@@ -44,7 +44,7 @@ use DynaLoader;
 use Prima::Gencls;
 use vars qw( %make_trans @ovvars @path_expand_ovvars $dir_sep $path_sep );
 use vars @ovvars = qw(
-    $CC $CFLAGS $CCCDLFLAGS $CDLFLAGS $C_FLAGS $CDEBUGFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
+    $CC $CFLAGS $CCFLAGS $CCCDLFLAGS $CDLFLAGS $C_FLAGS $CDEBUGFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
     $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG $CLINKPREFIX
     $LD $LDFLAGS $LD_FLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
     $LIB $LIBOFLAG
@@ -56,7 +56,8 @@ use vars @ovvars = qw(
     $COMPILER
     $PREFIX
     $PREFIX_BIN
-    $INSTALL_BIN
+    $INSTALLSCRIPT
+    $INSTALLSITEARCH
     $INSTALL_LIB
     $INSTALL_DL
     $INSTALL_EXAMPLES
@@ -78,7 +79,8 @@ use vars @path_expand_ovvars = qw(
     $COMPILER
     $PREFIX
     $PREFIX_BIN
-    $INSTALL_BIN
+    $INSTALLSCRIPT
+    $INSTALLSITEARCH
     $INSTALL_LIB
     $INSTALL_DL
     $INSTALL_EXAMPLES
@@ -182,7 +184,7 @@ sub tempfile
 sub cc_command_line
 {
     my ( $srcf, $objf, $exef, $compile_only, $dl) = @_;
-    my @cc = ( $CC, split ' ', $CFLAGS);
+    my @cc = ( $CC, split(' ', $CFLAGS), split(' ', $CCFLAGS));
     push @cc, split ' ', $CCCDLFLAGS if $dl;
     push @cc, split ' ', $CDLFLAGS if $dl && !$compile_only;
     push @cc, $COMPONLYFLAG if $compile_only;
@@ -555,7 +557,7 @@ sub setup_variables
                         },
                  msvc => {
                           warnflags => "-W3 -WX",
-                          cflags => "",
+                          cflags => "-nologo",
                           coutoflag => '-Fo',
                           coutexeflag => '-Fe',
                           clinkprefix => '/link',
@@ -647,6 +649,7 @@ sub setup_variables
     }
     setvar( 'C_FLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( $Config{ optimize} || '') . " ");
     setvar( 'CFLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
+    setvar( 'CCFLAGS',  '');
     setvar( 'CCCDLFLAGS', $Config{ cccdlflags});
     setvar( 'CDLFLAGS', $Config{ ccdlflags});
     setvar( 'COUTOFLAG', $cc_specs{ $COMPILER}->{ coutoflag});
@@ -727,11 +730,17 @@ sub setup_variables
         my ( $defname, $defvalue) = ( $1, $2 || 1);
         $DEFINES{ $defname} = $defvalue;
     }
-    setvar( 'PREFIX', $Config{ installsitearch});
-    setvar( 'INSTALL_BIN', $Config{ installbin});
-    setvar( 'INSTALL_LIB', $PREFIX . qd( "/Prima"));
-    setvar( 'INSTALL_DL', $PREFIX . qd( "/auto/Prima"));
-    setvar( 'INSTALL_EXAMPLES', $PREFIX . qd( "/Prima/examples"));
+    while ( $CCFLAGS =~ s/-D(\w+)(?:=(\S+))?\s*//) {
+        my ( $defname, $defvalue) = ( $1, $2 || 1);
+        $DEFINES{ $defname} = $defvalue;
+    }
+    
+    setvar( 'PREFIX',           $Config{ installsitearch});
+    setvar( 'INSTALLSITEARCH',  $Config{ installsitearch});
+    setvar( 'INSTALLSCRIPT',    $Config{ installscript});
+    setvar( 'INSTALL_LIB',      $INSTALLSITEARCH . qd( "/Prima"));
+    setvar( 'INSTALL_DL',       $INSTALLSITEARCH . qd( "/auto/Prima"));
+    setvar( 'INSTALL_EXAMPLES', $INSTALLSITEARCH . qd( "/Prima/examples"));
 
     setvar( 'MAKETYPE', lc ( $MAKE = $Config{ make}));
     # Note that Borland's make utility also named 'make'. But its
@@ -1443,10 +1452,13 @@ sub create_config_pm
    my $_cwd = cwd;
    my $cwd = qqd($_cwd);
    my $ifs = $Win32 ? '\\\\' : '/';
-   my @ip = @INCPATH;
+   my @ip = map { qqd($_) } @INCPATH;
    $ip[0] = "$cwd${ifs}include";
    $ip[1] = "$cwd${ifs}include${ifs}generic";
    my $ipp = join(',', map {"\'$_\'"} @ip);
+   $ip[0] = qqd("$INSTALLSITEARCH/Prima/CORE");
+   $ip[1] = qqd("$INSTALLSITEARCH/Prima/CORE/generic");
+   my $ippi = join(',', map {"\'$_\'"} @ip);
    my @cdefs = ('HAVE_CONFIG_H=1');
    my $cdefs = join( ',', map {"'$_'"} @cdefs);
    my $lddef = ( $COMPILER eq 'msvc') ? '/def:' : '',
@@ -1466,21 +1478,35 @@ sub create_config_pm
       push @libs, 'Prima' . $cc_specs{$COMPILER}->{ldlibext};
    }
    my $libpath = qqd(join( ',', map {"'$_'"} @libpath));
+   unless ( $PLATFORM eq 'unix') {
+      $libpath[-1] = "$INSTALLSITEARCH/auto/Prima";
+   }
+   my $libpathi = qqd(join( ',', map {"'$_'"} @libpath));
    my $libs    = qqd(join( ',', map {"'$_'"} @libs));
    my $perl    = qqd($^X);
    my $pl = qqd( $PrimaLib);
    my $pt = qqd( $PrimaTarget);
+   my $iscr = qqd($INSTALLSCRIPT);
+   my $isa  = qqd($INSTALLSITEARCH);
+   
 
    open F, "> Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
-   print F <<HEADER;
+   print F <<CONFIG;
 # This file was automatically generated.
 # Do not edit, you'll loose your changes anyway.
 package Prima::Config;
-use vars qw(%Config);
+use vars qw(%Config %Config_inst);
+
+%Config_inst = (
+  incpaths              => [ $ippi ],
+  gencls                => '$iscr\\\\gencls$SCRIPT_EXT',
+  tmlink                => '$iscr\\\\tmlink$SCRIPT_EXT',
+  libname               => '$isa${ifs}Prima$LIB_EXT',
+  dlname                => '$isa${ifs}$pt',
+  ldpaths               => [$libpathi],
+);
 
 %Config = (
-HEADER
-   print F <<BODY;
   ifs                   => '$ifs',
   quote                 => '\\$SHQUOTE',
   platform              => '$PLATFORM',
@@ -1492,7 +1518,7 @@ HEADER
   scriptext             => '$SCRIPT_EXT',
   genclsoptions         => '--tml --h --inc',
   cc                    => '$CC',
-  cflags                => '-c $C_FLAGS',
+  cflags                => '-c $C_FLAGS $CCFLAGS',
   cdebugflags           => '$cc_specs{$COMPILER}->{cdebugflags}',
   cincflag              => '$CINCPATHFLAG',
   cobjflag              => '$COUTOFLAG',
@@ -1515,14 +1541,11 @@ HEADER
   ldpaths               => [$libpath],
   ldlibs                => [$libs],
   ldlibext              =>'$cc_specs{$COMPILER}->{ldlibext}',
-  perl                  => 'perl',
-BODY
-
-print F <<FOOTER;
+  perl                  => '$perl',
 );
 
 1;
-FOOTER
+CONFIG
    close F;
 }
 
@@ -1659,14 +1682,12 @@ elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--rmdir') {
 }
 elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--updateconfig') {
    shift @ARGV;
-   my ( $from, $fn) = ( quotemeta(shift @ARGV), shift @ARGV);
-   my $ifs = $Win32 ? '\\\\' : '/';
-   my $ipp   = $Config{installarchlib} . qd( "/CORE");
-   my $incs  = qd( "['$Config{installsitearch}/Prima/CORE', '$Config{installsitearch}/Prima/CORE/generic', '$Config{installarchlib}/CORE']");
-   $SCRIPT_EXT = ( $Win32 ? '.bat' : ( $OS2 ? '.cmd' : ''));
-
+   my $fn = shift @ARGV;
    open F, $fn or die "cannot open $fn:$!\n";
    open FF, "> $fn.tmp" or die "cannot open $fn.tmp:$!\n";
+   my ( $c_state, $ci_state) = (0,0);
+   my %ci;
+   
    print FF <<HEADER;
 # This file was automatically generated.
 package Prima::Config;
@@ -1675,23 +1696,33 @@ use vars qw(%Config);
 %Config = (
 HEADER
    while ( <F>) {
-      next unless (m/^\%Config/ .. m/\)\;$/);
-      next if (m/^\%Config/ || m/\)\;$/);
-      next if m/^\s*(incpaths|gencls|tmlink)/;
-      if ( m/^\s*dlname/) {
-         s/$from/$ipp/;
-      } elsif ( m/^\s*libname/) {
-         s[$from\/auto\/Prima][$ipp];
-      } if ( m/^\s*ldpaths/) {
-         s[,\s*\'$from\/auto\/Prima\'][];
+      if ( $ci_state == 0) {
+         if ( m/\%Config_inst = \(/) {
+            $ci_state = 1;
+         }
+      } elsif ( $ci_state == 1) {
+         if ( m/^\);/) {
+            $ci_state = 0;
+         } else {
+            $ci{$1} = $_ if m/^\s*(\S+)\s*/;
+         }
       }
-      print FF $_;
+      if ( $c_state == 0) {
+         if ( m/\%Config = \(/) {
+            $c_state = 1;
+         }
+      } elsif ( $c_state == 1) {
+         if ( m/^\);/) {
+            $c_state = 0;
+         } else {
+            if ( m/^\s*(\S+)\s*/ && exists $ci{$1}) {
+               print FF $ci{$1};
+            } else {
+               print FF $_;
+            }
+         }
+      }
    }
-   print FF <<SUBST;
-  incpaths              => $incs,
-  gencls                => '$Config{installbin}${ifs}gencls$SCRIPT_EXT',
-  tmlink                => '$Config{installbin}${ifs}tmlink$SCRIPT_EXT',
-SUBST
 print FF <<FOOTER;
 );
 
@@ -1792,9 +1823,13 @@ FOOTER
 
     print "Setting up working environment.\n";
     %USER_VARS_LINKS = (
-        INSTALL_BIN => {
+        INSTALLSCRIPT => {
             src => 'PREFIX',
             format => '%s/bin',
+        },
+        INSTALLSITEARCH => {
+            src => 'PREFIX',
+            format => '%s',
         },
     );
     process_commandline;
@@ -1845,22 +1880,6 @@ all: prima
 
 EOF
 
-    if ( $ENV{ HOME} && ( -d qd( "$ENV{ HOME}/.Makeinc"))) {
-        my $hdir = "$ENV{ HOME}/.Makeinc";
-        if ( -f "$hdir/header.PL") {
-            push @headers, `$^X $hdir/header.PL`;
-            push @Makefile_deps, "$hdir/header.PL";
-        }
-        if ( -f "$hdir/footer.PL") {
-            push @footers, `$^X $hdir/footer.PL`;
-            push @Makefile_deps, "$hdir/footer.PL";
-        }
-        if ( -f "$hdir/Prima.ph") {
-            do "$hdir/Prima.ph";
-            push @Makefile_deps, "$hdir/Prima.ph";
-        }
-    }
-
     $make .= join( "\n", @headers) . "\n";
 
     while ( <*.cls>) {
@@ -1883,10 +1902,10 @@ EOF
            push @allinstall, $_, $INSTALL_EXAMPLES;
         }
     }
-    push @allbins, "utils/gencls.pl", $INSTALL_BIN;
-    push @allbins, "utils/tmlink.pl", $INSTALL_BIN;
-    push @allbins, "Prima/VB/VB.pl", $INSTALL_BIN;
-    push @allbins, "Prima/VB/cfgmaint.pl", $INSTALL_BIN;
+    push @allbins, "utils/gencls.pl", $INSTALLSCRIPT;
+    push @allbins, "utils/tmlink.pl", $INSTALLSCRIPT;
+    push @allbins, "Prima/VB/VB.pl", $INSTALLSCRIPT;
+    push @allbins, "Prima/VB/cfgmaint.pl", $INSTALLSCRIPT;
     
 
     my $thunks_tinc = qd( "include/generic/thunks.tinc");
@@ -1957,13 +1976,13 @@ EOF
     my %cp;
     my %cpbin;
     $cp{$PrimaTarget} = $INSTALL_DL;
-    $cp{$PrimaLib}    = $PREFIX;
-    $cp{"Prima.pm"}   = $PREFIX;
+    $cp{$PrimaLib}    = $INSTALLSITEARCH;
+    $cp{"Prima.pm"}   = $INSTALLSITEARCH;
     
     my $cwd = cwd();
     finddepth( sub {
         return if $File::Find::dir =~ /CVS/ || m/CVS/;
-        $cp{qd("$File::Find::dir/$_")} = qd("$PREFIX/$File::Find::dir") unless -d $_;
+        $cp{qd("$File::Find::dir/$_")} = qd("$INSTALLSITEARCH/$File::Find::dir") unless -d $_;
     }, 'Prima');
 
     delete $cp{qd("Prima/VB/VB.pl")};
@@ -2002,7 +2021,7 @@ EOF
     }
 
     print MAKE "\n\t\@echo Updating config...\n";
-    print MAKE "\t$^X Makefile.PL --updateconfig $cwd $PREFIX/Prima/Config.pm\n";
+    print MAKE "\t$^X Makefile.PL --updateconfig $INSTALLSITEARCH/Prima/Config.pm\n";
 
     print MAKE "\ndeinstall:";
     $i = 0;
@@ -2014,8 +2033,8 @@ EOF
        print MAKE "\t$cp{$_}$dir_sep$2 \\\n";
        $dirs_to_rm{$cp{$_}} = 1;
     }
-    delete $dirs_to_rm{$PREFIX};
-    delete $dirs_to_rm{$INSTALL_BIN};
+    delete $dirs_to_rm{$INSTALLSITEARCH};
+    delete $dirs_to_rm{$INSTALLSCRIPT};
     print MAKE "\n\t\@\$(RMDIR) \\\n";
     for ( sort { length($b) <=> length($a) } keys %dirs_to_rm) {
        print MAKE "\t$_ \\\n";
