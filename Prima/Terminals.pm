@@ -1423,7 +1423,7 @@ sub item_changed {
         my ( @r) = $self->{ termView}->rect;
         #print "Scrolling rect by $vShiftVal => $vS (@{ $scrollRect}), (@r)";
 
-        $self->{ termView}->scroll_rect( 0, $vS, confineRect => $scrollRect);
+        $self->{ termView}->scroll( 0, $vS, confineRect => $scrollRect);
 
         my ( $j);
         for ( $j = 0; $j <= $#{ $viewItems}; $j++) {

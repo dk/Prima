@@ -1923,7 +1923,7 @@ sub insert_empty_line
       $self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> font-> height, $self-> size,
    );
    if ( $y < $fc + $rc + $yt - 1 && $y + $len > $fc && $y <= $maxY && !$self-> has_selection) {
-      $self-> scroll_rect( 0, -$fh * $len,
+      $self-> scroll( 0, -$fh * $len,
                            confineRect => [ $bw, $bw + $dy, $w - $dx - $bw, $h - $bw - $fh * ( $y - $fc) ]);
    }
    $self->{vScrollBar}-> set(
