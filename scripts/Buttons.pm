@@ -357,7 +357,7 @@ sub on_paint
    @clr = ( $self-> disabledColor, $self-> disabledBackColor) if ( !$self-> enabled);
    my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
    my @size = $canvas-> size;
-   push ( @c3d, shift @c3d) if $_[0]-> { pressed} || $_[0]-> { checked};
+   @c3d = reverse @c3d if $_[0]-> { pressed} || $_[0]-> { checked};
    if ( !$self->{flat} || $self->{hilite})
    {
       $canvas-> rect3d( 1, 1, $size[0] - 2, $size[1] - 2, 2, @c3d, $clr[ 1])
