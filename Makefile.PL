@@ -1265,7 +1265,7 @@ EOF
     close CONFIG;
 
     push @allrealclean, $config_h;
-    push @allinstall, $config_h => $INSTALL_LIB . "/$config_dir";
+    push @allinstall, $config_h => $INSTALL_LIB . qd( "/CORE/generic");
 
     push @alldirs, qd( "include/generic"), qd( "auto/Prima");
 
