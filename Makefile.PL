@@ -248,7 +248,7 @@ sub setup_variables
     $LD = $Config{ ld};
     $LDFLAGS = "$Config{ ldflags} $Config{ lddlflags}";
     $LDOUTFLAG = $Win32 ? '/OUT:' : '-o';
-    $LDLIBPATHFLAG = $Win32 ? '/LIBPATH:' : '-L';
+    $LDLIBPATHFLAG = $Win32 ? '/DEF:win32/Prima.def /LIBPATH:' : '-L';
     $LDLIBFLAG = $Win32 ? '' : '-l';
     $OBJ_EXT = $Config{ _o};
     $LIB_EXT = $Config{ _a};
