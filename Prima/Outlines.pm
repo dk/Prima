@@ -782,7 +782,6 @@ sub reset_tree
    }
 
    $self-> {count} = $i;
-#  delete $self-> {itemCache};
 
    my $fullc = $self->{fullCalibrate};
    my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
@@ -1183,14 +1182,6 @@ sub get_item
          $lastChild = $idx == $lim;
       }
    }   
-#  return @{$self->{itemCache}->{$item}} if exists $self->{itemCache}->{$item};
-#  my $lev;
-#  my $rec  = $self-> iterate( sub {
-#     my ( $current, $parent, $index, $position, $level, $lastChild) = @_;
-#     $self->{itemCache}->{$position} = [$current, $level];
-#     $lev = $level, return 1 if $position == $item;
-#  });
-#  return $rec, $lev;
 }
 
 sub get_item_text
@@ -1717,3 +1708,454 @@ sub showDotDirs
 }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Outlines - tree view widgets
+
+=head1 DESCRIPTION
+
+The module provides a set of widget classes, designed to display a tree-like
+hierarchy of items. C<Prima::OutlineViewer> presents a generic class that
+contains basic functionality and defines the interface for the descendants, which are
+C<Prima::StringOutline>, C<Prima::Outline>, and C<Prima::DirectoryOutline>.
+
+=head1 SYNOPSIS
+
+  my $outline = Prima::StringOutline-> create(
+    items => [
+       [  'Simple item' ],
+       [[ 'Embedded item ']],
+       [[ 'More embedded items', [ '#1', '#2' ]]],
+    ],
+  );
+  $outline-> expand_all;
+
+=head1 Prima::OutlineViewer
+
+Presents a generic interface for browsing the tree-like lists.
+Each item is represented by a node in a linked list.
+The format of node is predefined, and is an anonymous array
+with the following definitions of indeces:
+
+=over
+
+=item 0
+
+Item id with non-defined format. The simplest implementation, C<Prima::StringOutline>, 
+treats the scalar as a text string. The more complex classes store 
+references to arrays or hashes here. See C<items> article of a concrete class
+for the format of a node record.
+
+=item 1
+
+Reference to a child node. C<undef> if there is none.
+
+=item 2
+
+A boolean flag, which selects if the node shown as expanded, e.g.
+all its immediate children are visible.
+
+=item 3
+
+Width of an item in pixels.
+
+=back
+
+The indeces above 3 should not be used, because eventual changes to the
+implementation of the class may use these. It should be enough item 0 to store 
+any value.
+
+To support a custom format of node, it is sufficient to overload the following 
+notifications: C<DrawItem>, C<MeasureItem>, C<Stringify>. Since C<DrawItem> is
+called for every item, a gross method C<draw_items> can be overloaded instead.
+See also L<Prima::StringOutline> and L<Prima::Outline>.
+
+The class employs two addressing methods, index-wise and item-wise. The index-wise
+counts only the visible ( non-expanded ) items, and is represented by an integer index.
+The item-wise addressing cannot be expressed by an integer index, and the full
+node structure is used as a reference. It is important to use a valid reference here,
+since the class does not always perform the check if the node belongs to internal node list due to 
+the speed reasons.
+
+C<Prima::OutlineViewer> is a descendant of C<Prima::GroupScroller> and C<Prima::MouseScroller>, 
+so some properties and methods are not described here. See L<Prima::IntUtils> for these.
+
+The class is not usable directly.
+
+=head2 Properties
+
+=over
+
+=item autoHeight INTEGER
+
+If set to 1, changes C<itemHeight> automatically according to the widget font height.
+If 0, does not influence anything.  When C<itemHeight> is set explicitly, 
+changes value to 0.
+
+Default value: 1
+
+=item dragable BOOLEAN
+
+If 1, allows the items to be dragged interactively by pressing control key
+together with left mouse button. If 0, item dragging is disabled.
+
+Default value: 1
+
+=item focusedItem INTEGER
+
+Selects the focused item index. If -1, no item is focused.
+It is mostly a run-time property, however, it can be set
+during the widget creation stage given that the item list is 
+accessible on this stage as well.
+
+=item indent INTEGER
+
+Width in pixels of the indent between item levels.
+
+Default value: 12
+
+=item itemHeight INTEGER
+
+Selects the height of the items in pixels. Since the outline classes do 
+not support items with different vertical dimensions, changes to this property 
+affect all items.
+
+Default value: default font height
+
+=item items ARRAY
+
+Provides access to the items as an anonymous array. The format of items is
+described in the opening article ( see L<Prima::OutlineViewer> ).
+
+Default value: []
+
+=item offset INTEGER
+
+Horizontal offset of an item list in pixels.
+
+=item topItem INTEGER
+
+Selects the first item drawn.
+
+=item showItemHint BOOLEAN
+
+If 1, allows activation of a hint label when the mouse pointer is hovered above
+an item that does not fit horizontally into the widget inferiors. If 0,
+the hint is never shown.
+
+See also: L<makehint>.
+
+Default value: 1
+
+=back
+
+=head2 Methods
+
+=over
+
+=item adjust INDEX, EXPAND
+
+Preforms expansion ( 1 ) or collapse ( 0 ) of INDEXth item, depending on EXPAND
+boolean flag value.
+
+=item calibrate
+
+Recalculates the node tree and the item dimensions. 
+Used internally.
+
+=item delete_items [ NODE = undef, OFFSET = 0, LENGTH = undef ]
+
+Deletes LENGTH children items of NODE at OFFSET. 
+If NODE is C<undef>, the root node is assumed. If LENGTH 
+is C<undef>, all items after OFFSET are deleted.
+
+=item delete_item NODE
+
+Deletes NODE from the item list.
+
+=item draw_items CANVAS, PAINT_DATA
+
+Called from within C<Paint> notification to draw
+items. The default behavior is to call C<DrawItem>
+notification for every visible item. PAINT_DATA
+is an array of arrays, where each array consists
+of parameters, passed to C<DrawItem> notification.
+
+This method is overridden in some descendant classes,
+to increase the speed of the drawing routine.
+
+See L<DrawItem> for PAINT_DATA parameters description.
+
+=item get_index NODE
+
+Traverses all items for NODE and finds if it is visible.
+If it is, returns two integers: the first is item index
+and the second is item depth level. If it is not visible,
+C<-1, undef> is returned.
+
+=item get_index_text INDEX
+
+Returns text string assigned to INDEXth item.
+Since the class does not assume the item storage organization,
+the text is queried via C<Stringify> notification.
+
+=item get_index_width INDEX
+
+Returns width in pixels of INDEXth item, which is a
+cached result of C<MeasureItem> notification, stored
+under index #3 in node.
+
+=item get_item INDEX
+
+Returns two scalars corresponding to INDEXth item: 
+node reference and its depth level. If INDEX is outside
+the list boundaries, empty array is returned.
+
+=item get_item_parent NODE
+
+Returns two scalars, corresponding to NODE:
+its parent node reference and offset of NODE in the parent's
+immediate children list.
+
+=item get_item_text NODE
+
+Returns text string assigned to NODE.
+Since the class does not assume the item storage organization,
+the text is queried via C<Stringify> notification.
+
+=item get_item_width NODE
+
+Returns width in pixels of INDEXth item, which is a
+cached result of C<MeasureItem> notification, stored
+under index #3 in node.
+
+=item expand_all [ NODE = undef ].
+
+Expands all nodes under NODE. If NODE is C<undef>, the root node
+is assumed. If the tree is large, the execution can take
+significant amount of time.
+
+=item insert_items NODE, OFFSET, @ITEMS
+
+Inserts one or more ITEMS under NODE with OFFSET.
+If NODE is C<undef>, the root node is assumed.
+
+=item iterate ACTION, FULL
+
+Traverses the item tree and calls ACTION subroutine
+for each node. If FULL boolean flag is 1, all nodes
+are traversed. If 0, only the expanded nodes are traversed.
+
+ACTION subroutine is called with the following parameters:
+
+=over
+
+=item 0
+
+Node reference
+
+=item 1
+
+Parent node reference; if C<undef>, the node is the root.
+
+=item 2
+
+Node offset in parent item list.
+
+=item 3
+
+Node index.
+
+=item 4
+
+Node depth level. 0 means the root node.
+
+=item 5
+
+A boolean flag, set to 1 if the node is the last child in parent node list,
+set to 0 otherwise.
+
+=back
+
+=item makehint SHOW, INDEX
+
+Controls hint label upon INDEXth item. If a boolean flag SHOW is set to 1,
+and C<showItemHint> property is 1, and the item index does not fit horizontally
+in the widget inferiors then the hint label is shown. 
+By default the label is removed automatically as the user moves the mouse pointer
+away from the item. If SHOW is set to 0, the hint label is hidden immediately.
+
+=item point2item Y, [ HEIGHT ]
+
+Returns index of an item that contains horizontal axis at Y in the widget coordinates.
+If HEIGHT is specified, it must be the widget height; if it is
+not, the value is fetched by calling C<Prima::Widget::height>.
+If the value is known, passing it to C<point2item> thus achieves
+some speed-up.
+
+=item validate_items ITEMS
+
+Traverses the array of ITEMS and puts every node to 
+the common format: cuts scalars above index #3, if there are any,
+or adds default values to a node if it contains less than 3 scalars.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Expand NODE, EXPAND
+
+Called when NODE is expanded ( 1 ) or collapsed ( 0 ). 
+The EXPAND boolean flag reflects the action taken.
+
+=item DragItem OLD_INDEX, NEW_INDEX
+
+Called when the user finishes the drag of an item
+from OLD_INDEX to NEW_INDEX position. The default action
+rearranges the item list in accord with the dragging action.
+
+=item DrawItem CANVAS, NODE, X1, Y1, X2, Y2, INDEX, FOCUSED
+
+Called when INDEXth item, contained in NODE is to be drawn on 
+CANVAS. X1, Y1, X2, Y2 coordinated define the exterior rectangle
+of the item in widget coordinates. FOCUSED boolean flag is set to
+1 if the item is focused; 0 otherwise.
+
+=item MeasureItem NODE, REF
+
+Puts width of NODE item in pixels into REF
+scalar reference. This notification must be called 
+from within C<begin_paint_info/end_paint_info> block.
+
+=item SelectItem INDEX
+
+Called when INDEXth item gets focused.
+
+=item Stringify NODE, TEXT_REF
+
+Puts text string, assigned to NODE item into TEXT_REF
+scalar reference.
+
+=back
+
+=head1 Prima::StringOutline
+
+Descendant of C<Prima::OutlineViewer> class, provides standard 
+single-text items widget. The items can be set by merely
+supplying a text as the first scalar in node array structure:
+
+  $string_outline-> items([ 'String', [ 'Descendant' ]]);
+
+=head1 Prima::Outline
+
+A variant of C<Prima::StringOutline>, with the only difference
+that the text is stored not in the first scalar in a node but
+as a first scalar in an anonymous array, which in turn is
+the first node scalar. The class does not define neither format nor
+the amount of scalars in the array, and as such presents a half-abstract
+class.
+
+=head1 Prima::DirectoryOutline
+
+Provides a standard widget with the item tree mapped to the directory
+structure, so each item is mapped to a directory. Depending on the type 
+of the host OS, there is either single root directory ( unix ), or
+one or more disk drive root items ( win32, os2 ).
+
+The format of a node is defined as follows:
+
+=over
+
+=item 0
+
+Directory name, string.
+
+=item 1
+
+Parent path; an empty string for the root items.
+
+=item 2
+
+Icon width in pixels, integer.
+
+=item 3
+
+Drive icon; defined only for the root items under non-unix hosts
+in order to reflect the drive type ( hard, floppy, etc ).
+
+=back
+
+=head2 Properties
+
+=over
+
+=item closedGlyphs INTEGER
+
+Number of horizontal equal-width images, contained in C<closedIcon>
+property.
+
+Default value: 1
+
+=item closedIcon ICON
+
+Provides an icon representation for the collapsed items.
+
+=item openedGlyphs INTEGER
+
+Number of horizontal equal-width images, contained in C<openedIcon>
+property.
+
+Default value: 1
+
+=item openedIcon OBJECT
+
+Provides an icon representation for the expanded items.
+
+=item showDotDirs BOOLEAN
+
+Selects if the directories with the first dot character
+are shown the tree view. The treatment of the dot-prefixed names
+as hidden is traditional to unix, and is of doubtful use under
+win32 and os2.
+
+Default value: 0
+
+=back
+
+=head2 Methods
+
+=over
+
+=item files [ FILE_TYPE ]
+
+If FILE_TYPE value is not specified, the list of all files in the
+current directory is returned. If FILE_TYPE is given, only the files
+of the types are returned. The FILE_TYPE is a string, one of those
+returned by C<Prima::Utils::getdir> ( see L<Prima::Utils/getdir> ).
+
+=item get_directory_tree PATH
+
+Reads the file structure under PATH and returns a newly created hierarchy 
+structure in the class node format. If C<showDotDirs> property value is 0,
+the dot-prefixed names are not included.
+
+Used internally inside C<Expand> notification.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<Prima::IntUtils>, <examples/outline.pl>.
+
+=cut
