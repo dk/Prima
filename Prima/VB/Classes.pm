@@ -968,6 +968,7 @@ sub prf_y_centered   { $_[0]-> y_centered(1) if $_[1]; }
 sub rerect
 {
    my ( $self, $data, $who) = @_;
+   return if $self-> {syncRecting};
    $self-> {syncRecting} = $who;
    $self-> set(
       $who => $data,
@@ -985,14 +986,18 @@ sub on_move
 {
    my ( $self, $ox, $oy, $x, $y) = @_;
    return if $self-> {syncRecting};
+   $self-> {syncRecting} = $self;
    $self-> prf_set( origin => [$x, $y]);
+   $self-> {syncRecting} = undef;
 }
 
 sub on_size
 {
    my ( $self, $ox, $oy, $x, $y) = @_;
    return if $self-> {syncRecting};
+   $self-> {syncRecting} = $self;
    $self-> prf_set( size => [$x, $y]);
+   $self-> {syncRecting} = undef;
 }
 
 sub on_paint

@@ -553,10 +553,13 @@ sub on_paint
 sub on_move
 {
    my ( $self, $ox, $oy, $x, $y) = @_;
+   return if $self-> {syncRecting};
+   $self-> {syncRecting} = $self;
    $self-> prf_set(
       origin => [$x, $y],
       originDontCare => 0,
    ) unless $self-> {syncRecting};
+   $self-> {syncRecting} = undef;
    $self-> {profile}->{left} = $x;
    $self-> {profile}->{bottom} = $y;
 }
@@ -564,10 +567,13 @@ sub on_move
 sub on_size
 {
    my ( $self, $ox, $oy, $x, $y) = @_;
+   return if $self-> {syncRecting};
+   $self-> {syncRecting} = $self;
    $self-> prf_set(
       size => [$x, $y],
       sizeDontCare => 0,
-   ) unless $self-> {syncRecting};
+   );
+   $self-> {syncRecting} = undef;
    $self-> {profile}->{width} = $x;
    $self-> {profile}->{height} = $y;
 }
