@@ -359,15 +359,20 @@ sub on_paint
    my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
    my @size = $canvas-> size;
    @c3d = reverse @c3d if $_[0]-> { pressed} || $_[0]-> { checked};
+   my @fbar = $self-> {default} ?
+      ( 1, 1, $size[0] - 2, $size[1] - 2):
+      ( 0, 0, $size[0] - 1, $size[1] - 1);
    if ( !$self->{flat} || $self->{hilite})
    {
-      $canvas-> rect3d( 1, 1, $size[0] - 2, $size[1] - 2, 2, @c3d, $clr[ 1])
+      $canvas-> rect3d( @fbar, 2, @c3d, $clr[ 1])
    } else {
      $canvas-> color( $clr[ 1]);
-     $canvas-> bar( 1, 1, $size[0] - 2, $size[1] - 2);
+     $canvas-> bar( @fbar);
    }
-   $canvas-> color( $self-> {default} ? cl::Black : $clr[ 1]);
-   $canvas-> rectangle( 0, 0, $size[0]-1, $size[1]-1);
+   if ( $self-> {default}) {
+      $canvas-> color( cl::Black);
+      $canvas-> rectangle( 0, 0, $size[0]-1, $size[1]-1);
+   }
    my $shift  = $self->{checked} ? 1 : 0;
    $shift += $self->{pressed} ? 2 : 0;
    my $capOk = $self-> text;
