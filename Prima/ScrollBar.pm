@@ -813,6 +813,10 @@ sub reset
       ) : (
          $btx + $atx, 1, $btx + $atx + $lenx - 1, $maxy - 1
       );
+      $self-> set(
+         cursorPos  => [ $rect[0] + 1, $rect[1] + 1],
+         cursorSize => [ $rect[2]-$rect[0]-2, $rect[3]-$rect[1]-2],
+      );
       $self->{ tab}->{ rect} = [@rect];
       $self->{ tab}->{ q(length)} = $lenx;
       if ( $v)
@@ -828,6 +832,7 @@ sub reset
          $self-> { right}->{rect} = ( $r2[ 0] < $r2[ 2]) ? [ @r2] : undef;
       }
    }
+   $self-> cursorVisible( $self-> { tab}-> { enabled});
 }
 
 sub set_bounds
