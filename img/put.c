@@ -322,31 +322,38 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 NOSCALE:   
 
    if (( PImage( dest)-> type & imBPP) < 8) {
-      int type = PImage( dest)-> type;
-      int ps   = PImage( dest)-> palSize;
-      int mask = (1 << type) - 1;
-      int conv = PImage( dest)-> conversion;
-      PImage( dest)-> conversion = ictNone;
-      CImage( dest)-> reset( dest, imbpp8, nilSV);
-      PImage( dest)-> palSize = ps;
-      memset( PImage( dest)-> palette + 255, 0xff, sizeof(RGBColor));
-      if (rop != ropCopyPut) { 
+      PImage i = ( PImage) dest;
+      int type = i-> type;
+      if (rop != ropCopyPut || i-> conversion == ictNone) { 
+         Handle b8 = i-> self-> dup( dest);
+         PImage j  = ( PImage) b8;
+         int mask  = (1 << type) - 1;
+         int sz;
+         Byte *dj, *di;
+         Byte colorref[256];
+         j-> self-> reset( b8, imbpp8, nilSV);
+         sz = j-> dataSize;
+         dj = j-> data;
          /* change 0/1 to 0x000/0xfff for correct masking */
-         int sz   = PImage( dest)-> dataSize;
-         Byte * d = PImage( dest)-> data;
          while ( sz--) {
-            if ( *d == mask) *d = 0xff;
-            d++;
+            if ( *dj == mask) *dj = 0xff;
+            dj++;
          }
+         img_put( b8, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop);
+         for ( sz = 0; sz < 256; sz++) colorref[sz] = ( sz > mask) ? mask : sz;
+         dj = j-> data;
+         di = i-> data;
+         for ( sz = 0; sz < i-> h; sz++, dj += j-> lineSize, di += i-> lineSize) 
+            bc_byte_mono_cr( dj, di, i-> w, colorref);
+         Object_destroy( b8);
+      } else {
+         int conv = i-> conversion;
+         i-> conversion = PImage( src)-> conversion;
+         i-> self-> reset( dest, imbpp8, nilSV);
+         img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop);
+         i-> self-> reset( dest, type, nilSV);
+         i-> conversion = conv;
       }
-      img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop);
-      if (rop != ropCopyPut) { 
-         int sz   = PImage( dest)-> dataSize;
-         Byte * d = PImage( dest)-> data;
-         while ( sz--) *(d++) &= mask;
-      }
-      CImage( dest)-> reset( dest, type, nilSV);
-      PImage( dest)-> conversion = conv;
       goto EXIT;
    } 
 

@@ -122,12 +122,15 @@ BC( mono, nibble, None)
          cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
       else
          cm_squeeze_palette( stdmono_palette, 2, dstPal, *dstPalSize);
+      cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    } else if ( *dstPalSize != 0) {
       cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 16);
       if ( *dstPalSize > 16 ) *dstPalSize = 16;
-   } else
+      cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+   } else {
       memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
-   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+      memcpy( colorref, map_stdcolorref, 256);
+   }
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_mono_nibble_cr( BCCONV, colorref);
 }
@@ -141,12 +144,15 @@ BC( mono, byte, None)
          cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
       else
          cm_squeeze_palette( stdmono_palette, 2, dstPal, *dstPalSize);
+      cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    } else if ( *dstPalSize != 0) {
       cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 256);
       if ( *dstPalSize > 256 ) *dstPalSize = 256;
-   } else
+      cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+   } else {
       memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
-   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+      memcpy( colorref, map_stdcolorref, 256);
+   }
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_mono_byte_cr( BCCONV, colorref);
 }
@@ -249,12 +255,15 @@ BC( nibble, nibble, None)
          cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
       else
          cm_squeeze_palette( cubic_palette16, 16, dstPal, *dstPalSize);
+      cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    } else if ( *dstPalSize != 0) {
       cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 16);
       if ( *dstPalSize > 16 ) *dstPalSize = 16;
-   } else
+      cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+   } else {
       memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
-   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+      memcpy( colorref, map_stdcolorref, 256);
+   }
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
       for ( j = 0; j < w; j++)
          dstData[j] = (colorref[srcData[j] >> 4] << 4) | colorref[srcData[j] & 0xf]; 
@@ -307,12 +316,15 @@ BC( nibble, byte, None)
          cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
       else
          cm_squeeze_palette( cubic_palette, 215, dstPal, *dstPalSize);
+      cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    } else if ( *dstPalSize != 0) {
       cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 256);
       if ( *dstPalSize > 256 ) *dstPalSize = 256;
-   } else
+      cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+   } else {
       memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
-   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+      memcpy( colorref, map_stdcolorref, 256);
+   }
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_nibble_byte_cr( BCCONV, colorref);
 }
