@@ -66,7 +66,7 @@ make the classes inheritable and their methods overrideable. The VMTs are
 usual C structs, that contain pointers to functions.
 Set of these functions represents a class. This chapter is not about OO 
 programming, you have to find a good book on it if you are not familiar with 
-the OO concepts, but in short, because Prima is written on C, not on C++,
+the OO concepts, but in short, because Prima is written in C, not in C++,
 it uses its own classes and objects implementation, so all object syntax
 is devised from scratch.
 
@@ -194,7 +194,7 @@ and from C:
    pset_c( name, "Sample");
    pset_i( index, 10);
    obj = Object_create("SampleObject", profile);
-   sv_free( obj);
+   sv_free(( SV*) profile);
 
 
 Convenience pset_XX macros assign a value of XX type to 
@@ -212,8 +212,8 @@ or from C
 
    Object_destroy( obj);
 
-An object can be automatically destructed when its reference count
-is reached 0. Note that the auto destruction would never happen
+An object can be automatically destroyed when its reference count
+reaches 0. Note that the auto destruction would never happen
 if the object's reference count is not lowered after its
 creation. The code
    
@@ -231,10 +231,10 @@ in re-entrant fashion.
 
 =head2 Data instance
 
-All object data after the creation represent an object instance.
+All object data after their creation represent an object instance.
 All Prima objects are blessed hashes, and the hash key
-__CMATE___ holds a C pointer to a memory which is occupied
-by C data instance, or "mate". It keeps all object variables
+__CMATE__ holds a C pointer to a memory which is occupied
+by C data instance, or a "mate". It keeps all object variables
 and a pointer to VMT. Every object has its own copy of data instance,
 but the VMTs can be shared. In order to reach to C data instance
 gimme_the_mate() function is used. As a first parameter it accepts
@@ -329,7 +329,7 @@ and characters can be:
 
 The format string can be prepended with '<' character, in which
 case SV * scalar ( always scalar, even if code returns nothing
-or array ) value is returned. The caller is responsible of 
+or array ) value is returned. The caller is responsible for
 freeing the return value.
 
 =head2 Exceptions
@@ -362,20 +362,22 @@ technique that keeps previous error message and looks like:
     CLOSE_G_EVAL;                       // close brackets
     ...
 
+This technique provides workaround to a "false alarm" situation, if
+SvTRUE( GvSV( errgv)) is true before perl_call_method().
 
 =head2 Object protection
 
 After the object destroy stage is completed, it is possible 
 that object's data instance is gone,
 and even simple stage check might cause segmentation fault.
-To avoid this, use bracketign functions called C<protect_object()> 
-and C<unprotect_object()>.
+To avoid this, bracketing functions called C<protect_object()> 
+and C<unprotect_object()> are used.
 protect_object() increments reference count to the object instance,
 thus delaying its freeing until decrementing unprotect_object() is called.
 
 All C code that references to an object must check for its stage
-after every routine that calls perl, because object might be destroyed
-inside this call. Typical code example would be like:
+after every routine that switches to perl code, because the object might 
+be destroyed inside the call. Typical code example would be like:
 
    function( Handle object) {
         int stage;
@@ -397,12 +399,12 @@ the call, because gimme_the_mate() function returns NULL
 if object's stage is csDead, and majority of Prima C code
 is prepended with this call, thus rejecting invalid references 
 on early stage. If it is desired to get the
-C mate even for objects in csDead stage, use C<gimme_the_real_mate()>
+C mate for objects that are in csDead stage, use C<gimme_the_real_mate()>
 function instead.
 
 =head2 init
 
-Object's method init() is responsible for setting all initial properties to 
+Object's method init() is responsible for setting all its initial properties to 
 the object, but all code that is executed inside init must be aware that
 the object's stage is csConstructing. init() consists of two parts:
 calling of ancestor's init() and setting properties. Examples are
@@ -420,14 +422,14 @@ pget_XX macros call croak() if the profile key is not
 present into profile, but the mechanism guarantees that
 all keys that are listed in profile_default() are conveyed to
 init(). For explicit checking of key presence pexists() macro
-is used, and pdelete() is used for key deletion, alhough is it not
+is used, and pdelete() is used for key deletion, although is it not
 recommended to use pdelete() inside init().
 
 =head2 Object creation and returning
 
 As described is previous sections, there are some
-precautions to be taken into account when an object gets created from C code.
-As an example would serve a piece of real code from DeviceBitmap.c:
+precautions to be taken into account when an object is created inside C code.
+A piece of real code from DeviceBitmap.c would serve as an example:
 
    static 
    Handle xdup( Handle self, char * className)
@@ -477,7 +479,8 @@ otherwise it might be destroyed before it's time.
 
 The newly created object returned from C would be destroyed
 due perl's garbage cleaning mechanism right away, unless the
-object value would be assigned to a scalar, for exmaple.
+object value would be assigned to a scalar, for example.
+
 Thus
    
     $c = Prima::Object-> create();
@@ -493,7 +496,7 @@ call Component_attach() during init-stage, automatically
 increasing their reference count. Component_attach() and 
 its reverse Component_detach() account list of objects, 
 attributed to each other. Object can be attached to multiple
-objects, but only once.
+objects, but cannot be attached more that once to another object.
 
 =head2 Notifications
 
@@ -503,7 +506,7 @@ different events. This mechanism is used heavily in event-driven
 programming. Component_notify() is used to call user notifications,
 and its format string has same format as accepted by perl_call_indirect().
 The only difference that it always has to be prepended with '<s', - 
-this way the call success flag is set, and first paramster have to 
+this way the call success flag is set, and first parameter have to 
 be the name of the notification.
 
     Component_notify( self, "<sH", "Paint", self);
@@ -565,7 +568,7 @@ produce different results. Therefore it might be only solution to
 code Class_set() explicitly.
 
 If it is desired to specify exact order how atomic properties have to be called,
-__ORDER__ anonymouse array have to be added to set() parameters.
+__ORDER__ anonymous array have to be added to set() parameters.
 
    $image-> set(
       owner => $xxx,
@@ -638,8 +641,8 @@ Prima object. returns nilHandle if object's stage is csDead
  Handle( SV * perlObject)
 
 Returns a C pointer to an object, if perlObject is a reference to a
-Prima object. Same as C<gimme_the_mate>, but does not care about
-object's stage.
+Prima object. Same as C<gimme_the_mate>, but does not check for
+the object stage.
 
 =item alloc1
 
@@ -711,8 +714,8 @@ Returns number of keys in the hash
  void * ( PHash self, void *action, void *params, int *pKeyLen, void **pKey);
 
 Enumerates all hash entries, calling action procedure on each.
-If action returns true, enumeration stops and the value is returned.
-Otherwise nil is returned. action have to be function prototyped as
+If the action procedure returns true, enumeration stops and the last processed
+value is returned. Otherwise nil is returned. action have to be function declared as
 
  Bool action_callback( void * value, int keyLen, void * key, void * params);
  
@@ -756,21 +759,21 @@ If cacheIt true, caches the hierarchy traverse result for a speedup.
 
  SV * ( Handle self, char *subName, const char *format, Bool cdecl, Bool coderef, va_list params);
 
-Core function for calling Prima methods. Is used by following three 
-functions, but never directly. Format is described in C<Calling perl code>
+Core function for calling Prima methods. Is used by the following three 
+functions, but is never called directly. Format is described in C<Calling perl code>
 section.
 
 =item call_perl
 
  SV * ( Handle self, char *subName, const char *format, ...); 
 
-Calls method to an object
+Calls method of an object pointer by a Handle
 
 =item sv_call_perl
 
  SV * ( SV * mate, char *subName, const char *format, ...); 
 
-Calls method to a scalar
+Calls method of an object pointed by a SV*
 
 =item cv_call_perl
 
@@ -804,7 +807,7 @@ Convenience call to C<Object_create> with parameters in hash 'profile'.
 
  void( Handle self);
 
-Destroys object. One of Prima function that can be called in 
+Destroys object. One of few Prima function that can be called in 
 re-entrant fashion.
 
 =item Object_alive
@@ -814,7 +817,7 @@ re-entrant fashion.
 Returns non-zero is object is alive, 0 otherwise.
 In particular, current implementation returns 1 if
 object's stage is csNormal and 2 if it is csConstructing.
-Has no virtually use in C, only used in perl code.
+Has virtually no use in C, only used in perl code.
 
 =item protect_object 
 
@@ -835,7 +838,7 @@ Can be called several times on an object.
 
  HV *( I32 ax, SV **sp, I32 items, SV **mark, int expected, const char *methodName);
 
-Transfers argemants in perl stack to a newly created HV.
+Transfers arguments in perl stack to a newly created HV and returns it.
 
 =item push_hv
 
@@ -855,7 +858,6 @@ Puts hv content as arguments to perl code to be called
 
 Reads result of executed perl code and stores them into hv.
 
-
 =item pexist
  
  Bool(char*key)
@@ -874,13 +876,13 @@ Deletes a key in hash 'profile'
 
 Returns value of ( SV*, int, float, char*, Handle or Bool)
 that is associated to a key in hash 'profile'. Calls croak()
-if key is not present.
+if the key is not present.
 
 =item pset_sv, pset_i, pset_f, pset_c, pset_H
 
  void( char*key, TYPE value)
 
-Assigns value to a key in hash 'profile' and increments
+Assigns a value to a key in hash 'profile' and increments
 reference count to a newly created scalar.
 
 =item pset_b
@@ -908,7 +910,7 @@ Returns copy of a string
 
  void ( PList self, int size, int delta);
 
-Created list instance with a static List structure.
+Creates a list instance with a static List structure.
 
 =item plist_create
 
@@ -941,7 +943,7 @@ on error.
  int ( PList self, Handle item, int pos);
 
 Inserts new item into a list at a given position, returns
-its posistion or -1 on error.
+its position or -1 on error.
 
 =item list_at
 
@@ -950,13 +952,11 @@ its posistion or -1 on error.
 Returns items that is located at given index or nilHandle 
 if the index is out of range.
 
-
 =item list_delete
 
  void( PList self, Handle item);
 
 Removes the item from list.
-
 
 =item list_delete_at
 
@@ -971,14 +971,13 @@ Removes the item located at given index from a list.
 Removes all items from the list. If kill is true,
 calls free() on every item before.
 
-
 =item list_first_that
 
  int( PList self, void * action, void * params);
 
 Enumerates all list entries, calling action procedure on each.
 If action returns true, enumeration stops and the index is returned.
-Otherwise -1 is returned. action have to be function prototyped as
+Otherwise -1 is returned. action have to be a function declared as
 
  Bool action_callback( Handle item, void * params);
  
@@ -988,6 +987,6 @@ params is a pointer to an arbitrary user data
 
  int( PList self, Handle item);
 
-Returns the index of an item, or -1 if the item is not in the list.
+Returns index of an item, or -1 if the item is not in the list.
 
 =back
