@@ -43,6 +43,7 @@ use Prima::Lists;
 use Prima::Label;
 use Prima::InputLine;
 use Prima::ComboBox;
+use Prima::MsgBox;
 
 package Prima::DirectoryListBox;
 use vars qw(@ISA @images);
@@ -860,7 +861,7 @@ sub Drive_Change
    my ( $self, $drive) = @_;
    my $newDisk = $drive-> text . "/";
    until (-d $newDisk) {
-      last if message_box( $self-> text, "Drive $newDisk is not ready!",
+      last if Prima::MsgBox::message_box( $self-> text, "Drive $newDisk is not ready!",
                    mb::Cancel | mb::Retry | mb::Warning) != mb::Retry;
    }
    unless (-d $newDisk) {
@@ -1002,7 +1003,7 @@ sub Open_Click
       }
       if ( $dirTo =~ /[*?]/)
       {
-         message_box( $self-> text, "Invalid path name " . $self-> Name-> text, mb::OK | mb::Error);
+         Prima::MsgBox::message_box( $self-> text, "Invalid path name " . $self-> Name-> text, mb::OK | mb::Error);
          $self->Name->select_all;
          $self->Name->focus;
          return;
@@ -1016,13 +1017,13 @@ sub Open_Click
       {
          if ( $self-> {noReadOnly} && !(-w $_))
          {
-            message_box( $self-> text, "File $_ is read only", mb::OK | mb::Error);
+            Prima::MsgBox::message_box( $self-> text, "File $_ is read only", mb::OK | mb::Error);
             $self->Name->select_all;
             $self->Name->focus;
             return;
          }
          return if !$self-> {openMode} && $self->{overwritePrompt} && (
-                 message_box( $self-> text,
+                 Prima::MsgBox::message_box( $self-> text,
                  "File $_ already exists. Overwrite?",
                  mb::OKCancel|mb::Warning) != mb::OK);
 
@@ -1033,11 +1034,11 @@ sub Open_Click
          $dirTo = '.', $fileTo = $_ unless defined $dirTo;
          if ( $self-> {openMode} && $self->{createPrompt})
          {
-            return if ( message_box( $self-> text,
+            return if ( Prima::MsgBox::message_box( $self-> text,
                 "File $_ does not exists. Create?", mb::OKCancel|mb::Information
              ) != mb::OK);
             if ( open FILE, ">$_") { close FILE; } else {
-               message_box( $self-> text, "Cannot create file $_: $!", mb::OK | mb::Error);
+               Prima::MsgBox::message_box( $self-> text, "Cannot create file $_: $!", mb::OK | mb::Error);
                $self->Name->select_all;
                $self->Name->focus;
                return;
@@ -1045,14 +1046,14 @@ sub Open_Click
          }
          if ( $self-> {pathMustExist} and !( -d $dirTo))
          {
-            message_box( $self-> text, "Directory $dirTo does not exist", mb::OK | mb::Error);
+            Prima::MsgBox::message_box( $self-> text, "Directory $dirTo does not exist", mb::OK | mb::Error);
             $self->Name->select_all;
             $self->Name->focus;
             return;
          }
          if ( $self-> {fileMustExist} and !( -f $_))
          {
-            message_box( $self-> text, "File $_ does not exist", mb::OK | mb::Error);
+            Prima::MsgBox::message_box( $self-> text, "File $_ does not exist", mb::OK | mb::Error);
             $self->Name->select_all;
             $self->Name->focus;
             return;
@@ -1061,7 +1062,7 @@ sub Open_Click
       if ( !$self->{openMode} && !$self->{noTestFileCreate})
       {
          if ( open FILE, ">>$_") { close FILE; } else {
-            message_box( $self-> text, "Cannot create file $_: $!", mb::OK | mb::Error);
+            Prima::MsgBox::message_box( $self-> text, "Cannot create file $_: $!", mb::OK | mb::Error);
             $self->Name->select_all;
             $self->Name->focus;
             return;
@@ -1293,7 +1294,7 @@ sub Drive_Change
    my ( $self, $drive) = @_;
    my $newDisk = $drive-> text . "/";
    until (-d $newDisk) {
-      last if message_box( $self-> text, "Drive $newDisk is not ready!",
+      last if Prima::MsgBox::message_box( $self-> text, "Drive $newDisk is not ready!",
                    mb::Cancel | mb::Retry | mb::Warning) != mb::Retry;
    }
    unless (-d $newDisk) {

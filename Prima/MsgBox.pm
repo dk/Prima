@@ -29,6 +29,12 @@
 package Prima::MsgBox;
 
 use strict;
+require Exporter;
+use vars qw(@ISA @EXPORT @EXPORT_OK);
+@ISA = qw(Exporter);
+@EXPORT = qw(message_box message input_box);
+@EXPORT_OK = qw(message_box message input_box);
+
 use Prima::Classes;
 use Prima::Buttons;
 use Prima::StdBitmap;
