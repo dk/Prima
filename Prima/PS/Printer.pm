@@ -62,7 +62,7 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      resFile       => Prima::path . '/printer',
+      resFile       => Prima::path . '/Printer',
       printer       => undef,
       defaultData   => {
          color          => 0,

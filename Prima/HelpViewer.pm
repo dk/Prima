@@ -150,14 +150,7 @@ use vars qw(@ISA $loaddlg $finddlg $prndlg $setupdlg $inifile
 $defaultVariableFont $defaultFixedFont);
 @ISA = qw(Prima::Window);
 
-{ 
-  my $path = Prima::path;
-  unless ( -d $path) {
-     use File::Path;
-     File::Path::mkpath $path;
-  }
-  $inifile = Prima::IniFile-> create( "$path/HelpWindow");
-}
+$inifile = Prima::IniFile-> create( Prima::path( 'HelpWindow'));
 
 sub profile_default
 {

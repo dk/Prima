@@ -93,12 +93,29 @@ sub import
    }
 }
 
-# returns a preferred path for the toolkit configuration files
+# returns a preferred path for the toolkit configuration files,
+# or, if a filename given, returns the name appended to the path
+# and proofs that the path exists
 sub path
 {
-   return "$ENV{HOME}/.prima" if exists $ENV{HOME};
-   return "$ENV{WINDIR}/.prima" if $^O =~ /win32/;
-   return "/.prima";
+   my $path;
+   if ( exists $ENV{HOME}) {
+      $path = "$ENV{HOME}/.prima";
+   } elsif ( $^O =~ /win32/ && exists $ENV{WINDIR}) {
+      $path = "$ENV{WINDIR}/.prima";
+   } else {
+      $path = "/.prima";
+   }
+
+   if ( $_[0]) {
+      unless ( -d $path) {
+         eval "use File::Path"; die "$@\n" if $@;
+         File::Path::mkpath $path;
+      }
+      $path .= "/$_[0]";
+   }
+
+   return $path;
 }
 
 1;

@@ -1288,13 +1288,8 @@ sub init
    $self->{pages}   = \@pages;
    $self->{gridAlert} = 5;
    
-   my $path = Prima::path;
-   unless ( -d $path) {
-      eval "use File::Path"; die "$@\n" if $@;
-      File::Path::mkpath $path;
-   }
    $self-> {iniFile} = Prima::IniFile-> create( 
-      file    => $path . '/vb',
+      file    => Prima::path('VisualBuilder'),
       default => [
          'View' => [
             'SnapToGrid' => 1,

@@ -410,7 +410,7 @@ $i-> register_panel( 'Banner' => {
 });   
 
 
-my $resFile = ( $ENV{HOME} || '.') . '/.demo_dock';
+my $resFile = Prima::path('demo_dock');
 
 # after all that, creating window ( the window itself is of small importance...)
 
