@@ -33,6 +33,9 @@ my $p = Prima::ColorDialog-> create(
   quality => 1,
   onDestroy => sub {$::application-> close;},
 );
-$p-> execute;
 
+# In a real example, it should be this:
+#    $p-> execute;
+# Right now, to run in on Unix successfully, we'll make it this:
+run Prima;
 
