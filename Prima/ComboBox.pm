@@ -219,7 +219,10 @@ sub List_MouseUp
 
 sub List_Click
 {
-   my $self = $_[0];
+   my ( $self, $list) = @_;
+   $self->{edit}->{interaction} = 1;
+   $self->{edit}->text( $list-> get_item_text( $list->focusedItem));
+   $self->{edit}->{interaction} = undef;
    $self-> listVisible(0);
    $self-> notify( q(Change));
 }
