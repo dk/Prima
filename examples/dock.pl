@@ -94,10 +94,10 @@ sub init
       dockerProfileClient => { # allow docking only to Edit
          fingerprint => dmfp::Edit,
       },   
-      dockerProfileLeft   => { fingerprint => dmfp::Vertical },   
-      dockerProfileRight  => { fingerprint => dmfp::Vertical },   
-      dockerProfileTop    => { fingerprint => dmfp::Horizontal },   
-      dockerProfileBottom => { fingerprint => dmfp::Horizontal },
+      dockerProfileLeft   => { fingerprint => dmfp::Vertical|dmfp::Tools|dmfp::Toolbar },   
+      dockerProfileRight  => { fingerprint => dmfp::Vertical|dmfp::Tools|dmfp::Toolbar },   
+      dockerProfileTop    => { fingerprint => dmfp::Horizontal|dmfp::Tools|dmfp::Toolbar },   
+      dockerProfileBottom => { fingerprint => dmfp::Horizontal|dmfp::Tools|dmfp::Toolbar },
    );
    $self-> instance-> add_notification( 'ToolbarChange', \&on_toolbarchange, $self);
    $self-> instance-> add_notification( 'PanelChange',   \&on_toolbarchange, $self);
