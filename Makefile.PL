@@ -1117,7 +1117,7 @@ sub setup_paths
         for ( 'local/', 'freeware/', 'gnu/', 'opt/') {
             push @INCPATH, qd( "/usr/${_}include") if -d "/usr/${_}include";
         }
-        my $incpath = find_header( qd( "X11/Xlib.h"), qd( "/usr/X11R6/include"), qd( "/usr/X11/include"), qd("/usr/X/include"));
+        my $incpath = find_header( qd( "X11/Xlib.h"), qd( "/usr/X11R6/include"), qd( "/usr/X11/include"), qd("/usr/X/include"), qd("/usr/openwin/include"));
         die "Prima needs X11 headers for compilation! Perhaps, you have non-standard path to X11? $extramsg\n" unless defined $incpath;
         if ( -d $incpath) {
            print "X11 includes found in $incpath\n";
