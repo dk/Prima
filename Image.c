@@ -462,15 +462,14 @@ XS( Image_load_FROMPERL)
       XPUSHs( &sv_undef);   
       err = true;
    }   
-   if ( err) {
-      SV * errSave = GvSV( errgv);
-      if ( SvTRUE( errSave)) {
-         SV * sv = newSVpv( error, na);
-         sv_catsv( errSave, sv);
-         sv_free( sv);
-      } else 
-        sv_setpv( GvSV( errgv), error);
-   }
+
+   /* This code breaks exception propagation chain
+      since it uses $@ for its own needs  */
+   if ( err)
+      sv_setpv( GvSV( errgv), error);
+   else
+      sv_setsv( GvSV( errgv), nilSV);
+
    PUTBACK;
    return;
 }   
@@ -514,15 +513,13 @@ XS( Image_save_FROMPERL)
    SPAGAIN;
    SP -= items;
    XPUSHs( sv_2mortal( newSViv(( ret > 0) ? ret : -ret)));
-   if ( ret <= 0) {
-      SV * errSave = GvSV( errgv);
-      if ( SvTRUE( errSave)) {
-         SV * sv = newSVpv( error, na);
-         sv_catsv( errSave, sv);
-         sv_free( sv);
-      } else 
-        sv_setpv( GvSV( errgv), error);
-   }
+   
+   /* This code breaks exception propagation chain
+      since it uses $@ for its own needs  */
+   if ( ret <= 0)
+      sv_setpv( GvSV( errgv), error);
+   else
+      sv_setsv( GvSV( errgv), nilSV);
    PUTBACK;
    return;
 }   

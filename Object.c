@@ -77,22 +77,27 @@ Object_create( char *className, HV * profile)
    my-> profile_add( self, profRef);
    var-> stage = csConstructing;
    SPAGAIN;
-   sv_setsv( GvSV( errgv), nilSV);
    {
+      dG_EVAL_ARGS;
       ENTER;
       SAVETMPS;
       PUSHMARK( sp);
       XPUSHs( var-> mate);
       sp = push_hv_for_REDEFINED( sp, profile);
       PUTBACK;
+
+      OPEN_G_EVAL;
       PERL_CALL_METHOD( "init", G_VOID|G_DISCARD|G_EVAL);
+      if ( SvTRUE( GvSV( errgv))) {
+         Object_destroy( self);
+         PUTBACK_G_EVAL;
+         CLOSE_G_EVAL;
+         croak( SvPV( GvSV( errgv), na));
+      }
+      CLOSE_G_EVAL;
       SPAGAIN;
       FREETMPS;
       LEAVE;
-   }
-   if ( SvTRUE( GvSV( errgv))) {
-      Object_destroy( self);
-      croak( SvPV( GvSV( errgv), na));
    }
    if ( primaObjects)
       hash_store( primaObjects, &self, sizeof( self), (void*)1);

@@ -212,33 +212,25 @@ I32
 clean_perl_call_method( char* methname, I32 flags)
 {
    I32 ret;
-   SV * errSave;
    dPUB_ARGS;
+   dG_EVAL_ARGS;
 
-   errSave = SvTRUE( GvSV( errgv)) ? newSVsv( GvSV( errgv)) : nil;
+   if ( !( flags & G_EVAL)) OPEN_G_EVAL;
    ret = perl_call_method( methname, flags | G_EVAL);
-   if ( !(SvTRUE( GvSV( errgv)))) {
-      if ( errSave) {
-         sv_setsv( GvSV( errgv), errSave);
-         sv_free( errSave);
+   if ( SvTRUE( GvSV( errgv))) {
+      PUB_CHECK;
+      if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR) {
+         dSP;
+         SPAGAIN;
+         (void)POPs;
       }
-      return ret;
+      if ( flags & G_EVAL) return ret;
+      PUTBACK_G_EVAL;
+      CLOSE_G_EVAL;
+      croak( SvPV( GvSV( errgv), na));
    }
-
-   PUB_CHECK;
-   if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR)
-   {
-      dSP;
-      SPAGAIN;
-      (void)POPs;
-   }
-
-   if ( errSave) {
-      sv_catsv( GvSV( errgv), errSave);
-      sv_free( errSave);
-   }
-
-   if ( !( flags & G_EVAL)) croak( SvPV( GvSV( errgv), na));
+   
+   if ( !( flags & G_EVAL)) CLOSE_G_EVAL;
    return ret;
 }
 
@@ -246,32 +238,25 @@ I32
 clean_perl_call_pv( char* subname, I32 flags)
 {
    I32 ret;
-   SV * errSave;
    dPUB_ARGS;
+   dG_EVAL_ARGS;
 
-   errSave = SvTRUE( GvSV( errgv)) ? newSVsv( GvSV( errgv)) : nil;
+   if ( !( flags & G_EVAL)) OPEN_G_EVAL;
    ret = perl_call_pv( subname, flags | G_EVAL);
-   if ( !(SvTRUE( GvSV( errgv)))) {
-      if ( errSave) {
-         sv_setsv( GvSV( errgv), errSave);
-         sv_free( errSave);
+   if ( SvTRUE( GvSV( errgv))) {
+      PUB_CHECK;
+      if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR) {
+         dSP;
+         SPAGAIN;
+         (void)POPs;
       }
-      return ret;
+      if ( flags & G_EVAL) return ret;
+      PUTBACK_G_EVAL;
+      CLOSE_G_EVAL;
+      croak( SvPV( GvSV( errgv), na));
    }
-
-   PUB_CHECK;
-   if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR)
-   {
-      dSP;
-      SPAGAIN;
-      (void)POPs;
-   }
-
-   if ( errSave) {
-      sv_catsv( GvSV( errgv), errSave);
-      sv_free( errSave);
-   }
-   if ( !( flags & G_EVAL)) croak( SvPV( GvSV( errgv), na));
+   
+   if ( !( flags & G_EVAL)) CLOSE_G_EVAL;
    return ret;
 }
 #endif
@@ -899,9 +884,10 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
       PUTBACK;
       if ( returns)
       {
-         dPUB_ARGS;
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
-         SV * errSave = SvTRUE( GvSV( errgv)) ? newSVsv( GvSV( errgv)) : nil;
+         dPUB_ARGS;
+         dG_EVAL_ARGS;
+         OPEN_G_EVAL;
          retCount = ( coderef) ?
             perl_call_sv(( SV *) subName, G_SCALAR|G_EVAL) :
             perl_call_method( subName, G_SCALAR|G_EVAL);
@@ -910,15 +896,11 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
          {
             (void)POPs;
             PUB_CHECK;
-            if ( errSave) {
-               sv_catsv( GvSV( errgv), errSave);
-               sv_free( errSave);
-            }
+            PUTBACK_G_EVAL;
+            CLOSE_G_EVAL;
             croak( SvPV( GvSV( errgv), na));    // propagate
-         } else if ( errSave) {
-            sv_setsv( GvSV( errgv), errSave);
-            sv_free( errSave);
-         }
+         } 
+         CLOSE_G_EVAL;
 #else
          retCount = ( coderef) ?
             perl_call_sv(( SV *) subName, G_SCALAR) :
@@ -939,21 +921,18 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
       {
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
          dPUB_ARGS;
-         SV * errSave = SvTRUE( GvSV( errgv)) ? newSVsv( GvSV( errgv)) : nil;
+         dG_EVAL_ARGS;
+         OPEN_G_EVAL;
          if ( coderef) perl_call_sv(( SV *) subName, G_DISCARD|G_EVAL);
             else perl_call_method( subName, G_DISCARD|G_EVAL);
          if ( SvTRUE( GvSV( errgv)))
          {
             PUB_CHECK;
-            if ( errSave) {
-               sv_catsv( GvSV( errgv), errSave);
-               sv_free( errSave);
-            }
+            PUTBACK_G_EVAL;
+            CLOSE_G_EVAL;
             croak( SvPV( GvSV( errgv), na));    // propagate
-         } else if ( errSave) {
-            sv_setsv( GvSV( errgv), errSave);
-            sv_free( errSave);
-         }
+         } 
+         CLOSE_G_EVAL;
 #else
          if ( coderef) perl_call_sv(( SV *) subName, G_DISCARD);
             else perl_call_method( subName, G_DISCARD);
