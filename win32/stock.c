@@ -57,7 +57,7 @@ stylus_alloc( PStylus data)
       LOGBRUSH * b;
       LOGBRUSH   xbrush;
 
-      if ( IS_WIN95 && (hash_count( stylusMan) > 128))
+      if ( hash_count( stylusMan) > 128)
          stylus_clean();
 
       ret = malloc( sizeof( DCStylus));
