@@ -448,7 +448,7 @@ sub draw_colorchunk
 
    for ( $j = 0; $j < scalar @{$sd} - 1; $j += 2) {
       my $xd = $self-> get_chunk_width( $chunk, $ofs, $$sd[$j], \$cc);
-      $self-> color( $$sd[$j+1] == cl::Fore ? $clr1 : $$sd[$j+1]);
+      $canvas-> color( $$sd[$j+1] == cl::Fore ? $clr1 : $$sd[$j+1]);
       $cc =~ s/\t/$self->{tabs}/g;
       $canvas-> text_out( $cc, $x, $y);
       $x += $xd;
@@ -618,9 +618,9 @@ sub on_paint
                $self-> get_chunk_width( $c, 0, $sel[0]) - $ofs + $bw,
                $self-> get_chunk_width( $c, 0, $sel[2]) - $ofs + $bw
             );
-            $self-> color( $sclr[1]);
-            $self-> bar( $vXs[0], $y, $vXs[1]-1, $y + $fh - 1);
-            $self-> color( $clr[0]);
+            $canvas-> color( $sclr[1]);
+            $canvas-> bar( $vXs[0], $y, $vXs[1]-1, $y + $fh - 1);
+            $canvas-> color( $clr[0]);
             my $cl = $sel[2] - length( $c);
             $c .= ' 'x$cl if $cl > 0;
             my $lc;
@@ -642,7 +642,7 @@ sub on_paint
          } else {
        # painting normal lines
             $c =~ s/\t/$tabs/g;
-            $self-> color( $clr[0]) if $sh;
+            $canvas-> color( $clr[0]) if $sh;
             $canvas-> text_out( $c, $x, $y);
          }
       }

@@ -835,20 +835,20 @@ sub on_paint
    ( $self-> color, $self-> backColor) :
    ( $self-> disabledColor, $self-> disabledBackColor);
    unless ( $self-> transparent) {
-      $self-> color( $clr[1]);
-      $self-> bar( 0, 0, @size);
+      $canvas-> color( $clr[1]);
+      $canvas-> bar( 0, 0, @size);
    }
-   my $fh = $self-> font-> height;
-   $self-> color( $self-> light3DColor);
-   $self-> rectangle( 1, 0, $size[0] - 1, $size[1] - $fh / 2 - 2);
-   $self-> color( $self-> dark3DColor);
-   $self-> rectangle( 0, 1, $size[0] - 2, $size[1] - $fh / 2 - 1);
+   my $fh = $canvas-> font-> height;
+   $canvas-> color( $self-> light3DColor);
+   $canvas-> rectangle( 1, 0, $size[0] - 1, $size[1] - $fh / 2 - 2);
+   $canvas-> color( $self-> dark3DColor);
+   $canvas-> rectangle( 0, 1, $size[0] - 2, $size[1] - $fh / 2 - 1);
    my $c = $self-> text;
    if ( length( $c) > 0) {
-      $self-> color( $clr[1]);
-      $self-> bar  ( 8, $size[1] - $fh - 1, 16 + $self-> get_text_width( $c), $size[1] - 1);
-      $self-> color( $clr[0]);
-      $self-> text_out( $c, 12, $size[1] - $fh - 1);
+      $canvas-> color( $clr[1]);
+      $canvas-> bar  ( 8, $size[1] - $fh - 1, 16 + $canvas-> get_text_width( $c), $size[1] - 1);
+      $canvas-> color( $clr[0]);
+      $canvas-> text_out( $c, 12, $size[1] - $fh - 1);
    }
 }
 

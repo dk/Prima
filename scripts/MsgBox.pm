@@ -106,7 +106,7 @@ sub message_box
          origin         => [ 20, ($dlg-> height + $fresh-> height - $icon-> height)/2],
          size           => [ $icon-> width, $icon-> height],
          onPaint        => sub {
-            my $self = $_[0];
+            my $self = $_[1];
             $self-> color( $dlg-> backColor);
             $self-> bar( 0, 0, $self-> size);
             $self-> put_image( 0, 0, $icon);

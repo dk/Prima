@@ -1455,10 +1455,10 @@ sub draw_items
 {
    my ($self,$canvas) = (shift,shift);
    my @clrs = (
-      $canvas-> get_color,
-      $canvas-> get_back_color,
-      $canvas-> get_color_index( ci::HiliteText),
-      $canvas-> get_color_index( ci::Hilite)
+      $self-> get_color,
+      $self-> get_back_color,
+      $self-> get_color_index( ci::HiliteText),
+      $self-> get_color_index( ci::Hilite)
    );
    my @clipRect = $canvas-> get_clip_rect;
    my $i;

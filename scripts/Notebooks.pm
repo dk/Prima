@@ -287,13 +287,13 @@ PaintEarsThen:
       $notifier->( @notifyParms, $canvas, -2, \@colorSet, \@poly);
    }
 
-   $self-> color( $c3d[0]);
+   $canvas-> color( $c3d[0]);
    my @ld = $tm ? ( 0, DefGapY) : ( $size[1] - 0, $size[1] - DefGapY - 1);
-   $self-> line( $size[0] - 1, $ld[0], $size[0] - 1, $ld[1]);
-   $self-> color( $c3d[1]);
-   $self-> line( 0, $ld[1], $size[0] - 1, $ld[1]);
-   $self-> line( 0, $ld[0], 0, $ld[1]);
-   $self-> color( $clr[0]);
+   $canvas-> line( $size[0] - 1, $ld[0], $size[0] - 1, $ld[1]);
+   $canvas-> color( $c3d[1]);
+   $canvas-> line( 0, $ld[1], $size[0] - 1, $ld[1]);
+   $canvas-> line( 0, $ld[0], 0, $ld[1]);
+   $canvas-> color( $clr[0]);
    goto EndOfSwappedPaint if $swapDraw;
 
 PaintSelTabBefore:
