@@ -72,9 +72,9 @@ Image_read_palette( Handle self, PRGBColor palBuf, SV * palette)
       return 0;
    av = (AV *) SvRV( palette);
    count = av_len( av) + 1;
-   if ( count % 3 != 0)
-      return 0;
    if ( count > 768) count = 768;
+   count -= count % 3;
+
    for ( i = 0; i < count; i++)
    {
       SV **itemHolder = av_fetch( av, i, 0);
