@@ -638,6 +638,8 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                 t-> options |= twReturnChunks;
              }
              lAdd( i);
+             if ( quickReturn) t-> options |= twReturnFirstLineLength;
+
              if ( t-> options & twWordBreak)
              {
                 /* checking whether break was at word boundary */
@@ -669,13 +671,19 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                       else
                          c[ j] = 0;
                       i -= len - j - 1;
+                   } else if ( t-> options & twBreakSingle) { 
+                      /* cannot be split, return nothing */
+                      int j;
+                      if (!( t-> options & twReturnChunks)) {
+                         for ( j = 0; j < t-> count; j++) free( ret[ j]);
+                         ret[ 0] = duplicate_string("");
+                      }
+                      t-> count = 0;
+                      return ret;
                    }
                 }
              }
-             if ( quickReturn) {
-                t-> options |= twReturnFirstLineLength;
-                return ret;
-             }
+             if ( quickReturn) return ret;
              i--; /* repeat again */
           }
           w = 0;
