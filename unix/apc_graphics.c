@@ -1,4 +1,5 @@
 #include "unix/guts.h"
+#include "Image.h"
 
 /***********************************************************/
 /*                                                         */
@@ -501,7 +502,65 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 void
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
-fprintf( stderr, "apc_gp_put_image()\n");
+   DEFXX;
+   PDrawableSysData IMG = X(image);
+   PImage img = PImage( image);
+
+   if (!IMG-> imageCache) {
+      int i;
+      U16 lut[ 256];
+      unsigned long red_mask, green_mask, blue_mask;
+      Visual *v = DefaultVisual( DISP, SCREEN);
+      U16 *data, *d;
+      int x, y;
+
+      if (( img-> type & imBPP) != 8) {
+	 croak( "Unsupported img-> bpp");
+      }
+      if ( guts. depth != 16) {
+	 croak( "Unsupported guts. depth");
+      }
+      if ( !img-> palette) {
+	 croak( "No palette, ouch!");
+      }
+
+      red_mask = v-> red_mask;
+      green_mask = v-> green_mask;
+      blue_mask = v-> blue_mask;
+      for ( i = 0; i < img-> palSize / sizeof( RGBColor); i++) {
+	 lut[i] = 0;
+	 lut[i] |=
+            (((img-> palette[i]. r >> 3) << 11) & red_mask) & 0xffff;
+	 lut[i] |= 
+             (((img-> palette[i]. g >> 2) << 5) & green_mask) & 0xffff;
+         lut[i] |=
+             ((img-> palette[i]. b >> 3) & blue_mask) & 0xffff;
+      }
+
+      d = data = malloc( img-> w * img-> h * sizeof( U16));
+      if ( !data) {
+	 croak( "apc_gp_put_image(): no memory");
+      }
+      for ( y = img-> h-1; y >= 0; y--) {
+	 unsigned char *line = img-> data + y*img-> lineSize;
+	 for ( x = 0; x < img-> w; x++) {
+	    *d++ = lut[line[x]];
+	 }
+      }
+
+      IMG-> imageCache = XCreateImage( DISP, v,
+				       guts. depth, ZPixmap, 0, (unsigned char*)data,
+				       img-> w, img-> h, 8, 0);
+      if (!IMG-> imageCache) {
+	 croak( "apc_gp_put_image(): error during XCreateImage()");
+      }
+   }
+   fprintf( stderr, "====================\nx,y:%d,%d   x,y:%d,%d,  w,h: %d,%d\n====================\n",
+	    xFrom, img-> h - yFrom - 1,
+	    x, REVERT(y), xLen, yLen);
+   XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> imageCache,
+	      xFrom, img-> h - yFrom - yLen,
+	      x, REVERT(y) - yLen, xLen, yLen);
 }
 
 void
