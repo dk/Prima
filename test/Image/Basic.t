@@ -1,20 +1,32 @@
 # $Id$
-print "1..13 create,type check,paintInfo,load,palette,pixel,paint,get_paint_state(),type,pixel,stretch,pixel bpp1,reverse stretch,bpp4,bpp8,RGB,short,long,float\n";
+print "1..20 create,type check,paintInfo,paint type consistency,load,palette,pixel,paint,get_paint_state(),type,pixel,stretch,pixel bpp1,reverse stretch,bpp4,bpp8,RGB,short,long,float\n";
 
 my $i = Prima::Image-> create(
    width => 20,
    height => 20,
-   type => im::BW,
+   type => im::Mono,
+   palette => [0,0,0,255,0,0],
    conversion => ict::None,
-   preserveType => 1,
 );
 
 
 ok( $i);
-ok( $i-> type == im::BW);
+ok( $i-> type == im::Mono);
 $i-> begin_paint_info;
 ok( $i-> get_paint_state == 2);
 $i-> end_paint_info;
+
+$i-> preserveType(0);
+$i-> begin_paint;
+$i-> end_paint;
+$i-> preserveType(1);
+if ( $::application-> get_bpp != 1) {
+   ok(( im::BPP & $i-> type) != 1);
+} else {
+   skip();
+}
+$i-> type( im::BW);
+
 ok ( 
    $i-> load( Prima::find_image('test::Object', 'rc.gif'))||
    $i-> load( Prima::find_image('test::Object', 'rc.bmp'))
