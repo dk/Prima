@@ -1,5 +1,5 @@
 # $Id$
-print "1..22 color,backColor,fillPattern,lineEnd,lineWidth,linePattern,rop,rop2,translate,textOpaque,textOutBaseline,color,backColor,fillPattern,lineEnd,lineWidth,linePattern,rop,rop2,translate,textOpaque,textOutBaseline";
+print "1..26 color,backColor,fillPattern,lineEnd,lineWidth,linePattern,rop,rop2,translate,textOpaque,textOutBaseline,lineJoin,fillWinding,color,backColor,fillPattern,lineEnd,lineWidth,linePattern,rop,rop2,translate,textOpaque,textOutBaseline,lineJoin,fillWinding";
 
 my $a = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 $a-> color( 0x123456);
@@ -8,8 +8,8 @@ $a-> backColor( 0x654321);
 ok( $a-> backColor == 0x654321);
 $a-> fillPattern( [0..7]); my $i = 0;
 ok( 0 == scalar grep { $i++ != $_ } @{$a-> fillPattern});
-$a-> lineEnd( le::Round);
-ok( $a-> lineEnd == le::Round);
+$a-> lineEnd( le::Square);
+ok( $a-> lineEnd == le::Square);
 $a-> lineWidth( 5);
 ok( $a-> lineWidth == 5);
 $a-> linePattern( lp::Dash);
@@ -25,13 +25,17 @@ $a-> textOpaque( 1);
 ok( $a-> textOpaque == 1);
 $a-> textOutBaseline( 1);
 ok( $a-> textOutBaseline == 1);
+$a-> lineJoin( lj::Bevel);
+ok( $a-> lineJoin == lj::Bevel);
+$a-> fillWinding( 1);
+ok( $a-> fillWinding);
 $a-> begin_paint;
 $a-> end_paint;
 ok( $a-> color == 0x123456);
 ok( $a-> backColor == 0x654321);
 $i = 0;
 ok( 0 == scalar grep { $i++ != $_ } @{$a-> fillPattern});
-ok( $a-> lineEnd == le::Round);
+ok( $a-> lineEnd == le::Square);
 ok( $a-> lineWidth == 5);
 ok( $a-> linePattern eq lp::Dash);
 ok( $a-> rop == rop::NotSrcXor);
@@ -40,5 +44,7 @@ ok( $a-> rop2 == rop::NotSrcXor);
 ok( $z[0] == 1 && $z[1] == 2);
 ok( $a-> textOpaque == 1);
 ok( $a-> textOutBaseline == 1);
+ok( $a-> lineJoin == lj::Bevel);
+ok( $a-> fillWinding);
 
 1;

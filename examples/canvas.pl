@@ -1,4 +1,20 @@
 # $Id$
+# todo:
+# - fp screen2object, fp coords
+# - fix area rectangle
+# - tags
+# - keyboard walk, focused/next/prev methods
+# - object zorder shortcuts
+# - objects: 
+#      arc(style=pieslice,chord,arc:nofill)
+#      bitmap
+#      oval -> ellipse
+#      polyline -> line(arrow,smooth)
+#      polygon(smooth)
+#      rectangle -> rectangle
+#      text(font)
+#      widget
+# - gp:lineJoin,fillRule,tileoffset
 use strict;
 use Prima qw(Application ScrollWidget);
 

@@ -2567,6 +2567,18 @@ LE(Round)
 END_TABLE(le,UV)
 #undef LE
 
+/* line joins */
+#define LJ(const_name) CONSTANT(lj,const_name)
+START_TABLE(lj,UV)
+#define    ljRound          0
+LJ(Round)
+#define    ljBevel          1
+LJ(Bevel)
+#define    ljMiter          2
+LJ(Miter)
+END_TABLE(lj,UV)
+#undef LJ
+
 /* line patterns */
 #define LP(const_name) CONSTANT(lp,const_name)
 START_TABLE(lp,unsigned char*)
@@ -3127,6 +3139,9 @@ apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode);
 extern unsigned long *
 apc_gp_get_font_ranges( Handle self, int * count);
 
+extern Bool
+apc_gp_get_fill_winding( Handle self);
+
 extern FillPattern *
 apc_gp_get_fill_pattern( Handle self);
 
@@ -3135,6 +3150,9 @@ apc_gp_get_handle( Handle self);
 
 extern int
 apc_gp_get_line_end( Handle self);
+
+extern int
+apc_gp_get_line_join( Handle self);
 
 extern int
 apc_gp_get_line_width( Handle self);
@@ -3185,6 +3203,9 @@ extern Bool
 apc_gp_set_color( Handle self, Color color);
 
 extern Bool
+apc_gp_set_fill_winding( Handle self, Bool fillWinding);
+
+extern Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern);
 
 extern Bool
@@ -3192,6 +3213,9 @@ apc_gp_set_font( Handle self, PFont font);
 
 extern Bool
 apc_gp_set_line_end( Handle self, int lineEnd);
+
+extern Bool
+apc_gp_set_line_join( Handle self, int lineJoin);
 
 extern Bool
 apc_gp_set_line_width( Handle self, int lineWidth);

@@ -1966,6 +1966,26 @@ apc_gp_get_font_ranges( Handle self, int * count)
    return ret;
 }
 
+Bool
+apc_gp_get_fill_winding( Handle self)
+{
+   DEFXX;
+   int fill_rule;
+   XGCValues gcv;
+
+   if ( XF_IN_PAINT(XX)) {
+      if ( XGetGCValues( DISP, XX-> gc, GCFillRule, &gcv) == 0) {
+         warn( "UAG_006: error querying GC values");
+         fill_rule = EvenOddRule;
+      } else {
+         fill_rule = gcv. fill_rule;
+      }
+   } else {
+      fill_rule = XX-> gcv. fill_rule;
+   }
+   return fill_rule == WindingRule;
+}
+
 FillPattern *
 apc_gp_get_fill_pattern( Handle self)
 {
@@ -1994,6 +2014,30 @@ apc_gp_get_line_end( Handle self)
    else if ( cap == CapProjecting)
       return leSquare;
    return leFlat;
+}
+
+int
+apc_gp_get_line_join( Handle self)
+{
+   DEFXX;
+   int join;
+   XGCValues gcv;
+
+   if ( XF_IN_PAINT(XX)) {
+      if ( XGetGCValues( DISP, XX-> gc, GCJoinStyle, &gcv) == 0) {
+         warn( "UAG_006: error querying GC values");
+         join = JoinRound;
+      } else {
+         join = gcv. join_style;
+      }
+   } else {
+      join = XX-> gcv. join_style;
+   }
+   if ( join == JoinMiter)
+      return ljMiter;
+   else if ( join == JoinBevel)
+      return ljBevel;
+   return ljRound;
 }
 
 int
@@ -2263,6 +2307,24 @@ apc_gp_set_color( Handle self, Color color)
 }
 
 Bool
+apc_gp_set_fill_winding( Handle self, Bool fillWinding)
+{
+   DEFXX;
+   int fill_rule;
+   XGCValues gcv;
+
+   fill_rule = fillWinding ? WindingRule : EvenOddRule;
+   if ( XF_IN_PAINT(XX)) {
+      gcv. fill_rule = fill_rule;
+      XChangeGC( DISP, XX-> gc, GCFillRule, &gcv);
+      XCHECKPOINT;
+   } else {
+      XX-> gcv. fill_rule = fill_rule;
+   }
+   return true;
+}
+
+Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
    DEFXX;
@@ -2304,6 +2366,30 @@ apc_gp_set_line_end( Handle self, int lineEnd)
 }
 
 Bool
+apc_gp_set_line_join( Handle self, int lineJoin)
+{
+   DEFXX;
+   int join = JoinRound;
+   XGCValues gcv;
+
+   if ( lineJoin == ljRound)
+      join = JoinRound;
+   else if ( lineJoin == ljBevel)
+      join = JoinBevel;
+   else if ( lineJoin == ljMiter)
+      join = JoinMiter;
+
+   if ( XF_IN_PAINT(XX)) {
+      gcv. join_style = join;
+      XChangeGC( DISP, XX-> gc, GCJoinStyle, &gcv);
+      XCHECKPOINT;
+   } else {
+      XX-> gcv. join_style = join;
+   }
+   return true;
+}
+
+Bool
 apc_gp_set_line_width( Handle self, int line_width)
 {
    DEFXX;
@@ -2322,7 +2408,6 @@ apc_gp_set_line_width( Handle self, int line_width)
       XX-> gcv. line_width = line_width;
    return true;
 }
-
 
 Bool
 apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)

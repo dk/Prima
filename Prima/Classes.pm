@@ -283,6 +283,7 @@ sub profile_default
    my %prf = (
       color           => cl::Black,
       backColor       => cl::White,
+      fillWinding     => 0,
       fillPattern     => fp::Solid,
       font            => {
          height      => 16,
@@ -295,6 +296,7 @@ sub profile_default
          encoding    => "",
       },
       lineEnd         => le::Round,
+      lineJoin        => lj::Round,
       linePattern     => lp::Solid,
       lineWidth       => 0,
       owner           => undef,

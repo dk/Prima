@@ -40,9 +40,11 @@ object Prima::Drawable ( Prima::Component)
    property     Color         backColor;
    property     Color         color;
    property     Rect          clipRect;
+   property     Bool          fillWinding;
    property     SV * 	      fillPattern;
    property     int           height;
    property     int           lineEnd;
+   property     int           lineJoin;
    property     SV *          linePattern;
    property     int           lineWidth;
    property     SV *          palette;

@@ -54,6 +54,7 @@ package gm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# grow modes
 package lp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line pen styles
 package fp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# fill styles & font pitches
 package le; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line ends
+package lj; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line joins
 package fs; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font styles
 package fw; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font weights
 package bi; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# border icons

@@ -658,12 +658,26 @@ static int ctx_le2LINEEND [] = {
    endCtx
 };
 
+Bool
+apc_gp_get_fill_winding ( Handle self)
+{
+   /* XXX */
+   return 0;
+}
+
 
 int
 apc_gp_get_line_end ( Handle self)
 {
    if ( !sys ps) return sys lineEnd;
    return ctx_remap_def( GpiQueryLineEnd( sys ps), ctx_le2LINEEND, false, leFlat);
+}
+
+int
+apc_gp_get_line_join ( Handle self)
+{
+   /* XXX */
+   return ljRound;
 }
 
 int
@@ -1023,11 +1037,25 @@ apc_gp_set_font( Handle self, PFont font)
 }
 
 Bool
+apc_gp_set_fill_winding( Handle self, int fillWinding)
+{
+   /* XXX */
+   return false;
+}
+
+Bool
 apc_gp_set_line_end ( Handle self, int lineEnd)
 {
    if ( !sys ps) { sys lineEnd = lineEnd; return true; }
    if ( !GpiSetLineEnd( sys ps, ctx_remap_def( lineEnd, ctx_le2LINEEND, true, LINEEND_DEFAULT)))
       apiErrRet;
+   return true;
+}
+
+Bool
+apc_gp_set_line_join( Handle self, int lineJoin)
+{
+   /* XXX */
    return true;
 }
 

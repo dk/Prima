@@ -1263,6 +1263,7 @@ register_constants( void)
    register_lp_constants();
    register_fp_constants();
    register_le_constants();
+   register_lj_constants();
    register_fs_constants();
    register_fw_constants();
    register_bi_constants();

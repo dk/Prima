@@ -998,10 +998,12 @@ apc_gp_get_back_color
 apc_gp_get_bpp
 apc_gp_get_clip_rect
 apc_gp_get_color
+apc_gp_get_fill_winding
 apc_gp_get_fill_pattern
 apc_gp_get_font_abc
 apc_gp_get_handle
 apc_gp_get_line_end
+apc_gp_get_line_join
 apc_gp_get_line_pattern
 apc_gp_get_line_width
 apc_gp_get_nearest_color
@@ -1025,8 +1027,10 @@ apc_gp_set_back_color
 apc_gp_set_clip_rect
 apc_gp_set_color
 apc_gp_set_fill_pattern
+apc_gp_set_fill_winding
 apc_gp_set_font
 apc_gp_set_line_end
+apc_gp_set_line_join
 apc_gp_set_line_pattern
 apc_gp_set_line_width
 apc_gp_set_palette

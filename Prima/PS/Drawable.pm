@@ -577,6 +577,9 @@ sub lineEnd
    $_[0]-> {changed}-> {lineEnd} = 1; 
 }
 
+sub lineJoin { lj::Round } # XXX
+sub fillWinding { 0 }      # XXX
+
 sub linePattern
 {
    return $_[0]-> SUPER::linePattern unless $#_;
