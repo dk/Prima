@@ -161,3 +161,102 @@ sub AUTOLOAD
 }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::StdDlg - wrapper module to the toolkit standard dialogs
+
+=head1 DESCRIPTION
+
+Provides a unified access to the toolkit dialogs, so there is
+no need to C<use> the corresponding module explicitly.
+
+=head1 SYNOPSIS
+
+   use Prima::StdDlg;
+   Prima::FileDialog-> create-> execute;
+   Prima::FontDialog-> create-> execute;
+
+=head1 API
+
+The module accesses the following dialog classes:
+
+=over
+
+=item  Prima::OpenDialog
+
+File open dialog.
+
+See L<Prima::FileDialog/Prima::OpenDialog>
+
+=item  Prima::SaveDialog
+
+File save dialog.
+
+See L<Prima::FileDialog/Prima::SaveDialog>
+
+=item Prima::ChDirDialog
+
+Directory change dialog.
+
+See L<Prima::FileDialog/Prima::ChDirDialog>
+
+=item Prima::FontDialog
+
+Font selection dialog.
+
+See L<Prima::FontDialog>. 
+
+=item Prima::FindDialog
+
+Generic 'find text' dialog.
+
+See L<Prima::EditDialog>.
+
+=item Prima::ReplaceDialog
+
+Generic 'find and replace text' dialog.
+
+See L<Prima::EditDialog>.
+
+=item Prima::PrintSetupDialog
+
+Printer selection and setup dialog.
+
+See L<Prima::PrintDialog>.
+
+=item Prima::ColorDialog
+
+Color selection dialog.
+
+See L<Prima::ColorDialog/Prima::ColorDialog>.
+
+=item Prima::ImageOpenDialog
+
+Image file load dialog.
+
+See L<Prima::ImageDialog/Prima::ImageOpenDialog>.
+
+=item Prima::ImageSaveDialog
+
+Image file save dialog.
+
+See L<Prima::ImageDialog/Prima::ImageSaveDialog>.
+
+=back
+
+=head1 AUTHORS
+
+Anton Berezin E<lt>tobez@plab.ku.dkE<gt>,
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Classes>
+
+
+=cut
