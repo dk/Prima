@@ -152,6 +152,7 @@ struct _UnixGuts
    long                         handled_events;
    Time                         last_time;
    int                          max_fd;
+   int                          modal_count;
    TAILQ_HEAD(,pending_event)   peventq;
    fd_set                       read_set;
    long                         total_events;

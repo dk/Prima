@@ -188,6 +188,7 @@ apc_widget_destroy( Handle self)
 {
    DEFXX;
 
+   XX-> flags.modal = false;
    if ( XX-> flags. paint_pending) {
       TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
       XX-> flags. paint_pending = false;

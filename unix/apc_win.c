@@ -152,7 +152,11 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint,
 Bool
 apc_window_activate( Handle self)
 {
-   DOLBUG( "apc_window_activate()\n");
+   XWindow frame;
+
+   frame = prima_find_frame_window( PWidget( self)-> handle);
+   if ( frame) XRaiseWindow( DISP, frame);
+   XSetInputFocus( DISP, PWidget(self)->handle, RevertToParent, CurrentTime);
    return true;
 }
 
@@ -397,6 +401,7 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
    if (!(XX-> flags. preexec_visible = apc_widget_is_visible( self)))
       apc_widget_set_visible( self, true);
    prima_simple_message( self, cmExecute, true);
+   guts. modal_count++;
    return true;
 }
 
@@ -408,12 +413,15 @@ apc_window_execute( Handle self, Handle insert_before)
    if (!application) return false;
 
    X(self)-> flags.modal = true;
+   protect_object( self);
 
    XNoOp( DISP);
    XFlush( DISP);
 
-   while ( prima_one_loop_round( true) && X(self)-> flags.modal)
+   while ( prima_one_loop_round( true) && X(self) && X(self)-> flags.modal)
       ;
+
+   unprotect_object( self);
    return true;
 }
 
@@ -447,5 +455,7 @@ apc_window_end_modal( Handle self)
          unprotect_object( oldfoc);
       }
    }
+   if ( guts. modal_count > 0)
+      guts. modal_count--;
    return true;
 }
