@@ -119,7 +119,7 @@ sub load_link
       } else {
          my $pg = $::application-> sys_action('browser');
          $self-> owner-> status("Cannot start browser"), return unless
-           defined $pg && ! system( "$pg &");
+           defined $pg && ! system( "$pg $link &");
       }   
       return;
    }
