@@ -978,7 +978,7 @@ apc_window_end_modal( Handle self)
          WinSetActiveWindow( HWND_DESKTOP, sys s. window. oldActive);
       if ( !who && var owner)
          CWidget( var owner)-> set_selected( var owner, 1);
-      if ( who = sys s. window. oldFoc) {
+      if (!( who = sys s. window. oldFoc)) {
          if ( PWidget( who)-> stage == csNormal)
             CWidget( who)-> set_focused( who, 1);
          unprotect_object( who);
