@@ -882,6 +882,11 @@ sub set_offset
                      clipRect => \@a);
    $self-> update_view;
    delete $self-> {singlePaint};
+   if ( $self-> focused) {
+     my $focId = ( $self-> {focusedItem} >= 0) ? $self-> {focusedItem} : 0;
+     $self-> {singlePaint}->{$focId} = 1;
+     $self-> refresh;
+   }
 }
 
 sub redraw_items
