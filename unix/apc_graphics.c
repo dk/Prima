@@ -1414,31 +1414,31 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
       
       switch ( XX-> paint_rop) { /* XXX Limited set edition - either expand to full list or find new way to display bitmaps */
       case ropXorPut:  
-         XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+         XSetBackground( DISP, XX-> gc, 0);
          XSetFunction( DISP, XX-> gc, GXxor); 
          break;
       case ropOrPut:   
-         XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+         XSetBackground( DISP, XX-> gc, 0);
          XSetFunction( DISP, XX-> gc, GXor);
          break;
       case ropAndPut:  
-         XSetBackground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetBackground( DISP, XX-> gc, 0xffffffff);
          XSetFunction( DISP, XX-> gc, GXand);
          break;
       case ropNotPut:   
       case ropBlackness:
-         XSetForeground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
-         XSetBackground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetForeground( DISP, XX-> gc, 0);
+         XSetBackground( DISP, XX-> gc, 0xffffffff);
          XSetFunction( DISP, XX-> gc, GXand);
          break;
       case ropWhiteness:
-         XSetForeground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
-         XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+         XSetForeground( DISP, XX-> gc, 0xffffffff);
+         XSetBackground( DISP, XX-> gc, 0);
          XSetFunction( DISP, XX-> gc, GXor);
          break;   
       default:   
-         XSetForeground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
-         XSetBackground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetForeground( DISP, XX-> gc, 0);
+         XSetBackground( DISP, XX-> gc, 0xffffffff);
          XSetFunction( DISP, XX-> gc, GXand);
       }
       XPutImage( DISP, XX-> gdrawable, XX-> gc, r-> map[index]-> image, 0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
@@ -1452,12 +1452,12 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
          break;
       case ropNotPut:   
          XSetForeground( DISP, XX-> gc, XX-> fore. primary);
-         XSetBackground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetBackground( DISP, XX-> gc, 0xffffffff);
          XSetFunction( DISP, XX-> gc, GXorInverted);
          goto DISPLAY;
       default:   
           XSetForeground( DISP, XX-> gc, XX-> fore. primary);
-          XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+          XSetBackground( DISP, XX-> gc, 0);
           XSetFunction( DISP, XX-> gc, GXor);
       DISPLAY:          
           XPutImage( DISP, XX-> gdrawable, XX-> gc, r-> map[index]-> image, 0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);

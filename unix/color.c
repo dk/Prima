@@ -234,6 +234,7 @@ static Color* standard_colors[] = {
 
 static const int MAX_COLOR_CLASS = sizeof( standard_colors) / sizeof( standard_colors[ 0]) - 1;
 
+/* maps RGB or cl-constant value to RGB value.  */
 Color 
 prima_map_color( Color clr, int * hint)
 {
@@ -305,6 +306,16 @@ my_XFreeColors( Display * disp, Colormap cm, long * ls, int count, long pal, int
 #define XFreeColors(a,b,c,d,e) my_XFreeColors(a,b,c,d,e,__LINE__)
 */
 
+/*
+     Fills Brush structure. If dithering is needed,
+  brush.secondary and brush.balance are set. Tries to
+  get new colors via XAllocColor, assigns new color cells
+  to self if successfull.
+     If no brush structure is given, no dithering is
+  preformed. 
+     Returns closest matching color, always the same as
+  brush-> primary.
+ */
 unsigned long
 prima_allocate_color( Handle self, Color color, Brush * brush)
 {
@@ -887,6 +898,18 @@ prima_done_color_subsystem( void)
    guts. mappingPlace = nil;
 }
 
+/*
+   Finds closest possible color in system palette.
+   Colors can be selectively filtered using maxRank
+   parameter - if it is greater that RANK_FREE, the colors
+   with rank lower that maxRank are not matched. Ranking can
+   make sense when self != nil and self != application, and
+   of course when color cell manipulation is possible. In other
+   words, local palette is never used if maxRank > RANK_FREE.
+   maxDiff tells the maximal difference for a color. If
+   no color is found that is closer than maxDiff, -1 is returned
+   and pointer to actual diff is returned.
+   */
 int
 prima_color_find( Handle self, long color, int maxDiff, int * diff, int maxRank)
 {
@@ -967,6 +990,12 @@ prima_color_new( XColor * xc)
    return true;
 }
 
+/*
+   Adds reference to widget that is responsible
+   for a color cell with given rank. Main palette
+   rank can be risen in response, but not lowered -
+   that is accomplished by prima_color_sync. 
+   */
 Bool
 prima_color_add_ref( Handle self, int index, int rank)
 {
@@ -978,7 +1007,8 @@ prima_color_add_ref( Handle self, int index, int rank)
    p = X(self)-> palette;
    r = LPAL_GET(index,p[LPAL_ADDR(index)]);
    if ( r != 0 && r <= nr) return false;
-   if ( r == 0) list_add( &guts. palette[index]. users, self);
+   if ( r == 0 && X(self)-> type. widget) 
+      list_add( &guts. palette[index]. users, self);
    if ( rank > guts. palette[index]. rank)
       guts. palette[index]. rank = rank;
    p[LPAL_ADDR(index)] &=~ LPAL_MASK(index);
@@ -987,6 +1017,7 @@ prima_color_add_ref( Handle self, int index, int rank)
    return true;
 }
 
+/* Frees stale color references */ 
 int
 prima_color_sync( void)
 {
@@ -1133,7 +1164,7 @@ prima_palette_replace( Handle self, Bool fast)
 
 ALLOC_STAGE:   
    /* allocate some colors */
-   prima_color_sync();
+//   prima_color_sync();
    XCHECKPOINT;
    for ( i = 0; i < psz; i++) 
       if (( req[i] & 0x80000000) == 0) {

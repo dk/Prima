@@ -349,8 +349,8 @@ prima_update_cursor( Handle self)
 	   || h > guts. cursor_pixmap_size. y)
       {
 	 if ( !guts. cursor_save) {
-	    guts. cursor_gcv. background = BlackPixel( DISP, SCREEN);
-	    guts. cursor_gcv. foreground = WhitePixel( DISP, SCREEN);
+	    guts. cursor_gcv. background = 0;
+	    guts. cursor_gcv. foreground = 0xffffffff;
 	 }
 	 if ( guts. cursor_save) {
 	    XFreePixmap( DISP, guts. cursor_save);

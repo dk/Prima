@@ -943,6 +943,7 @@ cache_remap_1( Image*img, ImageCache* cache)
       while ( sz--) *(p++) = ~(*p);
 }
 
+
 ImageCache*
 prima_create_image_cache( PImage img, Handle drawable, int type)
 {
@@ -1037,24 +1038,25 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       return nil;
    }
 
+#define PALETTE_VS_IMAGE_QUALITY
    if (( guts. palSize > 0) && (( pass-> type & imBPP) != 24)) {
-      int i, maxRank = drawable ? RANK_NORMAL : RANK_FREE;
+      int i, maxRank = RANK_FREE;
       Byte * p = X((Handle)img)-> palette;
       if ( type == CACHE_LOW_RES) {
          drawable = application;
          maxRank = RANK_LOCKED; 
       }
-      /* make mapping to all colors except RANK_NORMAL 
-       to promote Widget::palette() usage */
+               
       for ( i = 0; i < pass-> palSize; i++) {
-         int j = guts. mappingPlace[i] = prima_color_find(( Handle) img, 
+         int diff;
+         int j = guts. mappingPlace[i] = prima_color_find( nilHandle, 
             RGB_COMPOSITE( 
               pass-> palette[i].r,
               pass-> palette[i].g,
               pass-> palette[i].b
-            ), -1, nil, maxRank);
-         if ( p && (( p[LPAL_ADDR(j)] & LPAL_MASK(j)) == 0))
-            prima_color_add_ref(( Handle) img, j, RANK_LOCKED);
+            ), -1, &diff, maxRank);
+          if ( p && (( p[LPAL_ADDR(j)] & LPAL_MASK(j)) == 0))
+             prima_color_add_ref(( Handle) img, j, RANK_LOCKED);
       }
       
       switch(target_bpp){

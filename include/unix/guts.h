@@ -288,11 +288,14 @@ typedef struct _WmGenericData {
 #define LPAL_SET(i,j) (((j)&3)<<(((i)&3)*2))
 #define LPAL_GET(i,j) (((j)>>(((i)&3)*2))&3)
 
-#define RANK_IMMUTABLE 4
-#define RANK_LOCKED    3
-#define RANK_PRIORITY  2
-#define RANK_NORMAL    1
-#define RANK_FREE      0
+/* Every color cell in guts.palette is assigned a rank. Its purpose
+ is to maintain reasonable sharing of available system colors.
+ See prima_palette_replace which preforms sharing. */
+#define RANK_IMMUTABLE 4 /* Static color for 'cubic' filtering - or for Static visuals */
+#define RANK_LOCKED    3 /* Colors used in Pixmaps - cannot participate in palette managing, therefore 'locked' */
+#define RANK_PRIORITY  2 /* Colors explicitly set by Widget::set_palette */
+#define RANK_NORMAL    1 /* Automatically allocated colors for drawing routines */
+#define RANK_FREE      0 /* Colors not allocated by XAllocColor. Their values are not reliable */
 
 #define RGB_COMPOSITE(R,G,B) ((((R)&0xFF)<<16)|(((G)&0xFF)<<8)|((B)&0xFF))
 
