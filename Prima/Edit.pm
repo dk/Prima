@@ -734,7 +734,7 @@ sub point2xy
    $rx = 0;
 
    my $chunk  = $self-> get_chunk( $ry);
-   my $cl     = ( $w + $ofs) / $self-> get_text_width(' ');
+   my $cl     = ( $w + $ofs) / ($self-> get_text_width(' ')||1);
    $chunk    .= ' 'x$cl;
    if ( $ofs + $x > 0)
    {
