@@ -435,7 +435,7 @@ sub draw_text
 
    if ( $flags & dt::QueryHeight) {
       $linesToDraw = scalar @lines;
-      $h = $retVal = $linesToDraw * $fh;
+      $retVal = $linesToDraw * $fh;
    } else {
       $linesToDraw = int( $retVal = ( $h / $fh));
       $linesToDraw++ if (( $h % $fh) > 0) and ( $flags & dt::DrawPartial);
@@ -451,7 +451,7 @@ sub draw_text
    if ( $valign == dt::Top) {
       $y = $y2;
    } elsif ( $valign == dt::VCenter) {
-      $y = $y2 - int(( $h - $linesToDraw * $fh) / 2);
+      $y += int(( $h + $linesToDraw * $fh) / 2);
    } else {
       $y += $linesToDraw * $fh;
    }
