@@ -160,18 +160,20 @@ sub message_box
       autoWidth     => 0,
       wordWrap      => 1,
       showAccelChar => 1,
-      valignment    => ta::Center,
+      valignment    => ta::Middle,
+      growMode      => gm::Client,
    );
 
-   my $lHeight = ( scalar( $label-> get_lines)-1) * $label-> font-> height;
-   my $delta = $label-> height;
-   while ( $lHeight > $label-> height)
-   {
-       $dlg-> height( $dlg-> height + $delta);
+   my $gl = int( $label-> height / $label-> font-> height);
+   my $lc = scalar @{ $label-> text_wrap( $text, $label-> width, tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::ExpandTabs|tw::CalcTabs)};
+
+   if ( $lc > $gl) {
+       my $delta = ( $lc - $gl) * $label-> font-> height;
+       my $dh = $dlg-> height;
+       $delta = $::application-> height - $dh if $dh + $delta > $::application-> height;
+       $dlg-> height( $dh + $delta);
        $dlg-> centered(1);
        $iconView-> bottom( $iconView-> bottom + $delta / 2) if $iconView;
-       $label-> height( $label-> height + $delta);
-       $lHeight = ( scalar( $label-> get_lines)-1) * $label-> font-> height;
    }
 
    my $ret = $dlg-> execute;
