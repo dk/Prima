@@ -1394,7 +1394,7 @@ extern int
 list_index_of( PList self, Handle item);
 
 /* utf8 */
-#if (!defined(__EMX__) && (PERL_PATCHLEVEL > 5))
+#if PERL_PATCHLEVEL > 5
 #define PERL_SUPPORTS_UTF8  1
 #if (PERL_PATCHLEVEL == 6)
 #define utf8_to_uvchr utf8_to_uv_simple

@@ -612,6 +612,8 @@ apc_gp_get_font_ranges( Handle self, int * count)
    *count = 2;
    ret[0] = fm. sFirstChar;
    ret[1] = fm. sLastChar;
+   if ( ret[0] > 255) ret[0] = 255;
+   if ( ret[1] > 255) ret[1] = 255;
    return ret;
 }
 
