@@ -364,10 +364,12 @@ sub on_paint
       ( 0, 0, $size[0] - 1, $size[1] - 1);
    if ( !$self->{flat} || $self->{hilite})
    {
-      $canvas-> rect3d( @fbar, 2, @c3d, $clr[ 1])
+      $self-> transparent ?
+         $canvas-> rect3d( @fbar, 2, @c3d) :
+         $canvas-> rect3d( @fbar, 2, @c3d, $clr[ 1])
    } else {
      $canvas-> color( $clr[ 1]);
-     $canvas-> bar( @fbar);
+     $canvas-> bar( @fbar) unless $self-> transparent;
    }
    if ( $self-> {default}) {
       $canvas-> color( cl::Black);
