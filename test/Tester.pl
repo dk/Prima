@@ -34,9 +34,6 @@ use Prima::Config;
 eval "use Prima;";
 if ( $@) {
    die $@ unless $@ =~ /can't open display/i;
-   Prima::options('no-x11');
-   eval "use Prima;";
-   die $@ if $@;
    $noX11 = 1;
 }
 # should be ok now
