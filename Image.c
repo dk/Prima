@@ -1090,7 +1090,7 @@ XS( Image_load_FROMPERL) {
 	 }
 	 info = plist_create( 1, 1);
 	 hv = parse_hv( ax, sp, items, mark, 2, "Image::load");
-         add_image_profile(( HV *)SvRV( ST(i)), info, "Image::get_info");
+         add_image_profile( hv, info, "Image::get_info");
 	 sv_free(( SV*)hv);
       }
       result = apc_image_read( filename, info, true);
