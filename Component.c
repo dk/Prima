@@ -190,10 +190,19 @@ Component_set( Handle self, HV * profile)
 
    if ( pexist( owner))
    {
+      Handle theOwner;
       var owner = pget_H( owner);
       if (( var owner != nilHandle) && !kind_of( var owner, CComponent))
-         croak( "Illegal object reference passed to Component.set");
+         croak( "RTC0047: Illegal object reference passed to Component::set_owner");
       if ( var owner == nilHandle) var owner = application;
+      theOwner = var owner;
+
+      while ( theOwner) {
+         if ( theOwner == self)
+            croak( "RTC0048: Invalid owner reference passed to Component::set_owner");
+         theOwner = PComponent( theOwner)-> owner;
+      }
+
       pdelete( owner);                    /* like this. */
    }
    dyna_set( self, profile);
@@ -262,13 +271,13 @@ ForceProcess:
 	 goto ForceProcess;
       case ctSingle:
 	 event-> cmd = ( event-> cmd & ~ctQueueMask) | ctSingleResponse;
-	 if ( list_first_that( var evQueue, 
-			       ( PListProc) find_dup_msg, 
+	 if ( list_first_that( var evQueue,
+			       ( PListProc) find_dup_msg,
 			       (void*) event-> cmd)
 	      >= 0)
 	    break;
       default:
-	 list_add( var evQueue, 
+	 list_add( var evQueue,
 		   ( Handle) memcpy( malloc( sizeof( Event)),
 				     event, sizeof( Event)));
       }
@@ -361,42 +370,33 @@ Component_handle_event( Handle self, PEvent event)
       dyna( Create);
       if ( var stage == csNormal)
       {
-	 if ( var evQueue-> count > 0)
-	    list_first_that( var evQueue,
-			     ( PListProc)oversend,
-			     ( void*) self);
-	 list_destroy( var evQueue);
-	 free( var evQueue);
-	 var evQueue = nil;
+         if ( var evQueue-> count > 0)
+            list_first_that( var evQueue, ( PListProc)oversend, ( void*) self);
+         list_destroy( var evQueue);
+         free( var evQueue);
+         var evQueue = nil;
       }
       break;
    case cmDestroy:
       my on_destroy( self);
-      if ( is_dmopt( dmDestroy))
-	 delegate_sub( self, "Destroy", "H", self);
+      if ( is_dmopt( dmDestroy)) delegate_sub( self, "Destroy", "H", self);
       dyna( Destroy);
       break;
    case cmPost:
       {
-	 PPostMsg p = ( PPostMsg) event-> gen. p;
-	 my on_postmessage( self, p-> info1, p-> info2);
-	 if ( var stage >= csDead) return;
-	 if ( is_dmopt( dmPostMessage))
-	    delegate_sub( self, "PostMessage", "HSS",
-			  self, p-> info1, p-> info2);
-	 if ( var stage >= csDead)
-	    return;
-	 if ( var onPostMessage)
-	    cv_call_perl( var mate, var onPostMessage, "SS",
-			  p-> info1, p-> info2);
-	 if ( var stage >= csDead)
-	    return;
-	 if ( p-> info1)
-	    sv_free( p-> info1);
-	 if ( p-> info2)
-	    sv_free( p-> info2);
-	 free( p);
-	 list_delete( var postList, ( Handle) p);
+         PPostMsg p = ( PPostMsg) event-> gen. p;
+         my on_postmessage( self, p-> info1, p-> info2);
+         if ( var stage >= csDead) return;
+         if ( is_dmopt( dmPostMessage))
+            delegate_sub( self, "PostMessage", "HSS", self, p-> info1, p-> info2);
+         if ( var stage >= csDead) return;
+         if ( var onPostMessage)
+            cv_call_perl( var mate, var onPostMessage, "SS", p-> info1, p-> info2);
+         if ( var stage >= csDead) return;
+         if ( p-> info1) sv_free( p-> info1);
+         if ( p-> info2) sv_free( p-> info2);
+         free( p);
+         list_delete( var postList, ( Handle) p);
       }
    break;
    }
@@ -407,6 +407,17 @@ Component_migrate( Handle self, Handle attachTo)
 {
     PComponent detachFrom = PComponent( var owner ? var owner : application);
     PComponent attachTo_  = PComponent( attachTo  ? attachTo  : application);
+    Handle     theOwner   = ( Handle) attachTo_;
+
+    if ( !theOwner || !kind_of( theOwner, CComponent))
+       croak( "RTC0049: Invalid owner reference passed to Component::set_owner");
+
+    while ( theOwner) {
+       if ( theOwner == self)
+          croak( "RTC0049: Invalid owner reference passed to Component::set_owner");
+       theOwner = PComponent( theOwner)-> owner;
+    }
+
     if ( detachFrom != attachTo_) {
        attachTo_ -> self-> attach(( Handle) attachTo_, self);
        detachFrom-> self-> detach(( Handle) detachFrom, self, false);
@@ -534,7 +545,7 @@ Component_update_delegator( Handle self)
 }
 
 void
-Component_set_dyna_method( Handle self, char * methodName, 
+Component_set_dyna_method( Handle self, char * methodName,
 			   SV * container, SV** variable)
 {
    SV ** psv;
