@@ -712,12 +712,22 @@ void Widget_handle_event( Handle self, PEvent event)
         break;
       case cmPopup:
         {
-           PPopup p;
+           Handle org = self;
            my-> notify( self, "<siP", "Popup", event-> gen. B, event-> gen. P. x, event-> gen. P. y);
            objCheck;
-           p = ( PPopup) my-> get_popup( self);
-           if ( evOK && p && p-> self-> get_auto(( Handle) p))
-              p-> self-> popup(( Handle) p, event-> gen. P. x, event-> gen. P. y ,0,0,0,0);
+           if ( evOK) {
+              while ( self) {
+                 PPopup p = ( PPopup) CWidget( self)-> get_popup( self);
+                 if ( p && p-> self-> get_auto(( Handle) p)) {
+                    Point px = apc_widget_screen_to_client( self,
+                               apc_widget_client_to_screen( org, event-> gen. P));
+                    p-> self-> popup(( Handle) p, px. x, px. y ,0,0,0,0);
+                    CWidget( org)-> clear_event( org);
+                    break;
+                 }
+                 self = var-> owner;
+              }
+           }
         }
         break;
       case cmSize:
@@ -747,8 +757,8 @@ void Widget_handle_event( Handle self, PEvent event)
            if ( !event-> gen. B) my-> first_that( self, size_notify, &event-> gen. R);
            if ( doNotify) {
               Point oldSize;
-	      oldSize. x = event-> gen. R. left;
-	      oldSize. y = event-> gen. R. bottom;
+              oldSize. x = event-> gen. R. left;
+              oldSize. y = event-> gen. R. bottom;
               my-> notify( self, "<sPP", "Size", oldSize, event-> gen. P);
            }
         }
@@ -2466,7 +2476,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
       if ( !metrix-> bottom) dy = 0;
 
       printf( ">size_notify: %s, pos: %dx%d, size: %dx%d, delta: %dx%d\n",
-	      his-> name, pos. x, pos.y, size. x, size. y, dx, dy);
+              his-> name, pos. x, pos.y, size. x, size. y, dx, dy);
 
       if ( his-> growMode & gmGrowLoX) pos.  x += dx;
       if ( his-> growMode & gmGrowHiX && dx) size. x += dx; else size. x = reportedSize. x;
@@ -2476,7 +2486,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
       if ( his-> growMode & gmYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
 
       printf( "size_notify>: %s, pos: %dx%d, size: %dx%d\n",
-	      his-> name, pos. x, pos.y, size. x, size. y);
+              his-> name, pos. x, pos.y, size. x, size. y);
 
       his-> self-> set_pos ( child, pos.x, pos. y);
       his-> self-> set_size( child, size.x, size. y);

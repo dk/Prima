@@ -49,6 +49,7 @@ Application_init( Handle self, HV * profile)
    int hintPause = pget_i( hintPause);
    Color hintColor = pget_i( hintColor), hintBackColor = pget_i( hintBackColor);
    SV * hintFont = pget_sv( hintFont);
+   SV * sv;
    char * hintClass      = pget_c( hintClass);
    char * clipboardClass = pget_c( clipboardClass);
    char * printerClass   = pget_c( printerClass);
@@ -122,6 +123,15 @@ Application_init( Handle self, HV * profile)
       protect_object( var->  hintWidget);
       sv_free(( SV *) profile);
    }
+
+   if ( SvTYPE( sv = pget_sv( accelItems)) != SVt_NULL)
+      my-> set_accel_items( self, sv);
+   if ( SvTYPE( sv = pget_sv( popupItems)) != SVt_NULL)
+      my-> set_popup_items( self, sv);
+   pdelete( accelTable);
+   pdelete( accelItems);
+   pdelete( popupItems);
+
    my-> set( self, profile);
 }
 
@@ -372,9 +382,9 @@ Application_get_system_info( char * dummy)
    int  os, gui;
 
    os  = apc_application_get_os_info( system, sizeof( system),
-				      release, sizeof( release),
-				      vendor, sizeof( vendor),
-				      arch, sizeof( arch));
+                                      release, sizeof( release),
+                                      vendor, sizeof( vendor),
+                                      arch, sizeof( arch));
    gui = apc_application_get_gui_info( gui_desc, sizeof( gui_desc));
 
    pset_i( apc,            os);
@@ -413,7 +423,7 @@ Application_get_widget_from_handle( Handle self, SV * handle)
 {
    ApiHandle apiHandle;
    if ( SvIOK( handle))
-	   apiHandle = SvUVX( handle);
+           apiHandle = SvUVX( handle);
    else
       apiHandle = sv_2uv( handle);
    return apc_application_get_handle( self, apiHandle);
@@ -800,13 +810,13 @@ Application_popup_modal( Handle self)
 
 
 #define popupWin                                      \
-STMT_START {							                     \
-   PWindow_vmt top = CWindow( xTop);			         \
-   if ( !top-> get_visible( xTop))			          	\
-      top-> set_visible( xTop, 1);              		\
-   if ( top-> get_window_state( xTop) == wsMinimized)	\
-      top-> set_window_state( xTop, wsNormal);	      \
-   top-> set_selected( xTop, 1);          				\
+STMT_START {                                                                         \
+   PWindow_vmt top = CWindow( xTop);                             \
+   if ( !top-> get_visible( xTop))                                      \
+      top-> set_visible( xTop, 1);                              \
+   if ( top-> get_window_state( xTop) == wsMinimized)   \
+      top-> set_window_state( xTop, wsNormal);        \
+   top-> set_selected( xTop, 1);                                        \
    ret = xTop;                                        \
 } STMT_END
 
