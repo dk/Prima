@@ -70,7 +70,7 @@ object Prima::Application( Prima::Widget)
    method void   hide();
    method void   init( HV * profile);
    method Bool   lock()                        => apc_application_lock;
-   method void   insert_behind( Handle view);
+   method void   insert_behind( Handle widget);
    method Handle next();
    method Handle prev();
    method Point  screen_to_client( Point p);
@@ -78,7 +78,7 @@ object Prima::Application( Prima::Widget)
    method void   set_auto_close( Bool autoClose);
    method void   set_insert_mode( Bool insMode);
    method void   set_help_file( char * helpFile);
-   c_only void   set_hint_action( Handle view, Bool show, Bool mouseEvent);
+   c_only void   set_hint_action( Handle widget, Bool show, Bool mouseEvent);
    method void   set_hint_visible( Bool visible);
    method void   show();
    method SV*    sys_action( char * params);
@@ -101,7 +101,7 @@ object Prima::Application( Prima::Widget)
    method Bool   get_sync_paint();
    method Bool   get_tab_stop();
    method char * get_text();
-   method Handle get_view_from_point( Point p) => apc_application_get_view_from_point;
+   method Handle get_widget_from_point( Point p) => apc_application_get_widget_from_point;
    method Bool   get_visible();
 
    method void   set( HV * profile);

@@ -1492,7 +1492,7 @@ extern int
 apc_application_get_gui_info( char * description, int len);
 
 extern Handle
-apc_application_get_view_from_point( Handle self, Point point);
+apc_application_get_widget_from_point( Handle self, Point point);
 
 extern Handle
 apc_application_get_handle( Handle self, ApiHandle apiHandle);

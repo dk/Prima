@@ -482,7 +482,7 @@ sub Wheel_MouseUp
    $self->{mouseTransation} = undef;
    $self-> capture(0);
    if ( $btn == mb::Right) {
-      my $x = $::application-> get_view_from_point( $self-> client_to_screen( $x, $y));
+      my $x = $::application-> get_widget_from_point( $self-> client_to_screen( $x, $y));
       return unless $x;
       if ( $mod & km::Shift) {
          $x-> backColor( $owner-> value);

@@ -177,8 +177,7 @@ window_subsystem_init( void)
 void
 window_subsystem_cleanup( void)
 {
-/*XXX*/
-fprintf( stderr, "window_subsystem_cleanup()\n");
+   /*XXX*/
    if ( guts. wm_cleanup)
       guts. wm_cleanup();
 }
@@ -220,7 +219,7 @@ apc_application_begin_paint( Handle self)
 Bool
 apc_application_begin_paint_info( Handle self)
 {
-fprintf( stderr, "apc_application_begin_paint_info()\n");
+   DOLBUG( "apc_application_begin_paint_info()\n");
 /*NYI*/
    return true;
 }
@@ -261,7 +260,6 @@ apc_application_create( Handle self)
 Bool
 apc_application_close( Handle self)
 {
-fprintf( stderr, "apc_application_close()\n");
    Object_destroy( self);
    return true;
 }
@@ -269,7 +267,6 @@ fprintf( stderr, "apc_application_close()\n");
 Bool
 apc_application_destroy( Handle self)
 {
-fprintf( stderr, "apc_application_destroy()\n");
    if ( X_WINDOW) {
       XDestroyWindow( DISP, X_WINDOW);
       XCHECKPOINT;
@@ -288,7 +285,7 @@ apc_application_end_paint( Handle self)
 Bool
 apc_application_end_paint_info( Handle self)
 {
-fprintf( stderr, "apc_application_end_paint_info()\n");
+   DOLBUG( "apc_application_end_paint_info()\n");
    return true;
 }
 
@@ -303,18 +300,18 @@ apc_application_get_gui_info( char * description, int len)
 }
 
 Handle
-apc_application_get_view_from_point( Handle self, Point point)
+apc_application_get_widget_from_point( Handle self, Point point)
 {
-fprintf( stderr, "apc_application_get_view_from_point()\n");
-/*NYI*/
+   DOLBUG( "apc_application_get_widget_from_point()\n");
+   /*NYI*/
    return nilHandle;
 }
 
 Handle
 apc_application_get_handle( Handle self, ApiHandle apiHandle)
 {
-fprintf( stderr, "apc_application_get_handle()\n");
-/*NYI*/
+   DOLBUG( "apc_application_get_handle()\n");
+   /*NYI*/
    return nilHandle;
 }
 
@@ -497,16 +494,16 @@ FetchAndProcess:
 Bool
 apc_application_lock( Handle self)
 {
-fprintf( stderr, "apc_application_lock()\n");
-/*NYI*/
+   DOLBUG( "apc_application_lock()\n");
+   /*NYI*/
    return true;
 }
 
 Bool
 apc_application_unlock( Handle self)
 {
-fprintf( stderr, "apc_application_unlock()\n");
-/*NYI*/
+   DOLBUG( "apc_application_unlock()\n");
+   /*NYI*/
    return true;
 }
 
