@@ -313,25 +313,25 @@ apc_widget_get_transparent( Handle self)
 Bool
 apc_widget_is_captured( Handle self)
 {
-   return X(self)-> flags. grab;
+   return X(self)-> flags. grab ? true : false;
 }
 
 Bool
 apc_widget_is_enabled( Handle self)
 {
-   return XF_ENABLED(X(self));
+   return XF_ENABLED(X(self)) ? true : false;
 }
 
 Bool
 apc_widget_is_exposed( Handle self)
 {
-   return X(self)-> flags. exposed;
+   return X(self)-> flags. exposed ? true : false;
 }
 
 Bool
 apc_widget_is_focused( Handle self)
 {
-   return X(self)-> flags. focused;
+   return X(self)-> flags. focused ? true : false;
 }
 
 Bool
@@ -359,7 +359,7 @@ Bool
 apc_widget_is_visible( Handle self)
 {
    DOLBUG("apc_widget_is_visible(%s): %d\n", PWidget( self)-> name, X(self)-> flags. mapped);
-   return X(self)-> flags. mapped;
+   return X(self)-> flags. mapped ? true : false;
 }
 
 Bool

@@ -399,7 +399,7 @@ prima_get_gc( PDrawableSysData selfxx)
 
    if ( XX-> gc || XX-> gcl) croak( "UAG_004: internal error");
 
-   bitmap = XT_IS_BITMAP(XX);
+   bitmap = XT_IS_BITMAP(XX) ? true : false;
    gc_pool = bitmap ? &guts.bitmap_gc_pool : &guts.screen_gc_pool;
    XX->gcl = TAILQ_FIRST(gc_pool);
    if (XX->gcl)
@@ -420,7 +420,7 @@ prima_release_gc( PDrawableSysData selfxx)
 
    if ( XX-> gc) {
       if ( XX-> gcl == nil) croak( "UAG_005: internal error");
-      bitmap = XT_IS_BITMAP(XX);
+      bitmap = XT_IS_BITMAP(XX) ? true : false;
       gc_pool = bitmap ? &guts.bitmap_gc_pool : &guts.screen_gc_pool;
       TAILQ_INSERT_HEAD(gc_pool, XX->gcl, gc_link);
       XX->gcl = nil;
@@ -965,7 +965,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
    /* XXX implement in full */
 
    if ( XT_IS_DBM(XX)) {
-      pixmap = XT_IS_PIXMAP(XX);
+      pixmap = XT_IS_PIXMAP(XX) ? true : false;
       im = XGetImage( DISP, XX->gdrawable, x, REVERT(y), 1, 1,
                       pixmap ? AllPlanes : 1,
                       pixmap ? ZPixmap : XYPixmap);
