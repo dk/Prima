@@ -414,8 +414,7 @@ prima_init_font_subsystem( void)
    info[j]. flags. generic = true;  
    detail_font_info( info + j, nil, false, false);
 
-   /* create extra font entry for a 'default' font name 
-      and add possibly encoding string to the multi-encoding fonts */
+   /*  add 'encoding' string to the multi-encoding fonts */
    if ( guts. font_encoding_hack_type != FEHT_NONE) {
       PHash hash = hash_create();
       for ( i = 0; i < guts. n_fonts; i++) {
@@ -511,7 +510,7 @@ prima_cleanup_font_subsystem( void)
       XFreeFontNames( guts. font_names);
    if ( guts. font_info) {
       for ( i = 0; i < guts. n_fonts; i++)
-	 if ( guts. font_info[i]. vecname && guts. font_info[i]. flags. generic)
+	 if ( guts. font_info[i]. vecname)
 	    free( guts. font_info[i]. vecname);
       free( guts. font_info);
    }
