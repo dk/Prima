@@ -1367,7 +1367,9 @@ sub noTestFileCreate { ($#_)? $_[0]->{noTestFileCreate}   = ($_[1])  : return $_
 sub overwritePrompt  { ($#_)? $_[0]->{overwritePrompt}   = ($_[1])  : return $_[0]->{overwritePrompt} };
 sub pathMustExist    { ($#_)? $_[0]->{pathMustExist}     = ($_[1])  : return $_[0]->{pathMustExist} };
 sub fileMustExist    { ($#_)? $_[0]->{fileMustExist}   = ($_[1])  : return $_[0]->{fileMustExist} };
+sub defaultExt       { ($#_)? $_[0]->{defaultExt}   = ($_[1])  : return $_[0]->{defaultExt} };
 sub showHelp         { ($#_)? shift->raise_ro('showHelp')  : return $_[0]->{showHelp} };
+sub openMode         { $_[0]->{openMode} }
 
 package Prima::OpenDialog;
 use vars qw( @ISA);

@@ -93,6 +93,10 @@ sub AUTOLOAD
 package Prima;
 
 my ($openFileDlg, $saveFileDlg);
+   
+my @fileDlgProps = qw( defaultExt fileName filter filterIndex
+directory createPrompt multiSelect noReadOnly noTestFileCreate overwritePrompt
+pathMustExist fileMustExist sorted showDotFiles);
 
 sub open_file
 {
@@ -101,7 +105,8 @@ sub open_file
       system => exists($profile{system}) ? $profile{system} : 1,
       onDestroy => sub { undef $openFileDlg},
    ) unless $openFileDlg;
-   $openFileDlg-> set( %{$openFileDlg-> profile_default}, %profile);
+   my %a = %{$openFileDlg-> profile_default};
+   $openFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
    return $openFileDlg-> execute;
 }
 
@@ -112,7 +117,8 @@ sub save_file
       system => exists($profile{system}) ? $profile{system} : 1,
       onDestroy => sub { undef $saveFileDlg},
    ) unless $saveFileDlg;
-   $saveFileDlg-> set( %{$saveFileDlg-> profile_default}, %profile);
+   my %a = %{$openFileDlg-> profile_default};
+   $saveFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
    return $saveFileDlg-> execute;
 }
 
