@@ -255,8 +255,8 @@ sub check_auto_size
    {
       $cap =~ s/~//s unless $self->{showAccelChar};
       my %sets;
-      $sets{ width}  = $self-> get_text_width( $cap) + 6 if $self->{autoWidth};
-      $sets{ height} = $self-> font-> height + 2 if $self->{autoHeight};
+      $sets{ geomWidth}  = $self-> get_text_width( $cap) + 6 if $self->{autoWidth};
+      $sets{ geomHeight} = $self-> font-> height + 2 if $self->{autoHeight};
       $self-> set( %sets);
    }
    $self-> reset_lines;

@@ -647,6 +647,7 @@ sub notification_types { return \%RNT; }
    enabled           => 1,
    firstClick        => 1,
    focused           => 0,
+   geometry          => gt::GrowMode,
    growMode          => 0,
    height            => 100,
    helpContext       => '',
@@ -662,6 +663,8 @@ sub notification_types { return \%RNT; }
    ownerHint         => 1,
    ownerShowHint     => 1,
    ownerPalette      => 1,
+   packInfo          => undef,
+   placeInfo         => undef,
    pointerIcon       => undef,
    pointer           => cr::Default,
    pointerType       => cr::Default,
@@ -675,6 +678,7 @@ sub notification_types { return \%RNT; }
    popupLight3DColor      => cl::Light3DColor,
    popupDark3DColor       => cl::Dark3DColor,
    popupItems        => undef,
+   propagateGeometry => 0,
    right             => 200,
    scaleChildren     => 1,
    selectable        => 0,
@@ -793,7 +797,7 @@ sub profile_check_in
       $p-> { width } = $p-> { size}-> [ 0];
       $p-> { height} = $p-> { size}-> [ 1];
    }
-
+   
    my $designScale = exists $p->{designScale} ? $p->{designScale} : $default->{designScale};
    if ( defined $designScale) {
       my @defScale = @$designScale;
@@ -865,6 +869,21 @@ sub profile_check_in
       $p->{pointerIcon}    = $pt if !exists $p->{pointerIcon} && ref( $pt);
       $p->{pointerHotSpot} = $pt->{__pointerHotSpot}
          if !exists $p->{pointerHotSpot} && ref( $pt) && exists $pt->{__pointerHotSpot};
+   }
+
+   if ( exists $p-> {pack}) {
+      for ( keys %{$p-> {pack}}) {
+         s/^-//; # Tk syntax
+         $p-> {packInfo}->{$_} = $p->{pack}->{$_} unless exists $p->{packInfo}->{$_};
+      }
+      $p-> {geometry} = gt::Pack unless exists $p->{geometry};
+   } 
+   if ( exists $p-> {place}) {
+      for ( keys %{$p-> {place}}) {
+         s/^-//; # Tk syntax
+         $p-> {placeInfo}->{$_} = $p->{place}->{$_} unless exists $p->{placeInfo}->{$_};
+      }
+      $p-> {geometry} = gt::Place unless exists $p->{geometry}; 
    }
 }
 
@@ -975,6 +994,24 @@ sub deselect    { $_[0]-> selected(0); }
 sub focus       { $_[0]-> focused(1); }
 sub defocus     { $_[0]-> focused(0); }
 
+# Tk namespace and syntax compatibility
+
+sub pack { 
+   my $self = shift;
+   $self-> packInfo( { grep { defined } map { /^(?:-(\D.*))|(.*)$/; } @_ });
+   $self-> geometry( gt::Pack);
+}
+
+sub place { 
+   my $self = shift;
+   $self-> placeInfo( { grep { defined } map { /^(?:-(\D.*))|(.*)$/; } @_ });
+   $self-> geometry( gt::Place);
+}
+
+sub packForget { shift-> geometry( gt::Default)}
+sub placeForget { shift-> geometry( gt::Default)}
+sub packSlaves { shift-> get_pack_slaves()}
+sub placeSlaves { shift-> get_place_slaves()}
 
 # class Window
 package Prima::Window;
@@ -1098,6 +1135,12 @@ sub profile_default
    @$def{keys %prf} = values %prf;
    return $def;
 }
+
+package Prima::MainWindow;
+use vars qw(@ISA);
+@ISA = qw(Prima::Window);
+
+sub on_destroy { $::application-> close }
 
 # class MenuItem
 package Prima::MenuItem;

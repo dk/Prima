@@ -1292,7 +1292,7 @@ SvBOOL( SV *sv)
 #define pset_f( key, value)  pset_sv_noinc( key, newSVnv( value))
 #define pset_c( key, value)  pset_sv_noinc( key, newSVpv( value, 0))
 #define pset_b( key, value, len)  pset_sv_noinc( key, newSVpv( value, ( len)))
-#define pset_H( key, value)  pset_sv_noinc( key, (value) ? newSVsv((( PAnyObject) value)-> mate) : nilSV)
+#define pset_H( key, value)  pset_sv_noinc( key, (value) ? newSVsv((( PAnyObject) (value))-> mate) : nilSV)
 
 #define create_instance( obj)  (                                   \
    temporary_prf_Sv = ( SV **) Object_create( obj, profile),       \
@@ -1560,6 +1560,7 @@ typedef struct _ObjectOptions_ {
    unsigned optOwnerHint           : 1;
    unsigned optOwnerShowHint       : 1;
    unsigned optOwnerPalette        : 1;
+   unsigned optPropagateGeometry   : 1;
    unsigned optSetupComplete       : 1;
    unsigned optSelectable          : 1;
    unsigned optShowHint            : 1;
@@ -1628,6 +1629,22 @@ WC(Application)
 WC(Mask)
 END_TABLE(wc,UV)
 #undef WC
+
+/* geometry manager types */
+#define GT(const_name) CONSTANT(gt,const_name)
+START_TABLE(gt,UV)
+#define gtDefault          0
+GT(Default)
+#define gtGrowMode         0
+GT(GrowMode)
+#define gtPack             1
+GT(Pack)
+#define gtPlace            2
+GT(Place)
+#define gtMax              2
+GT(Max)
+END_TABLE(gt,UV)
+#undef GT
 
 /* widget grow constats */
 #define GM(const_name) CONSTANT(gm,const_name)
@@ -1928,6 +1945,37 @@ apc_window_end_modal( Handle self);
 
 
 /* Widget management */
+
+typedef struct {
+   Point          pad;            /* border padding */
+   Point          ipad;           /* size increaze */
+   Handle         order;          /* if non-nil, BEFORE or AFTER a widget */
+   Handle         next;           /* dynamically filled linked list of pack slaves */
+   unsigned int   after      : 1; /* 0 - order is BEFORE; 1 - order is AFTER */
+   unsigned int   expand     : 1; /* causes the allocation rectange to fill all remaining space */
+   unsigned int   fillx      : 1; /* fill horizontal extent */
+   unsigned int   filly      : 1; /* fill vertical extent */ 
+   unsigned int   side       : 2; /* 0 - left, 1 - bottom, 2 - right, 3 - top */
+   unsigned int   anchorx    : 2; /* 0 - left, 1 - center, 2 - right */
+   unsigned int   anchory    : 2; /* 0 - bottom, 1 - center, 2 - top */
+} PackInfo, *PPackInfo;
+
+typedef struct {
+   int x, y;
+   float relX, relY;
+   float relWidth, relHeight;
+   unsigned int   use_x   : 1;
+   unsigned int   use_y   : 1;
+   unsigned int   use_w   : 1;
+   unsigned int   use_h   : 1;
+   unsigned int   use_rx  : 1;
+   unsigned int   use_ry  : 1;
+   unsigned int   use_rw  : 1;
+   unsigned int   use_rh  : 1;
+   unsigned int   anchorx : 2; /* 0 - left, 1 - center, 2 - right */
+   unsigned int   anchory : 2; /* 0 - bottom, 1 - center, 2 - top */
+} PlaceInfo, *PPlaceInfo;
+
 extern Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint,
                    Bool clipOwner, Bool transparent, ApiHandle parentHandle);

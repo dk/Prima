@@ -440,7 +440,7 @@ sub on_keydown
 sub check_auto_size
 {
    my $self = $_[0];
-   $self-> height( $self-> font-> height + 2 + $self-> {borderWidth} * 2) if $self-> {autoHeight};
+   $self-> geomHeight( $self-> font-> height + 2 + $self-> {borderWidth} * 2) if $self-> {autoHeight};
 }
 
 sub copy

@@ -174,6 +174,10 @@ Application_set( Handle self, HV * profile)
    pdelete( clipOwner);
    pdelete( enabled);
    pdelete( focused);
+   pdelete( geometry);
+   pdelete( geomHeight);
+   pdelete( geomSize);
+   pdelete( geomWidth);
    pdelete( growMode);
    pdelete( height);
    pdelete( hintClass);
@@ -188,6 +192,8 @@ Application_set( Handle self, HV * profile)
    pdelete( ownerPalette);
    pdelete( ownerShowHint);
    pdelete( palette);
+   pdelete( pack);
+   pdelete( place);
    pdelete( printerClass);
    pdelete( printerModule);
    pdelete( helpClass);

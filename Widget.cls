@@ -35,7 +35,6 @@ object Prima::Widget( Prima::Drawable)
    Handle    currentWidget;	       # current widget pointer
    int       cursorLock;               # cursor lock count
    NPoint    designScale;              # font width and height for view design
-   int       growMode;                 # growing flags, see gmGrowXXX
    char   *  helpContext;              # help context string
    char   *  hint;                     # hint tag text
    int       lockCount;                # lock count
@@ -49,9 +48,21 @@ object Prima::Widget( Prima::Drawable)
    Point     sizeMax;                  # default max size
    int       tabOrder;                 # tab ordering number
    char   *  text;                     # caption text
-   Point     virtualSize;              # fictive size not aware of size limits
    int       widgetClass;              # predefined system class
    List      widgets;		       # list of child widgets
+
+#  geometry managers data
+#  common:   
+   int       geometry;                 # geometry manager, gtXXX
+   Point     geomSize;                 # requested size, common to all managers
+#  growMode:
+   int       growMode;                 # growing flags, see gmGrowXXX
+   Point     virtualSize;              # fictive size not aware of size limits
+#  pack:   
+   PackInfo  packInfo;                 # pack geometry manager info
+   Handle    packSlaves;               # first pack slave in linked list
+#  place
+   PlaceInfo placeInfo;                # place geometry manacer info
 
 # properties
    property  SV *   accelItems;
@@ -71,6 +82,10 @@ object Prima::Widget( Prima::Drawable)
    property  Bool   cursorVisible;
    property  NPoint designScale;
    property  Bool   enabled;
+   property  int    geometry;
+   property  int    geomHeight;
+   property  Point  geomSize;
+   property  int    geomWidth;
    property  int    growMode;
    property  Bool   firstClick;
    property  Bool   focused;
@@ -87,12 +102,15 @@ object Prima::Widget( Prima::Drawable)
    property  Bool   ownerShowHint;
    property  Bool   ownerPalette;
    property  Point  origin;
+   property  SV  *  packInfo;
    property  SV  *  palette;
+   property  SV  *  placeInfo;
    property  Point  pointerHotSpot;
    property  Handle pointerIcon;
    property  Point  pointerPos;
    property  int    pointerType;
    property  Color  popupColorIndex( int index);
+   property  Bool   propagateGeometry;
    property  Rect   rect;
    property  int    right;
    property  Bool   scaleChildren;
@@ -113,7 +131,6 @@ object Prima::Widget( Prima::Drawable)
    property  Bool   transparent;
    property  Bool   visible;
    property  int    widgetClass;
-
 
 # direct call methods
    method   void     attach( Handle objectHandle);
@@ -155,6 +172,7 @@ object Prima::Widget( Prima::Drawable)
    import   SV *     profile_default ();
    method   Handle   prev();
    method   void     repaint();
+   c_only   void     reset_children_geometry( Event * event);
    method   Bool     responsive()                    => apc_widget_is_responsive;
    public   void     screen_to_client();
    public   void     scroll( int dx, int dy, Rect *confine, Rect *clip, Bool withChildren);
@@ -178,8 +196,10 @@ object Prima::Widget( Prima::Drawable)
    method   SV   *   get_handle();
    method   Bool     get_locked();
    method   int      get_mouse_state()               => apc_pointer_get_state;
+   public   void     get_pack_slaves();
    method   Handle   get_parent();
    method   SV   *   get_parent_handle();
+   public   void     get_place_slaves();
    static   Point    get_pointer_size( char * dummy = "");
    method   Font     get_popup_font();
    c_only   Handle   get_selectee();

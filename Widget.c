@@ -60,8 +60,6 @@ static Bool find_dup_msg( PEvent event, int * cmd);
 static Bool pquery ( Handle window, Handle self, void * v);
 static Bool get_top_current( Handle self);
 static Bool sptr( Handle window, Handle self, void * v);
-static Bool size_notify( Handle self, Handle child, const Rect* metrix);
-static Bool move_notify( Handle self, Handle child, Point * moveTo);
 static Handle find_tabfoc( Handle self);
 static Bool showhint_notify ( Handle self, Handle child, void * data);
 static Bool hint_notify ( Handle self, Handle child, SV * hint);
@@ -77,6 +75,9 @@ Widget_init( Handle self, HV * profile)
 
    list_create( &var-> widgets, 0, 8);
    var-> tabOrder = -1;
+
+   var-> packInfo. side = 3; /* default pack side is 'top', anchor ='center' */
+   var-> packInfo. anchorx = var-> packInfo. anchory = 1;
 
    my-> update_sys_handle( self, profile);
    /* props init */
@@ -187,6 +188,7 @@ Widget_init( Handle self, HV * profile)
       my-> set_size( self, size);
    } else
       var-> virtualSize = my-> get_size( self);
+   var-> geomSize = var-> virtualSize;
 
    {
       Bool x = 0, y = 0;
@@ -195,6 +197,12 @@ Widget_init( Handle self, HV * profile)
       if ( pget_B( y_centered) || ( var-> growMode & gmYCenter)) y = 1;
       if ( x || y) my-> set_centered( self, x, y);
    }
+
+   opt_assign( optPropagateGeometry, pget_B( propagateGeometry));
+   my-> set_packInfo( self, pget_sv( packInfo));
+   my-> set_placeInfo( self, pget_sv( placeInfo));
+   my-> set_geometry( self, pget_i( geometry));
+   
    my-> set_shape       ( self, pget_H(  shape));
    my-> set_visible     ( self, pget_B( visible));
    if ( pget_B( capture)) my-> set_capture( self, 1, nilHandle);
@@ -316,6 +324,9 @@ void
 Widget_cleanup( Handle self)
 {
    enter_method;
+
+   my-> set_geometry( self, gtDefault);
+   
    if ( application && (( PApplication) application)-> hintUnder == self)
       my-> set_hintVisible( self, 0);
 
@@ -762,17 +773,14 @@ void Widget_handle_event( Handle self, PEvent event)
               n-> gen. P = event-> gen. P;
             }
           MOVE_EVENT:;
-            if ( !event-> gen. B)
-               my-> first_that( self, (void*)move_notify, &event-> gen. P);
             if ( doNotify) oldP = var-> pos;
             var-> pos = event-> gen. P;
             if ( doNotify && 
                  (oldP. x != event-> gen. P. x || 
                   oldP. y != event-> gen. P. y)) {
                my-> notify( self, "<sPP", "Move", oldP, event-> gen. P);
-               objCheck;
-               if ( var-> growMode & gmCenter) my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
             }
+            my-> reset_children_geometry( self, event);
          }
         break;
       case cmPopup:
@@ -819,15 +827,13 @@ void Widget_handle_event( Handle self, PEvent event)
               n-> gen. P. y = n-> gen. R. top    = event-> gen. P. y;
            }
         SIZE_EVENT:;  
-           if ( var-> growMode & gmCenter) my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
-
-           if ( !event-> gen. B) my-> first_that( self, (void*)size_notify, &event-> gen. R);
            if ( doNotify) {
               Point oldSize;
               oldSize. x = event-> gen. R. left;
               oldSize. y = event-> gen. R. bottom;
               my-> notify( self, "<sPP", "Size", oldSize, event-> gen. P);
            }
+           my-> reset_children_geometry( self, event);
         }
         break;
    }
@@ -1152,6 +1158,8 @@ Widget_next_tab( Handle self, Bool forward)
 
 /*::o */
 /*::p */
+
+
 void
 Widget_post_message( Handle self, SV * info1, SV * info2)
 {
@@ -1266,7 +1274,7 @@ Widget_set( Handle self, HV * profile)
    enter_method;
    Handle postOwner = nilHandle;
    AV *order = nil;
-   Bool geometry_changed = 0;
+   int geometry = gtDefault;
 
    if ( pexist(__ORDER__)) order = (AV*)SvRV(pget_sv( __ORDER__));
 
@@ -1296,7 +1304,10 @@ Widget_set( Handle self, HV * profile)
             my-> set_font ( self, CWidget( postOwner)-> get_font( postOwner));
             opt_set( optOwnerFont);
          }
-         geometry_changed = 1;
+      }
+      if ( var-> geometry != gtDefault) {
+         geometry = var-> geometry;
+         my-> set_geometry( self, gtDefault);
       }
    }
 
@@ -1321,7 +1332,6 @@ Widget_set( Handle self, HV * profile)
          pset_i( left,   set[0]);
          pset_i( bottom, set[1]);
          pdelete( origin);
-         geometry_changed = 1;
       }
       if ( pexist( rect))
       {
@@ -1336,7 +1346,6 @@ Widget_set( Handle self, HV * profile)
          pset_i( width,  rect[2] - rect[0]);
          pset_i( height, rect[3] - rect[1]);
          pdelete( rect);
-         geometry_changed = 1;
       }
       if ( pexist( size))
       {
@@ -1347,7 +1356,6 @@ Widget_set( Handle self, HV * profile)
          pset_i( width,  set[0]);
          pset_i( height, set[1]);
          pdelete( size);
-         geometry_changed = 1;
       }
 
       if (( exists[ iLEFT]   = pexist( left)))    values[ iLEFT]   = pget_i( left);
@@ -1434,7 +1442,6 @@ Widget_set( Handle self, HV * profile)
          pdelete( bottom);
          pdelete( width);
          pdelete( height);
-         geometry_changed = 1;
       } /* count > 1 */
    }
    if ( pexist( popupFont))
@@ -1475,14 +1482,12 @@ Widget_set( Handle self, HV * profile)
       prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
       my-> set_sizeMin( self, set);
       pdelete( sizeMin);
-      geometry_changed = 1;
    }
    if ( pexist( sizeMax)) {
       Point set;
       prima_read_point( pget_sv( sizeMax), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
       my-> set_sizeMax( self, set);
       pdelete( sizeMax);
-      geometry_changed = 1;
    }
    if ( pexist( cursorSize)) {
       Point set;
@@ -1496,11 +1501,19 @@ Widget_set( Handle self, HV * profile)
       my-> set_cursorPos( self, set);
       pdelete( cursorPos);
    }
+   if ( pexist( geomSize))
+   {
+      Point set;
+      prima_read_point( pget_sv( geomSize), (int*)&set, 2, "RTC0089: Array panic on 'geomSize'");
+      my-> set_geomSize( self, set);
+      pdelete( geomSize);
+   }
 
    inherited-> set( self, profile);
-   if ( postOwner) my-> set_tabOrder( self, var-> tabOrder);
-   if ( var-> growMode & gmCenter && geometry_changed) 
-      my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
+   if ( postOwner) {
+      my-> set_tabOrder( self, var-> tabOrder);
+      my-> set_geometry( self, geometry);
+   }
 }
 
 void
@@ -1625,6 +1638,7 @@ Widget_get_handle( Handle self)
    snprintf( buf, 256, "0x%08lx", apc_widget_get_handle( self));
    return newSVpv( buf, 0);
 }
+
 
 SV *
 Widget_get_parent_handle( Handle self)
@@ -1871,67 +1885,6 @@ sptr( Handle window, Handle self, void * v)
 }
 
 /* static iterators for ownership notifications */
-
-static Bool
-size_notify( Handle self, Handle child, const Rect* metrix)
-{
-   if ( his-> growMode) {
-      Point size  =  his-> self-> get_virtual_size( child);
-      Point pos   =  his-> self-> get_origin( child);
-      Point osize = size, opos = pos;
-      int   dx    = ((Rect *) metrix)-> right - ((Rect *) metrix)-> left;
-      int   dy    = ((Rect *) metrix)-> top   - ((Rect *) metrix)-> bottom;
-
-      if ( his-> growMode & gmGrowLoX) pos.  x += dx;
-      if ( his-> growMode & gmGrowHiX) size. x += dx;
-      if ( his-> growMode & gmGrowLoY) pos.  y += dy;
-      if ( his-> growMode & gmGrowHiY) size. y += dy;
-      if ( his-> growMode & gmXCenter) pos. x = (((Rect *) metrix)-> right - size. x) / 2;
-      if ( his-> growMode & gmYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
-
-      if ( pos.x != opos.x || pos.y != opos.y || size.x != osize.x || size.y != osize.y) {
-         if ( pos.x == opos.x && pos.y == opos.y) {
-            his-> self-> set_size( child, size);
-         } else if ( size.x == osize.x && size.y == osize.y) {
-            his-> self-> set_origin( child, pos);
-         } else {
-            Rect r;
-            r. left   = pos. x;
-            r. bottom = pos. y;
-            r. right  = pos. x + size. x;
-            r. top    = pos. y + size. y;
-            his-> self-> set_rect( child, r);
-         }
-      }
-   }
-   return false;
-}
-
-static Bool
-move_notify( Handle self, Handle child, Point * moveTo)
-{
-   Bool clp = his-> self-> get_clipOwner( child);
-   int  dx  = moveTo-> x - var-> pos. x;
-   int  dy  = moveTo-> y - var-> pos. y;
-   Point p;
-
-   if ( his-> growMode & gmDontCare) {
-      if ( !clp) return false;
-      p = his-> self-> get_origin( child);
-      p. x -= dx;
-      p. y -= dy;
-      his-> self-> set_origin( child, p);
-   } else {
-      if ( clp) return false;
-      p = his-> self-> get_origin( child);
-      p. x += dx;
-      p. y += dy;
-      his-> self-> set_origin( child, p);
-   }
-
-   return false;
-}
-
 
 Bool
 font_notify ( Handle self, Handle child, void * font)
@@ -2791,44 +2744,6 @@ Widget_size( Handle self, Bool set, Point size)
    return size;
 }
 
-Point
-Widget_sizeMin( Handle self, Bool set, Point min)
-{
-   enter_method;
-   if ( !set)
-      return var-> sizeMin;
-   var-> sizeMin = min;
-   if ( var-> stage <= csFrozen) {
-      Point sizeActual  = my-> get_size( self);
-      Point newSize     = sizeActual;
-      if ( sizeActual. x < min. x) newSize. x = min. x;
-      if ( sizeActual. y < min. y) newSize. y = min. y;
-      if (( newSize. x != sizeActual. x) || ( newSize. y != sizeActual. y))
-         my-> set_size( self, newSize);
-   }
-   apc_widget_set_size_bounds( self, var-> sizeMin, var-> sizeMax);
-   return min;
-}
-
-Point
-Widget_sizeMax( Handle self, Bool set, Point max)
-{
-   enter_method;
-   if ( !set)
-      return var-> sizeMax;
-   var-> sizeMax = max;
-   if ( var-> stage <= csFrozen) {
-      Point sizeActual  = my-> get_size( self);
-      Point newSize     = sizeActual;
-      if ( sizeActual. x > max. x) newSize. x = max. x;
-      if ( sizeActual. y > max. y) newSize. y = max. y;
-      if (( newSize. x != sizeActual. x) || ( newSize. y !=  sizeActual. y))
-          my-> set_size( self, newSize);
-   }
-   apc_widget_set_size_bounds( self, var-> sizeMin, var-> sizeMax);
-   return max;
-}
-
 Bool
 Widget_syncPaint( Handle self, Bool set, Bool syncPaint)
 {
@@ -2897,7 +2812,7 @@ Widget_tabOrder( Handle self, Bool set, int tabOrder)
           }
        }
        if ( match)
-          /* incrementing all tabOrders that greater than out */
+          /* incrementing all tabOrders that greater than ours */
           for ( i = 0; i < count; i++) {
              PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
              if ( self == ( Handle) ctrl) continue;

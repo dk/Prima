@@ -75,6 +75,7 @@ package fdo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog options
 package fe; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# file events
 package fr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# fetch resource constants
 package mt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# modality types
+package gt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# geometry manager types
 
 1;
 
