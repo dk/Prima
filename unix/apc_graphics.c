@@ -420,9 +420,67 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
 }
 
 void
-apc_gp_draw_poly( Handle self, int numPts, Point *points)
+apc_gp_draw_poly( Handle self, int n, Point *pp)
 {
-   DOLBUG( "apc_gp_draw_poly()\n");
+   DEFXX;
+   int i;
+   int x = XX-> gtransform. x;
+   int y = XX-> size. y - 1 - XX-> gtransform. y;
+   XPoint *p = malloc( sizeof( XPoint)*n);
+
+   if (!p)
+      croak( "apc_gp_draw_poly(): not enough memory");
+
+   for ( i = 0; i < n; i++) {
+      p[i].x = pp[i].x + x;
+      p[i].y = y - pp[i].y;
+   }
+
+/*    for ( i = 0; i < n; i++) { */
+/*       fprintf(stderr, "p[%d]=(XPoint){%hd,%hd}; ", i, p[i].x, p[i].y); */
+/*       if ( i % 4 == 0) */
+/* 	 fprintf( stderr, "\n"); */
+/*    } */
+/*    fprintf( stderr, "\n"); */
+
+   if ( XX-> flags. zeroLine) {
+      XGCValues gcv;
+      gcv. line_width = 0;
+      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+   }
+
+   XDrawLines( DISP, XX-> drawable, XX-> gc, p, n, CoordModeOrigin);
+
+   if ( XX-> flags. zeroLine) {
+      XGCValues gcv;
+      gcv. line_width = 1;
+      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+   }
+
+/* p[165]=(XPoint){207,134}; p[166]=(XPoint){207,133}; p[167]=(XPoint){207,132}; p[168]=(XPoint){207,131};  */
+/* p[169]=(XPoint){208,130}; p[170]=(XPoint){208,129}; p[171]=(XPoint){208,128}; p[172]=(XPoint){208,127};  */
+
+/* p[172]=(XPoint){207,134}; p[171]=(XPoint){207,133}; p[170]=(XPoint){207,132}; p[169]=(XPoint){207,131};  */
+/* p[168]=(XPoint){208,130}; p[167]=(XPoint){208,129}; p[166]=(XPoint){208,128}; p[165]=(XPoint){208,127};  */
+/* XSetLineAttributes( DISP, XX-> gc, 0, LineSolid, CapRound, JoinRound); */
+/* p[173]=(XPoint){208,126}; p[174]=(XPoint){208,125}; p[175]=(XPoint){208,124}; p[176]=(XPoint){208,123};  */
+/* p[177]=(XPoint){208,122}; p[178]=(XPoint){208,121}; p[179]=(XPoint){209,120}; p[180]=(XPoint){209,119};  */
+/* p[181]=(XPoint){210,118}; p[182]=(XPoint){210,117}; p[183]=(XPoint){211,116}; p[184]=(XPoint){211,115};  */
+/* p[185]=(XPoint){211,114}; p[186]=(XPoint){211,113}; p[187]=(XPoint){212,112}; p[188]=(XPoint){212,111};  */
+/* p[189]=(XPoint){213,111}; p[190]=(XPoint){214,110}; p[191]=(XPoint){214,109}; p[192]=(XPoint){215,108};  */
+/* p[193]=(XPoint){215,107}; p[194]=(XPoint){216,107}; p[195]=(XPoint){217,106}; p[196]=(XPoint){217,105};  */
+/* p[197]=(XPoint){218,105}; p[198]=(XPoint){219,104}; p[199]=(XPoint){219,103}; p[200]=(XPoint){220,102};  */
+/* p[201]=(XPoint){220,101}; p[202]=(XPoint){219,100}; p[203]=(XPoint){219,99}; p[204]=(XPoint){219,98};  */
+/* p[205]=(XPoint){219,97}; p[206]=(XPoint){220,97}; p[207]=(XPoint){221,96}; p[208]=(XPoint){221,95};  */
+/* p[209]=(XPoint){222,94}; p[210]=(XPoint){222,93}; p[211]=(XPoint){223,93}; p[212]=(XPoint){224,93};  */
+/* p[213]=(XPoint){225,93}; p[214]=(XPoint){226,93}; p[215]=(XPoint){227,93}; p[216]=(XPoint){228,93};  */
+/* p[217]=(XPoint){229,93}; p[218]=(XPoint){230,93}; p[219]=(XPoint){231,93}; p[220]=(XPoint){232,93};  */
+/* p[221]=(XPoint){232,94}; p[222]=(XPoint){233,95}; p[223]=(XPoint){234,95}; p[224]=(XPoint){235,95};  */
+/* p[225]=(XPoint){236,94}; p[226]=(XPoint){236,93};  */
+
+/*    i = 165; n = 172; */
+/*    XDrawLines( DISP, XX-> drawable, XX-> gc, p+i, n-i+1, CoordModeOrigin); */
+   free( p);
 }
 
 void
@@ -606,7 +664,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    SHIFT( x, y);
    XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> imageCache,
 	      xFrom, img-> h - yFrom - yLen,
-	      x, REVERT(y) - yLen, xLen, yLen);
+	      x, REVERT(y) - yLen + 1, xLen, yLen);
 }
 
 void
