@@ -166,7 +166,7 @@ Handle
 create_mate( SV *perlObject)
 {
    PAnyObject object;
-   Handle self;
+   Handle self = nilHandle;
    char *className;
    PVMT vmt;
 
@@ -1561,8 +1561,6 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
 #ifdef PARANOID_MALLOC
 #undef malloc
 #undef free
-#undef list_create
-#undef plist_create
 #ifndef __unix
 #define HAVE_FTIME
 #endif
@@ -1642,8 +1640,14 @@ _test_free( void *ptr, int ln, char *fil, Handle self)
 }
 
 /* to make freaking Windows happy */
+#ifndef __unix
+
+#undef list_create
+#undef plist_create
+
 void list_create( PList slf, int size, int delta) {}
 PList plist_create( int size, int delta) {}
+#endif
 
 #endif /* PARANOID_MALLOC */
 
