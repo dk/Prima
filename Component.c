@@ -651,8 +651,8 @@ XS( Component_notify_FROMPERL)
             sv_free( errSave);
          }
          if ( privMethod) sv_free( privMethod);
-         free( sequence);
          free( argsv);
+         free( sequence);
          croak( SvPV( GvSV( errgv), na));
       } else if ( errSave) {
          sv_setsv( GvSV( errgv), errSave);
@@ -676,8 +676,8 @@ XS( Component_notify_FROMPERL)
    SPAGAIN;
    SP -= items;
    XPUSHs( sv_2mortal( newSViv( ret)));
-   free( sequence);
    free( argsv);
+   free( sequence);
    PUTBACK;
 }
 
