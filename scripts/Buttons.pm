@@ -215,7 +215,7 @@ sub draw_veil
 sub draw_caption
 {
    my ( $self, $canvas, $x, $y) = @_;
-   my $cap = $self-> text;
+   my $cap = $self-> get_text;
    $cap =~ s/^([^~]*)\~(.*)$/$1$2/;
    my ( $leftPart, $accel) = ( $1, length($2) ? substr( $2, 0, 1) : undef);
    my ( $fw, $fh, $enabled) = (
@@ -263,8 +263,8 @@ sub draw_caption
 sub caption_box
 {
    my ($self,$canvas) = @_;
-   my $cap = $self-> text;
-   $cap =~ s/^([^~]*)\~(.*)$/$1$2/;
+   my $cap = $self-> get_text;
+   $cap =~ s/~//;
    return $canvas-> get_text_width( $cap), $canvas-> font-> height;
 }
 
