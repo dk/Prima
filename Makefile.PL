@@ -226,7 +226,7 @@ sub restore_output
 
 sub compile
 {
-    my ( $text, $compile_only) = @_;
+    my ( $text, $compile_only, @extra) = @_;
     my $tmpsrc = qd( tempfile( "$TMPDIR/pmts%04d.c"));
     my $tmpo = qd( tempfile( "$TMPDIR/pmts%04d$OBJ_EXT"));
     my $tmpexe = qd( tempfile( "$TMPDIR/pmts%04d$EXE_EXT"));
@@ -241,6 +241,7 @@ sub compile
 
     null_output;
     my @cc = grep !/^-W/i, cc_command_line( $tmpsrc, $tmpo, $tmpexe, $compile_only || 0);
+    push @cc, @extra;
     print STDERR "@cc\n";
     my $rc = system "@cc";
     restore_output;
@@ -456,6 +457,29 @@ sub env_true
     return( $ENV{ $var} && $ENV{ $var} =~ /^1|yes|on|true$/i);
 }
 
+sub check_dTHR
+{
+    print "Checking dTHR definition...";
+    my $rc = compile( <<EOF, 1, "-Wunused", "-Werror");
+#include <EXTERN.h>
+#include <perl.h>
+
+void
+dummy(void)
+{
+   dTHR;
+}
+EOF
+    if ( $rc) {
+        print " okay\n";
+    } else {
+        $DEFINES{REMOVE_dTHR_FROM_dSP} = 1;
+        print " hack needed\n";
+    }
+    return $rc;
+}
+
+
 sub setup_variables
 {
     #   die "Oops! OS/2 isn't supported!\n" if $^O =~ /os2/i;
@@ -669,6 +693,7 @@ sub setup_variables
     $OS2DLLF = &DynaLoader::mod2fname([$OS2DLLF]) if $OS2 && defined &DynaLoader::mod2fname;
     $PrimaTarget = qd( "auto/Prima/$OS2DLLF$DL_EXT");
     setvar( 'DEFFILE', $Win32 ? qd( "win32/Prima.def") : ( $OS2 ? qd( "os2/Prima.def") : ''));
+    check_dTHR() if $platform eq 'unix';
 
     @Prima_exports = qw(
   boot_Prima

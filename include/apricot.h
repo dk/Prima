@@ -82,6 +82,10 @@
 #define __XSlock_h__ 28
 #include <EXTERN.h>
 #include <perl.h>
+#ifdef REMOVE_dTHR_FROM_dSP
+#undef dSP
+#define dSP                djSP
+#endif
 #include <XSUB.h>
 
 #ifdef PERL_OBJECT
