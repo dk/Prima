@@ -571,7 +571,7 @@ sub set_checked
    return if $_[0]->{checked}+0 == $_[1]+0;
    $_[0]->{checked} = $_[1];
    $_[0]-> repaint;
-   $_[0]-> notify( 'Check', $_[0]->{checked});   
+   $_[0]-> notify( 'Check', $_[0]->{checked});
 }
 
 sub set_image_file
@@ -657,10 +657,10 @@ sub on_enter
 
 sub set_checked
 {
-   my $old = $_[0]-> {checked} + 0;
-   $_[0]-> {checked} = $_[1] + 0;
-   if ( $old != $_[1] + 0)
-   {
+   my $old = $_[0]-> {checked};
+   my $new = $_[1] ? 1 : 0;
+   if ( $old != $new) {
+      $_[0]-> {checked} = $new;
       $_[0]-> repaint;
       $_[0]-> notify( 'Check', $_[0]->{checked});
    }
