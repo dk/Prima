@@ -149,7 +149,7 @@ my $w = Prima::Window-> create(
       }
    },
    onMouseDown => sub {
-      my ( $self, $mod, $btn, $x, $y) = @_;
+      my ( $self, $btn, $mod, $x, $y) = @_;
       return if $self->{cap};
       $x = int( $x / 32);
       $y = int( $y / 32);
@@ -184,7 +184,7 @@ my $w = Prima::Window-> create(
       $self-> pointer( $xx);
    },
    onMouseUp => sub {
-      my ( $self, $mod, $btn, $x, $y) = @_;
+      my ( $self, $btn, $mod, $x, $y) = @_;
       return unless $self->{cap};
       $x = int( $x / 32);
       $y = int( $y / 32);
