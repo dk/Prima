@@ -328,7 +328,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
             // possible bug with toplevel non-windows
             if ( x != application && !local_wnd( WinQueryActiveWindow( HWND_DESKTOP), (( PWidget) x)-> handle)) {
                 ev. cmd = 0; // yes, we abandon mousedown but we should force selection:
-                if ((( PApplication) application)-> hintUnder == self) v-> self-> set_hint_visible( self, 0);
+                if ((( PApplication) application)-> hintUnder == self) v-> self-> set_hintVisible( self, 0);
                 if (( v-> options. optSelectable) && ( v-> selectingButtons & ev. pos. button))
                    apc_widget_set_focused( self);
             }

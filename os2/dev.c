@@ -222,8 +222,8 @@ enscreen( Handle image)
    {
       Handle j = i-> self-> dup( image);
       ((( PImage) j)-> self)->resample( j,
-         ((( PImage) j)-> self)->get_stats( j, isRangeLo),
-         ((( PImage) j)-> self)->get_stats( j, isRangeHi),
+         ((( PImage) j)-> self)-> stats( j, false, isRangeLo, 0),
+         ((( PImage) j)-> self)-> stats( j, false, isRangeHi, 0),
          0, 255
       );
       ((( PImage) j)-> self)->set_type( j, imByte);
