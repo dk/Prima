@@ -1,3 +1,5 @@
+1.15  Add message hooks. Add DirectoryOutline widget. Add tying properties.
+
 1.14  Add system-specific file dialogs. Add Edit::undo.
 
 1.13  Add themes support. Add command-line arguments interface.
