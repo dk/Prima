@@ -47,7 +47,6 @@ Popup_update_sys_handle( Handle self, HV * profile)
    Handle xOwner = pexist( owner) ? pget_H( owner) : var owner;
    if ( var owner && ( xOwner != var owner))
       ((( PWidget) var owner)-> self)-> set_popup( var owner, nilHandle);
-   var anchored = true;
    if ( !pexist( owner)) return;
    if ( !apc_popup_create( self, xOwner))
       croak("RTC0061: Cannot create popup");
