@@ -541,8 +541,14 @@ typedef ListProc *PListProc;
 extern void
 list_create( PList self, int size, int delta);
 
+extern PList
+plist_create( int size, int delta);
+
 extern void
 list_destroy( PList self);
+
+extern void
+plist_destroy( PList self);
 
 extern int
 list_add( PList self, Handle item);
@@ -1451,12 +1457,102 @@ typedef enum {
 #define    imTrigComplex    ((sizeof(float)*8*2)|imGrayScale|imTrigComplexNumber)
 #define    imTrigDComplex   ((sizeof(double)*8*2)|imGrayScale|imTrigComplexNumber)
 
+/* image drivers support */
+
+typedef struct _IMGCapInfo {
+   char *id;
+   /*
+    * Type characters:
+    * i - int
+    * n - double
+    * s - string
+    *
+    * A type character suffixed with asterisks means array.
+    */
+   char *type;
+   char *descr;
+   int size;
+   union {
+      int Int;
+      double Double;
+      char *String;
+
+      int *pInt;
+      double *pDouble;
+      char **pString;
+   } val;
+} ImgCapInfo, *PImgCapInfo;
+
+typedef struct _IMGProperties {
+   char *id;
+   /*
+    * Property types are the same as for capabilities, but with addition of
+    * b - byte.
+    */	
+   char *type;
+   char *descr;
+} ImgProps, *PImgProps;
+
+typedef struct _IMGProperty { /* To be passed for Load/Save related operations. */
+   char *id;
+   int size; /* Size of array if property contains an array. */
+   union {
+      int Int;
+      double Double;
+      char *String;
+      Byte Byte;
+
+      int *pInt;
+      double *pDouble;
+      char **pString;
+      Byte *pByte;
+   } val;
+} ImgProperty, *PImgProperty;
+
+typedef struct _IMGInfo {
+   PList propList;
+} ImgInfo, *PImgInfo;
+
+typedef Bool IMGF_Load( int fd, const char *filename, PList imgInfo);
+typedef IMGF_Load *PIMGF_Load;
+typedef Bool IMGF_Save( const char *filename, PList imgInfo);
+typedef IMGF_Save *PIMGF_Save;
+typedef Bool IMGF_Loadable( int fd, const char *filename, Byte *preread_buf, U32 buf_size);
+typedef IMGF_Loadable *PIMGF_Loadable;
+typedef Bool IMGF_Storable( const char *filename, PList imgInfo);
+typedef IMGF_Storable *PIMGF_Storable;
+typedef Bool IMGF_GetInfo( int fd, const char *filename, PList imgInfo);
+typedef IMGF_GetInfo *PIMGF_GetInfo;
+typedef const char *IMGF_GetErrorMsg( char *errorMsgBuf, int bufLen);
+typedef IMGF_GetErrorMsg *PIMGF_GetErrorMsg;
+
+typedef struct _IMGFormat {
+   char *id;
+   char *descr;
+
+   PImgCapInfo capabilities;
+   PImgProps propertyList;
+   int preread_size;
+
+   PIMGF_Load load;
+   PIMGF_Save save;
+   PIMGF_Loadable is_loadable;
+   PIMGF_Storable is_storable;
+   PIMGF_GetInfo getInfo;
+   PIMGF_GetErrorMsg getError;
+} ImgFormat, *PImgFormat;
+
+extern PList imgFormats;
+
 /* image & bitmaps */
 extern Bool
 apc_image_create( Handle self);
 
 extern void
 apc_image_destroy( Handle self);
+
+extern PImgProperty
+apc_image_add_property( PImgInfo imageInfo, const char *propName, int propArraySize);
 
 extern Bool
 apc_image_begin_paint( Handle self);
@@ -1472,6 +1568,9 @@ apc_image_end_paint_info( Handle self);
 
 extern void
 apc_image_update_change( Handle self);
+
+extern const char *
+apc_image_get_error_message( char *errorMsgBuf, int bufLen);
 
 extern ApiHandle
 apc_image_get_handle( Handle self);
