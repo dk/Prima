@@ -87,6 +87,8 @@ sub load_file
    }
    $o-> status('');
    $o-> update;
+   $o-> update_menu($ret == 1);
+
    return $ret;
 }
 
@@ -240,7 +242,7 @@ sub profile_default
             [ '-goprev'   => '~Previous' => 'prev' ],
             [ '-gonext'   => '~Next' => 'next' ],
           ]
-        ], 
+        ], ['-doc', '~Topics', ''],
         [],
         [ '~Help' => [
            [ '~About' => sub {
@@ -497,6 +499,55 @@ sub update
       my $mark = $t-> make_bookmark( lc $m);
       $self-> menu-> enabled( "go$l", defined $mark);
       $self-> bring($m)-> enabled( defined $mark);
+   }
+}
+
+sub doc_goto
+{
+   my ( $self, $item) = @_;
+   my $topic = $self-> menu-> data( $item);
+   $self-> {text}-> load_link("topic://$topic");
+}
+   
+sub update_menu
+{
+   my ( $self, $loaded_ok) = @_;
+   # update document menu layout
+   my $m = $self-> menu;
+   $m-> remove( $$_[0]) for @{$m-> get_items('doc')};
+   my $t = $self-> {text};
+
+   if ( $loaded_ok && scalar @{$t->{topics}}) {
+      my @array;
+      my $current = \@array;
+      my $level = 0;
+      my @stack;
+      my $id = -1;
+      for ( @{$t-> {topics}}) {
+         $id++;
+         my ( $start, $end, $text, $style, $depth, $offset) = @$_;
+         $depth = $style - Prima::PodView::STYLE_HEAD_1 + $depth;
+	 $text =~ s/([A-Z]<|>)//g;
+      AGAIN: 
+	 if ( $level == $depth) {
+	 } elsif ( $level < $depth) {
+	    my $last = $$current[-1];
+	    $depth = $level, goto AGAIN unless $last;
+	    push @stack, [ $level, $current];
+	    $level = $depth;
+            @$last = (@$last[0,1], $current = [[@$last],[]]);
+	 } elsif ( scalar @stack) {
+	    ($level, $current) = @{pop @stack};
+	 } else {
+	    $level = 0;
+	    $current = \@array;
+	 }
+	 push @$current, [ undef, $text, '', kb::NoKey, \&doc_goto, $id];
+      }
+      $m-> insert( \@array, 'doc', 0);
+      $m-> doc-> enabled(1);
+   } else {
+      $m-> doc-> enabled(0);
    }
 }
 
