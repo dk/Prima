@@ -36,6 +36,7 @@ use constant INSTALLED => 0;
 use constant CALLBACK  => 1;
 use constant PROFILE   => 2;
 use constant MODULE    => 3;
+use constant INSTALL   => 4;
 
 # install implicit property 'theme' selector
 push @Prima::Object::hooks, \&hook;
@@ -95,13 +96,14 @@ sub save_rc
 # register theme
 sub register
 {
-	my ( $file, $theme, $profile, $merger) = @_;
+	my ( $file, $theme, $profile, $merger, $installer) = @_;
 	deregister($_) if $themes{$theme};
 	$themes{$theme} = [ 
-	  0,        # activity flag
-	  $merger,  # merger routine, our own if undef
-	  $profile, # theme profile
-	  $file,    # theme file
+	  0,         # activity flag
+	  $merger,   # merger routine, our own if undef
+	  $profile,  # theme profile
+	  $file,     # theme file
+	  $installer,# installer/uninstaller routine
 	];
 }
 
@@ -152,7 +154,11 @@ sub install
 	for ( @_) {
 		my $theme = $_;
 		next if !exists $themes{$theme} || $themes{$theme}->[INSTALLED];
-		$themes{$theme}->[INSTALLED] = 1;
+		if ( $themes{$theme}->[INSTALL]) {
+		   $themes{$theme}->[INSTALLED] = $themes{$theme}->[INSTALL]->($theme, 1);
+		} else {
+		   $themes{$theme}->[INSTALLED] = 1;
+		}
 	}
 }
 
@@ -162,6 +168,7 @@ sub uninstall
 	for ( @_) {
 		my $theme = $_;
 		next if !exists $themes{$theme} || !$themes{$theme}->[INSTALLED];
+		$themes{$theme}->[INSTALL]->($theme, 0) if $themes{$theme}->[INSTALL];
 		$themes{$theme}->[INSTALLED] = 0;
 	}
 }
@@ -186,6 +193,7 @@ sub execute
 	my ( $instance, $object, $profile, $default) = @_;
 	my $merger = $instance->[CALLBACK] || \&merger; 
 	my $profiles = $instance->[PROFILE];
+	return unless $profiles;
 	my $i;
 	for ( $i = 0; $i < @$profiles; $i += 2) {
 		$merger-> ( $object, $profile, $default, $$profiles[$i+1]) if $object->isa($$profiles[$i]);
@@ -269,7 +277,7 @@ Can be used instead explicit C<use>.
 
 A loaded theme file may register one or more themes.
 
-=item register $FILE, $THEME, $MATCH, $CALLBACK
+=item register $FILE, $THEME, $MATCH, $CALLBACK, $INSTALLER
 
 Registers loaded theme. $THEME is unique string identifier.
 $MATCH is an array of pairs, where first item is class string,
@@ -282,8 +290,14 @@ If $CALLBACK is C<undef>, default C<merger> routine is called,
 which treats the second items of pairs as hashed of same format as
 default and user profiles.
 
-The theme is inactive until C<install> is called. $FILE is used
-to indicate the file in which the theme is stored.
+The theme is inactive until C<install> is called. If $INSTALLER
+subroutine is passed, it is called during install and uninstall,
+with two parameters, theme name and install flag. When install flag 
+is 1, the theme is about to be installed; the subroutine is expected
+to return a boolean success flag. Otherwise, subroutine return value
+is not used.
+
+$FILE is used to indicate the file in which the theme is stored.
 
 =item deregister $THEME
 
