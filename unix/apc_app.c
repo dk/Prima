@@ -124,7 +124,7 @@ Bool
 window_subsystem_init( void)
 {
    /*XXX*/ /* Namely, support for -display host:0.0 etc. */
-   XrmQuark common_quarks_list[16];
+   XrmQuark common_quarks_list[18];
    XrmQuarkList ql = common_quarks_list;
    XGCValues gcv;
    char *common_quarks =
@@ -132,11 +132,13 @@ window_subsystem_init( void)
       "Background.background."
       "Blinkinvisibletime.blinkinvisibletime."
       "Blinkvisibletime.blinkvisibletime."
+      "Clicktimeframe.clicktimeframe."
       "Font.font."
       "Foreground.foreground."
       "Wheeldown.wheeldown."
       "Wheelup.wheelup";
    
+   guts. click_time_frame = 200;
    guts. visible_timeout = 500;
    guts. invisible_timeout = 500;
    guts. insert = true;
@@ -191,6 +193,8 @@ window_subsystem_init( void)
    guts.qblinkinvisibletime = *ql++;
    guts.qBlinkvisibletime = *ql++;
    guts.qblinkvisibletime = *ql++;
+   guts.qClicktimeframe = *ql++;
+   guts.qclicktimeframe = *ql++;
    guts.qFont = *ql++;
    guts.qfont = *ql++;
    guts.qForeground = *ql++;
@@ -352,6 +356,7 @@ apc_application_create( Handle self)
    apc_component_fullname_changed_notify( self);
    guts. mouse_wheel_down = unix_rm_get_int( self, guts.qWheeldown, guts.qwheeldown, 0);
    guts. mouse_wheel_up = unix_rm_get_int( self, guts.qWheelup, guts.qwheelup, 0);
+   guts. click_time_frame = unix_rm_get_int( self, guts.qClicktimeframe, guts.qclicktimeframe, guts. click_time_frame);
    guts. visible_timeout = unix_rm_get_int( self, guts.qBlinkvisibletime, guts.qblinkvisibletime, guts. visible_timeout);
    guts. invisible_timeout = unix_rm_get_int( self, guts.qBlinkinvisibletime, guts.qblinkinvisibletime, guts. invisible_timeout);
 

@@ -40,6 +40,12 @@
 #ifndef Button8
 #define Button8		8
 #endif
+#ifndef Button6Mask
+#define Button6Mask     (1<<13)
+#endif
+#ifndef Button7Mask
+#define Button7Mask     (1<<14)
+#endif
 
 #include <unistd.h>
 #include <string.h>
@@ -148,11 +154,13 @@ typedef struct pending_event
 struct _UnixGuts
 {
    /* Event management */
+   Time                         click_time_frame;
    PHash                        clipboards;
    Atom                         create_event;
    fd_set                       excpt_set;
    PList                        files;
    long                         handled_events;
+   XButtonEvent                 last_button_event;
    Time                         last_time;
    int                          max_fd;
    int                          modal_count;
@@ -191,6 +199,8 @@ struct _UnixGuts
    XrmQuark                     qblinkinvisibletime;
    XrmQuark                     qBlinkvisibletime;
    XrmQuark                     qblinkvisibletime;
+   XrmQuark                     qClicktimeframe;
+   XrmQuark                     qclicktimeframe;
    XrmQuark                     qFont;
    XrmQuark                     qfont;
    XrmQuark                     qForeground;

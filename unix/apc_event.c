@@ -335,6 +335,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       return;
    }
    e. gen. source = self;
+   secondary. gen. source = self;
    XX = X(self);
 
    was_sent = ev-> xany. send_event;
@@ -391,6 +392,13 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if ( bev-> state & ShiftMask)     e.pos.mod |= kmShift;
       if ( bev-> state & ControlMask)   e.pos.mod |= kmCtrl;
       if ( bev-> state & Mod1Mask)      e.pos.mod |= kmAlt;
+      if ( bev-> state & Button1Mask)   e.pos.mod |= mb1;
+      if ( bev-> state & Button2Mask)   e.pos.mod |= mb2;
+      if ( bev-> state & Button3Mask)   e.pos.mod |= mb3;
+      if ( bev-> state & Button4Mask)   e.pos.mod |= mb4;
+      if ( bev-> state & Button5Mask)   e.pos.mod |= mb5;
+      if ( bev-> state & Button6Mask)   e.pos.mod |= mb6;
+      if ( bev-> state & Button7Mask)   e.pos.mod |= mb7;
       if ( e. cmd == cmMouseDown
 	   && (( guts. mouse_wheel_up != 0 && bev-> button == guts. mouse_wheel_up)
 	       || ( guts. mouse_wheel_down != 0 && bev-> button == guts. mouse_wheel_down)))
@@ -405,7 +413,18 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          secondary. gen. B = true;
          secondary. gen. P. x = e. pos. where. x;
          secondary. gen. P. y = e. pos. where. y;
+      } else if ( e. cmd == cmMouseUp &&
+                  guts.last_button_event.type == ButtonPress &&
+                  bev-> window == guts.last_button_event.window &&
+                  bev-> button == guts.last_button_event.button &&
+                  bev-> time - guts.last_button_event.time <= guts.click_time_frame) {
+	 secondary. cmd = cmMouseClick;
+	 secondary. pos. where. x = e. pos. where. x;
+	 secondary. pos. where. y = e. pos. where. y;
+	 secondary. pos. mod = e. pos. mod;
+	 secondary. pos. button = e. pos. button;
       }
+      memcpy( &guts.last_button_event, bev, sizeof(*bev));
       break;
    }
    case ButtonRelease: {
@@ -424,6 +443,13 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if ( ev-> xmotion. state & ShiftMask)     e.pos.mod |= kmShift;
       if ( ev-> xmotion. state & ControlMask)   e.pos.mod |= kmCtrl;
       if ( ev-> xmotion. state & Mod1Mask)      e.pos.mod |= kmAlt;
+      if ( ev-> xmotion. state & Button1Mask)   e.pos.mod |= mb1;
+      if ( ev-> xmotion. state & Button2Mask)   e.pos.mod |= mb2;
+      if ( ev-> xmotion. state & Button3Mask)   e.pos.mod |= mb3;
+      if ( ev-> xmotion. state & Button4Mask)   e.pos.mod |= mb4;
+      if ( ev-> xmotion. state & Button5Mask)   e.pos.mod |= mb5;
+      if ( ev-> xmotion. state & Button6Mask)   e.pos.mod |= mb6;
+      if ( ev-> xmotion. state & Button7Mask)   e.pos.mod |= mb7;
       break;
    }
    case EnterNotify: {
