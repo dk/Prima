@@ -53,7 +53,8 @@ Component_init( Handle self, HV * profile)
    inherited init( self, profile);
    if ( !my-> validate_owner( self, &var-> owner, profile)) {
       var-> stage = csDeadInInit;
-      croak( "Illegal 'owner' reference passed to %s::%s", my-> className, "init");
+      croak( "Illegal 'owner' reference passed to %s::%s%s", my-> className, "init",
+	     application ? "" : ". Probably you forgot to include 'use Prima::Application' in your code. Error");
    }
    if ( var-> owner)
       ((( PComponent) var-> owner)-> self)-> attach( var-> owner, self);
