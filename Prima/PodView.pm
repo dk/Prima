@@ -1277,14 +1277,25 @@ sub print
       # paint
       for ( @blocks) {
          my $b = $_; 
-         $self-> block_draw( $canvas, $b, $indent, $y);
-         while ( $y - $$b[ tb::BLK_HEIGHT] < 0) {
-            goto ABORT if $callback && ! $callback->();
-            $canvas-> new_page;
-            $y += $formatHeight;
+         if ( $y < $$b[ tb::BLK_HEIGHT]) {
+            if ( $$b[ tb::BLK_HEIGHT] < $formatHeight) {
+               goto ABORT if $callback && ! $callback->();
+               $canvas-> new_page;
+               $y = $formatHeight - $$b[ tb::BLK_HEIGHT];
+               $self-> block_draw( $canvas, $b, $indent, $y);
+            } else { 
+               $y -= $$b[ tb::BLK_HEIGHT];
+               while ( $y < 0) {
+                  goto ABORT if $callback && ! $callback->();
+                  $canvas-> new_page;
+                  $self-> block_draw( $canvas, $b, $indent, $y);
+                  $y += $formatHeight;
+               }
+            }
+         } else {
+            $y -= $$b[ tb::BLK_HEIGHT];
             $self-> block_draw( $canvas, $b, $indent, $y);
          }
-         $y -= $$b[ tb::BLK_HEIGHT];
       }
    }
 
