@@ -317,7 +317,7 @@ while ( my ($path, $path_hints) = each %paths) {
 	    my $topic = $_;
 	    s/\s.*$//;
 	    my $link = $_;
-	    print " $prop  $class\:\:$topic => $pod_root/$link\n" if $debug;
+	    print " $d_prop  $class\:\:$topic => $pod_root/$link\n" if $debug;
 	    push @{$all_items{$class}->{$prop}}, [ $topic, $pod_root, $link ]
 	       if defined $prop; # just when debugging
 	    $pods{$class} = $pod_root;
@@ -354,11 +354,12 @@ my @classes;
 
 if ( @want_class) {
    for ( @want_class) {
-      if ( $all_items{$_}) {
+      if ( $all_items{$_} || $descendants{$_} || $ascendants{$_}) {
 	 $header = "$_ - hierarchy";
 	 push @classes, $_;
       } else {
-	 die "No information for `$_'\n";
+	 print "No information for `$_'\n";
+	 exit;
       }
    }
 } else {
