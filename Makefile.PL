@@ -481,7 +481,7 @@ sub cmake
     push @allojects, qd( $ofile);
     my @deps = find_cdeps( $cfile);
     return(
-	   "$ofile: $cfile @deps\n\t" .
+	   "$ofile: Makefile $cfile @deps\n\t" .
 	   join( " ", cc_command_line( $cfile, $ofile, "", 1, 1)) .
 	   "\n\n"
 	  );
@@ -496,7 +496,7 @@ sub clsmake
 	unless defined $classname;
     my $mk = qd( "include/generic/$classname.inc " .
 		 "include/generic/$classname.h " .
-		 "include/generic/$classname.tml") . ": " .
+		 "include/generic/$classname.tml") . ": Makefile " .
 		"$clsfile " . qd( "utils/gencls.pl ");
     push @alltml, qd( "include/generic/$classname.tml");
     push @allclean, (
@@ -567,7 +567,7 @@ print MAKE $make;
 my $CPSCRIPT = quotemake( 'die qq(Even number of parameters expected) unless ( $#ARGV % 2); while ( scalar @ARGV) { ( $src, $dst) = ( shift @ARGV, shift @ARGV); print qq(Installing $src -> $dst\\n); next unless -f $src; die qq(Destination must be a directory) if -e $dst && ! -d $dst; mkpath $dst unless -d $dst; copy( $src, $dst) or die qq(Copy failed: $!); }');
 my $RMSCRIPT = quotemake( 'unlink @ARGV');
 print MAKE <<MAKE;
-$thunks_tinc: @alltml
+$thunks_tinc: Makefile @alltml
 \tperl utils/tmlink.pl -Iinclude/generic -o$thunks_tinc @alltml
 
 RM=$^X -e ${ SHQUOTE}${ RMSCRIPT}${ SHQUOTE}
@@ -575,14 +575,14 @@ RM=$^X -e ${ SHQUOTE}${ RMSCRIPT}${ SHQUOTE}
 clean:
 \t\$(RM) @allclean $PrimaTarget
 
-prima: Makefile dirs $PrimaTarget
+prima: dirs $PrimaTarget
 
 $PrimaTarget: @allojects
 \t${ \eval{ return join ' ', ld_command_line( $PrimaTarget, @allojects)}}
 
 Makefile: Makefile.PL
-\t\@echo Cleaning up...
-\t\@$MAKE clean
+#\t\@echo Cleaning up...
+#\t\@$MAKE clean
 \t\@echo Rebuilding Makefile...
 \t\@$^X Makefile.PL
 \t\@$MAKE
