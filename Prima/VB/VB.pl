@@ -407,6 +407,7 @@ sub enter_widget
    $self-> {current} = $w;
 
    if ( $self-> {current}) {
+      $self-> close_item;
       my %df = %{$_[0]->{default}};
       my $pf = $_[0]->{profile};
       my @ef = sort keys %{$self->{current}-> {events}};
