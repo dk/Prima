@@ -1012,6 +1012,13 @@ apc_widget_map_points( Handle self, Bool toScreen, int count, Point * points)
 }
 
 
+Color
+apc_widget_map_color( Handle self, Color color)
+{
+   if ((color < 0) && (( color & wcMask) == 0)) color |= var widgetClass;
+   return remap_color( NULLHANDLE, color, true); 
+}   
+
 #define need_view_recreate    (( DHANDLE( owner) != sys owner)        \
                              || ( syncPaint != is_apt( aptSyncPaint)) \
                              || ( clipOwner != is_apt( aptClipOwner)) \

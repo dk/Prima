@@ -944,6 +944,7 @@ apc_widget_is_focused
 apc_widget_is_responsive
 apc_widget_is_showing
 apc_widget_is_visible
+apc_widget_map_color
 apc_widget_map_points
 apc_widget_scroll
 apc_widget_set_capture

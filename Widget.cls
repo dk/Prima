@@ -146,6 +146,7 @@ object Prima::Widget( Prima::Drawable)
    method   void     key_event( int command, int code, int key = kbNoKey, int mod = 0, int repeat = 1, Bool post = 0);
    method   Handle   last();
    method   Bool     lock();
+   method   Color    map_color( Color color) => apc_widget_map_color;
    method   void     mouse_event( int command = cmMouseDown, int button = mbLeft, int mod = 0, int x = 0, int y = 0, Bool dblclk = 0, Bool post = 0);
    method   Handle   next();
    import   SV *     notification_types();

@@ -296,6 +296,16 @@ get_standard_color( long class, int index)
    return standard_colors[ cls][ index];
 }
 
+Color
+apc_widget_map_color( Handle self, Color color)
+{
+   if ((color < 0) && (( color & wcMask) == 0)) color |= var widgetClass;
+   if ( color >= 0) return color;
+   /* XXX - remove this -1: */
+   return ( Color) get_standard_color( color, (int)((unsigned long)color & ~(unsigned long)(wcMask|0x80000000))-1);
+}   
+
+
 static PHash globalColors = nil;
 static Colormap globalColormap;
 

@@ -1943,6 +1943,9 @@ apc_widget_is_visible( Handle self);
 extern Bool
 apc_widget_invalidate_rect( Handle self, Rect * rect);
 
+extern Color
+apc_widget_map_color( Handle self, Color color);
+
 extern Bool
 apc_widget_map_points( Handle self, Bool toScreen, int count, Point * points);
 
