@@ -748,9 +748,11 @@ sub profile_check_in
       ( exists $p->{ ownerShowHint} ? $p->{ ownerShowHint} : $default->{ ownerShowHint});
 
    (my $cls = ref $self) =~ s/^Prima:://;
-   unless (exists $p->{backColor}) {
-      my $clr = Prima::Widget::fetch_resource_color( $cls, $name, 'Background', 'backColor', $owner);
-      $p->{backColor} = $clr if $clr != cl::Invalid;
+   for my $back (qw(backColor hiliteBackColor disabledBackColor)) {
+      unless (exists $p->{$back}) {
+         my $clr = Prima::Widget::fetch_resource_color( $cls, $name, 'Background', $back, $owner);
+         $p->{$back} = $clr if $clr != cl::Invalid;
+      }
    }
 
    for ( $owner ? qw( color backColor showHint hint font): ())
