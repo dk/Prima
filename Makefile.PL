@@ -43,9 +43,10 @@ use DynaLoader;
 use Prima::Gencls;
 use vars qw( %make_trans @ovvars $dir_sep $path_sep );
 use vars @ovvars = qw(
-    $CC $CFLAGS $CCCDLFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
+    $CC $CFLAGS $CCCDLFLAGS $CDLFLAGS $C_FLAGS $CDEBUGFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
     $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG $CLINKPREFIX
-    $LD $LDFLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
+    $LD $LDFLAGS $LD_FLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
+    $LIB $LIBFLAGS $LIBOFLAG
     $OBJ_EXT $LIB_EXT $EXE_EXT $DL_EXT $SCRIPT_EXT
     @INCPATH
     @LIBPATH
@@ -96,6 +97,7 @@ use vars qw(
     @headers
     @footers
     @Makefile_deps
+    $PrimaLib
     $PrimaTarget
     @Prima_exports
     $extralibs
@@ -191,7 +193,8 @@ sub ld_command_line
         push @ld, map { "$LDLIBPATHFLAG$_"} @LIBPATH;
         push @ld, "$LDOUTFLAG$dstf", @_;
         push @ld, map { "$LDLIBFLAG$_"} @LIBS;
-        push @ld, qd( "os2/Prima.def") if $COMPILER eq 'emx';
+        push @ld, "os2\\Prima.def" if $OS2;
+        push @ld, "/def:win32\\Prima.def" if $Win32;
     }
     return @ld;
 }
@@ -385,7 +388,7 @@ EOF
         print "yes\n";
     }
     else {
-	$DEFINES{ $defname} = undef;
+        $DEFINES{ $defname} = undef;
         print "no\n";
     }
     return $rc;
@@ -417,10 +420,10 @@ sub setvar
         if ( defined $USER_VARS{ $varname}) {
             eval "\$$varname = \$USER_VARS{ \$varname}";
         }
-	elsif ( defined $USER_VARS_LINKS{ $varname}
-	        && exists $USER_VARS{ $USER_VARS_LINKS{ $varname}->{ src}}) {
-	    eval "\$$varname = sprintf \"$USER_VARS_LINKS{ $varname}->{ format}\", \$$USER_VARS_LINKS{ $varname}->{ src}";
-	}
+        elsif ( defined $USER_VARS_LINKS{ $varname}
+                && exists $USER_VARS{ $USER_VARS_LINKS{ $varname}->{ src}}) {
+            eval "\$$varname = sprintf \"$USER_VARS_LINKS{ $varname}->{ format}\", \$$USER_VARS_LINKS{ $varname}->{ src}";
+        }
         else {
             eval "\$$varname = join( '', \@_)";
         }
@@ -479,7 +482,6 @@ EOF
 
 sub setup_variables
 {
-    #   die "Oops! OS/2 isn't supported!\n" if $^O =~ /os2/i;
     my $platform;
     $NeedX11 = 0;
     if ( $Win32) {              # XXX Correct for NT.
@@ -507,8 +509,12 @@ sub setup_variables
                          ldoutflag => '-o',
                          ldlibpathflag => '-L',
                          ldlibflag => '-l',
+                         ldlibext  => '',
                          lddebugflags => '-g',
                          name => "GNU",
+                         lib  => '',
+                         libflags => '',
+                         liboflag => '',
                         },
                  emx => {
                          warnflags => "-Wall -Werror",
@@ -522,7 +528,11 @@ sub setup_variables
                          ldoutflag => '-o',
                          ldlibpathflag => '-L',
                          ldlibflag => '-l',
+                         ldlibext  => '',
                          lddebugflags => '-g',
+                         lib  => 'emxomf',
+                         libflags => '',
+                         liboflag => '-o',
                          name => "EMX",
                         },
                  msvc => {
@@ -535,10 +545,14 @@ sub setup_variables
                           cdebugflags => '-Zi',
                           ldflags => '',
                           ldoutflag => '/OUT:',
-                          ldlibpathflag => '/DEF:win32/Prima.def /LIBPATH:',
+                          ldlibpathflag => '/LIBPATH:',
                           ldlibflag => '',
+                          ldlibext  => '.lib',
                           lddebugflags => '/DEBUG',
                           name => "Microsoft Visual C++",
+                          lib  => 'lib',
+                          libflags => '-machine:386',
+                          liboflag => '-out:',
                          },
                  bcc32 => {
                            warnflags => "-w0", # Borland is the only compiler which doesn't allow of geting rid of warnings.
@@ -552,7 +566,11 @@ sub setup_variables
                            ldoutflag => '',
                            ldlibpathflag => '-L',
                            ldlibflag => '',
+                           ldlibext  => '',
                            lddebugflags => '-v',
+                           lib  => '',
+                           libflags => '',
+                           liboflag => '',
                            name => "Borland C++",
                           },
                 );
@@ -561,7 +579,6 @@ sub setup_variables
     setvar( 'NULLDEV', $Win32 ? "NUL" : "/dev/null");
 
     setvar( 'CC', $Config{ cc});
-
     print "Determining compiler type... ";
     if ( defined $USER_VARS{ COMPILER}) {
         $COMPILER = $USER_VARS{ COMPILER};
@@ -586,7 +603,8 @@ sub setup_variables
 
     my $ccflags   = $Config{ ccflags};
     my $warnflags = $cc_specs{ $COMPILER}->{ warnflags};
-    my $ldflags = $COMPILER eq 'emx' ? "" : "$Config{ ldflags} ";
+    # my $ldflags = $COMPILER eq 'emx' ? "" : "$Config{ ldflags} ";
+    my $ldflags = "";
     my $lddlflags = $Config{ lddlflags};
     if ( $COMPILER eq 'msvc' && (( $ccflags =~ /TP/) || ($ccflags =~ /O\d/))) { # M$VC++ protection
         $warnflags =~ s/W3/W1/;        # lower warning level
@@ -594,6 +612,7 @@ sub setup_variables
         $ldflags =~ s/(-|\/)nodefaultlib//g;
         $lddlflags =~ s/(-|\/)nodefaultlib//g;
     }
+    setvar( 'C_FLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( $Config{ optimize} || '') . " ");
     setvar( 'CFLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
     setvar( 'CCCDLFLAGS', $Config{ cccdlflags});
     setvar( 'CDLFLAGS', $Config{ ccdlflags});
@@ -605,6 +624,7 @@ sub setup_variables
     setvar( 'CLINKPREFIX', $cc_specs{ $COMPILER}->{ clinkprefix});
     setvar( 'CLIBPATHFLAG', $cc_specs{ $COMPILER}->{ clibpathflag});
     setvar( 'LD', $Config{ ld});
+    setvar( 'LD_FLAGS', "$ldflags $lddlflags $cc_specs{ $COMPILER}->{ ldflags} ");
     setvar( 'LDFLAGS', "$ldflags $lddlflags $cc_specs{ $COMPILER}->{ ldflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ lddebugflags}" : "") . " ");
     setvar( 'LDOUTFLAG', $cc_specs{ $COMPILER}->{ ldoutflag});
     setvar( 'LDLIBPATHFLAG', $cc_specs{ $COMPILER}->{ ldlibpathflag});
@@ -612,6 +632,10 @@ sub setup_variables
     setvar( 'OBJ_EXT', $Config{ _o});
     setvar( 'LIB_EXT', $Config{ _a});
     setvar( 'EXE_EXT', $Config{ _exe});
+    setvar( 'LIB',     $cc_specs{ $COMPILER}->{ lib});
+    setvar( 'LIBFLAGS', $cc_specs{ $COMPILER}->{ libflags});
+    setvar( 'LIBOFLAG', $cc_specs{ $COMPILER}->{ liboflag});
+
     setvar( 'SCRIPT_EXT',
             ( $Win32 ? '.bat' : ( $OS2 ? '.cmd' : '')));
     setvar( 'DL_EXT', "." . $Config{ dlext});
@@ -638,7 +662,7 @@ sub setup_variables
     #    push ( @libs, 'pmprintf') if $OS2 && defined $ENV{PRIMA_PMPRINTF};
     push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
     if ( $useGC) {
-	push @libs, 'leak';
+        push @libs, 'leak';
     }
     setvar( 'LIBS', ());
     my @flibs;
@@ -660,16 +684,15 @@ sub setup_variables
                 PERL_POLLUTE => 1,
                );
     if ( env_true( 'PRIMA_PARANOID_MALLOC')) {
-	$DEFINES{ PARANOID_MALLOC} = 1;
+        $DEFINES{ PARANOID_MALLOC} = 1;
     }
     if ( $useGC) {
-	$DEFINES{ USE_GC} = 1;
+        $DEFINES{ USE_GC} = 1;
     }
     while ( $CFLAGS =~ s/-D(\w+)(?:=(\S+))?\s*//) {
         my ( $defname, $defvalue) = ( $1, $2 || 1);
         $DEFINES{ $defname} = $defvalue;
     }
-
     setvar( 'PREFIX', $Config{ installsitearch});
     setvar( 'INSTALL_BIN', $Config{ installbin});
     setvar( 'INSTALL_LIB', $PREFIX . qd( "/Prima"));
@@ -689,6 +712,7 @@ sub setup_variables
     setvar( 'SHQUOTE', $Win32 ? '"' : "'");
     $OS2DLLF = 'Prima';
     $OS2DLLF = &DynaLoader::mod2fname([$OS2DLLF]) if $OS2 && defined &DynaLoader::mod2fname;
+    $PrimaLib    = qd( "auto/Prima/Prima$LIB_EXT");
     $PrimaTarget = qd( "auto/Prima/$OS2DLLF$DL_EXT");
     $extralibs = '';
     $extralibs = qd("auto/Prima/Prima.lib") if $OS2;
@@ -740,7 +764,7 @@ apc_dbm_destroy
 apc_dbm_get_handle
 apc_deregister_event
 apc_deregister_hook
-apc_dlopen
+apc_dl_export
 apc_fetch_resource
 apc_file_attach
 apc_file_change_mask
@@ -966,7 +990,7 @@ clean_perl_call_method
 clean_perl_call_pv
 create_mate
 create_object
-ctx_remap_def 
+ctx_remap_def
 cv_call_perl
 debug_write
 duplicate_string
@@ -999,7 +1023,6 @@ prima_hash_destroy
 prima_hash_fetch
 prima_hash_first_that
 prima_hash_store
-prima_mallocz
 prima_normalize_resource_string
 protect_object
 push_hv
@@ -1076,7 +1099,7 @@ sub setup_defines
         }
     }
     if ( $useGC) {
-	have_header( 'gc.h');
+        have_header( 'gc.h');
     }
 
     have_funcs_in( 'string.h', 'strcasecmp') || have_funcs_in( 'strings.h', 'stricmp');
@@ -1299,7 +1322,7 @@ sub clsmake
     my $mk = qd( "include/generic/$classname.h"
                ) . ": Makefile " .
                    "$clsfile " . qd( "utils/gencls.pl ") .
-		   qd( "Prima/Gencls.pm ");
+                   qd( "Prima/Gencls.pm ");
     push @alltml, qd( "include/generic/$classname.tml");
     push @alltmldeps, qd( "include/generic/$classname.h");
     push @allclean, (
@@ -1313,6 +1336,98 @@ sub clsmake
     print "\n";
     $mk .= "\n\t$^X utils/gencls.pl " .
         "--inc --h --tml $clsfile include/generic\n\n";
+}
+
+sub qqd
+{
+    my ( $path_str) = @_;
+    $path_str =~ s[/][$dir_sep]g;
+    $path_str =~ s[\\][\\\\]g;
+    return $path_str;
+}
+
+sub create_config_pm
+{
+   my $_cwd = cwd;
+   my $cwd = qqd($_cwd);
+   my $ifs = $Win32 ? '\\\\' : '/';
+   my $ipp = qqd( $Config{installarchlib} . "/CORE");
+   my @cdefs = ('HAVE_CONFIG_H=1');
+   my $cdefs = join( ',', map {"'$_'"} @cdefs);
+   my $lddef = ( $COMPILER eq 'msvc') ? '/def:' : '',
+   my @libpath = @LIBPATH;
+   my @libs = @LIBS;
+   my $perllib = pop @libs;
+   if ( $perllib =~ m[^(.*)\/([^/]*)$]) {
+      my $pfile = $2;
+      push @libpath, $1;
+      $pfile =~ s/$LIB_EXT$//;
+      push @libs,  $pfile;
+   } else {
+      push @libs, $perllib;
+   }
+   push @libpath, "$_cwd/auto/Prima";
+   push @libs, 'Prima' . $cc_specs{$COMPILER}->{ldlibext};
+   my $libpath = qqd(join( ',', map {"'$_'"} @libpath));
+   my $libs    = qqd(join( ',', map {"'$_'"} @libs));
+   my $perl    = qqd($^X);
+   my $pl = qqd( $PrimaLib);
+   my $pt = qqd( $PrimaTarget);
+
+   open F, "> Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
+   print F <<HEADER;
+# This file was automatically generated.
+# Do not edit, you'll loose your changes anyway.
+package Prima::Config;
+use vars qw(%Config);
+
+%Config = (
+HEADER
+   print F <<BODY;
+  ifs                   => '$ifs',
+  quote                 => '\\$SHQUOTE',
+  platform              => '$PLATFORM',
+  compiler              => '$COMPILER',
+  incpaths              => [ \'$cwd${ifs}include\', \'$cwd${ifs}include${ifs}generic\', \'$ipp\'],
+  platform_path         => '$cwd${ifs}$PLATFORM',
+  gencls                => '\\$SHQUOTE$perl\\$SHQUOTE $cwd${ifs}utils${ifs}gencls.pl',
+  tmlink                => '\\$SHQUOTE$perl\\$SHQUOTE $cwd${ifs}utils${ifs}tmlink.pl',
+  scriptext             => '$SCRIPT_EXT',
+  genclsoptions         => '--tml --h --inc',
+  cc                    => '$CC',
+  cflags                => '-c $C_FLAGS',
+  cdebugflags           => '$cc_specs{$COMPILER}->{cdebugflags}',
+  cincflag              => '$CINCPATHFLAG',
+  cobjflag              => '$COUTOFLAG',
+  cdefflag              => '$CDEFFLAG',
+  cdefs                 => [$cdefs],
+  objext                => '$OBJ_EXT',
+  lib                   => '$LIB',
+  libflags              => '$LIBFLAGS',
+  liboutflag            => '$LIBOFLAG',
+  libext                => '$LIB_EXT',
+  libname               => '$cwd${ifs}$pl',
+  dlname                => '$cwd${ifs}$pt',
+  dlext                 => '$DL_EXT',
+  ld                    => '$LD',
+  ldflags               => '$LD_FLAGS',
+  lddefflag             => '$lddef',
+  lddebugflags          => '$cc_specs{$COMPILER}->{lddebugflags}',
+  ldoutflag             => '$LDOUTFLAG',
+  ldlibflag             => '$LDLIBFLAG',
+  ldlibpathflag         => '$LDLIBPATHFLAG',
+  ldpaths               => [$libpath],
+  ldlibs                => [$libs],
+  ldlibext              =>'$cc_specs{$COMPILER}->{ldlibext}',
+  perl                  => 'perl',
+BODY
+
+print F <<FOOTER;
+);
+
+1;
+FOOTER
+   close F;
 }
 
 #
@@ -1398,7 +1513,50 @@ elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--rm') {
     shift @ARGV;
     unlink @ARGV;
 }
-else {
+elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--updateconfig') {
+   shift @ARGV;
+   my ( $from, $fn) = ( quotemeta(shift @ARGV), shift @ARGV);
+   my $ifs = $Win32 ? '\\\\' : '/';
+   my $ipp = $Config{installarchlib} . qd( "/CORE");
+   $SCRIPT_EXT = ( $Win32 ? '.bat' : ( $OS2 ? '.cmd' : ''));
+
+   open F, $fn or die "cannot open $fn:$!\n";
+   open FF, "> $fn.tmp" or die "cannot open $fn.tmp:$!\n";
+   print FF <<HEADER;
+# This file was automatically generated.
+package Prima::Config;
+use vars qw(%Config);
+
+%Config = (
+HEADER
+   while ( <F>) {
+      next unless (m/^\%Config/ .. m/\)\;$/);
+      next if (m/^\%Config/ || m/\)\;$/);
+      next if m/^\s*(incpaths|gencls|tmlink)/;
+      if ( m/^\s*dlname/) {
+         s/$from/$ipp/;
+      } elsif ( m/^\s*libname/) {
+         s[$from\/auto\/Prima][$ipp];
+      } if ( m/^\s*ldpaths/) {
+         s[,\s*\'$from\/auto\/Prima\'][];
+      }
+      print FF $_;
+   }
+   print FF <<SUBST;
+  incpaths              => '[\'$ipp\']',
+  gencls                => '$Config{installbin}${ifs}gencls$SCRIPT_EXT',
+  tmlink                => '$Config{installbin}${ifs}tmlink$SCRIPT_EXT',
+SUBST
+print FF <<FOOTER;
+);
+
+1;
+FOOTER
+   close FF;
+   close F;
+   unlink $fn;
+   rename "$fn.tmp", $fn;
+} else {
     $CWD = cwd;
 
     die "This script should be launched from Prima root directory\n"
@@ -1408,10 +1566,10 @@ else {
 
     print "Setting up working environment.\n";
     %USER_VARS_LINKS = (
-	INSTALL_BIN => {
-	    src => 'PREFIX',
-	    format => '%s/bin',
-	},
+        INSTALL_BIN => {
+            src => 'PREFIX',
+            format => '%s/bin',
+        },
     );
     process_commandline;
     setup_variables;
@@ -1442,6 +1600,10 @@ EOF
     push @allinstall, $config_h => $INSTALL_LIB . qd( "/CORE/generic");
 
     push @alldirs, qd( "include/generic"), qd( "auto/Prima");
+
+    print "Creating Prima::Config.pm\n";
+    create_config_pm;
+    #exit;
 
     my $make = <<EOF;
 # Makefile for Prima project under $Config{archname}
@@ -1509,6 +1671,13 @@ EOF
     my $srcdist_files = 'Makefile.PL *.c *.cls Prima.pm examples img include os2 prigraph Prima test unix utils win32';
     my $distname = 'Prima-1.00';
 
+    if ( $OS2) {
+       print MAKE <<OS2D;
+$extralibs:
+\temximp -o $extralibs os2\\Prima.def
+OS2D
+    }
+
     print MAKE <<EOF;
 $thunks_tinc: Makefile @alltmldeps
 \t$^X utils/tmlink.pl -Iinclude/generic -o$thunks_tinc @alltml
@@ -1558,21 +1727,10 @@ CPBIN=$^X Makefile.PL --cpbin
 install: all
 \t\@\$(CP) \\
 \t$PrimaTarget $INSTALL_DL \\
+\t$PrimaLib    $PREFIX \\
 EOF
-    if ( $Win32) {
-       my $libt = $PrimaTarget;
-       if ( $libt =~ s/\.dll$/.lib/i) {
-          $make .= "\t$libt $PREFIX \\\n";   
-       }
-    }
-    if ( $OS2) {
-       $make .= <<OS2D;
-$extralibs:
-\temximp -o $extralibs os2\\Prima\\Prima.def
-OS2D
-    }
-
     my ( $instcnt, $maxcnt) = ( 1, 20);
+    my $cwd = cwd();
     finddepth(
               sub
               {
@@ -1626,7 +1784,9 @@ OS2D
         $dst = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
         print MAKE " \\\n\t$src $dst"
     }
-    print MAKE "\n";
+    print MAKE "\\\n";
+    print MAKE "\t\@echo Updating config...\\\n";
+    print MAKE "\t$^X Makefile.PL --updateconfig $cwd $PREFIX/Prima/Config.pm\n";
 
     print MAKE <<EOF;
 
