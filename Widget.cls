@@ -162,7 +162,7 @@ object Widget( Drawable)
    method   void     set_bottom( int bottom);
    method   void     set_brief_keys( Bool briefKeys);
    method   void     set_buffered( Bool buffered);
-   method   void     set_capture( Bool capture);
+   method   void     set_capture( Bool capture, Handle confineTo = nilHandle);
    method   void     set_centered( Bool x, Bool y);
    import   void     set_clip_owner( Bool clipOwner);
    method   void     set_clip_rect( Rect clipRect);
