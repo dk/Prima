@@ -235,9 +235,7 @@ sub rundir
          rundir( $ff);
       } elsif ( -f $ff) {
          next unless $_ =~ /.t$/;
-         if ( defined $filter) {
-            next if lc( $filter) ne lc($_);
-         }
+         next if defined($filter) && $ff !~ /$filter$/;
          runfile( $ff);
       }
    }
