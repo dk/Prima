@@ -2688,8 +2688,8 @@ apc_gp_get_line_end( Handle self);
 extern int
 apc_gp_get_line_width( Handle self);
 
-extern char *
-apc_gp_get_line_pattern( Handle self, int * len);
+extern int
+apc_gp_get_line_pattern( Handle self, char * buffer);
 
 extern Color
 apc_gp_get_nearest_color( Handle self, Color color);

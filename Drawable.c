@@ -193,6 +193,7 @@ Drawable_set_line_pattern( Handle self, SV * pattern)
    int len;
    char *pat = ( char *) SvPV( pattern, len);
    if ( var->stage > csNormal) return false;
+   if ( len > 255) len = 255;
    return apc_gp_set_line_pattern( self, pat, len);
 }
 
@@ -327,10 +328,10 @@ Drawable_get_bpp( Handle self)
 SV *
 Drawable_get_line_pattern( Handle self)
 {
-   char * ret;
+   char ret[ 256];
    int len;
    if ( var->stage > csNormal) return nilSV;
-   ret = apc_gp_get_line_pattern( self, &len);
+   len = apc_gp_get_line_pattern( self, ret);
    return newSVpvn( ret, len);
 }
 

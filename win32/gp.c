@@ -1074,44 +1074,43 @@ apc_gp_get_line_width( Handle self)
    return sys stylus. pen. lopnWidth. x;
 }
 
-char *
-apc_gp_get_line_pattern( Handle self, int * len)
+int
+apc_gp_get_line_pattern( Handle self, char * buffer)
 {
-   objCheck nil;
+   objCheck 0;
    if ( !sys ps) {
-      *len = sys linePatternLen;
-      return ( *len > 3) ? sys linePattern : ( char*)&sys linePattern;
+      strcpy( buffer, ( sys linePatternLen > 3) ? sys linePattern : ( char*)&sys linePattern);
+      return sys linePatternLen;
    }
 
    switch ( sys stylus. pen. lopnStyle) {
    case PS_NULL:
-       *len = 0;
-       return "";
+       strcpy( buffer, "");
+       return 0;
    case PS_DASH:
-       *len = 2;
-       return psDash;
+       strcpy( buffer, psDash);
+       return 2;
    case PS_DOT:
-       *len = 2;
-       return psDot;
+       strcpy( buffer, psDot);
+       return 2;
    case PS_DASHDOT:
-       *len = 4;
-       return psDashDot;
+       strcpy( buffer, psDashDot);
+       return 4;
    case PS_DASHDOTDOT:
-       *len = 6;
-       return psDashDotDot;
+       strcpy( buffer, psDashDotDot);
+       return 6;
    case PS_USERSTYLE:
        {
           int i;
-          static char buf[ 256];
-          *len = sys stylus. extPen. patResource-> dotsCount;
-          if ( *len > 255) *len = 255;
-          for ( i = 0; i < *len; i++)
-             buf[ i] = sys stylus. extPen. patResource-> dots[ i];
-          return buf;
+          int len = sys stylus. extPen. patResource-> dotsCount;
+          if ( len > 255) len = 255;
+          for ( i = 0; i < len; i++)
+             buffer[ i] = sys stylus. extPen. patResource-> dots[ i];
+          return len;
        }
    default:
-       *len = 1;
-       return "\1";
+       strcpy( buffer, "\1");
+       return 1;
    }
 }
 
