@@ -259,7 +259,7 @@ bc_nibble_mono_cr( register Byte * source, register Byte * dest, register int co
       c = *source++;  d  = ( colorref[ c & 0xF] << 6) | ( colorref[ c >> 4] << 7);
       c = *source++;  d |= ( colorref[ c & 0xF] << 4) | ( colorref[ c >> 4] << 5);
       c = *source++;  d |= ( colorref[ c & 0xF] << 2) | ( colorref[ c >> 4] << 3);
-      c = *source++;  *dest++ = d | ( colorref[ c & 0xF] << 1) | colorref[ c >> 4];
+      c = *source++;  *dest++ = d | colorref[ c & 0xF] |( colorref[ c >> 4] << 1);
    }
    count &= 7;
    if ( count)

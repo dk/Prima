@@ -327,7 +327,10 @@ NOSCALE:
          /* change 0/1 to 0x000/0xfff for correct masking */
          int sz   = PImage( dest)-> dataSize;
          Byte * d = PImage( dest)-> data;
-         while ( sz--) *(d++) = (*d) ? 0xff : 0x00;
+         while ( sz--) {
+            *d = (*d) ? 0xff : 0x00;
+            d++;
+         }
          PImage( dest)-> palette[255].r = PImage( dest)-> palette[255].g = 
             PImage( dest)-> palette[255].b = 0xff;
       }
@@ -351,7 +354,10 @@ NOSCALE:
          /* change 0/1 to 0x000/0xfff for correct masking */
          int sz   = PImage( src)-> dataSize;
          Byte * d = PImage( src)-> data;
-         while ( sz--) *(d++) = (*d) ? 0xff : 0x00;
+         while ( sz--) {
+            *d = (*d) ? 0xff : 0x00;
+            d++;
+         }
          PImage( src)-> palette[255].r = PImage( src)-> palette[255].g = 
             PImage( src)-> palette[255].b = 0xff;
       }
@@ -371,7 +377,10 @@ NOSCALE:
          PImage( dest)-> palette, PImage( dest)-> palSize,
          colorref);
       s = PImage( src)-> data;
-      while ( i--) *(s++) = colorref[ *s];
+      while ( i--) {
+         *s = colorref[ *s];
+         s++;
+      }
    }
 
    if ( dstX < 0 || dstY < 0 || dstX + dstW >= dstSz. x || dstY + dstH >= dstSz. y) {
