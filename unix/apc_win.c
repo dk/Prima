@@ -125,8 +125,14 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    prima_send_create_event( X_WINDOW);
 
    // setting initial size
-   XX-> size. x = DisplayWidth( DISP, SCREEN) / 3;
-   XX-> size. y = DisplayHeight( DISP, SCREEN) / 3;
+   XX-> size = guts. displaySize;
+   if ( window_state != wsMaximized) {
+      XX-> zoomRect. right = XX-> size. x;
+      XX-> zoomRect. top   = XX-> size. y;
+      XX-> size. x /= 3;
+      XX-> size. y /= 3;
+   } else
+      XX-> flags. zoomed = 1;
    XX-> origin = ( Point) {0,0};
    
    bzero( &hints, sizeof( XSizeHints));
@@ -144,10 +150,8 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 Bool
 apc_window_activate( Handle self)
 {
-   XWindow frame;
    if ( X(self)-> flags. iconic || X(self)-> flags. withdrawn) return true;
-   frame = prima_find_frame_window( PWidget( self)-> handle);
-   if ( frame) XRaiseWindow( DISP, frame);
+   XRaiseWindow( DISP, X_WINDOW);
    apc_application_yield();
    XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
    XCHECKPOINT;
@@ -212,7 +216,8 @@ apc_window_get_icon( Handle self, Handle icon)
 int
 apc_window_get_window_state( Handle self)
 {
-   return X(self)-> flags. iconic ? wsMinimized : wsNormal;
+   return (X(self)-> flags. iconic != 0) ? wsMinimized :
+     ((X(self)-> flags. zoomed != 0) ? wsMaximized : wsNormal);
 }
 
 Bool
@@ -226,6 +231,7 @@ Bool
 apc_window_set_caption( Handle self, const char *caption)
 {
    XStoreName( DISP, X_WINDOW, caption);
+   XSetIconName( DISP, X_WINDOW, caption);
    return true;
 }
 
@@ -351,27 +357,73 @@ apc_window_set_icon( Handle self, Handle icon)
    return true;
 }
 
+static void
+apc_widget_set_rect( Handle self, int x, int y, int szx, int szy)
+{
+    XSizeHints hints;
+    hints. flags = USPosition | USSize;
+    hints. x = x;
+    hints. y = y;
+    hints. width  = szx;
+    hints. height = szy;
+    XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, hints. width, hints. height);
+    XSetWMNormalHints( DISP, X_WINDOW, &hints);
+}   
+
 Bool
 apc_window_set_window_state( Handle self, int state)
 {
    DEFXX;
+   Event e;
    XWMHints * wh;
-   if ( state == wsMaximized) return false; /* XXX */
-   if ( state != wsMinimized && state != wsNormal) return false; 
+   if ( state != wsMinimized && state != wsNormal && state != wsMaximized) return false; 
+
+   switch ( state) {
+   case wsMinimized:
+       if ( XX-> flags. iconic) return false;
+       break;
+   case wsMaximized:
+       break;
+   case wsNormal:
+       if ( !XX-> flags. iconic && !XX-> flags. zoomed) return false;
+       break;
+   default:
+       return false;
+   }   
+   
    wh = XGetWMHints( DISP, X_WINDOW);
    if ( !wh) {
       warn("Error querying XGetWMHints");
       return false;
    }
-   if ( !XX-> flags. withdrawn) {
-      if ( state == wsNormal)
-         XMapWindow( DISP, X_WINDOW);
-      else
-         XIconifyWindow( DISP, X_WINDOW, SCREEN);
-      XSync( DISP, false);
+   
+   if ( state == wsMaximized && !XX-> flags. zoomed) {
+      XX-> zoomRect = ( Rect) {XX-> origin.x, XX-> origin.y, XX-> size.x, XX-> size.y};
+      XX-> flags. zoomed = 1;
+      apc_widget_set_rect( self, 0, 0, guts. displaySize.x, guts. displaySize.y);
    }
-   XX-> flags. iconic = ( state == wsNormal) ? 0 : 1;
+
+   if ( !XX-> flags. withdrawn) {
+      if ( state == wsMinimized)
+         XIconifyWindow( DISP, X_WINDOW, SCREEN);
+      else {
+         XMapWindow( DISP, X_WINDOW);
+      }   
+   }     
+   XX-> flags. iconic = ( state == wsMinimized) ? 1 : 0;
+   
+   if ( XX-> flags. zoomed && state != wsMaximized) {
+      XX-> flags. zoomed = 0;
+      apc_widget_set_rect( self, XX-> zoomRect. left, XX-> zoomRect. bottom, 
+         XX-> zoomRect. right, XX-> zoomRect. top);
+   }   
    XFree( wh); 
+   
+   bzero( &e, sizeof(e));
+   e. gen. source = self;
+   e. cmd = cmWindowState;
+   e. gen. i = state;
+   apc_message( self, &e, false);
    return true;
 }
 
@@ -379,10 +431,10 @@ static Bool
 window_start_modal( Handle self, Bool shared, Handle insert_before)
 {
    DEFXX;
-
    if (( XX-> preexec_focus = apc_widget_get_focused()))
       protect_object( XX-> preexec_focus);
    CWindow( self)-> exec_enter_proc( self, shared, insert_before);
+   XSetTransientForHint( DISP, X_WINDOW, PWindow(PWindow(self)-> owner)-> handle);
    apc_widget_set_enabled( self, true);
    apc_widget_set_visible( self, true);
    apc_window_activate( self);
@@ -421,6 +473,7 @@ apc_window_end_modal( Handle self)
    Handle modal, oldfoc;
    DEFXX;
    XX-> flags.modal = false;
+   XSetTransientForHint( DISP, X_WINDOW, nilHandle);
    CWindow( self)-> exec_leave_proc( self);
    apc_widget_set_visible( self, false);
    if ( application) {

@@ -235,9 +235,11 @@ window_subsystem_init( void)
 
    /* XXX - return code? */
    guts. root = RootWindow( DISP, SCREEN);
+   guts. displaySize. x = DisplayWidth( DISP, SCREEN);
+   guts. displaySize. y = DisplayHeight( DISP, SCREEN);
    XQueryBestCursor( DISP, guts. root,
-		     DisplayWidth( DISP, SCREEN),     /* :-) */
-		     DisplayHeight( DISP, SCREEN),
+		     guts. displaySize. x,     /* :-) */
+		     guts. displaySize. y,
 		     &guts. cursor_width,
 		     &guts. cursor_height);
    XCHECKPOINT;
@@ -251,7 +253,7 @@ window_subsystem_init( void)
    guts. menu_windows = hash_create();
    guts. ximages = hash_create();
    guts. menugc = XCreateGC( DISP, guts. root, 0, &gcv);
-   guts. resolution. x = 25.4 * DisplayWidth( DISP, SCREEN) / DisplayWidthMM( DISP, SCREEN);
+   guts. resolution. x = 25.4 * guts. displaySize. x / DisplayWidthMM( DISP, SCREEN);
    guts. resolution. y = 25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN);
    guts. depth = DefaultDepth( DISP, SCREEN);
    guts. idepth = get_idepth();
@@ -495,10 +497,7 @@ apc_application_get_os_info( char *system, int slen,
 Point
 apc_application_get_size( Handle self)
 {
-   return (Point){
-      DisplayWidth( DISP, SCREEN),
-      DisplayHeight( DISP, SCREEN)
-   };
+   return guts. displaySize;
 }
 
 typedef struct {
@@ -537,7 +536,6 @@ static void
 perform_pending_paints( void)
 {
    PDrawableSysData selfxx, next;
-   int stage = csConstructing;
 
    for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
       next = TAILQ_NEXT( XX, paintq_link);

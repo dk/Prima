@@ -607,7 +607,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       }
       
       if ( guts. focused) prima_no_cursor( guts. focused);
-      guts. focused = nilHandle;
+      if ( self == guts. focused) guts. focused = nilHandle;
       e. cmd = cmReleaseFocus;
       break;
    }
@@ -650,14 +650,28 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case UnmapNotify: {
       XX-> flags. mapped = false;
-      if ( XX-> type. window) 
+      if ( XX-> type. window) {
          e. cmd = cmHide;
+         if ( !XX-> flags. iconic) {
+            secondary. cmd = cmWindowState;
+            secondary. gen. i = wsMinimized;
+            XX-> flags. iconic = 1;
+         }   
+      }   
       break;
    }
    case MapNotify: {
       XX-> flags. mapped = true;
-      if ( XX-> type. window)
+      if ( XX-> type. window) {
          e. cmd = cmShow;
+         if ( XX-> flags. iconic) {
+            secondary. cmd = cmWindowState;
+            secondary. gen. i = XX-> flags. zoomed ? wsMaximized : wsNormal;
+            XX-> flags. iconic = 0;
+         }   
+         if ( XX-> flags. withdrawn)
+            XX-> flags. withdrawn = 0;
+      }   
       break;
    }
    case MapRequest: {
@@ -674,7 +688,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    case ConfigureNotify: {
       XConfigureEvent *cev = &ev-> xconfigure;
       Bool size_changed, pos_changed;
-      Point old_size;
+      Point old_size, old_pos;
 
       if ( cev-> above != XX-> above) {
 	 /* z-order notification */
@@ -686,16 +700,17 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if ( !XX-> flags. process_configure_notify)
 	 return;
 
-      if ( XX-> real_parent != XX-> parent && !was_sent) {
+      /* if ( XX-> real_parent != XX-> parent && !was_sent) {
 	 XWindow cld;
 	 XTranslateCoordinates( DISP, XX-> real_parent, XX-> parent,
             cev-> x, cev-> y, &cev-> x, &cev-> y, &cld);
 	 XCHECKPOINT;
-      }
+      } */
       size_changed = ( cev-> width != XX-> size. x) || ( cev-> height != XX-> size. y);
       pos_changed  = ( cev-> x != XX-> origin. x) || 
                      ( XX-> origin. y != X(XX-> owner)-> size. y - XX-> size. y - cev-> y);
       old_size  = XX-> size;
+      old_pos   = XX-> origin;
       XX-> size   = ( Point) { cev-> width, cev-> height};
       XX-> origin = ( Point) { cev-> x, X(XX-> owner)-> size. y - XX-> size. y - cev-> y };
       
@@ -710,6 +725,27 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          prima_send_cmSize( self, old_size);
          if ( PObject( self)-> stage == csDead) return; 
       }
+
+      if ( size_changed && XX-> flags. want_visible) {
+         int qx = guts. displaySize.x * 3 / 4, qy = guts. displaySize.y * 3 / 4;
+         if ( !XX-> flags. zoomed) {
+            if ( XX-> size. x > qx && XX-> size. y > qy) {
+               e. cmd = cmWindowState;
+               e. gen. i = wsMaximized;
+               XX-> zoomRect = (Rect){old_pos.x, old_pos.y, old_size.x, old_size.y};
+               XX-> flags. zoomed = 1;
+            }   
+         } else {
+            if ( old_size.x > XX-> size.x && old_size.y > XX-> size.y) {
+               e. cmd = cmWindowState;
+               e. gen. i = wsNormal;
+               XX-> flags. zoomed = 0;
+            } else  
+               XX-> zoomRect = (Rect){XX-> origin.x, XX-> origin.y, XX-> size.x, XX-> size.y};
+         }   
+         if ( e. cmd) CComponent( self)-> message( self, &e);
+         if ( PObject( self)-> stage == csDead) return; 
+      }   
       return;
    }
    case ConfigureRequest: {

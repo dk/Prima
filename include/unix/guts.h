@@ -356,6 +356,7 @@ struct _UnixGuts
    XWindow                      grab_redirect;
    Point                        grab_translate_mouse;
    XWindow                      root;
+   Point                        displaySize;
 } guts;
 
 #define FXA_RESOLUTION_X guts. fxa_resolution_x
@@ -434,6 +435,7 @@ typedef struct _drawable_sys_data
    XWindow real_parent; /* top levels */
    XWindow parentHandle; /* top levels */
    XWindow above;
+   Rect zoomRect;
    XGCValues gcv;
    GC gc;
    GCList *gcl;
@@ -485,6 +487,7 @@ typedef struct _drawable_sys_data
       int want_visible                  : 1;
       int withdrawn                     : 1;
       int zero_line             	: 1;
+      int zoomed                        : 1;
    } flags;
    ImageCache bitmap_cache;
    ImageCache screen_cache;

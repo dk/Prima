@@ -936,10 +936,13 @@ apc_widget_set_visible( Handle self, Bool show)
    XX-> flags. want_visible = show;
    if ( !XX-> flags. falsely_hidden) {
       if ( show) {
+         Bool iconic = XX-> flags. iconic;
          if ( XX-> type. window && XX-> flags. withdrawn) {
             XWMHints * wh = XGetWMHints( DISP, X_WINDOW);
             if ( wh) {
-               wh-> initial_state = XX-> flags. iconic ? IconicState : NormalState;
+               wh-> initial_state = iconic ? IconicState : NormalState;
+               wh-> input = false;
+               wh-> flags = InputHint | StateHint;
                XSetWMHints( DISP, X_WINDOW, wh);
                XFree( wh); 
             } else 
@@ -948,10 +951,7 @@ apc_widget_set_visible( Handle self, Bool show)
             XSync( DISP, false);
          }   
          XMapWindow( DISP, X_WINDOW);
-         if ( XX-> type. window && XX-> flags. iconic) { 
-            XIconifyWindow( DISP, X_WINDOW, SCREEN);
-            XSync( DISP, false);
-         }   
+         XX-> flags. iconic = iconic;
       } else {
          if ( XX-> type. window && XX-> flags. iconic) {
             XWithdrawWindow( DISP, X_WINDOW, SCREEN);

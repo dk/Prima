@@ -747,12 +747,12 @@ apc_pointer_get_visible( Handle self)
 Bool
 apc_pointer_set_pos( Handle self, int x, int y)
 {
-   int ax = DisplayWidth( DISP, SCREEN);
-   int ay = DisplayHeight( DISP, SCREEN);
    if ( !XWarpPointer( DISP, None, guts. root, 
-      0, 0, ax, ay, x, ay - y - 1))
+      0, 0, guts. displaySize.x, guts. displaySize.y, x, guts. displaySize.y - y - 1))
       return false;
    XCHECKPOINT;
+   XSync( DISP, false);
+   prima_one_loop_round( false, true);
    return true;   
 }
 
@@ -1698,14 +1698,17 @@ apc_system_action( const char *s)
              prima_get_frame_info( self, &r) &&
              snprintf( buf, sizeof(buf), "%d %d %d %d", r.left, r.bottom, r.right, r.top) < sizeof(buf))
             return duplicate_string( buf);
+         return duplicate_string("");
       }
       break;
    case 's':
-      if ( strcmp( "synchronize", s)) {
+      if ( strcmp( "synchronize", s) == 0) {
          XSynchronize( DISP, true);
+         return nil;
       }   
       break;
    }
+   warn("Unknow sysaction:%s", s);
    return nil;
 }
 
