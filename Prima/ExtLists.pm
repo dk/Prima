@@ -28,6 +28,7 @@
 # contains:
 #   CheckList
 
+use strict;
 use Prima::Const;
 use Prima::Classes;
 use Prima::Lists;
@@ -197,7 +198,7 @@ sub on_mouseclick
    return if $foc < 0;
    my $f = vec( $self-> {vector}, $foc, 1) ? 0 : 1;
    vec( $self-> {vector}, $foc, 1) = $f;
-   $self-> notify(q(Change), $index, $f);
+   $self-> notify(q(Change), $foc, $f);
    $self-> invalidate_rect( $self-> item2rect( $foc));
 }
 
@@ -208,8 +209,8 @@ sub on_click
    return if $foc < 0;
    my $f = vec( $self-> {vector}, $foc, 1) ? 0 : 1;
    vec( $self-> {vector}, $foc, 1) = $f;
-   $self-> notify(q(Change), $index, $f);
-   $self-> invalidate_rect( $self-> item2rect( $index));
+   $self-> notify(q(Change), $foc, $f);
+   $self-> invalidate_rect( $self-> item2rect( $foc));
 }
 
 
