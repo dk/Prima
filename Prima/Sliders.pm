@@ -1208,6 +1208,8 @@ sub value
             $minDist = abs(($thatVal = $j) - $value) if abs( $j - $value) < $minDist;
          }
          $value = $thatVal if defined $thatVal;
+      } elsif ( $self-> {step} != 0 ) {
+         $value = int ( $value / $self-> {step} ) * $self-> {step};
       }
       $value = $min if $value < $min;
       $value = $max if $value > $max;
@@ -1630,6 +1632,8 @@ sub value
          $minDist = abs(($thatVal = $j) - $value) if abs( $j - $value) < $minDist;
       }
       $value = $thatVal if defined $thatVal;
+   } elsif ( $self-> {step} != 0 ) {
+      $value = int ( $value / $self-> {step} ) * $self-> {step};
    }
    return if $old == $value;
    $self->{value} = $value;
@@ -2017,7 +2021,8 @@ Default value: 0
 
 =item step INTEGER
 
-Integer delta for singular increment / decrement commands.
+Integer delta for singular increment / decrement commands and
+a threshold for C<value> when C<snap> value is 0.
 
 Default value: 1
 
