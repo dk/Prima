@@ -735,7 +735,7 @@ TkMakeBezierCurve(pointPtr, numPoints, numSteps, xPoints)
 #define STATIC_ARRAY_SIZE 200
 
 static Bool
-spline( Handle self, int count, Point * points)
+plot_spline( Handle self, int count, Point * points, Bool fill)
 {
    Bool ret;
    int array_size;
@@ -752,7 +752,9 @@ spline( Handle self, int count, Point * points)
 
    array_size = TkMakeBezierCurve( points, count, var-> splinePrecision, array);
 
-   if ( my-> polyline == Drawable_polyline) {
+   if ( fill && ( my-> fillpoly == Drawable_fillpoly)) {
+      ret = apc_gp_fill_poly( self, array_size, array);
+   } else if ( !fill && ( my-> polyline == Drawable_polyline)) {
       ret = apc_gp_draw_poly( self, array_size, array);
    } else {
       int i;
@@ -762,7 +764,9 @@ spline( Handle self, int count, Point * points)
          av_push( av, newSViv( array[i]. x));
          av_push( av, newSViv( array[i]. y));
       }
-      ret = my-> polyline( self, sv);
+      ret = fill ? 
+         my-> fillpoly( self, sv) :
+         my-> polyline( self, sv);
       sv_free( sv);
    }
 
@@ -772,41 +776,16 @@ spline( Handle self, int count, Point * points)
 }  
 
 static Bool
+spline( Handle self, int count, Point * points)
+{
+   return plot_spline( self, count, points, false);
+}
+
+static Bool
 fill_spline( Handle self, int count, Point * points)
 {
-   Bool ret;
-   int array_size;
-   Point static_array[STATIC_ARRAY_SIZE], *array;
-   
-   array_size = TkMakeBezierCurve( NULL, count, var-> splinePrecision, NULL);
-   if ( array_size >= STATIC_ARRAY_SIZE) {
-      if ( !( array = malloc( array_size * sizeof( Point)))) {
-         warn("Not enough memory");
-         return false;
-      }
-   } else 
-      array = static_array;
-
-   array_size = TkMakeBezierCurve( points, count, var-> splinePrecision, array);
-
-   if ( my-> polyline == Drawable_fillpoly) {
-      ret = apc_gp_fill_poly( self, array_size, array);
-   } else {
-      int i;
-      AV * av = newAV();
-      SV * sv = newRV(( SV*) av);
-      for ( i = 0; i < array_size; i++) {
-         av_push( av, newSViv( array[i]. x));
-         av_push( av, newSViv( array[i]. y));
-      }
-      ret = my-> fillpoly( self, sv);
-      sv_free( sv);
-   }
-
-   if ( array != static_array) free( array);
-   
-   return ret; 
-}  
+   return plot_spline( self, count, points, true);
+}
 
 Bool
 Drawable_spline( Handle self, SV * points)
