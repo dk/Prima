@@ -350,26 +350,28 @@ hwnd_check_limits( int x, int y, Bool uint)
 #define rgxNotExists   2
 #define rgxHasSubkeys  4
 #define rgxHasValues   8
-
+#define rgxInUser      16
+#define rgxInSys       32
 
 static Bool
-prf_exists( char * path, int * info)
+prf_exists( HKEY hk, char * path, int * info)
 {
    HKEY hKey;
    long cache;
+   Bool user = false;
 
    if ( cache = ( long) hash_fetch( regnodeMan, path, strlen( path))) {
       if ( info) *info = cache;
       return cache & rgxExists;
    }
 
-   if ( RegOpenKeyEx( HKEY_CURRENT_USER, path, 0,
+   if ( RegOpenKeyEx( hk, path, 0,
                       KEY_READ, &hKey) != ERROR_SUCCESS) {
-        hash_store( regnodeMan, path, strlen( path), (void*) rgxNotExists);
-        return false;
+       hash_store( regnodeMan, path, strlen( path), (void*) rgxNotExists);
+       return false;
    }
 
-   cache = rgxExists;
+   cache |= rgxExists;
    if ( info) {
       char buf[ MAXREGLEN];
       DWORD len = MAXREGLEN, subkeys = 0, msk, mc, values, mvn, mvd, sd;
@@ -386,99 +388,131 @@ prf_exists( char * path, int * info)
 }
 
 static Bool
-prf_find( char * path, List * names, int firstName, char * result)
+prf_find( HKEY hk, char * path, List * ids, int firstName, char * result)
 {
    char buf[ MAXREGLEN];
-   int info;
+   int j = 2, info;
 
-   snprintf( buf, MAXREGLEN, "%s\\%s", path, names-> items[ firstName]);
-   if ( prf_exists( buf, nil)) {
-      if ( names-> count > firstName + 1) {
-         if ( prf_find( buf, names, firstName + 1, result)) return true;
-      } else {
+   while ( j--) {
+      snprintf( buf, MAXREGLEN, "%s\\%s", path, ids[j].items[ firstName]);
+      if ( prf_exists( hk, buf, nil)) {
+         if ( ids[j].count > firstName + 1) {
+            if ( prf_find( hk, buf, ids, firstName + 1, result))
+               return true;
+         } else {
+            strcpy( result, buf);
+            return true;
+         }
+      }
+   }
+
+   j = 2;
+   while ( j--) {
+      snprintf( buf, MAXREGLEN, "%s\\*", path);
+      if ( prf_exists( hk, buf, &info)) {
+         if ( info & rgxHasSubkeys) {
+            int i;
+            for ( i = ids[j].count - 1; i >= firstName; i--) {
+               if ( prf_find( hk, buf, ids, i, result))
+                  return true;
+            }
+         }
+         if (( info & rgxHasValues) == 0)
+            return false;
          strcpy( result, buf);
          return true;
       }
    }
-
-   snprintf( buf, MAXREGLEN, "%s\\*", path);
-   if ( prf_exists( buf, &info)) {
-      if ( info & rgxHasSubkeys) {
-         int i;
-         for ( i = names-> count - 1; i > firstName; i--)
-            if ( prf_find( buf, names, i, result))
-               return true;
-      }
-      if (( info & rgxHasValues) == 0)
-         return false;
-      strcpy( result, buf);
-      return true;
-   }
    return false;
 }
 
-static char * regColors[] = {
-   "color",
-   "backColor",
-   "hiliteColor",
-   "disabledColor",
-   "hiliteBackColor",
-   "disabledBackColor",
-   "light3DColor",
-   "dark3DColor"
-};
 
-PHash
-apc_widget_user_profile( char * name, Handle owner)
+extern Bool
+apc_fetch_resource( const char *className, const char *name,
+                    const char *resClass, const char *resName,
+                    Handle owner, int resType,
+                    void *val)
 {
-   char buf[ MAXREGLEN];
+   Bool res = true;
    HKEY hKey;
-   Bool res;
-   DWORD type, size, dw, i;
-   PHash ret;
-   List names;
+   char buf[ MAXREGLEN];
+   DWORD type, size, i;
+   List ids[ 2];
 
-   list_create( &names, 8, 8);
-   list_add( &names, ( Handle) name);
+   i = 2; while( i--) list_create(&ids[i], 8, 8);
+
+   list_add(&ids[1], ( Handle) duplicate_string( name));
+   list_add(&ids[0], ( Handle) duplicate_string( className));
+
    while ( owner) {
-      list_insert_at( &names, ( Handle)( PComponent( owner)-> name), 0);
+      list_insert_at(&ids[1],   ( Handle) prima_normalize_resource_string(
+         duplicate_string( PComponent( owner)-> name), false), 0);
+      list_insert_at(&ids[0], ( Handle) prima_normalize_resource_string(
+         duplicate_string(
+            ( owner == application) ? "Prima" : CComponent( owner)-> className
+         ), true), 0);
       owner = PComponent( owner)-> owner;
    }
-   res = prf_find( REG_STORAGE, &names, 0, buf);
-   list_destroy( &names);
-   if ( !res) return nil;
 
+   if (!( res = prf_find( HKEY_CURRENT_USER, REG_STORAGE, ( List *) &ids, 0, buf)))
+      goto FINALIZE;
 
-   if ( RegOpenKeyEx( HKEY_CURRENT_USER, buf, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
-      return nil;
+   if ( RegOpenKeyEx( HKEY_CURRENT_USER, buf, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+      res = false;
+      goto FINALIZE;
+   }
 
-   ret = hash_create();
-
-   for ( i = 0; i < sizeof( regColors) / sizeof( char*); i++) {
-      Color * c;
+   switch ( resType) {
+   case frString:
+      type = REG_SZ;
+      size = MAXREGLEN;
+      if ( RegQueryValueEx( hKey, resName, NULL,
+           &type, ( LPBYTE) buf, &size) == ERROR_SUCCESS) {
+         char **x = ( char **) val;
+         *x = duplicate_string( buf);
+      } else
+      if ( RegQueryValueEx( hKey, resClass, NULL,
+           &type, ( LPBYTE) buf, &size) == ERROR_SUCCESS) {
+         char **x = ( char **) val;
+         *x = duplicate_string( buf);
+      } else
+         res = false;
+      break;
+   case frFont:
+      type = REG_SZ;
+      size = MAXREGLEN;
+      if ( RegQueryValueEx( hKey, resName, NULL,
+           &type, ( LPBYTE) buf, &size) == ERROR_SUCCESS)
+         font_pp2font( buf, ( Font *) val);
+      else
+      if ( RegQueryValueEx( hKey, resClass, NULL,
+           &type, ( LPBYTE) buf, &size) == ERROR_SUCCESS)
+         font_pp2font( buf, ( Font *) val);
+      else
+         res = false;
+      break;
+   case frColor:
       type = REG_DWORD;
       size = sizeof( DWORD);
-      if ( RegQueryValueEx( hKey, regColors[i], NULL,
-           &type, ( LPBYTE) &dw, &size) != ERROR_SUCCESS) continue;
-      c = ( Color*)malloc( sizeof( c));
-      *c = dw;
-      hash_store( ret, regColors[i], strlen(regColors[i]), c);
-   }
-   type = REG_SZ;
-   size = MAXREGLEN;
-   if ( RegQueryValueEx( hKey, "Font", NULL,
-        &type, ( LPBYTE) buf, &size) == ERROR_SUCCESS) {
-      Font * f = ( Font *) malloc( sizeof( Font));
-      font_pp2font( buf, f);
-      hash_store( ret, "Font", strlen("Font"), f);
+      if ( RegQueryValueEx( hKey, resName, NULL,
+           &type, ( LPBYTE) val, &size) != ERROR_SUCCESS)
+         res = ( RegQueryValueEx( hKey, resClass, NULL,
+           &type, ( LPBYTE) val, &size) == ERROR_SUCCESS);
+      else
+         res = false;
    }
 
    RegCloseKey( hKey);
-   return ret;
+
+FINALIZE:
+
+   i = 2;
+   while( i--) {
+      list_delete_all( &ids[i], true);
+      list_destroy( &ids[i]);
+   }
+   return res;
 }
-
-
-
 
 #ifdef __cplusplus
 }

@@ -411,6 +411,8 @@ Widget_fetch_resource_font( char *className, char *name, char *classRes, char *r
    Font font;
 
    bzero( &font, sizeof( font));
+   font. height = font. width = font. style = font. pitch = font. direction = font. resolution = font. size = C_NUMERIC_UNDEF;
+   strcpy( font. name, C_STRING_UNDEF);
    apc_fetch_resource( prima_normalize_resource_string( className, true),
                        prima_normalize_resource_string( name, false),
                        prima_normalize_resource_string( classRes, true),
