@@ -273,8 +273,8 @@ apc_dbm_destroy( Handle self)
    return true;
 }
 
-static void
-copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils)
+void
+prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils)
 {
    static Bool initialized = false;
    static unsigned char bits[256];
@@ -344,7 +344,7 @@ create_image_cache_1_to_1( PImage img, Handle drawable, Bool icon)
    if (!ximage) croak( "create_image_cache_1_to_1(): error creating ximage");
    ls = get_ximage_bytes_per_line(ximage);
    data = get_ximage_data(ximage);
-   copy_xybitmap( data, idata, w, h, ls, ils);
+   prima_copy_xybitmap( data, idata, w, h, ls, ils);
 
    if (icon) {
       *icon_cache = ximage;
@@ -586,8 +586,8 @@ create_image_cache_24_to_16( PImage img)
 }
 
 
-static void
-create_image_cache( PImage img, Handle drawable, Bool icon)
+void
+prima_create_image_cache( PImage img, Handle drawable, Bool icon)
 {
    PDrawableSysData IMG = X((Handle)img);
    Bool bit_cache = X(drawable)->flags.is_image && (PImage(drawable)->type & imBPP) == 1;
@@ -664,6 +664,37 @@ create_image_cache( PImage img, Handle drawable, Bool icon)
 }
 
 Bool
+prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
+{
+   DEFXX;
+   Pixmap p1, p2;
+   PIcon icon = PIcon(self);
+
+   prima_create_image_cache((PImage)icon, self, true);
+   p1 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), icon-> w, icon-> h, 1);
+   p2 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), icon-> w, icon-> h, 1);
+   XCHECKPOINT;
+   if ( p1 == None || p2 == None) {
+      if (p1 != None) XFreePixmap( DISP, p1);
+      if (p2 != None) XFreePixmap( DISP, p2);
+      return false;
+   }
+   XX-> gdrawable = p1;
+   prima_prepare_drawable_for_painting( self);
+   XSetForeground( DISP, XX-> gc, 0);
+   XSetBackground( DISP, XX-> gc, 1);
+   put_ximage( p2, XX-> gc, X(self)-> icon_bit_cache,
+               0, 0, 0, 0, icon-> w, icon-> h);
+   put_ximage( p1, XX-> gc, X(self)-> image_bit_cache,
+               0, 0, 0, 0, icon-> w, icon-> h);
+   prima_cleanup_drawable_after_painting( self);
+   XX-> gdrawable = None;
+   *xor = p1;
+   *and = p2;
+   return true;
+}
+
+Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
    DEFXX;
@@ -677,7 +708,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 
    /* 1) XXX - rop - correct support! */
    /* 2) XXX - Shared Mem Image Extension! */
-   create_image_cache( img, self, icon);
+   prima_create_image_cache( img, self, icon);
    SHIFT( x, y);
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
       warn( "apc_gp_put_image(): XGetGCValues() error");
@@ -809,13 +840,14 @@ static void
 slurp_image( Handle self, Pixmap px)
 {
    int target_depth;
-   XImage *i;
+   XImage *i = nil;
    PImage img = PImage( self);
 
    if (( img-> type & imBPP) == 1) {
       if ( px) {
          i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, 1, XYPixmap);
-         copy_xybitmap( img-> data, i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
+         XCHECKPOINT;
+         prima_copy_xybitmap( img-> data, i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
       }
    } else {
       if ( px) {
@@ -848,6 +880,7 @@ slurp_image_unsupported_depth:
          }
       }
    }
+   if (i) XDestroyImage(i);
 }
 
 Bool
@@ -1086,7 +1119,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    stretch = prepare_ximage( xclipsize, yclipsize, false);
    if ( !stretch) croak( "apc_gp_stretch_image(): error creating ximage");
 
-   create_image_cache( img, self, false);
+   prima_create_image_cache( img, self, false);
    bit_cache = XX->flags.is_image && (PImage(self)->type & imBPP) == 1;
    image_cache = bit_cache ? IMG-> image_bit_cache : IMG-> image_cache;
 

@@ -242,10 +242,16 @@ window_subsystem_done( void)
    }
    DOLBUG( "Free bitmap GC's: %d\n", n);
 
-   XFreeGC( DISP, guts. menugc);
-   prima_gc_ximages();          /* verrry dangerous, very quiet please */
-   if (DISP) XCloseDisplay( DISP);
-   DISP = nil;
+   if ( DISP) {
+      XFreeGC( DISP, guts. menugc);
+      prima_gc_ximages();          /* verrry dangerous, very quiet please */
+      if ( guts.pointer_font) {
+         XFreeFont( DISP, guts.pointer_font);
+         guts.pointer_font = nil;
+      }
+      XCloseDisplay( DISP);
+      DISP = nil;
+   }
    
    plist_destroy( guts. files);
    guts. files = nil;

@@ -33,6 +33,7 @@
 #include "unix/guts.h"
 #include "File.h"
 #include "Clipboard.h"
+#include "Icon.h"
 
 /* Miscellaneous system-dependent functions */
 
@@ -563,22 +564,93 @@ apc_pointer_get_pos( Handle self)
 int
 apc_pointer_get_shape( Handle self)
 {
-   DOLBUG( "apc_pointer_get_shape()\n");
-   return 0;
+   return X(self)->pointer_id;
 }
 
 Point
 apc_pointer_get_size( Handle self)
 {
-   DOLBUG( "apc_pointer_get_size()\n");
-   return (Point){0,0};
+   return (Point){guts.cursor_width,guts.cursor_height};
 }
 
 Bool
 apc_pointer_get_bitmap( Handle self, Handle icon)
 {
-   DOLBUG( "apc_pointer_get_bitmap()\n");
-   return false;
+   DEFXX;
+   XImage *im;
+   int id;
+   Handle o;
+   Pixmap p1 = None, p2 = None;
+   Bool free_pixmap = true;
+   GC gc;
+   XGCValues gcv;
+   char c;
+
+   id = XX-> pointer_id;
+   if ( id == crDefault) {
+      o = PWidget( self)-> owner;
+      while ( o && ( id = X(o)-> pointer_id) == crDefault)
+         o = PWidget(o)-> owner;
+      if ( id == crDefault)
+         id = crArrow;
+      else if ( id == crUser) {
+         p1 = X(o)-> user_p_source;
+         p2 = X(o)-> user_p_mask;
+      }
+   } else if ( id == crUser) {
+      p1 = XX-> user_p_source;
+      p2 = XX-> user_p_mask;
+   }
+   if ( id < crDefault || id > crUser)  return false;
+   if ( id == crUser) {
+      if ( !p1 || !p2) {
+         warn( "user pointer inconsistency");
+         return false;
+      }
+      free_pixmap = false;
+   } else {
+      if ( !guts.pointer_font) {
+         guts.pointer_font = XLoadQueryFont( DISP, "cursor");
+      }
+      if ( !guts.pointer_font) {
+         warn( "cannot load cursor font");
+         return false;
+      }
+      p1 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), guts.cursor_width, guts.cursor_height, 1);
+      p2 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), guts.cursor_width, guts.cursor_height, 1);
+      gcv. background = 1;
+      gcv. foreground = 0;
+      gcv. font = guts.pointer_font-> fid;
+      gc = XCreateGC( DISP, p1, GCBackground | GCForeground | GCFont, &gcv);
+      c = (char)cursor_map[id];
+      XDrawString( DISP, p1, gc, guts.cursor_width/2, guts.cursor_height/2,
+                   &c, 1);
+      gcv. background = 0;
+      gcv. foreground = 1;
+      XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
+      c = (char)(cursor_map[id]+1);
+      // XDrawString( DISP, p2, gc, guts.cursor_width/2, guts.cursor_height/2,
+      //             &c, 1);
+      XFreeGC( DISP, gc);
+   }
+   CIcon(icon)-> set_size( icon, guts.cursor_width, guts.cursor_height);
+   CIcon(icon)-> set_type( icon, imMono);
+   im = XGetImage( DISP, p1, 0, 0, guts.cursor_width, guts.cursor_height, 1, XYPixmap);
+   prima_copy_xybitmap( PIcon(icon)-> data, im-> data,
+                        PIcon(icon)-> w, PIcon(icon)-> h,
+                        PIcon(icon)-> lineSize, im-> bytes_per_line);
+   XDestroyImage( im);
+   im = XGetImage( DISP, p2, 0, 0, guts.cursor_width, guts.cursor_height, 1, XYPixmap);
+   prima_copy_xybitmap( PIcon(icon)-> mask, im-> data,
+                        PIcon(icon)-> w, PIcon(icon)-> h,
+                        PIcon(icon)-> maskLine, im-> bytes_per_line);
+   XDestroyImage( im);
+   CIcon(icon)-> update_change( icon);
+   if ( free_pixmap) {
+      XFreePixmap( DISP, p1);
+      XFreePixmap( DISP, p2);
+   }
+   return true;
 }
 
 Bool
@@ -600,16 +672,28 @@ apc_pointer_set_shape( Handle self, int id)
 {
    DEFXX;
    Handle o;
+   Cursor uc = None;
 
    if ( id < crDefault || id > crUser)  return false;
+   XX-> pointer_id = id;
    if ( id == crDefault) {
       o = PWidget(self)-> owner;
       while ( o && ( id = X(o)-> pointer_id) == crDefault)
          o = PWidget(o)-> owner;
       if ( id == crDefault)
          id = crArrow;
+      else if ( id == crUser)
+         uc = X(o)-> user_pointer;
    }
-   XX-> pointer_id = id;
+   if ( id == crUser) {
+      if ( uc != None || ( uc = XX-> user_pointer) != None) {
+         if ( self != application) {
+            XDefineCursor( DISP, XX-> udrawable, uc);
+            XCHECKPOINT;
+         }
+      } else
+         id = crArrow;
+   }
    if ( id != crUser) {
       if ( predefined_cursors[id] == None) {
          predefined_cursors[id] =
@@ -620,17 +704,69 @@ apc_pointer_set_shape( Handle self, int id)
          XDefineCursor( DISP, XX-> udrawable, predefined_cursors[id]);
          XCHECKPOINT;
       }
-   } else {
-      /* crUser */
    }
    return true;
 }
 
 Bool
-apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
+apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
 {
-   DOLBUG( "apc_pointer_set_user()\n");
-   return false;
+   DEFXX;
+   Handle cursor;
+   PIcon c;
+
+   if ( XX-> user_pointer != None) {
+      XFreeCursor( DISP, XX-> user_pointer);
+      XX-> user_pointer = None;
+   }
+   if ( XX-> user_p_source != None) {
+      XFreePixmap( DISP, XX-> user_p_source);
+      XX-> user_p_source = None;
+   }
+   if ( XX-> user_p_mask != None) {
+      XFreePixmap( DISP, XX-> user_p_mask);
+      XX-> user_p_mask = None;
+   }
+   if ( icon != nilHandle) {
+      cursor = CIcon(icon)->dup(icon);
+      if ( cursor == nilHandle) {
+         warn( "error duping user cursor");
+         return false;
+      }
+      c = PIcon(cursor);
+      if ( c-> w != guts.cursor_width || c-> h != guts.cursor_height) {
+         CIcon(cursor)-> stretch( cursor, guts.cursor_width, guts.cursor_height);
+         if ( c-> w != guts.cursor_width || c-> h != guts.cursor_height) {
+            warn( "error stretching user cursor");
+            Object_destroy( cursor);
+            return false;
+         }
+      }
+      if ((c-> type & imBPP) != 1) {
+         CIcon(cursor)-> set_type( cursor, imMono);
+         if ((c-> type & imBPP) != 1) {
+            warn( "error black-n-whiting user cursor");
+            Object_destroy( cursor);
+            return false;
+         }
+      }
+      if ( !prima_create_icon_pixmaps( cursor, &XX-> user_p_source, &XX-> user_p_mask)) {
+         warn( "error creating user cursor pixmaps");
+         Object_destroy( cursor);
+         return false;
+      }
+      Object_destroy( cursor);
+      XX-> user_pointer = XCreatePixmapCursor( DISP, XX-> user_p_source,
+                                               XX-> user_p_mask,
+                                               prima_allocate_color( self, clWhite),
+                                               prima_allocate_color( self, clBlack),
+                                               hot_spot. x, hot_spot. y);
+      if ( XX-> user_pointer == None) {
+         warn( "error creating cursor from pixmaps");
+         return false;
+      }
+   }
+   return true;
 }
 
 Bool

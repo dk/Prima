@@ -46,6 +46,7 @@
 #include "../guts.h"
 #include "bsd/queue.h"
 #include "Widget.h"
+#include "Image.h"
 
 #ifdef USE_MITSHM
 /* at least some versions of XShm.h do not prototype XShmGetEventBase() */
@@ -174,6 +175,7 @@ struct _UnixGuts
    Atom                         fxa_resolution_y;
    Atom                         fxa_spacing;
    int                          n_fonts;
+   XFontStruct                 *pointer_font;
    /* Resource management */
    XrmDatabase                  db;
    XrmQuark                     qBackground;
@@ -313,6 +315,9 @@ typedef struct _drawable_sys_data
    Point cursor_pos;
    Point cursor_size;
    int pointer_id;
+   Cursor user_pointer;
+   Pixmap user_p_source;
+   Pixmap user_p_mask;
    struct {
       int clip_owner			: 1;
       int sync_paint			: 1;
@@ -432,6 +437,15 @@ prima_init_font_subsystem( void);
 
 extern XColor*
 prima_allocate_color( Handle self, Color color);
+
+extern void
+prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils);
+
+extern Bool
+prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);
+
+extern void
+prima_create_image_cache( PImage, Handle, Bool);
 
 extern void
 prima_cleanup_drawable_after_painting( Handle self);
