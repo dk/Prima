@@ -892,7 +892,6 @@ sub profile_default
       shaftBreadth   => 6,
       tickAlign      => ta::Normal,
       vertical       => 0,
-      onTrackEnd     => undef,
    }
 }
 
@@ -1249,8 +1248,6 @@ sub profile_default
       %{$_[ 0]-> SUPER::profile_default},
       buttons        => 1,
       stdPointer     => 0,
-      onTrackEnd     => undef,
-      onStringify    => undef,
    }
 }
 

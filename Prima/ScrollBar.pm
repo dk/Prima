@@ -761,9 +761,11 @@ sub on_mousemove
              (( $x - $self->{$who}->{aperture} - $self->{btx}) *
               ( $self->{max} - $self->{min})) /
               ( $groove[2] - $groove[0] - $tab[2] + $tab[0])};
-      $self-> {suppressNotify} = $self->{autoTrack} ? undef : 1;
-      $self-> set_value( $val);
-      $self-> {suppressNotify} = undef;
+      if ( defined $val) {
+         $self-> {suppressNotify} = $self->{autoTrack} ? undef : 1;
+         $self-> set_value( $val);
+         $self-> {suppressNotify} = undef;
+      }
    } elsif ( $who eq q(b1)
 	     || $who eq q(b2)
 	     || $who eq q(left)
