@@ -108,8 +108,7 @@ sub rgb2hsv
 
 sub rgb2value
 {
-   my ( $r, $g, $b) = @_;
-   return $b|($g << 8)|($r << 16);
+   return $_[2]|($_[1] << 8)|($_[0] << 16);
 }
 
 sub value2rgb
@@ -163,7 +162,7 @@ sub create_wheel
    $i-> set_size( 256, 256);
 
    $i-> begin_paint;
-   $i-> color( cl::Black);
+   $i-> set_color( cl::Black);
    $i-> bar( 0, 0, $i-> width, $i-> height);
 
    my ( $y, $x);
@@ -173,7 +172,7 @@ sub create_wheel
          my ( $h, $s, $ok) = xy2hs( $x, $y, $d0);
          next if $ok;
          my ( $r, $g, $b) = hsv2rgb( $h, $s, 1);
-         $i-> color( $b|($g<<8)|($r<<16));
+         $i-> set_color( $b|($g<<8)|($r<<16));
          $i-> bar( $x * $imul, $y * $imul, ( $x + 1) * $imul - 1, ( $y + 1) * $imul - 1);
       }
    }
@@ -188,12 +187,12 @@ sub create_wheel
    );
 
    $a-> begin_paint;
-   $a-> color( $color);
+   $a-> set_color( $color);
    $a-> bar( 0, 0, $a-> size);
    $a-> rop( rop::XorPut);
    $a-> put_image( 0, 0, $i);
    $a-> rop( rop::CopyPut);
-   $a-> color( cl::Black);
+   $a-> set_color( cl::Black);
    $a-> fill_ellipse(
      128, 128,
      128 - $imul - 1,
@@ -218,9 +217,9 @@ sub create_wheel_shape
       type => im::BW,
    );
    $a-> begin_paint;
-   $a-> color( cl::Black);
+   $a-> set_color( cl::Black);
    $a-> bar( 0, 0, 255, 255);
-   $a-> color( cl::White);
+   $a-> set_color( cl::White);
    $a-> fill_ellipse( 128, 128, 128 - $imul - 1, 128 - $imul - 1);
    $a-> end_paint;
    return $a;
@@ -436,7 +435,7 @@ sub Wheel_Paint
    my ( $owner, $self, $canvas) = @_;
    $canvas-> put_image( 0, 0, $colorWheel);
    my ( $x, $y) = hs2xy( $owner->{H}-> value, $owner->{S}-> value/273);
-   $canvas-> color( cl::White);
+   $canvas-> set_color( cl::White);
    $canvas-> rop( rop::XorPut);
    if ( $shapext) {
       my @sz = $canvas-> size;
@@ -487,7 +486,7 @@ sub Wheel_MouseUp
       if ( $mod & km::Shift) {
          $x-> backColor( $owner-> value);
       } else {
-         $x-> color( $owner-> value);
+         $x-> set_color( $owner-> value);
       }
    }
 }
@@ -496,26 +495,25 @@ sub Roller_Paint
 {
    my ( $owner, $self, $canvas) = @_;
    my @size = $self-> size;
-   $canvas-> color( $self-> backColor);
-   $canvas-> bar( 0, 0, @size);
+   $canvas-> clear;
    my $i;
-   my ( $h, $s, $v, $d) = ( $owner->{H}-> value, $owner->{S}->
-                           value, $owner->{V}-> value, ($size[1]-16) / 32);
+   my ( $h, $s, $v, $d) = ( $owner->{H}-> value, $owner->{S}-> value,
+                            $owner->{V}-> value, ($size[1]-16) / 32);
    $s /= 255;
    $v /= 255;
    my ( $r, $g, $b);
 
-   for ( $i = 0; $i < 32; $i++) {
+   for $i (0..31) {
       ( $r, $g, $b) = hsv2rgb( $h, $s, $i / 31);
-      $canvas-> color( rgb2value( $r, $g, $b));
+      $canvas-> set_color( rgb2value( $r, $g, $b));
       $canvas-> bar( 8, 8 + $i * $d, $size[0] - 8, 8 + ($i + 1) * $d);
    }
 
-   $canvas-> color( cl::Black);
+   $canvas-> set_color( cl::Black);
    $canvas-> rectangle( 8, 8, $size[0] - 8, $size[1] - 8);
    $d = int( $v * ($size[1]-16));
    $canvas-> rectangle( 0, $d, $size[0]-1, $d + 15);
-   $canvas-> color( $owner->{value});
+   $canvas-> set_color( $owner->{value});
    $canvas-> bar( 1, $d + 1, $size[0]-2, $d + 14);
    $self-> {paintPoll} = 2 if exists $self-> {paintPoll};
 }
@@ -698,10 +696,10 @@ sub InputLine_Paint
    my $clr  = $combo-> value;
    $clr = $back if $clr == cl::Invalid;
    $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, $self-> light3DColor, $self-> dark3DColor);
-   $canvas-> color( $back);
+   $canvas-> set_color( $back);
    $canvas-> rectangle( 1, 1, $w - 2, $h - 2);
    $canvas-> rectangle( 2, 2, $w - 3, $h - 3);
-   $canvas-> color( $clr);
+   $canvas-> set_color( $clr);
    $canvas-> bar( 3, 3, $w - 4, $h - 4);
    $canvas-> rect_focus(2, 2, $w - 3, $h - 3) if $focused;
 }
