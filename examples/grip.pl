@@ -154,7 +154,7 @@ my $w = Prima::Window-> create(
          my $i = canvas( $v);
          paint( $v, $i);
          $i-> end_paint;
-         $self-> IV-> image( $i);
+         $self-> IV-> image( $i-> image);
       } elsif ( $cap == 3) {
          ($self->{dx},$self->{dy}) = $self-> client_to_screen( $x, $y);
          xordraw( $self);
