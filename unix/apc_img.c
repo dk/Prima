@@ -101,6 +101,8 @@ prima_prepare_ximage( int width, int height, Bool bitmap)
 {
    PrimaXImage *i;
    int extra_bytes;
+
+   if (width == 0 || height == 0) return false;
   
    switch ( guts.idepth) {
    case 16:     extra_bytes = 1;        break;
@@ -954,6 +956,8 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
    Handle dup = nilHandle;
    PImage pass = img;
 
+   if ( img-> w == 0 || img-> h == 0) return nil;
+
    if ( img-> palette == nil) {
       warn( "UAI_014: image has no palette");
       return nil;
@@ -1289,6 +1293,9 @@ apc_image_begin_paint( Handle self)
    PImage img = PImage( self);
    int icon = XX-> type. icon;
    Bool bitmap = (img-> type  == imBW) || ( guts. idepth == 1);
+
+   if (img-> w == 0 || img-> h == 0) return false;
+   
    XX-> gdrawable = XCreatePixmap( DISP, guts. root, img-> w, img-> h,
                                    bitmap ? 1 : guts. depth);
    XX-> type.pixmap = !bitmap;
