@@ -56,9 +56,8 @@ sub prf_types
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
       bool    => ['flat','vertical','default','checkable','checked'],
-      uiv     => ['glyphs','borderWidth',],
+      uiv     => ['glyphs','borderWidth','defaultGlyph','hiliteGlyph','disabledGlyph','pressedGlyph','holdGlyph'],
       upv     => ['imageScale',],
-      glyph   => ['defaultGlyph','hiliteGlyph','disabledGlyph','pressedGlyph','holdGlyph'],
       modalResult  => ['modalResult',],
       icon    => ['image',],
    );
@@ -1092,8 +1091,11 @@ sub prf_types
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
       bool    => [ 'vScroll','hScroll', 'dragable','autoHeight', 'showItemHint'],
-      uiv     => ['itemHeight','itemWidth','focusedItem','borderWidth','offset','topItem', 'indent'],
+      uiv     => ['itemHeight','itemWidth','focusedItem','borderWidth','offset','topItem', 'indent',
+        'openedGlyphs', 'closedGlyphs',
+      ],
       treeItems => ['items'],
+      icon      => ['closedIcon', 'openedIcon'],
    );
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;

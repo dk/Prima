@@ -108,14 +108,14 @@ sub init
       pageCount => 2,
    );
 
-   $self-> {mtabs} = $self-> insert( ComboBox =>
+   $self-> {mtabs} = $self-> insert( Button =>
       origin   => [ 0, 0],
       size     => [ 100, $fh],
-      items    => ['Properties', 'Events'],
+      text     => '~Events',
       growMode => gm::Floor,
-      style    => cs::DropDownList,
       name     => 'MTabs',
    );
+   $self-> {mtabs}-> {mode} = 0;
 
    $self-> {plist} = $self-> {monger}-> insert_to_page( 0, OPropListViewer =>
       origin   => [ 0, 0],
@@ -171,10 +171,13 @@ sub Div_Change
    );
 }
 
-sub MTabs_Change
+sub MTabs_Click
 {
    my ( $self, $mtabs) = @_;
-   my $ix = $mtabs-> List-> focusedItem;
+   my $ix = $mtabs-> {mode} ? 0 : 1;
+   $mtabs->{mode} = $ix;
+   $mtabs-> text( $ix ? '~Properties' : '~Events');
+
    $self-> {monger}-> pageIndex( $ix);
    $self-> {currentList} = $self-> { $ix ? 'elist' : 'plist' };
    $self-> close_item;
@@ -967,7 +970,7 @@ sub init
       origin    => [ 4, $self-> height - 30],
       size      => [ 26, 26],
       hint      => 'New',
-      imageFile => 'icons/new.bmp',
+      imageFile => Prima::find_image( 'VB::new.bmp'),
       glyphs    => 2,
       onClick   => sub { $VB::main-> new; } ,
    );
@@ -976,7 +979,7 @@ sub init
       origin    => [ 32, $self-> height - 30],
       size      => [ 26, 26],
       hint      => 'Open',
-      imageFile => 'icons/open.bmp',
+      imageFile => Prima::find_image( 'VB::open.bmp'),
       glyphs    => 2,
       onClick   => sub { $VB::main-> open; } ,
    );
@@ -985,7 +988,7 @@ sub init
        origin    => [ 60, $self-> height - 30],
        size      => [ 26, 26],
        hint      => 'Save',
-       imageFile => 'icons/save.bmp',
+       imageFile => Prima::find_image( 'VB::save.bmp'),
        glyphs    => 2,
        onClick   => sub { $VB::main-> save; } ,
     );
@@ -994,7 +997,7 @@ sub init
       origin    => [ 88, $self-> height - 30],
       size      => [ 26, 26],
       hint      => 'Run',
-      imageFile => 'icons/run.bmp',
+      imageFile => Prima::find_image( 'VB::run.bmp'),
       glyphs    => 2,
       onClick   => sub { $VB::main-> form_run} ,
    );
@@ -1107,15 +1110,20 @@ sub reset_tabs
        }
    }
 
+   my %iconfails = ();
+   my %icongtx   = ();
    for ( keys %{$self->{classes}}) {
       my ( $class, %info) = ( $_, %{$self->{classes}->{$_}});
       $offsets{$info{page}} = 4 unless exists $offsets{$info{page}};
       next unless $modules{$info{module}};
       my $i = undef;
       if ( $info{icon}) {
+         $info{icon} =~ s/\:(\d+)$//;
+         my @parms = ( Prima::find_image( $info{icon}));
+         push( @parms, 'index', $1) if defined $1;
          $i = Prima::Icon-> create;
-         unless ( $i-> load( $info{icon})) {
-            Prima::MsgBox::message_box($myText, "Error loading icon ".$info{icon}, mb::Error|mb::OK);
+         unless ( defined $parms[0] && $i-> load( @parms)) {
+            $iconfails{$info{icon}} = 1;
             $i = undef;
          }
       };
@@ -1133,6 +1141,11 @@ sub reset_tabs
    $self->{nbIndex} = 0;
    $nb-> unlock;
    $self->{currentClass} = undef;
+
+   if ( scalar keys %iconfails) {
+      my @x = keys %iconfails;
+      Prima::MsgBox::message_box( $myText, "Error loading images: @x", mb::Error|mb::OK);
+   }
 }
 
 sub get_nbpanel_count
@@ -1626,7 +1639,7 @@ sub form_run
 package VisualBuilder;
 
 $VB::ico = Prima::Image-> create;
-$VB::ico = undef unless $VB::ico-> load("icons/vb1.bmp");
+$VB::ico = undef unless $VB::ico-> load( Prima::find_image( 'VB::vb1.bmp'));
 $VB::main = MainPanel-> create;
 $VB::inspector = ObjectInspector-> create(
    top => $VB::main-> bottom - 12 - $::application-> get_system_value(sv::YTitleBar)

@@ -2509,7 +2509,7 @@ sub enter_menuitem
          push( @chk, exists $x->[0]->[1]->{$_} ? 1 : 0);
          $ix{$_} = $num++;
       }
-      $l-> reset_items( \@id, @chk, \%ix);
+      $l-> reset_items( \@id, \@chk, \%ix);
       $self-> open_item;
    } else {
       $l-> {id} = [];
