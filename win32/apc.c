@@ -1126,7 +1126,8 @@ apc_window_end_modal( Handle self)
    if ( application) {
       Handle who = Application_popup_modal( application);
       if ( !who && var owner)
-         SetFocus( DHANDLE( var owner));
+         CWidget( var owner)-> set_selected( var owner, 1);
+         // SetFocus( DHANDLE( var owner));
    }
    guts. focSysDisabled = 0;
 }
