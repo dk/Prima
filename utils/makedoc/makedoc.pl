@@ -33,13 +33,14 @@ if ( $build) {
    open F, "$path/Prima.pm" or die "Cannot open $path/Prima.pm:$!\n";
    my $begin;
    for ( <F>) {
-      $begin = 1 if !$begin && m/Core toolkit classes/;
+      $begin = 1 if !$begin && m/Tutorials/;
       next unless $begin;
       if (  m/L\<([^<]*)\>/) {
          push @bs, [ 0, $1];
       } elsif ( m/^=item\s*(.*)/) {
          push @bs, [ 1, $1];
-         push @bs, [0,'Prima'] unless $#bs;
+         push @bs, [0,'Prima'] 
+	 	if $#bs && $bs[-1][0] == 1 && $bs[-1][1] =~ /Core toolkit classes/;
       }
    }
    close F;
@@ -101,8 +102,9 @@ if ( $build) {
       my $cut;
       my $cow = 1;
       for ( <W>) {
-         if ( m/^=for\s*podview\s*<\s*img\s*src=\"?([^\"\s]+)\"?\s*cut\s*=\s*1\s*>/) {
+         if ( m/^=for\s*podview\s*<\s*img\s*src=\"?([^\"\s]+)\"?\s*(cut\s*=\s*1)?\s*>/) {
             my ( $gif, $eps) = ( $1, $1);
+	    $eps =~ s/\//_/g;
             $eps =~ s/\.[^\.]+$/.eps/;
             unless ( -f $eps) {
                for ( "$path/Prima", "$path/Prima/pod", "$path/pod/Prima") {
@@ -119,7 +121,8 @@ if ( $build) {
                }
             }
             if ( -f $eps) {
-               $cut = $cow = 1;
+               $cow = 1;
+	       $cut = 1 if defined $2;
                push @ctx, "=for latex \n\\includegraphics[keepaspectratio]{$eps}\n\n";
             } else {
                warn "** error creating $eps\n";
