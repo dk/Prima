@@ -429,6 +429,8 @@ window_set_client_size( Handle self, int width, int height)
    DEFXX;
    XSizeHints hints;
    PWidget widg = PWidget( self);
+   Bool implicit_move = false;
+   Point post;
    
    if ( !XX-> flags. zoomed) {
       widg-> virtualSize. x = width;
@@ -459,18 +461,24 @@ window_set_client_size( Handle self, int width, int height)
    bzero( &hints, sizeof( XSizeHints));
    XX-> flags. size_determined = 1;
    hints. flags = USSize | ( XX-> flags. position_determined ? USPosition : 0);
+   post = XX-> origin;
    hints. x = XX-> origin. x - XX-> decorationSize. x;
-   hints. y = guts. displaySize.y - height - XX-> menuHeight - XX-> origin. y - XX-> decorationSize.y + 1;
+   hints. y = guts. displaySize.y - height - XX-> menuHeight - XX-> origin. y - XX-> decorationSize.y;
    hints. width = width;
    hints. height = height + XX-> menuHeight;
    apc_SetWMNormalHints( self, &hints);
    if ( XX-> flags. position_determined) {
       XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, width, height + XX-> menuHeight);
+      implicit_move = true;
    } else {
       XResizeWindow( DISP, X_WINDOW, width, height + XX-> menuHeight);
    }
    XCHECKPOINT;
    prima_wm_sync( self, ConfigureNotify);
+   if ( implicit_move && (( XX-> origin.x != post.x) || (XX-> origin.y != post.y))) {
+      XX-> decorationSize. x =   XX-> origin.x - post. x;
+      XX-> decorationSize. y = - XX-> origin.y + post. y;
+   }
    return true;
 }
 
