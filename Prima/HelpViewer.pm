@@ -221,7 +221,7 @@ sub profile_default
             [ '-goback' => '~Back' => 'Alt + LeftArrow' => km::Alt | kb::Left, 'back' ],
             [ '-goforw' => '~Forward' => 'Alt + RightArrow' => km::Alt | kb::Right, 'forward' ],
             [],
-            [ '-goup'   => '~Up' => 'Alt + UpArrow' => km::Alt | kb::Right, 'up' ],
+            [ '-goup'   => '~Up' => 'Alt + UpArrow' => km::Alt | kb::Up, 'up' ],
             [ '-goprev'   => '~Previous' => 'prev' ],
             [ '-gonext'   => '~Next' => 'next' ],
           ]
