@@ -1285,8 +1285,8 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    } else if ( mono) {
       unsigned long fore, back;
       if ( XT_IS_DBM(X(image))) {
-         fore = guts. monochromeMap[1];
-         back = guts. monochromeMap[0];
+         fore = XX-> back. primary;
+         back = XX-> fore. primary;
       } else {
          if ( guts. palSize > 0) {
             fore = prima_color_find( self,
@@ -2070,8 +2070,8 @@ apc_gp_stretch_image( Handle self, Handle image,
    } else if ( mono) {
       unsigned long fore, back;
       if ( XT_IS_DBM(X(image))) {
-         fore = guts. monochromeMap[1];
-         back = guts. monochromeMap[0];
+         fore = XX-> back. primary;
+         back = XX-> fore. primary;
       } else {
          if ( guts. palSize > 0) {
             fore = prima_color_find( self, 

@@ -444,24 +444,30 @@ apc_gp_stretch_image ( Handle self, Handle image, int x, int y, int xFrom, int y
       lrop = ROP_SRCINVERT;
    } else
       lrop = ctx_remap( rop, ctx_rop2ROP, true);
-   if ( b-> cBitCount == imMono)
-   {
-      long cr[ 2];
-      cr[0] = db ? 0xFFFFFF :
-         remap_color( ps, ARGB( i-> palette[ 1]. r, i-> palette[ 1]. g, i-> palette[ 1]. b), true);
-      cr[1] = db ? 0x000000 :
-         remap_color( ps, ARGB( i-> palette[ 0]. r, i-> palette[ 0]. g, i-> palette[ 0]. b), true);
-      if ( cr[1] == clBlack)
-      {
-         long tmp = cr[0];
-         cr[0] = cr[1];
-         cr[1] = tmp;
+
+   if ( b-> cBitCount == imMono) {
+      if ( db) {
+         useSave = 1;
+         saveFore = GpiQueryColor( ps);
+         saveBack = GpiQueryBackColor( ps);
+         GpiSetColor( ps, saveBack);
+         GpiSetBackColor( ps, saveFore);
+      } else {
+         long cr[ 2];
+         cr[0] = remap_color( ps, ARGB( i-> palette[ 1]. r, i-> palette[ 1]. g, i-> palette[ 1]. b), true);
+         cr[1] = remap_color( ps, ARGB( i-> palette[ 0]. r, i-> palette[ 0]. g, i-> palette[ 0]. b), true);
+         if ( cr[1] == clBlack)
+         {
+            long tmp = cr[0];
+            cr[0] = cr[1];
+            cr[1] = tmp;
+         }
+         useSave = 1;
+         saveFore = GpiQueryColor( ps);
+         saveBack = GpiQueryBackColor( ps);
+         GpiSetColor( ps, cr[1]);
+         GpiSetBackColor( ps, cr[0]);
       }
-      useSave = 1;
-      saveFore = GpiQueryColor( ps);
-      saveBack = GpiQueryBackColor( ps);
-      GpiSetColor( ps, cr[1]);
-      GpiSetBackColor( ps, cr[0]);
    }
    if ( db) {
       HBITMAP bmSave = GpiSetBitmap( dsys( image) ps, nilHandle); // avoid PMERR_BITMAP_IN_USE
@@ -516,7 +522,9 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
          POINTL z = pt[2];
          pt[2] = pt[3];
          pt[3] = z;
-         for ( i = 0; i < 5; i++) { pt[i].x+=x; pt[i].y+=y;}
+         for ( i = 0; i < 5; i++) { pt[i].x+=p. x; pt[i].y+=p. y;}
+         pt[1]. y = pt[2]. y = p. y - var font. descent;
+         pt[0]. y = pt[3]. y = pt[1]. y + var font. height;
          GpiSetColor( sys ps, GpiQueryBackColor( sys ps));
          apc_gp_fill_poly( self, 4, ( Point*) pt);
          GpiSetColor( sys ps, c);

@@ -471,7 +471,8 @@ double fixed2float( FIXED f)
 static int
 font_font2gp_internal( PFont font, Point res, Bool forceSize)
 {
-   int i, count, resId, resValue, vecId, widValue, heiValue, ascent, descent, cp, cppassed = 0;
+   int resId, resValue, vecId, widValue, heiValue, ascent, descent, cp, cppassed = 0;
+   LONG i, count;
    PFONTMETRICS fm;
    Bool useWidth       = font-> width != 0;
    Bool useDirection   = font-> direction   != 0;
@@ -493,11 +494,11 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize)
       SIZEF sz;
       if ( !GpiQueryCharBox( guts. ps, &sz)) apiErr;
       if ( !GpiSetCharBox( guts. ps, &guts. defFontBox)) apiErr;
-      count = GpiQueryFonts( guts. ps, QF_PUBLIC, font->name, ( PLONG)&i, sizeof( FONTMETRICS), nil);
+      count = GpiQueryFonts( guts. ps, QF_PUBLIC, font->name, &i, sizeof( FONTMETRICS), nil);
       if ( count < 0) apiErrRet;
       if ( !( fm = malloc( count * sizeof( FONTMETRICS))))
          return 0;
-      if ( GpiQueryFonts( guts. ps, QF_PUBLIC, font->name, ( PLONG)&count, sizeof( FONTMETRICS), fm) < 0)
+      if ( GpiQueryFonts( guts. ps, QF_PUBLIC, font->name, &count, sizeof( FONTMETRICS), fm) < 0)
         apiErrRet;
       if ( !GpiSetCharBox( guts. ps, &sz)) apiErr;
    }
@@ -904,7 +905,7 @@ apc_fonts( Handle self, const char* facename, const char * encoding, int * retCo
 {
    PFont fmtx;
    PFONTMETRICS fm;
-   int i = 0, j, count;
+   LONG i = 0, j, count;
    Bool hasdc = 0;
    HPS ps;
    USHORT cp = 65535;
@@ -922,13 +923,13 @@ apc_fonts( Handle self, const char* facename, const char * encoding, int * retCo
 
    apcErrClear;
    if ( encoding) cp = font_enc2cp( encoding);
-   count = GpiQueryFonts( guts. ps, QF_PUBLIC, facename, ( PLONG)&i, sizeof( FONTMETRICS), nil);
+   count = GpiQueryFonts( guts. ps, QF_PUBLIC, facename, &i, sizeof( FONTMETRICS), nil);
    if ( count < 0) { apiErr; return nil; }
    if ( !( fm = malloc( count * sizeof( FONTMETRICS)))) {
       if ( hasdc) CPrinter( self)-> end_paint_info( self);
       return nil;
    }
-   if ( GpiQueryFonts( guts. ps, QF_PUBLIC, facename, ( PLONG)&count, sizeof( FONTMETRICS), fm) < 0) {
+   if ( GpiQueryFonts( guts. ps, QF_PUBLIC, facename, &count, sizeof( FONTMETRICS), fm) < 0) {
        apiErr;
        free( fm);
        if ( hasdc) CPrinter( self)-> end_paint_info( self);
@@ -1012,7 +1013,8 @@ apc_font_encodings( Handle self)
    Bool hasdc = 0;
    HPS ps;
    char buf[64], *fontspecific = FONT_FONTSPECIFIC;
-   int i, count, len, fslen = strlen( fontspecific);
+   int len, fslen = strlen( fontspecific);
+   LONG i = 0, count;
 
    if ( self == nilHandle || self == application)
       ps = guts. ps;
@@ -1026,19 +1028,20 @@ apc_font_encodings( Handle self)
       return nil;
 
    apcErrClear;
-   count = GpiQueryFonts( guts. ps, QF_PUBLIC, NULL, ( PLONG)&i, sizeof( FONTMETRICS), nil);
+   count = GpiQueryFonts( guts. ps, QF_PUBLIC, NULL, &i, sizeof( FONTMETRICS), nil);
    if ( count < 0) { apiErr; return nil; }
    if ( !( fm = malloc( count * sizeof( FONTMETRICS)))) {
       if ( hasdc) CPrinter( self)-> end_paint_info( self);
       return nil;
    }
-   if ( GpiQueryFonts( guts. ps, QF_PUBLIC, NULL, ( PLONG)&count, sizeof( FONTMETRICS), fm) < 0) {
+   if ( GpiQueryFonts( guts. ps, QF_PUBLIC, NULL, &count, sizeof( FONTMETRICS), fm) < 0) {
        apiErr;
        free( fm);
        if ( hasdc) CPrinter( self)-> end_paint_info( self);
        return nil;
    }
 
+   ret = hash_create();
    for ( i = 0; i < count; i++) {
        char * x;
        if ( fm[ i]. usCodePage == 65400) {

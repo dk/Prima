@@ -672,7 +672,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    HBITMAP  b1;
    HDC dc;
    DWORD theRop;
-   Bool ok = true, db, dcmono;
+   Bool ok = true, db, dcmono = false;
    POINT tr = {0, 0};
 
    COLORREF oFore, oBack;
@@ -728,12 +728,11 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    }
 
    // actions for mono images
-   dcmono = dsys( image) options. aptDeviceBitmap ?
-      (( PDeviceBitmap) image)-> monochrome : (
-         i-> options. optInDraw ?
-           ( dsys( image) bpp == 1) :
-           (( i-> type & imBPP) == 1)
-      );
+   if ( dsys( image) options. aptDeviceBitmap) {
+      if ((( PDeviceBitmap) image)-> monochrome)
+         STYLUS_USE_TEXT( sys ps);
+   } else
+      dcmono = i-> options. optInDraw ?  ( dsys( image) bpp == 1) : (( i-> type & imBPP) == 1);
 
    if ( dcmono) {
       PRGBColor pal = i-> palette;

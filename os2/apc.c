@@ -674,7 +674,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
    apc_window_set_caption( self, var text, is_opt( optUTF8_text));
    lock( false);
 
-   return apcError == 0;
+   return true;
 }
 
 Bool
@@ -1123,8 +1123,10 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
          get_view_ex( self, &vprf);
       reset = true;
    }
-   if ( reset || ( var handle == nilHandle))
-      create_group( self, owner, syncPaint, clipOwner, WC_CUSTOM, 0, &vprf, parentHandle);
+   if ( reset || ( var handle == nilHandle)) {
+      if ( !create_group( self, owner, syncPaint, clipOwner, WC_CUSTOM, 0, &vprf, parentHandle))
+         return false;
+   }
    if ( reset)
    {
       set_view_ex( self, &vprf);
@@ -1134,7 +1136,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
    if (( is_apt( aptTransparent) != transparent) && !reset) apc_widget_invalidate_rect( self, nil);
    apt_assign( aptTransparent, transparent);
    if ( reset) apc_widget_invalidate_rect( self, nil);
-   return apcError == 0;
+   return true;
 }
 
 Bool
