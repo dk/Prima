@@ -1655,150 +1655,147 @@ Image_preserveType( Handle self, Bool set, Bool preserveType)
 }
 
 Color
-Image_get_pixel( Handle self,int x,int y)
+Image_pixel( Handle self, Bool set, int x, int y, Color color)
 {
-    #define BGRto32(pal) ((var->palette[pal].r<<16) | (var->palette[pal].g<<8) | (var->palette[pal].b))
-    if ( opt_InPaint)
-        return inherited get_pixel(self,x,y);
-    if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0))
-        return clInvalid;
-    switch (var->type & imBPP) {
-        case imbpp1:
-            {
-                Byte p=var->data[var->lineSize*y+(x>>3)];
-                p=(p >> (7-(x & 7))) & 1;
-                return ((var->type & imGrayScale) ? (p ? 255 : 0) : BGRto32(p));
-            }
-        case imbpp4:
-            {
-                Byte p=var->data[var->lineSize*y+(x>>1)];
-                p=(x&1) ? p & 0x0f : p>>4;
-                return ((var->type & imGrayScale) ? (p*255L)/15 : BGRto32(p));
-            }
-        case imbpp8:
-            {
-                Byte p=var->data[var->lineSize*y+x];
-                return ((var->type & imGrayScale) ? p :  BGRto32(p));
-            }
-        case imbpp16:
-            {
-                short p=*(short*)(var->data + (var->lineSize*y+x*2));
-                return p;
-            }
-        case imbpp24:
-            {
-                RGBColor p=*(PRGBColor)(var->data + (var->lineSize*y+x*3));
-                return (p.r<<16) | (p.g<<8) | p.b;
-            }
-        case imbpp32:
-            {
-                long p;
-                if (var->type & imRealNumber) {
-                    float pf=*(float*)(var->data + (var->lineSize*y+x*4));
-                    double rangeLo = my-> stats( self, false, isRangeLo, 0);
-                    p=((pf - rangeLo)*LONG_MAX)/(var->stats[isRangeHi] - rangeLo);
-                }
-                else {
-                    p=*(long*)(var->data + (var->lineSize*y+x*4));
-                }
-                return p;
-            }
-        case imbpp64:
-            {
-                double pd=*(double*)(var->data + (var->lineSize*y+x*8));
-                double rangeLo;
-                if ((var->type & imComplexNumber) || (var->type & imTrigComplexNumber)) {
-                    return 0;
-                }
-                rangeLo = my-> stats( self, false, isRangeLo, 0);
-                return ((pd - rangeLo)/(var->stats[isRangeHi] - rangeLo))*LONG_MAX;
-            }
-        default:
-            return 0;
-    }
-    #undef BGRto32
-}
-
-Bool
-Image_set_pixel( Handle self,int x,int y,Color color)
-{
-    RGBColor rgb;
-    #define LONGtoBGR(lv,clr)   ((clr).b=(lv)&0xff,(clr).g=((lv)>>8)&0xff,(clr).r=((lv)>>16)&0xff,(clr))
-    if ( is_opt( optInDraw)) {
-        inherited set_pixel(self,x,y,color);
-        return true;
-    }
-    if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0)) {
-        return true;
-    }
-    switch (var->type & imBPP) {
-        case imbpp1  :
-            {
-                int x1=7-(x&7);
-                Byte p=(((var->type & imGrayScale) ? color/255 : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette)) & 1);
-                Byte *pd=var->data+(var->lineSize*y+(x>>3));
-                *pd&=~(1 << x1);
-                *pd|=(p << x1);
-            }
-            break;
-        case imbpp4  :
-            {
-                Byte p=((var->type & imGrayScale) ? (color*15)/255 : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette));
-                Byte *pd=var->data+(var->lineSize*y+(x>>1));
-                if (x&1) {
-                    *pd&=0xf0;
-                }
-                else {
-                    p<<=4;
-                    *pd&=0x0f;
-                }
-                *pd|=p;
-            }
-            break;
-        case imbpp8:
-            {
-                if (var->type & imGrayScale) {
-                    var->data[(var->lineSize)*y+x]=color;
-                }
-                else {
-                    var->data[(var->lineSize)*y+x]=cm_nearest_color(LONGtoBGR(color,rgb),(var->palSize),(var->palette));
-                }
-            }
-            break;
-        case imbpp16 :
-            {
-                *(short*)(var->data+(var->lineSize*y+(x<<1)))=color;
-            }
-            break;
-        case imbpp24 :
-            {
-                LONGtoBGR(color,rgb);
-                memcpy((var->data + (var->lineSize*y+x*3)),&rgb,sizeof(RGBColor));
-            }
-            break;
-        case imbpp32 :
-            {
-                if (var->type & imRealNumber) {
-                    double rangeLo = my-> stats( self, false, isRangeLo, 0);
-                    *(float*)(var->data+(var->lineSize*y+(x<<2)))=(((float)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
-                }
-                else {
-                    *(long*)(var->data+(var->lineSize*y+(x<<2)))=color;
-                }
-            }
-            break;
-        case imbpp64 :
+#define BGRto32(pal) ((var->palette[pal].r<<16) | (var->palette[pal].g<<8) | (var->palette[pal].b))
+   if (!set) {
+      if ( opt_InPaint)
+         return inherited pixel(self,false,x,y,color);
+      if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0))
+         return clInvalid;
+      switch (var->type & imBPP) {
+      case imbpp1:
+         {
+            Byte p=var->data[var->lineSize*y+(x>>3)];
+            p=(p >> (7-(x & 7))) & 1;
+            return ((var->type & imGrayScale) ? (p ? 255 : 0) : BGRto32(p));
+         }
+      case imbpp4:
+         {
+            Byte p=var->data[var->lineSize*y+(x>>1)];
+            p=(x&1) ? p & 0x0f : p>>4;
+            return ((var->type & imGrayScale) ? (p*255L)/15 : BGRto32(p));
+         }
+      case imbpp8:
+         {
+            Byte p=var->data[var->lineSize*y+x];
+            return ((var->type & imGrayScale) ? p :  BGRto32(p));
+         }
+      case imbpp16:
+         {
+            short p=*(short*)(var->data + (var->lineSize*y+x*2));
+            return p;
+         }
+      case imbpp24:
+         {
+            RGBColor p=*(PRGBColor)(var->data + (var->lineSize*y+x*3));
+            return (p.r<<16) | (p.g<<8) | p.b;
+         }
+      case imbpp32:
+         {
+            long p;
             if (var->type & imRealNumber) {
-                double rangeLo = my-> stats( self, false, isRangeLo, 0);
-                *(double*)(var->data+(var->lineSize*y+(x<<2)))=(((double)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
+               float pf=*(float*)(var->data + (var->lineSize*y+x*4));
+               double rangeLo = my-> stats( self, false, isRangeLo, 0);
+               p=((pf - rangeLo)*LONG_MAX)/(var->stats[isRangeHi] - rangeLo);
             }
-            break;
-        default:
-            return false;
-    }
-    my->update_change( self);
-    #undef LONGtoBGR
-    return true;
+            else {
+               p=*(long*)(var->data + (var->lineSize*y+x*4));
+            }
+            return p;
+         }
+      case imbpp64:
+         {
+            double pd=*(double*)(var->data + (var->lineSize*y+x*8));
+            double rangeLo;
+            if ((var->type & imComplexNumber) || (var->type & imTrigComplexNumber)) {
+               return 0;
+            }
+            rangeLo = my-> stats( self, false, isRangeLo, 0);
+            return ((pd - rangeLo)/(var->stats[isRangeHi] - rangeLo))*LONG_MAX;
+         }
+      default:
+         return 0;
+      }
+#undef BGRto32
+   } else {
+      RGBColor rgb;
+#define LONGtoBGR(lv,clr)   ((clr).b=(lv)&0xff,(clr).g=((lv)>>8)&0xff,(clr).r=((lv)>>16)&0xff,(clr))
+      if ( is_opt( optInDraw)) {
+         return inherited pixel(self,true,x,y,color);
+      }
+      if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0)) {
+         return color;
+      }
+      switch (var->type & imBPP) {
+      case imbpp1  :
+         {
+            int x1=7-(x&7);
+            Byte p=(((var->type & imGrayScale) ? color/255 : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette)) & 1);
+            Byte *pd=var->data+(var->lineSize*y+(x>>3));
+            *pd&=~(1 << x1);
+            *pd|=(p << x1);
+         }
+         break;
+      case imbpp4  :
+         {
+            Byte p=((var->type & imGrayScale) ? (color*15)/255 : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette));
+            Byte *pd=var->data+(var->lineSize*y+(x>>1));
+            if (x&1) {
+               *pd&=0xf0;
+            }
+            else {
+               p<<=4;
+               *pd&=0x0f;
+            }
+            *pd|=p;
+         }
+         break;
+      case imbpp8:
+         {
+            if (var->type & imGrayScale) {
+               var->data[(var->lineSize)*y+x]=color;
+            }
+            else {
+               var->data[(var->lineSize)*y+x]=cm_nearest_color(LONGtoBGR(color,rgb),(var->palSize),(var->palette));
+            }
+         }
+         break;
+      case imbpp16 :
+         {
+            *(short*)(var->data+(var->lineSize*y+(x<<1)))=color;
+         }
+         break;
+      case imbpp24 :
+         {
+            LONGtoBGR(color,rgb);
+            memcpy((var->data + (var->lineSize*y+x*3)),&rgb,sizeof(RGBColor));
+         }
+         break;
+      case imbpp32 :
+         {
+            if (var->type & imRealNumber) {
+               double rangeLo = my-> stats( self, false, isRangeLo, 0);
+               *(float*)(var->data+(var->lineSize*y+(x<<2)))=(((float)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
+            }
+            else {
+               *(long*)(var->data+(var->lineSize*y+(x<<2)))=color;
+            }
+         }
+         break;
+      case imbpp64 :
+         if (var->type & imRealNumber) {
+            double rangeLo = my-> stats( self, false, isRangeLo, 0);
+            *(double*)(var->data+(var->lineSize*y+(x<<2)))=(((double)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
+         }
+         break;
+      default:
+         return color;
+      }
+      my->update_change( self);
+#undef LONGtoBGR
+      return color;
+   }
 }
 
 Handle

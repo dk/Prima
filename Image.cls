@@ -39,13 +39,14 @@ object Prima::Image( Prima::Drawable)
 
    property int    conversion;
    property SV *   data;
-   property Bool   preserveType;
    property Bool   hScaling;
-   property double stats( int index);
-   property int    type;
    property SV *   palette;
+   property Color  pixel( int x, int y);
+   property Bool   preserveType;
    property Point  resolution;
    property Point  size;
+   property double stats( int index);
+   property int    type;
    property Bool   vScaling;
 
    # methods
@@ -62,7 +63,6 @@ object Prima::Image( Prima::Drawable)
    method SV   * get_handle();
    weird  Handle get_info( SV *who, char *filename);
    static char * get_status_string( SV *self);
-   method Color  get_pixel(int x, int y);
    method void   init( HV * profile);
    weird  Handle load( SV *who, char *filename, PList imgInfo);
    c_only void   make_empty();
@@ -70,7 +70,6 @@ object Prima::Image( Prima::Drawable)
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
    weird  Bool   save( SV *who, char *filename, PList imgInfo);
    method void   set( HV * profile);
-   method Bool   set_pixel(int x, int y, Color color);
    c_only void   reset( int type, SV * palette);
    c_only void   stretch( int width, int height);
    c_only void   update_change();

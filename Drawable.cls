@@ -42,6 +42,7 @@ object Prima::Drawable ( Prima::Component)
    property     SV *          linePattern;
    property     int           lineWidth;
    property     SV *          palette;
+   property     Color         pixel( int x, int y);
    property     Handle        region;
    property     Point         resolution;
    property     int           rop;
@@ -82,7 +83,6 @@ object Prima::Drawable ( Prima::Component)
    method Bool  bar(int x1, int y1, int x2, int y2)        => apc_gp_bar;
    method Bool  chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_chord;
    method Bool  clear(int x1=-1, int y1=-1, int x2=-1, int y2=-1)        => apc_gp_clear;
-   method Color get_pixel(int x, int y)                    => apc_gp_get_pixel;
    method Bool  ellipse(int x, int y, int Rx, int Ry)      => apc_gp_ellipse;
    method Bool  fill_chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_fill_chord;
    method Bool  fill_ellipse(int x, int y, int Rx, int Ry) => apc_gp_fill_ellipse;
@@ -96,7 +96,6 @@ object Prima::Drawable ( Prima::Component)
    method void  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
    method Bool  rectangle(int x1, int y1, int x2, int y2)  => apc_gp_rectangle;
    method Bool  sector( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_sector;
-   method Bool  set_pixel(int x, int y, Color color)       => apc_gp_set_pixel;
    method void  stretch_image(int x, int y, int xDest, int yDest, Handle image);
    method void  text_out( char * text, int x, int y, int len = -1);
    method SV*   text_wrap( char * text, int width, int options = twDefault, int tabIndent = 8, int textLen = -1);

@@ -322,7 +322,6 @@ sub profile_check_in
 }
 
 sub font       {($#_)?$_[0]->set_font($#_>1?{@_[1..$#_]}:$_[1]):return Prima::Font->new($_[0], "get_font", "set_font")}
-sub pixel      {($#_>2)? shift->set_pixel(@_) : return shift->get_pixel(@_);        }
 
 sub rect3d
 {

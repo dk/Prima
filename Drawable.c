@@ -835,6 +835,15 @@ Drawable_palette( Handle self, Bool set, SV * palette)
    return nilSV;
 }
 
+Color
+Drawable_pixel( Handle self, Bool set, int x, int y, Color color)
+{
+   if (!set) {
+      return apc_gp_get_pixel( self, x, y);
+   }
+   apc_gp_set_pixel( self, x, y, color);
+   return color;
+}
 
 Handle
 Drawable_region( Handle self, Bool set, Handle mask)
