@@ -38,11 +38,17 @@
  *   - removed #ifdef KERNEL part;
  *   - _SYS_QUEUE_H_ changed to _BSD_QUEUE_H_ everywhere.
  *
+ * tobez@tobez.org, 23-Jun-2000:
+ *   - added large ifndef SLIST_FOREACH, in case one of the standard
+ *     system headers #include <sys/queue.h>.
+ *
  * The original version was taken from:
  *
  *	@(#)queue.h	8.5 (Berkeley) 8/20/94
  * $FreeBSD: src/sys/sys/queue.h,v 1.30 1999/10/05 20:35:32 n_hibma Exp $
  */
+
+#ifndef SLIST_FOREACH
 
 #ifndef _BSD_QUEUE_H_
 #define	_BSD_QUEUE_H_
@@ -488,3 +494,5 @@ struct {								\
 } while (0)
 
 #endif /* !_BSD_QUEUE_H_ */
+
+#endif /* !SLIST_FOREACH */
