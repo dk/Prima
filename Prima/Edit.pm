@@ -871,7 +871,7 @@ sub on_keydown
       $mod &= ~km::Ctrl;
    }
    if  ((( $code & 0xFF) >= ord(' ')) &&
-#      (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
+       (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
        (( $key == kb::NoKey) || ( $key == kb::Space) || ( $key == kb::Tab))
       )
    {

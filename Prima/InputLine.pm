@@ -374,7 +374,7 @@ sub on_keydown
    
    if  (!$self-> {readOnly} &&
         (( $code & 0xFF) >= ord(' ')) &&
-#      (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
+      (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
        (( $key == kb::NoKey) || ( $key == kb::Space))
       )
    {
