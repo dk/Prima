@@ -478,6 +478,7 @@ extern Bool         palette_change( Handle self);
 extern long         palette_match( Handle self, long color);
 extern int          palette_match_color( XLOGPALETTE * lp, long clr, int * diffFactor);
 extern void         process_transparents( Handle self);
+extern Point        get_window_borders( int borderStyle);
 
 
 extern Bool      create_font_hash  ( void);
