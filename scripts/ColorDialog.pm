@@ -209,6 +209,9 @@ sub init
    my ( $h, $s, $v) = rgb2hsv( $r, $g, $b);
    $s *= 255;
    $v *= 255;
+   $h = int($h);
+   $s = int($s);
+   $v = int($v);
 
    $colorWheel = create_wheel(32, $self->backColor) unless $colorWheel;
 
