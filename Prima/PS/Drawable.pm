@@ -111,8 +111,7 @@ this behavior depends on a particular PS interpreter.
 =item ::useDeviceFontsOnly
 
 If 1, the system fonts, available from Prima::Application
-interfaces can not be used. This property is not to be mapped
-into the user-tunable setup dialog. Its usage is designed for
+interfaces can not be used. It is designed for
 developers and the outside-of-Prima applications that wish to
 use PS generation module without graphics. If 1, C<::useDeviceFonts>
 is set to 1 automatically.

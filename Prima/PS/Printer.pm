@@ -199,7 +199,10 @@ sub data
    $self-> reversed( $p-> {portrait} ? 0 : 1) if exists $dd-> {portrait};
    $self-> pageSize( @{exists($pageSizes{$p-> {page}}) ? $pageSizes{$p-> {page}} : $pageSizes{A4}})
      if exists $dd-> {page};
-   $self-> useDeviceFonts( $p-> {useDeviceFonts}) if exists $dd-> {page};
+   if ( exists $dd-> {page}) {
+      $self-> useDeviceFonts( $p-> {useDeviceFonts});
+      $self-> useDeviceFontsOnly( $p-> {useDeviceFontsOnly});
+   }
    if ( defined $dv) {
       my %dp = %{$p-> {devParms}};
       for ( keys %dp) {

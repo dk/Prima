@@ -398,7 +398,12 @@ $self-> widths([($self->width / 2 ) x 2]);
 
 $self-> {helpData} = {
    UseDeviceFonts => <<A,
-Use limited set of device fonts instead of exported bitmap fonts
+Use limited set of device fonts in addition to exported bitmap fonts.
+Always "Yes" if UseDeviceFontsOnly is set.
+A
+   UseDeviceFontsOnly => <<A,
+Use limited set of device fonts instead of exported bitmap fonts.
+Its usage may lead to that some document fonts will be mismatched
 A
    MediaType => <<A,
 An arbitrary string representing special attributes of the medium other
@@ -479,7 +484,7 @@ $self->{helpData}->{$_} =~ s/\n/ /g for keys %{$self->{helpData}};
    '),
 			columns => 2,
 			dragable => 0,
-			items => [['UseDeviceFonts', ' ', '1', '1', ],['MediaType', ' ', '0', ' ', ],['MediaColor', ' ', '0', ' ', ],['MediaWeight', ' ', '0', ' ', ],['MediaClass', ' ', '0', ' ', ],['InsertSheet', ' ', '1', '0', ],['LeadingEdge', ' ', '2', '0', ],['ManualFeed', ' ', '1', '0', ],['TraySwitch', ' ', '1', '0', ],['MediaPosition', ' ', '0', ' ', ],['DeferredMediaSelection', ' ', '1', '0', ],['MatchAll', ' ', '1', '0', ],],
+			items => [['UseDeviceFonts', ' ', '1', '1', ],['UseDeviceFontsOnly', ' ', '1', '0', ],['MediaType', ' ', '0', ' ', ],['MediaColor', ' ', '0', ' ', ],['MediaWeight', ' ', '0', ' ', ],['MediaClass', ' ', '0', ' ', ],['InsertSheet', ' ', '1', '0', ],['LeadingEdge', ' ', '2', '0', ],['ManualFeed', ' ', '1', '0', ],['TraySwitch', ' ', '1', '0', ],['MediaPosition', ' ', '0', ' ', ],['DeferredMediaSelection', ' ', '1', '0', ],['MatchAll', ' ', '1', '0', ],],
 			scalable => 1,
 			origin => [ 13, 89],
 			clickable => 0,
