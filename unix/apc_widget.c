@@ -32,6 +32,9 @@
 
 #include "unix/guts.h"
 
+#define SORT(a,b)       ({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
+#define REVERT(a)       ({ XX-> size. y - (a) - 1; })
+
 Point
 apc_widget_client_to_screen( Handle self, Point p)
 {
@@ -389,6 +392,9 @@ apc_widget_scroll( Handle self, int horiz, int vert,
 {
    DEFXX;
    int src_x, src_y, w, h, dst_x, dst_y;
+   XRectangle xr, ir;
+   Region invalid, reg;
+   PPaintList pl;
 
    if ( r) {
       src_x = r-> left;
@@ -405,15 +411,96 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    dst_y = src_y - vert;
 
    prima_get_gc( XX);
+   
+   xr. x = src_x;
+   xr. y = src_y;
+   xr. width = w;
+   xr. height = h;
+   ir = xr;
+   invalid = XCreateRegion();
+   XUnionRectWithRegion( &xr, invalid, invalid);
+   xr. x = dst_x;
+   xr. y = dst_y;
+   reg = XCreateRegion();
+   XUnionRectWithRegion( &xr, reg, reg);
+   if ( horiz == 0) {
+      if ( vert < 0)
+	 ir. height = -vert;
+      else {
+	 ir. y += ir. height - vert;
+	 ir. height = vert;
+      }
+   } else if ( vert == 0) {
+      if ( horiz < 0)
+	 ir. width = -horiz;
+      else {
+	 ir. x += ir. width - horiz;
+	 ir. width = horiz;
+      }
+   }
+   XSubtractRegion( invalid, reg, invalid);
+   XDestroyRegion( reg);
+   
    XX-> gcv. clip_mask = None;
    XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &XX-> gcv);
    XCHECKPOINT;
+   if (XX->scroll_rect. left != 0 || XX-> scroll_rect. right != 0) {
+      Region region;
+      Rect rect;
+      XRectangle cpa;
+      
+      rect = XX-> scroll_rect;
+      xr. x = rect. left;
+      xr. y = REVERT( rect. top) + 1;
+      xr. width = rect. right - rect. left;
+      xr. height = rect. top - rect. bottom;
+      region = XCreateRegion();
+      XUnionRectWithRegion( &xr, region, region);
+      XIntersectRegion( invalid, region, invalid);
+      prima_rect_intersect( &ir, &xr);
+      XSetRegion( DISP, XX-> gc, region);
+      XCHECKPOINT;
+      XDestroyRegion( region);
+      cpa. x = src_x;
+      cpa. y = src_y;
+      cpa. width = w;
+      cpa. height = h;
+      prima_rect_intersect( &cpa, &xr);
+      dst_x += -src_x + cpa. x;
+      dst_y += -src_y + cpa. y;
+      src_x = cpa. x;
+      src_y = cpa. y;
+      w = cpa. width;
+      h = cpa. height;
+   }
 
    XCopyArea( DISP, XX-> drawable, XX-> drawable, XX-> gc,
 	      src_x, src_y, w, h, dst_x, dst_y);
    XCHECKPOINT;
 
    prima_release_gc( XX);
+
+   if ( !XX-> region) {
+      XX-> region = XCreateRegion();
+      XX-> exposed_rect = ir;
+      /* fprintf( stderr, "exposed: %d %d %d %d\n", ir.x,ir.y,ir.width,ir.height); */
+   } else {
+      prima_rect_union( &XX-> exposed_rect, &ir);
+   }
+   XUnionRegion( XX-> region, invalid, XX-> region);
+   XDestroyRegion( invalid);
+   
+   pl = guts. paint_list;
+   while ( pl) {
+      if ( pl-> obj == self)
+	 return;
+      pl = pl-> next;
+   }
+   pl = malloc( sizeof( PaintList));
+   if (!pl) croak( "no memory");
+   pl-> obj = self;
+   pl-> next = guts. paint_list;
+   guts. paint_list = pl;
 }
 
 void
@@ -449,9 +536,11 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 }
 
 void
-apc_widget_set_clip_rect( Handle self, Rect clipRect)
+apc_widget_set_clip_rect( Handle self, Rect rect)
 {
-   DOLBUG( "apc_widget_set_clip_rect()\n");
+   SORT( rect. left, rect. right);
+   SORT( rect. bottom, rect. top);
+   X(self)-> scroll_rect = rect;
 }
 
 void

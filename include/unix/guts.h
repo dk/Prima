@@ -256,6 +256,7 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
    Region stale_region;
    XRectangle exposed_rect;
    XRectangle clip_rect;
+   Rect scroll_rect; /* clipping */
    FillPattern fill_pattern;
    int rop, paint_rop;
    PCachedFont font;
