@@ -29,6 +29,7 @@
 #  $Id$
 #
 use strict;
+no warnings;
 use Prima;
 
 my $rtfs = (  5, 7, 14, 18) [ int(rand(4)) ] ;
@@ -38,6 +39,7 @@ Prima::Application::add_startup_notification( sub {
 });
 
 package Prima::Widget;
+
 
 sub get_default_font
 {
