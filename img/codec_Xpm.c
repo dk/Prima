@@ -30,9 +30,11 @@
  */
 
 
+#include "img.h"
 #define Drawable        XDrawable
 #define Font            XFont
 #define Window          XWindow
+#undef FUNC
 #include <X11/xpm.h>
 #undef Font
 #undef Drawable
@@ -42,7 +44,6 @@
 #define XBool int
 #undef Complex
 #undef FUNC
-#include "img.h"
 #include "Icon.h"
 
 #ifdef __cplusplus
