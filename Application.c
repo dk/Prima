@@ -764,7 +764,7 @@ Application_get_image( Handle self, int x, int y, int xLen, int yLen)
    if ( xLen <= 0 || yLen <= 0) return nilHandle;
 
    profile = newHV();
-   i = Object_create( "Prima::Icon", profile);
+   i = Object_create( "Prima::Image", profile);
    sv_free(( SV *) profile);
    ret = apc_application_get_bitmap( self, i, x, y, xLen, yLen);
    --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
