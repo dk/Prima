@@ -43,7 +43,7 @@ use DynaLoader;
 use Prima::Gencls;
 use vars qw( %make_trans @ovvars $dir_sep $path_sep );
 use vars @ovvars = qw(
-    $CC $CFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
+    $CC $CFLAGS $CCCDLFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
     $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG $CLINKPREFIX
     $LD $LDFLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
     $OBJ_EXT $LIB_EXT $EXE_EXT $DL_EXT $SCRIPT_EXT
@@ -157,7 +157,8 @@ sub cc_command_line
 {
     my ( $srcf, $objf, $exef, $compile_only, $dl) = @_;
     my @cc = ( $CC, split ' ', $CFLAGS);
-    push @cc, split ' ', $CDLFLAGS if $dl;
+    push @cc, split ' ', $CCCDLFLAGS if $dl;
+    push @cc, split ' ', $CDLFLAGS if $dl && !$compile_only;
     push @cc, $COMPONLYFLAG if $compile_only;
     push @cc, map( { "$CINCPATHFLAG$_"} @INCPATH);
 #    for ( keys %DEFINES) {
@@ -594,7 +595,8 @@ sub setup_variables
         $lddlflags =~ s/(-|\/)nodefaultlib//g;
     }
     setvar( 'CFLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
-    setvar( 'CDLFLAGS', "$Config{ cccdlflags} $Config{ ccdlflags}");
+    setvar( 'CCCDLFLAGS', $Config{ cccdlflags});
+    setvar( 'CDLFLAGS', $Config{ ccdlflags});
     setvar( 'COUTOFLAG', $cc_specs{ $COMPILER}->{ coutoflag});
     setvar( 'COUTEXEFLAG', $cc_specs{ $COMPILER}->{ coutexeflag});
     setvar( 'CINCPATHFLAG', '-I');
