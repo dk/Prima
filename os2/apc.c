@@ -989,13 +989,18 @@ apc_window_end_modal( Handle self)
 }
 
 // Widget
-Point
-apc_widget_client_to_screen   ( Handle self, Point p)
+
+Bool
+apc_widget_map_points( Handle self, Bool toScreen, int count, Point * points)
 {
-   if ( !WinMapWindowPoints( var handle, HWND_DESKTOP, ( PPOINTL) &p, 1))
-      apiErr;
-   return p;
+   Bool ok;
+   if ( !( ok = WinMapWindowPoints(
+       toScreen ? var handle : HWND_DESKTOP,
+       toScreen ? HWND_DESKTOP : var handle,
+       ( PPOINTL) points, count))) apiErr;
+   return ok;
 }
+
 
 #define need_view_recreate    (( DHANDLE( owner) != sys owner)        \
                              || ( syncPaint != is_apt( aptSyncPaint)) \
@@ -1458,13 +1463,6 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 {
    if ( !WinSetCapture( HWND_DESKTOP, capture ? var handle : nilHandle)) apiErrRet;
    return true;
-}
-
-Point
-apc_widget_screen_to_client( Handle self, Point p)
-{
-   if ( !WinMapWindowPoints( HWND_DESKTOP, var handle, ( PPOINTL) &p, 1)) apiErr;
-   return p;
 }
 
 Bool

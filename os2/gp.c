@@ -89,8 +89,8 @@ apc_gp_done( Handle self)
 
 #define gp_arc_set {               \
   ARCPARAMS arc;                   \
-  arc. lP = radX;                  \
-  arc. lQ = radY;                  \
+  arc. lP = radX * 2;              \
+  arc. lQ = radY * 2;              \
   arc. lR = 0;                     \
   arc. lS = 0;                     \
   if ( !GpiSetArcParams( sys ps, &arc)) apiErr;  \
@@ -104,16 +104,16 @@ apc_gp_done( Handle self)
 
 
 Bool
-apc_gp_arc ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_arc ( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    LONG lType = GpiQueryLineType( sys ps);
    gp_arc_set;
    if ( !GpiSetLineType ( sys ps, LINETYPE_INVISIBLE)) apiErr;
-   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 1, 0), float2fixed(angleStart), MAKEFIXED(0, 0)) == GPI_ERROR) apiErr;
+   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), MAKEFIXED(0, 0)) == GPI_ERROR) apiErr;
    if ( !GpiSetLineType ( sys ps, lType)) apiErr;
    apc_gp_fix;
-   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 1, 0), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
+   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
    apc_gp_fix_end;
    return true;
 }
@@ -161,16 +161,16 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)      /* no fix */
 }
 
 Bool
-apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_chord( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    LONG lType = GpiQueryLineType( sys ps);
    gp_arc_set;
    if ( !GpiSetLineType ( sys ps, LINETYPE_INVISIBLE)) apiErr;
-   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 1, 0), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
+   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
    if ( !GpiSetLineType ( sys ps, lType)) apiErr;
    apc_gp_fix;
-   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 1, 0), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
+   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
    apc_gp_fix_end;
    return true;
 }
@@ -196,50 +196,50 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 }
 
 Bool
-apc_gp_ellipse( Handle self, int x, int y, int Rx, int Ry)
+apc_gp_ellipse( Handle self, int x, int y, double Rx, double Ry)
 {
    ARCPARAMS arc;
 
-   arc. lP = Rx;
-   arc. lQ = Ry;
+   arc. lP = Rx * 2;
+   arc. lQ = Ry * 2;
    arc. lR = 0;
    arc. lS = 0;
    if ( !GpiSetArcParams( sys ps, &arc)) apiErr;
    apc_gp_move( sys ps, x, y);
    apc_gp_fix;
-   if ( GpiFullArc( sys ps, DRO_OUTLINE, MAKEFIXED(1, 0)) == GPI_ERROR) apiErr;
+   if ( GpiFullArc( sys ps, DRO_OUTLINE, MAKEFIXED(0, 0x8000)) == GPI_ERROR) apiErr;
    apc_gp_fix_end;
    return true;
 }
 
 Bool
-apc_gp_fill_chord ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_fill_chord ( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    LONG lType = GpiQueryLineType( sys ps);
    gp_arc_set;
    if ( !GpiSetLineType ( sys ps, LINETYPE_INVISIBLE)) apiErr;
-   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 1, 0), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
+   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
    if ( !GpiSetLineType ( sys ps, lType)) apiErr;
    if ( !GpiBeginPath( sys ps, 1)) apiErr;
-   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 1, 0), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
+   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
    if ( !GpiEndPath( sys ps)) apiErr;
    if ( GpiFillPath( sys ps, 1, FPATH_ALTERNATE) == GPI_ERROR) apiErrRet;
    return true;
 }
 
 Bool                                                        /* no fix */
-apc_gp_fill_ellipse( Handle self, int x, int y, int Rx, int Ry)
+apc_gp_fill_ellipse( Handle self, int x, int y, double Rx, double Ry)
 {
    ARCPARAMS arc;
 
-   arc. lP = Rx;
-   arc. lQ = Ry;
+   arc. lP = Rx * 2;
+   arc. lQ = Ry * 2;
    arc. lR = 0;
    arc. lS = 0;
    if ( !GpiSetArcParams( sys ps, &arc)) apiErr;
    apc_gp_move( sys ps, x, y);
-   if ( GpiFullArc( sys ps, DRO_FILL, MAKEFIXED(1, 0)) == GPI_ERROR) apiErrRet;
+   if ( GpiFullArc( sys ps, DRO_FILL, MAKEFIXED(0, 0x8000)) == GPI_ERROR) apiErrRet;
    return true;
 }
 
@@ -255,13 +255,13 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 }
 
 Bool
-apc_gp_fill_sector ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_fill_sector ( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    gp_arc_set;
    if ( !GpiBeginPath( sys ps, 1)) apiErr;
    if ( !GpiMove( sys ps, &ptl)) apiErr;
-   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 1, 0), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
+   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
    if ( GpiLine( sys ps, &ptl) == GPI_ERROR) apiErr;
    if ( !GpiEndPath( sys ps)) apiErr;
    if ( GpiFillPath( sys ps, 1, FPATH_ALTERNATE) == GPI_ERROR) apiErrRet;
@@ -376,13 +376,13 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 }
 
 Bool
-apc_gp_sector ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_sector ( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    gp_arc_set;
    if ( !GpiMove( sys ps, &ptl)) apiErr;
    apc_gp_fix;
-   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 1, 0), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
+   if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
    if ( GpiLine( sys ps, &ptl) == GPI_ERROR) apiErr;
    apc_gp_fix_end;
    return true;
