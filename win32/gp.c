@@ -181,7 +181,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
    STYLUS_USE_BRUSH( ps);
    check_swap( x1, x2);
    check_swap( y1, y2);
-   if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y2 - 1, x2 + 2, sys lastSize. y - y1 + 1))) apiErr;
+   if ( !( ok = Rectangle( ps, x1, sys lastSize. y - y2 - 1, x2 + 2, sys lastSize. y - y1 + 1))) apiErr;
    SelectObject( ps, old);
    return ok;
 }}
@@ -1433,7 +1433,7 @@ FillPattern *
 apc_gp_get_fill_pattern( Handle self)
 {
    objCheck nil;
-   return &sys fillPattern;
+   return sys ps ? &sys fillPattern : &sys fillPattern2;
 }
 
 static int ctx_le2PS_ENDCAP[] = {

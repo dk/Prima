@@ -533,7 +533,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
 FillPattern *
 apc_gp_get_fill_pattern( Handle self)
 {
-   return &sys fillPattern;
+   return sys ps ? &sys fillPattern : &sys fillPattern2;
 }
 
 /* XXX check for correct results !!! */
