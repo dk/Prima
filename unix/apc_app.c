@@ -497,16 +497,17 @@ perform_pending_paints( void)
 {
    PDrawableSysData selfxx, next;
    Event e;
+   int stage = csConstructing;
 
    for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
       next = TAILQ_NEXT( XX, paintq_link);
-      if ( XX-> flags. paint_pending) {
+      if ( !XX-> flags. paint_pending)
+         croak( "assertion !paint_pending failed");
+      if (( stage = PWidget( XX->self)-> stage) != csConstructing) {
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
-      } else {
-         croak( "assertion !paint_pending failed");
       }
-      if ( PWidget( XX->self)-> stage == csNormal) {
+      if ( stage == csNormal) {
          e. cmd = cmPaint;
          CWidget( XX->self)-> message( XX-> self, &e);
       }
@@ -644,7 +645,7 @@ FetchAndProcess:
    }
    perform_pending_paints();
    kill_zombies();
-   return true;
+   return application != nilHandle;
 }
 
 Bool
