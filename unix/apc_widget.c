@@ -423,8 +423,6 @@ apc_widget_destroy( Handle self)
       prima_end_menu();
    if ( guts. focused == self)
       guts. focused = nilHandle;
-   if ( guts. lastWMFocus == X_WINDOW)
-      guts. lastWMFocus = nilHandle;
    XX-> flags.modal = false;
    if ( XX-> flags. paint_pending) {
       TAILQ_REMOVE( &guts.paintq, XX, paintq_link);

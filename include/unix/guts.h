@@ -466,7 +466,6 @@ typedef struct _UnixGuts
    Handle                       currentMenu;
    Handle                       unfocusedMenu;
    int                          menu_timeout;
-   XWindow                      lastWMFocus;
    XWindow                      root;
    XVisualInfo                  visual;
    int                          visualClass;

@@ -543,17 +543,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if ( guts. currentMenu) prima_end_menu();
       if (prima_no_input(XX, false, true)) return;
 
-      {
-         PWidget x = PWidget(self);
-         while ( x-> owner) {
-            if ( XT_IS_WINDOW(X(x))) break;
-            x = ( PWidget) x-> owner;
-         }
-         if ( x && ( Handle) x != application && x-> handle != guts. lastWMFocus) {
-            XSetInputFocus( DISP, x-> handle, RevertToNone, ev-> xbutton. time);
-         }
-      }
-      
       if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
          XWindow rx;
          XTranslateCoordinates( DISP, X_WINDOW, PWidget(guts. grab_widget)-> handle, 
@@ -611,6 +600,16 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if ( bev-> state & Button5Mask)   e.pos.mod |= mb5;
       if ( bev-> state & Button6Mask)   e.pos.mod |= mb6;
       if ( bev-> state & Button7Mask)   e.pos.mod |= mb7;
+
+      if ( e. cmd == cmMouseDown &&
+           guts.last_button_event.type == ButtonRelease &&
+           bev-> window == guts.last_button_event.window &&
+           bev-> button == guts.last_button_event.button &&
+           bev-> time - guts.last_button_event.time <= guts.click_time_frame) {
+ 	  e. cmd = cmMouseClick;
+          e. pos. dblclk = true;
+      }
+
       if ( e. cmd == cmMouseDown
 	   && (( guts. mouse_wheel_up != 0 && bev-> button == guts. mouse_wheel_up)
 	       || ( guts. mouse_wheel_down != 0 && bev-> button == guts. mouse_wheel_down)))
@@ -630,15 +629,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 secondary. pos. where. y = e. pos. where. y;
 	 secondary. pos. mod = e. pos. mod;
 	 secondary. pos. button = e. pos. button;
-         if (guts.last_click.window == bev->window &&
-             guts.last_click.button == bev->button &&
-             guts.last_button_event.time - guts.last_click.time <=
-                guts.double_click_time_frame) {
-            bzero( &guts.last_click, sizeof(guts.last_click));
-            secondary.pos.dblclk = true;
-         } else {
-            memcpy( &guts.last_click, bev, sizeof(guts.last_click));
-         }
+         memcpy( &guts.last_click, bev, sizeof(guts.last_click));
          if ( e. pos. button == mbRight) {
             Event ev;
             bzero( &ev, sizeof(ev));
@@ -650,6 +641,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          }
       }
       memcpy( &guts.last_button_event, bev, sizeof(*bev));
+      if ( e. cmd == cmMouseClick && e. pos. dblclk) {
+         bzero( &guts.last_click, sizeof(guts.last_click));
+         guts. last_button_event. type = 0;
+      }
+      
       if ( e. cmd == cmMouseDown && !XX-> flags. first_click) {
          Handle x = self, f = guts. focused ? guts. focused : application;
          while ( !X(x)-> type. window && ( x != application)) x = (( PWidget) x)-> owner;
