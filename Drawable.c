@@ -7,6 +7,10 @@
 #define my  ((( PDrawable) self)-> self)->
 #define var (( PDrawable) self)->
 
+#define gpARGS            Bool inPaint = opt_InPaint
+#define gpENTER           if ( !inPaint) my begin_paint_info( self)
+#define gpLEAVE           if ( !inPaint) my end_paint_info( self)
+
 PRGBColor read_palette( int * palSize, SV * palette);
 
 void
@@ -208,12 +212,61 @@ Drawable_set_text_out_baseline( Handle self, Bool baseline)
    opt_assign( optTextOutBaseLine, baseline);
 }
 
+int
+Drawable_get_paint_state( Handle self)
+{
+   if ( is_opt( optInDraw))
+      return 1;
+   else if ( is_opt( optInDrawInfo))
+      return 2;
+   else
+      return 0;
+}
+
+int
+Drawable_get_bpp( Handle self)
+{
+   gpARGS;
+   int ret;
+   gpENTER;
+   ret = apc_gp_get_bpp( self);
+   gpLEAVE;
+   return ret;
+}
+
+Color
+Drawable_get_nearest_color( Handle self, Color color)
+{
+   gpARGS;
+   gpENTER;
+   color = apc_gp_get_nearest_color( self, color);
+   gpLEAVE;
+   return color;
+}
+
+Point
+Drawable_get_resolution( Handle self)
+{
+   gpARGS;
+   Point ret;
+   gpENTER;
+   ret = apc_gp_get_resolution( self);
+   gpLEAVE;
+   return ret;
+}
+
+
 SV *
 Drawable_get_physical_palette( Handle self)
 {
+   gpARGS;
    int i, nCol;
    AV * av = newAV();
-   PRGBColor r = apc_gp_get_physical_palette( self, &nCol);
+   PRGBColor r;
+
+   gpENTER;
+   r = apc_gp_get_physical_palette( self, &nCol);
+   gpLEAVE;
 
    for ( i = 0; i < nCol; i++) {
       av_push( av, newSViv( r[ i].b));
@@ -227,14 +280,15 @@ Drawable_get_physical_palette( Handle self)
 SV *
 Drawable_get_font_abc( Handle self)
 {
+   gpARGS;
    int i;
    AV * av = newAV();
    PFontABC abc;
-   Bool inPaint = opt_InPaint;
 
-   if ( !inPaint) my begin_paint_info( self);
+
+   gpENTER;
    abc = apc_gp_get_font_abc( self);
-   if ( !inPaint) my end_paint_info( self);
+   gpLEAVE;
 
    for ( i = 0; i < 256; i++) {
       av_push( av, newSVnv( abc[ i]. a));
@@ -387,30 +441,30 @@ Drawable_fillpoly( Handle self, SV * points)
 int
 Drawable_get_text_width( Handle self, char * text, int len, Bool addOverhang)
 {
-   Bool inPaint = opt_InPaint;
+   gpARGS;
    int res;
    if ( len < 0) len = strlen( text);
-   if ( !inPaint) my begin_paint_info( self);
+   gpENTER;
    res = apc_gp_get_text_width( self, text, len, addOverhang);
-   if ( !inPaint) my end_paint_info( self);
+   gpLEAVE;
    return res;
 }
 
 SV *
 Drawable_get_text_box( Handle self, char * text, int len)
 {
+   gpARGS;
    Point * p;
    AV * av;
    int i;
    int yAdd = 0;
-   Bool inPaint = opt_InPaint;
 
    if ( !is_opt( optTextOutBaseLine) && ( var font. direction == 0))
       yAdd = var font. descent;
    if ( len < 0) len = strlen( text);
-   if ( !inPaint) my begin_paint_info( self);
+   gpENTER;
    p = apc_gp_get_text_box( self, text, len);
-   if ( !inPaint) my end_paint_info( self);
+   gpLEAVE;
    av = newAV();
    for ( i = 0; i < 5; i++) {
       av_push( av, newSViv( p[ i]. x));
@@ -423,7 +477,7 @@ Drawable_get_text_box( Handle self, char * text, int len)
 SV*
 Drawable_text_wrap( Handle self, char * text, int width, int options, int tabIndent, int textLen)
 {
-   Bool inPaint    = opt_InPaint;
+   gpARGS;
    TextWrapRec t   = {text, width, tabIndent, nil, options, textLen};
    Bool retChunks  = t. options & twReturnChunks;
    char** c;
@@ -434,9 +488,9 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    if ( t. tabIndent < 0) t. tabIndent = 0;
    if ( t. textLen   < 0) t. textLen   = strlen( t. text);
 
-   if ( !inPaint) my begin_paint_info( self);
+   gpENTER;
    c = apc_gp_text_wrap( self, &t);
-   if ( !inPaint) my end_paint_info( self);
+   gpLEAVE;
 
    for ( i = 0; i < t. count; i++) {
       av_push( av, retChunks ? ( newSViv(( int) c[ i])) : ( newSVpv( c[ i], 0)));
