@@ -789,7 +789,7 @@ sub set_value
    return if $value == $self->{value};
    $self-> {value} = $value;
    $self-> notify(q(Change));
-   $self-> repaint;
+   $self-> {edit}-> repaint;
 }
 
 sub set_colors
