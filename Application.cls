@@ -65,7 +65,7 @@ object Prima::Application( Prima::Widget)
    property  Bool   transparent;
    property  SV *   text;
    property  Bool   visible;
-   property  int    wantUnicodeInput;
+   property  Bool   wantUnicodeInput;
 
    method Bool   begin_paint();
    method Bool   begin_paint_info();

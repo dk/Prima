@@ -72,7 +72,7 @@ my $w = Prima::Window-> create(
          $_[0]-> menu-> checked( 'rr', $repeat);
        }],
        [ ( $::application-> wantUnicodeInput()   ? '*' : '') . # is is on?
-         ( $::application-> wantUnicodeInput(-1) ? '' : '-') . # is it writable ?
+         ( $::application-> get_system_value( sv::CanUTF8_Input) ? '' : '-') . # is it writable ?
           'uu' => '~Unicode input' => sub {
           $::application-> wantUnicodeInput( $_[0]-> menu-> toggle( 'uu'));
        }],

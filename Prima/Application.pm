@@ -338,15 +338,11 @@ is another layer of hint visibility control - if it is 0,
 all hint actions are disabled, disregarding C<::showHint> value
 in widgets.
 
-=item wantUnicodeInput INTEGER
+=item wantUnicodeInput BOOLEAN
 
 Selects if the system is allowed to generate key codes in unicode. 
-In get-mode returns the effective state of the unicode input flag, which cannot be
-changed if perl or system do not support UTF8. In set mode, returns 1 if
-the operation is supported, 0 if the system does not support unicode. This feature can
-be used to check the writability of the property, by passing a negative value;
-no attempts to change the property value will be made, but the return value
-will be valid.
+Returns the effective state of the unicode input flag, which cannot be
+changed if perl or operating system do not support UTF8. 
 
 =back
 
