@@ -144,7 +144,7 @@ sub item2rect
       $item -= $self->{topItem};
       my ($j,$i,$ih,$iw) = (
          $self->{rows} ? int( $item / $self->{rows} - (( $item < 0) ? 1 : 0)) : -1,
-         $item % $self->{rows},
+         $item % ( $self->{rows} ? $self->{rows} : 1),
          $self->{itemHeight},
          $self->{itemWidth}
       );
@@ -232,6 +232,7 @@ sub on_paint
       my $focusedState = $self-> focused ? ( exists $self->{unfocState} ? 0 : 1) : 0;
       my $singlePaint = exists $self->{singlePaint};
       my @paintArray;
+      my $rows = $self->{rows} ? $self->{rows} : 1;
       if ( $singlePaint)
       {
          for ( keys %{$self->{singlePaint}} )
@@ -251,16 +252,17 @@ sub on_paint
               $itemRect[0] - $self->{offset}, $itemRect[1],
               $itemRect[2]-1, $itemRect[3]-1,
               $sel, $self->{focusedItem} == $item ? $focusedState : 0,
-              int(( $item - $self->{topItem}) / $self->{rows}),
+              int(( $item - $self->{topItem}) / $rows),
             ]);
          }
       } else {
          my $item = $self->{topItem};
          if ( $self->{multiColumn})
          {
+            my $rows = $self->{rows} ? $self->{rows} : 1;
             MAIN:for ( $j = 0; $j < $self->{activeColumns}; $j++)
             {
-               for ( $i = 0; $i < $self->{rows}; $i++)
+               for ( $i = 0; $i < $rows; $i++)
                {
                   last MAIN if $item > $self->{lastItem};
                   my @itemRect = (
@@ -590,7 +592,7 @@ sub reset
       $self->{uncover} = undef;
       if ( $self->{rows} == 0)
       {
-         $self->{columns}++, $w += $iw + 1 while ( $w < $size[0]);
+         $self->{activeColumns}++, $self->{columns}++, $w += $iw + 1 while ( $w < $size[0]);
       } else {
          while ( $w <= $size[0])
          {
@@ -620,7 +622,8 @@ sub reset
                          $size[1] - ( $self->{lastItem} - $self->{topItem} + 1) * $ih;
       $self->{uncover} += $bw + $self->{dy};
       $self->{tailVisible} = 0;
-      if ( $self->{count} > 0 && $self->{lastItem} < $self->{count}-1 && !$self->{integralHeight} && $self->{yedge} > 0)
+      my $integralHeight = ( $self->{integralHeight} && ( $self-> {rows} > 0)) ? 1 : 0;
+      if ( $self->{count} > 0 && $self->{lastItem} < $self->{count}-1 && !$integralHeight && $self->{yedge} > 0)
       {
          $self->{tailVisible} = 1;
          $self->{lastItem}++;
@@ -767,6 +770,7 @@ sub set_focused_item
       delete $self-> {syncScroll};
    }
    $self-> {singlePaint}->{$foc} = 1;
+   delete $self-> {singlePaint} unless $self->{rows};
    $self-> refresh;
 }
 
@@ -1006,7 +1010,7 @@ sub set_top_item
    }
 
    if ( $self->{ multiColumn}) {
-      if ( $dt % $self->{rows} == 0) {
+      if (( $self->{rows} != 0) && ( $dt % $self->{rows} == 0)) {
          $self-> scroll( -( $dt / $self->{rows}) * ($iw + 1), 0,
                          clipRect => [ $bw, $bw + $dy, $w - $bw - $dx, $h - $bw ]);
       } else {

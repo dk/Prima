@@ -2698,6 +2698,22 @@ apc_system_action( const char * params)
          if ( WNetGetUser( connection, user, &len) != NO_ERROR)
             return 0;
          return strcpy( malloc( strlen( user) + 1), user);
+      } else if ( strncmp( params, "win32.SetVersion", 16) == 0) {
+         const char * ver = params + 17;
+         while ( *ver && ( *ver == ' '  || *ver == '\t')) ver++;
+
+         if ( stricmp( ver, "NT") == 0) {
+            guts. version = 0;
+            guts. is98 = 0;
+         } else if (( stricmp( ver, "95") == 0) || ( stricmp( ver, "mustdie") == 0)) {
+            guts. version = 0x80000003;
+            guts. is98 = 0;
+         } else if ( stricmp( ver, "98") == 0) {
+            guts. version = 0x80000003;
+            guts. is98 = 1;
+         } else {
+            warn( "Are you nuts? Microsoft itself afraid of %s yet!", ver);
+         }
       } else
          goto DEFAULT;
       break;

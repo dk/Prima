@@ -69,7 +69,7 @@ apc_gp_done( Handle self)
    }
    if ( sys linePatternLen  > 3) free( sys linePattern);
 
-   if ( IS_WIN95 && sys linePatternLen2 > 3) free( sys linePattern2);
+   if ( sys linePatternLen2 > 3) free( sys linePattern2);
    font_free( sys fontResource, false);
    if ( sys p256) free( sys p256);
    sys bm = sys pal = sys ps = sys bm = sys p256 = nilHandle;
