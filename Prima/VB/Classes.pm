@@ -2793,7 +2793,7 @@ sub open
       size   => [ ( $xb ) x 2],
       font   => { height => $xb - 4 * 0.8, style => fs::Bold },
       text   => 'X',
-      growMode => gm::GrowLoX|gm::GrowLoY,
+      growMode => gm::GrowLoY,
       onClick => sub { $self-> {B}-> popup-> popup($_[0]-> origin)},
    );
 
