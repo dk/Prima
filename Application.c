@@ -258,20 +258,47 @@ Application_get_caption_font( char * dummy)
 int
 Application_get_default_cursor_width( char * dummy)
 {
-   return apc_sys_get_cursor_width();
+   return apc_sys_get_value( svXCursor);
 }
 
 
 Point
 Application_get_default_scrollbar_metrics( char * dummy)
 {
-   return apc_sys_get_scrollbar_metrics();
+   Point ret = {
+      apc_sys_get_value( svXScrollbar),
+      apc_sys_get_value( svYScrollbar)
+   };
+   return ret;
 }
 
 Point
 Application_get_default_window_borders( char * dummy, int borderStyle)
 {
-   return apc_sys_get_window_borders( borderStyle);
+   Point ret = { 0,0};
+   switch ( borderStyle) {
+   case bsNone:
+      ret.x = svXbsNone;
+      ret.y = svYbsNone;
+      break;
+   case bsSizeable:
+      ret.x = svXbsSizeable;
+      ret.y = svYbsSizeable;
+      break;
+   case bsSingle:
+      ret.x = svXbsSingle;
+      ret.y = svYbsSingle;
+      break;
+   case bsDialog:
+      ret.x = svXbsDialog;
+      ret.y = svYbsDialog;
+      break;
+   default:
+      return ret;
+   }
+   ret. x = apc_sys_get_value( ret. x);
+   ret. y = apc_sys_get_value( ret. y);
+   return ret;
 }
 
 int
@@ -455,7 +482,11 @@ Application_get_parent( Handle self)
 Point
 Application_get_scroll_rate( Handle self)
 {
-  return apc_sys_get_autoscroll_rate();
+   Point ret = {
+      apc_sys_get_value( svAutoScrollFirst),
+      apc_sys_get_value( svAutoScrollNext)
+   };
+   return ret;
 }
 
 static void hshow( Handle self)

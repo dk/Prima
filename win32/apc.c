@@ -673,6 +673,9 @@ apc_window_get_border_style( Handle self)
 }
 
 Point
+apc_sys_get_window_borders( int borderStyle);
+
+Point
 apc_window_get_client_pos( Handle self)
 {
    Point delta = apc_sys_get_window_borders( sys s. window. borderStyle);
@@ -966,6 +969,7 @@ window_start_modal( Handle self, Bool shared, Handle insertBefore)
    // setting window up
    guts. focSysDisabled = 1;
    CWindow( self)-> exec_enter_proc( self, shared, insertBefore);
+   apc_widget_set_enabled( self, 1);
    SetWindowPos( wnd, 0, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_SHOWWINDOW);
    if ( sys s. window. state == wsMinimized)
       ShowWindow( wnd, SW_RESTORE);
@@ -1028,6 +1032,7 @@ apc_window_end_modal( Handle self)
    guts. focSysDisabled = 1;
    WinHideWindow( wnd);
    CWindow( self)-> exec_leave_proc( self);
+   apc_widget_set_enabled( self, 0);
    if ( application) {
       Handle who = Application_popup_modal( application);
       if ( !who && var owner)
@@ -2141,33 +2146,10 @@ void  apc_show_message( char * message)
    MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 }
 
-Point
-apc_sys_get_autoscroll_rate()
-{
-   Point pt = { 200, 50}; // cannot find actual values .(
-   return pt;
-}
-
-int
-apc_sys_get_cursor_width()
-{
-   GetSystemMetrics( SM_CXBORDER);
-}
-
 Bool
 apc_sys_get_insert_mode()
 {
    return guts. insertMode;
-}
-
-Point
-apc_sys_get_scrollbar_metrics()
-{
-   Point p = {
-      GetSystemMetrics( SM_CXHSCROLL),
-      GetSystemMetrics( SM_CYVSCROLL)
-   };
-   return p;
 }
 
 void
@@ -2224,6 +2206,27 @@ apc_sys_get_value( int sysValue)
        RegQueryValueEx( hKey, "DragFullWindows", nil, &valType, buf, &valSize);
        RegCloseKey( hKey);
        return atol( buf);
+   case svWheelPresent    : return GetSystemMetrics( SM_MOUSEWHEELPRESENT);
+   case svXIcon           : return guts. iconSizeLarge. x;
+   case svYIcon           : return guts. iconSizeLarge. y;
+   case svXSmallIcon      : return guts. iconSizeSmall. x;
+   case svYSmallIcon      : return guts. iconSizeSmall. y;
+   case svXPointer        : return guts. pointerSize. x;
+   case svYPointer        : return guts. pointerSize. y;
+   case svXScrollbar      : return GetSystemMetrics( SM_CXHSCROLL);
+   case svYScrollbar      : return GetSystemMetrics( SM_CYVSCROLL);
+   case svXCursor         : return GetSystemMetrics( SM_CXBORDER);
+   case svAutoScrollFirst : return 200;
+   case svAutoScrollNext  : return 50;
+   case svInsertMode      : return guts. insertMode;
+   case svXbsNone         : return 0;
+   case svYbsNone         : return 0;
+   case svXbsSizeable     : return GetSystemMetrics( SM_CXFRAME);
+   case svYbsSizeable     : return GetSystemMetrics( SM_CYFRAME);
+   case svXbsSingle       : return GetSystemMetrics( SM_CXBORDER);
+   case svYbsSingle       : return GetSystemMetrics( SM_CYBORDER);
+   case svXbsDialog       : return GetSystemMetrics( SM_CXDLGFRAME);
+   case svYbsDialog       : return GetSystemMetrics( SM_CYDLGFRAME);
    default:
       apcErr( errInvParams);
    }
