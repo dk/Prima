@@ -1686,7 +1686,9 @@ void list_delete( PList slf, Handle item)
 void list_delete_at( PList slf, int index)
 {
    if ( !slf || index < 0 || index >= slf-> count) return;
-   memmove( &slf-> items[ index], &slf-> items[ index + 1], ( --slf-> count - index) * sizeof( Handle));
+   slf-> count--;
+   if ( index == slf-> count) return;
+   memmove( &slf-> items[ index], &slf-> items[ index + 1], ( slf-> count - index) * sizeof( Handle));
 }
 
 Handle list_at( PList slf, int index)

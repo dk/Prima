@@ -256,6 +256,7 @@ Image_get_handle( Handle self)
 SV *
 Image_get_data( Handle self)
 {
+   if ( var stage > csNormal) return nilSV;
    return newSVpvn( var data, var dataSize);
 }
 
@@ -265,6 +266,7 @@ Image_set_data( Handle self, SV * svdata)
    int dataSize;
    void *data = SvPV( svdata, dataSize);
 
+   if ( var stage > csNormal) return;
    if ( is_opt( optInDraw) || dataSize <= 0) return;
 
    memcpy( var data, data, dataSize > var dataSize ? var dataSize : dataSize);
@@ -647,6 +649,7 @@ Image_get_palette( Handle self)
 void
 Image_set_palette( Handle self, SV * palette)
 {
+   if ( var stage > csNormal) return;
    if ( var type & imGrayScale)
       return;
    if ( !var palette)

@@ -159,6 +159,7 @@ void
 Drawable_set_palette( Handle self, SV * palette)
 {
    int ops = var palSize;
+   if ( var stage > csNormal) return;
    free( var palette);
    var palette = read_palette( &var palSize, palette);
    if ( ops == 0 && var palSize == 0) return; // do not bother apc

@@ -228,6 +228,7 @@ void
 Widget_attach( Handle self, Handle objectHandle)
 {
    if ( objectHandle == nilHandle) return;
+   if ( var stage > csNormal) return;
    if ( kind_of( objectHandle, CWidget)) list_add( &var widgets, objectHandle);
    inherited attach( self, objectHandle);
 }
@@ -299,8 +300,11 @@ void
 Widget_detach( Handle self, Handle objectHandle, Bool kill)
 {
    enter_method;
-   if ( kind_of( objectHandle, CWidget)) list_delete( &var widgets, objectHandle);
-   if ( var currentWidget == objectHandle) my set_current_widget( self, nilHandle);
+   if ( kind_of( objectHandle, CWidget)) {
+      list_delete( &var widgets, objectHandle);
+      if ( var currentWidget == objectHandle && objectHandle != nilHandle)
+          my set_current_widget( self, nilHandle);
+   }
    inherited detach( self, objectHandle, kill);
 }
 
@@ -966,8 +970,10 @@ Widget_next( Handle self)
 void
 Widget_post_message( Handle self, SV * info1, SV * info2)
 {
-   PPostMsg p = malloc( sizeof( PostMsg));
+   PPostMsg p;
    Event ev = { cmPost};
+   if ( var stage > csNormal) return;
+   p = malloc( sizeof( PostMsg));
    p-> info1  = newSVsv( info1);
    p-> info2  = newSVsv( info2);
    p-> h = self;
@@ -1428,6 +1434,7 @@ Widget_get_parent( Handle self)
 SV *
 Widget_get_pointer( Handle self)
 {
+   if ( var stage > csNormal) return nilSV;
    return newSVsv( var pointer);
 }
 
@@ -1447,12 +1454,15 @@ Widget_get_pointer_pos( Handle self)
 Handle
 Widget_get_pointer_icon( Handle self)
 {
-   HV * profile = newHV();
-   Handle icon = Object_create( "Icon", profile);
-   sv_free(( SV *) profile);
-   apc_pointer_get_bitmap( self, icon);
-   --SvREFCNT( SvRV((( PAnyObject) icon)-> mate));
-   return icon;
+   if ( var stage > csNormal) return nilHandle;
+   {
+      HV * profile = newHV();
+      Handle icon = Object_create( "Icon", profile);
+      sv_free(( SV *) profile);
+      apc_pointer_get_bitmap( self, icon);
+      --SvREFCNT( SvRV((( PAnyObject) icon)-> mate));
+      return icon;
+   }
 }
 
 Handle
@@ -1514,6 +1524,7 @@ Widget_get_selectable( Handle self)
 Handle
 Widget_get_selectee( Handle self)
 {
+   if ( var stage > csNormal) return nilHandle;
    if ( var currentWidget) {
       PWidget w = ( PWidget) var currentWidget;
       if ( w-> options. optSystemSelectable && !w-> self-> get_clip_owner(( Handle) w))
@@ -1591,7 +1602,7 @@ Widget_get_tab_stop( Handle self)
 char *
 Widget_get_text( Handle self)
 {
-   return var text;
+   return var text ? var text : "";
 }
 
 int
@@ -1621,6 +1632,7 @@ void
 Widget_set_accel_items( Handle self, SV * accelItems)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    if ( var accelTable == nilHandle)
    {
       HV * profile = newHV();
@@ -1637,6 +1649,7 @@ void
 Widget_set_accel_table( Handle self, Handle accelTable)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    if ( accelTable && !kind_of( accelTable, CAbstractMenu)) return;
    if ( accelTable && (( PAbstractMenu) accelTable)-> owner != self)
      my set_accel_items( self, ((( PAbstractMenu) accelTable)-> self)-> get_items( accelTable, ""));
@@ -1761,11 +1774,14 @@ void
 Widget_set_current_widget( Handle self, Handle widget)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    if ( widget) {
-      if ( !widget || ((( PWidget) widget)-> owner != self)) return;
+      if ( !widget || (( PWidget) widget)-> stage > csNormal ||
+         ((( PWidget) widget)-> owner != self)) return;
       var currentWidget = widget;
-   } else
+   } else {
       var currentWidget = nilHandle;
+   }
 
    /* adjust selection if we're in currently selected chain */
    if ( my get_selected( self))
@@ -1776,6 +1792,7 @@ Widget_set_current_widget( Handle self, Handle widget)
 void
 Widget_set_drag_pointer( Handle self, SV * dragPointer)
 {
+   if ( var stage > csNormal) return;
    SvREFCNT_inc( dragPointer);
    if ( var dragPointer) SvREFCNT_dec( var dragPointer);
    var dragPointer = dragPointer;
@@ -1786,6 +1803,7 @@ void
 Widget_set_focused( Handle self, Bool focused)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    if ( focused) {
       PWidget x = ( PWidget)( var owner);
       Handle current = self;
@@ -1846,6 +1864,7 @@ void
 Widget_set_hint( Handle self, char * hint)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    my first_that( self, hint_notify, (void*)hint);
 
    free( var hint);
@@ -1875,6 +1894,7 @@ void
 Widget_set_hint_visible( Handle self, Bool visible)
 {
    PApplication app = ( PApplication) application;
+   if ( var stage > csNormal) return;
    if ( visible == app-> hintVisible) return;
    if ( visible && strlen( var hint) == 0) return;
    app-> self-> set_hint_action( application, self, visible, false);
@@ -1963,6 +1983,7 @@ void
 Widget_set_palette( Handle self, SV * palette)
 {
    int oclrs = var palSize;
+   if ( var stage > csNormal) return;
    if ( var handle == nilHandle) return; /* aware of call from Drawable::init */
    free( var palette);
    var palette = read_palette( &var palSize, palette);
@@ -1979,6 +2000,7 @@ void
 Widget_set_pointer( Handle self, SV * pointer)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    if ( SvROK( pointer))
    {
       Point p = { 16, 16};
@@ -1998,6 +2020,7 @@ void
 Widget_set_pointer_icon( Handle self, Handle icon, Point hotSpot)
 {
    SV *oldp;
+   if ( var stage > csNormal) return;
    if ( icon != nilHandle && !kind_of( icon, CIcon)) {
       warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
       return;
@@ -2024,6 +2047,7 @@ void
 Widget_set_popup( Handle self, Handle popup)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    if ( popup && !kind_of( popup, CPopup)) return;
    if ( popup && (( PAbstractMenu) popup)-> owner != self)
       my set_popup_items( self, ((( PAbstractMenu) popup)-> self)-> get_items( popup, ""));
@@ -2047,6 +2071,7 @@ void
 Widget_set_popup_items( Handle self, SV * popupItems)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    if ( var popupMenu == nilHandle)
    {
      if ( SvTYPE( popupItems))
@@ -2094,6 +2119,7 @@ void
 Widget_set_selected( Handle self, Bool selected)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    if ( selected) {
       if ( var currentWidget) {
          PWidget w = ( PWidget) var currentWidget;
@@ -2218,6 +2244,7 @@ Widget_set_tab_order( Handle self, int tabOrder)
    PWidget owner = ( PWidget) var owner;
    PWidget busy;
    locCount = -1;
+   if ( var stage > csNormal) return;
    ( Handle) busy = owner-> self-> first_that( var owner, find_ordering, (void*) tabOrder);
    if ( busy)
    {
@@ -2256,6 +2283,7 @@ Widget_set_tab_stop( Handle self, Bool stop)
 void
 Widget_set_text( Handle self, char * text)
 {
+   if ( var stage > csNormal) return;
    free( var text);
    if ( text)
    {
