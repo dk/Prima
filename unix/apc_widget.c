@@ -410,7 +410,7 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    XRectangle xr, ir;
    Region invalid, reg;
    PPaintList pl;
-
+   
    if ( r) {
       src_x = r-> left;
       src_y = XX-> size. y - r-> top;
@@ -422,9 +422,17 @@ apc_widget_scroll( Handle self, int horiz, int vert,
       w = XX-> size. x;
       h = XX-> size. y;
    }
+
+   /* BUGBUGBUG
+   fprintf( stderr, "scroll: %d,%d - (%d,%d,%d,%d)\n",
+            horiz, vert,
+            src_x, src_y, w, h);
+            */
+
    dst_x = src_x + horiz;
    dst_y = src_y - vert;
 
+   prima_no_cursor( self);
    prima_get_gc( XX);
    
    XX-> gcv. clip_mask = None;
@@ -440,6 +448,10 @@ apc_widget_scroll( Handle self, int horiz, int vert,
       xr. y = REVERT( rect. top) + 1;
       xr. width = rect. right - rect. left;
       xr. height = rect. top - rect. bottom;
+      /* BUGBUGBUG
+      fprintf( stderr, "ScrollClip: (%d,%d - %d,%d)\n",
+               xr.x,xr.y,xr.width,xr.height);
+               */
       region = XCreateRegion();
       XUnionRectWithRegion( &xr, region, region);
       XSetRegion( DISP, XX-> gc, region);
@@ -477,10 +489,10 @@ apc_widget_scroll( Handle self, int horiz, int vert,
 	 ir. height = vert;
       }
    } else if ( vert == 0) {
-      if ( horiz < 0)
+      if ( horiz < 0) {
+	 ir. x += ir. width + horiz;
 	 ir. width = -horiz;
-      else {
-	 ir. x += ir. width - horiz;
+      } else {
 	 ir. width = horiz;
       }
    }
@@ -506,6 +518,13 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    XUnionRegion( XX-> region, invalid, XX-> region);
    XDestroyRegion( invalid);
 
+   /* BUGBUGBUG
+   fprintf( stderr, "exposed: (%d,%d,%d,%d)\n",
+            XX-> exposed_rect. x,
+            XX-> exposed_rect. y,
+            XX-> exposed_rect. width,
+            XX-> exposed_rect. height);
+            */
    pl = guts. paint_list;
    while ( pl) {
       if ( pl-> obj == self)

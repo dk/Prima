@@ -774,6 +774,7 @@ apc_timer_start( Handle self)
 	    guts. oldest = sys;
 	 }
 	 sys-> younger = before;
+         before-> older = sys;
       }
    } else {
       guts. oldest = sys;

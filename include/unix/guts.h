@@ -267,8 +267,8 @@ typedef struct _drawable_sys_data
    XWindow parent;
    NPoint resolution;
    Point origin, known_origin;
-   Point size, known_size;
-   Point transform, gtransform;
+   Point size, known_size, bsize;
+   Point transform, gtransform, btransform;
    Handle owner;  /* The real one */
    XWindow real_parent; /* top levels */
    XGCValues gcv;

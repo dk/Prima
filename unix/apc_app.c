@@ -273,8 +273,8 @@ apc_application_create( Handle self)
    apc_component_fullname_changed_notify( self);
    guts. mouse_wheel_down = unix_rm_get_int( self, guts.qWheeldown, guts.qwheeldown, 0);
    guts. mouse_wheel_up = unix_rm_get_int( self, guts.qWheelup, guts.qwheelup, 0);
-   guts. visible_timeout = unix_rm_get_int( self, guts.qBlinkvisibletime, guts.qblinkvisibletime, 200);
-   guts. invisible_timeout = unix_rm_get_int( self, guts.qBlinkinvisibletime, guts.qblinkinvisibletime, 200);
+   guts. visible_timeout = unix_rm_get_int( self, guts.qBlinkvisibletime, guts.qblinkvisibletime, guts. visible_timeout);
+   guts. invisible_timeout = unix_rm_get_int( self, guts.qBlinkinvisibletime, guts.qblinkinvisibletime, guts. invisible_timeout);
 
    prima_send_create_event( X_WINDOW);
    return true;
@@ -490,6 +490,9 @@ apc_application_go( Handle self)
 	    } else {
 	       CComponent( timer-> who)-> message( timer-> who, &e);
 	    }
+            if ( gettimeofday( &timeout, nil) != 0) {
+               croak( "apc_application_go() gettimeofday() returned: %s", strerror( errno));
+            }
 	 }
 	 if ( guts. oldest) {
 	    if ( guts. oldest-> when. tv_sec < timeout. tv_sec) {

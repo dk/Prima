@@ -36,7 +36,8 @@
 
 #define SORT(a,b)	({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
 #define REVERT(a)	({ XX-> size. y - (a) - 1; })
-#define SHIFT(a,b)	({ (a) += XX-> gtransform. x; (b) += XX-> gtransform. y; })
+#define SHIFT(a,b)	({ (a) += XX-> gtransform. x + XX-> btransform. x; \
+                           (b) += XX-> gtransform. y + XX-> btransform. y; })
 
 static int rop_map[] = {
    GXcopy	/* ropCopyPut */,		/* dest  = src */
@@ -386,11 +387,30 @@ prima_prepare_drawable_for_painting( Handle self)
    unsigned long mask = VIRGIN_GC_MASK;
 
    if ( XX-> udrawable && is_opt( optBuffered)) {
-      XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, XX-> size.x, XX->size.y, guts.depth);
+      int w, h;
+      if ( XX-> region) {
+         XX-> bsize. x = w = XX-> exposed_rect. width;
+         XX-> bsize. y = h = XX-> exposed_rect. height;
+         XX-> btransform. x = - XX-> exposed_rect. x;
+         XX-> btransform. y = XX-> exposed_rect. y;
+      } else {
+         XX-> bsize. x = w = XX-> size. x;
+         XX-> bsize. y = h = XX-> size. y;
+         XX-> btransform. x = 0;
+         XX-> btransform. y = 0;
+      } 
+      /* BUGBUGBUG
+      fprintf( stderr, "Buffer: (%d,%d - %d,%d)\n",
+               - XX-> btransform. x, XX-> btransform. y,
+               XX->bsize.x, XX->bsize.y);
+               */
+      XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, w, h, guts.depth);
       if (!XX-> gdrawable)
          XX-> gdrawable = XX-> udrawable;
    } else if ( XX-> udrawable && !XX-> gdrawable) {
       XX-> gdrawable = XX-> udrawable;
+      XX-> btransform. x = 0;
+      XX-> btransform. y = 0;
    }
 
    XX-> paint_rop = XX-> rop;
@@ -425,7 +445,15 @@ prima_prepare_drawable_for_painting( Handle self)
    XX-> clip_rect. width = XX-> size.x;
    XX-> clip_rect. height = XX-> size.y;
    if ( XX-> region) {
-      XSetRegion( DISP, XX-> gc, XX-> region);
+      if ( XX-> btransform. x != 0 || XX-> btransform. y != 0) {
+         Region r = XCreateRegion();
+         XUnionRegion( r, XX-> region, r);
+         XOffsetRegion( r, XX-> btransform. x, -XX-> btransform. y);
+         XSetRegion( DISP, XX-> gc, r);
+         XDestroyRegion( r);
+      } else {
+         XSetRegion( DISP, XX-> gc, XX-> region);
+      }
       XX-> stale_region = XX-> region;
       XX-> region = nil;
    }
@@ -450,10 +478,14 @@ prima_cleanup_drawable_after_painting( Handle self)
                                   || XX-> clip_rect. y != 0
                                   || XX-> clip_rect. width != XX-> size.x
                                   || XX-> clip_rect. height != XX-> size.y)) {
+         //XOffsetRegion( XX-> stale_region, -XX-> btransform. x, XX-> btransform. y);
          XSetRegion( DISP, XX-> gc, XX-> stale_region);
          XCHECKPOINT;
       }
-      XCopyArea( DISP, XX-> gdrawable, XX-> udrawable, XX-> gc, 0, 0, XX-> size.x, XX-> size.y, 0, 0);
+      XCopyArea( DISP, XX-> gdrawable, XX-> udrawable, XX-> gc, 
+                 0, 0, 
+                 XX-> bsize.x, XX-> bsize.y, 
+                 -XX-> btransform. x, XX-> btransform. y);
       XCHECKPOINT;
       XFreePixmap( DISP, XX-> gdrawable);
       XCHECKPOINT;
@@ -558,8 +590,8 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 {
    DEFXX;
    int i;
-   int x = XX-> gtransform. x;
-   int y = XX-> size. y - 1 - XX-> gtransform. y;
+   int x = XX-> gtransform. x + XX-> btransform. x;
+   int y = XX-> size. y - 1 - XX-> gtransform. y - XX-> btransform. y;
    XPoint *p = malloc( sizeof( XPoint)*n);
 
    if (!p)
@@ -672,11 +704,11 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    }
 
    for ( i = 0; i < numPts; i++) {
-      p[i]. x = (short)points[i]. x + XX-> gtransform. x;
-      p[i]. y = (short)REVERT(points[i]. y + XX-> gtransform. y);
+      p[i]. x = (short)points[i]. x + XX-> gtransform. x + XX-> btransform. x;
+      p[i]. y = (short)REVERT(points[i]. y + XX-> gtransform. y + XX-> btransform. y);
    }
-   p[numPts]. x = (short)points[0]. x + XX-> gtransform. x;
-   p[numPts]. y = (short)REVERT(points[0]. y + XX-> gtransform. y);
+   p[numPts]. x = (short)points[0]. x + XX-> gtransform. x + XX-> btransform. x;
+   p[numPts]. y = (short)REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
 
    if ( guts. limits. XFillPolygon >= numPts) {
       XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
@@ -1720,7 +1752,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    XRectangle r;
 
    if ( !XX-> flags. paint)
-      return true;
+      return false;
 
    SORT( clipRect. left, clipRect. right);
    SORT( clipRect. bottom, clipRect. top);
@@ -1729,10 +1761,25 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    r. width = clipRect. right - clipRect. left;
    r. height = clipRect. top - clipRect. bottom;
    XX-> clip_rect = r;
+   {
+      XRectangle rr = XX-> exposed_rect;
+      /* BUGBUGBUG
+      fprintf( stderr, "Clip: (%d,%d - %d,%d)\n",
+               r.x,r.y,r.width,r.height);
+               */
+      prima_rect_intersect( &rr, &r);
+      /* BUGBUGBUG
+      fprintf( stderr, "Intersection: (%d,%d - %d,%d)\n",
+               rr.x,rr.y,rr.width,rr.height);
+               */
+   }
    region = XCreateRegion();
    XUnionRectWithRegion( &r, region, region);
    if ( XX-> stale_region) {
       XIntersectRegion( region, XX-> stale_region, region);
+   }
+   if ( XX-> btransform. x != 0 || XX-> btransform. y != 0) {
+      XOffsetRegion( region, XX-> btransform. x, -XX-> btransform. y);
    }
    XSetRegion( DISP, XX-> gc, region);
    XDestroyRegion( region);
