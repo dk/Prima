@@ -7,7 +7,7 @@ unless ( $] >= 5.006 &&
    return 1;
 }
 
-print "1..2 support, wrap utf8 text\n";
+print "1..2 support,wrap utf8 text\n";
 ok(1);
 
 my $utf8_line;
