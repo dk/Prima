@@ -101,7 +101,7 @@ the wrapping code should not allow color property to be writable then.
 =item Black and white colors on paletted displays
 
 Due the fact that paletted displays employ indexed color 
-representation, 'black' and 'white' indexes are not always
+representation, 'black' and 'white' indeces are not always
 0 and 2^n-1, so result of raster image operations may look garbled (X).
 Win32 and OS/2 protect themselves from this condition by 
 forcing white to be the last color in the system palette.

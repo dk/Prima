@@ -683,7 +683,7 @@ Returns array of section names.
 
 Assigns VALUES to ITEM in SECTION. If number of new values are equal or greater
 than the number of the old, the method is same as L<replace_values>. Otherwise,
-the values with indexes higher than the number of new values are not touched.
+the values with indeces higher than the number of new values are not touched.
 
 =item write
 

@@ -139,7 +139,7 @@ See L<Prima::Window/borderStyle>
   bs::Dialog    - thick border
   bs::Sizeable  - thick border with interactive resize capabilities
 
-=head2 ci::  - color indices
+=head2 ci::  - color indeces
 
 See L<Prima::Widget/colorIndex>
 
@@ -353,7 +353,7 @@ See L<Prima::File>
   fe::Write
   fe::Exception
 
-=head2 fp::  - standard fill pattern indexes
+=head2 fp::  - standard fill pattern indeces
 
 See L<Prima::Drawable/fillPattern>
 
@@ -741,7 +741,7 @@ See L<Prima::Drawable/Raster operations>
   rop::SrcLeave       #   /* dest = (src != fore color) ? src : dest */
   rop::DestLeave      #   /* dest = (src != back color) ? src : dest */
 
-=head2 sbmp:: - system bitmaps indexes
+=head2 sbmp:: - system bitmaps indeces
 
 See also L<Prima::StdBitmap>.
 
@@ -784,7 +784,7 @@ See also L<Prima::StdBitmap>.
   sbmp::SFolderClosed
   sbmp::Last
 
-=head2 sv::  - system value indexes
+=head2 sv::  - system value indeces
 
 See also L<Prima::Application/get_system_value>
 

@@ -1658,7 +1658,7 @@ A read-only property. Returns number of selected items.
 
 =item selectedItems ARRAY
 
-ARRAY is an array of integer indexes of selected items.
+ARRAY is an array of integer indeces of selected items.
 
 =back
 
@@ -1668,7 +1668,7 @@ ARRAY is an array of integer indexes of selected items.
 
 =item add_selection ARRAY, FLAG
 
-Sets item indexes from ARRAY in selected
+Sets item indeces from ARRAY in selected
 or deselected state, depending on FLAG value, correspondingly 1 or 0.
 
 Only for multi-select mode.
@@ -1698,7 +1698,7 @@ See L<DrawItem> for parameters description.
 =item draw_text_items CANVAS, FIRST, LAST, X, Y, OFFSET, CLIP_RECT
 
 Called by C<std_draw_text_items> to draw sequence of text items with 
-indexes from FIRST to LAST on CANVAS, starting at point X, Y, and
+indeces from FIRST to LAST on CANVAS, starting at point X, Y, and
 incrementing the vertical position with OFFSET. CLIP_RECT is a reference
 to array of four integers with inclusive-inclusive coordinates of the active 
 clipping rectangle.
@@ -1870,7 +1870,7 @@ C<autoWidth> is set.
 =item delete_items ITEMS
 
 Deletes items from the list. ITEMS can be either an array,
-or a reference to an array of item indexes.
+or a reference to an array of item indeces.
 
 =item get_item_width INDEX
 
@@ -1879,7 +1879,7 @@ Returns width in pixels of INDEXth item from internal cache.
 =item get_items ITEMS
 
 Returns array of items. ITEMS can be either an array,
-or a reference to an array of item indexes.
+or a reference to an array of item indeces.
 Depending on the caller context, the results are different:
 in array context the item list is returned; in scalar -
 only the first item from the list. The semantic of the last
