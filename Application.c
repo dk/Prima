@@ -53,10 +53,8 @@ Application_init( Handle self, HV * profile)
    SV * hintFont = pget_sv( hintFont);
    SV * sv;
    char * hintClass      = pget_c( hintClass);
-   if ( application != nilHandle) {
-      var-> stage = csDeadInInit;
+   if ( application != nilHandle) 
       croak( "RTC0010: Attempt to create more than one application instance");
-   }
 
    CDrawable-> init( self, profile);
    list_create( &var->  widgets, 16, 16);

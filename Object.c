@@ -69,7 +69,7 @@ Object_create( char *className, HV * profile)
    xmate = newRV_inc( SvRV( POPs));
    self = create_mate( xmate);
    var-> mate = xmate;
-   var-> stage = csConstructing;
+   var-> stage = csDeadInInit;
    PUTBACK;
    FREETMPS;
    LEAVE;
@@ -103,7 +103,7 @@ Object_create( char *className, HV * profile)
    if ( primaObjects)
       hash_store( primaObjects, &self, sizeof( self), (void*)1);
    SvREFCNT_dec( profRef);
-   if ( var-> stage != csConstructing) {
+   if ( var-> stage > csConstructing) {
       if ( var-> mate && ( var-> mate != nilSV) && SvRV( var-> mate))
          --SvREFCNT( SvRV( var-> mate));
       return nilHandle;
@@ -239,6 +239,7 @@ XS( Object_alive_FROMPERL)
    SP -= items;
    if ( _c_apricot_self_ != nilHandle) {
       switch ((( PObject) _c_apricot_self_)-> stage) {
+      case csDeadInInit:
       case csConstructing:
           ret = 2;
           break;
@@ -260,7 +261,8 @@ void Object_done    ( Handle self) {}
 
 void Object_init    ( Handle self, HV * profile)
 {
-   if ( var-> stage != csConstructing) croak( "Unexpected call of Object::init");
+   if ( var-> stage != csDeadInInit) croak( "Unexpected call of Object::init");
+   var-> stage = csConstructing;
 }
 
 void Object_cleanup ( Handle self) {}
