@@ -6,8 +6,7 @@ my $dong2 = 0;
 my @mrep;
 my @mrep2;
 my $wx = Prima::Window-> create(
-   originDontCare => 1,
-   sizeDontCare => 1,
+   size => [ 100, 100],
    onMove => sub { $dong = 1; shift; @mrep = scalar(@mrep) ? ( @mrep[0,1], @_[2,3]) : @_;  },
    name => 'TEST',
 );
