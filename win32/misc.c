@@ -25,6 +25,8 @@
  */
 
 #include "win32\win32guts.h"
+#include <stdio.h>
+#include <stdarg.h>
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
@@ -188,6 +190,8 @@ apc_getdir( const char *dirname)
     if ( !wasDotDot)
        add_entry( "..", DIR);
 
+#undef FILE
+#undef DIR
     return ret;
 }
 
@@ -446,3 +450,35 @@ apc_widget_user_profile( PList names)
    RegCloseKey( hKey);
    return ret;
 }
+
+static const char *debug_file = "C:\\POPUPLOG.W32";
+
+int
+debug_write( const char *format, ...)
+{
+   FILE *f;
+   int rc;
+   va_list arg_ptr;
+
+   if( ( f = fopen( debug_file, "at")) == NULL) return 0;
+   va_start( arg_ptr, format);
+   rc = vfprintf( f, format, arg_ptr);
+   va_end( arg_ptr);
+   fclose( f);
+
+   return ( rc != EOF);
+}
+
+Bool
+log_write( const char *format, ...)
+{
+   int rc;
+   va_list arg_ptr;
+
+   va_start( arg_ptr, format);
+   rc = vfprintf( stderr, format, arg_ptr);
+   va_end( arg_ptr);
+
+   return ( rc != EOF);
+}
+
