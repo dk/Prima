@@ -890,6 +890,13 @@ apc_gp_get_text_opaque( Handle self)
    return true;
 }
 
+Bool
+apc_gp_get_text_out_baseline( Handle self)
+{
+   DOLBUG( "apc_gp_get_text_out_baseline()\n");
+   return false;
+}
+
 void
 apc_gp_set_back_color( Handle self, Color color)
 {
@@ -1049,3 +1056,8 @@ apc_gp_set_text_opaque( Handle self, Bool opaque)
    DOLBUG( "apc_gp_set_text_opaque()\n");
 }
 
+void
+apc_gp_set_text_out_baseline( Handle self, Bool baseline)
+{
+   DOLBUG( "apc_gp_set_text_out_baseline()\n");
+}
