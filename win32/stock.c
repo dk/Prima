@@ -924,6 +924,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
          elf. lfCharSet = ctx_CHARSET2index[ i];
          EnumFontFamiliesEx( dc, &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
       }
+      elf. lfCharSet = DEFAULT_CHARSET;
    } else {
       EnumFontFamiliesEx( dc, &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
    }
