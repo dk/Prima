@@ -410,19 +410,6 @@ AbstractMenu_set_check( Handle self, char * varName, Bool check)
    if ( m-> id) apc_menu_item_set_check( self, m, check);
 }
 
-void
-AbstractMenu_check( Handle self, char * varName)
-{
-   my set_check( self, varName, true);
-}
-
-void
-AbstractMenu_uncheck( Handle self, char * varName)
-{
-   my set_check( self, varName, false);
-}
-
-
 Bool
 AbstractMenu_get_check   ( Handle self, char * varName)
 {
@@ -691,6 +678,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       PMenuItemReg save = var tree;
       my first_that( self, collect_id, &maxId, true);
       addFirst = my new_menu( self, menuItems, 0);
+      if ( !addFirst) return; // error in menuItems
       var tree = addFirst;
       my first_that( self, increase_id, &maxId, true);
       var tree = save;
