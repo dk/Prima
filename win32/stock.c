@@ -362,18 +362,23 @@ find_node( const PFont font, Bool bySize)
    else
       node = fontHash. buckets[ i];
    if ( bySize) {
+      sz = (char *)(&(font-> name)) - (char *)&(font-> width);
       while ( node != nil)
       {
          if (( memcmp( &(font-> width), &(node-> key. width), sz) == 0) &&
              ( strcmp( font-> name, node-> key. name) == 0 ) &&
+             ( strcmp( font-> encoding, node-> key. encoding) == 0 ) &&
              (font-> size == node-> key. size))
             return node;
          node = node-> next2;
       }
    } else {
+      sz = (char *)(&(font-> name)) - (char *)&(font-> height);
       while ( node != nil)
       {
-         if (( memcmp( font, &(node-> key), sz) == 0) && ( strcmp( font-> name, node-> key. name) == 0 ))
+         if (( memcmp( font, &(node-> key), sz) == 0) && 
+             ( strcmp( font-> name, node-> key. name) == 0 )&&
+             ( strcmp( font-> encoding, node-> key. encoding) == 0 ))
             return node;
          node = node-> next;
       }
