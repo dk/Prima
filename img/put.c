@@ -77,19 +77,28 @@ bitblt_not( Byte * src, Byte * dst, int count)
 static void
 bitblt_notdstxor( Byte * src, Byte * dst, int count)
 {
-   while ( count--) *(dst++) = ~(*dst) ^ (*(src++));
+   while ( count--) {
+      *dst = ~(*dst) ^ (*(src++));
+      dst++;
+   }
 }
 
 static void
 bitblt_notdstand( Byte * src, Byte * dst, int count)
 {
-   while ( count--) *(dst++) = ~(*dst) & (*(src++));
+   while ( count--) {
+      *dst = ~(*dst) & (*(src++));
+      dst++;
+   }
 }
 
 static void
 bitblt_notdstor( Byte * src, Byte * dst, int count)
 {
-   while ( count--) *(dst++) = ~(*dst) | (*(src++));
+   while ( count--) {
+      *dst = ~(*dst) | (*(src++));
+      dst++;
+   }
 }
 
 static void
@@ -113,19 +122,28 @@ bitblt_notsrcor( Byte * src, Byte * dst, int count)
 static void
 bitblt_notxor( Byte * src, Byte * dst, int count)
 {
-   while ( count--) *(dst++) = ~( *(src++) ^ (*dst));
+   while ( count--) {
+      *dst = ~( *(src++) ^ (*dst));
+      dst++;
+   }
 }
 
 static void
 bitblt_notand( Byte * src, Byte * dst, int count)
 {
-   while ( count--) *(dst++) = ~( *(src++) & (*dst));
+   while ( count--) {
+      *dst = ~( *(src++) & (*dst));
+      dst++;
+   }
 }
 
 static void
 bitblt_notor( Byte * src, Byte * dst, int count)
 {
-   while ( count--) *(dst++) = ~( *(src++) | (*dst));
+   while ( count--) {
+      *dst = ~( *(src++) | (*dst));
+      dst++;
+   }
 }
 
 static void
@@ -143,7 +161,10 @@ bitblt_white( Byte * src, Byte * dst, int count)
 static void
 bitblt_invert( Byte * src, Byte * dst, int count)
 {
-   while ( count--) *(dst++) = ~(*dst);
+   while ( count--) {
+      *dst = ~(*dst);
+      dst++;
+   }
 }
 
 void 
