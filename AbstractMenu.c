@@ -821,7 +821,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
          apc_menu_update( self, nil, var-> tree);
          return;
       }
-      m = var-> tree;
+      branch = m = var-> tree;
       up = &var-> tree;
    } else {
       branch = m = my-> first_that( self, var_match, rootName, true);
