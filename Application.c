@@ -715,6 +715,24 @@ Application_top_frame( Handle self, Handle from)
 }
 
 Handle
+Application_get_image( Handle self, int x, int y, int xLen, int yLen)
+{
+   HV * profile;
+   Handle i;
+   Bool ret;
+   if ( var stage > csNormal) return nilHandle;
+   if ( xLen <= 0 || yLen <= 0) return nilHandle;
+
+   profile = newHV();
+   i = Object_create( "Icon", profile);
+   sv_free(( SV *) profile);
+   ret = apc_application_get_bitmap( self, i, x, y, xLen, yLen);
+   --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
+   return ret ? i : nilHandle;
+}
+
+
+Handle
 Application_map_focus( Handle self, Handle from)
 {
    Handle topFrame = my top_frame( self, from);

@@ -155,6 +155,48 @@ apc_application_get_gui_info( char * description, int len)
    return guiWindows;
 }
 
+Bool
+apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen)
+{
+   HBITMAP bm, bm2;
+   HDC dc, dc2;
+   XLOGPALETTE lpg;
+   HPALETTE hp, hp2, hp3;
+   if ( image == nilHandle) apcErrRet( errInvParams);
+   dobjCheck( image) false;
+
+
+   apcErrClear;
+   dc  = dc_alloc();
+   lpg. palNumEntries = GetSystemPaletteEntries( dc, 0, 256, lpg. palPalEntry);
+   lpg. palVersion = 0x300;
+
+   hp  = CreatePalette(( LOGPALETTE*)&lpg);
+   dc2 = CreateCompatibleDC( dc);
+   hp2 = SelectPalette( dc2, hp, 0);
+   RealizePalette( dc2);
+   hp3 = SelectPalette( dc, hp, 1);
+
+   bm  = CreateCompatibleBitmap( dc, xLen, yLen);
+   bm2 = SelectObject( dc2, bm);
+   BitBlt( dc2, 0, 0, xLen, yLen, dc, x, sys lastSize.y - y - yLen, SRCCOPY);
+   SelectObject( dc2, bm2);
+   SelectPalette( dc2, hp2, 1);
+   DeleteObject( hp);
+   DeleteDC( dc2);
+
+   bm2 = dsys(image)bm;
+   dsys(image)bm = bm;
+   image_query_bits( image, true);
+   dsys(image)bm = bm2;
+   DeleteObject( bm);
+   SelectPalette( dc, hp3, 1);
+   dc_free();
+
+   return true;
+}
+
+
 Handle
 hwnd_to_view( HWND win)
 {
@@ -1030,6 +1072,11 @@ apc_window_set_icon( Handle self, Handle icon)
    i = icon ? image_make_icon_handle( icon, guts. iconSizeLarge, nil, false) : nil;
    i = ( HICON) SendMessage( HANDLE, WM_SETICON, ICON_BIG, ( LPARAM) i);
    if ( i) DestroyIcon( i);
+   if ( icon && guts. loggerIcon == NULL && guts. logger != NULL) {
+      guts. loggerIcon = image_make_icon_handle( icon, guts. iconSizeLarge, nil, false);
+      i = ( HICON) SendMessage( guts. logger, WM_SETICON, ICON_BIG, ( LPARAM) guts. loggerIcon);
+      if ( i) DestroyIcon( i);
+   }
 }
 
 void
@@ -1205,24 +1252,27 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
 Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 {
+   Bool useRPDraw = false;
    objCheck false;
    apcErrClear;
 
    if ( is_apt( aptTransparent))
    {
-      if ( IsWindowVisible(( HWND) var handle))
-      {
+      if ( IsWindowVisible(( HWND) var handle)) {
          HWND parent = GetParent( HANDLE);
-         MSG  msg;
-         list_add( &guts. transp, self);
-         WinHideWindow(( HWND) var handle);
-         if ( parent) UpdateWindow( parent);
-         while ( PeekMessage( &msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE))
-            DispatchMessage( &msg);
-         if ( !parent) Sleep( 1);
-         WinShowWindow(( HWND) var handle);
-         UpdateWindow(( HWND) var handle);
-         list_delete( &guts. transp, self);
+         if ( !parent) {
+            MSG  msg;
+            list_add( &guts. transp, self);
+            WinHideWindow(( HWND) var handle);
+            if ( parent) UpdateWindow( parent);
+            while ( PeekMessage( &msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE))
+               DispatchMessage( &msg);
+            if ( !parent) Sleep( 1);
+            WinShowWindow(( HWND) var handle);
+            UpdateWindow(( HWND) var handle);
+            list_delete( &guts. transp, self);
+         } else
+            useRPDraw = true;
       }
    }
 
@@ -1239,7 +1289,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       if ( !( sys ps = GetDC(( HWND) var handle))) apiErrRet;
    }
 
-   if ( is_opt( optBuffered)) {
+   if ( is_opt( optBuffered) && insideOnPaint) {
       RECT r;
       HBITMAP bm;
       HDC dc;
@@ -1280,6 +1330,27 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       }
    }
    hwnd_enter_paint( self);
+
+   if ( useRPDraw) {
+      HDC dc;
+      Handle owner = var owner;
+      Point tr = dsys(owner)transform2;
+      Point ed = apc_widget_get_pos( self);
+
+      CWidget( owner)-> begin_paint( owner);
+      dc = dsys( owner) ps;
+      dsys( owner) ps = sys ps;
+      dsys(owner) transform2. x += ed. x;
+      dsys(owner) transform2. y += ed. y;
+      apc_gp_set_transform( owner, 0, 0);
+
+      CWidget( owner)-> notify( owner, "sH", "Paint", owner);
+      dsys(owner)transform2 = tr;
+      apc_gp_set_transform( owner, 0, 0);
+      dsys( owner) ps = dc;
+      CWidget( owner)-> end_paint( owner);
+   }
+
    return true;
 }
 

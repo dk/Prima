@@ -88,6 +88,7 @@ object Application( Widget)
    method Color  get_hint_color();
    method Font   get_hint_font();
    method int    get_hint_pause();
+   method Handle get_image( int x, int y, int xLen, int yLen);
    method Bool   get_modal_stop();
    method SV *   get_palette();
    method Handle get_parent();

@@ -1507,6 +1507,10 @@ apc_application_end_paint( Handle self);
 extern void
 apc_application_end_paint_info( Handle self);
 
+extern Bool
+apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen);
+
+
 extern int
 apc_application_get_gui_info( char * description, int len);
 
