@@ -27,7 +27,7 @@
 #
 #  $Id$
 
-use Prima qw(Application ScrollBar Buttons InputLine ExtLists Themes);
+use Prima qw(Application ScrollBar Buttons InputLine ExtLists Themes Notebooks);
 
 =pod 
 =item NAME
@@ -55,9 +55,10 @@ sub test
 		}
 	}
 	Prima::Themes::select( @themes);
-	$t = $playground-> insert( Widget => 
+	$t = $playground-> insert( TabbedNotebook => 
 		pack => { fill => 'both', expand => 1},
 		packPropagate => 0,
+		tabs => ['Tab'],
 	);
 
 	$t-> insert( ScrollBar => 
