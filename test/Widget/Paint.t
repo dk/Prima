@@ -1,5 +1,5 @@
 # $Id$
-print "1..5 onPaint message,update_view,scroll,invalid area consistency,pixel,clipRect,transform\n";
+print "1..8 onPaint message,update_view,scroll,query invalid area,invalid area consistency,pixel,clipRect,transform\n";
 
 $dong = 0;
 $w-> bring_to_front;
@@ -26,6 +26,8 @@ $ww-> update_view;
 ok( $dong );
 
 $ww-> invalidate_rect( 0, 0, 2, 2);
+my @cr = $ww-> get_invalid_rect;
+ok( $cr[0] == 0 && $cr[1] == 0 && $cr[2] == 2 && $cr[3] == 2);
 $ww-> update_view;
 ok( $rcrect[0] == 0 && $rcrect[1] == 0 && $rcrect[2] == 1 && $rcrect[3] == 1);
 
