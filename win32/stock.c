@@ -91,9 +91,9 @@ stylus_alloc( PStylus data)
          } else {
             int i;
             for ( i = 0; i < 8; i++) bmiHatch. bmiData[ i * 4] = ret-> s. brush. pattern[ i];
-            bmiHatch. bmiColors[ 0]. rgbBlue  =  ( ret-> s. brush. backColor & 0xFF);
+            bmiHatch. bmiColors[ 0]. rgbRed   =  ( ret-> s. brush. backColor & 0xFF);
             bmiHatch. bmiColors[ 0]. rgbGreen = (( ret-> s. brush. backColor >> 8) & 0xFF);
-            bmiHatch. bmiColors[ 0]. rgbRed   = (( ret-> s. brush. backColor >> 16) & 0xFF);
+            bmiHatch. bmiColors[ 0]. rgbBlue  = (( ret-> s. brush. backColor >> 16) & 0xFF);
             bmiHatch. bmiColors[ 1]. rgbRed   =  ( ret-> s. pen. lopnColor & 0xFF);
             bmiHatch. bmiColors[ 1]. rgbGreen = (( ret-> s. pen. lopnColor >> 8) & 0xFF);
             bmiHatch. bmiColors[ 1]. rgbBlue  = (( ret-> s. pen. lopnColor >> 16) & 0xFF);

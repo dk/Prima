@@ -126,6 +126,7 @@ typedef struct _WinGuts
     HWND           logger;             // logger window
     HWND           loggerListBox;      // logger box for stdout/stderr
     HICON          loggerIcon;         // logger icon
+    Handle         loggerIconSupplier; // logger icon tied window
     int            appLock;            // application lock count
     int            pointerLock;        // pointer lock count
     HANDLE         ioThread;           // handle of input-output thread
