@@ -230,11 +230,13 @@ apc_window_set_client_pos( Handle self, int x, int y)
    XX-> origin = (Point){x,y}; /* XXX ? */
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
 
-   hints. flags = USPosition | PMinSize;
+   hints. flags = USPosition | PMinSize | PMaxSize;
    hints. x = x;
    hints. y = y;
    hints. min_width = PWidget(self)-> sizeMin. x;
    hints. min_height = PWidget(self)-> sizeMin. y;
+   hints. max_width = PWidget(self)-> sizeMax. x;
+   hints. max_height = PWidget(self)-> sizeMax. y;
    XX-> flags. doSizeHints = false;
        
    XMoveWindow( DISP, X_WINDOW, x, y);
@@ -250,19 +252,39 @@ apc_window_set_client_size( Handle self, int width, int height)
    DEFXX;
    int y;
    XSizeHints hints;
+   PWidget widg = PWidget( self);
 
    bzero( &hints, sizeof( XSizeHints));
+
+   widg-> virtualSize = (Point){width,height};
+
+   width = width > 0
+      ? ( width >= widg-> sizeMin. x
+	  ? ( width <= widg-> sizeMax. x
+	      ? width
+	      : widg-> sizeMax. x)
+	  : widg-> sizeMin. x)
+      : 1;
+   height = height > 0
+      ? ( height >= widg-> sizeMin. y
+	  ? ( height <= widg-> sizeMax. y
+	      ? height
+	      : widg-> sizeMax. y)
+	  : widg-> sizeMin. y)
+      : 1;
 
    XX-> size = (Point){width, height}; /* XXX ? */
    y = X(XX-> owner)-> size. y - height - XX-> origin. y;
 
-   hints. flags = USPosition | USSize | PMinSize;
+   hints. flags = USPosition | USSize | PMinSize | PMaxSize;
    hints. x = XX-> origin. x;
    hints. y = y;
    hints. width = width;
    hints. height = height;
-   hints. min_width = PWidget(self)-> sizeMin. x;
-   hints. min_height = PWidget(self)-> sizeMin. y;
+   hints. min_width = widg-> sizeMin. x;
+   hints. min_height = widg-> sizeMin. y;
+   hints. max_width = widg-> sizeMax. x;
+   hints. max_height = widg-> sizeMax. y;
    XX-> flags. doSizeHints = false;
 
    XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
