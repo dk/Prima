@@ -134,6 +134,7 @@ Application_init( Handle self, HV * profile)
 void
 Application_done( Handle self)
 {
+   if ( self != application) return;
    unprotect_object( var-> hintTimer);
    unprotect_object( var-> hintWidget);
    list_destroy( &var->  modalHorizons);
@@ -145,7 +146,7 @@ Application_done( Handle self)
    var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
-   if ( self == application) application = nilHandle;
+   application = nilHandle;
 }
 
 void
