@@ -1,3 +1,29 @@
+/*-
+ * Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
 #ifndef __unix
 #   include <io.h>
 #else
@@ -13,6 +39,8 @@
 #include "Image.h"
 #ifndef __unix  /* Temporary hack */
 #include "gbm.h"
+#else
+#include "unix/img_api.h"
 #endif /* __unix */
 #include "Image.inc"
 #include "Clipboard.h"
@@ -482,7 +510,6 @@ Image_end_paint_info( Handle self)
    inherited end_paint_info( self);
 }
 
-
 static void
 add_image_profile( HV *profile, PList imgInfo)
 {
@@ -495,10 +522,8 @@ add_image_profile( HV *profile, PList imgInfo)
    PImgProperty imgProp;
    HE *he;
 
-   imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo));
-   memset( imageInfo, 0, sizeof( ImgInfo));
+   imageInfo = img_info_create( HvKEYS( profile));
    list_add( imgInfo, ( Handle) imageInfo);
-   imageInfo->propList = plist_create( HvKEYS( profile), 1);
 
    hv_iterinit( profile);
    for (;;)
@@ -511,7 +536,6 @@ add_image_profile( HV *profile, PList imgInfo)
 
       if ( SvROK( value)) {
 	 int i, n;
-	 char **propArray;
 
 	 if ( SvTYPE( SvRV( value)) != SVt_PVAV) {
 	    croak( "Invalid usage of Image::load: illegal reference type for key ``%s''", key);
@@ -519,33 +543,29 @@ add_image_profile( HV *profile, PList imgInfo)
 	 /* Reference to an array */
 	 ary = (AV*)SvRV( value);
 	 n = av_len( ary) + 1;
-	 propArray = n ? malloc( sizeof( char *) * n) : nil;
+	 imgProp = img_info_add_property( imageInfo, key, PROPTYPE_STRING | PROPTYPE_ARRAY, n > 0 ? n : 1);
 	 for ( i = 0; i < n; i++) {
 	    elem = av_fetch( ary, i, false);
 	    if ( ! elem) {
-	       free( propArray);
 	       croak( "Image::load: cannot fetch element %d of ``%s''", i, key);
 	    }
 	    if ( SvROK(*elem)) {
-	       free( propArray);
 	       croak( "Invalid usage of Image::load: array element %d of key ``%s'' cannot be a reference", i, key);
 	    }
-	    propArray[ i] = duplicate_string( SvPV( *elem, na));
+	    img_push_property_value( imgProp, SvPV( *elem, na));
 	 }
-	 imgProp = apc_image_add_property( imageInfo, key, PROPTYPE_STRING, n);
-	 imgProp->val.pString = propArray;
       } else {
 	 /* scalar */
-	 imgProp = apc_image_add_property( imageInfo, key, PROPTYPE_STRING, -1);
-	 imgProp->val.String = duplicate_string( SvPV( value, na));
+	 img_info_add_property( imageInfo, key, PROPTYPE_STRING, -1, SvPV( value, na));
       }
    }
 }
 
 static void
-add_Image_property_to_profile( HV *profile, PImgProperty imgProp, const char *calledFrom)
+add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *calledFrom)
 {
-    if ( imgProp->size == -1) {
+    DOLBUG( "Adding property `%s' of type 0x%04x to profile\n", imgProp->name, imgProp->flags);
+    if ( ( imgProp->flags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY) {
 	switch ( imgProp->flags & PROPTYPE_MASK) {
 	    case PROPTYPE_STRING:
 		hv_store( profile,
@@ -586,6 +606,26 @@ add_Image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
 			  newSViv( imgProp->val.Byte),
 			  0
 		    );
+		break;
+	    case PROPTYPE_PROP:
+		{
+		    int propIdx;
+		    HV *hv = newHV();
+		    for ( propIdx = 0; propIdx < imgProp->val.Properties.count; propIdx++) {
+			add_image_property_to_profile( 
+				hv,
+				( PImgProperty) list_at( &imgProp->val.Properties, propIdx),
+				calledFrom
+			    );
+		    }
+		    hv_store( profile,
+			      imgProp->name,
+			      strlen( imgProp->name),
+			      newRV_inc( ( SV *) hv),
+/*  			      newRV( ( SV *) hv), */
+			      0
+			);
+		}
 		break;
 	    case PROPTYPE_INT:
 	    default:
@@ -630,6 +670,21 @@ add_Image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
 		case PROPTYPE_BYTE:
 		    sv = newSViv( imgProp->val.pByte[ j]);
 		    break;
+		case PROPTYPE_PROP:
+		    {
+			int propIdx;
+			HV *hv = newHV();
+			for ( propIdx = 0; propIdx < imgProp->val.pProperties[ j].count; propIdx++) {
+			    add_image_property_to_profile(
+				hv,
+				( PImgProperty) list_at( imgProp->val.pProperties + j, propIdx),
+				calledFrom
+				);
+			}
+			sv = newRV_inc( ( SV *) hv);
+/*  			sv = newRV( ( SV *) hv); */
+		    }
+		    break;
 		case PROPTYPE_INT:
 		default:
 		    sv = newSViv( imgProp->val.pInt[ j]);
@@ -659,7 +714,7 @@ modify_Image( Handle self, PImgInfo imageInfo)
     ++SvREFCNT( SvRV(PImage(self)->mate));
     my->make_empty( self);
 
-    for ( i = ( imageInfo->propList->count - 1); i >= 0; i--) {
+    for ( i = 0 ; i < imageInfo->propList->count; i++) {
 	PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, i);
 	if ( strcmp( imgProp->name, "width") == 0) {
 	    reqProps |= REQPROP_WIDTH;
@@ -721,13 +776,9 @@ modify_Image( Handle self, PImgInfo imageInfo)
 		extraInfo = profile;
 	    }
 
-	    add_Image_property_to_profile( profile, imgProp, "Image::load");
+	    add_image_property_to_profile( profile, imgProp, "Image::load");
 	}
-
-	apc_image_clear_property( imgProp);
-	free( ( void *) list_at( imageInfo->propList, i));
     }
-    plist_destroy( imageInfo->propList);
 
     if ( reqProps != REQPROP_ALL) {
 	croak( "*** INTERNAL *** Got an incomplete image information from driver (signature: %04X)", reqProps);
@@ -1009,7 +1060,6 @@ XS( Image_load_FROMPERL) {
 	  if ( as_class) {
 	      Handle *selves;
 	      selves = malloc( info->count * sizeof( Handle));
-	      setbuf( stdout, nil);
 	      for ( i = 0; i < info->count; i++) {
 		  self = ( Handle) create_object( class_name, "", nil);
 		  SPAGAIN;
@@ -1053,7 +1103,7 @@ XS( Image_load_FROMPERL) {
 
       if ( info) {
 	  for ( i = 0; i < info->count; i++) {
-	      free( ( void *) list_at( info, i));
+	      img_info_destroy( ( PImgInfo) list_at( info, i));
 	  }
 	  plist_destroy( info);
       }
@@ -1160,11 +1210,8 @@ XS( Image_get_info_FROMPERL)
 	      hvInfo[ i] = newHV();
 	      for ( j = 0; j < imageInfo->propList->count; j++) {
 		  PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, j);
-		  add_Image_property_to_profile( hvInfo[ i], imgProp, "Image::get_info");
-		  apc_image_clear_property( imgProp);
-		  free( ( void *) list_at( imageInfo->propList, j));
+		  add_image_property_to_profile( hvInfo[ i], imgProp, "Image::get_info");
 	      }
-	      plist_destroy( imageInfo->propList);
 	  }
 	  if ( wantarray || ( singleProfile && ( info->count <= 1))) {
 	      if ( wantarray && singleProfile && ( info->count <= 1)) {
@@ -1191,12 +1238,14 @@ XS( Image_get_info_FROMPERL)
 	      XPUSHs( &sv_undef);
 	  }
       }
+
       if ( info) {
-	  for ( i =0; i <  info->count; i++) {
-	      free( ( void *) list_at( info, i));
+	  for ( i =0; i < info->count; i++) {
+	      img_info_destroy( ( PImgInfo) list_at( info, i));
 	  }
 	  plist_destroy( info);
       }
+
       PUTBACK;
       return;
    }
