@@ -38,7 +38,7 @@ use Cwd;
 use Exporter;
 use vars qw(@ISA @EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw( init qd dl_name quoted_split setvar env_true cmdline addlib
+@EXPORT = qw( init qd dl_name quoted_split setvar env_true addlib
           canon_name find_file find_cdeps cc_command_line ld_command_line generate_def);
 
 use vars qw( %make_trans @ovvars $dir_sep $path_sep );
@@ -85,22 +85,7 @@ $OS2   = $Prima::Config::Config{platform} eq 'os2';
 $Win32 = $Prima::Config::Config{platform} eq 'win32';
 $Unix  = $Prima::Config::Config{platform} eq 'unix';
 
-my $init_ok = 0;
-sub __init
-{
-   return if $init_ok;
-   $init_ok = 1;
-   %USER_VARS_LINKS = (
-      INSTALL_BIN => {
-          src => 'PREFIX',
-          format => '%s/bin',
-      },
-   );
-
-   %overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
-}
-
-sub cmdline
+sub init
 {
    my @argv = @_;
    if ( $#argv >= 0 && $argv[ 0] =~ /^\-\-cp(bin)?$/) {
@@ -170,20 +155,31 @@ EOF
                copy( $src, $dst) or die qq(Copy failed: $!);
            }
        }
-       return 1;
+       return 0;
    }
    elsif ( $#argv >= 0 && $argv[ 0] eq '--md') {
        shift @argv;
        mkpath \@argv;
-       return 1;
+       return 0;
    }
    elsif ( $#argv >= 0 && $argv[ 0] eq '--rm') {
        shift @argv;
        unlink @argv;
-       return 1;
+       return 0;
    }
 
-   __init();
+   %USER_VARS_LINKS = (
+      INSTALL_BIN => {
+          src => 'PREFIX',
+          format => '%s/bin',
+      },
+   );
+
+   %overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
+   $dir_sep   = $Prima::Config::Config{ifs};
+   $path_sep  = $Config{path_sep};
+   %DEFINES  = map { my @z = split('=', $_, 2); scalar(@z)?(@z):($_ => 1)} @{$Prima::Config::Config{cdefs}};
+   $mapheader{'apricot.h'} = undef;
    $ARGV_STR = join( " ", map { "\"$_\""} @argv);
    foreach my $arg ( @argv) {
        if ( $arg =~ /^\s*(\w+)\s*(\+?)\=(.*)$/) {
@@ -228,7 +224,25 @@ EOF
        }
    }
 
-   return 0;
+   foreach my $defname ( keys %USER_DEFINES) {
+      if ( defined $USER_DEFINES{ $defname}) {
+          $DEFINES{ $defname} = $USER_DEFINES{ $defname};
+      }
+      else {
+          delete $DEFINES{ $defname} if exists $DEFINES{ $defname};
+       }
+   }
+   foreach my $defname ( keys %USER_DEFINES_ADDONS) {
+       $DEFINES{ $defname} = ( $DEFINES{ $defname} || '') . join( '', @{ $USER_DEFINES_ADDONS{ $defname}});
+   }
+   setvar('INCPATH', @{$Prima::Config::Config{incpaths}});
+   setvar('LIBPATH', @{$Prima::Config::Config{ldpaths}});
+   setvar('LIBS',    @{$Prima::Config::Config{ldlibs}});
+   setvar( 'DEBUG', 0);
+   setvar( 'PREFIX', $Config{ installsitearch});
+   setvar( 'INSTALL_BIN', $Config{ installbin});
+
+   return 1;
 }
 
 
@@ -451,32 +465,8 @@ EOF
 
 sub addlib
 {
-   push @LIBS, $_[0] . $Prima::Config::Config{ldlibext} 
+   push @LIBS, ( $Unix ? '' : 'lib') . $_[0] . $Prima::Config::Config{ldlibext} 
 }
 
-sub init
-{
-   __init();
-   $dir_sep  = $Prima::Config::Config{ifs};
-   %DEFINES  = map { my @z = split('=', $_, 2); scalar(@z)?(@z):($_ => 1)} @{$Prima::Config::Config{cdefs}};
-   foreach my $defname ( keys %USER_DEFINES) {
-      if ( defined $USER_DEFINES{ $defname}) {
-          $DEFINES{ $defname} = $USER_DEFINES{ $defname};
-      }
-      else {
-          delete $DEFINES{ $defname} if exists $DEFINES{ $defname};
-       }
-   }
-   foreach my $defname ( keys %USER_DEFINES_ADDONS) {
-       $DEFINES{ $defname} = ( $DEFINES{ $defname} || '') . join( '', @{ $USER_DEFINES_ADDONS{ $defname}});
-   }
-   @INCPATH = @{$Prima::Config::Config{incpaths}};
-   @LIBPATH = @{$Prima::Config::Config{ldpaths}};
-   @LIBS    = @{$Prima::Config::Config{ldlibs}};
-   $mapheader{'apricot.h'} = undef;
-   setvar( 'DEBUG', 0);
-   setvar( 'PREFIX', $Config{ installsitearch});
-   setvar( 'INSTALL_BIN', $Config{ installbin});
-}
 
 1;

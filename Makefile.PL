@@ -1396,7 +1396,10 @@ sub create_config_pm
    my $_cwd = cwd;
    my $cwd = qqd($_cwd);
    my $ifs = $Win32 ? '\\\\' : '/';
-   my $ipp = qqd( $Config{installarchlib} . "/CORE");
+   my @ip = @INCPATH;
+   $ip[0] = "$cwd${ifs}include";
+   $ip[1] = "$cwd${ifs}include${ifs}generic";
+   my $ipp = join(',', map {"\'$_\'"} @ip);
    my @cdefs = ('HAVE_CONFIG_H=1');
    my $cdefs = join( ',', map {"'$_'"} @cdefs);
    my $lddef = ( $COMPILER eq 'msvc') ? '/def:' : '',
@@ -1435,7 +1438,7 @@ HEADER
   quote                 => '\\$SHQUOTE',
   platform              => '$PLATFORM',
   compiler              => '$COMPILER',
-  incpaths              => [ \'$cwd${ifs}include\', \'$cwd${ifs}include${ifs}generic\', \'$ipp\'],
+  incpaths              => [ $ipp ],
   platform_path         => '$cwd${ifs}$PLATFORM',
   gencls                => '\\$SHQUOTE$perl\\$SHQUOTE $cwd${ifs}utils${ifs}gencls.pl',
   tmlink                => '\\$SHQUOTE$perl\\$SHQUOTE $cwd${ifs}utils${ifs}tmlink.pl',
