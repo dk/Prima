@@ -10,6 +10,7 @@ object AbstractMenu ( Component)
    method Bool   get_enabled( char * varName);
    method SV   * get_handle();
    method SV   * get_items ( char * varName);
+   method Handle get_image ( char * varName);
    method int    get_key ( char * varName);
    method Bool   get_selected();
    method char * get_text( char * varName);
@@ -23,7 +24,8 @@ object AbstractMenu ( Component)
    method void   set_command( char * key, Bool enabled);
    method void   set_check ( char * varName, Bool check);
    method void   set_enabled ( char * varName, Bool enabled);
-   import void   set_items ( SV * menuItems);
+   method void   set_image ( char * varName, Handle image);
+   method void   set_items ( SV * menuItems);
    method void   set_key( char * varName, char * key);
    method void   set_selected( Bool selected);
    method void   set_text ( char * varName, char * text);
