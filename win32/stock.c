@@ -1301,7 +1301,7 @@ hwnd_enter_paint( Handle self)
    sys stylus. extPen. actual = false;
    apt_set( aptDCChangeLock);
    sys bpp = GetDeviceCaps( sys ps, BITSPIXEL);
-   if ( is_apt( aptWinPS)) {
+   if ( is_apt( aptWinPS) && self != application) {
       apc_gp_set_color( self, sys viewColors[ ciFore]);
       apc_gp_set_back_color( self, sys viewColors[ ciBack]);
    } else {
