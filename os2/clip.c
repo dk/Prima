@@ -42,19 +42,25 @@
 #define DHANDLE( view) (((( PDrawableData)(( PComponent) view)-> sysData)->className == WC_FRAME) ? WinQueryWindow((( PWidget) view)->handle, QW_PARENT) : (( PWidget) view)->handle)
 
 Bool
-apc_clipboard_create( void)
+apc_clipboard_create( Handle self)
+{
+   if ( !PClipboard( self)-> name
+        || strlen( PClipboard( self)-> name) != 9
+        || PClipboard(self)-> name[0] != 'C'
+        || strcmp( PClipboard( self)-> name, "Clipboard") != 0) {
+      return false;
+   }
+   return true;
+}
+
+Bool
+apc_clipboard_destroy( Handle self)
 {
    return true;
 }
 
 Bool
-apc_clipboard_destroy( void)
-{
-   return true;
-}
-
-Bool
-apc_clipboard_open( void)
+apc_clipboard_open( Handle self)
 {
    Bool ok;
    Bool oad = appDead;
@@ -66,14 +72,14 @@ apc_clipboard_open( void)
 }
 
 Bool
-apc_clipboard_close( void)
+apc_clipboard_close( Handle self)
 {
    if ( !WinCloseClipbrd( guts. anchor)) apiErrRet;
    return true;
 }
 
 Bool
-apc_clipboard_clear( void)
+apc_clipboard_clear( Handle self)
 {
    if ( !WinEmptyClipbrd( guts. anchor)) apiErrRet;
    return true;
@@ -88,14 +94,14 @@ static long cf2CF( long id)
 }
 
 Bool
-apc_clipboard_has_format( long id)
+apc_clipboard_has_format( Handle self, long id)
 {
    ULONG flags;
    return WinQueryClipbrdFmtInfo( guts. anchor, cf2CF( id), &flags);
 }
 
 void *
-apc_clipboard_get_data( long id, int * length)
+apc_clipboard_get_data( Handle self, long id, int * length)
 {
    id = cf2CF( id);
    switch( id)
@@ -175,7 +181,7 @@ apc_clipboard_get_data( long id, int * length)
 }
 
 Bool
-apc_clipboard_set_data( long id, void * data, int length)
+apc_clipboard_set_data( Handle self, long id, void * data, int length)
 {
    id = cf2CF( id);
    if ( data == nil)
@@ -216,7 +222,7 @@ apc_clipboard_set_data( long id, void * data, int length)
 }
 
 long
-apc_clipboard_register_format( const char * format)
+apc_clipboard_register_format( Handle self, const char * format)
 {
    ATOM atom;
    if (( atom = WinAddAtom( WinQuerySystemAtomTable(), format)) == 0) apiErrRet;
@@ -224,7 +230,7 @@ apc_clipboard_register_format( const char * format)
 }
 
 Bool
-apc_clipboard_deregister_format( long id)
+apc_clipboard_deregister_format( Handle self, long id)
 {
    WinDeleteAtom( WinQuerySystemAtomTable(), (ATOM)( id - cfCustom));
    return true;
