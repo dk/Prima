@@ -1725,8 +1725,8 @@ LABEL
          print HEADER ( exists $pipeMethods{ $id}) ? $pipeMethods{$id} : "${ownCType}_$id";
       } else {
          my @parmList = @parms;
-         unshift( @parmList, 'Handle') if $useHandle;
          unshift( @parmList, 'Bool') if $property;
+         unshift( @parmList, 'Handle') if $useHandle;
          for ( @parmList) { s/^\*(.*)/$1\*/;}  # since "*Struc" if way to know it's user ptr, map it back
          my $parmz = join( ', ', @parmList);
          print HEADER "(( $resSub$eptr (*)( $parmz)) func)";
