@@ -964,6 +964,13 @@ Image_dup( Handle self)
       memcpy( i-> data, var->data, var->dataSize);
    memcpy( i-> stats, var->stats, sizeof( var->stats));
    i-> statsCache = var->statsCache;
+
+   if ( hv_exists(( HV*)SvRV( var-> mate), "extras", 6)) {
+      SV ** sv = hv_fetch(( HV*)SvRV( var-> mate), "extras", 6, 0);
+      if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV)
+         hv_store(( HV*)SvRV( i-> mate), "extras", 6, newSVsv( *sv), 0);
+   }
+   
    --SvREFCNT( SvRV( i-> mate));
    return h;
 }
