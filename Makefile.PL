@@ -969,7 +969,7 @@ sub clsmake
         unless defined $classname;
     my $mk = qd( "include/generic/$classname.h"
                ) . ": Makefile " .
-                   "$clsfile " . qd( "utils/gencls.pl ") . 
+                   "$clsfile " . qd( "utils/gencls.pl ") .
 		   qd( "Prima/Gencls.pm ");
     push @alltml, qd( "include/generic/$classname.tml");
     push @alltmldeps, qd( "include/generic/$classname.h");
@@ -1139,6 +1139,8 @@ MAKE
     $make =~ tr!/!!s;
     open MAKE, ">Makefile" or die "Creation of Makefile failed: $!";
     print MAKE $make;
+    my $os_suffix = $^O;
+    $os_suffix =~ s/\s/_/g;
 
     print MAKE <<MAKE;
 $thunks_tinc: Makefile @alltmldeps
@@ -1147,7 +1149,12 @@ $thunks_tinc: Makefile @alltmldeps
 RM=$^X Makefile.PL --rm
 
 clean:
-\t\$(RM) @allclean $PrimaTarget
+\t\$(RM) @allclean $PrimaTarget Prima-bin-$os_suffix.zip
+
+bindist: all
+\t\$(RM) Prima-bin-$os_suffix.zip
+\t\@zip -r Prima-bin-$os_suffix.zip Prima.pm auto examples Prima
+\t\@perl -e "if(open F, q(.bindist-exclude)) { my \$\$x = q(zip Prima-bin-MSWin32.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
 
 prima: dirs $PrimaTarget
 
