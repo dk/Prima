@@ -629,6 +629,7 @@ XS( Component_notify_FROMPERL)
       dSP;
       dPUB_ARGS;
       int j;
+      SV * errSave;
 
       ENTER;
       SAVETMPS;
@@ -638,13 +639,22 @@ XS( Component_notify_FROMPERL)
          PUSHs((( PAnyObject)( sequence[i]))-> mate);
       for ( j = 0; j < argsc; j++) PUSHs( argsv[ j]);
       PUTBACK;
+      errSave = SvTRUE( GvSV( errgv)) ? newSVsv( GvSV( errgv)) : nil;
       perl_call_sv(( SV*) sequence[ i + 1], G_DISCARD | G_EVAL);
-      SPAGAIN;
       if ( SvTRUE( GvSV( errgv))) {
          PUB_CHECK;
+         if ( errSave) {
+            sv_catsv( GvSV( errgv), errSave);
+            sv_free( errSave);
+         }
          croak( SvPV( GvSV( errgv), na));
+      } else if ( errSave) {
+         sv_setsv( GvSV( errgv), errSave);
+         sv_free( errSave);
       }
-      PUTBACK;
+
+
+      SPAGAIN;
       FREETMPS;
       LEAVE;
       if (( var-> stage != csNormal) ||

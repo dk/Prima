@@ -115,6 +115,7 @@ void
 Object_destroy( Handle self)
 {
    SV *mate, *object = nil;
+
    if ( var-> stage > csNormal && var-> stage != csHalfDead)
       return;
 

@@ -1523,23 +1523,9 @@ Image_dup( Handle self)
    sv_free(( SV *) profile);
    i = ( PImage) h;
    memcpy( i-> palette, var->palette, 768);
-   if ( i-> type != var->type) {
-      /* Object does not support given type, but Image supports them all */
-      Handle img = ( Handle) create_object( "Prima::Image", "iiii",
-             "width"     , var->w,
-             "height"    , var->h,
-             "type"      , var->type,
-             "conversion", var->conversion
-      );
-      memcpy( PImage(img)-> palette, var->palette, 768);
-      memcpy( PImage(img)-> data,    var->data,    var->dataSize);
-      CImage(img)->set_type( img, i-> type);
-      if ( i->dataSize != PImage( img)->dataSize)
-         croak("RTC0108: Image::dup consistency failed");
-      memcpy( i-> data,    PImage(img)-> data,    PImage(img)->dataSize);
-      memcpy( i-> palette, PImage(img)-> palette, 768);
-      Object_destroy( img);
-   } else
+   if ( i-> type != var->type)
+      croak("RTC0108: Image::dup consistency failed");
+   else
       memcpy( i-> data, var->data, var->dataSize);
    memcpy( i-> stats, var->stats, sizeof( var->stats));
    i-> statsCache = var->statsCache;
@@ -1577,6 +1563,7 @@ Image_extract( Handle self, int x, int y, int width, int height)
 
    h = Object_create( var->self-> className, profile);
    sv_free(( SV *) profile);
+
    i = ( PImage) h;
    memcpy( i-> palette, var->palette, 768);
    if (( var->type & imBPP) >= 8) {
