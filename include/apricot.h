@@ -127,6 +127,11 @@ extern void *
 reallocf(void *ptr, size_t size);
 #endif
 
+#ifdef HAVE_PMPRINTF_H
+#define printf PmPrintf
+#endif
+
+
 #if ! ( defined( HAVE_SNPRINTF) || defined( HAVE__SNPRINTF))
 extern int
 snprintf( char *, size_t, const char *, ...);
@@ -1075,6 +1080,10 @@ SvBOOL( SV *sv)
 #define CImage(h)                       (PImage(h)-> self)
 #define PObject(h)                      TransmogrifyHandle(Object,(h))
 #define CObject(h)                      (PObject(h)-> self)
+#define PMenu(h)                        TransmogrifyHandle(Menu,(h))
+#define CMenu(h)                        (PMenu(h)-> self)
+#define PPopup(h)                       TransmogrifyHandle(Popup,(h))
+#define CPopup(h)                       (PPopup(h)-> self)
 #define PPrinter(h)                     TransmogrifyHandle(Printer,(h))
 #define CPrinter(h)                     (PPrinter(h)-> self)
 #define PTimer(h)                       TransmogrifyHandle(Timer,(h))
