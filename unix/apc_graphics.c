@@ -870,10 +870,10 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
    XSetArcMode( DISP, XX-> gc, ArcChord);
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
 
    if ( needf)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
           angleStart * 64, ( angleEnd - angleStart) * 64);
    return true;
 }
@@ -890,7 +890,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 
    SHIFT( x, y);
    y = REVERT( y);
-   XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
+   XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
    return true;
 }
 
@@ -954,10 +954,10 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
 
    if ( needf)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
          angleStart * 64, ( angleEnd - angleStart) * 64);
    return true;
 }
