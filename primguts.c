@@ -401,7 +401,7 @@ XS(ext_std_print)
          snprintf( c, 2048, "%s", SvPV( ST( i), na));
          c += strlen( c);
       }
-      log_write( "%s", buf);
+      fprintf( stderr, "%s", buf);
    }
    XSRETURN_EMPTY;
 }
@@ -1409,7 +1409,7 @@ prima( const char *primaPath, int argc, char **argv)
       return apcError;
    };
 
-   log_write( "*** PRIMA Engine started ***");
+   fprintf( stderr, "*** PRIMA Engine started ***\n");
    snprintf( incpath, 1024, "-I%s;%sScript;%smodules",
       getenv( "PRIMA_ADDITIONAL_PATH"),
       primaPath, primaPath);
@@ -1428,8 +1428,8 @@ prima( const char *primaPath, int argc, char **argv)
             } else if ( strncmp( argv[i], "-I", 2) == 0) {
                pargv[pargc++] = argv[i];
             } else {
-               log_write( "Unrecognized option \"%s\" passed on startup", argv[i]);
-               log_write( "Currently the only option allowed is \"-p\"");
+               fprintf( stderr, "Unrecognized option \"%s\" passed on startup\n", argv[i]);
+               fprintf( stderr, "Currently the only option allowed is \"-p\"\n");
                apc_show_message( "Unrecognized option passed on startup.\nSee Prima Log for details");
                goto NoPerlDying;
             }
@@ -1479,7 +1479,7 @@ prima( const char *primaPath, int argc, char **argv)
         tok = strtok( nil, ";");
      }
      sprintf( inc, "'%sScript', '%smodules'); 1;", primaPath, primaPath);
-     log_write( "|%s|", evaluation);
+     fprintf( stderr, "|%s|\n", evaluation);
      sv = eval( evaluation);
    }
 
@@ -1539,10 +1539,10 @@ prima( const char *primaPath, int argc, char **argv)
    appDead = true;
    window_subsystem_cleanup();
    if ( SvTRUE( sv))
-      log_write( "*** Seems to be OK ***\n");
+      fprintf( stderr, "*** Seems to be OK ***\n");
    else
    {
-      log_write( "*** %s", SvPV(GvSV( errgv), na));
+      fprintf( stderr, "*** %s\n", SvPV(GvSV( errgv), na));
       apc_show_message("Abnormal termination\nSee Prima Log for details");
       goto NoPerlDying;
    }
