@@ -68,7 +68,7 @@ sub profile_default
       resFile       => Prima::path . '/Printer',
       printer       => undef,
       defaultData   => {
-         color          => 0,
+         color          => 1,
          resolution     => 300,
          page           => 'A4',
          copies         => 1,
