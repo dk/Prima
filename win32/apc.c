@@ -2752,6 +2752,18 @@ apc_message( Handle self, PEvent ev, Bool post)
    return true;
 }
 
+static BOOL CALLBACK
+find_console( HWND w, LPARAM ptr) 
+{
+   DWORD pid;
+   char buf[256];
+   DWORD tid = GetWindowThreadProcessId( w, &pid);
+   if ( tid != guts. mainThreadId) return TRUE;
+   if ( GetClassName( w, buf, 255) == 0) return TRUE;
+   if ( strcmp( buf, "ConsoleWindowClass") != 0) return TRUE;
+   *(HWND*)(ptr) = w;
+   return FALSE;
+}   
 
 char *
 apc_system_action( const char * params)
@@ -2824,7 +2836,46 @@ apc_system_action( const char * params)
          } else {
             warn( "Are you nuts? Microsoft itself afraid of %s yet!", ver);
          }
-      } else
+      } else if ( strncmp( params, "win32.ConsoleWindow", 19) == 0) {         
+         params += 19;
+         
+         if ( !guts. console) {
+            EnumWindows( find_console, (LPARAM) &guts. console);
+            if ( strcmp( params, " exists") == 0) return 0;
+            if ( !guts. console) {
+                warn("No associated console window found");            
+                return 0;
+            }    
+         }   
+         
+         if ( strcmp( params, " exists") == 0) {
+           char * p;
+           sprintf( p = malloc(12), "0x%08x", guts. console);
+           return p;
+         } else   
+         if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else
+         if ( strcmp( params, " show") == 0)     { ShowWindow( guts. console, SW_SHOW); } else
+         if ( strcmp( params, " minimize") == 0) { ShowWindow( guts. console, SW_MINIMIZE); } else
+         if ( strcmp( params, " maximize") == 0) { ShowWindow( guts. console, SW_SHOWMAXIMIZED ); } else
+         if ( strcmp( params, " restore") == 0)  { ShowWindow( guts. console, SW_RESTORE); } else
+         if ( strcmp( params, " topmost") == 0)  { SetWindowPos( guts. console, HWND_TOPMOST, 0,0,0,0, SWP_NOMOVE|SWP_NOSIZE); } else
+         if ( strcmp( params, " notopmost") == 0)  { SetWindowPos( guts. console, HWND_NOTOPMOST, 0,0,0,0, SWP_NOMOVE|SWP_NOSIZE); } else
+         if ( strncmp( params, " text", 5) == 0)  { 
+            char * p = (char*)params + 5;
+            while ( *p == ' ') p++;
+            if ( *p) {
+               SetWindowText( guts. console, p);
+            } else {
+               int lc = GetWindowTextLength( guts. console);
+               p = malloc( lc + 2);
+               GetWindowText( guts. console, p, lc+1);
+               return p;
+            }
+         } else {
+            warn( "Bad parameters '%s' to sysaction win32.ConsoleWindow", params);
+            return 0;
+         }
+      } else 
          goto DEFAULT;
       break;
    DEFAULT:

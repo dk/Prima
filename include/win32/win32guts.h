@@ -184,6 +184,7 @@ typedef struct _WinGuts
     int            mouseTimer;         // is mouse timer started
     Bool           popupActive;        // flag to avoid double popup activation
     Bool           pointerInvisible;      
+    HWND           console;            // win32-bound console window
 // socket variables
     List           sockets;            // List of watchable sockets
     HANDLE         socketMutex;        // thread semaphore
