@@ -670,7 +670,7 @@ apc_widget_scroll( Handle self, int horiz, int vert,
 		   Rect *confine, Rect *clip, Bool withChildren)
 {
    DEFXX;
-   int src_x, src_y, w, h, dst_x, dst_y;
+   int src_x, src_y, w, h, dst_x, dst_y, iw, ih;
    XRectangle r;
    Region invalid, reg;
 
@@ -694,6 +694,8 @@ apc_widget_scroll( Handle self, int horiz, int vert,
 
    dst_x = src_x + horiz;
    dst_y = src_y - vert;
+   iw = w;
+   ih = h;
 
    if (clip) {
       XRectangle cpa;
@@ -731,6 +733,14 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    r. height = h;
    invalid = XCreateRegion();
    XUnionRectWithRegion( &r, invalid, invalid);
+   if ( clip) {
+      XRectangle cpa;
+      cpa. x = dst_x;
+      cpa. y = dst_y;
+      cpa. width = iw;
+      cpa. height = ih;
+      XUnionRectWithRegion( &cpa, invalid, invalid);
+   }
 
    if ( XX-> region) {
       reg = XCreateRegion();
