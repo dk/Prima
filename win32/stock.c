@@ -1354,9 +1354,6 @@ hwnd_leave_paint( Handle self)
       free( sys psd);
       sys psd = nil;
    }
-   free( sys charTable);
-   free( sys charTable2);
-   (void*)sys charTable = (void*)sys charTable2 = nil;
    sys bpp = 0;
 }
 

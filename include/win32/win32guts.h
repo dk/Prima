@@ -291,8 +291,6 @@ typedef struct _DrawableData
    Point          res;                     // resolution
 
    /* cached gp_GetCharABCWidthsFloat results */
-   float *        charTable;
-   ABCFLOAT *     charTable2;
    BYTE           tmPitchAndFamily;
    LONG           tmOverhang;
 

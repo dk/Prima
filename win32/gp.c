@@ -74,8 +74,6 @@ apc_gp_done( Handle self)
    sys bm = sys pal = sys ps = sys bm = sys p256 = nilHandle;
    sys fontResource = nil;
    sys linePattern = nil;
-   free( sys charTable);
-   free( sys charTable2);
    return true;
 }
 
@@ -1300,10 +1298,6 @@ apc_gp_set_font( Handle self, PFont font)
    GetTextMetrics( sys ps, &tm);
    sys tmOverhang       = tm. tmOverhang;
    sys tmPitchAndFamily = tm. tmPitchAndFamily;
-
-   free( sys charTable);
-   free( sys charTable2);
-   (void*)sys charTable = (void*)sys charTable2 = nil;
    return true;
 }
 
