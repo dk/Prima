@@ -248,8 +248,10 @@ input_disabled( PDrawableSysData XX, Bool ignore_horizon)
    Handle horizon = application;
 
    if ( guts. message_boxes) return true;
-   if ( guts. modal_count > 0 && !ignore_horizon)
+   if ( guts. modal_count > 0 && !ignore_horizon) {
       horizon = CApplication(application)-> map_focus( application, XX-> self);
+      if ( XX-> self == horizon) return !XF_ENABLED(XX);
+   }
    while (XX->self && XX-> self != horizon && XX-> self != application) {
       if (!XF_ENABLED(XX)) return true;
       XX = X(PWidget(XX->self)->owner);
@@ -617,7 +619,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       guts. last_time = ev-> xbutton. time;
       if ( guts. currentMenu) prima_end_menu();
       if (prima_no_input(XX, false, true)) return;
-
       if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
          XWindow rx;
          XTranslateCoordinates( DISP, X_WINDOW, PWidget(guts. grab_widget)-> handle, 
