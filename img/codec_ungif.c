@@ -297,7 +297,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          break;   
          
       case TERMINATE_RECORD_TYPE:
-         fi-> frameCount = l-> passed; /* can report how many frames now */
+         fi-> frameCount = l-> passed + 1; /* can report how many frames now */
          outc("Frame index out of range");
          
       case IMAGE_DESC_RECORD_TYPE:
