@@ -169,7 +169,7 @@ sub text
 sub on_translateaccel
 {
    my ( $self, $code, $key, $mod) = @_;
-   if ( defined $self->{accel} && ( $key == kb::NoKey) && lc chr $code eq $self-> { accel})
+   if ( !$self-> {showAccelChar} && defined $self->{accel} && ( $key == kb::NoKey) && lc chr $code eq $self-> { accel})
    {
       $self-> clear_event;
       $self-> notify( 'Click');
@@ -312,3 +312,129 @@ sub autoHeight    {($#_)?($_[0]->set_auto_height(  $_[1]))               :return
 sub wordWrap      {($#_)?($_[0]->set_word_wrap(    $_[1]))               :return $_[0]->{wordWrap}     }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Label - static text widget 
+
+=head1 DESCRIPTION
+
+The class is designed for display of text, and assumes no
+user interaction. The text output capabilities include wrapping,
+horizontal and vertical alignment, and automatic widget resizing to 
+match text extension. If text contains a tilde-escaped ( hot ) character, the label can
+explicitly focus the specified widget upon press of the character key, what feature 
+is useful for dialog design.
+
+=head1 SYNOPSIS
+
+   my $label = Prima::Label-> create(
+      text      => 'Enter ~name:',
+      focusLink => $name_inputline,
+      alignment => ta::Center,
+   );
+
+=head2 Properties
+
+=over
+
+=item alignment INTEGER
+
+One of the following C<ta::XXX> constants:
+
+   ta::Left
+   ta::Center 
+   ta::Right
+
+Selects the horizontal text alignment.
+
+Default value: C<ta::Left>
+
+=item autoHeight BOOLEAN
+
+If 1, the widget height is automatically changed as text extensions
+change.
+
+Default value: 0
+
+=item autoWidth BOOLEAN
+
+If 1, the widget width is automatically changed as text extensions
+change.
+
+Default value: 1
+
+=item focusLink WIDGET
+
+Points to a widget, which is explicitly focused when the user
+presses the combination of a hot key with the C<Alt> key.
+
+Prima::Label does not provide a separate property to access the
+hot key value, however it can be read from the C<{accel}> variable.
+
+Default value: C<undef>.
+
+=item showAccelChar BOOLEAN
+
+If 0, the tilde ( ~ ) character is collapsed from the text,
+and the hot character is underlined. When the user presses combination
+of the escaped character with the C<Alt> key, the C<focusLink>
+widget is explicitly focused.
+
+If 1, the text is showed as is, and no hot character is underlined.
+Key combionations with C<Alt> key are not recognized.
+
+Default value: 0
+
+=item showPartial BOOLEAN
+
+Used to determine if the last line of text should be drawn if
+it can not be vertically fit in the widget interior. If 1, the 
+last line is shown even if not visible in full. If 0, only full 
+lines are drawn.
+
+Default value: 1
+
+=item wordWrap BOOLEAN
+
+If 1, the text is wrapped if it can not be horizontally fit in the
+widget interior. 
+
+If 0, the text is not wrapped unless new line characters are present
+in the text.
+
+New line characters signal line wrapping with no respect to C<wordWrap>
+property value.
+
+Default value: 0
+
+=item valignment INTEGER
+
+One of the following C<ta::XXX> constants:
+
+   ta::Top
+   ta::Middle or ta::Center
+   ta::Bottom
+
+Selects the vertical text alignment.
+
+NB: C<ta::Middle> value is not equal to C<ta::Center>'s, however
+the both constants produce equal effect here.
+
+Default value: C<ta::Top>
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, F<examples/label.pl>
+
+=cut
