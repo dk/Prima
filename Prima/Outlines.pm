@@ -92,6 +92,8 @@ sub profile_check_in
    $p-> { autoHeight}     = 0 if exists $p-> { itemHeight} && !exists $p->{autoHeight};
 }
 
+use constant STACK_FRAME => 64;
+
 sub init
 {
    my $self = shift;
@@ -124,27 +126,40 @@ sub init
    return %profile;
 }
 
+# iterates throughout the item tree, calling given sub for each item.
+# sub's parameters are:
+# 0 - current item record pointer
+# 1 - parent item record pointer, undef if top-level
+# 2 - index of the current item into $parent->[1] array
+# 3 - index of the current item into items
+# 4 - level of the item ( 0 is topmost)
+# 5 - boolean, whether the current item is last item (e.g.$parent->[1]->[-1] == $parent->[1]->[$_[5]]).
+#
+# $full - if 0, iterates only expanded ( visible) items, if 1 - all items into the tree
+
 sub iterate
 {
    my ( $self, $sub, $full) = @_;
    my $position = 0;
    my $traverse;
    $traverse = sub {
-      my ( $current, $level, $lastChild) = @_;
-      return $current if $sub->( $current, $position, $level, $lastChild);
+      my ( $current, $parent, $index, $level, $lastChild) = @_;
+      return $current if $sub->( $current, $parent, $index, $position, $level, $lastChild);
       $position++;
       $level++;
       if ( $current->[1] && ( $full || $current->[2])) {
          my $c = scalar @{$current->[1]};
+         my $i = 0;
          for ( @{$current->[1]}) {
-            my $ret = $traverse->( $_, $level, --$c ? 0 : 1);
+            my $ret = $traverse->( $_, $current, $i++, $level, --$c ? 0 : 1);
             return $ret if $ret;
          }
       }
    };
    my $c = scalar @{$self->{items}};
+   my $i = 0;
    for ( @{$self->{items}}) {
-      my $ret = $traverse->( $_, 0, --$c ? 0 : 1);
+      my $ret = $traverse->( $_, undef, $i++, 0, --$c ? 0 : 1);
       return $ret if $ret;
    }
 }
@@ -157,24 +172,16 @@ sub adjust
    return unless $node;
    return unless $node->[1];
    return if $node->[2] == $action;
-
    $self-> notify(q(Expand), $node, $action);
-
    $node->[2] = $action;
    my $c = $self->{count};
    my $f = $self->{focusedItem};
    $self-> reset_tree;
 
-#  my ( $bw, $dx, $dy, $w, $h, $ih) = ( $self->{borderWidth}, $self->{dx},
-#     $self->{dy}, $self-> size, $self->{itemHeight});
    my ( $ih, @a) = ( $self->{itemHeight}, $self-> get_active_area);
    $self-> scroll( 0, ( $c - $self->{count}) * $ih,
-              #    clipRect => [ $bw, $bw + $dy, $w - $bw - $dx,
-              #                  $h - $bw - $ih * ( $index - $self->{topItem} + 1) ]);
                    clipRect => [ @a[0..2], $a[3] - $ih * ( $index - $self->{topItem} + 1)]);
    $self-> invalidate_rect(
-#     $bw, $h - ( $index - $self->{topItem} + 1) * $ih - 2,
-#     $w - $dx - $bw, $h - ( $index - $self->{topItem}) * $ih
       $a[0], $a[3] - ( $index - $self->{topItem} + 1) * $ih,
       $a[2], $a[3] - ( $index - $self->{topItem}) * $ih
    );
@@ -192,6 +199,7 @@ sub adjust
    my ($ix,$l) = $self-> get_item( $self-> focusedItem);
 
    $self-> update_tree;
+
    $self-> reset_scrolls;
    $self-> offset( $self-> {offset} + $self-> {indent})
       if $action && $c != $self->{count};
@@ -225,49 +233,35 @@ sub on_paint
    my @clr    = $self-> enabled ?
     ( $self-> color, $self-> backColor) :
     ( $self-> disabledColor, $self-> disabledBackColor);
-#  my ( $bw, $ih, $iw, $dx, $dy, $indent, $foc) = (
-#     $self->{ borderWidth}, $self->{ itemHeight}, $self->{ maxWidth},
-#     $self->{dx}, $self->{dy}, $self->{indent}, $self-> {focusedItem});
    my ( $bw, $ih, $iw, $indent, $foc, @a) = (
       $self->{ borderWidth}, $self->{ itemHeight}, $self->{ maxWidth},
       $self->{indent}, $self-> {focusedItem}, $self-> get_active_area( 1, @size));
    my $i;
    my $j;
-#  my $locWidth = $size[0] - $dx - $bw * 2;
    my $locWidth = $a[2] - $a[0] + 1;
    my @clipRect = $canvas-> clipRect;
-#  if ( $clipRect[0] > $bw && $clipRect[1] > $bw + $dy && $clipRect[2] < $size[0] - $bw - $dx && $clipRect[3] < $size[1] - $bw)
    if ( $clipRect[0] > $a[0] && $clipRect[1] > $a[1] && $clipRect[2] < $a[2] && $clipRect[3] < $a[3])
    {
-      #$canvas-> color( $clr[ 1]);
-      #$canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
       $canvas-> clipRect( @a);
       $canvas-> color( $clr[1]);
       $canvas-> bar( 0, 0, @size);
    } else {
       $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor, $clr[1]);
       $canvas-> clipRect( @a);
-      #$canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
    }
    my ( $topItem, $rows) = ( $self->{topItem}, $self->{rows});
    my $lastItem  = $topItem + $rows + 1;
    my $timin = $topItem;
-#  $timin    += int(( $size[1] - $bw - 1 - $clipRect[3]) / $ih) if $clipRect[3] < $size[1] - $bw - 1;
    $timin    += int(( $a[3] - $clipRect[3]) / $ih) if $clipRect[3] < $a[3];
-#  if ( $clipRect[1] >= $bw + $dy) {
    if ( $clipRect[1] >= $a[1]) {
-#     my $y = $size[1] - $clipRect[1] - $bw;
       my $y = $a[3] - $clipRect[1] + 1;
       $lastItem = $topItem + int($y / $ih) + 1;
    }
    $lastItem     = $self->{count} - 1 if $lastItem > $self->{count} - 1;
-#  my $firstY    = $size[1] - $bw + $ih * $topItem;
-#  my $lineY     = $size[1] - $bw - $ih * ( 1 + $timin - $topItem);
    my $firstY    = $a[3] + 1 + $ih * $topItem;
    my $lineY     = $a[3] + 1 - $ih * ( 1 + $timin - $topItem);
    my $dyim      = int(( $ih - $imageSize[1]) / 2) + 1;
    my $dxim      = int( $imageSize[0] / 2);
-
 
 # drawing lines
    my @lines;
@@ -279,7 +273,6 @@ sub on_paint
       fillPattern => fp::SimpleDots,
       color       => cl::White,
       backColor   => cl::Black,
-      # rop         => rop::XorPut,
    );
 
 
@@ -288,10 +281,13 @@ sub on_paint
    my $position = 0;
 
 # preparing stack
-   $i = int( $timin / 8) * 8 - 1;
-   if ( $i > 0) {
+   $i = int(( $timin + 1) / STACK_FRAME) * STACK_FRAME - 1; 
+#   $i = int( $timin / STACK_FRAME) * STACK_FRAME - 1; 
+   if ( $i >= 0) {
+#  if ( $i > 0) {
       $position = $i;
-      $j = int( $timin / 8) - 1;
+      $j = int(( $timin + 1) / STACK_FRAME) - 1;
+#     $j = int( $timin / STACK_FRAME) - 1;
       $i = $self->{stackFrames}->[$j];
       if ( $i) {
          my $k;
@@ -311,7 +307,6 @@ sub on_paint
 
 # following loop is recursive call turned inside-out -
 # so we can manipulate with stack
-
    if ( $position <= $lastItem) {
    while (1) {
       my $node      = $array->[1]->[$idx++];
@@ -366,39 +361,6 @@ sub on_paint
       }
    }}
 
-#  $self-> iterate( sub {
-#     my ( $current, $position, $level, $lastChild) = @_;
-#     my $l = int(( $level + 0.5) * $indent) + $deltax;
-#     if ( $lastChild) {
-#        if ( defined $lines[ $level]) {
-#           $canvas-> bar(
-#              $l, $firstY - $ih * $lines[ $level],
-#              $l, $firstY - $ih * ( $position + 0.5))
-#           if $position >= $timin;
-#           $lines[ $level] = undef;
-#        } elsif ( $position > 0) {
-#        # first and last
-#           $canvas-> bar(
-#              $l, $firstY - $ih * ( $position - 0.5),
-#              $l, $firstY - $ih * ( $position + 0.5))
-#        }
-#     } elsif ( !defined $lines[$level]) {
-#        $lines[$level] = $position ? $position - 0.5 : 0.5;
-#     }
-#     if ( $position >= $timin) {
-#        $canvas-> bar( $l + 1, $lineY + $ih/2, $l + $indent - 1, $lineY + $ih/2);
-#        if ( defined $current->[1]) {
-#           my $i = $images[($current->[2] == 0) ? 1 : 0];
-#           push( @marks, [$l - $dxim, $lineY + $dyim, $i]) if $i;
-#        };
-#        push ( @texts, [ $current, $l + $indent * 1.5, $lineY,
-#           $l + $indent * 1.5 + $node->[3] - 1, $lineY + $ih - 1,
-#           $position, ( $foc == $position) ? 1 : 0]);
-#        $lineY -= $ih;
-#     }
-#     return $position >= $lastItem;
-#  });
-
 # drawing line ends
    $i = 0;
    for ( @lines) {
@@ -411,7 +373,6 @@ sub on_paint
       fillPattern => fp::Solid,
       color       => $clr[0],
       backColor   => $clr[1],
-      # rop         => rop::CopyPut,
    );
 
 #
@@ -437,13 +398,9 @@ sub point2item
 {
    my ( $self, $y, $h) = @_;
    my $i = $self->{indents};
-   # my ( $bw, $dy) = ( $self->{borderWidth}, $self->{dy});
    $h = $self-> height unless defined $h;
-   # return $self->{topItem} - 1 if $y >= $h - $bw;
    return $self->{topItem} - 1 if $y >= $h - $$i[3];
-   # return $self->{topItem} + $self->{rows} if $y <= $bw + $dy;
    return $self->{topItem} + $self->{rows} if $y <= $$i[1];
-   # $y = $h - $y - $bw;
    $y = $h - $y - $$i[3];
    return $self->{topItem} + int( $y / $self->{itemHeight});
 }
@@ -459,14 +416,10 @@ sub on_mousedown
    my ($o,$i,@a) = ( $self->{offset}, $self->{indent}, $self-> get_active_area(0, @size));
    return if $btn != mb::Left;
    return if defined $self->{mouseTransaction} ||
-   #  $y < $bw + $dy || $y >= $size[1] - $bw ||
-   #  $x < $bw || $x >= $size[0] - $bw - $dx;
       $y < $a[1] || $y >= $a[3] || $x < $a[0] || $x >= $a[2];
 
    my $item   = $self-> point2item( $y, $size[1]);
    my ( $rec, $lev) = $self-> get_item( $item);
-#  if ( $rec && ( $x > -$o + $lev * $i + $i/2 + $a[0]) &&
-#     ( $x < -$o + $lev * $i + ($i*3)/2 + $a[0])) {
    if ( $rec &&
          ( $x >= ( 1 + $lev) * $i + $a[0] - $o - $imageSize[0] / 2) &&
          ( $x <  ( 1 + $lev) * $i + $a[0] - $o + $imageSize[0] / 2)
@@ -494,11 +447,8 @@ sub on_mouseclick
    my $bw = $self-> { borderWidth};
    my @size = $self-> size;
    my $item   = $self-> point2item( $y, $size[1]);
-   #my ($dx,$dy,$o,$i) = ( $self->{dx}, $self->{dy}, $self->{offset}, $self->{indent});
    my ($o,$i) = ( $self->{offset}, $self->{indent});
    my ( $rec, $lev) = $self-> get_item( $item);
-#  if ( $rec && ( $x > -$o + $lev * $i + $i/2 + $self->{indents}->[0]) &&
-#     ( $x < -$o + $lev * $i + ($i*3)/2 + $self->{indents}->[0])) {
    if ( $rec &&
          ( $x >= ( 1 + $lev) * $i + $self->{indents}->[0] - $o - $imageSize[0] / 2) &&
          ( $x <  ( 1 + $lev) * $i + $self->{indents}->[0] - $o + $imageSize[0] / 2)
@@ -528,15 +478,11 @@ sub makehint
       return;
    }
 
-   # return if $show && $self->{hinter} && $self->{hinter}-> {id} == $itemid;
 
    my $w = $self-> get_item_width( $item);
-#  my $x = $self-> width - $self-> {borderWidth} * 2 - $self->{dx};
-#  my ($x,$y) = $self-> get_active_area( 2);
    my @a = $self-> get_active_area;
    my $ofs = ( $lev + 2.5) * $self->{indent} - $self->{offset} + $self-> {indents}->[0];
 
-#  if ( $w + $ofs <= $x) {
    if ( $w + $ofs <= $a[2]) {
      $self-> makehint(0);
      return;
@@ -563,7 +509,6 @@ sub makehint
    my @org = $self-> client_to_screen(0,0);
    $self->{hinter}-> set(
       origin  => [ $org[0] + $ofs - 2,
-#                $org[1] + $self-> height - $self->{borderWidth} -
                  $org[1] + $self-> height - $self->{indents}->[3] -
                  $self->{itemHeight} * ( $itemid - $self->{topItem} + 1),
                  ],
@@ -607,8 +552,6 @@ sub Hinter_MouseLeave
 sub on_mousemove
 {
    my ( $self, $mod, $x, $y) = @_;
-   # my $bw = $self-> { borderWidth};
-   # my ($dx,$dy)     = ( $self->{dx}, $self->{dy});
    my @size = $self-> size;
    my @a    = $self-> get_active_area( 0, @size);
    if ( !defined $self->{mouseTransaction} && $self->{showItemHint}) {
@@ -618,18 +561,15 @@ sub on_mousemove
          $self-> makehint( 0);
          return;
       }
-#     if (( $y >= $size[1] - $bw) || ( $y <= $bw + $dy + $self->{itemHeight} / 2)) {
       if (( $y >= $a[3]) || ( $y <= $a[1] + $self->{itemHeight} / 2)) {
          $self-> makehint( 0);
          return;
       }
-#     $y = $size[1] - $y - $bw;
       $y = $a[3] - $y;
       $self-> makehint( 1, $self->{topItem} + int( $y / $self->{itemHeight}));
       return;
    }
    my $item = $self-> point2item( $y, $size[1]);
-#  if ( $y >= $size[1] - $bw || $y < $bw + $dx || $x >= $size[0] - $bw - $dx || $x < $bw)
    if ( $y >= $a[3] || $y < $a[1] || $x >= $a[2] || $x < $a[0])
    {
       $self-> scroll_timer_start unless $self-> scroll_timer_active;
@@ -639,7 +579,6 @@ sub on_mousemove
       $self-> scroll_timer_stop;
    }
    $self-> focusedItem( $item >= 0 ? $item : 0);
-#  $self-> offset( $self->{offset} + 5 * (( $x < $bw) ? -1 : 1)) if $x >= $size[0] - $bw - $dx || $x < $bw;
    $self-> offset( $self->{offset} + 5 * (( $x < $a[0]) ? -1 : 1)) if $x >= $a[2] || $x < $a[0];
 }
 
@@ -768,15 +707,9 @@ sub on_keydown
 sub reset
 {
    my $self = $_[0];
-#  my @size = $self-> size;
    my @size = $self-> get_active_area( 2);
    $self-> makehint(0);
    my $ih   = $self-> {itemHeight};
-#  my $bw   = $self-> {borderWidth};
-#  $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height-1 : 0);
-#  $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width-1  : 0);
-#  $size[1] -= $bw * 2 + $self->{dy};
-#  $size[0] -= $bw * 2 + $self->{dx};
    $self->{rows}  = int( $size[1] / $ih);
    $self->{rows}  = 0 if $self->{rows} < 0;
    $self->{yedge} = ( $size[1] - $self->{rows} * $ih) ? 1 : 0;
@@ -797,15 +730,12 @@ sub reset_scrolls
       );
    }
    if ( $self->{scrollTransaction} != 2 && $self->{hScroll})  {
-   #  my $w  = $self-> width - $self->{borderWidth} * 2 - $self->{dx};
       my @sz = $self-> get_active_area( 2);
       my $iw = $self->{maxWidth};
       $self-> {hScrollBar}-> set(
-   #     max      => $iw - $w,
          max      => $iw - $sz[0],
          whole    => $iw,
          value    => $self-> {offset},
-   #     partial  => $w,
          partial  => $sz[0],
          pageStep => $iw / 5,
       );
@@ -824,7 +754,7 @@ sub reset_tree
    $traverse = sub {
       my ( $node, $level, $lastChild) = @_;
       $lines[ $level] = $lastChild ? undef : ( $i ? $i - 0.5 : 0.5);
-      if (( $i % 8) == 7) {
+      if (( $i % STACK_FRAME) == STACK_FRAME - 1) {
          push( @{$self->{stackFrames}}, [@stack[0..$level]]);
          push( @{$self->{lineDefs}},    [@lines[0..$level]]);
       }
@@ -848,7 +778,7 @@ sub reset_tree
    }
 
    $self-> {count} = $i;
-   delete $self-> {itemCache};
+#  delete $self-> {itemCache};
 
    my $fullc = $self->{fullCalibrate};
    my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
@@ -857,7 +787,7 @@ sub reset_tree
    $self-> push_event;
    $self-> begin_paint_info;
    $self-> iterate( sub {
-      my ( $current, $position, $level) = @_;
+      my ( $current, $parent, $index, $position, $level) = @_;
       my $iw = $fullc ? undef : $current->[3];
       unless ( defined $iw) {
          $notifier->( @notifyParms, $current, \$iw);
@@ -877,7 +807,7 @@ sub calibrate
    my $self = $_[0];
    $self->{fullCalibrate} = 1;
    $self-> reset_tree;
-   delete $self->{fullC};
+   delete $self->{fullCalibrate};
    $self-> update_tree;
 }
 
@@ -941,20 +871,21 @@ sub set_focused_item
    }
    $self-> topItem( $topSet) if defined $topSet;
    ( $oldFoc, $foc) = ( $foc, $oldFoc) if $foc > $oldFoc;
-#  my @sz = $self-> size;
    my @a  = $self-> get_active_area;
-#  my $bw = $self->{borderWidth};
-#  $sz[1] -= $bw;
    my $ih = $self->{itemHeight};
    my $lastItem = $self->{topItem} + $self->{rows};
-   $foc = $oldFoc if $foc < 0 || $foc < $self->{topItem} || $foc > $self->{topItem} + $self->{rows};
-   $oldFoc = $foc if $oldFoc < 0 || $oldFoc < $self->{topItem} || $oldFoc > $self->{topItem} + $self->{rows};
-   $self-> invalidate_rect(
-      $a[0], $a[3] - ( $oldFoc - $self->{topItem} + 1) * $ih,
-      $a[2], $a[3] - ( $foc - $self->{topItem}) * $ih
-#     $bw, $sz[1] - ( $oldFoc - $self->{topItem} + 1) * $ih,
-#     $sz[0] - $self->{dx} - $bw, $sz[1] - ( $foc - $self->{topItem}) * $ih
-   ) if $foc >= 0;
+   $self-> invalidate_rect( $a[0], $a[3] - ( $oldFoc - $self->{topItem} + 1) * $ih,
+                            $a[2], $a[3] - ( $oldFoc - $self->{topItem}) * $ih) 
+      if $oldFoc >= 0 && $oldFoc != $foc && $oldFoc >= $self->{topItem} && $oldFoc <= $self->{topItem} + $self->{rows};
+   $self-> invalidate_rect( $a[0], $a[3] - ( $foc - $self->{topItem} + 1) * $ih,
+                            $a[2], $a[3] - ( $foc - $self->{topItem}) * $ih) 
+      if $foc >= 0 && $foc >= $self->{topItem} && $foc <= $self->{topItem} + $self->{rows};
+#  $foc = $oldFoc if $foc < 0 || $foc < $self->{topItem} || $foc > $self->{topItem} + $self->{rows};
+#  $oldFoc = $foc if $oldFoc < 0 || $oldFoc < $self->{topItem} || $oldFoc > $self->{topItem} + $self->{rows};
+   #$self-> invalidate_rect(
+   #   $a[0], $a[3] - ( $oldFoc - $self->{topItem} + 1) * $ih,
+   #   $a[2], $a[3] - ( $foc - $self->{topItem}) * $ih
+   #) if $foc >= 0;
 }
 
 sub set_indent
@@ -1075,60 +1006,19 @@ sub get_item_parent
    my ( $self, $item) = @_;
    my $parent;
    my $offset;
-   my $count = 0;
    return unless $item;
-   for ( @{$self->{items}}) {
-      return ( undef, $count) if $_ == $item;
-      $count++;
-   }
    $self-> iterate( sub {
-      my $cur = $_[0];
-      if ( $cur->[1] && $cur->[2]) {
-         my $count = 0;
-         for ( @{$cur->[1]}) {
-            if ( $_ == $item) {
-               $offset = $count;
-               $parent = $cur;
-               return 1;
-            }
-            $count++;
-         }
-         return 0;
-      }
-   });
-   return ( $parent, $offset) if $parent;
-
-   my $traverse;
-   $traverse = sub {
-      my $current  = $_[0];
-      if ( defined $current->[1]) {
-         my $count = 0;
-         for ( @{$current->[1]}) {
-            if ( $_ == $item) {
-               $offset = $count;
-               $parent = $current;
-               return 1;
-            }
-            $traverse->( $_);
-         }
-         $count++;
-      }
-   };
-   for ( @{$self->{items}}) {
-      last if $traverse->( $_);
-   }
+      my ($cur,$par,$idx) = @_;
+      $parent = $par, $offset = $idx, return 1 if $cur == $item;
+   }, 1);
    return $parent, $offset;
 }
 
 sub set_offset
 {
    my ( $self, $offset) = @_;
-#  my ( $iw, $bw, $w, $dx, $dy) = (
-#     $self->{maxWidth}, $self->{borderWidth}, $self-> width,
-#     $self->{dx}, $self->{dy});
    my ( $iw, @a) = ($self->{maxWidth}, $self-> get_active_area);
 
-#  my $lc = $w - 2 * $bw - $dx;
    my $lc = $a[2] - $a[0];
    if ( $iw > $lc) {
       $offset = $iw - $lc if $offset > $iw - $lc;
@@ -1139,17 +1029,13 @@ sub set_offset
    return if $self->{offset} == $offset;
    my $oldOfs = $self->{offset};
    $self-> {offset} = $offset;
-#  $w -= 2 * $bw + $dx;
-#  my $dt = $offset - $oldOfs;
    if ( $self->{hScroll} && $self->{scrollTransaction} != 2) {
       $self->{scrollTransaction} = 2;
       $self-> {hScrollBar}-> value( $offset);
       $self->{scrollTransaction} = 0;
    }
    $self-> makehint(0);
-   # $self-> scroll( -$dt, 0,
    $self-> scroll( $oldOfs - $offset, 0,
-   #               clipRect => [ $bw, $bw + $dy, $bw + $w, $self-> height - $bw ]);
                    clipRect => \@a);
 }
 
@@ -1162,12 +1048,8 @@ sub set_top_item
    return if $topItem == $self->{topItem};
    my $oldTop = $self->{topItem};
    $self->{topItem} = $topItem;
-#  my ($bw, $ih, $iw, $w, $h, $dx, $dy) = (
-#     $self->{borderWidth}, $self->{itemHeight}, $self->{itemWidth},
-#     $self->size, $self->{dx}, $self->{dy});
    my ($ih, @a) = (
       $self->{itemHeight}, $self-> get_active_area);
-#  my $dt = $topItem - $oldTop;
    $self-> makehint(0);
    if ( $self->{scrollTransaction} != 1 && $self->{vScroll}) {
       $self->{scrollTransaction} = 1;
@@ -1175,9 +1057,7 @@ sub set_top_item
       $self->{scrollTransaction} = 0;
    }
 
-#  $self-> scroll( 0, $dt * $ih,
    $self-> scroll( 0, ($topItem - $oldTop) * $ih,
-#                  clipRect => [ $bw, $bw + $dy, $w - $bw - $dx, $h - $bw ]);
                    clipRect => \@a);
 }
 
@@ -1244,15 +1124,12 @@ sub get_index
    my ( $self, $item) = @_;
    return -1, undef unless $item;
    my $lev;
-   my $rec;
-   my $res = $self-> iterate( sub {
-      my ( $current, $position, $level, $lastChild) = @_;
-      $lev = $level;
-      $rec = $position;
-      return $current == $item;
+   my $rec = -1;
+   $self-> iterate( sub {
+      my ( $current, $parent, $index, $position, $level, $lastChild) = @_;
+      $lev = $level, $rec = $position, return 1 if $current == $item;
    });
-   return $rec, $lev if $res;
-   return -1, undef;
+  return $rec, $lev;
 }
 
 
@@ -1260,15 +1137,56 @@ sub get_item
 {
    my ( $self, $item) = @_;
    return if $item < 0 || $item >= $self-> {count};
-   return @{$self->{itemCache}->{$item}} if exists $self->{itemCache}->{$item};
-   my $lev;
-   my $rec  = $self-> iterate( sub {
-      my ( $current, $position, $level, $lastChild) = @_;
-      $lev = $level;
-      $self->{itemCache}->{$position} = [$current, $level];
-      return $position == $item;
-   });
-   return $rec, $lev;
+
+   my ($array, $idx, $lim, $level) = ([['root'],$self->{items}], 0, scalar @{$self->{items}}, 0);
+   my $i = int(( $item + 1) / STACK_FRAME) * STACK_FRAME - 1;
+   my $position = 0;
+   my @stack;
+   if ( $i >= 0) {
+      $position = $i;
+      $i = $self-> {stackFrames}->[int( $item + 1) / STACK_FRAME - 1];
+      if ( $i) {
+         my $k;
+         for ( $k = 0; $k < scalar @{$i} - 1; $k++) {
+            $idx   = $i->[$k] + 1;
+            $lim   = scalar @{$array->[1]};
+            push( @stack, [ $array, $idx, $lim]);
+            $array = $array->[1]->[$idx - 1];
+         }
+         $idx   = $$i[$k];
+         $lim   = scalar @{$array->[1]};
+         $level = scalar @$i - 1;
+      }   
+   }
+
+   die "Internal error\n" if $position > $item;
+   while (1) {
+      my $node      = $array->[1]->[$idx++];
+      my $lastChild = $idx == $lim;
+      return $node, $level if $position == $item;
+      $position++;
+      if ( $node->[1] && $node->[2] && scalar @{$node->[1]}) {
+         $level++;
+         push ( @stack, [ $array, $idx, $lim]);
+         $idx   = 0;
+         $array = $node;
+         $lim   = scalar @{$node->[1]};
+         next;
+      }
+      while ( $lastChild) {
+         last unless $level--;
+         ( $array, $idx, $lim) = @{pop @stack};
+         $lastChild = $idx == $lim;
+      }
+   }   
+#  return @{$self->{itemCache}->{$item}} if exists $self->{itemCache}->{$item};
+#  my $lev;
+#  my $rec  = $self-> iterate( sub {
+#     my ( $current, $parent, $index, $position, $level, $lastChild) = @_;
+#     $self->{itemCache}->{$position} = [$current, $level];
+#     $lev = $level, return 1 if $position == $item;
+#  });
+#  return $rec, $lev;
 }
 
 sub get_item_text
@@ -1688,7 +1606,8 @@ sub on_expand
    $node->[1] = $x;
 #  valid way to do the same -
 #  $self-> delete_items( $node);
-#  $self-> insert_items( $node, 0, @$x);
+#  $self-> insert_items( $node, 0, @$x); but since on_expand is never called directly,
+#  adjust() will call necessary update functions for us.
 }
 
 sub path
