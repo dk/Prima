@@ -357,6 +357,7 @@ struct _UnixGuts
    Point                        grab_translate_mouse;
    XWindow                      root;
    Point                        displaySize;
+   long                         wm_event_timeout;
 } guts;
 
 #define FXA_RESOLUTION_X guts. fxa_resolution_x
@@ -699,6 +700,12 @@ prima_get_frame_info( Handle self, PRect r);
 
 extern void
 prima_send_cmSize( Handle self, Point oldSize);
+
+extern Bool
+apc_window_set_visible( Handle self, Bool show);
+   
+extern void
+prima_wm_sync( Handle self, int eventType);
 
 typedef Bool (*prima_wm_hook)( void);
 

@@ -41,19 +41,32 @@
 Bool
 apc_widget_map_points( Handle self, Bool toScreen, int n, Point *p)
 {
-   DEFXX;
-   int dx = 0, dy = XX-> size. y;
-   XWindow dummy;
-
-   XTranslateCoordinates( DISP, XX-> udrawable, guts. root, dx, dy, &dx, &dy, &dummy);
-   dy = DisplayHeight( DISP, SCREEN) - dy;
-   if (!toScreen) {
-      dx = -dx;
-      dy = -dy;
+   Point d = {0,0};
+   
+   while ( self && (self != application)) {
+      DEFXX;
+      Point origin;
+      if ( XX-> parentHandle) {
+         XWindow dummy;
+         XTranslateCoordinates( DISP, X_WINDOW, guts. root, 0, XX-> size.y-1, &origin.x, &origin.y, &dummy);
+         origin. y = guts. displaySize. y - origin. y;
+         self = application;
+      } else {
+         origin = XX-> origin;
+         self = XX-> flags. clip_owner ? PWidget(self)-> owner : application;
+      }
+      d. x += origin. x;
+      d. y += origin. y;
    }
+   
+   if ( !toScreen) {
+      d. x = -d. x;
+      d. y = -d. y;
+   }
+   
    while (n--) {
-      p[n]. x += dx;
-      p[n]. y += dy;
+      p[n]. x += d. x;
+      p[n]. y += d. y;
    }
    return true;
 }
@@ -761,14 +774,13 @@ Bool
 apc_widget_set_focused( Handle self)
 {
    XWindow focus = None;
-   if ( self && ( self != CApplication( application)-> map_focus( application, self))) {
+   if ( guts. message_boxes) return false;
+   if ( self && ( self != CApplication( application)-> map_focus( application, self)))
       return false;
-   }
    if ( self) {
       if (XT_IS_WINDOW(X(self))) return true; /* already done in activate() */
       focus = X_WINDOW;
    }
-   apc_application_yield();
    XSetInputFocus( DISP, focus, RevertToParent, CurrentTime);
    XCHECKPOINT;
    apc_application_yield();
@@ -938,38 +950,20 @@ Bool
 apc_widget_set_visible( Handle self, Bool show)
 {
    DEFXX;
-   int oldShow = XX-> flags. want_visible ? 1 : 0;
-   if (!XX) return false;
+   int oldShow;
+   if ( XX-> type. window)
+      return apc_window_set_visible( self, show);
+   
+   oldShow = XX-> flags. want_visible ? 1 : 0;
    XX-> flags. want_visible = show;
    if ( !XX-> flags. falsely_hidden) {
-      if ( show) {
-         Bool iconic = XX-> flags. iconic;
-         if ( XX-> type. window && XX-> flags. withdrawn) {
-            XWMHints * wh = XGetWMHints( DISP, X_WINDOW);
-            if ( wh) {
-               wh-> initial_state = iconic ? IconicState : NormalState;
-               wh-> input = false;
-               wh-> flags = InputHint | StateHint;
-               XSetWMHints( DISP, X_WINDOW, wh);
-               XFree( wh); 
-            } else 
-               warn("Error querying XGetWMHints");
-            XX-> flags. withdrawn = 0;
-            XSync( DISP, false);
-         }   
+      if ( show)
          XMapWindow( DISP, X_WINDOW);
-         XX-> flags. iconic = iconic;
-      } else {
-         if ( XX-> type. window && XX-> flags. iconic) {
-            XWithdrawWindow( DISP, X_WINDOW, SCREEN);
-            XSync( DISP, false);
-            XX-> flags. withdrawn = 1;
-         } else
-            XUnmapWindow( DISP, X_WINDOW);
-      }   
+      else
+         XUnmapWindow( DISP, X_WINDOW);
       XCHECKPOINT;
    }
-   if ( !XX-> type. window && ( oldShow != ( show ? 1 : 0)))
+   if ( oldShow != ( show ? 1 : 0))
       prima_simple_message(self, show ? cmShow : cmHide, false);
    return true;
 }
@@ -992,6 +986,11 @@ apc_widget_set_z_order( Handle self, Handle behind, Bool top)
       XLowerWindow( DISP, X_WINDOW);
       XCHECKPOINT;
    }
+
+   if ( X(self)-> type. window) 
+      prima_wm_sync( self, ConfigureNotify);
+   else 
+      prima_simple_message( self, cmZOrderChanged, false);
    return true;
 }
 

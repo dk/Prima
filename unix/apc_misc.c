@@ -1172,10 +1172,7 @@ apc_timer_start( Handle self)
    ENTERTIMER;
 
    inactivate_timer( sys);
-   if ( gettimeofday( &sys-> when, nil) != 0) {
-      warn( "gettimeofday error: %s", strerror( errno));
-      return false;
-   }
+   gettimeofday( &sys-> when, nil);
    sys-> when. tv_sec += sys-> timeout / 1000;
    sys-> when. tv_usec += (sys-> timeout % 1000) * 1000;
 

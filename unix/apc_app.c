@@ -273,6 +273,7 @@ window_subsystem_init( void)
    guts. files = plist_create( 16, 16);
    prima_rebuild_watchers();
    prima_wm_init();
+   guts. wm_event_timeout = 100000;
    if ( !prima_init_font_subsystem()) return false;
 /*    XSynchronize( DISP, true); */
    return true;
@@ -438,8 +439,10 @@ apc_application_get_widget_from_point( Handle self, Point p)
          from = to;
          to = child;
       } else {
+         Handle h;
          if ( to == from) to = X_WINDOW;
-         return prima_xw2h( to);
+         h = prima_xw2h( to);
+         return ( h == application) ? nilHandle : h;
       }
    }
    return nilHandle;
@@ -592,10 +595,7 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
    write_set = guts.write_set;
    excpt_set = guts.excpt_set;
    if ( guts. oldest) {
-      if ( gettimeofday( &timeout, nil) != 0) {
-         warn( "gettimeofday error: %s", strerror( errno));
-         return false;
-      }   
+      gettimeofday( &timeout, nil);
       if ( guts. oldest-> when. tv_sec < timeout. tv_sec ||
            ( guts. oldest-> when. tv_sec == timeout. tv_sec &&
              guts. oldest-> when. tv_usec <= timeout. tv_usec)) {
@@ -606,10 +606,7 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
          } else {
             prima_simple_message( timer-> who, cmTimer, false);
          }
-         if ( gettimeofday( &timeout, nil) != 0) {
-            warn( "gettimeofday error: %s", strerror( errno));
-            return false;
-         }   
+         gettimeofday( &timeout, nil);
       }
       if ( guts. oldest && wait) {
          if ( guts. oldest-> when. tv_sec < timeout. tv_sec) {

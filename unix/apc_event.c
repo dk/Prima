@@ -266,6 +266,137 @@ no_input( PDrawableSysData XX, Bool ignore_horizon, Bool beep)
    return false;
 }
 
+typedef struct _WMSyncData
+{
+   int     eventType;
+   Point   origin;
+   Point   size;
+   XWindow above;
+   Bool    mapped;
+} WMSyncData;
+
+static void
+wm_sync_data_from_event( Handle self, WMSyncData * wmsd, XConfigureEvent * cev)
+{
+    wmsd-> eventType = ConfigureNotify;
+    wmsd-> above     = cev-> above;
+    wmsd-> size      = ( Point) { cev-> width, cev-> height};
+
+    if ( X(self)-> real_parent) { // trust no one
+       XWindow dummy;
+       XTranslateCoordinates( DISP, X_WINDOW, guts. root,
+           0, wmsd-> size. y - 1, &wmsd-> origin. x, &wmsd-> origin. y, 
+           &dummy);
+       wmsd-> origin. y = guts. displaySize. y - wmsd-> origin. y;
+    } else
+       wmsd-> origin = ( Point) { cev-> x, X(X(self)-> owner)-> size. y - wmsd-> size. y - cev-> y };
+}
+
+
+static Bool
+process_wm_sync_data( Handle self, WMSyncData * wmsd)
+{
+   DEFXX;
+   Event e;
+   Bool size_changed = false;
+   switch ( wmsd-> eventType) {
+   case ConfigureNotify: {
+      Point old_size = XX-> size, old_pos = XX-> origin;
+      if ( wmsd-> origin. x != XX-> origin. x || wmsd-> origin. y != XX-> origin. y) {
+         // printf("GOT move to %d %d / %d %d\n", wmsd-> origin.x, wmsd-> origin.y, XX-> origin. x, XX-> origin. y);
+         bzero( &e, sizeof( Event));
+         e. cmd      = cmMove;
+         e. gen. P   = XX-> origin = wmsd-> origin;
+         e. gen. source = self;
+         CComponent( self)-> message( self, &e);
+         if ( PObject( self)-> stage == csDead) return false; 
+      }
+
+      if ( wmsd-> size. x != XX-> size. x || wmsd-> size. y != XX-> size. y) {
+         XX-> size = wmsd-> size;
+         // printf("got size to %d %d\n", XX-> size.x, XX-> size.y);
+         prima_send_cmSize( self, old_size);
+         if ( PObject( self)-> stage == csDead) return false; 
+         size_changed = true;
+      }
+      
+      if ( wmsd-> above != XX-> above) {
+         XX-> above = wmsd-> above;
+         bzero( &e, sizeof( Event));
+         e. cmd = cmZOrderChanged;
+         CComponent( self)-> message( self, &e);
+         if ( PObject( self)-> stage == csDead) return false; 
+      }
+      
+      if ( size_changed && XX-> flags. want_visible) {
+         int qx = guts. displaySize.x * 3 / 4, qy = guts. displaySize.y * 3 / 4;
+         bzero( &e, sizeof( Event));
+         if ( !XX-> flags. zoomed) {
+            if ( XX-> size. x > qx && XX-> size. y > qy) {
+               e. cmd = cmWindowState;
+               e. gen. i = wsMaximized;
+               XX-> zoomRect = (Rect){old_pos.x, old_pos.y, old_size.x, old_size.y};
+               XX-> flags. zoomed = 1;
+            }   
+         } else {
+            if ( old_size.x > XX-> size.x && old_size.y > XX-> size.y) {
+               e. cmd = cmWindowState;
+               e. gen. i = wsNormal;
+               XX-> flags. zoomed = 0;
+            } else  
+               XX-> zoomRect = (Rect){XX-> origin.x, XX-> origin.y, XX-> size.x, XX-> size.y};
+         }   
+         if ( e. cmd) CComponent( self)-> message( self, &e);
+         if ( PObject( self)-> stage == csDead) return false; 
+      }}
+      break;
+   case MapNotify:
+      if ( !XX-> flags. mapped && wmsd-> mapped) {
+         Event f;
+         bzero( &e, sizeof( Event));
+         bzero( &f, sizeof( Event));
+         if ( XX-> type. window && XX-> flags. iconic) {
+            f. cmd = cmWindowState;
+            f. gen. i = XX-> flags. zoomed ? wsMaximized : wsNormal;
+            f. gen. source = self;
+            XX-> flags. iconic = 0;
+         }   
+         if ( XX-> flags. withdrawn)
+            XX-> flags. withdrawn = 0;
+         XX-> flags. mapped = 1;
+         e. cmd = cmShow;
+         CComponent( self)-> message( self, &e);
+         if ( PObject( self)-> stage == csDead) return false; 
+         if ( f. cmd) {
+            CComponent( self)-> message( self, &f);
+            if ( PObject( self)-> stage == csDead) return false; 
+         }
+      }   
+      break;
+   case UnmapNotify:
+      if ( XX-> flags. mapped && !wmsd-> mapped) {
+         Event f;
+         bzero( &e, sizeof( Event));
+         bzero( &f, sizeof( Event));
+         if ( !XX-> flags. iconic && XX-> type. window) {
+            f. cmd = cmWindowState;
+            f. gen. i = wsMinimized;
+            f. gen. source = self;
+            XX-> flags. iconic = 1;
+         }   
+         e. cmd = cmHide;
+         XX-> flags. mapped = 0;
+         CComponent( self)-> message( self, &e);
+         if ( PObject( self)-> stage == csDead) return false; 
+         if ( f. cmd) {
+            CComponent( self)-> message( self, &f);
+            if ( PObject( self)-> stage == csDead) return false; 
+         }
+      }   
+   }
+   return true;
+}
+
 /*
 static char * xevdefs[] = { "0", "1"
 ,"KeyPress" ,"KeyRelease" ,"ButtonPress" ,"ButtonRelease" ,"MotionNotify" ,"EnterNotify"
@@ -358,10 +489,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       win = guts. grab_redirect;
 
    self = prima_xw2h( win);
-   /*
-   printf("%d:%s of ", ev-> type, ((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]));
-   printf( self ? "%s\n" : "%08x\n", self ? PWidget(self)-> name : self);
-   */
+
+/* 
+   if ( ev-> type > 0) {
+      printf("%d:%s of ", ev-> type, ((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]));
+      printf( self ? "%s\n" : "%08x\n", self ? PWidget(self)-> name : self);
+   }
+*/
+
    if (!self)
       return;
    if ( XT_IS_MENU(X(self))) {
@@ -472,7 +607,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          }
       }
       memcpy( &guts.last_button_event, bev, sizeof(*bev));
-      
       if ( e. cmd == cmMouseDown && !XX-> flags. first_click) {
          Handle x = self, f = guts. focused ? guts. focused : application;
          while ( !X(x)-> type. window && ( x != application)) x = (( PWidget) x)-> owner;
@@ -649,29 +783,23 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case UnmapNotify: {
+      if ( XX-> flags. process_configure_notify) {
+         WMSyncData wmsd;
+         wmsd. eventType = UnmapNotify;
+         wmsd. mapped = false;
+         process_wm_sync_data( self, &wmsd);
+      }
       XX-> flags. mapped = false;
-      if ( XX-> type. window) {
-         e. cmd = cmHide;
-         if ( !XX-> flags. iconic) {
-            secondary. cmd = cmWindowState;
-            secondary. gen. i = wsMinimized;
-            XX-> flags. iconic = 1;
-         }   
-      }   
       break;
    }
    case MapNotify: {
+      if ( XX-> flags. process_configure_notify) {
+         WMSyncData wmsd;
+         wmsd. eventType = MapNotify;
+         wmsd. mapped = true;
+         process_wm_sync_data( self, &wmsd);
+      }
       XX-> flags. mapped = true;
-      if ( XX-> type. window) {
-         e. cmd = cmShow;
-         if ( XX-> flags. iconic) {
-            secondary. cmd = cmWindowState;
-            secondary. gen. i = XX-> flags. zoomed ? wsMaximized : wsNormal;
-            XX-> flags. iconic = 0;
-         }   
-         if ( XX-> flags. withdrawn)
-            XX-> flags. withdrawn = 0;
-      }   
       break;
    }
    case MapRequest: {
@@ -680,72 +808,17 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
    case ReparentNotify: {
       XWindow p = ev-> xreparent. parent;
-      if ( !prima_xw2h( p)) 
-	 XX-> real_parent = p;
+      if ( XX-> type. window) 
+	 XX-> real_parent = ( p == guts. root) ? nilHandle : p;
       return;
    }
 
    case ConfigureNotify: {
-      XConfigureEvent *cev = &ev-> xconfigure;
-      Bool size_changed, pos_changed;
-      Point old_size, old_pos;
-
-      if ( cev-> above != XX-> above) {
-	 /* z-order notification */
-	 e. cmd = cmZOrderChanged;
-	 CComponent( self)-> message( self, &e);
-         if ( PObject( self)-> stage == csDead) return; 
-      }   
-      
-      if ( !XX-> flags. process_configure_notify)
-	 return;
-
-      /* if ( XX-> real_parent != XX-> parent && !was_sent) {
-	 XWindow cld;
-	 XTranslateCoordinates( DISP, XX-> real_parent, XX-> parent,
-            cev-> x, cev-> y, &cev-> x, &cev-> y, &cld);
-	 XCHECKPOINT;
-      } */
-      size_changed = ( cev-> width != XX-> size. x) || ( cev-> height != XX-> size. y);
-      pos_changed  = ( cev-> x != XX-> origin. x) || 
-                     ( XX-> origin. y != X(XX-> owner)-> size. y - XX-> size. y - cev-> y);
-      old_size  = XX-> size;
-      old_pos   = XX-> origin;
-      XX-> size   = ( Point) { cev-> width, cev-> height};
-      XX-> origin = ( Point) { cev-> x, X(XX-> owner)-> size. y - XX-> size. y - cev-> y };
-      
-      if ( pos_changed) {
-	 e. cmd = cmMove;
-	 e. gen. P = XX-> origin;
-	 CComponent( self)-> message( self, &e);
-         if ( PObject( self)-> stage == csDead) return; 
-      }
-
-      if ( size_changed) {
-         prima_send_cmSize( self, old_size);
-         if ( PObject( self)-> stage == csDead) return; 
-      }
-
-      if ( size_changed && XX-> flags. want_visible) {
-         int qx = guts. displaySize.x * 3 / 4, qy = guts. displaySize.y * 3 / 4;
-         if ( !XX-> flags. zoomed) {
-            if ( XX-> size. x > qx && XX-> size. y > qy) {
-               e. cmd = cmWindowState;
-               e. gen. i = wsMaximized;
-               XX-> zoomRect = (Rect){old_pos.x, old_pos.y, old_size.x, old_size.y};
-               XX-> flags. zoomed = 1;
-            }   
-         } else {
-            if ( old_size.x > XX-> size.x && old_size.y > XX-> size.y) {
-               e. cmd = cmWindowState;
-               e. gen. i = wsNormal;
-               XX-> flags. zoomed = 0;
-            } else  
-               XX-> zoomRect = (Rect){XX-> origin.x, XX-> origin.y, XX-> size.x, XX-> size.y};
-         }   
-         if ( e. cmd) CComponent( self)-> message( self, &e);
-         if ( PObject( self)-> stage == csDead) return; 
-      }   
+      if ( XX-> flags. process_configure_notify) {
+         WMSyncData wmsd;
+         wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure);
+         process_wm_sync_data( self, &wmsd);
+      } 
       return;
    }
    case ConfigureRequest: {
@@ -818,4 +891,171 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       /* Unhandled event, do nothing */
       guts. unhandled_events++;
    }
+}
+
+#define DEAD_BEEF 0xDEADBEEF
+
+static int
+copy_events( Handle self, PList events, WMSyncData * w)
+{
+   int ret = 0;
+   if ( guts. queued_events <= 0) return 0;
+   while ( guts. queued_events--) {
+      XEvent * x = malloc( sizeof( XEvent));
+      if ( !x) {
+         list_delete_all( events, true);
+         plist_destroy( events);
+         return -1;
+      }
+      XNextEvent( DISP, x);
+
+      switch ( x-> type) {
+      case ReparentNotify:
+         if ( X(self)-> type. window && ( x-> xreparent. window == PWidget(self)-> handle)) {
+             X(self)-> real_parent = ( x-> xreparent. parent == guts. root) ? 
+                nilHandle : x-> xreparent. parent;
+             x-> type = DEAD_BEEF;
+         }
+         break;
+      }
+      
+      if ( x-> type == w-> eventType) {
+         Bool ok = false;
+         switch ( x-> type) {
+         case ConfigureNotify: 
+            if ( x-> xconfigure. window == PWidget(self)-> handle) {
+               wm_sync_data_from_event( self, w, &x-> xconfigure);
+               ok = true;
+            }
+            break;
+         case UnmapNotify:
+            if ( x-> xmap. window == PWidget(self)-> handle) {
+               w-> mapped = false;
+               ok = true;
+            }
+            break;
+         case MapNotify:
+            if ( x-> xmap. window == PWidget(self)-> handle) {
+               w-> mapped = true;
+               ok = true;
+            }
+            break;
+         }
+         if ( ok) {
+            x-> type = -x-> type;
+            ret++;
+         }
+      }
+      if ( x-> type != DEAD_BEEF) 
+         list_add( events, ( Handle) x);
+   }
+   return ret;
+}
+
+void
+prima_wm_sync( Handle self, int eventType)
+{
+   DEFXX;
+   int r;
+   long diff, delay, evx;
+   fd_set zero, read;
+   struct timeval start_time, timeout;
+   PList events;
+   WMSyncData wmsd;
+   Bool quit_by_timeout = false;
+
+   // printf("enter conf for %d\n", eventType);
+   wmsd. eventType = eventType;
+   wmsd. origin    = XX-> origin;
+   wmsd. size      = XX-> size;
+   wmsd. above     = XX-> above;
+   wmsd. mapped    = XX-> flags. mapped;
+
+   // printf("enter syncer. current size: %d %d\n", XX-> size.x, XX-> size.y);
+   gettimeofday( &start_time, nil);
+   
+   // browse & copy queued events
+   evx = guts. queued_events = XEventsQueued( DISP, QueuedAlready);
+   if ( !( events = plist_create( guts. queued_events + 32, 32)))
+      return;
+   r = copy_events( self, events, &wmsd);
+   if ( r < 0) return;
+   // printf("copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
+
+   // measuring round-trip time
+   XSync( DISP, false);
+   gettimeofday( &timeout, nil);
+   delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000000 + 
+      ( timeout. tv_usec - start_time. tv_usec)) + guts. wm_event_timeout;
+   // printf("Sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000);
+
+   // got response already? happens if no wm present or 
+   // sometimes if wm is local to server
+   evx = guts. queued_events = XEventsQueued( DISP, QueuedAlready);
+   r = copy_events( self, events, &wmsd);
+   if ( r < 0) return;
+   // printf("pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
+   if ( r > 0) delay = 50000; // wait 50 ms just in case
+   // waiting for ConfigureNotify or timeout
+   // printf("enter cycle, size: %d %d\n", wmsd.size.x, wmsd.size.y);
+   start_time = timeout;
+   while ( 1) {
+      gettimeofday( &timeout, nil);
+      diff = ( timeout. tv_sec - start_time. tv_sec) * 1000000 + 
+             ( timeout. tv_usec - start_time. tv_usec);
+      if ( delay <= diff) 
+         break;
+      timeout. tv_sec  = ( delay - diff) / 1000000;
+      timeout. tv_usec = ( delay - diff) % 1000000;
+      // printf("want timeout:%g\n", (double)( delay - diff) / 1000000);
+      FD_ZERO( &zero);   
+      FD_ZERO( &read);
+      FD_SET( guts.connection, &read);
+      r = select( guts.connection+1, &read, &zero, &zero, &timeout);
+      if ( r < 0) {
+         warn("server connection error");
+         return;
+      }
+      if ( r == 0) {
+          // printf("timeout\n");
+         quit_by_timeout = true;
+         break; 
+      }
+      if (( evx = guts. queued_events = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
+         /* just like tcl/perl tk do, to avoid an infinite loop */
+         sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
+         XNoOp( DISP);
+         XFlush( DISP);
+         (void) signal( SIGPIPE, oldHandler);
+      }
+      
+      // copying new events
+      r = copy_events( self, events, &wmsd);
+      if ( r < 0) return;
+      // printf("copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
+      if ( r > 0) break; // has come ConfigureNotify
+   }  
+   // printf("exit cycle\n");
+
+   if ( quit_by_timeout) {
+      guts. wm_event_timeout *= 2;
+      // printf("INC timeout %g sec\n", (double)guts. wm_event_timeout / 1000000);
+      if ( guts. wm_event_timeout > 5000000) guts. wm_event_timeout = 5000000;
+   } else if ( delay > diff) {
+      guts. wm_event_timeout -= delay - diff;
+      if ( guts. wm_event_timeout < 10000) guts. wm_event_timeout = 10000;
+      // printf("DEC timeout %g sec\n", (double)guts. wm_event_timeout / 1000000);
+   }
+
+   // put events back
+   // printf("put back %d events\n", events-> count);
+   for ( r = events-> count - 1; r >= 0; r--) {
+      XPutBackEvent( DISP, ( XEvent*) events-> items[ r]);
+      free(( void*) events-> items[ r]);
+   }
+   plist_destroy( events);
+   evx = guts. queued_events = XEventsQueued( DISP, QueuedAlready);
+
+   // printf("exit syncer, size: %d %d\n", wmsd.size.x, wmsd.size.y);
+   process_wm_sync_data( self, &wmsd);
 }

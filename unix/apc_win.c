@@ -36,6 +36,7 @@
 #include "Window.h"
 #include "Application.h"
 
+
 Bool
 apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		   int border_style, Bool task_list,
@@ -155,9 +156,13 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 Bool
 apc_window_activate( Handle self)
 {
-   if ( X(self)-> flags. iconic || X(self)-> flags. withdrawn) return true;
-   XRaiseWindow( DISP, X_WINDOW);
-   apc_application_yield();
+   DEFXX;
+   if ( guts. message_boxes) return false;
+   if ( self && ( self != CApplication( application)-> map_focus( application, self)))
+      return false;
+
+   XMapRaised( DISP, X_WINDOW);
+   prima_wm_sync( self, ( XX-> flags. iconic || XX-> flags. withdrawn) ? MapNotify : ConfigureNotify);
    XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
    XCHECKPOINT;
    apc_application_yield();
@@ -300,30 +305,23 @@ apc_SetWMNormalHints( Handle self, XSizeHints * hints)
    XCHECKPOINT;
 }   
 
+
 Bool
 apc_window_set_client_pos( Handle self, int x, int y)
 {
    DEFXX;
    XSizeHints hints;
-   Point p = XX-> origin;
    bzero( &hints, sizeof( XSizeHints));
+
+   if ( x == XX-> origin. x && y == XX-> origin. y) return true;
    
-   XX-> origin = (Point){x,y};
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
    hints. flags = USPosition;
    hints. x = x;
    hints. y = y;
    XMoveWindow( DISP, X_WINDOW, x, y);
    apc_SetWMNormalHints( self, &hints);
-   
-   if ( XX-> origin.x != p. x || XX-> origin. y != p. y) {
-      Event e;
-      bzero( &e, sizeof( e));
-      e. cmd = cmMove;
-      e. gen. source = self;
-      e. gen. P = XX-> origin;
-      apc_message( self, &e, false);
-   }
+   prima_wm_sync( self, ConfigureNotify);
    return true;
 }
 
@@ -333,7 +331,8 @@ apc_window_set_client_size( Handle self, int width, int height)
    DEFXX;
    XSizeHints hints;
    PWidget widg = PWidget( self);
-   Point sz = XX-> size;
+   
+   if ( width == XX-> size. x && height == XX-> size. y) return true;
 
    bzero( &hints, sizeof( XSizeHints));
 
@@ -353,8 +352,6 @@ apc_window_set_client_size( Handle self, int width, int height)
 	  : widg-> sizeMin. y)
       : 1;
 
-   XX-> size = (Point){width,height}; /* XXX */
-
    hints. flags = USPosition | USSize;
    hints. x = XX-> origin. x;
    hints. y = X(XX-> owner)-> size. y - XX-> size.y - XX-> origin. y;
@@ -363,7 +360,48 @@ apc_window_set_client_size( Handle self, int width, int height)
    apc_SetWMNormalHints( self, &hints);
    XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, width, height);
    XCHECKPOINT;
-   prima_send_cmSize( self, sz);
+   prima_wm_sync( self, ConfigureNotify);
+   return true;
+}
+
+Bool
+apc_window_set_visible( Handle self, Bool show)
+{
+   DEFXX;
+
+   if ( show) {
+      if ( XX-> flags. mapped) return true;
+   } else {
+      if ( !XX-> flags. mapped) return true;
+   }
+
+   XX-> flags. want_visible = show;
+   if ( show) {
+      Bool iconic = XX-> flags. iconic;
+      if ( XX-> flags. withdrawn) {
+         XWMHints * wh = XGetWMHints( DISP, X_WINDOW);
+         if ( wh) {
+            wh-> initial_state = iconic ? IconicState : NormalState;
+            wh-> input = false;
+            wh-> flags = InputHint | StateHint;
+            XSetWMHints( DISP, X_WINDOW, wh);
+            XFree( wh); 
+         } else 
+            warn("Error querying XGetWMHints");
+         XX-> flags. withdrawn = 0;
+      }   
+      XMapWindow( DISP, X_WINDOW);
+      XX-> flags. iconic = iconic;
+      prima_wm_sync( self, MapNotify);
+   } else {
+      if ( XX-> flags. iconic) {
+         XWithdrawWindow( DISP, X_WINDOW, SCREEN);
+         XX-> flags. withdrawn = 1;
+      } else
+         XUnmapWindow( DISP, X_WINDOW);
+      prima_wm_sync( self, UnmapNotify);
+   }   
+   XCHECKPOINT;
    return true;
 }
 
@@ -394,6 +432,7 @@ apc_widget_set_rect( Handle self, int x, int y, int szx, int szy)
     hints. height = szy;
     XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, hints. width, hints. height);
     apc_SetWMNormalHints( self, &hints);
+    prima_wm_sync( self, ConfigureNotify);
 }   
 
 Bool
@@ -425,15 +464,16 @@ apc_window_set_window_state( Handle self, int state)
    
    if ( state == wsMaximized && !XX-> flags. zoomed) {
       XX-> zoomRect = ( Rect) {XX-> origin.x, XX-> origin.y, XX-> size.x, XX-> size.y};
-      XX-> flags. zoomed = 1;
       apc_widget_set_rect( self, 0, 0, guts. displaySize.x, guts. displaySize.y);
    }
 
    if ( !XX-> flags. withdrawn) {
-      if ( state == wsMinimized)
+      if ( state == wsMinimized) {
          XIconifyWindow( DISP, X_WINDOW, SCREEN);
-      else {
+         if ( XX-> flags. mapped) prima_wm_sync( self, UnmapNotify);
+      } else {
          XMapWindow( DISP, X_WINDOW);
+         if ( !XX-> flags. mapped) prima_wm_sync( self, MapNotify);
       }   
    }     
    XX-> flags. iconic = ( state == wsMinimized) ? 1 : 0;
@@ -444,6 +484,19 @@ apc_window_set_window_state( Handle self, int state)
          XX-> zoomRect. right, XX-> zoomRect. top);
    }   
    XFree( wh); 
+   
+
+   switch ( state) {
+   case wsMaximized:
+      if ( XX-> flags. zoomed) return true;
+      break;
+   case wsMinimized:
+      if ( XX-> flags. iconic) return true;
+      break;
+   case wsNormal:
+      if ( !XX-> flags. zoomed && !XX-> flags. iconic) return true;
+      break;
+   }
    
    bzero( &e, sizeof(e));
    e. gen. source = self;
