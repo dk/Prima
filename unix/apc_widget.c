@@ -312,12 +312,20 @@ apc_widget_is_responsive( Handle self)
 Bool
 apc_widget_is_showing( Handle self)
 {
-   return X(self)-> flags. visible;
+   XWindowAttributes attrs;
+
+   if ( X(self)-> flags. mapped
+	&& XGetWindowAttributes( DISP, X_WINDOW, &attrs)
+	&& attrs. map_state == IsViewable)
+      return true;
+   else
+      return false;
 }
 
 Bool
 apc_widget_is_visible( Handle self)
 {
+   DOLBUG("apc_widget_is_visible(%s): %d\n", PWidget( self)-> name, X(self)-> flags. mapped);
    return X(self)-> flags. mapped;
 }
 
@@ -437,6 +445,7 @@ void
 apc_widget_set_enabled( Handle self, Bool enable)
 {
    X(self)-> flags. enabled = enable;
+   DOLBUG( "apc_widget_set_enabled( %d) of %s\n", enable, PWidget(self)->name);
 }
 
 void
@@ -449,13 +458,9 @@ void
 apc_widget_set_focused( Handle self)
 {
    Handle o = self;
-   int state = 0;  /* 0 - can do, 1 - need flush, 2 - cannot do */
+   int state = 0;  /* 0 - can do, 1 - need flush */
 
    while ( X(o)-> owner && X(o)-> owner != application) {
-      if ( !X(o)-> flags. visible) {
-	 state = 2;
-	 break;
-      }
       if ( !X(o)-> flags. mapped) {
 	 state = 1;  /* don't break */
       }
@@ -532,9 +537,9 @@ apc_widget_set_visible( Handle self, Bool show)
    DEFXX;
    Bool flush_n_wait = false;
 
-   XX-> flags. visible = show;
+   DOLBUG( "apc_widget_set_visible( %d) of %s\n", show, PWidget(self)->name);
+   XX-> flags. mapped = show;
    if ( show) {
-
       if ( XX-> flags. doSizeHints) {
 	 XSizeHints hints;
 	 int width, height;

@@ -236,7 +236,6 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
    struct {
       int clipOwner		: 1;
       int syncPaint		: 1;
-      int visible		: 1;
       int mapped		: 1;
       int exposed		: 1;
       int paint                 : 1;
