@@ -942,6 +942,7 @@ sub on_paint
       my $bh = $canvas->font->height;
       my $bw  = ( $size[0] - $sb) / 2;
       return if $size[1] <= DefButtonX * ($self->{readOnly} ? 1 : 0) + 2 * $bh + 2;
+      $canvas-> transform((( $ta == 1) ? 1 : -1) * ( $bw - $sb - DefButtonX), 0) if $ta < 3;
       my $br  = $size[1] - 2 * $bh - 2;
       $canvas-> rect3d( $bw, $bh, $bw + $sb - 1, $bh + $br - 1, 1, @c3d, $cht[1]), return unless $range;
       my $val = $bh + 1 + abs( $self->{value} - $min) * ( $br - 3) / $range;
@@ -991,6 +992,7 @@ sub on_paint
       my $bh  = ( $size[1] - $sb) / 2;
       my $fh = $canvas-> font-> height;
       return if $size[0] <= DefButtonX * ($self->{readOnly} ? 1 : 0) + 2 * $bw + 2;
+      $canvas-> transform( 0, (( $ta == 1) ? -1 : 1) * ( $bh - $sb - DefButtonX)) if $ta < 3;
       my $br  = $size[0] - 2 * $bw - 2;
       $canvas-> rect3d( $bw, $bh, $bw + $br - 1, $bh + $sb - 1, 1, @c3d, $cht[1]), return unless $range;
       my $val = $bw + 1 + abs( $self->{value} - $min) * ( $br - 3) / $range;
@@ -1207,7 +1209,10 @@ sub value
          ( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
          $v1 -= DefButtonX / 2;
          $v2 += DefButtonX / 2 + 1;
-         $self-> invalidate_rect( $bw - 4, $v1, $bw + $sb + 9, $v2);
+         my $xd = 0;
+         $xd = (( $self-> {tickAlign} == ta::Normal) ? 1 : -1) *
+           ( $bw - $sb - DefButtonX) if $self-> {tickAlign} != ta::Dual;
+         $self-> invalidate_rect( $bw - 4 + $xd, $v1, $bw + $sb + 9 + $xd, $v2);
       } else {
          $sb = $size[1] / 6 unless $sb;
          $sb = 2 unless $sb;
@@ -1220,7 +1225,10 @@ sub value
          ( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
          $v1 -= DefButtonX / 2;
          $v2 += DefButtonX / 2 + 1;
-         $self-> invalidate_rect( $v1, $bh - 9, $v2, $bh + $sb + 4);
+         my $yd = 0;
+         $yd = (( $self-> {tickAlign} == ta::Normal) ? -1 : 1) *
+           ( $bh - $sb - DefButtonX) if $self-> {tickAlign} != ta::Dual;
+         $self-> invalidate_rect( $v1, $bh - 9 + $yd, $v2, $bh + $sb + 4 + $yd);
       }
       $self-> notify(q(Change));
    } else {
