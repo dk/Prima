@@ -162,7 +162,8 @@ apc_window_activate( Handle self)
       return false;
 
    XMapRaised( DISP, X_WINDOW);
-   prima_wm_sync( self, ( XX-> flags. iconic || XX-> flags. withdrawn) ? MapNotify : ConfigureNotify);
+   if ( XX-> flags. iconic || XX-> flags. withdrawn) 
+      prima_wm_sync( self, MapNotify);
    XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
    XCHECKPOINT;
    apc_application_yield();
