@@ -15,7 +15,7 @@ ok( $i-> type == im::BW);
 $i-> begin_paint_info;
 ok( $i-> get_paint_state == 2);
 $i-> end_paint_info;
-ok( $i-> load( 'Object/rc.bmp') || $l-> load('Object/rc.gif'));
+ok( $i-> load( 'Object/rc.bmp') || $i-> load('Object/rc.gif'));
 my @p = @{$i-> palette};
 ok( $p[0] == 0 && $p[1] == 0 && $p[2] == 0 && $p[3] == 0xFF && $p[4] == 0 && $p[5] == 0);
 ok(  $i-> pixel( 0,0) == 0 && $i-> pixel( 15,15) == 0 && $i-> pixel( 1,1) != 0);
