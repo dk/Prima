@@ -804,9 +804,9 @@ apc_window_get_icon( Handle self, Handle icon)
 
    objCheck false;
    p = ( HICON) SendMessage( HANDLE, WM_GETICON, ICON_BIG, 0);
+   if ( icon == nilHandle) return p != nilHandle;
+
    save = sys pointer;
-   if ( p    == nilHandle) apcErrRet( errInvWindowIcon);
-   if ( icon == nilHandle) apcErrRet( errInvParams);
    sys pointer = p;
    ret = apc_pointer_get_bitmap( self, icon);
    sys pointer = save;
@@ -1253,7 +1253,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       if ( bm) {
          sys ps2 = sys ps;
          sys ps  = dc;
-         if ( !SelectObject( dc, bm)) apiErr;
+         sys stockBM = SelectObject( dc, bm);
          sys bm = bm;
          apc_gp_set_transform( self, -r. left, -r. top);
          sys transform2. x = r. left;
@@ -1319,10 +1319,14 @@ void
 apc_widget_end_paint( Handle self)
 {
    objCheck;
-   if ( is_opt( optBuffered) && ( sys bm != nilHandle)) {
-      if ( !SetViewportOrgEx( sys ps, 0, 0, nil)) apiErr;
-      if ( !BitBlt( sys ps2, sys transform2. x, sys transform2. y, var w, var h, sys ps, 0, 0, SRCCOPY)) apiErr;
-      DeleteObject( sys bm);
+   if ( is_opt( optBuffered)) {
+      if ( sys bm != nilHandle) {
+         if ( !SetViewportOrgEx( sys ps, 0, 0, nil)) apiErr;
+         if ( !BitBlt( sys ps2, sys transform2. x, sys transform2. y, var w, var h, sys ps, 0, 0, SRCCOPY)) apiErr;
+         if ( sys stockBM)
+            SelectObject( sys ps, sys stockBM);
+         DeleteObject( sys bm);
+      }
       if ( sys pal) {
          SelectPalette( sys ps2, sys pal2, 1);
          SelectPalette( sys ps, sys stockPalette, 1);
@@ -1332,7 +1336,7 @@ apc_widget_end_paint( Handle self)
 
       DeleteDC( sys ps);
       sys ps = sys ps2;
-      sys bm = sys ps2 = nil;
+      sys bm = sys ps2 = sys stockBM = nil;
    }
 
    hwnd_leave_paint( self);
@@ -2539,30 +2543,6 @@ apc_sys_get_caption_font( PFont copyTo)
 }
 
 
-// etc
-static int ctx_mb2MB[] =
-{
-   mbError       , MB_ICONHAND,
-   mbQuestion    , MB_ICONQUESTION,
-   mbInformation , MB_ICONASTERISK,
-   mbWarning     , MB_ICONEXCLAMATION,
-   endCtx
-};
-
-
-void
-apc_beep( int style)
-{
-   MessageBeep( ctx_remap_def( style, ctx_mb2MB, true, MB_OK));
-}
-
-void
-apc_beep_tone( int freq, int duration)
-{
-   Beep( freq, duration);
-}
-
-
 char *
 apc_system_action( const char * params)
 {
@@ -2577,7 +2557,6 @@ apc_system_action( const char * params)
          int i = sscanf( params + 20, "%lu %d %d %d %d", &win, &r.left, &r.bottom, &r.right, &r.top);
 
          if ( i != 5 || !( self = hwnd_to_view( win))) {
-            BADPARAMS:
             warn( "Bad parameters to sysaction win32.DrawFocusRect");
             return 0;
          }
@@ -2593,6 +2572,18 @@ apc_system_action( const char * params)
          } else {
             log_write( "? No foc");
          }
+      } else if (strncmp( params, "win32.WNetGetUser", 17) == 0) {
+         char connection[ 1024];
+         char user[ 1024];
+         DWORD len = 1024;
+         int i = sscanf( params + 18, "%s", connection);
+         if ( i != 1) {
+            warn( "Bad parameters to sysaction win32.WNetGetUser");
+            return 0;
+         }
+         if ( WNetGetUser( connection, user, &len) != NO_ERROR)
+            return 0;
+         return strcpy( malloc( strlen( user) + 1), user);
       } else
          goto DEFAULT;
       break;
@@ -2601,91 +2592,5 @@ apc_system_action( const char * params)
       warn( "Unknown sysaction \"%s\"", params);
    }
    return 0;
-}
-
-void
-apc_query_drives_map( const char *firstDrive, char *map, int len)
-{
-   char *m = map;
-   int beg;
-   DWORD driveMap;
-   int i;
-
-   if ( !map) return;
-
-   beg = toupper( *firstDrive);
-   if (( beg < 'A') || ( beg > 'Z') || ( firstDrive[1] != ':'))
-      return;
-
-   beg -= 'A';
-
-   if ( !( driveMap = GetLogicalDrives()))
-      apiErr;
-   for ( i = beg; i < 26 && m - map + 3 < len; i++)
-   {
-      if ((driveMap << ( 31 - i)) >> 31)
-      {
-         *m++ = i + 'A';
-         *m++ = ':';
-         *m++ = ' ';
-      }
-   }
-
-   *m = '\0';
-   return;
-}
-
-static int ctx_dt2DRIVE[] =
-{
-   dtUnknown  , 0               ,
-   dtNone     , 1               ,
-   dtFloppy   , DRIVE_REMOVABLE ,
-   dtHDD      , DRIVE_FIXED     ,
-   dtNetwork  , DRIVE_REMOTE    ,
-   dtCDROM    , DRIVE_CDROM     ,
-   dtMemory   , DRIVE_RAMDISK   ,
-   endCtx
-};
-
-int
-apc_query_drive_type( const char *drive)
-{
-   char buf[ 256];                        //  Win95 fix
-   strncpy( buf, drive, 256);             //     sometimes D: isn't enough for 95,
-   if ( buf[1] == ':' && buf[2] == 0) {   //     but ok for D:\.
-      buf[2] = '\\';                      //
-      buf[3] = 0;                         //
-   }                                      //
-   return ctx_remap_def( GetDriveType( buf), ctx_dt2DRIVE, false, dtNone);
-}
-
-static char userName[ 1024];
-
-char *
-apc_get_user_name()
-{
-   DWORD maxSize = 1024;
-   if ( !GetUserName( userName, &maxSize)) apiErr;
-   return userName;
-}
-
-
-void *apc_dlopen(char *path, int mode)
-{
-   (void) mode;
-   return LoadLibrary( path);
-}
-
-void *dlsym(void *dll, char *symbol)
-{
-   return GetProcAddress((HMODULE)dll, symbol);
-}
-
-static char dlerror_description[256];
-
-char *dlerror(void)
-{
-   snprintf( dlerror_description, 256, "dlerror: %08x", GetLastError());
-   return dlerror_description;
 }
 
