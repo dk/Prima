@@ -89,8 +89,8 @@ apc_gp_done( Handle self)
 
 #define gp_arc_set {               \
   ARCPARAMS arc;                   \
-  arc. lP = radX * 2;              \
-  arc. lQ = radY * 2;              \
+  arc. lP = dX;                    \
+  arc. lQ = dY;                    \
   arc. lR = 0;                     \
   arc. lS = 0;                     \
   if ( !GpiSetArcParams( sys ps, &arc)) apiErr;  \
@@ -104,7 +104,7 @@ apc_gp_done( Handle self)
 
 
 Bool
-apc_gp_arc ( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_arc ( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    LONG lType = GpiQueryLineType( sys ps);
@@ -161,7 +161,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)      /* no fix */
 }
 
 Bool
-apc_gp_chord( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_chord( Handle self, int x, int y,  int dX, int dY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    LONG lType = GpiQueryLineType( sys ps);
@@ -213,7 +213,7 @@ apc_gp_ellipse( Handle self, int x, int y, double Rx, double Ry)
 }
 
 Bool
-apc_gp_fill_chord ( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_fill_chord ( Handle self, int x, int y,  int dX, int dY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    LONG lType = GpiQueryLineType( sys ps);
@@ -255,7 +255,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 }
 
 Bool
-apc_gp_fill_sector ( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_fill_sector ( Handle self, int x, int y,  int dX, int dY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    gp_arc_set;
@@ -376,7 +376,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 }
 
 Bool
-apc_gp_sector ( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_sector ( Handle self, int x, int y,  int dX, int dY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    gp_arc_set;
