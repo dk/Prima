@@ -133,6 +133,32 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
    return ( BITMAPINFO *) bi;
 }
 
+
+/*
+static void
+bm_put_zs( HBITMAP hbm, int x, int y, int z)
+{
+   HDC dc = dc_alloc();
+   HDC xdc = CreateCompatibleDC( 0);
+   BITMAPINFO bm;
+   int cx, cy;
+
+
+   bm. bmiHeader. biBitCount = 0;
+   bm. bmiHeader. biSize = sizeof( BITMAPINFO);
+   SelectObject( xdc, hbm);
+   GetDIBits( xdc, hbm, 0, 0, NULL, &bm, DIB_PAL_COLORS);
+   cx = bm. bmiHeader. biWidth;
+   cy = bm. bmiHeader. biHeight;
+
+   StretchBlt( dc, x, y, z * cx, z * cy, xdc, 0, 0, cx, cy, SRCCOPY);
+
+   DeleteDC( xdc);
+   dc_free();
+}
+*/
+
+
 HBITMAP
 image_make_bitmap_handle( Handle img, HPALETTE pal)
 {
@@ -472,31 +498,6 @@ apc_dbm_destroy( Handle self)
    DeleteDC( sys ps);
    sys pal = sys stockBM = sys ps = sys bm = nil;
 }
-
-/*
-static void
-bm_put_zs( HBITMAP hbm, int x, int y, int z)
-{
-   HDC dc = dc_alloc();
-   HDC xdc = CreateCompatibleDC( 0);
-   BITMAPINFO bm;
-   int cx, cy;
-
-
-   bm. bmiHeader. biBitCount = 0;
-   bm. bmiHeader. biSize = sizeof( BITMAPINFO);
-   SelectObject( xdc, hbm);
-   GetDIBits( xdc, hbm, 0, 0, NULL, &bm, DIB_PAL_COLORS);
-   cx = bm. bmiHeader. biWidth;
-   cy = bm. bmiHeader. biHeight;
-
-   StretchBlt( dc, x, y, z * cx, z * cy, xdc, 0, 0, cx, cy, SRCCOPY);
-
-   DeleteDC( xdc);
-   dc_free();
-}
-*/
-
 
 HICON
 image_make_icon_handle( Handle img, Point size, Point * hotSpot)
