@@ -27,6 +27,7 @@
 #include "apricot.h"
 #include "AbstractMenu.h"
 #include "Image.h"
+#include "Menu.h"
 #include "AbstractMenu.inc"
 
 #undef  my
@@ -231,8 +232,15 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
            if ( s[i] == '*') r-> checked  = ( ++decr > 0); // e.g. true
          }
          if ( decr) memmove( s, s + decr, strlen( s) + 1 - decr);
+         if ( strlen( s) == 0) {
+            free( r-> variable);
+            r-> variable = nil;
+         }
          #undef s
-      } else {
+      }
+
+      if ( r-> variable == nil)
+      {
          char b[256];    // auto enumeration
          r-> variable = malloc( snprintf( b, 256, "MenuItem%d", ++autoEnum) + 1);
          strcpy( r-> variable, b);
@@ -335,6 +343,7 @@ AbstractMenu_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
    ((( PComponent) var owner)-> self)-> attach ( var owner, self);
+   var anchored = kind_of( self, CMenu);
    my set_items( self, pget_sv( items));
    my update_sys_handle( self, profile);
    if ( pget_B( selected)) my set_selected( self, true);
