@@ -216,7 +216,7 @@ clean_perl_call_method( char* methname, I32 flags)
    dPUB_ARGS;
    dG_EVAL_ARGS;
 
-   if ( !( flags & G_EVAL)) OPEN_G_EVAL;
+   if ( !( flags & G_EVAL)) { OPEN_G_EVAL; }
    ret = perl_call_method( methname, flags | G_EVAL);
    if ( SvTRUE( GvSV( errgv))) {
       PUB_CHECK;
@@ -230,7 +230,7 @@ clean_perl_call_method( char* methname, I32 flags)
       croak( SvPV( GvSV( errgv), na));
    }
    
-   if ( !( flags & G_EVAL)) CLOSE_G_EVAL;
+   if ( !( flags & G_EVAL)) { CLOSE_G_EVAL; }
    return ret;
 }
 
@@ -241,7 +241,7 @@ clean_perl_call_pv( char* subname, I32 flags)
    dPUB_ARGS;
    dG_EVAL_ARGS;
 
-   if ( !( flags & G_EVAL)) OPEN_G_EVAL;
+   if ( !( flags & G_EVAL)) { OPEN_G_EVAL; }
    ret = perl_call_pv( subname, flags | G_EVAL);
    if ( SvTRUE( GvSV( errgv))) {
       PUB_CHECK;
@@ -255,7 +255,7 @@ clean_perl_call_pv( char* subname, I32 flags)
       croak( SvPV( GvSV( errgv), na));
    }
    
-   if ( !( flags & G_EVAL)) CLOSE_G_EVAL;
+   if ( !( flags & G_EVAL)) { CLOSE_G_EVAL; }
    return ret;
 }
 #endif
