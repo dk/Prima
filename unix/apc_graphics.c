@@ -1149,11 +1149,16 @@ apc_gp_get_pixel( Handle self, int x, int y)
          } else 
             c = guts.palette[pixel]. composite;
       } else {
+         int r, g, b, rmax, gmax, bmax;
+         rmax = gmax = bmax = 0xff;
          switch ( guts. idepth) {
          case 16:
             p32 = *(( uint16_t*)(im-> data));
             if ( guts.machine_byte_order != guts.byte_order) 
                p32 = REVERSE_BYTES_16(p32);
+            rmax = 0xff & ( 0xff << ( 8 - guts. red_range));
+            gmax = 0xff & ( 0xff << ( 8 - guts. green_range));
+            bmax = 0xff & ( 0xff << ( 8 - guts. blue_range));
             goto COMP;
          case 24:   
             p32 = (im-> data[0] << 16) | (im-> data[1] << 8) | im-> data[2];
@@ -1165,10 +1170,13 @@ apc_gp_get_pixel( Handle self, int x, int y)
             if ( guts.machine_byte_order != guts.byte_order) 
                p32 = REVERSE_BYTES_32(p32);
          COMP:   
-            c = 
-              ((((p32 & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range) |
-              (((((p32 & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range) << 8) |
-              (((((p32 & guts. visual. red_mask)   >> guts. red_shift)   << 8) >> guts. red_range) << 16);
+            r = ((((p32 & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range) & 0xff;
+            g = ((((p32 & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range) & 0xff;
+            b = ((((p32 & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range) & 0xff;
+            if ( r == rmax ) r = 0xff;
+            if ( g == gmax ) g = 0xff;
+            if ( b == bmax ) b = 0xff;
+            c = b | ( g << 8 ) | ( r << 16);
             break;
          default:
             warn("UAG_009: get_pixel not implemented for %d depth", guts.idepth);

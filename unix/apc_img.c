@@ -1409,8 +1409,6 @@ convert_16_to_24( XImage *i, PImage img)
       use this check fro example when a RGB image is to be converted into a
       low-palette image with RGB(0xff,0xff,0xff) expected and desirable palette
       slot value.
-
-      XXX - apc_gp_get_pixel probably needs this fix too
     */
 
    int rmax = 0xff & ( 0xff << ( 8 - guts. red_range));
