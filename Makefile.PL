@@ -309,9 +309,9 @@ sub setup_paths
 	push @LIBPATH, $libpath;
 	push @LIBS, 'X11';
 
-	if ( $incpath = find_header( "gif_lib.h", "", map { "$_/giflib"} @INCPATH)) {
+	if ( defined( $incpath = find_header( "gif_lib.h", "", map { "$_/giflib"} @INCPATH))) {
 	    print "Found gif_lib.h\n";
-	    push @INCPATH, $incpath;
+	    push @INCPATH, $incpath if $incpath;
 	    $DEFINES{ HAVE_GIFLIB} = 1;
 	    $libpath = find_lib( 'gif', '', '/usr/local/lib');
 	    die "GifLib libraries not found!\n" unless defined $libpath;
