@@ -452,21 +452,22 @@ sub on_mousedown
             return $self->selectedItems(( $foc < $item) ? [$foc..$item] : [ $item..$foc]);
 	 } elsif ( $mod & km::Ctrl) {
             return $self->toggle_item( $item);
+	 } elsif ( !$mod) {
+            $self-> {anchor} = $item;
+            $self-> selectedItems([$foc]);
 	 }
-         $self-> {anchor} = $item;
-         $self-> selectedItems([$foc]);
       } elsif ( $mod & (km::Ctrl||km::Shift)) {
          return $self->toggle_item( $item);
       }
    }
    $self-> {mouseTransaction} = 
       (( $mod & ( km::Alt | ($self->{multiSelect} ? 0 : km::Ctrl))) && $self->{dragable}) ? 2 : 1;
-   $self-> focusedItem( $foc);
    if ( $self-> {mouseTransaction} == 2) {
-      $self-> {dragItem} = $self-> focusedItem;
+      $self-> {dragItem} = $foc;
       $self-> {mousePtr} = $self-> pointer;
       $self-> pointer( cr::Move);
    }
+   $self-> focusedItem( $foc);
    $self-> capture(1);
 }
 
@@ -500,7 +501,8 @@ sub on_mousemove
       $self-> topItem( $self-> {topItem} + $aux);
       $item += (( $top != $self-> {topItem}) ? $aux : 0);
    }
-   if ( $self->{multiSelect} && $self-> {extendedSelect} && exists $self->{anchor})
+   if ( $self->{multiSelect} && $self-> {extendedSelect} 
+       && exists $self->{anchor} && $self->{mouseTransaction} != 2)
    {
        my ( $a, $b, $c) = ( $self->{anchor}, $item, $self->{focusedItem});
        my $globSelect = 0;
@@ -534,7 +536,8 @@ sub on_mouseup
    if ( $self->{mouseTransaction} == 2) {
       $self-> pointer( $self-> {mousePtr});
       my $fci = $self-> focusedItem;
-      @dragnotify = ($self-> {dragItem}, $fci) unless $fci == $self-> {dragItem};
+      @dragnotify = ($self-> {dragItem}, $fci) 
+         if $fci != $self-> {dragItem} and $self->{dragItem} >= 0;
    }
    delete $self->{mouseTransaction};
    delete $self->{mouseHorizontal};
@@ -743,7 +746,8 @@ sub set_focused_item
    return if $foc < -1;
    $self->{focusedItem} = $foc;
    $self-> selectedItems([$foc]) 
-      if $self->{multiSelect} && $self->{extendedSelect} && ! exists $self->{anchor};
+      if $self->{multiSelect} && $self->{extendedSelect} 
+         && ! exists $self->{anchor} && $self->{mouseTransaction} != 2;
    $self-> notify(q(SelectItem), [ $foc], 1) if $foc >= 0 && !exists $self-> {selectedItems}-> {$foc};
    my $topSet = undef;
    if ( $foc >= 0)
@@ -1501,12 +1505,23 @@ sub on_dragitem
 {
    my ( $self, $from, $to) = @_;
    my ( $is, $iw) = ( $self-> {items}, $self-> {widths});
-   splice( @$is, $to, 0, splice( @$is, $from, 1));
-   splice( @$iw, $to, 0, splice( @$iw, $from, 1));
-   if ( exists $self->{selectedItems}->{$from}) {
-      my $k = $self->{selectedItems}->{$from};
-      delete $self->{selectedItems}->{$from};
-      $self->{selectedItems}->{$to} = $k;
+   if ( $self-> {multiSelect}) {
+      my @k = sort { $b <=> $a } keys %{$self->{selectedItems}};
+      my @is = @$is[@k];
+      my @iw = @$iw[@k];
+      my $nto = $to;
+      for my $k ( @k) {
+         $nto-- if $k <= $to;
+         splice( @$is, $k, 1);
+         splice( @$iw, $k, 1);
+      }
+      $nto++ if $nto != $to;
+      splice( @$is, $nto, 0, reverse @is);
+      splice( @$iw, $nto, 0, reverse @iw);
+      @{$self->{selectedItems}}{$nto .. $nto + @k - 1} = delete @{$self->{selectedItems}}{@k};
+   } else {
+      splice( @$is, $to, 0, splice( @$is, $from, 1));
+      splice( @$iw, $to, 0, splice( @$iw, $from, 1));
    }
    $self-> repaint;
    $self-> clear_event;
@@ -1882,7 +1897,6 @@ an item. The index of the item is stored in C<focusedItem>.
 Called when the user finishes the drag of an item
 from OLD_INDEX to NEW_INDEX position. The default action
 rearranges the item list in accord with the dragging action.
-Also, it allows dragging a single item only.
 
 =item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, SELECTED, FOCUSED
 
