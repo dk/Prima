@@ -120,6 +120,42 @@ static ImgCodecInfo codec_info = {
 
 static int refCnt = 0;
 
+static int  
+std_open(const char *fn, int mode)
+{
+   return open(fn,mode);
+}
+
+static int  
+std_create(const char *fn, int mode)
+{
+   return open(fn, O_CREAT|O_TRUNC|mode, S_IREAD|S_IWRITE);
+}
+
+static void 
+std_close (int fd)
+{
+   close(fd);
+}
+
+static long 
+std_lseek(int fd, long pos, int whence)
+{
+   return lseek(fd,pos,whence);
+}
+static int  
+std_read(int fd, void *buf, int len)
+{
+   return read( fd, buf, len);
+}
+
+static int  
+std_write(int fd, const void *buf, int len)
+{
+   return write( fd, buf, len);
+}
+
+
 static void * 
 init( ImgCodecInfo ** info, void * param)
 {
@@ -129,6 +165,7 @@ init( ImgCodecInfo ** info, void * param)
    
    if ( refCnt++ == 0) {
       gbm_init();
+      gbm_io_setup( std_open, std_create, std_close, std_lseek, std_read, std_write);
       codec_info. versionMaj = gbm_version() / 100;
       codec_info. versionMin = gbm_version() % 100;
    }
@@ -295,7 +332,7 @@ static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    GBMRec * g;
-   
+  
    if ( !type_ok( fi-> f, (int)(instance-> initParam))) {
       int ft;
       if ( gbm_guess_filetype( fi-> fileName, &ft) != 0)
@@ -323,7 +360,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    else
       fi-> frameCount = 1;
 
-   if (( g-> fd = open( fi-> fileName, O_RDONLY | O_BINARY)) < 0) {
+   if (( g-> fd = gbm_io_open( fi-> fileName, O_RDONLY | O_BINARY)) < 0) {
       free( g);
       return nil;      
    }  
@@ -409,7 +446,7 @@ static void
 close_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    GBMRec * g = ( GBMRec *) fi-> instance;
-   close( g-> fd);
+   gbm_io_close( g-> fd);
    free( g);
 }   
 
@@ -478,7 +515,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
       g-> params += 4;
    }   
 
-   if (( g-> fd = open( fi-> fileName, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, S_IREAD | S_IWRITE)) < 0) {
+   if (( g-> fd = gbm_io_open( fi-> fileName, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY)) < 0) {
       free( g);
       return nil;      
    }  
@@ -578,7 +615,7 @@ static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
    GBMRec * g = ( GBMRec *) fi-> instance;
-   close( g-> fd);
+   gbm_io_close( g-> fd);
    free( g);
 }   
 
