@@ -928,9 +928,9 @@ query_diff( PFontInfo fi, PFont f, char * lcname, Bool by_size)
       if ( f-> pitch == fpDefault && fi-> font. pitch == fpFixed) {
          diff += 1.0;
       } else if ( f-> pitch == fpFixed && fi-> font. pitch == fpVariable) {
-         diff += 15000.0;
+         diff += 16000.0;
       } else if ( f-> pitch == fpVariable && fi-> font. pitch == fpFixed) {
-         diff += 350.0;
+         diff += 16000.0;
       }
    } else if ( f-> pitch != fpDefault) {
       diff += 10000.0;  /* 2/3 of the worst case */
