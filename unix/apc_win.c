@@ -41,85 +41,76 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		   int border_style, Bool task_list,
 		   int window_state, Bool use_origin, Bool use_size)
 {
-   XSetWindowAttributes attrs;
-   XWindow parent;
-   XWindow old;
-   Handle real_owner;
    DEFXX;
+   Event e;
+   Handle real_owner;
+   XSetWindowAttributes attrs;
+   XWindow parent = RootWindow( DISP, SCREEN);
+
+   if ( X_WINDOW)  // recreate request - can't change a thing ... 
+      return true; 
+
+   /* create */
+   attrs. event_mask = 0
+      | KeyPressMask
+      | KeyReleaseMask
+      | ButtonPressMask
+      | ButtonReleaseMask
+      | EnterWindowMask
+      | LeaveWindowMask
+      | PointerMotionMask
+      /* | PointerMotionHintMask */
+      /* | Button1MotionMask */
+      /* | Button2MotionMask */
+      /* | Button3MotionMask */
+      /* | Button4MotionMask */
+      /* | Button5MotionMask */
+      | ButtonMotionMask
+      | KeymapStateMask
+      | ExposureMask
+      | VisibilityChangeMask
+      | StructureNotifyMask
+      /* | ResizeRedirectMask */
+      /* | SubstructureNotifyMask */
+      /* | SubstructureRedirectMask */
+      | FocusChangeMask
+      | PropertyChangeMask
+      | ColormapChangeMask
+      | OwnerGrabButtonMask;
+   attrs. override_redirect = false;
+   attrs. do_not_propagate_mask = attrs. event_mask;
+   X_WINDOW = XCreateWindow( DISP, parent,
+	                     0, 0, 1, 1, 0, CopyFromParent,
+	                     InputOutput, CopyFromParent,
+	                     0
+	                     /* | CWBackPixmap */
+	                     /* | CWBackPixel */
+	                     /* | CWBorderPixmap */
+	                     /* | CWBorderPixel */
+	                     /* | CWBitGravity */
+	                     /* | CWWinGravity */
+	                     /* | CWBackingStore */
+	                     /* | CWBackingPlanes */
+	                     /* | CWBackingPixel */
+	                     | CWOverrideRedirect
+	                     /* | CWSaveUnder */
+	                     | CWEventMask
+	                     /* | CWDontPropagate */
+	                     /* | CWColormap */
+	                     /* | CWCursor */
+	                     , &attrs);
+   if (!X_WINDOW) return false;
+   XCHECKPOINT;
+   hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
+   XCHECKPOINT;
+   guts. wm_create_window( self, X_WINDOW);
+   XCHECKPOINT;
 
    XX-> type.drawable = true;
    XX-> type.widget = true;
    XX-> type.window = true;
 
-   /* Transparency is ignored for now */
-
-   parent = RootWindow( DISP, SCREEN);
    real_owner = application;
-
-   old = X_WINDOW;
-   if ( old && XX-> parent != parent) {
-      /* reparent */
-   } else if ( !old) {
-      /* create */
-      attrs. event_mask = 0
-	 | KeyPressMask
-	 | KeyReleaseMask
-	 | ButtonPressMask
-	 | ButtonReleaseMask
-	 | EnterWindowMask
-	 | LeaveWindowMask
-	 | PointerMotionMask
-	 /* | PointerMotionHintMask */
-	 /* | Button1MotionMask */
-	 /* | Button2MotionMask */
-	 /* | Button3MotionMask */
-	 /* | Button4MotionMask */
-	 /* | Button5MotionMask */
-	 | ButtonMotionMask
-	 | KeymapStateMask
-	 | ExposureMask
-	 | VisibilityChangeMask
-	 | StructureNotifyMask
-	 /* | ResizeRedirectMask */
-	 /* | SubstructureNotifyMask */
-	 /* | SubstructureRedirectMask */
-	 | FocusChangeMask
-	 | PropertyChangeMask
-	 | ColormapChangeMask
-	 | OwnerGrabButtonMask;
-      attrs. override_redirect = false;
-      attrs. do_not_propagate_mask = attrs. event_mask;
-      X_WINDOW = XCreateWindow( DISP, parent,
-				0, 0, 1, 1, 0, CopyFromParent,
-				InputOutput, CopyFromParent,
-				0
-				/* | CWBackPixmap */
-				/* | CWBackPixel */
-				/* | CWBorderPixmap */
-				/* | CWBorderPixel */
-				/* | CWBitGravity */
-				/* | CWWinGravity */
-				/* | CWBackingStore */
-				/* | CWBackingPlanes */
-				/* | CWBackingPixel */
-				| CWOverrideRedirect
-				/* | CWSaveUnder */
-				| CWEventMask
-				/* | CWDontPropagate */
-				/* | CWColormap */
-				/* | CWCursor */
-				, &attrs);
-      if (!X_WINDOW)
-	 return false;
-      XCHECKPOINT;
-      hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
-      XCHECKPOINT;
-      guts. wm_create_window( self, X_WINDOW);
-      XCHECKPOINT;
-   } else {
-      /* XXX otherwise do nothing? */
-   }
-
    XX-> parent = parent;
    XX-> udrawable = XX-> gdrawable = X_WINDOW;
 
@@ -130,12 +121,21 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XX-> flags. process_configure_notify = true;
 
    XX-> owner = real_owner;
-   XX-> size = (Point){0,0};
+   XX-> size. x = DisplayWidth( DISP, SCREEN) / 3;
+   XX-> size. y = DisplayHeight( DISP, SCREEN) / 3;
    XX-> known_size = (Point){APC_BAD_SIZE,APC_BAD_SIZE};
    XX-> origin = (Point){0,0};
    XX-> known_origin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
    apc_component_fullname_changed_notify( self);
    prima_send_create_event( X_WINDOW);
+
+   bzero( &e, sizeof(e));
+   e. gen. source = self;
+   e. cmd = cmSize;
+   e. gen. P = XX-> size;
+   e. gen. R. right = XX-> size. x;
+   e. gen. R. top = XX-> size. y;
+   apc_message( self, &e, false);
 
    return true;
 }
@@ -287,20 +287,10 @@ apc_window_set_client_pos( Handle self, int x, int y)
    DEFXX;
    XSizeHints hints;
 
-   /*MMM*/
-   if (0) {
-      Rect r;
-
-      prima_get_frame_info( self, &r);
-      fprintf( stderr, "%s: to: %d, %d; frame info: left(%d), top(%d), right(%d), bottom(%d) pixels\n",
-               PComponent(self)->name, x, y, r.left, r.top, r.right, r.bottom);
-   }
-
    bzero( &hints, sizeof( XSizeHints));
 
-   XX-> origin = (Point){x,y}; /* XXX ? */
+   XX-> origin = (Point){x,y}; 
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
-
    hints. flags = USPosition | PMinSize | PMaxSize;
    hints. x = x;
    hints. y = y;
@@ -313,8 +303,6 @@ apc_window_set_client_pos( Handle self, int x, int y)
    XMoveWindow( DISP, X_WINDOW, x, y);
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
-
-   DOLBUG( "window move to (%d,%d(%d))\n", x, XX-> origin. y, y);
    return true;
 }
 
@@ -325,27 +313,35 @@ apc_window_set_client_size( Handle self, int width, int height)
    int y;
    XSizeHints hints;
    PWidget widg = PWidget( self);
+   Event e;
 
    bzero( &hints, sizeof( XSizeHints));
 
    widg-> virtualSize = (Point){width,height};
 
-   width = width > 0
-      ? ( width >= widg-> sizeMin. x
-	  ? ( width <= widg-> sizeMax. x
+   width = ( width > 0)
+      ? (( width >= widg-> sizeMin. x)
+	  ? (( width <= widg-> sizeMax. x)
 	      ? width
 	      : widg-> sizeMax. x)
 	  : widg-> sizeMin. x)
       : 1;
-   height = height > 0
-      ? ( height >= widg-> sizeMin. y
-	  ? ( height <= widg-> sizeMax. y
+   height = ( height > 0)
+      ? (( height >= widg-> sizeMin. y)
+	  ? (( height <= widg-> sizeMax. y)
 	      ? height
 	      : widg-> sizeMax. y)
 	  : widg-> sizeMin. y)
       : 1;
 
-   XX-> size = (Point){width, height}; /* XXX ? */
+   bzero( &e, sizeof(e));
+   e. gen. source = self;
+   e. cmd = cmSize;
+   e. gen. R. left = XX-> size. x;
+   e. gen. R. bottom = XX-> size. y;
+   e. gen. P = XX-> size = (Point){width,height}; /* XXX */
+   e. gen. R. right = XX-> size. x;
+   e. gen. R. top = XX-> size. y;
    y = X(XX-> owner)-> size. y - height - XX-> origin. y;
 
    hints. flags = USPosition | USSize | PMinSize | PMaxSize;
@@ -362,6 +358,15 @@ apc_window_set_client_size( Handle self, int width, int height)
    XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
+
+   {
+      int i, y = X(XX-> owner)-> size. y, count = PWidget( self)-> widgets. count;
+      for ( i = 0; i < count; i++) {
+	 PWidget child = PWidget( PWidget( self)-> widgets. items[i]);
+         XMoveWindow( DISP, child-> handle, X(child)-> origin.x, y - X(child)-> size.y - X(child)-> origin.y);
+      }
+   }
+   apc_message( self, &e, false);
 
    DOLBUG( "window size to (%d,%d(%d)) - (%d,%d)\n", XX-> origin. x, XX-> origin. y, y, width, height);
    return true;

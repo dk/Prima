@@ -614,6 +614,7 @@ apc_widget_set_color( Handle self, Color color, int i)
    else if ( i == ciBack)
       apc_gp_set_back_color( self, color);
 
+   bzero( &e, sizeof(e));
    e. gen. source = self;
    e. gen. i      = i;
    apc_message( self, &e, false);
@@ -683,14 +684,10 @@ apc_widget_set_pos( Handle self, int x, int y)
    bzero( &e, sizeof( e));
    e. cmd = cmMove;
    e. gen. source = self;
-   if (0) /*MMM*/
-   fprintf( stderr, "%s: move from (%d,%d) to (%d,%d)\n",
-            PWidget(self)-> name, XX->origin.x, XX->origin.y, x, y);
-   XX-> origin = (Point){x,y};  /* XXX ? */
+   XX-> origin = (Point){x,y};
    e. gen. P = XX-> origin;
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
    XMoveWindow( DISP, X_WINDOW, x, y);
-   DOLBUG( "XMoveWindow: widget (%s) move to (%d,%d)\n", PWidget(self)-> name, x, y);
    XCHECKPOINT;
    apc_message( self, &e, false);
    return true;
@@ -713,25 +710,26 @@ apc_widget_set_size( Handle self, int width, int height)
    bzero( &e, sizeof( e));
    widg-> virtualSize = (Point){width,height};
 
-   width = width > 0
-      ? ( width >= widg-> sizeMin. x
-	  ? ( width <= widg-> sizeMax. x
+   width = ( width > 0)
+      ? (( width >= widg-> sizeMin. x)
+	  ? (( width <= widg-> sizeMax. x)
 	      ? width
 	      : widg-> sizeMax. x)
 	  : widg-> sizeMin. x)
       : 1;
-   height = height > 0
-      ? ( height >= widg-> sizeMin. y
-	  ? ( height <= widg-> sizeMax. y
+
+   height = ( height > 0)
+      ? (( height >= widg-> sizeMin. y)
+	  ? (( height <= widg-> sizeMax. y)
 	      ? height
 	      : widg-> sizeMax. y)
 	  : widg-> sizeMin. y)
       : 1;
    
-   if ( XX-> size. x == width && XX-> size. y == height) {
+   if ( XX-> size. x == width && XX-> size. y == height)
       return true;
-   }
 
+   bzero( &e, sizeof(e));
    e. gen. source = self;
    e. cmd = cmSize;
    e. gen. R. left = XX-> size. x;
@@ -741,31 +739,35 @@ apc_widget_set_size( Handle self, int width, int height)
    e. gen. R. top = XX-> size. y;
    y = X(XX-> owner)-> size. y - height - XX-> origin. y;
    XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
-   DOLBUG( "widget (%s) size to (%d,%d) - (%d,%d) |old size %d,%d|\n",
-	    PWidget(self)-> name, XX-> origin. x, y, width, height,
-	    e. gen. R. left, e. gen. R. bottom);
    XCHECKPOINT;
-   if (1){
-      int count = PWidget( self)-> widgets. count;
-      Handle *selves = malloc( count * sizeof( Handle));
-      int i, stage;
 
-      memcpy( selves, PWidget( self)-> widgets. items, count * sizeof( Handle));
+   {
+      int i, y = X(XX-> owner)-> size. y, count = PWidget( self)-> widgets. count;
       for ( i = 0; i < count; i++) {
-	 PWidget child = PWidget( selves[i]);
-
-	 if ( X(selves[i])-> flags. clip_owner && (child-> growMode & gmDontCare) == 0) {
-	    stage = child-> stage;
-	    child-> stage = csFrozen;
-	    apc_widget_set_pos( selves[i], X(selves[i])-> origin. x, X(selves[i])-> origin. y);
-	    child-> stage = stage;
-	 }
+	 PWidget child = PWidget( PWidget( self)-> widgets. items[i]);
+         XMoveWindow( DISP, child-> handle, X(child)-> origin.x, y - X(child)-> size.y - X(child)-> origin.y);
       }
-      free( selves);
    }
    apc_message( self, &e, false);
    return true;
 }
+
+Bool
+apc_widget_set_size_bounds( Handle self, Point min, Point max)
+{
+   DEFXX;
+   if ( XX-> type. window) {  
+      XSizeHints hints;
+      hints. flags = PMinSize | PMaxSize;
+      hints. min_width  = min. x;
+      hints. min_height = min. y;
+      hints. max_width  = max. x;
+      hints. max_height = max. y;
+      XSetWMNormalHints( DISP, X_WINDOW, &hints);
+      XCHECKPOINT;
+   }
+   return true;
+}   
 
 Bool
 apc_widget_set_visible( Handle self, Bool show)
