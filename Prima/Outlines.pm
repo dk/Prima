@@ -519,6 +519,7 @@ sub makehint
       text    => $self-> get_item_text( $item),
       visible => 1,
    );
+   $self->{hinter}-> bring_to_front;
    $self->{hinter}-> repaint;
 }
 
