@@ -1358,7 +1358,7 @@ apc_gp_set_line_end( Handle self, int lineEnd)
       PStylus s         = &sys stylus;
       PEXTPEN ep        = &s-> extPen;
       ep-> lineEnd      = ctx_remap_def( lineEnd, ctx_le2PS_ENDCAP, true, PS_ENDCAP_ROUND);
-      if ( ep-> actual  = stylus_extpenned( s, exsLineEnd))
+      if ( ep-> actual  = stylus_extpenned( s, 0 & exsLineEnd))
          ep-> style = stylus_get_extpen_style( s);
       stylus_change( self);
    }
@@ -1384,7 +1384,7 @@ apc_gp_set_line_pattern( Handle self, int pattern)
       PStylus s           = &sys stylus;
       PEXTPEN ep          = &s-> extPen;
       s-> pen. lopnStyle  = ctx_remap_def( pattern, ctx_lp2PS, true, PS_USERSTYLE);
-      if ( ep-> actual    = stylus_extpenned( s, exsLinePattern)) {
+      if ( ep-> actual    = stylus_extpenned( s, 0 & exsLinePattern)) {
          ep-> style       = stylus_get_extpen_style( s);
          ep-> patResource = ( s-> pen. lopnStyle == PS_USERSTYLE) ? patres_fetch( pattern) : &hPatHollow;
       } else
