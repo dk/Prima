@@ -289,6 +289,7 @@ Icon_mask( Handle self, Bool set, SV * svmask)
    mask = SvPV( svmask, maskSize);
    if ( is_opt( optInDraw) || maskSize <= 0) return nilSV;
    memcpy( var-> mask, mask, maskSize > var-> maskSize ? var-> maskSize : maskSize);
+   return nilSV;
 }
 
 void
