@@ -494,8 +494,6 @@ bc_byte_cr( register Byte * source, register Byte * dest, register int count, re
 static void
 bc_byte_graybyte( register Byte * source, register Byte * dest, register int count, register PRGBColor palette)
 {
-   dest   += count - 1;
-   source += count - 1;
    while ( count--)
    {
       register RGBColor r = palette[ *source++];
