@@ -45,7 +45,10 @@ void
 Popup_set_selected( Handle self, Bool selected)
 {
    inherited set_selected( self, selected);
-   ((( PWidget) var owner)-> self)-> set_popup( var owner, selected ? self : nilHandle);
+   if ( selected)
+      ((( PWidget) var owner)-> self)-> set_popup( var owner, self);
+   else if ( my get_selected( self))
+      ((( PWidget) var owner)-> self)-> set_popup( var owner, nilHandle);
 }
 
 Bool
@@ -62,6 +65,7 @@ Popup_popup( Handle self, int x, int y, int ancLeft, int ancBottom, int ancRight
    ColorSet color;
    Rect anchor = {ancLeft, ancBottom, ancRight, ancTop};
    int stage = owner-> stage;
+   if ( var stage > csNormal) return;
    owner-> stage = csFrozen;
    memcpy( color, owner-> popupColor, sizeof( ColorSet));
    for ( i = 0; i < ciMaxId + 1; i++)

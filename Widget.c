@@ -1,4 +1,3 @@
-//depot/Prima/Widget.c#11 - edit change 119 (text)
 #include "apricot.h"
 #include "Application.h"
 #include "Icon.h"
@@ -35,8 +34,8 @@ static Bool size_notify( Handle self, Handle child, void * metrix);
 static Bool move_notify( Handle self, Handle child, Point * moveTo);
 static void dyna_set( Handle self, HV * profile);
 static Handle find_tabfoc( Handle self);
-static Handle get_zorder( Handle self, int direction);
 static Bool showhint_notify ( Handle self, Handle child, void * data);
+static Bool read_point( AV * av, int * pt, int number, char * error);
 static Bool hint_notify ( Handle self, Handle child, char * hint);
        Bool accel_notify ( Handle group, Handle self, PEvent event);
        Bool font_notify ( Handle self, Handle child, void * font);
@@ -60,8 +59,7 @@ Widget_init( Handle self, HV * profile)
    var tabOrder = -1;
 
    if ( !kind_of( var owner, CWidget)) {
-      Object_destroy( self);
-      warn("Illegal object reference passed to Widget.init");
+      croak("Illegal object reference passed to Widget.init");
       return;
    }
 
@@ -127,32 +125,27 @@ Widget_init( Handle self, HV * profile)
 
    /* size, position, enabling, visibliity etc. runtime */
    {
-      AV * av   = ( AV *) SvRV( pget_sv( sizeMin));
       Point set;
-      set. x = SvIV( * av_fetch( av, 0, 0));
-      set. y = SvIV( * av_fetch( av, 1, 0));
+      int i[2];
+      AV * av;
+      SV ** holder;
+
+      read_point(( AV *) SvRV( pget_sv( sizeMin)), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
       my set_size_min( self, set);
-
-      av = ( AV *) SvRV( pget_sv( sizeMax));
-      set. x = SvIV( * av_fetch( av, 0, 0));
-      set. y = SvIV( * av_fetch( av, 1, 0));
+      read_point(( AV *) SvRV( pget_sv( sizeMax)), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
       my set_size_max( self, set);
-
-      av = ( AV *) SvRV( pget_sv( cursorSize));
-      my set_cursor_size( self,
-           SvIV( * av_fetch( av, 0, 0)),
-           SvIV( * av_fetch( av, 1, 0))
-      );
-
-      av = ( AV *) SvRV( pget_sv( cursorPos));
-      my set_cursor_pos( self,
-           SvIV( * av_fetch( av, 0, 0)),
-           SvIV( * av_fetch( av, 1, 0))
-      );
+      read_point(( AV *) SvRV( pget_sv( cursorSize)), i, 2, "RTC0084: Array panic on 'cursorSize'");
+      my set_cursor_size( self, i[0], i[1]);
+      read_point(( AV *) SvRV( pget_sv( cursorPos)), i, 2, "RTC0085: Array panic on 'cursorPos'");
+      my set_cursor_pos( self, i[0], i[1]);
 
       av = ( AV *) SvRV( pget_sv( designScale));
-      var designScale. x = SvNV( * av_fetch( av, 0, 0));
-      var designScale. y = SvNV( * av_fetch( av, 1, 0));
+      holder = av_fetch( av, 0, 0);
+      var designScale. x = holder ? SvNV( *holder) : 1;
+      if ( !holder) warn("RTC0086: Array panic on 'designScale'");
+      holder = av_fetch( av, 1, 0);
+      var designScale. y = holder ? SvNV( *holder) : 1;
+      if ( !holder) warn("RTC0086: Array panic on 'designScale'");
    }
    my set_enabled     ( self, pget_B( enabled));
    if ( !pexist( originDontCare) || !pget_B( originDontCare))
@@ -270,6 +263,7 @@ Bool
 Widget_can_close( Handle self)
 {
    enter_method;
+   if ( var stage > csNormal) return true;
    return my first_that( self, pquery, nil) ? false : !pquery( 0, self, nil);
 }
 
@@ -285,6 +279,7 @@ Bool
 Widget_close( Handle self)
 {
    enter_method;
+   if ( var stage > csNormal) return true;
    return my can_close( self);
 }
 
@@ -327,6 +322,12 @@ Widget_end_paint_info( Handle self)
 
 
 /*::f */
+Handle
+Widget_first( Handle self)
+{
+   return apc_widget_get_z_order( self, zoFirst);
+}
+
 Handle
 Widget_first_that( Handle self, void * actionProc, void * params)
 {
@@ -921,6 +922,12 @@ Widget_key_event( Handle self, int command, int code, int key, int mod, int repe
 }
 
 /*::l */
+Handle
+Widget_last( Handle self)
+{
+   return apc_widget_get_z_order( self, zoLast);
+}
+
 void
 Widget_locate( Handle self, Rect r )
 {
@@ -962,7 +969,7 @@ Widget_mouse_event( Handle self, int command, int button, int mod, int x, int y,
 Handle
 Widget_next( Handle self)
 {
-   return get_zorder( self,  1);
+   return apc_widget_get_z_order( self, zoNext);
 }
 
 /*::o */
@@ -987,7 +994,7 @@ Widget_post_message( Handle self, SV * info1, SV * info2)
 Handle
 Widget_prev( Handle self)
 {
-   return get_zorder( self, -1);
+   return apc_widget_get_z_order( self, zoPrev);
 }
 
 Bool
@@ -1080,38 +1087,38 @@ Widget_set( Handle self, HV * profile)
    if ( pexist( origin))
    {
       AV * av = ( AV *) SvRV( pget_sv( origin));
-      if (order && !pexist(left)) av_push( order, newSVpv("left",0));
+      int set[2];
+      if (order && !pexist(left))   av_push( order, newSVpv("left",0));
       if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
-      pset_sv( left,   * av_fetch( av, 0, 0));
-      pset_sv( bottom, * av_fetch( av, 1, 0));
+      read_point( av, set, 2, "RTC0087: Array panic on 'origin'");
+      pset_sv( left,   newSViv(set[0]));
+      pset_sv( bottom, newSViv(set[1]));
       pdelete( origin);
    }
    if ( pexist( rect))
    {
       AV * av = ( AV *) SvRV( pget_sv( rect));
-      Rect rect = {
-         SvIV( * av_fetch( av, 0, 0)),
-         SvIV( * av_fetch( av, 1, 0)),
-         SvIV( * av_fetch( av, 2, 0)),
-         SvIV( * av_fetch( av, 3, 0))
-      };
+      int rect[4];
       if (order && !pexist(left)) av_push( order, newSVpv("left",0));
       if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
       if (order && !pexist(width)) av_push( order, newSVpv("width",0));
       if (order && !pexist(height)) av_push( order, newSVpv("height",0));
-      pset_sv( left,   newSViv( rect. left));
-      pset_sv( bottom, newSViv( rect. bottom));
-      pset_sv( width,  newSViv( rect. right - rect. left));
-      pset_sv( height, newSViv( rect. top   - rect. bottom));
+      read_point( av, rect, 4, "RTC0088: Array panic on 'rect'");
+      pset_sv( left,   newSViv( rect[0]));
+      pset_sv( bottom, newSViv( rect[1]));
+      pset_sv( width,  newSViv( rect[2] - rect[0]));
+      pset_sv( height, newSViv( rect[3]   - rect[1]));
       pdelete( rect);
    }
    if ( pexist( size))
    {
       AV * av = ( AV *) SvRV( pget_sv( size));
+      int set[2];
       if (order && !pexist(width)) av_push( order, newSVpv("width",0));
       if (order && !pexist(height)) av_push( order, newSVpv("height",0));
-      pset_sv( width,  * av_fetch( av, 0, 0));
-      pset_sv( height, * av_fetch( av, 1, 0));
+      read_point( av, set, 2, "RTC0089: Array panic on 'size'");
+      pset_sv( width,  newSViv(set[0]));
+      pset_sv( height, newSViv(set[1]));
       pdelete( size);
    }
    if ( pexist( width) && pexist( right) && pexist( left))  pdelete( right);
@@ -1263,6 +1270,7 @@ Widget_update_view( Handle self)
 SV *
 Widget_get_accel_items( Handle self)
 {
+   if ( var stage > csNormal) return nilSV;
    return var accelTable ? ((( PAbstractMenu) var accelTable)-> self)-> get_items( var accelTable, "") : nilSV;
 }
 
@@ -1548,11 +1556,13 @@ Widget_get_selected( Handle self)
 Handle
 Widget_get_selected_widget( Handle self)
 {
-   Handle foc = apc_widget_get_focused();
-   PWidget  f = ( PWidget) foc;
-   while( f) {
-      if (( Handle) f == self) return foc;
-      f = ( PWidget) f-> owner;
+   if ( var stage <= csNormal) {
+      Handle foc = apc_widget_get_focused();
+      PWidget  f = ( PWidget) foc;
+      while( f) {
+         if (( Handle) f == self) return foc;
+         f = ( PWidget) f-> owner;
+      }
    }
    return nilHandle;
 
@@ -1763,6 +1773,7 @@ Widget_set_current( Handle self, Bool current)
 {
    PWidget o = ( PWidget) var owner;
    if ( o == nil) return;
+   if ( var stage > csNormal) return;
    if ( current)
       o-> self-> set_current_widget( var owner, self);
    else
@@ -1824,6 +1835,7 @@ void
 Widget_set_font( Handle self, Font font)
 {
    enter_method;
+   if ( var stage > csNormal) return;
    if ( !opt_InPaint) my first_that( self, font_notify, &font);
    if ( var handle == nilHandle) return; /* aware of call from Drawable::init */
    apc_font_pick( self, &font, & var font);
@@ -1884,7 +1896,8 @@ Widget_set_hint( Handle self, char * hint)
          char * hintText = var hint;
          Handle self = (( PApplication) application)-> hintWidget;
          enter_method;
-         my set_text( self, hintText);
+         if ( self)
+            my set_text( self, hintText);
       }
    }
    opt_clear( optOwnerHint);
@@ -1905,7 +1918,7 @@ Widget_set_left( Handle self, int _left )
 {
    enter_method;
    int _t = my get_bottom ( self);
-   my set_pos ( self, _left, _t);
+   my set_pos( self, _left, _t);
 }
 
 void
@@ -1930,7 +1943,7 @@ Widget_set_owner_color( Handle self, Bool ownerColor )
    {
       my set_color( self, ((( PWidget) var owner)-> self)-> get_color( var owner));
       opt_set( optOwnerColor);
-      my repaint ( self);
+      my repaint( self);
    }
 }
 
@@ -1954,7 +1967,7 @@ Widget_set_owner_hint( Handle self, Bool ownerHint )
    opt_assign( optOwnerHint, ownerHint);
    if ( is_opt( optOwnerHint) && var owner)
    {
-      my set_hint ( self, ((( PWidget) var owner)-> self)-> get_hint ( var owner));
+      my set_hint( self, ((( PWidget) var owner)-> self)-> get_hint ( var owner));
       opt_set( optOwnerHint);
    }
 }
@@ -1974,7 +1987,7 @@ Widget_set_owner_show_hint( Handle self, Bool ownerShowHint )
    opt_assign( optOwnerShowHint, ownerShowHint);
    if ( is_opt( optOwnerShowHint) && var owner)
    {
-      my set_show_hint ( self, ((( PWidget) var owner)-> self)-> get_show_hint ( var owner));
+      my set_show_hint( self, ((( PWidget) var owner)-> self)-> get_show_hint ( var owner));
       opt_set( optOwnerShowHint);
    }
 }
@@ -2173,6 +2186,7 @@ Widget_set_selected( Handle self, Bool selected)
 void
 Widget_set_selected_widget( Handle self, Handle widget)
 {
+   if ( var stage > csNormal) return;
    if ( widget) {
       if ((( PWidget) widget)-> owner == self)
          ((( PWidget) widget)-> self)-> set_selected( widget, true);
@@ -2424,33 +2438,6 @@ find_tabfoc( Handle self)
    return nilHandle;
 }
 
-static Handle
-get_zorder( Handle self, int direction)
-{
-   PWidget owner = ( PWidget) var owner;
-   int i, no = -1, count = owner-> widgets. count;
-   Handle ret = nilHandle;
-   Handle * list = owner-> widgets. items;
-   for ( i = 0; i < count; i++)
-   {
-      if ( list[ i] == self)
-      {
-         no = i;
-         break;
-      }
-   }
-   count--;
-
-   if ( no >= 0)
-   {
-      if ( direction < 0 && no == 0)     no = count; else
-      if ( direction > 0 && no == count) no = 0; else
-      no += direction;
-      ret = list[ no];
-   }
-   return ret;
-}
-
 
 static Bool
 get_top_current( Handle self)
@@ -2551,6 +2538,7 @@ showhint_notify ( Handle self, Handle child, void * data)
     return false;
 }
 
+
 static Bool
 hint_notify ( Handle self, Handle child, char * hint)
 {
@@ -2578,6 +2566,24 @@ single_color_notify ( Handle self, Handle child, void * color)
    return false;
 }
 
+static Bool
+read_point( AV * av, int * pt, int number, char * error)
+{
+   SV ** holder;
+   int i;
+   Bool result = true;
+   for ( i = 0; i < number; i++) {
+      holder = av_fetch( av, i, 0);
+      if ( holder)
+         pt[i] = SvIV( *holder);
+      else {
+         pt[i] = 0;
+         result = false;
+         if ( error) warn( error);
+      }
+   }
+   return result;
+}
 
 static void
 dyna_set( Handle self, HV * profile)

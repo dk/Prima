@@ -579,21 +579,22 @@ void Window_set( Handle self, HV * profile)
 Handle
 Window_get_icon( Handle self)
 {
-   HV * profile;
-   Handle i;
-   apc_window_get_icon( self, nilHandle);
-   if ( apcError == errInvWindowIcon) return nilHandle;
-   profile = newHV();
-   i = Object_create( "Icon", profile);
-   sv_free(( SV *) profile);
-   apc_window_get_icon( self, i);
-   --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
-   return i;
+   if ( var stage > csNormal) return nilHandle;
+   if ( apc_window_get_icon( self, nilHandle)) {
+      HV * profile = newHV();
+      Handle i = Object_create( "Icon", profile);
+      sv_free(( SV *) profile);
+      apc_window_get_icon( self, i);
+      --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
+      return i;
+   } else
+      return nilHandle;
 }
 
 void
 Window_set_icon( Handle self, Handle icon)
 {
+   if ( var stage > csNormal) return;
    if ( icon && !kind_of( icon, CImage)) {
        warn("RTC0091: Illegal object reference passed to Window.set_icon");
        return;
@@ -604,6 +605,7 @@ Window_set_icon( Handle self, Handle icon)
 void
 Window_set_menu( Handle self, Handle menu)
 {
+   if ( var stage > csNormal) return;
    if ( menu && !kind_of( menu, CMenu)) return;
    if ( menu && (( PMenu) menu)-> owner != self)
       my set_menu_items( self, ((( PMenu) menu)-> self)-> get_items( menu, ""));
@@ -627,6 +629,7 @@ Window_set_menu( Handle self, Handle menu)
 void
 Window_set_menu_items( Handle self, SV * menuItems)
 {
+   if ( var stage > csNormal) return;
    if ( var menu == nilHandle)
    {
      if ( SvTYPE( menuItems))

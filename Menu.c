@@ -26,7 +26,10 @@ void
 Menu_set_selected( Handle self, Bool selected)
 {
    inherited set_selected( self, selected);
-   ((( PWindow) var owner)-> self)-> set_menu( var owner, selected ? self : nilHandle);
+   if ( selected)
+      ((( PWindow) var owner)-> self)-> set_menu( var owner, self);
+   else if ( my get_selected( self))
+      ((( PWindow) var owner)-> self)-> set_menu( var owner, nilHandle);
 }
 
 Bool

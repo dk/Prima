@@ -90,6 +90,7 @@ void
 Image_reset( Handle self, int type, SV * palette)
 {
    Byte * newData = nil;
+   if ( var stage > csNormal) return;
    if (!( type & imGrayScale))
       Image_read_palette( self, var palette, palette);
    if ( var type == imByte && type == im256)
@@ -116,6 +117,7 @@ Image_stretch( Handle self, int width, int height)
 {
    Byte * newData = nil;
    int lineSize;
+   if ( var stage > csNormal) return;
    if ( width  >  65535) width  =  65535;
    if ( height >  65535) height =  65535;
    if ( width  < -65535) width  = -65535;
@@ -475,6 +477,7 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
    int ft;
    int lineSize, dataSize;
 
+   if ( var stage > csNormal) return false;
    if ( opt_InPaint) return false;
 
    memset( &gbm, 0, sizeof( GBM));

@@ -35,6 +35,29 @@ Application_init( Handle self, HV * profile)
    application = self;
    if ( !apc_application_create( self))
       croak( "RTC0011: Error creating application");
+// Widget init
+   SvHV_Font( pget_sv( font), &Font_buffer, "Application::init");
+   my set_font( self, Font_buffer);
+   SvHV_Font( pget_sv( popupFont), &Font_buffer, "Application::init");
+   my set_popup_font( self, Font_buffer);
+   {
+      AV * av = ( AV *) SvRV( pget_sv( designScale));
+      SV ** holder = av_fetch( av, 0, 0);
+      if ( holder)
+         var designScale. x = SvNV( *holder);
+      else
+         warn("RTC0012: Array panic on 'designScale'");
+      holder = av_fetch( av, 1, 0);
+      if ( holder)
+         var designScale. y = SvNV( *holder);
+      else
+         warn("RTC0012: Array panic on 'designScale'");
+      pdelete( designScale);
+   }
+   var text = malloc( 1);
+   var text[ 0] = 0;
+   opt_set( optModalHorizon);
+
    {
       HV * profile = newHV();
       static Timer_vmt HintTimerVmt;
@@ -42,17 +65,20 @@ Application_init( Handle self, HV * profile)
       pset_c( name, "Clipboard");
       pset_H( owner, self);
       var clipboard = create_instance( clipboardClass);
+      protect_object( var clipboard);
       hv_clear( profile);
 
       pset_c( name, "Printer");
       pset_H( owner, self);
       var printer = create_instance( printerClass);
+      protect_object( var printer);
       hv_clear( profile);
 
       pset_H( owner, self);
       pset_i( timeout, hintPause);
       pset_c( name, "HintTimer");
       var hintTimer = create_instance( "Timer");
+      protect_object( var hintTimer);
       hv_clear( profile);
       memcpy( &HintTimerVmt, CTimer, sizeof( HintTimerVmt));
       HintTimerVmt. on_tick = Application_HintTimer_Tick;
@@ -67,22 +93,9 @@ Application_init( Handle self, HV * profile)
       pset_c( name, "HintWidget");
       pset_sv( font, hintFont);
       var hintWidget = create_instance( hintClass);
+      protect_object( var hintWidget);
       sv_free(( SV *) profile);
    }
-// Widget init
-   SvHV_Font( pget_sv( font), &Font_buffer, "Application::init");
-   my set_font( self, Font_buffer);
-   SvHV_Font( pget_sv( popupFont), &Font_buffer, "Application::init");
-   my set_popup_font( self, Font_buffer);
-   {
-      AV * av = ( AV *) SvRV( pget_sv( designScale));
-      var designScale. x = SvNV( * av_fetch( av, 0, 0));
-      var designScale. y = SvNV( * av_fetch( av, 1, 0));
-      pdelete( designScale);
-   }
-   var text = malloc( 1);
-   var text[ 0] = 0;
-   opt_set( optModalHorizon);
    my set( self, profile);
 }
 
@@ -90,13 +103,18 @@ void
 Application_done( Handle self)
 {
    my close_help( self);
+   my first_that( self, kill_all, nil);
    my first_that_component( self, kill_all, nil);
+   unprotect_object( var clipboard);
+   unprotect_object( var printer);
+   unprotect_object( var hintTimer);
+   unprotect_object( var hintWidget);
    list_destroy( &var modalHorizons);
    list_destroy( &var widgets);
    free( var helpFile);
    free( var text);
    free( var hint);
-   var accelTable = var printer = var clipboard = nilHandle;
+   var accelTable = var printer = var clipboard = var hintWidget = var hintTimer = nilHandle;
    var helpFile   = var text    = var hint      = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
@@ -355,7 +373,7 @@ Handle
 Application_get_widget_from_handle( Handle self, SV * handle)
 {
    ApiHandle apiHandle;
-   if (SvIOK( handle))
+   if ( SvIOK( handle))
 	   apiHandle = SvUVX( handle);
    else
       apiHandle = sv_2uv( handle);
@@ -377,6 +395,7 @@ Application_get_help_file ( Handle self)
 void
 Application_set_help_file( Handle self, char * helpFile)
 {
+   if ( var stage > csNormal) return;
    if ( var helpFile && ( strcmp( var helpFile, helpFile) == 0)) return;
    free( var helpFile);
    strcpy( var helpFile = malloc( strlen ( helpFile) + 1), helpFile);
@@ -440,6 +459,7 @@ void
 Application_set_color_index( Handle self, Color color, int index)
 {
    SingleColor s = { color, index};
+   if ( var stage > csNormal) return;
    if (( index < 0) || ( index > ciMaxId)) return;
    if ( !opt_InPaint) my first_that( self, single_color_notify, &s);
    if ( opt_InPaint) switch ( index)
@@ -457,7 +477,8 @@ Application_set_color_index( Handle self, Color color, int index)
 Bool
 Application_close( Handle self)
 {
-   return inherited close( self) ? ( apc_application_close( self), true) : 0;
+   if ( var stage > csNormal) return true;
+   return inherited close( self) ? ( apc_application_close( self), true) : false;
 }
 
 Bool
@@ -528,7 +549,7 @@ Application_HintTimer_Tick( Handle timer)
    {
       Event ev = {cmHint};
       if ( pos. x != var hintMousePos. x || pos. y != var hintMousePos. y) return;
-      if (!var hintUnder || (( PObject) var hintUnder)-> stage != csNormal) return;
+      if ( !var hintUnder || (( PObject) var hintUnder)-> stage != csNormal) return;
       ev. gen. B = true;
       ev. gen. H = var hintUnder;
       var hintVisible = 1;

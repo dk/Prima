@@ -28,7 +28,14 @@ Drawable_init( Handle self, HV * profile)
          FillPattern fp;
          AV * av = ( AV *) SvRV( sv);
          if ( av_len( av) == 7) {
-            for ( i = 0; i < 8; i++) fp[ i] = SvIV( *av_fetch( av, i, 0));
+            for ( i = 0; i < 8; i++) {
+               SV ** holder = av_fetch( av, i, 0);
+               if ( !holder) {
+                  warn("RTC0058: Array panic on 'fillPattern'");
+                  break;
+               }
+               fp[ i] = SvIV( *holder);
+            }
             my set_fill_pattern( self, fp);
          } else {
             warn("RTC0056: Illegal fillPattern passed to Drawable::init");
@@ -47,7 +54,12 @@ Drawable_init( Handle self, HV * profile)
    if ( pexist( transform))
    {
       AV * av = ( AV *) SvRV( pget_sv( transform));
-      my set_transform( self, SvIV( * av_fetch( av, 0, 0)), SvIV( * av_fetch( av, 1, 0)));
+      Point tr = {0,0};
+      SV ** holder = av_fetch( av, 0, 0);
+      if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
+      holder = av_fetch( av, 1, 0);
+      if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
+      my set_transform( self, tr.x, tr.y);
    }
    SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::init");
    my set_font( self, Font_buffer);
@@ -112,7 +124,12 @@ void Drawable_set( Handle self, HV * profile)
    if ( pexist( transform))
    {
       AV * av = ( AV *) SvRV( pget_sv( transform));
-      my set_transform( self, SvIV( * av_fetch( av, 0, 0)), SvIV( * av_fetch( av, 1, 0)));
+      Point tr = {0,0};
+      SV ** holder = av_fetch( av, 0, 0);
+      if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
+      holder = av_fetch( av, 1, 0);
+      if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
+      my set_transform( self, tr.x, tr.y);
       pdelete( transform);
    }
    if ( pexist( fillPattern))
@@ -124,7 +141,14 @@ void Drawable_set( Handle self, HV * profile)
          FillPattern fp;
          AV * av = ( AV *) SvRV( sv);
          if ( av_len( av) == 7) {
-            for ( i = 0; i < 8; i++) fp[ i] = SvIV( *av_fetch( av, i, 0));
+            for ( i = 0; i < 8; i++) {
+               SV ** holder = av_fetch( av, i, 0);
+               if ( !holder) {
+                  warn("RTC0058: Array panic on 'fillPattern'");
+                  break;
+               }
+               fp[ i] = SvIV( *holder);
+            }
             my set_fill_pattern( self, fp);
          } else
             warn("RTC0057: Illegal fillPattern passed to Drawable::set");

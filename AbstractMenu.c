@@ -94,6 +94,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       AV *item;
       SV *subItem;
       PMenuItemReg r;
+      SV **holder;
 
       int l_var   = -1;
       int l_text  = -1;
@@ -154,14 +155,29 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       r-> rightAdjust = rightAdjust;
       r-> id = -1;
 
-#define a_get( l_, num) if ( num >= 0 ) {                                   \
-                          char * stk = SvPV( *av_fetch( item, num, 0), na);\
-                          l_ = malloc( strlen( stk) + 1);                  \
-                          strcpy( l_, stk);                                \
+#define a_get( l_, num) if ( num >= 0 ) {                                    \
+                           holder = av_fetch( item, num, 0);                 \
+                           if ( holder) {                                    \
+                              char * stk = SvPV( *holder, na);               \
+                              l_ = malloc( strlen( stk) + 1);                \
+                              strcpy( l_, stk);                              \
+                           } else {                                          \
+                              warn("RTC003A: menu build error: array panic");\
+                              my dispose_menu( self, m);                     \
+                              return nil;                                    \
+                           }                                                 \
                         }
       a_get( r-> accel   , l_accel);
       a_get( r-> variable, l_var);
-      if ( l_key >= 0) r-> key = key_normalize( SvPV( *av_fetch( item, l_key, 0), na));
+      if ( l_key >= 0) {
+         holder = av_fetch( item, l_key, 0);
+         if ( !holder) {
+            warn("RTC003B: menu build error: array panic");
+            my dispose_menu( self, m);
+            return nil;
+         }
+         r-> key = key_normalize( SvPV( *holder, na));
+      }
 
       if ( r-> variable)
       {
@@ -184,12 +200,13 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       // parsing text
       if ( l_text >= 0)
       {
-         subItem = ( SV *) *av_fetch( item, l_text, 0);
-         if ( !subItem) {
-            warn("RTC0035: menu build error: array panic");
+         holder = av_fetch( item, l_text, 0);
+         if ( !holder) {
+            warn("RTC003C: menu build error: array panic");
             my dispose_menu( self, m);
             return nil;
          }
+         subItem = *holder;
 
          if ( SvROK( subItem)) {
             Handle c_object = gimme_the_mate( subItem);
@@ -220,12 +237,14 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       // parsing sub
       if ( l_sub >= 0)
       {
-         subItem = ( SV*) *av_fetch( item, l_sub, 0);
-         if ( !subItem) {
-            warn("RTC0035: menu build error: array panic");
+         holder = av_fetch( item, l_sub, 0);
+         if ( !holder) {
+            warn("RTC003D: menu build error: array panic");
             my dispose_menu( self, m);
             return nil;
          }
+         subItem = *holder;
+
          if ( SvROK( subItem))
          {
             if ( SvTYPE( SvRV( subItem)) == SVt_PVCV)
@@ -286,6 +305,7 @@ AbstractMenu_done( Handle self)
    ((( PComponent) var owner)-> self)-> detach( var owner, self, false);
    apc_menu_destroy( self);
    my dispose_menu( self, var tree);
+   var tree = nil;
    inherited done( self);
 }
 
@@ -376,6 +396,7 @@ key_match ( Handle self, PMenuItemReg m, void * params)
 SV *
 AbstractMenu_get_items ( Handle self, char * varName)
 {
+   if ( var stage > csNormal) return nilSV;
    if ( strlen( varName))
    {
       PMenuItemReg m = my first_that( self, var_match, varName, true);
@@ -387,6 +408,7 @@ void
 AbstractMenu_set_items ( Handle self, SV * items)
 {
    PMenuItemReg oldBranch = var tree;
+   if ( var stage > csNormal) return;
    var tree = my new_menu( self, items, 0);
    apc_menu_update( self, oldBranch, var tree);
    my dispose_menu( self, oldBranch);
@@ -422,13 +444,15 @@ AbstractMenu_first_that( Handle self, void * actionProc, void * params, Bool use
 Bool
 AbstractMenu_has_item( Handle self, char * varName)
 {
-   return ( my first_that( self, var_match, varName, true) != nil);
+   return my first_that( self, var_match, varName, true) != nil;
 }
 
 void
 AbstractMenu_set_check( Handle self, char * varName, Bool check)
 {
-   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   PMenuItemReg m;
+   if ( var stage > csNormal) return;
+   m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
    if ( m-> divider || m-> down) return;
    if ( m-> id) apc_menu_item_set_check( self, m, check);
@@ -475,7 +499,9 @@ AbstractMenu_get_accel ( Handle self, char * varName)
 SV *
 AbstractMenu_get_action ( Handle self, char * varName)
 {
-   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   PMenuItemReg m;
+   if ( var stage > csNormal) return nilSV;
+   m = my first_that( self, var_match, varName, true);
    if ( m)
    {
       if ( m-> code)    return newSVsv( m-> code);
@@ -494,7 +520,9 @@ AbstractMenu_get_key ( Handle self, char * varName)
 void
 AbstractMenu_set_enabled ( Handle self, char * varName, Bool enabled)
 {
-   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   PMenuItemReg m;
+   if ( var stage > csNormal) return;
+   m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
    if ( m-> divider || m-> down) return;
    if ( m-> id) apc_menu_item_set_enabled( self, m, enabled);
@@ -504,9 +532,11 @@ AbstractMenu_set_enabled ( Handle self, char * varName, Bool enabled)
 void
 AbstractMenu_set_image ( Handle self, char * varName, Handle image)
 {
-   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   PMenuItemReg m;
    PImage i = ( PImage) image;
 
+   m = my first_that( self, var_match, varName, true);
+   if ( var stage > csNormal) return;
    if ( m == nil) return;
    if ( !m-> bitmap) return;
    if (( image == nilHandle) || !( kind_of( image, CImage))) {
@@ -528,7 +558,9 @@ AbstractMenu_set_image ( Handle self, char * varName, Handle image)
 void
 AbstractMenu_set_text ( Handle self, char * varName, char * text)
 {
-   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   PMenuItemReg m;
+   if ( var stage > csNormal) return;
+   m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
    if ( m-> text == nil) return;
    if ( m-> id) apc_menu_item_set_text( self, m, text);
@@ -540,7 +572,9 @@ AbstractMenu_set_text ( Handle self, char * varName, char * text)
 void
 AbstractMenu_set_accel ( Handle self, char * varName, char * accel)
 {
-   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   PMenuItemReg m;
+   if ( var stage > csNormal) return;
+   m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
    if ( m-> text == nil) return;
    if ( m-> id) apc_menu_item_set_accel( self, m, accel);
@@ -552,7 +586,9 @@ AbstractMenu_set_accel ( Handle self, char * varName, char * accel)
 void
 AbstractMenu_set_action ( Handle self, char * varName, SV * action)
 {
-   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   PMenuItemReg m;
+   if ( var stage > csNormal) return;
+   m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
    if ( m-> divider || m-> down) return;
    if ( SvROK( action))
@@ -580,18 +616,23 @@ AbstractMenu_set_action ( Handle self, char * varName, SV * action)
 void
 AbstractMenu_set_key( Handle self, char * varName, char * key)
 {
-   PMenuItemReg m = my first_that( self, var_match, varName, true);
-   int _key = key_normalize( key);
+   PMenuItemReg m;
+   int _key;
+   if ( var stage > csNormal) return;
+   m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
+   _key = key_normalize( key);
    if ( m-> divider || m-> down) return;
    if ( m-> id) apc_menu_item_set_key( self, m, _key);
    m-> key = _key;
 }
 
 void
-AbstractMenu_set_variable ( Handle self, char * varName, char * newName)
+AbstractMenu_set_variable( Handle self, char * varName, char * newName)
 {
-   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   PMenuItemReg m;
+   if ( var stage > csNormal) return;
+   m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
    free( m-> variable);
    m-> variable = malloc( strlen( newName) + 1);
@@ -648,6 +689,7 @@ void
 AbstractMenu_set_command( Handle self, char * key, Bool enabled)
 {
    Kmcc mcc = { key_normalize( key), enabled};
+   if ( var stage > csNormal) return;
    my first_that( self, kmcc, &mcc, true);
 }
 
@@ -684,7 +726,9 @@ static Bool prev_match ( Handle self, PMenuItemReg m, void * params) { return m-
 void
 AbstractMenu_delete( Handle self, char * varName)
 {
-   PMenuItemReg up, prev, m = my first_that( self, var_match, varName, true);
+   PMenuItemReg up, prev, m;
+   if ( var stage > csNormal) return;
+   m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
    apc_menu_item_delete( self, m);
    up   = my first_that( self, up_match, m, true);
@@ -712,6 +756,8 @@ void
 AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 {
    PMenuItemReg *up, m, addFirst, addLast, branch;
+
+   if ( var stage > csNormal) return;
 
    if ( SvTYPE( menuItems) == SVt_NULL) return;
 

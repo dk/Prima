@@ -28,7 +28,7 @@ void
 Component_init( Handle self, HV * profile)
 {
    Handle owner = pget_H( owner);
-   if (( owner != nilHandle) && !kind_of( owner, CComponent))
+   if (( owner != nilHandle) && (((( PObject) owner)-> stage > csNormal) || !kind_of( owner, CComponent)))
       croak( "Illegal object reference passed to Component.init");
    inherited init( self, profile);
    var owner = owner;
@@ -144,6 +144,8 @@ Component_done( Handle self)
 void
 Component_attach( Handle self, Handle object)
 {
+   if ( var stage > csNormal) return;
+
    if ( object && kind_of( object, CComponent)) {
       if ( var components == nil) {
          var components = malloc( sizeof( List));
@@ -217,6 +219,7 @@ Component_set( Handle self, HV * profile)
 void
 Component_set_name( Handle self, char * name)
 {
+   if ( var stage > csNormal) return;
    free( var name);
    var name = malloc( strlen ( name) + 1);
    strcpy( var name, name);
@@ -228,6 +231,7 @@ void
 Component_set_delegate_to( Handle self, Handle delegateTo)
 {
    Handle old = var delegateTo;
+   if ( var stage > csNormal) return;
    if ( old == delegateTo) return;
    var delegateTo = delegateTo;
    if ( var stage == csNormal)
@@ -277,14 +281,13 @@ ForceProcess:
       case ctSingle:
          event-> cmd = ( event-> cmd & ~ctQueueMask) | ctSingleResponse;
          if ( list_first_that( var evQueue, ( PListProc) find_dup_msg,
-			   (void*) event-> cmd) >= 0)
+			   (void *) event-> cmd) >= 0)
 	      break;
       default:
 	      list_add( var evQueue, ( Handle) memcpy( malloc( sizeof( Event)),
 				event, sizeof( Event)));
       }
-   } else if ( var stage > csNormal && var stage < csDead
-	       && ( event-> cmd & ctQueueMask) == ctPassThrough)
+   } else if (( var stage < csFinalizing) && ( event-> cmd & ctNoInhibit))
       goto ForceProcess;
    return ret;
 }
@@ -436,7 +439,7 @@ Component_migrate( Handle self, Handle attachTo)
     PComponent attachTo_  = PComponent( attachTo  ? attachTo  : application);
     Handle     theOwner   = ( Handle) attachTo_;
 
-    if ( !theOwner || !kind_of( theOwner, CComponent))
+    if ( !theOwner || attachTo_-> stage > csNormal || !kind_of( theOwner, CComponent))
        croak( "RTC0049: Invalid owner reference passed to Component::set_owner");
 
     while ( theOwner) {
@@ -490,8 +493,10 @@ Component_first_that_component( Handle self, void * actionProc, void * params)
 void
 Component_post_message( Handle self, SV * info1, SV * info2)
 {
-   PPostMsg p = malloc( sizeof( PostMsg));
+   PPostMsg p;
    Event ev = { cmPost};
+   if ( var stage > csNormal) return;
+   p = malloc( sizeof( PostMsg));
    p-> info1  = newSVsv( info1);
    p-> info2  = newSVsv( info2);
    p-> h      = self;

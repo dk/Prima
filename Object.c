@@ -66,7 +66,7 @@ Object_create( char *className, HV * profile)
    }
    SvREFCNT_dec( profRef);
    if ( var stage != csConstructing) {
-      if ( var mate && SvRV( var mate))
+      if ( var mate && ( var mate != nilSV) && SvRV( var mate))
          --SvREFCNT( SvRV( var mate));
       return nilHandle;
    }
@@ -84,7 +84,7 @@ Object_destroy( Handle self)
    if ( var stage > csNormal && var stage != csHalfDead)
       return;
    if ( var stage == csHalfDead) {
-      if ( !var mate)
+      if ( !var mate || ( var mate == nilSV))
          return;
       object = SvRV( var mate);
       if ( !object)
@@ -98,7 +98,7 @@ Object_destroy( Handle self)
    }
    var stage = csDestroying;
    mate = var mate;
-   if ( mate) {
+   if ( mate && ( mate != nilSV)) {
       object = SvRV( mate);
       if ( object) ++SvREFCNT( object);
    }
@@ -113,7 +113,7 @@ Object_destroy( Handle self)
       }
    }
    var stage = csDead;
-   var mate = nil;
+   var mate = nilSV;
    if ( mate && object) sv_free( mate);
 }
 

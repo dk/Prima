@@ -157,7 +157,7 @@ gimme_the_real_mate( SV *perlObject)
       if ( SvTYPE((SV*)obj) != SVt_PVHV) return nilHandle;
       mate = hv_fetch( obj, "__CMATE__", 9, 0);
       if ( mate == nil) return nilHandle;
-      return SvIV(*mate);
+      return SvIV( *mate);
    }
 }
 
@@ -212,7 +212,7 @@ XS( create_from_Perl)
       );
       SPAGAIN;
       SP -= items;
-      if ( _c_apricot_res_ && (( PAnyObject) _c_apricot_res_)-> mate)
+      if ( _c_apricot_res_ && (( PAnyObject) _c_apricot_res_)-> mate && (( PAnyObject) _c_apricot_res_)-> mate != nilSV)
       {
          XPUSHs( sv_mortalcopy((( PAnyObject) _c_apricot_res_)-> mate));
          --SvREFCNT( SvRV((( PAnyObject) _c_apricot_res_)-> mate));
@@ -268,7 +268,7 @@ unprotect_object( Handle obj)
    if (o-> protectCount<=0) return;
    o-> protectCount--;
    if (o-> protectCount>0) return;
-   if (o-> stage == csDead || o-> mate == nil)
+   if (o-> stage == csDead || o-> mate == nil || o-> mate == nilSV)
    {
       PObject ghost, lg;
 
