@@ -29,8 +29,9 @@ use Prima qw( StdBitmap Buttons);
 package UserInit;
 $::application = Prima::Application-> create( name => "Generic.pm");
 
+my $ph = Prima::Application->get_system_value(sv::YPointer);
 my $w = Prima::Window-> create(
-   size    => [ 350, 460],
+   size    => [ 350, 20 + ($ph+8)*11],
    left    => 200,
    onDestroy => sub {$::application-> close},
    text    => 'Pointers',
@@ -56,7 +57,8 @@ for my $c ( @a[0..$#a-1])
       flat => 1,
       left    => 10 + (($i-1) % 2)*170,
       width   => 160,
-      bottom  => $w-> height - int(($i+1)/2) * 40 - 10,
+      height  => $ph + 4,
+      bottom  => $w-> height - int(($i+1)/2) * ($ph+8) - 10,
       pointer => $p,
       name    => $c,
       image   => $w-> pointerIcon,
@@ -84,7 +86,8 @@ my $mapsetID = 0;
 my $b = $w-> insert( SpeedButton =>
    left    => 10 + (($i-1) % 2)*170,
    width   => 160,
-   bottom  => $w-> height - int(($i+1)/2) * 40 - 10,
+   height  => $ph+4,
+   bottom  => $w-> height - int(($i+1)/2) * ($ph+8) - 10,
    pointer => $ptr,
    image   => $ptr,
    text => $a[-1],

@@ -626,7 +626,7 @@ apc_pointer_get_hot_spot( Handle self)
       cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
    else
       cs = fs-> per_char + idx - fs-> min_char_or_byte2;
-   return (Point){-cs->lbearing, cs->descent};
+   return (Point){-cs->lbearing, guts.cursor_height - cs->ascent};
 }
 
 Point
@@ -703,12 +703,12 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       gcv. foreground = 1;
       XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
       XFillRectangle( DISP, p2, gc, 0, 0, w, h);
-      XDrawString( DISP, p1, gc, -cs-> lbearing, h - cs-> descent, (c = (char)(idx+1), &c), 1);
+      XDrawString( DISP, p1, gc, -cs-> lbearing, cs-> ascent, (c = (char)(idx+1), &c), 1);
       gcv. background = 1;
       gcv. foreground = 0;
       XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
-      XDrawString( DISP, p2, gc, -cs-> lbearing, h - cs-> descent, (c = (char)(idx+1), &c), 1);
-      XDrawString( DISP, p1, gc, -cs-> lbearing, h - cs-> descent, (c = (char)idx, &c), 1);
+      XDrawString( DISP, p2, gc, -cs-> lbearing, cs-> ascent, (c = (char)(idx+1), &c), 1);
+      XDrawString( DISP, p1, gc, -cs-> lbearing, cs-> ascent, (c = (char)idx, &c), 1);
       XFreeGC( DISP, gc);
    }
    CIcon(icon)-> create_empty( icon, w, h, imMono);
