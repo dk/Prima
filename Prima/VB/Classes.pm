@@ -1521,12 +1521,6 @@ sub get
    return $self->{A}-> text;
 }
 
-sub write
-{
-   my ( $class, $id, $data) = @_;
-   return "'". Prima::VB::Types::generic::quotable($data)."'";
-}
-
 package Prima::VB::Types::sibling;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::Handle);
@@ -1724,8 +1718,8 @@ sub open
 }
 
 sub change_id {
-   $_[0]-> {L}-> text( $_[0]->{id}.'x:');
-   $_[0]-> {M}-> text( $_[0]->{id}.'y:');
+   $_[0]-> {L}-> text( $_[0]->{id}.'.x:');
+   $_[0]-> {M}-> text( $_[0]->{id}.'.y:');
 }
 
 sub set
@@ -1747,7 +1741,6 @@ sub write
    my ( $class, $id, $data) = @_;
    return '[ '.$data->[0].', '.$data->[1].']';
 }
-
 
 package Prima::VB::Types::upoint;
 use vars qw(@ISA);
