@@ -234,6 +234,7 @@ sub profile_default
       centered      => 1,
       visible       => 0,
       scaleChildren => 0,
+      text          => 'Select color',
 
       quality       => 0,
       value         => cl::White,

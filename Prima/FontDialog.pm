@@ -50,6 +50,7 @@ sub profile_default
       centered    => 1,
       visible     => 0,
       designScale => [7, 16],
+      text        => 'Select font',
 
       showHelp    => 0,
       fixedOnly   => 0,
