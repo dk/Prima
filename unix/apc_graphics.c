@@ -176,7 +176,7 @@ Unbuffered:
    XX-> flags. paint_base_line = XX-> flags. base_line;
    XX-> flags. paint_opaque    = XX-> flags. opaque;
    XX-> saved_font = PDrawable( self)-> font;
-   XX-> flags. zero_line = XX-> flags. saved_zero_line;
+   XX-> line_width = XX-> gcv. line_width;
    XX-> gcv. clip_mask = None;
    XX-> gtransform = XX-> transform;
 
@@ -456,8 +456,23 @@ arc_completion( double * angleStart, double * angleEnd, int * needFigure)
    return ( max % 2) ? 1 : 2;
 }
 
-#define ELLIPSE_RECT x - ( dX + 1) / 2 + 1, y - dY / 2, dX - 1, dY - 1
-
+#define ELLIPSE_RECT x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY
+#define FILL_ANTIDEFECT_REPAIRABLE \
+      ( rop_map[XX-> paint_rop] == GXcopy ||\
+        rop_map[XX-> paint_rop] == GXset  ||\
+        rop_map[XX-> paint_rop] == GXclear) 
+#define FILL_ANTIDEFECT_OPEN {\
+  XGCValues gcv;\
+  gcv. line_width = 1;\
+  gcv. line_style = LineSolid;\
+  XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
+}   
+#define FILL_ANTIDEFECT_CLOSE {\
+  XGCValues gcv;\
+  gcv. line_width = XX-> line_width;\
+  gcv. line_style = ( XX-> paint_rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;\
+  XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
+}   
 
 Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
@@ -467,6 +482,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
+   if ( dX <= 0 || dY <= 0) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -547,6 +563,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
+   if ( dX <= 0 || dY <= 0) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -583,20 +600,8 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
       p[i].y = y - pp[i].y;
    }
 
-   if ( XX-> flags. zero_line) {
-      XGCValues gcv;
-      gcv. line_width = 0;
-      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
-   }
-
    PURE_FOREGROUND;
    XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, n, CoordModeOrigin);
-
-   if ( XX-> flags. zero_line) {
-      XGCValues gcv;
-      gcv. line_width = 1;
-      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
-   }
 
    free( p);
    return true;
@@ -624,20 +629,8 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
       s[i].y2 = y - pp[i*2+1].y;
    }
 
-   if ( XX-> flags. zero_line) {
-      XGCValues gcv;
-      gcv. line_width = 0;
-      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
-   }
-
    PURE_FOREGROUND;
    XDrawSegments( DISP, XX-> gdrawable, XX-> gc, s, n);
-
-   if ( XX-> flags. zero_line) {
-      XGCValues gcv;
-      gcv. line_width = 1;
-      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
-   }
 
    free( s);
    return true;
@@ -650,6 +643,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
+   if ( dX <= 0 || dY <= 0) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -666,21 +660,31 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
+   if ( dX <= 0 || dY <= 0) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
 
    XSetArcMode( DISP, XX-> gc, ArcChord);
-      
+   FILL_ANTIDEFECT_OPEN;  
+   
    while ( prima_make_brush( XX, mix++)) {
       compl = arc_completion( &angleStart, &angleEnd, &needf);
-      while ( compl--)
+      while ( compl--) {
          XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
+         if ( FILL_ANTIDEFECT_REPAIRABLE)
+            XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 0, 64*360);
+      }
 
-      if ( needf)
+      if ( needf) {
          XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
              angleStart * 64, ( angleEnd - angleStart) * 64);
+         if ( FILL_ANTIDEFECT_REPAIRABLE)
+            XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 
+               angleStart * 64, ( angleEnd - angleStart) * 64);
+      }
    }
+   FILL_ANTIDEFECT_CLOSE;
    return true;
 }
 
@@ -692,10 +696,17 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
+   if ( dX <= 0 || dY <= 0) return false;
    SHIFT( x, y);
    y = REVERT( y);
-   while ( prima_make_brush( XX, mix++)) 
+
+   FILL_ANTIDEFECT_OPEN;
+   while ( prima_make_brush( XX, mix++)) { 
       XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
+      if ( FILL_ANTIDEFECT_REPAIRABLE)
+         XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 0, 64*360);
+   }
+   FILL_ANTIDEFECT_CLOSE;
    return true;
 }
 
@@ -719,20 +730,17 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    p[numPts]. x = (short)points[0]. x + XX-> gtransform. x + XX-> btransform. x;
    p[numPts]. y = (short)REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
 
+   FILL_ANTIDEFECT_OPEN;
    if ( guts. limits. XFillPolygon >= numPts) {
-      while ( prima_make_brush( XX, mix++)) 
+      while ( prima_make_brush( XX, mix++)) {
          XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
+         if ( FILL_ANTIDEFECT_REPAIRABLE)
+            XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
+      }
       XCHECKPOINT;
-   } else {
-      warn( "UAG_003: XFillPolygon: request too large");
-   }
-   if ( guts. limits. XDrawLines > numPts) {
-      PURE_FOREGROUND;
-      XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
-      XCHECKPOINT;
-   } else {
-      warn( "UAG_004: XDrawLines: request too large");
-   }
+   } else 
+      warn( "Prima::Drawable::fill_poly: too many points");
+   FILL_ANTIDEFECT_CLOSE;
    free( p);
    return true;
 }
@@ -745,20 +753,30 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
+   if ( dX <= 0 || dY <= 0) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
    XSetArcMode( DISP, XX-> gc, ArcPieSlice);
 
+   FILL_ANTIDEFECT_OPEN;
    while ( prima_make_brush( XX, mix++)) {
       compl = arc_completion( &angleStart, &angleEnd, &needf);
-      while ( compl--)
+      while ( compl--) {
          XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
+         if ( FILL_ANTIDEFECT_REPAIRABLE)
+            XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 0, 64*360);
+      }
 
-      if ( needf)
+      if ( needf) {
          XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
             angleStart * 64, ( angleEnd - angleStart) * 64);
+         if ( FILL_ANTIDEFECT_REPAIRABLE)
+            XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 
+               angleStart * 64, ( angleEnd - angleStart) * 64);
+      }
    }
+   FILL_ANTIDEFECT_CLOSE;
    return true;
 }
 
@@ -1147,8 +1165,6 @@ apc_gp_get_region( Handle self, Handle mask)
 Bool
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 {
-   /* !!! - this function will not work correctly for cosmetic (width 0) lines */
-   /*       (but we are avoiding them anyway, for now) */
    DEFXX;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
@@ -1156,7 +1172,17 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 
    SHIFT( x1, y1); SHIFT( x2, y2);
    PURE_FOREGROUND;
+   if (( XX-> line_width == 0) && (x1 == x2 || y1 == y2)) {
+      XGCValues gcv;
+      gcv. line_width = 1;
+      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+   }
    XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
+   if (( XX-> line_width == 0) && (x1 == x2 || y1 == y2)) {
+      XGCValues gcv;
+      gcv. line_width = 0;
+      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+   }
    return true;
 }
 
@@ -1184,6 +1210,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
+   if ( dX <= 0 || dY <= 0) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -1645,25 +1672,7 @@ int
 apc_gp_get_line_width( Handle self)
 {
    DEFXX;
-   int w;
-   XGCValues gcv;
-
-   if ( XF_IN_PAINT(XX)) {
-      if ( XX-> flags. zero_line)
-	 w = 0;
-      else {
-	 if ( XGetGCValues( DISP, XX-> gc, GCLineWidth, &gcv) == 0) {
-            warn( "UAG_007: error querying GC values");
-	 }
-	 w = gcv. line_width;
-      }
-   } else {
-      if ( XX-> flags. saved_zero_line)
-	 w = 0;
-      else
-	 w = XX-> gcv. line_width;
-   }
-   return w;
+   return XF_IN_PAINT(XX) ? XX-> line_width : XX-> gcv. line_width; 
 }
 
 int
@@ -1911,20 +1920,14 @@ apc_gp_set_line_width( Handle self, int line_width)
 {
    DEFXX;
    XGCValues gcv;
-   int zero_line = line_width == 0;
-
-   if ( zero_line)
-      line_width = 1;
 
    if ( XF_IN_PAINT(XX)) {
-      XX-> flags. zero_line = zero_line;
-      gcv. line_width = line_width;
+      XX-> line_width = gcv. line_width = line_width;
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
       XCHECKPOINT;
-   } else {
-      XX-> flags. saved_zero_line = zero_line;
+   } else
       XX-> gcv. line_width = line_width;
-   }
+
    return true;
 }
 
@@ -1980,6 +1983,8 @@ apc_gp_set_rop( Handle self, int rop)
       function = rop_map[ rop];
 
    if ( XF_IN_PAINT(XX)) {
+      if ( rop < 0 || rop >= sizeof( rop_map)/sizeof(int))
+         rop = ropNoOper;
       XX-> paint_rop = rop;
       XSetFunction( DISP, XX-> gc, function);
       XCHECKPOINT;
