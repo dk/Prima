@@ -179,6 +179,7 @@ sub adjust
       $a[0], $a[3] - ( $index - $self->{topItem} + 1) * $ih,
       $a[2], $a[3] - ( $index - $self->{topItem}) * $ih
    );
+   $self->{doingExpand} = 1;
    if ( $c > $self->{count} && $f > $index) {
       if ( $f <= $index + $c - $self->{count}) {
          $self-> focusedItem( $index);
@@ -188,6 +189,7 @@ sub adjust
    } elsif ( $c < $self->{count} && $f > $index) {
       $self-> focusedItem( $f + $self->{count} - $c);
    }
+   $self->{doingExpand} = 0;
    my ($ix,$l) = $self-> get_item( $self-> focusedItem);
 
    $self-> update_tree;
@@ -927,6 +929,7 @@ sub set_focused_item
    return if $foc < -1;
    $self-> {focusedItem} = $foc;
    $self-> notify(q(SelectItem), $foc) if $foc >= 0;
+   return if $self-> {doingExpand};
    my $topSet = undef;
    if ( $foc >= 0)
    {
