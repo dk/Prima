@@ -1699,6 +1699,12 @@ apc_system_action( const char *s)
              snprintf( buf, sizeof(buf), "%d %d %d %d", r.left, r.bottom, r.right, r.top) < sizeof(buf))
             return duplicate_string( buf);
       }
+      break;
+   case 's':
+      if ( strcmp( "synchronize", s)) {
+         XSynchronize( DISP, true);
+      }   
+      break;
    }
    return nil;
 }
