@@ -191,10 +191,11 @@ write-only flag 'lineSize':
 
 Although it is possible to perform all kinds of calculations and modification
 with the pixels, returned by C<::data>, it is not advisable unless the speed
-does not matter. Standalone PDL package, and lately Prima-derived IPA package
-provide routines for data and image analysis. I<Prima::Image> itself provides
-only the simplest statistic information, namely: lowest and highest pixel values, 
-pixel sum, sum of square pixels, mean, variance, and standard deviation.
+does not matter. Standalone PDL package with help of PDL::PrimaImage package, 
+and Prima-derived IPA package provide routines for data and image analysis.
+I<Prima::Image> itself provides only the simplest statistic information, namely: 
+lowest and highest pixel values, pixel sum, sum of square pixels, mean, variance, 
+and standard deviation.
 
 =head2 Prima::Icon
 
@@ -640,3 +641,10 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 =head1 SEE ALSO
 
 L<Prima>, L<Prima::Drawable>, L<Prima::image-load>, L<Prima::codecs>.
+
+L<http://pdl.perl.org/> - PDL home page,
+
+L<http://prima.eu.org/PDL-PrimaImage/> - PDL::PrimaImage home page,
+
+L<http://prima.eu.org/IPA/> - IPA toolkit home page,
+
