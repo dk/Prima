@@ -716,6 +716,9 @@ sub setup_variables
     }
     print "$cc_specs{ $COMPILER}->{ name}\n";
 
+    # 5.8.0 hack
+    $Config{PATCHLEVEL} = $Config{PERL_PATCHLEVEL} if !defined $Config{PATCHLEVEL} || !length $Config{PATCHLEVEL};
+    $Config{SUBVERSION} = $Config{PERL_SUBVERSION} if !defined $Config{SUBVERSION} || !length $Config{SUBVERSION};
     # Checking some Config.pm - were empty for ActiveState 626
     $Config{PATCHLEVEL} = $Config{patchlevel} if !defined $Config{PATCHLEVEL} || !length $Config{PATCHLEVEL};
     $Config{SUBVERSION} = $Config{subversion} if !defined $Config{SUBVERSION} || !length $Config{SUBVERSION};

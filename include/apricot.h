@@ -224,6 +224,10 @@ extern "C" {
       #define dup    win32_dup
    #endif
    #ifdef PerlIO_stderr    /* ActiveState quirks */
+      #if (PERL_VERSION == 8) /* broken stderr definition */
+         #undef stderr
+         #define stderr PerlIO_stderr()
+      #endif
       #if (PERL_VERSION >= 6) /* broken fprintf definition */
          #define fprintf PerlIO_printf
       #else
