@@ -181,7 +181,7 @@ sub profile_check_in
    my ( $self, $p, $default) = @_;
    my $owner = $p-> { owner} ? $p-> { owner} : $default->{ owner};
    $self-> SUPER::profile_check_in( $p, $default);
-   $p-> { name} = ( ref $self) . ( 1 + map { (ref $self) eq (ref $_) ? 1 : () } $owner-> components)
+   $p-> { name} = ( ref $self) . ( 1 + map { (ref $self) eq (ref $_) ? 1 : () } $owner-> get_components)
      unless exists( $p-> { name}) || $default-> { name} ne ref $self;
 
    $p-> {delegateTo} = $owner if
@@ -199,23 +199,6 @@ sub set_owner  {
 sub name       {($#_)?$_[0]->set_name        ($_[1]):return $_[0]->get_name;        }
 sub owner      {($#_)?$_[0]->set_owner       ($_[1]):return $_[0]->get_owner;       }
 sub delegateTo {($#_)?$_[0]->set_delegate_to ($_[1]):return $_[0]->get_delegate_to; }
-
-sub components
-{
-   return () unless exists $_[ 0]-> { "__CREFS__"};
-   return values %{$_[0]-> {"__CREFS__"}};
-}
-
-sub fetch
-{
-   my $self   = $_[ 0];
-   my $comp   = $_[ 1];
-   my @components = $self-> components;
-   foreach (@components) {
-      return $_ if ( $_-> get_name eq $comp);
-   }
-   return undef;
-}
 
 sub get_notify_sub
 {
@@ -250,14 +233,14 @@ sub AUTOLOAD
    my @components = split( /::/, $expectedMethod);
    my $componentName = pop @components;
    my $class = join( '::', @components);
-   my $component = $self-> fetch( $componentName);
+   my $component = $self-> bring( $componentName);
    Carp::croak("Unknown widget or method \"$expectedMethod\"") unless $component && ref($component);
    return $component;
 }
 
 package Clipboard;
 use vars qw(@ISA);
-@ISA = qw(Object);
+@ISA = qw(Component);
 
 sub text  { $#_ ? $_[0]-> store( cf::Text,  $_[1]) : return $_[0]-> fetch(cf::Text)  }
 sub image { $#_ ? $_[0]-> store( cf::Image, $_[1]) : return $_[0]-> fetch(cf::Image) }
@@ -938,7 +921,7 @@ sub y_centered       {($#_)?$_[0]->set_centered(0,1)      :$_[0]->raise_wo("y_ce
 sub set_commands
 {
    my ( $self, $enable, @commands) = @_;
-   foreach ( $self-> components)
+   foreach ( $self-> get_components)
    {
       if ( $_->isa("AbstractMenu")) {
         my $menu = $_;

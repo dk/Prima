@@ -103,7 +103,7 @@ sub init
          bottom   => $self-> bottom,
          width    => $self-> width - $std[ 1],
          vertical => 0,
-         onChange => sub { $_[0]->owner->fetch( $name)->on_scroll},
+         onChange => sub { $_[0]->owner->bring( $name)->on_scroll},
       );
       my $vsb = ScrollBar-> create(
          name   => "VScroll",
@@ -112,7 +112,7 @@ sub init
          left   => $self-> right  - $std[ 0],
          bottom => $self-> bottom + $std[ 1],
          height => $self-> height - $std[ 1],
-         onChange => sub { $_[0]->owner->fetch( $name)->on_scroll},
+         onChange => sub { $_[0]->owner->bring( $name)->on_scroll},
       );
       $self-> set(
         width  => $self-> width  - $std[ 0],
