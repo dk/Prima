@@ -331,7 +331,7 @@ NOSCALE:
          int sz;
          Byte *dj, *di;
          Byte colorref[256];
-         j-> self-> reset( b8, imbpp8, nilSV);
+         j-> self-> reset( b8, imbpp8, nil, 0);
          sz = j-> dataSize;
          dj = j-> data;
          /* change 0/1 to 0x000/0xfff for correct masking */
@@ -349,9 +349,9 @@ NOSCALE:
       } else {
          int conv = i-> conversion;
          i-> conversion = PImage( src)-> conversion;
-         i-> self-> reset( dest, imbpp8, nilSV);
+         i-> self-> reset( dest, imbpp8, nil, 0);
          img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop);
-         i-> self-> reset( dest, type, nilSV);
+         i-> self-> reset( dest, type, nil, 0);
          i-> conversion = conv;
       }
       goto EXIT;
@@ -366,7 +366,7 @@ NOSCALE:
          if ( !src) goto EXIT;
          newObject = true;
       }
-      CImage( src)-> reset( src, PImage( dest)-> type, nilSV);
+      CImage( src)-> reset( src, PImage( dest)-> type, nil, 0);
       if ( type < 8 && rop != ropCopyPut) { 
          /* change 0/1 to 0x000/0xfff for correct masking */
          int sz   = PImage( src)-> dataSize;

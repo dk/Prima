@@ -74,7 +74,7 @@ object Prima::Image( Prima::Drawable)
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
    weird  int    save( SV *className, char *filename, HV * profile);
    method void   set( HV * profile);
-   c_only void   reset( int type, SV * palette);
+   c_only void   reset( int type, RGBColor * palette, int palSize);
    c_only void   stretch( int width, int height);
    method void   stretch_image(int x, int y, int xDest, int yDest, Handle image);
    c_only void   update_change();

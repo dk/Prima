@@ -113,7 +113,7 @@ Image_init( Handle self, HV * profile)
 }
 
 void
-Image_reset( Handle self, int new_type, SV * palette)
+Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 {
    Bool want_palette;
    RGBColor new_palette[256];
@@ -122,19 +122,18 @@ Image_reset( Handle self, int new_type, SV * palette)
    
    if ( var->stage > csFrozen) return;
 
-   want_palette = (!( new_type & imGrayScale)) && ( new_type != imRGB) && (palette != nilSV);
+   want_palette = (!( new_type & imGrayScale)) && ( new_type != imRGB) && (palSize > 0);
    if ( want_palette) {
-      if ( SvROK( palette) && ( SvTYPE( SvRV( palette)) == SVt_PVAV)) 
-         new_pal_size = apc_img_read_palette( new_palette, palette);
-      else {
-         new_pal_size = SvIV( palette); 
-         want_only_palette_colors = 1;
-      }
+      new_pal_size = palSize;
       if ( new_pal_size == 0) want_palette = false;
       if ( new_pal_size > ( 1 << ( new_type & imBPP)))
            new_pal_size = 1 << ( new_type & imBPP);
       if ( new_pal_size > 256)
            new_pal_size = 256;
+      if ( palette != nil)
+         memcpy( new_palette, palette, new_pal_size * 3);
+      else
+         want_only_palette_colors = 1;
    }
    if ( !want_palette && (
         ((var->type == (imbpp8|imGrayScale)) && (new_type == imbpp8)) ||
@@ -206,6 +205,22 @@ Image_stretch( Handle self, int width, int height)
    my->update_change( self);
 }
 
+static void
+Image_reset_sv( Handle self, int new_type, SV * palette)
+{
+   int colors;
+   RGBColor pal_buf[256], *pal_ptr;
+   if ( !palette || palette == nilSV) {
+      pal_ptr = nil;
+      colors  = 0;
+   } else if ( SvROK( palette) && ( SvTYPE( SvRV( palette)) == SVt_PVAV)) {
+      colors = apc_img_read_palette( pal_ptr = pal_buf, palette);
+   } else {
+      pal_ptr = nil;
+      colors  = SvIV( palette); 
+   }
+   my-> reset( self, new_type, pal_ptr, colors);
+}
 
 void
 Image_set( Handle self, HV * profile)
@@ -235,8 +250,10 @@ Image_set( Handle self, HV * profile)
       if ( !itype_supported( newType))
          warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", newType);
       else 
-         if ( !opt_InPaint) 
-            my-> reset( self, newType, pexist( palette) ? pget_sv( palette) : nilSV);
+         if ( !opt_InPaint) {
+            if ( pexist( palette)) 
+               Image_reset_sv( self, newType, pget_sv( palette));
+         }
       pdelete( palette);
       pdelete( type);
    }
@@ -413,7 +430,7 @@ Image_set_extended_data( Handle self, HV * profile)
    /* fixing image and maybe palette - for known type it's same code as in ::set, */
    /* but here's no sense calling it, just doing what we need. */
    if ( fixType != var-> type || pexist( palette)) { 
-      my-> reset( self, fixType, pexist( palette) ? pget_sv( palette) : nilSV);
+      Image_reset_sv( self, fixType, pget_sv( palette));
       pdelete( palette);
    }   
 
@@ -610,7 +627,7 @@ Image_end_paint( Handle self)
    apc_image_end_paint( self);
    inherited end_paint( self);
    if ( is_opt( optPreserveType) && var->type != oldType) {
-      my->reset( self, oldType, nilSV);
+      my->reset( self, oldType, nil, 0);
    } else {
       switch( var->type)
       {
