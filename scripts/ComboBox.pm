@@ -67,6 +67,7 @@ sub profile_default
       listHeight     => 100,
       ownerBackColor => 1,
       selectable     => 1,
+      literal        => 1,
       scaleChildren  => 0,
       editClass      => 'InputLine',
       listClass      => 'ListBox',
@@ -98,6 +99,7 @@ sub init
    $self-> {style}        = $profile{style};
    $self-> {listVisible}  = $profile{style} != cs::Simple;
    $self-> {caseSensitive}= $profile{caseSensitive};
+   $self-> {literal}      = $profile{literal};
    my $eh = $self-> {entryHeight} = $profile{entryHeight};
    $self-> {listHeight}   = $profile{listHeight};
    $self-> {edit} = $self-> insert( $profile{editClass} =>
@@ -292,6 +294,7 @@ sub InputLine_KeyDown
 {
    my ( $self, $edit, $code, $key, $mod) = @_;
    return unless $code;
+   return unless $_[0]-> {literal};
 
    if (( $code & 0xFF00) || (( $key != kb::NoKey) && ( $key != kb::Space) && ( $key != kb::Backspace)))
    {
@@ -351,6 +354,7 @@ sub InputLine_Setup
 sub InputLine_Change
 {
    return if defined $_[0]->{edit}->{interaction};
+   return unless $_[0]-> {literal};
    $_[0]->{list}->{interaction} = 1;
    my ( $self, $style, $list, $edit) = ($_[0], $_[0]->{style}, $_[0]->{list}, $_[1]);
    my $i;
@@ -549,6 +553,7 @@ sub listVisible  {($#_)?$_[0]->set_list_visible($_[1]):return $_[0]->get_list_vi
 sub style        {($#_)?$_[0]->set_style       ($_[1]):return $_[0]->get_style;       }
 sub entryHeight  {($#_)?$_[0]->set_entry_height($_[1]):return $_[0]->get_entry_height;}
 sub listHeight   {($#_)?$_[0]->set_list_height ($_[1]):return $_[0]->get_list_height;}
+sub literal      {($#_)?$_[0]->{literal} =      $_[1] :return $_[0]->{literal}       }
 
 
 
