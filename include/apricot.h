@@ -2373,7 +2373,9 @@ IS(Mean)
 IS(Variance)
 #define isStdDev         4
 IS(StdDev)
-#define isMaxIndex       4
+#define isSum            5
+IS(Sum)
+#define isMaxIndex       5
 IS(MaxIndex)
 END_TABLE(is,UV)
 #undef IS

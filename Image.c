@@ -1352,6 +1352,7 @@ Image_get_stats( Handle self, int index)
    }
    if ( var->w * var->h > 0)
    {
+      var->stats[ isSum] = sum;
       sum /= var->w * var->h;
       sum2 /= var->w * var->h;
       sum2 = sum2 - sum*sum;
