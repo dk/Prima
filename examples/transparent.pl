@@ -62,7 +62,7 @@ $w-> insert( Timer =>
 
 $w-> insert(
    Widget =>
-   left => 100,
+   origin => [ 90, 90],
    transparent => 1,
    onPaint => sub {
       my $self = $_[0];
