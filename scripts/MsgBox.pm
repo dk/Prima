@@ -43,11 +43,12 @@ $VERSION = '1.00';
 
 sub message_box
 {
-   my ( $title, $text, $options, $helpTopic) = @_;
+   my ( $title, $text, $options, $extras) = @_;
    $options = mb::Ok | mb::Error unless defined $options;
    $options |= mb::Ok unless $options & 0x0FF;
    my $buttons = $options & 0xFF;
-   $helpTopic ||= 0;
+   my $helpTopic = defined $$extras{helpTopic} ? $$extras{helpTopic} : 0;
+   my $defButton = defined $$extras{defButton} ? $$extras{defButton} : 0xFF;
    $options &= 0xFF00;
    my @mbs   = qw( Error Warning Information Question);
    my $icon;
@@ -73,7 +74,6 @@ sub message_box
        text          => $title,
        font          => $::application-> get_message_font,
        onExecute     => sub {
-          $fresh-> focus;
           Utils::beep( $options) if $options && !$nosound;
        },
    );
@@ -96,7 +96,10 @@ sub message_box
          bottom    => 10,
          text      => $bTexts[$i],
          ownerFont => 0,
+         default   => ( $bConsts[$i] & $defButton) ? 1 : 0,
+         current   => ( $bConsts[$i] & $defButton) ? 1 : 0,
       );
+      $defButton = 0 if $bConsts[$i] & $defButton;
       $dir ? ( $hpr{right} = $right, $hpr{tabOrder} = 0) : ( $hpr{left} = $left);
       if ( $bConsts[$i] == mb::Help)
       {
@@ -120,7 +123,6 @@ sub message_box
       last if ++$btns > 3;
    }
    $fresh = $freshFirst unless $dir;
-   $fresh-> default(1);
 
    my $iconRight = 0;
    my $iconView;
@@ -171,7 +173,7 @@ sub message_box
 
 sub message
 {
-   return message_box( $::application-> name, $_[0], mb::Ok|mb::Error);
+   return message_box( $::application-> name, @_);
 }
 
 1;
