@@ -419,7 +419,7 @@ A
 (Level 3) A flag specifying whether to insert a sheet of some special
 medium directly into the output document. Media coming from a source
 for which this attribute is Yes are sent directly to the output bin without
-passing through the device’s usual imaging mechanism (such as the fuser
+passing through the device's usual imaging mechanism (such as the fuser
 assembly on a laser printer). Consequently, nothing painted on the current
 page is actually imaged on the inserted medium.   
 A
@@ -475,6 +475,7 @@ non-null values - MediaColor, MediaWeight etc. except UseDeviceFonts.
 A
 
 };
+$self->{helpData}->{$_} =~ s/\n/ /g for keys %{$self->{helpData}};
    '),
 			columns => 2,
 			dragable => 0,
