@@ -1,4 +1,3 @@
-#
 #  Copyright (c) 1997-2000 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
@@ -39,7 +38,6 @@ my $VBVersion                    = 0.1;
 
 ###################################################
 
-$Prima::VB::VBLoader::builderActive = 1;
 my $classes = 'Prima::VB::Classes';
 if ( $lite) {
    $classes = 'Prima::VB::Lite::Classes';
@@ -1525,7 +1523,7 @@ sub inspect_load_data
    
    my $fn = ( $asFile ? $data : "input data");
    if ( $asFile) {
-      unless (CORE::open( F, $data)) {
+      unless (CORE::open( F, "< $data")) {
          Prima::MsgBox::message( "Error loading " . $data);
          return;
       }
@@ -1565,14 +1563,19 @@ INV:
       Prima::MsgBox::message( "Error loading module $_:$@");
       return;
    }
+   $Prima::VB::VBLoader::builderActive = 1;
    my $sub = eval( join( "\n", @d[$i..$#d]));
+   $Prima::VB::VBLoader::builderActive = 0;
 
    if ( $@ || ref($sub) ne 'CODE') {
       Prima::MsgBox::message("Error loading $fn:$@");
       return;
    }
    
-   return $sub-> ();
+   $Prima::VB::VBLoader::builderActive = 1;
+   my @ret = $sub->();
+   $Prima::VB::VBLoader::builderActive = 0;
+   return @ret;
 }
 
 sub preload_modules
@@ -2090,9 +2093,7 @@ sub form_run
       local $SIG{__WARN__} = sub { die $_[0] };
       my $sub = eval("$c");
       die "Error loading module $@" if $@;
-      $Prima::VB::VBLoader::builderActive = 0;
       my @d = $sub->();
-      $Prima::VB::VBLoader::builderActive = 1;
       my %r = Prima::VB::VBLoader::AUTOFORM_REALIZE( \@d, {});
       my $f = $r{$VB::form->prf('name')};
       $okCreate = 1;
@@ -2105,7 +2106,6 @@ sub form_run
          $VB::inspector-> hide if $VB::inspector;
       };
    };
-   $Prima::VB::VBLoader::builderActive = 1;
    if ( $@) {
       my $msg = "$@";
       $msg =~ s/ \(eval \d+\)//g;
