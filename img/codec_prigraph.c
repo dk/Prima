@@ -371,7 +371,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    }   
    
    CImage( fi-> object)-> create_empty( fi-> object, 
-      g-> gbm. w, g-> gbm. h, g-> gbm. bpp); 
+      g-> gbm. w, g-> gbm. h, i-> type); 
 
    if (( rc = gbm_read_data( g-> fd, g-> ft, &g-> gbm, PImage( fi-> object)-> data)) != 0) {
       strncpy( fi-> errbuf, gbm_err( rc), 256);
