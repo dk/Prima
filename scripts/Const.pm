@@ -173,7 +173,8 @@ use constant KeyUp        =>  0x00052;
 use constant MouseDown    =>  0x00053;
 use constant MouseUp      =>  0x00054;
 use constant MouseMove    =>  0x00055;
-use constant MouseClick   =>  0x00056;
+use constant MouseWheel   =>  0x00056;
+use constant MouseClick   =>  0x00057;
 use constant User         =>  0x00100;
 
 
@@ -212,7 +213,7 @@ use constant DestLeave =>      29 ;
 
 
 # grow flags
-package gf;
+package gm;
 use constant GrowLoX  =>      0x01  ;
 use constant GrowLoY  =>      0x02  ;
 use constant GrowHiX  =>      0x04  ;
@@ -229,20 +230,6 @@ use constant Left     =>          GrowHiY;
 use constant Floor    =>          GrowHiX;
 use constant Ceiling  =>          GrowHiX + GrowLoY;
 
-# line widths
-package lw;
-use constant Hollow =>      0 ;
-use constant Thin =>        1 ;
-use constant ExtraLight =>  2 ;
-use constant Light =>       3 ;
-use constant Normal =>      4 ;
-use constant Medium =>      5 ;
-use constant SemiBold =>    6 ;
-use constant Bold =>        7 ;
-use constant ExtraBold =>   8 ;
-use constant Heavy =>       9 ;
-use constant UltraHeavy => 10 ;
-
 # pen styles
 package lp;
 use constant Null =>        0x0000  ;   #
@@ -256,7 +243,7 @@ use constant DashDot =>     0xFAFA  ;   #  _._._._._._
 use constant DashDotDot =>  0xEAEA  ;   #  _.._.._.._.
 
 # fill styles
-package fs;
+package fp;
 use constant Empty       =>  0 ;
 use constant Solid       =>  1 ;
 use constant Line        =>  2 ;
@@ -282,7 +269,7 @@ use constant Round =>    2  ;
 
 
 # font subtypes
-package ft;
+package fs;
 use constant Normal     =>  0x0000  ;
 use constant Bold       =>  0x0001  ;
 use constant Thin       =>  0x0002  ;
