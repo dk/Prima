@@ -487,6 +487,7 @@ apc_font_load( const char* filename)
 static void
 dump_font( PFont f)
 {
+   if ( !DISP) return;
    fprintf( stderr, "*** BEGIN FONT DUMP ***\n");
    fprintf( stderr, "height: %d\n", f-> height);
    fprintf( stderr, "width: %d\n", f-> width);
@@ -1117,7 +1118,7 @@ apc_gp_set_font( Handle self, PFont font)
    PCachedFont kf = prima_find_known_font( font, false, false);
    if ( !kf || !kf-> id) {
       dump_font( font);
-      warn( "UAF_007: internal error (kf:%08x)", (IV)kf); /* the font was not cached, can't be */
+      if ( DISP) warn( "UAF_007: internal error (kf:%08x)", (IV)kf); /* the font was not cached, can't be */
       return false;
    }
 

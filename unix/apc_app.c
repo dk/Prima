@@ -156,6 +156,13 @@ window_subsystem_init( void)
       "Scrollnext.scrollnext";
    
    bzero( &guts, sizeof( guts));
+   {
+      char * noX = getenv("PRIMA_DEVEL_WANT_NO_X");
+      if ( noX && strcmp( noX, "YES") == 0) {
+         fprintf( stderr, "** warning: PRIMA_DEVEL_WANT_NO_X environment variable is set, proceed on your own risk!\n");
+         return true;
+      }
+   }
 
    guts. click_time_frame = 200;
    guts. double_click_time_frame = 200;
@@ -333,6 +340,7 @@ window_subsystem_init( void)
 void
 window_subsystem_cleanup( void)
 {
+   if ( !DISP) return;
    /*XXX*/
    prima_end_menu();
    if ( guts. wm_cleanup)
@@ -356,6 +364,8 @@ free_gc_pool( struct gc_head *head)
 void
 window_subsystem_done( void)
 {
+   if ( !DISP) return;
+
    prima_end_menu();
    free_gc_pool(&guts.bitmap_gc_pool);
    free_gc_pool(&guts.screen_gc_pool);
@@ -404,6 +414,9 @@ apc_application_create( Handle self)
 {
    XSetWindowAttributes attrs;
    DEFXX;
+
+   if ( !DISP) return false;
+   return false;
 
    XX-> type.application = true;
    XX-> type.widget = true;
