@@ -137,8 +137,10 @@ apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, do
    STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y;
    // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
-   if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
-       Arc( ps, x - radX, y - radY, x + radX, y + radY, x + radX, y, x + radX, y);
+   if ( angleEnd == angleStart) return true;
+   if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+       Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
+   if ( angleEnd - angleStart == 360) return true;
    if ( !Arc(
        ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
        x + cos( angleStart / GRAD) * radX, y - sin( angleStart / GRAD) * radY,
@@ -191,15 +193,18 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
    STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y;
-   if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1) {
+   if ( angleEnd == angleStart) return true;
+   if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1) {
       // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
       Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
    }
-   if ( !( ok = Chord(
-       ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-       x + cos( angleStart / GRAD) * radX, y - sin( angleStart / GRAD) * radY,
-       x + cos( angleEnd / GRAD) * radX,   y - sin( angleEnd / GRAD) * radY
-   ))) apiErr;
+   if ( angleEnd - angleStart != 360) {
+      if ( !( ok = Chord(
+          ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
+          x + cos( angleStart / GRAD) * radX, y - sin( angleStart / GRAD) * radY,
+          x + cos( angleEnd / GRAD) * radX,   y - sin( angleEnd / GRAD) * radY
+      ))) apiErr;
+   }
    SelectObject( ps, old);
    return ok;
 }}
@@ -253,11 +258,16 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
    Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old;
-   Bool    comp = stylus_complex( &sys stylus, ps);
+   Bool   comp;
+
+   if ( angleEnd == angleStart) return true;
+   comp = stylus_complex( &sys stylus, ps);
    y = sys lastSize. y - y;
    STYLUS_USE_BRUSH( ps);
    if ( comp) {
       old  = SelectObject( ps, hPenHollow);
+      if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+         if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1))) apiErr;
       if ( !( ok = Chord(
           ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1,
           x + cos( angleStart / GRAD) * radX,   y - sin( angleStart / GRAD) * radY,
@@ -265,6 +275,8 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
       ))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
+      if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+         if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY))) apiErr;
       if ( !( ok = Chord(
           ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
           x + cos( angleStart / GRAD) * radX,   y - sin( angleStart / GRAD) * radY,
@@ -401,9 +413,12 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old;
-   int newY    = sys lastSize. y - y;
+   int newY  = sys lastSize. y - y;
    POINT   pts[ 3];
-   Bool    comp = stylus_complex( &sys stylus, ps);
+   Bool comp;
+
+   if ( angleEnd == angleStart) return true;
+   comp = stylus_complex( &sys stylus, ps);
    pts[ 0]. x = x + cos( angleEnd / GRAD) * radX;
    pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY;
    pts[ 1]. x = x + cos( angleStart / GRAD) * radX;
@@ -413,6 +428,8 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
    if ( comp) {
       old = SelectObject( ps, hPenHollow);
+      if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+         if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1))) apiErr;
       if ( !( ok = Pie(
           ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1,
           pts[ 1]. x, pts[ 1]. y,
@@ -420,6 +437,8 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
       ))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
+      if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+         if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY))) apiErr;
       if ( !( ok = Pie(
           ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
           pts[ 1]. x, pts[ 1]. y,
@@ -494,7 +513,10 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
    HDC     ps = sys ps;
    int     newY = sys lastSize. y - y;
    POINT   pts[ 2];
-   HGDIOBJ old = SelectObject( ps, hBrushHollow);
+   HGDIOBJ old;
+
+   if ( angleEnd == angleStart) return true;
+   old = SelectObject( ps, hBrushHollow);
    pts[ 0]. x = x + cos( angleEnd / GRAD) * radX;
    pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY;
    pts[ 1]. x = x + cos( angleStart / GRAD) * radX;
@@ -502,13 +524,15 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
    STYLUS_USE_PEN( ps);
    y = newY;
    // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
-   if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+   if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
        Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
-   if ( !( ok = Pie(
-       ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-       pts[ 1]. x, pts[ 1]. y,
-       pts[ 0]. x, pts[ 0]. y
-   ))) apiErr;
+   if ( angleEnd - angleStart != 360) {
+      if ( !( ok = Pie(
+          ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
+          pts[ 1]. x, pts[ 1]. y,
+          pts[ 0]. x, pts[ 0]. y
+      ))) apiErr;
+   }
    SelectObject( ps, old);
    return ok;
 }}
