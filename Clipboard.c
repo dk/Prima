@@ -14,22 +14,20 @@
 #define cefStore    2
 #define cefFetch    3
 
-typedef SV* ClipboardExchangeFunc ( void * instance, int function, int subCommand, SV * data);
+typedef SV* ClipboardExchangeFunc ( struct _ClipboardFormatReg * instance, int function, SV * data);
 typedef ClipboardExchangeFunc *PClipboardExchangeFunc;
-
 
 typedef struct _ClipboardFormatReg
 {
-   char                   *id;
-   long                    sysId;
-   PClipboardExchangeFunc  server;
-   void                   *inst;
+   char                          *id;
+   long                          sysId;
+   ClipboardExchangeFunc         *server;
+   void                          *data;
 } ClipboardFormatReg, *PClipboardFormatReg;
 
-
-SV * text_server  ( void *, int, int, SV *);
-SV * image_server ( void *, int, int, SV *);
-SV * binary_server( void *, int, int, SV *);
+SV * text_server  ( PClipboardFormatReg, int, SV *);
+SV * image_server ( PClipboardFormatReg, int, SV *);
+SV * binary_server( PClipboardFormatReg, int, SV *);
 
 void *
 Clipboard_register_format_proc( Handle self, char * format, void * serverProc);
@@ -102,8 +100,8 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
    var formats = list;
    list += var formatCount++;
    strcpy( list-> id  = malloc( strlen( format) + 1), format);
-   list-> server      = ( PClipboardExchangeFunc) serverProc;
-   list-> sysId       = (long) list-> server( &list-> inst, cefInit, 0, ( SV *) list);
+   list-> server      = ( ClipboardExchangeFunc *) serverProc;
+   list-> sysId       = ( long) list-> server( list, cefInit, nilSV);
    return ( void *) list;
 }
 
@@ -113,7 +111,7 @@ Clipboard_deregister_format( Handle self, char * format)
    PClipboardFormatReg fr = first_that( self, find_format, format);
    PClipboardFormatReg list = ( PClipboardFormatReg) var formats;
    if ( fr == nil) return;
-   fr-> server( fr-> inst, cefDone, 0, nilSV);
+   fr-> server( fr, cefDone, nilSV);
    free( fr-> id);
    var formatCount--;
    memcpy( fr, fr + 1, sizeof( ClipboardFormatReg) * ( var formatCount - ( fr - list)));
@@ -168,7 +166,7 @@ Clipboard_fetch( Handle self, char * format)
    if ( !fr || !my format_exists( self, format))
       ret = newSVsv( nilSV);
    else
-      ret = fr-> server( fr-> inst, cefFetch, 0, nilSV);
+      ret = fr-> server( fr, cefFetch, nilSV);
    my close( self);
    return ret;
 }
@@ -180,7 +178,7 @@ Clipboard_store( Handle self, char * format, SV * data)
    if ( !fr) return;
    my open( self);
    if ( var openCount == 1) apc_clipboard_clear();
-   fr-> server( fr-> inst, cefStore, 0, data);
+   fr-> server( fr, cefStore, data);
    my close( self);
 }
 
@@ -287,12 +285,12 @@ void Clipboard_get_registered_formats_REDEFINED( Handle self) { warn("Invalid ca
 
 
 SV *
-text_server ( void * instance, int function, int subCommand, SV * data)
+text_server ( PClipboardFormatReg instance, int function, SV * data)
 {
    switch( function)
    {
       case cefInit:
-         return (SV*)cfText;
+         return ( SV *) cfText;
       case cefFetch:
          {
             int len;
@@ -316,12 +314,12 @@ text_server ( void * instance, int function, int subCommand, SV * data)
 }
 
 SV *
-image_server( void * instance, int function, int subCommand, SV * data)
+image_server( PClipboardFormatReg instance, int function, SV * data)
 {
     switch( function)
     {
       case cefInit:
-         return (SV*)cfBitmap;
+         return ( SV *) cfBitmap;
       case cefFetch:
          {
             HV * profile = newHV();
@@ -341,7 +339,7 @@ image_server( void * instance, int function, int subCommand, SV * data)
                warn("RTC0023: Not an image passed to clipboard");
                return nilSV;
             }
-            apc_clipboard_set_data( cfBitmap, (void*)image, 0);
+            apc_clipboard_set_data( cfBitmap, ( void *) image, 0);
          }
          break;
     }
@@ -349,37 +347,33 @@ image_server( void * instance, int function, int subCommand, SV * data)
 }
 
 SV *
-binary_server( void * instance, int function, int subCommand, SV * data)
+binary_server( PClipboardFormatReg instance, int function, SV * data)
 {
    switch( function)
    {
-   case cefInit:
-      {
-	 long id = apc_clipboard_register_format((( PClipboardFormatReg) data)-> id);
-	 *((long*) instance) = id;
-	 return ( SV*) id;
-      }
-   case cefDone:
-      apc_clipboard_deregister_format(( int)instance);
-      break;
+      case cefInit:
+         return ( SV*) apc_clipboard_register_format( instance-> id);
+      case cefDone:
+         apc_clipboard_deregister_format( instance-> sysId);
+         break;
    case cefFetch:
       {
          int len;
-         void *xdata = apc_clipboard_get_data(( int)instance, &len);
+         void *xdata = apc_clipboard_get_data( instance-> sysId, &len);
          if ( xdata) {
             SV * ret = newSVpv( xdata, len);
             free( xdata);
             return ret;
          }
       }
-   break;
+      break;
    case cefStore:
       {
          int len;
          void * xdata = SvPV( data, len);
-         apc_clipboard_set_data(( int)instance, xdata, len);
+         apc_clipboard_set_data( instance-> sysId, xdata, len);
       }
-   break;
+      break;
    }
    return nilSV;
 }
