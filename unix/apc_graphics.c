@@ -545,7 +545,7 @@ apc_gp_done( Handle self)
    return true;
 }
 
-int
+static int
 arc_completion( double * angleStart, double * angleEnd, int * needFigure)
 {
    int max;
