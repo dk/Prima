@@ -173,7 +173,7 @@ load_img_loadable( Handle item, void *params)
 {
     __PImgLoadData load_data = ( __PImgLoadData) params;
     PImgFormat imgFormat = ( PImgFormat) item;
-    DOLBUG( "checking %s whether it is loadable as %s\n", load_data->filename, imgFormat->id);
+/*    DOLBUG( "checking %s whether it is loadable as %s\n", load_data->filename, imgFormat->id); */
     if ( ( load_data->preread_size < imgFormat->preread_size)
 	 || ( ( load_data->desiredFormat != nil)
 	      && ( strcasecmp( load_data->desiredFormat, imgFormat->id) != 0))) {
@@ -270,7 +270,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 		rc = false;
 	    }
 	    else {
-		DOLBUG( "__apc_image_correct_property: correcting ``%s''\n", imgProp->name);
+/*		DOLBUG( "__apc_image_correct_property: correcting ``%s''\n", imgProp->name); */
 		switch ( fmtProps[ j].type[ 0]) {
 		    case 'i':
 			if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BIN) {
@@ -514,7 +514,7 @@ adjust_line_size( PList imgInfo)
 {
     int i;
 
-    DOLBUG( "Adjusting lineSize\n");
+/*    DOLBUG( "Adjusting lineSize\n"); */
 
     for ( i = 0; i < imgInfo->count; i++) {
 	PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
@@ -702,7 +702,7 @@ save_img_compatible( Handle item, void *params)
     Bool rc;
     int i;
 
-    DOLBUG( "save_img_compatible: trying format %s: ", imgFormat->id);
+/*    DOLBUG( "save_img_compatible: trying format %s: ", imgFormat->id); */
     save_data->outImgInfo = plist_create( save_data->imgInfo->count, 1);
     for ( i = 0; i < save_data->imgInfo->count; i++) {
 	PImgInfo imageInfo, outImageInfo;
@@ -724,7 +724,7 @@ save_img_compatible( Handle item, void *params)
 	}
 	plist_destroy( save_data->outImgInfo);
     }
-    DOLBUG( "%s\n", rc ? "compatible" : "incompatible");
+/*    DOLBUG( "%s\n", rc ? "compatible" : "incompatible"); */
     return rc;
 }
 

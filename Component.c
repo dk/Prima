@@ -627,6 +627,7 @@ XS( Component_notify_FROMPERL)
    evPtr = var-> evPtr;
    for ( i = 0; i < seqCount; i += 2) {
       dSP;
+      dPUB_ARGS;
       int j;
 
       ENTER;
@@ -639,7 +640,10 @@ XS( Component_notify_FROMPERL)
       PUTBACK;
       perl_call_sv(( SV*) sequence[ i + 1], G_DISCARD | G_EVAL);
       SPAGAIN;
-      if ( SvTRUE( GvSV( errgv))) croak( SvPV( GvSV( errgv), na));
+      if ( SvTRUE( GvSV( errgv))) {
+         PUB_CHECK;
+         croak( SvPV( GvSV( errgv), na));
+      }
       PUTBACK;
       FREETMPS;
       LEAVE;

@@ -59,10 +59,14 @@
 #include <Types.inc>
 #include "thunks.tinc"
 
-long   apcError = 0;
-
 static PHash vmtHash = nil;
 static List  staticObjects;
+
+Handle application = nilHandle;
+long   apcError = 0;
+List   postDestroys;
+int    recursiveCall = 0;
+PHash  primaObjects = nil;
 
 char *
 duplicate_string( const char *s)
@@ -142,16 +146,19 @@ SvBOOL( SV *sv)
 }
 #endif
 
-PHash primaObjects = nil;
-
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
+
 I32
 clean_perl_call_method( char* methname, I32 flags)
 {
    I32 ret;
+   dPUB_ARGS;
+
    ret = perl_call_method( methname, flags | G_EVAL);
    if ( !(SvTRUE( GvSV( errgv))))
       return ret;
+
+   PUB_CHECK;
    if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR)
    {
       dSP;
@@ -166,9 +173,12 @@ I32
 clean_perl_call_pv( char* subname, I32 flags)
 {
    I32 ret;
+   dPUB_ARGS;
    ret = perl_call_pv( subname, flags | G_EVAL);
    if ( !(SvTRUE( GvSV( errgv))))
       return ret;
+
+   PUB_CHECK;
    if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR)
    {
       dSP;
@@ -434,8 +444,6 @@ sv_query_method( SV *sv, char *methodName, Bool cacheIt)
    }
    return nil;
 }
-
-extern XS( Component_set_notification_FROMPERL);
 
 static void
 register_notifications( PVMT vmt)
@@ -796,6 +804,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
       PUTBACK;
       if ( returns)
       {
+         dPUB_ARGS;
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
          retCount = ( coderef) ?
             perl_call_sv(( SV *) subName, G_SCALAR|G_EVAL) :
@@ -804,6 +813,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
          if ( SvTRUE( GvSV( errgv)))
          {
             (void)POPs;
+            PUB_CHECK;
             croak( SvPV( GvSV( errgv), na));    // propagate
          }
 #else
@@ -825,10 +835,12 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
       else
       {
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
+         dPUB_ARGS;
          if ( coderef) perl_call_sv(( SV *) subName, G_DISCARD|G_EVAL);
             else perl_call_method( subName, G_DISCARD|G_EVAL);
          if ( SvTRUE( GvSV( errgv)))
          {
+            PUB_CHECK;
             croak( SvPV( GvSV( errgv), na));    // propagate
          }
 #else
@@ -1043,6 +1055,7 @@ XS( prima_cleanup)
    hash_destroy( vmtHash, false);
    list_delete_all( &staticObjects, true);
    list_destroy( &staticObjects);
+   list_destroy( &postDestroys);
    kill_zombies();
    window_subsystem_done();
 #ifdef PARANOID_MALLOC
@@ -1133,10 +1146,12 @@ NAN = 0.0;
       ST(0) = &sv_no;
       XSRETURN(1);
    };
+
    prima_init_image_subsystem();
    primaObjects = hash_create();
    vmtHash      = hash_create();
    list_create( &staticObjects, 16, 16);
+   list_create( &postDestroys, 16, 16);
 
    /* register hard coded XSUBs */
    newXS( "::destroy_mate", destroy_mate, MODULE);
@@ -1716,6 +1731,25 @@ PList plist_create( int size, int delta) {}
 
 #endif /* PARANOID_MALLOC */
 
+#ifndef unix
+int
+debug_write( const char *format, ...)
+{
+   FILE *f;
+   int rc;
+   va_list arg_ptr;
+
+   if( ( f = fopen( "C:\\PRIMAERR.LOG", "at")) == NULL) {
+       return false;
+   }
+   va_start( arg_ptr, format);
+   rc = vfprintf( f, format, arg_ptr);
+   va_end( arg_ptr);
+   fclose( f);
+
+   return ( rc != EOF);
+}
+#else
 int
 debug_write( const char *format, ...)
 {
@@ -1728,3 +1762,4 @@ debug_write( const char *format, ...)
     }
     return rc;
 }
+#endif

@@ -47,7 +47,6 @@
 #define var (( PImage) self)
 
 static int Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
-extern Bool read_point( AV * av, int * pt, int number, char * error);
 
 void
 Image_init( Handle self, HV * profile)
@@ -952,7 +951,7 @@ XS( Image_load_FROMPERL) {
       if ( ! result) {
           char errorBuf[ 1024];
           apc_image_get_error_message( errorBuf, 1024);
-          DOLBUG( "Error message: %s\n", errorBuf);
+/*        DOLBUG( "Error message: %s\n", errorBuf); */
       }
       SPAGAIN;
       SP -= items;

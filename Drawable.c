@@ -38,8 +38,6 @@
 #define gpENTER           if ( !inPaint) my-> begin_paint_info( self)
 #define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
 
-PRGBColor read_palette( int * palSize, SV * palette);
-
 void
 Drawable_init( Handle self, HV * profile)
 {

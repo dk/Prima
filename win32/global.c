@@ -1118,8 +1118,9 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
          if ( sys className == WC_FRAME && PWindow(self)->modal) {
            Window_cancel( self);
            return 0;
-         } else
+         } else {
            Object_destroy(( Handle) v);
+         }
          break;
       } else
          return 0;

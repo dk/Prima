@@ -1267,6 +1267,7 @@ END_TABLE(dt,UV)
 
 /* system-independent object option flags */
 typedef struct _ObjectOptions_ {
+   unsigned optInDestroyList       : 1;   /* Object */
    unsigned optcmDestroy           : 1;   /* Component */
    unsigned optInDraw              : 1;   /* Drawable */
    unsigned optInDrawInfo          : 1;

@@ -35,13 +35,7 @@
 #define my  ((( PApplication) self)-> self)
 #define var (( PApplication) self)
 
-Handle application = nilHandle;
-
 static void Application_HintTimer_handle_event( Handle, PEvent);
-
-extern Bool single_color_notify ( Handle self, Handle child, void * color);
-extern Bool font_notify ( Handle self, Handle child, void * font);
-extern Bool kill_all( Handle self, Handle child, void * dummy);
 
 void
 Application_init( Handle self, HV * profile)

@@ -27,6 +27,8 @@ object Prima::Object
 {
    int  stage;
    int  protectCount;
+   int  destroyRefCount;
+   Handle  owner;
    ObjectOptions options;
    method SV*	 can( char *name, Bool cacheIt = 1);
    method void   cleanup();

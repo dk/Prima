@@ -102,20 +102,47 @@ Object_create( char *className, HV * profile)
 
 #define csHalfDead csFrozen
 
+static void
+protect_chain( Handle self, int direction)
+{
+   while ( self) {
+      var-> destroyRefCount += direction;
+      self = var-> owner;
+   }
+}
+
 void
 Object_destroy( Handle self)
 {
    SV *mate, *object = nil;
    if ( var-> stage > csNormal && var-> stage != csHalfDead)
       return;
+
+   if ( var-> destroyRefCount > 0) {
+      if ( !is_opt( optInDestroyList)) {
+         opt_set( optInDestroyList);
+         list_add( &postDestroys, self);
+      }
+      return;
+   }
+
    if ( var-> stage == csHalfDead) {
+      Handle owner;
       if ( !var-> mate || ( var-> mate == nilSV))
          return;
       object = SvRV( var-> mate);
       if ( !object)
          return;
       var-> stage = csFinalizing;
+      recursiveCall++;
+      protect_chain( owner = var-> owner, 1);
       my-> done( self);
+      protect_chain( owner, -1);
+      recursiveCall--;
+      if ( is_opt( optInDestroyList)) {
+         list_delete( &postDestroys, self);
+         opt_clear( optInDestroyList);
+      }
       if ( primaObjects)
          hash_delete( primaObjects, &self, sizeof( self), false);
       var-> stage = csDead;
@@ -128,23 +155,46 @@ Object_destroy( Handle self)
       if ( object) ++SvREFCNT( object);
    }
    if ( object) {
+      Handle owner;
       var-> stage = csHalfDead;
+      recursiveCall++;
+    //  ENTER;
+    //  SAVEINT recursiveCall;
+      protect_chain( owner = var-> owner, 1);
       my-> cleanup( self);
-      if (var-> stage == csHalfDead) {
+      if ( var-> stage == csHalfDead) {
          var-> stage = csFinalizing;
          my-> done( self);
          if ( primaObjects)
             hash_delete( primaObjects, &self, sizeof( self), false);
+         if ( is_opt( optInDestroyList)) {
+            list_delete( &postDestroys, self);
+            opt_clear( optInDestroyList);
+         }
       }
+      protect_chain( owner, -1);
+    //  LEAVE;
+      recursiveCall--;
    }
    var-> stage = csDead;
    var-> mate = nilSV;
    if ( mate && object) sv_free( mate);
+
+   while (( recursiveCall == 0) && ( postDestroys. count > 0)) {
+      Handle last = postDestroys. items[ 0];
+      recursiveCall++;
+      Object_destroy( postDestroys. items[ 0]);
+      recursiveCall--;
+      if ( postDestroys. count == 0) break;
+      if ( postDestroys. items[ 0] != last) continue;
+      if ( postDestroys. count == 1)
+         croak("RTC0A00: Zombie detected: %08x", last);
+      else {
+         list_delete_at( &postDestroys, 0);
+         list_add( &postDestroys, last);
+      }
+   }
 }
-
-extern Handle
-gimme_the_real_mate( SV *perlObject);
-
 
 XS( Object_alive_FROMPERL)
 {

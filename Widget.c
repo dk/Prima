@@ -58,13 +58,6 @@ static Bool move_notify( Handle self, Handle child, Point * moveTo);
 static Handle find_tabfoc( Handle self);
 static Bool showhint_notify ( Handle self, Handle child, void * data);
 static Bool hint_notify ( Handle self, Handle child, char * hint);
-       Bool read_point( AV * av, int * pt, int number, char * error);
-       Bool accel_notify ( Handle group, Handle self, PEvent event);
-       Bool font_notify ( Handle self, Handle child, void * font);
-       Bool find_accel( Handle self, Handle item, int * key);
-       Bool single_color_notify ( Handle self, Handle child, void * color);
-       Bool kill_all( Handle self, Handle child, void * dummy);
-extern PRGBColor read_palette( int * palSize, SV * palette);
 
 /* init, done & update_sys_handle */
 void
@@ -227,7 +220,9 @@ void
 Widget_done( Handle self)
 {
    enter_method;
+   char name[ 256];
    PComponent detachFrom = ( PComponent) var-> owner;
+   strcpy( name, var-> name);
 
    if ((( PApplication) application)-> hintUnder == self)
       my-> set_hint_visible( self, 0);
@@ -316,8 +311,10 @@ Widget_close( Handle self)
    Bool canClose;
    enter_method;
    if ( var-> stage > csNormal) return true;
-   if (( canClose = my-> can_close( self)))
+   if (( canClose = my-> can_close( self))) {
+      debug_write("%s Widget_close\n", var-> name);
       Object_destroy( self);
+   }
    return canClose;
 }
 
@@ -2382,6 +2379,7 @@ void Widget_on_leave( Handle self) {}
 /* static iterators */
 Bool kill_all( Handle self, Handle child, void * dummy)
 {
+   debug_write("%s UKILL\n", PWidget( child)->name);
    Object_destroy( child); return 0;
 }
 

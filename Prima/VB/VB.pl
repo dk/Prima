@@ -1160,7 +1160,7 @@ sub init
    return %profile;
 }
 
-sub on_setup
+sub on_create
 {
    $_[0]-> reset_tabs;
 }

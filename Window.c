@@ -119,9 +119,6 @@ void Window_update_sys_handle( Handle self, HV * profile)
    pdelete( owner);
 }
 
-extern Bool accel_notify ( Handle group, Handle self, PEvent event);
-extern Bool find_accel( Handle self, Handle item, int * key);
-
 void Window_handle_event( Handle self, PEvent event)
 {
 #define evOK ( var-> evStack[ var-> evPtr - 1])

@@ -27,7 +27,6 @@ object Prima::Component( Prima::Object)
 {
     void        *sysData;            # system-dependent data, defined by apc
     char        *name;
-    Handle      owner;
     ApiHandle   handle;              # apc handle
     method   long      add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
     method   void      attach( Handle objectHandle);

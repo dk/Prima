@@ -424,7 +424,7 @@ static char * regColors[] = {
    "dark3DColor"
 };
 
-extern PHash
+PHash
 apc_widget_user_profile( char * name, Handle owner)
 {
    char buf[ MAXREGLEN];
