@@ -101,8 +101,11 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
    free( m-> variable);
    free( m-> perlSub);
    if ( m-> code) sv_free( m-> code);
-   if ( m-> bitmap) 
-      SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate)); 
+   if ( m-> bitmap) {
+      if ( PObject( m-> bitmap)-> stage < csDead)
+         SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate)); 
+      unprotect_object( m-> bitmap);
+   }
    my-> dispose_menu( self, m-> next);
    my-> dispose_menu( self, m-> down);
    free( m);
@@ -276,7 +279,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
                warn("RTC0037: menu build error: invalid image passed");
                goto TEXT;
             }
-            r-> bitmap =  gimme_the_mate( subItem);              // storing PImage as SV*
+            protect_object( r-> bitmap = c_object);
             SvREFCNT_inc( SvRV(( PObject( r-> bitmap))-> mate));
          } else {
          TEXT:
@@ -408,8 +411,12 @@ new_av(  PMenuItemReg m, int level)
             free( varName);
          }
 
-         if ( m-> bitmap) av_push( loc, newRV( SvRV((( PObject)( m-> bitmap))-> mate)));
-         else av_push( loc, newSVpv( m-> text, 0));
+         if ( m-> bitmap) {
+            if ( PObject( m-> bitmap)-> stage < csDead)
+               av_push( loc, newRV( SvRV((( PObject)( m-> bitmap))-> mate)));
+            else
+               av_push( loc, newSVpv( "", 0));
+         } else av_push( loc, newSVpv( m-> text, 0));
 
          if ( m-> accel)
          {
@@ -602,8 +609,10 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
    m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( m == nil) return nilHandle;
    if ( !m-> bitmap) return nilHandle;
-   if ( !set)
+   if ( !set) { 
+      if ( PObject( m-> bitmap)-> stage == csDead) return nilHandle;
       return m-> bitmap;
+   }
 
    if (( image == nilHandle) || !( kind_of( image, CImage))) {
       warn("RTC0039: invalid object passed to ::image");
@@ -615,7 +624,10 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
    }
 
    SvREFCNT_inc( SvRV(( PObject( image))-> mate));
-   SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate));
+   protect_object( image);
+   if ( PObject( m-> bitmap)-> stage < csDead) 
+      SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate));
+   unprotect_object( m-> bitmap);
    m-> bitmap = image;
    if ( m-> id > 0)
       if ( var-> stage <= csNormal)
