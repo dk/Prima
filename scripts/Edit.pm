@@ -186,7 +186,7 @@ sub reset
    my $uC   = $self-> {uChange};
    my $mw;
    $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height-1 : 0);
-   $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width-1  : 0);
+   $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width-1  : 1);
    $size[1] -= $bw * 2 + $self->{dy};
    $size[0] -= $bw * 2 + $self->{dx} - $cw;
    if ( $uC < 2)
