@@ -729,6 +729,7 @@ sub init
       size      => [ 245, 25],
       focusLink => $self-> Ext,
       text   => '~Extensions',
+      name   => 'ExtensionsLabel',
    );
 
    $self->insert( Label =>
