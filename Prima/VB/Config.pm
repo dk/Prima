@@ -265,6 +265,20 @@ sub classes
       RTModule => 'Prima::Sliders',
       module   => 'Prima::VB::CoreClasses',
    },
+   'Prima::Grid' => {
+       RTModule => 'Prima::Grids',
+       class  => 'Prima::VB::Grid',
+       page   => 'General',
+       icon   => 'VB::classes.gif:33',
+       module   => 'Prima::VB::CoreClasses',
+   },
+   'Prima::AbstractGrid' => {
+       RTModule => 'Prima::Grids',
+       class  => 'Prima::VB::AbstractGrid',
+       page   => 'Abstract',
+       icon   => 'VB::classes.gif:33',
+       module   => 'Prima::VB::CoreClasses',
+   },
    );
 }
 

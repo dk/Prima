@@ -210,21 +210,33 @@ sub classes
          page     => 'Sliders',
          module   => 'Prima::VB::CoreClasses',
          class    => 'Prima::VB::Header',
-     },
-     'Prima::DetailedList' => {
-        icon     => 'VB::classes.gif:31',
-        RTModule => 'Prima::DetailedList',
-        page     => 'General',
-        module   => 'Prima::VB::CoreClasses',
-        class    => 'Prima::VB::DetailedList',
-     },
-     'Prima::Calendar' => {
-        icon     => 'VB::classes.gif:32',
-        RTModule => 'Prima::Calendar',
-        page     => 'Additional',
-        module   => 'Prima::VB::CoreClasses',
-        class    => 'Prima::VB::Calendar',
-     },
+      },
+      'Prima::DetailedList' => {
+         icon     => 'VB::classes.gif:31',
+         RTModule => 'Prima::DetailedList',
+         page     => 'General',
+         module   => 'Prima::VB::CoreClasses',
+         class    => 'Prima::VB::DetailedList',
+      },
+      'Prima::Calendar' => {
+         icon     => 'VB::classes.gif:32',
+         RTModule => 'Prima::Calendar',
+         page     => 'Additional',
+         module   => 'Prima::VB::CoreClasses',
+         class    => 'Prima::VB::Calendar',
+      },
+      'Prima::Grid' => {
+          RTModule => 'Prima::Grids',
+          class  => 'Prima::VB::Grid',
+          page   => 'General',
+          icon   => 'VB::classes.gif:33',
+      },
+      'Prima::AbstractGrid' => {
+          RTModule => 'Prima::Grids',
+          class  => 'Prima::VB::AbstractGrid',
+          page   => 'Abstract',
+          icon   => 'VB::classes.gif:33',
+      },
    );
 }
 
@@ -2019,4 +2031,119 @@ sub on_paint
    $canvas-> clipRect( 0, 0, @sz);
    $self-> common_paint($canvas);
 }
+
+package Prima::VB::Grid;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onClick',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onSelectCell  => 'my ( $self, $column, $row) = @_;',
+      onDrawCell    => <<DRAWCELL,
+my ( \$self, \$canvas, 
+     \$column, \$row, \$indent, 
+     \$sx1, \$sy1, \$sx2, \$sy2,
+     \$cx1, \$cy1, \$cx2, \$cy2,
+     \$selected, \$focused
+   )  = \@_;
+DRAWCELL
+      onGetRange    => 'my ( $self, $axis, $index, $min, $max) = @_;',
+      onMeasure     => 'my ( $self, $axis, $index, $breadth) = @_;',
+      onSetExtent   => 'my ( $self, $axis, $index, $breadth) = @_;',
+      onStringify   => 'my ( $self, $column, $row, $text_ref) = @_;',
+   );
+}
+
+
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      bool    => [qw( allowChangeCellHeight allowChangeCellWidth autoHScroll autoVScroll
+                      clipCells drawHGrid drawVGrid hScroll vScroll multiSelect)],
+      uiv     => [qw(borderWidth columns constantCellWidth constantCellHeight gridGravity
+                     leftCell topCell rows)],
+      upoint  => [qw(focusedCell)],
+      color   => [qw(gridColor indentCellBackColor indentCellColor)],
+      urect   => [qw(cellIndents)],
+      multiItems  => ['cells'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
+
+sub prf_adjust_default
+{
+   my ( $self, $p, $pf) = @_;
+   $self-> SUPER::prf_adjust_default( $p, $pf);
+   delete $pf->{$_} for qw (offset);
+}
+
+sub on_paint
+{
+   my ( $self, $canvas) = @_;
+   my @r = $self->paint_exterior($canvas);
+   my @i = @{$self-> prf('cells')};
+   my $c = $self-> prf('columns');
+   my $r = $self-> prf('rows');
+   my $f = $canvas-> font-> height;
+   if ( scalar(@r) && $c && $r) {
+      my $z = $r[0];
+      my $j;
+      my @polyline;
+      my $lowline = $r[3] - $r * $f;
+      $lowline = $r[1] if $lowline < $r[1];
+      for ( $j = 0; $j < $c; $j++) {
+         my $ww = $canvas-> get_text_width( defined($i[0]->[$j]) ? $i[0]->[$j] : '');
+         my @z = ( $z, $r[1], ( $z + $ww > $r[2]) ? $r[2] : $z + $ww, $r[3]);
+         push @polyline, $z[2]+1, $lowline, $z[2]+1, $r[3];
+         $canvas-> draw_text( join("\n", map { defined($i[$_]->[$j]) ? $i[$_]->[$j] : '' } 0..($r-1)), 
+            @z, dt::NoWordWrap | dt::NewLineBreak | dt::Left | dt::Top | dt::UseClip
+         );
+         $z += $ww + 1;
+         last if $z > $r[2];
+      }
+      push @polyline, $r[0], $lowline, $r[0], $r[3];
+      push @polyline, map { $r[0], $r[3] - $_ * $f, $z, $r[3] - $_ * $f } 1 .. $r;
+      $self-> lines(\@polyline);
+   }
+   $self->common_paint($canvas);
+}
+
+sub prf_cells 
+{ 
+   my ( $self, $data) = @_;
+   my $c = $self-> prf('columns');
+   my $r = $self-> prf('rows');
+   for ( @$data) {
+      next if scalar @$_ >= $c;
+      push( @$_, ('') x ( $c - scalar @$_));
+   }
+   if ( scalar @$data < $r) {
+      $r -= @$data;
+      push @$data, [('') x $c] while $r--;
+   }
+      
+   $self-> repaint; 
+}
+
+sub prf_columns { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
+sub prf_rows    { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
+
+package Prima::VB::AbstractGrid;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Grid);
+
 1;

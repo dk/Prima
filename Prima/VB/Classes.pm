@@ -1598,8 +1598,6 @@ sub open
 
    $self-> {container}-> insert( Label =>
       origin => [ 5, $h - 36],
-      width  => 80,
-      autoWidth => 0,
       text      => 'RGB:',
       focusLink => $self->{A},
    );
@@ -1720,8 +1718,6 @@ sub open
 
    $self-> {L} = $self-> {container}-> insert( Label =>
       origin => [ 5, $self->{A}-> top + 5],
-      width  => 80,
-      autoWidth => 0,
       text      => $self->{id}.'.x:',
       focusLink => $self->{A},
    );
@@ -1739,8 +1735,6 @@ sub open
 
    $self-> {M} = $self-> {container}-> insert( Label =>
       origin => [ 5, $self->{B}-> top + 5],
-      width  => 80,
-      autoWidth => 0,
       text      => $self->{id}.'.y:',
       focusLink => $self->{B},
    );
@@ -1806,6 +1800,87 @@ sub get
    return [$x + $delta[0], $y + $delta[1]];
 }
 
+package Prima::VB::Types::rect;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::point);
+
+sub open
+{
+   my $self = $_[0];
+   $self-> SUPER::open(@_);
+
+   $self-> {C} = $self-> {container}-> insert( SpinEdit =>
+      origin   => [ 5, $self-> {B}-> bottom - $self-> {container}-> font-> height - 39],
+      width    => 120,
+      min      => -16383,
+      max      => 16383,
+      onChange => sub {
+         $self-> change;
+      },
+   );
+
+   $self-> {N} = $self-> {container}-> insert( Label =>
+      origin => [ 5, $self->{C}-> top + 5],
+      text      => $self->{id}.'.x2:',
+      focusLink => $self->{C},
+   );
+
+
+   $self-> {D} = $self-> {container}-> insert( SpinEdit =>
+      origin   => [ 5, $self-> {C}-> bottom - $self-> {container}-> font-> height - 39],
+      width    => 120,
+      min      => -16383,
+      max      => 16383,
+      onChange => sub {
+         $self-> change;
+      },
+   );
+
+   $self-> {O} = $self-> {container}-> insert( Label =>
+      origin => [ 5, $self->{D}-> top + 5],
+      text      => $self->{id}.'.y2:',
+      focusLink => $self->{D},
+   );
+}
+
+sub change_id {
+   my $self = shift;
+   $self-> SUPER::change_id( @_);
+   $self-> {N}-> text( $self->{id}.'.x2:');
+   $self-> {O}-> text( $self->{id}.'.y2:');
+}
+
+sub set
+{
+   my ( $self, $data) = @_;
+   $data = [] unless defined $data;
+   $self-> SUPER::set( $data);
+   $self->{C}-> value( defined $data->[2] ? $data->[2] : 0);
+   $self->{D}-> value( defined $data->[3] ? $data->[3] : 0);
+}
+
+sub get
+{
+   my $self = $_[0];
+   return [$self->{A}-> value,$self->{B}-> value,$self->{C}-> value,$self->{D}-> value];
+}
+
+sub write
+{
+   my ( $class, $id, $data) = @_;
+   return '[ '.$data->[0].', '.$data->[1].','.$data->[2].','.$data->[3].']';
+}
+
+package Prima::VB::Types::urect;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::rect);
+
+sub open
+{
+   my $self = shift;
+   $self-> SUPER::open( @_);
+   $self-> {$_}-> min(0) for qw(A B C D);
+}
 
 package Prima::VB::Types::cluster;
 use vars qw(@ISA);
