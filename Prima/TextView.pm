@@ -546,7 +546,7 @@ sub block_wrap
          my $tlen = $$b[ $i + 2];
          $lastTextOffset = $ofs + $tlen unless $wrapmode;
       REWRAP: 
-         my $tw = $canvas-> get_text_width( substr( $$t, $o + $ofs, $tlen), $tlen, 1);
+         my $tw = $canvas-> get_text_width( substr( $$t, $o + $ofs, $tlen), 1);
          my $apx = $f_taint-> {width};
 # print "$x+$apx: new text $tw :|",substr( $$t, $o + $ofs, $tlen),"|\n";
          if ( $x + $tw + $apx <= $width) {
@@ -567,8 +567,8 @@ sub block_wrap
             if ( $l > 0) {
                push @$z, tb::OP_TEXT, $ofs,
                   $l + length $leadingSpaces, 
-                  $tw = $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l), -1, 1);
-# print "$x + advance $$z[-1] |", $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l), -1, 0), "|\n";
+                  $tw = $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l), 1);
+# print "$x + advance $$z[-1] |", $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l), 0), "|\n";
                $str = substr( $str, $l);
                $l += length $leadingSpaces;
                $newblock-> ();
@@ -578,7 +578,7 @@ sub block_wrap
                if ( $str =~ /^(\s+)/) {
                   $ofs  += length $1;
                   $tlen -= length $1;
-                  $x    += $canvas-> get_text_width( $1, -1, 1);
+                  $x    += $canvas-> get_text_width( $1, 1);
                   $str =~ s/^\s+//;
                }
                goto REWRAP if length $str;
@@ -592,7 +592,7 @@ sub block_wrap
                                    # but may be some words can be stripped?
                   goto REWRAP if $ox > 0;
                   if ( $str =~ m/^(\S+)(\s*)/) {
-                     $tw = $canvas-> get_text_width( $1, -1, 1);
+                     $tw = $canvas-> get_text_width( $1, 1);
                      push @$z, tb::OP_TEXT, $ofs, length $1, $tw;
                      $x += $tw;
                      $ofs  += length($1) + length($2);
@@ -600,7 +600,7 @@ sub block_wrap
                      goto REWRAP;
                   }
                }
-               push @$z, tb::OP_TEXT, $ofs, length($str), $x += $canvas-> get_text_width( $str, -1, 1);
+               push @$z, tb::OP_TEXT, $ofs, length($str), $x += $canvas-> get_text_width( $str, 1);
             }
          } elsif ( $haswrapinfo) { # unwrappable, and cannot be fit - retrace
             $retrace->();
@@ -879,8 +879,7 @@ sub block_draw
                $self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
                $c_taint = 1;
             }
-            $ret = $canvas-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), 
-                              $x, $y, $$b[ $i + 2]);
+            $ret = $canvas-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), $x, $y);
          }
          $x += $$b[ $i + 3];
       } elsif ( $cmd == tb::OP_FONT) {
@@ -1086,8 +1085,7 @@ sub text2xoffset
                    $f_taint = $self-> get_font;
                 }
                 $px += $self-> get_text_width( 
-                   substr( ${$self->{text}}, $bofs + $$b[$i+1], $x - $$b[$i+1] ),
-                   $x - $$b[$i+1] );
+                   substr( ${$self->{text}}, $bofs + $$b[$i+1], $x - $$b[$i+1] ));
                 last;
              } elsif ( $x == $$b[$i+1] + $$b[$i+2]) {
                 $px += $$b[$i+3];

@@ -923,15 +923,10 @@ ARC
 
 sub text_out
 {
-   my ( $self, $text, $x, $y, $len) = @_;
-   return 0 unless $self-> {canDraw};
+   my ( $self, $text, $x, $y) = @_;
+   return 0 unless $self-> {canDraw} and length $text;
    $y += $self-> {font}-> {descent} if !$self-> textOutBaseline;
    ( $x, $y) = $self-> pixel2point( $x, $y); 
-   if ( !defined( $len) || $len < 0) {
-      $len = length( $text);
-   } else {
-      $text = substr( $text, 0, $len);
-   }
   
    my $n = $self-> {typeFontMap}-> {$self-> {font}-> {name}};
    my $spec = exists ( $self-> {font}-> {encoding}) ? 
@@ -965,7 +960,7 @@ sub text_out
       my ( $ds, $bs) = ( $self-> {font}-> {direction}, $self-> textOutBaseline);
       $self-> {font}-> {direction} = 0;
       $self-> textOutBaseline(1) unless $bs;
-      @rb = $self-> pixel2point( @{$self-> get_text_box( $text, $len)});
+      @rb = $self-> pixel2point( @{$self-> get_text_box( $text)});
       $self-> {font}-> {direction} = $ds;
       $self-> textOutBaseline($bs) unless $bs;
    }
@@ -1515,14 +1510,10 @@ sub get_font_ranges
 
 sub get_text_width
 {
-   my ( $self, $text, $len, $addOverhang) = @_;
-   if ( !defined( $len) || $len < 0) {
-      $len = length( $text);
-   } else {
-      $text = substr( $text, 0, $len);
-   }
-   return 0 unless $len;
+   my ( $self, $text, $addOverhang) = @_;
    my $i;
+   my $len = length $text;
+   return 0 unless $len;
    my ( $rmap, $nd) = $self-> get_rmap;
    my $cd;
    my $w = 0;
@@ -1543,13 +1534,10 @@ sub get_text_width
 
 sub get_text_box
 {
-   my ( $self, $text, $len) = @_;
-   if ( !defined( $len) || $len < 0) {
-      $len = length( $text);
-   } else {
-      $text = substr( $text, 0, $len);
-   }
+   my ( $self, $text) = @_;
    my ( $rmap, $nd) = $self-> get_rmap;
+   my $len = length $text;
+   return [ (0) x 10 ] unless $len; 
    my $cd;
    my $wmul = $self-> {font}-> {width} / $self-> {fontWidthDivisor};
    $cd = $rmap-> [ ord( substr( $text, 0, 1))] || $nd; 
@@ -1557,7 +1545,7 @@ sub get_text_box
    $cd = $rmap-> [ ord( substr( $text, $len - 1, 1))] || $nd; 
    my $ovxb = $wmul * (( $cd->[3] < 0) ? -$cd-> [3] : 0);
    
-   my $w = $self-> get_text_width( $text, $len);
+   my $w = $self-> get_text_width( $text);
    my @ret = (
       -$ovxa,      $self-> {font}-> {ascent} - 1,
       -$ovxa,     -$self-> {font}-> {descent}, 

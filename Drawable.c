@@ -383,7 +383,7 @@ Drawable_get_font_ranges( Handle self)
    AV * av = newAV();
    gpARGS;
    
-   gpENTER(newRV_noinc(( SV *) av));
+   gpENTER( newRV_noinc(( SV *) av));
    ret = apc_gp_get_font_ranges( self, &count);
    gpLEAVE;
    if ( ret) {
@@ -447,14 +447,13 @@ Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom,
 }
 
 Bool
-Drawable_text_out( Handle self, SV * text, int x, int y, int len)
+Drawable_text_out( Handle self, SV * text, int x, int y)
 {
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-   if ( len < 0 || len > dlen) len = dlen;
-   return apc_gp_text_out( self, c_text, x, y, len, utf8);
+   return apc_gp_text_out( self, c_text, x, y, dlen, utf8);
 }
 
 Point *
@@ -831,7 +830,7 @@ Drawable_render_spline( SV * obj, SV * points, int precision)
 }
 
 int
-Drawable_get_text_width( Handle self, SV * text, int len, Bool addOverhang)
+Drawable_get_text_width( Handle self, SV * text, Bool addOverhang)
 {
    gpARGS;
    int res;
@@ -839,15 +838,14 @@ Drawable_get_text_width( Handle self, SV * text, int len, Bool addOverhang)
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-   if ( len < 0 || len > dlen) len = dlen;
    gpENTER(0);
-   res = apc_gp_get_text_width( self, c_text, len, addOverhang, utf8);
+   res = apc_gp_get_text_width( self, c_text, dlen, addOverhang, utf8);
    gpLEAVE;
    return res;
 }
 
 SV *
-Drawable_get_text_box( Handle self, SV * text, int len)
+Drawable_get_text_box( Handle self, SV * text)
 {
    gpARGS;
    Point * p;
@@ -857,9 +855,8 @@ Drawable_get_text_box( Handle self, SV * text, int len)
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-   if ( len < 0 || len > dlen) len = dlen;
    gpENTER( newRV_noinc(( SV *) newAV()));
-   p = apc_gp_get_text_box( self, c_text, len, utf8);
+   p = apc_gp_get_text_box( self, c_text, dlen, utf8);
    gpLEAVE;
 
    av = newAV();
@@ -1205,7 +1202,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 }
 
 SV*
-Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabIndent, int textLen)
+Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabIndent)
 {
    TextWrapRec t;
    Bool retChunks;
@@ -1217,13 +1214,10 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
    t. text      = SvPV( text, tlen);
    t. utf8_text = SvUTF8( text);
    if ( t. utf8_text) {
-      i = prima_utf8_length( t. text);
-      if ( textLen < 0 || textLen > i ) textLen = i;
-      t. utf8_textLen = textLen;
-      t. textLen = utf8_hop(( U8*) t. text, textLen) - (U8*) t. text; 
+      t. utf8_textLen = prima_utf8_length( t. text);
+      t. textLen = utf8_hop(( U8*) t. text, t. utf8_textLen) - (U8*) t. text; 
    } else {
-      if ( textLen < 0 || textLen > tlen) textLen = tlen;
-      t. utf8_textLen = t. textLen = textLen;
+      t. utf8_textLen = t. textLen = tlen;
    }
    t. width     = ( width < 0) ? 0 : width;
    t. tabIndent = ( tabIndent < 0) ? 0 : tabIndent;
