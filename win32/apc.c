@@ -119,19 +119,21 @@ hwnd_to_view( HWND win)
 {
    Handle h;
    LONG ll;
-   int i = 2;
-   while (i--) {
-      if (( !win) || ( !IsWindow( win))) return nilHandle;
-      if ( GetWindowThreadProcessId( win, nil) != guts. mainThreadId) return nilHandle;
-      h = GetWindowLong( win, GWL_USERDATA);
-      if ( !h) return nilHandle;
-      ll = GetWindowLong( win, GWL_WNDPROC);
-      if (
-          ( ll == ( LONG) generic_view_handler) ||
-          ( ll == ( LONG) generic_app_handler) ||
-          ( ll == ( LONG) generic_frame_handler)
-         ) return h;
-   }
+   if (( !win) || ( !IsWindow( win)))
+      return nilHandle;
+   if ( GetWindowThreadProcessId( win, nil) != guts. mainThreadId)
+      return nilHandle;
+   h = GetWindowLong( win, GWL_USERDATA);
+   if ( !h) return nilHandle;
+   ll = GetWindowLong( win, GWL_WNDPROC);
+   if (
+       ( ll == ( LONG) generic_view_handler) ||
+       ( ll == ( LONG) generic_app_handler) ||
+       ( ll == ( LONG) generic_frame_handler)
+      ) return h;
+
+   if ( SendMessage( win, WM_HASMATE, 0, &h) == HASMATE_MAGIC)
+      return h;
    return nilHandle;
 }
 
@@ -1169,6 +1171,7 @@ apc_widget_begin_paint_info( Handle self)
    sys transform2. y = 0;
    if ( !( sys ps = GetDC(( HWND) var handle))) apiErrRet;
    hwnd_enter_paint( self);
+   sys pal = palette_create( self);
    rgn = CreateRectRgn( 0, 0, 0, 0);
    SelectClipRgn( sys ps, rgn);
    DeleteObject( rgn);
