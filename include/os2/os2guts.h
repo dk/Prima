@@ -8,12 +8,12 @@
 #define INCL_SPLDOSPRINT
 #include <os2.h>
 
-#define SEVERE_DEBUG
-
 #ifdef HAVE_PMPRINTF_H
-#define __PMPRINTF__  // OS/2 logging facility
+#define __PMPRINTF__  /* OS/2 logging facility */
 #include <PMPRINTF.H>
 #endif
+
+#define SEVERE_DEBUG
 
 #define WM_PRIMA_CREATE                   ( WM_USER + 1)
 #define WM_MENUCOMMAND                    ( WM_USER + 2)
