@@ -32,6 +32,7 @@ package Prima::Lists;
 
 # contains:
 #   AbstractListViewer
+#   AbstractListBox
 #   ListViewer
 #   ListBox
 #   ProtectedListBox
@@ -1168,6 +1169,15 @@ sub std_draw_text_items
    }
 }
 
+package Prima::AbstractListBox;
+use vars qw(@ISA);
+@ISA = qw(Prima::AbstractListViewer);
+
+sub draw_items
+{
+   shift-> std_draw_text_items(@_);
+}
+
 package Prima::ListViewer;
 use vars qw(@ISA);
 @ISA = qw(Prima::AbstractListViewer);
@@ -1485,6 +1495,7 @@ The module provides classes for several abstraction layers
 of item representation. The hierarchy of classes is as follows:
 
   AbstractListViewer
+     AbstractListBox
      ListViewer
         ProtectedListBox
         ListBox
@@ -1778,6 +1789,12 @@ Puts text string, assigned to INDEXth item into TEXT_REF
 scalar reference.
 
 =back
+
+=head1 Prima::AbstractListBox
+
+Exactly the same as its ascendant, C<Prima::AbstractListViewer>,
+except that it does not propagate C<DrawItem> message, 
+assuming that the items must be drawn as text. 
 
 =head1 Prima::ListViewer
 
