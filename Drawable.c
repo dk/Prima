@@ -378,10 +378,10 @@ void
 Drawable_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle image)
 {
    if ( image == nilHandle) return;
-   if ( xDest == PImage(self)-> w && yDest == PImage(self)-> h) 
+   if ( xDest == PImage(image)-> w && yDest == PImage(image)-> h) 
       apc_gp_put_image( self, image, x, y, 0, 0, xDest, yDest, my-> get_rop( self));
    else
-      apc_gp_stretch_image( self, image, x, y, 0, 0, xDest, yDest, PImage(self)-> w, PImage(self)-> h, my-> get_rop( self));
+      apc_gp_stretch_image( self, image, x, y, 0, 0, xDest, yDest, PImage(image)-> w, PImage(image)-> h, my-> get_rop( self));
 }
 
 void
