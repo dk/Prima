@@ -1,4 +1,6 @@
-#include <io.h>
+#ifndef __unix
+#   include <io.h>
+#endif /* __unix */
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
