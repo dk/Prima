@@ -320,7 +320,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
           x + cos( angleEnd / GRAD) * maxRad + 0.5 + 1, y - sin( angleEnd / GRAD) * maxRad + 0.5 + 1
       ))) apiErr;
    }
-   SelectObject( ps, old);
+   old = SelectObject( ps, old);
    if ( !comp) DeleteObject( old);
    return ok;
 }}
@@ -456,8 +456,6 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    int compl, needf, maxRad = radX > radY ? radX : radY;
 
    compl = arc_completion( angleStart, angleEnd, &needf);
-
-   if ( angleEnd == angleStart) return true;
    comp = stylus_complex( &sys stylus, ps);
 
    pts[ 0]. x = x + cos( angleEnd / GRAD) * maxRad + 0.5;
@@ -486,7 +484,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
           pts[ 0]. x, pts[ 0]. y
       ))) apiErr;
    }
-   SelectObject( ps, old);
+   old = SelectObject( ps, old);
    if ( !comp) DeleteObject( old);
    return ok;
 }}
