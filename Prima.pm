@@ -33,16 +33,7 @@ use strict;
 require DynaLoader;
 use vars qw($VERSION @ISA $__import);
 @ISA = qw(DynaLoader);
-
-BEGIN {
-    if ( $^O =~ /freebsd/i) {
-	( my $ver = `/usr/bin/uname -r`) =~ s/^(\d+\.\d+).*$/$1/;
-	if ( $ver >= 3.4) {
-	    eval "sub dl_load_flags { 0x01 }";
-	}
-    }
-}
-
+sub dl_load_flags { 0x00 }
 $VERSION = '1.07';
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {

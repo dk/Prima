@@ -71,6 +71,7 @@ use vars @ovvars = qw(
     $DEFFILE
     $DISTNAME
     $WANTNOCODECS
+    $DL_LOAD_FLAGS
     $DEBUG
 );
 
@@ -264,10 +265,9 @@ sub compile
     my $tmpsrc = qd( tempfile( "$TMPDIR/pmts%04d.c"));
     my $tmpo = qd( tempfile( "$TMPDIR/pmts%04d$OBJ_EXT"));
     my $tmpexe = qd( tempfile( "$TMPDIR/pmts%04d$EXE_EXT"));
-    my @tmpextras = (
-       qd( tempfile( "$TMPDIR/pmts%04d.ilk")),
-       qd( tempfile( "$TMPDIR/pmts%04d.pdb")),
-    );
+    my @tmpextras = ( $tmpsrc, $tmpsrc);
+    $tmpextras[0] =~ s/\.[^\.+]$/.ilk/;
+    $tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
 
     open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $extramsg";
     print TMPSRC $text;
@@ -685,6 +685,7 @@ sub setup_variables
 
     setvar( 'TMPDIR', $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp"));
     setvar( 'NULLDEV', "$CWD/makefile.log");
+    setvar( 'DL_LOAD_FLAGS', ( $Win32 || $OS2) ? 0 : -1);
 
     setvar( 'CC', $Config{ cc});
     print "Determining compiler type... ";
@@ -1402,6 +1403,101 @@ NOCODECS
                   );
     generate_win32_def if $Win32;
     generate_os2_def if $OS2;
+
+    # check if we need dl_load_flags(0x01)
+    if ( $DL_LOAD_FLAGS < 0) {
+
+       print "Determining dl_load_flags...";
+
+       my $c1  = qd( tempfile( "$TMPDIR/pmts%04d.c"));
+       $c1 =~ m/pmts([^\.]*).c$/;
+       my ( $n1, $n2) = ( $1, sprintf("%04d", 1 + $1));
+
+       my $o1  = qd( "$TMPDIR/pmts$n1$OBJ_EXT");
+       my $o2  = qd( "$TMPDIR/pmts$n2$OBJ_EXT");
+       my $dl1 = qd( "$TMPDIR/pmts$n1$DL_EXT");
+       my $dl2 = qd( "$TMPDIR/pmts$n2$DL_EXT");
+       my @ex = map { qd("$TMPDIR/pmts$_")} map { ("$n1$_", "$n2$_") } ('.ilk', '.pdb');
+
+       open TMPSRC, ">$c1" or die "Creation of temporary file $c1 failed";
+       print TMPSRC <<D;
+#include <apricot.h>
+
+int test( void ) { return 1; }
+
+XS(boot_pmts$n1) { 
+   dXSARGS;
+   XSRETURN(1);
+}
+D
+       close TMPSRC;
+
+       my $c2  = qd( tempfile( "$TMPDIR/pmts%04d.c"));
+       open TMPSRC, ">$c2" or die "Creation of temporary file $c2 failed";
+       print TMPSRC <<D;
+#include <apricot.h>
+
+extern int test ( void );
+
+XS(boot_pmts$n2) {
+   dXSARGS;
+   test();
+   XSRETURN(1);
+}
+D
+       close TMPSRC;
+
+       my @cc1 = grep !/^-W(all|error|\d)/i, cc_command_line( $c1, $o1, $dl1, 1);
+       my @cc2 = grep !/^-W(all|error|\d)/i, cc_command_line( $c2, $o2, $dl2, 1);
+       my @ld1 = ld_command_line( $dl1, $o1);
+       my @ld2 = ld_command_line( $dl2, $o2);
+       my $dlpl = "$^X -e '" . (join ' ', split("\n", <<DN)) . "'";
+require DynaLoader;
+unshift \@INC, q($TMPDIR);
+
+package pmts$n1;
+\@ISA = q(DynaLoader);
+sub dl_load_flags{0x00}
+bootstrap pmts$n1 0;
+
+package pmts$n2;
+\@ISA = q(DynaLoader);
+bootstrap pmts$n2 0;
+DN
+       
+       null_output;
+       print STDERR "@cc1\n";
+       goto FAIL if system("@cc1");
+       print STDERR "@ld1\n";
+       goto FAIL if system("@ld1");
+       print STDERR "@cc2\n";
+       goto FAIL if system("@cc2");
+       print STDERR "@ld2\n";
+       goto FAIL if system("@ld2");
+       print STDERR "$dlpl\n";
+       my $ok_0 = system( $dlpl );
+       $dlpl =~ s/0x00/0x01/;
+       print STDERR "$dlpl\n";
+       my $ok_1 = system( $dlpl );
+
+       if ( $ok_0 != 0 && $ok_1 == 0) {
+          $DL_LOAD_FLAGS = 1;
+       } elsif ( $ok_0 == 0 && $ok_1 == 0) {
+          $DL_LOAD_FLAGS = 0;
+       }
+FAIL:
+       unlink ( $c1, $c2, $o1, $o2, $dl1, $dl2, @ex );
+       restore_output;
+       if ( $DL_LOAD_FLAGS < 0 ) {
+          print <<DLERR;
+unknown
+** warning: set DL_LOAD_FLAGS=1 if your system requires RTLD_GLOBAL
+DLERR
+          $DL_LOAD_FLAGS = 0;
+       } else {
+          printf("0x%02x\n", $DL_LOAD_FLAGS);
+       }
+    }
 }
 
 sub process_commandline
@@ -1821,9 +1917,9 @@ elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--rmdir') {
 }
 elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--updateconfig') {
    shift @ARGV;
-   my $fn = shift @ARGV;
-   open F, $fn or die "cannot open $fn:$!\n";
-   open FF, "> $fn.tmp" or die "cannot open $fn.tmp:$!\n";
+   my ( $fn_cfg, $fn_prima) = ( shift @ARGV, shift @ARGV);
+   open F, $fn_cfg or die "cannot open $fn_cfg:$!\n";
+   open FF, "> $fn_cfg.tmp" or die "cannot open $fn_cfg.tmp:$!\n";
    my ( $c_state, $ci_state) = (0,0);
    my %ci;
 
@@ -1869,8 +1965,19 @@ print FF <<FOOTER;
 FOOTER
    close FF;
    close F;
-   unlink $fn;
-   rename "$fn.tmp", $fn;
+   unlink $fn_cfg;
+   rename "$fn_cfg.tmp", $fn_cfg;
+
+   if ( defined $fn_prima) {
+      open F, $fn_prima or die "cannot open $fn_prima:$!\n";
+      local $/;
+      my $ct = <F>;
+      close F;
+      $ct =~ s/(dl_load_flags\s*\{\s*)0x00/${1}0x01/;
+      open F, "> $fn_prima" or die "cannot write $fn_prima:$!\n";
+      print F $ct;
+      close F;
+   }
 } elsif ( $#ARGV >= 2 && $ARGV[ 0] eq '--dist') {
    my $type = lc $ARGV[1];
    my $cwd = cwd();
@@ -2209,9 +2316,10 @@ EOF
     }
 
     print MAKE "\n\t\@echo Updating config...\n";
-    print MAKE "\t$^X Makefile.PL --updateconfig $INSTALLSITEARCH/Prima/Config.pm\n";
+    print MAKE "\t$^X Makefile.PL --updateconfig $INSTALLSITEARCH/Prima/Config.pm";
+    print MAKE " $INSTALLSITEARCH/Prima.pm" if $DL_LOAD_FLAGS;
 
-    print MAKE "\ndeinstall:\n";
+    print MAKE "\n\ndeinstall:\n";
     my %dirs_to_rm;
     dump_cmd( sub { 
         $dirs_to_rm{$cp{$_[0]}} = 1;
