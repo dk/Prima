@@ -880,7 +880,8 @@ sub set_offset
    }
    $self-> scroll( -$dt, 0,
                      clipRect => \@a);
-   $self-> refresh;
+   $self-> update_view;
+   delete $self-> {singlePaint};
 }
 
 sub redraw_items
