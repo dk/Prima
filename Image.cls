@@ -37,6 +37,8 @@ object Prima::Image( Prima::Drawable)
    int            statsCache;
    Point          resolution;
 
+   property SV *  palette;
+
    # methods
    method Handle bitmap();
    method Bool   begin_paint();
@@ -53,7 +55,6 @@ object Prima::Image( Prima::Drawable)
    method SV   * get_handle();
    weird  Handle get_info( SV *who, char *filename);
    static char * get_status_string( SV *self);
-   method SV   * get_palette();
    method Color  get_pixel(int x, int y);
    method Bool   get_preserve_type();
    method Point  get_resolution();
@@ -71,7 +72,6 @@ object Prima::Image( Prima::Drawable)
    method void   set_conversion( int conversion);
    method void   set_data( SV * data);
    method void   set_height( int height);
-   method void   set_palette( SV * palette);
    method Bool   set_pixel(int x, int y, Color color);
    method void   set_preserve_type( Bool preserveType);
    method void   set_h_scaling( Bool scaling);

@@ -1456,19 +1456,13 @@ PROC
    }
 }
 
-sub set_fill_pattern_id {
-  $_[0]->SUPER::set_fill_pattern_id($_[1]);
-  $_[0]->{protect}->{fillPattern} = 1 if exists $_[0]->{protect};
-}
-
 sub draw_items
 {
    my ( $self, $canvas, @items) = @_;
    return if $canvas != $self;   # this does not support 'uncertain' drawings due that
    my %protect;                  # it's impossible to override $canvas's methods dynamically
-   for ( qw(font color backColor rop rop2 linePattern lineWidth lineEnd textOutBaseline))
+   for ( qw(font color backColor rop rop2 linePattern lineWidth lineEnd textOutBaseline fillPattern))
         { $protect{$_} = $canvas-> $_(); }
-   my @fp       = $canvas-> fillPattern;
    my @clipRect = $canvas-> clipRect;
    $self->{protect} = {};
 
@@ -1478,8 +1472,6 @@ sub draw_items
    {
       $notifier->( @notifyParms, $canvas, @$_);
 
-      $canvas-> fillPattern( @fp), delete $self->{protect}->{fillPattern}
-         if exists $self->{protect}->{fillPattern};
       $canvas-> clipRect( @clipRect), delete $self->{protect}->{clipRect}
          if exists $self->{protect}->{clipRect};
       for ( keys %{$self->{protect}}) { $self->$_($protect{$_}); }
@@ -1518,7 +1510,7 @@ sub draw_items
       $self-> get_color_index( ci::HiliteText),
       $self-> get_color_index( ci::Hilite)
    );
-   my @clipRect = $canvas-> get_clip_rect;
+   my @clipRect = $canvas-> clipRect;
    my $i;
    my $drawVeilFoc = -1;
    my $atY    = ( $self-> {itemHeight} - $canvas-> font-> height) / 2;

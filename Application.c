@@ -538,7 +538,7 @@ Application_set_font( Handle self, Font font)
 {
    if ( !opt_InPaint) my-> first_that( self, font_notify, &font);
    apc_font_pick( self, &font, & var-> font);
-   if ( opt_InPaint) apc_gp_set_font ( self, & var->  font);
+   if ( opt_InPaint) apc_gp_set_font ( self, &var-> font);
 }
 
 void
@@ -746,12 +746,6 @@ Application_get_hint_pause( Handle self)
 }
 
 void
-Application_set_palette( Handle self, SV * palette)
-{
-   CDrawable-> set_palette( self, palette);
-}
-
-void
 Application_set_show_hint( Handle self, Bool showHint)
 {
    opt_assign( optShowHint, showHint);
@@ -761,9 +755,9 @@ Handle Application_next( Handle self) { return self;}
 Handle Application_prev( Handle self) { return self;}
 
 SV *
-Application_get_palette( Handle self)
+Application_palette( Handle self, Bool set, SV * palette)
 {
-   return CDrawable-> get_palette( self);
+   return CDrawable-> palette( self, set, palette);
 }
 
 Handle
@@ -925,5 +919,5 @@ void Application_set_transparent( Handle self, Bool transparent) {}
 char *
 Application_text( Handle self, Bool set, char *text)
 {
-   return ""; 
+   return "";
 }

@@ -1348,6 +1348,9 @@ XS( Image_load_FROMPERL) {
       sprintf( buf, "index=%d", pget_i( index));
    sv_free(( SV*)profile);
 
+   SPAGAIN;
+   SP -= items;
+
    if ( as_class) {
       profile = newHV();
       self = Object_create( class_name, profile);
@@ -1610,29 +1613,25 @@ Image_resample( Handle self, double srcLo, double srcHi, double dstLo, double ds
 }
 
 SV *
-Image_get_palette( Handle self)
+Image_palette( Handle self, Bool set, SV * palette)
 {
-   AV * av = newAV();
-   int i;
-   int colors = ( 1 << ( var->type & imBPP)) & 0x1ff;
-   Byte * pal = ( Byte*) var->palette;
-   if (( var->type & imGrayScale) && (( var->type & imBPP) > imbpp8)) colors = 256;
-   for ( i = 0; i < colors*3; i++) av_push( av, newSViv( pal[ i]));
-   return newRV_noinc(( SV *) av);
-}
-
-void
-Image_set_palette( Handle self, SV * palette)
-{
-   if ( var->stage > csNormal) return;
-   if ( var->type & imGrayScale)
-      return;
-   if ( !var->palette)
-      return;
-
-   if ( !Image_read_palette( self, var->palette, palette))
-      warn("RTC0107: Invalid array reference passed to Image::set_palette");
-   my->update_change( self);
+   if ( var->stage > csNormal) return nilSV;
+   if ( set) {
+      if ( var->type & imGrayScale) return nilSV;
+      if ( !var->palette)           return nilSV;
+      if ( !Image_read_palette( self, var->palette, palette))
+         warn("RTC0107: Invalid array reference passed to Image::palette");
+      my-> update_change( self);
+   } else {
+      int i;
+      AV * av = newAV();
+      int colors = ( 1 << ( var->type & imBPP)) & 0x1ff;
+      Byte * pal = ( Byte*) var->palette;
+      if (( var->type & imGrayScale) && (( var->type & imBPP) > imbpp8)) colors = 256;
+      for ( i = 0; i < colors*3; i++) av_push( av, newSViv( pal[ i]));
+      return newRV_noinc(( SV *) av);
+   }
+   return nilSV;
 }
 
 void Image_set_conversion( Handle self, int conversion)

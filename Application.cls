@@ -34,6 +34,7 @@ object Prima::Application( Prima::Widget)
    Bool      autoClose;
 
    property  char* text;
+   property  SV  * palette;
 
    method Bool   begin_paint();
    method Bool   begin_paint_info();
@@ -99,7 +100,6 @@ object Prima::Application( Prima::Widget)
    method int    get_hint_pause();
    method Handle get_image( int x, int y, int xLen, int yLen);
    method Bool   get_modal_stop();
-   method SV *   get_palette();
    method Handle get_parent();
    method Bool   get_selectable();
    method Handle get_shape();
@@ -131,7 +131,6 @@ object Prima::Application( Prima::Widget)
    method void   set_owner_show_hint( Bool ownerShowHint);
    method void   set_owner_palette( Bool ownerShowHint);
    method Bool   set_pos( int x, int y);
-   method void   set_palette( SV * palette);
    method void   set_selectable( Bool selectable);
    method void   set_shape( Handle mask);
    method void   set_sync_paint( Bool syncPaint);

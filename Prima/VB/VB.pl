@@ -545,7 +545,7 @@ sub on_paint
    my ( $self, $canvas) = @_;
    $canvas-> backColor( $self-> backColor);
    $canvas-> color( cl::Blue);
-   $canvas-> fillPattern(0,0,0,0,4,0,0,0);
+   $canvas-> fillPattern([0,0,0,0,4,0,0,0]);
    my @sz = $canvas-> size;
    $canvas-> bar(0,0,@sz);
    $canvas-> fillPattern( fp::Solid);

@@ -99,7 +99,7 @@ sub draw_items
       $self-> get_color_index( ci::HiliteText),
       $self-> get_color_index( ci::Hilite)
    );
-   my @clipRect = $canvas-> get_clip_rect;
+   my @clipRect = $canvas-> clipRect;
    my $i;
    my $drawVeilFoc = -1;
    my $atY    = ( $self-> {itemHeight} - $canvas-> font-> height) / 2;

@@ -56,6 +56,7 @@ object Prima::Widget( Prima::Drawable)
    property  Color backColor;
    property  Color color;
    property  char* hint;
+   property  SV  * palette;
    property  Bool  selected;
    property  char* text;
 
@@ -216,7 +217,6 @@ object Prima::Widget( Prima::Drawable)
    method   void     set_owner_hint( Bool ownerHint);
    method   void     set_owner_show_hint( Bool ownerShowHint);
    method   void     set_owner_palette( Bool ownerPalette);
-   method   void     set_palette( SV * palette);
    method   void     set_pointer_hot_spot( int x, int y);
    method   void     set_pointer_icon( Handle icon);
    method   void     set_pointer_pos( int x, int y);

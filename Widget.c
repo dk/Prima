@@ -722,7 +722,7 @@ void Widget_handle_event( Handle self, PEvent event)
            if ( evOK) {
               while ( self) {
                  PPopup p = ( PPopup) CWidget( self)-> get_popup( self);
-                 if ( p && p-> self-> get_auto(( Handle) p)) {
+                 if ( p && p-> self-> get_autoPopup(( Handle) p)) {
                     Point px = apc_widget_screen_to_client( self,
                                apc_widget_client_to_screen( org, event-> gen. P));
                     p-> self-> popup(( Handle) p, px. x, px. y ,0,0,0,0);
@@ -1889,21 +1889,27 @@ Widget_set_owner_show_hint( Handle self, Bool ownerShowHint )
    }
 }
 
-void
-Widget_set_palette( Handle self, SV * palette)
+SV *
+Widget_palette( Handle self, Bool set, SV * palette)
 {
-   int oclrs = var-> palSize;
-   if ( var-> stage > csNormal) return;
-   if ( var-> handle == nilHandle) return; /* aware of call from Drawable::init */
+   int colors;
+   if ( !set)
+      return inherited-> palette( self, set, palette);
+
+   if ( var-> stage > csNormal) return nilSV;
+   if ( var-> handle == nilHandle) return nilSV; /* aware of call from Drawable::init */
+
+   colors = var-> palSize;
    free( var-> palette);
    var-> palette = read_palette( &var-> palSize, palette);
    opt_clear( optOwnerPalette);
-   if ( oclrs == 0 && var-> palSize == 0)
-      return; /* do not bother apc */
+   if ( colors == 0 && var-> palSize == 0)
+      return nilSV; /* do not bother apc */
    if ( opt_InPaint)
       apc_gp_set_palette( self);
    else
       apc_widget_set_palette( self);
+   return nilSV;
 }
 
 void

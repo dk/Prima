@@ -321,23 +321,11 @@ sub profile_check_in
    $p->{ font} = Prima::Drawable-> font_match( $p->{ font}, $default->{ font});
 }
 
-sub clipRect   {($#_)?shift->set_clip_rect   (@_   ):return $_[0]->get_clip_rect;   }
-sub fillPattern{($#_)?($#_>1?shift->set_fill_pattern(@_):shift->set_fill_pattern_id(@_)):return $_[0]->get_fill_pattern;}
-sub lineEnd    {($#_)?$_[0]->set_line_end    ($_[1]):return $_[0]->get_line_end;    }
-sub linePattern{($#_)?$_[0]->set_line_pattern($_[1]):return $_[0]->get_line_pattern;}
-sub lineWidth  {($#_)?$_[0]->set_line_width  ($_[1]):return $_[0]->get_line_width;  }
-sub textOutBaseline{($#_)?$_[0]->set_text_out_baseline($_[1]):return $_[0]->get_text_out_baseline;  }
-sub textOpaque {($#_)?$_[0]->set_text_opaque ($_[1]):return $_[0]->get_text_opaque; }
 sub font       {($#_)?$_[0]->set_font($#_>1?{@_[1..$#_]}:$_[1]):return Prima::Font->new($_[0], "get_font", "set_font")}
-sub palette    {($#_)?$_[0]->set_palette      ($_[1]):return $_[0]->get_palette;    }
-sub region     {($#_)?$_[0]->set_region      ($_[1]):return $_[0]->get_region;      }
-sub rop        {($#_)?$_[0]->set_rop         ($_[1]):return $_[0]->get_rop;         }
-sub rop2       {($#_)?$_[0]->set_rop2        ($_[1]):return $_[0]->get_rop2;        }
 sub resolution {($#_)?$_[0]->raise_ro("resolution") :return $_[0]->get_resolution;  }
 sub width      {($#_)?$_[0]->raise_ro("width")      :return $_[0]->get_width;       }
 sub height     {($#_)?$_[0]->raise_ro("height")     :return $_[0]->get_height;      }
 sub size       {($#_)?$_[0]->raise_ro("size")       :return $_[0]->get_size;        }
-sub transform  {($#_)? ($_[0]->set_transform($#_>1?@_[1..$#_]:@{$_[1]})):return $_[0]->get_transform;    }
 sub pixel      {($#_>2)? shift->set_pixel(@_) : return shift->get_pixel(@_);        }
 
 sub rect3d
@@ -403,7 +391,7 @@ sub rect_focus
       my ( $cl, $cl2, $rop) = (
          $canvas-> color, $canvas-> backColor, $canvas-> rop
       );
-      my @fp = $canvas-> fillPattern;
+      my $fp = $canvas-> fillPattern;
       $canvas-> set(
          fillPattern => fp::SimpleDots,
          color       => cl::White,
@@ -422,7 +410,7 @@ sub rect_focus
       }
 
       $canvas-> set(
-         fillPattern => [@fp],
+         fillPattern => $fp,
          backColor   => $cl2,
          color       => $cl,
          rop         => $rop,
@@ -565,7 +553,6 @@ sub stdDev       {($#_)?$_[0]->set_stats  ($_[1], is::StdDev ):return $_[0]->get
 sub type         {($#_)?$_[0]->set_type         ($_[1]):return $_[0]->get_type;         }
 sub width        {($#_)?$_[0]->set_width        ($_[1]):return $_[0]->get_width;        }
 sub size         {($#_)?$_[0]->set_size   ($_[1],$_[2]):return $_[0]->get_size;         }
-sub palette      {($#_)?$_[0]->set_palette      ($_[1]):return $_[0]->get_palette;      }
 sub preserveType {($#_)?$_[0]->set_preserve_type($_[1]):return $_[0]->get_preserve_type;}
 sub hScaling     {($#_)?$_[0]->set_h_scaling    ($_[1]):return $_[0]->get_h_scaling    ;}
 sub vScaling     {($#_)?$_[0]->set_v_scaling    ($_[1]):return $_[0]->get_v_scaling    ;}

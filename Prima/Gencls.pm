@@ -1667,7 +1667,7 @@ LABEL
       # generating call
       my $lpaus = length( $paramAuxSet);
       if ( $lpaus || $property) {
-         print HEADER "if ( $ifpropset) goto CALL_POINT;\n      " if $property && $lpaus;
+         print HEADER "if ( !( $ifpropset)) goto CALL_POINT;\n      " if $property && $lpaus;
          print HEADER $paramAuxSet;
          print HEADER "CALL_POINT : " if $property && $lpaus;
       }

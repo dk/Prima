@@ -854,7 +854,7 @@ sub TermView_Paint {
 
     my $clr = $term->color;
 
-    my @clipRect = $term->get_clip_rect;
+    my @clipRect = $term->clipRect;
     my @textClip = $self->prect2trect( @clipRect);
     #print "Clipping ", ($term->size)[0], "x", ($term->size)[1]," by @clipRect, @textClip, $self->{ textCols} x $self->{ textRows}, cH: ",$self->{ charHeight};
 
@@ -926,7 +926,7 @@ sub on_paint {
     return if $self != $drawDst;
 
     #$self->color( cl::Green);
-    #$self->bar( $self->get_clip_rect);
+    #$self->bar( $self->clipRect);
 
     $self->rect3d( 0, 0, $self->right - 1, $self->top - 1, $self->{ borderWidth},
                    cl::Dark3DColor, cl::Light3DColor);

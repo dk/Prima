@@ -45,38 +45,16 @@ Drawable_init( Handle self, HV * profile)
    apc_gp_init( self);
    var-> w = var-> h = 0;
    my-> set_color        ( self, pget_i ( color));
-   my-> set_backColor   ( self, pget_i ( backColor));
-   {
-      SV * sv = pget_sv( fillPattern);
-      if ( SvROK( sv)) {
-         int i;
-         FillPattern fp;
-         AV * av = ( AV *) SvRV( sv);
-         if ( av_len( av) == 7) {
-            for ( i = 0; i < 8; i++) {
-               SV ** holder = av_fetch( av, i, 0);
-               if ( !holder) {
-                  warn("RTC0058: Array panic on 'fillPattern'");
-                  break;
-               }
-               fp[ i] = SvIV( *holder);
-            }
-            my-> set_fill_pattern( self, fp);
-         } else {
-            warn("RTC0056: Illegal fillPattern passed to Drawable::init");
-            my-> set_fill_pattern_id( self, fpSolid);
-         }
-      } else
-         my-> set_fill_pattern_id( self, SvIV( sv));
-   }
-   my-> set_line_end     ( self, pget_i ( lineEnd));
-   my-> set_line_pattern ( self, pget_sv( linePattern));
-   my-> set_line_width   ( self, pget_i ( lineWidth));
+   my-> set_backColor    ( self, pget_i ( backColor));
+   my-> set_fillPattern  ( self, pget_sv( fillPattern));
+   my-> set_lineEnd      ( self, pget_i ( lineEnd));
+   my-> set_linePattern  ( self, pget_sv( linePattern));
+   my-> set_lineWidth    ( self, pget_i ( lineWidth));
    my-> set_region       ( self, pget_H ( region));
    my-> set_rop          ( self, pget_i ( rop));
    my-> set_rop2         ( self, pget_i ( rop2));
-   my-> set_text_opaque  ( self, pget_B ( textOpaque));
-   my-> set_text_out_baseline( self, pget_B ( textOutBaseline));
+   my-> set_textOpaque   ( self, pget_B ( textOpaque));
+   my-> set_textOutBaseline( self, pget_B ( textOutBaseline));
    if ( pexist( transform))
    {
       AV * av = ( AV *) SvRV( pget_sv( transform));
@@ -85,7 +63,7 @@ Drawable_init( Handle self, HV * profile)
       if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
       holder = av_fetch( av, 1, 0);
       if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
-      my-> set_transform( self, tr.x, tr.y);
+      my-> set_transform( self, tr);
    }
    SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::init");
    my-> set_font( self, Font_buffer);
@@ -155,97 +133,12 @@ void Drawable_set( Handle self, HV * profile)
       if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
       holder = av_fetch( av, 1, 0);
       if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
-      my-> set_transform( self, tr.x, tr.y);
+      my-> set_transform( self, tr);
       pdelete( transform);
-   }
-   if ( pexist( fillPattern))
-   {
-      SV * sv = pget_sv( fillPattern);
-      if ( SvROK( sv))
-      {
-         int i;
-         FillPattern fp;
-         AV * av = ( AV *) SvRV( sv);
-         if ( av_len( av) == 7) {
-            for ( i = 0; i < 8; i++) {
-               SV ** holder = av_fetch( av, i, 0);
-               if ( !holder) {
-                  warn("RTC0058: Array panic on 'fillPattern'");
-                  break;
-               }
-               fp[ i] = SvIV( *holder);
-            }
-            my-> set_fill_pattern( self, fp);
-         } else
-            warn("RTC0057: Illegal fillPattern passed to Drawable::set");
-      } else
-         my-> set_fill_pattern_id( self, SvIV( sv));
-      pdelete( fillPattern);
    }
    inherited set( self, profile);
 }
 
-Bool
-Drawable_set_line_pattern( Handle self, SV * pattern)
-{
-   STRLEN len;
-   char *pat = ( char *) SvPV( pattern, len);
-   if ( var->stage > csNormal) return false;
-   if ( len > 255) len = 255;
-   return apc_gp_set_line_pattern( self, pat, len);
-}
-
-void
-Drawable_set_fill_pattern( Handle self, FillPattern pattern)
-{
-   apc_gp_set_fill_pattern( self, pattern);
-}
-
-void
-Drawable_set_fill_pattern_id( Handle self, int patternId )
-{
-   if (( patternId < 0) || ( patternId > fpMaxId)) patternId = fpSolid;
-   my-> set_fill_pattern( self, fillPatterns[ patternId]);
-}
-
-void
-Drawable_set_font( Handle self, Font font)
-{
-   apc_font_pick( self, &font, &var-> font);
-   apc_gp_set_font( self, &var-> font);
-}
-
-void
-Drawable_set_palette( Handle self, SV * palette)
-{
-   int ops = var-> palSize;
-   if ( var-> stage > csNormal) return;
-   free( var-> palette);
-   var-> palette = read_palette( &var-> palSize, palette);
-   if ( ops == 0 && var-> palSize == 0) return; // do not bother apc
-   apc_gp_set_palette( self);
-}
-
-
-void
-Drawable_set_region( Handle self, Handle mask)
-{
-   if ( mask && !kind_of( mask, CImage)) {
-      warn("RTC005A: Illegal object reference passed to Drawable.set_region");
-      return;
-   }
-
-   if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
-      Handle i = CImage( mask)-> dup( mask);
-      ++SvREFCNT( SvRV( PImage( i)-> mate));
-      CImage( i)-> set_conversion( i, ictNone);
-      CImage( i)-> set_type( i, imBW);
-      apc_gp_set_region( self, i);
-      --SvREFCNT( SvRV( PImage( i)-> mate));
-      Object_destroy( i);
-   } else
-      apc_gp_set_region( self, mask);
-}
 
 Font *
 Drawable_font_match( char * dummy, Font * source, Font * dest, Bool pick)
@@ -324,13 +217,21 @@ Drawable_get_bpp( Handle self)
 }
 
 SV *
-Drawable_get_line_pattern( Handle self)
+Drawable_linePattern( Handle self, Bool set, SV * pattern)
 {
-   char ret[ 256];
-   int len;
    if ( var->stage > csNormal) return nilSV;
-   len = apc_gp_get_line_pattern( self, ret);
-   return newSVpvn( ret, len);
+
+   if ( set) {
+      STRLEN len;
+      char *pat = ( char *) SvPV( pattern, len);
+      if ( len > 255) len = 255;
+      apc_gp_set_line_pattern( self, pat, len);
+   } else {
+      char ret[ 256];
+      int len = apc_gp_get_line_pattern( self, ret);
+      return newSVpvn( ret, len);
+   }
+   return nilSV;
 }
 
 Color
@@ -341,21 +242,6 @@ Drawable_get_nearest_color( Handle self, Color color)
    color = apc_gp_get_nearest_color( self, color);
    gpLEAVE;
    return color;
-}
-
-Handle
-Drawable_get_region( Handle self)
-{
-   if ( var-> stage > csNormal) return nilHandle;
-   if ( apc_gp_get_region( self, nilHandle)) {
-      HV * profile = newHV();
-      Handle i = Object_create( "Prima::Image", profile);
-      sv_free(( SV *) profile);
-      apc_gp_get_region( self, i);
-      --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
-      return i;
-   } else
-      return nilHandle;
 }
 
 Point
@@ -425,18 +311,6 @@ Drawable_get_font_abc( Handle self, int first, int last)
 }
 
 
-FillPattern *
-Drawable_get_fill_pattern( Handle self)
-{
-   return apc_gp_get_fill_pattern( self);
-}
-
-Font
-Drawable_get_font( Handle self)
-{
-   return var-> font;
-}
-
 SV *
 Drawable_get_handle( Handle self)
 {
@@ -451,18 +325,6 @@ Drawable_get_height( Handle self)
 {
   return var-> h;
 }
-
-SV *
-Drawable_get_palette( Handle self)
-{
-   AV * av = newAV();
-   int i;
-   int colors = var-> palSize;
-   Byte * pal = ( Byte*) var-> palette;
-   for ( i = 0; i < colors * 3; i++) av_push( av, newSViv( pal[ i]));
-   return newRV_noinc(( SV *) av);
-}
-
 
 Point
 Drawable_get_size ( Handle self)
@@ -909,3 +771,179 @@ Drawable_color( Handle self, Bool set, Color color)
    apc_gp_set_color( self, color);
    return color;
 }
+
+Rect
+Drawable_clipRect( Handle self, Bool set, Rect clipRect)
+{
+   if ( !set)
+      return apc_gp_get_clip_rect( self);
+   apc_gp_set_clip_rect( self, clipRect);
+   return clipRect;
+}
+
+int
+Drawable_lineEnd( Handle self, Bool set, int lineEnd)
+{
+   if (!set) return apc_gp_get_line_end( self);
+   apc_gp_set_line_end( self, lineEnd);
+   return lineEnd;
+}
+
+int
+Drawable_lineWidth( Handle self, Bool set, int lineWidth)
+{
+   if (!set) return apc_gp_get_line_width( self);
+   apc_gp_set_line_width( self, lineWidth);
+   return lineWidth;
+}
+
+SV *
+Drawable_palette( Handle self, Bool set, SV * palette)
+{
+   int colors;
+   if ( var-> stage > csNormal) return nilSV;
+   colors = var-> palSize;
+   if ( set) {
+      free( var-> palette);
+      var-> palette = read_palette( &var-> palSize, palette);
+      if ( colors == 0 && var-> palSize == 0) return nilSV; // do not bother apc
+      apc_gp_set_palette( self);
+   } else {
+      AV * av = newAV();
+      int i;
+      Byte * pal = ( Byte*) var-> palette;
+      for ( i = 0; i < colors * 3; i++) av_push( av, newSViv( pal[ i]));
+      return newRV_noinc(( SV *) av);
+   }
+   return nilSV;
+}
+
+
+Handle
+Drawable_region( Handle self, Bool set, Handle mask)
+{
+   if ( var-> stage > csNormal) return nilHandle;
+
+   if ( set) {
+      if ( mask && !kind_of( mask, CImage)) {
+         warn("RTC005A: Illegal object reference passed to Drawable::region");
+         return nilHandle;
+      }
+
+      if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
+         Handle i = CImage( mask)-> dup( mask);
+         ++SvREFCNT( SvRV( PImage( i)-> mate));
+         CImage( i)-> set_conversion( i, ictNone);
+         CImage( i)-> set_type( i, imBW);
+         apc_gp_set_region( self, i);
+         --SvREFCNT( SvRV( PImage( i)-> mate));
+         Object_destroy( i);
+      } else
+         apc_gp_set_region( self, mask);
+
+   } else if ( apc_gp_get_region( self, nilHandle)) {
+      HV * profile = newHV();
+      Handle i = Object_create( "Prima::Image", profile);
+      sv_free(( SV *) profile);
+      apc_gp_get_region( self, i);
+      --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
+      return i;
+   }
+
+   return nilHandle;
+}
+
+int
+Drawable_rop( Handle self, Bool set, int rop)
+{
+   if (!set) return apc_gp_get_rop( self);
+   apc_gp_set_rop( self, rop);
+   return rop;
+}
+
+int
+Drawable_rop2( Handle self, Bool set, int rop2)
+{
+   if (!set) return apc_gp_get_rop2( self);
+   apc_gp_set_rop2( self, rop2);
+   return rop2;
+}
+
+Bool
+Drawable_textOpaque( Handle self, Bool set, Bool opaque)
+{
+   if (!set) return apc_gp_get_text_opaque( self);
+   apc_gp_set_text_opaque( self, opaque);
+   return opaque;
+}
+
+Bool
+Drawable_textOutBaseline( Handle self, Bool set, Bool textOutBaseline)
+{
+   if (!set) return apc_gp_get_text_out_baseline( self);
+   apc_gp_set_text_out_baseline( self, textOutBaseline);
+   return textOutBaseline;
+}
+
+Point
+Drawable_transform( Handle self, Bool set, Point transform)
+{
+   if (!set) return apc_gp_get_transform( self);
+   apc_gp_set_transform( self, transform. x, transform. y);
+   return transform;
+}
+
+SV *
+Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
+{
+   int i;
+   if ( !set) {
+      AV * av;
+      FillPattern * fp = apc_gp_get_fill_pattern( self);
+      if ( !fp) return nilSV;
+      av = newAV();
+      for ( i = 0; i < 8; i++) av_push( av, newSViv(( int) fp[ i]));
+      return newRV_noinc(( SV *) av);
+   } else {
+      if ( SvROK( svpattern) && ( SvTYPE( SvRV( svpattern)) == SVt_PVAV)) {
+          FillPattern fp;
+          AV * av = ( AV *) SvRV( svpattern);
+          if ( av_len( av) != 7) {
+             warn("RTC0056: Illegal fillPattern passed to Drawable::fillPattern");
+             return nilSV;
+          }
+          for ( i = 0; i < 8; i++) {
+            SV ** holder = av_fetch( av, i, 0);
+            if ( !holder) {
+               warn("RTC0057: Array panic on Drawable::fillPattern");
+               return nilSV;
+            }
+            fp[ i] = SvIV( *holder);
+         }
+         apc_gp_set_fill_pattern( self, fp);
+      } else {
+         int id = SvIV( svpattern);
+         if (( id < 0) || ( id > fpMaxId)) {
+            warn("RTC0058: fillPattern index out of range passed to Drawable::fillPattern");
+            return nilSV;
+         }
+         apc_gp_set_fill_pattern( self, fillPatterns[ id]);
+      }
+   }
+   return nilSV;
+}
+
+Font
+Drawable_get_font( Handle self)
+{
+   return var-> font;
+}
+
+void
+Drawable_set_font( Handle self, Font font)
+{
+   apc_font_pick( self, &font, &var-> font);
+   apc_gp_set_font( self, &var-> font);
+}
+
+

@@ -33,9 +33,20 @@ object Prima::Drawable ( Prima::Component)
    PRGBColor   palette;		       # logical palette
    int         palSize;                # logical palette size
 
-
-   property    Color backColor;
-   property    Color color;
+   property    Color         backColor;
+   property    Color         color;
+   property    Rect          clipRect;
+   property    SV * 	     fillPattern;
+   property    int           lineEnd;
+   property    SV *          linePattern;
+   property    int           lineWidth;
+   property    SV *          palette;
+   property    Handle        region;
+   property    int           rop;
+   property    int           rop2;
+   property    Bool          textOpaque;
+   property    Bool          textOutBaseline;
+   property    Point         transform;
 
    # globals
    method void   init( HV * profile);
@@ -49,47 +60,21 @@ object Prima::Drawable ( Prima::Component)
    c_only Bool	 font_add( Font * source, Font * dest);
    import SV *   profile_default();
 
-   # properties-to-be
    method void   set( HV * profile);
-   method Bool   set_clip_rect( Rect clipRect)      => apc_gp_set_clip_rect;
-   method void   set_fill_pattern ( FillPattern pattern);
-   method void   set_fill_pattern_id ( int patternId);
    method void   set_font( Font font);
-   method Bool   set_line_end( int lend)           => apc_gp_set_line_end;
-   method Bool   set_line_pattern( SV * pattern);
-   method Bool   set_line_width( int lwidth)       => apc_gp_set_line_width;
-   method void   set_palette( SV * palette);
-   method void   set_region( Handle mask);
-   method Bool   set_rop  ( int rop)               => apc_gp_set_rop;
-   method Bool   set_rop2 ( int rop)               => apc_gp_set_rop2;
-   method Bool   set_transform ( int x, int y)     => apc_gp_set_transform;
-   method Bool   set_text_opaque( Bool opaque)     => apc_gp_set_text_opaque;
-   method Bool   set_text_out_baseline( Bool bas)  => apc_gp_set_text_out_baseline;
 
    method int           get_bpp();
-   method Rect          get_clip_rect()                   => apc_gp_get_clip_rect;
-   method FillPattern * get_fill_pattern();
    method Font          get_font();
    method SV *          get_font_abc( int first = -1, int last = -1);
    method SV *          get_handle();
    method int           get_height();
-   method int           get_line_end()                    => apc_gp_get_line_end;
-   method SV *          get_line_pattern();
-   method int           get_line_width()                  => apc_gp_get_line_width;
    method Color         get_nearest_color( Color color);
    method int           get_paint_state();
-   method SV *          get_palette();
    method SV *          get_physical_palette();
-   method Handle        get_region();
    method Point         get_resolution();
-   method int           get_rop()                         => apc_gp_get_rop;
-   method int           get_rop2()                        => apc_gp_get_rop2;
    method Point         get_size();
    method int           get_text_width( char * text, int len = -1, Bool addOverhang = 0);
    method SV *          get_text_box( char * text, int len = -1);
-   method Point         get_transform()                   => apc_gp_get_transform;
-   method Bool          get_text_opaque()                 => apc_gp_get_text_opaque;
-   method Bool          get_text_out_baseline()           => apc_gp_get_text_out_baseline;
    method int           get_width();
 
    # operators

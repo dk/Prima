@@ -53,7 +53,7 @@ use vars qw(@ISA);
 sub create_menu
 {
    my $img = Prima::Image-> create;
-   $img-> load( 'h:/var/backup/os2/os2/bitmap/xfree86.gif');
+   $img-> load( 'h:/var/backup/os2/os2/bitmap/wicker2.gif');
    return [
       [ "~File" => [
           [ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!";}],   # anonymous sub
