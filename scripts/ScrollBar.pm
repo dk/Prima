@@ -633,7 +633,6 @@ sub ScrollTimer_Tick
 sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
-   $self-> clear_event;
    my ( $v, $x, $d, $s, $ps) = ($self-> vertical, $self-> value, 0, $self-> step, $self-> pageStep);
    $d = $s  if ( $key == kb::Right && !$v) || ( $key == kb::Down && $v);
    $d = -$s if ( $key == kb::Left  && !$v) || ( $key == kb::Up   && $v);
@@ -641,7 +640,7 @@ sub on_keydown
    $d = -$ps if $key == kb::PgUp && !($mod & kb::Ctrl);
    $d = $self-> max - $x if ( $key == kb::PgDn && $mod & kb::Ctrl) || $key == kb::End;
    $d = -$x if ( $key == kb::PgUp && $mod & kb::Ctrl) || $key == kb::Home;
-   $self-> value( $x + $d) if $d;
+   $self-> clear_event, $self-> value( $x + $d) if $d;
 }
 
 sub on_mousedown
