@@ -305,7 +305,7 @@ sub load_link
    my $doBookmark;
 
    unless ( defined $t) { # page / section / item
-      my ( $page, $section, $item, $lead_slash) = ( '', undef, 1, '');
+      my ( $page, $section, $item, $lead_slash) = ( '', '', 1, '');
 
       if ( $s =~ /^file:\/\/(.*)$/) {
          $page = $1;
