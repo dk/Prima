@@ -16,13 +16,17 @@ make ( or nmake for Win32 and OS/2) three times:
     make test
     make install
 
+If perl Makefile.PL fails, compilation commands along with errors 
+can be found in makefile.log. 
+
+If some of the required libraries or include files can not
+be found, INCPATH+=/some/include and LIBPATH+=/some/lib semantics
+should be used to tell Makefile.PL about these.
+
 To install into a private library, for example your home
 directory:
 
     perl Makefile.PL PREFIX=$HOME/lib/perl
-    make
-    make test
-    make install
 
 If make fails with message
 
