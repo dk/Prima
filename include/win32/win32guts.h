@@ -42,6 +42,12 @@ extern "C" {
 #define SEVERE_DEBUG
 typedef HANDLE WINHANDLE;
 
+#ifdef __CYGWIN__
+typedef int SOCKETHANDLE;
+#else
+typedef HANDLE SOCKETHANDLE;
+#endif
+
 #define IS_NT      (BOOL)( guts. version < 0x80000000)
 #define IS_WIN32S  (BOOL)(!(IS_NT) && (LOBYTE(LOWORD(guts. version))<4))
 #define IS_WIN95   (BOOL)(!(IS_NT) && !(IS_WIN32S))
@@ -238,8 +244,8 @@ typedef struct _TimerData
 
 typedef struct _FileData
 {
-   HANDLE object;
-   int    type;
+   SOCKETHANDLE object;
+   int          type;
 } FileData;
 
 typedef struct _PrinterData

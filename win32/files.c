@@ -29,22 +29,18 @@
 
 #ifdef __CYGWIN__
 
-/* XXX not implemented, because of the horrible mix between win32api and cygwin guts */
+#define SOCKET int
+#define _get_osfhandle(a) a
 
-#include "win32\win32guts.h"
-#include "apricot.h"
-Bool apc_file_attach( Handle self) { return false; }
-Bool apc_file_detach( Handle self) { return false; }
-Bool apc_file_change_mask( Handle self) { return false; }
-void socket_rehash( void) {}
+#include <pthread.h>
 
 #else
 
-
 #include <winsock.h>
-
 void __inline my_fd_zero( fd_set* f)           { FD_ZERO( f); }
 void __inline my_fd_set( HANDLE fd, fd_set* f) { FD_SET((unsigned int) fd, f); }
+
+#endif
 
 #include "win32\win32guts.h"
 #ifndef _APRICOT_H_
@@ -52,6 +48,8 @@ void __inline my_fd_set( HANDLE fd, fd_set* f) { FD_SET((unsigned int) fd, f); }
 #endif
 #include "Component.h"
 #include "File.h"
+
+
 #define var (( PFile) self)->
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
@@ -60,6 +58,7 @@ void __inline my_fd_set( HANDLE fd, fd_set* f) { FD_SET((unsigned int) fd, f); }
 extern "C" {
 #endif
 
+#ifndef __CYGWIN__
 
 #undef  select
 #undef  fd_set
@@ -67,6 +66,8 @@ extern "C" {
 #define FD_ZERO my_fd_zero
 #undef  FD_SET
 #define FD_SET my_fd_set
+
+#endif   
 
 static Bool            socketThreadStarted = false;
 static Bool            socketSetChanged    = false;
@@ -78,6 +79,9 @@ static fd_set socketSet2[3];
 static int    socketCommands[3] = { feRead, feWrite, feException};
 
 void
+#ifdef __CYGWIN__
+*   
+#endif   
 socket_select( void *dummy)
 {
    int count;
@@ -97,29 +101,66 @@ socket_select( void *dummy)
       }
 
       // calling select()
+#ifndef __CYGWIN__      
       count = socketSet1[0]. fd_count + socketSet1[1]. fd_count + socketSet1[2]. fd_count;
+#else
+      count = 0;
+      {
+	 int i,j;
+	 for ( i = 0; i < FD_SETSIZE; i++)
+	    for ( j = 0; j < 3; i++)
+	       if ( FD_ISSET( i, socketSet1+j)) {
+		  count++;
+		  goto END;
+	       }
+END:;
+      }
+#endif      
       if ( count > 0) {
-         int i, j, result = select( 0, &socketSet1[0], &socketSet1[1], &socketSet1[2], &socketTimeout);
+         int i, j, result = select( FD_SETSIZE-1, &socketSet1[0], &socketSet1[1], &socketSet1[2], &socketTimeout);
          socketSetChanged = true;
          if ( result == 0) continue;
          if ( result < 0) {
-            if ( WSAGetLastError() == WSAENOTSOCK) {
+	    int err;
+#ifndef __CYGWIN__	    
+            if (( err = WSAGetLastError()) == WSAENOTSOCK) 
+#else
+	    if (( err = errno) == EBADF) 
+#endif	    
+	    {
                // possibly some socket was closed
                guts. socketPostSync = 1;
                PostThreadMessage( guts. mainThreadId, WM_SOCKET_REHASH, 0, 0);
                while( guts. socketPostSync) Sleep(1);
-            } else
+            } else {
                // some error
-               PostThreadMessage( guts. mainThreadId, WM_CROAK, 0,
-                  ( LPARAM) err_msg( WSAGetLastError(), socketErrBuf));
+	       char * msg;
+#ifndef __CYGWIN__	    
+	       msg = err_msg( err, socketErrBuf);
+#else
+	       strncpy( msg = socketErrBuf, strerror(err), 255);
+ 	       socketErrBuf[255] = 0;
+#endif
+               PostThreadMessage( guts. mainThreadId, WM_CROAK, 0, (LPARAM) msg);
+	    }
             continue;
          }
          // posting select() results
          for ( j = 0; j < 3; j++)
+#ifndef __CYGWIN__	    
             for ( i = 0; i < socketSet1[j]. fd_count; i++) {
+#else
+            for ( i = 0; i < FD_SETSIZE; i++) {
+	       if ( !FD_ISSET( i, socketSet1 + j)) continue;
+#endif	       
                guts. socketPostSync = 1;
-               PostThreadMessage( guts. mainThreadId, WM_SOCKET,
-                   socketCommands[j], ( LPARAM) socketSet1[j]. fd_array[i]);
+               PostThreadMessage( guts. mainThreadId, WM_SOCKET, socketCommands[j],
+#ifndef __CYGWIN__	    
+                   ( LPARAM) socketSet1[j]. fd_array[i]
+#else
+                   ( LPARAM) i
+#endif
+	       );
                while( guts. socketPostSync) Sleep(1);
             }
       } else
@@ -129,6 +170,9 @@ socket_select( void *dummy)
 
    // if somehow failed, making restart possible
    socketThreadStarted = false;
+#ifdef __CYGWIN__
+   return NULL;
+#endif   
 }
 
 
@@ -165,7 +209,11 @@ reset_sockets( void)
          apiErr;
          croak("Failed to create socket mutex object");
       }
+#ifndef __CYGWIN__
       guts. socketThread = ( HANDLE) _beginthread( socket_select, 40960, NULL);
+#else
+      pthread_create(( pthread_t*) &guts. socketThread, 0, socket_select, NULL);
+#endif      
       socketThreadStarted = true;
    } else
       ReleaseMutex( guts. socketMutex);
@@ -190,6 +238,12 @@ apc_file_attach( Handle self)
 
    if ( guts. socket_version == 0) {
       int  _data, _sz = sizeof( int);
+      (void)_data;
+      (void)_sz;
+#ifdef __CYGWIN__
+      _sz = htons(80);
+      guts. socket_version = 2;
+#else      
 #ifdef PERL_OBJECT     // init perl socket library, if any
       PL_piSock-> Htons( 80);
 #else
@@ -199,22 +253,30 @@ apc_file_attach( Handle self)
          guts. socket_version = -1; // no sockets available
       else
          guts. socket_version = ( _data == SO_SYNCHRONOUS_NONALERT) ? 1 : 2;
+#endif
    }
 
    if ( SOCKETS_NONE)
       return false;
 
    sys s. file. object = SOCKETS_AS_HANDLES ?
-      (( HANDLE) _get_osfhandle( var fd)) :
-      (( HANDLE) var fd);
+      (( SOCKETHANDLE) _get_osfhandle( var fd)) :
+      (( SOCKETHANDLE) var fd);
 
    {
       int  _data, _sz = sizeof( int);
-      int result = SOCKETS_AS_HANDLES ?
+      int result =
+#ifndef __CYGWIN__	 
+          SOCKETS_AS_HANDLES ?
           WSAAsyncSelect((SOCKET) sys s. file. object, nilHandle, 0, 0) :
+#endif	  
           getsockopt(( SOCKET) sys s. file. object, SOL_SOCKET, SO_TYPE, (char*)&_data, &_sz);
       if ( result != 0)
+#ifndef __CYGWIN__	 
          fhtype = ( WSAGetLastError() == WSAENOTSOCK) ? FHT_OTHER : FHT_SOCKET;
+#else
+         fhtype = ( errno == EBADF) ? FHT_OTHER : FHT_SOCKET;
+#endif	  
       else
          fhtype = FHT_SOCKET;
    }
@@ -265,5 +327,3 @@ apc_file_change_mask( Handle self)
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __CYGWIN__ */

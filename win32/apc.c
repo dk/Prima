@@ -379,7 +379,7 @@ process_msg( MSG * msg)
    case WM_SOCKET:
       {
          int i;
-         WINHANDLE socket = ( WINHANDLE) msg-> lParam;
+         SOCKETHANDLE socket = ( SOCKETHANDLE) msg-> lParam;
          for ( i = 0; i < guts. sockets. count; i++) {
             Handle self = guts. sockets. items[ i];
             if (( sys s. file. object == socket) &&
