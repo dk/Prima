@@ -74,11 +74,32 @@ font_query_name( XFontStruct * s, PFontInfo f)
       if ( c) {
          f-> flags. name = true;
          snprintf( f-> font. name, 256, "%s %s", c, f-> font. family);
+         if ( !f-> flags. generic) {
+            strncat( f-> font. name, " ", 256);
+            strncat( f-> font. name, f-> xname + f-> info_offset, 256);
+         }
          strlwr( f-> lc_name, f-> font. name);
          XFree( c);
       } 
    } 
 }   
+
+static Bool 
+copy_hash_lists( PList list, int keyLen, void * key, void * dummy) 
+{
+   if ( list-> items[0]) {
+      int i;
+      for ( i = 2; i < list-> count; i++) {
+         PFontInfo f = &guts. font_info[(int)(list-> items[i])];
+         strncat( f-> font. name, " ", 256);
+         strncat( f-> font. name, f-> xname + f-> info_offset, 256);
+         strlwr( f-> lc_name, f-> font. name);
+         f-> flags. generic = false;
+      } 
+   }
+   plist_destroy( list);
+   return false;
+}
 
 Bool
 prima_init_font_subsystem( void)
@@ -141,6 +162,7 @@ prima_init_font_subsystem( void)
 	    /* advance through FAMILY_NAME */
 	    ++c;  b = t;
 	    while ( *c && *c != '-') { *t++ = *c++; }
+            info[j]. name_offset = c - names[i];
 	    *t = '\0';
 	    strcpy( info[j]. font. family, b);
 	    info[j]. flags. name = true;
@@ -296,6 +318,7 @@ prima_init_font_subsystem( void)
 	 if ( *c == '-') {
 	    /* advance through CHARSET_REGISTRY; just skip it;  XXX */
 	    ++c;
+            info[j]. info_offset = c - names[i];
             if (
                  ( strncasecmp( c, "sunolglyph",  strlen("sunolglyph")) == 0) ||
                  ( strncasecmp( c, "sunolcursor", strlen("sunolcursor")) == 0) ||
@@ -371,6 +394,7 @@ prima_init_font_subsystem( void)
          continue;
       }
       info[j]. xname = names[ i];
+      info[j]. flags. generic = true;  
       info[j]. flags. sloppy = true; /*
       if ( !info[j]. flags. width || !info[j]. flags. vector)
          info[j]. flags. disabled = true; */
@@ -387,7 +411,42 @@ prima_init_font_subsystem( void)
    info[j]. xname = "fixed";
    info[j]. flags. sloppy = true;  
    info[j]. flags. vector = true;  
+   info[j]. flags. generic = true;  
    detail_font_info( info + j, nil, false, false);
+
+   /* create extra font entry for a 'default' font name 
+      and add possibly encoding string to the multi-encoding fonts */
+   if ( guts. font_encoding_hack_type != FEHT_NONE) {
+      PHash hash = hash_create();
+      for ( i = 0; i < guts. n_fonts; i++) {
+         int len;
+         PList list;
+         if ( info[i]. info_offset == 0 || 
+              info[i]. name_offset == 0 || 
+             !info[i]. flags. name) 
+            continue;
+         len = info[ i]. name_offset;
+
+         if ( !( list = hash_fetch( hash, info[ i]. xname, len))) {
+            hash_store( hash, info[i].xname, len, list = plist_create( 8, 8));
+            list_add( list, ( Handle) 0); /* 'has duplicates' flag */
+            list_add( list, ( Handle) i);
+            if ( guts. font_encoding_hack_type == FEHT_MIXED_NAMES) 
+               list_add( list, ( Handle) i);
+         } else { 
+            char * enc = info[i].xname + info[i]. info_offset;
+            PFontInfo f = &info[(int)(list->items[1])];
+            if ( strcmp( f-> xname + f-> info_offset, enc) != 0) {
+               list-> items[0] = ( Handle) 1;
+               list_add( list, ( Handle) i);
+            } else if ( guts. font_encoding_hack_type == FEHT_MIXED_NAMES) {
+               list_add( list, ( Handle) i);
+            }
+         }
+      }
+      hash_first_that( hash, copy_hash_lists, nil, nil, nil);
+      hash_destroy( hash, false);
+   }
 
    if ( !apc_fetch_resource( "Prima", "", "Font", "font", 
                              nilHandle, frFont, &guts. default_font)) {
@@ -452,7 +511,7 @@ prima_cleanup_font_subsystem( void)
       XFreeFontNames( guts. font_names);
    if ( guts. font_info) {
       for ( i = 0; i < guts. n_fonts; i++)
-	 if ( guts. font_info[i]. vecname)
+	 if ( guts. font_info[i]. vecname && guts. font_info[i]. flags. generic)
 	    free( guts. font_info[i]. vecname);
       free( guts. font_info);
    }

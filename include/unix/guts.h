@@ -160,6 +160,7 @@ typedef struct _FontFlags {
    unsigned disabled         : 1;
    unsigned funky            : 1;
    unsigned intNames         : 1;
+   unsigned generic          : 1;
 } FontFlags;
 
 typedef struct _FontInfo {
@@ -169,6 +170,8 @@ typedef struct _FontInfo {
    char         lc_name[256];
    char        *vecname;
    char        *xname;
+   short int    name_offset;
+   short int    info_offset;
 } FontInfo, *PFontInfo;
 
 typedef struct _RotatedFont {
@@ -365,6 +368,7 @@ typedef struct _UnixGuts
    Font                         default_widget_font;
    Font                         default_msg_font;
    Font                         default_caption_font;
+   int                          font_encoding_hack_type; /* see FEHT constants */
    /* Resource management */
    XrmDatabase                  db;
    XrmQuark                     qBackground;
@@ -497,6 +501,10 @@ extern UnixGuts guts;
 #define FXA_FOUNDRY guts. fxa_foundry
 #define FXA_FAMILY_NAME XA_FAMILY_NAME
 #define FXA_AVERAGE_WIDTH guts. fxa_average_width
+
+#define FEHT_NONE                      0
+#define FEHT_MIXED_NAMES               1
+#define FEHT_MIXED_AND_UNMIXED_NAMES   2
 
 #define XCHECKPOINT						\
    STMT_START {							\
