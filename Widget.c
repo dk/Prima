@@ -1328,7 +1328,6 @@ repaint_all( Handle owner, Handle self, void * dummy)
 void
 Widget_unlock( Handle self)
 {
-   enter_method;
    if ( --var lockCount <= 0) {
       var lockCount = 0;
       repaint_all( var owner, self, nil);
