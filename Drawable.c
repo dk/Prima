@@ -555,7 +555,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
    } else                                                 \
       ret[ t-> count++] = c;                              \
    start += l;                                            \
-   if ( t-> options & twReturnFirstLineLength)           \
+   if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) \
       return ret;                                         \
 }
 
@@ -774,7 +774,7 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    c = Drawable_do_text_wrap( self, &t, abc);
    free( abc);
 
-   if ( t. options & twReturnFirstLineLength) {
+   if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) {
       int rlen = 0;
       if ( c) {
          if ( t. count > 0) rlen = (int) c[ 1];
