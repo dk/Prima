@@ -630,7 +630,7 @@ arc_completion( double * angleStart, double * angleEnd, int * needFigure)
 }
 
 Bool
-apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
 {
    int compl, needf;
    DEFXX;
@@ -679,7 +679,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 #define GRAD 57.29577951
 
 Bool
-apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_chord( Handle self, int x, int y,  double radX,  double radY, double angleStart, double angleEnd)
 {
    int sy, compl, needf;
    DEFXX;
@@ -772,7 +772,7 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 }
 
 Bool
-apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
+apc_gp_ellipse( Handle self, int x, int y,  double radX,  double radY)
 {
    DEFXX;
    SHIFT( x, y);
@@ -781,7 +781,7 @@ apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
 }
 
 Bool
-apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_fill_chord( Handle self, int x, int y,  double radX,  double radY, double angleStart, double angleEnd)
 {
    DEFXX;
    int compl, needf;
@@ -799,7 +799,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
 }
 
 Bool
-apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY)
+apc_gp_fill_ellipse( Handle self, int x, int y,  double radX,  double radY)
 {
    DEFXX;
    SHIFT( x, y);
@@ -847,7 +847,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 }
 
 Bool
-apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_fill_sector( Handle self, int x, int y,  double radX,  double radY, double angleStart, double angleEnd)
 {
    DEFXX;
    int compl, needf;
@@ -917,7 +917,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 }
 
 Bool
-apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_sector( Handle self, int x, int y,  double radX,  double radY, double angleStart, double angleEnd)
 {
    int sy, compl, needf;
    DEFXX;
@@ -1298,7 +1298,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
       XFreePixmap( DISP, XX-> fp_pixmap);
    patcpy( XX-> fill_pattern, pattern);
    XX-> fp_pixmap = None;
-   dflt = (patcmp( pattern, fillPatterns[fpSolid]) == 0); 
+   dflt = (patcmp( pattern, fillPatterns[fpSolid]) == 0);
    if ( !dflt) {
       XX-> fp_pixmap =
          XCreateBitmapFromData( DISP, XX-> gdrawable, pattern, 8, 8);
