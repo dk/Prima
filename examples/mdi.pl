@@ -104,14 +104,13 @@ $w = Prima::MDI-> create(
    titleHeight => 12,
 );
 
-$w = $w-> client;
 
 my $i = Prima::Image-> create;
 $i->load('Hand.gif');
 
-$w-> insert( ImageViewer =>
+$w-> client-> insert( ImageViewer =>
   origin => [0,0],
-  size   => [ $w-> size],
+  size   => [ $w-> client-> size],
   hScroll=> 1,
   vScroll=> 1,
   growMode => gm::Client,
