@@ -2198,7 +2198,7 @@ __END__
 
 =head1 NAME
 
-Visual Builder for the Prima toolkit
+VB - Visual Builder for the Prima toolkit
 
 =head1 DESCRIPTION
 

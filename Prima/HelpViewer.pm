@@ -858,6 +858,7 @@ detailed description:
 =over
 
 =item File
+
 =over
 
 =item Open
@@ -895,6 +896,7 @@ Closes all help viewer windows.
 =back 
 
 =item View
+
 =over
 
 =item Increase font
@@ -928,6 +930,7 @@ The following commands provide a simple vi-style text search functionality -
 character keys ?,/,n,N bound to the commands below:
 
 =over
+
 =item Forward
 
 Presents an input line where a text can be entered; the text search is 
@@ -954,6 +957,7 @@ Presents a setup dialog, where the user can select appropriate fonts and colors.
 =back
 
 =item Go
+
 =over
 
 =item Back
@@ -980,6 +984,7 @@ Moves to the next topic within a manpage.
 =back
 
 =item Help
+
 =over
 
 =item About

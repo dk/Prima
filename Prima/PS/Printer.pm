@@ -26,6 +26,8 @@
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
 #  $Id$
 #
+=pod
+
 =head1 NAME
 
 Prima::PS::Printer - PostScript interface to Prima::Printer

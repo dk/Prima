@@ -362,7 +362,8 @@ path name, or as a relative module name. In a way,
 
 and
  
-   Prima::VBLoad( Prima::find_image( 'Module', 'form.fm')) 
+   Prima::VBLoad( 
+   Prima::find_image( 'Module' 'form.fm')
 
 are identical. If the procedure finds that FILENAME is a relative
 module name, it calls C<Prima::find_image> automatically. To
