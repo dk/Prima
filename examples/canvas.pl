@@ -32,7 +32,7 @@ sub profile_check_in
       $p-> { paneWidth}  = $p-> { paneSize}-> [ 0];
       $p-> { paneHeight} = $p-> { paneSize}-> [ 1];
    }
-}   
+}
 
 sub init
 {
@@ -61,12 +61,12 @@ sub on_paint
       my @uses = $obj->uses;
       delete @props{@uses};
       my $f = $obj-> font;
-      $canvas-> set( 
+      $canvas-> set(
          (map { $_ => $obj-> $_()   } @uses),
-	 (map { $_ => $defaults{$_} } keys %props)
+         (map { $_ => $defaults{$_} } keys %props)
       );
       %props = map { $_ => 1 } @uses;
-      
+
       $canvas-> translate( @r[0,1]);
       $canvas-> clipRect( @r);
       $r[2] -= $r[0];
@@ -117,7 +117,7 @@ sub delete_object
 {
    my ( $self, $obj) = ( shift, shift);
    @{$self->{objects}} = grep { $_ != $obj } @{$self->{objects}};
-   $self-> {selection} = undef 
+   $self-> {selection} = undef
       if $self->{selection} && $self->{selection} == $obj;
    my @r = $self-> object2screen( $obj-> rect);
    $self-> invalidate_rect( @r) if $obj-> visible;
@@ -134,7 +134,7 @@ sub insert_object
    $obj;
 }
 
-sub attach_object 
+sub attach_object
 {
    push @{$_[0]->{objects}}, $_[1];
    $_[1]-> {owner} = $_[0];
@@ -226,9 +226,9 @@ sub position2object
       if ( $r[0] <= $nx && $r[1] <= $ny && $r[2] >= $nx && $r[3] >= $ny) {
          my @s = $self-> object2screen(@r[0,1]);
          if ( $skip_hittest || $obj-> on_hittest( $x - $s[0], $y - $s[1])) {
-	    $self-> pop_event;
-	    return ($obj, $x - $s[0], $y - $s[1]);
-	 }
+            $self-> pop_event;
+            return ($obj, $x - $s[0], $y - $s[1]);
+         }
       }
    }
    $self-> pop_event;
@@ -250,15 +250,15 @@ sub propagate_event
    my ( $self, $flow, $event, @params) = @_;
    $self-> push_event;
    my $stop = $flow & nt::SMASK;
-   for ( 
+   for (
       ( $flow & nt::FluxReverse) ?
         $self-> objects :
         reverse $self-> objects
    ) {
       $_-> $event( @params);
-      last if  
+      last if
         ( $stop == nt::Single) ||
-	( $stop == nt::Event && !$self-> eventFlag);
+        ( $stop == nt::Event && !$self-> eventFlag);
    }
    $self-> pop_event;
 }
@@ -266,7 +266,7 @@ sub propagate_event
 sub reset_zoom
 {
    my ( $self ) = @_;
-   $self-> limits( 
+   $self-> limits(
       $self-> {paneWidth} * $self-> {zoom},
       $self-> {paneHeight} * $self-> {zoom}
    );
@@ -352,7 +352,7 @@ sub zorder
    my $o = $self-> {objects};
    if ( $command ne 'first' and $command ne 'last') {
       for ( $idx = 0; $idx < @$o; $idx++) {
-	 last if $obj == $$o[$idx];
+         last if $obj == $$o[$idx];
       }
       return if $idx == @$o;
    }
@@ -377,8 +377,8 @@ sub zorder
       @$o = @o;
       for ( $i = 0; $i < @$o; $i++) {
          next unless $$[$i] != $command;
-	 splice @$o, $i, 0, $obj;
-	 last;
+         splice @$o, $i, 0, $obj;
+         last;
       }
    }
    $obj-> on_zorderchanged();
@@ -420,7 +420,7 @@ sub on_mousedown
          $self-> {anchor} = [ $nx, $ny ];
          $obj-> bring_to_front;
          $self-> focused_object( $found = $self-> {transaction} = $obj);
-	 $self-> capture(1, $self);
+         $self-> capture(1, $self);
       }
    }
    $self-> focused_object(undef) if $self-> {selection} && !$found;
@@ -448,7 +448,7 @@ sub on_mousemove
       my @s = $self-> {transaction}-> size;
       for ( 0..1) {
          $o[$_] = 0 if $o[$_] < 0;
-	 $o[$_] = $p[$_] - $s[$_] - 1 if $o[$_] >= $p[$_] - $s[$_];
+         $o[$_] = $p[$_] - $s[$_] - 1 if $o[$_] >= $p[$_] - $s[$_];
       }
       $self-> {transaction}-> origin( @o);
    }
@@ -462,15 +462,15 @@ sub on_keydown
       my $new = $self-> focused_object;
       if ( $key == kb::Tab) {
          $new = $self-> zorder( $new, $new ? 'prev' : 'last');
-	 $new = $self-> zorder( undef, 'last') unless $new;
+         $new = $self-> zorder( undef, 'last') unless $new;
       } else {
          $new = $self-> zorder( $new, $new ? 'next' : 'first');
-	 $new = $self-> zorder( undef, 'first') unless $new;
+         $new = $self-> zorder( undef, 'first') unless $new;
       }
       if ( $new) {
          $self-> focused_object( $new);
-	 $self-> clear_event;
-	 return;
+         $self-> clear_event;
+         return;
       }
    }
    $self-> SUPER::on_keydown( $code, $key, $mod, $repeat);
@@ -491,8 +491,8 @@ use vars qw(%defaults @uses %list_properties);
 
 {
    @uses = qw( backColor color fillPattern font lineEnd linePattern
-               lineWidth region rop rop2 splinePrecision textOpaque 
-	       textOutBaseline lineJoin fillWinding);
+               lineWidth region rop rop2 splinePrecision textOpaque
+               textOutBaseline lineJoin fillWinding);
    my $pd = Prima::Drawable-> profile_default();
    %defaults = map { $_ => $pd->{$_} } @uses;
    %list_properties = map { $_ => 1 } qw(origin size rect);
@@ -526,7 +526,7 @@ sub destroy
    $self-> owner( undef);
 }
 
-sub profile_default 
+sub profile_default
 {
    %defaults,
    origin  => [ 0, 0],
@@ -688,18 +688,18 @@ sub owner
    $_[1]-> attach_object( $_[0]) if $_[1];
 }
 
-sub left   
-{ 
-   $#_ ? 
+sub left
+{
+   $#_ ?
       $_[0]-> origin( $_[1], $_[0]-> {origin}-> [1]) :
       $_[0]-> {origin}->[0]
 }
 
-sub bottom 
-{ 
-   $#_ ? 
+sub bottom
+{
+   $#_ ?
        $_[0]-> origin( $_[0]-> {origin}-> [0], $_[1]) :
-       $_[0]-> {origin}->[1] 
+       $_[0]-> {origin}->[1]
 }
 
 sub right
@@ -900,7 +900,7 @@ use vars qw(@ISA);
 
 sub uses { return qw( rop rop2 backColor color lineWidth linePattern lineEnd); }
 
-package Prima::Canvas::Filled; 
+package Prima::Canvas::Filled;
 use vars qw(@ISA);
 @ISA = qw(Prima::CanvasObject);
 
@@ -910,7 +910,7 @@ package Prima::Canvas::FilledOutlined;
 use vars qw(@ISA);
 @ISA = qw(Prima::CanvasObject);
 
-sub profile_default 
+sub profile_default
 {
    $_[0]-> SUPER::profile_default,
    fill    => 1,
@@ -919,7 +919,7 @@ sub profile_default
    outlineBackColor => cl::Black,
 }
 
-sub uses { 
+sub uses {
    my $self = $_[0];
    my @ret = qw(rop rop2 color backColor);
    push @ret, qw(lineWidth linePattern lineEnd) if $self->{outline};
@@ -959,7 +959,7 @@ sub outlineBackColor
    $_[0]-> repaint;
 }
 
-package Prima::Canvas::Rectangle; 
+package Prima::Canvas::Rectangle;
 use vars qw(@ISA);
 @ISA = qw(Prima::Canvas::FilledOutlined);
 
@@ -1003,26 +1003,26 @@ sub on_paint
 
 package Prima::Canvas::arc_properties;
 
-sub start 
+sub start
 {
    return $_[0]->{start} unless $#_;
    $_[0]->{start} = $_[1];
    $_[0]-> repaint;
-}   
+}
 
-sub end 
+sub end
 {
    return $_[0]->{end} unless $#_;
    $_[0]->{end} = $_[1];
    $_[0]-> repaint;
-}   
+}
 
 
 package Prima::Canvas::Arc;
 use vars qw(@ISA);
 @ISA = qw(Prima::Canvas::Outlined Prima::Canvas::arc_properties);
 
-sub profile_default 
+sub profile_default
 {
    $_[0]-> SUPER::profile_default,
    start => 0,
@@ -1041,7 +1041,7 @@ package Prima::Canvas::FilledArc;
 use vars qw(@ISA);
 @ISA = qw(Prima::Canvas::FilledOutlined Prima::Canvas::arc_properties);
 
-sub profile_default 
+sub profile_default
 {
    $_[0]-> SUPER::profile_default,
    start => 0,
@@ -1076,7 +1076,7 @@ package Prima::Canvas::Sector;
 use vars qw(@ISA);
 @ISA = qw(Prima::Canvas::FilledArc);
 
-sub profile_default 
+sub profile_default
 {
    $_[0]-> SUPER::profile_default,
    mode  => 'sector',
@@ -1084,13 +1084,13 @@ sub profile_default
 
 package Prima::Canvas::line_properties;
 
-sub points 
+sub points
 {
    return $_[0]->{points} unless $#_;
    my $self = shift;
    my $p = ( defined($_[0]) && ref($_[0]) eq 'ARRAY') ? $_[0] : \@_;
    die "Number of points is not multiple of 2" if @$p % 2;
-   push @$p, @$p[0,1] 
+   push @$p, @$p[0,1]
       if $self-> {fix_last_point} && ( $$p[0] != $$p[-2] || $$p[1] != $$p[1]);
    $self->{points} = $p;
    $self-> update;
@@ -1160,42 +1160,42 @@ sub extents
    @r;
 }
 
-sub anchor 
+sub anchor
 {
    return @{$_[0]->{anchor}} unless $#_;
    $_[0]->{anchor} = [($#_ == 1) ? @{$_[1]} : @_[1,2]];
    $_[0]-> update;
-}   
+}
 
-sub aspect 
+sub aspect
 {
    return @{$_[0]->{aspect}} unless $#_;
    $_[0]->{aspect} = [(($#_ == 1) ? @{$_[1]} : @_[1,2])];
    $_[0]-> update;
-}   
+}
 
-sub shift 
+sub shift
 {
    return @{$_[0]->{shift}} unless $#_;
    $_[0]-> {shift} = [($#_ == 1) ? @{$_[1]} : @_[1,2]];
    $_[0]-> update;
-}   
+}
 
-sub smooth 
+sub smooth
 {
    return $_[0]->{smooth} unless $#_;
    $_[0]->{smooth} = $_[1];
    $_[0]-> repaint;
-}   
+}
 
-sub autoAdjust 
+sub autoAdjust
 {
    return $_[0]->{autoAdjust} unless $#_;
    $_[0]->{autoAdjust} = $_[1];
    $_[0]-> update;
-}   
+}
 
-sub rotate 
+sub rotate
 {
    return $_[0]->{rotate} unless $#_;
    my ( $self, $angle) = @_;
@@ -1206,7 +1206,7 @@ sub rotate
    delete $self-> {sina};
    delete $self-> {cosa};
    $self-> update;
-}   
+}
 
 package Prima::Canvas::Line;
 use vars qw(@ISA %arrowheads);
@@ -1219,7 +1219,7 @@ use vars qw(@ISA %arrowheads);
    square    => [0.5,0, 0,-0.5, -0.5,-0.5, 0, 0, -0.5, 0.5, 0,0.5, 0.5,0],
 );
 
-sub profile_default 
+sub profile_default
 {
    $_[0]-> SUPER::profile_default,
    autoAdjust => 1,
@@ -1232,7 +1232,7 @@ sub profile_default
    rotate => 0,
 }
 
-sub uses 
+sub uses
 {
    my $self = $_[0];
    my @ret = $self-> SUPER::uses;
@@ -1240,7 +1240,7 @@ sub uses
    @ret;
 }
 
-sub arrows 
+sub arrows
 {
    return @{$_[0]->{arrows}} unless $#_;
    my $self = $_[0];
@@ -1259,21 +1259,21 @@ sub arrow
    if ( defined ($arrow) && (!ref($arrow) || ref($arrow) eq 'ARRAY')) {
       unless (ref($arrow)) {
          if ( $arrow =~ /^([^\:]*)\:(\-?[\d\.]+)$/) {
-	    ( $arrow,$mul) = ($1,$2);
-	    goto ASPECT if !length $arrow && $self->{arrows}->[$idx];
-	 }
-         $arrow = exists ($arrowheads{$arrow}) ? 
-	   $arrowheads{$arrow} :
+            ( $arrow,$mul) = ($1,$2);
+            goto ASPECT if !length $arrow && $self->{arrows}->[$idx];
+         }
+         $arrow = exists ($arrowheads{$arrow}) ?
+           $arrowheads{$arrow} :
            $arrowheads{default};
       }
       if ( defined $self->{arrows}->[$idx] && $self->{arrows}->[$idx]-> isa('Prima::Canvas::Polygon')) {
          $self->{arrows}->[$idx]-> points( $arrow);
       } else {
          $self->{arrows}->[$idx] = Prima::Canvas::Polygon-> new(
-	    points => $arrow,
-	    fill   => 1,
-	    outline => 0,
-	 );
+            points => $arrow,
+            fill   => 1,
+            outline => 0,
+         );
       }
    ASPECT:
       $self->{arrows}->[$idx]-> aspect( $mul, $mul) if defined $mul;
@@ -1305,7 +1305,7 @@ sub on_paint
    my ( $self, $canvas, $width, $height) = @_;
    my @a = (0,0);
    my $lw = ($self-> {lineWidth} || 1);
-   for (@{$self->{arrows}}) { 
+   for (@{$self->{arrows}}) {
       next unless $_;
       my @r = $_-> extents;
       $r[2] -= $r[0];
@@ -1325,7 +1325,7 @@ sub on_paint
       $$p[$i+$_] += $a[$_] for 0,1;
    }
    $canvas-> lineWidth( $self-> lineWidth * $width / $size[0]);
-   $self-> {smooth} ? 
+   $self-> {smooth} ?
       $canvas-> spline( $p) :
       $canvas-> polyline( $p);
    my $flip = 0;
@@ -1339,9 +1339,9 @@ sub on_paint
          rotate    => atan2($y2 - $y1, $x2 - $x1) * 57.295779,
          backColor => $canvas-> color,
       );
-      $arrow-> on_paint( $canvas, 
-         $lw * $width * $asize[0] / $size[0], 
-	 $lw * $height * $asize[1] / $size[1]);
+      $arrow-> on_paint( $canvas,
+         $lw * $width * $asize[0] / $size[0],
+         $lw * $height * $asize[1] / $size[1]);
    }
 }
 
@@ -1362,7 +1362,7 @@ package Prima::Canvas::Polygon;
 use vars qw(@ISA);
 @ISA = qw(Prima::Canvas::FilledOutlined Prima::Canvas::line_properties);
 
-sub profile_default 
+sub profile_default
 {
    $_[0]-> SUPER::profile_default,
    anchor => [0,0],
@@ -1375,7 +1375,7 @@ sub profile_default
    autoAdjust => 1,
 }
 
-sub uses 
+sub uses
 {
    my $self = $_[0];
    my @ret = $self-> SUPER::uses;
@@ -1389,20 +1389,21 @@ sub on_paint
 {
    my ( $self, $canvas, $width, $height) = @_;
    my $p = $self-> zoom_points( $width, $height);
+   return unless @$p;
    if ( $self-> {fill}) {
       $canvas-> color( $self-> {backColor});
       $canvas-> backColor( $self-> {fillBackColor});
-      $self-> {smooth} ? 
-	 $canvas-> fill_spline( $p) :
-	 $canvas-> fillpoly( $p);
+      $self-> {smooth} ?
+         $canvas-> fill_spline( $p) :
+         $canvas-> fillpoly( $p);
    }
    if ( $self-> {outline}) {
       $canvas-> lineWidth( $self-> lineWidth * $width / $self-> width);
       $canvas-> color( $self-> {color});
       $canvas-> backColor( $self-> {outlineBackColor});
-      $self-> {smooth} ? 
-	 $canvas-> spline( $p) :
-	 $canvas-> polyline( $p);
+      $self-> {smooth} ?
+         $canvas-> spline( $p) :
+         $canvas-> polyline( $p);
    }
 }
 
@@ -1423,19 +1424,19 @@ package Prima::Canvas::Image;
 use vars qw(@ISA);
 @ISA = qw(Prima::CanvasObject);
 
-sub profile_default 
+sub profile_default
 {
    $_[0]-> SUPER::profile_default,
    image  => undef,
 }
 
-sub uses 
-{ 
+sub uses
+{
    my $i = $_[0]-> {image};
    my @ret;
    if ( $i) {
       push @ret, 'rop';
-      push @ret, qw(color backColor) if 
+      push @ret, qw(color backColor) if
          $i->isa('Prima::DeviceBitmap') && $i-> monochrome;
    }
    @ret;
@@ -1449,7 +1450,7 @@ sub on_paint
       my @save = $canvas-> get( qw(color fillPattern));
       $canvas-> set(
          color       => cl::Gray,
-	 fillPattern => fp::BkSlash,
+         fillPattern => fp::BkSlash,
       );
       $canvas-> bar( 0,0,$width-1,$height-1);
       $canvas-> set( @save);
@@ -1458,18 +1459,18 @@ sub on_paint
    }
 }
 
-sub image 
+sub image
 {
    return $_[0]->{image} unless $#_;
    $_[0]->{image} = $_[1];
    $_[0]-> repaint;
-}   
+}
 
 package Prima::Canvas::Text;
 use vars qw(@ISA);
 @ISA = qw(Prima::CanvasObject);
 
-sub profile_default 
+sub profile_default
 {
    $_[0]-> SUPER::profile_default,
    text       => '',
@@ -1489,36 +1490,36 @@ sub uses
 sub on_paint
 {
    my ( $self, $canvas, $width, $height) = @_;
-   $canvas-> draw_text( $self->{text}, 0, 0, 
+   $canvas-> draw_text( $self->{text}, 0, 0,
       $width-1, $height-1, $self->{flags}, $self->{tab});
 }
 
-sub text 
+sub text
 {
    return $_[0]->{text} unless $#_;
    $_[0]->{text} = $_[1];
    $_[0]-> repaint;
-}   
+}
 
-sub flags 
+sub flags
 {
    return $_[0]->{flags} unless $#_;
    $_[0]->{flags} = $_[1];
    $_[0]-> repaint;
-}   
+}
 
-sub tab 
+sub tab
 {
    return $_[0]->{tab} unless $#_;
    $_[0]->{tab} = $_[1];
    $_[0]-> repaint;
-}   
+}
 
 package Prima::Canvas::Widget;
 use vars qw(@ISA);
 @ISA = qw(Prima::CanvasObject);
 
-sub profile_default 
+sub profile_default
 {
    $_[0]-> SUPER::profile_default,
    widget     => undef,
@@ -1555,7 +1556,7 @@ sub destroy
    $self-> SUPER::destroy;
 }
 
-sub scalable 
+sub scalable
 {
    return $_[0]->{scalable} unless $#_;
    $_[0]->{scalable} = $_[1];
@@ -1563,7 +1564,7 @@ sub scalable
 
 sub instance { $_[1]->{__PRIMA__CANVAS__OBJECT__}}
 
-sub widget 
+sub widget
 {
    return $_[0]->{widget} unless $#_;
    my ( $self, $widget) = @_;
@@ -1585,7 +1586,7 @@ sub visible
 {
    return $_[0]-> SUPER::visible unless $#_;
    $_[0]-> SUPER::visible( $_[1]);
-   $_[0]->{widget}->visible( $_[1]) 
+   $_[0]->{widget}->visible( $_[1])
       if $_[0]->{widget} && $_[0]->{owner};
 }
 
@@ -1641,80 +1642,80 @@ my $w = Prima::MainWindow-> create(
   text => 'Canvas demo',
   menuItems => [
      ['~Object' => [
-        (map { [ $_  => "~$_" => \&insert] } 
-	   qw(Rectangle Ellipse Arc Chord Sector Image Bitmap Line Polygon Text Button InputLine)),
-	[],
-	[ '~Delete' => 'Del' , kb::Delete , \&delete]
+        (map { [ $_  => "~$_" => \&insert] }
+           qw(Rectangle Ellipse Arc Chord Sector Image Bitmap Line Polygon Text Button InputLine)),
+        [],
+        [ '~Delete' => 'Del' , kb::Delete , \&delete]
      ]],
      ['~Edit' => [
         ['color' => '~Foreground color' => \&set_color],
         ['backColor' => '~Background color' => \&set_color],
-	[],
-	['~Line width' => [ map { [ "lw$_", $_, \&set_line_width ] } 0..7, 10, 15 ]],
-	['Line ~pattern' => [ map { [ "lp:linePattern=$_", $_, \&set_constant ] } 
-	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %lp:: ]],
-	['Line ~end' => [ map { [ "le:lineEnd=$_", $_, \&set_constant ] } 
-	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %le:: ]],
-	['Line ~join' => [ map { [ "lj:lineJoin=$_", $_, \&set_constant ] } 
-	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %lj:: ]],
-	['Fill ~pattern' => [ map { [ "fp:fillPattern=$_", $_, \&set_constant ] } 
-	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fp:: ]],
-	['~Rop' => [ map { [ "rop:rop=$_", $_, \&set_constant ] } 
-	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
-	['Rop~2' => [ map { [ "rop:rop2=$_", $_, \&set_constant ] } 
-	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
-	['Fill r~ule' => [ map { [ "fillrule:fillWinding=$_", $_, \&set_constant ] } 
-	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fillrule:: ]],
-	[],
-	['fill' => 'Toggle ~fill' => \&toggle],
-	['outline' => 'Toggle ~outline' => \&toggle],
-	[],
-	['Arc,Chord,Sector' => [
-	   ['arc-' => 'Rotate ~right' => \&arc_rotate],
-	   ['arc+' => 'Rotate ~left' => \&arc_rotate],
-	   ['arc++' => 'E~xtend' => \&arc_rotate],
-	   ['arc--' => '~Shrink' => \&arc_rotate],
-	]],
-	['Line,Polygon' => [
-	   ['smooth1' => '~Spline' => \&smooth],
-	   ['smooth0' => '~Straigth' => \&smooth],
-	   ['rotate-' => 'Rotate ~right' => \&line_rotate],
-	   ['rotate+' => 'Rotate ~left' => \&line_rotate],
-	   [],
-	   ['Set ~arrows' => [
-	      map {["arrow=$_", ucfirst, \&set_arrowhead]} 'none', keys %Prima::Canvas::Line::arrowheads,
-	   ]],
-	   ['Set arrowhead ~size' => [
-	      map {["arrow=$_", $_, \&set_arrowhead]} 1,2,3,4,5
-	   ]],
-	]],
-	['Te~xt' => [
+        [],
+        ['~Line width' => [ map { [ "lw$_", $_, \&set_line_width ] } 0..7, 10, 15 ]],
+        ['Line ~pattern' => [ map { [ "lp:linePattern=$_", $_, \&set_constant ] }
+            sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %lp:: ]],
+        ['Line ~end' => [ map { [ "le:lineEnd=$_", $_, \&set_constant ] }
+            sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %le:: ]],
+        ['Line ~join' => [ map { [ "lj:lineJoin=$_", $_, \&set_constant ] }
+            sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %lj:: ]],
+        ['Fill ~pattern' => [ map { [ "fp:fillPattern=$_", $_, \&set_constant ] }
+            sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fp:: ]],
+        ['~Rop' => [ map { [ "rop:rop=$_", $_, \&set_constant ] }
+            sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
+        ['Rop~2' => [ map { [ "rop:rop2=$_", $_, \&set_constant ] }
+            sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
+        ['Fill r~ule' => [ map { [ "fillrule:fillWinding=$_", $_, \&set_constant ] }
+            sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fillrule:: ]],
+        [],
+        ['fill' => 'Toggle ~fill' => \&toggle],
+        ['outline' => 'Toggle ~outline' => \&toggle],
+        [],
+        ['Arc,Chord,Sector' => [
+           ['arc-' => 'Rotate ~right' => \&arc_rotate],
+           ['arc+' => 'Rotate ~left' => \&arc_rotate],
+           ['arc++' => 'E~xtend' => \&arc_rotate],
+           ['arc--' => '~Shrink' => \&arc_rotate],
+        ]],
+        ['Line,Polygon' => [
+           ['smooth1' => '~Spline' => \&smooth],
+           ['smooth0' => '~Straigth' => \&smooth],
+           ['rotate-' => 'Rotate ~right' => \&line_rotate],
+           ['rotate+' => 'Rotate ~left' => \&line_rotate],
+           [],
+           ['Set ~arrows' => [
+              map {["arrow=$_", ucfirst, \&set_arrowhead]} 'none', keys %Prima::Canvas::Line::arrowheads,
+           ]],
+           ['Set arrowhead ~size' => [
+              map {["arrow=$_", $_, \&set_arrowhead]} 1,2,3,4,5
+           ]],
+        ]],
+        ['Te~xt' => [
            ['font' => '~Font' => \&set_font],
            [],
-	   ['textOpaque1' => '~Opaque' => \&set_text_opaque],
-	   ['textOpaque0' => '~Transparent' => \&set_text_opaque],
-	   [],
-           (map { [ "dt:$_:".(dt::Left|dt::Right|dt::Center), $_, \&set_text_flags ]} 
-	      qw(Left Right Center) ),
-	   [],   
+           ['textOpaque1' => '~Opaque' => \&set_text_opaque],
+           ['textOpaque0' => '~Transparent' => \&set_text_opaque],
+           [],
+           (map { [ "dt:$_:".(dt::Left|dt::Right|dt::Center), $_, \&set_text_flags ]}
+              qw(Left Right Center) ),
+           [],
            (map { [ "dt:$_:".(dt::Top|dt::Bottom|dt::VCenter), $_, \&set_text_flags ]}
-	      qw(Top Bottom VCenter)),
-	   [],
+              qw(Top Bottom VCenter)),
+           [],
            (map { [ "dt:$_", $_, \&set_text_flags ]}
-	      qw(DrawPartial NewLineBreak WordBreak ExpandTabs UseExternalLeading)) 
-	]],
+              qw(DrawPartial NewLineBreak WordBreak ExpandTabs UseExternalLeading))
+        ]],
      ]],
      ['~View' => [
         ['zoom+' =>  'Zoom in' => '+' => '+' => \&zoom],
         ['zoom-' =>  'Zoom out' => '-' => '-' => \&zoom],
         ['zoom0' =>  'Zoom 100%' => 'Ctrl+1' => '^1' => \&zoom],
-	[],
-	['Align ~horizontally' => [
-	   map { [ "alignment=$_", $_, \&align ]} qw(Left Center Right)
-	]],
-	['Align ~vertically' => [
-	   map { [ "valignment=$_", $_, \&align ]} qw(Top Center Bottom)
-	]],
+        [],
+        ['Align ~horizontally' => [
+           map { [ "alignment=$_", $_, \&align ]} qw(Left Center Right)
+        ]],
+        ['Align ~vertically' => [
+           map { [ "valignment=$_", $_, \&align ]} qw(Top Center Bottom)
+        ]],
      ]],
   ],
 );
@@ -1732,19 +1733,19 @@ my $c = $w-> insert( 'Prima::CanvasEdit' =>
    valignment => ta::Middle,
 );
 
-my $widget_popup = 
+my $widget_popup =
 [
-   [ '~Move' => sub { 
+   [ '~Move' => sub {
       my ( $self, $obj, $owner);
       return unless $obj = Prima::Canvas::Widget-> instance( $self = $_[0]);
       return unless $owner = $obj->owner;
-      my @pp = $owner-> object2screen( 
-         $obj-> left + $obj-> width / 2, 
+      my @pp = $owner-> object2screen(
+         $obj-> left + $obj-> width / 2,
          $obj-> bottom + $obj-> height / 2);
       $owner-> pointerPos( @pp);
       $owner-> mouse_down( mb::Left, 0, @pp, 1);
    }],
-   [ '~Delete' => sub { 
+   [ '~Delete' => sub {
       return unless $_ = Prima::Canvas::Widget-> instance( $_[0]);
       $_-> destroy;
    }],
@@ -1799,7 +1800,7 @@ sub set_color
    my $obj;
    return unless $obj = $self-> Canvas-> focused_object;
    $colordialog = Prima::ColorDialog-> create unless $colordialog;
-   $colordialog-> value( $obj-> $property);
+   $colordialog-> value( $obj-> $property());
    $obj-> $property( $colordialog-> value) if $colordialog-> execute != mb::Cancel;
 }
 
@@ -1867,7 +1868,7 @@ sub arc_rotate
    my ( $self, $arc) = @_;
    my $obj;
    return unless $obj = $self-> Canvas-> focused_object;
-   return unless $obj-> isa('Prima::Canvas::Arc') || $obj-> isa('Prima::Canvas::FilledArc'); 
+   return unless $obj-> isa('Prima::Canvas::Arc') || $obj-> isa('Prima::Canvas::FilledArc');
    $arc =~ s/^arc//;
    if ( $arc eq '+') {
       $obj-> start( $obj-> start + 22.5);
@@ -1943,9 +1944,9 @@ sub set_text_flags
    $flags = $obj-> flags;
    $f[1] = eval "dt::$f[1]";
    if ( 2 == @f) {
-      $flags = (( $flags & $f[1]) ? 
-	 $flags & ~$f[1] : 
-	 $flags | $f[1]
+      $flags = (( $flags & $f[1]) ?
+         $flags & ~$f[1] :
+         $flags | $f[1]
       );
    } elsif ( 3 == @f) {
       $flags &= ~($f[2]+0);
