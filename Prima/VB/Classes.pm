@@ -2918,6 +2918,7 @@ sub item_changed
          $self->{sync} = undef;
       }
    }
+
 }
 
 #use Data::Dumper;
@@ -2969,6 +2970,13 @@ sub set
 #print Dumper( $setData);
    $self-> {B}-> items( $setData);
    $self-> {sync} = 0;
+}
+
+sub change
+{
+   my $self = $_[0];
+   $self-> SUPER::change;
+   $VB::form-> menuItems( $self-> get) if $VB::form && $self-> {widget} == $VB::form;
 }
 
 sub get
