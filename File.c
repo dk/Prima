@@ -166,13 +166,13 @@ File_remove_notification( Handle self, long id)
 static void
 File_reset_notifications( Handle self)
 {
-   int i, mask = var-> eventMask2 & var-> userMask;
+   int i, mask = var-> eventMask2;
    PList  list;
    void * ret[ 3];
    int    cmd[ 3] = { feRead, feWrite, feException};
 
    if ( var-> eventIDs == nil) {
-      var-> eventMask = mask;
+      var-> eventMask = var-> eventMask2 & var-> userMask;
       return;
    }
 
@@ -185,6 +185,8 @@ File_reset_notifications( Handle self)
       list = var-> events + ( int) ret[i] - 1;
       if ( list-> count > 0) mask |= cmd[ i];
    }
+
+   mask &= var-> userMask;
 
    if ( var-> eventMask != mask) {
       var-> eventMask = mask;
