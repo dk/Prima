@@ -185,28 +185,33 @@ sub freopen
    }
 }
 
+sub newwindow
+{
+   my ( $self, $filename, $i) = @_;
+   my $w = Prima::Window-> create(
+      onDestroy => \&iv_destroy,
+      menuItems => $self-> menuItems,
+      onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
+      size         => [ $i-> width + 50, $i-> height + 50],
+   );
+   $winCount++;
+   $w-> insert( ImageViewer =>
+       size   => [ $w-> size],
+       %iv_prf,
+   );
+   my $x = $i-> bitmap;
+   $w-> IV-> image( $x);
+   $w-> IV-> {fileName} = $filename;
+   $w-> {omenuID} = $self-> {omenuID};
+   $w-> select;
+   status($w);
+}
+
 sub fnewopen
 {
-   my $self = $_[0]-> IV;
    my $dlg  = Prima::ImageOpenDialog-> create();
    my $i = $dlg-> load;
-   if ( $i) {
-      my $w = Prima::Window-> create(
-         onDestroy => \&iv_destroy,
-         menuItems => $_[0]-> menuItems,
-         onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
-      );
-      $winCount++;
-      $w-> insert( ImageViewer =>
-          size   => [ $w-> size],
-          %iv_prf,
-      );
-      $w-> IV-> image( $i);
-      $w-> IV-> {fileName} = $dlg-> fileName;
-      $w-> {omenuID} = $self-> owner-> {omenuID};
-      $w-> select;
-      status($w);
-   }
+   newwindow( $_[0], $dlg-> fileName, $i) if $i;
    $dlg-> destroy;
 }
 
@@ -371,7 +376,12 @@ if ( @ARGV && $ARGV[0] =~ /^-z(\d+(\.\d*)?)$/) {
    $w->IV->zoom($1);
    shift @ARGV;
 }
-fload( $w, $ARGV[0]) if @ARGV;
+fload( $w, $ARGV[0]), shift if @ARGV;
+for ( @ARGV) {
+   my $i = Prima::Image-> load($_);
+   Prima::MsgBox::message("Cannot load $_:$@"), next unless $i;
+   newwindow( $w, $_, $i);
+}
 
 run Prima;
 
