@@ -186,6 +186,9 @@ apc_window_get_border_style( Handle self)
 Point
 apc_window_get_client_pos( Handle self)
 {
+   if (0) /*MMM*/
+   fprintf( stderr, "%s: getcpos: %d, %d\n",
+            PComponent(self)->name, X(self)->origin.x, X(self)->origin.y);
    return X(self)-> origin;
 }
 
@@ -223,11 +226,61 @@ apc_window_set_caption( Handle self, const char *caption)
    return true;
 }
 
+static XWindow
+find_frame_window( XWindow w)
+{
+   XWindow r, p, *c;
+   int nc;
+
+   while ( XQueryTree( DISP, w, &r, &p, &c, &nc)) {
+      if (c)
+         XFree(c);
+      if ( p == r)
+         return w;
+      w = p;
+   }
+   return None;
+}
+
+static Bool
+get_frame_info( Handle self, PRect r)
+{
+   DEFXX;
+   XWindow p, dummy;
+   int px, py;
+   unsigned int pw, ph, pb, pd;
+
+   if (( p = find_frame_window( X_WINDOW)) == None) {
+      return false;
+   } else if ( p == X_WINDOW) {
+      r-> left = r-> bottom = r-> right = r-> top = 0;
+   } else {
+      if ( !XTranslateCoordinates( DISP, X_WINDOW, p, 0, 0, &r->left, &r->top, &dummy))
+         croak( "error in XTranslateCoordinates()");
+      if ( !XGetGeometry( DISP, p, &dummy, &px, &py, &pw, &ph, &pb, &pd))
+         croak( "error in XGetGeometry()");
+      r->right = pw - XX->size.x - r-> left + pb;
+      r->left += pb;
+      r->bottom = ph - XX->size.y - r-> top + pb;
+      r->top += pb;
+   }
+   return true;
+}
+
 Bool
 apc_window_set_client_pos( Handle self, int x, int y)
 {
    DEFXX;
    XSizeHints hints;
+
+   /*MMM*/
+   if (0) {
+      Rect r;
+
+      get_frame_info( self, &r);
+      fprintf( stderr, "%s: to: %d, %d; frame info: left(%d), top(%d), right(%d), bottom(%d) pixels\n",
+               PComponent(self)->name, x, y, r.left, r.top, r.right, r.bottom);
+   }
 
    bzero( &hints, sizeof( XSizeHints));
 
