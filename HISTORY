@@ -1,3 +1,5 @@
+1.16  Add Clipboard::UTF8 exchange format. Add Drawable ::lineJoin and ::fillWinding.
+
 1.15  Add message hooks. Add DirectoryOutline widget. Add tying properties.
 
 1.14  Add system-specific file dialogs. Add Edit::undo.
