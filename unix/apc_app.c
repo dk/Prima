@@ -165,6 +165,8 @@ window_subsystem_init( void)
    guts. resolution. x = 25.4 * DisplayWidth( DISP, SCREEN) / DisplayWidthMM( DISP, SCREEN);
    guts. resolution. y = 25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN);
    guts. depth = DefaultDepth( DISP, SCREEN);
+   guts. byte_order = ImageByteOrder( DISP);
+   guts. bit_order = BitmapBitOrder( DISP);
    prima_wm_init();
    prima_init_font_subsystem();
    prima_init_image_subsystem();
