@@ -259,6 +259,131 @@ apc_fetch_resource( const char *className, const char *name,
    return false;
 }
 
+Color
+apc_lookup_color( const char * colorName)
+{
+   char buf[ 256];
+   char *b;
+   int len;
+   XColor clr; 
+
+   if ( DISP && XParseColor( DISP, DefaultColormap( DISP, SCREEN), colorName, &clr))
+      return X_COLOR_TO_RGB(clr);
+
+#define xcmp( name, stlen, retval)  if (( len == stlen) && ( strcmp( name, buf) == 0)) return retval
+
+   strncpy( buf, colorName, 256);
+   len = strlen( buf);
+   for ( b = buf; *b; b++) *b = tolower(*b);
+
+   switch( buf[0]) {
+   case 'a':
+       xcmp( "aqua", 4, 0x00FFFF);
+       xcmp( "azure", 5, ARGB(240,255,255));
+       break;
+   case 'b':
+       xcmp( "black", 5, 0x000000);
+       xcmp( "blanchedalmond", 14, ARGB( 255,235,205));
+       xcmp( "blue", 4, 0x000080);
+       xcmp( "brown", 5, 0x808000);
+       xcmp( "beige", 5, ARGB(245,245,220));
+       break;
+   case 'c':
+       xcmp( "cyan", 4, 0x008080);
+       xcmp( "chocolate", 9, ARGB(210,105,30));
+       break;
+   case 'd':
+       xcmp( "darkgray", 8, 0x404040);
+       break;
+   case 'e':
+       break;
+   case 'f':
+       xcmp( "fuchsia", 7, 0xFF00FF);
+       break;
+   case 'g':
+       xcmp( "green", 5, 0x008000);
+       xcmp( "gray", 4, 0x808080);
+       xcmp( "gray80", 6, ARGB(204,204,204));
+       xcmp( "gold", 4, ARGB(255,215,0));
+       break;
+   case 'h':
+       xcmp( "hotpink", 7, ARGB(255,105,180));
+       break;
+   case 'i':
+       xcmp( "ivory", 5, ARGB(255,255,240));
+       break;
+   case 'j':
+       break;
+   case 'k':
+       xcmp( "khaki", 5, ARGB(240,230,140));
+       break;
+   case 'l':
+       xcmp( "lime", 4, 0x00FF00);
+       xcmp( "lightgray", 9, 0xC0C0C0);
+       xcmp( "lightblue", 9, 0x0000FF);
+       xcmp( "lightgreen", 10, 0x00FF00);
+       xcmp( "lightcyan", 9, 0x00FFFF);
+       xcmp( "lightmagenta", 12, 0xFF00FF);
+       xcmp( "lightred", 8, 0xFF0000);
+       xcmp( "lemon", 5, ARGB(255,250,205));
+       break;
+   case 'm':
+       xcmp( "maroon", 6, 0x800000);
+       xcmp( "magenta", 7, 0x800080);
+       break;
+   case 'n':
+       xcmp( "navy", 4, 0x000080);
+       break;
+   case 'o':
+       xcmp( "olive", 5, 0x808000);
+       xcmp( "orange", 6, ARGB(255,165,0));
+       break;
+   case 'p':
+       xcmp( "purple", 6, 0x800080);
+       xcmp( "peach", 5, ARGB(255,218,185));
+       xcmp( "peru", 4, ARGB(205,133,63));
+       xcmp( "pink", 4, ARGB(255,192,203));
+       xcmp( "plum", 4, ARGB(221,160,221));
+       break;
+   case 'q':
+       break;
+   case 'r':
+       xcmp( "red", 3, 0x800000);
+       xcmp( "royalblue", 9, ARGB(65,105,225));
+       break;
+   case 's':
+       xcmp( "silver", 6, 0xC0C0C0);
+       xcmp( "sienna", 6, ARGB(160,82,45));
+       break;
+   case 't':
+       xcmp( "teal", 4, 0x008080);
+       xcmp( "turquoise", 9, ARGB(64,224,208));
+       xcmp( "tan", 3, ARGB(210,180,140));
+       xcmp( "tomato", 6, ARGB(255,99,71));
+       break;
+   case 'u':
+       break;
+   case 'w':
+       xcmp( "white", 5, 0xFFFFFF);
+       xcmp( "wheat", 5, ARGB(245,222,179));
+       break;
+   case 'v':
+       xcmp( "violet", 6, ARGB(238,130,238));
+       break;
+   case 'x':
+       break;
+   case 'y':
+       xcmp( "yellow", 6, 0xFFFF00);
+       break;
+   case 'z':
+       break;
+   }
+
+#undef xcmp
+
+   return clInvalid;
+}
+
 /* Component-related functions */
 
 Bool
