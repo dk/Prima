@@ -332,7 +332,11 @@ typedef struct _DComplex     { double re, im; } DComplex;
 typedef struct _TrigComplex  { float  r,  ph; } TrigComplex;
 typedef struct _TrigDComplex { double r,  ph; } TrigDComplex;
 
+#ifdef __cplusplus
 #define nil       NULL
+#else
+#define nil       Null(void*)
+#endif
 #define nilHandle Null(Handle)
 #define nilSV     &sv_undef
 #define true TRUE
