@@ -306,3 +306,103 @@ sub shortcut
 }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::KeySelector - key combination widget and routines
+
+=head1 DESCRIPTION
+
+The module provides a standard widget for selecting a user-defined
+key combination. The widget class allows import, export, and modification of
+key combinations.
+
+The module provides a set of routines, useful for conversion of
+a key combination between representations.
+
+=head1 SYNOPSIS
+
+  my $ks = Prima::KeySelector-> create( );
+  $ks-> key( km::Alt | ord('X'));
+  print Prima::KeySelector::describe( $ks-> key );
+
+=head2 Properties
+
+=over
+
+=item key INTEGER
+
+Selects a key combination in integer format. The format is
+described in L<Prima::Menu/"Hot key">, and is a combination
+of C<km::XXX> key modifiers and either a C<kb::XXX> virtual
+key, or a character code value.
+
+The property allows almost, but not all possible combinations of
+key constants. Only C<km::Ctrl>, C<km::Alt>, and C<km::Shift> 
+modifiers are allowed.
+
+=back
+
+=head2 Methods
+
+All methods here can ( and must ) be called without the object
+syntax; - the firts parameter must not be neither package nor 
+widget.
+
+=over
+
+=item describe KEY
+
+Accepts KEY in integer format, and returns string
+description of the key combination in human readable
+format. Useful for supplying an accelerator text to
+a menu.
+
+    print describe( km::Shift|km::Ctrl|km::F10);
+    Ctrl+Shift+F10
+
+=item export KEY
+
+Accepts KEY in integer format, and returns string
+with a perl-evaluable expression, which after
+evaluation resolves to the original KEY value. Useful for storing
+a key into text config files, where value must be both 
+human readable and easily passed to a program.
+
+    print export( km::Shift|km::Ctrl|km::F10);
+    km::Shift|km::Ctrl|km::F10 
+
+=item shortcut KEY
+
+Converts KEY from integer format to a string,
+acceptable by C<Prima::AbstractMenu> input methods.
+
+    print shortcut( km::Ctrl|ord('X'));
+    ^X
+
+=item translate_codes KEY, [ USE_CTRL = 0 ]
+
+Converts KEY in integer format to three integers
+in the format accepted by L<Prima::Widget/KeyDown> event:
+code, key, and modifier. USE_CTRL is only relevant when
+KEY first byte ( C<KEY & 0xFF> ) is between 1 and 26, what
+means that the key is a combination of an alpha key with the control key.
+If USE_CTRL is 1, code result is unaltered, and is in range 1 - 26.
+Otherwise, code result is converted to the character code
+( 1 to ord('A'), 2 to ord('B') etc ).
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<Prima::Menu>.
+
+=cut
