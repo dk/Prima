@@ -379,7 +379,7 @@ sub profile_default
       spinClass      => 'Prima::AltSpinButton',
       editProfile    => {},
       spinProfile    => {},
-      editDelegations=> [qw(KeyDown Change MouseWheel)],
+      editDelegations=> [qw(KeyDown Change MouseWheel Enter Leave)],
       spinDelegations=> [qw(Increment)],
    }
 }
@@ -484,6 +484,18 @@ sub InputLine_Change
 {
    my ( $self, $edit) = @_;
    $self-> notify(q(Change));
+}
+
+sub InputLine_Enter
+{
+   my ( $self, $edit) = @_;
+   $self-> notify(q(Enter));
+}
+
+sub InputLine_Leave
+{
+   my ( $self, $edit) = @_;
+   $self-> notify(q(Leave));
 }
 
 sub set_bounds
