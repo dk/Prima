@@ -1008,3 +1008,23 @@ apc_prn_abort_doc( Handle self)
    sys pal = sys ps = nil;
 }
 
+Bool
+apc_image_read( const char *filename, PList imgInfo, Bool readData)
+{
+   return true;
+}
+
+void
+apc_image_clear_property( PImgProperty imgProp)
+{
+
+}
+
+PImgProperty
+apc_image_add_property( PImgInfo imageInfo, const char *propName, U16 propType, int propArraySize)
+{
+
+}
+
+
+
