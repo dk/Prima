@@ -770,7 +770,9 @@ Application_get_image( Handle self, int x, int y, int xLen, int yLen)
    return ret ? i : nilHandle;
 }
 
-
+/*
+ * Cannot return nilHandle.
+ */
 Handle
 Application_map_focus( Handle self, Handle from)
 {
@@ -799,24 +801,23 @@ Application_map_focus( Handle self, Handle from)
    return ( !topShared || ( topShared == topFrame)) ? from : topShared;
 }
 
+static Handle
+popup_win( Handle xTop)
+{
+   PWindow_vmt top = CWindow( xTop);
+   if ( !top-> get_visible( xTop))
+      top-> set_visible( xTop, 1);
+   if ( top-> get_windowState( xTop) == wsMinimized)
+      top-> set_windowState( xTop, wsNormal);
+   top-> set_selected( xTop, 1);
+   return xTop;
+}
+
 Handle
 Application_popup_modal( Handle self)
 {
    Handle ha = apc_window_get_active();
-   Handle xTop, ret = nilHandle;
-
-
-#define popupWin                                      \
-STMT_START {                                          \
-   PWindow_vmt top = CWindow( xTop);                  \
-   if ( !top-> get_visible( xTop))                    \
-      top-> set_visible( xTop, 1);                    \
-   if ( top-> get_windowState( xTop) == wsMinimized)  \
-      top-> set_windowState( xTop, wsNormal);         \
-   top-> set_selected( xTop, 1);                      \
-   ret = xTop;                                        \
-} STMT_END
-
+   Handle xTop;
 
    if ( var->  topExclModal) {
    // checking exclusive modal chain
@@ -826,8 +827,7 @@ STMT_START {                                          \
             CWindow(xTop)-> bring_to_front( xTop);
             xTop = PWindow(xTop)-> nextExclModal;
          } else {
-            popupWin;
-            break;
+            return popup_win( xTop);
          }
       }
    } else {
@@ -845,13 +845,12 @@ STMT_START {                                          \
             CWindow(xTop)-> bring_to_front( xTop);
             xTop = PWindow(xTop)-> nextSharedModal;
          } else {
-            popupWin;
-            break;
+            return popup_win( xTop);
          }
       }
    }
 
-   return ret;
+   return nilHandle;
 }
 
 long int
