@@ -172,8 +172,8 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XCHECKPOINT;
 
    if (( class_hint = XAllocClassHint()) != nil) {
-      class_hint-> res_name  = PComponent(application)-> name;
-      class_hint-> res_class = CObject( self)-> className;
+      class_hint-> res_class  = PComponent(application)-> name;
+      class_hint-> res_name = CObject( self)-> className;
       XSetClassHint( DISP, X_WINDOW, class_hint);
       XFree (class_hint);
    }
