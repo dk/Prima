@@ -102,7 +102,12 @@ Widget_geometry( Handle self, Bool set, int geometry)
 {
    if ( !set)
       return var-> geometry;
-   if ( geometry == var-> geometry) return geometry;
+   if ( geometry == var-> geometry) {
+      /* because called within set_owner() */
+      if ((var-> geometry == gtGrowMode) && (var-> growMode & gmCenter)) 
+         my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
+      return geometry;
+   }
 
    if ( geometry < gtDefault || geometry > gtMax)
       croak("Prima::Widget::geometry: invalid value passed");
@@ -117,6 +122,10 @@ Widget_geometry( Handle self, Bool set, int geometry)
    }
    var-> geometry = geometry;
    switch ( var-> geometry) {
+   case gtGrowMode:
+      if ( var-> growMode & gmCenter)
+         my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
+      break;
    case gtPlace:
       Widget_place_enter( self);
       break;

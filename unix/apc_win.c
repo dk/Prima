@@ -82,6 +82,34 @@ apc_window_task_listed( Handle self, Bool task_list)
        PropModeReplace, ( unsigned char *) data, count);
 } 
 
+static void
+set_motif_hints( XWindow window, int border_style, int border_icons)
+{
+   struct {
+     uint32_t flags, functions, decorations;
+     int32_t  input_mode;
+     uint32_t status;
+   } mwmhints;
+
+   bzero( &mwmhints, sizeof(mwmhints));
+   mwmhints.flags |= (1L << 1); /*  MWM_HINTS_DECORATIONS */
+   if ( border_style == bsSizeable) {
+      mwmhints.decorations |= (1L << 1); /* MWM_DECOR_BORDER */
+        mwmhints.decorations |= (1L << 2); /* MWM_DECOR_RESIZEH */
+   }
+   if ( border_icons & biTitleBar)
+      mwmhints.decorations |= (1L << 3); /* MWM_DECOR_TITLE */
+   if ( border_icons & biSystemMenu)
+      mwmhints.decorations |= (1L << 4); /* MWM_DECOR_MENU */
+   if ( border_icons & biMinimize)
+      mwmhints.decorations |= (1L << 5); /* MWM_DECOR_MINIMIZE */
+   if (( border_icons & biMaximize) && ( border_style == bsSizeable))
+      mwmhints.decorations |= (1L << 6); /* MWM_DECOR_MAXIMIZE */
+
+   XChangeProperty(DISP, window, XA_MOTIF_WM_HINTS, XA_MOTIF_WM_HINTS, 32,
+       PropModeReplace, (unsigned char *) &mwmhints, 5);
+}
+
 Bool
 apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		   int border_style, Bool task_list,
@@ -98,8 +126,16 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    ConfigureEventPair *cep;
 
    if ( border_style != bsSizeable) border_style = bsDialog;
+   border_icons &= biAll;
 
    if ( X_WINDOW) { /* recreate request */
+      if (
+           ( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
+           ( border_icons != XX-> borderIcons)
+         ) {
+         set_motif_hints( X_WINDOW, border_style, border_icons);
+         XX-> borderIcons = border_icons;
+      }
       XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
       apc_widget_set_size_bounds( self, PWidget(self)-> sizeMin, PWidget(self)-> sizeMax);
       if (( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0))
@@ -238,6 +274,9 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       XSetWMClientMachine(DISP, X_WINDOW, &guts. hostname);
    XSetCommand(DISP, X_WINDOW, PL_origargv, PL_origargc);
 
+   set_motif_hints( X_WINDOW, border_style, border_icons);
+   XX-> borderIcons = border_icons;
+  
    XX-> type.drawable = true;
    XX-> type.widget = true;
    XX-> type.window = true;
@@ -343,7 +382,7 @@ apc_window_get_active( void)
 int
 apc_window_get_border_icons( Handle self)
 {
-   return X(self)-> flags. sizeable ? biAll : ( biAll & ~biMaximize);
+   return X(self)-> borderIcons;
 }
 
 int

@@ -1722,9 +1722,9 @@ apc_popup( Handle self, int x, int y, Rect *anchor)
       if ( y > anchor-> top)    anchor-> top    = y;
    }
    owner = X(PComponent(self)->owner);
-   y = owner-> size. y - y + owner-> menuHeight;
-   anchor-> bottom = owner-> size. y - anchor-> bottom + owner-> menuHeight;
-   anchor-> top = owner-> size. y - anchor-> top + owner-> menuHeight;
+   y = owner-> size. y - y;
+   anchor-> bottom = owner-> size. y - anchor-> bottom;
+   anchor-> top = owner-> size. y - anchor-> top;
    dx = dy = 0;
    XTranslateCoordinates( DISP, owner->udrawable, guts. root, dx, dy, &dx, &dy, &dummy);
    x += dx;

@@ -197,7 +197,8 @@ window_subsystem_init( void)
       "INCR",
       "PIXEL",
       "FOREGROUND",
-      "BACKGROUND"
+      "BACKGROUND",
+      "_MOTIF_WM_HINTS"
    };
    char hostname_buf[256], *hostname = hostname_buf;
    
