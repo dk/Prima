@@ -32,6 +32,7 @@
 
 #include "unix/guts.h"
 #include "Image.h"
+#include "Icon.h"
 
 #define SORT(a,b)	({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
 #define REVERT(a)	({ XX-> size. y - (a) - 1; })
@@ -659,7 +660,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 }
 
 static void
-create_image_cache_1_to_1( PImage img)
+create_image_cache_1_to_1( PImage img, Bool icon)
 {
    PDrawableSysData IMG = X((Handle)img);
    unsigned char *data;
@@ -669,12 +670,22 @@ create_image_cache_1_to_1( PImage img)
    int h = img-> h, w = img-> w;
    static unsigned char bits[256];
    static Bool initialized = false;
+   int ils;
+   unsigned char *idata;
+   
+   if ( icon) {
+      ils = PIcon(img)->maskLine;
+      idata = PIcon(img)->mask;
+   } else {
+      ils = img-> lineSize;
+      idata = img-> data;
+   }
    
    data = malloc( ls * h);
    if ( !data) croak( "create_image_cache_1_to_1(): no memory");
    if ( guts.bit_order == MSBFirst) {
       for ( y = h-1; y >= 0; y--) {
-	 memcpy( ls*(h-y-1)+data, img->data+y*img->lineSize, ls);
+	 memcpy( ls*(h-y-1)+data, idata+y*ils, ls);
       }
    } else {
       if (!initialized) {
@@ -693,26 +704,37 @@ create_image_cache_1_to_1( PImage img)
 	 initialized = true;
       }
       for ( y = h-1; y >= 0; y--) {
-	 register unsigned char *s = img->data+y*img->lineSize;
+	 register unsigned char *s = idata+y*ils;
 	 register unsigned char *t = ls*(h-y-1)+data;
 	 for ( x = 0; x < (w+7)/8; x++) {
 	    *t++ = bits[*s++];
 	 }
       }
    }
-   IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
-				     1, XYBitmap, 0, data,
-				     w, h, 32, ls);
-   if (!IMG-> image_cache) {
-      free( data);
-      croak( "create_image_cache_1_to_1(): error during XCreateImage()");
+   
+   if (icon) {
+      IMG-> icon_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+				       1, XYBitmap, 0, data,
+				       w, h, 32, ls);
+      if (!IMG-> icon_cache) {
+	 free( data);
+	 croak( "create_image_cache_1_to_1(): error during icon's XCreateImage()");
+      }
+   } else {
+      IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+					1, XYBitmap, 0, data,
+					w, h, 32, ls);
+      if (!IMG-> image_cache) {
+	 free( data);
+	 croak( "create_image_cache_1_to_1(): error during XCreateImage()");
+      }
+      IMG-> bitmap_back =
+	 *allocate_color((Handle)img,
+			 ARGB(img->palette[0].r,img->palette[0].g,img->palette[0].b));
+      IMG-> bitmap_fore =
+	 *allocate_color((Handle)img,
+			 ARGB(img->palette[1].r,img->palette[1].g,img->palette[1].b));
    }
-   IMG-> bitmap_back =
-      *allocate_color((Handle)img,
-		      ARGB(img->palette[0].r,img->palette[0].g,img->palette[0].b));
-   IMG-> bitmap_fore =
-      *allocate_color((Handle)img,
-		      ARGB(img->palette[1].r,img->palette[1].g,img->palette[1].b));
 }
 
 static void
@@ -859,7 +881,7 @@ create_image_cache_24_to_16( PImage img)
 }
 
 static void
-create_image_cache( PImage img)
+create_image_cache( PImage img, Bool icon)
 {
    PDrawableSysData IMG = X((Handle)img);
 
@@ -869,7 +891,7 @@ create_image_cache( PImage img)
       }
       switch (img-> type & imBPP) {
       case 1:
-	 create_image_cache_1_to_1( img);
+	 create_image_cache_1_to_1( img, false);
 	 break;
       case 4:
 	 switch (guts.depth) {
@@ -902,6 +924,9 @@ create_image_cache( PImage img)
 	 croak( "create_image_cache(): unsupported BPP");
       }
    }
+   if ( icon && !IMG-> icon_cache) {
+      create_image_cache_1_to_1( img, true);
+   }
 }
 
 Bool
@@ -911,11 +936,45 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    PDrawableSysData IMG = X(image);
    PImage img = PImage( image);
    unsigned long f = 0, b = 0;
+   Bool icon = kind_of((Handle)img, CIcon);
+   int func, ofunc;
+   XGCValues gcv;
 
    /* 1) XXX - rop - correct support! */
    /* 2) XXX - Shared Mem Image Extension! */
-   create_image_cache( img);
+   create_image_cache( img, icon);
    SHIFT( x, y);
+   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
+      warn( "apc_gp_put_image(): XGetGCValues() error");
+   }
+   ofunc = gcv. function;
+   if ( icon) {
+      func = GXand;
+      f = XX-> fore. pixel;
+      b = XX-> back. pixel;
+      XSetForeground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+      XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+      if ( func != ofunc)
+	 XSetFunction( DISP, XX-> gc, func);
+      XCHECKPOINT;
+      XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> icon_cache,
+		 xFrom, img-> h - yFrom - yLen,
+		 x, REVERT(y) - yLen + 1, xLen, yLen);
+      XCHECKPOINT;
+      XSetForeground( DISP, XX-> gc, f);
+      XSetBackground( DISP, XX-> gc, b);
+      func = GXxor;
+      if ( func == ofunc)
+	 XSetFunction( DISP, XX-> gc, func);
+      XCHECKPOINT;
+   } else {
+      if ( rop < 0 || rop >= sizeof( rop_map)/sizeof(int))
+	 func = GXnoop;
+      else
+	 func = rop_map[ rop];
+   }
+   if ( func != ofunc)
+      XSetFunction( DISP, XX-> gc, func);
    if (( img-> type & imBPP) == 1) {
       f = XX-> fore. pixel;
       b = XX-> back. pixel;
@@ -932,6 +991,8 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       XSetBackground( DISP, XX-> gc, b);
       XCHECKPOINT;
    }
+   if ( func != ofunc)
+      XSetFunction( DISP, XX-> gc, ofunc);
    return true;
 }
 
@@ -1175,7 +1236,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 
    /* 1) XXX - rop - correct support! */
    /* 2) XXX - Shared Mem Image Extension! */
-   create_image_cache( img);
+   create_image_cache( img, false);
    SHIFT( x, y);
    
    /* fprintf( stderr, "x%d y%d xf%d yf%d xdl%d ydl%d xl%d yl%d\n", x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen); */
