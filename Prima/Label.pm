@@ -159,9 +159,8 @@ sub on_paint
 sub text
 {
    return $_[0]->SUPER::text unless $#_;
-   my ( $self, $caption) = @_;
-   my $cap = $caption;
-   $self-> SUPER::text( $caption);
+   my $self = $_[0];
+   $self-> SUPER::text( $_[1]);
    $self-> check_auto_size;
    $self-> repaint;
 }
