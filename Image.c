@@ -564,7 +564,6 @@ add_image_profile( HV *profile, PList imgInfo)
 static void
 add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *calledFrom)
 {
-    DOLBUG( "Adding property `%s' of type 0x%04x to profile\n", imgProp->name, imgProp->flags);
     if ( ( imgProp->flags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY) {
 	switch ( imgProp->flags & PROPTYPE_MASK) {
 	    case PROPTYPE_STRING:
@@ -576,14 +575,6 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
 		    );
 		break;
 	    case PROPTYPE_BIN:
-		{
-		    int ti;
-		    fprintf( stderr, "[");
-		    for ( ti = 0; ti < imgProp->val.Binary.size; ti++) {
-			fprintf( stderr, "%02x ", imgProp->val.Binary.data[ ti]);
-		    }
-		    fprintf( stderr, "]\n");
-		}
 		hv_store( profile,
 			  imgProp->name,
 			  strlen( imgProp->name),
@@ -654,14 +645,6 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
 		    sv = newSVpv( imgProp->val.pString[ j], 0);
 		    break;
 		case PROPTYPE_BIN:
-		    {
-			int ti;
-			fprintf( stderr, "from entry #%d: [", j);
-			for ( ti = 0; ti < imgProp->val.pBinary[ j].size; ti++) {
-			    fprintf( stderr, "%02x ", imgProp->val.pBinary[ j].data[ ti]);
-			}
-			fprintf( stderr, "]\n");
-		    }
 		    sv = newSVpv( imgProp->val.pBinary[ j].data, imgProp->val.pBinary[ j].size);
 		    break;
 		case PROPTYPE_DOUBLE:
