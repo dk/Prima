@@ -449,8 +449,7 @@ sub Spin_Increment
 sub InputLine_KeyDown
 {
    my ( $self, $edit, $code, $key, $mod) = @_;
-   $edit-> clear_event if $key == kb::NoKey and
-      lc( chr $code) =~ m/[\!\@\#\$\%\^\&\*\(\)_\{\}\[\]\?\\\/\|\~\`\'\"\:\;A-DF-Za-df-z]/;
+   $edit-> clear_event if $key == kb::NoKey && chr($code) !~ /^[\d+-]$/;
    if ( $key == kb::Up || $key == kb::Down || $key == kb::PgDn || $key == kb::PgUp) {
       my ($s,$pgs) = ( $self-> step, $self-> pageStep);
       my $z = ( $key == kb::Up) ? $s : (( $key == kb::Down) ? -$s :
@@ -467,9 +466,7 @@ sub InputLine_KeyDown
       return;
    }
    if ($key == kb::Enter) {
-      my $c = $edit-> text;
-      $c = eval "$c";
-      $self-> value( defined $c ? $c : 0);
+      $self-> value( $edit-> get_text);
       $edit-> clear_event;
       return;
    }
@@ -498,32 +495,6 @@ sub set_step
    $self-> {step} = $step;
 }
 
-sub get_value
-{
-   my $self = $_[0];
-   my $value = $self-> {edit}-> text;
-   if ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
-      $value = $self->{min} if $value < $self->{min};
-      $value = $self->{max} if $value > $self->{max};
-   } else {
-      $value = $self->{min};
-   }
-   return $value;
-}
-
-sub set_value
-{
-   my ( $self, $value) = @_;
-   if ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
-      $value = $self->{min} if $value < $self->{min};
-      $value = $self->{max} if $value > $self->{max};
-   } else {
-      $value = $self->{min};
-   }
-   return if $value eq $self-> {edit}-> text;
-   $self-> {edit}-> text( $value);
-}
-
 sub circulate
 {
    return $_[0]->{circulate} unless $#_;
@@ -540,7 +511,31 @@ sub pageStep
 sub min          {($#_)?$_[0]->set_bounds($_[1], $_[0]-> {'max'})      : return $_[0]->{min};}
 sub max          {($#_)?$_[0]->set_bounds($_[0]-> {'min'}, $_[1])      : return $_[0]->{max};}
 sub step         {($#_)?$_[0]->set_step         ($_[1]):return $_[0]->{step}}
-sub value        {($#_)?$_[0]->set_value        ($_[1]):return $_[0]->get_value;   }
+sub value
+{
+   if ($#_) {
+      my ( $self, $value) = @_;
+      if ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
+         $value = $self->{min} if $value < $self->{min};
+         $value = $self->{max} if $value > $self->{max};
+      } else {
+         $value = $self->{min};
+      }
+      return if $value eq $self-> {edit}-> get_text;
+      $self-> {edit}-> set_text( $value);
+   } else {
+      my $self = $_[0];
+      my $value = $self-> {edit}-> get_text;
+      if ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
+         $value = $self->{min} if $value < $self->{min};
+         $value = $self->{max} if $value > $self->{max};
+      } else {
+         $value = $self->{min};
+      }
+      return $value;
+   }
+}
+
 
 # gauge reliefs
 package gr;
@@ -873,7 +868,7 @@ sub ticks       {($#_)?shift-> set_ticks          (@_):return $_[0]->get_ticks;}
 sub snap        {($#_)?$_[0]-> set_snap        ($_[1]):return $_[0]->{snap};}
 sub step        {($#_)?$_[0]-> set_step        ($_[1]):return $_[0]->{step};}
 sub scheme      {($#_)?shift-> set_scheme         (@_):$_[0]->raise_wo("scheme");}
-sub value       {($#_)?$_[0]-> set_value       ($_[1]):return $_[0]->{value};}
+sub value       {($#_)?$_[0]-> {value} =       $_[1]  :return $_[0]->{value};}
 sub min         {($#_)?$_[0]-> set_bound($_[1],q(min)):return $_[0]->{min};}
 sub max         {($#_)?$_[0]-> set_bound($_[1],q(max)):return $_[0]->{max};}
 
@@ -1161,56 +1156,6 @@ sub set_ribbon_strip
    $_[0]-> repaint;
 }
 
-sub set_value
-{
-   my ( $self, $value) = @_;
-   my ( $min, $max) = ( $self->{min}, $self->{max});
-   my $old = $self-> {value};
-   $value = $min if $value < $min;
-   $value = $max if $value > $max;
-   if ( $self->{snap}) {
-      my ( $minDist, $thatVal, $i) = ( abs( $min - $max));
-      my $tval = $self->{tickVal};
-      for ( $i = 0; $i < scalar @{$tval}; $i++) {
-         my $j = $$tval[ $i];
-         $minDist = abs(($thatVal = $j) - $value) if abs( $j - $value) < $minDist;
-      }
-      $value = $thatVal if defined $thatVal;
-   }
-   return if $old == $value;
-   $self->{value} = $value;
-   my @size = $self-> size;
-   my $sb = $self->{shaftBreadth};
-   if ( $self-> {vertical}) {
-      $sb = $size[0] / 6 unless $sb;
-      $sb = 2 unless $sb;
-      my $bh = $self->font->height;
-      my $bw  = ( $size[0] - $sb) / 2;
-      my $v1  = $bh + 1 + abs( $self->{value} - $self->{min}) *
-         ( $size[1] - 2 * $bh - 5) / (abs($self->{max} - $self->{min})||1);
-      my $v2  = $bh + 1 + abs( $old - $self->{min}) *
-         ( $size[1] - 2 * $bh - 5) / (abs($self->{max} - $self->{min})||1);
-      ( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
-      $v1 -= DefButtonX / 2;
-      $v2 += DefButtonX / 2 + 1;
-      $self-> invalidate_rect( $bw - 4, $v1, $bw + $sb + 9, $v2);
-   } else {
-      $sb = $size[1] / 6 unless $sb;
-      $sb = 2 unless $sb;
-      my $bw = $self->font->width;
-      my $bh  = ( $size[1] - $sb) / 2;
-      my $v1  = $bw + 1 + abs( $self->{value} - $self->{min}) *
-         ( $size[0] - 2 * $bw - 5) / (abs($self->{max} - $self->{min})||1);
-      my $v2  = $bw + 1 + abs( $old - $self->{min}) *
-         ( $size[0] - 2 * $bw - 5) / (abs($self->{max} - $self->{min})||1);
-      ( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
-      $v1 -= DefButtonX / 2;
-      $v2 += DefButtonX / 2 + 1;
-      $self-> invalidate_rect( $v1, $bh - 9, $v2, $bh + $sb + 4);
-   }
-   $self-> notify(q(Change));
-}
-
 sub set_shaft_breadth
 {
    my ( $self, $sb) = @_;
@@ -1227,6 +1172,59 @@ sub set_bound
    $self->repaint;
 }
 
+sub value
+{
+   if ($#_) {
+      my ( $self, $value) = @_;
+      my ( $min, $max) = ( $self->{min}, $self->{max});
+      my $old = $self-> {value};
+      $value = $min if $value < $min;
+      $value = $max if $value > $max;
+      if ( $self->{snap}) {
+         my ( $minDist, $thatVal, $i) = ( abs( $min - $max));
+         my $tval = $self->{tickVal};
+         for ( $i = 0; $i < scalar @{$tval}; $i++) {
+            my $j = $$tval[ $i];
+            $minDist = abs(($thatVal = $j) - $value) if abs( $j - $value) < $minDist;
+         }
+         $value = $thatVal if defined $thatVal;
+      }
+      return if $old == $value;
+      $self->{value} = $value;
+      my @size = $self-> size;
+      my $sb = $self->{shaftBreadth};
+      if ( $self-> {vertical}) {
+         $sb = $size[0] / 6 unless $sb;
+         $sb = 2 unless $sb;
+         my $bh = $self->font->height;
+         my $bw  = ( $size[0] - $sb) / 2;
+         my $v1  = $bh + 1 + abs( $self->{value} - $self->{min}) *
+            ( $size[1] - 2 * $bh - 5) / (abs($self->{max} - $self->{min})||1);
+         my $v2  = $bh + 1 + abs( $old - $self->{min}) *
+            ( $size[1] - 2 * $bh - 5) / (abs($self->{max} - $self->{min})||1);
+         ( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
+         $v1 -= DefButtonX / 2;
+         $v2 += DefButtonX / 2 + 1;
+         $self-> invalidate_rect( $bw - 4, $v1, $bw + $sb + 9, $v2);
+      } else {
+         $sb = $size[1] / 6 unless $sb;
+         $sb = 2 unless $sb;
+         my $bw = $self->font->width;
+         my $bh  = ( $size[1] - $sb) / 2;
+         my $v1  = $bw + 1 + abs( $self->{value} - $self->{min}) *
+            ( $size[0] - 2 * $bw - 5) / (abs($self->{max} - $self->{min})||1);
+         my $v2  = $bw + 1 + abs( $old - $self->{min}) *
+            ( $size[0] - 2 * $bw - 5) / (abs($self->{max} - $self->{min})||1);
+         ( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
+         $v1 -= DefButtonX / 2;
+         $v2 += DefButtonX / 2 + 1;
+         $self-> invalidate_rect( $v1, $bh - 9, $v2, $bh + $sb + 4);
+      }
+      $self-> notify(q(Change));
+   } else {
+      return $_[0]->{value};
+   }
+}
 sub vertical    {($#_)?$_[0]-> set_vertical    ($_[1]):return $_[0]->{vertical};}
 sub tickAlign   {($#_)?$_[0]-> set_tick_align  ($_[1]):return $_[0]->{tickAlign};}
 sub ribbonStrip {($#_)?$_[0]-> set_ribbon_strip($_[1]):return $_[0]->{ribbonStrip};}
@@ -1401,8 +1399,8 @@ sub on_paint
      if $ttw < $rad || !$self->{circAlive};
    return if defined $self->{singlePaint};
 
-   $ttw = $canvas-> get_text_width( $self-> text);
-   $canvas-> text_out( $self-> text, ( $size[0] - $ttw) / 2, 2);
+   $ttw = $canvas-> get_text_width( $self-> get_text);
+   $canvas-> text_out( $self-> get_text, ( $size[0] - $ttw) / 2, 2);
 
    if ( $self-> {buttons}) {
       my $s = $self-> {pressState};
@@ -1424,7 +1422,7 @@ sub on_paint
    }
 
    $canvas-> rect_focus(( $size[0] - $ttw) / 2 - 1, 1, ( $size[0] + $ttw) / 2 + 1, $fh + 2)
-      if $self-> focused && ( length( $self-> text) > 0);
+      if $self-> focused && ( length( $self-> get_text) > 0);
 }
 
 sub on_keydown
@@ -1569,8 +1567,23 @@ sub on_stringify
 }
 
 
-sub set_value
+sub set_buttons
 {
+   $_[0]->{buttons} = $_[1];
+   $_[0]-> repaint;
+}
+
+sub set_std_pointer
+{
+   $_[0]->{stdPointer} = $_[1];
+   $_[0]-> repaint;
+}
+
+sub stdPointer  {($#_)?$_[0]-> set_std_pointer ($_[1]):return $_[0]->{stdPointer};}
+sub buttons     {($#_)?$_[0]-> set_buttons     ($_[1]):return $_[0]->{buttons};}
+sub value
+{
+   return $_[0]->{value} unless $#_;
    my ( $self, $value) = @_;
    my ( $min, $max) = ( $self->{min}, $self->{max});
    my $old = $self-> {value};
@@ -1601,20 +1614,5 @@ sub set_value
    $self-> {singlePaint} = undef;
    $self-> notify(q(Change));
 }
-
-sub set_buttons
-{
-   $_[0]->{buttons} = $_[1];
-   $_[0]-> repaint;
-}
-
-sub set_std_pointer
-{
-   $_[0]->{stdPointer} = $_[1];
-   $_[0]-> repaint;
-}
-
-sub stdPointer  {($#_)?$_[0]-> set_std_pointer ($_[1]):return $_[0]->{stdPointer};}
-sub buttons     {($#_)?$_[0]-> set_buttons     ($_[1]):return $_[0]->{buttons};}
 
 1;
