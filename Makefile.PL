@@ -2127,6 +2127,7 @@ EOF
     push @allinstall, $config_h => $INSTALL_LIB . qd( "/CORE/generic");
     push @allinstall, map { qd($_), $INSTALLSITEARCH} <pod/*.pod>;
     push @allinstall, map { qd($_), $INSTALL_LIB} <pod/Prima/*.pod>;
+    push @allinstall, map { qd($_), $INSTALL_LIB} <pod/Prima/*.gif>;
     push @allman,     map { qd($_), manname($_, 1, 'pod')} <pod/*.pod>;
     push @allman,     map { qd($_), manname($_, 3, 'pod')} <pod/Prima/*.pod>;
     push @alldirs, qd( "include/generic"), qd( "auto/Prima");

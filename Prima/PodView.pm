@@ -162,6 +162,7 @@ sub init
    $self-> {links} = [];
    $self-> {styles} = [];
    $self-> {pageName} = '';
+   $self-> {manpath}  = '';
    $self-> {modelRange} = [0,0,0];
    $self-> {postBlocks} = {};
    $self-> {topics}     = [];
@@ -499,15 +500,17 @@ sub message
       $self-> update_styles;
    }
    $self-> pageName('');
+   $self-> {manpath} = '';
 }
 
 sub load_file 
 {
    my ( $self, $manpage) = @_;
    my $pageName = $manpage;
+   my $path = '';
 
    unless ( -f $manpage) {
-      my $fn;
+      my ( $fn, $mpath);
       my @ext =  ( '.pod', '.pm', '.pl' );
       push @ext, ( '.bat' ) if $^O =~ /win32/i;
       push @ext, ( '.bat', '.cmd' ) if $^O =~ /os2/;
@@ -518,13 +521,17 @@ sub load_file
                  split( $Config::Config{path_sep}, $ENV{PATH})) {
          if ( -f "$_/$manpage") {
             $manpage = "$_/$manpage";
+            $path = $_;
             last;
          }
          $fn = "$_/$manpage";
          $fn =~ s/::/\//g;
+         $mpath = $fn;
+         $mpath =~ s/\/[^\/]*$//;
          for ( @ext ) {
             if ( -f "$fn$_") {
                $manpage = "$fn$_";
+               $path = $mpath;
                goto FOUND;
             }
          }
@@ -545,7 +552,7 @@ ERROR
    }
 
    $self-> pointer( cr::Wait);
-   
+   $self-> {manpath} = $path;
    $self-> open_read;
    $self-> read($_) while <F>;
    close F;
@@ -626,7 +633,8 @@ sub add_formatted
                   local @INC = 
                       map {( "$_", "$_/pod")} 
                       grep { defined && length && -d } 
-                      ( @INC, split( $Config::Config{path_sep}, $ENV{PATH}));
+                      ( length($self-> {manpath}) ? $self->{manpath} : (), 
+                        @INC, split( $Config::Config{path_sep}, $ENV{PATH}));
                   $src = Prima::find_image( $src);
                   next unless $src;
                }
