@@ -546,10 +546,6 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmZOrderChanged:
         my-> notify( self, "<s", "ZOrderChanged");
         break;
-      case cmOK:
-      case cmCancel:
-        my-> clear_event( self);
-        return;
       case cmClick:
         my-> notify( self, "<s", "Click");
         break;

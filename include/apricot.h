@@ -647,12 +647,6 @@ CM(Valid)
 CM(Quit)
 #define cmHelp           0x00000002     /* WM_HELP analog */
 CM(Help)
-#define cmOK             0x00000003     /* std OK cmd */
-CM(OK)
-#define cmOk             cmOK
-CM(Ok)
-#define cmCancel         0x00000004     /* std Cancel cmd */
-CM(Cancel)
 #define cmClose         (0x00000005|ctDiscardable)
 CM(Close)
 #define cmCreate        (0x0000000A|ctPassThrough)
