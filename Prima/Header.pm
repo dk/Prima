@@ -261,6 +261,8 @@ sub on_mousedown
       $self-> {anchor} = $self-> {vertical} ? $y : $x;
       $self-> {anchor} -= $self-> tab2offset( $id) - $self->{offset};
    }
+   $self-> {pointerPos} = [$self->pointerPos];
+   delete $self-> {pointerSet};
 }
 
 sub on_mouseup
@@ -308,7 +310,15 @@ sub on_mousemove
          $self->{tabId} : -1
       );
       return unless $self-> {dragable};
-      $self-> pointer( cr::Move) if $self->{clickable};
+      my @ppos = $self-> pointerPos;
+      if ( $self->{clickable} && !$self->{pointerSet}) {
+         my @p = @{$self-> {pointerPos}};
+         if ( abs( $p[0] - $ppos[0]) > 2 || abs( $p[1] - $ppos[1]) > 2) {
+            $self-> pointer( cr::Move);
+            delete $self-> {pointerPos};
+            $self-> {pointerSet} = 1;
+         }
+      }
       my @lx = $self-> {vertical} ? @a[1,3] : @a[0,2];
       my $d  = $self-> {vertical} ? $y : $x;
       return if $d >= $lx[0] && $d < $lx[1];
@@ -320,7 +330,6 @@ sub on_mousemove
       return if $p == $o;
       $self-> {clickAllowed} = 0;
       if ( $self-> {widths}->[$p] > $self-> {widths}->[$o]) {
-         my @ppos = $self-> pointerPos;
          $ppos[$self-> {vertical} ? 1 : 0] +=
             ( $self-> {widths}->[$p] - $self-> {widths}->[$o]) * (( $p > $o) ? 1 : -1);
          $self-> pointerPos( @ppos);
