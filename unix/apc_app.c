@@ -448,7 +448,7 @@ apc_application_create( Handle self)
 Bool
 apc_application_close( Handle self)
 {
-   Object_destroy( self);
+   guts. applicationClose = true;
    return true;
 }
 
@@ -644,6 +644,8 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
    struct timeval timeout;
    int r, i, queued_events;
    PTimerSysData timer;
+
+   if ( guts. applicationClose) return false;
 
    if (( queued_events = XEventsQueued( DISP, QueuedAlready))) {
       goto FetchAndProcess;

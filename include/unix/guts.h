@@ -487,6 +487,7 @@ typedef struct _UnixGuts
    int                          appLock;
    XGCValues                    cursor_gcv;
    TimerSysData                 sys_timers[ LAST_SYS_TIMER - FIRST_SYS_TIMER + 1];
+   Bool                         applicationClose;
 } UnixGuts;
 
 extern UnixGuts guts;

@@ -790,13 +790,12 @@ apc_show_message( const char * message)
    int i;
    struct MsgDlg md, **storage;
    Bool ret = true;
-   
 
    if ( !DISP) {
       warn( message);
       return true;
    }   
-   
+  
    appSz = apc_application_get_size( nilHandle);
    /* acquiring message font and wrapping message text */
    {
@@ -945,7 +944,8 @@ apc_show_message( const char * message)
       ( appSz.x - winSz.x) / 2, ( appSz.y - winSz.y) / 2, winSz.x, winSz.y);
    XNoOp( DISP);
    XFlush( DISP);
-   while ( md. active) prima_one_loop_round( true, false);
+   while ( md. active && !guts. applicationClose) 
+      prima_one_loop_round( true, false);
    
    XFreeGC( DISP, md. gc);
    XDestroyWindow( DISP, md. w);
