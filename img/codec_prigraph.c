@@ -346,21 +346,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       }   
       i-> palSize = 1 << g-> gbm.bpp;
       cm_reverse_palette( i-> palette, i-> palette, 256);
-      switch( i-> type)
-      {
-         case imbpp1:
-            if ( memcmp( i-> palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
-               i-> type |= imGrayScale;
-            break;
-         case imbpp4:
-            if ( memcmp( i-> palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
-               i-> type |= imGrayScale;
-            break;
-         case imbpp8:
-            if ( memcmp( i-> palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
-               i-> type |= imGrayScale;
-            break;
-      }
    } else
       i-> palSize = 0;
 

@@ -33,6 +33,7 @@
 #endif 
 
 #include "img.h"
+#include "img_conv.h"
 #include "Image.h"
 
 #ifdef __cplusplus
@@ -455,6 +456,26 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          err = true;
 	 goto EXIT_NOW;
       }  
+
+      // checking for grayscale
+      {
+         PImage i = ( PImage) fi. object;
+         if ( !( i-> type & imGrayScale)) 
+            switch ( i-> type & imBPP) {
+            case imbpp1:
+               if ( i-> palSize == 2 && memcmp( i-> palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
+                  i-> type |= imGrayScale;
+               break;
+            case imbpp4:
+               if ( i-> palSize == 16 && memcmp( i-> palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
+                  i-> type |= imGrayScale;
+               break;
+            case imbpp8:
+               if ( i-> palSize == 256 && memcmp( i-> palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
+                  i-> type |= imGrayScale;
+               break;
+            }
+      }   
 
       // updating image
       if ( !fi. noImageData)
