@@ -276,8 +276,6 @@ window_subsystem_done()
    if ( guts. socketMutex) {
       // appDead must be TRUE for this moment!
       appDead = true;
-      if ( WaitForSingleObject( guts. socketThread, 2000) != WAIT_OBJECT_0)
-          warn("Failed to unlock socket thread #2");
       CloseHandle( guts. socketMutex);
    }
 
