@@ -42,6 +42,7 @@ use File::Copy;
 use Cwd;
 use DynaLoader;
 use Prima::Gencls;
+use ExtUtils::Packlist;
 use vars qw( %make_trans @ovvars @path_expand_ovvars $dir_sep $path_sep );
 use vars @ovvars = qw(
     $CC $CFLAGS $CCFLAGS $CCCDLFLAGS $CDLFLAGS $C_FLAGS $CDEBUGFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
@@ -133,6 +134,7 @@ use vars qw(
     $extralibs
     @executables
     $install_manuals
+    $packlist
 );
 
 my $extramsg = "(see makefile.log for details)";
@@ -1510,6 +1512,8 @@ DLERR
           printf("0x%02x\n", $DL_LOAD_FLAGS);
        }
     }
+
+    $packlist = ExtUtils::Packlist-> new();
 }
 
 sub process_commandline
@@ -2251,6 +2255,7 @@ EOF
     $cp{$PrimaTarget} = $INSTALL_DL;
     $cp{$PrimaLib}    = $INSTALLSITEARCH;
     $cp{"Prima.pm"}   = $INSTALLSITEARCH;
+    $cp{'.packlist'}  = $INSTALL_DL;
     push @allman, 'Prima.pm', manname( 'Prima.pm', 3, '');
 
     my $cwd = cwd();
@@ -2337,7 +2342,9 @@ EOF
     dump_cmd( sub { 
         $dirs_to_rm{$cp{$_[0]}} = 1;
         $_[0] =~ m/(\\|\/)?([^\\|\/]+)$/; 
-        return "$cp{$_[0]}$dir_sep$2";
+        my $rm = "$cp{$_[0]}$dir_sep$2";
+        $packlist->{$rm}++;
+        return $rm;
     }, 'RM', keys %cp);
     dump_cmd( sub { $_ }, 'RM', @man_to_remove);
     delete $dirs_to_rm{$INSTALLSITEARCH};
@@ -2347,6 +2354,7 @@ EOF
     print MAKE join( "\n", @footers), "\n";
 
     close MAKE;
+    $packlist-> write('.packlist');
     print "\nAll done.  Now you can run ${ MAKE}.\n";
 }
 
