@@ -376,7 +376,7 @@ typedef struct _drawable_sys_data
    Point cursor_size;
    Point pointer_hot_spot;
    int pointer_id;
-   int pointer_actual_id;
+   Cursor actual_pointer;
    Cursor user_pointer;
    Pixmap user_p_source;
    Pixmap user_p_mask;
@@ -395,6 +395,7 @@ typedef struct _drawable_sys_data
       int paint                 	: 1;
       int paint_base_line               : 1;
       int paint_pending                 : 1;
+      int pointer_obscured              : 1;
       int preexec_enabled               : 1;
       int preexec_visible               : 1;
       int process_configure_notify	: 1;

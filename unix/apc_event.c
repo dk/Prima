@@ -462,6 +462,15 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case EnterNotify: {
+      if (( guts. pointer_invisible_count == 0) && XX-> flags. pointer_obscured) {
+         XX-> flags. pointer_obscured = 0; 
+         XDefineCursor( DISP, XX-> udrawable, 
+           ( XX-> pointer_id == crUser) ? XX-> user_pointer : 
+           XX-> actual_pointer);
+      } else if (( guts. pointer_invisible_count < 0) && !XX-> flags. pointer_obscured) { 
+         XX-> flags. pointer_obscured = 1;
+         XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);
+      }   
       guts. last_time = ev-> xcrossing. time;
       if (no_input(XX, false)) {
 	 return;

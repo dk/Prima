@@ -749,11 +749,19 @@ apc_pointer_set_shape( Handle self, int id)
 
    if ( id < crDefault || id > crUser)  return false;
    XX-> pointer_id = id;
-   XX-> pointer_actual_id = id = get_cursor( self, nil, nil, nil, &uc);
+   id = get_cursor( self, nil, nil, nil, &uc);
    if ( id == crUser) {
       if ( uc != None || ( uc = XX-> user_pointer) != None) {
-         if ( self != application && guts. pointer_invisible_count == 0) {
-            XDefineCursor( DISP, XX-> udrawable, uc);
+         if ( self != application) {
+            if ( guts. pointer_invisible_count < 0) {
+               if ( !XX-> flags. pointer_obscured) {
+                  XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);   
+                  XX-> flags. pointer_obscured = 1;
+               }   
+            } else {   
+               XDefineCursor( DISP, XX-> udrawable, uc);
+               XX-> flags. pointer_obscured = 0;
+            }
             XCHECKPOINT;
          }
       } else
@@ -765,15 +773,20 @@ apc_pointer_set_shape( Handle self, int id)
             XCreateFontCursor( DISP, cursor_map[id]);
          XCHECKPOINT;
       }
-      if ( self != application && guts. pointer_invisible_count == 0) {
-         XDefineCursor( DISP, XX-> udrawable, predefined_cursors[id]);
+      XX-> actual_pointer = predefined_cursors[id];
+      if ( self != application) {
+         if ( guts. pointer_invisible_count < 0) {
+            if ( !XX-> flags. pointer_obscured) {
+               XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);   
+               XX-> flags. pointer_obscured = 1;
+            }   
+         } else {   
+            XDefineCursor( DISP, XX-> udrawable, predefined_cursors[id]);
+            XX-> flags. pointer_obscured = 0;
+         }
          XCHECKPOINT;
       }
    }
-   if ( guts. pointer_invisible_count < 0) {
-      XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);
-      XCHECKPOINT;
-   }   
    return true;
 }
 
@@ -842,30 +855,21 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
          warn( "error creating cursor from pixmaps");
          return false;
       }
-      if ( XX-> pointer_id == crUser && self != application && guts. pointer_invisible_count == 0) {
-         XDefineCursor( DISP, XX-> udrawable, XX-> user_pointer);
+      if ( XX-> pointer_id == crUser && self != application) {
+         if ( guts. pointer_invisible_count < 0) {
+            if ( !XX-> flags. pointer_obscured) {
+               XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);   
+               XX-> flags. pointer_obscured = 1;
+            }   
+         } else {   
+            XDefineCursor( DISP, XX-> udrawable, XX-> user_pointer);
+            XX-> flags. pointer_obscured = 0;
+         }
          XCHECKPOINT;
       }      
    }
    return true;
 }
-
-static Bool
-do_pointer( Handle window, Handle self, void * info)
-{
-   if ( info == nil) {
-      XDefineCursor( DISP, X(self)-> udrawable, guts. null_pointer); 
-   } else {   
-      if ( X(self)-> pointer_id == crUser) 
-         XDefineCursor( DISP, X(self)-> udrawable, X(self)-> user_pointer); 
-      else
-         XDefineCursor( DISP, X(self)-> udrawable, predefined_cursors[ X(self)-> pointer_actual_id]);
-   }
-   if ( PWidget(self)-> widgets. count > 0)
-      CWidget( self)-> first_that( self, do_pointer, info);
-   return false;
-}
-
 
 Bool
 apc_pointer_set_visible( Handle self, Bool visible)
@@ -910,9 +914,18 @@ apc_pointer_set_visible( Handle self, Bool visible)
          return true;
    }
  
-   /* scanning all widgets */
-   if ((( PApplication) application)-> widgets. count > 0)
-      CApplication( application)-> first_that( application, do_pointer, visible ? (void*)1 : nil);
+   /* setting pointer for widget under cursor */
+   {
+      Point p    = apc_pointer_get_pos( application);
+      Handle wij = apc_application_get_widget_from_point( application, p);
+      if ( wij) {
+         X(wij)-> flags. pointer_obscured = (visible ? 0 : 1);
+         XDefineCursor( DISP, X(wij)-> udrawable, 
+            visible ? (( X(wij)-> pointer_id == crUser) ? 
+                         X(wij)-> user_pointer : X(wij)-> actual_pointer) 
+                    : guts. null_pointer);  
+      }   
+   }   
    return true;
 }
 
