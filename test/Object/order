@@ -1,6 +1,7 @@
 Object.t
 Component.t
 GP.t
+GPState.t
 GPExtra.t
 Fonts.t
 
