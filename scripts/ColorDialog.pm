@@ -569,158 +569,6 @@ sub set_value
 sub value        {($#_)?$_[0]->set_value        ($_[1]):return $_[0]->{value};}
 sub quality      {($#_)?$_[0]->set_quality      ($_[1]):return $_[0]->{quality};}
 
-package ColorComboBox::InputLine;
-use vars qw(@ISA);
-@ISA = qw(Widget);
-
-sub profile_default
-{
-   return {
-      %{$_[ 0]-> SUPER::profile_default},
-      ownerBackColor   => 0,
-      selectable       => 1,
-      selectingButtons => 0,
-   }
-}
-
-sub on_paint
-{
-   my ( $self, $canvas, $combo, $w, $h, $focused) =
-      ($_[0],$_[1],$_[0]-> owner,$_[1]-> size, $_[0]->focused);
-   my $back = $self->enabled ? $self-> backColor : $self-> disabledBackColor;
-   my $clr  = $combo-> value;
-   $clr = $back if $clr == cl::Invalid;
-   $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, $self-> light3DColor, $self-> dark3DColor);
-   $canvas-> color( $back);
-   $canvas-> rectangle( 1, 1, $w - 2, $h - 2);
-   $canvas-> rectangle( 2, 2, $w - 3, $h - 3);
-   $canvas-> color( $clr);
-   $canvas-> bar( 3, 3, $w - 4, $h - 4);
-   if ( $focused) {
-      $canvas-> set(
-         rop         => rop::XorPut,
-         linePattern => lp::Dot,
-         color       => cl::White
-      );
-      $canvas-> rectangle( 2, 2, $w - 3, $h - 3);
-   }
-}
-
-sub on_mousedown
-{
-   # this code ( instead of listVisible(!listVisible)) is formed so because
-   # ::InputLine is selectable, and unwilling focus() could easily hide
-   # listBox automatically. Manual focus is also supported by
-   # selectingButtons == 0.
-   my $self = $_[0];
-   my $lv = $self-> owner-> listVisible;
-   $self-> owner-> listVisible(!$lv);
-   $self-> focus if $lv;
-   $self-> clear_event;
-}
-
-
-sub on_enter { $_[0]-> repaint; }
-sub on_leave { $_[0]-> repaint; }
-
-package ColorComboBox::Selector;
-use vars qw(@ISA);
-@ISA = qw(Widget);
-
-
-sub on_create
-{
-   my $self = $_[0];
-   $self-> {btn} = $self-> insert( Button =>
-      origin     => [ 3, 3],
-      width      => $self-> width - 6,
-      height     => 28,
-      text       => 'More...',
-      selectable => 0,
-      name       => 'MoreBtn',
-   );
-   my $c = $self-> owner-> colors;
-   $self-> {scr} = $self-> insert( ScrollBar =>
-      origin     => [ 75, $self->{btn}-> height + 8],
-      top        => $self-> height - 3,
-      vertical   => 1,
-      name       => 'Scroller',
-      max        => $c > 20 ? $c - 20 : 0,
-      partial    => 20,
-      step       => 4,
-      pageStep   => 20,
-      whole      => $c,
-   );
-
-}
-
-
-sub on_paint
-{
-   my ( $self, $canvas) = @_;
-   my ( $w, $h) = $self-> size;
-   my @c3d = ( $self-> light3DColor, $self-> dark3DColor);
-   $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, @c3d, $self-> backColor)
-      unless exists $self->{inScroll};
-   my $i;
-   my $pc = 18;
-   my $dy = $self-> {btn}-> height;
-
-   my $maxc = $self-> owner-> colors;
-   my $shft = $self->{scr}-> value;
-   for ( $i = 0; $i < 20; $i++) {
-      next if $i >= $maxc;
-      my ( $x, $y) = (($i % 4) * $pc + 3, ( 4 - int( $i / 4)) * $pc + 9 + $dy);
-      my $clr = 0;
-      $self-> owner-> notify('Colorify', $i + $shft, \$clr);
-      $canvas-> rect3d( $x, $y, $x + $pc - 2, $y + $pc - 2, 1, @c3d, $clr);
-   }
-}
-
-sub on_mousedown
-{
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   $x -= 3;
-   $y -= $self->{btn}-> height + 9;
-   return if $x < 0 || $y < 0;
-   $x = int($x / 18);
-   $y = int($y / 18);
-   return if $x > 3 || $y > 4;
-   $y = 4 - $y;
-   my $owner = $self-> owner;
-   $owner-> listVisible(0);
-   my $shft = $self->{scr}-> value;
-   my $maxc = $owner-> colors;
-   my $xcol = $shft + $x + $y * 4;
-   return if $xcol >= $maxc;
-   my $xval = 0;
-   $owner-> notify('Colorify', $xcol, \$xval);
-   $owner-> value( $xval);
-}
-
-sub MoreBtn_Click
-{
-   my $self = $_[0];
-   my $d;
-   $self-> owner-> listVisible(0);
-   $d = ColorDialog-> create(
-      value => $self-> owner-> value,
-   );
-   $self-> owner-> value( $d-> value) if $d-> execute;
-   $d-> destroy;
-}
-
-sub Scroller_Change
-{
-   $_[0]->{inScroll} = 1;
-   $_[0]-> invalidate_rect(
-      4, $_[0]->{btn}->top+6,
-      $_[0]->width - $_[0]-> {scr}-> width,
-      $_[0]->height - 3,
-   );
-   delete $_[0]->{inScroll};
-}
-
 package ColorComboBox;
 use vars qw(@ISA);
 @ISA = qw(ComboBox);
@@ -747,9 +595,11 @@ sub profile_default
       width            => 56,
       literal          => 0,
       colors           => 596,
-      editClass        => 'ColorComboBox::InputLine',
-      listClass        => 'ColorComboBox::Selector',
-      editProfile      => {},
+      editClass        => 'Widget',
+      listClass        => 'Widget',
+      editProfile      => {
+         selectingButtons => 0,
+      },
       listProfile      => {
          width    => 78 + $std[0],
          height   => 130,
@@ -795,6 +645,141 @@ sub InputLine_KeyDown
    $combo-> listVisible(1), $self-> clear_event if $key == kb::Down;
    return if $key != kb::NoKey;
    $self-> clear_event;
+}
+
+sub InputLine_Paint
+{
+   my ( $combo, $self, $canvas, $w, $h, $focused) =
+      ($_[0],$_[1],$_[2],$_[1]-> size, $_[1]->focused);
+   my $back = $self->enabled ? $self-> backColor : $self-> disabledBackColor;
+   my $clr  = $combo-> value;
+   $clr = $back if $clr == cl::Invalid;
+   $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, $self-> light3DColor, $self-> dark3DColor);
+   $canvas-> color( $back);
+   $canvas-> rectangle( 1, 1, $w - 2, $h - 2);
+   $canvas-> rectangle( 2, 2, $w - 3, $h - 3);
+   $canvas-> color( $clr);
+   $canvas-> bar( 3, 3, $w - 4, $h - 4);
+   if ( $focused) {
+      $canvas-> set(
+         rop         => rop::XorPut,
+         linePattern => lp::Dot,
+         color       => cl::White
+      );
+      $canvas-> rectangle( 2, 2, $w - 3, $h - 3);
+   }
+}
+
+sub InputLine_MouseDown
+{
+   # this code ( instead of listVisible(!listVisible)) is formed so because
+   # ::InputLine is selectable, and unwilling focus() could easily hide
+   # listBox automatically. Manual focus is also supported by
+   # selectingButtons == 0.
+   my ( $combo, $self)  = @_;
+   my $lv = $combo-> listVisible;
+   $combo-> listVisible(!$lv);
+   $self-> focus if $lv;
+   $self-> clear_event;
+}
+
+
+sub InputLine_Enter { $_[1]-> repaint; }
+sub InputLine_Leave { $_[1]-> repaint; }
+
+sub List_Create
+{
+   my ($combo,$self) = @_;
+   $combo-> {btn} = $self-> insert( Button =>
+      origin     => [ 3, 3],
+      width      => $self-> width - 6,
+      height     => 28,
+      text       => 'More...',
+      selectable => 0,
+      name       => 'MoreBtn',
+      delegateTo => $combo,
+   );
+   my $c = $combo-> colors;
+   $combo-> {scr} = $self-> insert( ScrollBar =>
+      origin     => [ 75, $combo->{btn}-> height + 8],
+      top        => $self-> height - 3,
+      vertical   => 1,
+      name       => 'Scroller',
+      max        => $c > 20 ? $c - 20 : 0,
+      partial    => 20,
+      step       => 4,
+      pageStep   => 20,
+      whole      => $c,
+      delegateTo => $combo,
+   );
+}
+
+
+sub List_Paint
+{
+   my ( $combo, $self, $canvas) = @_;
+   my ( $w, $h) = $self-> size;
+   my @c3d = ( $self-> light3DColor, $self-> dark3DColor);
+   $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, @c3d, $self-> backColor)
+      unless exists $self->{inScroll};
+   my $i;
+   my $pc = 18;
+   my $dy = $combo-> {btn}-> height;
+
+   my $maxc = $combo-> colors;
+   my $shft = $combo->{scr}-> value;
+   for ( $i = 0; $i < 20; $i++) {
+      next if $i >= $maxc;
+      my ( $x, $y) = (($i % 4) * $pc + 3, ( 4 - int( $i / 4)) * $pc + 9 + $dy);
+      my $clr = 0;
+      $combo-> notify('Colorify', $i + $shft, \$clr);
+      $canvas-> rect3d( $x, $y, $x + $pc - 2, $y + $pc - 2, 1, @c3d, $clr);
+   }
+}
+
+sub List_MouseDown
+{
+   my ( $combo, $self, $btn, $mod, $x, $y) = @_;
+   $x -= 3;
+   $y -= $combo->{btn}-> height + 9;
+   return if $x < 0 || $y < 0;
+   $x = int($x / 18);
+   $y = int($y / 18);
+   return if $x > 3 || $y > 4;
+   $y = 4 - $y;
+   $combo-> listVisible(0);
+   my $shft = $combo->{scr}-> value;
+   my $maxc = $combo-> colors;
+   my $xcol = $shft + $x + $y * 4;
+   return if $xcol >= $maxc;
+   my $xval = 0;
+   $combo-> notify('Colorify', $xcol, \$xval);
+   $combo-> value( $xval);
+}
+
+sub MoreBtn_Click
+{
+   my ($combo,$self) = @_;
+   my $d;
+   $combo-> listVisible(0);
+   $d = ColorDialog-> create(
+      value => $combo-> value,
+   );
+   $combo-> value( $d-> value) if $d-> execute;
+   $d-> destroy;
+}
+
+sub Scroller_Change
+{
+   my ($combo,$self) = @_;
+   $self = $combo-> List;
+   $self->{inScroll} = 1;
+   $self-> invalidate_rect(
+      4, $combo->{btn}->top+6,
+      $self->width - $combo-> {scr}-> width,
+      $self->height - 3,
+   );
+   delete $self->{inScroll};
 }
 
 
