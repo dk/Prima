@@ -2652,10 +2652,9 @@ sub makeseparator
    return if !$x;
    $x->[0][0] = '---';
    $x->[0][1] = {};
-   $_[0]-> adjust( $f, 1);
+   $_[0]-> repaint;
    $_[0]-> {master}-> change;
-   ( $x, $l) = $_[0]-> get_item( $f + 1);
-   $_[0]-> focusedItem( $f + 1);
+   $_[0]-> {master}-> {current} = undef;
    $_[0]-> {master}-> enter_menuitem( $x);
 }
 
@@ -2757,7 +2756,7 @@ sub open
       popupItems => [
          ['~New' => q(new),],
          ['~Make node' => q(makenode),],
-         ['Make ~separator' => q(makeseparator),],
+         ['Convert to ~separator' => q(makeseparator),],
          ['~Delete' => q(del),],
       ],
       onSelectItem => sub {

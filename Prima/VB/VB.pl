@@ -1146,6 +1146,10 @@ sub prf_icon
    $_[0]-> icon( $_[1]);
 }
 
+sub prf_menuItems
+{
+   $_[0]-> menuItems( $_[1]);
+}
 
 package MainPanel;
 use vars qw(@ISA *do_layer);
@@ -1761,8 +1765,6 @@ sub load_file
      $loaded++;
      $self-> text( sprintf( "Loaded %d%%", ($loaded / $maxwij) * 100)); 
    }, @seq);
-   $VB::form-> menuItems($VB::form->{profile}{menuItems})
-       if !$VB::form->{menuItems} && $VB::form->{profile}{menuItems};
    $VB::form-> show;
    $VB::inspector->{selectorChanging}-- if $VB::inspector;
    ObjectInspector::renew_widgets;
