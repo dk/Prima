@@ -126,7 +126,7 @@ Prima::EventHook - event filtering
 
 Prima dispatches events by calling notifications registered
 on one or more objects interested in the events. Also, one 
-event hook can be installed with receives all events occurred on
+event hook can be installed that would receive all events occurred on
 all objects. C<Prima::EventHook> provides multiplex access to
 the core event hook and introduces set of dispatching rules so 
 the user hook subs receive only a defined subset of events.
@@ -205,7 +205,7 @@ if event source is same as the object.
 
 If 1, SUB is called using same rules as described in C<'object'>, but also if
 the event source is a child of the object. Thus, selecting C<undef> as a filter
-object and setting C<'children'> to 0 is essentially the same as selecting
+object and setting C<'children'> to 0 is almost the same as selecting
 C<$::application>, which is the root of Prima object hierarchy, as filter
 object with C<'children'> set to 1.
 
