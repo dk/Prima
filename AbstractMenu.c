@@ -528,15 +528,13 @@ Handle
 AbstractMenu_get_image( Handle self, char * varName)
 {
    PMenuItemReg m = my-> first_that( self, var_match, varName, true);
-   if ( m == nil) return false;
-   return ( m) ? m-> bitmap : nilHandle;
+   return m ? m-> bitmap : nilHandle;
 }
 
 char *
 AbstractMenu_get_text ( Handle self, char * varName)
 {
    PMenuItemReg m = my-> first_that( self, var_match, varName, true);
-   if ( m == nil) return false;
    return ( m && m-> text) ? m-> text : "";
 }
 
