@@ -307,7 +307,35 @@ sub check_function
    print "\n";
 }
 
+sub check_header
+{
+   my ($header) = shift;
+   print "checking #include <$header>...";
+   my @where = @_;
+   my $code = "#include <$header>\nvoid stupid_dummy_function( void) {}\n";
+   my $name = "/tmp/pmplt$$";
+   open C, "> $name.c" or die $!;
+   print C $code;
+   close C;
+   my $r = system("@cc -c -o $name.o $name.c >/dev/null 2>&1") == 0;
+   if ($r) {
+      print " found with the existing include path!";
+   } else {
+      for (@where) {
+         $r = system("@cc -I$_ -c -o $name.o $name.c >/dev/null 2>&1") == 0;
+         if ($r) {
+            push @cc, "-I$_";
+            print " found in $_!";
+            last;
+         }
+      }
+      print " not found!" unless $r;
+   }
+   unlink  "$name.c", "$name.o";
+   print "\n";
+}
 
+check_header "gif_lib.h", "/usr/local/include/giflib";
 check_function "stricmp", "char *" => '', "char *" => '';
 check_function "strcasecmp", "char *" => '', "char *" => '';
 check_function "trunc", "double" => 1.5;
@@ -351,6 +379,7 @@ tags:
 \t\t	/usr/X11R6/include/X11/keysymdef.h
 \t/usr/local/bin/ctags -ip -e *.c \`find include -name "*.h" -print\` \\
 \t\t	/usr/X11R6/include/X11/X*.h unix/*.c \\
+\t\t	$Config{archlib}/CORE/*.h \\
 \t\t	/usr/X11R6/include/X11/keysymdef.h
 
 calltree:
