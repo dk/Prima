@@ -320,7 +320,6 @@ sub on_keydown
       if ( $c eq '/' || $c eq '\\')
       {
          $self-> selectedItems(( $c eq '/') ? [0..$self->{count}-1] : []);
-       # $self-> add_selection([0..$self->{count}-1], $c eq '/');
          $self-> clear_event;
          return;
       }
@@ -487,6 +486,18 @@ sub on_mousemove
    } else {
       $self-> stop_scroll_timer;
    }
+
+   if ( $aux)
+   {
+      my $top = $self-> {topItem};
+      $self-> {unfocState} = 1;
+      $self-> {singlePaint}->{$self->{focusedItem}} = 1;
+      $self-> refresh;
+      $self-> topItem( $self-> {topItem} + $aux);
+      delete $self-> {unfocState};
+      $item += (( $top != $self-> {topItem}) ? $aux : 0);
+   }
+
    if ( $self-> {extendedSelect} && exists $self->{anchor})
    {
        my ( $a, $b, $c) = ( $self->{anchor}, $item, $self->{focusedItem});
@@ -506,16 +517,6 @@ sub on_mousemove
           ( $a, $b) = ( $b, $a) if $a > $b;
           $self-> selectedItems([$a..$b]);
        }
-   }
-   if ( $aux)
-   {
-      my $top = $self-> {topItem};
-      $self-> {unfocState} = 1;
-      $self-> {singlePaint}->{$self->{focusedItem}} = 1;
-      $self-> refresh;
-      $self-> topItem( $self-> {topItem} + $aux);
-      delete $self-> {unfocState};
-      $item += (( $top != $self-> {topItem}) ? $aux : 0);
    }
    $self-> focusedItem( $item >= 0 ? $item : 0);
    $self-> offset( $self->{offset} + 5 * (( $x < $bw) ? -1 : 1)) if $x >= $size[0] - $bw - $dx || $x < $bw;
@@ -864,8 +865,7 @@ sub set_selected_items
    return if !$self->{ multiSelect} && ( scalar @{$items} > 0);
    my $ptr = $::application-> pointer;
    $::application-> pointer( cr::Wait)
-      if scalar @{$items} > 500 ||
-         scalar keys %{$self->{selectedItems}} > 500;
+      if scalar @{$items} > 500;
    my $sc = $self->{count};
    my %newItems;
    for (@{$items}) { $newItems{$_}=1 if $_>=0 && $_<$sc; }
