@@ -640,28 +640,36 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 }
 
 static void
-create_image_cache_8_to_16( PImage img)
+create_rgb_to_16_lut( int ncolors, const PRGBColor pal, U16 *lut)
 {
-   PDrawableSysData IMG = X((Handle)img);
-   int i;
-   U16 lut[ 256];
-   unsigned long red_mask, green_mask, blue_mask;
+   /* XXX make this 3,2,5,11-independent */
    Visual *v = DefaultVisual( DISP, SCREEN);
-   U16 *data, *d;
-   int x, y;
+   unsigned long red_mask, green_mask, blue_mask;
+   int i;
 
    red_mask = v-> red_mask;
    green_mask = v-> green_mask;
    blue_mask = v-> blue_mask;
-   for ( i = 0; i < img-> palSize; i++) {
+   for ( i = 0; i < ncolors; i++) {
       lut[i] = 0;
       lut[i] |=
-	 (((img-> palette[i]. r >> 3) << 11) & red_mask) & 0xffff;
+	 (((pal[i]. r >> 3) << 11) & red_mask) & 0xffff;
       lut[i] |= 
-	 (((img-> palette[i]. g >> 2) << 5) & green_mask) & 0xffff;
+	 (((pal[i]. g >> 2) << 5) & green_mask) & 0xffff;
       lut[i] |=
-	 ((img-> palette[i]. b >> 3) & blue_mask) & 0xffff;
+	 ((pal[i]. b >> 3) & blue_mask) & 0xffff;
    }
+}
+
+static void
+create_image_cache_8_to_16( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   U16 lut[ 256];
+   U16 *data, *d;
+   int x, y;
+   
+   create_rgb_to_16_lut( img-> palSize, img-> palette, lut);
 
    d = data = malloc( img-> w * img-> h * sizeof( U16));
    if ( !data) {
@@ -674,7 +682,7 @@ create_image_cache_8_to_16( PImage img)
       }
    }
 
-   IMG-> image_cache = XCreateImage( DISP, v,
+   IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
 				     guts. depth, ZPixmap, 0, (unsigned char*)data,
 				     img-> w, img-> h, 8, 0);
    if (!IMG-> image_cache) {
@@ -684,24 +692,83 @@ create_image_cache_8_to_16( PImage img)
 }
 
 static void
+create_image_cache_24_to_16( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   static U16 lur[256], lub[256], lug[256];
+   static Bool initialize = true;
+   U16 *data, *d;
+   int x, y;
+   int i;
+   RGBColor pal[256];
+   
+   if ( initialize) {
+      for ( i = 0; i < 256; i++) {
+	 pal[i]. r = i; pal[i]. g = 0; pal[i]. b = 0;
+      }
+      create_rgb_to_16_lut( 256, pal, lur);
+      for ( i = 0; i < 256; i++) {
+	 pal[i]. r = 0; pal[i]. g = i; pal[i]. b = 0;
+      }
+      create_rgb_to_16_lut( 256, pal, lug);
+      for ( i = 0; i < 256; i++) {
+	 pal[i]. r = 0; pal[i]. g = 0; pal[i]. b = i;
+      }
+      create_rgb_to_16_lut( 256, pal, lub);
+      initialize = false;
+   }
+
+   d = data = malloc( img-> w * img-> h * sizeof( U16));
+   if ( !data) {
+      croak( "create_image_cache_24_to_16(): no memory");
+   }
+   for ( y = img-> h-1; y >= 0; y--) {
+      unsigned char *line = img-> data + y*img-> lineSize;
+      for ( x = 0; x < img-> w; x++) {
+	 *d++ = lub[line[0]] | lug[line[1]] | lur[line[2]];
+	 line += 3;
+      }
+   }
+
+   IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+				     guts. depth, ZPixmap, 0, (unsigned char*)data,
+				     img-> w, img-> h, 8, 0);
+   if (!IMG-> image_cache) {
+      free( data);
+      croak( "create_image_cache_24_to_16(): error during XCreateImage()");
+   }
+}
+
+static void
 create_image_cache( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
 
    if ( !IMG-> image_cache) {
-      if (( img-> type & imBPP) != 8) {
-	 croak( "create_image_cache(): unsupported img-> bpp");
-      }
       if ( !img-> palette) {
 	 croak( "create_image_cache(): no palette, ouch!");
       }
-
-      switch ( guts. depth) {
-      case 16:
-	 create_image_cache_8_to_16( img);
+      switch (img-> type & imBPP) {
+      case 8:
+	 switch (guts.depth) {
+	 case 16:
+	    create_image_cache_8_to_16( img);
+	    break;
+	 default:
+	    croak( "create_image_cache(): unsupported screen depth for 8-bit images");
+	 }
+	 break;
+      case 24:
+	 switch (guts.depth) {
+	 case 16:
+	    create_image_cache_24_to_16( img);
+	    break;
+	 default:
+	    croak( "create_image_cache(): unsupported screen depth for 24-bit images");
+	 }
 	 break;
       default:
-	 croak( "create_image_cache(): unsupported guts. depth");
+	 croak( "create_image_cache(): unsupported BPP");
       }
    }
 }
