@@ -354,7 +354,6 @@ technique that keeps previous error message and looks like:
     // call code
     perl_call_method( ... | G_EVAL);    // G_EVAL is necessary
     if ( SvTRUE( GvSV( errgv)) {
-        PUTBACK_G_EVAL;                 // assign $@
         CLOSE_G_EVAL;                   // close brackets
         croak( SvPV( GvSV( errgv), na));// propagate exception
         // no code is executed after croak
@@ -605,11 +604,6 @@ Defines variable for $@ value storage
 =item OPEN_G_EVAL, CLOSE_G_EVAL
 
 Brackets for exception catching
-
-=item PUTBACK_G_EVAL
-
-On error condition, concatenates $@ with value stored in
-dG_EVAL_ARGS variable
 
 =item build_static_vmt 
 
