@@ -62,6 +62,7 @@ sub profile_default
       selStart       => 0,
       selEnd         => 0,
       selectable     => 1,
+      textRef        => undef,
       widgetClass    => wc::InputLine,
       width          => 96,
       wordDelimiters => ".()\"',#$@!%^&*{}[]?/|;:<>-= \xff\t",
@@ -92,7 +93,7 @@ sub init
    $self-> {defcw} = $::application-> get_default_cursor_width;
    $self-> {resetDisabled} = 1;
    my %profile = $self-> SUPER::init(@_);
-   for ( qw( writeOnly borderWidth passwordChar maxLen alignment autoTab autoSelect readOnly selEnd selStart charOffset firstChar wordDelimiters))
+   for ( qw( textRef writeOnly borderWidth passwordChar maxLen alignment autoTab autoSelect readOnly selEnd selStart charOffset firstChar wordDelimiters))
       { $self->$_( $profile{ $_}); }
    $self-> {resetDisabled} = 0;
    $self-> {resetLevel}    = 0;
@@ -216,11 +217,16 @@ sub reset
 
 sub text
 {
-   return $_[0]->SUPER::text unless $#_;
+   return ( defined($_[0]-> {textRef}) ? 
+             ${$_[0]->{textRef}} :
+             $_[0]->SUPER::text ) 
+          unless $#_;
    my ( $self, $cap) = @_;
    $cap = '' unless defined $cap;
    $cap = substr( $cap, 0, $self->{maxLen}) if $self-> {maxLen} >= 0 and length($cap) > $self->{maxLen};
-   $self->SUPER::text( $cap);
+   defined ( $self-> {textRef} ) ?
+      ${$self->{textRef}} = $cap :
+        $self->SUPER::text( $cap);
    $cap = $self->{passwordChar} x length $cap if $self->{writeOnly};
    $self-> {wholeLine} = $cap;
    $self-> charOffset( length $cap) if $self->{charOffset} > length $cap;
@@ -228,6 +234,12 @@ sub text
    $self-> reset;
    $self-> repaint;
    $self-> notify(q(Change));
+}
+
+sub textRef
+{
+   return $_[0]-> {textRef} unless $#_;
+   $_[0]-> text( $_[0]-> text) if defined ( $_[0]-> {textRef} = $_[1] );
 }
 
 sub on_keydown
@@ -934,6 +946,19 @@ Selects the start of text selection.
 =item selEnd INTEGER
 
 Selects the end of text selection.
+
+=item textRef SCALAR_REF
+
+If not undef, contains reference to the scalar that holds the text
+of the input line. All changes to ::text property are reflected there.
+The direct write access to the scalar is not recommended because it 
+leaves internal structures inconsistent, and the only way to synchronize
+structures is to set-call either ::textRef or ::text after every such change.
+
+If undef, the internal text container is used.
+
+Default value: undef
+
 
 =item wordDelimiters STRING
 
