@@ -1091,6 +1091,16 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 
       var w = cr. right - cr. left   + 1;
       var h = cr. top   - cr. bottom + 1;
+
+      if ( var w == 0 || var h == 0) {
+         if ( !WinEndPaint( sys ps)) apiErr;
+         apt_clear( aptWinPS);
+         apt_clear( aptWM_PAINT);
+         apt_clear( aptCompatiblePS);
+         sys ps = nilHandle;
+         return false;
+      }
+
       bm = bitmap_make_ps( self, &hps, &hdc, &bmInfo, cbScreen);
       if ( bm != nilHandle) {
          sys ps2 = sys ps;

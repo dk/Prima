@@ -1423,6 +1423,14 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       var w = r. right  - r. left;
       var h = r. bottom - r. top;
 
+      if ( var w == 0 || var h == 0) {
+         if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
+         apt_clear( aptWinPS);
+         apt_clear( aptWM_PAINT);
+         apt_clear( aptCompatiblePS);
+         sys ps = nilHandle;
+         return false;
+      }
 
       if ( !( dc = CreateCompatibleDC( sys ps))) apiErr;
 
