@@ -66,15 +66,15 @@ extern SV* readonly_clean_sv_2mortal( SV* sv);
 #endif
 
 typedef I32 Bool;
-typedef U32 Handle;
+typedef UV Handle;
 typedef Handle ApiHandle;
 typedef long Color;
 
 #include "Types.h"
 
 typedef U8                     Byte;
-typedef U16                    Short;
-typedef U32                    Long;
+typedef I16                    Short;
+typedef I32                    Long;
 
 typedef struct _DelegatedMessages_ {
    unsigned dmCreate             : 1;
