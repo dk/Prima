@@ -260,7 +260,7 @@ apc_clipboard_close( Handle self)
 	XX-> internal[cfText]. size == 0) {
       char * src = XX-> internal[cfUTF8]. data;
       int len    = utf8_length( src, src + XX-> internal[cfUTF8]. size);
-      if ( XX-> internal[cfText]. data = malloc( len)) {
+      if (( XX-> internal[cfText]. data = malloc( len))) {
 	  STRLEN charlen;
 	  U8 *src, *dst;
 	  dst = XX-> internal[cfText]. data;
