@@ -27,13 +27,13 @@ sub load_std_bmp
    if ( $copy)
    {
       my $i = $class-> create(name => $index);
-      undef $i unless $i-> load( $bmImageFile, $index);
+      undef $i unless $i-> load( $bmImageFile, index => $index);
       return $i;
    }
    return $bmCache{$index}->[$asIcon] if exists $bmCache{$index} && defined $bmCache{$index}->[$asIcon];
    $bmCache{$index} = [ undef, undef] unless exists $bmCache{$index};
    my $i = $class-> create(name => $index);
-   undef $i unless $i-> load( $bmImageFile, $index);
+   undef $i unless $i-> load( $bmImageFile, index => $index);
    $bmCache{$index}->[$asIcon] = $i;
    return $i;
 }
