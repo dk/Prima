@@ -179,7 +179,6 @@ the full area of a canvas, this rule is implicit and unnecessary, because
 whatever large the clipping rectangle is, drawing and painting
 cannot be performed outside the physical boundaries of the canvas.
 
-
 =head2 Direct rendering
 
 The direct rendering, contrary to the event-driven,
@@ -344,6 +343,35 @@ Strictly speaking, the I<virtual size> must be declared a read-only property,
 but currently it is implemented as a C<get_virtual_size()> function,
 and it is planned to fix this discrepancy between the document
 and the implementation in favor of the property syntax.
+
+=head2 Geometry managers
+
+The concept of geometry managers is imported from Tk, which in turn
+is a port of Tcl-Tk. The idea behind it is that a widget size and
+position is governed by one of the managers, which operate depending 
+on the specific options given to the widget. The selection is operated
+by C<::geometry> property, and is one of C<gt::XXX> constants. The native
+( and the default ) geometry manager is the described above grow-mode 
+algorithm ( C<gt::GrowMode> ). The currently implemented Tk managers are
+packer ( C<gt::Pack> ) and placer ( C<gt::Place>). Each has its own set of
+options and methods, and their manuals are provided separately in
+L<Prima::pack> and L<Prima::place> ( the manpages are also imported from Tk ).
+
+Another concept that comes along with geometry managers is the 'geometry request size'.
+It is realized as a two-integer property C<::geomSize>, which reflects the size
+selected by some intrinsic widget knowledge, and the idea is that C<::geomSize> it
+is merely a request to a geometry manager, whereas the latter changes C<::size> 
+accordingly. For example, a button might set its 'intrinsic' width in accord with
+the width of text string displayed in it. If the default width for such a button is not overridden,
+it is assigned with such a width. By default, under C<gt::GrowMode> geometry manager,
+setting C<::geomSize> ( and its two semi-alias properties C<::geomWidth> and C<::geomHeight> ) 
+also changes the actual widget size.Moreover, when the size is passed to the Widget 
+initialization code, C<::size> properties are used to initialize C<::geomSize>. Such design
+minimizes the confusion between the two properties, and also minimizes the direct usage
+of C<::geomSize>, limiting it for selecting advisory size in widget internal code.
+
+The geometry request size is useless under C<gt::GrowMode> geometry 
+manager, but Tk managers use it extensively. 
 
 =head2 Relative coordinates
 
@@ -1189,6 +1217,16 @@ If changed, initiates C<FontChanged> notification and repaints the widget.
 
 See also: C<designScale>, C<FontChanged>, C<ColorChanged>
 
+=item geometry INTEGER
+
+Selects one of the available geometry managers. The corresponding
+integer constants are:
+
+   gt::GrowMode, gt::Default - the default grow-mode algorithm
+   gt::Pack                  - Tk packer
+   gt::Place                 - Tk placer
+
+See C<growMode>, L<Prima::pack>, L<Prima::place>.
 
 =item growMode MODE
 
@@ -1244,6 +1282,35 @@ Disregards C<::selectable> property on set-call.
 
 See also: C<selectable>, C<selected>, C<selectedWidget>, C<KeyDown>
 
+=item geomWidth, geomHeight, geomSize
+
+Three properties that select geometry request size. Writing
+and reading to C<::geomWidth> and C<::geomHeight> is equivalent to
+C<::geomSize>. The properies are run-time only, and behave differently
+under different circumstances:
+
+=over
+
+=item *
+
+As the properties are run-time only, they can not be set in the profile,
+and their initial value is fetched from C<::size> property. Thus, setting the
+explicit size is aditionally sets the advised size in case the widget is
+to be used with the Tk geometry managers.
+
+=item *
+
+Setting the properties under the C<gt::GrowMode> geometry manager also
+sets the corresponding C<::width>, C<::height>, or C<::size>. When the properties
+are read, though, the real size properties are not read; the values are kept separately.
+
+=item *
+
+Setting the properties under Tk geometry managers cause widgets size and position changed 
+according to the geometry manager policy.
+
+=back
+
 =item height
 
 Maintains the height of a widget.
@@ -1251,7 +1318,6 @@ Maintains the height of a widget.
 See also: C<width>, 
 C<growMode>, C<Move>, C<Size>, C<get_virtual_size>, 
 C<sizeMax>, C<sizeMin>
-
 
 =item helpContext STRING
 
@@ -1360,6 +1426,10 @@ to its owner ( or to the screen if C<::clipOwner> is set to 0 ).
 See also: C<bottom>, C<right>, C<top>, C<left>, C<rect>,
 C<growMode>, C<Move>
 
+=item packInfo %OPTIONS
+
+See L<Prima::pack>
+
 =item palette [ @PALETTE ]
 
 Specifies array of colors, that are desired to be present
@@ -1379,6 +1449,10 @@ The parent window can belong to another application.
 Default value is undef.
 
 See also: C<clipOwner>
+
+=item placeInfo %OPTIONS
+
+See L<Prima::place>
 
 =item pointer cr::XXX or ICON
 
@@ -2075,6 +2149,14 @@ parameter must be either 1 or -1.
 Also used by the internal keyboard navigation code.
 
 See also: C<next_tab>, C<origin>
+
+=item pack, packForget, packSlaves
+
+See L<Prima::pack>
+
+=item place, placeForget, placeSlaves
+
+See L<Prima::place>
 
 =item prev
 

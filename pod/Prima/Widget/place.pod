@@ -1,0 +1,250 @@
+#  Copyright (c) 1992 The Regents of the University of California.
+#  Copyright (c) 1994-1996 Sun Microsystems, Inc.
+#  Copyright (c) 2003 Dmitry Karasik
+#
+#  This software is copyrighted by the Regents of the University of
+#  California, Sun Microsystems, Inc., and other parties.  The following
+#  terms apply to all files associated with the software unless explicitly
+#  disclaimed in individual files.
+#  
+#  The authors hereby grant permission to use, copy, modify, distribute,
+#  and license this software and its documentation for any purpose, provided
+#  that existing copyright notices are retained in all copies and that this
+#  notice is included verbatim in any distributions. No written agreement,
+#  license, or royalty fee is required for any of the authorized uses.
+#  Modifications to this software may be copyrighted by their authors
+#  and need not follow the licensing terms described here, provided that
+#  the new terms are clearly indicated on the first page of each file where
+#  they apply.
+#  
+#  IN NO EVENT SHALL THE AUTHORS OR DISTRIBUTORS BE LIABLE TO ANY PARTY
+#  FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+#  ARISING OUT OF THE USE OF THIS SOFTWARE, ITS DOCUMENTATION, OR ANY
+#  DERIVATIVES THEREOF, EVEN IF THE AUTHORS HAVE BEEN ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#  
+#  THE AUTHORS AND DISTRIBUTORS SPECIFICALLY DISCLAIM ANY WARRANTIES,
+#  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.  THIS SOFTWARE
+#  IS PROVIDED ON AN "AS IS" BASIS, AND THE AUTHORS AND DISTRIBUTORS HAVE
+#  NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR
+#  MODIFICATIONS.
+#  
+#  RESTRICTED RIGHTS: Use, duplication or disclosure by the government
+#  is subject to the restrictions as set forth in subparagraph (c) (1) (ii)
+#  of the Rights in Technical Data and Computer Software Clause as DFARS
+#  252.227-7013 and FAR 52.227-19.
+
+=head1 NAME
+
+Tk::place - Geometry manager for fixed or rubber-sheet placement
+
+=for category  Tk Geometry Management
+
+=head1 SYNOPSIS
+
+   $widget->place(option=>value?, option=>value, ...)
+
+   $widget->placeForget;
+
+   $widget->placeInfo(option=>value?, option=>value, ...);
+   $widget->geometry( gt::Place);
+
+   $master->placeSlaves
+
+=head1 DESCRIPTION
+
+The placer is a geometry manager from Tk.
+It provides simple fixed placement of windows, where you specify
+the exact size and location of one window, called the I<slave>,
+within another window, called the I<$master>.
+The placer also provides rubber-sheet placement, where you specify the
+size and location of the slave in terms of the dimensions of
+the master, so that the slave changes size and location
+in response to changes in the size of the master.
+Lastly, the placer allows you to mix these styles of placement so
+that, for example, the slave has a fixed width and height but is
+centered inside the master.
+
+=over 4
+
+=item place %OPTIONS
+
+The B<place> method arranges for the placer
+to manage the geometry of I<$slave>.
+The remaining arguments consist of one or more I<option>=>I<value>
+pairs that specify the way in which I<$slave>'s
+geometry is managed.
+If the placer is already managing I<$slave>, then the
+I<option>=>I<value> pairs modify the configuration for I<$slave>.
+The B<place> method returns an empty string as result.
+The following I<option>=>I<value> pairs are supported:
+
+=over 8
+
+=item B<in> => I<$master>
+
+I<$master> is the reference to the window relative
+to which I<$slave> is to be placed. 
+I<$master> must neither be I<$slave>'s child nor be present
+in a slaves list that directly or indirectly refers to the I<$slave>.
+
+If this option isn't specified then the master defaults to
+I<$slave>'s owner.
+
+=item B<x> => I<location>
+
+I<Location> specifies the x-coordinate within the master window
+of the anchor point for I<$slave> widget.
+
+=item B<relx> => I<location>
+
+I<Location> specifies the x-coordinate within the master window
+of the anchor point for I<$slave> widget.
+In this case the location is specified in a relative fashion
+as a floating-point number:  0.0 corresponds to the left edge
+of the master and 1.0 corresponds to the right edge of the master.
+I<Location> need not be in the range 0.0-1.0.
+If both B<x> and B<relx> are specified for a slave
+then their values are summed.  For example, "B<relx>=>0.5, B<x>=-2"
+positions the left edge of the slave 2 pixels to the left of the
+center of its master.
+
+=item B<y> => I<location>
+
+I<Location> specifies the y-coordinate within the master window
+of the anchor point for I<$slave> widget.
+
+=item B<rely> => I<location>
+
+I<Location> specifies the y-coordinate within the master window
+of the anchor point for I<$slave> widget.
+In this case the value is specified in a relative fashion
+as a floating-point number:  0.0 corresponds to the top edge
+of the master and 1.0 corresponds to the bottom edge of the master.
+I<Location> need not be in the range 0.0-1.0.
+If both B<y> and B<rely> are specified for a slave
+then their values are summed.  For example, B<rely>=>0.5, B<x>=>3
+positions the top edge of the slave 3 pixels below the
+center of its master.
+
+=item B<anchor> => I<where>
+
+I<Where> specifies which point of I<$slave> is to be positioned
+at the (x,y) location selected by the B<x>, B<y>,
+B<relx>, and B<rely> options.
+Thus if I<where> is B<se> then the lower-right corner of
+I<$slave>'s border will appear at the given (x,y) location
+in the master.
+The anchor position defaults to B<nw>.
+
+=item B<width> => I<size>
+
+I<Size> specifies the width for I<$slave>.
+If I<size> is an empty string, or if no B<width>
+or B<relwidth> option is specified, then the width requested
+internally by the window will be used.
+
+=item B<relwidth> => I<size>
+
+I<Size> specifies the width for I<$slave>.
+In this case the width is specified as a floating-point number
+relative to the width of the master: 0.5 means I<$slave> will
+be half as wide as the master, 1.0 means I<$slave> will have
+the same width as the master, and so on.
+If both B<width> and B<relwidth> are specified for a slave,
+their values are summed.  For example, B<relwidth>=>1.0, B<width>=>5
+makes the slave 5 pixels wider than the master.
+
+=item B<height> => I<size>
+
+I<Size> specifies the height for I<$slave>.
+If I<size> is an empty string, or if no B<height> or
+B<relheight> option is specified, then the height requested
+internally by the window will be used.
+
+=item B<relheight> => I<size>
+
+I<Size> specifies the height for I<$slave>.
+In this case the height is specified as a floating-point number
+relative to the height of the master: 0.5 means I<$slave> will
+be half as high as the master, 1.0 means I<$slave> will have
+the same height as the master, and so on.
+If both B<height> and B<relheight> are specified for a slave,
+their values are summed.  For example, B<relheight>=>1.0, B<height>=>-2
+makes the slave 2 pixels shorter than the master.
+
+=back
+
+=item placeSlaves
+
+The B<placeSlaves> method returns a list of all the slave
+windows for which I<$master> is the master.
+If there are no slaves for I<$master> then an empty list is
+returned.
+
+=item placeForget
+
+The B<placeForget> method causes the placer to stop managing
+the geometry of I<$slave>.  
+If I<$slave> isn't currently managed by the placer then the
+method call has no effect.
+
+=item placeInfo %OPTIONS
+
+In get-mode the B<placeInfo> method returns a list giving the current
+configuration of I<$slave>.
+The list consists of I<option>=>I<value> pairs in exactly the
+same form as might be specified to the B<place>
+method. 
+If the configuration of a window has been retrieved with
+B<placeInfo>, that configuration can be restored later by
+first using B<placeInfo> in set-mode and setting B<geometry>
+to C<gt::Place>, which is equivalent to a direct call to B<place>.
+
+=back
+
+=head1 Fine points
+
+It is not necessary for the master window to be the owner
+of the slave window.
+This feature is useful in at least two situations.
+First, for complex window layouts it means you can create a
+hierarchy of subwindows whose only purpose
+is to assist in the layout of the owner.
+The ``I<real children>'' of the owner (i.e. the windows that
+are significant for the application's user interface) can be
+children of the owner yet be placed inside the windows
+of the geometry-management hierarchy.
+This means that the path names of the ``I<real children>''
+don't reflect the geometry-management hierarchy and users
+can specify options for the real children
+without being aware of the structure of the geometry-management
+hierarchy.
+
+A second reason for having a master different than the slave's
+owner is to tie two siblings together.
+For example, the placer can be used to force a window always to
+be positioned centered just below one of its
+siblings by specifying the configuration
+
+S<    >B<in>=>I<$sibling>, B<relx>=>0.5, B<rely>=>1.0,
+B<anchor>=>'n'
+
+Whenever the I<$sibling> widget is repositioned in the future, the slave
+will be repositioned as well.
+
+Unlike the other geometry managers (such as the packer)
+the placer does not make any attempt to manipulate the geometry of
+the master windows or the owners of slave windows (i.e. it doesn't
+set their requested sizes).
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>
+
+L<Tk::place|Tk::place>
+L<Tk::pack|Tk::pack>
+
+=cut
+

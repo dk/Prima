@@ -1,0 +1,348 @@
+#  Copyright (c) 1990-1994 The Regents of the University of California.
+#  Copyright (c) 1994-1996 Sun Microsystems, Inc.
+#  Copyright (c) 2003 Dmitry Karasik
+#
+#  This software is copyrighted by the Regents of the University of
+#  California, Sun Microsystems, Inc., and other parties.  The following
+#  terms apply to all files associated with the software unless explicitly
+#  disclaimed in individual files.
+#  
+#  The authors hereby grant permission to use, copy, modify, distribute,
+#  and license this software and its documentation for any purpose, provided
+#  that existing copyright notices are retained in all copies and that this
+#  notice is included verbatim in any distributions. No written agreement,
+#  license, or royalty fee is required for any of the authorized uses.
+#  Modifications to this software may be copyrighted by their authors
+#  and need not follow the licensing terms described here, provided that
+#  the new terms are clearly indicated on the first page of each file where
+#  they apply.
+#  
+#  IN NO EVENT SHALL THE AUTHORS OR DISTRIBUTORS BE LIABLE TO ANY PARTY
+#  FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+#  ARISING OUT OF THE USE OF THIS SOFTWARE, ITS DOCUMENTATION, OR ANY
+#  DERIVATIVES THEREOF, EVEN IF THE AUTHORS HAVE BEEN ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#  
+#  THE AUTHORS AND DISTRIBUTORS SPECIFICALLY DISCLAIM ANY WARRANTIES,
+#  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.  THIS SOFTWARE
+#  IS PROVIDED ON AN "AS IS" BASIS, AND THE AUTHORS AND DISTRIBUTORS HAVE
+#  NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR
+#  MODIFICATIONS.
+#  
+#  RESTRICTED RIGHTS: Use, duplication or disclosure by the government
+#  is subject to the restrictions as set forth in subparagraph (c) (1) (ii)
+#  of the Rights in Technical Data and Computer Software Clause as DFARS
+#  252.227-7013 and FAR 52.227-19.
+
+
+=head1 NAME
+
+Prima::Widget::pack - Geometry manager that packs around edges of cavity
+
+=head1 SYNOPSIS
+
+  $widget-> pack( args);
+  
+  $widget-> packInfo( args);
+  $widget-> geometry( gt::Pack);
+
+
+=head1 DESCRIPTION
+
+The B<pack> method is used to communicate with the packer,
+a geometry manager that arranges the children of a owner by
+packing them in order around the edges of the owner.
+
+In this port of B<Tk::pack> it is normal to pack widgets one-at-a-time
+using the widget object to be packed to invoke a method call.
+This is a slight distortion of the original Tcl-Tk interface (which
+can handle lists of windows to one pack method call) but Tk reports
+that it has proven effective in practice.
+
+The B<pack> method can have any of several forms, depending
+on I<Option>:
+
+=over 4
+
+=item pack %OPTIONS
+
+The options consist of pairs of arguments that specify how
+to manage the slave.
+See L<"The packer algorithm"> below for details on how the options
+are used by the packer.
+The following options are supported:
+
+=over 8
+
+=item B<after> =E<gt> I<$other>
+
+I<$other> must be another window.
+Use its master as the master for the slave, and insert
+the slave just after I<$other> in the packing order.
+
+=item B<anchor> =E<gt> I<anchor>
+
+I<Anchor> must be a valid anchor position such as B<n>
+or B<sw>; it specifies where to position each slave in its
+parcel.
+Defaults to B<center>.
+
+=item B<before> =E<gt> I<$other>
+
+I<$other> must be another window.
+Use its master as the master for the slave, and insert
+the slave just before I<$other> in the packing order.
+
+=item B<expand> =E<gt> I<boolean>
+
+Specifies whether the slave should be expanded to consume
+extra space in their master.
+I<Boolean> may have any proper boolean value, such as B<1>
+or B<no>.
+Defaults to 0.
+
+=item B<fill> =E<gt> I<style>
+
+If a slave's parcel is larger than its requested dimensions, this
+option may be used to stretch the slave.
+I<Style> must have one of the following values:
+
+=over 12
+
+=item B<none>
+
+Give the slave its requested dimensions plus any internal padding
+requested with B<-ipadx> or B<-ipady>.  This is the default.
+
+=item B<x>
+
+Stretch the slave horizontally to fill the entire width of its
+parcel (except leave external padding as specified by B<-padx>).
+
+=item B<y>
+
+Stretch the slave vertically to fill the entire height of its
+parcel (except leave external padding as specified by B<-pady>).
+
+=item B<both>
+
+Stretch the slave both horizontally and vertically.
+
+=back
+
+=item B<in> =E<gt> I<$master>
+
+Insert the slave(s) at the end of the packing order for the master
+window given by I<$master>. Currently, only the immediate owner
+can be accepted as master.
+
+=item B<ipadx> =E<gt> I<amount>
+
+I<Amount> specifies how much horizontal internal padding to
+leave on each side of the slave(s).
+I<Amount> must be a valid screen distance, such as B<2> or B<.5c>.
+It defaults to 0.
+
+=item B<ipady> =E<gt> I<amount>
+
+I<Amount> specifies how much vertical internal padding to
+leave on each side of the slave(s).
+I<Amount>  defaults to 0.
+
+=item B<padx> =E<gt> I<amount>
+
+I<Amount> specifies how much horizontal external padding to
+leave on each side of the slave(s).
+I<Amount> defaults to 0.
+
+=item B<pady> =E<gt> I<amount>
+
+I<Amount> specifies how much vertical external padding to
+leave on each side of the slave(s).
+I<Amount> defaults to 0.
+
+=item B<side> =E<gt> I<side>
+
+Specifies which side of the master the slave(s) will be packed against.
+Must be B<left>, B<right>, B<top>, or B<bottom>.
+Defaults to B<top>.
+
+=back
+
+=back
+
+If no B<in>, B<after> or B<before> option is specified
+then slave will be inserted at the end of the packing list
+for its owner unless it is already managed by the packer (in which
+case it will be left where it is).
+If one of these options is specified then slave will be
+inserted at the specified point.
+If the slave are already managed by the geometry manager
+then any unspecified options for them retain their previous values rather
+than receiving default values.
+
+=over 4
+
+=item packForget
+
+Removes I<slave> from the packing order for its
+master and unmaps its window.
+The slave will no longer be managed by the packer.
+
+=item packInfo [ %OPTIONS ]
+
+In get-mode, returns a list whose elements are the current configuration state of
+the slave given by I<$slave>.
+The first two elements of the list are ``B<in>=E<gt>I<$master>'' where
+I<$master> is the slave's master.
+
+In set-mode, sets all B<pack> parameters, but does not set
+widget geometry property to C<gt::Pack>.
+
+=item packPropagate BOOLEAN
+
+If I<boolean> has a true boolean value 
+then propagation is enabled for I<$master>,
+(see L<"Geometry propagation"> below).
+If I<boolean> has a false boolean value then propagation is
+disabled for I<$master>.
+If I<boolean> is omitted then the method returns B<0> or
+B<1> to indicate whether propagation is currently enabled
+for I<$master>.
+
+Propagation is enabled by default.
+
+=item packSlaves
+
+Returns a list of all of the slaves in the packing order for I<$master>.
+The order of the slaves in the list is the same as their order in
+the packing order.
+If I<$master> has no slaves then an empty list/string is returned in
+array/scalar context, respectively
+
+=back
+
+=head1 The packer algorithm
+
+For each master the packer maintains an ordered list of slaves
+called the I<packing list>.
+The B<in>, B<after>, and B<before> configuration
+options are used to specify the master for each slave and the slave's
+position in the packing list.
+If none of these options is given for a slave then the slave
+is added to the end of the packing list for its owner.
+
+The packer arranges the slaves for a master by scanning the
+packing list in order.
+At the time it processes each slave, a rectangular area within
+the master is still unallocated.
+This area is called the I<cavity>;  for the first slave it
+is the entire area of the master.
+
+For each slave the packer carries out the following steps:
+
+=over 4
+
+=item *
+
+The packer allocates a rectangular I<parcel> for the slave
+along the side of the cavity given by the slave's B<side> option.
+If the side is top or bottom then the width of the parcel is
+the width of the cavity and its height is the requested height
+of the slave plus the B<ipady> and B<pady> options.
+For the left or right side the height of the parcel is
+the height of the cavity and the width is the requested width
+of the slave plus the B<ipadx> and B<padx> options.
+The parcel may be enlarged further because of the B<expand>
+option (see L<"Expansion"> below)
+
+=item *
+
+The packer chooses the dimensions of the slave.
+The width will normally be the slave's requested width plus
+twice its B<ipadx> option and the height will normally be
+the slave's requested height plus twice its B<ipady>
+option.
+However, if the B<fill> option is B<x> or B<both>
+then the width of the slave is expanded to fill the width of the parcel,
+minus twice the B<padx> option.
+If the B<fill> option is B<y> or B<both>
+then the height of the slave is expanded to fill the width of the parcel,
+minus twice the B<pady> option.
+
+=item *
+
+The packer positions the slave over its parcel.
+If the slave is smaller than the parcel then the B<-anchor>
+option determines where in the parcel the slave will be placed.
+If B<padx> or B<pady> is non-zero, then the given
+amount of external padding will always be left between the
+slave and the edges of the parcel.
+
+Once a given slave has been packed, the area of its parcel
+is subtracted from the cavity, leaving a smaller rectangular
+cavity for the next slave.
+If a slave doesn't use all of its parcel, the unused space
+in the parcel will not be used by subsequent slaves.
+If the cavity should become too small to meet the needs of
+a slave then the slave will be given whatever space is
+left in the cavity.
+If the cavity shrinks to zero size, then all remaining slaves
+on the packing list will be unmapped from the screen until
+the master window becomes large enough to hold them again.
+
+=back
+
+=head1 Expansion
+
+If a master window is so large that there will be extra space
+left over after all of its slaves have been packed, then the
+extra space is distributed uniformly among all of the slaves
+for which the B<expand> option is set.
+Extra horizontal space is distributed among the expandable
+slaves whose B<side> is B<left> or B<right>,
+and extra vertical space is distributed among the expandable
+slaves whose B<side> is B<top> or B<bottom>.
+
+=head1 Geometry propagation
+
+The packer normally computes how large a master must be to
+just exactly meet the needs of its slaves, and it sets the
+requested width and height of the master to these dimensions.
+This causes geometry information to propagate up through a
+window hierarchy to a top-level window so that the entire
+sub-tree sizes itself to fit the needs of the leaf windows.
+However, the B<geometryPropagate> method may be used to
+turn off propagation for one or more masters.
+If propagation is disabled then the packer will not set
+the requested width and height of the packer.
+This may be useful if, for example, you wish for a master
+window to have a fixed size that you specify.
+
+=head1 Restrictions on master windows
+
+The master for each slave must not be a child of the slave,
+and must not be present in any other list of slaves that
+directly or indirectly refers to the slave.
+
+=head1 Packing order
+
+If the master for a slave is not its owner then you must make sure
+that the slave is higher in the stacking order than the master.
+Otherwise the master will obscure the slave and it will appear as
+if the slave hasn't been packed correctly.
+The easiest way to make sure the slave is higher than the master is
+to create the master window first:  the most recently created window
+will be highest in the stacking order.
+Or, you can use the B<bring_to_front> and B<send_to_back> methods to change
+the stacking order of either the master or the slave.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>
+
+L<Tk::pack|Tk::pack>
+L<Tk::place|Tk::place>
+
+=cut
