@@ -709,7 +709,7 @@ CM(WindowState)
 CM(Timer)
 #define cmClick          0x0000001D                /* common click */
 CM(Click)
-#define cmCalcBounds     0x0000001E                /* query on change size */
+#define cmCalcBounds    (0x0000001E|ctPassThrough) /* query on change size */
 CM(CalcBounds)
 #define cmPost           0x0000001F                /* posted message */
 CM(Post)

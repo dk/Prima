@@ -508,8 +508,8 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmCalcBounds:
         {
            Point min, max;
-           min = my-> get_sizeMin( self);
-           max = my-> get_sizeMax( self);
+           min = var-> sizeMin;
+           max = var-> sizeMax;
            if (( min. x > 0) && ( min. x > event-> gen. R. right  )) event-> gen. R. right  = min. x;
            if (( min. y > 0) && ( min. y > event-> gen. R. top    )) event-> gen. R. top    = min. y;
            if (( max. x > 0) && ( max. x < event-> gen. R. right  )) event-> gen. R. right  = max. x;
