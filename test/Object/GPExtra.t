@@ -13,7 +13,7 @@ $x-> linePattern( lp::Solid);
 my $bl = 0;
 my $i;
 for ( $i = 0; $i < 7; $i++) {
-   $bl++ if $x-> get_pixel( $i, 4) == 0;
+   $bl++ if $x-> pixel( $i, 4) == 0;
 }
 ok( $bl < 6);
 
@@ -24,8 +24,8 @@ $x-> color( cl::Black);
 $x-> lineWidth( 3);
 $x-> line( 3, 4, 5, 4);
 $x-> lineWidth( 1);
-ok( $x-> get_pixel( 2, 4) == 0 &&
-    $x-> get_pixel( 5, 3) == 0
+ok( $x-> pixel( 2, 4) == 0 &&
+    $x-> pixel( 5, 3) == 0
 );
 
 # 3
@@ -38,7 +38,7 @@ $x-> bar( 0, 0, 7, 7);
 $x-> fillPattern( fp::Solid);
 $bl = 0;
 for ( $i = 0; $i < 8; $i++) {
-   $bl++ if $x-> get_pixel( $i, 4) == 0;
+   $bl++ if $x-> pixel( $i, 4) == 0;
 }
 ok( $bl == 4);
 
@@ -49,7 +49,7 @@ $x-> color( 0x808080);
 $x-> bar( 0, 0, 7, 7);
 $bl = 0;
 for ( $i = 0; $i < 7; $i++) {
-   $bl++ if $x-> get_pixel( $i, 4) == 0;
+   $bl++ if $x-> pixel( $i, 4) == 0;
 }
 ok( $bl == 4);
 
@@ -59,7 +59,7 @@ $x-> bar( 0, 0, 7, 7);
 $x-> rop( rop::XorPut);
 $x-> bar( 0, 0, 1, 1);
 $x-> rop( rop::CopyPut);
-ok( $x-> get_pixel( 0, 0) == 0);
+ok( $x-> pixel( 0, 0) == 0);
 
 $x-> destroy;
 1;
