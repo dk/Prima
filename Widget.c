@@ -60,7 +60,6 @@ Widget_init( Handle self, HV * profile)
    var tabOrder = -1;
 
    if ( !kind_of( var owner, CWidget)) {
-      inherited done( self);
       Object_destroy( self);
       croak("Illegal object reference passed to Widget.init");
    }
@@ -211,10 +210,13 @@ Widget_done( Handle self)
    detachFrom-> self-> detach( var owner, self, false);
    my detach( self, var popupMenu, true);
    var popupMenu = nilHandle;
+
    SvREFCNT_dec( var pointer);
    free( var text);
    apc_widget_destroy( self);
    free( var hint);
+   var text = nil;
+   var hint = nil;
 
    list_destroy( &var widgets);
    inherited done( self);
@@ -1622,7 +1624,7 @@ Widget_set_accel_items( Handle self, SV * accelItems)
       HV * profile = newHV();
       if ( SvTYPE( accelItems)) pset_sv( items, accelItems);
       pset_H ( owner, self);
-      my set_accel_table( self, create_instance( AccelTable));
+      my set_accel_table( self, create_instance( "AccelTable"));
       sv_free(( SV *) profile);
    }
    else
@@ -2048,7 +2050,7 @@ Widget_set_popup_items( Handle self, SV * popupItems)
          HV * profile = newHV();
          pset_sv( items, popupItems);
          pset_H ( owner, self);
-         my set_popup( self, create_instance( Popup));
+         my set_popup( self, create_instance( "Popup"));
          sv_free(( SV *) profile);
       }
    }

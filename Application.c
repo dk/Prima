@@ -41,20 +41,18 @@ Application_init( Handle self, HV * profile)
 
       pset_c( name, "Clipboard");
       pset_H( owner, self);
-      var clipboard = Object_create( clipboardClass, profile);
-      SvREFCNT_inc( SvRV((( PAnyObject) var clipboard)-> mate));
+      var clipboard = create_instance( clipboardClass);
       hv_clear( profile);
 
       pset_c( name, "Printer");
       pset_H( owner, self);
-      var printer = Object_create( printerClass, profile);
-      SvREFCNT_inc( SvRV((( PAnyObject) var printer)-> mate));
+      var printer = create_instance( printerClass);
       hv_clear( profile);
 
       pset_H( owner, self);
       pset_i( timeout, hintPause);
       pset_c( name, "HintTimer");
-      var hintTimer = Object_create( "Timer", profile);
+      var hintTimer = create_instance( "Timer");
       hv_clear( profile);
       memcpy( &HintTimerVmt, CTimer, sizeof( HintTimerVmt));
       HintTimerVmt. on_tick = Application_HintTimer_Tick;
@@ -68,7 +66,7 @@ Application_init( Handle self, HV * profile)
       pset_i( showHint, 0);
       pset_c( name, "HintWidget");
       pset_sv( font, hintFont);
-      var hintWidget = Object_create( hintClass, profile);
+      var hintWidget = create_instance( hintClass);
       sv_free(( SV *) profile);
    }
 // Widget init
@@ -98,14 +96,14 @@ Application_done( Handle self)
    list_destroy( &var modalHorizons);
    list_destroy( &var widgets);
    var accelTable = nilHandle;
-   SvREFCNT_dec( SvRV((( PAnyObject) var clipboard)-> mate));
    Object_destroy( var clipboard);
    var clipboard = nilHandle;
-   SvREFCNT_dec( SvRV((( PAnyObject) var printer)-> mate));
    Object_destroy( var printer);
-   free( var text);
-   free( var hint);
    var printer = nilHandle;
+   free( var text);
+   var text = nil;
+   free( var hint);
+   var hint = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
    application = nilHandle;
