@@ -527,7 +527,7 @@ although not by default.
 
    Prima::Application-> wantUnicodeInput(1)
 
-is the documented ( see L<Prima::Application> ) way to initiate UTF8 clipboard
+is the easiest ( see L<Prima::Application> ) way to initiate UTF8 clipboard
 text exchange.
 
 =head1 Other XRDB resources
