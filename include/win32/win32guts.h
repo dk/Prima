@@ -464,6 +464,7 @@ extern void         font_pp2font( char * presParam, Font * font);
 extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
 extern Bool         get_font_from_hash( PFont font, int *vectored, Bool bySize);
 extern Point        get_window_borders( int borderStyle);
+extern Bool         hwnd_check_limits( int x, int y, Bool uint);
 extern void         hwnd_enter_paint( Handle self);
 extern Handle       hwnd_frame_top_level( Handle self);
 extern void         hwnd_leave_paint( Handle self);
