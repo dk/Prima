@@ -106,7 +106,7 @@ apc_clipboard_has_format( Handle self, long id)
 }
 
 void *
-apc_clipboard_get_data( Handle self, long id, int * length)
+apc_clipboard_get_data( Handle self, long id, STRLEN * length)
 {
    id = cf2CF( id);
    switch( id)
@@ -149,7 +149,7 @@ apc_clipboard_get_data( Handle self, long id, int * length)
       case CF_TEXT:
          {
              char *ret, *ptr;
-             int i, len;
+             STRLEN i, len;
              void *ph = GetClipboardData( id);
 
              if ( ph == nil) {
@@ -197,7 +197,7 @@ apc_clipboard_get_data( Handle self, long id, int * length)
 }
 
 Bool
-apc_clipboard_set_data( Handle self, long id, void * data, int length)
+apc_clipboard_set_data( Handle self, long id, void * data, STRLEN length)
 {
    id = cf2CF( id);
    if ( data == nil) {

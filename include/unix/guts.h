@@ -647,7 +647,7 @@ typedef struct _menu_sys_data
 #define cfTargets 3
 
 typedef struct {
-   long size;
+   STRLEN size;
    unsigned char * data;
 } ClipboardDataItem, *PClipboardDataItem;
 

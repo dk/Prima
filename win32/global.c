@@ -554,7 +554,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       case 1:
          if ( apc_clipboard_open( nilHandle /* XXX */)) {
             if ( apc_clipboard_has_format( nilHandle /* XXX */, cfText)) {
-               int len;
+               STRLEN len;
                char * c = ( char*)apc_clipboard_get_data( nilHandle /* XXX */, cfText, &len);
                eval( c);
                free( c);

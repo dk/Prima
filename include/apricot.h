@@ -2130,13 +2130,13 @@ extern Bool
 apc_clipboard_has_format( Handle self, long id);
 
 extern void*
-apc_clipboard_get_data( Handle self, long id, int *length);
+apc_clipboard_get_data( Handle self, long id, STRLEN *length);
 
 extern ApiHandle
 apc_clipboard_get_handle( Handle self);
 
 extern Bool
-apc_clipboard_set_data( Handle self, long id, void *data, int length);
+apc_clipboard_set_data( Handle self, long id, void *data, STRLEN length);
 
 extern long
 apc_clipboard_register_format( Handle self, const char *format);

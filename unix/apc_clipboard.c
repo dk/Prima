@@ -339,10 +339,10 @@ apc_clipboard_has_format( Handle self, long id)
 }
 
 void *
-apc_clipboard_get_data( Handle self, long id, int *length)
+apc_clipboard_get_data( Handle self, long id, STRLEN *length)
 {
    DEFCC;
-   unsigned long size;
+   STRLEN size;
    unsigned char * data;
    void * ret;
 
@@ -395,7 +395,7 @@ apc_clipboard_get_data( Handle self, long id, int *length)
 }
 
 Bool
-apc_clipboard_set_data( Handle self, long id, void * data, int length)
+apc_clipboard_set_data( Handle self, long id, void * data, STRLEN length)
 {
    DEFCC;
    if ( id < 0 || id >= guts. clipboard_formats_count) return false;
