@@ -1037,8 +1037,8 @@ prima_create_image_cache( PImage img, Handle drawable)
       }
       
       switch(target_bpp){
-      case 8: cache_remap_8( img, cache); break;
-      case 4: cache_remap_4( img, cache); break;
+      case 8: if ((pass-> type & imBPP) != 1) cache_remap_8( img, cache); break;
+      case 4: if ((pass-> type & imBPP) != 1) cache_remap_4( img, cache); break;
       case 1: cache_remap_1( img, cache); break;
       default: warn("UAI_019: palette is not supported");
       }
@@ -1224,8 +1224,32 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       XSetBackground( DISP, XX-> gc, 0);
       XX-> flags. brush_fore = XX-> flags. brush_back = 0;
    } else if ( mono) {
-      XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
-      XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+      unsigned long fore, back;
+      if ( XT_IS_DBM(X(image))) {
+         fore = guts. monochromeMap[1];
+         back = guts. monochromeMap[0];
+      } else {
+         if ( guts. palSize > 0) {
+            fore = prima_color_find(( Handle) img, 
+                RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
+                -1, nil, RANK_NORMAL);
+            back = prima_color_find(( Handle) img, 
+                RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
+                -1, nil, RANK_NORMAL);
+         } else {
+            fore = 
+               (((img-> palette[1].r << guts. red_range  ) >> 8) << guts.   red_shift) |
+               (((img-> palette[1].g << guts. green_range) >> 8) << guts. green_shift) |
+               (((img-> palette[1].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+            back = 
+               (((img-> palette[0].r << guts. red_range  ) >> 8) << guts.   red_shift) |
+               (((img-> palette[0].g << guts. green_range) >> 8) << guts. green_shift) |
+               (((img-> palette[0].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+         }
+      }
+         
+      XSetForeground( DISP, XX-> gc, fore);
+      XSetBackground( DISP, XX-> gc, back);
       XX-> flags. brush_fore = XX-> flags. brush_back = 0;
    }
    prima_put_ximage( XX-> gdrawable, XX-> gc, result,
@@ -1952,8 +1976,32 @@ apc_gp_stretch_image( Handle self, Handle image,
       XSetBackground( DISP, XX-> gc, 0);
       XX-> flags. brush_fore = XX-> flags. brush_back = 0;
    } else if ( mono) {
-      XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
-      XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+      unsigned long fore, back;
+      if ( XT_IS_DBM(X(image))) {
+         fore = guts. monochromeMap[1];
+         back = guts. monochromeMap[0];
+      } else {
+         if ( guts. palSize > 0) {
+            fore = prima_color_find(( Handle) img, 
+                RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
+                -1, nil, RANK_NORMAL);
+            back = prima_color_find(( Handle) img, 
+                RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
+                -1, nil, RANK_NORMAL);
+         } else {
+            fore = 
+               (((img-> palette[1].r << guts. red_range  ) >> 8) << guts.   red_shift) |
+               (((img-> palette[1].g << guts. green_range) >> 8) << guts. green_shift) |
+               (((img-> palette[1].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+            back = 
+               (((img-> palette[0].r << guts. red_range  ) >> 8) << guts.   red_shift) |
+               (((img-> palette[0].g << guts. green_range) >> 8) << guts. green_shift) |
+               (((img-> palette[0].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+         }
+      }
+         
+      XSetForeground( DISP, XX-> gc, fore);
+      XSetBackground( DISP, XX-> gc, back);
       XX-> flags. brush_fore = XX-> flags. brush_back = 0;
    }
    prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
