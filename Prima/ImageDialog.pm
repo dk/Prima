@@ -384,7 +384,7 @@ sub save
             my $x = "use $codec->{module};";
             eval $x;
             if ($@) {
-               Prima::MsgBox::message("Error invoking $codec->{fileShortType} filter dialog");
+               Prima::MsgBox::message("Error invoking $codec->{fileShortType} filter dialog:$@");
             } else {
                $self-> {codecFilters}-> [$fi] = $codec-> {package}-> save_dialog;
             }
