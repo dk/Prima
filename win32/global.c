@@ -658,7 +658,6 @@ AGAIN:
       }
       break;
    case WM_LBUTTONDOWN:
-      printf("%s\n", v-> name);
       ev. pos. button = mbLeft;
       goto MB_DOWN;
    case WM_RBUTTONDOWN:
