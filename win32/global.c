@@ -608,10 +608,8 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              (( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
 
           keyState = guts. keyState;
-
 AGAIN:             
           // ascii mapping
-             
           switch ( ToAsciiEx( mp1, scan, keyState, (LPWORD) keys, 0, kl)) {
           case 1: // char
              if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0) && ( GetKeyState( VK_SHIFT) >= 0)) {
@@ -655,10 +653,16 @@ AGAIN:
               ev. key. mod |= kmDeadKey;
           }
           ev. key. code = keys[ 0];
+          
 
           // simulated key codes
           if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))
              ev. key. key = kbBackTab;
+          
+          if ( ev. key. code >= 'A' && ev. key. code <= 'z' && ev. key. mod & kmCtrl) {
+             ev. key. code = toupper(ev. key. code & 0xFF) - '@';
+             if (!( ev. key. mod & kmShift)) ev. key. code = tolower( ev. key. code);
+          }
       }
       break;
    case WM_INITMENUPOPUP:
