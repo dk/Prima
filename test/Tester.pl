@@ -1,0 +1,224 @@
+package main;
+use vars qw( @ISA $w $dong);
+
+my $verbose = 0;
+my $testing = 0;
+my @results = ();
+my @extras  = ();
+my @extraTestNames  = ();
+my $ok_count;
+my $testsRan = 0;
+
+
+BEGIN
+{
+   if ($^O !~ /MSWin32/) {
+      use lib qw(. scripts);
+      use Prima;
+   }
+
+   unless ($^O !~ /MSWin32/) {
+      untie *STDOUT;
+   }
+
+   package ExTiedStdOut;
+
+   sub TIEHANDLE
+   {
+      my $class = shift;
+      my $isError = shift;
+      bless \$isError, $class;
+   }
+
+   sub analyze
+   {
+      unless ( $testing) {
+         print STDERR $_[0];
+         return;
+      }
+      if ( scalar @results == 0 && $_[0] =~ /\d+\s*\.\.\s*(\d+)\s*(.*)/) {
+         if ( $1 > 0) {
+            @results = ((0) x ( $1));
+            @extraTestNames = ();
+            my @a = split( ',', $2);
+            my $i;
+            for ( $i = 0; $i < @a; $i++) { $extraTestNames[$i] = $a[$i]; }
+         } else {
+            push( @extras, $_[0]);
+         }
+      } else {
+         if ( $_[0] =~ /(not\s+)?ok(.*)\b/) {
+            my $notOK = defined $1;
+            my $id;
+            my $ex = $2;
+            if ( $_[0] =~ /ok\s+(\d+)/) {
+               $id = $1;
+            } else {
+               $id = $ok_count;
+            }
+            if ( defined $ex) {
+               $ex = ( $ex =~ /\s+\#\s+skip/i) ? 1 : undef;
+            }
+            if (( $id > 0 && $id <= scalar @results) || ( scalar @results == ( $id - 1))) {
+               $results[ $id - 1] = $ex ? -1 : ( $notOK ? 0 : 1);
+            } else {
+               push( @extras, "! test $id of ".@results." run");
+            }
+         } else {
+            push( @extras, $_[0]);
+         }
+      }
+   }
+
+   sub PRINT {
+      my $r = shift;
+      $$r++;
+      analyze( join( '', @_));
+   }
+
+   sub PRINTF {
+       shift;
+       my $fmt = shift;
+       analyze( sprintf($fmt, @_));
+   }
+
+   tie *STDOUT, 'ExTiedStdOut', 0;
+}
+use Prima;
+use Prima::Const;
+use Prima::Classes;
+use Prima::Application name => 'failtester';
+my $filter = undef;
+
+for ( @ARGV) {
+   if ( /^-(.*)/) {
+      if ( lc($1) eq 'v') {
+         $verbose = 1;
+      }
+   } else {
+      $filter = $_;
+      last;
+   }
+}
+
+
+sub __wait
+{
+   my $count = 20000;
+   $dong = 0;
+   while ( $count--) {
+      last if $dong;
+      $::application-> yield;
+   }
+   return $dong;
+}
+
+sub __dong
+{
+   $dong = 1;
+}
+
+$w = Prima::Window-> create(
+   onDestroy => sub { $::application-> close},
+   size => [ 200,200],
+);
+
+sub ok
+{
+   print $_[0] ? "ok $ok_count\n" : "not ok $ok_count\n";
+   $ok_count++;
+}
+
+sub runfile
+{
+   my $d = $_[0];
+   $d =~ s/.t$//;
+   print "Testing $d...";
+   $ok_count = 1;
+   $testing = 1;
+   @results = ();
+   @extras  = ();
+   my $c = eval { require $_[0]; };
+   $testing = 0;
+   if ( $@) {
+       print "test error: $@\n"
+   } else {
+      if ( $verbose) {
+         my $i = 0;
+         print "\n";
+         for ( @results) {
+            my $exName = defined $extraTestNames[ $i] ? "  ($extraTestNames[$i])" : '';
+            my $j = $i + $testsRan + 1;
+            print "test $j:".(( $_ < 0 ) ? "skipped" : (( $_ > 0) ? "passed" : "failed")).$exName."\n";
+            $i++;
+         }
+         $testsRan += $i;
+         print "$_\n" for @extras;
+      } else {
+         my $res = 1;
+         for ( @results) {
+            next if $_ < 0;
+            $res &= $_;
+         }
+         $testsRan++;
+         print (( $res ? "passed" : "failed")."\n");
+      }
+   }
+}
+
+sub rundir
+{
+   my $dir = $_[0];
+   opendir( FDIR, $dir);
+   my @f = readdir( FDIR);
+   closedir FDIR;
+   my @files = ();
+   my @index = ();
+
+   for ( @f) {
+      next if ( $_ eq ".") || ( $_ eq "..");
+      if ( $_ eq 'order') {
+         if ( open F, "$dir/$_") {
+            @index = <F>;
+            close F;
+            chomp for @index;
+         }
+         next;
+      }
+      push @files, $_;
+   }
+
+   my %h = map { $_ => 1 } @files;
+   @f = ();
+   for ( @index) {
+      next unless length( $_);
+      if ( exists $h{$_}) {
+         push( @f, $_);
+         $h{$_} = 0;
+      }
+   }
+
+   for ( keys %h) {
+      push( @f, $_) if $h{$_};
+   }
+
+   for ( @f)
+   {
+      my $ff = "$dir/$_";
+      if ( -d $ff) {
+         rundir( $ff);
+      } elsif ( -f $ff) {
+         next unless $_ =~ /.t$/;
+         if ( defined $filter) {
+            next if lc( $filter) ne lc($_);
+         }
+         runfile( $ff);
+      }
+   }
+
+}
+
+rundir('.');
+
+run Prima;
+
