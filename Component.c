@@ -406,8 +406,7 @@ Component_handle_event( Handle self, PEvent event)
    {
    case cmCreate:
       my-> notify( self, "<s", "Create");
-      if ( var-> stage == csNormal)
-      {
+      if ( var-> stage == csNormal && var-> evQueue) {
          PList q = var-> evQueue;
          var-> evQueue = nil;
          if ( q-> count > 0)
