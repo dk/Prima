@@ -119,6 +119,7 @@ sub init
    $self-> {__DYNAS__}->{ onActivate}    = $profile{ onActivate};
    $self-> {__DYNAS__}->{ onDeactivate}  = $profile{ onDeactivate};
    $self-> {__DYNAS__}->{ onWindowState} = $profile{ onWindowState};
+   $self-> popup-> auto(0) if $self-> popup;
    $self-> {client} = $self-> insert( $profile{clientClass},
       rect     => [ $self-> get_client_rect],
       growMode => gm::Client,
