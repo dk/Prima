@@ -983,7 +983,7 @@ sub text_out
    
    if ( $self-> {font}-> {style} & fs::Underlined) {
       $self-> emit("[] 0 setdash 0 setlinecap 0 setlinewidth");
-      $self-> emit("newpath $rb[0] 0 moveto $rb[4] 0 rlineto stroke");
+      $self-> emit("newpath @rb[0,3] moveto $rb[4] 0 rlineto stroke");
    }
    $self-> emit("grestore");
    return 1;
