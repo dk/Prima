@@ -65,6 +65,12 @@
 #error "Reconsider the order in which you #include files"
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
@@ -154,18 +160,34 @@ typedef long Color;
 
 #include "Types.h"
 
-#ifndef _SYS_INTTYPES_H_
-#ifdef _MACHINE_TYPES_H_
-typedef u_int8_t uint8_t;
-typedef u_int16_t uint16_t;
-typedef u_int32_t uint32_t;
+#if !defined(HAVE_INT8_T)
+typedef signed char     int8_t;
+#endif
+#if !defined(HAVE_INT16_T)
+typedef signed short    int16_t;
+#endif
+#if !defined(HAVE_INT32_T)
+typedef signed long     int32_t;
+#endif
+#if !defined(HAVE_UINT8_T)
+#if !defined(HAVE_U_INT8_T)
+typedef u_int8_t        uint8_t;
 #else
-typedef unsigned char  uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned long  uint32_t;
-typedef char            int8_t;
-typedef short           int16_t;
-typedef long            int32_t;
+typedef unsigned char   uint8_t;
+#endif
+#endif
+#if !defined(HAVE_UINT16_T)
+#if !defined(HAVE_U_INT16_T)
+typedef u_int16_t       uint16_t;
+#else
+typedef unsigned short  uint16_t;
+#endif
+#endif
+#if !defined(HAVE_UINT32_T)
+#if !defined(HAVE_U_INT32_T)
+typedef u_int32_t       uint32_t;
+#else
+typedef unsigned long   uint32_t;
 #endif
 #endif
 
