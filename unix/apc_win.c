@@ -396,10 +396,8 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
    if (( XX-> preexec_focus = apc_widget_get_focused()))
       protect_object( XX-> preexec_focus);
    CWindow( self)-> exec_enter_proc( self, shared, insert_before);
-   if (!(XX-> flags. preexec_enabled = apc_widget_is_enabled( self)))
-      apc_widget_set_enabled( self, true);
-   if (!(XX-> flags. preexec_visible = apc_widget_is_visible( self)))
-      apc_widget_set_visible( self, true);
+   apc_widget_set_enabled( self, true);
+   apc_widget_set_visible( self, true);
    prima_simple_message( self, cmExecute, true);
    guts. modal_count++;
    return true;
@@ -437,14 +435,11 @@ apc_window_end_modal( Handle self)
    PWindow win = PWindow(self);
    Handle modal, oldfoc;
    DEFXX;
-
    if ( win-> modal == mtExclusive)
       XX-> flags.modal = false;
    CWindow( self)-> exec_leave_proc( self);
-   if (!XX-> flags.preexec_visible)
-      apc_widget_set_visible( self, false);
-   if (!XX-> flags.preexec_enabled)
-      apc_widget_set_enabled( self, 0);
+   apc_widget_set_visible( self, false);
+   apc_widget_set_enabled( self, 0);
    if ( application) {
       modal = CApplication(application)->popup_modal( application);
       if ( !modal && win->owner)

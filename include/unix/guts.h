@@ -462,8 +462,6 @@ typedef struct _drawable_sys_data
       int paint_opaque                  : 1;
       int paint_pending                 : 1;
       int pointer_obscured              : 1;
-      int preexec_enabled               : 1;
-      int preexec_visible               : 1;
       int process_configure_notify	: 1;
       int reload_font			: 1;
       int saved_zero_line       	: 1;
