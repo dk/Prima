@@ -1,4 +1,4 @@
-#include "apricot.h"
+   #include "apricot.h"
 #include "Application.h"
 #include "Icon.h"
 #include "Popup.h"
