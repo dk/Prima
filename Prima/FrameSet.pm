@@ -64,7 +64,7 @@ sub init
     my %profile = $me->SUPER::init(@_);
 
     foreach my $key (qw(minFrameWidth maxFrameWidth)) {
-	eval "\$me->$key(\$profile{\$key})";
+	$me->$key($profile{$key});
     }
 
     return %profile;
@@ -75,7 +75,7 @@ sub minFrameWidth
 {
     my $me = shift;
     if (@_ > 0) {
-	return if exists $me->{minFrameWidth} && $me->{minFrameWidth} == $_[0];
+	return if defined ($me->{minFrameWidth}) && $me->{minFrameWidth} == $_[0];
 	if (defined $_[0]) {
 	    $me->{minFrameWidth} = $_[0] < 0 ? 0 : $_[0];
 	} else {
@@ -90,7 +90,7 @@ sub maxFrameWidth
 {
     my $me = shift;
     if (@_ > 0) {
-	return if exists($me->{maxFrameWidth}) && ($me->{maxFrameWidth} == $_[0]);
+	return if defined($me->{maxFrameWidth}) && ($me->{maxFrameWidth} == $_[0]);
 	if (defined $_[0]) {
 	    $me->{maxFrameWidth} = $_[0] < 0 ? 0 : $_[0];
 	} else {
@@ -116,9 +116,10 @@ sub profile_default
 	%{$_[0]->SUPER::profile_default},
 	vertical	=> 0,
 	thickness	=> 4,
-	still		=> 0,
 	growMode	=> gm::GrowHiX | gm::GrowLoX,
-	pointerType	=> cr::SizeNS,
+        frame1          => undef,
+        frame2          => undef,
+        sliderIndex     => 0,
     };
 }
 
@@ -127,12 +128,9 @@ sub profile_check_in
     my ($me, $p, $default) = @_;
     my $userPointer = exists $p->{pointerType};
     $me->SUPER::profile_check_in($p, $default);
-    my $vertical = exists $p->{vertical} ? $p->{vertical} : $default->{vertical};
-    if ($vertical) {
-	$p->{growMode} = gm::GrowHiY | gm::GrowLoY;
-	$p->{pointerType} = cr::SizeWE;
+    if (exists $p->{vertical} ? $p->{vertical} : $default->{vertical}) {
+	$p->{growMode} = gm::GrowHiY | gm::GrowLoY unless exists $p->{growMode};
     }
-    $p->{pointerType} = cr::Default if $p->{still} && ! $userPointer;
 }
 
 sub init
@@ -140,9 +138,8 @@ sub init
     my $me = shift;
     my %profile = $me->SUPER::init(@_);
 
-    foreach my $prop (qw(thickness vertical still frame1 frame2 sliderIndex)) {
-	eval "\$me->$prop(\$profile{\$prop})"
-	    if exists $profile{$prop};
+    foreach my $prop (qw(thickness vertical frame1 frame2 sliderIndex)) {
+	$me->$prop($profile{$prop});
     }
 
     $me->adjust_sizes;
@@ -155,7 +152,8 @@ sub on_paint
 {
     my ($me, $canvas) = @_;
    my @sz = $canvas->size;
-   if ($me->{still}) {
+   unless ($me-> enabled) {
+        $me->color( $me-> disabledBackColor);
 	$me->bar( 0, 0, $me->size);
    } else {
 	$me->rect3d(
@@ -171,10 +169,13 @@ sub on_paint
 			    $me->light3DColor,
 			    $me->dark3DColor,
 			),
-		    $me->backColor
+ 		        $me->backColor
 		   );
    }
 }
+
+sub on_enable  { $_[0]-> repaint; }
+sub on_disable { $_[0]-> repaint; }
 
 sub on_mousedown
 {
@@ -277,7 +278,6 @@ sub adjust_sizes
     my $me = shift;
     my ($w, $h);
     my $owner = $me->owner;
-    return unless defined($owner) && $owner->isa('Prima::Widget');
     if ($me->{vertical}) {
 	$h = $owner->height;
 	$w = $me->{thickness};
@@ -297,7 +297,13 @@ sub xorrect
    $o-> begin_paint;
    my $oo = $self-> clipOwner ? $self-> owner : $::application;
    $o-> clipRect( $oo-> client_to_screen( 0,0,$oo->size));
-   $o-> rect_focus( @r, $self-> {border});
+   $o-> set(
+      fillPattern => fp::SimpleDots,
+      color       => cl::Set,
+      backColor   => cl::Clear,
+      rop         => rop::XorPut,
+   );
+   $o-> bar( @r);
    $o-> end_paint;
 }
 
@@ -356,17 +362,6 @@ sub thickness
     }
 }
 
-sub still
-{
-    my $me = shift;
-    if (@_ > 0) {
-	return if exists($me->{still}) && $me->{still} == $_[0];
-	$me->{still} = $_[0];
-	$me->repaint;
-    } else {
-	return $me->{still};
-    }
-}
 
 sub frame1
 {
@@ -408,10 +403,6 @@ use vars qw(@ISA);
 
 @ISA = qw(Prima::Widget);
 
-use constant SLIDER_DARK => 0;		# Dark slider side.
-use constant SLIDER_SINGLE => 1;	# Single-line slider.
-use constant SLIDER_LIGHT => 2;		# Light slider side.
-
 # Initialization.
 sub profile_default
 {
@@ -419,15 +410,21 @@ sub profile_default
 	%{ $_[0]->SUPER::profile_default},
 	arrangement => fra::Horizontal,		# Vertical or horizontal insertion of frames.
 	frameCount => 2,			# Number of frames, no less than 2.
-#	flexible => 1,				# Frame can be resized by user at any time at any place.
+ 	flexible => 1,				# Frame can be resized by user at any time at any place.
 	sliders => [qw(1)],			# Where resize sliders must be located. Array size depends on number of frames and must be (nframes+1) long.
 	sliderWidth => 4,
-	separatorWidth => 1,			# Separator is a immovable slider.
+	separatorWidth => 1,			# Separator is an immovable slider.
 	frameSizes => [qw(50% *)],		# Sizes of frames in percents, pixel or '*' for automatic.
 	growMode => gm::Client,
 	origin => [0, 0],
 	opaqueResize => 0,
 	resizeMethod => frr::Simple,
+        frameClass    => 'Prima::FrameSet::Frame',
+        frameProfile  => {},
+        frameProfiles => [],
+        sliderClass    => 'Prima::FrameSet::Slider',
+        sliderProfile  => {},
+        sliderProfiles => [],
     };
 }
 
@@ -450,25 +447,19 @@ sub init
 
     $me->{frameSizes} = $profile{frameSizes};
 
-    if (! exists $profile{origin}) {
-	$me->origin(0, 0);
-    }
-
-    if (! exists $profile{size}) {
-	$me->size($me->owner->size);
-    }
-
     foreach my $prop (qw(frameCount arrangement sliderWidth separatorWidth
 			 flexible opaqueResize resizeMethod)) {
-	eval "\$me->$prop(\$profile{\$prop})"
-	    if exists $profile{$prop};
-	die $@ if $@;
+	$me->$prop($profile{$prop});
     }
 
     for (my $i = 0; $i < $profile{frameCount}; $i++) {
+        my %xp = %{$profile{frameProfile}};
+        %xp = ( %xp, %{$profile{frameProfiles}->[$i]}) 
+           if $profile{frameProfiles}->[$i] && ref($profile{frameProfiles}->[$i]) eq 'HASH';
 	my $frame = $me->insert(
-				qw( FrameSet::Frame) =>
+				$profile{frameClass} =>
 				name => "Frame$i",
+                                %xp,
 	);
 	push @{$me->{frames}}, $frame;
     }
@@ -476,23 +467,27 @@ sub init
     my $sn;
     for ($sn = 0; $sn < ($profile{frameCount} - 1); $sn++) {
 	my $moveable = $profile{sliders}->[$sn] ? 1 : 0;
-	$moveable = $profile{flexible} if exists $profile{flexible};
+	$moveable = $profile{flexible};
+        my %xp = %{$profile{sliderProfile}};
+        %xp = ( %xp, %{$profile{sliderProfiles}->[$sn]}) 
+           if $profile{sliderProfiles}->[$sn] && ref($profile{sliderProfiles}->[$sn]) eq 'HASH';
 	my $slider = $me->insert(
-	    qw(FrameSet::Slider) =>
+	    $profile{sliderClass} =>
 	    name => "Slider#$sn",
 	    $moveable ?
 		(
 		 thickness => $profile{sliderWidth},
-		 still => 0,
+		 enabled => 1,
 		) : (
 		 thickness => 1,
-		 still => 1,
+		 enabled => 0,
 		),
 # Horizontal arrangement of frames means we need a vertically oriented slider.
 	    vertical => $me->{arrangement} == fra::Horizontal,
 	    frame1 => $me->{frames}->[$sn],
 	    frame2 => $me->{frames}->[$sn + 1],
 	    sliderIndex => $sn,
+            %xp,
 	);
 	push @{$me->{sliders}}, $slider;
     }
@@ -550,8 +545,7 @@ sub recalc_frames
 
 	    (my $nfsz = $fsz) =~ s/\%$//;
 
-	    die "Negative frame size ($fsz)"
-		if $nfsz < 0;
+            $nfsz = 0 if $nfsz < 0;
 
 	    if ($fsz =~ /\%$/) {
 		$percents += $nfsz;
@@ -559,9 +553,6 @@ sub recalc_frames
 		$pixels += $nfsz;
 	    }
 	}
-
-	die sprintf( 'Prima::FrameSet: total frames size in percents (%.20f) exceeds 100', $percents)
-	    if $percents > 100.;
 
 	my $totalSize;	# Total width or height depending on arrangement.
 	if ($me->{arrangement} == fra::Vertical) {
@@ -577,8 +568,6 @@ sub recalc_frames
 	}
 
 	my $percentSize = ($size * $percents / 100.);
-	die "Prima::FrameSet: frame size in percents is too big to fit it properly"
-	    if $size < $percentSize;
 
 	my $autoSize = $asterixCount ? ($size - $percentSize) / $asterixCount : 0; # Size of an automaticly-sized frame.
 
@@ -786,7 +775,7 @@ sub sliderWidth
 	$me->{sliderWidth} = $_[0];
 	if ($haveIt) {
 	    for (my $i = 0; $i < ($me->{frameCount} - 1); $i++) {
-		unless ($me->{sliders}->[$i]->still) {
+		if ($me->{sliders}->[$i]->enabled) {
 		    $me->{sliders}->[$i]->thickness($_[0]);
 		}
 	    }
@@ -807,7 +796,7 @@ sub separatorWidth
 	$me->{separatorWidth} = $_[0];
 	if ($haveIt) {
 	    for (my $i = 0; $i < ($me->{frameCount} - 1); $i++) {
-		if ($me->{sliders}->[$i]->still) {
+		if ($me->{sliders}->[$i]->enabled) {
 		    $me->{sliders}->[$i]->thickness($_[0]);
 		}
 	    }
@@ -829,7 +818,7 @@ sub flexible
 	if ($haveIt) {
 	    for (my $i = 0; $i < ($me->{frameCount} - 1); $i++) {
 		$me->{sliders}->[$i]->thickness($me->{flexible} ? $me->{sliderWidth} : $me->{separatorWidth});
-		$me->{sliders}->[$i]->still(! $me->{flexible});
+		$me->{sliders}->[$i]->enabled( $me->{flexible});
 	    }
 	    $me->recalc_frames;
 	    $me->reset;
@@ -837,6 +826,16 @@ sub flexible
     } else {
 	return $me->{flexible};
     }
+}
+
+sub frameSizes
+{
+   return [@{$_[0]->{frameSizes}}] unless $#_;
+   my $me = shift;
+   my @fs = ( $_[0] && ref($_[0]) eq 'ARRAY' && 1 == scalar @_) ? @{$_[0]} : @_;
+   $me-> {frameSizes} = \@fs;
+   $me-> recalc_frames( initial => 1);
+   $me-> reset;
 }
 
 sub opaqueResize

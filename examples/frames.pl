@@ -43,6 +43,7 @@ my $frame = $w->insert(
     origin => [0, 0],
     frameSizes => [qw(211 20% 123 10% * 45% *)],
     opaqueResize => 0,
+    frameProfiles => [ 0,0, { minFrameWidth => 123, maxFrameWidth => 123 }],
 );
 
 for (my $i = 0; $i < 6; $i++) {
@@ -57,10 +58,6 @@ for (my $i = 0; $i < 6; $i++) {
 	},
     );
 }
-
-my $f = $frame->frames->[2];
-$f->minFrameWidth(100);
-$f->maxFrameWidth(100);
 
 my $subframe = $frame->insert_to_frame(
     4,
