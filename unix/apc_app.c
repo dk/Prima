@@ -416,7 +416,6 @@ apc_application_create( Handle self)
    DEFXX;
 
    if ( !DISP) return false;
-   return false;
 
    XX-> type.application = true;
    XX-> type.widget = true;
