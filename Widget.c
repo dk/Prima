@@ -1117,11 +1117,11 @@ void
 Widget_setup( Handle self)
 {
    enter_method;
-   inherited-> setup( self);
    if ( get_top_current( self) &&
         my-> get_enabled( self) &&
         my-> get_visible( self))
       my-> set_selected( self, true);
+   inherited-> setup( self);
 }
 
 void
