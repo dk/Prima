@@ -249,6 +249,8 @@ B<Perl programming>:
 
 - L<Prima::Menu> - pull-down and pop-up menu objects
 
+- L<Prima::Timer> - programmable periodical events 
+
 B<C programming>
 
 - L<Prima::internals> - Internal architecture
