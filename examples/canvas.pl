@@ -69,7 +69,7 @@ sub on_paint
       $canvas-> clipRect( @r);
       $r[2] -= $r[0];
       $r[3] -= $r[1];
-      $obj-> on_paint( $canvas, @r[2,3]);
+      $obj-> on_paint( $canvas, $r[2]+1,$r[3]+1);
    }
    $canvas-> translate(0,0);
    $canvas-> clipRect(@c);
@@ -143,8 +143,8 @@ sub object2screen
    my $zoom = $self->{zoom};
    my @ret;
    for ( $i = 1; $i <= $#_; $i+=2) {
-      push @ret, -$d[0] + $_[$i]   * $zoom + $i[0];
-      push @ret, +$d[1] + $_[$i+1] * $zoom + $i[1] if defined $_[$i+1];
+      push @ret, int(-$d[0] + $_[$i]   * $zoom + $i[0] + .5);
+      push @ret, int(+$d[1] + $_[$i+1] * $zoom + $i[1] + .5) if defined $_[$i+1];
    }
    return @ret;
 }
@@ -227,6 +227,8 @@ sub delete_object
 {
    my ( $self, $obj) = ( shift, shift);
    @{$self->{objects}} = grep { $_ != $obj } @{$self->{objects}};
+   $self-> {selection} = undef 
+      if $self->{selection} && $self->{selection} == $obj;
    my @r = $self-> object2screen( $obj-> rect);
    $self-> invalidate_rect( @r) if $obj-> visible;
 }
@@ -721,13 +723,13 @@ sub on_paint
    if ( $self-> {fill}) {
       $canvas-> color( $self-> {backColor});
       $canvas-> backColor( $self-> {fillBackColor});
-      $canvas-> bar( 0, 0, $width, $height);
+      $canvas-> bar( 0, 0, $width - 1, $height - 1);
    }
    if ( $self-> {outline}) {
+      my $lw = int(($self-> {lineWidth} || 1) / 2);
       $canvas-> color( $self-> {color});
       $canvas-> backColor( $self-> {outlineBackColor});
-      my $lw = int($self-> {lineWidth} / 2);
-      $canvas-> rectangle( $lw, $lw, $width - $lw, $height - $lw);
+      $canvas-> rectangle( $lw, $lw, $width - $lw - 1, $height - $lw - 1);
    }
 }
 
@@ -738,16 +740,18 @@ use vars qw(@ISA);
 sub on_paint
 {
    my ( $self, $canvas, $width, $height) = @_;
+   my ( $cx, $cy) = (int(($width - 1) / 2), int(($height - 1)/ 2));
    if ( $self-> {fill}) {
       $canvas-> color( $self-> {backColor});
       $canvas-> backColor( $self-> {fillBackColor});
-      $canvas-> fill_ellipse( $width / 2, $height / 2, $width, $height);
+      $canvas-> fill_ellipse( $cx, $cy, $width, $height);
    }
    if ( $self-> {outline}) {
+      my $lw = ($self-> {lineWidth} || 1) - 1;
       $canvas-> color( $self-> {color});
       $canvas-> backColor( $self-> {outlineBackColor});
-      $canvas-> ellipse( $width / 2, $height / 2, 
-         $width - $self-> {lineWidth} + 1, $height - $self-> {lineWidth} + 1);
+      $canvas-> ellipse( $cx, $cy,
+         $width - $lw, $height - $lw);
    }
 }
 
@@ -768,7 +772,7 @@ my $w = Prima::MainWindow-> create(
      ['~Edit' => [
         ['color' => '~Foreground color' => \&set_color],
         ['backColor' => '~Background color' => \&set_color],
-	['~Line width' => [ map { [ "lw$_", $_, \&set_line_width ] } 1..5, 7, 10, 15 ]],
+	['~Line width' => [ map { [ "lw$_", $_, \&set_line_width ] } 0..7, 10, 15 ]],
 	['Line ~pattern' => [ map { [ "lp:linePattern=$_", $_, \&set_constant ] } 
 	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %lp:: ]],
 	['Line ~end' => [ map { [ "le:lineEnd=$_", $_, \&set_constant ] } 
@@ -866,6 +870,6 @@ sub zoom
    }
 }
 
-$c-> insert_object( 'Prima::Canvas::Rectangle');
+$c-> insert_object( 'Prima::Canvas::Rectangle', linePattern => lp::DotDot, lineWidth => 10);
 
 run Prima;
