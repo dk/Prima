@@ -768,9 +768,45 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 }
 
 Bool
-apc_gp_draw_poly2( Handle self, int numPts, Point * points)
+apc_gp_draw_poly2( Handle self, int np, Point *pp)
 {
-   DOLBUG( "apc_gp_draw_poly2()\n");
+   DEFXX;
+   int i;
+   int x = XX-> gtransform. x + XX-> btransform. x;
+   int y = XX-> size. y - 1 - XX-> gtransform. y - XX-> btransform. y;
+   XSegment *s;
+   int n = np / 2;
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_011: put begin_paint somewhere");
+      return false;
+   }
+
+   if ((s = malloc( sizeof( XSegment)*n)) == nil)
+      croak( "UAG_012: no memory");
+
+   for ( i = 0; i < n; i++) {
+      s[i].x1 = pp[i*2].x + x;
+      s[i].y1 = y - pp[i*2].y;
+      s[i].x2 = pp[i*2+1].x + x;
+      s[i].y2 = y - pp[i*2+1].y;
+   }
+
+   if ( XX-> flags. zero_line) {
+      XGCValues gcv;
+      gcv. line_width = 0;
+      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+   }
+
+   XDrawSegments( DISP, XX-> gdrawable, XX-> gc, s, n);
+
+   if ( XX-> flags. zero_line) {
+      XGCValues gcv;
+      gcv. line_width = 1;
+      XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+   }
+
+   free( s);
    return true;
 }
 
