@@ -110,7 +110,7 @@ $w-> insert(
       my ($x,$y)=$_[0]->size;
       $_[0]->color($_[0]->backColor);
       $_[0]-> bar(0,0,$x,$y);
-      $_[0]->color(cl::White);
+      $_[0]->color(cl::Set);
       $_[0]->rop(rop::XorPut);
       $_[0]->line(0,0,$x,$y);
       $_[0]->line(0,$y,$x,0);
