@@ -492,6 +492,7 @@ extern Bool         stylus_complex( PStylus stylus, HDC dc);
 extern Bool         stylus_extpenned( PStylus stylus, int excludeFlags);
 extern void         stylus_free( PDCStylus res, Bool permanent);
 extern DWORD        stylus_get_extpen_style( PStylus s);
+extern HRGN         region_create( Handle mask);
 
 #endif
 

@@ -37,6 +37,7 @@
 #include <ctype.h>
 #include <gbm.h>
 #include "Window.h"
+#include "Image.h"
 
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
@@ -1492,3 +1493,83 @@ palette_match( Handle self, long clr)
    return PALETTERGB( color.r, color.g, color.b);
 }
 
+
+HRGN
+region_create( Handle mask)
+{
+   LONG i, w, h, x, y, size = 256;
+   HRGN    rgn = NULL;
+   Byte    * idata;
+   RGNDATA * rdata = nil;
+   RECT    * current;
+   Bool      set = 0;
+
+   if ( !mask)
+      return NULL;
+
+   dobjCheck( mask) NULL;
+
+   w = PImage( mask)-> w;
+   h = PImage( mask)-> h;
+   if ( dsys( mask) s. imgCachedRegion) {
+      rgn = CreateRectRgn(0,0,0,0);
+      CombineRgn( rgn, dsys( mask) s. imgCachedRegion, nil, RGN_COPY);
+      return rgn;
+   }
+
+   idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
+
+   rdata = ( RGNDATA*) malloc( sizeof( RGNDATAHEADER) + size * sizeof( RECT));
+   rdata-> rdh. nCount = 0;
+   current = ( RECT * ) &( rdata-> Buffer);
+   current--;
+
+   for ( y = 0; y < h; y++) {
+      for ( x = 0; x < w; x++) {
+         if ( idata[ x >> 3] == 0) {
+            x += 7;
+            continue;
+         }
+         if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
+            if ( set && current-> top == y && current-> right == x)
+               current-> right++;
+            else {
+               set = 1;
+               if ( rdata-> rdh. nCount >= size) {
+                  rdata = realloc( rdata, sizeof( RGNDATAHEADER) + ( size *= 3) * sizeof( RECT));
+                  current = ( RECT * ) &( rdata-> Buffer);
+                  current += rdata-> rdh. nCount - 1;
+               }
+               rdata-> rdh. nCount++;
+               current++;
+               current-> left   = x;
+               current-> top    = y;
+               current-> right  = x + 1;
+               current-> bottom = y + 1;
+            }
+         }
+      }
+      idata -= PImage( mask)-> lineSize;
+   }
+
+   if ( set) {
+      rdata-> rdh. dwSize          = sizeof( RGNDATAHEADER);
+      rdata-> rdh. iType           = RDH_RECTANGLES;
+      rdata-> rdh. nRgnSize        = rdata-> rdh. nCount * sizeof( RECT);
+      rdata-> rdh. rcBound. left   = 0;
+      rdata-> rdh. rcBound. top    = 0;
+      rdata-> rdh. rcBound. right  = h;
+      rdata-> rdh. rcBound. bottom = w;
+
+      if ( !( rgn = ExtCreateRegion( NULL,
+         sizeof( RGNDATAHEADER) + ( rdata-> rdh. nCount * sizeof( RECT)), rdata))) {
+         apcErr( 900);
+      }
+
+      dsys( mask) s. imgCachedRegion = CreateRectRgn(0,0,0,0);
+      CombineRgn( dsys( mask) s. imgCachedRegion, rgn, nil, RGN_COPY);
+   }
+   free( rdata);
+
+   return rgn;
+}

@@ -1998,108 +1998,42 @@ apc_widget_set_size( Handle self, int width, int height)
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
 }
 
+
+
 void
 apc_widget_set_shape( Handle self, Handle mask)
 {
-   RGNDATA * rdata = nil;
-   RECT    * current;
-   LONG i, w, h, x, y, size = 256;
-   Byte    * idata;
-   Bool      set = 0;
-   HRGN      rgn = nilHandle;
-
+   HRGN rgn = nilHandle;
    objCheck;
-   if ( !mask) {
+
+   rgn = region_create( mask);
+   if ( !rgn) {
       SetWindowRgn( HANDLE, nil, true);
       return;
    }
-   dobjCheck( mask);
 
-   w = PImage( mask)-> w;
-   h = PImage( mask)-> h;
-   if ( dsys( mask) s. imgCachedRegion) {
-      rgn = CreateRectRgn(0,0,0,0);
-      CombineRgn( rgn, dsys( mask) s. imgCachedRegion, nil, RGN_COPY);
-      goto USE_CACHED_REGION;
-   }
+   sys extraBounds. x = PImage( mask)-> w;
+   sys extraBounds. y = PImage( mask)-> h;
+   if ( sys className == WC_FRAME) {
+      Point delta = get_window_borders( sys s. window. borderStyle);
+      Point sz    = apc_widget_get_size( self);
+      Point p     = sys extraBounds;
+      HRGN  r1, r2;
+      OffsetRgn( rgn, delta.x, sz. y - p.y - delta.y);
+      sys extraPos. x = delta.x;
+      sys extraPos. y = sz. y - p.y - delta.y;
+      r1 = CreateRectRgn( 0, 0, 8192, 8192);
+      r2 = CreateRectRgn( delta. x, sz. y - delta. y - p.y,
+         delta.x + p.x + 1, sz. y - delta. y + 1);
+      CombineRgn( r1, r1, r2, RGN_XOR);
+      CombineRgn( rgn, rgn, r1, RGN_OR);
+      DeleteObject( r1);
+      DeleteObject( r2);
+   } else
+      sys extraPos. x = sys extraPos. y = 0;
 
-   idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
-
-   rdata = ( RGNDATA*) malloc( sizeof( RGNDATAHEADER) + size * sizeof( RECT));
-   rdata-> rdh. nCount = 0;
-   current = ( RECT * ) &( rdata-> Buffer);
-   current--;
-
-   for ( y = 0; y < h; y++) {
-      for ( x = 0; x < w; x++) {
-         if ( idata[ x >> 3] == 0) {
-            x += 7;
-            continue;
-         }
-         if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
-            if ( set && current-> top == y && current-> right == x)
-               current-> right++;
-            else {
-               set = 1;
-               if ( rdata-> rdh. nCount >= size) {
-                  rdata = realloc( rdata, sizeof( RGNDATAHEADER) + ( size *= 3) * sizeof( RECT));
-                  current = ( RECT * ) &( rdata-> Buffer);
-                  current += rdata-> rdh. nCount - 1;
-               }
-               rdata-> rdh. nCount++;
-               current++;
-               current-> left   = x;
-               current-> top    = y;
-               current-> right  = x + 1;
-               current-> bottom = y + 1;
-            }
-         }
-      }
-      idata -= PImage( mask)-> lineSize;
-   }
-
-   if ( set) {
-      rdata-> rdh. dwSize          = sizeof( RGNDATAHEADER);
-      rdata-> rdh. iType           = RDH_RECTANGLES;
-      rdata-> rdh. nRgnSize        = rdata-> rdh. nCount * sizeof( RECT);
-      rdata-> rdh. rcBound. left   = 0;
-      rdata-> rdh. rcBound. top    = 0;
-      rdata-> rdh. rcBound. right  = h;
-      rdata-> rdh. rcBound. bottom = w;
-
-      if ( !( rgn = ExtCreateRegion( NULL,
-         sizeof( RGNDATAHEADER) + ( rdata-> rdh. nCount * sizeof( RECT)), rdata))) {
-         apcErr( 900);
-      }
-
-      dsys( mask) s. imgCachedRegion = CreateRectRgn(0,0,0,0);
-      CombineRgn( dsys( mask) s. imgCachedRegion, rgn, nil, RGN_COPY);
-
-USE_CACHED_REGION:
-      sys extraBounds. x = w;
-      sys extraBounds. y = h;
-      if ( sys className == WC_FRAME) {
-         Point delta = get_window_borders( sys s. window. borderStyle);
-         Point sz    = apc_widget_get_size( self);
-         HRGN  r1, r2;
-         OffsetRgn( rgn, delta.x, sz. y - h - delta.y);
-         sys extraPos. x = delta.x;
-         sys extraPos. y = sz. y - h - delta.y;
-         r1 = CreateRectRgn( 0, 0, 8192, 8192);
-         r2 = CreateRectRgn( delta. x, sz. y - delta. y - h,
-            delta.x + w + 1, sz. y - delta. y + 1);
-         CombineRgn( r1, r1, r2, RGN_XOR);
-         CombineRgn( rgn, rgn, r1, RGN_OR);
-         DeleteObject( r1);
-         DeleteObject( r2);
-      } else
-         sys extraPos. x = sys extraPos. y = 0;
-
-      if ( !SetWindowRgn( HANDLE, rgn, true))
-         apiErr;
-   }
-
-   free( rdata);
+   if ( !SetWindowRgn( HANDLE, rgn, true))
+      apiErr;
 }
 
 

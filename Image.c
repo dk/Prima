@@ -134,9 +134,8 @@ Image_reset( Handle self, int type, SV * palette)
    var->lineSize = (( var->w * ( type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
    var->palSize = (1 << ( type & imBPP)) & 0x1ff;
-   if ( var->dataSize > 0)
-   {
-      newData = malloc( var->dataSize);
+   if ( var->dataSize > 0) {
+      newData = malloc( var-> dataSize);
       ic_type_convert( self, newData, var->palette, type);
    }
    free( var->data);
@@ -163,7 +162,8 @@ Image_stretch( Handle self, int width, int height)
    }
    lineSize = (( abs( width) * ( var->type & imBPP) + 31) / 32) * 4;
    newData = malloc( lineSize * abs( height));
-   ic_stretch( self, newData, width, height, is_opt( optHScaling), is_opt( optVScaling));
+   if ( var-> data)
+      ic_stretch( self, newData, width, height, is_opt( optHScaling), is_opt( optVScaling));
    free( var->data);
    var->data = newData;
    var->lineSize = lineSize;

@@ -2708,6 +2708,9 @@ apc_gp_get_nearest_color( Handle self, Color color);
 extern PRGBColor
 apc_gp_get_physical_palette( Handle self, int * colors);
 
+extern Bool
+apc_gp_get_region( Handle self, Handle mask);
+
 extern Point
 apc_gp_get_resolution( Handle self);
 
@@ -2755,6 +2758,9 @@ apc_gp_set_line_pattern( Handle self, int pattern);
 
 extern void
 apc_gp_set_palette( Handle self);
+
+extern void
+apc_gp_set_region( Handle self, Handle mask);
 
 extern void
 apc_gp_set_rop( Handle self, int rop);

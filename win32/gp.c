@@ -1164,6 +1164,64 @@ apc_gp_get_physical_palette( Handle self, int * color)
    return r;
 }
 
+Bool
+apc_gp_get_region( Handle self, Handle mask)
+{
+   HRGN rgn;
+   int res;
+   HBITMAP bm, bmSave;
+   HBRUSH  brSave;
+   HDC dc;
+   XBITMAPINFO xbi;
+   BITMAPINFO * bi;
+   RECT clipEx;
+
+   objCheck false;
+   if ( !is_opt( optInDraw) || !sys ps) return false;
+
+   rgn = CreateRectRgn(0,0,0,0);
+
+   res = GetClipRgn( sys ps, rgn);
+   if ( res <= 0) {        // error or just no region
+      DeleteObject( rgn);
+      return false;
+   }
+   if ( !mask) {
+      DeleteObject( rgn);
+      return true;
+   }
+
+   GetClipBox( sys ps, &clipEx);
+   OffsetRgn( rgn, sys transform2. x, sys transform2. y);
+   OffsetRgn( rgn, 0,  clipEx. bottom - clipEx. top - sys lastSize.y);
+
+   CImage( mask)-> create_empty( mask, clipEx. right, sys lastSize.y - clipEx. top, imBW);
+
+   dc = dc_compat_alloc(0);
+   if ( !( bm = CreateBitmap( PImage( mask)-> w, PImage( mask)-> h, 1, 1, nil))) {
+      dc_compat_free();
+      return true;
+   }
+
+   bmSave = SelectObject( dc, bm);
+   brSave = SelectObject( dc, CreateSolidBrush( RGB(0,0,0)));
+   Rectangle( dc, 0, 0, PImage( mask)-> w, PImage( mask)-> h);
+   DeleteObject( SelectObject( dc, CreateSolidBrush( RGB( 255, 255, 255))));
+   PaintRgn( dc, rgn);
+   DeleteObject( SelectObject( dc, brSave));
+
+   bi = image_get_binfo( mask, &xbi);
+   if ( !GetDIBits( dc, bm, 0, PImage( mask)-> h, PImage( mask)-> data, bi, DIB_RGB_COLORS)) apiErr;
+   SelectObject( dc, bmSave);
+   DeleteObject( bm);
+   dc_compat_free();
+
+   DeleteObject( rgn);
+
+   return true;
+}
+
+
 Point
 apc_gp_get_resolution( Handle self)
 {
@@ -1445,6 +1503,25 @@ apc_gp_set_palette( Handle self)
    RealizePalette( sys ps);
    if ( sys pal) DeleteObject( sys pal);
    sys pal = pal;
+}
+
+void
+apc_gp_set_region( Handle self, Handle mask)
+{
+   HRGN rgn = nilHandle;
+   objCheck;
+
+   if ( !is_opt( optInDraw) || !sys ps) return;
+
+   rgn = region_create( mask);
+   if ( !rgn) {
+      SelectClipRgn( sys ps, nil);
+      return;
+   }
+   OffsetRgn( rgn, -sys transform2. x, -sys transform2. y);
+   OffsetRgn( rgn, 0, sys lastSize.y - PImage(mask)-> h);
+   SelectClipRgn( sys ps, rgn);
+   DeleteObject( rgn);
 }
 
 void

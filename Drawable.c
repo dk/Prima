@@ -26,6 +26,7 @@
 
 #include "apricot.h"
 #include "Drawable.h"
+#include "Image.h"
 #include "Drawable.inc"
 
 #undef my
@@ -73,6 +74,7 @@ Drawable_init( Handle self, HV * profile)
    my set_line_end     ( self, pget_i ( lineEnd));
    my set_line_pattern ( self, pget_i ( linePattern));
    my set_line_width   ( self, pget_i ( lineWidth));
+   my set_region       ( self, pget_H ( region));
    my set_rop          ( self, pget_i ( rop));
    my set_rop2         ( self, pget_i ( rop2));
    my set_text_opaque  ( self, pget_B ( textOpaque));
@@ -217,6 +219,23 @@ Drawable_set_palette( Handle self, SV * palette)
 }
 
 
+void
+Drawable_set_region( Handle self, Handle mask)
+{
+   if ( mask && !kind_of( mask, CImage)) return;
+
+   if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
+      Handle i = CImage( mask)-> dup( mask);
+      ++SvREFCNT( SvRV( PImage( i)-> mate));
+      CImage( i)-> set_conversion( i, ictNone);
+      CImage( i)-> set_type( i, imBW);
+      apc_gp_set_region( self, i);
+      --SvREFCNT( SvRV( PImage( i)-> mate));
+      Object_destroy( i);
+   } else
+      apc_gp_set_region( self, mask);
+}
+
 Font *
 Drawable_font_match( char * dummy, Font * source, Font * dest, Bool pick)
 {
@@ -307,6 +326,21 @@ Drawable_get_nearest_color( Handle self, Color color)
    color = apc_gp_get_nearest_color( self, color);
    gpLEAVE;
    return color;
+}
+
+Handle
+Drawable_get_region( Handle self)
+{
+   if ( var stage > csNormal) return nilHandle;
+   if ( apc_gp_get_region( self, nilHandle)) {
+      HV * profile = newHV();
+      Handle i = Object_create( "Image", profile);
+      sv_free(( SV *) profile);
+      apc_gp_get_region( self, i);
+      --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
+      return i;
+   } else
+      return nilHandle;
 }
 
 Point

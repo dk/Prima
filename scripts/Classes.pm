@@ -297,6 +297,7 @@ sub profile_default
       linePattern     => lp::Solid,
       lineWidth       => 0,
       palette         => [],
+      region          => undef,
       rop             => rop::CopyPut,
       rop2            => rop::NoOper,
       textOutBaseline => 0,
@@ -326,6 +327,7 @@ sub textOutBaseline{($#_)?$_[0]->set_text_out_baseline($_[1]):return $_[0]->get_
 sub textOpaque {($#_)?$_[0]->set_text_opaque ($_[1]):return $_[0]->get_text_opaque; }
 sub font       {($#_)?$_[0]->set_font($#_>1?{@_[1..$#_]}:$_[1]):return Font->new($_[0], "get_font", "set_font")}
 sub palette    {($#_)?$_[0]->set_palette      ($_[1]):return $_[0]->get_palette;    }
+sub region     {($#_)?$_[0]->set_region      ($_[1]):return $_[0]->get_region;      }
 sub rop        {($#_)?$_[0]->set_rop         ($_[1]):return $_[0]->get_rop;         }
 sub rop2       {($#_)?$_[0]->set_rop2        ($_[1]):return $_[0]->get_rop2;        }
 sub resolution {($#_)?$_[0]->raise_ro("resolution") :return $_[0]->get_resolution;  }
