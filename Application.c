@@ -37,7 +37,7 @@
 
 Handle application = nilHandle;
 
-static void Application_HintTimer_Tick( Handle);
+static void Application_HintTimer_handle_event( Handle, PEvent);
 
 extern Bool single_color_notify ( Handle self, Handle child, void * color);
 extern Bool font_notify ( Handle self, Handle child, void * font);
@@ -104,10 +104,10 @@ Application_init( Handle self, HV * profile)
       pset_i( timeout, hintPause);
       pset_c( name, "HintTimer");
       var->  hintTimer = create_instance( "Prima::Timer");
-      protect_object( var->  hintTimer);
+      protect_object( var-> hintTimer);
       hv_clear( profile);
       memcpy( &HintTimerVmt, CTimer, sizeof( HintTimerVmt));
-      HintTimerVmt. on_tick = Application_HintTimer_Tick;
+      HintTimerVmt. handle_event = Application_HintTimer_handle_event;
       (( PTimer) var->  hintTimer)-> self = &HintTimerVmt;
 
       pset_H( owner, self);
@@ -131,16 +131,16 @@ Application_done( Handle self)
    my-> close_help( self);
    my-> first_that( self, kill_all, nil);
    my-> first_that_component( self, kill_all, nil);
-   unprotect_object( var->  clipboard);
-   unprotect_object( var->  printer);
-   unprotect_object( var->  hintTimer);
-   unprotect_object( var->  hintWidget);
+   unprotect_object( var-> clipboard);
+   unprotect_object( var-> printer);
+   unprotect_object( var-> hintTimer);
+   unprotect_object( var-> hintWidget);
    list_destroy( &var->  modalHorizons);
    list_destroy( &var->  widgets);
-   free( var->  helpFile);
-   free( var->  text);
-   free( var->  hint);
-   var->  accelTable = var->  printer = var->  clipboard = var->  hintWidget = var->  hintTimer = nilHandle;
+   free( var-> helpFile);
+   free( var-> text);
+   free( var-> hint);
+   var->  accelTable = var->  printer = var->  clipboard = var-> hintWidget = var-> hintTimer = nilHandle;
    var->  helpFile   = var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
@@ -399,7 +399,7 @@ Application_get_clipboard( Handle self)
 Handle
 Application_get_printer( Handle self)
 {
-   return var->  printer;
+   return var-> printer;
 }
 
 Point
@@ -594,24 +594,27 @@ static void hshow( Handle self)
 }
 
 void
-Application_HintTimer_Tick( Handle timer)
+Application_HintTimer_handle_event( Handle timer, PEvent event)
 {
-   Handle self = application;
-   Point pos = my-> get_pointer_pos( self);
-   ((( PTimer) timer)-> self)-> stop( timer);
-   if ( var->  hintActive == 1)
-   {
-      Event ev = {cmHint};
-      if ( pos. x != var->  hintMousePos. x || pos. y != var->  hintMousePos. y) return;
-      if ( !var->  hintUnder || (( PObject) var->  hintUnder)-> stage != csNormal) return;
-      ev. gen. B = true;
-      ev. gen. H = var->  hintUnder;
-      var->  hintVisible = 1;
-      if (( PWidget( var->  hintUnder)-> stage == csNormal) &&
-          ( CWidget( var->  hintUnder)-> message( var->  hintUnder, &ev)))
-          hshow( self);
-   } else if ( var->  hintActive == -1)
-      var->  hintActive = 0;
+   CComponent-> handle_event( timer, event);
+   if ( event-> cmd == cmTimer) {
+      Handle self = application;
+      Point pos = my-> get_pointer_pos( self);
+      ((( PTimer) timer)-> self)-> stop( timer);
+      if ( var->  hintActive == 1)
+      {
+         Event ev = {cmHint};
+         if ( pos. x != var->  hintMousePos. x || pos. y != var->  hintMousePos. y) return;
+         if ( !var->  hintUnder || (( PObject) var->  hintUnder)-> stage != csNormal) return;
+         ev. gen. B = true;
+         ev. gen. H = var->  hintUnder;
+         var->  hintVisible = 1;
+         if (( PWidget( var->  hintUnder)-> stage == csNormal) &&
+             ( CWidget( var->  hintUnder)-> message( var->  hintUnder, &ev)))
+             hshow( self);
+      } else if ( var->  hintActive == -1)
+         var->  hintActive = 0;
+   }
 }
 
 void
@@ -627,21 +630,21 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
          Event ev = {cmHint};
          ev. gen. B = true;
          ev. gen. H = view;
-         ((( PTimer) var->  hintTimer)-> self)-> stop( var->  hintTimer);
+         ((( PTimer) var->  hintTimer)-> self)-> stop( var-> hintTimer);
          var->  hintVisible = 1;
          if (( PWidget( view)-> stage == csNormal) &&
              ( CWidget( view)-> message( view, &ev)))
              hshow( self);
       } else {
          if ( !byMouse && var->  hintActive == 1) return;
-         CTimer( var->  hintTimer)-> start( var->  hintTimer);
+         CTimer( var->  hintTimer)-> start( var-> hintTimer);
       }
       var->  hintActive = 1;
    } else {
       int oldHA = var->  hintActive;
       int oldHV = var->  hintVisible;
       if ( oldHA != -1)
-         ((( PTimer) var->  hintTimer)-> self)-> stop( var->  hintTimer);
+         ((( PTimer) var-> hintTimer)-> self)-> stop( var-> hintTimer);
       if ( var->  hintVisible)
       {
          Event ev = {cmHint};

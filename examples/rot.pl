@@ -1,4 +1,4 @@
-use Prima::Application;
+use Prima qw(Application);
 
 #my @data = (
 #  'XXXXXXXX',

@@ -37,11 +37,7 @@ package Prima::ComboBox;
 #    DriveComboBox
 
 use vars qw(@ISA %listProps %editProps %listDynas);
-use Prima::Classes;
-use Prima::InputLine;
-use Prima::Lists;
-use Prima::Utils;
-use Prima::StdBitmap;
+use Prima qw( InputLine Lists Utils StdBitmaps);
 @ISA = qw(Prima::Widget);
 
 use constant DefButtonX => 17;
@@ -139,21 +135,32 @@ sub init
       selectable  => 1,
       tabStop     => 1,
       current     => 1,
+      onFontChanged => sub { $_[0]-> owner-> InputLine_FontChanged( @_)},
+      onCreate      => sub { $_[0]-> owner-> InputLine_Create( @_)},
+      onSetup       => sub { $_[0]-> owner-> InputLine_Setup( @_)},
+      onKeyDown     => sub { $_[0]-> owner-> InputLine_KeyDown( @_)},
+      onKeyUp       => sub { $_[0]-> owner-> InputLine_KeyUp( @_)},
+      onChange      => sub { $_[0]-> owner-> InputLine_Change( @_)},
       (map { $_ => $profile{$_}} keys %editProps),
       %{$profile{editProfile}},
    );
 
    $self-> {list} = $self-> insert( $profile{listClass} =>
-      name        => 'List',
-      origin      => [ 0, 0],
-      width       => $w,
-      height      => ( $self-> {style} == cs::Simple) ? ( $h - $eh) : $self-> {listHeight},
-      growMode    => gm::Client,
-      tabStop     => 0,
-      multiSelect => 0,
-      clipOwner   => $self-> {style} == cs::Simple,
-      visible     => $self-> {style} == cs::Simple,
-      (map { $_ => $profile{$_}} keys %listDynas),
+      name         => 'List',
+      origin       => [ 0, 0],
+      width        => $w,
+      height       => ( $self-> {style} == cs::Simple) ? ( $h - $eh) : $self-> {listHeight},
+      growMode     => gm::Client,
+      tabStop      => 0,
+      multiSelect  => 0,
+      clipOwner    => $self-> {style} == cs::Simple,
+      visible      => $self-> {style} == cs::Simple,
+      onLeave      => sub { $_[0]-> owner-> List_Leave( @_)},
+      onSelectItem => sub { $_[0]-> owner-> List_SelectItem( @_)},
+      onMouseUp    => sub { $_[0]-> owner-> List_MouseUp( @_)},
+      onClick      => sub { $_[0]-> owner-> List_Click( @_)},
+      onKeyDown    => sub { $_[0]-> owner-> List_KeyDown( @_)},
+      (map { $_ => $profile{$_}} grep { exists $profile{$_} ? 1 : 0} keys %listDynas),
       (map { $_ => $profile{$_}} keys %listProps),
       %{$profile{listProfile}},
    );
@@ -168,25 +175,13 @@ sub init
       tabStop        => 0,
       ownerFont      => 0,
       selectable     => 0,
-      onPaint        => sub
-      {
-         my ( $self, $canvas) = @_;
-         my ( $w, $h)   = $canvas-> size;
-         my $ena    = $self-> enabled && $self-> owner-> enabled;
-         my @clr    = $ena ?
-          ( $self-> color, $self-> backColor) :
-          ( $self-> disabledColor, $self-> disabledBackColor);
-         my $lv = $self-> owner-> listVisible;
-         my ( $rc, $lc) = ( $self-> light3DColor, $self-> dark3DColor);
-         ( $rc, $lc) = ( $lc, $rc) if $lv;
-         $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, $rc, $lc, $clr[1]);
-         if ( $ena) {
-            $canvas-> color( $rc);
-            $canvas-> fillpoly([ 5, $h * 0.6 - 1, $w - 4, $h * 0.6 - 1, $w/2 + 1, $h * 0.4 - 1]);
-         }
-         $canvas-> color( $clr[0]);
-         $canvas-> fillpoly([ 4, $h * 0.6, $w - 5, $h * 0.6, $w/2, $h * 0.4]);
-      },
+      onColorChanged => sub { $_[0]-> owner-> Button_ColorChanged( @_)},
+      onFontChange   => sub { $_[0]-> owner-> Button_FontChanged( @_)},
+      onMouseDown    => sub { $_[0]-> owner-> Button_MouseDown( @_)},
+      onMouseClick   => sub { $_[0]-> owner-> Button_MouseClick( @_)},
+      onMouseUp      => sub { $_[0]-> owner-> Button_MouseUp( @_)},
+      onMouseMove    => sub { $_[0]-> owner-> Button_MouseMove( @_)},
+      onPaint        => sub { $_[0]-> owner-> Button_Paint( @_)},
       %{$profile{buttonProfile}},
    );
    $self-> visible( $visible);
@@ -202,16 +197,6 @@ sub on_create
 sub on_size { $_[0]-> listVisible(0); }
 sub on_move { $_[0]-> listVisible(0); }
 
-sub set
-{
-   my ( $self, %profile) = @_;
-   my %listPasse;
-   for ( keys %listDynas) {
-      $listPasse{$_} = $profile{$_}, delete $profile{$_} if exists $profile{$_};
-   }
-   $self->{list}->set( %listPasse) if scalar keys %listPasse;
-   $self-> SUPER::set( %profile);
-}
 
 sub List_Leave
 {
@@ -310,6 +295,26 @@ sub Button_MouseMove
 }
 
 sub Button_MouseUp { $_[1]-> set_capture(0); }
+
+sub Button_Paint
+{
+   my ( $owner, $self, $canvas) = @_;
+   my ( $w, $h)   = $canvas-> size;
+   my $ena    = $self-> enabled && $owner-> enabled;
+   my @clr    = $ena ?
+    ( $self-> color, $self-> backColor) :
+    ( $self-> disabledColor, $self-> disabledBackColor);
+   my $lv = $owner-> listVisible;
+   my ( $rc, $lc) = ( $self-> light3DColor, $self-> dark3DColor);
+   ( $rc, $lc) = ( $lc, $rc) if $lv;
+   $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, $rc, $lc, $clr[1]);
+   if ( $ena) {
+      $canvas-> color( $rc);
+      $canvas-> fillpoly([ 5, $h * 0.6 - 1, $w - 4, $h * 0.6 - 1, $w/2 + 1, $h * 0.4 - 1]);
+   }
+   $canvas-> color( $clr[0]);
+   $canvas-> fillpoly([ 4, $h * 0.6, $w - 5, $h * 0.6, $w/2, $h * 0.4]);
+}
 
 sub InputLine_FontChanged
 {
@@ -711,6 +716,12 @@ sub init
    $profile{text} = $profile{drive};
    $profile{items} = [@{$self-> {drives}}];
    %profile = $self-> SUPER::init(%profile);
+   $self-> {list}-> set(
+      onDrawItem     => sub { $_[0]-> owner-> List_DrawItem( @_)},
+      onFontChanged  => sub { $_[0]-> owner-> List_FontChanged( @_)},
+      onMeasureItem  => sub { $_[0]-> owner-> List_MeasureItem( @_)},
+      onStringify    => sub { $_[0]-> owner-> List_Stringify( @_)},
+   );
    $self-> {drive} = $self-> text;
    $self-> {list}->itemHeight( $maxhei);
    $self-> drive( $self-> {drive});

@@ -55,7 +55,6 @@ static Bool get_top_current( Handle self);
 static Bool sptr( Handle window, Handle self, void * v);
 static Bool size_notify( Handle self, Handle child, const Rect* metrix);
 static Bool move_notify( Handle self, Handle child, Point * moveTo);
-static void dyna_set( Handle self, HV * profile);
 static Handle find_tabfoc( Handle self);
 static Bool showhint_notify ( Handle self, Handle child, void * data);
 static Bool hint_notify ( Handle self, Handle child, char * hint);
@@ -82,13 +81,12 @@ Widget_init( Handle self, HV * profile)
    var-> tabOrder = -1;
 
    if ( !kind_of( var-> owner, CWidget)) {
-      croak("Illegal object reference passed to Widget.init");
+      croak("Illegal object reference passed to Widget::init");
       return;
    }
 
    attachTo = ( PComponent) var-> owner;
    attachTo-> self-> attach ( var-> owner, self);
-   dyna_set( self, profile);
 
    my-> update_sys_handle( self, profile);
    /* props init */
@@ -326,8 +324,15 @@ Widget_close( Handle self)
 Bool
 Widget_custom_paint( Handle self)
 {
+   PList  list;
+   void * ret;
    enter_method;
-   return (var-> onPaint) || (is_dmopt( dmPaint)) || (my-> on_paint != Widget_on_paint);
+   if ( my-> on_paint != Widget_on_paint) return true;
+   if ( var-> eventIDs == nil) return false;
+   ret = hash_fetch( var-> eventIDs, "onPaint", 7);
+   if ( ret == nil) return false;
+   list = var-> events + ( int) ret - 1;
+   return list-> count > 0;
 }
 
 /*::d */
@@ -396,10 +401,6 @@ Widget_first_that( Handle self, void * actionProc, void * params)
 void Widget_handle_event( Handle self, PEvent event)
 {
    enter_method;
-#undef dyna
-#undef delegate
-#define dyna( Method) if ( var-> on##Method) cv_call_perl( var-> mate, var-> on##Method, "")
-#define delegate( Method) if ( is_dmopt( dm##Method)) delegate_sub( self, # Method, "H", self)
 #define evOK ( var-> evStack[ var-> evPtr - 1])
 #define objCheck if ( var-> stage > csNormal) return
    inherited-> handle_event ( self, event);
@@ -420,9 +421,7 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmSetup:
         if ( !is_opt( optSetupComplete)) {
            opt_set( optSetupComplete);
-           my-> on_setup( self);           objCheck;
-           delegate( Setup);             objCheck;
-           dyna( Setup);
+           my-> notify( self, "<s", "Setup");
         }
         break;
       case cmRepaint:
@@ -432,9 +431,7 @@ void Widget_handle_event( Handle self, PEvent event)
         if ( !opt_InPaint && !my-> get_locked( self))
           if ( inherited-> begin_paint( self)) {
              if ( apc_widget_begin_paint( self, true)) {
-                if ( var-> onPaint) cv_call_perl( var-> mate, var-> onPaint, "H", self);
-                else if ( is_dmopt( dmPaint)) delegate_sub( self, "Paint", "HH", self, self);
-                else my-> on_paint( self, self);
+                my-> notify( self, "<sH", "Paint", self);
                 objCheck;
                 apc_widget_end_paint( self);
                 inherited-> end_paint( self);
@@ -443,118 +440,67 @@ void Widget_handle_event( Handle self, PEvent event)
           }
         break;
       case cmHelp:
-        my-> on_help( self);
-        if ( evOK) delegate( Help);    objCheck;
-        if ( evOK) dyna( Help);        objCheck;
+        my-> notify( self, "<s", "Help");
         if ( evOK) my-> help( self);
         break;
       case cmEnable       :
-        my-> on_enable( self);           objCheck;
-        delegate( Enable);             objCheck;
-        dyna( Enable);
+        my-> notify( self, "<s", "Enable");
         break;
       case cmDisable      :
-        my-> on_disable( self);          objCheck;
-        delegate( Disable);            objCheck;
-        dyna( Disable);
+        my-> notify( self, "<s", "Disable");
         break;
       case cmReceiveFocus :
-        my-> on_enter( self);            objCheck;
-        delegate( Enter);              objCheck;
-        dyna( Enter);
+        my-> notify( self, "<s", "Enter");
         break;
       case cmReleaseFocus :
-        my-> on_leave( self);            objCheck;
-        delegate( Leave);              objCheck;
-        dyna( Leave);
+        my-> notify( self, "<s", "Leave");
         break;
       case cmShow         :
-        my-> on_show( self);             objCheck;
-        delegate( Show);               objCheck;
-        dyna( Show);
+        my-> notify( self, "<s", "Show");
         break;
       case cmHide         :
-        my-> on_hide( self);             objCheck;
-        delegate( Hide);               objCheck;
-        dyna( Hide);
+        my-> notify( self, "<s", "Hide");
         break;
       case cmHint:
-        my-> on_hint( self, event-> gen. B);
-        objCheck;
-        if ( is_dmopt( dmHint)) delegate_sub( self, "Hint", "Hi", self, event-> gen. B);
-        objCheck;
-        if ( var-> onHint) cv_call_perl( var-> mate, var-> onHint, "i", event-> gen. B);
+        my-> notify( self, "<si", "Hint", event-> gen. B);
         break;
       case cmClose        :
-        if ( my-> first_that( self, pquery, nil))
-        {
+        if ( my-> first_that( self, pquery, nil)) {
            my-> clear_event( self);
            return;
         }
         objCheck;
-        dyna( Close);
-        objCheck;
-        if ( evOK) delegate( Close);
-        objCheck;
-        if ( evOK) my-> on_close( self);
+        my-> notify( self, "<s", "Close");
         break;
       case cmZOrderChanged:
-        dyna( ZOrderChanged);                   objCheck;
-        if ( evOK) delegate( ZOrderChanged);    objCheck;
-        if ( evOK) my-> on_zorderchanged( self);
+        my-> notify( self, "<s", "ZOrderChanged");
         break;
       case cmOK:
       case cmCancel:
         my-> clear_event( self);
         break;
       case cmClick:
-        my-> on_click ( self);                    objCheck;
-        delegate( Click);                       objCheck;
-        dyna( Click);
+        my-> notify( self, "<s", "Click");
         break;
       case cmColorChanged:
         if ( !kind_of( event-> gen. source, CPopup))
-        {
-           my-> on_colorchanged ( self, event-> gen. i);
-           objCheck;
-           if ( is_dmopt( dmColorChanged))
-              delegate_sub( self, "ColorChanged", "Hi", self, event-> gen. i);
-           objCheck;
-           if ( var-> onColorChanged) cv_call_perl( var-> mate, var-> onColorChanged, "i", event-> gen. i);
-        } else {
+            my-> notify( self, "<si", "ColorChanged", event-> gen. i);
+        else
             var-> popupColor[ event-> gen. i] =
                apc_menu_get_color( event-> gen. source, event-> gen. i);
-        }
         break;
       case cmFontChanged:
         if ( !kind_of( event-> gen. source, CPopup))
-        {
-           my-> on_fontchanged ( self);         objCheck;
-           delegate( FontChanged);            objCheck;
-           dyna( FontChanged);
-        } else {
+           my-> notify( self, "<s", "FontChanged");
+        else
            apc_menu_get_font( event-> gen. source, &var-> popupFont);
-        }
         break;
       case cmMenu:
-         my-> on_menu( self, event-> gen. H, (char*) event-> gen. p);
-         objCheck;
-         if ( is_dmopt( dmMenu)) delegate_sub( self, "Menu", "HHs", self, event-> gen. H, (char*) event-> gen. p);
-         objCheck;
-         if ( var-> onMenu) cv_call_perl( var-> mate, var-> onMenu, "Hs", event-> gen. H, (char*) event-> gen. p);
+         my-> notify( self, "<sHs", "Menu", event-> gen. H, event-> gen. p);
          break;
       case cmMouseClick:
-         if ( var-> onMouseClick)
-            cv_call_perl( var-> mate, var-> onMouseClick, "iiPi", event-> pos. button,
-            event-> pos. mod, event -> pos. where, event-> pos. dblclk);
-         objCheck;
-         if ( evOK)
-            if ( is_dmopt( dmMouseClick))
-               delegate_sub( self,  "MouseClick", "HiiPi", self, event-> pos. button,
-               event-> pos. mod, event -> pos. where, event-> pos. dblclk);
-         objCheck;
-         if ( evOK)
-            my-> on_mouseclick( self, event-> pos. button, event-> pos. mod, event -> pos. where. x, event-> pos. where. y, event-> pos. dblclk);
+         my-> notify( self, "<siiPi", "MouseClick",
+            event-> pos. button, event-> pos. mod, event -> pos. where, event-> pos. dblclk);
          break;
       case cmMouseDown:
          if ((( PApplication) application)-> hintUnder == self)
@@ -563,66 +509,26 @@ void Widget_handle_event( Handle self, PEvent event)
          if (((event-> pos. button & var-> selectingButtons) != 0) && my-> get_selectable( self))
             my-> set_selected( self, true);
          objCheck;
-         if ( var-> onMouseDown)
-            cv_call_perl( var-> mate, var-> onMouseDown, "iiP", event-> pos. button,
-            event-> pos. mod, event -> pos. where);
-         objCheck;
-         if ( evOK)
-            if ( is_dmopt( dmMouseDown))
-               delegate_sub( self, "MouseDown", "HiiP", self, event-> pos. button,
-               event-> pos. mod, event -> pos. where);
-         objCheck;
-         if ( evOK)
-            my-> on_mousedown( self, event-> pos. button, event-> pos. mod, event -> pos. where. x, event-> pos. where. y);
+         my-> notify( self, "<siiP", "MouseDown",
+            event-> pos. button, event-> pos. mod, event -> pos. where);
          break;
       case cmMouseUp:
-        if ( var-> onMouseUp)
-           cv_call_perl( var-> mate, var-> onMouseUp, "iiP", event-> pos. button, event-> pos. mod, event -> pos. where);
-        objCheck;
-        if ( evOK)
-           if ( is_dmopt( dmMouseUp))
-              delegate_sub( self, "MouseUp", "HiiP", self, event-> pos. button, event-> pos. mod, event -> pos. where);
-        objCheck;
-        if ( evOK)
-           my-> on_mouseup( self, event-> pos. button, event-> pos. mod, event -> pos. where. x, event-> pos. where. y);
+        my-> notify( self, "<siiP", "MouseUp",
+            event-> pos. button, event-> pos. mod, event -> pos. where);
         break;
       case cmMouseMove:
         if ((( PApplication) application)-> hintUnder == self)
            my-> set_hint_visible( self, 1);
         objCheck;
-        if ( var-> onMouseMove)
-           cv_call_perl( var-> mate, var-> onMouseMove, "iP",  event-> pos. mod, event -> pos. where);
-        objCheck;
-        if ( evOK)
-           if ( is_dmopt( dmMouseMove))
-              delegate_sub( self, "MouseMove", "HiP", self, event-> pos. mod, event -> pos. where);
-        objCheck;
-        if ( evOK)
-           my-> on_mousemove( self, event-> pos. mod, event -> pos. where. x, event-> pos. where. y);
+        my-> notify( self, "<siP", "MouseMove", event-> pos. mod, event -> pos. where);
         break;
       case cmMouseWheel:
-        if ( var-> onMouseWheel)
-           cv_call_perl( var-> mate, var-> onMouseWheel, "iPi",
-			 event-> pos. mod, event -> pos. where,
-			 event-> pos. button); /* +n*delta == up, -n*delta == down */
-        objCheck;
-        if ( evOK)
-           if ( is_dmopt( dmMouseWheel))
-              delegate_sub( self, "MouseWheel", "HiPi", self, event-> pos. mod, event -> pos. where, event-> pos. button);
-        objCheck;
-        if ( evOK)
-           my-> on_mousewheel( self, event-> pos. mod, event -> pos. where. x, event-> pos. where. y, event-> pos. button);
+        my-> notify( self, "<siPi", "MouseWheel",
+           event-> pos. mod, event -> pos. where,
+           event-> pos. button); /* +n*delta == up, -n*delta == down */
         break;
       case cmMouseEnter:
-        if ( var-> onMouseEnter)
-           cv_call_perl( var-> mate, var-> onMouseEnter, "iP",  event-> pos. mod, event -> pos. where);
-        objCheck;
-        if ( evOK)
-           if ( is_dmopt( dmMouseEnter))
-              delegate_sub( self, "MouseEnter", "HiP", self, event-> pos. mod, event -> pos. where);
-        objCheck;
-        if ( evOK)
-           my-> on_mouseenter( self, event-> pos. mod, event -> pos. where. x, event-> pos. where. y);
+        my-> notify( self, "<siP", "MouseEnter", event-> pos. mod, event -> pos. where);
         objCheck;
         if ( application && is_opt( optShowHint) && ((( PApplication) application)-> options. optShowHint) && var-> hint[0])
         {
@@ -631,15 +537,11 @@ void Widget_handle_event( Handle self, PEvent event)
         }
         break;
       case cmMouseLeave:
-        if ( application && is_opt( optShowHint))
-        {
+        if ( application && is_opt( optShowHint)) {
            PApplication app = ( PApplication) application;
            app-> self-> set_hint_action( application, self, false, true);
         }
-        objCheck;
-        dyna( MouseLeave);                              objCheck;
-        if ( evOK) delegate( MouseLeave);               objCheck;
-        if ( evOK) my-> on_mouseleave( self);
+        my-> notify( self, "<s", "MouseLeave");
         break;
       case cmKeyDown:
         {
@@ -649,26 +551,16 @@ void Widget_handle_event( Handle self, PEvent event)
               rep = 1;
            else
               event-> key. repeat = 1;
-           for ( i = 0; i < rep; i++)
-           {
-              if ( var-> onKeyDown)
-                 cv_call_perl( var-> mate, var-> onKeyDown, "iiii", event-> key.code, event-> key. key, event-> key. mod, event-> key. repeat);
+           for ( i = 0; i < rep; i++) {
+              my-> notify( self, "<siiii", "KeyDown",
+                  event-> key.code, event-> key. key, event-> key. mod, event-> key. repeat);
               objCheck;
-              if ( evOK)
-                 if ( is_dmopt( dmKeyDown))
-                    delegate_sub( self, "KeyDown", "Hiiii", self, event-> key.code, event-> key. key, event-> key. mod, event-> key. repeat);
-              objCheck;
-              if ( evOK)
-                 my-> on_keydown( self, event-> key.code, event-> key. key, event-> key. mod, event-> key. repeat);
-              objCheck;
-              if ( evOK)
-              {
+              if ( evOK) {
                  int key = CAbstractMenu-> translate_key( nilHandle, event-> key. code, event-> key. key, event-> key. mod);
                  if ( my-> process_accel( self, key)) my-> clear_event( self);
               }
               objCheck;
-              if ( evOK && var-> owner)
-              {
+              if ( evOK && var-> owner) {
                  Event ev = *event;
                  ev. key. source = self;
                  ev. cmd         = cmDelegateKey;
@@ -732,11 +624,8 @@ void Widget_handle_event( Handle self, PEvent event)
         }
         break;
       case cmTranslateAccel:
-        if ( var-> onTranslateAccel)
-           cv_call_perl( var-> mate, var-> onTranslateAccel, "iii", event-> key.code, event-> key. key, event-> key. mod);
-        objCheck;
-        if ( evOK)
-           my-> on_translateaccel( self, event-> key.code, event-> key. key, event-> key. mod);
+        my-> notify( self, "<siii", "TranslateAccel",
+            event-> key.code, event-> key. key, event-> key. mod);
         objCheck;
         if ( evOK) {
            if ( event-> key. key == kbLeft      || event-> key. key == kbRight     ||
@@ -781,15 +670,8 @@ void Widget_handle_event( Handle self, PEvent event)
         }
         break;
       case cmKeyUp:
-        if ( var-> onKeyUp)
-           cv_call_perl( var-> mate, var-> onKeyUp, "iii", event-> key.code, event-> key. key, event-> key. mod);
-        objCheck;
-        if ( evOK)
-           if ( is_dmopt( dmKeyUp))
-              delegate_sub( self, "KeyUp", "Hiii", self, event-> key.code, event-> key. key, event-> key. mod);
-        objCheck;
-        if ( evOK)
-           my-> on_keyup( self, event-> key.code, event-> key. key, event-> key. mod);
+        my-> notify( self, "<siii", "KeyUp",
+           event-> key.code, event-> key. key, event-> key. mod);
         break;
       case cmMenuCmd:
         if ( event-> gen. source)
@@ -819,11 +701,7 @@ void Widget_handle_event( Handle self, PEvent event)
                my-> first_that( self, move_notify, &event-> gen. P);
             var-> pos = event-> gen. P;
             if ( doNotify) {
-               my-> on_move( self, var-> pos, event-> gen. P);
-               objCheck;
-               if ( is_dmopt( dmMove)) delegate_sub( self, "Move", "HPP", self, var-> pos, event-> gen. P);
-               objCheck;
-               if ( var-> onMove) cv_call_perl( var-> mate, var-> onMove, "PP", var-> pos, event-> gen. P);
+               my-> notify( self, "<sPP", "Move", var-> pos, event-> gen. P);
                objCheck;
                if ( var-> growMode & gmCenter) my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
             }
@@ -831,16 +709,10 @@ void Widget_handle_event( Handle self, PEvent event)
         break;
       case cmPopup:
         {
-           PPopup p = ( PPopup) my-> get_popup( self);
-           my-> on_popup( self, event-> gen. B, event-> gen. P. x, event-> gen. P. y);
+           PPopup p;
+           my-> notify( self, "<siP", "Popup", event-> gen. B, event-> gen. P. x, event-> gen. P. y);
            objCheck;
-           if ( evOK)
-               if ( is_dmopt( dmPopup))
-                  delegate_sub( self, "Popup", "HiP", self, event-> gen. B, event-> gen. P);
-           objCheck;
-           if ( evOK && var-> onPopup)
-              cv_call_perl( var-> mate, var-> onPopup, "iP", event-> gen. B, event-> gen. P);
-           objCheck;
+           p = ( PPopup) my-> get_popup( self);
            if ( evOK && p && p-> self-> get_auto(( Handle) p))
               p-> self-> popup(( Handle) p, event-> gen. P. x, event-> gen. P. y ,0,0,0,0);
         }
@@ -872,13 +744,7 @@ void Widget_handle_event( Handle self, PEvent event)
            if ( !event-> gen. B) my-> first_that( self, size_notify, &event-> gen. R);
            if ( doNotify) {
               Point oldSize = {event-> gen. R. left, event-> gen. R. bottom};
-              my-> on_size( self, oldSize, event-> gen. P);
-              objCheck;
-              if ( is_dmopt( dmSize))
-                 delegate_sub( self, "Size", "HPP", self, oldSize, event-> gen. P);
-              objCheck;
-              if ( var-> onSize)
-                 cv_call_perl( var-> mate, var-> onSize, "PP", oldSize, event-> gen. P);
+              my-> notify( self, "<sPP", "Size", oldSize, event-> gen. P);
            }
         }
         break;
@@ -1222,7 +1088,6 @@ Widget_set( Handle self, HV * profile)
       pdelete( designScale);
    }
 
-   dyna_set( self, profile);
    inherited-> set( self, profile);
    if ( var-> owner != postOwner)
    {
@@ -1268,49 +1133,6 @@ Widget_show_hint( Handle self)
 
 /*::t */
 /*::u */
-void
-Widget_update_delegator( Handle self)
-{
-   enter_method;
-   HV * profile;
-   inherited-> update_delegator( self);
-   if ( var-> delegateTo == nilHandle) return;
-   profile = my-> get_delegators( self);
-#define delegator( MsgName) if ( pexist( MsgName)) dmopt_set( dm##MsgName);
-   delegator( Change);
-   delegator( Click);
-   delegator( Close);
-   delegator( ColorChanged);
-   delegator( Disable);
-   delegator( DragDrop);
-   delegator( DragOver);
-   delegator( Enable);
-   delegator( EndDrag);
-   delegator( Enter);
-   delegator( Help);
-   delegator( Leave);
-   delegator( FontChanged);
-   delegator( Hide);
-   delegator( Hint);
-   delegator( KeyDown);
-   delegator( KeyUp);
-   delegator( Menu);
-   delegator( MouseClick);
-   delegator( MouseDown);
-   delegator( MouseUp);
-   delegator( MouseMove);
-   delegator( MouseWheel);
-   delegator( MouseEnter);
-   delegator( MouseLeave);
-   delegator( Move);
-   delegator( Paint);
-   delegator( Popup);
-   delegator( Setup);
-   delegator( Show);
-   delegator( Size);
-   delegator( TranslateAccel);
-   delegator( ZOrderChanged);
-}
 
 static Bool
 repaint_all( Handle owner, Handle self, void * dummy)
@@ -2744,46 +2566,6 @@ read_point( AV * av, int * pt, int number, char * error)
       }
    }
    return result;
-}
-
-static void
-dyna_set( Handle self, HV * profile)
-{
-   #undef dyna
-   #define dyna( Method) Component_set_dyna_method( self, "on" # Method, (SV*)profile, &var-> on##Method)
-   dyna( Change);
-   dyna( Click);
-   dyna( Close);
-   dyna( ColorChanged);
-   dyna( Disable);
-   dyna( DragDrop);
-   dyna( DragOver);
-   dyna( Enable);
-   dyna( EndDrag);
-   dyna( Enter);
-   dyna( Help);
-   dyna( Leave);
-   dyna( FontChanged);
-   dyna( Hide);
-   dyna( Hint);
-   dyna( KeyDown);
-   dyna( KeyUp);
-   dyna( Menu);
-   dyna( MouseClick);
-   dyna( MouseDown);
-   dyna( MouseUp);
-   dyna( MouseMove);
-   dyna( MouseWheel);
-   dyna( MouseEnter);
-   dyna( MouseLeave);
-   dyna( Move);
-   dyna( Paint);
-   dyna( Popup);
-   dyna( Setup);
-   dyna( Show);
-   dyna( Size);
-   dyna( TranslateAccel);
-   dyna( ZOrderChanged);
 }
 
 /* XS section */

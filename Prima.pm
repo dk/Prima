@@ -35,6 +35,7 @@ bootstrap Prima $VERSION;
 $::application = undef;
 require Prima::Const;
 require Prima::Classes;
+init Prima $VERSION;
 
 sub END
 {
@@ -47,15 +48,6 @@ sub run
    $::application-> go if $::application-> alive;
 }
 
-sub import
-{
-   my @modules = @_;
-   for my $module (@modules) {
-      $module = "Prima::$module" unless $module =~ /^Prima::/;
-      eval "require $module;" if $module;
-   }
-}
-
 sub find_image
 {
    shift if @_ > 1;
@@ -65,6 +57,15 @@ sub find_image
       return "$_/Prima/images/$name" if -f "$_/Prima/images/$name" && -r _;
    }
    return undef;
+}
+
+sub import
+{
+   my @modules = @_;
+   for my $module (@modules) {
+      $module = "Prima::$module" unless $module =~ /^Prima::/;
+      eval "use $module;" if $module;
+   }
 }
 
 1;

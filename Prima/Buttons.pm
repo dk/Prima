@@ -98,16 +98,7 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
    $self-> { pressed} = $profile{ pressed};
-   $self-> {__DYNAS__}->{ onCheck} = $profile{ onCheck};
    return %profile;
-}
-
-sub set
-{
-   my ( $self, %parms) = @_;
-   $self-> SUPER::set( %parms);
-   $self-> {__DYNAS__}->{onCheck} = $parms{onCheck},
-     delete $parms{onCheck} if exists $parms{onCheck};
 }
 
 sub cancel_transaction
@@ -825,11 +816,11 @@ sub set_checked
 
    my $old = $self-> {checked} + 0;
    $self-> {checked} = $_[1] + 0;
-   if ( $old != $_[1] + 0)
-   {
+   if ( $old != $_[1] + 0) {
       $self-> repaint;
       $chkOk = ( $self->{checked} != $chkOk) && $self->{checked};
-      $self-> owner-> notify( 'RadioClick', $self) if $chkOk;
+      my $owner = $self-> owner;
+      $owner-> notify( 'RadioClick', $self) if $chkOk && exists $owner-> notification_types->{RadioClick};
       $self-> notify( 'Check', $self->{checked});
    }
 }
@@ -908,17 +899,8 @@ sub init
 {
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
-   $self-> {__DYNAS__}->{onRadioClick} = $profile{ onRadioClick};
    $self-> index( $profile{index});
    return %profile;
-}
-
-sub set
-{
-   my ( $self, %parms) = @_;
-   $self-> SUPER::set( %parms);
-   $self-> {__DYNAS__}->{onRadioClick} = $parms{onRadioClick},
-     delete $parms{onRadioClick} if exists $parms{onRadioClick};
 }
 
 sub on_radioclick

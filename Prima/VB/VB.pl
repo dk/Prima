@@ -1,10 +1,5 @@
 use strict;
-use Prima;
-use Prima::Classes;
-use Prima::StdDlg;
-use Prima::Notebooks;
-use Prima::MsgBox;
-use Prima::StdDlg;
+use Prima qw(StdDlg Notebooks MsgBox StdDlg);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
@@ -33,7 +28,8 @@ use vars qw($inspector
             $main
             $form
             $ico
-            $fastLoad);
+            $fastLoad
+            );
 
 $fastLoad = 1;
 my $openFileDlg;
@@ -70,6 +66,7 @@ sub on_click
    my $current = $VB::inspector-> {current};
    return if $index < 0 or !$current;
    my $id = $self-> {'id'}->[$index];
+   return if $id eq 'name' || $id eq 'owner';
    $self-> SUPER::on_click;
    if ( $self->{check}->[$index]) {
       $current->prf_set( $id => $current->{default}->{$id});
@@ -115,7 +112,7 @@ sub init
 
    my $fh = $self-> font-> height + 6;
 
-   $self-> insert( ComboBox =>
+   my $j = $self-> insert( ComboBox =>
       origin   => [ 0, $sz[1] - $fh],
       size     => [ $sz[0], $fh],
       growMode => gm::Ceiling,
@@ -123,6 +120,7 @@ sub init
       name     => 'Selector',
       items    => [''],
    );
+   $j-> make_event( 'Change');
 
    $self-> {monger} = $self-> insert( Notebook =>
       origin  => [ 0, $fh],
@@ -139,13 +137,13 @@ sub init
       name     => 'MTabs',
    );
    $self-> {mtabs}-> {mode} = 0;
+   $self-> {mtabs}-> make_event('Click');
 
    $self-> {plist} = $self-> {monger}-> insert_to_page( 0, OPropListViewer =>
       origin   => [ 0, 0],
       size     => [ 100, $sz[1] - $fh * 2],
       hScroll  => 1,
       name       => 'PList',
-      delegateTo => $self,
       growMode   => gm::Client,
    );
 
@@ -154,12 +152,11 @@ sub init
       size     => [ 100, $sz[1] - $fh * 2],
       hScroll  => 1,
       name       => 'EList',
-      delegateTo => $self,
       growMode   => gm::Client,
    );
    $self-> {currentList} = $self-> {'plist'};
 
-   $self-> insert( Divider =>
+   $j = $self-> insert( Divider =>
       vertical => 1,
       origin => [ 100, 0],
       size   => [ 6, $sz[1] - $fh],
@@ -167,6 +164,7 @@ sub init
       max    => 50,
       name   => 'Div',
    );
+   $j-> make_event( 'Change');
 
    $self-> {panel} = $self-> insert( Notebook =>
       origin    => [ 106, 0],
@@ -280,6 +278,7 @@ sub close_item
 {
    my $self = $_[0];
    return unless defined $self->{opened};
+   $self->{lastOpenedId} = $self->{opened}->{id};
    $self->{opened} = undef;
 }
 
@@ -314,6 +313,7 @@ sub open_item
    $self-> {opened}-> set( $data);
    $self-> {sync} = undef;
    $p-> pageIndex( $pageset) if defined $pageset;
+   $self-> {lastOpenedId} = undef;
 }
 
 
@@ -327,6 +327,7 @@ sub enter_widget
       return unless defined $self-> {current};
    }
    my $oid = $self->{opened}->{id} if $self->{opened};
+   $oid = $self-> {lastOpenedId} unless defined $oid;
    $self-> {current} = $w;
    $self-> close_item;
 
@@ -377,6 +378,7 @@ sub enter_widget
 sub renew_widgets
 {
    return unless $VB::inspector;
+   return if $VB::inspector->{selectorChanging};
    $VB::inspector->{selectorChanging} = 1;
    $VB::inspector-> close_item;
    if ( $VB::form) {
@@ -415,6 +417,16 @@ sub on_destroy
 package Form;
 use vars qw(@ISA);
 @ISA = qw( Prima::Window Prima::VB::Window);
+
+{
+my %RNT = (
+   %{Prima::Window->notification_types()},
+   Load => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
 
 sub profile_default
 {
@@ -1054,6 +1066,7 @@ sub init
       tabs     => [ @pages],
       buffered => 1,
    );
+   $self-> {tabset}-> make_event( 'Change');
 
    $self-> {nb} = $self-> insert( Widget =>
       origin => [ 150, 0],
@@ -1073,7 +1086,6 @@ sub init
       growMode   => gm::Floor,
       backColor  => cl::Gray,
       name       => 'NBPanel',
-      delegateTo => $self,
       onPaint    => sub {
          my ( $self, $canvas) = @_;
          my @sz = $self-> size;
@@ -1087,26 +1099,26 @@ sub init
       origin  => [1,5],
       size    => [11,36],
       name    => 'LeftScroll',
-      delegateTo => $self,
       onPaint => sub {
          $_[0]-> on_paint( $_[1]);
          $_[1]-> color( $_[0]-> enabled ? cl::Black : cl::Gray);
          $_[1]-> fillpoly([7,4,7,32,3,17]);
       },
    );
+   $self-> {leftScroll}-> make_event( 'Click');
 
    $self-> {rightScroll} = $self-> {nb}-> insert( SpeedButton =>
       origin  => [$self-> {nb}-> width-11,5],
       size    => [11,36],
       name    => 'RightScroll',
       growMode => gm::Right,
-      delegateTo => $self,
       onPaint => sub {
          $_[0]-> on_paint( $_[1]);
          $_[1]-> color( $_[0]-> enabled ? cl::Black : cl::Gray);
          $_[1]-> fillpoly([3,4,3,32,7,17]);
       },
    );
+   $self-> {rightScroll}-> make_event( 'Click');
 
    $self->{classes} = \%classes;
    $self->{pages}   = \@pages;
@@ -1175,6 +1187,7 @@ sub reset_tabs
          origin => [ $offsets{$info{page}}, 4],
          size   => [ 36, 36],
       );
+      $j-> make_event( 'Click', $self);
       $j->{orgLeft}   = $offsets{$info{page}};
       $j->{className} = $class;
       $offsets{$info{page}} += 40;
@@ -1322,6 +1335,7 @@ sub open
       return;
    }
 
+   $VB::main-> wait;
    my $i;
    my %dep;
    my @seq = $sub->();
@@ -1341,12 +1355,17 @@ sub open
       $class{$dep{$_}->{class}} = 1;
    }
 
+   my $oldtxt = $self-> text;
+   my $maxwij = scalar(@seq) / 2;
+   $self-> text( "Loading...");
+
    my $f = Form-> create(
       realClass   => $dep{$main}->{realClass},
       class   => $dep{$main}->{class},
       module  => $dep{$main}->{module},
       extras  => $dep{$main}->{extras},
       creationOrder => 0,
+      visible => 0,
    );
    for ( keys %{$dep{$main}->{profile}}) {
       next unless $_ eq 'size';
@@ -1363,6 +1382,8 @@ sub open
    }
    $VB::form = $f;
 
+   $VB::inspector->{selectorChanging} = 1;
+   my $loaded = 1;
    local *do_layer = sub
    {
       my $id = $_[0];
@@ -1394,17 +1415,20 @@ sub open
          }
          $c-> prf_set( %{$dep{$_}->{profile}});
          $widgets{$_} = $c;
+         $loaded++;
+         $self-> text( sprintf( "Loaded %d%%", ($loaded / $maxwij) * 100));
          &do_layer( $_);
       }
    };
    &do_layer( $main, \%owners);
-
+   $VB::form-> show;
+   $VB::inspector->{selectorChanging}--;
    ObjectInspector::renew_widgets;
    update_menu();
+   $self-> text( $oldtxt);
    $VB::form-> notify(q(Load));
    $_-> notify(q(Load)) for $VB::form-> widgets;
 }
-
 
 sub write_form
 {
@@ -1484,7 +1508,6 @@ POSTHEAD
 sub write_PL
 {
    my $self = $_[0];
-
    my $main = $VB::form-> prf( 'name');
    my @cmp = $VB::form-> widgets;
 
@@ -1538,7 +1561,6 @@ HEAD2
          $c .= "sub $aname {\n   $asub\n}\n\n";
       }
    }
-
    $c .= <<HEAD3;
 sub init
 {
@@ -1561,22 +1583,21 @@ HEAD3
 
    $c .= '   '.$actions{onBegin}->{$_}."(q($_), \$instances{$_});\n"
       for keys %{$actions{onBegin}};
-
    $c .= <<HEAD4;
    my \%profile = \$self-> SUPER::init(\@_);
    my \%names   = ( q($main) => \$self);
+   \$self-> lock;
 HEAD4
    @cmp = sort { $a->{creationOrder} <=> $b->{creationOrder}} @cmp;
    my %names = (
       $main => 1
    );
-   my @re_cmp;
+   my @re_cmp = ();
 
    $c .= '   '.$actions{onFormCreate}->{$_}."(q($_), \$instances{$_}, \$self);\n"
       for keys %{$actions{onFormCreate}};
    $c .= '   '.$actions{onCreate}->{$main}."(q($main), \$instances{$main}, \$self);\n"
       if $actions{onCreate}->{$main};
-
 AGAIN:
    for ( @cmp) {
       my $owner = $_->prf('owner');
@@ -1619,13 +1640,14 @@ AGAIN:
    }
    if ( scalar @re_cmp) {
       @cmp = @re_cmp;
+      @re_cmp = ();
       goto AGAIN;
    }
 
    $c .= '   '.$actions{onEnd}->{$_}."(q($_), \$instances{$_}, \$names{$_});\n"
       for keys %{$actions{onEnd}};
-
 $c .= <<POSTHEAD;
+   \$self-> unlock;
    return \%profile;
 }
 
@@ -1655,6 +1677,7 @@ sub save
 
    if ( CORE::open( F, ">".$self->{fmName})) {
       local $/;
+      $VB::main-> wait;
       my $c = $asPL ? $self-> write_PL : $self-> write_form;
       print F $c;
    } else {
@@ -1731,6 +1754,7 @@ sub form_run
       $VB::main->{running}-> destroy;
       $VB::main->{running} = undef;
    }
+   $VB::main-> wait;
    my $c = $self-> write_form;
    my $okCreate = 0;
    eval{
@@ -1759,6 +1783,16 @@ sub form_run
    Prima::MsgBox::message( "$@") if $@;
 }
 
+sub wait
+{
+   my $t = $_[0]-> insert( Timer => timeout => 10, onTick => sub {
+      $::application-> pointer( $_[0]->{savePtr});
+      $_[0]-> destroy;
+   });
+   $t-> {savePtr} = $::application-> pointer;
+   $::application-> pointer( cr::Wait);
+   $t-> start;
+}
 
 package VisualBuilder;
 

@@ -687,7 +687,8 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              ev. cmd = cmMove;
              ev. gen . P. x = ( short) LOWORD( mp2);
              ev. gen . P. y = sz. y - ( short) HIWORD( mp2) - sys yOverride;
-             if ( is_apt( aptTransparent)) InvalidateRect( win, nil, false);
+             if ( is_apt( aptTransparent))
+                InvalidateRect( win, nil, false);
           }
       }
       break;

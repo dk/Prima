@@ -23,6 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+use Prima;
 use Prima::Const;
 
 # class Object; base class of all Prima classes
@@ -44,8 +45,6 @@ sub CREATE
    my $class = shift;
    my $self = {};
    bless( $self, $class);
-   $self-> { '__DYNAS__'}       = {};
-   $self-> { '__DELEGATORS__'}  = {};
    return $self;
 }
 
@@ -173,28 +172,12 @@ my %RNT = (
 sub notification_types { return \%RNT; }
 }
 
-sub __update_delegator
-{
-   my $self = $_[0];
-   my $nt   = $self-> notification_types;
-   my $dlg  = $self-> delegateTo;
-   my %hash = ();
-   $self-> { '__DELEGATORS__'}  = \%hash;
-   return unless $dlg;
-   my $name = $self-> name;
-   for ( keys %{$nt}) {
-      my $cv = $dlg->can("${name}_$_",0);
-      $hash{$_} = $cv if $cv;
-   }
-}
-
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
       name       => ref $_[ 0],
       owner      => $::application,
-      delegateTo => 0,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -210,46 +193,52 @@ sub profile_check_in
         $p-> { name} = ( ref $self) . ( 1 + map { (ref $self) eq (ref $_) ? 1 : () } $owner-> get_components);
         $p-> { name} =~ s/(.*):([^:]+)$/$2/;
      }
-
-     $p-> {delegateTo} = $owner if
-           ( defined $p-> {delegateTo} && $p->{delegateTo}==0)
-        || ( !exists($p->{delegateTo}) && defined( $default->{delegateTo}) && ( $default->{delegateTo}==0));
    }
 }
 
-sub set_owner  {
-   $_[0]->set(
-      owner      => $_[1],
-      delegateTo => $_[1],
-   );
-}
+sub set_owner  { $_[0]->set( owner => $_[1]);}
 
 sub name       {($#_)?$_[0]->set_name        ($_[1]):return $_[0]->get_name;        }
 sub owner      {($#_)?$_[0]->set_owner       ($_[1]):return $_[0]->get_owner;       }
-sub delegateTo {($#_)?$_[0]->set_delegate_to ($_[1]):return $_[0]->get_delegate_to; }
 
 sub get_notify_sub
 {
    my ($self, $note) = @_;
-   my $onNote = 'on' . $note;
    my $rnt = $self->notification_types->{$note};
-   $rnt ||= nt::Default;
-   if ( $rnt & nt::CustomFirst)
-   {
-      return ( $self-> {__DYNAS__}->{$onNote}, $self) if defined $self-> {__DYNAS__}->{$onNote};
-      my ($delegate,$owner,$subref) = ($self-> name . '_' . $note,$self-> delegateTo,0);
-      return ( $subref, $owner, $self) if $subref = $owner-> can( $delegate, 0);
+   $rnt = nt::Default unless defined $rnt;
+   if ( $rnt & nt::CustomFirst) {
+      my $onNote = 'on' . $note;
+      my ( $referer, $sub, $id) = $self-> get_notification( $onNote, ($rnt & nt::FluxReverse) ? -1 : 0);
+      if ( defined $referer) {
+         return ( $sub, $referer, $self) if $referer != $self;
+         return ( $sub, $self);
+      }
       my $method = "on_" . lc $note;
-      return ( $subref, $self) if $subref = $self-> can( $method, 0);
+      return ( $sub, $self) if $sub = $self-> can( $method, 0);
    } else {
-      my $method = "on_" . lc $note;
-      my $subref;
-      return ( $subref, $self) if $subref = $self-> can( $method, 0);
-      my ($delegate,$owner) = ($self-> name . '_' . $note, $self-> delegateTo);
-      return ( $subref, $owner, $self) if $subref = $owner-> can( $delegate, 0);
-      return ( $self-> {__DYNAS__}->{$onNote}, $self) if defined $self-> {__DYNAS__}->{$onNote};
+      my ( $sub, $method) = ( undef, "on_" . lc $note);
+      return ( $sub, $self) if $sub = $self-> can( $method, 0);
+      my $onNote = 'on' . $note;
+      my ( $referer, $sub2, $id) = $self-> get_notification( $onNote, ($rnt & nt::FluxReverse) ? -1 : 0);
+      if ( defined $referer) {
+         return ( $sub, $referer, $self) if $referer != $self;
+         return ( $sub, $self);
+      }
    }
    return undef;
+}
+
+sub make_event
+{
+   my ( $self, $name, $referer) = @_;
+   my @names = ref($name) ? @$name : ($name);
+   $referer = $self-> owner unless defined $referer;
+   $name = $self-> name;
+   for ( @names) {
+      my $sub = $referer-> can( "${name}_$_", 0);
+      next unless $sub;
+      my $id = $self-> add_notification( "on$_", $sub, $referer);
+   }
 }
 
 sub AUTOLOAD
@@ -662,6 +651,7 @@ my %RNT = (
    EndDrag        => nt::Default,
    Enter          => nt::Default,
    FontChanged    => nt::Default,
+   Help           => nt::Default,
    Hide           => nt::Default,
    Hint           => nt::Default,
    KeyDown        => nt::Command,
@@ -682,6 +672,7 @@ my %RNT = (
    Show           => nt::Default,
    Size           => nt::Default,
    TranslateAccel => nt::Default,
+   ZOrderChanged  => nt::Default,
 );
 
 sub notification_types { return \%RNT; }

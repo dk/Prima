@@ -45,7 +45,7 @@ sub classes
       },
       'Prima::ListViewer' => {
          RTModule => 'Prima::Lists',
-         class  => 'Prima::VB::ListBox',
+         class  => 'Prima::VB::ListViewer',
          page   => 'Abstract',
          icon   => 'VB::classes.gif:16',
       },
@@ -311,6 +311,7 @@ sub prf_vertical    { $_[0]->repaint; }
 sub prf_image       { $_[0]->repaint; }
 sub prf_imageScale  { $_[0]->repaint; }
 
+
 package Prima::VB::Label;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
@@ -377,8 +378,6 @@ sub profile_default
    return $def;
 }
 
-
-
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -394,7 +393,6 @@ sub prf_types
    return $pt;
 }
 
-
 sub prf_adjust_default
 {
    my ( $self, $p, $pf) = @_;
@@ -407,8 +405,6 @@ sub prf_adjust_default
       firstChar
    );
 }
-
-
 
 sub on_paint
 {
@@ -430,7 +426,6 @@ sub prf_writeOnly     { $_[0]->repaint; }
 sub prf_borderWidth   { $_[0]->repaint; }
 sub prf_passwordChar  { $_[0]->repaint; }
 
-
 package Prima::VB::Cluster;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
@@ -444,7 +439,6 @@ sub profile_default
    @$def{keys %prf} = values %prf;
    return $def;
 }
-
 
 sub prf_types
 {
@@ -537,7 +531,6 @@ sub profile_default
    return $def;
 }
 
-
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -547,7 +540,6 @@ sub prf_types
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
 }
-
 
 package Prima::VB::GroupCheckBox;
 use vars qw(@ISA);
@@ -615,7 +607,6 @@ sub profile_default
    return $def;
 }
 
-
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -630,14 +621,12 @@ sub prf_types
    return $pt;
 }
 
-
 sub prf_adjust_default
 {
    my ( $self, $p, $pf) = @_;
    $self-> SUPER::prf_adjust_default( $p, $pf);
    delete $pf->{$_} for qw (offset);
 }
-
 
 sub on_paint
 {
@@ -654,10 +643,25 @@ sub on_paint
 sub prf_items         { $_[0]->repaint; }
 sub prf_integralHeight{ $_[0]->repaint; }
 
-package Prima::VB::DirectoryListBox;
+package Prima::VB::ListViewer;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::ListBox);
 
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onDrawItem    => 'my ( $self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused) = @_;',
+      onStringify   => 'my ( $self, $index, $result) = @_;',
+      onSelectItem  => 'my ( $self, $index, $selectState) = @_;',
+      onMeasureItem => 'my ( $self, $index, $result) = @_;',
+   );
+}
+
+
+package Prima::VB::DirectoryListBox;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::ListBox);
 
 sub prf_types
 {
@@ -687,7 +691,6 @@ sub on_paint
    )  if scalar @r;
    $self-> common_paint($canvas);
 }
-
 
 
 package Prima::VB::ScrollBar;
@@ -746,7 +749,6 @@ sub on_paint
 
 sub prf_vertical   { $_[0]->repaint; }
 
-
 package Prima::VB::ComboBox;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
@@ -774,7 +776,6 @@ sub profile_default
    @$def{keys %prf} = values %prf;
    return $def;
 }
-
 
 sub prf_adjust_default
 {
@@ -847,7 +848,6 @@ sub prf_types
    return $pt;
 }
 
-
 sub prf_adjust_default
 {
    my ( $self, $p, $pf) = @_;
@@ -870,7 +870,6 @@ sub prf_types
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
 }
-
 
 sub prf_adjust_default
 {
@@ -1002,7 +1001,6 @@ sub prf_alignment     { $_[0]->repaint; }
 sub prf_valignment    { $_[0]->repaint; }
 sub prf_zoom          { $_[0]->repaint; }
 
-
 package Prima::VB::ScrollWidget;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
@@ -1030,6 +1028,15 @@ use Prima::Sliders;
 package Prima::VB::SpinButton;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
+
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onIncrement => 'my ( $self, $increment) = @_;',
+   );
+}
+
 
 sub profile_default
 {
@@ -1067,6 +1074,14 @@ sub on_paint
 package Prima::VB::AltSpinButton;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
+
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onIncrement => 'my ( $self, $increment) = @_;',
+   );
+}
 
 sub profile_default
 {
@@ -1122,7 +1137,6 @@ package Prima::VB::SpinEdit;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::InputLine);
 
-
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -1136,7 +1150,6 @@ sub prf_types
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
 }
-
 
 sub prf_adjust_default
 {
@@ -1174,6 +1187,14 @@ package Prima::VB::Gauge;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onStringify => 'my ( $self, $index, $result) = @_;',
+   );
+}
+
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
@@ -1183,7 +1204,6 @@ sub profile_default
    @$def{keys %prf} = values %prf;
    return $def;
 }
-
 
 sub prf_types
 {
@@ -1262,7 +1282,6 @@ sub prf_value         { $_[0]->repaint; }
 sub prf_indent        { $_[0]->repaint; }
 sub prf_relief        { $_[0]->repaint; }
 sub prf_vertical      { $_[0]->repaint; }
-
 
 package Prima::VB::AbstractSlider;
 use vars qw(@ISA);
@@ -1348,6 +1367,14 @@ package Prima::VB::CircularSlider;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::AbstractSlider);
 
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onStringify => 'my ( $self, $index, $result) = @_;',
+   );
+}
+
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
@@ -1357,7 +1384,6 @@ sub profile_default
    @$def{keys %prf} = values %prf;
    return $def;
 }
-
 
 sub prf_types
 {
@@ -1405,6 +1431,18 @@ sub profile_default
    return $def;
 }
 
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onSelectItem  => 'my ( $self, $index) = @_;',
+      onDrawItem    => 'my ( $self, $canvas, $node, $left, $bottom, $right, $top, $position, $focused) = @_;',
+      onMeasureItem => 'my ( $self, $node, $result) = @_;',
+      onExpand      => 'my ( $self, $node, $action) = @_;',
+      onDragItem    => 'my ( $self, $from, $to) = @_;',
+      onStringify   => 'my ( $self, $node, $result) = @_;',
+   );
+}
 
 sub prf_types
 {
@@ -1477,7 +1515,6 @@ ENOUGH:
    $self-> common_paint($canvas);
 }
 
-
 sub prf_items  { $_[0]->repaint; }
 
 package Prima::VB::DirectoryOutline;
@@ -1507,6 +1544,7 @@ package Prima::VB::Notebook;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::CommonControl);
 
+
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -1527,67 +1565,41 @@ sub init
    $self-> insert( Popup =>
       name => 'AltPopup',
       items => [
-         ['~Next page' => '+' => '+' => sub { $self-> prf_set( 'pageIndex' => $self-> prf('pageIndex') + 1);}],
-         ['~Previous page' => '-' => '-' => sub { $self-> prf_set( 'pageIndex' => $self-> prf('pageIndex') - 1);}],
+         ['~Next page' => '+' => '+' => sub { $self-> pg_inc(1); }],
+         ['~Previous page' => '-' => '-' => sub { $self-> pg_inc(-1); }],
+         ['~Move to page...' => 'Ctrl+M' => '^M' => q(widget_repage)],
       ],
    )-> selected(0);
-   $self-> mainEvent('onDestroy');
+   $self-> add_hooks(qw(name owner DESTROY));
    return %profile;
-}
-
-sub on_mousedown
-{
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   if ( $btn == mb::Right && $mod & km::Ctrl) {
-      $self-> Popup2-> popup( $x, $y);
-      $self-> clear_event;
-      return;
-   }
 }
 
 sub prf_pageIndex
 {
    my ( $self, $pi) = @_;
    return if $pi == $self->{pageIndex};
-
-   my $l = $self->{list};
-   for ( keys %{$l}) {
-      my $item = $VB::form-> bring($_);
-      next unless defined $item;
-      $item-> visible( $l->{$_} == $pi);
+   my $l = $self-> {list};
+   for ( $VB::form-> widgets) {
+      my $n = $_->name;
+      next unless exists $l->{$n};
+      $_->visible( $pi == $l->{$n});
    }
    $self->{pageIndex} = $pi;
-}
-
-sub prf_attach
-{
-   my ( $self, $child) = @_;
-   $self-> {list}->{$child-> name} = $self->{pageIndex};
-}
-
-sub prf_detach
-{
-   my ( $self, $child) = @_;
-   delete $self->{list}->{$child-> name};
 }
 
 sub ext_profile
 {
    my $self = $_[0];
-   my $name = $_[0]-> prf('name');
-   return map {
-      my $name = $_->prf('name');
-      $name => $self->{list}->{$name};
-   } grep {
-      $_-> prf('owner') eq $name
-   } $VB::form-> widgets;
+   my $l    = $self->{list};
+   return map { $_ => $l->{$_}} keys %{$l};
 }
 
 sub act_profile
 {
    my ($self, $asPL) = @_;
    return (
-      onChild  => '$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})',
+      onChild        => '$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})',
+      onChildCreate  => '$_[3]-> origin( $_[3]->left-$_[3]->owner->left, $_[3]-> bottom-$_[3]->owner->bottom);',
    );
 }
 
@@ -1597,19 +1609,101 @@ sub on_load
    return unless $self->{extras};
    $self->{list} = $self-> {extras};
    delete $self-> {extras};
+   $self-> {pageIndex} = -1; # force repage
+   $self-> prf_pageIndex($self-> prf('pageIndex'));
+}
 
-   my $l  = $self->{list};
-   my $pi = $self-> {pageIndex};
-   for ( keys %{$l}) {
-      my $item = $VB::form-> bring($_);
-      next unless defined $item;
-      $item-> visible( $l->{$_} == $pi);
+sub on_hook
+{
+   my ( $self, $who, $prop, $old, $new) = @_;
+   if ( $prop eq 'name') {
+      return unless exists $self->{list}->{$old};
+      $self->{list}->{$new} = $self->{list}->{$old};
+      delete $self->{list}->{$old};
+      return;
    }
+   if ( $prop eq 'owner') {
+      my $n = $self-> prf('name');
+      my $l = $self-> {list};
+      if (( $n eq $old) || exists $l->{$old}) {
+         return if exists $l->{$new} || ( $n eq $new);
+         delete $l->{$who};
+      } elsif (( $n eq $new) || exists $l->{$new}) {
+         return if exists $l->{$old} || ( $n eq $old);
+         $l-> {$who} = $self-> {pageIndex};
+      }
+      return;
+   }
+   if ( $prop eq 'DESTROY') {
+      delete $self->{list}->{$who};
+      return;
+   }
+}
+
+sub widget_repage
+{
+   my $self = $_[0];
+   my @mw = $VB::form-> marked_widgets;
+   my $d = Prima::Dialog-> create(
+       text => 'Move to page',
+       size => [ 217, 63],
+       centered => 1,
+       icon => $VB::ico,
+       visible => 0,
+       designScale => [7, 16],
+   );
+   $d-> insert( [Prima::SpinEdit =>
+       origin => [ 3, 8],
+       name  => 'Spin',
+       size  => [ 100, 20],
+       value => $self-> {pageIndex},
+       max   => 16383,
+   ], [ Prima::Button =>
+       origin => [ 109, 8],
+       size => [ 96, 36],
+       text => '~OK',
+       onClick => sub { $d-> ok; },
+   ], [ Prima::Label =>
+       origin => [ 3, 36],
+       size => [ 100, 20],
+       text => 'Move to page',
+   ]);
+   my $ok = $d-> execute == cm::OK;
+   my $pi = $d-> Spin-> value;
+   $d-> destroy;
+   return unless $ok;
+   return if $self-> {pageIndex} == $pi;
+   my $ctrl = 0;
+   for ( @mw) {
+      my $name = $_-> name;
+      next unless exists $self->{list}->{$name};
+      $self->{list}->{$name} = $pi;
+      $ctrl++;
+   }
+   return unless $ctrl;
+   $self-> prf_set( pageIndex => $pi);
+}
+
+sub pg_inc
+{
+   my ( $self, $inc) = @_;
+   my $np = $self->{pageIndex} + $inc;
+   return if $np < 0 || $np > 16383;
+   $self-> prf_set( pageIndex => $np);
 }
 
 package Prima::VB::TabSet;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::CommonControl);
+
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onDrawTab    => 'my ( $self, $canvas, $number, $colorSet, $largePolygon, $smallPolygon) = @_;',
+      onMeasureTab => 'my ( $self, $index, $result) = @_;',
+   );
+}
 
 sub profile_default
 {
@@ -1635,7 +1729,6 @@ sub prf_types
 
 sub prf_tabs    { $_[0]-> repaint; }
 sub prf_topMost { $_[0]-> repaint; }
-
 
 sub on_paint
 {
@@ -1707,7 +1800,7 @@ sub on_paint
    $canvas-> rect3d( 10, 10, $sz[0] - 11, $sz[1] - 10 - $mh, 1, reverse @c3d);
    $canvas-> rect3d( 2, 2, $sz[0] - 3, $sz[1] - $mh, 1, @c3d);
    $canvas-> linePattern( lp::Dash);
-   $canvas-> rectangle( 12, 12, $sz[0] - 29, $sz[1] - 60 - $mh);
+   $canvas-> rectangle( 12, 12, $sz[0] - 17, $sz[1] - 48 - $mh);
    $canvas-> linePattern( lp::Solid);
    $canvas-> common_paint( $canvas);
 }

@@ -819,7 +819,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
       }
 
       // or vector font - for any purpose?
-      // if so, it could guranteed that font-> height == tmHeight
+      // if so, it could guaranteed that font-> height == tmHeight
       if ( es. vecId) {
          LOGFONT lpf = es. lf;
          TEXTMETRIC tm;
@@ -886,7 +886,9 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
       // This could be achieved if system does not have "System" font
       *font = guts. windowFont;
       font-> pitch = fpDefault;
-      r = font_font2gp( font, res, forceSize, dc);
+      recursiveFF++;
+      r = ( recursiveFF < 3) ? font_font2gp( font, res, forceSize, dc) : fgBitmap;
+      recursiveFF--;
       out( r);
    }
    return fgBitmap;
@@ -908,6 +910,7 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
    font-> resolution = res. y * 0x10000 + res. x;
    if ( forceSize) {
       key. height = font-> height;
+      key. width  = font-> width;
       addSizeEntry = true;
    } else {
       key. size  = font-> size;

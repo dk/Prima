@@ -55,8 +55,6 @@ $ww-> set( onPaint => sub {
 $ww-> repaint;
 $ww-> update_view;
 
-$ww-> set( onPaint => undef);
-
 $ww-> destroy;
 
 1;

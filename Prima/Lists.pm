@@ -109,24 +109,12 @@ sub init
    $self->{selectedItems} = {} unless $profile{multiSelect};
    for ( qw( gridColor hScroll vScroll offset multiColumn itemHeight autoHeight itemWidth multiSelect extendedSelect integralHeight focusedItem topItem selectedItems borderWidth))
       { $self->$_( $profile{ $_}); }
-   $self-> {__DYNAS__}->{onDrawItem}    = $profile{onDrawItem};
-   $self-> {__DYNAS__}->{onSelectItem}  = $profile{onSelectItem};
    $self-> reset;
    $self-> reset_scrolls;
    $self->{firstPaint} = 1;
    return %profile;
 }
 
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   $self->{__DYNAS__}->{onDrawItem}   = $profile{onDrawItem},
-      delete $profile{onDrawItem}   if exists $profile{onDrawItem};
-   $self->{__DYNAS__}->{onSelectItem} = $profile{onSelectItem},
-      delete $profile{onSelectItem} if exists $profile{onSelectItem};
-   $self-> SUPER::set( %profile);
-}
 
 sub refresh
 {
@@ -1135,22 +1123,10 @@ sub init
    $self->{maxWidth}   = 0;
    $self->{autoWidth}  = 0;
    my %profile = $self-> SUPER::init(@_);
-   $self-> {__DYNAS__}->{onMeasureItem} = $profile{onMeasureItem};
-   $self-> {__DYNAS__}->{onStringify}   = $profile{onStringify};
    $self->autoWidth( $profile{autoWidth});
    $self->items    ( $profile{items});
    $self->focusedItem  ( $profile{focusedItem});
    return %profile;
-}
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   $self->{__DYNAS__}->{onMeasureItem} = $profile{onMeasureItem},
-      delete $profile{onMeasureItem} if exists $profile{onMeasureItem};
-   $self->{__DYNAS__}->{onStringify} = $profile{onStringify},
-      delete $profile{onStringify} if exists $profile{onStringify};
-   $self-> SUPER::set( %profile);
 }
 
 
@@ -1193,6 +1169,7 @@ sub on_fontchanged
    $self-> itemHeight( $self-> font-> height), $self->{autoHeight} = 1 if $self-> { autoHeight};
    $self-> calibrate;
 }
+
 
 sub recalc_widths
 {
@@ -1433,26 +1410,6 @@ sub draw_items
 package Prima::ListBox;
 use vars qw(@ISA);
 @ISA = qw(Prima::ListViewer);
-
-
-sub init
-{
-   my $self = shift;
-   $self->{onDrawItem}    = undef;
-   $self->{onMeasureItem} = undef;
-   $self->{onStringify  } = undef;
-   my %profile = $self-> SUPER::init(@_);
-   return %profile;
-}
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   $profile{onDrawItem}    = undef;
-   $profile{onMeasureItem} = undef;
-   $profile{onStringify  } = undef;
-   $self-> SUPER::set( %profile);
-}
 
 sub get_item_text  { return $_[0]->{items}->[$_[1]]; }
 

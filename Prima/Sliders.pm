@@ -68,19 +68,7 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init( @_);
    $self-> { pressState} = 0;
-   $self-> {__DYNAS__}->{onIncrement}  = $profile{onIncrement};
-   $self-> {__DYNAS__}->{onTrackEnd}   = $profile{onTrackEnd};
    return %profile;
-}
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   $self->{__DYNAS__}->{onIncrement} = $profile{onIncrement},
-      delete $profile{onIncrement} if exists $profile{onIncrement};
-   $self->{__DYNAS__}->{onTrackEnd} = $profile{onTrackEnd},
-      delete $profile{onTrackEnd} if exists $profile{onTrackEnd};
-   $self-> SUPER::set( %profile);
 }
 
 sub on_mouseclick
@@ -379,7 +367,9 @@ sub profile_default
       min            => 0,
       max            => 100,
       step           => 1,
+      pageStep       => 10,
       value          => 0,
+      circulate      => 0,
       height         => $fh < 20 ? 20 : $fh,
       editClass      => 'Prima::InputLine',
       spinClass      => 'Prima::AltSpinButton',
@@ -394,7 +384,7 @@ sub init
    my %profile = @_;
    my $visible = $profile{visible};
    $profile{visible} = 0;
-   for (qw( min max step)) {$self->{$_} = 1;};
+   for (qw( min max step circulate pageStep)) {$self->{$_} = 1;};
    %profile = $self-> SUPER::init(%profile);
    my ( $w, $h) = ( $self-> size);
    $self-> {spin} = $self-> insert( $profile{spinClass} =>
@@ -404,7 +394,8 @@ sub init
       right          => $w - 1,
       height         => $h - 1 * 2,
       growMode       => gm::Right,
-      (map { $_ => $profile{$_}} keys %spinDynas),
+      onIncrement    => sub { $_[0]-> owner-> Spin_Increment( @_)},
+      (map { $_ => $profile{$_}} grep { exists $profile{$_} ? 1 : 0} keys %spinDynas),
       %{$profile{spinProfile}},
    );
    $self-> {edit} = $self-> insert( $profile{editClass} =>
@@ -416,26 +407,16 @@ sub init
       tabStop     => 1,
       borderWidth => 0,
       current     => 1,
+      onKeyDown   => sub { $_[0]-> owner-> InputLine_KeyDown(@_)},
+      onChange    => sub { $_[0]-> owner-> InputLine_Change(@_)},
       (map { $_ => $profile{$_}} keys %editProps),
       %{$profile{editProfile}},
       text        => $profile{value},
    );
-   for (qw( min max step value)) {$self->$_($profile{$_});};
+   for (qw( min max step value circulate pageStep)) {$self->$_($profile{$_});};
    $self-> visible( $visible);
    return %profile;
 }
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   my %spinPasse;
-   for ( keys %spinDynas) {
-      $spinPasse{$_} = $profile{$_}, delete $profile{$_} if exists $profile{$_};
-   }
-   $self->{list}->set( %spinPasse) if scalar keys %spinPasse;
-   $self-> SUPER::set( %profile);
-}
-
 
 sub on_paint
 {
@@ -444,12 +425,24 @@ sub on_paint
    $canvas-> rect3d( 0, 0, $s[0]-1, $s[1]-1, 1, $self-> dark3DColor, $self-> light3DColor);
 }
 
+sub on_mousewheel
+{
+   my ( $self, $mod, $x, $y, $z) = @_;
+   $z = int($z/120);
+   $z *= $self-> {pageStep} if $mod & km::Ctrl;
+   my $value = $self-> value;
+   $self-> value( $value + $z * $self->{step});
+   $self-> value( $z > 0 ? $self-> min : $self-> max)
+      if $self-> {circulate} && ( $self-> value == $value);
+}
+
 sub Spin_Increment
 {
    my ( $self, $spin, $increment) = @_;
    my $value = $self-> value;
    $self-> value( $value + $increment * $self->{step});
-   $self-> value( $increment > 0 ? $self-> min : $self-> max) if $self-> value == $value;
+   $self-> value( $increment > 0 ? $self-> min : $self-> max)
+      if $self-> {circulate} && ( $self-> value == $value);
 }
 
 sub InputLine_KeyDown
@@ -457,6 +450,21 @@ sub InputLine_KeyDown
    my ( $self, $edit, $code, $key, $mod) = @_;
    $edit-> clear_event if $key == kb::NoKey and
       lc( chr $code) =~ m/[\!\@\#\$\%\^\&\*\(\)_\{\}\[\]\?\\\/\|\~\`\'\"\:\;A-DF-Za-df-z]/;
+   if ( $key == kb::Up || $key == kb::Down || $key == kb::PgDn || $key == kb::PgUp) {
+      my ($s,$pgs) = ( $self-> step, $self-> pageStep);
+      my $z = ( $key == kb::Up) ? $s : (( $key == kb::Down) ? -$s :
+          (( $key == kb::PgUp) ? $pgs : -$pgs));
+      if (( $mod & km::Ctrl) && ( $key == kb::PgDn || $key == kb::PgUp)) {
+         $self-> value( $key == kb::PgDn ? $self-> min : $self-> max);
+      } else {
+         my $value = $self-> value;
+         $self-> value( $value + $z);
+         $self-> value( $z > 0 ? $self-> min : $self-> max)
+            if $self-> {circulate} && ( $self-> value == $value);
+      }
+      $edit-> clear_event;
+      return;
+   }
    if ($key == kb::Enter) {
       my $c = $edit-> text;
       $c = eval "$c";
@@ -515,6 +523,19 @@ sub set_value
    $self-> {edit}-> text( $value);
 }
 
+sub circulate
+{
+   return $_[0]->{circulate} unless $#_;
+   $_[0]->{circulate} = $_[1];
+}
+
+sub pageStep
+{
+   return $_[0]->{pageStep} unless $#_;
+   $_[0]->{pageStep} = $_[1];
+}
+
+
 sub min          {($#_)?$_[0]->set_bounds($_[1], $_[0]-> {'max'})      : return $_[0]->{min};}
 sub max          {($#_)?$_[0]->set_bounds($_[0]-> {'min'}, $_[1])      : return $_[0]->{max};}
 sub step         {($#_)?$_[0]->set_step         ($_[1]):return $_[0]->{step}}
@@ -563,7 +584,6 @@ sub init
    my %profile = $self-> SUPER::init(@_);
    for (qw( relief value indent min max threshold vertical))
      {$self->{$_} = 0}
-   $self-> {__DYNAS__}->{onStringify} = $profile{onStringify};
    $self->{string} = '';
    for (qw( vertical threshold min max relief indent value))
      {$self->$_($profile{$_}); }
@@ -574,14 +594,6 @@ sub setup
 {
    $_[0]->SUPER::setup;
    $_[0]->value($_[0]->{value});
-}
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   $self->{__DYNAS__}->{onStringify} = $profile{onStringify},
-      delete $profile{onStringify} if exists $profile{onStringify};
-   $self-> SUPER::set( %profile);
 }
 
 sub on_paint
@@ -903,16 +915,7 @@ sub init
    my %profile = $self-> SUPER::init( @_);
    for ( qw( vertical tickAlign ribbonStrip shaftBreadth))
      {$self->$_($profile{$_});}
-   $self-> {__DYNAS__}->{onTrackEnd}   = $profile{onTrackEnd};
    return %profile;
-}
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   $self->{__DYNAS__}->{onTrackEnd} = $profile{onTrackEnd},
-      delete $profile{onTrackEnd} if exists $profile{onTrackEnd};
-   $self-> SUPER::set( %profile);
 }
 
 sub on_paint
@@ -1258,27 +1261,15 @@ sub init
       {$self->{$_}=0}
    $self-> {string} = '';
    my %profile = $self-> SUPER::init( @_);
-   $self-> {__DYNAS__}->{onTrackEnd}   = $profile{onTrackEnd};
-   $self-> {__DYNAS__}->{onStringify}  = $profile{onStringify};
    for ( qw( buttons stdPointer))
      {$self->$_($profile{$_});}
    $self-> reset;
    return %profile;
 }
 
-sub set
-{
-   my ( $self, %profile) = @_;
-   $self->{__DYNAS__}->{onTrackEnd} = $profile{onTrackEnd},
-      delete $profile{onTrackEnd} if exists $profile{onTrackEnd};
-   $self->{__DYNAS__}->{onStringify} = $profile{onStringify},
-      delete $profile{onStringify} if exists $profile{onStringify};
-   $self-> SUPER::set( %profile);
-}
-
 sub setup
 {
-   $_[0]->SUPER::setup;
+   $_[0]-> SUPER::setup;
    $_[0]-> notify(q(Stringify), $_[0]->{value}, \$_[0]->{string});
    $_[0]-> repaint;
 }

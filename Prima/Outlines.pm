@@ -119,25 +119,9 @@ sub init
    for ( qw( hScroll vScroll offset itemHeight autoHeight borderWidth indent
       items focusedItem topItem showItemHint dragable))
       { $self->$_( $profile{ $_}); }
-   $self-> {__DYNAS__}->{onDrawItem}    = $profile{onDrawItem};
-   $self-> {__DYNAS__}->{onSelectItem}  = $profile{onSelectItem};
-   $self-> {__DYNAS__}->{onMeasureItem} = $profile{onMeasureItem};
-   $self-> {__DYNAS__}->{onStringify}   = $profile{onStringify};
-   $self-> {__DYNAS__}->{onExpand}      = $profile{onExpand};
-   $self-> {__DYNAS__}->{onDragItem}    = $profile{onDragItem};
    $self-> reset;
    $self-> reset_scrolls;
    return %profile;
-}
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   for ( qw( onDrawItem onSelectItem onMeasureItem onStringify onExpand onDragItem)) {
-      $self->{__DYNAS__}->{$_} = $profile{$_},
-         delete $profile{$_} if exists $profile{$_};
-   }
-   $self-> SUPER::set( %profile);
 }
 
 sub iterate
@@ -525,6 +509,7 @@ sub makehint
            height         => $self->{itemHeight},
            name           => 'Hinter',
        );
+       $self->{hinter}-> make_event([qw( Paint MouseDown MouseLeave)]);
    }
    $self->{hintActive} = 1;
    $self->{hinter}-> {id} = $itemid;

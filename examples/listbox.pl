@@ -2,10 +2,7 @@
 #  Example of listbox extended usage
 #
 use strict;
-use Carp;
-use Prima::Classes;
-use Prima::ComboBox;
-use Prima::Edit;
+use Prima qw( ComboBox Edit);
 
 
 package TestWindow;

@@ -55,16 +55,12 @@ my $scrollTimer;
 sub scroll_timer_active
 {
    return 0 unless defined $scrollTimer;
-   my $dt = $scrollTimer-> delegateTo;
-   return 0 if !$dt or $_[0] != $dt;
    return $scrollTimer-> {active};
 }
 
 sub scroll_timer_semaphore
 {
    return 0 unless defined $scrollTimer;
-   my $dt = $scrollTimer-> delegateTo;
-   return 0 if !$dt or $_[0] != $dt;
    $#_ ?
       $scrollTimer-> {semaphore} = $_[1] :
       return $scrollTimer-> {semaphore};
@@ -87,13 +83,11 @@ sub scroll_timer_start
       my @rates = $::application-> get_scroll_rate;
       $scrollTimer = Prima::Timer-> create(
          owner      => $::application,
-         delegateTo => $self,
          timeout    => $rates[0],
          name       => q(ScrollTimer),
+         onTick     => sub { $self-> ScrollTimer_Tick( @_)},
       );
       @{$scrollTimer}{qw(firstRate nextRate newRate)} = (@rates,$rates[1]);
-   } else {
-      $scrollTimer-> delegateTo( $self);
    }
    $scrollTimer-> {semaphore} = 1;
    $scrollTimer-> {active} = 1;
@@ -196,13 +190,15 @@ sub set_h_scroll
    my $bw = $self-> {borderWidth} || 0;
    if ( $self->{hScroll} = $hs) {
       $self->{hScrollBar} = $self-> insert( q(ScrollBar),
-         name     => q(HScroll),
-         vertical => 0,
-         origin   => [ $bw-1, $bw-1],
-         growMode => gm::GrowHiX,
-         pointerType  => cr::Arrow,
-         width    => $self-> width - 2 * $bw + 2 - ( $self->{vScroll} ? $self->{vScrollBar}-> width - 2 : 0),
+         name        => q(HScroll),
+         vertical    => 0,
+         origin      => [ $bw-1, $bw-1],
+         growMode    => gm::GrowHiX,
+         pointerType => cr::Arrow,
+         width       => $self-> width - 2 * $bw + 2 - ( $self->{vScroll} ? $self->{vScrollBar}-> width - 2 : 0),
       );
+      my $callback = $self-> can('HScroll_Change', 0);
+      $self->{hScrollBar}-> add_notification( 'onChange', $callback, $self) if $callback;
       if ( $self->{vScroll})
       {
          my $h = $self-> {hScrollBar}-> height;
@@ -242,6 +238,8 @@ sub set_v_scroll
          growMode => gm::GrowLoX | gm::GrowHiY,
          pointerType  => cr::Arrow,
       );
+      my $callback = $self-> can('VScroll_Change', 0);
+      $self->{vScrollBar}-> add_notification( 'onChange', $callback, $self) if $callback;
       if ( $self->{hScroll})
       {
          $self-> {hScrollBar}->width(

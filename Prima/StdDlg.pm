@@ -143,13 +143,16 @@ sub init
       focusLink => $self-> Name,
       text   => '~Filename',
    );
-   $self->insert( ListBox  =>
+
+   my $j = $self-> insert( ListBox  =>
       name        => 'Files',
       origin      => [ 14,  85 ],
       size        => [ 245, 243],
       multiSelect => $profile{ multiSelect},
    );
-   $self->insert( ComboBox =>
+   $j-> make_event([qw(KeyDown SelectItem Click)]);
+
+   $j = $self->insert( ComboBox =>
       name    => 'Ext',
       origin  => [ 14 , 25],
       size    => [ 245, 25],
@@ -157,50 +160,63 @@ sub init
       items   => [ @exts],
       text => $exts[ $self->{ filterIndex}],
    );
+   $j-> make_event('Change');
+
    $self->insert( Label=>
       origin    => [ 14, 55],
       size      => [ 245, 25],
       focusLink => $self-> Ext,
       text   => '~Extensions',
    );
-   $self->insert( Label =>
+
+   $j = $self->insert( Label =>
       name      => 'Directory',
       origin    => [ 275, 343],
       size      => [ 235, 25],
       autoWidth => 0,
       text    => $profile{ directory},
    );
-   $self->insert( DirectoryListBox =>
+   $j-> make_event('FontChanged');
+
+   $j = $self->insert( DirectoryListBox =>
       name       => 'Dir',
       origin     => [ 275, 85],
       size       => [ 235, 243],
       path       => $self-> { directory},
    );
-   $self->insert( DriveComboBox =>
+   $j-> make_event('Change');
+
+   $j = $self->insert( DriveComboBox =>
       origin     => [ 275, 25],
       size       => [ 235, 25],
       name       => 'Drive',
       drive      => $self-> Dir-> path,
    );
+   $j-> make_event('Change');
+
    $self->insert( Label=>
       origin    => [ 275, 375],
       size      => [ 235, 25],
       text   => 'Di~rectory',
       focusLink => $self-> Dir,
    );
+
    $self->insert( Label =>
       origin    => [ 275, 55],
       size      => [ 235, 25],
       text   => '~Drives',
       focusLink => $self-> Drive,
    );
-   $self->insert( Button=>
+
+   $j = $self->insert( Button=>
       origin  => [ 524, 350],
       size    => [ 96, 36],
       text => $self-> {openMode} ? '~Open' : '~Save',
       name    => 'Open',
       default => 1,
    );
+   $j-> make_event('Click');
+
    $self->insert( Button=>
       origin      => [ 524, 294],
       name    => 'Cancel',
@@ -577,11 +593,12 @@ sub init
 {
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
+   my $j;
 
    for ( qw( showHelp directory
    )) { $self->{$_} = $profile{$_} }
 
-   $self-> insert( DirectoryListBox =>
+   $j = $self-> insert( DirectoryListBox =>
       origin   => [ 10, 40],
       width    => 200,
       height   => 160,
@@ -589,6 +606,7 @@ sub init
       current  => 1,
       path     => $self-> { directory},
    );
+   $j-> make_event('KeyDown');
 
    $self->insert( Label =>
       name      => 'Directory',
@@ -599,19 +617,22 @@ sub init
       focusLink => $self-> Dir,
    );
 
-   $self-> insert( DriveComboBox =>
+   $j = $self-> insert( DriveComboBox =>
       origin => [ 10, 10],
       width  => 200,
       name   => 'Drive',
    );
+   $j-> make_event('Change');
 
-   $self->insert( Button=>
+   $j = $self-> insert( Button =>
       origin  => [ 226, 164],
       size    => [ 96, 36],
       text    => '~OK',
       name    => 'OK',
       default => 1,
    );
+   $j-> make_event('Click');
+
    $self->insert( Button=>
       origin      => [ 226, 108],
       name        => 'Cancel',
@@ -713,6 +734,7 @@ sub init
 {
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
+   my $j;
    $self-> insert( ComboBox =>
       name    => 'Find',
       origin  => [ 51, 120],
@@ -820,21 +842,23 @@ sub init
    );
    $o-> index( $profile{scope});
 
-   $self-> insert( Button =>
+   $j = $self-> insert( Button =>
       name    => 'OK',
       origin  => [ 8,  5],
       size    => [ 40, 14],
       default => 1,
       text => '~OK',
    );
+   $j-> make_event('Click');
 
-   $self-> insert( Button =>
+   $j = $self-> insert( Button =>
       name    => 'ChangeAll',
       origin  => [ 56,  5],
       size    => [ 76, 14],
       text => 'Change ~all',
       enabled => !$profile{findStyle},
    );
+   $j-> make_event('Click');
 
    $self-> insert( Button =>
       origin  => [ 139, 5],

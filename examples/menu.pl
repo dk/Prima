@@ -2,10 +2,7 @@
 #  Example of menu extended usage
 #
 use strict;
-use Carp;
-use Prima::Classes;
-use Prima::InputLine;
-use Prima::Label;
+use Prima qw( InputLine Label);
 
 package TestWindow;
 use vars qw(@ISA);

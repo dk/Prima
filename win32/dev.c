@@ -589,7 +589,8 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
    HDC dc;
    XBITMAPINFO bi;
 
-   ( Handle) i = i-> self-> dup( img);
+   if ( noSZ || noBPP)
+      ( Handle) i = i-> self-> dup( img);
 
    if ( IS_WIN95 && forPointer && ( guts. displayBMInfo. bmiHeader. biBitCount <= 4)) {
       i-> self-> set_conversion(( Handle) i, ictNone);
@@ -660,7 +661,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
 
    DeleteObject( ii. hbmColor);
    DeleteObject( ii. hbmMask);
-   Object_destroy(( Handle) i);
+   if (( Handle) i != img) Object_destroy(( Handle) i);
    return r;
 }
 

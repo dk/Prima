@@ -244,6 +244,10 @@ sub init
       height => 256,
       name   => 'Wheel',
       ownerBackColor => 1,
+      onPaint     => sub { $_[0]-> owner-> Wheel_Paint( @_);},
+      onMouseDown => sub { $_[0]-> owner-> Wheel_MouseDown( @_);},
+      onMouseUp   => sub { $_[0]-> owner-> Wheel_MouseUp( @_);},
+      onMouseMove => sub { $_[0]-> owner-> Wheel_MouseMove( @_);},
    );
 
    $self->{roller} = $self->insert( Widget =>
@@ -253,6 +257,10 @@ sub init
       buffered  => 1,
       name      => 'Roller',
       ownerBackColor => 1,
+      onPaint     => sub { $_[0]-> owner-> Roller_Paint( @_);},
+      onMouseDown => sub { $_[0]-> owner-> Roller_MouseDown( @_);},
+      onMouseUp   => sub { $_[0]-> owner-> Roller_MouseUp( @_);},
+      onMouseMove => sub { $_[0]-> owner-> Roller_MouseMove( @_);},
    );
 
    # RGB
@@ -644,21 +652,19 @@ sub init
    my %profile = @_;
    $self->{value} = $profile{value};
    $self->{colors} = $profile{colors};
+   $profile{listProfile}->{onCreate}    = sub { $_[0]-> owner-> List_Create( @_)};
+   $profile{listProfile}->{onPaint}     = sub { $_[0]-> owner-> List_Paint( @_)};
+   $profile{listProfile}->{onMouseDown} = sub { $_[0]-> owner-> List_MouseDown( @_)};
+   $profile{editProfile}->{onKeyDown}   = sub { $_[0]-> owner-> InputLine_KeyDown( @_)};
+   $profile{editProfile}->{onPaint}     = sub { $_[0]-> owner-> InputLine_Paint( @_)};
+   $profile{editProfile}->{onMouseDown} = sub { $_[0]-> owner-> InputLine_MouseDown( @_)};
+   $profile{editProfile}->{onEnter}     = sub { $_[0]-> owner-> InputLine_Enter( @_)};
+   $profile{editProfile}->{onLeave}     = sub { $_[0]-> owner-> InputLine_Leave( @_)};
    %profile = $self-> SUPER::init(%profile);
-   $self-> {__DYNAS__}->{onColorify} = $profile{onColorify};
    $self-> colors( $profile{colors});
    $self-> value( $profile{value});
    return %profile;
 }
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   $self->{__DYNAS__}->{onColorify} = $profile{onColorify},
-      delete $profile{onColorify} if exists $profile{onColorify};
-   $self-> SUPER::set( %profile);
-}
-
 
 sub InputLine_KeyDown
 {
@@ -712,7 +718,7 @@ sub List_Create
       text       => 'More...',
       selectable => 0,
       name       => 'MoreBtn',
-      delegateTo => $combo,
+      onClick    => sub { $combo-> MoreBtn_Click( @_)},
    );
    my $c = $combo-> colors;
    $combo-> {scr} = $self-> insert( ScrollBar =>
@@ -725,7 +731,7 @@ sub List_Create
       step       => 4,
       pageStep   => 20,
       whole      => $c,
-      delegateTo => $combo,
+      onChange   => sub { $combo-> Scroller_Change( @_)},
    );
 }
 

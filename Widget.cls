@@ -105,7 +105,6 @@ object Prima::Widget( Prima::Drawable)
    method   void     unlock();
    method   void     update_view();
    c_only   void     update_sys_handle( HV * profile);
-   method   void     update_delegator();
    method   void     validate_rect( Rect rect)       => apc_widget_validate_rect;
 
 # properties read methods
@@ -287,39 +286,5 @@ object Prima::Widget( Prima::Drawable)
    event    void     on_size( Point oldSize, Point newSize);
    event    void     on_translateaccel( int code, int key, int shiftState);
    event    void     on_zorderchanged();
-# dynamic event handlers
-   SV *   onChange;
-   SV *   onClick;
-   SV *   onClose;
-   SV *   onColorChanged;
-   SV *   onDisable;
-   SV *   onDragDrop;
-   SV *   onDragOver;
-   SV *   onEnable;
-   SV *   onEndDrag;
-   SV *   onEnter;
-   SV *   onFontChanged;
-   SV *   onHelp;
-   SV *   onHide;
-   SV *   onHint;
-   SV *   onKeyDown;
-   SV *   onKeyUp;
-   SV *   onLeave;
-   SV *   onMenu;
-   SV *   onMouseClick;
-   SV *   onMouseDown;
-   SV *   onMouseUp;
-   SV *   onMouseMove;
-   SV *   onMouseWheel;
-   SV *   onMouseEnter;
-   SV *   onMouseLeave;
-   SV *   onMove;
-   SV *   onPaint;
-   SV *   onPopup;
-   SV *   onSetup;
-   SV *   onShow;
-   SV *   onSize;
-   SV *   onTranslateAccel;
-   SV *   onZOrderChanged;
 }
 

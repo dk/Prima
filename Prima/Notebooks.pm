@@ -83,24 +83,12 @@ sub init
    $self->{tabs}     = [];
    $self->{widths}   = [];
    my %profile = $self-> SUPER::init(@_);
-   $self-> {__DYNAS__}->{onMeasureTab} = $profile{onMeasureTab};
-   $self-> {__DYNAS__}->{onDrawTab}    = $profile{onDrawTab};
    for ( qw( colored topMost tabs focusedTab firstTab tabIndex)) { $self->$_( $profile{ $_}); }
    $self-> recalc_widths;
    $self-> reset;
    return %profile;
 }
 
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   $self->{__DYNAS__}->{onMeasureTab} = $profile{onMeasureTab},
-      delete $profile{onMeasureTab} if exists $profile{onMeasureTab};
-   $self->{__DYNAS__}->{onDrawTab} = $profile{onDrawTab},
-      delete $profile{onDrawTab} if exists $profile{onDrawTab};
-   $self-> SUPER::set( %profile);
-}
 
 sub reset
 {
@@ -599,29 +587,27 @@ sub set_page_index
    return if $pi == $self->{pageIndex};
    $self-> lock;
    my $cp = $self->{widgets}->[$self->{pageIndex}];
-   my $i;
    if ( defined $cp) {
-      for ( $i = 0; $i < scalar @{$cp} / 4; $i++) {
-         my $cx = $$cp[ $i * 4];
-         $$cp[ $i * 4 + 1] = $cx-> enabled;
-         $$cp[ $i * 4 + 2] = $cx-> visible;
-         $$cp[ $i * 4 + 3] = $cx-> current;
-         $cx-> visible(0);
-         $cx-> enabled(0);
+      for ( @$cp) {
+         $$_[1] = $$_[0]-> enabled;
+         $$_[2] = $$_[0]-> visible;
+         $$_[3] = $$_[0]-> current;
+         $$_[0]-> visible(0);
+         $$_[0]-> enabled(0);
       }
    }
    $cp = $self->{widgets}->[$pi];
-   my $hasSel = undef;
    if ( defined $cp) {
-      for ( $i = 0; $i < scalar @{$cp} / 4; $i++) {
-         my $cx = $$cp[ $i * 4];
-         $cx-> enabled($$cp[ $i * 4 + 1]);
-         $cx-> visible($$cp[ $i * 4 + 2]);
-         $hasSel = $i if !defined $hasSel && $$cp[ $i * 4 + 3];
-         $cx-> current($$cp[ $i * 4 + 3]);
+      my $hasSel;
+      for ( @$cp) {
+         $$_[0]-> enabled($$_[1]);
+         $$_[0]-> visible($$_[2]);
+         if ( !defined $hasSel && $$_[3]) {
+            $hasSel = 1;
+            $$_[0]-> select if $sel;
+         }
+         $$_[0]-> current($$_[3]);
       }
-      $hasSel = 0 unless defined $hasSel;
-      $$cp[ $hasSel * 4]-> select if $i and $sel;
    }
    $self-> unlock;
    $self-> update_view;
@@ -648,10 +634,7 @@ sub delete_page
    $self-> {pageCount}--;
    $self-> pageIndex( $self-> pageIndex);
    if ( $removeChildren) {
-      my $i; my $s = $r[0];
-      for ( $i = 0; $i < scalar @{$s} / 4; $i++) {
-         $$s[$i*4]-> destroy;
-      }
+      $$_[0]-> destroy for @{$r[0]};
    }
 }
 
@@ -662,17 +645,16 @@ sub attach_to_page
    $self-> insert_page if $self-> {pageCount} == 0;
    $page = $self-> {pageCount} - 1 if $page > $self-> {pageCount} - 1 || $page < 0;
    my $cp = $self->{widgets}->[$page];
-   my $dt = $self-> delegateTo;
    for ( @_) {
-      push( @{$cp}, $_);
-      push( @{$cp}, $_->enabled);
-      push( @{$cp}, $_->visible);
-      push( @{$cp}, $_->current);
-      if ( $page != $self->{pageIndex}) {
-         $_-> visible(0);
-         $_-> enabled(0);
-      }
-      $_-> delegateTo( $dt);
+      # $_->add_notification( onEnable  => \&_enable  => $self);
+      # $_->add_notification( onDisable => \&_disable => $self);
+      # $_->add_notification( onShow    => \&_show    => $self);
+      # $_->add_notification( onHide    => \&_hide    => $self);
+      my @rec = ( $_, $_->enabled, $_->visible, $_->current);
+      push( @{$cp}, [@rec]);
+      next if $page == $self->{pageIndex};
+      $_-> visible(0);
+      $_-> enabled(0);
    }
 }
 
@@ -710,8 +692,10 @@ sub contains_widget
    my $cptr = $self->{widgets};
    for ( $i = 0; $i < $self->{pageCount}; $i++) {
       my $cp = $$cptr[$i];
-      for ( $j = 0; $j < scalar @{$cp}/4; $j++) {
-         return ( $i, $j) if $$cp[$j*4] == $ctrl;
+      my $j = 0;
+      for ( @$cp) {
+         return ( $i, $j) if $$_[0] == $ctrl;
+         $j++;
       }
    }
    return;
@@ -721,20 +705,15 @@ sub widgets_from_page
 {
    my ( $self, $page) = @_;
    return if $page < 0 or $page >= $self->{pageCount};
-   my @a = @{$self->{widgets}->[$page]};
-   my $i;
    my @r = ();
-   for ( $i = 0; $i < scalar @a; $i+=4) {
-      push( @r, $a[$i])
-   };
+   push( @r, $$_[0]) for @{$self->{widgets}->[$page]};
    return @r;
 }
 
 sub detach
 {
    my ( $self, $widget, $killFlag) = @_;
-   my ( $page, $number) = $self-> contains_widget( $widget);
-   splice( @{$self->{widgets}->[$page]}, $number * 4, 4) if defined $page;
+   $self-> detach_from_page( $widget);
    $self->SUPER::detach( $widget, $killFlag);
 }
 
@@ -743,7 +722,7 @@ sub detach_from_page
    my ( $self, $ctrl)   = @_;
    my ( $page, $number) = $self-> contains_widget( $ctrl);
    return unless defined $page;
-   splice( @{$self->{widgets}->[$page]}, $number * 4, 4);
+   splice( @{$self->{widgets}->[$page]}, $number, 1);
 }
 
 sub delete_widget
@@ -759,7 +738,7 @@ sub move_widget
    my ( $self, $widget, $newPage) = @_;
    my ( $page, $number) = $self-> contains_widget( $widget);
    return unless defined $page;
-   @{$self->{widgets}->[$newPage]} = splice( @{$self->{widgets}->[$page]}, $number * 4, 4);
+   @{$self->{widgets}->[$newPage]} = splice( @{$self->{widgets}->[$page]}, $number, 1);
    $self-> repaint if $self->{pageIndex} == $page || $self->{pageIndex} == $newPage;
 }
 
@@ -769,7 +748,7 @@ sub set_page_count
    $pageCount = 0 if $pageCount < 0;
    return if $pageCount == $self->{pageCount};
    if ( $pageCount < $self->{pageCount}) {
-      splice(@{$self-> {widgets}},$pageCount);
+      splice(@{$self-> {widgets}}, $pageCount);
       $self->{pageCount} = $pageCount;
       $self->pageIndex($pageCount - 1) if $self->{pageIndex} < $pageCount - 1;
    } else {
@@ -842,6 +821,7 @@ sub init
       buffered  => 1,
       designScale => undef,
    );
+   $self->{tabSet}-> make_event('Change');
    $self->{notebook} = Prima::Notebook-> create(
       owner      => $self,
       name       => 'Notebook',
@@ -849,15 +829,14 @@ sub init
       size       => [ $size[0] - DefBorderX * 2 - 5,
          $size[1] - DefBorderX * 2 - $self->{tabSet}-> height - DefBookmarkX - 4],
       growMode   => gm::Client,
-      pageIndex  => $profile{pageIndex},
       scaleChildren => $scaleChildren,
       (map { $_  => $profile{$_}} keys %notebookProps),
-      delegateTo => $self-> delegateTo,
       designScale => undef,
       pageCount  => scalar @{$profile{tabs}},
    );
    $self-> {notebook}-> designScale( $self-> designScale); # propagate designScale
    $self-> tabs( $profile{tabs});
+   $self-> pageIndex( $profile{pageIndex});
    $self-> visible( $visible);
    return %profile;
 }
@@ -956,7 +935,7 @@ sub page2tab
 {
    my ( $self, $index) = @_;
    my $t = $self->{tabs};
-   my $i = 0;
+   my $i = $$t[1] - 1;
    my $j = 0;
    while( $i < $index) {
       $j++;

@@ -106,7 +106,7 @@ sub on_paint
    if ( $imYz < $winY) {
       if ( $ya == ta::Top) {
          $aty = $winY - $imYz;
-      } elsif ( $ya == ta::Center) {
+      } elsif ( $ya == ta::Middle) {
          $aty = ($winY - $imYz)/2;
       } else {
          $aty = 0;

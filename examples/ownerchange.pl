@@ -1,7 +1,5 @@
 use strict;
-use Carp;
-use Prima::Classes;
-use Prima::Buttons;
+use Prima qw(Buttons);
 
 $::application = Prima::Application-> create( name => "Generic.pm");
 my $w = Prima::Window-> create(

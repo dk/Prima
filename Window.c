@@ -37,18 +37,6 @@
 #define var (( PWindow) self)
 
 
-static void
-dyna_set( Handle self, HV * profile)
-{
-   #define dyna( Method) Component_set_dyna_method( self, "on" # Method, (SV*)profile, &var-> on##Method)
-   dyna( Execute);
-   dyna( EndModal);
-   dyna( Activate);
-   dyna( Deactivate);
-   dyna( WindowState);
-}
-
-
 void
 Window_init( Handle self, HV * profile)
 {
@@ -68,7 +56,6 @@ Window_init( Handle self, HV * profile)
    my-> set_menu_font  ( self, Font_buffer);
    if ( SvTYPE( sv = pget_sv( menuItems)) != SVt_NULL)
       my-> set_menu_items( self, sv);
-   dyna_set( self, profile);
    my-> set_modal_result( self, pget_i( modalResult));
    my-> set_modal_horizon( self, pget_B( modalHorizon));
 }
@@ -142,8 +129,7 @@ void Window_handle_event( Handle self, PEvent event)
    switch (event-> cmd)
    {
    case cmColorChanged:
-      if ( event-> gen. source == var-> menu)
-      {
+      if ( event-> gen. source == var-> menu) {
          var-> menuColor[ event-> gen. i] = apc_menu_get_color( var-> menu, event-> gen. i);
          return;
       }
@@ -156,43 +142,21 @@ void Window_handle_event( Handle self, PEvent event)
       }
       break;
    case cmExecute:
-      my-> on_execute( self);
-      objCheck;
-      if ( is_dmopt( dmExecute)) delegate_sub( self, "Execute", "H", self);
-      objCheck;
-      if ( var-> onExecute) cv_call_perl( var-> mate, var-> onExecute, "");
+      my-> notify( self, "<s", "Execute");
       break;
    case cmEndModal:
-      my-> on_endmodal( self);
-      objCheck;
-      if ( is_dmopt( dmEndModal)) delegate_sub( self, "EndModal", "H", self);
-      objCheck;
-      if ( var-> onEndModal) cv_call_perl( var-> mate, var-> onEndModal, "");
+      my-> notify( self, "<s", "EndModal");
       break;
    case cmActivate:
       if ( var-> owner)
          PWidget( var-> owner)-> currentWidget = self;
-      my-> on_activate( self);
-      objCheck;
-      if ( is_dmopt( dmActivate)) delegate_sub( self, "Activate", "H", self);
-      objCheck;
-      if ( var-> onActivate) cv_call_perl( var-> mate, var-> onActivate, "");
+      my-> notify( self, "<s", "Activate");
       break;
    case cmDeactivate:
-      my-> on_deactivate( self);
-      objCheck;
-      if ( is_dmopt( dmDeactivate)) delegate_sub( self, "Deactivate", "H", self);
-      objCheck;
-      if ( var-> onDeactivate) cv_call_perl( var-> mate, var-> onDeactivate, "");
+      my-> notify( self, "<s", "Deactivate");
       break;
    case cmWindowState:
-      my-> on_windowstate( self, event-> gen. i);
-      objCheck;
-      if ( is_dmopt( dmWindowState))
-         delegate_sub( self, "WindowState", "Hi", self, event-> gen. i);
-      objCheck;
-      if ( var-> onWindowState) cv_call_perl( var-> mate, var-> onWindowState, "i", event-> gen. i);
-      objCheck;
+      my-> notify( self, "<si", "WindowState", event-> gen. i);
       break;
    case cmDelegateKey:
       #define leave { my-> clear_event( self); return; }
@@ -578,13 +542,11 @@ Window_get_menu_items( Handle self)
 
 void Window_set( Handle self, HV * profile)
 {
-   if ( pexist( menuFont))
-   {
+   if ( pexist( menuFont)) {
       SvHV_Font( pget_sv( menuFont), &Font_buffer, "Window::set");
       my-> set_menu_font( self, Font_buffer);
       pdelete( menuFont);
    }
-   dyna_set( self, profile);
    inherited set( self, profile);
 }
 
@@ -702,22 +664,6 @@ Window_process_accel( Handle self, int key)
    return var-> modal ? my-> first_that_component( self, find_accel, &key)
      : inherited process_accel( self, key);
 }
-
-void
-Window_update_delegator( Handle self)
-{
-   HV * profile;
-   inherited update_delegator( self);
-   if ( var-> delegateTo == nilHandle) return;
-   profile = my-> get_delegators( self);
-#define delegator( MsgName) if ( pexist( MsgName)) dmopt_set( dm##MsgName);
-   delegator( Execute);
-   delegator( EndModal);
-   delegator( Activate);
-   delegator( Deactivate);
-   delegator( WindowState);
-}
-
 
 void  Window_on_execute( Handle self) {}
 void  Window_on_endmodal( Handle self) {}

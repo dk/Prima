@@ -63,7 +63,7 @@ sub AUTOFORM_REALIZE
       %{$dep{$main}->{profile}},
       %{$parms->{$main}},
    );
-
+   $ret{$main}-> lock;
    $actions{onFormCreate}->{$_}->($_, $instances{$_}, $ret{$main})
       for keys %{$actions{onFormCreate}};
    $actions{onCreate}->{$main}->($main, $instances{$_}, $ret{$main})
@@ -101,7 +101,7 @@ sub AUTOFORM_REALIZE
 
    $actions{onEnd}->{$_}->($_, $instances{$_}, $ret{$_})
       for keys %{$actions{onEnd}};
-
+   $ret{$main}-> unlock;
    return %ret;
 }
 

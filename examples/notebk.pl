@@ -15,14 +15,14 @@ sub init
       origin => [10, 10],
       size => [ $self-> width - 20, $self-> height - 20],
       growMode => gm::Client,
-      pageCount => 11,
+#     pageCount => 11,
       tabs => [0..5,5,5..10],
    );
 
    $n-> insert_to_page( 0 => 'Button');
    my $j = $n-> insert_to_page( 1 => 'CheckBox' => left => 200);
    $n-> insert_to_page( 2,
-      [ Button => origin => [ 10, 10], ],
+      [ Button => origin => [ 0, 0], ],
       [ Button => origin => [ 10, 40], ],
       [ Button => origin => [ 10, 70], ],
       [ Button => origin => [ 10,100], ],

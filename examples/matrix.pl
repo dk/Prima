@@ -1,7 +1,5 @@
 use strict;
-use Prima::Classes;
-use Prima::Label;
-use Prima::MsgBox;
+use Prima;
 
 $::application = Prima::Application->  create;
 

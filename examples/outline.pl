@@ -1,5 +1,4 @@
-use Prima::Application;
-use Prima::Outlines;
+use Prima qw(Application Outlines);
 
 my $w = Prima::Window->create( size => [ 200, 200],
 onDestroy=>sub{$::application-> close});

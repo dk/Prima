@@ -140,30 +140,17 @@ sub init
       { $self->$_( $profile{ $_}); }
    $self-> {zoomRect} = [ $self->rect];
    $self-> {miniRect} = [ 0, 0, $self-> sizeMin];
-   $self-> {__DYNAS__}->{ onActivate}    = $profile{ onActivate};
-   $self-> {__DYNAS__}->{ onDeactivate}  = $profile{ onDeactivate};
-   $self-> {__DYNAS__}->{ onWindowState} = $profile{ onWindowState};
    $self-> popup-> auto(0) if $self-> popup;
    $self-> {client} = $self-> insert( $profile{clientClass},
-      rect     => [ $self-> get_client_rect],
-      growMode => gm::Client,
+      rect         => [ $self-> get_client_rect],
+      growMode     => gm::Client,
       pointerType  => cr::Arrow,
-      name     => 'MDIClient',
+      name         => 'MDIClient',
+      onDestroy    => sub { $_[0]-> owner-> MDIClient_Destroy(@_);},
       %{$profile{clientProfile}},
    );
    return %profile;
 }
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   for( qw( onActivate onDeactivate onWindowState)) {
-      $self->{__DYNAS__}->{$_} = $profile{$_},
-         delete $profile{$_} if exists $profile{$_};
-   }
-   $self-> SUPER::set( %profile);
-}
-
 
 sub on_paint
 {

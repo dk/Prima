@@ -37,33 +37,34 @@
 typedef Bool ActionProc ( Handle self, Handle item, void * params);
 typedef ActionProc *PActionProc;
 
-static void
-dyna_set( Handle self, HV * profile)
-{
-#define dyna( Method)				\
-   Component_set_dyna_method( self,		\
-			      "on" # Method,	\
-			      (SV*)profile,	\
-			      &var-> on##Method)
-   dyna( Create);
-   dyna( Destroy);
-   dyna( PostMessage);
-}
-
 void
 Component_init( Handle self, HV * profile)
 {
    Handle owner = pget_H( owner);
+   SV * res;
+   HV * hv;
+   HE * he;
    if (( owner != nilHandle) && (((( PObject) owner)-> stage > csNormal) || !kind_of( owner, CComponent)))
       croak( "Illegal object reference passed to Component.init");
    inherited init( self, profile);
    var-> owner = owner;
    my-> set_name( self, pget_c( name));
-   my-> set_delegate_to( self, pget_H( delegateTo));
-   dyna_set( self, profile);
    var-> evQueue = malloc( sizeof( List));
    list_create( var-> evQueue,  8, 8);
    apc_component_create( self);
+
+   res = my-> notification_types( self);
+   hv = ( HV *) SvRV( res);
+   hv_iterinit( hv);
+   while (( he = hv_iternext( hv)) != nil) {
+      char buf[ 1024];
+      SV ** holder;
+      int len = snprintf( buf, 1023, "on%s", HeKEY( he));
+      holder = hv_fetch( profile, buf, len, 0);
+      if ( holder == nil || SvTYPE( *holder) == SVt_NULL) continue;
+      my-> add_notification( self, buf, *holder, self, -1);
+   }
+   sv_free( res);
 }
 
 void
@@ -110,9 +111,10 @@ free_queue( PEvent event, void * dummy)
 }
 
 static Bool
-free_reference( Handle self, void * dummy)
+free_eventref( Handle self, Handle * org)
 {
-   var-> delegateTo = nilHandle;
+   if ( var-> refs) list_delete( var-> refs, *org);
+   my-> unlink_notifier( self, *org);
    return false;
 }
 
@@ -130,14 +132,29 @@ detach_all( Handle child, Handle self)
 void
 Component_done( Handle self)
 {
-   if ( var-> delegateTo && (( PComponent) var-> delegateTo)-> refList)
-      list_delete((( PComponent) var-> delegateTo)-> refList, self);
-   if ( var-> refList != nil) {
-      list_first_that( var-> refList, free_reference, nil);
-      list_destroy( var-> refList);
-      free( var-> refList);
-      var-> refList = nil;
+   if ( var-> eventIDs) {
+      int i;
+      PList list = var-> events;
+      hash_destroy( var-> eventIDs, false);
+      var-> eventIDs = nil;
+      for ( i = 0; i < var-> eventIDCount; i++) {
+         int j;
+         for ( j = 0; j < list-> count; j += 2)
+            sv_free(( SV *) list-> items[ j + 1]);
+         list_destroy( list++);
+      }
+      free( var-> events);
+      var-> events = nil;
    }
+
+
+   if ( var-> refs) {
+      Handle * pself = &self;
+      list_first_that( var-> refs, free_eventref, pself);
+      plist_destroy( var-> refs);
+      var-> refs = nil;
+   }
+
    if ( var-> postList != nil) {
       list_first_that( var-> postList, free_private_posts, nil);
       list_destroy( var-> postList);
@@ -210,12 +227,6 @@ Component_get_owner( Handle self)
   return var-> owner;
 }
 
-Handle
-Component_get_delegate_to( Handle self)
-{
-   return var-> delegateTo;
-}
-
 void
 Component_set( Handle self, HV * profile)
 {
@@ -240,7 +251,6 @@ Component_set( Handle self, HV * profile)
 
       pdelete( owner);                    /* like this. */
    }
-   dyna_set( self, profile);
    inherited set ( self, profile);
 }
 
@@ -252,32 +262,6 @@ Component_set_name( Handle self, char * name)
    var-> name = malloc( strlen ( name) + 1);
    strcpy( var-> name, name);
    apc_component_fullname_changed_notify( self);
-   if ( var-> stage == csNormal)
-      my-> update_delegator( self);
-}
-
-void
-Component_set_delegate_to( Handle self, Handle delegateTo)
-{
-   Handle old = var-> delegateTo;
-   if ( var-> stage > csNormal) return;
-   if ( old == delegateTo) return;
-   var-> delegateTo = delegateTo;
-   if ( var-> stage == csNormal)
-      my-> update_delegator( self);
-   if ( old && (( PComponent) old)-> refList)
-      list_delete((( PComponent) old)-> refList, self);
-   if ( delegateTo) {
-      PComponent next = ( PComponent) var-> owner;
-      while ( next && (( Handle) next != delegateTo))
-         next = ( PComponent) (( PComponent) next)-> owner;
-      if ( next == nil) {
-         next = ( PComponent) delegateTo;
-         if ( next-> refList == nil)
-            list_create( next-> refList = malloc( sizeof( List)), 8, 8);
-         list_add( next-> refList, self);
-      }
-   }
 }
 
 static Bool
@@ -408,21 +392,10 @@ oversend( PEvent event, Handle self)
 void
 Component_handle_event( Handle self, PEvent event)
 {
-#undef dyna
-#define dyna( Method)					\
-   if ( var-> on##Method)					\
-      cv_call_perl( var-> mate, var-> on##Method, "")
-#define objCheck   if ( var-> stage > csNormal) return
-#define objCheckEx if ( var-> stage >= csDead) return
    switch ( event-> cmd)
    {
    case cmCreate:
-      my-> update_delegator( self);
-      my-> on_create( self);
-      objCheck;
-      if ( is_dmopt( dmCreate)) delegate_sub( self, "Create", "H", self);
-      objCheck;
-      dyna( Create);
+      my-> notify( self, "<s", "Create");
       if ( var-> stage == csNormal)
       {
          if ( var-> evQueue-> count > 0)
@@ -433,27 +406,18 @@ Component_handle_event( Handle self, PEvent event)
       }
       break;
    case cmDestroy:
-      my-> on_destroy( self);
-      objCheckEx;
-      if ( is_dmopt( dmDestroy)) delegate_sub( self, "Destroy", "H", self);
-      objCheckEx;
-      dyna( Destroy);
+      opt_set( optcmDestroy);
+      my-> notify( self, "<s", "Destroy");
+      opt_clear( optcmDestroy);
       break;
    case cmPost:
       {
          PPostMsg p = ( PPostMsg) event-> gen. p;
-         my-> on_postmessage( self, p-> info1, p-> info2);
-         objCheck;
-         if ( is_dmopt( dmPostMessage))
-            delegate_sub( self, "PostMessage", "HSS", self, p-> info1, p-> info2);
-         objCheck;
-         if ( var-> onPostMessage)
-            cv_call_perl( var-> mate, var-> onPostMessage, "SS", p-> info1, p-> info2);
-         objCheck;
+         list_delete( var-> postList, ( Handle) p);
+         my-> notify( self, "<sSS", "PostMessage", p-> info1, p-> info2);
          if ( p-> info1) sv_free( p-> info1);
          if ( p-> info2) sv_free( p-> info2);
          free( p);
-         list_delete( var-> postList, ( Handle) p);
       }
    break;
    }
@@ -556,251 +520,175 @@ Component_on_postmessage( Handle self, SV * info1, SV * info2)
 {
 }
 
-HV *
-Component_get_dynas( Handle self)
-{
-   return ( HV*) SvRV( *hv_fetch(( HV*) SvRV( var-> mate),
-				 "__DYNAS__", 9, 0));
-}
-
-HV *
-Component_get_delegators( Handle self)
-{
-   return ( HV*) SvRV( *hv_fetch(( HV*) SvRV( var-> mate),
-				 "__DELEGATORS__", 14, 0));
-}
-
-
-void
-Component_update_delegator( Handle self)
-{
-   HV * profile;
-   call_perl( self, "__update_delegator", "");
-   memset( &var-> delegatedMessages, 0, sizeof( var-> delegatedMessages));
-   if ( var-> delegateTo == nilHandle)
-      return;
-   profile = my-> get_delegators( self);
-#define delegator( MsgName) if ( pexist( MsgName)) dmopt_set( dm##MsgName)
-   delegator( Create);
-   delegator( Destroy);
-   delegator( PostMessage);
-}
-
-void
-Component_set_dyna_method( Handle self, char * methodName,
-			   SV * container, SV** variable)
-{
-   SV ** psv;
-   int len = strlen( methodName);
-   HV * profile = ( HV*) container;
-   Bool assign;
-   Bool is_hash = SvTYPE( container) == SVt_PVHV;
-   if ( is_hash) {
-      psv = hv_fetch( profile, methodName, len, 0);
-      if (!psv) return;
-      assign = true;
-   } else {
-      assign  = !is_hash;
-      is_hash = false;
-      psv = &container;
-   }
-   container = ( SvROK( *psv) && ( SvTYPE( SvRV( *psv)) == SVt_PVCV))
-      ? newSVsv( *psv) : nilSV;
-   if ( is_hash)
-      hv_delete( profile, methodName, len, G_DISCARD);
-   if ( assign) {
-      profile = ( HV*) SvRV( *hv_fetch(( HV*) SvRV( var-> mate),
-				       "__DYNAS__", 9, 0));
-      hv_store( profile, methodName, len, container, 0);
-      *variable = ( container == nilSV) ? nil : SvRV( container);
-   }
-}
 
 XS( Component_notify_FROMPERL)
 {
    dXSARGS;
-   Handle self;
-   PComponent owner;
-   HV   * hv;
-   char * note;
-   int    rnt, snt, noteLen;
-   SV   * dyna      = nil;
-   SV   * delegator = nil;
-   char buf[1024];
-   char *s;
-   SV **argsv;
-   SV   * res;
-   int  argsc = items - 1;
-   Bool is0 = false, is1 = false, is2 = false;
-   int  evPtr, ret = -1;
-
-#define call(callType)                                                               \
-{                                                                                    \
-   {                                                                                 \
-      dSP;                                                                           \
-      int i;                                                                         \
-      ENTER;                                                                         \
-      SAVETMPS;                                                                      \
-      PUSHMARK( sp);                                                                 \
-      EXTEND( sp, argsc + (( callType == 1) ? 1 : 0));                               \
-      if ( callType == 1) PUSHs( owner-> mate);                                      \
-      for ( i = 0; i < argsc; i++) PUSHs( argsv[ i]);                                \
-      PUTBACK;                                                                       \
-      if ( callType == 0)                                                            \
-         perl_call_method( buf, G_DISCARD | G_EVAL);                                 \
-      else                                                                           \
-         perl_call_sv(( callType == 1) ? delegator : dyna, G_DISCARD | G_EVAL);      \
-      SPAGAIN;                                                                       \
-      if ( SvTRUE( GvSV( errgv))) croak( SvPV( GvSV( errgv), na));                   \
-      PUTBACK;                                                                       \
-      FREETMPS;                                                                      \
-      LEAVE;                                                                         \
-   }                                                                                 \
-   SPAGAIN;                                                                          \
-   if ( var-> stage != csNormal || var-> evPtr != evPtr) is0 = is1 = is2 = false;        \
-}
-
-#define evOK  ( var-> evStack[ var-> evPtr - 1])
+   Handle   self;
+   SV     * res;
+   HV     * hv;
+   char   * name, * s;
+   int      nameLen, rnt, i, ret = -1, evPtr;
+   SV    ** argsv;
+   int      argsc = items - 1;
+   char     buf[ 1024];
+   SV     * privMethod;
+   Handle * sequence;
+   int      seqCount = 0;
+   PList    list = nil;
 
    if ( items < 2)
       croak ("Invalid usage of Component.notify");
    SP -= items;
    self    = gimme_the_mate( ST( 0));
-   note    = ( char*) SvPV( ST( 1), na);
-   noteLen = strlen( note);
+   name    = ( char*) SvPV( ST( 1), na);
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Component.notify");
-   if ( var-> stage != csNormal) XSRETURN_EMPTY;
+
+   if ( var-> stage != csNormal) {
+      if ( !is_opt( optcmDestroy)) XSRETURN_IV(1);
+      opt_clear( optcmDestroy);
+   }
+
    res = my-> notification_types( self);
    hv = ( HV *) SvRV( res);
-
    SPAGAIN;
-   if ( hv_exists( hv, note, strlen( note)))
-   {
-     temporary_prf_Sv = hv_fetch( hv, note, noteLen, 0);
-     if ( !temporary_prf_Sv || !SvOK(*temporary_prf_Sv) || SvTYPE(*temporary_prf_Sv) == SVt_NULL)
-        croak("RTC0045: Inconsistent storage in %s::notification_types for %s during Component.notify", var-> self-> className, note);
-     rnt = SvIV( *temporary_prf_Sv);
-     snt = rnt & (ntEvent | ntMultiple);
+
+   /* fetching notification type */
+   nameLen = strlen( name);
+   if ( hv_exists( hv, name, nameLen)) {
+      SV ** holder = hv_fetch( hv, name, nameLen, 0);
+      if ( !holder || !SvOK(*holder) || SvTYPE(*holder) == SVt_NULL)
+         croak("RTC0045: Inconsistent storage in %s::notification_types for %s during Component.notify", var-> self-> className, name);
+      rnt = SvIV( *holder);
    } else {
-     rnt = ntPrivateFirst;
-     snt = ntMultiple;
+      warn("Unknown notification:%s", name);
+      rnt = ntDefault;
    }
    sv_free( res);
-   hv = ( HV*) SvRV( *hv_fetch(( HV*) SvRV( ST( 0)), "__DYNAS__", 9, 0));
+   SPAGAIN;
 
-   strcat( strcpy( buf, "on"), note);
-   temporary_prf_Sv = hv_fetch( hv, buf, noteLen + 2, 0);
-   if ( temporary_prf_Sv && SvOK(*temporary_prf_Sv))
-   {
-      if ( SvTYPE(*temporary_prf_Sv) == SVt_NULL)
-         dyna = nil;
-      else {
-         if ( !SvROK(*temporary_prf_Sv) ||
-              SvTYPE(SvRV(*temporary_prf_Sv)) != SVt_PVCV)
-            croak("RTC0046: Inconsistent storage in %s::__DYNAS__ for %s during Component.notify", var-> self-> className, note);
-        dyna = *temporary_prf_Sv;
+   /* searching private on_xxx method */
+   strncat( strcpy( buf, "on_"), name, 1023);
+   for ( s = buf; *s; s++) *s = tolower(*s);
+   privMethod = ( SV *) query_method( self, buf, 0);
+   if ( privMethod) {
+      privMethod = newRV( privMethod);
+      seqCount++;
+   }
+   SPAGAIN;
+
+   /* searching dynamic onXxxx subs */
+   if ( var-> eventIDs) {
+      void * ret;
+      int len = snprintf( buf, 1022, "on%s", name);
+      ret = hash_fetch( var-> eventIDs, buf, len);
+      if ( ret != nil) {
+         int j;
+         list = var-> events + ( int) ret - 1;
+         seqCount += list-> count;
       }
    }
-   is2 = dyna != nil;
 
-   owner = ( PComponent) var-> delegateTo;
-   if ( owner && owner-> stage != csNormal) owner = nil;
-   if ( owner) {
-      hv = ( HV*) SvRV( *hv_fetch(( HV*) SvRV( ST( 0)), "__DELEGATORS__", 14, 0));
-      temporary_prf_Sv = hv_fetch( hv, note, strlen( note), 0);
-      if ( temporary_prf_Sv && SvOK(*temporary_prf_Sv)) {
-         if ( SvTYPE(*temporary_prf_Sv) == SVt_NULL)
-            owner = nil;
-         else {
-            if ( !SvROK(*temporary_prf_Sv) ||
-                 SvTYPE(SvRV(*temporary_prf_Sv)) != SVt_PVCV)
-               croak("RTC0046: Inconsistent storage in %s::__DELEGATORS__ for %s during Component.notify", var-> self-> className, note);
-            delegator = *temporary_prf_Sv;
+   if ( seqCount == 0) XSRETURN_IV(1);
+
+   /* filling calling sequence */
+   sequence = ( Handle *) malloc( seqCount * 2 * sizeof( void *));
+   i = 0;
+   if ( privMethod && (( rnt & ntCustomFirst) == 0)) {
+      sequence[ i++] = self;
+      sequence[ i++] = ( Handle) privMethod;
+   }
+   if ( list) {
+      int j;
+      if ( rnt & ntFluxReverse) {
+         for ( j = list-> count - 1; j > 0; j -= 2) {
+            sequence[ i++] = list-> items[ j - 1];
+            sequence[ i++] = list-> items[ j];
          }
       } else
-         owner = nil;
-      SPAGAIN;
+         memcpy( sequence + i, list-> items, list-> count * sizeof( Handle));
    }
-   is1 = owner != nil;
-
-   strcat( strcpy( buf, "on_"), note);
-   for ( s = buf; *s; s++)
-      *s = tolower(*s);
-   if ( query_method( self, buf, 0)) is0 = true;
-   SPAGAIN;
-
-   argsv = malloc( argsc * sizeof( SV*));
-   {
-      int i;
-      for ( i = 0; i < argsc; i++) argsv[ i] = ST( i + 1);
+   if ( privMethod && ( rnt & ntCustomFirst)) {
+      sequence[ i++] = self;
+      sequence[ i++] = ( Handle) privMethod;
    }
+
+   /* copying arguments passed from perl */
+   argsv = malloc( argsc * sizeof( SV *));
+   for ( i = 0; i < argsc; i++) argsv[ i] = ST( i + 1);
    argsv[ 0] = ST( 0);
 
+   /* entering event */
    my-> push_event( self);
    SPAGAIN;
+
+   /* cycling subs */
+   rnt &= ntMultiple | ntEvent;
    evPtr = var-> evPtr;
+   for ( i = 0; i < seqCount; i += 2) {
+      dSP;
+      int j;
 
-   if ( rnt & ntCustomFirst)
-   {
-      switch( snt)
-      {
-         case ntSingle:
-            if ( is2) call( 2) else
-            if ( is1) call( 1) else
-            if ( is0) call( 0)
-            break;
-         case ntEvent:
-            if ( is2) call( 2)
-            if ( is1 && evOK) call( 1)
-            if ( is0 && evOK) call( 0)
-            break;
-         default:
-            if ( is2) call(2)
-            if ( is1) call(1)
-            if ( is0) call(0)
-      }
-   } else {
-      switch( snt)
-      {
-         case ntSingle:
-            if ( is0) call( 0) else
-            if ( is1) call( 1) else
-            if ( is2) call( 2)
-            break;
-         case ntEvent:
-            if ( is0) call( 0)
-            if ( is1 && evOK) call( 1)
-            if ( is2 && evOK) call( 2)
-            break;
-         default:
-            if ( is0) call(0)
-            if ( is1) call(1)
-            if ( is2) call(2)
-      }
+      ENTER;
+      SAVETMPS;
+      PUSHMARK( sp);
+      EXTEND( sp, argsc + (( sequence[ i] == self) ? 0 : 1));
+      if ( sequence[ i] != self)
+         PUSHs((( PAnyObject)( sequence[i]))-> mate);
+      for ( j = 0; j < argsc; j++) PUSHs( argsv[ j]);
+      PUTBACK;
+      perl_call_sv(( SV*) sequence[ i + 1], G_DISCARD | G_EVAL);
+      SPAGAIN;
+      if ( SvTRUE( GvSV( errgv))) croak( SvPV( GvSV( errgv), na));
+      PUTBACK;
+      FREETMPS;
+      LEAVE;
+      if (( var-> stage != csNormal) ||
+          ( var-> evPtr != evPtr) ||
+          ( rnt == ntSingle) ||
+         (( rnt == ntEvent) && ( var-> evStack[ var-> evPtr - 1] == 0))
+         ) break;
    }
+   SPAGAIN;
 
+   /* leaving */
+   if ( privMethod) sv_free( privMethod);
    if ( var-> stage < csDead) ret = my-> pop_event( self);
    SPAGAIN;
    SP -= items;
    XPUSHs( sv_2mortal( newSViv( ret)));
+   free( sequence);
    free( argsv);
    PUTBACK;
 }
 
-void
+Bool
 Component_notify( Handle self, char * format, ...)
 {
+   Bool r;
+   SV * ret;
    va_list args;
    va_start( args, format);
-   call_perl_indirect( self, "notify", format, true, false, args);
+   ret = call_perl_indirect( self, "notify", format, true, false, args);
    va_end( args);
+   r = ( ret && SvIOK( ret)) ? SvIV( ret) : 0;
+   if ( ret) my-> set_event_flag( self, r);
+   return r;
 }
 
-void
+Bool
 Component_notify_REDEFINED( Handle self, char * format, ...)
 {
-   warn("Invalid call of of Component::notify");
+   Bool r;
+   SV * ret;
+   va_list args;
+   va_start( args, format);
+   ret = call_perl_indirect( self, "notify", format, true, false, args);
+   va_end( args);
+   r = ( ret && SvIOK( ret)) ? SvIV( ret) : 0;
+   if ( ret) my-> set_event_flag( self, r);
+   return r;
 }
 
 XS( Component_get_components_FROMPERL)
@@ -830,3 +718,195 @@ XS( Component_get_components_FROMPERL)
 void Component_get_components          ( Handle self) { warn("Invalid call of Component::get_components"); }
 void Component_get_components_REDEFINED( Handle self) { warn("Invalid call of Component::get_components"); }
 
+long
+Component_add_notification( Handle self, char * name, SV * subroutine, Handle referer, int index)
+{
+   void * ret;
+   PList  list;
+   int    nameLen = strlen( name);
+
+   if (( name[0] != 'o') || ( name[1] != 'n') ||
+      ( !hv_exists(( HV *) SvRV( my-> notification_types( self)), name + 2, nameLen - 2))) {
+       warn("RTC04B: No such event %s", name);
+       return 0;
+   }
+
+   if ( !subroutine || !SvROK( subroutine) || ( SvTYPE( SvRV( subroutine)) != SVt_PVCV)) {
+      warn("RTC04C: Not a CODE reference passed to %s to Component::add_notification", name);
+      return 0;
+   }
+
+   if ( referer == nilHandle) referer = self;
+
+   if ( var-> eventIDs == nil) {
+      var-> eventIDs = hash_create();
+      ret = nil;
+   } else
+      ret = hash_fetch( var-> eventIDs, name, nameLen);
+
+   if ( ret == nil) {
+      hash_store( var-> eventIDs, name, nameLen, ( void*)( var-> eventIDCount + 1));
+      if ( var-> events == nil)
+         var-> events = malloc( sizeof( List));
+      else {
+         void * cf = realloc( var-> events, ( var-> eventIDCount + 1) * sizeof( List));
+         if ( cf == nil) free( var-> events);
+         var-> events = cf;
+      }
+      if ( var-> events == nil) croak("No enough memory");
+      list = var-> events + var-> eventIDCount++;
+      list_create( list, 2, 2);
+   } else
+      list = var-> events + ( int) ret - 1;
+
+   ret = ( void *) newSVsv( subroutine);
+   index = list_insert_at( list, referer, index);
+   list_insert_at( list, ( Handle) ret, index + 1);
+
+   if ( referer != self) {
+      if ( PComponent( referer)-> refs == nil)
+         PComponent( referer)-> refs = plist_create( 2, 2);
+      else
+         if ( list_index_of( PComponent( referer)-> refs, self) >= 0) goto NO_ADDREF;
+      list_add( PComponent( referer)-> refs, self);
+   NO_ADDREF:;
+      if ( var-> refs == nil)
+         var-> refs = plist_create( 2, 2);
+      else
+         if ( list_index_of( var-> refs, referer) >= 0) goto NO_SELFREF;
+      list_add( var-> refs, referer);
+   NO_SELFREF:;
+   }
+
+   return ( long) ret;
+}
+
+void
+Component_remove_notification( Handle self, long id)
+{
+   int i = var-> eventIDCount;
+   PList  list = var-> events;
+
+   if ( list == nil) return;
+
+   while ( i--) {
+      int j;
+      for ( j = 0; j < list-> count; j += 2) {
+         if ((( long) list-> items[ j + 1]) != id) continue;
+         sv_free(( SV *) list-> items[ j + 1]);
+         list_delete_at( list, j + 1);
+         list_delete_at( list, j);
+         return;
+      }
+      list++;
+   }
+}
+
+void
+Component_unlink_notifier( Handle self, Handle referer)
+{
+   int i = var-> eventIDCount;
+   PList  list = var-> events;
+
+   if ( list == nil) return;
+
+   while ( i--) {
+      int j;
+   AGAIN:
+      for ( j = 0; j < list-> count; j += 2) {
+         if ((( long) list-> items[ j]) != referer) continue;
+         sv_free(( SV *) list-> items[ j + 1]);
+         list_delete_at( list, j + 1);
+         list_delete_at( list, j);
+         goto AGAIN;
+      }
+      list++;
+   }
+}
+
+XS( Component_get_notification_FROMPERL)
+{
+   dXSARGS;
+   Handle self;
+   char * event;
+   void * ret;
+   PList  list;
+
+   if ( items < 2)
+      croak ("Invalid usage of Component.get_notification");
+
+   SP -= items;
+   self = gimme_the_mate( ST( 0));
+   if ( self == nilHandle)
+      croak( "Illegal object reference passed to Component.get_notification");
+
+   if ( var-> eventIDs == nil) XSRETURN_EMPTY;
+   event = ( char *) SvPV( ST( 1), na);
+   ret = hash_fetch( var-> eventIDs, event, strlen( event));
+   if ( ret == nil) XSRETURN_EMPTY;
+   list = var-> events + ( int) ret - 1;
+
+   if ( items < 3) {
+      int i;
+      if ( GIMME_V == G_ARRAY) {
+         int count = (int)( list-> count * 1.5);
+         EXTEND( sp, count);
+         for ( i = 0; i < list-> count; i += 2) {
+            PUSHs( sv_2mortal( newSVsv((( PAnyObject)( list-> items[i]))-> mate)));
+            PUSHs( sv_2mortal( newSVsv(( SV *) list->items[i + 1])));
+            PUSHs( sv_2mortal( newSViv(( long) list->items[i + 1])));
+         }
+      } else
+         XPUSHs( sv_2mortal( newSViv( list-> count / 2)));
+      PUTBACK;
+   } else {
+      int index = SvIV( ST( 2));
+      int count = list-> count / 2;
+      if ( index >= count || index < -count) XSRETURN_EMPTY;
+      if ( index < 0) index = count + index;
+      EXTEND( sp, 3);
+      PUSHs( sv_2mortal( newSVsv((( PAnyObject) list->items[index * 2])-> mate)));
+      PUSHs( sv_2mortal( newSVsv(( SV *) list->items[index * 2 + 1])));
+      PUSHs( sv_2mortal( newSViv(( long) list->items[index * 2 + 1])));
+      PUTBACK;
+   }
+}
+
+void Component_get_notification          ( Handle self, char * name, int index) { warn("Invalid call of Component::get_notification"); }
+void Component_get_notification_REDEFINED( Handle self, char * name, int index) { warn("Invalid call of Component::get_notification"); }
+
+XS( Component_set_notification_FROMPERL)
+{
+   dXSARGS;
+   GV * gv;
+   SV * sub;
+   char * name, * convname;
+   Handle self;
+   void * ret;
+   PList list;
+   int i;
+
+   if ( items < 1)
+      croak ("Invalid usage of Component::notification property");
+   self = gimme_the_mate( ST( 0));
+   if ( self == nilHandle)
+      croak( "Illegal object reference passed to Component::notification property");
+   if ( CvANON( cv) || !( gv = CvGV( cv))) croak("Cannot be called as anonymous sub");
+
+   sub = sv_newmortal();
+   gv_efullname3( sub, gv, nil);
+   name = SvPVX( sub);
+   if ( items < 2)
+      croak( "Attempt to read write-only property %s", name);
+   convname = name;
+   while ( *(name++)) {
+      if ( *name == ':') convname = name + 1;
+   }
+
+   sub = ST( 1);
+   my-> add_notification( self, convname, sub, self, -1);
+   XSRETURN_EMPTY;
+}
+
+void Component_set_notification          ( Handle self, char * name, SV * subroutine) { warn("Invalid call of Component::set_notification"); }
+void Component_set_notification_REDEFINED( Handle self, char * name, SV * subroutine) { warn("Invalid call of Component::set_notification"); }

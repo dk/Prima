@@ -8,8 +8,6 @@ Prima::ColorDialog-> create(
   quality => 1,
   onDestroy => sub {$::application-> close;},
 );
-
-
 run Prima;
 
 

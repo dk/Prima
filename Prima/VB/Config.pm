@@ -230,7 +230,7 @@ sub classes
       RTModule => 'Prima::Lists',
       page     => 'Abstract',
       module   => 'Prima::VB::CoreClasses',
-      class    => 'Prima::VB::ListBox',
+      class    => 'Prima::VB::ListViewer',
    },
    );
 }

@@ -175,7 +175,6 @@ sub init
    $self-> {defcw} = $::application-> get_default_cursor_width;
    my %profile = $self-> SUPER::init(@_);
    $profile{selection} = [@{$profile{selStart}}, @{$profile{selEnd}}];
-   $self-> {__DYNAS__}->{onParseSyntax}  = $profile{onParseSyntax};
    for ( qw( hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs
              textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
              firstCol tabIndent readOnly offset wordDelimiters wantTabs wantReturns
@@ -191,15 +190,6 @@ sub init
    $self-> {modified} = 0;
    return %profile;
 }
-
-sub set
-{
-   my ( $self, %profile) = @_;
-   $self->{__DYNAS__}->{onParseSyntax} = $profile{onParseSyntax},
-      delete $profile{onParseSyntax} if exists $profile{onParseSyntax};
-   $self-> SUPER::set( %profile);
-}
-
 
 sub reset
 {

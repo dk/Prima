@@ -9,14 +9,14 @@ my @wsave = @w;
 ok($w[0] == 200 && $w[1] == 200);
 $w-> size( 300, 300);
 @w = $w-> get_size;
-$w-> set( onSize => sub {
+my $id = $w-> add_notification( onSize => sub {
    my ( $self, $oldx, $oldy, $newx, $newy) = @_;
    $dong = 1 if ( $newx == $wsave[0] && $newy == $wsave[1] && $oldx == $w[0] && $oldy == $w[1]);
 });
 $dong = 0;
 $w-> size( 200, 200);
 ok( $dong || &__wait);
-$w-> set( onSize => undef);
+$w-> remove_notification( $id);
 $w-> size( @w);
 my @dw = $w-> size;
 ok($w[0] == $dw[0] && $w[1] == $dw[1]);

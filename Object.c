@@ -70,8 +70,6 @@ Object_create( char *className, HV * profile)
    my-> profile_add( self, profRef);
    var-> stage = csConstructing;
    SPAGAIN;
-   if ( primaObjects)
-      hash_store( primaObjects, &self, sizeof( self), (void*)1);
    if ( my-> init == Object_init_REDEFINED)
    {
       ENTER;
@@ -90,6 +88,8 @@ Object_create( char *className, HV * profile)
    {
       my-> init( self, profile);
    }
+   if ( primaObjects)
+      hash_store( primaObjects, &self, sizeof( self), (void*)1);
    SvREFCNT_dec( profRef);
    if ( var-> stage != csConstructing) {
       if ( var-> mate && ( var-> mate != nilSV) && SvRV( var-> mate))

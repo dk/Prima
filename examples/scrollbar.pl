@@ -1,7 +1,5 @@
 use strict;
-use Carp;
-use Prima::Classes;
-use Prima::ScrollBar;
+use Prima qw(ScrollBar);
 
 package MyWindow;
 use vars qw(@ISA);
@@ -13,10 +11,6 @@ sub updateArea
      $_[0]-> Blue-> value|($_[0]-> Green-> value<<8)|($_[0]-> Red-> value<<16)
   );
 }
-
-sub Red_Change { $_[0]-> updateArea; }
-sub Green_Change { $_[0]-> updateArea; }
-sub Blue_Change { $_[0]-> updateArea; }
 
 sub Timer1_Tick
 {
@@ -45,6 +39,7 @@ $w-> insert(
     vertical => 0,
     max      => 255,
     width    => $w-> width - 2,
+    onChange => sub { $w-> updateArea },
 );
 $w-> insert(
    "ScrollBar",
@@ -53,6 +48,7 @@ $w-> insert(
     vertical => 0,
     max      => 255,
     width    => $w-> width - 2,
+    onChange => sub { $w-> updateArea },
 );
 $w-> insert(
    "ScrollBar",
@@ -61,6 +57,7 @@ $w-> insert(
     vertical => 0,
     max      => 255,
     width    => $w-> width - 2,
+    onChange => sub { $w-> updateArea },
 );
 
 $w-> insert(
@@ -95,10 +92,12 @@ $w-> insert(
       $_[0]->height($_[0]->height+(($_[1]==1)?1:-1));
    },
 );
-$w-> insert(
-Timer=>
-timeout=> 2000,
-name => 'Timer1',
-)-> start;
+my $t = $w-> insert(
+   Timer=>
+   timeout=> 2000,
+   name => 'Timer1',
+);
+$t-> add_notification( "onTick", \&MyWindow::Timer1_Tick, $w);
+$t-> start;
 
 run Prima;

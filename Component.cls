@@ -28,8 +28,8 @@ object Prima::Component( Prima::Object)
     void        *sysData;            # system-dependent data, defined by apc
     char        *name;
     Handle      owner;
-    Handle      delegateTo;
     ApiHandle   handle;              # apc handle
+    method   long      add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
     method   void      attach( Handle objectHandle);
     method   Handle    bring( char * componentName);
     method   Bool      can_event();
@@ -43,45 +43,41 @@ object Prima::Component( Prima::Object)
     method   Bool      get_event_flag();
     method   SV      * get_handle();
     method   char    * get_name();
+    public   void      get_notification( char * name, int index);
     method   Handle    get_owner();
-    method   Handle    get_delegate_to();
-    c_only   HV      * get_dynas();
-    c_only   HV      * get_delegators();
     c_only   void      handle_event ( PEvent event);
     method   void      init( HV * profile);
     c_only   Bool      message( PEvent event);
     c_only   Bool      migrate( Handle attachTo);
     import   SV *      notification_types();
-    public   void      notify( char * format, ...);
+    public   Bool      notify( char * format, ...);
     method   Bool      pop_event();
     method   void      post_message( SV * info1, SV * info2);
     import   SV *      profile_default();
     method   void      push_event();
     c_only   void      recreate();
+    method   void      remove_notification( long id);
     method   void      set( HV * profile);
     method   void      setup();
     method   void      set_event_flag( Bool eventFlag);
     method   void      set_name( char * name);
-    method   void      set_delegate_to( Handle delegateTo);
-    c_only   void      set_dyna_method( char * methodName, SV * container, SV** variable);
+    public   void      set_notification( char * name, SV * subroutine);
     import   void      set_owner( Handle owner);
+    method   void      unlink_notifier( Handle referer);
     c_only   void      update_sys_handle( HV * profile);
-    method   void      update_delegator();
 # virtual event handlers
     event    void      on_create();
     event    void      on_destroy();
     event    void      on_postmessage( SV * info1, SV * info2);
-# dynamic event handlers
-    SV *   onCreate;
-    SV *   onDestroy;
-    SV *   onPostMessage;
 # internal variables
-    DelegatedMessages delegatedMessages;
     char * evStack;
     int    evPtr;
     int    evLimit;
     PList  postList;
     PList  components;
     PList  evQueue;
-    PList  refList;
+    PList  refs;
+    PList  events;
+    PHash  eventIDs;
+    int    eventIDCount;
 }

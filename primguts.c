@@ -360,39 +360,6 @@ XS( destroy_mate)
    XSRETURN_EMPTY;
 }
 
-XS(ext_std_print)
-{
-   int isError;
-   int i;
-   char buf[ 2048];
-   char *c = buf;
-   dXSARGS;
-
-   strcpy( buf, "");
-   if ( items >= 2)
-   {
-      isError = SvTRUE( SvRV( ST( 0)));
-      if ( isError)
-      {
-         // f = stderr;
-         // fprintf( f, "STDERR: ");
-      }
-      else
-      {
-         // f = stdout;
-         // fprintf( f, "STDOUT: ");
-      }
-      for ( i = 1; i < items; i++)
-      {
-         // fprintf( f, "%s", SvPV( ST( i), na));
-         snprintf( c, 2048, "%s", SvPV( ST( i), na));
-         c += strlen( c);
-      }
-      fprintf( stderr, "%s", buf);
-   }
-   XSRETURN_EMPTY;
-}
-
 Bool
 kind_of( Handle object, void *cls)
 {
@@ -431,6 +398,71 @@ sv_query_method( SV *sv, char *methodName, Bool cacheIt)
    return nil;
 }
 
+extern XS( Component_set_notification_FROMPERL);
+
+static void
+register_notifications( PVMT vmt)
+{
+   SV *package;
+   SV *nt_sub;
+   SV *nt_ref;
+   HV *nt;
+   PVMT v = vmt;
+   HE *he;
+   char buf[ 1024];
+
+   while (( v != nil) && ( v != (PVMT) CComponent)) v = v-> base;
+   if (!v) return;
+   package = newSVpv( vmt-> className, 0);
+   if ( !package) croak( "GUTS016: Not enough memory");
+   nt_sub = ( SV*) sv_query_method( package, "notification_types", 0);
+   if ( !nt_sub) croak( "GUTS016: Invalid package %s", vmt-> className);
+   nt_ref = cv_call_perl( package, nt_sub, "<");
+   if ( !nt_ref || !SvROK(nt_ref) || SvTYPE(SvRV(nt_ref)) != SVt_PVHV)
+      croak( "GUTS016: %s: Bad notification_types() return value", vmt-> className);
+   nt = (HV*)SvRV(nt_ref);
+
+   hv_iterinit( nt);
+   while (( he = hv_iternext( nt)) != nil) {
+      snprintf( buf, 1024, "on%s", HeKEY( he));
+      if (sv_query_method( package, buf, 0)) continue;
+      snprintf( buf, 1024, "%s::on%s", vmt-> className, HeKEY( he));
+      newXS( buf, Component_set_notification_FROMPERL, vmt-> className);
+   }
+   sv_free( package);
+}
+
+XS(Prima_init)
+{
+   dXSARGS;
+   (void)items;
+   {
+      SV * ref;
+      SV * package = newSVpv( "Prima::Object", 0);
+      if ( !package) croak( "GUTS016: Not enough memory");
+      ref = ( SV *) sv_query_method( package, "profile_default", 0);
+      sv_free( package);
+      if ( !ref) croak("'use Prima;' call required in main script");
+   }
+   register_notifications((PVMT)CComponent);
+   register_notifications((PVMT)CAbstractMenu);
+   register_notifications((PVMT)CAccelTable);
+   register_notifications((PVMT)CMenu);
+   register_notifications((PVMT)CPopup);
+   register_notifications((PVMT)CClipboard);
+   register_notifications((PVMT)CTimer);
+   register_notifications((PVMT)CDrawable);
+   register_notifications((PVMT)CImage);
+   register_notifications((PVMT)CIcon);
+   register_notifications((PVMT)CDeviceBitmap);
+   register_notifications((PVMT)CWidget);
+   register_notifications((PVMT)CWindow);
+   register_notifications((PVMT)CApplication);
+   register_notifications((PVMT)CPrinter);
+   SPAGAIN;
+   XSRETURN_EMPTY;
+}
+
 Bool
 build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
 {
@@ -441,12 +473,12 @@ build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
 
    if ( ancestorVmt == nil)
    {
-      log_write( "GUTS001: Cannot locate base class \"%s\" of class \"%s\"\n", ancestorName, vmt-> className);
+      warn( "GUTS001: Cannot locate base class \"%s\" of class \"%s\"\n", ancestorName, vmt-> className);
       return false;
    }
    if ( ancestorVmt-> base != ancestorVmt-> super)
    {
-      log_write( "GUTS002: Cannot inherit C-class \"%s\" from Perl-class \"%s\"\n", vmt-> className, ancestorName);
+      warn( "GUTS002: Cannot inherit C-class \"%s\" from Perl-class \"%s\"\n", vmt-> className, ancestorName);
       return false;
    }
 
@@ -456,6 +488,7 @@ build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
    to = (void **)((char *)vmt + sizeof(VMT));
    for ( i = 0; i < n; i++) if ( to[i] == nil) to[i] = from[i];
    build_static_vmt( vmt);
+   register_notifications( vmt);
    return true;
 }
 
@@ -512,14 +545,13 @@ gimme_the_vmt( const char *className)
       if ( inheritedName != nil)
          originalVmt = gimme_the_vmt( SvPV( *inheritedName, na));
       else
-         return nil;    // The error message will be printed by the previous incarnation
+         return nil; /* The error message will be printed by the previous incarnation */
    }
-   if ( !originalVmt)
-   {
+   if ( !originalVmt) {
       croak( "GUTS005: Error finding ancestor's VMT for %s\n", className);
       return nil;
    }
-   // Do we really need to do this?
+   /* Do we really need to do this? */
    if ( strEQ( className, originalVmt-> className))
       return originalVmt;
 
@@ -555,11 +587,11 @@ gimme_the_vmt( const char *className)
       patchWhom = patchWhom-> base;
    }
 
-   // Store newly created vmt into our hash...
+   /* Store newly created vmt into our hash... */
    hash_store( vmtHash, (char *)className, strlen( className), vmt);
    list_add( &staticObjects, (Handle) vmt);
    list_add( &staticObjects, (Handle) vmt-> className);
-
+   register_notifications( vmt);
    return vmt;
 }
 
@@ -575,24 +607,6 @@ notify_perl( Handle self, char *methodName, const char *format, ...)
    va_start( params, format);
    toReturn = call_perl_indirect((( PComponent) self)-> owner,
                  subName, format, true, false, params);
-   va_end( params);
-   return toReturn;
-}
-
-SV *
-delegate_sub( Handle self, char *methodName, const char *format, ...)
-{
-   SV *toReturn;
-   PComponent obj = ( PComponent) self;
-   HV * hv   = ( HV*) SvRV( *hv_fetch(( HV*) SvRV( obj-> mate), "__DELEGATORS__", 14, 0));
-   SV ** sub = hv_fetch( hv, methodName, strlen( methodName), 0);
-   va_list params;
-
-   if ( sub == nil) croak("GUTS015: Inconsistent __DELEGATORS__ storage in %s for %s", obj-> name, methodName);
-   va_start( params, format);
-   toReturn = call_perl_indirect(( Handle)(( PComponent) obj-> delegateTo)-> mate,
-      ( char*)SvRV( *sub),
-      format, false, true, params);
    va_end( params);
    return toReturn;
 }
@@ -1077,9 +1091,9 @@ NAN = 0.0;
    list_create( &staticObjects, 16, 16);
 
    /* register hard coded XSUBs */
-   newXS( "TiedStdOut::PRINT", ext_std_print, MODULE);
    newXS( "::destroy_mate", destroy_mate, MODULE);
    newXS( "Prima::cleanup", prima_cleanup, "Prima");
+   newXS( "Prima::init", Prima_init, "Prima");
    newXS( "Prima::Utils::getdir", Utils_getdir_FROMPERL, "Prima::Utils");
    /* register built-in classes */
    newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
@@ -1395,17 +1409,19 @@ list_add( PList slf, Handle item)
    return slf-> count - 1;
 }
 
-void
+int
 list_insert_at( PList slf, Handle item, int pos)
 {
-   int max;
+   int max, ret;
    Handle save;
-   if ( list_add( slf, item) < 0) return;
+   ret = list_add( slf, item);
+   if ( ret < 0) return ret;
    max = slf-> count - 1;
-   if ( pos < 0 || pos >= max) return;
+   if ( pos < 0 || pos >= max) return ret;
    save = slf-> items[ max];
    memmove( &slf-> items[ pos + 1], &slf-> items[ pos], ( max - pos) * sizeof( Handle));
    slf-> items[ pos] = save;
+   return pos;
 }
 
 int

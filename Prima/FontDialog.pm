@@ -66,6 +66,7 @@ sub init
 {
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
+   my $j;
 
    $self-> {showHelp}  = $profile{showHelp};
    $self-> {logFont}   = $profile{logFont};
@@ -77,37 +78,37 @@ sub init
       name   => 'Style',
    );
 
-   $gr-> insert( CheckBox =>
+   $j = $gr-> insert( CheckBox =>
       origin => [ 15, 95],
       size   => [ 96, 36],
       name   => 'FontStyleButton',
       text   => '~Bold',
-      delegateTo => $self,
    );
+   $j-> make_event( 'Click', $self);
 
-   $gr-> insert( CheckBox =>
+   $j = $gr-> insert( CheckBox =>
       origin => [ 15, 65],
       size   => [ 96, 36],
       name   => 'FontStyleButton',
       text   => '~Italic',
-      delegateTo => $self,
    );
+   $j-> make_event( 'Click', $self);
 
-   $gr-> insert( CheckBox =>
+   $j = $gr-> insert( CheckBox =>
       origin => [ 15, 35],
       size   => [ 96, 36],
       name   => 'FontStyleButton',
       text   => '~Underline',
-      delegateTo => $self,
    );
+   $j-> make_event( 'Click', $self);
 
-   $gr-> insert( CheckBox =>
+   $j = $gr-> insert( CheckBox =>
       origin => [ 15, 5],
       size   => [ 96, 36],
       name   => 'FontStyleButton',
       text   => 'Strike ~out',
-      delegateTo => $self,
    );
+   $j-> make_event( 'Click', $self);
 
    my $name = $self-> insert( ComboBox =>
       origin => [ 10, 165],
@@ -130,6 +131,7 @@ sub init
       name   => 'Size',
       style  => cs::Simple,
    );
+   $size-> make_event( 'Change');
 
    $self-> insert( Label =>
       origin    => [ 275, 320],
@@ -144,12 +146,12 @@ sub init
       name       => 'Sample',
    );
 
-   $gr-> insert( Widget =>
+   $j = $gr-> insert( Widget =>
       origin     => [ 5, 5],
       size       => [ 240, 120],
       name       => 'Example',
-      delegateTo => $self,
    );
+   $j-> make_event([qw(Paint FontChanged)], $self);
 
    $self-> insert( Button =>
       origin      => [ 435, 280],

@@ -18,6 +18,9 @@ use Prima::Classes;
 
 package Prima::VB::Object;
 
+
+my %hooks = ();
+
 sub init_profiler
 {
    my ( $self, $prf) = @_;
@@ -26,16 +29,23 @@ sub init_profiler
    $self-> {module}  = $prf->{module};
    $self-> {creationOrder} = $prf->{creationOrder};
    $self-> {creationOrder} = 0 unless defined $self-> {creationOrder};
-   $self-> {profile} = $prf->{profile};
+   $self-> {profile} = {};
    $self-> {extras}  = $prf->{extras} if $prf->{extras};
-   my %events = %{$self-> prf_events};
+   my %events = $self-> prf_events;
    for ( keys %{$prf->{class}->notification_types}) {
       $events{"on$_"} = '' unless exists $events{"on$_"};
+   }
+   for ( keys %events) {
+      $events{$_} = 'my $self = $_[0];' unless length $events{$_};
    }
    $self-> {events}  = \%events;
    $self-> {default} = {%{$prf->{class}-> profile_default}, %events};
    $self-> prf_adjust_default( $self-> {profile}, $self-> {default});
-   $self-> prf_set( %{$self-> {profile}});
+   $self-> prf_set( name  => $prf-> {profile}-> {name})  if exists $prf-> {profile}-> {name};
+   $self-> prf_set( owner => $prf-> {profile}-> {owner}) if exists $prf-> {profile}-> {owner};
+   delete $prf-> {profile}-> {name};
+   delete $prf-> {profile}-> {owner};
+   $self-> prf_set( %{$prf-> {profile}});
    my $types = $self-> prf_types;
    my %xt = ();
    for ( keys %{$types}) {
@@ -46,17 +56,45 @@ sub init_profiler
    $self-> {types} = \%xt;
 }
 
+sub add_hooks
+{
+   my ( $object, @properties) = @_;
+   for ( @properties) {
+      $hooks{$_} = [] unless $hooks{$_};
+      push( @{$hooks{$_}}, $object);
+   }
+}
+
+sub remove_hooks
+{
+   my ( $object, @properties) = @_;
+   @properties = keys %hooks unless scalar @properties;
+   for ( keys %hooks) {
+      my $i = scalar @{$hooks{$_}};
+      while ( $i--) {
+         last if $hooks{$_}->[$i - 1] == $object;
+      }
+      next if $i < 0;
+      splice( @{$hooks{$_}}, $i, 1);
+   }
+}
+
 sub prf_set
 {
    my ( $self, %profile) = @_;
+   my $name = $self-> prf('name');
+   for ( keys %profile) {
+      my $key = $_;
+      next unless $hooks{$key};
+      my $o = exists $self->{profile}->{$key} ? $self->{profile}->{$key} : $self->{default}->{$key};
+      $_-> on_hook( $name, $key, $o, $profile{$key}) for @{$hooks{$key}};
+   }
    $self->{profile} = {%{$self->{profile}}, %profile};
    my $check = $VB::inspector && ( $VB::inspector->{opened}) && ( $VB::inspector->{current} eq $self);
    $check    = $VB::inspector->{opened}->{id} if $check;
    for ( keys %profile) {
       my $cname = 'prf_'.$_;
-      if ( $check) {
-         ObjectInspector::widget_changed(0) if $check eq $_;
-      }
+      ObjectInspector::widget_changed(0) if $check && ( $check eq $_);
       $self-> $cname( $profile{$_}) if $self-> can( $cname);
    }
 }
@@ -78,7 +116,6 @@ sub prf_delete
    }
 }
 
-
 sub prf
 {
    my ( $self, @property) = @_;
@@ -98,7 +135,7 @@ sub prf_adjust_default
 
 sub prf_events
 {
-   return {};
+   return ();
 }
 
 sub ext_profile
@@ -124,14 +161,6 @@ my %RNT = (
 sub notification_types { return \%RNT; }
 }
 
-sub set
-{
-   my ( $self, %parms) = @_;
-   $self-> SUPER::set( %parms);
-   $self-> {__DYNAS__}->{onLoad} = $parms{onLoad},
-     delete $parms{onLoad} if exists $parms{onLoad};
-}
-
 
 sub profile_default
 {
@@ -145,14 +174,11 @@ sub profile_default
       marked     => 0,
       mainEvent  => undef,
       sizeMin    => [11,11],
-      selectingButtons => mb::Right,
+      selectingButtons => 0,
       accelItems => [
          ['altpopup',0,0, km::Shift|km::Ctrl|kb::F9 => sub{
-            my $p = $_[0]-> bring( 'AltPopup');
-            if ( $p) {
-               $p-> popup( $_[0]-> pointerPos);
-               $_[0]-> clear_event;
-            }
+             $_[0]-> altpopup;
+             $_[0]-> clear_event;
          }],
       ],
    );
@@ -166,18 +192,15 @@ sub prf_types
    return {
       name       => ['name'],
       Handle     => ['owner'],
-      sibling    => ['delegateTo'],
       FMAction   => [qw( onBegin onFormCreate onCreate onChild onChildCreate onEnd )],
    };
 }
 
 sub prf_events
 {
-   return {
-      onCreate       => 'my $self = $_[0];',
-      onDestroy      => 'my $self = $_[0];',
+   return (
       onPostMessage  => 'my ( $self, $info1, $info2) = @_;',
-   };
+   );
 }
 
 
@@ -185,7 +208,6 @@ sub prf_adjust_default
 {
    my ( $self, $p, $pf) = @_;
    $self-> SUPER::prf_adjust_default( $p, $pf);
-   delete $pf->{delegateTo};
    $pf-> {owner} = '';
 }
 
@@ -213,7 +235,13 @@ sub init
    for ( qw( marked sizeable mainEvent)) {
       $self->$_( $profile{$_});
    }
-   $profile{profile}->{name} = $self-> name;
+   my %names = map { $_->name => 1} grep { $_ != $self } $VB::form-> widgets;
+   $names{$VB::form-> name} = 1;
+   my $xname = $self-> name;
+   my $yname = $xname;
+   my $cnt = 0;
+   $yname = sprintf("%s.%d", $xname, $cnt++) while exists $names{$yname};
+   $profile{profile}->{name} = $yname;
    $self-> init_profiler( \%profile);
    ObjectInspector::renew_widgets();
    return %profile;
@@ -227,7 +255,8 @@ sub get_profile_default
 sub common_paint
 {
    my ( $self, $canvas) = @_;
-   if ( $self-> {marked} or $self-> focused) {
+   #if ( $self-> {marked} or $self-> focused) {
+   if ( $self-> {marked}) {
       my @sz = $canvas-> size;
       $canvas-> color( cl::Black);
       $canvas-> rectangle( 1, 1, $sz[0] - 2, $sz[1] - 2);
@@ -417,11 +446,25 @@ sub on_mousedown
    }
 
    if ( $btn == mb::Right && $mod & km::Ctrl) {
-      my $p = $self-> bring( 'AltPopup');
-      return unless $p;
-      $p-> popup( $x, $y);
+      $self-> altpopup;
       $self-> clear_event;
       return;
+   }
+}
+
+sub altpopup
+{
+   my $self  = $_[0];
+   while ( 1) {
+      my $p = $self-> bring( 'AltPopup');
+      if ( $p) {
+         $p-> popup( $self-> pointerPos);
+         last;
+      }
+      last if $self == $VB::form;
+      my $o = $self-> prf('owner');
+      $self = ( $o eq $VB::form-> name) ? $VB::form : $VB::form-> bring( $o);
+      last unless $self;
    }
 }
 
@@ -429,7 +472,8 @@ sub on_mouseclick
 {
    my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
    return unless $dbl;
-   if ( defined $self-> mainEvent) {
+   $mod &= km::Alt|km::Shift|km::Ctrl;
+   if ( $mod == 0 && defined $self-> mainEvent) {
       my $a = $self-> mainEvent;
       $self-> marked(1,1);
       ObjectInspector::enter_widget( $self);
@@ -612,7 +656,6 @@ sub on_enter
    ObjectInspector::enter_widget( $_[0]);
 };
 
-sub on_leave {$_[0]->marked(0,1)};
 
 sub marked
 {
@@ -655,7 +698,7 @@ sub prf_name
    $_[0]->name($_[1]);
    return unless $VB::inspector;
    my $s = $VB::inspector-> Selector;
-   $VB::inspector->{selectorChanging} = 1;
+   $VB::inspector->{selectorChanging}++;
    my @it = @{$s-> List-> items};
    my $sn = $s-> text;
    my $si = $s-> focusedItem;
@@ -665,7 +708,7 @@ sub prf_name
    $s-> List-> items( \@it);
    $s-> text( $sn);
    $s-> focusedItem( $si);
-   $VB::inspector->{selectorChanging} = 0;
+   $VB::inspector->{selectorChanging}--;
 
    $_[0]-> name_changed( $old, $_[1]);
 }
@@ -675,8 +718,8 @@ sub name_changed
    return unless $VB::form;
    my ( $self, $oldName, $newName) = @_;
 
-   for ( $VB::form-> widgets) {
-      my $pf = $_-> prf_types;
+   for ( $VB::form, $VB::form-> widgets) {
+      my $pf = $_-> {types};
       next unless defined $pf->{Handle};
       my $widget = $_;
       for ( @{$pf->{Handle}}) {
@@ -722,8 +765,13 @@ sub prf_owner
 sub on_destroy
 {
    my $self = $_[0];
-   $self-> name_changed( $self-> name, $VB::form-> name) if $VB::form;
+   my $n = $self-> name;
+   $self-> remove_hooks;
+   $self-> name_changed( $n, $VB::form-> name) if $VB::form;
    $self-> owner_changed( $self-> prf('owner'), undef);
+   if ( $hooks{DESTROY}) {
+      $_-> on_hook( $self-> name, 'DESTROY') for @{$hooks{DESTROY}};
+   }
 }
 
 package Prima::VB::Drawable;
@@ -846,6 +894,31 @@ sub prf_types
    return $pt;
 }
 
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onColorChanged   => 'my ($self, $colorIndex) = @_;',
+      onDragDrop       => 'my ($self, $x, $y) = @_;',
+      onDragOver       => 'my ($self, $x, $y, $state) = @_;',
+      onEndDrag        => 'my ($self, $x, $y) = @_;',
+      onHint           => 'my ($self, $show) = @_;',
+      onKeyDown        => 'my ($self, $code, $key, $mod, $repeat) = @_;',
+      onKeyUp          => 'my ($self, $code, $key, $mod) = @_;',
+      onMenu           => 'my ($self, $menu, $variable) = @_;',
+      onMouseDown      => 'my ($self, $btn, $mod, $x, $y) = @_;',
+      onMouseUp        => 'my ($self, $btn, $mod, $x, $y) = @_;',
+      onMouseClick     => 'my ($self, $btn, $mod, $x, $y, $dblclk) = @_;',
+      onMouseMove      => 'my ($self, $mod, $x, $y) = @_;',
+      onMouseWheel     => 'my ($self, $mod, $x, $y, $z) = @_;',
+      onMouseEnter     => 'my ($self, $mod, $x, $y) = @_;',
+      onMove           => 'my ($self, $oldx, $oldy, $x, $y) = @_;',
+      onPaint          => 'my ($self, $canvas) = @_;',
+      onPopup          => 'my ($self, $mouseDriven, $x, $y) = @_;',
+      onSize           => 'my ($self, $oldx, $oldy, $x, $y) = @_;',
+      onTranslateAccel => 'my ($self, $code, $key, $mod) = @_;',
+   );
+}
 
 sub prf_color        { $_[0]-> color($_[1]); }
 sub prf_backColor    { $_[0]-> backColor( $_[1]); }
@@ -952,7 +1025,7 @@ sub prf_adjust_default
 
 package Prima::VB::Window;
 use vars qw(@ISA);
-@ISA = qw(Prima::VB::Widget);
+@ISA = qw(Prima::VB::Control);
 
 sub prf_adjust_default
 {
@@ -961,6 +1034,23 @@ sub prf_adjust_default
    delete $pf->{$_} for qw (
        menu
        modalResult
+       menuColor
+       menuBackColor
+       menuHiliteBackColor
+       menuDisabledBackColor
+       menuHiliteColor
+       menuDisabledColor
+       menuDark3DColor
+       menuLight3DColor
+       menuFont
+   );
+}
+
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onWindowState  => 'my ( $self, $windowState) = @_;',
    );
 }
 
@@ -1137,13 +1227,16 @@ sub wake
       return;
    }
 
-   my $c = $_[0]->{A}->backColor;
+   my $bc = $_[0]->{A}->backColor;
+   my $c = $_[0]->{A}->color;
    $_[0]->{A}->backColor(cl::LightRed);
+   $_[0]->{A}->color(cl::Yellow);
    $_[0]->{A}->{monger} = $_[0]->{A}->insert( Timer =>
       timeout => 300,
       onTick  => sub {
          $_[0]-> owner->{monger} = undef;
-         $_[0]-> owner-> backColor($c);
+         $_[0]-> owner-> color($c);
+         $_[0]-> owner-> backColor($bc);
          $_[0]-> destroy;
       },
    );
@@ -1156,8 +1249,12 @@ sub valid
    my $tx = $self->{A}->text;
    $self->wake, return 0 unless length( $tx);
    $self->wake, return 0 if $tx =~ /[\s\\\~\!\@\#\$\%\^\&\*\(\)\-\+\=\[\]\{\}\.\,\?\;\|\`\'\"]/;
-   my $s = $VB::inspector-> Selector-> List-> items;
+   my $l = $VB::inspector-> Selector-> List;
+   my $s = $l-> items;
+   my $fi= $l-> focusedItem;
+   my $i = 0;
    for ( @$s) {
+      next if $i++ == $fi;
       $self->wake, return 0 if $_ eq $tx;
    }
    return 1;
@@ -2938,8 +3035,10 @@ sub valid
    $self->wake, return 0 if $tx =~ /[\s\\\~\!\@\#\$\%\^\&\*\(\)\-\+\=\[\]\{\}\.\,\?\;\|\`\'\"]/;
    my $s = $self-> {widget}-> {B};
    my $ok = 1;
+   my $fi = $s-> focusedItem;
    $s-> iterate( sub {
       my ( $current, $position, $level) = @_;
+      return 0 if $position == $fi;
       $ok = 0, return 1 if defined $current->[0]->[1]->{name} && $current->[0]->[1]->{name} eq $tx;
       return 0;
    }, 1);

@@ -1,7 +1,4 @@
 use Prima;
-use Prima::Const;
-use Prima::Classes;
-
 
 $::application = Prima::Application-> create( name => "Tester");
 
@@ -143,6 +140,7 @@ my $w = Prima::Window-> create(
       $xor-> color( cl::Green);
       $xor-> text_out( $i, 0, 0);
       $xor-> end_paint;
+
       $xx-> combine( $xor, $and);
       $self-> pointer( $xx);
    },

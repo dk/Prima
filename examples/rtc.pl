@@ -1,7 +1,4 @@
-
-use Prima::Classes;
-use Prima::Buttons;
-use Prima::ScrollBar;
+use Prima qw( Buttons ScrollBar);
 
 package UserInit;
 

@@ -1,8 +1,5 @@
 use strict;
-use Prima;
-use Prima::Buttons;
-use Prima::Classes;
-use Prima::StdBitmap;
+use Prima qw( StdBitmap Buttons);
 
 package UserInit;
 $::application = Prima::Application-> create( name => "Generic.pm");

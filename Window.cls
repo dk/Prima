@@ -55,6 +55,7 @@ object Prima::Window( Prima::Widget)
    method   int      get_window_state()              => apc_window_get_window_state;
    c_only   void     handle_event ( PEvent event);
    method   void     init( HV * profile);
+   import   SV *     notification_types();
    method   void     ok();
    c_only   Bool     process_accel( int key);
    import   SV *     profile_default ();
@@ -79,17 +80,11 @@ object Prima::Window( Prima::Widget)
    method   void     set_transparent( Bool transparent);
    method   void     set_window_state( int state)    => apc_window_set_window_state;
    c_only   void     update_sys_handle( HV * profile);
-   method   void     update_delegator();
    event    void     on_activate();
    event    void     on_deactivate();
    event    void     on_endmodal();
    event    void     on_execute();
    event    void     on_windowstate( int windowState);
-   SV * onActivate;
-   SV * onDeactivate;
-   SV * onEndModal;
-   SV * onExecute;
-   SV * onWindowState;
 # private
    Handle   nextExclModal;
    Handle   prevExclModal;

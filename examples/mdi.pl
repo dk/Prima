@@ -1,8 +1,5 @@
 use strict;
-use Prima::Classes;
-use Prima::InputLine;
-use Prima::ImageViewer;
-use Prima::MDI;
+use Prima qw( InputLine ImageViewer MDI);
 
 package Generic;
 $::application = Prima::Application-> create(name => 'mdi');
