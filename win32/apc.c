@@ -340,9 +340,11 @@ process_msg( MSG * msg)
          musClk. pending = 0;
          break;
    }
+   // absolutely unneeded syscall, we don't use CHAR messages, but -
+   // Mustdie 95 and Mustdie 98 switches kbd lamps inside TranslateMessage()
+   if ( IS_WIN95) TranslateMessage( msg);
    DispatchMessage( msg);
    kill_zombies();
-   stylus_clean();
    return true;
 }
 
@@ -2421,6 +2423,9 @@ int ctx_kb2VK[] = {
    kbF14         ,   VK_F14            ,
    kbF15         ,   VK_F15            ,
    kbF16         ,   VK_F16            ,
+   kbNumLock     ,   VK_NUMLOCK        ,
+   kbScrollLock  ,   VK_SCROLL         ,
+   kbCapsLock    ,   VK_CAPITAL        ,
    endCtx
 };
 
@@ -2430,6 +2435,13 @@ int ctx_kb2VK2[] = {
    kbEsc         ,   VK_ESCAPE         ,
    kbSpace       ,   VK_SPACE          ,
    kbEnter       ,   VK_RETURN         ,
+   endCtx
+};
+
+int ctx_kb2VK3[] = {
+   kbAltL        ,   kbAltR            ,
+   kbShiftL      ,   kbShiftR          ,
+   kbCtrlL       ,   kbCtrlR           ,
    endCtx
 };
 
