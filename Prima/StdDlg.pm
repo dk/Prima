@@ -116,6 +116,9 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
 
+   my $drives = length( Prima::Utils::query_drives_map);
+   $self-> {hasDrives} = $drives;
+
    for ( qw( defaultExt filter directory filterIndex
              createPrompt fileMustExist noReadOnly noTestFileCreate
              overwritePrompt pathMustExist showHelp openMode sorted
@@ -182,8 +185,8 @@ sub init
 
    $self->insert( DirectoryListBox =>
       name       => 'Dir',
-      origin     => [ 275, 85],
-      size       => [ 235, 243],
+      origin     => [ 275, $drives ? 85 : 25],
+      size       => [ 235, $drives ? 243 : 303],
       path       => $self-> { directory},
       delegations=> [qw(Change)],
    );
@@ -194,7 +197,7 @@ sub init
       name       => 'Drive',
       drive      => $self-> Dir-> path,
       delegations=> [qw(Change)],
-   );
+   ) if $drives;
 
    $self->insert( Label=>
       origin    => [ 275, 375],
@@ -208,7 +211,7 @@ sub init
       size      => [ 235, 25],
       text   => '~Drives',
       focusLink => $self-> Drive,
-   );
+   ) if $drives;
 
    $self->insert( Button=>
       origin  => [ 524, 350],
@@ -235,9 +238,11 @@ sub init
    $self-> Name-> current(1);
    $self-> Name-> select_all;
    $self-> {curpaths} = {};
-   for ( @{$self-> Drive-> items}) { $self->{curpaths}->{lc $_} = $_}
-   $self->{curpaths}->{lc $self-> Drive-> drive} = $self-> Dir-> path;
-   $self->Drive-> {lastDrive} = $self->Drive-> drive;
+   if ( $drives) {
+      for ( @{$self-> Drive-> items}) { $self->{curpaths}->{lc $_} = $_}
+      $self->{curpaths}->{lc $self-> Drive-> drive} = $self-> Dir-> path;
+      $self->Drive-> {lastDrive} = $self->Drive-> drive;
+   }
    return %profile;
 }
 
@@ -502,7 +507,7 @@ sub directory
 {
    return $_[0]->Dir->path unless $#_;
    $_[0]->Dir->path($_[1]);
-   $_[0]->Drive->text( $_[0]->Dir->path);
+   $_[0]->Drive->text( $_[0]->Dir->path) if $_[0]-> {hasDrives};
 }
 
 sub fileName
@@ -596,14 +601,16 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
    my $j;
+   my $drives = length( Prima::Utils::query_drives_map);
+   $self-> {hasDrives} = $drives;
 
    for ( qw( showHelp directory
    )) { $self->{$_} = $profile{$_} }
 
    $self-> insert( DirectoryListBox =>
-      origin   => [ 10, 40],
+      origin   => [ 10, $drives ? 40 : 10],
       width    => 200,
-      height   => 160,
+      height   => $drives ? 160 : 190,
       name     => 'Dir',
       current  => 1,
       path     => $self-> { directory},
@@ -624,7 +631,7 @@ sub init
       width  => 200,
       name   => 'Drive',
       delegations => [qw(Change)],
-   );
+   ) if $drives;
 
    $self-> insert( Button =>
       origin  => [ 226, 164],
@@ -650,9 +657,11 @@ sub init
    ) if $self->{showHelp};
 
    $self-> {curpaths} = {};
-   for ( @{$self-> Drive-> items}) { $self->{curpaths}->{lc $_} = $_}
-   $self->{curpaths}->{lc $self-> Drive-> drive} = $self-> Dir-> path;
-   $self->Drive-> {lastDrive} = $self->Drive-> drive;
+   if ( $drives) {
+      for ( @{$self-> Drive-> items}) { $self->{curpaths}->{lc $_} = $_}
+      $self->{curpaths}->{lc $self-> Drive-> drive} = $self-> Dir-> path;
+      $self->Drive-> {lastDrive} = $self->Drive-> drive;
+   }
 
    return %profile;
 }
@@ -703,7 +712,7 @@ sub directory
 {
    return $_[0]->Dir->path unless $#_;
    $_[0]-> Dir->path($_[1]);
-   $_[0]-> Drive->text( $_[0]->Dir->path);
+   $_[0]-> Drive->text( $_[0]->Dir->path) if $_[0]-> {hasDrives};
 }
 
 sub showHelp         { ($#_)? shift->raise_ro('showHelp')  : return $_[0]->{showHelp} };
