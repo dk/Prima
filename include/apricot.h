@@ -124,6 +124,7 @@ extern void *
 reallocf(void *ptr, size_t size);
 #endif
 
+
 typedef I32 Bool;
 typedef UV Handle;
 typedef Handle ApiHandle;
@@ -134,51 +135,6 @@ typedef long Color;
 typedef U8                     Byte;
 typedef I16                    Short;
 typedef I32                    Long;
-
-typedef struct _DelegatedMessages_ {
-   unsigned dmCreate             : 1;
-   unsigned dmDestroy            : 1;
-   unsigned dmPostMessage        : 1;
-   unsigned dmTick               : 1;
-   unsigned dmChange             : 1;
-   unsigned dmClick              : 1;
-   unsigned dmClose              : 1;
-   unsigned dmColorChanged       : 1;
-   unsigned dmDisable            : 1;
-   unsigned dmDragDrop           : 1;
-   unsigned dmDragOver           : 1;
-   unsigned dmEnable             : 1;
-   unsigned dmEndDrag            : 1;
-   unsigned dmEnter              : 1;
-   unsigned dmFontChanged        : 1;
-   unsigned dmHide               : 1;
-   unsigned dmHint               : 1;
-   unsigned dmKeyDown            : 1;
-   unsigned dmKeyUp              : 1;
-   unsigned dmLeave              : 1;
-   unsigned dmMenu               : 1;
-   unsigned dmMouseClick         : 1;
-   unsigned dmMouseDown          : 1;
-   unsigned dmMouseUp            : 1;
-   unsigned dmMouseMove          : 1;
-   unsigned dmMouseWheel         : 1;
-   unsigned dmMouseEnter         : 1;
-   unsigned dmMouseLeave         : 1;
-   unsigned dmMove               : 1;
-   unsigned dmPaint              : 1;
-   unsigned dmPopup              : 1;
-   unsigned dmSetup              : 1;
-   unsigned dmShow               : 1;
-   unsigned dmSize               : 1;
-   unsigned dmTranslateAccel     : 1;
-   unsigned dmZOrderChanged      : 1;
-   unsigned dmActivate           : 1;
-   unsigned dmDeactivate         : 1;
-   unsigned dmExecute            : 1;
-   unsigned dmEndModal           : 1;
-   unsigned dmWindowState        : 1;
-   unsigned dmHelp               : 1;
-} DelegatedMessages;
 
 typedef struct _RGBColor
 {
@@ -383,20 +339,25 @@ NT(Single)
 NT(Multiple)
 #define ntEvent          0x4
 NT(Event)
+#define ntFluxNormal     0x0
+NT(FluxNormal)
+#define ntFluxReverse    0x8
+NT(FluxReverse)
 #define ntSMASK         ntMultiple | ntEvent
 NT(SMASK)
-#define ntDefault       ntPrivateFirst | ntMultiple
+#define ntDefault       ntPrivateFirst | ntMultiple | ntFluxReverse
 NT(Default)
-#define ntProperty      ntPrivateFirst | ntSingle
+#define ntProperty      ntPrivateFirst | ntSingle   | ntFluxNormal
 NT(Property)
-#define ntRequest       ntPrivateFirst | ntEvent
+#define ntRequest       ntPrivateFirst | ntEvent    | ntFluxNormal
 NT(Request)
-#define ntNotification  ntCustomFirst  | ntMultiple
+#define ntNotification  ntCustomFirst  | ntMultiple | ntFluxReverse
 NT(Notification)
-#define ntAction        ntCustomFirst  | ntSingle
+#define ntAction        ntCustomFirst  | ntSingle   | ntFluxReverse
 NT(Action)
-#define ntCommand       ntCustomFirst  | ntEvent
+#define ntCommand       ntCustomFirst  | ntEvent    | ntFluxReverse
 NT(Command)
+
 END_TABLE(nt,UV)
 #undef NT
 
@@ -1014,9 +975,6 @@ notify_perl( Handle self, char *methodName, const char *format, ...);
 extern SV*
 cv_call_perl( SV * mate, SV * coderef, const char *format, ...);
 
-extern SV*
-delegate_sub( Handle self, char * methodName, const char *format, ...);
-
 extern Handle
 Object_create( char * className, HV * profile);
 
@@ -1144,7 +1102,7 @@ plist_destroy( PList self);
 extern int
 list_add( PList self, Handle item);
 
-extern void
+extern int
 list_insert_at( PList self, Handle item, int pos);
 
 extern Handle
@@ -1273,6 +1231,7 @@ END_TABLE(dt,UV)
 
 /* system-independent object option flags */
 typedef struct _ObjectOptions_ {
+   unsigned optcmDestroy           : 1;   /* Component */
    unsigned optInDraw              : 1;   /* Drawable */
    unsigned optInDrawInfo          : 1;
    unsigned optTextOutBaseLine     : 1;
