@@ -160,6 +160,7 @@ typedef struct _FontFlags {
    unsigned sloppy           : 1;
    unsigned disabled         : 1;
    unsigned funky            : 1;
+   unsigned heights_cache    : 1;
 } FontFlags;
 
 typedef struct _FontInfo {
@@ -171,6 +172,7 @@ typedef struct _FontInfo {
    char        *xname;
    short int    name_offset;
    short int    info_offset;
+   int          heights_cache[2];
 } FontInfo, *PFontInfo;
 
 typedef struct _RotatedFont {
@@ -361,6 +363,7 @@ typedef struct {
 #define FXA_AVERAGE_WIDTH   guts. atoms[ AI_FXA_AVERAGE_WIDTH]
 #define FXA_CHARSET_REGISTRY guts. atoms[ AI_FXA_CHARSET_REGISTRY]
 #define FXA_CHARSET_ENCODING guts. atoms[ AI_FXA_CHARSET_ENCODING]
+#define FXA_CAP_HEIGHT XA_CAP_HEIGHT
 #define CREATE_EVENT guts. atoms[ AI_CREATE_EVENT]
 #define WM_DELETE_WINDOW guts. atoms[ AI_WM_DELETE_WINDOW]
 #define WM_PROTOCOLS guts. atoms[ AI_WM_PROTOCOLS]
@@ -415,6 +418,7 @@ typedef struct _UnixGuts
    Font                         default_widget_font;
    Font                         default_msg_font;
    Font                         default_caption_font;
+   int                          no_scaled_fonts;
    /* Resource management */
    XrmDatabase                  db;
    XrmQuark                     qBackground;
@@ -880,6 +884,8 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 
 extern void
 prima_free_rotated_entry( PCachedFont f);
+
+#define frUnix_int 1000 
 
 extern int
 unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);

@@ -214,6 +214,9 @@ apc_fetch_resource( const char *className, const char *name,
          case frFont:
             prima_font_pp2font( s, ( Font *) result);
             break;
+         case frUnix_int:
+            *((int*)result) = atoi( s);
+            break;
          default:
             return false;
          }

@@ -1601,7 +1601,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    }  
    SHIFT( x, y);
 
-   if ( PDrawable( self)-> font. direction != 0 || 1) {
+   if ( PDrawable( self)-> font. direction != 0) {
       Bool ret = gp_text_out_rotated( self, text, x, y, len, utf8);
       if ( utf8) free(( char *) text);
       return ret;
@@ -1748,12 +1748,9 @@ apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
    PFontABC abc;
    if ( self) {
       DEFXX;
-      XFontStruct *fs;
       if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
-      fs = XQueryFont( DISP, XX-> font-> id);
-      if (!fs) return nil;
-      abc = prima_xfont2abc( fs, firstChar, lastChar);
-      XFreeFontInfo( nil, fs, 1);
+      if (!XX-> font) return nil;
+      abc = prima_xfont2abc( XX-> font-> fs, firstChar, lastChar);
    } else
       abc = prima_xfont2abc( guts. font_abc_nil_hack, firstChar, lastChar);
    return abc;
@@ -1766,8 +1763,8 @@ apc_gp_get_font_ranges( Handle self, int * count)
    unsigned long * ret = nil;
    XFontStruct * fs;
    if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
-   fs = XQueryFont( DISP, XX-> font-> id);
-   if (!fs) return nil;
+   if (!XX-> font) return nil;
+   fs = XX-> font-> fs;
    *count = (fs-> max_byte1 - fs-> min_byte1 + 1) * 2;
    if (( ret = malloc( sizeof( unsigned long) * ( *count)))) {
       int i;
@@ -1775,7 +1772,6 @@ apc_gp_get_font_ranges( Handle self, int * count)
          ret[(i - fs-> min_byte1) * 2 + 0] = i * 256 + fs-> min_char_or_byte2;
          ret[(i - fs-> min_byte1) * 2 + 1] = i * 256 + fs-> max_char_or_byte2;
       }
-      XFreeFontInfo( nil, fs, 1);
    }
    return ret;
 }
@@ -1885,6 +1881,7 @@ gp_get_text_width( Handle self, const char *text, int len, Bool addOverhang, Boo
    int ret;
    
    if ( !XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
+   if ( !XX-> font) return 0;
    ret = wide ? 
       XTextWidth16( XX-> font-> fs, ( XChar2b *) text, len) :
       XTextWidth  ( XX-> font-> fs, (char*) text, len);
@@ -1919,13 +1916,15 @@ gp_get_text_box( Handle self, const char * text, int len, Bool wide)
 
    if ( !XX-> font) 
       apc_gp_set_font( self, &PDrawable( self)-> font);
+   if ( !XX-> font) 
+      return nil;
    
    x = wide ? 
       XTextWidth16( XX-> font-> fs, ( XChar2b*) text, len) :
       XTextWidth( XX-> font-> fs, (char*)text, len);
    ovx = gp_get_text_overhangs( self, text, len, wide);
 
-   pt[0].y = pt[2]. y = XX-> font-> font. ascent;
+   pt[0].y = pt[2]. y = XX-> font-> font. ascent - 1;
    pt[1].y = pt[3]. y = - XX-> font-> font. descent;
    pt[4].y = 0;
    pt[4].x = x;

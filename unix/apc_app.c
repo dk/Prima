@@ -158,6 +158,7 @@ window_subsystem_init( void)
       "Submenudelay.submenudelay."
       "Scrollfirst.scrollfirst."
       "Scrollnext.scrollnext";
+
    char * atom_names[AI_count] = {
       "RESOLUTION_X",
       "RESOLUTION_Y",

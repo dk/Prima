@@ -1628,9 +1628,9 @@ sub get_text_box
    
    my $w = $self-> get_text_width( $text, $len);
    my @ret = (
-      -$ovxa,      $self-> {font}-> {ascent},
+      -$ovxa,      $self-> {font}-> {ascent} - 1,
       -$ovxa,     -$self-> {font}-> {descent}, 
-      $w - $ovxb,  $self-> {font}-> {ascent},
+      $w - $ovxb,  $self-> {font}-> {ascent} - 1,
       $w - $ovxb, -$self-> {font}-> {descent},
       $w, 0
    );

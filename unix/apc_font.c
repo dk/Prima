@@ -200,6 +200,8 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
    int style = 0;    /* must become 2 if we know it */
    int vector = 0;   /* must become 5, or 3 if we know it */
 
+   info-> flags. sloppy = true;
+
    /*
     * The code below tries to deduce several values from the name
     * of a font, which cannot be relied upon (as specified by XLFD).
@@ -449,6 +451,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
                 char pattern[ 1024], *pat = pattern;
                 int dash = 0;
                 info-> font. vector = true;
+                if ( guts. no_scaled_fonts) info-> flags. disabled = true;
                 info-> flags. bad_vector = (vector == 3);
 
                 c = xlfd_name;
@@ -541,6 +544,9 @@ prima_init_font_subsystem( void)
    }
 
    encodings = hash_create();
+
+   apc_fetch_resource( "Prima", "", "Noscaledfonts", "noscaledfonts", 
+      nilHandle, frUnix_int, &guts. no_scaled_fonts); 
 
    for ( i = 0, j = 0; i < count; i++) {
       if ( xlfd_parse_font( names[i], info + j, true)) {
@@ -833,6 +839,97 @@ add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s, 
    return true;
 }
 
+#define MAX_HGS_SIZE 5
+
+typedef struct
+{
+   int sp;
+   int locked;
+   int target;
+   int xlfd[MAX_HGS_SIZE];
+   int prima[MAX_HGS_SIZE];
+} HeightGuessStack;
+
+static void
+init_try_height( HeightGuessStack * p, int target, int firstMove )
+{
+   p-> locked = 0;
+   p-> sp     = 1;
+   p-> target = target;
+   p-> xlfd[0] = firstMove;
+}
+
+static int
+try_height( HeightGuessStack * p, int height)
+{
+   int ret = -1;
+   
+   if ( p-> locked != 0) return p-> locked;
+   if ( p-> sp >= MAX_HGS_SIZE) goto DONT_ADVISE;
+
+   if ( p-> sp > 1) {
+      int x0 = p-> xlfd[ p-> sp - 2];
+      int x1 = p-> xlfd[ p-> sp - 1];
+      int y0 = p-> prima[ p-> sp - 2];
+      int y1 = p-> prima[ p-> sp - 1] = height;
+      int d0 = y0 - p-> target;
+      int d1 = y1 - p-> target;
+      if (( d0 < 0 && d1 < 0 && d1 >= d0) || ( d0 > 0 && d1 > 0 && d1 <= d0)) { /* underflow */
+         int sp = p-> sp - 2;
+         while ( d1 == d0 && sp-- > 0) { /* not even moved */
+            x0 = p-> xlfd[ sp];
+            y0 = p-> prima[ sp];
+            d0 = y0 - p-> target;
+         }
+         if ( d1 != d0) {
+            ret = x0 + ( x1 - x0) * ( p-> target - y0) / ( y1 - y0) + 0.5;
+            if ( ret == x1 ) ret += ( d1 < 0) ? 1 : -1;
+            if ( ret < 1 ) ret = 1;
+         }
+      } else if ((( d0 < 0 && d1 > 0) || ( d0 > 0 && d1 < 0)) && ( abs(x0 - x1) > 1)) { /* overflow */
+         ret = x0 + ( x1 - x0) * ( p-> target - y0) / ( y1 - y0) + 0.5;
+         if ( ret == x0 ) ret += ( d0 < 0) ? 1 : -1; else
+         if ( ret == x1 ) ret += ( d1 < 0) ? 1 : -1;
+         if ( ret < 1 ) ret = 1;
+      }
+      /* printf("-- [%d=>%d],[%d=>%d] (%d %d)\n", x0, y0, x1, y1, d0, d1); */
+   } else {
+      if ( height > 0) /* sp == 0 */
+         ret = p-> target * p-> target / height;
+      p-> prima[ p-> sp - 1] = height;
+   }
+
+   if ( ret > 0) {
+      int i;
+      for ( i = 0; i < p-> sp; i++) 
+         if ( p-> xlfd[ i] == ret) { /* advised already? */
+            ret = -1;
+            break;
+         }
+      p-> xlfd[ p-> sp] = ret;
+   } 
+
+   p-> sp++;
+   
+DONT_ADVISE:   
+   if ( ret < 0) { /* select closest match */
+      int i, best_i = -1, best_diff = INT_MAX, diff, sp = p-> sp - 1; 
+      for ( i = 0; i < sp; i++) {
+         diff = p-> target - p-> prima[i];
+         if ( diff < 0) diff += 1000;
+         if ( best_diff > diff) {
+            best_diff = diff;
+            best_i = i;
+         }
+      }
+      if ( best_i >= 0 && p-> xlfd[best_i] != p-> xlfd[ sp - 1]) 
+         ret = p-> xlfd[best_i];
+      p-> locked = -1;
+   }
+
+   return ret;
+}
+
 static void
 detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
 {
@@ -841,23 +938,29 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
    char name[ 1024];
    FontInfo fi;
    PFontInfo of = f;
-   int height=0, size=0;
+   int height = 0, size = 0;
    FontKey key;
    Bool askedDefaultPitch;
-   
-   if ( f-> font. vector) {
-      memcpy( &fi, f, sizeof( fi));
-      f = &fi;
-   }
-   
+   HeightGuessStack hgs;
+
    if ( f-> vecname) {
-      if ( bySize) 
+      if ( bySize)
          size = font-> size * 10;
-      else
-         height = font-> height;
-   }   
-    
+      else {
+         size = font-> height * 10;
+         init_try_height( &hgs, size, f-> flags. heights_cache ? f-> heights_cache[0] : size);
+         if ( f-> flags. heights_cache)
+            size = try_height( &hgs, f-> heights_cache[1]);
+      }
+   }
+
+AGAIN:
    if ( f-> vecname) {
+      memcpy( &fi, f, sizeof( fi));
+      fi. flags. size = fi. flags. height = fi. flags. width = fi. flags. ascent =
+         fi. flags. descent = fi. flags. internalLeading = fi. flags. externalLeading = 0;
+      f = &fi;
+
       if ( f-> flags. bad_vector) {
          /* three fields */
          sprintf( name, f-> vecname, height, size, font-> width * 10);
@@ -891,62 +994,87 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       }   
    }
 
-   if ( addToCache && font) {
-      /* trust the slant part of style */
-      font-> style = f-> font. style;
-   }   
-
-   f-> font. internalLeading  = s-> max_bounds. ascent - s-> ascent;
-   f-> flags. internalLeading = true;
-
-   if ( f-> flags. sloppy || f-> font. vector) {
-      /* detailing y-resolution */
-      if ( XGetFontProperty( s, FXA_RESOLUTION_Y, &v) && v) {
-         XCHECKPOINT;
-         f-> flags. yDeviceRes = true;
-         f-> font. yDeviceRes = v;
+   if ( f-> flags. sloppy || f-> vecname) {
+      /* check first if height is o.k. */
+      f-> font. height = s-> max_bounds. ascent + s-> max_bounds. descent;
+      f-> flags. height = true;
+      if ( f-> vecname && !bySize && f-> font. height != font-> height) {
+         int h = try_height( &hgs, f-> font. height * 10);
+         /* printf("%d::%d => %d, advised %d\n", hgs.sp-1, font-> height, f-> font. height, h); */
+         if ( h > 0) {
+            if ( !of-> flags. heights_cache) {
+               of-> heights_cache[0] = font-> height * 10;
+               of-> heights_cache[1] = f-> font. height;
+            }
+            size = h;
+            goto AGAIN;
+         } 
       }
+      
+      /* detailing y-resolution */
+      if ( !f-> flags. yDeviceRes) {
+         if ( XGetFontProperty( s, FXA_RESOLUTION_Y, &v) && v) {
+            XCHECKPOINT;
+            f-> font. yDeviceRes = v;
+         } else {
+            f-> font. yDeviceRes = 72;
+         }
+         f-> flags. yDeviceRes = true;
+      }
+      
       /* detailing x-resolution */
-      if ( XGetFontProperty( s, FXA_RESOLUTION_X, &v) && v) {
-         XCHECKPOINT;
+      if ( !f-> flags. xDeviceRes) {
+         if ( XGetFontProperty( s, FXA_RESOLUTION_X, &v) && v) {
+            XCHECKPOINT;
+            f-> font. xDeviceRes = v;
+         } else {
+            f-> font. xDeviceRes = 72;
+         }
          f-> flags. xDeviceRes = true;
-         f-> font. xDeviceRes = v;
+      }
+
+      /* detailing internal leading */
+      if ( !f-> flags. internalLeading) {
+         if ( XGetFontProperty( s, FXA_CAP_HEIGHT, &v) && v) {
+            XCHECKPOINT;
+            f-> font. internalLeading = s-> max_bounds. ascent - v;
+         } else {
+            if ( f-> flags. height) { 
+               f-> font. internalLeading = s-> max_bounds. ascent + s-> max_bounds. descent - f-> font. height;
+            } else if ( f-> flags. size) {
+               f-> font. internalLeading = s-> max_bounds. ascent + s-> max_bounds. descent - 
+                  ( f-> font. size * f-> font. yDeviceRes) / 72.27 + 0.5;
+            } else {
+               f-> font. internalLeading = 0;
+            }
+         }
+         f-> flags. internalLeading = true;
       }
 
       /* detailing point size and height */
       if ( bySize) {
-         f-> font. height = s-> max_bounds. ascent + s-> max_bounds. descent;
-         f-> font. size = size / 10; 
+         if ( f-> vecname)
+            f-> font. size = size / 10;
+         else if ( !f-> flags. size)
+            f-> font. size = font-> size;
       } else {
-         if ( height == 0) 
-            f-> font. height = height = s-> max_bounds. ascent + s-> max_bounds. descent;
-         if ( XGetFontProperty( s, FXA_POINT_SIZE, &v) && v) {
-            XCHECKPOINT;
-            f-> font. size = ( v < 10) ? 1 : ( v / 10);
-         } else
-            f-> font. size = ( f-> font. height - f-> font. internalLeading) * 72.27 / guts. resolution. y + 0.5;
-         f-> font. height = height;
+
+         if ( f-> vecname && f-> font. height < font-> height) { /* adjust anyway */
+            f-> font. internalLeading += font-> height - f-> font. height;
+            f-> font. height = font-> height;
+         }
+
+         if ( !f-> flags. size) {
+            if ( XGetFontProperty( s, FXA_POINT_SIZE, &v) && v) {
+               XCHECKPOINT;
+               f-> font. size = ( v < 10) ? 1 : ( v / 10);
+            } else 
+               f-> font. size = ( f-> font. height - f-> font. internalLeading) * 72.27 / f-> font. height + 0.5;
+         }
       }
-      f-> flags. height = true;
       f-> flags. size = true;
-      of-> flags. sloppy = false;
-      f-> flags. maximalWidth = false;
-   } 
 
-   if ( addToCache && font) {
-      /* detailing stuff */
-      int underlinePos = 0, underlineThickness = 1;
-
-      if ( !f-> flags. xDeviceRes) {
-         f-> font. xDeviceRes = guts. resolution. x;
-         f-> flags. xDeviceRes = true;
-      }   
-
-      if ( !f-> flags. yDeviceRes) {
-         f-> font. yDeviceRes = guts. resolution. y;
-         f-> flags. yDeviceRes = true;
-      } 
-
+      /* misc stuff */
       f-> flags. resolution      = true;
       f-> font. resolution       = f-> font. yDeviceRes * 0x10000 + f-> font. xDeviceRes;
       f-> flags. ascent          = true;
@@ -962,10 +1090,11 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       f-> flags. direction       = true;
       f-> font.  direction       = 0;
       f-> flags. externalLeading = true;
-      f-> font.  externalLeading = s-> ascent + s-> descent - f-> font. height;
+      f-> font.  externalLeading = abs( s-> max_bounds. ascent - s-> ascent) + 
+                                   abs( s-> max_bounds. descent - s-> descent);
 
       /* detailing width */
-      if ( f-> font. width == 0) {
+      if ( f-> font. width == 0 || !f-> flags. width) {
          if ( XGetFontProperty( s, FXA_AVERAGE_WIDTH, &v) && v) {
             XCHECKPOINT;
             f-> font. width = v / 10;
@@ -995,7 +1124,16 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
          } else 
             f-> font. width = f-> font. maximalWidth = s-> max_bounds. width;
       }
-      
+      of-> flags. sloppy = false;
+   } 
+
+   if ( addToCache && font) {
+      /* detailing stuff */
+      int underlinePos = 0, underlineThickness = 1;
+
+      /* trust the slant part of style */
+      font-> style = f-> font. style;
+
       /* detailing underline things */
       if ( XGetFontProperty( s, XA_UNDERLINE_POSITION, &v) && v) {
          XCHECKPOINT;
@@ -1038,8 +1176,11 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
    }
 }
 
+#define QUERYDIFF_BY_SIZE        (-1)
+#define QUERYDIFF_BY_HEIGHT      (-2)
+
 static double 
-query_diff( PFontInfo fi, PFont f, char * lcname, Bool by_size)
+query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 {
    double diff = 0.0;
    int enc_match = 0;
@@ -1089,13 +1230,20 @@ query_diff( PFontInfo fi, PFont f, char * lcname, Bool by_size)
       }   
    } else {   
       int a, b;
-      if ( by_size) {
+      switch ( selector) {
+      case QUERYDIFF_BY_SIZE:
          a = fi-> font. size;
          b = f-> size;
-      } else {
+         break;
+      case QUERYDIFF_BY_HEIGHT:
          a = fi-> font. height;
          b = f-> height;
-      }  
+         break;
+      default:
+         a = fi-> font. height;
+         b = fi-> flags. sloppy ? selector : f-> height;
+         break;
+      }
       if ( a > b) {
          if ( have_vector_fonts) diff += 1000000.0;
          diff += 600.0; 
@@ -1149,17 +1297,20 @@ query_diff( PFontInfo fi, PFont f, char * lcname, Bool by_size)
    return diff;
 }   
 
+
 Bool
 apc_font_pick( Handle self, PFont source, PFont dest)
 {
    PFontInfo info = guts. font_info;
-   int i, n = guts. n_fonts, pickCount = 0, index = -1, lastIndex = -1;
+   int i, n = guts. n_fonts, index, lastIndex;
    Bool by_size = Drawable_font_add( self, source, dest);
-   double minDiff = INT_MAX, lastDiff = INT_MAX;
+   int query_type = by_size ? QUERYDIFF_BY_SIZE : QUERYDIFF_BY_HEIGHT;
+   double minDiff, lastDiff;
    char lcname[ 256];
    Bool underlined = dest-> style & fsUnderlined;
    Bool struckout  = dest-> style & fsStruckOut;
    int  direction  = dest-> direction;
+   HeightGuessStack hgs;
 
    if ( n == 0) return false;
   
@@ -1169,8 +1320,8 @@ apc_font_pick( Handle self, PFont source, PFont dest)
       dest-> direction = direction;
       return true;
    }
- 
-   /* 
+
+   /*
    if ( by_size) {
       printf("reqS:%d.[%d]{%d}(%d).%s/%s\n", dest-> size, dest-> height, dest-> style, dest-> pitch, dest-> name, dest-> encoding);
    } else {
@@ -1181,12 +1332,16 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    if ( !hash_fetch( encodings, dest-> encoding, strlen( dest-> encoding)))
       dest-> encoding[0] = 0;
 
+   if ( !by_size) init_try_height( &hgs, dest-> height, dest-> height);
+
    strlwr( lcname, dest-> name);
 AGAIN:   
+   index = lastIndex = -1;
+   lastDiff = minDiff = INT_MAX;
    for ( i = 0; i < n; i++) {
       double diff;
       if ( info[i]. flags. disabled) continue;
-      diff = query_diff( info + i, dest, lcname, by_size);
+      diff = query_diff( info + i, dest, lcname, query_type);
       if ( diff < minDiff) {
          lastIndex = index;
          index = i;
@@ -1200,23 +1355,20 @@ AGAIN:
 
    /*
     printf( "#0: %d (%g): %s\n", i, minDiff, info[i].xname); 
-    printf("pick:%d.[%d]{%d}.%s\n", info[i].font. height, info[i].font. size, info[i].font. style, info[i].font. name);
-   */
-   
-   if ( info[ i]. flags. sloppy && pickCount++ < 20) { 
+    printf("pick:%d.[%d]{%d}%s%s.%s\n", info[i].font. height, info[i].font. size, info[i].font. style, info[i].flags.sloppy?"S":"", info[i].vecname?"V":"", info[i].font. name);
+    */
+    
+   if ( !by_size && info[ i]. flags. sloppy && !info[ i]. vecname) {
       detail_font_info( info + i, dest, false, by_size); 
       if ( minDiff < query_diff( info + i, dest, lcname, by_size)) {
-         minDiff = lastDiff = INT_MAX;
-         index = -1;
-         goto AGAIN;
+         int h = try_height( &hgs, info[i]. font. height);
+         if ( h > 0) {
+            query_type = h;
+            goto AGAIN;
+         }
       }
    } 
 
-   /*
-     printf( "took diff %f after %d steps out of %d\n", minDiff, pickCount, n); 
-      if ( lastIndex >= 0)
-         printf( "#1: %d (%g): %s %d\n", lastIndex, lastDiff, info[lastIndex]. xname, info[lastIndex]. font. vector);
-   */
    detail_font_info( info + index, dest, true, by_size);
 
    if ( underlined) dest-> style |= fsUnderlined;
@@ -1239,8 +1391,8 @@ spec_fonts( int *retCount)
 
    *retCount = 0;
    defaultFont. width  = 0;
-   defaultFont. height = 10;
-   defaultFont. size   = 0;
+   defaultFont. height = 0;
+   defaultFont. size   = 10;
    
   
    if ( !( hash = hash_create())) {
@@ -1281,8 +1433,10 @@ spec_fonts( int *retCount)
          return nil;
       }
 
+      /*
       if ( info[i]. flags. sloppy) 
-         detail_font_info( info + i, &defaultFont, false, false);
+         detail_font_info( info + i, &defaultFont, false, true);
+       */
       *fm = info[i]. font;
      
       { /* multi-encoding format */
@@ -1376,12 +1530,14 @@ apc_fonts( Handle self, const char *facename, const char * encoding, int *retCou
    }
    
    defaultFont. width  = 0;
-   defaultFont. height = 10;
-   defaultFont. size   = 0;
+   defaultFont. height = 0;
+   defaultFont. size   = 10;
       
    for ( i = 0; i < n_table; i++) {
-      if ( table[i]-> flags. sloppy) 
-         detail_font_info( table[i], &defaultFont, false, false);
+      /*
+      if ( table[i]-> flags. sloppy)
+         detail_font_info( table[i], &defaultFont, false, true);
+       */
       fmtx[i] = table[i]-> font;
    }   
    free( table);
@@ -1479,8 +1635,8 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
    
    while ( direction < 0) direction += 3600;
    direction %= 3600;
-/*   if ( direction == 0)
-      return false;*/
+   if ( direction == 0)
+      return false;
 
    /* finding record for given direction */
    while (*pr) {
@@ -1620,7 +1776,7 @@ FAILED:
       /* getting glyph bits */
       ximage = XGetImage( DISP, r-> arena, 0, 0, r-> orgBox. x, r-> orgBox. y, 1, XYPixmap); 
       if ( !ximage) {
-         warn("Can't get image");
+         warn("Can't get image %dx%d", r-> orgBox.x, r-> orgBox.y);
          return false;
       }   
       XCHECKPOINT;
