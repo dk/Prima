@@ -336,7 +336,7 @@ mechanism, which allows handling events using several different schemes.
 An event is a condition, caused by the system or the user, or an explicit notify()
 call. The formerly described events,
 onCreate and onDestroy are triggered after a new object 
-creates or before it gets  destroyed - these two events, along with
+creates or before it gets destroyed - these two events, along with
 onPostMessage ( which is described later ) are intrinsic to all
 Prima toolkit objects. New classes can register their own events
 and define their execution flow, using notification_types() method.
