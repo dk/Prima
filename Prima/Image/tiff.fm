@@ -1,0 +1,169 @@
+# VBForm version file=1.2 builder=0.2
+# [preload] Prima::ComboBox
+sub
+{
+	return (
+	'Label1' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
+		profile => {
+			owner => 'Form1',
+			text => 'Text field',
+			focusLink => 'TextSelector',
+			origin => [ 10, 174],
+			name => 'Label1',
+			size => [ 230, 30],
+	}},
+	'Form1' => {
+		class   => 'Prima::Window',
+		module  => 'Prima::Classes',
+		parent => 1,
+		code => Prima::VB::VBLoader::GO_SUB(''),
+		profile => {
+			left => 395,
+			width => 497,
+			origin => [ 395, 385],
+			name => 'Form1',
+			bottom => 385,
+			height => 213,
+			size => [ 497, 213],
+			sizeDontCare => 0,
+			text => 'TIFF filter',
+			originDontCare => 0,
+			centered => 1,
+	}},
+	'TextSelector' => {
+		class   => 'Prima::ComboBox',
+		module  => 'Prima::ComboBox',
+		profile => {
+			owner => 'Form1',
+			text => '',
+			style => cs::DropDownList,
+			origin => [ 10, 141],
+			name => 'TextSelector',
+			onChange => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
+my $old = $self-> {OLDFOCUSEDITEM};
+$old = $self-> List-> get_items(0) unless defined $old;
+my $new = $self-> text;
+my $o = $self-> owner;
+if ( $new ne $old) {
+   $self-> {OLDFOCUSEDITEM} = $new;
+   $o-> {TextFields}-> {$old} = $o-> TextField-> text;
+   $new = $o-> {TextFields}-> {$new};
+   $new = \'\' unless defined $new;
+   $o-> TextField-> text( $new);   
+}
+','TextSelector', 'onChange'),
+			items => ['Artist', 'Copyright', 'DateTime', 'DocumentName', 'HostComputer', 'ImageDescription', 'Make', 'Model', 'PageName', 'Software', ],
+			size => [ 230, 30],
+	}},
+	'TextField' => {
+		class   => 'Prima::Edit',
+		module  => 'Prima::Edit',
+		profile => {
+			owner => 'Form1',
+			onMouseClick => Prima::VB::VBLoader::GO_SUB('my ($self, $btn, $mod, $x, $y, $dblclk) = @_;
+','TextField', 'onMouseClick'),
+			text => '',
+			origin => [ 10, 10],
+			name => 'TextField',
+			size => [ 230, 119],
+	}},
+	'Label2' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
+		profile => {
+			owner => 'Form1',
+			focusLink => 'Compression',
+			text => '~Compression',
+			origin => [ 255, 174],
+			name => 'Label2',
+			size => [ 230, 30],
+	}},
+	'Compression' => {
+		class   => 'Prima::ComboBox',
+		module  => 'Prima::ComboBox',
+		profile => {
+			owner => 'Form1',
+			text => '',
+			style => cs::DropDownList,
+			origin => [ 255, 141],
+			name => 'Compression',
+			size => [ 230, 30],
+	}},
+	'Label3' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
+		profile => {
+			owner => 'Form1',
+			focusLink => 'XResolution',
+			text => '~Resolution',
+			origin => [ 255, 96],
+			name => 'Label3',
+			size => [ 230, 30],
+	}},
+	'XResolution' => {
+		class   => 'Prima::SpinEdit',
+		module  => 'Prima::Sliders',
+		profile => {
+			owner => 'Form1',
+			min => 10,
+			value => 1200,
+			max => 100000,
+			origin => [ 254, 62],
+			name => 'XResolution',
+			size => [ 68, 22],
+			step => 100,
+	}},
+	'YResolution' => {
+		class   => 'Prima::SpinEdit',
+		module  => 'Prima::Sliders',
+		profile => {
+			owner => 'Form1',
+			min => 10,
+			value => 1200,
+			max => 100000,
+			origin => [ 335, 62],
+			name => 'YResolution',
+			size => [ 68, 22],
+			step => 100,
+	}},
+	'ResolutionUnit' => {
+		class   => 'Prima::ComboBox',
+		module  => 'Prima::ComboBox',
+		profile => {
+			owner => 'Form1',
+			origin => [ 411, 62],
+			style => cs::DropDownList,
+			name => 'ResolutionUnit',
+			items => ['inch', 'centimeter', 'none', ],
+			size => [ 74, 22],
+	}},
+	'OK' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			owner => 'Form1',
+			modalResult => '1',
+			text => '~OK',
+			origin => [ 279, 10],
+			name => 'OK',
+			default => 1,
+			size => [ 96, 36],
+	}},
+	'Cancel' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			owner => 'Form1',
+			modalResult => '4',
+			text => 'Cancel',
+			origin => [ 389, 10],
+			name => 'Cancel',
+			size => [ 96, 36],
+	}},
+	);
+}
