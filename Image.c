@@ -2043,6 +2043,123 @@ Image_extract( Handle self, int x, int y, int width, int height)
    return h;
 }
 
+/*
+  divide the pixels, by whether they match color or not on two 
+  groups, F and B. Both are converted correspondingly to the settings
+  of color/backColor and rop/rop2. Possible variations:
+  rop == rop::NoOper,    pixel value remains ths same
+  rop == rop::CopyPut,   use the color value
+  rop == rop::Blackness, use black pixel
+  rop == rop::Whiteness, use white pixel
+  rop == rop::AndPut   , result is dest & color value
+  etc...
+*/   
+
+void
+Image_map( Handle self, Color color)
+{
+   Byte * d;
+   RGBColor c;   
+   int   type = var-> type, height = var-> h, i, ls;
+   int   rop[2]; 
+   RGBColor r[2];
+
+   if ( var-> data == nil) return;
+
+   rop[0] = my-> get_rop( self);
+   rop[1] = my-> get_rop2( self);
+   if ( rop[0] == ropNoOper && rop[1] == ropNoOper) return;
+
+   for ( i = 0; i < 2; i++) {
+      int not = 0;
+      
+      switch( rop[i]) {
+      case ropBlackness:
+         r[i]. r = r[i]. g = r[i]. b = 0;
+         rop[i] = ropCopyPut;
+         break;
+      case ropWhiteness:
+         r[i]. r = r[i]. g = r[i]. b = 0xff;
+         rop[i] = ropCopyPut;
+         break;
+      case ropNoOper:
+         break;   
+      default: {   
+         Color c = my-> get_color( self);
+         r[i]. r = ( c >> 16) & 0xff;
+         r[i]. g = ( c >> 8) & 0xff;
+         r[i]. b = c & 0xff;
+      }} 
+      
+      switch ( rop[i]) {
+      case ropNotPut:
+          rop[i] = ropCopyPut; not = 1; break;
+      case ropNotSrcXor:
+          rop[i] = ropXorPut; not = 1; break;    
+      case ropNotSrcAnd:
+          rop[i] = ropAndPut; not = 1; break;    
+      case ropNotSrcOr:
+          rop[i] = ropOrPut; not = 1; break;    
+      }  
+      
+      if ( not) {
+         r[i]. r = ~ r[i]. r;
+         r[i]. g = ~ r[i]. g;
+         r[i]. b = ~ r[i]. b;
+      }
+   }         
+
+   c. r = ( color >> 16) & 0xff;
+   c. g = ( color >> 8) & 0xff;
+   c. b = color & 0xff;
+   
+   my-> set_type( self, imRGB);
+
+   d = ( Byte * ) var-> data;
+   ls = var-> lineSize;
+   
+   while ( height--) {
+      PRGBColor data = ( PRGBColor) d;
+      for ( i = 0; i < var-> w; i++) {
+         int z = ( data-> r == c.r && data-> g == c.g && data-> b == c.b) ? 0 : 1;
+         switch( rop[z]) {
+         case ropAndPut:     
+            data-> r &= r[z]. r; data-> g &= r[z]. g; data-> b &= r[z]. b; break;
+         case ropXorPut:     
+            data-> r ^= r[z]. r; data-> g ^= r[z]. g; data-> b ^= r[z]. b; break;
+         case ropOrPut:      
+            data-> r |= r[z]. r; data-> g |= r[z]. g; data-> b |= r[z]. b; break;
+         case ropNotDestAnd: 
+            data-> r = ( ~data-> r) & r[z].r; data-> g = ( ~data-> g) & r[z].g; data-> b = ( ~data-> b) & r[z].b; break;
+         case ropNotDestOr:  
+            data-> r = ( ~data-> r) | r[z].r; data-> g = ( ~data-> g) | r[z].g; data-> b = ( ~data-> b) | r[z].b; break;
+         case ropNotDestXor: 
+            data-> r = ( ~data-> r) ^ r[z].r; data-> g = ( ~data-> g) ^ r[z].g; data-> b = ( ~data-> b) ^ r[z].b; break;
+         case ropNotAnd:     
+            data-> r = ~(data-> r & r[z].r); data-> g = ~(data-> g & r[z].g); data-> b = ~(data-> b & r[z].b); break;
+         case ropNotOr:      
+            data-> r = ~(data-> r | r[z].r); data-> g = ~(data-> g | r[z].g); data-> b = ~(data-> b | r[z].b); break;
+         case ropNotXor:     
+            data-> r = ~(data-> r ^ r[z].r); data-> g = ~(data-> g ^ r[z].g); data-> b = ~(data-> b ^ r[z].b); break;
+         case ropNoOper:     
+            break;   
+         case ropInvert:     
+            data-> r = ~r[z]. r; data-> g = ~r[z]. g; data-> b = ~r[z]. b; break;
+         default:            
+            data-> r = r[z]. r; data-> g = r[z]. g; data-> b = r[z]. b;
+         }      
+         data++;
+      }   
+      d += ls;
+   }   
+
+   if ( is_opt( optPreserveType) && var->type != type) 
+      my-> set_type( self, type);
+   else
+      my-> update_change( self);
+}   
+   
+
 #ifdef __cplusplus
 }
 #endif

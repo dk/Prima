@@ -68,6 +68,7 @@ object Prima::Image( Prima::Drawable)
    method void   init( HV * profile);
    weird  Handle load( SV *who, char *filename, PList imgInfo);
    c_only void   make_empty();
+   method void   map( Color color);
    import SV *   profile_default ();
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
    weird  Bool   save( SV *who, char *filename, PList imgInfo);
