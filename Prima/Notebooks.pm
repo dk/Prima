@@ -650,8 +650,8 @@ sub attach_to_page
       push( @{$cp}, [@rec]);
       next if $page == $self->{pageIndex};
       $_-> visible(0);
-      $_-> enabled(0);
       $_-> autoEnableChildren(0);
+      $_-> enabled(0);
    }
 }
 
