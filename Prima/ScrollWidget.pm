@@ -156,3 +156,61 @@ sub deltaY        {($#_)?$_[0]->set_deltas($_[0]->{'deltaX'},$_[1]):return $_[0]
 sub deltas        {($#_)?$_[0]->set_deltas         ($_[1], $_[2]):return ($_[0]->{'deltaX'},$_[0]->{'deltaY'}); }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::ScrollWidget - scrollable generic document widget.
+
+=head1 DESCRIPTION
+
+C<Prima::ScrollWidget> is a simple class that declares two pairs of properties,
+I<delta> and I<limit> for vertical and horizontal axes, which define a 
+a virtual document. I<limit> is the document dimension, and I<delta> is
+the current offset. 
+
+C<Prima::ScrollWidget> is a descendant of C<Prima::GroupScroller>, and, as well as its
+ascendant, provides same user navigation by two scrollbars. The scrollbars' C<partial> 
+and C<whole> properties are maintained if the document or widget extensions change.
+
+=head1 API
+
+=head2 Properties
+
+=item deltas X, Y
+
+Selects horizontal and vertical document offsets.
+
+=item deltaX INTEGER
+
+Selects horizontal document offset.
+
+=item deltaY INTEGER
+
+Selects vertical document offset.
+
+=item limits X, Y
+
+Selects horizontal and vertical document extensions.
+
+=item limitX INTEGER
+
+Selects horizontal document extension.
+
+=item limitY INTEGER
+
+Selects vertical document extension.
+ 
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::ImageViewer>, L<Prima::IntUtils>, L<Prima::ScrollBar>, F<examples/e.pl>.
+
+
+=cut

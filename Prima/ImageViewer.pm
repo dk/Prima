@@ -338,3 +338,119 @@ sub zoom         {($#_)?$_[0]->set_zoom($_[1]):return $_[0]->{zoom}}
 sub quality      {($#_)?$_[0]->set_quality($_[1]):return $_[0]->{quality}}
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::ImageViewer - standard image, icon, and bitmap viewer class.
+
+=head1 DESCRIPTION
+
+The module contains C<Prima::ImageViewer> class, which provides
+image displaying functionality, including different zoom levels.
+
+C<Prima::ImageViewer> is a descendant of C<Prima::ScrollWidget>
+and inherits its document scrolling behavior and programming interface.
+See L<Prima::ScrollWidget> for details.
+
+=head1 API
+
+=head2 Properties
+
+=over
+
+=item alignment INTEGER
+
+One of the following C<ta::XXX> constants:
+
+   ta::Left
+   ta::Center 
+   ta::Right
+
+Selects the horizontal image alignment.
+
+Default value: C<ta::Left>
+
+=item image OBJECT
+
+Selects the image object to be displayed. OBJECT can be
+an instance of C<Prima::Image>, C<Prima::Icon>, or C<Prima::DeviceBitmap> class.
+
+=item imageFile FILE
+
+Set the image FILE to be loaded and displayed. Is rarely used since does not return
+a loading success flag.
+
+=item quality BOOLEAN
+
+A boolean flag, selecting if the palette of C<image> is to be 
+copied into the widget palette, providing higher visual
+quality on paletted displays. See also L<Prima::Widget/palette>.
+
+Default value: 1
+
+=item valignment INTEGER
+
+One of the following C<ta::XXX> constants:
+
+   ta::Top
+   ta::Middle or ta::Center
+   ta::Bottom
+
+Selects the vertical image alignment.
+
+NB: C<ta::Middle> value is not equal to C<ta::Center>'s, however
+the both constants produce equal effect here.
+
+Default value: C<ta::Bottom>
+
+=item zoom INTEGER
+
+Selects zoom level for image display. The acceptable value range
+is between 0.02 and 100. The zoom value
+is rounded to fiftieth and twentieth fractionals - 
+.02, .04, .05, .06, .08, and 0.1 .
+
+Default value: 1
+
+=back
+
+=head2 Methods
+
+=over
+
+=item screen2point X, Y, [ X, Y, ... ]
+
+Performs translation of integer pairs integers as (X,Y)-points from widget coordinates 
+to pixel offset in image coordinates. Takes in account zoom level,
+image alignments, and offsets. Returns array of same length as the input.
+
+Useful for determining correspondence, for example, of a mouse event
+to a image point.
+
+The reverse function is C<point2screen>.
+
+=item point2screen   X, Y, [ X, Y, ... ]
+
+Performs translation of integer pairs as (X,Y)-points from image pixel offset
+to widget image coordinates. Takes in account zoom level,
+image alignments, and offsets. Returns array of same length as the input.
+
+Useful for detemining a screen location of an image point.
+
+The reverse function is C<screen2point>.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Image>, L<Prima::ScrollWidget>, F<examples/iv.pl>.
+
+=cut
