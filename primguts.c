@@ -1752,7 +1752,10 @@ hash_store( PHash h, const void *key, int keyLen, void *val)
 {
    HE *he;
    ksv_check;
-   if ( he) return false;
+   if ( he) {
+      HeVAL( he) = &sv_undef;
+      hv_delete_ent( h, ksv, G_DISCARD, 0);
+   }
    he = hv_store_ent( h, ksv, &sv_undef, 0);
    HeVAL( he) = ( SV *) val;
    return true;
