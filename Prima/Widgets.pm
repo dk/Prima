@@ -23,19 +23,16 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-#  Created by Dmitry Karasik <dk@plab.ku.dk>
+#  Created by Dmitry Karasik <dmitry@karasik.eu.org>
 #
 #  $Id$
 
 # contains:
 #   Panel
-#   Scroller
 
+use strict;
 use Prima::Const;
 use Prima::Classes;
-use Prima::ScrollBar;
-use strict;
-
 
 package Prima::Panel;
 use vars qw(@ISA);
@@ -100,25 +97,22 @@ sub on_paint
       return;
    }
    $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, @c3d) if $bw > 0;
-   $canvas-> text_out ( $cap,
-      ( $size[0] - $canvas-> get_text_width( $cap)) / 2,
-      ( $size[1] - $canvas-> font-> height) / 2,
-   ) if $cap;
    my ( $x, $y) = ( $bw, $bw);
    my ( $dx, $dy ) = ( $self-> {iw}, $self->{ih});
-   if ( $bw > 0) {
-      $canvas-> clipRect( $bw, $bw, $size[0] - $bw - 1, $size[1] - $bw - 1);
-      $size[0] -= $bw;
-      $size[1] -= $bw;
-   }
-   while ( $x < $size[0]) {
+   $canvas-> clipRect( $bw, $bw, $size[0] - $bw - 1, $size[1] - $bw - 1) if $bw > 0;
+   $canvas-> clear if $self-> {image}-> isa('Prima::Icon');
+   while ( $x < $size[0] - $bw) {
       $y = $bw;
-      while ( $y < $size[1]) {
+      while ( $y < $size[1] - $bw) {
          $canvas-> stretch_image( $x, $y, $dx, $dy, $self->{image});
          $y += $dy;
       }
       $x += $dx;
    }
+   $canvas-> text_out ( $cap,
+      ( $size[0] - $canvas-> get_text_width( $cap)) / 2,
+      ( $size[1] - $canvas-> font-> height) / 2,
+   ) if $cap;
 }
 
 sub set_border_width
@@ -187,134 +181,70 @@ sub zoom         {($#_)?$_[0]->set_zoom($_[1]):return $_[0]->{zoom}}
 sub borderWidth  {($#_)?$_[0]->set_border_width($_[1]):return $_[0]->{borderWidth}}
 sub raise        {($#_)?$_[0]->set_raise($_[1]):return $_[0]->{raise}}
 
-
-package Prima::Scroller;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget);
-
-# Scroller is an abstract object, so it needs on_paint to be overriden.
-# also area limits should be set through set_limits.
-
-sub profile_default
-{
-   my %d = %{$_[ 0]-> SUPER::profile_default};
-   return {
-      %d,
-      growMode           => gm::GrowHiX | gm::GrowHiY,
-      deltaX             => 0,
-      deltaY             => 0,
-      limitX             => 0,
-      limitY             => 0,
-      standardScrollBars => 0,
-   }
-}
-
-sub init
-{
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   if ( $profile{ standardScrollBars})
-   {
-      my $name = $profile{ name};
-      my @std = @Prima::ScrollBar::stdMetrics;
-      my $hsb = Prima::ScrollBar-> create(
-         name     => "HScroll",
-         owner    => $self-> owner,
-         left     => $self-> left,
-         bottom   => $self-> bottom,
-         width    => $self-> width - $std[ 1],
-         vertical => 0,
-         onChange => sub { $_[0]->owner->bring( $name)->on_scroll},
-      );
-      my $vsb = Prima::ScrollBar-> create(
-         name   => "VScroll",
-         vertical => 1,
-         owner  => $self-> owner,
-         left   => $self-> right  - $std[ 0],
-         bottom => $self-> bottom + $std[ 1],
-         height => $self-> height - $std[ 1],
-         onChange => sub { $_[0]->owner->bring( $name)->on_scroll},
-      );
-      $self-> set(
-        width  => $self-> width  - $std[ 0],
-        bottom => $self-> bottom + $std[ 1],
-        height => $self-> height - $std[ 1],
-      );
-      ( $self-> { hscroll}, $self-> { vscroll}) = ( $hsb, $vsb);
-   } else {
-      ( $self-> { hscroll}, $self-> { vscroll}) = ( undef, undef);
-   }
-   $self-> {deltaX }  = $profile{ deltaX };
-   $self-> {deltaY }  = $profile{ deltaY };
-   $self-> limits ( $profile{ limitX }, $profile{ limitY });
-   return %profile;
-}
-
-sub set_limits
-{
-   $_[0]-> {limitY} = $_[1];
-   $_[0]-> {limitX} = $_[2];
-   $_[0]-> reset_scrolls;
-}
-
-sub set_delta
-{
-   $_[0]-> {deltaY} = $_[1];
-   $_[0]-> {deltaX} = $_[2];
-   $_[0]-> reset_scrolls;
-}
-
-
-sub reset_scrolls
-{
-   my $self = $_[0];
-   my ($w, $h) = $self-> limits;
-   my ($x, $y) = $self-> size;
-   $self-> { deltaX} = $w - $x if ($self-> deltaX > $w - $x) && ( $self-> deltaX > 0);
-   if ( $self-> hscroll) {
-      $self-> hscroll-> set(
-         max     => $x < $w ? $w - $x : 0,
-         value   => $self-> deltaX,
-         partial => $x < $w ? $x : $w,
-         whole   => $w,
-      );
-      $self-> { deltaX} = $self-> hscroll-> value;
-   }
-   if ( $self-> vscroll) {
-      $self-> vscroll-> set(
-         max     => $y < $h ? $h - $y : 0,
-         value   => $self-> deltaY,
-         partial => $y < $h ? $y : $h,
-         whole   => $h,
-      );
-      $self-> { deltaY} = $self-> vscroll-> value;
-   }
-}
-
-sub on_size
-{
-  $_[0]->reset_scrolls;
-}
-
-sub on_scroll
-{
-   my $self = $_[0];
-   my $odx = $self-> deltaX;
-   my $ody = $self-> deltaY;
-   $self-> {deltaX} = $self-> hscroll-> value if $self-> hscroll;
-   $self-> {deltaY} = $self-> vscroll-> value if $self-> vscroll;
-   $self-> scroll( $odx - $self-> deltaX, $self-> deltaY - $ody);
-}
-
-
-sub vscroll { return $_[0]-> { vscroll}};
-sub hscroll { return $_[0]-> { hscroll}};
-sub limitX {($#_)?$_[0]->set_limits($_[1],$_[0]->{limitY}):return $_[0]->{'limitX'};  }
-sub limitY {($#_)?$_[0]->set_limits($_[0]->{'limitX'},$_[1]):return $_[0]->{'limitY'};  }
-sub limits {($#_)?$_[0]->set_limits         ($_[1], $_[2]):return ($_[0]->{'limitY'},$_[0]->{'limitX'});}
-sub deltaX {($#_)?$_[0]->set_delta ($_[1],$_[0]->{deltaY}):return $_[0]->{'deltaX'};  }
-sub deltaY {($#_)?$_[0]->set_delta ($_[0]->{'deltaX'},$_[1]):return $_[0]->{'deltaY'};  }
-sub delta  {($#_)?$_[0]->set_delta          ($_[1], $_[2]):return ($_[0]->{'deltaY'},$_[0]->{'deltaX'}); }
-
-
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Widgets - miscellaneous widget classes
+
+=head1 DESCRIPTION
+
+The module was designed to serve as a collection of small widget
+classes that do not group well with the other, more purposeful classes.
+The current implementation contains the only class, C<Prima::Panel>.
+
+=head1 Prima::Panel
+
+Provides a simple panel widget, capable of displaying a single line
+of centered text on a custom background. Probably this functionality
+is better to be merged into C<Prima::Label>'s.
+
+=head2 Properties
+
+=over
+
+=item borderWidth INTEGER
+
+Width of 3d-shade border around the widget.
+
+Default value: 1
+
+=item image OBJECT
+
+Selects image to be drawn as a tiled background.
+If C<undef>, the background is drawn with the background color.
+
+=item imageFile PATH
+
+Set the image FILE to be loaded and displayed. Is rarely used since does not return
+a loading success flag.
+
+=item raise BOOLEAN
+
+Style of 3d-shade border around the widget.
+If 1, the widget is 'risen'; if 0 it is 'sunken'.
+
+Default value: 1
+
+=item zoom INTEGER
+
+Selects zoom level for image display. 
+The acceptable value range is between 1 and 10. 
+
+Default value: 1
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>
+
+=cut
