@@ -39,7 +39,8 @@ my $display = "DISPLAY";
 my $wDisplay;
 
 my $i = Prima::Image-> create;
-$i-> load( 'baba.bmp');
+$i-> load( 'winnt256.gif' );
+$i-> size( 600, 600);
 
 sub paint
 {

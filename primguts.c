@@ -1126,18 +1126,18 @@ XS( boot_Prima)
       ST(0) = &sv_no; \
       XSRETURN(1); \
   }
-   TYPECHECK( uint8_t,  1);
-   TYPECHECK( int8_t,   1);
-   TYPECHECK( uint16_t, 2);
-   TYPECHECK( int16_t,  2);
-   TYPECHECK( uint32_t, 4);
-   TYPECHECK( int32_t,  4);
+   TYPECHECK( u_int8_t,  1);
+   TYPECHECK( int8_t,    1);
+   TYPECHECK( u_int16_t, 2);
+   TYPECHECK( int16_t,   2);
+   TYPECHECK( u_int32_t, 4);
+   TYPECHECK( int32_t,   4);
    TYPECHECK( void*, sizeof(Handle));
 
 #undef TYPECHECK
 #ifdef BROKEN_COMPILER
    {
-      union {uint8_t c[8];double d;} nan = {{00, 00, 00, 00, 00, 00, 0xf8, 0xff}};
+      union {u_int8_t c[8];double d;} nan = {{00, 00, 00, 00, 00, 00, 0xf8, 0xff}};
       NAN = nan. d;
    }
 #endif /* BROKEN_COMPILER */
