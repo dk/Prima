@@ -59,3 +59,118 @@ sub xcolor {
 }
 
 1;
+
+__DATA__
+
+=head1 NAME
+
+Utils - miscellanneous routines
+
+=head1 DESCRIPTION
+
+The module contains several routines, implemented in C. These
+routines can be accessed via C<Prima::Utils::> prefix.
+
+=head1 API
+
+=over
+
+=item beep [ FLAGS = mb::Error ] 
+
+Invokes the system-depended sound and/or visual bell, 
+corresponding to one of following constants:
+
+  mb::Error
+  mb::Warning
+  mb::Information
+  mb::Question
+
+=item get_gui
+
+Returns one of C<gui::XXX> constants, reflecting the graphic
+user interface used in the system:
+
+   gui::Default
+   gui::PM  
+   gui::Windows
+   gui::XLib 
+   gui::OpenLook
+   gui::Motif
+
+The meaning of the return value is somewhat vague, and
+might be deprecated in future releases.
+
+=item get_os
+
+Returns one of C<apc::XXX> constants, reflecting the platfrom.
+Currently, the list of the supported platforms is:
+
+   apc::Os2    
+   apc::Win32  
+   apc::Unix
+
+=item ceil DOUBLE
+
+Obsolete function.
+
+Returns stdlib's ceil() of DOUBLE
+
+=item floor DOUBLE
+
+Obsolete function.
+
+Returns stdlib's floor() of DOUBLE
+
+=item query_drives_map [ FIRST_DRIVE = "A:" ]
+
+Returns anonymous array to drive letters, used by the system.
+FIRST_DRIVE can be set to other value to start enumeration from.
+Some OSes can probe eventual diskette drives inside the drive enumeration
+routines, so there is a chance to increase responsiveness of the function
+it might be reasonable to set FIRST_DRIVE to C<C:> string.
+
+If the system supports no drive letters, empty array reference is returned ( unix ).
+
+=item query_drive_type DRIVE
+
+Returns one of C<dt::XXX> constants, describing the type of drive,
+where DRIVE is a 1-character string. If there is no such drive, or
+the system supports no drive letters ( unix ), C<dt::None> is returned.
+
+   dt::None
+   dt::Unknown
+   dt::Floppy
+   dt::HDD
+   dt::Network
+   dt::CDROM
+   dt::Memory
+
+=item sound [ FREQUENCY = 2000, DURATION = 100 ]
+
+Issues a tone of FREQUENCY in Hz with DURATION in milliseconds.
+
+=item username
+
+Returns the login name of the user. 
+Sometimes is preferred to the perl-provided C<getlogin> ( see L<perlfunc/getlogin> ) .
+
+=item xcolor COLOR
+
+Accepts COLOR string on one of the three formats:
+
+  #rgb
+  #rrggbb
+  #rrrgggbbb
+
+and returns 24-bit RGB integer value.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>
+

@@ -208,7 +208,7 @@ sub create_wheel
 sub create_wheel_shape
 {
    return unless $shapext;
-   my ($id, $color)   = @_;
+   my $id = $_[0];
    my $imul = 256 / $id;
    my $a = Prima::Image-> create(
       width => 256,
@@ -639,7 +639,7 @@ sub profile_default
    return {
       %sup,
       style            => cs::DropDownList,
-      height           => $sup{ entryHeight},
+      height           => $sup{ editHeight},
       value            => cl::White,
       width            => 56,
       literal          => 0,
@@ -876,4 +876,138 @@ sub colors       {($#_)?$_[0]->set_colors      ($_[1]):return $_[0]->{colors};  
 
 1;
 
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Color selection facilities
+
+=head1 DESCRIPTION
+
+The module contains two packages, C<Prima::ColorDialog> and C<Prima::ColorComboBox>,
+used as standard tools for interactive color selection. C<Prima::ColorComboBox> is
+a modified combo widget, which provides selecting from predefined palette but also can
+invoke C<Prima::ColorDialog> window.
+
+=head1 Prima::ColorDialog
+
+=head2 Properties
+
+=over
+
+=item quality BOOLEAN
+
+Used to increase visual quality of the dialog if run on paletted displays.
+
+Default value: 0
+
+=item value COLOR
+
+Selects the color, represented by the color wheel and other dialog controls.
+
+Default value: C<cl::White>
+
+=back
+
+=head2 Methods
+
+=over
+
+=item hsv2rgb HUE, SATURATION, LUMINOSITY
+
+Converts color from HSV to RGB format and returns three integer values, red, green,
+and blue components.
+
+=item rgb2hsv RED, GREEN, BLUE
+
+Converts color from RGB to HSV format and returns three numerical values, hue, saturation,
+and luminosity components.
+
+=item rgb2value RED, GREEN, BLUE
+
+Combines separate channels into single 24-bit RGB value and returns the result.
+
+=item value2rgb COLOR
+
+Splits 24-bit RGB value into three channels, red, green, and blue and returns
+three integer values.
+
+=item xy2hs X, Y, RADIUS
+
+Maps X and Y coordinate values onto a color wheel with RADIUS in pixels.
+The code uses RADIUS = 119 for mouse position coordinate mapping.
+Returns three values, - hue, saturation and error flag. If error flag
+is set, the conversion has failed.
+
+=item hs2xy HUE, SATURATION
+
+Maps hue and saturation onto 256-pixel wide color wheel, and
+returns X and Y coordinates of the corresponding point.
+
+=item create_wheel SHADES, BACK_COLOR
+
+Creates a color wheel with number of SHADES given,
+drawn on a BACK_COLOR background, and returns a C<Prima::DeviceBitmap> object.
+
+=item create_wheel_shape SHADES
+
+Creates a circular 1-bit mask, with radius derived from SHAPES.
+SHAPES must be same as passed to L<create_wheel>.
+Returns C<Prima::Image> object.
+
+=back
+
+=head2 Variables
+
+=over
+
+=item $colorWheel
+
+Contains cached result of L<create_wheel> call.
+
+=item $colorWheelShape
+
+Contains cached result of L<create_wheel_shape> call.
+
+=back
+
+=head1 Prima::ColorComboBox
+
+=head2 Events
+
+=over
+
+=item Colorify INDEX, COLOR_PTR
+
+C<nt::Action> callback, designed to map combo palette index into a RGB color.
+INDEX is an integer from 0 to L<colors> - 1, COLOR_PTR is a reference to a
+result scalar, where the notification is expected to write the resulting color.
+
+=back
+
+=head2 Properties
+
+=over
+
+=item colors INTEGER
+
+Defines amount of colors in the fixed palette of the combo box.
+
+=item value COLOR
+
+Contains the color selection as 24-bit integer value.
+
+=back
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::ComboBox>, F<examples/cv.pl>.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=cut
 
