@@ -37,6 +37,7 @@ Clipboard_init( Handle self, HV * profile)
    if ( !application) croak("RTC0020: Cannot create clipboard without application instance");
    if ( app-> clipboard) croak( "RTC0021: Attempt to create more than one clipboard instance");
    inherited init( self, profile);
+   CComponent( application)-> attach( application, self);
    if ( !apc_clipboard_create())
       croak( "RTC0022: Cannot create clipboard");
    {
@@ -50,8 +51,9 @@ Clipboard_done( Handle self)
 {
    PApplication app = ( PApplication) application;
    if ( var openCount > 0) apc_clipboard_close();
-    while( var formatCount)
+   while( var formatCount)
        my deregister_format( self, (( PClipboardFormatReg) var formats)-> id);
+   CComponent( application)-> detach( application, self, false);
    apc_clipboard_destroy();
    app-> clipboard = nilHandle;
    inherited done( self);
