@@ -46,7 +46,7 @@ use vars @ovvars = qw(
     $CC $CFLAGS $CCCDLFLAGS $CDLFLAGS $C_FLAGS $CDEBUGFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
     $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG $CLINKPREFIX
     $LD $LDFLAGS $LD_FLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
-    $LIB $LIBFLAGS $LIBOFLAG
+    $LIB $LIBOFLAG
     $OBJ_EXT $LIB_EXT $EXE_EXT $DL_EXT $SCRIPT_EXT
     @INCPATH
     @LIBPATH
@@ -505,7 +505,7 @@ sub setup_variables
                          cdebugflags => '-g -O',
                          clinkprefix => '',
                          clibpathflag => '-L',
-                         ldflags => '',
+                         ldflags => '-lgcc',
                          ldoutflag => '-o',
                          ldlibpathflag => '-L',
                          ldlibflag => '-l',
@@ -513,7 +513,6 @@ sub setup_variables
                          lddebugflags => '-g',
                          name => "GNU",
                          lib  => '',
-                         libflags => '',
                          liboflag => '',
                         },
                  emx => {
@@ -531,7 +530,6 @@ sub setup_variables
                          ldlibext  => '',
                          lddebugflags => '-g',
                          lib  => 'emxomf',
-                         libflags => '',
                          liboflag => '-o',
                          name => "EMX",
                         },
@@ -551,7 +549,6 @@ sub setup_variables
                           lddebugflags => '/DEBUG',
                           name => "Microsoft Visual C++",
                           lib  => 'lib',
-                          libflags => '-machine:386',
                           liboflag => '-out:',
                          },
                  bcc32 => {
@@ -569,7 +566,6 @@ sub setup_variables
                            ldlibext  => '',
                            lddebugflags => '-v',
                            lib  => '',
-                           libflags => '',
                            liboflag => '',
                            name => "Borland C++",
                           },
@@ -633,7 +629,6 @@ sub setup_variables
     setvar( 'LIB_EXT', $Config{ _a});
     setvar( 'EXE_EXT', $Config{ _exe});
     setvar( 'LIB',     $cc_specs{ $COMPILER}->{ lib});
-    setvar( 'LIBFLAGS', $cc_specs{ $COMPILER}->{ libflags});
     setvar( 'LIBOFLAG', $cc_specs{ $COMPILER}->{ liboflag});
 
     setvar( 'SCRIPT_EXT',
@@ -1406,7 +1401,6 @@ HEADER
   cdefs                 => [$cdefs],
   objext                => '$OBJ_EXT',
   lib                   => '$LIB',
-  libflags              => '$LIBFLAGS',
   liboutflag            => '$LIBOFLAG',
   libext                => '$LIB_EXT',
   libname               => '$cwd${ifs}$pl',
