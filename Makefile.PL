@@ -231,9 +231,9 @@ sub compile
     close TMPSRC;
 
     null_output;
-    my @cc = cc_command_line( $tmpsrc, $tmpo, $tmpexe, $compile_only || 0);
+    my @cc = grep !/^-W/i, cc_command_line( $tmpsrc, $tmpo, $tmpexe, $compile_only || 0);
     print STDERR "@cc\n";
-    my $rc = system grep { ! /^-W/i} @cc;
+    my $rc = system "@cc";
     restore_output;
     unlink $tmpsrc;
     unlink $tmpo if -w $tmpo;
@@ -281,8 +281,7 @@ sub find_lib
     local @LIBS = @LIBS;
     push @LIBS, $lib;
     foreach $libpath ( @_) {
-        local @LIBPATH = @LIBPATH;
-        push @LIBPATH, $libpath if $libpath;
+        local @LIBPATH = (@LIBPATH, $libpath) if $libpath;
         $present = compile( <<ENDP);
 int
 main()
