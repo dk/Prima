@@ -1,0 +1,83 @@
+use Types;
+
+object Drawable ( Component)
+{
+   Font        font;
+   int         w;
+   int         h;
+
+   # globals
+   method void   init( HV * profile);
+   method void   done();
+   method void   cleanup();
+   method Bool   begin_paint();
+   method Bool   begin_paint_info();
+   method void   end_paint();
+   method void   end_paint_info();
+   static Font * font_match( char * dummy, Font * source, Font * dest);
+   c_only Bool	 font_add( Font * source, Font * dest);
+   import SV *   profile_default();
+
+   # properties
+   method void   set( HV * profile);
+   method void   set_back_color( Color color)       => apc_gp_set_back_color;
+   method void   set_clip_rect( Rect clipRect)      => apc_gp_set_clip_rect;
+   method void   set_color( Color color)            => apc_gp_set_color;
+   method void   set_fill_pattern ( FillPattern pattern);
+   method void   set_fill_pattern_id ( int patternId);
+   method void   set_font( Font font);
+   method void   set_line_end( int lend)           => apc_gp_set_line_end;
+   method void   set_line_pattern( int lpattern)   => apc_gp_set_line_pattern;
+   method void   set_line_width( int lwidth)       => apc_gp_set_line_width;
+   method void   set_rop  ( int rop)               => apc_gp_set_rop;
+   method void   set_rop2 ( int rop)               => apc_gp_set_rop2;
+   method void   set_transform ( int x, int y)     => apc_gp_set_transform;
+   method void   set_text_opaque( Bool opaque)     => apc_gp_set_text_opaque;
+   method void   set_text_out_baseline ( Bool baseline);
+
+   method Color         get_back_color()                  => apc_gp_get_back_color;
+   method Rect          get_clip_rect()                   => apc_gp_get_clip_rect;
+   method Color         get_color()                       => apc_gp_get_color;
+   method FillPattern * get_fill_pattern();
+   method Font          get_font();
+   method SV *          get_font_abc();
+   method FontMetric    get_font_metrics( Font f);
+   method int           get_height();
+   method int           get_line_end()                    => apc_gp_get_line_end;
+   method int           get_line_pattern()                => apc_gp_get_line_pattern;
+   method int           get_line_width()                  => apc_gp_get_line_width;
+   method Point         get_resolution()                  => apc_gp_get_resolution;
+   method int           get_rop()                         => apc_gp_get_rop;
+   method int           get_rop2()                        => apc_gp_get_rop2;
+   method Point         get_size();
+   method int           get_text_width( char * text, int len = -1, Bool addOverhang = 0);
+   method SV *          get_text_box( char * text, int len = -1);
+   method Point         get_transform()                   => apc_gp_get_transform;
+   method Bool          get_text_opaque()                 => apc_gp_get_text_opaque;
+   method Bool          get_text_out_baseline();
+   method int           get_width();
+
+   # operators
+   method void  arc( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_arc;
+   method void  bar(int x1, int y1, int x2, int y2)        => apc_gp_bar;
+   method void  chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_chord;
+   method Color get_pixel(int x, int y)                    => apc_gp_get_pixel;
+   method void  ellipse(int x, int y, int Rx, int Ry)      => apc_gp_ellipse;
+   method void  fill_chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_fill_chord;
+   method void  fill_ellipse(int x, int y, int Rx, int Ry) => apc_gp_fill_ellipse;
+   method void  fillpoly( SV * points);
+   method void  fill_sector( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_fill_sector;
+   method void  flood_fill( int x, int y, Color color, Bool singleBorder = 1) => apc_gp_flood_fill;
+   method void  line(int x1, int y1, int x2, int y2)       => apc_gp_line;
+   method void  lines( SV * points);
+   method void  put_image(int x, int y, Handle image);
+   method void  polyline( SV * points);
+   method void  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
+                                                           => apc_gp_stretch_image;
+   method void  rectangle(int x1, int y1, int x2, int y2)  => apc_gp_rectangle;
+   method void  sector( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_sector;
+   method void  set_pixel(int x, int y, Color color)       => apc_gp_set_pixel;
+   method void  stretch_image(int x, int y, int xDest, int yDest, Handle image);
+   method void  text_out( char * text, int x, int y, int len = -1);
+   method SV*   text_wrap( char * text, int width, int options = twDefault, int tabIndent = 8, int textLen = -1);
+}
