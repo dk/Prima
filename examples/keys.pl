@@ -37,6 +37,7 @@ my $repeat    = 0;
 my $w = Prima::Window-> create(
     onDestroy => sub {$::application-> destroy},
     size => [500,250],
+    text => 'Keyboard events checker',
     menuItems => [['~Options' => [
        [ '*pp' => '~Propagate key event' => sub {
          $propagate = $propagate ? 0 : 1;

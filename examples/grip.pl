@@ -29,10 +29,9 @@ use Prima::Const;
 use Prima::Classes;
 use Prima::ImageViewer;
 
-
 package MonoDeviceBitmap;
-use vars qw( @ISA);
-@ISA = qw( Prima::DeviceBitmap);
+use vars qw(@ISA);
+@ISA = qw(Prima::DeviceBitmap);
 
 sub set_color
 {
@@ -62,6 +61,7 @@ sub canvas
        monochrome   => 1,
        preserveType => 1,
     );
+
     $i-> begin_paint;
     $i-> set(
        color      => $self-> color,
@@ -145,7 +145,7 @@ my $w = Prima::Window-> create(
       $self-> capture(0);
       if ( $cap == 1) {
          $self-> pointer( cr::Default);
-         my $v = $::application-> get_view_from_point( $self-> client_to_screen( $x, $y));
+         my $v = $::application-> get_widget_from_point( $self-> client_to_screen( $x, $y));
          return unless $v;
          my $i = canvas( $v);
          paint( $v, $i);

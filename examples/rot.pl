@@ -141,6 +141,7 @@ sub rotate {
 my $a = 1;
 my $w = Prima::Window-> create
 (
+  text => 'Rotating line',
   font => { name => 'Terminal', size => 12, },
   menuItems =>
     [[ '~Options' => [

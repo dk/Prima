@@ -159,7 +159,7 @@ sub fdopen
 sub freopen
 {
    my $self = $_[0]-> IV;
-   my $i = Image-> create;
+   my $i = Prima::Image-> create;
    if ( $i-> load( $self-> {fileName})) {
       $self-> image( $i);
       status( $_[0]);
@@ -193,6 +193,7 @@ sub fnewopen
          );
          $w-> IV-> image( $i);
          $w-> IV-> {fileName} = $f;
+         $w-> select;
          status($w);
       } else {
          Prima::MsgBox::message("Cannot load $f");

@@ -24,8 +24,9 @@
 #  SUCH DAMAGE.
 #
 use Prima;
+use Prima::MsgBox;
 
-$::application = Prima::Application-> create( name => "Tester");
+$::application = Prima::Application-> create( name => "Chess puzzle");
 
 my %figs = (
   'K' => [0,0],
@@ -51,11 +52,24 @@ my @colors = (
 );
 
 my $w = Prima::Window-> create(
-   name => 'Urof',
+   name => 'Chess puzzle',
    size => [ 300, 300],
    font => { style => fs::Bold, size => 11,},
    buffered => 1,
    onDestroy => sub { $::application-> close},
+   menuItems => [
+      ["~Help" => sub{
+          my $txt = 'Chess puzzle. Objective is to put figures so they could reach every cell upon the board';
+          Prima::MsgBox::message( $txt, mb::OK | mb::Cancel, {
+             buttons => { mb::Cancel => {
+                text => '~Solution',
+                onClick => sub {
+                   Prima::MsgBox::message('Use Ctrl + mouse doubleclick on the board ', mb::OK);
+                }
+             }}
+          });
+      }],
+   ],
    onPaint => sub {
       my $self = $_[0];
       my $i;

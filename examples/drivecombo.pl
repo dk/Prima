@@ -37,11 +37,6 @@ my $w = Prima::Window-> create(
    bottom => 300,
    width  => 250,
    height => 250,
-   menuItems => [
-      [ "~Normal" => sub {$_[0]->ComboBox1->style(cs::Simple);}],
-      [ "~Drop down" => sub {$_[0]->ComboBox1->style(cs::DropDown);}],
-      [ "~List" => sub {$_[0]->ComboBox1->style(cs::DropDownList);}],
-   ],
    onDestroy=> sub { $::application-> destroy},
 );
 
@@ -49,7 +44,6 @@ $w-> insert( DriveComboBox =>
    origin => [ 10, 10],
    width  => 200,
    name => 'ComboBox1',
-#  height => 200,
    onChange => sub { $w-> DirectoryListBox1->path( $_[0]->text); },
 );
 
@@ -60,7 +54,6 @@ $w-> insert( DirectoryListBox =>
    growMode => gm::Client,
    onChange => sub { print $_[0]-> path."\n"},
    name => 'DirectoryListBox1',
-#  path => 'w:/',
-) if 1;
+);
 
 run Prima;

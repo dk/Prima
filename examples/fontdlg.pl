@@ -295,7 +295,7 @@ $w-> insert( Button =>
            $p-> text_out( 'family              : '.$m->{family   }, 2, $sd); $sd -= $fh;
            $p-> text_out( 'face name           : '.$cachedFacename, 2, $sd); $sd -= $fh;
         },
-     );
+     )-> select;
   },
 );
 

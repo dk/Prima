@@ -81,6 +81,7 @@ sub print_sample
             paint( $canvas);
          },
       );
+      $wDisplay-> select;
       return;
    }
 
