@@ -26,14 +26,13 @@
 
 #include "apricot.h"
 #include "Icon.h"
+#include "img_conv.h"
 #include <Icon.inc>
 
 #undef  my
 #define inherited CImage->
 #define my  ((( PIcon) self)-> self)
 #define var (( PIcon) self)
-
-extern void ic_type_convert( Handle, Byte *, PRGBColor, int);
 
 void
 produce_mask( Handle self)

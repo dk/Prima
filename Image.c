@@ -35,9 +35,9 @@
 #include <limits.h>
 #include <math.h>
 #include "apricot.h"
-#include "Img.h"
 #include "Image.h"
 #include "img_api.h"
+#include "img_conv.h"
 #include <Image.inc>
 #include "Clipboard.h"
 
@@ -45,9 +45,6 @@
 #define inherited CDrawable->
 #define my  ((( PImage) self)-> self)
 #define var (( PImage) self)
-
-#include "imgtype.cinc"
-#include "imgscale.cinc"
 
 static int Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
 extern Bool read_point( AV * av, int * pt, int number, char * error);
@@ -262,7 +259,6 @@ Image_make_empty( Handle self)
    var->lineSize = 0;
    var->dataSize = 0;
    var->data     = nil;
-   var->status   = ieOK;
    my->update_change( self);
 }
 
@@ -1316,7 +1312,6 @@ Image_create_empty( Handle self, int width, int height, int type)
       memcpy( var->palette, std256gray_palette, sizeof( std256gray_palette));
       break;
    }
-   var->status = ieOK;
 }
 
 void

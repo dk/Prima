@@ -33,7 +33,6 @@ object Prima::Image( Prima::Drawable)
    int            dataSize;          #  == lineSize * h
    int            conversion;        # ictXXXX
    unsigned char *data;
-   int            status;
    ImageStats     stats;
    int            statsCache;
    Point          resolution;

@@ -29,7 +29,6 @@
 #endif
 #include "win32\win32guts.h"
 #include "Window.h"
-#include "Img.h"
 #include "img_api.h"
 #include "Icon.h"
 #include "DeviceBitmap.h"

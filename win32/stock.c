@@ -35,7 +35,6 @@
 #endif
 #include "win32\win32guts.h"
 #include <ctype.h>
-#include "Img.h"
 #include "Window.h"
 #include "Image.h"
 #include "Printer.h"

@@ -266,7 +266,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
                goto TEXT;
             }
             // log_write("%sbmp: %s %d", buf, ((PComponent)c_object)->name, kind_of( c_object, CImage));
-            if (((( PImage) c_object)-> status != 0) || ((( PImage) c_object)-> w == 0)
+            if (((( PImage) c_object)-> w == 0)
                || ((( PImage) c_object)-> h == 0))
             {
                warn("RTC0037: menu build error: invalid image passed");
@@ -594,7 +594,7 @@ AbstractMenu_set_image ( Handle self, char * varName, Handle image)
       warn("RTC0039: set_image error: invalid image passed");
       return;
    }
-   if ( i-> status != 0 || i-> w == 0 || i-> h == 0) {
+   if ( i-> w == 0 || i-> h == 0) {
       warn("RTC0039: set_image error: invalid image passed");
       return;
    }
