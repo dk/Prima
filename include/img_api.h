@@ -1,4 +1,6 @@
 /*-
+ * $Id$
+ *
  * Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
  * All rights reserved.
  *
@@ -236,6 +238,9 @@ img_push_property_value( PImgProperty imgProp, ...);
 
 extern PImgProperty
 img_duplicate_property( PImgProperty imgProp);
+
+extern Byte *
+_img_repad_data( Byte *, int, int, int);
 
 #ifdef __cplusplus
 }

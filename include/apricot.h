@@ -24,6 +24,8 @@
  * SUCH DAMAGE.
  */
 
+/* $Id$ */
+
 #ifndef _APRICOT_H_
 #define _APRICOT_H_
 
@@ -1234,6 +1236,7 @@ SvBOOL( SV *sv)
 #define pset_i( key, value)  pset_sv_noinc( key, newSViv( value))
 #define pset_f( key, value)  pset_sv_noinc( key, newSVnv( value))
 #define pset_c( key, value)  pset_sv_noinc( key, newSVpv( value, 0))
+#define pset_b( key, value, len)  pset_sv_noinc( key, newSVpv( value, ( len)))
 #define pset_H( key, value)  pset_sv_noinc( key, (value) ? newSVsv((( PAnyObject) value)-> mate) : nilSV)
 
 #define create_instance( obj)  (                                   \

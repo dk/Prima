@@ -60,6 +60,26 @@ extern "C" {
 
 static int Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
 
+static void
+repadding_check( Handle self, HV * profile)
+{
+   if ( pexist( lineSize)) {
+       if ( pexist( data)) {
+	   int lineSize = pget_i( lineSize);
+	   if ( (lineSize % 4) != 0) {
+	       char *padded_data = _img_repad_data( pget_c( data), lineSize, var->h, var->lineSize);
+	       DOLBUG( "Repadding from %d to %d\n", lineSize, var->lineSize);
+	       pset_b( data, padded_data, var->dataSize);
+	       free( padded_data);
+	   }
+       }
+       else {
+	   warn( "Image: lineSize supplied without property data.");
+       }
+       pdelete( lineSize);
+   }
+}
+
 void
 Image_init( Handle self, HV * profile)
 {
@@ -73,13 +93,14 @@ Image_init( Handle self, HV * profile)
    var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
    var->data = ( var->dataSize > 0) ? allocb( var->dataSize) : nil;
+   repadding_check( self, profile);
+   my->set_data( self, pget_sv( data));
    free( var->palette);
    var->palette = allocn( RGBColor, 256);
    opt_assign( optPreserveType, pget_B( preserveType));
    var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
    if (!( var->type & imGrayScale))
       Image_read_palette( self, var->palette, pget_sv( palette));
-   my->set_data( self, pget_sv( data));
    {
       Point set;
       prima_read_point( pget_sv( resolution), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
@@ -223,7 +244,7 @@ Image_set( Handle self, HV * profile)
       int i = 0;
       while( imTypes[i] != newType && imTypes[i] != -1) i++;
       if ( imTypes[i] == -1) {
-         warn("RTC0100: Invalid image type requested (%04x) in Image::set_type", newType);
+         warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", newType);
       } else {
          if ( !opt_InPaint)
             my->reset( self, newType, pexist( palette) ? pget_sv( palette) : my->get_palette( self));
@@ -238,6 +259,9 @@ Image_set( Handle self, HV * profile)
       my-> set_resolution( self, set);
       pdelete( resolution);
    }
+
+   repadding_check( self, profile);
+
    inherited set ( self, profile);
 }
 
@@ -1056,7 +1080,7 @@ modify_Image( Handle self, PImgInfo imageInfo)
     }
 
     if ( ( gotProps & REQPROP_ALL) != REQPROP_ALL) {
-        croak( "*** INTERNAL *** Got an incomplete image information from driver (signature: %04X)", gotProps);
+        croak( "*** INTERNAL *** Got an incomplete image information from driver (signature: %08X)", gotProps);
     }
     if ( ( var->lineSize * var->h) != var->dataSize) {
         croak( "Image data/line size inconsistency detected");

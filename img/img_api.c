@@ -1,4 +1,6 @@
 /*-
+ * $Id$
+ *
  * Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $Id$
  */
 
 /*
@@ -586,6 +586,25 @@ img_duplicate_property( PImgProperty imgProp)
     }
 
     return outImgProp;
+}
+
+Byte *
+_img_repad_data( Byte *data, int oldLineSize, int h, int newLineSize)
+{
+    Byte *padded_data, *pSrc, *pDst;
+    if ( data == NULL
+       	|| newLineSize < oldLineSize
+       	|| (newLineSize % 4) != 0) {
+	return NULL;
+    }
+    DOLBUG( "Allocating image data for %d bytes\n", newLineSize * h);
+    padded_data = allocb( newLineSize * h);
+    for ( pSrc = data, pDst = padded_data;
+       	  h > 0;
+	  h--, pSrc += oldLineSize, pDst += newLineSize) {
+	memcpy( pDst, pSrc, oldLineSize);
+    }
+    return padded_data;
 }
 
 #ifdef __cplusplus

@@ -118,7 +118,7 @@ apc_register_image_format( int version, PImgFormat imgf)
     }
 
     if ( list_first_that( imgFormats, image_format_exists, ( void *) imgf->id) >= 0) {
-	/* The format already registered */
+	/* The format is registered already */
 	__apc_image_set_error( "apc_register_image_format: a driver for format id ``%s'' already registered", imgf->id);
 	return false;
     }
