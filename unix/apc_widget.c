@@ -167,6 +167,43 @@ process_transparents( Handle self)
    }
 }
 
+static Bool
+flush_events( Display * disp, XEvent * ev, Handle self)
+{
+   XWindow win;
+   /* leave only configuration unrelated commands on the queue */
+   switch ( ev-> type) {
+   case SelectionRequest:
+   case SelectionClear:
+   case MappingNotify:
+   case SelectionNotify:
+   case ClientMessage:
+   case MapNotify:
+   case UnmapNotify:
+   case KeymapNotify:
+   case KeyPress:
+   case KeyRelease:
+   case PropertyNotify:
+   case ColormapNotify:
+   case DestroyNotify:
+      return false;
+   }
+
+   switch ( ev-> type) {
+   case ConfigureNotify:
+   case -ConfigureNotify:
+      win = ev-> xconfigure. window;
+      break;
+   case ReparentNotify:
+      win = ev-> xreparent. window;
+      break;
+   default:
+      win = ev-> xany. window;
+   }
+
+   return win == X_WINDOW;
+}
+
 Bool
 apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		   Bool clip_owner, Bool transparent, ApiHandle parentHandle)
@@ -215,6 +252,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    if ( reset) {
       Point pos = PWidget(self)-> pos;
+      XEvent dummy_ev;
       if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
       CWidget( self)-> end_paint_info( self);
       CWidget( self)-> end_paint( self);
@@ -222,6 +260,10 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
       }
+      /* flush configure events */
+      XSync( DISP, false);
+      while ( XCheckIfEvent( DISP, &dummy_ev, (void*)flush_events, (XPointer)self));
+      
       XChangeWindowAttributes( DISP, X_WINDOW, CWWinGravity, &attrs);
       XReparentWindow( DISP, X_WINDOW, parent, pos. x, 
          X(owner)-> size.y + X(owner)-> menuHeight - pos. y - X(self)-> size. y);
