@@ -582,7 +582,6 @@ $w-> insert( Widget =>
 &$re_size(1);
 &$re_sample;
 }
-                 my $c = chr(0xfdee);
 
 run;
 run Prima;
