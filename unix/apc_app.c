@@ -350,7 +350,6 @@ apc_application_create( Handle self)
    DEFXX;
 
    XX-> type.application = true;
-   XX-> type.window = true;
    XX-> type.widget = true;
    XX-> type.drawable = true;
 
