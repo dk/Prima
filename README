@@ -108,6 +108,11 @@ example, ..../generic or perl ..../generic .
 MORE INFORMATION
 ================
 
+The toolkit contains set of POD files describing its
+features, and the programming interfaces.
+Run 'podview Prima' or 'perldoc Prima' command to start
+with the main manual page.
+
 Visit http://www.prima.eu.org/ for the recent versions
 of the toolkit. You can use cvs update feature to keep
 in touch. The mailing list on the toolkit is avialable,
