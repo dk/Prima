@@ -738,10 +738,11 @@ prima_font_subsystem_set_option( char * option, char * value)
 void
 prima_font_pp2font( char * ppFontNameSize, PFont font)
 {
-   int i, newEntry = 0, detail;
+   int i, newEntry = 0, len, dash = 0;
    FontInfo fi;
    XFontStruct * xf;
    Font dummy, def_dummy, *def;
+   char buf[512], *p;
 
    if ( !font) font = &dummy;
    
@@ -753,8 +754,22 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
          return;
       }
    }
+
+   /* check if font is XLFD and ends in -*-*, so we can replace it with $LANG */
+   len = strlen( ppFontNameSize);
+   for ( i = 0, p = ppFontNameSize; i < len; i++, p++)
+      if ( *p == '-') dash++;
+   if (( dash == 14) && (strcmp( ppFontNameSize + len - 4, "-*-*") == 0)) {
+      memcpy( buf, ppFontNameSize, len - 3);
+      buf[ len - 3] = 0;
+      strncat( buf, guts. locale, 512);
+      buf[511] = 0;
+      ppFontNameSize = buf;
+      len = strlen( ppFontNameSize);
+   }
    
-   xf = ( XFontStruct * ) hash_fetch( xfontCache, ppFontNameSize, strlen(ppFontNameSize));
+   
+   xf = ( XFontStruct * ) hash_fetch( xfontCache, ppFontNameSize, len);
 
    if ( !xf ) {
       xf = XLoadQueryFont( DISP, ppFontNameSize);
@@ -772,16 +787,16 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
                *font = guts. default_font;
          return;
       }
-      hash_store( xfontCache, ppFontNameSize, strlen( ppFontNameSize), xf);
+      hash_store( xfontCache, ppFontNameSize, len, xf);
       newEntry = 1;
    }
   
    bzero( &fi, sizeof( fi));
    fi. flags. sloppy = true;
    fi. xname = ppFontNameSize;
-   detail = xlfd_parse_font( ppFontNameSize, &fi, false);
+   xlfd_parse_font( ppFontNameSize, &fi, false);
    font_query_name( xf, &fi);
-   if ( !detail) detail_font_info( &fi, font, false, false);
+   detail_font_info( &fi, font, false, false);
    *font = fi. font;
    if ( guts. default_font_ok) {
       def = &guts. default_font;
