@@ -167,6 +167,7 @@ object Widget( Drawable)
    method   Bool     get_selected();
    method   Handle   get_selected_widget();
    method   int      get_selecting_buttons();
+   method   Handle   get_shape();
    method   int      get_shift_state()               => apc_kbd_get_state;
    method   Bool     get_show_hint();
    method   Point    get_size()                      => apc_widget_get_size;
@@ -235,6 +236,7 @@ object Widget( Drawable)
    method   void     set_selected( Bool selected);
    method   void     set_selected_widget( Handle widget);
    method   void     set_selecting_buttons( int sb);
+   method   void     set_shape( Handle mask);
    method   void     set_show_hint( Bool showHint);
    method   void     set_size( int x, int y)            => apc_widget_set_size;
    method   void     set_size_min( Point min);

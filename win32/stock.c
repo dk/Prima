@@ -195,10 +195,10 @@ patres_fetch( DWORD pattern)
       if ( mark == last)
          cnt++;
       else {
-			if ( idx >= 0) storage[ idx] = cnt;
-			idx++;
-         cnt             = mark ? 0 : 2;
-         last            = mark;
+         if ( idx >= 0) storage[ idx] = cnt;
+         idx++;
+         cnt  = mark ? 0 : 2;
+         last = mark;
       }
    }
    storage[ idx] = cnt;
@@ -1479,3 +1479,4 @@ palette_match( Handle self, long clr)
 
    return PALETTERGB( color.r, color.g, color.b);
 }
+

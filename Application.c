@@ -804,6 +804,7 @@ char * Application_get_text( Handle self) { return ""; }
 Bool Application_get_enabled( Handle self) { return true; }
 Bool Application_get_tab_stop( Handle self) { return false; }
 Bool Application_get_selectable( Handle self) { return false; }
+Handle Application_get_shape( Handle self) { return nilHandle; }
 Bool Application_get_sync_paint( Handle self) { return false; }
 Bool Application_get_visible( Handle self) { return true; }
 Bool Application_get_modal_stop( Handle self) { return true; }
@@ -831,6 +832,7 @@ void Application_set_owner_palette( Handle self, Bool ownerPalette) {}
 void Application_set_pos( Handle self, int x, int y) {}
 void Application_set_size( Handle self, int x, int y) {}
 void Application_set_selectable( Handle self, Bool selectable) {}
+void Application_set_shape( Handle self, Handle mask) {}
 void Application_set_sync_paint( Handle self, Bool syncPaint) {}
 void Application_set_clip_owner( Handle self, Bool clipOwner) {}
 void Application_set_tab_order( Handle self, int tabOrder) {}

@@ -92,6 +92,7 @@ object Application( Widget)
    method SV *   get_palette();
    method Handle get_parent();
    method Bool   get_selectable();
+   method Handle get_shape();
    method Bool   get_sync_paint();
    method Bool   get_tab_stop();
    method char * get_text();
@@ -122,6 +123,7 @@ object Application( Widget)
    method void   set_pos( int x, int y);
    method void   set_palette( SV * palette);
    method void   set_selectable( Bool selectable);
+   method void   set_shape( Handle mask);
    method void   set_sync_paint( Bool syncPaint);
    method void   set_size( int x, int y);
    method void   set_show_hint( Bool showHint);

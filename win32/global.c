@@ -228,6 +228,7 @@ window_subsystem_init()
    guts. currentKeyState = guts. keyState;
    guts. smDblClk. x = GetSystemMetrics( SM_CXDOUBLECLK);
    guts. smDblClk. y = GetSystemMetrics( SM_CYDOUBLECLK);
+
    return true;
 }
 
@@ -1035,9 +1036,9 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
            if ( wp) {
               POINT xp = p;
               MapWindowPoints( desktop, wp, &xp, 1);
-              wp = ChildWindowFromPoint( wp, xp);
+              wp = ChildWindowFromPointEx( wp, xp, CWP_SKIPINVISIBLE);
            } else
-              wp = ChildWindowFromPoint( wp, p);
+              wp = ChildWindowFromPointEx( wp, p, CWP_SKIPINVISIBLE);
            if ( wp != ( HWND)(( PWidget) lastMouseOver)-> handle)
            {
               HWND old = ( HWND)(( PWidget) lastMouseOver)-> handle;

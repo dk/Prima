@@ -1665,6 +1665,9 @@ apc_widget_get_z_order( Handle self, int zOrderId);
 extern Point
 apc_widget_get_pos( Handle self);
 
+extern Bool
+apc_widget_get_shape( Handle self, Handle mask);
+
 extern Point
 apc_widget_get_size( Handle self);
 
@@ -1731,6 +1734,9 @@ apc_widget_set_palette( Handle self);
 
 extern void
 apc_widget_set_pos( Handle self, int x, int y);
+
+extern void
+apc_widget_set_shape( Handle self, Handle mask);
 
 extern void
 apc_widget_set_size( Handle self, int width, int height);

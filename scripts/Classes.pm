@@ -722,6 +722,7 @@ sub notification_types { return \%RNT; }
    selected          => 0,
    selectedWidget    => undef,
    selectingButtons  => mb::Left,
+   shape             => undef,
    showHint          => 1,
    syncPaint         => 1,
    tabOrder          => -1,
@@ -942,6 +943,7 @@ sub selectable       {($#_)?$_[0]->set_selectable  ($_[1]):return $_[0]->get_sel
 sub selected         {($#_)?$_[0]->set_selected    ($_[1]):return $_[0]->get_selected  }
 sub selectedWidget  {($#_)?$_[0]->set_selected_widget($_[1]):return $_[0]->get_selected_widget;}
 sub selectingButtons {($#_)?$_[0]->set_selecting_buttons($_[1]):return $_[0]->get_selecting_buttons}
+sub shape            {($#_)?$_[0]->set_shape       ($_[1]):return $_[0]->get_shape;       }
 sub showHint         {($#_)?$_[0]->set_show_hint   ($_[1]):return $_[0]->get_show_hint;   }
 sub size             {($#_)?$_[0]->set_size ($_[1], $_[2]):return $_[0]->get_size;        }
 sub sizeMax          {($#_)? ($_[0]->set_size_max($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_size_max;    }

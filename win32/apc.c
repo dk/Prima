@@ -30,6 +30,7 @@
 #endif
 #include "guts.h"
 #include "Menu.h"
+#include "Image.h"
 #include "Window.h"
 #include "Application.h"
 
@@ -363,9 +364,9 @@ apc_application_get_view_from_point( Handle self, Point point)
    if ( p) {
       POINT xp = pt;
       MapWindowPoints( HWND_DESKTOP, p, &xp, 1);
-      p = ChildWindowFromPoint( p, xp);
+      p = ChildWindowFromPointEx( p, xp, CWP_SKIPINVISIBLE);
    } else
-      p = ChildWindowFromPoint( HWND_DESKTOP, pt);
+      p = ChildWindowFromPointEx( HWND_DESKTOP, pt, CWP_SKIPINVISIBLE);
 
    if ( !p) return nilHandle;
    if ( !( tid = GetWindowThreadProcessId( p, &pid))) apiErr;
@@ -1553,6 +1554,58 @@ apc_widget_get_z_order( Handle self, int zOrderId)
 
 
 Bool
+apc_widget_get_shape( Handle self, Handle mask)
+{
+   HRGN rgn;
+   int res;
+   HBITMAP bm, bmSave;
+   HBRUSH  brSave;
+   HDC dc;
+   XBITMAPINFO xbi;
+   BITMAPINFO * bi;
+
+   objCheck false;
+   rgn = CreateRectRgn(0,0,0,0);
+
+   res = GetWindowRgn( HANDLE, rgn);
+   if ( res == ERROR) {
+      DeleteObject( rgn);
+      return false;
+   }
+   if ( !mask) {
+      DeleteObject( rgn);
+      return true;
+   }
+
+   CImage( mask)-> create_empty( mask, sys extraBounds. x, sys extraBounds. y, imBW);
+
+   dc = dc_compat_alloc(0);
+   if ( !( bm = CreateBitmap( PImage( mask)-> w, PImage( mask)-> h, 1, 1, nil))) {
+      dc_compat_free();
+      return true;
+   }
+
+   bmSave = SelectObject( dc, bm);
+   brSave = SelectObject( dc, CreateSolidBrush( RGB(0,0,0)));
+   Rectangle( dc, 0, 0, PImage( mask)-> w, PImage( mask)-> h);
+   DeleteObject( SelectObject( dc, CreateSolidBrush( RGB( 255, 255, 255))));
+   SetViewportOrgEx( dc, -sys extraPos. x, -sys extraPos. y, NULL);
+   PaintRgn( dc, rgn);
+   DeleteObject( SelectObject( dc, brSave));
+
+   bi = image_get_binfo( mask, &xbi);
+   if ( !GetDIBits( dc, bm, 0, PImage( mask)-> h, PImage( mask)-> data, bi, DIB_RGB_COLORS)) apiErr;
+   SelectObject( dc, bmSave);
+   DeleteObject( bm);
+   dc_compat_free();
+
+   DeleteObject( rgn);
+
+   return true;
+}
+
+
+Bool
 apc_widget_get_sync_paint( Handle self)
 {
    objCheck false;
@@ -1853,6 +1906,101 @@ apc_widget_set_size( Handle self, int width, int height)
       width, height,
       SWP_NOZORDER | SWP_NOACTIVATE)) apiErr;
 }
+
+void
+apc_widget_set_shape( Handle self, Handle mask)
+{
+   RGNDATA * rdata;
+   RECT    * current;
+   LONG i, w, h, x, y, size = 256;
+   Byte    * idata;
+   Bool      set = 0;
+
+   objCheck;
+   if ( !mask) {
+      SetWindowRgn( HANDLE, nil, true);
+      return;
+   }
+   dobjCheck( mask);
+   idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
+
+   rdata = ( RGNDATA*) malloc( sizeof( RGNDATAHEADER) + size * sizeof( RECT));
+   rdata-> rdh. nCount = 0;
+   current = ( RECT * ) &( rdata-> Buffer);
+   current--;
+
+   w = PImage( mask)-> w;
+   h = PImage( mask)-> h;
+
+   // for ( y = h - 1; y >= 0; y--) {
+   for ( y = 0; y < h; y++) {
+      int ey = h - y - 1;
+      for ( x = 0; x < w; x++) {
+         if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
+            if ( set && current-> top == y && current-> right == x)
+               current-> right++;
+            else {
+               set = 1;
+               if ( rdata-> rdh. nCount >= size) {
+                  rdata = realloc( rdata, sizeof( RGNDATAHEADER) + ( size *= 3) * sizeof( RECT));
+                  current = ( RECT * ) &( rdata-> Buffer);
+                  current += rdata-> rdh. nCount - 1;
+               }
+               rdata-> rdh. nCount++;
+               current++;
+               current-> left   = x;
+               current-> top    = y;
+               current-> right  = x + 1;
+               current-> bottom = y + 1;
+            }
+         }
+      }
+      idata -= PImage( mask)-> lineSize;
+   }
+
+   if ( set) {
+      HRGN rgn;
+
+      rdata-> rdh. dwSize          = sizeof( RGNDATAHEADER);
+      rdata-> rdh. iType           = RDH_RECTANGLES;
+      rdata-> rdh. nRgnSize        = rdata-> rdh. nCount * sizeof( RECT);
+      rdata-> rdh. rcBound. left   = 0;
+      rdata-> rdh. rcBound. top    = 0;
+      rdata-> rdh. rcBound. right  = h;
+      rdata-> rdh. rcBound. bottom = w;
+
+      sys extraBounds. x = w;
+      sys extraBounds. y = h;
+
+      if ( !( rgn = ExtCreateRegion( NULL,
+         sizeof( RGNDATAHEADER) + ( rdata-> rdh. nCount * sizeof( RECT)), rdata))) {
+         apcErr( 900);
+      }
+
+      if ( sys className == WC_FRAME) {
+         Point delta = get_window_borders( sys s. window. borderStyle);
+         Point sz    = apc_widget_get_size( self);
+         HRGN  r1, r2;
+         OffsetRgn( rgn, delta.x, sz. y - h - delta.y);
+         sys extraPos. x = delta.x;
+         sys extraPos. y = sz. y - h - delta.y;
+         r1 = CreateRectRgn( 0, 0, 8192, 8192);
+         r2 = CreateRectRgn( delta. x, sz. y - delta. y - h,
+            delta.x + w + 1, sz. y - delta. y + 1);
+         CombineRgn( r1, r1, r2, RGN_XOR);
+         CombineRgn( rgn, rgn, r1, RGN_OR);
+         DeleteObject( r1);
+         DeleteObject( r2);
+      } else
+         sys extraPos. x = sys extraPos. y = 0;
+
+      if ( !SetWindowRgn( HANDLE, rgn, true))
+         apiErr;
+   }
+
+   free( rdata);
+}
+
 
 void
 apc_widget_set_tab_order( Handle self, int tabOrder)

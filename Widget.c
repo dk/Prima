@@ -194,6 +194,7 @@ Widget_init( Handle self, HV * profile)
       if ( pget_B( y_centered) || ( var growMode & gmYCenter)) y = 1;
       if ( x || y) my set_centered( self, x, y);
    }
+   my set_shape       ( self, pget_H(  shape));
    my set_visible     ( self, pget_B( visible));
    if ( pget_B( capture)) my set_capture( self, 1, nilHandle);
    if ( pget_B( current)) my set_current( self, 1);
@@ -1637,6 +1638,23 @@ Widget_get_selecting_buttons( Handle self)
    return var selectingButtons;
 }
 
+
+Handle
+Widget_get_shape( Handle self)
+{
+   if ( var stage > csNormal) return nilHandle;
+   if ( apc_widget_get_shape( self, nilHandle)) {
+      HV * profile = newHV();
+      Handle i = Object_create( "Image", profile);
+      sv_free(( SV *) profile);
+      apc_widget_get_shape( self, i);
+      --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
+      return i;
+   } else
+      return nilHandle;
+}
+
+
 Bool
 Widget_get_show_hint( Handle self)
 {
@@ -2266,6 +2284,22 @@ Widget_set_show_hint( Handle self, Bool showHint )
    opt_assign( optShowHint, showHint);
    if ( application && !is_opt( optShowHint) && oldShowHint) my set_hint_visible( self, 0);
 }
+
+void
+Widget_set_shape( Handle self, Handle mask)
+{
+   if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
+      Handle i = CImage( mask)-> dup( mask);
+      ++SvREFCNT( SvRV( PImage( i)-> mate));
+      CImage( i)-> set_conversion( i, ictNone);
+      CImage( i)-> set_type( i, imBW);
+      apc_widget_set_shape( self, i);
+      --SvREFCNT( SvRV( PImage( i)-> mate));
+      Object_destroy( i);
+   } else
+      apc_widget_set_shape( self, mask);
+}
+
 
 void
 Widget_set_size_min( Handle self, Point min)

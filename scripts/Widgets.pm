@@ -93,7 +93,7 @@ sub on_paint
       $canvas-> text_out( $cap,
          ( $size[0] - $canvas-> get_text_width( $cap)) / 2,
          ( $size[1] - $canvas-> font-> height) / 2,
-      ) if $cap;
+      ) if defined $cap;
       return;
    }
    $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, @c3d) if $bw > 0;

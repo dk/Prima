@@ -1442,6 +1442,18 @@ Image_create_empty( Handle self, int width, int height, int type)
       memset( var->data, 0, var->dataSize);
    } else
       var->data = nil;
+   if ( var->type & imGrayScale) switch ( var->type & imBPP)
+   {
+   case imbpp1:
+      memcpy( var->palette, stdmono_palette, sizeof( stdmono_palette));
+      break;
+   case imbpp4:
+      memcpy( var->palette, std16gray_palette, sizeof( std16gray_palette));
+      break;
+   case imbpp8:
+      memcpy( var->palette, std256gray_palette, sizeof( std256gray_palette));
+      break;
+   }
    var->status = ieOK;
 }
 
