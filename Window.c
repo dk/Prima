@@ -449,6 +449,34 @@ void Window_set( Handle self, HV * profile)
       pdelete( menuFont);
    }
    if ( pexist( owner)) postOwner = pget_H( owner);
+
+   if ( pexist( frameOrigin) || pexist( frameSize)) {
+      Bool io = 0, is = 0;
+      Point o, s;
+      if ( pexist( frameOrigin)) {
+         int set[2];
+         prima_read_point( pget_sv( frameOrigin), set, 2, "RTC0092: Array panic on 'frameOrigin'");
+         pdelete( frameOrigin);
+         o. x = set[0];
+         o. y = set[1];
+         io = 1;
+      }
+      if ( pexist( frameSize)) {
+         int set[2];
+         prima_read_point( pget_sv( frameSize), set, 2, "RTC0093: Array panic on 'frameSize'");
+         pdelete( frameSize);
+         s. x = set[0];
+         s. y = set[1];
+         is = 1;
+      }
+      if ( is && io)
+         apc_widget_set_rect( self, o. x, o. y, s. x, s. y);
+      else if ( io) 
+         my-> set_frameOrigin( self, o);
+      else
+         my-> set_frameSize( self, s);
+  }
+
    inherited set( self, profile);
    if ( postOwner && is_opt( optOwnerIcon)) {
       my-> set_ownerIcon( self, 1);
@@ -660,6 +688,15 @@ Window_origin( Handle self, Bool set, Point origin)
       return apc_window_get_client_pos( self);
    apc_window_set_client_pos( self, origin.x, origin.y);
    return origin;
+}
+
+Rect
+Window_rect( Handle self, Bool set, Rect r)
+{
+   if ( !set) 
+      return inherited rect( self, set, r); 
+   apc_window_set_client_rect( self, r. left, r. bottom, r. right - r. left, r. top - r. bottom);
+   return r;
 }
 
 Bool

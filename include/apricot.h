@@ -1864,6 +1864,9 @@ extern Bool
 apc_window_set_client_pos( Handle self, int x, int y);
 
 extern Bool
+apc_window_set_client_rect( Handle self, int x, int y, int width, int height);
+
+extern Bool
 apc_window_set_client_size( Handle self, int x, int y);
 
 extern Bool
@@ -2005,6 +2008,9 @@ apc_widget_set_palette( Handle self);
 
 extern Bool
 apc_widget_set_pos( Handle self, int x, int y);
+
+extern Bool
+apc_widget_set_rect( Handle self, int x, int y, int width, int height);
 
 extern Bool
 apc_widget_set_shape( Handle self, Handle mask);

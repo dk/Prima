@@ -1327,62 +1327,139 @@ Widget_set( Handle self, HV * profile)
          }
       }
    }
-   if ( pexist( origin))
+
+   /* geometry manipulations */
    {
-      int set[2];
-      if (order && !pexist(left))   av_push( order, newSVpv("left",0));
-      if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
-      prima_read_point( pget_sv( origin), set, 2, "RTC0087: Array panic on 'origin'");
-      pset_sv( left,   newSViv(set[0]));
-      pset_sv( bottom, newSViv(set[1]));
-      pdelete( origin);
-   }
-   if ( pexist( rect))
-   {
-      int rect[4];
-      if (order && !pexist(left)) av_push( order, newSVpv("left",0));
-      if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
-      if (order && !pexist(width)) av_push( order, newSVpv("width",0));
-      if (order && !pexist(height)) av_push( order, newSVpv("height",0));
-      prima_read_point( pget_sv( rect), rect, 4, "RTC0088: Array panic on 'rect'");
-      pset_sv( left,   newSViv( rect[0]));
-      pset_sv( bottom, newSViv( rect[1]));
-      pset_sv( width,  newSViv( rect[2] - rect[0]));
-      pset_sv( height, newSViv( rect[3]   - rect[1]));
-      pdelete( rect);
-   }
-   if ( pexist( size))
-   {
-      int set[2];
-      if (order && !pexist(width)) av_push( order, newSVpv("width",0));
-      if (order && !pexist(height)) av_push( order, newSVpv("height",0));
-      prima_read_point( pget_sv( size), set, 2, "RTC0089: Array panic on 'size'");
-      pset_sv( width,  newSViv(set[0]));
-      pset_sv( height, newSViv(set[1]));
-      pdelete( size);
-   }
-   if ( pexist( width) && pexist( right) && pexist( left))  pdelete( right);
-   if ( pexist( height) && pexist( top) && pexist( bottom)) pdelete( top);
-   if ( pexist( right) && pexist( left))
-   {
-      int right = pget_i( right);
-      if (order && !pexist(width)) av_push( order, newSVpv("width",0));
-      pset_i( width, right - pget_i( left));
-      pdelete( right);
-   }
-   if ( pexist( top) && pexist( bottom)) {
-      int top = pget_i( top);
-      if (order && !pexist(height)) av_push( order, newSVpv("height",0));
-      pset_i( height, top - pget_i( bottom));
-      pdelete( top);
-   }
-   if ( pexist( left) && pexist( bottom)) {
-      Point pos;
-      pos. x  = pget_i( left);
-      pos. y  = pget_i( bottom);
-      my-> set_origin( self, pos);
-      pdelete( left);
-      pdelete( bottom);
+#define iLEFT   0      
+#define iRIGHT  1
+#define iTOP    2
+#define iBOTTOM 3
+#define iWIDTH  4
+#define iHEIGHT 5
+      int i, count;
+      Bool exists[ 6];
+      int  values[ 6];
+
+      if ( pexist( origin))
+      {
+         int set[2];
+         if (order && !pexist(left))   av_push( order, newSVpv("left",0));
+         if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
+         prima_read_point( pget_sv( origin), set, 2, "RTC0087: Array panic on 'origin'");
+         pset_sv( left,   newSViv(set[0]));
+         pset_sv( bottom, newSViv(set[1]));
+         pdelete( origin);
+      }
+      if ( pexist( rect))
+      {
+         int rect[4];
+         if (order && !pexist(left)) av_push( order, newSVpv("left",0));
+         if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
+         if (order && !pexist(width)) av_push( order, newSVpv("width",0));
+         if (order && !pexist(height)) av_push( order, newSVpv("height",0));
+         prima_read_point( pget_sv( rect), rect, 4, "RTC0088: Array panic on 'rect'");
+         pset_sv( left,   newSViv( rect[0]));
+         pset_sv( bottom, newSViv( rect[1]));
+         pset_sv( width,  newSViv( rect[2] - rect[0]));
+         pset_sv( height, newSViv( rect[3] - rect[1]));
+         pdelete( rect);
+      }
+      if ( pexist( size))
+      {
+         int set[2];
+         if (order && !pexist(width)) av_push( order, newSVpv("width",0));
+         if (order && !pexist(height)) av_push( order, newSVpv("height",0));
+         prima_read_point( pget_sv( size), set, 2, "RTC0089: Array panic on 'size'");
+         pset_sv( width,  newSViv(set[0]));
+         pset_sv( height, newSViv(set[1]));
+         pdelete( size);
+      }
+
+      if (( exists[ iLEFT]   = pexist( left)))    values[ iLEFT]   = pget_i( left);
+      if (( exists[ iRIGHT]  = pexist( right)))   values[ iRIGHT]  = pget_i( right);
+      if (( exists[ iTOP]    = pexist( top)))     values[ iTOP]    = pget_i( top);
+      if (( exists[ iBOTTOM] = pexist( bottom ))) values[ iBOTTOM] = pget_i( bottom);
+      if (( exists[ iWIDTH]  = pexist( width)))   values[ iWIDTH]  = pget_i( width);
+      if (( exists[ iHEIGHT] = pexist( height)))  values[ iHEIGHT] = pget_i( height);
+
+      count = 0;
+      for ( i = 0; i < 6; i++) if ( exists[ i]) count++;
+
+      if ( count > 1) {
+         if ( exists[ iWIDTH] && exists[ iRIGHT] && exists[ iLEFT]) {
+            exists[ iRIGHT] = 0;
+            count--;
+         }
+         if ( exists[ iHEIGHT] && exists[ iTOP] && exists[ iBOTTOM]) {
+            exists[ iTOP] = 0;
+            count--;
+         }
+         if ( exists[ iRIGHT] && exists[ iLEFT]) {
+            exists[ iWIDTH] = 1;
+            values[ iWIDTH] = values[ iRIGHT] - values[ iLEFT];
+            exists[ iRIGHT] = 0;
+         }
+         if ( exists[ iTOP] && exists[ iBOTTOM]) {
+            exists[ iHEIGHT] = 1;
+            values[ iHEIGHT] = values[ iTOP] - values[ iBOTTOM];
+            exists[ iTOP]    = 0;
+         }
+
+         if (
+              ( count == 2) &&
+              (
+                 ( exists[ iLEFT]  && exists[ iBOTTOM]) ||
+                 ( exists[ iWIDTH] && exists[ iHEIGHT])
+              )
+            ) {
+            Point p;
+            if ( exists[ iLEFT]) {
+               p. x = values[ iLEFT];
+               p. y = values[ iBOTTOM];
+               my-> set_origin( self, p);
+            } else {
+               p. x = values[ iWIDTH];
+               p. y = values[ iHEIGHT];
+               my-> set_size( self, p);
+            }
+         } else {
+            Rect r;
+            if ( !exists[ iWIDTH] || !exists[ iHEIGHT]) {
+               Point sz;
+               sz = my-> get_size( self);
+               if ( !exists[ iWIDTH])  values[ iWIDTH]  = sz. x;
+               if ( !exists[ iHEIGHT]) values[ iHEIGHT] = sz. y;
+               exists[ iWIDTH] = exists[ iHEIGHT] = 1; 
+            }
+            if ( ( !exists[ iLEFT]   && !exists[ iRIGHT]) ||
+                 ( !exists[ iBOTTOM] && !exists[ iTOP])) {
+               Point pos;
+               pos = my-> get_origin( self);
+               if ( !exists[ iLEFT])   values[ iLEFT]   = pos. x;
+               if ( !exists[ iBOTTOM]) values[ iBOTTOM] = pos. y;
+               exists[ iLEFT] = exists[ iBOTTOM] = 1; 
+            }
+            if ( !exists[ iLEFT]) {
+               exists[ iLEFT] = 1;
+               values[ iLEFT] = values[ iRIGHT] - values[ iWIDTH];
+            }
+            if ( !exists[ iBOTTOM]) {
+               exists[ iBOTTOM] = 1;
+               values[ iBOTTOM] = values[ iTOP] - values[ iHEIGHT];
+            }
+            r. left   = values[ iLEFT];
+            r. bottom = values[ iBOTTOM];
+            r. right  = values[ iLEFT] + values[ iWIDTH];
+            r. top    = values[ iBOTTOM] + values[ iHEIGHT];
+            my-> set_rect( self, r);
+         }
+         pdelete( left);
+         pdelete( right);
+         pdelete( top);
+         pdelete( bottom);
+         pdelete( width);
+         pdelete( height);
+      } /* count > 1 */
    }
    if ( pexist( popupFont))
    {
@@ -2488,15 +2565,8 @@ Widget_rect( Handle self, Bool set, Rect r)
       r. bottom = p. y;
       r. right  = p. x + s. x;
       r. top    = p. y + s. y;
-   } else {
-      Point pos, size;
-      pos. x = r. left;
-      pos. y = r. bottom;
-      size. x = r. right - r. left;
-      size. y = r. top - r. bottom;
-      my-> set_origin( self, pos);
-      my-> set_size( self, size);
-   }
+   } else 
+      apc_widget_set_rect( self, r. left, r. bottom, r. right - r. left, r. top - r. bottom);
    return r;
 }
 

@@ -46,6 +46,7 @@ object Prima::Window( Prima::Widget)
    property int      modalResult;
    property Point    origin;
    property Bool     ownerIcon;
+   property Rect     rect;
    property Bool     selected;
    property Point    size;
    property Bool     taskListed;
