@@ -1148,6 +1148,8 @@ sub prf_icon
 
 sub prf_menuItems
 {
+   local $_[0]->{syncRecting};
+   $_[0]->{syncRecting} = 'height';
    $_[0]-> menuItems( $_[1]);
 }
 
