@@ -33,6 +33,7 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#include "Icon.h"
 #include "Window.h"
 #include "Application.h"
 
@@ -230,8 +231,70 @@ apc_window_get_client_size( Handle self)
 Bool
 apc_window_get_icon( Handle self, Handle icon)
 {
-   DOLBUG( "apc_window_get_icon()\n");
-   return false;
+   XWMHints * hints;
+   Pixmap xor, and;
+   int xx, xy, ax, ay, xd, ad;
+   XImage * i;
+   Bool ret;
+
+
+   if ( !( hints = XGetWMHints( DISP, X_WINDOW))) return false;  
+   if ( !icon || !hints-> icon_pixmap) {
+      Bool ret = hints-> icon_pixmap != nilHandle;
+      XFree( hints);
+      return ret;
+   }
+   xor = hints-> icon_pixmap;
+   and = hints-> icon_mask;
+   XFree( hints); 
+
+   {
+      XWindow foo;
+      int bar;
+      if ( !XGetGeometry( DISP, xor, &foo, &bar, &bar, &xx, &xy, &bar, &xd))
+         return false;
+      if ( and && (!XGetGeometry( DISP, and, &foo, &bar, &bar, &ax, &ay, &bar, &ad)))
+         return false;
+   } 
+
+   CImage( icon)-> create_empty( icon, xx, xy, ( xd == 1) ? 1 : guts. qdepth);
+   if (( i = XGetImage( DISP, xor, 0, 0, xx, xy, 
+      ( xd == 1) ? 1 : AllPlanes, ( xd == 1) ? XYPixmap : ZPixmap))) {
+      XCHECKPOINT;
+      ret = prima_query_image( icon, i);
+      XDestroyImage( i);
+      if ( !ret) return false;
+   } else 
+      return false;
+   
+   if ( and) {
+      HV * profile = newHV();
+      Handle mask = Object_create( "Prima::Image", profile);
+      sv_free(( SV *) profile);
+      CImage( mask)-> create_empty( mask, ax, ay, ( ad == 1) ? 1 : guts. qdepth);
+      if (( i = XGetImage( DISP, and, 0, 0, ax, ay, 
+         ( ad == 1) ? 1 : AllPlanes, ( ad == 1) ? XYPixmap : ZPixmap))) {
+         XCHECKPOINT;
+         ret = prima_query_image( mask, i);
+         XDestroyImage( i);
+      } else 
+         ret = false;
+      if (( PImage( mask)-> type & imBPP) != 1)
+         CImage( mask)-> type( mask, true, imBW);
+      if ( ret) {
+         int i; 
+         Byte *d = PImage(mask)-> data;
+         for ( i = 0; i < PImage(mask)-> dataSize; i++, d++)
+            *d = ~(*d);
+      } else
+         bzero( PImage( mask)-> data, PImage( mask)-> dataSize);
+      if ( xx != ax || xy != ay) 
+         CImage( mask)-> size( mask, true, ( Point){xx,xy});
+      memcpy( PIcon( icon)-> mask, PImage( mask)-> data, PIcon( icon)-> maskSize);
+      Object_destroy( mask);
+   }
+
+   return true;
 }
 
 int
@@ -397,15 +460,10 @@ apc_window_set_visible( Handle self, Bool show)
    if ( show) {
       Bool iconic = XX-> flags. iconic;
       if ( XX-> flags. withdrawn) {
-         XWMHints * wh = XGetWMHints( DISP, X_WINDOW);
-         if ( wh) {
-            wh-> initial_state = iconic ? IconicState : NormalState;
-            wh-> input = false;
-            wh-> flags = InputHint | StateHint;
-            XSetWMHints( DISP, X_WINDOW, wh);
-            XFree( wh); 
-         } else 
-            warn("Error querying XGetWMHints");
+         XWMHints wh;
+         wh. initial_state = iconic ? IconicState : NormalState;
+         wh. flags = StateHint;
+         XSetWMHints( DISP, X_WINDOW, &wh);
          XX-> flags. withdrawn = 0;
       }   
       XMapWindow( DISP, X_WINDOW);
@@ -433,7 +491,74 @@ apc_window_set_menu( Handle self, Handle menu)
 Bool
 apc_window_set_icon( Handle self, Handle icon)
 {
-   DOLBUG( "apc_window_set_icon()\n");
+   PIcon i = ( PIcon) icon;
+   XIconSize * sz = nil; 
+   Pixmap xor, and;
+   XWMHints wmhints;
+   IconHandle ih;
+   int n;
+
+   if ( !icon) {
+      wmhints. flags = IconPixmapHint | IconMaskHint;
+      wmhints. icon_pixmap = nilHandle;
+      wmhints. icon_mask   = nilHandle;
+      XSetWMHints( DISP, X_WINDOW, &wmhints);
+      XCHECKPOINT;
+      return true;
+   }
+
+   if ( XGetIconSizes( DISP, guts.root, &sz, &n)) {
+      int zx = sz-> min_width, zy = sz-> min_height;
+      while ( 1) {
+         if ( i-> w <= zx || i-> h <= zy) break;
+         zx += sz-> width_inc;
+         zy += sz-> height_inc;
+      }
+      if (( zx != i-> w && zy != i-> h) || ( sz-> max_width != i-> w && sz-> max_height != i-> h)) {
+         i = ( PIcon) i-> self-> dup( icon);
+         i-> self-> size(( Handle) i, true, (Point){zx,zy});
+      }
+      XFree( sz);
+   } 
+
+   if ( kind_of( icon, CIcon)) {
+      ih = i-> self-> split(( Handle) i);
+   } else {
+      ih. xorMask = ( Handle)i;
+      ih. andMask = nilHandle;
+   }
+
+   {
+      Handle h = CImage(ih.xorMask)-> bitmap( ih.xorMask);
+      xor = X(h)-> gdrawable;
+      X(h)-> gdrawable = XCreatePixmap( DISP, guts. root, 1, 1, 1);
+      Object_destroy( h);
+      if ( ih. andMask) {
+         int i; 
+         Byte *d = PImage(ih.andMask)-> data;
+         for ( i = 0; i < PImage(ih.andMask)-> dataSize; i++, d++)
+            *d = ~(*d);
+         h = CImage(ih.andMask)-> bitmap( ih.andMask);
+         and = X(h)-> gdrawable;
+         X(h)-> gdrawable = XCreatePixmap( DISP, guts. root, 1, 1, 1);
+         Object_destroy( h);
+         Object_destroy( ih. xorMask);
+         Object_destroy( ih. andMask);
+      } else
+         and = nilHandle;
+   }
+
+   if (( Handle) i != icon) Object_destroy(( Handle) i);
+
+   wmhints. flags = IconPixmapHint;
+   wmhints. icon_pixmap = xor;
+   if ( and) {
+      wmhints. flags |= IconMaskHint;
+      wmhints. icon_mask = and;
+   }
+   XSetWMHints( DISP, X_WINDOW, &wmhints);
+   XCHECKPOINT;
+   
    return true;
 }
 

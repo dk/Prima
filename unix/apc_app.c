@@ -257,6 +257,10 @@ window_subsystem_init( void)
    guts. resolution. y = 25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN);
    guts. depth = DefaultDepth( DISP, SCREEN);
    guts. idepth = get_idepth();
+   if ( guts.depth == 1) guts. qdepth = 1; else
+   if ( guts.depth <= 4) guts. qdepth = 4; else
+   if ( guts.depth <= 8) guts. qdepth = 8; else
+      guts. qdepth = 24;
    guts. byte_order = ImageByteOrder( DISP);
    guts. bit_order = BitmapBitOrder( DISP);
    if ( BYTEORDER == LSB32)

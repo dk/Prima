@@ -873,16 +873,6 @@ get_bpp( Handle self)
       return guts. idepth;
 }
   
-static int
-get_bpp_depth( int depth)
-{
-   if ( depth == 1) return 1; else
-   if ( depth <= 4) return 4; else
-   if ( depth <= 8) return 8; else
-   return 24;
-}   
-
-
 static ImageCache*
 get_cache( Handle self, Handle drawable)
 {
@@ -1158,7 +1148,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
                 xFrom, img-> h - yFrom - yLen, xLen, yLen, AllPlanes, ZPixmap)))
             return false;
          obj = Object_create("Prima::Image", profile = newHV());
-         CImage( obj)-> create_empty( obj, xLen, yLen, get_bpp_depth( guts. idepth));
+         CImage( obj)-> create_empty( obj, xLen, yLen, guts. qdepth);
          if ( prima_query_image( obj, i)) {
             CImage( obj)-> set_type( obj, imBW);
             ret = apc_gp_put_image( self, obj, x, y, 0, 0, xLen, yLen, rop);
@@ -1383,7 +1373,7 @@ Bool
 prima_query_image( Handle self, XImage * i)
 {
    PImage img = PImage( self);
-   int target_depth = (( img-> type & imBPP) == 1) ? 1 : get_bpp_depth( guts. idepth);
+   int target_depth = (( img-> type & imBPP) == 1) ? 1 : guts. qdepth;
 
    if (( img-> type & imBPP) != target_depth) 
       CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
@@ -1879,7 +1869,7 @@ apc_gp_stretch_image( Handle self, Handle image,
                 AllPlanes, ZPixmap)))
             return false;
          obj = Object_create("Prima::Image", profile = newHV());
-         CImage( obj)-> create_empty( obj, src_w, src_h, get_bpp_depth( guts. idepth));
+         CImage( obj)-> create_empty( obj, src_w, src_h, guts. qdepth);
          if ( prima_query_image( obj, i)) 
              apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
          sv_free((SV*) profile);
@@ -2033,7 +2023,7 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
    
    if ( !inPaint) apc_application_begin_paint( self);
 
-   CImage( image)-> create_empty( image, xLen, yLen, get_bpp_depth( guts. idepth));
+   CImage( image)-> create_empty( image, xLen, yLen, guts. qdepth);
    if ( guts. idepth == 1)
       i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - yLen, xLen, yLen, 1, XYPixmap);
    else

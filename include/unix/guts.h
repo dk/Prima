@@ -360,6 +360,7 @@ struct _UnixGuts
    Display                     *display;
    int                          machine_byte_order;
    int                          idepth; /* image depth; can be 32 if depth == 24 */
+   int                          qdepth; /* image depth for querying */
    struct {
       long XDrawArcs;
       long XDrawLines;
@@ -505,7 +506,7 @@ typedef struct _drawable_sys_data
    Pixmap fp_pixmap;
    int rop, paint_rop;
    int rop2, paint_rop2;
-   int line_style;
+   int line_style, line_width;
    unsigned char *dashes, *paint_dashes;
    int ndashes, paint_ndashes;
    PCachedFont font;
@@ -542,14 +543,12 @@ typedef struct _drawable_sys_data
       int pointer_obscured              : 1;
       int process_configure_notify	: 1;
       int reload_font			: 1;
-      int saved_zero_line       	: 1;
       int sizeable                      : 1;
       int sync_paint			: 1;
       int transparent                   : 1;
       int transparent_busy              : 1;
       int want_visible                  : 1;
       int withdrawn                     : 1;
-      int zero_line             	: 1;
       int zoomed                        : 1;
    } flags;
    ImageCache bitmap_cache;

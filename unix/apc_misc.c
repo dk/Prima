@@ -1621,10 +1621,26 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svSubmenuDelay:  /* XXX ? */ return 50;
    case svFullDrag: /* XXX ? */ return false;
    case svWheelPresent:		return guts.mouse_wheel_up || guts.mouse_wheel_down;
-   case svXIcon: /* XXX wm query */ return 64;
-   case svYIcon: /* XXX wm query */ return 64;
-   case svXSmallIcon: /* XXX wm query */ return 20;
-   case svYSmallIcon:  /* XXX wm query */ return 20;
+   case svXIcon: 
+   case svYIcon: 
+   case svXSmallIcon: 
+   case svYSmallIcon: 
+       {
+          int ret[4], n;
+          XIconSize * sz = nil; 
+          if ( XGetIconSizes( DISP, guts.root, &sz, &n) && ( n > 0)) {
+             ret[0] = sz-> max_width; 
+             ret[1] = sz-> max_height;
+             ret[2] = sz-> min_width; 
+             ret[3] = sz-> min_height;
+          } else {
+             ret[0] = ret[1] = 64;
+             ret[2] = ret[3] = 20;
+          }
+          if ( sz) XFree( sz);
+          return ret[v - svXIcon];
+       }
+       break;
    case svXPointer:		return guts. cursor_width;
    case svYPointer:		return guts. cursor_height;
    case svXScrollbar:		return 16;
