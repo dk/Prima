@@ -169,6 +169,8 @@ XS( Object_alive_FROMPERL)
 {
    dXSARGS;
    Handle _c_apricot_self_;
+   int ret;
+
    if ( items != 1)
       croak ("Invalid usage of Object::%s", "alive");
    _c_apricot_self_ = gimme_the_real_mate( ST( 0));
@@ -176,7 +178,18 @@ XS( Object_alive_FROMPERL)
       croak( "Illegal object reference passed to Object::%s", "alive");
    SPAGAIN;
    SP -= items;
-   XPUSHs( sv_2mortal( newSViv((( PObject) _c_apricot_self_)-> stage != csDead)));
+
+   switch ((( PObject) _c_apricot_self_)-> stage) {
+   case csConstructing:
+       ret = 2;
+       break;
+   case csNormal:
+       ret = 1;
+       break;
+   default:
+       ret = 0;
+   }
+   XPUSHs( sv_2mortal( newSViv( ret)));
    PUTBACK;
    return;
 }
