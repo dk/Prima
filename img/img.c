@@ -989,22 +989,45 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
       fi. object = fi. frameMap[ i];
       fi. objectExtras = profile;
 
-      /* converting image to format with maximum bit depth */
+      /* converting image to format with maximum bit depth and category flags match */
       if ( autoConvert) {
          int *k = c-> info-> saveTypes;
-         int max = *k & imBPP, supported = false;
+         int max = *k & imBPP, best = *k, supported = false;
+         int flags = im-> type & imCategory, bestflags = *k & imCategory, bestmatch;
+#define dBITS(a) int i = 0x80, match = ( flags & (a)) >> 8
+#define CALCBITS(x) { \
+   x = 0;\
+   while ( i >>= 1 ) if ( match & i ) x++; \
+}
+         {
+            dBITS( bestflags );
+            CALCBITS( bestmatch )
+         }
          while ( *k) {
             if ( im-> type == *k) {
                supported = true;
                break;
             }   
-            if ( max < ( *k & imBPP))
-               max = *k;
+            if ( max < ( *k & imBPP)) {
+               dBITS( bestflags = ( *k & imCategory));
+               max       = *k & imBPP;
+               best      = *k;
+               CALCBITS( bestmatch );
+            } else if ( max == ( *k & imBPP)) {
+               dBITS( *k );
+               int testmatch;
+               CALCBITS( testmatch );
+               if ( testmatch > bestmatch ) {
+                  best      = *k;
+                  bestflags = *k & imCategory;
+                  bestmatch = testmatch;
+               }
+            }
             k++;
-         }   
+         }
          if ( !supported) {
-            im-> self-> set_type(( Handle) im, max);
-            if ( max != im-> type) outd("Failed converting image to type '%04x'", max);
+            im-> self-> set_type(( Handle) im, best);
+            if ( best != im-> type) outd("Failed converting image to type '%04x'", best);
          }
       }      
       
