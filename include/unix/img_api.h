@@ -152,6 +152,9 @@ extern void
 img_info_destroy_properties( PImgInfo imgInfo);
 
 extern void
+img_clear_properties( PList propList);
+
+extern void
 img_destroy_properties( PList propList);
 
 extern void
