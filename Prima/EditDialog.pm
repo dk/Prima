@@ -257,7 +257,7 @@ sub findStyle
    return if $_[0]-> {findStyle} == $_[1];
    my ( $self, $style) = @_;
    $self-> {findStyle} = ( $style ? 1 : 0 );
-   $self-> $_-> enabled( ! $style ) for qw( Replace ReplaceLabel ChangeAll);
+   $self-> bring($_)-> enabled( ! $style ) for qw( Replace ReplaceLabel ChangeAll);
    $self-> Options-> Prompt-> enabled( !$style);
 }
 
