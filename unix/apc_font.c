@@ -680,10 +680,10 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
             apc_font_pick( application, font, font);
             font-> pitch = fpDefault;
          }
-         if ( font != &guts. default_font)
 #ifdef USE_XFT
-            if ( !guts. use_xft || prima_xft_parse( ppFontNameSize, font))
+         if ( !guts. use_xft || prima_xft_parse( ppFontNameSize, font))
 #endif         
+            if ( font != &guts. default_font)
                *font = guts. default_font;
          return;
       }
