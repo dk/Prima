@@ -31,8 +31,9 @@ MusClkRec musClk = {0};
 void set_platform_data( HINSTANCE inst, int cmd)
 {
    memset( &guts, 0, sizeof( guts));
-   guts. cmdShow = cmd;
+   guts. cmdShow  = cmd;
    guts. instance = inst;
+   guts. version  = GetVersion();
 }
 
 extern void start_logger( void);
@@ -42,6 +43,8 @@ window_subsystem_init()
 {
    WNDCLASS  wc;
    HDC dc;
+   HBITMAP hbm;
+
    start_logger();
 
    guts. errorMode = SetErrorMode( SEM_FAILCRITICALERRORS);
@@ -123,9 +126,18 @@ window_subsystem_init()
    }
    create_font_hash();
 
-   guts. displayBMInfo. bmiHeader. biBitCount = 0;
+   memset( &guts. displayBMInfo, 0, sizeof( guts. displayBMInfo));
    guts. displayBMInfo. bmiHeader. biSize = sizeof( BITMAPINFO);
-   GetDIBits( dc, GetCurrentObject( dc, OBJ_BITMAP), 0, 0, NULL, &guts. displayBMInfo, DIB_PAL_COLORS);
+   if ( !( hbm = GetCurrentObject( dc, OBJ_BITMAP))) {
+      apiErr;
+      dc_free();
+      return false;
+   }
+
+   if ( !GetDIBits( dc, hbm, 0, 0, NULL, &guts. displayBMInfo, DIB_PAL_COLORS)) {
+      guts. displayBMInfo. bmiHeader. biBitCount = GetDeviceCaps( dc, BITSPIXEL);
+      guts. displayBMInfo. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
+   }
 
    dc_free();
    guts. insertMode = true;
@@ -563,8 +575,12 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_QUERYNEWPALETTE:
       return palette_change( self);
    case WM_PALETTECHANGED:
-      if (( HWND) mp1 != win)
+      if (( HWND) mp1 != win) {
+         Handle mp = hwnd_to_view(( HWND) mp1);
+         if ( mp && ( hwnd_top_level( mp) == hwnd_top_level( self)))
+            return 0;
          palette_change( self);
+      }
       break;
    case WM_POSTAL:
       ev. cmd    = cmPost;
@@ -962,9 +978,16 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
          {
             HDC dc = dc_alloc();
             int oldBPP = guts. displayBMInfo. bmiHeader. biBitCount;
+            HBITMAP hbm;
+
             guts. displayBMInfo. bmiHeader. biBitCount = 0;
             guts. displayBMInfo. bmiHeader. biSize = sizeof( BITMAPINFO);
-            GetDIBits( dc, GetCurrentObject( dc, OBJ_BITMAP), 0, 0, NULL, &guts. displayBMInfo, DIB_PAL_COLORS);
+            if ( !( hbm = GetCurrentObject( dc, OBJ_BITMAP))) apiErr;
+
+            if ( !GetDIBits( dc, hbm, 0, 0, NULL, &guts. displayBMInfo, DIB_PAL_COLORS)) {
+               guts. displayBMInfo. bmiHeader. biBitCount = ( int) mp1;
+               guts. displayBMInfo. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
+            };
             dsys( application) lastSize. x = LOWORD( mp2);
             dsys( application) lastSize. y = HIWORD( mp2);
             if ( oldBPP != guts. displayBMInfo. bmiHeader. biBitCount)
