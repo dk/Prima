@@ -1083,6 +1083,7 @@ sub format
    }
 
    $self-> stop_format;
+   $self-> selection(-1,-1,-1,-1);
 
    my $paneWidth = $pw;
    my $paneHeight = 0;

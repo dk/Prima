@@ -667,9 +667,9 @@ sub block_wrap
             my $newY = $y + $f_taint-> {ascent} + $f_taint-> {externalLeading};
             $$b[ tb::BLK_HEIGHT] = $newY if $$b[ tb::BLK_HEIGHT] < $newY; 
 #            print "OP_TEXT patch $$b[$i+1] => ";
+            $lastTextOffset = $$b[ tb::BLK_TEXT_OFFSET] + $$b[ $i + 1] + $$b[ $i + 2];
             $$b[ $i + 1] -= $lastBlockOffset - $$b[ tb::BLK_TEXT_OFFSET];
 #            print "$$b[$i+1]\n";
-            $lastTextOffset = $$b[ tb::BLK_TEXT_OFFSET] + $$b[ $i + 1] + $$b[ $i + 2];
          } elsif ( $cmd == tb::OP_FONT) {
             if ( $$b[$i + 1] == tb::F_SIZE) {
                $$state[ $$b[$i + 1]] = $self-> {defaultFontSize} + $$b[$i + 2];
