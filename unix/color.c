@@ -193,8 +193,8 @@ static Color standard_widget_colors[] = {
 static Color standard_window_colors[] = {
    0x000000,	/* Prima.Window.foreground */
    0xcccccc,        /* Prima.Window.background */
-   0x000000,	/* Prima.Window.hilitefore */
-   0xcccccc,        /* Prima.Window.hiliteback */
+   0xffffff,	    /* Prima.Window.hilitefore */
+   0x000000,        /* Prima.Window.hiliteback */
    0x606060,        /* Prima.Window.disabledfore */
    0xcccccc,        /* Prima.Window.disabledback */
    0xffffff,        /* Prima.Window.light3d */
