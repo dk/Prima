@@ -49,7 +49,6 @@ typedef struct _SingleColor
    int   index;
 } SingleColor, *PSingleColor;
 
-static Bool unshift_ordering( Handle owner, Handle self, int tabOrder);
 static Bool find_dup_msg( PEvent event, int cmd);
 static Bool pquery ( Handle window, Handle self, void * v);
 static Bool get_top_current( Handle self);
@@ -240,7 +239,6 @@ Widget_done( Handle self)
       my detach( self, var accelTable, true);
    var accelTable = nilHandle;
 
-   CWidget( var owner)-> first_that( var owner, unshift_ordering, (void*) var tabOrder);
    detachFrom-> self-> detach( var owner, self, false);
    my detach( self, var popupMenu, true);
    var popupMenu = nilHandle;
@@ -1097,7 +1095,6 @@ Widget_set( Handle self, HV * profile)
          croak("RTC0081: Illegal object reference passed to Widget::set_owner");
       if ( my migrate( self, postOwner))
       {
-         ((( PWidget) var owner)-> self)-> first_that( var owner, unshift_ordering, (void*) var tabOrder);
          if ( postOwner)
          {
             if ( is_opt( optOwnerColor))
@@ -2385,15 +2382,37 @@ Widget_set_tab_order( Handle self, int tabOrder)
     count = owner-> widgets. count;
     if ( tabOrder < 0) {
        int i, maxOrder = -1;
+       // finding maximal tabOrder value among the siblings
        for ( i = 0; i < count; i++) {
           PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
           if ( self == ( Handle) ctrl) continue;
           if ( maxOrder < ctrl-> tabOrder) maxOrder = ctrl-> tabOrder;
        }
-       var tabOrder = maxOrder + 1;
+       if ( maxOrder < INT_MAX) {
+          var tabOrder = maxOrder + 1;
+          return;
+       }
+       // maximal value found, but has no use; finding gaps
+       {
+          int j = 0;
+          Bool match = 1;
+          while ( !match) {
+             for ( i = 0; i < count; i++) {
+                PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
+                if ( self == ( Handle) ctrl) continue;
+                if ( ctrl-> tabOrder == j) {
+                   match = 1;
+                   break;
+                }
+             }
+             j++;
+          }
+          var tabOrder = j - 1;
+       }
     } else {
        int i;
        Bool match = 0;
+       // finding exact match among the siblings
        for ( i = 0; i < count; i++) {
           PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
           if ( self == ( Handle) ctrl) continue;
@@ -2403,6 +2422,7 @@ Widget_set_tab_order( Handle self, int tabOrder)
           }
        }
        if ( match)
+          // incrementing all tabOrders that greater than out
           for ( i = 0; i < count; i++) {
              PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
              if ( self == ( Handle) ctrl) continue;
@@ -2504,13 +2524,6 @@ void Widget_on_leave( Handle self) {}
 
 
 /* static iterators */
-static Bool
-unshift_ordering( Handle owner, Handle self, int tabOrder)
-{
-   if ( var tabOrder > tabOrder) var tabOrder--;
-   return false;
-}
-
 Bool kill_all( Handle self, Handle child, void * dummy)
 {
    Object_destroy( child); return 0;
