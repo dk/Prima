@@ -40,7 +40,7 @@
 #ifndef __unix  /* Temporary hack */
 #include "gbm.h"
 #else
-#include "unix/img_api.h"
+#include "img_api.h"
 #endif /* __unix */
 #include "Image.inc"
 #include "Clipboard.h"
@@ -511,19 +511,14 @@ Image_end_paint_info( Handle self)
 }
 
 static void
-add_image_profile( HV *profile, PList imgInfo)
+fill_in_image_profile( HV *profile, PList propList, const char *calledFrom)
 {
    SV *value;
    char *key;
-   /* int keyLen; */
    AV *ary;
    SV **elem;
-   PImgInfo imageInfo;
    PImgProperty imgProp;
    HE *he;
-
-   imageInfo = img_info_create( HvKEYS( profile));
-   list_add( imgInfo, ( Handle) imageInfo);
 
    hv_iterinit( profile);
    for (;;)
@@ -535,30 +530,94 @@ add_image_profile( HV *profile, PList imgInfo)
       /* keyLen = HeKLEN( he); */
 
       if ( SvROK( value)) {
-	 int i, n;
-
-	 if ( SvTYPE( SvRV( value)) != SVt_PVAV) {
-	    croak( "Invalid usage of Image::load: illegal reference type for key ``%s''", key);
-	 }
-	 /* Reference to an array */
-	 ary = (AV*)SvRV( value);
-	 n = av_len( ary) + 1;
-	 imgProp = img_info_add_property( imageInfo, key, PROPTYPE_STRING | PROPTYPE_ARRAY, n > 0 ? n : 1);
-	 for ( i = 0; i < n; i++) {
-	    elem = av_fetch( ary, i, false);
-	    if ( ! elem) {
-	       croak( "Image::load: cannot fetch element %d of ``%s''", i, key);
-	    }
-	    if ( SvROK(*elem)) {
-	       croak( "Invalid usage of Image::load: array element %d of key ``%s'' cannot be a reference", i, key);
-	    }
-	    img_push_property_value( imgProp, SvPV( *elem, na));
+	 switch ( SvTYPE( SvRV( value))) {
+	     case SVt_PVAV:
+		 {
+		     int i, n, len;
+		     int elemType = 0; /* Can be either PROPTYPE_BIN or PROPTYPE_PROP
+					  depending on the array content. */
+		     /* Reference to an array */
+		     ary = (AV*)SvRV( value);
+		     n = av_len( ary) + 1;
+		     /* The first step must be cheking of array content and choosing
+		        elemt type carefully. A mixture of scalars and references isn't
+			allowed as well as the references may be hash references only. */
+		     if ( n > 0) {
+			 for ( i = 0; i < n; i++) {
+			     if ( ! ( elem = av_fetch( ary, i, false))) {
+				 croak( "%s: cannot fetch element %d of ``%s''", calledFrom, i, key);
+			     }
+			     if ( ( elemType != 0)
+				  && ( ( SvROK( *elem) && ( elemType != PROPTYPE_PROP))
+				       || ( ! SvROK( *elem) && ( elemType == PROPTYPE_PROP)))) {
+				 croak( "%s: mixture of scalars and references in property ``%s'' is not allowed.\n", calledFrom, key);
+			     }
+			     if ( SvROK( *elem)) {
+				 if ( SvTYPE( SvRV( *elem)) != SVt_PVHV) {
+				     croak( "%s: array element %d of key %s is an array.", calledFrom, i, key);
+				 }
+				 if ( elemType == 0) {
+				     elemType = PROPTYPE_PROP;
+				 }
+			     }
+			     else if ( elemType != PROPTYPE_BIN) {
+				 elemType = PROPTYPE_BIN;
+			     }
+			 }
+		     }
+		     else {
+			 /* An empty array received, assuming default value for type. */
+			 elemType = PROPTYPE_BIN;
+		     }
+		     imgProp = img_push_property( propList, key, elemType | PROPTYPE_ARRAY, n > 0 ? n : 1);
+		     for ( i = 0; i < n; i++) {
+			 /* I do not check for success of fetching since it has been done
+			    in type-choosing loop. */
+			 elem = av_fetch( ary, i, false);
+			 if ( elemType == PROPTYPE_BIN) {
+			     char *buf = SvPV( *elem, len);
+			     /* len must be increased by 1 to include termination zero. */
+			     img_push_property_value( imgProp, len + 1, buf);
+			 }
+			 else {
+			     HV *subprofile = ( HV *)SvRV( *elem);
+			     img_push_property_value( imgProp, HvKEYS( subprofile));
+			     fill_in_image_profile( subprofile, imgProp->val.pProperties + i, calledFrom);
+			 }
+		     }
+		 }
+		 break;
+	     case SVt_PVHV:
+		 {
+		     /* Reference to a hash. */
+		     HV *subprofile = ( HV *) SvRV( value);
+		     imgProp = img_push_property( propList, key, PROPTYPE_PROP, -1, HvKEYS( subprofile));
+		     fill_in_image_profile( subprofile, &imgProp->val.Properties, calledFrom);
+		 }
+		 break;
+	     default:
+		 croak( "Invalid usage of %s: illegal reference type for key ``%s''", calledFrom, key);
 	 }
       } else {
 	 /* scalar */
-	 img_info_add_property( imageInfo, key, PROPTYPE_STRING, -1, SvPV( value, na));
+	 int len;
+	 char *buf = SvPV( value, len);
+	 /* len must be increased by 1 to include termination zero. */
+	 img_push_property( propList, key, PROPTYPE_BIN, -1, len + 1, buf);
       }
    }
+}
+
+static void
+add_image_profile( HV *profile, PList imgInfo, const char *calledFrom)
+{
+   PImgInfo imageInfo;
+
+   if ( ! ( imageInfo = img_info_create( HvKEYS( profile)))) {
+       croak( "%s: can't create new image profile.\n", calledFrom);
+   }
+   fill_in_image_profile( profile, imageInfo->propList, calledFrom);
+   list_add( imgInfo, ( Handle) imageInfo);
 }
 
 static void
@@ -612,8 +671,7 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
 		    hv_store( profile,
 			      imgProp->name,
 			      strlen( imgProp->name),
-			      newRV_inc( ( SV *) hv),
-/*  			      newRV( ( SV *) hv), */
+			      newRV_noinc( ( SV *) hv),
 			      0
 			);
 		}
@@ -664,8 +722,7 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
 				calledFrom
 				);
 			}
-			sv = newRV_inc( ( SV *) hv);
-/*  			sv = newRV( ( SV *) hv); */
+			sv = newRV_noinc( ( SV *) hv);
 		    }
 		    break;
 		case PROPTYPE_INT:
@@ -675,7 +732,7 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
 	    }
 	    av_push( av, sv);
 	}
-	hv_store( profile, imgProp->name, strlen( imgProp->name), newRV_inc( ( SV *) av), 0);
+  	hv_store( profile, imgProp->name, strlen( imgProp->name), newRV_noinc( ( SV *) av), 0);
     }
 }
 
@@ -753,7 +810,7 @@ modify_Image( Handle self, PImgInfo imageInfo)
 			croak( "Image::load: can't create new ``extraInfo'' profile");
 		    }
 		    hv_store( ( HV *) SvRV( var->mate), "extraInfo", 9,
-			      newRV_inc( ( SV *) profile),  0);
+			      newRV_noinc( ( SV *) profile),  0);
 		}
 
 		extraInfo = profile;
@@ -907,7 +964,8 @@ XS( Image_load_FROMPERL) {
 	 for ( i = 2; i < items; i++) {
 	    add_image_profile(( HV *)SvRV( ST(i)), info);
 	 }
-      } else {
+      }
+      else {
 	 /* assuming normal single profile */
          char buf [ 15];
          int index = 0;
@@ -1024,7 +1082,7 @@ XS( Image_load_FROMPERL) {
 	 }
 	 info = plist_create( items - 2, 1);
 	 for ( i = 2; i < items; i++) {
-	    add_image_profile(( HV *)SvRV( ST(i)), info);
+	    add_image_profile(( HV *)SvRV( ST(i)), info, "Image::load");
 	 }
       } else {
 	 /* assuming normal single profile */
@@ -1033,7 +1091,7 @@ XS( Image_load_FROMPERL) {
 	 }
 	 info = plist_create( 1, 1);
 	 hv = parse_hv( ax, sp, items, mark, 2, "Image::load");
-	 add_image_profile( hv, info);
+	 add_image_profile( hv, info, "Image::load");
 	 sv_free(( SV*)hv);
       }
       result = apc_image_read( filename, info, true);
@@ -1167,7 +1225,7 @@ XS( Image_get_info_FROMPERL)
 	 }
 	 info = plist_create( items - 2, 1);
 	 for ( i = 2; i < items; i++) {
-	    add_image_profile(( HV *)SvRV( ST(i)), info);
+	    add_image_profile(( HV *)SvRV( ST(i)), info, "Image::get_info");
 	 }
       } else {
 	 /* assuming normal single profile */
@@ -1176,7 +1234,7 @@ XS( Image_get_info_FROMPERL)
 	 }
 	 info = plist_create( 1, 1);
 	 hv = parse_hv( ax, sp, items, mark, 2, "Image::get_info");
-	 add_image_profile( hv, info);
+	 add_image_profile( hv, info, "Image::get_info");
 	 sv_free(( SV*)hv);
       }
       result = apc_image_read( filename, info, false);
