@@ -147,12 +147,14 @@ typedef long Color;
 
 #include "Types.h"
 
+#ifndef _SYS_INTTYPES_H_
 typedef unsigned char  uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned long  uint32_t;
 typedef char            int8_t;
 typedef short           int16_t;
 typedef long            int32_t;
+#endif
 
 typedef uint8_t         Byte;
 typedef int16_t         Short;
