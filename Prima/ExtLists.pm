@@ -52,7 +52,7 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      vector => 0,
+      vector => '',
    );
    @$def{keys %prf} = values %prf;
    return $def;
