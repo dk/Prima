@@ -1277,7 +1277,7 @@ sub init
    $self->insert( Label =>
       name      => 'Directory',
       origin    => [ 10, 202],
-      growMode => gm::Ceiling,
+      growMode => gm::GrowLoY,
       autoWidth => 1,
       autoHeight => 1,
       text      => '~Directory',
