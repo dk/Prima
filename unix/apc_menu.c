@@ -1659,7 +1659,6 @@ apc_menu_item_set_check( Handle self, PMenuItemReg m)
 Bool
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m)
 {
-   DEFMM;
    menu_touch( self, m, false);
    menubar_repaint( self);
    return true;
