@@ -642,21 +642,25 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
        {
           RECT r;
           Handle parent = v-> self-> get_parent(( Handle) v);
-          Point sz   = CWidget(parent)-> get_size( parent);
-          Point pos  = var self-> get_pos( self);
-          ev. cmd    = cmMove;
-          ev. gen. P = pos;
-          if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd == 0;
+          if ( parent) {
+             Point sz   = CWidget(parent)-> get_size( parent);
+             Point pos  = var self-> get_pos( self);
+             ev. cmd    = cmMove;
+             ev. gen. P = pos;
+             if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd == 0;
+          }
        }
        break;
    case WM_MOVE:
       {
           Handle parent = v-> self-> get_parent(( Handle) v);
-          Point sz = CWidget(parent)-> get_size( parent);
-          ev. cmd = cmMove;
-          ev. gen . P. x = ( SHORT) LOWORD( mp2);
-          ev. gen . P. y = sz. y - ( int) HIWORD( mp2) - sys yOverride;
-          if ( is_apt( aptTransparent)) InvalidateRect( win, nil, false);
+          if ( parent) {
+             Point sz = CWidget(parent)-> get_size( parent);
+             ev. cmd = cmMove;
+             ev. gen . P. x = ( SHORT) LOWORD( mp2);
+             ev. gen . P. y = sz. y - ( int) HIWORD( mp2) - sys yOverride;
+             if ( is_apt( aptTransparent)) InvalidateRect( win, nil, false);
+          }
       }
       break;
    case WM_NCHITTEST:
@@ -884,10 +888,9 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
       return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
-       if ( generic_view_handler(( HWND) v-> handle, msg, mp1, mp2) == 1)
-          return 1;
-       else
-          hiStage = true;
+       if ( generic_view_handler(( HWND) v-> handle, msg, mp1, mp2) == 0)
+          return 0;
+       hiStage = true;
        break;
    case WM_DLGENTERMODAL:
        ev. cmd = mp1 ? cmExecute : cmEndModal;
@@ -974,20 +977,24 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
        {
           RECT r;
           Handle parent = v-> self-> get_parent(( Handle) v);
-          Point sz   = CWidget(parent)-> get_size( parent);
-          Point pos  = var self-> get_pos( self);
-          ev. cmd    = cmMove;
-          ev. gen. P = pos;
-          if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd == 0;
+          if ( parent) {
+             Point sz   = CWidget(parent)-> get_size( parent);
+             Point pos  = var self-> get_pos( self);
+             ev. cmd    = cmMove;
+             ev. gen. P = pos;
+             if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd == 0;
+          }
        }
        break;
    case WM_MOVE:
        {
           Handle parent = v-> self-> get_parent(( Handle) v);
-          Point sz = CWidget(parent)-> get_size( parent);
-          ev. cmd = cmMove;
-          ev. gen . P. x = ( SHORT) LOWORD( mp2);
-          ev. gen . P. y = sz. y - ( SHORT) HIWORD( mp2) - sys yOverride;
+          if ( parent) {
+             Point sz = CWidget(parent)-> get_size( parent);
+             ev. cmd = cmMove;
+             ev. gen . P. x = ( SHORT) LOWORD( mp2);
+             ev. gen . P. y = sz. y - ( SHORT) HIWORD( mp2) - sys yOverride;
+          }
        }
        break;
    case WM_SYSCHAR:return 1;
