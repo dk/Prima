@@ -74,7 +74,7 @@ file, usually named .Xdefaults, which contains the database in the string form.
 
 The format of .Xdefaults directly reflects XRDB capabilities, one of the most
 important of which is globbing, manifested via * ( star ) character. Using
-globbing, the use can set up a property value that corresponds to multiple
+globbing, the user can set up a property value that corresponds to multiple
 targets:
 
    *.ListBox.backColor: yellow
