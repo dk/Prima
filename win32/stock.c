@@ -52,6 +52,8 @@ stylus_alloc( PStylus data)
    PDCStylus ret = hash_fetch( stylusMan, data, sizeof( Stylus) - ( extPen ? 0 : sizeof( EXTPEN)));
    if ( ret == nil) {
       LOGPEN * p;
+      LOGBRUSH * b;
+      LOGBRUSH   xbrush;
 
       if ( IS_WIN95 && ( hash_count( stylusMan) > 128))
          stylus_clean();
@@ -75,17 +77,28 @@ stylus_alloc( PStylus data)
             ret-> hpen = CreatePen( PS_SOLID, 0, 0);
          }
       }
+      b = &ret-> s. brush. lb;
       if ( ret-> s. brush. lb. lbStyle == BS_DIBPATTERNPT) {
-         int i;
-         for ( i = 0; i < 8; i++) bmiHatch. bmiData[ i * 4] = ret-> s. brush. pattern[ i];
-         bmiHatch. bmiColors[ 0]. rgbBlue  =  ( ret-> s. brush. backColor & 0xFF);
-         bmiHatch. bmiColors[ 0]. rgbGreen = (( ret-> s. brush. backColor >> 8) & 0xFF);
-         bmiHatch. bmiColors[ 0]. rgbRed   = (( ret-> s. brush. backColor >> 16) & 0xFF);
-         bmiHatch. bmiColors[ 1]. rgbRed   =  ( ret-> s. pen. lopnColor & 0xFF);
-         bmiHatch. bmiColors[ 1]. rgbGreen = (( ret-> s. pen. lopnColor >> 8) & 0xFF);
-         bmiHatch. bmiColors[ 1]. rgbBlue  = (( ret-> s. pen. lopnColor >> 16) & 0xFF);
+         if ( ret-> s. brush. backColor == ret-> s. pen. lopnColor) {
+            // workaround Win32 bug with mono bitmaps -
+            // if color and backColor are the same, but fill pattern present, backColor
+            // value is ignored by some unknown, but certainly important reason :)
+            xbrush. lbStyle = BS_SOLID;
+            xbrush. lbColor = ret-> s. pen. lopnColor;
+            xbrush. lbHatch = 0;
+            b = &xbrush;
+         } else {
+            int i;
+            for ( i = 0; i < 8; i++) bmiHatch. bmiData[ i * 4] = ret-> s. brush. pattern[ i];
+            bmiHatch. bmiColors[ 0]. rgbBlue  =  ( ret-> s. brush. backColor & 0xFF);
+            bmiHatch. bmiColors[ 0]. rgbGreen = (( ret-> s. brush. backColor >> 8) & 0xFF);
+            bmiHatch. bmiColors[ 0]. rgbRed   = (( ret-> s. brush. backColor >> 16) & 0xFF);
+            bmiHatch. bmiColors[ 1]. rgbRed   =  ( ret-> s. pen. lopnColor & 0xFF);
+            bmiHatch. bmiColors[ 1]. rgbGreen = (( ret-> s. pen. lopnColor >> 8) & 0xFF);
+            bmiHatch. bmiColors[ 1]. rgbBlue  = (( ret-> s. pen. lopnColor >> 16) & 0xFF);
+         }
       }
-      if ( !( ret-> hbrush = CreateBrushIndirect( &ret-> s. brush. lb))) {
+      if ( !( ret-> hbrush = CreateBrushIndirect( b))) {
          apiErr;
          ret-> hbrush = CreateSolidBrush( RGB( 255, 255, 255));
       }
