@@ -744,19 +744,14 @@ sub on_translateaccel
    if ( !$self-> {mouseTransaction}) {
       if (( $key == kb::Tab || $key == kb::BackTab) && ( $mod & km::Ctrl)) {
          my $back = ($key == kb::BackTab);
-         my $x    = ( $back ? $self-> last : $self-> first);
-         my $mdix = $x-> isa('Prima::MDI') ? $x : undef;
-         while ( $x) {
-            $x = ( $back ? $x-> prev : $x-> next);
-            $mdix = $x if $x && $x-> isa('Prima::MDI');
-         }
-         unless ( $x) {
-            $x = ( $back ? $x-> first : $self-> last );
-            $mdix = $x if $x && $x-> isa('Prima::MDI');
-         }
-         if ( $mdix) {
-            $mdix-> bring_to_front;
-            $mdix-> select;
+         my $x = $self-> first;
+         my @mdis = ( $x );
+         push @mdis, $x while $x = $x-> next;
+         @mdis = grep { $_->isa('Prima::MDI') } @mdis;
+         $x = $mdis[ $back ? 1 : -1];
+         if ( $x) {
+            $back ? $mdis[0]-> send_to_back : $x-> bring_to_front;
+            $x-> select;
          }
          $self-> clear_event;
       } if (( $key == kb::Space) && ( $mod & km::Ctrl) && ( $self-> { borderIcons} & mbi::SystemMenu)) {
