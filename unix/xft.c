@@ -384,6 +384,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
    
    key. width = 0;
    if ( hash_fetch( mismatch, &key, sizeof( FontKey))) {
+      Fdebug("xft: refuse\n");
       return false;
    }
    key. width = f. width;
@@ -467,6 +468,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
    /* match best font - must return something useful; the match is statically allocated */
    match = XftFontMatch( DISP, SCREEN, request, &res);
    if ( !match) {
+      Fdebug("xft: XftFontMatch error\n");
       FcPatternDestroy( request);
       return false;
    }
@@ -489,6 +491,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          xft_build_font_key( &key, &f, by_size);
          key. width = 0;
          hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
+	 Fdebug("xft: charset mismatch\n");
          return false;
       }
    }
@@ -501,6 +504,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          xft_build_font_key( &key, &f, by_size);
          key. width = 0;
          hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
+	 Fdebug("xft: refuse bitmapped font\n");
          return false;
       }
    }
@@ -529,6 +533,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          xft_build_font_key( &key, &f, by_size);
          key. width = 0;
          hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
+	 Fdebug("xft: name mismatch\n");
          return false;
       }
    }
@@ -539,6 +544,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
       xft_build_font_key( &key, &f, by_size);
       key. width = 0;
       hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
+      Fdebug("xft: XftFontOpenPattern error\n");
       return false;
    }
    if ( kf_base) {

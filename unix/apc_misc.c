@@ -202,6 +202,7 @@ apc_fetch_resource( const char *className, const char *name,
                          &type, &value)) {
       if ( type == guts.qString) {
          s = (char *)value.addr;
+	 Xdebug("found %s\n", s);
          switch ( resType) {
          case frString:
             *((char**)result) = duplicate_string( s);
@@ -210,12 +211,16 @@ apc_fetch_resource( const char *className, const char *name,
             if (!XParseColor( DISP, DefaultColormap( DISP, SCREEN), s, &clr))
                return false;
             *((Color*)result) = X_COLOR_TO_RGB(clr);
+	    Xdebug("color: %06x\n", *((Color*)result));
             break;
          case frFont:
             prima_font_pp2font( s, ( Font *) result);
+#define DEBUG_FONT(font) font.height,font.width,font.size,font.name,font.encoding
+            Xdebug("font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT((*(( Font *) result))));
             break;
          case frUnix_int:
             *((int*)result) = atoi( s);
+	    Xdebug("int: %d\n", *((int*)result));
             break;
          default:
             return false;
