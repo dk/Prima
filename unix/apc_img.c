@@ -33,6 +33,7 @@ static int apcErrorType = APCERRT_NONE;
 #define APCIMG_NOT_ENOUGH_MEMORY 3
 #define APCIMG_NO_FORMAT 4
 #define APCIMG_INV_PROPERTY_TYPE 5
+#define APCIMG_INV_PROPERTY_VAL 6
 static int apcErrorCode = APCIMG_NO_ERROR;
 static int errDriverIdx = -1;
 
@@ -77,6 +78,9 @@ apc_image_get_error_message( char *errorMsgBuf, int bufLen)
 		    break;
 		case APCIMG_INV_PROPERTY_TYPE:
 		    msg = "invalid property type";
+		    break;
+		case APCIMG_INV_PROPERTY_VAL:
+		    msg = "invalid property value";
 		    break;
 		default:
 		    msg = "*** APC internal: unknown error code";
@@ -292,14 +296,41 @@ load_img_loadable( Handle item, void *params)
 }
 
 Bool
-__apc_image_correct_properties( PList propList, PImgFormat imgFormat)
+__apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat)
 {
    PImgProps fmtProps = imgFormat->propertyList;
+   PList propList = imageInfo->propList;
    int i, j, n;
    Bool rc = true;
 
    for ( i = ( propList->count - 1); ( i >= 0) && rc; i--) {
        PImgProperty imgProp = ( PImgProperty) list_at( propList, i);
+       if ( strcmp( imgProp->id, "extraInfo") == 0) {
+	   if ( imgProp->size != -1) {
+	       // We don't expect an array here.
+	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
+	       fprintf( stderr, "Property %s: wrong type\n", imgProp->id);
+	       rc = false;
+	   }
+	   else if ( ( strcasecmp( imgProp->val.String, "yes") != 0)
+		     && ( strcasecmp( imgProp->val.String, "on") != 0)
+		     && ( strcasecmp( imgProp->val.String, "1") != 0)
+		     && ( strcasecmp( imgProp->val.String, "no") != 0)
+		     && ( strcasecmp( imgProp->val.String, "off") != 0)
+		     && ( strcasecmp( imgProp->val.String, "0") != 0)) {
+	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_VAL);
+	       fprintf( stderr, "Property %s: wrong value \'%s\'\n", imgProp->id, imgProp->val.String);
+	       rc = false;
+	   }
+	   else {
+	       imageInfo->extraInfo = 
+		   ( strcasecmp( imgProp->val.String, "yes") == 0)
+		   || ( strcasecmp( imgProp->val.String, "on") == 0)
+		   || ( strcasecmp( imgProp->val.String, "1") == 0);
+	   }
+	   list_delete_at( propList, i);
+	   continue;
+       }
        for ( j = 0; fmtProps[ j].id; j++) {
 	   if ( strcmp( imgProp->id, fmtProps[ j].id) == 0) {
 	       break;
@@ -410,7 +441,7 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 			    );
 			for ( i = 0; ( i < imgInfo->count) && correction_succeed; i++) {
 			    PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
-			    correction_succeed = __apc_image_correct_properties( imageInfo->propList, imgFormat);
+			    correction_succeed = __apc_image_correct_properties( imageInfo, imgFormat);
 			}
 			if ( correction_succeed) {
 			    rc = ( readData ?

@@ -1,5 +1,7 @@
 #include "apricot.h"
 #include "unix/gif_support.h"
+#include <unistd.h>
+#include <signal.h>
 
 ImgFormat gifFormat = {
     "GIF", "Graphics Interchange Format",
@@ -194,7 +196,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
     GifImageDesc *gifChunks;
     GifPixelType **imageData;
     int lastIndex = -1;
-    Bool succeed = true;
+    Bool succeed = true, readAll = false;
     int imgDescCount = 0;
     int *queriedIdx;
     int i, gifrc;
@@ -208,23 +210,28 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
     }
     for ( i = 0; ( i < imgInfo->count) && succeed; i++) {
 	int indexPropIdx;
+	PImgProperty imgProp;
 	PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
 	fprintf( stderr, "Image #%d: %d properties\n", i, imageInfo->propList->count);
 	indexPropIdx = list_first_that( imageInfo->propList, property_name, ( void*) "index");
 	if ( indexPropIdx >= 0) {
-	    PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, indexPropIdx);
-	    if ( imgProp->size == -1) {
-		if ( imgProp->val.Int > lastIndex) {
-		    lastIndex = imgProp->val.Int;
-		}
-		queriedIdx[ i] = imgProp->val.Int;
+	    imgProp = ( PImgProperty) list_at( imageInfo->propList, indexPropIdx);
+	}
+	else {
+	    imgProp = apc_image_add_property( imageInfo, "index", -1);
+	    imgProp->val.Int = 0;
+	}
+	if ( imgProp->size == -1) {
+	    if ( imgProp->val.Int > lastIndex) {
+		lastIndex = imgProp->val.Int;
 	    }
-	    else {
-		/* ERROR: The property contains an array. */
-		__gif_seterror( GIFERRT_DRIVER, DERR_WRONG_PROPERTY_TYPE);
-		succeed = false;
-		continue;
-	    }
+	    queriedIdx[ i] = imgProp->val.Int;
+	}
+	else {
+	    /* ERROR: The property contains an array. */
+	    __gif_seterror( GIFERRT_DRIVER, DERR_WRONG_PROPERTY_TYPE);
+	    succeed = false;
+	    continue;
 	}
     }
 
@@ -232,7 +239,15 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 	return false;
     }
 
-    printf( "We need %d images\n", lastIndex + 1);
+    if ( ( lastIndex == -1) && readData) {
+	printf( "We need all images\n");
+	readAll = true;
+	fprintf( stderr, "Unsupported mode (yet)\n");
+	return false;
+    }
+    else {
+	printf( "We need %d images\n", lastIndex + 1);
+    }
 
     fprintf( stderr, "opening %s\n", filename);
 
@@ -242,6 +257,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 	return false;
     }
 
+    /* XXX this is a subject to change! */
     gifChunks = ( GifImageDesc *) malloc( sizeof( GifImageDesc) * ( lastIndex + 1));
     if ( gifChunks == NULL) {
 	DGifCloseFile( gif);
@@ -406,7 +422,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 	    default:
 		fprintf( stderr, "Unknown record type\n");
 	}
-	done = done || ( ! succeed) || ( imgDescCount > lastIndex);
+	done = done || ( ! succeed) || ( imgDescCount > lastIndex) || ( ! readAll);
     } while( ( gifType != TERMINATE_RECORD_TYPE) && ( ! done));
 
     if ( succeed) {

@@ -1514,6 +1514,7 @@ typedef struct _IMGProperty { /* To be passed for Load/Save related operations. 
 } ImgProperty, *PImgProperty;
 
 typedef struct _IMGInfo {
+   Bool extraInfo;
    PList propList;
 } ImgInfo, *PImgInfo;
 
