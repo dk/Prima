@@ -893,6 +893,8 @@ sub profile_default
       menuFont              => $_[ 0]-> get_default_menu_font,
       modalHorizon          => 1,
       ownerFont             => 0,
+      originDontCare        => 1,
+      sizeDontCare          => 1,
       tabStop               => 0,
       taskListed            => 1,
       transparent           => 0,
@@ -917,6 +919,15 @@ sub profile_check_in
    $p->{ modalHorizon} = 0 if $p->{clipOwner} || $default->{clipOwner};
    $p->{ growMode} = 0 if !exists $p->{growMode} and $default->{growMode} == gf::DontCare and
      (( exists $p->{clipOwner} && ($p->{clipOwner}==1)) or ( $default->{clipOwner} == 1));
+   my $shp = exists $p->{originDontCare} ? $p->{originDontCare} : $default-> {originDontCare};
+   my $shs = exists $p->{sizeDontCare  } ? $p->{sizeDontCare  } : $default-> {sizeDontCare  };
+   $p->{originDontCare} = 0 if $shp and
+      exists $p->{left}   or exists $p->{bottom} or
+      exists $p->{origin} or exists $p->{rect};
+   $p->{sizeDontCare} = 0 if $shs and
+      exists $p->{width}  or exists $p->{height} or
+      exists $p->{size}   or exists $p->{rect} or
+      exists $p->{right}  or exists $p->{top};
 }
 
 sub maximize    { $_[0]->windowState( ws::Maximized)}
@@ -959,9 +970,11 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      borderStyle  => bs::Dialog,
-      borderIcons  => bi::SystemMenu | bi::TitleBar,
-      widgetClass  => wc::Dialog,
+      borderStyle    => bs::Dialog,
+      borderIcons    => bi::SystemMenu | bi::TitleBar,
+      widgetClass    => wc::Dialog,
+      originDontCare => 0,
+      sizeDontCare   => 0,
    );
    @$def{keys %prf} = values %prf;
    return $def;
