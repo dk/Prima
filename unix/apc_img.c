@@ -347,6 +347,11 @@ apc_image_update_change( Handle self)
 
    XX-> size. x = img-> w;
    XX-> size. y = img-> h;
+   if ( guts. depth > 1)
+      XX-> type.pixmap = ((img-> type & imBPP) > 1) ? 1 : 0;
+   else
+      XX-> type.pixmap = 0;
+   XX-> type.bitmap = !!XX-> type.pixmap;
    return true;
 }
 
@@ -361,6 +366,8 @@ apc_dbm_create( Handle self, Bool monochrome)
    XX-> type.drawable = true;
    XX->size. x          = ((PDeviceBitmap)(self))-> w;
    XX->size. y          = ((PDeviceBitmap)(self))-> h;
+   if ( XX-> size.x == 0) XX-> size.x = 1;
+   if ( XX-> size.y == 0) XX-> size.y = 1;
    XX->gdrawable        = XCreatePixmap( DISP, guts. root, XX->size. x, XX->size. y,
                                          monochrome ? 1 : guts.depth);
    if (XX-> gdrawable == None) return false;
@@ -1101,16 +1108,75 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    PImage img = PImage( image);
    int func, ofunc;
    XGCValues gcv;
-   ImageCache *cache;
+   ImageCache *cache = nil;
+   Bool mono, icon = false, tempResult = false;
+   PrimaXImage * result;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
-   
-   if ( XT_IS_DBM(X(image)))
-      return put_pixmap( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
 
-   cache = prima_create_image_cache( img, self);
-   if ( !cache) return false;
+   if ( xFrom >= img-> w || yFrom >= img-> h) return false;
+   if ( xFrom + xLen > img-> w) xLen = img-> w - xFrom;
+   if ( yFrom + yLen > img-> h) yLen = img-> h - yFrom;
+   if ( xLen <= 0 || yLen <= 0) return false;
+  
+   if ( XT_IS_DBM(X(image))) {
+      HV * profile;
+      XImage * i;
+      if (
+           ( XT_IS_BITMAP(X(image)) && ( XT_IS_BITMAP(X(self)) || ( guts. depth == 1))) ||
+           ( XT_IS_PIXMAP(X(image)) && ( XT_IS_PIXMAP(X(self)) || XT_IS_WIDGET(X(self)))) 
+         )
+         return put_pixmap( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
+
+      if ( XT_IS_BITMAP(X(image))) {
+         int j, ls;
+         Byte * src, * dst;
+         mono = true;
+         if ( !( i = XGetImage( DISP, X(image)-> gdrawable, 
+             xFrom, img-> h - yFrom - yLen, xLen, yLen, 1, XYPixmap)))
+            return false;
+         if ( !( result = prima_prepare_ximage( xLen, yLen, true))) {
+            XDestroyImage( i);
+            return false;
+         }
+         xFrom = 0;
+         yFrom = img-> h - yLen;
+         tempResult = true;
+         ls = ( i-> bytes_per_line > result-> bytes_per_line_alias) ? 
+            result-> bytes_per_line_alias : i-> bytes_per_line;
+         src = i-> data;
+         dst = result-> data_alias;
+         for ( j = 0; j < yLen; j++, src += i-> bytes_per_line, dst += result-> bytes_per_line_alias) 
+            memcpy( dst, src, ls);
+         XCHECKPOINT;
+         XDestroyImage( i);
+      } else {
+         Handle obj;
+         Bool ret = false;
+         if ( !( i = XGetImage( DISP, X(image)-> gdrawable, 
+                xFrom, img-> h - yFrom - yLen, xLen, yLen, AllPlanes, ZPixmap)))
+            return false;
+         obj = Object_create("Prima::Image", profile = newHV());
+         CImage( obj)-> create_empty( obj, xLen, yLen, get_bpp_depth( guts. idepth));
+         if ( prima_query_image( obj, i)) {
+            CImage( obj)-> set_type( obj, imBW);
+            ret = apc_gp_put_image( self, obj, x, y, 0, 0, xLen, yLen, rop);
+         }
+         sv_free((SV*) profile);
+         Object_destroy( obj);
+         XCHECKPOINT;
+         XDestroyImage( i);
+         return ret;
+      }
+   } else {
+      mono = (( img-> type & imBPP) == 1) || ( guts. idepth == 1);
+      cache = prima_create_image_cache( img, self);
+      if ( !cache) return false;
+      result = cache-> image;
+      icon   = cache-> icon != nil;
+   }
+   
    if ( guts. dynamicColors) {
       int i;
       Byte * p1 = X(image)-> palette;
@@ -1122,13 +1188,12 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       }
    }
    SHIFT( x, y);
-   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
+   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
       warn( "UAI_016: error querying GC values");
-   }
    ofunc = gcv. function;
-   if ( cache-> icon) {
+   if ( icon) {
       func = GXand;
-      if ( cache-> bitmap) {
+      if ( XT_IS_BITMAP(X(self))) {
          XSetForeground( DISP, XX-> gc, 1);
          XSetBackground( DISP, XX-> gc, 0);
       } else {
@@ -1153,18 +1218,23 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    }
    if ( func != ofunc)
       XSetFunction( DISP, XX-> gc, func);
-   if ((( img-> type & imBPP) == 1) || ( guts. idepth == 1)) {
+   
+   if ( XT_IS_BITMAP(X(self))) {
+      XSetForeground( DISP, XX-> gc, 1);
+      XSetBackground( DISP, XX-> gc, 0);
+      XX-> flags. brush_fore = XX-> flags. brush_back = 0;
+   } else if ( mono) {
       XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
       XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
-      XX-> flags. brush_fore = 0;
-      XX-> flags. brush_back = 0;
-      XCHECKPOINT;
+      XX-> flags. brush_fore = XX-> flags. brush_back = 0;
    }
-   prima_put_ximage( XX-> gdrawable, XX-> gc, cache->image,
+   prima_put_ximage( XX-> gdrawable, XX-> gc, result,
                      xFrom, img-> h - yFrom - yLen,
                      x, REVERT(y) - yLen + 1, xLen, yLen);
    if ( func != ofunc)
       XSetFunction( DISP, XX-> gc, ofunc);
+   if ( tempResult)
+      prima_free_ximage( result);
    return true;
 }
 
@@ -1335,13 +1405,13 @@ slurp_image_unsupported_depth:
 }   
    
 
-static void
+static Bool
 slurp_image( Handle self, Pixmap px)
 {
    XImage *i = nil;
    PImage img = PImage( self);
 
-   if ( !px) return;
+   if ( !px) return false;
 
    if (( img-> type & imBPP) == 1)
       i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, 1, XYPixmap);
@@ -1351,10 +1421,10 @@ slurp_image( Handle self, Pixmap px)
    if ( i) {
       Bool res = prima_query_image( self, i);
       XDestroyImage( i);
-      if ( !res) 
-         warn( "UAI_017: unsupported depths combination");
+      if ( !res) return false;
    } else 
-      warn("Error querying image");  
+      return false;
+   return true;
 }
 
 Bool
@@ -1611,7 +1681,7 @@ typedef void mStretchProc( void * srcData, void * dstData, Bool xreverse,
 
 
 static PrimaXImage *
-do_stretch( Handle self, PImage img, PrimaXImage *cache,
+do_stretch( Handle self, PrimaXImage *cache,
             int src_x, int src_y, int src_w, int src_h,
             int dst_x, int dst_y, int dst_w, int dst_h,
             int *x, int *y, int *w, int *h)
@@ -1631,7 +1701,7 @@ do_stretch( Handle self, PImage img, PrimaXImage *cache,
    xclipsize = cr. width;
    yclipstart = cr. y - dst_y;
    yclipsize = cr. height;
-   bpp = ( cache-> image-> format == XYBitmap) ? 1 : guts. idepth;
+   bpp = ( cache-> image-> format == XYBitmap || cache-> image-> format == XYPixmap) ? 1 : guts. idepth;
    if ( xclipstart + xclipsize <= 0 || yclipstart + yclipsize <= 0) return nil;
    stretch_calculate_seed( src_w, dst_w, &xclipstart, &xclipsize, &xseed);
    stretch_calculate_seed( src_h, dst_h, &yclipstart, &yclipsize, &yseed);
@@ -1653,7 +1723,6 @@ do_stretch( Handle self, PImage img, PrimaXImage *cache,
       int targetwidth  = xclipsize;
       int targetheight = yclipsize;
       int copyBytes = tls > sls ? sls : tls;
-
       switch ( bpp) {
       case 1:
           srcData += src_x / ByteBits;
@@ -1684,6 +1753,7 @@ do_stretch( Handle self, PImage img, PrimaXImage *cache,
           break;
       default:
           warn( "UAI_020: %d-bit stretch is not yet implemented", bpp); 
+          prima_free_ximage( stretch);
           return nil;
       }   
 
@@ -1744,19 +1814,16 @@ apc_gp_stretch_image( Handle self, Handle image,
    DEFXX;
    PImage img = PImage( image);
    PrimaXImage *stretch;
-   ImageCache *cache;
+   ImageCache *cache = nil;
    int func, ofunc;
    XGCValues gcv;
    int x, y, w, h;
-
-   if ( XT_IS_DBM(X(image))) {
-      DOLBUG( "apc_gp_stretch_image");
-      return false;
-   }   
+   Bool mono, icon = false, tempResult = false;
+   PrimaXImage * result;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
-   
+
    if ( src_h < 0) {
       src_h = -src_h;
       dst_h = -dst_h;
@@ -1771,8 +1838,49 @@ apc_gp_stretch_image( Handle self, Handle image,
    if ( src_y + src_h > img-> h) src_h = img-> h - src_y;
    if ( src_w == 0 || src_h == 0) return false;
 
-   cache = prima_create_image_cache( img, self);
-   if ( !cache) return false;
+   if ( XT_IS_DBM(X(image))) {
+      XImage * i;
+      if ( XT_IS_PIXMAP(X(image)) && XT_IS_BITMAP(X(self))) {
+         Handle obj;
+         HV * profile;
+         if ( !( i = XGetImage( DISP, X(image)-> gdrawable, 
+                src_x, img-> h - src_y - src_h, src_w, src_h, 
+                AllPlanes, ZPixmap)))
+            return false;
+         obj = Object_create("Prima::Image", profile = newHV());
+         CImage( obj)-> create_empty( obj, src_w, src_h, get_bpp_depth( guts. idepth));
+         if ( prima_query_image( obj, i)) 
+             apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
+         sv_free((SV*) profile);
+         Object_destroy( obj);
+         return true;
+      } else {
+         mono = XT_IS_BITMAP(X(image));
+         if ( !( i = XGetImage( DISP, X(image)-> gdrawable, 
+                src_x, img-> h - src_y - src_h, src_w, src_h, 
+                mono ? 1 : AllPlanes, mono ? XYPixmap : ZPixmap)))
+             return false;
+         tempResult = true;  
+         src_x = 0;
+         src_y = img-> h - ABS( src_h);
+         if ( !( result = malloc( sizeof( PrimaXImage)))) {
+            XDestroyImage( i);
+            return false;
+         }
+         bzero( result, sizeof( PrimaXImage));
+         result-> image = i;
+         result-> data_alias = i-> data; 
+         result-> bytes_per_line_alias = i-> bytes_per_line; 
+      }
+   } else {
+      mono = (( img-> type & imBPP) == 1) || ( guts. idepth == 1);
+      cache = prima_create_image_cache( img, self);
+      if ( !cache) return false;
+      result = cache-> image;
+      icon   = cache-> icon != nil;
+   }
+
+
    if ( guts. dynamicColors) {
       int i;
       Byte * p1 = X(image)-> palette;
@@ -1784,72 +1892,71 @@ apc_gp_stretch_image( Handle self, Handle image,
       }
    }
    
-   if ( src_w != dst_w || src_h != dst_h) {
+   SHIFT( dst_x, dst_y);
+   dst_y = XX->size.y - dst_y - ABS(dst_h);
+   src_y = img-> h - src_y - ABS(src_h);
 
-      SHIFT( dst_x, dst_y);
-      dst_y = XX->size.y - dst_y - ABS(dst_h);
-      src_y = img-> h - src_y - ABS(src_h);
+   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
+      warn( "UAI_022: error querying GC values");
+   ofunc = gcv. function;
 
-      if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
-         warn( "UAI_022: error querying GC values");
-      }
-      ofunc = gcv. function;
-
-      if ( cache-> icon) {
-         func = GXxor;
-         stretch = do_stretch(self, img, cache-> icon,
-                              src_x, src_y, src_w, src_h,
-                              dst_x, dst_y, dst_w, dst_h,
-                              &x, &y, &w, &h
-                             );
-         if ( stretch != nil) {
-            func = GXand;
-            if ( cache-> bitmap) {
-               XSetForeground( DISP, XX-> gc, 1);
-               XSetBackground( DISP, XX-> gc, 0);
-            } else {
-               XSetForeground( DISP, XX-> gc, 0xffffffff);
-               XSetBackground( DISP, XX-> gc, 0x00000000);
-            }
-            XX-> flags. brush_fore = 0;
-            XX-> flags. brush_back = 0;
-            if ( func != ofunc)
-               XSetFunction( DISP, XX-> gc, func);
-            XCHECKPOINT;
-            prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
-            func = GXxor;
-            if ( func == ofunc)
-               XSetFunction( DISP, XX-> gc, func);
-            XCHECKPOINT;
-            destroy_ximage( stretch);
-            XCHECKPOINT;
-         }
-      } else
-         func = prima_rop_map( rop);
-
-      stretch = do_stretch(self, img, cache-> image,
+   if ( icon) {
+      func = GXxor;
+      stretch = do_stretch(self, cache-> icon,
                            src_x, src_y, src_w, src_h,
                            dst_x, dst_y, dst_w, dst_h,
                            &x, &y, &w, &h
                           );
-      if ( stretch == nil) return true; /* nothing to draw */
-      if ( func != ofunc)
-         XSetFunction( DISP, XX-> gc, func);
-
-      if ((( img-> type & imBPP) == 1) || ( guts. idepth == 1)) {
-         XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
-         XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+      if ( stretch != nil) {
+         func = GXand;
+         if ( XT_IS_BITMAP(X(self))) {
+            XSetForeground( DISP, XX-> gc, 1);
+            XSetBackground( DISP, XX-> gc, 0);
+         } else {
+            XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
+            XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+         }
          XX-> flags. brush_fore = 0;
          XX-> flags. brush_back = 0;
+         if ( func != ofunc)
+            XSetFunction( DISP, XX-> gc, func);
+         XCHECKPOINT;
+         prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
+         func = GXxor;
+         if ( func == ofunc)
+            XSetFunction( DISP, XX-> gc, func);
+         XCHECKPOINT;
+         destroy_ximage( stretch);
          XCHECKPOINT;
       }
-      prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
-      if ( func != ofunc)
-         XSetFunction( DISP, XX-> gc, ofunc);
-      destroy_ximage( stretch);
-      XCHECKPOINT;
    } else
-      return apc_gp_put_image( self, image, dst_x, dst_y, src_x, src_y, src_w, src_h, rop);
+      func = prima_rop_map( rop);
+
+   stretch = do_stretch(self, result,
+                        src_x, src_y, src_w, src_h,
+                        dst_x, dst_y, dst_w, dst_h,
+                        &x, &y, &w, &h
+                       );
+   if ( stretch == nil) goto EXIT; /* nothing to draw */
+   if ( func != ofunc)
+      XSetFunction( DISP, XX-> gc, func);
+   if ( XT_IS_BITMAP(X(self))) {
+      XSetForeground( DISP, XX-> gc, 1);
+      XSetBackground( DISP, XX-> gc, 0);
+      XX-> flags. brush_fore = XX-> flags. brush_back = 0;
+   } else if ( mono) {
+      XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
+      XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+      XX-> flags. brush_fore = XX-> flags. brush_back = 0;
+   }
+   prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
+   if ( func != ofunc)
+      XSetFunction( DISP, XX-> gc, ofunc);
+   destroy_ximage( stretch);
+   XCHECKPOINT;
+EXIT:   
+   if ( tempResult)
+      prima_free_ximage( result);
    return true;
 }
 
