@@ -1195,6 +1195,7 @@ register_constants( void)
    register_fdo_constants();
    register_fe_constants();
    register_fr_constants();
+   register_mt_constants();
 }
 
 XS( Object_alive_FROMPERL);

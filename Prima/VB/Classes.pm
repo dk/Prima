@@ -2053,7 +2053,7 @@ sub open
             name    => 'Choose font',
             icon    => $VB::ico,
          );
-         $_[0]-> font( $f-> logFont) if $f-> execute == cm::OK;
+         $_[0]-> font( $f-> logFont) if $f-> execute == mb::OK;
       },
       onFontChanged => sub {
          return if $self->{sync};
@@ -2346,7 +2346,7 @@ sub open
                },
             );
             $l-> set_count( scalar @r);
-            if ( $dd-> execute == cm::OK) {
+            if ( $dd-> execute == mb::OK) {
                $self-> set( $i);
                $self-> change;
             }

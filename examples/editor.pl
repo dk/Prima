@@ -337,7 +337,7 @@ sub find_dialog
    $d-> Replace-> items($fd->{replaceItems}) unless $findStyle;
    my $ret = 0;
    my $rf  = $d-> execute;
-   if ( $rf != cm::Cancel) {
+   if ( $rf != mb::Cancel) {
       { for( @props) { $self->{findData}->{$_} = $d->$_()}}
       $self->{findData}->{result} = $rf;
       $self->{findData}->{asFind} = $findStyle;
@@ -378,11 +378,11 @@ sub do_find
             my $r = Prima::MsgBox::message_box( $self-> text,
              "Replace this text?",
              mb::YesNoCancel|mb::Information|mb::NoSound);
-            redo FIND if ($r == mb::No) && ($$p{result} == cm::User);
+            redo FIND if ($r == mb::No) && ($$p{result} == mb::ChangeAll);
             last FIND if $r == mb::Cancel;
          }
          $e-> set_line( $n[1], $n[3]);
-         redo FIND if $$p{result} == cm::User;
+         redo FIND if $$p{result} == mb::ChangeAll;
       }
    }
 }

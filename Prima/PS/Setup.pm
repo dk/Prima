@@ -294,7 +294,7 @@ sub sdlg_exec
    $d-> Profiles-> focusedItem( $index);
    
    $self-> sdlg_import( $p);
-   return if $self-> {setupDlg}-> execute != cm::OK;
+   return if $self-> {setupDlg}-> execute != mb::OK;
    $p = {};
    $self-> sdlg_export( $p);
    $self-> data( $p);

@@ -77,14 +77,14 @@ Window_init( Handle self, HV * profile)
 void
 Window_cancel( Handle self)
 {
-   my-> set_modalResult ( self, cmCancel);
+   my-> set_modalResult ( self, mbCancel);
    my-> end_modal( self);
 }
 
 void
 Window_ok( Handle self)
 {
-   my-> set_modalResult ( self, cmOK);
+   my-> set_modalResult ( self, mbOK);
    my-> end_modal( self);
 }
 
@@ -373,7 +373,7 @@ int
 Window_execute( Handle self, Handle insertBefore)
 {
    if ( var-> modal)
-      return cmCancel;
+      return mbCancel;
 
    protect_object( self);
    if ( insertBefore
@@ -382,7 +382,7 @@ Window_execute( Handle self, Handle insertBefore)
 	     || PWindow( insertBefore)-> modal != mtExclusive))
       insertBefore = nilHandle;
    if ( !apc_window_execute( self, insertBefore))
-      var-> modalResult = cmCancel;
+      var-> modalResult = mbCancel;
 
    unprotect_object( self);
    return var-> modalResult;

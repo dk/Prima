@@ -153,7 +153,7 @@ sub Cancel_Click
 
 sub execute
 {
-   return $_[0]-> SUPER::execute == cm::OK;
+   return $_[0]-> SUPER::execute == mb::OK;
 }
 
 1;

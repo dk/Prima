@@ -161,14 +161,14 @@ sub init
       size        => [ 96, 36],
       text        => '~OK',
       default     => 1,
-      modalResult => cm::OK,
+      modalResult => mb::OK,
    );
 
    $self-> insert( Button =>
       origin      => [ 435, 235],
       size        => [ 96, 36],
       text        => 'Cancel',
-      modalResult => cm::Cancel,
+      modalResult => mb::Cancel,
    );
 
    $self->insert( Button =>

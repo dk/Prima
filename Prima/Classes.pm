@@ -1000,7 +1000,7 @@ sub profile_default
       menuLight3DColor      => cl::Light3DColor,
       menuDark3DColor       => cl::Dark3DColor,
       menuFont              => $_[ 0]-> get_default_menu_font,
-      modalResult           => cm::Cancel,
+      modalResult           => mb::Cancel,
       modalHorizon          => 1,
       ownerFont             => 0,
       ownerIcon             => 1,

@@ -56,7 +56,7 @@ $xw-> insert( Timer =>
    $_[0]-> destroy;
 })-> start;
 my $mr = $xw-> execute;
-ok( $dong && $mr == cm::OK);
+ok( $dong && $mr == mb::OK);
 
 
 $dong = 0;

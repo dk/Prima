@@ -75,5 +75,6 @@ package fds; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog scope t
 package fdo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog options
 package fe; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# file events constants
 package fr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# fetch resource constants
+package mt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# modality types
 
 1;

@@ -371,14 +371,14 @@ sub init
    $self-> insert( Button =>
       text        => '~OK',
       origin      => [ 20, 20],
-      modalResult => cm::OK,
+      modalResult => mb::OK,
       default     => 1,
    );
 
    $self-> insert( Button =>
       text        => 'Cancel',
       origin      => [ 126, 20],
-      modalResult => cm::Cancel,
+      modalResult => mb::Cancel,
    );
    $self->{R}->select;
    $self-> quality( $profile{quality});
@@ -798,7 +798,7 @@ sub MoreBtn_Click
       text  => 'Mixed color palette',
       value => $combo-> value,
    );
-   $combo-> value( $d-> value) if $d-> execute != cm::Cancel;
+   $combo-> value( $d-> value) if $d-> execute != mb::Cancel;
    $d-> destroy;
 }
 

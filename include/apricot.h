@@ -613,9 +613,18 @@ END_TABLE(nt,UV)
 #undef NT
 
 /* Modality types */
+#define MT(const_name) CONSTANT(mt,const_name)
+START_TABLE(mt,UV)
 #define mtNone           0
+MT(None)
 #define mtShared         1
+MT(Shared)
 #define mtExclusive      2
+MT(Exclusive)
+
+END_TABLE(mt,UV)
+#undef MT
+
 
 /* Command event types */
 #define ctQueueMask      0x00070000     /* masks bits that defines behavior

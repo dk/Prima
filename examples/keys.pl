@@ -77,7 +77,7 @@ my $w = Prima::Window-> create(
              logFont => $_[0]-> Label1-> font,
           );
           $fontDialog = $d;
-          return unless $d-> execute == cm::OK;
+          return unless $d-> execute == mb::OK;
           print $::application-> get_focused_widget;
           $_[0]-> Label1-> font( $d-> logFont);
        }],

@@ -265,14 +265,14 @@ sub init
        size => [ 96, 36],
        text => '~OK',
        default => 1,
-       modalResult => cm::OK,
+       modalResult => mb::OK,
        delegations => ['Click'],
    );
    $self-> insert( qq(Prima::Button) => 
        origin => [ 379, 120],
        size => [ 96, 36],
        text => 'Cancel',
-       modalResult => cm::Cancel,
+       modalResult => mb::Cancel,
    );
    return %profile;
 }

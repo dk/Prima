@@ -37,7 +37,6 @@ use Prima::Buttons;
 use Prima::Label;
 use Prima::ComboBox;
 
-
 package Prima::FindDialog;
 use vars qw(@ISA);
 @ISA = qw(Prima::Dialog);
@@ -196,7 +195,7 @@ sub init
       origin  => [ 139, 5],
       size    => [ 40, 14],
       text => 'Cancel',
-      modalResult => cm::Cancel,
+      modalResult => mb::Cancel,
    );
    $self-> Find-> focus;
    return %profile;
@@ -241,7 +240,7 @@ sub ChangeAll_Click
 {
    my $self = $_[0];
    return unless $self-> valid;
-   $self-> modalResult( cm::User);
+   $self-> modalResult( mb::ChangeAll );
    $self-> end_modal;
 }
 

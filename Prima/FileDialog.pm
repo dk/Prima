@@ -788,7 +788,7 @@ sub init
       name    => 'Cancel',
       text    => 'Cancel',
       size        => [ 96, 36],
-      modalResult => cm::Cancel,
+      modalResult => mb::Cancel,
    );
    $self->insert( Button=>
       origin      => [ 524, 224],
@@ -822,7 +822,7 @@ sub on_show
 
 sub execute
 {
-   return ($_[0]-> SUPER::execute != cm::Cancel) ? $_[0]-> fileName : ( wantarray ? () : undef);
+   return ($_[0]-> SUPER::execute != mb::Cancel) ? $_[0]-> fileName : ( wantarray ? () : undef);
 }
 
 
@@ -1268,7 +1268,7 @@ sub init
       name        => 'Cancel',
       text        => 'Cancel',
       size        => [ 80, 30],
-      modalResult => cm::Cancel,
+      modalResult => mb::Cancel,
    );
 
    $self->insert( Button=>

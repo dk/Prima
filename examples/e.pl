@@ -198,7 +198,7 @@ sub on_mouseclick
    );
    $self-> {colorDlg} = $d;
    $d-> value( $colors[$index]);
-   return unless  $d-> execute == cm::OK;
+   return unless  $d-> execute == mb::OK;
    $colors[ $index] = $d-> value;
    $self-> owner-> {indicator}-> repaint;
 }

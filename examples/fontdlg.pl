@@ -470,13 +470,13 @@ $w-> insert( Widget =>
 $w-> insert( Button =>
    origin      => [ 270, 25],
    text        => '~Ok',
-   modalResult => cm::OK,
+   modalResult => mb::OK,
 );
 
 $w-> insert( Button =>
    origin      => [ 374, 25],
    text        => 'Cancel',
-   modalResult => cm::Cancel,
+   modalResult => mb::Cancel,
 );
 
 &$re_size;

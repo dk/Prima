@@ -102,6 +102,9 @@ sub AUTOLOAD
    shift->$method(@_);
 }
 
+package mb;
+
+use constant ChangeAll => 0xCA11;
 
 package Prima::FindDialog;
 

@@ -1721,7 +1721,7 @@ sub widget_repage
        size => [ 100, 20],
        text => 'Move to page',
    ]);
-   my $ok = $d-> execute == cm::OK;
+   my $ok = $d-> execute == mb::OK;
    my $pi = $d-> Spin-> value;
    $d-> destroy;
    return unless $ok;

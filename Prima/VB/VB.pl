@@ -876,7 +876,7 @@ sub fm_reclass
        size => [ 317, 20],
        text => $lab_text,
    ]);
-   if ( $dlg-> execute == cm::OK) {
+   if ( $dlg-> execute == mb::OK) {
       $self-> {class} = $i-> text;
       delete $self-> {realClass};
    }
@@ -1038,12 +1038,12 @@ sub fm_creationorder
       size => [ 96, 36],
       text => '~OK',
       default => 1,
-      modalResult => cm::OK,
+      modalResult => mb::OK,
    ], [ Button =>
       origin => [ 109, 5],
       size => [ 96, 36],
       text => 'Cancel',
-      modalResult => cm::Cancel,
+      modalResult => mb::Cancel,
    ], [ ListBox =>
       origin => [ 5, 48],
       name => 'Items',
@@ -1090,7 +1090,7 @@ palette => [ 0,0,0,0,0,0],
           $i-> focusedItem( $fi + 1);
        },
     ]);
-    if ( $d-> execute != cm::Cancel) {
+    if ( $d-> execute != mb::Cancel) {
        my $cord = 1;
        $self-> bring( $_)-> {creationOrder} = $cord++ for @{$d-> Items-> items};
     }
