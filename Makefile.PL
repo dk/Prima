@@ -2024,12 +2024,12 @@ FOOTER
    my @dirs;
    my @files;
    finddepth( sub {
-      return if $_ eq '.' || $_ eq 'Makefile' || $_ eq 'makefile.log';
+      return if $_ eq '.' || $_ eq 'Makefile' || $_ eq 'makefile.log' || $_ eq '.packlist';
       return if /\.(pdb|ncb|opt|dsp|dsw)$/i; # M$VC
       my $f = "$File::Find::dir/$_";
       return if $f =~ /include.generic|CVS/;
       if ($type eq 'bin') {
-         return if $f =~ /\.(c|cls|h|packlist)$/i;
+         return if $f =~ /\.(c|cls|h)$/i;
          return if $f =~ /$cwd.(img|include|os2|win32|unix|Makefile.PL)/i;
       } else {
          return if $f =~ /auto/;
