@@ -739,12 +739,34 @@ typedef struct _ObjectOptions_ {
 #define   wsMaximized      2
 
 /* system values */
-#define   svYMenu          0
-#define   svYTitleBar      1
-#define   svMousePresent   2
-#define   svMouseButtons   3
-#define   svSubmenuDelay   4
-#define   svFullDrag       5
+#define   svYMenu           0
+#define   svYTitleBar       1
+#define   svXIcon           2
+#define   svYIcon           3
+#define   svXSmallIcon      4
+#define   svYSmallIcon      5
+#define   svXPointer        6
+#define   svYPointer        7
+#define   svXScrollbar      8
+#define   svYScrollbar      9
+#define   svXCursor         10
+#define   svAutoScrollFirst 11
+#define   svAutoScrollNext  12
+#define   svInsertMode      13
+#define   svXbsNone         14
+#define   svYbsNone         15
+#define   svXbsSizeable     16
+#define   svYbsSizeable     17
+#define   svXbsSingle       18
+#define   svYbsSingle       19
+#define   svXbsDialog       20
+#define   svYbsDialog       21
+#define   svMousePresent    22
+#define   svMouseButtons    23
+#define   svWheelPresent    24
+#define   svSubmenuDelay    25
+#define   svFullDrag        26
+
 
 extern Handle application;
 extern long   apcError;
@@ -1746,12 +1768,6 @@ extern PFontMetric
 apc_fonts( char *facename, int *retCount);
 
 /* system metrics */
-extern Point
-apc_sys_get_autoscroll_rate( void);
-
-extern int
-apc_sys_get_cursor_width( void);
-
 extern Bool
 apc_sys_get_insert_mode( void);
 
@@ -1761,14 +1777,8 @@ apc_sys_get_msg_font( PFont copyTo);
 extern PFont
 apc_sys_get_caption_font( PFont copyTo);
 
-extern Point
-apc_sys_get_scrollbar_metrics( void);
-
 extern int
 apc_sys_get_value( int sysValue);
-
-extern Point
-apc_sys_get_window_borders( int borderStyle);
 
 extern void
 apc_sys_set_insert_mode( Bool insMode);
