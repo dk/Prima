@@ -910,12 +910,17 @@ apc_widget_set_shape( Handle self, Handle mask)
    for ( i = 0; i < img-> dataSize; i++, data++) *data = ~*data;
    cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP);
    if ( !cache) return false;
-   px = XCreatePixmap(DISP, guts. root, img->w, img->h, 1);
+   px = XCreatePixmap(DISP, guts. root, img->w, img->h + XX-> menuHeight, 1);
    gc = XCreateGC(DISP, px, 0, &gcv);
-   prima_put_ximage(px, gc, cache->image, 0, 0, 0, 0, img->w, img->h);
+   if ( XX-> menuHeight > 0) {
+      XSetForeground( DISP, gc, 1);
+      XFillRectangle( DISP, px, gc, 0, 0, img-> w, XX-> menuHeight);
+   }
+   XSetForeground( DISP, gc, 0);
+   prima_put_ximage(px, gc, cache->image, 0, 0, 0, XX-> menuHeight, img->w, img->h);
    XFreeGC( DISP, gc);
    XShapeCombineMask( DISP, X_WINDOW, ShapeBounding, 0, 0, px, ShapeSet);
-   XShapeOffsetShape( DISP, X_WINDOW, ShapeBounding, 0, XX-> size. y + XX-> menuHeight - img-> h);
+   XShapeOffsetShape( DISP, X_WINDOW, ShapeBounding, 0, XX-> size. y - img-> h);
    XFreePixmap( DISP, px);
    data = img-> data;
    for ( i = 0; i < img-> dataSize; i++, data++) *data = ~*data;

@@ -883,15 +883,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
          M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
       }
-      if ( size_changed) {
-         if ( XX-> shape_extent. x != 0 || XX-> shape_extent. y != 0) {
-            int ny = XX-> ackSize. y - XX-> shape_extent. y;
-            if ( XX-> shape_offset. y != ny) {
-               XShapeOffsetShape( DISP, win, ShapeBounding, 0, ny - XX-> shape_offset. y);
-               XX-> shape_offset. y = ny;
-            }
-         }
-      }
       return;
    }                        
    case ConfigureNotify: {
@@ -921,16 +912,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
          M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
       }
-      if ( size_changed) {
+      if ( size_changed) 
          prima_end_menu();
-         if ( XX-> shape_extent. x != 0 || XX-> shape_extent. y != 0) {
-            int ny = XX-> ackSize. y - XX-> shape_extent. y;
-            if ( XX-> shape_offset. y != ny) {
-               XShapeOffsetShape( DISP, win, ShapeBounding, 0, ny - XX-> shape_offset. y);
-               XX-> shape_offset. y = ny;
-            }
-         }
-      }
       return;
    }
    case ConfigureRequest: {
