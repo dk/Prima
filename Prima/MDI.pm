@@ -1,4 +1,3 @@
-#
 #  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
@@ -163,7 +162,7 @@ sub profile_default
          [ move    => '~Move' => q(keyMove)],
          [ size    => '~Size' => q(keySize)],
          [],
-         [ close   => '~Close' => 'Ctrl+F4' => '^F4' => q(close)],
+         [ close   => '~Close' => 'Ctrl+F4' => '^F4' => sub { $_[0]-> close; } ],
       ],
    );
    @$def{keys %prf} = values %prf;
@@ -195,6 +194,7 @@ sub init
       delegations  => ['Destroy'],
       %{$profile{clientProfile}},
    );
+   $self-> update_popup_commands;
    return %profile;
 }
 
@@ -759,7 +759,7 @@ sub on_translateaccel
             $mdix-> select;
          }
          $self-> clear_event;
-      } if (( $key == kb::Space) && ( $mod & km::Ctrl)) {
+      } if (( $key == kb::Space) && ( $mod & km::Ctrl) && ( $self-> { borderIcons} & mbi::SystemMenu)) {
          my ( $w, $y, $bw)  = ( $self-> height, $self-> {titleY}, $self-> {border});
          $self-> popup-> popup( $bw, $w - $y - $bw, $bw, $w - $y - $bw, $bw + $y, $w - $bw);
          $self-> clear_event;
@@ -1054,6 +1054,7 @@ sub set_border_icons
 
    $self-> { iconsAtRight} = $icos;
 
+   $self-> update_popup_commands;
    $self-> update_size_min;
    $self-> sync_client;
    $self-> repaint;
@@ -1069,9 +1070,24 @@ sub set_border_style
    $bby = $bby > 1 ? $bby : (( $bby > 0) ? 1 : 0);
    $self-> {border} = $bbx > $bby ? $bby : $bbx;
 
+   $self-> update_popup_commands;
    $self-> update_size_min;
    $self-> sync_client;
    $self-> repaint;
+}
+
+sub update_popup_commands
+{
+   my $self = $_[0];
+   my $popup = $self-> popup;
+
+   my ( $bi, $bs, $ws) = ( $self-> {borderIcons}, $self-> {borderStyle}, $self-> {windowState});
+   
+   $popup-> max-> enabled(( $bi & mbi::Maximize) && ( $ws != ws::Maximized));
+   $popup-> min-> enabled(( $bi & mbi::Minimize) && ( $ws != ws::Minimized));
+   $popup-> restore-> enabled(( $bi & (mbi::Minimize|mbi::Maximize)) && ( $ws != ws::Normal));
+   $popup-> move-> enabled( $ws == ws::Normal);
+   $popup-> size-> enabled(( $ws == ws::Normal) && ( $bs == bs::Sizeable));
 }
 
 sub set_window_state
@@ -1152,6 +1168,7 @@ sub set_window_state
       $popup-> disable( $_) for ( qw( restore));
    }
    $self->{windowState} = $ws;
+   $self-> update_popup_commands;
    $self-> notify(q(WindowState));
 }
 
