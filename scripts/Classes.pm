@@ -403,6 +403,99 @@ sub rect_focus
    }
 }
 
+sub draw_text
+{
+   my ( $canvas, $string, $x, $y, $x2, $y2, $flags, $tabIndent) = @_;
+
+   $flags     = dt::Default unless defined $flags;
+   $tabIndent = 1 if !defined( $tabIndent) || $tabIndent < 0;
+
+   $x2 = int( $x2);
+   $x  = int( $x);
+   $y2 = int( $y2);
+   $y  = int( $y);
+
+   my ( $w, $h) = ( $x2 - $x + 1, $y2 - $y + 1);
+
+   return 0 if $w <= 0 || $h <= 0;
+
+   my $twFlags = tw::ReturnLines |
+      (( $flags & dt::DrawMnemonic  ) ? ( tw::CalcMnemonic | tw::CollapseTilde) : 0) |
+      (( $flags & dt::DrawSingleChar) ? 0 : tw::BreakSingle ) |
+      (( $flags & dt::NewLineBreak  ) ? tw::NewLineBreak : 0) |
+      (( $flags & dt::SpaceBreak    ) ? tw::SpaceBreak   : 0) |
+      (( $flags & dt::WordBreak     ) ? tw::WordBreak    : 0) |
+      (( $flags & dt::ExpandTabs    ) ? ( tw::ExpandTabs | tw::CalcTabs) : 0)
+   ;
+
+   my @lines = @{$canvas-> text_wrap( $string, $w, $twFlags, $tabIndent)};
+   my $tildes;
+   $tildes = pop @lines if $flags & dt::DrawMnemonic;
+
+   return 0 unless scalar @lines;
+
+   my @clipSave;
+   my $fm = $canvas-> font-> metrics;
+   my $fh = $fm-> {height} + (( $flags & dt::QueryHeight) ? $fm->{externalLeading} : 0);
+   my ( $linesToDraw, $retVal);
+   my $valign = $flags & 0xC;
+
+   if ( $flags & dt::QueryHeight) {
+      $linesToDraw = scalar @lines;
+      $h = $retVal = $linesToDraw * $fh;
+   } else {
+      $linesToDraw = int( $retVal = ( $h / $fh));
+      $linesToDraw++ if (( $h % $fh) > 0) and ( $flags & dt::DrawPartial);
+      $valign      = dt::Top if $linesToDraw < scalar @lines;
+      $linesToDraw = $retVal = scalar @lines if $linesToDraw > scalar @lines;
+   }
+
+   if ( $flags & dt::UseClip) {
+      @clipSave = $canvas-> clipRect;
+      $canvas-> clipRect( $x, $y, $x + $w, $y + $h);
+   }
+
+   if ( $valign == dt::Top) {
+      $y = $y2;
+   } elsif ( $valign == dt::VCenter) {
+      $y = $y2 - int(( $h - $linesToDraw * $fh) / 2);
+   } else {
+      $y += $linesToDraw * $fh;
+   }
+
+   my ( $starty, $align) = ( $y, $flags & 0x3);
+
+   for ( @lines) {
+      last unless $linesToDraw--;
+      my $xx;
+      if ( $align == dt::Left) {
+         $xx = $x;
+      } elsif ( $align == dt::Center) {
+         $xx = $x + int(( $w - $canvas-> get_text_width( $_)) / 2);
+      } else {
+         $xx = $x2 - $canvas-> get_text_width( $_);
+      }
+      $y -= $fh;
+      $canvas-> text_out( $_, $xx, $y);
+   }
+
+   if ( $flags & dt::DrawMnemonic) {
+      my $tl = $tildes->{tildeLine};
+      my $xx = $x;
+      if ( $align == dt::Center) {
+         $xx = $x + int(( $w - $canvas-> get_text_width( $lines[ $tl])) / 2);
+      } elsif ( $align == dt::Right) {
+         $xx = $x2 - $canvas-> get_text_width( $lines[ $tl]);
+      }
+      $tl++;
+      $canvas-> line( $xx + $tildes->{tildeStart}, $starty - $fh * $tl,
+                      $xx + $tildes->{tildeEnd}  , $starty - $fh * $tl);
+   }
+
+   $canvas-> clipRect( @clipSave) if $flags & dt::UseClip;
+
+   return $retVal;
+}
 
 # class Image
 package Image;
