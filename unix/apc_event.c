@@ -277,13 +277,26 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
 
    /* possibly skip this event */
-   if ( next_event
-	&& next_event-> type == ev-> type
-	&& ev-> type == MotionNotify
-	&& win == next_event-> xany. window)
-   {
-      guts. skipped_events++;
-      return;
+   if ( next_event) {
+      if (next_event-> type == ev-> type
+          && ev-> type == MotionNotify
+          && win == next_event-> xany. window) {
+         guts. skipped_events++;
+         return;
+      } else if ( ev-> type == KeyRelease
+                  && next_event-> type == KeyPress
+                  && ev-> xkey. time == next_event-> xkey. time
+                  && ev-> xkey. display == next_event-> xkey. display
+                  && ev-> xkey. window == next_event-> xkey. window
+                  && ev-> xkey. root == next_event-> xkey. root
+                  && ev-> xkey. subwindow == next_event-> xkey. subwindow
+                  && ev-> xkey. x == next_event-> xkey. x
+                  && ev-> xkey. y == next_event-> xkey. y
+                  && ev-> xkey. state == next_event-> xkey. state
+                  && ev-> xkey. keycode == next_event-> xkey. keycode) {
+         guts. skipped_events++;
+         return;
+      }
    }
 
    self = prima_xw2h( win);
