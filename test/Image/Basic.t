@@ -25,12 +25,13 @@ if ( $::application-> get_bpp != 1) {
 } else {
    skip();
 }
-$i-> type( im::BW);
-
-ok ( 
-   $i-> load( Prima::find_image('test::Object', 'rc.gif'))||
-   $i-> load( Prima::find_image('test::Object', 'rc.bmp'))
-);
+$i-> type( im::bpp1);
+$i-> palette( [0,0,0,255,0,0]);
+$i-> data(
+   "\x00\x00\x00\x00\x7f\xfe\x00\x00\@\x02\x00\x00_\xfa\x00\x00P\x0a\x00\x00".
+   "W\xea\x00\x00T\*\x00\x00U\xaa\x00\x00U\xaa\x00\x00T\*\x00\x00".
+   "W\xea\x00\x00P\x0a\x00\x00_\xfa\x00\x00\@\x02\x00\x00\x7f\xfe\x00\x00".
+   "\x00\x00\x00\x00");
 my @p = @{$i-> palette};
 ok( $p[0] == 0 && $p[1] == 0 && $p[2] == 0 && $p[3] == 0xFF && $p[4] == 0 && $p[5] == 0);
 ok(  $i-> pixel( 0,0) == 0 && $i-> pixel( 15,15) == 0 && $i-> pixel( 1,1) != 0);
