@@ -1,4 +1,4 @@
-print "1..8 onMove message - pass 1,correct movement,parameters consistency - pass 1,child move,child move consistency,onMove message - pass 2,parameters consistency - pass 2,gmDontCare\n";
+print "1..9 onMove message - pass 1,correct movement,parameters consistency - pass 1,child move,child move consistency,onMove message - pass 2,parameters consistency - pass 2,gmDontCare,recreate consistency\n";
 
 my $dong2 = 0;
 
@@ -61,6 +61,12 @@ ok( $dong || &__wait);
 ok( $mrep[0] == $or[0] && $mrep[1] == $or[1] && $mrep[2] == $nor[0] && $mrep[3] == $nor[1]);
 @or = $wl-> origin;
 ok( $or[0] == $or2[0] && $or[1] == $or2[1]);
+
+@or = $wl-> origin;
+$wl-> owner( $w);
+@nor = $wl-> origin;
+$wl-> owner( $wx);
+ok( $or[0] == $nor[0] && $or[1] == $nor[1]);
 
 $wx-> destroy;
 
