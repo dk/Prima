@@ -1218,12 +1218,14 @@ sub set_font
    my ( $self, $font) = @_;
    $font = { %$font }; 
    my $n = exists($font-> {name}) ? $font-> {name} : $self-> {font}-> {name};
+   my $gui_font;
    $n = $self-> {useDeviceFonts} ? $Prima::PS::Fonts::defaultFontName : 'Default'
       unless defined $n;
 
    $font-> {height} = int(( $font-> {size} * $self-> {resolution}-> [1]) / 72.27 + 0.5)
       if exists $font->{size};
 
+AGAIN:
    if ( $self-> {useDeviceFontsOnly} || !$::application ||
          ( $self-> {useDeviceFonts} && 
            ( 
@@ -1262,10 +1264,26 @@ sub set_font
       $self-> set_locale( $self-> {font}-> {encoding});
    } else {
       my $wscale = $font-> {width};
+      my $wsize  = $font-> {size};
+      my $wfsize = $self->{font}-> {size};
       delete $font-> {width};
       delete $font-> {size};
       delete $self-> {font}-> {size};
-      $self-> {font} = Prima::Drawable-> font_match( $font, $self-> {font});
+      unless ( $gui_font) {
+	 $gui_font = Prima::Drawable-> font_match( $font, $self-> {font});
+	 if ( $gui_font->{name} ne $font->{name} && $self-> {useDeviceFonts}) {
+	    # back up
+	    my $pitch = (exists ( $font-> {pitch} ) ? $font-> {pitch} : $self-> {font}->{pitch}) || fp::Variable;
+	    $n = $font-> {name} = ( $pitch == fp::Variable) ? 
+	       $Prima::PS::Fonts::variablePitchName :
+	       $Prima::PS::Fonts::fixedPitchName;
+	    $font->{width} = $wscale if defined $wscale;
+	    $font->{wsize} = $wsize  if defined $wsize;
+	    $self->{font}->{size} = $wfsize if defined $wfsize;
+	    goto AGAIN;
+	 }
+      }
+      $self-> {font} = $gui_font;
       $self-> {font}-> {size} = int( $self-> {font}-> {height} * 72.27 / $self-> {resolution}-> [1] + 0.5);
       $self-> {typeFontMap}-> {$self-> {font}-> {name}} = 2; 
       $self-> {fontWidthDivisor} = $self-> {font}-> {width};
@@ -1318,9 +1336,7 @@ sub plate
 sub plate_glyph
 {
    my $z = $_[0]-> plate;
-   return '' if 
-      $_[0]-> {useDeviceFontsOnly} ||
-      ( $z-> font-> encoding ne $_[0]-> {font}->{encoding} );
+   return '' if $_[0]-> {useDeviceFontsOnly};
    my $x = $_[1];
    my $d  = $z-> font-> descent;
    my ( $dimx, $dimy) = $z-> size;
