@@ -808,7 +808,6 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
             out("Not a Prima::Image descendant passed"); 
       } else if ( images) {
          SV ** holder = av_fetch( images, i - xself, 0);
-         Handle obj;
          if ( !holder) outd("Array panic on 'images[%d]' property", i - xself);
          obj = gimme_the_mate( *holder);
          if ( !obj) 
