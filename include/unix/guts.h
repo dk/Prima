@@ -9,6 +9,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
+#include <X11/Xresource.h>
 #undef Font
 #undef Drawable
 #undef Bool
@@ -141,6 +142,18 @@ struct _UnixGuts
    Atom fxa_foundry;
    Atom fxa_average_width;
 
+   /* generally used quarks */
+   XrmQuark qBackground;
+   XrmQuark qbackground;
+   XrmQuark qFont;
+   XrmQuark qfont;
+   XrmQuark qForeground;
+   XrmQuark qforeground;
+   XrmQuark qWheeldown;
+   XrmQuark qwheeldown;
+   XrmQuark qWheelup;
+   XrmQuark qwheelup;
+
    /* statistics */
    long int total_events;
    long int handled_events;
@@ -188,8 +201,15 @@ struct _UnixGuts
 #define APC_BAD_SIZE INT_MAX
 #define APC_BAD_ORIGIN INT_MAX
 
+#define COMPONENT_SYS_DATA \
+   XrmQuarkList qClassName; \
+   XrmQuarkList qInstanceName; \
+   int nClassName; \
+   int nInstanceName
+
 typedef struct _drawable_sys_data /* more like widget_sys_data */
 {
+   COMPONENT_SYS_DATA; /* must be the first */
    XDrawable drawable;
    XWindow parent;
    NPoint resolution;
@@ -228,6 +248,7 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
 
 typedef struct _timer_sys_data
 {
+   COMPONENT_SYS_DATA; /* must be the first */
    int timeout;
    Handle who;
    struct _timer_sys_data *older;
@@ -237,6 +258,9 @@ typedef struct _timer_sys_data
 
 typedef union _unix_sys_data
 {
+   struct {
+      COMPONENT_SYS_DATA;
+   } component;
    DrawableSysData drawable;
    TimerSysData timer;
 } UnixSysData, *PUnixSysData;

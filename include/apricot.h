@@ -850,6 +850,9 @@ apc_component_create( Handle self);
 extern void
 apc_component_destroy( Handle self);
 
+extern void
+apc_component_fullname_changed_notify( Handle self);
+
 /* Window */
 extern Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint,

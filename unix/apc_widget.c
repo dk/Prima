@@ -121,6 +121,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint,
    XX-> knownSize = (Point){APC_BAD_SIZE,APC_BAD_SIZE};
    XX-> origin = (Point){0,0};
    XX-> knownOrigin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
+   apc_component_fullname_changed_notify( self);
 
    DOLBUG( "&&&&&&&&&&& window created: %s &&&&&&&&&&&\n", PWidget( self)-> name);
 

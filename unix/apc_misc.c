@@ -52,6 +52,139 @@ apc_component_destroy( Handle self)
    X_WINDOW = nilHandle;
 }
 
+void
+apc_component_fullname_changed_notify( Handle self)
+{
+   PComponent me = PComponent( self);
+   static char convert[256];
+   static Bool converted = false;
+   XrmQuark qClass, qInstance;
+   int i, l, n;
+   char *c, *s;
+   DEFXX;
+   PDrawableSysData UU;
+   Handle *list;
+
+   if (!XX)
+      return;
+
+   if ( !converted) {
+      for ( l = 0; l < 256; l++) {
+	 convert[l] = isalnum(l) ? l : '_';
+      }
+      converted = true;
+   }
+
+   l = strlen( s = me-> self-> className);
+   c = malloc( l+1);
+   if (!c) croak( "apc_component_fullname_changed_notify: not enough memory");
+   while ( l >= 0) {
+      c[l] = convert[(unsigned)(unsigned char)s[l]];
+      l--;
+   }
+   c[0] = toupper(c[0]);
+   qClass = XrmStringToQuark(c);
+   free( c);
+
+   l = strlen( s = (me-> name ? me-> name : "noname"));
+   c = malloc( l+1);
+   if (!c) croak( "apc_component_fullname_changed_notify: not enough memory");
+   while ( l >= 0) {
+      c[l] = convert[(unsigned)(unsigned char)s[l]];
+      l--;
+   }
+   c[0] = tolower(c[0]);
+   qInstance = XrmStringToQuark(c);
+   free(c);
+
+   free( XX-> qClassName); XX-> qClassName = nil;
+   free( XX-> qInstanceName); XX-> qInstanceName = nil;
+
+   if ( me-> owner && me-> owner != self && PComponent(me-> owner)-> sysData && X(PComponent( me-> owner))-> qClassName) {
+      UU = X(PComponent( me-> owner));
+      XX-> nClassName = n = UU-> nClassName + 1;
+      XX-> qClassName = malloc( sizeof( XrmQuark) * (n + 2));
+      memcpy( XX-> qClassName, UU-> qClassName, sizeof( XrmQuark) * n);
+      XX-> qClassName[n-1] = qClass;
+      XX-> nInstanceName = n = UU-> nInstanceName + 1;
+      XX-> qInstanceName = malloc( sizeof( XrmQuark) * (n + 2));
+      memcpy( XX-> qInstanceName, UU-> qInstanceName, sizeof( XrmQuark) * n);
+      XX-> qInstanceName[n-1] = qInstance;
+   } else {
+      XX-> nClassName = n = 1;
+      XX-> qClassName = malloc( sizeof( XrmQuark) * (n + 2));
+      XX-> qClassName[n-1] = qClass;
+      XX-> nInstanceName = n = 1;
+      XX-> qInstanceName = malloc( sizeof( XrmQuark) * (n + 2));
+      XX-> qInstanceName[n-1] = qInstance;
+   }
+
+   if ( PComponent(self)-> components && (n = PComponent(self)-> components-> count) > 0) {
+      list = malloc( sizeof( Handle) * n);
+      memcpy( list, PComponent(self)-> components-> items, sizeof( Handle) * n);
+      
+      for ( i = 0; i < n; i++) {
+	 apc_component_fullname_changed_notify( list[i]);
+      }
+      free( list);
+   }
+
+/*    PComponent her = me; */
+/*    char *class, *instance, *c, *s, ch; */
+/*    int classLen, instanceLen, classSize, instanceSize, l; */
+
+/*    if ( !me-> sysData) */
+/*       return; */
+
+/*    class = malloc( classSize = 2048); classLen = 0; */
+/*    instance = malloc( instanceSize = 2048); instanceLen = 0; */
+
+/*    for (;;) { */
+/*       if ( her == PComponent( application)) { */
+/* 	 c = "Prima"; */
+/*       } else { */
+/* 	 c = her-> self-> className; */
+/*       } */
+/*       l = strlen( c); */
+/*       if ( l + classLen + 1 >= classSize) { */
+/* 	 class = reallocf( class, classSize+=(l>=2047?l+2:2048)); */
+/* 	 if (!class) croak( "apc_component_fullname_changed_notify: not enough memory"); */
+/*       } */
+/*       while ( l) { */
+/* 	 class[classLen++] = convert[(unsigned)(unsigned char)c[--l]]; */
+/*       } */
+/*       class[classLen-1] = toupper(class[classLen-1]); */
+/*       class[classLen++] = '.'; */
+
+/*       if ( her-> name) { */
+/* 	 c = her-> name; */
+/*       } else { */
+/* 	 c = "noname"; */
+/*       } */
+/*       l = strlen( c); */
+/*       if ( l + instanceLen + 1 >= instanceSize) { */
+/* 	 instance = reallocf( instance, instanceSize+=(l>=2047?l+2:2048)); */
+/* 	 if (!instance) croak( "apc_component_fullname_changed_notify: not enough memory"); */
+/*       } */
+/*       while ( l) { */
+/* 	 instance[instanceLen++] = convert[(unsigned)(unsigned char)c[--l]]; */
+/*       } */
+/*       instance[instanceLen-1] = tolower(instance[instanceLen-1]); */
+/*       instance[instanceLen++] = '.'; */
+
+/*       if ( !her-> owner || PComponent( her-> owner) == her) */
+/* 	 break; */
+/*       her = PComponent( her-> owner); */
+/*    } */
+/*    class[--classLen] = 0; */
+/*    c = class; s = class+classLen-1; while ( c < s) { ch = *c; *c++ = *s; *s-- = ch; } */
+/*    instance[--instanceLen] = 0; */
+/*    c = instance; s = instance+instanceLen-1; while ( c < s) { ch = *c; *c++ = *s; *s-- = ch; } */
+/*    fprintf( stderr, "=============== Class: %s\n", class); */
+/*    fprintf( stderr, "=============== Instance: %s\n", instance); */
+/*    free( class); */
+/*    free( instance); */
+}
 
 /* View attributes */
 void
@@ -280,6 +413,7 @@ apc_timer_create( Handle self, Handle owner, int timeout)
    sys-> timeout = timeout;
    opt_clear( optActive);
    sys-> who = self;
+   apc_component_fullname_changed_notify( self);
 
    return true;
 }

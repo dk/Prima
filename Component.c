@@ -223,6 +223,7 @@ Component_set_name( Handle self, char * name)
    free( var name);
    var name = malloc( strlen ( name) + 1);
    strcpy( var name, name);
+   apc_component_fullname_changed_notify( self);
    if ( var stage == csNormal)
       my update_delegator( self);
 }

@@ -55,7 +55,16 @@ x_io_error_handler( Display *d)
 Bool
 window_subsystem_init( void)
 {
-/*XXX*/ /* Namely, support for -display host:0.0 etc. */
+   /*XXX*/ /* Namely, support for -display host:0.0 etc. */
+   XrmQuark common_quarks_list[11];
+   XrmQuarkList ql = common_quarks_list;
+   char *common_quarks =
+      "Background.background."
+      "Font.font."
+      "Foreground.foreground."
+      "Wheeldown.wheeldown."
+      "Wheelup.wheelup";
+
    guts. riHead = guts. riTail = 0;
    guts. dolbug = getenv( "PRIMA_DOLBUG") ? true : false;
    DISP = XOpenDisplay( nil);
@@ -63,6 +72,19 @@ window_subsystem_init( void)
    XSetErrorHandler( x_error_handler);
    (void)x_io_error_handler;
    XCHECKPOINT;
+
+   XrmInitialize();
+   XrmStringToQuarkList( common_quarks, common_quarks_list);
+   guts.qBackground = *ql++;
+   guts.qbackground = *ql++;
+   guts.qFont = *ql++;
+   guts.qfont = *ql++;
+   guts.qForeground = *ql++;
+   guts.qforeground = *ql++;
+   guts.qWheeldown = *ql++;
+   guts.qwheeldown = *ql++;
+   guts.qWheelup = *ql++;
+   guts.qwheelup = *ql++;
 
    guts. mouse_buttons = XGetPointerMapping( DISP, guts. buttons_map, 256);
    XCHECKPOINT;
@@ -153,15 +175,12 @@ apc_application_create( Handle self)
    XSetWindowAttributes attrs;
    DEFXX;
 
-fprintf( stderr, "apc_application_create()\n");
-
    attrs. event_mask = StructureNotifyMask;
    X_WINDOW = XCreateWindow( DISP, RootWindow( DISP, SCREEN),
 			     0, 0, 1, 1, 0, CopyFromParent,
 			     InputOutput, CopyFromParent,
 			     CWEventMask, &attrs);
    XCHECKPOINT;
-fprintf( stderr, "apc_application_create(), window: %08lx\n", X_WINDOW);
    if (!X_WINDOW) return false;
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
 
