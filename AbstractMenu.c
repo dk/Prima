@@ -142,6 +142,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
    n = av_len( av);
 
    if ( n == -1) {
+      if ( level == 0) return nil; /* null menu */
       warn("RTC003E: menu build error: empty array passed");
       return nil;
    }
