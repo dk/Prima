@@ -29,11 +29,14 @@ Bool image_screenable( Handle image, Handle screen, int * bitCount)
          return true;
 
       if ( dsys( screen) options. aptCompatiblePS || !dsys( screen) ps) {
-         if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8) {
+         int bpp = guts. displayBMInfo. bmiHeader. biBitCount *
+                   guts. displayBMInfo. bmiHeader. biPlanes;
+         if ( bpp) {
             if ( bitCount) {
-               *bitCount = guts. displayBMInfo. bmiHeader. biBitCount;
+               *bitCount = bpp;
                if ( *bitCount < 4) *bitCount = 1;
                else if ( *bitCount < 8) *bitCount = 4;
+               else return true;
             }
             return false;
          }
@@ -94,7 +97,7 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
          bi-> bmiHeader. biPlanes = bi-> bmiHeader. biBitCount = 1;
          bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = 2;
       } else if ( bi-> bmiHeader. biBitCount <= 8) {
-         nColors = 1 << bi-> bmiHeader. biBitCount;
+         nColors = 1 << ( bi-> bmiHeader. biBitCount * bi-> bmiHeader. biPlanes);
          if ( sys pal) {
             GetPaletteEntries( sys pal, 0, nColors, ( LPPALETTEENTRY) &bi-> bmiColors);
             bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = nColors;
@@ -532,7 +535,7 @@ apc_dbm_destroy( Handle self)
 }
 
 HICON
-image_make_icon_handle( Handle img, Point size, Point * hotSpot)
+image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer)
 {
    PIcon i = ( PIcon) img;
    HICON    r;
@@ -544,6 +547,12 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
    XBITMAPINFO bi;
 
    ( Handle) i = i-> self-> dup( img);
+
+   if ( IS_WIN95 && forPointer && ( guts. displayBMInfo. bmiHeader. biBitCount <= 4)) {
+      i-> self-> set_conversion(( Handle) i, ictNone);
+   } else
+      forPointer = false;
+
    if ( noSZ || noBPP) {
       if ( noSZ)
          i-> self-> set_size(( Handle) i, size. x, size. y);
@@ -588,8 +597,12 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 
 // creating icon by old 3.1 method - we need that for correct AND-mask,
 // don't care other pointer properties
-      if ( !( r = CreateIcon( guts. instance, size.x, size.y, 1, i-> type & imBPP,
-                              i-> mask, i-> data))) {
+      r = forPointer ?
+         CreateCursor( guts. instance, ii. xHotspot, ii. yHotspot,
+            size.x, size.y, i-> mask, i-> data) :
+         CreateIcon( guts. instance, size.x, size.y, 1, i-> type & imBPP,
+            i-> mask, i-> data);
+      if ( !r) {
          Object_destroy(( Handle) i);
          apiErrRet;
       }

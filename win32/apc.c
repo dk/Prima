@@ -971,7 +971,7 @@ apc_window_set_icon( Handle self, Handle icon)
 {
    HICON i;
    objCheck;
-   i = icon ? image_make_icon_handle( icon, guts. iconSizeLarge, nil) : nil;
+   i = icon ? image_make_icon_handle( icon, guts. iconSizeLarge, nil, false) : nil;
    i = ( HICON) SendMessage( HANDLE, WM_SETICON, ICON_BIG, ( LPARAM) i);
    if ( i) DestroyIcon( i);
 }
@@ -1665,7 +1665,7 @@ apc_widget_set_palette( Handle self)
       free( sys p256);
       sys p256 = nil;
    }
-   if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8)
+   if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
       palette_change( self);
 }
 

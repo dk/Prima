@@ -1293,7 +1293,10 @@ palette_change( Handle self)
    SzList l;
    PRGBColor p;
    PRGBColor d;
-   int nColors = ( 1 << guts. displayBMInfo. bmiHeader. biBitCount) & 0x1FF;
+   int nColors = ( 1 << (
+       guts. displayBMInfo. bmiHeader. biBitCount *
+       guts. displayBMInfo. bmiHeader. biPlanes
+   )) & 0x1FF;
    int i;
    HPALETTE pal;
    XLOGPALETTE xlp = {0x300};

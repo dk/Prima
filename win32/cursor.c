@@ -223,7 +223,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
    if ( sys pointer2)
       if ( !DestroyCursor( sys pointer2)) apiErr;
    apcErrClear;
-   sys pointer2 = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot) : nilHandle;
+   sys pointer2 = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot, true) : nilHandle;
    if ( apcError) return false;
    if ( sys pointerId == crUser)
    {
