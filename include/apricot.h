@@ -524,6 +524,10 @@ ctx_remap_def ( int value, int * table, Bool direct, int default_value);
 #define ctx_remap_end(a,b,c)	ctx_remap_def((a),(b),(c), endCtx)
 #define ctx_remap(a,b,c)	ctx_remap_def((a),(b),(c), 0)
 
+/* utility functions */
+
+extern char *
+duplicate_string( const char *);
 
 /* lists support */
 
@@ -1486,9 +1490,9 @@ typedef struct _IMGCapInfo {
 typedef struct _IMGProperties {
    char *id;
    /*
-    * Property types are the same as for capabilities, but with addition of
+    * Property types are the same as for capabilities but with addition of
     * b - byte.
-    */	
+    */
    char *type;
    char *descr;
 } ImgProps, *PImgProps;
@@ -1565,6 +1569,12 @@ apc_image_end_paint( Handle self);
 
 extern void
 apc_image_end_paint_info( Handle self);
+
+extern Bool
+apc_image_read( const char *filename, PList imgInfo, Bool readData);
+
+extern Bool
+apc_image_save( const char *filename, const char *format, PList imgInfo);
 
 extern void
 apc_image_update_change( Handle self);
