@@ -2176,7 +2176,10 @@ FOOTER
    my @dirs;
    my @files;
    finddepth( sub {
-      return if $_ eq '.' || $_ eq 'Makefile' || $_ eq 'makefile.log' || $_ eq '.packlist';
+      return if $_ eq '.' || 
+                ($_ eq 'Makefile' && $File::Find::dir eq $cwd) || 
+		$_ eq 'makefile.log' || 
+		$_ eq '.packlist';
       return if /\.(pdb|ncb|opt|dsp|dsw)$/i; # M$VC
       my $f = "$File::Find::dir/$_";
       return if $f =~ /include.generic|CVS/;
