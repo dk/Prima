@@ -123,7 +123,7 @@ sub load_link
          if ( $f < 0) {
             Prima::MsgBox::message("Cannot fork:$!"); 
          } elsif ( $f == 0) {
-            exec("$pg $link");
+            { exec("$pg $link"); }
             eval "use Prima;";
             Prima::MsgBox::message("Cannot execute $pg:$!");
             die "Cannot execute $pg:$!";
