@@ -93,6 +93,21 @@ extern SV* readonly_clean_sv_2mortal( SV* sv);
 #define PERL_CALL_PV       perl_call_pv
 #endif
 
+#ifdef PRIMA_STRICMP_PRESENT
+#ifndef PRIMA_STRCASECMP_PRESENT
+#define strcasecmp(a,b) stricmp((a),(b))
+#endif
+#else
+#ifdef PRIMA_STRCASECMP_PRESENT
+#define stricmp(a,b) strcasecmp((a),(b))
+#else
+#define strcasecmp(a,b) stricmp((a),(b))
+#define PRIMA_NEED_OWN_STRICMP 1
+export int
+stricmp(const char *s1, const char *s2);
+#endif
+#endif
+
 typedef I32 Bool;
 typedef UV Handle;
 typedef Handle ApiHandle;
