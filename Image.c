@@ -78,6 +78,8 @@ Image_init( Handle self, HV * profile)
    var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
    var->data = ( var->dataSize > 0) ? allocb( var->dataSize) : nil;
+   if ( var-> data == nil) 
+      croak("Image::init: cannot allocate %d bytes", var-> dataSize);
    free( var->palette);
    var->palette = allocn( RGBColor, 256);
    if ( !Image_set_extended_data( self, profile))
@@ -163,6 +165,8 @@ Image_reset( Handle self, int type, SV * palette)
    var->palSize = (1 << ( type & imBPP)) & 0x1ff;
    if ( var->dataSize > 0) {
       newData = allocb( var-> dataSize);
+      if ( newData == nil) 
+         croak("Image::reset: cannot allocate %d bytes", var-> dataSize);
       ic_type_convert( self, newData, var->palette, type);
    }
    free( var->data);
@@ -189,6 +193,8 @@ Image_stretch( Handle self, int width, int height)
    }
    lineSize = (( abs( width) * ( var->type & imBPP) + 31) / 32) * 4;
    newData = allocb( lineSize * abs( height));
+   if ( newData == nil) 
+         croak("Image::reset: cannot allocate %d bytes", var-> dataSize);
    if ( var-> data)
       ic_stretch( self, newData, width, height, is_opt( optHScaling), is_opt( optVScaling));
    free( var->data);
@@ -1365,6 +1371,8 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
    lineSize = (( gbm. w * gbm. bpp + 31) / 32) * 4;
    dataSize = gbm. h * lineSize;
    data = ( dataSize > 0) ? allocb( dataSize) : nil;
+   if ( data == nil) 
+      croak("Image::load: cannot allocate %d bytes", var-> dataSize);
    rc = gbm_read_data( file, ft, &gbm, data);
    checkrc;
 
@@ -1738,6 +1746,8 @@ Image_create_empty( Handle self, int width, int height, int type)
    if ( var->dataSize > 0)
    {
       var->data = allocb( var->dataSize);
+      if ( var-> data == nil) 
+         croak("Image::create_empty: cannot allocate %d bytes", var-> dataSize);
       memset( var->data, 0, var->dataSize);
    } else
       var->data = nil;
