@@ -625,7 +625,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
          c-> text. utf8   = ( name == UTF8_STRING);
       } else {
          c-> binary. data = ( Byte * ) ret;
-         c-> text. length = size;
+         c-> binary. length = size;
       }
    }
    return true;
@@ -920,7 +920,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
          }
 
          /* content of PIXMAP or BITMAP is seemingly gets invalidated
-            after a selection transfer, unlike the string data format */
+            after the selection transfer, unlike the string data format */
          if ( id == cfBitmap) {
             bzero( CC-> internal[id].data, CC-> internal[id].size);
             bzero( CC-> external[id].data, CC-> external[id].size);
