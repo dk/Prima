@@ -497,6 +497,7 @@ REPEAT_CALC:
       }
    if ( big_pal != palette) {
       cm_squeeze_palette( big_pal, count, palette, *max_pal_size);
+      count = *max_pal_size;
       free( big_pal);
    }
    free( map);
