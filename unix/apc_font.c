@@ -355,10 +355,10 @@ prima_init_font_subsystem( void)
 	    while ( *c && *c != '-') c++;
 	 }
 	 if ( *c == '-') {
-	    /* advance through CHARSET_ENCODING; just skip it;  XXX */
+            c++;
             if (( strncasecmp( c, "0",  strlen("0")) == 0))
                  info[j]. flags. funky = 1;
-	    ++c;
+            /* advance through CHARSET_ENCODING; just skip it;  XXX */
 	    while ( *c && *c != '-') c++;
 	    if ( !*c  && info[j]. flags. pitch && 
 		 ( vector == 5 || vector == 3 || 
