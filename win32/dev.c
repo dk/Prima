@@ -143,6 +143,7 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
       bitCount = lower;
    }
 
+   if ( nColors > image-> palSize) nColors = image-> palSize;
    memset( bi, 0, sizeof( BITMAPINFOHEADER) + nColors * sizeof( RGBQUAD));
    bi-> bmiHeader. biSize          = sizeof( BITMAPINFOHEADER); // - sizeof( RGBQUAD);
    bi-> bmiHeader. biWidth         = image-> w;

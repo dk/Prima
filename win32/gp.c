@@ -940,7 +940,7 @@ gp_text_wrap( Handle self, TextWrapRec * t)
         unsigned char * l = ret[ tildeLine];
         t-> t_char = l[ tildePos+1];
         if ( t-> options & twCollapseTilde)
-           memcpy( &l[ tildePos], &l[ tildePos+1], strlen( l) - tildePos);
+           memmove( &l[ tildePos], &l[ tildePos+1], strlen( l) - tildePos);
         l = ret[ t-> t_line];
         if ( !GetTextExtentPoint32( sys ps, l, tildeLPos, &sz)) apiErr;
         if (( sys tmPitchAndFamily & TMPF_TRUETYPE) == 0) sz. cx -= sys tmOverhang;

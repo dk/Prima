@@ -781,6 +781,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
                font_logfont2textmetric( dc, &lpf, &tm);
                if ( xf. width + tm. tmOverhang == font-> width) {
                   font_textmetric2font( &tm, font, true);
+                  font-> direction = 0;
                   font-> size   = xf. size;
                   font-> height = xf. height;
                   font-> maximalWidth += tm. tmOverhang;
@@ -808,6 +809,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
             es. lf. lfWidth        += tm. tmOverhang;
          }
          font_textmetric2font( &es. tm, font, true);
+         font-> direction = 0;
          strncpy( font-> family, es. family, LF_FULLFACESIZE);
          font-> size     = ( es. tm. tmHeight - es. tm. tmInternalLeading) * 72.0 / res.y + 0.5;
          font-> width    = es. lf. lfWidth;
@@ -927,6 +929,7 @@ fep2( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PList lst)
 {
    PFont fm = malloc( sizeof( Font));
    font_textmetric2font(( TEXTMETRIC *) t, fm, false);
+   fm-> direction = fm-> resolution = 0;
    strncpy( fm-> name,     e-> elfLogFont. lfFaceName, LF_FACESIZE);
    strncpy( fm-> family,   e-> elfFullName,            LF_FULLFACESIZE);
    list_add( lst, ( Handle) fm);

@@ -1032,7 +1032,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
       {
         POINT p;
         HWND wp;
-        if ( lastMouseOver && !GetCapture())
+        if ( lastMouseOver && !GetCapture() && ( PObject( lastMouseOver)-> stage == csNormal))
         {
            HWND desktop = HWND_DESKTOP;
            GetCursorPos( &p);
