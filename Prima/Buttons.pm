@@ -212,15 +212,15 @@ sub draw_veil
     my ($self,$canvas) = (shift, shift);
     my $back = $self-> backColor;
     $canvas-> set(
-       color       => cl::Black,
-       backColor   => cl::White,
+       color       => cl::Clear,
+       backColor   => cl::Set,
        fillPattern => fp::SimpleDots,
        rop         => rop::AndPut
     );
     $canvas-> bar( @_);
     $canvas-> set(
        color       => $back,
-       backColor   => cl::Black,
+       backColor   => cl::Clear,
        rop         => rop::OrPut
     );
     $canvas-> bar( @_);

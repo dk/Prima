@@ -375,8 +375,8 @@ sub rect_focus
    my $fp = $canvas-> fillPattern;
    $canvas-> set(
                  fillPattern => fp::SimpleDots,
-                 color       => cl::White,
-                 backColor   => cl::Black,
+                 color       => cl::Set,
+                 backColor   => cl::Clear,
                  rop         => rop::XorPut,
                 );
 
