@@ -1,8 +1,6 @@
 # $Id$
 # todo:
-# - objects: 
-#      line(arrow)
-#      widget
+# - objects:widget
 # - gp:tileoffset
 use strict;
 
@@ -491,11 +489,16 @@ sub new
    my %defaults = $self-> profile_default;
    $self-> {$_} = $defaults{$_} for keys %defaults;
    $self-> {font} = {%{$defaults{font}}};
+   $self-> init( \%defaults, \%properties);
    $self-> set(%properties);
-   die "No ``owner'' is specified" unless $self-> {owner};
    $self-> on_create;
    $self-> unlock;
    return $self;
+}
+
+sub init
+{
+   my ( $self, $defaults, $properties);
 }
 
 sub DESTROY { shift-> on_destroy }
@@ -530,7 +533,7 @@ sub set
 
 sub clear_event
 {
-   $_[0]-> owner-> clear_event;
+   $_[0]-> {owner}-> clear_event if $_[0]->{owner};
 }
 
 sub on_create
@@ -598,6 +601,13 @@ sub repaint
    $_[0]-> _update( $_[0]-> origin, $_[0]-> size);
 }
 
+sub invalidate_rect
+{
+   my ( $self, $x1, $y1, $x2, $y2) = @_;
+   my @o = $self-> origin;
+   $self-> _update( $o[0] + $x1, $o[1] + $y1, $x2 - $x1 + 1, $y2 - $y1 + 1);
+}
+
 sub _begin_update
 {
    my $self = $_[0];
@@ -610,7 +620,6 @@ sub _update
    my ( $self, $x, $y, $w, $h) = @_;
    return unless $self->{visible};
    my $auto = ! $self->{_update};
-   Carp::confess unless defined $y;
    push @{$self->{_update}}, $x, $y, $x + $w, $y + $h;
    $self-> _end_update if $auto && !$self->{_lock_update};
 }
@@ -618,8 +627,8 @@ sub _update
 sub _end_update
 {
    my $self = $_[0];
-   return if !$self->{visible} || $self-> {_lock_update} || !$self->{_update};
-   my $o = $self-> owner;
+   return if !$self->{visible} || $self-> {_lock_update} || !$self->{_update} || !$self->{owner};
+   my $o = $self-> {owner};
    my @o = $o-> object2screen( @{$self->{_update}});
    my $i;
    for ($i = 0; $i < @o; $i+=4) {
@@ -734,20 +743,21 @@ sub size
    $self-> _end_update;
 }
 
-sub bring_to_front { $_[0]-> owner-> zorder( $_[0], 'front') }
-sub send_to_back   { $_[0]-> owner-> zorder( $_[0], 'back') }
-sub insert_behind  { $_[0]-> owner-> zorder( $_[0], $_[1]) }
-sub first          { $_[0]-> owner-> zorder( $_[0], 'first') }
-sub last           { $_[0]-> owner-> zorder( $_[0], 'last') }
-sub next           { $_[0]-> owner-> zorder( $_[0], 'next') }
-sub prev           { $_[0]-> owner-> zorder( $_[0], 'prev') }
+sub bring_to_front { $_[0]-> {owner}-> zorder( $_[0], 'front') if $_[0]->{owner} }
+sub send_to_back   { $_[0]-> {owner}-> zorder( $_[0], 'back')  if $_[0]->{owner} }
+sub insert_behind  { $_[0]-> {owner}-> zorder( $_[0], $_[1])   if $_[0]->{owner} }
+sub first          { $_[0]-> {owner}-> zorder( $_[0], 'first') if $_[0]->{owner} }
+sub last           { $_[0]-> {owner}-> zorder( $_[0], 'last')  if $_[0]->{owner} }
+sub next           { $_[0]-> {owner}-> zorder( $_[0], 'next')  if $_[0]->{owner} }
+sub prev           { $_[0]-> {owner}-> zorder( $_[0], 'prev')  if $_[0]->{owner} }
 
 sub visible
 {
    return $_[0]->{visible} unless $#_;
    return if $_[0]-> {visible} == $_[1];
    $_[0]-> {visible} = $_[1];
-   $_[0]-> owner-> invalidate_rect( $_[0]-> owner-> object2screen( $_[0]-> rect));
+   $_[0]-> {owner}-> invalidate_rect( $_[0]-> owner-> object2screen( $_[0]-> rect))
+      if $_[0]->{owner};
 }
 
 sub color
@@ -1058,17 +1068,50 @@ sub zoom_points
    my ( $self, $w, $h) = @_;
    my ( $x, $y) = $self-> size;
    return [] if $w < 1 || $h < 1 || $x < 1 || $y < 1;
+   unless ( defined $self-> {cosa}) {
+      my $a = $self-> {rotate} / 57.295779;
+      $self-> {cosa} = cos( $a);
+      $self-> {sina} = sin( $a);
+   }
+   my ( $cos, $sin) = ( $self-> {cosa}, $self-> {sina});
+   my @anchor = @{$self->{anchor}};
+   my @aspect = @{$self->{aspect}};
+   my @shift  = @{$self->{shift}};
    $x /= $w;
    $y /= $h;
    $h = $self->{points};
    my @ret;
    for ( $w = 0; $w < @$h; $w += 2) {
-      push @ret,
-         $$h[$w] / $x,
-         $$h[$w+1] / $y,
+      my $X = $$h[$w]    - $anchor[0];
+      my $Y = $$h[$w+1]  - $anchor[1];
+      my $A = ($X * $cos - $Y * $sin) * $aspect[0];
+      my $B = ($X * $sin + $Y * $cos) * $aspect[1];
+      push @ret, ($A + $anchor[0] + $shift[0]) / $x;
+      push @ret, ($B + $anchor[1] + $shift[1]) / $y;
    }
    \@ret;
 }
+
+sub anchor 
+{
+   return @{$_[0]->{anchor}} unless $#_;
+   $_[0]->{anchor} = [($#_ == 1) ? @{$_[1]} : @_[1,2]];
+   $_[0]-> repaint if $_[0]-> {rotate};
+}   
+
+sub aspect 
+{
+   return @{$_[0]->{aspect}} unless $#_;
+   $_[0]->{aspect} = [map { $_ <= 0 ? 1 : $_ } (($#_ == 1) ? @{$_[1]} : @_[1,2])];
+   $_[0]-> repaint;
+}   
+
+sub shift 
+{
+   return @{$_[0]->{shift}} unless $#_;
+   $_[0]-> {shift} = [($#_ == 1) ? @{$_[1]} : @_[1,2]];
+   $_[0]-> repaint;
+}   
 
 sub smooth 
 {
@@ -1077,15 +1120,39 @@ sub smooth
    $_[0]-> repaint;
 }   
 
+sub rotate 
+{
+   return $_[0]->{rotate} unless $#_;
+   my ( $self, $angle) = @_;
+   $angle += 360 while $angle < 0;
+   $angle %= 360;
+   $self->{rotate} = $angle;
+   delete $self-> {sina};
+   delete $self-> {cosa};
+   $self-> repaint;
+}   
+
 package Prima::Canvas::Line;
-use vars qw(@ISA);
+use vars qw(@ISA %arrowheads);
 @ISA = qw(Prima::Canvas::Outlined Prima::Canvas::line_properties);
+
+%arrowheads = (
+   feather   => [1,0, -1,-1,-0.5,-0.7,-0.15,-0.4, 0,0, -0.15, 0.4, -0.5,0.7,-1,1, 1,0],
+   default   => [1,0, -1,-1, -1,1, 1,0],
+   flying    => [1,0, -1,-1, 0,0, -1,1, 1,0],
+   square    => [0.5,0, 0,-0.5, -0.5,-0.5, 0, 0, -0.5, 0.5, 0,0.5, 0.5,0],
+);
 
 sub profile_default 
 {
    $_[0]-> SUPER::profile_default,
+   anchor => [0,0],
+   aspect => [1,1],
+   shift  => [0,0],
+   arrows => [undef,undef],
    points => [],
    smooth => 0,
+   rotate => 0,
 }
 
 sub uses 
@@ -1096,13 +1163,65 @@ sub uses
    @ret;
 }
 
+sub arrows 
+{
+   return @{$_[0]->{arrows}} unless $#_;
+   my $self = $_[0];
+   $self-> lock;
+   my @arrows = ($#_ == 1) ? @{$_[1]} : @_[1,2];
+   $self-> arrow( $_, $arrows[$_]) for 0, 1;
+   $self-> unlock;
+}
+
+sub arrow
+{
+   return $_[0]->{arrows}->[$_[1]] if $#_ == 1;
+   my ( $self, $idx, $arrow) = @_;
+   return if $idx < 0 || $idx > 1;
+   my $mul;
+   if ( defined ($arrow) && (!ref($arrow) || ref($arrow) eq 'ARRAY')) {
+      unless (ref($arrow)) {
+         if ( $arrow =~ /^([^\:]+)\:([\d\.]+)$/) {
+	    ( $arrow,$mul) = ($1,$2);
+	 }
+         $arrow = exists ($arrowheads{$arrow}) ? 
+	   $arrowheads{$arrow} :
+           $arrowheads{simple};
+      }
+      if ( defined $self->{arrows}->[$idx] && $self->{arrows}->[$idx]-> isa('Prima::Canvas::Polygon')) {
+         $self->{arrows}->[$idx]-> points( $arrow);
+      } else {
+         $self->{arrows}->[$idx] = Prima::Canvas::Polygon-> new(points => $arrow);
+      }
+      $self->{arrows}->[$idx]-> aspect( $mul, $mul) if defined $mul;
+   } else {
+      $self->{arrows}->[$idx] = $arrow;
+   }
+   $self->repaint;
+}
+
 sub on_paint
 {
    my ( $self, $canvas, $width, $height) = @_;
    my $p = $self-> zoom_points( $width, $height);
+   return if 4 > @$p ;
    $self-> {smooth} ? 
       $canvas-> spline( $p) :
       $canvas-> polyline( $p);
+   my $lw = ($self-> {lineWidth} || 1);
+   my $flip = 0;
+   for my $arrow ( @{$self->{arrows}}) {
+      my ( $x1, $y1, $x2, $y2) = @$p[ $flip++ ? (2,3,0,1) : (-4..-1)];
+      next unless $arrow;
+      my @asize = $arrow-> size;
+      my @size  = $self-> size;
+      $arrow-> set(
+         shift  => [ $x2 * $self-> width / $width, $y2 * $self-> height / $height],
+         rotate => atan2($y2 - $y1, $x2 - $x1) * 57.295779,
+      );
+      $arrow-> backColor( $canvas-> color);
+      $arrow-> on_paint( $canvas, $width * $asize[0] / $size[0], $height * $asize[1] / $size[1]);
+   }
 }
 
 package Prima::Canvas::Polygon;
@@ -1112,8 +1231,12 @@ use vars qw(@ISA);
 sub profile_default 
 {
    $_[0]-> SUPER::profile_default,
+   anchor => [0,0],
+   aspect => [1,1],
+   shift  => [0,0],
    points => [],
    smooth => 0,
+   rotate => 0,
    fix_last_point => 1,
 }
 
@@ -1291,14 +1414,23 @@ my $w = Prima::MainWindow-> create(
 	['outline' => 'Toggle ~outline' => \&toggle],
 	[],
 	['Arc,Chord,Sector' => [
-	   ['arc+' => 'Rotate ~right' => \&arc_rotate],
-	   ['arc-' => 'Rotate ~left' => \&arc_rotate],
+	   ['arc-' => 'Rotate ~right' => \&arc_rotate],
+	   ['arc+' => 'Rotate ~left' => \&arc_rotate],
 	   ['arc++' => 'E~xtend' => \&arc_rotate],
 	   ['arc--' => '~Shrink' => \&arc_rotate],
 	]],
 	['Line,Polygon' => [
 	   ['smooth1' => '~Spline' => \&smooth],
 	   ['smooth0' => '~Straigth' => \&smooth],
+	   ['rotate-' => 'Rotate ~right' => \&line_rotate],
+	   ['rotate+' => 'Rotate ~left' => \&line_rotate],
+	   [],
+	   ['Set ~arrows' => [
+	      map {["arrow=$_", ucfirst, \&set_arrowhead]} 'none', keys %Prima::Canvas::Line::arrowheads,
+	   ]],
+	   ['Set arrowhead ~size' => [
+	      map {["arrow=$_", $_, \&set_arrowhead]} 1,2,3,4,5
+	   ]],
 	]],
 	['Te~xt' => [
            ['font' => '~Font' => \&set_font],
@@ -1348,8 +1480,17 @@ sub insert
    my %profile;
    $profile{image} = $logo if $obj eq 'Image';
    $profile{image} = $bitmap, $obj = 'Image' if $obj eq 'Bitmap';
-   $profile{points} = [ 0,0,50,40,100,0,50,60,100,100] if $obj eq 'Line';
-   $profile{points} = [ 20,0,50,100,80,0,0,65,100,65] if $obj eq 'Polygon';
+   if ( $obj eq 'Line') {
+       $profile{points} = [ 10,10,10,50,50,40,100,0,50,60,90,90];
+       $profile{shift}  = [ 50,50],
+       $profile{arrows} = [ 'default', 'feather:10'];
+       $profile{size}   = [ 200,200],
+       $profile{anchor} = [ 50,50],
+   }
+   if ( $obj eq 'Polygon') {
+      $profile{points} = [ 20,0,50,100,80,0,0,65,100,65];
+      $profile{anchor} = [50,50];
+   }
    $profile{text} = "use Prima qw(Application);\nMainWindow->create();\nrun Prima;"
       if $obj eq 'Text';
    $c-> selected_object( $c-> insert_object( "Prima::Canvas::$obj", %profile));
@@ -1451,6 +1592,38 @@ sub arc_rotate
    }
 }
 
+sub line_rotate
+{
+   my ( $self, $line) = @_;
+   my $obj;
+   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj-> isa('Prima::Canvas::line_properties');
+   $line =~ s/^rotate//;
+   if ( $line eq '+') {
+      $obj-> rotate( $obj-> rotate + 10);
+   } elsif ( $line eq '-') {
+      $obj-> rotate( $obj-> rotate - 10);
+   }
+}
+
+sub set_arrowhead
+{
+   my ( $self, $arrow) = @_;
+   my $obj;
+   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj-> isa('Prima::Canvas::Line');
+   $arrow =~ s/^arrow\=//;
+   if ( $arrow =~ /^\d+$/) {
+      for ( $obj-> arrows) {
+         $_-> aspect( $arrow, $arrow) if $_;
+      }
+      $obj-> repaint;
+   } else {
+      $arrow = undef if $arrow eq 'none';
+      $obj-> arrows( $arrow, $arrow);
+   }
+}
+
 sub smooth
 {
    my ( $self, $smooth) = @_;
@@ -1493,5 +1666,6 @@ sub set_text_flags
 
 $c-> insert_object( 'Prima::Canvas::Rectangle', linePattern => lp::Solid, lineWidth => 10);
 $c-> insert_object( 'Prima::Canvas::Image', image => $logo, origin => [ 50, 50]);
+#insert($w,'Line');
 
 run Prima;
