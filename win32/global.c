@@ -484,7 +484,8 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    MB_MAINACT:
       if ( !is_apt( aptEnabled) || !apc_widget_is_responsive( self))
       {
-         if ( ev. cmd != cmMouseUp) MessageBeep( MB_OK);
+         if ( ev. cmd == cmMouseDown || (ev. cmd == cmMouseClick && ev. pos. dblclk))
+            MessageBeep( MB_OK);
          return 0;
       }
       goto MB_MAIN;
