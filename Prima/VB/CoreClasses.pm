@@ -949,7 +949,7 @@ sub prf_adjust_default
       accelItems     selection
       cursorX        markers
       cursorY        textRef
-      modified       firstCol
+      modified       topLine
       offset
       selection
       selEnd

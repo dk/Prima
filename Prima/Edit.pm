@@ -120,7 +120,6 @@ sub profile_default
       cursorX           => 0,
       cursorY           => 0,
       cursorWrap        => 0,
-      firstCol          => 0,
       insertMode        => 0,
       hiliteNumbers     => cl::Green,
       hiliteQStrings    => cl::LightBlue,
@@ -142,6 +141,7 @@ sub profile_default
       syntaxHilite      => 0,
       tabIndent         => 8,
       textRef           => undef,
+      topLine           => 0,
       vScroll           => 0,
       wantTabs          => 0,
       wantReturns       => 1,
@@ -167,7 +167,7 @@ sub profile_check_in
 sub init
 {
    my $self = shift;
-   for ( qw( autoIndent firstCol offset resetDisabled blockType persistentBlock
+   for ( qw( autoIndent topLine  offset resetDisabled blockType persistentBlock
              tabIndent readOnly wantReturns wantTabs))
       { $self->{$_} = 1; }
    for ( qw( wordWrap hScroll vScroll rows maxLineCount maxLineLength maxLineWidth
@@ -185,7 +185,7 @@ sub init
    $profile{selection} = [@{$profile{selStart}}, @{$profile{selEnd}}];
    for ( qw( hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs
              textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
-             firstCol tabIndent readOnly offset wordDelimiters wantTabs wantReturns
+             topLine  tabIndent readOnly offset wordDelimiters wantTabs wantReturns
              wordWrap cursorWrap markers))
       { $self->$_( $profile{ $_}); }
    delete $self->{resetDisabled};
@@ -203,25 +203,18 @@ sub reset
 {
    my $self = $_[0];
    return if $self->{resetDisabled};
-#  my @size = $self-> size;
    my @a    = ( $self-> {indents}->[0], $self-> {indents}->[1]);
    my @size = $self-> get_active_area(2);
-#  my $bw   = $self-> {borderWidth};
    my $cw   = $self-> {defcw};
    my $ti   = $self-> {tabIndent};
    my $uC   = $self-> {uChange};
    my $mw;
-#  $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height - 1 : 0);
-#  $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width  - 1 : 0);
-#  $size[1] -= $bw * 2 + $self->{dy};
-#  $size[0] -= $bw * 2 + $self->{dx} - $cw;
    $size[0] -= $cw;
    if ( $uC < 2)
    {
       $self-> {fixed} = $self-> font-> pitch == fp::Fixed;
       $self-> {averageWidth} = $self-> font-> width;
       $mw                    = $self-> {averageWidth};
-#     $self-> {maxFixedLength} = int(( $size[0] - $cw) / $mw);
       $self-> {maxFixedLength} = int( $size[0] / $mw);
       $self-> {tabs} = ' 'x$ti;
    }
@@ -296,15 +289,11 @@ sub reset
       $self-> {cursorInsWidth} = $self-> get_chunk_width( $chunk, $x, 1);
    }
 # positioning cursor
-#  my $cx  = $bw + $self-> {cursorAtX} - $self-> {offset};
    my $cx  = $a[0] + $self-> {cursorAtX} - $self-> {offset};
-#  my $cy  = $self->{dy} + $bw + $yTail + ($self-> {rows} - $self-> {cursorYl} + $self->{firstCol} - 1) * $fh;
-   my $cy  = $a[1] + $yTail + ($self-> {rows} - $self-> {cursorYl} + $self->{firstCol} - 1) * $fh;
+   my $cy  = $a[1] + $yTail + ($self-> {rows} - $self-> {cursorYl} + $self->{topLine } - 1) * $fh;
    my $xcw = $self-> {insertMode} ? $cw : $self->{cursorInsWidth};
    my $ycw = $fh;
-#  $ycw -= $bw - $cy, $cy = $bw if $cy < $bw;
    $ycw -= $a[1] - $cy, $cy = $a[1] if $cy < $a[1];
-#  $xcw = $size[0] + $bw - $cx - 1 if $cx + $xcw >= $size[0] + $bw;
    $xcw = $size[0] + $a[0] - $cx - 1 if $cx + $xcw >= $size[0] + $a[0];
    $self-> cursorVisible( $xcw > 0);
    if ( $xcw > 0) {
@@ -341,7 +330,7 @@ sub reset_scrolls
          pageStep => $self-> {rows},
          whole    => $self-> {maxChunk} + 1,
          partial  => $self-> {rows},
-         value    => $self-> {firstCol},
+         value    => $self-> {topLine },
       );
    }
    if ( $self->{scrollTransaction} != 2 && $self->{hScroll})
@@ -365,7 +354,7 @@ sub VScroll_Change
    my ( $self, $scr) = @_;
    return if $self-> {scrollTransaction};
    $self-> {scrollTransaction} = 1;
-   $self-> firstCol( $scr-> value);
+   $self-> topLine ( $scr-> value);
    $self-> {scrollTransaction} = 0;
 }
 
@@ -473,7 +462,7 @@ SYNTAXER
 
 sub draw_colorchunk
 {
-   my ( $self, $canvas, $chunk, $i, $x, $y, $clr1, $clr2) = @_;
+   my ( $self, $canvas, $chunk, $i, $x, $y, $clr) = @_;
    my $sd = $self->{syntax}->[$i];
    unless ( defined $sd) {
       $self-> notify(q(ParseSyntax), $chunk, $sd);
@@ -484,7 +473,7 @@ sub draw_colorchunk
 
    for ( $j = 0; $j < scalar @{$sd} - 1; $j += 2) {
       my $xd = $self-> get_chunk_width( $chunk, $ofs, $$sd[$j], \$cc);
-      $canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr1 : $$sd[$j+1]);
+      $canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr : $$sd[$j+1]);
       $cc =~ s/\t/$self->{tabs}/g;
       $canvas-> text_out( $cc, $x, $y);
       $x += $xd;
@@ -501,16 +490,9 @@ sub on_paint
    ( $self-> color, $self-> backColor) :
    ( $self-> disabledColor, $self-> disabledBackColor);
    my @sclr   = ( $self-> hiliteColor, $self-> hiliteBackColor);
-#  my ( $bw, $fh, $dx, $dy, $fc, $lc, $rc, $ofs, $yt, $tabs, $cw, $bt, $issel,
-#       $sh, $sx) = (
-#      $self->{ borderWidth}, $self->font-> height, $self->{dx}, $self->{dy},
-#      $self->{firstCol}, $self->{maxChunk}+1, $self->{rows}, $self-> {offset},
-#      $self-> {yTail}, $self->{tabs},  $self->{defcw}, $self-> {blockType},
-#      $self-> has_selection, $self->{syntaxHilite}, $self->{syntax},
-#   );
-   my ( $bw, $fh, $fc, $lc, $rc, $ofs, $yt, $tabs, $cw, $bt, $issel,
+   my ( $bw, $fh, $tl, $lc, $rc, $ofs, $yt, $tabs, $cw, $bt, $issel,
         $sh, $sx) = ( $self->{borderWidth}, $self->font-> height,
-       $self->{firstCol}, $self->{maxChunk}+1, $self->{rows}, $self-> {offset},
+       $self->{topLine }, $self->{maxChunk}+1, $self->{rows}, $self-> {offset},
        $self-> {yTail}, $self->{tabs},  $self->{defcw}, $self-> {blockType},
        $self-> has_selection, $self->{syntaxHilite}, $self->{syntax},
    );
@@ -518,7 +500,6 @@ sub on_paint
 
 # drawing sheet
    my @clipRect = $self-> clipRect;
-#  if ( $clipRect[0] > $bw && $clipRect[1] > $bw + $dy && $clipRect[2] < $size[0] - $bw - $dx && $clipRect[3] < $size[1] - $bw)
    if ( $clipRect[0] > $a[0] && $clipRect[1] > $a[1] && $clipRect[2] < $a[2] && $clipRect[3] < $a[3])
    {
       $canvas-> color( $clr[ 1]);
@@ -531,22 +512,16 @@ sub on_paint
       $canvas-> clipRect( $a[0], $a[1], $a[2] - 1, $a[3] - 1);
    }
    $canvas-> color( $clr[0]);
-# defining repaint area - from and to limits
    my $i;
-#  my $lim = ( $fc + $rc + $yt > $lc) ? $lc : $fc + $rc + $yt;
-#  my $y = $size[1] - $bw - $fh;
    my $y = $a[3] - $fh;
-#  my $lim = int(( $size[1] - $clipRect[1]) / $fh) + $fc + 1;
-   my $lim = int(( $a[3] - $clipRect[1]) / $fh) + $fc + 1;
+   my $lim = int(( $a[3] - $clipRect[1]) / $fh) + $tl + 1;
    {
-#      my $fx = int(( $size[1] - $clipRect[3]) / $fh) + $fc;
-       my $fx = int(( $a[3] - $clipRect[3]) / $fh) + $fc;
-       $fx = $fc if $fx < $fc;
-       $y -= ( $fx - $fc) * $fh;
-       $fc = $fx;
+       my $fx = int(( $a[3] - $clipRect[3]) / $fh) + $tl;
+       $fx = $tl if $fx < $tl;
+       $y -= ( $fx - $tl) * $fh;
+       $tl = $fx;
    }
    $lim = $lc if $lim > $lc;
-#  my $x    = $bw - $ofs;
    my $x    = $a[0] - $ofs;
 # painting selection
    my @sel;
@@ -557,49 +532,47 @@ sub on_paint
       if ( $bt == bt::CUA)
       {
          @cuaXs   = (
-#           $bw - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[1]), 0, $sel[0]),
-#           $bw - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[3]), 0, $sel[2])
             $a[0] - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[1]), 0, $sel[0]),
             $a[0] - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[3]), 0, $sel[2])
          );
          my $cSet = 0;
          if ( $sel[1] == $sel[3])
          {
-            if ( $sel[1] >= $fc && $sel[ 1] < $lim)
+            if ( $sel[1] >= $tl && $sel[ 1] < $lim)
             {
                $cSet = 1;
                $canvas-> color( $sclr[ 1]);
-               $canvas-> bar( $cuaXs[0], $y - $fh * ( $sel[1] - $fc - 1) - 1, $cuaXs[1]-1, $y - $fh * ( $sel[1] - $fc));
+               $canvas-> bar( $cuaXs[0], $y - $fh * ( $sel[1] - $tl - 1) - 1, $cuaXs[1]-1, $y - $fh * ( $sel[1] - $tl));
             }
          } else {
-            if ( $sel[1] >= $fc && $sel[ 1] < $lim)
+            if ( $sel[1] >= $tl && $sel[ 1] < $lim)
             {
                $cSet = 1;
                $canvas-> color( $sclr[ 1]);
-               $canvas-> bar( $cuaXs[0], $y - $fh * ( $sel[1] - $fc - 1) - 1, $size[0], $y - $fh * ( $sel[1] - $fc));
+               $canvas-> bar( $cuaXs[0], $y - $fh * ( $sel[1] - $tl - 1) - 1, $size[0], $y - $fh * ( $sel[1] - $tl));
             }
-            if ( $sel[3] >= $fc && $sel[ 3] < $lim)
+            if ( $sel[3] >= $tl && $sel[ 3] < $lim)
             {
                $canvas-> color( $sclr[ 1]) unless $cSet;
                $cSet = 1;
-               $canvas-> bar( 0, $y - $fh * ( $sel[3] - $fc - 1) - 1, $cuaXs[1]-1, $y - $fh * ( $sel[3] - $fc));
+               $canvas-> bar( 0, $y - $fh * ( $sel[3] - $tl - 1) - 1, $cuaXs[1]-1, $y - $fh * ( $sel[3] - $tl));
             }
-            if ( $sel[3] -1 > $sel[1] && ( $sel[1] + 1 < $lim || $sel[ 3] - 1 >= $fc))
+            if ( $sel[3] -1 > $sel[1] && ( $sel[1] + 1 < $lim || $sel[ 3] - 1 >= $tl))
             {
                $canvas-> color( $sclr[ 1]) unless $cSet;
                $cSet = 1;
-               $canvas-> bar( 0, $y - $fh * ( $sel[1] - $fc) - 1, $size[0], $y - $fh * ( $sel[3] - $fc - 1));
+               $canvas-> bar( 0, $y - $fh * ( $sel[1] - $tl) - 1, $size[0], $y - $fh * ( $sel[3] - $tl - 1));
             }
          }
          $canvas-> color( $clr[0]) if $cSet;
       } elsif ( $bt == bt::Horizontal) {
-         if ( $sel[1] < $lim || $sel[ 3] >= $fc) {
+         if ( $sel[1] < $lim || $sel[ 3] >= $tl) {
             $canvas-> color( $sclr[ 1]);
-            $canvas-> bar( 0, $y - $fh * ( $sel[1] - $fc - 1) - 1, $size[0], $y - $fh * ( $sel[3] - $fc));
+            $canvas-> bar( 0, $y - $fh * ( $sel[1] - $tl - 1) - 1, $size[0], $y - $fh * ( $sel[3] - $tl));
             # painting horizontal block lines, if available
             $canvas-> color( $sclr[0]);
-            my ($from, $to) = (( $fc > $sel[1]) ? $fc : $sel[1], ( $lim < ($sel[3]+1)) ? $lim : ( $sel[3] + 1));
-            my $horz_y = $y - ( $from - $fc) * $fh;
+            my ($from, $to) = (( $tl > $sel[1]) ? $tl : $sel[1], ( $lim < ($sel[3]+1)) ? $lim : ( $sel[3] + 1));
+            my $horz_y = $y - ( $from - $tl) * $fh;
             for ( $i = $from; $i < $to; $i++)
             {
                my $c = $self-> get_chunk( $i);
@@ -614,7 +587,7 @@ sub on_paint
    my $cSet = 0;
 
 # painting lines
-   for ( $i = $fc; $i < $lim; $i++)
+   for ( $i = $tl; $i < $lim; $i++)
    {
       my $c = $self-> get_chunk( $i);
       if ( $issel && $i >= $sel[1] && $i <= $sel[3])
@@ -626,7 +599,7 @@ sub on_paint
                my $cl = $sel[2] - length( $c);
                $c .= ' 'x$cl if $cl > 0;
                my $lc;
-               if ( $sh) { $self-> draw_colorchunk($canvas, $c, $i, $x, $y, @clr); } else {
+               if ( $sh) { $self-> draw_colorchunk($canvas, $c, $i, $x, $y, $clr[0]); } else {
                   $lc = substr( $c, 0, $sel[0]); $lc =~ s/\t/$tabs/g;
                   $canvas-> text_out( $lc, $x, $y);
                   $lc = substr( $c, $sel[2], length($c)); $lc =~ s/\t/$tabs/g;
@@ -640,7 +613,7 @@ sub on_paint
                my $cl = $sel[0] - length( $c);
                $c .= ' 'x$cl if $cl > 0;
                my $lc;
-               if ( $sh) { $self-> draw_colorchunk($canvas, $c, $i, $x, $y, @clr); } else {
+               if ( $sh) { $self-> draw_colorchunk($canvas, $c, $i, $x, $y, $clr[0]); } else {
                   $lc = substr( $c, 0, $sel[0]); $lc =~ s/\t/$tabs/g;
                   $canvas-> text_out( $lc, $x, $y);
                }
@@ -651,7 +624,7 @@ sub on_paint
             } elsif ( $i == $sel[3]) {
                my $cl = $sel[2] - length( $c);
                $c .= ' 'x$cl if $cl > 0;
-               if ( $sh) { $self-> draw_colorchunk($canvas, $c, $i, $x, $y, @clr); } else {
+               if ( $sh) { $self-> draw_colorchunk($canvas, $c, $i, $x, $y, $clr[0]); } else {
                   $canvas-> color( $clr[0]);
                   $lc = substr( $c, $sel[2], length( $c)); $lc =~ s/\t/$tabs/g;
                   $canvas-> text_out( $lc, $cuaXs[1], $y);
@@ -668,8 +641,6 @@ sub on_paint
             }
          } elsif ( $bt == bt::Vertical) {
             my @vXs = (
-#              $self-> get_chunk_width( $c, 0, $sel[0]) - $ofs + $bw,
-#              $self-> get_chunk_width( $c, 0, $sel[2]) - $ofs + $bw,
                $self-> get_chunk_width( $c, 0, $sel[0]) - $ofs + $a[0],
                $self-> get_chunk_width( $c, 0, $sel[2]) - $ofs + $a[0]
             );
@@ -679,7 +650,7 @@ sub on_paint
             my $cl = $sel[2] - length( $c);
             $c .= ' 'x$cl if $cl > 0;
             my $lc;
-            if ( $sh) { $self-> draw_colorchunk($canvas, $c, $i, $x, $y, @clr); } else {
+            if ( $sh) { $self-> draw_colorchunk($canvas, $c, $i, $x, $y, $clr[0]); } else {
                $lc = substr( $c, 0, $sel[0]); $lc =~ s/\t/$tabs/g;
                $canvas-> text_out( $lc, $x, $y);
                $lc = substr( $c, $sel[2], length($c)); $lc =~ s/\t/$tabs/g;
@@ -693,7 +664,7 @@ sub on_paint
       } else {
       # painting syntaxed lines
          if ( $sh) {
-            $self-> draw_colorchunk( $canvas, $c, $i, $x, $y, @clr);
+            $self-> draw_colorchunk( $canvas, $c, $i, $x, $y, $clr[0]);
          } else {
        # painting normal lines
             $c =~ s/\t/$tabs/g;
@@ -708,19 +679,10 @@ sub on_paint
 sub point2xy
 {
    my ( $self, $x, $y) = @_;
-#  my ( $w, $h, $bw, $dx, $dy, $fh, $ofs, $avg) = (
-#     $self-> size, $self-> {borderWidth}, $self-> {dx}, $self->{dy}, $self-> font-> height,
-#     $self-> {offset}, $self->{averageWidth},
-#  );
    my ( $fh, $ofs, $avg, @a) = (
       $self-> font-> height, $self-> {offset}, $self->{averageWidth}, $self-> get_active_area
    );
    my ( $rx, $ry, $inBounds);
-#  $inBounds = !( $x <= $bw || $x > $w - $dx - $bw || $y < $bw + $dy || $y > $h - $bw);
-#  $x -= $bw;
-#  $y -= $bw + $dy;
-#  $h -= $bw + $bw + $dy;
-#  $w -= $bw + $bw + $dx;
    $inBounds = !( $x <= $a[0] || $x > $a[2] || $y < $a[1] || $y > $a[3]);
    $x -= $a[0];
    $y -= $a[1];
@@ -730,7 +692,7 @@ sub point2xy
    $y  = -$fh if $y < 0;
    $x  = $w + $avg * 2 if $x > $w + $avg * 2;
    $x  = - $avg * 2 if $x < - $avg * 2;
-   $ry = int(( $h - $y) / $fh) + $self->{firstCol};
+   $ry = int(( $h - $y) / $fh) + $self->{topLine };
    $ry = 0 if $ry < 0;
    $ry = $self->{maxChunk} if $ry > $self->{maxChunk};
    $rx = 0;
@@ -818,9 +780,9 @@ sub on_mousewheel
    my ( $self, $mod, $x, $y, $z) = @_;
    $z = int( $z/120);
    $z *= $self-> {rows} if $mod & km::Ctrl;
-   my $newTop = $self-> firstCol - $z;
+   my $newTop = $self-> topLine  - $z;
    my $maxTop = $self-> {maxChunk} - $self->{rows} + 1;
-   $self-> firstCol( $newTop > $maxTop ? $maxTop : $newTop);
+   $self-> topLine ( $newTop > $maxTop ? $maxTop : $newTop);
    $self-> clear_event;
 }
 
@@ -890,7 +852,7 @@ sub on_keydown
       return unless $mod & km::Ctrl;
       $mod &= ~km::Ctrl;
    }
-   if  ((( $code & 0xFF) >= ord(' ')) &&
+   if  ((( $code & 0xFF) >= ord(' ') || (( $code & 0xFF) == ord("\t"))) &&
        (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
        (( $key == kb::NoKey) || ( $key == kb::Space) || ( $key == kb::Tab))
       )
@@ -1083,7 +1045,7 @@ sub has_selection
 sub realize_panning
 {
    delete $_[0]-> {delayPanning};
-   for ( qw( firstCol offset)) {
+   for ( qw( topLine  offset)) {
        my $c = 'delay_' . $_;
        next unless defined $_[0]-> {$c};
        $_[0]-> $_( $_[0]-> {$c});
@@ -1105,12 +1067,12 @@ sub set_cursor
    $self-> {cursorXl} = $lx;
    $self-> {cursorYl} = $ly;
    return if $y == $oy and $x == $ox and $lx == $olx and $ly == $oly;
-   my ( $fc, $r, $yt) = ( $self->{firstCol}, $self->{rows}, $self-> {yTail});
-   if ( $ly < $fc) {
-      $self-> firstCol( $ly);
-   } elsif ( $ly >= $fc + $r) {
+   my ( $tl, $r, $yt) = ( $self->{topLine }, $self->{rows}, $self-> {yTail});
+   if ( $ly < $tl) {
+      $self-> topLine ( $ly);
+   } elsif ( $ly >= $tl + $r) {
       my $nfc = $ly - $r + 1;
-      $self-> firstCol( $nfc);
+      $self-> topLine ( $nfc);
    }
    my $chunk  = $self-> get_chunk( $ly);
    my $atX    = $self-> get_chunk_width( $chunk, 0, $lx);
@@ -1136,28 +1098,24 @@ sub set_cursor
    $self-> cancel_block if !$self->{blockShiftMark} && !$self->{persistentBlock};
 }
 
-sub set_first_col
+sub set_top_line
 {
-   my ( $self, $fc) = @_;
-   $fc = $self->{maxChunk} if $fc >= $self->{maxChunk};
-   $fc = 0 if $fc < 0;
-   return if $self->{firstCol} == $fc;
+   my ( $self, $tl) = @_;
+   $tl = $self->{maxChunk} if $tl >= $self->{maxChunk};
+   $tl = 0 if $tl < 0;
+   return if $self->{topLine } == $tl;
    if ( $self-> {delayPanning}) {
-      $self-> {delay_firstCol} = $fc;
+      $self-> {delay_topLine } = $tl;
       return;
    }
-   my $dt = $fc - $self->{firstCol};
-   $self->{firstCol} = $fc;
+   my $dt = $tl - $self->{topLine };
+   $self->{topLine } = $tl;
    if ( $self->{vScroll} && $self->{scrollTransaction} != 1) {
       $self->{scrollTransaction} = 1;
-      $self-> {vScrollBar}-> value( $fc);
+      $self-> {vScrollBar}-> value( $tl);
       $self->{scrollTransaction} = 0;
    }
    $self-> reset_cursor;
-#  my ( $bw, $dx, $dy, $x, $y, $fh) =
-#      ($self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> size, $self-> font-> height);
-#  $self-> scroll( 0, $dt * $fh,
-#                  clipRect => [ $bw, $bw+$dy, $x-$bw-$dx, $y-$bw]);
    $self-> scroll( 0, $dt * $self-> font-> height,
                    clipRect => [ $self-> get_active_area]);
 }
@@ -1272,11 +1230,8 @@ sub set_offset
       $self-> {hScrollBar}-> value( $offset);
       $self->{scrollTransaction} = 0;
    }
-#  my ( $x, $y) = $self->size;
-#  my ( $bw, $dx, $dy) = ($self->{borderWidth}, $self->{dx}, $self->{dy});
    $self-> reset_cursor;
    $self-> scroll( -$dt, 0,
-#                  clipRect => [ $bw, $bw + $dy, $x - $dx - $bw, $y - $bw]);
                    clipRect => [ $self-> get_active_area]);
 }
 
@@ -1362,16 +1317,11 @@ sub set_selection
       $start = ( $sy < $osy) ? $sy : $osy;
       $end   = ( $ey > $oey) ? $ey : $oey;
    }
-#  my ( $bw, $dx, $dy, $ofs, $fc, $fh, $x, $y, $r, $yT) =
-#     (
-#        $self->{borderWidth}, $self->{dx}, $self->{dy}, $self->{offset},
-#        $self->{firstCol}, $self->font-> height, $self-> size, $self->{rows}, $self->{yTail}
-#     );
-   my ( $ofs, $fc, $fh, $r, $yT) = (
-         $self->{offset}, $self->{firstCol}, $self->font-> height, $self->{rows}, $self->{yTail}
+   my ( $ofs, $tl, $fh, $r, $yT) = (
+         $self->{offset}, $self->{topLine }, $self->font-> height, $self->{rows}, $self->{yTail}
       );
    my @a = $self-> get_active_area( 0);
-   return if $end < $fc || $start >= $fc + $r + $yT;
+   return if $end < $tl || $start >= $tl + $r + $yT;
    if ( $start == $end && $bt == bt::CUA)
    {
       # single connective line paint
@@ -1399,22 +1349,16 @@ sub set_selection
          $chunk = $self-> get_chunk( $start);
       }
       $self-> invalidate_rect(
-#        $bw - $ofs + $self-> get_chunk_width( $chunk, 0, $xstart) - 1,
-#        $y - $bw - $fh * ( $start - $fc + 1),
-#        $bw - $ofs + $self-> get_chunk_width( $chunk, 0, $xend),
-#        $y - $bw - $fh * ( $start - $fc)
          $a[0] - $ofs + $self-> get_chunk_width( $chunk, 0, $xstart) - 1,
-         $a[3] - $fh * ( $start - $fc + 1),
+         $a[3] - $fh * ( $start - $tl + 1),
          $a[0] - $ofs + $self-> get_chunk_width( $chunk, 0, $xend),
-         $a[3] - $fh * ( $start - $fc)
+         $a[3] - $fh * ( $start - $tl)
       );
    } else {
       # general connected lines paint
       $self-> invalidate_rect(
-#        $bw, $y - $bw - $fh * ( $end - $fc + 1),
-#        $x - $bw - $dx, $y - $bw - $fh * ( $start - $fc),
-         $a[0], $a[3] - $fh * ( $end - $fc + 1),
-         $a[2], $a[3] - $fh * ( $start - $fc),
+         $a[0], $a[3] - $fh * ( $end - $tl + 1),
+         $a[2], $a[3] - $fh * ( $start - $tl),
       );
    }
 }
@@ -1734,7 +1678,7 @@ sub cursor_pgup  {
    my $d = $_[1] || 1;
    my $i;
    for ( $i= 0;$i<$d; $i++) {
-      my $cy = $_[0]-> firstCol - ( $_[0]-> {cursorYl} > $_[0]-> firstCol ? 0 : $_[0]-> {rows});
+      my $cy = $_[0]-> topLine  - ( $_[0]-> {cursorYl} > $_[0]-> topLine  ? 0 : $_[0]-> {rows});
       $_[0]-> cursorLog( $_[0]->{cursorXl}, $cy < 0 ? 0 : $cy);
    }
 }
@@ -1742,8 +1686,8 @@ sub cursor_pgdn  {
    my $d = $_[1] || 1;
    my $i;
    for ( $i= 0;$i<$d; $i++) {
-      my ( $fc, $r) = ($_[0]-> firstCol, $_[0]-> {rows});
-      my $cy = $fc + $r - 1 + (( $_[0]-> {cursorYl} < $fc+$r-1) ? 0 : $r);
+      my ( $tl, $r) = ($_[0]-> topLine , $_[0]-> {rows});
+      my $cy = $tl + $r - 1 + (( $_[0]-> {cursorYl} < $tl+$r-1) ? 0 : $r);
       $_[0]-> cursorLog( $_[0]->{cursorXl}, $cy);
    }
 }
@@ -1868,17 +1812,12 @@ sub set_line
    $self-> insert_empty_line(0), $y = $maxY = $self->{maxLine} if $maxY < 0;
    return if $y > $maxY || $y < 0;
    my ( $newDim, $oldDim, $ry) = (0,0,0);
-#  my ( $dx, $dy, $bw, $fh, $fc, $ofs, $w, $h) = (
-#     $self->{dx}, $self->{dy}, $self->{borderWidth}, $self-> font-> height,
-#     $self->{firstCol}, $self->{offset}, $self-> size,
-#  );
-   my ( $fh, $fc, $ofs, @a) = (
-      $self-> font-> height, $self->{firstCol}, $self->{offset}, $self-> get_active_area,
+   my ( $fh, $tl, $ofs, @a) = (
+      $self-> font-> height, $self->{topLine }, $self->{offset}, $self-> get_active_area,
    );
    my @sz = ( $a[2] - $a[0], $a[3] - $a[1]);
    my ( $_from, $_to);
    if ( $self->{wordWrap}) {
-#     my $breaks = $self-> text_wrap( $line, $w - $bw * 2 - $dx - $self->{defcw}, tw::WordBreak|tw::CalcTabs|tw::NewLineBreak|tw::ReturnChunks, $self->{tabIndent});
       my $breaks = $self-> text_wrap( $line, $sz[0] - $self->{defcw}, tw::WordBreak|tw::CalcTabs|tw::NewLineBreak|tw::ReturnChunks, $self->{tabIndent});
       my @chunkMap;
       ( undef, $ry) = $self-> make_logical( 0, $y);
@@ -1889,9 +1828,6 @@ sub set_line
       my $i;
       for ( $i = 0; $i < $newDim; $i++)
       {
-#        push( @chunkMap, $$breaks[$i * 2]);
-#        push( @chunkMap, $$breaks[$i * 2 + 1]);
-#        push( @chunkMap, $y);
          push( @chunkMap, $$breaks[$i * 2], $$breaks[$i * 2 + 1], $y);
       }
       splice( @{$cm}, $ry * 3, $oldDim * 3, @chunkMap);
@@ -1926,10 +1862,8 @@ sub set_line
          }
          my $lw = $self->{maxLineWidth};
          $self-> {hScrollBar}-> set(
-#           max      => $lw - $w - $bw * 2 - $dx,
             max      => $lw - $sz[0],
             whole    => $lw,
-#           partial  => $w - $bw * 2 - $dx,
             partial  => $sz[0],
          ) if $self-> {hScroll};
       }
@@ -1977,10 +1911,8 @@ sub set_line
    if ( defined $_to)
    {
       $self-> invalidate_rect(
-#        $bw - $ofs, $h - $bw - $fh * ( $_to - $fc + 1),
-#        $w - $dx - $bw, $h - $bw - $fh * ( $_from - $fc)
-         $a[0], $a[3] - $fh * ( $_to - $fc + 1),
-         $a[2], $a[3] - $fh * ( $_from - $fc)
+         $a[0], $a[3] - $fh * ( $_to - $tl + 1),
+         $a[2], $a[3] - $fh * ( $_from - $tl)
       );
    } else {
       $self-> repaint;
@@ -2034,18 +1966,13 @@ sub insert_empty_line
       $self-> selection( @sel);
       delete $self->{anchor};
    }
-#  my ( $fc, $rc, $yt, $bw, $dx, $dy, $fh, $w, $h) = (
-#     $self->{firstCol}, $self->{rows}, $self->{yTail},
-#     $self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> font-> height, $self-> size,
-#  );
-   my ( $fc, $rc, $yt, $fh, @a) = (
-      $self->{firstCol}, $self->{rows}, $self->{yTail},
+   my ( $tl, $rc, $yt, $fh, @a) = (
+      $self->{topLine }, $self->{rows}, $self->{yTail},
       $self-> font-> height, $self-> get_active_area,
    );
-   if ( $y < $fc + $rc + $yt - 1 && $y + $len > $fc && $y <= $maxY && !$self-> has_selection) {
+   if ( $y < $tl + $rc + $yt - 1 && $y + $len > $tl && $y <= $maxY && !$self-> has_selection) {
       $self-> scroll( 0, -$fh * $len,
-                           confineRect => [ @a[0..2], $a[3] - $fh * ( $y - $fc)]);
-#                          confineRect => [ $bw, $bw + $dy, $w - $dx - $bw, $h - $bw - $fh * ( $y - $fc) ]);
+                           confineRect => [ @a[0..2], $a[3] - $fh * ( $y - $tl)]);
    }
    $self->{vScrollBar}-> set(
       max      => $self-> {maxChunk} - $self->{rows} + 1,
@@ -2125,10 +2052,8 @@ sub delete_line
             my $lw = $self->{maxLineWidth};
             my $w  = $self->width - $self->{indents}->[0] - $self->{indents}->[2];
             $self-> {hScrollBar}-> set(
-#              max      => $lw - $self->width - $self->{borderWidth} * 2 - $self->{dx},
                max      => $lw - $w,
                whole    => $lw,
-#              partial  => $self-> width - $self->{borderWidth} * 2 - $self->{dx},
                partial  => $w,
             ) if $self-> {hScroll};
             last;
@@ -2488,7 +2413,7 @@ sub cursorLog       {($#_)?($_[0]->set_cursor    ($_[0]->make_physical($_[1],$_[
 sub cursorX         {($#_)?($_[0]->set_cursor    ($_[1],$_[0]-> {cursorY})):return $_[0]->{cursorX}    }
 sub cursorY         {($#_)?($_[0]->set_cursor    ($_[0]-> {q(cursorX)},$_[1])):return $_[0]->{cursorY}    }
 sub cursorWrap      {($#_)?($_[0]->{cursorWrap     }=$_[1])                :return $_[0]->{cursorWrap     }}
-sub firstCol        {($#_)?($_[0]->set_first_col (   $_[1]))               :return $_[0]->{firstCol}    }
+sub topLine         {($#_)?($_[0]->set_top_line (   $_[1]))               :return $_[0]->{topLine }    }
 sub hiliteNumbers   {($#_)?$_[0]->set_hilite_numbers ($_[1])               :return $_[0]->{hiliteNumbers} }
 sub hiliteQStrings  {($#_)?$_[0]->set_hilite_q_strings($_[1])              :return $_[0]->{hiliteQStrings} }
 sub hiliteQQStrings {($#_)?$_[0]->set_hilite_qq_strings($_[1])             :return $_[0]->{hiliteQQStrings} }
@@ -2514,3 +2439,650 @@ sub wordDelimiters  {($#_)?($_[0]->{wordDelimiters}= $_[1])                :retu
 sub wordWrap        {($#_)?($_[0]->set_word_wrap(    $_[1]))               :return $_[0]->{wordWrap }    }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Edit - standard text editing widget
+
+=head1 DESCRIPTION
+
+The class provides text editing capabilities, three types of selection, text wrapping,
+syntax highlighting, auto indenting, search and replace methods.
+
+The class does not provide undo functionality.
+
+The module declares C<bt::> package, that contains integer constants for selection block type,
+used by L<blockType> property.
+
+=head1 USAGE
+
+   use Prima:Edit;
+   my $e = Prima::Edit-> create(
+      text         => 'Hello $world',
+      syntaxHilite => 1,
+   );
+   $e-> selection( 1, 1, 1, 2);
+
+The class addresses the text space by (X,Y)-coordinates,
+where X is character offset and Y is line number. The addressing can be
+'physical' and 'logical', - in logical case Y is number of line of text.
+The difference can be observed if L<wordWrap> property is set to 1, when a single 
+text string can be shown as several sub-strings, called I<chunks>.
+
+The text is stored linewise in C<{lines}> array; to access it use L<get_line> method.
+To access the text chunk-wise, use L<get_chunk> method.
+
+All keyboard events, except the character input and tab key handling, are 
+processed by the accelerator table ( see L<Prima::Menu> ). The default
+C<accelItems> table defines names, keyboard combinations, and the corresponding
+actions to the class functions. The class does not provide functionality to change
+these mappings. To do so, consult L<Prima::Menu/Prima::AccelTable>.
+
+=head1 API
+
+=head2 Events
+
+=over
+
+=item ParseSyntax TEXT, RESULT_ARRAY_REF
+
+Called when syntax highlighting is requires - TEXT is a string to be parsed,
+and the parsing results to be stored in RESULT_ARRAY_REF, which is a reference
+to an array of integer pairs, each representing a single-colored text chunk.
+The first integer in the pairs is the length of a chunk, the second - color
+value ( C<cl::XXX> constants ).
+
+=back
+
+=head2 Properties
+
+=over
+
+=item autoIndent BOOLEAN
+
+Selects if the auto indenting feature is on.
+
+Default value: 1
+
+=item blockType INTEGER
+
+Defines type of selection block. Can be one of the following constants:
+
+=over
+
+=item bt::CUA
+
+Normal block, where the first and the last line of the selection can
+be partial, and the lines between occupy the whole line. CUA stands for
+'common user access'.
+
+Default keys: Shift + arrow keys
+
+See also: L<shift_cursor_key>
+
+=item bt::Vertical
+
+Rectangular block, where all selected lines are of same offsets and lengths.
+
+Default key: Alt+B 
+
+See also: L<mark_vertical>
+
+=item bt::Horizontal
+
+Rectangular block, where the selection occupies the whole line.
+
+Default key: Alt+L
+
+See also: L<mark_horizontal>
+
+=back
+
+=item borderWidth INTEGER
+
+Width of 3d-shade border around the widget.
+
+Default value: 2
+
+=item cursor X, Y
+
+Selects physical position of the cursor
+
+=item cursorX X
+
+Selects physical horizontal position of the cursor
+
+=item cursorY Y
+
+Selects physical vertical position of the cursor
+
+=item cursorWrap BOOLEAN
+
+Selects cursor behavior when moved horizontally outside the line. If 0, the cursor is
+not moved. If 1, the cursor moved to the adjacent line. 
+
+See also: L<cursor_left>, L<cursor_right>, L<word_left>, L<word_right>.
+
+=item insertMode BOOLEAN
+
+Governs the typing mode - if 1, the typed text is inserted, if 0, the text overwrites
+the old text. When C<insertMode> is 0, the cursor shape covers is thick and covers the whole
+character; when 1, it is of default width.
+
+Default toggle key: Insert
+
+=item hiliteNumbers COLOR
+
+Selects the color for number highlighting
+
+=item hiliteQStrings COLOR
+
+Selects the color for highlighting the single-quoted strings
+
+=item hiliteQQStrings COLOR
+
+Selects the color for highlighting the double-quoted strings
+
+=item hiliteIDs ARRAY
+
+Array of scalar pairs, that define words to be highlighted.
+The first item in the pair is an array of words; the second item is
+a color value.
+
+=item hiliteChars ARRAY
+
+Array of scalar pairs, that define characters to be highlighted.
+The first item in the pair is a string of characters; the second item is
+a color value.
+
+=item hiliteREs ARRAY
+
+Array of scalar pairs, that define character patterns to be highlighted.
+The first item in the pair is a perl regular expression; the second item is
+a color value.
+
+=item hScroll BOOLEAN
+
+Selects if the horizontal scrollbar is visible.
+
+See also: L<vScroll>
+
+=item mark MARK [ BLOCK_TYPE ]
+
+Selects block marking state. If MARK is 1, starts the block marking,
+if 0 - stops the block marking. When MARK is 1, BLOCK_TYPE can be used
+to set the selection type ( C<bt::XXX> constants ). If BLOCK_TYPE is 
+unset the value of L<blockType> is used.
+
+=item markers ARRAY
+
+Array of arrays with integer pairs, X and Y, where each represents
+a physical coordinates in text. Used as anchor storage for the fast navigations.
+
+See also: L<add_marker>, L<delete_marker>
+
+=item modified BOOLEAN
+
+A boolean flag that shows if the text was modified. Can be used externally,
+to check if the text is to be saved to a file, for example.
+
+=item offset INTEGER
+
+Horizontal offset of text lines in pixels. 
+
+=item persistentBlock BOOLEAN
+
+Selects whether the selection is cancelled as soon as the cursor is moved ( 0 )
+or it persists until the selection is explicitly changed ( 1 ). 
+
+Default value: 0
+
+=item readOnly BOOLEAN
+
+If 1, no user input is accepted.
+
+=item selection X1, Y1, X2, Y2
+
+Accepts two pair of coordinates, ( X1,Y1) the beginning and ( X2,Y2) the end
+of new selection, and sets the block according to L<blockType> property.
+
+The selection is null if X1 equals to X2 and Y1 equals to Y2. 
+L<has_selection> method returns 1 if the selection is non-null.
+
+=item selStart X, Y
+
+Manages the selection start. See L<selection>, X1 and Y1.
+
+=item selEnd X, Y
+
+Manages the selection end. See L<selection>, X2 and Y2.
+
+=item syntaxHilite BOOLEAN
+
+Governs the syntax highlighting. Is not implemented for word wrapping mode.
+
+=item tabIndent INTEGER
+
+Maps tab ( \t ) key to C<tabIndent> amount of space characters.
+
+=item text TEXT
+
+Provides access to all the text data. The lines are separated by 
+the new line ( \n ) character. 
+
+See also: L<textRef>.
+
+=item textRef TEXT_PTR
+
+Provides access to all the text data. The lines are separated by 
+the new line ( \n ) character. TEXT_PTR is a pointer to text string. 
+
+The property is more efficient than L<text> with the large text,
+because the copying of the text scalar to the stack stage is eliminated.
+
+See also: L<text>.
+
+=item topLine INTEGER
+
+Selects the first line of the text drawn. 
+
+=item vScroll BOOLEAN
+
+Selects if the vertical scrollbar is visible.
+
+See also: L<hScroll>
+
+=item wantTabs BOOLEAN
+
+Selects the way the tab ( \t ) character is recognized in the user input.
+If 1, it is recognized by the Tab key; however, this disallows the toolkit 
+widget tab-driven navigation. If 0, the tab character can be entered by
+pressing Ctrl+Tab key combination.
+
+Default value: 0
+
+=item wantReturns BOOLEAN
+
+Selects the way the new line ( \n ) character is recognized in the user input.
+If 1, it is recognized by the Enter key; however, this disallows the toolkit 
+default button activation. If 0, the new line character can be entered by
+pressing Ctrl+Enter key combination.
+
+Default value: 1
+
+
+=item wordDelimiters STRING
+
+Contains string of character that are used for word breaking. 
+Default STRING value consists of punctuation marks, space and tab characters,
+and C<\xff> character.
+
+=item wordWrap BOOLEAN
+
+Selects whether the long lines are wrapped, or can be positioned outside the horizontal
+widget inferior borders. If 1, L<syntaxHilite> is not used. A line of text can be represented
+by more than one line of screen text ( chunk ) . To access the text chunk-wise, use L<get_chunk>
+method.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item add_marker X, Y
+
+Adds physical coordinated X,Y to L<markers> property.
+
+=item back_char [ REPEAT = 1 ] 
+
+Removes REPEAT times a character left to the cursor. If the cursor is on 0 x-position,
+removes the new-line character and concatenates the lines.
+
+Default key: Backspace
+
+=item cancel_block
+
+Removes the selection block
+
+Default key: Alt+U
+
+=item change_locked
+
+Returns 1 if the logical locking is on, 0 if it is off. 
+
+See also L<lock_change>.
+
+=item copy
+
+Copies the selected text, if any, to the clipboard.
+
+Default key: Ctrl+Insert
+
+=item copy_block
+
+Copies the selected text and inserts it into the cursor position, according to
+the L<blockType> value.
+
+Default key: Alt+C
+
+=item cursor_cend
+
+Moves cursor to the bottom line
+
+Default key: Ctrl+End
+
+=item cursor_chome
+
+Moves cursor to the top line
+
+Default key: Ctrl+Home
+
+=item cursor_cpgdn
+
+Default key: Ctrl+PageDown
+
+Moves cursor to the end of text.
+
+=item cursor_cpgup
+
+Moves cursor to the beginning of text.
+
+Default key: Ctrl+PageUp
+
+=item cursor_down [ REPEAT = 1 ] 
+
+Moves cursor REPEAT times down
+
+Default key: Down
+
+=item cursor_end
+
+Moves cursor to the end of the line
+
+Default key: End
+
+=item cursor_home
+
+Moves cursor to the beginning of the line
+
+Default key: Home
+
+=item cursor_left [ REPEAT = 1 ]
+
+Moves cursor REPEAT times left
+
+Default key: Left
+
+=item cursor_right [ REPEAT = 1 ]
+
+Moves cursor REPEAT times right
+
+Default key: Right
+
+=item cursor_up [ REPEAT = 1 ]
+
+Moves cursor REPEAT times up
+
+Default key: Up
+
+=item cursor_pgdn [ REPEAT = 1 ]
+
+Moves cursor REPEAT pages down
+
+Default key: PageDown
+
+=item cursor_pgup [ REPEAT = 1 ]
+
+Moves cursor REPEAT pages up
+
+Default key: PageUp
+
+=item cursor_shift_key [ ACCEL_TABLE_ITEM ] 
+
+Performs action of the cursor movement, bound to ACCEL_TABLE_ITEM action
+( defined in C<accelTable> or C<accelItems> property ), and extends the
+selection block along the cursor movement. Not called directly.
+
+=item cut
+
+Cuts the selected text into the clipboard.
+
+Default key: Shift+Delete
+
+=item delete_block
+
+Removes the selected text.
+
+Default key: Alt+D
+
+=item delete_char [ REPEAT = 1 ]
+
+Delete REPEAT characters from the cursor position
+
+Default key: Delete
+
+=item delete_line LINE_ID, [ LINES = 1 ]
+
+Removes LINES of text at LINE_ID.
+
+=item delete_current_chunk 
+
+Removes the chunk ( or line, if L<wordWrap> is 0 ) at the cursor.
+
+Default key: Ctrl+Y
+
+=item delete_chunk CHUNK_ID, [ CHUNKS = 1 ] 
+
+Removes CHUNKS ( or lines, if L<wordWrap> is 0 ) of text at CHUNK_ID
+
+=item delete_marker INDEX
+
+Removes marker INDEX in L<markers> list.
+
+=item delete_to_end
+
+Removes text to the end of the chunk.
+
+Default key: Ctrl+E
+
+=item delete_text X, Y, TEXT_LENGTH
+
+Removes TEXT_LENGTH characters at X,Y physical coordinates
+
+=item draw_colorchunk CANVAS, TEXT, LINE_ID, X, Y, COLOR
+
+Paints the syntax-highlighted chunk of TEXT, taken from LINE_ID line index, at
+X, Y. COLOR is used if the syntax highlighting information contains C<cl::Fore>
+as color reference.
+
+=item end_block
+
+Stops the block selection session.
+
+=item find SEARCH_STRING, [ X = 0, Y = 0, REPLACE_LINE = '', OPTIONS ]
+
+Tries to find ( and, if REPLACE_LINE is defined, to replace with it ) 
+SEARCH_STRING from (X,Y) physical coordinates. OPTIONS is an integer
+that consists of the C<fdo::> constants; the same constants are used
+in L<Prima::EditDialog>, which provides graphic interface to the find and replace
+facilities of L<Prima::Edit>.
+
+=over
+
+=item fdo::MatchCase
+
+If set, the search is case-sensitive.
+
+=item fdo::WordsOnly
+
+If set, SEARCH_STRING must constitute the whole word.
+
+=item fdo::RegularExpression
+
+If set, SEARCH_STRING is a regular expression.
+
+=item fdo::BackwardSearch
+
+If set, the search direction is backwards.
+
+=item fdo::ReplacePrompt
+
+Not used in the class, however, used in L<Prima::EditDialog>.
+
+=back
+
+=item get_chunk CHUNK_ID
+
+Returns chunk of text, located at CHUNK_ID. 
+Returns empty string if chunk is nonexistent.
+
+=item get_chunk_end CHUNK_ID
+
+Returns the index of chunk at CHUNK_ID, corresponding to the last chunk 
+of same line.
+
+=item get_chunk_org CHUNK_ID
+
+Returns the index of chunk at CHUNK_ID, corresponding to the first chunk 
+of same line.
+
+=item get_chunk_width TEXT, FROM, LENGTH, [ RETURN_TEXT_PTR ]
+
+Returns the width in pixels of C<substr( TEXT, FROM, LENGTH)>.
+If FROM is larger than length of TEXT, TEXT is
+padded with space characters. Tab character in TEXT replaced to L<tabIndent> times
+space character. If RETURN_TEXT_PTR pointer is specified, the
+converted TEXT is stored there.
+
+=item get_line INDEX
+
+Returns line of text, located at INDEX. 
+Returns empty string if line is nonexistent.
+
+=item get_line_dimension INDEX
+
+Returns two integers, representing the line at INDEX in L<wordWrap> mode:
+the first value is the corresponding chunk index, the second is how many
+chunks represent the line.
+
+See also: L<make_logical>.
+
+=item get_line_ext CHUNK_ID
+
+Returns the line, corresponding to the chunk index.
+
+=item has_selection
+
+Returns boolean value, indicating if the selection block is active.
+
+=item insert_empty_line LINE_ID, [ REPEAT = 1 ]
+
+Inserts REPEAT empty lines at LINE_ID.
+
+=item insert_line LINE_ID, @TEXT
+
+Inserts @TEXT strings at LINE_ID
+
+=item insert_text TEXT, [ HIGHLIGHT = 0 ] 
+
+Inserts TEXT at the cursor position. If HIGHLIGHT is set to 1,
+the selection block is cancelled and the newly inserted text is selected.
+
+=item lock_change BOOLEAN
+
+Increments ( 1 ) or decrements ( 0 ) lock count. Used to defer change notification
+in multi-change calls. When internal lock count hits zero, C<Change> notification is called. 
+
+=item make_logical X, Y
+
+Maps logical X,Y coordinates to the physical and returns the integer pair.
+Returns same values when L<wordWrap> is 0.
+
+=item make_physical X, Y
+
+Maps physical X,Y coordinates to the logical and returns the integer pair.
+
+Returns same values when L<wordWrap> is 0.
+
+=item mark_horizontal
+
+Starts block marking session with C<bt::Horizontal> block type.
+
+Default key: Alt+L
+
+=item mark_vertical
+
+Starts block marking session with C<bt::Vertical> block type.
+
+Default key: Alt+B
+
+=item overtype_block
+
+Copies the selected text and overwrites the text next to the cursor position, according to
+the L<blockType> value.
+
+Default key: Alt+O
+
+=item paste
+
+Copies text from the clipboard and inserts it in the cursor position.
+
+Default key: Shift+Insert
+
+=item realize_panning
+
+Performs deferred widget panning, activated by setting C<{delayPanning}> to 1.
+The deferred operations are those performed by L<offset> and L<topLine>.
+
+=item set_line LINE_ID, TEXT, [ OPERATION, FROM, LENGTH ]
+
+Changes line at LINE_ID to new TEXT. Hint scalars OPERATION, FROM and LENGTH
+used to maintain selection and marking data. OPERATION is an arbitrary string,
+the ones that are recognized are C<'overtype'>, C<'add'>, and C<'delete'>.
+FROM and LENGTH define the range of the change; FROM is a character offset and
+LENGTH is a length of changed text.
+
+=item split_line
+
+Splits a line in two at the cursor position.
+
+Default key: Enter ( or Ctrl+Enter if L<wantReturns> is 0 )
+
+=item select_all
+
+Selects all text
+
+=item start_block [ BLOCK_TYPE ]
+
+Begins the block selection session. The block type if BLOCK_TYPE, if it is
+specified, or L<blockType> property value otherwise.
+
+=item update_block
+
+Adjusts the selection inside the block session, extending of shrinking it to 
+the current cursor position.
+
+=item word_left [ REPEAT = 1 ]
+
+Moves cursor REPEAT words to the left.
+
+=item word_right [ REPEAT = 1 ]
+
+Moves cursor REPEAT words to the right.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<Prima::EditDialog>, L<Prima::IntUtils>, F<examples/editor.pl>
+
+=cut 
