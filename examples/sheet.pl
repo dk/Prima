@@ -1,0 +1,81 @@
+use Prima;
+use Prima::DetailedList;
+
+package Sheet;
+
+
+use Prima;
+use Prima::Header;
+use Prima::Application;
+
+my $w = Prima::Window-> create;
+
+my @items;
+
+my $fname;
+
+my $os = Prima::Application-> get_system_info;
+if ( $os->{apc} == apc::Unix) {
+   $fname = '/etc/services';
+} elsif ( $os->{apc} == apc::Win32) {
+   $fname =
+     ( $os->{system} eq 'Windows NT') ?
+      "$ENV{SYSTEMROOT}\\system32\\drivers\\etc\\services" : undef;
+   $fname = 'z:/etc/services' if Prima::Utils::username eq 'dk';
+};
+
+if ( defined $fname) {
+   open F, $fname;
+   while (<F>) {
+      next if /^#/;
+      chomp;
+      s/\t/\s/g;
+      next unless /^(\w+)\s+(\d+)(\\|\/)(\w+)\s+?\#\s*(.*)$/;
+      push ( @items, [ $1, $2, $4, $5]);
+   }
+   close F;
+} else {
+   push ( @items,
+     ["msmd", '666', 'zzp', 'Microsoft Must Die Service'],
+     [qw(domain   53 tcp	   Domain_Name_Server    )],
+     [qw(domain   53 udp	   Domain_Name_Server    )],
+     [qw(xns-ch   54 tcp	   XNS_Clearinghouse     )],
+     [qw(xns-ch   54 udp	   XNS_Clearinghouse     )],
+     [qw(isi-gl   55 tcp	   ISI_Graphics_Language )],
+     [qw(isi-gl   55 udp	   ISI_Graphics_Language )],
+     [qw(xns-auth 56 tcp	   XNS_Authentication    )],
+   );
+}
+
+my $l = $w-> insert( DetailedList =>
+   origin => [0,0],
+   size   => [ $w-> size],
+   growMode => gm::Client,
+   hScroll => 1,
+   items   => \@items,
+   headers => [ 'Service' , 'Port', 'Protocol', 'Description'],
+   columns => 4,
+   onSort => sub {
+      my ( $self, $col, $dir) = @_;
+      return if $col != 1;
+      if ( $dir) {
+         $self-> {items} = [
+            sort { $$a[$col] <=> $$b[$col]}
+            @{$self->{items}}];
+      } else {
+         $self-> {items} = [
+            sort { $$b[$col] <=> $$a[$col]}
+            @{$self->{items}}];
+      }
+      $self-> clear_event;
+   },
+);
+
+#$::application-> yield;
+#my $h = $l-> { header};
+#$h-> { widths}-> [0] += 50;
+#$h-> recalc_maxwidth;
+#$l-> Header_SizeItem( $h, 0, $h-> { widths}-> [0] - 50, $h-> { widths}-> [0]);
+
+run Prima;
+

@@ -27,6 +27,7 @@ use strict;
 use Carp;
 use Prima::ComboBox;
 use Prima::Classes;
+use Prima::FileDialog;
 
 package UserInit;
 $::application = Prima::Application-> create( name => "DriveCombo.pm");
