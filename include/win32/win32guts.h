@@ -358,6 +358,7 @@ typedef struct _MusClkRec {
 #define stbPen          1
 #define stbBrush        2
 #define stbText         4
+#define stbBacking      8
 
 #define STYLUS_USE_PEN( __ps)                              \
    if ( !( sys stylusFlags & stbPen)) {                    \
@@ -378,6 +379,13 @@ typedef struct _MusClkRec {
       if ( __ps)                                           \
          SetTextColor( __ps, sys stylus. pen. lopnColor);  \
       sys stylusFlags |= stbText;                          \
+   }
+
+#define STYLUS_USE_BACKING( __ps)                          \
+   if ( !( sys stylusFlags & stbBacking)) {                \
+      if ( __ps)                                           \
+         SetBkColor( __ps, sys stylus. brush. backColor);  \
+      sys stylusFlags |= stbBacking;                       \
    }
 
 
@@ -457,7 +465,7 @@ extern HPALETTE     image_make_bitmap_palette( Handle img);
 extern void         image_set_cache( Handle from, Handle self);
 extern void         image_destroy_cache( Handle self);
 extern void         image_query_bits( Handle self, Bool forceNewImage);
-extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot);
+extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer);
 extern BYTE *       mod_select( int mod);
 extern void         mod_free( BYTE * modState);
 extern void         dbm_recreate( Handle self);
