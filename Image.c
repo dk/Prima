@@ -312,7 +312,7 @@ Image_size( Handle self, Bool set, Point size)
 {
    if ( !set)
       return inherited size( self, set, size);
-   Image_stretch( self, size.x, size.y);
+   CImage( self)-> stretch( self, size.x, size.y);
    return size;
 }
 

@@ -331,7 +331,8 @@ Icon_update_change( Handle self)
          if (!( var-> mask = allocb( var-> maskSize = maskSize)) && maskSize > 0) {
             my-> make_empty( self);
             warn("Not enough memory: %d bytes", maskSize);
-         }
+         } else
+            memset( var-> mask, 0, maskSize);
       }
       return;
    }   
