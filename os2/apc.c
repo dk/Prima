@@ -1996,6 +1996,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 
    att = kind_of( self, CMenu) ? DHANDLE( var owner) : HWND_OBJECT;
    if ( kind_of( var owner, CWindow) &&
+	kind_of( self, CMenu) &&
         var stage <= csNormal &&
         ((( PAbstractMenu) self)-> self)-> get_selected( self)) {
       Point size = CWindow( var owner)-> get_size( var owner);

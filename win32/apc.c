@@ -581,6 +581,7 @@ typedef struct _ViewProfile {
   Handle   capture;
 } ViewProfile, *PViewProfile;
 
+
 static void
 get_view_ex( Handle self, PViewProfile p)
 {
@@ -594,6 +595,7 @@ get_view_ex( Handle self, PViewProfile p)
   p-> focused   = apc_widget_is_focused( self);
   p-> visible   = apc_widget_is_visible( self);
 }
+
 
 static void
 set_view_ex( Handle self, PViewProfile p)
@@ -736,8 +738,10 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    if ( reset)
    {
       int i;
+      Handle oldOwner = var owner; var owner = owner; 
       apc_widget_set_pos( self, vprf-> pos. x, vprf-> pos. y);
       apc_widget_set_size( self, vprf-> size. x, vprf-> size. y);
+      var owner = oldOwner;
       for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
       if ( sys className == WC_FRAME)
       {
@@ -818,7 +822,9 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
   apt_assign( aptTaskList,  taskList);
   if ( reset)
   {
+     Handle oldOwner = var owner; var owner = owner; 
      apc_window_set_window_state( self, windowState);
+     var owner = oldOwner;
      set_view_ex( self, &vprf);
      sys s. window = ws;
      if ( !SetWindowPlacement( HANDLE, &wp)) apiErr;
@@ -1372,7 +1378,9 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
       create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM, WS_CHILD, exstyle, 1, 1, &vprf);
    if ( reset)
    {
+      Handle oldOwner = var owner; var owner = owner; 
       set_view_ex( self, &vprf);
+      var owner = oldOwner;
       var stage = oStage;
    }
    if ( is_apt( aptTransparent) != transparent && !reset) apc_widget_redraw( self);
@@ -2396,6 +2404,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
    dobjCheck( var owner) false;
 
    if ( kind_of( var owner, CWindow) &&
+	kind_of( self, CMenu) &&
         var stage <= csNormal &&
         ((( PAbstractMenu) self)-> self)-> get_selected( self)) {
       HMENU h = GetMenu( DHANDLE( var owner));
