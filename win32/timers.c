@@ -153,7 +153,7 @@ Bool
 apc_timer_stop( Handle self)
 {
    objCheck false;
-   if ( !KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle)) apiErrRet;
+   KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle);
    return true;
 }
 

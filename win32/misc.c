@@ -310,6 +310,7 @@ apc_sys_get_value( int sysValue)
    case svYbsSingle       : return GetSystemMetrics( SM_CYBORDER);
    case svXbsDialog       : return GetSystemMetrics( SM_CXDLGFRAME);
    case svYbsDialog       : return GetSystemMetrics( SM_CYDLGFRAME);
+   case svShapeExtension  : return 1;
    default:
       apcErr( errInvParams);
    }

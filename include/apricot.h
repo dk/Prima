@@ -1451,6 +1451,8 @@ SV(SubmenuDelay)
 SV(FullDrag)
 #define   svDblClickDelay   27
 SV(DblClickDelay)
+#define   svShapeExtension  28
+SV(ShapeExtension)
 END_TABLE(sv,UV)
 #undef SV
 
