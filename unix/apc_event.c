@@ -1651,6 +1651,8 @@ copy_events( Handle self, PList events, WMSyncData * w, int eventType)
       }
       if ( x-> type != DEAD_BEEF) 
          list_add( events, ( Handle) x);
+      else
+	 free( x);
    }
    return ret;
 }

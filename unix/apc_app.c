@@ -525,6 +525,7 @@ free_gc_pool( struct gc_head *head)
    n1 = TAILQ_FIRST(head);
    while (n1 != nil) {
       n2 = TAILQ_NEXT(n1, gc_link);
+      XFreeGC( DISP, n1-> gc);
       /* XXX */ free(n1);
       n1 = n2;
    }
@@ -542,6 +543,7 @@ window_subsystem_done( void)
    }
 
    prima_end_menu();
+
    free_gc_pool(&guts.bitmap_gc_pool);
    free_gc_pool(&guts.screen_gc_pool);
    prima_done_color_subsystem();

@@ -436,12 +436,10 @@ apc_widget_destroy( Handle self)
       XX-> flags. paint_pending = false;
    }
    if ( XX-> recreateData) free( XX-> recreateData);
-   free(XX-> dashes);
-   XX-> dashes = nil;
-   XX-> ndashes = 0;
-   free(XX->paint_dashes);
-   XX-> paint_dashes = nil;
-   XX-> paint_ndashes = 0;
+   if ( XX-> invalid_region) {
+      XDestroyRegion( XX-> invalid_region);
+      XX-> invalid_region = nil;
+   }
    if ( X_WINDOW) {
       if ( guts. grab_redirect == XX-> client || guts. grab_redirect == X_WINDOW) 
          guts. grab_redirect = nilHandle;

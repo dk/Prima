@@ -296,8 +296,10 @@ prima_cleanup_drawable_after_painting( Handle self)
       prima_free_rotated_entry( XX-> font);
       XX-> font-> refCnt = 0;
    }
-   free(XX->paint_dashes);
-   XX-> paint_dashes = nil;
+   if ( XX-> paint_dashes) {
+      free(XX->paint_dashes);
+      XX-> paint_dashes = nil;
+   }
    XX-> paint_ndashes = 0;
    XF_IN_PAINT(XX) = false;
    PDrawable( self)-> font = XX-> saved_font;
@@ -441,12 +443,18 @@ apc_gp_init( Handle self)
 Bool
 apc_gp_done( Handle self)
 {
-   if ( !X(self)) return false;
+   DEFXX;
+   if ( XX) return false;
+   if ( XX-> dashes) {
+      free(XX-> dashes);
+      XX-> dashes = nil;
+   }
+   XX-> ndashes = 0;
    if ( guts. dynamicColors) {
       prima_palette_free( self, true);
-      free(X(self)-> palette);
+      free(XX-> palette);
    }
-   prima_release_gc(X(self));
+   prima_release_gc(XX);
    return true;
 }
 

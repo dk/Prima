@@ -120,7 +120,10 @@ apc_clipboard_create( Handle self)
 static void
 clipboard_free_data( void * data, int size, long id)
 {
-   if ( size <= 0) return;
+   if ( size <= 0) {
+      if ( size == 0 && data != nil) free( data);
+      return;
+   }
    if ( id == cfBitmap) {
       int i;
       Pixmap * p = (Pixmap*) data;

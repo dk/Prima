@@ -142,9 +142,9 @@ Application_done( Handle self)
    list_destroy( &var->  widgets);
    free( var-> text);
    free( var-> hint);
-   var->  accelTable =
-      var-> hintWidget = var-> hintTimer = nilHandle;
-   var->  text    = var->  hint      = nil;
+   free( var-> helpContext);
+   var-> accelTable = var-> hintWidget = var-> hintTimer = nilHandle;
+   var-> text = var->  hint = var-> helpContext = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
    application = nilHandle;

@@ -374,6 +374,15 @@ apc_component_create( Handle self)
 Bool
 apc_component_destroy( Handle self)
 {
+   DEFXX;
+   if ( XX-> q_instance_name) {
+      free( XX-> q_instance_name);
+      XX-> q_instance_name = nil;
+   }
+   if ( XX-> q_class_name) {
+      free( XX-> q_class_name);
+      XX-> q_class_name = nil;
+   }
    free( PComponent( self)-> sysData);
    PComponent( self)-> sysData = nil;
    X_WINDOW = nilHandle;

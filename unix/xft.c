@@ -222,6 +222,7 @@ prima_xft_init(void)
  
    locale = hash_fetch( encodings, guts. locale, strlen( guts.locale));
    if ( !locale) locale = std_charsets;
+   FcCharSetDestroy( fcs_ascii);
 }
 
 void
@@ -500,6 +501,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          key. width = 0;
          hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
 	 Fdebug("xft: charset mismatch\n");
+         FcPatternDestroy( match);
          return false;
       }
    }
@@ -513,6 +515,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          key. width = 0;
          hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
 	 Fdebug("xft: refuse bitmapped font\n");
+         FcPatternDestroy( match);
          return false;
       }
    }
@@ -545,6 +548,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
 	    xft_build_font_key( &key, &f, by_size);
 	    key. width = 0;
 	    hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
+            FcPatternDestroy( match);
 	    return false;
 	 }
 	 
@@ -574,6 +578,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
       key. width = 0;
       hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
       Fdebug("xft: XftFontOpenPattern error\n");
+      FcPatternDestroy( match);
       return false;
    }
    if ( kf_base) {
