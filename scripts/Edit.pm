@@ -66,26 +66,26 @@ sub profile_default
          [ PageDown     => 0, 0, kb::PgDn                , sub{$_[0]->cursor_pgdn}],
          [ Home         => 0, 0, kb::Home                , sub{$_[0]->cursor_home}],
          [ End          => 0, 0, kb::End                 , sub{$_[0]->cursor_end}],
-         [ CtrlPageUp   => 0, 0, kb::PgUp|kb::Ctrl       , sub{$_[0]->cursor_cpgup}],
-         [ CtrlPageDown => 0, 0, kb::PgDn|kb::Ctrl       , sub{$_[0]->cursor_cpgdn}],
-         [ CtrlHome     => 0, 0, kb::Home|kb::Ctrl       , sub{$_[0]->cursor_chome}],
-         [ CtrlEnd      => 0, 0, kb::End |kb::Ctrl       , sub{$_[0]->cursor_cend}],
-         [ WordLeft     => 0, 0, kb::Left |kb::Ctrl      , sub{$_[0]->word_left}],
-         [ WordRight    => 0, 0, kb::Right|kb::Ctrl      , sub{$_[0]->word_right}],
-         [ ShiftCursorDown   => 0, 0, kb::Shift|kb::Down                , q(cursor_shift_key)],
-         [ ShiftCursorUp     => 0, 0, kb::Shift|kb::Up                  , q(cursor_shift_key)],
-         [ ShiftCursorLeft   => 0, 0, kb::Shift|kb::Left                , q(cursor_shift_key)],
-         [ ShiftCursorRight  => 0, 0, kb::Shift|kb::Right               , q(cursor_shift_key)],
-         [ ShiftPageUp       => 0, 0, kb::Shift|kb::PgUp                , q(cursor_shift_key)],
-         [ ShiftPageDown     => 0, 0, kb::Shift|kb::PgDn                , q(cursor_shift_key)],
-         [ ShiftHome         => 0, 0, kb::Shift|kb::Home                , q(cursor_shift_key)],
-         [ ShiftEnd          => 0, 0, kb::Shift|kb::End                 , q(cursor_shift_key)],
-         [ ShiftCtrlPageUp   => 0, 0, kb::Shift|kb::PgUp|kb::Ctrl       , q(cursor_shift_key)],
-         [ ShiftCtrlPageDown => 0, 0, kb::Shift|kb::PgDn|kb::Ctrl       , q(cursor_shift_key)],
-         [ ShiftCtrlHome     => 0, 0, kb::Shift|kb::Home|kb::Ctrl       , q(cursor_shift_key)],
-         [ ShiftCtrlEnd      => 0, 0, kb::Shift|kb::End |kb::Ctrl       , q(cursor_shift_key)],
-         [ ShiftWordLeft     => 0, 0, kb::Shift|kb::Left |kb::Ctrl      , q(cursor_shift_key)],
-         [ ShiftWordRight    => 0, 0, kb::Shift|kb::Right|kb::Ctrl      , q(cursor_shift_key)],
+         [ CtrlPageUp   => 0, 0, kb::PgUp|km::Ctrl       , sub{$_[0]->cursor_cpgup}],
+         [ CtrlPageDown => 0, 0, kb::PgDn|km::Ctrl       , sub{$_[0]->cursor_cpgdn}],
+         [ CtrlHome     => 0, 0, kb::Home|km::Ctrl       , sub{$_[0]->cursor_chome}],
+         [ CtrlEnd      => 0, 0, kb::End |km::Ctrl       , sub{$_[0]->cursor_cend}],
+         [ WordLeft     => 0, 0, kb::Left |km::Ctrl      , sub{$_[0]->word_left}],
+         [ WordRight    => 0, 0, kb::Right|km::Ctrl      , sub{$_[0]->word_right}],
+         [ ShiftCursorDown   => 0, 0, km::Shift|kb::Down                , q(cursor_shift_key)],
+         [ ShiftCursorUp     => 0, 0, km::Shift|kb::Up                  , q(cursor_shift_key)],
+         [ ShiftCursorLeft   => 0, 0, km::Shift|kb::Left                , q(cursor_shift_key)],
+         [ ShiftCursorRight  => 0, 0, km::Shift|kb::Right               , q(cursor_shift_key)],
+         [ ShiftPageUp       => 0, 0, km::Shift|kb::PgUp                , q(cursor_shift_key)],
+         [ ShiftPageDown     => 0, 0, km::Shift|kb::PgDn                , q(cursor_shift_key)],
+         [ ShiftHome         => 0, 0, km::Shift|kb::Home                , q(cursor_shift_key)],
+         [ ShiftEnd          => 0, 0, km::Shift|kb::End                 , q(cursor_shift_key)],
+         [ ShiftCtrlPageUp   => 0, 0, km::Shift|kb::PgUp|km::Ctrl       , q(cursor_shift_key)],
+         [ ShiftCtrlPageDown => 0, 0, km::Shift|kb::PgDn|km::Ctrl       , q(cursor_shift_key)],
+         [ ShiftCtrlHome     => 0, 0, km::Shift|kb::Home|km::Ctrl       , q(cursor_shift_key)],
+         [ ShiftCtrlEnd      => 0, 0, km::Shift|kb::End |km::Ctrl       , q(cursor_shift_key)],
+         [ ShiftWordLeft     => 0, 0, km::Shift|kb::Left |km::Ctrl      , q(cursor_shift_key)],
+         [ ShiftWordRight    => 0, 0, km::Shift|kb::Right|km::Ctrl      , q(cursor_shift_key)],
          [ Insert         => 0, 0, kb::Insert , sub {$_[0]-> insertMode(!$_[0]-> insertMode)}],
 # edit keys
          [ Delete         => 0, 0, kb::Delete,    sub {$_[0]->delete_char unless $_[0]->{readOnly}}],
@@ -101,9 +101,9 @@ sub profile_default
          [ CopyBlock      => 0, 0, '@C',          q(copy_block)],
          [ OvertypeBlock  => 0, 0, '@O',          q(overtype_block)],
 # clipboard keys
-         [ Cut            => 0, 0, kb::Shift|kb::Delete, q(cut)],
-         [ Copy           => 0, 0, kb::Ctrl |kb::Insert, q(copy)],
-         [ Paste          => 0, 0, kb::Shift|kb::Insert, q(paste)],
+         [ Cut            => 0, 0, km::Shift|kb::Delete, q(cut)],
+         [ Copy           => 0, 0, km::Ctrl |kb::Insert, q(copy)],
+         [ Paste          => 0, 0, km::Shift|kb::Insert, q(paste)],
       ],
       autoIndent        => 1,
       blockType         => bt::CUA,
@@ -761,7 +761,7 @@ sub on_mousewheel
 {
    my ( $self, $mod, $x, $y, $z) = @_;
    $z = int( $z/120);
-   $z *= $self-> {rows} if $mod & kb::Ctrl;
+   $z *= $self-> {rows} if $mod & km::Ctrl;
    my $newTop = $self-> firstCol - $z;
    my $maxTop = $self-> {maxChunk} - $self->{rows} + 1;
    $self-> firstCol( $newTop > $maxTop ? $maxTop : $newTop);
@@ -773,15 +773,15 @@ sub on_keydown
    return if $self->{readOnly};
    $self->notify(q(MouseUp),0,0,0) if $self->{mouseTransaction};
    if ( $key == kb::Tab && !$self->{wantTabs}) {
-      return unless $mod & kb::Ctrl;
-      $mod &= ~kb::Ctrl;
+      return unless $mod & km::Ctrl;
+      $mod &= ~km::Ctrl;
    }
    if ( $key == kb::Enter && !$self->{wantReturns}) {
-      return unless $mod & kb::Ctrl;
-      $mod &= ~kb::Ctrl;
+      return unless $mod & km::Ctrl;
+      $mod &= ~km::Ctrl;
    }
    if  (( $code & 0xFF) &&
-       (( $mod  & (kb::Alt | kb::Ctrl)) == 0) &&
+       (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
        (( $key == kb::NoKey) || ( $key == kb::Space) || ( $key == kb::Tab))
       )
    {

@@ -245,7 +245,7 @@ sub execute
 sub Files_KeyDown
 {
    my ( $dlg, $self, $code, $key, $mod) = @_;
-   if (( $mod & kb::Ctrl) && ( uc chr( $code & 0xFF) eq 'R'))
+   if (( $mod & km::Ctrl) && ( uc chr( $code & 0xFF) eq 'R'))
    {
       $dlg-> Dir-> path( $dlg-> Dir-> path);
       $self-> clear_event;
@@ -605,7 +605,7 @@ sub init
 sub Dir_KeyDown
 {
    my ( $dlg, $self, $code, $key, $mod) = @_;
-   if (( $mod & kb::Ctrl) && ( uc chr( $code & 0xFF) eq 'R'))
+   if (( $mod & km::Ctrl) && ( uc chr( $code & 0xFF) eq 'R'))
    {
       $dlg-> Dir-> path( $dlg-> Dir-> path);
       $self-> clear_event;

@@ -65,19 +65,19 @@ my $defaultAccelItems = [
     ['Cursor right' => 'Right' => kb::Right => 'cursorRight'],
     ['Cursor up' => 'Up' => kb::Up => 'cursorUp'],
     ['Cursor down' => 'Down' => kb::Down => 'cursorDown'],
-    ['Cursor left by word' => 'Ctrl-Left' => ( kb::Ctrl | kb::Left) => 'wordLeft'],
-    ['Cursor right by word' => 'Ctrl-Right' => ( kb::Ctrl | kb::Right) => 'wordRight'],
+    ['Cursor left by word' => 'Ctrl-Left' => ( km::Ctrl | kb::Left) => 'wordLeft'],
+    ['Cursor right by word' => 'Ctrl-Right' => ( km::Ctrl | kb::Right) => 'wordRight'],
     ['Ins' => 'Ins' => kb::Insert => 'toggleInsMode'],
     ['Delete char' => 'Del' => kb::Delete => 'deleteChar'],
     ['Delete left char' => 'Backspace' => kb::Backspace => 'deleteLeftChar'],
     ['Delete word right' => 'Alt-W' => '@W' => 'deleteWordRight'],
-    ['Delete word left' => 'Ctrl-Backspace' => ( kb::Ctrl | kb::Backspace) => 'deleteWordLeft'],
-    ['Delete word inplace' => 'Ctrl-Del' => ( kb::Ctrl | kb::Delete) => 'deleteWord'],
+    ['Delete word left' => 'Ctrl-Backspace' => ( km::Ctrl | kb::Backspace) => 'deleteWordLeft'],
+    ['Delete word inplace' => 'Ctrl-Del' => ( km::Ctrl | kb::Delete) => 'deleteWord'],
     ['Delete up to line begin' => 'Ctrl-U' => '^U' => 'deleteToLineBegin'],
     ['Delete up to line end' => 'Ctrl-K' => '^K' => 'deleteToLineEnd'],
     ['Execute command' => 'Enter' => kb::Enter => 'enterPressed'],
-    ['Previous prompt' => 'Ctrl-Up' => ( kb::Ctrl | kb::Up) => 'previousPrompt'],
-    ['Next prompt' => 'Ctrl-Down' => ( kb::Ctrl | kb::Down) => 'nextPrompt'],
+    ['Previous prompt' => 'Ctrl-Up' => ( km::Ctrl | kb::Up) => 'previousPrompt'],
+    ['Next prompt' => 'Ctrl-Down' => ( km::Ctrl | kb::Down) => 'nextPrompt'],
 ];
 
 #\subsection{profile\_default}
@@ -895,7 +895,7 @@ sub TermView_Paint {
 sub TermView_KeyDown {
     my ( $self, $term, $code, $key, $mod) = @_;
     if  ( ( $code & 0xFF) &&
-        ( ( $mod  & ( kb::Alt | kb::Ctrl)) == 0) &&
+        ( ( $mod  & ( km::Alt | km::Ctrl)) == 0) &&
         ( ( $key == kb::NoKey) || ( $key == kb::Space))
        ) {
         $self->put_str( chr( $code & 0xFF));

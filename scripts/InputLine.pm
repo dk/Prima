@@ -226,13 +226,13 @@ sub on_keydown
 # navigation part
    if ( scalar grep { $key == $_ } (kb::Left,kb::Right,kb::Home,kb::End))
    {
-       return if $mod & kb::Alt;
+       return if $mod & km::Alt;
        my $delta = 0;
        if    ( $key == kb::Left)  { $delta = -1;}
        elsif ( $key == kb::Right) { $delta = 1;}
        elsif ( $key == kb::Home)  { $delta = -$offset;}
        elsif ( $key == kb::End)   { $delta = $caplen - $offset;}
-       if (( $mod & kb::Ctrl) && ( $key == kb::Left || $key == kb::Right))
+       if (( $mod & km::Ctrl) && ( $key == kb::Left || $key == kb::Right))
        {
          my $orgd = $delta;
          if ( $offset + $delta > 0 && $offset + $delta < $caplen)
@@ -268,7 +268,7 @@ sub on_keydown
        }
        if (( $offset + $delta >= 0) && ( $offset + $delta <= $caplen))
        {
-          if ( $mod & kb::Shift)
+          if ( $mod & km::Shift)
           {
              my ( $start, $end) = $self->selection;
              ($start, $end) = ( $offset, $offset) if $start == $end;
@@ -339,14 +339,14 @@ sub on_keydown
              $self-> text( $cap);
           }
           $::application-> get_clipboard-> store( cf::Text, $del)
-            if $mod & ( kb::Ctrl|kb::Shift);
+            if $mod & ( km::Ctrl|km::Shift);
        }
        $self-> clear_event;
        return;
    }
-   if ( $key == kb::Insert && ( $mod & ( kb::Ctrl|kb::Shift)))
+   if ( $key == kb::Insert && ( $mod & ( km::Ctrl|km::Shift)))
    {
-       if ( $mod & kb::Ctrl)
+       if ( $mod & km::Ctrl)
        {
            $self-> copy if $start != $end;
        } else {
@@ -358,7 +358,7 @@ sub on_keydown
 
 # typing part
    if  (( $code & 0xFF) &&
-       (( $mod  & (kb::Alt | kb::Ctrl)) == 0) &&
+       (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
        (( $key == kb::NoKey) || ( $key == kb::Space))
       )
    {

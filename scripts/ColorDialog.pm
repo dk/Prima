@@ -458,7 +458,7 @@ sub Wheel_MouseUp
    if ( $btn == mb::Right) {
       my $x = $::application-> get_view_from_point( $self-> client_to_screen( $x, $y));
       return unless $x;
-      if ( $mod & kb::Shift) {
+      if ( $mod & km::Shift) {
          $x-> backColor( $owner-> value);
       } else {
          $x-> color( $owner-> value);

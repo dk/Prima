@@ -337,7 +337,7 @@ sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
-   if ( $mod & kb::Ctrl && $self->{multiSelect})
+   if ( $mod & km::Ctrl && $self->{multiSelect})
    {
       my $c = chr ( $code & 0xFF);
       if ( $c eq '/' || $c eq '\\')
@@ -353,7 +353,7 @@ sub on_keydown
    {
       my $newItem = $self->{focusedItem};
       my $doSelect = 0;
-      if ( $mod == 0 || ( $mod & kb::Shift && $self->{ extendedSelect}))
+      if ( $mod == 0 || ( $mod & km::Shift && $self->{ extendedSelect}))
       {
          my $pgStep  = $self->{rows} - 1;
          $pgStep = 1 if $pgStep <= 0;
@@ -369,14 +369,14 @@ sub on_keydown
            : $self->{topItem} + $pgStep; };
          if ( $key == kb::PgDn) { $newItem += $mc ? $self->{rows} * $cols : $pgStep };
          if ( $key == kb::PgUp) { $newItem -= $mc ? $self->{rows} * $cols : $pgStep};
-         $doSelect = $mod & kb::Shift;
+         $doSelect = $mod & km::Shift;
       }
-      if ( $mod & kb::Ctrl ||
-         (( $mod & ( kb::Shift|kb::Ctrl)==(kb::Shift|kb::Ctrl)) && $self->{ extendedSelect}))
+      if ( $mod & km::Ctrl ||
+         (( $mod & ( km::Shift|km::Ctrl)==(km::Shift|km::Ctrl)) && $self->{ extendedSelect}))
       {
          if ( $key == kb::PgUp || $key == kb::Home) { $newItem = 0};
          if ( $key == kb::PgDn || $key == kb::End)  { $newItem = $self->{count} - 1};
-         $doSelect = $mod & kb::Shift;
+         $doSelect = $mod & km::Shift;
       }
       if ( $doSelect )
       {
@@ -472,7 +472,7 @@ sub on_mousedown
       $x < $bw || $x >= $size[0] - $bw - $dx;
    my $item = $self-> point2item( $x, $y);
    if (( $self->{multiSelect} && !$self->{extendedSelect}) ||
-       ( $self->{extendedSelect} && ( $mod & (kb::Ctrl|kb::Shift))))
+       ( $self->{extendedSelect} && ( $mod & (km::Ctrl|km::Shift))))
    {
       $self-> toggle_item( $item);
       return if $self->{extendedSelect};
@@ -561,7 +561,7 @@ sub on_mousewheel
 {
    my ( $self, $mod, $x, $y, $z) = @_;
    $z = int( $z/120);
-   $z *= $self-> {rows} if $mod & kb::Ctrl;
+   $z *= $self-> {rows} if $mod & km::Ctrl;
    my $newTop = $self-> topItem - $z;
    my $cols = $self->{multiColumn} ? $self->{columns} - $self->{xTailVisible} : 1;
    my $maxTop = $self-> {count} - $self-> {rows} * $cols;
@@ -1341,7 +1341,7 @@ sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
-   if ( $code & 0xFF && $key == kb::NoKey && !($mod & ~kb::Shift) && $self->{count})
+   if ( $code & 0xFF && $key == kb::NoKey && !($mod & ~km::Shift) && $self->{count})
    {
       my $i;
       my ( $c, $hit, $items) = ( lc chr ( $code & 0xFF), undef, $self->{items});

@@ -329,7 +329,7 @@ sub InputLine_KeyDown
 
    if (( $code & 0xFF00) || (( $key != kb::NoKey) && ( $key != kb::Space) && ( $key != kb::Backspace)))
    {
-      return if $key == kb::Tab || $key == kb::ShiftTab;
+      return if $key == kb::Tab || $key == kb::BackTab;
       $edit->{incline} = '' if $key;
       $self-> listVisible(1), $edit-> clear_event
          if $key == kb::Down && $_[0]->{style} != cs::Simple;
@@ -340,7 +340,7 @@ sub InputLine_KeyDown
    else
    {
       return if $_[0]->{style} != cs::DropDownList;
-      return if $mod & ( kb::Alt|kb::Ctrl);
+      return if $mod & ( km::Alt|km::Ctrl);
       $edit->{keyDown} = 1;
       if ( $key == kb::Backspace)
       {
