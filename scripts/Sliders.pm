@@ -421,7 +421,6 @@ sub init
       %{$profile{editProfile}},
       text        => $profile{value},
    );
-   $self-> {lastEditText} = 0;
    for (qw( min max step value)) {$self->$_($profile{$_});};
    $self-> visible( $visible);
    return %profile;
@@ -457,24 +456,20 @@ sub Spin_Increment
 sub InputLine_KeyDown
 {
    my ( $self, $edit, $code, $key, $mod) = @_;
-   $edit-> clear_event if $key == kb::NoKey and lc( chr $code) =~ m/[a-df-z]/;
+   $edit-> clear_event if $key == kb::NoKey and
+      lc( chr $code) =~ m/[\!\@\#\$\%\^\&\*\(\)_\{\}\[\]\?\\\/\|\~\`\'\"\:\;A-DF-Za-df-z]/;
+   if ($key == kb::Enter) {
+      my $c = $edit-> text;
+      $c = eval "$c";
+      $self-> value( defined $c ? $c : 0);
+      $edit-> clear_event;
+      return;
+   }
 }
 
 sub InputLine_Change
 {
    my ( $self, $edit) = @_;
-   unless ( exists $self->{validDisabled}) {
-      my $ch = undef;
-      my $value = $edit-> text;
-      if ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
-         $ch = $value = $self->{min} if $value < $self->{min};
-         $ch = $value = $self->{max} if $value > $self->{max};
-      } else {
-         $ch = $self->{lastEditText};
-      }
-      $edit-> text( $ch), return if defined $ch;
-   }
-   $self-> {lastEditText} = $edit-> text;
    $self-> notify(q(Change));
 }
 
@@ -495,6 +490,19 @@ sub set_step
    $self-> {step} = $step;
 }
 
+sub get_value
+{
+   my $self = $_[0];
+   my $value = $self-> {edit}-> text;
+   if ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
+      $value = $self->{min} if $value < $self->{min};
+      $value = $self->{max} if $value > $self->{max};
+   } else {
+      $value = $self->{min};
+   }
+   return $value;
+}
+
 sub set_value
 {
    my ( $self, $value) = @_;
@@ -505,15 +513,13 @@ sub set_value
       $value = $self->{min};
    }
    return if $value eq $self-> {edit}-> text;
-   $self-> {validDisabled} = 1;
    $self-> {edit}-> text( $value);
-   delete $self-> {validDisabled};
 }
 
 sub min          {($#_)?$_[0]->set_bounds($_[1], $_[0]-> {'max'})      : return $_[0]->{min};}
 sub max          {($#_)?$_[0]->set_bounds($_[0]-> {'min'}, $_[1])      : return $_[0]->{max};}
 sub step         {($#_)?$_[0]->set_step         ($_[1]):return $_[0]->{step}}
-sub value        {($#_)?$_[0]->set_value        ($_[1]):return $_[0]->{edit}->text;}
+sub value        {($#_)?$_[0]->set_value        ($_[1]):return $_[0]->get_value;   }
 
 # gauge reliefs
 package gr;

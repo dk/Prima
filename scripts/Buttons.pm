@@ -570,8 +570,8 @@ sub set_checked
    return unless $_[0]-> { checkable};
    return if $_[0]->{checked}+0 == $_[1]+0;
    $_[0]->{checked} = $_[1];
-   $_[0]-> notify( 'Check', $_[0]->{checked});
    $_[0]-> repaint;
+   $_[0]-> notify( 'Check', $_[0]->{checked});   
 }
 
 sub set_image_file

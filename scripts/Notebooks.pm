@@ -61,7 +61,7 @@ sub profile_default
       colored          => 1,
       firstTab         => 0,
       focusedTab       => 0,
-      height           => $font-> { height} * 2,
+      height           => $font-> { height} > 14 ? $font-> { height} * 2 : 28,
       ownerBackColor   => 1,
       selectable       => 1,
       selectingButtons => 0,
@@ -820,6 +820,7 @@ sub init
    $self->{tabs}     = [];
    %profile = $self-> SUPER::init(%profile);
    my @size = $self-> size;
+   my $maxh = $self-> font-> height * 2;
    $self->{tabSet} = TabSet-> create(
       owner     => $self,
       name      => 'TabSet',
@@ -827,6 +828,7 @@ sub init
       width     => $size[0],
       top       => $size[1] - 1,
       growMode  => gm::Ceiling,
+      height    => $maxh > 28 ? $maxh : 28,
       buffered  => 1,
    );
    $self->{notebook} = Notebook-> create(
@@ -859,11 +861,14 @@ sub on_paint
    $canvas-> rect3d( 0, 0, $size[0] - 1, $size[1] - 1 + TabSet::DefGapY, 1, reverse @c3d);
    $canvas-> rect3d( DefBorderX, DefBorderX, $size[0] - 1 - DefBorderX,
       $size[1] - DefBorderX + TabSet::DefGapY, 1, @c3d);
-   $canvas-> color( $c3d[0]);
    my $y = $size[1] - DefBorderX + TabSet::DefGapY;
    my $x  = $size[0] - DefBorderX - DefBookmarkX;
+
+   return if $y < DefBorderX * 2 + DefBookmarkX;
+   $canvas-> color( $c3d[0]);
    $canvas-> line( DefBorderX + 2,  $y - 2, $x - 2, $y - 2);
    $canvas-> line( $x + DefBookmarkX - 4, $y - DefBookmarkX + 1, $x + DefBookmarkX - 4, DefBorderX + 2);
+
    my $fh = 24;
    my $a  = 0;
    my ($pi, $mpi) = ( $self->{notebook}->pageIndex, $self->{notebook}->pageCount - 1);
@@ -902,10 +907,12 @@ sub on_paint
       my $tx = $self->{tabSet}-> tabIndex;
       my $t1 = $$t[ $tx * 2];
       my $yh = $y - $fh * 0.8 - $self-> font-> height / 2;
+      $canvas-> clipRect( DefBorderX + 1, $y - $fh * 1.6 + 1, $x - 4, $y - 3);
       $canvas-> text_out( $t1, DefBorderX + 4, $yh);
       if ( $$t[ $tx * 2 + 1] > 1) {
          $t1 = sprintf("Page %d of %d ", $self->pageIndex - $self->tab2page( $tx) + 1, $$t[ $tx * 2 + 1]);
-         $canvas-> text_out( $t1, $size[0] - DefBorderX - 3 - DefBookmarkX - $self-> get_text_width( $t1), $yh);
+         my $tl1 = $size[0] - DefBorderX - 3 - DefBookmarkX - $self-> get_text_width( $t1);
+         $canvas-> text_out( $t1, $tl1, $yh) if $tl1 > 4 + DefBorderX + $fh * 3;
       }
    }
 }
@@ -1025,8 +1032,9 @@ sub set_page_index
    $newA |= 1 if $pix > 0;
    $newA |= 2 if $pix < $mpi;
    $self->invalidate_rect(
-      DefBorderX + 1, $size[1] - DefBorderX - $th - DefBookmarkX,
-      $size[0] - DefBorderX - (( $a == $newA) ? DefBookmarkX + 2 : 0), $size[1] - DefBorderX - $th
+      DefBorderX + 1, $size[1] - DefBorderX - $th - DefBookmarkX - 1,
+      $size[0] - DefBorderX - (( $a == $newA) ? DefBookmarkX + 2 : 0),
+      $size[1] - DefBorderX - $th + 3
    );
 }
 
