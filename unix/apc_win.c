@@ -94,6 +94,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    Point p0 = {0,0};
    Atom atoms[ 2];
    XWMHints wmhints;
+   XClassHint *class_hint;
 
    if ( border_style != bsSizeable) border_style = bsDialog;
 
@@ -169,6 +170,13 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    atoms[ 1] = WM_TAKE_FOCUS;
    XSetWMProtocols( DISP, X_WINDOW, atoms, 2);
    XCHECKPOINT;
+
+   if (( class_hint = XAllocClassHint()) != nil) {
+      class_hint-> res_name  = PComponent(application)-> name;
+      class_hint-> res_class = "Prima";
+      XSetClassHint( DISP, X_WINDOW, class_hint);
+      XFree (class_hint);
+   }
 
    XX-> type.drawable = true;
    XX-> type.widget = true;
