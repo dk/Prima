@@ -1109,11 +1109,11 @@ apc_img_info2hash( PImgCodec codec)
       if ( c-> canLoadMultiple) {
          hv_store( hv, "index",        5, newSViv(0),     0);
          hv_store( hv, "map",          3, newSVsv(nilSV), 0);
-         hv_store( hv, "loadAll",      7, newSVsv(0),     0);
-         hv_store( hv, "wantFrames",  10, newSVsv(0),     0);
+         hv_store( hv, "loadAll",      7, newSViv(0),     0);
+         hv_store( hv, "wantFrames",  10, newSViv(0),     0);
       }
-      hv_store( hv, "loadExtras",  10, newSVsv(0),     0);
-      hv_store( hv, "noImageData", 11, newSVsv(0),     0);
+      hv_store( hv, "loadExtras",  10, newSViv(0),     0);
+      hv_store( hv, "noImageData", 11, newSViv(0),     0);
       hv_store( hv, "className",    9, newSVpv("Prima::Image", 0), 0);
    } else
       hv = newHV();
