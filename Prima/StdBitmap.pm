@@ -25,7 +25,7 @@
 #
 package Prima::StdBitmap;
 use strict;
-use Prima::Const;
+require Prima;
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 @ISA = qw(Exporter);
@@ -35,21 +35,7 @@ $VERSION = '1.00';
 %EXPORT_TAGS = ();
 
 my %bmCache = ();
-my $bmImageFile = undef;
-
-{
-   my $imagePath = '.';
-   for ( keys %::) {
-      if (/Prima\/StdBitmap\.pm$/) {
-         $imagePath = $_;
-         $imagePath =~ s/^..(.*)\/StdBitmap\.pm$/$1/;
-         last;
-      }
-   }
-   # my $scriptPath = (grep { m/Script$/ } @INC)[-1];
-   # ( my $imagePath = $scriptPath) =~ s/Script$/Images/;
-   $bmImageFile = "$imagePath/sysimage.gif";
-}
+my $bmImageFile = Prima-> find_image( "sysimage.gif");
 
 sub load_std_bmp
 {
