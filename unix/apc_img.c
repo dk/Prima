@@ -1135,7 +1135,7 @@ put_pixmap( Handle self, Handle pixmap, int dst_x, int dst_y, int src_x, int src
    XCopyArea( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
               src_x, YY->size.y + YY-> menuHeight - src_y - h,
               w, h,
-              dst_x, 0); //XX->size.y + XX-> menuHeight - dst_y - h);
+              dst_x, XX->size.y + XX-> menuHeight - dst_y - h);
    XCHECKPOINT;
    return true;
 }
@@ -1159,7 +1159,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    if ( yFrom + yLen > img-> h) yLen = img-> h - yFrom;
    if ( xLen <= 0 || yLen <= 0) return false;
   
-   if ( XT_IS_DBM(X(image))) {
+   if ( XT_IS_DBM(X(image)) || PObject( image)-> options. optInDraw) {
       HV * profile;
       XImage * i;
       if (
@@ -1211,16 +1211,9 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    } else {
       mono = (( img-> type & imBPP) == 1) || ( guts. idepth == 1);
       icon = XT_IS_ICON(X(image));
-      if ( !PObject( image)-> options. optInDraw) {
-         cache = prima_create_image_cache( img, self, CACHE_AUTODETECT);
-         if ( !cache) return false;
-         result = cache-> image;
-      } else if ( icon) {
-         cache = &X(image)-> image_cache;
-         if ( cache-> icon == nil) 
-            if ( !create_cache1_1( img, cache, true)) 
-               return false;
-      }
+      cache = prima_create_image_cache( img, self, CACHE_AUTODETECT);
+      if ( !cache) return false;
+      result = cache-> image;
    }
    
    if ( guts. dynamicColors) {
@@ -1263,53 +1256,48 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       func = prima_rop_map( rop);
    }
 
-   if ( !PObject( image)-> options. optInDraw) {
-      if ( func != ofunc)
-         XSetFunction( DISP, XX-> gc, func);
-      
-      if ( XT_IS_BITMAP(X(self))) {
-         XSetForeground( DISP, XX-> gc, 1);
-         XSetBackground( DISP, XX-> gc, 0);
-         XX-> flags. brush_fore = XX-> flags. brush_back = 0;
-      } else if ( mono) {
-         unsigned long fore, back;
-         if ( XT_IS_DBM(X(image))) {
-            fore = guts. monochromeMap[1];
-            back = guts. monochromeMap[0];
+   if ( func != ofunc)
+      XSetFunction( DISP, XX-> gc, func);
+   
+   if ( XT_IS_BITMAP(X(self))) {
+      XSetForeground( DISP, XX-> gc, 1);
+      XSetBackground( DISP, XX-> gc, 0);
+      XX-> flags. brush_fore = XX-> flags. brush_back = 0;
+   } else if ( mono) {
+      unsigned long fore, back;
+      if ( XT_IS_DBM(X(image))) {
+         fore = guts. monochromeMap[1];
+         back = guts. monochromeMap[0];
+      } else {
+         if ( guts. palSize > 0) {
+            fore = prima_color_find( self,
+                RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
+                -1, nil, RANK_NORMAL);
+            back = prima_color_find( self,
+                RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
+                -1, nil, RANK_NORMAL);
          } else {
-            if ( guts. palSize > 0) {
-               fore = prima_color_find( self,
-                   RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
-                   -1, nil, RANK_NORMAL);
-               back = prima_color_find( self,
-                   RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
-                   -1, nil, RANK_NORMAL);
-            } else {
-               fore = 
-                  (((img-> palette[1].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-                  (((img-> palette[1].g << guts. green_range) >> 8) << guts. green_shift) |
-                  (((img-> palette[1].b << guts. blue_range ) >> 8) << guts.  blue_shift);
-               back = 
-                  (((img-> palette[0].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-                  (((img-> palette[0].g << guts. green_range) >> 8) << guts. green_shift) |
-                  (((img-> palette[0].b << guts. blue_range ) >> 8) << guts.  blue_shift);
-            }
+            fore = 
+               (((img-> palette[1].r << guts. red_range  ) >> 8) << guts.   red_shift) |
+               (((img-> palette[1].g << guts. green_range) >> 8) << guts. green_shift) |
+               (((img-> palette[1].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+            back = 
+               (((img-> palette[0].r << guts. red_range  ) >> 8) << guts.   red_shift) |
+               (((img-> palette[0].g << guts. green_range) >> 8) << guts. green_shift) |
+               (((img-> palette[0].b << guts. blue_range ) >> 8) << guts.  blue_shift);
          }
-            
-         XSetForeground( DISP, XX-> gc, fore);
-         XSetBackground( DISP, XX-> gc, back);
-         XX-> flags. brush_fore = XX-> flags. brush_back = 0;
       }
-      prima_put_ximage( XX-> gdrawable, XX-> gc, result,
-                        xFrom, img-> h - yFrom - yLen,
-                        x, REVERT(y) - yLen + 1, xLen, yLen);
-      if ( func != ofunc)
-         XSetFunction( DISP, XX-> gc, ofunc);
-   } else {
-       x -= XX-> gtransform. x + XX-> btransform. x;
-       y -= XX-> gtransform. y + XX-> btransform. y;
-       put_pixmap( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
+         
+      XSetForeground( DISP, XX-> gc, fore);
+      XSetBackground( DISP, XX-> gc, back);
+      XX-> flags. brush_fore = XX-> flags. brush_back = 0;
    }
+   prima_put_ximage( XX-> gdrawable, XX-> gc, result,
+                     xFrom, img-> h - yFrom - yLen,
+                     x, REVERT(y) - yLen + 1, xLen, yLen);
+   if ( func != ofunc)
+      XSetFunction( DISP, XX-> gc, ofunc);
+
    if ( tempResult)
       prima_free_ximage( result);
    return true;
