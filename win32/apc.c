@@ -843,7 +843,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
            taskList, WC_FRAME, style, exstyle, usePos, useSize, &vprf, NULL)) {
 	if ( on_top >= 0) {
 	   apt_assign( aptOnTop, on_top);
-	   if ( on_top > 0) {
+	   if ( on_top > 0)
 	      SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0, 
 	         SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 	}
@@ -877,7 +877,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
   }
   if ( on_top >= 0) {
      apt_assign( aptOnTop, on_top);
-     if ( on_top > 0) {
+     if ( on_top > 0)
         SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0, 
            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
   }
