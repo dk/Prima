@@ -29,6 +29,7 @@ cursor_update( Handle self)
 void
 apc_cursor_set_pos( Handle self, int x, int y)
 {
+   objCheck;
    sys cursorPos. x = x;
    sys cursorPos. y = y;
    cursor_update( self);
@@ -37,6 +38,7 @@ apc_cursor_set_pos( Handle self, int x, int y)
 void
 apc_cursor_set_size( Handle self, int x, int y)
 {
+   objCheck;
    sys cursorSize. x = x;
    sys cursorSize. y = y;
    cursor_update( self);
@@ -45,6 +47,7 @@ apc_cursor_set_size( Handle self, int x, int y)
 void
 apc_cursor_set_visible( Handle self, Bool visible)
 {
+   objCheck;
    apt_assign( aptCursorVis, visible);
    cursor_update( self);
 }
@@ -52,18 +55,23 @@ apc_cursor_set_visible( Handle self, Bool visible)
 Point
 apc_cursor_get_pos( Handle self)
 {
+   Point p = {0,0};
+   objCheck p;
    return sys cursorPos;
 }
 
 Point
 apc_cursor_get_size( Handle self)
 {
+   Point p = {0,0};
+   objCheck p;
    return sys cursorSize;
 }
 
 Bool
 apc_cursor_get_visible( Handle self)
 {
+   objCheck false;
    return is_apt( aptCursorVis);
 }
 
@@ -72,6 +80,7 @@ apc_pointer_get_hot_spot( Handle self)
 {
    Point         r = {0,0};
    ICONINFO      ii;
+   objCheck r;
    if ( !GetIconInfo( sys pointer, &ii))
       apiErr
    else {
@@ -86,8 +95,9 @@ apc_pointer_get_hot_spot( Handle self)
 Point
 apc_pointer_get_pos( Handle self)
 {
-   Point p;
+   Point p = {0,0};
    RECT r;
+   objCheck p;
    if ( !GetCursorPos(( POINT*) &p)) apiErr;
    GetWindowRect( HWND_DESKTOP, &r);
    p. y = r. bottom - p. y - 1;
@@ -97,6 +107,7 @@ apc_pointer_get_pos( Handle self)
 int
 apc_pointer_get_shape( Handle self)
 {
+   objCheck 0;
    return sys pointerId;
 }
 
@@ -119,6 +130,8 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 
    if ( icon == nilHandle)
       apcErrRet( errInvParams);
+   objCheck false;
+   dobjCheck( icon) false;
    if ( !GetIconInfo( sys pointer, &ii))
       apiErrRet;
    i-> self-> create_empty( icon, guts. pointerSize. x, guts. pointerSize. y, 1);
@@ -146,6 +159,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 Bool
 apc_pointer_get_visible( Handle self)
 {
+   objCheck false;
    return is_apt( aptPointerVis);
 }
 
@@ -176,7 +190,10 @@ int ctx_cr2IDC[] =
 void
 apc_pointer_set_shape( Handle self, int sysPtrId)
 {
-   HCURSOR user = sys pointer2;
+   HCURSOR user;
+
+   objCheck;
+   user = sys pointer2;
    if ( sysPtrId < crDefault || sysPtrId > crUser) return;
    sys pointerId = sysPtrId;
    if ( sysPtrId == crDefault)
@@ -202,6 +219,7 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
 Bool
 apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 {
+   objCheck false;
    if ( sys pointer2)
       if ( !DestroyCursor( sys pointer2)) apiErr;
    apcErrClear;

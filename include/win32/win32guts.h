@@ -80,6 +80,9 @@
 #define apcErrRet(err)    { apcErr(err);          return false; }
 #define apcErrClear       { apcError = errOk;                   }
 
+#define objCheck          if ( var stage == csDead) return
+#define dobjCheck(handle) if ((( PObject)handle)-> stage == csDead) return
+
 
 typedef struct _HandleOptions_ {
    unsigned aptWM_PAINT             : 1;       // true if inside WM_PAINT

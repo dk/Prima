@@ -725,12 +725,12 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    orgCmd = ev. cmd;
    if ( ev. cmd) v-> self-> message( self, &ev); else ev. cmd = orgMsg;
 
+   if ( v-> stage > csNormal) orgMsg = 0; // protect us from dead body
+
    switch ( orgMsg) {
    case WM_DESTROY:
-      if ( v-> stage <= csNormal) {
-         v-> handle = nilHandle;       // tell apc not to kill this HWND
-         Object_destroy(( Handle) v);
-      }
+      v-> handle = nilHandle;       // tell apc not to kill this HWND
+      Object_destroy(( Handle) v);
       break;
    case WM_PAINT:
       return 0;
@@ -742,14 +742,11 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       if ( ev. cmd == 0)
          return ( LRESULT)1;
 // propagate message
-      if ( var stage <= csNormal)
-         propagate( self, orgMsg, &ev, mp1, mp2);
+       propagate( self, orgMsg, &ev, mp1, mp2);
       break;
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
        ev. cmd = 1; // force call DefWindowProc
-       if ( ev. cmd && ( var stage <= csNormal))
-          propagate( self, orgMsg, &ev, mp1, mp2);
        break;
    case WM_MOUSEMOVE:
       if ( is_apt( aptEnabled)) SetCursor( sys pointer);

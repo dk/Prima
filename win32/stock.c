@@ -813,6 +813,7 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
 void
 apc_font_pick( Handle self, PFont source, PFont dest)
 {
+   if ( self) objCheck;
    font_font2gp( dest, self ? sys res : guts. displayResolution,
       Drawable_font_add( self, source, dest), self ? sys ps : 0);
 }

@@ -254,7 +254,7 @@ void
 protect_object( Handle obj)
 {
    PObject o = (PObject)obj;
-   if (o-> protectCount>=0) o-> protectCount++;
+   if ( o-> protectCount >= 0) o-> protectCount++;
 }
 
 void

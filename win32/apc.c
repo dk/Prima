@@ -7,7 +7,6 @@
 #include "Window.h"
 #include "Application.h"
 
-
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
@@ -21,6 +20,7 @@
 Bool
 apc_application_begin_paint ( Handle self)
 {
+   objCheck false;
    apcErrClear;
    if ( !( sys ps = dc_alloc())) apiErrRet;
    hwnd_enter_paint( self);
@@ -38,6 +38,7 @@ Bool
 apc_application_begin_paint_info( Handle self)
 {
    Bool ok = apc_application_begin_paint( self);
+   objCheck false;
    if ( ok) {
       HRGN rgn = CreateRectRgn( 0, 0, 0, 0);
       SelectClipRgn( sys ps, rgn);
@@ -52,6 +53,7 @@ apc_application_create( Handle self)
 {
    HWND h;
    RECT r;
+   objCheck false;
    if ( !( h = CreateWindowEx( 0, "GenericApp", "", 0, 0, 0, 0, 0,
           nilHandle, nilHandle, guts. instance, nilHandle))) apiErrRet;
    sys handle = h;
@@ -79,6 +81,7 @@ apc_application_close( Handle self)
 void
 apc_application_destroy( Handle self)
 {
+   objCheck;
    if ( IsWindow( sys handle))  {
       if ( !KillTimer( sys handle, TID_USERMAX)) apiErr;
       if ( !DestroyWindow( sys handle)) apiErr;
@@ -93,6 +96,7 @@ void
 apc_application_end_paint   ( Handle self)
 {
    apcErrClear;
+   objCheck;
    hwnd_leave_paint( self);
    if ( sys pal) DeleteObject( sys pal);
    dc_free();
@@ -189,7 +193,8 @@ Point
 apc_application_get_size( Handle self)
 {
    RECT  r;
-   Point ret;
+   Point ret = {0,0};
+   objCheck ret;
    GetWindowRect( HWND_DESKTOP, &r);
    ret. x = r. right;
    ret. y = r. bottom;
@@ -258,6 +263,7 @@ void
 apc_application_go( Handle self)
 {
    MSG msg;
+   objCheck;
    while ( GetMessage( &msg, NULL, 0, 0) && process_msg( &msg));
    if ( application) Object_destroy( application);
 }
@@ -301,8 +307,14 @@ Handle
 apc_application_get_view_from_point( Handle self, Point point)
 {
    DWORD pid, tid;
-   POINT pt = {point. x, sys lastSize. y - point. y - 1};
-   HWND  p =  WindowFromPoint( pt);
+   POINT pt;
+   HWND  p;
+
+   objCheck nilHandle;
+   pt.x = point. x;
+   pt.y = sys lastSize. y - point. y - 1;
+   p    =  WindowFromPoint( pt);
+
    if ( p) {
       POINT xp = pt;
       MapWindowPoints( HWND_DESKTOP, p, &xp, 1);
@@ -323,6 +335,8 @@ apc_component_create( Handle self)
    PComponent c = ( PComponent) self;
    PDrawableData d = c-> sysData;
 
+   objCheck;
+
    if ( d) return;
    d = malloc( sizeof( DrawableData));
    memset( d, 0, sizeof( DrawableData));
@@ -334,6 +348,7 @@ apc_component_destroy( Handle self)
 {
    PComponent    c = ( PComponent) self;
    PDrawableData d = c-> sysData;
+   objCheck;
    var handle = nilHandle;
    if ( d == nil) return;
    free( d);
@@ -346,10 +361,12 @@ process_transparents( Handle self)
 {
    int i;
    RECT mr;
+   objCheck;
    GetWindowRect(( HWND) var handle, &mr);
 again:
    for ( i = 0; i < var widgets. count; i++) {
       Handle x = var widgets. items[ i];
+      dobjCheck(x);
       if ( dsys(x) options. aptTransparent && IsWindowVisible( DHANDLE( x))) {
          RECT r, dr;
          GetWindowRect( DHANDLE( x), &r);
@@ -567,6 +584,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
 //   | (  taskList                     ? 0                   : WS_EX_TOOLWINDOW)
   ;
 
+  objCheck false;
   if ( !kind_of( self, CWidget)) apcErrRet( errInvObject);
   apcErrClear;
   if (( var handle != nilHandle) && (
@@ -629,7 +647,9 @@ void
 apc_window_activate( Handle self)
 {
    if ( self) {
-      HWND w = HANDLE;
+      HWND w;
+      objCheck;
+      w = HANDLE;
       SetForegroundWindow( w); // no reasonable error description here,
       SetActiveWindow( w);     // long live M$DN :E
    }
@@ -656,7 +676,9 @@ apc_window_get_active( void)
 }
 
 Bool
-apc_window_close( Handle self) {
+apc_window_close( Handle self)
+{
+   objCheck true;
    if ( !PostMessage( HANDLE, WM_CLOSE, 0, 0)) apiErrRet;
    return true;
 }
@@ -664,12 +686,14 @@ apc_window_close( Handle self) {
 int
 apc_window_get_border_icons( Handle self)
 {
+   objCheck 0;
    return sys s. window. borderIcons;
 }
 
 int
 apc_window_get_border_style( Handle self)
 {
+   objCheck 0;
    return sys s. window. borderStyle;
 }
 
@@ -681,9 +705,10 @@ apc_window_get_client_pos( Handle self)
 {
    Point delta = apc_sys_get_window_borders( sys s. window. borderStyle);
    Handle parent = var self-> get_parent( self);
-   Point p, sz   = CWidget( parent)-> get_size( parent);
+   Point p = {0,0}, sz   = CWidget( parent)-> get_size( parent);
    RECT  r;
 
+   objCheck p;
    if ( apc_window_get_window_state( self) == wsMinimized) {
       WINDOWPLACEMENT w = { sizeof( WINDOWPLACEMENT)};
       if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
@@ -701,7 +726,8 @@ Point
 apc_window_get_client_size( Handle self)
 {
    RECT r;
-   Point p;
+   Point p = { 0,0};
+   objCheck p;
    if ( apc_window_get_window_state( self) == wsMinimized) {
       // cannot acquire client extension at this time. Using euristic calculations.
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
@@ -724,9 +750,13 @@ apc_window_get_client_size( Handle self)
 Bool
 apc_window_get_icon( Handle self, Handle icon)
 {
-   HICON    p = ( HICON) SendMessage( HANDLE, WM_GETICON, ICON_BIG, 0);
-   HCURSOR  save = sys pointer;
+   HICON    p;
+   HCURSOR  save;
    Bool ret;
+
+   objCheck false;
+   p = ( HICON) SendMessage( HANDLE, WM_GETICON, ICON_BIG, 0);
+   save = sys pointer;
    if ( p    == nilHandle) apcErrRet( errInvWindowIcon);
    if ( icon == nilHandle) apcErrRet( errInvParams);
    sys pointer = p;
@@ -822,6 +852,7 @@ int
 apc_window_get_window_state( Handle self)
 {
    WINDOWPLACEMENT s = {sizeof( WINDOWPLACEMENT)};
+   objCheck wsNormal;
    if ( !GetWindowPlacement( HANDLE, &s)) apiErr;
    if ( s. showCmd == SW_SHOWMAXIMIZED) return wsMaximized;
    if ( s. showCmd == SW_SHOWMINIMIZED) return wsMinimized;
@@ -831,12 +862,14 @@ apc_window_get_window_state( Handle self)
 Bool
 apc_window_get_task_listed( Handle self)
 {
+   objCheck false;
    return is_apt( aptTaskList);
 }
 
 void
 apc_window_set_caption( Handle self, char * caption)
 {
+   objCheck;
    if ( !SetWindowText( HANDLE, caption)) apiErr;
 }
 
@@ -849,6 +882,7 @@ apc_window_set_client_pos( Handle self, int x, int y)
    Point sz = CWidget( parent)-> get_size( parent);
 
 
+   objCheck;
    if ( var stage == csConstructing && apc_window_get_window_state( self) != wsNormal) {
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
       if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
@@ -875,6 +909,7 @@ apc_window_set_client_size( Handle self, int x, int y)
    if ( x < 0) x = 0;
    if ( y < 0) y = 0;
 
+   objCheck;
    if (( var stage == csConstructing && ws != wsNormal) || ws == wsMinimized) {
    // if (( var stage == csConstructing) || ws == wsMinimized) {
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
@@ -917,6 +952,7 @@ apc_window_set_menu( Handle self, Handle menu)
 {
    Point size  = var self-> get_size( self);
    HMENU wMenu = GetMenu( HANDLE);
+   objCheck false;
    if ( menu)
       (( PComponent) menu)-> handle = nilHandle;
    apcErrClear;
@@ -934,6 +970,7 @@ void
 apc_window_set_icon( Handle self, Handle icon)
 {
    HICON i;
+   objCheck;
    i = icon ? image_make_icon_handle( icon, guts. iconSizeLarge, nil) : nil;
    i = ( HICON) SendMessage( HANDLE, WM_SETICON, ICON_BIG, ( LPARAM) i);
    if ( i) DestroyIcon( i);
@@ -943,6 +980,7 @@ void
 apc_window_set_window_state( Handle self, int state)
 {
    int  fl = -1;
+   objCheck;
    switch ( state)
    {
       case wsMaximized: fl = SW_SHOWMAXIMIZED; break;
@@ -959,9 +997,11 @@ apc_window_set_window_state( Handle self, int state)
 static Bool
 window_start_modal( Handle self, Bool shared, Handle insertBefore)
 {
-   HWND wnd = HANDLE;
+   HWND wnd;
    HWND active = GetActiveWindow();
 
+   objCheck false;
+   wnd = HANDLE;
    if ( sys className != WC_FRAME) { apcErr( errInvParams); return false; }
 
    // setting window up
@@ -975,12 +1015,15 @@ window_start_modal( Handle self, Bool shared, Handle insertBefore)
       SetActiveWindow( wnd);
       SetForegroundWindow( wnd);
    } else {
-      HWND zorder = GetWindow( DHANDLE( insertBefore), GW_HWNDNEXT);
+      HWND zorder;
+      dobjCheck( insertBefore) false;
+      zorder = GetWindow( DHANDLE( insertBefore), GW_HWNDNEXT);
       if ( !zorder) zorder = HWND_BOTTOM;
       SetWindowPos( wnd, zorder, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
       if ( active)
          SetActiveWindow( active);
    }
+   objCheck false;
    PostMessage( wnd, WM_DLGENTERMODAL, 1, 0);
    guts. focSysDisabled = 0;
 }
@@ -988,6 +1031,7 @@ window_start_modal( Handle self, Bool shared, Handle insertBefore)
 Bool
 apc_window_execute( Handle self, Handle insertBefore)
 {
+   objCheck false;
    if ( !window_start_modal( self, false, insertBefore))
       return false;
    // message loop
@@ -1016,21 +1060,26 @@ apc_window_execute( Handle self, Handle insertBefore)
 Bool
 apc_window_execute_shared( Handle self, Handle insertBefore)
 {
+   objCheck false;
    return window_start_modal( self, true, insertBefore);
 }
 
 void
 apc_window_end_modal( Handle self)
 {
-   HWND wnd = HANDLE;
+   HWND wnd;
+   objCheck;
+   wnd = HANDLE;
    if ( PWindow( self)-> modal == mtExclusive) {
       if ( self == (( PApplication) application)-> topExclModal)
          PostThreadMessage( guts. mainThreadId, WM_BREAKMSGLOOP, 0, self);
    }
    guts. focSysDisabled = 1;
-   WinHideWindow( wnd);
    CWindow( self)-> exec_leave_proc( self);
+   WinHideWindow( wnd);
+   objCheck;
    apc_widget_set_enabled( self, 0);
+   objCheck;
    if ( application) {
       Handle who = Application_popup_modal( application);
       if ( !who && var owner)
@@ -1046,6 +1095,7 @@ apc_widget_client_to_screen( Handle self, Point p)
    POINT pt;
    Point sz = ((( PWidget) self)-> self)-> get_size( self);
    Point appSz = apc_application_get_size( application);
+   objCheck sz;
    pt. x = p. x;
    pt. y = sz. y - p. y;
    MapWindowPoints(( HWND) var handle, nilHandle, &pt, 1);
@@ -1061,6 +1111,9 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
    ViewProfile vprf;
    int oStage = var stage;
    int exstyle;
+
+   objCheck false;
+   dobjCheck( owner) false;
 
    if ( !kind_of( self, CWidget)) apcErr( errInvObject);
    apcErrClear;
@@ -1095,6 +1148,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
 Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 {
+   objCheck false;
    apcErrClear;
 
    if ( is_apt( aptTransparent))
@@ -1175,6 +1229,7 @@ Bool
 apc_widget_begin_paint_info( Handle self)
 {
    HRGN rgn;
+   objCheck false;
    apt_set( aptWinPS);
    apt_set( aptCompatiblePS);
    sys transform2. x = 0;
@@ -1192,6 +1247,7 @@ apc_widget_begin_paint_info( Handle self)
 void
 apc_widget_destroy( Handle self)
 {
+   objCheck;
    if ( sys pointer2) if ( !DestroyCursor( sys pointer2)) apiErr;
    if ( sys recreateData) free( sys recreateData);
    free( sys timeDefs);
@@ -1214,6 +1270,7 @@ apc_widget_default_font( PFont copyTo)
 void
 apc_widget_end_paint( Handle self)
 {
+   objCheck;
    if ( is_opt( optBuffered) && ( sys bm != nilHandle)) {
       if ( !SetViewportOrgEx( sys ps, 0, 0, nil)) apiErr;
       if ( !BitBlt( sys ps2, sys transform2. x, sys transform2. y, var w, var h, sys ps, 0, 0, SRCCOPY)) apiErr;
@@ -1251,6 +1308,7 @@ apc_widget_end_paint( Handle self)
 void
 apc_widget_end_paint_info( Handle self)
 {
+   objCheck;
    hwnd_leave_paint( self);
    sys pal = nil;
    if ( !ReleaseDC(( HWND) var handle, sys ps)) apiErr;
@@ -1262,14 +1320,17 @@ apc_widget_end_paint_info( Handle self)
 Bool
 apc_widget_get_clip_owner( Handle self)
 {
+   objCheck false;
    return is_apt( aptClipOwner);
 }
 
 Rect
 apc_widget_get_clip_rect( Handle self)
 {
-   Rect r;
-   RECT * c = sys pClipRect;
+   Rect r = {0,0,0,0};
+   RECT * c;
+   objCheck r;
+   c = sys pClipRect;
    if ( c) {
       int ly    = sys lastSize. y;
       r. left   = c-> left;
@@ -1284,12 +1345,14 @@ apc_widget_get_clip_rect( Handle self)
 Color
 apc_widget_get_color( Handle self, int index)
 {
+   objCheck clInvalid;
    return sys viewColors[ index];
 }
 
 Bool
 apc_widget_get_first_click( Handle self)
 {
+   objCheck false;
    return is_apt( aptFirstClick);
 }
 
@@ -1302,6 +1365,7 @@ apc_widget_get_focused()
 static PRECT map_Rect( Handle self, Rect * rect)
 {
    RECT  __rectangle;
+   objCheck ( PRECT) rect;
    GetWindowRect(( HWND) var handle, &__rectangle);
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT) &__rectangle, 2);
@@ -1319,6 +1383,7 @@ static PRECT map_Rect( Handle self, Rect * rect)
 static Rect * map_RECT( Handle self, RECT * rect)
 {
    RECT __rectangle;
+   objCheck ( Rect*)rect;
    GetWindowRect(( HWND) var handle, &__rectangle);
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&__rectangle, 2);
@@ -1336,6 +1401,7 @@ static Rect * map_RECT( Handle self, RECT * rect)
 ApiHandle
 apc_widget_get_handle( Handle self)
 {
+   objCheck 0;
    return ( ApiHandle) HANDLE;
 }
 
@@ -1343,6 +1409,7 @@ Rect
 apc_widget_get_invalid_rect( Handle self)
 {
    Rect r  = {0,0,0,0};
+   objCheck r;
    if ( GetUpdateRect(( HWND) var handle, ( PRECT) &r, false))
       return *( map_RECT( self, ( PRECT) &r));
    return r;
@@ -1352,8 +1419,10 @@ Point
 apc_widget_get_pos( Handle self)
 {
    RECT  r;
-   Point p, sz;
-   Handle parent = is_apt( aptClipOwner) ? var owner : application;
+   Point p, sz = {0,0};
+   Handle parent;
+   objCheck sz;
+   parent = is_apt( aptClipOwner) ? var owner : application;
    sz = ((( PWidget) parent)-> self)-> get_size( parent);
    if ( sys className == WC_FRAME && apc_window_get_window_state( self) == wsMinimized) {
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
@@ -1374,7 +1443,8 @@ Point
 apc_widget_get_size( Handle self)
 {
    RECT r;
-   Point p;
+   Point p = {0,0};
+   objCheck p;
    if ( sys className == WC_FRAME && apc_window_get_window_state( self) == wsMinimized) {
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
       if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
@@ -1393,24 +1463,28 @@ apc_widget_get_size( Handle self)
 Bool
 apc_widget_get_sync_paint( Handle self)
 {
+   objCheck false;
    return is_apt( aptSyncPaint);
 }
 
 Bool
 apc_widget_get_transparent( Handle self)
 {
+   objCheck false;
    return is_apt( aptTransparent);
 }
 
 Bool
 apc_widget_is_captured( Handle self)
 {
+   objCheck false;
    return GetCapture() == ( HWND) var handle;
 }
 
 Bool
 apc_widget_is_enabled( Handle self)
 {
+   objCheck false;
    return is_apt( aptEnabled);
    // return IsWindowEnabled( HANDLE);
 }
@@ -1419,6 +1493,7 @@ Bool
 apc_widget_is_responsive( Handle self)
 {
    Bool ena = true;
+   objCheck false;
    while ( ena && self != application) {
       // ena  = IsWindowEnabled( HANDLE);
       ena  = is_apt( aptEnabled);
@@ -1430,21 +1505,25 @@ apc_widget_is_responsive( Handle self)
 Bool
 apc_widget_is_focused( Handle self)
 {
+   objCheck false;
    return is_apt( aptFocused);
 }
 
 Bool
 apc_widget_is_visible( Handle self)
 {
+   objCheck false;
    return IsWindowVisible( HANDLE);
 }
 
 static Bool
 repaint_all( Handle owner, Handle self, void * dummy)
 {
+   objCheck false;
    if ( !is_apt( aptTransparent)) {
       if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
       if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
+      objCheck false;
       var self-> first_that( self, repaint_all, nil);
    }
    process_transparents( self);
@@ -1455,8 +1534,10 @@ void
 apc_widget_invalidate_rect( Handle self, Rect * rect)
 {
    PRECT pRect = rect ? map_Rect( self, rect) : nil;
+   objCheck;
    if ( !InvalidateRect (( HWND) var handle, pRect, false)) apiErr;
    if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
+   objCheck;
    if ( !rect)
       var self-> first_that( self, repaint_all, nil);
    process_transparents( self);
@@ -1465,9 +1546,10 @@ apc_widget_invalidate_rect( Handle self, Rect * rect)
 Point
 apc_widget_screen_to_client( Handle self, Point p)
 {
-   POINT pt;
+   POINT pt = {0,0};
    Point sz = ((( PWidget) self)-> self)-> get_size( self);
    Point appSz = apc_application_get_size( application);
+   objCheck p;
    pt. x = p. x;
    pt. y = appSz. y - p. y;
    MapWindowPoints( nilHandle, ( HWND) var handle, &pt, 1);
@@ -1480,11 +1562,13 @@ void
 apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Bool scrollChildren)
 {
    PRECT pRect = r ? map_Rect( self, r) : nil;
+   objCheck;
    HideCaret(( HWND) var handle);
    if ( !ScrollWindowEx(( HWND) var handle,
       horiz, -vert, pRect, sys pClipRect, NULL, NULL,
       SW_INVALIDATE | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
    )) apiErr;
+   objCheck;
    if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
    ShowCaret(( HWND) var handle);
 }
@@ -1492,6 +1576,7 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Bool scrollChildr
 void
 apc_widget_set_capture( Handle self, Bool capture)
 {
+   objCheck;
    if ( capture)
       SetCapture(( HWND) var handle);
    else
@@ -1503,9 +1588,14 @@ apc_widget_set_capture( Handle self, Bool capture)
 void
 apc_widget_set_clip_rect( Handle self, Rect c)
 {
-   int ly = sys lastSize. y;
-   RECT * cr = &sys clipRect;
+   int ly;
+   RECT * cr;
+
+   objCheck;
+
    // inclusive-inclusive
+   ly = sys lastSize. y;
+   cr = &sys clipRect;
 
    check_swap( c. bottom, c. top);
    check_swap( c. left, c. right);
@@ -1522,6 +1612,7 @@ void
 apc_widget_set_color( Handle self, Color color, int index)
 {
    Event ev = {cmColorChanged};
+   objCheck;
    sys viewColors[ index] = color;
 
    ev. gen. source = self;
@@ -1532,6 +1623,7 @@ apc_widget_set_color( Handle self, Color color, int index)
 void
 apc_widget_set_enabled( Handle self, Bool enable)
 {
+   objCheck;
    apt_assign( aptEnabled, enable);
    if (( sys className == WC_FRAME) || ( var owner == application))
       EnableWindow( HANDLE, enable);
@@ -1542,6 +1634,7 @@ apc_widget_set_enabled( Handle self, Bool enable)
 void
 apc_widget_set_first_click( Handle self, Bool firstClick)
 {
+   objCheck;
    apt_assign( aptFirstClick, firstClick);
 }
 
@@ -1559,6 +1652,7 @@ void
 apc_widget_set_font( Handle self, PFont font)
 {
    Event ev = {cmFontChanged};
+   objCheck;
    ev. gen. source = self;
    var self-> message( self, &ev);
 }
@@ -1566,6 +1660,7 @@ apc_widget_set_font( Handle self, PFont font)
 void
 apc_widget_set_palette( Handle self)
 {
+   objCheck;
    if ( sys p256) {
       free( sys p256);
       sys p256 = nil;
@@ -1577,9 +1672,14 @@ apc_widget_set_palette( Handle self)
 void
 apc_widget_set_pos( Handle self, int x, int y)
 {
-   Handle parent = is_apt( aptClipOwner) ? var owner : application;
-   Point sz = ((( PWidget) parent)-> self)-> get_size( parent);
+   Handle parent;
+   Point sz;
    RECT r;
+
+   objCheck;
+
+   parent = is_apt( aptClipOwner) ? var owner : application;
+   sz = ((( PWidget) parent)-> self)-> get_size( parent);
 
    if ( sys className == WC_FRAME) {
       HWND h = HANDLE;
@@ -1607,6 +1707,7 @@ void
 apc_widget_set_size( Handle self, int width, int height)
 {
    RECT c, r;
+   objCheck;
    if ( width  < 0) width = 0;
    if ( height < 0) height = 0;
    if ( sys className == WC_FRAME) {
@@ -1640,10 +1741,13 @@ apc_widget_set_tab_order( Handle self, int tabOrder)
 void
 apc_widget_set_visible( Handle self, Bool show)
 {
+   objCheck;
    if ( !SetWindowPos( HANDLE, nilHandle, 0, 0, 0, 0,
         ( show ? SWP_SHOWWINDOW : SWP_HIDEWINDOW) | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErr;
+   objCheck;
    if ( !is_apt( aptClipOwner)) {
       InvalidateRect(( HWND) var handle, nil, false);
+      objCheck;
       process_transparents( self);
    }
 }
@@ -1652,7 +1756,11 @@ void
 apc_widget_set_z_order( Handle self, Handle behind, Bool top)
 {
    HWND opt = ( top) ? HWND_TOP : HWND_BOTTOM;
-   if ( behind != nilHandle) opt = DHANDLE( behind);
+   objCheck;
+   if ( behind != nilHandle) {
+      dobjCheck( behind);
+      opt = DHANDLE( behind);
+   }
    if ( !SetWindowPos( HANDLE, opt, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE)) apiErr;
    // unexpected stupig Windows bug'o'feature - when only window is available to a thread,
    // bring_to_front does not do anything! - so fixing
@@ -1663,13 +1771,14 @@ apc_widget_set_z_order( Handle self, Handle behind, Bool top)
 void
 apc_widget_update( Handle self)
 {
+   objCheck;
    if ( !UpdateWindow(( HWND) var handle)) apiErr;
 }
 
 void
 apc_widget_validate_rect( Handle self, Rect rect)
 {
-
+   objCheck;
    if ( !ValidateRect (( HWND) var handle, map_Rect( self, &rect))) apiErr;
 }
 
@@ -1687,6 +1796,8 @@ apc_kbd_get_state( Handle self)
 Bool
 apc_menu_create( Handle self, Handle owner)
 {
+   objCheck false;
+   dobjCheck( owner) false;
    sys className = WC_MENU;
    sys owner     = DHANDLE( owner);
 }
@@ -1702,6 +1813,7 @@ void
 apc_menu_destroy( Handle self)
 {
    if ( var handle) {
+      objCheck;
       if ( IsWindow(( HWND) var handle) && !DestroyMenu(( HMENU) var handle)) apiErr;
       hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
    }
@@ -1743,6 +1855,8 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
    PWindow owner;
    Point size;
    Bool resize;
+   objCheck;
+   dobjCheck( var owner);
    if ( resize = kind_of( var owner, CWindow) &&
         var stage <= csNormal &&
         ((( PAbstractMenu) self)-> self)-> get_selected( self)) {
@@ -1767,6 +1881,7 @@ apc_menu_item_set_accel( Handle self, PMenuItemReg m, char * accel)
    UINT flags;
 
    if ( !var handle) return;
+   objCheck;
    flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
    if ( flags == 0xFFFFFFFF) {
       apiErr;
@@ -1785,6 +1900,7 @@ void
 apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check)
 {
    if ( !var handle) return;
+   objCheck;
    CheckMenuItem(( HMENU) var handle,
       m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( check ? MF_CHECKED : MF_UNCHECKED));
 }
@@ -1793,6 +1909,7 @@ void
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled)
 {
    if ( !var handle) return;
+   objCheck;
    EnableMenuItem(( HMENU) var handle,
       m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( enabled ? MF_ENABLED : MF_GRAYED));
 }
@@ -1810,6 +1927,7 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
    UINT flags;
 
    if ( !var handle) return;
+   objCheck;
    flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
    if ( flags == 0xFFFFFFFF) {
       apiErr;
@@ -1829,12 +1947,15 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
 ApiHandle
 apc_menu_get_handle( Handle self)
 {
+   objCheck 0;
    return ( ApiHandle) var handle;
 }
 
 Bool
 apc_popup_create( Handle self, Handle owner)
 {
+   objCheck false;
+   dobjCheck( owner) false;
    sys owner = DHANDLE( owner);
    var handle  = ( Handle) add_item( false, self, (( PMenu) self)-> tree);
    sys className = WC_MENU;
@@ -1850,6 +1971,7 @@ apc_popup_default_font( PFont font)
 Bool
 apc_popup( Handle self, int x, int y)
 {
+   objCheck false;
    if ( !TrackPopupMenuEx(
       ( HMENU) var handle, TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_RIGHTBUTTON,
        x, dsys( var owner) lastSize. y - y, ( HWND)(( PComponent) var owner)-> handle, NULL)
@@ -1919,12 +2041,14 @@ apc_help_open_topic( Handle self, long command)
 {
    UINT hm = ctx_remap_def( command, ctx_hmp2HELP, true, HELP_CONTEXT);
    DWORD data = ( hm == HELP_CONTEXT) ? ( DWORD) command : 0;
+   dobjCheck( application) false;
    return WinHelp( DHANDLE( application), PApplication(application)-> helpFile, hm, data);
 }
 
 void
 apc_help_close( Handle self)
 {
+   dobjCheck( application);
    WinHelp( DHANDLE( application), PApplication(application)-> helpFile, HELP_QUIT, 0);
 }
 
@@ -1941,6 +2065,7 @@ apc_message( Handle self, PEvent ev, Bool post)
    ULONG msg;
    USHORT mp1s = 0;
    ApiMessageSender sender = post ? (ApiMessageSender) PostMessage : (ApiMessageSender) SendMessage;
+   objCheck;
    switch ( ev-> cmd)
    {
        case cmPost:

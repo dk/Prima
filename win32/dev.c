@@ -331,6 +331,7 @@ image_query_bits( Handle self, Bool forceNewImage)
 Bool
 apc_image_create( Handle self)
 {
+   objCheck false;
    apt_set( aptBitmap);
    image_destroy_cache( self);
    sys lastSize. x = var w;
@@ -341,6 +342,7 @@ apc_image_create( Handle self)
 void
 apc_image_destroy( Handle self)
 {
+   objCheck;
    image_destroy_cache( self);
 }
 
@@ -348,6 +350,7 @@ Bool
 apc_image_begin_paint( Handle self)
 {
    apcErrClear;
+   objCheck false;
    if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
    sys bpp = GetDeviceCaps( sys ps, BITSPIXEL);
    if ( sys bm == nilHandle) {
@@ -370,6 +373,7 @@ Bool
 apc_image_begin_paint_info( Handle self)
 {
    apcErrClear;
+   objCheck false;
    if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
    if ( !sys pal) sys pal = image_make_bitmap_palette( self);
    if ( sys pal) SelectPalette( sys ps, sys pal, 0);
@@ -383,6 +387,7 @@ apc_image_end_paint( Handle self)
 {
    BITMAPINFO * bi;
    apcErrClear;
+   objCheck;
 
    image_query_bits( self, false);
    hwnd_leave_paint( self);
@@ -395,6 +400,7 @@ apc_image_end_paint( Handle self)
 void
 apc_image_end_paint_info( Handle self)
 {
+   objCheck;
    apcErrClear;
    hwnd_leave_paint( self);
    DeleteDC( sys ps);
@@ -405,6 +411,7 @@ apc_image_end_paint_info( Handle self)
 void
 apc_image_update_change( Handle self)
 {
+   objCheck;
    image_destroy_cache( self);
    sys lastSize. x = var w;
    sys lastSize. y = var h;
@@ -416,6 +423,7 @@ apc_dbm_create( Handle self, Bool monochrome)
    HDC dc;
    Bool palc = 0;
 
+   objCheck false;
    apcErrClear;
    apt_set( aptBitmap);
    apt_set( aptDeviceBitmap);
@@ -510,6 +518,7 @@ apc_dbm_destroy( Handle self)
 {
    apcErrClear;
    hash_delete( imageMan, &self, sizeof( self), false);
+   objCheck;
 
    hwnd_leave_paint( self);
 
@@ -604,24 +613,28 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 ApiHandle
 apc_image_get_handle( Handle self)
 {
+   objCheck 0;
    return ( ApiHandle) sys ps;
 }
 
 ApiHandle
 apc_dbm_get_handle( Handle self)
 {
+   objCheck 0;
    return ( ApiHandle) sys ps;
 }
 
 ApiHandle
 apc_prn_get_handle( Handle self)
 {
+   objCheck 0;
    return ( ApiHandle) sys ps;
 }
 
 
 Bool
 apc_prn_create( Handle self) {
+   objCheck false;
 //   sys lastSize. x = var w;
 //   sys lastSize. y = var h;
    return true;
@@ -735,6 +748,7 @@ apc_prn_enumerate( Handle self, int * count)
    int i;
 
    *count = 0;
+   objCheck nil;
 
    EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil, 2,
          nil, 0, &needed, &returned);
@@ -781,6 +795,9 @@ apc_prn_select( Handle self, char * printer)
    int rc;
    PRINTER_INFO_2 ppi;
    HDC dc;
+
+   objCheck false;
+
    rc = prn_query( self, printer, &ppi);
    if ( rc > 0)
    {
@@ -801,24 +818,31 @@ apc_prn_select( Handle self, char * printer)
 char *
 apc_prn_get_selected( Handle self)
 {
+   objCheck "";
    return sys s. prn. ppi. pPrinterName;
 }
 
 Point
 apc_prn_get_size( Handle self)
 {
+   Point p = {0,0};
+   objCheck p;
    return sys lastSize;
 }
 
 Point
 apc_prn_get_resolution( Handle self)
 {
+   Point p = {0,0};
+   objCheck p;
    return sys res;
 }
 
 char *
 apc_prn_get_default( Handle self)
 {
+   objCheck "";
+
    GetProfileString("windows", "device", ",,,", sys s. prn. defPrnBuf, 255);
    if (( sys s. prn. device = strtok( sys s. prn. defPrnBuf, (const char *) ","))
             && ( sys s. prn. driver = strtok((char *) NULL,
@@ -841,6 +865,7 @@ apc_prn_setup( Handle self)
    HWND who = GetActiveWindow();
    HDC dc;
 
+   objCheck false;
    if ( !OpenPrinter( sys s. prn. ppi. pPrinterName, &lph, nil))
       apiErrRet;
    sz = DocumentProperties( nil, lph, sys s. prn. ppi. pPrinterName, nil, nil, 0);
@@ -886,6 +911,7 @@ apc_prn_begin_doc( Handle self, char * docName)
    LPPRINTER_INFO_2 ppi = &sys s. prn. ppi;
    DOCINFO doc = { sizeof( DOCINFO), docName, nil, nil, 0};
 
+   objCheck false;
    if ( !( sys ps = CreateDC( ppi-> pDriverName, ppi-> pPrinterName, ppi-> pPortName, ppi-> pDevMode)))
       apiErrRet;
 
@@ -916,6 +942,7 @@ apc_prn_begin_paint_info( Handle self)
    LPPRINTER_INFO_2 ppi = &sys s. prn. ppi;
    DOCINFO doc = { sizeof( DOCINFO), "", nil, nil, 0};
 
+   objCheck false;
    if ( !( sys ps = CreateDC( ppi-> pDriverName, ppi-> pPrinterName, ppi-> pPortName, ppi-> pDevMode)))
       apiErrRet;
 
@@ -930,6 +957,7 @@ apc_prn_end_doc( Handle self)
 {
    apcErrClear;
 
+   objCheck;
    if ( EndPage( sys ps) < 0) apiPrnErr;
    if ( EndDoc( sys ps) < 0) apiPrnErr;
 
@@ -943,6 +971,7 @@ void
 apc_prn_end_paint_info( Handle self)
 {
    apcErrClear;
+   objCheck;
    hwnd_leave_paint( self);
    DeleteDC( sys ps);
    sys ps = nil;
@@ -951,6 +980,7 @@ apc_prn_end_paint_info( Handle self)
 void
 apc_prn_new_page( Handle self)
 {
+   objCheck;
    if ( EndPage( sys ps) < 0) apiPrnErr;
    if ( StartPage( sys ps) < 0) apiPrnErr;
 }
@@ -958,6 +988,7 @@ apc_prn_new_page( Handle self)
 void
 apc_prn_abort_doc( Handle self)
 {
+   objCheck;
    if ( AbortDoc( sys ps) < 0) apiPrnErr;
 
    hwnd_leave_paint( self);
