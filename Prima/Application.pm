@@ -56,9 +56,9 @@ Prima::Application - root of widget objects hierarchy
 Prima::Application class serves as a hierarchy root for
 all objects with child-owner relationship. All toolkit
 objects, existing with non-null owner property, belong 
-in their top-level parental relationship to Prima::Application
+by their top-level parental relationship to Prima::Application
 object. There can be only one instance of Prima::Application
-class at one time.
+class at a time.
 
 =head1 USAGE
 
@@ -107,7 +107,7 @@ actual, but uninformative results, - C<::origin> is one of those, but
 same are C<::buffered>, C<::clipOwner>, C<::enabled>, C<::growMode>,
 C<::owner> and owner-inheritance properties, C<::selectable>, C<::shape>,
 C<::syncPaint>, C<::tabOrder>, C<::tabStop>, C<::transparent>, C<::visible>.
-To this group also belongs C<::modalHorizon>, a Prima::Window property,
+To this group also belongs C<::modalHorizon>, Prima::Window class property,
 but defined for consistency and returning always 1. 
 Other methods and properties, like C<::size>, that provide different 
 functionality are described in L<"API">.
@@ -117,13 +117,13 @@ functionality are described in L<"API">.
 Prima::Application is a wrapper to functionality, that
 is not related to one or another class clearly.
 A notable example, paint mode, which is derived from Prima::Drawable
-class, allows painting on the screen, overwriting the information
-output by other programs. Although being subject to begin_paint()/end_paint()
+class, allows painting on the screen, overwriting the graphic information
+created by the other programs. Although being subject to begin_paint()/end_paint()
 brackets, this functionality can not be attached to a class-shared
-API, an therefore considered 'global'. All such functionality is gathered
+API, an therefore is considered global. All such functionality is gathered
 in the Prima::Application class.
 
-These topics enumerated below, related do global function, but
+These topics enumerated below, related to the global scope, but
 occupying more than one method or property - such functions 
 described in L<"API">.
 
@@ -131,7 +131,7 @@ described in L<"API">.
 
 =item Painting  
 
-As stated above, Prima::Application provides interface to
+As stated above, Prima::Application provides interface to the 
 on-screen painting. This mode is triggered by begin_paint()/end_paint()
 methods pair, and the other pair, begin_paint_info()/end_paint_info()
 triggers the information mode. This three-state paint functionality
@@ -156,7 +156,7 @@ Result of L<get_printer> method points to an automatically
 created printer object, responsible for the system-driven
 printing. Depending on the operating system, it is either 
 Prima::Printer, if the system provides GUI printing capabilities,
-or generic Prima::PS::Printer, a PostScript document interface.
+or generic Prima::PS::Printer, the PostScript document interface.
 
 See L<Prima::Printer> for details.
 
@@ -171,7 +171,7 @@ under Win32 and OS/2.
 These are no methods to access these clipboard objects, except
 fetch() ( or, the indirect name calling ) - the clipboard objects
 are named after the system clipboard names, which are
-returned from Prima::Clipboard::get_standard_clipboards.
+returned by Prima::Clipboard::get_standard_clipboards.
 
 The default clipboard is named I<Clipboard>, and is accessible via
 
@@ -193,7 +193,7 @@ set these options.
 
 C<Prima::Application> provides two methods for communicating
 with the help viewer window: C<open_help()> opens a selected topic
-in the window, and C<close_help()> closes that window.
+in the help window, and C<close_help()> closes the window.
 
 =item System-dependent information
 
@@ -204,11 +204,11 @@ extra system information, returned by Prima::Application methods.
 C<get_system_value> returns a system value for one of C<sv::XXX> constants,
 so the program can read the system-specific information. As well as
 C<get_system_info> method, that returns the short description of the system,
-it is the portable call. All systems return such information.
+it is the portable call. 
 To the contrary, C<sys_action> method is a wrapper to system-dependent
 functionality, called in non-portable way. This method is never used
 within the toolkit, and its usage is discouraged, primarily because
-its options do not serve the toolkit design, so are subject to change 
+its options do not serve the toolkit design, are subject to changes 
 and cannot be relied upon.
 
 =back
@@ -240,8 +240,8 @@ icon by default.
 
 A system boolean flag, showing whether text widgets
 through the system should insert ( 1 ) or overwrite ( 0 )
-text on user input. Not all systems provide such unifying
-functionality.
+text on user input. Not all systems provide the global state
+of the flag.
 
 =item helpClass STRING
 
@@ -265,39 +265,39 @@ subsystem until C<close_help> call is made.
 
 Create-only property.
 
-Specifies a class of widget, used as a hint label.
+Specifies a class of widget, used as the hint label.
 
 Default value: Prima::HintWidget
 
 =item hintColor COLOR
 
-An alias to foreground color property for hint label widget.
+An alias to foreground color property for the hint label widget.
 
 =item hintBackColor COLOR
 
-An alias to background color property for hint label widget.
+An alias to background color property for the hint label widget.
 
 =item hintFont %FONT
 
-An alias to font property for hint label widget.
+An alias to font property for the hint label widget.
 
 =item hintPause TIMEOUT
 
-Selects the timeout ( in milliseconds ) before hint label is shown
+Selects the timeout in milliseconds before the hint label is shown
 when the mouse pointer hovers over a widget.
 
 =item modalHorizon BOOLEAN
 
 A read-only property. Used as a landmark for
 the lowest-level modal horizon.
-Returns always 1.
+Always returns 1.
 
 =item palette [ @PALETTE ]
 
 Used only within paint and information modes.
 Selects solid colors in a system palette, as many as possible.
-PALETTE is an array of integer triplets, where each is R, G and B
-component.
+PALETTE is an array of integer triplets, where each is red, green, and blue
+component, with intensity range from 0 to 255.
 
 =item printerClass STRING
 
@@ -305,7 +305,7 @@ Create-only property.
 
 Specifies a class of object, used as a printer.
 The default value is system-dependent, but is either
-Prima::Printer or Prima::PS::Printer.
+C<Prima::Printer> or C<Prima::PS::Printer>.
 
 =item printerModule STRING
 
@@ -331,12 +331,12 @@ Returns two integers, width and height of the screen.
 
 =item showHint
 
-If 1, the toolkit is allowed to show a hint label over 
-a widget. If 0, it is forbidden. In addition to functionality
+If 1, the toolkit is allowed to show the hint label over 
+a widget. If 0, the display of the hint is forbidden. In addition to functionality
 of C<::showHint> property in Prima::Widget, Prima::Application::showHint
-is an another layer of hint visibility control - if it is 0,
+is another layer of hint visibility control - if it is 0,
 all hint actions are disabled, disregarding C<::showHint> value
-of widgets.
+in widgets.
 
 =back
 
@@ -377,21 +377,21 @@ Closes the help viewer window.
 
 =item end_paint
 
-Quits the enabled state and returns application object to a normal state. 
+Quits the enabled state and returns application object to the normal state. 
 
 =item end_paint_info
 
-Quits the information state and returns application object to a normal state. 
+Quits the information state and returns application object to the normal state. 
 
 =item font_encodings
 
 Returns array of encodings, represented by strings, that are recognized by the system
-and available in at least one font. Each system provides different
+and available for at least one font. Each system provides different
 sets of encoding strings; the font encodings are not portable.
 
 =item fonts NAME = '', ENCODING = ''
 
-Returns hash of font hashes ( see L<Prima::Drawable>, Fonts section )
+Returns hash of font hashes ( see L<Prima::Drawable/Fonts> )
 describing fonts of NAME font family and of ENCODING. If NAME is '' or C<undef>,
 returns one fonts hash for each of the font families that match the ENCODING
 string. If ENCODING is '' or C<undef>, no encoding match is performed.
@@ -457,25 +457,25 @@ HEIGHT are zero or negative, C<undef> is returned.
 
 =item get_hint_widget
 
-Returns a hint label widget, attached automatically to
+Returns the hint label widget, attached automatically to
 Prima::Application object during startup. The widget
 is of C<::hintClass> class, Prima::HintWidget by
 default.
 
 =item get_printer
 
-Returns a printer object, attached automatically to
+Returns the printer object, attached automatically to
 Prima::Application object. The object is of C<::printerClass>
 class.
 
 =item get_message_font
 
-Returns a font the system uses to draw the message text.
+Returns the font the system uses to draw the message text.
 The method can be called with a class string instead of an object instance.
 
 =item get_modal_window MODALITY_TYPE = mt::Exclusive, TOPMOST = 1
 
-Returns a modal window, that resides on an end of a
+Returns the modal window, that resides on an end of a
 modality chain. MODALITY_TYPE selects the chain, and can be either
 C<mt::Exclusive> or C<mt::Shared>. TOPMOST is a boolean flag, selecting
 the lookup direction; if it is 1, the 'topmost' window is returned,
@@ -490,7 +490,7 @@ of just one window, TOPMOST value is apparently irrelevant.
 Returns two integer values of two system-specific
 scrolling timeouts. The first is the initial timeout,
 that is applied when the user drags the mouse from
-a scrollable widget ( text field, for example ), and
+a scrollable widget ( a text field, for example ), and
 the widget is about to scroll, but the actual scroll
 is performed after the timeout is expired. The second 
 is the repetitive timeout, - if the dragging condition
@@ -526,7 +526,7 @@ user interface used in the system:
    gui::Motif
 
 The meaning of this field is somewhat vague, and
-the field might be deprecated in future releases.
+the field will possibly be deprecated in the future releases.
 
 =item guiDescription
 
@@ -570,19 +570,19 @@ of C<sv::XXX> constants. The constants are:
    sv::YPointer           acceptable by the system  
    sv::XScrollbar       - width of the default vertical scrollbar
    sv::YScrollbar       - height of the default horizontal scrollbar 
-                          ( see C<get_default_scrollbar_metrics()> )
+                          ( see get_default_scrollbar_metrics() )
    sv::XCursor          - width of the system cursor
-                          ( see C<get_default_cursor_width()> )
+                          ( see get_default_cursor_width() )
    sv::AutoScrollFirst  - the initial and the repetitive 
    sv::AutoScrollNext     scroll timeouts
-                          ( see C<get_scroll_rate()>
+                          ( see get_scroll_rate() )
    sv::InsertMode       - the system insert mode
-                          ( see C<::insertMode>
+                          ( see insertMode )
    sv::XbsNone          - widths and heights of the top-level window
    sv::YbsNone            decorations, correspondingly, with borderStyle
    sv::XbsSizeable        bs::None, bs::Sizeable, bs::Single, and
    sv::YbsSizeable        bs::Dialog. 
-   sv::XbsSingle          ( see C<get_default_window_borders()> )
+   sv::XbsSingle          ( see get_default_window_borders() )
    sv::YbsSingle
    sv::XbsDialog
    sv::YbsDialog
@@ -605,13 +605,13 @@ The method can be called with a class string instead of an object instance.
 =item get_widget_from_handle HANDLE
 
 HANDLE is an integer value of a toolkit widget. It is usually
-passed to a program by other IPC means, so it returns
+passed to the program by other IPC means, so it returns
 the associated widget. If no widget is associated with 
 HANDLE, C<undef> is returned.
 
 =item get_widget_from_point X_OFFSET, Y_OFFSET
 
-Returns a widget that occupies screen area under (X_OFFSET,Y_OFFSET)
+Returns the widget that occupies screen area under (X_OFFSET,Y_OFFSET)
 coordinates. If no toolkit widget are found, C<undef> is returned.
 
 =item go
@@ -622,7 +622,7 @@ The main event loop. Called by
 
 standard code. Returns when the program is about to
 terminate, or if the exception was signaled. In the
-latter case, can be safely re-started.
+latter case, the loop can be safely re-started.
 
 =item lock
 
@@ -633,16 +633,16 @@ The output can be restored with C<unlock()>.
 
 Opens the help viewer window with TOPIC string in 
 link POD format ( see L<perlpod> ) - the string is treated
-as "manpage/section", where 'manpage' is a file with POD 
-content and 'section' is a topic inside the manpage.
+as "manpage/section", where 'manpage' is the file with POD 
+content and 'section' is the topic inside the manpage.
 
 =item sys_action CALL
 
-CALL is an arbitrary string, contained the system
+CALL is an arbitrary string of the system
 service name and the parameters to it.
-This functionality is non-portable, and should be avoided.
+This functionality is non-portable, and its usage should be avoided.
 The system services provided are not documented and
-probably subject to change. The actual services
+subject to change. The actual services
 can be looked in the toolkit source code under
 I<apc_system_action> tag.
 
@@ -665,7 +665,7 @@ within the event loop. yield() cannot be used to
 organize event loops, but it can be employed to
 process stacked system events explicitly, to 
 increase responsiveness of a program, for example,
-inside a long calculation loop.
+inside a long calculation cycle.
 
 The method can be called with a class string instead of an object instance;
 however, the $::application object must be initialized.
