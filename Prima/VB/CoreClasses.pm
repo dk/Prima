@@ -1596,7 +1596,7 @@ sub init
       items => [
          ['~Next page' => '+' => '+' => sub { $self-> pg_inc(1); }],
          ['~Previous page' => '-' => '-' => sub { $self-> pg_inc(-1); }],
-         ['~Move widget to page...' => 'Ctrl+M' => '^M' => q(widget_repage)],
+         ['~Move widget to page...' => 'Ctrl+M' => '^M' => sub { $self-> widget_repage } ],
       ],
    )-> selected(0);
    $self-> add_hooks(qw(name owner DESTROY));
@@ -1812,6 +1812,7 @@ sub prf_types
    my %de = (
       items => ['tabs'],
       uiv   => ['tabIndex'],
+      bool  => ['style', 'orientation'],
    );
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
@@ -1847,14 +1848,72 @@ sub on_paint
    $canvas-> bar( 0, 0, @sz);
    $canvas-> color( $cl);
    my $fh = $canvas-> font-> height;
-   my $mh = ( $fh * 2 > 28 ) ? $fh * 2 : 28;
-   $canvas-> rect3d( 10, 10, $sz[0] - 11, $sz[1] - 10 - $mh, 1, reverse @c3d);
-   $canvas-> rect3d( 2, 2, $sz[0] - 3, $sz[1] - $mh, 1, @c3d);
+   my $mh = $fh * 2 + 4;
+   my @tabs = @{$self-> prf('tabs')};
+   my $earx = 16;
+
+   my ( $page, $last, $x, $maxx, $ix) = 
+      (0,'', $earx * 3, $sz[0] - $earx * 3 - 1, $self-> prf('pageIndex'));
+   my $y = $self-> prf('orientation') ? 0 : $sz[1] - $mh;
+   for ( @tabs) {
+      next unless $page++ >= $ix;
+      next if $_ eq $last;
+      $last = $_;
+      
+      my $w = $canvas-> get_text_width( $last);
+      $canvas-> text_out( $last, $x + $earx + 2, $y + $fh/2 + 2);
+      $canvas-> rectangle( $x+1, $y + $fh/2+1, $x + $earx * 2 + $w + 2, $y + $fh*3/2+2);
+      $canvas-> rectangle( $x, $y + $fh/2, $x + $earx * 2 + $w + 3, $y + $fh*3/2+3) if $page == $ix+1;
+      $x += $w + $earx * 2 + 4;
+      last if $x > $maxx;
+   }
+   $canvas-> rect3d( $earx/2, $y + $fh/2, $earx * 2.5, $y + $fh * 3/2+4, 2, @c3d, $canvas-> backColor);
+   $canvas-> rect3d( $maxx + $earx/2, $y + $fh/2, $maxx + $earx * 2.5, $y + $fh * 3/2+4, 2, @c3d, $canvas-> backColor);
+   $canvas-> fillpoly([$earx, $y + $fh, $earx*2, $y + $fh*0.5+3, $earx*2, $y + $fh*1.5-1]);
+   $canvas-> fillpoly([$maxx + $earx*2, $y + $fh, $maxx + $earx, $y + $fh*0.5+3, $maxx + $earx, $y + $fh*1.5-1]);
+
+   my @tr = $canvas-> translate;
+   $canvas-> translate( $self-> prf('orientation') ? (0, $mh) : (0,0));
+   if ( $self-> prf('style')) {
+      $canvas-> rect3d( 10, 10, $sz[0] - 11, $sz[1] - 10 - $mh, 1, reverse @c3d);
+      $canvas-> rect3d( 2, 2, $sz[0] - 3, $sz[1] - $mh, 1, @c3d);
+   }
    $canvas-> linePattern( lp::Dash);
-   $canvas-> rectangle( 12, 12, $sz[0] - 17, $sz[1] - 48 - $mh);
+   $canvas-> rectangle( 12, 12, $sz[0] - 17, $sz[1] - ($self-> prf('style') ? 48 : -4) - $mh);
    $canvas-> linePattern( lp::Solid);
+   $canvas-> translate(@tr);
    $self-> common_paint( $canvas);
 }
+
+sub on_mousedown
+{
+   my ( $self, $btn, $mod, $x, $y) = @_;
+   if ( $btn == mb::Left) {
+      my @sz = $self-> size;
+      my $fh = $self-> font-> height;
+      my $ny = $self-> prf('orientation') ? 0 : $sz[1] - 2 * $fh - 4;
+      my $earx = 16;
+      my $maxx = $sz[0] - $earx;
+      if ( $y > $ny + $fh/2 && $y < $ny + $fh*3/2+4) {
+          if ( $x > $earx/2 && $x < $earx * 2.5) {
+	     $self-> prf_set( 'pageIndex' => $self-> prf('pageIndex') - 1);
+	     return;
+	  } elsif ( $x > $maxx - $earx*1.5 && $x < $maxx + $earx/2) {
+	     $self-> prf_set( 'pageIndex' => $self-> prf('pageIndex') + 1);
+	     return;
+	  }
+      }
+   }
+   $self-> SUPER::on_mousedown( $btn, $mod, $x, $y);
+}
+
+sub prf_orientation { $_[0]-> repaint }
+sub prf_style { $_[0]-> repaint }
+sub prf_pageIndex { 
+   $_[0]-> SUPER::prf_pageIndex( $_[1]);
+   $_[0]-> repaint;
+}
+
 
 package Prima::VB::Header;
 use vars qw(@ISA);
