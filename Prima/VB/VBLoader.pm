@@ -32,7 +32,10 @@ $builderActive = 0;
 
 sub GO_SUB
 {
-   return $builderActive ? $_[0] : eval "sub { $_[0] }";
+   return $_[0] if $builderActive;
+   my $x = eval "sub { $_[0] }";
+   if ( $@) { printf( STDERR "VBLoader: $@. Code: ---\n$_[0]\n---\n" ); return sub {}};
+   return $x;
 }
 
 sub AUTOFORM_REALIZE
@@ -137,7 +140,7 @@ sub AUTOFORM_CREATE
    my $contents;
    {
       local $/;
-      open F, $filename or die "Cannot open $filename\n";
+      open F, $filename or die "Cannot open $filename:$!\n";
       $contents = <F>;
       close F;
    }
