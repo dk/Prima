@@ -534,7 +534,7 @@ text exchange.
 
 =head2 Timeouts
 
-Raw X11 provides no such GUI helpers and double-click event, cursor, or menu.
+Raw X11 provides no such GUI helpers as double-click event, cursor, or menu.
 Neither does it provide the related time how often, for example, a cursor would
 blink. Therefore Prima emulates these, but allows the user to reprogram the
 corresponding timeouts. Prima recognizes the following properties, accessible
@@ -667,7 +667,7 @@ X - XRDB
 
 =item *
 
-A - all together
+A - all of the above
 
 =back
 
@@ -676,8 +676,8 @@ Example:
    --debug=xf
 
 Also, the built-in X API C<XSynchronize> call, which enables X protocol
-synchronization ( at expense of operation slowdown ) is activated with
-C<--sync> command-line argument, and can be used to ease eventual debugging.
+synchronization ( at expense of operation slowdown though ) is activated with
+C<--sync> command-line argument, and can be used to ease the debugging.
 
 =head1 AUTHOR
 
