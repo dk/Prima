@@ -85,6 +85,9 @@ sub profile_check_in
    my $style = exists $p->{style} ? $p->{style} : $default->{style};
    if ( $style != cs::Simple) {
       $p->{ entryHeight} = exists $p->{height} ? $p->{height} : $default->{height} unless exists $p->{ entryHeight};
+   } else {
+      my $fh = exists $p->{font}->{height} ? $p->{font}->{height} : $default->{font}->{height};
+      $p->{ entryHeight} = $fh + 2 unless exists $p->{entryHeight};
    }
 }
 
@@ -123,6 +126,7 @@ sub init
       multiSelect => 0,
       clipOwner   => $self-> {style} == cs::Simple,
       visible     => $self-> {style} == cs::Simple,
+      (map { $_ => $profile{$_}} keys %listDynas),
       (map { $_ => $profile{$_}} keys %listProps),
       %{$profile{listProfile}},
    );
@@ -355,6 +359,9 @@ sub InputLine_Change
 {
    return if defined $_[0]->{edit}->{interaction};
    return unless $_[0]-> {literal};
+
+   $_[0]->notify(q(Change)) if $_[0]->{style} != cs::DropDownList;
+
    $_[0]->{list}->{interaction} = 1;
    my ( $self, $style, $list, $edit) = ($_[0], $_[0]->{style}, $_[0]->{list}, $_[1]);
    my $i;
