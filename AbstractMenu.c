@@ -274,6 +274,7 @@ AbstractMenu_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
    ((( PComponent) var owner)-> self)-> attach ( var owner, self);
+   my set_items( self, pget_sv( items));
    my update_sys_handle( self, profile);
    if ( pget_B( selected)) my set_selected( self, true);
 }
@@ -281,7 +282,8 @@ AbstractMenu_init( Handle self, HV * profile)
 void
 AbstractMenu_done( Handle self)
 {
-   ((( PComponent) var owner)-> self)-> detach ( var owner, self, false);
+   if ( my get_selected( self)) my set_selected( self, false);
+   ((( PComponent) var owner)-> self)-> detach( var owner, self, false);
    apc_menu_destroy( self);
    my dispose_menu( self, var tree);
    inherited done( self);
@@ -345,7 +347,6 @@ new_av(  PMenuItemReg m, int level)
          else {
             if ( m-> code) av_push( loc, newSVsv( m-> code)); else
             if ( m-> perlSub) av_push( loc, newSVpv( m-> perlSub, 0));
-            // else if ( m-> sysCmd) av_push( loc, newSViv( m-> sysCmd));
          }
       }
       av_push( glo, newRV_noinc(( SV *) loc));
@@ -381,6 +382,16 @@ AbstractMenu_get_items ( Handle self, char * varName)
       return ( m && m-> down) ? new_av( m-> down, 1) : nilSV;
    } else return var tree ? new_av( var tree, 0) : nilSV;
 }
+
+void
+AbstractMenu_set_items ( Handle self, SV * items)
+{
+   PMenuItemReg oldBranch = var tree;
+   var tree = my new_menu( self, items, 0);
+   apc_menu_update( self, oldBranch, var tree);
+   my dispose_menu( self, oldBranch);
+}
+
 
 static PMenuItemReg
 do_link( Handle self, PMenuItemReg m, PMenuProc p, void * params, Bool useDisabled)
@@ -419,8 +430,9 @@ AbstractMenu_set_check( Handle self, char * varName, Bool check)
 {
    PMenuItemReg m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
-   m-> checked = check;
+   if ( m-> divider || m-> down) return;
    if ( m-> id) apc_menu_item_set_check( self, m, check);
+   m-> checked = check;
 }
 
 Bool
@@ -437,19 +449,27 @@ AbstractMenu_get_enabled ( Handle self, char * varName)
    return ( m) ? !m-> disabled : false;
 }
 
+Handle
+AbstractMenu_get_image( Handle self, char * varName)
+{
+   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   if ( m == nil) return false;
+   return ( m) ? m-> bitmap : nilHandle;
+}
+
 char *
 AbstractMenu_get_text ( Handle self, char * varName)
 {
    PMenuItemReg m = my first_that( self, var_match, varName, true);
    if ( m == nil) return false;
-   return ( m) ? m-> text : "";
+   return ( m && m-> text) ? m-> text : "";
 }
 
 char *
 AbstractMenu_get_accel ( Handle self, char * varName)
 {
    PMenuItemReg m = my first_that( self, var_match, varName, true);
-   return ( m) ? m-> accel : "";
+   return ( m && m-> accel) ? m-> accel : "";
 }
 
 SV *
@@ -460,7 +480,6 @@ AbstractMenu_get_action ( Handle self, char * varName)
    {
       if ( m-> code)    return newSVsv( m-> code);
       if ( m-> perlSub) return newSVpv( m-> perlSub, 0);
-      // if ( m-> sysCmd)  return newSViv( m-> sysCmd);
    }
    return nilSV;
 }
@@ -469,7 +488,7 @@ int
 AbstractMenu_get_key ( Handle self, char * varName)
 {
    PMenuItemReg m = my first_that( self, var_match, varName, true);
-   return ( m) ? ! m-> key : kbNoKey;
+   return ( m && !(m-> divider) && !(m-> down)) ? ! m-> key : kbNoKey;
 }
 
 void
@@ -477,15 +496,41 @@ AbstractMenu_set_enabled ( Handle self, char * varName, Bool enabled)
 {
    PMenuItemReg m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
+   if ( m-> divider || m-> down) return;
    if ( m-> id) apc_menu_item_set_enabled( self, m, enabled);
    m-> disabled = !enabled;
 }
+
+void
+AbstractMenu_set_image ( Handle self, char * varName, Handle image)
+{
+   PMenuItemReg m = my first_that( self, var_match, varName, true);
+   PImage i = ( PImage) image;
+
+   if ( m == nil) return;
+   if ( !m-> bitmap) return;
+   if (( image == nilHandle) || !( kind_of( image, CImage))) {
+      warn("RTC0039: set_image error: invalid image passed");
+      return;
+   }
+   if ( i-> status != 0 || i-> w == 0 || i-> h == 0) {
+      warn("RTC0039: set_image error: invalid image passed");
+      return;
+   }
+
+   my attach( self, image);
+   my detach( self, m-> bitmap, false);
+   if ( m-> id) apc_menu_item_set_image( self, m, image);
+   m-> bitmap = image;
+}
+
 
 void
 AbstractMenu_set_text ( Handle self, char * varName, char * text)
 {
    PMenuItemReg m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
+   if ( m-> text == nil) return;
    if ( m-> id) apc_menu_item_set_text( self, m, text);
    free( m-> text);
    m-> text = malloc( strlen( text) + 1);
@@ -497,6 +542,7 @@ AbstractMenu_set_accel ( Handle self, char * varName, char * accel)
 {
    PMenuItemReg m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
+   if ( m-> text == nil) return;
    if ( m-> id) apc_menu_item_set_accel( self, m, accel);
    free( m-> accel);
    m-> accel = malloc( strlen( accel) + 1);
@@ -508,6 +554,7 @@ AbstractMenu_set_action ( Handle self, char * varName, SV * action)
 {
    PMenuItemReg m = my first_that( self, var_match, varName, true);
    if ( m == nil) return;
+   if ( m-> divider || m-> down) return;
    if ( SvROK( action))
    {
       if ( m-> code) sv_free( m-> code);
@@ -515,7 +562,6 @@ AbstractMenu_set_action ( Handle self, char * varName, SV * action)
       if ( SvTYPE( SvRV( action)) == SVt_PVCV)
       {
          m-> code = newSVsv( action);
-         // m-> sysCmd  = 0;
          free( m-> perlSub);
          m-> perlSub = nil;
       }
@@ -523,14 +569,11 @@ AbstractMenu_set_action ( Handle self, char * varName, SV * action)
    else
    {
       char * line = ( char *) SvPV( action, na);
-      // m-> sysCmd = atol( line);
       free( m-> perlSub);
       if ( m-> code) sv_free( m-> code);
       m-> code = nil;
-      // if ( m-> sysCmd == 0) {
       m-> perlSub = malloc( strlen( line) + 1);
       strcpy( m-> perlSub, line);
-      // } else m-> perlSub = nil;
    }
 }
 
@@ -540,6 +583,7 @@ AbstractMenu_set_key( Handle self, char * varName, char * key)
    PMenuItemReg m = my first_that( self, var_match, varName, true);
    int _key = key_normalize( key);
    if ( m == nil) return;
+   if ( m-> divider || m-> down) return;
    if ( m-> id) apc_menu_item_set_key( self, m, _key);
    m-> key = _key;
 }
@@ -594,8 +638,8 @@ kmcc ( Handle self, PMenuItemReg m, void * params)
 {
    if ((( PKmcc) params)-> key == m-> key)
    {
-      m-> disabled = !(( PKmcc) params)-> enabled;
       if ( m-> id) apc_menu_item_set_enabled( self, m, !m-> disabled);
+      m-> disabled = !(( PKmcc) params)-> enabled;
    }
    return false;
 }
@@ -667,24 +711,22 @@ static Bool increase_id( Handle self, PMenuItemReg m, int * params)
 void
 AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 {
-   PMenuItemReg *up, m, addFirst, addLast;
-   Bool selected;
+   PMenuItemReg *up, m, addFirst, addLast, branch;
 
    if ( SvTYPE( menuItems) == SVt_NULL) return;
 
-   selected = my get_selected( self);
    if ( strlen( rootName) == 0)
    {
       if ( var tree == nil)
       {
          var tree = my new_menu( self, menuItems, 0);
-         if ( selected) my set_selected( self, true);
+         apc_menu_update( self, nil, var tree);
          return;
       }
       m = var tree;
       up = &var tree;
    } else {
-      m = my first_that( self, var_match, rootName, true);
+      branch = m = my first_that( self, var_match, rootName, true);
       if ( m == nil || m-> down == nil) return;
       up = &m-> down;
       m = m-> down;
@@ -725,6 +767,6 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       addFirst = addFirst-> next;
    }
 
-   if ( selected) my set_selected( self, true);
+   apc_menu_update( self, branch, branch);
 }
 
