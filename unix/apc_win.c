@@ -499,11 +499,10 @@ apc_window_set_icon( Handle self, Handle icon)
    int n;
 
    if ( !icon) {
-      wmhints. flags = IconPixmapHint | IconMaskHint;
-      wmhints. icon_pixmap = nilHandle;
-      wmhints. icon_mask   = nilHandle;
+      XDeleteProperty( DISP, X_WINDOW, XA_WM_HINTS);
+      wmhints. flags = InputHint;
+      wmhints. input = false; 
       XSetWMHints( DISP, X_WINDOW, &wmhints);
-      XCHECKPOINT;
       return true;
    }
 
