@@ -375,7 +375,7 @@ Image_set_extended_data( Handle self, HV * profile)
          goto GOOD_RETURN;
       }   
       if ( !pexistType) { /* plain repadding */
-         ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 0, 0, nil);
+         ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 1, 1, nil);
          my-> update_change( self);
          goto GOOD_RETURN;
       }   
@@ -1076,7 +1076,7 @@ Image_map( Handle self, Color color)
       case ropNoOper:
          break;   
       default: {   
-         Color c = my-> get_color( self);
+         Color c = i ? my-> get_backColor( self) : my-> get_color( self);
          r[i]. r = ( c >> 16) & 0xff;
          r[i]. g = ( c >> 8) & 0xff;
          r[i]. b = c & 0xff;
