@@ -409,28 +409,6 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
     return true;
 }
 
-static Bool 
-propagate_mouse( Handle self, Event * e)
-{
-   Handle xself = self;
-   Event ev = *e;
-   Point p = e-> pos. where, pos;
-   while ( PWidget(xself)-> owner &&
-           PWidget(xself)-> owner != application &&
-           X(xself)-> flags. clip_owner) {
-      pos = apc_widget_get_pos( xself);
-      xself = PWidget(xself)-> owner;
-      p. x += pos. x; 
-      p. y += pos. y; 
-      ev. pos. where = p;
-      ev. cmd = e-> cmd;
-      CComponent( xself)-> message( xself, &ev);
-      if ( !ev. cmd) return false;
-      if ( PObject( self)-> stage == csDead) return false; 
-      if ( PObject( xself)-> stage == csDead) return false; 
-   }
-   return true;
-}
 
 /*
 static char * xevdefs[] = { "0", "1"
@@ -1007,19 +985,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          case cmKeyDown:
             if ( prima_handle_menu_shortcuts( self, ev, keysym) < 0) return;
             break;
-         case cmMouseDown: case cmMouseUp: case cmMouseMove: 
-            if ( !propagate_mouse( self, &e)) return;
-            break;
          }
       }
       if ( secondary. cmd) {
 	 CComponent( self)-> message( self, &secondary);
          if ( PObject( self)-> stage == csDead) return; 
-         switch ( secondary. cmd) {
-         case cmMouseWheel: case cmMouseClick:
-            if ( !propagate_mouse( self, &secondary)) return;
-            break;
-         }
       }
    } else {
       /* Unhandled event, do nothing */

@@ -415,40 +415,6 @@ find_oid( PAbstractMenu menu, PMenuItemReg m, int id)
    return m-> down && ( m-> down-> id == id);
 }
 
-static void
-propagate( Handle self, UINT msg, PEvent ev, WPARAM mp1, LPARAM mp2)
-{
-   HWND prop, org = HANDLE;
-   RECT r;
-   POINT pt;
-
-   if ( !is_apt( aptClipOwner) || ( var owner == application))
-      return;
-
-   if ( !( self = var owner))
-      return;
-
-   prop = HANDLE;
-
-   if ( msg != WM_MOUSEWHEEL) {
-      pt. x = ( short) LOWORD( mp2);
-      pt. y = ( short) HIWORD( mp2);
-      GetWindowRect( prop, &r);
-      MapWindowPoints( NULL, prop, ( POINT*) &r, 2);
-      r. right--;
-      r. bottom--;
-      MapWindowPoints( org, prop, &pt, 1);
-      if (
-          (( pt. x < 0) || ( pt. y < 0) || ( pt. x > r. right) || ( pt. y > r. bottom)) &&
-          ( GetCapture() != prop)
-         )
-         return;
-      mp2 = MAKELPARAM( pt. x, pt. y);
-   }
-
-   PostMessage( prop, msg + 0x400, mp1, mp2);
-}
-
 
 static void
 zorder_sync( Handle self, HWND me, LPWINDOWPOS lp)
@@ -691,14 +657,8 @@ AGAIN:
         DestroyCaret();
       }
       break;
-   case WM_LBUTTONDBLCLK + 0x400: case WM_LBUTTONUP + 0x400:   case WM_LBUTTONDOWN + 0x400:
-   case WM_MBUTTONDBLCLK + 0x400: case WM_MBUTTONUP + 0x400:   case WM_MBUTTONDOWN + 0x400:
-   case WM_RBUTTONDBLCLK + 0x400: case WM_RBUTTONUP + 0x400:   case WM_RBUTTONDOWN + 0x400:
-   case WM_RMOUSECLICK   + 0x400: case WM_MMOUSECLICK + 0x400: case WM_LMOUSECLICK + 0x400:
-   case WM_MOUSEWHEEL    + 0x400:
-       SendMessage( win, msg - 0x400, mp1, mp2);
-       return 0;
    case WM_LBUTTONDOWN:
+      printf("%s\n", v-> name);
       ev. pos. button = mbLeft;
       goto MB_DOWN;
    case WM_RBUTTONDOWN:
@@ -984,9 +944,7 @@ AGAIN:
    case WM_RMOUSECLICK:   case WM_MMOUSECLICK: case WM_LMOUSECLICK:
       if ( ev. cmd == 0)
          return ( LRESULT)1;
-// propagate message
-      propagate( self, orgMsg, &ev, mp1, mp2);
-      break;
+      return ( LRESULT)1;
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
        // ev. cmd = 1; // forced call DefWindowProc superseded for test reasons
@@ -995,8 +953,6 @@ AGAIN:
       if ( is_apt( aptEnabled)) SetCursor( sys pointer);
       break;
    case WM_MOUSEWHEEL:
-      if ( ev. cmd)
-         propagate( self, orgMsg, &ev, mp1, mp2);
       return ( LRESULT)1;
    case WM_WINDOWPOSCHANGING:
        {
@@ -1074,7 +1030,6 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    case WM_ENABLE:
    case WM_FORCEFOCUS:
    case WM_MOUSEWHEEL:
-   case WM_MOUSEWHEEL + 0x400:
    case WM_ZORDERSYNC:
       return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
    case WM_QUERYNEWPALETTE:
