@@ -1510,7 +1510,6 @@ typedef struct _ObjectOptions_ {
    unsigned optPreserveType        : 1;   /* Image */
    unsigned optVScaling            : 1;
    unsigned optHScaling            : 1;
-   unsigned optDisableUpdate       : 1;   /* Icon */
    unsigned optAutoPopup           : 1;   /* Popup */
    unsigned optActive              : 1;   /* Timer */
    unsigned optOwnerIcon           : 1;   /* Window */
@@ -2672,6 +2671,18 @@ ICT(Halftone)
 ICT(ErrorDiffusion)
 END_TABLE(ict,UV)
 #undef ICT
+
+/* Icon auto masking types */
+#define AM(const_name) CONSTANT(am,const_name)
+START_TABLE(am,UV)
+#define    amNone               0
+AM(None)
+#define    amMaskColor           1
+AM(MaskColor)
+#define    amAuto                2
+AM(Auto)           
+END_TABLE(am,UV)
+#undef AM
 
 /* image & bitmaps */
 extern Bool

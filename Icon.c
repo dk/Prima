@@ -47,44 +47,34 @@ produce_mask( Handle self)
    Byte * area8 = var-> data;
    Byte * dest = var-> mask;
    Byte * src;
-   Byte color;
+   Byte color = 0;
    RGBColor rgbcolor;
    int i, bpp2;
    int line8Size = (( var-> w * 8 + 31) / 32) * 4;
    int bpp = var-> type & imBPP;
    int w = var-> w, h = var-> h;
-   int transpIx = -1;
 
    if ( var-> w == 0 || var-> h == 0) return;
 
-   // checking transparency extra info
-   {
-      SV ** holder = hv_fetch(( HV*) SvRV( var-> mate), "extraInfo", 9, 0);
-      if ( holder && SvROK( *holder) && SvTYPE( SvRV( *holder)) == SVt_PVHV) {
-         HV * hv = ( HV*) SvRV( *holder);
-         holder = hv_fetch( hv, "transparentColorIndex", 21, 0);
-         if ( holder && SvIOK( *holder)) {
-            transpIx = SvIV( *holder);
-            if ( transpIx < 0 || transpIx >= var-> palSize) transpIx = -1;
-            if ( transpIx > 0 && !hv_exists( hv, "transparentColor.R", 18)) {
-               hv_store( hv, "transparentColor.R", 18, newSViv( var-> palette[ transpIx]. r), 0);
-               hv_store( hv, "transparentColor.G", 18, newSViv( var-> palette[ transpIx]. g), 0);
-               hv_store( hv, "transparentColor.B", 18, newSViv( var-> palette[ transpIx]. b), 0);
-            }
-         }
-      }
-   }
+   if ( var-> autoMasking == amNone) return;
+
+   if ( var-> autoMasking == amMaskColor) {
+      rgbcolor. b = var-> maskColor & 0xFF;
+      rgbcolor. g = (var-> maskColor >> 8)  & 0xFF;
+      rgbcolor. r = (var-> maskColor >> 16) & 0xFF;
+      if ( bpp <= 8)
+         color = cm_nearest_color( rgbcolor, var-> palSize, var-> palette);
+   }   
 
    if ( bpp == imMono) {
       // mono case simplifies our task
-      int j = var-> maskSize;
-      int ix = ( transpIx <= 0) ? 0 : 1;
+      int  j = var-> maskSize;
       Byte * mask = var-> mask;
       memcpy ( var-> mask, var-> data, var-> dataSize);
-      if ( transpIx <= 0) {
+      if ( color == 0) {
          while ( j--) mask[ j] = ~mask[ j];
       }
-      var-> palette[ix]. r = var-> palette[ix]. g = var-> palette[ix]. b = 0;
+      var-> palette[color]. r = var-> palette[color]. g = var-> palette[color]. b = 0;
       return;
    }
 
@@ -103,7 +93,7 @@ produce_mask( Handle self)
       break;
    }
 
-   if ( transpIx < 0) {  // calculate transparent color
+   if ( var-> autoMasking == amAuto) {  // calculate transparent color
       Byte corners [4];
       Byte counts  [4] = {1, 1, 1, 1};
       RGBColor rgbcorners[4];
@@ -221,10 +211,7 @@ produce_mask( Handle self)
             }
       }
 colorFound:;
-   } else {
-      color = transpIx;
-      rgbcolor = var-> palette[ color];
-   }
+   } 
 
    // processing transparency
    memset( var-> mask, 0, var-> maskSize);
@@ -281,6 +268,8 @@ void
 Icon_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
+   my-> set_maskColor( self, pget_i( maskColor));
+   my-> set_autoMasking( self, pget_i( autoMasking));
    my-> set_mask( self, pget_sv( mask));
 }
 
@@ -290,21 +279,60 @@ Icon_mask( Handle self, Bool set, SV * svmask)
 {
    STRLEN maskSize;
    void * mask;
+   int am = var-> autoMasking;
    if ( var-> stage > csFrozen) return nilSV;
    if ( !set)
       return newSVpvn(( char *) var-> mask, var-> maskSize);
    mask = SvPV( svmask, maskSize);
    if ( is_opt( optInDraw) || maskSize <= 0) return nilSV;
    memcpy( var-> mask, mask, maskSize > var-> maskSize ? var-> maskSize : maskSize);
+   var-> autoMasking = amNone;
+   my-> update_change( self);
+   var-> autoMasking = am;
    return nilSV;
 }
+
+int
+Icon_autoMasking( Handle self, Bool set, int autoMasking)
+{
+   if ( !set)
+      return var-> autoMasking;
+   if ( var-> autoMasking == autoMasking) return 0;
+   var-> autoMasking = autoMasking;
+   if ( is_opt( optInDraw)) return 0;
+   my-> update_change( self);
+   return 0;
+}   
+
+Color
+Icon_maskColor( Handle self, Bool set, Color color)
+{
+   if ( !set)
+      return var-> maskColor;
+   if ( var-> maskColor == color) return 0;
+   var-> maskColor = color;
+   if ( is_opt( optInDraw)) return 0;
+   if ( var-> autoMasking == amMaskColor) 
+      my-> update_change( self);
+   return clInvalid;
+}   
 
 void
 Icon_update_change( Handle self)
 {
-   if ( is_opt( optDisableUpdate)) 
-      return;
    inherited update_change( self);
+
+   if ( var-> autoMasking == amNone) {
+      int maskLine = (( var-> w + 31) / 32) * 4;
+      int maskSize = maskLine * var-> h;
+      if ( maskLine != var-> maskLine || maskSize != var-> maskSize) {
+         free( var-> mask);
+         var-> maskLine = maskLine;
+         var-> mask = allocb( var-> maskSize = maskSize);
+      }
+      return;
+   }   
+   
    free( var-> mask);
    if ( var-> data)
    {
@@ -321,7 +349,7 @@ void
 Icon_stretch( Handle self, int width, int height)
 {
    Byte * newMask = nil;
-   int lineSize, oldW = var-> w, oldH = var-> h;
+   int lineSize, oldW = var-> w, oldH = var-> h, am = var-> autoMasking;
    if ( var->stage > csFrozen) return;
    if ( width  >  65535) width  =  65535;
    if ( height >  65535) height =  65535;
@@ -334,31 +362,21 @@ Icon_stretch( Handle self, int width, int height)
       return;
    }
    
-   opt_set( optDisableUpdate);
-   inherited stretch( self, width, height);
-   opt_clear( optDisableUpdate);
    lineSize = (( abs( width) + 31) / 32) * 4;
    newMask  = allocb( lineSize * abs( height));
    if ( newMask == nil)
       croak("Icon::stretch: cannot allocate %d bytes", lineSize * abs( height));
+   var-> autoMasking = amNone;
    if ( var-> mask) 
       ic_stretch( imMono, var-> mask, oldW, oldH, newMask, width, height, is_opt( optHScaling), is_opt( optVScaling));
-      
+   inherited stretch( self, width, height);
    free( var-> mask);
    var->mask = newMask;
    var->maskLine = lineSize;
    var->maskSize = lineSize * abs( height);
-   inherited update_change( self); 
+   inherited stretch( self, width, height);
+   var-> autoMasking = am;
 }
-
-/*
-void
-Icon_update_mask_change( Handle self)
-{
-   if ( !var-> data) return;
-   produce_mask( self);
-}
-*/
 
 void
 Icon_create_empty( Handle self, int width, int height, int type)
@@ -401,6 +419,7 @@ Icon_split( Handle self)
    sv_free(( SV *) profile);
    i = ( PImage) ret. andMask;
    memcpy( i-> data, var-> mask, var-> maskSize);
+   i-> self-> update_change(( Handle) i);
 
    var-> self-> className = inherited className;
    ret. xorMask         = inherited dup( self);
@@ -414,6 +433,9 @@ void
 Icon_combine( Handle self, Handle xorMask, Handle andMask)
 {
    Bool killAM = 0;
+   int am = var-> autoMasking;
+
+   
    if ( !kind_of( xorMask, CImage) || !kind_of( andMask, CImage))
       return;
    my-> create_empty( self, PImage( xorMask)-> w, PImage( xorMask)-> h, PImage( xorMask)-> type);
@@ -432,8 +454,14 @@ Icon_combine( Handle self, Handle xorMask, Handle andMask)
 
    memcpy( var-> data, PImage( xorMask)-> data, var-> dataSize);
    memcpy( var-> mask, PImage( andMask)-> data, var-> maskSize);
+   memcpy( var-> palette, PImage( xorMask)-> palette, 768);
+   var-> palSize = PImage( xorMask)-> palSize;
 
    if ( killAM) Object_destroy( andMask);
+
+   var-> autoMasking = amNone;
+   my-> update_change( self);
+   var-> autoMasking = am;
 }
 
 #ifdef __cplusplus

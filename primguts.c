@@ -1204,6 +1204,7 @@ register_constants( void)
    register_im_constants();
    register_ict_constants();
    register_is_constants();
+   register_am_constants();
    register_apc_constants();
    register_gui_constants();
    register_dt_constants();

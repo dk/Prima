@@ -36,7 +36,11 @@ object Prima::Icon( Prima::Image)
    unsigned char*    mask;
    int               maskLine;
    int               maskSize;
+   Color             maskColor;
+   int               autoMasking;
    property SV *     mask;
+   property Color    maskColor;
+   property int      autoMasking;
    method void       init( HV * profile);
    method Handle     dup();
    method IconHandle split();

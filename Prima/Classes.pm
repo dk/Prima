@@ -536,7 +536,9 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      mask  => '',
+      autoMasking => am::Auto,
+      mask        => '',
+      maskColor   => 0,
    );
    @$def{keys %prf} = values %prf;
    return $def;

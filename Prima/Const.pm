@@ -63,6 +63,7 @@ package sv; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# system values
 package im; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# image types
 package ict; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image conversion types
 package is; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Image statistics types
+package am; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Icon auto masking
 package apc; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# OS type
 package gui; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# GUI types
 package dt; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Drives types & draw_text constants
