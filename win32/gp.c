@@ -786,7 +786,7 @@ apc_gp_get_font_abc( Handle self, int first, int last)
 
    f1 = malloc(( last - first + 1) * sizeof( FontABC));
    if ( !gp_GetCharABCWidthsFloat( sys ps, first, last, f2)) apiErr;
-   for ( i = first; i <= last; i++) {
+   for ( i = 0; i <= first - last; i++) {
       f1[i].a = f2[i].abcfA;
       f1[i].b = f2[i].abcfB;
       f1[i].c = f2[i].abcfC;

@@ -400,8 +400,6 @@ apc_image_begin_paint( Handle self)
    apcErrClear;
    objCheck false;
    if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
-   sys bpp = (( PImage( self)-> type & imBPP) == imbpp1) ? 1 :
-      GetDeviceCaps( sys ps, BITSPIXEL);
    if ( sys bm == nilHandle) {
       Handle deja  = image_enscreen( self, self);
       image_set_cache( deja, self);
@@ -411,6 +409,7 @@ apc_image_begin_paint( Handle self)
    if ( !sys pal)
       sys pal = image_make_bitmap_palette( self);
    hwnd_enter_paint( self);
+   if (( PImage( self)-> type & imBPP) == imbpp1) sys bpp = 1;
    if ( sys pal) {
       SelectPalette( sys ps, sys pal, 0);
       RealizePalette( sys ps);
@@ -427,6 +426,7 @@ apc_image_begin_paint_info( Handle self)
    if ( !sys pal) sys pal = image_make_bitmap_palette( self);
    if ( sys pal) SelectPalette( sys ps, sys pal, 0);
    hwnd_enter_paint( self);
+   if (( PImage( self)-> type & imBPP) == imbpp1) sys bpp = 1;
    return true;
 }
 

@@ -78,9 +78,9 @@ stylus_alloc( PStylus data)
       } else {
          int i, delta = p-> lopnWidth. x > 1 ? p-> lopnWidth. x - 1 : 0;
          LOGBRUSH pb;
-	 pb. lbStyle = BS_SOLID;
-	 pb. lbColor = ret-> s. pen. lopnColor;
-	 pb. lbHatch = 0;
+         pb. lbStyle = BS_SOLID;
+         pb. lbColor = ret-> s. pen. lopnColor;
+         pb. lbHatch = 0;
          for ( i = 1; i < ret-> s. extPen. patResource-> dotsCount; i += 2)
             ret-> s. extPen. patResource-> dotsPtr[ i] += delta;
          if ( !( ret-> hpen   = ExtCreatePen( ret-> s. extPen. style, p-> lopnWidth. x, &pb,
@@ -628,6 +628,8 @@ font_pp2font( char * presParam, Font * f)
 
    strncpy( f-> name, p, 256);
    p = f-> name;
+   f-> style = 0;
+   f-> pitch = fpDefault;
    for ( i = strlen( p) - 1; i >= 0; i--)  {
       if ( p[ i] == '.')  {
          if ( stricmp( "Italic",    &p[ i + 1]) == 0) f-> style |= fsItalic;
@@ -638,6 +640,7 @@ font_pp2font( char * presParam, Font * f)
       }
    }
    f-> width = f-> height = C_NUMERIC_UNDEF;
+   f-> direction = 0;
 }
 
 PFont
@@ -1298,8 +1301,13 @@ hwnd_enter_paint( Handle self)
    sys stylus. extPen. actual = false;
    apt_set( aptDCChangeLock);
    sys bpp = GetDeviceCaps( sys ps, BITSPIXEL);
-   apc_gp_set_color( self, sys viewColors[ ciFore]);
-   apc_gp_set_back_color( self, sys viewColors[ ciBack]);
+   if ( is_apt( aptWinPS)) {
+      apc_gp_set_color( self, sys viewColors[ ciFore]);
+      apc_gp_set_back_color( self, sys viewColors[ ciBack]);
+   } else {
+      apc_gp_set_color( self, sys lbs[0]);
+      apc_gp_set_back_color( self, sys lbs[1]);
+   }
 
    if ( sys psd == nil) sys psd = malloc( sizeof( PaintSaveData));
    apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));

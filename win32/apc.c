@@ -50,13 +50,13 @@ apc_application_begin_paint ( Handle self)
    objCheck false;
    apcErrClear;
    if ( !( sys ps = dc_alloc())) apiErrRet;
+   apt_set( aptWinPS);
+   apt_set( aptCompatiblePS);
    hwnd_enter_paint( self);
    if ( sys pal = palette_create( self)) {
       SelectPalette( sys ps, sys pal, 0);
       RealizePalette( sys ps);
    }
-   apt_set( aptWinPS);
-   apt_set( aptCompatiblePS);
    return true;
 }
 
@@ -231,9 +231,9 @@ hwnd_to_view( HWND win)
 
 int
 apc_application_get_os_info( char *system, int slen,
-			     char *release, int rlen,
-			     char *vendor, int vlen,
-			     char *arch, int alen)
+                             char *release, int rlen,
+                             char *vendor, int vlen,
+                             char *arch, int alen)
 {
    SYSTEM_INFO si;
    OSVERSIONINFO os = { sizeof( OSVERSIONINFO)};
@@ -243,15 +243,15 @@ apc_application_get_os_info( char *system, int slen,
    GetVersionEx( &os);
    if ( system) {
       if ( IS_NT) {
-	 strncpy( system, "Windows NT", slen);
+         strncpy( system, "Windows NT", slen);
       } else if ( IS_WIN95) {
          if ((os.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) &&
-	     ((os.dwMajorVersion > 4) ||
-	      ((os.dwMajorVersion == 4) && (os.dwMinorVersion > 0)))) {
+             ((os.dwMajorVersion > 4) ||
+              ((os.dwMajorVersion == 4) && (os.dwMinorVersion > 0)))) {
             strncpy( system, "Windows 98", slen);
-	 } else {
+         } else {
             strncpy( system, "Windows 95", slen);
-	 }
+         }
       } else {
          strncpy( system, "Windows", slen);
       }
@@ -278,8 +278,8 @@ apc_application_get_os_info( char *system, int slen,
    }
    if ( release)
       snprintf( release, rlen, "%d.%d",
-		LOBYTE( LOWORD( version)),
-		HIBYTE( LOWORD( version)));
+                LOBYTE( LOWORD( version)),
+                HIBYTE( LOWORD( version)));
    return apcWin32;
 }
 
@@ -588,10 +588,8 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
       int i;
       if (( DHANDLE( owner) == sys owner) && ( clipOwner == is_apt( aptClipOwner)))
       {
-         char buf[256];
          behind = GetWindow( HANDLE, GW_HWNDPREV);
          if ( behind == nilHandle) behind = HWND_TOP;
-         GetWindowText( behind, buf, 256);
       }
       var stage = csAxEvents;
       if ( kind_of( self, CWidget))
@@ -717,6 +715,8 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
   ;
 
   objCheck false;
+  dobjCheck( owner) false;
+
   if ( !kind_of( self, CWidget)) apcErrRet( errInvObject);
   apcErrClear;
   if (( var handle != nilHandle) && (
@@ -964,12 +964,12 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
           if ( i-> text) {
              char buf [ 1024];
              if ( i-> accel) {
-		 snprintf( buf, 1024, "%s\t%s", i-> text, i-> accel);
-	     }
-	     else {
-		 strncpy( buf, i-> text, 1023);
-		 buf[ 1023] = 0;
-	     }
+                 snprintf( buf, 1024, "%s\t%s", i-> text, i-> accel);
+             }
+             else {
+                 strncpy( buf, i-> text, 1023);
+                 buf[ 1023] = 0;
+             }
              map_tildas( buf, strlen( i-> text));
              menuItem. dwTypeData = ( LPTSTR) buf;
           } else if ( i-> bitmap)

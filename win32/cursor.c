@@ -39,17 +39,18 @@
 #define DHANDLE(x) dsys(x) handle
 
 
-void
+Bool
 cursor_update( Handle self)
 {
    if ( !is_apt( aptFocused))
-      return;
+      return true;
    DestroyCaret();
    if ( is_apt( aptCursorVis)) {
-      if ( !CreateCaret(( HWND) var handle, nil, sys cursorSize. x, sys cursorSize. y)) apiErr;
-      if ( !SetCaretPos( sys cursorPos. x, sys lastSize. y - sys cursorPos. y - sys cursorSize. y)) apiErr;
-      if ( !ShowCaret(( HWND) var handle)) apiErr;
+      if ( !CreateCaret(( HWND) var handle, nil, sys cursorSize. x, sys cursorSize. y)) apiErrRet;
+      if ( !SetCaretPos( sys cursorPos. x, sys lastSize. y - sys cursorPos. y - sys cursorSize. y)) apiErrRet;
+      if ( !ShowCaret(( HWND) var handle)) apiErrRet;
    }
+   return true;
 }
 
 Bool
@@ -59,8 +60,7 @@ apc_cursor_set_pos( Handle self, int x, int y)
    if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
    sys cursorPos. x = x;
    sys cursorPos. y = y;
-   cursor_update( self);
-   return true;
+   return cursor_update( self);
 }
 
 Bool
@@ -70,8 +70,7 @@ apc_cursor_set_size( Handle self, int x, int y)
    if ( !hwnd_check_limits( x, y, false)) apcErrRet( errInvParams);
    sys cursorSize. x = x;
    sys cursorSize. y = y;
-   cursor_update( self);
-   return true;
+   return cursor_update( self);
 }
 
 Bool
@@ -79,8 +78,7 @@ apc_cursor_set_visible( Handle self, Bool visible)
 {
    objCheck false;
    apt_assign( aptCursorVis, visible);
-   cursor_update( self);
-   return true;
+   return cursor_update( self);
 }
 
 Point

@@ -198,7 +198,7 @@ apc_clipboard_set_data( long id, void * data, int length)
             if ( p)
                if ( !SetClipboardData( CF_PALETTE, p)) apiErr;
          }
-         break;
+         return true;
       case CF_TEXT:
          {
              void *ptr;
@@ -225,7 +225,7 @@ apc_clipboard_set_data( long id, void * data, int length)
                 if ( !SetClipboardData( CF_UNICODETEXT, glob)) apiErr;
              }
          }
-         break;
+         return true;
       default:
          {
              char* ptr;
@@ -240,6 +240,7 @@ apc_clipboard_set_data( long id, void * data, int length)
              memcpy( ptr, &length, sizeof( int));
              GlobalUnlock( glob);
              if ( !SetClipboardData( id, glob)) apiErrRet;
+             return true;
          }
     }
     return false;
