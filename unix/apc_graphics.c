@@ -1511,9 +1511,14 @@ apc_gp_set_region( Handle self, Handle mask)
    XX-> clip_rect. x = 0;
    XX-> clip_rect. y = REVERT(img-> h);
    if ( !( region = region_create( mask))) goto EMPTY;
-   if ( XX-> paint_region) 
+   /* offset region if drawable is buffered */
+   XOffsetRegion( region, XX-> btransform. x, XX-> size.y - img-> h - XX-> btransform. y);
+   /* otherwise ( and only otherwise ), and if there's a
+      X11 clipping, intersect the region with it. X11 clipping
+      must not mix with the buffer clipping */
+   if (( !XX-> udrawable || XX-> udrawable == XX-> gdrawable) && 
+       XX-> paint_region) 
       XIntersectRegion( region, XX-> paint_region, region);
-   XOffsetRegion( region, XX-> btransform. x, XX-> size.y - img-> h + XX-> btransform. y);
    XSetRegion( DISP, XX-> gc, region);
    if ( XX-> flags. kill_current_region) 
       XDestroyRegion( XX-> current_region);
