@@ -110,8 +110,12 @@ sub set
       delete $profile{partial};
       delete $profile{whole};
    }
-   if ( exists $profile{min} and exists $profile{max}) {
-      $self-> set_bounds($profile{max}, $profile{max});
+   if ( exists $profile{min} or exists $profile{max}) {
+      my ( $min, $max) = (
+         exists($profile{min}) ? $profile{min} : $self->{min},
+         exists($profile{max}) ? $profile{max} : $self->{max},
+      );
+      $self-> set_bounds($min,$max);
       delete $profile{min};
       delete $profile{max};
    }
