@@ -13,7 +13,7 @@ use ScrollBar;
 
 package ColorDialog;
 use vars qw( @ISA $colorWheel);
-@ISA = qw( Window);
+@ISA = qw( Dialog);
 
 sub hsv2rgb
 {
@@ -188,9 +188,6 @@ sub profile_default
       centered      => 1,
       visible       => 0,
       scaleChildren => 0,
-      borderStyle   => bs::Dialog,
-      borderIcons   => bi::SystemMenu | bi::TitleBar,
-      widgetClass   => wc::Dialog,
 
       quality       => 0,
       value         => cl::White,
