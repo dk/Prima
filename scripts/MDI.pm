@@ -78,6 +78,7 @@ sub profile_default
       selectingButtons      => 0,
       icon                  => 0,
       ownerFont             => 0,
+      dragMode              => undef,
       tabStop               => 0,
       tileable              => 1,
       transparent           => 0,
@@ -112,7 +113,7 @@ sub init
       { $self->{$_} = 0; }
    my %profile = $self-> SUPER::init(@_);
    $self->{zoomGrowMode} = $profile{growMode};
-   for ( qw( borderStyle borderIcons icon tileable windowState))
+   for ( qw( borderStyle borderIcons icon tileable windowState dragMode))
       { $self->$_( $profile{ $_}); }
    $self-> {zoomRect} = [ $self->rect];
    $self-> {miniRect} = [ 0, 0, $self-> sizeMin];
@@ -440,17 +441,33 @@ sub sizemove_cancel
    my $ok;
    return unless $self-> {mouseTransaction};
    if ( $self-> {mouseTransaction} eq q(caption)) {
-      $self-> origin( @{$self-> {trackSaveData}});
+      if ( $self-> {fullDrag}) {
+         $self-> origin( @{$self-> {trackSaveData}});
+      } else {
+         $self-> xorrect( @{$self-> {prevRect}});
+      }
       $ok = 1;
    } elsif ( $self-> {mouseTransactionArea} eq q(size)) {
-      $self-> rect( @{$self-> {trackSaveData}});
+      if ( $self-> {fullDrag}) {
+         $self-> rect( @{$self-> {trackSaveData}});
+      } else {
+         $self-> xorrect( @{$self-> {prevRect}});
+      }
       $ok = 1;
    } elsif ( $self-> {mouseTransaction} eq q(keyMove)) {
-      $self-> origin( @{$self-> {trackSaveData}});
+      if ( $self-> {fullDrag}) {
+         $self-> origin( @{$self-> {trackSaveData}});
+      } else {
+         $self-> xorrect( @{$self-> {prevRect}});
+      }
       $self-> select;
       $ok = 1;
    } elsif ( $self-> {mouseTransaction} eq q(keySize)) {
-      $self-> rect( @{$self-> {trackSaveData}});
+      if ( $self-> {fullDrag}) {
+         $self-> rect( @{$self-> {trackSaveData}});
+      } else {
+         $self-> xorrect( @{$self-> {prevRect}});
+      }
       $self-> select;
       $ok = 1;
    }
@@ -465,6 +482,16 @@ sub sizemove_cancel
    return $ok;
 }
 
+sub check_drag
+{
+   my $self = $_[0];
+   if ( defined $self-> {dragMode}) {
+      $self-> {fullDrag} = $self-> {dragMode};
+   } else {
+      $self-> {fullDrag} = $::application-> get_system_value( sv::FullDrag);
+   }
+}
+
 sub keyMove
 {
    my $self = $_[0];
@@ -474,6 +501,11 @@ sub keyMove
    $self-> pointer( cr::Move);
    $self-> focus;
    $self-> capture(1, $self-> owner);
+   $self-> check_drag;
+   unless ($self-> {fullDrag}) {
+      $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+      $self-> xorrect( @{$self-> {prevRect}});
+   };
 }
 
 sub keySize
@@ -484,6 +516,11 @@ sub keySize
    $self-> pointer( cr::Size);
    $self-> focus;
    $self-> capture(1, $self-> owner);
+   $self-> check_drag;
+   unless ($self-> {fullDrag}) {
+      $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+      $self-> xorrect( @{$self-> {prevRect}});
+   };
 }
 
 
@@ -501,6 +538,21 @@ sub on_postmessage
    } elsif ( $cm2 eq q(close)) {
       $self-> close;
    }
+}
+
+sub xorrect
+{
+   my ( $self, @r) = @_;
+   $r[2]--;
+   $r[3]--;
+   my $o = $::application;
+   $o-> begin_paint;
+   my @cr = $self-> owner-> rect;
+   $o-> clipRect( @cr);
+   $cr[2]--;
+   $cr[3]--;
+   $o-> rect_focus( @r, $self-> {border});
+   $o-> end_paint;
 }
 
 sub on_mousedown
@@ -546,6 +598,11 @@ sub on_mousedown
       $self-> {spotY} = $y;
       $self-> {trackSaveData} = [$self-> origin];
       $self-> capture(1, $self-> owner);
+      $self-> check_drag;
+      unless ($self-> {fullDrag}) {
+         $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+         $self-> xorrect( @{$self-> {prevRect}});
+      };
       return;
    }
 
@@ -567,6 +624,11 @@ sub on_mousedown
       elsif ( $part eq q(NWSE1)) { ( $xa, $ya) = ( 1,-1); }
       $self-> {dirData} = [$xa, $ya];
       $self-> capture(1, $self-> owner);
+      $self-> check_drag;
+      unless ($self-> {fullDrag}) {
+         $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+         $self-> xorrect( @{$self-> {prevRect}});
+      };
       return;
    }
 
@@ -631,19 +693,32 @@ sub on_keydown
          ( $key == kb::Left)  { $dx -= 5; } elsif
          ( $key == kb::Right) { $dx += 5; } elsif
          ( $key == kb::Enter) {
-            $self-> {mouseTransaction} = $self-> {mouseTransactionArea} = $self-> {dirData} =
-               $self-> {spotX} = $self-> {spotY} = undef;
             $self-> pointer( cr::Default);
             $self-> capture(0);
             $self-> clear_event;
+            unless ( $self-> {fullDrag}) {
+               $self-> xorrect( @{$self-> {prevRect}});
+               $self-> origin( $self-> owner-> screen_to_client(@{$self-> {prevRect}}[0,1]));
+            }
+            $self-> {mouseTransaction} = $self-> {mouseTransactionArea} = $self-> {dirData} =
+               $self-> {spotX} = $self-> {spotY} = undef;
             return;
          }
       if ( $dx or $dy) {
          my @p = $self-> pointerPos;
          my @o = $self-> origin;
          $self-> pointerPos( $p[0] + $dx, $p[1] + $dy);
-         $self-> origin( $o[0] + $dx, $o[1] + $dy);
          $self-> clear_event;
+         if ( $self-> {fullDrag}) {
+            $self-> origin( $o[0] + $dx, $o[1] + $dy);
+         } else {
+            $self-> xorrect( @{$self-> {prevRect}});
+            ${$self-> {prevRect}}[0] += $dx;
+            ${$self-> {prevRect}}[1] += $dy;
+            ${$self-> {prevRect}}[2] += $dx;
+            ${$self-> {prevRect}}[3] += $dy;
+            $self-> xorrect( @{$self-> {prevRect}});
+         }
          return;
       }
    }
@@ -659,15 +734,37 @@ sub on_keydown
             $self-> pointer( cr::Default);
             $self-> capture(0);
             $self-> clear_event;
+            unless ( $self-> {fullDrag}) {
+               $self-> xorrect( @{$self-> {prevRect}});
+               $self-> rect(
+                 $self-> owner-> screen_to_client(@{$self-> {prevRect}}[0,1]),
+                 $self-> owner-> screen_to_client(@{$self-> {prevRect}}[2,3])
+               );
+            }
             return;
          }
       if ( $dx or $dy) {
-         my @o = $self-> size;
-         $self-> width( $o[0] + $dx) if $dx;
-         if ( $dy) {
-            my $b = $self-> bottom;
-            $self-> height( $o[1] + $dy);
-            $self-> bottom( $b - $dy) unless $self-> height != $o[1] + $dy;
+         if ( $self->{fullDrag}) {
+            my @o = $self-> size;
+            $self-> width( $o[0] + $dx) if $dx;
+            if ( $dy) {
+               my $b = $self-> bottom;
+               $self-> height( $o[1] + $dy);
+               $self-> bottom( $b - $dy) unless $self-> height != $o[1] + $dy;
+            }
+         } else {
+            $self-> xorrect( @{$self-> {prevRect}});
+            my @r = @{$self-> {prevRect}};
+            $r[1] -= $dy;
+            $r[2] += $dx;
+            my @min = $self-> sizeMin;
+            $r[1] = $r[3] - $min[1] if $r[3] - $r[1] < $min[1];
+            $r[2] = $r[0] + $min[0] if $r[2] < $r[0] + $min[0];
+            my @max = $self-> sizeMax;
+            $r[1] = $r[3] - $max[1] if $r[3] - $r[1] > $max[1];
+            $r[2] = $r[0] + $max[0] if $r[2] > $r[0] + $max[0];
+            $self-> {prevRect} = \@r;
+            $self-> xorrect( @r);
          }
          $self-> clear_event;
          return;
@@ -688,6 +785,12 @@ sub on_mouseup
    $self-> capture(0);
 
    if ( $tr eq q(caption)) {
+      unless ( $self-> {fullDrag}) {
+         $self-> xorrect( @{$self-> {prevRect}});
+         my @org = $_[0]-> origin;
+         my @new = ( $org[0] + $x - $self->{spotX}, $org[1] + $y - $self->{spotY});
+         $self-> origin( $new[0], $new[1]) if $org[1] != $new[1] || $org[0] != $new[0];
+      }
       $self-> {spotX} = $self-> {spotY} = undef;
       return;
    }
@@ -704,6 +807,12 @@ sub on_mouseup
    }
 
    if ( $self-> {mouseTransactionArea} eq q(size)) {
+      unless ($self-> {fullDrag}) {
+         my @r = @{$self-> {prevRect}};
+         $self-> xorrect( @r);
+         @r = ( $self-> owner-> screen_to_client(@r[0,1]), $self-> owner-> screen_to_client(@r[2,3]));
+         $self-> rect( @r);
+      };
       $self-> {mouseTransactionArea} = $self->{dirData} = undef;
       return;
    }
@@ -716,16 +825,33 @@ sub on_mousemove
 
    if ( $self->{mouseTransaction}) {
        if ( $self-> {mouseTransaction} eq q(caption)) {
-          my @org = $_[0]-> origin;
-          my @new = ( $org[0] + $x - $self->{spotX}, $org[1] + $y - $self->{spotY});
-          $self-> origin( $new[0], $new[1]) if $org[1] != $new[1] || $org[0] != $new[0];
+          if ( $self->{fullDrag}) {
+             my @org = $_[0]-> origin;
+             my @new = ( $org[0] + $x - $self->{spotX}, $org[1] + $y - $self->{spotY});
+             $self-> origin( $new[0], $new[1]) if $org[1] != $new[1] || $org[0] != $new[0];
+          } else {
+             $self-> xorrect( @{$self-> {prevRect}});
+             my @xorg = $self-> client_to_screen( $x - $self->{spotX}, $y - $self->{spotY});
+             my @sz   = $self-> size;
+             $self-> {prevRect} = [ @xorg, $sz[0] + $xorg[0], $sz[1] + $xorg[1]];
+             $self-> xorrect( @{$self-> {prevRect}});
+          }
           return;
        }
 
        if ( $self-> {mouseTransaction} eq q(keyMove)) {
-          my @org = $_[0]-> origin;
-          my @new = ( $org[0] + $x - $self->{spotX}, $org[1] + $y - $self->{spotY});
-          $self-> origin( $new[0], $new[1]) if $org[1] != $new[1] || $org[0] != $new[0];
+          if ( $self->{fullDrag}) {
+             my @org = $_[0]-> origin;
+             my @new = ( $org[0] + $x - $self->{spotX}, $org[1] + $y - $self->{spotY});
+             $self-> origin( $new[0], $new[1]) if $org[1] != $new[1] || $org[0] != $new[0];
+          } else {
+          #  It works, but confuses slightly
+          #  $self-> xorrect( @{$self-> {prevRect}});
+          #  my @xorg = $self-> client_to_screen( $x - $self->{spotX}, $y - $self->{spotY});
+          #  my @sz   = $self-> size;
+          #  $self-> {prevRect} = [ @xorg, $sz[0] + $xorg[0], $sz[1] + $xorg[1]];
+          #  $self-> xorrect( @{$self-> {prevRect}});
+          }
           return;
        }
 
@@ -759,9 +885,9 @@ sub on_mousemove
              $new[2] = $org[2] + $x - $self->{spotX};
              if ( $new[2] < $org[0] + $min[0]) {
                 $new[2] = $org[0] + $min[0];
-                $self->{spotX} = $min[0];
+                $self->{spotX} = $min[0] if $self->{fullDrag};
              } else {
-                $self->{spotX} = $x;
+                $self->{spotX} = $x if $self->{fullDrag};
              }
           }
 
@@ -772,13 +898,20 @@ sub on_mousemove
              $new[3] = $org[3] + $y - $self->{spotY};
              if ( $new[3] < $org[1] + $min[1]) {
                 $new[3] = $org[1] + $min[1];
-                $self->{spotY} = $min[1];
+                $self->{spotY} = $min[1] if $self->{fullDrag};
              } else {
-                $self->{spotY} = $y;
+                $self->{spotY} = $y if $self->{fullDrag};
              }
           }
-          $self-> rect( @new) if $org[1] != $new[1] || $org[0] != $new[0] ||
-              $org[2] != $new[2] || $org[3] != $new[3];
+          if ( $org[1] != $new[1] || $org[0] != $new[0] || $org[2] != $new[2] || $org[3] != $new[3]) {
+             if ( $self-> {fullDrag}) {
+                $self-> rect( @new)
+             } else {
+                $self-> xorrect( @{$self-> {prevRect}});
+                $self-> {prevRect} = [$self-> owner-> client_to_screen( @new[0,1]), $self-> owner-> client_to_screen( @new[2,3])];
+                $self-> xorrect( @{$self-> {prevRect}});
+             }
+          }
           return;
        }
    } else {
@@ -956,6 +1089,7 @@ sub close       { $_[0]->destroy if $_[0]-> SUPER::close; }
 
 sub borderIcons          {($#_)?$_[0]->set_border_icons($_[1])                        :return $_[0]->{borderIcons}}
 sub borderStyle          {($#_)?$_[0]->set_border_style($_[1])                        :return $_[0]->{borderStyle}}
+sub dragMode             {($#_)?($_[0]->{dragMode} = $_[1])                           :return $_[0]->{dragMode}; }
 sub client               {return $_[0]-> {client};}
 sub frameOrigin          {($#_)?$_[0]->set_pos($_[1], $_[2])                          :return $_[0]->get_pos;   }
 sub frameSize            {($#_)?$_[0]->set_size($_[1], $_[2])                         :return $_[0]->get_size;  }
