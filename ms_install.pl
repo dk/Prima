@@ -171,12 +171,13 @@ ENDP
          close SRCPL;
          close DSTPL;
       } elsif ( $mswin32) {
-         my $i = system("pl2bat $src");
-         $src =~ s/pl$//i;
-         $src .= 'bat';
-         abort "Error: pl2bat $src failed\n" unless -f $src;
          print "Installing $dst ...\n";
+	 $dst =~ s/bat$/pl/;
          abort "Error:$!\n" unless copy $src, $dst;
+         my $i = system("pl2bat $dst");
+	 $src = $dst;
+	 $dst =~ s/pl$/bat/;
+         abort "Error: pl2bat $dst failed\n" unless -f $dst;
          unlink $src;
       } else {
          open SRCPL, "<$src" or abort "Cannot open $src: $!";
@@ -195,10 +196,13 @@ ENDP
       }
    }
 
-   open F, "> install.log";
-   print F "f:$_\n" for @instfiles;
-   print F "d:$_\n" for @instdir;
-   close F;
+   if ( open F, "> install.log") {
+      print F "f:$_\n" for @instfiles;
+      print F "d:$_\n" for @instdir;
+      close F;
+   } else {
+      print "(!) Unable to write 'install.log' ($!), uninstall will be unavailable\n";
+   }
 
    print <<D;
 
