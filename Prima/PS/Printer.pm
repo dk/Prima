@@ -44,11 +44,31 @@ through Prima::PS::Drawable module. Allows different user profiles to be
 created and managed with GUI setup dialog. The module is designed to be 
 compliant with Prima::Printer interface.
 
+Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
+
+=head1 SYNOPSIS
+
+   use Prima::PS::Printer;
+
+   my $x;
+   if ( $preview) {
+      $x = Prima::PS::Pipe-> create( command => 'gv -');
+   } elsif ( $print_in_file) {
+      $x = Prima::PS::File-> create( file => 'out.ps');
+   } else {
+      $x = Prima::PS::LPR-> create( args => '-Pcolorprinter');
+   }
+   $x-> begin_doc;
+   $x-> font-> size( 300);
+   $x-> text_out( "hello!", 100, 100);
+   $x-> end_doc;
+
 =cut
 
 use strict;
 use Prima;
 use Prima::Utils;
+use IO::Handle;
 use Prima::PS::Drawable;
 
 package Prima::PS::Printer;
@@ -68,6 +88,7 @@ sub profile_default
    my %prf = (
       resFile       => Prima::Utils::path . '/Printer',
       printer       => undef,
+      gui           => 1,
       defaultData   => {
          color          => 1,
          resolution     => 300,
@@ -107,6 +128,7 @@ sub init
    $self-> {data} = {};
    $self-> $_($profile{$_}) for qw(defaultData resFile);
    $self-> {printers} = {};
+   $self-> {gui} = $profile{gui};
    
    my $pr = $profile{printer} if defined $profile{printer};
 
@@ -201,7 +223,7 @@ sub printers
 sub resolution
 {
    return $_[0]-> SUPER::resolution unless $#_;
-   $_[0]-> raise_ro("resolution") if @_ != 3; # pass interited call
+   $_[0]-> raise_ro("resolution") if @_ != 3; # pass inherited call
    shift-> SUPER::resolution( @_);
 }
 
@@ -337,6 +359,7 @@ sub deepcopy
 
 sub setup_dialog
 {
+   return unless $_[0]->{gui};
    eval "use Prima::PS::Setup"; die "$@\n" if $@;
    $_[0]-> sdlg_exec;
 }
@@ -349,34 +372,47 @@ sub begin_doc
    $self-> {spoolHandle} = undef;
 
    if ( $self-> {data}-> {spoolerType} == file) {
-      eval "use Prima::MsgBox"; die "$@\n" if $@;
-      my $f = Prima::MsgBox::input_box( 'Print to file', 'Output file name:', '', mb::OKCancel, { buttons => {
-         mb::OK, { 
-         modalResult => undef,
-         onClick => sub {
-            $_[0]-> clear_event;
-            my $f = $_[0]-> owner-> InputLine1-> text;
-            if ( -f $f) {
-                 return 0 if Prima::MsgBox::message("File $f already exists. Overwrite?",
-                      mb::Warning|mb::OKCancel) != mb::OK;         
-            } else {
-                unless ( open F, "> $f") {
-                    Prima::MsgBox::message("Error opening $f:$!", mb::Error|mb::OK);           
-                    return 0;
-                }   
-                close F;
-                unlink $f;
-            } 
-            $_[0]-> owner-> modalResult( mb::OK);
-            $_[0]-> owner-> end_modal;
-      }}}});
-      return 0 unless defined $f;
-      unless ( open PSSTREAM, "> $f") {
-         Prima::message("Error opening $f:$!");
-         goto AGAIN;
+      if ( $self-> {gui}) {
+         eval "use Prima::MsgBox"; die "$@\n" if $@;
+         my $f = Prima::MsgBox::input_box( 'Print to file', 'Output file name:', '', mb::OKCancel, { buttons => {
+            mb::OK, { 
+            modalResult => undef,
+            onClick => sub {
+               $_[0]-> clear_event;
+               my $f = $_[0]-> owner-> InputLine1-> text;
+               if ( -f $f) {
+                    return 0 if Prima::MsgBox::message("File $f already exists. Overwrite?",
+                         mb::Warning|mb::OKCancel) != mb::OK;         
+               } else {
+                   unless ( open F, "> $f") {
+                       Prima::MsgBox::message("Error opening $f:$!", mb::Error|mb::OK);           
+                       return 0;
+                   }   
+                   close F;
+                   unlink $f;
+               } 
+               $_[0]-> owner-> modalResult( mb::OK);
+               $_[0]-> owner-> end_modal;
+         }}}});
+         return 0 unless defined $f;
+         my $h = IO::Handle-> new;
+         unless ( open $h, "> $f") {
+            undef $h;
+            Prima::message("Error opening $f:$!");
+            goto AGAIN;
+         }
+         $self-> {spoolHandle} = $h;
+         $self-> {spoolName}   = $f;
+      } else { # no gui
+         my $h = IO::Handle-> new;
+	 my $f = $self-> {data}->{spoolerData};
+         unless ( open $h, "> $f") {
+            undef $h;
+	    return 0;
+         }
+         $self-> {spoolHandle} = $h;
+         $self-> {spoolName}   = $f;
       }
-      $self-> {spoolHandle} = *PSSTREAM;
-      $self-> {spoolName}   = $f;
       unless ( $self-> SUPER::begin_doc( $docName)) {
          unlink( $self-> {spoolName});
          close( $self-> {spoolHandle});
@@ -423,7 +459,7 @@ sub spool
       my @cmds;
       if ( $self-> {data}-> {spoolerType} == lpr) {
          push( @cmds, map { $_ . ' ' . $self-> {data}-> {spoolerData}} qw(
-           lp lpr /bin/lp /bin/lpr /usr/bin/lp /usr/bin/lpr));
+            lp lpr /bin/lp /bin/lpr /usr/bin/lp /usr/bin/lpr));
       } else {
          push( @cmds, $self-> {data}-> {spoolerData});
       } 
@@ -432,29 +468,115 @@ sub spool
       $SIG{PIPE} = 'IGNORE';
       CMDS: for ( @cmds) {
          $piped = 0;
-         next unless open PSSTREAM, "|$_";
-         my $oldfh = select PSSTREAM;
-         $|=1;
-         select $oldfh;
-         $piped = 1 unless print PSSTREAM $data;
-         close( PSSTREAM), next if $piped;
+	 my $f = IO::Handle-> new;
+         next unless open $f, "|$_";
+	 $f-> autoflush(1);
+         $piped = 1 unless print $f $data;
+         close( $f), next if $piped;
          $ok = 1;
-         $self-> {spoolHandle} = *PSSTREAM;
+         $self-> {spoolHandle} = $f;
          $self-> {spoolName}   = $_;
          last;
       }
-      Prima::message("Error printing to '$cmds[0]'") unless $ok;
+      Prima::message("Error printing to '$cmds[0]'") if !$ok && $self->{gui};
       return $ok;
    }
 
    if ( !(print {$self->{spoolHandle}} $data) || 
          ( $piped && $self-> {data}-> {spoolerType} != file )
       ) {
-      Prima::message( "Error printing to '$self->{spoolName}'");
+      Prima::message( "Error printing to '$self->{spoolName}'") if $self->{gui};
       return 0;
    }
 
    return 1;
+}
+
+package Prima::PS::File;
+use vars qw(@ISA);
+@ISA=q(Prima::PS::Printer);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      file => 'out.ps',
+      gui  => 0,
+   );   
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+   $self-> {data}->{spoolerType} = Prima::PS::Printer::file;
+   $self-> {data}->{spoolerData} = $profile{file};
+}
+
+sub file
+{
+   return $_[0]->{data}->{spoolerData} unless $#_;
+   $_[0]->{data}->{spoolerData} = $_[1];
+}
+
+package Prima::PS::LPR;
+use vars qw(@ISA);
+@ISA=q(Prima::PS::Printer);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      gui  => 0,
+      args => '',
+   );   
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+   $self-> {data}->{spoolerType} = Prima::PS::Printer::lpr;
+   $self-> {data}->{spoolerData} = $profile{args};
+}
+
+sub args
+{
+   return $_[0]->{data}->{spoolerData} unless $#_;
+   $_[0]->{data}->{spoolerData} = $_[1];
+}
+
+package Prima::PS::Pipe;
+use vars qw(@ISA);
+@ISA=q(Prima::PS::Printer);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      gui  => 0,
+      command => '',
+   );   
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+   $self-> {data}->{spoolerType} = Prima::PS::Printer::exec;
+   $self-> {data}->{spoolerData} = $profile{command};
+}
+
+sub command
+{
+   return $_[0]->{data}->{spoolerData} unless $#_;
+   $_[0]->{data}->{spoolerData} = $_[1];
 }
 
 1;
