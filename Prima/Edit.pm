@@ -201,8 +201,8 @@ sub reset
    my $ti   = $self-> {tabIndent};
    my $uC   = $self-> {uChange};
    my $mw;
-   $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height-1 : 0);
-   $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width-1  : 1);
+   $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height - 1 : 0);
+   $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width  - 1 : 0);
    $size[1] -= $bw * 2 + $self->{dy};
    $size[0] -= $bw * 2 + $self->{dx} - $cw;
    if ( $uC < 2)
@@ -331,7 +331,7 @@ sub reset_scrolls
        my $lw = $self->{maxLineWidth};
        $self-> {hScrollBar}-> set(
           max      => $self-> {wordWrap} ? 0 : $lw - $w,
-          whole    => $lw,
+          whole    => $lw < $w ? $w : $lw,
           value    => $self-> {offset},
           partial  => $w,
           pageStep => $lw / 5,
@@ -491,11 +491,11 @@ sub on_paint
    if ( $clipRect[0] > $bw && $clipRect[1] > $bw + $dy && $clipRect[2] < $size[0] - $bw - $dx && $clipRect[3] < $size[1] - $bw)
    {
       $canvas-> color( $clr[ 1]);
-      $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx, $size[1] - $bw);
+      $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
       $canvas-> bar( 0, 0, @size);
    } else {
       $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor, $clr[1]);
-      $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx, $size[1] - $bw);
+      $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
    }
    $canvas-> color( $clr[0]);
 # defining repaint area - from and to limits
@@ -978,7 +978,7 @@ sub set_cursor
    my ( $ox, $oy) = ($self->{cursorX}, $self->{cursorY});
    my $maxY = $self->{maxLine};
    $y = $maxY if $y < 0 || $y > $maxY;
-$y = 0 if $y < 0; # ??
+   $y = 0 if $y < 0; # ??
    my $line = $self-> get_line( $y);
    $x = length( $line) if $x < 0;
    my ( $lx, $ly) = $self-> make_logical( $x, $y);
@@ -1270,12 +1270,7 @@ sub set_selection
          $y - $bw - $fh * ( $start - $fc)
       );
    } else {
-      my @r = (
-         $bw, $y - $bw - $fh * ( $end - $fc + 1),
-         $x - $bw - $dx, $y - $bw - $fh * ( $start - $fc),
-      );
       # general connected lines paint
-
       $self-> invalidate_rect(
          $bw, $y - $bw - $fh * ( $end - $fc + 1),
          $x - $bw - $dx, $y - $bw - $fh * ( $start - $fc),
@@ -1321,8 +1316,8 @@ sub set_word_wrap
    return if $ww == $self->{wordWrap};
    $self->{wordWrap} = $ww;
    $self-> syntaxHilite(0) if $ww;
-   $self->reset;
-   $self->reset_scrolls;
+   $self-> reset;
+   $self-> reset_scrolls;
    $self->repaint;
 }
 
@@ -1572,7 +1567,7 @@ sub cursor_right {
 sub cursor_home  {
    my ($spaces) = ($_[0]-> get_line( $_[0]-> cursorY) =~ /^([s\t]*)/);
    $_[0]-> offset(0);
-   $_[0]-> cursorX( length $spaces);
+   $_[0]-> cursorX(0);
 }
 sub cursor_end   {
    my ($nonspaces) = ($_[0]-> get_line( $_[0]-> cursorY) =~ /^(.*?)[\s\t]*$/);
@@ -1772,6 +1767,7 @@ sub set_line
          $self-> {hScrollBar}-> set(
             max      => $lw - $w - $bw * 2 - $dx,
             whole    => $lw,
+            partial  => $w - $bw * 2 - $dx,
          ) if $self-> {hScroll};
       }
       $_from = $_to = $y;
@@ -1928,22 +1924,6 @@ sub delete_line
       $self->{maxChunk} -= $len;
    }
    my @removed = splice( @{$self->{lines}}, $y, $len);
-   unless ( $self->{wordWrap}) {
-      my $needReset = 0;
-      my $mlv       = $self->{maxLineLength};
-      for ( @removed) {
-         $self->{maxLineCount}-- if length($_) == $mlv;
-         if ( $self->{maxLineCount} <= 0) {
-            $self-> reset;
-            my $lw = $self->{maxLineWidth};
-            $self-> {hScrollBar}-> set(
-               max      => $lw - $self->width - $self->{borderWidth} * 2 - $self->{dx},
-               whole    => $lw,
-            ) if $self-> {hScroll};
-            last;
-         }
-      }
-   }
    splice( @{$self->{syntax}}, $y, $len) if $self->{syntaxHilite};
    for (@{$self->{markers}}) {
       $$_[1] -= $len if $$_[1] >= $y;
@@ -1969,6 +1949,22 @@ sub delete_line
       max   => $self-> {maxChunk} - $self->{rows} + 1,
       whole => $self-> {maxChunk} + 1,
    ) if $self->{vScroll};
+   unless ( $self->{wordWrap}) {
+      my $mlv       = $self->{maxLineLength};
+      for ( @removed) {
+         $self->{maxLineCount}-- if length($_) == $mlv;
+         if ( $self->{maxLineCount} <= 0) {
+            $self-> reset;
+            my $lw = $self->{maxLineWidth};
+            $self-> {hScrollBar}-> set(
+               max      => $lw - $self->width - $self->{borderWidth} * 2 - $self->{dx},
+               whole    => $lw,
+               partial  => $self-> width - $self->{borderWidth} * 2 - $self->{dx},
+            ) if $self-> {hScroll};
+            last;
+         }
+      }
+   }
    $self-> cursor( $self-> cursor);
    $self-> repaint;
    $self-> notify(q(Change)) unless $self->{notifyChangeLock};
