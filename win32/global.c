@@ -1002,6 +1002,8 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    orgCmd = ev. cmd;
    if ( ev. cmd) v-> self-> message( self, &ev); else ev. cmd = orgMsg;
 
+   if ( var stage == csDead) orgMsg = 0;
+
    switch ( orgMsg) {
    case WM_CLOSE:
       if ( ev. cmd) {

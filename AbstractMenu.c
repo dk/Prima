@@ -547,10 +547,6 @@ sub_call( Handle self, PMenuItemReg m)
 {
    if ( m == nil) return false;
    if ( m-> code) cv_call_perl((( PComponent) var owner)-> mate, SvRV( m-> code), "s", m-> variable);
-   //  else if ( m-> sysCmd)  {
-   //     Event ev = { m-> sysCmd};
-   //     apc_message( var owner, &ev, 0);
-   //  }
    else if ( m-> perlSub) call_perl( var owner, m-> perlSub, "s", m-> variable);
    return true;
 }

@@ -123,6 +123,7 @@ find_0tab( Handle owner, Handle self, Handle * add)
 void Window_handle_event( Handle self, PEvent event)
 {
 #define evOK ( var evStack[ var evPtr - 1])
+#define objCheck if ( var stage > csNormal) return
    switch (event-> cmd)
    {
    case cmColorChanged:
@@ -141,29 +142,40 @@ void Window_handle_event( Handle self, PEvent event)
       break;
    case cmExecute:
       my on_execute( self);
+      objCheck;
       if ( is_dmopt( dmExecute)) delegate_sub( self, "Execute", "H", self);
+      objCheck;
       if ( var onExecute) cv_call_perl( var mate, var onExecute, "");
       break;
    case cmEndModal:
       my on_endmodal( self);
+      objCheck;
       if ( is_dmopt( dmEndModal)) delegate_sub( self, "EndModal", "H", self);
+      objCheck;
       if ( var onEndModal) cv_call_perl( var mate, var onEndModal, "");
       break;
    case cmActivate:
       my on_activate( self);
+      objCheck;
       if ( is_dmopt( dmActivate)) delegate_sub( self, "Activate", "H", self);
+      objCheck;
       if ( var onActivate) cv_call_perl( var mate, var onActivate, "");
       break;
    case cmDeactivate:
       my on_deactivate( self);
+      objCheck;
       if ( is_dmopt( dmDeactivate)) delegate_sub( self, "Deactivate", "H", self);
+      objCheck;
       if ( var onDeactivate) cv_call_perl( var mate, var onDeactivate, "");
       break;
    case cmWindowState:
       my on_windowstate( self, event-> gen. i);
+      objCheck;
       if ( is_dmopt( dmWindowState))
          delegate_sub( self, "WindowState", "Hi", self, event-> gen. i);
+      objCheck;
       if ( var onWindowState) cv_call_perl( var mate, var onWindowState, "i", event-> gen. i);
+      objCheck;
       break;
    case cmDelegateKey:
       #define leave { my clear_event( self); return; }
@@ -177,6 +189,7 @@ void Window_handle_event( Handle self, PEvent event)
           ev. key. subcmd = 1;
           if ( my first_that( self, accel_notify, &ev)) leave;
       }
+      objCheck;
       break;
    case cmTranslateAccel:
       if ( event-> key. key == kbEsc && var modal)
@@ -184,6 +197,7 @@ void Window_handle_event( Handle self, PEvent event)
          my cancel( self);
          my clear_event( self);
       }
+      objCheck;
       if ( event-> key. key == kbTab || event-> key. key == kbShiftTab)
       {
          int i         = 0, count = var widgets. count;

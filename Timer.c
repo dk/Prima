@@ -44,13 +44,16 @@ Timer_update_sys_handle( Handle self, HV * profile)
 void
 Timer_handle_event( Handle self, PEvent event)
 {
+#define objCheck if ( var stage > csNormal) return
    inherited handle_event ( self, event);
    switch ( event-> cmd)
    {
       case cmTimer:
          my on_tick( self);
+         objCheck;
          if ( is_dmopt( dmTick))
             delegate_sub( self, "Tick", "H", self);
+         objCheck;
          if ( var onTick) cv_call_perl( var mate, var onTick, "");
          break;
    }

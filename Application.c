@@ -159,6 +159,7 @@ void Application_handle_event( Handle self, PEvent event)
       {
          ((( PComponent) event-> gen. H)-> self)-> message( event-> gen. H, event);
          event-> cmd = 0;
+         if ( var stage > csNormal) return;
       }
       break;
    }

@@ -367,12 +367,16 @@ Component_handle_event( Handle self, PEvent event)
 #define dyna( Method)					\
    if ( var on##Method)					\
       cv_call_perl( var mate, var on##Method, "")
+#define objCheck   if ( var stage > csNormal) return
+#define objCheckEx if ( var stage >= csDead) return
    switch ( event-> cmd)
    {
    case cmCreate:
       my update_delegator( self);
       my on_create( self);
+      objCheck;
       if ( is_dmopt( dmCreate)) delegate_sub( self, "Create", "H", self);
+      objCheck;
       dyna( Create);
       if ( var stage == csNormal)
       {
@@ -385,20 +389,22 @@ Component_handle_event( Handle self, PEvent event)
       break;
    case cmDestroy:
       my on_destroy( self);
+      objCheckEx;
       if ( is_dmopt( dmDestroy)) delegate_sub( self, "Destroy", "H", self);
+      objCheckEx;
       dyna( Destroy);
       break;
    case cmPost:
       {
          PPostMsg p = ( PPostMsg) event-> gen. p;
          my on_postmessage( self, p-> info1, p-> info2);
-         if ( var stage >= csDead) return;
+         objCheck;
          if ( is_dmopt( dmPostMessage))
             delegate_sub( self, "PostMessage", "HSS", self, p-> info1, p-> info2);
-         if ( var stage >= csDead) return;
+         objCheck;
          if ( var onPostMessage)
             cv_call_perl( var mate, var onPostMessage, "SS", p-> info1, p-> info2);
-         if ( var stage >= csDead) return;
+         objCheck;
          if ( p-> info1) sv_free( p-> info1);
          if ( p-> info2) sv_free( p-> info2);
          free( p);
