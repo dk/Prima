@@ -185,7 +185,6 @@ Object_destroy( Handle self)
       if ( object) ++SvREFCNT( object);
    }
    if ( object) {
-      PObject_vmt v;
       Handle owner;
       var-> stage = csHalfDead;
       recursiveCall++;
