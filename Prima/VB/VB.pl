@@ -1840,6 +1840,7 @@ sub bring_inspector
 
 package VisualBuilder;
 
+$::application-> accelItems( VB::accelItems);
 $VB::ico = Prima::Image-> create;
 $VB::ico = undef unless $VB::ico-> load( Prima::find_image( 'VB::VB.gif'), index => 6);
 $VB::main = MainPanel-> create;
@@ -1850,8 +1851,6 @@ $VB::form = Form-> create;
 ObjectInspector::renew_widgets;
 ObjectInspector::preload() unless $VB::fastLoad;
 $VB::main-> update_menu();
-
-$::application-> accelItems( VB::accelItems);
 
 RERUN: eval {
    run Prima;
