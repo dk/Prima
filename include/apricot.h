@@ -46,21 +46,27 @@
    #define BOOLEAN_DEFINED
    #define __INLINE__            __inline
    #define snprintf              _snprintf
+   #define stricmp               _stricmp
    extern double                 NAN;
+   #define PRIMA_STRICMP_PRESENT 1
 #else
    #define __INLINE__            __inline__
 #endif
 
-#ifdef __unix	/* This is wrong, not every unix */
+#ifdef __unix   /* This is wrong, not every unix */
    extern double NAN;
 #endif
 
 #ifdef WORD
 #error "Reconsider the order in which you #include files"
 #endif
+
+#define __inline__ __inline
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
+
+
 #if defined(WORD) && (WORD==257)
 #undef WORD
 #endif
@@ -103,7 +109,7 @@ extern SV* readonly_clean_sv_2mortal( SV* sv);
 #else
 #define strcasecmp(a,b) stricmp((a),(b))
 #define PRIMA_NEED_OWN_STRICMP 1
-export int
+extern int
 stricmp(const char *s1, const char *s2);
 #endif
 #endif
@@ -236,13 +242,13 @@ typedef struct _PostMsg {
 /* by means of Perl hashes */
 
 #ifdef POLLUTE_NAME_SPACE
-#define hash_create	   prima_hash_create
-#define hash_destroy	   prima_hash_destroy
-#define hash_fetch	   prima_hash_fetch
-#define hash_delete	   prima_hash_delete
-#define hash_store	   prima_hash_store
-#define hash_count	   prima_hash_count
-#define hash_first_that	prima_hash_first_that
+#define hash_create        prima_hash_create
+#define hash_destroy       prima_hash_destroy
+#define hash_fetch         prima_hash_fetch
+#define hash_delete        prima_hash_delete
+#define hash_store         prima_hash_store
+#define hash_count         prima_hash_count
+#define hash_first_that    prima_hash_first_that
 #endif
 
 typedef HV *PHash;
@@ -266,12 +272,12 @@ prima_hash_delete( PHash self, const void *key, int keyLen, Bool kill);
 extern Bool
 prima_hash_store( PHash self, const void *key, int keyLen, void *val);
 
-#define prima_hash_count(hash) (HvKEYS(( HV*)hash))
-
+extern long
+prima_hash_count( PHash self);
 
 extern void*
 prima_hash_first_that( PHash self, void *action, void *params,
-		       int *pKeyLen, void **pKey);
+                       int *pKeyLen, void **pKey);
 
 /* tables of constants support */
 
@@ -300,11 +306,11 @@ XS(prima_autoload_##package##_constant) \
       table = hash_create(); \
       if (!table) croak( #package "::constant: cannot create hash"); \
       for ( i = 0; i < sizeof( Prima_Autoload_##package##_constants) \
-	       / sizeof( ConstTable_##package); i++) \
-	 hash_store( table, \
-		     Prima_Autoload_##package##_constants[i]. name, \
-		     strlen( Prima_Autoload_##package##_constants[i]. name), \
-		     &Prima_Autoload_##package##_constants[i]. value); \
+               / sizeof( ConstTable_##package); i++) \
+         hash_store( table, \
+                     Prima_Autoload_##package##_constants[i]. name, \
+                     strlen( Prima_Autoload_##package##_constants[i]. name), \
+                     &Prima_Autoload_##package##_constants[i]. value); \
    } \
  \
    if ( items != 1) croak( "invalid call to " #package "::constant"); \
@@ -327,7 +333,7 @@ void register_##package##_constants( void) { \
    newXS( #package "::constant", prima_autoload_##package##_constant, #package); \
    sv = newSVpv("", 0); \
    for ( i = 0; i < sizeof( Prima_Autoload_##package##_constants) \
-	    / sizeof( ConstTable_##package); i++) { \
+            / sizeof( ConstTable_##package); i++) { \
       sv_setpvf( sv, "%s::%s", #package, Prima_Autoload_##package##_constants[i]. name); \
       cv = sv_2cv(sv, &unused_hv, &unused_gv, true); \
       sv_setpv((SV*)cv, ""); \
@@ -350,10 +356,10 @@ typedef struct { \
 #define csNormal         0         /* normal during life stage */
 #define csDestroying     1         /* destroy() started */
 #define csFrozen         2         /* cleanup() started - no messages
-				      available at this point */
+                                      available at this point */
 #define csFinalizing     3         /* done() started */
 #define csDead           4         /* destroy() finished - no methods
-				      available at this point */
+                                      available at this point */
 
 /* Notification types */
 #define NT(const_name) CONSTANT(nt,const_name)
@@ -368,7 +374,7 @@ NT(Single)
 NT(Multiple)
 #define ntEvent          0x4
 NT(Event)
-#define ntSMASK		ntMultiple | ntEvent
+#define ntSMASK         ntMultiple | ntEvent
 NT(SMASK)
 #define ntDefault       ntPrivateFirst | ntMultiple
 NT(Default)
@@ -391,15 +397,15 @@ END_TABLE(nt,UV)
 #define mtExclusive      2
 
 /* Command event types */
-#define ctQueueMask      0x00070000	/* masks bits that defines behavior
-					   in !csNormal stages: */
-#define ctCacheable      0x00000000	/* Command caches in the queue */
-#define ctDiscardable    0x00010000	/* Command should be discarded */
-#define ctPassThrough    0x00020000	/* Command passes as normal */
-#define ctSingle         0x00040000	/* Command caches in the queue only
-					   once, then changes ct bits to */
-#define ctSingleResponse 0x00050000	/* ctSingleResponse */
-#define ctNoInhibit      0x00080000	/* Valid for csDestroying and csFrozen */
+#define ctQueueMask      0x00070000     /* masks bits that defines behavior
+                                           in !csNormal stages: */
+#define ctCacheable      0x00000000     /* Command caches in the queue */
+#define ctDiscardable    0x00010000     /* Command should be discarded */
+#define ctPassThrough    0x00020000     /* Command passes as normal */
+#define ctSingle         0x00040000     /* Command caches in the queue only
+                                           once, then changes ct bits to */
+#define ctSingleResponse 0x00050000     /* ctSingleResponse */
+#define ctNoInhibit      0x00080000     /* Valid for csDestroying and csFrozen */
 
 /* Apricot events */
 /* commands */
@@ -409,18 +415,18 @@ START_TABLE(cm,UV)
 CM(Valid)
 #define cmQuit           0x00000001
 CM(Quit)
-#define cmHelp           0x00000002	/* WM_HELP analog */
+#define cmHelp           0x00000002     /* WM_HELP analog */
 CM(Help)
-#define cmOK             0x00000003	/* std OK cmd */
+#define cmOK             0x00000003     /* std OK cmd */
 CM(OK)
-#define cmOk		 cmOK
+#define cmOk             cmOK
 CM(Ok)
-#define cmCancel         0x00000004	/* std Cancel cmd */
+#define cmCancel         0x00000004     /* std Cancel cmd */
 CM(Cancel)
 #define cmClose         (0x00000005|ctDiscardable)
 CM(Close)
-					/* on dialog close, WM_CLOSE analog */
-#define cmCreate         0x0000000A	/* WM_CREATE analog */
+                                        /* on dialog close, WM_CLOSE analog */
+#define cmCreate         0x0000000A     /* WM_CREATE analog */
 CM(Create)
 #define cmDestroy       (0x0000000B|ctPassThrough|ctNoInhibit) /* WM_DESTROY analog */
 CM(Destroy)
@@ -435,14 +441,14 @@ CM(ReleaseFocus)
 #define cmPaint         (0x00000010|ctSingle)      /* WM_PAINT analog */
 CM(Paint)
 #define cmRepaint       (0x00000010|ctSingleResponse) /* and it's response
-							 action */
+                                                         action */
 CM(Repaint)
 #define cmSize          (0x00000011|ctPassThrough) /* WM_SIZE analog */
 CM(Size)
 #define cmMove          (0x00000012|ctPassThrough) /* WM_MOVE analog */
 CM(Move)
 #define cmColorChanged  (0x00000013|ctDiscardable) /* generates when color
-						      changed */
+                                                      changed */
 CM(ColorChanged)
 #define cmZOrderChanged (0x00000014|ctDiscardable) /* z-order change command */
 CM(ZOrderChanged)
@@ -455,10 +461,10 @@ CM(Activate)
 #define cmDeactivate    (0x00000018|ctDiscardable) /* active stage change */
 CM(Deactivate)
 #define cmFontChanged   (0x00000019|ctDiscardable) /* generates when font
-						      changed */
+                                                      changed */
 CM(FontChanged)
 #define cmWindowState   (0x0000001A|ctDiscardable) /* generates when window
-						      state changed */
+                                                      state changed */
 CM(WindowState)
 #define cmTimer          0x0000001C                /* WM_TIMER analog */
 CM(Timer)
@@ -469,12 +475,12 @@ CM(CalcBounds)
 #define cmPost           0x0000001F                /* posted message */
 CM(Post)
 #define cmPopup          0x00000020                /* interactive popup
-						      request */
+                                                      request */
 CM(Popup)
 #define cmExecute        0x00000021                /* dialog execution start */
 CM(Execute)
 #define cmSetup          0x00000022                /* first message for alive
-						      and active widget */
+                                                      and active widget */
 CM(Setup)
 #define cmHint           0x00000023                /* hint show/hide message */
 CM(Hint)
@@ -522,21 +528,21 @@ END_TABLE(cm,UV)
 #define MB(const_name) CONSTANT(mb,const_name)
 #define MB2(const_name,string_name) CONSTANT2(mb,const_name,string_name)
 START_TABLE(mb,UV)
-#define mb1		1
+#define mb1             1
 MB2(1,b1)
-#define mb2		2
+#define mb2             2
 MB2(2,b2)
-#define mb3		4
+#define mb3             4
 MB2(3,b3)
-#define mb4		8
+#define mb4             8
 MB2(4,b4)
-#define mb5		16
+#define mb5             16
 MB2(5,b5)
-#define mb6		32
+#define mb6             32
 MB2(6,b6)
-#define mb7		64
+#define mb7             64
 MB2(7,b7)
-#define mb8		128
+#define mb8             128
 MB2(8,b8)
 #define mbLeft          mb1
 MB(Left)
@@ -596,7 +602,7 @@ KM(Shift)
 KM(Ctrl)
 #define kmAlt           0x08000000
 KM(Alt)
-#define kmKeyPad	0x40000000
+#define kmKeyPad        0x40000000
 KM(KeyPad)
 END_TABLE(km,UV)
 #undef KM
@@ -604,11 +610,11 @@ END_TABLE(km,UV)
 #define KB(const_name) CONSTANT(kb,const_name)
 START_TABLE(kb,UV)
 /* keyboard masks */
-#define kbCharMask	0x000000ff
+#define kbCharMask      0x000000ff
 KB(CharMask)
-#define kbCodeMask	0x00ffff00
+#define kbCodeMask      0x00ffff00
 KB(CodeMask)
-#define kbModMask	0xff000000
+#define kbModMask       0xff000000
 KB(ModMask)
 
 /* bad key or no key code */
@@ -616,37 +622,37 @@ KB(ModMask)
 KB(NoKey)
 
 /* virtual keys which are modifiers at the same time */
-#define kbShiftL	0x00010100
+#define kbShiftL        0x00010100
 KB(ShiftL)
-#define kbShiftR	0x00010200
+#define kbShiftR        0x00010200
 KB(ShiftR)
-#define kbCtrlL		0x00010300
+#define kbCtrlL         0x00010300
 KB(CtrlL)
-#define kbCtrlR		0x00010400
+#define kbCtrlR         0x00010400
 KB(CtrlR)
-#define kbAltL		0x00010500
+#define kbAltL          0x00010500
 KB(AltL)
-#define kbAltR		0x00010600
+#define kbAltR          0x00010600
 KB(AltR)
-#define kbMetaL		0x00010700
+#define kbMetaL         0x00010700
 KB(MetaL)
-#define kbMetaR		0x00010800
+#define kbMetaR         0x00010800
 KB(MetaR)
-#define kbSuperL	0x00010900
+#define kbSuperL        0x00010900
 KB(SuperL)
-#define kbSuperR	0x00010a00
+#define kbSuperR        0x00010a00
 KB(SuperR)
-#define kbHyperL	0x00010b00
+#define kbHyperL        0x00010b00
 KB(HyperL)
-#define kbHyperR	0x00010c00
+#define kbHyperR        0x00010c00
 KB(HyperR)
-#define kbCapsLock	0x00010d00
+#define kbCapsLock      0x00010d00
 KB(CapsLock)
-#define kbNumLock	0x00010e00
+#define kbNumLock       0x00010e00
 KB(NumLock)
-#define kbScrollLock	0x00010f00
+#define kbScrollLock    0x00010f00
 KB(ScrollLock)
-#define kbShiftLock	0x00011000
+#define kbShiftLock     0x00011000
 KB(ShiftLock)
 
 /* Virtual keys which have character code at the same time */
@@ -654,227 +660,227 @@ KB(ShiftLock)
 KB(Backspace)
 #define kbTab           0x00020900
 KB(Tab)
-#define kbKPTab		(kmKeyPad | kbTab)	/* C-only */
-#define kbLinefeed	0x00020a00
+#define kbKPTab         (kmKeyPad | kbTab)      /* C-only */
+#define kbLinefeed      0x00020a00
 KB(Linefeed)
-#define kbEnter		0x00020d00
+#define kbEnter         0x00020d00
 KB(Enter)
-#define kbReturn	kbEnter
+#define kbReturn        kbEnter
 KB(Return)
-#define kbKPEnter	(kmKeyPad | kbEnter)	/* C-only */
-#define kbKPReturn	kbKPEnter		/* C-only */
-#define kbEscape	0x00021b00
+#define kbKPEnter       (kmKeyPad | kbEnter)    /* C-only */
+#define kbKPReturn      kbKPEnter               /* C-only */
+#define kbEscape        0x00021b00
 KB(Escape)
-#define kbEsc		kbEscape
+#define kbEsc           kbEscape
 KB(Esc)
-#define kbSpace		0x00022000
+#define kbSpace         0x00022000
 KB(Space)
-#define kbKPSpace	(kmKeyPad | kbSpace)	/* C-only */
+#define kbKPSpace       (kmKeyPad | kbSpace)    /* C-only */
 
-#define kbKPEqual	(kmKeyPad | '=')	/* C-only */
-#define kbKPMultiply	(kmKeyPad | '*')	/* C-only */
-#define kbKPAdd		(kmKeyPad | '+')	/* C-only */
-#define kbKPSeparator	(kmKeyPad | ',')	/* C-only */
-#define kbKPSubtract	(kmKeyPad | '-')	/* C-only */
-#define kbKPDecimal	(kmKeyPad | '.')	/* C-only */
-#define kbKPDivide	(kmKeyPad | '/')	/* C-only */
-#define kbKP0		(kmKeyPad | '0')	/* C-only */
-#define kbKP1		(kmKeyPad | '1')	/* C-only */
-#define kbKP2		(kmKeyPad | '2')	/* C-only */
-#define kbKP3		(kmKeyPad | '3')	/* C-only */
-#define kbKP4		(kmKeyPad | '4')	/* C-only */
-#define kbKP5		(kmKeyPad | '5')	/* C-only */
-#define kbKP6		(kmKeyPad | '6')	/* C-only */
-#define kbKP7		(kmKeyPad | '7')	/* C-only */
-#define kbKP8		(kmKeyPad | '8')	/* C-only */
-#define kbKP9		(kmKeyPad | '9')	/* C-only */
+#define kbKPEqual       (kmKeyPad | '=')        /* C-only */
+#define kbKPMultiply    (kmKeyPad | '*')        /* C-only */
+#define kbKPAdd         (kmKeyPad | '+')        /* C-only */
+#define kbKPSeparator   (kmKeyPad | ',')        /* C-only */
+#define kbKPSubtract    (kmKeyPad | '-')        /* C-only */
+#define kbKPDecimal     (kmKeyPad | '.')        /* C-only */
+#define kbKPDivide      (kmKeyPad | '/')        /* C-only */
+#define kbKP0           (kmKeyPad | '0')        /* C-only */
+#define kbKP1           (kmKeyPad | '1')        /* C-only */
+#define kbKP2           (kmKeyPad | '2')        /* C-only */
+#define kbKP3           (kmKeyPad | '3')        /* C-only */
+#define kbKP4           (kmKeyPad | '4')        /* C-only */
+#define kbKP5           (kmKeyPad | '5')        /* C-only */
+#define kbKP6           (kmKeyPad | '6')        /* C-only */
+#define kbKP7           (kmKeyPad | '7')        /* C-only */
+#define kbKP8           (kmKeyPad | '8')        /* C-only */
+#define kbKP9           (kmKeyPad | '9')        /* C-only */
 
 /* Other virtual keys */
-#define kbClear		0x00040100
+#define kbClear         0x00040100
 KB(Clear)
-#define kbPause		0x00040200
+#define kbPause         0x00040200
 #ifdef Pause
 #undef Pause
 #endif
 KB(Pause)
-#define kbSysRq		0x00040300
+#define kbSysRq         0x00040300
 KB(SysRq)
-#define kbSysReq	kbSysRq
+#define kbSysReq        kbSysRq
 KB(SysReq)
-#define kbDelete	0x00040400
+#define kbDelete        0x00040400
 KB(Delete)
-#define kbKPDelete	(kmKeyPad | kbDelete)	/* C-only */
-#define kbHome		0x00040500
+#define kbKPDelete      (kmKeyPad | kbDelete)   /* C-only */
+#define kbHome          0x00040500
 KB(Home)
-#define kbKPHome	(kmKeyPad | kbHome)	/* C-only */
-#define kbLeft		0x00040600
+#define kbKPHome        (kmKeyPad | kbHome)     /* C-only */
+#define kbLeft          0x00040600
 KB(Left)
-#define kbKPLeft	(kmKeyPad | kbLeft)	/* C-only */
-#define kbUp		0x00040700
+#define kbKPLeft        (kmKeyPad | kbLeft)     /* C-only */
+#define kbUp            0x00040700
 KB(Up)
-#define kbKPUp		(kmKeyPad | kbUp)	/* C-only */
-#define kbRight		0x00040800
+#define kbKPUp          (kmKeyPad | kbUp)       /* C-only */
+#define kbRight         0x00040800
 KB(Right)
-#define kbKPRight	(kmKeyPad | kbRight)	/* C-only */
-#define kbDown		0x00040900
+#define kbKPRight       (kmKeyPad | kbRight)    /* C-only */
+#define kbDown          0x00040900
 KB(Down)
-#define kbKPDown	(kmKeyPad | kbDown)	/* C-only */
-#define kbPgUp		0x00040a00
+#define kbKPDown        (kmKeyPad | kbDown)     /* C-only */
+#define kbPgUp          0x00040a00
 KB(PgUp)
-#define kbPrior		kbPgUp
+#define kbPrior         kbPgUp
 KB(Prior)
-#define kbPageUp	kbPgUp
+#define kbPageUp        kbPgUp
 KB(PageUp)
-#define kbKPPgUp	(kmKeyPad | kbPgUp)	/* C-only */
-#define kbKPPrior	kbKPPgUp		/* C-only */
-#define kbKPPageUp	kbKPPgUp		/* C-only */
-#define kbPgDn		0x00040b00
+#define kbKPPgUp        (kmKeyPad | kbPgUp)     /* C-only */
+#define kbKPPrior       kbKPPgUp                /* C-only */
+#define kbKPPageUp      kbKPPgUp                /* C-only */
+#define kbPgDn          0x00040b00
 KB(PgDn)
-#define kbNext		kbPgDn
+#define kbNext          kbPgDn
 KB(Next)
-#define kbPageDown	kbPgDn
+#define kbPageDown      kbPgDn
 KB(PageDown)
-#define kbKPPgDn	(kmKeyPad | kbPgDn)	/* C-only */
-#define kbKPNext	kbKPPgDn		/* C-only */
-#define kbKPPageDown	kbKPPgDn		/* C-only */
-#define kbEnd		0x00040c00
+#define kbKPPgDn        (kmKeyPad | kbPgDn)     /* C-only */
+#define kbKPNext        kbKPPgDn                /* C-only */
+#define kbKPPageDown    kbKPPgDn                /* C-only */
+#define kbEnd           0x00040c00
 KB(End)
-#define kbKPEnd		(kmKeyPad | kbEnd)	/* C-only */
-#define kbBegin		0x00040d00
+#define kbKPEnd         (kmKeyPad | kbEnd)      /* C-only */
+#define kbBegin         0x00040d00
 KB(Begin)
-#define kbKPBegin	(kmKeyPad | kbBegin)	/* C-only */
-#define kbSelect	0x00040e00
+#define kbKPBegin       (kmKeyPad | kbBegin)    /* C-only */
+#define kbSelect        0x00040e00
 KB(Select)
-#define kbPrint		0x00040f00
+#define kbPrint         0x00040f00
 KB(Print)
-#define kbPrintScr	kbPrint
+#define kbPrintScr      kbPrint
 KB(PrintScr)
-#define kbExecute	0x00041000
+#define kbExecute       0x00041000
 KB(Execute)
-#define kbInsert	0x00041100
+#define kbInsert        0x00041100
 KB(Insert)
-#define kbKPInsert	(kmKeyPad | kbInsert)	/* C-only */
-#define kbUndo		0x00041200
+#define kbKPInsert      (kmKeyPad | kbInsert)   /* C-only */
+#define kbUndo          0x00041200
 KB(Undo)
-#define kbRedo		0x00041300
+#define kbRedo          0x00041300
 KB(Redo)
-#define kbMenu		0x00041400
+#define kbMenu          0x00041400
 KB(Menu)
-#define kbFind		0x00041500
+#define kbFind          0x00041500
 KB(Find)
-#define kbCancel	0x00041600
+#define kbCancel        0x00041600
 KB(Cancel)
-#define kbHelp		0x00041700
+#define kbHelp          0x00041700
 KB(Help)
-#define kbBreak		0x00041800
+#define kbBreak         0x00041800
 KB(Break)
-#define kbBackTab	0x00041900
+#define kbBackTab       0x00041900
 KB(BackTab)
 
 /* Virtual function keys */
-#define kbF1		0x00080100
+#define kbF1            0x00080100
 KB(F1)
-#define kbKPF1		(kmKeyPad | kbF1)	/* C-only */
-#define kbF2		0x00080200
+#define kbKPF1          (kmKeyPad | kbF1)       /* C-only */
+#define kbF2            0x00080200
 KB(F2)
-#define kbKPF2		(kmKeyPad | kbF2)	/* C-only */
-#define kbF3		0x00080300
+#define kbKPF2          (kmKeyPad | kbF2)       /* C-only */
+#define kbF3            0x00080300
 KB(F3)
-#define kbKPF3		(kmKeyPad | kbF3)	/* C-only */
-#define kbF4		0x00080400
+#define kbKPF3          (kmKeyPad | kbF3)       /* C-only */
+#define kbF4            0x00080400
 KB(F4)
-#define kbKPF4		(kmKeyPad | kbF4)	/* C-only */
-#define kbF5		0x00080500
+#define kbKPF4          (kmKeyPad | kbF4)       /* C-only */
+#define kbF5            0x00080500
 KB(F5)
-#define kbF6		0x00080600
+#define kbF6            0x00080600
 KB(F6)
-#define kbF7		0x00080700
+#define kbF7            0x00080700
 KB(F7)
-#define kbF8		0x00080800
+#define kbF8            0x00080800
 KB(F8)
-#define kbF9		0x00080900
+#define kbF9            0x00080900
 KB(F9)
-#define kbF10		0x00080a00
+#define kbF10           0x00080a00
 KB(F10)
-#define kbF11		0x00080b00
+#define kbF11           0x00080b00
 KB(F11)
-#define kbL1		kbF11
+#define kbL1            kbF11
 KB(L1)
-#define kbF12		0x00080c00
+#define kbF12           0x00080c00
 KB(F12)
-#define kbL2		kbF12
+#define kbL2            kbF12
 KB(L2)
-#define kbF13		0x00080d00
+#define kbF13           0x00080d00
 KB(F13)
-#define kbL3		kbF13
+#define kbL3            kbF13
 KB(L3)
-#define kbF14		0x00080e00
+#define kbF14           0x00080e00
 KB(F14)
-#define kbL4		kbF14
+#define kbL4            kbF14
 KB(L4)
-#define kbF15		0x00080f00
+#define kbF15           0x00080f00
 KB(F15)
-#define kbL5		kbF15
+#define kbL5            kbF15
 KB(L5)
-#define kbF16		0x00081000
+#define kbF16           0x00081000
 KB(F16)
-#define kbL6		kbF16
+#define kbL6            kbF16
 KB(L6)
-#define kbF17		0x00081100
+#define kbF17           0x00081100
 KB(F17)
-#define kbL7		kbF17
+#define kbL7            kbF17
 KB(L7)
-#define kbF18		0x00081200
+#define kbF18           0x00081200
 KB(F18)
-#define kbL8		kbF18
+#define kbL8            kbF18
 KB(L8)
-#define kbF19		0x00081300
+#define kbF19           0x00081300
 KB(F19)
-#define kbL9		kbF19
+#define kbL9            kbF19
 KB(L9)
-#define kbF20		0x00081400
+#define kbF20           0x00081400
 KB(F20)
-#define kbL10		kbF20
+#define kbL10           kbF20
 KB(L10)
-#define kbF21		0x00081500
+#define kbF21           0x00081500
 KB(F21)
-#define kbR1		kbF21
+#define kbR1            kbF21
 KB(R1)
-#define kbF22		0x00081600
+#define kbF22           0x00081600
 KB(F22)
-#define kbR2		kbF22
+#define kbR2            kbF22
 KB(R2)
-#define kbF23		0x00081700
+#define kbF23           0x00081700
 KB(F23)
-#define kbR3		kbF23
+#define kbR3            kbF23
 KB(R3)
-#define kbF24		0x00081800
+#define kbF24           0x00081800
 KB(F24)
-#define kbR4		kbF24
+#define kbR4            kbF24
 KB(R4)
-#define kbF25		0x00081900
+#define kbF25           0x00081900
 KB(F25)
-#define kbR5		kbF25
+#define kbR5            kbF25
 KB(R5)
-#define kbF26		0x00081a00
+#define kbF26           0x00081a00
 KB(F26)
-#define kbR6		kbF26
+#define kbR6            kbF26
 KB(R6)
-#define kbF27		0x00081b00
+#define kbF27           0x00081b00
 KB(F27)
-#define kbR7		kbF27
+#define kbR7            kbF27
 KB(R7)
-#define kbF28		0x00081c00
+#define kbF28           0x00081c00
 KB(F28)
-#define kbR8		kbF28
+#define kbR8            kbF28
 KB(R8)
-#define kbF29		0x00081d00
+#define kbF29           0x00081d00
 KB(F29)
-#define kbR9		kbF29
+#define kbR9            kbF29
 KB(R9)
-#define kbF30		0x00081e00
+#define kbF30           0x00081e00
 KB(F30)
-#define kbR10		kbF30
+#define kbR10           kbF30
 KB(R10)
 END_TABLE(kb,UV)
 #undef KB
@@ -949,9 +955,9 @@ debug_write( const char *format, ...);
 #if (PERL_PATCHLEVEL < 5)
 /* ...(perl stinks)... */
 #undef  SvREFCNT_inc
-#define SvREFCNT_inc(sv) ((Sv = (SV*)(sv)),		\
-			  (void)(Sv && ++SvREFCNT(Sv)),	\
-			  (SV*)Sv)
+#define SvREFCNT_inc(sv) ((Sv = (SV*)(sv)),             \
+                          (void)(Sv && ++SvREFCNT(Sv)), \
+                          (SV*)Sv)
 #endif
 
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
@@ -985,7 +991,7 @@ query_method( Handle object, char *methodName, Bool cacheIt);
 
 extern SV*
 call_perl_indirect( Handle self, char *subName, const char *format,
-		    Bool cdecl, Bool coderef, va_list params);
+                    Bool cdecl, Bool coderef, va_list params);
 
 extern SV*
 call_perl( Handle self, char *subName, const char *format, ...);
@@ -1016,7 +1022,7 @@ unprotect_object( Handle obj);
 
 extern HV*
 parse_hv( I32 ax, SV **sp, I32 items, SV **mark,
-	  int expected, const char *methodName);
+          int expected, const char *methodName);
 
 extern void
 push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv);
@@ -1060,27 +1066,27 @@ extern SV **temporary_prf_Sv;
    )
 
 #ifdef POLLUTE_NAME_SPACE
-#define TransmogrifyHandle(c,h)		((P##c)(h))
-#define PAbstractMenu(h)		TransmogrifyHandle(AbstractMenu,(h))
-#define CAbstractMenu(h)		(PAbstractMenu(h)->self)
-#define PApplication(h)			TransmogrifyHandle(Application,(h))
-#define CApplication(h)			(PApplication(h)-> self)
-#define PComponent(h)			TransmogrifyHandle(Component,(h))
-#define CComponent(h)			(PComponent(h)-> self)
-#define PDrawable(h)			TransmogrifyHandle(Drawable,(h))
-#define CDrawable(h)			(PDrawable(h)-> self)
-#define PIcon(h)			TransmogrifyHandle(Icon,(h))
-#define CIcon(h)			(PIcon(h)-> self)
-#define PImage(h)			TransmogrifyHandle(Image,(h))
-#define CImage(h)			(PImage(h)-> self)
-#define PObject(h)			TransmogrifyHandle(Object,(h))
-#define CObject(h)			(PObject(h)-> self)
-#define PTimer(h)			TransmogrifyHandle(Timer,(h))
-#define CTimer(h)			(PTimer(h)-> self)
-#define PWidget(h)			TransmogrifyHandle(Widget,(h))
-#define CWidget(h)			(PWidget(h)-> self)
-#define PWindow(h)			TransmogrifyHandle(Window,(h))
-#define CWindow(h)			(PWindow(h)-> self)
+#define TransmogrifyHandle(c,h)         ((P##c)(h))
+#define PAbstractMenu(h)                TransmogrifyHandle(AbstractMenu,(h))
+#define CAbstractMenu(h)                (PAbstractMenu(h)->self)
+#define PApplication(h)                 TransmogrifyHandle(Application,(h))
+#define CApplication(h)                 (PApplication(h)-> self)
+#define PComponent(h)                   TransmogrifyHandle(Component,(h))
+#define CComponent(h)                   (PComponent(h)-> self)
+#define PDrawable(h)                    TransmogrifyHandle(Drawable,(h))
+#define CDrawable(h)                    (PDrawable(h)-> self)
+#define PIcon(h)                        TransmogrifyHandle(Icon,(h))
+#define CIcon(h)                        (PIcon(h)-> self)
+#define PImage(h)                       TransmogrifyHandle(Image,(h))
+#define CImage(h)                       (PImage(h)-> self)
+#define PObject(h)                      TransmogrifyHandle(Object,(h))
+#define CObject(h)                      (PObject(h)-> self)
+#define PTimer(h)                       TransmogrifyHandle(Timer,(h))
+#define CTimer(h)                       (PTimer(h)-> self)
+#define PWidget(h)                      TransmogrifyHandle(Widget,(h))
+#define CWidget(h)                      (PWidget(h)-> self)
+#define PWindow(h)                      TransmogrifyHandle(Window,(h))
+#define CWindow(h)                      (PWindow(h)-> self)
 #endif POLLUTE_NAME_SPACE
 
 
@@ -1091,8 +1097,8 @@ extern SV **temporary_prf_Sv;
 extern int
 ctx_remap_def ( int value, int * table, Bool direct, int default_value);
 
-#define ctx_remap_end(a,b,c)	ctx_remap_def((a),(b),(c), endCtx)
-#define ctx_remap(a,b,c)	ctx_remap_def((a),(b),(c), 0)
+#define ctx_remap_end(a,b,c)    ctx_remap_def((a),(b),(c), endCtx)
+#define ctx_remap(a,b,c)        ctx_remap_def((a),(b),(c), 0)
 
 /* utility functions */
 
@@ -1258,6 +1264,7 @@ END_TABLE(dt,UV)
 typedef struct _ObjectOptions_ {
    unsigned optInDraw              : 1;   /* Drawable */
    unsigned optInDrawInfo          : 1;
+   unsigned optTextOutBaseLine     : 1;
    unsigned optBriefKeys           : 1;   /* Widget */
    unsigned optBuffered            : 1;
    unsigned optModalHorizon        : 1;
@@ -1284,9 +1291,9 @@ typedef struct _ObjectOptions_ {
 #define opt_clear( option)         (PObject(self)-> options. option = 0)
 #define is_opt( option)            (PObject(self)-> options. option)
 #define opt_assign( option, value) (PObject(self)->options. option = \
-				    (value) ? 1 : 0)
+                                    (value) ? 1 : 0)
 #define opt_InPaint                ( is_opt( optInDraw) \
-				     || is_opt( optInDrawInfo))
+                                     || is_opt( optInDrawInfo))
 
 /* apc class constants */
 #define WC(const_name) CONSTANT(wc,const_name)
@@ -1354,7 +1361,7 @@ GM(Center)
 #define gmDontCare            0x040
 GM(DontCare)
 /* shortcuts */
-#define gmClient	      (gmGrowHiX|gmGrowHiY)
+#define gmClient              (gmGrowHiX|gmGrowHiY)
 GM(Client)
 #define gmRight               (gmGrowLoX|gmGrowHiY)
 GM(Right)
@@ -1378,7 +1385,7 @@ BI(Minimize)
 BI(Maximize)
 #define    biTitleBar      8
 BI(TitleBar)
-#define    biAll	   (biSystemMenu|biMinimize|biMaximize|biTitleBar)
+#define    biAll           (biSystemMenu|biMinimize|biMaximize|biTitleBar)
 BI(All)
 END_TABLE(bi,UV)
 #undef BI
@@ -1521,9 +1528,9 @@ apc_application_get_handle( Handle self, ApiHandle apiHandle);
 
 extern int
 apc_application_get_os_info( char *system, int slen,
-			     char *release, int rlen,
-			     char *vendor, int vlen,
-			     char *arch, int alen);
+                             char *release, int rlen,
+                             char *vendor, int vlen,
+                             char *arch, int alen);
 
 extern Point
 apc_application_get_size( Handle self);
@@ -1553,8 +1560,8 @@ apc_component_fullname_changed_notify( Handle self);
 /* Window */
 extern Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint,
-		   Bool clipOwner, int borderIcons, int borderStyle,
-		   Bool taskList, int windowState, Bool useOrigin, Bool useSize);
+                   Bool clipOwner, int borderIcons, int borderStyle,
+                   Bool taskList, int windowState, Bool useOrigin, Bool useSize);
 
 extern void
 apc_window_activate( Handle self);
@@ -1623,7 +1630,7 @@ apc_widget_client_to_screen( Handle self, Point p);
 
 extern Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint,
-		   Bool clipOwner, Bool transparent);
+                   Bool clipOwner, Bool transparent);
 
 extern Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint);
@@ -1711,7 +1718,7 @@ apc_widget_screen_to_client( Handle self, Point p);
 
 extern void
 apc_widget_scroll( Handle self, int horiz, int vert, Rect * rect,
-		   Bool scrollChildren);
+                   Bool scrollChildren);
 
 extern void
 apc_widget_set_capture( Handle self, Bool capture, Handle confineTo);
@@ -1757,6 +1764,9 @@ apc_widget_set_z_order( Handle self, Handle behind, Bool top);
 
 extern void
 apc_widget_update( Handle self);
+
+extern PHash
+apc_widget_user_profile( PList names);
 
 extern void
 apc_widget_validate_rect( Handle self, Rect rect);
@@ -2120,35 +2130,35 @@ typedef Color ColorSet[ ciMaxId + 1];
 
 /* raster operations */
 typedef enum {
-   ropCopyPut = 0,	/* dest  = src */
-   ropXorPut,		/* dest ^= src */
-   ropAndPut,		/* dest &= src */
-   ropOrPut,		/* dest |= src */
-   ropNotPut,		/* dest = !src */
-   ropNotBlack,		/* dest = (src <> 0) ? src */
-   ropNotDestXor,	/* dest = (!dest) ^ src */
-   ropNotDestAnd,	/* dest = (!dest) & src */
-   ropNotDestOr,	/* dest = (!dest) | src */
-   ropNotSrcXor,	/* dest ^= !src */
-   ropNotSrcAnd,	/* dest &= !src */
-   ropNotSrcOr,		/* dest |= !src */
-   ropNotXor,		/* dest = !(src ^ dest) */
-   ropNotAnd,		/* dest = !(src & dest) */
-   ropNotOr,		/* dest = !(src | dest) */
-   ropNotBlackXor,	/* dest ^= (src <> 0) ? src */
-   ropNotBlackAnd,	/* dest &= (src <> 0) ? src */
-   ropNotBlackOr,	/* dest |= (src <> 0) ? src */
-   ropNoOper,		/* dest = dest */
-   ropBlackness,	/* dest = 0 */
-   ropWhiteness,	/* dest = white */
-   ropInvert,		/* dest = !dest */
-   ropPattern,		/* dest = pattern */
-   ropXorPattern,	/* dest ^= pattern */
-   ropAndPattern,	/* dest &= pattern */
-   ropOrPattern,	/* dest |= pattern */
-   ropNotSrcOrPat,	/* dest |= pattern | (!src) */
-   ropSrcLeave,		/* dest = (src != fore color) ? src : figa */
-   ropDestLeave,	/* dest = (src != back color) ? src : figa */
+   ropCopyPut = 0,      /* dest  = src */
+   ropXorPut,           /* dest ^= src */
+   ropAndPut,           /* dest &= src */
+   ropOrPut,            /* dest |= src */
+   ropNotPut,           /* dest = !src */
+   ropNotBlack,         /* dest = (src <> 0) ? src */
+   ropNotDestXor,       /* dest = (!dest) ^ src */
+   ropNotDestAnd,       /* dest = (!dest) & src */
+   ropNotDestOr,        /* dest = (!dest) | src */
+   ropNotSrcXor,        /* dest ^= !src */
+   ropNotSrcAnd,        /* dest &= !src */
+   ropNotSrcOr,         /* dest |= !src */
+   ropNotXor,           /* dest = !(src ^ dest) */
+   ropNotAnd,           /* dest = !(src & dest) */
+   ropNotOr,            /* dest = !(src | dest) */
+   ropNotBlackXor,      /* dest ^= (src <> 0) ? src */
+   ropNotBlackAnd,      /* dest &= (src <> 0) ? src */
+   ropNotBlackOr,       /* dest |= (src <> 0) ? src */
+   ropNoOper,           /* dest = dest */
+   ropBlackness,        /* dest = 0 */
+   ropWhiteness,        /* dest = white */
+   ropInvert,           /* dest = !dest */
+   ropPattern,          /* dest = pattern */
+   ropXorPattern,       /* dest ^= pattern */
+   ropAndPattern,       /* dest &= pattern */
+   ropOrPattern,        /* dest |= pattern */
+   ropNotSrcOrPat,      /* dest |= pattern | (!src) */
+   ropSrcLeave,         /* dest = (src != fore color) ? src : figa */
+   ropDestLeave,        /* dest = (src != back color) ? src : figa */
 } ROP;
 #define ROP(const_name) CONSTANT(rop,const_name)
 START_TABLE(rop,UV)
@@ -2600,7 +2610,7 @@ apc_gp_done( Handle self);
 
 extern void
 apc_gp_arc( Handle self, int x, int y, int radX, int radY,
-	    double angleStart, double angleEnd);
+            double angleStart, double angleEnd);
 
 extern void
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2);
@@ -2610,7 +2620,7 @@ apc_gp_clear( Handle self);
 
 extern void
 apc_gp_chord( Handle self, int x, int y, int radX, int radY,
-	      double angleStart, double angleEnd);
+              double angleStart, double angleEnd);
 
 extern void
 apc_gp_draw_poly( Handle self, int numPts, Point * points);
@@ -2623,7 +2633,7 @@ apc_gp_ellipse( Handle self, int x, int y, int radX, int radY);
 
 extern void
 apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY,
-		   double angleStart, double angleEnd);
+                   double angleStart, double angleEnd);
 
 extern void
 apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY);
@@ -2633,11 +2643,11 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points);
 
 extern void
 apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY,
-		    double angleStart, double angleEnd);
+                    double angleStart, double angleEnd);
 
 extern void
 apc_gp_flood_fill( Handle self, int x, int y, Color borderColor,
-		   Bool singleBorder);
+                   Bool singleBorder);
 
 extern Color
 apc_gp_get_pixel( Handle self, int x, int y);
@@ -2647,22 +2657,22 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2);
 
 extern void
 apc_gp_put_image( Handle self, Handle image, int x, int y,
-		  int xFrom, int yFrom, int xLen, int yLen, int rop);
+                  int xFrom, int yFrom, int xLen, int yLen, int rop);
 extern void
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2);
 
 extern void
 apc_gp_sector( Handle self, int x, int y, int radX, int radY,
-	       double angleStart, double angleEnd);
+               double angleStart, double angleEnd);
 
 extern void
 apc_gp_set_pixel( Handle self, int x, int y, Color color);
 
 extern void
 apc_gp_stretch_image( Handle self, Handle image,
-		      int x, int y, int xFrom, int yFrom,
-		      int xDestLen, int yDestLen, int xLen, int yLen,
-		      int rop);
+                      int x, int y, int xFrom, int yFrom,
+                      int xDestLen, int yDestLen, int xLen, int yLen,
+                      int rop);
 
 extern void
 apc_gp_text_out( Handle self, const char* text, int x, int y, int len);
@@ -2725,11 +2735,11 @@ apc_gp_get_text_box( Handle self, const char* text, int len);
 extern Bool
 apc_gp_get_text_opaque( Handle self);
 
-extern Bool
-apc_gp_get_text_out_baseline( Handle self);
-
 extern int
 apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang);
+
+extern Bool
+apc_gp_get_text_out_baseline( Handle self);
 
 extern Point
 apc_gp_get_transform( Handle self);
