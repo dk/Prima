@@ -1103,7 +1103,7 @@ prima_wm_sync( Handle self, int eventType)
    r = copy_events( self, events, &wmsd, eventType);
    if ( r < 0) return;
    /* printf("pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); */
-   delay = 50000; /* wait 50 ms just in case */
+   delay += 50000; /* wait 50 ms just in case */
    /* waiting for ConfigureNotify or timeout */
    /* printf("enter cycle, size: %d %d\n", wmsd.size.x, wmsd.size.y); */
    start_time = timeout;
@@ -1148,7 +1148,7 @@ prima_wm_sync( Handle self, int eventType)
    if ( quit_by_timeout) {
       guts. wm_event_timeout *= 2;
       /* printf("INC timeout %g sec\n", (double)guts. wm_event_timeout / 1000000); */
-      if ( guts. wm_event_timeout > 5000000) guts. wm_event_timeout = 5000000;
+      if ( guts. wm_event_timeout > 500000) guts. wm_event_timeout = 500000;
    } else if ( delay > diff) {
       guts. wm_event_timeout -= delay - diff;
       if ( guts. wm_event_timeout < 10000) guts. wm_event_timeout = 10000;
