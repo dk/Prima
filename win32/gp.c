@@ -1723,7 +1723,7 @@ apc_gp_get_transform( Handle self)
    if ( !GetViewportOrgEx( sys ps, (POINT*)&p)) apiErr;
    p. y = -p. y;
    p. x += sys transform2. x;
-   p. y += sys transform2. y;
+   p. y -= sys transform2. y;
    return p;
 }
 
