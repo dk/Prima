@@ -40,6 +40,7 @@ use File::Path;
 use File::Copy;
 use Cwd;
 use DynaLoader;
+use Prima::Gencls;
 use vars qw( %make_trans @ovvars $dir_sep $path_sep );
 use vars @ovvars = qw(
     $CC $CFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG
@@ -1159,25 +1160,45 @@ install: all
 MAKE
 
     finddepth( sub { print MAKE "\t", qd( "$File::Find::dir/$_ $PREFIX/$File::Find::dir"), " \\\n" unless -d $_}, 'Prima');
+    my ( $instcnt, $maxcnt) = ( 1, 20);
     while ( scalar @allinstall) {
 	my ( $src, $dst) = ( shift @allinstall, shift @allinstall);
-	print MAKE "\t$src $dst \\\n";
+	print MAKE "\t$src $dst";
+	if ( ( $instcnt % $maxcnt) == 0) {
+	    print MAKE "\n\t\@\$(CP)";
+	}
+	$instcnt++;
+	print MAKE " \\\n";
     }
     while ( <include/*.h>) {
 	my ( $dsth) = $_;
 	$dsth =~ s/^include/CORE/;
-	print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
+	print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth"));
+	if ( ( $instcnt % $maxcnt) == 0) {
+	    print MAKE "\n\t\@\$(CP)";
+	}
+	$instcnt++;
+	print MAKE " \\\n";
     }
     while ( <include/$PLATFORM/*.h>) {
 	my ( $dsth) = $_;
 	$dsth =~ s/^include/CORE/;
-	print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
+	print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth"));
+	if ( ( $instcnt % $maxcnt) == 0) {
+	    print MAKE "\n\t\@\$(CP)";
+	}
+	$instcnt++;
+	print MAKE " \\\n";
     }
     print MAKE "\tPrima.pm $PREFIX\n";
 
     print MAKE "\t\@\$(CPBIN)";
+    $instcnt = 1;
     while ( scalar @allbins) {
 	my ( $src, $dst) = ( shift @allbins, shift @allbins);
+	if ( ( $instcnt % $maxcnt) == 0) {
+	    print MAKE "\n\t\@\$(CPBIN)";
+	}
 	$dst = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
 	print MAKE " \\\n\t$src $dst"
     }
