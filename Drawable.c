@@ -909,7 +909,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
       t. utf8_textLen = t. textLen = textLen;
    }
    t. width     = ( width < 0) ? 0 : width;
-   t. tabIndent = ( tabIndent < 0) ? 0 : t. tabIndent;
+   t. tabIndent = ( tabIndent < 0) ? 0 : tabIndent;
    t. options   = options;
    retChunks    = t. options & twReturnChunks;
    t. ascii     = &var-> font_abc_ascii;
