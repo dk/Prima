@@ -755,7 +755,7 @@ sub notification_types { return \%RNT; }
    selectingButtons  => mb::Left,
    shape             => undef,
    showHint          => 1,
-   syncPaint         => 1,
+   syncPaint         => 0,
    tabOrder          => -1,
    tabStop           => 1,
    text              => undef,
