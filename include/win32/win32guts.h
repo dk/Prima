@@ -255,6 +255,7 @@ typedef struct _DrawableData
    PAINTSTRUCT    paintStruc;
    HBITMAP        bm;                      // cached bitmap
    HPALETTE       pal;                     // cached palette
+   HPALETTE       pal2;                    // cached palette for optBuffered
    char          *bmRaw;                   // cached raw bitmap
    ColorSet       viewColors;
 // HDC data
@@ -390,6 +391,7 @@ typedef struct _MusClkRec {
 )
 
 
+#define palette_create image_make_bitmap_palette
 
 extern Bool         appDead;
 
@@ -438,10 +440,10 @@ extern Handle       hwnd_to_view( HWND win);
 extern void         hwnd_enter_paint( Handle self);
 extern void         hwnd_leave_paint( Handle self);
 extern Handle       hwnd_top_level( Handle self);
-extern Bool         image_screenable( Handle image);
-extern Handle       image_enscreen( Handle image);
+extern Bool         image_screenable( Handle image, Handle screen, int * bitCount);
+extern Handle       image_enscreen( Handle image, Handle screen);
 extern BITMAPINFO * image_get_binfo( Handle img, XBITMAPINFO * bi);
-extern HBITMAP      image_make_bitmap_handle( Handle img);
+extern HBITMAP      image_make_bitmap_handle( Handle img, HPALETTE palette);
 extern HPALETTE     image_make_bitmap_palette( Handle img);
 extern void         image_set_cache( Handle from, Handle self);
 extern void         image_destroy_cache( Handle self);
@@ -450,6 +452,7 @@ extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotS
 extern BYTE *       mod_select( int mod);
 extern void         mod_free( BYTE * modState);
 extern void         dbm_recreate( Handle self);
+extern Bool         palette_change( Handle self);
 
 extern Bool      create_font_hash  ( void);
 extern Bool      destroy_font_hash ( void);
@@ -457,6 +460,8 @@ extern Bool      add_font_to_hash  ( const PFont key, const PFont font, int vect
 extern Bool      get_font_from_hash( PFont font, int *vectored, FAMTEXTMETRIC * fm, Bool bySize);
 
 extern long      remap_color( long clr, Bool toSystem);
+extern void      cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
+
 
 #endif
 
