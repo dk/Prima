@@ -287,6 +287,7 @@ sub Name_SelectItem
    my ( $owner, $self, $index, $state) = @_;
    my $sz = $owner-> {logFont}->{size};
    my $fn = $owner-> reset_sizelist;
+   $owner-> Size-> InputLine-> text( $sz);
    $owner-> apply( name => $fn, size => $sz);
 }
 
