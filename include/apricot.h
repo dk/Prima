@@ -1471,21 +1471,20 @@ apc_application_begin_paint_info( Handle self);
 extern Bool
 apc_application_create( Handle self);
 
-extern void
+extern Bool
 apc_application_close( Handle self);
 
-extern void
+extern Bool
 apc_application_destroy( Handle self);
 
-extern void
+extern Bool
 apc_application_end_paint( Handle self);
 
-extern void
+extern Bool
 apc_application_end_paint_info( Handle self);
 
 extern Bool
 apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen);
-
 
 extern int
 apc_application_get_gui_info( char * description, int len);
@@ -1505,26 +1504,26 @@ apc_application_get_os_info( char *system, int slen,
 extern Point
 apc_application_get_size( Handle self);
 
-extern void
+extern Bool
 apc_application_go( Handle self);
 
-extern void
+extern Bool
 apc_application_lock( Handle self);
 
-extern void
+extern Bool
 apc_application_unlock( Handle self);
 
-extern void
+extern Bool
 apc_application_yield( void);
 
 /* Component */
-extern void
+extern Bool
 apc_component_create( Handle self);
 
-extern void
+extern Bool
 apc_component_destroy( Handle self);
 
-extern void
+extern Bool
 apc_component_fullname_changed_notify( Handle self);
 
 /* Window */
@@ -1533,7 +1532,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint,
                    Bool clipOwner, int borderIcons, int borderStyle,
                    Bool taskList, int windowState, Bool useOrigin, Bool useSize);
 
-extern void
+extern Bool
 apc_window_activate( Handle self);
 
 extern Bool
@@ -1566,22 +1565,22 @@ apc_window_get_window_state( Handle self);
 extern Bool
 apc_window_get_task_listed( Handle self);
 
-extern void
+extern Bool
 apc_window_set_caption( Handle self, const char* caption);
 
-extern void
+extern Bool
 apc_window_set_client_pos( Handle self, int x, int y);
 
-extern void
+extern Bool
 apc_window_set_client_size( Handle self, int x, int y);
 
 extern Bool
 apc_window_set_menu( Handle self, Handle menu);
 
-extern void
+extern Bool
 apc_window_set_icon( Handle self, Handle icon);
 
-extern void
+extern Bool
 apc_window_set_window_state( Handle self, int state);
 
 extern Bool
@@ -1590,7 +1589,7 @@ apc_window_execute( Handle self, Handle insertBefore);
 extern Bool
 apc_window_execute_shared( Handle self, Handle insertBefore);
 
-extern void
+extern Bool
 apc_window_end_modal( Handle self);
 
 
@@ -1608,16 +1607,16 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint);
 extern Bool
 apc_widget_begin_paint_info( Handle self);
 
-extern void
+extern Bool
 apc_widget_destroy( Handle self);
 
 extern PFont
 apc_widget_default_font( PFont copyTo);
 
-extern void
+extern Bool
 apc_widget_end_paint( Handle self);
 
-extern void
+extern Bool
 apc_widget_end_paint_info( Handle self);
 
 extern Bool
@@ -1680,65 +1679,62 @@ apc_widget_is_showing( Handle self);
 extern Bool
 apc_widget_is_visible( Handle self);
 
-extern void
+extern Bool
 apc_widget_invalidate_rect( Handle self, Rect * rect);
 
 extern Point
 apc_widget_screen_to_client( Handle self, Point p);
 
-extern void
+extern Bool
 apc_widget_scroll( Handle self, int horiz, int vert, Rect * rect,
                    Bool scrollChildren);
 
-extern void
+extern Bool
 apc_widget_set_capture( Handle self, Bool capture, Handle confineTo);
 
-extern void
+extern Bool
 apc_widget_set_clip_rect( Handle self, Rect clipRect);
 
-extern void
+extern Bool
 apc_widget_set_color( Handle self, Color color, int index);
 
-extern void
+extern Bool
 apc_widget_set_enabled( Handle self, Bool enable);
 
-extern void
+extern Bool
 apc_widget_set_first_click( Handle self, Bool firstClick);
 
-extern void
+extern Bool
 apc_widget_set_focused( Handle self);
 
-extern void
+extern Bool
 apc_widget_set_font( Handle self, PFont font);
 
-extern void
+extern Bool
 apc_widget_set_palette( Handle self);
 
-extern void
+extern Bool
 apc_widget_set_pos( Handle self, int x, int y);
 
-extern void
+extern Bool
 apc_widget_set_shape( Handle self, Handle mask);
 
-extern void
+extern Bool
 apc_widget_set_size( Handle self, int width, int height);
 
-extern void
-apc_widget_set_tab_order( Handle self, int tabOrder);
-
-extern void
+extern Bool
 apc_widget_set_visible( Handle self, Bool show);
 
-extern void
+extern Bool
 apc_widget_set_z_order( Handle self, Handle behind, Bool top);
 
-extern void
+extern Bool
 apc_widget_update( Handle self);
 
 extern PHash
-apc_widget_user_profile( PList names);
+apc_widget_user_profile( char * name, Handle owner);
 
-extern void
+extern Bool
 apc_widget_validate_rect( Handle self, Rect rect);
 
 /* standard system pointers */
@@ -1772,13 +1768,13 @@ END_TABLE(cr,UV)
 #undef CR
 
 /* Widget attributes */
-extern void
+extern Bool
 apc_cursor_set_pos( Handle self, int x, int y);
 
-extern void
+extern Bool
 apc_cursor_set_size( Handle self, int x, int y);
 
-extern void
+extern Bool
 apc_cursor_set_visible( Handle self, Bool visible);
 
 extern Point
@@ -1808,16 +1804,16 @@ apc_pointer_get_bitmap( Handle self, Handle icon);
 extern Bool
 apc_pointer_get_visible( Handle self);
 
-extern void
+extern Bool
 apc_pointer_set_pos( Handle self, int x, int y);
 
-extern void
+extern Bool
 apc_pointer_set_shape( Handle self, int sysPtrId);
 
 extern Bool
 apc_pointer_set_user( Handle self, Handle icon, Point hotSpot);
 
-extern void
+extern Bool
 apc_pointer_set_visible( Handle self, Bool visible);
 
 extern int
@@ -1835,16 +1831,16 @@ apc_kbd_get_state( Handle self);
 extern Bool
 apc_clipboard_create( void);
 
-extern void
+extern Bool
 apc_clipboard_destroy( void);
 
 extern Bool
 apc_clipboard_open( void);
 
-extern void
+extern Bool
 apc_clipboard_close( void);
 
-extern void
+extern Bool
 apc_clipboard_clear( void);
 
 extern Bool
@@ -1862,7 +1858,7 @@ apc_clipboard_set_data( long id, void *data, int length);
 extern long
 apc_clipboard_register_format( const char *format);
 
-extern void
+extern Bool
 apc_clipboard_deregister_format( long id);
 
 /* Menus & popups */
@@ -1887,10 +1883,10 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 extern Bool
 apc_menu_create( Handle self, Handle owner);
 
-extern void
+extern Bool
 apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch);
 
-extern void
+extern Bool
 apc_menu_destroy( Handle self);
 
 extern PFont
@@ -1902,31 +1898,31 @@ apc_menu_get_color( Handle self, int index);
 extern PFont
 apc_menu_get_font( Handle self, PFont font);
 
-extern void
+extern Bool
 apc_menu_set_color( Handle self, Color color, int index);
 
-extern void
+extern Bool
 apc_menu_set_font( Handle self, PFont font);
 
-extern void
+extern Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m);
 
-extern void
+extern Bool
 apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel);
 
-extern void
+extern Bool
 apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check);
 
-extern void
+extern Bool
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled);
 
-extern void
+extern Bool
 apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image);
 
-extern void
+extern Bool
 apc_menu_item_set_key( Handle self, PMenuItemReg m, int key);
 
-extern void
+extern Bool
 apc_menu_item_set_text( Handle self, PMenuItemReg m, const char* text);
 
 extern ApiHandle
@@ -1945,19 +1941,19 @@ apc_popup( Handle self, int x, int y, Rect * anchor);
 extern Bool
 apc_timer_create( Handle self, Handle owner, int timeout);
 
-extern void
+extern Bool
 apc_timer_destroy( Handle self);
 
 extern int
 apc_timer_get_timeout( Handle self);
 
-extern void
+extern Bool
 apc_timer_set_timeout( Handle self, int timeout);
 
 extern Bool
 apc_timer_start( Handle self);
 
-extern void
+extern Bool
 apc_timer_stop( Handle self);
 
 extern ApiHandle
@@ -1982,10 +1978,10 @@ END_TABLE(hmp,IV)
 extern Bool
 apc_help_open_topic( Handle self, long command);
 
-extern void
+extern Bool
 apc_help_close( Handle self);
 
-extern void
+extern Bool
 apc_help_set_file( Handle self, const char* helpFile);
 
 /* Messages */
@@ -1994,10 +1990,10 @@ apc_help_set_file( Handle self, const char* helpFile);
 #define mbInformation  0x0400
 #define mbQuestion     0x0800
 
-extern void
+extern Bool
 apc_message( Handle self, PEvent ev, Bool post);
 
-extern void
+extern Bool
 apc_show_message( const char* message);
 
 
@@ -2375,7 +2371,7 @@ END_TABLE(ict,UV)
 extern Bool
 apc_image_create( Handle self);
 
-extern void
+extern Bool
 apc_image_destroy( Handle self);
 
 extern Bool
@@ -2384,10 +2380,10 @@ apc_image_begin_paint( Handle self);
 extern Bool
 apc_image_begin_paint_info( Handle self);
 
-extern void
+extern Bool
 apc_image_end_paint( Handle self);
 
-extern void
+extern Bool
 apc_image_end_paint_info( Handle self);
 
 extern Bool
@@ -2396,7 +2392,7 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData);
 extern Bool
 apc_image_save( const char *filename, const char *format, PList imgInfo);
 
-extern void
+extern Bool
 apc_image_update_change( Handle self);
 
 extern const char *
@@ -2409,7 +2405,7 @@ apc_image_get_handle( Handle self);
 extern Bool
 apc_dbm_create( Handle self, Bool monochrome);
 
-extern void
+extern Bool
 apc_dbm_destroy( Handle self);
 
 extern ApiHandle
@@ -2572,79 +2568,79 @@ typedef struct _FontABC
 } FontABC, *PFontABC;
 
 /* gpi functions underplace */
-extern void
+extern Bool
 apc_gp_init( Handle self);
 
-extern void
+extern Bool
 apc_gp_done( Handle self);
 
-extern void
+extern Bool
 apc_gp_arc( Handle self, int x, int y, int radX, int radY,
             double angleStart, double angleEnd);
 
-extern void
+extern Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2);
 
-extern void
+extern Bool
 apc_gp_clear( Handle self);
 
-extern void
+extern Bool
 apc_gp_chord( Handle self, int x, int y, int radX, int radY,
               double angleStart, double angleEnd);
 
-extern void
+extern Bool
 apc_gp_draw_poly( Handle self, int numPts, Point * points);
 
-extern void
+extern Bool
 apc_gp_draw_poly2( Handle self, int numPts, Point * points);
 
-extern void
+extern Bool
 apc_gp_ellipse( Handle self, int x, int y, int radX, int radY);
 
-extern void
+extern Bool
 apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY,
                    double angleStart, double angleEnd);
 
-extern void
+extern Bool
 apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY);
 
-extern void
+extern Bool
 apc_gp_fill_poly( Handle self, int numPts, Point * points);
 
-extern void
+extern Bool
 apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY,
                     double angleStart, double angleEnd);
 
-extern void
+extern Bool
 apc_gp_flood_fill( Handle self, int x, int y, Color borderColor,
                    Bool singleBorder);
 
 extern Color
 apc_gp_get_pixel( Handle self, int x, int y);
 
-extern void
+extern Bool
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2);
 
-extern void
+extern Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y,
                   int xFrom, int yFrom, int xLen, int yLen, int rop);
-extern void
+extern Bool
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2);
 
-extern void
+extern Bool
 apc_gp_sector( Handle self, int x, int y, int radX, int radY,
                double angleStart, double angleEnd);
 
-extern void
+extern Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color);
 
-extern void
+extern Bool
 apc_gp_stretch_image( Handle self, Handle image,
                       int x, int y, int xFrom, int yFrom,
                       int xDestLen, int yDestLen, int xLen, int yLen,
                       int rop);
 
-extern void
+extern Bool
 apc_gp_text_out( Handle self, const char* text, int x, int y, int len);
 
 extern char**
@@ -2714,56 +2710,56 @@ apc_gp_get_text_out_baseline( Handle self);
 extern Point
 apc_gp_get_transform( Handle self);
 
-extern void
+extern Bool
 apc_gp_set_back_color( Handle self, Color color);
 
-extern void
+extern Bool
 apc_gp_set_clip_rect( Handle self, Rect clipRect);
 
-extern void
+extern Bool
 apc_gp_set_color( Handle self, Color color);
 
-extern void
+extern Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern);
 
-extern void
+extern Bool
 apc_gp_set_font( Handle self, PFont font);
 
-extern void
+extern Bool
 apc_gp_set_line_end( Handle self, int lineEnd);
 
-extern void
+extern Bool
 apc_gp_set_line_width( Handle self, int lineWidth);
 
-extern void
+extern Bool
 apc_gp_set_line_pattern( Handle self, int pattern);
 
-extern void
+extern Bool
 apc_gp_set_palette( Handle self);
 
-extern void
+extern Bool
 apc_gp_set_region( Handle self, Handle mask);
 
-extern void
+extern Bool
 apc_gp_set_rop( Handle self, int rop);
 
-extern void
+extern Bool
 apc_gp_set_rop2( Handle self, int rop);
 
-extern void
+extern Bool
 apc_gp_set_transform( Handle self, int x, int y);
 
-extern void
+extern Bool
 apc_gp_set_text_opaque( Handle self, Bool opaque);
 
-extern void
+extern Bool
 apc_gp_set_text_out_baseline( Handle self, Bool baseline);
 
 /* printer */
 extern Bool
 apc_prn_create( Handle self);
 
-extern void
+extern Bool
 apc_prn_destroy( Handle self);
 
 extern PrinterInfo*
@@ -2796,16 +2792,16 @@ apc_prn_begin_doc( Handle self, const char* docName);
 extern Bool
 apc_prn_begin_paint_info( Handle self);
 
-extern void
+extern Bool
 apc_prn_end_doc( Handle self);
 
-extern void
+extern Bool
 apc_prn_end_paint_info( Handle self);
 
-extern void
+extern Bool
 apc_prn_new_page( Handle self);
 
-extern void
+extern Bool
 apc_prn_abort_doc( Handle self);
 
 /* fonts */
@@ -2815,7 +2811,7 @@ apc_font_default( PFont font);
 extern int
 apc_font_load( const char* filename);
 
-extern void
+extern Bool
 apc_font_pick( Handle self, PFont source, PFont dest);
 
 extern PFont
@@ -2834,14 +2830,14 @@ apc_sys_get_caption_font( PFont copyTo);
 extern int
 apc_sys_get_value( int sysValue);
 
-extern void
+extern Bool
 apc_sys_set_insert_mode( Bool insMode);
 
 /* etc */
-extern void
+extern Bool
 apc_beep( int style);
 
-extern void
+extern Bool
 apc_beep_tone( int freq, int duration);
 
 extern Color
@@ -2850,7 +2846,7 @@ apc_lookup_color( const char *colorName);
 extern char *
 apc_system_action( const char *params);
 
-extern void
+extern Bool
 apc_query_drives_map( const char *firstDrive, char *result, int len);
 
 extern int
