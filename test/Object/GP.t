@@ -156,8 +156,10 @@ ok( $x-> pixel( 1,2) == 0 &&
     $x-> pixel( 2,3) == 0 &&
     $x-> pixel( 3,2) == 0 &&
     $x-> pixel( 2,2) == 0 &&
-    $x-> pixel( 1,1) == 0xFFFFFF &&
-    $x-> pixel( 3,3) == 0xFFFFFF
+    $x-> pixel( 1,0) == 0xFFFFFF &&
+    $x-> pixel( 0,1) == 0xFFFFFF &&
+    $x-> pixel( 4,3) == 0xFFFFFF &&
+    $x-> pixel( 3,4) == 0xFFFFFF
 );
 
 
