@@ -180,7 +180,7 @@ apc_img_profile_add( HV * to, HV * from, HV * keys)
       if ( !hv_exists( from, key, keyLen))
          continue;
       holder = hv_fetch( from, key, keyLen, 0);
-      if ( holder)
+      if ( holder) 
          hv_store( to, key, keyLen, newSVsv( *holder), 0);
    }
 }   
@@ -212,7 +212,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    ret = plist_create( 8, 8);
    if ( !ret) out("Not enough memory")
 
-   snprintf( error, 256, "Error loading %s", fileName);
+   strcpy( error, "Internal error");
    fi. errbuf = error;
 
    // open file
@@ -320,7 +320,11 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
                break;
             }   
 
-            if ( fi. stop) { err = true; goto EXIT_NOW; }
+            if ( fi. stop) { 
+               err = true; 
+               free( loadmap);
+               goto EXIT_NOW; 
+            }
          }   
          c = nil;
       }   
@@ -336,7 +340,11 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
                codecID = i;
                break;
             }   
-            if ( fi. stop) { err = true; goto EXIT_NOW; }
+            if ( fi. stop) { 
+               err = true; 
+               free( loadmap);
+               goto EXIT_NOW; 
+            }
             c = nil;
          }
       }
@@ -369,7 +377,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
 
    // loading
    for ( i = 0; i < fi. frameMapSize; i++) {
-      HV * profile = def;
+      HV * profile = commonHV;
       char * className = "Prima::Image";
 
       fi. frame = incrementalLoad ? i : fi. frameMap[ i];
@@ -423,7 +431,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          while ( vmt && vmt != (PVMT)CImage) 
             vmt = vmt-> base;
          if ( !vmt) {
-            if ( fi. profile != def) sv_free(( SV *) fi. profile);      
+            if ( fi. profile != commonHV) sv_free(( SV *) fi. profile);      
             outd("class '%s' is not a Prima::Image descendant", className);
          }   
       }      
@@ -434,7 +442,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          fi. object = Object_create( className, profile);
          sv_free(( SV *) profile); 
          if ( !fi. object) {
-            if ( fi. profile != def) sv_free(( SV *) fi. profile);
+            if ( fi. profile != commonHV) sv_free(( SV *) fi. profile);
             outd("Failed to create object '%s'", className);
          }   
       } else
@@ -448,7 +456,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          sv_free(( SV *) fi. frameProperties);
          if ( fi. object != self)
             Object_destroy( fi. object);
-         if ( fi. profile != def) sv_free(( SV *) fi. profile);
+         if ( fi. profile != commonHV) sv_free(( SV *) fi. profile);
          if ( incrementalLoad) {
             if ( fi. frameCount < 0) fi. frameCount = fi. frame;
             goto EXIT_NOW; // EOF, report no error
@@ -494,7 +502,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
       } 
 
       sv_free(( SV *) fi. frameProperties);
-      if ( fi. profile != def) sv_free(( SV *) fi. profile);
+      if ( fi. profile != commonHV) sv_free(( SV *) fi. profile);
 
       list_add( ret, fi. object);
    }
@@ -556,6 +564,7 @@ apc_img_frame_count( char * fileName)
    fi. fileProperties = newHV(); 
    fi. frameCount = -1;
    fi. errbuf     = error;
+   fi. stop       = false;
 
    // finding codec
    {
@@ -600,6 +609,11 @@ apc_img_frame_count( char * fileName)
                continue;
             if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL)
                break;
+            
+            if ( fi. stop) { 
+               free( loadmap);
+               goto EXIT_NOW; 
+            }
          }   
          c = nil;
       }   
@@ -613,7 +627,11 @@ apc_img_frame_count( char * fileName)
                   continue;
             if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL)
                break;
-            c = nil;
+            if ( fi. stop) { 
+               free( loadmap);
+               goto EXIT_NOW; 
+            }
+           c = nil;
          }
       }
       free( loadmap);
