@@ -859,6 +859,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
    int bk  = GetBkMode( ps);
    int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
    int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
+   if ( div <= 0) div = 1;
 
    STYLUS_USE_TEXT( ps);
    if ( opa != bk) SetBkMode( ps, opa);
@@ -1282,6 +1283,7 @@ apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
    /* width more that 32K returned incorrectly by Win32 core */
    if (( div = 32768L / ( var font. maximalWidth ? var font. maximalWidth : 1)))
       div = 1;
+   if ( div <= 0) div = 1;
    
    while ( offset < len) {
       int chunk_len = ( offset + div > len) ? ( len - offset) : div;
