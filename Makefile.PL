@@ -44,7 +44,7 @@ use vars qw( %make_trans @ovvars $dir_sep $path_sep );
 use vars @ovvars = qw(
     $CC $CFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG
     $LD $LDFLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
-    $OBJ_EXT $LIB_EXT $EXE_EXT $DL_EXT
+    $OBJ_EXT $LIB_EXT $EXE_EXT $DL_EXT $SCRIPT_EXT
     @INCPATH
     @LIBPATH
     @LIBS
@@ -96,7 +96,7 @@ use vars qw(
 sub print_config
 {
     foreach my $var ( sort keys %Config) {
-        print "$var='", $Config{ $var} || '', "'\n";
+	print "$var='", $Config{ $var} || '', "'\n";
     }
 }
 
@@ -126,7 +126,7 @@ sub tempfile
     my $name;
     my $n = 0;
     do {
-        $name = sprintf $mask, $n++;
+	$name = sprintf $mask, $n++;
     } while ( -e $name);
     return $name;
 }
@@ -153,15 +153,15 @@ sub ld_command_line
     my ( $dstf) = shift;
     my @ld = ( $LD, split( ' ', $LDFLAGS));
     if ( $COMPILER eq 'bcc32') {
-        push @ld, '-L"' . join( ';', @LIBPATH) . '" c0d32.obj ';
-        push @ld, @_;
-        push @ld, ",", $dstf, ", ,", @LIBS, ",", "win32\\Prima.def,";
+	push @ld, '-L"' . join( ';', @LIBPATH) . '" c0d32.obj ';
+	push @ld, @_;
+	push @ld, ",", $dstf, ", ,", @LIBS, ",", "win32\\Prima.def,";
     }
     else {
-        push @ld, map { "$LDLIBPATHFLAG$_"} @LIBPATH;
-        push @ld, "$LDOUTFLAG$dstf", @_;
-        push @ld, map { "$LDLIBFLAG$_"} @LIBS;
-        push @ld, qd( "os2/Prima.def") if $COMPILER eq 'emx';
+	push @ld, map { "$LDLIBPATHFLAG$_"} @LIBPATH;
+	push @ld, "$LDOUTFLAG$dstf", @_;
+	push @ld, map { "$LDLIBFLAG$_"} @LIBS;
+	push @ld, qd( "os2/Prima.def") if $COMPILER eq 'emx';
     }
     return @ld;
 }
@@ -170,7 +170,7 @@ sub null_output
 {
     open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
     open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
-    # $NULLDEV = $Win32 ? "CON" : "/dev/tty";
+    #	$NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
     close STDOUT;
     close STDERR;
     open STDOUT, ">$NULLDEV" or fatal "STDOUT redirect failed: $!";
@@ -219,9 +219,9 @@ sub have_header
 #include <$header>
 ENDP
     if ( $present) {
-        my $defname = "HAVE_" . uc $header;
-        $defname =~ s/\W/_/g;
-        $DEFINES{ $defname} = 1;
+	my $defname = "HAVE_" . uc $header;
+	$defname =~ s/\W/_/g;
+	$DEFINES{ $defname} = 1;
     }
     print( $present ? "yes" : "no", "\n");
     return $present;
@@ -232,12 +232,12 @@ sub find_header
     my $header = shift;
     my ( $incpath, $present);
     foreach $incpath ( @_) {
-        local @INCPATH = @INCPATH;
-        push @INCPATH, $incpath if $incpath;
-        $present = compile( <<ENDP, 1);
+	local @INCPATH = @INCPATH;
+	push @INCPATH, $incpath if $incpath;
+	$present = compile( <<ENDP, 1);
 #include <$header>
 ENDP
-        return $incpath if $present;
+	return $incpath if $present;
     }
     return undef;
 }
@@ -249,15 +249,15 @@ sub find_lib
     local @LIBS = @LIBS;
     push @LIBS, $lib;
     foreach $libpath ( @_) {
-        local @LIBPATH = @LIBPATH;
-        push @LIBPATH, $libpath if $libpath;
-        $present = compile( <<ENDP);
+	local @LIBPATH = @LIBPATH;
+	push @LIBPATH, $libpath if $libpath;
+	$present = compile( <<ENDP);
 void
 main()
 {
 }
 ENDP
-        return $libpath if $present;
+	return $libpath if $present;
     }
     return undef;
 }
@@ -274,13 +274,13 @@ main()
 }
 ENDP
     if ( $rc) {
-        my $defname = "HAVE_" . uc $funcname;
-        $defname =~ s/\W/_/g;
-        $DEFINES{ $defname} = 1;
-        print "yes\n";
+	my $defname = "HAVE_" . uc $funcname;
+	$defname =~ s/\W/_/g;
+	$DEFINES{ $defname} = 1;
+	print "yes\n";
     }
     else {
-        print "no\n";
+	print "no\n";
     }
     return $rc;
 }
@@ -293,13 +293,13 @@ sub have_define
     my $tmpsrc = qd( tempfile( "pmts%04d.c"));
     my $tmpo = $tmpsrc;
     if ( $Win32) {
-        $tmpo =~ s/\.c$/\.obj/;
+	$tmpo =~ s/\.c$/\.obj/;
     }
     else {
-        $tmpo =~ s/\.c$/\.o/;
+	$tmpo =~ s/\.c$/\.o/;
     }
     open TMPSRC, ">$tmpsrc";
-    print TMPSRC <<EOF;
+    print TMPSRC <<ENDP;
 int
 main()
 {
@@ -309,7 +309,7 @@ return 0;
 #error No
 #endif
 }
-EOF
+ENDP
     close TMPSRC;
     null_output;
     my $ccrc = system( "$CC -c $tmpsrc");
@@ -335,13 +335,13 @@ main()
 }
 ENDP
     if ( $rc) {
-        my $defname = "HAVE_" . uc $type;
-        $defname =~ s/\W/_/g;
-        $DEFINES{ $defname} = 1;
-        print "yes\n";
+	my $defname = "HAVE_" . uc $type;
+	$defname =~ s/\W/_/g;
+	$DEFINES{ $defname} = 1;
+	print "yes\n";
     }
     else {
-        print "no\n";
+	print "no\n";
     }
     return $rc;
 }
@@ -351,112 +351,112 @@ sub setvar
     my ( $varname) = shift;
     die "Tried to set non-overrideable variable $varname" unless $overrideable{ $varname};
     if ( $overrideable{ $varname} eq '$') {
-        if ( defined $USER_VARS{ $varname}) {
-            eval "\$$varname = \$USER_VARS{ \$varname}";
-        }
-        else {
-            eval "\$$varname = join( '', \@_)";
-        }
-        die $@ if $@;
-        if ( defined $USER_VARS_ADDONS{ $varname}) {
-            eval "\$$varname .= join( '', \@{ \$USER_VARS_ADDONS{ \$varname}})";
-        }
-        die $@ if $@;
+	if ( defined $USER_VARS{ $varname}) {
+	    eval "\$$varname = \$USER_VARS{ \$varname}";
+	}
+	else {
+	    eval "\$$varname = join( '', \@_)";
+	}
+	die $@ if $@;
+	if ( defined $USER_VARS_ADDONS{ $varname}) {
+	    eval "\$$varname .= join( '', \@{ \$USER_VARS_ADDONS{ \$varname}})";
+	}
+	die $@ if $@;
     }
     elsif ( $overrideable{ $varname} eq '@') {
-        if ( defined $USER_VARS{ $varname}) {
-            eval "\@$varname = \$USER_VARS{ \$varname}";
-        }
-        else {
-            eval "\@$varname = \@_";
-        }
-        die $@ if $@;
-        if ( defined $USER_VARS_ADDONS{ $varname}) {
-            eval "push \@$varname, \@{ \$USER_VARS_ADDONS{ \$varname}}";
-        }
-        die $@ if $@;
+	if ( defined $USER_VARS{ $varname}) {
+	    eval "\@$varname = \$USER_VARS{ \$varname}";
+	}
+	else {
+	    eval "\@$varname = \@_";
+	}
+	die $@ if $@;
+	if ( defined $USER_VARS_ADDONS{ $varname}) {
+	    eval "push \@$varname, \@{ \$USER_VARS_ADDONS{ \$varname}}";
+	}
+	die $@ if $@;
     }
     else {
-        die "Unsupported type of variable";
+	die "Unsupported type of variable";
     }
 }
 
 sub setup_variables
 {
-#   die "Oops! OS/2 isn't supported!\n" if $^O =~ /os2/i;
+    #	die "Oops! OS/2 isn't supported!\n" if $^O =~ /os2/i;
     my $platform;
     $NeedX11 = 0;
-    if ( $Win32) { # XXX Correct for NT.
-        $platform = 'win32';
+    if ( $Win32) {		# XXX Correct for NT.
+	$platform = 'win32';
     }
     elsif ( $OS2) {
-        $platform = 'os2';
+	$platform = 'os2';
     }
     else {
-        $platform = 'unix';
-        $NeedX11 = 1;
+	$platform = 'unix';
+	$NeedX11 = 1;
     }
     setvar( 'PLATFORM', $platform);
 
     %cc_specs = (
-                 gcc => {
-                         warnflags => "-Wall -Werror",
-                         cflags => "",
-                         coutoflag => '-o',
-                         coutexeflag => '-o',
-                         cdebugflags => '-g -O',
-                         clibpathflag => '-L',
-                         ldflags => '',
-                         ldoutflag => '-o',
-                         ldlibpathflag => '-L',
-                         ldlibflag => '-l',
-                         lddebugflags => '-g',
-                         name => "GNU",
-                        },
-                 emx => {
-#                        warnflags => "-Wall -Werror",
-                         warnflags => "-Wall",
-                         cflags => "",
-                         coutoflag => '-o',
-                         coutexeflag => '-o',
-                         cdebugflags => '-g -O',
-                         clibpathflag => '-L',
-                         ldflags => '',
-                         ldoutflag => '-o',
-                         ldlibpathflag => '-L',
-                         ldlibflag => '-l',
-                         lddebugflags => '-g',
-                         name => "EMX",
-                        },
-                 msvc => {
-                          warnflags => "-W3 -WX",
-                          cflags => "",
-                          coutoflag => '-Fo',
-                          coutexeflag => '-Fe',
-                          clibpathflag => '/link /LIBPATH:',
-                          cdebugflags => '-Zi',
-                          ldflags => '',
-                          ldoutflag => '/OUT:',
-                          ldlibpathflag => '/DEF:win32/Prima.def /LIBPATH:',
-                          ldlibflag => '',
-                          lddebugflags => '/DEBUG',
-                          name => "Microsoft Visual C++",
-                         },
-                 bcc32 => {
-                           warnflags => "-w0", # Borland is the only compiler which doesn't allow of geting rid of warnings.
-                           cflags => "-tWM",
-                           coutoflag => '-o',
-                           coutexeflag => '-e',
-                           clibpathflag => '-L',
-                           cdebugflags => '-v -y',
-                           ldflags => '',
-                           ldoutflag => '',
-                           ldlibpathflag => '-L',
-                           ldlibflag => '',
-                           lddebugflags => '-v',
-                           name => "Borland C++",
-                          },
-                );
+		 gcc => {
+			 warnflags => "-Wall -Werror",
+			 cflags => "",
+			 coutoflag => '-o',
+			 coutexeflag => '-o',
+			 cdebugflags => '-g -O',
+			 clibpathflag => '-L',
+			 ldflags => '',
+			 ldoutflag => '-o',
+			 ldlibpathflag => '-L',
+			 ldlibflag => '-l',
+			 lddebugflags => '-g',
+			 name => "GNU",
+			},
+		 emx => {
+			 #			  warnflags => "-Wall -Werror",
+			 warnflags => "-Wall",
+			 cflags => "",
+			 coutoflag => '-o',
+			 coutexeflag => '-o',
+			 cdebugflags => '-g -O',
+			 clibpathflag => '-L',
+			 ldflags => '',
+			 ldoutflag => '-o',
+			 ldlibpathflag => '-L',
+			 ldlibflag => '-l',
+			 lddebugflags => '-g',
+			 name => "EMX",
+			},
+		 msvc => {
+			  warnflags => "-W3 -WX",
+			  cflags => "",
+			  coutoflag => '-Fo',
+			  coutexeflag => '-Fe',
+			  clibpathflag => '/link /LIBPATH:',
+			  cdebugflags => '-Zi',
+			  ldflags => '',
+			  ldoutflag => '/OUT:',
+			  ldlibpathflag => '/DEF:win32/Prima.def /LIBPATH:',
+			  ldlibflag => '',
+			  lddebugflags => '/DEBUG',
+			  name => "Microsoft Visual C++",
+			 },
+		 bcc32 => {
+			   warnflags => "-w0", # Borland is the only compiler which doesn't allow of geting rid of warnings.
+			   cflags => "-tWM",
+			   coutoflag => '-o',
+			   coutexeflag => '-e',
+			   clibpathflag => '-L',
+			   cdebugflags => '-v -y',
+			   ldflags => '',
+			   ldoutflag => '',
+			   ldlibpathflag => '-L',
+			   ldlibflag => '',
+			   lddebugflags => '-v',
+			   name => "Borland C++",
+			  },
+		);
 
     setvar( 'TMPDIR', $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp"));
     setvar( 'NULLDEV', $Win32 ? "NUL" : "/dev/null");
@@ -465,23 +465,23 @@ sub setup_variables
 
     print "Determining compiler type... ";
     if ( defined $USER_VARS{ COMPILER}) {
-        $COMPILER = $USER_VARS{ COMPILER};
-        die "Compiler type $COMPILER is unknown" unless defined $cc_specs{ $COMPILER};
+	$COMPILER = $USER_VARS{ COMPILER};
+	die "Compiler type $COMPILER is unknown" unless defined $cc_specs{ $COMPILER};
     }
     elsif ( have_define( "__EMX__")) {
-        $COMPILER = 'emx';
+	$COMPILER = 'emx';
     }
     elsif ( have_define( "__GNUC__")) {
-        $COMPILER = 'gcc';
+	$COMPILER = 'gcc';
     }
     elsif ( have_define( "__BORLANDC__")) {
-        $COMPILER = 'bcc32';
+	$COMPILER = 'bcc32';
     }
     elsif ( have_define( "_MSC_VER")) {
-        $COMPILER = 'msvc';
+	$COMPILER = 'msvc';
     }
     else {
-        die "Unknown or unsupported compiler\n";
+	die "Unknown or unsupported compiler\n";
     }
     print "$cc_specs{ $COMPILER}->{ name}\n";
 
@@ -501,27 +501,31 @@ sub setup_variables
     setvar( 'OBJ_EXT', $Config{ _o});
     setvar( 'LIB_EXT', $Config{ _a});
     setvar( 'EXE_EXT', $Config{ _exe});
+    setvar( 'SCRIPT_EXT',
+	    ( $Win32 ? '.bat' : ( $OS2 ? '.cmd' : '')));
     setvar( 'DL_EXT', "." . $Config{ dlext});
     setvar( 'INCPATH', (
-                        "include",
-                        qd( "include/generic"),
-                        $Config{installarchlib} . qd( "/CORE"),
-                       )
-          );
+			"include",
+			qd( "include/generic"),
+			$Config{installarchlib} . qd( "/CORE"),
+		       )
+	  );
     setvar( 'LIBPATH', split ' ', $Config{ libpth});
-    setvar( 'LIBS', map { s/^$LDLIBFLAG//; $_} split ' ', $Config{ libs});
+    my @libs = map { s/^$LDLIBFLAG//; $_} split ' ', $Config{ libs};
+    #	 push ( @libs, 'pmprintf') if $OS2 && defined $ENV{PRIMA_PMPRINTF};
+    setvar( 'LIBS', @libs);
     %DEFINES = (
-                PERL_PATCHLEVEL => $Config{ patchlevel},
-                PERL_SUBVERSION => $Config{ subversion},
-                PRIMA_CORE => 1,
-                PERL_POLLUTE => 1,
-               );
+		PERL_PATCHLEVEL => $Config{ patchlevel},
+		PERL_SUBVERSION => $Config{ subversion},
+		PRIMA_CORE => 1,
+		PERL_POLLUTE => 1,
+	       );
     $DEFINES{ PARANOID_MALLOC} = 1
-        if ( $ENV{ PRIMA_PARANOID_MALLOC}
-             && $ENV{ PRIMA_PARANOID_MALLOC} =~ /^1|yes|on|true$/i);
+	if ( $ENV{ PRIMA_PARANOID_MALLOC}
+	     && $ENV{ PRIMA_PARANOID_MALLOC} =~ /^1|yes|on|true$/i);
     while ( $CFLAGS =~ s/-D(\w+)(?:=(\S+))?\s*//) {
-        my ( $defname, $defvalue) = ( $1, $2 || '');
-        $DEFINES{ $defname} = $defvalue;
+	my ( $defname, $defvalue) = ( $1, $2 || '');
+	$DEFINES{ $defname} = $defvalue;
     }
 
     setvar( 'PREFIX', $Config{ installsitearch});
@@ -691,27 +695,27 @@ sub setup_variables
 sub setup_paths
 {
     if ( $NeedX11) {
-        push @INCPATH, ( qd( "/usr/include"), qd( "/usr/local/include"));
-        my $incpath = find_header( qd( "X11/Xlib.h"), qd( "/usr/X11R6/include"), qd( "/usr/X11/include"));
-        die "Prima needs X11 headers for compilation! Perhaps, you have non-standard path to X11?\n" unless defined $incpath;
-        print "X11 includes found in $incpath\n";
-        push @INCPATH, $incpath;
-        my $libpath = find_lib( "X11", "/usr/X11R6/lib", "/usr/X11/lib");
-        die "Prima needs X11 libraries for compilation! Perhaps, you have non-standard path to X11?\n" unless defined $libpath;
-        print "X11 libraries found in $libpath\n";
-        push @LIBPATH, $libpath;
-        push @LIBS, 'X11';
-        if (defined find_lib( "Xext", '')) {
-           print "Xext library found.\n";
-           push @LIBS, "Xext";
-        }
+	push @INCPATH, ( qd( "/usr/include"), qd( "/usr/local/include"));
+	my $incpath = find_header( qd( "X11/Xlib.h"), qd( "/usr/X11R6/include"), qd( "/usr/X11/include"));
+	die "Prima needs X11 headers for compilation! Perhaps, you have non-standard path to X11?\n" unless defined $incpath;
+	print "X11 includes found in $incpath\n";
+	push @INCPATH, $incpath;
+	my $libpath = find_lib( "X11", "/usr/X11R6/lib", "/usr/X11/lib");
+	die "Prima needs X11 libraries for compilation! Perhaps, you have non-standard path to X11?\n" unless defined $libpath;
+	print "X11 libraries found in $libpath\n";
+	push @LIBPATH, $libpath;
+	push @LIBS, 'X11';
+	if (defined find_lib( "Xext", '')) {
+	    print "Xext library found.\n";
+	    push @LIBS, "Xext";
+	}
     }
     else {
-        my $libpath = find_lib( $Config{ libperl}, "", qd( "$Config{ archlib}/CORE"));
-        die "Cannot find perl library" unless defined $libpath;
-        print "Perl library found in ", ( $libpath || "default LIBPATH"), "\n";
-        push @LIBPATH, $libpath if $libpath;
-        push @LIBS, $Config{ libperl};
+	my $libpath = find_lib( $Config{ libperl}, "", qd( "$Config{ archlib}/CORE"));
+	die "Cannot find perl library" unless defined $libpath;
+	print "Perl library found in ", ( $libpath || "default LIBPATH"), "\n";
+	push @LIBPATH, $libpath if $libpath;
+	push @LIBS, $Config{ libperl};
     }
 }
 
@@ -720,42 +724,52 @@ sub setup_defines
     have_header( "io.h");
     have_header( "unistd.h");
     have_header( "X11/extensions/shape.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
+    if ( $OS2 && defined $ENV{ PRIMA_PMPRINTF}) {
+	if ( have_header( "pmprintf.h", "os2.h")) {
+	    my $libpath = find_lib( 'pmprintf', "");
+	    die "There is no library for pmprintf" unless defined $libpath;
+	    push @LIBS, 'pmprintf';
+	}
+	else {
+	    warn "PRIMA_PMPRINTF defined, but there is no pmprintf.h in include path";
+	}
+    }
     have_func( 'strcasecmp') || have_func( 'stricmp');
     have_func( 'snprintf');
     have_func( '_snprintf');
     have_func( 'reallocf');
     if ( $Win32) {
-        have_type( "BOOLEAN", "windows.h");
+	have_type( "BOOLEAN", "windows.h");
     }
 
     foreach my $defname ( keys %USER_DEFINES) {
-        if ( defined $USER_DEFINES{ $defname}) {
-            $DEFINES{ $defname} = $USER_DEFINES{ $defname};
-        }
-        else {
-            delete $DEFINES{ $defname} if exists $DEFINES{ $defname};
-        }
+	if ( defined $USER_DEFINES{ $defname}) {
+	    $DEFINES{ $defname} = $USER_DEFINES{ $defname};
+	}
+	else {
+	    delete $DEFINES{ $defname} if exists $DEFINES{ $defname};
+	}
     }
     foreach my $defname ( keys %USER_DEFINES_ADDONS) {
-        $DEFINES{ $defname} = ( $DEFINES{ $defname} || '') . join( '', @{ $USER_DEFINES_ADDONS{ $defname}});
+	$DEFINES{ $defname} = ( $DEFINES{ $defname} || '') . join( '', @{ $USER_DEFINES_ADDONS{ $defname}});
     }
 }
 
 sub generate_win32_def
 {
     open PRIMADEF, ">$DEFFILE" or die "Cannot create $DEFFILE: $!";
-    print PRIMADEF <<EOF;
+    print PRIMADEF <<ENDP;
 LIBRARY Prima
 DESCRIPTION 'Prima Guts version 2.00, Copyright (C) the Protein Laboratory 1997'
 CODE LOADONCALL
 DATA LOADONCALL NONSHARED MULTIPLE
 EXPORTS
-EOF
+ENDP
     if ( $COMPILER eq 'bcc32') {
-        print PRIMADEF map { "\t_$_\n\t$_=_$_\n"} @Prima_exports;
+	print PRIMADEF map { "\t_$_\n\t$_=_$_\n"} @Prima_exports;
     }
     else {
-        print PRIMADEF map { "\t$_\n\t_$_ = $_\n"} @Prima_exports;
+	print PRIMADEF map { "\t$_\n\t_$_ = $_\n"} @Prima_exports;
     }
     close PRIMADEF;
 }
@@ -763,13 +777,13 @@ EOF
 sub generate_os2_def
 {
     open PRIMADEF, ">$DEFFILE" or die "Cannot create $DEFFILE: $!";
-    print PRIMADEF <<EOF;
+    print PRIMADEF <<ENDP;
 LIBRARY $OS2DLLF INITINSTANCE TERMINSTANCE
 DESCRIPTION 'Prima Guts version 2.00, Copyright (C) the Protein Laboratory 1997'
 CODE LOADONCALL
 DATA LOADONCALL NONSHARED MULTIPLE
 EXPORTS
-EOF
+ENDP
     print PRIMADEF map { "\t$_\n"} @Prima_exports;
     close PRIMADEF;
 }
@@ -783,17 +797,17 @@ sub setup_misc
     $dmake_tbl = [ map { chr} 0..255];
     $nmake_tbl = [ map { chr} 0..255];
     foreach ( ':', ';', '#', '(', ')', '^', '\\', '{', '}', '!', '@', '-') {
-        $nmake_tbl->[ ord] = "^$_";
+	$nmake_tbl->[ ord] = "^$_";
     }
     $nmake_tbl->[ ord '%'] = '%%';
     $nmake_tbl->[ ord '$'] = $make_tbl->[ ord '$'] = '$$';
     $dmake_tbl->[ ord '#'] = '\\#';
     $make_tbl->[ ord '#'] = '\\#';
     %make_trans = (
-                   make => $make_tbl,
-                   nmake => $nmake_tbl,
-                   dmake => $dmake_tbl,
-                  );
+		   make => $make_tbl,
+		   nmake => $nmake_tbl,
+		   dmake => $dmake_tbl,
+		  );
     generate_win32_def if $Win32;
     generate_os2_def if $OS2;
 }
@@ -803,46 +817,46 @@ sub process_commandline
     %overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
     $ARGV_STR = join( " ", map { "\"$_\""} @ARGV);
     foreach my $arg ( @ARGV) {
-        if ( $arg =~ /^\s*(\w+)\s*(\+?)\=(.*)$/) {
-            my ( $varname, $setmode, $varval) = ( $1, $2 || '', $3);
-            die "Unknown variable $varname" unless $overrideable{ $varname};
-            if ( $overrideable{ $varname} eq '$') {
-                if ( $setmode eq '+') {
-                    push @{ $USER_VARS_ADDONS{ $varname}}, $varval;
-                }
-                else {
-                    $USER_VARS{ $varname} = $varval;
-                }
-                die $@ if $@;
-            }
-            elsif ( $overrideable{ $varname} eq '@') {
-                my @values = split /$path_sep/, $varval;
-                if ( $setmode eq '+') {
-                    push @{ $USER_VARS_ADDONS{ $varname}}, @values;
-                }
-                else {
-                    $USER_VARS{ $varname} = @values;
-                }
-                die $@ if $@;
-            }
-        }
-        elsif ( $arg =~ /^-(D|U)(\w+)(?:(\+?)=(.*))?$/) {
-            my ( $defmode, $defname, $setmode, $value) = ( $1, $2, $3 || '', $4 || '');
-            if ( $defmode eq 'U') {
-                $USER_DEFINES{ $defname} = undef; # I.e. it will exists in the hash...
-            }
-            else {
-                if ( $setmode eq '+') {
-                    push @{ $USER_DEFINES_ADDONS{ $defname}}, $value;
-                }
-                else {
-                    $USER_DEFINES{ $defname} = $value;
-                }
-            }
-        }
-        else {
-            die "Unknown command line argument or wrong syntax: '$arg'";
-        }
+	if ( $arg =~ /^\s*(\w+)\s*(\+?)\=(.*)$/) {
+	    my ( $varname, $setmode, $varval) = ( $1, $2 || '', $3);
+	    die "Unknown variable $varname" unless $overrideable{ $varname};
+	    if ( $overrideable{ $varname} eq '$') {
+		if ( $setmode eq '+') {
+		    push @{ $USER_VARS_ADDONS{ $varname}}, $varval;
+		}
+		else {
+		    $USER_VARS{ $varname} = $varval;
+		}
+		die $@ if $@;
+	    }
+	    elsif ( $overrideable{ $varname} eq '@') {
+		my @values = split /$path_sep/, $varval;
+		if ( $setmode eq '+') {
+		    push @{ $USER_VARS_ADDONS{ $varname}}, @values;
+		}
+		else {
+		    $USER_VARS{ $varname} = @values;
+		}
+		die $@ if $@;
+	    }
+	}
+	elsif ( $arg =~ /^-(D|U)(\w+)(?:(\+?)=(.*))?$/) {
+	    my ( $defmode, $defname, $setmode, $value) = ( $1, $2, $3 || '', $4 || '');
+	    if ( $defmode eq 'U') {
+		$USER_DEFINES{ $defname} = undef; # I.e. it will exists in the hash...
+	    }
+	    else {
+		if ( $setmode eq '+') {
+		    push @{ $USER_DEFINES_ADDONS{ $defname}}, $value;
+		}
+		else {
+		    $USER_DEFINES{ $defname} = $value;
+		}
+	    }
+	}
+	else {
+	    die "Unknown command line argument or wrong syntax: '$arg'";
+	}
     }
 }
 
@@ -851,15 +865,15 @@ sub find_file
     my ( $fname, $dir) = @_;
     my $pathname = qd( "$dir/$fname");
     if ( -e $pathname) {
-        return ( $pathname, 1);
+	return ( $pathname, 1);
     }
     opendir D, $dir or die "Cannot open dir $dir: $!";
     my @entries = map { qd( "$dir/$_")} grep { /^[^.]/ && -d qd( "$dir/$_")} readdir D;
     closedir D;
     my $found;
     foreach my $entry ( @entries) {
-        ( $pathname, $found) = find_file( $fname, $entry);
-        return ( $pathname, 1) if $found;
+	( $pathname, $found) = find_file( $fname, $entry);
+	return ( $pathname, 1) if $found;
     }
     return ( $fname, 0);
 }
@@ -869,7 +883,7 @@ sub canon_name
     my ( $fname) = @_;
     my $qdirsep = quotemeta( $dir_sep);
     $fname =~ s{[^$qdirsep]+$qdirsep\.\.(?:$qdirsep|\Z)}{}
-        while $fname =~ /(?:$qdirsep|\A)\.\.(?:$qdirsep|\Z)/;
+	while $fname =~ /(?:$qdirsep|\A)\.\.(?:$qdirsep|\Z)/;
     $fname =~ s{(?:(?<=$qdirsep)|(?<=\A))\.(?=$qdirsep|\Z)$qdirsep?}{}g;
     return $fname;
 }
@@ -890,21 +904,21 @@ sub find_cdeps
     local *CF;
     open CF, "<$cfile" or die "Cannot open $cfile: $!";
     while ( <CF>) {
-        chomp;
-        next unless /^\s*\#\s*include\s+"([^\"]+)"/;
-        my $incfile = $1;
-        my $found = 0;
-        ( $incfile, $found) = find_file( $incfile, ".");
-        $incfile = qd( "include/generic/$incfile") unless $found;
-        $incfile = canon_name( $incfile);
-        unless ( exists $included->{ $incfile}) {
-            push @{ $alldeps{ $cfile}}, $incfile;
-            push @{ $deps->{ $cfile}}, $incfile;
-            $included->{ $incfile} = 1;
-        }
-        my @subdeps = find_cdeps( $incfile, $deps, $included);
-        push @{ $deps->{ $cfile}}, @subdeps;
-        push @{ $alldeps{ $cfile}}, @subdeps;
+	chomp;
+	next unless /^\s*\#\s*include\s+"([^\"]+)"/;
+	my $incfile = $1;
+	my $found = 0;
+	( $incfile, $found) = find_file( $incfile, ".");
+	$incfile = qd( "include/generic/$incfile") unless $found;
+	$incfile = canon_name( $incfile);
+	unless ( exists $included->{ $incfile}) {
+	    push @{ $alldeps{ $cfile}}, $incfile;
+	    push @{ $deps->{ $cfile}}, $incfile;
+	    $included->{ $incfile} = 1;
+	}
+	my @subdeps = find_cdeps( $incfile, $deps, $included);
+	push @{ $deps->{ $cfile}}, @subdeps;
+	push @{ $alldeps{ $cfile}}, @subdeps;
     }
     close CF;
     return @{ $deps->{ $cfile}};
@@ -916,17 +930,17 @@ sub cmake
     print "Finding dependencies for $cfile...\n";
     my $ofile = "$1$OBJ_EXT" if $cfile =~ /^(.*)\.c$/;
     die "Internal error: illegal c file"
-        unless defined $ofile;
+	unless defined $ofile;
     $cfile = qd( $cfile);
     $ofile = qd( $ofile);
     push @allclean, $ofile;
     push @allojects, $ofile;
     my @deps = find_cdeps( $cfile);
     return(
-           "$ofile: Makefile $cfile @deps\n\t" .
-           join( " ", cc_command_line( $cfile, $ofile, "", 1, 1)) .
-           "\n\n"
-          );
+	   "$ofile: Makefile $cfile @deps\n\t" .
+	   join( " ", cc_command_line( $cfile, $ofile, "", 1, 1)) .
+	   "\n\n"
+	  );
 }
 
 sub clsmake
@@ -935,25 +949,25 @@ sub clsmake
     print "Finding dependencies for $clsfile...";
     my $classname = $1 if $clsfile =~ /^(.*)\.cls$/;
     die "Internal error: illegal cls file"
-        unless defined $classname;
+	unless defined $classname;
     my $mk = qd( "include/generic/$classname.h"
-               ) . ": Makefile " .
-                "$clsfile " . qd( "utils/gencls.pl ");
+	       ) . ": Makefile " .
+		   "$clsfile " . qd( "utils/gencls.pl ");
     push @alltml, qd( "include/generic/$classname.tml");
     push @alltmldeps, qd( "include/generic/$classname.h");
     push @allclean, (
-                     qd( "include/generic/$classname.h"),
-                     qd( "include/generic/$classname.inc"),
-                     qd( "include/generic/$classname.tml")
-                    );
+		     qd( "include/generic/$classname.h"),
+		     qd( "include/generic/$classname.inc"),
+		     qd( "include/generic/$classname.tml")
+		    );
     push @allinstall, qd( "include/generic/$classname.h"), $INSTALL_LIB . qd( "/CORE/generic");
     for (`perl utils/gencls.pl --depend $clsfile`) {
-        next unless /^ancestor:\s+(.*)$/;
-        $mk .= qd( "include/generic/$1.h $1.cls ");
+	next unless /^ancestor:\s+(.*)$/;
+	$mk .= qd( "include/generic/$1.h $1.cls ");
     }
     print "\n";
     $mk .= "\n\tperl utils/gencls.pl " .
-        "--inc --h --tml $clsfile include/generic\n\n";
+	"--inc --h --tml $clsfile include/generic\n\n";
 }
 
 #
@@ -969,22 +983,62 @@ if ( $#ARGV >= 0 && $ARGV[ 0] =~ /^\-\-cp(bin)?$/) {
     shift @ARGV;
     die qq(Even number of parameters expected) unless ( $#ARGV % 2);
     while ( scalar @ARGV) {
-        my ( $src, $dst) = ( shift @ARGV, shift @ARGV);
-        print qq(Installing $src -> $dst\n);
-        next unless -f $src;
-        die qq(Destination must be a directory) if -e $dst && ! -d $dst;
-        mkpath $dst unless -d $dst;
-        copy( $src, $dst) or die qq(Copy failed: $!);
-        if ( $isbin) {
-            $dst = qd( "$dst/" . basename( $src));
-            if ( $Win32) {
-                system "pl2bat $dst";
-                unlink $dst;
-            }
-            else {
-                chmod 0555, $dst;
-            }
-        }
+	my ( $src, $dst) = ( shift @ARGV, shift @ARGV);
+	print qq(Installing $src -> $dst\n);
+	next unless -f $src;
+	if ( $isbin) {
+	    my $dstdir = dirname( $dst);
+	    mkpath $dstdir if $dstdir && ! -d $dstdir;
+	    open SRCPL, "<$src" or die "Cannot open $src: $!";
+	    open DSTPL, ">$dst" or die "Cannot create $dst: $!";
+	    chmod 0555, $dst unless $Win32 || $OS2;
+	    if ( $Win32) {
+		print DSTPL <<ENDP;
+\@rem = '--*-Perl-*--
+\@echo off
+if "%OS%" == "Windows_NT" goto WinNT
+perl -w -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+goto endofperl
+:WinNT
+perl -w -x -S "%0" %*
+if NOT "%COMSPEC%" == "%SystemRoot%\\system32\\cmd.exe" goto endofperl
+if %errorlevel% == 9009 echo You do not have Perl in your PATH.
+goto endofperl
+\@rem ';
+ENDP
+	    }
+	    elsif ( $OS2) {
+		my $perlpath = $Config{ perlpath};
+		$perlpath =~ s/(perl)(\.exe)?$/$1__$2/i if $perlpath =~ /perl(\.exe)?$/i;
+		print DSTPL <<ENDP;
+extproc $perlpath -wS
+ENDP
+	    }
+	    else {
+		print DSTPL <<ENDP;
+#! $Config{ perlpath} -w
+ENDP
+	    }
+	    my $filestart = 1;
+	    while ( <SRCPL>) {
+		next if $filestart && /^\#\!/;
+		$filestart = 0;
+		print DSTPL;
+	    }
+	    if ( $Win32) {
+		print DSTPL <<ENDP;
+__END__
+:endofperl
+ENDP
+	    }
+	    close SRCPL;
+	    close DSTPL;
+	}
+	else {
+	    die qq(Destination must be a directory) if -e $dst && ! -d $dst;
+	    mkpath $dst unless -d $dst;
+	    copy( $src, $dst) or die qq(Copy failed: $!);
+	}
     }
 }
 elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--md') {
@@ -999,7 +1053,7 @@ else {
     $CWD = cwd;
 
     die "This script should be launched from Prima root directory\n"
-        unless -r qd( "include/apricot.h") && -d "Prima";
+	unless -r qd( "include/apricot.h") && -d "Prima";
 
     $| = 1;
 
@@ -1025,40 +1079,40 @@ all: prima
 MAKE
 
     if ( $ENV{ HOME} && ( -d qd( "$ENV{ HOME}/.Makeinc"))) {
-        my $hdir = "$ENV{ HOME}/.Makeinc";
-        if ( -f "$hdir/header.PL") {
-            push @headers, `perl $hdir/header.PL`;
-            push @Makefile_deps, "$hdir/header.PL";
-        }
-        if ( -f "$hdir/footer.PL") {
-            push @footers, `perl $hdir/footer.PL`;
-            push @Makefile_deps, "$hdir/footer.PL";
-        }
-        if ( -f "$hdir/Prima.ph") {
-            do "$hdir/Prima.ph";
-            push @Makefile_deps, "$hdir/Prima.ph";
-        }
+	my $hdir = "$ENV{ HOME}/.Makeinc";
+	if ( -f "$hdir/header.PL") {
+	    push @headers, `perl $hdir/header.PL`;
+	    push @Makefile_deps, "$hdir/header.PL";
+	}
+	if ( -f "$hdir/footer.PL") {
+	    push @footers, `perl $hdir/footer.PL`;
+	    push @Makefile_deps, "$hdir/footer.PL";
+	}
+	if ( -f "$hdir/Prima.ph") {
+	    do "$hdir/Prima.ph";
+	    push @Makefile_deps, "$hdir/Prima.ph";
+	}
     }
 
     $make .= join( "\n", @headers) . "\n";
 
     while ( <*.cls>) {
-        $make .= clsmake( $_);
+	$make .= clsmake( $_);
     }
     while ( <*.c>) {
-        $make .= cmake( $_);
+	$make .= cmake( $_);
     }
     while ( <img/*.c>) {
-        $make .= cmake( $_);
+	$make .= cmake( $_);
     }
     while ( <$PLATFORM/*.c>) {
-        $make .= cmake( $_);
+	$make .= cmake( $_);
     }
     while ( <examples/*.pl>) {
-        push @allbins, $_, $INSTALL_EXAMPLES;
+	push @allbins, $_, $INSTALL_EXAMPLES;
     }
     while ( <utils/*.pl>) {
-        push @allbins, $_, $INSTALL_BIN;
+	push @allbins, $_, $INSTALL_BIN;
     }
 
     my $thunks_tinc = qd( "include/generic/thunks.tinc");
@@ -1100,25 +1154,26 @@ MAKE
 
     finddepth( sub { print MAKE "\t", qd( "$File::Find::dir/$_ $PREFIX/$File::Find::dir"), " \\\n" unless -d $_}, 'Prima');
     while ( scalar @allinstall) {
-        my ( $src, $dst) = ( shift @allinstall, shift @allinstall);
-        print MAKE "\t$src $dst \\\n";
+	my ( $src, $dst) = ( shift @allinstall, shift @allinstall);
+	print MAKE "\t$src $dst \\\n";
     }
     while ( <include/*.h>) {
-        my ( $dsth) = $_;
-        $dsth =~ s/^include/CORE/;
-        print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
+	my ( $dsth) = $_;
+	$dsth =~ s/^include/CORE/;
+	print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
     }
     while ( <include/$PLATFORM/*.h>) {
-        my ( $dsth) = $_;
-        $dsth =~ s/^include/CORE/;
-        print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
+	my ( $dsth) = $_;
+	$dsth =~ s/^include/CORE/;
+	print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
     }
     print MAKE "\tPrima.pm $PREFIX\n";
 
     print MAKE "\t\@\$(CPBIN)";
     while ( scalar @allbins) {
-        my ( $src, $dst) = ( shift @allbins, shift @allbins);
-        print MAKE " \\\n\t$src $dst"
+	my ( $src, $dst) = ( shift @allbins, shift @allbins);
+	$dst = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
+	print MAKE " \\\n\t$src $dst"
     }
     print MAKE "\n";
 
@@ -1137,7 +1192,7 @@ MAKE
     print MAKE join( "\n", @footers), "\n";
 
     close MAKE;
-    print "\nAll done.  Now you can run ${ MAKE}.\n";
+    print "\nAll done.	Now you can run ${ MAKE}.\n";
 }
 
 exit;
