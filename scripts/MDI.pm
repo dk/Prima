@@ -224,21 +224,21 @@ sub on_paint
    while ( $icos) {
       my $di;
       if ( $bbi & bi::Minimize) {
-         $di  = $bp & bi::Minimize ?
-            StdBitmap::image( $self->{windowState} == ws::Minimized ?
+         $di  = ( $bp & bi::Minimize) ?
+            StdBitmap::image(( $self->{windowState} == ws::Minimized) ?
                sbmp::RestorePressed : sbmp::MinPressed) :
-            StdBitmap::image( $self->{windowState} == ws::Minimized ?
+            StdBitmap::image(( $self->{windowState} == ws::Minimized) ?
                sbmp::Restore : sbmp::Min);
          $bbi &= ~bi::Minimize;
       } elsif ( $bbi & bi::Maximize) {
-         $di = $bp & bi::Maximize ?
-            StdBitmap::image( $self->{windowState} == ws::Maximized ?
+         $di = ( $bp & bi::Maximize) ?
+            StdBitmap::image(( $self->{windowState} == ws::Maximized) ?
                sbmp::RestorePressed : sbmp::MaxPressed) :
-            StdBitmap::image( $self->{windowState} == ws::Maximized ?
+            StdBitmap::image(( $self->{windowState} == ws::Maximized) ?
                sbmp::Restore : sbmp::Max);
          $bbi &= ~bi::Maximize;
       } elsif ( $bbi & bi::SystemMenu) {
-         $di  = $bp & bi::SystemMenu ?
+         $di  = ( $bp & bi::SystemMenu) ?
             StdBitmap::image( sbmp::ClosePressed) :
             StdBitmap::image( sbmp::Close);
          $bbi &= ~bi::SystemMenu;
@@ -407,19 +407,19 @@ sub xy2part
    } elsif ( $x >= $size[0] - $bw - $dy) {
       return ( $bi & bi::SystemMenu) ? q(close) :
              (( $bi & bi::Maximize)  ? (
-                $self->{windowState} == ws::Maximized ? q(restore) : q(max)
+                ($self->{windowState} == ws::Maximized) ? q(restore) : q(max)
              ) : (
-                $self->{windowState} == ws::Minimized ? q(restore) : q(min)
+                ($self->{windowState} == ws::Minimized) ? q(restore) : q(min)
              ));
    } elsif ( $x >= $size[0] - $bw - $dy * 2) {
       return (( $bi & ( bi::SystemMenu | bi::Maximize)) == (bi::SystemMenu | bi::Maximize))
          ? (
-            $self->{windowState} == ws::Maximized ? q(restore) : q(max)
+            ($self->{windowState} == ws::Maximized) ? q(restore) : q(max)
          ) : (
-            $self->{windowState} == ws::Minimized ? q(restore) : q(min)
+            ($self->{windowState} == ws::Minimized) ? q(restore) : q(min)
          );
    } else {
-      return $self->{windowState} == ws::Minimized ? q(restore) : q(min);
+      return ($self->{windowState} == ws::Minimized) ? q(restore) : q(min);
    }
    return q(desktop);
 }
@@ -666,7 +666,7 @@ sub on_mousedown
       ( $part eq q(max)     ? bi::Maximize : 0)  |
       ( $part eq q(close)   ? bi::SystemMenu : 0)|
       ( $part eq q(restore) ? (
-         $self-> {windowState} == ws::Minimized ? bi::Minimize : bi::Maximize
+         ($self-> {windowState} == ws::Minimized) ? bi::Minimize : bi::Maximize
       ) : 0)
    ;
    $self-> {lastMouseOver} = 1;
@@ -682,7 +682,7 @@ sub on_mouseclick
    my $part = $self-> xy2part( $x, $y);
 
    if ( $part eq q(caption)) {
-      $self-> post_action( $self->{windowState} == ws::Normal ? q(max) : q(restore));
+      $self-> post_action(( $self->{windowState} == ws::Normal) ? q(max) : q(restore));
       return;
    }
 
@@ -891,7 +891,7 @@ sub on_mousemove
                 ( $part eq q(max)     ? bi::Maximize : 0)  |
                 ( $part eq q(close)   ? bi::SystemMenu : 0)|
                 ( $part eq q(restore) ? (
-                   $self-> {windowState} == ws::Minimized ? bi::Minimize : bi::Maximize
+                   ( $self-> {windowState} == ws::Minimized) ? bi::Minimize : bi::Maximize
                 ) : 0)) : 0;
              $self-> { lastMouseOver} = $mouseOver;
              $self-> repaint_title(q(right));

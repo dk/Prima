@@ -42,7 +42,7 @@ use IntUtils;
 use Cwd;
 
 package ci;
-use constant Grid      => MaxIndex + 1;
+use constant Grid      => 1 + MaxId;
 
 package AbstractListViewer;
 use vars qw(@ISA);

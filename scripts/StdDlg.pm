@@ -34,6 +34,7 @@ package StdDlg;
 
 use strict;
 use Carp;
+use Const;
 use Classes;
 use Buttons;
 use Lists;
@@ -238,7 +239,7 @@ sub on_show
 
 sub execute
 {
-   return $_[0]-> SUPER::execute != cm::Cancel ? $_[0]-> fileName : ( wantarray ? () : undef);
+   return ($_[0]-> SUPER::execute != cm::Cancel) ? $_[0]-> fileName : ( wantarray ? () : undef);
 }
 
 

@@ -473,7 +473,7 @@ sub draw_colorchunk
 
    for ( $j = 0; $j < scalar @{$sd} - 1; $j += 2) {
       my $xd = $self-> get_chunk_width( $chunk, $ofs, $$sd[$j], \$cc);
-      $canvas-> color( $$sd[$j+1] == cl::Fore ? $clr1 : $$sd[$j+1]);
+      $canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr1 : $$sd[$j+1]);
       $cc =~ s/\t/$self->{tabs}/g;
       $canvas-> text_out( $cc, $x, $y);
       $x += $xd;
