@@ -76,7 +76,7 @@ cm_init_colormap()
    }
 }
 
-static void
+void
 cm_reverse_palette( PRGBColor source, PRGBColor dest, int colors)
 {
    while( colors--)
@@ -92,7 +92,7 @@ cm_reverse_palette( PRGBColor source, PRGBColor dest, int colors)
    }
 }
 
-static void
+void
 cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors)
 {
    if (( srcColors == 0) || ( destColors == 0)) return;
