@@ -23,7 +23,6 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package Buttons;
 
 # contains:
 #   Button
@@ -39,15 +38,15 @@ package Buttons;
 
 
 use Carp;
-use Const;
-use Classes;
-use StdBitmap;
+use Prima::Const;
+use Prima::Classes;
+use Prima::StdBitmap;
 use strict;
 
 
-package AbstractButton;
+package Prima::AbstractButton;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 {
 my %RNT = (
@@ -299,9 +298,9 @@ sub on_disable { $_[0]-> cancel_transaction; $_[0]-> repaint; }
 sub on_enter   { $_[0]-> repaint; }
 
 
-package Button;
+package Prima::Button;
 use vars qw(@ISA);
-@ISA = qw(AbstractButton);
+@ISA = qw(Prima::AbstractButton);
 
 my %standardGlyphScheme = (
       glyphs => 4,
@@ -600,9 +599,9 @@ sub modalResult  {($#_)?$_[0]->set_modal_result($_[1]):return $_[0]->{modalResul
 sub glyphs       {($#_)?$_[0]->set_glyphs      ($_[1]):return $_[0]->{glyphs}      }
 
 
-package Cluster;
+package Prima::Cluster;
 use vars qw(@ISA @images);
-@ISA = qw(AbstractButton);
+@ISA = qw(Prima::AbstractButton);
 
 my @images;
 
@@ -672,9 +671,9 @@ sub check        { $_[0]->set_checked(1)}
 sub uncheck      { $_[0]->set_checked(0)}
 
 
-package CheckBox;
+package Prima::CheckBox;
 use vars qw(@ISA);
-@ISA = qw(Cluster);
+@ISA = qw(Prima::Cluster);
 
 sub profile_default
 {
@@ -738,9 +737,9 @@ sub on_paint
 
 }
 
-package Radio;
+package Prima::Radio;
 use vars qw(@ISA @images);
-@ISA = qw(Cluster);
+@ISA = qw(Prima::Cluster);
 
 sub profile_default
 {
@@ -836,9 +835,9 @@ sub set_checked
 
 sub checked  { ($#_)?$_[0]->set_checked ($_[1]):return $_[0]->{checked}     }
 
-package SpeedButton;
+package Prima::SpeedButton;
 use vars qw(@ISA);
-@ISA = qw(Button);
+@ISA = qw(Prima::Button);
 
 sub profile_default
 {
@@ -847,9 +846,9 @@ sub profile_default
    return $def;
 }
 
-package GroupBox;
+package Prima::GroupBox;
 use vars qw(@ISA);
-@ISA=qw(Widget);
+@ISA=qw(Prima::Widget);
 
 sub profile_default
 {
@@ -883,8 +882,8 @@ sub on_paint
    }
 }
 
-package RadioGroup;
-no strict; @ISA=qw(GroupBox); use strict;
+package Prima::RadioGroup;
+no strict; @ISA=qw(Prima::GroupBox); use strict;
 
 {
 my %RNT = (
@@ -941,8 +940,8 @@ sub index
    }
 }
 
-package CheckBoxGroup;
-no strict; @ISA=qw(GroupBox); use strict;
+package Prima::CheckBoxGroup;
+no strict; @ISA=qw(Prima::GroupBox); use strict;
 
 sub value
 {

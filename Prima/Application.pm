@@ -26,9 +26,9 @@
 package main;
 use vars qw($clipboard);
 
-package Application;
+package Prima::Application;
 use strict;
-use Classes;
+use Prima::Classes;
 use vars qw($uses);
 
 sub import {

@@ -29,17 +29,17 @@
 #    ColorComboBox
 
 use strict;
-use Const;
-use Classes;
-use Sliders;
-use Label;
-use Buttons;
-use ComboBox;
-use ScrollBar;
+use Prima::Const;
+use Prima::Classes;
+use Prima::Sliders;
+use Prima::Label;
+use Prima::Buttons;
+use Prima::ComboBox;
+use Prima::ScrollBar;
 
-package ColorDialog;
+package Prima::ColorDialog;
 use vars qw( @ISA $colorWheel);
-@ISA = qw( Dialog);
+@ISA = qw( Prima::Dialog);
 
 sub hsv2rgb
 {
@@ -592,9 +592,9 @@ sub set_value
 sub value        {($#_)?$_[0]->set_value        ($_[1]):return $_[0]->{value};}
 sub quality      {($#_)?$_[0]->set_quality      ($_[1]):return $_[0]->{quality};}
 
-package ColorComboBox;
+package Prima::ColorComboBox;
 use vars qw(@ISA);
-@ISA = qw(ComboBox);
+@ISA = qw(Prima::ComboBox);
 
 {
 my %RNT = (

@@ -23,14 +23,12 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package Terminals;
 
 use strict;
-use Const;
-use Classes;
-use ScrollBar;
-use strict;
-use Utils;
+use Prima::Const;
+use Prima::Classes;
+use Prima::ScrollBar;
+use Prima::Utils;
 
 # Terminal specific constants
 package tm;
@@ -38,14 +36,9 @@ package tm;
 use constant WordBegin      => 0x0000;
 use constant WordEnd        => 0x0001;
 
-package AbstractTerminal;
+package Prima::AbstractTerminal;
 use vars qw( @ISA);
-@ISA = qw( Widget);
-
-use strict;
-use Carp;
-use Classes;
-use Utils;
+@ISA = qw( Prima::Widget);
 
 {
     my %RNT = (

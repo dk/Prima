@@ -23,21 +23,20 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package Widgets;
 
 # contains:
 #   Panel
 #   Scroller
 
-use Const;
-use Classes;
-use ScrollBar;
+use Prima::Const;
+use Prima::Classes;
+use Prima::ScrollBar;
 use strict;
 
 
-package Panel;
+package Prima::Panel;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 sub profile_default
 {
@@ -185,9 +184,9 @@ sub borderWidth  {($#_)?$_[0]->set_border_width($_[1]):return $_[0]->{borderWidt
 sub raise        {($#_)?$_[0]->set_raise($_[1]):return $_[0]->{raise}}
 
 
-package Scroller;
+package Prima::Scroller;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 # Scroller is an abstract object, so it needs on_paint to be overriden.
 # also area limits should be set through set_limits.

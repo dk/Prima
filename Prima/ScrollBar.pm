@@ -23,15 +23,15 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package ScrollBar;
+package Prima::ScrollBar;
 use vars qw(@ISA @stdMetrics);
-@ISA = qw(Widget MouseScroller);
+@ISA = qw(Prima::Widget Prima::MouseScroller);
 
 @stdMetrics = Application-> get_default_scrollbar_metrics;
 
 use strict;
-use Const;
-use IntUtils;
+use Prima::Const;
+use Prima::IntUtils;
 
 =head1 NAME
 

@@ -23,19 +23,19 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package FontDialog;
+package Prima::FontDialog;
 
 use strict;
-use Const;
-use Classes;
-use Buttons;
-use ComboBox;
-use Label;
-use MsgBox;
+use Prima::Const;
+use Prima::Classes;
+use Prima::Buttons;
+use Prima::ComboBox;
+use Prima::Label;
+use Prima::MsgBox;
 
 
 use vars qw( @ISA);
-@ISA = qw( Dialog);
+@ISA = qw( Prima::Dialog);
 
 sub profile_default
 {

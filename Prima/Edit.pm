@@ -30,15 +30,15 @@ use constant CUA          =>  0;
 use constant Vertical     =>  1;
 use constant Horizontal   =>  2;
 
-package Edit;
+package Prima::Edit;
 use vars qw(@ISA);
-@ISA = qw(Widget MouseScroller GroupScroller);
+@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
 
 use strict;
-use Const;
-use Classes;
-use ScrollBar;
-use IntUtils;
+use Prima::Const;
+use Prima::Classes;
+use Prima::ScrollBar;
+use Prima::IntUtils;
 
 {
 my %RNT = (

@@ -23,7 +23,6 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package Sliders;
 
 # contains:
 #   SpinButton
@@ -34,14 +33,14 @@ package Sliders;
 #   CircularSlider
 
 use strict;
-use Const;
-use Classes;
-use IntUtils;
+use Prima::Const;
+use Prima::Classes;
+use Prima::IntUtils;
 
 
-package AbstractSpinButton;
+package Prima::AbstractSpinButton;
 use vars qw(@ISA);
-@ISA = qw(Widget MouseScroller);
+@ISA = qw(Prima::Widget Prima::MouseScroller);
 
 {
 my %RNT = (
@@ -100,9 +99,9 @@ sub on_increment  {
 #  my ( $self, $increment) = @_;
 }
 
-package SpinButton;
+package Prima::SpinButton;
 use vars qw(@ISA);
-@ISA = qw(AbstractSpinButton);
+@ISA = qw(Prima::AbstractSpinButton);
 
 sub profile_default
 {
@@ -224,9 +223,9 @@ sub set_state
    $self-> repaint;
 }
 
-package AltSpinButton;
+package Prima::AltSpinButton;
 use vars qw(@ISA);
-@ISA = qw(AbstractSpinButton);
+@ISA = qw(Prima::AbstractSpinButton);
 
 sub profile_default
 {
@@ -344,10 +343,10 @@ sub set_state
    $self-> repaint;
 }
 
-package SpinEdit;
+package Prima::SpinEdit;
 use vars qw(@ISA %editProps %spinDynas);
-use InputLine;
-@ISA = qw(Widget);
+use Prima::InputLine;
+@ISA = qw(Prima::Widget);
 
 
 %editProps = (
@@ -528,9 +527,9 @@ use constant Border       =>  0;
 use constant Raise        =>  1;
 
 
-package Gauge;
+package Prima::Gauge;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 {
 my %RNT = (
@@ -705,9 +704,9 @@ use constant Axis         => 1;
 use constant Thermometer  => 2;
 use constant StdMinMax    => 3;
 
-package AbstractSlider;
+package Prima::AbstractSlider;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 sub profile_default
 {
@@ -871,9 +870,9 @@ use constant Normal      => 0;
 use constant Alternative => 1;
 use constant Dual        => 2;
 
-package Slider;
+package Prima::Slider;
 use vars qw(@ISA);
-@ISA = qw(AbstractSlider);
+@ISA = qw(Prima::AbstractSlider);
 
 {
 my %RNT = (
@@ -1229,9 +1228,9 @@ sub tickAlign   {($#_)?$_[0]-> set_tick_align  ($_[1]):return $_[0]->{tickAlign}
 sub ribbonStrip {($#_)?$_[0]-> set_ribbon_strip($_[1]):return $_[0]->{ribbonStrip};}
 sub shaftBreadth{($#_)?$_[0]-> set_shaft_breadth($_[1]):return $_[0]->{shaftBreadth};}
 
-package CircularSlider;
+package Prima::CircularSlider;
 use vars qw(@ISA);
-@ISA = qw(AbstractSlider MouseScroller);
+@ISA = qw(Prima::AbstractSlider Prima::MouseScroller);
 
 {
 my %RNT = (

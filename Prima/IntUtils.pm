@@ -23,12 +23,12 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package IntUtils;
+package Prima::IntUtils;
 
 use strict;
-use Const;
+use Prima::Const;
 
-package MouseScroller;
+package Prima::MouseScroller;
 
 #    Used for system-defined scrolling delays for widgets that scrolls themselves
 #  using MouseMove notification.
@@ -113,7 +113,7 @@ sub ScrollTimer_Tick
    $self-> scroll_timer_stop unless defined $self->{mouseTransaction};
 }
 
-package GroupScroller;
+package Prima::GroupScroller;
 
 #  used for Groups that contains optional scroll bars and provides properties for
 #  it's maintenance and notifications ( HScroll_Change and VScroll_Change).
@@ -140,7 +140,7 @@ package GroupScroller;
 #  widget should set up scrollbar's max/min/step/pageStep/whole/partial/value
 #  properties manually.
 
-use ScrollBar;
+use Prima::ScrollBar;
 
 sub set_border_width
 {

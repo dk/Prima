@@ -1,7 +1,6 @@
 package Prima;
 
 use strict;
-use lib qw(. scripts);
 require DynaLoader;
 use vars qw($VERSION @ISA);
 @ISA = qw(DynaLoader);
@@ -9,6 +8,8 @@ use vars qw($VERSION @ISA);
 $VERSION = '0.01';
 bootstrap Prima $VERSION;
 $::application = undef;
+require Prima::Const;
+require Prima::Classes;
 
 sub END
 {

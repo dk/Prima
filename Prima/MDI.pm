@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package MDI;
+package Prima::MDI;
 
 # contains:
 #   MDI
@@ -31,14 +31,14 @@ package MDI;
 #   MDIWindow
 
 use strict;
-use Classes;
+use Prima::Classes;
 
-package MDIWindow;
+package Prima::MDIWindow;
 use vars qw(@ISA);
-@ISA = qw( Window MDIOwner);
+@ISA = qw( Prima::Window Prima::MDIOwner);
 
 
-package MDIOwner;
+package Prima::MDIOwner;
 
 sub mdi_activate
 {
@@ -73,11 +73,11 @@ sub tile
    $m[0]->tile if $m[0];
 }
 
-package MDI;
+package Prima::MDI;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
-use StdBitmap;
+use Prima::StdBitmap;
 
 {
 my %RNT = (

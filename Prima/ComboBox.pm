@@ -30,19 +30,19 @@ use constant Simple       =>  0;
 use constant DropDown     =>  1;
 use constant DropDownList =>  2;
 
-package ComboBox;
+package Prima::ComboBox;
 
 # contains:
 #    ComboBox
 #    DriveComboBox
 
 use vars qw(@ISA %listProps %editProps %listDynas);
-use Classes;
-use InputLine;
-use Lists;
-use Utils;
-use StdBitmap;
-@ISA = qw(Widget);
+use Prima::Classes;
+use Prima::InputLine;
+use Prima::Lists;
+use Prima::Utils;
+use Prima::StdBitmap;
+@ISA = qw(Prima::Widget);
 
 use constant DefButtonX => 17;
 
@@ -589,9 +589,9 @@ sub literal      {($#_)?$_[0]->{literal} =      $_[1] :return $_[0]->{literal}  
 
 
 
-package DriveComboBox::InputLine;
+package Prima::DriveComboBox::InputLine;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 sub profile_default
 {
@@ -657,9 +657,9 @@ sub on_mouseclick
 }
 
 
-package DriveComboBox;
+package Prima::DriveComboBox;
 use vars qw(@ISA @images);
-@ISA = qw(ComboBox);
+@ISA = qw(Prima::ComboBox);
 
 sub profile_default
 {

@@ -23,15 +23,13 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package Notebook;
-
-package TabSet;
+package Prima::TabSet;
 use vars qw(@ISA);
-@ISA = qw(Widget MouseScroller);
+@ISA = qw(Prima::Widget Prima::MouseScroller);
 
 use strict;
-use Const;
-use Classes;
+use Prima::Const;
+use Prima::Classes;
 
 {
 my %RNT = (
@@ -558,9 +556,9 @@ sub tabIndex     {($#_)?($_[0]->set_tab_index(    $_[1]))               :return 
 sub topMost      {($#_)?($_[0]->set_top_most (    $_[1]))               :return $_[0]->{topMost}}
 sub tabs         {($#_)?(shift->set_tabs     (    @_   ))               :return $_[0]->{tabs}}
 
-package Notebook;
+package Prima::Notebook;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 sub profile_default
 {
@@ -781,9 +779,9 @@ sub set_page_count
 sub pageIndex     {($#_)?($_[0]->set_page_index   ( $_[1]))    :return $_[0]->{pageIndex}}
 sub pageCount     {($#_)?($_[0]->set_page_count   ( $_[1]))    :return $_[0]->{pageCount}}
 
-package TabbedNotebook;
+package Prima::TabbedNotebook;
 use vars qw(@ISA %notebookProps);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 use constant DefBorderX   => 11;
 use constant DefBookmarkX => 32;

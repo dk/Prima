@@ -23,14 +23,14 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package MsgBox;
+package Prima::MsgBox;
 
 use strict;
-use Classes;
-use Buttons;
-use StdBitmap;
-use Label;
-use Utils;
+use Prima::Classes;
+use Prima::Buttons;
+use Prima::StdBitmap;
+use Prima::Label;
+use Prima::Utils;
 
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);

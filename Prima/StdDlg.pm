@@ -23,7 +23,6 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package StdDlg;
 
 #  contains:
 #      OpenDialog
@@ -34,19 +33,19 @@ package StdDlg;
 
 use strict;
 use Carp;
-use Const;
-use Classes;
-use Buttons;
-use Lists;
-use Label;
-use InputLine;
-use ComboBox;
+use Prima::Const;
+use Prima::Classes;
+use Prima::Buttons;
+use Prima::Lists;
+use Prima::Label;
+use Prima::InputLine;
+use Prima::ComboBox;
 
-package FileDialog;
-use MsgBox;
+package Prima::FileDialog;
+use Prima::MsgBox;
 use Cwd;
 use vars qw( @ISA);
-@ISA = qw( Dialog);
+@ISA = qw( Prima::Dialog);
 
 sub profile_default
 {
@@ -517,9 +516,9 @@ sub pathMustExist    { ($#_)? $_[0]->{pathMustExist}     = ($_[1])  : return $_[
 sub fileMustExist    { ($#_)? $_[0]->{fileMustExist}   = ($_[1])  : return $_[0]->{fileMustExist} };
 sub showHelp         { ($#_)? shift->raise_ro('showHelp')  : return $_[0]->{showHelp} };
 
-package OpenDialog;
+package Prima::OpenDialog;
 use vars qw( @ISA);
-@ISA = qw( FileDialog);
+@ISA = qw( Prima::FileDialog);
 
 sub profile_default {
    return { %{$_[ 0]-> SUPER::profile_default},
@@ -535,9 +534,9 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
 }
 
-package SaveDialog;
+package Prima::SaveDialog;
 use vars qw( @ISA);
-@ISA = qw( FileDialog);
+@ISA = qw( Prima::FileDialog);
 
 sub profile_default  {
    return { %{$_[ 0]-> SUPER::profile_default},
@@ -553,11 +552,9 @@ sub profile_check_in
     $self-> SUPER::profile_check_in( $p, $default);
 }
 
-package ChDirDialog;
-use MsgBox;
-use Cwd;
+package Prima::ChDirDialog;
 use vars qw(@ISA);
-@ISA = qw(Dialog);
+@ISA = qw(Prima::Dialog);
 
 sub profile_default
 {
@@ -687,9 +684,9 @@ sub directory
 
 sub showHelp         { ($#_)? shift->raise_ro('showHelp')  : return $_[0]->{showHelp} };
 
-package FindDialog;
+package Prima::FindDialog;
 use vars qw(@ISA);
-@ISA = qw(Dialog);
+@ISA = qw(Prima::Dialog);
 
 sub profile_default
 {
@@ -897,9 +894,9 @@ sub options     {($#_)?$_[0]->Options->value($_[1])  :return $_[0]->Options->val
 sub findText    {($#_)?$_[0]->Find->text($_[1])   :return $_[0]->Find->text}
 sub replaceText {($#_)?$_[0]->Replace->text($_[1]):return $_[0]->Replace->text}
 
-package ReplaceDialog;
+package Prima::ReplaceDialog;
 use vars qw(@ISA);
-@ISA = qw(FindDialog);
+@ISA = qw(Prima::FindDialog);
 
 sub profile_default
 {

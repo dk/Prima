@@ -23,11 +23,10 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package Classes;
-use Const;
+use Prima::Const;
 
 # class Object; base class of all Prima classes
-package Object;
+package Prima::Object;
 use strict;
 use Carp;
 
@@ -105,7 +104,7 @@ sub set {
    return;
 }
 
-package Font;
+package Prima::Font;
 
 sub new
 {
@@ -160,9 +159,9 @@ GENPROC
 sub DESTROY {}
 
 # class Component
-package Component;
+package Prima::Component;
 use vars qw(@ISA);
-@ISA = qw(Object);
+@ISA = qw(Prima::Object);
 
 {
 my %RNT = (
@@ -265,17 +264,17 @@ sub AUTOLOAD
    return $component;
 }
 
-package Clipboard;
+package Prima::Clipboard;
 use vars qw(@ISA);
-@ISA = qw(Component);
+@ISA = qw(Prima::Component);
 
 sub text  { $#_ ? $_[0]-> store( 'Text',  $_[1]) : return $_[0]-> fetch('Text')  }
 sub image { $#_ ? $_[0]-> store( 'Image', $_[1]) : return $_[0]-> fetch('Image') }
 
 # class Drawable
-package Drawable;
+package Prima::Drawable;
 use vars qw(@ISA);
-@ISA = qw(Component);
+@ISA = qw(Prima::Component);
 
 my $sysData = Application-> get_system_info;
 
@@ -520,9 +519,9 @@ sub draw_text
 }
 
 # class Image
-package Image;
+package Prima::Image;
 use vars qw( @ISA);
-@ISA = qw(Drawable);
+@ISA = qw(Prima::Drawable);
 
 sub profile_default
 {
@@ -567,9 +566,9 @@ sub vScaling     {($#_)?$_[0]->set_v_scaling    ($_[1]):return $_[0]->get_v_scal
 sub resolution   {($#_)?shift->set_resolution   (@_)   :return $_[0]->get_resolution   ;}
 
 # class Icon
-package Icon;
+package Prima::Icon;
 use vars qw( @ISA);
-@ISA = qw(Image);
+@ISA = qw(Prima::Image);
 
 sub profile_default
 {
@@ -585,9 +584,9 @@ sub profile_default
 sub mask         {($#_)?$_[0]->set_mask         ($_[1]):return $_[0]->get_mask;         }
 
 # class DeviceBitmap
-package DeviceBitmap;
+package Prima::DeviceBitmap;
 use vars qw( @ISA);
-@ISA = qw(Drawable);
+@ISA = qw(Prima::Drawable);
 
 sub profile_default
 {
@@ -604,9 +603,9 @@ sub profile_default
 sub monochrome {($#_)?$_[0]->raise_ro("monochrome") :return $_[0]->get_monochrome;}
 
 # class Timer
-package Timer;
+package Prima::Timer;
 use vars qw(@ISA);
-@ISA = qw(Component);
+@ISA = qw(Prima::Component);
 
 {
 my %RNT = (
@@ -630,9 +629,9 @@ sub profile_default
 sub timeout    {($#_)?$_[0]->set_timeout     ($_[1]):return $_[0]->get_timeout;     }
 
 # class Printer
-package Printer;
+package Prima::Printer;
 use vars qw(@ISA);
-@ISA = qw(Drawable);
+@ISA = qw(Prima::Drawable);
 
 sub profile_default
 {
@@ -645,9 +644,9 @@ sub profile_default
 }
 
 # class Widget
-package Widget;
+package Prima::Widget;
 use vars qw(@ISA %WidgetProfile);
-@ISA = qw(Drawable);
+@ISA = qw(Prima::Drawable);
 
 {
 my %RNT = (
@@ -1048,9 +1047,9 @@ sub defocus     { $_[0]-> set_focused(0); }
 
 
 # class Window
-package Window;
+package Prima::Window;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 {
 my %RNT = (
@@ -1157,9 +1156,9 @@ sub modalResult          {($#_)?$_[0]->set_modal_result($_[1]):return $_[0]->get
 
 
 # class Dialog
-package Dialog;
+package Prima::Dialog;
 use vars qw(@ISA);
-@ISA = qw(Window);
+@ISA = qw(Prima::Window);
 
 sub profile_default
 {
@@ -1176,7 +1175,7 @@ sub profile_default
 }
 
 # class MenuItem
-package MenuItem;
+package Prima::MenuItem;
 
 sub create
 {
@@ -1208,9 +1207,9 @@ sub toggle  {
 }
 
 # class AbstractMenu
-package AbstractMenu;
+package Prima::AbstractMenu;
 use vars qw(@ISA);
-@ISA = qw(Component);
+@ISA = qw(Prima::Component);
 
 sub profile_default
 {
@@ -1259,19 +1258,19 @@ sub AUTOLOAD
 }
 
 # class AccelTable
-package AccelTable;
+package Prima::AccelTable;
 use vars qw(@ISA);
-@ISA = qw(AbstractMenu);
+@ISA = qw(Prima::AbstractMenu);
 
 # class Menu
-package Menu;
+package Prima::Menu;
 use vars qw(@ISA);
-@ISA = qw(AbstractMenu);
+@ISA = qw(Prima::AbstractMenu);
 
 # class Popup
-package Popup;
+package Prima::Popup;
 use vars qw(@ISA);
-@ISA = qw(AbstractMenu);
+@ISA = qw(Prima::AbstractMenu);
 
 sub profile_default
 {
@@ -1282,9 +1281,9 @@ sub profile_default
 
 sub auto       {($#_)?$_[0]->set_auto        ($_[1]):return $_[0]->get_auto;        }
 
-package HintWidget;
+package Prima::HintWidget;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 sub profile_default
 {
@@ -1340,9 +1339,9 @@ sub on_paint
    }
 }
 
-package Application;
+package Prima::Application;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 sub profile_default
 {

@@ -23,13 +23,13 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package Label;
+package Prima::Label;
 use vars qw(@ISA);
-@ISA = qw(Widget);
+@ISA = qw(Prima::Widget);
 
 use Carp;
-use Const;
-use Classes;
+use Prima::Const;
+use Prima::Classes;
 use strict;
 
 sub profile_default

@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package Lists;
+package Prima::Lists;
 
 # contains:
 #   AbstractListViewer
@@ -33,23 +33,22 @@ package Lists;
 #   DirectoryListBox
 
 use Carp;
-use Const;
-use Classes;
-use ScrollBar;
+use Prima::Const;
+use Prima::Classes;
+use Prima::ScrollBar;
 use strict;
-use StdBitmap;
-use IntUtils;
+use Prima::StdBitmap;
+use Prima::IntUtils;
 use Cwd;
 
 package ci;
 use constant Grid      => 1 + MaxId;
 
-package AbstractListViewer;
+package Prima::AbstractListViewer;
 use vars qw(@ISA);
-@ISA = qw(Widget MouseScroller GroupScroller);
+@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
 
-use strict;
-use Classes;
+use Prima::Classes;
 
 {
 my %RNT = (
@@ -1102,9 +1101,9 @@ sub selectedCount {($#_)?$_[0]->raise_ro("selectedCount") :return $_[0]->get_sel
 sub selectedItems {($#_)?shift->set_selected_items    (@_):return $_[0]->get_selected_items;}
 sub topItem       {($#_)?$_[0]->set_top_item       ($_[1]):return $_[0]->{topItem}        }
 
-package ListViewer;
+package Prima::ListViewer;
 use vars qw(@ISA);
-@ISA = qw(AbstractListViewer);
+@ISA = qw(Prima::AbstractListViewer);
 
 {
 my %RNT = (
@@ -1374,9 +1373,9 @@ sub autoWidth     {($#_)?$_[0]->{autoWidth} = $_[1]       :return $_[0]->{autoWi
 sub count         {($#_)?$_[0]->raise_ro('count')         :return $_[0]->{count}          }
 sub items         {($#_)?$_[0]->set_items( $_[1])         :return $_[0]->{items}          }
 
-package ProtectedListBox;
+package Prima::ProtectedListBox;
 use vars qw(@ISA);
-@ISA = qw(ListViewer);
+@ISA = qw(Prima::ListViewer);
 
 BEGIN {
    for ( qw(font color backColor rop rop2 linePattern lineWidth lineEnd textOutBaseline fillPattern clipRect))
@@ -1429,9 +1428,9 @@ sub draw_items
 }
 
 
-package ListBox;
+package Prima::ListBox;
 use vars qw(@ISA);
-@ISA = qw(ListViewer);
+@ISA = qw(Prima::ListViewer);
 
 
 sub init
@@ -1550,10 +1549,10 @@ sub draw_items
    }
 }
 
-package DirectoryListBox;
+package Prima::DirectoryListBox;
 use vars qw(@ISA @images);
 
-@ISA = qw(ListViewer);
+@ISA = qw(Prima::ListViewer);
 
 sub profile_default
 {

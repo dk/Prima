@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package IniFile;
+package Prima::IniFile;
 
 #
 # Version: 0.01 19980115
@@ -482,7 +482,7 @@ sub replace_values
    }
 }
 
-package IniFile::Section::Helper::to::Tie;
+package Prima::IniFile::Section::Helper::to::Tie;
 
 sub TIEHASH
 {
@@ -552,7 +552,7 @@ sub NEXTKEY
    return wantarray ? ($key, $self-> FETCH($key)) : $key;
 }
 
-package IniFile;
+package Prima::IniFile;
 
 sub section
 {

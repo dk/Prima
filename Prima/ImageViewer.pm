@@ -23,11 +23,11 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-use ScrollWidget;
+use Prima::ScrollWidget;
 
-package ImageViewer;
+package Prima::ImageViewer;
 use vars qw(@ISA);
-@ISA = qw( ScrollWidget);
+@ISA = qw( Prima::ScrollWidget);
 
 sub profile_default
 {

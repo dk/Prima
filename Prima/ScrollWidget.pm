@@ -24,13 +24,13 @@
 #  SUCH DAMAGE.
 #
 use strict;
-use Const;
-use Classes;
-use IntUtils;
+use Prima::Const;
+use Prima::Classes;
+use Prima::IntUtils;
 
-package ScrollWidget;
+package Prima::ScrollWidget;
 use vars qw(@ISA);
-@ISA = qw( Widget GroupScroller);
+@ISA = qw( Prima::Widget Prima::GroupScroller);
 
 sub profile_default
 {
