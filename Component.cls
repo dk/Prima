@@ -67,10 +67,6 @@ object Prima::Component( Prima::Object)
     import   void      set_owner( Handle owner);
     method   void      unlink_notifier( Handle referer);
     c_only   void      update_sys_handle( HV * profile);
-# virtual event handlers
-    event    void      on_create();
-    event    void      on_destroy();
-    event    void      on_postmessage( SV * info1, SV * info2);
 # internal variables
     char * evStack;
     int    evPtr;

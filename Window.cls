@@ -80,11 +80,6 @@ object Prima::Window( Prima::Widget)
    method   void     set_transparent( Bool transparent);
    method   Bool     set_window_state( int state)    => apc_window_set_window_state;
    c_only   void     update_sys_handle( HV * profile);
-   event    void     on_activate();
-   event    void     on_deactivate();
-   event    void     on_endmodal();
-   event    void     on_execute();
-   event    void     on_windowstate( int windowState);
 # private
    Handle   nextExclModal;
    Handle   prevExclModal;

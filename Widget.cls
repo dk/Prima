@@ -252,39 +252,6 @@ object Prima::Widget( Prima::Drawable)
    method   void     set_widget_class( int widgetClass);
    method   void     set_width( int width);
 
-# virtual event handlers
-   event    void     on_change();
-   event    void     on_click();
-   event    void     on_close();
-   event    void     on_colorchanged( int colorIndex);
-   event    void     on_disable();
-   event    void     on_dragdrop( Handle source, int x, int y);
-   event    void     on_dragover( Handle source, int x, int y, int state);
-   event    void     on_enable();
-   event    void     on_enddrag( Handle target, int x, int y);
-   event    void     on_enter();
-   event    void     on_fontchanged();
-   event    void     on_help();
-   event    void     on_hide();
-   event    void     on_hint( Bool show);
-   event    void     on_keydown( int code, int key, int shiftState, int repeat);
-   event    void     on_keyup( int code, int key, int shiftState);
-   event    void     on_leave();
-   event    void     on_menu( Handle menu, char * variable);
-   event    void     on_mouseclick( int button, int shiftState, int x, int y, Bool dbl);
-   event    void     on_mousedown( int button, int shiftState, int x, int y);
-   event    void     on_mouseup( int button, int shiftState, int x, int y);
-   event    void     on_mousemove( int shiftState, int x, int y);
-   event    void     on_mousewheel( int shiftState, int x, int y, int z);
-   event    void     on_mouseenter( int shiftState, int x, int y);
-   event    void     on_mouseleave();
-   event    void     on_move( Point oldPos, Point newPos);
    method   void     on_paint( Handle canvas);
-   event    void     on_popup( Bool mouseDriven, int x, int y);
-   event    void     on_setup();
-   event    void     on_show();
-   event    void     on_size( Point oldSize, Point newSize);
-   event    void     on_translateaccel( int code, int key, int shiftState);
-   event    void     on_zorderchanged();
 }
 
