@@ -63,6 +63,10 @@
    #define __INLINE__            __inline__
 #endif
 
+#if !defined(__unix) && defined(unix)
+#define __unix unix
+#endif    
+
 #ifdef __unix   /* This is wrong, not every unix */
    extern double NAN;
 #endif
