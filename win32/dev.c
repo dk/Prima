@@ -43,7 +43,6 @@ Bool image_screenable( Handle image, Handle screen, int * bitCount)
       } else {
          if ( dsys( screen) bpp == 0) {
             if ( !dsys(screen) ps) {
-               log_write("APC_ERR: Cannot access BPP HDC at line %d at %s", __LINE__, __FILE__);
                *bitCount = 1;
                return false;
             }
@@ -113,7 +112,7 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
       nColors  = (( 1 << ( image-> type & imBPP)) & 0x1ff);
       bitCount = image-> type & imBPP;
    } else {
-      nColors  = 1 << lower;
+      nColors  = ( 1 << lower) & 0x1ff;
       bitCount = lower;
    }
 
@@ -335,7 +334,7 @@ Bool
 apc_image_create( Handle self)
 {
    objCheck false;
-   apt_set( aptBitmap);
+   // apt_set( aptBitmap);
    image_destroy_cache( self);
    sys lastSize. x = var w;
    sys lastSize. y = var h;
@@ -465,6 +464,7 @@ apc_dbm_create( Handle self, Bool monochrome)
    sys stockBM = SelectObject( sys ps, sys bm);
 
    hwnd_enter_paint( self);
+   if ( monochrome) sys bpp = 1;
 
    hash_store( imageMan, &self, sizeof( self), (void*)self);
    return true;
@@ -698,7 +698,7 @@ static void ppi_destroy( LPPRINTER_INFO_2 ppi)
 void
 apc_prn_destroy( Handle self)
 {
-
+   ppi_destroy( &sys s. prn. ppi);
 }
 
 

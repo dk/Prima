@@ -36,7 +36,8 @@ long   apcError = 0;
 
 static PerlInterpreter *myPerl;
 static char evaluation[ 4096];
-static HV *vmtHash;
+static PHash vmtHash;
+static List  staticObjects;
 
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
 I32 clean_perl_call_method( char* methname, I32 flags)
@@ -415,7 +416,7 @@ Bool build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtS
 void build_static_vmt( void *vvmmtt)
 {
    PVMT vmt = vvmmtt;
-   hv_store( vmtHash, vmt-> className, strlen( vmt-> className), newSViv(( IV) vmt), 0);
+   hash_store( vmtHash, vmt-> className, strlen( vmt-> className), vmt);
 }
 
 #ifdef PARANOID_MALLOC
@@ -441,8 +442,8 @@ gimme_the_vmt( const char *className)
    PVMT patchWhom;
 
    // Check whether this class has been already built...
-   vmtAddr = hv_fetch( vmtHash, (char *)className, strlen( className), 0);
-   if ( vmtAddr != nil) return ( PVMT) SvIV( *vmtAddr);
+   vmtAddr = hash_fetch( vmtHash, (char *)className, strlen( className));
+   if ( vmtAddr != nil) return ( PVMT) vmtAddr;
 
    // No;  try to find inherited VMT...
    stash = gv_stashpv( (char *)className, false);
@@ -508,10 +509,13 @@ gimme_the_vmt( const char *className)
    }
 
    // Store newly created vmt into our hash...
-   hv_store( vmtHash, (char *)className, strlen( className), newSViv(( IV) vmt), 0);
+   hash_store( vmtHash, (char *)className, strlen( className), vmt);
+   list_add( &staticObjects, (Handle) vmt);
+   list_add( &staticObjects, (Handle) vmt-> className);
 
    return vmt;
 }
+
 
 SV *
 notify_perl( Handle self, char *methodName, char *format, ...)
@@ -967,6 +971,9 @@ SaveError(pat, va_alist)
 
     /* This code is based on croak/warn, see mess() in util.c */
 
+// #define saferealloc realloc
+// #define safemalloc malloc
+
 #ifdef I_STDARG
     va_start(args, pat);
 #else
@@ -1168,6 +1175,7 @@ extern PHash objects;
 #define PRIMAPERL_endav endav
 #endif
 
+
 XS( prima_cleanup)
 {
    dXSARGS;
@@ -1175,7 +1183,10 @@ XS( prima_cleanup)
 
    appDead = true;
    window_subsystem_cleanup();
-   sv_free(( SV *) vmtHash);
+   hash_destroy( vmtHash, false);
+   list_delete_all( &staticObjects, true);
+   list_destroy( &staticObjects);
+   kill_zombies();
    window_subsystem_done();
 
    ST(0) = &sv_yes;
@@ -1220,7 +1231,8 @@ NAN = 0.0;
 #ifdef PARANOID_MALLOC
    objects = hash_create();
 #endif
-   vmtHash = newHV();
+   vmtHash = hash_create();
+   list_create( &staticObjects, 16, 16);
 
    /* register hard coded XSUBs */
    newXS( "TiedStdOut::PRINT", ext_std_print, MODULE);
@@ -1344,7 +1356,8 @@ prima( const char *primaPath, int argc, char **argv)
 #ifdef PARANOID_MALLOC
    objects = hash_create();
 #endif
-   vmtHash = newHV();
+   vmtHash = hash_create();
+   list_create( &staticObjects, 16, 16);
 
    { // Construct @INC
      char *additionalPath = getenv( "PRIMA_ADDITIONAL_PATH");
@@ -1423,20 +1436,20 @@ prima( const char *primaPath, int argc, char **argv)
       goto NoPerlDying;
    }
    perl_run( myPerl);
-   sv_free(( SV *) vmtHash);
    perl_destruct( myPerl);
+   hash_destroy( vmtHash, false);
+   list_delete_all( &staticObjects, true);
+   list_destroy( &staticObjects);
 DieHard:
    appDead = true;
    window_subsystem_cleanup();
    if (waitBeforeQuit)
       apc_show_message( "I was asked to wait before quitting...");
 NoPerlDying:
+   kill_zombies();
    window_subsystem_done();
 #ifdef PARANOID_MALLOC
-   if (myPerl) {
-      kill_zombies();
-      output_mallocs();
-   }
+   if (myPerl) output_mallocs();
 #endif
    perl_free( myPerl);
    return 0;
@@ -1528,6 +1541,8 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
       table[0] = endCtx;
       table[1] = (int)hash1;
       table[2] = (int)hash2;
+      list_add( &staticObjects, ( Handle) hash1);
+      list_add( &staticObjects, ( Handle) hash2);
    }
 
    hash = (void*)(direct ? table[1] : table[2]);
