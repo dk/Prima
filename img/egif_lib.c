@@ -69,18 +69,22 @@ GifFileType *EGifOpenFileName(char *FileName, int TestExistance)
 	FileHandle = open(FileName,
 			  O_WRONLY | O_CREAT | O_EXCL
 #ifndef __unix
-			                     | O_BINARY
-#endif /* __unix */
-			                               ,
+			                     | O_BINARY,
 			  S_IREAD | S_IWRITE);
+#else
+                                                       ,
+                          0644);
+#endif /* __unix */
     else
 	FileHandle = open(FileName,
 			  O_WRONLY | O_CREAT | O_TRUNC
 #ifndef __unix
-			                     | O_BINARY
-#endif /* __unix */
-			                               ,
+			                     | O_BINARY,
 			  S_IREAD | S_IWRITE);
+#else
+                                                       ,
+                          0644);
+#endif /* __unix */
 
     if (FileHandle == -1) {
 	_GifError = E_GIF_ERR_OPEN_FAILED;
