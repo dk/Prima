@@ -1068,16 +1068,15 @@ bc_mono_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width)
       register Byte a;
       short    lShift = from & 7;
       short    rShift = 8 - lShift;
-      register int byteLim = ( width < rShift) ? 0 :
-         ((( width - rShift) >> 3) + (((( width - rShift) & 7) > 0) ? 1 : 0));
+      register int toLim  = ( width >> 3) + ((( width & 7) > 0) ? 1 : 0);
+      Byte * froLim = source + (( from + width) >> 3) + (((( from + width) & 7) > 0) ? 1 : 0);
       source += from >> 3;
       a = *source++;
-      while( byteLim--) {
-         register Byte b = *source++;
+      while( toLim--) {
+         register Byte b = ( source == froLim) ? 0 : *source++;
          *dest++ = ( a << lShift) | ( b >> rShift);
          a = b;
       }
-      if (( width & 7) != 0) *dest++ = a << lShift;
    } else
       memcpy( dest, source + ( from >> 3), ( width >> 3) + (( width & 7) > 0 ? 1 : 0));
 }
