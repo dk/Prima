@@ -44,7 +44,7 @@ extern "C" {
 
 #define macro_asis(SourceType,DestType)                                        \
 void ic_##SourceType##_##DestType( Handle self,                           \
-      Byte *dstData, PRGBColor dstPal, int dstType)                            \
+      Byte *dstData, PRGBColor dstPal, int dstType, int * dstPalSize, Bool palSize_only)   \
 {                                                                              \
    SourceType *src = (SourceType*) var->data;                                   \
    DestType *dst = (DestType*) dstData;                                        \
@@ -66,7 +66,7 @@ void ic_##SourceType##_##DestType( Handle self,                           \
 
 #define macro_asis_complex(SourceType,DestType)                                        \
 void ic_##SourceType##_##DestType##_complex( Handle self,                           \
-      Byte *dstData, PRGBColor dstPal, int dstType)                            \
+      Byte *dstData, PRGBColor dstPal, int dstType, int * dstPalSize, Bool palSize_only)  \
 {                                                                              \
    SourceType *src = (SourceType*) var->data;                                   \
    DestType *dst = (DestType*) dstData;                                        \
@@ -88,7 +88,7 @@ void ic_##SourceType##_##DestType##_complex( Handle self,                       
 
 #define macro_asis_revcomplex(SourceType,DestType)                       \
 void ic_##SourceType##_complex_##DestType( Handle self,                           \
-      Byte *dstData, PRGBColor dstPal, int dstType)                            \
+      Byte *dstData, PRGBColor dstPal, int dstType, int * dstPalSize, Bool palSize_only)         \
 {                                                                              \
    SourceType *src = (SourceType*) var->data;                                   \
    DestType *dst = (DestType*) dstData;                                        \

@@ -35,21 +35,110 @@ extern "C" {
 
 #define var (( PImage) self)
 
+#define dEDIFF_ARGS \
+   int * err_buf
+#define EDIFF_INIT  \
+    if (!(err_buf = malloc(( width + 2) * 3 * sizeof( int)))) return;\
+    memset( err_buf, 0,( width + 2) * 3 * sizeof( int));
+#define EDIFF_DONE free(err_buf)
+#define EDIFF_CONV err_buf
+
+#define BCPARMS      self, dstData, dstPal, dstType, dstPalSize, palSize_only
+
 /* Mono */
+
+BC( mono, mono, None)
+{
+   dBCARGS;
+   BCWARN;
+
+   if ( palSize_only || *dstPalSize == 0) 
+      memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof( RGBColor));
+   
+   if ((
+         (var->palette[0].r + var->palette[0].g + var->palette[0].b) >
+         (var->palette[1].r + var->palette[1].g + var->palette[1].b)
+       ) == (
+         (dstPal[0].r + dstPal[0].g + dstPal[0].b) >
+         (dstPal[1].r + dstPal[1].g + dstPal[1].b) 
+       )) {
+      if ( dstData != var-> data)
+         memcpy( dstData, var-> data, var-> dataSize);
+   } else {
+      for ( i = 0; i < var-> dataSize; i++, srcData++)
+         *srcData = ~(*srcData);
+   }
+}
+
+BC( mono, mono, Optimized)
+{
+   dBCARGS;
+   U16 * tree;
+   Byte * buf;
+   dEDIFF_ARGS;
+   BCWARN;
+
+   if ( palSize_only) 
+      cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+
+   if ( !( buf = malloc( width))) goto FAIL;
+   
+   EDIFF_INIT;
+   if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
+      EDIFF_DONE;
+      free( buf);
+      goto FAIL;
+   }
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+      bc_mono_byte( srcData, buf, width); 
+      bc_byte_op( buf, buf, width, tree, var-> palette, dstPal, EDIFF_CONV);
+      bc_byte_mono_cr( buf, dstData, width, map_stdcolorref); 
+   }
+   free( tree);
+   free( buf);
+   EDIFF_DONE;
+   return;
+   
+FAIL:  
+   ic_mono_mono_ictNone(BCPARMS);
+}
+
 BC( mono, nibble, None)
 {
    dBCARGS;
    BCWARN;
+   if ( palSize_only) { 
+      if ( var-> palSize > *dstPalSize)
+         cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+      else
+         cm_squeeze_palette( stdmono_palette, 2, dstPal, *dstPalSize);
+   } else if ( *dstPalSize != 0) {
+      cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 16);
+      if ( *dstPalSize > 16 ) *dstPalSize = 16;
+   } else
+      memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
+   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_mono_nibble( BCCONV);
+      bc_mono_nibble_cr( BCCONV, colorref);
 }
 
 BC( mono, byte, None)
 {
    dBCARGS;
    BCWARN;
+   if ( palSize_only) { 
+      if ( var-> palSize > *dstPalSize)
+         cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+      else
+         cm_squeeze_palette( stdmono_palette, 2, dstPal, *dstPalSize);
+   } else if ( *dstPalSize != 0) {
+      cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 256);
+      if ( *dstPalSize > 256 ) *dstPalSize = 256;
+   } else
+      memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
+   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_mono_byte( BCCONV);
+      bc_mono_byte_cr( BCCONV, colorref);
 }
 
 BC( mono, graybyte, None)
@@ -58,7 +147,6 @@ BC( mono, graybyte, None)
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_mono_graybyte( BCCONV, var->palette);
-   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));
 }
 
 BC( mono, rgb, None)
@@ -75,36 +163,148 @@ BC( nibble, mono, None)
 {
    dBCARGS;
    BCWARN;
-   cm_fill_colorref( var->palette, srcColors, stdmono_palette, 2, colorref);
+   if ( palSize_only) { 
+      if ( var-> palSize > *dstPalSize)
+         cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+      else
+         cm_squeeze_palette( stdmono_palette, 2, dstPal, *dstPalSize);
+   } else if ( *dstPalSize != 0) {
+      cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 2);
+      if ( *dstPalSize > 2 ) *dstPalSize = 2;
+   } else
+      memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
+   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_nibble_mono_cr( BCCONV, colorref);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
 }
 
-BC( nibble, mono, Halftone)
+BC( nibble, mono, Ordered)
 {
    dBCARGS;
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_nibble_mono_ht( BCCONV, var->palette, i);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+   memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
 
 BC( nibble, mono, ErrorDiffusion)
 {
    dBCARGS;
+   dEDIFF_ARGS;
    BCWARN;
+   EDIFF_INIT;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_nibble_mono_ed( BCCONV, var->palette);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+      bc_nibble_mono_ed( BCCONV, var->palette, EDIFF_CONV);
+   EDIFF_DONE;
+   memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
+}
+
+BC( nibble, mono, Optimized)
+{
+   dBCARGS;
+   U16 * tree;
+   Byte * buf;
+   dEDIFF_ARGS;
+   BCWARN;
+
+   if ( palSize_only) goto FAIL;
+   if ( !( buf = malloc( width))) goto FAIL;
+   EDIFF_INIT;
+   if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
+      EDIFF_DONE;
+      free( buf);
+      goto FAIL;
+   }
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+      bc_nibble_byte( srcData, buf, width);
+      bc_byte_op( buf, buf, width, tree, var-> palette, dstPal, EDIFF_CONV);
+      bc_byte_mono_cr( buf, dstData, width, map_stdcolorref);
+   }
+   free( tree);
+   free( buf);
+   EDIFF_DONE;
+   return;
+   
+FAIL:  
+   ic_nibble_mono_ictErrorDiffusion(BCPARMS);
+} 
+
+BC( nibble, nibble, None)
+{
+   dBCARGS;
+   int j, w = (width >> 1) + (width & 1);
+   BCWARN;
+   if ( palSize_only) { 
+      if ( var-> palSize > *dstPalSize)
+         cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+      else
+         cm_squeeze_palette( cubic_palette16, 16, dstPal, *dstPalSize);
+   } else if ( *dstPalSize != 0) {
+      cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 16);
+      if ( *dstPalSize > 16 ) *dstPalSize = 16;
+   } else
+      memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
+   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+      for ( j = 0; j < w; j++)
+         dstData[j] = (colorref[srcData[j] >> 4] << 4) | colorref[srcData[j] & 0xf]; 
+   }
+}
+
+BC( nibble, nibble, Optimized)
+{
+   dBCARGS;
+   U16 * tree;
+   Byte * buf;
+   dEDIFF_ARGS;
+   BCWARN;
+
+   if ( palSize_only) { 
+      if ( var-> palSize > *dstPalSize)
+         cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+      else
+         cm_squeeze_palette( cubic_palette16, 16, dstPal, *dstPalSize);
+   }
+
+   if ( !( buf = malloc( width))) goto FAIL;
+   
+   EDIFF_INIT;
+   if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
+      EDIFF_DONE;
+      free( buf);
+      goto FAIL;
+   }
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+      bc_nibble_byte( srcData, buf, width); 
+      bc_byte_op( buf, buf, width, tree, var-> palette, dstPal, EDIFF_CONV);
+      bc_byte_nibble_cr( buf, dstData, width, map_stdcolorref); 
+   }
+   free( tree);
+   free( buf);
+   EDIFF_DONE;
+   return;
+   
+FAIL:  
+   ic_nibble_nibble_ictNone(BCPARMS);
 }
 
 BC( nibble, byte, None)
 {
    dBCARGS;
    BCWARN;
+   if ( palSize_only) { 
+      if ( var-> palSize > *dstPalSize)
+         cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+      else
+         cm_squeeze_palette( cubic_palette, 215, dstPal, *dstPalSize);
+   } else if ( *dstPalSize != 0) {
+      cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 256);
+      if ( *dstPalSize > 256 ) *dstPalSize = 256;
+   } else
+      memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
+   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_nibble_byte( BCCONV);
+      bc_nibble_byte_cr( BCCONV, colorref);
 }
 
 BC( nibble, graybyte, None)
@@ -113,7 +313,6 @@ BC( nibble, graybyte, None)
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_nibble_graybyte( BCCONV, var->palette);
-   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));
 }
 
 BC( nibble, rgb, None)
@@ -129,60 +328,206 @@ BC( byte, mono, None)
 {
    dBCARGS;
    BCWARN;
-   cm_fill_colorref( var->palette, srcColors, stdmono_palette, 2, colorref);
+   if ( palSize_only) { 
+      if ( var-> palSize > *dstPalSize)
+         cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+      else
+         cm_squeeze_palette( stdmono_palette, 2, dstPal, *dstPalSize);
+   } else if ( *dstPalSize != 0) {
+      cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 2);
+      if ( *dstPalSize > 2 ) *dstPalSize = 2;
+   } else
+      memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
+   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_byte_mono_cr( BCCONV, colorref);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
 }
 
-BC( byte, mono, Halftone)
+BC( byte, mono, Ordered)
 {
    dBCARGS;
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_byte_mono_ht( BCCONV, var->palette, i);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+   memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
 
 BC( byte, mono, ErrorDiffusion)
 {
    dBCARGS;
+   dEDIFF_ARGS;
    BCWARN;
+   EDIFF_INIT;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_byte_mono_ed( BCCONV, var->palette);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+      bc_byte_mono_ed( BCCONV, var->palette, EDIFF_CONV);
+   EDIFF_DONE;
+   memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
+
+BC( byte, mono, Optimized)
+{
+   dBCARGS;
+   U16 * tree;
+   Byte * buf;
+   dEDIFF_ARGS;
+   BCWARN;
+
+   if ( palSize_only) goto FAIL;
+   if ( !( buf = malloc( width))) goto FAIL;
+   EDIFF_INIT;
+   if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
+      EDIFF_DONE;
+      free( buf);
+      goto FAIL;
+   }
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+      bc_byte_op( srcData, buf, width, tree, var-> palette, dstPal, EDIFF_CONV);
+      bc_byte_mono_cr( buf, dstData, width, map_stdcolorref);
+   }
+   free( tree);
+   free( buf);
+   EDIFF_DONE;
+   return;
+   
+FAIL:  
+   ic_byte_mono_ictErrorDiffusion(BCPARMS);
+} 
 
 BC( byte, nibble, None)
 {
    dBCARGS;
    BCWARN;
-   {
-      RGBColor dstPalBuf[ 16];
-      cm_squeeze_palette( var->palette, srcColors, dstPalBuf, 16);
-      cm_fill_colorref( var->palette, srcColors, dstPalBuf, 16, colorref);
-      memcpy( dstPal, dstPalBuf, sizeof( dstPalBuf));
-   }
+   if ( palSize_only) { 
+      if ( var-> palSize > *dstPalSize)
+         cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+      else
+         cm_squeeze_palette( cubic_palette16, 16, dstPal, *dstPalSize);
+   } else if ( *dstPalSize != 0) {
+      cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 16);
+      if ( *dstPalSize > 16 ) *dstPalSize = 16;
+   } else
+      cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize = 16);
+   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_byte_nibble_cr( BCCONV, colorref);
 }
 
-BC( byte, nibble, Halftone)
+BC( byte, nibble, Ordered)
 {
    dBCARGS;
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_byte_nibble_ht( BCCONV, var->palette, i);
-   memcpy( dstPal, cubic_palette8, 8 * sizeof( RGBColor));
+   memcpy( dstPal, cubic_palette8, (*dstPalSize = 8) * sizeof(RGBColor));
 }
 
 BC( byte, nibble, ErrorDiffusion)
 {
    dBCARGS;
+   dEDIFF_ARGS;
    BCWARN;
+   EDIFF_INIT;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_byte_nibble_ed( BCCONV, var->palette);
-   memcpy( dstPal, cubic_palette8, 8 * sizeof( RGBColor));
+      bc_byte_nibble_ed( BCCONV, var->palette, EDIFF_CONV);
+   EDIFF_DONE;
+   memcpy( dstPal, cubic_palette8, (*dstPalSize = 8) * sizeof(RGBColor));
+}
+
+BC( byte, nibble, Optimized)
+{
+   dBCARGS;
+   U16 * tree;
+   Byte * buf, hist[256];
+   RGBColor new_palette[256];
+   int j, new_pal_size = 0;
+   dEDIFF_ARGS;
+   BCWARN;
+
+   if ( *dstPalSize == 0 || palSize_only) {
+      int lim = palSize_only ? *dstPalSize : 16;
+      memset( hist, 0, sizeof( hist));
+      for ( i = 0; i < height; i++) {
+         Byte * d = srcData + srcLine * i;
+         for ( j = 0; j < width; j++, d++) 
+            if ( hist[*d] == 0) {
+               hist[*d] = 1;
+               new_palette[new_pal_size++] = var-> palette[*d];
+               if ( new_pal_size == 256) goto END_HIST_LOOP;
+            }
+      }
+   END_HIST_LOOP:
+      if ( new_pal_size > lim) {
+         cm_squeeze_palette( new_palette, new_pal_size, new_palette, lim);
+         new_pal_size = lim;
+      }
+   } else
+      memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
+
+   if ( !( buf = malloc( width))) goto FAIL;
+   EDIFF_INIT;
+   if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+      EDIFF_DONE;
+      free( buf);
+      goto FAIL;
+   }
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+      bc_byte_op( srcData, buf, width, tree, var-> palette, new_palette, EDIFF_CONV);
+      bc_byte_nibble_cr( buf, dstData, width, map_stdcolorref);
+   }
+   memcpy( dstPal, new_palette, new_pal_size * sizeof(RGBColor));
+   *dstPalSize = new_pal_size;
+   free( tree);
+   free( buf);
+   EDIFF_DONE;
+   return;
+   
+FAIL:  
+   ic_byte_nibble_ictErrorDiffusion(BCPARMS);
+} 
+
+BC( byte, byte, None)
+{
+   dBCARGS;
+   int j;
+   BCWARN;
+   if ( palSize_only) { 
+      if ( var-> palSize > *dstPalSize)
+         cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
+      else
+         cm_squeeze_palette( cubic_palette, 256, dstPal, *dstPalSize);
+   } else if ( *dstPalSize != 0) {
+      cm_squeeze_palette( dstPal, *dstPalSize, dstPal, 256);
+      if ( *dstPalSize > 256 ) *dstPalSize = 256;
+   } else
+      cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize = 256);
+   cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+      for ( j = 0; j < width; j++)
+         dstData[j] = colorref[srcData[j]];
+   }
+}
+
+BC( byte, byte, Optimized)
+{
+   dBCARGS;
+   U16 * tree;
+   dEDIFF_ARGS;
+   BCWARN;
+
+   if ( palSize_only) cm_squeeze_palette( cubic_palette, 216, dstPal, *dstPalSize);
+   EDIFF_INIT;
+   if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
+      EDIFF_DONE;
+      goto FAIL;
+   }
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) 
+      bc_byte_op( srcData, dstData, width, tree, var-> palette, dstPal, EDIFF_CONV);
+   free( tree);
+   EDIFF_DONE;
+   return;
+   
+FAIL:  
+   ic_byte_byte_ictNone(BCPARMS);
 }
 
 BC( byte, graybyte, None)
@@ -191,7 +536,6 @@ BC( byte, graybyte, None)
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_byte_graybyte( BCCONV, var->palette);
-   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));
 }
 
 BC( byte, rgb, None)
@@ -203,72 +547,48 @@ BC( byte, rgb, None)
 }
 
 /* Graybyte */
-BC( graybyte, mono, None)
-{
-   dBCARGS;
-   BCWARN;
-   cm_fill_colorref( var->palette, srcColors, stdmono_palette, 2, colorref);
-   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_byte_mono_cr( BCCONV, colorref);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
-}
-
-BC( graybyte, mono, Halftone)
+BC( graybyte, mono, Ordered)
 {
    dBCARGS;
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_graybyte_mono_ht( BCCONV, i);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+   memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
 
 BC( graybyte, mono, ErrorDiffusion)
 {
    dBCARGS;
+   dEDIFF_ARGS;
    BCWARN;
+   EDIFF_INIT;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_graybyte_mono_ed( BCCONV);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+      bc_byte_mono_ed( BCCONV, std256gray_palette, EDIFF_CONV);
+   EDIFF_DONE;
+   memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
 
-BC( graybyte, nibble, None)
-{
-   dBCARGS;
-   BCWARN;
-   {
-      RGBColor dstPalBuf[ 16];
-      cm_squeeze_palette( var->palette, srcColors, dstPalBuf, 16);
-      cm_fill_colorref( var->palette, srcColors, dstPalBuf, 16, colorref);
-      memcpy( dstPal, dstPalBuf, sizeof( dstPalBuf));
-   }
-   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_byte_nibble_cr( BCCONV, colorref);
-}
-
-BC( graybyte, nibble, Halftone)
+BC( graybyte, nibble, Ordered)
 {
    dBCARGS;
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_graybyte_nibble_ht( BCCONV, i);
    memcpy( dstPal, std16gray_palette, sizeof( std16gray_palette));
+   *dstPalSize = 16;
 }
 
 BC( graybyte, nibble, ErrorDiffusion)
 {
    dBCARGS;
+   dEDIFF_ARGS;
    BCWARN;
+   EDIFF_INIT;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_graybyte_nibble_ed( BCCONV);
+      bc_graybyte_nibble_ed( BCCONV, EDIFF_CONV);
+   EDIFF_DONE;
    memcpy( dstPal, std16gray_palette, sizeof( std16gray_palette));
-}
-
-
-BC( graybyte, byte, None)
-{
-   dBCARGS;
-   BCWARN;
-   if ( srcData != dstData) memcpy( dstData, srcData, dstLine * height);
+   *dstPalSize = 16;
 }
 
 BC( graybyte, rgb, None)
@@ -292,26 +612,58 @@ BC( rgb, mono, None)
       bc_rgb_graybyte( srcData, convBuf, width);
       bc_byte_mono_cr( convBuf, dstData, width, colorref);
    }
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
    free( convBuf);
+   memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
 
-BC( rgb, mono, Halftone)
+BC( rgb, mono, Ordered)
 {
    dBCARGS;
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_rgb_mono_ht( BCCONV, i);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+   memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
 
 BC( rgb, mono, ErrorDiffusion)
 {
    dBCARGS;
+   dEDIFF_ARGS;
    BCWARN;
+   EDIFF_INIT;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_rgb_mono_ed( BCCONV);
-   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+      bc_rgb_mono_ed( BCCONV, EDIFF_CONV);
+   EDIFF_DONE;
+   memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
+}
+
+BC( rgb, mono, Optimized)
+{
+   dBCARGS;
+   Byte * buf;
+   U16 * tree;
+   dEDIFF_ARGS;
+   BCWARN;
+
+   if ( palSize_only) goto FAIL;
+   if ( !( buf = malloc( width))) goto FAIL;
+   EDIFF_INIT;
+   if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
+      EDIFF_DONE;
+      free( buf);
+      goto FAIL;
+   }
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+      bc_rgb_byte_op(( RGBColor *) srcData, buf, width, tree, dstPal, EDIFF_CONV);
+      bc_byte_mono_cr( buf, dstData, width, map_stdcolorref);
+   }
+   free( tree);
+   free( buf);
+   EDIFF_DONE;
+   return;
+
+FAIL:   
+   ic_rgb_mono_ictErrorDiffusion(BCPARMS);
 }
 
 BC( rgb, nibble, None)
@@ -321,26 +673,68 @@ BC( rgb, nibble, None)
    memcpy( dstPal, cubic_palette16, sizeof( cubic_palette16));
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_rgb_nibble(BCCONV);
+   *dstPalSize = 16;
 }
 
-BC( rgb, nibble, Halftone)
+BC( rgb, nibble, Ordered)
 {
    dBCARGS;
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_rgb_nibble_ht( BCCONV, i);
-   memcpy( dstPal, cubic_palette8, 8 * sizeof( RGBColor));
+   memcpy( dstPal, cubic_palette8, (*dstPalSize = 8) * sizeof(RGBColor));
 }
 
 BC( rgb, nibble, ErrorDiffusion)
 {
    dBCARGS;
+   dEDIFF_ARGS;
    BCWARN;
+   EDIFF_INIT;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_rgb_nibble_ed( BCCONV);
-   memcpy( dstPal, cubic_palette8, 8 * sizeof( RGBColor));
-}   
+      bc_rgb_nibble_ed( BCCONV, EDIFF_CONV);
+   EDIFF_DONE;
+   memcpy( dstPal, cubic_palette8, (*dstPalSize = 8) * sizeof(RGBColor));
+}
 
+BC( rgb, nibble, Optimized)
+{
+   dBCARGS;
+   U16 * tree;
+   Byte * buf;
+   RGBColor new_palette[16];
+   int new_pal_size = 16;
+   dEDIFF_ARGS;
+   BCWARN;
+
+   if ( *dstPalSize == 0 || palSize_only) {
+      if ( palSize_only) new_pal_size = *dstPalSize;
+      if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size)) 
+         goto FAIL;
+   } else
+      memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
+
+   if ( !( buf = malloc( width))) goto FAIL;
+   EDIFF_INIT;
+   if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+      EDIFF_DONE;
+      free( buf);
+      goto FAIL;
+   }
+   memcpy( dstPal, new_palette, new_pal_size * 3);
+   *dstPalSize = new_pal_size;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+      bc_rgb_byte_op(( RGBColor *) srcData, buf, width, tree, dstPal, EDIFF_CONV);
+      bc_byte_nibble_cr( buf, dstData, width, map_stdcolorref);
+   }
+   free( tree);
+   free( buf);
+   EDIFF_DONE;
+   return;
+   
+FAIL:  
+   ic_rgb_nibble_ictErrorDiffusion(BCPARMS);
+} 
 
 BC( rgb, byte, None)
 {
@@ -348,26 +742,61 @@ BC( rgb, byte, None)
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_rgb_byte( BCCONV);
-   memcpy( dstPal, cubic_palette, sizeof( cubic_palette));
+   memcpy( dstPal, cubic_palette, (*dstPalSize = 216) * sizeof(RGBColor));
 }
 
-BC( rgb, byte, Halftone)
+BC( rgb, byte, Ordered)
 {
    dBCARGS;
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_rgb_byte_ht( BCCONV, i);
-   memcpy( dstPal, cubic_palette, sizeof( cubic_palette));
+   memcpy( dstPal, cubic_palette, (*dstPalSize = 216) * sizeof(RGBColor));
 }
 
 BC( rgb, byte, ErrorDiffusion)
 {
    dBCARGS;
+   dEDIFF_ARGS;
    BCWARN;
+   EDIFF_INIT;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
-      bc_rgb_byte_ed( BCCONV);
-   memcpy( dstPal, cubic_palette, sizeof( cubic_palette));
+      bc_rgb_byte_ed( BCCONV, EDIFF_CONV);
+   EDIFF_DONE;
+   memcpy( dstPal, cubic_palette, (*dstPalSize = 216) * sizeof(RGBColor));
 }   
+
+BC( rgb, byte, Optimized)
+{
+   dBCARGS;
+   U16 * tree;
+   RGBColor new_palette[768];
+   int new_pal_size = 256;
+   dEDIFF_ARGS;
+   BCWARN;
+   if ( *dstPalSize == 0 || palSize_only) {
+      if ( palSize_only) new_pal_size = *dstPalSize;
+      if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size)) 
+         goto FAIL;
+   } else
+      memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
+
+   EDIFF_INIT;
+   if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+      EDIFF_DONE;
+      goto FAIL;
+   }
+   memcpy( dstPal, new_palette, new_pal_size * 3);
+   *dstPalSize = new_pal_size;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
+      bc_rgb_byte_op(( RGBColor *) srcData, dstData, width, tree, dstPal, EDIFF_CONV);
+   free( tree);
+   EDIFF_DONE;
+   return;
+   
+FAIL:  
+   ic_rgb_byte_ictErrorDiffusion(BCPARMS);
+} 
 
 BC( rgb, graybyte, None)
 {
@@ -375,7 +804,6 @@ BC( rgb, graybyte, None)
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_rgb_graybyte( BCCONV);
-   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));
 }
 
 #ifdef __cplusplus

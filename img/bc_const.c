@@ -206,6 +206,305 @@ cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette
          cm_nearest_color( fromPalette[ fromColorCount], toColorCount, toPalette);
 }
 
+U16 *
+cm_study_palette( RGBColor * palette, int pal_size)
+{
+   RGBColor * org_palette = palette;
+   int i, pal2count = 1, pal2size = 64;
+   int sz = CELL_SIZE * pal2size;
+   
+   U16 * p = malloc( sz * sizeof( U16));
+   if ( !p) return nil;
+   for ( i = 0; i < sz; i++) p[i] = PAL_FREE;
+   for ( i = 0; i < pal_size; i++, palette++) {
+      int table = 0, index = 
+         ((palette-> r >> 6) << 4) +
+         ((palette-> g >> 6) << 2) +
+          (palette-> b >> 6);
+      int shift = 4;
+      while ( 1) {
+         if ( p[table + index] & PAL_FREE) {
+            p[table + index] = i;
+            break;
+         } else if ( p[table + index] & PAL_REF) {
+            table = (p[table + index] & ~PAL_REF) * CELL_SIZE;
+            index = 
+               (((palette-> r >> shift) & 3) << 4) + 
+               (((palette-> g >> shift) & 3) << 2) +
+                ((palette-> b >> shift) & 3);
+            shift -= 2;
+         } else {
+            U16 old = p[table + index];
+            int sub_index, old_sub_index, new_table;
+
+          REPEAT:
+            if ( pal2count == pal2size) {
+               int j, newsz;
+               U16 * n;
+               newsz = ( pal2size += 64 ) * CELL_SIZE;
+               if ( !(n = malloc( newsz * sizeof( U16)))) {
+                  free( p);
+                  return nil;
+               }
+               memcpy( n, p, sizeof(U16) * sz);
+               for ( j = sz; j < newsz; j++) n[j] = PAL_FREE;
+               free( p);
+               p = n;
+               sz = newsz;
+            }
+
+            sub_index =
+               (((palette-> r >> shift) & 3) << 4) + 
+               (((palette-> g >> shift) & 3) << 2) +
+                ((palette-> b >> shift) & 3);
+            old_sub_index = 
+               (((org_palette[old].r >> shift) & 3) << 4) + 
+               (((org_palette[old].g >> shift) & 3) << 2) +
+                ((org_palette[old].b >> shift) & 3);
+            new_table = pal2count * CELL_SIZE;
+            p[table + index] = (pal2count++) | PAL_REF;
+            if ( sub_index != old_sub_index) {
+               p[ new_table + sub_index]     = i;
+               p[ new_table + old_sub_index] = old;
+               break;
+            } else {
+               if ( shift > 1) {
+                  shift -= 2;
+                  table = new_table;
+                  index = sub_index;
+                  goto REPEAT;
+               }
+               p[ table + index] = i;
+               break; 
+            }
+         }
+      }
+   }
+
+   {
+      struct {
+         int i;
+         int table;
+         int r;
+         int g;
+         int b;
+      } stack[4]; /* max depth */
+      int sp = 0;
+      memset( stack, 0, sizeof(stack));
+      for ( ; stack[sp].i < 64; stack[sp].i++) {
+         if ( p[stack[sp].table + stack[sp].i] & PAL_FREE) {
+            RGBColor cell;
+            int shift = 6 - sp * 2, delta = 32 >> sp * 2;
+            cell. r = stack[sp]. r + delta + ((( stack[sp].i >> 4) & 3) << shift);
+            cell. g = stack[sp]. g + delta + ((( stack[sp].i >> 2) & 3) << shift);
+            cell. b = stack[sp]. b + delta +  (( stack[sp].i & 3) << shift);
+            p[stack[sp].table + stack[sp].i] = cm_nearest_color( cell, pal_size, org_palette);
+         } else if ( p[stack[sp].table + stack[sp].i] & PAL_REF) {
+            int shift = 6 - sp * 2;
+            stack[sp + 1].r = stack[sp]. r + ((( stack[sp].i >> 4) & 3) << shift); 
+            stack[sp + 1].g = stack[sp]. g + ((( stack[sp].i >> 2) & 3) << shift); 
+            stack[sp + 1].b = stack[sp]. b + (( stack[sp].i & 3) << shift); 
+            stack[sp + 1].table = (p[stack[sp].table + stack[sp].i] & ~PAL_REF) * CELL_SIZE;
+            stack[++sp].i = -1;
+         }
+         while ( stack[sp].i == 63 && sp > 0) sp--;
+      }
+   }
+   return p;
+}
+
+#define MAP1_SIDE  32
+#define MAP1_SHIFT  3
+#define MAP1_SIDE3 (MAP1_SIDE*MAP1_SIDE*MAP1_SIDE)
+#define MAP2_SIDE   8 
+#define MAP2_SHIFT  3
+#define MAP2_MASK   7
+#define MAP2_ITEM_SIZE  64 
+#define MAP2_ITEM_SHIFT 6
+
+Bool
+cm_optimized_palette( Byte * data, int lineSize, int width, int height, RGBColor * palette, int * max_pal_size)
+{
+   int i, j, sz, count, side = MAP1_SIDE, shift = MAP1_SHIFT, force_squeeze = 0, map0index = 0;
+   int countB, countL, map2scale = 0;
+   Byte * map, * map2;
+   RGBColor * big_pal;
+
+   if ( !( map = malloc( MAP1_SIDE3))) return false;
+
+REPEAT_CALC:   
+   count = 0;
+   memset( map, 0, MAP1_SIDE3);
+
+   /* calculate colors with resolution 1 / 512 */
+   for ( i = 0; i < height; i++) {
+      RGBColor * p = ( RGBColor*)( data + i * lineSize );
+      for ( j = 0; j < width; j++, p++) {
+         int index = (p-> r >> shift) * side * side +
+                     (p-> g >> shift) * side +
+                     (p-> b >> shift);
+         if ( map[index] == 0) {
+            map[index] = 1;
+            count++;
+         }
+      }
+   }
+
+   j = 0;
+   sz = side * side * side;
+   /* if too many colors, extract only max_pal_size and return */
+   if ( count > *max_pal_size) {
+      if (( count > 512) && ( side > 8) && !force_squeeze) {
+         side >>= 1; 
+         shift++;
+         goto REPEAT_CALC;
+      }
+      NO_MEMORY:
+      {
+         RGBColor * big_pal = malloc( count * sizeof(RGBColor));
+         if ( !big_pal) {
+            free( map);
+            return false;
+         }
+         for ( i = 0; i < sz; i++)
+            if ( map[i]) {
+               big_pal[j]. r = (i / ( side * side)) << shift;
+               big_pal[j]. g = ((i / side) % side ) << shift;
+               big_pal[j]. b = (i % side) << shift;
+               j++;
+            }
+         cm_squeeze_palette( big_pal, j, palette, *max_pal_size);
+         free( big_pal);
+         free( map);
+         return true;
+      }
+   }
+
+   /* scale was lowered due to many colors, but now it is too few colors... */
+   if ( side != MAP1_SIDE) {
+      force_squeeze = 1;
+      side <<= 1;
+      shift--;
+      goto REPEAT_CALC;
+   }
+
+
+   /* stage 2 - full color calc */
+   if (!( map2 = malloc( MAP2_ITEM_SIZE * count))) goto NO_MEMORY;
+   memset( map2, 0, MAP2_ITEM_SIZE * count);
+
+   /* calculate colors with full resolution */
+   sz = MAP1_SIDE * MAP1_SIDE * MAP1_SIDE;
+   count = 0;
+   for ( i = 0; i < sz; i++)  
+      if ( map[i]) {
+         if ( count == 0) map0index = i;
+         map[i] = count++;
+      }
+   count = 0;
+      
+   for ( i = 0; i < height; i++) {
+      RGBColor * p = ( RGBColor*)( data + i * lineSize );
+      for ( j = 0; j < width; j++, p++) {
+         int index1 = (p-> r >> MAP1_SHIFT) * MAP1_SIDE * MAP1_SIDE +
+                      (p-> g >> MAP1_SHIFT) * MAP1_SIDE +
+                      (p-> b >> MAP1_SHIFT);
+         int index2 = (p-> r & MAP2_MASK) * MAP2_SIDE * MAP2_SIDE +
+                      (p-> g & MAP2_MASK) * MAP2_SIDE +
+                      (p-> b & MAP2_MASK);
+         index1 = (map[index1] << MAP2_ITEM_SHIFT) + (index2 >> 3);
+         if (( map2[index1] & (1 << (index2 & 7))) == 0) {
+            map2[index1] |= (1 << (index2 & 7));
+            count++;
+         }
+      }
+   }
+
+   /* Too many colors - if indeed too many, resample with /8 and /64 scale.
+      Even /64 scale though can result in up to 4K colors */
+   countB = countL = 0;
+   if ( count > *max_pal_size) {
+      if ( count > *max_pal_size * 2 && map2scale == 0) { 
+         for ( i = 0; i < sz; i++)
+            if ( i == map0index || map[i] != 0) {
+               Byte * k = map2 + map[i] * MAP2_ITEM_SIZE;
+               U32 * l = ( U32 *) k;
+               for ( j = 0; j < MAP2_ITEM_SIZE / 4; j+=2) 
+                  if ( l[j] || l[j+1]) countL++;
+               for ( j = 0; j < MAP2_ITEM_SIZE; j++) 
+                  if ( k[j]) countB++;
+            }
+         if ( countB > *max_pal_size * 2) {
+            count = countL;
+            map2scale = 2;
+         } else {
+            count = countB;
+            map2scale = 1;
+         }
+      }
+   }
+
+   /* collect final palette */
+   if ( count > *max_pal_size) {
+      if ( !( big_pal = malloc( count * sizeof(RGBColor)))) {
+         free( map);
+         free( map2);
+         return false;
+      }
+   } else
+      big_pal = palette;
+
+   count = 0;
+   for ( i = 0; i < sz; i++)
+      if ( i == map0index || map[i] != 0) {
+         int r = (i / ( MAP1_SIDE * MAP1_SIDE)) << MAP1_SHIFT;
+         int g = ((i / MAP1_SIDE) % MAP1_SIDE ) << MAP1_SHIFT;
+         int b = (i % MAP1_SIDE) << MAP1_SHIFT;
+         Byte * k = map2 + map[i] * MAP2_ITEM_SIZE;
+         switch ( map2scale) {
+         case 0: /* 1/1  */
+            for ( j = 0; j < 512; j++) {
+               if ( k[j >> 3] & ( 1 << ( j & 7))) {
+                  big_pal[count]. r = r + j / ( MAP2_SIDE * MAP2_SIDE);
+                  big_pal[count]. g = g + (j / MAP2_SIDE) % MAP2_SIDE;
+                  big_pal[count]. b = b + j % MAP2_SIDE;
+                  count++;
+               }
+            }
+            break;
+         case 1: /* 1/8  */
+            for ( j = 0; j < 64; j++) {
+               if ( k[j]) {
+                  big_pal[count]. r = r + ((j / ( 4 * 4)) << 1);
+                  big_pal[count]. g = g + (((j / 4) % 4) << 1);
+                  big_pal[count]. b = b + ((j % 4) << 1);
+                  count++;
+               }
+            }
+            break;
+         case 2: /* 1/64  */
+            for ( j = 0; j < 8; j++) {
+               if ( *(( U32*) k) || *((( U32*) k) + 1)) {
+                  big_pal[count]. r = r + ((j / ( 2 * 2)) << 2);
+                  big_pal[count]. g = g + (((j / 2) % 2) << 2);
+                  big_pal[count]. b = b + ((j % 2) << 2);
+                  count++;
+               }
+               k += 7;
+            }
+            break;
+         }
+      }
+   if ( big_pal != palette) {
+      cm_squeeze_palette( big_pal, count, palette, *max_pal_size);
+      free( big_pal);
+   }
+   free( map);
+   free( map2);
+   *max_pal_size = count;
+   return true;
+}
+
 
 #ifdef __cplusplus
 }

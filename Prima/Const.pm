@@ -534,8 +534,10 @@ See L<Prima::Image/type>.
 See L<Prima::Image/conversion>.
 
   ict::None            - no dithering
-  ict::Halftone        - 8x8 halftone dithering
-  ict::ErrorDiffusion  - ordered dithering
+  ict::Ordered         - 8x8 ordered halftone dithering
+  ict::ErrorDiffusion  - error diffusion dithering with static palette
+  ict::Optimized       - error diffusion dithering with optimized palette
+  
 
 =head2 is::  - image statistics indeces
 

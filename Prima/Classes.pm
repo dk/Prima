@@ -478,7 +478,7 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      conversion    => ict::Halftone,
+      conversion    => ict::Optimized,
       height        => 0,
       palette       => [0,0,0,0xFF,0xFF,0xFF],
       preserveType  => 0,

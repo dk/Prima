@@ -112,52 +112,64 @@ Image_init( Handle self, HV * profile)
 }
 
 void
-Image_reset( Handle self, int type, SV * palette)
+Image_reset( Handle self, int new_type, SV * palette)
 {
-   int ps;
-   Byte * newData = nil;
+   Bool want_palette;
+   RGBColor new_palette[256];
+   Byte * new_data = nil;
+   int new_pal_size = 0, new_line_size, new_data_size, want_only_palette_colors = 0;
+   
    if ( var->stage > csFrozen) return;
 
-   ps = (1 << ( type & imBPP)) & 0x1ff;
-   if (!( type & imGrayScale)) {
-      int pps;
-      switch ( type) {
-      case im16:
-         if (( var-> type & imBPP) < im16) {
-            int c = 1 << ( var-> type & imBPP);
-            memcpy( var-> palette + c, cubic_palette16 + c, sizeof( RGBColor) * ( 16 - c));
-         }
-         break;
-      case im256:
-         if (( var-> type & imBPP) < im256) {
-            int c = 1 << ( var-> type & imBPP);
-            memcpy( var-> palette + c, cubic_palette + c, sizeof( RGBColor) * ( 256 - c));
-         }
-         break;
+   want_palette = (!( new_type & imGrayScale)) && ( new_type != imRGB) && (palette != nilSV);
+   if ( want_palette) {
+      if ( SvROK( palette) && ( SvTYPE( SvRV( palette)) == SVt_PVAV)) 
+         new_pal_size = apc_img_read_palette( new_palette, palette);
+      else {
+         new_pal_size = SvIV( palette); 
+         want_only_palette_colors = 1;
       }
-      pps = apc_img_read_palette( var->palette, palette);
-      if ( pps) ps = pps;
+      if ( new_pal_size == 0) want_palette = false;
+      if ( new_pal_size > ( 1 << ( new_type & imBPP)))
+           new_pal_size = 1 << ( new_type & imBPP);
+      if ( new_pal_size > 256)
+           new_pal_size = 256;
    }
-   if ( var->type == imByte && type == im256)
-   {
-      var->type = type;
+   if ( !want_palette && (
+        ((var->type == (imbpp8|imGrayScale)) && (new_type == imbpp8)) ||
+        ((var->type == (imbpp4|imGrayScale)) && (new_type == imbpp4)) ||
+        ((var->type == (imbpp1|imGrayScale)) && (new_type == imbpp1))
+      )) {
+      var->type = new_type;
       return;
    }
-   var->lineSize = (( var->w * ( type & imBPP) + 31) / 32) * 4;
-   var->dataSize = ( var->lineSize) * var->h;
-   var->palSize  = ps;
-   if ( var->dataSize > 0) {
-      newData = allocb( var-> dataSize);
-      if ( newData == nil) {
+   if ( var-> type == new_type && (
+        ((new_type != imbpp8 && new_type != imbpp4 && new_type != imbpp1) || !want_palette)
+      )) return;
+
+   new_line_size = (( var-> w * ( new_type & imBPP) + 31) / 32) * 4;
+   new_data_size = new_line_size * var-> h;
+   if ( new_data_size > 0) {
+      if ( !( new_data = allocb( new_data_size))) {
          my-> make_empty( self);
-         croak("Image::reset: cannot allocate %d bytes", var-> dataSize);
+         croak("Image::reset: cannot allocate %d bytes", new_data_size);
       }
-      ic_type_convert( self, newData, var->palette, type);
+      if ( new_pal_size != 1)
+         ic_type_convert( self, new_data, new_palette, new_type, 
+               &new_pal_size, want_only_palette_colors);
+      else
+         memset( new_data, 0, new_data_size);
    }
-   free( var->data);
-   var->data = newData;
-   var->type = type;
-   my->update_change( self);
+   if ( new_pal_size > 0) {
+      var-> palSize = new_pal_size;
+      memcpy( var-> palette, new_palette, new_pal_size * 3);
+   }
+   free( var-> data);
+   var-> type     = new_type;
+   var-> data     = new_data;
+   var-> lineSize = new_line_size;
+   var-> dataSize = new_data_size;
+   my-> update_change( self);
 }
 
 void
@@ -222,15 +234,8 @@ Image_set( Handle self, HV * profile)
       if ( !itype_supported( newType))
          warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", newType);
       else 
-         if ( !opt_InPaint) {
-            if ( pexist( palette)) {
-               my-> reset( self, newType, pget_sv( palette));
-            } else {
-               SV * palette = my-> get_palette( self);
-               my-> reset( self, newType, palette);
-               sv_free( palette);
-            }
-         }
+         if ( !opt_InPaint) 
+            my-> reset( self, newType, pexist( palette) ? pget_sv( palette) : nilSV);
       pdelete( palette);
       pdelete( type);
    }
@@ -406,15 +411,9 @@ Image_set_extended_data( Handle self, HV * profile)
       
    /* fixing image and maybe palette - for known type it's same code as in ::set, */
    /* but here's no sense calling it, just doing what we need. */
-   if ( fixType != var-> type) { 
-      if ( pexist( palette)) {
-         my-> reset( self, fixType, pget_sv( palette));
-         pdelete( palette);
-      } else {
-         SV * palette = my-> get_palette( self);
-         my-> reset( self, fixType, palette);
-         sv_free( palette);
-      }
+   if ( fixType != var-> type || pexist( palette)) { 
+      my-> reset( self, fixType, pexist( palette) ? pget_sv( palette) : nilSV);
+      pdelete( palette);
    }   
 
     /* copying user data */

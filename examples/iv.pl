@@ -94,8 +94,8 @@ sub status
 sub menuadd
 {
    unless ( $_[0]->IV-> image) {
-      $_[0]-> {omenuID} = 'O';
-      $_[0]-> {conversion} = ict::Halftone;
+      $_[0]-> {omenuID} = 'P';
+      $_[0]-> {conversion} = ict::Optimized;
       $_[0]-> menu-> insert(
         [
            [ 'Reopen' => 'Ctrl+R' => '^R'       => \&freopen],
@@ -125,10 +125,12 @@ sub menuadd
                  ['~256 colors' => sub {icvt($_[0],im::bpp8)}],
                  ['~Grayscale' => sub {icvt($_[0],im::bpp8|im::GrayScale)}],
                  ['~RGB' => sub {icvt($_[0],im::RGB)}],
+                 ['~Long' => sub {icvt($_[0],im::Long)}],
                  [],
                  ['N' => '~No halftoning' => sub {setconv(@_)}],
-                 ['*O' => '~Ordered' => sub {setconv(@_)}],
+                 ['O' => '~Ordered' => sub {setconv(@_)}],
                  ['E' => '~Error diffusion' => sub {setconv(@_)}],
+                 ['*P' => 'O~ptimized' => sub {setconv(@_)}],
               ]],
               ['~Zoom' => [
                  ['~Normal ( 100%)' => 'Ctrl+Z' => '^Z' => sub{$_[0]->IV->zoom(1.0)}],
@@ -255,8 +257,9 @@ sub setconv
    $self-> {omenuID}    = $menuID;
    $self-> {conversion} = ( 
      ( $menuID eq 'N') ? ict::None : (
-     ( $menuID eq 'O') ? ict::Halftone : ict::ErrorDiffusion
-     )
+     ( $menuID eq 'O') ? ict::Ordered : (
+     ( $menuID eq 'E') ? ict::ErrorDiffusion : ict::Optimized
+     ))
    );  
 }   
 

@@ -38,7 +38,34 @@ if ( b > 255) { eb -= ( b - 255); b = 255; } else { eb = 0; } \
 if ( g > 255) { eg -= ( g - 255); g = 255; } else { eg = 0; } \
 if ( r > 255) { er -= ( r - 255); r = 255; } else { er = 0; }
 
+#define dEDIFF_ARGS \
+   int er, eg, eb, nextR, nextG, nextB, *perr = err_buf;\
+   register int r, g, b
 
+#define EDIFF_INIT \
+   nextR = perr[0], nextG = perr[1], nextB = perr[2];\
+   perr[0] = perr[1] = perr[2] = er = eg = eb = 0
+
+#define EDIFF_BEGIN_PIXEL(red,gre,blu) \
+      b = (blu) + eb + nextB;\
+      g = (gre) + eg + nextG;\
+      r = (red) + er + nextR;\
+      nextR = perr[3];\
+      nextG = perr[4];\
+      nextB = perr[5];\
+      if ( r > 255) r = 255; else if ( r < 0) r = 0;\
+      if ( g > 255) g = 255; else if ( g < 0) g = 0;\
+      if ( b > 255) b = 255; else if ( b < 0) b = 0;\
+      er = eb = eg = 0
+
+#define EDIFF_END_PIXEL_EX(red_err,gre_err,blu_err) \
+      perr[0] += er = (perr[3] = (red_err) / 5) * 2;\
+      perr[1] += eg = (perr[4] = (gre_err) / 5) * 2;\
+      perr[2] += eb = (perr[5] = (blu_err) / 5) * 2;\
+      perr += 3
+
+#define EDIFF_END_PIXEL(red_err,gre_err,blu_err) \
+      EDIFF_END_PIXEL_EX(r-(red_err),g-(gre_err),b-(blu_err))
 
 /* Bitstroke convertors */
 /* Mono */
@@ -316,39 +343,45 @@ bc_nibble_mono_ht( register Byte * source, register Byte * dest, register int co
 
 /* 16-> 1, error diffusion */
 void
-bc_nibble_mono_ed( register Byte * source, register Byte * dest, register int count, register PRGBColor palette)
+bc_nibble_mono_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int * err_buf)
 {
-#define en1(xd) (( y = palette[(xd)], (sum = y.r + y.b + y.g + e) > 383)?1:0)
-#define en2 e = sum - (( sum > 383) ? 765 : 0)
-   
-   int sum, e = 0;
-   register int count8 = count >> 3;
-   while ( count8--)
-   {
-      Byte  c;
-      Byte  dst;
-      RGBColor y;
-      
-      c = *source++; dst  = en1(c >> 4) << 7; en2; dst |= en1(c & 0xf) << 6; en2;
-      c = *source++; dst |= en1(c >> 4) << 5; en2; dst |= en1(c & 0xf) << 4; en2;
-      c = *source++; dst |= en1(c >> 4) << 3; en2; dst |= en1(c & 0xf) << 2; en2;
-      c = *source++; dst |= en1(c >> 4) << 1; en2; *dest++ = dst | en1(c & 0xf); en2;
-   }
-   count &= 7;
-   if ( count)
-   {
-      Byte d = 0, s = 7;
-      count = ( count >> 1) + ( count & 1);
-      while ( count--)
-      {
-         Byte c = *source++;
-         RGBColor y;
-         d |= en1( c >> 4) << s--;
-         en2;
-         d |= en1( c & 0xf) << s--;
-         en2;
+   dEDIFF_ARGS;
+   int count8 = count >> 3;
+   EDIFF_INIT;
+
+   while ( count8--) {
+      Byte c, dst = 0, i, shift = 8;
+      for ( i = 0; i < 4; i++) {
+         c = (*source) >> 4;
+         c = map_RGB_gray[ palette[c].r + palette[c].g + palette[c].b];
+         EDIFF_BEGIN_PIXEL(c,c,c);
+         dst |= (( r + g + b ) > 383) << (--shift);
+         EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+         c = *(source++) & 0xf;
+         c = map_RGB_gray[ palette[c].r + palette[c].g + palette[c].b];
+         EDIFF_BEGIN_PIXEL(c,c,c);
+         dst |= (( r + g + b ) > 383) << (--shift);
+         EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
       }
-      *dest = d;
+      *(dest++) = dst;
+   }   
+   count &= 7;
+   if ( count) {
+      Byte c, dst = 0, shift = 8;
+      count = ( count >> 1) + ( count & 1);
+      while ( count--) {
+         c = *source >> 4;
+         c = map_RGB_gray[ palette[c].r + palette[c].g + palette[c].b];
+         EDIFF_BEGIN_PIXEL(c,c,c);
+         dst |= (( r + g + b ) > 383) << (--shift);
+         EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+         c = *(source++) & 0xf;
+         c = map_RGB_gray[ palette[c].r + palette[c].g + palette[c].b];
+         EDIFF_BEGIN_PIXEL(c,c,c);
+         dst |= (( r + g + b ) > 383) << (--shift);
+         EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+      }
+      *(dest++) = dst;
    }
 }   
 
@@ -514,38 +547,35 @@ bc_byte_mono_ht( register Byte * source, register Byte * dest, register int coun
 
 /* byte-> mono, halftoned */
 void
-bc_byte_mono_ed( register Byte * source, register Byte * dest, register int count, PRGBColor palette)
+bc_byte_mono_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int * err_buf)
 {
-#define egb1 (( y = palette[*source++], (sum = y.r + y.b + y.g + e) > 383)?1:0)
-#define egb2 e = sum - (( sum > 383) ? 765 : 0)
-   int sum, e = 0, count8 = count & 7;
+   dEDIFF_ARGS;
+   int count8 = count & 7;
+   EDIFF_INIT;
    count >>= 3;
    while ( count--)
    {
-      Byte  dst;
-      RGBColor y;
-      dst  = egb1 << 7; egb2;
-      dst |= egb1 << 6; egb2;
-      dst |= egb1 << 5; egb2;
-      dst |= egb1 << 4; egb2;
-      dst |= egb1 << 3; egb2;
-      dst |= egb1 << 2; egb2;
-      dst |= egb1 << 1; egb2;
-      *dest++ = dst | egb1; egb2;
+      Byte dst = 0, c, i = 8;
+      while ( i--) {
+         c = *source++;
+         c = map_RGB_gray[ palette[c].r + palette[c].g + palette[c].b];
+         EDIFF_BEGIN_PIXEL(c,c,c);
+         dst |= (( r + g + b ) > 383) << i;
+         EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+      }
+      *dest++ = dst;
    }
-   if ( count8)
-   {
-      Byte     dst = 0;
-      Byte     i = 7;
-      RGBColor y;
-      count = count8;
-      while( count--) {
-         dst |= egb1 << i--;
-         egb2;
-      }   
+   if ( count8) {
+      Byte dst = 0, c, i = 8;
+      while ( count8--) {
+         c = *source++;
+         c = map_RGB_gray[ palette[c].r + palette[c].g + palette[c].b];
+         EDIFF_BEGIN_PIXEL(c,c,c);
+         dst |= (( r + g + b ) > 383) << --i;
+         EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+      }
       *dest = dst;
    }
-   
 }   
 
 /* 256-> 16 */
@@ -598,36 +628,30 @@ bc_byte_nibble_ht( register Byte * source, Byte * dest, register int count, regi
 
 /* 256-> 16 cubic, error diffusion */
 void
-bc_byte_nibble_ed( register Byte * source, Byte * dest, register int count, register PRGBColor palette)
+bc_byte_nibble_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int * err_buf)
 {
-   int er = 0, eg = 0, eb = 0;
-   int r, g, b;
-   
+   dEDIFF_ARGS;
    Byte tail = count & 1;
    count = count >> 1;
+   EDIFF_INIT;
    while ( count--)
    {
-      Byte dst;
-      RGBColor y;
-      y = palette[ *source++]; r = y.r + er; g = y.g + eg; b = y.b + eb; 
-      EDIFF_OP_RGB
+      Byte dst, c;
+      c = *source++;
+      EDIFF_BEGIN_PIXEL(palette[c].r, palette[c].g, palette[c].b);
       dst = (( r > 127) * 4 + (g > 127) * 2 + (b > 127)) << 4;
-      er += r - (( r > 127) ? 255 : 0);
-      eg += g - (( g > 127) ? 255 : 0);
-      eb += b - (( b > 127) ? 255 : 0);
-      
-      y = palette[ *source++]; r = y.r + er; g = y.g + eg; b = y.b + eb; 
-      EDIFF_OP_RGB
-      *dest++ = dst + (( r > 127) * 4 + (g > 127) * 2 + (b > 127));
-      er += r - (( r > 127) ? 255 : 0);
-      eg += g - (( g > 127) ? 255 : 0);
-      eb += b - (( b > 127) ? 255 : 0);
+      EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+      c = *source++;
+      EDIFF_BEGIN_PIXEL(palette[c].r, palette[c].g, palette[c].b);
+      *dest++ = dst | ( r > 127) * 4 + (g > 127) * 2 + (b > 127);
+      EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
    }
    if ( tail)
    {
-      RGBColor y = palette[ *source++]; r = y.r + er; g = y.g + eg; b = y.b + eb; 
-      EDIFF_OP_RGB
-      *dest = (( r > 127) * 4 + (g > 127) * 2 + (b > 127))<<4;
+      Byte c = *source++; 
+      EDIFF_BEGIN_PIXEL(palette[c].r, palette[c].g, palette[c].b);
+      *dest = (( r > 127) * 4 + (g > 127) * 2 + (b > 127)) << 4;
+      EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
    }
 }
 
@@ -638,6 +662,33 @@ bc_byte_cr( register Byte * source, register Byte * dest, register int count, re
    dest   += count - 1;
    source += count - 1;
    while ( count--) *dest-- = colorref[ *source--];
+}
+     
+/* 256, remap one palette to another */
+void
+bc_byte_op( Byte * source, Byte * dest, int count, U16 * tree, 
+            PRGBColor src_palette, PRGBColor dst_palette, int * err_buf)
+{
+   dEDIFF_ARGS;
+   EDIFF_INIT;
+   while ( count--) {
+      int table = 0, shift = 6, index;
+      PRGBColor src_pal = src_palette + *(source++);
+      EDIFF_BEGIN_PIXEL(src_pal->r,src_pal->g,src_pal->b);
+      while ( 1) {
+         index = (((r >> shift) & 3) << 4) + 
+                 (((g >> shift) & 3) << 2) +
+                  ((b >> shift) & 3);
+         if ( tree[ table + index] & PAL_REF) {
+            table = (tree[ table + index] & ~PAL_REF) * CELL_SIZE;
+            shift -= 2;
+         } else {
+            PRGBColor dst_pal = dst_palette + (*(dest++) = tree[ table + index]);
+            EDIFF_END_PIXEL( dst_pal->r, dst_pal->g, dst_pal->b);
+            break;
+         }
+      }
+   } 
 }
 
 /* 256-> gray */
@@ -694,41 +745,6 @@ bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int 
    }
 }
 
-/* gray-> mono, error diffusion */
-void
-bc_graybyte_mono_ed( register Byte * source, register Byte * dest, register int count)
-{
-#define edgb1 (((sum = (*source++) + e)) > 127)
-#define edgb2 e = sum - (( sum > 127) ? 255 : 0)
-   int sum, e = 0;
-   int count8 = count & 7;
-   count >>= 3;
-   while ( count--)
-   {
-      Byte  dst;
-      dst  = edgb1 << 7; edgb2;
-      dst |= edgb1 << 6; edgb2;
-      dst |= edgb1 << 5; edgb2;
-      dst |= edgb1 << 4; edgb2;
-      dst |= edgb1 << 3; edgb2;
-      dst |= edgb1 << 2; edgb2;
-      dst |= edgb1 << 1; edgb2;
-      *dest++ = dst | edgb1; edgb2;
-   }
-   if ( count8)
-   {
-      register Byte  dst = 0;
-      register Byte  i = 7;
-      count = count8;
-      while( count--) {
-         dst |= edgb1 << i--; 
-         edgb2;
-      }   
-      *dest = dst;
-   }
-   
-}   
-
 /* gray -> 16 gray */
 void
 bc_graybyte_nibble_ht( register Byte * source, Byte * dest, register int count, int lineSeqNo)
@@ -760,28 +776,34 @@ bc_graybyte_nibble_ht( register Byte * source, Byte * dest, register int count, 
 
 /* gray -> 16 gray, error diffusion */
 void
-bc_graybyte_nibble_ed( register Byte * source, Byte * dest, register int count)
+bc_graybyte_nibble_ed( Byte * source, Byte * dest, int count, int * err_buf)
 {
-   int e = 0;
+   dEDIFF_ARGS;
    Byte tail = count & 1;
    count = count >> 1;
+   EDIFF_INIT;
    while ( count--)
    {
-      Byte dst;
-      int s = ( *source++) + e;
-      if ( s > 255) { e -= ( s - 255); s = 255; } else { e = 0; }
-      dst = div17[s] << 4;
-      e += s % 17;
-      s = ( *source++) + e;
-      if ( s > 255) { e -= ( s - 255); s = 255; } else { e = 0; }
-      *dest++ = dst + div17[s];
-      e += s % 17;
-   }   
-   if ( tail) {
-      int s = ( *source++) + e;
-      if ( s > 255) { e -= ( s - 255); s = 255; } else { e = 0; }
-      *dest++ = div17[s] << 4;
-   }   
+      Byte dst, c, rm;
+      c = *source++;
+      EDIFF_BEGIN_PIXEL(c,c,c);
+      dst = div17[r] << 4;
+      rm = r % 17;
+      EDIFF_END_PIXEL_EX(rm,rm,rm);
+      c = *source++;
+      EDIFF_BEGIN_PIXEL(c,c,c);
+      rm = r % 17;
+      *dest++ = dst | div17[r];
+      EDIFF_END_PIXEL_EX(rm,rm,rm);
+   }
+   if ( tail)
+   {
+      Byte c = *source++, rm; 
+      EDIFF_BEGIN_PIXEL(c,c,c);
+      rm = r % 17;
+      *dest = div17[r] << 4;
+      EDIFF_END_PIXEL_EX(rm,rm,rm);
+   }
 }   
 
 /* gray-> rgb */
@@ -850,35 +872,32 @@ bc_rgb_mono_ht( register Byte * source, register Byte * dest, register int count
 
 /* rgb-> mono, error diffusion */
 void
-bc_rgb_mono_ed( Byte * source, register Byte * dest, register int count)
+bc_rgb_mono_ed( Byte * source, Byte * dest, int count, int * err_buf)
 {
-#define ed1r ((sum = ((*source++) + (*source++) + (*source++) + e)) > 383)
-#define ed2r e = sum - (( sum > 383) ? 765 : 0)
-   int sum, e = 0;
    int count8 = count & 7;
-
+   dEDIFF_ARGS;
+   EDIFF_INIT;
    count >>= 3;
    while ( count--) {
-      Byte dst;
-      dst =  ed1r << 7; ed2r;
-      dst |= ed1r << 6; ed2r;
-      dst |= ed1r << 5; ed2r;
-      dst |= ed1r << 4; ed2r;
-      dst |= ed1r << 3; ed2r;
-      dst |= ed1r << 2; ed2r;
-      dst |= ed1r << 1; ed2r;
-      *dest++ = dst | ed1r; ed2r;
-   }   
+      Byte i = 8, dst = 0;
+      while(i--) {
+         int c = map_RGB_gray[*(source++) + *(source++) + *(source++)];
+         EDIFF_BEGIN_PIXEL(c,c,c);
+         dst |= (( r + g + b) > 383) << i;
+         EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+      }
+      *dest++ = dst;
+   }
    if ( count8) {
-      Byte  dst = 0;
-      Byte  i = 7;
-      count = count8;
-      while( count--) {
-         dst |= ed1r << i--;
-         ed2r;
-      }   
+      Byte i = 8, dst = 0;
+      while ( count8--) {
+         int c = map_RGB_gray[*(source++) + *(source++) + *(source++)];
+         EDIFF_BEGIN_PIXEL(c,c,c);
+         dst |= (((r + g + b) > 383) << --i);
+         EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+      }
       *dest = dst;
-   }   
+   }
 }   
 
 /* rgb -> nibble, no halftoning */
@@ -959,37 +978,26 @@ bc_rgb_nibble_ht( register Byte * source, Byte * dest, register int count, int l
 
 /* rgb-> 8 cubic, error diffusion */
 void
-bc_rgb_nibble_ed( Byte * source, register Byte * dest, register int count)
+bc_rgb_nibble_ed( Byte * source, Byte * dest, int count, int * err_buf)
 {
-   int er = 0, eg = 0, eb = 0;
+   dEDIFF_ARGS;
    Byte tail = count & 1;
    count = count >> 1;
+   EDIFF_INIT;
    while ( count--) {
-      int b = (*source++) + eb;
-      int g = (*source++) + eg;
-      int r = (*source++) + er;
       Byte dst;
-      EDIFF_OP_RGB
+      EDIFF_BEGIN_PIXEL(*(source++), *(source++), *(source++));
       dst = (( r > 127) * 4 + (g > 127) * 2 + (b > 127)) << 4;
-      er += r - (( r > 127) ? 255 : 0);
-      eg += g - (( g > 127) ? 255 : 0);
-      eb += b - (( b > 127) ? 255 : 0);
-      b = (*source++) + eb;
-      g = (*source++) + eg;
-      r = (*source++) + er;
-      EDIFF_OP_RGB
+      EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+      EDIFF_BEGIN_PIXEL(*(source++), *(source++), *(source++));
       *dest++ = dst + (( r > 127) * 4 + (g > 127) * 2 + (b > 127));
-      er += r - (( r > 127) ? 255 : 0);
-      eg += g - (( g > 127) ? 255 : 0);
-      eb += b - (( b > 127) ? 255 : 0);
+      EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
    }   
    if ( tail) {
-      int b = (*source++) + eb;
-      int g = (*source++) + eg;
-      int r = (*source++) + er;
-      EDIFF_OP_RGB
+      EDIFF_BEGIN_PIXEL(*(source++), *(source++), *(source++));
       *dest++ = (( r > 127) * 4 + (g > 127) * 2 + (b > 127)) << 4;
-   }   
+      EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
+   }
 }   
 
 /* rgb-> 256 cubic */
@@ -1027,20 +1035,43 @@ bc_rgb_byte_ht( Byte * source, register Byte * dest, register int count, int lin
 
 /* rgb-> 256 cubic, error diffusion */
 void
-bc_rgb_byte_ed( Byte * source, register Byte * dest, register int count)
+bc_rgb_byte_ed( Byte * source, Byte * dest, int count, int * err_buf)
 {
-   int er = 0, eg = 0, eb = 0;
+   dEDIFF_ARGS;
+   EDIFF_INIT;
    while ( count--) {
-      int b = (*source++) + eb;
-      int g = (*source++) + eg;
-      int r = (*source++) + er;
-      EDIFF_OP_RGB
-      (*dest++) = div51[r] * 36 + div51[g] * 6 + div51[b];
-      er += mod51[ r];
-      eg += mod51[ g];
-      eb += mod51[ b];
+      EDIFF_BEGIN_PIXEL(*(source++), *(source++), *(source++));
+      *(dest++) = div51[r] * 36 + div51[g] * 6 + div51[b];
+      EDIFF_END_PIXEL_EX( mod51[r], mod51[g], mod51[b]);
    }   
 }   
+
+/* rgb -> 8bit optimized */
+void
+bc_rgb_byte_op( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * palette, int * err_buf)
+{
+   dEDIFF_ARGS;
+   EDIFF_INIT;
+   while ( count--) {
+      int table = 0, shift = 6, index;
+      EDIFF_BEGIN_PIXEL(src->r,src->g,src->b);
+      src++;
+      while ( 1) {
+         index = (((r >> shift) & 3) << 4) + 
+                 (((g >> shift) & 3) << 2) +
+                  ((b >> shift) & 3);
+         if ( tree[ table + index] & PAL_REF) {
+            table = (tree[ table + index] & ~PAL_REF) * CELL_SIZE;
+            shift -= 2;
+         } else {
+            *dest = tree[ table + index];
+            EDIFF_END_PIXEL( palette[*dest].r, palette[*dest].g, palette[*dest].b);
+            dest++;
+            break;
+         }
+      }
+   } 
+}
    
 /* bitstroke copiers */
 void

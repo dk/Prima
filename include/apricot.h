@@ -2740,10 +2740,12 @@ END_TABLE(is,UV)
 START_TABLE(ict,UV)
 #define    ictNone               0
 ICT(None)
-#define    ictHalftone           1
-ICT(Halftone)
+#define    ictOrdered            1
+ICT(Ordered)
 #define    ictErrorDiffusion     2
 ICT(ErrorDiffusion)
+#define    ictOptimized          3
+ICT(Optimized)
 END_TABLE(ict,UV)
 #undef ICT
 

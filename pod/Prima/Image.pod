@@ -223,8 +223,9 @@ Selects type of dithering algorithm, when down-sampling
 takes place. TYPE is one of C<ict::XXX> constants:
 
    ict::None            - no dithering
-   ict::Halftone        - 8x8 halftone dithering
-   ict::ErrorDiffusion  - ordered dithering
+   ict::Halftone        - 8x8 ordered halftone dithering
+   ict::ErrorDiffusion  - error diffusion dithering with static palette
+   ict::Optimized       - error diffusion dithering with optimized palette
 
 As an example, if a 4x4 color image with every pixel set to RGB(64,64,64),
 converted to a 1-bit image, the following results occur:
@@ -241,7 +242,7 @@ converted to a 1-bit image, the following results occur:
      [ 0 0 0 0 ]
      [ 0 1 0 1 ]
 
-   ict::ErrorDiffusion:
+   ict::ErrorDiffusion, ict::Ordered:
      [ 0 0 0 1 ]
      [ 0 0 0 1 ]
      [ 0 0 0 1 ]

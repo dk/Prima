@@ -89,7 +89,7 @@ produce_mask( Handle self)
    default:
       bpp2  = im256;
       if (!( area8 = allocb( var-> h * line8Size))) return;
-      ic_type_convert( self, area8, var-> palette, im256 | ( var-> type & imGrayScale));
+      ic_type_convert( self, area8, var-> palette, im256 | ( var-> type & imGrayScale), &var-> palSize, false);
       break;
    }
 
