@@ -75,7 +75,7 @@ apc_component_fullname_changed_notify( Handle self)
       converted = true;
    }
 
-   l = strlen( s = me-> self-> className);
+   l = strlen( s = ( self == application ? "Prima" : me-> self-> className));
    c = malloc( l+1);
    if (!c) croak( "apc_component_fullname_changed_notify: not enough memory");
    while ( l >= 0) {
