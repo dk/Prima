@@ -368,7 +368,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
          }
          count. l += ystep. l;
          if ( srcLast == srcData) {
-            memcpy( dstData, dstData - dstLine, dstLine);
+            memcpy( dstData, dstData - dstLine, dstLine < 0 ? -dstLine : dstLine);
          } else {
             proc( srcData, dstData, var->w, w, absw, xstep.l);
             srcLast = srcData;
