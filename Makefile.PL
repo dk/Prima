@@ -1979,7 +1979,7 @@ $PrimaTarget: @allojects $extralibs
 \t${ \eval{ return join ' ', ld_command_line( $PrimaTarget, @allojects)}}
 
 test: all
-\t\@perl -w test/Tester.pl
+\t\@$^X -w test/Tester.pl
 
 
 Makefile: Makefile.PL @Makefile_deps
