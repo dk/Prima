@@ -1519,7 +1519,7 @@ sub paste
 sub make_logical
 {
    my ( $self, $x, $y) = @_;
-   return (0,0) if $self->{maxLine} < 0;
+   return (0,0) if $self->{maxChunk} < 0;
    return $x, $y unless $self->{wordWrap};
    my $maxY = $self->{maxLine};
    $y = $maxY if $y > $maxY || $y < 0;
