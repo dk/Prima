@@ -38,31 +38,37 @@
 #include "Window.h"
 #include "Application.h"
 
+/* Tell a NET-compliant window manager that the window needs special treatment.
+    See freedesktop.org for docs 
+   XXX - want working code with NET_WM_STATE_MAXIMIZED_VERT/HORIZ.
+ */
 static void
-apc_window_task_listed( Handle self, Bool task_list)
+set_net_hints( XWindow window, Bool task_listed, Bool modal)
 {
-   DEFXX;
-   Atom data[32], type, * prop;
+   Atom data[40], type, * prop;
    int count = 0, format;
    XClientMessageEvent ev;
    unsigned long i, n, left;
 
-   if ( XGetWindowProperty( DISP, X_WINDOW, NET_WM_STATE, 0, 32, false, XA_ATOM,
+   /* read and preserve all state properties we don't know about */
+   if ( XGetWindowProperty( DISP, window, NET_WM_STATE, 0, 32, false, XA_ATOM,
           &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
      if ( prop) {
          if ( n > 32) n = 32;
          for ( i = 0; i < n; i++) 
-            if ( prop[i] != NET_WM_STATE_SKIP_TASKBAR)
+            if ( prop[i] != NET_WM_STATE_SKIP_TASKBAR && prop[i] != NET_WM_STATE_MODAL)
                data[ count++] = prop[i];
          XFree(( unsigned char *) prop);
       }
    }
 
-   XX-> flags. task_listed = ( task_list ? 1 : 0);
+   /* Send change message to root window, it's responsible for
+      on-the-fly changes. Otherwise, the properties are not re-read
+      until next XMapWindow() */
    bzero( &ev, sizeof(ev));
    ev. type = ClientMessage;
    ev. display = DISP;
-   ev. window = X_WINDOW;
+   ev. window = window;
    ev. message_type = NET_WM_STATE;
    ev. format = 32;
    /*
@@ -70,16 +76,30 @@ apc_window_task_listed( Handle self, Bool task_list)
       _NET_WM_STATE_ADD           1    // add/set property 
       _NET_WM_STATE_TOGGLE        2    // toggle property  
     */
-   ev. data. l[0] = task_list ? 0 : 1;
+   ev. data. l[0] = task_listed ? 0 : 1;
    ev. data. l[1] = ( long) NET_WM_STATE_SKIP_TASKBAR;
    ev. data. l[2] = 0;
    XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
+
+   ev. data. l[0] = modal ? 1 : 0;
+   ev. data. l[1] = ( long) NET_WM_STATE_MODAL;
+   XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
    XCHECKPOINT;
 
-   if ( !task_list) data[ count++] = NET_WM_STATE_SKIP_TASKBAR;
-
-   XChangeProperty( DISP, X_WINDOW, NET_WM_STATE, XA_ATOM, 32,
+   /* finally reset the list of properties */
+   if ( !task_listed) data[ count++] = NET_WM_STATE_SKIP_TASKBAR;
+   if (  modal)       data[ count++] = NET_WM_STATE_MODAL;
+   XChangeProperty( DISP, window, NET_WM_STATE, XA_ATOM, 32,
        PropModeReplace, ( unsigned char *) data, count);
+} 
+
+
+static void
+apc_window_task_listed( Handle self, Bool task_list)
+{
+   DEFXX;
+   XX-> flags. task_listed = ( task_list ? 1 : 0);
+   set_net_hints( X_WINDOW, XX-> flags.task_listed, XX-> flags.modal);
 } 
 
 static void
@@ -997,7 +1017,9 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
 Bool
 apc_window_execute( Handle self, Handle insert_before)
 {
-   X(self)-> flags.modal = true;
+   DEFXX;
+   XX-> flags.modal = true;
+   set_net_hints( X_WINDOW, XX-> flags.task_listed, XX-> flags.modal);
    if ( !window_start_modal( self, false, insert_before))
       return false;
    if (!application) return false;
@@ -1005,8 +1027,9 @@ apc_window_execute( Handle self, Handle insert_before)
    protect_object( self);
 
    XSync( DISP, false);
-   while ( prima_one_loop_round( true, true) && X(self) && X(self)-> flags.modal)
+   while ( prima_one_loop_round( true, true) && XX && XX-> flags.modal)
       ;
+   if ( XX) set_net_hints( X_WINDOW, XX-> flags.task_listed, XX-> flags.modal);
    unprotect_object( self);
    return true;
 }

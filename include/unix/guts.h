@@ -391,7 +391,8 @@ typedef struct {
 #define AI_FOREGROUND                    23
 #define AI_BACKGROUND                    24
 #define AI_MOTIF_WM_HINTS                25
-#define AI_count                         26
+#define AI_NET_WM_STATE_MODAL            26
+#define AI_count                         27
 
 #define FXA_RESOLUTION_X guts. atoms[ AI_FXA_RESOLUTION_X]
 #define FXA_RESOLUTION_Y guts. atoms[ AI_FXA_RESOLUTION_Y]
@@ -423,6 +424,7 @@ typedef struct {
 #define CF_FOREGROUND guts. atoms[ AI_FOREGROUND]
 #define CF_BACKGROUND guts. atoms[ AI_BACKGROUND]
 #define XA_MOTIF_WM_HINTS guts. atoms[ AI_MOTIF_WM_HINTS]
+#define NET_WM_STATE_MODAL guts. atoms[ AI_NET_WM_STATE_MODAL]
 
 typedef struct _UnixGuts
 {

@@ -186,19 +186,20 @@ init_x11( void)
       "WM_DELETE_WINDOW",
       "WM_PROTOCOLS",
       "WM_TAKE_FOCUS",
-      "NET_WM_STATE",
-      "NET_WM_STATE_SKIP_TASKBAR",
-      "NET_WM_STATE_MAXIMIZED_VERT",
-      "NET_WM_STATE_MAXIMIZED_HORIZ",
-      "NET_WM_NAME",
-      "NET_WM_ICON_NAME",
+      "_NET_WM_STATE",
+      "_NET_WM_STATE_SKIP_TASKBAR",
+      "_NET_WM_STATE_MAXIMIZED_VERT",
+      "_NET_WM_STATE_MAXIMIZED_HORIZ",
+      "_NET_WM_NAME",
+      "_NET_WM_ICON_NAME",
       "UTF8_STRING",
       "TARGETS",
       "INCR",
       "PIXEL",
       "FOREGROUND",
       "BACKGROUND",
-      "_MOTIF_WM_HINTS"
+      "_MOTIF_WM_HINTS",
+      "_NET_WM_STATE_MODAL"
    };
    char hostname_buf[256], *hostname = hostname_buf;
 

@@ -995,6 +995,7 @@ apc_show_message( const char * message, Bool utf8)
       XTextProperty p;
       XSizeHints xs;
       XSetWindowAttributes attrs;
+      Atom net_data[2];
       attrs. event_mask = 0
 	 | KeyPressMask
 	 | ButtonPressMask
@@ -1028,6 +1029,10 @@ apc_show_message( const char * message, Bool utf8)
          XSetWMName( DISP, md. w, &p);
          XFree( p. value);
       }
+      net_data[0] = NET_WM_STATE_SKIP_TASKBAR;
+      net_data[1] = NET_WM_STATE_MODAL;
+      XChangeProperty( DISP, md. w, NET_WM_STATE, XA_ATOM, 32,
+          PropModeReplace, ( unsigned char *) net_data, 2);
    }
 
    storage = &guts. message_boxes;
