@@ -1256,6 +1256,8 @@ static void
 register_constants( void)
 {
    register_nt_constants();
+   register_kb_constants();
+   register_km_constants();
    register_mb_constants();
 }
 

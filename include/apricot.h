@@ -511,173 +511,297 @@ END_TABLE(mb,UV)
 #undef MB
 #undef MB2
 
+/* keyboard modifiers */
+#define KM(const_name) CONSTANT(km,const_name)
+START_TABLE(km,UV)
+#define kmShift         0x01000000
+KM(Shift)
+#define kmCtrl          0x04000000
+KM(Ctrl)
+#define kmAlt           0x08000000
+KM(Alt)
+#define kmKeyPad	0x40000000
+KM(KeyPad)
+END_TABLE(km,UV)
+#undef KM
+
+#define KB(const_name) CONSTANT(kb,const_name)
+START_TABLE(kb,UV)
 /* keyboard masks */
 #define kbCharMask	0x000000ff
+KB(CharMask)
 #define kbCodeMask	0x00ffff00
+KB(CodeMask)
 #define kbModMask	0xff000000
-
-/* keyboard modifiers */
-#define kmShift         0x01000000
-#define kmCtrl          0x04000000
-#define kmAlt           0x08000000
-#define kmKeyPad	0x40000000
+KB(ModMask)
 
 /* bad key or no key code */
 #define kbNoKey         0x00FFFF00
+KB(NoKey)
 
 /* virtual keys which are modifiers at the same time */
 #define kbShiftL	0x00010100
+KB(ShiftL)
 #define kbShiftR	0x00010200
+KB(ShiftR)
 #define kbCtrlL		0x00010300
+KB(CtrlL)
 #define kbCtrlR		0x00010400
+KB(CtrlR)
 #define kbAltL		0x00010500
+KB(AltL)
 #define kbAltR		0x00010600
+KB(AltR)
 #define kbMetaL		0x00010700
+KB(MetaL)
 #define kbMetaR		0x00010800
+KB(MetaR)
 #define kbSuperL	0x00010900
+KB(SuperL)
 #define kbSuperR	0x00010a00
+KB(SuperR)
 #define kbHyperL	0x00010b00
+KB(HyperL)
 #define kbHyperR	0x00010c00
+KB(HyperR)
 #define kbCapsLock	0x00010d00
+KB(CapsLock)
 #define kbNumLock	0x00010e00
+KB(NumLock)
 #define kbScrollLock	0x00010f00
+KB(ScrollLock)
 #define kbShiftLock	0x00011000
+KB(ShiftLock)
 
 /* Virtual keys which have character code at the same time */
-#define kbBackspace     0x00020808
-#define kbTab           0x00020909
-#define kbKPTab		(kmKeyPad | kbTab)
-#define kbLinefeed	0x00020a0a
-#define kbEnter		0x00020d0d
+#define kbBackspace     0x00020800
+KB(Backspace)
+#define kbTab           0x00020900
+KB(Tab)
+#define kbKPTab		(kmKeyPad | kbTab)	/* C-only */
+#define kbLinefeed	0x00020a00
+KB(Linefeed)
+#define kbEnter		0x00020d00
+KB(Enter)
 #define kbReturn	kbEnter
-#define kbKPEnter	(kmKeyPad | kbEnter)
-#define kbKPReturn	kbKPEnter
-#define kbEscape	0x00021b1b
+KB(Return)
+#define kbKPEnter	(kmKeyPad | kbEnter)	/* C-only */
+#define kbKPReturn	kbKPEnter		/* C-only */
+#define kbEscape	0x00021b00
+KB(Escape)
 #define kbEsc		kbEscape
-#define kbSpace		0x00022020
-#define kbKPSpace	(kmKeyPad | kbSpace)
+KB(Esc)
+#define kbSpace		0x00022000
+KB(Space)
+#define kbKPSpace	(kmKeyPad | kbSpace)	/* C-only */
 
-#define kbKPEqual	(kmKeyPad | '=')
-#define kbKPMultiply	(kmKeyPad | '*')
-#define kbKPAdd		(kmKeyPad | '+')
-#define kbKPSeparator	(kmKeyPad | ',')
-#define kbKPSubtract	(kmKeyPad | '-')
-#define kbKPDecimal	(kmKeyPad | '.')
-#define kbKPDivide	(kmKeyPad | '/')
-#define kbKP0		(kmKeyPad | '0')
-#define kbKP1		(kmKeyPad | '1')
-#define kbKP2		(kmKeyPad | '2')
-#define kbKP3		(kmKeyPad | '3')
-#define kbKP4		(kmKeyPad | '4')
-#define kbKP5		(kmKeyPad | '5')
-#define kbKP6		(kmKeyPad | '6')
-#define kbKP7		(kmKeyPad | '7')
-#define kbKP8		(kmKeyPad | '8')
-#define kbKP9		(kmKeyPad | '9')
+#define kbKPEqual	(kmKeyPad | '=')	/* C-only */
+#define kbKPMultiply	(kmKeyPad | '*')	/* C-only */
+#define kbKPAdd		(kmKeyPad | '+')	/* C-only */
+#define kbKPSeparator	(kmKeyPad | ',')	/* C-only */
+#define kbKPSubtract	(kmKeyPad | '-')	/* C-only */
+#define kbKPDecimal	(kmKeyPad | '.')	/* C-only */
+#define kbKPDivide	(kmKeyPad | '/')	/* C-only */
+#define kbKP0		(kmKeyPad | '0')	/* C-only */
+#define kbKP1		(kmKeyPad | '1')	/* C-only */
+#define kbKP2		(kmKeyPad | '2')	/* C-only */
+#define kbKP3		(kmKeyPad | '3')	/* C-only */
+#define kbKP4		(kmKeyPad | '4')	/* C-only */
+#define kbKP5		(kmKeyPad | '5')	/* C-only */
+#define kbKP6		(kmKeyPad | '6')	/* C-only */
+#define kbKP7		(kmKeyPad | '7')	/* C-only */
+#define kbKP8		(kmKeyPad | '8')	/* C-only */
+#define kbKP9		(kmKeyPad | '9')	/* C-only */
 
 /* Other virtual keys */
 #define kbClear		0x00040100
+KB(Clear)
 #define kbPause		0x00040200
+#ifdef Pause
+#undef Pause
+#endif
+KB(Pause)
 #define kbSysRq		0x00040300
+KB(SysRq)
 #define kbSysReq	kbSysRq
+KB(SysReq)
 #define kbDelete	0x00040400
-#define kbKPDelete	(kmKeyPad | kbDelete)
+KB(Delete)
+#define kbKPDelete	(kmKeyPad | kbDelete)	/* C-only */
 #define kbHome		0x00040500
-#define kbKPHome	(kmKeyPad | kbHome)
+KB(Home)
+#define kbKPHome	(kmKeyPad | kbHome)	/* C-only */
 #define kbLeft		0x00040600
-#define kbKPLeft	(kmKeyPad | kbLeft)
+KB(Left)
+#define kbKPLeft	(kmKeyPad | kbLeft)	/* C-only */
 #define kbUp		0x00040700
-#define kbKPUp		(kmKeyPad | kbUp)
+KB(Up)
+#define kbKPUp		(kmKeyPad | kbUp)	/* C-only */
 #define kbRight		0x00040800
-#define kbKPRight	(kmKeyPad | kbRight)
+KB(Right)
+#define kbKPRight	(kmKeyPad | kbRight)	/* C-only */
 #define kbDown		0x00040900
-#define kbKPDown	(kmKeyPad | kbDown)
+KB(Down)
+#define kbKPDown	(kmKeyPad | kbDown)	/* C-only */
 #define kbPgUp		0x00040a00
+KB(PgUp)
 #define kbPrior		kbPgUp
+KB(Prior)
 #define kbPageUp	kbPgUp
-#define kbKPPgUp	(kmKeyPad | kbPgUp)
-#define kbKPPrior	kbKPPgUp
-#define kbKPPageUp	kbKPPgUp
+KB(PageUp)
+#define kbKPPgUp	(kmKeyPad | kbPgUp)	/* C-only */
+#define kbKPPrior	kbKPPgUp		/* C-only */
+#define kbKPPageUp	kbKPPgUp		/* C-only */
 #define kbPgDn		0x00040b00
+KB(PgDn)
 #define kbNext		kbPgDn
+KB(Next)
 #define kbPageDown	kbPgDn
-#define kbKPPgDn	(kmKeyPad | kbPgDn)
-#define kbKPNext	kbKPPgDn
-#define kbKPPageDown	kbKPPgDn
+KB(PageDown)
+#define kbKPPgDn	(kmKeyPad | kbPgDn)	/* C-only */
+#define kbKPNext	kbKPPgDn		/* C-only */
+#define kbKPPageDown	kbKPPgDn		/* C-only */
 #define kbEnd		0x00040c00
-#define kbKPEnd		(kmKeyPad | kbEnd)
+KB(End)
+#define kbKPEnd		(kmKeyPad | kbEnd)	/* C-only */
 #define kbBegin		0x00040d00
-#define kbKPBegin	(kmKeyPad | kbBegin)
+KB(Begin)
+#define kbKPBegin	(kmKeyPad | kbBegin)	/* C-only */
 #define kbSelect	0x00040e00
+KB(Select)
 #define kbPrint		0x00040f00
+KB(Print)
 #define kbPrintScr	kbPrint
+KB(PrintScr)
 #define kbExecute	0x00041000
+KB(Execute)
 #define kbInsert	0x00041100
-#define kbKPInsert	(kmKeyPad | kbInsert)
+KB(Insert)
+#define kbKPInsert	(kmKeyPad | kbInsert)	/* C-only */
 #define kbUndo		0x00041200
+KB(Undo)
 #define kbRedo		0x00041300
+KB(Redo)
 #define kbMenu		0x00041400
+KB(Menu)
 #define kbFind		0x00041500
+KB(Find)
 #define kbCancel	0x00041600
+KB(Cancel)
 #define kbHelp		0x00041700
+KB(Help)
 #define kbBreak		0x00041800
+KB(Break)
 #define kbBackTab	0x00041900
+KB(BackTab)
 
 /* Virtual function keys */
 #define kbF1		0x00080100
-#define kbKPF1		(kmKeyPad | kbF1)
+KB(F1)
+#define kbKPF1		(kmKeyPad | kbF1)	/* C-only */
 #define kbF2		0x00080200
-#define kbKPF2		(kmKeyPad | kbF2)
+KB(F2)
+#define kbKPF2		(kmKeyPad | kbF2)	/* C-only */
 #define kbF3		0x00080300
-#define kbKPF3		(kmKeyPad | kbF3)
+KB(F3)
+#define kbKPF3		(kmKeyPad | kbF3)	/* C-only */
 #define kbF4		0x00080400
-#define kbKPF4		(kmKeyPad | kbF4)
+KB(F4)
+#define kbKPF4		(kmKeyPad | kbF4)	/* C-only */
 #define kbF5		0x00080500
+KB(F5)
 #define kbF6		0x00080600
+KB(F6)
 #define kbF7		0x00080700
+KB(F7)
 #define kbF8		0x00080800
+KB(F8)
 #define kbF9		0x00080900
+KB(F9)
 #define kbF10		0x00080a00
+KB(F10)
 #define kbF11		0x00080b00
+KB(F11)
 #define kbL1		kbF11
+KB(L1)
 #define kbF12		0x00080c00
+KB(F12)
 #define kbL2		kbF12
+KB(L2)
 #define kbF13		0x00080d00
+KB(F13)
 #define kbL3		kbF13
+KB(L3)
 #define kbF14		0x00080e00
+KB(F14)
 #define kbL4		kbF14
+KB(L4)
 #define kbF15		0x00080f00
+KB(F15)
 #define kbL5		kbF15
+KB(L5)
 #define kbF16		0x00081000
+KB(F16)
 #define kbL6		kbF16
+KB(L6)
 #define kbF17		0x00081100
+KB(F17)
 #define kbL7		kbF17
+KB(L7)
 #define kbF18		0x00081200
+KB(F18)
 #define kbL8		kbF18
+KB(L8)
 #define kbF19		0x00081300
+KB(F19)
 #define kbL9		kbF19
+KB(L9)
 #define kbF20		0x00081400
+KB(F20)
 #define kbL10		kbF20
+KB(L10)
 #define kbF21		0x00081500
+KB(F21)
 #define kbR1		kbF21
+KB(R1)
 #define kbF22		0x00081600
+KB(F22)
 #define kbR2		kbF22
+KB(R2)
 #define kbF23		0x00081700
+KB(F23)
 #define kbR3		kbF23
+KB(R3)
 #define kbF24		0x00081800
+KB(F24)
 #define kbR4		kbF24
+KB(R4)
 #define kbF25		0x00081900
+KB(F25)
 #define kbR5		kbF25
+KB(R5)
 #define kbF26		0x00081a00
+KB(F26)
 #define kbR6		kbF26
+KB(R6)
 #define kbF27		0x00081b00
+KB(F27)
 #define kbR7		kbF27
+KB(R7)
 #define kbF28		0x00081c00
+KB(F28)
 #define kbR8		kbF28
+KB(R8)
 #define kbF29		0x00081d00
+KB(F29)
 #define kbR9		kbF29
+KB(R9)
 #define kbF30		0x00081e00
+KB(F30)
 #define kbR10		kbF30
+KB(R10)
+END_TABLE(kb,UV)
+#undef KB
 
 /* Please, please, PLEASE!  Do not use directly! */
 
