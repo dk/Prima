@@ -138,6 +138,7 @@ sub init
       growMode    => gm::GrowHiX,
       selectable  => 1,
       tabStop     => 1,
+      current     => 1,
       (map { $_ => $profile{$_}} keys %editProps),
       %{$profile{editProfile}},
    );

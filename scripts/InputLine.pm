@@ -50,7 +50,7 @@ sub profile_default
       insertMode     => 0,
       maxLen         => 256,  # length $def{ text},
       passwordChar   => '*',
-      pointer        => cr::Text,
+      pointerType    => cr::Text,
       readOnly       => 0,
       selection      => [0, 0],
       selStart       => 0,

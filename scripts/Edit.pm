@@ -125,7 +125,7 @@ sub profile_default
       markers           => [],
       modified          => 0,
       offset            => 0,
-      pointer           => cr::Text,
+      pointerType       => cr::Text,
       persistentBlock   => 0,
       readOnly          => 0,
       selection         => [0, 0, 0, 0],

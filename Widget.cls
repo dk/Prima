@@ -35,7 +35,6 @@ object Widget( Drawable)
    Handle    currentWidget;	       # current widget pointer
    int       cursorLock;               # cursor lock count
    NPoint    designScale;              # font width and height for view design
-   SV     *  dragPointer;              # cursor shape when dragging smth over
    int       growMode;                 # growing flags, see gmGrowXXX
    long      helpContext;              # help context
    char   *  hint;                     # hint tag text
@@ -43,7 +42,7 @@ object Widget( Drawable)
    Font      popupFont;                # font for popup menu
    ColorSet  popupColor;               # colors for popup menu
    Handle    popupMenu;                # popup menu by default
-   SV     *  pointer;                  # cursor shape
+   int       pointerType;              # pointer type, crXXX
    Point     pos;                      # last position
    Point     sizeUnbound;              # fictive size not aware of size limits
    Point     sizeMin;                  # default min size
@@ -129,7 +128,6 @@ object Widget( Drawable)
    static   Font     get_default_font( char * dummy = "");
    static   Font     get_default_popup_font( char * dummy = "");
    method   NPoint   get_design_scale();
-   method   SV *     get_drag_pointer();
    method   Bool     get_enabled()                   => apc_widget_is_enabled;
    method   int      get_grow_mode();
    method   Bool     get_first_click()               => apc_widget_get_first_click;
@@ -152,11 +150,11 @@ object Widget( Drawable)
    method   Bool     get_owner_show_hint();
    method   Bool     get_owner_palette();
    method   Handle   get_parent();
-   method   SV *     get_pointer();
+   method   Point    get_pointer_hot_spot()          => apc_pointer_get_hot_spot;
    method   Handle   get_pointer_icon();
    method   Point    get_pointer_pos();
-   method   Point    get_pointer_hot_spot()          => apc_pointer_get_hot_spot;
    static   Point    get_pointer_size( char * dummy = "");
+   method   int      get_pointer_type();
    method   Bool     get_pointer_visible()           => apc_pointer_get_visible;
    method   Color    get_popup_color( int index);
    method   Font     get_popup_font();
@@ -203,7 +201,6 @@ object Widget( Drawable)
    method   void     set_cursor_pos( int x, int y)     => apc_cursor_set_pos;
    method   void     set_cursor_size( int x, int y)    => apc_cursor_set_size;
    method   void     set_cursor_visible( Bool visible) => apc_cursor_set_visible;
-   method   void     set_drag_pointer( SV * dragPointer);
    method   void     set_enabled( Bool enable)         => apc_widget_set_enabled;
    method   void     set_first_click( Bool firstClick) => apc_widget_set_first_click;
    method   void     set_focused( Bool focused);
@@ -221,9 +218,10 @@ object Widget( Drawable)
    method   void     set_owner_show_hint( Bool ownerShowHint);
    method   void     set_owner_palette( Bool ownerPalette);
    method   void     set_palette( SV * palette);
-   method   void     set_pointer( SV * pointer);
-   method   void     set_pointer_icon( Handle icon, Point hotSpot);
+   method   void     set_pointer_hot_spot( int x, int y);
+   method   void     set_pointer_icon( Handle icon);
    method   void     set_pointer_pos( int x, int y);
+   method   void     set_pointer_type( int type);
    method   void     set_pointer_visible( Bool visible) => apc_pointer_set_visible;
    method   void     set_popup( Handle popup);
    method   void     set_popup_color( Color color, int index);

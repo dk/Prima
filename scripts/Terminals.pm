@@ -87,7 +87,7 @@ sub profile_default {
         borderWidth             =>         2,
         hScroll                 =>         0,
         vScroll                 =>         0,
-        pointer                 =>  cr::Text,
+        pointerType             =>  cr::Text,
         lineWrap                =>         0,
         prompt                  =>      '$ ',
         topItem                 =>     undef,
@@ -1018,7 +1018,7 @@ sub insert_bone
       size   => [ $self->{vScrollBar}-> width, $self->{hScrollBar}-> height],
       ownerBackColor => 1,
       growMode  => gm::GrowLoX,
-      pointer   => cr::Arrow,
+      pointerType=> cr::Arrow,
       onPaint   => sub {
          my ( $self, $owner, $w, $h) = ($_[0], $_[0]-> owner, $_[0]-> size);
          $self-> color( $self-> backColor);
@@ -1043,7 +1043,7 @@ sub set_h_scroll
          origin   => [ $bw, $bw],
          growMode => gm::GrowHiX,
          width    => $self-> width - 2 * $bw - ( $self->{vScroll} ? $self->{vScrollBar}-> width : 0),
-         pointer  => cr::Arrow,
+         pointerType => cr::Arrow,
          firstClick => 1,
       );
    } else {
@@ -1069,7 +1069,7 @@ sub set_v_scroll
          top      => $size[1] - $bw,
          bottom   => $bw + ( $self->{hScroll} ? $self->{hScrollBar}->height : 0),
          growMode => gm::GrowLoX | gm::GrowHiY,
-         pointer  => cr::Arrow,
+         pointerType => cr::Arrow,
          firstClick => 1,
       );
    } else {

@@ -173,7 +173,7 @@ sub insert_bone
    $self-> {bone}-> destroy if defined $self-> {bone};
    $self->{bone} = $self-> insert( q(Widget),
       name   => q(Bone),
-      pointer=> cr::Arrow,
+      pointerType => cr::Arrow,
       origin => [ $bw + $self->{hScrollBar}-> width-1, $bw - 1],
       size   => [ $self->{vScrollBar}-> width-2, $self->{hScrollBar}-> height-1],
       ownerBackColor => 1,
@@ -200,7 +200,7 @@ sub set_h_scroll
          vertical => 0,
          origin   => [ $bw-1, $bw-1],
          growMode => gm::GrowHiX,
-         pointer  => cr::Arrow,
+         pointerType  => cr::Arrow,
          width    => $self-> width - 2 * $bw + 2 - ( $self->{vScroll} ? $self->{vScrollBar}-> width - 2 : 0),
       );
       if ( $self->{vScroll})
@@ -240,7 +240,7 @@ sub set_v_scroll
          top      => $size[1] - $bw + 1,
          bottom   => $bw + ( $self->{hScroll} ? $self->{hScrollBar}-> height - 2 : 0),
          growMode => gm::GrowLoX | gm::GrowHiY,
-         pointer  => cr::Arrow,
+         pointerType  => cr::Arrow,
       );
       if ( $self->{hScroll})
       {

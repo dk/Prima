@@ -146,7 +146,7 @@ sub init
    $self-> {client} = $self-> insert( $profile{clientClass},
       rect     => [ $self-> get_client_rect],
       growMode => gm::Client,
-      pointer  => cr::Arrow,
+      pointerType  => cr::Arrow,
       name     => 'MDIClient',
       %{$profile{clientProfile}},
    );

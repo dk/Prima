@@ -1736,8 +1736,8 @@ sub new_directory
       return;
    };
 
-   my $oldPointer = $::application-> get_pointer;
-   $::application-> set_pointer( cr::Wait);
+   my $oldPointer = $::application-> pointer;
+   $::application-> pointer( cr::Wait);
    $self-> {files} = [(readdir DIR)];
    closedir DIR;
    $self-> {filesStat} = [map { (stat("$p$_"))[2] || 0; } @{$self-> {files}}];
@@ -1772,7 +1772,7 @@ sub new_directory
    $self->items([@lb]);
    $self-> focusedItem( $foc);
    $self-> notify( q(Change));
-   $::application-> set_pointer( $oldPointer);
+   $::application-> pointer( $oldPointer);
 }
 
 

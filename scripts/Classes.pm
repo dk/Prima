@@ -684,7 +684,6 @@ sub notification_types { return \%RNT; }
    dark3DColor       => cl::Dark3DColor,
    disabledBackColor => cl::Disabled,
    disabledColor     => cl::DisabledText,
-   dragPointer       => cr::Invalid,
    enabled           => 1,
    firstClick        => 0,
    focused           => 0,
@@ -703,7 +702,9 @@ sub notification_types { return \%RNT; }
    ownerHint         => 1,
    ownerShowHint     => 1,
    ownerPalette      => 1,
+   pointerIcon       => undef,
    pointer           => cr::Default,
+   pointerType       => cr::Default,
    pointerVisible    => 1,
    popup             => undef,
    popupColor             => cl::NormalText,
@@ -747,6 +748,7 @@ sub profile_default
       cursorSize        => [ 12, 3],
       designScale       => [ 0, 0],
       origin            => [ 0, 0],
+      pointerHotSpot    => [ 0, 0],
       rect              => [ 0, 0, 100, 100],
       size              => [ 100, 100],
       sizeMin           => [ 0, 0],
@@ -865,6 +867,14 @@ sub profile_check_in
       my $vis = exists $p-> { visible} ? $p-> { visible} : $default-> { visible};
       $p->{current} = 1 if $ena && $vis;
    }
+
+   if ( exists $p-> {pointer}) {
+      my $pt = $p-> {pointer};
+      $p->{pointerType}    = ( ref($pt) ? cr::User : $pt) if !exists $p->{pointerType};
+      $p->{pointerIcon}    = $pt if !exists $p->{pointerIcon} && ref( $pt);
+      $p->{pointerHotSpot} = $pt->{__pointerHotSpot}
+         if !exists $p->{pointerHotSpot} && ref( $pt) && exists $pt->{__pointerHotSpot};
+   }
 }
 
 sub set_sync_paint {$_[0]->set(syncPaint  =>$_[1])};
@@ -884,7 +894,6 @@ sub currentWidget   {($#_)?$_[0]->set_current_widget ($_[1]):return $_[0]->get_c
 sub cursorPos        {($#_)? ($_[0]->set_cursor_pos($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_cursor_pos;    }
 sub cursorSize       {($#_)? ($_[0]->set_cursor_size($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_cursor_size;    }
 sub cursorVisible    {($#_)?$_[0]->set_cursor_visible($_[1]):return $_[0]->get_cursor_visible;      }
-sub dragPointer      {($#_)?$_[0]->set_drag_pointer($_[1]):return $_[0]->get_drag_pointer;}
 sub enabled          {($#_)?$_[0]->set_enabled     ($_[1]):return $_[0]->get_enabled;     }
 sub growMode         {($#_)?$_[0]->set_grow_mode   ($_[1]):return $_[0]->get_grow_mode;   }
 sub dark3DColor      {($#_)?$_[0]->set_color_index ($_[1], ci::Dark3DColor):return $_[0]->get_color_index(ci::Dark3DColor)}
@@ -909,9 +918,10 @@ sub ownerFont        {($#_)?$_[0]->set_owner_font ($_[1]) :return $_[0]->get_own
 sub ownerHint        {($#_)?$_[0]->set_owner_hint ($_[1]) :return $_[0]->get_owner_hint;  }
 sub ownerPalette     {($#_)?$_[0]->set_owner_palette($_[1]) :return $_[0]->get_owner_palette;  }
 sub ownerShowHint    {($#_)?$_[0]->set_owner_show_hint($_[1]):return $_[0]->get_owner_show_hint;}
-sub pointer          {($#_)?$_[0]->set_pointer     ($_[1]):return $_[0]->get_pointer;     }
-sub pointerPos       {($#_)?shift->set_pointer_pos (@_):return $_[0]->get_pointer_pos; }
 sub pointerIcon      {($#_)?shift->set_pointer_icon(@_):return $_[0]->get_pointer_icon;}
+sub pointerHotSpot   {($#_)?shift->set_pointer_hot_spot(@_):return $_[0]->get_pointer_hot_spot;}
+sub pointerPos       {($#_)?shift->set_pointer_pos (@_):return $_[0]->get_pointer_pos; }
+sub pointerType      {($#_)?shift->set_pointer_type(@_):return $_[0]->get_pointer_type;}
 sub pointerVisible   {($#_)?$_[0]->set_pointer_visible($_[1]):return $_[0]->get_pointer_visible;     }
 sub popup            {($#_)?$_[0]->set_popup       ($_[1]):return $_[0]->get_popup;       }
 sub popupFont             {($#_)?$_[0]->set_popup_font ($_[1])  :return Font->new($_[0], "get_popup_font", "set_popup_font")}
@@ -972,6 +982,26 @@ sub insert
    push @e, $_[ 0]-> create(@_[1..$#_], owner=> $self)
       if scalar @_;
    return wantarray ? @e : $e[0];
+}
+
+sub pointer
+{
+   if ( $#_) {
+      $_[0]-> set_pointer_type( $_[1]), return unless ref( $_[1]);
+      defined $_[1]-> {__pointerHotSpot} ?
+         $_[0]-> set(
+            pointerIcon    => $_[1],
+            pointerHotSpot => $_[1]-> {__pointerHotSpot},
+         ) :
+            $_[0]-> set_pointer_icon( $_[1]);
+      $_[0]-> set_pointer_type( cr::User);
+   } else {
+      my $i = $_[0]-> get_pointer_type;
+      return $i if $i != cr::User;
+      $i = $_[0]-> get_pointer_icon;
+      $i-> {__pointerHotSpot} = [ $_[0]-> get_pointer_hot_spot];
+      return $i;
+   }
 }
 
 sub widgets    { return shift->get_widgets};
@@ -1292,7 +1322,7 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      pointer        => cr::Arrow,
+      pointerType    => cr::Arrow,
       owner          => undef,
       scaleChildren  => 0,
       ownerColor     => 0,

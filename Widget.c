@@ -119,12 +119,21 @@ Widget_init( Handle self, HV * profile)
    my set_brief_keys         ( self, pget_B(  briefKeys));
    my set_buffered           ( self, pget_B(  buffered));
    my set_cursor_visible     ( self, pget_B(  cursorVisible));
-   my set_drag_pointer       ( self, pget_sv( dragPointer));
    my set_grow_mode          ( self, pget_i(  growMode));
    my set_hint               ( self, pget_c(  hint));
    my set_help_context       ( self, pget_i(  helpContext));
    my set_first_click        ( self, pget_B(  firstClick));
-   my set_pointer            ( self, pget_sv( pointer));
+   {
+      Point hotSpot;
+      Handle icon = pget_H( pointerIcon);
+      read_point(( AV *) SvRV( pget_sv( pointerHotSpot)), (int*)&hotSpot, 2, "RTC0087: Array panic on 'pointerHotSpot'");
+      if ( icon != nilHandle && !kind_of( icon, CIcon)) {
+         warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
+         icon = nilHandle;
+      }
+      apc_pointer_set_user( self, icon, hotSpot);
+   }
+   my set_pointer_type       ( self, pget_i(  pointerType));
    my set_selecting_buttons  ( self, pget_i(  selectingButtons));
    my set_selectable         ( self, pget_B(  selectable));
    my set_show_hint          ( self, pget_B(  showHint));
@@ -231,7 +240,6 @@ Widget_done( Handle self)
    my detach( self, var popupMenu, true);
    var popupMenu = nilHandle;
 
-   SvREFCNT_dec( var pointer);
    free( var text);
    apc_widget_destroy( self);
    free( var hint);
@@ -1184,6 +1192,20 @@ Widget_set( Handle self, HV * profile)
       my set_popup_font( self, Font_buffer);
       pdelete( popupFont);
    }
+   if ( pexist( pointerIcon) && pexist( pointerHotSpot))
+   {
+      Point hotSpot;
+      Handle icon = pget_H( pointerIcon);
+      read_point(( AV *) SvRV( pget_sv( pointerHotSpot)), (int*)&hotSpot, 2, "RTC0087: Array panic on 'pointerHotSpot'");
+      if ( icon != nilHandle && !kind_of( icon, CIcon)) {
+         warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
+         icon = nilHandle;
+      }
+      apc_pointer_set_user( self, icon, hotSpot);
+      if ( var pointerType == crUser) my first_that( self, sptr, nil);
+      pdelete( pointerIcon);
+      pdelete( pointerHotSpot);
+   }
 
    dyna_set( self, profile);
    inherited set( self, profile);
@@ -1403,12 +1425,6 @@ Widget_get_design_scale( Handle self)
    return var designScale;
 }
 
-SV *
-Widget_get_drag_pointer( Handle self)
-{
-   return nilSV; /* not currently supported */
-}
-
 int
 Widget_get_grow_mode( Handle self)
 {
@@ -1482,26 +1498,6 @@ Widget_get_parent( Handle self)
    return my get_clip_owner( self) ? var owner : application;
 }
 
-SV *
-Widget_get_pointer( Handle self)
-{
-   if ( var stage > csNormal) return nilSV;
-   return newSVsv( var pointer);
-}
-
-Point
-Widget_get_pointer_size( char*dummy)
-{
-   return apc_pointer_get_size( nilHandle);
-}
-
-Point
-Widget_get_pointer_pos( Handle self)
-{
-   enter_method;
-   return my screen_to_client( self, apc_pointer_get_pos( self));
-}
-
 Handle
 Widget_get_pointer_icon( Handle self)
 {
@@ -1514,6 +1510,25 @@ Widget_get_pointer_icon( Handle self)
       --SvREFCNT( SvRV((( PAnyObject) icon)-> mate));
       return icon;
    }
+}
+
+Point
+Widget_get_pointer_pos( Handle self)
+{
+   enter_method;
+   return my screen_to_client( self, apc_pointer_get_pos( self));
+}
+
+Point
+Widget_get_pointer_size( char*dummy)
+{
+   return apc_pointer_get_size( nilHandle);
+}
+
+int
+Widget_get_pointer_type( Handle self)
+{
+   return var pointerType;
 }
 
 Handle
@@ -1844,16 +1859,6 @@ Widget_set_current_widget( Handle self, Handle widget)
 
 
 void
-Widget_set_drag_pointer( Handle self, SV * dragPointer)
-{
-   if ( var stage > csNormal) return;
-   SvREFCNT_inc( dragPointer);
-   if ( var dragPointer) SvREFCNT_dec( var dragPointer);
-   var dragPointer = dragPointer;
-}
-
-
-void
 Widget_set_focused( Handle self, Bool focused)
 {
    enter_method;
@@ -2053,41 +2058,40 @@ Widget_set_palette( Handle self, SV * palette)
 }
 
 void
-Widget_set_pointer( Handle self, SV * pointer)
+Widget_set_pointer_icon( Handle self, Handle icon)
 {
    enter_method;
-   if ( var stage > csNormal) return;
-   if ( SvROK( pointer))
-   {
-      Point p = { 16, 16};
-      my set_pointer_icon( self, gimme_the_mate( pointer), p);
-      apc_pointer_set_shape( self, crUser);
-   } else
-   {
-      int ptr = SvIV( pointer);
-      if ( var pointer) SvREFCNT_dec( var pointer);
-      var pointer = newSViv(ptr);
-      apc_pointer_set_shape( self, ptr);
-   }
-   my first_that( self, sptr, nil);
-}
-
-void
-Widget_set_pointer_icon( Handle self, Handle icon, Point hotSpot)
-{
-   SV *oldp;
+   Point hotSpot;
    if ( var stage > csNormal) return;
    if ( icon != nilHandle && !kind_of( icon, CIcon)) {
       warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
       return;
    }
+   hotSpot = my get_pointer_hot_spot( self);
    apc_pointer_set_user( self, icon, hotSpot);
-   oldp = var pointer;
-   if ( icon)
-      var pointer = newSVsv((( PAnyObject) icon)-> mate);
-   else
-      var pointer = newSVsv( nilSV);
-   if ( oldp) SvREFCNT_dec( oldp);
+   if ( var pointerType == crUser) my first_that( self, sptr, nil);
+}
+
+void
+Widget_set_pointer_hot_spot( Handle self, int x, int y)
+{
+   enter_method;
+   Handle icon;
+   Point hotSpot = {x, y};
+   if ( var stage > csNormal) return;
+   icon = my get_pointer_icon( self);
+   apc_pointer_set_user( self, icon, hotSpot);
+   if ( var pointerType == crUser) my first_that( self, sptr, nil);
+}
+
+void
+Widget_set_pointer_type( Handle self, int type)
+{
+   enter_method;
+   if ( var stage > csNormal) return;
+   var pointerType = type;
+   apc_pointer_set_shape( self, type);
+   my first_that( self, sptr, nil);
 }
 
 void
@@ -2184,9 +2188,9 @@ Widget_set_selected( Handle self, Bool selected)
          else
             w-> self-> set_selected(( Handle) w, true);
       } else
-      if ( is_opt( optSelectable))
+      if ( is_opt( optSelectable)) {
          my set_focused( self, true);
-      else
+      } else
       if ( is_opt( optSystemSelectable)) {
          /* nothing to do with Widget, reserved for Window */
       }
@@ -2500,8 +2504,9 @@ static Bool
 sptr( Handle window, Handle self, void * v)
 {
    enter_method;
-   if ( !SvROK( var pointer) && ( SvIV( var pointer) == crDefault))
-      my set_pointer( self, var pointer); /* possibility to refresh system pointer */
+   /* does nothing but refreshes system pointer */
+   if ( var pointerType == crDefault)
+      my set_pointer_type( self, crDefault);
    return false;
 }
 
