@@ -1081,8 +1081,8 @@ sub set_first_col
    $self-> reset_cursor;
    my ( $bw, $dx, $dy, $x, $y, $fh) =
        ($self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> size, $self-> font-> height);
-   $self-> clipRect( $bw, $bw + $dy, $x - $bw - $dx, $y - $bw);
-   $self-> scroll( 0, $dt * $fh);
+   $self-> scroll( 0, $dt * $fh,
+                   clipRect => [ $bw, $bw+$dy, $x-$bw-$dx, $y-$bw]);
 }
 
 sub set_h_scroll
@@ -1194,8 +1194,8 @@ sub set_offset
    my ( $x, $y) = $self->size;
    my ( $bw, $dx, $dy) = ($self->{borderWidth}, $self->{dx}, $self->{dy});
    $self-> reset_cursor;
-   $self-> clipRect( $bw, $bw + $dy, $x - $dx - $bw, $y - $bw);
-   $self-> scroll( -$dt, 0);
+   $self-> scroll( -$dt, 0,
+                   clipRect => [ $bw, $bw + $dy, $x - $dx - $bw, $y - $bw]);
 }
 
 
@@ -1923,11 +1923,8 @@ sub insert_empty_line
       $self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> font-> height, $self-> size,
    );
    if ( $y < $fc + $rc + $yt - 1 && $y + $len > $fc && $y <= $maxY && !$self-> has_selection) {
-      $self-> scroll_rect(
-         0, -$fh * $len,
-         $bw,              $bw + $dy,
-         $w - $dx - $bw,   $h - $bw - $fh * ( $y - $fc)
-      );
+      $self-> scroll_rect( 0, -$fh * $len,
+                           confineRect => [ $bw, $bw + $dy, $w - $dx - $bw, $h - $bw - $fh * ( $y - $fc) ]);
    }
    $self->{vScrollBar}-> set(
       max      => $self-> {maxChunk} - $self->{rows} + 1,

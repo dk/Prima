@@ -167,9 +167,9 @@ sub adjust
 
    my ( $bw, $dx, $dy, $w, $h, $ih) = ( $self->{borderWidth}, $self->{dx},
       $self->{dy}, $self-> size, $self->{itemHeight});
-   $self-> clipRect( $bw, $bw + $dy, $w - $bw - $dx,
-      $h - $bw - $ih * ( $index - $self->{topItem} + 1));
-   $self-> scroll( 0, ( $c - $self->{count}) * $ih);
+   $self-> scroll( 0, ( $c - $self->{count}) * $ih,
+                   clipRect => [ $bw, $bw + $dy, $w - $bw - $dx,
+                                 $h - $bw - $ih * ( $index - $self->{topItem} + 1) ]);
    $self-> invalidate_rect(
       $bw, $h - ( $index - $self->{topItem} + 1) * $ih - 2,
       $w - $dx - $bw, $h - ( $index - $self->{topItem}) * $ih
@@ -1087,8 +1087,8 @@ sub set_offset
       $self->{scrollTransaction} = 0;
    }
    $self-> makehint(0);
-   $self-> clipRect( $bw, $bw + $dy, $bw + $w, $self-> height - $bw);
-   $self-> scroll( -$dt, 0);
+   $self-> scroll( -$dt, 0,
+                   clipRect => [ $bw, $bw + $dy, $bw + $w, $self-> height - $bw ]);
 }
 
 sub set_top_item
@@ -1111,8 +1111,8 @@ sub set_top_item
       $self->{scrollTransaction} = 0;
    }
 
-   $self-> clipRect( $bw, $bw + $dy, $w - $bw - $dx, $h - $bw);
-   $self-> scroll( 0, $dt * $ih);
+   $self-> scroll( 0, $dt * $ih,
+                   clipRect => [ $bw, $bw + $dy, $w - $bw - $dx, $h - $bw ]);
 }
 
 

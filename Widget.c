@@ -114,7 +114,7 @@ Widget_init( Handle self, HV * profile)
    {
       Point hotSpot;
       Handle icon = pget_H( pointerIcon);
-      read_point(( AV *) SvRV( pget_sv( pointerHotSpot)), (int*)&hotSpot, 2, "RTC0087: Array panic on 'pointerHotSpot'");
+      prima_read_point( pget_sv( pointerHotSpot), (int*)&hotSpot, 2, "RTC0087: Array panic on 'pointerHotSpot'");
       if ( icon != nilHandle && !kind_of( icon, CIcon)) {
          warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
          icon = nilHandle;
@@ -155,13 +155,13 @@ Widget_init( Handle self, HV * profile)
       SV ** holder;
       NPoint ds = {1,1};
 
-      read_point(( AV *) SvRV( pget_sv( sizeMin)), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
+      prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
       my-> set_size_min( self, set);
-      read_point(( AV *) SvRV( pget_sv( sizeMax)), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
+      prima_read_point( pget_sv( sizeMax), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
       my-> set_size_max( self, set);
-      read_point(( AV *) SvRV( pget_sv( cursorSize)), i, 2, "RTC0084: Array panic on 'cursorSize'");
+      prima_read_point( pget_sv( cursorSize), i, 2, "RTC0084: Array panic on 'cursorSize'");
       my-> set_cursor_size( self, i[0], i[1]);
-      read_point(( AV *) SvRV( pget_sv( cursorPos)), i, 2, "RTC0085: Array panic on 'cursorPos'");
+      prima_read_point( pget_sv( cursorPos), i, 2, "RTC0085: Array panic on 'cursorPos'");
       my-> set_cursor_pos( self, i[0], i[1]);
 
       av = ( AV *) SvRV( pget_sv( designScale));
@@ -936,19 +936,61 @@ Widget_repaint( Handle self)
 
 /*::s */
 void
-Widget_scroll( Handle self, int horiz, int vert, Bool scrollChildren)
+Widget_scroll( Handle self, int dx, int dy, Rect *confine, Rect *clip, Bool withChildren)
 {
    enter_method;
    if ( !opt_InPaint && ( var-> stage == csNormal) && !my-> get_locked( self))
-      apc_widget_scroll( self, horiz, vert, nil, scrollChildren);
+      apc_widget_scroll( self, dx, dy, confine, clip, withChildren);
 }
 
 void
-Widget_scroll_rect( Handle self, int horiz, int vert, Rect rect, Bool scrollChildren)
+Widget_scroll_REDEFINED( Handle self, int dx, int dy, Rect *confine, Rect *clip, Bool withChildren)
 {
-   enter_method;
-   if ( !opt_InPaint && ( var-> stage == csNormal) && !my-> get_locked( self))
-      apc_widget_scroll( self, horiz, vert, &rect, scrollChildren);
+   warn("Invalid call of Widget::scroll");
+}
+
+XS( Widget_scroll_FROMPERL)
+{
+   dXSARGS;
+   Handle self;
+   int dx, dy;
+   Rect *confine = nil;
+   Rect *clip = nil;
+   Rect confine_rect, clip_rect;
+   Bool withChildren = false;
+   HV *profile;
+   int rect[4];
+
+   if ( items < 3 || (items - 3) % 2) goto invalid_usage;
+   if (!( self = gimme_the_mate( ST(0)))) goto invalid_usage;
+   dx = SvIV( ST(1));
+   dy = SvIV( ST(2));
+   profile = parse_hv( ax, sp, items, mark, 3, "Widget::scroll");
+   if ( pexist( confineRect)) {
+      prima_read_point( pget_sv( confineRect), rect, 4, "RTC008B: Array panic on 'confineRect'");
+      confine = &confine_rect;
+      confine-> left = rect[0];
+      confine-> bottom = rect[1];
+      confine-> right = rect[2];
+      confine-> top = rect[3];
+   }
+   if ( pexist( clipRect)) {
+      prima_read_point( pget_sv( clipRect), rect, 4, "RTC008C: Array panic on 'clipRect'");
+      clip = &clip_rect;
+      clip-> left = rect[0];
+      clip-> bottom = rect[1];
+      clip-> right = rect[2];
+      clip-> top = rect[3];
+   }
+   if ( pexist( withChildren)) withChildren = pget_B( withChildren);
+   sv_free((SV*)profile);
+   Widget_scroll( self, dx, dy, confine, clip, withChildren);
+   SPAGAIN;
+   SP -= items;
+   PUTBACK;
+   XSRETURN_EMPTY;
+invalid_usage:
+   croak ("Invalid usage of %s", "Widget::scroll");
 }
 
 void
@@ -1006,24 +1048,22 @@ Widget_set( Handle self, HV * profile)
    }
    if ( pexist( origin))
    {
-      AV * av = ( AV *) SvRV( pget_sv( origin));
       int set[2];
       if (order && !pexist(left))   av_push( order, newSVpv("left",0));
       if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
-      read_point( av, set, 2, "RTC0087: Array panic on 'origin'");
+      prima_read_point( pget_sv( origin), set, 2, "RTC0087: Array panic on 'origin'");
       pset_sv( left,   newSViv(set[0]));
       pset_sv( bottom, newSViv(set[1]));
       pdelete( origin);
    }
    if ( pexist( rect))
    {
-      AV * av = ( AV *) SvRV( pget_sv( rect));
       int rect[4];
       if (order && !pexist(left)) av_push( order, newSVpv("left",0));
       if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
       if (order && !pexist(width)) av_push( order, newSVpv("width",0));
       if (order && !pexist(height)) av_push( order, newSVpv("height",0));
-      read_point( av, rect, 4, "RTC0088: Array panic on 'rect'");
+      prima_read_point( pget_sv( rect), rect, 4, "RTC0088: Array panic on 'rect'");
       pset_sv( left,   newSViv( rect[0]));
       pset_sv( bottom, newSViv( rect[1]));
       pset_sv( width,  newSViv( rect[2] - rect[0]));
@@ -1032,11 +1072,10 @@ Widget_set( Handle self, HV * profile)
    }
    if ( pexist( size))
    {
-      AV * av = ( AV *) SvRV( pget_sv( size));
       int set[2];
       if (order && !pexist(width)) av_push( order, newSVpv("width",0));
       if (order && !pexist(height)) av_push( order, newSVpv("height",0));
-      read_point( av, set, 2, "RTC0089: Array panic on 'size'");
+      prima_read_point( pget_sv( size), set, 2, "RTC0089: Array panic on 'size'");
       pset_sv( width,  newSViv(set[0]));
       pset_sv( height, newSViv(set[1]));
       pdelete( size);
@@ -1076,7 +1115,7 @@ Widget_set( Handle self, HV * profile)
    {
       Point hotSpot;
       Handle icon = pget_H( pointerIcon);
-      read_point(( AV *) SvRV( pget_sv( pointerHotSpot)), (int*)&hotSpot, 2, "RTC0087: Array panic on 'pointerHotSpot'");
+      prima_read_point( pget_sv( pointerHotSpot), (int*)&hotSpot, 2, "RTC0087: Array panic on 'pointerHotSpot'");
       if ( icon != nilHandle && !kind_of( icon, CIcon)) {
          warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
          icon = nilHandle;
@@ -1215,15 +1254,6 @@ Bool
 Widget_get_buffered( Handle self)
 {
    return is_opt( optBuffered);
-}
-
-Rect
-Widget_get_clip_rect( Handle self)
-{
-   return opt_InPaint ?
-      inherited-> get_clip_rect( self) :
-      apc_widget_get_clip_rect( self);
-
 }
 
 Color
@@ -1656,16 +1686,6 @@ Widget_set_centered( Handle self, Bool x, Bool y)
    if ( x) mypos. x = ( size. x - mysize. x) / 2;
    if ( y) mypos. y = ( size. y - mysize. y) / 2;
    my-> set_pos( self, mypos. x, mypos. y);
-}
-
-Bool
-Widget_set_clip_rect( Handle self, Rect clipRect)
-{
-   if ( opt_InPaint)
-      inherited-> set_clip_rect( self, clipRect);
-   else
-      apc_widget_set_clip_rect( self, clipRect);
-   return true;
 }
 
 Bool
@@ -2575,19 +2595,27 @@ single_color_notify ( Handle self, Handle child, void * color)
 }
 
 Bool
-read_point( AV * av, int * pt, int number, char * error)
+prima_read_point( SV *rv_av, int * pt, int number, char * error)
 {
    SV ** holder;
    int i;
+   AV *av;
    Bool result = true;
-   for ( i = 0; i < number; i++) {
-      holder = av_fetch( av, i, 0);
-      if ( holder)
-         pt[i] = SvIV( *holder);
-      else {
-         pt[i] = 0;
-         result = false;
-         if ( error) warn( error);
+
+   if ( !rv_av || !SvROK( rv_av) || ( SvTYPE( SvRV( rv_av)) != SVt_PVAV)) {
+      result = false;
+      if ( error) croak( error);
+   } else {
+      av = (AV*)SvRV(rv_av);
+      for ( i = 0; i < number; i++) {
+         holder = av_fetch( av, i, 0);
+         if ( holder)
+            pt[i] = SvIV( *holder);
+         else {
+            pt[i] = 0;
+            result = false;
+            if ( error) croak( error);
+         }
       }
    }
    return result;

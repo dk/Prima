@@ -608,12 +608,11 @@ sub set_first_char
    my $border = $self-> {borderWidth} + 1;
    my @size = $self-> size;
 
-   $self-> clipRect( $border, $border, $size[0] - $border, $size[1] - $border);
-   $self-> scroll(
-     ( $ofc > $pos) ?
-        $self-> get_text_width( substr( $self->{line}, 0, $ofc - $pos)) :
-      - $self-> get_text_width( substr( $oline, 0, $pos - $ofc))
-   , 0);
+   $self-> scroll(( $ofc > $pos) ?
+                  $self-> get_text_width( substr( $self->{line}, 0, $ofc - $pos)) :
+                  - $self-> get_text_width( substr( $oline, 0, $pos - $ofc))
+                  , 0,
+                  clipRect => [ $border, $border, $size[0] - $border, $size[1] - $border]);
 }
 
 sub set_write_only

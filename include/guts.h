@@ -31,7 +31,7 @@ extern Handle  gimme_the_real_mate( SV *perlObject);
 extern XS( Component_set_notification_FROMPERL);
 
 extern PRGBColor read_palette( int * palSize, SV * palette);
-extern Bool read_point( AV * av, int * pt, int number, char * error);
+extern Bool prima_read_point( SV *rvav, int * pt, int number, char * error);
 extern Bool accel_notify ( Handle group, Handle self, PEvent event);
 extern Bool font_notify ( Handle self, Handle child, void * font);
 extern Bool find_accel( Handle self, Handle item, int * key);

@@ -1241,23 +1241,6 @@ apc_widget_get_clip_owner( Handle self)
    return is_apt( aptClipOwner);
 }
 
-Rect
-apc_widget_get_clip_rect( Handle self)
-{
-   Rect r = {0,0,0,0};
-   RECTL * c;
-   objCheck r;
-   c = sys pClipRect;
-   if ( c) {
-      r. left   = c-> xLeft;
-      r. right  = c-> xRight;
-      r. top    = c-> yTop;
-      r. bottom = c-> yBottom;
-   } else
-      r. left = r. right = r. top = r. bottom = 0;
-   return r;
-}
-
 static int ctx_ci2PP[] =
 {
    ciNormalText     , PP_FOREGROUNDCOLOR,
@@ -1463,36 +1446,16 @@ apc_widget_screen_to_client( Handle self, Point p)
 }
 
 Bool
-apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Bool scrollChildren)
+apc_widget_scroll( Handle self, int horiz, int vert, Rect *r, Rect *cr, Bool scrollChildren)
 {
    WinShowCursor( var handle, false);
-   if ( !WinScrollWindow( var handle, horiz, vert, (PRECTL)r, sys pClipRect, nilHandle, nil,
+   if ( !WinScrollWindow( var handle, horiz, vert, (PRECTL)r, (PRECTL)cr, nilHandle, nil,
                     SW_INVALIDATERGN | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
                   )) apiErr;
    return WinShowCursor( var handle, true);
 }
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
-
-Bool
-apc_widget_set_clip_rect( Handle self, Rect c)
-{
-   RECTL * cr;
-
-   // inclusive-inclusive
-
-   cr = &sys clipRect;
-   check_swap( c. bottom, c. top);
-   check_swap( c. left, c. right);
-   cr-> xLeft   = c. left;
-   cr-> xRight  = c. right;
-   cr-> yTop    = c. top;
-   cr-> yBottom = c. bottom;
-
-   sys pClipRect = ( c. top == 0 && c. bottom == 0 && c. left == 0 && c. right == 0) ?
-      nil : cr;
-   return true;
-}
 
 Bool
 apc_widget_set_color( Handle self, Color color, int index)

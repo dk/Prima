@@ -69,7 +69,7 @@ Image_init( Handle self, HV * profile)
    my->set_data( self, pget_sv( data));
    {
       Point set;
-      read_point(( AV *) SvRV( pget_sv( resolution)), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
+      prima_read_point( pget_sv( resolution), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
       my-> set_resolution( self, set.x, set.y);
    }
    if ( var->type & imGrayScale) switch ( var->type & imBPP)
@@ -228,7 +228,7 @@ Image_set( Handle self, HV * profile)
    if ( pexist( resolution))
    {
       Point set;
-      read_point(( AV *) SvRV( pget_sv( resolution)), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
+      prima_read_point( pget_sv( resolution), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
       my-> set_resolution( self, set.x, set.y);
       pdelete( resolution);
    }

@@ -879,8 +879,8 @@ sub set_offset
       $self-> {hScrollBar}-> value( $offset);
       $self->{scrollTransaction} = 0;
    }
-   $self-> clipRect( $bw, $bw + $dy, $bw + $w, $self-> height - $bw);
-   $self-> scroll( -$dt, 0);
+   $self-> scroll( -$dt, 0,
+                   clipRect => [ $bw, $bw + $dy, $bw + $w, $self-> height - $bw ]);
    $self-> refresh;
 }
 
@@ -1007,15 +1007,15 @@ sub set_top_item
 
    if ( $self->{ multiColumn}) {
       if ( $dt % $self->{rows} == 0) {
-         $self-> clipRect( $bw, $bw + $dy, $w - $bw - $dx, $h - $bw);
-         $self-> scroll( -( $dt / $self->{rows}) * ($iw + 1), 0);
+         $self-> scroll( -( $dt / $self->{rows}) * ($iw + 1), 0,
+                         clipRect => [ $bw, $bw + $dy, $w - $bw - $dx, $h - $bw ]);
       } else {
-         $self-> clipRect( $bw, $bw + $dy + $self->{yedge}, $w - $bw - $dx, $h - $bw);
-         $self-> scroll( 0, $ih * $dt);
+         $self-> scroll( 0, $ih * $dt,
+                         clipRect => [ $bw, $bw + $dy + $self->{yedge}, $w - $bw - $dx, $h - $bw ]);
       }
    } else {
-      $self-> clipRect( $bw, $bw + $dy, $w - $bw - $dx, $h - $bw);
-      $self-> scroll( 0, $dt * $ih);
+      $self-> scroll( 0, $dt * $ih,
+                      clipRect => [ $bw, $bw + $dy, $w - $bw - $dx, $h - $bw ]);
    }
    $self-> update_view;
 }

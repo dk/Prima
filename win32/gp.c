@@ -907,6 +907,7 @@ apc_gp_get_clip_rect( Handle self)
    RECT r;
    Rect rr = {0,0,0,0};
    objCheck rr;
+   if ( !is_opt( optInDraw) || !sys ps) return rr;
    if ( !GetClipBox( sys ps, &r)) apiErr;
    if ( IsRectEmpty( &r)) return rr;
    rr. left   = r. left;

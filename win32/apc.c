@@ -1510,24 +1510,6 @@ apc_widget_get_clip_owner( Handle self)
    return is_apt( aptClipOwner);
 }
 
-Rect
-apc_widget_get_clip_rect( Handle self)
-{
-   Rect r = {0,0,0,0};
-   RECT * c;
-   objCheck r;
-   c = sys pClipRect;
-   if ( c) {
-      int ly    = sys lastSize. y;
-      r. left   = c-> left;
-      r. right  = c-> right;
-      r. top    = ly - c-> top;
-      r. bottom = ly - c-> bottom;
-   } else
-      r. left = r. right = r. top = r. bottom = 0;
-   return r;
-}
-
 Color
 apc_widget_get_color( Handle self, int index)
 {
@@ -1861,13 +1843,15 @@ apc_widget_screen_to_client( Handle self, Point p)
 }
 
 Bool
-apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Bool scrollChildren)
+apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Rect *cr, Bool scrollChildren)
 {
    PRECT pRect = r ? map_Rect( self, r) : nil;
+   PRECT pClipRect = cr ? map_Rect( self, cr) : nil;
    objCheck false;
    HideCaret(( HWND) var handle);
+
    if ( !ScrollWindowEx(( HWND) var handle,
-      horiz, -vert, pRect, sys pClipRect, NULL, NULL,
+      horiz, -vert, pRect, pClipRect, NULL, NULL,
       SW_INVALIDATE | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
    )) apiErr;
    objCheck false;
@@ -1894,30 +1878,6 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 }
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
-
-Bool
-apc_widget_set_clip_rect( Handle self, Rect c)
-{
-   int ly;
-   RECT * cr;
-
-   objCheck false;
-
-   // inclusive-inclusive
-   ly = sys lastSize. y;
-   cr = &sys clipRect;
-
-   check_swap( c. bottom, c. top);
-   check_swap( c. left, c. right);
-   cr-> left   = c. left;
-   cr-> right  = c. right;
-   cr-> top    = ly - c. top;
-   cr-> bottom = ly - c. bottom;
-
-   sys pClipRect = ( c. top == 0 && c. bottom == 0 && c. left == 0 && c. right == 0) ?
-      nil : cr;
-   return true;
-}
 
 Bool
 apc_widget_set_color( Handle self, Color color, int index)
@@ -2722,9 +2682,9 @@ apc_system_action( const char * params)
          HWND h = GetFocus();
          if ( h) {
             char b[ 256];
-            debug_write( "%08x: %s", h, GetWindowText( h, b, 255) ? b : "NULL");
+            DOLBUG( "%08x: %s", h, GetWindowText( h, b, 255) ? b : "NULL");
          } else {
-            debug_write( "? No foc");
+            DOLBUG( "? No foc");
          }
       } else if (strncmp( params, "win32.WNetGetUser", 17) == 0) {
          char connection[ 1024];

@@ -737,7 +737,7 @@ sub set_offsets {
     }
 
     $self->{ ignoreViewsMove} = 1;
-    $self->{ termView}->scroll( $hs, $vs, 1);
+    $self->{ termView}->scroll( $hs, $vs, withChildren => 1);
     $self->{ termView}->update_view if ! $self->syncPaint;
     $self->{ ignoreViewsMove} = 0;
 
@@ -1423,7 +1423,7 @@ sub item_changed {
         my ( @r) = $self->{ termView}->rect;
         #print "Scrolling rect by $vShiftVal => $vS (@{ $scrollRect}), (@r)";
 
-        $self->{ termView}->scroll_rect( 0, $vS, @{ $scrollRect}, 0);
+        $self->{ termView}->scroll_rect( 0, $vS, confineRect => $scrollRect);
 
         my ( $j);
         for ( $j = 0; $j <= $#{ $viewItems}; $j++) {

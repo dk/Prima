@@ -93,8 +93,8 @@ object Prima::Widget( Prima::Drawable)
    method   void     repaint();
    method   Bool     responsive()                    => apc_widget_is_responsive;
    method   Point    screen_to_client(Point p)       => apc_widget_screen_to_client;
-   method   void     scroll( int horiz, int vert, Bool scrollChildren = false);
-   method   void     scroll_rect( int horiz, int vert, Rect r, Bool scrollChildren = false);
+   public   void     scroll( int dx, int dy, Rect *confine, Rect *clip, Bool withChildren);
+#   use it like $w-> scroll( 5, 0, confineRect => [0,0,60,60], clipRect => [...], withChildren => 1);
    method   void     send_to_back();
    method   void     set( HV * profile);
    method   void     setup();
@@ -116,7 +116,6 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     get_buffered();
    method   Bool     get_capture()                   => apc_widget_is_captured;
    method   Bool     get_clip_owner()                => apc_widget_get_clip_owner;
-   method   Rect     get_clip_rect();
    method   Color    get_color();
    method   Color    get_color_index( int index);
    method   Bool     get_current();
@@ -194,7 +193,6 @@ object Prima::Widget( Prima::Drawable)
    method   void     set_capture( Bool capture, Handle confineTo = nilHandle);
    method   void     set_centered( Bool x, Bool y);
    import   void     set_clip_owner( Bool clipOwner);
-   method   Bool     set_clip_rect( Rect clipRect);
    method   void     set_current_widget( Handle widget);
    method   Bool     set_color( Color color);
    method   void     set_color_index( Color color, int index);

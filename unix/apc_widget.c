@@ -217,13 +217,6 @@ apc_widget_get_clip_owner( Handle self)
    return X(self)-> flags. clip_owner;
 }
 
-Rect
-apc_widget_get_clip_rect( Handle self)
-{
-   DOLBUG( "apc_widget_get_clip_rect()\n");
-   return (Rect){0,0,0,0};
-}
-
 Color
 apc_widget_get_color( Handle self, int index)
 {
@@ -403,14 +396,14 @@ apc_widget_screen_to_client( Handle self, Point p)
 
 Bool
 apc_widget_scroll( Handle self, int horiz, int vert,
-		   Rect *r, Bool withChildren)
+		   Rect *r, Rect *scroll_rect, Bool withChildren)
 {
    DEFXX;
    int src_x, src_y, w, h, dst_x, dst_y;
    XRectangle xr, ir;
    Region invalid, reg;
    PPaintList pl;
-   
+
    if ( r) {
       src_x = r-> left;
       src_y = XX-> size. y - r-> top;
@@ -432,12 +425,12 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    XX-> gcv. clip_mask = None;
    XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &XX-> gcv);
    XCHECKPOINT;
-   if (XX->scroll_rect. left != 0 || XX-> scroll_rect. right != 0) {
+   if (scroll_rect) {
       Region region;
       Rect rect;
       XRectangle cpa;
      
-      rect = XX-> scroll_rect;
+      rect = *scroll_rect;
       xr. x = rect. left;
       xr. y = REVERT( rect. top) + 1;
       xr. width = rect. right - rect. left;
@@ -552,15 +545,6 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
       XCHECKPOINT;
       XX-> flags. grab = false;
    }
-   return true;
-}
-
-Bool
-apc_widget_set_clip_rect( Handle self, Rect rect)
-{
-   SORT( rect. left, rect. right);
-   SORT( rect. bottom, rect. top);
-   X(self)-> scroll_rect = rect;
    return true;
 }
 

@@ -1677,9 +1677,6 @@ apc_widget_end_paint_info( Handle self);
 extern Bool
 apc_widget_get_clip_owner( Handle self);
 
-extern Rect
-apc_widget_get_clip_rect( Handle self);
-
 extern Color
 apc_widget_get_color( Handle self, int index);
 
@@ -1741,14 +1738,12 @@ extern Point
 apc_widget_screen_to_client( Handle self, Point p);
 
 extern Bool
-apc_widget_scroll( Handle self, int horiz, int vert, Rect * rect,
+apc_widget_scroll( Handle self, int horiz, int vert,
+                   Rect *confine, Rect *clip,
                    Bool scrollChildren);
 
 extern Bool
 apc_widget_set_capture( Handle self, Bool capture, Handle confineTo);
-
-extern Bool
-apc_widget_set_clip_rect( Handle self, Rect clipRect);
 
 extern Bool
 apc_widget_set_color( Handle self, Color color, int index);

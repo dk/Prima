@@ -130,9 +130,7 @@ sub set_deltas
    return if $w == $odx and $h == $ody;
    $self-> {deltaY} = $h;
    $self-> {deltaX} = $w;
-   my @r = $self->get_active_area($www,$hhh);
-   $self-> clipRect( @r);
-   $self-> scroll( $odx - $w, $h - $ody);
+   $self-> scroll( $odx - $w, $h - $ody, clipRect => [$self->get_active_area($www,$hhh)]);
    $self-> {scrollTransaction} = 1;
    $self-> {hScrollBar}-> value( $w) if $self->{hScroll};
    $self-> {vScrollBar}-> value( $h) if $self->{vScroll};
