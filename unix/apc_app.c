@@ -177,7 +177,11 @@ window_subsystem_init( void)
 
    guts. ri_head = guts. ri_tail = 0;
    DISP = XOpenDisplay( nil);
-   if (!DISP) return false;
+   if (!DISP) {
+      char * disp = getenv("DISPLAY");
+      fprintf( stderr, "Error: Can't open display: %s\n", disp ? disp : "");
+      return false;
+   }
    XSetErrorHandler( x_error_handler);
    guts.main_error_handler = x_error_handler;
    (void)x_io_error_handler;
