@@ -232,67 +232,68 @@ void Window_handle_event( Handle self, PEvent event)
          int i         = 0, count = var widgets. count;
          int dir       = ( event-> key. key == kbTab) ? 1 : -1;
          Handle foc    = apc_widget_get_focused();
-         Handle * list;
-         Handle   org;
-         if ( count > 0)
+         if ( count > 1)
          {
+            int order, min = INT_MAX, max = 0, j = 0;
+            Handle minH, maxH, match;
             /* searching for 1-st level view that responds for focus */
-            while ( foc && PWidget(foc)-> owner != self)
-               foc = PWidget(foc)-> owner;
-            /* copying list and sorting to tabOrder */
-            list = malloc( count * sizeof( Handle));
-            for ( i = 0; i < count; i++)
-            {
-               PWidget v    = ( PWidget) var widgets. items[ i];
-               list[ v-> tabOrder] = ( Handle) v;
-               if ( v-> tabOrder >= count) {
-                  free( list);
-                  warn("DBG001: Unmatched tabOrder in %s %d", __FILE__, __LINE__);
-                  return;
-               }
+            while ( foc && PWidget( foc)-> owner != self)
+               foc = PWidget( foc)-> owner;
+
+            /* determining widgets with minimum and maiximum tabOrder values */
+            for ( i = 0; i < count; i++) {
+                PWidget v = ( PWidget) var widgets. items[ i];
+                if ( v-> tabOrder < 0) continue;
+                if ( max <= v-> tabOrder) {
+                   max  = v-> tabOrder;
+                   maxH = ( Handle) v;
+                }
+                if ( min >= v-> tabOrder) {
+                   min  = v-> tabOrder;
+                   minH = ( Handle) v;
+                }
+                j++;
             }
-            /* determining foc presence and/or position in list */
-            if ( foc) {
-               i = 0;
-               while( i < count && list[ i] != foc) i++;
-               if ( i >= count) i = count - 1;
-            } else {
-               i = count - 1;
-            }
-            org = list[ i];
-            /* cycling for best match */
+            if ( j == 0) return; // protecting the unlikely case when all tabOrders < 0
+            if ( foc == nilHandle) foc = minH;
+            order = PWidget( foc)-> tabOrder;
+
             do {
-               Handle self, add;
-               i += dir;
-               if ( i < 0) i = count - 1; else if ( i >= count) i = 0;
-               self = list[ i];
-               if ( my get_enabled( self))
-               {
-                  /* direct hit */
-                  if ( my get_selectable( self) && my get_tab_stop( self))
-                  {
-                      org = self;
-                      break;
+               // determining next possible selection
+               if ( dir > 0 && order == max) { // cycling to start
+                  match = minH;
+               } else if ( dir < 0 && order == min) { // cycling to end
+                  match = maxH;
+               } else {
+                  int left = INT_MAX, right = INT_MIN;
+                  Handle leftH = nilHandle, rightH = nilHandle;
+                  for ( i = 0; i < count; i++) {
+                      PWidget v = ( PWidget) var widgets. items[ i];
+                      int x;
+                      if ( v-> tabOrder < 0) continue;
+                      x = order - v-> tabOrder;
+                      if ( x > 0 && x < left) {
+                         left = x;
+                         leftH = ( Handle) v;
+                      }
+                      if ( x < 0 && x > right) {
+                         right = x;
+                         rightH = ( Handle) v;
+                      }
                   }
-                  if (!( kind_of( self, CWidget))) continue;
-                  /* grouped hit */
-                  add  = nilHandle;
-                  my first_that( self, find_0tab, &add);
-                  if ( add) {
-                      self = org = add;
-                      break;
-                  }
+                  match = ( dir < 0) ? leftH : rightH;
                }
-            } while ( org != list[ i]);
-            free( list);
-            /* focusing found view */
-            {
-               PWidget_vmt widget = CWidget( org);
-               if ( widget-> get_enabled( org)
-                    && widget-> get_selectable( org)
-                    && widget-> get_tab_stop( org))
-                  widget-> set_selected( org, true);
-            }
+
+               // checking, whether selectable ...
+               if ( CWidget( match)-> get_enabled( match)  &&
+                    CWidget( match)-> get_tab_stop( match) &&
+                    CWidget( match)-> get_selectee( match))
+               {
+                    CWidget( match)-> set_selected( match, 1);
+                    break;
+               }
+               order = PWidget( match)-> tabOrder;
+            } while ( match != foc);
          }
          my clear_event( self);
       }

@@ -2381,37 +2381,37 @@ Widget_set_size_max( Handle self, Point max)
 void
 Widget_set_tab_order( Handle self, int tabOrder)
 {
-   PWidget owner = ( PWidget) var owner;
-   PWidget busy;
-   locCount = -1;
-   if ( var stage > csNormal) return;
-   ( Handle) busy = owner-> self-> first_that( var owner, find_ordering, (void*) tabOrder);
-   if ( busy)
-   {
-      if (( Handle) busy != self)
-      {
-         int i;
-         int incr = ( var tabOrder < tabOrder) ? -1 : 1;
-         if ( var tabOrder == tabOrder) return;
-         if ( var tabOrder < 0)
-         {
-            var tabOrder = locCount + 1;
-            incr = 1;
-         }
-         for ( i = 0; i < owner-> widgets. count; i++)
-         {
-            PWidget ctrl = ( PWidget) ( owner-> widgets. items[ i]);
-            if (
-               ( incr < 0 && ctrl-> tabOrder > var tabOrder && ctrl-> tabOrder <= tabOrder) ||
-               ( incr > 0 && ctrl-> tabOrder < var tabOrder && ctrl-> tabOrder >= tabOrder))
-               ctrl-> tabOrder += incr;
-         }
-      } else
-        tabOrder = locCount;
-   } else
-      tabOrder  = locCount;
-   var tabOrder = tabOrder;
-   apc_widget_set_tab_order( self, tabOrder);
+    int count;
+    PWidget owner = ( PWidget) var owner;
+    if ( var stage > csNormal) return;
+    count = owner-> widgets. count;
+    if ( tabOrder < 0) {
+       int i, maxOrder = -1;
+       for ( i = 0; i < count; i++) {
+          PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
+          if ( self == ( Handle) ctrl) continue;
+          if ( maxOrder < ctrl-> tabOrder) maxOrder = ctrl-> tabOrder;
+       }
+       var tabOrder = maxOrder + 1;
+    } else {
+       int i;
+       Bool match = 0;
+       for ( i = 0; i < count; i++) {
+          PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
+          if ( self == ( Handle) ctrl) continue;
+          if ( ctrl-> tabOrder == tabOrder) {
+             match = 1;
+             break;
+          }
+       }
+       if ( match)
+          for ( i = 0; i < count; i++) {
+             PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
+             if ( self == ( Handle) ctrl) continue;
+             if ( ctrl-> tabOrder >= tabOrder) ctrl-> tabOrder++;
+          }
+       var tabOrder = tabOrder;
+    }
 }
 
 void
