@@ -86,7 +86,8 @@ Image_init( Handle self, HV * profile)
       my-> set_data( self, pget_sv( data));
    opt_assign( optPreserveType, pget_B( preserveType));
    var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
-   if (!( var->type & imGrayScale)) {
+   if (!( var->type & imGrayScale) && 
+       pexist( palette)) { /* palette might be killed by set_extended_data() */
       int ps = apc_img_read_palette( var->palette, pget_sv( palette));
       if ( ps) var-> palSize = ps;
    }
