@@ -1036,10 +1036,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       pass-> self-> set_type(( Handle) pass, imByte);
    }
    
-   if (
-       ((( guts. palSize > 0) || (target_bpp == 1)) && (( img-> type & imBPP) == 24)) ||
-       ((( img-> type & imBPP) <= 8) && ((img-> type & imBPP) >= target_bpp)) 
-      )  {
+   if ( target_bpp < 24 && img-> type != imBW) {
       int bpp, colors = 0;
       RGBColor palbuf[256], *palptr = nil;
       if ( !dup) {
@@ -1061,6 +1058,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
             colors++;
             if ( colors > 255) break;
          }
+         palptr = palbuf;
       }
       pass-> self-> reset( dup, bpp, palptr, colors);
    } 
@@ -1095,7 +1093,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
               pass-> palette[i].b
             ), -1, nil, maxRank);
 
-          if ( p && ( prima_lpal_get( p, j) == RANK_FREE)) 
+         if ( p && ( prima_lpal_get( p, j) == RANK_FREE)) 
              prima_color_add_ref(( Handle) img, j, RANK_LOCKED);
       }
       for ( i = pass-> palSize; i < 256; i++) guts. mappingPlace[i] = 0;
