@@ -186,14 +186,16 @@ sub profile_default
            ['Close ~all windows' => 'Alt+X' => '@X' => sub { Prima::HelpViewer-> close }],
         ]], [ '~View' => [
            [ '~Increase font' => 'Ctrl +' => '^+' => sub {
-               return if $_[0]-> {text}-> font-> size > 100;
-               $_[0]-> {text}-> font-> size( $_[0]-> {text}-> font-> size + 2);
-               $inifile-> section('View')-> {FontSize} = $_[0]-> {text}-> font-> size;
+               return if $_[0]-> {text}-> {defaultFontSize} > 100;
+               $_[0]-> {text}-> {defaultFontSize} += 2;
+               $_[0]-> {text}-> format(1);
+               $inifile-> section('View')-> {FontSize} = $_[0]-> {text}-> {defaultFontSize};
            }],
            [ '~Decrease font' => 'Ctrl -' => '^-' => sub {
-               return if $_[0]-> {text}-> font-> size < 4;
-               $_[0]-> {text}-> font-> size( $_[0]-> {text}-> font-> size - 2);
-               $inifile-> section('View')-> {FontSize} = $_[0]-> {text}-> font-> size;
+               return if $_[0]-> {text}-> {defaultFontSize} < 4;
+               $_[0]-> {text}-> {defaultFontSize} -= 2;
+               $_[0]-> {text}-> format(1);
+               $inifile-> section('View')-> {FontSize} = $_[0]-> {text}-> {defaultFontSize};
           }],
           [],
           [ 'fullView' => 'Full text ~view' => sub {
@@ -323,7 +325,7 @@ sub init
    if ( exists $sec-> {FontSize} ) {
       my $fs = $sec-> {FontSize};
       if ( $fs =~ /^\d+$/ && $fs > 4 && $fs < 100) {
-         $self-> {text}-> font-> size( $fs);
+         $self-> {text}-> {defaultFontSize} = $fs;
       }
    }
    
@@ -352,7 +354,7 @@ sub init
       if $sec-> {ColorLink};
 
    push @Prima::HelpViewer::helpWindows, $self;
-   
+
    return %profile;
 }
 
@@ -361,7 +363,7 @@ sub on_close
    my $self = $_[0];
    my $sec = $inifile-> section('View');
 
-   $sec-> {FontSize}     = $self-> {text}-> font-> size;
+   $sec-> {FontSize}     = $self-> {text}-> {defaultFontSize};
    $sec-> {FontEncoding} = $self-> {text}-> {fontPalette}->[0]->{encoding};
    $sec-> {FullText}     = $self-> {text}-> topicView ? 0 : 1;
 }
