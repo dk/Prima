@@ -39,12 +39,12 @@ extern "C" {
 #define var (( PWidget) self)
 #define his (( PWidget) child)
 
-static void pack_children( Handle self); 
-static void pack_enter( Handle self); 
-static void pack_leave( Handle self); 
-static void place_children( Handle self); 
-static Bool size_notify( Handle self, Handle child, const Rect* metrix);
-static Bool move_notify( Handle self, Handle child, Point * moveTo);
+void Widget_pack_children( Handle self); 
+void Widget_place_children( Handle self); 
+Bool Widget_size_notify( Handle self, Handle child, const Rect* metrix);
+Bool Widget_move_notify( Handle self, Handle child, Point * moveTo);
+static void Widget_pack_enter( Handle self); 
+static void Widget_pack_leave( Handle self); 
 
 /*
    geometry managers.
@@ -72,8 +72,8 @@ geometry_reset( Handle self)
    }
 
    /* children geometry */
-   place_children( self);
-   pack_children( self);
+   Widget_place_children( self);
+   Widget_pack_children( self);
 }
 
 int
@@ -88,13 +88,13 @@ Widget_geometry( Handle self, Bool set, int geometry)
    
    switch ( var-> geometry) {
    case gtPack:
-      pack_leave( self);
+      Widget_pack_leave( self);
       break;
    }
    var-> geometry = geometry;
    switch ( var-> geometry) {
    case gtPack:
-      pack_enter( self);
+      Widget_pack_enter( self);
       break;
    }
    if ( var-> owner) geometry_reset( var-> owner);
@@ -152,28 +152,10 @@ Widget_propagateGeometry( Handle self, Bool set, Bool propagate)
 }
 
 void
-Widget_reset_children_geometry( Handle self, Event * event)
+Widget_reset_children_geometry( Handle self)
 {
-   /* handle growMode children */
-   if ( var-> growMode & gmCenter) 
-      my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
-
-   if ( !event-> gen. B) {
-      switch ( event-> cmd) {
-      case cmSize:
-         my-> first_that( self, (void*) size_notify, &event-> gen. R);
-         break;
-      case cmMove:
-         my-> first_that( self, (void*) move_notify, &event-> gen. P);
-         break;
-      }
-   }
-
-   /* handle slaves */
-   if ( !event-> gen. B && event-> cmd == cmSize) {
-      pack_children( self);
-      place_children( self);
-   }
+   Widget_pack_children( self);
+   Widget_place_children( self);
 }
 
 Point
@@ -221,8 +203,8 @@ Widget_sizeMax( Handle self, Bool set, Point max)
 
 /* gtGrowMode */
 
-static Bool
-size_notify( Handle self, Handle child, const Rect* metrix)
+Bool
+Widget_size_notify( Handle self, Handle child, const Rect* metrix)
 {
    if ( his-> growMode) {
       Point size  =  his-> self-> get_virtual_size( child);
@@ -256,8 +238,8 @@ size_notify( Handle self, Handle child, const Rect* metrix)
    return false;
 }
 
-static Bool
-move_notify( Handle self, Handle child, Point * moveTo)
+Bool
+Widget_move_notify( Handle self, Handle child, Point * moveTo)
 {
    Bool clp = his-> self-> get_clipOwner( child);
    int  dx  = moveTo-> x - var-> pos. x;
@@ -435,8 +417,8 @@ YExpansion(slavePtr, cavityHeight)
     return (minExpand < 0) ? 0 : minExpand;
 }
 
-static void
-pack_children( Handle self)
+void
+Widget_pack_children( Handle self)
 {
     PWidget masterPtr, slavePtr;
     int cavityX, cavityY, cavityWidth, cavityHeight;
@@ -629,8 +611,8 @@ pack_children( Handle self)
 
 /* applies pack parameters and enters pack slaves chain */
 
-static void
-pack_enter( Handle self)
+void
+Widget_pack_enter( Handle self)
 {
 
    /* see if leftover object reference is alive */
@@ -684,8 +666,8 @@ pack_enter( Handle self)
 }
 
 /* removes widget from list of pack slaves */
-static void
-pack_leave( Handle self)
+void
+Widget_pack_leave( Handle self)
 {
    Handle ptr;
    
@@ -868,8 +850,8 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
       }
 
       if ( reset_zorder) {
-         pack_leave( self);
-         pack_enter( self);
+         Widget_pack_leave( self);
+         Widget_pack_enter( self);
       }
 
       if ( var-> owner) geometry_reset( var-> owner);
@@ -906,8 +888,8 @@ void Widget_get_pack_slaves_REDEFINED( Handle self) { warn("Invalid call of Widg
  */
 /* place internal mechanism - stolen from Tk v800.24, tkPlace.c */
 
-static void
-place_children( Handle self)
+void
+Widget_place_children( Handle self)
 {
     register PWidget slave;
     register PlaceInfo *slavePtr;

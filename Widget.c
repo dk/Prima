@@ -64,6 +64,11 @@ static Handle find_tabfoc( Handle self);
 static Bool showhint_notify ( Handle self, Handle child, void * data);
 static Bool hint_notify ( Handle self, Handle child, SV * hint);
 
+extern void Widget_pack_children( Handle self); 
+extern void Widget_place_children( Handle self); 
+extern Bool Widget_size_notify( Handle self, Handle child, const Rect* metrix);
+extern Bool Widget_move_notify( Handle self, Handle child, Point * moveTo);
+
 /* init, done & update_sys_handle */
 void
 Widget_init( Handle self, HV * profile)
@@ -773,14 +778,18 @@ void Widget_handle_event( Handle self, PEvent event)
               n-> gen. P = event-> gen. P;
             }
           MOVE_EVENT:;
+            if ( !event-> gen. B)
+               my-> first_that( self, (void*) Widget_move_notify, &event-> gen. P);
             if ( doNotify) oldP = var-> pos;
             var-> pos = event-> gen. P;
             if ( doNotify && 
                  (oldP. x != event-> gen. P. x || 
                   oldP. y != event-> gen. P. y)) {
                my-> notify( self, "<sPP", "Move", oldP, event-> gen. P);
+               objCheck;
+               if ( var-> growMode & gmCenter) 
+                  my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
             }
-            my-> reset_children_geometry( self, event);
          }
         break;
       case cmPopup:
@@ -827,13 +836,18 @@ void Widget_handle_event( Handle self, PEvent event)
               n-> gen. P. y = n-> gen. R. top    = event-> gen. P. y;
            }
         SIZE_EVENT:;  
+           if ( var-> growMode & gmCenter) 
+               my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
+           if ( !event-> gen. B)
+               my-> first_that( self, (void*) Widget_size_notify, &event-> gen. R);
            if ( doNotify) {
               Point oldSize;
               oldSize. x = event-> gen. R. left;
               oldSize. y = event-> gen. R. bottom;
               my-> notify( self, "<sPP", "Size", oldSize, event-> gen. P);
            }
-           my-> reset_children_geometry( self, event);
+           Widget_pack_children( self);
+           Widget_place_children( self);
         }
         break;
    }
