@@ -418,10 +418,10 @@ apc_menu_get_font( Handle self, PFont font)
 Bool
 apc_menu_set_color( Handle self, Color color, int i)
 {
-   DEFXX;
+   // DEFXX;
 
    if ( i >= 0 && i <= ciMaxId) {
-      XX-> c[i] = *prima_allocate_color( self, color);
+      /* XXX XX-> c[i] = *prima_allocate_color( self, color); */
       return true;
    } else {
       return false;

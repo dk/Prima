@@ -827,6 +827,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
    if ( icon != nilHandle) {
       Bool noSZ  = PIcon(icon)-> w != guts.cursor_width || PIcon(icon)-> h != guts.cursor_height;
       Bool noBPP = (PIcon(icon)-> type & imBPP) != 1;
+      XColor xcb, xcw;
       if ( noSZ || noBPP) {
          cursor = CIcon(icon)->dup(icon);
          c = PIcon(cursor);
@@ -861,11 +862,14 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
       if ( noSZ || noBPP)
          Object_destroy( cursor);
       XX-> pointer_hot_spot = hot_spot;
+      xcb. red = xcb. green = xcb. blue = 0; 
+      xcw. red = xcw. green = xcw. blue = 0xFFFF; 
+      xcb. pixel = guts. monochromeMap[0];
+      xcw. pixel = guts. monochromeMap[1];
+      xcb. flags = xcw. flags = DoRed | DoGreen | DoBlue;
       XX-> user_pointer = XCreatePixmapCursor( DISP, XX-> user_p_source,
-                                               XX-> user_p_mask,
-                                               prima_allocate_color( self, clWhite),
-                                               prima_allocate_color( self, clBlack),
-                                               hot_spot. x, guts.cursor_height - hot_spot. y);
+          XX-> user_p_mask, &xcw, &xcb, 
+          hot_spot. x, guts.cursor_height - hot_spot. y);
       if ( XX-> user_pointer == None) {
          warn( "error creating cursor from pixmaps");
          return false;
@@ -894,6 +898,7 @@ apc_pointer_set_visible( Handle self, Bool visible)
       Handle nullc = ( Handle) create_object( "Prima::Icon", "", nil);
       PIcon  n = ( PIcon) nullc;
       Pixmap xor, and;
+      XColor xc;      
       if ( nullc == nilHandle) {
          warn("Error creating icon object");
          return false;
@@ -906,9 +911,10 @@ apc_pointer_set_visible( Handle self, Bool visible)
          return false;
       }  
       Object_destroy( nullc);
-      guts. null_pointer = XCreatePixmapCursor( DISP, xor, and, 
-          prima_allocate_color( self, clBlack),
-          prima_allocate_color( self, clBlack), 0, 0);
+      xc. red = xc. green = xc. blue = 0;
+      xc. pixel = guts. monochromeMap[0];
+      xc. flags = DoRed | DoGreen | DoBlue;
+      guts. null_pointer = XCreatePixmapCursor( DISP, xor, and, &xc, &xc, 0, 0);                                      
       XCHECKPOINT;
       XFreePixmap( DISP, xor);
       XFreePixmap( DISP, and);
@@ -1306,9 +1312,19 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
       {
          int i, y = md-> textPos. y;
          int d = md-> pressed ? 2 : 0;
-         XSetForeground( DISP, md-> gc, md-> bg-> pixel); 
+         XSetForeground( DISP, md-> gc, md-> bg. primary); 
+         if ( md-> bg. balance > 0) {
+            Pixmap p = prima_get_hatch( &guts. ditherPatterns[ md-> bg. balance]);
+            if ( p) {
+               XSetStipple( DISP, md-> gc, p);
+               XSetFillStyle( DISP, md-> gc, FillOpaqueStippled);
+               XSetBackground( DISP, md-> gc, md-> bg. secondary);
+            } 
+         } 
          XFillRectangle( DISP, w, md-> gc, 0, 0, md-> winSz.x, md-> winSz.y);
-         XSetForeground( DISP, md-> gc, md-> fg-> pixel); 
+         if ( md-> bg. balance > 0) 
+            XSetFillStyle( DISP, md-> gc, FillSolid);
+         XSetForeground( DISP, md-> gc, md-> fg); 
          for ( i = 0; i < md-> wrappedCount; i++) {
             XDrawString( DISP, w, md-> gc, 
               ( md-> winSz.x - md-> widths[i]) / 2, y, 
@@ -1323,7 +1339,7 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
               ( md-> btnSz.y - md-> font-> height - md-> font-> externalLeading) / 2 - 2 + d,
             "OK", 2);
          XSetForeground( DISP, md-> gc, 
-            md-> pressed ? md-> d3d-> pixel : md-> l3d-> pixel); 
+            md-> pressed ? md-> d3d : md-> l3d); 
          XDrawLine( DISP, w, md-> gc,
             md-> btnPos.x, md-> btnPos.y + md-> btnSz.y - 1, 
             md-> btnPos.x, md-> btnPos. y);
@@ -1331,7 +1347,7 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
             md-> btnPos.x + 1, md-> btnPos. y,
             md-> btnPos.x + md-> btnSz.x - 1, md-> btnPos. y);
          XSetForeground( DISP, md-> gc, 
-            md-> pressed ? md-> l3d-> pixel : md-> d3d-> pixel); 
+            md-> pressed ? md-> l3d : md-> d3d); 
          XDrawLine( DISP, w, md-> gc,
             md-> btnPos.x, md-> btnPos.y + md-> btnSz.y, 
             md-> btnPos.x + md-> btnSz.x, md-> btnPos.y + md-> btnSz.y);
@@ -1537,14 +1553,17 @@ apc_show_message( const char * message)
    *storage = &md;
 
    {
+#define CLR(x) prima_allocate_color( nilHandle,prima_map_color(x),nil)
       XGCValues gcv;
       gcv. font = md. fontId;
       md. gc = XCreateGC( DISP, md. w, GCFont, &gcv);
-      md. fg  = prima_allocate_color( nilHandle, clFore | wcDialog);
-      md. bg  = prima_allocate_color( nilHandle, clBack | wcDialog);
-      md. l3d = prima_allocate_color( nilHandle, clLight3DColor | wcDialog);
-      md. d3d = prima_allocate_color( nilHandle, clDark3DColor  | wcDialog);
+      md. fg  = CLR(clFore | wcDialog);
+      prima_allocate_color( nilHandle, prima_map_color(clBack | wcDialog), &md. bg);
+      md. l3d = CLR(clLight3DColor | wcDialog);
+      md. d3d = CLR(clDark3DColor  | wcDialog);
+#undef CLR      
    }
+   
    
    XMapWindow( DISP, md. w);
    XMoveResizeWindow( DISP, md. w, 

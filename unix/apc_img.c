@@ -117,7 +117,7 @@ prima_prepare_ximage( int width, int height, Bool bitmap)
 
 #ifdef USE_MITSHM
    if ( guts. local_connection && guts. shared_image_extension && !bitmap) {
-      i-> image = XShmCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+      i-> image = XShmCreateImage( DISP, VISUAL, 
                                    bitmap ? 1 : guts.depth,
                                    bitmap ? XYBitmap : ZPixmap,
                                    nil, &i->xmem, width, height);
@@ -167,7 +167,7 @@ normal_way:
       free(i);
       return nil;
    }
-   i-> image = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+   i-> image = XCreateImage( DISP, VISUAL, 
                              bitmap ? 1 : guts.depth,
                              bitmap ? XYBitmap : ZPixmap,
                              0, i-> data_alias,
@@ -245,6 +245,7 @@ prima_ximage_event( XEvent *eve) /* to be called from apc_event's handle_event *
    }
 #endif
 }
+
 void
 prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i, int src_x, int src_y, int dst_x, int dst_y, int width, int height)
 {
@@ -285,6 +286,7 @@ clear_caches( Handle self)
 {
    DEFXX;
 
+   prima_palette_free( self, false);
    destroy_ximage( XX-> bitmap_cache. icon);
    destroy_ximage( XX-> bitmap_cache. image);
    destroy_ximage( XX-> screen_cache. icon);
@@ -457,11 +459,9 @@ create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
    prima_copy_xybitmap( data, idata, w, h, ls, ils);
 
    if ( for_icon) {
-      cache-> icon      = ximage;
+      cache-> icon  = ximage;
    } else {
-      cache-> image     = ximage;
-      cache-> back      = *prima_allocate_color( cache->bitmap ? nilHandle : application, ARGB(img->palette[0].r,img->palette[0].g,img->palette[0].b));
-      cache-> fore      = *prima_allocate_color( cache->bitmap ? nilHandle : application, ARGB(img->palette[1].r,img->palette[1].g,img->palette[1].b));
+      cache-> image = ximage;
    }
    return true;
 }
@@ -470,13 +470,12 @@ static void
 create_rgb_to_16_lut( int ncolors, const PRGBColor pal, Pixel16 *lut)
 {
    /* XXX make this 3,2,5,11-independent */
-   Visual *v = DefaultVisual( DISP, SCREEN);
    unsigned long red_mask, green_mask, blue_mask;
    int i;
 
-   red_mask = v-> red_mask;
-   green_mask = v-> green_mask;
-   blue_mask = v-> blue_mask;
+   red_mask   = guts. visual. red_mask;
+   green_mask = guts. visual. green_mask;
+   blue_mask  = guts. visual. blue_mask;
    for ( i = 0; i < ncolors; i++) {
       lut[i] = 0;
       lut[i] |=
@@ -508,12 +507,12 @@ rank_rgb_shifts( void)
 {
    static int shift[3];
    static Bool shift_unknown = true;
-   Visual *v;
+   XVisualInfo *v;
    unsigned long m;
    int xchg;
 
    if ( shift_unknown) {
-      v = DefaultVisual( DISP, SCREEN);
+      v = &guts. visual;
 
       m = v-> red_mask;
       shift[0] = 0;
@@ -549,7 +548,7 @@ rank_rgb_shifts( void)
 static void
 create_rgb_to_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
 {
-   Visual *v = DefaultVisual( DISP, SCREEN);
+   XVisualInfo *v = &guts. visual;
    unsigned long rmask, gmask, bmask;
    int rrsh, grsh, brsh, rlsh, glsh, blsh;
    int i;
@@ -578,19 +577,22 @@ create_rgb_to_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
 static Bool
 create_cache4_8( Image *img, ImageCache *cache)
 {
-   unsigned char lut1[ NPalEntries8];
-   unsigned char lut2[ NPalEntries8];
+   static Bool init = false;
+   static unsigned char lut1[ NPalEntries8];
+   static unsigned char lut2[ NPalEntries8];
    unsigned char *data;
    int x, y;
    int ls;
-   int h = img-> h, w = img-> w;
+   int h = img-> h, w = img-> w, ww = (w >> 1) + (w & 1);
    unsigned i;
 
-   for ( i = 0; i < NPalEntries8; i++) {
-      lut1[i] = ((i & MSNibble) >> MSNibbleShift);
-      lut2[i] = ((i & LSNibble) >> LSNibbleShift);
-   }   
-   
+   if ( !init) {
+      init = true;
+      for ( i = 0; i < NPalEntries8; i++) {
+         lut1[i] = ((i & MSNibble) >> MSNibbleShift);
+         lut2[i] = ((i & LSNibble) >> LSNibbleShift);
+      }  
+   }
 
    cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) return false;
@@ -599,7 +601,7 @@ create_cache4_8( Image *img, ImageCache *cache)
    for ( y = h-1; y >= 0; y--) {
       register unsigned char *line = img-> data + y*img-> lineSize;
       register unsigned char *d = (unsigned char*)(ls*(h-y-1)+data);
-      for ( x = 0; x < (w+1)/2; x++) {
+      for ( x = 0; x < ww; x++) {
 	 *d++ = lut1[line[x]];
 	 *d++ = lut2[line[x]];
       }
@@ -716,7 +718,7 @@ create_cache_equal( Image *img, ImageCache *cache)
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
-   lls = ls > img-> lineSize ? img-> lineSize : ls;
+   lls = (ls > img-> lineSize) ? img-> lineSize : ls;
 
    for ( y = h-1; y >= 0; y--) 
       memcpy( data + ls * (h - y - 1), img-> data + y*img-> lineSize,  lls);
@@ -902,7 +904,8 @@ get_bpp( Handle self)
 {
    if ( self == nilHandle || X(self) == nil)
       return 1; /* XXX */
-   else if ( XT_IS_BITMAP(X(self)))
+   else if ( XT_IS_BITMAP(X(self)) || 
+           ( XT_IS_IMAGE(X(self)) && ((PImage(self)-> type & imBPP) == 1)))
       return 1;
    else
       return guts. idepth;
@@ -973,6 +976,37 @@ create_cache24( Image* img, ImageCache *cache, int bpp)
    return false;
 }
 
+static void
+cache_remap_8( Image*img, ImageCache* cache)
+{
+   int sz = img-> h * cache-> image-> bytes_per_line_alias;
+   Byte * p = cache-> image-> data_alias;
+   while ( sz--) 
+      *(p++) = guts. mappingPlace[ *p];
+}
+
+static void
+cache_remap_4( Image*img, ImageCache* cache)
+{
+   int sz = img-> h * cache-> image-> bytes_per_line_alias;
+   Byte * p = cache-> image-> data_alias;
+   while ( sz--) 
+      *(p++) = 
+         guts. mappingPlace[(*p) & 0xf] |
+        (guts. mappingPlace[((*p) & 0xf0) >> 4] << 4);
+}
+
+static void
+cache_remap_1( Image*img, ImageCache* cache)
+{
+   int sz = img-> h * cache-> image-> bytes_per_line_alias;
+   Byte * p = cache-> image-> data_alias;
+   if ( guts. mappingPlace[0] == guts. mappingPlace[1]) 
+      memset( p, sz, (guts. mappingPlace[0] == 0) ? 0 : 0xff);
+   else if ( guts. mappingPlace[0] != 0)  
+      while ( sz--) *(p++) = ~(*p);
+}
+
 ImageCache*
 prima_create_image_cache( PImage img, Handle drawable)
 {
@@ -980,6 +1014,8 @@ prima_create_image_cache( PImage img, Handle drawable)
    int target_bpp       = get_bpp( drawable);
    ImageCache *cache    = get_cache((Handle)img, drawable);
    Bool ret;
+   Handle dup = nilHandle;
+   PImage pass = img;
 
    if ( img-> palette == nil) {
       warn( "UAI_014: image has no palette");
@@ -990,18 +1026,63 @@ prima_create_image_cache( PImage img, Handle drawable)
       if ( !create_cache1_1( img, cache, true))
          return nil;
    }   
-   if ( cache-> image == nil) {
-      switch ( img-> type & imBPP) {
-      case 1:   ret = create_cache1( img, cache, target_bpp); break;
-      case 4:   ret = create_cache4( img, cache, target_bpp); break;
-      case 8:   ret = create_cache8( img, cache, target_bpp); break;
-      case 24:  ret = create_cache24(img, cache, target_bpp); break;
-      default:  
-         warn( "UAI_015: unsupported image type");
+   if ( cache-> image != nil) 
+      return cache;
+   
+   if (
+       ((( guts. palSize > 0) || (target_bpp == 1)) && (( img-> type & imBPP) == 24)) ||
+       ((( img-> type & imBPP) <= 8) && ((img-> type & imBPP) > target_bpp)) 
+      )  {
+      int bpp;
+      if (!(dup = img-> self-> dup(( Handle) img)))
          return nil;
-      }
-      if ( !ret) return nil;
+      pass = ( PImage) dup;
+      if ( target_bpp <= 1) bpp = imbpp1; else
+      if ( target_bpp <= 4) bpp = imbpp4; else bpp = imbpp8;
+      if ( guts. grayScale) bpp |= imGrayScale;
+      pass-> self-> set_type( dup, bpp);
+   } 
+     
+   
+   switch ( pass-> type & imBPP) {
+   case 1:   ret = create_cache1( pass, cache, target_bpp); break;
+   case 4:   ret = create_cache4( pass, cache, target_bpp); break;
+   case 8:   ret = create_cache8( pass, cache, target_bpp); break;
+   case 24:  ret = create_cache24(pass, cache, target_bpp); break;
+   default:  
+      warn( "UAI_015: unsupported image type");
+      return nil;
    }
+   if ( !ret) {
+      if ( dup) Object_destroy(dup);
+      return nil;
+   }
+
+   if (( guts. palSize > 0) && (( pass-> type & imBPP) != 24)) {
+      int i, maxRank = drawable ? RANK_NORMAL : RANK_FREE;
+      Byte * p = X((Handle)img)-> palette;
+      // make mapping to all colors except RANK_NORMAL 
+      // to promote Widget::palette() usage
+      for ( i = 0; i < pass-> palSize; i++) {
+         int j = guts. mappingPlace[i] = prima_color_find(( Handle) img, 
+            RGB_COMPOSITE( 
+              pass-> palette[i].r,
+              pass-> palette[i].g,
+              pass-> palette[i].b
+            ), -1, nil, maxRank);
+         if ( p && (( p[LPAL_ADDR(j)] & LPAL_MASK(j)) == 0))
+            prima_color_add_ref(( Handle) img, j, RANK_LOCKED);
+      }
+      
+      switch(target_bpp){
+      case 8: cache_remap_8( img, cache); break;
+      case 4: cache_remap_4( img, cache); break;
+      case 1: cache_remap_1( img, cache); break;
+      default: warn("UAI_019: palette is not supported");
+      }
+   }
+
+   if ( dup) Object_destroy(dup);
    return cache;
 }
 
@@ -1063,15 +1144,28 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 {
    DEFXX;
    PImage img = PImage( image);
-   unsigned long f = 0, b = 0;
    int func, ofunc;
    XGCValues gcv;
    ImageCache *cache;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
+   if ( !XF_IN_PAINT(XX)) return false;
+   
    if ( XT_IS_DBM(X(image)))
       return put_pixmap( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
+
    cache = prima_create_image_cache( img, self);
    if ( !cache) return false;
+   if ( guts. dynamicColors) {
+      int i;
+      Byte * p1 = X(image)-> palette;
+      Byte * p2 = XX-> palette;
+      for ( i = 0; i < guts. palSize; i++) {
+         if ((( p1[LPAL_ADDR(i)] & LPAL_MASK(i)) == 0) &&
+             (( p2[LPAL_ADDR(i)] & LPAL_MASK(i)) != 0))
+            prima_color_add_ref( self, i, RANK_LOCKED);
+      }
+   }
    SHIFT( x, y);
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
       warn( "UAI_016: error querying GC values");
@@ -1079,15 +1173,15 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    ofunc = gcv. function;
    if ( cache-> icon) {
       func = GXand;
-      f = XX-> fore. pixel;
-      b = XX-> back. pixel;
       if ( cache-> bitmap) {
          XSetForeground( DISP, XX-> gc, 1);
          XSetBackground( DISP, XX-> gc, 0);
       } else {
-         XSetForeground( DISP, XX-> gc, 0xffffffff);
-         XSetBackground( DISP, XX-> gc, 0x00000000);
+         XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
+         XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
       }
+      XX-> flags. brush_fore = 0;
+      XX-> flags. brush_back = 0;
       
       if ( func != ofunc)
 	 XSetFunction( DISP, XX-> gc, func);
@@ -1095,8 +1189,6 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       prima_put_ximage( XX-> gdrawable, XX-> gc, cache->icon,
                         xFrom, img-> h - yFrom - yLen,
                         x, REVERT(y) - yLen + 1, xLen, yLen);
-      XSetForeground( DISP, XX-> gc, f);
-      XSetBackground( DISP, XX-> gc, b);
       func = GXxor;
       if ( func == ofunc)
 	 XSetFunction( DISP, XX-> gc, func);
@@ -1106,21 +1198,16 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    }
    if ( func != ofunc)
       XSetFunction( DISP, XX-> gc, func);
-   if (( img-> type & imBPP) == 1) {
-      f = XX-> fore. pixel;
-      b = XX-> back. pixel;
-      XSetForeground( DISP, XX-> gc, cache->fore. pixel);
-      XSetBackground( DISP, XX-> gc, cache->back. pixel);
+   if ((( img-> type & imBPP) == 1) || ( guts. idepth == 1)) {
+      XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
+      XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+      XX-> flags. brush_fore = 0;
+      XX-> flags. brush_back = 0;
       XCHECKPOINT;
    }
    prima_put_ximage( XX-> gdrawable, XX-> gc, cache->image,
                      xFrom, img-> h - yFrom - yLen,
                      x, REVERT(y) - yLen + 1, xLen, yLen);
-   if (( img-> type & imBPP) == 1) {
-      XSetForeground( DISP, XX-> gc, f);
-      XSetBackground( DISP, XX-> gc, b);
-      XCHECKPOINT;
-   }
    if ( func != ofunc)
       XSetFunction( DISP, XX-> gc, ofunc);
    return true;
@@ -1175,7 +1262,7 @@ prima_rgblut( void)
 {
    static Bool initialize = true;
    if (initialize) {
-      Visual *v = DefaultVisual( DISP, SCREEN);
+      XVisualInfo *v = &guts. visual;
 
       calc_masks_and_lut_16or32_to_24( v-> red_mask,   &lut[0]. mask, &lut[0]. revMask, &lut[0]. shift, &lut[0]. revShift, lut[0]. lut);
       calc_masks_and_lut_16or32_to_24( v-> green_mask, &lut[1]. mask, &lut[1]. revMask, &lut[1]. shift, &lut[1]. revShift, lut[1]. lut);
@@ -1264,6 +1351,52 @@ convert_32_to_24( XImage *i, PImage img)
    }
 }
 
+static void
+convert_equal_paletted( XImage *i, PImage img)
+{
+   int y, w, h;
+   Pixel8 *d, *line;
+   
+   h = img-> h;
+   w = ( img-> lineSize < i-> bytes_per_line) ? img-> lineSize : i-> bytes_per_line;
+   d = ( Pixel8*)(i-> data + (h-1) * i-> bytes_per_line);
+   line = (Pixel8*)img-> data;
+   for ( y = 0; y < h; y++) {
+      memcpy( line, d, img-> w);
+      d -= i-> bytes_per_line;
+      line += img-> lineSize;
+   }
+/* XXX if ( guts. bit_order != MSBFirst) prima_mirror_bytes( img-> data, img-> dataSize); */
+   
+   img-> palSize = 0;
+   if ( guts. dynamicColors) {
+      Byte * palette = X(img)-> palette;
+      for ( y = 0; y < guts. systemColorMapSize; y++) {
+         int j = guts. systemColorMap[y];
+         img-> palette[img-> palSize]. r = guts. palette[j]. r;
+         img-> palette[img-> palSize]. g = guts. palette[j]. g;
+         img-> palette[img-> palSize]. b = guts. palette[j]. b;
+         guts. mappingPlace[j] = img-> palSize++;
+      }
+      for ( y = 0; y < guts. palSize; y++) 
+         if ( palette[LPAL_ADDR(y)] & LPAL_MASK(y)) {
+            img-> palette[img-> palSize]. r = guts. palette[y]. r;
+            img-> palette[img-> palSize]. g = guts. palette[y]. g;
+            img-> palette[img-> palSize]. b = guts. palette[y]. b;
+            guts. mappingPlace[y] = img-> palSize++;
+         }
+      for ( y = 0; y < img-> dataSize; y++)
+         img-> data[y] = guts. mappingPlace[ img-> data[y]]; 
+   } else {
+      for ( y = 0; y < guts. palSize; y++) {
+         img-> palette[y]. r = guts. palette[y]. r;
+         img-> palette[y]. g = guts. palette[y]. g;
+         img-> palette[y]. b = guts. palette[y]. b;
+         img-> palSize++;
+      }
+   }
+}
+
 Bool
 prima_query_image( Handle self, XImage * i)
 {
@@ -1296,10 +1429,18 @@ prima_query_image( Handle self, XImage * i)
             break;
 slurp_image_unsupported_depth:
          default:
+            warn("UAI_023: unsupported backing image conversion from %d to %d\n", guts.idepth, target_depth);
             return false;
          }
       } else {
-         /* just copy with care */
+         switch ( target_depth) {
+         case 8:
+            convert_equal_paletted( i, img);
+            break;
+         default:  
+            warn("UAI_024: unsupported backing image\n");
+            return false;
+         }
       }
    }
    return true;
@@ -1339,6 +1480,7 @@ apc_image_end_paint( Handle self)
       XCHECKPOINT;
       XX-> gdrawable = 0;
    }
+   clear_caches( self);
    return true;
 }
 
@@ -1713,7 +1855,6 @@ apc_gp_stretch_image( Handle self, Handle image,
 {
    DEFXX;
    PImage img = PImage( image);
-   unsigned long f = 0, b = 0;
    PrimaXImage *stretch;
    ImageCache *cache;
    int func, ofunc;
@@ -1725,10 +1866,9 @@ apc_gp_stretch_image( Handle self, Handle image,
       return false;
    }   
 
-   if ( img-> options. optInDrawInfo) return false;
-
-   cache = prima_create_image_cache( img, self);
-   if ( !cache) return false;
+   if ( PObject( self)-> options. optInDrawInfo) return false;
+   if ( !XF_IN_PAINT(XX)) return false;
+   
    if ( src_h < 0) {
       src_h = -src_h;
       dst_h = -dst_h;
@@ -1737,6 +1877,24 @@ apc_gp_stretch_image( Handle self, Handle image,
       src_w = -src_w;
       dst_w = -dst_w;
    }   
+   if ( src_x < 0) src_x = 0; if ( src_x >= img-> w) return false;
+   if ( src_y < 0) src_y = 0; if ( src_y >= img-> h) return false;
+   if ( src_x + src_w > img-> w) src_w = img-> w - src_x;
+   if ( src_y + src_h > img-> h) src_h = img-> h - src_y;
+   if ( src_w == 0 || src_h == 0) return false;
+
+   cache = prima_create_image_cache( img, self);
+   if ( !cache) return false;
+   if ( guts. dynamicColors) {
+      int i;
+      Byte * p1 = X(image)-> palette;
+      Byte * p2 = XX-> palette;
+      for ( i = 0; i < guts. palSize; i++) {
+         if ((( p1[LPAL_ADDR(i)] & LPAL_MASK(i)) == 0) &&
+             (( p2[LPAL_ADDR(i)] & LPAL_MASK(i)) != 0))
+            prima_color_add_ref( self, i, RANK_LOCKED);
+      }
+   }
    
    if ( src_w != dst_w || src_h != dst_h) {
 
@@ -1758,8 +1916,6 @@ apc_gp_stretch_image( Handle self, Handle image,
                              );
          if ( stretch != nil) {
             func = GXand;
-            f = XX-> fore. pixel;
-            b = XX-> back. pixel;
             if ( cache-> bitmap) {
                XSetForeground( DISP, XX-> gc, 1);
                XSetBackground( DISP, XX-> gc, 0);
@@ -1767,12 +1923,12 @@ apc_gp_stretch_image( Handle self, Handle image,
                XSetForeground( DISP, XX-> gc, 0xffffffff);
                XSetBackground( DISP, XX-> gc, 0x00000000);
             }
+            XX-> flags. brush_fore = 0;
+            XX-> flags. brush_back = 0;
             if ( func != ofunc)
                XSetFunction( DISP, XX-> gc, func);
             XCHECKPOINT;
             prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
-            XSetForeground( DISP, XX-> gc, f);
-            XSetBackground( DISP, XX-> gc, b);
             func = GXxor;
             if ( func == ofunc)
                XSetFunction( DISP, XX-> gc, func);
@@ -1792,19 +1948,14 @@ apc_gp_stretch_image( Handle self, Handle image,
       if ( func != ofunc)
          XSetFunction( DISP, XX-> gc, func);
 
-      if (( img-> type & imBPP) == 1) {
-         f = XX-> fore. pixel;
-         b = XX-> back. pixel;
-         XSetForeground( DISP, XX-> gc, cache-> fore. pixel);
-         XSetBackground( DISP, XX-> gc, cache-> back. pixel);
+      if ((( img-> type & imBPP) == 1) || ( guts. idepth == 1)) {
+         XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
+         XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+         XX-> flags. brush_fore = 0;
+         XX-> flags. brush_back = 0;
          XCHECKPOINT;
       }
       prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
-      if (( img-> type & imBPP) == 1) {
-         XSetForeground( DISP, XX-> gc, f);
-         XSetBackground( DISP, XX-> gc, b);
-         XCHECKPOINT;
-      }
       if ( func != ofunc)
          XSetFunction( DISP, XX-> gc, ofunc);
       destroy_ximage( stretch);
@@ -1813,7 +1964,6 @@ apc_gp_stretch_image( Handle self, Handle image,
       return apc_gp_put_image( self, image, dst_x, dst_y, src_x, src_y, src_w, src_h, rop);
    return true;
 }
-
 
 Bool
 apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen)

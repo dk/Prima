@@ -43,6 +43,10 @@
 #define REVERSE_BYTES_24(x) ((((x)&0xff)<<16) | ((x)&0xff00) | (((x)&0xff0000)>>8))
 #define REVERSE_BYTES_16(x) ((((x)&0xff)<<8 ) | (((x)&0xff00)>>8))
 
+#define COLOR_R16(x) (((x)>>8)&0xFF00)
+#define COLOR_G16(x) ((x)&0xFF00)
+#define COLOR_B16(x) (((x)<<8)&0xFF00)
+
 static int rop_map[] = {
    GXcopy	/* ropCopyPut */,		/* dest  = src */
    GXxor	/* ropXorPut */,		/* dest ^= src */
@@ -82,317 +86,6 @@ prima_rop_map( int rop)
       return GXnoop;
    else
       return rop_map[ rop];
-}
-
-static RGBColor standard_button_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Button.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Button.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Button.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Button.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Button.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Button.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Button.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Button.dark3d */
-};
-
-static RGBColor standard_checkbox_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Checkbox.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Checkbox.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Checkbox.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Checkbox.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Checkbox.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Checkbox.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Checkbox.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Checkbox.dark3d */
-};
-
-static RGBColor standard_combo_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Combo.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Combo.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Combo.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Combo.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Combo.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Combo.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Combo.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Combo.dark3d */
-};
-
-static RGBColor standard_dialog_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Dialog.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Dialog.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Dialog.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Dialog.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Dialog.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Dialog.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Dialog.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Dialog.dark3d */
-};
-
-static RGBColor standard_edit_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Edit.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Edit.background */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Edit.hilitefore */
-   { 0x00, 0x00, 0x00 },	/* Prima.Edit.hilitebac */
-   { 0x60, 0x60, 0x60 },        /* Prima.Edit.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Edit.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Edit.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Edit.dark3d */
-};
-
-static RGBColor standard_inputline_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Inputline.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Inputline.background */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Inputline.hilitefore */
-   { 0x00, 0x00, 0x00 },	/* Prima.Inputline.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Inputline.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Inputline.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Inputline.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Inputline.dark3d */
-};
-
-static RGBColor standard_label_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Label.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Label.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Label.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Label.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Label.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Label.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Label.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Label.dark3d */
-};
-
-static RGBColor standard_listbox_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Listbox.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Listbox.background */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Listbox.hilitefore */
-   { 0x00, 0x00, 0x00 },	/* Prima.Listbox.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Listbox.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Listbox.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Listbox.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Listbox.dark3d */
-};
-
-static RGBColor standard_menu_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Menu.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Menu.background */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Menu.hilitefore */
-   { 0x00, 0x00, 0x00 },	/* Prima.Menu.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Menu.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Menu.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Menu.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Menu.dark3d */
-};
-
-static RGBColor standard_popup_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Popup.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Popup.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Popup.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Popup.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Popup.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Popup.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Popup.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Popup.dark3d */
-};
-
-static RGBColor standard_radio_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Radio.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Radio.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Radio.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Radio.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Radio.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Radio.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Radio.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Radio.dark3d */
-};
-
-static RGBColor standard_scrollbar_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Scrollbar.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Scrollbar.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Scrollbar.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Scrollbar.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Scrollbar.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Scrollbar.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Scrollbar.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Scrollbar.dark3d */
-};
-
-static RGBColor standard_slider_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Slider.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Slider.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Slider.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Slider.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Slider.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Slider.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Slider.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Slider.dark3d */
-};
-
-static RGBColor standard_widget_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Widget.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Widget.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Widget.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Widget.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Widget.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Widget.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Widget.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Widget.dark3d */
-};
-
-static RGBColor standard_window_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Window.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Window.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Window.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Window.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Window.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Window.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Window.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Window.dark3d */
-};
-
-static RGBColor standard_application_colors[] = {
-   { 0x00, 0x00, 0x00 },	/* Prima.Application.foreground */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Application.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Application.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Application.hiliteback */
-   { 0x60, 0x60, 0x60 },        /* Prima.Application.disabledfore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Application.disabledback */
-   { 0xff, 0xff, 0xff },        /* Prima.Application.light3d */
-   { 0x80, 0x80, 0x80 },	/* Prima.Application.dark3d */
-};
-
-static PRGBColor standard_colors[] = {
-   nil,
-   standard_button_colors,		/* Prima.Button.* */
-   standard_checkbox_colors,		/* Prima.Checkbox.* */
-   standard_combo_colors,		/* Prima.Combo.* */
-   standard_dialog_colors,		/* Prima.Dialog.* */
-   standard_edit_colors,		/*   ...etc... */
-   standard_inputline_colors,
-   standard_label_colors,
-   standard_listbox_colors,
-   standard_menu_colors,
-   standard_popup_colors,
-   standard_radio_colors,
-   standard_scrollbar_colors,
-   standard_slider_colors,
-   standard_widget_colors,
-   standard_window_colors,
-   standard_application_colors,
-};
-
-static const int MAX_COLOR_CLASS = sizeof( standard_colors) / sizeof( standard_colors[ 0]) - 1;
-static const int MAX_COLOR_INDEX = ciMaxId;
-static const RGBColor RGB_BLACK = { 0, 0, 0 };
-
-static RGBColor
-get_standard_color( long class, int index)
-{
-   long cls = (class & wcMask) >> 16;
-   if ( cls <= 0 || cls > MAX_COLOR_CLASS) {
-      warn( "UAG_001: illegal color class: %08x", class);
-      return RGB_BLACK;
-   }
-   if ( index < 0 || index > MAX_COLOR_INDEX) {
-      warn( "UAG_002: illegal color index: %d", index);
-      return RGB_BLACK;
-   }
-   return standard_colors[ cls][ index];
-}
-
-static Color 
-map_color( Color color)
-{
-   RGBColor r;
-   if ( color >= 0) return color;
-   /* XXX - remove this -1: */
-   r = get_standard_color(color, (int)((unsigned long)color & ~(unsigned long)(wcMask|0x80000000))-1);
-   return ( r.r << 16) | (r.g << 8) | r.b;
-}   
-
-Color
-apc_widget_map_color( Handle self, Color color)
-{
-   if ((color < 0) && (( color & wcMask) == 0)) color |= PWidget(self)->widgetClass;
-   return map_color( color);
-}   
-
-
-static PHash globalColors = nil;
-static Colormap globalColormap;
-
-XColor*
-prima_allocate_color( Handle self, Color color)
-{
-   RGBColor c;
-   XColor *x_color;
-   static XColor bitmap_white = { pixel: 1, red: 0xffff, green: 0xffff, blue: 0xffff};
-   static XColor bitmap_black = { pixel: 0, red: 0x0000, green: 0x0000, blue: 0x0000};
-
-   /* super duper debug
-   static XColor *black = nil;
-   static XColor *white = nil;
-   static int i;
-   */
-
-   if ( !globalColors) {
-      globalColors = hash_create();
-      globalColormap = DefaultColormap( DISP, SCREEN);
-   }
-
-   /* super duper debug
-   if ( !black) {
-      black = malloc( sizeof( XColor));
-      black-> red = 0;
-      black-> green = 0;
-      black-> blue = 0;
-      black-> flags = DoRed | DoGreen | DoBlue;
-      black-> pixel = 0;
-      XAllocColor( DISP, globalColormap, black);
-      white = malloc( sizeof( XColor));
-      white-> red = 0xffff;
-      white-> green = 0xffff;
-      white-> blue = 0xffff;
-      white-> flags = DoRed | DoGreen | DoBlue;
-      white-> pixel = 0;
-      XAllocColor( DISP, globalColormap, white);
-   }
-   i++;
-   return  i%2 ? black : white;
-   */
-
-
-   if ( color < 0) {
-      /* XXX - remove this -1: */
-      c = get_standard_color( color, (int)((unsigned long)color & ~(unsigned long)(wcMask|0x80000000))-1);
-   } else {
-      c = *(( PRGBColor) &color);
-   }
-
-   if ( self != nilHandle && 
-        (( XT_IS_IMAGE(X(self)) && (PImage(self)-> type & imBPP) == 1) ||
-        XT_IS_BITMAP(X(self)))
-      ) {
-      if ((unsigned short)c.r + (unsigned short)c.g + (unsigned short)c.b > 381)
-         return &bitmap_white;
-      else
-         return &bitmap_black;
-   }
-
-   x_color = hash_fetch( globalColors, &c, sizeof(c));
-   if ( !x_color) {
-      Status r;
-      if ( !( x_color = malloc( sizeof( XColor))))
-         return &bitmap_black;
-      x_color-> red = (short)((unsigned short)c. r << 8);
-      x_color-> green = (short)((unsigned short)c. g << 8);
-      x_color-> blue = (short)((unsigned short)c. b << 8);
-      x_color-> flags = DoRed | DoGreen | DoBlue;
-      x_color-> pixel = 0;
-      r = XAllocColor( DISP, globalColormap, x_color);
-      hash_store( globalColors, &c, sizeof(c), x_color);
-   }
-
-   return x_color;
 }
 
 void
@@ -446,7 +139,6 @@ prima_release_gc( PDrawableSysData selfxx)
    }
 }
 
-
 void
 prima_prepare_drawable_for_painting( Handle self)
 {
@@ -455,6 +147,7 @@ prima_prepare_drawable_for_painting( Handle self)
    int w, h;
    XRectangle r;
 
+   XF_IN_PAINT(XX) = true;
    if ( !(PObject( self)-> options. optInDrawInfo) && XX-> udrawable && is_opt( optBuffered)) {
       if ( XX-> region) {
          XClipBox( XX-> region, &r);
@@ -483,8 +176,6 @@ Unbuffered:
    XX-> flags. paint_base_line = XX-> flags. base_line;
    XX-> flags. paint_opaque    = XX-> flags. opaque;
    XX-> saved_font = PDrawable( self)-> font;
-   XX-> fore = XX-> saved_fore;
-   XX-> back = XX-> saved_back;
    XX-> flags. zero_line = XX-> flags. saved_zero_line;
    XX-> gcv. clip_mask = None;
    XX-> gtransform = XX-> transform;
@@ -531,8 +222,8 @@ Unbuffered:
       XX-> region = nil;
    }
 
-   XF_IN_PAINT(XX) = true;
-
+   apc_gp_set_color( self, XX-> saved_fore);
+   apc_gp_set_back_color( self, XX-> saved_back);
    memcpy( XX-> saved_fill_pattern, XX-> fill_pattern, sizeof( FillPattern));
    XX-> fill_pattern[0]++; // force 
    apc_gp_set_fill_pattern( self, XX-> saved_fill_pattern);
@@ -568,10 +259,6 @@ prima_cleanup_drawable_after_painting( Handle self)
    }
    prima_release_gc(XX);
    memcpy( XX-> fill_pattern, XX-> saved_fill_pattern, sizeof( FillPattern));
-   if ( XX-> fp_pixmap != None) {
-      XFreePixmap( DISP, XX-> fp_pixmap);
-      XX-> fp_pixmap = None;
-   }   
    if ( XX-> font && ( --XX-> font-> refCnt <= 0)) {
       prima_free_rotated_entry( XX-> font);
       XX-> font-> refCnt = 0;
@@ -590,16 +277,129 @@ prima_cleanup_drawable_after_painting( Handle self)
    XFlush(DISP);
 }
 
+#define PURE_FOREGROUND if (!XX->flags.brush_fore) {\
+   XSetForeground( DISP, XX-> gc, XX-> fore. primary);\
+   XSetFillStyle( DISP, XX-> gc, FillSolid);\
+   XX->flags.brush_fore=1;\
+}
+
+#define PURE_BACKGROUND if (!XX->flags.brush_back) {\
+   XSetBackground( DISP, XX-> gc, XX-> back. primary);\
+   XX->flags.brush_back=1;\
+}
+
+Bool
+prima_make_brush( DrawableSysData * XX, int colorIndex)
+{
+   Pixmap p;
+
+   if ( !guts. useDithering || XX-> flags. brush_null_hatch) {
+      if ( colorIndex > 0) return false;
+      if ( XX-> fore. balance) {
+         p = prima_get_hatch( &guts. ditherPatterns[ XX-> fore. balance]);
+         if ( p) {
+            XSetStipple( DISP, XX-> gc, p);
+            XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+            XSetBackground( DISP, XX-> gc, XX-> fore. secondary);
+            XX-> flags. brush_back = 0;
+         } else // failure
+            XSetFillStyle( DISP, XX-> gc, FillSolid);
+      } else 
+         XSetFillStyle( DISP, XX-> gc, FillSolid);
+      if (!XX->flags.brush_fore) {
+         XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+         XX->flags.brush_fore = 1;
+      }
+   } else if ( XX->fore.balance == 0 && XX->back.balance == 0) {
+      if ( colorIndex > 0) return false;
+      
+      p = prima_get_hatch( &XX-> fill_pattern);
+      XSetFillStyle( DISP, XX-> gc, p ? FillOpaqueStippled : FillSolid);
+      if ( p) XSetStipple( DISP, XX-> gc, p);
+      if (!XX->flags.brush_fore) {
+         XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+         XX->flags.brush_fore = 1;
+      }
+      if (p && !XX->flags.brush_back) {
+         XSetBackground( DISP, XX-> gc, XX-> back. primary);
+         XX->flags.brush_back = 1;
+      }
+   } else {
+      switch ( colorIndex) {
+      case 0: // back mix
+         if ( XX-> back. balance) {
+            p = prima_get_hatch( &guts. ditherPatterns[ XX-> back. balance]);
+            if ( p) {
+               XSetStipple( DISP, XX-> gc, p);
+               XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+               XSetBackground( DISP, XX-> gc, XX-> back. secondary);
+            } else  // failure
+               XSetFillStyle( DISP, XX-> gc, FillSolid);
+         } else 
+            XSetFillStyle( DISP, XX-> gc, FillSolid);
+         XSetForeground( DISP, XX-> gc, XX-> back. primary);
+         XX-> flags. brush_back = 0;
+         break;
+      case 1: // fore mix
+         if ( memcmp( XX-> fill_pattern, fillPatterns[fpEmpty], sizeof(FillPattern))==0)
+            return false;
+         if ( XX-> fore. balance) {
+            int i;
+            FillPattern fp;
+            memcpy( &fp, &guts. ditherPatterns[ XX-> fore. balance], sizeof(FillPattern));
+            for ( i = 0; i < 8; i++)
+               fp[i] &= XX-> fill_pattern[i];
+            p = prima_get_hatch( &fp);
+         } else 
+            p = prima_get_hatch( &XX-> fill_pattern);
+         if ( !p) return false;
+         XSetStipple( DISP, XX-> gc, p);
+         XSetFillStyle( DISP, XX-> gc, FillStippled);
+         if ( !XX-> flags. brush_fore) {
+            XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+            XX-> flags. brush_fore = 1;
+         }
+         break;
+      case 2: // fore mix with fill pattern
+         if ( memcmp( XX-> fill_pattern, fillPatterns[fpEmpty], sizeof(FillPattern))==0)
+            return false;
+         if ( XX-> fore. balance ) {
+            int i;
+            FillPattern fp;
+            memcpy( &fp, &guts. ditherPatterns[ XX-> fore. balance], sizeof(FillPattern));
+            for ( i = 0; i < 8; i++) 
+               fp[i] = (~fp[i]) & XX-> fill_pattern[i];
+            p = prima_get_hatch( &fp);
+            if ( !p) return false;
+            XSetStipple( DISP, XX-> gc, p);
+            XSetFillStyle( DISP, XX-> gc, FillStippled);
+            XSetForeground( DISP, XX-> gc, XX-> fore. secondary);
+            XX-> flags. brush_fore = 0;
+            break;
+         } else
+            return false;
+      default:
+         return false;
+      }
+   }
+   return true;
+}
+   
 Bool
 apc_gp_init( Handle self)
 {
    X(self)-> resolution = guts. resolution;
+   if ( guts. dynamicColors && !prima_palette_alloc( self)) return false;
    return true;
 }
 
 Bool
 apc_gp_done( Handle self)
 {
+   if ( guts. dynamicColors) {
+      prima_palette_free( self, true);
+      free(X(self)-> palette);
+   }
    prima_release_gc(X(self));
    return true;
 }
@@ -655,6 +455,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
 
    SHIFT( x, y);
    y = REVERT( y);
+   PURE_FOREGROUND;
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 360 * 64);
@@ -668,13 +469,15 @@ Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
+   int mix = 0;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
-   XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
+   while ( prima_make_brush( XX, mix++)) 
+      XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
    XCHECKPOINT;
    return true;
 }
@@ -686,7 +489,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
-
+   
    if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
       x1 = 0; y1 = 0;
       x2 = XX-> size. x - 1;
@@ -694,10 +497,28 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
    }
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
-   XSetForeground( DISP, XX-> gc, XX-> back. pixel);
+   
+   // clean color entries, leave just background & foreground. XXX
+   if ( guts. dynamicColors && x1 <= 0 && x2 > XX-> size.x && y1 <= 0 && y2 >= XX-> size.y) {
+      prima_palette_free(self,false);
+      apc_gp_set_color(self, XX-> fore. color);
+      apc_gp_set_back_color(self, XX-> back. color);
+   }
+   
+   XSetForeground( DISP, XX-> gc, XX-> back. primary);
+   if ( XX-> back. balance > 0) {
+      Pixmap p = prima_get_hatch( &guts. ditherPatterns[ XX-> back. balance]);
+      if ( p) {
+         XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+         XSetStipple( DISP, XX-> gc, p);
+         XSetBackground( DISP, XX-> gc, XX-> back. secondary);
+      } else
+         XSetFillStyle( DISP, XX-> gc, FillSolid);
+   } else 
+      XSetFillStyle( DISP, XX-> gc, FillSolid);
+   XX-> flags. brush_fore = 0;
    XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
-   XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
-   XCHECKPOINT;
+   
    return true;
 }
 
@@ -714,6 +535,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 
    SHIFT( x, y);
    y = REVERT( y);
+   PURE_FOREGROUND;
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 360 * 64);
@@ -752,6 +574,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
    }
 
+   PURE_FOREGROUND;
    XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, n, CoordModeOrigin);
 
    if ( XX-> flags. zero_line) {
@@ -792,6 +615,7 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
    }
 
+   PURE_FOREGROUND;
    XDrawSegments( DISP, XX-> gdrawable, XX-> gc, s, n);
 
    if ( XX-> flags. zero_line) {
@@ -814,6 +638,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 
    SHIFT( x, y);
    y = REVERT( y);
+   PURE_FOREGROUND;
    XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
    return true;
 }
@@ -822,7 +647,7 @@ Bool
 apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
    DEFXX;
-   int compl, needf;
+   int compl, needf, mix = 0;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
@@ -831,13 +656,16 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
    y = REVERT( y);
 
    XSetArcMode( DISP, XX-> gc, ArcChord);
-   compl = arc_completion( &angleStart, &angleEnd, &needf);
-   while ( compl--)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
+      
+   while ( prima_make_brush( XX, mix++)) {
+      compl = arc_completion( &angleStart, &angleEnd, &needf);
+      while ( compl--)
+         XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
 
-   if ( needf)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
-          angleStart * 64, ( angleEnd - angleStart) * 64);
+      if ( needf)
+         XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
+             angleStart * 64, ( angleEnd - angleStart) * 64);
+   }
    return true;
 }
 
@@ -845,12 +673,14 @@ Bool
 apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 {
    DEFXX;
+   int mix = 0;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
    SHIFT( x, y);
    y = REVERT( y);
-   XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
+   while ( prima_make_brush( XX, mix++)) 
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
    return true;
 }
 
@@ -860,7 +690,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    /* XXX - beware, current implementation will not deal correctly with different rops and tiles */
    XPoint *p;
    DEFXX;
-   int i;
+   int i, mix = 0;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
@@ -875,12 +705,14 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    p[numPts]. y = (short)REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
 
    if ( guts. limits. XFillPolygon >= numPts) {
-      XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
+      while ( prima_make_brush( XX, mix++)) 
+         XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
       XCHECKPOINT;
    } else {
       warn( "UAG_003: XFillPolygon: request too large");
    }
    if ( guts. limits. XDrawLines > numPts) {
+      PURE_FOREGROUND;
       XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
       XCHECKPOINT;
    } else {
@@ -894,7 +726,7 @@ Bool
 apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
    DEFXX;
-   int compl, needf;
+   int compl, needf, mix = 0;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
@@ -903,13 +735,15 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
    y = REVERT( y);
    XSetArcMode( DISP, XX-> gc, ArcPieSlice);
 
-   compl = arc_completion( &angleStart, &angleEnd, &needf);
-   while ( compl--)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
+   while ( prima_make_brush( XX, mix++)) {
+      compl = arc_completion( &angleStart, &angleEnd, &needf);
+      while ( compl--)
+         XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
 
-   if ( needf)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
-         angleStart * 64, ( angleEnd - angleStart) * 64);
+      if ( needf)
+         XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
+            angleStart * 64, ( angleEnd - angleStart) * 64);
+   }
    return true;
 }
 
@@ -926,44 +760,42 @@ get_pixel_depth( int depth)
    
 
 static uint32_t
-color_to_pixel( Color color)
+color_to_pixel( Handle self, Color color, int depth)
 {
    uint32_t pv;
    RGBLUTEntry * lut;
-   int depth = get_pixel_depth( guts. idepth);
 
-   switch ( depth) {
-   case 1:
+   if ( depth == 1) {
       pv = color ? 1 : 0;
-      break;
-   case 4:
-   case 8:
-      warn("UAG_005: Not supported pixel depth");
-      return 0;
-   case 16:   
-   case 24:   
-   case 32:   
-      lut = prima_rgblut(); 
-      pv = 
-         ((( color & 0xFF)     >>        lut[2]. revShift)  << lut[2].shift) |
-         ((( color & 0xFF00)   >> ( 8 +  lut[1]. revShift)) << lut[1].shift) |
-         ((( color & 0xFF0000) >> ( 16 + lut[0]. revShift)) << lut[0].shift);
-      if ( guts.machine_byte_order != guts.byte_order)  
-         switch( depth) {
-         case 16:
-            pv = REVERSE_BYTES_16( pv);
-            break;   
-         case 24:
-            pv = REVERSE_BYTES_24( pv);
-            break;   
-         case 32:
-            pv = REVERSE_BYTES_32( pv);
-            break;            
-         }   
-       break;
-   default:
-      warn("UAG_005: Not supported pixel depth");
-      return 0;
+   } else if ( guts.palSize > 0 ) {
+      pv = prima_color_find( self, color, -1, nil, RANK_FREE);
+   } else {
+      switch ( depth) {
+      case 16:   
+      case 24:   
+      case 32:   
+         lut = prima_rgblut(); 
+         pv = 
+            ((( color & 0xFF)     >>        lut[2]. revShift)  << lut[2].shift) |
+            ((( color & 0xFF00)   >> ( 8 +  lut[1]. revShift)) << lut[1].shift) |
+            ((( color & 0xFF0000) >> ( 16 + lut[0]. revShift)) << lut[0].shift);
+         if ( guts.machine_byte_order != guts.byte_order)  
+            switch( depth) {
+            case 16:
+               pv = REVERSE_BYTES_16( pv);
+               break;   
+            case 24:
+               pv = REVERSE_BYTES_24( pv);
+               break;   
+            case 32:
+               pv = REVERSE_BYTES_32( pv);
+               break;            
+            }   
+          break;
+      default:
+         warn("UAG_005: Not supported pixel depth");
+         return 0;
+      }
    }
    return pv;
 }  
@@ -1115,6 +947,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
    Bool ret = false;
    XRectangle cr;
    FillSession s;
+   int mix = 0;
    
    if ( !opt_InPaint) return false;
    
@@ -1123,7 +956,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
    s. gc           = XX-> gc;
    SHIFT( x, y);
    y = REVERT( y);
-   color = map_color( color);
+   color = prima_map_color( color);
    prima_gp_get_clip_rect( self, &cr);
 
    s. clip. left   = cr. x;
@@ -1132,20 +965,30 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
    s. clip. bottom = cr. y + cr. height - 1;
    if ( cr. width <= 0 || cr. height <= 0) return false;
    s. i = nil;
+   s. depth = ( XT_IS_BITMAP(X(self)) || 
+              ( XT_IS_IMAGE(X(self)) && ((((PImage)self)->type & imBPP) == 1))) 
+                 ? 1 : guts. idepth;
+   s. depth = get_pixel_depth( s. depth);
+   s. color = color_to_pixel( self, color, s.depth);
    
-   s. color = color_to_pixel( color);
-   s. depth = get_pixel_depth( guts. idepth);
-   
-   switch( s. depth) { case 4: case 8: return false;}   /* XXX */
-
    s. first = s. clip. top;
    s. lists = malloc(( s. clip. bottom - s. clip. top + 1) * sizeof( void*));
    bzero( s. lists, ( s. clip. bottom - s. clip. top + 1) * sizeof( void*));
 
+   prima_make_brush( XX, mix++);
    if ( fs_get_pixel( &s, x, y)) {
       fill( &s, x, y, -1, x, x);
       ret = true;
-   }   
+   }  
+
+   while ( prima_make_brush( XX, mix++)) {
+      for ( y = 0; y < s. clip. bottom - s. clip. top + 1; y++)
+         if ( s. lists[y]) 
+            for ( x = 0; x < s.lists[y]-> count; x += 2) 
+               XFillRectangle( DISP, s.drawable, s.gc, 
+                   (int)s.lists[y]->items[x], y,
+                   (int)s.lists[y]->items[x+1] - (int)s.lists[y]->items[x], 1);
+   }
 
    if ( s. i) XDestroyImage( s. i);
 
@@ -1186,38 +1029,49 @@ apc_gp_get_pixel( Handle self, int x, int y)
    if ( !im) return clInvalid;
 
    if ( pixmap) {
-      switch ( guts. idepth) {
-      case 4:
-      case 8:
-         warn( "UAG_009: not implemented");
-         return clInvalid;
-      case 16:
-         p32 = *(( uint16_t*)(im-> data));
-         if ( guts.machine_byte_order != guts.byte_order) 
-            p32 = REVERSE_BYTES_16(p32);
-         goto COMP;
-      case 24:   
-         p32 = (im-> data[0] << 16) | (im-> data[1] << 8) | im-> data[2];
-         if ( guts.machine_byte_order != guts.byte_order) 
-            p32 = REVERSE_BYTES_24(p32);
-         goto COMP;
-      case 32:
-         p32 = *(( uint32_t*)(im-> data));
-         if ( guts.machine_byte_order != guts.byte_order) 
-            p32 = REVERSE_BYTES_32(p32);
-      COMP:   
-         if ( !lut) lut = prima_rgblut();
-         c = 
-              lut[2]. lut[(p32 & lut[2]. mask) >> lut[2]. shift] | 
-            ( lut[1]. lut[(p32 & lut[1]. mask) >> lut[1]. shift] << 8) | 
-            ( lut[0]. lut[(p32 & lut[0]. mask) >> lut[0]. shift] << 16);
-         break;
-      }   
+      if ( guts. palSize > 0) {
+         int pixel;
+         if ( guts. idepth <= 8) 
+            pixel = (*( U8*)( im-> data)) & (( 1 << guts.idepth) - 1);
+         else
+            pixel = (*( U16*)( im-> data)) & (( 1 << guts.idepth) - 1);
+         if ( guts.palette[pixel]. rank == RANK_FREE) {
+            XColor xc;
+            xc.pixel = pixel;
+            XQueryColors( DISP, guts. defaultColormap, &xc, 1);
+            c = RGB_COMPOSITE(xc.red>>8,xc.green>>8,xc.blue>>8);
+         } else 
+            c = guts.palette[pixel]. composite;
+      } else {
+         switch ( guts. idepth) {
+         case 16:
+            p32 = *(( uint16_t*)(im-> data));
+            if ( guts.machine_byte_order != guts.byte_order) 
+               p32 = REVERSE_BYTES_16(p32);
+            goto COMP;
+         case 24:   
+            p32 = (im-> data[0] << 16) | (im-> data[1] << 8) | im-> data[2];
+            if ( guts.machine_byte_order != guts.byte_order) 
+               p32 = REVERSE_BYTES_24(p32);
+            goto COMP;
+         case 32:
+            p32 = *(( uint32_t*)(im-> data));
+            if ( guts.machine_byte_order != guts.byte_order) 
+               p32 = REVERSE_BYTES_32(p32);
+         COMP:   
+            if ( !lut) lut = prima_rgblut();
+            c = 
+                 lut[2]. lut[(p32 & lut[2]. mask) >> lut[2]. shift] | 
+               ( lut[1]. lut[(p32 & lut[1]. mask) >> lut[1]. shift] << 8) | 
+               ( lut[0]. lut[(p32 & lut[0]. mask) >> lut[0]. shift] << 16);
+            break;
+         default:
+            warn("UAG_009: get_pixel not implemented for %d depth", guts.idepth);
+         }   
+      }
    } else {
-      if ( im-> data[0] & (( guts.bit_order == MSBFirst) ? 0x80 : 1))
-         c = 0xffffff;
-      else
-         c = 0;
+      c = ( im-> data[0] & ((guts.bit_order == MSBFirst) ? 0x80 : 1)) 
+         ? 0xffffff : 0;
    }   
 
    XDestroyImage( im);
@@ -1227,9 +1081,52 @@ apc_gp_get_pixel( Handle self, int x, int y)
 Color
 apc_gp_get_nearest_color( Handle self, Color color)
 {
-   DOLBUG("apc_gp_get_nearest_color");
+   if ( guts. palSize > 0) 
+      return guts. palette[ prima_color_find( self, color, -1, nil, RANK_FREE)]. composite;
+   if ( guts. visualClass == TrueColor || guts. visualClass == DirectColor) {
+      XColor xc;
+      xc. red   = COLOR_R16(color);
+      xc. green = COLOR_G16(color);
+      xc. blue  = COLOR_B16(color);
+      if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
+         XFreeColors( DISP, guts. defaultColormap, &xc. pixel, 1, 0); 
+         return 
+            (( xc. red   & 0xFF00) << 8) |
+            (( xc. green & 0xFF00)) |
+            (( xc. blue  & 0xFF00) >> 8);
+      }
+   }
    return color;
 }   
+
+PRGBColor
+apc_gp_get_physical_palette( Handle self, int * colors)
+{
+   int i;
+   PRGBColor p;
+   XColor * xc;
+   
+   *colors = 0;
+   
+   if ( guts. palSize == 0) return nil;
+   if ( !( p = malloc( guts. palSize * sizeof( RGBColor))))
+      return nil;
+   if ( !( xc = malloc( guts. palSize * sizeof( XColor)))) {
+      free( p);
+      return nil;
+   }
+   for ( i = 0; i < guts. palSize; i++) xc[i]. pixel = i;
+   XQueryColors( DISP, guts. defaultColormap, xc, guts. palSize);
+   XCHECKPOINT;
+   for ( i = 0; i < guts. palSize; i++) {
+      p[i]. r = xc[i]. red   >> 8;
+      p[i]. g = xc[i]. green >> 8;
+      p[i]. b = xc[i]. blue  >> 8;
+   }
+   free( xc);
+   *colors = guts. palSize;
+   return p;
+}
 
 Bool
 apc_gp_get_region( Handle self, Handle mask)
@@ -1249,6 +1146,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
    if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x1, y1); SHIFT( x2, y2);
+   PURE_FOREGROUND;
    XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
    return true;
 }
@@ -1263,6 +1161,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
+   PURE_FOREGROUND;
    XDrawRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
    XCHECKPOINT;
    return true;
@@ -1281,6 +1180,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
    y = REVERT( y);
 
    compl = arc_completion( &angleStart, &angleEnd, &needf);
+   PURE_FOREGROUND;
    while ( compl--)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
           0, 360 * 64);
@@ -1301,9 +1201,9 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
 Bool
 apc_gp_set_palette( Handle self)
 {
-   DOLBUG( "apc_gp_set_palette()\n");
-   return true;
+   return prima_palette_replace( self, false);
 }
+
 
 Bool
 apc_gp_set_region( Handle self, Handle mask)
@@ -1340,21 +1240,14 @@ Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
    DEFXX;
-   XColor *c;
-   unsigned long old;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
 
-   c = prima_allocate_color( self, color);
-   old = XX-> fore. pixel;
    SHIFT( x, y);
-   XSetForeground( DISP, XX-> gc, c-> pixel);
-   XCHECKPOINT;
+   XSetForeground( DISP, XX-> gc, prima_allocate_color( self, color, nil));
    XDrawPoint( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y));
-   XCHECKPOINT;
-   XSetForeground( DISP, XX-> gc, old);
-   XCHECKPOINT;
+   XX-> flags. brush_fore = 0;
    return true;
 }
 
@@ -1482,12 +1375,12 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
       case ropWhiteness:
          break;
       case ropNotPut:   
-         XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
+         XSetForeground( DISP, XX-> gc, XX-> fore. primary);
          XSetBackground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
          XSetFunction( DISP, XX-> gc, GXorInverted);
          goto DISPLAY;
       default:   
-          XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
+          XSetForeground( DISP, XX-> gc, XX-> fore. primary);
           XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
           XSetFunction( DISP, XX-> gc, GXor);
       DISPLAY:          
@@ -1497,8 +1390,11 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
       ax += cs-> width;
    }  
    apc_gp_set_rop( self, XX-> paint_rop);
-   XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
-   XSetBackground( DISP, XX-> gc, XX-> back. pixel);
+   XSetFillStyle( DISP, XX-> gc, FillSolid);
+   XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+   XSetBackground( DISP, XX-> gc, XX-> back. primary);
+   XX-> flags. brush_fore = 1;
+   XX-> flags. brush_back = 1;
 
    if ( PDrawable( self)-> font. style & fsUnderlined) {
       int lw = apc_gp_get_line_width( self);
@@ -1543,7 +1439,8 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
       Point * p = apc_gp_get_text_box( self, text, len);
       FillPattern fp;
       memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
-      XSetForeground( DISP, XX-> gc, XX-> back. pixel);
+      XSetForeground( DISP, XX-> gc, XX-> back. primary);
+      XX-> flags. brush_back = 0;
       XSetFunction( DISP, XX-> gc, GXcopy);
       apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
       for ( i = 0; i < 4; i++) {
@@ -1555,7 +1452,8 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
       
       apc_gp_fill_poly( self, 4, p);
       apc_gp_set_rop( self, XX-> paint_rop);
-      XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
+      XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+      XX-> flags. brush_fore = 1;
       apc_gp_set_fill_pattern( self, fp);
       free( p);
    }  
@@ -1566,6 +1464,11 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    if ( !XX-> flags. paint_base_line)
       y += XX-> font-> font. descent;
 
+   XSetFillStyle( DISP, XX-> gc, FillSolid);
+   if ( !XX-> flags. brush_fore) {
+      XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+      XX-> flags. brush_fore = 1;
+   }
    XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
 
@@ -1590,8 +1493,7 @@ Color
 apc_gp_get_back_color( Handle self)
 {
    DEFXX;
-   XColor c = ( XF_IN_PAINT(XX)) ? XX-> back : XX-> saved_back;
-   return ARGB( c. red >> 8, c. green >> 8, c. blue >> 8);
+   return ( XF_IN_PAINT(XX)) ? XX-> back. color : XX-> saved_back;
 }
 
 int
@@ -1604,8 +1506,7 @@ Color
 apc_gp_get_color( Handle self)
 {
    DEFXX;
-   XColor c = ( XF_IN_PAINT(XX)) ? XX-> fore : XX-> saved_fore;
-   return ARGB( c. red >> 8, c. green >> 8, c. blue >> 8);
+   return ( XF_IN_PAINT(XX)) ? XX-> fore. color : XX-> saved_fore;
 }
 
 void
@@ -1880,23 +1781,6 @@ apc_gp_get_text_out_baseline( Handle self)
 }
 
 Bool
-apc_gp_set_back_color( Handle self, Color color)
-{
-   DEFXX;
-   XColor *c = prima_allocate_color( self, color);
-
-   if ( XF_IN_PAINT(XX)) {
-      XX-> back = *c;
-      XSetBackground( DISP, XX-> gc, c-> pixel);
-      XCHECKPOINT;
-   } else {
-      XX-> saved_back = *c;
-      XX-> gcv. background = c-> pixel;
-   }
-   return true;
-}
-
-Bool
 apc_gp_set_clip_rect( Handle self, Rect clipRect)
 {
    DEFXX;
@@ -1927,19 +1811,28 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
 }
 
 Bool
+apc_gp_set_back_color( Handle self, Color color)
+{
+   DEFXX;
+   color = prima_map_color( color);
+   if ( XF_IN_PAINT(XX)) {
+      prima_allocate_color( self, color, &XX-> back);
+      XX-> flags. brush_back = 0;
+   } else 
+      XX-> saved_back = color;
+   return true;
+}
+
+Bool
 apc_gp_set_color( Handle self, Color color)
 {
    DEFXX;
-   XColor *c = prima_allocate_color( self, color);
-
+   color = prima_map_color( color);
    if ( XF_IN_PAINT(XX)) {
-      XX-> fore = *c;
-      XSetForeground( DISP, XX-> gc, c-> pixel);
-      XCHECKPOINT;
-   } else {
-      XX-> saved_fore = *c;
-      XX-> gcv. foreground = c-> pixel;
-   }
+      prima_allocate_color( self, color, &XX-> fore);
+      XX-> flags. brush_fore = 0;
+   } else 
+      XX-> saved_fore = color;
    return true;
 }
 
@@ -1947,33 +1840,12 @@ Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
    DEFXX;
-   Bool dflt;
-#define patcmp(p1,p2) (memcmp((p1),(p2),sizeof(FillPattern)))
-#define patcpy(pt,ps) (memcpy((pt),(ps),sizeof(FillPattern)))
-
-   if ( patcmp( pattern, XX-> fill_pattern) == 0)
+   if ( memcmp( pattern, XX-> fill_pattern, sizeof(FillPattern)) == 0)
       return true;
-
-   patcpy( XX-> fill_pattern, pattern);
-   dflt = (patcmp( pattern, fillPatterns[fpSolid]) == 0);
-   
-   if ( XF_IN_PAINT(XX)) {
-      if ( XX-> fp_pixmap)
-         XFreePixmap( DISP, XX-> fp_pixmap);
-      XX-> fp_pixmap = None;
-      if ( !dflt)
-         if (( XX-> fp_pixmap = XCreateBitmapFromData( 
-               DISP, XX-> gdrawable, pattern, 8, 8)) == None) {
-             warn( "UAG_008: error creating stipple");
-             dflt = true;
-         }      
-      XSetFillStyle( DISP, XX-> gc, dflt ? FillSolid : FillOpaqueStippled);
-      if ( !dflt) XSetStipple( DISP, XX-> gc, XX-> fp_pixmap);
-      XCHECKPOINT;
-   }
+   XX-> flags. brush_null_hatch = 
+     ( memcmp( pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
+   memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
    return true;
-#undef patcmp
-#undef patcpy
 }
 
 /*- see apc_font.c

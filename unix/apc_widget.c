@@ -340,6 +340,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 Bool
 apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 {
+   if ( guts. dynamicColors && inside_on_paint) prima_palette_free( self, false);
    prima_no_cursor( self);
    prima_prepare_drawable_for_painting( self);
    return true;

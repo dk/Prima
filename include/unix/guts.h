@@ -107,8 +107,6 @@ typedef struct _PrimaXImage
 typedef struct {
    PrimaXImage *image;
    PrimaXImage *icon;
-   XColor fore;
-   XColor back;
    Bool bitmap;
 } ImageCache;
 
@@ -231,6 +229,43 @@ typedef struct _WmGenericData {
    Atom protocols;
    Atom takeFocus;
 } WmGenericData, *PWmGenericData;
+
+#define COLOR_R(x) (((x)>>16)&0xFF)
+#define COLOR_G(x) (((x)>>8)&0xFF)
+#define COLOR_B(x) ((x)&0xFF)
+#define COLOR_R16(x) (((x)>>8)&0xFF00)
+#define COLOR_G16(x) ((x)&0xFF00)
+#define COLOR_B16(x) (((x)<<8)&0xFF00)
+
+#define LPAL_ADDR(i)  (i)>>2
+#define LPAL_MASK(i)  (3<<(((i)&3)*2))
+#define LPAL_SET(i,j) (((j)&3)<<(((i)&3)*2))
+#define LPAL_GET(i,j) (((j)>>(((i)&3)*2))&3)
+
+#define RANK_IMMUTABLE 4
+#define RANK_LOCKED    3
+#define RANK_PRIORITY  2
+#define RANK_NORMAL    1
+#define RANK_FREE      0
+
+#define RGB_COMPOSITE(R,G,B) ((((R)&0xFF)<<16)|(((G)&0xFF)<<8)|((B)&0xFF))
+
+typedef struct {
+   Byte  r, g, b;
+   Byte  rank;
+   Bool  touched;
+   long  composite;
+   List  users;
+} MainColorEntry;
+
+typedef struct {
+   unsigned long  primary;
+   unsigned long  secondary;
+   Color          color;
+   Byte           balance; /* 0-63 */
+} Brush;
+
+
 
 struct _UnixGuts
 {
@@ -356,6 +391,21 @@ struct _UnixGuts
    XWindow                      grab_redirect;
    Point                        grab_translate_mouse;
    XWindow                      root;
+   XVisualInfo                  visual;
+   int                          visualClass;
+   MainColorEntry *             palette;
+   int *                        mappingPlace;
+   int                          monochromeMap[2];
+   int                          palSize;
+   int                          localPalSize;
+   int *                        systemColorMap;
+   int                          systemColorMapSize;
+   int                          colorCubeRib;
+   Bool                         dynamicColors;
+   Bool                         grayScale;
+   Bool                         useDithering;
+   Colormap                     defaultColormap;
+   FillPattern *                ditherPatterns;
    Point                        displaySize;
    long                         wm_event_timeout;
 } guts;
@@ -440,7 +490,8 @@ typedef struct _drawable_sys_data
    XGCValues gcv;
    GC gc;
    GCList *gcl;
-   XColor fore, back, saved_fore, saved_back;
+   Brush fore, back;
+   Color saved_fore, saved_back;
    ColorSet colors;
    Region region;
    Region stale_region;
@@ -465,6 +516,9 @@ typedef struct _drawable_sys_data
    void * recreateData;
    struct {
       int base_line                     : 1;
+      int brush_fore                    : 1;
+      int brush_back                    : 1;
+      int brush_null_hatch              : 1;
       int clip_owner			: 1;
       int cursor_visible		: 1;
       int enabled               	: 1;
@@ -495,6 +549,7 @@ typedef struct _drawable_sys_data
    ImageCache screen_cache;
    Handle preexec_focus;
    TAILQ_ENTRY(_drawable_sys_data) paintq_link;
+   Byte * palette;
 } DrawableSysData, *PDrawableSysData;
 
 #define XF_ENABLED(x)   ((x)->flags.enabled)
@@ -563,6 +618,7 @@ typedef union _unix_sys_data
 
 #define DISP		(guts. display)
 #define SCREEN		(guts. screen_number)
+#define VISUAL          (guts. visual. visual)
 #define DRIN		guts. display, guts. screen_number
 #define X_WINDOW	(PComponent(self)-> handle)
 #define X(obj)		((PDrawableSysData)(PComponent((obj))-> sysData))
@@ -602,9 +658,38 @@ prima_release_gc( PDrawableSysData);
 
 extern Bool
 prima_init_font_subsystem( void);
+extern Bool
+prima_init_color_subsystem( void);
 
-extern XColor*
-prima_allocate_color( Handle self, Color color);
+extern void
+prima_done_color_subsystem( void);
+
+extern int
+prima_color_find( Handle self, long color, int maxDiff, int * diff, int maxRank);
+
+extern Bool
+prima_palette_replace( Handle self, Bool fast);
+
+extern Color
+prima_map_color( Color color);
+
+extern unsigned long
+prima_allocate_color( Handle self, Color color, Brush * brush);
+
+extern void   
+prima_palette_free( Handle self, Bool priority);
+
+extern Bool   
+prima_palette_alloc( Handle self);
+
+extern Bool   
+prima_color_add_ref( Handle self, int index, int rank);
+
+extern int    
+prima_color_sync( void);
+
+extern Pixmap 
+prima_get_hatch( FillPattern * fp);
 
 extern void
 prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils);
@@ -731,7 +816,8 @@ struct MsgDlg {
    int     fontId;
    Point   winSz;
    GC      gc;
-   XColor *fg, *bg, *l3d, *d3d;
+   unsigned long fg, l3d, d3d;
+   Brush   bg;
    XWindow w;
    int     focus_revertTo;
    XWindow focus;

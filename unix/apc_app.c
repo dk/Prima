@@ -274,6 +274,7 @@ window_subsystem_init( void)
    prima_rebuild_watchers();
    prima_wm_init();
    guts. wm_event_timeout = 100000;
+   if ( !prima_init_color_subsystem()) return false;
    if ( !prima_init_font_subsystem()) return false;
 /*    XSynchronize( DISP, true); */
    return true;
@@ -306,6 +307,7 @@ window_subsystem_done( void)
 {
    free_gc_pool(&guts.bitmap_gc_pool);
    free_gc_pool(&guts.screen_gc_pool);
+   prima_done_color_subsystem();
 
    if ( DISP) {
       XFreeGC( DISP, guts. menugc);
