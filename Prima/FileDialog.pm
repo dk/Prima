@@ -31,11 +31,6 @@
 #
 #  $Id$
 
-#  contains:
-#      
-#      SaveDialog
-#      ChDirDialog
-
 use strict;
 use Prima::Classes;
 use Prima::Buttons;
@@ -362,6 +357,14 @@ sub closedGlyphs
    $_[1] = 1 if $_[1] < 1;
    $_[0]->{closedGlyphs} = $_[1];
    $_[0]-> recalc_icons;
+   $_[0]-> calibrate;
+}
+
+sub indent
+{
+   return $_[0]-> {indent} unless $#_;
+   $_[1] = 0 if $_[1] < 0;
+   return if $_[0]-> {indent} == $_[1];
    $_[0]-> calibrate;
 }
 
@@ -1026,7 +1029,7 @@ sub Open_Click
       $_ .= $self-> {defaultExt} if $self-> {openMode} && !m{\.[^/]*$};
       if ( -f $_)
       {
-         if ( $self-> {noReadOnly} && !(-w $_))
+         if ( !$self-> {openMode} && $self-> {noReadOnly} && !(-w $_))
          {
             Prima::MsgBox::message_box( $self-> text, "File $_ is read only", mb::OK | mb::Error);
             $self->Name->select_all;
@@ -1340,3 +1343,271 @@ sub directory
 sub showHelp         { ($#_)? shift->raise_ro('showHelp')  : return $_[0]->{showHelp} };
 
 1;
+
+__DATA__
+
+=head1 NAME
+
+File system related widgets and dialogs.
+
+=head1 DESCRIPTION 
+
+The module contains widgets for file and drive selection,
+and also standard open file, save file, and change directory 
+dialogs.
+
+=head1 Prima::DirectoryListBox
+
+A direstory listing list box. Shows the list of 
+subdirectories and upper directories, hierarchy-mapped,
+with the folder images and outlines.
+
+=head2 Properties 
+
+=over
+
+=item closedGlyphs INTEGER
+
+Number of horizontal equal-width images, contained in L<closedIcon>
+property.
+
+Default value: 1
+
+=item closedIcon ICON
+
+Provides an icon representation 
+for the directories, contained in the current directory.
+
+=item indent INTEGER
+
+A positive integer number of pixels, used for offset of
+the hierarchy outline.
+
+Default value: 12
+
+=item openedGlyphs INTEGER
+
+Number of horizontal equal-width images, contained in L<openedIcon>
+property.
+
+Default value: 1
+
+=item openedIcon OBJECT
+
+Provides an icon representation 
+for the directories, contained in the directories above the current
+directory.
+
+=item path STRING
+
+Runtime-only property. Selects a file system path.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item files [ FILE_TYPE ]
+
+If FILE_TYPE value is not specified, the list of all files in the
+current directory is returned. If FILE_TYPE is given, only the files
+of the types are returned. The FILE_TYPE is a string, one of those
+returned by C<Prima::Utils::getdir> ( see L<Prima::Utils/getdir>.
+
+=back
+
+=head1 Prima::DriveComboBox
+
+Provides drive selection combo-box for non-unix systems.
+
+=head2 Properties
+
+=over
+
+=item firstDrive DRIVE_LETTER 
+
+Create-only property. 
+
+Default value: 'A:'
+
+DRIVE_LETTER can be set to other value to start the drive enumeration from.
+Some OSes can probe eventual diskette drives inside the drive enumeration
+routines, so it might be reasonable to set DRIVE_LETTER to C<C:> string
+for responsiveness increase.
+
+=item drive DRIVE_LETTER
+
+Selects the drive letter.
+
+Default value: 'C:'
+
+=back
+
+=head1 Prima::FileDialog
+
+Provides a standard file dialog, allowing to navigate by the
+file system and select one or many files. The class can
+operate in two modes - 'open' and 'save'; these modes are
+set by L<Prima::OpenDialog> and L<Prima::SaveDialog>.
+Some properties behave differently depending on the mode,
+which is stored in L<openMode> property.
+
+=head2 Properties
+
+=over
+
+=item createPrompt BOOLEAN
+
+If 1, and a file selected is nonexistent, asks the user
+if the file is to be created. 
+
+Only actual when L<openMode> is 1. 
+
+Default value: 0
+
+=item defaultExt STRING
+
+Selects the file extension, appended to the 
+file name typed by the user, if the extension is not given.
+
+Default value: ''
+
+=item directory STRING
+
+Selects the currently selected directory.
+
+=item fileMustExist BOOLEAN
+
+If 1, ensures that the file typed by the user exists before
+closing the dialog. 
+
+Default value: 1
+
+=item fileName STRING, ...
+
+For single-file selection, assigns the selected file name,
+For multiple-file selection, on get-call returns list of the selected
+files; on set-call, accepts a single string, where the file names
+are separated by the space character. The eventual space characters
+must be quoted.
+
+=item filter ARRAY
+
+Contains array of arrays of string pairs, where each pair describes
+a file type. The first scalar in the pair is the description of
+the type; the second is a file mask.
+
+Default value: [[ 'All files' => '*']]
+
+=item filterIndex INTEGER
+
+Selects the index in L<filter> array of the currently selected file type.
+
+=item multiSelect BOOLEAN
+
+Selects whether the user can select several ( 1 ) or one ( 0 ) file.
+
+See also: L<fileName>.
+
+=item noReadOnly BOOLEAN
+
+If 1, fails to open a file when it is read-only.
+
+Default value: 0
+
+Only actual when L<openMode> is 0. 
+
+=item noTestFileCreate BOOLEAN
+
+If 0, tests if a file selected can be created.
+
+Default value: 0
+
+Only actual when L<openMode> is 0. 
+
+=item overwritePrompt BOOLEAN
+
+If 1, asks the user if the file selected is to be overwrittten.
+
+Default value: 1
+
+Only actual when L<openMode> is 0. 
+
+=item openMode BOOLEAN
+
+Create-only property.
+
+Selects whether the dialog operates in 'open' ( 1 ) mode or 'save' ( 0 ) 
+mode.
+
+=item pathMustExist BOOLEAN
+
+If 1, ensures that the path, types by the user, exists before
+closing the dialog.
+
+Default value: 1
+
+=item showHelp BOOLEAN
+
+Create-only property. If 1, 'Help' button is inserted in the dialog.
+
+Default value: 1
+
+=item sorted BOOLEAN
+
+Selects whether the file list appears sorted by name ( 1 ) or not ( 0 ).
+
+Default value : 1
+
+=back
+
+=head2 Methods
+
+=over
+
+=item reread
+
+Re-reads the currently selected directory.
+
+=back
+
+=head1 Prima::OpenDialog
+
+Descendant of L<Prima::FileDialog>, tuned for open-dialog functionality.
+
+=head1 Prima::SaveDialog
+
+Descendant of L<Prima::FileDialog>, tuned for save-dialog functionality.
+
+=head1 Prima::ChDirDialog
+
+Provides standard dialog with interactive directory selection.
+
+=head2 Properties
+
+=over
+
+=item directory STRING
+
+Selects the directory
+
+=item showHelp
+
+Create-only property. If 1, 'Help' button is inserted in the dialog.
+
+Default value: 1
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Window>, L<Prima::Lists>,
+F<examples/drivecombo.pl>, F<examples/launch.pl>.
+
+=cut
+
