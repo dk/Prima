@@ -926,7 +926,7 @@ sub prf_types
             persistentBlock readOnly syntaxHilite wantTabs wantReturns wordWrap
             autoHScroll autoVScroll
          )],
-      uiv     => [qw(borderWidth tabIndent)],
+      uiv     => [qw(borderWidth tabIndent undoLimit)],
       editBlockType => ['blockType',],
       color   => [qw(hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs)],
       string  => ['wordDelimiters',],

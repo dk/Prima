@@ -93,7 +93,10 @@ sub profile_default
          [ ShiftWordRight    => 0, 0, km::Shift|kb::Right|km::Ctrl      , q(cursor_shift_key)],
          [ Insert         => 0, 0, kb::Insert , sub {$_[0]-> insertMode(!$_[0]-> insertMode)}],
 # edit keys
-         [ Delete         => 0, 0, kb::Delete,    sub {$_[0]->delete_char unless $_[0]->{readOnly}}],
+         [ Delete         => 0, 0, kb::Delete,    sub {
+             return if $_[0]->{readOnly};
+             $_[0]-> has_selection ? $_[0]-> delete_block : $_[0]->delete_char; 
+           }],
          [ Backspace      => 0, 0, kb::Backspace, sub {$_[0]->back_char unless $_[0]->{readOnly}}],
          [ DeleteChunk    => 0, 0, '^Y',          sub {$_[0]->delete_current_chunk unless $_[0]->{readOnly}}],
          [ DeleteToEnd    => 0, 0, '^E',          sub {$_[0]->delete_to_end unless $_[0]->{readOnly}}],
@@ -114,6 +117,9 @@ sub profile_default
          [ CutMS          => 0, 0, '^X', q(cut)],
          [ CopyMS         => 0, 0, '^C', q(copy)],
          [ PasteMS        => 0, 0, '^V', q(paste)],
+# undo         
+         [ Undo            => 0, 0, km::Alt|kb::Backspace, q(undo)],
+         [ Redo            => 0, 0, '^R', q(redo)],
       ],
       autoIndent        => 1,
       autoHScroll       => 1,
@@ -148,6 +154,7 @@ sub profile_default
       textRef           => undef,
       topLine           => 0,
       vScroll           => 0,
+      undoLimit         => 1000,
       wantTabs          => 0,
       wantReturns       => 1,
       widgetClass       => wc::Edit,
@@ -180,7 +187,7 @@ sub init
    for ( qw( wordWrap hScroll vScroll rows maxLineCount maxLineLength maxLineWidth
              scrollTransaction maxLine maxChunk capLen cursorY cursorX cursorWrap
              cursorXl cursorYl syntaxHilite hiliteNumbers hiliteQStrings hiliteQQStrings
-             notifyChangeLock modified borderWidth autoHScroll autoVScroll
+             notifyChangeLock modified borderWidth autoHScroll autoVScroll blockShiftMark
         ))
    { $self->{$_} = 0;}
    $self-> { insertMode}   = $::application-> insertMode;
@@ -189,12 +196,14 @@ sub init
    $self-> {defcw} = $::application-> get_default_cursor_width;
    my %profile = $self-> SUPER::init(@_);
    $self-> setup_indents;
+   $self-> {undo} = [];
+   $self-> {redo} = [];
    $profile{selection} = [@{$profile{selStart}}, @{$profile{selEnd}}];
    for ( qw( hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs
              autoHScroll autoVScroll
              textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
              topLine  tabIndent readOnly offset wordDelimiters wantTabs wantReturns
-             wordWrap cursorWrap markers))
+             wordWrap cursorWrap markers undoLimit))
       { $self->$_( $profile{ $_}); }
    delete $self->{resetDisabled};
    $self-> {uChange} = 0;
@@ -782,9 +791,9 @@ sub on_mousemove
       $self->scroll_timer_semaphore(0);
    }
    $self-> {delayPanning} = 1;
-   $self-> {blockShiftMark}  = 1;
+   $self-> blockShiftMark(1);
    $self-> cursor( @xy);
-   $self-> {blockShiftMark}  = 0;
+   $self-> blockShiftMark(0);
    $self-> update_block unless $self-> {mouseTransaction} == 2;
    $self-> realize_panning;
 }
@@ -874,6 +883,7 @@ sub on_keydown
        my @cs = $self-> cursor;
        my $c  = $self-> get_line( $cs[1]);
        my $l = 0;
+       $self-> begin_undo_group;
        if ( $self->insertMode)
        {
           $l = $cs[0] - length( $c), $c .= ' 'x$l if length( $c) < $cs[ 0];
@@ -885,6 +895,7 @@ sub on_keydown
           $self-> set_line( $cs[1], $c, q(overtype));
        }
        $self-> cursor( $cs[0] + $repeat, $cs[1]);
+       $self-> end_undo_group;
        $self-> clear_event;
    }
 }
@@ -919,6 +930,7 @@ sub set_block_type
 {
    my ( $self, $bt) = @_;
    return if $bt == $self->{blockType};
+   $self-> push_group_undo_action('blockType', $self->{blockType});
    $self->{blockType} = $bt;
    return unless $self-> has_selection;
    $self-> reset_render;
@@ -1101,7 +1113,18 @@ sub set_cursor
       my $nofs = $atX - $actualWidth + $deltaX;
       $nofs = $ofs + $avg if $nofs - $ofs < $avg;
       $self-> offset( $nofs);
-   }
+   }          
+   # check if last undo record contains cursor movements only, so these movements
+   # can be grouped                                
+   my $undo = 1;
+   if ( !$self-> {undo_in_action} && @{$self-> {undo}} && @{$self->{undo}->[-1]}) {
+      my $ok = 1;   
+      for ( @{$self->{undo}->[-1]}) {
+         $ok = 0, last if $$_[0] ne 'cursor';
+      }
+      $undo = 0 if $ok;
+   } 
+   $self-> push_undo_action( 'cursor', $self-> {cursorX}, $self-> {cursorY}) if $undo;
    $self-> {cursorX}        = $x;
    $self-> {cursorY}        = $y;
    $self-> {cursorAtX}      = $atX;
@@ -1122,6 +1145,7 @@ sub set_top_line
       return;
    }
    my $dt = $tl - $self->{topLine };
+   $self-> push_group_undo_action( 'topLine', $self->{topLine});
    $self->{topLine } = $tl;
    if ( $self-> {vScroll} && $self->{scrollTransaction} != 1) {
       $self->{scrollTransaction} = 1;
@@ -1222,6 +1246,7 @@ sub set_insert_mode
    $self->{insertMode} = $insert;
    $self-> reset_cursor if $oi != $insert;
    $::application-> insertMode( $insert);
+   $self-> push_group_undo_action( 'insertMode', $oi) if $oi != $insert;
 }
 
 
@@ -1236,6 +1261,7 @@ sub set_offset
       return;
    }
    my $dt = $offset - $self-> {offset};
+   $self-> push_group_undo_action( 'offset', $self->{offset});
    $self->{offset} = $offset;
    if ( $self->{hScroll} && $self->{scrollTransaction} != 2) {
       $self->{scrollTransaction} = 2;
@@ -1291,6 +1317,7 @@ sub set_selection
    $self->{selEndl}   = [ $lex, $ley];
    return if $sx == $osx && $ex == $oex && $sy == $osy && $ey == $oey;
    return if $sx == $ex && $sy == $ey && $onsel;
+   $self-> push_group_undo_action('selection', $osx, $osy, $oex, $oey);
    ( $osx, $osy, $oex, $oey) = ( $_osx, $_osy, $_oex, $_oey);
    ( $sx, $sy)   = @{$self->{selStartl}};
    ( $ex, $ey)   = @{$self->{selEndl}};
@@ -1422,8 +1449,10 @@ sub cut
 {
    my $self = $_[0];
    return if $self->{readOnly};
+   $self-> begin_undo_group;
    $self-> copy;
    $self-> delete_block;
+   $self-> end_undo_group;
 }
 
 sub copy
@@ -1490,6 +1519,7 @@ sub insert_text
 {
    my ( $self, $s, $hilite) = @_;
    return if !defined($s) or length( $s) == 0;
+   $self-> begin_undo_group;
    $self-> cancel_block unless $self->{blockType} == bt::CUA;
    my @cs = $self-> cursor;
    my @ln = split( "\n", $s, -1);
@@ -1516,6 +1546,7 @@ sub insert_text
       $self-> unlock;
    }
    $self-> lock_change(0);
+   $self-> end_undo_group;
 }
 
 sub paste
@@ -1675,8 +1706,10 @@ sub cursor_right {
 }
 sub cursor_home  {
    my ($spaces) = ($_[0]-> get_line( $_[0]-> cursorY) =~ /^([s\t]*)/);
+   $_[0]-> begin_undo_group;
    $_[0]-> offset(0);
    $_[0]-> cursorX(0);
+   $_[0]-> end_undo_group;
 }
 sub cursor_end   {
    my ($nonspaces) = ($_[0]-> get_line( $_[0]-> cursorY) =~ /^(.*?)[\s\t]*$/);
@@ -1774,16 +1807,27 @@ sub word_left
 sub cursor_shift_key
 {
    my ( $self, $menuItem) = @_;
+   $self-> begin_undo_group;
    $self-> start_block unless exists $self->{anchor};
    $menuItem =~ s/Shift//;
    my $action = $self-> accelTable-> action( $menuItem);
    $action = $self-> can( $action, 0) unless ref $action;
    $self-> {delayPanning} = 1;
-   $self->{blockShiftMark} = 1;
+   $self-> blockShiftMark(1);
    $action-> ( @_);
-   $self->{blockShiftMark} = 0;
+   $self-> blockShiftMark(0);
    $self-> selection( @{$self->{anchor}}, $self->{cursorX}, $self->{cursorY});
    $self-> realize_panning;
+   $self-> end_undo_group;
+}
+
+sub blockShiftMark
+{
+   return $_[0]-> {blockShiftMark} unless $#_;
+   my ( $self, $mark) = @_;
+   return if $self-> {blockShiftMark} == $mark;
+   $self-> push_group_undo_action( 'blockShiftMark', $self-> {blockShiftMark});
+   $self-> {blockShiftMark} = $mark;
 }
 
 sub mark_vertical
@@ -1829,6 +1873,8 @@ sub set_line
    );
    my @sz = ( $a[2] - $a[0], $a[3] - $a[1]);
    my ( $_from, $_to);
+   $self-> begin_undo_group;
+   $self-> push_undo_action( 'set_line', $y, $self-> {lines}-> [$y]);
    if ( $self->{wordWrap}) {
       my $breaks = $self-> text_wrap( $line, $sz[0] - $self->{defcw}, tw::WordBreak|tw::CalcTabs|tw::NewLineBreak|tw::ReturnChunks, $self->{tabIndent});
       my @chunkMap;
@@ -1940,6 +1986,7 @@ sub set_line
       $self-> repaint;
    }
    $self-> cursor( $self-> cursor);
+   $self-> end_undo_group;
    $self-> notify(q(Change)) unless $self->{notifyChangeLock};
 }
 
@@ -1950,6 +1997,7 @@ sub insert_empty_line
    $len ||= 1;
    return if $y > $maxY + 1 || $y < 0 || $len == 0;
    my $ly;
+   $self->push_undo_action('delete_line', $y, $len);
    if ( $self-> {wordWrap})
    {
       if ( $y > $maxY) {
@@ -2012,12 +2060,14 @@ sub insert_line
    my $maxY = $self->{maxLine};
    return if $y > $maxY + 1 || $y < 0 || $len == 0;
    my $i;
+   $self-> begin_undo_group;
    $self-> insert_empty_line( $y, $len);
    $self-> lock_change(1);
    for ( $i = 0; $i < $len; $i++) {
       $self-> set_line( $y + $i, $lines[ $i], q(add), 0, length( $lines[ $i]));
    }
    $self-> lock_change(0);
+   $self-> end_undo_group;
 }
 
 sub delete_line
@@ -2026,6 +2076,12 @@ sub delete_line
    my $maxY = $self->{maxLine};
    $len ||= 1;
    return if $y > $maxY || $y < 0 || $len == 0;
+   $self-> begin_undo_group;
+   for ( my $i=0; $i < $len; $i++) {
+      $self-> push_undo_action( 'set_line', $y+$i, $self->{lines}->[$y+$i]);
+   }
+   $self-> push_undo_action( 'insert_empty_line', $y, $len);
+   
    $len = $maxY - $y + 1 if $y + $len > $maxY + 1;
    my ( $lx, $ly) = (0,0);
    if ( $self-> {wordWrap})
@@ -2093,6 +2149,7 @@ sub delete_line
       }
    }
    $self-> cursor( $self-> cursor);
+   $self-> end_undo_group;
    $self-> repaint;
    $self-> notify(q(Change)) unless $self->{notifyChangeLock};
 }
@@ -2121,6 +2178,7 @@ sub delete_chunk
    $self-> lock;
    my ( $sy, $ey) = ( $psy, $pey);
    my $c;
+   $self-> begin_undo_group;
    $self-> lock_change(1);
    if ( $start > 0)
    {
@@ -2141,6 +2199,7 @@ sub delete_chunk
    $self-> cursor( $self->{cursorX}, $psy);
    $self-> unlock;
    $self-> lock_change(0);
+   $self-> end_undo_group;
 }
 
 
@@ -2158,8 +2217,10 @@ sub delete_text
    {
       return if $y == $maxY;
       $self-> lock_change(1);
+      $self-> begin_undo_group;
       $self-> set_line( $y, $self-> get_line( $y) . $self-> get_line( $y + 1));
       $self-> delete_line( $y + 1);
+      $self-> end_undo_group;
       $self-> lock_change(0);
       return;
    }
@@ -2180,6 +2241,7 @@ sub back_char
    my $self = $_[0];
    my @c = $self-> cursor;
    my $d = $_[1] || 1;
+   $self-> begin_undo_group;
    if ( $c[0] >= $d) {
       $self-> delete_text( $c[0] - $d, $c[1], $d);
       $self-> cursorX( $c[0] - $d);
@@ -2187,13 +2249,13 @@ sub back_char
       $self-> cursor( -1, $c[1] - 1);
       $self-> delete_text( -1, $c[1] - 1);
    }
+   $self-> end_undo_group;
 }
 
 sub delete_current_chunk
 {
    my $self = $_[0];
-   my $y = $self->{cursorYl};
-   $self-> delete_chunk( $y);
+   $self-> delete_chunk( $self->{cursorYl});
 }
 
 sub delete_to_end
@@ -2209,6 +2271,8 @@ sub delete_block
 {
    my $self = $_[0];
    return unless $self-> has_selection;
+   $self-> begin_undo_group;
+   $self-> push_undo_action('selection', $self-> selection);
    my @sel = ( @{$self->{selStartl}}, @{$self->{selEndl}});
    my $bt = $self->{blockType};
    if ( $bt == bt::Horizontal) {
@@ -2254,6 +2318,7 @@ sub delete_block
    }
    $self-> cursorLog( $sel[0], $sel[1]);
    $self-> cancel_block;
+   $self-> end_undo_group;
 }
 
 sub copy_block
@@ -2263,6 +2328,7 @@ sub copy_block
    my @sel = $self-> selection;
    $self-> lock_change(0);
    $self-> lock;
+   $self-> begin_undo_group;
    if ( $self-> {blockType} == bt::Horizontal) {
       my @lines;
       my $i;
@@ -2284,6 +2350,7 @@ sub copy_block
          $self-> set_line( $i, $c);
       }
    }
+   $self-> end_undo_group;
    $self-> unlock;
    $self-> lock_change(1);
 }
@@ -2296,6 +2363,7 @@ sub overtype_block
    my @sel = $self-> selection;
    $self-> lock_change(0);
    $self-> lock;
+   $self-> begin_undo_group;
    if ( $self-> {blockType} == bt::Horizontal) {
       my $i;
       for ( $i = $sel[1]; $i <= $sel[3]; $i++) {
@@ -2318,6 +2386,7 @@ sub overtype_block
          $self-> set_line( $i, $c);
       }
    }
+   $self-> end_undo_group;
    $self-> unlock;
    $self-> lock_change(1);
 }
@@ -2330,6 +2399,7 @@ sub split_line
    $c .= ' 'x($cs[0]-length($c)) if length($c) < $cs[0];
    my ( $old, $new) = ( substr( $c, 0, $cs[0]), substr( $c, $cs[0], length( $c) - $cs[0]));
    $self-> lock_change(1);
+   $self-> begin_undo_group;
    $self-> set_line( $cs[1], $old, q(delete), $cs[0], length( $c) - $cs[0]);
    my $cshift = 0;
    if ( $self-> {autoIndent}) {
@@ -2344,7 +2414,97 @@ sub split_line
    }
    $self-> insert_line( $cs[1]+1, $new);
    $self-> cursor( $cshift, $cs[1] + 1);
+   $self-> end_undo_group;
    $self-> lock_change(0);
+}
+
+sub begin_undo_group 
+{ 
+   my $self = $_[0];
+   return if !$self->{undoLimit};
+   if ( $self->{undo_in_action}) {
+      push @{$self-> {redo}}, [] unless $self-> {grouped_undo}++;
+   } else {
+      push @{$self-> {undo}}, [] unless $self-> {grouped_undo}++;
+      $self->{redo} = [] if !$self->{redo_in_action};
+   }
+}
+
+sub end_undo_group   
+{ 
+   my $self = $_[0];
+   return if !$self->{undoLimit};
+   my $ref = $self->{undo_in_action} ? 'redo' : 'undo';
+   $self-> {grouped_undo}-- if $self-> {grouped_undo} > 0;
+   # skip last record if empty
+   pop @{$self-> {$ref}} if !$self-> {grouped_undo} && @{$self->{$ref}} && 0==@{$self->{$ref}->[-1]};
+   shift @{$self->{$ref}} if @{$self->{$ref}} > $self->{undoLimit};
+}
+
+sub push_undo_action   
+{ 
+   my $self = shift;
+   return if !$self->{undoLimit};
+   my $ref = $self->{undo_in_action} ? 'redo' : 'undo';
+   my $action = [ @_ ];
+   if ( $self-> {grouped_undo}) {
+      push @{$self->{$ref}->[-1]}, $action;
+   } else {
+      push @{$self->{$ref}}, [ $action ];
+      shift @{$self->{$ref}} if @{$self->{$ref}} > $self->{undoLimit};
+      $self->{redo} = [] if !$self->{redo_in_action} && !$self->{undo_in_action};
+   }
+}              
+
+sub push_group_undo_action   
+{ 
+   my $self = shift;
+   return if !$self->{undoLimit};
+   my $ref = $self->{undo_in_action} ? 'redo' : 'undo';
+   return $self-> push_undo_action(@_) if $self-> {grouped_undo};
+   push @{$self-> {$ref}}, [] unless @{$self-> {$ref}};
+   $self-> {grouped_undo} = 1;
+   $self-> push_undo_action(@_);
+   $self-> {grouped_undo} = 0;
+}
+
+sub undo
+{
+   my $self = $_[0];
+   return if $self->{undo_in_action} || !$self->{undoLimit};
+   return unless @{$self->{undo}};
+   my $group = pop @{$self->{undo}};
+   return unless $group && @$group;
+   $self-> {undo_in_action} = 1;
+   for ( reverse @$group) {
+      my ( $method, @params) = @$_;
+      next unless $self->can($method);
+      $self-> $method( @params);
+   }
+   $self-> {undo_in_action} = 0;
+}
+
+sub redo
+{
+   my $self = $_[0];
+   return if !$self->{undoLimit};
+   return unless @{$self->{redo}};
+   my $group = pop @{$self->{redo}};
+   return unless $group && @$group;
+   $self-> {redo_in_action} = 1;
+   for ( reverse @$group) {
+      my ( $method, @params) = @$_;
+      next unless $self->can($method);
+      $self-> $method( @params);
+   }
+   $self-> {redo_in_action} = 0;
+}
+
+sub undoLimit
+{
+   return $_[0]->{undoLimit} unless $#_;
+   my ( $self, $ul) = @_;
+   $self-> {undoLimit} = $ul if $ul >= 0;
 }
 
 sub find
@@ -2483,9 +2643,7 @@ Prima::Edit - standard text editing widget
 =head1 DESCRIPTION
 
 The class provides text editing capabilities, three types of selection, text wrapping,
-syntax highlighting, auto indenting, search and replace methods.
-
-The class does not provide undo functionality.
+syntax highlighting, auto indenting, undo and redo function, search and replace methods.
 
 The module declares C<bt::> package, that contains integer constants for selection block type,
 used by L<blockType> property.
@@ -2554,7 +2712,7 @@ be partial, and the lines between occupy the whole line. CUA stands for
 
 Default keys: Shift + arrow keys
 
-See also: L<shift_cursor_key>
+See also: L<cursor_shift_key>
 
 =item bt::Vertical
 
@@ -2708,7 +2866,14 @@ See also: L<text>.
 
 =item topLine INTEGER
 
-Selects the first line of the text drawn. 
+Selects the first line of the text drawn.
+
+=item undoLimit INTEGER
+
+Sets limit on number of stored atomic undo operations. If 0,
+undo is disabled.
+
+Default value: 1000 
 
 =item wantTabs BOOLEAN
 
@@ -2761,6 +2926,11 @@ Removes REPEAT times a character left to the cursor. If the cursor is on 0 x-pos
 removes the new-line character and concatenates the lines.
 
 Default key: Backspace
+
+=item begin_undo_group
+
+Opens bracket for group of actions, undone as single operation. 
+The bracket is closed by calling C<end_undo_group>.  
 
 =item cancel_block
 
@@ -2921,6 +3091,10 @@ as color reference.
 
 Stops the block selection session.
 
+=item end_undo_group
+
+Closes bracket for group of actions, opened by C<begin_undo_group>.  
+
 =item find SEARCH_STRING, [ X = 0, Y = 0, REPLACE_LINE = '', OPTIONS ]
 
 Tries to find ( and, if REPLACE_LINE is defined, to replace with it ) 
@@ -3056,6 +3230,10 @@ Default key: Shift+Insert
 Performs deferred widget panning, activated by setting C<{delayPanning}> to 1.
 The deferred operations are those performed by L<offset> and L<topLine>.
 
+=item redo
+
+Re-applies changes, formerly rolled back by C<undo>.
+
 =item set_line LINE_ID, TEXT, [ OPERATION, FROM, LENGTH ]
 
 Changes line at LINE_ID to new TEXT. Hint scalars OPERATION, FROM and LENGTH
@@ -3078,6 +3256,11 @@ Selects all text
 
 Begins the block selection session. The block type if BLOCK_TYPE, if it is
 specified, or L<blockType> property value otherwise.
+
+=item undo
+
+Rolls back changes into internal array, which size cannot extend C<undoLimit>
+value. In case C<undoLimit> is 0, no undo actions can be made.
 
 =item update_block
 

@@ -159,6 +159,9 @@ sub profile_default
             ['~Find...' => 'Esc'      => kb::Esc   , q(find)],
             ['~Replace...'=> 'Ctrl+S' => '^S'      , q(replace)],
             ['Find ~next' => 'Ctrl+L' => '^L'      , q(find_next)],
+            [],
+            ['~Undo' => 'Alt+Backspace' => kb::NoKey   , sub {$_[0]->{editor}->undo}],
+            ['~Redo' => 'Ctrl+R'        => kb::NoKey   , sub {$_[0]->{editor}->redo}],
         ]],
         ['~Options' => [
             [ 'syx' => '~Syntax hilite' => sub{ $_[0]->{editor}-> syntaxHilite( $_[0]->menu-> syx-> toggle)}],
