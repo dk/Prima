@@ -770,6 +770,10 @@ apc_pointer_set_shape( Handle self, int id)
          XCHECKPOINT;
       }
    }
+   if ( guts. pointer_invisible_count < 0) {
+      XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);
+      XCHECKPOINT;
+   }   
    return true;
 }
 
