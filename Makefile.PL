@@ -1887,7 +1887,7 @@ goto endofperl
 EOF
             }
             elsif ( $OS2) {
-                my $perlpath = $Config{ perlpath};
+                my $perlpath = $^X;
                 $perlpath =~ s/(perl)(\.exe)?$/$1__$2/i if $perlpath =~ /perl(\.exe)?$/i;
                 print DSTPL <<EOF;
 extproc $perlpath -wS
@@ -1895,7 +1895,7 @@ EOF
             }
             else {
                 print DSTPL <<EOF;
-#! $Config{ perlpath} -w
+#!$^X -w
 EOF
             }
             my $filestart = 1;
