@@ -277,8 +277,13 @@ fcpattern2font( FcPattern * pattern, PFont font)
    FcPatternGetBool( pattern, FC_SCALABLE, 0, &font-> vector);
    FcPatternGetDouble( pattern, FC_ASPECT, 0, &d);
    font-> xDeviceRes = font-> yDeviceRes * d;
-   if ( FcPatternGetInteger( pattern, FC_SIZE, 0, &font-> size) != FcResultMatch)
+   if ( 
+         (FcPatternGetInteger( pattern, FC_SIZE, 0, &font-> size) != FcResultMatch) &&
+         (font-> height != C_NUMERIC_UNDEF)
+      ) {
       font-> size = font-> height * 72.27 / font-> yDeviceRes + .5;
+      Fdebug("xft:size calculated:%d\n", font-> size);
+   }
 
    font-> firstChar = 32; font-> lastChar = 255;
    font-> breakChar = 32; font-> defaultChar = 32;
@@ -532,11 +537,34 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
       FcChar8 * s = nil;
       FcPatternGetString( match, FC_FAMILY, 0, &s);
       if ( !s || strcmp(( const char*) s, f. name) != 0) {
-         xft_build_font_key( &key, &f, by_size);
-         key. width = 0;
-         hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
-	 Fdebug("xft: name mismatch\n");
-         return false;
+	 int i, n = guts. n_fonts;
+         PFontInfo info = guts. font_info;
+
+	 if ( !guts. xft_priority) {
+	    Fdebug("xft: name mismatch\n");
+	 NAME_MISMATCH:
+	    xft_build_font_key( &key, &f, by_size);
+	    key. width = 0;
+	    hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
+	    return false;
+	 }
+	 
+         /* check if core has cached face name */
+	 if ( prima_find_known_font( &f, false, by_size)) {
+	    Fdebug("xft: pass to cached core\n");
+	    goto NAME_MISMATCH;
+	 }
+
+         /* check if core has non-cached face name */
+         for ( i = 0; i < n; i++) {
+            if ( 
+		  info[i]. flags. disabled || 
+		  !info[i].flags.name ||
+	          (strcmp( info[i].font.name, f.name) != 0) 
+	       ) continue;
+	    Fdebug("xft: pass to core\n");
+	    goto NAME_MISMATCH;
+         }
       }
    }
   

@@ -571,6 +571,7 @@ typedef struct _UnixGuts
    int                          shared_image_completion_event;
    Bool                         xshmattach_failed;
    int                          use_xft;
+   Bool                         xft_priority;
    Bool                         xft_disable_large_fonts;
    int                          xft_xrender_major_opcode;
    Bool                         xft_no_antialias;

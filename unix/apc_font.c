@@ -50,6 +50,7 @@ static char * do_menu_font = nil;
 static char * do_widget_font = nil;
 static Bool   do_xft = true;
 static Bool   do_xft_no_antialias = false;
+static Bool   do_xft_priority = true;
 
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 
@@ -252,7 +253,10 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
             Font xf;
             int noname =  ( b[0] == '*' && b[1] == 0);
             int nofamily = ( info-> font.family[0] == '*' && info-> font.family[1] == 0);
-            fill_default_font( &xf);
+            if ( guts. default_font_ok)
+	       xf = guts. default_font;
+	    else
+               fill_default_font( &xf);
             if ( !nofamily) strcpy( xf. family, info-> font. family);
             if ( !noname)   strcpy( xf. name, info-> font. name);
             prima_core_font_pick( nilHandle, &xf, &xf);
@@ -571,7 +575,6 @@ prima_init_font_subsystem( void)
 
    guts. font_hash = hash_create();
    xfontCache      = hash_create();
-   prima_font_pp2font( "fixed", nil);
 
    /* locale */
    {
@@ -603,9 +606,11 @@ prima_init_font_subsystem( void)
    
 #ifdef USE_XFT
    guts. xft_no_antialias = do_xft_no_antialias;
+   guts. xft_priority     = do_xft_priority;
    if ( do_xft) prima_xft_init();
 #endif
 
+   prima_font_pp2font( "fixed", nil);
    Fdebug("font: init\n");
    if ( do_default_font) {
       prima_font_pp2font( do_default_font, &guts. default_font);
@@ -707,6 +712,19 @@ prima_font_subsystem_set_option( char * option, char * value)
    if ( strcmp( option, "no-aa") == 0) {
       if ( value) warn("`--no-antialias' option has no parameters");
       do_xft_no_antialias = true;
+      return true;
+   } else
+   if ( strcmp( option, "font-priority") == 0) {
+      if ( !value) {
+	 warn("`--font-priority' must be given parameters, either 'core' or 'xft'");
+         return false;
+      }
+      if ( strcmp( value, "core") == 0)
+	   do_xft_priority = false;
+      else if ( strcmp( value, "xft") == 0)
+	   do_xft_priority = true;
+      else
+         warn("Invalid value '%s' to `--font-priority' option. Valid are 'core' and 'xft'", value);
       return true;
    } else
    if ( strcmp( option, "font") == 0) {
