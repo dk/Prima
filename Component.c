@@ -692,7 +692,7 @@ XS( Component_notify_FROMPERL)
       if ( SvTYPE(*temporary_prf_Sv) == SVt_NULL)
          dyna = nil;
       else {
-         if ( SvTYPE(*temporary_prf_Sv) != SVt_RV ||
+         if ( !SvROK(*temporary_prf_Sv) ||
               SvTYPE(SvRV(*temporary_prf_Sv)) != SVt_PVCV)
             croak("RTC0046: Inconsistent storage in %s::__DYNAS__ for %s during Component.notify", var self-> className, note);
         dyna = *temporary_prf_Sv;
@@ -709,7 +709,7 @@ XS( Component_notify_FROMPERL)
          if ( SvTYPE(*temporary_prf_Sv) == SVt_NULL)
             owner = nil;
          else {
-            if ( SvTYPE(*temporary_prf_Sv) != SVt_RV ||
+            if ( !SvROK(*temporary_prf_Sv) ||
                  SvTYPE(SvRV(*temporary_prf_Sv)) != SVt_PVCV)
                croak("RTC0046: Inconsistent storage in %s::__DELEGATORS__ for %s during Component.notify", var self-> className, note);
             delegator = *temporary_prf_Sv;

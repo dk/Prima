@@ -933,6 +933,12 @@ load_image_indirect( Handle self, char *filename, char *subIndex)
       checkrc;
    }
 
+   if ( ft != itGIF) {
+      int len = strlen( subIndex);
+      if (( len > 2) && (( subIndex[len-1] != '0') || ( subIndex[len-2] != '=')))
+         return false;
+   }
+
    if ( ft == itBMP) strcat( subIndex, " inv");  /* GBM is baran */
    rc = gbm_read_header( filename, file, ft, &gbm, subIndex);
    checkrc;
