@@ -29,12 +29,7 @@
 
 package Prima::IniFile;
 
-#
-# Version: 0.01 19980115
-#
-
 require 5.003;       # probably
-$VERSION = 0.01;
 
 use strict;
 use Carp;
@@ -85,10 +80,6 @@ Prima::IniFile - support of Windows-like initialization files
 =head1 DESCRIPTION
 
    Wait, may be I'll write it...
-
-=head1 VERSION
-
-Version 0.01
 
 =head1 AUTHOR
 
