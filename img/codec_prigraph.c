@@ -259,7 +259,9 @@ static ImageSignatures signatures[] =
    /* { itGEM, */
    /* { itCVP, */
    { itJPG, 4, "\xff\xd8\xff\xe0" },
+   { itJPG, 4, "\xff\xd8\xff\xe1" },
    { itJPG, 4, "\xe0\xff\xd8\xff" },
+   { itJPG, 4, "\xe1\xff\xd8\xff" },
    { itPNG, 8, "\x89PNG\r\n\x1a\n"}
 };
 

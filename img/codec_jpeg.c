@@ -102,13 +102,15 @@ static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    LoadRec * l;
-   char buf[4];
+   Byte buf[4];
 
    if ( fseek( fi-> f, 0, SEEK_SET) < 0) return false;
    if ( fread( buf, 1, 4, fi-> f) != 4) return false;
    if (
          ( memcmp( "\xff\xd8\xff\xe0", buf, 4) != 0) &&
-         ( memcmp( "\xe0\xff\xd8\xff", buf, 4) != 0)
+         ( memcmp( "\xff\xd8\xff\xe1", buf, 4) != 0) &&
+         ( memcmp( "\xe0\xff\xd8\xff", buf, 4) != 0) &&
+         ( memcmp( "\xe1\xff\xd8\xff", buf, 4) != 0)
       ) return false;   
    if ( fseek( fi-> f, 0, SEEK_SET) < 0) return false;
    fi-> stop = true;
