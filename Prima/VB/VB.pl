@@ -115,7 +115,8 @@ sub on_click
 
 sub on_selectitem
 {
-   my ( $self, $lst) = @_;
+   my ( $self, $lst, $state) = @_;
+   return unless $state;
    $VB::inspector-> close_item;
    $VB::inspector-> open_item;
 }
