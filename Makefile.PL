@@ -393,7 +393,7 @@ main()
 #if defined( $defname)
 return 0;
 #else
-#error No
+0error No
 #endif
 }
 EOF
