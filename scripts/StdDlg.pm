@@ -397,8 +397,8 @@ sub Open_Click
          }
          return if !$self-> {openMode} && $self->{overwritePrompt} && (
                  message_box( $self-> text,
-                 "File $_ alreay exists. Overwrite?",
-                 mb::OKCancel) != mb::OK);
+                 "File $_ already exists. Overwrite?",
+                 mb::OKCancel|mb::Warning) != mb::OK);
 
       }
       else
@@ -407,7 +407,7 @@ sub Open_Click
          if ( $self-> {openMode} && $self->{createPrompt})
          {
             return if ( message_box( $self-> text,
-                "File $_ does not exists. Create?", mb::OKCancel
+                "File $_ does not exists. Create?", mb::OKCancel|mb::Information
              ) != mb::OK);
             if ( open FILE, ">$_") { close FILE; } else {
                message_box( $self-> text, "Cannot create file $_: $!", mb::OK | mb::Error);
