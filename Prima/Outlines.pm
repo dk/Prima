@@ -1485,7 +1485,7 @@ sub draw_items
          $canvas-> color( $self-> hiliteColor);
       }
       my $icon = (length( $node->[0]->[1]) || $unix) ?
-         ( $images[ $node->[2] ? 0 : 1]) : $node->[0]->[3];
+         ( $node->[2] ? $self->{openedIcon} : $self->{closedIcon}) : $node->[0]->[3];
       $canvas-> put_image(
         $left - $self->{indent} / 4,
         int($bottom + ( $self->{itemHeight} - $self->{iconSizes}->[1]) / 2),
