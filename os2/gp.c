@@ -695,7 +695,40 @@ apc_gp_get_physical_palette( Handle self, int * color)
 Bool
 apc_gp_get_region( Handle self, Handle mask)
 {
-   return false;
+   HRGN rgn, orgn;
+   RECTL clipEx;
+   POINTL offset;
+
+   objCheck false;
+   if ( !is_opt( optInDraw) || !sys ps) return false;
+
+   rgn = GpiQueryClipRegion( sys ps);
+   if ( !rgn || rgn == HRGN_ERROR)          // error or just no region
+      return false;
+   if ( !mask)
+      return true;
+
+   GpiQueryClipBox( sys ps, &clipEx);
+
+   GpiSetClipRegion( sys ps, nilHandle, &orgn);
+
+   offset = ( POINTL) { sys transform2. x, sys transform2. y};
+   GpiOffsetRegion( sys ps, rgn, &offset);
+   CImage( mask)-> create_empty( mask, clipEx. xRight, clipEx. yTop, imBW);
+   CImage( mask)-> begin_paint( mask);
+   CImage( mask)-> set_backColor( mask, 0);
+   CImage( mask)-> clear( mask, 0, 0, clipEx. xRight, clipEx. yTop);
+   CImage( mask)-> set_color( mask, 0xFFFFFF);
+   CImage( mask)-> set_backColor( mask, 0xFFFFFF);
+   if ( GpiPaintRegion( dsys( mask) ps, rgn) == GPI_ERROR) apiErr;
+   offset = ( POINTL) { -sys transform2. x, -sys transform2. y};
+   GpiOffsetRegion( sys ps, rgn, &offset);
+
+   CImage( mask)-> end_paint( mask);
+
+   GpiSetClipRegion( sys ps, rgn, &orgn);
+
+   return true;
 }
 
 Point
@@ -1033,7 +1066,24 @@ apc_gp_set_palette( Handle self)
 Bool
 apc_gp_set_region( Handle self, Handle mask)
 {
-   return false;
+   HRGN rgn = nilHandle;
+   HRGN oldrgn;
+   POINTL offset;
+   objCheck false;
+
+   if ( !is_opt( optInDraw) || !sys ps) return true;
+
+   rgn = region_create( self, mask);
+   if ( !rgn) {
+      if ( GpiSetClipRegion( sys ps, nilHandle, &oldrgn) == HRGN_ERROR) apiErrRet;
+      if ( oldrgn) GpiDestroyRegion( sys ps, oldrgn);
+      return true;
+   }
+   offset = ( POINTL) { -sys transform2. x, -sys transform2. y };
+   GpiOffsetRegion( sys ps, rgn, &offset);
+   if ( GpiSetClipRegion( sys ps, rgn, &oldrgn) == HRGN_ERROR) apiErrRet;
+   if ( oldrgn) GpiDestroyRegion( sys ps, oldrgn);
+   return true;
 }
 
 Bool

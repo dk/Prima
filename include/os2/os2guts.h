@@ -253,6 +253,7 @@ typedef struct _DrawableData
      TimerData     timer;
      WindowData    window;
      PrinterData   prn;
+     HRGN          imgCachedRegion;      // Image specific field
    } s;
 } DrawableData, *PDrawableData;
 
@@ -320,6 +321,7 @@ extern int          font_style( PFONTMETRICS fm);
 extern void         font_fontmetrics2font( PFONTMETRICS m, PFont f, Bool readonly);
 extern long         remap_color( HPS ps, long clr, Bool toSystem);
 extern Bool         screenable( Handle image);
+extern HRGN         region_create( Handle self, Handle mask);
 
 
 extern Bool create_font_hash          ( void);

@@ -37,6 +37,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include "os2/os2guts.h"
+#include "Image.h"
 #include "Menu.h"
 #include "Window.h"
 #include "Printer.h"
@@ -135,6 +136,79 @@ hwnd_frame_top_level( Handle self)
 }
 
 // hwnd end
+
+HRGN
+region_create( Handle self, Handle mask)
+{
+   LONG  w, h, x, y, size = 256;
+   HRGN    rgn = nilHandle;
+   Byte    * idata;
+   RECTL   * rdata = nil;
+   LONG      rcount = 0;
+   RECTL   * current;
+   Bool      set = 0;
+   HPS       ps = sys ps;
+
+   if ( !mask)
+      return nilHandle;
+
+   dobjCheck( mask) nilHandle;
+
+   w = PImage( mask)-> w;
+   h = PImage( mask)-> h;
+   if ( dsys( mask) s. imgCachedRegion) {
+      rgn = GpiCreateRegion( ps, 0, NULL);
+      if ( !rgn || rgn == HRGN_ERROR) apiErr;
+      GpiCombineRegion( ps, rgn, dsys( mask) s. imgCachedRegion, nilHandle, CRGN_COPY);
+      return rgn;
+   }
+
+   idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
+
+   rdata = malloc( size * sizeof( RECTL));
+   current = rdata;
+   current--;
+
+   for ( y = h - 1; y >= 0; y--) {
+      for ( x = 0; x < w; x++) {
+         if ( idata[ x >> 3] == 0) {
+            x += 7;
+            continue;
+         }
+         if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
+            if ( set && current-> yTop == y && current-> xRight == x)
+               current-> xRight++;
+            else {
+               set = 1;
+               if ( rcount >= size) {
+                  rdata = realloc( rdata, ( size *= 3) * sizeof( RECTL));
+                  current = rdata;
+                  current += rcount - 1;
+               }
+               rcount++;
+               current++;
+               current-> xLeft   = x;
+               current-> yTop    = y + 1;
+               current-> xRight  = x + 1;
+               current-> yBottom = y;
+            }
+         }
+      }
+      idata -= PImage( mask)-> lineSize;
+   }
+
+   if ( set) {
+      rgn = GpiCreateRegion( ps, rcount, rdata);
+      if ( !rgn || rgn == HRGN_ERROR) apiErr;
+      dsys( mask) s. imgCachedRegion = GpiCreateRegion( ps, 0, nilHandle);
+      GpiCombineRegion( ps, dsys( mask) s. imgCachedRegion, rgn, nilHandle, CRGN_COPY);
+   }
+   free(( void *) rdata);
+   return rgn;
+}
+
+
+
 // colors
 #define stdDisabled  SYSCLR_MENUDISABLEDTEXT, SYSCLR_WINDOW
 #define stdHilite    SYSCLR_HILITEFOREGROUND, SYSCLR_HILITEBACKGROUND
