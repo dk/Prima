@@ -684,9 +684,23 @@ save_prepare_data( void)
 }
 
 static void
+save_cleanup_img_data( __PImgSaveData save_data)
+{
+    if ( save_data->outImgInfo) {
+	int i;
+	for ( i = 0; i < save_data->outImgInfo->count; i++) {
+	    PImgInfo imageInfo = ( PImgInfo) list_at( save_data->outImgInfo, i);
+	    img_info_destroy( imageInfo);
+	}
+	plist_destroy( save_data->outImgInfo);
+    }
+}
+
+static void
 save_cleanup_data( __PImgSaveData *save_data)
 {
     if ( *save_data != nil) {
+	save_cleanup_img_data( *save_data);
 	list_destroy( &( *save_data)->formats);
 	free( *save_data);
 	*save_data = nil;
@@ -738,11 +752,7 @@ save_img_compatible( Handle item, void *params)
     }
     rc = imgFormat->is_compatible( save_data->outImgInfo);
     if ( ! rc) {
-	for ( i = 0; i < save_data->outImgInfo->count; i++) {
-	    PImgInfo imageInfo = ( PImgInfo) list_at( save_data->outImgInfo, i);
-	    img_info_destroy( imageInfo);
-	}
-	plist_destroy( save_data->outImgInfo);
+	save_cleanup_img_data( save_data);
     }
 /*    DOLBUG( "%s\n", rc ? "compatible" : "incompatible"); */
     return rc;
