@@ -170,21 +170,21 @@ typedef signed short    int16_t;
 typedef signed long     int32_t;
 #endif
 #if !defined(HAVE_UINT8_T)
-#if !defined(HAVE_U_INT8_T)
+#if defined(HAVE_U_INT8_T)
 typedef u_int8_t        uint8_t;
 #else
 typedef unsigned char   uint8_t;
 #endif
 #endif
 #if !defined(HAVE_UINT16_T)
-#if !defined(HAVE_U_INT16_T)
+#if defined(HAVE_U_INT16_T)
 typedef u_int16_t       uint16_t;
 #else
 typedef unsigned short  uint16_t;
 #endif
 #endif
 #if !defined(HAVE_UINT32_T)
-#if !defined(HAVE_U_INT32_T)
+#if defined(HAVE_U_INT32_T)
 typedef u_int32_t       uint32_t;
 #else
 typedef unsigned long   uint32_t;
