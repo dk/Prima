@@ -117,7 +117,6 @@ apc_image_get_error_message( char *errorMsgBuf, int bufLen)
 	    {
 		PImgFormat imgf;
 		if ( ( errDriverIdx >= 0) && ( errDriverIdx < imgFormats->count)) {
-		    DOLBUG( "Asking driver %d for error\n", errDriverIdx);
 		    imgf = ( PImgFormat) list_at( imgFormats, errDriverIdx);
 		    msg = ( char *) imgf->getError( NULL, 0);
 		}
@@ -674,157 +673,14 @@ apc_image_fetch_more( __PImgLoadData load_data, int preread_size)
     return rc;
 }
 
-/*  PImgProperty */
-/*  apc_image_add_property( PImgInfo imageInfo, const char *propName, U16 propType, int propArraySize) */
-/*  { */
-/*      PImgProperty imgProp; */
-
-/*      if ( ( imageInfo == nil) || ( imageInfo->propList == nil) || ( propName == nil)) { */
-/*  	return nil; */
-/*      } */
-
-/*      imgProp = malloc( sizeof( ImgProperty)); */
-/*      if ( imgProp != nil) { */
-/*  	imgProp->name = duplicate_string( propName); */
-/*  	imgProp->flags = propType; */
-/*  	imgProp->size = propArraySize; */
-/*  	list_add( imageInfo->propList, ( Handle) imgProp); */
-/*      } */
-
-/*      return imgProp; */
-/*  } */
-
-/*  void */
-/*  apc_image_clear_property( PImgProperty imgProp) */
-/*  { */
-/*      if ( imgProp != nil) { */
-/*  	free( imgProp->name); */
-/*  	if ( imgProp->size == -1) { */
-/*  	    switch ( imgProp->flags & PROPTYPE_MASK) { */
-/*  		case PROPTYPE_STRING: */
-/*  		    free( imgProp->val.String); */
-/*  		    break; */
-/*  		case PROPTYPE_BIN: */
-/*  		    free( imgProp->val.Binary.data); */
-/*  		    break; */
-/*  	    } */
-/*  	} */
-/*  	else { */
-/*  	    if ( imgProp->size > 0) { */
-/*  		int i; */
-/*  		switch ( imgProp->flags & PROPTYPE_MASK) { */
-/*  		    case PROPTYPE_STRING: */
-/*  			for ( i = 0; i < imgProp->size; i++) { */
-/*  			    free( imgProp->val.pString[ i]); */
-/*  			} */
-/*  			break; */
-/*  		    case PROPTYPE_BIN: */
-/*  			for ( i = 0; i < imgProp->size; i++) { */
-/*  			    if ( imgProp->val.pBinary[ i].data != nil) { */
-/*  				free( imgProp->val.pBinary[ i].data); */
-/*  			    } */
-/*  			} */
-/*  			break; */
-/*  		} */
-/*  		switch ( imgProp->flags & PROPTYPE_MASK) { */
-/*  		    case PROPTYPE_INT: */
-/*  			free( imgProp->val.pInt); */
-/*  			break; */
-/*  		    case PROPTYPE_DOUBLE: */
-/*  			free( imgProp->val.pDouble); */
-/*  			break; */
-/*  		    case PROPTYPE_STRING: */
-/*  			free( imgProp->val.pString); */
-/*  			break; */
-/*  		    case PROPTYPE_BIN: */
-/*  			free( imgProp->val.pBinary); */
-/*  			break; */
-/*  		    case PROPTYPE_BYTE: */
-/*  		    default: */
-/*  			free( imgProp->val.pByte); */
-/*  			break; */
-/*  		} */
-/*  	    } */
-/*  	} */
-/*      } */
-/*  } */
-
-/*  void */
-/*  apc_image_free_property( PImgProperty imgProp) */
-/*  { */
-/*      apc_image_clear_property( imgProp); */
-/*      free( imgProp); */
-/*  } */
-
 void
 prima_init_image_subsystem( void)
 {
    apc_register_image_format( APCIMG_VERSION, &gifFormat);
 }
 
-/*  void */
-/*  ___apc_image_test() */
-/*  { */
-/*      PList imgInfo = nil; */
-/*      PImgInfo imageInfo; */
-/*      PImgProperty imgProp; */
-
-/*      DOLBUG( "___apc_image_test\n"); */
-/*      DOLBUG( "registering GIF format: %s\n", apc_register_image_format( APCIMG_VERSION, &gifFormat) ? "ok" : "failed"); */
-
-/*      imgInfo = plist_create( 5, 5); */
-
-/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
-/*      imageInfo->propList = plist_create( 5, 5); */
-/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
-/*      imgProp->name = duplicate_string( "index"); */
-/*      imgProp->size = -1; */
-/*      imgProp->val.Int = 5; */
-/*      list_add( imageInfo->propList, ( Handle) imgProp); */
-/*      list_add( imgInfo, ( Handle) imageInfo); */
-/*      DOLBUG( "First one\n"); */
-
-/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
-/*      imageInfo->propList = plist_create( 5, 5); */
-/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
-/*      imgProp->name = duplicate_string( "index"); */
-/*      imgProp->size = -1; */
-/*      imgProp->val.Int = 2; */
-/*      list_add( imageInfo->propList, ( Handle) imgProp); */
-/*      list_add( imgInfo, ( Handle) imageInfo); */
-
-/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
-/*      imageInfo->propList = plist_create( 5, 5); */
-/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
-/*      imgProp->name = duplicate_string( "index"); */
-/*      imgProp->size = -1; */
-/*      imgProp->val.Int = 10; */
-/*      list_add( imageInfo->propList, ( Handle) imgProp); */
-/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
-/*      imgProp->name = duplicate_string( "index1"); */
-/*      imgProp->size = -1; */
-/*      imgProp->val.Int = 16; */
-/*      list_add( imageInfo->propList, ( Handle) imgProp); */
-/*      list_add( imgInfo, ( Handle) imageInfo); */
-
-/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
-/*      imageInfo->propList = plist_create( 5, 5); */
-/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
-/*      imgProp->name = duplicate_string( "index"); */
-/*      imgProp->size = -1; */
-/*      imgProp->val.Int = 1; */
-/*      list_add( imageInfo->propList, ( Handle) imgProp); */
-/*      list_add( imgInfo, ( Handle) imageInfo); */
-
-/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
-/*      imageInfo->propList = plist_create( 5, 5); */
-/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
-/*      list_add( imgInfo, ( Handle) imageInfo); */
-
-/*      DOLBUG( "Getting info about image...\n"); */
-
-/*      if ( ! apc_image_read( "/home/voland/tmp/eagle8.gif", imgInfo, true)) { */
-/*  	DOLBUG( "getinfo failed: "); */
-/*  	DOLBUG( "%s\n", apc_image_get_error_message( NULL, 0)); */
-/*      } */
-/*  } */
+void
+prima_cleanup_image_subsystem( void)
+{
+    plist_destroy( imgFormats);
+}

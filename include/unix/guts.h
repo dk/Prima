@@ -297,6 +297,9 @@ prima_init_image_subsystem( void);
 extern void
 prima_cleanup_font_subsystem( void);
 
+extern void
+prima_cleanup_image_subsystem( void);
+
 extern int
 unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);
 
