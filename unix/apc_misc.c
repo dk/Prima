@@ -907,3 +907,46 @@ apc_getdir( const char *dirname)
    }
    return dirlist;
 }
+
+void
+prima_rect_union( XRectangle *t, const XRectangle *s)
+{
+   XRectangle r;
+   
+   if ( t-> x < s-> x) r. x = t-> x; else r. x = s-> x;
+   if ( t-> y < s-> y) r. y = t-> y; else r. y = s-> y;
+   if ( t-> x + t-> width > s-> x + s-> width)
+      r. width = t-> x + t-> width - r. x;
+   else
+      r. width = s-> x + s-> width - r. x;
+   if ( t-> y + t-> height > s-> y + s-> height)
+      r. height = t-> y + t-> height - r. y;
+   else
+      r. height = s-> y + s-> height - r. y;
+   *t = r;
+}
+
+void
+prima_rect_intersect( XRectangle *t, const XRectangle *s)
+{
+   XRectangle r;
+   int w, h;
+   
+   if ( t-> x > s-> x) r. x = t-> x; else r. x = s-> x;
+   if ( t-> y > s-> y) r. y = t-> y; else r. y = s-> y;
+   if ( t-> x + t-> width < s-> x + s-> width)
+      w = t-> x + (int)t-> width - r. x;
+   else
+      w = s-> x + (int)s-> width - r. x;
+   if ( t-> y + t-> height < s-> y + s-> height)
+      h = t-> y + (int)t-> height - r. y;
+   else
+      h = s-> y + (int)s-> height - r. y;
+   if ( w < 0 || h < 0) {
+      r. x = 0; r. y = 0; r. width = 0; r. height = 0;
+   } else {
+      r. width = w; r. height = h;
+   }
+   *t = r;
+}
+

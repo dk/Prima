@@ -351,11 +351,14 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
       ev. y = r. y;
       ev. width = r. width;
       ev. height = r. height;
+      XX-> exposed_rect = r;
 
       if ( !XX-> flags. sync_paint) {
 	 XSendEvent( DISP, X_WINDOW, false, 0, (XEvent*)&ev);
 	 XCHECKPOINT;
       }
+   } else {
+      prima_rect_union( &XX-> exposed_rect, &r);
    }
 
    XUnionRectWithRegion( &r, XX-> region, XX-> region);

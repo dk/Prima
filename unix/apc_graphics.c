@@ -149,8 +149,8 @@ static RGBColor standard_label_colors[] = {
 static RGBColor standard_listbox_colors[] = {
    { 0x00, 0x00, 0x00 },	/* Prima.Listbox.foreground */
    { 0xcc, 0xcc, 0xcc },        /* Prima.Listbox.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Listbox.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Listbox.hiliteback */
+   { 0xcc, 0xcc, 0xcc },        /* Prima.Listbox.hilitefore */
+   { 0x00, 0x00, 0x00 },	/* Prima.Listbox.hiliteback */
    { 0x60, 0x60, 0x60 },        /* Prima.Listbox.disabledfore */
    { 0xcc, 0xcc, 0xcc },        /* Prima.Listbox.disabledback */
    { 0xff, 0xff, 0xff },        /* Prima.Listbox.light3d */
@@ -160,8 +160,8 @@ static RGBColor standard_listbox_colors[] = {
 static RGBColor standard_menu_colors[] = {
    { 0x00, 0x00, 0x00 },	/* Prima.Menu.foreground */
    { 0xcc, 0xcc, 0xcc },        /* Prima.Menu.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Menu.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Menu.hiliteback */
+   { 0xcc, 0xcc, 0xcc },        /* Prima.Menu.hilitefore */
+   { 0x00, 0x00, 0x00 },	/* Prima.Menu.hiliteback */
    { 0x60, 0x60, 0x60 },        /* Prima.Menu.disabledfore */
    { 0xcc, 0xcc, 0xcc },        /* Prima.Menu.disabledback */
    { 0xff, 0xff, 0xff },        /* Prima.Menu.light3d */
@@ -396,6 +396,10 @@ prima_prepare_drawable_for_painting( Handle self)
    XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
    XCHECKPOINT;
 
+   XX-> clip_rect. x = 0;
+   XX-> clip_rect. y = 0;
+   XX-> clip_rect. width = XX-> size.x;
+   XX-> clip_rect. height = XX-> size.y;
    if ( XX-> region) {
       XSetRegion( DISP, XX-> gc, XX-> region);
       XX-> stale_region = XX-> region;
@@ -1009,8 +1013,23 @@ apc_gp_get_color( Handle self)
 Rect
 apc_gp_get_clip_rect( Handle self)
 {
-   DOLBUG( "apc_gp_get_clip_rect()\n");
-   return (Rect){0,0,0,0};
+   DEFXX;
+   XRectangle cr;
+   Rect r;
+   
+   cr. x = 0;
+   cr. y = 0;
+   cr. width = XX-> size.x;
+   cr. height = XX-> size.y;
+   if ( XX-> flags. paint && ( XX-> region || XX-> stale_region)) {
+      prima_rect_intersect( &cr, &XX-> exposed_rect);
+      prima_rect_intersect( &cr, &XX-> clip_rect);
+   }
+   r. left = cr. x;
+   r. top = XX-> size. y - cr. y;
+   r. bottom = r. top - cr. height;
+   r. right = cr. x + cr. width;
+   return r;
 }
 
 PFontABC
@@ -1165,6 +1184,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    r. y = REVERT( clipRect. top) + 1;
    r. width = clipRect. right - clipRect. left;
    r. height = clipRect. top - clipRect. bottom;
+   XX-> clip_rect = r;
    region = XCreateRegion();
    XUnionRectWithRegion( &r, region, region);
    if ( XX-> stale_region) {

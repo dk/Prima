@@ -403,6 +403,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 r. height = ev-> xexpose. height;
 	 if ( !XX-> region) {
 	    XX-> region = XCreateRegion();
+	    XX-> exposed_rect = r;
+	 } else {
+	    prima_rect_union( &XX-> exposed_rect, &r);
 	 }
 	 XUnionRectWithRegion( &r, XX-> region, XX-> region);
       }

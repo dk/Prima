@@ -254,6 +254,8 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
    ColorSet colors;
    Region region;
    Region stale_region;
+   XRectangle exposed_rect;
+   XRectangle clip_rect;
    FillPattern fill_pattern;
    int rop, paint_rop;
    PCachedFont font;
@@ -348,6 +350,12 @@ prima_update_cursor( Handle self);
 extern int
 unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);
 
+/* rectangle arithmetic */
+extern void
+prima_rect_union( XRectangle *t, const XRectangle *s);
+
+extern void
+prima_rect_intersect( XRectangle *t, const XRectangle *s);
 
 /* Interaction with Window Managers */
 
