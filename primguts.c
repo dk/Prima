@@ -4,6 +4,7 @@
 #include <float.h>
 #ifdef __unix
 #include <floatingpoint.h>
+#include <sys/types.h>
 #endif /* __unix */
 #include "apricot.h"
 #include "guts.h"
@@ -1214,6 +1215,9 @@ XS( prima_cleanup)
    list_destroy( &staticObjects);
    kill_zombies();
    window_subsystem_done();
+#ifdef PARANOID_MALLOC
+   output_mallocs();
+#endif
 
    ST(0) = &sv_yes;
    XSRETURN(1);
@@ -1668,11 +1672,11 @@ list_destroy( PList slf)
 }
 
 void
-plist_destroy( PList self)
+plist_destroy( PList slf)
 {
-   if ( self != NULL) {
-      list_destroy( self);
-      free( self);
+   if ( slf != NULL) {
+      list_destroy( slf);
+      free( slf);
    }
 }
 
@@ -1869,21 +1873,31 @@ Handle self = 0;
 static unsigned long
 timestamp( void)
 {
+#ifdef HAVE_FTIME
    struct timeb t;
    ftime( &t);
    return t. time * 1000 + t. millitm;
+#else
+   struct timeval t;
+   struct timezone tz;
+   gettimeofday( &t, &tz);
+   return t.tv_sec * 1000 + t.tv_usec;
+#endif
 }
 
 static void
 output_mallocs( void)
 {
    HE *he;
+   DOLBUG( "=========================== Reporing heap problems ===========================\n");
    hv_iterinit( hash);
+   DOLBUG( "Iteration done...\n");
    while (( he = hv_iternext( hash)) != nil) {
       debug_write( "%s\n", (char *)HeVAL( he));
       free( HeVAL( he));
       HeVAL( he) = &sv_undef;
    }
+   DOLBUG( "=========================== Report done ===========================\n");
    sv_free(( SV *) hash);
 }
 
@@ -1896,8 +1910,12 @@ _test_malloc( size_t size, int ln, char *fil, Handle self)
    char *c;
    char *c1, *c2;
 
+#ifndef __unix
    if (!myPerl) return malloc( size);
-   if (!hash) hash = hash_create();
+#endif
+   if (!hash) {
+       hash = hash_create();
+   }
    mlc = malloc( size);
    c1 = strrchr( fil, '/');
    c2 = strrchr( fil, '\\');
@@ -1910,7 +1928,7 @@ _test_malloc( size_t size, int ln, char *fil, Handle self)
          sprintf( obj, "%s(?)", ((( PObject) self)-> self)-> className);
    } else
       strcpy( obj, "NOSELF");
-   sprintf( s, "%lu %s(%d) %s %lu", timestamp(), fil, ln, obj, size);
+   sprintf( s, "%lu %s(%d) %s %lu", timestamp(), fil, ln, obj, ( unsigned long) size);
    c = malloc( strlen(s)+1);
    strcpy( c, s);
    hash_store( hash, &mlc, sizeof(mlc), c);
