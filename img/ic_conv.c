@@ -90,6 +90,15 @@ BC( nibble, mono, Halftone)
    memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
 }
 
+BC( nibble, mono, ErrorDiffusion)
+{
+   dBCARGS;
+   BCWARN;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
+      bc_nibble_mono_ed( BCCONV, var->palette);
+   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+}
+
 BC( nibble, byte, None)
 {
    dBCARGS;
@@ -135,6 +144,15 @@ BC( byte, mono, Halftone)
    memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
 }
 
+BC( byte, mono, ErrorDiffusion)
+{
+   dBCARGS;
+   BCWARN;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
+      bc_byte_mono_ed( BCCONV, var->palette);
+   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+}
+
 BC( byte, nibble, None)
 {
    dBCARGS;
@@ -155,6 +173,15 @@ BC( byte, nibble, Halftone)
    BCWARN;
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
       bc_byte_nibble_ht( BCCONV, var->palette, i);
+   memcpy( dstPal, cubic_palette8, 8 * sizeof( RGBColor));
+}
+
+BC( byte, nibble, ErrorDiffusion)
+{
+   dBCARGS;
+   BCWARN;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
+      bc_byte_nibble_ed( BCCONV, var->palette);
    memcpy( dstPal, cubic_palette8, 8 * sizeof( RGBColor));
 }
 
@@ -195,6 +222,15 @@ BC( graybyte, mono, Halftone)
    memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
 }
 
+BC( graybyte, mono, ErrorDiffusion)
+{
+   dBCARGS;
+   BCWARN;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
+      bc_graybyte_mono_ed( BCCONV);
+   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+}
+
 BC( graybyte, nibble, None)
 {
    dBCARGS;
@@ -217,6 +253,16 @@ BC( graybyte, nibble, Halftone)
       bc_graybyte_nibble_ht( BCCONV, i);
    memcpy( dstPal, std16gray_palette, sizeof( std16gray_palette));
 }
+
+BC( graybyte, nibble, ErrorDiffusion)
+{
+   dBCARGS;
+   BCWARN;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
+      bc_graybyte_nibble_ed( BCCONV);
+   memcpy( dstPal, std16gray_palette, sizeof( std16gray_palette));
+}
+
 
 BC( graybyte, byte, None)
 {
@@ -258,6 +304,15 @@ BC( rgb, mono, Halftone)
    memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
 }
 
+BC( rgb, mono, ErrorDiffusion)
+{
+   dBCARGS;
+   BCWARN;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
+      bc_rgb_mono_ed( BCCONV);
+   memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
+}
+
 BC( rgb, nibble, None)
 {
    dBCARGS;
@@ -276,6 +331,16 @@ BC( rgb, nibble, Halftone)
    memcpy( dstPal, cubic_palette8, 8 * sizeof( RGBColor));
 }
 
+BC( rgb, nibble, ErrorDiffusion)
+{
+   dBCARGS;
+   BCWARN;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
+      bc_rgb_nibble_ed( BCCONV);
+   memcpy( dstPal, cubic_palette8, 8 * sizeof( RGBColor));
+}   
+
+
 BC( rgb, byte, None)
 {
    dBCARGS;
@@ -293,6 +358,15 @@ BC( rgb, byte, Halftone)
       bc_rgb_byte_ht( BCCONV, i);
    memcpy( dstPal, cubic_palette, sizeof( cubic_palette));
 }
+
+BC( rgb, byte, ErrorDiffusion)
+{
+   dBCARGS;
+   BCWARN;
+   for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
+      bc_rgb_byte_ed( BCCONV);
+   memcpy( dstPal, cubic_palette, sizeof( cubic_palette));
+}   
 
 BC( rgb, graybyte, None)
 {

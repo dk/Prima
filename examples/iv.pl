@@ -71,6 +71,8 @@ sub status
 sub menuadd
 {
    unless ( $_[0]->IV-> image) {
+      $_[0]-> {omenuID} = 'O';
+      $_[0]-> {conversion} = ict::Halftone;
       $_[0]-> menu-> insert(
         [
            [ 'Reopen' => 'Ctrl+R' => '^R'       => \&freopen],
@@ -101,7 +103,9 @@ sub menuadd
                  ['~Grayscale' => sub {icvt($_[0],im::bpp8|im::GrayScale)}],
                  ['~RGB' => sub {icvt($_[0],im::RGB)}],
                  [],
-                 ['*hft' => '~Halftoning' => sub{$_[0]->menu->toggle($_[1]);}],
+                 ['N' => '~No halftoning' => sub {setconv(@_)}],
+                 ['*O' => '~Ordered' => sub {setconv(@_)}],
+                 ['E' => '~Error diffusion' => sub {setconv(@_)}],
               ]],
               ['~Zoom' => [
                  ['~Normal ( 100%)' => 'Ctrl+Z' => '^Z' => sub{$_[0]->IV->zoom(1.0)}],
@@ -246,11 +250,25 @@ sub fsaveas
    $dlg-> destroy;
 }
 
+sub setconv
+{
+   my ( $self, $menuID) = @_;
+   return if $self-> {omenuID} eq $menuID;
+   $self-> menu-> uncheck( $self->{omenuID});
+   $self-> menu-> check( $menuID);
+   $self-> {omenuID}    = $menuID;
+   $self-> {conversion} = ( 
+     ( $menuID eq 'N') ? ict::None : (
+     ( $menuID eq 'O') ? ict::Halftone : ict::ErrorDiffusion
+     )
+   );  
+}   
+
 sub icvt
 {
    my $im = $_[0]->IV->image;
    $im-> set(
-      conversion => $_[0]->menu->hft->checked ? ict::Halftone : ict::None,
+      conversion => $_[0]-> {conversion},
       type       => $_[1],
    );
    status( $_[0]);
@@ -276,8 +294,6 @@ sub zbestfit
    my $iv = $_[0]->IV;
    my @szA = $iv->image->size;
    my @szB = $iv->get_active_area(2);
-   $szB[0] = $szB[2] - $szB[0];
-   $szB[1] = $szB[3] - $szB[1];
    my $x = $szB[0]/$szA[0];
    my $y = $szB[1]/$szA[1];
    $iv-> zoom( $x < $y ? $x : $y);

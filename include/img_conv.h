@@ -66,6 +66,7 @@ extern void bc_mono_graybyte( register Byte * source, register Byte * dest, regi
 extern void bc_mono_rgb( register Byte * source, Byte * dest, register int count, register PRGBColor palette);
 extern void bc_nibble_mono_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref);
 extern void bc_nibble_mono_ht( register Byte * source, register Byte * dest, register int count, register PRGBColor palette, int lineSeqNo);
+extern void bc_nibble_mono_ed( register Byte * source, register Byte * dest, register int count, register PRGBColor palette);
 extern void bc_nibble_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref);
 extern void bc_nibble_byte( register Byte * source, register Byte * dest, register int count);
 extern void bc_nibble_graybyte( register Byte * source, register Byte * dest, register int count, register PRGBColor palette);
@@ -73,21 +74,28 @@ extern void bc_nibble_byte_cr( register Byte * source, register Byte * dest, reg
 extern void bc_nibble_rgb( register Byte * source, Byte * dest, register int count, register PRGBColor palette);
 extern void bc_byte_mono_cr( register Byte * source, Byte * dest, register int count, register Byte * colorref);
 extern void bc_byte_mono_ht( register Byte * source, register Byte * dest, register int count, PRGBColor palette, int lineSeqNo);
+extern void bc_byte_mono_ed( register Byte * source, register Byte * dest, register int count, PRGBColor palette);
 extern void bc_byte_nibble_cr( register Byte * source, Byte * dest, register int count, register Byte * colorref);
 extern void bc_byte_nibble_ht( register Byte * source, Byte * dest, register int count, register PRGBColor palette, int lineSeqNo);
+extern void bc_byte_nibble_ed( register Byte * source, Byte * dest, register int count, register PRGBColor palette);
 extern void bc_byte_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref);
 extern void bc_byte_graybyte( register Byte * source, register Byte * dest, register int count, register PRGBColor palette);
 extern void bc_byte_rgb( register Byte * source, Byte * dest, register int count, register PRGBColor palette);
 extern void bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo);
+extern void bc_graybyte_mono_ed( register Byte * source, register Byte * dest, register int count);
 extern void bc_graybyte_nibble_ht( register Byte * source, Byte * dest, register int count, int lineSeqNo);
+extern void bc_graybyte_nibble_ed( register Byte * source, Byte * dest, register int count);
 extern void bc_graybyte_rgb( register Byte * source, Byte * dest, register int count);
 extern void bc_rgb_graybyte( Byte * source, register Byte * dest, register int count);
 extern void bc_rgb_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo);
+extern void bc_rgb_mono_ed( register Byte * source, register Byte * dest, register int count);
 extern Byte rgb_color_to_16( register Byte b, register Byte g, register Byte r);
 extern void bc_rgb_nibble( register Byte *source, Byte *dest, int count);
 extern void bc_rgb_nibble_ht( register Byte * source, Byte * dest, register int count, int lineSeqNo);
+extern void bc_rgb_nibble_ed( register Byte * source, Byte * dest, register int count);
 extern void bc_rgb_byte( Byte * source, register Byte * dest, register int count);
 extern void bc_rgb_byte_ht( Byte * source, register Byte * dest, register int count, int lineSeqNo);
+extern void bc_rgb_byte_ed( Byte * source, register Byte * dest, register int count);
 
 // bitstroke stretching types
 
@@ -137,28 +145,35 @@ extern void ic_mono_graybyte_ictNone( Handle self, Byte * dstData, PRGBColor dst
 extern void ic_mono_rgb_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_nibble_mono_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_nibble_mono_ictHalftone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
+extern void ic_nibble_mono_ictErrorDiffusion( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_nibble_byte_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_nibble_graybyte_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_nibble_rgb_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_byte_mono_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
-extern void ic_byte_mono_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_byte_mono_ictHalftone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
+extern void ic_byte_mono_ictErrorDiffusion( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_byte_nibble_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_byte_nibble_ictHalftone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
+extern void ic_byte_nibble_ictErrorDiffusion( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_byte_graybyte_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_byte_rgb_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_graybyte_mono_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_graybyte_mono_ictHalftone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
+extern void ic_graybyte_mono_ictErrorDiffusion( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_graybyte_nibble_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_graybyte_nibble_ictHalftone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
+extern void ic_graybyte_nibble_ictErrorDiffusion( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_graybyte_byte_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_graybyte_rgb_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_rgb_mono_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_rgb_mono_ictHalftone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
+extern void ic_rgb_mono_ictErrorDiffusion( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_rgb_nibble_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_rgb_nibble_ictHalftone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
+extern void ic_rgb_nibble_ictErrorDiffusion( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_rgb_byte_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_rgb_byte_ictHalftone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
+extern void ic_rgb_byte_ictErrorDiffusion( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_rgb_graybyte_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 
 extern void ic_Byte_short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
