@@ -320,6 +320,17 @@ sub load_link
             $t = $tid;
             last;
          }
+         if ( !defined $t || $t < 0) {
+            $tid = -1;
+            my $s = quotemeta $section;
+            for ( @{$self-> {topics}}) {
+               $tid++;
+               next unless $$_[T_DESCRIPTION] =~ m/^$s/;
+               next if !$item && $$_[T_STYLE] == STYLE_ITEM;
+               $t = $tid;
+               last;
+            }
+         }
          unless ( defined $t) { # no such topic, must be a page?
             $page = $section;
             $section = '';
