@@ -31,6 +31,11 @@
 # This is not a ``normal'' Makefile.PL file.
 # It does not use MakeMaker.
 #
+
+BEGIN {
+    unshift @INC, '.';
+};
+
 my $usePrigraph = defined $ENV{PRIMA_PRIGRAPH};
 
 require 5.00502;
@@ -55,6 +60,7 @@ use vars @ovvars = qw(
     $PLATFORM
     $COMPILER
     $PREFIX
+    $PREFIX_BIN
     $INSTALL_BIN
     $INSTALL_LIB
     $INSTALL_DL
@@ -78,6 +84,7 @@ use vars qw(
     %DEFINES
     %USER_VARS
     %USER_VARS_ADDONS
+    %USER_VARS_LINKS
     %USER_DEFINES
     %USER_DEFINES_ADDONS
     %overrideable
@@ -194,7 +201,7 @@ sub null_output
 {
     open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
     open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
-#   $NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
+#    $NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
     if ( $^O !~ /linux/) {
         close STDOUT;
         close STDERR;
@@ -249,10 +256,10 @@ sub have_header
     return $DEFINES{$defname} if defined $DEFINES{$defname};
     my @pre_headers = map { "#include <$_>\n" } @_;
     print "Checking for presence of $header... ";
-    my $present = compile( <<ENDP, 1);
+    my $present = compile( <<EOF, 1);
 @pre_headers
 #include <$header>
-ENDP
+EOF
     $DEFINES{ $defname} = 0;
     $DEFINES{ $defname} = 1 if $present;
     print( $present ? "yes" : "no", "\n");
@@ -266,9 +273,9 @@ sub find_header
     foreach $incpath ( @_) {
         local @INCPATH = @INCPATH;
         push @INCPATH, $incpath if $incpath;
-        $present = compile( <<ENDP, 1);
+        $present = compile( <<EOF, 1);
 #include <$header>
-ENDP
+EOF
         return $incpath if $present;
     }
     return undef;
@@ -282,13 +289,13 @@ sub find_lib
     push @LIBS, $lib;
     foreach $libpath ( @_) {
         local @LIBPATH = (@LIBPATH, $libpath) if $libpath;
-        $present = compile( <<ENDP);
+        $present = compile( <<EOF);
 int
 main()
 {
    return 0;
 }
-ENDP
+EOF
         return $libpath if $present;
     }
     return undef;
@@ -302,7 +309,7 @@ sub have_func
     my @srchead = map { "#include <$_>\n"} @headers;
     $defname =~ s/\W/_/g;
     print "Checking for function $funcname... ";
-    my $rc = compile( <<ENDP);
+    my $rc = compile( <<EOF);
 @srchead
 
 int
@@ -311,7 +318,7 @@ main()
     void * ixi = $funcname;
     return 0;
 }
-ENDP
+EOF
     if ( $rc) {
         $DEFINES{ $defname} = 1;
         print "yes\n";
@@ -336,7 +343,7 @@ sub have_define
         $tmpo =~ s/\.c$/\.o/;
     }
     open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
-    print TMPSRC <<ENDP;
+    print TMPSRC <<EOF;
 int
 main()
 {
@@ -346,7 +353,7 @@ return 0;
 #error No
 #endif
 }
-ENDP
+EOF
     close TMPSRC;
     null_output;
     my $ccrc = system( "$CC -c $tmpsrc");
@@ -363,7 +370,7 @@ sub have_type
     return 1 if $DEFINES{$defname};
     print "Checking for presence of type ${ type}... ";
     my @srchead = map { "#include <$_>\n"} @headers;
-    my $rc = compile( <<ENDP);
+    my $rc = compile( <<EOF);
 @srchead
 
 int
@@ -372,7 +379,7 @@ main()
     ${ type} foo;
     return 0;
 }
-ENDP
+EOF
     if ( $rc) {
         $DEFINES{ $defname} = 1;
         print "yes\n";
@@ -409,6 +416,9 @@ sub setvar
         if ( defined $USER_VARS{ $varname}) {
             eval "\$$varname = \$USER_VARS{ \$varname}";
         }
+	elsif ( defined $USER_VARS_LINKS{ $varname}) {
+	    eval "\$$varname = sprintf \"$USER_VARS_LINKS{ $varname}->{ format}\", \$$USER_VARS_LINKS{ $varname}->{ src}";
+	}
         else {
             eval "\$$varname = join( '', \@_)";
         }
@@ -869,13 +879,13 @@ sub setup_defines
 sub generate_win32_def
 {
     open PRIMADEF, ">$DEFFILE" or die "Cannot create $DEFFILE: $!";
-    print PRIMADEF <<ENDP;
+    print PRIMADEF <<EOF;
 LIBRARY Prima
 DESCRIPTION 'Prima Guts version 2.00, Copyright (C) the Protein Laboratory 1997'
 CODE LOADONCALL
 DATA LOADONCALL NONSHARED MULTIPLE
 EXPORTS
-ENDP
+EOF
     if ( $COMPILER eq 'bcc32') {
         print PRIMADEF map { "\t_$_\n\t$_=_$_\n"} @Prima_exports;
     }
@@ -888,13 +898,13 @@ ENDP
 sub generate_os2_def
 {
     open PRIMADEF, ">$DEFFILE" or die "Cannot create $DEFFILE: $!";
-    print PRIMADEF <<ENDP;
+    print PRIMADEF <<EOF;
 LIBRARY $OS2DLLF INITINSTANCE TERMINSTANCE
 DESCRIPTION 'Prima Guts version 2.00, Copyright (C) the Protein Laboratory 1997'
 CODE LOADONCALL
 DATA LOADONCALL NONSHARED MULTIPLE
 EXPORTS
-ENDP
+EOF
     print PRIMADEF map { "\t$_\n"} @Prima_exports;
     close PRIMADEF;
 }
@@ -1104,7 +1114,7 @@ if ( $#ARGV >= 0 && $ARGV[ 0] =~ /^\-\-cp(bin)?$/) {
             open DSTPL, ">$dst" or die "Cannot create $dst: $!";
             chmod 0555, $dst unless $Win32 || $OS2;
             if ( $Win32) {
-                print DSTPL <<ENDP;
+                print DSTPL <<EOF;
 \@rem = '--*-Perl-*--
 \@echo off
 if "%OS%" == "Windows_NT" goto WinNT
@@ -1117,19 +1127,19 @@ if %errorlevel% == 9009 echo You do not have Perl in your PATH.
 goto endofperl
 \@rem ';
 #!perl
-ENDP
+EOF
             }
             elsif ( $OS2) {
                 my $perlpath = $Config{ perlpath};
                 $perlpath =~ s/(perl)(\.exe)?$/$1__$2/i if $perlpath =~ /perl(\.exe)?$/i;
-                print DSTPL <<ENDP;
+                print DSTPL <<EOF;
 extproc $perlpath -wS
-ENDP
+EOF
             }
             else {
-                print DSTPL <<ENDP;
+                print DSTPL <<EOF;
 #! $Config{ perlpath} -w
-ENDP
+EOF
             }
             my $filestart = 1;
             while ( <SRCPL>) {
@@ -1138,10 +1148,10 @@ ENDP
                 print DSTPL;
             }
             if ( $Win32) {
-                print DSTPL <<ENDP;
+                print DSTPL <<EOF;
 __END__
 :endofperl
-ENDP
+EOF
             }
             close SRCPL;
             close DSTPL;
@@ -1170,6 +1180,12 @@ else {
     $| = 1;
 
     print "Setting up working environment.\n";
+    %USER_VARS_LINKS = (
+	INSTALL_BIN => {
+	    src => 'PREFIX',
+	    format => '%s/bin',
+	},
+    );
     process_commandline;
     setup_variables;
     setup_paths;
@@ -1178,7 +1194,7 @@ else {
 
     push @alldirs, qd( "include/generic"), qd( "auto/Prima");
 
-    my $make = <<MAKE;
+    my $make = <<EOF;
 # Makefile for Prima project under $Config{archname}
 #
 # THIS IS GENERATED FILE.
@@ -1188,7 +1204,7 @@ else {
 
 all: prima
 
-MAKE
+EOF
 
     if ( $ENV{ HOME} && ( -d qd( "$ENV{ HOME}/.Makeinc"))) {
         my $hdir = "$ENV{ HOME}/.Makeinc";
@@ -1231,7 +1247,7 @@ MAKE
     push @allclean, $thunks_tinc;
 
     print "Writing Makefile...";
-    $make =~ tr!/!!s;
+    $make =~ tr[/][]s;
     open MAKE, ">Makefile" or die "Creation of Makefile failed: $!";
     print MAKE $make;
 
@@ -1242,7 +1258,7 @@ MAKE
     my $srcdist_files = 'Makefile.PL *.c *.cls Prima.pm examples img include os2 prigraph Prima test unix utils win32';
     my $distname = 'Prima-1.00';
 
-    print MAKE <<MAKE;
+    print MAKE <<EOF;
 $thunks_tinc: Makefile @alltmldeps
 \t$^X utils/tmlink.pl -Iinclude/generic -o$thunks_tinc @alltml
 
@@ -1288,7 +1304,7 @@ CPBIN=$^X Makefile.PL --cpbin
 install: all
 \t\@\$(CP) \\
 \t$PrimaTarget $INSTALL_DL \\
-MAKE
+EOF
 
     my ( $instcnt, $maxcnt) = ( 1, 20);
     finddepth(
@@ -1346,7 +1362,7 @@ MAKE
     }
     print MAKE "\n";
 
-    print MAKE <<MAKE;
+    print MAKE <<EOF;
 
 MD=$^X Makefile.PL --md
 
@@ -1356,7 +1372,7 @@ dirs: @alldirs
 \t\@echo Creating directories...
 \t\@\$(MD) @alldirs
 
-MAKE
+EOF
 
     print MAKE join( "\n", @footers), "\n";
 
