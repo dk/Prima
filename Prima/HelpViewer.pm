@@ -95,6 +95,11 @@ sub link_click
    $self-> SUPER::link_click( $s, $btn, $mod, $x, $y);
    return if $btn != mb::Right;
    my $new = ref($self-> owner)-> create;
+   if ( $s =~ /^\//) {
+      $s = "$self->{pageName}$s";
+   } elsif ( $s =~ /^topic:\/\//) {
+      $new-> {text}-> load_link( $self-> {pageName});
+   }
    $new-> {text}-> update_view;
    $new-> {text}-> load_link( $s);
    $new-> select;
@@ -181,15 +186,18 @@ sub profile_default
            [ '~Increase font' => 'Ctrl +' => '^+' => sub {
                return if $_[0]-> {text}-> font-> size > 100;
                $_[0]-> {text}-> font-> size( $_[0]-> {text}-> font-> size + 2);
+               $inifile-> section('View')-> {FontSize} = $_[0]-> {text}-> font-> size;
            }],
            [ '~Decrease font' => 'Ctrl -' => '^-' => sub {
                return if $_[0]-> {text}-> font-> size < 4;
                $_[0]-> {text}-> font-> size( $_[0]-> {text}-> font-> size - 2);
+               $inifile-> section('View')-> {FontSize} = $_[0]-> {text}-> font-> size;
           }],
           [],
           [ 'fullView' => 'Full text ~view' => sub {
              $_[0]-> {text}-> topicView( ! $_[0]-> menu-> toggle( $_[1]));
              $_[0]-> update;
+             $inifile-> section('View')-> {FullText} = $_[0]-> {text}-> topicView ? 0 : 1;
           }],
           [],
           ['~Find...' => 'Ctrl+F' => '^F' => 'find'],
@@ -826,6 +834,7 @@ sub set_encoding
    $m-> uncheck( "ENC$enc") if $m-> has_item( "ENC$enc");
    $m-> check( "ENC$fe");
    $t-> {fontPalette}->[$_]-> {encoding} = $fe for 0,1;
+   $inifile-> section('View')-> {FontEncoding} = $self-> {text}-> {fontPalette}->[0]->{encoding};
    $t-> format(1);
 }
 
