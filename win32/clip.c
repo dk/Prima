@@ -178,13 +178,12 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
                       utf = c-> text. text + dt;
                    }
                    utf = uvchr_to_utf8( utf, *p);
-                   c-> text. length++;
                 }
              }
-             *utf = 0;
-             c-> text. length = strlen( utf);
              ret = true;
           CLEAR:;
+             *utf = 0;
+             c-> text. length = strlen( utf);
              GlobalUnlock( ph);
              return ret;
          } else {
@@ -203,7 +202,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
              c-> text. length = 0;
              if ((c-> text. text = ( char *) malloc( len))) {
                 for ( i = 0; i < len; i++)
-                   if ( ptr[i] != '\r') 
+                   if ( ptr[i] != '\r' || ( i > 0 && ptr[i-1] != '\n')) 
                       c-> text. text[c-> text. length++] = ptr[i];
                 ret = true;
              } 
@@ -258,39 +257,40 @@ apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
          return true;
       case CF_TEXT:
          {
-            int ulen = c-> text. utf8 ? strlen( c-> text. text) : c-> text. length;
-            int i, nlength = c-> text. length + 1;
+            int ulen = c-> text. utf8 ? 
+                    utf8_length( c-> text. text, c-> text. text + c-> text. length) : 
+                    c-> text. length;
+            int i, cr = 0;
             void *ptr, *oemptr;
             char *dst;
             HGLOBAL glob, oemglob;
 
             for ( i = 0; i < c-> text. length; i++) 
                if (c-> text. text[i] == '\n' && c-> text. text[i+1] != '\r') 
-                  nlength++;
+                  cr++;
 
             if ( !IS_NT || !c-> text. utf8) {
-               glob    = GlobalAlloc( GMEM_DDESHARE, (ulen + 1) * sizeof( CHAR));
-               oemglob = GlobalAlloc( GMEM_DDESHARE, (ulen + 1) * sizeof( CHAR));
+               glob    = GlobalAlloc( GMEM_DDESHARE, ulen + cr + 1);
+               oemglob = GlobalAlloc( GMEM_DDESHARE, ulen + cr + 1);
                if ( glob)    ptr    = GlobalLock( glob);
                if ( oemglob) oemptr = GlobalLock( oemglob);
 
                if ( ptr && oemptr) {
-                  dst = ( char *) ptr;
-                  for ( i = 0; i < ulen; i++) {
-                     if ( c-> text. text[i] == '\n' && c-> text. text[i+1] != '\r') 
-                        *(dst++) = '\r';
-                     *(dst++) = c-> text. text[i];
-                  }
-                  *dst = 0;
                   if ( c-> text. utf8) {
-                     WCHAR * buf = malloc( sizeof( WCHAR) * nlength);
-                     if ( !buf) goto NO_UTF;
-                     utf8_to_wchar( ptr, buf, nlength);
-                     WideCharToMultiByte( CP_ACP,   0, buf, nlength, ptr,    nlength, nil, nil);
-                     WideCharToMultiByte( CP_OEMCP, 0, buf, nlength, oemptr, nlength, nil, nil);
+                     WCHAR * buf = malloc( sizeof( WCHAR) * ulen);
+                     if ( !buf) goto FAIL;
+                     utf8_to_wchar( c-> text. text, buf, ulen);
+                     WideCharToMultiByte( CP_ACP,   0, buf, ulen, ptr,    ulen + cr + 1, nil, nil);
+                     WideCharToMultiByte( CP_OEMCP, 0, buf, ulen, oemptr, ulen + cr + 1, nil, nil);
                   } else {
-                  NO_UTF:
-                     CharToOemBuff(( LPCTSTR) ptr, ( LPTSTR) oemptr, nlength);
+                     dst = ( char *) ptr;
+                     for ( i = 0; i < c-> text. length; i++) {
+                        if ( c-> text. text[i] == '\n' && c-> text. text[i+1] != '\r') 
+                           *(dst++) = '\r';
+                        *(dst++) = c-> text. text[i];
+                     }
+                     *dst = 0;
+                     CharToOemBuff(( LPCTSTR) ptr, ( LPTSTR) oemptr, ulen + cr + 1);
                   }
                   GlobalUnlock( oemptr);
                   GlobalUnlock( ptr);
@@ -298,6 +298,7 @@ apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
                   if ( !SetClipboardData( CF_OEMTEXT, oemglob)) apiErr;
                } else {
                   apiErr;
+               FAIL:
                   if ( ptr) GlobalUnlock( ptr);
                   if ( oemptr) GlobalUnlock( oemptr);
                   if ( glob) GlobalFree( glob);
@@ -306,14 +307,14 @@ apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
             }
             
             if ( IS_NT) {
-               if (( glob = GlobalAlloc( GMEM_DDESHARE, ( c-> text. length + 1) * sizeof( WCHAR)))) {
+               if (( glob = GlobalAlloc( GMEM_DDESHARE, ( ulen + 1) * sizeof( WCHAR)))) {
                   if (( ptr = GlobalLock( glob))) {
                      if ( c-> text. utf8)
-                        utf8_to_wchar( c-> text. text, ptr, c-> text. length + 1);
+                        utf8_to_wchar( c-> text. text, ptr, ulen + 1);
                      else
                         MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, 
                             c-> text. text, c-> text. length + 1, 
-                            ( LPWSTR) ptr,  c-> text. length + 1);
+                            ( LPWSTR) ptr,  ulen + 1);
                      GlobalUnlock( glob);
                      if ( !SetClipboardData( CF_UNICODETEXT, glob)) apiErr;
                   } else {
@@ -322,7 +323,6 @@ apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
                   }
                } else apiErr;
             } 
-
          }
          return true;
       default:
