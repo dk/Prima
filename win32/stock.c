@@ -1151,12 +1151,13 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
    PFont fm;
    char wname[256], *name = nil;
 
+   if ( f-> wide) {
+      wchar2char( wname, e-> elfLogFont. lfFaceName, LF_FACESIZE);
+      name = wname;
+   } else
+      name = (( ENUMLOGFONTEXA*) e)-> elfLogFont. lfFaceName;
+
    if ( f-> hash) { /* gross-family enumeration */
-      if ( f-> wide) {
-         wchar2char( wname, e-> elfLogFont. lfFaceName, LF_FACESIZE);
-         name = wname;
-      } else
-         name = (( ENUMLOGFONTEXA*) e)-> elfLogFont. lfFaceName;
       fm = hash_fetch( f-> hash, name, strlen( name));
       if ( fm) {
          char ** enc = (char**) fm-> encoding;
