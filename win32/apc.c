@@ -1092,7 +1092,6 @@ apc_window_set_client_pos( Handle self, int x, int y)
       w. rcNormalPosition. right  += x - delta. x - w. rcNormalPosition. left;
       w. rcNormalPosition. left    = x - delta. x;
       w. flags   = 0;
-      w. showCmd  = 0;
       if ( !SetWindowPlacement( HANDLE, &w)) apiErr;
    } else {
       if ( !GetWindowRect( HANDLE, &r)) apiErr;
@@ -1139,7 +1138,6 @@ apc_window_set_client_size( Handle self, int x, int y)
       w. rcNormalPosition. top    = w. rcNormalPosition. bottom - y - ( c2. bottom - c2. top - c. bottom + c. top);
       w. rcNormalPosition. right  = x + ( c2. right - c2. left - c. right + c. left) + w. rcNormalPosition. left;
       w. flags   = 0;
-      w. showCmd = 0;
       if ( !SetWindowPlacement( h, &w)) apiErr;
    } else {
       if ( !GetWindowRect( h, &r)) apiErr;
@@ -2047,7 +2045,7 @@ apc_widget_set_pos( Handle self, int x, int y)
          w. rcNormalPosition. bottom  = sz. y - y;
          w. rcNormalPosition. right  += x - w. rcNormalPosition. left;
          w. rcNormalPosition. left    = x;
-         w. flags = w. showCmd = 0;
+         w. flags = 0;
          if ( !SetWindowPlacement( h, &w)) apiErrRet;
          return true;
       }
@@ -2078,7 +2076,7 @@ apc_widget_set_size( Handle self, int width, int height)
          if ( height < 0) height = 0;
          w. rcNormalPosition. top    = w. rcNormalPosition. bottom - height;
          w. rcNormalPosition. right  = width + w. rcNormalPosition. left;
-         w. flags = w. showCmd = 0;
+         w. flags = 0;
          if ( !SetWindowPlacement( h, &w)) apiErrRet;
          return true;
       }
