@@ -1560,7 +1560,7 @@ typedef struct _ObjectOptions_ {
    unsigned optOwnerHint           : 1;
    unsigned optOwnerShowHint       : 1;
    unsigned optOwnerPalette        : 1;
-   unsigned optPropagateGeometry   : 1;
+   unsigned optPackPropagate       : 1;
    unsigned optSetupComplete       : 1;
    unsigned optSelectable          : 1;
    unsigned optShowHint            : 1;
@@ -1947,34 +1947,38 @@ apc_window_end_modal( Handle self);
 /* Widget management */
 
 typedef struct {
+   /* common geometry fields */
+   Handle         next;           /* dynamically filled linked list of pack slaves */
+   Handle         in;             /* 'in' option */
+   /* pack */
    Point          pad;            /* border padding */
    Point          ipad;           /* size increaze */
    Handle         order;          /* if non-nil, BEFORE or AFTER a widget */
-   Handle         next;           /* dynamically filled linked list of pack slaves */
+   /* place */ 
+   int x, y;
+   float relX, relY;
+   float relWidth, relHeight;
+
+   /* bitwise fields */
+   /* common */
+   unsigned int   anchorx    : 2; /* 0 - left, 1 - center, 2 - right */
+   unsigned int   anchory    : 2; /* 0 - bottom, 1 - center, 2 - top */
+   /* pack */
    unsigned int   after      : 1; /* 0 - order is BEFORE; 1 - order is AFTER */
    unsigned int   expand     : 1; /* causes the allocation rectange to fill all remaining space */
    unsigned int   fillx      : 1; /* fill horizontal extent */
    unsigned int   filly      : 1; /* fill vertical extent */ 
    unsigned int   side       : 2; /* 0 - left, 1 - bottom, 2 - right, 3 - top */
-   unsigned int   anchorx    : 2; /* 0 - left, 1 - center, 2 - right */
-   unsigned int   anchory    : 2; /* 0 - bottom, 1 - center, 2 - top */
-} PackInfo, *PPackInfo;
-
-typedef struct {
-   int x, y;
-   float relX, relY;
-   float relWidth, relHeight;
-   unsigned int   use_x   : 1;
-   unsigned int   use_y   : 1;
-   unsigned int   use_w   : 1;
-   unsigned int   use_h   : 1;
-   unsigned int   use_rx  : 1;
-   unsigned int   use_ry  : 1;
-   unsigned int   use_rw  : 1;
-   unsigned int   use_rh  : 1;
-   unsigned int   anchorx : 2; /* 0 - left, 1 - center, 2 - right */
-   unsigned int   anchory : 2; /* 0 - bottom, 1 - center, 2 - top */
-} PlaceInfo, *PPlaceInfo;
+   /* place */ 
+   unsigned int   use_x      : 1;
+   unsigned int   use_y      : 1;
+   unsigned int   use_w      : 1;
+   unsigned int   use_h      : 1;
+   unsigned int   use_rx     : 1;
+   unsigned int   use_ry     : 1;
+   unsigned int   use_rw     : 1;
+   unsigned int   use_rh     : 1;
+} GeomInfo, *PGeomInfo;
 
 extern Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint,

@@ -667,6 +667,7 @@ sub notification_types { return \%RNT; }
    ownerShowHint     => 1,
    ownerPalette      => 1,
    packInfo          => undef,
+   packPropagate     => 1,
    placeInfo         => undef,
    pointerIcon       => undef,
    pointer           => cr::Default,
@@ -681,7 +682,6 @@ sub notification_types { return \%RNT; }
    popupLight3DColor      => cl::Light3DColor,
    popupDark3DColor       => cl::Dark3DColor,
    popupItems        => undef,
-   propagateGeometry => 0,
    right             => 200,
    scaleChildren     => 1,
    selectable        => 0,
@@ -783,8 +783,7 @@ sub profile_check_in
       $p->{ $_} = Prima::Widget-> font_match( $p->{ $_}, $default->{ $_});
    }
 
-   if ( exists( $p-> { origin}))
-   {
+   if ( exists( $p-> { origin})) {
       $p-> { left  } = $p-> { origin}-> [ 0];
       $p-> { bottom} = $p-> { origin}-> [ 1];
    }
@@ -827,6 +826,7 @@ sub profile_check_in
    } else {
       $p-> {designScale} = [0,0];
    }
+
 
    $p-> { top} = $default->{ bottom} + $p-> { height}
      if ( !exists ( $p-> { top}) && !exists( $p-> { bottom}) && exists( $p-> { height}));
@@ -882,6 +882,9 @@ sub profile_check_in
       }
       $p-> {geometry} = gt::Pack unless exists $p->{geometry};
    } 
+   $p-> {packPropagate} = 0 if !exists $p->{packPropagate} && 
+      ( exists $p->{width} || exists $p-> {height});
+   
    if ( exists $p-> {place}) {
       for ( keys %{$p-> {place}}) {
          s/^-//; # Tk syntax
@@ -1002,6 +1005,7 @@ sub defocus     { $_[0]-> focused(0); }
 
 sub pack { 
    my $self = shift;
+# XXX regexp kills valid undefs   
    $self-> packInfo( { grep { defined } map { /^(?:-(\D.*))|(.*)$/; } @_ });
    $self-> geometry( gt::Pack);
 }
@@ -1012,8 +1016,8 @@ sub place {
    $self-> geometry( gt::Place);
 }
 
-sub packForget { shift-> geometry( gt::Default)}
-sub placeForget { shift-> geometry( gt::Default)}
+sub packForget { $_[0]-> geometry( gt::Default) if $_[0]-> geometry == gt::Pack }
+sub placeForget { $_[0]-> geometry( gt::Default) if $_[0]-> geometry == gt::Place }
 sub packSlaves { shift-> get_pack_slaves()}
 sub placeSlaves { shift-> get_place_slaves()}
 

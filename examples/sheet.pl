@@ -48,7 +48,7 @@ use Prima;
 use Prima::Header;
 use Prima::Application;
 
-my $w = Prima::MainWindow-> create;
+my $w = Prima::MainWindow-> create( packPropagate => 0);
 
 my @items;
 

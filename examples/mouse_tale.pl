@@ -108,6 +108,7 @@ my $initfs = 20;
 
 $w = Prima::MainWindow-> create(
    name => 'Mouse tale',
+   packPropagate => 0,
    menuItems => [
       ['~Font' => [
           [ '~Increase' , 'Ctrl+Plus' , km::Ctrl|ord('+') , sub {

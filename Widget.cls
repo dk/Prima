@@ -55,14 +55,14 @@ object Prima::Widget( Prima::Drawable)
 #  common:   
    int       geometry;                 # geometry manager, gtXXX
    Point     geomSize;                 # requested size, common to all managers
+   GeomInfo  geomInfo;                 # managers options
 #  growMode:
    int       growMode;                 # growing flags, see gmGrowXXX
    Point     virtualSize;              # fictive size not aware of size limits
 #  pack:   
-   PackInfo  packInfo;                 # pack geometry manager info
    Handle    packSlaves;               # first pack slave in linked list
 #  place
-   PlaceInfo placeInfo;                # place geometry manacer info
+   Handle    placeSlaves;              # first place slave in linked list
 
 # properties
    property  SV *   accelItems;
@@ -110,7 +110,7 @@ object Prima::Widget( Prima::Drawable)
    property  Point  pointerPos;
    property  int    pointerType;
    property  Color  popupColorIndex( int index);
-   property  Bool   propagateGeometry;
+   property  Bool   packPropagate;
    property  Rect   rect;
    property  int    right;
    property  Bool   scaleChildren;

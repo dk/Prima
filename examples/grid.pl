@@ -51,6 +51,7 @@ use Prima::Grids;
 my $g;
 my $w = Prima::MainWindow-> create(
    text => 'Grid example',
+   packPropagate => 0,
    menuItems => [
       ['~Options' => [
          ['*dhg', 'Draw HGrid'=> sub { $g-> drawHGrid( $_[0]-> menu-> toggle( $_[1])) }],

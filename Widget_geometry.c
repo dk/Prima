@@ -39,12 +39,14 @@ extern "C" {
 #define var (( PWidget) self)
 #define his (( PWidget) child)
 
-void Widget_pack_children( Handle self); 
-void Widget_place_children( Handle self); 
+void Widget_pack_slaves( Handle self); 
+void Widget_place_slaves( Handle self); 
 Bool Widget_size_notify( Handle self, Handle child, const Rect* metrix);
 Bool Widget_move_notify( Handle self, Handle child, Point * moveTo);
 static void Widget_pack_enter( Handle self); 
 static void Widget_pack_leave( Handle self); 
+static void Widget_place_enter( Handle self); 
+static void Widget_place_leave( Handle self); 
 
 /*
    geometry managers.
@@ -57,23 +59,42 @@ static void Widget_pack_leave( Handle self);
    
   */
 
+/*
+pack Handle fields:
 
-/* action taken when geomSize changes - adjust own geometry, and children's .
- */
+   next       - available only when geometry == gtPack
+   order, in  - available always, but is guaranteedly valid when geometry == gtPack only
+
+   in and order cause croaks when submitted via packInfo(), but are silently
+   converted to nil when geometry changes and the references are not valid anymore
+
+*/
+
+
+#define MASTER      ((var->geometry != gtGrowMode && var->geomInfo.in)?var->geomInfo.in:var->owner)
+#define geometry_reset_all() geometry_reset(MASTER,-1)
+                     
+
+/* resets particular ( or all, if geometry < 0 ) geometry widgets */
+
 static void
-geometry_reset( Handle self)
+geometry_reset( Handle self, int geometry)
 {
-   /* own geometry */
-   switch ( var-> geometry) {
-   case gtGrowMode:
-      if ( var-> growMode & gmCenter) 
-         my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
-      break;
+   if ( !self) return;
+
+   if ( 
+         (var-> geometry == gtGrowMode) &&
+         (var-> growMode & gmCenter) &&
+         ( geometry == gtGrowMode || geometry < 0)
+      ) {
+      my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
    }
 
-   /* children geometry */
-   Widget_place_children( self);
-   Widget_pack_children( self);
+   if ( geometry == gtPack || geometry < 0)
+       Widget_pack_slaves( self);
+   
+   if ( geometry == gtPlace || geometry < 0)
+       Widget_place_slaves( self);
 }
 
 int
@@ -87,17 +108,23 @@ Widget_geometry( Handle self, Bool set, int geometry)
       croak("Prima::Widget::geometry: invalid value passed");
    
    switch ( var-> geometry) {
+   case gtPlace:
+      Widget_place_leave( self);
+      break;
    case gtPack:
       Widget_pack_leave( self);
       break;
    }
    var-> geometry = geometry;
    switch ( var-> geometry) {
+   case gtPlace:
+      Widget_place_enter( self);
+      break;
    case gtPack:
       Widget_pack_enter( self);
       break;
    }
-   if ( var-> owner) geometry_reset( var-> owner);
+   geometry_reset_all();
    return var-> geometry;
 }
 
@@ -105,12 +132,13 @@ Point
 Widget_geomSize( Handle self, Bool set, Point geomSize)
 {
    if ( !set)
-      return ( var-> geometry == gtDefault) ? my-> get_size(self) : var-> geomSize;
+      return var-> geomSize;
+      /* return ( var-> geometry == gtDefault) ? my-> get_size(self) : var-> geomSize; */
    var-> geomSize = geomSize;
    if ( var-> geometry == gtDefault) 
       my-> set_size( self, var-> geomSize);
-   else if ( var-> owner) 
-      geometry_reset( var-> owner);
+   else
+      geometry_reset_all();
    return var-> geomSize;
 }
 
@@ -118,12 +146,13 @@ int
 Widget_geomHeight( Handle self, Bool set, int geomHeight)
 {
    if ( !set) 
-      return ( var-> geometry == gtDefault) ? my-> get_height( self) : var-> geomSize. y;
+      return var-> geomSize. y;
+      /* return ( var-> geometry == gtDefault) ? my-> get_height( self) : var-> geomSize. y; */
    var-> geomSize. y = geomHeight;
    if ( var-> geometry == gtDefault) 
       my-> set_height( self, var-> geomSize. y);
-   else if ( var-> owner) 
-      geometry_reset( var-> owner);
+   else
+      geometry_reset_all();
    return var-> geomSize. y;
 }
 
@@ -131,31 +160,86 @@ int
 Widget_geomWidth( Handle self, Bool set, int geomWidth)
 {
    if ( !set) 
-      return ( var-> geometry == gtDefault) ? my-> get_width( self) : var-> geomSize. x;
+      return var-> geomSize. x;
+      /* return ( var-> geometry == gtDefault) ? my-> get_width( self) : var-> geomSize. x; */
    var-> geomSize. x = geomWidth;
    if ( var-> geometry == gtDefault) 
       my-> set_width( self, var-> geomSize. x);
-   else if ( var-> owner) 
-      geometry_reset( var-> owner);
+   else
+      geometry_reset_all();
    return var-> geomSize. x;
 }
 
 Bool
-Widget_propagateGeometry( Handle self, Bool set, Bool propagate)
+Widget_packPropagate( Handle self, Bool set, Bool propagate)
 {
    Bool repack;
-   if ( !set) return is_opt( optPropagateGeometry);
-   repack = !(is_opt( optPropagateGeometry)) && propagate;
-   opt_assign( optPropagateGeometry, propagate);
-   if ( repack && var-> owner) geometry_reset( var-> owner);
-   return is_opt( optPropagateGeometry);
+   if ( !set) return is_opt( optPackPropagate);
+   repack = !(is_opt( optPackPropagate)) && propagate;
+   opt_assign( optPackPropagate, propagate);
+   if ( repack) geometry_reset_all();
+   return is_opt( optPackPropagate);
 }
 
 void
 Widget_reset_children_geometry( Handle self)
 {
-   Widget_pack_children( self);
-   Widget_place_children( self);
+   Widget_pack_slaves( self);
+   Widget_place_slaves( self);
+}
+
+/* checks if Handle in is allowed to be a master for self -
+   used for gt::Pack */
+static Handle
+Widget_check_in( Handle self, Handle in, Bool barf)
+{
+   Handle h = in;
+
+   /* check overall validity */
+   if ( !in || !kind_of( in, CWidget)) {
+      if ( barf)
+         croak("%s: invalid 'in': not a widget", "RTC008F: Prima::Widget::pack");
+      else
+         return nilHandle;
+   }
+
+   /* check direct inheritance */
+   while ( h) {
+      if ( h == self) {
+         if ( barf)
+            croak("%s: invalid 'in': is already a child", "RTC008F: Prima::Widget::pack");
+         else
+            return nilHandle;
+      }
+      h = PWidget( h)-> owner;
+   }
+
+   /* check slaves chain */
+   h = PWidget( in)-> packSlaves;
+   while ( h) {
+      if ( h == in) {
+         if ( barf)
+            croak("%s: invalid 'in': already a pack slave", "RTC008F: Prima::Widget::pack");
+         else
+            return nilHandle;
+      }
+      h = PWidget( h)-> geomInfo. next;
+   }
+   
+   h = PWidget( in)-> placeSlaves;
+   while ( h) {
+      if ( h == in) {
+         if ( barf)
+            croak("%s: invalid 'in': already a place slave", "RTC008F: Prima::Widget::pack");
+         else
+            return nilHandle;
+      }
+      h = PWidget( h)-> geomInfo. next;
+   }
+
+   /* place to check other chains if needed */
+
+   return in;
 }
 
 Point
@@ -171,8 +255,8 @@ Widget_sizeMin( Handle self, Bool set, Point min)
       if ( sizeActual. y < min. y) newSize. y = min. y;
       if (( newSize. x != sizeActual. x) || ( newSize. y != sizeActual. y))
          my-> set_size( self, newSize);
-      if ( var-> geometry != gtDefault && var-> owner) 
-         geometry_reset( var-> owner);
+      if ( var-> geometry != gtDefault)
+         geometry_reset_all();
    }
    apc_widget_set_size_bounds( self, var-> sizeMin, var-> sizeMax);
    return min;
@@ -191,8 +275,8 @@ Widget_sizeMax( Handle self, Bool set, Point max)
       if ( sizeActual. y > max. y) newSize. y = max. y;
       if (( newSize. x != sizeActual. x) || ( newSize. y !=  sizeActual. y))
           my-> set_size( self, newSize);
-      if ( var-> geometry != gtDefault && var-> owner) 
-         geometry_reset( var-> owner);
+      if ( var-> geometry != gtDefault)
+         geometry_reset_all();
    }
    apc_widget_set_size_bounds( self, var-> sizeMin, var-> sizeMax);
    return max;
@@ -301,8 +385,8 @@ Widget_move_notify( Handle self, Handle child, Point * moveTo)
 static int
 slave_width( register PWidget slavePtr, register int plus)
 {
-   register int width = slavePtr-> geomSize. x + slavePtr-> packInfo. pad.x + 
-                        slavePtr-> packInfo. ipad.x + plus;
+   register int width = slavePtr-> geomSize. x + slavePtr-> geomInfo. pad.x + 
+                        slavePtr-> geomInfo. ipad.x + plus;
    if ( width < slavePtr-> sizeMin.x) width = slavePtr-> sizeMin.x;
    if ( width > slavePtr-> sizeMax.x) width = slavePtr-> sizeMax.x;
    return width;
@@ -311,8 +395,8 @@ slave_width( register PWidget slavePtr, register int plus)
 static int
 slave_height( register PWidget slavePtr, register int plus)
 {
-   register int height = slavePtr-> geomSize.y + slavePtr-> packInfo. pad.y + 
-                        slavePtr-> packInfo. ipad.y + plus;
+   register int height = slavePtr-> geomSize.y + slavePtr-> geomInfo. pad.y + 
+                        slavePtr-> geomInfo. ipad.y + plus;
    if ( height < slavePtr-> sizeMin.y) height = slavePtr-> sizeMin.y;
    if ( height > slavePtr-> sizeMax.y) height = slavePtr-> sizeMax.y;
    return height;
@@ -341,16 +425,16 @@ XExpansion(slavePtr, cavityWidth)
     minExpand = cavityWidth;
     numExpand = 0;
     for (; slavePtr != NULL;
-        slavePtr = ( PWidget) slavePtr-> packInfo. next) {
+        slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
 	childWidth = slave_width(slavePtr, 0);
-	if ((slavePtr-> packInfo. side == TOP) || (slavePtr-> packInfo. side == BOTTOM)) {
+	if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
 	    curExpand = (cavityWidth - childWidth)/numExpand;
 	    if (curExpand < minExpand) {
 		minExpand = curExpand;
 	    }
 	} else {
 	    cavityWidth -= childWidth;
-	    if (slavePtr->packInfo. expand) {
+	    if (slavePtr->geomInfo. expand) {
 		numExpand++;
 	    }
 	}
@@ -396,16 +480,16 @@ YExpansion(slavePtr, cavityHeight)
 
     minExpand = cavityHeight;
     numExpand = 0;
-    for (; slavePtr != NULL; slavePtr = (PWidget) slavePtr->packInfo. next) {
+    for (; slavePtr != NULL; slavePtr = (PWidget) slavePtr->geomInfo. next) {
 	childHeight = slave_height(slavePtr, 0);
-	if ((slavePtr-> packInfo. side == LEFT) || (slavePtr-> packInfo. side == RIGHT)) {
+	if ((slavePtr-> geomInfo. side == LEFT) || (slavePtr-> geomInfo. side == RIGHT)) {
 	    curExpand = (cavityHeight - childHeight)/numExpand;
 	    if (curExpand < minExpand) {
 		minExpand = curExpand;
 	    }
 	} else {
 	    cavityHeight -= childHeight;
-	    if (slavePtr-> packInfo. expand) {
+	    if (slavePtr-> geomInfo. expand) {
 		numExpand++;
 	    }
 	}
@@ -418,7 +502,7 @@ YExpansion(slavePtr, cavityHeight)
 }
 
 void
-Widget_pack_children( Handle self)
+Widget_pack_slaves( Handle self)
 {
     PWidget masterPtr, slavePtr;
     int cavityX, cavityY, cavityWidth, cavityHeight;
@@ -465,8 +549,8 @@ Widget_pack_children( Handle self)
 
     width = height = maxWidth = maxHeight = 0;
     for (slavePtr=masterPtr; slavePtr != NULL; 
-         slavePtr = ( PWidget) slavePtr-> packInfo. next) {
-	if ((slavePtr-> packInfo. side == TOP) || (slavePtr-> packInfo. side == BOTTOM)) {
+         slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
+	if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
 	    tmp = slave_width( slavePtr, width);
 	    if (tmp > maxWidth) maxWidth = tmp;
 	    height += slave_height(slavePtr,0);
@@ -493,7 +577,7 @@ Widget_pack_children( Handle self)
 
     if ((((maxWidth != my-> get_geomWidth(self)))
 	    || (maxHeight != my-> get_geomHeight(self)))
-	    && is_opt( optPropagateGeometry)) {
+	    && is_opt( optPackPropagate)) {
         Point p;
         p. x = maxWidth;
         p. y = maxHeight;
@@ -516,11 +600,11 @@ Widget_pack_children( Handle self)
     size = CWidget(self)-> get_size( self);
     cavityWidth = size. x;
     cavityHeight = size. y;
-    for ( slavePtr=masterPtr; slavePtr != NULL; slavePtr = ( PWidget) slavePtr-> packInfo. next) {
-	if ((slavePtr-> packInfo. side == TOP) || (slavePtr-> packInfo. side == BOTTOM)) {
+    for ( slavePtr=masterPtr; slavePtr != NULL; slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
+	if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
 	    frameWidth = cavityWidth;
 	    frameHeight = slave_height(slavePtr,0);
-	    if (slavePtr-> packInfo. expand)
+	    if (slavePtr-> geomInfo. expand)
 		frameHeight += YExpansion(slavePtr, cavityHeight);
 	    cavityHeight -= frameHeight;
 	    if (cavityHeight < 0) {
@@ -528,7 +612,7 @@ Widget_pack_children( Handle self)
 		cavityHeight = 0;
 	    }
 	    frameX = cavityX;
-	    if (slavePtr-> packInfo. side == TOP) {
+	    if (slavePtr-> geomInfo. side == TOP) {
 		frameY = cavityY;
 		cavityY += frameHeight;
 	    } else {
@@ -537,7 +621,7 @@ Widget_pack_children( Handle self)
 	} else {
 	    frameHeight = cavityHeight;
 	    frameWidth = slave_width(slavePtr,0);
-	    if (slavePtr->  packInfo. expand)
+	    if (slavePtr->  geomInfo. expand)
 		frameWidth += XExpansion(slavePtr, cavityWidth);
 	    cavityWidth -= frameWidth;
 	    if (cavityWidth < 0) {
@@ -545,7 +629,7 @@ Widget_pack_children( Handle self)
 		cavityWidth = 0;
 	    }
 	    frameY = cavityY;
-	    if (slavePtr-> packInfo. side == LEFT) {
+	    if (slavePtr-> geomInfo. side == LEFT) {
 		frameX = cavityX;
 		cavityX += frameWidth;
 	    } else {
@@ -559,13 +643,13 @@ Widget_pack_children( Handle self)
 	 * fill, padding, and frame factors.  
 	 */
 
-	borderX = slavePtr-> packInfo. pad.x;
-	borderY = slavePtr-> packInfo. pad.y;
-	width = slavePtr->  geomSize. x + slavePtr-> packInfo. ipad.x;
-	if (slavePtr->  packInfo. fillx || (width > (frameWidth - borderX))) 
+	borderX = slavePtr-> geomInfo. pad.x;
+	borderY = slavePtr-> geomInfo. pad.y;
+	width = slavePtr->  geomSize. x + slavePtr-> geomInfo. ipad.x;
+	if (slavePtr->  geomInfo. fillx || (width > (frameWidth - borderX))) 
 	    width = frameWidth - borderX;
-	height = slavePtr->  geomSize. y + slavePtr-> packInfo. ipad.y;
-	if (slavePtr->  packInfo. filly || (height > (frameHeight - borderY))) 
+	height = slavePtr->  geomSize. y + slavePtr-> geomInfo. ipad.y;
+	if (slavePtr->  geomInfo. filly || (height > (frameHeight - borderY))) 
 	    height = frameHeight - borderY;
 	borderX /= 2;
 	borderY /= 2;
@@ -573,7 +657,7 @@ Widget_pack_children( Handle self)
         if ( height < slavePtr-> sizeMin.y) height = slavePtr-> sizeMin.y;
         if ( width > slavePtr-> sizeMax.x) width = slavePtr-> sizeMax.x;
         if ( height > slavePtr-> sizeMax.y) height = slavePtr-> sizeMax.y;
-	switch (slavePtr-> packInfo. anchorx) {
+	switch (slavePtr-> geomInfo. anchorx) {
         case WEST:
            x = frameX + borderX;
            break;
@@ -584,7 +668,7 @@ Widget_pack_children( Handle self)
            x = frameX + frameWidth - width - borderX;
            break;
         }
-	switch (slavePtr-> packInfo. anchory) {
+	switch (slavePtr-> geomInfo. anchory) {
         case NORTH:
            y = frameY + borderY;
            break;
@@ -614,54 +698,58 @@ Widget_pack_children( Handle self)
 void
 Widget_pack_enter( Handle self)
 {
+   Handle master, ptr;
 
-   /* see if leftover object reference is alive */
-   if ( var-> packInfo. order && 
-        !hash_fetch( primaObjects, &var-> packInfo. order, sizeof(Handle))) {
-      var-> packInfo. order = nilHandle;
-      var-> packInfo. after = 0;
+   /* see if leftover object references are alive */
+   if ( var-> geomInfo. order && 
+        !hash_fetch( primaObjects, &var-> geomInfo. order, sizeof(Handle))) {
+      var-> geomInfo. order = nilHandle;
+      var-> geomInfo. after = 0;
+   }
+   if ( var-> geomInfo. in) {
+      if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle))) 
+         var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
+      else
+         var-> geomInfo. in = nilHandle;
    }
 
-
    /* store into slaves list */
-   if ( var-> owner) {
-      Handle master = var-> owner, ptr;
+   master = (( var-> geomInfo. in) ? var-> geomInfo. in : var-> owner);
 
-      if ( PWidget( master)-> packSlaves) {
-         /* insert into list using 'order' marker */
-         ptr = PWidget( master)-> packSlaves;
-         if ( ptr != var-> packInfo. order) {
-            Handle optr = ptr;
-            Bool inserted = false;
-            while ( ptr) {
-               if ( ptr == var-> packInfo. order) {
-                  if ( var-> packInfo. after) {
-                     var-> packInfo. next = PWidget( ptr)-> packInfo. next;
-                     PWidget( ptr)-> packInfo. next = self;
-                  } else {
-                     var-> packInfo. next = ptr;
-                     PWidget( optr)-> packInfo. next = self;
-                  }
-                  inserted = true;
-                  break;
+   if ( PWidget( master)-> packSlaves) {
+      /* insert into list using 'order' marker */
+      ptr = PWidget( master)-> packSlaves;
+      if ( ptr != var-> geomInfo. order) {
+         Handle optr = ptr;
+         Bool inserted = false;
+         while ( ptr) {
+            if ( ptr == var-> geomInfo. order) {
+               if ( var-> geomInfo. after) {
+                  var-> geomInfo. next = PWidget( ptr)-> geomInfo. next;
+                  PWidget( ptr)-> geomInfo. next = self;
+               } else {
+                  var-> geomInfo. next = ptr;
+                  PWidget( optr)-> geomInfo. next = self;
                }
-               optr = ptr;
-               ptr = PWidget( ptr)-> packInfo. next;
+               inserted = true;
+               break;
             }
-            if ( !inserted) PWidget( optr)-> packInfo. next = self;
-         } else {
-            /* order is first in list */
-            if ( var-> packInfo. after) {
-               var-> packInfo. next = PWidget( ptr)-> packInfo. next;
-               PWidget( ptr)-> packInfo. next = self;
-            } else {
-               var-> packInfo. next = ptr;
-               PWidget( master)-> packSlaves = self;
-            }
+            optr = ptr;
+            ptr = PWidget( ptr)-> geomInfo. next;
          }
-      } else { /* owner has no slaves, we're first */
-         PWidget( master)-> packSlaves = self;
+         if ( !inserted) PWidget( optr)-> geomInfo. next = self;
+      } else {
+         /* order is first in list */
+         if ( var-> geomInfo. after) {
+            var-> geomInfo. next = PWidget( ptr)-> geomInfo. next;
+            PWidget( ptr)-> geomInfo. next = self;
+         } else {
+            var-> geomInfo. next = ptr;
+            PWidget( master)-> packSlaves = self;
+         }
       }
+   } else { /* master has no slaves, we're first */
+      PWidget( master)-> packSlaves = self;
    }
 }
 
@@ -669,23 +757,27 @@ Widget_pack_enter( Handle self)
 void
 Widget_pack_leave( Handle self)
 {
-   Handle ptr;
-   
-   if ( var-> owner) {
-      if (( ptr = PWidget( var-> owner)-> packSlaves) != self) {
-         while ( PWidget(ptr)-> packInfo. next) {
-            if ( PWidget(ptr)-> packInfo. next == self) {
-               PWidget(ptr)-> packInfo. next = var-> packInfo. next;
-               break;
+   Handle ptr, master;
+
+   master = (( var-> geomInfo. in) ? var-> geomInfo. in : var-> owner);
+
+   if ( master) {
+      if (( ptr = PWidget( master)-> packSlaves) != self) {
+         if ( ptr) {
+            while ( PWidget(ptr)-> geomInfo. next) {
+               if ( PWidget(ptr)-> geomInfo. next == self) {
+                  PWidget(ptr)-> geomInfo. next = var-> geomInfo. next;
+                  break;
+               }
+               ptr = PWidget(ptr)-> geomInfo. next;
             }
-            ptr = PWidget(ptr)-> packInfo. next;
          }
       } else {
-         PWidget( var-> owner)-> packSlaves = var-> packInfo. next;
+         PWidget( master)-> packSlaves = var-> geomInfo. next;
       }
    }
 
-   var-> packInfo. next = nilHandle;
+   var-> geomInfo. next = nilHandle;
 }
 
 SV * 
@@ -693,7 +785,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 {
    if ( !set) {
       HV * profile = newHV();
-      PackInfo *p = &var-> packInfo;
+      GeomInfo *p = &var-> geomInfo;
 
       switch ( p-> side) {
       case LEFT   : pset_c( side, "top");    break;
@@ -730,7 +822,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 
       pset_H( after,  ( p-> order && p-> after)  ? p-> order : nilHandle);
       pset_H( before, ( p-> order && !p-> after) ? p-> order : nilHandle);
-      pset_H( in, var-> owner);
+      pset_H( in, var-> geomInfo. in);
       
       pset_i( ipadx, p-> ipad. x);
       pset_i( ipady, p-> ipad. y);
@@ -740,7 +832,8 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
       return newRV_noinc(( SV *) profile);
    } else {
       HV * profile;
-      Bool reset_zorder = false;
+      Bool reset_zorder = false, set_in = false;
+      Handle in = nilHandle;
 
       if ( SvTYPE(packInfo) == SVt_NULL) return nilSV;
       
@@ -750,111 +843,118 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
       profile = ( HV*) SvRV( packInfo);
       if ( pexist( side)) {
          char * c = pget_c( side);
-         if ( *c == 'l' && (strcmp( c, "left")==0))   var-> packInfo. side = LEFT; else
-         if ( *c == 'b' && (strcmp( c, "bottom")==0)) var-> packInfo. side = BOTTOM; else
-         if ( *c == 'r' && (strcmp( c, "right")==0))  var-> packInfo. side = RIGHT; else
-         if ( *c == 't' && (strcmp( c, "top")==0))    var-> packInfo. side = TOP; else
+         if ( *c == 'l' && (strcmp( c, "left")==0))   var-> geomInfo. side = LEFT; else
+         if ( *c == 'b' && (strcmp( c, "bottom")==0)) var-> geomInfo. side = BOTTOM; else
+         if ( *c == 'r' && (strcmp( c, "right")==0))  var-> geomInfo. side = RIGHT; else
+         if ( *c == 't' && (strcmp( c, "top")==0))    var-> geomInfo. side = TOP; else
             croak("%s: invalid 'side'", "RTC008F: Prima::Widget::pack");
       }
 
       if ( pexist( fill)) {
          char * c = pget_c( fill);
          if (( strcmp( c, "x") == 0)) {
-            var-> packInfo. fillx = 1; 
-            var-> packInfo. filly = 0; 
+            var-> geomInfo. fillx = 1; 
+            var-> geomInfo. filly = 0; 
          } else if (( strcmp( c, "y") == 0)) {
-            var-> packInfo. fillx = 0; 
-            var-> packInfo. filly = 1; 
+            var-> geomInfo. fillx = 0; 
+            var-> geomInfo. filly = 1; 
          } else if ( *c == 'n' && ( strcmp( c, "none") == 0)) {
-            var-> packInfo. fillx = 
-            var-> packInfo. filly = 0; 
+            var-> geomInfo. fillx = 
+            var-> geomInfo. filly = 0; 
          } else if ( *c == 'b' && ( strcmp( c, "both") == 0)) {
-            var-> packInfo. fillx = 
-            var-> packInfo. filly = 1; 
+            var-> geomInfo. fillx = 
+            var-> geomInfo. filly = 1; 
          } else
             croak("%s: invalid 'fill'", "RTC008F: Prima::Widget::pack");
       }
       
       if ( pexist( expand)) {
-         var-> packInfo. expand = pget_B( expand);
+         var-> geomInfo. expand = pget_B( expand);
       }
 
       if ( pexist( anchor)) {
          char * c = pget_c( anchor);
          if (( strcmp( c, "n") == 0)) {
-            var-> packInfo. anchorx = CENTER;
-            var-> packInfo. anchory = NORTH;
+            var-> geomInfo. anchorx = CENTER;
+            var-> geomInfo. anchory = NORTH;
          } else if (( strcmp( c, "ne") == 0)) {
-            var-> packInfo. anchorx = EAST;
-            var-> packInfo. anchory = NORTH;
+            var-> geomInfo. anchorx = EAST;
+            var-> geomInfo. anchory = NORTH;
          } else if (( strcmp( c, "e") == 0)) {
-            var-> packInfo. anchorx = EAST;
-            var-> packInfo. anchory = CENTER;
+            var-> geomInfo. anchorx = EAST;
+            var-> geomInfo. anchory = CENTER;
          } else if (( strcmp( c, "se") == 0)) {
-            var-> packInfo. anchorx = EAST;
-            var-> packInfo. anchory = SOUTH;
+            var-> geomInfo. anchorx = EAST;
+            var-> geomInfo. anchory = SOUTH;
          } else if (( strcmp( c, "s") == 0)) {
-            var-> packInfo. anchorx = CENTER;
-            var-> packInfo. anchory = SOUTH;
+            var-> geomInfo. anchorx = CENTER;
+            var-> geomInfo. anchory = SOUTH;
          } else if (( strcmp( c, "sw") == 0)) {
-            var-> packInfo. anchorx = WEST;
-            var-> packInfo. anchory = SOUTH;
+            var-> geomInfo. anchorx = WEST;
+            var-> geomInfo. anchory = SOUTH;
          } else if (( strcmp( c, "w") == 0)) {
-            var-> packInfo. anchorx = WEST;
-            var-> packInfo. anchory = CENTER;
+            var-> geomInfo. anchorx = WEST;
+            var-> geomInfo. anchory = CENTER;
          } else if (( strcmp( c, "nw") == 0)) {
-            var-> packInfo. anchorx = WEST;
-            var-> packInfo. anchory = NORTH;
+            var-> geomInfo. anchorx = WEST;
+            var-> geomInfo. anchory = NORTH;
          } else if ( *c == 'c' && ( strcmp( c, "center") == 0)) {
-            var-> packInfo. anchorx = CENTER;
-            var-> packInfo. anchory = CENTER;
+            var-> geomInfo. anchorx = CENTER;
+            var-> geomInfo. anchory = CENTER;
          } else
             croak("%s: invalid 'anchor'", "RTC008F: Prima::Widget::pack");
       }
 
-      if ( pexist( ipadx)) var-> packInfo. ipad. x = pget_i( ipadx);
-      if ( pexist( ipady)) var-> packInfo. ipad. y = pget_i( ipady);
-      if ( pexist( padx))  var-> packInfo. pad. x  = pget_i( padx);
-      if ( pexist( pady))  var-> packInfo. pad. y  = pget_i( pady);
+      if ( pexist( ipadx)) var-> geomInfo. ipad. x = pget_i( ipadx);
+      if ( pexist( ipady)) var-> geomInfo. ipad. y = pget_i( ipady);
+      if ( pexist( padx))  var-> geomInfo. pad. x  = pget_i( padx);
+      if ( pexist( pady))  var-> geomInfo. pad. y  = pget_i( pady);
 
       if ( pexist( after)) {
          SV * sv = pget_sv( after);
          if ( SvTYPE(sv) != SVt_NULL) {
-            if ( !( var-> packInfo. order = gimme_the_mate( sv)))
+            if ( !( var-> geomInfo. order = gimme_the_mate( sv)))
                croak("%s: invalid 'after'", "RTC008F: Prima::Widget::pack");
-            var-> packInfo. after = 1;
+            var-> geomInfo. after = 1;
             if ( pexist( before)) {
                sv = pget_sv( before);
                if ( SvTYPE(sv) != SVt_NULL)
                   croak("%s: 'after' and 'before' cannot be present simultaneously", "RTC008F: Prima::Widget::pack");
             }
          } else {
-            var-> packInfo. order = nilHandle;
-            var-> packInfo. after = 0;
+            var-> geomInfo. order = nilHandle;
+            var-> geomInfo. after = 0;
          }
          reset_zorder = true;
       } else if ( pexist( before)) {
          SV * sv = pget_sv( before);
          if ( SvTYPE(sv) != SVt_NULL) {
-            if ( !( var-> packInfo. order = gimme_the_mate( sv)))
+            if ( !( var-> geomInfo. order = gimme_the_mate( sv)))
                croak("%s: invalid 'before'", "RTC008F: Prima::Widget::pack");
          } else
-            var-> packInfo. order = nilHandle;
-         var-> packInfo. after = 0;
+            var-> geomInfo. order = nilHandle;
+         var-> geomInfo. after = 0;
          reset_zorder = true;
       }
 
       if ( pexist( in)) {
-         if ( pget_H( in) != var-> owner)
-            croak("%s: invalid 'in'", "RTC008F: Prima::Widget::pack");
+         SV * sv = pget_sv( in);
+         in = nilHandle;
+         if ( SvTYPE( sv) != SVt_NULL)
+            in = Widget_check_in( self, gimme_the_mate( sv), true);
+         set_in = reset_zorder = true;
       }
 
-      if ( reset_zorder) {
-         Widget_pack_leave( self);
-         Widget_pack_enter( self);
+      if ( var-> geometry == gtPack) {
+         if ( reset_zorder) 
+            Widget_pack_leave( self);
       }
-
-      if ( var-> owner) geometry_reset( var-> owner);
+      if ( set_in) var-> geomInfo. in = in;
+      if ( var-> geometry == gtPack) {
+         if ( reset_zorder) 
+            Widget_pack_enter( self);
+         geometry_reset( MASTER, gtPack);
+      }
    }
    return nilSV;
 }
@@ -873,7 +973,7 @@ XS( Widget_get_pack_slaves_FROMPERL)
    self = var-> packSlaves;
    while ( self) {
       XPUSHs( sv_2mortal( newSVsv((( PAnyObject) self)-> mate)));
-      self = var-> packInfo. next;
+      self = var-> geomInfo. next;
    }
    PUTBACK;
    return;
@@ -889,12 +989,70 @@ void Widget_get_pack_slaves_REDEFINED( Handle self) { warn("Invalid call of Widg
 /* place internal mechanism - stolen from Tk v800.24, tkPlace.c */
 
 void
-Widget_place_children( Handle self)
+Widget_place_enter( Handle self)
 {
-    register PWidget slave;
-    register PlaceInfo *slavePtr;
+   Handle master, ptr;
+
+   /* see if leftover object references are alive */
+   if ( var-> geomInfo. in) {
+      if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle))) 
+         var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
+      else
+         var-> geomInfo. in = nilHandle;
+   }
+
+   /* store into slaves list */
+   master = (( var-> geomInfo. in) ? var-> geomInfo. in : var-> owner);
+
+   if ( PWidget( master)-> placeSlaves) {
+      /* append to the end of list  */
+      if (( ptr = PWidget( master)-> placeSlaves)) {
+         while ( PWidget( ptr)-> geomInfo. next) 
+            ptr = PWidget( ptr)-> geomInfo. next;
+         PWidget( ptr)-> geomInfo. next = self;
+      } else {
+         /* first in list */
+         var-> geomInfo. next = ptr;
+         PWidget( master)-> placeSlaves = self;
+      }
+   } else { /* master has no slaves, we're first */
+      PWidget( master)-> placeSlaves = self;
+   }
+}
+
+/* removes widget from list of place slaves */
+void
+Widget_place_leave( Handle self)
+{
+   Handle ptr, master;
+
+   master = (( var-> geomInfo. in) ? var-> geomInfo. in : var-> owner);
+
+   if ( master) {
+      if (( ptr = PWidget( master)-> placeSlaves) != self) {
+         if ( ptr) {
+            while ( PWidget(ptr)-> geomInfo. next) {
+               if ( PWidget(ptr)-> geomInfo. next == self) {
+                  PWidget(ptr)-> geomInfo. next = var-> geomInfo. next;
+                  break;
+               }
+               ptr = PWidget(ptr)-> geomInfo. next;
+            }
+         }
+      } else {
+         PWidget( master)-> placeSlaves = var-> geomInfo. next;
+      }
+   }
+
+   var-> geomInfo. next = nilHandle;
+}
+
+void
+Widget_place_slaves( Handle self)
+{
+    PWidget slave, master;
     int x, y, width, height, tmp;
-    int i, masterWidth, masterHeight;
+    int masterWidth, masterHeight;
     double x1, y1, x2, y2;
     Point size;
 
@@ -904,15 +1062,16 @@ Widget_place_children( Handle self)
      * geometry can be computed independently of the other slaves.
      */
 
+    if (!( master = ( PWidget) var-> placeSlaves)) return;
     size = my-> get_size( self);
     masterWidth  = size. x; 
     masterHeight = size. y; 
-
-    for ( i = 0; i < var-> widgets. count; i++) {
+    
+    for (slave=master; slave != NULL; 
+         slave = ( PWidget) slave-> geomInfo. next) {
        Point sz;
-       slave = (PWidget) (var-> widgets. items[i]);
-       if ( slave-> geometry != gtPlace) continue;
-       slavePtr = &slave-> placeInfo;
+       register GeomInfo* slavePtr = &slave-> geomInfo;
+       
        sz = slave-> self-> get_size(( Handle) slave);
         
 	/*
@@ -1008,7 +1167,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 {
    if ( !set) {
       HV * profile = newHV();
-      PlaceInfo *p = &var-> placeInfo;
+      GeomInfo *p = &var-> geomInfo;
 
       switch ( p-> anchorx) {
       case WEST:
@@ -1028,7 +1187,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
          break;
       }
 
-      pset_H( in, var-> owner);
+      pset_H( in, var-> geomInfo. in);
       
       if ( p-> use_x)   pset_i( x, p-> x);
       if ( p-> use_y)   pset_i( y, p-> y);
@@ -1042,6 +1201,8 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
       return newRV_noinc(( SV *) profile);
    } else {
       HV * profile;
+      Handle in = nilHandle;
+      Bool set_in = false;
 
       if ( SvTYPE(placeInfo) == SVt_NULL) return nilSV;
       
@@ -1053,83 +1214,95 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
       if ( pexist( anchor)) {
          char * c = pget_c( anchor);
          if (( strcmp( c, "n") == 0)) {
-            var-> placeInfo. anchorx = CENTER;
-            var-> placeInfo. anchory = NORTH;
+            var-> geomInfo. anchorx = CENTER;
+            var-> geomInfo. anchory = NORTH;
          } else if (( strcmp( c, "ne") == 0)) {
-            var-> placeInfo. anchorx = EAST;
-            var-> placeInfo. anchory = NORTH;
+            var-> geomInfo. anchorx = EAST;
+            var-> geomInfo. anchory = NORTH;
          } else if (( strcmp( c, "e") == 0)) {
-            var-> placeInfo. anchorx = EAST;
-            var-> placeInfo. anchory = CENTER;
+            var-> geomInfo. anchorx = EAST;
+            var-> geomInfo. anchory = CENTER;
          } else if (( strcmp( c, "se") == 0)) {
-            var-> placeInfo. anchorx = EAST;
-            var-> placeInfo. anchory = SOUTH;
+            var-> geomInfo. anchorx = EAST;
+            var-> geomInfo. anchory = SOUTH;
          } else if (( strcmp( c, "s") == 0)) {
-            var-> placeInfo. anchorx = CENTER;
-            var-> placeInfo. anchory = SOUTH;
+            var-> geomInfo. anchorx = CENTER;
+            var-> geomInfo. anchory = SOUTH;
          } else if (( strcmp( c, "sw") == 0)) {
-            var-> placeInfo. anchorx = WEST;
-            var-> placeInfo. anchory = SOUTH;
+            var-> geomInfo. anchorx = WEST;
+            var-> geomInfo. anchory = SOUTH;
          } else if (( strcmp( c, "w") == 0)) {
-            var-> placeInfo. anchorx = WEST;
-            var-> placeInfo. anchory = CENTER;
+            var-> geomInfo. anchorx = WEST;
+            var-> geomInfo. anchory = CENTER;
          } else if (( strcmp( c, "nw") == 0)) {
-            var-> placeInfo. anchorx = WEST;
-            var-> placeInfo. anchory = NORTH;
+            var-> geomInfo. anchorx = WEST;
+            var-> geomInfo. anchory = NORTH;
          } else if ( *c == 'c' && ( strcmp( c, "center") == 0)) {
-            var-> placeInfo. anchorx = CENTER;
-            var-> placeInfo. anchory = CENTER;
+            var-> geomInfo. anchorx = CENTER;
+            var-> geomInfo. anchory = CENTER;
          } else
             croak("%s: invalid 'anchor'", "RTC008F: Prima::Widget::place");
       }
 
       if ( pexist( x)) {
          SV * sv = pget_sv( x);
-         if (( var-> placeInfo. use_x = (SvTYPE( sv) != SVt_NULL))) 
-            var-> placeInfo. x = SvIV( sv);
+         if (( var-> geomInfo. use_x = (SvTYPE( sv) != SVt_NULL))) 
+            var-> geomInfo. x = SvIV( sv);
       }
       if ( pexist( y)) {
          SV * sv = pget_sv( y);
-         if (( var-> placeInfo. use_y = (SvTYPE( sv) != SVt_NULL))) 
-            var-> placeInfo. y = SvIV( sv);
+         if (( var-> geomInfo. use_y = (SvTYPE( sv) != SVt_NULL))) 
+            var-> geomInfo. y = SvIV( sv);
       }
       if ( pexist( width)) {
          SV * sv = pget_sv( width);
-         if (( var-> placeInfo. use_w = (SvTYPE( sv) != SVt_NULL))) 
+         if (( var-> geomInfo. use_w = (SvTYPE( sv) != SVt_NULL))) 
             var-> geomSize. x = SvIV( sv);
       }
       if ( pexist( height)) {
          SV * sv = pget_sv( height);
-         if (( var-> placeInfo. use_h = (SvTYPE( sv) != SVt_NULL))) 
+         if (( var-> geomInfo. use_h = (SvTYPE( sv) != SVt_NULL))) 
             var-> geomSize. y = SvIV( sv);
       }
       if ( pexist( relx)) {
          SV * sv = pget_sv( relx);
-         if (( var-> placeInfo. use_rx = (SvTYPE( sv) != SVt_NULL))) 
-            var-> placeInfo. relX = SvNV( sv);
+         if (( var-> geomInfo. use_rx = (SvTYPE( sv) != SVt_NULL))) 
+            var-> geomInfo. relX = SvNV( sv);
       }
       if ( pexist( rely)) {
          SV * sv = pget_sv( rely);
-         if (( var-> placeInfo. use_ry = (SvTYPE( sv) != SVt_NULL))) 
-            var-> placeInfo. relY = SvNV( sv);
+         if (( var-> geomInfo. use_ry = (SvTYPE( sv) != SVt_NULL))) 
+            var-> geomInfo. relY = SvNV( sv);
       }
       if ( pexist( relwidth)) {
          SV * sv = pget_sv( relwidth);
-         if (( var-> placeInfo. use_rw = (SvTYPE( sv) != SVt_NULL))) 
-            var-> placeInfo. relWidth = SvNV( sv);
+         if (( var-> geomInfo. use_rw = (SvTYPE( sv) != SVt_NULL))) 
+            var-> geomInfo. relWidth = SvNV( sv);
       }
       if ( pexist( relheight)) {
          SV * sv = pget_sv( relheight);
-         if (( var-> placeInfo. use_rh = (SvTYPE( sv) != SVt_NULL))) 
-            var-> placeInfo. relHeight = SvNV( sv);
+         if (( var-> geomInfo. use_rh = (SvTYPE( sv) != SVt_NULL))) 
+            var-> geomInfo. relHeight = SvNV( sv);
       }
 
       if ( pexist( in)) {
-         if ( pget_H( in) != var-> owner)
-            croak("%s: invalid 'in'", "RTC008F: Prima::Widget::place");
+         SV * sv = pget_sv( in);
+         in = nilHandle;
+         if ( SvTYPE( sv) != SVt_NULL)
+            in = Widget_check_in( self, gimme_the_mate( sv), true);
+         set_in = true;
       }
       
-      if ( var-> owner) geometry_reset( var-> owner);
+      if ( var-> geometry == gtPlace) {
+         if ( set_in) 
+            Widget_place_leave( self);
+      }
+      if ( set_in) var-> geomInfo. in = in;
+      if ( var-> geometry == gtPlace) {
+         if ( set_in) 
+            Widget_place_enter( self);
+         geometry_reset( MASTER, gtPlace);
+      }
    }
 
    return nilSV;

@@ -64,8 +64,8 @@ static Handle find_tabfoc( Handle self);
 static Bool showhint_notify ( Handle self, Handle child, void * data);
 static Bool hint_notify ( Handle self, Handle child, SV * hint);
 
-extern void Widget_pack_children( Handle self); 
-extern void Widget_place_children( Handle self); 
+extern void Widget_pack_slaves( Handle self); 
+extern void Widget_place_slaves( Handle self); 
 extern Bool Widget_size_notify( Handle self, Handle child, const Rect* metrix);
 extern Bool Widget_move_notify( Handle self, Handle child, Point * moveTo);
 
@@ -81,8 +81,8 @@ Widget_init( Handle self, HV * profile)
    list_create( &var-> widgets, 0, 8);
    var-> tabOrder = -1;
 
-   var-> packInfo. side = 3; /* default pack side is 'top', anchor ='center' */
-   var-> packInfo. anchorx = var-> packInfo. anchory = 1;
+   var-> geomInfo. side = 3; /* default pack side is 'top', anchor ='center' */
+   var-> geomInfo. anchorx = var-> geomInfo. anchory = 1;
 
    my-> update_sys_handle( self, profile);
    /* props init */
@@ -203,7 +203,7 @@ Widget_init( Handle self, HV * profile)
       if ( x || y) my-> set_centered( self, x, y);
    }
 
-   opt_assign( optPropagateGeometry, pget_B( propagateGeometry));
+   opt_assign( optPackPropagate, pget_B( packPropagate));
    my-> set_packInfo( self, pget_sv( packInfo));
    my-> set_placeInfo( self, pget_sv( placeInfo));
    my-> set_geometry( self, pget_i( geometry));
@@ -328,8 +328,23 @@ Widget_can_close( Handle self)
 void
 Widget_cleanup( Handle self)
 {
+   Handle ptr;
    enter_method;
 
+   /* disconnect all geometry slaves */
+   ptr = var-> packSlaves;
+   while ( ptr) {
+      PWidget( ptr)-> geometry = gtDefault;
+      ptr = PWidget( ptr)-> geomInfo. next;
+   }
+   var-> packSlaves = nilHandle;
+   ptr = var-> placeSlaves;
+   while ( ptr) {
+      PWidget( ptr)-> geometry = gtDefault;
+      ptr = PWidget( ptr)-> geomInfo. next;
+   }
+   var-> placeSlaves = nilHandle;
+   
    my-> set_geometry( self, gtDefault);
    
    if ( application && (( PApplication) application)-> hintUnder == self)
@@ -846,8 +861,8 @@ void Widget_handle_event( Handle self, PEvent event)
               oldSize. y = event-> gen. R. bottom;
               my-> notify( self, "<sPP", "Size", oldSize, event-> gen. P);
            }
-           Widget_pack_children( self);
-           Widget_place_children( self);
+           Widget_pack_slaves( self);
+           Widget_place_slaves( self);
         }
         break;
    }
