@@ -108,6 +108,9 @@ extern SV* readonly_clean_sv_2mortal( SV* sv);
 #define PERL_CALL_PV       perl_call_pv
 #endif
 
+#ifndef HAVE_BZERO
+extern void bzero(void*,size_t);
+#endif
 #ifdef HAVE_STRICMP
 #ifndef HAVE_STRCASECMP
 #define strcasecmp(a,b) stricmp((a),(b))

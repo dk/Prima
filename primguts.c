@@ -77,6 +77,14 @@ duplicate_string( const char *s)
    return d;
 }
 
+#ifndef HAVE_BZERO
+void
+bzero( void * data, size_t size)
+{
+   memset( data, 0, size);
+}
+#endif
+
 #ifdef PRIMA_NEED_OWN_STRICMP
 int
 stricmp(const char *s1, const char *s2)

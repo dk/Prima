@@ -743,6 +743,7 @@ sub setup_defines
     have_func( 'snprintf');
     have_func( '_snprintf');
     have_func( 'reallocf');
+    have_func( 'bzero');
     if ( $Win32) {
 	have_type( "BOOLEAN", "windows.h");
     }

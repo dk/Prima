@@ -30,14 +30,6 @@
  */
 #include "img_api.h"
 
-#ifndef __unix
-void
-bzero( void * data, size_t size)
-{
-   memset( data, 0, size);
-}
-#endif
-
 /* This function must always be used for creating a new image info structure. */
 PImgInfo
 img_info_create( int propCount)
