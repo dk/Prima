@@ -134,7 +134,7 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
 }
 
 
-
+/*
 void
 bm_put_zs( HBITMAP hbm, int x, int y, int z)
 {
@@ -155,7 +155,7 @@ bm_put_zs( HBITMAP hbm, int x, int y, int z)
    DeleteDC( xdc);
    dc_free();
 }
-
+*/
 
 
 
@@ -556,20 +556,8 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
    bi. bmiColors[ 0]. rgbRed = bi. bmiColors[ 0]. rgbGreen = bi. bmiColors[ 0]. rgbBlue = 0;
    bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
 
-   if ( 0) {
-      char * bx = malloc( i-> dataSize * 2);
-
-      memset( bx, 0x11, i->dataSize * 2);
-
-      // bi. bmiHeader. biHeight *= 2;
-      if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-          bx, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
-      // bi. bmiHeader. biHeight /= 2;
-      free( bx);
-   } else {
-      if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-         i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
-   }
+   if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+      i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
 
    dc_free();
    if ( !( r = CreateIconIndirect( &ii))) apiErr;
