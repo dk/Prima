@@ -71,8 +71,13 @@ void
 img_info_destroy_properties( PImgInfo imgInfo)
 {
     if ( imgInfo) {
-	img_destroy_properties( imgInfo->propList);
-	imgInfo->propList = nil;
+	if ( imgInfo->propList) {
+	    img_destroy_properties( imgInfo->propList);
+	    imgInfo->propList = nil;
+	}
+	else {
+	    DOLBUG( "*Error* nil propList passed to img_info_destroy_properties\n");
+	}
     }
     else {
 	DOLBUG( "*Error* nil passed to img_info_destroy_properties\n");
@@ -81,15 +86,26 @@ img_info_destroy_properties( PImgInfo imgInfo)
 
 /* Empties a property list without freeing the list itself. */
 void
-img_destroy_properties( PList propList)
+img_clear_properties( PList propList)
 {
     if ( propList) {
 	int i;
-
+	
 	for ( i = 0; i < propList->count; i++) {
 	    img_free_property( ( PImgProperty) list_at( propList, i));
 	}
-	list_destroy( propList);
+    }
+    else {
+	DOLBUG( "*Error* nil passed to img_clear_properties\n");
+    }
+}
+
+void
+img_destroy_properties( PList propList)
+{
+    if ( propList) {
+	img_clear_properties( propList);
+	plist_destroy( propList);
     }
     else {
 	DOLBUG( "*Error* nil passed to img_destroy_properties\n");
