@@ -18,7 +18,6 @@ sub hsv2rgb
    $s = 0 if $s < 0;
    $v *= 255;
    return $v, $v, $v if $h == -1;
-   $s = 0.000001 unless $s;
    my ( $r, $g, $b, $i, $f, $w, $q, $t);
    $h -= 360 if $h >= 360;
    $h /= 60;
@@ -101,11 +100,7 @@ sub xy2hs
    $s = $r / $c;
    $h = $h * 57.295779513 + 180;
 
-   if ($s == 0) {
-     $s = 0.00001;
-   } elsif ( $s > 1) {
-     $s = 1;
-   }
+   $s = 1 if $s > 1;
 
    return $h, $s, $d > 0;
 }
@@ -200,7 +195,7 @@ sub init
    $self->{setTransaction} = undef;
 
    my $c = $self->{value} = $profile{value};
-   my ( $b, $g, $r) = value2rgb( $c);
+   my ( $r, $g, $b) = value2rgb( $c);
    my ( $h, $s, $v) = rgb2hsv( $r, $g, $b);
    $s *= 255;
    $v *= 255;
@@ -409,7 +404,7 @@ sub Wheel_MouseMove
    $owner-> {HSVPin} = Lum|Hue|Sat;
    $owner-> {H}-> value( int( $h));
    $owner-> {S}-> value( int( $s * 255));
-   $owner-> value( rgb2value( hsv2rgb( $h, $s, $owner->{V}->value/255)));
+   $owner-> value( rgb2value( hsv2rgb( int($h), $s, $owner->{V}->value/255)));
    $owner-> {HSVPin} = undef;
    $owner-> {setTransaction} = undef;
 }
@@ -453,7 +448,7 @@ sub Roller_Paint
    $canvas-> color( cl::Black);
    $d = int( $v * ($size[1]-16));
    $canvas-> rectangle( 0, $d, $size[0]-1, $d + 15);
-   $canvas-> color( rgb2value( hsv2rgb( $h, $s, $v)));
+   $canvas-> color( $owner->{value});
    $canvas-> bar( 1, $d + 1, $size[0]-2, $d + 14);
 }
 
@@ -492,6 +487,7 @@ sub set_value
 {
    my ( $self, $value) = @_;
    return if $value == $self->{value} and ! $self->{HSVPin};
+   $self->{value} = $value;
    my $st = $self->{setTransaction};
    $self->{setTransaction} = 1;
    my $rgb = $self->{RGBPin} || 0;
@@ -509,7 +505,6 @@ sub set_value
    $self->{wheel}->repaint unless $hsv & Wheel;
    $self->{roller}->repaint unless $hsv & Roller;
    $self->{setTransaction} = $st;
-   $self->{value} = $value;
 }
 
 sub value        {($#_)?$_[0]->set_value        ($_[1]):return $_[0]->{value};}

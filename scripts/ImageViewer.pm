@@ -8,11 +8,11 @@ sub profile_default
 {
    my $def = $_[0]-> SUPER::profile_default;
    my %prf = (
-      image      => undef,
-      imageFile  => undef,
-      zoom       => 1,
-      alignment  => ta::Left,
-      valignment => ta::Bottom,
+      image        => undef,
+      imageFile    => undef,
+      zoom         => 1,
+      alignment    => ta::Left,
+      valignment   => ta::Bottom,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -140,12 +140,14 @@ sub set_image
    $self->{image} = $img;
    unless ( defined $img) {
       $self->limits(0,0);
+      $self->palette([]);
       return;
    }
    my ( $x, $y) = ($img-> width, $img-> height);
    $x *= $self->{zoom};
    $y *= $self->{zoom};
-   $self->limits($x,$y);
+   $self-> limits($x,$y);
+   $self-> palette( $img->palette);
    $self-> repaint;
 }
 
