@@ -932,13 +932,6 @@ sub set_border_width
    $self-> repaint;
 }
 
-sub unlock
-{
-   my $self = $_[0];
-   $self-> SUPER::unlock;
-   $self-> repaint;
-}
-
 sub set_text_ref
 {
    my ( $self, $ref) = @_;
