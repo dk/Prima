@@ -1411,8 +1411,8 @@ list_index_of( PList self, Handle item);
 #define SvUTF8(sv)          0
 #define utf8_length(s,e)    ((U8*)(e)-(U8*)(s))
 #define utf8_hop(s,off)     ((U8*)((s)+(off)))
-#define SvUTF8_on(sv)       0
-#define SvUTF8_off(sv)      0
+#define SvUTF8_on(sv)       {}
+#define SvUTF8_off(sv)      {}
 
 #define utf8_to_uvchr       prima_utf8_to_uv
 #define utf8_to_uvuni       prima_utf8_to_uv
