@@ -49,11 +49,8 @@ fetch_sys_timer( Handle self, PTimerSysData *s, Bool *real_timer)
    if ( self == 0) {
       *s = nil;
       *real_timer = false;
-   } else if ( self == CURSOR_TIMER) {
-      *s = &guts. cursor_timer;
-      *real_timer = false;
-   } else if ( self == MENU_TIMER) {
-      *s = &guts. menu_timer;
+   } else if ( self >= FIRST_SYS_TIMER && self <= LAST_SYS_TIMER) {
+      *s = &guts. sys_timers[ self - FIRST_SYS_TIMER];
       *real_timer = false;
    } else {
       *s = ((PTimerSysData)(PComponent((self))-> sysData));
@@ -160,7 +157,6 @@ Bool
 apc_timer_stop( Handle self)
 {
    ENTERTIMER;
-
    inactivate_timer( sys);
    if ( real) opt_clear( optActive);
    return true;

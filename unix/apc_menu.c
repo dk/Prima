@@ -928,8 +928,23 @@ AGAIN:
          case NotifyNonlinearVirtual: 
             return;
          }
-         M(self)-> focus = nilHandle;
-         prima_end_menu();
+         apc_timer_stop( MENU_UNFOCUS_TIMER);
+         apc_timer_start( MENU_UNFOCUS_TIMER);
+         guts. unfocusedMenu = self;
+      }
+      break;
+   case FocusIn:
+      if ( guts. unfocusedMenu && self == guts. unfocusedMenu && self == guts. currentMenu) {
+         switch ( ev-> xfocus. detail) {
+         case NotifyVirtual:
+         case NotifyPointer:
+         case NotifyPointerRoot: 
+         case NotifyDetailNone: 
+         case NotifyNonlinearVirtual: 
+            return;
+         }
+         apc_timer_stop( MENU_UNFOCUS_TIMER);
+         guts. unfocusedMenu = nilHandle;
       }
       break;
    case KeyPress: {
@@ -1078,7 +1093,6 @@ NEXT_STAGE:
    }
    break;
    case MenuTimerMessage: 
-   apc_timer_stop( MENU_TIMER);
    if ( self == guts. currentMenu) {
       DEFMM;
       PMenuWindow w;
@@ -1155,6 +1169,8 @@ prima_end_menu(void)
    PMenuSysData XX;
    PMenuWindow w;
    apc_timer_stop( MENU_TIMER);
+   apc_timer_stop( MENU_UNFOCUS_TIMER);
+   guts. unfocusedMenu = nilHandle; 
    if ( !guts. currentMenu) return;
    XX = M(guts. currentMenu);
    {

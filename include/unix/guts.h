@@ -202,8 +202,11 @@ typedef struct CachedFont {
 
 union       _unix_sys_data;
 
-#define CURSOR_TIMER	((Handle)11)
-#define MENU_TIMER	((Handle)12)
+#define FIRST_SYS_TIMER         ((Handle)11)
+#define CURSOR_TIMER	        ((Handle)11)
+#define MENU_TIMER	        ((Handle)12)
+#define MENU_UNFOCUS_TIMER	((Handle)13)
+#define LAST_SYS_TIMER          ((Handle)13)
 
 #if defined(sgi) && !defined(__GNUC__)
 /* multiple compilation and runtime errors otherwise. must be some alignment tricks */
@@ -394,7 +397,6 @@ typedef struct _UnixGuts
    Point                        cursor_pixmap_size;
    Pixmap                       cursor_save;
    Bool                         cursor_shown;
-   TimerSysData                 cursor_timer;
    int                          cursor_width;
    Pixmap                       cursor_xor;
    Bool                         insert;
@@ -454,8 +456,8 @@ typedef struct _UnixGuts
    int                          scroll_first;
    int                          scroll_next;
    Handle                       currentMenu;
+   Handle                       unfocusedMenu;
    int                          menu_timeout;
-   TimerSysData                 menu_timer;
    XWindow                      lastWMFocus;
    XWindow                      root;
    XVisualInfo                  visual;
@@ -480,6 +482,7 @@ typedef struct _UnixGuts
    Point                        ellipseDivergence;
    int                          appLock;
    XGCValues                    cursor_gcv;
+   TimerSysData                 sys_timers[ LAST_SYS_TIMER - FIRST_SYS_TIMER];
 } UnixGuts;
 
 extern UnixGuts guts;
@@ -620,7 +623,7 @@ typedef struct _drawable_sys_data
 #define XF_ENABLED(x)   ((x)->flags.enabled)
 #define XF_IN_PAINT(x)  ((x)->flags.paint)
 
-#define MenuTimerMessage 1021
+#define MenuTimerMessage   1021
 
 #define MENU_ITEM_GAP 4
 
