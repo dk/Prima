@@ -130,12 +130,12 @@ apc_clipboard_get_data( long id, int * length)
                apcErr( errInvClipboardData);
                return nil;
             }
+            *length = GlobalSize( ph);
+            if ( *length == 0)
+               return nil; // not an error
             if ( !( ptr = ( char*) GlobalLock( ph)))
                apiErrRet;
-            *length = *(( int*) ptr);
-            ptr += sizeof( int);
-            ret = malloc( *length);
-            memcpy( ret, ptr, *length);
+            memcpy( ret = malloc( *length), ptr, *length);
             GlobalUnlock( ph);
             return ret;
          }
@@ -198,15 +198,14 @@ apc_clipboard_set_data( long id, void * data, int length)
       default:
          {
              char* ptr;
-             HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, length + sizeof(int));
+             HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, length);
              if ( !glob) apiErrRet;
              if ( !( ptr = GlobalLock( glob))) {
                 apiErr;
                 GlobalFree( glob);
                 return false;
              }
-             memcpy( ptr + sizeof(int), data, length);
-             memcpy( ptr, &length, sizeof(int));
+             memcpy( ptr, data, length);
              GlobalUnlock( glob);
              if ( !SetClipboardData( id, glob)) apiErrRet;
          }
@@ -217,10 +216,8 @@ apc_clipboard_set_data( long id, void * data, int length)
 long
 apc_clipboard_register_format( char * format)
 {
-   char buf[ 1024];
    UINT r;
-   snprintf( buf, 1024, "Apc private %s", format);
-   if ( !( r = RegisterClipboardFormat( buf))) apiErrRet;
+   if ( !( r = RegisterClipboardFormat( format))) apiErrRet;
    return r + cfCustom;
 }
 
