@@ -1407,17 +1407,6 @@ package ListBox;
 use vars qw(@ISA);
 @ISA = qw(ListViewer);
 
-sub profile_default
-{
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my %prf = (
-      onDrawItem    => undef,
-      onMeasureItem => undef,
-      onStringify   => undef,
-   );
-   @$def{keys %prf} = values %prf;
-   return $def;
-}
 
 sub init
 {
