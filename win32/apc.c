@@ -16,6 +16,7 @@
 
 #define WinShowWindow(WND) SetWindowPos( WND, nil, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_SHOWWINDOW|SWP_NOACTIVATE);
 #define WinHideWindow(WND) SetWindowPos( WND, nil, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_HIDEWINDOW);
+#define apc_widget_repaint(self)  apc_widget_invalidate_rect(self,nil)
 
 Bool
 apc_application_begin_paint ( Handle self)
@@ -950,10 +951,7 @@ apc_window_set_window_state( Handle self, int state)
    }
    if ( fl > 0)
    {
-      int i, lock = sys lockState;
-      while ( sys lockState) apc_widget_unlock( self);
       ShowWindow( HANDLE, fl);
-      for ( i = 0; i < lock; i++) apc_widget_lock( self);
       sys s. window. state = state;
    }
 }
@@ -1441,25 +1439,6 @@ apc_widget_is_visible( Handle self)
    return IsWindowVisible( HANDLE);
 }
 
-void
-apc_widget_invalidate_rect( Handle self, Rect rect)
-{
-   if ( sys lockState == 0) {
-      if ( !InvalidateRect (( HWND) var handle, map_Rect( self, &rect), false)) apiErr;
-      if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
-      process_transparents( self);
-   }
-}
-
-void
-apc_widget_lock( Handle self)
-{
-   if ( sys lockState++ == 0) {
-      apt_assign( aptLockVisState, ( GetWindowLong( HANDLE, GWL_STYLE) & WS_VISIBLE) == WS_VISIBLE);
-      if ( !LockWindowUpdate( HANDLE)) apiErr;
-   }
-}
-
 static Bool
 repaint_all( Handle owner, Handle self, void * dummy)
 {
@@ -1473,14 +1452,14 @@ repaint_all( Handle owner, Handle self, void * dummy)
 }
 
 void
-apc_widget_repaint( Handle self)
+apc_widget_invalidate_rect( Handle self, Rect * rect)
 {
-   if ( sys lockState == 0) {
-      if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
-      if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
+   PRECT pRect = rect ? map_Rect( self, rect) : nil;
+   if ( !InvalidateRect (( HWND) var handle, pRect, false)) apiErr;
+   if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
+   if ( !rect)
       var self-> first_that( self, repaint_all, nil);
-      process_transparents( self);
-   }
+   process_transparents( self);
 }
 
 Point
@@ -1498,27 +1477,16 @@ apc_widget_screen_to_client( Handle self, Point p)
 }
 
 void
-apc_widget_scroll( Handle self, int horiz, int vert, Bool scrollChildren)
+apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Bool scrollChildren)
 {
+   PRECT pRect = r ? map_Rect( self, r) : nil;
    HideCaret(( HWND) var handle);
    if ( !ScrollWindowEx(( HWND) var handle,
-      horiz, -vert, NULL, sys pClipRect, NULL, NULL,
+      horiz, -vert, pRect, sys pClipRect, NULL, NULL,
       SW_INVALIDATE | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
    )) apiErr;
    if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
    ShowCaret(( HWND) var handle);
-}
-
-void
-apc_widget_scroll_rect( Handle self, int horiz, int vert, Rect r, Bool scrollChildren)
-{
-   HideCaret(( HWND) var handle);
-   if ( !ScrollWindowEx(( HWND) var handle,
-      horiz, -vert, map_Rect( self, &r), sys pClipRect, NULL, NULL,
-      SW_INVALIDATE | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
-   )) apiErr;
-   ShowCaret(( HWND) var handle);
-   if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
 }
 
 void
@@ -1672,11 +1640,6 @@ apc_widget_set_tab_order( Handle self, int tabOrder)
 void
 apc_widget_set_visible( Handle self, Bool show)
 {
-   if ( sys lockState)
-   {
-      apt_assign( aptLockVisState, show);
-      return;
-   }
    if ( !SetWindowPos( HANDLE, nilHandle, 0, 0, 0, 0,
         ( show ? SWP_SHOWWINDOW : SWP_HIDEWINDOW) | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErr;
    if ( !is_apt( aptClipOwner)) {
@@ -1695,17 +1658,6 @@ apc_widget_set_z_order( Handle self, Handle behind, Bool top)
    // bring_to_front does not do anything! - so fixing
   // if (( sys className == WC_FRAME) && ( opt == HWND_TOP) && ( guts. topWindows < 2))
   //    apc_window_activate( self);
-}
-
-void
-apc_widget_unlock( Handle self)
-{
-   if ( --sys lockState == 0) {
-      if ( !LockWindowUpdate( nilHandle)) apiErr;
-      if ( !SetWindowPos( HANDLE, 0, 0, 0, 0, 0,
-            ( is_apt( aptLockVisState) ? SWP_SHOWWINDOW : SWP_HIDEWINDOW) |
-             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErr;
-   }
 }
 
 void
