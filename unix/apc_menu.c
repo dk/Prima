@@ -87,6 +87,7 @@ get_window( Handle self, PMenuItemReg m)
       | ColormapChangeMask
       | OwnerGrabButtonMask;
    attrs. override_redirect = true;
+   attrs. save_under = true;
    attrs. do_not_propagate_mask = attrs. event_mask;
    w->w = XCreateWindow( DISP, guts. root,
                          0, 0, 1, 1, 0, CopyFromParent,
@@ -94,12 +95,14 @@ get_window( Handle self, PMenuItemReg m)
                          0
                          | CWOverrideRedirect
                          | CWEventMask
+                         | CWSaveUnder
                          , &attrs);
    if (!w->w) {
       free(w);
       return nil;
    }
    XCHECKPOINT;
+   XSetTransientForHint( DISP, w->w, None);
    hash_store( guts.menu_windows, &w->w, sizeof(w->w), (void*)self);
    wx = XX-> w;
    if ( predefined_cursors[crArrow] == None) {
