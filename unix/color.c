@@ -307,6 +307,23 @@ my_XFreeColors( Display * disp, Colormap cm, long * ls, int count, long pal, int
 #define XFreeColors(a,b,c,d,e) my_XFreeColors(a,b,c,d,e,__LINE__)
 */
 
+static Bool
+alloc_color( XColor * c) 
+{
+   int diff = 5 * 256,
+     r = c-> red,
+     g = c-> green,
+     b = c-> blue;
+   if ( !XAllocColor( DISP, guts. defaultColormap, c)) return false;
+   if ( 
+      diff > abs( c-> red   - r) &&
+      diff > abs( c-> green - g) &&
+      diff > abs( c-> blue  - b)
+   ) return true;
+   XFreeColors( DISP, guts. defaultColormap, &c->pixel, 1, 0);
+   return false;
+}
+
 /*
      Fills Brush structure. If dithering is needed,
   brush.secondary and brush.balance are set. Tries to
@@ -356,12 +373,11 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
             xc. blue  = COLOR_B16(color);
             xc. flags = DoGreen | DoBlue | DoRed;
             prima_color_sync();
-            if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
-               if ( prima_color_new( &xc)) {
-                  /* printf("%s alloc %d ( wanted %06x). got %02x %02x %02x\n", PWidget(self)-> name, xc.pixel, color, xc.red>>8,xc.green>>8,xc.blue>>8); */
-                  prima_color_add_ref( self, xc. pixel, RANK_NORMAL);
-                  return brush-> primary = xc. pixel;
-               }
+            if ( alloc_color( &xc)) {
+               prima_color_new( &xc);
+               /* printf("%s alloc %d ( wanted %06x). got %02x %02x %02x\n", PWidget(self)-> name, xc.pixel, color, xc.red>>8,xc.green>>8,xc.blue>>8); */
+               prima_color_add_ref( self, xc. pixel, RANK_NORMAL);
+               return brush-> primary = xc. pixel;
             }
          }
 
@@ -1087,6 +1103,8 @@ prima_palette_replace( Handle self, Bool fast)
       req[i] = PWindow(self)-> menuColor[ i - psz + menu]; 
    
    granted = 0;
+
+   if ( !restricted) XGrabServer( DISP);
    
    /* fetch actual colors - they are useful when no free colorcells
       available, but colormap has some good colors, which we don't
@@ -1121,7 +1139,7 @@ prima_palette_replace( Handle self, Bool fast)
                   xc. red   = COLOR_R16(req[i]);
                   xc. green = COLOR_G16(req[i]);
                   xc. blue  = COLOR_B16(req[i]);
-                  if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
+                  if ( alloc_color(&xc)) {
                      if ( prima_color_new( &xc))
                         /* to protect from sync - give actual status on SUCCESS */
                         guts.palette[xc.pixel].rank = RANK_IMMUTABLE + 1; 
@@ -1130,7 +1148,7 @@ prima_palette_replace( Handle self, Bool fast)
                      continue;
                }
                req[i] |= 0x80000000;
-               prima_color_add_ref( self, pixel, rank);
+               if ( !restricted) prima_color_add_ref( self, pixel, rank);
                granted++;
                break;
             }
@@ -1161,11 +1179,10 @@ ALLOC_STAGE:
          xc. red   = COLOR_R16(req[i]);
          xc. green = COLOR_G16(req[i]);
          xc. blue  = COLOR_B16(req[i]);
-         if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
-            if ( prima_color_new( &xc)) {
-               prima_color_add_ref( self, xc. pixel, rank);
-               granted++;
-            } 
+         if ( alloc_color( &xc)) {
+            prima_color_new( &xc);
+            prima_color_add_ref( self, xc. pixel, rank);
+            granted++;
             req[i] |= 0x80000000;
          } else 
             break;
@@ -1294,7 +1311,7 @@ ENOUGH:;
       xc. red   = rqx[i]. r << 8;
       xc. green = rqx[i]. g << 8;
       xc. blue  = rqx[i]. b << 8;
-      if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
+      if ( alloc_color( &xc)) {
          if ( prima_color_new( &xc)) {
             /* give new color NORMAL status - to be cleaned automatically */
             /* upon 1st sync() invocation */
@@ -1323,6 +1340,9 @@ SUCCESS:
          guts.palette[i].rank = RANK_PRIORITY;
            
    prima_color_sync(); 
+
+   XUngrabServer( DISP);
+   
    for ( i = 0; i < widgets. count; i++)
       if ( PWidget( widgets. items[i])-> stage < csDead)
          apc_widget_invalidate_rect( widgets. items[i], nil);
