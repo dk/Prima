@@ -1348,7 +1348,7 @@ __DATA__
 
 =head1 NAME
 
-File system related widgets and dialogs.
+Prima::FileDialog - File system related widgets and dialogs.
 
 =head1 DESCRIPTION 
 

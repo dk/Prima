@@ -64,7 +64,7 @@ __DATA__
 
 =head1 NAME
 
-Utils - miscellanneous routines
+Prima::Utils - miscellanneous routines
 
 =head1 DESCRIPTION
 
