@@ -1167,7 +1167,8 @@ apc_gp_get_physical_palette( Handle self, int * color)
 Point
 apc_gp_get_resolution( Handle self)
 {
-   Point p = {0,0};
+   Point p = guts. displayResolution;
+   if ( !self) return p;
    objCheck p;
    return sys res;
 }
