@@ -286,7 +286,7 @@ __apc_image_correct_property( PImgProps fmtProps,
     int i, j, n;
     Bool rc = true;
 
-    for ( i = ( propList->count - 1); ( i >= 0) && rc; i--) {
+    for ( i = ( propList->count - 1); ( i >= 0); i--) {
 	Bool isExtraInfo, isReadAll;
 	imgProp = ( PImgProperty) list_at( propList, i);
 	if ( readAll || extraInfo) {
@@ -340,128 +340,195 @@ __apc_image_correct_property( PImgProps fmtProps,
 		rc = false;
 	    }
 	    else {
+		DOLBUG( "__apc_image_correct_property: correcting ``%s''\n", imgProp->name);
 		switch ( fmtProps[ j].type[ 0]) {
 		    case 'i':
-			if ( fmtProps[ j].type[ 1] == '*') {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_ARRAY | PROPTYPE_INT,
-								   imgProp->used)) != nil;
-			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, atoi( imgProp->val.pBinary[ n].data));
+			if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BIN) {
+			    if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_INT) {
+				__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is expected to be an integer", imgProp->name);
+			    }
+			    else {
+				rc = ( outImgProp = img_duplicate_property( imgProp)) != nil;
+				list_add( outPropList, ( Handle) outImgProp);
 			    }
 			}
 			else {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_INT,
-								   0,
-								   atoi( imgProp->val.Binary.data))) != nil;
+			    if ( fmtProps[ j].type[ 1] == '*') {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_INT,
+								       imgProp->used)) != nil;
+				for ( n = 0; n < imgProp->used && rc; n++) {
+				    rc = img_push_property_value( outImgProp, atoi( imgProp->val.pBinary[ n].data));
+				}
+			    }
+			    else {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_INT,
+								       0,
+								       atoi( imgProp->val.Binary.data))) != nil;
+			    }
 			}
 			break;
 		    case 'n':
-			if ( fmtProps[ j].type[ 1] == '*') {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_ARRAY | PROPTYPE_DOUBLE,
-								   imgProp->used)) != nil;
-			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, atof( imgProp->val.pBinary[ n].data));
+			if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BIN) {
+			    if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_DOUBLE) {
+				__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is expected to be a double", imgProp->name);
+			    }
+			    else {
+				rc = ( outImgProp = img_duplicate_property( imgProp)) != nil;
+				list_add( outPropList, ( Handle) outImgProp);
 			    }
 			}
 			else {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_DOUBLE,
-								   0,
-								   atof( imgProp->val.Binary.data))) != nil;
+			    if ( fmtProps[ j].type[ 1] == '*') {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_DOUBLE,
+								       imgProp->used)) != nil;
+				for ( n = 0; n < imgProp->used && rc; n++) {
+				    rc = img_push_property_value( outImgProp, atof( imgProp->val.pBinary[ n].data));
+				}
+			    }
+			    else {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_DOUBLE,
+								       0,
+								       atof( imgProp->val.Binary.data))) != nil;
+			    }
 			}
 			break;
 		    case 's':
-			if ( fmtProps[ j].type[ 1] == '*') {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_ARRAY | PROPTYPE_STRING,
-								   imgProp->used)) != nil;
-			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, imgProp->val.pBinary[ n].data);
+			if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BIN) {
+			    if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_STRING) {
+				__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is expected to be a string", imgProp->name);
+			    }
+			    else {
+				rc = ( outImgProp = img_duplicate_property( imgProp)) != nil;
+				list_add( outPropList, ( Handle) outImgProp);
 			    }
 			}
 			else {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_STRING,
-								   0,
-								   imgProp->val.Binary.data)) != nil;
+			    if ( fmtProps[ j].type[ 1] == '*') {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_STRING,
+								       imgProp->used)) != nil;
+				for ( n = 0; n < imgProp->used && rc; n++) {
+				    rc = img_push_property_value( outImgProp, imgProp->val.pBinary[ n].data);
+				}
+			    }
+			    else {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_STRING,
+								       0,
+								       imgProp->val.Binary.data)) != nil;
+			    }
 			}
 			break;
 		    case 'b':
-			if ( fmtProps[ j].type[ 1] == '*') {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_ARRAY | PROPTYPE_BYTE,
-								   imgProp->used)) != nil;
-			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, atoi( imgProp->val.pBinary[ n].data));
+			if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BIN) {
+			    if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BYTE) {
+				__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is expected to be a byte", imgProp->name);
+			    }
+			    else {
+				rc = ( outImgProp = img_duplicate_property( imgProp)) != nil;
+				list_add( outPropList, ( Handle) outImgProp);
 			    }
 			}
 			else {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_BYTE,
-								   0,
-								   atoi( imgProp->val.Binary.data))) != nil;
+			    if ( fmtProps[ j].type[ 1] == '*') {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_BYTE,
+								       imgProp->used)) != nil;
+				for ( n = 0; n < imgProp->used && rc; n++) {
+				    rc = img_push_property_value( outImgProp, atoi( imgProp->val.pBinary[ n].data));
+				}
+			    }
+			    else {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_BYTE,
+								       0,
+								       atoi( imgProp->val.Binary.data))) != nil;
+			    }
 			}
 			break;
 		    case 'B':
 			/* The size of binary data must be decreased by 1 because it was
 			   choosen in a way to preserve trailing zero in the Perl string. */
-			if ( fmtProps[ j].type[ 1] == '*') {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_ARRAY | PROPTYPE_BIN,
-								   imgProp->used)) != nil;
-			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, imgProp->val.pBinary[ n].size - 1, imgProp->val.pBinary[ n].data);
+			if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BIN) {
+			    if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BIN) {
+				__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is expected to be a binary data", imgProp->name);
+			    }
+			    else {
+				rc = ( outImgProp = img_duplicate_property( imgProp)) != nil;
+				list_add( outPropList, ( Handle) outImgProp);
 			    }
 			}
 			else {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_BIN,
-								   0,
-								   imgProp->val.Binary.size - 1,
-								   imgProp->val.Binary.data)) != nil;
+			    if ( fmtProps[ j].type[ 1] == '*') {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_BIN,
+								       imgProp->used)) != nil;
+				for ( n = 0; n < imgProp->used && rc; n++) {
+				    rc = img_push_property_value( outImgProp, imgProp->val.pBinary[ n].size - 1, imgProp->val.pBinary[ n].data);
+				}
+			    }
+			    else {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_BIN,
+								       0,
+								       imgProp->val.Binary.size - 1,
+								       imgProp->val.Binary.data)) != nil;
+			    }
 			}
 			break;
 		    case 'p':
-			if ( fmtProps[ j].type[ 1] == '*') {
-			    rc = ( outImgProp = img_push_property( outPropList,
-								   imgProp->name,
-								   PROPTYPE_ARRAY | PROPTYPE_PROP,
-								   imgProp->used)) != nil;
-			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, 
-							      imgProp->val.pProperties[ n].count)
-				    && __apc_image_correct_property( fmtProps[ j].subProps,
-								   imgProp->val.pProperties + n,
-								   outImgProp->val.pProperties + n,
-								   nil,
-								   nil);
+			if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BIN) {
+			    if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_PROP) {
+				__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is expected to be a set of properties", imgProp->name);
+			    }
+			    else {
+				rc = ( outImgProp = img_duplicate_property( imgProp)) != nil;
+				list_add( outPropList, ( Handle) outImgProp);
 			    }
 			}
 			else {
-			    rc = ( ( outImgProp = img_push_property( outPropList, 
-								     imgProp->name,
-								     PROPTYPE_PROP,
-								     0,
-								     imgProp->val.Properties.count)) != nil)
-				&& __apc_image_correct_property( fmtProps[ j].subProps,
-								 &imgProp->val.Properties,
-								 &outImgProp->val.Properties,
-								 nil,
-								 nil
-				    );
+			    if ( fmtProps[ j].type[ 1] == '*') {
+				rc = ( outImgProp = img_push_property( outPropList,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_PROP,
+								       imgProp->used)) != nil;
+				for ( n = 0; n < imgProp->used && rc; n++) {
+				    rc = img_push_property_value( outImgProp, 
+								  imgProp->val.pProperties[ n].count)
+					&& __apc_image_correct_property( fmtProps[ j].subProps,
+									 imgProp->val.pProperties + n,
+									 outImgProp->val.pProperties + n,
+									 nil,
+									 nil);
+				}
+			    }
+			    else {
+				rc = ( ( outImgProp = img_push_property( outPropList, 
+									 imgProp->name,
+									 PROPTYPE_PROP,
+									 0,
+									 imgProp->val.Properties.count)) != nil)
+				    && __apc_image_correct_property( fmtProps[ j].subProps,
+								     &imgProp->val.Properties,
+								     &outImgProp->val.Properties,
+								     nil,
+								     nil
+					);
+			    }
 			}
 			break;
 		    default:
@@ -489,7 +556,7 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool *
 {
     PImgInfo outImageInfo;
     PList propList = imageInfo->propList;
-    Bool rc = true;
+    Bool rc;
 
     rc = ( ( outImageInfo = img_info_create( propList->count)) != nil)
 	&& __apc_image_correct_property( imgFormat->propertyList, 
@@ -510,6 +577,62 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool *
     img_info_destroy( outImageInfo);
 
     return rc;
+}
+
+static Bool
+adjust_line_size( PList imgInfo) 
+{
+    int i;
+
+    DOLBUG( "Adjusting lineSize\n");
+
+    for ( i = 0; i < imgInfo->count; i++) {
+	PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
+	PImgProperty lineSizeProp = nil, dataProp = nil;
+	int h = 0, j;
+
+	for ( j = 0; j < imageInfo->propList->count; j++) {
+	    PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, j);
+
+	    if ( strcmp( imgProp->name, "data") == 0) {
+		dataProp = imgProp;
+	    }
+	    else if ( strcmp( imgProp->name, "lineSize") == 0) {
+		lineSizeProp = imgProp;
+	    }
+	    else if ( strcmp( imgProp->name, "height") == 0) {
+		h = imgProp->val.Int;
+	    }
+	}
+
+	if ( ( dataProp != nil)
+	     && ( lineSizeProp != nil)
+	     && ( ( dataProp->flags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY)
+	     && ( ( dataProp->flags & PROPTYPE_MASK) == PROPTYPE_BYTE)
+	     && ( ( lineSizeProp->flags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY)
+	     && ( ( lineSizeProp->flags & PROPTYPE_MASK) == PROPTYPE_INT)
+	     && ( ( lineSizeProp->val.Int % 4) != 0)) {
+	    int newSize = ( lineSizeProp->val.Int / 4 + 1) * 4;
+	    Byte *newData = ( Byte *) malloc( newSize * h);
+	    Byte *po = newData, *pi = dataProp->val.pByte;
+
+	    if ( ! newData) {
+		return false;
+	    }
+
+	    for ( j = 0; j < h; j++) {
+		memcpy( po, pi, lineSizeProp->val.Int);
+		po += newSize;
+		pi += lineSizeProp->val.Int;
+	    }
+
+	    free( dataProp->val.pByte);
+	    dataProp->val.pByte = newData;
+	    dataProp->used = dataProp->size = newSize * h;
+	    lineSizeProp->val.Int = newSize;
+	}
+    }
+    return true;
 }
 
 /*
@@ -555,7 +678,14 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 			    if ( ! rc) {
 				__apc_image_set_error( "apc_image_read(%s): error in %s driver: %s",
 						       filename,
+						       imgFormat->id,
 						       imgFormat->getError( NULL, 0));
+			    }
+			    if ( readData) {
+				if ( ! adjust_line_size( imgInfo)) {
+				    __apc_image_set_error( "apc_image_read(%s): lineSize correction failed",
+							   filename);
+				}
 			    }
 			}
 		    }
@@ -587,7 +717,9 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 typedef struct {
     const char *filename;
     PList imgInfo;
+    PList outImgInfo;
     const char *desiredFormat;
+    List formats; /* List of formats reported the file being storable. */
 } __ImgSaveData, *__PImgSaveData;
 
 static __PImgSaveData
@@ -596,6 +728,7 @@ save_prepare_data()
     __PImgSaveData save_data = ( __PImgSaveData) malloc( sizeof( __ImgSaveData));
     if ( save_data != nil) {
 	save_data->filename = nil;
+	list_create( &save_data->formats, 5, 5);
     }
     return save_data;
 }
@@ -604,6 +737,7 @@ static void
 save_cleanup_data( __PImgSaveData *save_data)
 {
     if ( *save_data != nil) {
+	list_destroy( &( *save_data)->formats);
 	free( *save_data);
 	*save_data = nil;
     }
@@ -614,11 +748,53 @@ save_img_storable( Handle item, void *params)
 {
     PImgFormat imgFormat = ( PImgFormat) item;
     __PImgSaveData save_data = ( __PImgSaveData) params;
-    if ( ( save_data->desiredFormat != nil)
-	 && ( strcasecmp( save_data->desiredFormat, imgFormat->id) != 0)) {
-	return false;
+    if ( save_data->desiredFormat != nil) {
+	if ( strcasecmp( save_data->desiredFormat, imgFormat->id) != 0) {
+	    return false;
+	}
+	else {
+	    list_add( &save_data->formats, item);
+	    return true;
+	}
     }
-    return imgFormat->is_storable( save_data->filename, save_data->imgInfo);
+    else if ( imgFormat->is_storable( save_data->filename, save_data->imgInfo)) {
+	list_add( &save_data->formats, item);
+    }
+    return false;
+}
+
+static Bool
+save_img_compatible( Handle item, void *params)
+{
+    PImgFormat imgFormat = ( PImgFormat) item;
+    __PImgSaveData save_data = ( __PImgSaveData) params;
+    Bool rc;
+    int i;
+
+    DOLBUG( "save_img_compatible: trying format %s: ", imgFormat->id);
+    save_data->outImgInfo = plist_create( save_data->imgInfo->count, 1);
+    for ( i = 0; i < save_data->imgInfo->count; i++) {
+	PImgInfo imageInfo, outImageInfo;
+	imageInfo = ( PImgInfo) list_at( save_data->imgInfo, i);
+	outImageInfo = img_info_create( imageInfo->propList->count);
+	__apc_image_correct_property( imgFormat->propertyList,
+				      imageInfo->propList,
+				      outImageInfo->propList,
+				      nil,
+				      nil
+	    );
+	list_add( save_data->outImgInfo, ( Handle)outImageInfo);
+    }
+    rc = imgFormat->is_compatible( save_data->outImgInfo);
+    if ( ! rc) {
+	for ( i = 0; i < save_data->outImgInfo->count; i++) {
+	    PImgInfo imageInfo = ( PImgInfo) list_at( save_data->outImgInfo, i);
+	    img_info_destroy( imageInfo);
+	}
+	plist_destroy( save_data->outImgInfo);
+    }
+    DOLBUG( "%s\n", rc ? "compatible" : "incompatible");
+    return rc;
 }
 
 Bool
@@ -629,14 +805,28 @@ apc_image_save( const char *filename, const char *format, PList imgInfo)
     if ( ( imgInfo != nil) && ( filename != nil)) {
 	__PImgSaveData save_data = save_prepare_data();
 	if ( save_data != nil) {
-	    int format_idx;
+	    int format_idx = -1;
 	    save_data->filename = filename;
 	    save_data->desiredFormat = format;
 	    save_data->imgInfo = imgInfo;
-	    format_idx = list_first_that( imgFormats, save_img_storable, ( void*) save_data);
+	    list_first_that( imgFormats, save_img_storable, ( void *) save_data);
+	    if ( save_data->formats.count > 0) {
+		format_idx = list_first_that( &save_data->formats, save_img_compatible, ( void *)save_data);
+	    }
 	    if ( format_idx != -1) {
 		PImgFormat imgFormat = ( PImgFormat) list_at( imgFormats, format_idx);
-		rc = ( imgFormat->save( save_data->filename, save_data->imgInfo) == 0);
+		rc = imgFormat->save( filename, save_data->outImgInfo);
+		if ( ! rc) {
+		    __apc_image_set_error( "apc_image_save(%s): error in %s driver: %s",
+					   filename,
+					   imgFormat->id,
+					   imgFormat->getError( NULL, 0));
+		}
+	    }
+	    else {
+		__apc_image_set_error( "apc_image_save(%s): no compatible image formats found",
+				       filename
+		    );
 	    }
 	    save_cleanup_data( &save_data);
 	}

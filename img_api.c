@@ -231,7 +231,20 @@ img_delete_property_at( PList propList, int index)
 }
 
 PImgProperty
-img_property_create( const char *name, U16 propFlags, int propArraySize)
+img_property_create( const char *name, U16 propFlags, int propArraySize, ...)
+{
+    PImgProperty imgProp;
+    va_list arg;
+
+    va_start( arg, propArraySize);
+    imgProp = img_property_create_v( name, propFlags, propArraySize, arg);
+    va_end( arg);
+
+    return imgProp;
+}
+
+PImgProperty
+img_property_create_v( const char *name, U16 propFlags, int propArraySize, va_list arg)
 {
     PImgProperty imgProp;
 
@@ -278,34 +291,7 @@ img_property_create( const char *name, U16 propFlags, int propArraySize)
 		    break;
 	    }
 	}
-    }
-
-    return imgProp;
-}
-
-/* The functions pushes a new property into existing property list. */
-PImgProperty
-img_push_property_v( PList propList,
-		     const char *propName,
-		     U16 propFlags, /* Combination of PROPTYPE_* constants. */
-		     int propArraySize, /* Ignored for non-array property. */
-		     va_list arg /* Optional parameter might be used for immediate
-				    initialization of non-array property.
-				    For PROPTYPE_PROP this just an initial size of
-				    properties list. This function might be used to
-				    fill the list.
-				    Binary data must be passed in two parameters:
-				    the first is size (int) and the second is pointer
-				    to the data.
-				    *NOTE*: the data will be copied as well as it being
-				    done for a String value. */
-    )
-{
-    PImgProperty imgProp;
-
-    imgProp = img_property_create( propName, propFlags, propArraySize);
-    if ( imgProp) {
-	if ( (propFlags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY) {
+	else {
 	    switch ( propFlags & PROPTYPE_MASK) {
 		case PROPTYPE_INT:
 		    {
@@ -351,6 +337,33 @@ img_push_property_v( PList propList,
 		    break;
 	    }
 	}
+    }
+
+    return imgProp;
+}
+
+/* The functions pushes a new property into existing property list. */
+PImgProperty
+img_push_property_v( PList propList,
+		     const char *propName,
+		     U16 propFlags, /* Combination of PROPTYPE_* constants. */
+		     int propArraySize, /* Ignored for non-array property. */
+		     va_list arg /* Optional parameter might be used for immediate
+				    initialization of non-array property.
+				    For PROPTYPE_PROP this just an initial size of
+				    properties list. This function might be used to
+				    fill the list.
+				    Binary data must be passed in two parameters:
+				    the first is size (int) and the second is pointer
+				    to the data.
+				    *NOTE*: the data will be copied as well as it being
+				    done for a String value. */
+    )
+{
+    PImgProperty imgProp;
+
+    imgProp = img_property_create_v( propName, propFlags, propArraySize, arg);
+    if ( imgProp) {
 	list_add( propList, ( Handle) imgProp);
     }
 
@@ -499,4 +512,83 @@ img_push_property_value( PImgProperty imgProp, ...)
     rc = img_push_property_value_v( imgProp, arg);
     va_end( arg);
     return rc;
+}
+
+PImgProperty
+img_duplicate_property( PImgProperty imgProp)
+{
+    PImgProperty outImgProp = nil;
+
+    if ( ( imgProp->flags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY) {
+	int i;
+
+	outImgProp = img_property_create( imgProp->name, imgProp->flags, imgProp->size);
+	if ( outImgProp) {
+	    Bool rc = true;
+	    for ( i = 0; i < imgProp->size; i++) {
+		switch ( ( imgProp->flags & PROPTYPE_MASK)) {
+		    case PROPTYPE_INT:
+			rc = img_push_property_value( outImgProp, imgProp->val.pInt[ i]);
+			break;
+		    case PROPTYPE_DOUBLE:
+			rc = img_push_property_value( outImgProp, imgProp->val.pDouble[ i]);
+			break;
+		    case PROPTYPE_STRING:
+			rc = img_push_property_value( outImgProp, imgProp->val.pString[ i]);
+			break;
+		    case PROPTYPE_BYTE:
+			rc = img_push_property_value( outImgProp, imgProp->val.pByte[ i]);
+			break;
+		    case PROPTYPE_BIN:
+			rc = img_push_property_value( outImgProp, imgProp->val.pBinary[ i].size, imgProp->val.pBinary[ i].data);
+			break;
+		    case PROPTYPE_PROP:
+			rc = img_push_property_value( outImgProp, imgProp->val.pProperties[ i].count);
+			if ( rc) {
+			    int j;
+			    for ( j = 0; j < imgProp->val.pProperties[ i].count; j++) {
+				PImgProperty subProp = img_duplicate_property( ( PImgProperty) list_at( imgProp->val.pProperties + i, j));
+				list_add( outImgProp->val.pProperties + outImgProp->used - 1, ( Handle) subProp);
+			    }
+			}
+			break;
+		}
+	    }
+	    if ( ! rc) {
+		img_free_property( outImgProp);
+		outImgProp = nil;
+	    }
+	}
+    }
+    else {
+	switch ( imgProp->flags & PROPTYPE_MASK) {
+	    case PROPTYPE_INT:
+		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.Int);
+		break;
+	    case PROPTYPE_DOUBLE:
+		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.Double);
+		break;
+	    case PROPTYPE_STRING:
+		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.String);
+		break;
+	    case PROPTYPE_BYTE:
+		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.Byte);
+		break;
+	    case PROPTYPE_BIN:
+		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.Binary.size, imgProp->val.Binary.data);
+		break;
+	    case PROPTYPE_PROP:
+		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.Properties.count);
+		if ( outImgProp) {
+		    int j;
+		    for ( j = 0; j < imgProp->val.Properties.count; j++) {
+			PImgProperty subProp = img_duplicate_property( ( PImgProperty) list_at( &imgProp->val.Properties, j));
+			list_add( &outImgProp->val.Properties, ( Handle) subProp);
+		    }
+		}
+		break;
+	}
+    }
+
+    return outImgProp;
 }

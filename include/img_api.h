@@ -119,6 +119,8 @@ typedef Bool IMGF_Loadable( int fd, const char *filename, Byte *preread_buf, U32
 typedef IMGF_Loadable *PIMGF_Loadable;
 typedef Bool IMGF_Storable( const char *filename, PList imgInfo);
 typedef IMGF_Storable *PIMGF_Storable;
+typedef Bool IMGF_Compatible( PList imgInfo);
+typedef IMGF_Compatible *PIMGF_Compatible;
 typedef Bool IMGF_GetInfo( int fd, const char *filename, PList imgInfo, Bool readAll);
 typedef IMGF_GetInfo *PIMGF_GetInfo;
 typedef const char *IMGF_GetErrorMsg( char *errorMsgBuf, int bufLen);
@@ -136,6 +138,7 @@ typedef struct _IMGFormat {
    PIMGF_Save save;
    PIMGF_Loadable is_loadable;
    PIMGF_Storable is_storable;
+   PIMGF_Compatible is_compatible;
    PIMGF_GetInfo getInfo;
    PIMGF_GetErrorMsg getError;
 } ImgFormat, *PImgFormat;
@@ -173,7 +176,10 @@ extern void
 img_delete_property_at( PList propList, int index);
 
 extern PImgProperty
-img_property_create( const char *name, U16 propFlags, int propArraySize);
+img_property_create( const char *name, U16 propFlags, int propArraySize, ...);
+
+extern PImgProperty
+img_property_create_v( const char *name, U16 propFlags, int propArraySize, va_list arg);
 
 /* The functions pushes a new property into existing property list. */
 extern PImgProperty
@@ -217,5 +223,8 @@ img_push_property_value_v( PImgProperty imgProp, va_list arg);
 
 extern Bool
 img_push_property_value( PImgProperty imgProp, ...);
+
+extern PImgProperty
+img_duplicate_property( PImgProperty imgProp);
 
 #endif

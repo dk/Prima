@@ -67,7 +67,7 @@ object Prima::Image( Prima::Drawable)
    c_only void   make_empty();
    import SV *   profile_default ();
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
-   method Bool   save( char *filename, HV *options);
+   weird  Bool   save( SV *who, char *filename, PList imgInfo);
    method void   set( HV * profile);
    method void   set_conversion( int conversion);
    method void   set_data( SV * data);
