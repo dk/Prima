@@ -288,6 +288,7 @@ sub on_enter   { $_[0]-> repaint; }
 sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
+   return if $mod & km::DeadKey;
    $mod &= ( km::Shift|km::Ctrl|km::Alt);
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
    if ( $mod & km::Ctrl && $self->{multiSelect})
@@ -1259,7 +1260,8 @@ sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
-   if ( $code & 0xFF && $key == kb::NoKey && !($mod & ~km::Shift) && $self->{count})
+   return if $mod & km::DeadKey;
+   if ((( $code & 0xFF) >= ord(' ')) && ( $key == kb::NoKey) && !($mod & ~km::Shift) && $self->{count})
    {
       my $i;
       my ( $c, $hit, $items) = ( lc chr ( $code & 0xFF), undef, $self->{items});

@@ -373,8 +373,8 @@ sub on_keydown
 # typing part
    
    if  (!$self-> {readOnly} &&
-        ( $code & 0xFF) &&
-       (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
+        (( $code & 0xFF) >= ord(' ')) &&
+#      (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
        (( $key == kb::NoKey) || ( $key == kb::Space))
       )
    {

@@ -870,8 +870,8 @@ sub on_keydown
       return unless $mod & km::Ctrl;
       $mod &= ~km::Ctrl;
    }
-   if  (( $code & 0xFF) &&
-       (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
+   if  ((( $code & 0xFF) >= ord(' ')) &&
+#      (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
        (( $key == kb::NoKey) || ( $key == kb::Space) || ( $key == kb::Tab))
       )
    {

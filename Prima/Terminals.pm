@@ -373,7 +373,7 @@ sub reset {
 
     #print "resetting";
 
-    if ( $self->{ termView}->font)-> pitch != fp::Fixed) {
+    if ( $self->{ termView}->font-> pitch != fp::Fixed) {
         $self->{ termView}->font->pitch( fp::Fixed);
         return;
     }
@@ -595,7 +595,7 @@ sub insert_view {
     }
     $self->buildinItem( $item);
     if ( ! $item->isa( 'Prima::Widget')) {
-        croak "Item #$i not a Widget descendant" unless $item->isa( 'Prima::Widget');
+       croak( "Item #$i not a Widget descendant") unless $item->isa( 'Prima::Widget');
     }
     if ( defined( $i)) {
         $self->{ items}->[ $i] = $item;
@@ -888,8 +888,8 @@ sub TermView_Paint {
 #\subsection{TermView\_KeyDown}
 sub TermView_KeyDown {
     my ( $self, $term, $code, $key, $mod) = @_;
-    if  ( ( $code & 0xFF) &&
-        ( ( $mod  & ( km::Alt | km::Ctrl)) == 0) &&
+    if  ( (( $code & 0xFF) >= ord(' ')) &&
+#       ( ( $mod  & ( km::Alt | km::Ctrl)) == 0) &&
         ( ( $key == kb::NoKey) || ( $key == kb::Space))
        ) {
         $self->put_str( chr( $code & 0xFF));
@@ -1244,7 +1244,7 @@ sub set_reuse_prompts {
 #\subsection{set\_word\_right\_mode}
 sub set_word_right_mode {
     my ( $self, $wrm) = @_;
-    croak "Wrong wordRightMode passed"
+    croak("Wrong wordRightMode passed")
         unless defined( $wrm) && ( ( $wrm == tm::WordEnd) || ( $wrm == tm::WordBegin));
     $self->{ wordRightMode} = $wrm;
 }
@@ -1500,7 +1500,7 @@ sub invalidate_line {
 sub set_line {
     my ( $self, $i, $str, $p) = @_;
 
-    croak "Wrong parameters passed to the method set_line"
+    croak("Wrong parameters passed to the method set_line")
         unless defined( $str) && defined( $i) && ( ( $i >= 0) && ( $i <= ( $#{ $self->{ items}} + 1)));
     if ( defined( $self->{ items}->[ $i])) {
         return if ref $self->{ items}->[ $i];
@@ -1540,7 +1540,7 @@ sub set_line {
         $clen = $itemChanged ? ( $oldlen > $newlen ? $oldlen : $newlen) - $cpos : $slen;
     }
     else {
-        croak "Unknown mode passed for method set_line";
+        croak("Unknown mode passed for method set_line");
     }
 
     if ( $itemChanged) {
@@ -1640,7 +1640,7 @@ sub remove_view_item {
 
     my ( $item) = $self->{ items}->[ $i];
 
-    croak "Not a reference to a Widget descendant" unless $item->isa( "Prima::Widget");
+    croak( "Not a reference to a Widget descendant") unless $item->isa( "Prima::Widget");
 
     $item->notify( 'TerminalRemove', $self);
     $item->destroy, return 1
@@ -1664,7 +1664,7 @@ sub insert_item {
     }
 
     if ( $i < ( - $#{ $items} - 1)) {
-        croak "Incorrect index passed to insert_item";
+        croak("Incorrect index passed to insert_item");
     }
 
     my ( $idx) = $i < 0 ? scalar( @{ $items}) - $i : $i;
@@ -1736,7 +1736,7 @@ sub delete_item {
     }
 
     if ( $i < ( - $#{ $items} - 1)) {
-        croak "Incorrect index passed to insert_item";
+        croak("Incorrect index passed to insert_item");
     }
 
     my ( $idx) = $i < 0 ? scalar( @{ $items}) - $i : $i;
@@ -1933,8 +1933,8 @@ sub put_str {
     my $focused = $self->{ focused};
     my ( $cP, $slen) = ( $self->{ cursorPos}, length( $str));
 
-    croak "Can't print into a empty item" unless defined( $self->{ items}->[ $focused]);
-    croak "Can't print into a Widget item" if ref $self->{ items}->[ $focused];
+    croak("Can't print into a empty item") unless defined( $self->{ items}->[ $focused]);
+    croak("Can't print into a Widget item") if ref $self->{ items}->[ $focused];
 
     $self->{ cursorPos} += $slen;
     $self->set_line( $focused, $str, { mode => ( $self->{ insertMode} ? 'insert' : 'change'), spos => $cP, slen => $slen});

@@ -33,7 +33,7 @@ my $l = $w-> insert( InputLine =>
    text        => '0:::1234 5678 90ab cdef ghij klmn oprq stuv:1::1234 5678 90ab cdef ghij klmn oprq stuv:2::1234 5678 90ab cdef ghij klmn oprq stuv:3::1234 5678 90ab cdef ghij klmn oprq stuv:4::1234 5678 90ab cdef ghij klmn oprq stuv::End',
    centered    => 1,
    width       => 300,
-   firstChar   => 10,
+#  firstChar   => 10,
    alignment   => ta::Center,
    font        => { size => 18, },
    growMode    => gm::GrowHiX,

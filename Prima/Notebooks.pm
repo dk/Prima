@@ -745,6 +745,7 @@ sub move_widget
    $self-> repaint if $self->{pageIndex} == $page || $self->{pageIndex} == $newPage;
 }
 
+
 sub set_page_count
 {
    my ( $self, $pageCount) = @_;

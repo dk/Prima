@@ -578,11 +578,13 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_KEYUP:
       if ( apc_widget_is_responsive( self)) {
           HKL  kl;
-          BYTE octl;
           WORD keys[ 2];
+          BYTE * keyState;
+          BYTE emptyKeyState[256];
           Bool up = ( msg == WM_KEYUP) || ( msg == WM_SYSKEYUP);
           Bool extended = mp2 & ( 1 << 24);
           UINT scan = ( HIWORD( mp2) & 0xFF) | ( up ? 0x80000000 : 0);
+          int deadPollCount = 0;
 
           // basic assignments
           ev. cmd = up ? cmKeyUp : cmKeyDown;
@@ -605,27 +607,12 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              (( GetKeyState( VK_CONTROL) < 0) ? kmCtrl  : 0) |
              (( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
 
-          if ( ev. key. mod & kmCtrl) {
-             int j;
-             char buf[ KL_NAMELENGTH * 2] = "";
-             if ( !GetKeyboardLayoutName( buf)) apiErr;
-             // non-alphanumeric keys - such as /\|?., etc - with kmCtrl are giving weird results
-             octl = guts. currentKeyState[ VK_CONTROL];
-             guts. currentKeyState[ VK_CONTROL] = 0;
-             kl   = nil;
-             for ( j = 0; j < ( sizeof( keyLayouts) / sizeof( char*)); j++) {
-                if ( strncmp( buf + 4, keyLayouts[ j], 4) == 0) {
-                   kl = GetKeyboardLayout( 0);
-                   break;
-                }
-             }
-             if ( kl == nil)
-                kl = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
-          } else
-             kl = GetKeyboardLayout( 0);
-
+          kl = GetKeyboardLayout( 0);
+          keyState = guts. keyState;
+AGAIN:             
           // ascii mapping
-          switch ( ToAsciiEx( mp1, scan, guts. keyState, keys, 0, kl)) {
+             
+          switch ( ToAsciiEx( mp1, scan, keyState, keys, 0, kl)) {
           case 1: // char
              break;
           case 2: { // double char
@@ -638,18 +625,23 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              }
              break;
           case 0: // virtual key
-             keys[ 0] = ( mp1 < VK_NUMPAD0 || mp1 > VK_DIVIDE) ? 0 : mp1 - '0';
+             if ( deadPollCount == 0) {
+             /* can't have character code - maybe fish out without mods? */
+                keyState = emptyKeyState;
+                memset( emptyKeyState, 0, sizeof( emptyKeyState));
+                deadPollCount = 1;
+                ev. key. mod |= kmDeadKey;
+                goto AGAIN;
+             } else {
+             /* same meaning without mods, no code anyway */
+                keys[ 0] = 0;
+                ev. key. mod &= ~kmDeadKey;
+             }   
              break;
           default:
-             ev. key. mod |= kmDeadKey;
+              ev. key. mod |= kmDeadKey;
           }
           ev. key. code = keys[ 0] & 0xFF;
-
-          if ( ev. key. mod & kmCtrl) {
-             guts. currentKeyState[ VK_CONTROL] = octl;
-             if ( isalpha( ev. key. code))
-                ev. key. code = toupper( ev. key. code) - '@';
-          }
 
           // simulated key codes
           if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))

@@ -631,7 +631,7 @@ sub on_keydown
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
 
    return unless $self->{count};
-   if (( $key == kb::NoKey) && ( $code & 0xFF)) {
+   if (( $key == kb::NoKey) && (( $code & 0xFF) >= ord(' '))) {
       if ( chr( $code) eq '+') {
          $self-> adjust( $self->{focusedItem}, 1);
          $self-> clear_event;
