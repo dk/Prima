@@ -487,8 +487,8 @@ Drawable_get_text_box( Handle self, char * text, int len)
    return newRV_noinc(( SV *) av);
 }
 
-static char **
-do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
+char **
+Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
 {
    float width[ 256];
    int start = 0, i, lSize = 16;
@@ -751,7 +751,7 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    }
    if ( abc == nil) return nil;
    
-   c = do_text_wrap( self, &t, abc);
+   c = Drawable_do_text_wrap( self, &t, abc);
    free( abc);
 
    for ( i = 0; i < t. count; i++) {
