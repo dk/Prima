@@ -73,6 +73,11 @@ apc_menu_set_font( Handle self, PFont font)
 }
 
 void
+apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
+{
+}
+
+void
 apc_menu_item_delete( Handle self, PMenuItemReg m)
 {
 }
@@ -93,6 +98,11 @@ apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled)
 }
 
 void
+apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
+{
+}
+
+void
 apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
 {
 }
@@ -100,6 +110,12 @@ apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
 void
 apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
 {
+}
+
+ApiHandle
+apc_menu_get_handle( Handle self)
+{
+   return nilHandle;
 }
 
 Bool
