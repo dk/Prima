@@ -720,15 +720,6 @@ sub on_mousemove
    return unless defined $self->{mouseTransaction};
    my $who   = $self->{mouseTransaction};
 
-   if ( $who eq q(b1) || $who eq q(b2) || $who eq q(left) || $who eq q(right))
-   {
-      my $upon  = $self-> translate_point( $x, $y);
-      my $oldPress = $self->{$who}->{pressed};
-      $self->{$who}->{pressed} = ( defined $upon && ( $upon eq $who)) ? 1 : 0;
-      my $useRepaint = $self->{$who}->{pressed} != $oldPress;
-      $self-> repaint if $useRepaint;
-   }
-
    if ( $who eq q(tab))
    {
       my @groove = @{$self->{groove}->{rect}};
@@ -743,11 +734,20 @@ sub on_mousemove
              (( $x - $self->{$who}->{aperture} - $self->{btx}) *
               ( $self->{max} - $self->{min})) /
               ( $groove[2] - $groove[0] - $tab[2] + $tab[0])};
-      my $ov = $self-> {value};
       $self-> {suppressNotify} = $self->{autoTrack} ? undef : 1;
-      $self-> value( $val);
+      $self-> set_value( $val);
       $self-> {suppressNotify} = undef;
+   } elsif ( $who eq q(b1)
+	     || $who eq q(b2)
+	     || $who eq q(left)
+	     || $who eq q(right)) {
+      my $upon  = $self-> translate_point( $x, $y);
+      my $oldPress = $self->{$who}->{pressed};
+      $self->{$who}->{pressed} = ( defined $upon && ( $upon eq $who)) ? 1 : 0;
+      my $useRepaint = $self->{$who}->{pressed} != $oldPress;
+      $self-> repaint if $useRepaint;
    }
+
 }
 
 
@@ -852,7 +852,7 @@ sub set_value
    $value = $max if $value > $max;
    $value -= $min;
    $max   -= $min;
-   my $div    = eval{ int($value / $self->{step} + 0.5 * (( $value >= 0) ? 1 : -1))} || 0;
+   my $div = eval{ int($value / $self->{step} + 0.5 * (( $value >= 0) ? 1 : -1))} || 0;
    my $lbound = $value == 0 ? 0 : $div * $self->{step};
    my $rbound = $value == $max ? $max : ( $div + 1) * $self->{step};
    $value = ( $value >= (( $lbound + $rbound) / 2)) ? $rbound : $lbound;
@@ -860,12 +860,12 @@ sub set_value
    $value = $max if $value > $max;
    $value += $min;
    my $oldValue = $self-> {value};
+   return if $oldValue == $value;
    my %v = ();
    $v{b1ok}     = $self->{b1}->{enabled}?1:0;
    $v{b2ok}     = $self->{b2}->{enabled}?1:0;
    $v{grooveok} = $self->{tab}->{enabled}?1:0;
    $v{grooveok} .= join(q(x),@{$self->{tab}->{rect}}) if $v{grooveok};
-   return if $oldValue == $value;
    $self-> { value} = $value;
    $self-> reset;
    $v{b1ok2}     = $self->{b1}->{enabled}?1:0;
