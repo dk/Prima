@@ -276,6 +276,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    XButtonEvent *bev;
    int cmd;
 
+   XCHECKPOINT;
    if ( ev-> type == guts. shared_image_completion_event) {
       prima_ximage_event( ev);
       return;
@@ -592,7 +593,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
    case ReparentNotify: {
       XWindow p = ev-> xreparent. parent;
-      if ( !prima_xw2h( p))
+      if ( !prima_xw2h( p)) 
 	 XX-> real_parent = p;
       DOLBUG( "ReparentNotify\n");
       return;
@@ -604,6 +605,13 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       Point old_origin = XX-> known_origin;
       Bool size_changed;
 
+      if ( cev-> above != XX-> above) {
+	 /* z-order notification */
+	 e. cmd = cmZOrderChanged;
+	 CComponent( self)-> message( self, &e);
+         if ( PObject( self)-> stage == csDead) return; 
+      }   
+      
       if ( !XX-> flags. process_configure_notify)
 	 return;
 
@@ -650,6 +658,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
                   PWidget(self)-> name, old_origin.x, old_origin.y, XX->origin.x, XX->origin.y);
 	 e. gen. P = XX-> origin;  (void)old_origin;
 	 CComponent( self)-> message( self, &e);
+         if ( PObject( self)-> stage == csDead) return; 
       }
 
       XX-> flags. no_size = false;
@@ -686,6 +695,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		  old_size. x, old_size. y,
 		  XX-> size. x, XX-> size. y);
 	 CComponent( self)-> message( self, &e);
+         if ( PObject( self)-> stage == csDead) return; 
       }
 
       XX-> known_origin = XX-> origin;
@@ -753,6 +763,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       guts. handled_events++;
       cmd = e. cmd;
       CComponent( self)-> message( self, &e);
+      if ( PObject( self)-> stage == csDead) return; 
       if ( e. cmd && cmd == cmClose) {
          if ( XX-> type. window && PWindow(self)-> modal)
             CWindow(self)-> cancel( self);
@@ -761,6 +772,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       }
       if ( secondary. cmd) {
 	 CComponent( self)-> message( self, &secondary);
+         if ( PObject( self)-> stage == csDead) return; 
       }
    } else {
       /* Unhandled event, do nothing */

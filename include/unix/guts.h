@@ -421,6 +421,7 @@ typedef struct _drawable_sys_data
    Point transform, gtransform, btransform;
    Handle owner;  /* The real one */
    XWindow real_parent; /* top levels */
+   XWindow above;
    XGCValues gcv;
    GC gc;
    GCList *gcl;

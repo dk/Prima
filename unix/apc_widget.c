@@ -67,6 +67,76 @@ apc_widget_get_parent_handle( Handle self)
    return nilHandle;
 }
 
+Handle
+apc_widget_get_z_order( Handle self, int zOrderId)
+{
+   XWindow root, parent, *children;
+   unsigned int count;
+   int i, inc;
+   Handle ret = nilHandle;
+
+   if ( !( PComponent(self)-> owner))
+      return self;
+
+   switch ( zOrderId) {
+   case zoFirst:
+      i = 1;
+      inc = -1;
+      break;
+   case zoLast:
+      i  = 1;
+      inc = 1;
+      break;
+   case zoNext:
+      i = 0;
+      inc = -1;
+      break;
+   case zoPrev:
+      i = 0;
+      inc = 1;
+      break;
+   default:
+      return nilHandle;
+   }
+
+   if ( XQueryTree( DISP, PComponent(PComponent(self)-> owner)-> handle, 
+      &root, &parent, &children, &count) == 0)
+         return nilHandle;
+
+   if ( count == 0) goto EXIT;
+
+   if ( i == 0) {
+      int found = -1;
+      for ( i = 0; i < count; i++) {
+         if ( children[ i] == X_WINDOW) {
+            found = i;
+            break;
+         }   
+      }   
+      if ( found < 0) { // if !clipOwner
+         ret = self;
+         goto EXIT; 
+      }   
+      i = found + inc;
+      if ( i < 0 || i >= count) goto EXIT; // last in line
+   } else
+      i = ( zOrderId == zoFirst) ? count - 1 : 0;
+   
+   while ( 1) {
+      Handle who = ( Handle) hash_fetch( guts. windows, (void*)&(children[i]), sizeof(X_WINDOW));
+      if ( who) {
+         ret = who;
+         break;
+      }   
+      i += inc;
+      if ( i < 0 || i >= count) break;
+   }   
+
+EXIT:   
+   if ( children) XFree( children);
+   return ret;
+}   
+
 Bool
 apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		   Bool clip_owner, Bool transparent, ApiHandle parentHandle)
@@ -160,6 +230,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    XX-> flags. do_size_hints = false;
    XX-> flags. no_size = true;
    XX-> flags. process_configure_notify = false;
+   XX-> above = nilHandle;
 
    XX-> owner = real_owner;
    XX-> size = (Point){0,0};
@@ -185,8 +256,9 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 Bool
 apc_widget_begin_paint_info( Handle self)
 {
-   DOLBUG( "apc_widget_begin_paint_info()\n");
-   return false;
+   prima_no_cursor( self);
+   prima_prepare_drawable_for_painting( self);
+   return true;
 }
 
 Bool
@@ -234,7 +306,8 @@ apc_widget_end_paint( Handle self)
 Bool
 apc_widget_end_paint_info( Handle self)
 {
-   DOLBUG( "apc_widget_end_paint_info()\n");
+   prima_cleanup_drawable_after_painting( self);
+   prima_update_cursor( self);
    return true;
 }
 
@@ -272,8 +345,12 @@ apc_widget_get_handle( Handle self)
 Rect
 apc_widget_get_invalid_rect( Handle self)
 {
-   DOLBUG( "apc_widget_get_invalid_rect()\n");
-   return (Rect){0,0,0,0};
+   DEFXX;
+   XRectangle r;
+   if ( !XX-> region)
+      return (Rect){0,0,0,0};
+   XClipBox( XX-> region, &r);
+   return (Rect){r.x, XX-> size.y - r.height - r.y, r.x + r.width, XX-> size.y - r.y};
 }
 
 Point
@@ -337,8 +414,12 @@ apc_widget_is_focused( Handle self)
 Bool
 apc_widget_is_responsive( Handle self)
 {
-   DOLBUG( "apc_widget_is_responsive()\n");
-   return false;
+   Bool ena = true;
+   while ( ena && self != application) {
+      ena  = XF_ENABLED(X(self)) ? true : false;
+      self = PWidget(self)-> owner;
+   }
+   return ena;
 }
 
 Bool
@@ -561,13 +642,17 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
 Bool
 apc_widget_set_focused( Handle self)
 {
+   XWindow focus = None;
    if ( self && ( self != CApplication( application)-> map_focus( application, self))) {
       return false;
    }
-   /* fprintf( stderr, "set pokus %s\n", PComponent(self)->name); */
-   if (XT_IS_WINDOW(X(self))) return true; /* already done in activate() */
-   /* fprintf( stderr, "set pokus %s\n", PComponent(self)->name); */
-   XSetInputFocus( DISP, apc_widget_is_showing( self) ? X_WINDOW : None, RevertToParent, CurrentTime);
+   if ( self) {
+      /* fprintf( stderr, "set pokus %s\n", PComponent(self)->name); */
+      if (XT_IS_WINDOW(X(self))) return true; /* already done in activate() */
+      /* fprintf( stderr, "set pokus %s\n", PComponent(self)->name); */
+      if ( apc_widget_is_showing( self)) focus = X_WINDOW;
+   }
+   XSetInputFocus( DISP, focus, RevertToParent, CurrentTime);
    XCHECKPOINT;
    return true;
 }
@@ -770,7 +855,33 @@ apc_widget_update( Handle self)
 Bool
 apc_widget_validate_rect( Handle self, Rect rect)
 {
-   DOLBUG( "apc_widget_validate_rect()\n");
+   XRectangle r;
+   DEFXX;
+   Region rgn;
+
+   r. x = rect. left;
+   r. width = rect. right - rect. left;
+   r. y = XX-> size. y - rect. top;
+   r. height = rect. top - rect. bottom;
+
+   if ( !XX-> region) 
+      return true;
+   
+   if ( !( rgn = XCreateRegion())) 
+      return false;
+   
+   XUnionRectWithRegion( &r, rgn, rgn);
+   XSubtractRegion( XX-> region, rgn, XX-> region);
+   XDestroyRegion( rgn);
+
+   if ( XEmptyRegion( XX-> region)) {
+      if ( XX-> flags. paint_pending) {
+         TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+         XX-> flags. paint_pending = false;
+      }
+      XDestroyRegion( XX-> region);
+      XX-> region = nil;
+   }   
    return true;
 }
 
