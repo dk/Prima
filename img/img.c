@@ -443,8 +443,8 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          if ( fi. object != self)
             Object_destroy( fi. object);
          if ( fi. profile != def) sv_free(( SV *) fi. profile);
-         if ( incrementalLoad && fi. frameCount < 0) {
-            fi. frameCount = fi. frame;
+         if ( incrementalLoad) {
+            if ( fi. frameCount < 0) fi. frameCount = fi. frame;
             goto EXIT_NOW; // EOF, report no error
          }   
          out( fi. errbuf);
