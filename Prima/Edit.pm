@@ -950,6 +950,7 @@ sub set_text_ref
    @{$self->{lines}} = split( "\n", $$ref);
    $self-> {maxLine} = scalar @{$self->{lines}} - 1;
    $self-> reset_syntax;
+   $self-> reset_scrolls;
    if ( !$self->{resetDisabled})
    {
       $self-> lock;
