@@ -371,7 +371,6 @@ typedef struct _UnixGuts
    Font                         default_widget_font;
    Font                         default_msg_font;
    Font                         default_caption_font;
-   int                          font_encoding_hack_type; /* see FEHT constants */
    Bool                         font_detail_names;
    /* Resource management */
    XrmDatabase                  db;
@@ -508,10 +507,6 @@ extern UnixGuts guts;
 #define FXA_AVERAGE_WIDTH guts. fxa_average_width
 #define FXA_CHARSET_REGISTRY guts. fxa_charset_registry
 #define FXA_CHARSET_ENCODING guts. fxa_charset_encoding
-
-#define FEHT_NONE                      0
-#define FEHT_MIXED_NAMES               1
-#define FEHT_MIXED_AND_UNMIXED_NAMES   2
 
 #define XCHECKPOINT						\
    STMT_START {							\

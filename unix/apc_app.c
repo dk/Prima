@@ -160,19 +160,11 @@ window_subsystem_init( void)
       "Scrollnext.scrollnext";
    
    bzero( &guts, sizeof( guts));
-   guts. font_encoding_hack_type = FEHT_NONE;
    {
       char * noX = getenv("PRIMA_DEVEL_WANT_NO_X");
       if ( noX && strcmp( noX, "YES") == 0) {
          fprintf( stderr, "** warning: PRIMA_DEVEL_WANT_NO_X environment variable is set, proceed on your own risk!\n");
          return true;
-      }
-
-      noX = getenv("PRIMA_FONT_ENCODING_TYPE");
-      if ( noX) {
-         int t = atoi( noX);
-         if ( t >= FEHT_NONE && t <= FEHT_MIXED_AND_UNMIXED_NAMES) 
-            guts. font_encoding_hack_type = t;
       }
    }
 

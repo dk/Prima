@@ -520,39 +520,6 @@ skip_font:
       }
    }
 
-   /*  add 'encoding' string to the multi-encoding fonts */
-   if ( guts. font_encoding_hack_type != FEHT_NONE) {
-      PHash hash = hash_create();
-      for ( i = 0; i < guts. n_fonts; i++) {
-         int len;
-         PList list;
-         if ( info[i]. info_offset == 0 || 
-              info[i]. name_offset == 0 || 
-             !info[i]. flags. name) 
-            continue;
-         len = info[ i]. name_offset;
-
-         if ( !( list = hash_fetch( hash, info[ i]. xname, len))) {
-            hash_store( hash, info[i].xname, len, list = plist_create( 8, 8));
-            list_add( list, ( Handle) 0); /* 'has duplicates' flag */
-            list_add( list, ( Handle) i);
-            if ( guts. font_encoding_hack_type == FEHT_MIXED_NAMES) 
-               list_add( list, ( Handle) i);
-         } else { 
-            char * enc = info[i].xname + info[i]. info_offset;
-            PFontInfo f = &info[(int)(list->items[1])];
-            if ( strcmp( f-> xname + f-> info_offset, enc) != 0) {
-               list-> items[0] = ( Handle) 1;
-               list_add( list, ( Handle) i);
-            } else if ( guts. font_encoding_hack_type == FEHT_MIXED_NAMES) {
-               list_add( list, ( Handle) i);
-            }
-         }
-      }
-      hash_first_that( hash, copy_hash_lists, nil, nil, nil);
-      hash_destroy( hash, false);
-   }
-
    /* locale */
    {
       int len;
