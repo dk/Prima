@@ -846,8 +846,19 @@ AGAIN:
       DEFMM;
       int px, first = 0;
       PMenuWindow w;
+      XWindow focus = nil;
       if ( prima_no_input( X(PComponent(self)->owner), false, true)) return;
       if ( ev-> xbutton. button != Button1) return;
+
+      if ( XX-> wstatic. w == win) {
+         Handle x = guts. focused, owner = PComponent(self)-> owner;
+         while ( x && !X(x)-> type. window) x = PComponent( x)-> owner;
+         if ( x != owner) {
+            XSetInputFocus( DISP, focus = PComponent( owner)-> handle, 
+               RevertToNone, ev-> xbutton. time);
+         }
+      }
+      
       if ( !( w = get_menu_window( self, win))) {
          prima_end_menu();
          return;
@@ -863,7 +874,10 @@ AGAIN:
          if ( ev-> type == ButtonRelease) return;
          if ( guts. currentMenu) 
             prima_end_menu();
-         XGetInputFocus( DISP, &XX-> focus, &rev);
+         if ( focus)
+            XX-> focus = focus;
+         else
+            XGetInputFocus( DISP, &XX-> focus, &rev);
          if ( !XX-> type. popup) {
             Handle topl = PComponent( self)-> owner;
             Handle who  = ( Handle) hash_fetch( guts.windows, (void*)&XX-> focus, sizeof(XX-> focus));

@@ -925,6 +925,16 @@ apc_widget_set_focused( Handle self)
    }
    XGetInputFocus( DISP, &xfoc, &rev);
    if ( xfoc == focus) return true;
+
+   { /* code for no-wm environment */
+      Handle who = ( Handle) hash_fetch( guts.windows, (void*)&xfoc, sizeof(xfoc)), x = self;
+      while ( who && XT_IS_WINDOW(X(who))) who = PComponent( who)-> owner;
+      while ( x && !XT_IS_WINDOW(X(x))) x = PComponent( x)-> owner;
+      if ( x && x != application && x != who && XT_IS_WINDOW(X(x)))
+         XSetInputFocus( DISP, PComponent(x)-> handle, RevertToNone, CurrentTime);
+   }
+
+   
    XSetInputFocus( DISP, focus, RevertToParent, CurrentTime);
    XCHECKPOINT;
    

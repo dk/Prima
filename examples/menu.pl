@@ -73,7 +73,7 @@ sub create_menu
    $img-> load( "$1/Hand.gif");
    return [
       [ "~File" => [
-          [ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!";}],   # anonymous sub
+          [ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!\n";}],   # anonymous sub
           [ $img => sub {
              my $img = $_[0]-> menu-> image( $_[1]);
              my @r = @{$img-> palette};
