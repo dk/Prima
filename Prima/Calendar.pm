@@ -64,7 +64,7 @@ sub profile_default
 sub profile_check_in
 {
    my ( $self, $p, $default) = @_;
-   $p-> {date} = $default-> {date};
+   $p-> {date} = $default-> {date} unless exists $p-> {date};
    $p-> {date}-> [0] = $p-> {day}   if exists $p-> {day};
    $p-> {date}-> [1] = $p-> {month} if exists $p-> {month};
    $p-> {date}-> [2] = $p-> {year}  if exists $p-> {year};
