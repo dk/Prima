@@ -56,7 +56,6 @@ Clipboard_done( Handle self)
        my deregister_format( self, (( PClipboardFormatReg) var formats)-> id);
    CComponent( application)-> detach( application, self, false);
    apc_clipboard_destroy();
-   app-> clipboard = nilHandle;
    inherited done( self);
 }
 
