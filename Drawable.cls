@@ -85,6 +85,7 @@ object Prima::Drawable ( Prima::Component)
    method SV *  get_physical_palette();
    method int   get_text_width( SV * text, int len = -1, Bool addOverhang = 0);
    method SV *  get_text_box( SV * text, int len = -1);
+   static SV *  render_spline( SV * obj, SV * points, int precision = -1);
 
    # operators
    method Bool  arc( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_arc;
