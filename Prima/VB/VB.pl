@@ -331,14 +331,15 @@ sub widget_changed
    my ( $how, $id) = @_;
    my $self = $VB::inspector;
    return unless $self;
-   return unless $self-> {opened};
-   if ( $id eq $self->{opened}->{id}) {
-      return if $self-> {sync};
-      $self-> {sync} = 1;
-      my $data = $self-> {opened}-> {widget}-> prf( $id);
-      $self-> {opened}-> set( $data);
-      $self-> {sync} = undef;
-   }   
+   if ( $self-> {opened}) {
+      if ( $id eq $self->{opened}->{id}) {
+         return if $self-> {sync};
+         $self-> {sync} = 1;
+         my $data = $self-> {opened}-> {widget}-> prf( $id);
+         $self-> {opened}-> set( $data);
+         $self-> {sync} = undef;
+      }   
+   }
    my $list = $self-> {currentList};
    my $ix = $list->{index}->{$id};
    if ( $list-> {check}->[$ix] == $how) {
@@ -403,7 +404,6 @@ sub enter_widget
    my $oid = $self->{opened}->{id} if $self->{opened};
    $oid = $self-> {lastOpenedId} unless defined $oid;
    $self-> {current} = $w;
-   $self-> close_item;
 
    if ( $self-> {current}) {
       my %df = %{$_[0]->{default}};
@@ -533,6 +533,16 @@ sub init
    $self-> init_profiler( \%profile);
    $self-> {guidelineX} = $self-> width  / 2;
    $self-> {guidelineY} = $self-> height / 2;
+   unless ( $self-> {syncRecting}) {
+      $self-> {syncRecting} = $self;
+      $self-> prf_set(
+         origin => [$self-> origin],
+         size   => [$self-> size],
+         originDontCare => 0,
+         sizeDontCare   => 0,
+      );
+      $self-> {syncRecting} = undef;
+   }
    return %profile;
 }
 
@@ -1658,14 +1668,14 @@ sub load_file
       visible     => 0,
    );
    $VB::form-> prf_set( %{$mf->{profile}});
-   $VB::inspector->{selectorChanging} = 1;
+   $VB::inspector->{selectorChanging} = 1 if $VB::inspector;
    my $loaded = 1;
    $self-> push_widgets( sub {
      $loaded++;
      $self-> text( sprintf( "Loaded %d%%", ($loaded / $maxwij) * 100)); 
    }, @seq);
    $VB::form-> show;
-   $VB::inspector->{selectorChanging}--;
+   $VB::inspector->{selectorChanging}-- if $VB::inspector;
    ObjectInspector::renew_widgets;
    update_menu();
    $self-> text( $oldtxt);

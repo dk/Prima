@@ -117,10 +117,9 @@ sub prf_set
       $_-> on_hook( $name, $key, $o, $profile{$key}) for @{$hooks{$key}};
    }
    $self->{profile} = {%{$self->{profile}}, %profile};
-   my $check = $VB::inspector && ( $VB::inspector->{opened}) && ( $VB::inspector->{current} eq $self);
+   my $check = $VB::inspector && ( $VB::inspector->{current}) && ( $VB::inspector->{current} eq $self);
    for ( keys %profile) {
       my $cname = 'prf_'.$_;
-      # ObjectInspector::widget_changed(0) if $check && ( $check eq $_);
       ObjectInspector::widget_changed(0, $_) if $check;
       $self-> $cname( $profile{$_}) if $self-> can( $cname);
    }
@@ -286,7 +285,7 @@ sub common_paint
       $canvas-> color( cl::Black);
       $canvas-> rectangle( 1, 1, $sz[0] - 2, $sz[1] - 2);
       $canvas-> rop( rop::XorPut);
-      $canvas-> color( cl::White);
+      $canvas-> color( cl::Set);
       my ( $hw, $hh) = ( int($sz[0]/2), int($sz[1]/2));
       $canvas-> bar( 0,0,4,4);
       $canvas-> bar( $hw-2,0,$hw+2,4);
@@ -426,9 +425,11 @@ sub on_mousedown
       
       $self-> bring_to_front;
       $self-> focus;
-      $VB::inspector->{selectorChanging} = 1; # disallow auto single-select
-      ObjectInspector::enter_widget( $self);
-      $VB::inspector->{selectorChanging} = 0;
+      if ( $VB::inspector) {
+         $VB::inspector->{selectorChanging} = 1; # disallow auto single-select
+         ObjectInspector::enter_widget( $self);
+         $VB::inspector->{selectorChanging} = 0;
+      }
 
       $self-> iterate_children( sub { $_[0]-> bring_to_front; $_[0]-> update_view; }); 
 
@@ -510,7 +511,7 @@ sub on_mouseclick
    my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
    return unless $dbl;
    $mod &= km::Alt|km::Shift|km::Ctrl;
-   if ( $mod == 0 && defined $self-> mainEvent) {
+   if ( $mod == 0 && defined $self-> mainEvent && $VB::inspector) {
       my $a = $self-> mainEvent;
       $self-> marked(1,1);
       $VB::inspector-> set_monger_index( 1);
@@ -1291,6 +1292,7 @@ sub valid
    my $tx = $self->{A}->text;
    $self->wake, return 0 unless length( $tx);
    $self->wake, return 0 if $tx =~ /[\s\\\~\!\@\#\$\%\^\&\*\(\)\-\+\=\[\]\{\}\.\,\?\;\|\`\'\"]/;
+   return 1 unless $VB::inspector;
    my $l = $VB::inspector-> Selector-> List;
    my $s = $l-> items;
    my $fi= $l-> focusedItem;
@@ -1507,7 +1509,7 @@ sub set
       $data = '';
       $self->{A}-> items( ['']);
    } else {
-      my %items = map { $_ => 1} @{$VB::inspector-> Selector-> items};
+      my %items = $VB::inspector ? (map { $_ => 1} @{$VB::inspector-> Selector-> items}) : ();
       delete $items{ $self->{widget}->name};
       $self->{A}-> items( [ keys %items]);
       $data = $VB::form-> name unless length $data;
@@ -1532,7 +1534,7 @@ sub set
       $data = '';
       $self->{A}-> items( ['']);
    } else {
-      my %items = map { $_ => 1} @{$VB::inspector-> Selector-> items};
+      my %items = $VB::inspector ? (map { $_ => 1} @{$VB::inspector-> Selector-> items}) : ();
       $self->{A}-> items( [ '', keys %items]);
       $data = $self->{widget}-> name if !defined $data || ( length( $data) == 0);
    }
@@ -1586,8 +1588,6 @@ sub open
 
    $self-> {container}-> insert( Label =>
       origin => [ 5, $self->{B}-> top + 5],
-      width  => 80,
-      autoWidth => 0,
       text      => '~Widget class:',
       focusLink => $self->{B},
    );
@@ -1606,8 +1606,6 @@ sub open
 
    $self-> {container}-> insert( Label =>
       origin => [ 5, $self->{C}-> top + 5],
-      width  => 80,
-      autoWidth => 0,
       text      => '~Color index:',
       focusLink => $self->{B},
    );
