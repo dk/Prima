@@ -319,17 +319,25 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    border_icons &= biAll;
 
    if ( X_WINDOW) { /* recreate request */
+      Bool destructive_motif_hints = 0; /* KDE 3.1: setting motif hints kills net_wm hints */
       if ( !guts.icccm_only && (
            ( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
            ( border_icons != XX-> borderIcons) || 
 	   ( on_top >= 0)
          )) {
 	 Bool visible = XX-> flags. mapped;
+	 if (
+           ( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
+           ( border_icons != XX-> borderIcons))
+	    destructive_motif_hints = 1;
+	 if ( destructive_motif_hints && on_top < 0)
+	    on_top = apc_window_get_on_top( self);
 	 if ( visible) {
 	    XUnmapWindow( DISP, X_WINDOW);
             prima_wm_sync( self, UnmapNotify);
 	 }
-         set_motif_hints( X_WINDOW, border_style, border_icons);
+         if ( destructive_motif_hints)
+            set_motif_hints( X_WINDOW, border_style, border_icons);
 	 if ( on_top >= 0)
 	    set_net_hints( X_WINDOW, -1, -1, -1, on_top);
 	 if ( visible) { 
@@ -337,8 +345,12 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
             prima_wm_sync( self, MapNotify);
 	 }
          XX-> borderIcons = border_icons;
+         XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
       }
-      if (( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0))
+      if (
+            (( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0)) 
+	    || destructive_motif_hints
+	 )
          apc_window_task_listed( self, task_list);
       return true; 
    }   
