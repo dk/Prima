@@ -130,8 +130,12 @@ extern void *
 reallocf(void *ptr, size_t size);
 #endif
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 #ifdef HAVE_PMPRINTF_H
 #define printf PmPrintf
+extern unsigned long PmPrintf(char *, ...);
 #endif
 
 
