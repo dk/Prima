@@ -856,6 +856,8 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
    if ( div <= 0) div = 1;
 
+   if ( !HAS_WCHAR) utf8 = false;
+
    if ( utf8)  
       if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) return false;
 
@@ -905,7 +907,9 @@ gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lp
    if ( iFirstChar > iLastChar)  // checking bound as far as we can
       return FALSE;
 
-   if ( !GetTextMetricsW( dc, &tm)) // determining font
+   if ( !HAS_WCHAR) unicode = false;
+   
+   if ( !gp_GetTextMetrics( dc, &tm)) // determining font
       return FALSE;
 
    if ( tm. tmPitchAndFamily & TMPF_TRUETYPE) {
@@ -972,6 +976,32 @@ gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lp
    }
    
    return TRUE;
+}
+
+#define TM(field) to->field = from->field
+void
+textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to)
+{
+    TM(tmHeight); TM(tmAscent); TM(tmDescent); TM(tmInternalLeading);
+    TM(tmExternalLeading); TM(tmAveCharWidth); TM(tmMaxCharWidth);
+    TM(tmWeight); TM(tmOverhang); TM(tmDigitizedAspectX);
+    TM(tmDigitizedAspectY); TM(tmFirstChar); TM(tmLastChar);
+    TM(tmDefaultChar); TM(tmBreakChar); TM(tmItalic); TM(tmUnderlined);
+    TM(tmStruckOut); TM(tmPitchAndFamily); TM(tmCharSet);
+}
+#undef TM
+                
+
+BOOL
+gp_GetTextMetrics( HDC dc, LPTEXTMETRICW tm)
+{
+   BOOL ret;
+   TEXTMETRICA a;
+   if ( HAS_WCHAR)
+      return GetTextMetricsW( dc, tm);
+   ret = GetTextMetricsA( dc, &a);
+   textmetric_c2w( &a, tm);
+   return ret;
 }
 
 PFontABC
@@ -1136,7 +1166,7 @@ apc_gp_get_font_ranges( Handle self, int * count)
       TEXTMETRICW tm;
       if ( !( ret = malloc( sizeof( unsigned long) * 4)))
         return nil;
-      GetTextMetricsW( sys ps, &tm);
+      gp_GetTextMetrics( sys ps, &tm);
       if ( index == endCtx) {
          ret[0] = 0x20;
          ret[1] = 0xff;
@@ -1513,6 +1543,8 @@ gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Boo
    objCheck 0;
    if ( len == 0) return 0;
 
+   if ( !HAS_WCHAR) wide = false;
+
    /* width more that 32K returned incorrectly by Win32 core */
    if (( div = 32768L / ( var font. maximalWidth ? var font. maximalWidth : 1)) == 0)
       div = 1;
@@ -1553,6 +1585,7 @@ int
 apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Bool utf8)
 {
    int ret;
+   if ( !HAS_WCHAR) utf8 = false;
    if ( utf8)  
       if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) return 0;
    ret = gp_get_text_width( self, text, len, addOverhang, utf8);
@@ -1567,6 +1600,7 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
    Point * pt = ( Point *) malloc( sizeof( Point) * 5);
    if ( !pt) return nil;
 
+   if ( !HAS_WCHAR) utf8 = false;
    memset( pt, 0, sizeof( Point) * 5);
 
    if ( utf8)  
@@ -1745,7 +1779,7 @@ apc_gp_set_font( Handle self, PFont font)
    objCheck false;
    if ( !sys ps) return true;
    font_change( self, font);
-   GetTextMetricsW( sys ps, &tm);
+   gp_GetTextMetrics( sys ps, &tm);
    sys tmOverhang       = tm. tmOverhang;
    sys tmPitchAndFamily = tm. tmPitchAndFamily;
    return true;

@@ -148,7 +148,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
          }
          break;
       case CF_TEXT:
-         if ( wantUnicodeInput && IS_NT && IsClipboardFormatAvailable( CF_UNICODETEXT)) {
+         if ( wantUnicodeInput && HAS_WCHAR && IsClipboardFormatAvailable( CF_UNICODETEXT)) {
              WCHAR *ptr, *p;
              int i, len, size;
              char *utf;
@@ -269,7 +269,7 @@ apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
                if (c-> text. text[i] == '\n' && c-> text. text[i+1] != '\r') 
                   cr++;
 
-            if ( !IS_NT || !c-> text. utf8) {
+            if ( !HAS_WCHAR || !c-> text. utf8) {
                glob    = GlobalAlloc( GMEM_DDESHARE, ulen + cr + 1);
                oemglob = GlobalAlloc( GMEM_DDESHARE, ulen + cr + 1);
                if ( glob)    ptr    = GlobalLock( glob);
@@ -306,7 +306,7 @@ apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
                }
             }
             
-            if ( IS_NT) {
+            if ( HAS_WCHAR) {
                if (( glob = GlobalAlloc( GMEM_DDESHARE, ( ulen + 1) * sizeof( WCHAR)))) {
                   if (( ptr = GlobalLock( glob))) {
                      if ( c-> text. utf8)

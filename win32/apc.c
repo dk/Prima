@@ -997,28 +997,30 @@ map_text_accel( PMenuItemReg i)
    int l1, l2 = 0, amps = 0;
    WCHAR * buf;
 
-   l1 = 1 + ( i-> flags. utf8_text ? prima_utf8_length( i-> text) : strlen( i-> text));
+   l1 = 1 + (( i-> flags. utf8_text && HAS_WCHAR) ? prima_utf8_length( i-> text) : strlen( i-> text));
    c = i-> text;  while (*c++) if ( *c == '&') amps++;
    if ( i-> accel) {
-      l2 = 1 + ( i-> flags. utf8_accel ? prima_utf8_length( i-> accel) : strlen( i-> accel));
+      l2 = 1 + (( i-> flags. utf8_accel && HAS_WCHAR) ? prima_utf8_length( i-> accel) : strlen( i-> accel));
       c = i-> accel; while (*c++) if ( *c == '&') amps++;
    }
    buf = malloc( sizeof( WCHAR) * ( l1 + l2 + amps));
    if ( !buf) return nil;
    memset( buf, 0, sizeof( WCHAR) * ( l1 + l2 + amps));
    
-   if ( i-> flags. utf8_text) 
+   if ( i-> flags. utf8_text && HAS_WCHAR) 
       utf8_to_wchar( i-> text, buf, l1 - 1);
    else
       MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, i-> text, l1 - 1, buf, l1 * 2 - 2);
    if ( i-> accel) {
       buf[l1 - 1] = '\t';
-      if ( i-> flags. utf8_accel) 
+      if ( i-> flags. utf8_accel && HAS_WCHAR) 
          utf8_to_wchar( i-> accel, buf + l1, l2);
       else
          MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, i-> accel, l2 - 1, buf + l1, l2 * 2 - 2);
    }
    map_tildas( buf, l1 + l2 + amps);
+   if ( !HAS_WCHAR)
+      wchar2char(( char*) buf, buf, l1 + l2 + amps); 
    return buf;
 }
 
@@ -1070,7 +1072,10 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
              menuItem. dwTypeData = map_text_accel( i);
           } else if ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead)
              menuItem. dwTypeData = ( LPWSTR) image_make_bitmap_handle( i-> bitmap, nil);
-          InsertMenuItemW( m, -1, true, &menuItem);
+          if ( HAS_WCHAR)
+             InsertMenuItemW( m, -1, true, &menuItem);
+          else
+             InsertMenuItemA( m, -1, true, ( LPMENUITEMINFOA) &menuItem);
           if ( i-> text && menuItem. dwTypeData) free( menuItem. dwTypeData);
        }
        menuItem. dwItemData = menu;
@@ -1103,7 +1108,7 @@ Bool
 apc_window_set_caption( Handle self, const char * caption, Bool utf8)
 {
    objCheck false;
-   if ( utf8) {
+   if ( HAS_WCHAR && utf8) {
       WCHAR * c = alloc_utf8_to_wchar( caption, -1);
       if ( !( rc = SetWindowTextW( HANDLE, c))) apiErr;
       free( c);
@@ -2530,9 +2535,15 @@ apc_menu_item_set_accel( Handle self, PMenuItemReg m)
 
    apcErrClear;
    buf = map_text_accel( m);
-   if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, buf)) 
-      apiErr;
+   if ( HAS_WCHAR) {
+      if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                       m-> id + MENU_ID_AUTOSTART, buf)) 
+         apiErr;
+   } else {
+      if ( !ModifyMenuA(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                       m-> id + MENU_ID_AUTOSTART, ( char *) buf)) 
+         apiErr;
+   }
    free( buf);
    return rc == errOk;
 }
@@ -2582,8 +2593,13 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m)
 
    apcErrClear;
    buf = map_text_accel( m);
-   if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+   if ( HAS_WCHAR) {
+      if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
                     m-> id + MENU_ID_AUTOSTART, (WCHAR*) buf)) apiErr;
+   } else {
+      if ( !ModifyMenuA(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                    m-> id + MENU_ID_AUTOSTART, (char*) buf)) apiErr;
+   }
    free( buf);
    return rc == errOk;
 }
@@ -2602,9 +2618,15 @@ apc_menu_item_set_image( Handle self, PMenuItemReg m)
 
    flags |= MF_BITMAP;
 
-   if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, 
-                    ( LPCWSTR) image_make_bitmap_handle( m-> bitmap, nil))) apiErrRet;
+   if ( HAS_WCHAR) {
+      if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                       m-> id + MENU_ID_AUTOSTART, 
+                       ( LPCWSTR) image_make_bitmap_handle( m-> bitmap, nil))) apiErrRet;
+   } else {
+      if ( !ModifyMenuA(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                       m-> id + MENU_ID_AUTOSTART, 
+                       ( LPCSTR) image_make_bitmap_handle( m-> bitmap, nil))) apiErrRet;
+   }
    return true;
 }
 
