@@ -201,7 +201,7 @@ Component_attach( Handle self, Handle object)
       if ( var-> components == nil)
          var-> components = plist_create( 8, 8);
       else
-         if ( list_index_of( var-> components, object) > 0) {
+         if ( list_index_of( var-> components, object) >= 0) {
             warn( "RTC0040: Object attach failed");
             return;
          }
