@@ -647,12 +647,14 @@ XS( Component_notify_FROMPERL)
             sv_catsv( GvSV( errgv), errSave);
             sv_free( errSave);
          }
+         if ( privMethod) sv_free( privMethod);
+         free( sequence);
+         free( argsv);
          croak( SvPV( GvSV( errgv), na));
       } else if ( errSave) {
          sv_setsv( GvSV( errgv), errSave);
          sv_free( errSave);
       }
-
 
       SPAGAIN;
       FREETMPS;
