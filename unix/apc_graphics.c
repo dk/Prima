@@ -548,7 +548,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       red_mask = v-> red_mask;
       green_mask = v-> green_mask;
       blue_mask = v-> blue_mask;
-      for ( i = 0; i < img-> palSize / sizeof( RGBColor); i++) {
+      for ( i = 0; i < img-> palSize; i++) { /* XXX ? Is palSize inconsistent? 256 or 768? */
 	 lut[i] = 0;
 	 lut[i] |=
             (((img-> palette[i]. r >> 3) << 11) & red_mask) & 0xffff;
