@@ -280,6 +280,32 @@ Application_get_system_value( char * dummy, int sysValue)
    return apc_sys_get_value( sysValue);
 }
 
+SV *
+Application_get_system_info( char * dummy)
+{
+   HV * profile = newHV();
+   char system   [ 1024];
+   char release  [ 1024];
+   char vendor   [ 1024];
+   char arch     [ 1024];
+   char gui_desc [ 1024];
+   int  os, gui;
+
+   os  = apc_application_get_os_info( system, release, vendor, arch);
+   gui = apc_application_get_gui_info( gui_desc);
+
+   pset_i( apc,            os);
+   pset_i( gui,            gui);
+   pset_c( system,         system);
+   pset_c( release,        release);
+   pset_c( vendor,         vendor);
+   pset_c( architecture,   arch);
+   pset_c( guiDescription, gui_desc);
+
+   return newRV_noinc(( SV *) profile);
+}
+
+
 Handle
 Application_get_clipboard( Handle self)
 {
@@ -636,21 +662,22 @@ Application_map_focus( Handle self, Handle from)
    return ( !topShared || ( topShared == topFrame)) ? from : topShared;
 }
 
-void
+Handle
 Application_popup_modal( Handle self)
 {
    Handle ha = apc_window_get_active();
-   Handle xTop;
+   Handle xTop, ret = nilHandle;
 
 
 #define popupWin                                      \
 STMT_START {							                     \
    PWindow_vmt top = CWindow( xTop);			         \
    if ( !top-> get_visible( xTop))			          	\
- top-> set_visible( xTop, 1);              				\
+      top-> set_visible( xTop, 1);              		\
    if ( top-> get_window_state( xTop) == wsMinimized)	\
- top-> set_window_state( xTop, wsNormal);	            \
+      top-> set_window_state( xTop, wsNormal);	      \
    top-> set_selected( xTop, 1);          				\
+   ret = xTop;                                        \
 } STMT_END
 
 
@@ -668,7 +695,7 @@ STMT_START {							                     \
       }
    } else {
       if ( !var topSharedModal && var modalHorizons. count == 0)
-         return; // return from if no shared modals active
+         return nilHandle; // return from if no shared modals active
       // checking shared modal chains
       if ( ha) {
          xTop = ( PWindow(ha)->modal == 0) ? CWindow(ha)->get_horizon(ha) : ha;
@@ -686,6 +713,8 @@ STMT_START {							                     \
          }
       }
    }
+
+   return ret;
 }
 
 

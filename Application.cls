@@ -34,6 +34,7 @@ object Application( Widget)
    method Point  get_pos();
    method Point  get_scroll_rate();
    method Point  get_size()  => apc_application_get_size;
+   static SV *   get_system_info( char * dummy = "");
    static int    get_system_value( char * dummy = "", int sysValue = 0);
    method void   go( void)   => apc_application_go;
    c_only void   handle_event ( PEvent event);
@@ -117,5 +118,5 @@ object Application( Widget)
 
    c_only  Handle map_focus( Handle from);
    c_only  Handle top_frame( Handle from);
-   c_only  void   popup_modal();
+   c_only  Handle popup_modal();
 }
