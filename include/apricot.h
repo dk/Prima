@@ -229,6 +229,8 @@ extern "C" {
          #define fprintf PerlIO_printf
       #else
       #endif
+   #elif (PERL_VERSION == 7)
+      #define fprintf PerlIO_printf
    #else
       #undef fprintf
       #ifdef win32_stderr
