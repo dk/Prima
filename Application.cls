@@ -86,6 +86,7 @@ object Prima::Application( Prima::Widget)
    c_only void   update_sys_handle( HV * profile);
    static void   yield( char *dummy = "");
 
+   method Bool   get_capture();
    method Color  get_color_index( int index);
    method Bool   get_enabled();
    method Color  get_hint_back_color();
@@ -106,6 +107,7 @@ object Prima::Application( Prima::Widget)
 
    method void   set( HV * profile);
    method void   set_buffered( Bool buffered);
+   method void   set_capture( Bool capture, Handle confineTo);
    method void   set_centered( Bool x, Bool y);
    method void   set_clip_owner( Bool clipOwner);
    method void   set_color_index( Color color, int index);

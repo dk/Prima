@@ -160,39 +160,42 @@ Application_done( Handle self)
 void
 Application_set( Handle self, HV * profile)
 {
-   pdelete( owner);
-   pdelete( syncPaint);
-   pdelete( clipOwner);
-   pdelete( left);
-   pdelete( rigth);
-   pdelete( width);
-   pdelete( height);
-   pdelete( top);
    pdelete( bottom);
-   pdelete( size);
-   pdelete( origin);
-   pdelete( rect);
+   pdelete( buffered);
+   pdelete( capture);
+   pdelete( centered);
+   pdelete( clipboardClass);
+   pdelete( clipOwner);
    pdelete( enabled);
-   pdelete( visible);
-   pdelete( tabOrder);
-   pdelete( tabStop);
+   pdelete( focused);
    pdelete( growMode);
-   pdelete( text);
-   pdelete( selectable);
-   pdelete( ownerPalette);
-   pdelete( palette);
-   pdelete( ownerShowHint);
+   pdelete( height);
+   pdelete( hintClass);
+   pdelete( hintVisible);
+   pdelete( left);
+   pdelete( modalHorizon);
+   pdelete( origin);
+   pdelete( owner);
    pdelete( ownerBackColor);
    pdelete( ownerColor);
    pdelete( ownerFont);
-   pdelete( centered);
-   pdelete( transparent);
-   pdelete( clipboardClass);
+   pdelete( ownerPalette);
+   pdelete( ownerShowHint);
+   pdelete( palette);
    pdelete( printerClass);
-   pdelete( hintClass);
-   pdelete( hintVisible);
-   pdelete( buffered);
-   pdelete( modalHorizon);
+   pdelete( rect);
+   pdelete( rigth);
+   pdelete( selectable);
+   pdelete( shape);
+   pdelete( size);
+   pdelete( syncPaint);
+   pdelete( tabOrder);
+   pdelete( tabStop);
+   pdelete( transparent);
+   pdelete( text);
+   pdelete( top);
+   pdelete( visible);
+   pdelete( width);
    inherited set( self, profile);
 }
 
@@ -861,6 +864,7 @@ STMT_START {                                                                    
 void Application_update_sys_handle( Handle self, HV * profile) {}
 
 char * Application_get_text( Handle self) { return ""; }
+Bool Application_get_capture( Handle self) { return false; }
 Bool Application_get_enabled( Handle self) { return true; }
 Bool Application_get_tab_stop( Handle self) { return false; }
 Bool Application_get_selectable( Handle self) { return false; }
@@ -877,6 +881,7 @@ void Application_set_help_context( Handle self, long context)
 
 void Application_set_text( Handle self, char * text) {}
 void Application_set_buffered( Handle self, Bool buffered) {}
+void Application_set_capture( Handle self, Bool capture, Handle confineTo) {}
 void Application_set_centered( Handle self, Bool x, Bool y) {}
 Bool Application_set_enabled( Handle self, Bool enable) { return false;}
 Bool Application_set_visible( Handle self, Bool visible) { return false; }
