@@ -211,8 +211,8 @@ sub init
    );
    $self->insert( Button=>
       origin      => [ 524, 224],
-      name     => 'Help',
-      text     => '~Help',
+      name        => 'Help',
+      text        => '~Help',
       size        => [ 96, 36],
    ) if $self->{showHelp};
    $self-> Name-> current(1);
@@ -294,7 +294,6 @@ sub Drive_Change
    $self-> Dir-> path( $self->{curpaths}->{lc $drive-> text});
    if ( lc $drive-> text ne lc substr($self-> Dir-> path,0,2))
    {
-      #Utils::message("opapa ($drv): ".$self->{curpaths}->{$drive-> text});
       $drive->drive( $self-> Dir-> path);
    }
    $drive-> {lastDrive} = $drive-> drive;
@@ -328,8 +327,10 @@ sub Files_Click
 sub Open_Click
 {
    my $self = shift;
-   $_ = $self-> Name-> text; s/;/ /g;
-   my @files = split;
+   $_ = $self-> Name-> text;
+   my @files = split(';', $_);
+   s/^\s+// for @files;
+   s/\s+$// for @files;
    return unless scalar @files;
    @files = ($files[ 0]) if ( !$self->multiSelect and scalar @files > 1);
    my $compoundMask = join( ';', grep {/[*?]/} map {m!([^/\\]*)$! ? $1 : $_} grep {/[*?]/} @files);
