@@ -288,14 +288,6 @@ sub Dir_Change
    my @a = grep { /$mask/i; } $dir-> files( 'reg');
    @a = sort {uc($a) cmp uc($b)} @a if $self->{sorted};
    $self-> Files-> items([@a]);
-   if ( $self-> Files-> focusedItem < 0) {
-      my $n = $self-> Name;
-      my $presn = $n-> text;
-      $n-> lock;
-      $self-> Files-> focusedItem(0);
-      $n-> text( $presn);
-      $n-> unlock;
-   }
    $self-> Directory_FontChanged( $self-> Directory);
 }
 
