@@ -1441,7 +1441,7 @@ sub add_widgets
       filter => [['Packages' => '*.pm'], [ 'All files' => '*']],
    );
    return unless $d-> execute;
-   my @r = Prima::VB::CfgMaint::add_package( $d-> fileName);
+   my @r = Prima::VB::CfgMaint::add_module( $d-> fileName);
    Prima::MsgBox::message( "Error:$r[1]"), return unless $r[0];
    $self->{classes} = {%Prima::VB::CfgMaint::classes};
    $self->{pages}   = [@Prima::VB::CfgMaint::pages];
