@@ -1050,14 +1050,13 @@ Drawable_palette( Handle self, Bool set, SV * palette)
    return nilSV;
 }
 
-long
-Drawable_pixel( Handle self, Bool set, int x, int y, long color)
+SV *
+Drawable_pixel( Handle self, Bool set, int x, int y, SV * color)
 {
-   if (!set) {
-      return apc_gp_get_pixel( self, x, y);
-   }
-   apc_gp_set_pixel( self, x, y, color);
-   return color;
+   if (!set)
+      return newSViv( apc_gp_get_pixel( self, x, y));
+   apc_gp_set_pixel( self, x, y, SvIV( color));
+   return nilSV;
 }
 
 Handle

@@ -9,13 +9,14 @@ my $i = Prima::Image-> create(
    conversion => ict::None,
 );
 
-
+# 1,2,3
 ok( $i);
 ok( $i-> type == im::Mono);
 $i-> begin_paint_info;
 ok( $i-> get_paint_state == 2);
 $i-> end_paint_info;
 
+# 4
 $i-> preserveType(0);
 $i-> begin_paint;
 $i-> end_paint;
@@ -32,16 +33,19 @@ $i-> data(
    "W\xea\x00\x00T\*\x00\x00U\xaa\x00\x00U\xaa\x00\x00T\*\x00\x00".
    "W\xea\x00\x00P\x0a\x00\x00_\xfa\x00\x00\@\x02\x00\x00\x7f\xfe\x00\x00".
    "\x00\x00\x00\x00");
+# 5,6,7
 my @p = @{$i-> palette};
 ok( $p[0] == 0 && $p[1] == 0 && $p[2] == 0 && $p[3] == 0xFF && $p[4] == 0 && $p[5] == 0);
 ok(  $i-> pixel( 0,0) == 0 && $i-> pixel( 15,15) == 0 && $i-> pixel( 1,1) != 0);
 $i-> begin_paint;
 ok( $i-> get_paint_state == 1);
 $i-> end_paint;
+# 8,9,10
 ok( $i-> get_paint_state == 0);
 ok( $i-> type == im::bpp1);
 ok( $i-> pixel( 0,0) == 0 && $i-> pixel( 15,15) == 0);
 $i-> size( 160, 160);
+# 11, 12, 13
 ok( $i-> pixel( 0,0) == 0 && $i-> pixel( 159,159) == 0);
 $i-> size( 16, 16);
 $i-> pixel( 15, 15, 0xFFFFFF);
@@ -50,6 +54,7 @@ $i-> size( -16, -16);
 ok( $i-> pixel( 0,0) != 0 && $i-> pixel( 15,15) == 0);
 
 my $j;
+# 14, 15
 for ( im::bpp4, im::bpp8) {
    $i-> type( $_);
    $i-> palette([0xFF, 0, 0xFF]);
@@ -59,6 +64,7 @@ for ( im::bpp4, im::bpp8) {
    ok( $i-> pixel( 12,12) == 0xFF00FF && $j == 0xFF00FF);
 }
 
+# 16, 17, 18
 for ( im::RGB, im::Short, im::Long) {
    $i-> type( $_);
    $i-> pixel( 3, 3, 0x1234);
@@ -67,12 +73,21 @@ for ( im::RGB, im::Short, im::Long) {
    ok( $i-> pixel( 12,12) == 0x1234 && $j == 0x1234);
 }
 
+# 19
 $i-> type( im::Float);
 $i-> pixel( 3, 3, 25);
 $j = $i-> pixel( 3,3);
 $i-> size( -16, -16);
-ok( abs( 25 - $i-> pixel( 12,12)) < 8 && abs( 25-$j) < 8);
+ok( abs( 25 - $i-> pixel( 12,12)) < 1 && abs( 25-$j) < 1);
 
+# 20
+$i-> type( im::Complex);
+$i-> pixel( 3, 3, [ 100, 200]);
+$j = $i-> pixel( 3,3);
+$i-> size( -16, -16);
+ok( abs( 100 - $i-> pixel( 12,12)->[0]) < 1 && abs( 200 - $j->[1]) < 1);
+
+# 21
 $i-> type( im::Byte);
 $i-> size( 2, 2);
 $i-> pixel( 0, 0, 193);

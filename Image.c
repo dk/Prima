@@ -798,96 +798,139 @@ Image_preserveType( Handle self, Bool set, Bool preserveType)
    return false;
 }
 
-long
-Image_pixel( Handle self, Bool set, int x, int y, long color)
+SV *
+Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 {
 #define BGRto32(pal) ((var->palette[pal].r<<16) | (var->palette[pal].g<<8) | (var->palette[pal].b))
    if (!set) {
       if ( opt_InPaint)
-         return inherited pixel(self,false,x,y,color);
-      if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0))
-         return clInvalid;
+         return inherited pixel(self,false,x,y,pixel);
 
-      if ( var-> type & imRealNumber) {
+      if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0))
+         return newSViv( clInvalid);
+
+      if ( var-> type & (imComplexNumber|imTrigComplexNumber)) {
+         AV * av = newAV(); 
          switch ( var-> type) {
-         case imFloat: {
-            float pf=*(float*)(var->data + (var->lineSize*y+x*sizeof(float)));
-            double rangeLo = my-> stats( self, false, isRangeLo, 0);
-            return ((pf - rangeLo)*INT32_MAX)/(var->stats[isRangeHi] - rangeLo);
+         case imComplex:
+         case imTrigComplex: {
+            float * f = (float*)(var->data + (var->lineSize*y+x*2*sizeof(float)));
+            av_push( av, newSVnv( *(f++)));
+            av_push( av, newSVnv( *f));
+            break;
          }
-         case imDouble: {
-            double pd=*(double*)(var->data + (var->lineSize*y+x*sizeof(double)));
-            double rangeLo = my-> stats( self, false, isRangeLo, 0);
-            return ((pd - rangeLo)/(var->stats[isRangeHi] - rangeLo))*INT32_MAX;
+         case imDComplex:
+         case imTrigDComplex: {
+            double * f = (double*)(var->data + (var->lineSize*y+x*2*sizeof(double)));
+            av_push( av, newSVnv( *(f++)));
+            av_push( av, newSVnv( *f));
+            break;
          }
+         }
+         return newRV_noinc(( SV*) av);
+      } else if ( var-> type & imRealNumber) {
+         switch ( var-> type) {
+         case imFloat: 
+            return newSVnv(*(float*)(var->data + (var->lineSize*y+x*sizeof(float))));
+         case imDouble: 
+            return newSVnv(*(double*)(var->data + (var->lineSize*y+x*sizeof(double))));
          default:
-            return 0;                        
-      }}
-      
-      switch (var->type & imBPP) {
+            return nilSV;
+      }} else
+         switch (var->type & imBPP) {
       case imbpp1:
          {
             Byte p=var->data[var->lineSize*y+(x>>3)];
             p=(p >> (7-(x & 7))) & 1;
-            return ((var->type & imGrayScale) ? (p ? 255 : 0) : BGRto32(p));
+            return newSViv(((var->type & imGrayScale) ? (p ? 255 : 0) : BGRto32(p)));
          }
       case imbpp4:
          {
             Byte p=var->data[var->lineSize*y+(x>>1)];
             p=(x&1) ? p & 0x0f : p>>4;
-            return ((var->type & imGrayScale) ? (p*255L)/15 : BGRto32(p));
+            return newSViv(((var->type & imGrayScale) ? (p*255L)/15 : BGRto32(p)));
          }
       case imbpp8:
          {
             Byte p=var->data[var->lineSize*y+x];
-            return ((var->type & imGrayScale) ? p :  BGRto32(p));
+            return newSViv(((var->type & imGrayScale) ? p :  BGRto32(p)));
          }
       case imbpp16:
          {
-            Short p=*(Short*)(var->data + (var->lineSize*y+x*2));
-            return p;
+            return newSViv(*(Short*)(var->data + (var->lineSize*y+x*2)));
          }
       case imbpp24:
          {
             RGBColor p=*(PRGBColor)(var->data + (var->lineSize*y+x*3));
-            return (p.r<<16) | (p.g<<8) | p.b;
+            return newSViv((p.r<<16) | (p.g<<8) | p.b);
          }
       case imbpp32:
-         return *(Long*)(var->data + (var->lineSize*y+x*4));
+         return newSViv(*(Long*)(var->data + (var->lineSize*y+x*4)));
       default:
-         return 0;
+         return newSViv(clInvalid);
       }
 #undef BGRto32
    } else {
+      Color color;
       RGBColor rgb;
 #define LONGtoBGR(lv,clr)   ((clr).b=(lv)&0xff,(clr).g=((lv)>>8)&0xff,(clr).r=((lv)>>16)&0xff,(clr))
-      if ( is_opt( optInDraw)) {
-         return inherited pixel(self,true,x,y,color);
-      }
-      if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0)) {
-         return color;
-      }
+      if ( is_opt( optInDraw)) 
+         return inherited pixel(self,true,x,y,pixel);
 
-      if ( var-> type & imRealNumber) {
+      if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0)) 
+         return nilSV;
+
+      if ( var-> type & (imComplexNumber|imTrigComplexNumber)) {
+         if ( !SvROK( pixel) || ( SvTYPE( SvRV( pixel)) != SVt_PVAV)) {
+            switch ( var-> type) {
+            case imComplex:
+            case imTrigComplex:
+               *(float*)(var->data+(var->lineSize*y+x*2*sizeof(float)))=SvNV(pixel);
+               break;
+            case imDComplex:
+            case imTrigDComplex:
+               *(double*)(var->data+(var->lineSize*y+x*2*sizeof(double)))=SvNV(pixel);
+               break;
+            default:
+               return nilSV;
+            }
+         } else {
+            AV * av = (AV *) SvRV( pixel);
+            SV **sv[2];
+            sv[0] = av_fetch( av, 0, 0);
+            sv[1] = av_fetch( av, 1, 0);
+            
+            switch ( var-> type) {
+            case imComplex:
+            case imTrigComplex:
+               if ( sv[0]) *(float*)(var->data+(var->lineSize*y+x*2*sizeof(float)))=SvNV(*(sv[0]));
+               if ( sv[1]) *(float*)(var->data+(var->lineSize*y+(x*2+1)*sizeof(float)))=SvNV(*(sv[1]));
+               break;
+            case imDComplex:
+            case imTrigDComplex:
+               if ( sv[0]) *(double*)(var->data+(var->lineSize*y+x*2*sizeof(double)))=SvNV(*(sv[0]));
+               if ( sv[1]) *(double*)(var->data+(var->lineSize*y+(x*2+1)*sizeof(double)))=SvNV(*(sv[1]));
+               break;
+            default:
+               return nilSV;
+            }
+         }
+      } else if ( var-> type & imRealNumber) {
          switch ( var-> type) {
-         case imFloat:  {
-            double rangeLo = my-> stats( self, false, isRangeLo, 0);
-            *(float*)(var->data+(var->lineSize*y+x*sizeof(float)))=(((float)color)/(INT32_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
+         case imFloat:  
+            *(float*)(var->data+(var->lineSize*y+x*sizeof(float)))=SvNV(pixel);
             break;
-         }   
-         case imDouble: {
-            double rangeLo = my-> stats( self, false, isRangeLo, 0);
-            *(double*)(var->data+(var->lineSize*y+x*sizeof(double)))=(((double)color)/(INT32_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
+         case imDouble: 
+            *(double*)(var->data+(var->lineSize*y+x*sizeof(double)))=SvNV(pixel);
             break;
-         }   
          default:
-            return color;
+            return nilSV;
          }
          my->update_change( self);
-         return color;
+         return nilSV;
       }
       
-      
+      color = SvIV( pixel);
       switch (var->type & imBPP) {
       case imbpp1  :
          {
@@ -933,11 +976,11 @@ Image_pixel( Handle self, Bool set, int x, int y, long color)
          *(Long*)(var->data+(var->lineSize*y+(x<<2)))=color;
          break;
       default:
-         return color;
+         return nilSV;
       }
       my->update_change( self);
 #undef LONGtoBGR
-      return color;
+      return nilSV;
    }
 }
 

@@ -44,7 +44,7 @@ object Prima::Drawable ( Prima::Component)
    property     SV *          linePattern;
    property     int           lineWidth;
    property     SV *          palette;
-   property     long          pixel( int x, int y);
+   property     SV *          pixel( int x, int y);
    property     Handle        region;
    property     Point         resolution;
    property     int           rop;
