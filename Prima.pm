@@ -43,7 +43,7 @@ BEGIN {
     }
 }
 
-$VERSION = '1.01';
+$VERSION = '1.02';
 bootstrap Prima $VERSION;
 $::application = undef;
 require Prima::Const;
