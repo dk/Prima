@@ -28,7 +28,7 @@
 #include "Application.h"
 #include "Image.h"
 #include "Clipboard.h"
-#include "Clipboard.inc"
+#include <Clipboard.inc>
 
 #undef  my
 #define inherited CComponent->

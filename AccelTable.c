@@ -27,7 +27,7 @@
 #include "apricot.h"
 #include "AccelTable.h"
 #include "Widget.h"
-#include "AccelTable.inc"
+#include <AccelTable.inc>
 
 #undef  my
 #define inherited CAbstractMenu->

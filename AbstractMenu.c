@@ -28,7 +28,7 @@
 #include "AbstractMenu.h"
 #include "Image.h"
 #include "Menu.h"
-#include "AbstractMenu.inc"
+#include <AbstractMenu.inc>
 
 #undef  my
 #define inherited CComponent->

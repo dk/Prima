@@ -405,7 +405,7 @@ apc_application_yield()
 }
 
 Handle
-apc_application_get_view_from_point( Handle self, Point point)
+apc_application_get_widget_from_point( Handle self, Point point)
 {
    DWORD pid, tid;
    POINT pt;

@@ -57,7 +57,7 @@
 
 #define MODULE "Prima Guts"
 
-#include "Types.inc"
+#include <Types.inc>
 #include "thunks.tinc"
 
 long   apcError = 0;

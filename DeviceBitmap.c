@@ -26,7 +26,7 @@
 
 #include "apricot.h"
 #include "DeviceBitmap.h"
-#include "DeviceBitmap.inc"
+#include <DeviceBitmap.inc>
 
 #undef  my
 #define inherited CDrawable->

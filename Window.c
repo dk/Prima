@@ -29,7 +29,7 @@
 #include "Menu.h"
 #include "Icon.h"
 #include "Application.h"
-#include "Window.inc"
+#include <Window.inc>
 
 #undef  my
 #define inherited CWidget->

@@ -27,7 +27,7 @@
 #include "apricot.h"
 #include "Popup.h"
 #include "Widget.h"
-#include "Popup.inc"
+#include <Popup.inc>
 
 #undef  my
 #define inherited CAbstractMenu->

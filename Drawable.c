@@ -27,7 +27,7 @@
 #include "apricot.h"
 #include "Drawable.h"
 #include "Image.h"
-#include "Drawable.inc"
+#include <Drawable.inc>
 
 #undef my
 #define inherited CComponent->

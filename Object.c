@@ -26,7 +26,7 @@
 
 #include "apricot.h"
 #include "Object.h"
-#include "Object.inc"
+#include <Object.inc>
 
 #undef  my
 #define my  ((( PObject) self)-> self)

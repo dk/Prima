@@ -28,7 +28,7 @@
 #include "Timer.h"
 #include "Window.h"
 #include "Application.h"
-#include "Application.inc"
+#include <Application.inc>
 
 #undef  my
 #define inherited CWidget->

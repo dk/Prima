@@ -41,7 +41,7 @@
 #include "gbm.h"
 #endif /* __unix */
 #include "img_api.h"
-#include "Image.inc"
+#include <Image.inc>
 #include "Clipboard.h"
 
 #undef  my

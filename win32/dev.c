@@ -1068,4 +1068,10 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
    return true;
 }
 
+Bool
+apc_image_save( const char *filename, const char *format, PList imgInfo)
+{
+   return true;
+}
+
 

@@ -26,7 +26,7 @@
 
 #include "apricot.h"
 #include "Utils.h"
-#include "Utils.inc"
+#include <Utils.inc>
 
 SV *Utils_query_drives_map( char *firstDrive)
 {

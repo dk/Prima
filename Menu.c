@@ -27,7 +27,7 @@
 #include "apricot.h"
 #include "Window.h"
 #include "Menu.h"
-#include "Menu.inc"
+#include <Menu.inc>
 
 #undef  my
 #define inherited CAbstractMenu->

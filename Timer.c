@@ -26,7 +26,7 @@
 
 #include "apricot.h"
 #include "Timer.h"
-#include "Timer.inc"
+#include <Timer.inc>
 
 #undef  my
 #define inherited CComponent->

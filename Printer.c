@@ -26,7 +26,7 @@
 
 #include "apricot.h"
 #include "Printer.h"
-#include "Printer.inc"
+#include <Printer.inc>
 #undef  my
 #define inherited CDrawable->
 #define my  ((( PPrinter) self)-> self)

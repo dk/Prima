@@ -30,7 +30,7 @@
 #include "Popup.h"
 #include "Widget.h"
 #include "Window.h"
-#include "Widget.inc"
+#include <Widget.inc>
 
 #undef  my
 #define inherited CDrawable

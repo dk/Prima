@@ -26,7 +26,7 @@
 
 #include "apricot.h"
 #include "Icon.h"
-#include "Icon.inc"
+#include <Icon.inc>
 
 #undef  my
 #define inherited CImage->
