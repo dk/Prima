@@ -1564,6 +1564,8 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
 
+   if ( len == 0) return true;
+
    /* paint background if opaque */
    if ( XX-> flags. paint_opaque) {
       int i;
