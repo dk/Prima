@@ -787,7 +787,8 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 // Window
 Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
-                   int borderStyle, Bool taskList, int windowState, Bool usePos, Bool useSize)
+                   int borderStyle, Bool taskList, int windowState, 
+		   int on_top, Bool usePos, Bool useSize)
 {
   Bool reset = false;
   ViewProfile vprf;
@@ -840,6 +841,12 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
   if ( reset || ( var handle == nilHandle))
      if ( !create_group( self, owner, syncPaint, false,
            taskList, WC_FRAME, style, exstyle, usePos, useSize, &vprf, NULL)) {
+	if ( on_top >= 0) {
+	   apt_assign( aptOnTop, on_top);
+	   if ( on_top > 0) {
+	      SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0, 
+	         SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+	}
         HWND_lock( false);
         return false;
      }
@@ -867,6 +874,12 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 //      if ( !SetWindowPlacement( HANDLE, &wp)) apiErr;
 //  }
     guts. topWindows++;
+  }
+  if ( on_top >= 0) {
+     apt_assign( aptOnTop, on_top);
+     if ( on_top > 0) {
+        SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0, 
+           SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
   }
   apc_window_set_caption( self, var text, is_opt( optUTF8_text));
   HWND_lock( false);
@@ -1126,6 +1139,13 @@ apc_window_get_task_listed( Handle self)
 {
    objCheck false;
    return is_apt( aptTaskList);
+}
+
+Bool
+apc_window_get_on_top( Handle self)
+{
+   objCheck false;
+   return is_apt( aptOnTop);
 }
 
 Bool

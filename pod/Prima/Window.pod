@@ -377,6 +377,12 @@ NB: These constants are defined so they can be bitwise-or'ed,
 and I<Prima::MsgBox> package uses this feature, where one
 of its functions parameters is a combination of C<mb::> constants.
 
+=item onTop BOOLEAN
+
+If set, the window is hinted to stay on top of all other windows.
+
+Default value: 0
+
 =item ownerIcon BOOLEAN
 
 If 1, the icon is synchronized with the owner's.

@@ -102,6 +102,7 @@ void Window_update_sys_handle( Handle self, HV * profile)
        pexist( syncPaint) ||
        pexist( taskListed) ||
        pexist( borderIcons) ||
+       pexist( onTop) ||
        pexist( borderStyle)
     )) return;
    if ( pexist( owner)) my-> cancel_children( self);
@@ -112,6 +113,7 @@ void Window_update_sys_handle( Handle self, HV * profile)
       pexist( borderStyle) ? pget_i( borderStyle) : my-> get_borderStyle( self),
       pexist( taskListed)  ? pget_B( taskListed)  : my-> get_taskListed( self),
       pexist( windowState) ? pget_i( windowState) : my-> get_windowState( self),
+      pexist( onTop) ? pget_B( onTop) : -1, /* This is way better. I should've thought of this before! */
       !( pexist( originDontCare) && pget_B( originDontCare)),
       !( pexist( sizeDontCare)   && pget_B( sizeDontCare))
    ))
@@ -121,6 +123,7 @@ void Window_update_sys_handle( Handle self, HV * profile)
    pdelete( syncPaint);
    pdelete( taskListed);
    pdelete( windowState);
+   pdelete( onTop);
 }
 
 void Window_handle_event( Handle self, PEvent event)
@@ -611,6 +614,19 @@ Window_get_default_menu_font( char * dummy)
    Font f;
    apc_menu_default_font( &f);
    return f;
+}
+
+Bool
+Window_onTop( Handle self, Bool set, Bool onTop)
+{
+   HV * profile;
+   if ( !set)
+      return apc_window_get_on_top( self);
+   profile = newHV();
+   pset_i( onTop, onTop);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return true;
 }
 
 Bool

@@ -44,6 +44,7 @@ object Prima::Window( Prima::Widget)
    property SV *     menuItems;
    property Bool     modalHorizon;
    property int      modalResult;
+   property Bool     onTop;
    property Point    origin;
    property Bool     ownerIcon;
    property Rect     rect;

@@ -175,6 +175,7 @@ typedef struct _HandleOptions_ {
    unsigned aptTextOpaque           : 1;       // gp text drawing flag
    unsigned aptTextOutBaseline      : 1;       // gp text drawing flag
    unsigned aptWinPosDetermined     : 1;       // 0 when size is set, but position is not
+   unsigned aptOnTop                : 1;       // HWND_TOPMOST is set
 } HandleOptions;
 
 typedef struct _WinGuts

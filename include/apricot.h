@@ -1889,7 +1889,7 @@ apc_component_fullname_changed_notify( Handle self);
 /* Window */
 extern Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons, int borderStyle,
-                   Bool taskList, int windowState, Bool useOrigin, Bool useSize);
+                   Bool taskList, int windowState, int onTop, Bool useOrigin, Bool useSize);
 
 extern Bool
 apc_window_activate( Handle self);
@@ -1917,6 +1917,9 @@ apc_window_get_client_size( Handle self);
 
 extern Bool
 apc_window_get_icon( Handle self, Handle icon);
+
+extern Bool
+apc_window_get_on_top( Handle self);
 
 extern int
 apc_window_get_window_state( Handle self);

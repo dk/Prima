@@ -595,7 +595,8 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 
 Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
-                   int borderStyle, Bool taskList, int windowState, Bool usePos, Bool useSize)
+                   int borderStyle, Bool taskList, int windowState, 
+		   int on_top, Bool usePos, Bool useSize)
 {
    Bool reset = false;
    ViewProfile vprf;
@@ -809,6 +810,12 @@ Bool
 apc_window_get_task_listed( Handle self)
 {
    return is_apt( aptTaskList);
+}
+
+Bool
+apc_window_get_on_top( Handle self)
+{
+   return false; /* XXX */
 }
 
 int

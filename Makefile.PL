@@ -1185,6 +1185,7 @@ apc_window_get_border_style
 apc_window_get_client_pos
 apc_window_get_client_size
 apc_window_get_icon
+apc_window_get_on_top
 apc_window_get_task_listed
 apc_window_get_window_state
 apc_window_is_active

@@ -398,7 +398,8 @@ typedef struct {
 #define AI_NET_SUPPORTED                 27
 #define AI_NET_WM_STATE_MAXIMIZED_HORIZ  28
 #define AI_UTF8_MIME                     29
-#define AI_count                         30
+#define AI_NET_WM_STATE_STAYS_ON_TOP     30
+#define AI_count                         31
 
 #define FXA_RESOLUTION_X guts. atoms[ AI_FXA_RESOLUTION_X]
 #define FXA_RESOLUTION_Y guts. atoms[ AI_FXA_RESOLUTION_Y]
@@ -433,7 +434,7 @@ typedef struct {
 #define NET_WM_STATE_MODAL guts. atoms[ AI_NET_WM_STATE_MODAL]
 #define NET_SUPPORTED guts. atoms[ AI_NET_SUPPORTED]
 #define UTF8_MIME guts. atoms[ AI_UTF8_MIME]
-
+#define NET_WM_STATE_STAYS_ON_TOP guts. atoms[ AI_NET_WM_STATE_STAYS_ON_TOP]
 
 #define DEBUG_FONTS 0x01
 #define DEBUG_CLIP  0x02
