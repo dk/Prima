@@ -43,7 +43,7 @@ BEGIN {
     }
 }
 
-$VERSION = '1.03';
+$VERSION = '1.04';
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {
    $::application = 0;
