@@ -28,6 +28,7 @@ package StdDlg;
 #  contains:
 #      OpenDialog
 #      SaveDialog
+#      ChDirDialog
 #      FindDialog
 #      ReplaceDialog
 
@@ -102,7 +103,9 @@ sub canon_path
       $fn = $p;
       $dir = '.';
    }
-   $dir = Cwd::abs_path($dir);
+   $dir = eval { Cwd::abs_path($dir) };
+   $dir = "." if $@;
+   $dir = "" unless -d $dir;
    return "$dir/$fn";
 }
 
@@ -211,7 +214,7 @@ sub init
       text     => '~Help',
       size        => [ 96, 36],
    ) if $self->{showHelp};
-   $self-> Name-> focus;
+   $self-> Name-> current(1);
    $self-> Name-> select_all;
    $self-> {curpaths} = {};
    for ( @{$self-> Drive-> items}) { $self->{curpaths}->{lc $_} = $_}
@@ -513,6 +516,140 @@ sub profile_check_in
     $p->{ openMode} = 0;
     $self-> SUPER::profile_check_in( $p, $default);
 }
+
+package ChDirDialog;
+use MsgBox;
+use Cwd;
+use vars qw(@ISA);
+@ISA = qw(Dialog);
+
+sub profile_default
+{
+   return {
+      %{$_[ 0]-> SUPER::profile_default},
+      width       => 334,
+      height      => 236,
+      centered    => 1,
+      visible     => 0,
+      text        => 'Change directory',
+
+      directory   => '',
+      designScale => [7, 16],
+      showHelp    => 0,
+   }
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+
+   for ( qw( showHelp directory
+   )) { $self->{$_} = $profile{$_} }
+
+   $self-> insert( DirectoryListBox =>
+      origin   => [ 10, 40],
+      width    => 200,
+      height   => 160,
+      name     => 'Dir',
+      current  => 1,
+      path     => $self-> { directory},
+   );
+
+   $self->insert( Label =>
+      name      => 'Directory',
+      origin    => [ 10, 202],
+      size      => [ 200, 25],
+      autoWidth => 0,
+      text      => '~Directory',
+      focusLink => $self-> Dir,
+   );
+
+   $self-> insert( DriveComboBox =>
+      origin => [ 10, 10],
+      width  => 200,
+      name   => 'Drive',
+   );
+
+   $self->insert( Button=>
+      origin  => [ 226, 164],
+      size    => [ 96, 36],
+      text    => '~OK',
+      name    => 'OK',
+      default => 1,
+   );
+   $self->insert( Button=>
+      origin      => [ 226, 108],
+      name        => 'Cancel',
+      text        => 'Cancel',
+      size        => [ 96, 36],
+      modalResult => cm::Cancel,
+   );
+   $self->insert( Button=>
+      origin      => [ 226, 52],
+      name        => 'Help',
+      text        => '~Help',
+      size        => [ 96, 36],
+   ) if $self->{showHelp};
+
+   $self-> {curpaths} = {};
+   for ( @{$self-> Drive-> items}) { $self->{curpaths}->{lc $_} = $_}
+   $self->{curpaths}->{lc $self-> Drive-> drive} = $self-> Dir-> path;
+   $self->Drive-> {lastDrive} = $self->Drive-> drive;
+
+   return %profile;
+}
+
+
+
+sub Dir_KeyDown
+{
+   my ( $dlg, $self, $code, $key, $mod) = @_;
+   if (( $mod & kb::Ctrl) && ( uc chr( $code & 0xFF) eq 'R'))
+   {
+      $dlg-> Dir-> path( $dlg-> Dir-> path);
+      $self-> clear_event;
+   }
+}
+
+sub Drive_Change
+{
+   my ( $self, $drive) = @_;
+   my $newDisk = $drive-> text . "/";
+   until (-d $newDisk) {
+      last if message_box( $self-> text, "Drive $newDisk is not ready!",
+                   mb::Cancel | mb::Retry | mb::Warning) != mb::Retry;
+   }
+   unless (-d $newDisk) {
+      $drive-> drive($drive-> {lastDrive});
+      $drive-> clear_event;
+      return;
+   }
+   my $path = $self-> Dir-> path;
+   my $drv  = lc substr($path,0,2);
+   $self->{curpaths}->{$drv} = $path;
+   $self-> Dir-> path( $self->{curpaths}->{lc $drive-> text});
+   if ( lc $drive-> text ne lc substr($self-> Dir-> path,0,2))
+   {
+      $drive->drive( $self-> Dir-> path);
+   }
+   $drive-> {lastDrive} = $drive-> drive;
+}
+
+sub OK_Click
+{
+   my $self = $_[0];
+   $self-> ok;
+}
+
+sub directory
+{
+   return $_[0]->Dir->path unless $#_;
+   $_[0]-> Dir->path($_[1]);
+   $_[0]-> Drive->text( $_[0]->Dir->path);
+}
+
+sub showHelp         { ($#_)? shift->raise_ro('showHelp')  : return $_[0]->{showHelp} };
 
 package FindDialog;
 use vars qw(@ISA);
