@@ -214,7 +214,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
                }   
             }  
             if ( m-> flags. utf8_text) {
-               int len = utf8_length( m-> text, m-> text + i);
+               int len = utf8_length(( U8*) m-> text, m-> text + i);
                XChar2b * xc = prima_alloc_utf8_to_wchar( m-> text, len);
                if ( xc) {
                   ix-> width += startx + XTextWidth16( XX-> font-> fs, xc, len);
@@ -241,7 +241,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
          }
          if ( m-> accel && ( l = strlen( m-> accel))) {
             if ( m-> flags. utf8_accel) {
-               int len = utf8_length( m-> accel, m-> accel + l);
+               int len = utf8_length(( U8*) m-> accel, m-> accel + l);
                XChar2b * xc = prima_alloc_utf8_to_wchar( m-> accel, len);
                if ( xc) {
                   ix-> accel_width = XTextWidth16( XX-> font-> fs, xc, len);
@@ -670,7 +670,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                   l = 0; i = 0;
                   while ( l < sz - 1 && t[i]) {
                      STRLEN len = 1;
-                     UV uv = m-> flags. utf8_text ? utf8_to_uvchr( t + i, &len) : *((U8*)t+i);
+                     UV uv = m-> flags. utf8_text ? utf8_to_uvchr(( U8*) t + i, &len) : *((U8*)t+i);
                      if (t[i] == '~' && t[i+1]) {
                         if ( t[i+1] == '~') {
                            if ( m-> flags. utf8_text) {

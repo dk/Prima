@@ -452,7 +452,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int len)
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
-   if ( utf8) dlen = utf8_length( c_text, c_text + dlen);
+   if ( utf8) dlen = utf8_length(( U8*) c_text, c_text + dlen);
    if ( len < 0 || len > dlen) len = dlen;
    apc_gp_text_out( self, c_text, x, y, len, utf8);
 }
@@ -521,7 +521,7 @@ Drawable_get_text_width( Handle self, SV * text, int len, Bool addOverhang)
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
-   if ( utf8) dlen = utf8_length( c_text, c_text + dlen);
+   if ( utf8) dlen = utf8_length(( U8*) c_text, c_text + dlen);
    if ( len < 0 || len > dlen) len = dlen;
    gpENTER;
    res = apc_gp_get_text_width( self, c_text, len, addOverhang, utf8);
@@ -539,7 +539,7 @@ Drawable_get_text_box( Handle self, SV * text, int len)
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
-   if ( utf8) dlen = utf8_length( c_text, c_text + dlen);
+   if ( utf8) dlen = utf8_length(( U8*) c_text, c_text + dlen);
    if ( len < 0 || len > dlen) len = dlen;
    gpENTER;
    p = apc_gp_get_text_box( self, c_text, len, utf8);
@@ -723,7 +723,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
       
       if ( t-> utf8_text) {
          STRLEN len;
-         uv = utf8_to_uvchr( t-> text + i, &len);
+         uv = utf8_to_uvchr(( U8*) t-> text + i, &len);
          i += len;
       } else
          uv = (( unsigned char *)(t-> text))[i++];
@@ -844,7 +844,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
       if ( t-> options & twCollapseTilde)
          memmove( l + tildePos, l + tildePos + 1, strlen( l) - tildePos);
       l = ret[ t-> t_line] + tildeLPos;
-      uv = t-> utf8_text ? utf8_to_uvchr( l, &len) : *((unsigned char*)l);
+      uv = t-> utf8_text ? utf8_to_uvchr(( U8*) l, &len) : *((unsigned char*)l);
       abc = query_abc_range( self, t, uv / 256) + (uv & 0xff);
       w = tildeOffset;
       t-> t_start = w - 1;
