@@ -347,6 +347,7 @@ GENPROC
 sub profile_default
 {
    my $font = $_[ 0]-> get_default_font;
+   my $fh   = $font-> {height} + 2;
    return {
       %{InputLine->profile_default},
       %{$_[ 0]-> SUPER::profile_default},
@@ -357,7 +358,7 @@ sub profile_default
       max            => 100,
       step           => 1,
       value          => 0,
-      height         => $font-> {height} + 2,
+      height         => $fh < 20 ? 20 : $fh,
       editClass      => 'InputLine',
       spinClass      => 'AltSpinButton',
       editProfile    => {},
@@ -424,7 +425,9 @@ sub on_paint
 sub Spin_Increment
 {
    my ( $self, $spin, $increment) = @_;
-   $self-> value( $self-> value + $increment * $self->{step});
+   my $value = $self-> value;
+   $self-> value( $value + $increment * $self->{step});
+   $self-> value( $increment > 0 ? $self-> min : $self-> max) if $self-> value == $value;
 }
 
 sub InputLine_KeyDown
