@@ -32,6 +32,7 @@ options:
    -b    use both user and root config to read
    -x    do not write backups
    -o    read-only mode
+   -p    execute 'use Prima;' code
 commands:
    a  - add     p|k    name
    l  - list    w|p|k  ( w - [page])
@@ -57,16 +58,22 @@ $Prima::VB::CfgMaint::backup     = 1;
 for ( @ARGV) {
    push( @cmd, $_), next unless /^-/;
    $_ = lc $_;
-   if ( $_ eq '-b') {
-      $both = 1;
-   } elsif ( $_ eq '-r') {
-      $Prima::VB::CfgMaint::systemWide = 1;
-   } elsif ( $_ eq '-x') {
-      $Prima::VB::CfgMaint::backup = 0;
-   } elsif ( $_ eq '-o') {
-      $ro = 1;
-   } else {
-      die "Unknown option: $_\n";
+   s/^-//;
+   for ( split( '', $_)) {
+      if ( $_ eq 'b') {
+         $both = 1;
+      } elsif ( $_ eq 'r') {
+         $Prima::VB::CfgMaint::systemWide = 1;
+      } elsif ( $_ eq 'x') {
+         $Prima::VB::CfgMaint::backup = 0;
+      } elsif ( $_ eq 'o') {
+         $ro = 1;
+      } elsif ( $_ eq 'p') {
+         eval "use Prima;";
+         die "$@" if $@;
+      } else {
+         die "Unknown option: $_\n";
+      }
    }
 }
 
