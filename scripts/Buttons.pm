@@ -198,9 +198,8 @@ sub on_mouseup
    $self-> {spaceTransaction} = undef;
    $self-> {lastMouseOver}    = undef;
    $self-> capture(0);
-   if ( $x > 0 && $y > 0 && $x < $size[0] && $y < $size[1] )
-   {
-      $self-> pressed( 0);
+   $self-> pressed( 0);
+   if ( $x > 0 && $y > 0 && $x < $size[0] && $y < $size[1] ) {
       $self-> notify( 'Click');
    }
 }
