@@ -31,13 +31,19 @@ stylus_alloc( PStylus data)
       ret-> refcnt = 0;
       p = &ret-> s. pen;
       if ( !extPen) {
-         if ( !( ret-> hpen = CreatePenIndirect( p))) apiErr;
+         if ( !( ret-> hpen = CreatePenIndirect( p))) {
+            apiErr;
+            ret-> hpen = CreatePen( PS_SOLID, 0, 0);
+         }
       } else {
          LOGBRUSH pb = { BS_SOLID, ret-> s. pen. lopnColor, 0};
          if ( !( ret-> hpen   = ExtCreatePen( ret-> s. extPen. style, p-> lopnWidth. x, &pb,
             ret-> s. extPen. patResource-> styleCount,
             ret-> s. extPen. patResource-> dotsPtr
-         ))) apiErr;
+         ))) {
+            if ( !IS_WIN95) apiErr;
+            ret-> hpen = CreatePen( PS_SOLID, 0, 0);
+         }
       }
       if ( ret-> s. brush. lb. lbStyle == BS_DIBPATTERNPT) {
          int i;
@@ -49,7 +55,10 @@ stylus_alloc( PStylus data)
          bmiHatch. bmiColors[ 1]. rgbGreen = (( ret-> s. pen. lopnColor >> 8) & 0xFF);
          bmiHatch. bmiColors[ 1]. rgbBlue  = (( ret-> s. pen. lopnColor >> 16) & 0xFF);
       }
-      if ( !( ret-> hbrush = CreateBrushIndirect( &ret-> s. brush. lb))) apiErr;
+      if ( !( ret-> hbrush = CreateBrushIndirect( &ret-> s. brush. lb))) {
+         apiErr;
+         ret-> hbrush = CreateSolidBrush( RGB( 255, 255, 255));
+      }
       hash_store( stylusMan, &ret-> s, sizeof( Stylus) - ( extPen ? 0 : sizeof( EXTPEN)), ret);
    }
    ret-> refcnt++;
@@ -377,7 +386,12 @@ font_alloc( Font * data, Point * resolution)
       memcpy( f = &ret-> font, data, sizeof( Font));
       ret-> refcnt = 0;
       font_font2logfont( f, &logfont);
-      if ( !(ret-> hfont  = CreateFontIndirect( &logfont))) apiErr;
+      if ( !( ret-> hfont  = CreateFontIndirect( &logfont))) {
+         LOGFONT lf;
+         apiErr;
+         memset( &lf, 0, sizeof( lf));
+         CreateFontIndirect( &lf);
+      }
       hash_store( fontMan, &ret-> font, FONTSTRUCSIZE + strlen( ret-> font. name), ret);
    }
    ret-> refcnt++;
@@ -1273,11 +1287,11 @@ palette_change( Handle self)
    free( p);
 
    pal = CreatePalette(( LOGPALETTE *) &xlp);
-   dc  = GetDC( HANDLE);
 
+   dc  = GetDC( HANDLE);
    pal  = SelectPalette( dc, pal, 0);
    rCol = RealizePalette( dc);
-   DeleteObject( SelectPalette( dc, pal, 1));
+   DeleteObject( SelectPalette( dc, pal, 0));
    ReleaseDC( HANDLE, dc);
 
    if ( rCol > 0)
