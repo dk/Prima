@@ -665,6 +665,12 @@ void Widget_handle_event( Handle self, PEvent event)
                   case kbDown: 
                      next = my-> next_positional( self, 0, -1);
                      break;
+                  case kbTab:
+                     next = my-> next_tab( self, true);
+                     break;
+                  case kbBackTab:
+                     next = my-> next_tab( self, false);
+                     break;
                   default:;   
                   }   
                   if ( next) {
@@ -1059,6 +1065,108 @@ Widget_next_positional( Handle self, int dx, int dy)
 
    return max;
 }
+
+static int compare_taborders_forward( const void *a, const void *b)
+{
+   if ((*(PWidget*) a)-> tabOrder < (*(PWidget*) b)-> tabOrder)
+      return -1; else
+   if ((*(PWidget*) a)-> tabOrder > (*(PWidget*) b)-> tabOrder)
+      return 1; 
+   else
+      return 0;
+}   
+
+static int compare_taborders_backward( const void *a, const void *b)
+{
+   if ((*(PWidget*) a)-> tabOrder < (*(PWidget*) b)-> tabOrder)
+      return 1; else
+   if ((*(PWidget*) a)-> tabOrder > (*(PWidget*) b)-> tabOrder)
+      return -1; 
+   else
+      return 0;
+}   
+
+static int
+do_taborder_candidates( Handle level, Handle who, 
+     int (*compareProc)(const void *, const void *), 
+     int * stage, Handle * result)
+{
+   int i, fsel = -1;
+   PList w = &(PWidget( level)-> widgets);
+   Handle * ordered = malloc( w-> count * sizeof( Handle));
+   
+   if ( !ordered) return 0;
+   
+   memcpy( ordered, w-> items, w-> count * sizeof( Handle));
+   qsort( ordered, w-> count, sizeof( Handle), compareProc);
+
+   // finding current widget in the group
+   for ( i = 0; i < w-> count; i++) {
+      Handle x = ordered[i];
+      if ( CWidget( x)-> get_current( x)) {
+         fsel = i;
+         break;
+      }   
+   }   
+   if ( fsel < 0) fsel = 0;
+   
+   for ( i = 0; i < w-> count; i++) {
+      int j;
+      Handle x;
+
+      j = i + fsel;
+      if ( j >= w-> count) j -= w-> count;
+      
+      x = ordered[j];
+      if ( CWidget( x)-> get_visible( x) && CWidget( x)-> get_enabled( x)) {
+         if ( CWidget( x)-> get_selectable( x) && CWidget( x)-> get_tabStop( x)) {
+            if ( *result == nilHandle) *result = x; 
+            switch( *stage) {
+            case 0: // nothing found yet
+               if ( x == who) *stage = 1;
+               break;
+            default:
+               // next widget after 'who' is ours
+               *result = x;
+               free( ordered);
+               return false;
+            }   
+         }   
+         if ( !do_taborder_candidates( x, who, compareProc, stage, result)) {
+            free( ordered);
+            return false; // fall through
+         }   
+      }
+   }   
+   free( ordered);
+   return true;
+}
+
+Handle 
+Widget_next_tab( Handle self, Bool forward)
+{
+   Handle horizon = self, result = nilHandle;
+   List candidates;
+   int stage = 0;
+
+   while ( PWidget( horizon)-> owner) {
+      if (
+          ( PWidget( horizon)-> options. optSystemSelectable) || // fast check for CWindow
+          ( PWidget( horizon)-> options. optModalHorizon) 
+         ) break; 
+      horizon = PWidget( horizon)-> owner;
+   }
+
+   if ( !CWidget( horizon)-> get_visible( horizon) ||
+        !CWidget( horizon)-> get_enabled( horizon)) return nilHandle;
+   
+   do_taborder_candidates( horizon, self, 
+      forward ? compare_taborders_forward : compare_taborders_backward, 
+      &stage, &result);
+   if ( result == self) result = nilHandle;
+   return result;
+}
+
 /*::o */
 /*::p */
 void

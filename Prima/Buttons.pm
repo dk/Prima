@@ -655,6 +655,22 @@ sub init
    return %profile;
 }
 
+sub on_keydown
+{
+   my ( $self, $code, $key, $mod, $repeat) = @_;
+   if ( $key == kb::Tab || $key == kb::BackTab) {
+      my ( $next, $owner) = ( $self, $self-> owner);
+      while ( $next) {
+         last unless $next-> owner == $owner && $next-> isa('Prima::Cluster');
+         $next = $next-> next_tab( $key == kb::Tab);
+      }
+      $next-> select if $next;
+      $self-> clear_event;
+      return;
+   }
+   $self-> SUPER::on_keydown( $code, $key, $mod, $repeat);
+}
+
 sub on_click
 {
    my $self = $_[0];
