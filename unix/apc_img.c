@@ -136,6 +136,7 @@ prima_prepare_ximage( int width, int height, Bool bitmap)
       }
       i-> xmem. shmaddr = i-> image-> data = shmat( i-> xmem. shmid, 0, 0);
       if ( i-> xmem. shmaddr == (void*)-1 || i-> xmem. shmaddr == nil) {
+         i-> image-> data = nil;
          XDestroyImage( i-> image);
          shmctl( i-> xmem. shmid, IPC_RMID, 0);
          goto normal_way;
@@ -147,6 +148,7 @@ prima_prepare_ximage( int width, int height, Bool bitmap)
          XCHECKPOINT;
 bad_xshm_attach:
          XSetErrorHandler(guts.main_error_handler);
+         i-> image-> data = nil;
          XDestroyImage( i-> image);
          shmdt( i-> xmem. shmaddr);
          shmctl( i-> xmem. shmid, IPC_RMID, 0);
@@ -204,6 +206,7 @@ prima_free_ximage( PrimaXImage *i)
 #ifdef USE_MITSHM
    if ( i-> shm) {
       XShmDetach( DISP, &i-> xmem);
+      i-> image-> data = nil;
       XDestroyImage( i-> image);
       shmdt( i-> xmem. shmaddr);
       free(i);
