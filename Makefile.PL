@@ -69,6 +69,7 @@ use vars @ovvars = qw(
     $DEFFILE
     $DISTNAME
     $WANTNOCODECS
+    $DEBUG
 );
 
 use vars @path_expand_ovvars = qw(
@@ -645,8 +646,9 @@ sub setup_variables
         $ldflags =~ s/(-|\/)nodefaultlib//g;
         $lddlflags =~ s/(-|\/)nodefaultlib//g;
     }
+    setvar( 'DEBUG', defined($ENV{ PRIMA_DEVEL}) ? $ENV{ PRIMA_DEVEL} : 0);
     setvar( 'C_FLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( $Config{ optimize} || '') . " ");
-    setvar( 'CFLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
+    setvar( 'CFLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( $DEBUG ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
     setvar( 'CCFLAGS',  '');
     setvar( 'CCCDLFLAGS', $Config{ cccdlflags});
     setvar( 'CDLFLAGS', $Config{ ccdlflags});
@@ -659,7 +661,7 @@ sub setup_variables
     setvar( 'CLIBPATHFLAG', $cc_specs{ $COMPILER}->{ clibpathflag});
     setvar( 'LD', $Config{ ld});
     setvar( 'LD_FLAGS', "$ldflags $lddlflags $cc_specs{ $COMPILER}->{ ldflags} ");
-    setvar( 'LDFLAGS', "$ldflags $lddlflags $cc_specs{ $COMPILER}->{ ldflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ lddebugflags}" : "") . " ");
+    setvar( 'LDFLAGS', "$ldflags $lddlflags $cc_specs{ $COMPILER}->{ ldflags}" . ( $DEBUG ? " $cc_specs{ $COMPILER}->{ lddebugflags}" : "") . " ");
     setvar( 'LDOUTFLAG', $cc_specs{ $COMPILER}->{ ldoutflag});
     setvar( 'LDLIBPATHFLAG', $cc_specs{ $COMPILER}->{ ldlibpathflag});
     setvar( 'LDLIBFLAG', $cc_specs{ $COMPILER}->{ ldlibflag});
