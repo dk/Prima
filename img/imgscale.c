@@ -44,7 +44,7 @@ void bs_##type##_out( type * srcData, type * dstData, int w, int x, int absx, lo
    }                                                                                \
 }
 
-BS_BYTEEXPAND( u_int8_t);
+BS_BYTEEXPAND( uint8_t);
 BS_BYTEEXPAND( int16_t);
 BS_BYTEEXPAND( RGBColor);
 BS_BYTEEXPAND( int32_t);
@@ -53,7 +53,7 @@ BS_BYTEEXPAND( double);
 BS_BYTEEXPAND( Complex);
 BS_BYTEEXPAND( DComplex);
 
-BS_BYTEIMPACT( u_int8_t);
+BS_BYTEIMPACT( uint8_t);
 BS_BYTEIMPACT( int16_t);
 BS_BYTEIMPACT( RGBColor);
 BS_BYTEIMPACT( int32_t);
@@ -64,7 +64,7 @@ BS_BYTEIMPACT( DComplex);
 
 
 void
-bs_mono_in( u_int8_t * srcData, u_int8_t * dstData, int w, int x, int absx, long step)
+bs_mono_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
    Fixed count = {0};
    int   last   = 0;
@@ -113,7 +113,7 @@ bs_mono_in( u_int8_t * srcData, u_int8_t * dstData, int w, int x, int absx, long
 }
 
 void
-bs_mono_out( u_int8_t * srcData, u_int8_t * dstData, int w, int x, int absx, long step)
+bs_mono_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
    Fixed    count = {0};
    register int i, j = 0;
@@ -163,7 +163,7 @@ bs_mono_out( u_int8_t * srcData, u_int8_t * dstData, int w, int x, int absx, lon
 
 // nibble stretching functions are requiring *dstData filled with zeros
 
-void bs_nibble_in( u_int8_t * srcData, u_int8_t * dstData, int w, int x, int absx, long step)
+void bs_nibble_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
    Fixed count = {0};
    int   last = 0;
@@ -187,7 +187,7 @@ void bs_nibble_in( u_int8_t * srcData, u_int8_t * dstData, int w, int x, int abs
    }
 }
 
-void bs_nibble_out( u_int8_t * srcData, u_int8_t * dstData, int w, int x, int absx, long step)
+void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
    Fixed count = {0};
    int   i, k = 0;
@@ -302,7 +302,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
       case imNibble:   case imNibble|imGrayScale:
          (void*)proc = ( var->w > absw) ? bs_nibble_in : bs_nibble_out;     break;
       case imByte:     case im256:
-         (void*)proc = ( var->w > absw) ? bs_u_int8_t_in : bs_u_int8_t_out;   break;
+         (void*)proc = ( var->w > absw) ? bs_uint8_t_in : bs_uint8_t_out;   break;
       case imRGB:      case imRGB|imGrayScale:
          (void*)proc = ( var->w > absw) ? bs_RGBColor_in : bs_RGBColor_out; break;
       case imShort:

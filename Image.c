@@ -885,12 +885,12 @@ modify_Image( Handle self, PImgInfo imageInfo)
     if ( ( imageInfo->convertionAllowed >= ICL_NONDESTRUCTIVE)
 	 && ( ( gotProps & EXISTPROP_PALETTETYPE) == EXISTPROP_PALETTETYPE)
 	 && ( paletteType != var->type)) {
-/*	DOLBUG( "Setting palette to type %02x from %02x, palsize: %d\n", paletteType, var->type, var->palSize); */
+	/* DOLBUG( "Setting palette to type %02x from %02x, palsize: %d\n", paletteType, var->type, var->palSize); */
 	my->set_type( self, paletteType);
     }
     --SvREFCNT( SvRV(PImage(self)->mate));
     my->update_change( self);
-/*  DOLBUG( "Got type: %02x\n", var->type); */
+    /* DOLBUG( "Got type: %02x\n", var->type); */
 }
 
 XS( Image_load_FROMPERL) {
@@ -1214,7 +1214,7 @@ Image_get_stats( Handle self, int index)
    if ( var->statsCache & ( 1 << index)) return var->stats[ index];
    /* calculate image stats */
    switch (var->type) {
-      case imByte:    gather_stats(u_int8_t);break;
+      case imByte:    gather_stats(uint8_t);break;
       case imShort:   gather_stats(int16_t);  break;
       case imLong:    gather_stats(int32_t);   break;
       case imFloat:   gather_stats(float);  break;
