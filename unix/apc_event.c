@@ -31,6 +31,9 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#define XK_MISCELLANY
+#define XK_LATIN1
+#include <X11/keysymdef.h>
 
 static Handle
 xw2h( XWindow win)
@@ -42,6 +45,70 @@ xw2h( XWindow win)
 }
 
 extern Bool appDead;
+
+static void
+handle_key_event( Handle self, XKeyEvent *ev, Event *e, Bool release)
+{
+   /* if e-> cmd is unset on exit, the event will not be passed to the system-independent part */
+   char str_buf[ 256];
+   KeySym keysym;
+   U32 keycode;
+   int str_len;
+
+   str_len = XLookupString( ev, str_buf, 256, &keysym, nil);
+
+   switch (keysym) {
+   case XK_BackSpace:		keycode = kbBackspace;		break;
+   case XK_Tab:			keycode = kbTab;		break;
+   case XK_KP_Tab:		keycode = kbKPTab;		break;
+   case XK_Linefeed:		keycode = kbLinefeed;		break;
+   case XK_Return:		keycode = kbEnter;		break;
+   case XK_KP_Enter:		keycode = kbKPEnter;		break;
+   case XK_Escape:		keycode = kbEscape;		break;
+   case XK_KP_Space:		keycode = kbKPSpace;		break;
+   case XK_KP_Equal:		keycode = kbKPEqual;		break;
+   case XK_KP_Multiply:		keycode = kbKPMultiply;		break;
+   case XK_KP_Add:		keycode = kbKPAdd;		break;
+   case XK_KP_Separator:	keycode = kbKPSeparator;	break;
+   case XK_KP_Subtract:		keycode = kbKPSubtract;		break;
+   case XK_KP_Decimal:		keycode = kbKPDecimal;		break;
+   case XK_KP_Divide:		keycode = kbKPDivide;		break;
+   case XK_KP_0:		keycode = kbKP0;		break;
+   case XK_KP_1:		keycode = kbKP1;		break;
+   case XK_KP_2:		keycode = kbKP2;		break;
+   case XK_KP_3:		keycode = kbKP3;		break;
+   case XK_KP_4:		keycode = kbKP4;		break;
+   case XK_KP_5:		keycode = kbKP5;		break;
+   case XK_KP_6:		keycode = kbKP6;		break;
+   case XK_KP_7:		keycode = kbKP7;		break;
+   case XK_KP_8:		keycode = kbKP8;		break;
+   case XK_KP_9:		keycode = kbKP9;		break;
+   default:			keycode = kbNoKey;
+   }
+
+   if ( str_len == 1 && keycode == kbNoKey && *str_buf == ' ')
+      keycode = kbSpace;
+   if ( keycode == kbNoKey) {
+      if ( str_len == 1)
+	 keycode = (U8)*str_buf;
+      else if ( keysym < 0xFD00)
+	 keycode = keysym & 0x000000ff;
+      else
+	 return; /* don't generate an event */
+   }
+   if (( keycode & kbCodeCharMask) == kbCodeCharMask)
+      keycode |= (keycode >> 8) & 0xFF;
+   e-> cmd = release ? cmKeyUp : cmKeyDown;
+   e-> key. key = keycode & kbCodeMask;
+   if ( !e-> key. key)		e-> key. key = kbNoKey;
+   e-> key. code = keycode & kbCharMask;
+   e-> key. mod = keycode & kbModMask;
+   e-> key. repeat = 1;
+   /* ShiftMask LockMask ControlMask Mod1Mask Mod2Mask Mod3Mask Mod4Mask Mod5Mask */
+   if ( ev-> state & ShiftMask)		e-> key. mod |= kmShift;
+   if ( ev-> state & ControlMask)	e-> key. mod |= kmCtrl;
+   if ( ev-> state & Mod1Mask)		e-> key. mod |= kmAlt;
+}
 
 void
 handle_event( XEvent *ev, XEvent *next_event)
@@ -102,10 +169,12 @@ handle_event( XEvent *ev, XEvent *next_event)
    switch ( ev-> type) {
    case KeyPress: {
       if (disabled) return;
+      handle_key_event( self, &ev-> xkey, &e, false);
       break;
    }
    case KeyRelease: {
       if (disabled) return;
+      handle_key_event( self, &ev-> xkey, &e, true);
       break;
    }
    case ButtonPress: {
