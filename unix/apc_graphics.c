@@ -987,8 +987,15 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    DEFXX;
    SHIFT( x, y);
 
+   if (0) {
+      fprintf( stderr, "H: %d, D: %d, A: %d\n",
+               XX-> font-> font. height,
+               XX-> font-> fs-> descent,
+               XX-> font-> fs-> ascent);
+   }
+
    if ( !XX-> flags. paint_base_line)
-      y += XX-> font-> fs-> descent;
+      y += XX-> font-> fs-> ascent + XX-> font-> fs-> descent - XX-> font-> font. height;
    XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
    return true;
