@@ -264,6 +264,7 @@ sub new_directory
    my @ups = split /[\/\\]/, $p;
    my @lb;
    my $wasRoot = 0;
+   $ups[0] = '/' if $p =~ /^\//;
    for ( @ups)
    {
       push @lb, {
@@ -300,6 +301,7 @@ sub path
    return $_[0]-> {path} unless $#_;
    my $p = $_[1];
    $p =~ s{^([^\\\/]*[\\\/][^\\\/]*)[\\\/]$}{$1};
+   $p .= '/' unless $p =~ m![/\\]$!;
    unless( scalar( stat $p)) {
       $p = "";
    } else {
