@@ -150,9 +150,9 @@ prima_wm_generic( void)
    if ( !( guts. wm_data = wm = malloc( sizeof( WmGenericData))))
       return false;
 
-   wm-> deleteWindow = XInternAtom( DISP, "WM_DELETE_WINDOW", 1);
-   wm-> takeFocus    = XInternAtom( DISP, "WM_TAKE_FOCUS", 1);
-   wm-> protocols    = XInternAtom( DISP, "WM_PROTOCOLS", 1);
+   wm-> deleteWindow = XInternAtom( DISP, "WM_DELETE_WINDOW", 0);
+   wm-> takeFocus    = XInternAtom( DISP, "WM_TAKE_FOCUS", 0);
+   wm-> protocols    = XInternAtom( DISP, "WM_PROTOCOLS", 0);
 
    guts. wm_create_window = wm_generic_create_window_hook;
    guts. wm_cleanup = wm_generic_cleanup_hook;
@@ -196,10 +196,10 @@ prima_wm_init( void)
    int i;
 
    /* freedesktop.org stuff */
-   guts. net_wm_state                 = XInternAtom( DISP, "_NET_WM_STATE", 1);
-   guts. net_wm_state_maximized_vert  = XInternAtom( DISP, "_NET_WM_STATE_MAXIMIZED_VERT", 1);
-   guts. net_wm_state_maximized_horiz = XInternAtom( DISP, "_NET_WM_STATE_MAXIMIZED_HORIZ", 1);
-   guts. net_wm_state_skip_taskbar    = XInternAtom( DISP, "_NET_WM_STATE_SKIP_TASKBAR", 1);
+   guts. net_wm_state                 = XInternAtom( DISP, "_NET_WM_STATE", 0);
+   guts. net_wm_state_maximized_vert  = XInternAtom( DISP, "_NET_WM_STATE_MAXIMIZED_VERT", 0);
+   guts. net_wm_state_maximized_horiz = XInternAtom( DISP, "_NET_WM_STATE_MAXIMIZED_HORIZ", 0);
+   guts. net_wm_state_skip_taskbar    = XInternAtom( DISP, "_NET_WM_STATE_SKIP_TASKBAR", 0);
 
    for ( i = 0; i < sizeof(registered_window_managers) / sizeof(prima_wm_hook); i++)
       if ( registered_window_managers[ i]())
