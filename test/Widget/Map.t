@@ -1,3 +1,4 @@
+# $Id$
 print "1..3 screen to client,client to screen,application";
 
 my $ww = $w-> insert( 'Widget' => origin => [ 10, 10],);

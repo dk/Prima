@@ -25,6 +25,8 @@
 #
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
 #
+#  $Id$
+#
 # This is the demonstration of Prima::Dock and Prima::DockManager 
 # modules. The window created is docking client, and it's able 
 # to accept toolbars and panels, and toolbars in turn accept buttons.

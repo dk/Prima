@@ -1,3 +1,4 @@
+# $Id$
 print "1..20 create,pixel,pixel,line,lines,polyline,rectangle,ellipse,arc,bar,fillpoly,fill_ellipse,fill_chord,flood_fill,clipRect,transform,put_image,stretch_image,xor_put,text_out\n";
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);

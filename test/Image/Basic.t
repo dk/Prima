@@ -1,3 +1,4 @@
+# $Id$
 print "1..13 create,type check,paintInfo,load,palette,pixel,paint,get_paint_state(),type,pixel,stretch,pixel bpp1,reverse stretch,bpp4,bpp8,RGB,short,long,float\n";
 
 my $i = Prima::Image-> create(

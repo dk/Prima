@@ -1,3 +1,4 @@
+# $Id$
 print "1..13 activate,onActivate,deactivate,onDeactivate,maximize,onWindowState,".
       "restore from maximized,minimize,restore from minimized,restore max->min->normal,".
       "user modality,execute,close\n";

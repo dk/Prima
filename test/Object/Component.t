@@ -1,3 +1,4 @@
+# $Id$
 print "1..6 create,onCreate,name,onPostMessage,onPostMessage,onDestroy\n";
 
 { # block for mys

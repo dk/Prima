@@ -1,3 +1,4 @@
+# $Id$
 # Leave, Enter, Show, Hide, Enable, Disable
 print "1..6 hide,show,disable,enable,enter,leave";
 

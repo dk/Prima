@@ -1,3 +1,4 @@
+# $Id$
 print "1..5 init,create result,alive,method override,destroy\n";
 
 package GumboJumboObject;

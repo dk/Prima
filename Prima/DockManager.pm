@@ -25,6 +25,8 @@
 #
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
 #
+#  $Id$
+#
 # contains
 #    DockManager
 #    DockManager::LaunchPad

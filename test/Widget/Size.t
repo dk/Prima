@@ -1,3 +1,4 @@
+# $Id$
 print "1..11 set/get consinstency,onSize message,consistency with onSize,in hidden state,in minimized state,in maximized state,".
             "virtual size on create set/get consistency,growMode,virtual size restore consistency,reparent check,virtual size runtime consistency\n";
 

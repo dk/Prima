@@ -1,3 +1,4 @@
+# $Id$
 print "1..7 create,runtime,horizontal,vertical,hidden,event,reparent\n";
 
 my $ww = $w-> insert( Widget =>

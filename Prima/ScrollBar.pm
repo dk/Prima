@@ -25,7 +25,12 @@
 #
 #  Created by:
 #     Dmitry Karasik <dk@plab.ku.dk> 
-#     Anton Berezin  <tobez@plab.ku.dk>
+#  Modifications by:
+#     Anton Berezin  <tobez@tobez.org>
+#  Documentation by:
+#     Anton Berezin  <tobez@tobez.org>
+#
+#  $Id$
 
 package Prima::ScrollBar;
 use vars qw(@ISA @stdMetrics);

@@ -27,6 +27,8 @@
 #     Dmitry Karasik <dk@plab.ku.dk> 
 #     Anton Berezin  <tobez@plab.ku.dk>
 #
+#  $Id$
+#
 # edit block types
 package bt;
 use constant CUA          =>  0;

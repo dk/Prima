@@ -23,6 +23,8 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+#  $Id$
+#
 use Prima qw(Buttons StdBitmap), Application => { name => 'Buttons sample' };
 
 my $w = Prima::Window-> create(

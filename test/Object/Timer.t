@@ -1,3 +1,4 @@
+# $Id$
 print "1..4 create,start,onTick,recreate\n";
 
 my $t = $w-> insert( Timer => timeout => 20 => onTick => \&__dong);

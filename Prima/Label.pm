@@ -24,6 +24,8 @@
 #  SUCH DAMAGE.
 #
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
+#
+#  $Id$
 package Prima::Label;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);

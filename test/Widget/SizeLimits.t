@@ -1,3 +1,4 @@
+# $Id$
 print "1..3 create,runtime sizeMin,reparent sizeMax\n";
 
 my $ww = $w-> insert( Widget =>

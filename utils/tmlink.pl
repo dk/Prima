@@ -23,14 +23,13 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-# TMLINK
+#  $Id$
 #
-# APRICOT 001 PROJECT LINE
+# TMLINK
 #
 # .tml -> .inc
 # tml files linker
 #
-# rev.date: 19/08/98
 
 use strict;
 

@@ -25,7 +25,9 @@
 #
 #  Created by:
 #     Dmitry Karasik <dk@plab.ku.dk> 
-#     Anton Berezin  <tobez@plab.ku.dk>
+#     Anton Berezin  <tobez@tobez.org>
+#
+#  $Id$
 package Prima::Lists;
 
 # contains:

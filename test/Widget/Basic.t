@@ -1,3 +1,4 @@
+# $Id$
 print "1..5 create,onCreate,onPostMessage,onPostMessage,onDestroy\n";
 
 $dong = 0;

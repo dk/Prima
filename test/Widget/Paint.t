@@ -1,3 +1,4 @@
+# $Id$
 print "1..5 onPaint message,update_view,scroll,invalid area consistency,pixel,clipRect,transform\n";
 
 $dong = 0;

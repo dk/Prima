@@ -24,8 +24,10 @@
 #  SUCH DAMAGE.
 #
 #  Created by:
-#     Dmitry Karasik <dk@plab.ku.dk> 
 #     Anton Berezin  <tobez@plab.ku.dk>
+#     Dmitry Karasik <dk@plab.ku.dk> 
+#
+#  $Id$
 package Prima::Const;
 use Prima '';
 use Carp;

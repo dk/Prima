@@ -1,3 +1,4 @@
+# $Id$
 print "1..3 create,runtime,event\n";
 
 my $first   = $w-> insert( 'Widget');

@@ -23,7 +23,8 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-
+#  $Id$
+#
 
 use Prima 'InputLine', Application => { name => 'InputLine sample' };
 

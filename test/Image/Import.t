@@ -1,3 +1,4 @@
+# $Id$
 print "1..8 import,bounds overset,bounds underset,im::fmtBGR,im::fmtIRGB,im::fmtRGBI,im::fmtIBGR,im::fmtBGRI,im::bpp8+palette";
 
 my $i = Prima::Image-> create( 

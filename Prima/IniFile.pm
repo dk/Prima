@@ -23,7 +23,9 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-#  Created by Anton Berezin  <tobez@plab.ku.dk>
+#  Created by Anton Berezin  <tobez@tobez.org>
+#
+#  $Id$
 
 package Prima::IniFile;
 

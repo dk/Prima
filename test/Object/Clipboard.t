@@ -1,3 +1,4 @@
+# $Id$
 print "1..6 alive,predefined formats,text,image,user-defined format,clear\n";
 
 my $c = $::application-> Clipboard;

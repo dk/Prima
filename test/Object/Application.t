@@ -1,3 +1,4 @@
+# $Id$
 print "1..3 gp_init,pixel,forbidden actions\n";
 my $a = $::application;
 

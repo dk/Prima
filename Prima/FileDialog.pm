@@ -24,10 +24,12 @@
 #  SUCH DAMAGE.
 #
 #  Created by:
+#     Anton Berezin  <tobez@tobez.org>
 #     Dmitry Karasik <dk@plab.ku.dk> 
-#     Anton Berezin  <tobez@plab.ku.dk>
 #  Modifications by:
 #     David Scott <dscott@dgt.com>
+#
+#  $Id$
 
 #  contains:
 #      OpenDialog

@@ -1,3 +1,4 @@
+# $Id$
 print "1..3 child create lock,child unlock,lock conststency\n";
 
 $dong = 0;

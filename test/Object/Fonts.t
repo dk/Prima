@@ -1,3 +1,4 @@
+# $Id$
 print "1..6 height,width,size,direction,pitch,style,text_wrap\n";
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);

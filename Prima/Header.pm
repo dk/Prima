@@ -24,6 +24,9 @@
 #  SUCH DAMAGE.
 #
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
+#  Modifications by Anton Berezin <tobez@tobez.org>
+#
+#  $Id$
 
 package Prima::Header;
 

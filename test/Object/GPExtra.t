@@ -1,3 +1,4 @@
+# $Id$
 print "1..5 linePattern,lineWidth,fillPattern,dithering,rop paint\n";
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);

@@ -1,3 +1,4 @@
+# $Id$
 print "1..3 send,post,simulation\n";
 
 $dong = 0;

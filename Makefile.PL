@@ -24,12 +24,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-
-#
-# Create Makefile for a Prima compilation
-#
-# This is not a ``normal'' Makefile.PL file.
-# It does not use MakeMaker.
+#  $Id$
 #
 
 BEGIN {

@@ -24,8 +24,10 @@
 #  SUCH DAMAGE.
 #
 #  Created by:
-#     Anton Berezin  <tobez@plab.ku.dk>
+#     Anton Berezin  <tobez@tobez.org>
 #     Dmitry Karasik <dk@plab.ku.dk> 
+#
+#  $Id$
 
 
 

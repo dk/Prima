@@ -24,6 +24,8 @@
 #  SUCH DAMAGE.
 #
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
+#
+#  $Id$
 use strict;
 use Prima::Const;
 use Prima::Classes;
