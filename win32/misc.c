@@ -324,3 +324,125 @@ apc_sys_get_caption_font( PFont copyTo)
    return copyTo;
 }
 
+#define rgxExists      1
+#define rgxNotExists   2
+#define rgxHasSubkeys  4
+#define rgxHasValues   8
+
+
+static Bool
+prf_exists( char * path, int * info)
+{
+   HKEY hKey;
+   long cache;
+
+   if ( cache = ( long) hash_fetch( regnodeMan, path, strlen( path))) {
+      if ( info) *info = cache;
+      return cache & rgxExists;
+   }
+
+   if ( RegOpenKeyEx( HKEY_CURRENT_USER, path, 0,
+                      KEY_READ, &hKey) != ERROR_SUCCESS) {
+        hash_store( regnodeMan, path, strlen( path), (void*) rgxNotExists);
+        return false;
+   }
+
+   cache = rgxExists;
+   if ( info) {
+      char buf[ MAXREGLEN];
+      DWORD len = MAXREGLEN, subkeys = 0, msk, mc, values, mvn, mvd, sd;
+      FILETIME ft;
+      RegQueryInfoKey( hKey, buf, &len, NULL, &subkeys, &msk, &mc, &values,
+         &mvn, &mvd, &sd, &ft);
+      if ( subkeys > 0) cache |= rgxHasSubkeys;
+      if ( values  > 0) cache |= rgxHasValues;
+      *info = cache;
+   }
+   hash_store( regnodeMan, path, strlen( path), (void*) cache);
+   RegCloseKey( hKey);
+   return true;
+}
+
+static Bool
+prf_find( char * path, List * names, int firstName, char * result)
+{
+   char buf[ MAXREGLEN];
+   int info;
+
+   _snprintf( buf, MAXREGLEN, "%s\\%s", path, names-> items[ firstName]);
+   if ( prf_exists( buf, nil)) {
+      if ( names-> count > firstName + 1) {
+         if ( prf_find( buf, names, firstName + 1, result)) return true;
+      } else {
+         strcpy( result, buf);
+         return true;
+      }
+   }
+
+   _snprintf( buf, MAXREGLEN, "%s\\*", path);
+   if ( prf_exists( buf, &info)) {
+      if ( info & rgxHasSubkeys) {
+         int i;
+         for ( i = names-> count - 1; i > firstName; i--)
+            if ( prf_find( buf, names, i, result))
+               return true;
+      }
+      if (( info & rgxHasValues) == 0)
+         return false;
+      strcpy( result, buf);
+      return true;
+   }
+   return false;
+}
+
+static char * regColors[] = {
+   "color",
+   "backColor",
+   "hiliteColor",
+   "disabledColor",
+   "hiliteBackColor",
+   "disabledBackColor",
+   "light3DColor",
+   "dark3DColor"
+};
+
+extern PHash
+apc_widget_user_profile( PList names)
+{
+   char buf[ MAXREGLEN];
+   HKEY hKey;
+   Bool res;
+   DWORD type, size, dw, i;
+   PHash ret;
+
+   res = prf_find( REG_STORAGE, names, 0, buf);
+   if ( !res) return nil;
+
+
+   if ( RegOpenKeyEx( HKEY_CURRENT_USER, buf, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+      return nil;
+
+   ret = hash_create();
+
+   for ( i = 0; i < sizeof( regColors) / sizeof( char*); i++) {
+      Color * c;
+      type = REG_DWORD;
+      size = sizeof( DWORD);
+      if ( RegQueryValueEx( hKey, regColors[i], NULL,
+           &type, ( LPBYTE) &dw, &size) != ERROR_SUCCESS) continue;
+      c = malloc( sizeof( c));
+      *c = dw;
+      hash_store( ret, regColors[i], strlen(regColors[i]), c);
+   }
+   type = REG_SZ;
+   size = MAXREGLEN;
+   if ( RegQueryValueEx( hKey, "Font", NULL,
+        &type, ( LPBYTE) buf, &size) == ERROR_SUCCESS) {
+      Font * f = malloc( sizeof( Font));
+      font_pp2font( buf, f);
+      hash_store( ret, "Font", strlen("Font"), f);
+   }
+
+   RegCloseKey( hKey);
+   return ret;
+}

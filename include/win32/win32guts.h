@@ -32,6 +32,9 @@
 #define HASMATE_MAGIC                    0xDEAF0CE1
 #define MENU_ID_AUTOSTART                100
 #define TID_USERMAX                      32767
+#define REG_STORAGE                      "SOFTWARE\\Perl\\Prima"
+#define MAXREGLEN                        1024
+
 
 #define WM_WRITE_TO_LOG                   ( WM_USER + 0)
 #define WM_PRIMA_CREATE                   ( WM_USER + 1)
@@ -249,11 +252,6 @@ typedef struct _DCFont
    HFONT         hfont;
 } DCFont, *PDCFont;
 
-typedef struct _FAMTEXTMETRIC
-{
-   TEXTMETRIC t;
-   char       family[ LF_FULLFACESIZE];
-} FAMTEXTMETRIC, *PFAMTEXTMETRIC;
 
 typedef struct _XLOGPALETTE {
    WORD         palVersion;
@@ -299,6 +297,8 @@ typedef struct _DrawableData
    /* cached gp_GetCharABCWidthsFloat results */
    float *        charTable;
    ABCFLOAT *     charTable2;
+   BYTE           tmPitchAndFamily;
+   LONG           tmOverhang;
 
    /* HDC attributes storage outside paint mode */
    Color          lbs[2];
@@ -441,12 +441,13 @@ extern PHash        stylusMan;
 extern HBRUSH       hBrushHollow;
 extern PatResource  hPatHollow;
 extern HPEN         hPenHollow;
+extern PHash        regnodeMan;
 
 LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_view_handler     ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 
-extern Bool         add_font_to_hash( const PFont key, const PFont font, int vectored, FAMTEXTMETRIC * fm, Bool addSizeEntry);
+extern Bool         add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeEntry);
 extern void         cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
 extern Bool         create_font_hash( void);
 extern void         cursor_update( Handle self);
@@ -461,10 +462,11 @@ extern PDCFont      font_alloc( Font * data, Point * resolution);
 extern void         font_change( Handle self, Font * font);
 extern void         font_clean();
 extern void         font_font2logfont( Font * font, LOGFONT * lf);
-extern void         font_free( PDCFont res);
+extern void         font_free( PDCFont res, Bool permanent);
 extern void         font_logfont2font( LOGFONT * lf, Font * font, Point * resolution);
+extern void         font_pp2font( char * presParam, Font * font);
 extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
-extern Bool         get_font_from_hash( PFont font, int *vectored, FAMTEXTMETRIC * fm, Bool bySize);
+extern Bool         get_font_from_hash( PFont font, int *vectored, Bool bySize);
 extern Point        get_window_borders( int borderStyle);
 extern void         hwnd_enter_paint( Handle self);
 extern Handle       hwnd_frame_top_level( Handle self);
