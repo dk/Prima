@@ -320,10 +320,10 @@ EOF
 
 sub find_lib
 {
-    my $lib = shift;
+    my ( $lib, $inc) = ( shift, shift );
     my ( $libpath, $present);
 
-    if ( $OS2) { # link386 is broken - warns, not dies if no library found
+    if ( $OS2 && !length $inc) { # link386 is broken - warns, not dies if no library found
        if ( -f $lib) {
           $lib =~ s/(\\|\/[^\\|\/]*)$//g;
           return $lib;
@@ -341,6 +341,8 @@ sub find_lib
     foreach $libpath ( @_) {
         local @LIBPATH = (@LIBPATH, $libpath) if $libpath;
         $present = compile( <<EOF);
+$inc
+
 int
 main()
 {
@@ -813,7 +815,7 @@ sub setup_variables
 # here starts lot of execs...
 
     for my $lib (@libs) {
-       if ( defined find_lib($lib,'')) {
+       if ( defined find_lib($lib, '', '')) {
           push @flibs, $lib;
        } else {
           print "*** Warning (probably harmless): `$lib' library not found\n";
@@ -1237,20 +1239,20 @@ sub setup_paths
            print "X11 includes found in $incpath\n";
            push @INCPATH, $incpath;
         }
-        my $libpath = find_lib( "X11", "/usr/X11R6/lib", "/usr/X11/lib", "usr/X/lib");
+        my $libpath = find_lib( "X11", '', "/usr/X11R6/lib", "/usr/X11/lib", "usr/X/lib");
         die "Prima needs X11 libraries for compilation! Perhaps, you have non-standard path to X11?  $extramsg\n" unless defined $libpath;
         if ( -d $libpath) {
            print "X11 libraries found in $libpath\n";
            push @LIBPATH, $libpath;
         }
         push @LIBS, 'X11';
-        if (defined find_lib( "Xext", '')) {
+        if (defined find_lib( "Xext", '', '')) {
             print "Xext library found.\n";
             push @LIBS, "Xext";
         }
     }
     else {
-        my $libpath = find_lib( $Config{ libperl}, "", qd( "$Config{ archlib}/CORE"));
+        my $libpath = find_lib( $Config{ libperl}, '', "", qd( "$Config{ archlib}/CORE"));
         die "Cannot find perl library $extramsg\n" unless defined $libpath;
         print "Perl library found in ", ( $libpath || "default LIBPATH"), "\n";
         push @LIBPATH, $libpath if $libpath;
@@ -1288,7 +1290,7 @@ sub setup_defines
     }
     if ( $OS2 && defined $ENV{ PRIMA_PMPRINTF}) {
         if ( have_header( "pmprintf.h", "os2.h")) {
-            my $libpath = find_lib( 'pmprintf', "");
+            my $libpath = find_lib( 'pmprintf', '', "");
             die "There is no library for pmprintf  $extramsg\n" unless defined $libpath;
             push @LIBS, 'pmprintf';
         }
@@ -1359,10 +1361,16 @@ sub setup_misc
     # finding image codecs
     my %libs = map { $_ => 1 } @LIBS;
     while (<img/codec_*.c>) {
+       my @inc;
        m/codec_(.*)\.c$/i;
        my ( $fn, $lib) = ( $_, $1);
+       next unless open F, $fn;
+       while(<F>) {
+          push @inc, $_ if m/^\s*#include\s*\</;
+       }
+       close F;
        $lib.='.lib' if $Win32 || $OS2;
-       if ( $libs{$lib} || defined find_lib( $lib,'')) {
+       if ( $libs{$lib} || defined find_lib( $lib, join('', @inc), '')) {
           push( @ACTIVE_CODECS, $1);
           push( @LIBS, $lib) unless $libs{$lib};
           print "Using image library '$lib'\n";

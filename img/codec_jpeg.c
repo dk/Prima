@@ -34,6 +34,7 @@
 /* Prima-specific undefs */
 #undef HAVE_STDLIB_H
 #undef LOCAL
+#include <stdio.h>
 #include <jpeglib.h>
 
 #ifdef __cplusplus
