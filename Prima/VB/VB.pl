@@ -620,6 +620,7 @@ sub on_destroy
       if ( defined $VB::main) {
          $VB::main->{fmName} = undef;
          $VB::main->update_menu();
+         $VB::main->update_markings();
       }
    }
    ObjectInspector::renew_widgets;
@@ -800,7 +801,9 @@ sub fm_reclass
 {
    my $self = $VB::form;
    return unless $self;
-   my $cx = $self-> selectedWidget;
+   my @wijs = $VB::form-> marked_widgets;
+   return unless scalar @wijs;
+   my $cx = $wijs[0];
    $self = $cx if $cx;
    my $lab_text = 'Class name';
    $lab_text =  "Temporary class for ".$self->{realClass} if defined $self->{realClass};
@@ -848,11 +851,11 @@ sub fm_subalign
    my $self = $VB::form;
    return unless $self;
    my ( $id) = @_;
-   my $cx = $self-> selectedWidget;
-   return unless $cx;
+   my @wijs = $VB::form-> marked_widgets;
+   return unless scalar @wijs;
    $id ?
-      $cx-> bring_to_front :
-      $cx-> send_to_back;
+      $wijs[0]-> bring_to_front :
+      $wijs[0]-> send_to_back;
 }
 
 sub fm_stepalign
@@ -860,8 +863,9 @@ sub fm_stepalign
    my $self = $VB::form;
    return unless $self;
    my ($id) = @_;
-   my $cx = $self-> selectedWidget;
-   return unless $cx;
+   my @wijs = $VB::form-> marked_widgets;
+   return unless scalar @wijs;
+   my $cx = $wijs[0];
    if ( $id) {
       my $cz = $cx-> prev;
       if ( $cz) {
@@ -1036,10 +1040,10 @@ sub profile_default
              ['~Delete' => sub { Form::fm_delete(); } ],
              [],
              ['~Align' => [
-                ['~Bring to front' => sub { Form::fm_subalign(1);}],
-                ['~Send to back'   => sub { Form::fm_subalign(0);}],
-                ['Step ~forward'   => sub { Form::fm_stepalign(1);}],
-                ['Step ~back'      => sub { Form::fm_stepalign(0);}],
+                ['~Bring to front' => 'Shift+PgUp' => km::Shift|kb::PgUp => sub { Form::fm_subalign(1);}],
+                ['~Send to back'   => 'Shift+PgDn' => km::Shift|kb::PgDn => sub { Form::fm_subalign(0);}],
+                ['Step ~forward'   => 'Ctrl+PgUp' => km::Ctrl|kb::PgUp => sub { Form::fm_stepalign(1);}],
+                ['Step ~back'      => 'Ctrl+PgDn' => km::Ctrl|kb::PgDn => sub { Form::fm_stepalign(0);}],
              ]],
              ['~Change class...' => sub { Form::fm_reclass();}],
              ['Creation ~order' => sub { Form::fm_creationorder(); } ],
@@ -1814,6 +1818,9 @@ sub update_menu
    $VB::main-> {savebutton}-> enabled( $f);
 }
 
+sub update_markings
+{
+}
 
 sub form_cancel
 {

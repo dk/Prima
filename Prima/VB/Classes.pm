@@ -697,6 +697,7 @@ sub marked
        }
        $self-> {marked} = $mark;
        $self-> repaint;
+       $VB::main-> update_markings();
    } else {
       return 0 if $_[0] == $VB::form;
       return $_[0]->{marked};
@@ -745,18 +746,15 @@ sub name_changed
 {
    return unless $VB::form;
    my ( $self, $oldName, $newName) = @_;
-   print "changing: $oldName => $newName\n";
 
    for ( $VB::form, $VB::form-> widgets) {
       my $pf = $_-> {prf_types};
       next unless defined $pf->{Handle};
       my $widget = $_;
-      print "wij:".$_->name."\n";
       for ( @{$pf->{Handle}}) {
          my $val = $widget->prf( $_);
          next unless defined $val;
          $widget-> prf_set( $_ => $newName) if $val eq $oldName;
-         print "$_:$val => $newName | $oldName\n";
       }
    }
 }
@@ -798,12 +796,12 @@ sub on_destroy
    my $self = $_[0];
    my $n = $self-> name;
    $self-> remove_hooks;
-   print "delete |$n|\n";
    $self-> name_changed( $n, $VB::form-> name) if $VB::form;
    $self-> owner_changed( $self-> prf('owner'), undef);
    if ( $hooks{DESTROY}) {
       $_-> on_hook( $self-> name, 'DESTROY') for @{$hooks{DESTROY}};
    }
+   $VB::main->update_markings();
 }
 
 package Prima::VB::Drawable;
