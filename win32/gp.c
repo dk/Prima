@@ -68,7 +68,7 @@ apc_gp_done( Handle self)
          }
       }
    }
-   font_free( sys fontResource);
+   font_free( sys fontResource, false);
    if ( sys p256) free( sys p256);
    sys bm = sys pal = sys ps = sys bm = sys p256 = nilHandle;
    sys fontResource = nil;
@@ -86,7 +86,7 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
          ( x1 < *x2) ? ( *x2)++ : ( *x2)--;
       else
       {
-         //	Zinc Application Framework - W_GDIDSP.CPP COPYRIGHT (C) 1990-1998
+         //     Zinc Application Framework - W_GDIDSP.CPP COPYRIGHT (C) 1990-1998
          long tan = ( *y2 - y1) * 1000L / ( *x2 - x1);
          if ( tan < 1000 && tan > -1000) {
             int dx = *x2 - x1;
@@ -108,7 +108,7 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
          ( x1 < *x2) ? ( *x2)-- : ( *x2)++;
       else
       {
-         //	Zinc Application Framework - W_GDIDSP.CPP COPYRIGHT (C) 1990-1998
+         //     Zinc Application Framework - W_GDIDSP.CPP COPYRIGHT (C) 1990-1998
          long tan = ( *y2 - y1) * 1000L / ( *x2 - x1);
          if ( tan < 1000 && tan > -1000) {
             int dx = *x2 - x1;
@@ -713,24 +713,29 @@ gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lp
    if ( !GetCharWidth( dc, iFirstChar, iLastChar, fb)) // checking full widths
       return FALSE;
 
-
    if ( tm. tmPitchAndFamily & TMPF_TRUETYPE) {
       ABC abc[ 256];
+      int charExtra;
 
       if ( !GetCharABCWidths( dc, iFirstChar, iLastChar, abc))
          apiErrRet;
 
+      charExtra = fb[0] - tm. tmOverhang - ( abc[0].abcA + abc[0].abcB + abc[0].abcC);
+      if ( charExtra < 0) charExtra = 0;
+
       for ( i = 0; i <= iLastChar - iFirstChar; i++) {
          lpABCF[i]. abcfA = abc[ i]. abcA;
-         lpABCF[i]. abcfB = abc[ i]. abcB;
+         lpABCF[i]. abcfB = abc[ i]. abcB + charExtra;
          lpABCF[i]. abcfC = abc[ i]. abcC;
       }
    } else {
-      int j = 0;
       memset( lpABCF, 0, sizeof( ABCFLOAT) * ( iLastChar - iFirstChar + 1));
 
-      for ( i = 0; i <= iLastChar - iFirstChar; i++)
-         lpABCF[i]. abcfB = fb[ i];
+      for ( i = 0; i <= iLastChar - iFirstChar; i++) {
+         lpABCF[i]. abcfA = tm. tmOverhang;
+         lpABCF[i]. abcfB = fb[ i] - tm. tmOverhang;
+         lpABCF[i]. abcfC = -tm. tmOverhang;
+      }
    }
    return TRUE;
 }
@@ -937,7 +942,9 @@ gp_text_wrap( Handle self, TextWrapRec * t)
            memcpy( &l[ tildePos], &l[ tildePos+1], strlen( l) - tildePos);
         l = ret[ t-> t_line];
         if ( !GetTextExtentPoint32( sys ps, l, tildeLPos, &sz)) apiErr;
+        if (( sys tmPitchAndFamily & TMPF_TRUETYPE) == 0) sz. cx -= sys tmOverhang;
         if ( !gp_GetCharABCWidthsFloat( sys ps, l[ tildeLPos], l[ tildeLPos], &ch)) apiErr;
+
         t-> t_start = sz. cx;
         t-> t_end   = sz. cx + ch. abcfB + ch. abcfA + ch. abcfC;
     } else {
@@ -1014,10 +1021,10 @@ apc_gp_get_clip_rect( Handle self)
    rr. right  = r. right - 1;
    rr. bottom = sys lastSize. y - r. bottom;
    rr. top    = sys lastSize. y - r. top    - 1;
-   rr. left   += sys transform2. x;
-   rr. right  += sys transform2. x;
-   rr. top    -= sys transform2. y;
-   rr. bottom -= sys transform2. y;
+// rr. left   += sys transform2. x;
+// rr. right  += sys transform2. x;
+// rr. top    -= sys transform2. y;
+// rr. bottom -= sys transform2. y;
    return rr;
 }
 
@@ -1275,12 +1282,26 @@ apc_gp_get_text_out_baseline( Handle self)
    return is_apt( aptTextOutBaseline);
 }
 
+
 int
 apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
 {
    SIZE  sz;
    objCheck 0;
+   if ( len == 0) return 0;
    if ( !GetTextExtentPoint32( sys ps, text, len, &sz)) apiErr;
+
+   if ( addOverhang) {
+      if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
+         ABC abc[2];
+         GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
+         GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
+         if ( abc[0]. abcA < 0) sz. cx -= abc[0]. abcA;
+         if ( abc[1]. abcC < 0) sz. cx -= abc[1]. abcC;
+      } else if ( IS_NT)
+         sz. cx += sys tmOverhang;
+   } else if ( !IS_NT)
+      sz. cx -= sys tmOverhang;
    return sz. cx;
 }
 
@@ -1289,14 +1310,31 @@ apc_gp_get_text_box( Handle self, const char* text, int len)
 {objCheck nil;{
    SIZE  sz;
    Point * pt = malloc( sizeof( Point) * 5);
-   TEXTMETRIC tm;
+
    if ( !GetTextExtentPoint32( sys ps, text, len, &sz)) apiErr;
-   GetTextMetrics( sys ps, &tm);
    memset( pt, 0, sizeof( Point) * 5);
-   pt[0].y = pt[2]. y = sz. cy;
+
+   pt[0].y = pt[2]. y = sz. cy - - var font. descent;
+   pt[1].y = pt[3]. y = - var font. descent;
+   pt[4].y = 0;
    pt[3].x = pt[2]. x = pt[4]. x = sz. cx;
-   pt[4].y = tm. tmDescent;
-   if (( tm. tmPitchAndFamily & ( TMPF_VECTOR|TMPF_TRUETYPE)) && ( var font. direction != 0)) {
+   if ( len > 0 && !IS_NT) pt[4].x -= sys tmOverhang;
+
+   if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
+      ABC abc[2];
+      GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
+      GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
+      if ( abc[0]. abcA < 0) {
+         pt[0].x += abc[0]. abcA;
+         pt[1].x += abc[0]. abcA;
+      }
+      if ( abc[1]. abcC < 0) {
+         pt[2].x -= abc[1]. abcC;
+         pt[3].x -= abc[1]. abcC;
+      }
+   }
+
+   if ( var font. direction != 0) {
       int i;
       float s = sin( var font. direction / ( 10 * GRAD));
       float c = cos( var font. direction / ( 10 * GRAD));
@@ -1425,10 +1463,15 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 void
 apc_gp_set_font( Handle self, PFont font)
 {
+   TEXTMETRIC tm;
    objCheck;
    if ( !sys ps)
       return;
    font_change( self, font);
+   GetTextMetrics( sys ps, &tm);
+   sys tmOverhang       = tm. tmOverhang;
+   sys tmPitchAndFamily = tm. tmPitchAndFamily;
+
    free( sys charTable);
    free( sys charTable2);
    (void*)sys charTable = (void*)sys charTable2 = nil;
@@ -1567,6 +1610,7 @@ apc_gp_set_text_opaque( Handle self, Bool opaque)
    apt_assign( aptTextOpaque, opaque);
 }
 
+
 void
 apc_gp_set_text_out_baseline( Handle self, Bool baseline)
 {
@@ -1574,5 +1618,4 @@ apc_gp_set_text_out_baseline( Handle self, Bool baseline)
    apt_assign( aptTextOutBaseline, baseline);
    if ( sys ps) SetTextAlign( sys ps, baseline ? TA_BASELINE : TA_BOTTOM);
 }
-
 
