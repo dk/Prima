@@ -462,9 +462,18 @@ $w-> insert( Widget =>
       $_[1]-> color( $fore);
       my $probe = "AaBbCcZz";
       $probe = $_[1]-> font-> size.".".$_[1]-> font-> name;
-      #$probe = join('', map { chr } 140..160);
+      my @box = @{$_[1]-> get_text_box( $probe)};
+      pop @box;
+      pop @box;
       my $width = $_[1]-> get_text_width( $probe);
-      $_[1]-> text_out( $probe, ( $x - $width) / 2, ( $y - $_[1]-> font-> height) / 2);
+      my ( $ox, $oy) = (( $x - $width) / 2, ( $y - $_[1]-> font-> height) / 2);
+      $box[$_] += $ox for 0,2,4,6; 
+      $box[$_] += $oy for 1,3,5,7; 
+      @box[4,5,6,7] = @box[6,7,4,5];
+      $_[1]-> color( cl::Yellow);
+      $_[1]-> fillpoly(\@box);
+      $_[1]-> color( cl::Black);
+      $_[1]-> text_out( $probe, $ox, $oy);
    },
    onFontChanged => sub {
       unless ( defined $w-> {exampleFontSet})

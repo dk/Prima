@@ -966,8 +966,8 @@ PICK_AGAIN:
       /* detailing underline things */
       if ( XGetFontProperty( s, XA_UNDERLINE_POSITION, &v) && v) {
          XCHECKPOINT;
-         underlinePos = v;
-      } else
+         underlinePos =  -s-> descent + v;
+      } else 
          underlinePos = - s-> descent + 1;
       
       if ( XGetFontProperty( s, XA_UNDERLINE_THICKNESS, &v) && v) {
@@ -976,7 +976,10 @@ PICK_AGAIN:
       } else
          underlineThickness = 1;
 
-      
+      underlinePos -= underlineThickness;
+      if ( -underlinePos + underlineThickness / 2 >= s-> descent) 
+         underlinePos = -s-> descent + underlineThickness / 2 - 1;
+
       build_font_key( &key, font, bySize); 
  /* printf("add to :%d.%d.{%d}.%s\n", f-> font.height, f-> font.size, f-> font. style, f-> font.name); */
       if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
