@@ -602,6 +602,7 @@ sub setup_variables
     my $lddlflags = $Config{ lddlflags};
     if ( $COMPILER eq 'msvc' && (( $ccflags =~ /TP/) || ($ccflags =~ /O\d/))) { # M$VC++ protection
         $warnflags =~ s/W3/W1/;        # lower warning level
+        $ccflags   =~ s/\-W3/\-W1/;        # lower warning level
         $warnflags =~ s/(-|\/)WX//;    # and dismiss 'warnings as errors'; ( for its stupidity in the c++ case)
         $ldflags =~ s/(-|\/)nodefaultlib//g;
         $lddlflags =~ s/(-|\/)nodefaultlib//g;
