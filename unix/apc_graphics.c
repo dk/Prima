@@ -951,6 +951,39 @@ create_image_cache_8_to_24( PImage img)
 }
 
 static void
+create_image_cache_8_to_32( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   unsigned long lut[ 256];
+   U32 *data;
+   int x, y;
+   int ls = ((img-> w * 24 + 31)/32)*4;
+   int h = img-> h, w = img-> w;
+
+   create_rgb_to_24_lut( img-> palSize, img-> palette, lut);
+
+   data = malloc( ls * h);
+   if ( !data) {
+      croak( "create_image_cache_8_to_24(): no memory");
+   }
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register U32 *d = (U32*)(ls*(h-y-1)+(unsigned char *)data);
+      for ( x = 0; x < w; x++) {
+	 *d++ = lut[line[x]];
+      }
+   }
+
+   IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+				     guts. depth, ZPixmap, 0, (unsigned char*)data,
+				     w, h, 32, ls);
+   if (!IMG-> image_cache) {
+      free( data);
+      croak( "create_image_cache_8_to_32(): error during XCreateImage()");
+   }
+}
+
+static void
 create_image_cache_24_to_16( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
@@ -1031,6 +1064,9 @@ create_image_cache( PImage img, Bool icon)
 	    break;
          case 24:
             create_image_cache_8_to_24( img);
+            break;
+         case 32:
+            create_image_cache_8_to_32( img);
             break;
 	 default:
 	    croak( "create_image_cache(): unsupported screen depth for 8-bit images");
