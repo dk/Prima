@@ -46,7 +46,9 @@ extern void init_image_support();
 // image basic routines
 extern void ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch);
 extern void ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
-extern int image_guess_type( int fd);
+extern int  image_guess_type( int fd);
+extern Bool itype_supported( int type);
+extern Bool itype_importable( int type, int *newtype, void **from_proc, void **to_proc);
 
 // palette routines
 extern void cm_init_colormap( void);
@@ -193,9 +195,13 @@ extern void rs_double_Byte( Handle self, Byte * dstData, int dstType, double src
 
 // extra convertors
 extern void bc_irgb_rgb( Byte * source, Byte * dest, int count);
+extern void bc_ibgr_rgb( Byte * source, Byte * dest, int count);
+extern void bc_bgri_rgb( Byte * source, Byte * dest, int count);
 extern void bc_rgbi_rgb( Byte * source, Byte * dest, int count);
 extern void bc_rgb_irgb( Byte * source, Byte * dest, int count);
 extern void bc_rgb_rgbi( Byte * source, Byte * dest, int count);
+extern void bc_rgb_ibgr( Byte * source, Byte * dest, int count);
+extern void bc_rgb_bgri( Byte * source, Byte * dest, int count);
 
 
 // misc

@@ -2527,6 +2527,8 @@ IM(bpp128)
 #define    imBPP                 0x0FF
 IM(BPP)
 
+#define    imColor               0x0000
+IM(Color)
 #define    imGrayScale           0x1000
 IM(GrayScale)
 #define    imRealNumber          0x2000
@@ -2535,6 +2537,28 @@ IM(RealNumber)
 IM(ComplexNumber)
 #define    imTrigComplexNumber   0x8000
 IM(TrigComplexNumber)
+#define    imCategory            0xFF00
+IM(Category)
+
+
+#define    imFMT                 0xFF0000
+ IM(FMT)
+
+/* imbpp24 subformats */
+#define    imfmtRGB              0x000000
+ IM(fmtRGB)
+#define    imfmtBGR              0x010000
+ IM(fmtBGR)
+
+/* imbpp32 subformats */
+#define    imfmtRGBI             0x000000
+ IM(fmtRGBI)
+#define    imfmtIRGB             0x010000
+ IM(fmtIRGB)
+#define    imfmtBGRI             0x020000
+ IM(fmtBGRI)
+#define    imfmtIBGR             0x030000
+ IM(fmtIBGR)
 
 /* Shortcuts and composites */
 #define    imMono           imbpp1

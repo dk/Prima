@@ -31,7 +31,35 @@
 extern "C" {
 #endif
 
-// Extra bitstroke convertors
+static struct valid_image_type {
+   int type;
+   int newtype;
+   void *from_proc;
+   void *to_proc;
+} valid_image_types[] =
+{
+   { imbpp24 | imColor | imfmtBGR,      imRGB, cm_reverse_palette, cm_reverse_palette},
+   { imbpp32 | imColor | imfmtRGBI,     imRGB, bc_rgbi_rgb, bc_rgb_rgbi },
+   { imbpp32 | imColor | imfmtIRGB,     imRGB, bc_irgb_rgb, bc_rgb_irgb },
+   { imbpp32 | imColor | imfmtBGRI,     imRGB, bc_bgri_rgb, bc_rgb_bgri },
+   { imbpp32 | imColor | imfmtIBGR,     imRGB, bc_ibgr_rgb, bc_rgb_ibgr },
+};
+
+Bool
+itype_importable( int type, int *newtype, void **from_proc, void **to_proc)
+{
+   int i;
+
+   for (i=0; i < sizeof(valid_image_types)/sizeof(struct valid_image_type); i++)
+      if ( valid_image_types[i]. type == type) {
+         if (newtype) *newtype =        valid_image_types[i]. newtype;
+         if (from_proc) *from_proc =    valid_image_types[i]. from_proc;
+         if (to_proc) *to_proc =        valid_image_types[i]. to_proc;
+         return true;
+      }
+   return false;
+}
+
 
 static void
 memcpy_bitconvproc( Byte * src, Byte * dest, int count)
@@ -65,12 +93,14 @@ ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int src
 void
 bc_rgb_rgbi( register Byte * source, register Byte * dest, register int count)
 {
+   dest   += count * 4 - 1;
+   source += count * 3 - 1;
    while ( count--)
    {
-      *dest++ = *source++;
-      *dest++ = *source++;
-      *dest++ = *source++;
-      *dest++ = 0;
+      *dest-- = 0;
+      *dest-- = *source--;
+      *dest-- = *source--;
+      *dest-- = *source--;
    }
 }
 
@@ -90,12 +120,14 @@ bc_rgbi_rgb( register Byte * source, register Byte * dest, register int count)
 void
 bc_rgb_irgb( register Byte * source, register Byte * dest, register int count)
 {
+   dest   += count * 4 - 1;
+   source += count * 3 - 1;
    while ( count--)
    {
-      *dest++ = 0;
-      *dest++ = *source++;
-      *dest++ = *source++;
-      *dest++ = *source++;
+      *dest-- = *source--;
+      *dest-- = *source--;
+      *dest-- = *source--;
+      *dest-- = 0;
    }
 }
 
@@ -110,6 +142,69 @@ bc_irgb_rgb( register Byte * source, register Byte * dest, register int count)
       *dest++ = *source++;
    }
 }
+
+void
+bc_bgri_rgb( register Byte * source, register Byte * dest, register int count)
+{
+   while ( count--)
+   {
+      register Byte a, b, c;
+      a = *source++;
+      b = *source++;
+      *dest++ = *source++;
+      *dest++ = b;
+      *dest++ = a;
+      source++;
+   }
+}
+
+void
+bc_rgb_bgri( register Byte * source, register Byte * dest, register int count)
+{
+   dest   += count * 4 - 1;
+   source += count * 3 - 1;
+   while ( count--)
+   {
+      register Byte a = *source--;
+      register Byte b = *source--;
+      *dest--   = 0;
+      *dest-- = *source--;
+      *dest-- = b;
+      *dest-- = a;
+   }
+}
+
+void
+bc_ibgr_rgb( register Byte * source, register Byte * dest, register int count)
+{
+   while ( count--)
+   {
+      register Byte a, b, c;
+      source++;
+      a = *source++;
+      b = *source++;
+      *dest++ = *source++;
+      *dest++ = b;
+      *dest++ = a;
+   }
+}
+
+void
+bc_rgb_ibgr( register Byte * source, register Byte * dest, register int count)
+{
+   dest   += count * 4 - 1;
+   source += count * 3 - 1;
+   while ( count--)
+   {
+      register Byte a = *source--;
+      register Byte b = *source--;
+      *dest-- = *source--;
+      *dest-- = b;
+      *dest-- = a;
+      *dest-- = 0;
+   }
+}
+
 
 
 #ifdef __cplusplus

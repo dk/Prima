@@ -58,64 +58,8 @@ extern "C" {
 #define my  ((( PImage) self)-> self)
 #define var (( PImage) self)
 
-static int Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
-
-static void
-repadding_check( Handle self, HV * profile)
-{
-   if ( pexist( data)) {
-       void *data;
-       STRLEN dataSize;
-       data = SvPV( pget_sv( data), dataSize);
-       if ( dataSize <= 0) {
-          pdelete( data);
-          pdelete( lineSize);
-          return;
-       }   
-
-       if ( pexist( lineSize)) {
-          int lineSize = pget_i( lineSize);
-          pdelete( lineSize);
-          if ( lineSize != var-> lineSize) {      
-             int newDataSize = ( dataSize + lineSize - 1 ) / lineSize * var-> lineSize;
-             Byte * newData;
-             if ( newDataSize > var-> dataSize) newDataSize = var-> dataSize;
-             newData = allocb( newDataSize);
-             if ( !newData) {
-                pdelete( data);
-                warn( "%s %d:Cannot malloc %d bytes", __FILE__, __LINE__, newDataSize);
-                return;
-             }   
-             
-             ibc_repad( data, newData, lineSize, var-> lineSize, dataSize, newDataSize, 1, 1, nil);
-             DOLBUG( "Repadding from %d to %d\n", lineSize, var->lineSize);
-             pset_b( data, newData, newDataSize);
-             free( newData);
-          }
-       }
-       if ( pexist( type) && ( pget_i( type) == imbpp32)) { // assuming RGBI model
-          int i32lineSize = (( var-> w * 32 + 31) / 32) * 4;
-          int newDataSize = ( dataSize + i32lineSize - 1 ) / i32lineSize * var-> lineSize;
-          Byte * newData;
-          pdelete( type);
-          if ( newDataSize > var-> dataSize) newDataSize = var-> dataSize;
-          newData = allocb( newDataSize);
-          if ( !newData) {
-             pdelete( data);
-             warn( "%s %d:Cannot malloc %d bytes", __FILE__, __LINE__, newDataSize);
-             return;
-          }   
-          ibc_repad( data, newData, i32lineSize, var-> lineSize, dataSize, newDataSize, 4, 3, bc_rgbi_rgb);
-          pset_b( data, newData, newDataSize);
-          free( newData);
-       }   
-   }
-   
-   if ( pexist( lineSize)) {
-      warn( "Image: lineSize supplied without property data.");
-      pdelete( lineSize);
-   }
-}
+static int  Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
+static Bool Image_set_extended_data( Handle self, HV * profile);
 
 void
 Image_init( Handle self, HV * profile)
@@ -126,13 +70,16 @@ Image_init( Handle self, HV * profile)
    var->conversion = pget_i( conversion);
    opt_assign( optHScaling, pget_B( hScaling));
    opt_assign( optVScaling, pget_B( vScaling));
-   var->type = pget_i( type);
-   if ( var-> type == imbpp32) var-> type = imbpp24;
+   if ( !itype_supported( var-> type = pget_i( type))) 
+      if ( !itype_importable( var-> type, &var-> type, nil, nil)) {
+         warn( "Image::init: cannot set type %08x", var-> type);
+         var-> type = imBW;
+      }   
    var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
    var->data = ( var->dataSize > 0) ? allocb( var->dataSize) : nil;
-   repadding_check( self, profile);
-   my->set_data( self, pget_sv( data));
+   if ( !Image_set_extended_data( self, profile))
+      my-> set_data( self, pget_sv( data));
    free( var->palette);
    var->palette = allocn( RGBColor, 256);
    opt_assign( optPreserveType, pget_B( preserveType));
@@ -253,16 +200,13 @@ Image_stretch( Handle self, int width, int height)
    my->update_change( self);
 }
 
-static int imTypes[] = {
-   imMono, imBW, im16, im256, imRGB, imByte, imShort, imLong, imFloat, -1
-};
 
 void
 Image_set( Handle self, HV * profile)
 {
    if ( pexist( conversion))
    {
-      my->set_conversion( self, pget_i( conversion));
+      my-> set_conversion( self, pget_i( conversion));
       pdelete( conversion);
    }
    if ( pexist( hScaling))
@@ -276,20 +220,21 @@ Image_set( Handle self, HV * profile)
       pdelete( vScaling);
    }
 
+   if ( Image_set_extended_data( self, profile))
+      pdelete( data);
+
    if ( pexist( type))
    {
       int newType = pget_i( type);
-      int i = 0;
-      while( imTypes[i] != newType && imTypes[i] != -1) i++;
-      if ( imTypes[i] == -1) {
+      if ( !itype_supported( newType))
          warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", newType);
-      } else {
+      else 
          if ( !opt_InPaint)
-            my->reset( self, newType, pexist( palette) ? pget_sv( palette) : my->get_palette( self));
-      }
+            my-> reset( self, newType, pexist( palette) ? pget_sv( palette) : my->get_palette( self));
       pdelete( palette);
       pdelete( type);
    }
+
    if ( pexist( resolution))
    {
       Point set;
@@ -297,8 +242,6 @@ Image_set( Handle self, HV * profile)
       my-> set_resolution( self, set);
       pdelete( resolution);
    }
-
-   repadding_check( self, profile);
 
    inherited set ( self, profile);
 }
@@ -399,6 +342,102 @@ Image_data( Handle self, Bool set, SV * svdata)
    my-> update_change( self);
    return nilSV;
 }
+
+/*
+  Routine sets image data almost as Image::set_data, but taking into
+  account 'lineSize' and 'type', fields. To be called from bunch routines,
+  line ::init or ::set. Returns true if relevant fields were found and
+  data extracted and set, and false if user data should be set throught ::set_data.
+  Image itself may undergo conversion during the routine; in that case 'palette'
+  property may be used also. All these fields, if used, or meant to be used but
+  erroneously set, will be deleted regardless of routine success. 
+*/
+Bool
+Image_set_extended_data( Handle self, HV * profile)
+{
+   void *data, *proc;
+   STRLEN dataSize;
+   int lineSize = 0, newType, fixType, oldType;
+   Bool pexistType, pexistLine, supp;
+   
+   if ( !pexist( data)) {
+      if ( pexist( lineSize)) {
+         warn( "Image: lineSize supplied without data property.");
+         pdelete( lineSize);
+      }
+      return false;
+   }   
+   
+   data = SvPV( pget_sv( data), dataSize);
+
+   // parameters check
+   pexistType = pexist( type) && ( newType = pget_i( type)) != var-> type;
+   pexistLine = pexist( lineSize) && ( lineSize = pget_i( lineSize)) != var-> lineSize;
+
+   pdelete( lineSize);
+   pdelete( type);
+   
+   if ( !pexistLine && !pexistType) return false;
+
+   if ( is_opt( optInDraw) || dataSize <= 0) 
+      goto GOOD_RETURN;
+
+   // determine line size, if any
+   if ( pexistLine) {
+      if ( lineSize <= 0) {
+         warn( "Image::set_data: invalid lineSize:%d passed", lineSize);
+         goto GOOD_RETURN;
+      }   
+      if ( !pexistType) { // plain repadding
+         ibc_repad( data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 0, 0, nil);
+         goto GOOD_RETURN;
+      }   
+   }
+
+   // pre-fetch auto conversion, if set in same clause
+   if ( pexist( preserveType))
+       opt_assign( optPreserveType, pget_B( preserveType));
+   if ( is_opt( optPreserveType))
+      oldType = var-> type;
+
+    /* getting closest type */
+   if (( supp = itype_supported( newType))) {
+      fixType = newType;
+      proc    = nil;
+   } else if ( !itype_importable( newType, &fixType, &proc, nil)) {
+      warn( "Image::set_data: invalid image type %08x", newType);
+      goto GOOD_RETURN;
+   }   
+      
+   /* fixing image and maybe palette - for known type it's same code as in ::set, */
+   /* but here's no sense calling it, just doing what we need. */
+   if ( fixType != var-> type) { 
+      my-> reset( self, fixType, pexist( palette) ? pget_sv( palette) : my-> get_palette( self));
+      pdelete( palette);
+   }   
+
+    /* copying user data */
+   if ( supp && lineSize == 0) 
+       /* same code as in ::set_data */
+      memcpy( var->data, data, dataSize > var->dataSize ? var->dataSize : dataSize);
+   else {
+      // if no explicit lineSize set, assuming x4 padding 
+      if ( lineSize == 0)
+         lineSize = (( var-> w * ( newType & imBPP) + 31) / 32) * 4;
+      // copying using repadding routine
+      ibc_repad( data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 
+                 ( newType & imBPP) / 8, ( var-> type & imBPP) / 8, proc
+               );
+   }   
+
+   // if wanted to keep original type, restoring
+   if ( is_opt( optPreserveType))
+      my-> set_type( self, oldType);
+   
+GOOD_RETURN:   
+   pdelete(data);
+   return true;
+}   
 
 #ifndef PRIGRAPH
 static void

@@ -383,6 +383,24 @@ ic_type_convert( Handle self,
    }
 }
 
+static int imTypes[] = {
+   imbpp1, imbpp1|imGrayScale, 
+   imbpp4, imbpp4|imGrayScale,
+   imbpp8, imbpp8|imGrayScale,
+   imRGB, 
+   imShort, imLong, imFloat, imDouble,
+   imComplex, imDComplex, imTrigComplex, imTrigDComplex,
+   -1
+};
+
+Bool
+itype_supported( int type)
+{
+    int i = 0;
+    while( imTypes[i] != type && imTypes[i] != -1) i++;
+    return imTypes[i] != -1;
+}   
+
 typedef struct _ImageSignatures
 {
    int type;
