@@ -715,6 +715,18 @@ sub print
    my $pc = 1;
    $self-> {printing} = 1;
 
+   my @font;
+   my $sec = $inifile-> section('View');
+   my $printer_font = $p-> get_font;
+   unless ( length $sec-> {VariableFont}) {
+      $font[0] = $self-> {text}-> {fontPalette}-> [0]-> {name};
+      $self-> {text}-> {fontPalette}-> [0]-> {name} = $printer_font->{name};
+   }
+   unless ( length $sec-> {FixedFont}) {
+      $font[1] = $self-> {text}-> {fontPalette}-> [1]-> {name};
+      $self-> {text}-> {fontPalette}-> [1]-> {name} = $printer_font->{name};
+   }
+
    $self-> {text}-> print( $p, sub {
       $self-> status("Printing page $pc. Press ESC to cancel");
       $pc++;
@@ -729,6 +741,10 @@ sub print
    } else {
       $self-> status("Printing aborted");
       $p-> abort_doc;
+   }
+
+   for ( 0, 1) {
+      $self-> {text}-> {fontPalette}-> [$_]-> {name} = $font[$_] if defined $font[$_];
    }
    
    $self-> {printing} = undef;
