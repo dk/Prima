@@ -117,7 +117,7 @@ sub save_file
       system => exists($profile{system}) ? $profile{system} : 1,
       onDestroy => sub { undef $saveFileDlg},
    ) unless $saveFileDlg;
-   my %a = %{$openFileDlg-> profile_default};
+   my %a = %{$saveFileDlg-> profile_default};
    $saveFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
    return $saveFileDlg-> execute;
 }
