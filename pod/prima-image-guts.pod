@@ -338,9 +338,8 @@ following code will create desirable mask:
            ( _l-> transparent < PIcon( fi-> object)-> palSize)) {
          PRGBColor p = PIcon( fi-> object)-> palette;
          p += _l-> transparent;
-         CIcon( fi-> object)-> set_maskColor( fi-> object, 
-            ARGB( p->r, p-> g, p-> b));
-         CIcon( fi-> object)-> set_autoMasking( fi-> object, amMaskColor);
+         PIcon( fi-> object)-> maskColor = ARGB( p->r, p-> g, p-> b);
+         PIcon( fi-> object)-> autoMasking = amMaskColor;
       }   
 
 Of course, 
@@ -354,7 +353,7 @@ b) if explicit bit mask is given, code will be like:
       if ( kind_of( fi-> object, CIcon) && 
            ( _l-> maskData >= 0)) {
          memcpy( PIcon( fi-> object)-> mask, _l-> maskData, _l-> maskSize);
-         CIcon( fi-> object)-> set_autoMasking( fi-> object, amNone);
+         PIcon( fi-> object)-> autoMasking = amNone;
       }   
 
 Note that mask is also subject to LSB/MSB and 32-bit alignment 

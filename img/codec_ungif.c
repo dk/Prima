@@ -386,9 +386,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                  ( l-> transparent < PIcon( fi-> object)-> palSize)) {
                PRGBColor p = PIcon( fi-> object)-> palette;
                p += l-> transparent;
-               CIcon( fi-> object)-> set_maskColor( fi-> object, 
-                  ARGB( p->r, p-> g, p-> b));
-               CIcon( fi-> object)-> set_autoMasking( fi-> object, amMaskColor);
+               PIcon( fi-> object)-> maskColor = ARGB( p->r, p-> g, p-> b);
+               PIcon( fi-> object)-> autoMasking = amMaskColor;
             }   
          }   
          
