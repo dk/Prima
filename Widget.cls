@@ -11,7 +11,7 @@ object Widget( Drawable)
    int       cursorLock;               # cursor lock count
    NPoint    designScale;              # font width and height for view design
    SV     *  dragPointer;              # cursor shape when dragging smth over
-   int       growMode;                 # growing flags, see gfGrowXXX
+   int       growMode;                 # growing flags, see gmGrowXXX
    long      helpContext;              # help context
    char   *  hint;                     # hint tag text
    Font      popupFont;                # font for popup menu
@@ -243,6 +243,7 @@ object Widget( Drawable)
    event    void     on_mousedown( int button, int shiftState, int x, int y);
    event    void     on_mouseup( int button, int shiftState, int x, int y);
    event    void     on_mousemove( int shiftState, int x, int y);
+   event    void     on_mousewheel( int shiftState, int x, int y, int z);
    event    void     on_mouseenter( int shiftState, int x, int y);
    event    void     on_mouseleave();
    event    void     on_move( Point oldPos, Point newPos);
@@ -276,6 +277,7 @@ object Widget( Drawable)
    SV *   onMouseDown;
    SV *   onMouseUp;
    SV *   onMouseMove;
+   SV *   onMouseWheel;
    SV *   onMouseEnter;
    SV *   onMouseLeave;
    SV *   onMove;
