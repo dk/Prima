@@ -463,6 +463,7 @@ Unbuffered:
 
    XX-> paint_rop = XX-> rop;
    XX-> flags. paint_base_line = XX-> flags. base_line;
+   XX-> flags. paint_opaque    = XX-> flags. opaque;
    XX-> saved_font = PDrawable( self)-> font;
    XX-> fore = XX-> saved_fore;
    XX-> back = XX-> saved_back;
@@ -547,6 +548,10 @@ prima_cleanup_drawable_after_painting( Handle self)
    memcpy( XX-> fill_pattern, XX-> saved_fill_pattern, sizeof( FillPattern));
    if ( XX-> fp_pixmap != None && XX-> fp_pixmap != XX-> saved_fp_pixmap) {
       XFreePixmap( DISP, XX-> fp_pixmap);
+   }
+   if ( XX-> font && ( --XX-> font-> refCnt <= 0)) {
+      prima_free_rotated_entry( XX-> font);
+      XX-> font-> refCnt = 0;
    }
    XX-> fp_pixmap = XX-> saved_fp_pixmap;
    XX-> saved_fp_pixmap = None;
@@ -987,6 +992,13 @@ apc_gp_get_pixel( Handle self, int x, int y)
    return c;
 }
 
+Color
+apc_gp_get_nearest_color( Handle self, Color color)
+{
+   DOLBUG("apc_gp_get_nearest_color");
+   return color;
+}   
+
 Bool
 apc_gp_get_region( Handle self, Handle mask)
 {
@@ -1127,6 +1139,175 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    return true;
 }
 
+static Point
+gp_get_text_overhangs( Handle self, const char *text, int len)
+{
+   DEFXX;
+   Point ret;
+   if ( len > 0) {
+      XCharStruct * cs;
+      int index = text[0];
+      if ( index < XX-> font-> fs-> min_char_or_byte2) 
+         index = XX-> font-> fs-> default_char;
+      if ( index > XX-> font-> fs-> max_char_or_byte2) 
+         index = XX-> font-> fs-> default_char;
+      cs = XX-> font-> fs-> per_char ? XX-> font-> fs-> per_char + index 
+       - XX-> font-> fs-> min_char_or_byte2 : &(XX-> font-> fs-> min_bounds);
+      ret. x = ( cs-> lbearing < 0) ? - cs-> lbearing : 0;
+
+      index = text[len-1];
+      if ( index < XX-> font-> fs-> min_char_or_byte2) 
+         index = XX-> font-> fs-> default_char;
+      if ( index > XX-> font-> fs-> max_char_or_byte2) 
+         index = XX-> font-> fs-> default_char;
+      cs = XX-> font-> fs-> per_char ? XX-> font-> fs-> per_char + index 
+       - XX-> font-> fs-> min_char_or_byte2 : &(XX-> font-> fs-> min_bounds);
+      ret. y = (( cs-> width - cs-> rbearing) < 0) ? cs-> rbearing - cs-> width : 0;
+   } else
+      ret. x = ret. y = 0;
+   return ret;
+}   
+
+static Bool
+gp_text_out_rotated( Handle self, const char* text, int x, int y, int len) 
+{
+   DEFXX;
+   int i;
+   PRotatedFont r;
+   XCharStruct *cs;
+   int px, py = ( XX-> flags. paint_base_line) ?  XX-> font-> font. descent : 0; 
+   int ax = 0, ay = 0;
+   int psx, psy, dsx, dsy;
+   Fixed rx, ry;
+
+   if ( !prima_update_rotated_fonts( XX-> font, ( char*) text, len, PDrawable( self)-> font. direction, &r)) 
+      return false;
+
+   for ( i = 0; i < len; i++) {
+      unsigned char index = ( unsigned char) text[i];
+      /* acquire actual character index */
+      if ( index < r-> first || index >= r-> first + r-> length) {
+         if ( r-> defaultChar < 0) continue;
+         index = ( unsigned char) r-> defaultChar;
+      }
+      if ( r-> map[index] == nil) continue;
+      cs = XX-> font-> fs-> per_char ? XX-> font-> fs-> per_char + index 
+         - XX-> font-> fs-> min_char_or_byte2 : &(XX-> font-> fs-> min_bounds);
+  
+      /* find reference point in pixmap */
+      px = ( cs-> lbearing < 0) ? -cs-> lbearing : 0;
+      rx. l = px * r-> cos2. l - py * r-> sin2. l + 0x8000;
+      ry. l = px * r-> sin2. l + py * r-> cos2. l + 0x8000;
+      psx = rx. i. i - r-> shift. x;
+      psy = ry. i. i - r-> shift. y;
+      
+      /* find glyph position */
+      rx. l = ax * r-> cos2. l - ay * r-> sin2. l + 0x8000;
+      ry. l = ax * r-> sin2. l + ay * r-> cos2. l + 0x8000;
+      dsx = x + rx. i. i - psx;
+      dsy = REVERT( y + ry. i. i) + psy - r-> dimension. y + 1;
+
+      /*       
+      printf("shift %d %d\n", r-> shift.x, r-> shift.y);            
+      printf("point ref: %d %d => %d %d. dims: %d %d, [%d %d %d]\n", px, py, psx, psy, r-> dimension.x, r-> dimension.y, 
+           cs-> lbearing, cs-> rbearing - cs-> lbearing, cs-> width - cs-> rbearing);
+      printf("plot ref: %d %d => %d %d\n", ax, ay, rx.i.i, ry.i.i);
+      printf("at: %d %d ( sz = %d), dest: %d %d\n", x, y, XX-> size.y, dsx, dsy);
+      */
+      
+/*   GXandReverse   ropNotDestAnd */		/* dest = (!dest) & src */
+/*   GXorReverse    ropNotDestOr */		/* dest = (!dest) | src */
+/*   GXequiv        ropNotSrcXor */		/* dest ^= !src */
+/*   GXandInverted  ropNotSrcAnd */		/* dest &= !src */
+/*   GXorInverted   ropNotSrcOr */		/* dest |= !src */
+/*   GXnand         ropNotAnd */		/* dest = !(src & dest) */
+/*   GXnor          ropNotOr */		/* dest = !(src | dest) */
+/*   GXinvert       ropInvert */		/* dest = !dest */
+      
+      switch ( XX-> paint_rop) { /* XXX Limited set edition - either expand to full list or find new way to display bitmaps */
+      case ropXorPut:  
+         XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+         XSetFunction( DISP, XX-> gc, GXxor); 
+         break;
+      case ropOrPut:   
+         XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+         XSetFunction( DISP, XX-> gc, GXor);
+         break;
+      case ropAndPut:  
+         XSetBackground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetFunction( DISP, XX-> gc, GXand);
+         break;
+      case ropNotPut:   
+      case ropBlackness:
+         XSetForeground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+         XSetBackground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetFunction( DISP, XX-> gc, GXand);
+         break;
+      case ropWhiteness:
+         XSetForeground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+         XSetFunction( DISP, XX-> gc, GXor);
+         break;   
+      default:   
+         XSetForeground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+         XSetBackground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetFunction( DISP, XX-> gc, GXand);
+      }
+      XPutImage( DISP, XX-> gdrawable, XX-> gc, r-> map[index]-> image, 0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
+      XCHECKPOINT; 
+      switch ( XX-> paint_rop) {
+      case ropAndPut:   
+      case ropOrPut:
+      case ropXorPut:
+      case ropBlackness:   
+      case ropWhiteness:
+         break;
+      case ropNotPut:   
+         XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
+         XSetBackground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetFunction( DISP, XX-> gc, GXorInverted);
+         goto DISPLAY;
+      default:   
+          XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
+          XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+          XSetFunction( DISP, XX-> gc, GXor);
+      DISPLAY:          
+          XPutImage( DISP, XX-> gdrawable, XX-> gc, r-> map[index]-> image, 0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
+          XCHECKPOINT;
+      }
+      ax += cs-> width;
+   }  
+   apc_gp_set_rop( self, XX-> paint_rop);
+   XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
+   XSetBackground( DISP, XX-> gc, XX-> back. pixel);
+
+   if ( PDrawable( self)-> font. style & fsUnderlined) {
+      int lw = apc_gp_get_line_width( self);
+      int tw = apc_gp_get_text_width( self, text, len, true) - 1;
+      int d  = XX-> font-> underlinePos;
+      Point ovx = gp_get_text_overhangs( self, text, len);
+      int x1, y1, x2, y2;
+      if ( lw != XX-> font-> underlineThickness)
+         apc_gp_set_line_width( self, XX-> font-> underlineThickness);
+
+      ay = d + ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
+      rx. l = -ovx.x * r-> cos2. l - ay * r-> sin2. l + 0.5;
+      ry. l = -ovx.x * r-> sin2. l + ay * r-> cos2. l + 0.5;
+      x1 = x + rx. i. i;
+      y1 = y + ry. i. i;
+      tw += ovx.y;
+      rx. l = tw * r-> cos2. l - ay * r-> sin2. l + 0.5;
+      ry. l = tw * r-> sin2. l + ay * r-> cos2. l + 0.5;
+      x2 = x + rx. i. i;
+      y2 = y + ry. i. i;
+      
+      XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2)); 
+      if ( lw != XX-> font-> underlineThickness) 
+         apc_gp_set_line_width( self, lw);
+   }   
+   return true;
+}   
+
 Bool
 apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 {
@@ -1148,8 +1329,35 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
                );
    }
 
+   /* paint background if opaque */
+   if ( XX-> flags. paint_opaque) {
+      int i;
+      Point * p = apc_gp_get_text_box( self, text, len);
+      FillPattern fp;
+      memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
+      XSetForeground( DISP, XX-> gc, XX-> back. pixel);
+      XSetFunction( DISP, XX-> gc, GXcopy);
+      apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
+      for ( i = 0; i < 4; i++) {
+         p[i].x += x;
+         p[i].y += y;
+      }   
+      i = p[2].x; p[2].x = p[3].x; p[3].x = i;
+      i = p[2].y; p[2].y = p[3].y; p[3].y = i;
+      
+      apc_gp_fill_poly( self, 4, p);
+      apc_gp_set_rop( self, XX-> paint_rop);
+      XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
+      apc_gp_set_fill_pattern( self, fp);
+      free( p);
+   }  
+
+   if ( PDrawable( self)-> font. direction != 0) 
+      return gp_text_out_rotated( self, text, x, y, len);
+
    if ( !XX-> flags. paint_base_line)
-      y += -XX-> font-> fs-> ascent + XX-> font-> font. height;
+      y += XX-> font-> font. descent;
+
    XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
 
@@ -1157,9 +1365,11 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
       int lw = apc_gp_get_line_width( self);
       int tw = apc_gp_get_text_width( self, text, len, true);
       int d  = XX-> font-> underlinePos;
+      Point ovx = gp_get_text_overhangs( self, text, len);
       if ( lw != XX-> font-> underlineThickness)
          apc_gp_set_line_width( self, XX-> font-> underlineThickness);
-      XDrawLine( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y + d), x + tw - 1, REVERT( y + d)); 
+      XDrawLine( DISP, XX-> gdrawable, XX-> gc, 
+         x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d)); 
       if ( lw != XX-> font-> underlineThickness) 
          apc_gp_set_line_width( self, lw);
    }   
@@ -1367,18 +1577,57 @@ int
 apc_gp_get_text_width( Handle self, const char *text, int len, Bool addOverhang)
 {
    DEFXX;
+
    if ( !XX-> font) {
       apc_gp_set_font( self, &PDrawable( self)-> font);
    }
-   return XTextWidth( XX-> font-> fs, text, len);
-   return 0;
+   
+   if ( addOverhang) {
+      Point ovx = gp_get_text_overhangs( self, text, len);
+      return ovx. x + ovx. y + XTextWidth( XX-> font-> fs, text, len);
+   } else
+      return XTextWidth( XX-> font-> fs, text, len);
 }
 
 Point *
 apc_gp_get_text_box( Handle self, const char* text, int len)
 {
-   DOLBUG( "apc_gp_get_text_box()\n");
-   return nil;
+   DEFXX;
+   Point * pt = ( Point *) malloc( sizeof( Point) * 5);
+   int x;
+   Point ovx;
+
+   if ( !XX-> font) 
+      apc_gp_set_font( self, &PDrawable( self)-> font);
+   
+   x = XTextWidth( XX-> font-> fs, text, len);
+   ovx = gp_get_text_overhangs( self, text, len);
+
+   pt[0].y = pt[2]. y = XX-> font-> font. ascent;
+   pt[1].y = pt[3]. y = - XX-> font-> font. descent;
+   pt[4].y = 0;
+   pt[4].x = x;
+   pt[3].x = pt[2]. x = x - ovx. y;
+   pt[0].x = pt[1]. x = - ovx. x;
+
+   if ( !XX-> flags. paint_base_line) {
+      int i;
+      for ( i = 0; i < 5; i++) pt[i]. y += XX-> font-> font. descent;
+   }   
+   
+   if ( PDrawable( self)-> font. direction != 0) {
+      int i;
+      double s = sin( PDrawable( self)-> font. direction / 572.9577951);
+      double c = cos( PDrawable( self)-> font. direction / 572.9577951);
+      for ( i = 0; i < 5; i++) {
+         int x = pt[i]. x;
+         int y = pt[i]. y;
+         pt[i]. x = x * c - y * s + 0.5;
+         pt[i]. y = x * s + y * c + 0.5;
+      }
+   }
+ 
+   return pt;
 }
 
 Point
@@ -1395,8 +1644,12 @@ apc_gp_get_transform( Handle self)
 Bool
 apc_gp_get_text_opaque( Handle self)
 {
-   DOLBUG( "apc_gp_get_text_opaque()\n");
-   return true;
+   DEFXX;
+   if ( XF_IN_PAINT(XX)) {
+      return XX-> flags. paint_opaque;
+   } else {
+      return XX-> flags. opaque;
+   }
 }
 
 Bool
@@ -1642,7 +1895,12 @@ apc_gp_set_transform( Handle self, int x, int y)
 Bool
 apc_gp_set_text_opaque( Handle self, Bool opaque)
 {
-   DOLBUG( "apc_gp_set_text_opaque()\n");
+   DEFXX;
+   if ( XF_IN_PAINT(XX)) {
+      XX-> flags. paint_opaque = !!opaque;
+   } else {
+      XX-> flags. opaque = !!opaque;
+   }
    return true;
 }
 

@@ -84,11 +84,33 @@
 #include "bsd/queue.h"
 #include "Widget.h"
 #include "Image.h"
+#include "img_conv.h"
 
 #ifdef USE_MITSHM
 /* at least some versions of XShm.h do not prototype XShmGetEventBase() */
 extern int XShmGetEventBase( Display*);
 #endif
+
+typedef struct _PrimaXImage
+{
+   Bool shm;
+   Bool can_free;
+   int ref_cnt;
+   void *data_alias;
+   int bytes_per_line_alias;
+   XImage *image;
+#ifdef USE_MITSHM
+   XShmSegmentInfo xmem;
+#endif
+} PrimaXImage;
+
+typedef struct {
+   PrimaXImage *image;
+   PrimaXImage *icon;
+   XColor fore;
+   XColor back;
+   Bool bitmap;
+} ImageCache;
 
 typedef struct _RequestInformation
 {
@@ -144,14 +166,33 @@ typedef struct _FontInfo {
    char        *xname;
 } FontInfo, *PFontInfo;
 
+typedef struct _RotatedFont {
+   int          direction;
+   int          first;
+   int          length;
+   PrimaXImage**map;
+   Point        shift;
+   Point        dimension;
+   Point        orgBox;
+   Pixmap       arena;
+   GC           arena_gc;
+   Byte        *arena_bits;
+   int          lineSize;
+   int          defaultChar;
+   Fixed        sin, cos, sin2, cos2;
+   struct       RotatedFont *next;
+} RotatedFont, *PRotatedFont;
+
 typedef struct _CachedFont {
    FontFlags    flags;
    Font         font;
    XFontStruct *fs;
    char        *load_name;
    XFont        id;
+   PRotatedFont rotated;
    int          underlinePos;
    int          underlineThickness;
+   int          refCnt;
 } CachedFont, *PCachedFont;
 
 union       _unix_sys_data;
@@ -366,15 +407,6 @@ struct _UnixGuts
 #define XT_IS_WIDGET(x)         ((x)->type.widget)
 #define XT_IS_WINDOW(x)         ((x)->type.window)
 
-struct PrimaXImage;
-
-typedef struct {
-   struct PrimaXImage *image;
-   struct PrimaXImage *icon;
-   XColor fore;
-   XColor back;
-   Bool bitmap;
-} ImageCache;
 
 typedef struct _drawable_sys_data
 {
@@ -423,8 +455,10 @@ typedef struct _drawable_sys_data
       int mapped			: 1;
       int modal                         : 1;
       int no_size			: 1;
+      int opaque                	: 1;
       int paint                 	: 1;
       int paint_base_line               : 1;
+      int paint_opaque                  : 1;
       int paint_pending                 : 1;
       int pointer_obscured              : 1;
       int preexec_enabled               : 1;
@@ -541,6 +575,9 @@ prima_allocate_color( Handle self, Color color);
 extern void
 prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils);
 
+extern void
+prima_copy_xybitmap_inplace( unsigned char *data, int w, int h, int ls);
+
 extern Bool
 prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);
 
@@ -548,7 +585,7 @@ extern ImageCache*
 prima_create_image_cache( PImage img, Handle drawable);
 
 void
-prima_put_ximage( XDrawable win, GC gc, struct PrimaXImage *i,
+prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,
                   int src_x, int src_y, int dst_x, int dst_y,
                   int width, int height);
 
@@ -576,6 +613,12 @@ prima_simple_message( Handle self, int cmd, Bool is_post);
 extern void
 prima_update_cursor( Handle self);
 
+extern Bool
+prima_update_rotated_fonts( PCachedFont f, char * text, int len, int direction, PRotatedFont *result);
+
+extern void
+prima_free_rotated_entry( PCachedFont f);
+
 extern int
 unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);
 
@@ -597,6 +640,12 @@ prima_gc_ximages( void);
 extern void
 prima_ximage_event( XEvent*);
 
+extern PrimaXImage*
+prima_prepare_ximage( int width, int height, Bool bitmap);
+
+extern Bool
+prima_free_ximage( PrimaXImage *i);
+
 extern int
 prima_rop_map( int rop);
 
@@ -608,6 +657,7 @@ prima_find_frame_window( XWindow w);
 
 extern Bool
 prima_get_frame_info( Handle self, PRect r);
+
 
 typedef Bool (*prima_wm_hook)( void);
 

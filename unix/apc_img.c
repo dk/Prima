@@ -33,7 +33,6 @@
 #include "Image.h"
 #include "Icon.h"
 #include "DeviceBitmap.h"
-#include "img_conv.h"
 
 #define REVERT(a)	({ XX-> size. y - (a) - 1; })
 #define SHIFT(a,b)	({ (a) += XX-> gtransform. x + XX-> btransform. x; \
@@ -84,18 +83,6 @@ typedef struct
    Pixel32 b;
 } Duplet32;
 
-struct PrimaXImage
-{
-   Bool shm;
-   Bool can_free;
-   int ref_cnt;
-   void *data_alias;
-   int bytes_per_line_alias;
-   XImage *image;
-#ifdef USE_MITSHM
-   XShmSegmentInfo xmem;
-#endif
-};
 
 #define get_ximage_data(xim)            ((xim)->data_alias)
 #define get_ximage_bytes_per_line(xim)  ((xim)->bytes_per_line_alias)
@@ -109,10 +96,10 @@ shm_ignore_errors(Display *d, XErrorEvent *ev)
 }
 #endif
 
-static struct PrimaXImage*
-prepare_ximage( int width, int height, Bool bitmap)
+PrimaXImage*
+prima_prepare_ximage( int width, int height, Bool bitmap)
 {
-   struct PrimaXImage *i;
+   PrimaXImage *i;
    int extra_bytes;
   
    switch ( guts.idepth) {
@@ -122,9 +109,9 @@ prepare_ximage( int width, int height, Bool bitmap)
    default:     extra_bytes = 0;
    }
 
-   i = malloc( sizeof( struct PrimaXImage));
+   i = malloc( sizeof( PrimaXImage));
    if (!i) return nil;
-   bzero( i, sizeof( struct PrimaXImage));
+   bzero( i, sizeof( PrimaXImage));
 
 #ifdef USE_MITSHM
    if ( guts. local_connection && guts. shared_image_extension && !bitmap) {
@@ -191,8 +178,8 @@ normal_way:
    return i;
 }
 
-static Bool
-free_ximage( struct PrimaXImage *i) /* internal */
+Bool
+prima_free_ximage( PrimaXImage *i) 
 {
    if (!i) return true;
 #ifdef USE_MITSHM
@@ -210,20 +197,20 @@ free_ximage( struct PrimaXImage *i) /* internal */
 }
 
 static Bool
-destroy_ximage( struct PrimaXImage *i)
+destroy_ximage( PrimaXImage *i)
 {
    if ( !i) return true;
    if ( i-> ref_cnt > 0) {
       i-> can_free = true;
       return true;
    }
-   return free_ximage( i);
+   return prima_free_ximage( i);
 }
 
 static Bool
-destroy_one_ximage( struct PrimaXImage *i, int nothing1, void *nothing2, void *nothing3)
+destroy_one_ximage( PrimaXImage *i, int nothing1, void *nothing2, void *nothing3)
 {
-   free_ximage( i);
+   prima_free_ximage( i);
    return false;
 }
 
@@ -239,7 +226,7 @@ prima_ximage_event( XEvent *eve) /* to be called from apc_event's handle_event *
 {
 #ifdef USE_MITSHM
    XShmCompletionEvent *ev = (XShmCompletionEvent*)eve;
-   struct PrimaXImage *i;
+   PrimaXImage *i;
 
    if ( eve && eve-> type == guts. shared_image_completion_event) {
       i = hash_fetch( guts.ximages, (void*)&ev->shmseg, sizeof(ev->shmseg));
@@ -248,7 +235,7 @@ prima_ximage_event( XEvent *eve) /* to be called from apc_event's handle_event *
          if ( i-> ref_cnt <= 0) {
             hash_delete( guts.ximages, (void*)&ev->shmseg, sizeof(ev->shmseg), false);
             if ( i-> can_free)
-               free_ximage( i);
+               prima_free_ximage( i);
          }
       }
    }
@@ -256,7 +243,7 @@ prima_ximage_event( XEvent *eve) /* to be called from apc_event's handle_event *
 }
 
 void
-prima_put_ximage( XDrawable win, GC gc, struct PrimaXImage *i, int src_x, int src_y, int dst_x, int dst_y, int width, int height)
+prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i, int src_x, int src_y, int dst_x, int dst_y, int width, int height)
 {
 #ifdef USE_MITSHM
    if ( i-> shm) {
@@ -409,15 +396,36 @@ prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int
       }
    } else {
       mirrored_bits = mirror_bits();
+      w = ( w + 7) / 8;
       for ( y = h-1; y >= 0; y--) {
 	 register const unsigned char *s = idata+y*ils;
 	 register unsigned char *t = ls*(h-y-1)+data;
-	 for ( x = 0; x < (w+7)/8; x++) {
+	 for ( x = 0; x < w; x++) {
 	    *t++ = mirrored_bits[*s++];
 	 }
       }
    }
 }
+
+void
+prima_copy_xybitmap_inplace( unsigned char *data, int w, int h, int ls)
+{
+   register int x;
+   Byte *t = data;
+   Byte *mirrored_bits;
+
+   /* XXX: MSB/LSB */
+   if ( guts.bit_order != MSBFirst) {
+      mirrored_bits = mirror_bits();
+      w = (w + 7)/8;
+      while( h--) {
+	 for ( x = 0; x < w; x++) 
+	    *t++ = mirrored_bits[*t];
+         t += ls;
+      }
+   }
+}
+
 
 static void
 create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
@@ -427,7 +435,7 @@ create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
    int h = img-> h, w = img-> w;
    int ils;
    unsigned char *idata;
-   struct PrimaXImage *ximage;
+   PrimaXImage *ximage;
 
    if ( for_icon) {
       ils = PIcon(img)->maskLine;
@@ -437,7 +445,7 @@ create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
       idata = img-> data;
    }
 
-   ximage = prepare_ximage( w, h, true);
+   ximage = prima_prepare_ximage( w, h, true);
    if (!ximage) croak( "UAI_002: error creating ximage");
    ls = get_ximage_bytes_per_line(ximage);
    data = get_ximage_data(ximage);
@@ -578,7 +586,7 @@ create_cache4_8( Image *img, ImageCache *cache)
    }   
    
 
-   cache->image = prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) croak( "UAI_023: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -609,7 +617,7 @@ create_cache4_16( Image *img, ImageCache *cache)
       lut[i]. a = lut1[(i & MSNibble) >> MSNibbleShift];
       lut[i]. b = lut1[(i & LSNibble) >> LSNibbleShift];
    }
-   cache->image = prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) croak( "UAI_003: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -644,7 +652,7 @@ create_cache4_24( Image *img, ImageCache *cache)
       lut[i]. b2 = (ColorComponent)((lut1[(i & LSNibble) >> LSNibbleShift] >> shift[2]) & ColorComponentMask);
    }
 
-   cache->image = prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) croak( "UAI_004: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -675,7 +683,7 @@ create_cache4_32( Image *img, ImageCache *cache)
       lut[i]. b = lut1[(i & LSNibble) >> LSNibbleShift];
    }
 
-   cache->image = prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) croak( "UAI_005: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -694,7 +702,7 @@ create_cache_equal( Image *img, ImageCache *cache)
 {
    unsigned char *data;
    int y, ls, lls, h = img-> h;
-   cache->image = prepare_ximage( img-> w, h, false);
+   cache->image = prima_prepare_ximage( img-> w, h, false);
    if ( !cache->image) croak( "UAI_024: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -716,7 +724,7 @@ create_cache8_16( Image *img, ImageCache *cache)
 
    create_rgb_to_16_lut( img-> palSize, img-> palette, lut);
 
-   cache->image = prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) croak( "UAI_006: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -749,7 +757,7 @@ create_cache8_24( Image *img, ImageCache *cache)
       lut[i]. a2 = (ColorComponent)((lut1[i] >> shift[2]) & ColorComponentMask);
    }
 
-   cache->image = prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) croak( "UAI_007: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -774,7 +782,7 @@ create_cache8_32( Image *img, ImageCache *cache)
 
    create_rgb_to_xpixel_lut( img-> palSize, img-> palette, lut);
 
-   cache->image = prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) croak( "UAI_008: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -816,7 +824,7 @@ create_cache24_16( Image *img, ImageCache *cache)
       initialize = false;
    }
 
-   cache->image = prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) croak( "UAI_009: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -858,7 +866,7 @@ create_cache24_32( Image *img, ImageCache *cache)
       initialize = false;
    }
 
-   cache->image = prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, false);
    if ( !cache->image) croak( "UAI_010: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -1509,14 +1517,14 @@ typedef void mStretchProc( void * srcData, void * dstData, Bool xreverse,
    int targetwidth, Fixed step, Fixed count, int first, int last, int targetLineSize);
 
 
-static struct PrimaXImage *
-do_stretch( Handle self, PImage img, struct PrimaXImage *cache,
+static PrimaXImage *
+do_stretch( Handle self, PImage img, PrimaXImage *cache,
             int src_x, int src_y, int src_w, int src_h,
             int dst_x, int dst_y, int dst_w, int dst_h,
             int *x, int *y, int *w, int *h)
 {
    Byte *data;
-   struct PrimaXImage *stretch;
+   PrimaXImage *stretch;
    StretchSeed xseed, yseed;
    XRectangle cr;
    int bpp;
@@ -1535,7 +1543,7 @@ do_stretch( Handle self, PImage img, struct PrimaXImage *cache,
    stretch_calculate_seed( src_w, dst_w, &xclipstart, &xclipsize, &xseed);
    stretch_calculate_seed( src_h, dst_h, &yclipstart, &yclipsize, &yseed);
    if ( xclipsize <= 0 || yclipsize <= 0) return nil;
-   stretch = prepare_ximage( xclipsize, yclipsize, bpp == 1);
+   stretch = prima_prepare_ximage( xclipsize, yclipsize, bpp == 1);
    if ( !stretch) croak( "UAI_019: error creating ximage");
 
    tls = get_ximage_bytes_per_line( stretch);
@@ -1642,7 +1650,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    DEFXX;
    PImage img = PImage( image);
    unsigned long f = 0, b = 0;
-   struct PrimaXImage *stretch;
+   PrimaXImage *stretch;
    ImageCache *cache;
    int func, ofunc;
    XGCValues gcv;

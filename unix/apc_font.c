@@ -62,10 +62,11 @@ global %Font {
 }
 */
 
+
+
 static PHash xfontCache = nil;
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 static Bool have_vector_fonts = false;
-
 
 static void
 strlwr( char *d, const char *s)
@@ -441,6 +442,35 @@ prima_init_font_subsystem( void)
 }
 
 void
+prima_free_rotated_entry( PCachedFont f)
+{
+   while ( f-> rotated) {
+      PRotatedFont r = f-> rotated;
+      while ( r-> length--) {
+          if ( r-> map[ r-> length]) {
+             prima_free_ximage( r-> map[ r-> length]);
+             r-> map[ r-> length] = nilHandle;
+          }      
+      }   
+      f-> rotated = ( PRotatedFont) r-> next;
+      XFreeGC( DISP, r-> arena_gc);
+      if ( r-> arena) 
+         XFreePixmap( DISP, r-> arena);
+      if ( r-> arena_bits)
+         free( r-> arena_bits);
+      free( r);
+   }
+}   
+
+static Bool
+free_rotated_entries( PCachedFont f, int keyLen, void * key, void * dummy)
+{
+   prima_free_rotated_entry( f);
+   free( f);   
+   return false;
+}   
+
+void
 prima_cleanup_font_subsystem( void)
 {
    int i;
@@ -459,7 +489,8 @@ prima_cleanup_font_subsystem( void)
 
    if ( guts. font_hash) {
       /* XXX destroy load_name first - enumerating */
-      hash_destroy( guts. font_hash, true);
+      hash_first_that( guts. font_hash, free_rotated_entries, nil, nil, nil); 
+      hash_destroy( guts. font_hash, false);
       guts. font_hash = nil;
    }
 
@@ -566,6 +597,7 @@ add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s, 
    kf-> flags = f-> flags;
    kf-> underlinePos = uPos;
    kf-> underlineThickness = uThinkness;
+   kf-> refCnt = 0;
    hash_store( guts. font_hash, key, sizeof( FontKey), kf);
 }
 
@@ -582,6 +614,7 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
    int weight, height, size;
    FontKey key;
    Bool askedDefaultPitch;
+   int pickable = 0, pickValue = 0;
    
    if ( f-> font. vector) {
       memcpy( &fi, f, sizeof( fi));
@@ -591,14 +624,16 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
    if ( f-> vecname) {
       if ( bySize) {
          height = 0;
-         size   = font-> size * 10;
+         pickValue = size   = font-> size * 10;
       } else {
-         height = font-> height;
+         pickValue = height = font-> height;
          size   = 0;
       }   
    }   
     
    if ( f-> vecname) {
+      pickable = 1;
+PICK_AGAIN:         
       if ( f-> flags. xDeviceRes) {
          /* three fields */
          sprintf( name, f-> vecname, height, size, font-> width * 10);
@@ -693,13 +728,34 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       } 
 
       if ( !f-> flags. size) {
+         /* assume internalLeading = 0 */
          f-> flags. size = true;
          f-> font. size  = f-> font. height * 72.27 / f-> font. yDeviceRes + 0.5;
          preSize = f-> font. height * 722.7 / f-> font. yDeviceRes + 0.5;
-      }   
+         f-> flags. internalLeading = true;
+         f-> font. internalLeading  = 0;
+      } else {
+         f-> flags. internalLeading = true;
+         f-> font. internalLeading  = f-> font. height - (int)(0.5+f-> font. yDeviceRes * preSize / 722.7);
+         /* Prima still doesn't define 'font size' term - should it be that value inside
+            the font headers or the size related to Drawable's resolution? The following
+            line sticks to the second definition. Comment it out if the first one is
+            preferable */   
+         f-> font. size = (( f-> font. height - f-> font. internalLeading) * 72.27) / guts. resolution. y + 0.5;
+      }
 
-      f-> flags. internalLeading = true;
-      f-> font. internalLeading  = f-> font. height - (int)(0.5+f-> font. yDeviceRes * preSize / 722.7);
+      if ( pickable) {
+         int * a = bySize ? &size : &height;
+         int   b = bySize ? f-> font. size : f-> font. height;
+         int   m = bySize ? 10 : 1;
+         pickable = 0;
+         if ( b != pickValue && b != 0) {
+            *a = *a * pickValue / ( b * m) + 0.5;
+            if ( *a != pickValue) 
+               goto PICK_AGAIN;
+         }
+      }   
+      
       f-> flags. resolution      = true;
       f-> font. resolution       = f-> font. yDeviceRes * 0x10000 + f-> font. xDeviceRes;
       f-> flags. ascent          = true;
@@ -728,7 +784,7 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
                f-> font. maximalWidth = x;
          }      
       } else 
-         f-> flags. maximalWidth = s-> max_bounds. width;
+         f-> font. maximalWidth = s-> max_bounds. width;
 
 /*      if ( s-> ascent + 0*s-> descent != f-> font. height) 
          croak( "%s: %d <=> %d", f-> font.name, f-> font. height, s-> ascent + s-> descent*0);*/
@@ -787,11 +843,10 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       /* XXX YYY ZZZ */
       /* Things left undetailed for now: */
       /*  slant part of style, vector(ha-ha) */
-
       /* XXX YYY ZZZ */
       /* Things left undetermined for now: */
       /*  codepage, ascent, descent, extLead, breakCh */
-/* printf("accept:%d.%d.{%d}.%s; res:%d %d\n", f-> font.height, f-> font.size, f-> font. width, f-> font.name,
+ /* printf("accept:%d.%d.{%d}.%s; res:%d %d\n", f-> font.height, f-> font.size, f-> font. style, f-> font.name, 
        f-> font. xDeviceRes, f-> font. yDeviceRes); */
       
    }   
@@ -825,7 +880,7 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
 
       
       build_font_key( &key, font, bySize); 
-/* printf("add to :%d.%d.{%d}.%s\n", f-> font.height, f-> font.size, f-> font. width, f-> font.name); */
+ /* printf("add to :%d.%d.{%d}.%s\n", f-> font.height, f-> font.size, f-> font. style, f-> font.name); */
       add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness);
       askedDefaultPitch = font-> pitch == fpDefault;
       memcpy( font, &f-> font, sizeof( Font));
@@ -950,16 +1005,20 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    double minDiff = INT_MAX, lastDiff = INT_MAX;
    char lcname[ 256];
    Bool underlined = dest-> style & fsUnderlined;
-   /*
+   int  direction  = dest-> direction;
+  
+
+   /* 
    if ( by_size) {
-      printf("reqS:%d.[%d]{%d}.%s\n", dest-> size, dest-> height, dest-> width, dest-> name);
+      printf("reqS:%d.[%d]{%d}.%s\n", dest-> size, dest-> height, dest-> style, dest-> name);
    } else {
-      printf("reqH:%d.[%d]{%d}.%s\n", dest-> height, dest-> size, dest-> width, dest-> name);
+      printf("reqH:%d.[%d]{%d}.%s\n", dest-> height, dest-> size, dest-> style, dest-> name);
    }
    */
 
    if ( find_known_font( dest, true, by_size)) {
       if ( underlined) dest-> style |= fsUnderlined;
+      dest-> direction = direction;
       return true;
    }
 
@@ -981,23 +1040,24 @@ AGAIN:
 
    i = index;
 
-   /*  printf( "#0: %d (%g): %s\n", i, minDiff, info[i].xname); */
+   /* printf( "#0: %d (%g): %s\n", i, minDiff, info[i].xname); */
+     
    
    if ( info[ i]. flags. sloppy && pickCount++ < 20) { 
       detail_font_info( info + i, dest, false, by_size); 
       if ( minDiff < query_diff( info + i, dest, lcname, by_size))
          goto AGAIN;
-   }   
-   
+   } 
 
-   /*
-      printf( "took diff %f after %d steps\n", minDiff, pickCount); 
+   /* 
+      printf( "took diff %f after %d steps out of %d\n", minDiff, pickCount, n); 
       if ( lastIndex >= 0)
          printf( "#1: %d (%g): %s %d\n", lastIndex, lastDiff, info[lastIndex]. xname, info[lastIndex]. font. vector);
    */
 
    detail_font_info( info + index, dest, true, by_size);
    if ( underlined) dest-> style |= fsUnderlined;
+   dest-> direction = direction;
    return true;
 }
 
@@ -1072,6 +1132,15 @@ apc_gp_set_font( Handle self, PFont font)
    }
 
    reload = XX-> font != kf && XX-> font != nil;
+
+   if ( reload) {
+      kf-> refCnt++;
+      if ( XX-> font && ( --XX-> font-> refCnt <= 0)) {
+         prima_free_rotated_entry( XX-> font);
+         XX-> font-> refCnt = 0;
+      }   
+   }   
+
    XX-> font = kf;
 
    if ( XX-> flags. paint) {
@@ -1088,7 +1157,11 @@ Bool
 apc_menu_set_font( Handle self, PFont font)
 {
    PMenuSysData selfxx = ((PMenuSysData)(PComponent((self))-> sysData));
-   PCachedFont kf = find_known_font( font, false, false);
+   PCachedFont kf;
+
+   font-> direction = 0; /* skip unnecessary logic */
+   
+   kf = find_known_font( font, false, false);
 
    if ( !kf || !kf-> id) {
       dump_font( font);
@@ -1098,3 +1171,206 @@ apc_menu_set_font( Handle self, PFont font)
    XX-> font = kf;
    return true;
 }
+
+Bool
+prima_update_rotated_fonts( PCachedFont f, char * text, int len, int direction, PRotatedFont * result)
+{
+   PRotatedFont * pr = &f-> rotated;
+   PRotatedFont r = nil;
+   int i;
+   
+   if ( direction == 0)
+      return false;
+
+   /* finding record for given direction */
+   while (*pr) {
+      if ((*pr)-> direction == direction) {
+         r = *pr;
+         break;
+      }      
+      pr = ( PRotatedFont *) &((*pr)-> next);
+   }  
+
+   if ( !r) { /* creating startup values for new entry */
+      double sin1, cos1, sin2, cos2, rad;
+      int    rbox_x[4], rbox_y[4], box_x[4], box_y[4], box[4];
+      XGCValues xgv;
+
+      r = *pr = malloc( sizeof( RotatedFont));
+      if ( !r) {
+         warn("Not enough memory");
+         return false;
+      }   
+      bzero( r, sizeof( RotatedFont));
+      r-> direction = direction;
+      r-> first   = f-> fs-> min_char_or_byte2; 
+      r-> length  = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2) 
+         - r-> first + 1;
+      if ( r-> length < 0) r-> length = 0;
+      r-> defaultChar = f-> fs-> default_char;
+      if ( r-> defaultChar < r-> first || r-> defaultChar >= r-> first + r-> length)
+         r-> defaultChar = -1;
+         
+      if ( r-> length > 0) {
+         if ( !( r-> map = malloc( r-> length * sizeof( void*)))) {
+            *pr = nil;
+            free( r);
+            warn("Not enough memory");
+            return false;
+         }
+         bzero( r-> map, r-> length * sizeof( void*));
+      }    
+      while ( direction < 0) direction += 3600;
+      direction %= 3600;
+      if ( direction == 0) return false;
+      rad = direction * 3.14159 / 1800.0;
+      r-> sin. l = ( sin1 = sin( -rad)) * 0x10000;
+      r-> cos. l = ( cos1 = cos( -rad)) * 0x10000;
+      r-> sin2.l = ( sin2 = sin(  rad)) * 0x10000;
+      r-> cos2.l = ( cos2 = cos(  rad)) * 0x10000;
+      
+/*
+   1(0,y)  2(x,y)
+   0(0,0)  3(x,0)
+*/   
+      box_x[0] = box_y[0] = box_x[1] = box_y[3] = 0;
+      r-> orgBox. x = box_x[2] = box_x[3] = f-> fs-> max_bounds. width;
+      r-> orgBox. y = box_y[1] = box_y[2] = f-> fs-> max_bounds. ascent + f-> fs-> max_bounds. descent;
+      for ( i = 0; i < 4; i++) {
+         rbox_x[i] = box_x[i] * cos2 - box_y[i] * sin2 + 0.5;
+         rbox_y[i] = box_x[i] * sin2 + box_y[i] * cos2 + 0.5;
+         box[i] = 0; 
+      }   
+      for ( i = 0; i < 4; i++) {
+         if ( rbox_x[i] < box[0]) box[0] = rbox_x[i];
+         if ( rbox_y[i] < box[1]) box[1] = rbox_y[i];
+         if ( rbox_x[i] > box[2]) box[2] = rbox_x[i]; 
+         if ( rbox_y[i] > box[3]) box[3] = rbox_y[i]; 
+      }   
+      r-> dimension. x = box[2] - box[0] + 1; 
+      r-> dimension. y = box[3] - box[1] + 1; 
+      r-> shift. x = box[0];
+      r-> shift. y = box[1];
+     
+      r-> lineSize = (( r-> orgBox. x + 31) / 32) * 4;
+      if ( !( r-> arena_bits = malloc( r-> lineSize * r-> orgBox. y)))
+         goto FAILED;
+
+      r-> arena = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), r-> orgBox.x, r-> orgBox. y, 1);  
+      if ( !r-> arena) {
+         free( r-> arena_bits);
+FAILED:         
+         *pr = nil;
+         free( r-> map);
+         free( r);
+         warn("Cannot create pixmap");
+         return false;
+      }   
+      XCHECKPOINT;
+      r-> arena_gc = XCreateGC( DISP, r-> arena, 0, &xgv);
+      XCHECKPOINT;
+      XSetFont( DISP, r-> arena_gc, f-> id);
+      XCHECKPOINT;
+      XSetBackground( DISP, r-> arena_gc, 0);
+   }   
+
+   /* processing character records */
+   for ( i = 0; i < len; i++) {
+      unsigned char index = ( unsigned char) text[i];
+      XCharStruct * cs;
+      XImage * ximage;
+      PrimaXImage * px;
+      Byte * ndata;
+      
+      /* querying character */
+      if ( index < r-> first || index >= r-> first + r-> length) {
+         if ( r-> defaultChar < 0) continue;
+         index = ( unsigned char) r-> defaultChar;
+      }   
+      if ( r-> map[index]) continue;
+      cs = f-> fs-> per_char ? f-> fs-> per_char + index - f-> fs-> min_char_or_byte2 :
+         &(f-> fs-> min_bounds);
+      XSetForeground( DISP, r-> arena_gc, 0);
+      XFillRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x, r-> orgBox .y);
+      XSetForeground( DISP, r-> arena_gc, 1);
+      // XDrawRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x-1, r-> orgBox .y-1);
+      XDrawString( DISP, r-> arena, r-> arena_gc, 
+          ( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
+          r-> orgBox. y - f-> fs-> descent - 1,
+          &index, 1);
+      // XDrawLine( DISP, r-> arena, r-> arena_gc, 0, r-> orgBox .y-1, 8, r-> orgBox .y-1);
+      XCHECKPOINT;
+
+      /* getting glyph bits */
+      ximage = XGetImage( DISP, r-> arena, 0, 0, r-> orgBox. x, r-> orgBox. y, 1, XYPixmap); 
+      if ( !ximage) {
+         warn("Can't get image");
+         return false;
+      }   
+      XCHECKPOINT;
+      prima_copy_xybitmap( r-> arena_bits, ximage-> data, r-> orgBox. x, r-> orgBox. y, 
+         r-> lineSize,  ximage-> bytes_per_line);
+      XDestroyImage( ximage);
+      
+      px = prima_prepare_ximage( r-> dimension. x, r-> dimension. y, 1);
+      if ( !px) {
+         warn( "Can't query image"); 
+         return false; 
+      }   
+      ndata = ( Byte*) px-> data_alias;
+      bzero( ndata, px-> bytes_per_line_alias * r-> dimension. y); 
+      
+      /* rotating */
+      {
+         int x, y;
+         Fixed lx, ly;
+         Byte * dst = ndata + px-> bytes_per_line_alias * ( r-> dimension. y - 1);
+
+         for ( y = r-> shift. y; y < r-> shift. y + r-> dimension. y; y++) {
+            lx. l = r-> shift. x * r-> cos. l - y * r-> sin. l;
+#ifdef ROTATE_FONTS_FAST
+            lx. l += 0x8000;
+#endif            
+            ly. l = r-> shift. x * r-> sin. l + y * r-> cos. l + 0x8000;
+            for ( x = 0; x < r-> dimension. x; x++) {
+#ifdef ROTATE_FONTS_FAST
+               if ( ly. i. i >= 0 && ly. i. i < r-> orgBox. y &&
+                    lx. i. i >= 0 && lx. i. i < r-> orgBox. x) {
+                  Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
+                  if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7)))) 
+                     dst[ x >> 3] |= 1 << ( 7 - ( x & 7));
+               } 
+#else
+               if ( ly. i. i >= 0 && ly. i. i < r-> orgBox. y && lx. i. i >= 0 && lx. i. i < r-> orgBox. x) {
+                  long pv;
+                  Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
+                  pv = 0;
+                  if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))  
+                     pv += ( 0x10000 - lx. i. f);
+                  if ( lx. i. i < r-> orgBox. x - 1) {
+                     if ( src[( lx. i. i + 1) >> 3] & ( 1 << ( 7 - (( lx. i. i + 1) & 7))))  
+                        pv += lx. i. f; 
+                  } else {
+                     if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))  
+                        pv += 0x8000;
+                  }   
+                  if ( pv >= 0x8000)
+                     dst[ x >> 3] |= 1 << ( 7 - ( x & 7)); 
+               } 
+#endif               
+               lx. l += r-> cos. l;
+               ly. l += r-> sin. l;
+            }   
+            dst -= px-> bytes_per_line_alias;
+         }   
+      }   
+
+      prima_copy_xybitmap_inplace( ndata, r-> dimension.x, r-> dimension.y, px-> bytes_per_line_alias);
+      r-> map[index] = px;
+   }   
+
+   if ( result)
+      *result = r;
+   
+   return true;
+}   
