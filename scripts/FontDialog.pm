@@ -163,7 +163,6 @@ sub refresh_fontlist
 
    for ( sort { $a->{name} cmp $b->{name}} @{$::application-> fonts})
    {
-      next;
       next if $self->{fixedOnly} and $_->{pitch} != fp::Fixed;
       $fontList{$_->{name}} = $_;
       push ( @fontItems, $_->{name});
