@@ -53,10 +53,10 @@ apc_get_standard_clipboards( void)
 Bool
 apc_clipboard_create( Handle self)
 {
-   if ( !PClipboard( self)-> name
-        || strlen( PClipboard( self)-> name) != 9
-        || PClipboard(self)-> name[0] != 'C'
-        || strcmp( PClipboard( self)-> name, "Clipboard") != 0) {
+   if ( !((PClipboard)self)-> name
+        || strlen(((PClipboard)self)-> name) != 9
+        || ((PClipboard)self)-> name[0] != 'C'
+        || strcmp(((PClipboard)self)-> name, "Clipboard") != 0) {
       return false;
    }
    return true;
