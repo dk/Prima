@@ -91,7 +91,7 @@ my $g = $w-> insert( 'Prima::GridViewer' =>
       ['Ag',  'Cd', 'In', 'Sn', 'Sb',  'Te', 'J', '', '', '', 'Xe','','',''],
       ['Cs',  'Ba', 'La', 'Hf', 'Ta',  'W', 'Re', 'Os', 'Ir', 'Pt', '','','',''],
       ['Au',  'Hg', 'Tl', 'Pb', 'Bi',  'Po', 'At', '', '', '', 'Rn','','',''],
-      ['Fr',  'Ra', 'Ac', 'Rf',  'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds','','',''],
+      ['Fr',  'Ra', 'Ac', 'Rf',  'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds','','','',''],
       ['',  '', '', '', '',  '', '', '', '', '', '','','',''],
       ['Ce',  'Pr', 'Nd', 'Pm', 'Sm', 'Eu',  'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb','Lu'],
       ['Th',  'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No','Lr'],
