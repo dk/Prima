@@ -1092,4 +1092,104 @@ sub on_paint
 }
 
 
+package Prima::VB::AbstractOutline;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
+
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      bool    => [ 'vScroll','hScroll', 'dragable','autoHeight', 'showItemHint'],
+      uiv     => ['itemHeight','itemWidth','focusedItem','borderWidth','offset','topItem', 'indent'],
+      treeItems => ['items'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
+
+
+sub prf_adjust_default
+{
+   my ( $self, $p, $pf) = @_;
+   $self-> SUPER::prf_adjust_default( $p, $pf);
+   delete $pf->{$_} for qw (offset);
+}
+
+package Prima::VB::OutlineViewer;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::AbstractOutline);
+
+sub prf_adjust_default
+{
+   my ( $self, $p, $pf) = @_;
+   $self-> SUPER::prf_adjust_default( $p, $pf);
+   delete $pf->{$_} for qw (items);
+}
+
+
+package Prima::VB::StringOutline;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::AbstractOutline);
+
+sub on_paint
+{
+   my ( $self, $canvas) = @_;
+   my @r = $self->paint_exterior( $canvas);
+   my $c = '';
+   my $i = $self-> prf('items');
+   my $traverse;
+   if ( $i && scalar @r) {
+      my $fh = $canvas-> font-> height;
+      my $max = int(($r[3] - $r[1]) / $fh) + 1;
+      $traverse = sub{
+         my ( $x, $l) = @_;
+         goto ENOUGH unless $max--;
+         $c .= "\t\t" x $l;
+         $c .= $x->[2] ? '[-] ' : '[+] ' if $x->[1];
+         $c .= $x->[0] . "\n";
+         $l++;
+         if ( $x->[1] && $x->[2]) {
+            $traverse->($_, $l) for @{$x->[1]};
+         }
+      };
+      $traverse-> ($_,0) for @$i;
+ENOUGH:
+      $canvas-> draw_text( $c, @r,
+         dt::NoWordWrap | dt::ExpandTabs |
+         dt::NewLineBreak | dt::Left | dt::Top | dt::UseExternalLeading |
+         dt::UseClip
+      );
+   }
+   $self-> common_paint($canvas);
+}
+
+
+sub prf_items  { $_[0]->repaint; }
+
+package Prima::VB::DirectoryOutline;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::AbstractOutline);
+
+sub prf_adjust_default
+{
+   my ( $self, $p, $pf) = @_;
+   $self-> SUPER::prf_adjust_default( $p, $pf);
+   delete $pf->{$_} for qw ( items dragable );
+}
+
+
+sub on_paint
+{
+   my ( $self, $canvas) = @_;
+   my @r = $self->paint_exterior( $canvas);
+   $canvas-> draw_text( "usr\n\tlocal\n\t\tshare\n\t\t\texamples\n\t\t\t\tetc", @r,
+      dt::NoWordWrap | dt::ExpandTabs |
+      dt::NewLineBreak | dt::Left | dt::Top | dt::UseExternalLeading |
+      dt::UseClip
+   )  if scalar @r;
+   $self-> common_paint($canvas);
+}
+
+
 1;

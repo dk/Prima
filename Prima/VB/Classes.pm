@@ -989,7 +989,7 @@ use vars qw(@ISA);
 sub open
 {
    my $self = $_[0];
-   $self-> SUPER::init( @_);
+   $self-> SUPER::open( @_);
    $self-> {A}-> maxLen( 1);
 }
 
@@ -2069,16 +2069,19 @@ sub open
                my @images = ( $i1);
                if ( $i1-> load( $f, index => 1)) {
                    my $maxH = $i1-> height;
+                   my $maxW = $i1-> width;
                    while ( 1) {
                       my $j = $in-> create;
                       last unless $j-> load( $f, index => $ix++);
                       push ( @images, $j);
-                      my $h = $j-> height;
-                      $maxH = $h if $h > $maxH;
+                      my @sz = $j-> size;
+                      $maxH = $sz[1] if $sz[1] > $maxH;
+                      $maxW = $sz[0] if $sz[0] > $maxW;
                    }
                    my $dd = Prima::Dialog-> create(
                       centered => 1,
                       visible  => 0,
+                      borderStyle => bs::Sizeable,
                       size     => [ 300, 300],
                       name     => 'Select image',
                    );
@@ -2086,6 +2089,10 @@ sub open
                       size     => [ $dd-> size],
                       origin   => [ 0,0],
                       itemHeight => $maxH,
+                      itemWidth  => $maxW,
+                      multiColumn => 1,
+                      autoWidth   => 0,
+                      growMode    => gm::Client,
                       onDrawItem => sub {
                          my ($self, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focusedItem) = @_;
                          my $clrSave = $self-> color;
@@ -2257,10 +2264,7 @@ sub write
       'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data).'\')';
 }
 
-package MenuOutline;
-use vars qw(@ISA);
-@ISA = qw(Prima::Outline);
-
+package MyOutline;
 
 sub on_keydown
 {
@@ -2279,51 +2283,55 @@ sub on_keydown
    }
 }
 
+sub new_item
+{
+}
+
 sub new
 {
-   my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
+   my $f = $_[0]-> focusedItem;
+   my ( $x, $l) = $_[0]-> get_item( $f);
    my ( $p, $o) = $_[0]-> get_item_parent( $x);
    $o = -1 unless defined $o;
-   $_[0]-> insert_items( $p, $o + 1,
-      [['New Item', { text => 'New Item',
-      action => $Prima::VB::Types::menuItems::menuDefaults{action}}], undef, 0],
-   );
-   $_[0]-> {master}-> enter_menuitem( $x);
+   $_[0]-> insert_items( $p, $o + 1, $_[0]-> new_item);
    $_[0]-> {master}-> change;
+   ( $x, $l) = $_[0]-> get_item( $f + 1);
+   $_[0]-> focusedItem( $f + 1);
+   $_[0]-> {master}-> enter_menuitem( $x);
 }
 
 sub makenode
 {
-   my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
+   my $f = $_[0]-> focusedItem;
+   my ( $x, $l) = $_[0]-> get_item( $f);
    return if !$x;
    if ( $x->[1]) {
-      splice( @{$x->[1]}, 0, 0, [
-         ['New Item', { text => 'New Item',
-         action => $Prima::VB::Types::menuItems::menuDefaults{action}}], undef, 0,
-      ]);
+      splice( @{$x->[1]}, 0, 0, $_[0]-> new_item);
       $_[0]-> reset_tree;
       $_[0]-> update_tree;
       $_[0]-> repaint;
       $_[0]-> reset_scrolls;
    } else {
-      $x-> [1] = [
-         [['New Item', { text => 'New Item',
-         action => $Prima::VB::Types::menuItems::menuDefaults{action}}], undef, 0],
-      ];
+      $x-> [1] = [$_[0]-> new_item];
       $x-> [2] = 0;
    }
-   $_[0]-> adjust( $_[0]-> focusedItem, 1);
-   $_[0]-> {master}-> enter_menuitem( $x);
+   $_[0]-> adjust( $f, 1);
    $_[0]-> {master}-> change;
+   ( $x, $l) = $_[0]-> get_item( $f + 1);
+   $_[0]-> focusedItem( $f + 1);
+   $_[0]-> {master}-> enter_menuitem( $x);
 }
 
 sub del
 {
-   my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
+   my $f = $_[0]-> focusedItem;
+   my ( $x, $l) = $_[0]-> get_item( $f);
    $_[0]-> delete_item( $x);
-   ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
-   $_[0]-> {master}-> enter_menuitem( $x);
    $_[0]-> {master}-> change;
+   $f-- if $f;
+   ( $x, $l) = $_[0]-> get_item( $f);
+   $_[0]-> focusedItem( $f);
+   $_[0]-> {master}-> enter_menuitem( $x);
 }
 
 
@@ -2333,6 +2341,17 @@ sub on_dragitem
    $self-> SUPER::on_dragitem( @_);
    $self-> {master}-> change;
 }
+
+package MenuOutline;
+use vars qw(@ISA);
+@ISA = qw(Prima::Outline MyOutline);
+
+sub new_item
+{
+   return  [['New Item', { text => 'New Item',
+      action => $Prima::VB::Types::menuItems::menuDefaults{action}}], undef, 0];
+}
+
 
 package MPropListViewer;
 use vars qw(@ISA);
@@ -2481,18 +2500,16 @@ sub enter_menuitem
    $self-> {current} = $x;
    $self-> close_item;
    my $l = $self->{A};
-   $l->{fHeight} = $l-> font-> height;
    if ( $self-> {current}) {
-      $l-> {id}    = [ sort keys %menuProps];
-      $l-> {check} = [];
+      my @id = sort keys %menuProps;
+      my @chk = ();
       my %ix  = ();
-      $l-> {index} = \%ix;
       my $num = 0;
-      for ( @{$l-> {id}}) {
-         push( @{$l-> {check}}, exists $x->[0]->[1]->{$_} ? 1 : 0);
+      for ( @id) {
+         push( @chk, exists $x->[0]->[1]->{$_} ? 1 : 0);
          $ix{$_} = $num++;
       }
-      $l-> set_count( scalar @{$l-> {id}});
+      $l-> reset_items( \@id, @chk, \%ix);
       $self-> open_item;
    } else {
       $l-> {id} = [];
@@ -2740,7 +2757,7 @@ sub write
 {
    my ( $class, $id, $data, $flag) = @_;
    return 'undef' unless defined $data;
-   my $c = "\n";
+   my $c = '';
    my $traverse;
    $traverse = sub {
       my ( $data, $level) = @_;
@@ -2780,7 +2797,7 @@ sub write
       $c .= "], \n";
    };
    $traverse->( $_, 0) for @$data;
-   return "[$c]";
+   return "\n[$c]";
 }
 
 
@@ -2960,6 +2977,101 @@ sub write
    return $txt;
 }
 
+package ItemsOutline;
+use vars qw(@ISA);
+@ISA = qw(Prima::StringOutline MyOutline);
+
+sub new_item
+{
+   return  ['New Item', undef, 0];
+}
+
+package Prima::VB::Types::treeItems;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::generic);
+
+
+sub open
+{
+   my $self = $_[0];
+   my $h = $self-> {container}-> height;
+   my $w = $self-> {container}-> width;
+   my $fh = $self-> {container}-> font-> height;
+
+   $self-> {A} = $self-> {container}-> insert( ItemsOutline =>
+      origin => [ 0, $fh + 4],
+      size   => [ $w - 1, $h - $fh - 4],
+      growMode => gm::Client,
+      hScroll => 1,
+      vScroll => 1,
+      popupItems => [
+         ['~New' => q(new),],
+         ['~Make node' => q(makenode),],
+         ['~Delete' => q(del),],
+      ],
+      onSelectItem => sub {
+         my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
+         $self-> enter_menuitem( $x);
+      },
+   );
+   $self-> {A}->{master} = $self;
+   $self-> {B} = $self-> {container}-> insert( InputLine =>
+      origin => [ 0, 1],
+      width  => $w,
+      growMode => gm::Floor,
+      text => '',
+      onChange => sub {
+         my ( $x, $l) = $self-> {A}-> get_item( $self-> {A}-> focusedItem);
+         if ( $x) {
+            $x->[0] = $_[0]-> text;
+            $self-> change;
+            $self-> {A}-> reset_tree;
+            $self-> {A}-> update_tree;
+            $self-> {A}-> repaint;
+         }
+      },
+   );
+}
+
+sub enter_menuitem
+{
+   my ( $self, $x ) = @_;
+   $self-> {B}-> text( $x ? $x->[0] : '');
+}
+
+sub get
+{
+   return $_[0]-> {A}-> items;
+}
+
+sub set
+{
+   return $_[0]-> {A}-> items( $_[1]);
+}
+
+
+sub write
+{
+   my ( $class, $id, $data) = @_;
+   return '[]' unless $data;
+   my $c = '';
+   my $traverse;
+   $traverse = sub {
+      my ($x,$lev) = @_;
+      $c .= ' ' x ( $lev * 3);
+      $c .= "['". Prima::VB::Types::generic::quotable($x->[0])."', ";
+      if ( $x-> [1]) {
+         $lev++;
+         $c .= "[\n";
+         $traverse->($_, $lev) for @{$x->[1]};
+         $lev--;
+         $c .= ' ' x ( $lev * 3)."], $$x[2]";
+      }
+      $c .= "],\n";
+   };
+   $traverse->($_, 0) for @$data;
+   return "\n[$c]";
+}
 
 
 1;

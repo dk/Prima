@@ -304,32 +304,27 @@ sub enter_widget
 
       my @ef = sort keys %{$self->{current}-> {events}};
       my $ep = $self-> {elist};
-      $ep-> {id}     = \@ef;
-      $ep-> {check}  = [];
+      my @check = ();
       my %ix = ();
       my $num = 0;
-      for ( @{$ep-> {id}}) {
-         push( @{$ep-> {check}}, exists $pf->{$_} ? 1 : 0);
+      for ( @ef) {
+         push( @check, exists $pf->{$_} ? 1 : 0);
          $ix{$_} = $num++;
          delete $df{$_};
       }
-      $ep-> {fHeight} = $ep-> font-> height;
-      $ep-> {index}  = {%ix};
-      $ep-> set_count( scalar @{$ep-> {id}});
+      $ep-> reset_items( [@ef], [@check], {%ix});
       $ep-> focusedItem( $ix{$oid}) if defined $oid and defined $ix{$oid};
 
       my $lp = $self-> {plist};
-      $lp-> {id}     = [ sort keys %df];
-      $lp-> {check}  = [];
+      @ef = sort keys %df;
       %ix = ();
+      @check = ();
       $num = 0;
-      for ( @{$lp-> {id}}) {
-         push( @{$lp-> {check}}, exists $pf->{$_} ? 1 : 0);
+      for ( @ef) {
+         push( @check, exists $pf->{$_} ? 1 : 0);
          $ix{$_} = $num++;
       }
-      $lp-> {fHeight} = $lp-> font-> height;
-      $lp-> {index}   = {%ix};
-      $lp-> set_count( scalar @{$lp-> {id}});
+      $lp-> reset_items( [@ef], [@check], {%ix});
       $lp-> focusedItem( $ix{$oid}) if defined $oid and defined $ix{$oid};
 
       $self-> Selector-> text( $self-> {current}-> name)
@@ -1630,8 +1625,8 @@ sub form_run
 
 package VisualBuilder;
 
-$VB::ico = Prima::Icon-> create;
-$VB::ico = undef unless $VB::ico-> load("icons/vb.gif");
+$VB::ico = Prima::Image-> create;
+$VB::ico = undef unless $VB::ico-> load("icons/vb1.bmp");
 $VB::main = MainPanel-> create;
 $VB::inspector = ObjectInspector-> create(
    top => $VB::main-> bottom - 12 - $::application-> get_system_value(sv::YTitleBar)

@@ -190,6 +190,27 @@ sub classes
          page   => 'Additional',
          icon   => 'icons/cslider.bmp',
       },
+      'Prima::StringOutline' => {
+         RTModule => 'Prima::Outlines',
+         module => 'Prima::VB::CoreClasses',
+         class  => 'Prima::VB::StringOutline',
+         page   => 'General',
+         icon   => 'icons/outline.bmp',
+      },
+      'Prima::OutlineViewer' => {
+         RTModule => 'Prima::Outlines',
+         module => 'Prima::VB::CoreClasses',
+         class  => 'Prima::VB::OutlineViewer',
+         page   => 'Abstract',
+         icon   => 'icons/outline.bmp',
+      },
+      'Prima::DirectoryOutline' => {
+         RTModule => 'Prima::Outlines',
+         module => 'Prima::VB::CoreClasses',
+         class  => 'Prima::VB::DirectoryOutline',
+         page   => 'Additional',
+         icon   => 'icons/dlistout.bmp',
+      },
    );
 }
 
