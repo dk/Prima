@@ -44,6 +44,7 @@ object Widget( Drawable)
    import   void     enable_commands();
    method   void     end_paint();
    method   void     end_paint_info();
+   method   Handle   first();
    c_only   Handle   first_that( void * actionProc, void * params);
    c_only   void     handle_event ( PEvent event);
    method   void     hide();
@@ -54,6 +55,7 @@ object Widget( Drawable)
    method   void     invalidate_rect( Rect rect);
    c_only   Bool     is_child( Handle possibleOwner);
    method   void     key_event( int command, int code, int key = kbNoKey, int mod = 0, int repeat = 1, Bool post = 0);
+   method   Handle   last();
    method   void     locate       ( Rect r);
    method   void     lock();
    method   void     mouse_event( int command = cmMouseDown, int button = mbLeft, int mod = 0, int x = 0, int y = 0, Bool dblclk = 0, Bool post = 0);
