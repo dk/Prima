@@ -316,6 +316,7 @@ typedef struct _drawable_sys_data
    Pixmap user_p_source;
    Pixmap user_p_mask;
    struct {
+      int base_line                     : 1;
       int clip_owner			: 1;
       int cursor_visible		: 1;
       int do_size_hints			: 1;
@@ -327,6 +328,7 @@ typedef struct _drawable_sys_data
       int mapped			: 1;
       int no_size			: 1;
       int paint                 	: 1;
+      int paint_base_line               : 1;
       int paint_pending                 : 1;
       int process_configure_notify	: 1;
       int reload_font			: 1;

@@ -479,6 +479,7 @@ Unbuffered:
    }
 
    XX-> paint_rop = XX-> rop;
+   XX-> flags. paint_base_line = XX-> flags. base_line;
    XX-> saved_font = PDrawable( self)-> font;
    XX-> fore = XX-> saved_fore;
    XX-> back = XX-> saved_back;
@@ -985,6 +986,9 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 {
    DEFXX;
    SHIFT( x, y);
+
+   if ( !XX-> flags. paint_base_line)
+      y += XX-> font-> fs-> descent;
    XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
    return true;
@@ -1223,8 +1227,12 @@ apc_gp_get_text_opaque( Handle self)
 Bool
 apc_gp_get_text_out_baseline( Handle self)
 {
-   DOLBUG( "apc_gp_get_text_out_baseline()\n");
-   return false;
+   DEFXX;
+   if ( XX-> flags. paint) {
+      return XX-> flags. paint_base_line;
+   } else {
+      return XX-> flags. base_line;
+   }
 }
 
 Bool
@@ -1466,6 +1474,11 @@ apc_gp_set_text_opaque( Handle self, Bool opaque)
 Bool
 apc_gp_set_text_out_baseline( Handle self, Bool baseline)
 {
-   DOLBUG( "apc_gp_set_text_out_baseline()\n");
+   DEFXX;
+   if ( XX-> flags. paint) {
+      XX-> flags. paint_base_line = !!baseline;
+   } else {
+      XX-> flags. base_line = !!baseline;
+   }
    return true;
 }
