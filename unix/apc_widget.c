@@ -148,7 +148,7 @@ EXIT:
    return ret;
 }   
 
-static void
+void
 process_transparents( Handle self)
 {
    int i;

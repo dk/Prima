@@ -896,6 +896,9 @@ prima_send_cmSize( Handle self, Point oldSize);
 extern Bool
 prima_no_input( PDrawableSysData XX, Bool ignore_horizon, Bool beep);
 
+extern void
+process_transparents( Handle self);
+
 extern Bool
 apc_window_set_visible( Handle self, Bool show);
 

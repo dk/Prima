@@ -829,6 +829,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = true;
       }
+
+      process_transparents(self);
       return;
    }
    case GraphicsExpose: {
