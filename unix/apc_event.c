@@ -677,7 +677,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case MotionNotify: {
       guts. last_time = ev-> xmotion. time;
-      if (prima_no_input(XX, true, false)) return;
       if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
          XWindow rx;
          XTranslateCoordinates( DISP, X_WINDOW, PWidget(guts. grab_widget)-> handle, 
@@ -718,7 +717,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);
       }   
       guts. last_time = ev-> xcrossing. time;
-      if (prima_no_input(XX, true, false)) return;
       e. cmd = cmMouseEnter;
      CrossingEvent:
       if ( ev-> xcrossing. subwindow != None) return;
@@ -728,7 +726,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case LeaveNotify: {
       guts. last_time = ev-> xcrossing. time;
-      if (prima_no_input(XX, true, false)) return;
       e. cmd = cmMouseLeave;
       goto CrossingEvent;
    }
