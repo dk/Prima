@@ -212,6 +212,8 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 
    if ( str_len == 1 && keycode == kbNoKey && *str_buf == ' ')
       keycode = kbSpace;
+   if (( keycode == kbTab || keycode == kbKPTab) && ( ev-> state & ShiftMask))
+      keycode = kbBackTab;
    if ( keycode == kbNoKey) {
       if ( keysym <= 0x0000007f && !isalpha(keysym & 0x000000ff))
 	 keycode = keysym & 0x000000ff;
