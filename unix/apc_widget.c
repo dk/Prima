@@ -267,6 +267,9 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       XChangeWindowAttributes( DISP, X_WINDOW, CWWinGravity, &attrs);
       XReparentWindow( DISP, X_WINDOW, parent, pos. x, 
          X(owner)-> size.y + X(owner)-> menuHeight - pos. y - X(self)-> size. y);
+      XX-> ackOrigin = pos;
+      XX-> ackSize   = XX-> size;
+      XX-> flags. mapped = XX-> flags. want_visible;
       process_transparents( self);
       return true;
    }   
@@ -623,7 +626,7 @@ apc_widget_is_showing( Handle self)
    XWindowAttributes attrs;
    DEFXX;
 
-   if ( XX && XX-> flags. mapped
+   if ( XX  
 	&& XGetWindowAttributes( DISP, XX->udrawable, &attrs)
 	&& attrs. map_state == IsViewable)
       return true;
