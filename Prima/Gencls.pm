@@ -1704,6 +1704,7 @@ LABEL
          print HEADER ",\n" if $stn > 0;
          print HEADER "         ";
          print HEADER "( $ifpropset) ? ( " if $property && !$reuseStructVar;
+         my $defPropParm;
          if ( exists $structs{$lVar} || exists $arrays{$lVar})
          {
             if ( exists $structs{$lVar}) {
@@ -1712,6 +1713,7 @@ LABEL
                $stn += $arrays{$lVar}[0];
             };
             print HEADER "$ptr$incRes$structCount";
+            $defPropParm = "${lVar}_buffer";
             $structCount++;
          } else {
            if ( $mtVar eq "SV*") {
@@ -1721,9 +1723,10 @@ LABEL
            } else {
               print HEADER "$ptr( $lVar) $xsConv{$mtVar}[1]( ST( $stn)$xsConv{$mtVar}[8])";
            }
+           $defPropParm = "($lVar)0";
            $stn++;
          }
-         print HEADER ") : $incRes" if $property && !$reuseStructVar; # feature that $incRes is same type as 1-st param for properties
+         print HEADER ") : $defPropParm" if $property && !$reuseStructVar;
       }
       print HEADER "\n";
       print HEADER "      );\n";
