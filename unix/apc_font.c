@@ -876,10 +876,18 @@ query_diff( PFontInfo fi, PFont f, char * lcname, Bool by_size)
    }
    
    if ( fi-> flags. name && strcmp( lcname, fi-> lc_name) == 0) {
-      if ( fi-> flags. sloppy) detail_font_info( fi, nil, false, false);
+      if ( fi-> flags. sloppy) {
+         Font xf = *f;
+         detail_font_info( fi, &xf, false, false);
+         fi-> flags. sloppy = 0;
+      }
       diff += 0.0;
    } else if ( fi-> flags. family && strcmp( lcname, fi-> lc_family) == 0) {
-      if ( fi-> flags. sloppy) detail_font_info( fi, nil, false, false);
+      if ( fi-> flags. sloppy) {
+         Font xf = *f;
+         detail_font_info( fi, &xf, false, false);
+         fi-> flags. sloppy = 0;
+      }
       diff += 1000.0;
    } else if ( fi-> flags. family && strstr( fi-> lc_family, lcname)) {
       diff += 2000.0;
