@@ -2365,7 +2365,7 @@ EOF
        my $cmd = "\t\@pod2man --lax --section=\%d \%s " . ( length( $Config{gzip} ) ? 
            "| $Config{gzip} -c > \%s.gz\n" : 
            "> \%s\n" );
-       print MAKE "\t\@echo Installing man pages...\n";
+       print MAKE "\n\t\@echo Installing man pages...\n";
        while ( scalar @allman ) {
           push @man_to_remove, $allman[1];
           $allman[1] =~ m/\.(\d+)$/;

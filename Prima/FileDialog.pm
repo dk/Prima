@@ -319,6 +319,7 @@ sub path
    my $p = $_[1];
    $p =~ s{^([^\\\/]*[\\\/][^\\\/]*)[\\\/]$}{$1};
    $p .= '/' unless $p =~ m/[\/\\]$/;
+   $p =~ s/^\/\//\//; # cygwin barfs on // paths
    unless( scalar( stat $p)) {
       $p = "";
    } else {
@@ -666,7 +667,7 @@ sub profile_default
    }
 }
 
-my $unix = Prima::Application-> get_system_info->{apc} == apc::Unix;
+my $unix = (Prima::Application-> get_system_info->{apc} == apc::Unix) || ($^O =~ /cygwin/);
 
 sub canonize_mask
 {
