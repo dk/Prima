@@ -1,23 +1,15 @@
 # $Id$
 # todo:
-# - fp screen2object, fp coords
-# - fix area rectangle
-# - tags
-# - keyboard walk, focused/next/prev methods
-# - object zorder shortcuts
 # - objects: 
-#      arc(style=pieslice,chord,arc:nofill)
-#      bitmap
-#      oval -> ellipse
 #      polyline -> line(arrow,smooth)
 #      polygon(smooth)
-#      rectangle -> rectangle
 #      text(font)
 #      widget
-# - gp:lineJoin,fillRule,tileoffset
+# - gp:tileoffset
 use strict;
-use Prima qw(Application ScrollWidget);
+use Prima qw(Application StdBitmap);
 
+use Prima qw(ScrollWidget);
 # A widget with two scrollbars. Contains set of objects, that know
 # how to draw themselves. The graphic objects hierarchy starts
 # from GraphicObject class
@@ -36,6 +28,7 @@ sub profile_default
       paneHeight => 0,
       alignment  => ta::Left,
       valignment => ta::Bottom,
+      selectable => 1,
    }
 }
 
@@ -115,6 +108,18 @@ sub on_mouseclick
    $self-> propagate_mouse_event( 'on_mousemove', $x, $y, $mod, $x, $y, $dbl);
 }
 
+sub on_keydown
+{
+   my ( $self, $code, $key, $mod, $repeat) = @_;
+   $self-> propagate_event( 'on_keydown', $code, $key, $mod, $repeat);
+}
+
+sub on_keyup
+{
+   my ( $self, $code, $key, $mod) = @_;
+   $self-> propagate_event( 'on_keyup', $code, $key, $mod);
+}
+
 sub delete_object
 {
    my ( $self, $obj) = ( shift, shift);
@@ -128,11 +133,19 @@ sub delete_object
 sub insert_object
 {
    my ( $self, $class) = ( shift, shift);
-   push @{$self->{objects}}, $class-> new(
+   my $obj;
+   $self-> attach_object( $obj = $class-> new(
       @_,
       owner => $self,
-   );
-   $self->{objects}->[-1];
+   ));
+   $obj;
+}
+
+sub attach_object 
+{
+   push @{$_[0]->{objects}}, $_[1];
+   $_[1]-> {owner} = $_[0];
+   $_[1]-> repaint;
 }
 
 sub object2screen
@@ -206,11 +219,7 @@ sub screen2object
       push @ret, ($_[$i]   + $d[0]) / $zoom;
       push @ret, ($_[$i+1] + $d[1]) / $zoom if defined $_[$i+1];
    }
-   return map {
-      ( $_ < 0) ?
-         int( $_ - .5) :
-         int( $_ + .5)
-   } @ret;
+   @ret;
 }
 
 sub position2object
@@ -218,7 +227,7 @@ sub position2object
    my ( $self, $x, $y, $skip_hittest) = @_;
    my ( $nx, $ny) = $self-> screen2object( $x, $y);
    $self-> push_event;
-   for my $obj ( @{$self->{objects}}) {
+   for my $obj ( reverse @{$self->{objects}}) {
       next unless $obj-> visible;
       my @r = $obj-> rect;
       if ( $r[0] <= $nx && $r[1] <= $ny && $r[2] >= $nx && $r[3] >= $ny) {
@@ -240,6 +249,17 @@ sub propagate_mouse_event
    return unless $obj;
    $self-> push_event;
    $obj-> $event( @params);
+   $self-> pop_event;
+}
+
+sub propagate_event
+{
+   my ( $self, $event, @params) = @_;
+   $self-> push_event;
+   for ( reverse $self-> objects) {
+      $_-> $event( @params);
+      last unless $self-> eventFlag;
+   }
    $self-> pop_event;
 }
 
@@ -315,27 +335,44 @@ sub zoom
 sub zorder
 {
    my ( $self, $obj, $command) = @_;
-   my $robj = grep { $_ == $obj } @{$self->{objects}};
-   return unless $robj;
+   my $idx;
+   my $o = $self-> {objects};
+   if ( $command ne 'first' and $command ne 'last') {
+      for ( $idx = 0; $idx < @$o; $idx++) {
+	 last if $obj == $$o[$idx];
+      }
+      return if $idx == @$o;
+   }
    if ( $command eq 'front') {
-      @{$self->{objects}} = grep { $_ != $obj } @{$self->{objects}}; 
-      push @{$self->{objects}}, $obj;
+      @$o = grep { $_ != $obj } @$o;
+      push @$o, $obj;
    } elsif ( $command eq 'back') {
-      @{$self->{objects}} = grep { $_ != $obj } @{$self->{objects}}; 
-      unshift @{$self->{objects}}, $obj;
+      @$o = grep { $_ != $obj } @$o;
+      unshift @$o, $obj;
+   } elsif ( $command eq 'first') {
+      return $$o[0];
+   } elsif ( $command eq 'last') {
+      return $$o[-1];
+   } elsif ( $command eq 'next') {
+      return $$o[$idx+1];
+   } elsif ( $command eq 'prev') {
+      return $idx ? $$o[$idx-1] : undef;
    } else {
       my $i;
-      my @o = grep { $_ != $obj } @{$self->{objects}}; 
-      return if @o == @{$self->{objects}};
-      @{$self->{objects}} = @o;
-      for ( $i = 0; $i < @{$self->{objects}}; $i++) {
-         next unless $self->{objects}->[$i] != $command;
-	 splice @{$self->{objects}}, $i, 0, $obj;
+      my @o = grep { $_ != $obj } @$o;
+      return if @o == @$o;
+      @$o = @o;
+      for ( $i = 0; $i < @$o; $i++) {
+         next unless $$[$i] != $command;
+	 splice @$o, $i, 0, $obj;
 	 last;
       }
    }
+   $obj-> on_zorderchanged();
    $obj-> repaint;
 }
+
+sub objects {@{$_[0]->{objects}}}
 
 package Prima::CanvasEdit;
 use vars qw(@ISA);
@@ -352,14 +389,13 @@ sub on_paint
       color => 0,
    );
    my @r = $self-> object2screen( 0, 0, $self-> paneSize);
-   $canvas-> rectangle( $r[0]-1, $r[1]-1, $r[2]+1, $r[3]+1);
+   $canvas-> rectangle( $r[0]-1, $r[1]-1, $r[2], $r[3]);
    return unless $self-> {selection};
    @r = $self-> object2screen($self->{selection}-> rect);
    $r[2]--;
    $r[3]--;
    $canvas-> rect_focus(@r);
 }
-
 
 sub on_mousedown
 {
@@ -369,6 +405,7 @@ sub on_mousedown
       my ( $obj, $nx, $ny) = $self-> position2object( $x, $y);
       if ( $obj) {
          $self-> {anchor} = [ $nx, $ny ];
+         $obj-> bring_to_front;
          $self-> selected_object( $found = $self-> {transaction} = $obj);
 	 $self-> capture(1, $self);
       }
@@ -405,13 +442,34 @@ sub on_mousemove
    $self-> SUPER::on_mousemove( $mod, $x, $y);
 }
 
+sub on_keydown
+{
+   my ( $self, $code, $key, $mod, $repeat) = @_;
+   if ( $key == kb::Tab || $key == kb::BackTab) {
+      my $new = $self-> selected_object;
+      if ( $key == kb::Tab) {
+         $new = $self-> zorder( $new, $new ? 'prev' : 'last');
+	 $new = $self-> zorder( undef, 'last') unless $new;
+      } else {
+         $new = $self-> zorder( $new, $new ? 'next' : 'first');
+	 $new = $self-> zorder( undef, 'first') unless $new;
+      }
+      if ( $new) {
+         $self-> selected_object( $new);
+	 $self-> clear_event;
+	 return;
+      }
+   }
+   $self-> SUPER::on_keydown( $code, $key, $mod, $repeat);
+}
+
 sub selected_object
 {
    return $_[0]-> {selection} unless $#_;
    return if $_[1] && $_[1]-> owner != $_[0];
    $_[0]-> {selection}-> repaint if $_[0]-> {selection};
    $_[0]-> {selection} = $_[1];
-   $_[0]-> zorder( $_[0]-> {selection}, 'front') if $_[0]-> {selection};
+   $_[0]-> {selection}-> repaint if $_[0]-> {selection};
 }
 
 
@@ -421,7 +479,7 @@ use vars qw(%defaults @uses);
 {
    @uses = qw( backColor color fillPattern font lineEnd linePattern
                lineWidth region rop rop2 splinePrecision textOpaque 
-	       textOutBaseline);
+	       textOutBaseline lineJoin fillWinding);
    my $pd = Prima::Drawable-> profile_default();
    %defaults = map { $_ => $pd->{$_} } @uses;
 }
@@ -451,6 +509,7 @@ sub profile_default
    origin  => [ 0, 0],
    size    => [ 100, 100],
    visible => 1,
+   name    => '',
 }
 
 sub uses
@@ -475,6 +534,16 @@ sub on_hittest
 {
    my ( $self, $x, $y) = @_;
    1;
+}
+
+sub on_keydown
+{
+   my ( $self, $code, $key, $mod, $repeat) = @_;
+}
+
+sub on_keyup
+{
+   my ( $self, $code, $key, $mod) = @_;
 }
 
 sub on_mousedown
@@ -505,6 +574,11 @@ sub on_move
 sub on_size
 {
    my ( $self, $oldx, $oldy, $x, $y) = @_;
+}
+
+sub on_zorderchanged
+{
+   my ( $self) = @_;
 }
 
 sub repaint
@@ -542,10 +616,9 @@ sub _end_update
    delete $self->{_update};
 }
 
-sub lock
-{
-   $_[0]->{_lock_update}++;
-}
+sub name { $#_ ? $_[0]->{name} = $_[1] : $_[0]->{name} }
+
+sub lock { $_[0]->{_lock_update}++ }
 
 sub unlock
 {
@@ -555,7 +628,10 @@ sub unlock
 
 sub owner
 {
-   return $_[0]-> {owner};
+   return $_[0]-> {owner} unless $#_;
+   $_[0]-> {owner}-> delete_object( $_[0]) if $_[0]-> {owner};
+   $_[0]-> {owner} = undef;
+   $_[1]-> attach_object( $_[0]) if $_[1];
 }
 
 sub left   
@@ -646,6 +722,14 @@ sub size
    $self-> _end_update;
 }
 
+sub bring_to_front { $_[0]-> owner-> zorder( $_[0], 'front') }
+sub send_to_back   { $_[0]-> owner-> zorder( $_[0], 'back') }
+sub insert_behind  { $_[0]-> owner-> zorder( $_[0], $_[1]) }
+sub first          { $_[0]-> owner-> zorder( $_[0], 'first') }
+sub last           { $_[0]-> owner-> zorder( $_[0], 'last') }
+sub next           { $_[0]-> owner-> zorder( $_[0], 'next') }
+sub prev           { $_[0]-> owner-> zorder( $_[0], 'prev') }
+
 sub visible
 {
    return $_[0]->{visible} unless $#_;
@@ -703,6 +787,20 @@ sub lineEnd
 {
    return $_[0]-> {lineEnd} unless $#_;
    $_[0]-> {lineEnd} = $_[1];
+   $_[0]-> repaint;
+}
+
+sub lineJoin
+{
+   return $_[0]-> {lineJoin} unless $#_;
+   $_[0]-> {lineJoin} = $_[1];
+   $_[0]-> repaint;
+}
+
+sub fillWinding
+{
+   return $_[0]-> {fillWinding} unless $#_;
+   $_[0]-> {fillWinding} = $_[1];
    $_[0]-> repaint;
 }
 
@@ -818,7 +916,6 @@ sub on_paint
       $canvas-> backColor( $self-> {fillBackColor});
       $canvas-> bar( 0, 0, $width - 1, $height - 1);
    }
-   $canvas-> clipRect( 0, 0, $canvas-> size);
    if ( $self-> {outline}) {
       my $lw1 = int(($self-> {lineWidth} || 1) / 2);
       my $lw2 = int((($self-> {lineWidth} || 1) - 1) / 2) + 1;
@@ -849,18 +946,114 @@ sub on_paint
    }
 }
 
+package Prima::Canvas::Arc;
+use vars qw(@ISA);
+@ISA = qw(Prima::Canvas::Outlined);
+
+sub profile_default 
+{
+   $_[0]-> SUPER::profile_default,
+   start => 0,
+   end   => 90,
+}
+
+sub on_paint
+{
+   my ( $self, $canvas, $width, $height) = @_;
+   my ( $cx, $cy) = (int(($width - 1) / 2), int(($height - 1)/ 2));
+   my $lw = ($self-> {lineWidth} || 1) - 1;
+   $canvas-> arc( $cx, $cy, $width - $lw, $height - $lw, $self->{start}, $self->{end});
+}
+
+package Prima::Canvas::FilledArc;
+use vars qw(@ISA);
+@ISA = qw(Prima::Canvas::FilledOutlined);
+
+sub profile_default 
+{
+   $_[0]-> SUPER::profile_default,
+   start => 0,
+   end   => 90,
+   mode  => 'chord',
+}
+
+sub on_paint
+{
+   my ( $self, $canvas, $width, $height) = @_;
+   my ( $cx, $cy) = (int(($width - 1) / 2), int(($height - 1)/ 2));
+   my $mode1 = ($self->{mode} eq 'chord') ? 'chord' : 'sector';
+   my $mode2 = ($self->{mode} eq 'chord') ? 'fill_chord' : 'fill_sector';
+   if ( $self-> {fill}) {
+      $canvas-> color( $self-> {backColor});
+      $canvas-> backColor( $self-> {fillBackColor});
+      $canvas-> $mode2( $cx, $cy, $width, $height, $self->{start}, $self->{end});
+   }
+   if ( $self-> {outline}) {
+      my $lw = ($self-> {lineWidth} || 1) - 1;
+      $canvas-> color( $self-> {color});
+      $canvas-> backColor( $self-> {outlineBackColor});
+      $canvas-> $mode1( $cx, $cy, $width - $lw, $height - $lw, $self->{start}, $self->{end});
+   }
+}
+
+package Prima::Canvas::Chord;
+use vars qw(@ISA);
+@ISA = qw(Prima::Canvas::FilledArc);
+
+package Prima::Canvas::Sector;
+use vars qw(@ISA);
+@ISA = qw(Prima::Canvas::FilledArc);
+
+sub profile_default 
+{
+   $_[0]-> SUPER::profile_default,
+   mode  => 'sector',
+}
+
+package Prima::Canvas::Image;
+use vars qw(@ISA);
+@ISA = qw(Prima::CanvasObject);
+
+sub profile_default 
+{
+   $_[0]-> SUPER::profile_default,
+   image  => undef,
+}
+
+sub uses { 'rop' }
+
+sub on_paint
+{
+   my ( $self, $canvas, $width, $height) = @_;
+   my $i = $self-> {image};
+   unless ( defined $i) {
+      my @save = $canvas-> get( qw(color fillPattern));
+      $canvas-> set(
+         color       => cl::Gray,
+	 fillPattern => fp::BkSlash,
+      );
+      $canvas-> bar( 0,0,$width-1,$height-1);
+      $canvas-> set( @save);
+   } else {
+   #$canvas-> put_image_indirect( $i, 0,0, 0,0, $width, $height, $width, $height+10, rop::CopyPut);
+   $canvas-> stretch_image( 0,0, $width, $height, $i);
+   }
+}
+
 package main;
 
 use Prima qw(ColorDialog);
 
-my ( $colordialog );
+my ( $colordialog, $logo );
+
+$logo = Prima::StdBitmap-> icon(0);
 
 my $w = Prima::MainWindow-> create(
   text => 'Canvas demo',
   menuItems => [
      ['~Object' => [
-        ['Rectangle' => '~Rectangle' => \&insert],
-        ['Ellipse' => '~Ellipse' => \&insert],
+        (map { [ $_  => "~$_" => \&insert] } 
+	   qw(Rectangle Ellipse Arc Chord Sector Image)),
 	[],
 	[ '~Delete' => 'Del' , kb::Delete , \&delete]
      ]],
@@ -911,7 +1104,9 @@ my $c = $w-> insert( 'Prima::CanvasEdit' =>
 sub insert
 {
    my ( $self, $obj) = @_;
-   $c-> selected_object( $c-> insert_object( "Prima::Canvas::$obj"));
+   my %profile;
+   $profile{image} = $logo if $obj eq 'Image';
+   $c-> selected_object( $c-> insert_object( "Prima::Canvas::$obj", %profile));
 }
 
 sub delete
@@ -981,5 +1176,6 @@ sub align
 }
 
 $c-> insert_object( 'Prima::Canvas::Rectangle', linePattern => lp::Solid, lineWidth => 10);
+$c-> insert_object( 'Prima::Canvas::Image', image => $logo, origin => [ 50, 50]);
 
 run Prima;
