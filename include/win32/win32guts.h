@@ -170,6 +170,7 @@ typedef struct _WinGuts
     Point          iconSizeSmall;
     Point          pointerSize;
     BYTE           keyState[ 256];     // application key buffer state
+    BYTE           emptyKeyState[ 256];// just zeros
     BYTE          *currentKeyState;    // current virtual key buffer state
     HKL            keyLayout;          // key layout, most likely latin for Ctrl+Key mapping
     NONCLIENTMETRICS ncmData;          // windows system data

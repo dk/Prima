@@ -261,6 +261,7 @@ window_subsystem_init()
       free( kl);
    }
    guts. currentKeyState = guts. keyState;
+   memset( guts. emptyKeyState, 0, sizeof( guts. emptyKeyState));
    guts. smDblClk. x = GetSystemMetrics( SM_CXDOUBLECLK);
    guts. smDblClk. y = GetSystemMetrics( SM_CYDOUBLECLK);
 
@@ -577,14 +578,13 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_KEYDOWN:
    case WM_KEYUP:
       if ( apc_widget_is_responsive( self)) {
-          HKL  kl;
-          WORD keys[ 2];
+          BYTE keys[ 4];
           BYTE * keyState;
-          BYTE emptyKeyState[256];
           Bool up = ( msg == WM_KEYUP) || ( msg == WM_SYSKEYUP);
           Bool extended = mp2 & ( 1 << 24);
           UINT scan = ( HIWORD( mp2) & 0xFF) | ( up ? 0x80000000 : 0);
           int deadPollCount = 0;
+          HKL kl = GetKeyboardLayout(0);
 
           // basic assignments
           ev. cmd = up ? cmKeyUp : cmKeyDown;
@@ -607,18 +607,34 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              (( GetKeyState( VK_CONTROL) < 0) ? kmCtrl  : 0) |
              (( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
 
-          kl = GetKeyboardLayout( 0);
           keyState = guts. keyState;
+
 AGAIN:             
           // ascii mapping
              
-          switch ( ToAsciiEx( mp1, scan, keyState, keys, 0, kl)) {
+          switch ( ToAsciiEx( mp1, scan, keyState, (LPWORD) keys, 0, kl)) {
           case 1: // char
+             if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0)) {
+                BYTE keys2[4];
+                if (( ToAsciiEx( mp1, scan, guts. emptyKeyState, (LPWORD) keys2, 0, kl) == 1) &&
+                    ( keys2[0] != keys[0])) {
+                    /* example - (AltGr+2) == '@' on danish keyboard.
+                       this hack is to tell whether the key without mods
+                       will give same character code ...  */
+                    ev. key. mod &= ~(kmAlt|kmCtrl|kmShift);
+                }
+             }   
              break;
           case 2: { // double char
                 Event evx;
+                if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0)) {
+                   BYTE keys2[4];
+                   if (( ToAsciiEx( mp1, scan, guts. emptyKeyState, (LPWORD) keys2, 0, kl) == 1) &&
+                       ( keys2[0] != keys[1]))
+                       ev. key. mod &= ~(kmAlt|kmCtrl|kmShift);
+                }   
                 memcpy( &evx, &ev, sizeof( ev));
-                evx. key. code = keys[ 0] & 0xFF;
+                evx. key. code = keys[ 0];
                 keys[ 0] = keys[ 1];
                 v-> self-> message( self, &evx);
                 if ( v-> stage != csNormal) return 1;
@@ -627,21 +643,18 @@ AGAIN:
           case 0: // virtual key
              if ( deadPollCount == 0) {
              /* can't have character code - maybe fish out without mods? */
-                keyState = emptyKeyState;
-                memset( emptyKeyState, 0, sizeof( emptyKeyState));
+                keyState = guts. emptyKeyState;
                 deadPollCount = 1;
-                ev. key. mod |= kmDeadKey;
                 goto AGAIN;
              } else {
              /* same meaning without mods, no code anyway */
                 keys[ 0] = 0;
-                ev. key. mod &= ~kmDeadKey;
              }   
              break;
           default:
               ev. key. mod |= kmDeadKey;
           }
-          ev. key. code = keys[ 0] & 0xFF;
+          ev. key. code = keys[ 0];
 
           // simulated key codes
           if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))
