@@ -941,12 +941,14 @@ apc_gp_get_color( Handle self)
    return remap_color( sys stylus. pen. lopnColor, false);
 }
 
-Rect    apc_gp_get_clip_rect( Handle self)
+Rect
+apc_gp_get_clip_rect( Handle self)
 {
    RECT r;
    Rect rr = {0,0,0,0};
    objCheck rr;
    if ( !GetClipBox( sys ps, &r)) apiErr;
+   if ( IsRectEmpty( &r)) return rr;
    rr. left   = r. left;
    rr. right  = r. right - 1;
    rr. bottom = sys lastSize. y - r. bottom;
@@ -1234,7 +1236,7 @@ apc_gp_set_clip_rect( Handle self, Rect c)
    check_swap( c. top, c. bottom);
    check_swap( c. left, c. right);
    if ( !( rgn = CreateRectRgn( c. left,  sys lastSize. y - c. top,
-                                c. right, sys lastSize. y - c. bottom))) {
+                                c. right + 1, sys lastSize. y - c. bottom - 1))) {
       apiErr;
       return;
    }
