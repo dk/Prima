@@ -412,7 +412,6 @@ AbstractMenu_cleanup( Handle self)
 void
 AbstractMenu_set( Handle self, HV * profile)
 {
-   Handle postOwner = var-> owner;
    Bool select = false;
    if ( pexist( owner)) {
       select = pexist( selected) ? pget_B( selected) : my-> get_selected( self);

@@ -433,7 +433,6 @@ Component_migrate( Handle self, Handle attachTo)
 {
     PComponent detachFrom = PComponent( var-> owner ? var-> owner : application);
     PComponent attachTo_  = PComponent( attachTo  ? attachTo  : application);
-    Handle     theOwner   = ( Handle) attachTo_;
 
     if ( detachFrom != attachTo_) {
        if ( attachTo_)
