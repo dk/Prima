@@ -193,6 +193,7 @@ window_subsystem_done( void)
 
    XrmDestroyDatabase( guts.db);
    if (guts.windows) hash_destroy( guts.windows, false);
+   prima_cleanup_image_subsystem();
    prima_cleanup_font_subsystem();
 }
 
