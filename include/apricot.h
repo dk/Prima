@@ -320,51 +320,173 @@ typedef struct _PostMsg {
 #define mbRight         mb3
 #define mbMiddle        mb2
 
-/* key constants */
-#define kmShift         0x100000
-#define kmCtrl          0x400000
-#define kmAlt           0x800000
+/* keyboard masks */
+#define kbCharMask	0x000000ff
+#define kbCodeMask	0x00ffff00
+#define kbModMask	0xff000000
 
-#define kbShift         0x100000
-#define kbCtrl          0x400000
-#define kbAlt           0x800000
+/* keyboard modifiers */
+#define kmShift         0x01000000
+#define kmCtrl          0x04000000
+#define kmAlt           0x08000000
+#define kmKeyPad	0x40000000
 
-#define kbNoKey         0xFF00
-#define kbBackspace     0x0b00
-#define kbTab           0x0c00
-#define kbShiftTab      0x0d00
-#define kbPause         0x0e00
-#define kbEsc           0x0f00
-#define kbSpace         0x1000
-#define kbPgUp          0x1100
-#define kbPgDn          0x1200
-#define kbEnd           0x1300
-#define kbHome          0x1400
-#define kbLeft          0x1500
-#define kbUp            0x1600
-#define kbRight         0x1700
-#define kbDown          0x1800
-#define kbPrintScr      0x1900
-#define kbInsert        0x1a00
-#define kbDelete        0x1b00
-#define kbEnter         0x1e00
-#define kbSysRq         0x1f00
-#define kbF1            0x2000
-#define kbF2            0x2100
-#define kbF3            0x2200
-#define kbF4            0x2300
-#define kbF5            0x2400
-#define kbF6            0x2500
-#define kbF7            0x2600
-#define kbF8            0x2700
-#define kbF9            0x2800
-#define kbF10           0x2900
-#define kbF11           0x2a00
-#define kbF12           0x2b00
-#define kbF13           0x2c00
-#define kbF14           0x2d00
-#define kbF15           0x2e00
-#define kbF16           0x2f00
+/* bad key or no key code */
+#define kbNoKey         0x00FFFF00
+
+/* virtual keys which are modifiers at the same time */
+#define kbShiftL	0x00010100
+#define kbShiftR	0x00010200
+#define kbCtrlL		0x00010300
+#define kbCtrlR		0x00010400
+#define kbAltL		0x00010500
+#define kbAltR		0x00010600
+#define kbMetaL		0x00010700
+#define kbMetaR		0x00010800
+#define kbSuperL	0x00010900
+#define kbSuperR	0x00010a00
+#define kbHyperL	0x00010b00
+#define kbHyperR	0x00010c00
+#define kbCapsLock	0x00010d00
+#define kbNumLock	0x00010e00
+#define kbScrollLock	0x00010f00
+#define kbShiftLock	0x00011000
+
+/* Virtual keys which have character code at the same time */
+#define kbBackspace     0x00020808
+#define kbTab           0x00020909
+#define kbKPTab		(kmKeyPad | kbTab)
+#define kbLinefeed	0x00020a0a
+#define kbEnter		0x00020d0d
+#define kbReturn	kbEnter
+#define kbKPEnter	(kmKeyPad | kbEnter)
+#define kbKPReturn	kbKPEnter
+#define kbEscape	0x00021b1b
+#define kbEsc		kbEscape
+#define kbSpace		0x00022020
+#define kbKPSpace	(kmKeyPad | kbSpace)
+
+#define kbKPEqual	(kmKeyPad | '=')
+#define kbKPMultiply	(kmKeyPad | '*')
+#define kbKPAdd		(kmKeyPad | '+')
+#define kbKPSeparator	(kmKeyPad | ',')
+#define kbKPSubtract	(kmKeyPad | '-')
+#define kbKPDecimal	(kmKeyPad | '.')
+#define kbKPDivide	(kmKeyPad | '/')
+#define kbKP0		(kmKeyPad | '0')
+#define kbKP1		(kmKeyPad | '1')
+#define kbKP2		(kmKeyPad | '2')
+#define kbKP3		(kmKeyPad | '3')
+#define kbKP4		(kmKeyPad | '4')
+#define kbKP5		(kmKeyPad | '5')
+#define kbKP6		(kmKeyPad | '6')
+#define kbKP7		(kmKeyPad | '7')
+#define kbKP8		(kmKeyPad | '8')
+#define kbKP9		(kmKeyPad | '9')
+
+/* Other virtual keys */
+#define kbClear		0x00040100
+#define kbPause		0x00040200
+#define kbSysRq		0x00040300
+#define kbSysReq	kbSysRq
+#define kbDelete	0x00040400
+#define kbKPDelete	(kmKeyPad | kbDelete)
+#define kbHome		0x00040500
+#define kbKPHome	(kmKeyPad | kbHome)
+#define kbLeft		0x00040600
+#define kbKPLeft	(kmKeyPad | kbLeft)
+#define kbUp		0x00040700
+#define kbKPUp		(kmKeyPad | kbUp)
+#define kbRight		0x00040800
+#define kbKPRight	(kmKeyPad | kbRight)
+#define kbDown		0x00040900
+#define kbKPDown	(kmKeyPad | kbDown)
+#define kbPgUp		0x00040a00
+#define kbPrior		kbPgUp
+#define kbPageUp	kbPgUp
+#define kbKPPgUp	(kmKeyPad | kbPgUp)
+#define kbKPPrior	kbKPPgUp
+#define kbKPPageUp	kbKPPgUp
+#define kbPgDn		0x00040b00
+#define kbNext		kbPgDn
+#define kbPageDown	kbPgDn
+#define kbKPPgDn	(kmKeyPad | kbPgDn)
+#define kbKPNext	kbKPPgDn
+#define kbKPPageDown	kbKPPgDn
+#define kbEnd		0x00040c00
+#define kbKPEnd		(kmKeyPad | kbEnd)
+#define kbBegin		0x00040d00
+#define kbKPBegin	(kmKeyPad | kbBegin)
+#define kbSelect	0x00040e00
+#define kbPrint		0x00040f00
+#define kbPrintScr	kbPrint
+#define kbExecute	0x00041000
+#define kbInsert	0x00041100
+#define kbKPInsert	(kmKeyPad | kbInsert)
+#define kbUndo		0x00041200
+#define kbRedo		0x00041300
+#define kbMenu		0x00041400
+#define kbFind		0x00041500
+#define kbCancel	0x00041600
+#define kbHelp		0x00041700
+#define kbBreak		0x00041800
+#define kbBackTab	0x00041900
+
+/* Virtual function keys */
+#define kbF1		0x00080100
+#define kbKPF1		(kmKeyPad | kbF1)
+#define kbF2		0x00080200
+#define kbKPF2		(kmKeyPad | kbF2)
+#define kbF3		0x00080300
+#define kbKPF3		(kmKeyPad | kbF3)
+#define kbF4		0x00080400
+#define kbKPF4		(kmKeyPad | kbF4)
+#define kbF5		0x00080500
+#define kbF6		0x00080600
+#define kbF7		0x00080700
+#define kbF8		0x00080800
+#define kbF9		0x00080900
+#define kbF10		0x00080a00
+#define kbF11		0x00080b00
+#define kbL1		kbF11
+#define kbF12		0x00080c00
+#define kbL2		kbF12
+#define kbF13		0x00080d00
+#define kbL3		kbF13
+#define kbF14		0x00080e00
+#define kbL4		kbF14
+#define kbF15		0x00080f00
+#define kbL5		kbF15
+#define kbF16		0x00081000
+#define kbL6		kbF16
+#define kbF17		0x00081100
+#define kbL7		kbF17
+#define kbF18		0x00081200
+#define kbL8		kbF18
+#define kbF19		0x00081300
+#define kbL9		kbF19
+#define kbF20		0x00081400
+#define kbL10		kbF20
+#define kbF21		0x00081500
+#define kbR1		kbF21
+#define kbF22		0x00081600
+#define kbR2		kbF22
+#define kbF23		0x00081700
+#define kbR3		kbF23
+#define kbF24		0x00081800
+#define kbR4		kbF24
+#define kbF25		0x00081900
+#define kbR5		kbF25
+#define kbF26		0x00081a00
+#define kbR6		kbF26
+#define kbF27		0x00081b00
+#define kbR7		kbF27
+#define kbF28		0x00081c00
+#define kbR8		kbF28
+#define kbF29		0x00081d00
+#define kbR9		kbF29
+#define kbF30		0x00081e00
+#define kbR10		kbF30
 
 /* Please, please, PLEASE!  Do not use directly! */
 
