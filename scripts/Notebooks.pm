@@ -833,7 +833,7 @@ sub init
    );
    $self->{notebook} = Notebook-> create(
       owner      => $self,
-      name       => 'NotebookX',
+      name       => 'Notebook',
       origin     => [ DefBorderX + 1, DefBorderX + 1],
       size       => [ $size[0] - DefBorderX * 2 - 5,
          $size[1] - DefBorderX * 2 - $self->{tabSet}-> height - DefBookmarkX - 4],
