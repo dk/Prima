@@ -65,12 +65,14 @@ use constant DefButtonX => 17;
 for ( keys %editProps) {
    eval <<GENPROC;
    sub $_ { return shift-> {edit}-> $_(\@_); }
+   sub Prima::ComboBox::DummyEdit::$_ {}
 GENPROC
 }
 
 for (keys %listProps) {
    eval <<GENPROC;
    sub $_ { return shift-> {list}-> $_(\@_); }
+   sub Prima::ComboBox::DummyList::$_ {}
 GENPROC
 }
 
@@ -122,6 +124,8 @@ sub init
    my %profile = @_;
    my $visible = $profile{visible};
    $profile{visible} = 0;
+   $self->{edit} = bless [], q\Prima::ComboBox::DummyEdit\;
+   $self->{list} = bless [], q\Prima::ComboBox::DummyList\;
    %profile = $self-> SUPER::init(%profile);
    my ( $w, $h) = ( $self-> size);
    $self-> {style}        = $profile{style};

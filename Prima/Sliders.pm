@@ -351,6 +351,7 @@ use Prima::InputLine;
 for ( keys %editProps) {
    eval <<GENPROC;
    sub $_ { return shift-> {edit}-> $_(\@_); }
+   sub Prima::SpinEdit::DummyEdit::$_ { }
 GENPROC
 }
 
@@ -387,6 +388,7 @@ sub init
    my $visible = $profile{visible};
    $profile{visible} = 0;
    for (qw( min max step circulate pageStep)) {$self->{$_} = 1;};
+   $self->{edit} = bless [], q\Prima::SpinEdit::DummyEdit\;
    %profile = $self-> SUPER::init(%profile);
    my ( $w, $h) = ( $self-> size);
    $self-> {spin} = $self-> insert( $profile{spinClass} =>
