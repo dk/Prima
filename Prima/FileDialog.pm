@@ -632,6 +632,8 @@ sub profile_default
    }
 }
 
+my $unix = Prima::Application-> get_system_info->{apc} == apc::Unix;
+
 sub canonize_mask
 {
    my $self = shift;
@@ -658,7 +660,7 @@ sub canon_path
       $fn = $p;
       $dir = '.';
    }
-   unless ( scalar(stat($dir))) {
+   unless ( scalar(stat($dir . (( !$unix && $dir =~ /:$/) ? '/' : '')))) {
       $dir = "";
    } else {
       $dir = eval { Cwd::abs_path($dir) };
@@ -939,7 +941,6 @@ sub Name_text
    $self-> Name-> text( $text);
 }
 
-my $unix = Prima::Application-> get_system_info->{apc} == apc::Unix;
 
 sub Open_Click
 {
