@@ -151,7 +151,7 @@ sub can_use_locale
 sub month2str
 {
    return $non_locale_months[$_[1]] unless $_[0]-> {useLocale};
-   return POSIX::strftime ( "%B", 0, 0, 0, 0, $_[1], 0 );
+   return POSIX::strftime ( "%B", 0, 0, 0, 1, $_[1], 0 );
 }
 
 sub make_months
@@ -161,19 +161,20 @@ sub make_months
       # %OB is a BSD extension for locale-specific date string
       # for use without date
       $OB_format = (
-         POSIX::strftime ( "%OB", 0, 0, 0, 0, 0, 0 ) eq
-         POSIX::strftime ( "%OB", 0, 0, 0, 0, 1, 0 )
+         POSIX::strftime ( "%OB", 0, 0, 0, 1, 0, 0 ) eq
+         POSIX::strftime ( "%OB", 0, 0, 0, 1, 1, 0 )
       ) ? '%B' : '%OB';
    }
+   print POSIX::strftime(q(%B),0,0,0,1,12,0), "\n";
    return [ map {
-      POSIX::strftime ( $OB_format, 0, 0, 0, 0, $_, 0 )
+      POSIX::strftime ( $OB_format, 0, 0, 0, 1, $_, 0 )
    } 0 .. 11 ];
 }
 
 sub day_of_week
 {
    my ( $self, $day, $month, $year, $useFirstDayOfWeek) = @_;
-   $day++; $month++; $year += 1900;
+   $month++; $year += 1900;
 
    $useFirstDayOfWeek = 1 unless defined $useFirstDayOfWeek;
 
@@ -197,7 +198,7 @@ sub reset_days
    my $self = $_[0];
    my $dow = $self-> {firstDayOfWeek};
    $self-> {days} = $self-> {useLocale} ?
-     [ map { strftime("%a", 0, 0, 0, 0, 0, 0, $_) } 0 .. 6 ] :
+     [ map { strftime("%a", 0, 0, 0, 1, 0, 0, $_) } 0 .. 6 ] :
      [ qw( Sun Mon Tue Wed Thu Fri Sat ) ];
    push @{$self->{days}}, splice( @{$self->{days}}, 0, $dow) if $dow;
 }
@@ -240,9 +241,10 @@ sub Day_Paint
    }
 
    my ( $d, $m, $y) = @{$owner->{date}};
-   my $dow = $owner-> day_of_week( 0, $m, $y);
+   my $dow = $owner-> day_of_week( 1, $m, $y);
    my $v = $days_in_months[ $m] + (((( $y % 4) == 0) && ( $m == 1)) ? 1 : 0);
    $y = $sz[1] - $zs[1] * 2 + $zs[3] - 3;
+   $d--;
    for ( $i = 0; $i < $v; $i++) {
       if ( $d == $i) {
          $canvas-> color( cl::Hilite);
@@ -283,9 +285,9 @@ sub Day_MouseDown
    my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
    my @sz = $self-> size;
    $day = (int(($sz[1] - $y - 2) / $zs[1]) - 1) * 7 + 
-           int(($x - 2) / $zs[0]) - $owner-> day_of_week( 0, $month, $year);
+           int(($x - 2) / $zs[0]) - $owner-> day_of_week( 1, $month, $year) + 1;
    $self-> clear_event;
-   return if $day < 0 || $day >= $v;
+   return if $day <= 0 || $day > $v;
    $owner-> date( $day, $month, $year);
 }
 
@@ -337,9 +339,9 @@ sub date
    $month = 0 if $month < 0;
    $year = 0 if $year < 0;
    $year = 199 if $year > 199;
-   $day = 0 if $day < 0;
+   $day = 1 if $day < 1;
    my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
-   $day = $v - 1 if $day >= $v;
+   $day = $v if $day > $v;
    my @od = @{$self-> {date}};
    return if $day == $od[0] && $month == $od[1] && $year == $od[2];
    $self-> {date} = [ $day, $month, $year ];
@@ -374,7 +376,6 @@ sub date_as_string
 {
    my $self = shift;
    my ( $d, $m, $y) = ( @_ ? ( $#_ ? @_ : @{$_[0]}) : @{ $self-> {date}});
-   $d++;
    $y += 1900;
    return $self-> month2str( $m) . " $d, $y";
 }
@@ -410,7 +411,7 @@ Prima::Calendar - standard calendar widget
 Provides interactive selection of date between 1900 and 2099 years.
 The main property, L<date>, is a three-integer array, day, month, and year,
 in the format of perl localtime ( see L<perlfunc/localtime> ) - 
-day can be in range from 0 to 30,month from 0 to 11, year from 0 to 199.
+day can be in range from 1 to 31,month from 0 to 11, year from 0 to 199.
 
 =head1 SYNOPSIS
 
@@ -444,7 +445,7 @@ Called when the L<date> property is changed.
 =item date DAY, MONTH, YEAR
 
 Accepts three integers in format of C<localtime>.
-DAY can be from 0 to 30, MONTH from 0 to 11, YEAR from 0 to 199.
+DAY can be from 1 to 31, MONTH from 0 to 11, YEAR from 0 to 199.
 
 Default value: today's date.
 
