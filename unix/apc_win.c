@@ -562,7 +562,7 @@ apc_window_set_icon( Handle self, Handle icon)
    XWMHints wmhints;
    int n;
 
-   if ( !icon) {
+   if ( !icon || i-> w == 0 || i-> h == 0) {
       if ( !XX-> flags. has_icon) return true;
       XX-> flags. has_icon = false;
       XDeleteProperty( DISP, X_WINDOW, XA_WM_HINTS);
