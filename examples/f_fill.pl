@@ -72,14 +72,14 @@ my $w = Prima::Window-> create(
         my $x = (32-$_) * 8;
         $x = ($x<<16)|($x<<8)|$x;
         $canvas-> color($x);
-        $canvas-> fill_ellipse($is[0]/2,$is[1]/2, $xrad*(32-$_), $xrad*(32-$_));
+        $canvas-> fill_ellipse($is[0]/2,$is[1]/2, $xrad*(32-$_)*2, $xrad*(32-$_)*2);
      };
      $canvas-> region( $i);
      for ( 1..32) {
         my $x = ($_-1) * 8;
         $x = ($x<<16)|($x<<8)|$x;
         $canvas-> color($x);
-        $canvas-> fill_ellipse($is[0]/2,$is[1]/2, $xrad*(32-$_), $xrad*(32-$_));
+        $canvas-> fill_ellipse($is[0]/2,$is[1]/2, $xrad*(32-$_)*2, $xrad*(32-$_)*2);
      };
   },
 );
