@@ -61,7 +61,6 @@ Window_ok( Handle self)
 }
 
 
-
 void
 Window_done( Handle self)
 {
@@ -91,7 +90,9 @@ void Window_update_sys_handle( Handle self, HV * profile)
       pexist( borderIcons) ? pget_i( borderIcons) : my get_border_icons( self),
       pexist( borderStyle) ? pget_i( borderStyle) : my get_border_style( self),
       pexist( taskListed)  ? pget_B( taskListed)  : my get_task_listed( self),
-      pexist( windowState) ? pget_i( windowState) : my get_window_state( self)
+      pexist( windowState) ? pget_i( windowState) : my get_window_state( self),
+      !( pexist( originDontCare) && pget_B( originDontCare)),
+      !( pexist( sizeDontCare)   && pget_B( sizeDontCare))
    ))
       croak("RTC0090: Cannot create window");
    pdelete( borderStyle);
