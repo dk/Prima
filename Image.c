@@ -53,6 +53,7 @@
 #include "imgscale.cinc"
 
 static int Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
+extern Bool read_point( AV * av, int * pt, int number, char * error);
 
 void
 Image_init( Handle self, HV * profile)
@@ -73,6 +74,11 @@ Image_init( Handle self, HV * profile)
    var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
    Image_read_palette( self, var->palette, pget_sv( palette));
    my->set_data( self, pget_sv( data));
+   {
+      Point set;
+      read_point(( AV *) SvRV( pget_sv( resolution)), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
+      my-> set_resolution( self, set.x, set.y);
+   }
    if ( var->type & imGrayScale) switch ( var->type & imBPP)
    {
    case imbpp1:
@@ -211,6 +217,13 @@ Image_set( Handle self, HV * profile)
       pdelete( width);
       pdelete( height);
    }
+   if ( pexist( resolution))
+   {
+      Point set;
+      read_point(( AV *) SvRV( pget_sv( resolution)), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
+      my-> set_resolution( self, set.x, set.y);
+      pdelete( resolution);
+   }
    inherited set ( self, profile);
 }
 
@@ -273,6 +286,24 @@ void
 Image_set_v_scaling( Handle self, Bool scaling)
 {
    opt_assign( optVScaling, scaling);
+}
+
+void
+Image_set_resolution( Handle self, int x, int y)
+{
+   if ( x <= 0 || y <= 0) {
+      Point r = apc_gp_get_resolution( application);
+      x = r. x;
+      x = r. y;
+   }
+   var-> resolution. x = x;
+   var-> resolution. y = y;
+}
+
+Point
+Image_get_resolution( Handle self)
+{
+   return var-> resolution;
 }
 
 void

@@ -36,6 +36,7 @@ object Image( Drawable)
    int            status;
    ImageStats     stats;
    int            statsCache;
+   Point          resolution;
 
    # methods
    method Handle bitmap();
@@ -56,6 +57,7 @@ object Image( Drawable)
    method SV   * get_palette();
    method Color  get_pixel(int x, int y);
    method Bool   get_preserve_type();
+   method Point  get_resolution();
    method Bool   get_h_scaling();
    method Bool   get_v_scaling();
    method double get_stats( int index);
@@ -75,6 +77,7 @@ object Image( Drawable)
    method void   set_preserve_type( Bool preserveType);
    method void   set_h_scaling( Bool scaling);
    method void   set_v_scaling( Bool scaling);
+   method void   set_resolution( int x, int y);
    method void   set_size( int width, int height);
    method void   set_stats( double value, int index);
    import void   set_type( int type);
