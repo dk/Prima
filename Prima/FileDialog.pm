@@ -32,7 +32,7 @@
 #  $Id$
 
 #  contains:
-#      OpenDialog
+#      
 #      SaveDialog
 #      ChDirDialog
 
@@ -148,8 +148,8 @@ sub on_drawitem
    if ( $hilite) {
       $c = $self-> color;
       $bc = $self-> backColor;
-      $self-> color($self-> hiliteColor);
-      $self-> backColor($self-> hiliteBackColor);
+      $canvas-> color($self-> hiliteColor);
+      $canvas-> backColor($self-> hiliteBackColor);
    }
    $canvas-> clear( $left, $bottom, $right, $top);
    my $type = $item->{type};
@@ -907,6 +907,7 @@ sub quoted_split
 {
    my @ret;
    $_ = $_[0];
+   s/(\\[^\\\s])/\\$1/g;
    study;
    {
       /\G\s+/gc && redo;
@@ -936,24 +937,38 @@ sub Name_text
    $self-> Name-> text( $text);
 }
 
+my $unix = Prima::Application-> get_system_info->{apc} == apc::Unix;
+
 sub Open_Click
 {
    my $self = shift;
    $_ = $self-> Name-> text;
-   my @files = quoted_split( $_);
+   my @files;
+   if ( $self-> multiSelect) {
+      @files = quoted_split( $_);
+   } else {
+      s/\\([\\\s])/$1/g;
+      @files = ($_);
+   }
    return unless scalar @files;
    @files = ($files[ 0]) if ( !$self->multiSelect and scalar @files > 1);
    (@files = grep {/[*?]/} @files), @files = ($files[ 0]) if /[*?]/;
+   my %uniq; @files = grep { !$uniq{$_}++ } @files;
 # validating names
-   for ( @files)
+   for ( @files) 
    {
       s{\\}{/}g;
-      $_ = $self-> directory . $_ unless m{^/|:};
+      s/^~/$ENV{HOME}/ if m/^~/ && defined $ENV{HOME};
+      if ( $unix) {
+         $_ = $self-> directory . $_ unless m{^/};
+      } else {
+         $_ = $self-> directory . $_ unless m{^/|[A-Za-z]:};
+         $_ .= '/' if !$unix && m/^[A-Za-z]:$/;
+      }
       my $pwd = cwd; chdir $self-> directory;
       $_ = canon_path($_);
       chdir $pwd;
    }
-   my %uniq; @files = grep { !$uniq{$_}++ } @files;
 
 # testing for indirect directory/mask use
    if ( scalar @files == 1)
@@ -964,7 +979,7 @@ sub Open_Click
          my %cont;
          for ( @{$self->{filter}}) { $cont{$$_[0]} = $$_[1]};
          $self-> directory( $files[ 0]);
-         $self-> Name-> text( $cont{ $self-> Ext-> text});
+         $self-> Name->text('');
          $self-> Name->focus;
          return;
       }
@@ -1014,6 +1029,7 @@ sub Open_Click
       else
       {
          my ( $dirTo, $fileTo) = ( m{^(.*[:/\\])([^:\\/]*)$});
+         $dirTo = '.', $fileTo = $_ unless defined $dirTo;
          if ( $self-> {openMode} && $self->{createPrompt})
          {
             return if ( message_box( $self-> text,
