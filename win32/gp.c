@@ -1614,10 +1614,10 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
       float s = sin( var font. direction / ( 10 * GRAD));
       float c = cos( var font. direction / ( 10 * GRAD));
       for ( i = 0; i < 5; i++) {
-         int x = pt[i]. x;
-         int y = pt[i]. y;
-         pt[i]. x = x * c - y * s;
-         pt[i]. y = x * s + y * c;
+         float x = pt[i]. x * c - pt[i]. y * s;
+         float y = pt[i]. x * s + pt[i]. y * c;
+         pt[i]. x = x + (( x > 0) ? 0.5 : -0.5);
+         pt[i]. y = y + (( y > 0) ? 0.5 : -0.5);
       }
    }
 

@@ -1565,7 +1565,6 @@ Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8)
 {
    DEFXX;
-   SHIFT( x, y);
    
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
@@ -1600,8 +1599,9 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
       apc_gp_set_fill_pattern( self, fp);
       free( p); 
    }  
+   SHIFT( x, y);
 
-   if ( PDrawable( self)-> font. direction != 0) {
+   if ( PDrawable( self)-> font. direction != 0 || 1) {
       Bool ret = gp_text_out_rotated( self, text, x, y, len, utf8);
       if ( utf8) free(( char *) text);
       return ret;
@@ -1617,9 +1617,9 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    }
 
    if ( utf8)
-      XDrawString16( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), (XChar2b*) text, len);
+      XDrawString16( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y) + 1, (XChar2b*) text, len);
    else
-      XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), ( char*) text, len);
+      XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y) + 1, ( char*) text, len);
    XCHECKPOINT;
    
    if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
@@ -1942,10 +1942,10 @@ gp_get_text_box( Handle self, const char * text, int len, Bool wide)
       double s = sin( PDrawable( self)-> font. direction / 572.9577951);
       double c = cos( PDrawable( self)-> font. direction / 572.9577951);
       for ( i = 0; i < 5; i++) {
-         int x = pt[i]. x;
-         int y = pt[i]. y;
-         pt[i]. x = x * c - y * s + 0.5;
-         pt[i]. y = x * s + y * c + 0.5;
+         double x = pt[i]. x * c - pt[i]. y * s;
+         double y = pt[i]. x * s + pt[i]. y * c;
+         pt[i]. x = x + (( x > 0) ? 0.5 : -0.5);
+         pt[i]. y = y + (( y > 0) ? 0.5 : -0.5);
       }
    }
  

@@ -915,11 +915,11 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
 
       /* detailing point size and height */
       if ( bySize) {
-         f-> font. height = s-> max_bounds. ascent + s-> descent;
+         f-> font. height = s-> max_bounds. ascent + s-> max_bounds. descent;
          f-> font. size = size / 10; 
       } else {
          if ( height == 0) 
-            f-> font. height = height = s-> max_bounds. ascent + s-> descent;
+            f-> font. height = height = s-> max_bounds. ascent + s-> max_bounds. descent;
          if ( XGetFontProperty( s, FXA_POINT_SIZE, &v) && v) {
             XCHECKPOINT;
             f-> font. size = ( v < 10) ? 1 : ( v / 10);
@@ -950,9 +950,9 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       f-> flags. resolution      = true;
       f-> font. resolution       = f-> font. yDeviceRes * 0x10000 + f-> font. xDeviceRes;
       f-> flags. ascent          = true;
-      f-> font. ascent           = s-> max_bounds. ascent;
+      f-> font. ascent           = f-> font. height - s-> max_bounds. descent;
       f-> flags. descent         = true;
-      f-> font. descent          = s-> descent; 
+      f-> font. descent          = s-> max_bounds. descent; 
       f-> flags. defaultChar     = true;
       f-> font. defaultChar      = s-> default_char;
       f-> flags. firstChar       = true;
@@ -961,6 +961,8 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       f-> font.  lastChar        = s-> max_byte1 * 256 + s-> max_char_or_byte2;
       f-> flags. direction       = true;
       f-> font.  direction       = 0;
+      f-> flags. externalLeading = true;
+      f-> font.  externalLeading = s-> ascent + s-> descent - f-> font. height;
 
       /* detailing width */
       if ( f-> font. width == 0) {
@@ -997,9 +999,9 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       /* detailing underline things */
       if ( XGetFontProperty( s, XA_UNDERLINE_POSITION, &v) && v) {
          XCHECKPOINT;
-         underlinePos =  -s-> descent + v;
+         underlinePos =  -s-> max_bounds. descent + v;
       } else 
-         underlinePos = - s-> descent + 1;
+         underlinePos = - s-> max_bounds. descent + 1;
       
       if ( XGetFontProperty( s, XA_UNDERLINE_THICKNESS, &v) && v) {
          XCHECKPOINT;
@@ -1008,8 +1010,8 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
          underlineThickness = 1;
 
       underlinePos -= underlineThickness;
-      if ( -underlinePos + underlineThickness / 2 > s-> descent) 
-         underlinePos = -s-> descent + underlineThickness / 2;
+      if ( -underlinePos + underlineThickness / 2 > s-> max_bounds. descent) 
+         underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
 
       build_font_key( &key, font, bySize); 
  /* printf("add to :%d.%d.{%d}.%s\n", f-> font.height, f-> font.size, f-> font. style, f-> font.name); */
@@ -1477,8 +1479,8 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
    
    while ( direction < 0) direction += 3600;
    direction %= 3600;
-   if ( direction == 0)
-      return false;
+/*   if ( direction == 0)
+      return false;*/
 
    /* finding record for given direction */
    while (*pr) {
@@ -1606,12 +1608,12 @@ FAILED:
       if ( wide)
          XDrawString16( DISP, r-> arena, r-> arena_gc, 
              ( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
-             r-> orgBox. y - f-> fs-> descent - 1,
+             r-> orgBox. y - f-> fs-> max_bounds. descent,
              &index, 1);
       else
          XDrawString( DISP, r-> arena, r-> arena_gc, 
              ( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
-             r-> orgBox. y - f-> fs-> descent - 1,
+             r-> orgBox. y - f-> fs-> max_bounds. descent,
              (const char *)&index. byte2, 1);
       XCHECKPOINT;
 
