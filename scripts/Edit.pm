@@ -195,7 +195,7 @@ sub reset
       $self-> {fixed} = $self-> font-> _pitch == fp::Fixed;
       $self-> {averageWidth} = $self-> font-> averageWidth;
       $mw                    = $self-> {averageWidth};
-      $self-> {maxFixedLength} = sprintf("%d", ( $size[0] - $cw) / $mw);
+      $self-> {maxFixedLength} = int(( $size[0] - $cw) / $mw);
       $self-> {tabs} = ' 'x$ti;
    }
 
@@ -251,7 +251,7 @@ sub reset
    }
 
    my $fh    = $self-> font-> height;
-   $self-> {rows}  = sprintf("%d", $size[1] / $fh);
+   $self-> {rows}  = int($size[1] / $fh);
    my $yTail = $size[1] - $self-> {rows} * $fh;
 
    if ( $uC < 2)
@@ -445,6 +445,7 @@ sub draw_colorchunk
    }
    my ( $cc,$j);
    my $ofs = 0;
+
    for ( $j = 0; $j < scalar @{$sd} - 1; $j += 2) {
       my $xd = $self-> get_chunk_width( $chunk, $ofs, $$sd[$j], \$cc);
       $self-> color( $$sd[$j+1] == cl::Fore ? $clr1 : $$sd[$j+1]);
@@ -667,7 +668,7 @@ sub point2xy
    $y  = -$fh if $y < 0;
    $x  = $w + $avg * 2 if $x > $w + $avg * 2;
    $x  = - $avg * 2 if $x < - $avg * 2;
-   $ry = sprintf("%d", ( $h - $y) / $fh) + $self->{firstCol};
+   $ry = int(( $h - $y) / $fh) + $self->{firstCol};
    $ry = 0 if $ry < 0;
    $ry = $self->{maxChunk} if $ry > $self->{maxChunk};
    $rx = 0;
@@ -679,8 +680,8 @@ sub point2xy
    {
       my $ofsx = $ofs + $x;
       $ofsx = $self->{maxLineWidth} if $ofsx > $self->{maxLineWidth};
-      my $blocks = $self-> text_wrap( $chunk, $ofsx, tw::CalcTabs, $self->{tabIndent});
-      $rx = length( $$blocks[ 0]);
+      my $blocks = $self-> text_wrap( $chunk, $ofsx, tw::CalcTabs|tw::BreakSingle, $self->{tabIndent});
+      $rx = length( $$blocks[ 0]) if scalar @{$blocks};
    }
    return $self-> make_physical( $rx, $ry), $inBounds;
 }
@@ -951,6 +952,7 @@ sub set_cursor
    my ( $ox, $oy) = ($self->{cursorX}, $self->{cursorY});
    my $maxY = $self->{maxLine};
    $y = $maxY if $y < 0 || $y > $maxY;
+$y = 0 if $y < 0; # ??
    my $line = $self-> get_line( $y);
    $x = length( $line) if $x < 0;
    my ( $lx, $ly) = $self-> make_logical( $x, $y);
@@ -1443,22 +1445,22 @@ sub make_logical
    my $cm = $self->{chunkMap};
    my $r;
    ( $l, $r) = ( 0, $self->{maxChunk} + 1);
-   my $i = sprintf("%d", $r / 2);
+   my $i = int($r / 2);
    my $kk = 0;
    while (1) {
       my $acd = $$cm[$i * 3 + 2];
       last if $acd == $y;
       ( $acd > $y) ? ( $r = $i) : ( $l = $i);
-      $i = sprintf("%d", ( $l + $r) / 2);
+      $i = int(( $l + $r) / 2);
       if ( $kk++ > 200) {
          print "bcs dump to $y\n";
          ( $l, $r) = ( 0, $self->{maxChunk} + 1);
-         $i = sprintf("%d", $r / 2);
+         $i = int($r / 2);
          for ( $kk = 0; $kk < 7; $kk++) {
             my $acd = $$cm[$i * 3 + 2];
             print "i:$i [$l $r] f() = $acd\n";
             ( $acd > $y) ? ( $r = $i) : ( $l = $i);
-            $i = sprintf("%d", ( $l + $r) / 2);
+            $i = int(( $l + $r) / 2);
          }
          die;
          last;
@@ -1577,7 +1579,12 @@ sub cursor_right {
       $_[0]-> cursorX( $x + $d);
    }
 }
-sub cursor_home  { $_[0]-> cursorX( 0); }
+sub cursor_home  {
+   my $c = $_[0]-> get_line( $_[0]-> cursorY);
+   $c =~ /^([\s\t]+)/;
+   $_[0]-> offset(0);
+   $_[0]-> cursorX( defined $1 ? length( $1) : 0);
+}
 sub cursor_end   {
    my $c = $_[0]-> get_line( $_[0]-> cursorY);
    $c =~ s/[\s\t]*$//;
@@ -1868,7 +1875,8 @@ sub insert_empty_line
    for (@{$self->{markers}}) { $$_[1] += $len if $$_[1] >= $y; }
    splice( @{$self->{lines}}, $y, 0, ('')x$len);
    $self->{maxLine} += $len;
-   splice( @{$self->{syntax}}, $y, 0, [0,cl::Black]x$len) if $self->{syntaxHilite};
+   splice( @{$self->{syntax}}, $y, 0, ([0,cl::Black])x$len) if $self->{syntaxHilite};
+
    if ( $self-> has_selection)
    {
       my @sel = $self-> selection;
