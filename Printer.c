@@ -44,6 +44,13 @@ Printer_begin_doc( Handle self, char * docName)
 }
 
 void
+Printer_new_page( Handle self)
+{
+   if ( !is_opt( optInDraw)) return;
+   apc_prn_new_page( self);
+}
+
+void
 Printer_end_doc( Handle self)
 {
    if ( !is_opt( optInDraw)) return;
@@ -57,6 +64,14 @@ Printer_abort_doc( Handle self)
    if ( !is_opt( optInDraw)) return;
    inherited end_paint( self);
    apc_prn_abort_doc( self);
+}
+
+Bool
+Printer_set_printer( Handle self, char * printerName)
+{
+   if ( is_opt( optInDraw))     my end_paint( self);
+   if ( is_opt( optInDrawInfo)) my end_paint_info( self);
+   return apc_prn_select( self, printerName);
 }
 
 Bool Printer_begin_paint( Handle self) { return my begin_doc( self, ""); }
