@@ -660,13 +660,15 @@ sub value
 {
    return $_[0]-> {value} unless $#_;
    my $v = $_[1] < $_[0]-> {min} ? $_[0]-> {min} : ($_[1] > $_[0]-> {max} ? $_[0]-> {max} : $_[1]);
+   $v -= $_[0]-> {min};
    my $old = $_[0]-> {value};
    if (abs($old - $v) >= $_[0]-> {threshold})
    {
       my ($x, $y) = $_[0]-> get_size;
       my $i = $_[0]-> {indent};
-      my $x1 = $i + ($x - $i*2) * $old / ($_[0]-> {max} - $_[0]-> {min});
-      my $x2 = $i + ($x - $i*2) * $v   / ($_[0]-> {max} - $_[0]-> {min});
+      my $range = $_[0]-> {max} - $_[0]-> {min} + 1;
+      my $x1 = $i + ($x - $i*2) * $old / $range;
+      my $x2 = $i + ($x - $i*2) * $v   / $range;
       if ( $x1 > $x2)
       {
          $i = $x1;
