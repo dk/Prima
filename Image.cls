@@ -22,6 +22,7 @@ object Image( Drawable)
    method void   end_paint();
    method void   end_paint_info();
    method Handle extract( int x, int y, int width, int height);
+   method int    get_bpp();
    method int    get_conversion();
    method char * get_status_string();
    method SV   * get_palette();

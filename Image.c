@@ -370,6 +370,7 @@ Image_save( Handle self, char *filename, HV *profile)
 }
 
 int Image_get_type  ( Handle self) { return var type; }
+int Image_get_bpp   ( Handle self) { return var type & imBPP; }
 
 
 Bool
