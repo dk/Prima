@@ -2492,7 +2492,7 @@ used by L<blockType> property.
 
 =head1 USAGE
 
-   use Prima:Edit;
+   use Prima::Edit;
    my $e = Prima::Edit-> create(
       text         => 'Hello $world',
       syntaxHilite => 1,
