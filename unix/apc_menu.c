@@ -1584,7 +1584,9 @@ static void
 menu_reconfigure( Handle self)
 {
    XEvent ev;
+   DEFMM;
    ev. type = ConfigureNotify;
+   XX-> w-> sz. x =  ev. xconfigure. width - 1; /* force cache flush */
    ev. xconfigure. width  = X(PComponent(self)-> owner)-> size.x;
    ev. xconfigure. height = X(PComponent(self)-> owner)-> size.y;
    prima_handle_menu_event( &ev, PMenu(self)-> handle, self);
