@@ -382,6 +382,10 @@ sub paint_exterior
    return @r;
 }
 
+sub prf_borderWidth   { $_[0]->repaint; }
+sub prf_hScroll       { $_[0]->repaint; }
+sub prf_vScroll       { $_[0]->repaint; }
+
 package Prima::VB::ListBox;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
@@ -422,11 +426,8 @@ sub on_paint
    $self-> common_paint($canvas);
 }
 
-sub prf_borderWidth   { $_[0]->repaint; }
 sub prf_items         { $_[0]->repaint; }
 sub prf_integralHeight{ $_[0]->repaint; }
-sub prf_hScroll       { $_[0]->repaint; }
-sub prf_vScroll       { $_[0]->repaint; }
 
 package Prima::VB::DirectoryListBox;
 use vars qw(@ISA);
@@ -685,9 +686,6 @@ sub on_paint
    $self-> common_paint($canvas);
 }
 
-sub prf_borderWidth   { $_[0]->repaint; }
-sub prf_hScroll       { $_[0]->repaint; }
-sub prf_vScroll       { $_[0]->repaint; }
 sub prf_wordWrap      { $_[0]->repaint; }
 
 package Prima::VB::ImageViewer;
@@ -754,9 +752,6 @@ sub on_paint
    $self-> common_paint($canvas);
 }
 
-sub prf_borderWidth   { $_[0]->repaint; }
-sub prf_hScroll       { $_[0]->repaint; }
-sub prf_vScroll       { $_[0]->repaint; }
 sub prf_image         { $_[0]->repaint; }
 sub prf_alignment     { $_[0]->repaint; }
 sub prf_valignment    { $_[0]->repaint; }
@@ -784,10 +779,6 @@ sub on_paint
    $self->paint_exterior( $canvas);
    $self-> common_paint( $canvas);
 }
-
-sub prf_borderWidth   { $_[0]->repaint; }
-sub prf_hScroll       { $_[0]->repaint; }
-sub prf_vScroll       { $_[0]->repaint; }
 
 use Prima::Sliders;
 
@@ -1177,7 +1168,6 @@ sub prf_adjust_default
    $self-> SUPER::prf_adjust_default( $p, $pf);
    delete $pf->{$_} for qw ( items dragable );
 }
-
 
 sub on_paint
 {
