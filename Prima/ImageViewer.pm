@@ -23,6 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+use strict;
 use Prima::ScrollWidget;
 
 package Prima::ImageViewer;
@@ -61,7 +62,7 @@ sub init
    my $self = shift;
    for ( qw( image ImageFile))
       { $self->{$_} = undef; }
-   for ( qw( alignment quality valignment))
+   for ( qw( alignment quality valignment imageX imageY))
       { $self->{$_} = 0; }
    for ( qw( zoom integralScreen integralImage))
       { $self->{$_} = 1; }
@@ -89,8 +90,8 @@ sub on_paint
    my @r = $self-> get_active_area( 0, @size);
    $canvas-> clipRect( @r);
    $canvas-> transform( @r[0,1]);
-   my $imY  = $self->{image}->height;
-   my $imX  = $self->{image}->width;
+   my $imY  = $self->{imageY};
+   my $imX  = $self->{imageX};
    my $z = $self->{zoom};
    my $imYz = int($imY * $z);
    my $imXz = int($imX * $z);
@@ -104,7 +105,7 @@ sub on_paint
    if ( $imYz < $winY) {
       if ( $ya == ta::Top) {
          $aty = $winY - $imYz;
-      } elsif ( $ya == ta::Middle) {
+      } elsif ( $ya != ta::Bottom) {
          $aty = ($winY - $imYz)/2;
       } else {
          $aty = 0;
@@ -122,7 +123,7 @@ sub on_paint
    if ( $imXz < $winX) {
       if ( $xa == ta::Right) {
          $atx = $winX - $imXz;
-      } elsif ( $xa == ta::Center) {
+      } elsif ( $xa != ta::Left) {
          $atx = ($winX - $imXz)/2;
       } else {
          $atx = 0;
@@ -163,11 +164,14 @@ sub set_image
    my ( $self, $img) = @_;
    $self->{image} = $img;
    unless ( defined $img) {
+      $self->{imageX} = $self->{imageY} = 0;
       $self->limits(0,0);
       $self->palette([]);
       return;
    }
    my ( $x, $y) = ($img-> width, $img-> height);
+   $self-> {imageX} = $x;
+   $self-> {imageY} = $y;
    $x *= $self->{zoom};
    $y *= $self->{zoom};
    $self-> limits($x,$y);
@@ -233,13 +237,31 @@ sub screen2point
 {
    my $self = shift;
    my @ret = ();
-   my $i   = $self-> {indents};
-   my $mx  = $self-> {vScroll} ? $self-> {vScrollBar}-> max : 0;
+   my ( $i, $wx, $wy, $z, $dx, $dy, $ha, $va) =
+      @{$self}{qw(indents winX winY zoom deltaX deltaY alignment valignment)};
+   my $maxy = ( $wy < $self->{limitY}) ? $self->{limitY} - $wy : 0;
+   unless ( $maxy) {
+       if ( $va == ta::Top) {
+          $maxy += $self-> {imageY} * $z - $wy;
+       } elsif ( $va != ta::Bottom) {
+          $maxy += ( $self-> {imageY} * $z - $wy) / 2;
+       }
+   }
+   my $maxx = 0;
+   if ( $wx > $self->{limitX}) {
+       if ( $ha == ta::Right) {
+          $maxx += $self-> {imageX} * $z - $wx;
+       } elsif ( $ha != ta::Left) {
+          $maxx += ( $self-> {imageX} * $z - $wx) / 2;
+       }
+   }
+
    while ( scalar @_) {
       my ( $x, $y) = ( shift, shift);
-      $x += $self-> {deltaX} - $$i[0];
-      $y += $mx - $self-> {deltaY} - $$i[1];
-      push @ret, $x / $self->{zoom}, $y / $self->{zoom};
+      $x += $dx - $$i[0];
+      $y += $maxy - $dy - $$i[1];
+      $x += $maxx;
+      push @ret, $x / $z, $y / $z;
    }
    return @ret;
 }
@@ -248,13 +270,28 @@ sub point2screen
 {
    my $self = shift;
    my @ret = ();
-   my $i   = $self-> {indents};
-   my $mx  = $self-> {vScroll} ? $self-> {vScrollBar}-> max : 0;
-   my $z   = $self->{zoom};
+   my ( $i, $wx, $wy, $z, $dx, $dy, $ha, $va) =
+      @{$self}{qw(indents winX winY zoom deltaX deltaY alignment valignment)};
+   my $maxy = ( $wy < $self->{limitY}) ? $self->{limitY} - $wy : 0;
+   unless ( $maxy) {
+       if ( $va == ta::Top) {
+          $maxy += $self-> {imageY} * $z - $wy;
+       } elsif ( $va != ta::Bottom) {
+          $maxy += ( $self-> {imageY} * $z - $wy) / 2;
+       }
+   }
+   my $maxx = 0;
+   if ( $wx > $self->{limitX}) {
+       if ( $ha == ta::Right) {
+          $maxx += $self-> {imageX} * $z - $wx;
+       } elsif ( $ha != ta::Left) {
+          $maxx += ( $self-> {imageX} * $z - $wx) / 2;
+       }
+   }
    while ( scalar @_) {
       my ( $x, $y) = ( $z * shift, $z * shift);
-      $x -= $self-> {deltaX} - $$i[0];
-      $y -= $mx - $self-> {deltaY} - $$i[1];
+      $x -= $maxx + $self-> {deltaX} - $$i[0];
+      $y -= $maxy - $self-> {deltaY} - $$i[1];
       push @ret, $x, $y;
    }
    return @ret;

@@ -52,7 +52,7 @@ sub profile_default
 sub init
 {
    my $self = shift;
-   for ( qw( scrollTransaction hScroll vScroll limitX limitY deltaX deltaY borderWidth))
+   for ( qw( scrollTransaction hScroll vScroll limitX limitY deltaX deltaY borderWidth winX winY))
       { $self->{$_} = 0; }
    my %profile = $self-> SUPER::init(@_);
    $self-> {indents} = [0,0,0,0];
@@ -69,6 +69,8 @@ sub reset_scrolls
    my $self = $_[0];
    my ($x, $y) = $self-> get_active_area(2);
    my ($w, $h) = $self-> limits;
+   $self-> {winX} = $x;
+   $self-> {winY} = $y;
 
    if ( $self-> {hScroll}) {
       $self-> {hScrollBar}-> set(
@@ -118,7 +120,7 @@ sub set_deltas
 
    $w = $x if $w > $x;
    $h = $y if $h > $y;
-   return if $w == $odx and $h == $ody;
+   return if $w == $odx && $h == $ody;
    $self-> {deltaY} = $h;
    $self-> {deltaX} = $w;
    $self-> scroll( $odx - $w, $h - $ody, clipRect => [$self->get_active_area(0, @sz)]);
