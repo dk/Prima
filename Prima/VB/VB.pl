@@ -55,7 +55,6 @@ package VB;
 use vars qw($inspector
             $main
             $form
-            $ico
             $fastLoad
             );
 
@@ -479,6 +478,7 @@ sub profile_default
       selectable     => 1,
       mainEvent      => 'onMouseClick',
       popupItems     => $VB::main-> menu-> get_items( 'edit'),
+      ownerIcon      => 0,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -1595,6 +1595,8 @@ PREHEAD
       $val = defined($val) ? $type-> write( $_, $val, 1) : 'undef';
       $c .= "       $_ => $val,\n";
    }
+   my @ds = ( $::application-> font-> width, $::application-> font-> height);
+   $c .= "       designScale => [ $ds[0], $ds[1]],\n";
    $c .= <<HEAD2;
    );
    \@\$def{keys \%prf} = values \%prf;
@@ -1672,7 +1674,7 @@ AGAIN:
       $c .= '   '.$actions{onChild}->{$owner}."(q($owner), \$instances{$owner}, \$names{$owner}, q($name));\n"
          if $actions{onChild}->{$owner};
 
-      $c .= "   \$names{$name} = \$names{$owner}-> insert( $class => \n";
+      $c .= "   \$names{$name} = \$names{$owner}-> insert( qq($class) => \n";
       my ( $x,$prf) = ($_, $_->{profile});
       my @o = $_-> get_o_delta;
       for ( keys %{$prf}) {
@@ -1871,9 +1873,8 @@ sub bring_inspector
 
 package VisualBuilder;
 
+$::application-> icon( Prima::Image-> load( Prima::find_image( 'VB::VB.gif'), index => 6));
 $::application-> accelItems( VB::accelItems);
-$VB::ico = Prima::Image-> create;
-$VB::ico = undef unless $VB::ico-> load( Prima::find_image( 'VB::VB.gif'), index => 6);
 $VB::main = MainPanel-> create;
 $VB::inspector = ObjectInspector-> create(
    top => $VB::main-> bottom - 12 - $::application-> get_system_value(sv::YTitleBar)
