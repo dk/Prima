@@ -357,6 +357,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
    if ( wmsd-> size. x != XX-> size. x || wmsd-> size. y != XX-> size. y + XX-> menuHeight) {
       XX-> size. x = wmsd-> size. x;
       XX-> size. y = wmsd-> size. y - XX-> menuHeight;
+      PWidget( self)-> virtualSize = XX-> size; 
       /* printf("got size to %d %d by %d\n", XX-> size.x, XX-> size.y, wmsd-> eventType); */
       prima_send_cmSize( self, old_size);
       if ( PObject( self)-> stage == csDead) return false; 
