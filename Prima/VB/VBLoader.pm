@@ -27,6 +27,10 @@ sub AUTOFORM_REALIZE
    }
 
    delete $dep{$main}->{profile}->{owner};
+   for ( keys %{$dep{$main}->{profile}}) {
+      next unless /^on[A-Z]/;
+      $dep{$main}->{profile}->{$_} = eval "sub { $dep{$main}->{profile}{$_}}";
+   }
    $ret{$main} = $dep{$main}->{class}-> create(
       %{$dep{$main}->{profile}},
       %{$parms->{$main}},
@@ -48,9 +52,14 @@ sub AUTOFORM_REALIZE
          $_ = $$seq[$i];
          next unless $owners{$_} eq $id;
          $owners{$_} = $main unless exists $ret{$owners{$_}}; # validating owner entry
+         my $phash = $dep{$_}->{profile};
+         for ( keys %{$phash}) {
+            next unless /^on[A-Z]/;
+            $phash->{$_} = eval "sub { $phash->{$_}}";
+         }
          $ret{$_} = $ret{$owners{$_}}-> insert(
             $dep{$_}->{class},
-            %{$dep{$_}->{profile}},
+            %{$phash},
             %{$parms->{$_}},
          );
          &do_layer( $_);

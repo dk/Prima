@@ -323,10 +323,31 @@ package Prima::VB::GroupRadioBox;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::GroupBox);
 
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      uiv    => ['index'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
+
 
 package Prima::VB::GroupCheckBox;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::GroupBox);
+
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      uiv    => ['value'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
+
 
 package Prima::VB::BiScroller;
 
@@ -688,7 +709,6 @@ sub prf_types
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
 }
-
 
 sub prf_adjust_default
 {

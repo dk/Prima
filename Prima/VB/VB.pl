@@ -6,8 +6,16 @@ use Prima::Notebooks;
 use Prima::MsgBox;
 use Prima::StdDlg;
 use Prima::VB::VBLoader;
-use Prima::VB::Config;
-use Prima::VB::Classes;
+use Prima::VB::VBControls;
+
+my $config  = 'Prima::VB::Config';
+my $classes = 'Prima::VB::Classes';
+
+#$config  = 'Prima::VB::Lite::Config';
+#$classes = 'Prima::VB::Lite::Classes';
+
+eval "use $config; use $classes;";
+die "$@" if $@;
 use Prima::Application name => 'VB';
 
 $SIG{__WARN__} = sub {
@@ -24,142 +32,32 @@ use vars qw($inspector
 
 $fastLoad = 1;
 
-package Divider;
+
+
+package OPropListViewer;
 use vars qw(@ISA);
-@ISA = qw(Prima::Widget);
+@ISA = qw(PropListViewer);
 
-sub profile_default
+sub on_click
 {
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my %prf = (
-      vertical       => 0,
-      growMode       => gm::GrowHiX,
-      pointerType    => cr::SizeNS,
-      min            => 0,
-      max            => 0,
-   );
-   @$def{keys %prf} = values %prf;
-   return $def;
-}
-
-
-sub profile_check_in
-{
-   my ( $self, $p, $default) = @_;
-   $self-> SUPER::profile_check_in( $p, $default);
-   my $vertical = exists $p-> {vertical} ? $p-> {vertical} : $default->{ vertical};
-   if ( $vertical)
-   {
-      $p-> { growMode} = gm::GrowLoX | gm::GrowHiY if !exists $p-> { growMode};
-      $p-> { pointerType } = cr::SizeWE if !exists $p-> { pointerType};
-   }
-}
-
-
-sub init
-{
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   for ( qw( vertical min max))
-      { $self->{$_} = 0; }
-   for ( qw( vertical min max))
-      { $self->$_( $profile{ $_}); }
-   return %profile;
-}
-
-sub on_paint
-{
-   my ( $self, $canvas) = @_;
-   my @sz = $canvas-> size;
-   $self-> rect3d( 0,0,$sz[0]-1,$sz[1]-1,1,$self->light3DColor,$self->dark3DColor,$self->backColor);
-   my $v = $self->{vertical};
-   return if $sz[ $v ? 0 : 1] < 4;
-   $self->color($self->light3DColor);
-   my $d = int($sz[ $v ? 0 : 1] / 2);
-   $v ?
-     $self->line($d, 2, $d, $sz[1]-3) :
-     $self->line(2, $d, $sz[0]-3, $d);
-   $self->color($self->dark3DColor);
-   $d++;
-   $v ?
-     $self->line($d, 2, $d, $sz[1]-3) :
-     $self->line(2, $d, $sz[0]-3, $d);
-}
-
-sub on_mousedown
-{
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   if ( $btn == mb::Left && !$self->{drag}) {
-      $self-> capture( 1, $self-> owner);
-      $self->{drag} = 1;
-      $self->{pos}  = $self->{vertical} ? $x : $y;
-   }
-}
-
-sub on_mouseup
-{
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   if ( $btn == mb::Left && $self->{drag}) {
-      $self-> capture(0);
-      $self->{drag} = 0;
-   }
-}
-
-sub on_mousemove
-{
-   my ( $self, $mod, $x, $y) = @_;
-   if ( $self->{drag}) {
-      if ( $self->{vertical}) {
-         my $np = $self-> left - $self->{pos} + $x;
-         my $w = $self-> owner-> width;
-         my $ww = $self-> width;
-         $np = $self->{min} if $np < $self->{min};
-         $np = $w - $self->{max} - $ww if $np > $w - $self->{max} - $ww;
-         $self-> left( $np);
-         $self-> notify( q(Change));
-      } else {
-         my $np = $self-> bottom - $self->{pos} + $y;
-         my $w  = $self-> owner-> height;
-         my $ww = $self-> height;
-         $np = $self->{min} if $np < $self->{min};
-         $np = $w - $self->{max} - $ww if $np > $w - $self->{max} - $ww;
-         $self-> bottom( $np);
-         $self-> notify( q(Change));
-      }
-   }
-}
-
-sub vertical
-{
-   if ( $#_) {
-      return if $_[1] == $_[0]->{vertical};
-      $_[0]->{vertical} = $_[1];
-      $_[0]->repaint;
+   my $self = $_[0];
+   my $index = $self-> focusedItem;
+   my $current = $VB::inspector-> {current};
+   return if $index < 0 or !$current;
+   my $id = $self-> {'id'}->[$index];
+   $self-> SUPER::on_click;
+   if ( $self->{check}->[$index]) {
+      $current->prf_set( $id => $current->{default}->{$id});
    } else {
-      return $_[0]->{vertical};
+      $current->prf_delete( $id);
    }
 }
 
-sub min
+sub on_selectitem
 {
-   if ( $#_) {
-      my $mp = $_[1];
-      return if $_[0]->{min} == $mp;
-      $_[0]->{min} = $mp;
-   } else {
-      return $_[0]->{min};
-   }
-}
-
-sub max
-{
-   if ( $#_) {
-      my $mp = $_[1];
-      return if $_[0]->{max} == $mp;
-      $_[0]->{max} = $mp;
-   } else {
-      return $_[0]->{max};
-   }
+   my ( $self, $lst) = @_;
+   $VB::inspector-> close_item;
+   $VB::inspector-> open_item;
 }
 
 
@@ -201,13 +99,40 @@ sub init
       items    => [''],
    );
 
-   $self-> insert( ListViewer =>
-      origin   => [ 0, 0],
-      size     => [ 100, $sz[1] - $fh],
-      hScroll  => 1,
+   $self-> {monger} = $self-> insert( Notebook =>
+      origin  => [ 0, $fh],
+      size    => [ 100,  $sz[1] - $fh * 2],
       growMode => gm::Client,
-      name     => 'List',
+      pageCount => 2,
    );
+
+   $self-> {mtabs} = $self-> insert( ComboBox =>
+      origin   => [ 0, 0],
+      size     => [ 100, $fh],
+      items    => ['Properties', 'Events'],
+      growMode => gm::Floor,
+      style    => cs::DropDownList,
+      name     => 'MTabs',
+   );
+
+   $self-> {plist} = $self-> {monger}-> insert_to_page( 0, OPropListViewer =>
+      origin   => [ 0, 0],
+      size     => [ 100, $sz[1] - $fh * 2],
+      hScroll  => 1,
+      name       => 'PList',
+      delegateTo => $self,
+      growMode   => gm::Client,
+   );
+
+   $self-> {elist} = $self-> {monger}-> insert_to_page( 1, OPropListViewer =>
+      origin   => [ 0, 0],
+      size     => [ 100, $sz[1] - $fh * 2],
+      hScroll  => 1,
+      name       => 'EList',
+      delegateTo => $self,
+      growMode   => gm::Client,
+   );
+   $self-> {currentList} = $self-> {'plist'};
 
    $self-> insert( Divider =>
       vertical => 1,
@@ -236,11 +161,22 @@ sub Div_Change
 {
    my $self = $_[0];
    my $right = $self-> Div-> right;
-   $self-> List-> width( $self-> Div-> left);
+   $self-> {monger}-> width( $self-> Div-> left);
+   $self-> {mtabs}-> width( $self-> Div-> left);
    $self-> Panel-> set(
       width => $self-> width - $right,
       left  => $right,
    );
+}
+
+sub MTabs_Change
+{
+   my ( $self, $mtabs) = @_;
+   my $ix = $mtabs-> List-> focusedItem;
+   $self-> {monger}-> pageIndex( $ix);
+   $self-> {currentList} = $self-> { $ix ? 'elist' : 'plist' };
+   $self-> close_item;
+   $self-> open_item;
 }
 
 sub Selector_Change
@@ -262,72 +198,6 @@ sub Selector_Change
    $self->{selectorRetrieving} = 0;
 }
 
-sub List_Stringify
-{
-   my ( $oi, $self, $index, $sref) = @_;
-   $$sref = $oi->{propsId}->[$index];
-   $self-> clear_event;
-}
-
-sub List_MeasureItem
-{
-   my ( $oi, $self, $index, $sref) = @_;
-   $$sref = $self->get_text_width($oi->{propsId}->[$index]);
-   $self-> clear_event;
-}
-
-sub List_DrawItem
-{
-   my ($oi, $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused) = @_;
-   my $clrSave = $canvas-> color;
-   my $ena = $oi-> {propsCheck}->[$index];
-   unless ( defined $oi->{hBenchColor}) {
-      $me->color( $me-> hiliteBackColor);
-      my $i1 = $me-> color;
-      $me->color( $me-> backColor);
-      my $i2 = $me-> color;
-      my ( $r1, $g1, $b1, $r2, $g2, $b2) = (
-         ( $i1 >> 16) & 0xFF, ( $i1 >> 8) & 0xFF, $i1 & 0xFF,
-         ( $i2 >> 16) & 0xFF, ( $i2 >> 8) & 0xFF, $i2 & 0xFF,
-      );
-      $r1 = int(( $r1 + $r2) / 2);
-      $g1 = int(( $g1 + $g2) / 2);
-      $b1 = int(( $b1 + $b2) / 2);
-      $oi->{hBenchColor} = $b1 | ( $g1 << 8) | ( $r1 << 16);
-      $oi->{hBenchColor} = $i1 if $oi->{hBenchColor} == $i2;
-   }
-   my $backColor = $hilite ? ( $ena ? $me-> hiliteBackColor : $oi-> {hBenchColor}) : $me-> backColor;
-   my $color = $hilite ? $me-> hiliteColor : $clrSave;
-   $canvas-> color( $backColor);
-   $canvas-> bar( $left, $bottom, $right, $top);
-   $canvas-> color( $ena ? $color : cl::Gray);
-   my $text = ${$oi-> {propsId}}[$index];
-   my $x = $left + 2;
-   $canvas-> text_out( $text, $x, ($top + $bottom - $oi->{fHeight}) / 2);
-   $canvas-> color( $clrSave);
-}
-
-sub List_Click
-{
-   my $self = $_[0];
-   my $index = $_[1]-> focusedItem;
-   return if $index < 0 or !$self->{current};
-   my $id = $self-> {propsId}->[$index];
-   $self-> {propsCheck}->[$index] = !$self-> {propsCheck}->[$index];
-   $_[1]-> redraw_items( $index);
-   if ( $self-> {propsCheck}->[$index]) {
-      $self->{current}->prf_set( $id => $self->{current}->{default}->{$id});
-   } else {
-      $self->{current}->prf_delete( $id);
-   }
-}
-
-sub List_SelectItem
-{
-   my ( $self, $lst) = @_;
-   $self-> close_item;
-   $self-> open_item;
-}
 
 sub item_changed
 {
@@ -340,10 +210,11 @@ sub item_changed
          $self-> {sync} = 1;
          my $data = $self-> {opened}-> get;
          $self->{opened}->{widget}->prf_set( $self->{opened}->{id} => $data);
-         my $ix = $self->{propsIndex}->{$self->{opened}->{id}};
-         unless ( $self-> {propsCheck}->[$ix]) {
-            $self-> {propsCheck}->[$ix] = 1;
-            $self-> List-> redraw_items( $ix);
+         my $list = $self-> {currentList};
+         my $ix = $list-> {index}->{$self->{opened}->{id}};
+         unless ( $list-> {check}->[$ix]) {
+            $list-> {check}->[$ix] = 1;
+            $list-> redraw_items( $ix);
          }
          $self->{sync} = undef;
       }
@@ -358,13 +229,14 @@ sub widget_changed
    return unless $self-> {opened};
    return if $self-> {sync};
    $self-> {sync} = 1;
-   my $id = $self->{opened}->{id};
+   my $id   = $self->{opened}->{id};
    my $data = $self-> {opened}-> {widget}-> prf( $id);
    $self-> {opened}-> set( $data);
-   my $ix = $self->{propsIndex}->{$id};
-   if ( $self-> {propsCheck}->[$ix] == $how) {
-      $self-> {propsCheck}->[$ix] = $how ? 0 : 1;
-      $self-> List-> redraw_items( $ix);
+   my $list = $self-> {currentList};
+   my $ix = $list->{index}->{$id};
+   if ( $list-> {check}->[$ix] == $how) {
+      $list-> {check}->[$ix] = $how ? 0 : 1;
+      $list-> redraw_items( $ix);
    }
    $self-> {sync} = undef;
 }
@@ -381,32 +253,33 @@ sub open_item
 {
    my $self = $_[0];
    return if defined $self->{opened};
-   my $f = $self-> List-> focusedItem;
+   my $list = $self->{currentList};
+   my $f = $list-> focusedItem;
+
    if ( $f < 0) {
       $self->{panel}->pageIndex(0);
       return;
    }
-   $self-> {lastBrowseIx} = $f;
-    my $id   = $self->{propsId}->[$self-> {lastBrowseIx}];
-    my $type = $VB::main-> get_typerec( $self->{current}-> {types}->{$id});
-    my $p = $self->{panel};
-    my $pageset;
-    if ( exists $p->{pages}->{$type}) {
-       $self-> {opened} = $self->{typeCache}->{$type};
-       $pageset = $p->{pages}->{$type};
-       $self-> {opened}-> renew( $id, $self-> {current});
-    } else {
-       $p-> pageCount( $p-> pageCount + 1);
-       $p-> pageIndex( $p-> pageCount - 1);
-       $p->{pages}->{$type} = $p-> pageIndex;
-       $self-> {opened} = $type-> new( $p, $id, $self-> {current});
-       $self->{typeCache}->{$type} = $self-> {opened};
-    }
-    my $data = $self-> {current}-> prf( $id);
-    $self-> {sync} = 1;
-    $self-> {opened}-> set( $data);
-    $self-> {sync} = undef;
-    $p-> pageIndex( $pageset) if defined $pageset;
+   my $id   = $list->{id}->[$f];
+   my $type = $VB::main-> get_typerec( $self->{current}-> {types}->{$id});
+   my $p = $self->{panel};
+   my $pageset;
+   if ( exists $p->{pages}->{$type}) {
+      $self-> {opened} = $self->{typeCache}->{$type};
+      $pageset = $p->{pages}->{$type};
+      $self-> {opened}-> renew( $id, $self-> {current});
+   } else {
+      $p-> pageCount( $p-> pageCount + 1);
+      $p-> pageIndex( $p-> pageCount - 1);
+      $p->{pages}->{$type} = $p-> pageIndex;
+      $self-> {opened} = $type-> new( $p, $id, $self-> {current});
+      $self-> {typeCache}->{$type} = $self-> {opened};
+   }
+   my $data = $self-> {current}-> prf( $id);
+   $self-> {sync} = 1;
+   $self-> {opened}-> set( $data);
+   $self-> {sync} = undef;
+   $p-> pageIndex( $pageset) if defined $pageset;
 }
 
 
@@ -424,34 +297,50 @@ sub enter_widget
    $self-> close_item;
 
    if ( $self-> {current}) {
-      my $df = $_[0]->{default};
+      my %df = %{$_[0]->{default}};
       my $pf = $_[0]->{profile};
-      $self-> {propsId}     = [ sort keys %{$df}];
-      $self-> {propsCheck}  = [];
-      $self-> {propsStr}    = [];
+
+      my @ef = sort keys %{$self->{current}-> {events}};
+      my $ep = $self-> {elist};
+      $ep-> {id}     = \@ef;
+      $ep-> {check}  = [];
       my %ix = ();
       my $num = 0;
-      for ( @{$self-> {propsId}}) {
-         push( @{$self-> {propsCheck}}, exists $pf->{$_} ? 1 : 0);
-         push( @{$self-> {propsStr}}, '');
+      for ( @{$ep-> {id}}) {
+         push( @{$ep-> {check}}, exists $pf->{$_} ? 1 : 0);
+         $ix{$_} = $num++;
+         delete $df{$_};
+      }
+      $ep-> {fHeight} = $ep-> font-> height;
+      $ep-> {index}  = {%ix};
+      $ep-> set_count( scalar @{$ep-> {id}});
+      $ep-> focusedItem( $ix{$oid}) if defined $oid and defined $ix{$oid};
+
+      my $lp = $self-> {plist};
+      $lp-> {id}     = [ sort keys %df];
+      $lp-> {check}  = [];
+      %ix = ();
+      $num = 0;
+      for ( @{$lp-> {id}}) {
+         push( @{$lp-> {check}}, exists $pf->{$_} ? 1 : 0);
          $ix{$_} = $num++;
       }
-      $self-> {fHeight}     = $self-> font-> height;
-      $self-> {hBenchColor} = undef;
-      $self-> {propsIndex}  = \%ix;
-      $self-> List-> set_count( scalar @{$self-> {propsId}});
-      $self-> List-> focusedItem( $ix{$oid}) if defined $oid and defined $ix{$oid};
+      $lp-> {fHeight} = $lp-> font-> height;
+      $lp-> {index}   = {%ix};
+      $lp-> set_count( scalar @{$lp-> {id}});
+      $lp-> focusedItem( $ix{$oid}) if defined $oid and defined $ix{$oid};
+
       $self-> Selector-> text( $self-> {current}-> name)
          unless $self->{selectorRetrieving};
       $self-> open_item;
    } else {
-      $self-> {props}     = [];
-      $self-> {propCheck} = [];
-      $self-> {propStr}   = [];
-      $self-> {propsIndex}  = {};
-      $self-> {hBenchColor} = undef;
-      $self-> {panel}->pageIndex(0);
-      $self-> List-> set_count(0);
+      $self-> {panel}-> pageIndex(0);
+      for ( qw( plist elist)) {
+         my $p = $self-> {$_};
+         $p-> {check} = [];
+         $p-> {index} = {};
+         $p-> set_count(0);
+      }
       $self-> Selector-> text( '');
    }
 }
@@ -479,7 +368,7 @@ sub renew_widgets
 sub preload
 {
    my $self = $VB::inspector;
-   my $l = $self-> List;
+   my $l = $self-> {plist};
    my $cnt = $l-> count;
    $self->{panel}->hide;
    $l->hide;
@@ -508,7 +397,7 @@ sub profile_default
       height         => 200,
       centered       => 1,
       class          => 'Prima::Window',
-      module         => 'Prima::Classes',
+      module         => $classes,
       selectable     => 1,
       popupItems     => $VB::main-> menu-> get_items( 'edit'),
    );
@@ -1069,8 +958,8 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
 
-   my %classes = Prima::VB::Config::classes;
-   my @pages   = Prima::VB::Config::pages;
+   my %classes = eval "$config".'::classes';
+   my @pages   = eval "$config".'::pages';
 
    $self-> set(
      sizeMin => [ 350, $self->height],
@@ -1543,7 +1432,7 @@ PREHEAD
    for ( keys %$prf) {
       my $val = $prf->{$_};
       my $type = $self-> get_typerec( $types->{$_}, \$val);
-      $val = defined($val) ? $type-> write( $_, $val) : 'undef';
+      $val = defined($val) ? $type-> write( $_, $val, 1) : 'undef';
       $c .= "       $_ => $val,\n";
    }
    $c .= <<HEAD2;
@@ -1578,7 +1467,6 @@ AGAIN:
       my $name = $_-> prf( 'name');
       $names{$name} = 1;
       $c .= "   \$names{q($name)} = \$names{q($owner)}-> insert( $class => \n";
-#     $c .= "$class-> create(
       my ( $x,$prf) = ($_, $_->{profile});
       my @o = $_-> get_o_delta;
       for ( keys %{$prf}) {
@@ -1592,7 +1480,7 @@ AGAIN:
          }
          next if $_ eq 'owner';
          my $type = $self-> get_typerec( $types->{$_}, \$val);
-         $val = defined($val) ? $type-> write( $_, $val) : 'undef';
+         $val = defined($val) ? $type-> write( $_, $val, 1) : 'undef';
          $c .= "       $_ => $val,\n";
       }
       $c .= "   );\n";

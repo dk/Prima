@@ -24,7 +24,12 @@ sub init_profiler
    $self-> {creationOrder} = $prf->{creationOrder};
    $self-> {creationOrder} = 0 unless defined $self-> {creationOrder};
    $self-> {profile} = $prf->{profile};
-   $self-> {default} = $prf->{class}-> profile_default;
+   my %events = %{$self-> prf_events};
+   for ( keys %{$prf->{class}->notification_types}) {
+      $events{"on$_"} = '' unless exists $events{"on$_"};
+   }
+   $self-> {events}  = \%events;
+   $self-> {default} = {%{$prf->{class}-> profile_default}, %events};
    $self-> prf_adjust_default( $self-> {profile}, $self-> {default});
    $self-> prf_set( %{$self-> {profile}});
    my $types = $self-> prf_types;
@@ -33,6 +38,7 @@ sub init_profiler
       my ( $props, $type) = ( $types->{$_}, $_);
       $xt{$_} = $type for @$props;
    }
+   $xt{$_} = 'event' for keys %events;
    $self-> {types} = \%xt;
 }
 
@@ -86,6 +92,9 @@ sub prf_adjust_default
 {
 }
 
+sub events
+{
+}
 
 package Prima::VB::Component;
 use vars qw(@ISA);
@@ -118,6 +127,16 @@ sub prf_types
       sibling    => ['delegateTo'],
    };
 }
+
+sub prf_events
+{
+   return {
+      onCreate       => 'my $self = $_[0];',
+      onDestroy      => 'my $self = $_[0];',
+      onPostMessage  => 'my ( $self, $info1, $info2) = @_;',
+   };
+}
+
 
 sub prf_adjust_default
 {
@@ -621,6 +640,7 @@ sub prf_types
       bool          => ['textOutBaseline', 'textOpaque'],
       point         => ['transform'],
       palette       => ['palette'],
+      image         => ['region'],
    );
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
@@ -661,6 +681,7 @@ sub prf_adjust_default
       linePattern
       lineWidth
       fillPattern
+      region
       rop
       rop2
       textOpaque
@@ -860,6 +881,7 @@ use Prima::Buttons;
 use Prima::ColorDialog;
 use Prima::Label;
 use Prima::FontDialog;
+use Prima::Outlines;
 
 package Prima::VB::Types::generic;
 
@@ -869,6 +891,7 @@ sub new
    my $self = {};
    bless( $self, $class);
    ( $self-> {container}, $self->{id}, $self->{widget}) = @_;
+   $self-> {changeProc} = \&ObjectInspector::item_changed;
    $self-> open();
    return $self;
 }
@@ -896,6 +919,12 @@ sub valid
 {
    return 1;
 }
+
+sub change
+{
+   $_[0]-> {changeProc}->( $_[0]);
+}
+
 
 sub write
 {
@@ -948,7 +977,7 @@ sub open
       width  => $self-> {container}-> width - 10,
       growMode => gm::Ceiling,
       onChange => sub {
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 }
@@ -1004,17 +1033,20 @@ sub open
    my @sz = $i-> size;
    my $fh = $i-> font-> height;
    $self-> {A} = $i-> insert( Edit =>
-      origin   => [ 5, $fh * 4 + 10],
-      size     => [ $sz[0]-10, $sz[1] - $fh * 4 - 16],
+      origin   => [ 5, 5],
+      size     => [ $sz[0]-10, $sz[1] - 34],
       growMode => gm::Client,
       onChange => sub {
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
-   $i-> insert( Button =>
-      origin => [5, $fh * 2 + 16],
-      size   => [$sz[0]-10,$fh+6],
-      text   => '~Load',
+   $i-> insert( SpeedButton =>
+      origin => [5, $sz[1] - 28],
+      size   => [27, 27],
+      hint   => 'Load',
+      growMode => gm::GrowLoY,
+      image  => $VB::main-> {openbutton}-> image,
+      glyphs => $VB::main-> {openbutton}-> glyphs,
       onClick => sub {
          my $d = Prima::OpenDialog-> create(
             text => 'Load text',
@@ -1027,7 +1059,7 @@ sub open
                $f = <F>;
                $self->{A}->text( $f);
                close F;
-               ObjectInspector::item_changed();
+               $self-> change;
             } else {
                Prima::MsgBox::message("Cannot load $f");
             }
@@ -1035,10 +1067,13 @@ sub open
          $d-> destroy;
       },
    );
-   $self->{B} = $i-> insert( Button =>
-      origin => [5, $fh + 10],
-      size   => [$sz[0]-10,$fh+6],
-      text   => '~Save',
+   $self->{B} = $i-> insert( SpeedButton =>
+      origin => [ 33, $sz[1] - 28],
+      size   => [27, 27],
+      hint   => 'Save',
+      growMode => gm::GrowLoY,
+      image  => $VB::main-> {savebutton}-> image,
+      glyphs => $VB::main-> {savebutton}-> glyphs,
       onClick => sub {
          my $dlg  = Prima::SaveDialog-> create(
             icon => $VB::ico,
@@ -1057,13 +1092,16 @@ sub open
          $dlg-> destroy;
       },
    );
-   $i-> insert( Button =>
-      origin => [5, 4],
-      size   => [$sz[0]-10,$fh+6],
-      text   => '~Clear',
+   $i-> insert( SpeedButton =>
+      origin => [ 62, $sz[1] - 28],
+      size   => [27, 27],
+      hint   => 'Clear',
+      growMode => gm::GrowLoY,
+      image  => $VB::main-> {newbutton}-> image,
+      glyphs => $VB::main-> {newbutton}-> glyphs,
       onClick => sub {
          $self-> set( '');
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 }
@@ -1082,7 +1120,7 @@ sub open
       min    => -16383,
       max    => 16383,
       onChange => sub {
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 }
@@ -1117,7 +1155,7 @@ sub open
       width  => 120,
       text   => $self-> {id},
       onClick  => sub {
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 }
@@ -1152,7 +1190,7 @@ sub open
       style  => cs::DropDownList,
       items  => [''],
       onChange => sub {
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 }
@@ -1223,7 +1261,7 @@ sub open
          $self-> {B}-> text('undef');
          $self-> {C}-> text('undef');
          $self-> {sync} = undef;
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 
@@ -1243,7 +1281,7 @@ sub open
       items    => ['undef', @uClasses],
       onChange => sub {
          return if $self-> {sync};
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 
@@ -1263,7 +1301,7 @@ sub open
       items    => ['undef', @uColors],
       onChange => sub {
          return if $self-> {sync};
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 
@@ -1348,7 +1386,7 @@ sub open
       min      => -16383,
       max      => 16383,
       onChange => sub {
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 
@@ -1367,7 +1405,7 @@ sub open
       min      => -16383,
       max      => 16383,
       onChange => sub {
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 
@@ -1457,7 +1495,7 @@ sub open_indirect
       height => $h - 10,
       growMode => gm::Client,
       onSelectItem => sub {
-         ObjectInspector::item_changed();
+         $self-> change;
          $self->on_change();
       },
       items => [$self->IDS],
@@ -1852,7 +1890,7 @@ sub open
 sub on_change
 {
    my $self = $_[0];
-   ObjectInspector::item_changed();
+   $self-> change;
    $self->{sync} = 1;
    $self->{marker}-> font( $self->{marker}-> font_match(
       $self-> get,
@@ -1943,8 +1981,8 @@ sub open
 
    my $fh = $i-> font-> height;
    $self->{A} = $i-> insert( Widget =>
-      origin   => [ 5, $fh * 4 + 10],
-      size     => [ $sz[0]-10, $sz[1] - $fh * 4 - 16],
+      origin   => [ 5, 5],
+      size     => [ $sz[0]-10, $sz[1] - 34],
       growMode => gm::Client,
       onPaint  => sub {
          my ( $self, $canvas) = @_;
@@ -1966,10 +2004,13 @@ sub open
       },
    );
 
-   $i-> insert( Button =>
-      origin => [5, $fh * 2 + 16],
-      size   => [$sz[0]-10,$fh+6],
-      text   => '~Load',
+   $i-> insert( SpeedButton =>
+      origin => [ 5, $sz[1] - 28],
+      size   => [ 27, 27],
+      hint   => 'Load',
+      image  => $VB::main-> {openbutton}-> image,
+      glyphs => $VB::main-> {openbutton}-> glyphs,
+      growMode => gm::GrowLoY,
       onClick => sub {
          my $d = Prima::OpenDialog-> create(
             icon => $VB::ico,
@@ -1983,20 +2024,65 @@ sub open
             my $in = $self-> imgClass();
             my $i = $in-> create;
             my $f = $d-> fileName;
-            if ( $i-> load( $f)) {
+            if ( $i-> load( $f, index => 0)) {
+               my $i1 = $in-> create;
+               my $ix = 2;
+               my @images = ( $i1);
+               if ( $i1-> load( $f, index => 1)) {
+                   my $maxH = $i1-> height;
+                   while ( 1) {
+                      my $j = $in-> create;
+                      last unless $j-> load( $f, index => $ix++);
+                      push ( @images, $j);
+                      my $h = $j-> height;
+                      $maxH = $h if $h > $maxH;
+                   }
+                   my $dd = Prima::Dialog-> create(
+                      centered => 1,
+                      visible  => 0,
+                      size     => [ 300, 300],
+                      name     => 'Select image',
+                   );
+                   my $l = $dd-> insert( ListViewer =>
+                      size     => [ $dd-> size],
+                      origin   => [ 0,0],
+                      itemHeight => $maxH,
+                      onDrawItem => sub {
+                         my ($self, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focusedItem) = @_;
+                         my $clrSave = $self-> color;
+                         my $backColor = $hilite ? $self-> hiliteBackColor : $self-> backColor;
+                         $canvas-> color( $backColor);
+                         $canvas-> bar( $left, $bottom, $right, $top);
+                         $canvas-> color( $clrSave);
+                         $canvas-> put_image( $left, $bottom, $images[$index]);
+                      },
+                      onClick => sub {
+                          my $self = $_[0];
+                          $i = $images[ $self-> focusedItem];
+                          $dd-> ok;
+                      },
+                   );
+                   $l-> set_count( scalar @images);
+                   $dd-> destroy, goto FAIL unless $dd-> execute == cm::OK;
+               }
+
                $self-> set( $i);
-               ObjectInspector::item_changed();
+               $self-> change;
             } else {
                Prima::MsgBox::message("Cannot load $f");
             }
          }
+      FAIL:
          $d-> destroy;
       },
    );
-   $self->{B} = $i-> insert( Button =>
-      origin => [5, $fh + 10],
-      size   => [$sz[0]-10,$fh+6],
-      text   => '~Save',
+   $self->{B} = $i-> insert( SpeedButton =>
+      origin => [33, $sz[1]- 28],
+      size   => [27, 27],
+      hint   => 'Save',
+      image  => $VB::main-> {savebutton}-> image,
+      glyphs => $VB::main-> {savebutton}-> glyphs,
+      growMode => gm::GrowLoY,
       onClick => sub {
          my $dlg  = Prima::SaveDialog-> create(
             icon => $VB::ico,
@@ -2013,13 +2099,16 @@ sub open
          $dlg-> destroy;
       },
    );
-   $i-> insert( Button =>
-      origin => [5, 4],
-      size   => [$sz[0]-10,$fh+6],
-      text   => '~Clear',
+   $self->{C} = $i-> insert( SpeedButton =>
+      origin => [62, $sz[1] - 28],
+      size   => [27, 27],
+      hint   => 'Clear',
+      glyphs => $VB::main-> {newbutton}-> glyphs,
+      image  => $VB::main-> {newbutton}-> image,
+      growMode => gm::GrowLoY,
       onClick => sub {
          $self-> set( undef);
-         ObjectInspector::item_changed();
+         $self-> change;
       },
    );
 }
@@ -2034,7 +2123,8 @@ sub set
    my ( $self, $data) = @_;
    $self->{A}->{icon} = $data;
    $self->{A}-> repaint;
-   $self->{B}-> enabled( defined $data);
+   $self->{B}-> enabled( $data);
+   $self->{C}-> enabled( $data);
 }
 
 sub get
@@ -2106,6 +2196,563 @@ sub write
    }
    $r .= ']';
    return $r;
+}
+
+
+package Prima::VB::Types::event;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::text);
+
+sub write
+{
+   my ( $class, $id, $data, $flag) = @_;
+   return "'". Prima::VB::Types::generic::quotable($data)."'" unless $flag;
+   return "sub { $data}";
+}
+
+package MenuOutline;
+use vars qw(@ISA);
+@ISA = qw(Prima::Outline);
+
+
+sub on_keydown
+{
+   my ( $self, $code, $key, $mod) = @_;
+   $self-> SUPER::on_keydown( $code, $key, $mod);
+   $mod &= (km::Ctrl|km::Shift|km::Alt);
+   if ( $key == kb::Delete && $mod == 0) {
+      $self-> del;
+      $self-> clear_event;
+      return;
+   }
+   if ( $key == kb::Insert && $mod == 0) {
+      $self-> new;
+      $self-> clear_event;
+      return;
+   }
+}
+
+sub new
+{
+   my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
+   my ( $p, $o) = $_[0]-> get_item_parent( $x);
+   $o = -1 unless defined $o;
+   $_[0]-> insert_items( $p, $o + 1,
+      [['New Item', { text => 'New Item',
+      action => $Prima::VB::Types::menuItems::menuDefaults{action}}], undef, 0],
+   );
+   ObjectInspector::item_changed();
+   $_[0]-> {master}-> enter_menuitem( $x);
+}
+
+sub makenode
+{
+   my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
+   return if !$x;
+   if ( $x->[1]) {
+      splice( @{$x->[1]}, 0, 0, [
+         ['New Item', { text => 'New Item',
+         action => $Prima::VB::Types::menuItems::menuDefaults{action}}], undef, 0,
+      ]);
+      $_[0]-> reset_tree;
+      $_[0]-> update_tree;
+      $_[0]-> repaint;
+   } else {
+      $x-> [1] = [
+         [['New Item', { text => 'New Item',
+         action => $Prima::VB::Types::menuItems::menuDefaults{action}}], undef, 0],
+      ];
+      $x-> [2] = 0;
+   }
+   $_[0]-> adjust( $_[0]-> focusedItem, 1);
+   $_[0]-> {master}-> enter_menuitem( $x);
+}
+
+sub del
+{
+   my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
+   $_[0]-> delete_item( $x);
+   $_[0]-> {master}-> enter_menuitem( $x);
+}
+
+
+package MPropListViewer;
+use vars qw(@ISA);
+@ISA = qw(PropListViewer);
+
+sub on_click
+{
+   my $self = $_[0];
+   my $index = $self-> focusedItem;
+   my $current = $self-> {master}-> {current};
+   return if $index < 0 or !$current;
+   my $id = $self-> {'id'}->[$index];
+   $self-> SUPER::on_click;
+   if ( $self->{check}->[$index]) {
+      $current-> [0]->[1]-> {$id} = $Prima::VB::Types::menuItems::menuDefaults{$id};
+   } else {
+      delete $current-> [0]->[1]-> {$id};
+   }
+}
+
+
+package Prima::VB::Types::menuItems;
+use vars qw(@ISA %menuProps %menuDefaults);
+@ISA = qw(Prima::VB::Types::generic);
+
+
+%menuProps = (
+   'key'     => 'key',
+   'accel'   => 'string',
+   'text'    => 'string',
+   'name'    => 'string',
+   'enabled' => 'bool',
+   'checked' => 'bool',
+   'image'   => 'image',
+   'action'  => 'event',
+);
+
+%menuDefaults = (
+   'key'     => kb::NoKey,
+   'accel'   => '',
+   'text'    => '',
+   'name'    => 'MenuItem',
+   'enabled' => 1,
+   'checked' => 0,
+   'image'   => undef,
+   'action'  => 'my ( $self, $item) = @_;',
+);
+
+
+sub open
+{
+   my $self = $_[0];
+   my $h = $self-> {container}-> height;
+   my $w = $self-> {container}-> width;
+   my $fh = $self-> {container}-> font-> height;
+
+   my $divx = $h / 2;
+   $self-> {A} = $self-> {container}-> insert( MPropListViewer =>
+      origin => [ 0, 0],
+      size   => [ 100, $divx],
+      growMode => gm::Client,
+      hScroll => 1,
+      vScroll => 1,
+      onSelectItem => sub {
+         $self-> close_item;
+         $self-> open_item;
+      },
+   );
+   $self-> {A}->{master} = $self;
+
+   $self-> {Div1} = $self-> {container}-> insert( Divider =>
+      vertical => 0,
+      origin => [ 0, $divx],
+      size   => [ 100, 6],
+      min    => 20,
+      max    => 20,
+      name   => 'Div',
+      growMode => gm::Ceiling,
+      onChange => sub {
+         my $bottom = $_[0]-> bottom;
+         $self-> {A}-> height( $bottom);
+         $self-> {B}-> set(
+            top    => $self-> {container}-> height,
+            bottom => $bottom + 6,
+         );
+      }
+   );
+
+   $self-> {B} = $self-> {container}-> insert( MenuOutline =>
+      origin => [ 0, $divx + 6],
+      size   => [ 100, $h - $divx - 6],
+      growMode => gm::Ceiling,
+      hScroll => 1,
+      vScroll => 1,
+      popupItems => [
+         ['~New' => q(new),],
+         ['~Make node' => q(makenode),],
+         ['~Delete' => q(del),],
+      ],
+      onSelectItem => sub {
+         my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
+         $self-> enter_menuitem( $x);
+      },
+   );
+   $self-> {B}->{master} = $self;
+
+   $self-> {Div2} = $self-> {container}-> insert( Divider =>
+      vertical => 1,
+      origin => [ 100, 0],
+      size   => [ 6, $h - 1],
+      min    => 50,
+      max    => 50,
+      name   => 'Div',
+      onChange => sub {
+         my $right = $_[0]-> right;
+         $self-> {A}-> width( $_[0]-> left);
+         $self-> {Div1}-> width( $_[0]-> left);
+         $self-> {B}-> width( $_[0]-> left);
+         $self-> {panel}-> set(
+            width => $self-> {container}-> width - $right,
+            left  => $right,
+         );
+      }
+   );
+
+   $self-> {panel} = $self-> {container}-> insert( Notebook =>
+      origin    => [ 106, 0],
+      size      => [ $w - 106, $h - 1],
+      growMode  => gm::Right,
+      name      => 'Panel',
+      pageCount => 1,
+   );
+   $self-> {panel}->{pages} = {};
+}
+
+sub enter_menuitem
+{
+   my ( $self, $x ) = @_;
+   if ( defined $x) {
+      return if defined $self-> {current} and $self-> {current} == $x;
+   } else {
+      return unless defined $self-> {current};
+   }
+   $self-> {current} = $x;
+   $self-> close_item;
+   my $l = $self->{A};
+   $l->{fHeight} = $l-> font-> height;
+   if ( $self-> {current}) {
+      $l-> {id}    = [ sort keys %menuProps];
+      $l-> {check} = [];
+      my %ix  = ();
+      $l-> {index} = \%ix;
+      my $num = 0;
+      for ( @{$l-> {id}}) {
+         push( @{$l-> {check}}, exists $x->[0]->[1]->{$_} ? 1 : 0);
+         $ix{$_} = $num++;
+      }
+      $l-> set_count( scalar @{$l-> {id}});
+      $self-> open_item;
+   } else {
+      $l-> {id} = [];
+      $l-> {check} = [];
+      $l-> {index} = {};
+      $l-> set_count( 0);
+   }
+}
+
+
+sub close_item
+{
+   my ( $self ) = @_;
+   return unless defined $self->{opened};
+   $self->{opened} = undef;
+}
+
+
+sub open_item
+{
+   my ( $self) = @_;
+   return if defined $self->{opened};
+   my $list = $self->{A};
+   my $f = $list-> focusedItem;
+
+   if ( $f < 0) {
+      $self->{panel}->pageIndex(0);
+      return;
+   }
+   my $id   = $list->{id}->[$f];
+   my $type = $VB::main-> get_typerec( $menuProps{ $id});
+   my $p = $self->{panel};
+   my $pageset;
+   if ( exists $p->{pages}->{$type}) {
+      $self-> {opened} = $self->{typeCache}->{$type};
+      $pageset = $p->{pages}->{$type};
+      $self-> {opened}-> renew( $id, $self);
+   } else {
+      $p-> pageCount( $p-> pageCount + 1);
+      $p-> pageIndex( $p-> pageCount - 1);
+      $p->{pages}->{$type} = $p-> pageIndex;
+      $self-> {opened} = $type-> new( $p, $id, $self);
+      $self-> {opened}-> {changeProc} = \&Prima::VB::Types::menuItems::item_changed;
+      $self-> {typeCache}->{$type} = $self-> {opened};
+   }
+   my $drec = $self-> {current}->[0]->[1];
+   my $data = exists $drec->{$id} ? $drec->{$id} : $menuDefaults{$id};
+   $self-> {sync} = 1;
+   $self-> {opened}-> set( $data);
+   $self-> {sync} = undef;
+   $p-> pageIndex( $pageset) if defined $pageset;
+}
+
+
+sub item_changed
+{
+   my $self = $_[0]-> {widget};
+   return unless $self;
+   return unless $self-> {opened};
+   return if $self-> {sync};
+   if ( $self-> {opened}-> valid) {
+      if ( $self-> {opened}-> can( 'get')) {
+
+         my $list = $self-> {A};
+
+         $self-> {sync} = 1;
+         my $data = $self-> {opened}-> get;
+         my $c = $self->{opened}->{widget}->{current};
+         $c->[0]->[1]->{$self->{opened}->{id}} = $data;
+         if ( $self->{opened}->{id} eq 'name') {
+            $c->[0]->[0] = $data;
+            $self->{B}-> reset_tree;
+            $self->{B}-> update_tree;
+            $self->{B}-> repaint;
+         } elsif ( $self->{opened}->{id} eq 'text' && !exists $c->[0]->[1]->{name}) {
+            $c->[0]->[0] = $data;
+            $self->{B}-> reset_tree;
+            $self->{B}-> update_tree;
+            $self->{B}-> repaint;
+         } elsif  ( $self->{opened}->{id} eq 'key' && !exists $c->[0]->[1]->{accel}) {
+            $c->[0]->[1]->{accel} = $menuDefaults{accel};
+            $list-> {check}->[$list-> {index}->{accel}] = 1;
+            $list-> redraw_items($list-> {index}->{accel});
+         } elsif  ( $self->{opened}->{id} eq 'accel' && !exists $c->[0]->[1]->{key}) {
+            $c->[0]->[1]->{key} = $menuDefaults{key};
+            $list-> {check}->[$list-> {index}->{key}] = 1;
+            $list-> redraw_items($list-> {index}->{key});
+         }
+
+         my $ix = $list-> {index}->{$self->{opened}->{id}};
+         unless ( $list-> {check}->[$ix]) {
+            $list-> {check}->[$ix] = 1;
+            $list-> redraw_items( $ix);
+         }
+         $self->{sync} = undef;
+      }
+   }
+}
+
+
+sub set
+{
+   my ( $self, $data) = @_;
+   $self-> {sync} = 1;
+   $self-> {B}-> items( $data);
+   $self-> {sync} = 0;
+}
+
+sub get
+{
+   my $self = $_[0];
+   return $self-> {B}-> items;
+}
+
+
+sub write
+{
+   my ( $class, $id, $data, $flag) = @_;
+   return 'undef' unless defined $data;
+   my $c = '';
+   my $traverse;
+   $traverse = sub {
+      my ($current, $level) = @_;
+      $c .= ' ' x ( $level * 3).'[ ';
+      my $i = $current->[0]->[1];
+      my $hastext  = exists $i->{text};
+      my $hasname  = exists $i->{name};
+      my $hasimage = exists $i->{image};
+      my $hasacc   = exists $i->{accel};
+      my $hasact   = exists $i->{action};
+      my $haskey   = exists $i->{key};
+      my $hassub   = exists $i->{action};
+      my $namepfx  = (( exists $i->{enabled} && !$i->{enabled}) ? '-' : '').
+                     (( exists $i->{checked} &&  $i->{checked}) ? '*' : '');
+      my @cmd = ();
+
+      if ( $current-> [1]) {
+         $hasacc = $haskey = $hasact = 0;
+         if ( $hastext || $hasimage) {
+            push ( @cmd, qw(name text));
+         }
+      } elsif (( $hastext || $hasimage) && $hasacc && $haskey && $hasact) {
+         push ( @cmd, qw( name text accel key action));
+      } elsif (( $hastext || $hasimage) && $hasact) {
+         push ( @cmd, qw( name text action));
+      }
+
+      for ( @cmd) {
+         my $val = $i-> {$_};
+         if (( $_ eq 'text') && $hasimage && !$hastext) {
+            $_ = 'image';
+            $val = $i-> {$_};
+         } elsif ( $_ eq 'name') {
+            $val = '' unless defined $val;
+            $val = "$namepfx$val";
+         }
+         my $type = $VB::main-> get_typerec( $menuProps{$_});
+         $c .= $type-> write( $_, $val, $flag) . ', ';
+      }
+
+      if ( $current->[1] && $current->[2]) {
+         $c .= "[\n";
+         $level++;
+         $traverse->( $_, $level) for @{$current->[1]};
+         $level--;
+         $c .= ' ' x ( $level * 3).']';
+
+      }
+      $c .= "], \n";
+   };
+   $traverse->( $_, 0) for @$data;
+   return "[$c]";
+}
+
+
+package Prima::VB::Types::menuname;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::name);
+
+
+sub valid
+{
+   my $self = $_[0];
+   my $tx = $self->{A}->text;
+   $self->wake, return 0 unless length( $tx);
+   $self->wake, return 0 if $tx =~ /[\s\\\~\!\@\#\$\%\^\&\*\(\)\-\+\=\[\]\{\}\.\,\?\;\|\`\'\"]/;
+   my $s = $VB::inspector-> {current}-> {A};
+   my $ok = 1;
+   $s-> iterate( sub {
+      my ( $current, $position, $level) = @_;
+      $ok = 0, return 1 if defined $current->[0]->[1]->{name} && $current->[0]->[1]->{name} eq $tx;
+      return 0;
+   });
+   $self->wake unless $ok;
+   return $ok;
+}
+
+package Prima::VB::Types::key;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::generic);
+
+my %vkeys = (
+);
+
+{
+   for ( keys %kb::) {
+      next if $_ eq 'constant';
+      next if $_ eq 'AUTOLOAD';
+      next if $_ eq 'CharMask';
+      next if $_ eq 'CodeMask';
+      next if $_ eq 'ModMask';
+      $vkeys{$_} = &{$kb::{$_}}();
+   }
+}
+
+sub open
+{
+   my $self = $_[0];
+   my $i = $self->{container};
+   my @sz = $i-> size;
+   my $fh = $i-> font-> height;
+   $sz[1] -= $fh + 12;
+   $self->{key} = $i-> insert( ComboBox =>
+      origin   => [ 5, $sz[1]],
+      size     => [ $sz[0] - 5, $fh + 4],
+      growMode => gm::Ceiling,
+      onChange => sub { $self-> change},
+      style    => cs::DropDownList,
+      items    => [ sort keys %vkeys, 'A'..'Z', '0'..'9', '+', '-', '*'],
+   );
+
+   $sz[1] -= $fh * 4 + 28;
+   $self->{mod} = $i-> insert( GroupBox =>
+      origin   => [ 5, $sz[1]],
+      size     => [ $sz[0] - 5, $fh * 4 + 28],
+      growMode => gm::Ceiling,
+      style    => cs::DropDown,
+      text     => '',
+      onChange => sub { $self-> change(); },
+   );
+
+   my @esz = $self->{mod}->size;
+   $esz[1] -= $fh * 2 + 4;
+   $self->{modShift} = $self->{mod}->insert( CheckBox =>
+      origin  => [ 8, $esz[1]],
+      size    => [ $esz[0] - 16, $fh + 4],
+      text    => '~Shift',
+      growMode => gm::GrowHiX,
+      onClick => sub { $self-> change(); },
+   );
+
+   $esz[1] -= $fh + 6;
+   $self->{modCtrl} = $self->{mod}->insert( CheckBox =>
+      origin  => [ 8, $esz[1]],
+      size    => [ $esz[0] - 16, $fh + 4],
+      text    => '~Ctrl',
+      growMode => gm::GrowHiX,
+      onClick => sub { $self-> change(); },
+   );
+   $esz[1] -= $fh + 6;
+
+   $self->{modAlt} = $self->{mod}->insert( CheckBox =>
+      origin  => [ 8, $esz[1]],
+      size    => [ $esz[0] - 16, $fh + 4],
+      text    => '~Alt',
+      growMode => gm::GrowHiX,
+      onClick => sub { $self-> change(); },
+   );
+}
+
+sub get
+{
+   my $self = $_[0];
+
+   my $mod = ( $self-> {modAlt}-> checked ? km::Alt : 0) |
+      ( $self-> {modCtrl}-> checked ? km::Ctrl : 0) |
+      ( $self-> {modShift}-> checked ? km::Shift : 0)
+   ;
+   my $vk = $self->{key}->text;
+   $vk = exists $vkeys{$vk} ? $vkeys{$vk} : ord( $vk);
+   return $mod | $vk;
+}
+
+sub set
+{
+   my ( $self, $data) = @_;
+   if ( $data & 0xFF) {
+      $self-> {key}-> text( chr($data & 0xFF));
+   } else {
+      my $x = 'NoKey';
+      $data &= kb::CodeMask;
+      for ( keys %vkeys) {
+         next if $_ eq 'constant';
+         $x = $_, last if $data == $vkeys{$_};
+      }
+      $self-> {key}-> text( $x);
+   }
+   $self-> {modAlt}-> checked( $data & km::Alt);
+   $self-> {modCtrl}-> checked( $data & km::Ctrl);
+   $self-> {modShift}-> checked( $data & km::Shift);
+}
+
+sub write
+{
+   my ( $class, $id, $data) = @_;
+   my $txt = '';
+   if ( $data & 0xFF) {
+      $txt = 'ord(\''.chr($data & 0xFF).'\')';
+   } else {
+      my $x = 'NoKey';
+      $data &= kb::CodeMask;
+      for ( keys %vkeys) {
+         $x = $_, last if $vkeys{$_} == $data;
+      }
+      $txt = 'kb::'.$x;
+   }
+   $txt .= '|km::Alt' if $data & km::Alt;
+   $txt .= '|km::Ctrl' if $data & km::Ctrl;
+   $txt .= '|km::Shift' if $data & km::Shift;
+   return $txt;
 }
 
 
