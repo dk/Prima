@@ -56,13 +56,6 @@ typedef HANDLE WINHANDLE;
 #error This version of apc_Win32 does not support Unicode
 #endif
 
-#ifndef CYGWIN32
-#define O_SYNC                      0
-#elif defined( _POSIX_SOURCE)
-#define O_SYNC                      _FSYNC
-#endif
-
-
 #define DEFAULT_SYSTEM_FONT              "System"
 #define DEFAULT_WIDGET_FONT              "MS Shell Dlg"
 #define DEFAULT_WIDGET_FONT_SIZE         8

@@ -448,7 +448,8 @@ apc_image_end_paint( Handle self)
    if ( sys stockBM)
       SelectObject( sys ps, sys stockBM);
    DeleteDC( sys ps);
-   sys stockBM = sys ps = nil;
+   sys stockBM = nil;
+   sys ps = nil;
    return apcError == errOk;
 }
 
@@ -593,7 +594,10 @@ apc_dbm_destroy( Handle self)
      SelectObject( sys ps, sys stockBM);
    DeleteObject( sys bm);
    DeleteDC( sys ps);
-   sys pal = sys stockBM = sys ps = sys bm = nil;
+   sys pal = nil;
+   sys stockBM = nil;
+   sys ps = nil;
+   sys bm = nil;
    return true;
 }
 
@@ -1092,7 +1096,8 @@ apc_prn_end_doc( Handle self)
    hwnd_leave_paint( self);
    if ( sys pal) DeleteObject( sys pal);
    DeleteDC( sys ps);
-   sys pal = sys ps = nil;
+   sys pal = nil;
+   sys ps = nil;
    return apcError == errOk;
 }
 
@@ -1125,7 +1130,8 @@ apc_prn_abort_doc( Handle self)
    hwnd_leave_paint( self);
    if ( sys pal) DeleteObject( sys pal);
    DeleteDC( sys ps);
-   sys pal = sys ps = nil;
+   sys pal = nil;
+   sys ps = nil;
    return apcError == errOk;
 }
 

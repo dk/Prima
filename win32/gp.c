@@ -79,7 +79,11 @@ apc_gp_done( Handle self)
    if ( sys linePatternLen2 > 3) free( sys linePattern2);
    font_free( sys fontResource, false);
    if ( sys p256) free( sys p256);
-   sys bm = sys pal = sys ps = sys bm = sys p256 = nil;
+   sys bm = nil;
+   sys pal = nil;
+   sys ps = nil;
+   sys bm = nil;
+   sys p256 = nil;
    sys fontResource = nil;
    sys linePattern = nil;
    return true;
@@ -653,13 +657,14 @@ static int ctx_rop2R4[] = {
   endCtx
 };
 
-
+/*
 static void dc2screen( HDC dc, Handle self)
 {
    HDC xdc = dc_alloc();
    if ( !BitBlt( xdc, 0, 0, var w, var h, dc, 0, 0, SRCCOPY)) apiErr;
    dc_free();
 }
+*/
 
 Bool
 apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)

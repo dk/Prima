@@ -142,7 +142,8 @@ apc_application_end_paint( Handle self)
    dc_free();
    apt_clear( aptWinPS);
    apt_clear( aptCompatiblePS);
-   sys pal = sys ps = nil;
+   sys pal = nil;
+   sys ps = nil;
    return true;
 }
 
@@ -1023,11 +1024,11 @@ map_text_accel( PMenuItemReg i)
    return buf;
 }
 
-static HWND
+static HMENU
 add_item( Bool menuType, Handle menu, PMenuItemReg i)
 {
     MENUITEMINFOW menuItem;
-    HWND m;
+    HMENU m;
     PMenuWndData mwd;
     PMenuItemReg first;
 
@@ -1401,7 +1402,7 @@ apc_window_end_modal( Handle self)
          SetActiveWindow( sys s. window. oldActive);
       if ( !who && var owner)
          CWidget( var owner)-> set_selected( var owner, 1);
-      if ( who = sys s. window. oldFoc) {
+      if (( who = sys s. window. oldFoc)) {
          if ( PWidget( who)-> stage == csNormal)
             CWidget( who)-> set_focused( who, 1);
          unprotect_object( who);
@@ -1683,7 +1684,9 @@ apc_widget_end_paint( Handle self)
 
       DeleteDC( sys ps);
       sys ps = sys ps2;
-      sys bm = sys ps2 = sys stockBM = nil;
+      sys bm = nil;
+      sys ps2 = nil;
+      sys stockBM = nil;
    }
 
    hwnd_leave_paint( self);
@@ -1694,7 +1697,8 @@ apc_widget_end_paint( Handle self)
       } else if ( is_apt( aptWinPS))
          if ( !ReleaseDC(( HWND) var handle, sys ps)) apiErr;
    }
-   sys ps = sys pal2 = nil;
+   sys ps = nil;
+   sys pal2 = nil;
    apt_clear( aptWinPS);
    apt_clear( aptWM_PAINT);
    apt_clear( aptCompatiblePS);
@@ -3058,7 +3062,7 @@ apc_system_action( const char * params)
 
          if ( strcmp( params, " exists") == 0) {
            char * p = ( char *) malloc(12);
-           if ( p) sprintf( p, "0x%08lx", guts. console);
+           if ( p) sprintf( p, "0x%08lx", ( unsigned long) guts. console);
            return p;
          } else
          if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else

@@ -1649,7 +1649,10 @@ hwnd_leave_paint( Handle self)
    SelectObject( sys ps,  sys stockBrush);
    SelectObject( sys ps,  sys stockFont);
    SelectPalette( sys ps, sys stockPalette, 0);
-   sys stockPen = sys stockBrush = sys stockFont = sys stockPalette = nil;
+   sys stockPen = nil;
+   sys stockBrush = nil;
+   sys stockFont = nil;
+   sys stockPalette = nil;
    stylus_free( sys stylusResource, false);
    if ( IS_WIN95) {
       if ( sys linePatternLen2 > 3) free( sys linePattern2);

@@ -208,7 +208,7 @@ apc_getdir( const char *dirname)
    if ( strcmp( dirname, "/") == 0)
       dname = "";
    else
-      dname = dirname;
+      dname = ( char*) dirname;
       
 
    if (( dh = opendir( dirname)) && (dirlist = plist_create( 50, 50))) {
