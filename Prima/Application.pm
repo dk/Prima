@@ -1,4 +1,4 @@
-#
+
 #  Copyright (c) 1997-2000 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
@@ -42,3 +42,602 @@ sub import {
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Application - root of widget objects hierarchy
+
+=head1 DESCRIPTION
+
+Prima::Application class serves as a hierarchy root for
+all objects with child-owner relationship. All toolkit
+objects, existing with non-null owner property, belong 
+in their top-level parental relationship to Prima::Application
+object. There can be only one instance of Prima::Application
+class at one time.
+
+=head1 USAGE
+
+
+Prima::Application class, and its only instance are 
+treated specially throughout the toolkit. The object
+instance is contained in 
+
+  $::application
+
+scalar, defined in I<Prima.pm> module. 
+The application instance must be created whenever
+widget and window, or event loop functionality is
+desired. Usually 
+
+   use Prima::Application;
+
+code is enough, but I<$::application> can also
+be assigned explicitly. The 'use' syntax has advantage
+as more resistant to eventual changes in the toolkit design.
+It can also be used in conjunction with custom parameters hash,
+alike the general create() syntax:
+
+   use Prima::Application name => 'Test application', icon => $icon;
+
+In addition to this functionality Prima::Application
+is also a wrapper to a set of system functions, not
+directly relationed to object classes. This functionality
+is generally explained in L<"API">. 
+
+=head2 Inherited functionality
+
+Prima::Application is a descendant of Prima::Widget, but
+it is designed so because their functional outliers are closest
+to each other.
+Prima::Application does not strictly conform ( in OO sense )
+to any of the built-in classes. It has methods copied from both
+Prima::Widget and Prima::Window at one time, and the inherited
+Prima::Widget methods and properties function differently.
+For example, C<::origin>, a property from Prima::Widget, is
+also implemented in Prima::Application, but returns always (0,0),
+an expected but not much usable result.
+C<::size>, on the contrary, returns the extent of the screen in pixels.
+There are few properties, inherited from Prima::Widget, which return
+actual, but uninformative results, - C<::origin> is one of those, but
+same are C<::buffered>, C<::clipOwner>, C<::enabled>, C<::growMode>,
+C<::owner> and owner-inheritance properties, C<::selectable>, C<::shape>,
+C<::syncPaint>, C<::tabOrder>, C<::tabStop>, C<::transparent>, C<::visible>.
+To this group also belongs C<::modalHorizon>, a Prima::Window property,
+but defined for consistency and returning always 1. 
+Other methods and properties, like C<::size>, that provide different 
+functionality are described in L<"API">.
+
+=head2 Global functionality
+
+Prima::Application is a wrapper to functionality, that
+is not related to one or another class clearly.
+A notable example, paint mode, which is derived from Prima::Drawable
+class, allows painting on the screen, overwriting the information
+output by other programs. Although being subject to begin_paint()/end_paint()
+brackets, this functionality can not be attached to a class-shared
+API, an therefore considered 'global'. All such functionality is gathered
+in the Prima::Application class.
+
+These topics enumerated below, related do global function, but
+occupying more than one method or property - such functions 
+described in L<"API">.
+
+=over
+
+=item Painting  
+
+As stated above, Prima::Application provides interface to
+on-screen painting. This mode is triggered by begin_paint()/end_paint()
+methods pair, and the other pair, begin_paint_info()/end_paint_info()
+triggers the information mode. This three-state paint functionality
+is more thoroughly described in L<Prima::Drawable>.
+
+=item Hint
+
+$::application hosts a special Prima::HintWidget class object,
+accessible via C<get_hint_widget()>, but with color and font functions
+aliased ( C<::hintColor>, C<::hintBackColor>, C<::hintFont> ).
+
+This widget serves as a hint label, floating over widgets
+if the mouse pointer hovers longer than C<::hintPause> milliseconds.
+
+Prima::Application internally manages all hint functionality.
+The hint widget itself, however, can be replaced before application
+object is created, using C<::hintClass> create-only property.
+
+=item Printer
+
+Result of <get_printer()> method points to an automatically
+created printer object, responsible for the system-driven
+printing. Depending on the operating system, it is either 
+Prima::Printer, if the system provides GUI printing capabilities,
+or generic Prima::PS::Printer, a PostScript document interface.
+
+See L<Prima::Printer> for details.
+
+=item Clipboard
+
+$::application hosts set of Prima::Clipboard objects, created 
+automatically to reflect the system-provided clipboard IPC
+functionality. Their number depends on the system, - under X11
+environment there is three clipboard objects, and only one 
+under Win32 and OS/2.
+
+These are no methods to access these clipboard objects, except
+fetch() ( or, the indirect name calling ) - the clipboard objects
+are named after the system clipboard names, which are
+returned from Prima::Clipboard::get_standard_clipboards.
+
+The default clipboard is named I<Clipboard>, and is accessible via
+
+  my $clipboard = $::application-> Clipboard;
+
+code.
+
+See L<Prima::Clipboard> for details.
+
+=item Help subsystem 
+
+The original design of the help subsystem, when
+the program uses the system-provided help viewer
+with system-dependent help files, seems not scaling
+well. Still, it is fully functional on some platforms ( Win32, OS/2 ),
+and will be around until a new, more protable design will be impelemnted.
+
+Currently, there is a 'help file', a file with hypertext information in 
+a system-dependent format, loaded via the C<::helpFile> property.
+It contains topics and articles, accessible by supplying corresponding
+integer value to C<help_context()>. If such value is positive, it is
+a direct topic index, otherwise it is one of C<hmp::XXX> constants
+( see L<Prima::Widget> ).C<help_context()> opens a selected topic
+in a system-provided help window, and C<close_help()> closes that window.
+The system help window is also closed when the program terminates.
+
+=item System-dependent information
+
+A complex program will need eventually more information than the toolkit
+provides. Or, knowing the toolkit boundaries in some platforms, the program
+changes its behavior accordingly. Both these topics are facilitated by
+extra system information, returned by Prima::Application methods.
+C<get_system_value> returns a system value for one of C<sv::XXX> constants,
+so the program can read the system-specific information. As well as
+C<get_system_info> method, that returns the short description of the system,
+it is the portable call. All systems return such information.
+To the contrary, C<sys_action> method is a wrapper to system-dependent
+functionality, called in non-portable way. This method is never used
+within the toolkit, and its usage is discouraged, primarily because
+its options do not serve the toolkit design, so are subject to change 
+and cannot be relied upon.
+
+=back
+
+=head1 API
+
+=head2 Properties
+
+=over
+
+=item autoClose BOOLEAN
+
+If set to 1, issues C<close()> after the last top-level window
+is destroyed. Does not influence anything if set to 0. 
+
+This feature is designed to help with general 'one main window' 
+application layouts. 
+
+Default value: 1
+
+=item icon OBJECT
+
+Holds the icon object, associated with the application.
+If C<undef>, a system-provided default icon is assumed.
+Prima::Window object instances inherit the application
+icon by default.
+
+=item insertMode BOOLEAN
+
+A system boolean flag, showing whether text widgets
+through the system should insert ( 1 ) or overwrite ( 0 )
+text on user input. Not all systems provide such unifying
+functionality.
+
+=item helpFile STRING
+
+I<Design in progress>. Points to the help file,
+in system-dependent format, which is accessible 
+via C<help_context()> method.
+
+=item hintClass STRING
+
+Create-only property.
+
+Specifies a class of widget, used as a hint label.
+
+Default value: Prima::HintWidget
+
+=item hintColor COLOR
+
+An alias to foreground color property for hint label widget.
+
+=item hintBackColor COLOR
+
+An alias to background color property for hint label widget.
+
+=item hintFont %FONT
+
+An alias to font property for hint label widget.
+
+=item hintPause TIMEOUT
+
+Selects the timeout ( in milliseconds ) before hint label is shown
+when the mouse pointer hovers over a widget.
+
+=item modalHorizon BOOLEAN
+
+A read-only property. Used as a landmark for
+the lowest-level modal horizon.
+Returns always 1.
+
+=item palette [ @PALETTE ]
+
+Used only within paint and information modes.
+Selects solid colors in a system palette, as many as possible.
+PALETTE is an array of integer triplets, where each is R, G and B
+component.
+
+=item printerClass STRING
+
+Create-only property.
+
+Specifies a class of object, used as a printer.
+The default value is system-dependent, but is either
+Prima::Printer or Prima::PS::Printer.
+
+=item printerModule STRING
+
+Create-only property.
+
+Specifies a perl module, loaded indirectly before
+a printer object of C<::printerClass> class is created. 
+Used when C<::printerClass> property is overridden and
+the new class is contained in a third module.
+
+=item pointerVisible BOOLEAN
+
+Governs the system pointer visiblity.
+If 0, hides the pointer so it is not visible in all 
+system windows. Therefore this property usage must be considered 
+with care.
+
+=item size 
+
+A read-only property.
+
+Returns two integers, width and height of the screen.
+
+=item showHint
+
+If 1, the toolkit is allowed to show a hint label over 
+a widget. If 0, it is forbidden. In addition to functionality
+of C<::showHint> property in Prima::Widget, Prima::Application::showHint
+is an another layer of hint visibility control - if it is 0,
+all hint actions are disabled, disregarding C<::showHint> value
+of widgets.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item add_startup_notification @CALLBACK
+
+CALLBACK is an array of anonymous subs, which is executed when
+Prima::Application object is created. If the application object 
+is already created during the call, CALLBACKs called immediately.
+
+Useful for add-on packages initialization.
+
+=item begin_paint
+
+Enters the enabled ( active paint ) state, returns success flag.
+Once the object is in enabled state, painting and drawing 
+methods can perform write operations on the whole screen.
+
+=item begin_paint_info
+
+Enters the information state, returns success flag.
+The object information state is same as enabled state ( see C<begin_paint()>),
+except that painting and drawing methods are not permitted to change
+the screen.
+
+=item close
+
+Issues a system termination call, resulting in calling
+C<close> for all top-level windows. The call can be interrupted by these,
+and thus cancelled. If not cancelled, stops the application event loop.
+
+=item close_help
+
+I<Design in progress>. Closes the system-provided help viewer window.
+
+=item end_paint
+
+Quits the enabled state and returns application object to a normal state. 
+
+=item end_paint_info
+
+Quits the information state and returns application object to a normal state. 
+
+=item fonts NAME = ''
+
+Returns hash of font hashes ( see L<Prima::Drawable>, Fonts section )
+describing fonts of NAME font family. If NAME is '' or C<undef>,
+returns one fonts hash for each of the font families.
+
+=item get_active_window
+
+Returns object reference to a currently active window,
+if any, that belongs to the program. If no such window exists,
+C<undef> is returned.
+
+The exact definition of 'active window' is system-dependent, but
+it is generally believed that an active window is the one that
+has keyboard focus on one of its children widgets.
+
+=item get_caption_font
+
+Returns a title font, that the system uses to draw
+top-level window captions.
+The method can be called with a class string instead of an object instance.
+
+=item get_default_cursor_width
+
+Returns width of the system cursor in pixels.
+The method can be called with a class string instead of an object instance.
+
+=item get_default_font 
+
+Returns the default system font.
+The method can be called with a class string instead of an object instance.
+
+=item get_default_scrollbar_metrics
+
+Returns dimensions of the system scrollbars - width of the standard vertical
+scrollbar and height of the standard horizon scrollbar.
+The method can be called with a class string instead of an object instance.
+
+=item get_default_window_borders BORDER_STYLE = bs::Sizeable
+
+Returns width and height of standard system window border
+decorations for one of C<bs::XXX> constants.
+The method can be called with a class string instead of an object instance.
+
+=item get_focused_widget
+
+Returns object reference to a currently focused widget,
+if any, that belongs to the program. If no such widget exists,
+C<undef> is returned.
+
+=item get_image X_OFFSET, Y_OFFSET, WIDTH, HEIGHT
+
+Returns Prima::Image object with WIDTH and HEIGHT dimensions
+filled with graphic content of the screen, copied from
+X_OFFSET and Y_OFFSET coordinates. If WIDTH and HEIGHT
+extend beyond the screen dimensions, they are adjusted.
+If the offsets are outside screen boundaries, or WIDTH and
+HEIGHT are zero or negative, C<undef> is returned.
+
+=item get_hint_widget
+
+Returns a hint label widget, attached automatically to
+Prima::Application object during startup. The widget
+is of C<::hintClass> class, Prima::HintWidget by
+default.
+
+=item get_printer
+
+Returns a printer object, attached automatically to
+Prima::Application object. The object is of C<::printerClass>
+class.
+
+=item get_message_font
+
+Returns a font the system uses to draw the message text.
+The method can be called with a class string instead of an object instance.
+
+=item get_scroll_rate
+
+Returns two integer values of two system-specific
+scrolling timeouts. The first is the initial timeout,
+that is applied when the user drags the mouse from
+a scrollable widget ( text field, for example ), and
+the widget is about to scroll, but the actual scroll
+is performed after the timeout is expired. The second 
+is the repetitive timeout, - if the dragging condition
+did not change, the scrolling performs automatically
+after this timeout. The timeout values are in milliseconds.
+
+=item get_system_info
+
+Returns a hash with information about the system.
+The hash result contains the following keys:
+
+=over
+
+=item apc
+
+One of C<apc::XXX> constants, reflecting the platfrom.
+Currently, the list of the supported platforms is:
+
+   apc::Os2    
+   apc::Win32  
+   apc::Unix   
+
+=item gui  
+
+One of C<gui::XXX> constants, reflecting the graphic
+user interface used in the system:
+
+   gui::Default
+   gui::PM  
+   gui::Windows
+   gui::XLib 
+   gui::OpenLook
+   gui::Motif
+
+The meaning of this field is somewhat vague, and
+the field might be deprecated in future releases.
+
+=item guiDescription
+
+Description of graphic user interface,
+returned as an arbitrary string.
+
+=item system
+
+An arbitrary string, representing the operating
+system software.
+
+=item release
+
+An arbitrary string, reflecting the OS version
+information.
+
+=item vendor
+
+The OS vendor string
+
+=item architecture
+
+The machine architecture string
+
+=back
+
+The method can be called with a class string instead of an object instance.
+
+=item get_system_value 
+
+Returns the system integer value, associatied with one 
+of C<sv::XXX> constants. The constants are:
+
+   sv::YMenu            - height of menu bar in top-level windows
+   sv::YTitleBar        - height of title bar in top-level windows
+   sv::XIcon            - width and height of main icon dimensions, 
+   sv::YIcon              acceptable by the system
+   sv::XSmallIcon       - width and height of alternate icon dimensions,  
+   sv::YSmallIcon         acceptable by the system 
+   sv::XPointer         - width and height of mouse pointer icon
+   sv::YPointer           acceptable by the system  
+   sv::XScrollbar       - width of the default vertical scrollbar
+   sv::YScrollbar       - height of the default horizontal scrollbar 
+                          ( see C<get_default_scrollbar_metrics()> )
+   sv::XCursor          - width of the system cursor
+                          ( see C<get_default_cursor_width()> )
+   sv::AutoScrollFirst  - the initial and the repetitive 
+   sv::AutoScrollNext     scroll timeouts
+                          ( see C<get_scroll_rate()>
+   sv::InsertMode       - the system insert mode
+                          ( see C<::insertMode>
+   sv::XbsNone          - widths and heights of the top-level window
+   sv::YbsNone            decorations, correspondingly, with borderStyle
+   sv::XbsSizeable        bs::None, bs::Sizeable, bs::Single, and
+   sv::YbsSizeable        bs::Dialog. 
+   sv::XbsSingle          ( see C<get_default_window_borders()> )
+   sv::YbsSingle
+   sv::XbsDialog
+   sv::YbsDialog
+   sv::MousePresent     - 1 if the mouse is present, 0 otherwise
+   sv::MouseButtons     - number of the mouse buttons
+   sv::WheelPresent     - 1 if the mouse wheel is present, 0 otherwise
+   sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on an implicit selection
+   sv::FullDrag         - 1 if the top-level windows are dragged dynamically, 0 - with marquee mode
+   sv::DblClickDelay    - mouse double-click timeout in milliseconds
+   sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 0 otherwise
+   sv::ColorPointer     - 1 if system accepts color pointer icons.
+
+The method can be called with a class string instead of an object instance.
+
+=item get_widget_from_handle HANDLE
+
+HANDLE is an integer value of a toolkit widget. It is usually
+passed to a program by other IPC means, so it returns
+the associated widget. If no widget is associated with 
+HANDLE, C<undef> is returned.
+
+=item get_widget_from_point X_OFFSET, Y_OFFSET
+
+Returns a widget that occupies screen area under (X_OFFSET,Y_OFFSET)
+coordinates. If no toolkit widget are found, C<undef> is returned.
+
+=item go
+
+The main event loop. Called by 
+
+  run Prima;
+
+standard code. Returns when the program is about to
+terminate, or if the exception was signalled. In the
+latter case, can be safely re-started.
+
+=item help_context INDEX
+
+I<Design in progress>. Opens the system-provided help viewer window
+with the topic, associated to INDEX value, which is either a 
+positive integer or one of C<hmp::XXX> constants.
+
+=item lock
+
+Effectively blocks the graphic output for all widgets.
+The output can be restored with C<unlock()>.
+
+=item sys_action CALL
+
+CALL is an arbitratry string, contained the system
+service name and the parameters to it.
+This functionality is non-portable, and should be avoided.
+The system services provided are not documented and
+probably subject to change. The actual services
+can be looked in the toolkit source code under
+I<apc_system_action> tag.
+
+=item unlock
+
+Unblocks the graphic output for all widgets,
+previously locked with C<lock()>.
+
+=item yield
+
+An event dispatcher, called from within the event loop.
+If the event loop can be schematized, then in
+
+   while ( application not closed ) {
+      yield
+   }
+
+draft yield() is the only function, called repeatedly
+within the event loop. yield() cannot be used to
+organize event loops, but it can be employed to
+process stacked system events explicitly, to 
+increase responsiveness of a program, for example,
+inside a long calculation loop.
+
+The method can be called with a class string instead of an object instance;
+however, the $::application object must be initialized.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Object>, L<Prima::Widget>, L<Prima::Window>
+
+=cut

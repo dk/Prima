@@ -251,6 +251,8 @@ B<Perl programming>:
 
 - L<Prima::Timer> - programmable periodical events 
 
+- L<Prima::Application> - root of widget objects hierarchy 
+
 B<C programming>
 
 - L<Prima::internals> - Internal architecture
