@@ -167,6 +167,8 @@ sub set_valignment
    $_[0]->repaint;
 }
 
+my @cubic_palette;
+
 sub set_image
 {
    my ( $self, $img) = @_;
@@ -186,7 +188,26 @@ sub set_image
    $y *= $self->{zoom};
    $self-> {icon} = $img-> isa('Prima::Icon');
    $self-> limits($x,$y);
-   $self-> palette( $img->palette) if $self->{quality};
+   if ( $self->{quality}) {
+      if (( $img-> type & im::BPP) > 8) {
+         my $depth = $self-> get_bpp;
+         if (($depth > 2) && ($depth <= 8)) {
+            unless ( scalar @cubic_palette) {
+               my ( $r, $g, $b) = (6, 6, 6);
+               @cubic_palette = ((0) x 648);
+               for ( $b = 0; $b < 6; $b++) {
+                  for ( $g = 0; $g < 6; $g++) {
+                     for ( $r = 0; $r < 6; $r++) {
+                        my $ix = $b + $g * 6 + $r * 36;
+                        @cubic_palette[ $ix, $ix + 1, $ix + 2] = 
+                           map {$_*51} ($b,$g,$r); 
+            }}}}
+            $self-> palette( \@cubic_palette);
+         }
+      } else {
+         $self-> palette( $img->palette);
+      }
+   }
    $self-> repaint;
 }
 
