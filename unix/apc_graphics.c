@@ -288,8 +288,8 @@ get_standard_color( long class, int index)
 static PHash globalColors = nil;
 static Colormap globalColormap;
 
-static XColor*
-allocate_color( Handle self, Color color)
+XColor*
+prima_allocate_color( Handle self, Color color)
 {
    RGBColor c;
    XColor *x_color;
@@ -312,7 +312,7 @@ allocate_color( Handle self, Color color)
       x_color = malloc( sizeof( XColor));
       if ( !x_color) {
 	 /* XXX better free existing colors... */
-	 croak( "allocate_color: not enough memory");
+	 croak( "prima_allocate_color: not enough memory");
       }
       x_color-> red = (short)((unsigned short)c. r << 8);
       x_color-> green = (short)((unsigned short)c. g << 8);
@@ -747,11 +747,11 @@ create_image_cache_1_to_1( PImage img, Bool icon)
 	 croak( "create_image_cache_1_to_1(): error during XCreateImage()");
       }
       IMG-> bitmap_back =
-	 *allocate_color((Handle)img,
-			 ARGB(img->palette[0].r,img->palette[0].g,img->palette[0].b));
+	 *prima_allocate_color((Handle)img,
+                               ARGB(img->palette[0].r,img->palette[0].g,img->palette[0].b));
       IMG-> bitmap_fore =
-	 *allocate_color((Handle)img,
-			 ARGB(img->palette[1].r,img->palette[1].g,img->palette[1].b));
+         *prima_allocate_color((Handle)img,
+                               ARGB(img->palette[1].r,img->palette[1].g,img->palette[1].b));
    }
 }
 
@@ -1253,7 +1253,7 @@ Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
    DEFXX;
-   XColor *c = allocate_color( self, color);
+   XColor *c = prima_allocate_color( self, color);
    unsigned long old = XX-> fore. pixel;
 
    SHIFT( x, y);
@@ -1581,8 +1581,8 @@ Bool
 apc_gp_set_back_color( Handle self, Color color)
 {
    DEFXX;
-   XColor *c = allocate_color( self, color);
-
+   XColor *c = prima_allocate_color( self, color);
+   
    if ( XX-> flags. paint) {
       XX-> back = *c;
       XSetBackground( DISP, XX-> gc, c-> pixel);
@@ -1625,7 +1625,7 @@ Bool
 apc_gp_set_color( Handle self, Color color)
 {
    DEFXX;
-   XColor *c = allocate_color( self, color);
+   XColor *c = prima_allocate_color( self, color);
 
    if ( XX-> flags. paint) {
       XX-> fore = *c;
