@@ -1300,7 +1300,8 @@ NEXT_STAGE:
                   j++;
                }
                if ( z == c) {
-                  menu_enter_item( XX, w, i, 1);
+                  if ( menu_enter_item( XX, w, i, 1) && w-> next)
+                     menu_select_item( XX, w, i);
                   return;
                }
             }
