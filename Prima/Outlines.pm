@@ -26,6 +26,7 @@
 
 # contains:
 #   OutlineViewer
+#   StringOutline
 #   Outline
 #   DirectoryOutline
 
@@ -54,6 +55,7 @@ my %RNT = (
    Stringify   => nt::Action,
    MeasureItem => nt::Action,
    Expand      => nt::Action,
+   DragItem    => nt::Default,
 );
 
 
@@ -66,6 +68,7 @@ sub profile_default
    my %prf = (
       autoHeight     => 1,
       borderWidth    => 2,
+      dragable       => 1,
       hScroll        => 0,
       focusedItem    => -1,
       indent         => 12,
@@ -107,20 +110,21 @@ sub init
    for ( qw( topItem focusedItem))
       { $self->{$_} = -1; }
    for ( qw( scrollTransaction dx dy hScroll vScroll offset count autoHeight borderWidth
-      rows maxWidth hintActive showItemHint))
+      rows maxWidth hintActive showItemHint dragable))
       { $self->{$_} = 0; }
    for ( qw( itemHeight integralHeight indent))
       { $self->{$_} = 1; }
    $self->{items}      = [];
    my %profile = $self-> SUPER::init(@_);
    for ( qw( hScroll vScroll offset itemHeight autoHeight borderWidth indent
-      items focusedItem topItem showItemHint))
+      items focusedItem topItem showItemHint dragable))
       { $self->$_( $profile{ $_}); }
    $self-> {__DYNAS__}->{onDrawItem}    = $profile{onDrawItem};
    $self-> {__DYNAS__}->{onSelectItem}  = $profile{onSelectItem};
    $self-> {__DYNAS__}->{onMeasureItem} = $profile{onMeasureItem};
    $self-> {__DYNAS__}->{onStringify}   = $profile{onStringify};
    $self-> {__DYNAS__}->{onExpand}      = $profile{onExpand};
+   $self-> {__DYNAS__}->{onDragItem}    = $profile{onDragItem};
    $self-> reset;
    $self-> reset_scrolls;
    return %profile;
@@ -129,7 +133,7 @@ sub init
 sub set
 {
    my ( $self, %profile) = @_;
-   for ( qw( onDrawItem onSelectItem onMeasureItem onStringify onExpand)) {
+   for ( qw( onDrawItem onSelectItem onMeasureItem onStringify onExpand onDragItem)) {
       $self->{__DYNAS__}->{$_} = $profile{$_},
          delete $profile{$_} if exists $profile{$_};
    }
@@ -308,7 +312,7 @@ sub on_paint
 # following loop is recursive call turned inside-out -
 # so we can manipulate with stack
 
-   if ( $position < $lastItem) {
+   if ( $position <= $lastItem) {
    while (1) {
       my $node      = $array->[1]->[$idx++];
       my $lastChild = $idx == $lim;
@@ -459,8 +463,15 @@ sub on_mousedown
       $self-> adjust( $item, $rec->[2] ? 0 : 1) if $rec->[1];
       return;
    }
-   $self-> {mouseTransaction} = 1;
+
+   $self-> {mouseTransaction} = (( $mod & km::Ctrl) && $self->{dragable}) ? 2 : 1;
    $self-> focusedItem( $item >= 0 ? $item : 0);
+   $self-> {mouseTransaction} = 1 if $self-> focusedItem < 0;
+   if ( $self-> {mouseTransaction} == 2) {
+      $self-> {dragItem} = $self-> focusedItem;
+      $self-> {mousePtr} = $self-> pointer;
+      $self-> pointer( cr::Move);
+   }
    $self-> capture(1);
 }
 
@@ -605,10 +616,17 @@ sub on_mouseup
    my ( $self, $btn, $mod, $x, $y) = @_;
    return if $btn != mb::Left;
    return unless defined $self->{mouseTransaction};
+   my @dragnotify;
+   if ( $self->{mouseTransaction} == 2) {
+      $self-> pointer( $self-> {mousePtr});
+      my $fci = $self-> focusedItem;
+      @dragnotify = ($self-> {dragItem}, $fci) unless $fci == $self-> {dragItem};
+   }
    delete $self->{mouseTransaction};
    delete $self->{mouseHorizontal};
    $self-> capture(0);
    $self-> clear_event;
+   $self-> notify(q(DragItem), @dragnotify) if @dragnotify;
 }
 
 sub on_mousewheel
@@ -955,7 +973,8 @@ sub insert_items
 {
    my ( $self, $where, $at, @items) = @_;
    return unless scalar @items;
-   $where = [0, $self->{items}] unless $where;
+   my $forceReset = 0;
+   $where = [0, $self->{items}], $forceReset = 1 unless $where;
    $self-> validate_items( $_) for @items;
    return unless $where->[1];
    my $ch = scalar @{$where->[1]};
@@ -963,7 +982,7 @@ sub insert_items
    $at = $ch if $at > $ch;
    my ( $x, $l) = $self-> get_index( $where);
    splice( @{$where->[1]}, $at, 0, @items);
-   return if $x < 0;
+   return if $x < 0 && !$forceReset;
    $self-> reset_tree;
    $self-> update_tree;
    $self-> repaint;
@@ -1159,6 +1178,13 @@ sub showItemHint
    $self-> makehint(0) if !$sh && $self->{hintActive};
 }
 
+sub dragable
+{
+   return $_[0]-> {dragable} unless $#_;
+   $_[0]->{dragable} = $_[1];
+}
+
+
 sub get_index
 {
    my ( $self, $item) = @_;
@@ -1172,6 +1198,7 @@ sub get_index
       return $current == $item;
    });
    return $rec, $lev if $res;
+   return -1, undef;
 }
 
 
@@ -1244,6 +1271,49 @@ sub on_expand
 #   my ( $self, $node, $action) = @_;
 }
 
+sub on_dragitem
+{
+    my ( $self, $from, $to) = @_;
+    my ( $fx, $fl) = $self-> get_item( $from);
+    my ( $tx, $tl) = $self-> get_item( $to);
+    my ( $fpx, $fpo) = $self-> get_item_parent( $fx);
+    return unless $fx && $tx;
+    my $found_inv = 0;
+
+    my $traverse;
+    $traverse = sub {
+       my $current = $_[0];
+       $found_inv = 1, return if $current == $tx;
+       if ( $current->[1] && $current->[2]) {
+          my $c = scalar @{$current->[1]};
+          for ( @{$current->[1]}) {
+             my $ret = $traverse->( $_);
+             return $ret if $ret;
+          }
+       }
+    };
+    $traverse->( $fx);
+    return if $found_inv;
+
+
+    if ( $fpx) {
+      splice( @{$fpx->[1]}, $fpo, 1);
+    } else {
+       splice( @{$self->{items}}, $fpo, 1);
+    }
+    unless ( $tx-> [1]) {
+       $tx->[1] = [$fx];
+       $tx->[2] = 1;
+    } else {
+       splice( @{$tx->[1]}, 0, 0, $fx);
+    }
+    $self-> reset_tree;
+    $self-> update_tree;
+    $self-> repaint;
+    $self-> clear_event;
+}
+
+
 sub autoHeight    {($#_)?$_[0]->set_auto_height    ($_[1]):return $_[0]->{autoHeight}     }
 sub borderWidth   {($#_)?$_[0]->set_border_width   ($_[1]):return $_[0]->{borderWidth}    }
 sub focusedItem   {($#_)?$_[0]->set_focused_item   ($_[1]):return $_[0]->{focusedItem}    }
@@ -1253,7 +1323,7 @@ sub itemHeight    {($#_)?$_[0]->set_item_height    ($_[1]):return $_[0]->{itemHe
 sub offset        {($#_)?$_[0]->set_offset         ($_[1]):return $_[0]->{offset}         }
 sub topItem       {($#_)?$_[0]->set_top_item       ($_[1]):return $_[0]->{topItem}        }
 
-package Prima::Outline;
+package Prima::StringOutline;
 use vars qw(@ISA);
 @ISA = qw(Prima::OutlineViewer);
 
@@ -1285,6 +1355,40 @@ sub on_stringify
 {
    my ( $self, $node, $result) = @_;
    $$result = $node->[0];
+}
+
+package Prima::Outline;
+use vars qw(@ISA);
+@ISA = qw(Prima::OutlineViewer);
+
+sub draw_items
+{
+   my ($self, $canvas, $paintStruc) = @_;
+   for ( @$paintStruc) {
+      my ( $node, $left, $bottom, $right, $top, $position, $focused) = @$_;
+      if ( $focused) {
+         my $c = $canvas-> color;
+         $canvas-> color( $self-> hiliteBackColor);
+         $canvas-> bar( $left, $bottom, $right, $top);
+         $canvas-> color( $self-> hiliteColor);
+         $canvas-> text_out( $node->[0]->[0], $left, $bottom);
+         $canvas-> color( $c);
+      } else {
+         $canvas-> text_out( $node->[0]->[0], $left, $bottom);
+      }
+   }
+}
+
+sub on_measureitem
+{
+   my ( $self, $node, $result) = @_;
+   $$result = $self-> get_text_width( $node->[0]->[0]);
+}
+
+sub on_stringify
+{
+   my ( $self, $node, $result) = @_;
+   $$result = $node->[0]->[0];
 }
 
 package Prima::DirectoryOutline;
@@ -1321,6 +1425,7 @@ sub profile_default
    return {
       %{$_[ 0]-> SUPER::profile_default},
       path           => '',
+      dragable       => 0,
       openedGlyphs   => 1,
       closedGlyphs   => 1,
       openedIcon     => undef,
