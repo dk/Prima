@@ -614,7 +614,7 @@ AGAIN:
              
           switch ( ToAsciiEx( mp1, scan, keyState, (LPWORD) keys, 0, kl)) {
           case 1: // char
-             if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0)) {
+             if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0) && ( GetKeyState( VK_SHIFT) >= 0)) {
                 BYTE keys2[4];
                 if (( ToAsciiEx( mp1, scan, guts. emptyKeyState, (LPWORD) keys2, 0, kl) == 1) &&
                     ( keys2[0] != keys[0])) {
@@ -627,7 +627,7 @@ AGAIN:
              break;
           case 2: { // double char
                 Event evx;
-                if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0)) {
+                if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0) && ( GetKeyState( VK_SHIFT) >= 0)) {
                    BYTE keys2[4];
                    if (( ToAsciiEx( mp1, scan, guts. emptyKeyState, (LPWORD) keys2, 0, kl) == 1) &&
                        ( keys2[0] != keys[1]))
