@@ -693,8 +693,8 @@ Image_resample( Handle self, double srcLo, double srcHi, double dstLo, double ds
    switch ( var->type)
    {
       case imByte:   rs_Byte_Byte     ( RSPARMS); break;
-      case imShort:  rs_short_short   ( RSPARMS); break;
-      case imLong:   rs_long_long     ( RSPARMS); break;
+      case imShort:  rs_Short_Short   ( RSPARMS); break;
+      case imLong:   rs_Long_Long     ( RSPARMS); break;
       case imFloat:  rs_float_float   ( RSPARMS); break;
       case imDouble: rs_double_double ( RSPARMS); break;
       default: return;

@@ -121,8 +121,8 @@ ic_type_convert( Handle self,
          case im256:     ic_mono_byte_ictNone(BCPARMS);      break;
          case imByte:    ic_mono_graybyte_ictNone(BCPARMS);  break;
          case imRGB:     ic_mono_rgb_ictNone(BCPARMS);       break;
-         case imShort:   ic_MIDCONVERT(mono, short);         break;
-         case imLong:    ic_MIDCONVERT(mono, long);          break;
+         case imShort:   ic_MIDCONVERT(mono, Short);         break;
+         case imLong:    ic_MIDCONVERT(mono, Long);          break;
          case imFloat:   ic_MIDCONVERT(mono, float);         break;
          case imDouble:  ic_MIDCONVERT(mono, double);        break;
          case imComplex: ic_MIDCONVERT(mono, float_complex); break;
@@ -149,8 +149,8 @@ ic_type_convert( Handle self,
             ic_nibble_graybyte_ictNone(BCPARMS);       break;
          case imRGB:
             ic_nibble_rgb_ictNone(BCPARMS);            break;
-         case imShort:  ic_MIDCONVERT(nibble, short);        break;
-         case imLong:   ic_MIDCONVERT(nibble, long);         break;
+         case imShort:  ic_MIDCONVERT(nibble, Short);        break;
+         case imLong:   ic_MIDCONVERT(nibble, Long);         break;
          case imFloat:  ic_MIDCONVERT(nibble, float);        break;
          case imDouble: ic_MIDCONVERT(nibble, double);       break;
          case imComplex: ic_MIDCONVERT(nibble, float_complex); break;
@@ -187,8 +187,8 @@ ic_type_convert( Handle self,
             ic_byte_graybyte_ictNone(BCPARMS);          break;
          case imRGB:
             ic_byte_rgb_ictNone(BCPARMS); break;
-         case imShort:  ic_MIDCONVERT(byte, short);        break;
-         case imLong:   ic_MIDCONVERT(byte, long);         break;
+         case imShort:  ic_MIDCONVERT(byte, Short);        break;
+         case imLong:   ic_MIDCONVERT(byte, Long);         break;
          case imFloat:  ic_MIDCONVERT(byte, float);        break;
          case imDouble: ic_MIDCONVERT(byte, double);       break;
          case imComplex: ic_MIDCONVERT(byte, float_complex); break;
@@ -224,8 +224,8 @@ ic_type_convert( Handle self,
             break;
          case imRGB:
             ic_graybyte_rgb_ictNone(BCPARMS); break;
-         case imShort  : ic_Byte_short( BCPARMS);  break;
-         case imLong   : ic_Byte_long( BCPARMS);   break;
+         case imShort  : ic_Byte_Short( BCPARMS);  break;
+         case imLong   : ic_Byte_Long( BCPARMS);   break;
          case imFloat  : ic_Byte_float( BCPARMS);  break;
          case imDouble : ic_Byte_double( BCPARMS); break;
          case imComplex: ic_Byte_float_complex(BCPARMS); break;
@@ -237,7 +237,7 @@ ic_type_convert( Handle self,
       case imShort:  switch ( dstType)
       {
          case imMono  :
-            ic_short_Byte( BCSELFGRAY);
+            ic_Short_Byte( BCSELFGRAY);
             var->type = imByte;
             switch ( var->conversion)
             {
@@ -246,7 +246,7 @@ ic_type_convert( Handle self,
             }
             break;
          case im16  :
-            ic_short_Byte( BCSELFGRAY);
+            ic_Short_Byte( BCSELFGRAY);
             var->type = imByte;
             switch ( var->conversion)
             {
@@ -255,19 +255,19 @@ ic_type_convert( Handle self,
             }
             break;
          case im256:
-            ic_short_Byte(BCPARMS);
+            ic_Short_Byte(BCPARMS);
             break;
          case imRGB   :
-            ic_short_Byte( BCSELFGRAY);
+            ic_Short_Byte( BCSELFGRAY);
             var->type = imByte;
             ic_graybyte_rgb_ictNone( BCPARMS);
             break;
-         case imByte   : ic_short_Byte( BCPARMS);   break;
-         case imLong   : ic_short_long( BCPARMS);   break;
-         case imFloat  : ic_short_float( BCPARMS);  break;
-         case imDouble : ic_short_double( BCPARMS); break;
-         case imComplex: ic_short_float_complex(BCPARMS); break;
-         case imDComplex: ic_short_double_complex(BCPARMS); break;
+         case imByte   : ic_Short_Byte( BCPARMS);   break;
+         case imLong   : ic_Short_Long( BCPARMS);   break;
+         case imFloat  : ic_Short_float( BCPARMS);  break;
+         case imDouble : ic_Short_double( BCPARMS); break;
+         case imComplex: ic_Short_float_complex(BCPARMS); break;
+         case imDComplex: ic_Short_double_complex(BCPARMS); break;
       }
       break;
       /* imShort */
@@ -275,7 +275,7 @@ ic_type_convert( Handle self,
       case imLong:  switch ( dstType)
       {
          case imMono  :
-            ic_long_Byte( BCSELFGRAY);
+            ic_Long_Byte( BCSELFGRAY);
             var->type = imByte;
             switch ( var->conversion)
             {
@@ -284,7 +284,7 @@ ic_type_convert( Handle self,
             }
             break;
          case im16  :
-            ic_long_Byte( BCSELFGRAY);
+            ic_Long_Byte( BCSELFGRAY);
             var->type = imByte;
             switch ( var->conversion)
             {
@@ -293,19 +293,19 @@ ic_type_convert( Handle self,
             }
             break;
          case im256:
-            ic_long_Byte(BCPARMS);
+            ic_Long_Byte(BCPARMS);
             break;
          case imRGB   :
-            ic_long_Byte( BCSELFGRAY);
+            ic_Long_Byte( BCSELFGRAY);
             var->type = imByte;
             ic_graybyte_rgb_ictNone( BCPARMS);
             break;
-         case imByte   : ic_long_Byte( BCPARMS);   break;
-         case imShort  : ic_long_short( BCPARMS);  break;
-         case imFloat  : ic_long_float( BCPARMS);  break;
-         case imDouble : ic_long_double( BCPARMS); break;
-         case imComplex: ic_long_float_complex(BCPARMS); break;
-         case imDComplex: ic_long_double_complex(BCPARMS); break;
+         case imByte   : ic_Long_Byte( BCPARMS);   break;
+         case imShort  : ic_Long_Short( BCPARMS);  break;
+         case imFloat  : ic_Long_float( BCPARMS);  break;
+         case imDouble : ic_Long_double( BCPARMS); break;
+         case imComplex: ic_Long_float_complex(BCPARMS); break;
+         case imDComplex: ic_Long_double_complex(BCPARMS); break;
       }
       break;
       /* imLong */
@@ -339,8 +339,8 @@ ic_type_convert( Handle self,
             ic_graybyte_rgb_ictNone( BCPARMS);
             break;
          case imByte   : ic_float_Byte( BCPARMS);   break;
-         case imShort  : ic_float_short( BCPARMS);  break;
-         case imLong   : ic_float_long( BCPARMS);   break;
+         case imShort  : ic_float_Short( BCPARMS);  break;
+         case imLong   : ic_float_Long( BCPARMS);   break;
          case imDouble : ic_float_double( BCPARMS); break;
          case imComplex: ic_float_float_complex(BCPARMS); break;
          case imDComplex: ic_float_double_complex(BCPARMS); break;
@@ -378,8 +378,8 @@ ic_type_convert( Handle self,
             ic_graybyte_rgb_ictNone( BCPARMS);
             break;
          case imByte   : ic_double_Byte( BCPARMS);   break;
-         case imShort  : ic_double_short( BCPARMS);  break;
-         case imLong   : ic_double_long( BCPARMS);   break;
+         case imShort  : ic_double_Short( BCPARMS);  break;
+         case imLong   : ic_double_Long( BCPARMS);   break;
          case imFloat  : ic_double_float( BCPARMS);  break;
          case imComplex: ic_double_float_complex(BCPARMS); break;
          case imDComplex: ic_double_double_complex(BCPARMS); break;
@@ -425,8 +425,8 @@ ic_type_convert( Handle self,
          case imByte:
             ic_rgb_graybyte_ictNone(BCPARMS); break;
             break;
-         case imShort:  ic_MIDCONVERT(rgb, short);        break;
-         case imLong:   ic_MIDCONVERT(rgb, long);         break;
+         case imShort:  ic_MIDCONVERT(rgb, Short);        break;
+         case imLong:   ic_MIDCONVERT(rgb, Long);         break;
          case imFloat:  ic_MIDCONVERT(rgb, float);        break;
          case imDouble: ic_MIDCONVERT(rgb, double);       break;
          case imComplex: ic_MIDCONVERT(rgb, float_complex); break;
@@ -460,8 +460,8 @@ ic_type_convert( Handle self,
           case imRGB:     ic_MIDCONVERT_REV( float_complex,rgb,None); break;  
           case im256:   
           case imByte:    ic_float_complex_Byte(BCPARMS); break;
-          case imShort:   ic_float_complex_short(BCPARMS); break;
-          case imLong:    ic_float_complex_long(BCPARMS); break;
+          case imShort:   ic_float_complex_Short(BCPARMS); break;
+          case imLong:    ic_float_complex_Long(BCPARMS); break;
           case imDouble:  ic_float_complex_double(BCPARMS); break;
           case imFloat:   ic_float_complex_float( BCPARMS); break;
       }                   
@@ -491,8 +491,8 @@ ic_type_convert( Handle self,
           case imRGB:     ic_MIDCONVERT_REV(double_complex,rgb,None); break;  
           case im256:
           case imByte:    ic_double_complex_Byte(BCPARMS); break;
-          case imShort:   ic_double_complex_short(BCPARMS); break;
-          case imLong:    ic_double_complex_long(BCPARMS); break;
+          case imShort:   ic_double_complex_Short(BCPARMS); break;
+          case imLong:    ic_double_complex_Long(BCPARMS); break;
           case imDouble:  ic_double_complex_double(BCPARMS); break;
           case imFloat:   ic_double_complex_float( BCPARMS); break;
       }                   

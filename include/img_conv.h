@@ -178,33 +178,33 @@ extern void ic_rgb_byte_ictHalftone( Handle self, Byte * dstData, PRGBColor dstP
 extern void ic_rgb_byte_ictErrorDiffusion( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_rgb_graybyte_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 
-extern void ic_Byte_short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_Byte_long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Byte_Short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Byte_Long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_Byte_float( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_Byte_double( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_short_Byte( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_short_long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_short_float( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_short_double( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_long_Byte( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_long_short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_long_float( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_long_double( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Short_Byte( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Short_Long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Short_float( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Short_double( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Long_Byte( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Long_Short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Long_float( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Long_double( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_float_Byte( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_float_short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_float_long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_float_Short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_float_Long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_float_double( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_double_Byte( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_double_short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_double_long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_double_Short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_double_Long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_double_float( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 
 extern void ic_Byte_float_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_Byte_double_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_short_float_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_short_double_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_long_float_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_long_double_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Short_float_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Short_double_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Long_float_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_Long_double_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_float_float_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_float_double_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_double_float_complex( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
@@ -212,24 +212,24 @@ extern void ic_double_double_complex( Handle self, Byte *dstData, PRGBColor dstP
 
 extern void ic_double_complex_double( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_double_complex_float( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_double_complex_long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_double_complex_short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_double_complex_Long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_double_complex_Short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_double_complex_Byte( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_float_complex_double( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_float_complex_float( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_float_complex_long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
-extern void ic_float_complex_short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_float_complex_Long( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
+extern void ic_float_complex_Short( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 extern void ic_float_complex_Byte( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 
 
 // image resampling routines
 extern void rs_Byte_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
-extern void rs_short_short( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
-extern void rs_long_long( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
+extern void rs_Short_Short( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
+extern void rs_Long_Long( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 extern void rs_float_float( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 extern void rs_double_double( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
-extern void rs_short_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
-extern void rs_long_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
+extern void rs_Short_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
+extern void rs_Long_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 extern void rs_float_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 extern void rs_double_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 
