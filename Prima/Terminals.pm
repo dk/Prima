@@ -594,7 +594,7 @@ sub insert_view {
     }
     $self->buildinItem( $item);
     if ( ! $item->isa( 'Prima::Widget')) {
-        croak "Item #$i not a Widget descendant" unless $item->isa( 'Widget');
+        croak "Item #$i not a Widget descendant" unless $item->isa( 'Prima::Widget');
     }
     if ( defined( $i)) {
         $self->{ items}->[ $i] = $item;
@@ -1639,7 +1639,7 @@ sub remove_view_item {
 
     my ( $item) = $self->{ items}->[ $i];
 
-    croak "Not a reference to a Widget descendant" unless $item->isa( "Widget");
+    croak "Not a reference to a Widget descendant" unless $item->isa( "Prima::Widget");
 
     $item->notify( 'TerminalRemove', $self);
     $item->destroy, return 1

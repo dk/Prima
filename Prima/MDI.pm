@@ -33,12 +33,20 @@ package Prima::MDI;
 use strict;
 use Prima::Classes;
 
-package Prima::MDIWindow;
-use vars qw(@ISA);
-@ISA = qw( Prima::Window Prima::MDIOwner);
-
 
 package Prima::MDIOwner;
+use vars qw(@ISA);
+@ISA = qw( Prima::Widget);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      growMode    => gm::Client,
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
 
 sub mdi_activate
 {
@@ -52,7 +60,7 @@ sub mdi_activate
 
 sub mdis
 {
-   return grep {$_->isa('MDI')?$_:0} $_[0]-> widgets
+   return grep {$_->isa('Prima::MDI')?$_:0} $_[0]-> widgets
 }
 
 sub arrange_icons
@@ -278,7 +286,7 @@ sub sync_client
 
 sub mdis
 {
-   return grep {$_-> isa('MDI') ? $_ : 0} $_[0]-> owner-> widgets
+   return grep {$_-> isa('Prima::MDI') ? $_ : 0} $_[0]-> owner-> widgets
 }
 
 sub arrange_icons
@@ -557,8 +565,9 @@ sub xorrect
    $r[3]--;
    my $o = $::application;
    $o-> begin_paint;
-   my @cr = $self-> owner-> rect;
-   $o-> clipRect( @cr);
+   my $oo = $self-> owner;
+   my @cr = $oo-> rect;
+   $o-> clipRect( $oo-> client_to_screen( @cr[0,1]), $oo-> client_to_screen( @cr[2,3]));
    $cr[2]--;
    $cr[3]--;
    $o-> rect_focus( @r, $self-> {border});
@@ -686,6 +695,30 @@ sub on_mouseclick
       }
       $self-> post_action(q(close));
       return;
+   }
+}
+
+sub on_translateaccel
+{
+   my ( $self, $code, $key, $mod) = @_;
+   if ( !$self-> {mouseTransaction}) {
+      if (( $key == kb::Tab) && ( $mod & km::Ctrl)) {
+         my $x    = $self-> first;
+         my $mdix = $x-> isa('Prima::MDI') ? $x : undef;
+         while ( $x) {
+            $x = $x-> next;
+            $mdix = $x if $x && $x-> isa('Prima::MDI');
+         }
+         unless ( $x) {
+            $x = $self-> last;
+            $mdix = $x if $x && $x-> isa('Prima::MDI');
+         }
+         if ( $mdix) {
+            $mdix-> bring_to_front;
+            $mdix-> select;
+         }
+         $self-> clear_event;
+      }
    }
 }
 
@@ -1097,10 +1130,10 @@ sub MDIClient_Destroy
 }
 
 
-sub maximize    { $_[0]->windowState( ws::Maximized)}
-sub minimize    { $_[0]->windowState( ws::Minimized)}
-sub restore     { $_[0]->windowState( ws::Normal)}
-sub close       { $_[0]->destroy if $_[0]-> SUPER::close; }
+sub maximize    { $_[0]-> windowState( ws::Maximized)}
+sub minimize    { $_[0]-> windowState( ws::Minimized)}
+sub restore     { $_[0]-> windowState( ws::Normal)}
+sub close       { $_[0]-> SUPER::close; }
 
 sub borderIcons          {($#_)?$_[0]->set_border_icons($_[1])                        :return $_[0]->{borderIcons}}
 sub borderStyle          {($#_)?$_[0]->set_border_style($_[1])                        :return $_[0]->{borderStyle}}

@@ -507,7 +507,7 @@ sub set_default
       for ( @widgets)
       {
          last if $_ == $self;
-         $_-> default(0) if $_->isa(q(Button)) && $_->default;
+         $_-> default(0) if $_->isa(q(Prima::Button)) && $_->default;
       }
    }
    $self-> repaint;
