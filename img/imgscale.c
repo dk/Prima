@@ -246,28 +246,27 @@ void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx
 }
 
 void
-ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch)
+ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch)
 {
    int  absh = h < 0 ? -h : h;
    int  absw = w < 0 ? -w : w;
-   int  srcLine = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
-   int  dstLine = (( absw  * ( var->type & imBPP) + 31) / 32) * 4;
-   Byte * srcData = var->data;
+   int  srcLine = (( srcW *  ( type & imBPP) + 31) / 32) * 4;
+   int  dstLine = (( absw  * ( type & imBPP) + 31) / 32) * 4;
    Fixed xstep, ystep, count;
    int last = 0;
    int i;
-   int yMin = ( var->h > absh) ? absh : var->h;
+   int yMin = ( srcH > absh) ? absh : srcH;
    PStretchProc proc = nil;
    Byte *srcLast = nil;
 
-   if ( w == var->w) xStretch = false;
-   if ( h == var->h) yStretch = false;
+   if ( w == srcW) xStretch = false;
+   if ( h == srcH) yStretch = false;
 // transfer case
    if ( !xStretch && !yStretch && ( w > 0))
    {
       int y;
       int xMin = ( srcLine > dstLine) ? dstLine : srcLine;
-      if ( var->w < w || var->h < absh) memset( dstData, 0, dstLine * absh);
+      if ( srcW < w || srcH < absh) memset( dstData, 0, dstLine * absh);
       if ( h < 0)
       {
          dstData += dstLine * ( yMin - 1);
@@ -282,18 +281,18 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
    {
       int xMin = ( srcLine > dstLine) ? dstLine : srcLine;
       count. l = 0;
-      if ( var->w < w) memset( dstData, 0, dstLine * absh);
+      if ( srcW < w) memset( dstData, 0, dstLine * absh);
       if ( h < 0)
       {
          dstData += dstLine * ( absh - 1);
          dstLine =- dstLine;
       }
-      if ( absh < var->h)
+      if ( absh < srcH)
       {
-         ystep. l = (double) absh / var->h * 0x10000;
+         ystep. l = (double) absh / srcH * 0x10000;
          memcpy( dstData, srcData, xMin);
          dstData += dstLine;
-         for ( i = 0; i < var->h; i++)
+         for ( i = 0; i < srcH; i++)
          {
             if ( count. i.i > last)
             {
@@ -305,7 +304,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
             srcData += srcLine;
          }
       } else {
-         ystep. l = (double) var->h / absh * 0x10000;
+         ystep. l = (double) srcH / absh * 0x10000;
          for ( i = 0; i < absh; i++)
          {
             if ( count.i.i > last)
@@ -324,48 +323,48 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
 // general actions for x-scaling
    count. l = 0;
    count. l = 0;
-   if ( var->w < absw || var->h < absh || ( var->type & imBPP) == imNibble)
+   if ( srcW < absw || srcH < absh || ( type & imBPP) == imNibble)
       memset( dstData, 0, dstLine * absh);
-   if ( absw < var->w)
-      xstep. l = (double) absw / var->w * 0x10000;
+   if ( absw < srcW)
+      xstep. l = (double) absw / srcW * 0x10000;
    else
-      xstep. l = (double) var->w / absw * 0x10000;
-   switch( var->type)
+      xstep. l = (double) srcH / absw * 0x10000;
+   switch( type)
    {
       case imMono:     case imBW:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_mono_in : bs_mono_out);  break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_mono_in : bs_mono_out);  break;
       case imNibble:   case imNibble|imGrayScale:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_nibble_in : bs_nibble_out);     break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_nibble_in : bs_nibble_out);     break;
       case imByte:     case im256:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_uint8_t_in : bs_uint8_t_out);   break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_uint8_t_in : bs_uint8_t_out);   break;
       case imRGB:      case imRGB|imGrayScale:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_RGBColor_in : bs_RGBColor_out); break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_RGBColor_in : bs_RGBColor_out); break;
       case imShort:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_int16_t_in : bs_int16_t_out);   break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_int16_t_in : bs_int16_t_out);   break;
       case imLong:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_int32_t_in : bs_int32_t_out);   break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_int32_t_in : bs_int32_t_out);   break;
       case imFloat:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_float_in : bs_float_out);       break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_float_in : bs_float_out);       break;
       case imDouble:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_double_in : bs_double_out);     break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_double_in : bs_double_out);     break;
       case imComplex:  case imTrigComplex:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_Complex_in : bs_Complex_out);   break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_Complex_in : bs_Complex_out);   break;
       case imDComplex: case imTrigDComplex:
-         proc = ( PStretchProc)(( var->w > absw) ? bs_DComplex_in : bs_DComplex_out); break;
+         proc = ( PStretchProc)(( srcW > absw) ? bs_DComplex_in : bs_DComplex_out); break;
       default:
          return;
    }
 
 // no vertical stretch case
-   if ( !yStretch || ( var->h == -h))
+   if ( !yStretch || ( srcH == -h))
    {
       if ( h < 0)
       {
          dstData += dstLine * ( yMin - 1);
          dstLine =- dstLine;
       }
-      for ( i = 0; i < var->h; i++, srcData += srcLine, dstData += dstLine)
-         proc( srcData, dstData, var->w, w, absw, xstep.l);
+      for ( i = 0; i < srcH; i++, srcData += srcLine, dstData += dstLine)
+         proc( srcData, dstData, srcW, w, absw, xstep.l);
       return;
    }
 
@@ -375,16 +374,16 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
       dstData += dstLine * ( absh - 1);
       dstLine =- dstLine;
    }
-   if ( absh < var->h)
+   if ( absh < srcH)
    {
-      ystep. l = (double) absh / var->h * 0x10000;
-      proc( srcData, dstData, var->w, w, absw, xstep.l);
+      ystep. l = (double) absh / srcH * 0x10000;
+      proc( srcData, dstData, srcW, w, absw, xstep.l);
       dstData += dstLine;
-      for ( i = 0; i < var->h; i++)
+      for ( i = 0; i < srcH; i++)
       {
          if ( count. i.i > last)
          {
-            proc( srcData, dstData, var->w, w, absw, xstep.l);
+            proc( srcData, dstData, srcW, w, absw, xstep.l);
             dstData += dstLine;
             last = count.i.i;
          }
@@ -392,7 +391,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
          srcData += srcLine;
       }
    } else {
-      ystep. l = (double) var->h / absh * 0x10000;
+      ystep. l = (double) srcH / absh * 0x10000;
       for ( i = 0; i < absh; i++)
       {
          if ( count.i.i > last)
@@ -404,7 +403,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
          if ( srcLast == srcData) {
             memcpy( dstData, dstData - dstLine, dstLine < 0 ? -dstLine : dstLine);
          } else {
-            proc( srcData, dstData, var->w, w, absw, xstep.l);
+            proc( srcData, dstData, srcW, w, absw, xstep.l);
             srcLast = srcData;
          }
          dstData += dstLine;

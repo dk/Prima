@@ -44,7 +44,7 @@ extern "C" {
 extern void init_image_support();
 
 // image basic routines
-extern void ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch);
+extern void ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch);
 extern void ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern int  image_guess_type( int fd);
 extern Bool itype_supported( int type);

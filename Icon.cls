@@ -43,4 +43,5 @@ object Prima::Icon( Prima::Image)
    method void       combine( Handle xorMask, Handle andMask);
    c_only void       create_empty( int width, int height, int type);
    c_only void       update_change();
-}
+   c_only void       stretch( int width, int height);
+} 

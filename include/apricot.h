@@ -1486,6 +1486,7 @@ typedef struct _ObjectOptions_ {
    unsigned optPreserveType        : 1;   /* Image */
    unsigned optVScaling            : 1;
    unsigned optHScaling            : 1;
+   unsigned optDisableUpdate       : 1;   /* Icon */
    unsigned optAutoPopup           : 1;   /* Popup */
    unsigned optActive              : 1;   /* Timer */
    unsigned optOwnerIcon           : 1;   /* Window */

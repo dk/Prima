@@ -302,6 +302,8 @@ Icon_mask( Handle self, Bool set, SV * svmask)
 void
 Icon_update_change( Handle self)
 {
+   if ( is_opt( optDisableUpdate)) 
+      return;
    inherited update_change( self);
    free( var-> mask);
    if ( var-> data)
@@ -313,6 +315,40 @@ Icon_update_change( Handle self)
    }
    else
       var-> mask = nil;
+}
+
+void
+Icon_stretch( Handle self, int width, int height)
+{
+   Byte * newMask = nil;
+   int lineSize, oldW = var-> w, oldH = var-> h;
+   if ( var->stage > csFrozen) return;
+   if ( width  >  65535) width  =  65535;
+   if ( height >  65535) height =  65535;
+   if ( width  < -65535) width  = -65535;
+   if ( height < -65535) height = -65535;
+   if (( width == var->w) && ( height == var->h)) return;
+   if ( width == 0 || height == 0)
+   {
+      my->create_empty( self, 0, 0, var->type);
+      return;
+   }
+   
+   opt_set( optDisableUpdate);
+   inherited stretch( self, width, height);
+   opt_clear( optDisableUpdate);
+   lineSize = (( abs( width) + 31) / 32) * 4;
+   newMask  = allocb( lineSize * abs( height));
+   if ( newMask == nil)
+      croak("Icon::stretch: cannot allocate %d bytes", lineSize * abs( height));
+   if ( var-> mask) 
+      ic_stretch( imMono, var-> mask, oldW, oldH, newMask, width, height, is_opt( optHScaling), is_opt( optVScaling));
+      
+   free( var-> mask);
+   var->mask = newMask;
+   var->maskLine = lineSize;
+   var->maskSize = lineSize * abs( height);
+   inherited update_change( self); 
 }
 
 /*
