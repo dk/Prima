@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
  * All rights reserved.
@@ -23,6 +22,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * $Id$
  */
 
 #include <limits.h>

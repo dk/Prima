@@ -22,6 +22,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * $Id$
  */
 
 /***********************************************************/
@@ -491,7 +493,7 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 			| ButtonReleaseMask
 			| PointerMotionMask
 			| ButtonMotionMask, GrabModeAsync, GrabModeAsync,
-			None, None, CurrentTime);
+			confine_to, None, CurrentTime);
       XCHECKPOINT;
       if ( r != GrabSuccess) {
 	 /* XXX do something sensible here */
