@@ -14,6 +14,7 @@
 #define cefStore    2
 #define cefFetch    3
 
+struct _ClipboardFormatReg;
 typedef SV* ClipboardExchangeFunc ( struct _ClipboardFormatReg * instance, int function, SV * data);
 typedef ClipboardExchangeFunc *PClipboardExchangeFunc;
 
