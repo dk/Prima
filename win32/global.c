@@ -35,10 +35,7 @@
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
-// #define NO_LOGGER
-
 WinGuts guts;
-Bool    loggerDead   = false;
 DWORD   rc;
 PHash   stylusMan    = nilHandle; // pen & brush manager
 PHash   fontMan      = nilHandle; // font manager
@@ -57,15 +54,17 @@ int     FONTSTRUCSIZE, FONTSTRUCSIZE2;
 Handle lastMouseOver = nilHandle;
 MusClkRec musClk = {0};
 
-void set_platform_data( HINSTANCE inst, int cmd)
-{
-   memset( &guts, 0, sizeof( guts));
-   guts. cmdShow  = cmd;
-   guts. instance = inst;
-   guts. version  = GetVersion();
-}
 
-extern void start_logger( void);
+BOOL APIENTRY
+DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
+{
+    if ( reason == DLL_PROCESS_ATTACH) {
+       memset( &guts, 0, sizeof( guts));
+       guts. instance = hInstance;
+       guts. cmdShow  = SW_SHOWDEFAULT;
+    }
+    return TRUE;
+}
 
 Bool
 window_subsystem_init()
@@ -74,11 +73,8 @@ window_subsystem_init()
    HDC dc;
    HBITMAP hbm;
 
+   guts. version  = GetVersion();
    guts. mainThreadId = GetCurrentThreadId();
-#ifndef NO_LOGGER
-   start_logger();
-#endif
-
    guts. errorMode = SetErrorMode( SEM_FAILCRITICALERRORS);
 
    memset( &wc, 0, sizeof( wc));
@@ -117,12 +113,12 @@ window_subsystem_init()
    wc.lpszClassName = "Generic";
    RegisterClass( &wc);
 
-   stylusMan = hash_create();
-   fontMan   = hash_create();
-   patMan    = hash_create();
-   menuMan   = hash_create();
-   imageMan  = hash_create();
-   regnodeMan= hash_create();
+   stylusMan  = hash_create();
+   fontMan    = hash_create();
+   patMan     = hash_create();
+   menuMan    = hash_create();
+   imageMan   = hash_create();
+   regnodeMan = hash_create();
    create_font_hash();
    {
       LOGBRUSH b = { BS_HOLLOW, 0, 0};
@@ -231,26 +227,6 @@ window_subsystem_init()
    guts. smDblClk. x = GetSystemMetrics( SM_CXDOUBLECLK);
    guts. smDblClk. y = GetSystemMetrics( SM_CYDOUBLECLK);
 
-// set up logger font
-   if ( guts. logger)  {
-      HKEY hKey;
-      DWORD valSize = 256, valType = REG_SZ;
-      char buf[ 256] = "";
-
-      if ( RegOpenKeyEx( HKEY_CURRENT_USER, "SOFTWARE\\Perl\\Prima\\Logger", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-         if ( RegQueryValueEx( hKey, "Font", nil, &valType, buf, &valSize) == ERROR_SUCCESS) {
-            Font f;
-            LOGFONT lf;
-            font_pp2font( buf, &f);
-            apc_font_pick( nilHandle, &f, &f);
-            font_font2logfont( &f, &lf);
-            SendMessage( guts. loggerListBox, WM_SETFONT,
-               ( WPARAM) CreateFontIndirect( &lf), ( LPARAM) 0);
-         }
-         RegCloseKey( hKey);
-      }
-   }
-
    return true;
 }
 
@@ -270,11 +246,6 @@ window_subsystem_done()
    hash_destroy( regnodeMan, false);
    DeleteObject( hPenHollow);
    DeleteObject( hBrushHollow);
-
-   if ( guts. logger) DestroyWindow( guts. logger);
-   loggerDead          = TRUE;
-   guts. logger        = NULL;
-   guts. loggerListBox = NULL;
    SetErrorMode( guts. errorMode);
 }
 
