@@ -28,7 +28,7 @@
 #include "img_conv.h"
 #include "Image.h"
 
-// Prima-specific undefs
+/* Prima-specific undefs */
 #undef HAVE_STDLIB_H
 #undef LOCAL
 #include <jpeglib.h>
@@ -43,18 +43,18 @@ static int    jpgbpp[] = { imbpp8 | imGrayScale, imbpp24, 0 };
 static ImgCodecInfo codec_info = {
    "JPEG",
    "Independent JPEG Group",
-   6, 1,    // version
-   jpgext,    // extension
-   "JPEG File Interchange Format",     // file type
-   "JPEG", // short type
-   nil,    // features 
-   "Prima::Image::jpeg",  // module
-   "Prima::Image::jpeg",  // package
-   true,   // canLoad
-   false,  // canLoadMultiple 
-   true,   // canSave
-   false,  // canSaveMultiple
-   jpgbpp, // save types
+   6, 1,    /* version */
+   jpgext,    /* extension */
+   "JPEG File Interchange Format",     /* file type */
+   "JPEG", /* short type */
+   nil,    /* features  */
+   "Prima::Image::jpeg",  /* module */
+   "Prima::Image::jpeg",  /* package */
+   true,   /* canLoad */
+   false,  /* canLoadMultiple  */
+   true,   /* canSave */
+   false,  /* canSaveMultiple */
+   jpgbpp, /* save types */
    nil
 };
 
@@ -160,8 +160,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    {
       Byte * dest = i-> data + ( i-> h - 1) * i-> lineSize;
       while ( l-> d.output_scanline < l-> d.output_height ) {
-	 JSAMPROW sarray[1] = {dest}; 
-	 int scanlines = jpeg_read_scanlines(&l-> d, sarray, 1);
+	 JSAMPROW sarray[1];
+	 int scanlines;
+         sarray[0] = dest;
+         scanlines = jpeg_read_scanlines(&l-> d, sarray, 1);
          if ( bpp == 24) 
             cm_reverse_palette(( PRGBColor) dest, ( PRGBColor) dest, i-> w);
          dest -= scanlines * i-> lineSize;
@@ -273,7 +275,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    if ( pexist( progressive) && pget_B( progressive)) 
       jpeg_simple_progression(&l-> c);
 
-   if ( l-> c. input_components == 3) { // RGB
+   if ( l-> c. input_components == 3) { /* RGB */
       l-> buf = malloc( i-> lineSize);
       if ( !l-> buf) {
          strcpy( fi-> errbuf, "not enough memory");

@@ -56,49 +56,104 @@ static int    pngbpp[] = {
    0 
 };   
 static char * features[] = { 
-   "PLTE", "IHDR", "gAMA", "iCCP", "bKGD", "tEXt", 
-   "zTXt", "oFFs", "pHYs", "sCAL", "sRGB", "tRNS",
+   "PLTE", "IHDR", 
+#ifdef PNG_gAMA_SUPPORTED
+   "gAMA", 
+#endif
+#ifdef PNG_iCCP_SUPPORTED   
+   "iCCP",
+#endif
+#ifdef PNG_bKGD_SUPPORTED   
+   "bKGD",
+#endif   
+#ifdef PNG_TEXT_SUPPORTED
+   "tEXt", 
+#ifdef PNG_zTXt_SUPPORTED
+   "zTXt", 
+#endif   
+#endif
+#ifdef PNG_oFFs_SUPPORTED   
+   "oFFs", 
+#endif
+#ifdef PNG_pHYs_SUPPORTED   
+   "pHYs", 
+#endif
+#ifdef PNG_sCAL_SUPPORTED   
+   "sCAL", 
+#endif
+#ifdef PNG_sRGB_SUPPORTED   
+   "sRGB", 
+#endif
+#ifdef PNG_tRNS_SUPPORTED   
+   "tRNS",
+#endif   
    nil
 };
 
 static char * loadOutput[] = { 
    "alpha",
    "background",
+#ifdef PNG_iCCP_SUPPORTED   
    "iccp_name",
    "iccp_profile",
+#endif   
    "interlaced",
+#ifdef PNG_INTRAPIXEL_DIFFERENCING
    "mng_datastream",
+#endif
+#ifdef PNG_oFFs_SUPPORTED   
    "offset_x",
    "offset_y",
    "offset_dimension",
+#endif   
+#ifdef PNG_sRGB_SUPPORTED   
    "render_intent",
+#endif   
+#ifdef PNG_pHYs_SUPPORTED   
    "resolution_x",
    "resolution_y",
    "resolution_dimension",
+#endif
+#ifdef PNG_sCAL_SUPPORTED   
    "scale_x",
    "scale_y",
    "scale_unit",
+#endif   
+#ifdef PNG_TEXT_SUPPORTED
    "text",
+#endif   
+#ifdef PNG_tRNS_SUPPORTED   
    "transparency_table",
    "transparent_colors",
+#endif   
    nil
 };   
 
 static ImgCodecInfo codec_info = {
    "PNG",
    "PNG development group, http://www.libpng.org",
-   PNG_LIBPNG_VER_MAJOR, PNG_LIBPNG_VER_MINOR, // version
-   pngext,  // extension
-   "Portable Network Graphics",     // file type
-   "PNG",  // short type
-   features,    // features 
-   "",     // module
-   "",     // package
-   true,   // canLoad
-   false,  // canLoadMultiple 
-   true,   // canSave
-   false,  // canSaveMultiple
-   pngbpp, // save types
+#ifdef PNG_LIBPNG_VER_MAJOR
+   PNG_LIBPNG_VER_MAJOR, 
+#else
+   PNG_LIBPNG_VER / 10000,
+#endif
+#ifdef PNG_LIBPNG_VER_MINOR
+   PNG_LIBPNG_VER_MINOR, 
+#else
+   PNG_LIBPNG_VER % 10000,
+#endif
+   /* version */
+   pngext,  /* extension */
+   "Portable Network Graphics",     /* file type */
+   "PNG",  /* short type */
+   features,    /* features  */
+   "",     /* module */
+   "",     /* package */
+   true,   /* canLoad */
+   false,  /* canLoadMultiple  */
+   true,   /* canSave */
+   false,  /* canSaveMultiple */
+   pngbpp, /* save types */
    loadOutput
 };
 
@@ -122,7 +177,8 @@ init( PImgCodecInfo * info, void * param)
 #elif defined(sgi)
     LUT_exponent = 1.0 / 1.7;
     /* there doesn't seem to be any documented function to get the
-     * "gamma" value, so we do it the hard way */
+       "gamma" value, so we do it the hard way - which is unreliable for remote 
+        runs anyway */
     {
        FILE * infile = fopen("/etc/config/system.glGammaVal", "r");
        if (infile) {
@@ -170,7 +226,9 @@ static HV *
 load_defaults( PImgCodec c)
 {
    HV * profile = newHV();
+#ifdef PNG_gAMA_SUPPORTED   
    pset_f( gamma, 0.45455); 
+#endif   
    pset_f( screen_gamma, default_screen_gamma);
    /*
     if background is not RGB, ( like clInvalid), use 
@@ -194,13 +252,21 @@ typedef struct _LoadRec {
    Byte * line;
 } LoadRec;
 
-static PNGAPI void
+static 
+#ifdef PNGAPI 
+PNGAPI
+#endif
+void
 warning_fn( png_structp png_ptr, png_const_charp msg) 
 { 
    /* warn( msg); */
 }
 
-static PNGAPI void 
+static 
+#ifdef PNGAPI 
+PNGAPI
+#endif
+void
 error_fn( png_structp png_ptr, png_const_charp msg) 
 {
    char * buf = ( char *) png_get_error_ptr( png_ptr); 
@@ -331,6 +397,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          } 
       }
 
+#ifdef PNG_gAMA_SUPPORTED      
       if ( pexist( gamma)) {
          gamma = pget_f( gamma);
          if ( gamma < PNG_GAMMA_THRESHOLD || gamma > PNG_MAX_GAMMA) {
@@ -341,6 +408,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       } else if ( png_get_gAMA(l-> png_ptr, l-> info_ptr, &gamma)) {
          has_gamma = true;
       }
+#endif      
 
       if ( has_gamma) png_set_gamma(l->png_ptr, screen_gamma, gamma);
    }
@@ -367,6 +435,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
    /* image background color */
    background = clInvalid;
+#ifdef PNG_bKGD_SUPPORTED   
    if ( png_get_valid( l-> png_ptr, l-> info_ptr, PNG_INFO_bKGD)) {
       RGBColor r;
       png_color_16p pBackground;
@@ -390,20 +459,21 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
        }
        background = ARGB(r.r, r.g, r.b);
    }
-   // store to load output
+#endif   
+   /* store to load output */
    if ( fi-> loadExtras) {
       HV * profile = fi-> frameProperties;
       if ( background != clInvalid)
          pset_i( background, background);
    }
-   // set blending background
+   /* set blending background */
    if ( icon && pexist( background)) {
       strcpy( fi-> errbuf, "Option 'background' cannot be set when loading to an Icon object");
       return false;
    }
    if ( !icon && (alpha_opt == ALPHA_OPT_BLEND)) {
       png_color_16 p;
-      // override with user data
+      /* override with user data */
       if ( pexist( background) && ((pget_i( background) & clSysFlag) == 0)) 
          background = pget_i( background);
       p.red   = (background & 0xFF0000) >> 16;
@@ -412,8 +482,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       if (
           ( color_type == PNG_COLOR_TYPE_GRAY_ALPHA) &&
           (( p.red != p.green) || (p.red != p.blue))
-         ) { // backgrounding of GRAY_ALPHA with non-gray color can't be performed
-             // into gray color space
+         ) { /* backgrounding of GRAY_ALPHA with non-gray color can't be performed */
+             /* into gray color space */
          png_set_gray_to_rgb(l-> png_ptr);
          png_set_bgr(l-> png_ptr);
          bpp = 24;
@@ -424,9 +494,11 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
    number_passes = png_set_interlace_handling(l-> png_ptr);
 
-   // loading tRNS information
+   /* loading tRNS information */
    trns_n = 0;
    trns_t = nil;
+   trns_p = nil;
+#ifdef PNG_tRNS_SUPPORTED   
    if ( png_get_tRNS( l-> png_ptr, l-> info_ptr, &trns_t, &trns_n, &trns_p)) {
       if ( fi-> loadExtras) {
          int i;
@@ -443,6 +515,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          }
       }
    }
+#endif   
 
    /* synchronize final settings */
    png_read_update_info(l-> png_ptr, l-> info_ptr);
@@ -468,7 +541,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( fi-> noImageData) {
       hv_store( fi-> frameProperties, "width",  5, newSViv( width), 0);
       hv_store( fi-> frameProperties, "height", 6, newSViv( height), 0);
-      if ( fi-> loadExtras) { // skip data and read info blocks
+      if ( fi-> loadExtras) { /* skip data and read info blocks */
          for (pass = 0; pass < number_passes; pass++) {
             int y;
             for (y = 0; y < height; y++) 
@@ -516,7 +589,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    } else
       alpha_image = nilHandle;
 
-   // cycle through scanlines 
+   /* cycle through scanlines  */
    for (pass = 0; pass < number_passes; pass++) {
       int y;
       Byte * data = PImage( fi-> object)-> data;
@@ -546,7 +619,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                }
             }       
          } else {
-            if ( obd == 2) { // convert from 8-bit down to 4-bit
+            if ( obd == 2) { /* convert from 8-bit down to 4-bit */
                png_read_row(l->png_ptr, l-> b8_4, NULL);
                bc_byte_nibble_cr( l-> b8_4, data, width, map_stdcolorref);
             } else
@@ -570,7 +643,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
           PRGBColor p = PIcon( fi-> object)-> palette;
           if ( trns_t) {
              int i, min_ix = 0, min_val = 255;
-             // transparency values per pixel table is present, finding best candidate
+             /* transparency values per pixel table is present, finding best candidate */
              for ( i = 0; i < trns_n; i++) 
                 if ( trns_t[i] < min_val) {
                    min_val = trns_t[i];
@@ -587,7 +660,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( alpha_image)
       CImage( alpha_image)-> update_change( alpha_image);
    
-   // misc extras 
+   /* misc extras  */
 READ_END:   
       
    if ( fi-> loadExtras) {
@@ -598,11 +671,17 @@ READ_END:
       png_textp tx;
       double scx, scy;
 
+      (void)tx; (void)py; (void)pl; (void)i; (void)ct;
+      (void)pf; (void)name; (void)scx; (void)scy;
+
       png_read_end(l-> png_ptr, l-> info_ptr);
 
       pset_i( interlaced, interlace_type == PNG_INTERLACE_ADAM7);
+#ifdef PNG_INTRAPIXEL_DIFFERENCING
       pset_i( mng_datastream, filter == PNG_INTRAPIXEL_DIFFERENCING);
-      
+#endif
+     
+#ifdef PNG_sRGB_SUPPORTED
       if ( png_get_sRGB( l-> png_ptr, l-> info_ptr, &i)) {
          char * c = "none";
          switch (i) {
@@ -613,31 +692,41 @@ READ_END:
          } 
          pset_c( render_intent, c);
       }
+#endif      
 
+#ifdef PNG_iCCP_SUPPORTED      
       if ( png_get_iCCP( l-> png_ptr, l-> info_ptr, &name, &ct, &pf, &pl)) {
          pset_c( iccp_name, name);
          if ( pf) pset_sv_noinc( iccp_profile, newSVpv( pf, pl));
       }
+#endif
 
+#ifdef PNG_TEXT_SUPPORTED      
       if ( png_get_text( l-> png_ptr, l-> info_ptr, &tx, &ct)) {
          HV * hash = newHV();
          for ( i = 0; i < ct; i++, tx++) 
             hv_store( hash, tx-> key, strlen( tx-> key), newSVpv( tx-> text, tx-> text_length), 0);
          pset_sv_noinc( text, newRV_noinc(( SV *) hash));
       }
+#endif      
 
+#ifdef PNG_oFFs_SUPPORTED      
       if ( png_get_oFFs( l-> png_ptr, l-> info_ptr, &pl, &py, &i)) {
          pset_i( offset_x, pl);
          pset_i( offset_y, py);
          pset_c( offset_dimension, ( i == PNG_OFFSET_PIXEL) ? "pixel" : "micrometer");
       }
-      
+#endif      
+     
+#ifdef PNG_pHYs_SUPPORTED      
       if ( png_get_pHYs( l-> png_ptr, l-> info_ptr, &pl, &py, &i)) {
          pset_i( resolution_x, pl);
          pset_i( resolution_y, py);
          pset_c( resolution_dimension, ( i == PNG_RESOLUTION_METER) ? "meter" : "unknown");
       }
-      
+#endif      
+     
+#ifdef PNG_sCAL_SUPPORTED      
       if ( png_get_sCAL( l-> png_ptr, l-> info_ptr, &i, &scx, &scy)) {
          pset_f( scale_x, scx);
          pset_f( scale_y, scy);
@@ -646,6 +735,7 @@ READ_END:
             (( i == PNG_SCALE_RADIAN) ? "radian" : "unknown")
          );
       }
+#endif      
    }
 
    return true;
@@ -667,23 +757,41 @@ save_defaults( PImgCodec c)
    HV * profile = newHV();
    pset_H( alpha, nilHandle);
    pset_i( background, clInvalid);
+#ifdef PNG_gAMA_SUPPORTED   
    pset_f( gamma, 0.45455);
+#endif
+#ifdef PNG_iCCP_SUPPORTED   
    pset_c( iccp_name, "unspecified");
    pset_c( iccp_profile, "");
+#endif   
    pset_i( interlaced, 0);
+#ifdef PNG_INTRAPIXEL_DIFFERENCING
    pset_i( mng_datastream, 0);
+#endif
+#ifdef PNG_oFFs_SUPPORTED   
    pset_i( offset_x, 0);
    pset_i( offset_y, 0);
    pset_c( offset_dimension, "pixel");
+#endif
+#ifdef PNG_sRGB_SUPPORTED
    pset_c( render_intent, "none");
+#endif   
+#ifdef PNG_pHYs_SUPPORTED   
    pset_i( resolution_x, 0);
    pset_i( resolution_y, 0);
    pset_c( resolution_dimension, "meter");
+#endif   
+#ifdef PNG_sCAL_SUPPORTED
    pset_f( scale_x, 1);
    pset_f( scale_y, 1);
    pset_c( scale_unit, "unknown");
+#endif   
+#ifdef PNG_TEXT_SUPPORTED   
    pset_sv_noinc( text, newRV_noinc((SV*)newHV()));
+#endif
+#ifdef PNG_tRNS_SUPPORTED   
    pset_sv_noinc( transparent_color, newSViv(clInvalid));
+#endif   
    return profile;
 }
 
@@ -744,7 +852,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    icon = kind_of( fi-> object, CIcon);
    alpha_object = nilHandle;
 
-   // header
+   /* header */
    {
       int bit_depth, color_type, interlace = PNG_INTERLACE_NONE, 
           filter = PNG_FILTER_TYPE_DEFAULT;
@@ -758,18 +866,20 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       }
       if ( pexist( interlaced) && pget_B( interlaced))
          interlace = PNG_INTERLACE_ADAM7;
+#ifdef PNG_INTRAPIXEL_DIFFERENCING
       if ( pexist( mng_datastream) && pget_B( mng_datastream))
          filter = PNG_INTRAPIXEL_DIFFERENCING;
+#endif
       if ( pexist( alpha)) {
          Handle obj;
          Bool autoConvert;
          {
-            // recognize autoConvert as the image subsystem does
+            /* recognize autoConvert as the image subsystem does */
             HV * profile = fi-> extras;
             autoConvert = pexist( autoConvert) ? pget_B( autoConvert) : true;
          }
 
-         // png doesn't support paletted images with alpha channel?
+         /* png doesn't support paletted images with alpha channel? */
          if ( color_type == PNG_COLOR_TYPE_PALETTE) {
             if ( !autoConvert) 
                outc("Cannot apply alpha channel to a paletted image");
@@ -779,7 +889,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
             color_type = PNG_COLOR_TYPE_RGB;
          }
 
-         // and does not alpha with bit_depth other that 8 or 24 bits?
+         /* and does not alpha with bit_depth other that 8 or 24 bits? */
          if ( bit_depth != 8) {
             if ( !autoConvert)
                outc( "Image depth must be of 8 bits to be saved with alpha channel");
@@ -810,7 +920,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          interlace, PNG_COMPRESSION_TYPE_DEFAULT, filter);
    }
 
-   // palette
+   /* palette */
    if ((( i-> type & imBPP) <= 8) && ((i-> type & imGrayScale) == 0)) {
       RGBColor * pal = i-> palette;
       int num_palette, j;
@@ -825,7 +935,8 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       png_set_PLTE(l->png_ptr, l->info_ptr, palette, num_palette);
    }
 
-   // sRGB
+   /* sRGB */
+#ifdef PNG_sRGB_SUPPORTED   
    if ( pexist( render_intent)) {
       char * c = pget_c( render_intent);
       if ( stricmp( c, "none") != 0) {
@@ -839,8 +950,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          }
       }
    }
+#endif   
 
-   // gamma
+   /* gamma */
+#ifdef PNG_gAMA_SUPPORTED   
    if ( pexist( gamma)) {
       double gamma = pget_f( gamma);
       if ( gamma < PNG_GAMMA_THRESHOLD || gamma > PNG_MAX_GAMMA) {
@@ -849,17 +962,21 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       }
       png_set_gAMA( l-> png_ptr, l-> info_ptr, gamma);
    }
+#endif   
 
-   // iccp
+   /* iccp */
+#ifdef PNG_iCCP_SUPPORTED   
    if ( pexist( iccp_name) || pexist( iccp_profile)) {
       char * prf = nil;
       STRLEN plen = 0;
       char * name = pexist( iccp_name) ? pget_c( iccp_name) : "unspecified";
       if ( pexist( iccp_profile)) prf = SvPV( pget_sv( iccp_profile), plen);
-      png_set_iCCP( l-> png_ptr, l-> info_ptr, name, NULL, (void*) prf, plen);
+      png_set_iCCP( l-> png_ptr, l-> info_ptr, name, 0, (void*) prf, plen);
    }
+#endif   
 
-   // tRNS
+   /* tRNS */
+#ifdef PNG_tRNS_SUPPORTED   
    {
       png_color_16 trns_p[256];
       png_byte trns_t[256];
@@ -890,13 +1007,15 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
             png_set_tRNS(l->png_ptr, l-> info_ptr, nil, 1, trns_p);
          }
         
-         // maybe it is a good idea to adjust automatically backgound 
+         /* maybe it is a good idea to adjust automatically backgound  */
          if ( !pexist( background) || (pget_i( background) & clSysFlag)) 
             pset_i( background, color);
       }
    }
+#endif   
    
-   // bKGD
+   /* bKGD */
+#ifdef PNG_bKGD_SUPPORTED   
    if ( pexist( background)) {
       Color background = pget_i( background);
       if (( background & clSysFlag) == 0) {
@@ -907,8 +1026,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
         png_set_bKGD(l-> png_ptr, l-> info_ptr, &p);
       }
    }
+#endif   
 
-   // text
+   /* text */
+#ifdef PNG_TEXT_SUPPORTED   
    if ( pexist( text)) {
       HV * hv;
       HE * he;
@@ -927,7 +1048,12 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       for (;;) {
          STRLEN vlen;
          if (( he = hv_iternext( hv)) == nil) break;
-         txt[i]. compression = PNG_TEXT_COMPRESSION_zTXt;
+         txt[i]. compression = 
+#ifdef PNG_zTXt_SUPPORTED            
+            PNG_TEXT_COMPRESSION_zTXt;
+#else
+            PNG_TEXT_COMPRESSION_NONE;
+#endif
          txt[i]. key =  (char*) HeKEY( he);
          txt[i]. text = (char*) SvPV( HeVAL( he), vlen);
          txt[i]. text_length = vlen;
@@ -936,8 +1062,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       png_set_text(l-> png_ptr, l-> info_ptr, txt, len);
       free( txt);
    }
+#endif   
 
-   // offset
+   /* offset */
+#ifdef PNG_oFFs_SUPPORTED   
    if ( pexist( offset_x) || pexist( offset_y) || pexist( offset_dimension)) {
       int ox = pexist( offset_x) ? pget_i( offset_x) : 0;
       int oy = pexist( offset_y) ? pget_i( offset_y) : 0;
@@ -953,8 +1081,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       }
       png_set_oFFs( l-> png_ptr, l-> info_ptr, ox, oy, dm);   
    }
+#endif   
 
-   // phys
+   /* phys */
+#ifdef PNG_pHYs_SUPPORTED   
    if ( pexist( resolution_x) || pexist( resolution_y) || pexist( resolution_dimension)) {
       int ox = pexist( resolution_x) ? pget_i( resolution_x) : 0;
       int oy = pexist( resolution_y) ? pget_i( resolution_y) : 0;
@@ -970,8 +1100,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       }
       png_set_pHYs( l-> png_ptr, l-> info_ptr, ox, oy, dm);   
    }
+#endif   
    
-   // scale
+   /* scale */
+#ifdef PNG_sCAL_SUPPORTED   
    if ( pexist( scale_x) || pexist( scale_y) || pexist( scale_unit)) {
       double ox = pexist( scale_x) ? pget_f( scale_x) : 1;
       double oy = pexist( scale_y) ? pget_f( scale_y) : 1;
@@ -988,13 +1120,14 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       }
       png_set_sCAL( l-> png_ptr, l-> info_ptr, dm, ox, oy);   
    }
+#endif   
 
-   // done with header, write it now
+   /* done with header, write it now */
    png_write_info(l-> png_ptr, l-> info_ptr);
 
    if (( i-> type & imBPP) == 24) png_set_bgr(l-> png_ptr);
 
-   // writing data
+   /* writing data */
    {
       int pass, num_pass = png_set_interlace_handling(l-> png_ptr);
       for (pass = 0; pass < num_pass; pass++) {
@@ -1032,7 +1165,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       }
    }
 
-   // end - not comments or time
+   /* end - now comments or time, if any */
    png_write_end(l-> png_ptr, NULL);
    return true;
 }   

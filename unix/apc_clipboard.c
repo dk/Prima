@@ -302,14 +302,14 @@ apc_clipboard_has_format( Handle self, long id)
 
       if ( XX-> external[cfTargets]. size == 0) {
          Atom ret;
-         // read TARGETS, which as array of ATOMs
+         /* read TARGETS, which as array of ATOMs */
          query_data( self, cfTargets, &ret);
 
          if ( XX-> external[cfTargets].size > 0) {
             int i;
             Atom * x = (Atom*)(XX-> external[cfTargets].data);
 
-            // find our index for TARGETS[i], assign CFDATA_NOT_ACQUIRED to it
+            /* find our index for TARGETS[i], assign CFDATA_NOT_ACQUIRED to it */
             for ( i = 0; i < XX-> external[cfTargets].size / sizeof(Atom); i++,x++) { 
                int j, k = -1;
                for ( j = 0; j < guts. clipboard_formats_count; j++) {

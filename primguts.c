@@ -53,6 +53,7 @@
 #include "Timer.h"
 #include "Utils.h"
 #include "Printer.h"
+#include "img_conv.h"
 
 
 #define USE_MAGICAL_STORAGE 0
@@ -198,7 +199,7 @@ snprintf( char *buf, size_t len, const char *format, ...)
 }
 #endif
 
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(sgi) 
 Bool
 SvBOOL( SV *sv)
 {
@@ -275,11 +276,11 @@ create_mate( SV *perlObject)
    char *className;
    PVMT vmt;
 
-   // finding the vmt
+   /* finding the vmt */
    className = HvNAME( SvSTASH( SvRV( perlObject))); if ( !className) return 0;
    vmt = gimme_the_vmt( className); if ( !vmt) return 0;
 
-   // allocating an instance
+   /* allocating an instance */
    object = ( PAnyObject) malloc( vmt-> instanceSize);
    memset( object, 0, vmt-> instanceSize);
    object-> self = ( PVMT) vmt;
@@ -287,7 +288,7 @@ create_mate( SV *perlObject)
 
    if (USE_MAGICAL_STORAGE)
    {
-      // assigning the tilde-magic
+      /* assigning the tilde-magic */
       MAGIC *mg;
 
       sv_magic( SvRV( perlObject), SvRV( perlObject), '~', (char*)&object, sizeof(void*));
@@ -299,11 +300,11 @@ create_mate( SV *perlObject)
    }
    else
    {
-      // another scheme, uses hash slot
+      /* another scheme, uses hash slot */
       hv_store( (HV*)SvRV( perlObject), "__CMATE__", 9, newSViv((IV)object), 0);
    }
 
-   // extra check
+   /* extra check */
    self = gimme_the_mate( perlObject);
    if ( self != (Handle)object)
       croak( "GUTS007: create_mate() consistency check failed.\n");
@@ -365,7 +366,7 @@ XS( create_from_Perl)
          XPUSHs( sv_mortalcopy((( PAnyObject) _c_apricot_res_)-> mate));
          --SvREFCNT( SvRV((( PAnyObject) _c_apricot_res_)-> mate));
       } else XPUSHs( &sv_undef);
-      // push_hv( ax, sp, items, mark, 1, hv);
+      /* push_hv( ax, sp, items, mark, 1, hv); */
       sv_free(( SV *) hv);
    }
    PUTBACK;
@@ -648,16 +649,16 @@ gimme_the_vmt( const char *className)
    VmtPatch *patch; int patchLength;
    PVMT patchWhom;
 
-   // Check whether this class has been already built...
+   /* Check whether this class has been already built... */
    vmtAddr = ( SV **) hash_fetch( vmtHash, (char *)className, strlen( className));
    if ( vmtAddr != nil) return ( PVMT) vmtAddr;
 
-   // No;  try to find inherited VMT...
+   /* No;  try to find inherited VMT... */
    stash = gv_stashpv( (char *)className, false);
    if ( stash == nil)
    {
       croak( "GUTS003: Cannot locate package %s\n", className);
-      return nil;     // Definitely wrong!
+      return nil;     /* Definitely wrong! */
    }
 
    isaGlob = hv_fetch( stash, "ISA", 3, 0);
@@ -667,7 +668,7 @@ gimme_the_vmt( const char *className)
           ( av_len( GvAV(( GV *) *isaGlob)) < 0)
       ))
    {
-      // ISA found!
+      /* ISA found! */
       inheritedName = av_fetch( GvAV(( GV *) *isaGlob), 0, 0);
       if ( inheritedName != nil)
          originalVmt = gimme_the_vmt( SvPV( *inheritedName, na));
@@ -692,7 +693,7 @@ gimme_the_vmt( const char *className)
    vmt-> className = newClassName;
    vmt-> base = originalVmt;
 
-   // Not particularly effective now...
+   /* Not particularly effective now... */
    patchWhom = originalVmt;
    while ( patchWhom != nil)
    {
@@ -806,7 +807,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
       returns = true;
    }
 
-   // Parameter check
+   /* Parameter check */
    i = 0;
    while ( format[ i] != '\0')
    {
@@ -898,7 +899,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
             PUB_CHECK;
             PUTBACK_G_EVAL;
             CLOSE_G_EVAL;
-            croak( SvPV( GvSV( errgv), na));    // propagate
+            croak( SvPV( GvSV( errgv), na));    /* propagate */
          } 
          CLOSE_G_EVAL;
 #else
@@ -930,7 +931,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
             PUB_CHECK;
             PUTBACK_G_EVAL;
             CLOSE_G_EVAL;
-            croak( SvPV( GvSV( errgv), na));    // propagate
+            croak( SvPV( GvSV( errgv), na));    /* propagate */
          } 
          CLOSE_G_EVAL;
 #else
@@ -958,10 +959,10 @@ parse_hv( I32 ax, SV **sp, I32 items, SV **mark, int expected, const char *metho
    for ( i = expected; i < items; i += 2)
    {
       HE *he;
-      // check the validity of a key
+      /* check the validity of a key */
       if (!( SvPOK( ST( i)) && ( !SvROK( ST( i)))))
          croak( "GUTS011: Illegal value for a profile key (argument #%d) passed to ``%s''", i, methodName);
-      // and add the pair
+      /* and add the pair */
       he = hv_store_ent( hv, ST( i), newSVsv( ST( i+1)), 0);
       av_push( order, newSVsv( ST( i)));
    }
@@ -983,7 +984,7 @@ push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv)
       sv_free((SV *)hv);
       PUTBACK;
       return;
-      // XSRETURN( callerReturns);
+      /* XSRETURN( callerReturns); */
    }
 
    rorder = hv_fetch( hv, "__ORDER__", 9, 0);
@@ -995,7 +996,7 @@ push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv)
       n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != nil) n++;
       n--; EXTEND( sp, n*2);
 
-      // push everything in proper order
+      /* push everything in proper order */
       l = av_len(order);
       for ( i = 0; i <= l; i++) {
          key = av_fetch(order, i, 0);
@@ -1010,11 +1011,11 @@ push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv)
       return;
    }
 
-   // Calculate the length of our hv
+   /* Calculate the length of our hv */
    n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != nil) n++;
    EXTEND( sp, n*2);
 
-   // push everything
+   /* push everything */
    hv_iterinit( hv);
    while (( he = hv_iternext( hv)) != nil)
    {
@@ -1024,7 +1025,7 @@ push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv)
    sv_free(( SV *) hv);
    PUTBACK;
    return;
-   // XSRETURN( callerReturns + n*2);
+   /* XSRETURN( callerReturns + n*2); */
 }
 
 SV **
@@ -1043,7 +1044,7 @@ push_hv_for_REDEFINED( SV **sp, HV *hv)
       n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != nil) n++;
       n--; EXTEND( sp, n*2);
 
-      // push everything in proper order
+      /* push everything in proper order */
       l = av_len(order);
       for ( i = 0; i <= l; i++) {
          key = av_fetch(order, i, 0);
@@ -1056,11 +1057,11 @@ push_hv_for_REDEFINED( SV **sp, HV *hv)
       return sp;
    }
 
-   // Calculate the length of our hv
+   /* Calculate the length of our hv */
    n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != nil) n++;
    EXTEND( sp, n*2);
 
-   // push everything
+   /* push everything */
    hv_iterinit( hv);
    while (( he = hv_iternext( hv)) != nil)
    {
@@ -1212,7 +1213,7 @@ XS( boot_Prima)
 
 #define TYPECHECK(s1,s2) \
   if (sizeof(s1) != (s2)) { \
-      printf("Error: type %s is not %d bytes long", #s1, s2); \
+      printf("Error: type %s is %d bytes long (expected to be %d)", #s1, sizeof(s1), s2); \
       ST(0) = &sv_no; \
       XSRETURN(1); \
   }
@@ -1237,12 +1238,12 @@ XS( boot_Prima)
       /* We need the control over mathematical exceptions, that's it */
       double zero; /* ``volatile'' to cheat clever optimizers */
       zero = 0.0;
-      // fpresetsticky(FP_X_INV|FP_X_DZ);
-      // fpsetmask(~(FP_X_INV|FP_X_DZ));
-      // NAN = 0.0 / zero;
+      /* fpresetsticky(FP_X_INV|FP_X_DZ);
+         fpsetmask(~(FP_X_INV|FP_X_DZ));
+         NAN = 0.0 / zero; */
 NAN = 0.0;
-      // fpresetsticky(FP_X_INV|FP_X_DZ);
-      // fpsetmask(FP_X_INV|FP_X_DZ);
+      /* fpresetsticky(FP_X_INV|FP_X_DZ);
+         fpsetmask(FP_X_INV|FP_X_DZ); */
    }
 #endif /* __unix */
 
@@ -1335,13 +1336,13 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
                  /* Already exists something */
                  node = hash->table[key];
                  while ( node-> next) node = node-> next;
-                 // node->next = malloc( sizeof( RemapHashNode));
+                 /* node->next = malloc( sizeof( RemapHashNode)); */
                  node->next = next++;
                  node->next-> key = tbl[0];
                  node->next-> val = tbl[1];
                  node->next-> next = nil;
               } else {
-                 // hash->table[key] = malloc( sizeof( RemapHashNode));
+                 /* hash->table[key] = malloc( sizeof( RemapHashNode)); */
                  hash->table[key] = next++;
                  hash->table[key]-> key = tbl[0];
                  hash->table[key]-> val = tbl[1];
@@ -1362,13 +1363,13 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
                  /* Already exists something */
                  node = hash->table[key];
                  while ( node-> next) node = node-> next;
-                 // node->next = malloc( sizeof( RemapHashNode));
+                 /* node->next = malloc( sizeof( RemapHashNode)); */
                  node->next = next++;
                  node->next-> key = tbl[1];
                  node->next-> val = tbl[0];
                  node->next-> next = nil;
               } else {
-                 // hash->table[key] = malloc( sizeof( RemapHashNode));
+                 /* hash->table[key] = malloc( sizeof( RemapHashNode)); */
                  hash->table[key] = next++;
                  hash->table[key]-> key = tbl[1];
                  hash->table[key]-> val = tbl[0];
@@ -1492,7 +1493,7 @@ XS(Utils_getdir_FROMPERL) {
    return;
 }
 
-// list section
+/* list section */
 
 #ifdef PARANOID_MALLOC
 void

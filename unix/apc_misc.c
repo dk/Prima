@@ -306,16 +306,6 @@ apc_component_fullname_changed_notify( Handle self)
 
 /* Cursor support */
 
-static XGCValues cursor_gcv = {
-   background: 0,
-   cap_style: CapButt,
-   clip_mask: None,
-   foreground: 0,
-   function: GXcopy,
-   line_width: 0,
-   subwindow_mode: ClipByChildren,
-};
-
 void
 prima_no_cursor( Handle self)
 {
@@ -332,7 +322,7 @@ prima_no_cursor( Handle self)
       w = XX-> cursor_size. x;
 
       prima_get_gc( XX);
-      XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &cursor_gcv);
+      XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &guts. cursor_gcv);
       XCHECKPOINT;
       XCopyArea( DISP, guts. cursor_save, XX-> udrawable, XX-> gc,
 		 0, 0, w, h, x, y);
@@ -359,8 +349,8 @@ prima_update_cursor( Handle self)
 	   || h > guts. cursor_pixmap_size. y)
       {
 	 if ( !guts. cursor_save) {
-	    cursor_gcv. background = BlackPixel( DISP, SCREEN);
-	    cursor_gcv. foreground = WhitePixel( DISP, SCREEN);
+	    guts. cursor_gcv. background = BlackPixel( DISP, SCREEN);
+	    guts. cursor_gcv. foreground = WhitePixel( DISP, SCREEN);
 	 }
 	 if ( guts. cursor_save) {
 	    XFreePixmap( DISP, guts. cursor_save);
@@ -389,7 +379,7 @@ prima_update_cursor( Handle self)
       }
 
       prima_get_gc( XX);
-      XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &cursor_gcv);
+      XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &guts. cursor_gcv);
       XCHECKPOINT;
       XCopyArea( DISP, XX-> udrawable, guts. cursor_save, XX-> gc,
 		 x, y, w, h, 0, 0);
@@ -436,7 +426,7 @@ prima_cursor_tick( void)
       w = XX-> cursor_size. x;
 
       prima_get_gc( XX);
-      XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &cursor_gcv);
+      XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &guts. cursor_gcv);
       XCHECKPOINT;
       XCopyArea( DISP, pixmap, XX-> udrawable, XX-> gc, 0, 0, w, h, x, y);
       XCHECKPOINT;
@@ -807,7 +797,7 @@ apc_show_message( const char * message)
    }   
    
    appSz = apc_application_get_size( nilHandle);
-   // acquiring message font and wrapping message text
+   /* acquiring message font and wrapping message text */
    {
       PCachedFont cf;
       PFontABC abc;
@@ -840,7 +830,7 @@ apc_show_message( const char * message)
       md. widths  = malloc( twr. count * sizeof(int));
       md. lengths = malloc( twr. count * sizeof(int));
 
-      // find text extensions
+      /* find text extensions */
       max = 0;
       for ( i = 0; i < twr. count; i++) {
          md. widths[i] = XTextWidth( fs, wrapped[i], 
@@ -1173,6 +1163,7 @@ apc_getdir( const char *dirname)
    if (( dh = opendir( dirname)) && (dirlist = plist_create( 50, 50))) {
       while (( de = readdir( dh))) {
 	 list_add( dirlist, (Handle)duplicate_string( de-> d_name));
+#if defined(DT_REG) && defined(DT_DIR)
 	 switch ( de-> d_type) {
 	 case DT_FIFO:	type = "fifo";	break;
 	 case DT_CHR:	type = "chr";	break;
@@ -1185,6 +1176,7 @@ apc_getdir( const char *dirname)
 	 case DT_WHT:	type = "wht";	break;
 #endif
 	 default:
+#endif 
                         snprintf( path, 2047, "%s/%s", dirname, de-> d_name);
                         type = nil;
                         if ( stat( path, &s) == 0) {
@@ -1202,7 +1194,9 @@ apc_getdir( const char *dirname)
                            }
                         }
                         if ( !type)     type = "unknown";
+#if defined(DT_REG) && defined(DT_DIR)
 	 }
+#endif
 	 list_add( dirlist, (Handle)duplicate_string( type));
       }
       closedir( dh);
@@ -1260,8 +1254,8 @@ Bool   apc_prn_create( Handle self) { return false; }
 Bool   apc_prn_destroy( Handle self) { return true; }
 Bool   apc_prn_select( Handle self, const char* printer) { return false; }
 char * apc_prn_get_selected( Handle self) { return nil; }
-Point  apc_prn_get_size( Handle self) { return (Point){0,0}; }
-Point  apc_prn_get_resolution( Handle self) { return (Point){0,0}; }
+Point  apc_prn_get_size( Handle self) { Point r = {0,0}; return r; }
+Point  apc_prn_get_resolution( Handle self) { Point r = {0,0}; return r; }
 char * apc_prn_get_default( Handle self) { return nil; }
 Bool   apc_prn_setup( Handle self) { return false; }
 Bool   apc_prn_begin_doc( Handle self, const char* docName) { return false; }

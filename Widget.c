@@ -181,13 +181,17 @@ Widget_init( Handle self, HV * profile)
    }
    my-> set_enabled     ( self, pget_B( enabled));
    if ( !pexist( originDontCare) || !pget_B( originDontCare)) {
-      Point pos = { pget_i( left), pget_i( bottom)};
+      Point pos;
+      pos. x = pget_i( left);
+      pos. y = pget_i( bottom);
       my-> set_origin( self, pos);
    } else
       var-> pos = my-> get_origin( self);
 
    if ( !pexist( sizeDontCare  ) || !pget_B( sizeDontCare  )) {
-      Point size = { pget_i( width), pget_i( height)};
+      Point size;
+      size. x = pget_i( width);
+      size. y = pget_i( height);
       my-> set_size( self, size);
    } else
       var-> virtualSize = my-> get_size( self);
@@ -1004,7 +1008,7 @@ Widget_next_positional( Handle self, int dx, int dy)
    
    while ( PWidget( horizon)-> owner) {
       if (
-          ( PWidget( horizon)-> options. optSystemSelectable) || // fast check for CWindow
+          ( PWidget( horizon)-> options. optSystemSelectable) || /* fast check for CWindow */
           ( PWidget( horizon)-> options. optModalHorizon) 
          ) break; 
       horizon = PWidget( horizon)-> owner;
@@ -1102,7 +1106,7 @@ do_taborder_candidates( Handle level, Handle who,
    memcpy( ordered, w-> items, w-> count * sizeof( Handle));
    qsort( ordered, w-> count, sizeof( Handle), compareProc);
 
-   // finding current widget in the group
+   /* finding current widget in the group */
    for ( i = 0; i < w-> count; i++) {
       Handle x = ordered[i];
       if ( CWidget( x)-> get_current( x)) {
@@ -1124,11 +1128,11 @@ do_taborder_candidates( Handle level, Handle who,
          if ( CWidget( x)-> get_selectable( x) && CWidget( x)-> get_tabStop( x)) {
             if ( *result == nilHandle) *result = x; 
             switch( *stage) {
-            case 0: // nothing found yet
+            case 0: /* nothing found yet */
                if ( x == who) *stage = 1;
                break;
             default:
-               // next widget after 'who' is ours
+               /* next widget after 'who' is ours */
                *result = x;
                free( ordered);
                return false;
@@ -1136,7 +1140,7 @@ do_taborder_candidates( Handle level, Handle who,
          }   
          if ( !do_taborder_candidates( x, who, compareProc, stage, result)) {
             free( ordered);
-            return false; // fall through
+            return false; /* fall through */
          }   
       }
    }   
@@ -1152,7 +1156,7 @@ Widget_next_tab( Handle self, Bool forward)
 
    while ( PWidget( horizon)-> owner) {
       if (
-          ( PWidget( horizon)-> options. optSystemSelectable) || // fast check for CWindow
+          ( PWidget( horizon)-> options. optSystemSelectable) || /* fast check for CWindow */
           ( PWidget( horizon)-> options. optModalHorizon) 
          ) break; 
       horizon = PWidget( horizon)-> owner;
@@ -1376,7 +1380,9 @@ Widget_set( Handle self, HV * profile)
       pdelete( top);
    }
    if ( pexist( left) && pexist( bottom)) {
-      Point pos = {pget_i( left), pget_i( bottom)};
+      Point pos;
+      pos. x  = pget_i( left);
+      pos. y  = pget_i( bottom);
       my-> set_origin( self, pos);
       pdelete( left);
       pdelete( bottom);
@@ -1589,7 +1595,7 @@ Widget_hintVisible( Handle self, Bool set, int hintVisible)
    if ( wantVisible == PApplication( application)-> hintVisible) return false;
    if ( wantVisible) {
       if ( strlen( var-> hint) == 0) return false;
-      if ( hintVisible > 0) PApplication(application)-> hintActive = -1; // immediate
+      if ( hintVisible > 0) PApplication(application)-> hintActive = -1; /* immediate */
    }
    CApplication( application)-> set_hint_action( application, self, wantVisible, false);
    return false;
@@ -2484,8 +2490,11 @@ Widget_rect( Handle self, Bool set, Rect r)
       r. right  = p. x + s. x;
       r. top    = p. y + s. y;
    } else {
-      Point pos  = { r. left, r. bottom};
-      Point size = { r. right - r. left, r. top - r. bottom};
+      Point pos, size;
+      pos. x = r. left;
+      pos. y = r. bottom;
+      size. x = r. right - r. left;
+      size. y = r. top - r. bottom;
       my-> set_origin( self, pos);
       my-> set_size( self, size);
    }

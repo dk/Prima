@@ -64,18 +64,18 @@ static char * loadOutput[] = {
 static ImgCodecInfo codec_info = {
    "GIFLIB",
    "ftp://prtr-13.ucsc.edu/pub/libungif/",
-   1, 0,      // version
-   gifext,    // extension
-   "Graphics Interchange Format",     // file type
-   "GIF", // short type
-   gifver,    // features 
-   "Prima::Image::gif",     // module
-   "Prima::Image::gif",     // package
-   true,   // canLoad
-   true,   // canLoadMultiple 
-   true,   // canSave
-   true,   // canSaveMultiple
-   gifbpp, // save types
+   1, 0,      /* version */
+   gifext,    /* extension */
+   "Graphics Interchange Format",     /* file type */
+   "GIF", /* short type */
+   gifver,    /* features  */
+   "Prima::Image::gif",     /* module */
+   "Prima::Image::gif",     /* package */
+   true,   /* canLoad */
+   true,   /* canLoadMultiple  */
+   true,   /* canSave */
+   true,   /* canSaveMultiple */
+   gifbpp, /* save types */
    loadOutput
 };
 
@@ -204,7 +204,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    l-> passed  = -1;
    l-> transparent = -1;
 
-   // safe to kill
+   /* safe to kill */
    fclose( fi-> f);
    fi-> f = NULL;
 
@@ -224,7 +224,6 @@ typedef struct _GIFGraphControlExt {
     U16 delayTime;
     Byte transparentColorIndex;
 } GIFGraphControlExt, *PGIFGraphControlExt;
-
 #pragma pack()
 
 static void
@@ -254,7 +253,7 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data, Bool privateExte
    case COMMENT_EXT_FUNC_CODE: if ( fi-> loadExtras) {
       SV * sv = newSVpv( data + 1, *data);
       if ( privateExtensions && pexist( comment)) {
-         // enable long comments
+         /* enable long comments */
          sv_catsv( pget_sv( comment), sv);
          sv_free( sv);
       } else
@@ -304,7 +303,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       case IMAGE_DESC_RECORD_TYPE:
          if ( DGifGetImageDesc( l-> gft) != GIF_OK) out;
 
-         if ( ++l-> passed != fi-> frame) { // skip image block
+         if ( ++l-> passed != fi-> frame) { /* skip image block */
              int sz;
              Byte * block = nil;
              if ( DGifGetCode( l-> gft, &sz, &block) != GIF_OK) out;
@@ -315,7 +314,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
              break;
          }   
 
-         // loading palette
+         /* loading palette */
          { 
             int type = l-> gft-> Image.ColorMap ? l-> gft-> Image.ColorMap-> BitsPerPixel : 
                      ( l-> gft-> SColorMap      ? l-> gft-> SColorMap-> BitsPerPixel : imbpp1);
@@ -352,7 +351,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                out;
             }   
 
-            // copying & converting data
+            /* copying & converting data */
             {
                int j, pass = 0, idst = 0;
                Byte * src = data, *dst = i-> data;
@@ -380,7 +379,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
             free( data);
 
-            // applying transparent index to Icon
+            /* applying transparent index to Icon */
             if ( kind_of( fi-> object, CIcon) && 
                  ( l-> transparent >= 0) &&
                  ( l-> transparent < PIcon( fi-> object)-> palSize)) {
@@ -471,7 +470,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
    if ( !( g = EGifOpenFileName( fi-> fileName, 0)))
       return nil;
 
-   // safe to kill
+   /* safe to kill */
    fclose( fi-> f);
    fi-> f = NULL;
 
@@ -505,7 +504,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    HV * profile = fi-> objectExtras;
 
    if ( fi-> frame == 0) {  
-      // put screen description
+      /* put screen description */
       int w = i-> w, h = i-> h, cr = i-> palSize, bg = 0, ps = i-> palSize;
       RGBColor * r = i-> palette;
       RGBColor rgbc[ 256];
@@ -528,9 +527,9 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       FreeMapObject( c);
    }   
    
-   // writing extras
+   /* writing extras */
 
-   // comments 
+   /* comments  */
    if ( pexist( comment)) {
       char * c = pget_c( comment);
       int len  = strlen( c);
@@ -544,7 +543,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       }
    }   
    
-   // graphics control block
+   /* graphics control block */
    if ( pexist( delayTime)      || 
         pexist( disposalMethod) ||
         pexist( userInput)      ||
@@ -573,7 +572,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          out;
    }
 
-   // writing image
+   /* writing image */
    {
       ColorMapObject * c = make_colormap( i-> palette, i-> palSize);
       int ox = 0, oy = 0, interlaced = 0;
@@ -598,7 +597,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       if ( !data) outcm( ls * i-> h);
       dst = data;
 
-      // copying & converting data
+      /* copying & converting data */
       for ( j = 0; j < i-> h; j++) {
          src = i-> data + ( i-> h - 1 - idst) * i-> lineSize;
          if ( interlaced) {

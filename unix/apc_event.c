@@ -279,15 +279,16 @@ static void
 wm_sync_data_from_event( Handle self, WMSyncData * wmsd, XConfigureEvent * cev, Bool mapped)
 {
     wmsd-> above     = cev-> above;
-    wmsd-> size      = ( Point) { cev-> width, cev-> height};
+    wmsd-> size. x   = cev-> width;
+    wmsd-> size. y   = cev-> height;
 
-    if ( X(self)-> real_parent) { // trust no one
+    if ( X(self)-> real_parent) { /* trust no one */
        XWindow dummy;
        XTranslateCoordinates( DISP, X_WINDOW, guts. root,
            0, 0, &cev-> x, &cev-> y, &dummy);
     }
-    wmsd-> origin = ( Point) { cev-> x, 
-       X(X(self)-> owner)-> size. y + X(X(self)-> owner)-> menuHeight - wmsd-> size. y - cev-> y };
+    wmsd-> origin. x  = cev-> x;
+    wmsd-> origin. y  = X(X(self)-> owner)-> size. y + X(X(self)-> owner)-> menuHeight - wmsd-> size. y - cev-> y;
     wmsd-> mapped  = mapped;
 }
 
@@ -311,7 +312,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
    Point old_size = XX-> size, old_pos = XX-> origin;
 
    if ( wmsd-> origin. x != PWidget(self)-> pos. x || wmsd-> origin. y != PWidget(self)-> pos. y) {
-      // printf("GOT move to %d %d / %d %d\n", wmsd-> origin.x, wmsd-> origin.y, PWidget(self)->pos. x, PWidget(self)->pos. y);
+      /* printf("GOT move to %d %d / %d %d\n", wmsd-> origin.x, wmsd-> origin.y, PWidget(self)->pos. x, PWidget(self)->pos. y); */
       bzero( &e, sizeof( Event));
       e. cmd      = cmMove;
       e. gen. P   = XX-> origin = wmsd-> origin;
@@ -323,7 +324,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
    if ( wmsd-> size. x != XX-> size. x || wmsd-> size. y != XX-> size. y + XX-> menuHeight) {
       XX-> size. x = wmsd-> size. x;
       XX-> size. y = wmsd-> size. y - XX-> menuHeight;
-      // printf("got size to %d %d by %d\n", XX-> size.x, XX-> size.y, wmsd-> eventType);
+      /* printf("got size to %d %d by %d\n", XX-> size.x, XX-> size.y, wmsd-> eventType); */
       prima_send_cmSize( self, old_size);
       if ( PObject( self)-> stage == csDead) return false; 
       size_changed = true;
@@ -344,7 +345,10 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
          if ( XX-> size. x > qx && XX-> size. y > qy) {
             e. cmd = cmWindowState;
             e. gen. i = wsMaximized;
-            XX-> zoomRect = (Rect){old_pos.x, old_pos.y, old_size.x, old_size.y};
+            XX-> zoomRect.left = old_pos.x;
+            XX-> zoomRect.bottom = old_pos.y;
+            XX-> zoomRect.right = old_size.x;
+            XX-> zoomRect.top = old_size.y;
             XX-> flags. zoomed = 1;
          }   
       } else {
@@ -352,8 +356,12 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
             e. cmd = cmWindowState;
             e. gen. i = wsNormal;
             XX-> flags. zoomed = 0;
-         } else  
-            XX-> zoomRect = (Rect){XX-> origin.x, XX-> origin.y, XX-> size.x, XX-> size.y};
+         } else {
+            XX-> zoomRect.left = XX-> origin.x;
+            XX-> zoomRect.bottom = XX-> origin.y;
+            XX-> zoomRect.right = XX-> size.x;
+            XX-> zoomRect.top = XX-> size.y;
+         }
       }   
       if ( e. cmd) CComponent( self)-> message( self, &e);
       if ( PObject( self)-> stage == csDead) return false; 
@@ -884,7 +892,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
             XTranslateCoordinates( DISP, X_WINDOW, XX-> real_parent,
                0, 0, &XX-> decorationSize.x, &XX-> decorationSize.y, &dummy);
          } else 
-            XX-> decorationSize = ( Point){0,0};
+            XX-> decorationSize. x = XX-> decorationSize. y = 0;
       }
       return;
 
@@ -921,7 +929,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure, XX-> flags. mapped);
          XX-> ackOrigin. y = wmsd. origin. y;
          XX-> ackOrigin. x = wmsd. origin. x;
-         // printf("%d --> %d %d\n", ev-> xany.serial, ev-> xconfigure. width, ev-> xconfigure. height);
+         /* printf("%d --> %d %d\n", ev-> xany.serial, ev-> xconfigure. width, ev-> xconfigure. height); */
          XX-> flags. configured = 1;
          process_wm_sync_data( self, &wmsd);
       } else 
@@ -1047,7 +1055,7 @@ copy_events( Handle self, PList events, WMSyncData * w, int eventType)
                 XTranslateCoordinates( DISP, X_WINDOW, X(self)-> real_parent,
                    0, 0, &X(self)-> decorationSize.x, &X(self)-> decorationSize.y, &dummy);
              } else 
-                X(self)-> decorationSize = ( Point){0,0};
+                X(self)-> decorationSize. x = X(self)-> decorationSize. y = 0;
              }
          break;
       }
@@ -1058,7 +1066,7 @@ copy_events( Handle self, PList events, WMSyncData * w, int eventType)
          case ConfigureNotify: 
             if ( x-> xconfigure. window == PWidget(self)-> handle) {
                wm_sync_data_from_event( self, w, &x-> xconfigure, w-> mapped);
-               // printf("copy %d %d\n", x-> xconfigure. width, x-> xconfigure. height);
+               /* printf("copy %d %d\n", x-> xconfigure. width, x-> xconfigure. height); */
                ok = true;
             }
             break;
@@ -1097,36 +1105,36 @@ prima_wm_sync( Handle self, int eventType)
    WMSyncData wmsd;
    Bool quit_by_timeout = false;
 
-   // printf("enter conf for %d\n", eventType);
+   /* printf("enter conf for %d\n", eventType); */
    open_wm_sync_data( self, &wmsd);
 
-   // printf("enter syncer. current size: %d %d\n", XX-> size.x, XX-> size.y);
+   /* printf("enter syncer. current size: %d %d\n", XX-> size.x, XX-> size.y); */
    gettimeofday( &start_time, nil);
    
-   // browse & copy queued events
+   /* browse & copy queued events */
    evx = XEventsQueued( DISP, QueuedAlready);
    if ( !( events = plist_create( evx + 32, 32)))
       return;
    r = copy_events( self, events, &wmsd, eventType);
    if ( r < 0) return;
-   // printf("copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
+   /* printf("copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); */
 
-   // measuring round-trip time
+   /* measuring round-trip time */
    XSync( DISP, false);
    gettimeofday( &timeout, nil);
    delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000000 + 
       ( timeout. tv_usec - start_time. tv_usec)) + guts. wm_event_timeout;
-   // printf("Sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000);
+   /* printf("Sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000); */
 
-   // got response already? happens if no wm present or 
-   // sometimes if wm is local to server
+   /* got response already? happens if no wm present or  */
+   /* sometimes if wm is local to server */
    evx = XEventsQueued( DISP, QueuedAlready);
    r = copy_events( self, events, &wmsd, eventType);
    if ( r < 0) return;
-   // printf("pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
-   delay = 50000; // wait 50 ms just in case
-   // waiting for ConfigureNotify or timeout
-   // printf("enter cycle, size: %d %d\n", wmsd.size.x, wmsd.size.y);
+   /* printf("pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); */
+   delay = 50000; /* wait 50 ms just in case */
+   /* waiting for ConfigureNotify or timeout */
+   /* printf("enter cycle, size: %d %d\n", wmsd.size.x, wmsd.size.y); */
    start_time = timeout;
    while ( 1) {
       gettimeofday( &timeout, nil);
@@ -1136,7 +1144,7 @@ prima_wm_sync( Handle self, int eventType)
          break;
       timeout. tv_sec  = ( delay - diff) / 1000000;
       timeout. tv_usec = ( delay - diff) % 1000000;
-      // printf("want timeout:%g\n", (double)( delay - diff) / 1000000);
+      /* printf("want timeout:%g\n", (double)( delay - diff) / 1000000); */
       FD_ZERO( &zero);   
       FD_ZERO( &read);
       FD_SET( guts.connection, &read);
@@ -1146,38 +1154,38 @@ prima_wm_sync( Handle self, int eventType)
          return;
       }
       if ( r == 0) {
-          // printf("timeout\n");
+          /* printf("timeout\n"); */
          quit_by_timeout = true;
          break; 
       }
       if (( evx = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
          /* just like tcl/perl tk do, to avoid an infinite loop */
-         sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
+         RETSIGTYPE oldHandler = signal( SIGPIPE, SIG_IGN);
          XNoOp( DISP);
          XFlush( DISP);
          (void) signal( SIGPIPE, oldHandler);
       }
       
-      // copying new events
+      /* copying new events */
       r = copy_events( self, events, &wmsd, eventType);
       if ( r < 0) return;
-      // printf("copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
-      if ( r > 0) break; // has come ConfigureNotify
+      /* printf("copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); */
+      if ( r > 0) break; /* has come ConfigureNotify */
    }  
-   // printf("exit cycle\n");
+   /* printf("exit cycle\n"); */
 
    if ( quit_by_timeout) {
       guts. wm_event_timeout *= 2;
-      // printf("INC timeout %g sec\n", (double)guts. wm_event_timeout / 1000000);
+      /* printf("INC timeout %g sec\n", (double)guts. wm_event_timeout / 1000000); */
       if ( guts. wm_event_timeout > 5000000) guts. wm_event_timeout = 5000000;
    } else if ( delay > diff) {
       guts. wm_event_timeout -= delay - diff;
       if ( guts. wm_event_timeout < 10000) guts. wm_event_timeout = 10000;
-      // printf("DEC timeout %g sec\n", (double)guts. wm_event_timeout / 1000000);
+      /* printf("DEC timeout %g sec\n", (double)guts. wm_event_timeout / 1000000); */
    }
 
-   // put events back
-   // printf("put back %d events\n", events-> count);
+   /* put events back */
+   /* printf("put back %d events\n", events-> count); */
    for ( r = events-> count - 1; r >= 0; r--) {
       XPutBackEvent( DISP, ( XEvent*) events-> items[ r]);
       free(( void*) events-> items[ r]);
@@ -1185,7 +1193,7 @@ prima_wm_sync( Handle self, int eventType)
    plist_destroy( events);
    evx = XEventsQueued( DISP, QueuedAlready);
 
-   // printf("exit syncer, size: %d %d\n", wmsd.size.x, wmsd.size.y);
+   /* printf("exit syncer, size: %d %d\n", wmsd.size.x, wmsd.size.y); */
    process_wm_sync_data( self, &wmsd);
    X(self)-> flags. configured = 1;
 }

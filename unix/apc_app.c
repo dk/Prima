@@ -39,6 +39,7 @@
 #include <sys/utsname.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <signal.h>
 #if !defined(BYTEORDER)
 #error "BYTEORDER is not defined"
 #endif
@@ -50,10 +51,12 @@
 #define BUFSIZ  2048
 #endif
 
+UnixGuts guts;
+
 static int
 x_error_handler( Display *d, XErrorEvent *ev)
 {
-   int tail = guts. ri_tail;
+   int tail = guts. ri_tail; 
    int prev = tail;
    char *name = "Prima";
    char buf[BUFSIZ];
@@ -95,6 +98,7 @@ x_io_error_handler( Display *d)
 {
    fprintf( stderr, "Fatal input/output X error\n");
    _exit( 1);
+   return 0; /* happy now? */
 }
 
 static XrmDatabase
@@ -306,6 +310,9 @@ window_subsystem_init( void)
    if ( !prima_init_clipboard_subsystem()) return false;
    if ( !prima_init_color_subsystem()) return false;
    if ( !prima_init_font_subsystem()) return false;
+   bzero( &guts. cursor_gcv, sizeof( guts. cursor_gcv));
+   guts. cursor_gcv. cap_style = CapButt;
+   guts. cursor_gcv. function = GXcopy;
 
    {
       XGCValues gcv;
@@ -433,7 +440,8 @@ apc_application_create( Handle self)
    XX-> pointer_id = crArrow;
    XX-> gdrawable = XX-> udrawable = guts. root;
    XX-> parent = None;
-   XX-> origin = ( Point){0,0};
+   XX-> origin. x = 0;
+   XX-> origin. y = 0;
    XX-> ackSize = XX-> size = apc_application_get_size( self);
    XX-> owner = nilHandle;
 
@@ -722,7 +730,7 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
        FD_ISSET( guts.connection, &read_set)) {
       if (( queued_events = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
          /* just like tcl/perl tk do, to avoid an infinite loop */
-         sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
+         RETSIGTYPE oldHandler = signal( SIGPIPE, SIG_IGN);
          XNoOp( DISP);
          XFlush( DISP);
          (void) signal( SIGPIPE, oldHandler);

@@ -49,10 +49,11 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XSizeHints hints;
    XSetWindowAttributes attrs;
    XWindow parent = guts. root;
+   Point p0 = {0,0};
 
    if ( border_style != bsSizeable) border_style = bsDialog;
 
-   if ( X_WINDOW) { // recreate request 
+   if ( X_WINDOW) { /* recreate request */
       XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
       apc_widget_set_size_bounds( self, PWidget(self)-> sizeMin, PWidget(self)-> sizeMax);
       return true; 
@@ -132,7 +133,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    prima_send_create_event( X_WINDOW);
    if ( border_style == bsSizeable) XX-> flags. sizeable = 1;
 
-   // setting initial size
+   /* setting initial size */
    XX-> size = guts. displaySize;
    if ( window_state != wsMaximized) {
       XX-> zoomRect. right = XX-> size. x;
@@ -141,8 +142,9 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       XX-> size. y /= 3;
    } else
       XX-> flags. zoomed = 1;
-   XX-> origin = ( Point) {0,0};
-   XX-> ackOrigin = XX-> ackSize = ( Point){0,0};
+   XX-> origin. x = XX-> origin. y = 
+   XX-> ackOrigin. x = XX-> ackOrigin. y = 
+   XX-> ackSize. x = XX-> ackOrigin. y = 0;
    
    bzero( &hints, sizeof( XSizeHints));
    hints. flags  = PBaseSize;
@@ -151,7 +153,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XResizeWindow( DISP, X_WINDOW, XX-> size. x, XX-> size. y); 
 
-   prima_send_cmSize( self, (Point){0,0});
+   prima_send_cmSize( self, p0);
    
    return true;
 }
@@ -280,8 +282,12 @@ apc_window_get_icon( Handle self, Handle icon)
             *d = ~(*d);
       } else
          bzero( PImage( mask)-> data, PImage( mask)-> dataSize);
-      if ( xx != ax || xy != ay) 
-         CImage( mask)-> size( mask, true, ( Point){xx,xy});
+      if ( xx != ax || xy != ay)  {
+         Point p;
+         p.x = xx;
+         p.y = xy;
+         CImage( mask)-> size( mask, true, p);
+      }
       memcpy( PIcon( icon)-> mask, PImage( mask)-> data, PIcon( icon)-> maskSize);
       Object_destroy( mask);
    }
@@ -368,9 +374,9 @@ apc_SetWMNormalHints( Handle self, XSizeHints * hints)
       hints-> max_width  = PWidget(self)-> sizeMax.x;
       hints-> max_height = PWidget(self)-> sizeMax.y + XX-> menuHeight;
    } else {   
-      Point who = ( hints-> flags & USSize) ? 
-         (Point){hints-> width, hints-> height} : 
-         (Point){XX-> size.x, XX-> size.y + XX-> menuHeight};
+      Point who; 
+      who. x = ( hints-> flags & USSize) ? hints-> width  : XX-> size. x;
+      who. y = ( hints-> flags & USSize) ? hints-> height : XX-> size. y + XX-> menuHeight;
       hints-> min_width  = who. x;
       hints-> min_height = who. y;
       hints-> max_width  = who. x;
@@ -423,8 +429,10 @@ window_set_client_size( Handle self, int width, int height)
    XSizeHints hints;
    PWidget widg = PWidget( self);
    
-   if ( !XX-> flags. zoomed) 
-      widg-> virtualSize = (Point){width,height};
+   if ( !XX-> flags. zoomed) {
+      widg-> virtualSize. x = width;
+      widg-> virtualSize. y = height;
+  } 
 
    width = ( width > 0)
       ? (( width >= widg-> sizeMin. x)
@@ -566,8 +574,11 @@ apc_window_set_icon( Handle self, Handle icon)
       if ( zx > sz-> max_width)  zx = sz-> max_width;
       if ( zy > sz-> max_height) zy = sz-> max_height;
       if (( zx != i-> w && zy != i-> h) || ( sz-> max_width != i-> w && sz-> max_height != i-> h)) {
+         Point z;
          i = ( PIcon) i-> self-> dup( icon);
-         i-> self-> size(( Handle) i, true, (Point){zx,zy});
+         z.x = zx;
+         z.y = zy;
+         i-> self-> size(( Handle) i, true, z);
       }
       XFree( sz);
    } 
@@ -659,7 +670,10 @@ apc_window_set_window_state( Handle self, int state)
    }
    
    if ( state == wsMaximized && !XX-> flags. zoomed) {
-      XX-> zoomRect = ( Rect) {XX-> origin.x, XX-> origin.y, XX-> size.x, XX-> size.y};
+      XX-> zoomRect. left   = XX-> origin.x;
+      XX-> zoomRect. bottom = XX-> origin.y;
+      XX-> zoomRect. right  = XX-> size.x;
+      XX-> zoomRect. top    = XX-> size.y;
       apc_window_set_rect( self, 0, 0, guts. displaySize.x, guts. displaySize.y - XX-> menuHeight);
    }
 

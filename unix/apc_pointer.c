@@ -107,10 +107,11 @@ apc_pointer_get_hot_spot( Handle self)
    int id = get_cursor(self, nil, nil, &hot_spot, nil);
    XFontStruct *fs;
    XCharStruct *cs;
+   Point ret = {0,0};
 
-   if ( id < crDefault || id > crUser)  return (Point){0,0};
+   if ( id < crDefault || id > crUser)  return ret;
    if ( id == crUser)                   return hot_spot;
-   if ( !load_pointer_font())           return (Point){0,0};
+   if ( !load_pointer_font())           return ret;
 
    idx = cursor_map[id];
    fs = guts.pointer_font;
@@ -120,7 +121,9 @@ apc_pointer_get_hot_spot( Handle self)
       cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
    else
       cs = fs-> per_char + idx - fs-> min_char_or_byte2;
-   return (Point){-cs->lbearing, guts.cursor_height - cs->ascent};
+   ret. x = cs->lbearing;
+   ret. y = guts.cursor_height - cs->ascent;
+   return ret;
 }
 
 Point
@@ -134,8 +137,9 @@ apc_pointer_get_pos( Handle self)
    if ( !XQueryPointer( DISP, guts. root,
 			&root, &child, &p. x, &p. y,
 			&x, &y, &mask)) {
+      Point p = {0,0};
       warn( "XQueryPointer error");
-      return (Point){0,0};
+      return p;
    }
    p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
    return p;
@@ -150,7 +154,10 @@ apc_pointer_get_shape( Handle self)
 Point
 apc_pointer_get_size( Handle self)
 {
-   return (Point){guts.cursor_width,guts.cursor_height};
+   Point p;
+   p.x = guts.cursor_width;
+   p.y = guts.cursor_height;
+   return p;
 }
 
 Bool

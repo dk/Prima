@@ -44,18 +44,18 @@ static char * loadOutput[] = {
 static ImgCodecInfo codec_info = {
    "X11 Bitmap",
    "X Consortium",
-   X_PROTOCOL, 5,    // version
-   xbmext,    // extension
-   "X11 Bitmap File",     // file type
-   "XBM", // short type
-   nil,    // features 
-   "",     // module
-   "",     // package
-   true,   // canLoad
-   false,  // canLoadMultiple 
-   true,   // canSave
-   false,  // canSaveMultiple
-   xbmbpp, // save types
+   X_PROTOCOL, 5,    /* version */
+   xbmext,    /* extension */
+   "X11 Bitmap File",     /* file type */
+   "XBM", /* short type */
+   nil,    /* features  */
+   "",     /* module */
+   "",     /* package */
+   true,   /* canLoad */
+   false,  /* canLoadMultiple  */
+   true,   /* canSave */
+   false,  /* canSaveMultiple */
+   xbmbpp, /* save types */
    loadOutput
 };
 
@@ -126,8 +126,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    while ( h--) {
       int w = ls;
       Byte * d = dst, * s = src;
-      // in order to comply with imGrayScale, revert bits
-      // rather that palette
+      /* in order to comply with imGrayScale, revert bits
+         rather that palette */
       while ( w--) *(d++) = ~ *(s++);
       src += ls;
       dst -= i-> lineSize;
@@ -174,7 +174,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    l = malloc( ls);
    if ( !l) return false;
 
-   // extracting name
+   /* extracting name */
    name = xc;
    while ( *xc) {
       if ( *xc == '/') 

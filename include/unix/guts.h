@@ -131,35 +131,35 @@ typedef struct _RequestInformation
 #define kbFunctionMask	0x00080000
 
 typedef struct _FontFlags {
-   int height           : 1;
-   int width            : 1;
-   int style            : 1;
-   int pitch            : 1;
-   int direction        : 1;
-   int resolution       : 1;
-   int name             : 1;
-   int size             : 1;
-   int codepage         : 1;
-   int family           : 1;
-   int vector           : 1;
-   int ascent           : 1;
-   int descent          : 1;
-   int weight           : 1;
-   int maximalWidth     : 1;
-   int internalLeading  : 1;
-   int externalLeading  : 1;
-   int xDeviceRes       : 1;
-   int yDeviceRes       : 1;
-   int firstChar        : 1;
-   int lastChar         : 1;
-   int breakChar        : 1;
-   int defaultChar      : 1;
+   unsigned height           : 1;
+   unsigned width            : 1;
+   unsigned style            : 1;
+   unsigned pitch            : 1;
+   unsigned direction        : 1;
+   unsigned resolution       : 1;
+   unsigned name             : 1;
+   unsigned size             : 1;
+   unsigned codepage         : 1;
+   unsigned family           : 1;
+   unsigned vector           : 1;
+   unsigned ascent           : 1;
+   unsigned descent          : 1;
+   unsigned weight           : 1;
+   unsigned maximalWidth     : 1;
+   unsigned internalLeading  : 1;
+   unsigned externalLeading  : 1;
+   unsigned xDeviceRes       : 1;
+   unsigned yDeviceRes       : 1;
+   unsigned firstChar        : 1;
+   unsigned lastChar         : 1;
+   unsigned breakChar        : 1;
+   unsigned defaultChar      : 1;
    /* extras */
-   int bad_vector	: 1;
-   int sloppy           : 1;
-   int disabled         : 1;
-   int funky            : 1;
-   int intNames         : 1;
+   unsigned bad_vector	     : 1;
+   unsigned sloppy           : 1;
+   unsigned disabled         : 1;
+   unsigned funky            : 1;
+   unsigned intNames         : 1;
 } FontFlags;
 
 typedef struct _FontInfo {
@@ -205,21 +205,29 @@ union       _unix_sys_data;
 #define CURSOR_TIMER	((Handle)11)
 #define MENU_TIMER	((Handle)12)
 
+#if defined(sgi) && !defined(__GNUC__)
+/* multiple compilation and runtime errors otherwise. must be some alignment tricks */
+#define COMPONENT_SYS_DATA_ALIGN  unsigned dummy : 20;
+#else
+#define COMPONENT_SYS_DATA_ALIGN
+#endif
+
 #define COMPONENT_SYS_DATA                                                    \
    Handle self;                                                               \
    struct {                                                                   \
-      int application           : 1;                                          \
-      int bitmap                : 1;                                          \
-      int dbm                   : 1;                                          \
-      int drawable              : 1;                                          \
-      int icon                  : 1;                                          \
-      int image                 : 1;                                          \
-      int menu                  : 1;                                          \
-      int pixmap                : 1;                                          \
-      int popup                 : 1;                                          \
-      int timer                 : 1;                                          \
-      int widget                : 1;                                          \
-      int window                : 1;                                          \
+      unsigned application           : 1;                                     \
+      unsigned bitmap                : 1;                                     \
+      unsigned dbm                   : 1;                                     \
+      unsigned drawable              : 1;                                     \
+      unsigned icon                  : 1;                                     \
+      unsigned image                 : 1;                                     \
+      unsigned menu                  : 1;                                     \
+      unsigned pixmap                : 1;                                     \
+      unsigned popup                 : 1;                                     \
+      unsigned timer                 : 1;                                     \
+      unsigned widget                : 1;                                     \
+      unsigned window                : 1;                                     \
+      COMPONENT_SYS_DATA_ALIGN                                                \
    } type;                                                                    \
    XrmQuarkList q_class_name;                                                 \
    XrmQuarkList q_instance_name;                                              \
@@ -262,8 +270,6 @@ typedef struct pending_event
    TAILQ_ENTRY(pending_event) peventq_link;
 } PendingEvent;
 
-struct MsgDlg;
-
 typedef struct _WmGenericData {
    Atom deleteWindow;
    Atom protocols;
@@ -305,7 +311,7 @@ typedef struct {
    Byte           balance; /* 0-63 */
 } Brush;
 
-struct _UnixGuts
+typedef struct _UnixGuts
 {
    /* Event management */
    Time                         click_time_frame;
@@ -470,7 +476,10 @@ struct _UnixGuts
    int                          red_range, green_range, blue_range;
    Point                        ellipseDivergence;
    int                          appLock;
-} guts;
+   XGCValues                    cursor_gcv;
+} UnixGuts;
+
+extern UnixGuts guts;
 
 #define FXA_RESOLUTION_X guts. fxa_resolution_x
 #define FXA_RESOLUTION_Y guts. fxa_resolution_y
@@ -543,6 +552,10 @@ typedef struct _drawable_sys_data
    XRectangle clip_rect;
    FillPattern fill_pattern, saved_fill_pattern;
    Pixmap fp_pixmap;
+#if defined(sgi) && !defined(__GNUC__)
+/* multiple compilation and runtime errors otherwise. must be some alignment tricks */
+   char dummy_b_1[2];
+#endif
    int rop, paint_rop;
    int rop2, paint_rop2;
    int line_style, line_width;
@@ -561,39 +574,39 @@ typedef struct _drawable_sys_data
    Pixmap user_p_mask;
    void * recreateData;
    struct {
-      int base_line                     : 1;
-      int brush_fore                    : 1;
-      int brush_back                    : 1;
-      int brush_null_hatch              : 1;
-      int clip_owner			: 1;
-      int configured                    : 1;
-      int cursor_visible		: 1;
-      int enabled               	: 1;
-      int exposed			: 1;
-      int falsely_hidden                : 1;
-      int first_click                   : 1;
-      int grab                  	: 1;
-      int has_icon                      : 1;
-      int iconic                        : 1;
-      int mapped			: 1;
-      int modal                         : 1;
-      int opaque                	: 1;
-      int paint                 	: 1;
-      int paint_base_line               : 1;
-      int paint_opaque                  : 1;
-      int paint_pending                 : 1;
-      int pointer_obscured              : 1;
-      int position_determined           : 1;
-      int process_configure_notify	: 1;
-      int reload_font			: 1;
-      int sizeable                      : 1;
-      int size_determined               : 1;
-      int sync_paint			: 1;
-      int transparent                   : 1;
-      int transparent_busy              : 1;
-      int want_visible                  : 1;
-      int withdrawn                     : 1;
-      int zoomed                        : 1;
+      unsigned base_line                : 1;
+      unsigned brush_fore               : 1;
+      unsigned brush_back               : 1;
+      unsigned brush_null_hatch         : 1;
+      unsigned clip_owner	        : 1;
+      unsigned configured               : 1;
+      unsigned cursor_visible		: 1;
+      unsigned enabled               	: 1;
+      unsigned exposed			: 1;
+      unsigned falsely_hidden           : 1;
+      unsigned first_click              : 1;
+      unsigned grab                 	: 1;
+      unsigned has_icon                 : 1;
+      unsigned iconic                   : 1;
+      unsigned mapped			: 1;
+      unsigned modal                    : 1;
+      unsigned opaque                	: 1;
+      unsigned paint                    : 1;
+      unsigned paint_base_line          : 1;
+      unsigned paint_opaque             : 1;
+      unsigned paint_pending            : 1;
+      unsigned pointer_obscured         : 1;
+      unsigned position_determined      : 1;
+      unsigned process_configure_notify	: 1;
+      unsigned reload_font		: 1;
+      unsigned sizeable                 : 1;
+      unsigned size_determined          : 1;
+      unsigned sync_paint               : 1;
+      unsigned transparent              : 1;
+      unsigned transparent_busy         : 1;
+      unsigned want_visible             : 1;
+      unsigned withdrawn                : 1;
+      unsigned zoomed                   : 1;
    } flags;
    ImageCache image_cache;
    Handle preexec_focus;
@@ -915,6 +928,8 @@ struct MsgDlg {
 
 extern void
 prima_msgdlg_event( XEvent* ev, struct MsgDlg * md);
+
+typedef void (*RETSIGTYPE)(int);
 
 #endif
 

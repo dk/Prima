@@ -35,10 +35,10 @@
 #include "unix/guts.h"
 #include "Image.h"
 
-#define SORT(a,b)	({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
-#define REVERT(a)	({ XX-> size. y + XX-> menuHeight - (a) - 1; })
-#define SHIFT(a,b)	({ (a) += XX-> gtransform. x + XX-> btransform. x; \
-                           (b) += XX-> gtransform. y + XX-> btransform. y; })
+#define SORT(a,b)	{ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
+#define REVERT(a)	(XX-> size. y + XX-> menuHeight - (a) - 1)
+#define SHIFT(a,b)	{ (a) += XX-> gtransform. x + XX-> btransform. x; \
+                           (b) += XX-> gtransform. y + XX-> btransform. y; }
 #define REVERSE_BYTES_32(x) ((((x)&0xff)<<24) | (((x)&0xff00)<<8) | (((x)&0xff0000)>>8) | (((x)&0xff000000)>>24))
 #define REVERSE_BYTES_24(x) ((((x)&0xff)<<16) | ((x)&0xff00) | (((x)&0xff0000)>>8))
 #define REVERSE_BYTES_16(x) ((((x)&0xff)<<8 ) | (((x)&0xff00)>>8))
@@ -224,11 +224,11 @@ Unbuffered:
    apc_gp_set_color( self, XX-> saved_fore);
    apc_gp_set_back_color( self, XX-> saved_back);
    memcpy( XX-> saved_fill_pattern, XX-> fill_pattern, sizeof( FillPattern));
-   XX-> fill_pattern[0]++; // force 
+   XX-> fill_pattern[0]++; /* force  */
    apc_gp_set_fill_pattern( self, XX-> saved_fill_pattern);
 
    if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
-      // fprintf( stderr, "set font g: %s\n", XX-> font-> load_name);
+      /* fprintf( stderr, "set font g: %s\n", XX-> font-> load_name); */
       XSetFont( DISP, XX-> gc, XX-> font-> id);
       XCHECKPOINT;
    } else {
@@ -246,7 +246,11 @@ prima_cleanup_drawable_after_painting( Handle self)
          XSetRegion( DISP, XX-> gc, XX-> paint_region);
       } else {
          Region region = XCreateRegion();
-         XRectangle r = {-XX-> btransform. x, XX-> btransform. y,XX->bsize.x,XX->bsize.y};
+         XRectangle r;
+         r. x = -XX-> btransform. x;
+         r. y = XX-> btransform. y;
+         r. width = XX->bsize.x;
+         r. height = XX->bsize.y;
          XUnionRectWithRegion( &r, region, region);
          XSetRegion( DISP, XX-> gc, region);
          XDestroyRegion( region);
@@ -321,7 +325,7 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
             XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
             XSetBackground( DISP, XX-> gc, XX-> fore. secondary);
             XX-> flags. brush_back = 0;
-         } else // failure
+         } else /* failure */
             XSetFillStyle( DISP, XX-> gc, FillSolid);
       } else 
          XSetFillStyle( DISP, XX-> gc, FillSolid);
@@ -345,21 +349,21 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
       }
    } else {
       switch ( colorIndex) {
-      case 0: // back mix
+      case 0: /* back mix */
          if ( XX-> back. balance) {
             p = prima_get_hatch( &guts. ditherPatterns[ XX-> back. balance]);
             if ( p) {
                XSetStipple( DISP, XX-> gc, p);
                XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
                XSetBackground( DISP, XX-> gc, XX-> back. secondary);
-            } else  // failure
+            } else  /* failure */
                XSetFillStyle( DISP, XX-> gc, FillSolid);
          } else 
             XSetFillStyle( DISP, XX-> gc, FillSolid);
          XSetForeground( DISP, XX-> gc, XX-> back. primary);
          XX-> flags. brush_back = 0;
          break;
-      case 1: // fore mix
+      case 1: /* fore mix */
          if ( memcmp( XX-> fill_pattern, fillPatterns[fpEmpty], sizeof(FillPattern))==0)
             return false;
          if ( XX-> fore. balance) {
@@ -379,7 +383,7 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
             XX-> flags. brush_fore = 1;
          }
          break;
-      case 2: // fore mix with fill pattern
+      case 2: /* fore mix with fill pattern */
          if ( memcmp( XX-> fill_pattern, fillPatterns[fpEmpty], sizeof(FillPattern))==0)
             return false;
          if ( XX-> fore. balance ) {
@@ -533,7 +537,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
    
-   // clean color entries, leave just background & foreground. XXX
+   /* clean color entries, leave just background & foreground. XXX */
    if ( guts. dynamicColors && x1 <= 0 && x2 > XX-> size.x && y1 <= 0 && y2 >= XX-> size.y) {
       prima_palette_free(self,false);
       apc_gp_set_color(self, XX-> fore. color);
@@ -1739,10 +1743,15 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 Point
 apc_gp_get_resolution( Handle self)
 {
-   if ( self)
-      return (Point){X(self)-> resolution. x, X(self)-> resolution. y};
-   else
-      return (Point){guts.resolution.x, guts.resolution.y};
+   Point ret;
+   if ( self) {
+      ret.x = X(self)-> resolution.x;
+      ret.y = X(self)-> resolution.y;
+   } else {
+      ret.x = guts.resolution.x;
+      ret.y = guts.resolution.y;
+   }
+   return ret;
 }
 
 int

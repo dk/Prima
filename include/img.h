@@ -37,80 +37,80 @@
 extern "C" {
 #endif
 
-// common data, request for a whole file load
+/* common data, request for a whole file load */
 
 typedef struct _ImgLoadFileInstance {
-  // instance data, filled by core
+  /* instance data, filled by core */
   char          * fileName;
   FILE          * f; 
 
-  // instance data, filled by open_load
-  int             frameCount;     // total frames in the file; can return -1 if unknown
-  HV            * fileProperties; // specific file data
-  void          * instance;       // user instance
+  /* instance data, filled by open_load */
+  int             frameCount;     /* total frames in the file; can return -1 if unknown */
+  HV            * fileProperties; /* specific file data */
+  void          * instance;       /* user instance */
 
-  // user-specified data - applied to whole file
+  /* user-specified data - applied to whole file */
   Bool            loadExtras; 
   Bool            loadAll;
   Bool            noImageData;
-  HV            * extras;         // profile applied to all frames
+  HV            * extras;         /* profile applied to all frames */
 
-  // user-specified data - applied to every frame
-  HV            * profile;         // frame-specific profile, in
-  HV            * frameProperties; // frame-specific properties, out
+  /* user-specified data - applied to every frame */
+  HV            * profile;         /* frame-specific profile, in */
+  HV            * frameProperties; /* frame-specific properties, out */
   
-  int             frame;          // request frame index
-  Bool            jointFrame;     // true, if last frame was a previous one
-  Handle          object;         // to be used by load
+  int             frame;          /* request frame index */
+  Bool            jointFrame;     /* true, if last frame was a previous one */
+  Handle          object;         /* to be used by load */
 
-  // internal variables
+  /* internal variables */
   int             frameMapSize;   
   int           * frameMap;
   Bool            stop;
-  char          * errbuf;         // $! value
+  char          * errbuf;         /* $! value */
 } ImgLoadFileInstance, *PImgLoadFileInstance;
 
-// common data, request for a whole file save
+/* common data, request for a whole file save */
 
 typedef struct _ImgSaveFileInstance {
-  // instance data, filled by core
+  /* instance data, filled by core */
   char          * fileName;
   FILE          * f; 
-  Bool            append;         // true if append, false if rewrite
+  Bool            append;         /* true if append, false if rewrite */
 
-  // instance data, filled by open_save
-  void          * instance;       // result of open, user data for save session
-  HV            * extras;         // profile applied to whole save session
+  /* instance data, filled by open_save */
+  void          * instance;       /* result of open, user data for save session */
+  HV            * extras;         /* profile applied to whole save session */
 
-  // user-specified data - applied to every frame
+  /* user-specified data - applied to every frame */
   int             frame;
-  Handle          object;         // to be used by save
-  HV            * objectExtras;   // extras supplied to image object
+  Handle          object;         /* to be used by save */
+  HV            * objectExtras;   /* extras supplied to image object */
   
-  // internal variables
+  /* internal variables */
   int             frameMapSize;   
   Handle        * frameMap;
-  char          * errbuf;         // $! value
+  char          * errbuf;         /* $! value */
 } ImgSaveFileInstance, *PImgSaveFileInstance;
 
-// codec info
+/* codec info */
 typedef struct _ImgCodecInfo {
-   char  * name;              // DUFF codec
-   char  * vendor;            // Duff & Co. 
-   int     versionMaj;        // 1
-   int     versionMin;        // 0
-   char ** fileExtensions;    // duf, duff
-   char  * fileType;          // Dumb File Format 
-   char  * fileShortType;     // DUFF
-   char ** featuresSupported; // duff-version 1, duff-rgb, duff-cmyk
-   char  * primaModule;       // Prima::ImgPlugins::duff.pm
-   char  * primaPackage;      // Prima::ImgPlugins::duff
+   char  * name;              /* DUFF codec */
+   char  * vendor;            /* Duff & Co. */ 
+   int     versionMaj;        /* 1 */
+   int     versionMin;        /* 0 */
+   char ** fileExtensions;    /* duf, duff */
+   char  * fileType;          /* Dumb File Format  */
+   char  * fileShortType;     /* DUFF */
+   char ** featuresSupported; /* duff-version 1, duff-rgb, duff-cmyk */
+   char  * primaModule;       /* Prima::ImgPlugins::duff.pm */
+   char  * primaPackage;      /* Prima::ImgPlugins::duff */
    Bool    canLoad;
    Bool    canLoadMultiple;  
    Bool    canSave;          
    Bool    canSaveMultiple;  
-   int   * saveTypes;         // imMono, imBW ... 0
-   char ** loadOutput;        // hash keys reported by load 
+   int   * saveTypes;         /* imMono, imBW ... 0 */
+   char ** loadOutput;        /* hash keys reported by load  */
 } ImgCodecInfo, *PImgCodecInfo;
 
 struct ImgCodec;

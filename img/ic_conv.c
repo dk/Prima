@@ -34,8 +34,8 @@ extern "C" {
 
 
 #define var (( PImage) self)
-// Mono
 
+/* Mono */
 BC( mono, nibble, None)
 {
    dBCARGS;
@@ -69,7 +69,7 @@ BC( mono, rgb, None)
       bc_mono_rgb( BCCONV, var->palette);
 }
 
-// Nibble
+/* Nibble */
 
 BC( nibble, mono, None)
 {
@@ -124,7 +124,7 @@ BC( nibble, rgb, None)
       bc_nibble_rgb( BCCONV, var->palette);
 }
 
-// Byte
+/* Byte */
 BC( byte, mono, None)
 {
    dBCARGS;
@@ -202,7 +202,7 @@ BC( byte, rgb, None)
       bc_byte_rgb( BCCONV, var->palette);
 }
 
-// Graybyte
+/* Graybyte */
 BC( graybyte, mono, None)
 {
    dBCARGS;
@@ -279,7 +279,7 @@ BC( graybyte, rgb, None)
       bc_graybyte_rgb( BCCONV);
 }
 
-// RGB
+/* RGB */
 BC( rgb, mono, None)
 {
    dBCARGS;

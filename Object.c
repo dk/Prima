@@ -174,8 +174,8 @@ Object_destroy( Handle self)
       Handle owner;
       var-> stage = csHalfDead;
       recursiveCall++;
-    //  ENTER;
-    //  SAVEINT recursiveCall;
+    /*  ENTER;
+        SAVEINT recursiveCall; */
       protect_chain( owner = var-> owner, 1);
       my-> cleanup( self);
       if ( var-> stage == csHalfDead) {
@@ -189,7 +189,7 @@ Object_destroy( Handle self)
          }
       }
       protect_chain( owner, -1);
-    //  LEAVE;
+    /*  LEAVE; */
       recursiveCall--;
    }
    var-> stage = csDead;

@@ -322,7 +322,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
    a[0] = COLOR_R(color);
    a[1] = COLOR_G(color);
    a[2] = COLOR_B(color);
-  //  printf("%s asked for %06x\n", self?PWidget(self)->name:"null", color);
+  /*  printf("%s asked for %06x\n", self?PWidget(self)->name:"null", color); */
    if (self && XT_IS_BITMAP(XX)) {
       Byte balance = ( a[0] + a[1] + a[2] + 6) / (3 * 4);
       if ( balance < 64) {
@@ -346,7 +346,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
             prima_color_sync();
             if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
                if ( prima_color_new( &xc)) {
-                  // printf("%s alloc %d ( wanted %06x). got %02x %02x %02x\n", PWidget(self)-> name, xc.pixel, color, xc.red>>8,xc.green>>8,xc.blue>>8);
+                  /* printf("%s alloc %d ( wanted %06x). got %02x %02x %02x\n", PWidget(self)-> name, xc.pixel, color, xc.red>>8,xc.green>>8,xc.blue>>8); */
                   prima_color_add_ref( self, xc. pixel, RANK_NORMAL);
                   return brush-> primary = xc. pixel;
                }
@@ -433,7 +433,7 @@ R'G' , B=0            maximal error lines). balance is computed as diff between
                   b[0] = guts. palette[brush-> primary].r;
                   b[1] = guts. palette[brush-> primary].g;
                   b[2] = guts. palette[brush-> primary].b;
-//                  printf("want %06x, closest is %06x\n", color, guts.palette[brush-> primary].composite);
+/*                  printf("want %06x, closest is %06x\n", color, guts.palette[brush-> primary].composite); */
                   ab2 = (a[0]-b[0])*(a[0]-b[0]) +
                         (a[1]-b[1])*(a[1]-b[1]) +
                         (a[2]-b[2])*(a[2]-b[2]);
@@ -442,7 +442,7 @@ R'G' , B=0            maximal error lines). balance is computed as diff between
                      d[0] = guts. palette[i].r;
                      d[1] = guts. palette[i].g;
                      d[2] = guts. palette[i].b;
-                     // printf("tasting %06x\n", guts.palette[i].composite);
+                     /* printf("tasting %06x\n", guts.palette[i].composite); */
                      bd2 = (d[0]-b[0])*(d[0]-b[0]) +
                            (d[1]-b[1])*(d[1]-b[1]) +
                            (d[2]-b[2])*(d[2]-b[2]);
@@ -452,10 +452,10 @@ R'G' , B=0            maximal error lines). balance is computed as diff between
                            (d[1]-a[1])*(d[1]-a[1]) +
                            (d[2]-a[2])*(d[2]-a[2]);
                      cd  = ( ad2 - ab2 + bd2) / (2 * bd);
-                     // printf("bd:%g,bd2:%d, ad2:%d, cd:%g\n", bd, bd2, ad2, cd);
+                     /* printf("bd:%g,bd2:%d, ad2:%d, cd:%g\n", bd, bd2, ad2, cd); */
                      if ( cd < bd) {
                         ac2 = ad2 - cd * cd;
-                        // printf("ac2:%d\n", ac2);
+                        /* printf("ac2:%d\n", ac2); */
                         if ( ac2 < maxDiff || (( ac2 < maxDiff + 12) && (cd < mincd))) {
                            maxDiff = ac2;
                            bestMatch = i;
@@ -473,7 +473,7 @@ ENOUGH:;
                   } 
                   brush-> secondary = bestMatch;
                   brush-> balance   = 63 - BMcd * 64 / BMbd;
-                  // printf("MIX with %d of %06x\n", brush-> balance, guts.palette[bestMatch].composite);
+                  /* printf("MIX with %d of %06x\n", brush-> balance, guts.palette[bestMatch].composite); */
                }
             }
          }
@@ -798,8 +798,11 @@ BLACK_WHITE_ALLOCATED:
       }
    } else {
       int i, j, from[3] = {0,0,0}, to[3] = {0,0,0}, stage[3] = {0,0,0}, lim[3]; 
-      unsigned long mask[3] = {guts. visual. red_mask, guts. visual. green_mask, guts. visual. blue_mask};
-      // find color bounds and test if they are contiguous
+      unsigned long mask[3];
+      mask[0] = guts. visual. red_mask;
+      mask[1] = guts. visual. green_mask;
+      mask[2] = guts. visual. blue_mask;
+      /* find color bounds and test if they are contiguous */
       for ( j = 0; j < 3; j++) {
          for ( i = 0; i < 32; i++) {
             switch ( stage[j]) {
@@ -980,7 +983,7 @@ prima_color_add_ref( Handle self, int index, int rank)
       guts. palette[index]. rank = rank;
    p[LPAL_ADDR(index)] &=~ LPAL_MASK(index);
    p[LPAL_ADDR(index)] |=  LPAL_SET(index, nr);
-   // printf("%s %s %d %d\n", PWidget(self)-> name, r ? "raised to " : "added as", nr, index);
+   /* printf("%s %s %d %d\n", PWidget(self)-> name, r ? "raised to " : "added as", nr, index); */
    return true;
 }
 
@@ -1021,8 +1024,8 @@ prima_color_sync( void)
    return freed + count;
 }
 
-// updates contents of DefaultColormap. 
-// NB - never to be called with 'fast' set to true.
+/* updates contents of DefaultColormap.  */
+/* NB - never to be called with 'fast' set to true. */
 
 Bool
 prima_palette_replace( Handle self, Bool fast)
@@ -1042,7 +1045,7 @@ prima_palette_replace( Handle self, Bool fast)
    if ( XX-> type.image || XX-> type. dbm) rank = RANK_LOCKED; else
       return false;
 
-   if ( !fast) prima_palette_free( self, true); // remove old entries
+   if ( !fast) prima_palette_free( self, true); /* remove old entries */
   
    psz = PDrawable( self)-> palSize + menu;
    if ( XT_IS_WINDOW(X(self)) && PWindow(self)-> menu) 
@@ -1065,9 +1068,9 @@ prima_palette_replace( Handle self, Bool fast)
    
    granted = 0;
    
-   // fetch actual colors - they are useful when no free colorcells
-   // available, but colormap has some good colors, which we don't
-   // possess
+   /* fetch actual colors - they are useful when no free colorcells
+      available, but colormap has some good colors, which we don't
+      possess */
    if ( !restricted) {
       int count = 0, j;
       XColor xc[32];
@@ -1084,8 +1087,8 @@ prima_palette_replace( Handle self, Bool fast)
          for ( j = 0; j < count; j++) prima_color_new( &xc[j]);
    }
    
-   // printf("%s find match for %d colors\n", PWidget(self)-> name, psz);
-   // find out if any allocated entries are present already
+   /* printf("%s find match for %d colors\n", PWidget(self)-> name, psz); */
+   /* find out if any allocated entries are present already */
    for ( i = 0; i < psz; i++) 
       if (( req[i] & 0x80000000) == 0) {
          unsigned long c = req[i];
@@ -1100,7 +1103,7 @@ prima_palette_replace( Handle self, Bool fast)
                   xc. blue  = COLOR_B16(req[i]);
                   if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
                      if ( prima_color_new( &xc))
-                        // to protect from sync - give actual status on SUCCESS
+                        /* to protect from sync - give actual status on SUCCESS */
                         guts.palette[xc.pixel].rank = RANK_IMMUTABLE + 1; 
                      pixel = xc.pixel;
                   } else
@@ -1114,7 +1117,7 @@ prima_palette_replace( Handle self, Bool fast)
          }
       }
 
-    // printf("granted %d\n", granted);
+    /* printf("granted %d\n", granted); */
    if ( restricted) {
       free( req);
       return true;
@@ -1129,7 +1132,7 @@ prima_palette_replace( Handle self, Bool fast)
    }
 
 ALLOC_STAGE:   
-   // allocate some colors
+   /* allocate some colors */
    prima_color_sync();
    XCHECKPOINT;
    for ( i = 0; i < psz; i++) 
@@ -1147,7 +1150,7 @@ ALLOC_STAGE:
          } else 
             break;
       }
-     // printf("ok - now %d are granted\n", granted);
+     /* printf("ok - now %d are granted\n", granted); */
   
    if ( granted == psz) {
       free( req);
@@ -1155,7 +1158,7 @@ ALLOC_STAGE:
    }
        
    if ( stage == RANK_NORMAL) {
-       // try to remove RANK_NORMAL colors
+       /* try to remove RANK_NORMAL colors */
        p = guts. palette;
        for ( i = 0; i < guts. palSize; i++, p++) {
           if ( p-> rank == RANK_NORMAL) {
@@ -1179,7 +1182,7 @@ ALLOC_STAGE:
    
    if ( XX-> type. image) goto SUCCESS;
   
-   // try to remove RANK_PRIORITY entries
+   /* try to remove RANK_PRIORITY entries */
    p = guts. palette;
    for ( i = 0; i < guts. palSize; i++, p++) {
       if ( p-> rank == RANK_PRIORITY) {
@@ -1196,15 +1199,15 @@ ALLOC_STAGE:
    }
    
    psz = prima_color_sync();
-   if ( psz == 0) goto SUCCESS; // free no RANK_PRIORITY colors :( 
+   if ( psz == 0) goto SUCCESS; /* free no RANK_PRIORITY colors :(  */
    XCHECKPOINT;
 
-   // collect big palette
+   /* collect big palette */
    j = 0;
    for ( i = 0; i < guts. palSize; i++)
       if ( guts. palette[i]. rank != RANK_FREE) 
          j++;
-   stage = j; // immutable and locked colors
+   stage = j; /* immutable and locked colors */
    for ( i = 0; i < widgets. count; i++) {
       j += PWidget( widgets. items[i])-> palSize;
       if ( XT_IS_WINDOW(X(widgets. items[i])) && 
@@ -1212,8 +1215,8 @@ ALLOC_STAGE:
          j += ciMaxId + 1;
    }
    
-    // printf("BIG:%d vs %d\n", j, psz);
-   if ( !( rqx = malloc( sizeof( RGBColor) * j))) goto SUCCESS; // :O
+    /* printf("BIG:%d vs %d\n", j, psz); */
+   if ( !( rqx = malloc( sizeof( RGBColor) * j))) goto SUCCESS; /* :O */
    
    {
       RGBColor * r = rqx;
@@ -1240,7 +1243,7 @@ ALLOC_STAGE:
       }
    }
    
-   // squeeze palette
+   /* squeeze palette */
    if ( j > psz + stage) {
       int k, tolerance = 0, t2 = 0, lim = psz + stage;
       while ( 1) {
@@ -1261,10 +1264,10 @@ ALLOC_STAGE:
          tolerance += 2;
          t2 = tolerance * tolerance;
       }
-ENOUGH:      
+ENOUGH:;    
    }
    
-   // printf("ok. XAllocColor again\n");
+   /* printf("ok. XAllocColor again\n"); */
    granted = 0;
    for ( i = stage; i < stage + psz; i++) {
       XColor xc;
@@ -1273,8 +1276,8 @@ ENOUGH:
       xc. blue  = rqx[i]. b << 8;
       if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
          if ( prima_color_new( &xc)) {
-            // give new color NORMAL status - to be cleaned automatically
-            // upon 1st sync() invocation
+            /* give new color NORMAL status - to be cleaned automatically */
+            /* upon 1st sync() invocation */
             guts. palette[xc. pixel]. touched = 1;
             guts. palette[xc. pixel]. rank = RANK_NORMAL;
             granted++;
@@ -1283,10 +1286,10 @@ ENOUGH:
          break;
    }
    free( rqx);
-   // printf("ok - %d out of %d \n", granted, psz);
+   /* printf("ok - %d out of %d \n", granted, psz); */
    XCHECKPOINT;
    
-   // now give away colors that can be mapped to reduced palette
+   /* now give away colors that can be mapped to reduced palette */
    prima_palette_replace( self, true);
    for ( i = 0; i < widgets. count; i++) 
       prima_palette_replace( widgets. items[i], true);
@@ -1294,7 +1297,7 @@ ENOUGH:
    
 SUCCESS:
 
-   // restore status of pre-fetched colors
+   /* restore status of pre-fetched colors */
    for ( i = 0; i < guts. palSize; i++)
       if ( guts.palette[i].rank == RANK_IMMUTABLE + 1)
          guts.palette[i].rank = RANK_PRIORITY;
@@ -1304,7 +1307,7 @@ SUCCESS:
       if ( PWidget( widgets. items[i])-> stage < csDead)
          apc_widget_invalidate_rect( widgets. items[i], nil);
    
-   //  printf("EXIT\n");
+   /*  printf("EXIT\n"); */
    list_destroy( &widgets);
    return true;
 }
@@ -1331,7 +1334,7 @@ prima_palette_free( Handle self, Bool priority)
       if ( rank > 0 && max >= rank) {
          p[LPAL_ADDR(i)] &=~ LPAL_MASK(i);
          list_delete( &guts. palette[i]. users, self);
-         // printf("%s free %d, %d\n", PWidget(self)-> name, i, p[LPAL_ADDR(i)] & LPAL_MASK(i));
+         /* printf("%s free %d, %d\n", PWidget(self)-> name, i, p[LPAL_ADDR(i)] & LPAL_MASK(i)); */
          guts. palette[i]. touched = true;
       }
    }

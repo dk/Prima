@@ -352,7 +352,7 @@ Image_set_extended_data( Handle self, HV * profile)
    
    data = SvPV( pget_sv( data), dataSize);
 
-   // parameters check
+   /* parameters check */
    pexistType = pexist( type) && ( newType = pget_i( type)) != var-> type;
    pexistLine = pexist( lineSize) && ( lineSize = pget_i( lineSize)) != var-> lineSize;
 
@@ -364,20 +364,20 @@ Image_set_extended_data( Handle self, HV * profile)
    if ( is_opt( optInDraw) || dataSize <= 0) 
       goto GOOD_RETURN;
 
-   // determine line size, if any
+   /* determine line size, if any */
    if ( pexistLine) {
       if ( lineSize <= 0) {
          warn( "Image::set_data: invalid lineSize:%d passed", lineSize);
          goto GOOD_RETURN;
       }   
-      if ( !pexistType) { // plain repadding
+      if ( !pexistType) { /* plain repadding */
          ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 0, 0, nil);
          my-> update_change( self);
          goto GOOD_RETURN;
       }   
    }
 
-   // pre-fetch auto conversion, if set in same clause
+   /* pre-fetch auto conversion, if set in same clause */
    if ( pexist( preserveType))
        opt_assign( optPreserveType, pget_B( preserveType));
    if ( is_opt( optPreserveType))
@@ -404,16 +404,16 @@ Image_set_extended_data( Handle self, HV * profile)
        /* same code as in ::set_data */
       memcpy( var->data, data, dataSize > var->dataSize ? var->dataSize : dataSize);
    else {
-      // if no explicit lineSize set, assuming x4 padding 
+      /* if no explicit lineSize set, assuming x4 padding */
       if ( lineSize == 0)
          lineSize = (( var-> w * ( newType & imBPP) + 31) / 32) * 4;
-      // copying using repadding routine
+      /* copying using repadding routine */
       ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 
                  ( newType & imBPP) / 8, ( var-> type & imBPP) / 8, proc
                );
    }   
    my-> update_change( self);
-   // if wanted to keep original type, restoring
+   /* if want to keep original type, restoring */
    if ( is_opt( optPreserveType))
       my-> set_type( self, oldType);
    

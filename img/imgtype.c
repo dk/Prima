@@ -588,7 +588,7 @@ image_guess_type( int fd)
 }
 
 void
-init_image_support()
+init_image_support(void)
 {
    cm_init_colormap();
 }

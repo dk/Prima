@@ -92,7 +92,8 @@ cm_init_colormap( void)
       int b, g, r;
       for ( b = 0; b < 6; b++) for ( g = 0; g < 6; g++) for ( r = 0; r < 6; r++)
       {
-//       cubic_palette[ b + g * 6 + r * 36] =( RGBColor) { b * 51, g * 51, r * 51 };
+/*       cubic_palette[ b + g * 6 + r * 36] =( RGBColor) { b * 51, g * 51, r *
+ *       51 }; */
 	 int idx = b + g * 6 + r * 36;
 	 cubic_palette[ idx]. b = b * 51;
 	 cubic_palette[ idx]. g = g * 51;
@@ -103,7 +104,8 @@ cm_init_colormap( void)
       int b, g, r;
       for ( b = 0; b < 2; b++) for ( g = 0; g < 2; g++) for ( r = 0; r < 2; r++)
       {
-//       cubic_palette8[ b + g * 2 + r * 4] = ( RGBColor) { b * 255, g * 255, r * 255 };
+/*       cubic_palette8[ b + g * 2 + r * 4] = ( RGBColor) { b * 255, g * 255,
+ *       r * 255 }; */
 	 int idx = b + g * 2 + r * 4;
 	 cubic_palette8[ idx]. b = b * 255;
 	 cubic_palette8[ idx]. g = g * 255;

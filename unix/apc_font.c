@@ -318,7 +318,7 @@ prima_init_font_subsystem( void)
 	    while ( *c && *c != '-') c++;
 	    if ( !*c  && info[j]. flags. pitch && 
 		 ( vector == 5 || vector == 3 || 
-		 // ( vector == 5 || 
+		 /* ( vector == 5 ||  */
 		   ( info[j]. flags. height &&
 		     info[j]. flags. size &&
 		     info[j]. flags. xDeviceRes &&
@@ -422,7 +422,7 @@ prima_free_rotated_entry( PCachedFont f)
       while ( r-> length--) {
           if ( r-> map[ r-> length]) {
              prima_free_ximage( r-> map[ r-> length]);
-             r-> map[ r-> length] = nilHandle;
+             r-> map[ r-> length] = nil;
           }      
       }   
       f-> rotated = ( PRotatedFont) r-> next;
@@ -1136,7 +1136,7 @@ apc_gp_set_font( Handle self, PFont font)
 
    if ( XX-> flags. paint) {
       XX-> flags. reload_font = reload;
-      // fprintf( stderr, "set font: %s\n", XX-> font-> load_name);
+      /* fprintf( stderr, "set font: %s\n", XX-> font-> load_name); */
       XSetFont( DISP, XX-> gc, XX-> font-> id);
       XCHECKPOINT;
    }
@@ -1294,12 +1294,12 @@ FAILED:
       XSetForeground( DISP, r-> arena_gc, 0);
       XFillRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x, r-> orgBox .y);
       XSetForeground( DISP, r-> arena_gc, 1);
-      // XDrawRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x-1, r-> orgBox .y-1);
+      /* XDrawRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x-1, r-> orgBox .y-1); */
       XDrawString( DISP, r-> arena, r-> arena_gc, 
           ( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
           r-> orgBox. y - f-> fs-> descent - 1,
           &index, 1);
-      // XDrawLine( DISP, r-> arena, r-> arena_gc, 0, r-> orgBox .y-1, 8, r-> orgBox .y-1);
+      /* XDrawLine( DISP, r-> arena, r-> arena_gc, 0, r-> orgBox .y-1, 8, r-> orgBox .y-1); */
       XCHECKPOINT;
 
       /* getting glyph bits */

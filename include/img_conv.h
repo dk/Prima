@@ -42,24 +42,24 @@ extern "C" {
 #endif
 
 
-// initializer routine
-extern void init_image_support();
+/* initializer routine */
+extern void init_image_support(void);
 
-// image basic routines
+/* image basic routines */
 extern void ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch);
 extern void ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern int  image_guess_type( int fd);
 extern Bool itype_supported( int type);
 extern Bool itype_importable( int type, int *newtype, void **from_proc, void **to_proc);
 
-// palette routines
+/* palette routines */
 extern void cm_init_colormap( void);
 extern void cm_reverse_palette( PRGBColor source, PRGBColor dest, int colors);
 extern void cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
 extern Byte cm_nearest_color( RGBColor color, int palSize, PRGBColor palette);
 extern void cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette, int toColorCount, Byte * colorref);
 
-// bitstroke conversion routines
+/* bitstroke conversion routines */
 extern void bc_mono_nibble( register Byte * source, register Byte * dest, register int count);
 extern void bc_mono_nibble_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref);
 extern void bc_mono_byte( register Byte * source, register Byte * dest, register int count);
@@ -99,12 +99,14 @@ extern void bc_rgb_byte( Byte * source, register Byte * dest, register int count
 extern void bc_rgb_byte_ht( Byte * source, register Byte * dest, register int count, int lineSeqNo);
 extern void bc_rgb_byte_ed( Byte * source, register Byte * dest, register int count);
 
-// bitstroke stretching types
+/* bitstroke stretching types */
 
 typedef void StretchProc( void * srcData, void * dstData, int w, int x, int absx, long step);
 typedef StretchProc *PStretchProc;
 
+#if !defined(sgi) || defined(__GNUC__)
 #pragma pack(1)
+#endif
 typedef union _Fixed {
    int32_t l;
 #if (BYTEORDER==0x4321) || (BYTEORDER==0x87654321)
@@ -119,11 +121,13 @@ typedef union _Fixed {
    } i;
 #endif
 } Fixed;
+#if !defined(sgi) || defined(__GNUC__)
 #pragma pack()
+#endif
 
 #define UINT16_PRECISION (1L<<(8*sizeof(uint16_t)))
 
-// bitstroke stretching routines
+/* bitstroke stretching routines */
 extern void bs_mono_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);
 extern void bs_nibble_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);
 extern void bs_uint8_t_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);
@@ -145,11 +149,11 @@ extern void bs_double_out( double * srcData, double * dstData, int w, int x, int
 extern void bs_Complex_out( Complex * srcData, Complex * dstData, int w, int x, int absx, long step);
 extern void bs_DComplex_out( DComplex * srcData, DComplex * dstData, int w, int x, int absx, long step);
 
-// bitstroke copy routines
+/* bitstroke copy routines */
 extern void bc_nibble_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width);
 extern void bc_mono_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width);
 
-// image conversion routines
+/* image conversion routines */
 extern void ic_mono_nibble_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_mono_byte_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
 extern void ic_mono_graybyte_ictNone( Handle self, Byte * dstData, PRGBColor dstPal, int dstType);
@@ -231,7 +235,7 @@ extern void ic_float_complex_Short( Handle self, Byte *dstData, PRGBColor dstPal
 extern void ic_float_complex_Byte( Handle self, Byte *dstData, PRGBColor dstPal, int dstType);
 
 
-// image resampling routines
+/* image resampling routines */
 extern void rs_Byte_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 extern void rs_Short_Short( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 extern void rs_Long_Long( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
@@ -242,7 +246,7 @@ extern void rs_Long_Byte( Handle self, Byte * dstData, int dstType, double srcLo
 extern void rs_float_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 extern void rs_double_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 
-// extra convertors
+/* extra convertors */
 extern void bc_irgb_rgb( Byte * source, Byte * dest, int count);
 extern void bc_ibgr_rgb( Byte * source, Byte * dest, int count);
 extern void bc_bgri_rgb( Byte * source, Byte * dest, int count);
@@ -253,13 +257,13 @@ extern void bc_rgb_ibgr( Byte * source, Byte * dest, int count);
 extern void bc_rgb_bgri( Byte * source, Byte * dest, int count);
 
 
-// misc
+/* misc */
 typedef void SimpleConvProc( Byte * srcData, Byte * dstData, int count);
 typedef SimpleConvProc *PSimpleConvProc;
 
 extern void ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int srcDataSize, int dstDataSize, int srcBPP, int dstBPP, void * bit_conv_proc);
 
-// internal maps
+/* internal maps */
 extern Byte     map_stdcolorref    [ 256];
 extern Byte     div51              [ 256];
 extern Byte     div17              [ 256];
@@ -275,7 +279,7 @@ extern Byte     map_halftone8x8_51 [  64];
 extern Byte     map_halftone8x8_64 [  64];
 
 
-// internal macros
+/* internal macros */
 
 #define dBCARGS                                                   \
    int i;                                                         \
@@ -288,7 +292,7 @@ extern Byte     map_halftone8x8_64 [  64];
    Byte * srcData = var->data;                                    \
    Byte colorref[ 256]
 
-#ifdef __BORLANDC__
+#if defined (__BORLANDC__) || ( defined (sgi) && !defined (__GNUC__))
 #define BCWARN
 #else
 #define BCWARN                                                   \

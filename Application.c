@@ -62,7 +62,7 @@ Application_init( Handle self, HV * profile)
    application = self;
    if ( !apc_application_create( self))
       croak( "RTC0011: Error creating application");
-// Widget init
+/* Widget init */
    SvHV_Font( pget_sv( font), &Font_buffer, "Application::init");
    my-> set_font( self, Font_buffer);
    SvHV_Font( pget_sv( popupFont), &Font_buffer, "Application::init");
@@ -84,7 +84,7 @@ Application_init( Handle self, HV * profile)
    var->  text = duplicate_string("");
    opt_set( optModalHorizon);
 
-   // store printer info
+   /* store printer info */
    {
       HV * hv = ( HV *) SvRV( var-> mate);
       hv_store( hv, "PrinterClass",  12, newSVpv( pget_c( printerClass),  0), 0);
@@ -784,7 +784,7 @@ Application_map_focus( Handle self, Handle from)
       return ( topFrame == var->  topExclModal) ? from : var->  topExclModal;
 
    if ( !var->  topSharedModal && var->  modalHorizons. count == 0)
-      return from; // return from if no shared modals active
+      return from; /* return from if no shared modals active */
 
   if ( topFrame == self) {
       if ( !var->  topSharedModal) return from;
@@ -821,7 +821,7 @@ Application_popup_modal( Handle self)
    Handle xTop;
 
    if ( var->  topExclModal) {
-   // checking exclusive modal chain
+   /* checking exclusive modal chain */
       xTop = ( !ha || ( PWindow(ha)->modal == 0)) ? var->  exclModal : ha;
       while ( xTop) {
          if ( PWindow(xTop)-> nextExclModal) {
@@ -833,8 +833,8 @@ Application_popup_modal( Handle self)
       }
    } else {
       if ( !var->  topSharedModal && var->  modalHorizons. count == 0)
-         return nilHandle; // return from if no shared modals active
-      // checking shared modal chains
+         return nilHandle; /* return from if no shared modals active */
+      /* checking shared modal chains */
       if ( ha) {
          xTop = ( PWindow(ha)->modal == 0) ? CWindow(ha)->get_horizon(ha) : ha;
          if ( xTop == application) xTop = var->  sharedModal;

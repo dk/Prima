@@ -146,7 +146,9 @@ void Drawable_set( Handle self, HV * profile)
       pdelete( transform);
    }
    if ( pexist( width) && pexist( height)) {
-      Point size = { pget_i( width), pget_i( height)};
+      Point size;
+      size. x = pget_i( width);
+      size. y = pget_i( height);
       my-> set_size( self, size);
       pdelete( width);
       pdelete( height);
@@ -176,7 +178,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
    Bool useDir    = source-> direction != C_NUMERIC_UNDEF;
    Bool useName   = strcmp( source-> name, C_STRING_UNDEF) != 0;
 
-   // assignning values
+   /* assignning values */
    if ( useHeight) dest-> height    = source-> height;
    if ( useWidth ) dest-> width     = source-> width;
    if ( useDir   ) dest-> direction = source-> direction;
@@ -186,7 +188,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
    if ( useName  ) 
       strcpy( dest-> name, source-> name);
 
-   // nulling dependencies
+   /* nulling dependencies */
    if ( !useHeight && useSize)
       dest-> height = 0;
    if ( !useWidth && ( usePitch || useHeight || useName || useSize || useDir || useStyle))
@@ -196,7 +198,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
    if ( useHeight)
       dest-> size = 0;
 
-   // validating entries
+   /* validating entries */
    if ( dest-> height <= 0) dest-> height = 1;
       else if ( dest-> height > 16383 ) dest-> height = 16383;
    if ( dest-> width  <  0) dest-> width  = 1;
@@ -509,7 +511,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
       abc[i]. a = ( abc[i]. a < 0) ? - abc[i]. a : 0;
    }
 
-// macro for adding string/chunk into result table
+/* macro for adding string/chunk into result table */
 #define lAdd(end) {                                       \
    IV l = end - start;                                \
    char *c = nil;                                         \
@@ -543,7 +545,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
    start += l;                                            \
 }
 
-// determining ~ character location
+/* determining ~ character location */
     if ( t-> options & twCalcMnemonic) {
        for ( i = 0; i < t-> textLen - 1; i++)
           if ( text[ i] == '~') {
@@ -557,7 +559,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
              }
           }
     }
-// scanning line accumulating widths and breaking if necessary
+/* scanning line accumulating widths and breaking if necessary */
     t-> count = 0;
     w = abc[ text[ 0]]. a;
     for ( i = 0; i < t-> textLen; i++)
@@ -600,10 +602,10 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
        if ( doWidthBreak && w + winc + inc > t-> width)
        {
           if (( i - start == 0) || (( i - 1 == tildeIndex) && ( i - start == 1))) {
-            // case when even single char could not fit in given width.
+            /* case when even single char could not fit in given width. */
              if ( t-> options & twBreakSingle)
              {
-                // do not return anything in this case
+                /* do not return anything in this case */
                 int j;
                 if (!( t-> options & twReturnChunks)) {
                    for ( j = 0; j < t-> count; j++) free( ret[ j]);
@@ -612,14 +614,14 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                 t-> count = 0;
                 return ret;
              } else
-                // or fit this character
+                /* or fit this character */
                 lAdd( i + 1);
           } else {
              unsigned char * c;
              lAdd( i);
              if ( t-> options & twWordBreak)
              {
-                // checking whether break was at word boundary
+                /* checking whether break was at word boundary */
                 unsigned char rc = text[ i];
                 int len;
                 if ( t-> options & twReturnChunks)
@@ -632,7 +634,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                   len = strlen(( const char *) c);
                 }
                 if ( rc != ' ' && rc != '\t' && rc != '\n') {
-                   // determining whether this line could be split
+                   /* determining whether this line could be split */
                    IV j;
                    Bool ok = false;
                    for ( j = len; j >= 0; j--)
@@ -651,16 +653,16 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                    }
                 }
              }
-             i--; // repeat again
+             i--; /* repeat again */
           }
           w = 0;
           continue;
        } else
           w += winc;
     }
-// adding or skipping last line
+/* adding or skipping last line */
     if ( t-> textLen - start > 0 || t-> count == 0) lAdd( t-> textLen);
-// removing ~ and determining it's location
+/* removing ~ and determining it's location */
     if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
         unsigned char *l = ( unsigned char *) ret[ tildeLine];
         t-> t_char = l[ tildePos+1];
@@ -673,7 +675,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
     } else {
         t-> t_start = t-> t_end = t-> t_line = -1;
     }
-// expanding tabs
+/* expanding tabs */
     if (( t-> options & twExpandTabs) && !(t-> options & twReturnChunks) && wasTab)
     {
        for ( i = 0; i < t-> count; i++)
@@ -856,7 +858,7 @@ Drawable_palette( Handle self, Bool set, SV * palette)
    if ( set) {
       free( var-> palette);
       var-> palette = read_palette( &var-> palSize, palette);
-      if ( colors == 0 && var-> palSize == 0) return nilSV; // do not bother apc
+      if ( colors == 0 && var-> palSize == 0) return nilSV; /* do not bother apc */
       apc_gp_set_palette( self);
    } else {
       AV * av = newAV();

@@ -67,7 +67,7 @@ produce_mask( Handle self)
    }   
 
    if ( bpp == imMono) {
-      // mono case simplifies our task
+      /* mono case simplifies our task */
       int  j = var-> maskSize;
       Byte * mask = var-> mask;
       memcpy ( var-> mask, var-> data, var-> dataSize);
@@ -78,7 +78,7 @@ produce_mask( Handle self)
       return;
    }
 
-   // convert to 8 bit
+   /* convert to 8 bit */
    switch ( bpp)
    {
    case im16:
@@ -93,13 +93,13 @@ produce_mask( Handle self)
       break;
    }
 
-   if ( var-> autoMasking == amAuto) {  // calculate transparent color
+   if ( var-> autoMasking == amAuto) {  /* calculate transparent color */
       Byte corners [4];
       Byte counts  [4] = {1, 1, 1, 1};
       RGBColor rgbcorners[4];
       int j = var-> lineSize, k;
 
-      // retrieving corner pixels
+      /* retrieving corner pixels */
       switch ( bpp2) {
       case im16:
          corners[ 0] = area8[ 0] >> 4;
@@ -144,7 +144,7 @@ produce_mask( Handle self)
          break;
       }
 
-      // preliminary ponos comparison
+      /* preliminary comparison to a transparent color candidate ( hack ) */
       for ( j = 0; j < 4; j++) {
          if (
              (( rgbcorners[j]. b) == 0) &&
@@ -156,10 +156,10 @@ produce_mask( Handle self)
          }
       }
 
-      color = corners[ 3]; // our wild (and possibly bad) guess
+      color = corners[ 3]; /* our wild (and possibly bad) guess */
       rgbcolor = rgbcorners[ 3];
 
-      // sorting
+      /* sorting */
       for ( j = 0; j < 3; j++)
          for (k = 0; k < 3; k++)
             if ( corners[ k] < corners[ k + 1]) {
@@ -167,7 +167,7 @@ produce_mask( Handle self)
                corners[ k] = corners[ k + 1];
                corners[ k + 1] = l;
             }
-      // forming maximum's vector
+      /* forming maximum's vector */
       i = 0;
       for (j = 0; j < 3; j++) if ( corners[ j + 1] == corners[ j]) counts[ i]++; else i++;
       for (j = 0; j < 3; j++)
@@ -186,7 +186,7 @@ produce_mask( Handle self)
       } else {
          int colorsToCompare = ( counts[0] == 2) ? 2 : 4;
 
-         // compare to ponos
+         /* compare to that yellowish hue... */
          for ( j = 0; j < colorsToCompare; j++)
             if (( rgbcorners[j]. b < 20) &&
                 ( rgbcorners[j]. r > 100) &&
@@ -199,7 +199,7 @@ produce_mask( Handle self)
                goto colorFound;
             }
 
-         // compare to ponos in a MicroSoft's terminology
+         /* compare to MicroSoft Pink */
          for ( j = 0; j < colorsToCompare; j++)
             if (( rgbcorners[j]. g < 20) &&
                 ( rgbcorners[j]. r > 200) &&
@@ -213,7 +213,7 @@ produce_mask( Handle self)
 colorFound:;
    } 
 
-   // processing transparency
+   /* processing transparency */
    memset( var-> mask, 0, var-> maskSize);
    src  = area8;
    for ( i = 0; i < h; i++, dest += var-> maskLine, src += var-> lineSize) {
@@ -251,7 +251,7 @@ colorFound:;
       }
    }
 
-   // finalize
+   /* finalize */
    if ( bpp != im256 && bpp != im16 && bpp != imRGB) {
       free ( var-> data);
       var-> data = area8;

@@ -59,6 +59,8 @@
    #define BROKEN_COMPILER       1
    extern double                 NAN;
    #define __INLINE__
+#elif defined(sgi) && !defined(__GNUC__)
+   #define __INLINE__           
 #else
    #define __INLINE__            __inline__
 #endif
@@ -304,7 +306,15 @@ extern void *
 prima_mallocz( size_t sz);
 
 typedef I32 Bool;
-typedef UV Handle;
+#if PTRSIZE==LONGSIZE
+typedef unsigned long Handle;
+#elif PTRSIZE==INTSIZE
+typedef unsigned int Handle;
+#elif PTRSIZE==SHORTSIZE
+typedef unsigned short Handle;
+#else
+#error "Cannot find adequate integer type"
+#endif
 typedef Handle ApiHandle;
 typedef long Color;
 
@@ -1255,7 +1265,7 @@ extern SV **temporary_prf_Sv;
 
 #ifdef __GNUC__
 #define SvBOOL(sv) ({ SV *svsv = sv; SvTRUE(svsv);})
-#elif defined( __BORLANDC__)
+#elif defined(__BORLANDC__) || defined(sgi)
 extern Bool SvBOOL( SV *sv);
 #else
 __INLINE__ Bool
@@ -1263,7 +1273,7 @@ SvBOOL( SV *sv)
 {
    return SvTRUE(sv);
 }
-#endif /* __GNUC__ */
+#endif 
 
 #define pexist( key) hv_exists( profile, # key, strlen( #key))
 #define pdelete( key) hv_delete( profile, # key, strlen( #key), G_DISCARD)
@@ -1323,7 +1333,7 @@ SvBOOL( SV *sv)
 #define CWidget(h)                      (PWidget(h)-> self)
 #define PWindow(h)                      TransmogrifyHandle(Window,(h))
 #define CWindow(h)                      (PWindow(h)-> self)
-#endif POLLUTE_NAME_SPACE
+#endif 
 
 
 /* mapping functions */
@@ -2427,7 +2437,7 @@ typedef enum {
    ropOrPattern,        /* dest |= pattern */
    ropNotSrcOrPat,      /* dest |= pattern | (!src) */
    ropSrcLeave,         /* dest = (src != fore color) ? src : figa */
-   ropDestLeave,        /* dest = (src != back color) ? src : figa */
+   ropDestLeave         /* dest = (src != back color) ? src : figa */
 } ROP;
 #define ROP(const_name) CONSTANT(rop,const_name)
 START_TABLE(rop,UV)

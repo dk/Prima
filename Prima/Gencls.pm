@@ -2002,7 +2002,7 @@ SD
      print HEADER <<LABEL;
 
 typedef struct _${ownCType}_vmt {
-// internal runtime classifiers
+/* internal runtime classifiers */
    char *$hClassName;
    void *$hSuper;
    void *$hBase;
@@ -2010,7 +2010,7 @@ typedef struct _${ownCType}_vmt {
    VmtPatch *patch;
    int patchLength;
    int vmtSize;
-// methods definition
+/* methods definition */
 LABEL
 
       for ( my $i = 0; $i <= $#allMethods; $i++)
@@ -2026,7 +2026,7 @@ LABEL
 extern P${ownCType}_vmt C${ownCType};
 
 typedef struct _$ownCType {
-// internal pointers
+/* internal pointers */
    P${ownCType}_vmt $hSelf;
 LABEL
                                                       # vmt
@@ -2034,7 +2034,7 @@ if ($baseClass) { print HEADER "   P${baseCType}_vmt " } else { print HEADER "  
 print HEADER "$hSuper;\n";
 print HEADER "   SV  *$hMate;\n";
 print HEADER "   struct _AnyObject *killPtr;\n";
-print HEADER "// instance variables \n";
+print HEADER "/* instance variables */\n";
 
 
      foreach (@allVars)                                  # variables
@@ -2049,7 +2049,7 @@ print HEADER "// instance variables \n";
   {
      my $whatToReg = $genObject ? "Class" : "Package";
      print HEADER "extern void register_${ownCType}_${whatToReg}( void);\n\n";
-     print HEADER "//Local methods definitions\n";
+     print HEADER "/* Local methods definitions */\n";
      for ( my $i = 0; $i <= $#allMethods; $i++)
      {
         my $id = $allMethods[$i];
@@ -2186,7 +2186,7 @@ CONTAINED_STRUCTURE
 
                                                 # constructor & destructor
       print HEADER "\n";
-      print HEADER "// patches\n";
+      print HEADER "/* patches */\n";
       print HEADER "extern ${baseCType}_vmt ${baseCType}Vmt;\n" if ( $baseClass && !$genDyna);
       print HEADER "extern ${ownCType}_vmt ${ownCType}Vmt;\n\n";
       print HEADER "static VmtPatch ${ownCType}VmtPatch[] =\n";    # patches
@@ -2198,13 +2198,13 @@ CONTAINED_STRUCTURE
          if ( $j) { print HEADER ','} ;
          print HEADER "\n  { &(${ownCType}Vmt. $id), (void*)${ownCType}_${id}_REDEFINED, \"$id\"}";
       }
-      print HEADER "\n  {nil,nil,nil} // M\$C empty struct error" unless scalar @newMethods;
+      print HEADER "\n  {nil,nil,nil} /* M\$C empty struct error */" unless scalar @newMethods;
       print HEADER "\n};\n\n";
 
       my $lpCount = $#newMethods + 1;
       print HEADER <<LABEL;
 
-//Class virtual methods table
+/* Class virtual methods table */
 ${ownCType}_vmt ${ownCType}Vmt = {
    \"${ownOClass}\",
    ${\($baseClass && !$genDyna ? "\&${baseCType}Vmt" : "nil")},
@@ -2252,7 +2252,7 @@ LABEL
    if ( $genPackage)
    {
       my $whatToReg = $genObject ? "Class" : "Package";
-      print HEADER "void register_${ownCType}_${whatToReg}()\n";   # registration proc
+      print HEADER "void register_${ownCType}_${whatToReg}( void)\n";   # registration proc
       print HEADER "{";
       if ( $genObject)
       {
@@ -2284,9 +2284,9 @@ SD
   if ( $genTml) {                                        #3 - class.tml
      open HEADER, ">$dirOut$ownFile.tml" or die "APC009: Cannot open $dirOut$ownFile.tml\n";
      print HEADER <<LABEL;
-// This file was automatically generated.
-// Do not edit, you'll loose your changes anyway.
-/*  file: $ownFile.tml   */
+/* This file was automatically generated.
+ Do not edit, you'll loose your changes anyway.
+ file: $ownFile.tml   */
 
 LABEL
 

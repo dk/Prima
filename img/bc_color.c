@@ -40,9 +40,9 @@ if ( r > 255) { er -= ( r - 255); r = 255; } else { er = 0; }
 
 
 
-// Bitstroke convertors
-// Mono
-// 1-> 16
+/* Bitstroke convertors */
+/* Mono */
+/* 1-> 16 */
 void
 bc_mono_nibble( register Byte * source, register Byte * dest, register int count)
 {
@@ -77,7 +77,7 @@ bc_mono_nibble( register Byte * source, register Byte * dest, register int count
    }
 }
 
-// 1-> mapped 16
+/* 1-> mapped 16 */
 void
 bc_mono_nibble_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref)
 {
@@ -112,7 +112,7 @@ bc_mono_nibble_cr( register Byte * source, register Byte * dest, register int co
    }
 }
 
-//  1 -> 256
+/*  1 -> 256 */
 void
 bc_mono_byte( register Byte * source, register Byte * dest, register int count)
 {
@@ -144,7 +144,7 @@ bc_mono_byte( register Byte * source, register Byte * dest, register int count)
    }
 }
 
-//  1 -> mapped 256
+/*  1 -> mapped 256 */
 void
 bc_mono_byte_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref)
 {
@@ -177,7 +177,7 @@ bc_mono_byte_cr( register Byte * source, register Byte * dest, register int coun
 }
 
 
-//  1 -> gray
+/*  1 -> gray */
 void
 bc_mono_graybyte( register Byte * source, register Byte * dest, register int count, register PRGBColor palette)
 {
@@ -212,7 +212,7 @@ bc_mono_graybyte( register Byte * source, register Byte * dest, register int cou
 }
 
 
-//  1 -> rgb
+/*  1 -> rgb */
 void
 bc_mono_rgb( register Byte * source, Byte * dest, register int count, register PRGBColor palette)
 {
@@ -246,8 +246,8 @@ bc_mono_rgb( register Byte * source, Byte * dest, register int count, register P
 }
 
 
-//  Nibble
-// 16-> 1
+/*  Nibble */
+/* 16-> 1 */
 void
 bc_nibble_mono_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref)
 {
@@ -277,7 +277,7 @@ bc_nibble_mono_cr( register Byte * source, register Byte * dest, register int co
    }
 }
 
-// 16-> 1, halftone
+/* 16-> 1, halftone */
 void
 bc_nibble_mono_ht( register Byte * source, register Byte * dest, register int count, register PRGBColor palette, int lineSeqNo)
 {
@@ -314,7 +314,7 @@ bc_nibble_mono_ht( register Byte * source, register Byte * dest, register int co
    }
 }
 
-// 16-> 1, error diffusion
+/* 16-> 1, error diffusion */
 void
 bc_nibble_mono_ed( register Byte * source, register Byte * dest, register int count, register PRGBColor palette)
 {
@@ -352,7 +352,7 @@ bc_nibble_mono_ed( register Byte * source, register Byte * dest, register int co
    }
 }   
 
-// map 16
+/* map 16 */
 void
 bc_nibble_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref)
 {
@@ -366,7 +366,7 @@ bc_nibble_cr( register Byte * source, register Byte * dest, register int count, 
    }
 }
 
-//  16 -> 256
+/*  16 -> 256 */
 void
 bc_nibble_byte( register Byte * source, register Byte * dest, register int count)
 {
@@ -385,7 +385,7 @@ bc_nibble_byte( register Byte * source, register Byte * dest, register int count
    }
 }
 
-//  16 -> gray
+/*  16 -> gray */
 void
 bc_nibble_graybyte( register Byte * source, register Byte * dest, register int count, register PRGBColor palette)
 {
@@ -411,7 +411,7 @@ bc_nibble_graybyte( register Byte * source, register Byte * dest, register int c
 }
 
 
-// 16 -> mapped 256
+/* 16 -> mapped 256 */
 void
 bc_nibble_byte_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref)
 {
@@ -431,7 +431,7 @@ bc_nibble_byte_cr( register Byte * source, register Byte * dest, register int co
 }
 
 
-// 16-> rgb
+/* 16-> rgb */
 void
 bc_nibble_rgb( register Byte * source, Byte * dest, register int count, register PRGBColor palette)
 {
@@ -451,8 +451,8 @@ bc_nibble_rgb( register Byte * source, Byte * dest, register int count, register
    }
 }
 
-// Byte
-// 256-> 1
+/* Byte */
+/* 256-> 1 */
 void
 bc_byte_mono_cr( register Byte * source, Byte * dest, register int count, register Byte * colorref)
 {
@@ -478,7 +478,7 @@ bc_byte_mono_cr( register Byte * source, Byte * dest, register int count, regist
    }
 }
 
-// byte-> mono, halftoned
+/* byte-> mono, halftoned */
 void
 bc_byte_mono_ht( register Byte * source, register Byte * dest, register int count, PRGBColor palette, int lineSeqNo)
 {
@@ -512,7 +512,7 @@ bc_byte_mono_ht( register Byte * source, register Byte * dest, register int coun
    }
 }
 
-// byte-> mono, halftoned
+/* byte-> mono, halftoned */
 void
 bc_byte_mono_ed( register Byte * source, register Byte * dest, register int count, PRGBColor palette)
 {
@@ -548,7 +548,7 @@ bc_byte_mono_ed( register Byte * source, register Byte * dest, register int coun
    
 }   
 
-// 256-> 16
+/* 256-> 16 */
 void
 bc_byte_nibble_cr( register Byte * source, Byte * dest, register int count, register Byte * colorref)
 {
@@ -562,7 +562,7 @@ bc_byte_nibble_cr( register Byte * source, Byte * dest, register int count, regi
    if ( tail) *dest = colorref[ *source] << 4;
 }
 
-// 256-> 16 cubic halftoned
+/* 256-> 16 cubic halftoned */
 void
 bc_byte_nibble_ht( register Byte * source, Byte * dest, register int count, register PRGBColor palette, int lineSeqNo)
 {
@@ -596,7 +596,7 @@ bc_byte_nibble_ht( register Byte * source, Byte * dest, register int count, regi
    }
 }
 
-// 256-> 16 cubic, error diffusion
+/* 256-> 16 cubic, error diffusion */
 void
 bc_byte_nibble_ed( register Byte * source, Byte * dest, register int count, register PRGBColor palette)
 {
@@ -631,7 +631,7 @@ bc_byte_nibble_ed( register Byte * source, Byte * dest, register int count, regi
    }
 }
 
-// map 256
+/* map 256 */
 void
 bc_byte_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref)
 {
@@ -640,7 +640,7 @@ bc_byte_cr( register Byte * source, register Byte * dest, register int count, re
    while ( count--) *dest-- = colorref[ *source--];
 }
 
-// 256-> gray
+/* 256-> gray */
 void
 bc_byte_graybyte( register Byte * source, register Byte * dest, register int count, register PRGBColor palette)
 {
@@ -651,7 +651,7 @@ bc_byte_graybyte( register Byte * source, register Byte * dest, register int cou
    }
 }
 
-// 256-> rgb
+/* 256-> rgb */
 void
 bc_byte_rgb( register Byte * source, Byte * dest, register int count, register PRGBColor palette)
 {
@@ -661,8 +661,8 @@ bc_byte_rgb( register Byte * source, Byte * dest, register int count, register P
    while ( count--) *rdest-- = palette[ *source--];
 }
 
-// Gray Byte
-// gray-> mono, halftoned
+/* Gray Byte */
+/* gray-> mono, halftoned */
 void
 bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo)
 {
@@ -694,7 +694,7 @@ bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int 
    }
 }
 
-// gray-> mono, error diffusion
+/* gray-> mono, error diffusion */
 void
 bc_graybyte_mono_ed( register Byte * source, register Byte * dest, register int count)
 {
@@ -729,7 +729,7 @@ bc_graybyte_mono_ed( register Byte * source, register Byte * dest, register int 
    
 }   
 
-// gray -> 16 gray
+/* gray -> 16 gray */
 void
 bc_graybyte_nibble_ht( register Byte * source, Byte * dest, register int count, int lineSeqNo)
 {
@@ -758,7 +758,7 @@ bc_graybyte_nibble_ht( register Byte * source, Byte * dest, register int count, 
    }
 }
 
-// gray -> 16 gray, error diffusion
+/* gray -> 16 gray, error diffusion */
 void
 bc_graybyte_nibble_ed( register Byte * source, Byte * dest, register int count)
 {
@@ -784,7 +784,7 @@ bc_graybyte_nibble_ed( register Byte * source, Byte * dest, register int count)
    }   
 }   
 
-// gray-> rgb
+/* gray-> rgb */
 void
 bc_graybyte_rgb( register Byte * source, Byte * dest, register int count)
 {
@@ -802,9 +802,9 @@ bc_graybyte_rgb( register Byte * source, Byte * dest, register int count)
    }
 }
 
-// RGB
+/* RGB */
 
-// rgb -> gray
+/* rgb -> gray */
 void
 bc_rgb_graybyte( Byte * source, register Byte * dest, register int count)
 {
@@ -816,7 +816,7 @@ bc_rgb_graybyte( Byte * source, register Byte * dest, register int count)
    }
 }
 
-// rgb-> mono, halftoned
+/* rgb-> mono, halftoned */
 void
 bc_rgb_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo)
 {
@@ -881,15 +881,15 @@ bc_rgb_mono_ed( Byte * source, register Byte * dest, register int count)
    }   
 }   
 
-// rgb -> nibble, no halftoning
-__INLINE__ Byte
+/* rgb -> nibble, no halftoning */
+Byte
 rgb_color_to_16( register Byte b, register Byte g, register Byte r)
 {
-   // 1 == 255
-   // 2/3 == 170
-   // 1/2 == 128
-   // 1/3 == 85
-   // 0 == 0
+   /* 1 == 255 */
+   /* 2/3 == 170 */
+   /* 1/2 == 128 */
+   /* 1/3 == 85 */
+   /* 0 == 0 */
    int rg, dist = 384;
    Byte code = 0;
    Byte mask = 8;
@@ -928,7 +928,7 @@ bc_rgb_nibble( register Byte *source, Byte *dest, int count)
       *dest = rgb_color_to_16(source[0],source[1],source[2]) << 4;
 }
 
-// rgb-> 8 halftoned
+/* rgb-> 8 halftoned */
 void
 bc_rgb_nibble_ht( register Byte * source, Byte * dest, register int count, int lineSeqNo)
 {
@@ -992,7 +992,7 @@ bc_rgb_nibble_ed( Byte * source, register Byte * dest, register int count)
    }   
 }   
 
-// rgb-> 256 cubic
+/* rgb-> 256 cubic */
 void
 bc_rgb_byte( Byte * source, register Byte * dest, register int count)
 {
@@ -1005,7 +1005,7 @@ bc_rgb_byte( Byte * source, register Byte * dest, register int count)
 }
 
 
-// rgb-> 256 cubic, halftoned
+/* rgb-> 256 cubic, halftoned */
 void
 bc_rgb_byte_ht( Byte * source, register Byte * dest, register int count, int lineSeqNo)
 {
@@ -1042,7 +1042,7 @@ bc_rgb_byte_ed( Byte * source, register Byte * dest, register int count)
    }   
 }   
    
-// bitstroke copiers
+/* bitstroke copiers */
 void
 bc_nibble_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width)
 {

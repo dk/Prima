@@ -36,8 +36,8 @@
 #include "Window.h"
 #include "Application.h"
 
-#define SORT(a,b)       ({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
-#define REVERT(a)	({ XX-> size. y + XX-> menuHeight - (a) - 1; })
+#define SORT(a,b)       { int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
+#define REVERT(a)	( XX-> size. y + XX-> menuHeight - (a) - 1)
 
 Bool
 apc_widget_map_points( Handle self, Bool toScreen, int n, Point *p)
@@ -124,12 +124,12 @@ apc_widget_get_z_order( Handle self, int zOrderId)
             break;
          }   
       }   
-      if ( found < 0) { // if !clipOwner
+      if ( found < 0) { /* if !clipOwner */
          ret = self;
          goto EXIT; 
       }   
       i = found + inc;
-      if ( i < 0 || i >= count) goto EXIT; // last in line
+      if ( i < 0 || i >= count) goto EXIT; /* last in line */
    } else
       i = ( zOrderId == zoFirst) ? count - 1 : 0;
    
@@ -303,8 +303,9 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    if ( XT_IS_WINDOW(X(owner)) && PWindow(owner)-> menu)
       XRaiseWindow( DISP, PComponent(PWindow(owner)-> menu)-> handle);
 
-   XX-> size = (Point){0,0};
-   XX-> ackOrigin = XX-> ackSize = ( Point){0,0};
+   XX-> size. x = XX-> size. y = 
+   XX-> ackOrigin. x = XX-> ackOrigin. y = 
+   XX-> ackSize. x = XX-> ackOrigin. y = 0;
 
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
 
@@ -365,7 +366,9 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
       Point so = CWidget(owner)-> get_size( owner);
       XDrawable dc;
       Region region;
-      XRectangle xr = {0,0,sz.x,sz.y};
+      XRectangle xr = {0,0,0,0};
+      xr. width = sz.x;
+      xr. height = sz.y;
   
       CWidget(owner)-> begin_paint( owner);
       dc = X(owner)-> gdrawable;
@@ -495,12 +498,18 @@ Rect
 apc_widget_get_invalid_rect( Handle self)
 {
    DEFXX;
+   Rect ret;
    XRectangle r;
-   if ( !XX-> invalid_region)
-      return (Rect){0,0,0,0};
+   if ( !XX-> invalid_region) {
+      Rect r = {0,0,0,0}; 
+      return r;
+   }
    XClipBox( XX-> invalid_region, &r);
-   return (Rect){r.x, XX-> size.y + XX-> menuHeight - r.height - r.y, 
-                 r.x + r.width, XX-> size.y + XX-> menuHeight - r.y};
+   ret. left = r.x;
+   ret. bottom = XX-> size.y + XX-> menuHeight - r.height - r.y; 
+   ret. right = r.x + r.width;
+   ret. top =  XX-> size.y + XX-> menuHeight - r.y;
+   return ret;
 }
 
 Point
@@ -508,6 +517,7 @@ apc_widget_get_pos( Handle self)
 {
    DEFXX;
    XWindow r;
+   Point ret;
    int x, y, w, h, d, b;
 
    if ( XX-> type. window) {
@@ -524,8 +534,9 @@ apc_widget_get_pos( Handle self)
    
    XGetGeometry( DISP, X_WINDOW, &r, &x, &y, &w, &h, &b, &d);
    XTranslateCoordinates( DISP, XX-> parentHandle, guts. root, x, y, &x, &y, &r);
-   y = DisplayHeight( DISP, SCREEN) - y - w; 
-   return ( Point) { x, y};    
+   ret. x = x;
+   ret. y = DisplayHeight( DISP, SCREEN) - y - w; 
+   return ret;
 }
 
 Bool
@@ -918,7 +929,8 @@ apc_widget_set_pos( Handle self, int x, int y)
    bzero( &e, sizeof( e));
    e. cmd = cmMove;
    e. gen. source = self;
-   XX-> origin = e. gen. P = (Point){x,y};
+   XX-> origin. x = e. gen. P. x = x;
+   XX-> origin. y = e. gen. P. y = y;
    y = X(XX-> owner)-> size. y + X(XX-> owner)-> menuHeight - XX-> size.y - y;
    if ( XX-> parentHandle) {
       XWindow cld;
@@ -1020,7 +1032,8 @@ apc_widget_set_size( Handle self, int width, int height)
       return apc_window_set_client_size( self, width - rc. left - rc. right, height - rc. bottom - rc. top);
    }   
    
-   widg-> virtualSize = (Point){width,height};
+   widg-> virtualSize. x = width;
+   widg-> virtualSize. y = height;
 
    width = ( width > 0)
       ? (( width >= widg-> sizeMin. x)

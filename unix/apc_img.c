@@ -1,4 +1,4 @@
-/*-
+/*
  * Copyright (c) 1997-2000 The Protein Laboratory, University of Copenhagen
  * All rights reserved.
  *
@@ -34,9 +34,9 @@
 #include "Icon.h"
 #include "DeviceBitmap.h"
 
-#define REVERT(a)	({ XX-> size. y + XX-> menuHeight - (a) - 1; })
-#define SHIFT(a,b)	({ (a) += XX-> gtransform. x + XX-> btransform. x; \
-                           (b) += XX-> gtransform. y + XX-> btransform. y; })
+#define REVERT(a)	( XX-> size. y + XX-> menuHeight - (a) - 1 )
+#define SHIFT(a,b)	{ (a) += XX-> gtransform. x + XX-> btransform. x; \
+                           (b) += XX-> gtransform. y + XX-> btransform. y; }
 /* Multiple evaluation macro! */
 #define REVERSE_BYTES_32(x) ((((x)&0xff)<<24) | (((x)&0xff00)<<8) | (((x)&0xff0000)>>8) | (((x)&0xff000000)>>24))
 #define REVERSE_BYTES_16(x) ((((x)&0xff)<<8 ) | (((x)&0xff00)>>8))
@@ -1044,8 +1044,8 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
          drawable = application;
          maxRank = RANK_LOCKED; 
       }
-      // make mapping to all colors except RANK_NORMAL 
-      // to promote Widget::palette() usage
+      /* make mapping to all colors except RANK_NORMAL 
+       to promote Widget::palette() usage */
       for ( i = 0; i < pass-> palSize; i++) {
          int j = guts. mappingPlace[i] = prima_color_find(( Handle) img, 
             RGB_COMPOSITE( 
@@ -1165,7 +1165,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
          tempResult = true;
          ls = ( i-> bytes_per_line > result-> bytes_per_line_alias) ? 
             result-> bytes_per_line_alias : i-> bytes_per_line;
-         src = i-> data;
+         src = ( unsigned char *) i-> data;
          dst = result-> data_alias;
          for ( j = 0; j < yLen; j++, src += i-> bytes_per_line, dst += result-> bytes_per_line_alias) 
             memcpy( dst, src, ls);
@@ -1546,7 +1546,7 @@ static Bool mbsInitialized = false;
 static Byte set_bits[ByteValues];
 static Byte clear_bits[ByteValues];
 
-static void mbs_init_bits()
+static void mbs_init_bits(void)
 {
    if ( !mbsInitialized) {
       int i;
@@ -1655,15 +1655,15 @@ static void mbs_##type##_in( type * srcData, type * dstData, Bool xreverse,    \
     }                                                                   \
 }   
 
-BS_BYTEEXPAND( Pixel8);
-BS_BYTEEXPAND( Pixel16);
-BS_BYTEEXPAND( Pixel24);
-BS_BYTEEXPAND( Pixel32);
+BS_BYTEEXPAND( Pixel8)
+BS_BYTEEXPAND( Pixel16)
+BS_BYTEEXPAND( Pixel24)
+BS_BYTEEXPAND( Pixel32)
 
-BS_BYTEIMPACT( Pixel8);
-BS_BYTEIMPACT( Pixel16);
-BS_BYTEIMPACT( Pixel24);
-BS_BYTEIMPACT( Pixel32);
+BS_BYTEIMPACT( Pixel8)
+BS_BYTEIMPACT( Pixel16)
+BS_BYTEIMPACT( Pixel24)
+BS_BYTEIMPACT( Pixel32)
 
 
 static void mbs_copy( Byte * srcData, Byte * dstData, Bool xreverse,  
