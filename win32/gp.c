@@ -133,21 +133,41 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
 
+int
+arc_completion( double angleStart, double angleEnd, int * needFigure)
+{
+   int max;
+   double diff = abs( angleEnd - angleStart);
+   if ( diff == 0) {
+      *needFigure = false;
+      return 0;
+   }
+   if ( diff < 360) {
+      *needFigure = true;
+      return 0;
+   }
+
+   max = (int)(diff / 360);
+   *needFigure = ( max * 360) != diff;
+   if ( max == 1) return 1;
+   return ( max < 3) ? max : ( max % 2);
+}
+
 Bool
 apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 { objCheck false; {
+   int compl, needf, maxRad = radX > radY ? radX : radY;
    HDC     ps = sys ps;
    STYLUS_USE_PEN( ps);
+   compl = arc_completion( angleStart, angleEnd, &needf);
    y = sys lastSize. y - y;
-   // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
-   if ( angleEnd == angleStart) return true;
-   if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
-       Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
-   if ( angleEnd - angleStart == 360) return true;
+   while( compl--)
+      Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
+   if ( !needf) return true;
    if ( !Arc(
        ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-       x + cos( angleStart / GRAD) * radX, y - sin( angleStart / GRAD) * radY,
-       x + cos( angleEnd / GRAD) * radX,   y - sin( angleEnd / GRAD) * radY
+       x + cos( angleStart / GRAD) * maxRad + 0.5, y - sin( angleStart / GRAD) * maxRad + 0.5,
+       x + cos( angleEnd / GRAD) * maxRad + 0.5,   y - sin( angleEnd / GRAD) * maxRad + 0.5
    )) apiErrRet;
    return true;
 }}
@@ -198,20 +218,17 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
    Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
+   int compl, needf, maxRad = radX > radY ? radX : radY;
+   compl = arc_completion( angleStart, angleEnd, &needf);
    STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y;
-   if ( angleEnd == angleStart) return true;
-   if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1) {
-      // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
+   while ( compl--)
       Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
-   }
-   if ( angleEnd - angleStart != 360) {
-      if ( !( ok = Chord(
-          ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-          x + cos( angleStart / GRAD) * radX, y - sin( angleStart / GRAD) * radY,
-          x + cos( angleEnd / GRAD) * radX,   y - sin( angleEnd / GRAD) * radY
-      ))) apiErr;
-   }
+   if ( !( ok = !needf || Chord(
+       ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
+       x + cos( angleStart / GRAD) * maxRad + 0.5, y - sin( angleStart / GRAD) * maxRad + 0.5,
+       x + cos( angleEnd / GRAD) * maxRad + 0.5,   y - sin( angleEnd / GRAD) * maxRad + 0.5
+   ))) apiErr;
    SelectObject( ps, old);
    return ok;
 }}
@@ -278,28 +295,29 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
    HDC     ps = sys ps;
    HGDIOBJ old;
    Bool   comp;
+   int compl, needf, maxRad = radX > radY ? radX : radY;
 
-   if ( angleEnd == angleStart) return true;
+   compl = arc_completion( angleStart, angleEnd, &needf);
    comp = stylus_complex( &sys stylus, ps);
    y = sys lastSize. y - y;
    STYLUS_USE_BRUSH( ps);
    if ( comp) {
       old  = SelectObject( ps, hPenHollow);
-      if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+      while ( compl--)
          if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1))) apiErr;
-      if ( !( ok = Chord(
+      if ( !( ok = !needf || Chord(
           ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1,
-          x + cos( angleStart / GRAD) * radX,   y - sin( angleStart / GRAD) * radY,
-          x + cos( angleEnd / GRAD) * radX + 1, y - sin( angleEnd / GRAD) * radY + 1
+          x + cos( angleStart / GRAD) * maxRad + 0.5,   y - sin( angleStart / GRAD) * maxRad + 0.5,
+          x + cos( angleEnd / GRAD) * maxRad + 0.5 + 1, y - sin( angleEnd / GRAD) * maxRad + 0.5 + 1
       ))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
-      if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+      while ( compl--)
          if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY))) apiErr;
-      if ( !( ok = Chord(
+      if ( !( ok = !needf || Chord(
           ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-          x + cos( angleStart / GRAD) * radX,   y - sin( angleStart / GRAD) * radY,
-          x + cos( angleEnd / GRAD) * radX + 1, y - sin( angleEnd / GRAD) * radY + 1
+          x + cos( angleStart / GRAD) * maxRad + 0.5,   y - sin( angleStart / GRAD) * maxRad + 0.5,
+          x + cos( angleEnd / GRAD) * maxRad + 0.5 + 1, y - sin( angleEnd / GRAD) * maxRad + 0.5 + 1
       ))) apiErr;
    }
    SelectObject( ps, old);
@@ -435,30 +453,34 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    int newY  = sys lastSize. y - y;
    POINT   pts[ 3];
    Bool comp;
+   int compl, needf, maxRad = radX > radY ? radX : radY;
+
+   compl = arc_completion( angleStart, angleEnd, &needf);
 
    if ( angleEnd == angleStart) return true;
    comp = stylus_complex( &sys stylus, ps);
-   pts[ 0]. x = x + cos( angleEnd / GRAD) * radX;
-   pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY;
-   pts[ 1]. x = x + cos( angleStart / GRAD) * radX;
-   pts[ 1]. y = newY - sin( angleStart / GRAD) * radY;
+
+   pts[ 0]. x = x + cos( angleEnd / GRAD) * maxRad + 0.5;
+   pts[ 0]. y = newY - sin( angleEnd / GRAD) * maxRad + 0.5;
+   pts[ 1]. x = x + cos( angleStart / GRAD) * maxRad + 0.5;
+   pts[ 1]. y = newY - sin( angleStart / GRAD) * maxRad + 0.5;
+
    STYLUS_USE_BRUSH( ps);
    y = newY;
-   // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
    if ( comp) {
       old = SelectObject( ps, hPenHollow);
-      if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+      while ( compl--)
          if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1))) apiErr;
-      if ( !( ok = Pie(
+      if ( !( ok = !needf || Pie(
           ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1,
           pts[ 1]. x, pts[ 1]. y,
           pts[ 0]. x, pts[ 0]. y
       ))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
-      if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+      while ( compl--)
          if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY))) apiErr;
-      if ( !( ok = Pie(
+      if ( !( ok = !needf || Pie(
           ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
           pts[ 1]. x, pts[ 1]. y,
           pts[ 0]. x, pts[ 0]. y
@@ -550,28 +572,26 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
 {objCheck false;{
    Bool ok = true;
    HDC     ps = sys ps;
-   int     newY = sys lastSize. y - y;
+   int compl, needf, maxRad = radX > radY ? radX : radY, newY = sys lastSize. y - y;
    POINT   pts[ 2];
    HGDIOBJ old;
 
-   if ( angleEnd == angleStart) return true;
+   compl = arc_completion( angleStart, angleEnd, &needf);
    old = SelectObject( ps, hBrushHollow);
-   pts[ 0]. x = x + cos( angleEnd / GRAD) * radX;
-   pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY;
-   pts[ 1]. x = x + cos( angleStart / GRAD) * radX;
-   pts[ 1]. y = newY - sin( angleStart / GRAD) * radY;
+   pts[ 0]. x = x + cos( angleEnd / GRAD) * maxRad + 0.5;
+   pts[ 0]. y = newY - sin( angleEnd / GRAD) * maxRad + 0.5;
+   pts[ 1]. x = x + cos( angleStart / GRAD) * maxRad + 0.5;
+   pts[ 1]. y = newY - sin( angleStart / GRAD) * maxRad + 0.5;
    STYLUS_USE_PEN( ps);
    y = newY;
-   // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
-   if (( angleEnd >= angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+   while ( compl--)
        Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
-   if ( angleEnd - angleStart != 360) {
-      if ( !( ok = Pie(
-          ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-          pts[ 1]. x, pts[ 1]. y,
-          pts[ 0]. x, pts[ 0]. y
-      ))) apiErr;
-   }
+   if ( !( ok = !needf || Pie(
+       ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
+       pts[ 1]. x, pts[ 1]. y,
+       pts[ 0]. x, pts[ 0]. y
+   ))) apiErr;
+
    SelectObject( ps, old);
    return ok;
 }}
