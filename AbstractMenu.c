@@ -52,11 +52,11 @@ key_normalize( const char * key)
 
    for (;;) {
       if (*key == '^')
-	 r |= kbCtrl;
+	 r |= kmCtrl;
       else if (*key == '@')
-	 r |= kbAlt;
+	 r |= kmAlt;
       else if (*key == '#')
-	 r |= kbShift;
+	 r |= kmShift;
       else
 	 break;
       key++;
@@ -699,8 +699,8 @@ AbstractMenu_sub_call_id ( Handle self, int sysId)
 
 #define keyRealize( key)     if ((( key & 0xFF) >= 'A') && (( key & 0xFF) <= 'z')) \
                              key = tolower( key & 0xFF) |                          \
-                                (( key & ( kbCtrl | kbAlt)) ?                      \
-                                ( key & ( kbCtrl | kbAlt | kbShift))               \
+                                (( key & ( kmCtrl | kmAlt)) ?                      \
+                                ( key & ( kmCtrl | kmAlt | kmShift))               \
                              : 0)
 
 Bool
