@@ -622,6 +622,8 @@ apc_widget_set_pos( Handle self, int x, int y)
    DEFXX;
    Event e;
 
+   if ( x == XX-> origin. x && y == XX-> origin. y)
+      return true;
    bzero( &e, sizeof( e));
    e. cmd = cmMove;
    e. gen. source = self;
@@ -666,6 +668,10 @@ apc_widget_set_size( Handle self, int width, int height)
 	      : widg-> sizeMax. y)
 	  : widg-> sizeMin. y)
       : 1;
+   
+   if ( XX-> size. x == width && XX-> size. y == height) {
+      return true;
+   }
 
    e. gen. source = self;
    e. cmd = cmSize;
