@@ -231,6 +231,7 @@ sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
    return if $mod & km::DeadKey;
+   
    $mod &= ( km::Shift|km::Ctrl|km::Alt);
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
    my $offset = $self-> charOffset;
@@ -317,7 +318,7 @@ sub on_keydown
 
    if ( $key == kb::Backspace)
    {
-       if ( $offset > 0 || $start != $end)
+       if ( !$self-> {readOnly} && ($offset > 0 || $start != $end))
        {
           if ( $start != $end)
           {
@@ -336,7 +337,7 @@ sub on_keydown
    }
    if ( $key == kb::Delete)
    {
-       if ( $offset < $caplen || $start != $end)
+       if ( !$self-> {readOnly} && ( $offset < $caplen || $start != $end))
        {
           my $del;
           if ( $start != $end)
@@ -370,7 +371,9 @@ sub on_keydown
    }
 
 # typing part
-   if  (( $code & 0xFF) &&
+   
+   if  (!$self-> {readOnly} &&
+        ( $code & 0xFF) &&
        (( $mod  & (km::Alt | km::Ctrl)) == 0) &&
        (( $key == kb::NoKey) || ( $key == kb::Space))
       )
@@ -415,7 +418,7 @@ sub copy
 sub paste
 {
    my $self = $_[0];
-   return if $self->{writeOnly};
+   return if $self->{readOnly};
    my $cap = $self-> text;
    my ( $start, $end) = $self-> selection;
    ($start, $end) = ( $self-> charOffset, $self-> charOffset) if $start == $end;
@@ -435,7 +438,7 @@ sub delete
    my $cap = $self-> text;
    substr( $cap, $start, $end - $start) = '';
    $self-> selection(0,0);
-   $self-> text( $cap);
+   $self-> text( $cap) unless $self-> {readOnly};
 }
 
 sub cut
@@ -447,7 +450,7 @@ sub cut
    my $del = substr( $cap, $start, $end - $start);
    substr( $cap, $start, $end - $start) = '';
    $self-> selection(0,0);
-   $self-> text( $cap);
+   $self-> text( $cap) unless $self-> {readOnly};
    $::application-> Clipboard-> store( 'Text', $del) unless $self->{writeOnly};
 }
 
