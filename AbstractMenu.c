@@ -12,30 +12,46 @@ typedef Bool MenuProc ( Handle self, PMenuItemReg m, void * params);
 typedef MenuProc *PMenuProc;
 
 static int
-key_normalize( char * key)
+key_normalize( const char * key)
 {
-   char *eptr;
-   int r = strtol( key, &eptr, 10);
-   if ( eptr != key) return (( r < 0) || ( r > 9)) ? r : r + '0';
-   while ( key[0])
-   {
-      switch ( key[0])
-      {
-         case '^' : r |= kbCtrl;  break;
-         case '@' : r |= kbAlt;   break;
-         case '#' : r |= kbShift; break;
-      default:
-         goto Away;
-      }
+   /*
+    *   Valid keys:
+    *      keycode as a string representing decimal number;
+    *      any combination of ^, @, #  (Control, Alt, Shift) plus
+    *         exactly one character - lowercase and get ascii code of this
+    *         fN - function key, N is a number from 1 to 16 inclusive
+    *   All other combinations will result in kbNoKey returned
+    */
+   int r = 0, r1;
+
+   for (;;) {
+      if (*key == '^')
+	 r |= kbCtrl;
+      else if (*key == '@')
+	 r |= kbAlt;
+      else if (*key == '#')
+	 r |= kbShift;
+      else
+	 break;
       key++;
    }
-   Away:
-   if ( key[0] == 0) return r;
-   if ( tolower( key[0]) == 'f')
-   {
-      int l = atol( ++key);
-      return r | ((( l > 0) && ( l < 17)) ? kbF1 + (--l << 8) : 'f');
-   } else return r | tolower( key[0]);
+   if (!*key) return kbNoKey;  /* #, ^, @ alone are not allowed */
+   if (!key[1]) {
+      return r | tolower(*key);
+   } else {
+      char *e;
+      if (isdigit(*key)) {
+	 if (r) return kbNoKey;
+	 r = strtol( key, &e, 10);
+	 if (*e) return kbNoKey;
+	 return r;
+      } else if (tolower(*key) != 'f')
+	 return kbNoKey;
+      key++;
+      r1 = strtol( key, &e, 10);
+      if (*e || r1 < 1 || r1 > 16) return kbNoKey;
+      return r | (kbF1 + ((r1-1) << 8));
+   }
 }
 
 void
