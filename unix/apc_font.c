@@ -953,9 +953,9 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       f-> flags. defaultChar     = true;
       f-> font. defaultChar      = s-> default_char;
       f-> flags. firstChar       = true;
-      f-> font.  firstChar       = s-> min_byte1 * 255 + s-> min_char_or_byte2;
+      f-> font.  firstChar       = s-> min_byte1 * 256 + s-> min_char_or_byte2;
       f-> flags. lastChar        = true;
-      f-> font.  lastChar        = s-> max_byte1 * 255 + s-> max_char_or_byte2;
+      f-> font.  lastChar        = s-> max_byte1 * 256 + s-> max_char_or_byte2;
       f-> flags. direction       = true;
       f-> font.  direction       = 0;
 

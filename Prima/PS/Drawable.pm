@@ -1572,6 +1572,12 @@ sub get_font_abc
    return \@ret;
 }
 
+sub get_font_ranges
+{
+   my $self = $_[0];
+   return [ $self-> {font}-> {firstChar}, $self-> {font}-> {lastChar}];
+}
+
 sub get_text_width
 {
    my ( $self, $text, $len, $addOverhang) = @_;

@@ -3060,6 +3060,9 @@ apc_gp_get_clip_rect( Handle self);
 extern PFontABC
 apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode);
 
+extern unsigned long *
+apc_gp_get_font_ranges( Handle self, int * count);
+
 extern FillPattern *
 apc_gp_get_fill_pattern( Handle self);
 

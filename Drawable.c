@@ -357,6 +357,25 @@ Drawable_get_font_abc( Handle self, int first, int last, Bool unicode)
    return newRV_noinc(( SV *) av);
 }
 
+SV *
+Drawable_get_font_ranges( Handle self)
+{
+   int count = 0;
+   unsigned long * ret;
+   AV * av = newAV();
+   gpARGS;
+   gpENTER;
+   ret = apc_gp_get_font_ranges( self, &count);
+   gpLEAVE;
+   if ( ret) {
+      int i;
+      for ( i = 0; i < count; i++) 
+         av_push( av, newSViv( ret[i]));
+      free( ret);
+   }
+   return newRV_noinc(( SV *) av);
+}
+
 
 SV *
 Drawable_get_handle( Handle self)

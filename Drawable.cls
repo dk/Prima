@@ -73,6 +73,7 @@ object Prima::Drawable ( Prima::Component)
    method int   get_bpp();
    method Font  get_font();
    method SV *  get_font_abc( int first = -1, int last = -1, Bool unicode = 0);
+   method SV *  get_font_ranges();
    method SV *  get_handle();
    method Color get_nearest_color( Color color);
    method int   get_paint_state();
