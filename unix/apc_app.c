@@ -176,6 +176,8 @@ window_subsystem_init( void)
    guts. depth = DefaultDepth( DISP, SCREEN);
    guts. byte_order = ImageByteOrder( DISP);
    guts. bit_order = BitmapBitOrder( DISP);
+   
+   guts. files = plist_create( 16, 16);
    prima_wm_init();
    prima_init_font_subsystem();
 /*    XSynchronize( DISP, true); */
@@ -205,6 +207,9 @@ window_subsystem_done( void)
 
    if (DISP) XCloseDisplay( DISP);
    DISP = nil;
+   
+   plist_destroy( guts. files);
+   guts. files = nil;
 
    DOLBUG( "Total X events: %ld\n", guts. total_events);
    DOLBUG( "Handled X events: %ld\n", guts. handled_events);
@@ -372,15 +377,76 @@ apc_application_get_size( Handle self)
    };
 }
 
+typedef struct {
+   int no;
+   void *sub;
+   void *glob;
+} FileList, *PFileList;
+
+Bool
+apc_watch_filehandle( int no, void *sub, void *glob)
+{
+   PFileList f = malloc( sizeof( FileList));
+   f->no = no;
+   f->sub = sub;
+   f->glob = glob;
+   list_add( guts.files, (Handle)f);
+   return true;
+}
+
+void
+apc_watch_notify( PFileList f, int kind)
+{
+   dSP;
+   ENTER;
+   SAVETMPS;
+   PUSHMARK( sp);
+   EXTEND( sp, 2);
+   PUSHs((SV*)f->glob);
+   PUSHs( sv_2mortal( newSViv( kind)));
+   PUTBACK;
+#ifdef PERL_CALL_SV_DIE_BUG_AWARE
+   perl_call_sv(( SV *) f->sub, G_DISCARD|G_EVAL);
+   if ( SvTRUE( GvSV( errgv))) {
+      croak( SvPV( GvSV( errgv), na));
+   }
+#else
+   perl_call_sv(( SV *) f->sub, G_DISCARD);
+#endif
+   SPAGAIN; FREETMPS; LEAVE;
+}
+
+#ifdef PerlIO
+typedef PerlIO *FileStream;
+#else
+#define PERLIO_IS_STDIO 1
+typedef FILE *FileStream;
+#define PerlIO_fileno(f) fileno(f)
+#endif
+
+static Bool
+sweep_files( Handle item, void *dummy)
+{
+   PFileList f = (PFileList)item;
+   FileStream s;
+
+   s = IoIFP(sv_2io(f->glob));
+   if (!s) {
+      list_delete( guts.files, item);
+   }
+   return false;
+}
+
 Bool
 apc_application_go( Handle self)
 {
 /*NCI*/
    XEvent ev, next_event;
-   fd_set read_set;
+   fd_set read_set, write_set, excpt_set;
    int connection = ConnectionNumber( DISP);
+   int max_fd;
    struct timeval timeout;
-   int r, n;
+   int r, n, i;
 
    XNoOp( DISP);
    XFlush( DISP);
@@ -392,7 +458,19 @@ apc_application_go( Handle self)
 	 goto FetchAndProcess;
       }
       FD_ZERO( &read_set);
+      FD_ZERO( &write_set);
+      FD_ZERO( &excpt_set);
       FD_SET( connection, &read_set);
+      max_fd = connection;
+      list_first_that( guts.files, sweep_files, nil);
+      for ( i = 0; i < guts.files->count; i++) {
+	 PFileList f = (PFileList)list_at( guts.files,i);
+	 FD_SET( f->no, &read_set);
+	 FD_SET( f->no, &write_set);
+	 FD_SET( f->no, &excpt_set);
+	 if ( f->no > max_fd)
+	    max_fd = f->no;
+      }
       if ( guts. oldest) {
 	 if ( gettimeofday( &timeout, nil) != 0) {
 	    croak( "apc_application_go() gettimeofday() returned: %s", strerror( errno));
@@ -442,7 +520,7 @@ apc_application_go( Handle self)
 	 timeout. tv_usec = 200000;
       }
 
-      if (( r = select( connection+1, &read_set, nil, nil, &timeout)) > 0 &&
+      if (( r = select( connection+1, &read_set, &write_set, &excpt_set, &timeout)) > 0 &&
 	  FD_ISSET( connection, &read_set)) {
 	 if (( n = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
 	    /* just like tcl/perl tk do, to avoid an infinite loop */
@@ -474,8 +552,26 @@ FetchAndProcess:
       } else if ( r < 0) {
 	 fprintf( stderr, "select() error: %d\n", errno);
       } else {
- 	 XNoOp( DISP);
- 	 XFlush( DISP);
+	 if ( r > 0) {
+	    for ( i = 0; i < guts.files->count; i++) {
+	       PFileList f = (PFileList)list_at( guts.files,i);
+	       if ( FD_ISSET( f->no, &read_set)) {
+		  apc_watch_notify( f, 1);
+		  break;
+	       }
+	       if ( FD_ISSET( f->no, &write_set)) {
+		  apc_watch_notify( f, 2);
+		  break;
+	       }
+	       if ( FD_ISSET( f->no, &excpt_set)) {
+		  apc_watch_notify( f, 3);
+		  break;
+	       }
+	    }
+	 } else {
+	    XNoOp( DISP);
+	    XFlush( DISP);
+	 }
       }
       {
 	 PPaintList pl = guts. paint_list;

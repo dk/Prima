@@ -125,6 +125,7 @@ struct _UnixGuts
    Display *display;
    int screen_number;
    PHash windows;
+   PList files;
    NPoint resolution;
    int depth;
    int byte_order;
