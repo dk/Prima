@@ -229,3 +229,10 @@ apc_clipboard_deregister_format( long id)
    // Windows doesn't have such functionality. Such a strange malfunction
 }
 
+ApiHandle
+apc_clipboard_get_handle( Handle self)
+{
+   return nilHandle;
+}
+
+

@@ -1,5 +1,6 @@
 #ifndef _WIN32_H_
 #define _WIN32_H_
+#define _WIN32_WINNT 0x400
 #include <windows.h>
 #include <winspool.h>
 #include "apricot.h"
@@ -41,7 +42,6 @@
 #define WM_POSTAL                         ( WM_USER + 3)
 #define WM_DLGENTERMODAL                  ( WM_USER + 4)
 #define WM_BREAKMSGLOOP                   ( WM_USER + 5)
-#define WM_FONTCHANGED                    ( WM_USER + 6)
 #define WM_COLORCHANGED                   ( WM_USER + 7)
 #define WM_MOUSEENTER                     ( WM_USER + 8)
 #define WM_MOUSEEXIT                      ( WM_USER + 9)
@@ -137,6 +137,7 @@ typedef struct _WinGuts
     Bool           focSysGranted;      // SetFocus() was called inside apc_widget_set_focused
     UINT           errorMode;          // SetErrorMode() result
     DWORD          version;            // GetVersion() cached result
+    Point          smDblClk;           // cached SM_CxDOUBLECLK values
 } WinGuts, *PWinGuts;
 
 

@@ -110,3 +110,9 @@ apc_timer_stop( Handle self)
    sys s. timer. active = false;
 }
 
+ApiHandle
+apc_timer_get_handle( Handle self)
+{
+   return ( ApiHandle) var handle;
+}
+

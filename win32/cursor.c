@@ -77,6 +77,8 @@ apc_pointer_get_hot_spot( Handle self)
    else {
       r. x = ii. xHotspot;
       r. y = ii. yHotspot;
+      DeleteObject( ii. hbmMask);
+      DeleteObject( ii. hbmColor);
    }
    return r;
 }
@@ -137,6 +139,8 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    }
    dc_free();
    for ( j = 0; j < i-> maskSize; j++)  i-> mask[ j] = ~i-> mask[ j];
+   DeleteObject( ii. hbmMask);
+   DeleteObject( ii. hbmColor);
 }
 
 Bool

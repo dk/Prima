@@ -26,6 +26,10 @@ stylus_alloc( PStylus data)
    PDCStylus ret = hash_fetch( stylusMan, data, sizeof( Stylus) - ( extPen ? 0 : sizeof( EXTPEN)));
    if ( ret == nil) {
       LOGPEN * p;
+
+      if ( IS_WIN95 && ( hash_count( stylusMan) > 128))
+         stylus_clean();
+
       ret = malloc( sizeof( DCStylus));
       memcpy( &ret-> s, data, sizeof( Stylus));
       ret-> refcnt = 0;
@@ -375,6 +379,12 @@ destroy_font_hash( void)
 }
 
 
+static Bool _ft_cleaner( PDCFont f, int keyLen, void * key, void * dummy) {
+   if ( f-> refcnt <= 0) font_free( f);
+   return false;
+}
+
+
 PDCFont
 font_alloc( Font * data, Point * resolution)
 {
@@ -382,6 +392,10 @@ font_alloc( Font * data, Point * resolution)
    if ( ret == nil) {
       LOGFONT logfont;
       PFont   f;
+
+      if ( IS_WIN95 && ( hash_count( fontMan) > 128))
+         hash_first_that( fontMan, _ft_cleaner, nil, nil, nil);
+
       ret = malloc( sizeof( DCFont));
       memcpy( f = &ret-> font, data, sizeof( Font));
       ret-> refcnt = 0;
@@ -421,25 +435,24 @@ font_change( Handle self, Font * font)
 void
 font_logfont2font( LOGFONT * lf, Font * f, Point * res)
 {
+   TEXTMETRIC tm;
+   HDC dc = dc_alloc();
+   HFONT hf = SelectObject( dc, CreateFontIndirect( lf));
+
+   GetTextMetrics( dc, &tm);
+   DeleteObject( SelectObject( dc, hf));
+   dc_free();
+
    if ( !res) res = &guts. displayResolution;
-   if ( lf-> lfHeight <= 0) {
-      HDC dc = dc_alloc();
-      HFONT hf = SelectObject( dc, CreateFontIndirect( lf));
-      TEXTMETRIC tm;
-      GetTextMetrics( dc, &tm);
-      f-> height = tm. tmHeight;
-      DeleteObject( SelectObject( dc, hf));
-      dc_free();
-   } else
-     f-> height            = lf-> lfHeight;
-   f-> size                = f-> height * 72.0 / res-> y + 0.5;
+   f-> height              = tm. tmHeight;
+   f-> size                = ( f-> height - tm. tmInternalLeading) * 72.0 / res-> y + 0.5;
    f-> width               = lf-> lfWidth ? lf-> lfWidth : C_NUMERIC_UNDEF;
    f-> direction           = lf-> lfEscapement;
    f-> style               = 0 |
-      ( lf-> lfItalic     ? ftItalic     : 0) |
-      ( lf-> lfUnderline  ? ftUnderlined : 0) |
-      ( lf-> lfStrikeOut  ? ftStruckOut  : 0) |
-     (( lf-> lfWeight >= 700) ? ftBold   : 0);
+      ( lf-> lfItalic     ? fsItalic     : 0) |
+      ( lf-> lfUnderline  ? fsUnderlined : 0) |
+      ( lf-> lfStrikeOut  ? fsStruckOut  : 0) |
+     (( lf-> lfWeight >= 700) ? fsBold   : 0);
    f-> pitch               = ((( lf-> lfPitchAndFamily & 3) == DEFAULT_PITCH) ? fpDefault :
       ((( lf-> lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
    strncpy( f-> name, lf-> lfFaceName, LF_FACESIZE);
@@ -454,10 +467,10 @@ font_font2logfont( Font * f, LOGFONT * lf)
    lf-> lfWidth            = f-> width;
    lf-> lfEscapement       = f-> direction;
    lf-> lfOrientation      = f-> direction;
-   lf-> lfWeight           = ( f-> style & ftBold)       ? 800 : 400;
-   lf-> lfItalic           = ( f-> style & ftItalic)     ? 1 : 0;
-   lf-> lfUnderline        = ( f-> style & ftUnderlined) ? 1 : 0;
-   lf-> lfStrikeOut        = ( f-> style & ftStruckOut)  ? 1 : 0;
+   lf-> lfWeight           = ( f-> style & fsBold)       ? 800 : 400;
+   lf-> lfItalic           = ( f-> style & fsItalic)     ? 1 : 0;
+   lf-> lfUnderline        = ( f-> style & fsUnderlined) ? 1 : 0;
+   lf-> lfStrikeOut        = ( f-> style & fsStruckOut)  ? 1 : 0;
    lf-> lfCharSet          = f-> codepage;
    lf-> lfOutPrecision     = OUT_TT_PRECIS;
    lf-> lfClipPrecision    = CLIP_DEFAULT_PRECIS;
@@ -472,14 +485,14 @@ font_font2logfont( Font * f, LOGFONT * lf)
 void
 font_textmetric2fontmetric( TEXTMETRIC * tm, FontMetric * fm)
 {
-   fm-> nominalSize            = tm-> tmHeight * 72.0 / guts. displayResolution.y + 0.5;
+   fm-> nominalSize            = ( tm-> tmHeight - tm-> tmInternalLeading) * 72.0 / guts. displayResolution.y + 0.5;
    fm-> width                  = tm-> tmAveCharWidth;
    fm-> height                 = tm-> tmHeight;
    fm-> style                  = 0 |
-                                 ( tm-> tmItalic     ? ftItalic     : 0) |
-                                 ( tm-> tmUnderlined ? ftUnderlined : 0) |
-                                 ( tm-> tmStruckOut  ? ftStruckOut  : 0) |
-                                 (( tm-> tmWeight >= 700) ? ftBold   : 0);
+                                 ( tm-> tmItalic     ? fsItalic     : 0) |
+                                 ( tm-> tmUnderlined ? fsUnderlined : 0) |
+                                 ( tm-> tmStruckOut  ? fsStruckOut  : 0) |
+                                 (( tm-> tmWeight >= 700) ? fsBold   : 0);
    fm-> pitch                  =
       (( tm-> tmPitchAndFamily & TMPF_FIXED_PITCH)               ? fpVariable : fpFixed) |
       (( tm-> tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? fpVector   : fpRaster);
@@ -1275,6 +1288,7 @@ palette_change( Handle self)
    l. p = p;
    list_first_that( &l.l, pal_collect, &l);
    cm_squeeze_palette( p, xlp. palNumEntries, d, nColors);
+   xlp. palNumEntries = nColors;
 
    for ( i = 0; i < nColors; i++) {
       xlp. palPalEntry[ i]. peRed    = d[ i]. r;

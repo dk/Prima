@@ -395,6 +395,12 @@ apc_gp_get_pixel( Handle self, int x, int y)
    return remap_color(( Color) c, false);
 }
 
+ApiHandle
+apc_gp_get_handle( Handle self)
+{
+   return ( ApiHandle) sys ps;
+}
+
 void
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 {
