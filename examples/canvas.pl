@@ -18,6 +18,8 @@ sub profile_default
       paneSize   => [ 0, 0],
       paneWidth  => 0,
       paneHeight => 0,
+      alignment  => ta::Left,
+      valignment => ta::Bottom,
    }
 }
 
@@ -35,10 +37,10 @@ sub init
 {
    my ( $self, %profile) = @_;
    $self->{zoom} = 1;
-   $self->{$_} = 0 for qw(paneWidth paneHeight);
+   $self->{$_} = 0 for qw(paneWidth paneHeight alignment valignment);
    $self->{objects} = [];
    %profile = $self-> SUPER::init(%profile);
-   $self-> $_($profile{$_}) for qw(zoom paneWidth paneHeight);
+   $self-> $_($profile{$_}) for qw(zoom paneWidth paneHeight alignment valignment);
    return %profile;
 }
 
@@ -46,8 +48,6 @@ sub on_paint
 {
    my ( $self, $canvas) = @_;
    $canvas-> clear;
-   my @d = $self-> deltas;
-   my @i = $self-> indents;
    my $zoom = $self->{zoom};
    my @c = $canvas-> clipRect;
    my %props;
@@ -74,6 +74,182 @@ sub on_paint
    $canvas-> translate(0,0);
    $canvas-> clipRect(@c);
 }
+
+sub on_mousedown
+{
+   my ( $self, $btn, $mod, $x, $y) = @_;
+   $self-> propagate_mouse_event( 'on_mousedown', $x, $y, $btn, $mod, $x, $y);
+}
+
+sub on_mouseup
+{
+   my ( $self, $btn, $mod, $x, $y) = @_;
+   $self-> propagate_mouse_event( 'on_mouseup', $x, $y, $btn, $mod, $x, $y);
+}
+
+sub on_mousemove
+{
+   my ( $self, $mod, $x, $y) = @_;
+   $self-> propagate_mouse_event( 'on_mousemove', $x, $y, $mod, $x, $y);
+}
+
+sub on_mouseclick
+{
+   my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
+   $self-> propagate_mouse_event( 'on_mousemove', $x, $y, $mod, $x, $y, $dbl);
+}
+
+sub delete_object
+{
+   my ( $self, $obj) = ( shift, shift);
+   @{$self->{objects}} = grep { $_ != $obj } @{$self->{objects}};
+   $self-> {selection} = undef 
+      if $self->{selection} && $self->{selection} == $obj;
+   my @r = $self-> object2screen( $obj-> rect);
+   $self-> invalidate_rect( @r) if $obj-> visible;
+}
+
+sub insert_object
+{
+   my ( $self, $class) = ( shift, shift);
+   push @{$self->{objects}}, $class-> new(
+      @_,
+      owner => $self,
+   );
+   $self->{objects}->[-1];
+}
+
+sub object2screen
+{
+   my $self = $_[0];
+   my $i;
+   my @d = $self-> deltas;
+   my ( $ha, $va) = ( $self-> {alignment}, $self-> {valignment});
+   my ($x, $y) = $self-> get_active_area(2);
+   my @l = $self-> limits;
+   if ( $l[0] < $x) {
+      if ( $ha == ta::Left) {
+      } elsif ( $ha != ta::Right) {
+         $d[0] -= ($x - $l[0])/2;
+      } else {
+         $d[0] -= $x - $l[0];
+      }
+   }
+   if ( $l[1] < $y) {
+      if ( $va == ta::Top) {
+         $d[1] -= $y - $l[1];
+      } elsif ( $va != ta::Bottom) {
+         $d[1] -= ($y - $l[1])/2;
+      }
+   } else {
+      $d[1] = $l[1] - $y - $d[1];
+   }
+   $d[$_] -= $self->{indents}->[$_] for 0,1;
+   my $zoom = $self->{zoom};
+   my @ret;
+   for ( $i = 1; $i <= $#_; $i+=2) {
+      push @ret, $_[$i] * $zoom - $d[0];
+      push @ret, $_[$i+1] * $zoom - $d[1] if defined $_[$i+1];
+   }
+   return map {
+      ( $_ < 0) ?
+         int( $_ - .5) :
+         int( $_ + .5)
+   } @ret;
+}
+
+sub screen2object
+{
+   my $self = $_[0];
+   my $i;
+   my @d = $self-> deltas;
+   my ( $ha, $va) = ( $self-> {alignment}, $self-> {valignment});
+   my ($x, $y) = $self-> get_active_area(2);
+   my @l = $self-> limits;
+   if ( $l[0] < $x) {
+      if ( $ha == ta::Left) {
+      } elsif ( $ha != ta::Right) {
+         $d[0] -= ($x - $l[0])/2;
+      } else {
+         $d[0] -= $x - $l[0];
+      }
+   }
+   if ( $l[1] < $y) {
+      if ( $va == ta::Top) {
+         $d[1] -= $y - $l[1];
+      } elsif ( $va != ta::Bottom) {
+         $d[1] -= ($y - $l[1])/2;
+      }
+   } else {
+      $d[1] = $l[1] - $y - $d[1];
+   }
+   my $zoom = $self->{zoom};
+   my @ret;
+   $d[$_] -= $self->{indents}->[$_] for 0,1;
+   for ( $i = 1; $i <= $#_; $i+=2) {
+      push @ret, ($_[$i]   + $d[0]) / $zoom;
+      push @ret, ($_[$i+1] + $d[1]) / $zoom if defined $_[$i+1];
+   }
+   return map {
+      ( $_ < 0) ?
+         int( $_ - .5) :
+         int( $_ + .5)
+   } @ret;
+}
+
+sub position2object
+{
+   my ( $self, $x, $y, $skip_hittest) = @_;
+   my ( $nx, $ny) = $self-> screen2object( $x, $y);
+   $self-> push_event;
+   for my $obj ( @{$self->{objects}}) {
+      next unless $obj-> visible;
+      my @r = $obj-> rect;
+      if ( $r[0] <= $nx && $r[1] <= $ny && $r[2] >= $nx && $r[3] >= $ny) {
+         my @s = $self-> object2screen(@r[0,1]);
+         if ( $skip_hittest || $obj-> on_hittest( $x - $s[0], $y - $s[1])) {
+	    $self-> pop_event;
+	    return ($obj, $x - $s[0], $y - $s[1]);
+	 }
+      }
+   }
+   $self-> pop_event;
+   return;
+}
+
+sub propagate_mouse_event
+{
+   my ( $self, $event, $x, $y, @params) = @_;
+   my ( $obj, $nx, $ny) = $self-> position2object( $x, $y);
+   return unless $obj;
+   $self-> push_event;
+   $obj-> $event( @params);
+   $self-> pop_event;
+}
+
+sub reset_zoom
+{
+   my ( $self ) = @_;
+   $self-> limits( 
+      $self-> {paneWidth} * $self-> {zoom},
+      $self-> {paneHeight} * $self-> {zoom}
+   );
+}
+
+sub alignment
+{
+   return $_[0]->{alignment} unless $#_;
+   $_[0]->{alignment} = $_[1];
+   $_[0]->repaint;
+}
+
+sub valignment
+{
+   return $_[0]->{valignment} unless $#_;
+   $_[0]->{valignment} = $_[1];
+   $_[0]->repaint;
+}
+
 
 sub paneWidth
 {
@@ -110,45 +286,6 @@ sub paneSize
    $self-> repaint;
 }
 
-sub reset_zoom
-{
-   my ( $self ) = @_;
-   $self-> limits( 
-      $self-> {paneWidth} * $self-> {zoom},
-      $self-> {paneHeight} * $self-> {zoom}
-   );
-}
-
-sub screen2object
-{
-   my $self = $_[0];
-   my $i;
-   my @d = $self-> deltas;
-   my @i = $self-> indents;
-   my $zoom = $self->{zoom};
-   my @ret;
-   for ( $i = 1; $i <= $#_; $i+=2) {
-      push @ret, int(($_[$i]   + $d[0] - $i[0])/$zoom + .5);
-      push @ret, int(($_[$i+1] - $d[1] - $i[1])/$zoom + .5) if defined $_[$i+1];
-   }
-   return @ret;
-}
-
-sub object2screen
-{
-   my $self = $_[0];
-   my $i;
-   my @d = $self-> deltas;
-   my @i = $self-> indents;
-   my $zoom = $self->{zoom};
-   my @ret;
-   for ( $i = 1; $i <= $#_; $i+=2) {
-      push @ret, int(-$d[0] + $_[$i]   * $zoom + $i[0] + .5);
-      push @ret, int(+$d[1] + $_[$i+1] * $zoom + $i[1] + .5) if defined $_[$i+1];
-   }
-   return @ret;
-}
-
 sub zoom
 {
    return $_[0]->{zoom} unless $#_;
@@ -157,80 +294,6 @@ sub zoom
    $self->{zoom} = $zoom;
    $self-> reset_zoom;
    $self-> repaint;
-}
-
-sub position2object
-{
-   my ( $self, $x, $y, $skip_hittest) = @_;
-   my ( $nx, $ny) = $self-> screen2object( $x, $y);
-   $self-> push_event;
-   for my $obj ( @{$self->{objects}}) {
-      next unless $obj-> visible;
-      my @r = $obj-> rect;
-      if ( $r[0] <= $nx && $r[1] <= $ny && $r[2] >= $nx && $r[3] >= $ny) {
-         my @s = $self-> object2screen(@r[0,1]);
-         if ( $skip_hittest || $obj-> on_hittest( $x - $s[0], $y - $s[1])) {
-	    $self-> pop_event;
-	    return ($obj, $x - $s[0], $y - $s[1]);
-	 }
-      }
-   }
-   $self-> pop_event;
-   return;
-}
-
-sub propagate_mouse_event
-{
-   my ( $self, $event, $x, $y, @params) = @_;
-   my ( $obj, $nx, $ny) = $self-> position2object( $x, $y);
-   return unless $obj;
-   $self-> push_event;
-   $obj-> $event( @params);
-   $self-> pop_event;
-}
-
-sub on_mousedown
-{
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   $self-> propagate_mouse_event( 'on_mousedown', $x, $y, $btn, $mod, $x, $y);
-}
-
-sub on_mouseup
-{
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   $self-> propagate_mouse_event( 'on_mouseup', $x, $y, $btn, $mod, $x, $y);
-}
-
-sub on_mousemove
-{
-   my ( $self, $mod, $x, $y) = @_;
-   $self-> propagate_mouse_event( 'on_mousemove', $x, $y, $mod, $x, $y);
-}
-
-sub on_mouseclick
-{
-   my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
-   $self-> propagate_mouse_event( 'on_mousemove', $x, $y, $mod, $x, $y, $dbl);
-}
-
-sub insert_object
-{
-   my ( $self, $class) = ( shift, shift);
-   push @{$self->{objects}}, $class-> new(
-      @_,
-      owner => $self,
-   );
-   $self->{objects}->[-1];
-}
-
-sub delete_object
-{
-   my ( $self, $obj) = ( shift, shift);
-   @{$self->{objects}} = grep { $_ != $obj } @{$self->{objects}};
-   $self-> {selection} = undef 
-      if $self->{selection} && $self->{selection} == $obj;
-   my @r = $self-> object2screen( $obj-> rect);
-   $self-> invalidate_rect( @r) if $obj-> visible;
 }
 
 sub zorder
@@ -266,8 +329,16 @@ sub on_paint
 {
    my ( $self, $canvas) = @_;
    $self-> SUPER::on_paint( $canvas);
+   $canvas-> set(
+      linePattern => lp::Solid,
+      rop => rop::CopyPut,
+      lineWidth => 0,
+      color => 0,
+   );
+   my @r = $self-> object2screen( 0, 0, $self-> paneSize);
+   $canvas-> rectangle( $r[0]-1, $r[1]-1, $r[2]+1, $r[3]+1);
    return unless $self-> {selection};
-   my @r = $self-> object2screen($self->{selection}-> rect);
+   @r = $self-> object2screen($self->{selection}-> rect);
    $r[2]--;
    $r[3]--;
    $canvas-> rect_focus(@r);
@@ -304,10 +375,16 @@ sub on_mousemove
 {
    my ( $self, $mod, $x, $y) = @_;
    if ( $self-> {transaction}) {
+      my @p = $self-> paneSize;
       $x -= $self-> {anchor}->[0];
       $y -= $self-> {anchor}->[1];
       my @o = $self-> screen2object( $x, $y);
-      $self-> {transaction}-> origin( $self-> screen2object( $x, $y));
+      my @s = $self-> {transaction}-> size;
+      for ( 0..1) {
+         $o[$_] = 0 if $o[$_] < 0;
+	 $o[$_] = $p[$_] - $s[$_] - 1 if $o[$_] >= $p[$_] - $s[$_];
+      }
+      $self-> {transaction}-> origin( @o);
    }
    $self-> SUPER::on_mousemove( $mod, $x, $y);
 }
@@ -725,11 +802,13 @@ sub on_paint
       $canvas-> backColor( $self-> {fillBackColor});
       $canvas-> bar( 0, 0, $width - 1, $height - 1);
    }
+   $canvas-> clipRect( 0, 0, $canvas-> size);
    if ( $self-> {outline}) {
-      my $lw = int(($self-> {lineWidth} || 1) / 2);
+      my $lw1 = int(($self-> {lineWidth} || 1) / 2);
+      my $lw2 = int((($self-> {lineWidth} || 1) - 1) / 2) + 1;
       $canvas-> color( $self-> {color});
       $canvas-> backColor( $self-> {outlineBackColor});
-      $canvas-> rectangle( $lw, $lw, $width - $lw - 1, $height - $lw - 1);
+      $canvas-> rectangle( $lw1, $lw1, $width - $lw2, $height - $lw2);
    }
 }
 
@@ -750,8 +829,7 @@ sub on_paint
       my $lw = ($self-> {lineWidth} || 1) - 1;
       $canvas-> color( $self-> {color});
       $canvas-> backColor( $self-> {outlineBackColor});
-      $canvas-> ellipse( $cx, $cy,
-         $width - $lw, $height - $lw);
+      $canvas-> ellipse( $cx, $cy, $width - $lw, $height - $lw);
    }
 }
 
@@ -762,6 +840,7 @@ use Prima qw(ColorDialog);
 my ( $colordialog );
 
 my $w = Prima::MainWindow-> create(
+  text => 'Canvas demo',
   menuItems => [
      ['~Object' => [
         ['Rectangle' => '~Rectangle' => \&insert],
@@ -790,7 +869,14 @@ my $w = Prima::MainWindow-> create(
      ['~View' => [
         ['zoom+' =>  'Zoom in' => '+' => '+' => \&zoom],
         ['zoom-' =>  'Zoom out' => '-' => '-' => \&zoom],
-        ['zoom0' =>  'Zoom in' => 'Ctrl+1' => '^1' => \&zoom],
+        ['zoom0' =>  'Zoom 100%' => 'Ctrl+1' => '^1' => \&zoom],
+	[],
+	['Align ~horizontally' => [
+	   map { [ "alignment=$_", $_, \&align ]} qw(Left Center Right)
+	]],
+	['Align ~vertically' => [
+	   map { [ "valignment=$_", $_, \&align ]} qw(Top Center Bottom)
+	]],
      ]],
   ],
 );
@@ -870,6 +956,14 @@ sub zoom
    }
 }
 
-$c-> insert_object( 'Prima::Canvas::Rectangle', linePattern => lp::DotDot, lineWidth => 10);
+sub align
+{
+   my ( $self, $align) = @_;
+   my $c = $self-> Canvas;
+   $align =~ m/([^\=]+)\=(.*)$/;
+   $c-> $1( eval "ta::$2");
+}
+
+$c-> insert_object( 'Prima::Canvas::Rectangle', linePattern => lp::Solid, lineWidth => 10);
 
 run Prima;
