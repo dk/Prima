@@ -44,12 +44,11 @@ use constant DefButtonX => 17;
 # these are properties, methods and dynas of encapsulated widgets, edit and list
 
 %editProps = (
-   alignment      => 1, autoScroll  => 1, text        => 1, text        => 1,
+   alignment      => 1, autoScroll  => 1, text        => 1, select_all  => 1,
    charOffset     => 1, maxLen      => 1, insertMode  => 1, firstChar   => 1,
    selection      => 1, selStart    => 1, selEnd      => 1, writeOnly   => 1,
    copy           => 1, cut         => 1, 'delete'    => 1, paste       => 1,
    wordDelimiters => 1, readOnly    => 1, passwordChar=> 1, focus       => 1,
-   select_all     => 1,
 );
 
 %listProps = (
