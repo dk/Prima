@@ -228,8 +228,26 @@ A font with name C<Arial>, size 10, bold, italic. The C<fontconfig> syntax
 allows more than that, for example, arbitrary matrix transformations, but
 Prima can make use only of font name, size, and style flags.
 
+
+=over
+
+=item C<--no-xft>
+
 C<--no-xft> command-line argument, and boolean C<UseXFT.usexft> XRDB property 
 can be used to disable use of the Xft library.
+
+=item C<--font-priority>
+
+Can be set to either C<xft> or C<core>, to select a font provider mechanism
+to match unknown or incompletely specified fonts against.
+
+Default value: C<xft> ( if compiled in ), C<core> otherwise.
+
+=item C<--no-aa>
+
+If set, turns off Xft antialiasing.
+
+=back
 
 =head1 Colors
 
@@ -312,7 +330,7 @@ contain more than one palette, and allow ( or disallow ) modification of
 palette color cells depending on a visual, the palette is attributed to.
 
 A visual is a X server resource, containing representation of color coding
-scheme, color bit depth, and modifiability of the palette. X server can ( and
+scheme, color bit depth, and modificability of the palette. X server can ( and
 usually does ) provide more than one visual, as well as different bit depths.
 There are six classes of visuals in X paradigm. In each, Prima behaves
 differently, also depending on display bit depth available.  In particular,
@@ -335,7 +353,7 @@ extremely rarely met.
 =item GrayScale
 
 Contains modifiable color palette, and capable of displaying monochrome values
-only. Theoretically, and paletted display on a monochrome monitor can be
+only. Theoretically, any paletted display on a monochrome monitor can be
 treated as a GrayScale visual. For both I<GrayScale> and I<StaticGray> visuals
 Prima resorts to dithering if it cannot get at least 32 evenly spaced gray
 values from black to white.
@@ -343,7 +361,7 @@ values from black to white.
 =item StaticColor
 
 All color cells are read-only.  A typical example is a PC display in a 16-color
-640x480 (EGA) mode.  This visual is rarely met.
+EGA mode.  This visual is rarely met.
 
 =item PseudoColor
 
@@ -584,13 +602,14 @@ See L<Color> for more information.
 BUTTON is a number of X mouse button event, treated as 'mouse wheel down'
 event.
 
-Default value: 0 ( disabled )
+Default value: 5 ( default values for wheeldown and wheelup are current de-facto 
+most popular settings ).
 
 =item Wheelup.wheelup BUTTON
 
 BUTTON is a number of X mouse button event, treated as 'mouse wheel up' event.
 
-Default value: 0 ( disabled )
+Default value: 4
 
 =back
 
