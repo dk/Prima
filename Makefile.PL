@@ -1226,6 +1226,13 @@ sub setup_defines
     have_types_in( "sys/bitypes.h",
                    qw(u_int8_t u_int16_t u_int32_t u_int64_t));
 
+    have_types_in( "sys/inttypes.h",
+                   qw(int8_t int16_t int32_t));
+    have_types_in( "sys/inttypes.h",
+                   qw(uint8_t uint16_t uint32_t uint64_t));
+    have_types_in( "sys/inttypes.h",
+                   qw(u_int8_t u_int16_t u_int32_t u_int64_t));
+
     have_types_in( "stdint.h",
                    qw(int8_t int16_t int32_t));
     have_types_in( "stdint.h",

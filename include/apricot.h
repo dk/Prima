@@ -70,6 +70,12 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#ifdef HAVE_SYS_BITYPES_H
+#include <sys/bitypes.h>
+#endif
+#ifdef HAVE_SYS_INTTYPES_H
+#include <sys/inttypes.h>
+#endif
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
