@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Drawable - 2-D graphic interface
+Prima::Drawable - 2-D graphic interface
 
 =head1 DESCRIPTION
 

@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Window and Dialog - top-level window management
+Prima::Window - top-level window management
 
 =head1 DESCRIPTION 
 

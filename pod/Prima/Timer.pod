@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Timer - programmable periodical events
+Prima::Timer - programmable periodical events
 
 =head1 DESCRIPTION
 

@@ -2,7 +2,7 @@
 
 =head1 NAME 
 
-Problems, questionable or intricate topics in 2-D Graphics
+Prima::gp-problems - Problems, questionable or intricate topics in 2-D Graphics
 
 =head1 Introduction
 

@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Menu - pull-down and pop-up menu objects
+Prima::Menu - pull-down and pop-up menu objects
 
 =head1 DESCRIPTION 
 

@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Object and Component - Prima toolkit base classes
+Prima::Object - Prima toolkit base classes
 
 =head1 DESCRIPTION
 

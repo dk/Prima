@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-How to write a codec for Prima image subsystem
+Prima::codecs - How to write a codec for Prima image subsystem
 
 =head1 DESCRIPTION
 

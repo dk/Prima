@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-File - asynchronous stream I/O.
+Prima::File - asynchronous stream I/O.
 
 =head1 DESCRIPTION
 

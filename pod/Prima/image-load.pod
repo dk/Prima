@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Using image subsystem
+Prima::image-load - Using image subsystem
 
 =head1 DESCRIPTION
 

@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Image - Bitmap routines
+Prima::Image - Bitmap routines
 
 =head1 DESCRIPTION
 

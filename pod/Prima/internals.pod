@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Prima internal architecture
+Prima::internals - Prima internal architecture
 
 =head1 DESCRIPTION
 

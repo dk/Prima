@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Clipboard - GUI-driven intreprocess communication
+Prima::Clipboard - GUI-driven intreprocess communication
 
 =head1 DESCRIPTION
 
