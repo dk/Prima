@@ -34,6 +34,7 @@ BEGIN {
 require 5.00502;
 use strict;
 use Config;
+my %Config = %Config::Config; # original %Config is read-only
 use File::Find;
 use File::Basename;
 use File::Path;
@@ -597,6 +598,12 @@ sub setup_variables
         die "Unknown or unsupported compiler\n";
     }
     print "$cc_specs{ $COMPILER}->{ name}\n";
+
+    # Checking some Config.pm - were empty for ActiveState 626
+    $Config{PATCHLEVEL} = $Config{patchlevel} if !defined $Config{PATCHLEVEL} || !length $Config{PATCHLEVEL};
+    $Config{SUBVERSION} = $Config{subversion} if !defined $Config{SUBVERSION} || !length $Config{SUBVERSION};
+    $Config{ld} = ($Win32 ? 'link' : 'ld'), print("** warning: malformed Config.pm\n") 
+       unless length $Config{ld};
 
     my $ccflags   = $Config{ ccflags};
     my $warnflags = $cc_specs{ $COMPILER}->{ warnflags};
@@ -1199,7 +1206,9 @@ sub setup_misc
 
 perl Makefile.PL WANTNOCODECS=1
 
-to ignore this error.
+to ignore this error. Note that in this configuration Prima
+will not be able to work with graphic files. Please follow
+the instructions in README file.
 
 NOCODECS
 
