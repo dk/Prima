@@ -168,8 +168,9 @@ sub iterate
    my $i = 0;
    for ( @{$self->{items}}) {
       my $ret = $traverse->( $_, undef, $i++, 0, --$c ? 0 : 1);
-      return $ret if $ret;
+      undef $traverse, return $ret if $ret;
    }
+   undef $traverse;
 }
 
 sub adjust
@@ -792,6 +793,7 @@ sub reset_tree
       $traverse->( $_, 0, --$c ? 0 : 1);
       $stack[0]++;
    }
+   undef $traverse;
 
    $self-> {count} = $i;
 
@@ -943,6 +945,7 @@ sub validate_items
       splice( @$current, $spliceTo);
    };
    $traverse->( $items);
+   undef $traverse;
 }
 
 sub set_items
@@ -1272,6 +1275,7 @@ sub on_dragitem
        }
     };
     $traverse->( $fx);
+    undef $traverse;
     return if $found_inv;
 
 

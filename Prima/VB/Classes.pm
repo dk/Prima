@@ -3131,6 +3131,7 @@ sub set
       push( @$set, \@record);
    };
    $traverse->( $_, $setData) for @$data;
+   undef $traverse;
 #print "set:";
 #print Dumper( $setData);
    $self-> {B}-> items( $setData);
@@ -3198,6 +3199,7 @@ sub get
       push @$ret, \@in;
    };
    $traverse->( $_, $retData) for @{$self->{B}-> items};
+   undef $traverse;
 #print "get:";
 #print Dumper( $retData);
    return $retData;
@@ -3248,6 +3250,7 @@ sub write
       $c .= "], \n";
    };
    $traverse->( $_, 0) for @$data;
+   undef $traverse;
    return "\n[$c]";
 }
 
@@ -3413,6 +3416,7 @@ sub write
       $c .= "],\n";
    };
    $traverse->($_, 0) for @$data;
+   undef $traverse;
    return "\n[$c]";
 }
 
