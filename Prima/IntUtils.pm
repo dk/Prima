@@ -175,6 +175,7 @@ sub insert_bone
       size   => [ $self->{vScrollBar}-> width-2, $self->{hScrollBar}-> height-1],
       growMode  => gm::GrowLoX,
       widgetClass => wc::ScrollBar,
+      designScale => undef,
       onPaint   => sub {
          my ( $self, $canvas, $owner, $w, $h) = ($_[0], $_[1], $_[0]-> owner, $_[0]-> size);
          $canvas-> color( $self-> backColor);
@@ -200,8 +201,9 @@ sub set_h_scroll
          pointerType => cr::Arrow,
          width       => $self-> width - 2 * $bw + 2 - ( $self->{vScroll} ? $self->{vScrollBar}-> width - 2 : 0),
          delegations => ['Change'],
+         designScale => undef,
       );
-	  $self->setup_indents;
+      $self->setup_indents;
       if ( $self->{vScroll})
       {
          my $h = $self-> {hScrollBar}-> height;
@@ -212,7 +214,7 @@ sub set_h_scroll
          $self-> insert_bone;
       }
    } else {
-	  $self->setup_indents;
+      $self->setup_indents;
       $self->{hScrollBar}-> destroy;
       if ( $self->{vScroll})
       {
@@ -242,8 +244,9 @@ sub set_v_scroll
          growMode => gm::GrowLoX | gm::GrowHiY,
          pointerType  => cr::Arrow,
          delegations  => ['Change'],
+         designScale => undef,
       );
-	  $self->setup_indents;
+      $self->setup_indents;
       if ( $self->{hScroll})
       {
          $self-> {hScrollBar}->width(
@@ -253,7 +256,7 @@ sub set_v_scroll
          $self-> insert_bone;
       }
    } else {
-	  $self->setup_indents;
+      $self->setup_indents;
       $self-> {vScrollBar}-> destroy;
       if ( $self->{hScroll})
       {
