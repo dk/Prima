@@ -846,10 +846,12 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
          PUnixMenuItem ix;
          int x = 0;
          int stage = 0;
+         if ( w-> sz. x == ev-> xconfigure. width &&
+              w-> sz. y == ev-> xconfigure. height) return;
+         if ( guts. currentMenu == self) prima_end_menu();
          w-> sz. x = ev-> xconfigure. width;
          w-> sz. y = ev-> xconfigure. height;
 
-         if ( guts. currentMenu == self) prima_end_menu();
 AGAIN:             
          w-> last = -1;
          m = w-> m;
