@@ -997,7 +997,7 @@ create_stretched_image( PImage img, int x, int y, int w, int h, int tw, int th)
       src_data = malloc( hack-> dataSize);
       if ( !src_data) croak( "create_stretched_image(): no memory");
       for ( i = 0; i < h; i++) {
-	 memcpy( src_data + i*hack-> lineSize, IMG-> image_cache-> data + i*ls + x*guts.depth/8, hack-> lineSize);
+	 memcpy( src_data + i*hack-> lineSize, IMG-> image_cache-> data + (i+img->h-y-h+1)*ls + x*guts.depth/8, hack-> lineSize);
       }
       hack-> data = src_data;
    }
@@ -1024,12 +1024,18 @@ apc_gp_stretch_image( Handle self, Handle image,
    DEFXX;
    PImage img = PImage( image);
    XImage *stretch;
+   
+   if ( xDestLen == xLen && yDestLen == yLen) {
+      apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
+      return;
+   }
 
    /* 1) XXX - rop - correct support! */
    /* 2) XXX - Shared Mem Image Extension! */
    create_image_cache( img);
    SHIFT( x, y);
    
+   /* fprintf( stderr, "x%d y%d xf%d yf%d xdl%d ydl%d xl%d yl%d\n", x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen); */
    if ( x < 0 || y < 0 || xDestLen > XX-> size.x || yDestLen > XX-> size.y) {
       /* optimization might be necessary */
       stretch = create_stretched_image( img, xFrom, yFrom, xLen, yLen, xDestLen, yDestLen);
