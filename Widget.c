@@ -375,10 +375,10 @@ void Widget_handle_event( Handle self, PEvent event)
         }
         break;
       case cmRepaint:
-        my repaint( self);
+        if ( var lockCount == 0) my repaint( self);
         break;
       case cmPaint        :
-        if ( !opt_InPaint)
+        if ( !opt_InPaint && ( var lockCount == 0))
           if ( inherited begin_paint( self)) {
              if ( apc_widget_begin_paint( self, true)) {
                 if ( var onPaint) cv_call_perl( var mate, var onPaint, "H", self);
@@ -822,6 +822,14 @@ Widget_insert_behind ( Handle self, Handle widget)
    apc_widget_set_z_order( self, widget, 0);
 }
 
+void
+Widget_invalidate_rect( Handle self, Rect rect)
+{
+   if ( !opt_InPaint && ( var stage == csNormal) && ( var lockCount == 0))
+      apc_widget_invalidate_rect( self, &rect);
+}
+
+
 Bool
 Widget_is_child( Handle self, Handle owner)
 {
@@ -859,6 +867,12 @@ Widget_locate( Handle self, Rect r )
    enter_method;
    my set_size( self, r. right - r. left, r. top - r. bottom);
    my set_pos( self, r. left, r. bottom);
+}
+
+void
+Widget_lock( Handle self)
+{
+   var lockCount++;
 }
 
 /*::m */
@@ -928,10 +942,25 @@ Widget_process_accel( Handle self, int key)
 void
 Widget_repaint( Handle self)
 {
-   if ( !opt_InPaint && ( var stage == csNormal)) apc_widget_repaint( self);
+   if ( !opt_InPaint && ( var stage == csNormal) && ( var lockCount == 0))
+      apc_widget_invalidate_rect( self, nil);
 }
 
 /*::s */
+void
+Widget_scroll( Handle self, int horiz, int vert, Bool scrollChildren)
+{
+   if ( !opt_InPaint && ( var stage == csNormal) && ( var lockCount == 0))
+      apc_widget_scroll( self, horiz, vert, nil, scrollChildren);
+}
+
+void
+Widget_scroll_rect( Handle self, int horiz, int vert, Rect rect, Bool scrollChildren)
+{
+   if ( !opt_InPaint && ( var stage == csNormal) && ( var lockCount == 0))
+      apc_widget_scroll( self, horiz, vert, &rect, scrollChildren);
+}
+
 void
 Widget_send_to_back( Handle self)
 {
@@ -1144,6 +1173,17 @@ Widget_update_delegator( Handle self)
    delegator( TranslateAccel);
    delegator( ZOrderChanged);
 }
+
+void
+Widget_unlock( Handle self)
+{
+   enter_method;
+   if ( --var lockCount <= 0) {
+      var lockCount = 0;
+      my repaint( self);
+   }
+}
+
 
 void
 Widget_update_view( Handle self)

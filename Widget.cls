@@ -14,6 +14,7 @@ object Widget( Drawable)
    int       growMode;                 # growing flags, see gmGrowXXX
    long      helpContext;              # help context
    char   *  hint;                     # hint tag text
+   int       lockCount;                # lock count
    Font      popupFont;                # font for popup menu
    ColorSet  popupColor;               # colors for popup menu
    Handle    popupMenu;                # popup menu by default
@@ -50,11 +51,11 @@ object Widget( Drawable)
    method   Bool     help();
    method   void     init( HV * profile);
    method   void     insert_behind( Handle view);
-   method   void     invalidate_rect( Rect rect)     => apc_widget_invalidate_rect;
+   method   void     invalidate_rect( Rect rect);
    c_only   Bool     is_child( Handle possibleOwner);
    method   void     key_event( int command, int code, int key = kbNoKey, int mod = 0, int repeat = 1, Bool post = 0);
    method   void     locate       ( Rect r);
-   method   void     lock()                          => apc_widget_lock;
+   method   void     lock();
    method   void     mouse_event( int command = cmMouseDown, int button = mbLeft, int mod = 0, int x = 0, int y = 0, Bool dblclk = 0, Bool post = 0);
    method   Handle   next();
    import   SV *     notification_types();
@@ -65,15 +66,15 @@ object Widget( Drawable)
    method   void     repaint();
    method   Bool     responsive()                    => apc_widget_is_responsive;
    method   Point    screen_to_client(Point p)       => apc_widget_screen_to_client;
-   method   void     scroll( int horiz, int vert, Bool scrollChildren = false)    => apc_widget_scroll;
-   method   void     scroll_rect( int horiz, int vert, Rect r, Bool scrollChildren = false)  => apc_widget_scroll_rect;
+   method   void     scroll( int horiz, int vert, Bool scrollChildren = false);
+   method   void     scroll_rect( int horiz, int vert, Rect r, Bool scrollChildren = false);
    method   void     send_to_back();
    method   void     set( HV * profile);
    method   void     setup();
    method   void     show();
    method   void     show_cursor();
    method   void     show_hint();
-   method   void     unlock()                        => apc_widget_unlock;
+   method   void     unlock();
    method   void     update_view();
    c_only   void     update_sys_handle( HV * profile);
    method   void     update_delegator();
