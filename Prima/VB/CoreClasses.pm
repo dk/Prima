@@ -797,7 +797,7 @@ sub prf_types
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
       bool       => [qw(caseSensitive literal autoSelect autoHeight)],
-      uiv        => [qw(entryHeight listHeight focusedItem)],
+      uiv        => [qw(editHeight listHeight focusedItem)],
       comboStyle => ['style'],
       string     => ['text'],
       items      => ['items'],

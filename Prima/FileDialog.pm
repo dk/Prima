@@ -444,7 +444,7 @@ sub profile_default
    return {
       %sup,
       style            => cs::DropDownList,
-      height           => $sup{ entryHeight},
+      height           => $sup{ editHeight},
       firstDrive       => 'A:',
       drive            => 'C:',
       editClass        => 'Prima::DriveComboBox::InputLine',
