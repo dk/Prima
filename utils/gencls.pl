@@ -828,7 +828,11 @@ sub load_single_part
          error "APC011: Cyclic inheritance detected.  Watch out ``$superClass''" if $definedClasses{ $superClass};
          do {
            $level++;
-           print "ancestor: $superClass\n" if $suppress & (!$sayparent || $level==1);
+           if ( $suppress & (!$sayparent || $level==1)) {
+              my $superXClass = $superClass;
+              $superXClass =~ s/^Prima:://;
+              print "ancestor: $superXClass\n";
+           }
            putback( $tok);
            my ( $superFile, $inhDyna) = find_file( "$superClass.cls");
            $tok = gettok;

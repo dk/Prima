@@ -207,7 +207,6 @@ Icon_set_mask( Handle self, SV * svmask)
 void
 Icon_update_change( Handle self)
 {
-   if ( var stage > csNormal) return;
    inherited update_change( self);
    free( var mask);
    if ( var data)

@@ -124,8 +124,23 @@ Image_reset( Handle self, int type, SV * palette)
 {
    Byte * newData = nil;
    if ( var->stage > csNormal) return;
-   if (!( type & imGrayScale))
+   if (!( type & imGrayScale)) {
+      switch ( type) {
+      case im16:
+         if (( var-> type & imBPP) < im16) {
+            int c = 1 << ( var-> type & imBPP);
+            memcpy( var-> palette + c, cubic_palette16 + c, sizeof( RGBColor) * ( 16 - c));
+         }
+         break;
+      case im256:
+         if (( var-> type & imBPP) < im256) {
+            int c = 1 << ( var-> type & imBPP);
+            memcpy( var-> palette + c, cubic_palette + c, sizeof( RGBColor) * ( 256 - c));
+         }
+         break;
+      }
       Image_read_palette( self, var->palette, palette);
+   }
    if ( var->type == imByte && type == im256)
    {
       var->type = type;
@@ -944,7 +959,7 @@ load_image_indirect( Handle self, char *filename, char *subIndex)
    var->lineSize = lineSize;
    var->dataSize = dataSize;
    var->palSize  = (1 << (var->type & imBPP)) & 0x1ff;
-   cm_reverse_palette( var->palette, var->palette, 256);
+   cm_reverse_palette( var->palette, var->palette, var->palSize);
 
    switch( var->type)
    {
@@ -1363,7 +1378,7 @@ Image_get_info( SV *who, char *filename)
 void
 Image_update_change( Handle self)
 {
-   apc_image_update_change( self);
+   if ( var-> stage <= csNormal) apc_image_update_change( self);
    var->statsCache = 0;
 }
 

@@ -36,7 +36,7 @@
 #error "Prima require at least perl 5.004, better 5.005"
 #endif
 
-/*  #define PARANOID_MALLOC */
+/* #define PARANOID_MALLOC */
 
 #define DOLBUG debug_write
 
@@ -65,6 +65,12 @@
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
+
+/*
+#undef realloc
+#undef malloc
+#undef free
+*/
 
 
 #if defined(WORD) && (WORD==257)

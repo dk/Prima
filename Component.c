@@ -130,6 +130,8 @@ detach_all( Handle child, Handle self)
 void
 Component_done( Handle self)
 {
+   if ( var delegateTo && (( PComponent) var delegateTo)-> refList)
+      list_delete((( PComponent) var delegateTo)-> refList, self);
    if ( var refList != nil) {
       list_first_that( var refList, free_reference, nil);
       list_destroy( var refList);
@@ -156,10 +158,6 @@ Component_done( Handle self)
       var components = nil;
    }
    apc_component_destroy( self);
-/* #ifdef PARANOID_MALLOC */
-/* if ( kind_of( self, CImage)) */
-/*    debug_write( "Freeing image %s\n", var name); */
-/* #endif */
    free( var name);
    var name = nil;
    free( var evStack);
@@ -358,7 +356,7 @@ Component_pop_event( Handle self)
       warn("RTC0042: Component::pop_event call not within message()");
       return false;
    }
-   return var evStack[ var evPtr--];
+   return var evStack[ --var evPtr];
 }
 
 void

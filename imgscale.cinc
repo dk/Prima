@@ -147,7 +147,8 @@ bs_mono_out( U8 * srcData, U8 * dstData, int w, int x, int absx, long step)
          xd |= ( xs >> 7) & 1;
          if ((( i + 1) & 7) == 0) dstData[ i >> 3] = xd;
       }
-      dstData[ i >> 3] = xd << (( i & 7) ? ( 8 - ( i & 7)) : 0);
+      if ( i & 7) dstData[ i >> 3] = xd << ( 8 - ( i & 7));
+      // dstData[ i >> 3] = xd << (( i & 7) ? ( 8 - ( i & 7)) : 0);
    } else {
       register int k = absx;
       xs = srcData[ j >> 3];

@@ -396,6 +396,7 @@ Widget_first_that( Handle self, void * actionProc, void * params)
 
 /*::g */
 /*::h */
+
 void Widget_handle_event( Handle self, PEvent event)
 {
    enter_method;

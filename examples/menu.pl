@@ -162,6 +162,7 @@ my $w = TestWindow-> create(
   bottom    => 300,
   size      => [ 360, 120],
   menuItems => TestWindow::create_menu,
+  onDestroy => sub {$::application-> close},
 );
 $w-> insert( "InputLine",
               origin    => [ 50, 10],

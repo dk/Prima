@@ -525,11 +525,11 @@ sub makehint
    $self->{hinter}-> {node} = $item;
    my @org = $self-> client_to_screen(0,0);
    $self->{hinter}-> set(
-      width   => $w + 4,
       origin  => [ $org[0] + $ofs - 2,
                  $org[1] + $self-> height - $self->{borderWidth} -
                  $self->{itemHeight} * ( $itemid - $self->{topItem} + 1),
                  ],
+      width   => $w + 4,
       text    => $self-> get_item_text( $item),
 
       visible => 1,
@@ -1380,24 +1380,14 @@ sub draw_items
          $canvas-> bar( $left - $self->{indent} / 4, $bottom, $right, $top);
          $canvas-> color( $self-> hiliteColor);
       }
-      if ( length( $node->[0]->[1]) || $unix) {
-         my $icon = $images[ $node->[2] ? 0 : 1];
-         $canvas-> put_image_indirect ( $icon,
-            $left - $self->{indent} / 4,
-            int($bottom + ( $self->{itemHeight} - $self->{iconSizes}->[1]) / 2),
-            0, 0,
-            @{$self->{iconSizes}},
-            @{$self->{iconSizes}},
-            rop::CopyPut) if $icon;
-      } else {
-         my $icon = $node->[0]->[3];
-         $canvas-> put_image(
-           $left - $self->{indent} / 4,
-           int($bottom + ( $self->{itemHeight} - $self->{iconSizes}->[1]) / 2),
-           $icon) if $icon;
-      }
+      my $icon = (length( $node->[0]->[1]) || $unix) ?
+         ( $images[ $node->[2] ? 0 : 1]) : $node->[0]->[3];
+      $canvas-> put_image(
+        $left - $self->{indent} / 4,
+        int($bottom + ( $self->{itemHeight} - $self->{iconSizes}->[1]) / 2),
+        $icon);
       $canvas-> text_out( $node->[0]->[0], $left + $dw,
-      int($bottom + ( $self->{itemHeight} - $self->{fontHeight}) / 2));
+        int($bottom + ( $self->{itemHeight} - $self->{fontHeight}) / 2));
       $canvas-> color( $c) if $focused;
    }
 }

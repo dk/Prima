@@ -649,7 +649,8 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    //
    if ( dc) {
       if ( !StretchBlt( xdc, x, ly - y - yDestLen, xDestLen, yDestLen, dc,
-            xFrom, i-> h - yFrom - yLen, xLen, yLen, theRop)) apiErr;
+            xFrom, i-> h - yFrom - yLen, xLen, yLen, theRop))
+         apiErr;
    } else {
       XBITMAPINFO xbi;
       BITMAPINFO * bi = image_get_binfo( deja, &xbi);

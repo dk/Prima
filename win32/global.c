@@ -201,7 +201,7 @@ window_subsystem_init()
 
    // selecting locale layout, more or less latin-like
    {
-      char buf[ KL_NAMELENGTH] = "";
+      char buf[ KL_NAMELENGTH * 2] = "";
       char * langs[]   = {"0409","0405","040A","040B","040E","040F","0413","0414","041D"};
       HKL current      = GetKeyboardLayout( 0);
       int i, j, size   = GetKeyboardLayoutList( 0, nil);
@@ -211,7 +211,7 @@ window_subsystem_init()
       GetKeyboardLayoutList( size, kl);
       for ( i = 0; i < size; i++) {
          ActivateKeyboardLayout( kl[ i], 0);
-         GetKeyboardLayoutName( buf);
+         if ( !GetKeyboardLayoutName( buf)) apiErr;
          for ( j = 0; j < ( sizeof( langs) / sizeof( char*)); j++) {
             if ( strncmp( buf + 4, langs[ j], 4) == 0) {
                guts. keyLayout = kl[ i];
@@ -267,7 +267,7 @@ char * err_msg( DWORD errId)
       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       ( LPTSTR) &lpMsgBuf, 0, NULL);
    strncpy( buf, lpMsgBuf, 256);
-   buf[ 256] = 0;
+   buf[ 255] = 0;
    LocalFree( lpMsgBuf);
    return buf;
 }
