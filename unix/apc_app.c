@@ -135,7 +135,7 @@ Bool
 window_subsystem_init( void)
 {
    /*XXX*/ /* Namely, support for -display host:0.0 etc. */
-   XrmQuark common_quarks_list[20];  /*XXX change number of elements if necessary */
+   XrmQuark common_quarks_list[26];  /*XXX change number of elements if necessary */
    XrmQuarkList ql = common_quarks_list;
    XGCValues gcv;
    char *common_quarks =
@@ -148,7 +148,10 @@ window_subsystem_init( void)
       "Font.font."
       "Foreground.foreground."
       "Wheeldown.wheeldown."
-      "Wheelup.wheelup";
+      "Wheelup.wheelup."
+      "Submenudelay.submenudelay."
+      "Scrollfirst.scrollfirst."
+      "Scrollnext.scrollnext";
    
    guts. click_time_frame = 200;
    guts. double_click_time_frame = 200;
@@ -218,6 +221,12 @@ window_subsystem_init( void)
    guts.qwheeldown = *ql++;
    guts.qWheelup = *ql++;
    guts.qwheelup = *ql++;
+   guts.qSubmenudelay = *ql++;
+   guts.qsubmenudelay = *ql++;
+   guts.qScrollfirst = *ql++;
+   guts.qscrollfirst = *ql++;
+   guts.qScrollnext = *ql++;
+   guts.qscrollnext = *ql++;
 
    guts. mouse_buttons = XGetPointerMapping( DISP, guts. buttons_map, 256);
    XCHECKPOINT;
@@ -248,7 +257,7 @@ window_subsystem_init( void)
    TAILQ_INIT( &guts.peventq);
    TAILQ_INIT( &guts.bitmap_gc_pool);
    TAILQ_INIT( &guts.screen_gc_pool);
-   guts. clipboards = hash_create();
+
    guts. windows = hash_create();
    guts. menu_windows = hash_create();
    guts. ximages = hash_create();
@@ -278,8 +287,41 @@ window_subsystem_init( void)
    prima_rebuild_watchers();
    prima_wm_init();
    guts. wm_event_timeout = 100000;
+   guts. menu_timeout = 200;
+   guts. scroll_first = 200;
+   guts. scroll_next = 50;
+   apc_timer_create( CURSOR_TIMER, nilHandle, 2);
+   apc_timer_create( MENU_TIMER,   nilHandle, guts. menu_timeout);
+   if ( !prima_init_clipboard_subsystem()) return false;
    if ( !prima_init_color_subsystem()) return false;
    if ( !prima_init_font_subsystem()) return false;
+
+   {
+      XGCValues gcv;
+      Pixmap px = XCreatePixmap( DISP, guts.root, 4, 4, 1);
+      GC gc = XCreateGC( DISP, px, 0, &gcv);
+      XImage *xi;
+      XSetForeground( DISP, gc, 0);
+      XFillRectangle( DISP, px, gc, 0, 0, 5, 5);
+      XSetForeground( DISP, gc, 1);
+      XDrawArc( DISP, px, gc, 0, 0, 4, 4, 0, 360 * 64);
+      if (( xi = XGetImage( DISP, px, 0, 0, 4, 4, 1, XYPixmap))) {
+         int i;
+         Byte *data[4];
+         if ( xi-> bitmap_bit_order == LSBFirst) 
+            prima_mirror_bytes( xi-> data, xi-> bytes_per_line * 4);
+         for ( i = 0; i < 4; i++) data[i] = (Byte*)xi-> data + i * xi-> bytes_per_line;
+#define PIX(x,y) ((data[y][0] & (0x80>>(x)))!=0)
+         if (  PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = -1; else
+         if ( !PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = 1; 
+         if (  PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = -1; else
+         if ( !PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = 1; 
+#undef PIX                          
+         XDestroyImage( xi);
+      }
+      XFreeGC( DISP, gc);
+      XFreePixmap( DISP, px);
+   }
 /*    XSynchronize( DISP, true); */
    return true;
 }
@@ -288,6 +330,7 @@ void
 window_subsystem_cleanup( void)
 {
    /*XXX*/
+   prima_end_menu();
    if ( guts. wm_cleanup)
       guts. wm_cleanup();
 }
@@ -309,9 +352,11 @@ free_gc_pool( struct gc_head *head)
 void
 window_subsystem_done( void)
 {
+   prima_end_menu();
    free_gc_pool(&guts.bitmap_gc_pool);
    free_gc_pool(&guts.screen_gc_pool);
    prima_done_color_subsystem();
+   free( guts. clipboard_formats);
 
    if ( DISP) {
       XFreeGC( DISP, guts. menugc);
@@ -338,6 +383,7 @@ window_subsystem_done( void)
 Bool
 apc_application_begin_paint( Handle self)
 {
+   if ( guts. appLock > 0) return false;
    prima_prepare_drawable_for_painting( self, false);
    return true;
 }
@@ -345,8 +391,7 @@ apc_application_begin_paint( Handle self)
 Bool
 apc_application_begin_paint_info( Handle self)
 {
-   DOLBUG( "apc_application_begin_paint_info()\n");
-/*NYI*/
+   prima_prepare_drawable_for_painting( self, false);
    return true;
 }
 
@@ -373,7 +418,7 @@ apc_application_create( Handle self)
    XX-> gdrawable = XX-> udrawable = guts. root;
    XX-> parent = None;
    XX-> origin = ( Point){0,0};
-   XX-> size = apc_application_get_size( self);
+   XX-> ackSize = XX-> size = apc_application_get_size( self);
    XX-> owner = nilHandle;
 
    XX-> flags. clip_owner = 1;
@@ -386,6 +431,9 @@ apc_application_create( Handle self)
    guts. double_click_time_frame = unix_rm_get_int( self, guts.qDoubleclicktimeframe, guts.qdoubleclicktimeframe, guts. double_click_time_frame);
    guts. visible_timeout = unix_rm_get_int( self, guts.qBlinkvisibletime, guts.qblinkvisibletime, guts. visible_timeout);
    guts. invisible_timeout = unix_rm_get_int( self, guts.qBlinkinvisibletime, guts.qblinkinvisibletime, guts. invisible_timeout);
+   guts. menu_timeout = unix_rm_get_int( self, guts.qSubmenudelay, guts.qsubmenudelay, guts. menu_timeout);
+   guts. scroll_first = unix_rm_get_int( self, guts.qScrollfirst, guts.qscrollfirst, guts. scroll_first);
+   guts. scroll_next = unix_rm_get_int( self, guts.qScrollnext, guts.qscrollnext, guts. scroll_next);
 
    prima_send_create_event( X_WINDOW);
    return true;
@@ -419,7 +467,7 @@ apc_application_end_paint( Handle self)
 Bool
 apc_application_end_paint_info( Handle self)
 {
-   DOLBUG( "apc_application_end_paint_info()\n");
+   prima_cleanup_drawable_after_painting( self);
    return true;
 }
 
@@ -547,15 +595,15 @@ perform_pending_paints( void)
 
    for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
       next = TAILQ_NEXT( XX, paintq_link);
-      if ( XX-> flags. paint_pending &&
+      if ( XX-> flags. paint_pending && (guts. appLock == 0) &&
          (PWidget( XX->self)-> stage == csNormal)) {
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
          prima_simple_message( XX-> self, cmPaint, false);
          /* handle the case where this widget is locked */
-         if (XX->region) {
-            XDestroyRegion(XX->region);
-            XX->region = nil;
+         if (XX->invalid_region) {
+            XDestroyRegion(XX->invalid_region);
+            XX->invalid_region = nil;
          }
       } 
       XX = next;
@@ -606,6 +654,13 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
          apc_timer_start( timer-> who);
          if ( timer-> who == CURSOR_TIMER) {
             prima_cursor_tick();
+         } else if ( timer-> who == MENU_TIMER) {
+            if ( guts. currentMenu) {
+               XEvent ev;
+               ev. type = MenuTimerMessage;
+               prima_handle_menu_event( &ev, M(guts. currentMenu)-> w-> w, guts. currentMenu);
+            }
+            apc_timer_stop( MENU_TIMER);
          } else {
             prima_simple_message( timer-> who, cmTimer, false);
          }
@@ -724,16 +779,14 @@ apc_application_go( Handle self)
 Bool
 apc_application_lock( Handle self)
 {
-   DOLBUG( "apc_application_lock()\n");
-   /*NYI*/
+   guts. appLock++;
    return true;
 }
 
 Bool
 apc_application_unlock( Handle self)
 {
-   DOLBUG( "apc_application_unlock()\n");
-   /*NYI*/
+   if ( guts. appLock > 0) guts. appLock--;
    return true;
 }
 

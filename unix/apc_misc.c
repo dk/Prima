@@ -36,7 +36,6 @@
 #include "unix/guts.h"
 #include "Application.h"
 #include "File.h"
-#include "Clipboard.h"
 #include "Icon.h"
 #define XK_MISCELLANY
 #include <X11/keysymdef.h>
@@ -181,6 +180,7 @@ apc_fetch_resource( const char *className, const char *name,
    classes[nc]          = 0;
    instances[ni]        = 0;
 
+   /*
    if (0) {
       int i;
       fprintf( stderr, "inst: ");
@@ -193,6 +193,7 @@ apc_fetch_resource( const char *className, const char *name,
       }
       fprintf( stderr, "\n");
    }
+   */
    
    if ( XrmQGetResource( guts.db,
                          instances,
@@ -366,11 +367,6 @@ prima_update_cursor( Handle self)
       XCHECKPOINT;
       prima_release_gc( XX);
 
-      if (!guts. cursor_timer) {
-	 guts. cursor_timer = malloc( sizeof( TimerSysData));
-	 bzero( guts. cursor_timer, sizeof( TimerSysData));
-	 apc_timer_create( CURSOR_TIMER, nilHandle, 2);
-      }
       if ( XX-> flags. cursor_visible) {
 	 guts. cursor_shown = false;
 	 prima_cursor_tick();
@@ -533,698 +529,31 @@ apc_file_change_mask( Handle self)
    return apc_file_attach( self);
 }
 
-
-/* Pointers (mouse cursors) */
-
-static int
-cursor_map[] = {
-   /* crArrow           => */   XC_left_ptr,
-   /* crText            => */   XC_xterm,
-   /* crWait            => */   XC_watch,
-   /* crSize            => */   XC_sizing,
-   /* crMove            => */   XC_fleur,
-   /* crSizeWest        => */   XC_left_side,
-   /* crSizeEast        => */   XC_right_side,
-   /* crSizeNE          => */   XC_sb_h_double_arrow,
-   /* crSizeNorth       => */   XC_top_side,
-   /* crSizeSouth       => */   XC_bottom_side,
-   /* crSizeNS          => */   XC_sb_v_double_arrow,
-   /* crSizeNW          => */   XC_top_left_corner,
-   /* crSizeSE          => */   XC_bottom_right_corner,
-   /* crSizeNE          => */   XC_top_right_corner,
-   /* crSizeSW          => */   XC_bottom_left_corner,
-   /* crInvalid         => */   XC_X_cursor,
-};
-
-static Cursor
-predefined_cursors[] = {
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None
-};
-
-static int
-get_cursor( Handle self, Pixmap *source, Pixmap *mask, Point *hot_spot, Cursor *cursor)
-{
-   int id = X(self)-> pointer_id;
-
-   while ( self && ( id = X(self)-> pointer_id) == crDefault)
-      self = PWidget(self)-> owner;
-   if ( id == crDefault) {
-      id = crArrow;
-   } else if ( id == crUser) {
-      if (source)       *source   = X(self)-> user_p_source;
-      if (mask)         *mask     = X(self)-> user_p_mask;
-      if (hot_spot)     *hot_spot = X(self)-> pointer_hot_spot;
-      if (cursor)       *cursor   = X(self)-> user_pointer;
-   }
-
-   return id;
-}
-
-static Bool
-load_pointer_font( void)
-{
-   if ( !guts.pointer_font)
-      guts.pointer_font = XLoadQueryFont( DISP, "cursor");
-   if ( !guts.pointer_font) {
-      warn( "Cannot load cursor font");
-      return false;
-   }
-   return true;
-}
-
-Point
-apc_pointer_get_hot_spot( Handle self)
-{
-   Point hot_spot;
-   int idx;
-   int id = get_cursor(self, nil, nil, &hot_spot, nil);
-   XFontStruct *fs;
-   XCharStruct *cs;
-
-   if ( id < crDefault || id > crUser)  return (Point){0,0};
-   if ( id == crUser)                   return hot_spot;
-   if ( !load_pointer_font())           return (Point){0,0};
-
-   idx = cursor_map[id];
-   fs = guts.pointer_font;
-   if ( !fs-> per_char)
-      cs = &fs-> min_bounds;
-   else if ( idx < fs-> min_char_or_byte2 || idx > fs-> max_char_or_byte2)
-      cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
-   else
-      cs = fs-> per_char + idx - fs-> min_char_or_byte2;
-   return (Point){-cs->lbearing, guts.cursor_height - cs->ascent};
-}
-
-Point
-apc_pointer_get_pos( Handle self)
-{
-   Point p;
-   XWindow root, child;
-   int x, y;
-   unsigned int mask;
-
-   if ( !XQueryPointer( DISP, guts. root,
-			&root, &child, &p. x, &p. y,
-			&x, &y, &mask)) {
-      warn( "XQueryPointer error");
-      return (Point){0,0};
-   }
-   p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
-   return p;
-}
-
-int
-apc_pointer_get_shape( Handle self)
-{
-   return X(self)->pointer_id;
-}
-
-Point
-apc_pointer_get_size( Handle self)
-{
-   return (Point){guts.cursor_width,guts.cursor_height};
-}
-
-Bool
-apc_pointer_get_bitmap( Handle self, Handle icon)
-{
-   XImage *im;
-   int id;
-   Pixmap p1 = None, p2 = None;
-   Bool free_pixmap = true;
-   GC gc;
-   XGCValues gcv;
-   char c;
-   int w = guts.cursor_width, h = guts.cursor_height;
-
-   id = get_cursor( self, &p1, &p2, nil, nil);
-   if ( id < crDefault || id > crUser)  return false;
-   if ( id == crUser) {
-      if ( !p1 || !p2) {
-         warn( "User pointer inconsistency");
-         return false;
-      }
-      free_pixmap = false;
-   } else {
-      XFontStruct *fs;
-      XCharStruct *cs;
-      int idx = cursor_map[id];
-
-      if ( !load_pointer_font()) return false;
-      fs = guts.pointer_font;
-      if ( !fs-> per_char)
-         cs = &fs-> min_bounds;
-      else if ( idx < fs-> min_char_or_byte2 || idx > fs-> max_char_or_byte2)
-         cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
-      else
-         cs = fs-> per_char + idx - fs-> min_char_or_byte2;
-      
-      p1 = XCreatePixmap( DISP, guts. root, w, h, 1);
-      p2 = XCreatePixmap( DISP, guts. root, w, h, 1);
-      gcv. background = 1;
-      gcv. foreground = 0;
-      gcv. font = guts.pointer_font-> fid;
-      gc = XCreateGC( DISP, p1, GCBackground | GCForeground | GCFont, &gcv);
-      XFillRectangle( DISP, p1, gc, 0, 0, w, h);
-      gcv. background = 0;
-      gcv. foreground = 1;
-      XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
-      XFillRectangle( DISP, p2, gc, 0, 0, w, h);
-      XDrawString( DISP, p1, gc, -cs-> lbearing, cs-> ascent, (c = (char)(idx+1), &c), 1);
-      gcv. background = 1;
-      gcv. foreground = 0;
-      XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
-      XDrawString( DISP, p2, gc, -cs-> lbearing, cs-> ascent, (c = (char)(idx+1), &c), 1);
-      XDrawString( DISP, p1, gc, -cs-> lbearing, cs-> ascent, (c = (char)idx, &c), 1);
-      XFreeGC( DISP, gc);
-   }
-   CIcon(icon)-> create_empty( icon, w, h, imMono);
-   im = XGetImage( DISP, p1, 0, 0, w, h, 1, XYPixmap);
-   prima_copy_xybitmap( PIcon(icon)-> data, im-> data,
-                        PIcon(icon)-> w, PIcon(icon)-> h,
-                        PIcon(icon)-> lineSize, im-> bytes_per_line);
-   XDestroyImage( im);
-   im = XGetImage( DISP, p2, 0, 0, w, h, 1, XYPixmap);
-   prima_copy_xybitmap( PIcon(icon)-> mask, im-> data,
-                        PIcon(icon)-> w, PIcon(icon)-> h,
-                        PIcon(icon)-> maskLine, im-> bytes_per_line);
-  if ( id == crUser) {
-     int i;
-     Byte * mask = PIcon(icon)-> mask;
-     for ( i = 0; i < PIcon(icon)-> maskSize; i++) 
-        mask[i] = ~mask[i];
-   }   
-   XDestroyImage( im);
-   if ( free_pixmap) {
-      XFreePixmap( DISP, p1);
-      XFreePixmap( DISP, p2);
-   }
-   return true;
-}
-
-Bool
-apc_pointer_get_visible( Handle self)
-{
-   return guts. pointer_invisible_count == 0;
-}
-
-Bool
-apc_pointer_set_pos( Handle self, int x, int y)
-{
-   XEvent ev;
-   if ( !XWarpPointer( DISP, None, guts. root, 
-      0, 0, guts. displaySize.x, guts. displaySize.y, x, guts. displaySize.y - y - 1))
-      return false;
-   XCHECKPOINT;
-   XSync( DISP, false);
-   while ( XCheckMaskEvent( DISP, PointerMotionMask, &ev))
-      prima_handle_event( &ev, nil);
-   guts. queued_events = XEventsQueued( DISP, QueuedAlready);
-   return true;   
-}
-
-Bool
-apc_pointer_set_shape( Handle self, int id)
-{
-   DEFXX;
-   Cursor uc = None;
-
-   if ( id < crDefault || id > crUser)  return false;
-   XX-> pointer_id = id;
-   id = get_cursor( self, nil, nil, nil, &uc);
-   if ( id == crUser) {
-      if ( uc != None || ( uc = XX-> user_pointer) != None) {
-         if ( self != application) {
-            if ( guts. pointer_invisible_count < 0) {
-               if ( !XX-> flags. pointer_obscured) {
-                  XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);   
-                  XX-> flags. pointer_obscured = 1;
-               }   
-            } else {   
-               XDefineCursor( DISP, XX-> udrawable, uc);
-               XX-> flags. pointer_obscured = 0;
-            }
-            XCHECKPOINT;
-         }
-      } else
-         id = crArrow;
-   }
-   if ( id != crUser) {
-      if ( predefined_cursors[id] == None) {
-         predefined_cursors[id] =
-            XCreateFontCursor( DISP, cursor_map[id]);
-         XCHECKPOINT;
-      }
-      XX-> actual_pointer = predefined_cursors[id];
-      if ( self != application) {
-         if ( guts. pointer_invisible_count < 0) {
-            if ( !XX-> flags. pointer_obscured) {
-               XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);   
-               XX-> flags. pointer_obscured = 1;
-            }   
-         } else {   
-            XDefineCursor( DISP, XX-> udrawable, predefined_cursors[id]);
-            XX-> flags. pointer_obscured = 0;
-         }
-         XCHECKPOINT;
-      }
-   }
-   return true;
-}
-
-Bool
-apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
-{
-   DEFXX;
-   Handle cursor;
-   PIcon c;
-
-   if ( XX-> user_pointer != None) {
-      XFreeCursor( DISP, XX-> user_pointer);
-      XX-> user_pointer = None;
-   }
-   if ( XX-> user_p_source != None) {
-      XFreePixmap( DISP, XX-> user_p_source);
-      XX-> user_p_source = None;
-   }
-   if ( XX-> user_p_mask != None) {
-      XFreePixmap( DISP, XX-> user_p_mask);
-      XX-> user_p_mask = None;
-   }
-   if ( icon != nilHandle) {
-      Bool noSZ  = PIcon(icon)-> w != guts.cursor_width || PIcon(icon)-> h != guts.cursor_height;
-      Bool noBPP = (PIcon(icon)-> type & imBPP) != 1;
-      XColor xcb, xcw;
-      if ( noSZ || noBPP) {
-         cursor = CIcon(icon)->dup(icon);
-         c = PIcon(cursor);
-         if ( cursor == nilHandle) {
-            warn( "Error duping user cursor");
-            return false;
-         }
-         if ( noSZ) {
-            CIcon(cursor)-> stretch( cursor, guts.cursor_width, guts.cursor_height);
-            if ( c-> w != guts.cursor_width || c-> h != guts.cursor_height) {
-               warn( "Error stretching user cursor");
-               Object_destroy( cursor);
-               return false;
-            }
-         }   
-         if ( noBPP) {
-            CIcon(cursor)-> set_type( cursor, imMono);
-            if ((c-> type & imBPP) != 1) {
-               warn( "Error black-n-whiting user cursor");
-               Object_destroy( cursor);
-               return false;
-            }
-         }
-      } else
-         cursor = icon;
-      if ( !prima_create_icon_pixmaps( cursor, &XX-> user_p_source, &XX-> user_p_mask)) {
-         warn( "Error creating user cursor pixmaps");
-         if ( noSZ || noBPP)
-            Object_destroy( cursor);
-         return false;
-      }
-      if ( noSZ || noBPP)
-         Object_destroy( cursor);
-      XX-> pointer_hot_spot = hot_spot;
-      xcb. red = xcb. green = xcb. blue = 0; 
-      xcw. red = xcw. green = xcw. blue = 0xFFFF; 
-      xcb. pixel = guts. monochromeMap[0];
-      xcw. pixel = guts. monochromeMap[1];
-      xcb. flags = xcw. flags = DoRed | DoGreen | DoBlue;
-      XX-> user_pointer = XCreatePixmapCursor( DISP, XX-> user_p_source,
-          XX-> user_p_mask, &xcw, &xcb, 
-          hot_spot. x, guts.cursor_height - hot_spot. y);
-      if ( XX-> user_pointer == None) {
-         warn( "error creating cursor from pixmaps");
-         return false;
-      }
-      if ( XX-> pointer_id == crUser && self != application) {
-         if ( guts. pointer_invisible_count < 0) {
-            if ( !XX-> flags. pointer_obscured) {
-               XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);   
-               XX-> flags. pointer_obscured = 1;
-            }   
-         } else {   
-            XDefineCursor( DISP, XX-> udrawable, XX-> user_pointer);
-            XX-> flags. pointer_obscured = 0;
-         }
-         XCHECKPOINT;
-      }      
-   }
-   return true;
-}
-
-Bool
-apc_pointer_set_visible( Handle self, Bool visible)
-{
-   /* creating empty cursor, if any */
-   if ( !visible && ( guts. null_pointer == nilHandle)) {
-      Handle nullc = ( Handle) create_object( "Prima::Icon", "", nil);
-      PIcon  n = ( PIcon) nullc;
-      Pixmap xor, and;
-      XColor xc;      
-      if ( nullc == nilHandle) {
-         warn("Error creating icon object");
-         return false;
-      }   
-      n-> self-> create_empty( nullc, 16, 16, 1);
-      memset( n-> mask, 0xFF, n-> maskSize);
-      if ( !prima_create_icon_pixmaps( nullc, &xor, &and)) {
-         warn( "Error creating null cursor pixmaps"); 
-         Object_destroy( nullc);
-         return false;
-      }  
-      Object_destroy( nullc);
-      xc. red = xc. green = xc. blue = 0;
-      xc. pixel = guts. monochromeMap[0];
-      xc. flags = DoRed | DoGreen | DoBlue;
-      guts. null_pointer = XCreatePixmapCursor( DISP, xor, and, &xc, &xc, 0, 0);                                      
-      XCHECKPOINT;
-      XFreePixmap( DISP, xor);
-      XFreePixmap( DISP, and);
-      if ( !guts. null_pointer) {
-         warn( "Error creating null cursor from pixmaps");
-         return false;
-      }   
-   }   
-
-   /* maintaining hide/show count */
-   if ( visible) {
-      if ( guts. pointer_invisible_count == 0) 
-         return true;
-      if ( ++guts. pointer_invisible_count < 0)
-         return true;
-   } else {
-      if ( guts. pointer_invisible_count-- < 0)
-         return true;
-   }
- 
-   /* setting pointer for widget under cursor */
-   {
-      Point p    = apc_pointer_get_pos( application);
-      Handle wij = apc_application_get_widget_from_point( application, p);
-      if ( wij) {
-         X(wij)-> flags. pointer_obscured = (visible ? 0 : 1);
-         XDefineCursor( DISP, X(wij)-> udrawable, 
-            visible ? (( X(wij)-> pointer_id == crUser) ? 
-                         X(wij)-> user_pointer : X(wij)-> actual_pointer) 
-                    : guts. null_pointer);  
-      }   
-   }   
-   return true;
-}
-
 int
 apc_pointer_get_state( Handle self)
 {
-   DOLBUG( "apc_pointer_get_state()\n");
-   return 0;
+   XWindow foo;
+   int bar, mask;
+   XQueryPointer( DISP, guts.root,  &foo, &foo, &bar, &bar, &bar, &bar, &mask);
+   return
+      (( mask & Button1Mask) ? mb1 : 0) |
+      (( mask & Button2Mask) ? mb2 : 0) |
+      (( mask & Button3Mask) ? mb3 : 0) |
+      (( mask & Button4Mask) ? mb4 : 0) |
+      (( mask & Button5Mask) ? mb5 : 0);
 }
 
 int
 apc_kbd_get_state( Handle self)
 {
-   DOLBUG( "apc_kbd_get_state()\n");
-   return 0;
+   XWindow foo;
+   int bar, mask;
+   XQueryPointer( DISP, guts.root, &foo, &foo, &bar, &bar, &bar, &bar, &mask);
+   return
+      (( mask & ShiftMask)   ? kmShift : 0) |
+      (( mask & ControlMask) ? kmCtrl  : 0) |
+      (( mask & Mod1Mask)    ? kmAlt   : 0);
 }
-
-
-/* Clipboard */
-
-#define C(obj)		((PClipboardSysData)(PComponent((obj))-> sysData))
-#define DEFCC		PClipboardSysData selfcc = C(self)
-#define CC		selfcc
-
-PList
-apc_get_standard_clipboards( void)
-{
-   PList l = plist_create( 3, 1);
-   if (!l) return nil;
-   list_add( l, (Handle)duplicate_string( "Primary"));
-   list_add( l, (Handle)duplicate_string( "Secondary"));
-   list_add( l, (Handle)duplicate_string( "Clipboard"));
-   return l;
-}
-
-Bool
-apc_clipboard_create( Handle self)
-{
-   PClipboard c = (PClipboard)self;
-   char *name;
-   DEFCC;
-
-   name = CC-> name = duplicate_string( c-> name);
-   while (*name) {
-      *name = toupper(*name);
-      name++;
-   }
-   CC-> atom = XInternAtom( DISP, CC-> name, false);
-
-   if ( hash_fetch( guts.clipboards, &CC->atom, sizeof(CC->atom))) {
-      CC-> atom = None;
-      CC-> name = nil;
-      free( CC-> name);
-      return false;
-   }
-
-   hash_store( guts.clipboards, &CC->atom, sizeof(CC->atom), (void*)self);
-   return true;
-}
-
-Bool
-apc_clipboard_destroy( Handle self)
-{
-   DEFCC;
-   if (CC-> atom != None) {
-      /* XXX - other cleanup here */
-      hash_delete( guts.clipboards, &CC->atom, sizeof(CC->atom), false);
-   }
-   free( CC-> name);
-   CC-> atom = None;
-   CC-> name = nil;
-   return true;
-}
-
-Bool
-apc_clipboard_open( Handle self)
-{
-   DOLBUG( "apc_clipboard_open()\n");
-   return false;
-}
-
-Bool
-apc_clipboard_close( Handle self)
-{
-   DOLBUG( "apc_clipboard_close()\n");
-   return true;
-}
-
-Bool
-apc_clipboard_clear( Handle self)
-{
-   DOLBUG( "apc_clipboard_clear()\n");
-   return true;
-}
-
-Bool
-apc_clipboard_has_format( Handle self, long id)
-{
-   DOLBUG( "apc_clipboard_has_format()\n");
-   return false;
-}
-
-void *
-apc_clipboard_get_data( Handle self, long id, int *length)
-{
-   DOLBUG( "apc_clipboard_get_data()\n");
-   return nil;
-}
-
-Bool
-apc_clipboard_set_data( Handle self, long id, void * data, int length)
-{
-   DOLBUG( "apc_clipboard_set_data()\n");
-   return false;
-}
-
-long
-apc_clipboard_register_format( Handle self, const char* format)
-{
-   DOLBUG( "apc_clipboard_register_format()\n");
-   return 0;
-}
-
-Bool
-apc_clipboard_deregister_format( Handle self, long id)
-{
-   DOLBUG( "apc_clipboard_deregister_format()\n");
-   return true;
-}
-
-ApiHandle
-apc_clipboard_get_handle( Handle self)
-{
-      return nilHandle;
-}
-
-
-/* Timer */
-
-static void
-inactivate_timer( PTimerSysData sys)
-{
-   if ( sys-> older || sys-> younger || guts. oldest == sys) {
-      if ( sys-> older) {
-	 sys-> older-> younger = sys-> younger;
-      } else {
-	 guts. oldest = sys-> younger;
-      }
-      if ( sys-> younger)
-	 sys-> younger-> older = sys-> older;
-   }
-   sys-> older = nil;
-   sys-> younger = nil;
-}
-
-static void
-fetch_sys_timer( Handle self, PTimerSysData *s, Bool *real_timer)
-{
-   if ( self == 0) {
-      *s = nil;
-      *real_timer = false;
-   } else if ( self == CURSOR_TIMER) {
-      *s = guts. cursor_timer;
-      *real_timer = false;
-   } else {
-      *s = ((PTimerSysData)(PComponent((self))-> sysData));
-      *real_timer = true;
-   }
-}
-
-#define ENTERTIMER \
-	PTimerSysData sys; \
-	Bool real; \
-	\
-	fetch_sys_timer( self, &sys, &real)
-
-Bool
-apc_timer_create( Handle self, Handle owner, int timeout)
-{
-   Bool recreate;
-   ENTERTIMER;
-
-   sys-> type.timer = true;
-   recreate = real && sys-> who != nilHandle;
-   inactivate_timer( sys);
-   sys-> timeout = timeout;
-   sys-> who = self;
-   if (real) {
-      if ( !recreate) opt_clear( optActive);
-      apc_component_fullname_changed_notify( self);
-      if ( is_opt( optActive)) apc_timer_start( self);
-   }
-   return true;
-}
-
-Bool
-apc_timer_destroy( Handle self)
-{
-   ENTERTIMER;
-
-   inactivate_timer( sys);
-   sys-> timeout = 0;
-   if (real) opt_clear( optActive);
-   return true;
-}
-
-int
-apc_timer_get_timeout( Handle self)
-{
-   ENTERTIMER;
-   return sys-> timeout;
-}
-
-Bool
-apc_timer_set_timeout( Handle self, int timeout)
-{
-   ENTERTIMER;
-
-   sys-> timeout = timeout;
-   if ( !real || is_opt( optActive))
-      apc_timer_start( self);
-   return true;
-}
-
-Bool
-apc_timer_start( Handle self)
-{
-   PTimerSysData before;
-   ENTERTIMER;
-
-   inactivate_timer( sys);
-   gettimeofday( &sys-> when, nil);
-   sys-> when. tv_sec += sys-> timeout / 1000;
-   sys-> when. tv_usec += (sys-> timeout % 1000) * 1000;
-
-   before = guts. oldest;
-   if ( before) {
-      while ( before-> when. tv_sec < sys-> when. tv_sec ||
-	      ( before-> when. tv_sec == sys-> when. tv_sec &&
-		before-> when. tv_usec <= sys-> when. tv_usec)) {
-	 if ( !before-> younger) {
-	    before-> younger = sys;
-	    sys-> older = before;
-	    before = nil;
-	    break;
-	 }
-	 before = before-> younger;
-      }
-      if ( before) {
-	 if ( before-> older) {
-	    sys-> older = before-> older;
-	 } else {
-	    guts. oldest = sys;
-	 }
-	 sys-> younger = before;
-         before-> older = sys;
-      }
-   } else {
-      guts. oldest = sys;
-   }
-
-   if ( real) opt_set( optActive);
-   return true;
-}
-
-Bool
-apc_timer_stop( Handle self)
-{
-   ENTERTIMER;
-
-   inactivate_timer( sys);
-   if ( real) opt_clear( optActive);
-   return true;
-}
-
 
 /* Help */
 
@@ -1518,6 +847,8 @@ apc_show_message( const char * message)
    XGetInputFocus( DISP, &md. focus, &md. focus_revertTo);
    XCHECKPOINT;
    {
+      char * prima = "Prima";
+      XTextProperty p;
       XSizeHints xs;
       XSetWindowAttributes attrs;
       attrs. event_mask = 0
@@ -1548,7 +879,11 @@ apc_show_message( const char * message)
       xs. x = ( appSz.x - winSz.x) / 2;
       xs. y = ( appSz.y - winSz.y) / 2;
       XSetWMNormalHints( DISP, md. w, &xs);
-      XStoreName( DISP, md. w, "Prima");
+      if ( XStringListToTextProperty( &prima, 1, &p) != 0) {
+         XSetWMIconName( DISP, md. w, &p);
+         XSetWMName( DISP, md. w, &p);
+         XFree( p. value);
+      }
    }
 
    storage = &guts. message_boxes;
@@ -1556,12 +891,12 @@ apc_show_message( const char * message)
    *storage = &md;
 
    {
-#define CLR(x) prima_allocate_color( nilHandle,prima_map_color(x),nil)
+#define CLR(x) prima_allocate_color( nilHandle,prima_map_color(x,nil),nil)
       XGCValues gcv;
       gcv. font = md. fontId;
       md. gc = XCreateGC( DISP, md. w, GCFont, &gcv);
       md. fg  = CLR(clFore | wcDialog);
-      prima_allocate_color( nilHandle, prima_map_color(clBack | wcDialog), &md. bg);
+      prima_allocate_color( nilHandle, prima_map_color(clBack | wcDialog,nil), &md. bg);
       md. l3d = CLR(clLight3DColor | wcDialog);
       md. d3d = CLR(clDark3DColor  | wcDialog);
 #undef CLR      
@@ -1614,11 +949,15 @@ int
 apc_sys_get_value( int v)  /* XXX one big XXX */
 {
    switch ( v) {
-   case svYMenu: /* XXX sensible menu height - query? */ return 20;
+   case svYMenu: {
+      Font f;
+      apc_font_default( &f);
+      return f. height + MENU_ITEM_GAP * 2;
+   } 
    case svYTitleBar: /* XXX */ return 20;
    case svMousePresent:		return guts. mouse_buttons > 0;
    case svMouseButtons:		return guts. mouse_buttons;
-   case svSubmenuDelay:  /* XXX ? */ return 50;
+   case svSubmenuDelay:  /* XXX ? */ return guts. menu_timeout;
    case svFullDrag: /* XXX ? */ return false;
    case svWheelPresent:		return guts.mouse_wheel_up || guts.mouse_wheel_down;
    case svXIcon: 
@@ -1646,8 +985,8 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svXScrollbar:		return 16;
    case svYScrollbar:		return 16;
    case svXCursor:		return 1;
-   case svAutoScrollFirst:	return 200;
-   case svAutoScrollNext:	return 50;
+   case svAutoScrollFirst:	return guts. scroll_first;
+   case svAutoScrollNext:	return guts. scroll_next;
    case svXbsNone:		return 0;
    case svYbsNone:		return 0;
    case svXbsSizeable:		return 3; /* XXX */
@@ -1714,6 +1053,10 @@ apc_system_action( const char *s)
 {
    int l = strlen( s);
    switch (*s) {
+   case 'b':
+      if ( l == 7 && strcmp( s, "browser") == 0)
+         return duplicate_string("netscape");
+      break;
    case 'c':
       if ( l == 19 && strcmp( s, "can.shape.extension") == 0 && guts.shape_extension)
          return duplicate_string( "yes");
@@ -1764,15 +1107,14 @@ apc_query_drive_type( const char *drive)
 char *
 apc_get_user_name( void)
 {
-   DOLBUG( "apc_get_user_name()\n");
-   return nil;
+   return getlogin();
 }
 
-void *
-apc_dlopen(char *path, int mode)
+Bool
+apc_dl_export(char *path)
 {
-   DOLBUG( "apc_dlopen()\n");
-   return nil;
+   /* XXX */
+   return true;
 }
 
 PList
@@ -1865,5 +1207,32 @@ prima_rect_intersect( XRectangle *t, const XRectangle *s)
       r. width = w; r. height = h;
    }
    *t = r;
+}
+
+
+
+/* printer stubs */
+
+Bool   apc_prn_create( Handle self) { return false; }
+Bool   apc_prn_destroy( Handle self) { return true; }
+Bool   apc_prn_select( Handle self, const char* printer) { return false; }
+char * apc_prn_get_selected( Handle self) { return nil; }
+Point  apc_prn_get_size( Handle self) { return (Point){0,0}; }
+Point  apc_prn_get_resolution( Handle self) { return (Point){0,0}; }
+char * apc_prn_get_default( Handle self) { return nil; }
+Bool   apc_prn_setup( Handle self) { return false; }
+Bool   apc_prn_begin_doc( Handle self, const char* docName) { return false; }
+Bool   apc_prn_begin_paint_info( Handle self) { return false; }
+Bool   apc_prn_end_doc( Handle self) { return true; } 
+Bool   apc_prn_end_paint_info( Handle self) { return true; } 
+Bool   apc_prn_new_page( Handle self) { return true; }
+Bool   apc_prn_abort_doc( Handle self) { return true; }
+ApiHandle   apc_prn_get_handle( Handle self) { return ( ApiHandle) 0; }
+
+PrinterInfo * 
+apc_prn_enumerate( Handle self, int * count) 
+{
+   *count = 0;
+   return nil;
 }
 

@@ -164,6 +164,7 @@ apc_window_activate( Handle self)
    XWindow xfoc;
    XEvent ev;
 
+   if ( !XX-> flags. mapped) return true;
    if ( guts. message_boxes) return false;
    if ( self && ( self != CApplication( application)-> map_focus( application, self)))
       return false;
@@ -207,8 +208,7 @@ apc_window_get_active( void)
 int
 apc_window_get_border_icons( Handle self)
 {
-   DOLBUG( "apc_window_get_border_icons()\n");
-   return 0;
+   return X(self)-> flags. sizeable ? biAll : ( biAll & ~biMaximize);
 }
 
 int
@@ -237,9 +237,12 @@ apc_window_get_icon( Handle self, Handle icon)
    XWMHints * hints;
    Pixmap xor, and;
    int xx, xy, ax, ay, xd, ad;
-   XImage * i;
    Bool ret;
 
+   if ( !icon) 
+      return X(self)-> flags. has_icon ? true : false;
+   else
+      if ( !X(self)-> flags. has_icon) return false;
 
    if ( !( hints = XGetWMHints( DISP, X_WINDOW))) return false;  
    if ( !icon || !hints-> icon_pixmap) {
@@ -261,27 +264,14 @@ apc_window_get_icon( Handle self, Handle icon)
    } 
 
    CImage( icon)-> create_empty( icon, xx, xy, ( xd == 1) ? 1 : guts. qdepth);
-   if (( i = XGetImage( DISP, xor, 0, 0, xx, xy, 
-      ( xd == 1) ? 1 : AllPlanes, ( xd == 1) ? XYPixmap : ZPixmap))) {
-      XCHECKPOINT;
-      ret = prima_query_image( icon, i);
-      XDestroyImage( i);
-      if ( !ret) return false;
-   } else 
-      return false;
+   if ( !prima_std_query_image( icon, xor)) return false;
    
    if ( and) {
       HV * profile = newHV();
       Handle mask = Object_create( "Prima::Image", profile);
       sv_free(( SV *) profile);
       CImage( mask)-> create_empty( mask, ax, ay, ( ad == 1) ? 1 : guts. qdepth);
-      if (( i = XGetImage( DISP, and, 0, 0, ax, ay, 
-         ( ad == 1) ? 1 : AllPlanes, ( ad == 1) ? XYPixmap : ZPixmap))) {
-         XCHECKPOINT;
-         ret = prima_query_image( mask, i);
-         XDestroyImage( i);
-      } else 
-         ret = false;
+      ret = prima_std_query_image( mask, and);
       if (( PImage( mask)-> type & imBPP) != 1)
          CImage( mask)-> type( mask, true, imBW);
       if ( ret) {
@@ -310,15 +300,19 @@ apc_window_get_window_state( Handle self)
 Bool
 apc_window_get_task_listed( Handle self)
 {
-   DOLBUG( "apc_window_get_task_listed()\n");
-   return false;
+   /* TransientForHint might be the closest definition to this */
+   return true;
 }
 
 Bool
 apc_window_set_caption( Handle self, const char *caption)
 {
-   XStoreName( DISP, X_WINDOW, caption);
-   XSetIconName( DISP, X_WINDOW, caption);
+   XTextProperty p;
+   if ( XStringListToTextProperty(( char **) &caption, 1, &p) == 0) 
+      return false;
+   XSetWMIconName( DISP, X_WINDOW, &p);
+   XSetWMName( DISP, X_WINDOW, &p);
+   XFree( p. value);
    return true;
 }
 
@@ -394,7 +388,14 @@ apc_window_set_client_pos( Handle self, int x, int y)
 {
    DEFXX;
    XSizeHints hints;
+
    bzero( &hints, sizeof( XSizeHints));
+
+   if ( XX-> flags. zoomed) {
+      XX-> zoomRect. left = x;
+      XX-> zoomRect. bottom = y;
+      return true;
+   }
 
    if ( x == XX-> origin. x && y == XX-> origin. y) return true;
    XX-> flags. position_determined = 1;
@@ -407,14 +408,14 @@ apc_window_set_client_pos( Handle self, int x, int y)
   
    y = guts. displaySize.y - XX-> size.y - XX-> menuHeight - y;
    hints. flags = USPosition;
-   hints. x = x - XX-> decorationSize.x;
-   hints. y = y - XX-> decorationSize.y + 1;
+   hints. x = x - XX-> decorationSize. x;
+   hints. y = y - XX-> decorationSize. y;
    apc_SetWMNormalHints( self, &hints);
    XMoveWindow( DISP, X_WINDOW, hints. x, hints. y);
+          
    prima_wm_sync( self, ConfigureNotify);
    return true;
 }
-
 
 static Bool
 window_set_client_size( Handle self, int width, int height)
@@ -423,10 +424,9 @@ window_set_client_size( Handle self, int width, int height)
    XSizeHints hints;
    PWidget widg = PWidget( self);
    
-   bzero( &hints, sizeof( XSizeHints));
-   XX-> flags. size_determined = 1;
+   if ( !XX-> flags. zoomed) 
+      widg-> virtualSize = (Point){width,height};
 
-   widg-> virtualSize = (Point){width,height};
    width = ( width > 0)
       ? (( width >= widg-> sizeMin. x)
 	  ? (( width <= widg-> sizeMax. x)
@@ -442,8 +442,16 @@ window_set_client_size( Handle self, int width, int height)
 	  : widg-> sizeMin. y)
       : 1;
 
+   if ( XX-> flags. zoomed) {
+      XX-> zoomRect. right = width;
+      XX-> zoomRect. top   = height;
+      return true;
+   }
+
+   bzero( &hints, sizeof( XSizeHints));
+   XX-> flags. size_determined = 1;
    hints. flags = USSize | ( XX-> flags. position_determined ? USPosition : 0);
-   hints. x = XX-> origin. x - XX-> decorationSize.x;
+   hints. x = XX-> origin. x - XX-> decorationSize. x;
    hints. y = guts. displaySize.y - height - XX-> menuHeight - XX-> origin. y - XX-> decorationSize.y + 1;
    hints. width = width;
    hints. height = height + XX-> menuHeight;
@@ -470,10 +478,13 @@ Bool
 prima_window_reset_menu( Handle self, int newMenuHeight)
 {
    DEFXX;
+   int oh = XX-> menuHeight;
    if ( newMenuHeight != XX-> menuHeight) {
       XX-> menuHeight = newMenuHeight;
-      if ( PWindow(self)-> stage <= csNormal && XX-> flags. size_determined) 
+      if ( PWindow(self)-> stage <= csNormal && XX-> flags. size_determined) {
          return window_set_client_size( self, XX-> size.x, XX-> size.y);
+      } else
+         XX-> size. y -= newMenuHeight + oh;   
    }
    return true;
 }
@@ -519,14 +530,16 @@ apc_window_set_visible( Handle self, Bool show)
 Bool
 apc_window_set_icon( Handle self, Handle icon)
 {
+   DEFXX;
    PIcon i = ( PIcon) icon;
    XIconSize * sz = nil; 
    Pixmap xor, and;
    XWMHints wmhints;
-   IconHandle ih;
    int n;
 
    if ( !icon) {
+      if ( !XX-> flags. has_icon) return true;
+      XX-> flags. has_icon = false;
       XDeleteProperty( DISP, X_WINDOW, XA_WM_HINTS);
       wmhints. flags = InputHint;
       wmhints. input = false; 
@@ -534,13 +547,16 @@ apc_window_set_icon( Handle self, Handle icon)
       return true;
    }
 
-   if ( XGetIconSizes( DISP, guts.root, &sz, &n)) {
+   if ( XGetIconSizes( DISP, guts.root, &sz, &n) && n > 0) {
       int zx = sz-> min_width, zy = sz-> min_height;
       while ( 1) {
          if ( i-> w <= zx || i-> h <= zy) break;
          zx += sz-> width_inc;
          zy += sz-> height_inc;
+         if ( zx >= sz-> max_width || zy >= sz-> max_height) break;
       }
+      if ( zx > sz-> max_width)  zx = sz-> max_width;
+      if ( zy > sz-> max_height) zy = sz-> max_height;
       if (( zx != i-> w && zy != i-> h) || ( sz-> max_width != i-> w && sz-> max_height != i-> h)) {
          i = ( PIcon) i-> self-> dup( icon);
          i-> self-> size(( Handle) i, true, (Point){zx,zy});
@@ -548,57 +564,56 @@ apc_window_set_icon( Handle self, Handle icon)
       XFree( sz);
    } 
 
-   if ( kind_of( icon, CIcon)) {
-      ih = i-> self-> split(( Handle) i);
-   } else {
-      ih. xorMask = ( Handle)i;
-      ih. andMask = nilHandle;
-   }
-
+   xor = prima_std_pixmap( icon, CACHE_LOW_RES);
+   if ( !xor) goto FAIL;
    {
-      /* XXX dynamicColors */
-      Handle h = CImage(ih.xorMask)-> bitmap( ih.xorMask);
-      xor = X(h)-> gdrawable;
-      X(h)-> gdrawable = XCreatePixmap( DISP, guts. root, 1, 1, 1);
-      Object_destroy( h);
-      if ( ih. andMask) {
-         int i; 
-         Byte *d = PImage(ih.andMask)-> data;
-         for ( i = 0; i < PImage(ih.andMask)-> dataSize; i++, d++)
-            *d = ~(*d);
-         h = CImage(ih.andMask)-> bitmap( ih.andMask);
-         and = X(h)-> gdrawable;
-         X(h)-> gdrawable = XCreatePixmap( DISP, guts. root, 1, 1, 1);
-         Object_destroy( h);
-         Object_destroy( ih. xorMask);
-         Object_destroy( ih. andMask);
-      } else
-         and = nilHandle;
+      GC gc;
+      XGCValues gcv;
+      
+      and = XCreatePixmap( DISP, guts. root, i-> w, i-> h, 1);
+      if ( !and) {
+         XFreePixmap( DISP, xor);
+         goto FAIL;
+      }
+      
+      gc = XCreateGC( DISP, and, 0, &gcv);
+      if ( X(icon)-> image_cache. icon) {
+         XSetBackground( DISP, gc, 0xffffffff);
+         XSetForeground( DISP, gc, 0x00000000);
+         prima_put_ximage( and, gc, X(icon)-> image_cache. icon, 0, 0, 0, 0, i-> w, i-> h);
+      } else {
+         XSetForeground( DISP, gc, 0xffffffff);
+         XFillRectangle( DISP, and, gc, 0, 0, i-> w + 1, i-> h + 1);
+      }
+      XFreeGC( DISP, gc);
    }
-
    if (( Handle) i != icon) Object_destroy(( Handle) i);
 
-   wmhints. flags = IconPixmapHint;
+   wmhints. flags = InputHint | IconPixmapHint | IconMaskHint;
    wmhints. icon_pixmap = xor;
-   if ( and) {
-      wmhints. flags |= IconMaskHint;
-      wmhints. icon_mask = and;
-   }
+   wmhints. icon_mask   = and;
+   wmhints. input       = false;
    XSetWMHints( DISP, X_WINDOW, &wmhints);
    XCHECKPOINT;
+
+   XX-> flags. has_icon = true;
    
    return true;
+FAIL:
+
+   if (( Handle) i != icon) Object_destroy(( Handle) i);
+   return false;
 }
 
 static void
-apc_widget_set_rect( Handle self, int x, int y, int szx, int szy)
+apc_window_set_rect( Handle self, int x, int y, int szx, int szy)
 {
     XSizeHints hints;
 
     bzero( &hints, sizeof( XSizeHints));
     hints. flags = USPosition | USSize;
-    hints. x = x;
-    hints. y = y;
+    hints. x = x - X(self)-> decorationSize. x;
+    hints. y = guts. displaySize. y - szy - X(self)-> menuHeight - y - X(self)-> decorationSize. y;
     hints. width  = szx;
     hints. height = szy + X(self)-> menuHeight;
     X(self)-> flags. size_determined = 1;
@@ -637,7 +652,7 @@ apc_window_set_window_state( Handle self, int state)
    
    if ( state == wsMaximized && !XX-> flags. zoomed) {
       XX-> zoomRect = ( Rect) {XX-> origin.x, XX-> origin.y, XX-> size.x, XX-> size.y};
-      apc_widget_set_rect( self, 0, 0, guts. displaySize.x, guts. displaySize.y);
+      apc_window_set_rect( self, 0, 0, guts. displaySize.x, guts. displaySize.y - XX-> menuHeight);
    }
 
    if ( !XX-> flags. withdrawn) {
@@ -653,7 +668,7 @@ apc_window_set_window_state( Handle self, int state)
    
    if ( XX-> flags. zoomed && state != wsMaximized) {
       XX-> flags. zoomed = 0;
-      apc_widget_set_rect( self, XX-> zoomRect. left, XX-> zoomRect. bottom, 
+      apc_window_set_rect( self, XX-> zoomRect. left, XX-> zoomRect. bottom, 
          XX-> zoomRect. right, XX-> zoomRect. top);
    }   
    XFree( wh); 

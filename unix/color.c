@@ -33,6 +33,7 @@
 
 #include "unix/guts.h"
 #include "Drawable.h"
+#include "Window.h"
 
 
 static Color standard_button_colors[] = {
@@ -137,8 +138,8 @@ static Color standard_menu_colors[] = {
 static Color standard_popup_colors[] = {
    0x000000,	/* Prima.Popup.foreground */
    0xcccccc,        /* Prima.Popup.background */
-   0x000000,	/* Prima.Popup.hilitefore */
-   0xcccccc,        /* Prima.Popup.hiliteback */
+   0xcccccc,        /* Prima.Popup.hilitefore */
+   0x000000,	    /* Prima.Popup.hiliteback */
    0x606060,        /* Prima.Popup.disabledfore */
    0xcccccc,        /* Prima.Popup.disabledback */
    0xffffff,        /* Prima.Popup.light3d */
@@ -232,38 +233,32 @@ static Color* standard_colors[] = {
 };
 
 static const int MAX_COLOR_CLASS = sizeof( standard_colors) / sizeof( standard_colors[ 0]) - 1;
-static const int MAX_COLOR_INDEX = ciMaxId;
-
-static Color
-get_standard_color( long class, int index)
-{
-   long cls = (class & wcMask) >> 16;
-   if ( cls <= 0 || cls > MAX_COLOR_CLASS) {
-      warn( "UAG_001: illegal color class: %08x", class);
-      return 0xFFFFFF; 
-   }
-   if ( index < 0 || index > MAX_COLOR_INDEX) {
-      warn( "UAG_002: illegal color index: %d", index);
-      return 0xFFFFFF;
-   }
-   return standard_colors[ cls][ index];
-}
 
 Color 
-prima_map_color( Color color)
+prima_map_color( Color clr, int * hint)
 {
-   if ( color >= 0) return color;
-   /* XXX - remove this -1: */
-   return get_standard_color(color, (int)((unsigned long)color & ~(unsigned long)(wcMask|0x80000000))-1);
+   long cls;
+   if ( hint) *hint = COLORHINT_NONE;
+   if ( clr >= 0) return clr;
+   
+   cls = (clr & wcMask) >> 16;
+   if ( cls <= 0 || cls > MAX_COLOR_CLASS) cls = wcWidget;
+   if (( clr = ( clr & ~wcMask)) > clMaxSysColor) clr = clMaxSysColor;
+   if ( clr == clSet)   {
+      if ( hint) *hint = COLORHINT_WHITE;
+      return 0xffffff; 
+   } else if ( clr == clClear) {
+      if ( hint) *hint = COLORHINT_BLACK;
+      return 0; 
+   } else return standard_colors[cls][clr-1];
 }   
 
 Color
 apc_widget_map_color( Handle self, Color color)
 {
    if ((color < 0) && (( color & wcMask) == 0)) color |= PWidget(self)->widgetClass;
-   return prima_map_color( color);
+   return prima_map_color( color, nil);
 }   
-
 
 static PHash  hatches;
 static Bool   kill_hatches( Pixmap pixmap, int keyLen, void * key, void * dummy);
@@ -315,11 +310,19 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 {
    DEFXX;
    Brush b;
-   int a[3] = { COLOR_R(color), COLOR_G(color), COLOR_B(color)};
+   int a[3], hint;
+
    if ( !brush) brush = &b;
-  //  printf("%s asked for %06x\n", self?PWidget(self)->name:"null", color);
    brush-> balance = 0;
-   brush-> color = color;
+   brush-> color = color = prima_map_color( color, &hint);
+
+   if ( hint) 
+      return ( brush-> primary = (( hint == COLORHINT_BLACK) ? LOGCOLOR_BLACK : LOGCOLOR_WHITE));
+   
+   a[0] = COLOR_R(color);
+   a[1] = COLOR_G(color);
+   a[2] = COLOR_B(color);
+  //  printf("%s asked for %06x\n", self?PWidget(self)->name:"null", color);
    if (self && XT_IS_BITMAP(XX)) {
       Byte balance = ( a[0] + a[1] + a[2] + 6) / (3 * 4);
       if ( balance < 64) {
@@ -333,23 +336,24 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
          int ab2;
          Bool dyna = guts. dynamicColors && self && X(self)-> type. widget && ( self != application);
          brush-> primary = prima_color_find( self, color, -1, &ab2, RANK_FREE);
-         if ( guts. useDithering && (brush != &b) && (ab2 > 12)) {
-            if ( dyna) {
-               XColor xc;
-               xc. red   = COLOR_R16(color);
-               xc. green = COLOR_G16(color);
-               xc. blue  = COLOR_B16(color);
-               xc. flags = DoGreen | DoBlue | DoRed;
-               prima_color_sync();
-               if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
-                  if ( prima_color_new( &xc)) {
-                     // printf("%s alloc %d ( wanted %06x). got %02x %02x %02x\n", PWidget(self)-> name, xc.pixel, color, xc.red>>8,xc.green>>8,xc.blue>>8);
-                     prima_color_add_ref( self, xc. pixel, RANK_NORMAL);
-                     return brush-> primary = xc. pixel;
-                  }
+         
+         if ( dyna && ab2 > 12) {
+            XColor xc;
+            xc. red   = COLOR_R16(color);
+            xc. green = COLOR_G16(color);
+            xc. blue  = COLOR_B16(color);
+            xc. flags = DoGreen | DoBlue | DoRed;
+            prima_color_sync();
+            if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
+               if ( prima_color_new( &xc)) {
+                  // printf("%s alloc %d ( wanted %06x). got %02x %02x %02x\n", PWidget(self)-> name, xc.pixel, color, xc.red>>8,xc.green>>8,xc.blue>>8);
+                  prima_color_add_ref( self, xc. pixel, RANK_NORMAL);
+                  return brush-> primary = xc. pixel;
                }
             }
-            
+         }
+
+         if ( guts. useDithering && (brush != &b) && (ab2 > 12)) {
             if ( guts. grayScale) {
                int clr = ( COLOR_R(color) + COLOR_G(color) + 
                      COLOR_B(color)) / 3;
@@ -775,12 +779,13 @@ BLACK_WHITE_ALLOCATED:
          10, 58,  6, 54,  9, 57,  5, 53,
          42, 26, 38, 22, 41, 25, 37, 21
       };
-      bzero( p, sizeof( FillPattern) * 64);
+      bzero( p, sizeof( FillPattern) * 65);
       for ( i = 0; i < 65; i++, p++) 
          for ( y = 0; y < 8; y++) 
              for ( x = 0; x < 8; x++) 
                 if ( i <= map[y * 8 + x])
                    (*p)[y] |= 1 << x;
+      
    } else {
       warn("not enough memory\n");
       return false;
@@ -794,7 +799,7 @@ BLACK_WHITE_ALLOCATED:
    } else {
       int i, j, from[3] = {0,0,0}, to[3] = {0,0,0}, stage[3] = {0,0,0}, lim[3]; 
       unsigned long mask[3] = {guts. visual. red_mask, guts. visual. green_mask, guts. visual. blue_mask};
-      // find color bounds and test if they are continuous
+      // find color bounds and test if they are contiguous
       for ( j = 0; j < 3; j++) {
          for ( i = 0; i < 32; i++) {
             switch ( stage[j]) {
@@ -1024,7 +1029,7 @@ prima_palette_replace( Handle self, Bool fast)
 {
    DEFXX;
    Bool restricted = fast || XX-> type. dbm;
-   int rank, psz, i, j, granted, stage;
+   int rank, psz, i, j, granted, stage, menu = 0;
    unsigned long * req;
    RGBColor * rqx;
    MainColorEntry * p;
@@ -1039,7 +1044,10 @@ prima_palette_replace( Handle self, Bool fast)
 
    if ( !fast) prima_palette_free( self, true); // remove old entries
   
-   if (( psz = PDrawable( self)-> palSize) == 0) {
+   psz = PDrawable( self)-> palSize + menu;
+   if ( XT_IS_WINDOW(X(self)) && PWindow(self)-> menu) 
+      psz += (menu = ciMaxId + 1);
+   if ( psz == 0) {
       prima_color_sync();
       return true; 
    }
@@ -1047,11 +1055,13 @@ prima_palette_replace( Handle self, Bool fast)
    if ( !( req = malloc( sizeof( unsigned long) * psz))) 
       return false;
 
-   for ( i = 0; i < psz; i++) 
+   for ( i = 0; i < psz - menu; i++) 
       req[i] = RGB_COMPOSITE( 
          PWidget( self)-> palette[i].r,
          PWidget( self)-> palette[i].g,
          PWidget( self)-> palette[i].b);
+   for ( i = psz - menu; i < psz; i++) 
+      req[i] = PWindow(self)-> menuColor[ i - psz + menu]; 
    
    granted = 0;
    
@@ -1195,15 +1205,19 @@ ALLOC_STAGE:
       if ( guts. palette[i]. rank != RANK_FREE) 
          j++;
    stage = j; // immutable and locked colors
-   for ( i = 0; i < widgets. count; i++) 
+   for ( i = 0; i < widgets. count; i++) {
       j += PWidget( widgets. items[i])-> palSize;
+      if ( XT_IS_WINDOW(X(widgets. items[i])) && 
+           PWindow(widgets. items[i])-> menu)
+         j += ciMaxId + 1;
+   }
    
     // printf("BIG:%d vs %d\n", j, psz);
    if ( !( rqx = malloc( sizeof( RGBColor) * j))) goto SUCCESS; // :O
    
    {
       RGBColor * r = rqx;
-      for ( i = 0; i < guts. palSize; i++)
+      for ( i = 0; i < guts. palSize; i++) 
          if ( guts. palette[i]. rank != RANK_FREE) {
             r-> r = guts. palette[i]. r;
             r-> g = guts. palette[i]. g;
@@ -1214,6 +1228,15 @@ ALLOC_STAGE:
          memcpy( r, PWidget( widgets. items[i])-> palette, 
             PWidget( widgets. items[i])-> palSize * sizeof( RGBColor));
          r += PWidget( widgets. items[i])-> palSize;
+         if ( XT_IS_WINDOW(X(widgets. items[i])) && 
+              PWindow(widgets. items[i])-> menu) {
+            int k;
+            for ( k = 0; k <= ciMaxId; k++, r++) {
+               r-> r = COLOR_R(PWindow(widgets. items[i])-> menuColor[k]);
+               r-> g = COLOR_G(PWindow(widgets. items[i])-> menuColor[k]);
+               r-> b = COLOR_B(PWindow(widgets. items[i])-> menuColor[k]);
+            }
+         }
       }
    }
    

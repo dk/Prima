@@ -167,49 +167,6 @@ process_transparents( Handle self)
    }
 }
 
-typedef struct _RecreateData {
-  Point    pos;
-  Point    size;
-  Point    virtSize;
-  Bool     enabled;
-  Bool     visible;
-  Bool     focused;
-  Bool     capture;
-} RecreateData, *PRecreateData;
-
-static void
-get_view_ex( Handle self, PRecreateData p)
-{
-  p-> capture   = apc_widget_is_captured( self);
-  p-> pos       = apc_widget_get_pos( self);
-  p-> size      = apc_widget_get_size( self);
-  p-> virtSize  = PWidget(self)-> virtualSize;
-  p-> enabled   = apc_widget_is_enabled( self);
-  p-> focused   = apc_widget_is_focused( self);
-  p-> visible   = apc_widget_is_visible( self);
-}
-
-
-static void
-set_view_ex( Handle self, PRecreateData p)
-{
-  DEFXX; 
-  XX-> origin. x = XX-> origin. y = XX-> size. x = XX-> size. y = INT_MAX; // force reset
-  apc_widget_set_visible( self, false);
-  apc_widget_set_pos( self, p-> pos. x, p-> pos. y);
-  apc_widget_set_size( self, p-> size. x, p-> size. y);
-  PWidget(self)-> virtualSize = p-> virtSize;
-  apc_widget_set_enabled( self, p-> enabled);
-  apc_widget_set_visible( self, p-> visible);
-  if ( p-> focused) {
-     if ( guts. focused == self) guts. focused = nilHandle;
-     apc_widget_set_focused( self);
-  }   
-  if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
-  XClearWindow( DISP, X_WINDOW);
-  process_transparents( self);
-}
-
 Bool
 apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		   Bool clip_owner, Bool transparent, ApiHandle parentHandle)
@@ -219,31 +176,11 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    Handle real_owner;
    XWindow parent, old = X_WINDOW;
    XSetWindowAttributes attrs;
-   Handle * list = PWidget( self)-> widgets. items;
-   int count = PWidget( self)-> widgets. count;
-   RecreateData vprf;
 
    reset = ( old != nilHandle) && ( 
       ( clip_owner != XX-> flags. clip_owner) ||
       ( parentHandle != XX-> parent)
    );
-
-   if ( reset) {
-      int i;
-      if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self)
-         prima_end_menu();
-      CWidget( self)-> end_paint_info( self);
-      CWidget( self)-> end_paint( self);
-      for( i = 0; i < count; i++)
-         get_view_ex( list[ i], ( RecreateData*)( X( list[ i])-> recreateData = malloc( sizeof( RecreateData))));
-      
-      if ( XX-> recreateData) {
-         memcpy( &vprf, XX-> recreateData, sizeof( vprf));
-         free( XX-> recreateData);
-         XX-> recreateData = nil;
-      } else
-         get_view_ex( self, &vprf);
-   }   
 
    XX-> flags. transparent = !!transparent;
    XX-> type.drawable = true;
@@ -259,57 +196,61 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    if ( parentHandle)
       parent = parentHandle;
    XX-> parentHandle = parentHandle;
+   XX-> real_parent = XX-> parent = parent;
+   XX-> above = nilHandle;
+   XX-> owner = real_owner;
 
-   attrs. event_mask = 0
-      | KeyPressMask
-      | KeyReleaseMask
-      | ButtonPressMask
-      | ButtonReleaseMask
-      | EnterWindowMask
-      | LeaveWindowMask
-      | PointerMotionMask
-      /* | PointerMotionHintMask */
-      /* | Button1MotionMask */
-      /* | Button2MotionMask */
-      /* | Button3MotionMask */
-      /* | Button4MotionMask */
-      /* | Button5MotionMask */
-      | ButtonMotionMask
-      | KeymapStateMask
-      | ExposureMask
-      | VisibilityChangeMask
-      | StructureNotifyMask
-      /* | ResizeRedirectMask */
-      /* | SubstructureNotifyMask */
-      /* | SubstructureRedirectMask */
-      | FocusChangeMask
-      | PropertyChangeMask
-      | ColormapChangeMask
+   XX-> flags. clip_owner = !!clip_owner;
+   XX-> flags. sync_paint = !!sync_paint;
+
+   attrs. event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask
+      | ButtonReleaseMask | EnterWindowMask | LeaveWindowMask | PointerMotionMask
+      | ButtonMotionMask | KeymapStateMask | ExposureMask | VisibilityChangeMask
+      | StructureNotifyMask | FocusChangeMask | PropertyChangeMask | ColormapChangeMask
       | OwnerGrabButtonMask;
    attrs. override_redirect = true;
    attrs. do_not_propagate_mask = attrs. event_mask;
    attrs. win_gravity = ( clip_owner && ( owner != application)) 
       ? SouthWestGravity : NorthWestGravity;
+
+   if ( reset) {
+      Point pos = PWidget(self)-> pos;
+      if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
+      CWidget( self)-> end_paint_info( self);
+      CWidget( self)-> end_paint( self);
+      if ( XX-> flags. paint_pending) {
+         TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+         XX-> flags. paint_pending = false;
+      }
+      XChangeWindowAttributes( DISP, X_WINDOW, CWWinGravity, &attrs);
+      XReparentWindow( DISP, X_WINDOW, parent, pos. x, 
+         X(owner)-> size.y + X(owner)-> menuHeight - pos. y - X(self)-> size. y);
+      process_transparents( self);
+      return true;
+   }   
+
+   if ( old != nilHandle) return true;
+
    X_WINDOW = XCreateWindow( DISP, parent,
-	                     0, 0, 1, 1, 0, CopyFromParent,
-	                     InputOutput, CopyFromParent,
-	                     0
-	                     /* | CWBackPixmap */
-	                     /* | CWBackPixel */
-	                     /* | CWBorderPixmap */
-	                     /* | CWBorderPixel */
-	                     /* | CWBitGravity */
-	                     | CWWinGravity
-	                     /* | CWBackingStore */
-	                     /* | CWBackingPlanes */
-	                     /* | CWBackingPixel */
-	                     | CWOverrideRedirect
-	                     /* | CWSaveUnder */
-	                     | CWEventMask
-	                     /* | CWDontPropagate */
-	                     /* | CWColormap */
-	                     /* | CWCursor */
-	                     , &attrs);
+                             0, 0, 1, 1, 0, CopyFromParent,
+                             InputOutput, CopyFromParent,
+                             0
+                             /* | CWBackPixmap */
+                             /* | CWBackPixel */
+                             /* | CWBorderPixmap */
+                             /* | CWBorderPixel */
+                             /* | CWBitGravity */
+                             | CWWinGravity
+                             /* | CWBackingStore */
+                             /* | CWBackingPlanes */
+                             /* | CWBackingPixel */
+                             | CWOverrideRedirect
+                             /* | CWSaveUnder */
+                             | CWEventMask
+                             /* | CWDontPropagate */
+                             /* | CWColormap */
+                             /* | CWCursor */
+                             , &attrs);
    if (!X_WINDOW)
       return false;
    XCHECKPOINT;
@@ -317,60 +258,32 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    if ( XT_IS_WINDOW(X(owner)) && PWindow(owner)-> menu)
       XRaiseWindow( DISP, PComponent(PWindow(owner)-> menu)-> handle);
 
-   if ( reset) {
-      hash_delete( guts.windows, &old, sizeof(X_WINDOW), false);
-   } else {
-      XX-> size = (Point){0,0};
-      XX-> ackOrigin = XX-> ackSize = ( Point){0,0};
-   }   
+   XX-> size = (Point){0,0};
+   XX-> ackOrigin = XX-> ackSize = ( Point){0,0};
+
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
 
-   XX-> real_parent = XX-> parent = parent;
    XX-> gdrawable = XX-> udrawable = X_WINDOW;
 
-   XX-> flags. clip_owner = clip_owner;
-   XX-> flags. sync_paint = sync_paint;
    XX-> flags. process_configure_notify = false;
    XX-> flags. position_determined = 1;
    XX-> flags. size_determined = 1;
    
-   XX-> above = nilHandle;
-   XX-> owner = real_owner;
-
    apc_component_fullname_changed_notify( self);
    
-   if ( reset) {
-      int i, stage = PWidget(self)-> stage;
-      Handle oldOwner = PWidget(self)-> owner;  PWidget(self)-> owner = owner;
-      PWidget(self)-> stage = csFrozen;
-      if ( XX-> flags. paint_pending) {
-         TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
-         XX-> flags. paint_pending = false;
-      }
-      XX-> flags. falsely_hidden = 0;
-      set_view_ex( self, &vprf);
-      XCHECKPOINT;
-      PWidget(self)-> owner = oldOwner;
-      for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
-      XDestroyWindow( DISP, old);
-      XCHECKPOINT;
-      if ( XX-> pointer_id == crUser)
-         XDefineCursor( DISP, XX-> udrawable, XX-> user_pointer);
-      else
-         apc_pointer_set_shape( self, XX-> pointer_id);
-      PWidget(self)-> stage = stage;
-   } else
-      prima_send_create_event( X_WINDOW);
+   prima_send_create_event( X_WINDOW);
 
    return true;
 }
-
 
 Bool
 apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 {
    DEFXX;
    Bool useRPDraw = false;
+
+   if ( guts. appLock > 0) return false;
+   
    if ( XX-> flags. transparent && inside_on_paint) {
       if ( XX-> flags. want_visible && !XX-> flags. falsely_hidden) {
          if ( XX-> parent == guts. root) {
@@ -395,30 +308,40 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
             useRPDraw = true;
       }
    }
+   XCHECKPOINT;    
    if ( guts. dynamicColors && inside_on_paint) prima_palette_free( self, false);
    prima_no_cursor( self);
    prima_prepare_drawable_for_painting( self, inside_on_paint);
    if ( useRPDraw) {
       Handle owner = PWidget(self)->owner;
-      Point ed = apc_widget_get_pos( self);
+      Point po = apc_widget_get_pos( self);
+      Point sz = apc_widget_get_size( self);
+      Point so = CWidget(owner)-> get_size( owner);
       XDrawable dc;
-      Bool buffered = PWidget(owner)-> options. optBuffered;
-      
-      PWidget(owner)-> options. optBuffered = false;
+      Region region;
+      XRectangle xr = {0,0,sz.x,sz.y};
+  
       CWidget(owner)-> begin_paint( owner);
       dc = X(owner)-> gdrawable;
       X(owner)-> gdrawable = XX-> gdrawable;
-      if ( XX-> region) 
-         XSetRegion( DISP, X(owner)-> gc, XX-> region);
-      else if ( XX-> stale_region) 
-         XSetRegion( DISP, X(owner)-> gc, XX-> stale_region);
-      X(owner)-> gtransform. x = -ed. x;
-      X(owner)-> gtransform. y = X(owner)-> size. y + X(owner)-> menuHeight - XX-> size.y - ed. y;
+      X(owner)-> btransform. x = -po. x;
+      X(owner)-> btransform. y = so. y - sz. y - po. y;
+      if ( X(owner)-> paint_region) {
+         XDestroyRegion( X(owner)-> paint_region);
+         X(owner)-> paint_region = nil;
+      }
+      region = XCreateRegion();
+      XUnionRectWithRegion( &xr, region, region);
+      if ( XX-> paint_region) 
+         XIntersectRegion( XX-> paint_region, region, region);
+      X(owner)-> paint_region = XCreateRegion();
+      XUnionRegion( X(owner)-> paint_region, region, X(owner)-> paint_region);
+      XOffsetRegion( X(owner)-> paint_region, -X(owner)-> btransform.x, X(owner)-> btransform.y); 
+      XSetRegion( DISP, X(owner)-> gc, region);
       CWidget( owner)-> notify( owner, "sH", "Paint", owner);
       X(owner)-> gdrawable = dc;
       CWidget( owner)-> end_paint( owner);
-      if ( buffered)
-         PWidget(owner)-> options. optBuffered = true;
+      XDestroyRegion( region);
    }
    return true;
 }
@@ -439,6 +362,8 @@ apc_widget_destroy( Handle self)
       prima_end_menu();
    if ( guts. focused == self)
       guts. focused = nilHandle;
+   if ( guts. lastWMFocus == X_WINDOW)
+      guts. lastWMFocus = nilHandle;
    XX-> flags.modal = false;
    if ( XX-> flags. paint_pending) {
       TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
@@ -524,9 +449,9 @@ apc_widget_get_invalid_rect( Handle self)
 {
    DEFXX;
    XRectangle r;
-   if ( !XX-> region)
+   if ( !XX-> invalid_region)
       return (Rect){0,0,0,0};
-   XClipBox( XX-> region, &r);
+   XClipBox( XX-> invalid_region, &r);
    return (Rect){r.x, XX-> size.y + XX-> menuHeight - r.height - r.y, 
                  r.x + r.width, XX-> size.y + XX-> menuHeight - r.y};
 }
@@ -559,7 +484,30 @@ apc_widget_get_pos( Handle self)
 Bool
 apc_widget_get_shape( Handle self, Handle mask)
 {
-   return false;
+   DEFXX;
+   XRectangle *r, *rc;
+   int i, count, ordering;
+
+   if ( !guts. shape_extension) return false;
+
+   if ( !mask) 
+      return XX-> shape_extent. x != 0 && XX-> shape_extent. y != 0;
+      
+   if ( XX-> shape_extent. x == 0 || XX-> shape_extent. y == 0)
+      return false;
+
+   r = rc = XShapeGetRectangles( DISP, X_WINDOW, ShapeBounding, &count, &ordering);
+  
+   CImage(mask)-> create_empty( mask, XX-> shape_extent. x, XX-> shape_extent. y, imBW);
+   CImage(mask)-> begin_paint( mask); 
+   XSetForeground( DISP, X(mask)-> gc, 1);
+   for ( i = 0; i < count; i++, r++) 
+      XFillRectangle( DISP, X(mask)-> gdrawable, X(mask)-> gc, 
+          r-> x - XX-> shape_offset. x, r-> y - XX-> shape_offset. y, 
+          r-> width, r-> height);
+   XFree( rc);
+   CImage(mask)-> end_paint( mask);  
+   return true;
 }
 
 Point
@@ -663,15 +611,15 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
       r. height = XX-> size. y;
    }
 
-   if ( !XX-> region) {
-      XX-> region = XCreateRegion();
+   if ( !XX-> invalid_region) {
+      XX-> invalid_region = XCreateRegion();
       if ( !XX-> flags. paint_pending) {
          TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = true;
       }
    }
 
-   XUnionRectWithRegion( &r, XX-> region, XX-> region);
+   XUnionRectWithRegion( &r, XX-> invalid_region, XX-> invalid_region);
    if ( XX-> flags. sync_paint) {
       apc_widget_update( self);
    }
@@ -756,17 +704,16 @@ apc_widget_scroll( Handle self, int horiz, int vert,
       XUnionRectWithRegion( &cpa, invalid, invalid);
    }
 
-   if ( XX-> region) {
+   if ( XX-> invalid_region) {
       reg = XCreateRegion();
-      XUnionRegion( XX-> region, reg, reg);
+      XUnionRegion( XX-> invalid_region, reg, reg);
       XIntersectRegion( reg, invalid, reg);
-      XSubtractRegion( XX-> region, reg, XX-> region);
+      XSubtractRegion( XX-> invalid_region, reg, XX-> invalid_region);
       XOffsetRegion( reg, horiz, -vert);
-      XUnionRegion( XX-> region, reg, XX-> region);
+      XUnionRegion( XX-> invalid_region, reg, XX-> invalid_region);
       XDestroyRegion( reg);
-   } else {
-      XX-> region = XCreateRegion();
-   }
+   } else 
+      XX-> invalid_region = XCreateRegion();
 
    r. x = dst_x;
    r. y = dst_y;
@@ -774,7 +721,7 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    XUnionRectWithRegion( &r, reg, reg);
    XSubtractRegion( invalid, reg, invalid);
    XDestroyRegion( reg);
-   XUnionRegion( XX-> region, invalid, XX-> region);
+   XUnionRegion( XX-> invalid_region, invalid, XX-> invalid_region);
    XDestroyRegion( invalid);
    if ( !XX-> flags. paint_pending) {
       TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
@@ -901,8 +848,7 @@ apc_widget_set_font( Handle self, PFont font)
 Bool
 apc_widget_set_palette( Handle self)
 {
-   DOLBUG( "apc_widget_set_palette()\n");
-   return true;
+   return prima_palette_replace( self, false);
 }
 
 Bool
@@ -910,7 +856,6 @@ apc_widget_set_pos( Handle self, int x, int y)
 {
    DEFXX;
    Event e;
-
    if ( XX-> type. window) {
       Rect rc;
       prima_get_frame_info( self, &rc);
@@ -944,6 +889,43 @@ apc_widget_set_pos( Handle self, int x, int y)
 Bool
 apc_widget_set_shape( Handle self, Handle mask)
 {
+   DEFXX;
+   PImage img;
+   Pixmap px;
+   GC gc;
+   XGCValues gcv;
+   ImageCache * cache;
+   int i;
+   Byte * data;
+
+   if ( !guts. shape_extension) return false; 
+   
+   if ( !mask) {
+      if ( XX-> shape_extent. x == 0 || XX-> shape_extent. y == 0) return true;
+      XShapeCombineMask( DISP, X_WINDOW, ShapeBounding, 0, 0, None, ShapeSet);
+      XX-> shape_extent. x = XX-> shape_extent. y = 0;
+      return true;
+   }
+   
+   img = PImage(mask);
+   data = img-> data;
+   for ( i = 0; i < img-> dataSize; i++, data++) *data = ~*data;
+   cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP);
+   if ( !cache) return false;
+   px = XCreatePixmap(DISP, guts. root, img->w, img->h, 1);
+   gc = XCreateGC(DISP, px, 0, &gcv);
+   prima_put_ximage(px, gc, cache->image, 0, 0, 0, 0, img->w, img->h);
+   XFreeGC( DISP, gc);
+   XShapeCombineMask( DISP, X_WINDOW, ShapeBounding, 0, 0, px, ShapeSet);
+   XShapeOffsetShape( DISP, X_WINDOW, ShapeBounding, 0, XX-> size. y + XX-> menuHeight - img-> h);
+   XFreePixmap( DISP, px);
+   data = img-> data;
+   for ( i = 0; i < img-> dataSize; i++, data++) *data = ~*data;
+   apc_image_update_change( mask);
+   XX-> shape_extent. x = img-> w; 
+   XX-> shape_extent. y = img-> h; 
+   XX-> shape_offset. x = 0;
+   XX-> shape_offset. y = XX-> size. y + XX-> menuHeight - img-> h;
    return true;
 }
 
@@ -961,12 +943,13 @@ prima_send_cmSize( Handle self, Point oldSize)
    e. gen. P. x = e. gen. R. right = XX-> size. x;
    e. gen. P. y = e. gen. R. top = XX-> size. y;
    {
-      int i, y = XX-> size. y, count = PWidget( self)-> widgets. count;
+      int i, y = XX-> size. y + XX-> menuHeight, count = PWidget( self)-> widgets. count;
       for ( i = 0; i < count; i++) {
 	 PWidget child = PWidget( PWidget( self)-> widgets. items[i]);
          if ((( PWidget(child)-> growMode & gmDontCare) == 0) &&
-             ( X(child)-> flags. clip_owner || ( child-> owner == application)))
+             ( !X(child)-> flags. clip_owner || ( child-> owner == application))) {
             XMoveWindow( DISP, child-> handle, X(child)-> origin.x, y - X(child)-> size.y - X(child)-> origin. y);
+         }
       }
    }
    apc_message( self, &e, false);
@@ -1024,7 +1007,7 @@ apc_widget_set_size( Handle self, int width, int height)
       }   
    } else {
       if ( XX-> flags. want_visible) XUnmapWindow( DISP, X_WINDOW);  
-      XMoveResizeWindow( DISP, X_WINDOW, x, y, 1, 1);
+      XMoveResizeWindow( DISP, X_WINDOW, x, y, ( width == 0) ? 1 : width, ( height == 0) ? 1 : height);
       XX-> flags. falsely_hidden = 1;
    }   
    prima_send_cmSize( self, sz);
@@ -1112,7 +1095,7 @@ apc_widget_update( Handle self)
 {
    DEFXX;
 
-   if ( XX-> region) {
+   if ( XX-> invalid_region) {
       if ( XX-> flags. paint_pending) {
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
@@ -1134,23 +1117,23 @@ apc_widget_validate_rect( Handle self, Rect rect)
    r. y = XX-> size. y - rect. top;
    r. height = rect. top - rect. bottom;
 
-   if ( !XX-> region) 
+   if ( !XX-> invalid_region) 
       return true;
    
    if ( !( rgn = XCreateRegion())) 
       return false;
    
    XUnionRectWithRegion( &r, rgn, rgn);
-   XSubtractRegion( XX-> region, rgn, XX-> region);
+   XSubtractRegion( XX-> invalid_region, rgn, XX-> invalid_region);
    XDestroyRegion( rgn);
 
-   if ( XEmptyRegion( XX-> region)) {
+   if ( XEmptyRegion( XX-> invalid_region)) {
       if ( XX-> flags. paint_pending) {
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
       }
-      XDestroyRegion( XX-> region);
-      XX-> region = nil;
+      XDestroyRegion( XX-> invalid_region);
+      XX-> invalid_region = nil;
    }   
    return true;
 }

@@ -104,10 +104,16 @@ typedef struct _PrimaXImage
 #endif
 } PrimaXImage;
 
+
+#define CACHE_AUTODETECT 0
+#define CACHE_BITMAP     1
+#define CACHE_PIXMAP     2
+#define CACHE_LOW_RES    3
+
 typedef struct {
+   int type;
    PrimaXImage *image;
    PrimaXImage *icon;
-   Bool bitmap;
 } ImageCache;
 
 typedef struct _RequestInformation
@@ -195,7 +201,41 @@ typedef struct CachedFont {
 } CachedFont, *PCachedFont;
 
 union       _unix_sys_data;
-struct     _timer_sys_data;
+
+#define CURSOR_TIMER	((Handle)11)
+#define MENU_TIMER	((Handle)12)
+
+#define COMPONENT_SYS_DATA                                                    \
+   Handle self;                                                               \
+   struct {                                                                   \
+      int application           : 1;                                          \
+      int bitmap                : 1;                                          \
+      int dbm                   : 1;                                          \
+      int drawable              : 1;                                          \
+      int icon                  : 1;                                          \
+      int image                 : 1;                                          \
+      int menu                  : 1;                                          \
+      int pixmap                : 1;                                          \
+      int popup                 : 1;                                          \
+      int timer                 : 1;                                          \
+      int widget                : 1;                                          \
+      int window                : 1;                                          \
+   } type;                                                                    \
+   XrmQuarkList q_class_name;                                                 \
+   XrmQuarkList q_instance_name;                                              \
+   int n_class_name;                                                          \
+   int n_instance_name
+
+typedef struct _timer_sys_data
+{
+   COMPONENT_SYS_DATA;
+   int timeout;
+   Handle who;
+   struct _timer_sys_data *older;
+   struct _timer_sys_data *younger;
+   struct timeval when;
+} TimerSysData, *PTimerSysData;
+
 struct  _drawable_sys_data;
 
 #define VIRGIN_GC_MASK  (       GCBackground    \
@@ -265,14 +305,14 @@ typedef struct {
    Byte           balance; /* 0-63 */
 } Brush;
 
-
-
 struct _UnixGuts
 {
    /* Event management */
    Time                         click_time_frame;
    Time                         double_click_time_frame;
    PHash                        clipboards;
+   Atom *                       clipboard_formats;
+   int                          clipboard_formats_count;
    Atom                         create_event;
    fd_set                       excpt_set;
    PList                        files;
@@ -330,12 +370,18 @@ struct _UnixGuts
    XrmQuark                     qwheeldown;
    XrmQuark                     qWheelup;
    XrmQuark                     qwheelup;
+   XrmQuark                     qSubmenudelay;
+   XrmQuark                     qsubmenudelay;
+   XrmQuark                     qScrollfirst;
+   XrmQuark                     qscrollfirst;
+   XrmQuark                     qScrollnext;
+   XrmQuark                     qscrollnext;
    /* Timers & cursors */
    int                          cursor_height;
    Point                        cursor_pixmap_size;
    Pixmap                       cursor_save;
    Bool                         cursor_shown;
-   struct _timer_sys_data      *cursor_timer;
+   TimerSysData                 cursor_timer;
    int                          cursor_width;
    Pixmap                       cursor_xor;
    Bool                         insert;
@@ -392,13 +438,18 @@ struct _UnixGuts
    XWindow                      grab_redirect;
    Handle                       grab_widget;
    Point                        grab_translate_mouse;
+   int                          scroll_first;
+   int                          scroll_next;
    Handle                       currentMenu;
+   int                          menu_timeout;
+   TimerSysData                 menu_timer;
+   XWindow                      lastWMFocus;
    XWindow                      root;
    XVisualInfo                  visual;
    int                          visualClass;
    MainColorEntry *             palette;
    int *                        mappingPlace;
-   int                          monochromeMap[2];
+   unsigned long                monochromeMap[2];
    int                          palSize;
    int                          localPalSize;
    int *                        systemColorMap;
@@ -413,6 +464,8 @@ struct _UnixGuts
    long                         wm_event_timeout;
    int                          red_shift, green_shift, blue_shift;
    int                          red_range, green_range, blue_range;
+   Point                        ellipseDivergence;
+   int                          appLock;
 } guts;
 
 #define FXA_RESOLUTION_X guts. fxa_resolution_x
@@ -444,26 +497,6 @@ struct _UnixGuts
 #define APC_BAD_SIZE INT_MAX
 #define APC_BAD_ORIGIN INT_MAX
 
-#define COMPONENT_SYS_DATA                                                    \
-   Handle self;                                                               \
-   struct {                                                                   \
-      int application           : 1;                                          \
-      int bitmap                : 1;                                          \
-      int dbm                   : 1;                                          \
-      int drawable              : 1;                                          \
-      int icon                  : 1;                                          \
-      int image                 : 1;                                          \
-      int menu                  : 1;                                          \
-      int pixmap                : 1;                                          \
-      int popup                 : 1;                                          \
-      int timer                 : 1;                                          \
-      int widget                : 1;                                          \
-      int window                : 1;                                          \
-   } type;                                                                    \
-   XrmQuarkList q_class_name;                                                 \
-   XrmQuarkList q_instance_name;                                              \
-   int n_class_name;                                                          \
-   int n_instance_name
 
 #define XT_IS_APPLICATION(x)    ((x)->type.application)
 #define XT_IS_BITMAP(x)         ((x)->type.bitmap)
@@ -489,6 +522,7 @@ typedef struct _drawable_sys_data
    Point transform, gtransform, btransform;
    Point ackOrigin, ackSize;   
    int menuHeight; 
+   int menuColorImmunity;
    Point decorationSize;
    Handle owner;  /* The real one */
    XWindow real_parent; /* top levels */
@@ -501,8 +535,7 @@ typedef struct _drawable_sys_data
    Brush fore, back;
    Color saved_fore, saved_back;
    ColorSet colors;
-   Region region;
-   Region stale_region;
+   Region invalid_region, paint_region;
    XRectangle clip_rect;
    FillPattern fill_pattern, saved_fill_pattern;
    Pixmap fp_pixmap;
@@ -511,6 +544,7 @@ typedef struct _drawable_sys_data
    int line_style, line_width;
    unsigned char *dashes, *paint_dashes;
    int ndashes, paint_ndashes;
+   Point clip_mask_extent, shape_extent, shape_offset;
    PCachedFont font;
    Font saved_font;
    Point cursor_pos;
@@ -535,6 +569,7 @@ typedef struct _drawable_sys_data
       int falsely_hidden                : 1;
       int first_click                   : 1;
       int grab                  	: 1;
+      int has_icon                      : 1;
       int iconic                        : 1;
       int mapped			: 1;
       int modal                         : 1;
@@ -556,8 +591,7 @@ typedef struct _drawable_sys_data
       int withdrawn                     : 1;
       int zoomed                        : 1;
    } flags;
-   ImageCache bitmap_cache;
-   ImageCache screen_cache;
+   ImageCache image_cache;
    Handle preexec_focus;
    TAILQ_ENTRY(_drawable_sys_data) paintq_link;
    Byte * palette;
@@ -566,17 +600,7 @@ typedef struct _drawable_sys_data
 #define XF_ENABLED(x)   ((x)->flags.enabled)
 #define XF_IN_PAINT(x)  ((x)->flags.paint)
 
-#define CURSOR_TIMER	((Handle)11)
-
-typedef struct _timer_sys_data
-{
-   COMPONENT_SYS_DATA;
-   int timeout;
-   Handle who;
-   struct _timer_sys_data *older;
-   struct _timer_sys_data *younger;
-   struct timeval when;
-} TimerSysData, *PTimerSysData;
+#define MenuTimerMessage 1021
 
 #define MENU_ITEM_GAP 4
 
@@ -595,6 +619,7 @@ typedef struct _menu_window
    Handle               self;
    XWindow              w;
    Point                sz;
+   Point                pos;
    PMenuItemReg         m;
    int                  num;
    PUnixMenuItem        um;
@@ -613,15 +638,31 @@ typedef struct _menu_sys_data
    PMenuWindow          w;
    MenuWindow           wstatic;
    PCachedFont          font;
+   int                  guillemots;
    unsigned long        c[ciMaxId+1];
+   XWindow              focus;
+   PMenuWindow          focused;
 } MenuSysData, *PMenuSysData;
+
+#define cfPixmap  2
+#define cfTargets 3
+
+typedef struct {
+   long size;
+   unsigned char * data;
+} ClipboardDataItem, *PClipboardDataItem;
 
 typedef struct _clipboard_sys_data
 {
    COMPONENT_SYS_DATA;
-   char                *name;
-   Atom                 atom;
-   Time                 have_since;
+   Atom                 selection;
+   Atom                 target;
+   Bool                 opened;
+   Bool                 inside_event;
+   Bool                 need_write;
+   Handle               selection_owner;
+   PClipboardDataItem   external;
+   PClipboardDataItem   internal;
 } ClipboardSysData, *PClipboardSysData;
 
 typedef union _unix_sys_data
@@ -644,6 +685,8 @@ typedef union _unix_sys_data
 #define DEFXX		PDrawableSysData selfxx = (self == nilHandle ? nil : X(self))
 #define M(obj)		((PMenuSysData)(PComponent((obj))-> sysData))
 #define DEFMM           PMenuSysData selfxx = ((PMenuSysData)(PComponent((self))-> sysData))
+#define C(obj)		((PClipboardSysData)(PComponent((obj))-> sysData))
+#define DEFCC		PClipboardSysData selfxx = C(self)
 #define XX		selfxx
 #define WHEEL_DELTA	120
 
@@ -659,6 +702,9 @@ extern void
 prima_handle_menu_event( XEvent *ev, XWindow win, Handle self);
 
 extern void
+prima_handle_selection_event( XEvent *ev, XWindow win, Handle self);
+
+extern void
 prima_get_gc( PDrawableSysData);
 
 extern void
@@ -666,6 +712,9 @@ prima_rebuild_watchers( void);
 
 extern void
 prima_release_gc( PDrawableSysData);
+
+extern Bool
+prima_init_clipboard_subsystem( void);
 
 extern Bool
 prima_init_font_subsystem( void);
@@ -682,8 +731,15 @@ prima_color_find( Handle self, long color, int maxDiff, int * diff, int maxRank)
 extern Bool
 prima_palette_replace( Handle self, Bool fast);
 
+#define COLORHINT_NONE  0
+#define COLORHINT_BLACK 1
+#define COLORHINT_WHITE 2 
+
+#define LOGCOLOR_BLACK 0
+#define LOGCOLOR_WHITE (guts.palSize?(guts.palSize-1):0xffffffff)
+
 extern Color
-prima_map_color( Color color);
+prima_map_color( Color color, int * hint);
 
 extern unsigned long
 prima_allocate_color( Handle self, Color color, Brush * brush);
@@ -713,7 +769,7 @@ extern Bool
 prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);
 
 extern ImageCache*
-prima_create_image_cache( PImage img, Handle drawable);
+prima_create_image_cache( PImage img, Handle drawable, int type);
 
 void
 prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,
@@ -722,6 +778,12 @@ prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,
 
 Bool
 prima_query_image( Handle self, XImage * image);
+
+Bool
+prima_std_query_image( Handle self, Pixmap px);
+
+Pixmap
+prima_std_pixmap( Handle self, int type);
 
 extern void
 prima_cleanup_drawable_after_painting( Handle self);
@@ -796,6 +858,9 @@ extern void
 prima_send_cmSize( Handle self, Point oldSize);
 
 extern Bool
+prima_no_input( PDrawableSysData XX, Bool ignore_horizon, Bool beep);
+
+extern Bool
 apc_window_set_visible( Handle self, Bool show);
 
 extern Bool
@@ -803,6 +868,9 @@ prima_window_reset_menu( Handle self, int newMenuHeight);
 
 extern void
 prima_end_menu(void);
+
+extern int
+prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym); 
    
 extern void
 prima_wm_sync( Handle self, int eventType);

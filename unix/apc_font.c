@@ -496,7 +496,6 @@ apc_font_default( PFont f)
 int
 apc_font_load( const char* filename)
 {
-   DOLBUG( "apc_font_load()\n");
    return 0;
 }
 
@@ -1180,7 +1179,8 @@ apc_menu_set_font( Handle self, PFont font)
    }
 
    XX-> font = kf;
-   if ( XX-> type. menu && X_WINDOW) {
+   XX-> guillemots = XTextWidth( kf-> fs, ">>", 2); 
+   if ( !XX-> type. popup && X_WINDOW) {
        if (( kf-> font. height + 4) != X(PComponent(self)-> owner)-> menuHeight) {
           prima_window_reset_menu( PComponent(self)-> owner, kf-> font. height + MENU_ITEM_GAP * 2);
           XResizeWindow( DISP, X_WINDOW, XX-> w-> sz.x, XX-> w-> sz.y = kf-> font. height + MENU_ITEM_GAP * 2);
