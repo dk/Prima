@@ -674,7 +674,7 @@ apc_gp_get_line_end ( Handle self)
 static int ctx_lj2LINEJOIN [] = {
    ljRound     ,  LINEJOIN_ROUND  ,
    ljBevel     ,  LINEJOIN_BEVEL  ,
-   ljMitre     ,  LINEJOIN_MITRE  ,
+   ljMiter     ,  LINEJOIN_MITRE  ,
    endCtx
 };
 
@@ -682,7 +682,7 @@ int
 apc_gp_get_line_join ( Handle self)
 {
    if ( !sys ps) return sys lineJoin;
-   return ctx_remap_def( GpiQueryLineJion( sys ps), ctx_lj2LINEJION, false, ljRound);
+   return ctx_remap_def( GpiQueryLineJoin( sys ps), ctx_lj2LINEJOIN, false, ljRound);
 }
 
 int
@@ -1042,7 +1042,7 @@ apc_gp_set_font( Handle self, PFont font)
 }
 
 Bool
-apc_gp_set_fill_winding( Handle self, int fillWinding)
+apc_gp_set_fill_winding( Handle self, Bool fillWinding)
 {
    sys fillWinding = fillWinding;
    return true;
@@ -1061,7 +1061,7 @@ Bool
 apc_gp_set_line_join( Handle self, int lineJoin)
 {
    if ( !sys ps) { sys lineJoin = lineJoin; return true; }
-   if ( !GpiSetLineJoin( sys ps, ctx_remap_def( lineJoin, ctx_lj2LINEJION, true, LINEJOIN_DEFAULT)))
+   if ( !GpiSetLineJoin( sys ps, ctx_remap_def( lineJoin, ctx_lj2LINEJOIN, true, LINEJOIN_DEFAULT)))
       apiErrRet;
    return true;
 }
