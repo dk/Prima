@@ -927,8 +927,9 @@ sub Name_text
    my $self;
    for ( @_) {
       $self = $_, next unless defined $self;
-      s/(\s|\\)/\\$1/g;
-      $text .= $_;
+      my $x = $_;
+      $x =~ s/(\s|\\)/\\$1/g;
+      $text .= $x;
       $text .= ' ';
    }
    chop $text;
