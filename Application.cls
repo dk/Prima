@@ -33,6 +33,7 @@ object Prima::Application( Prima::Widget)
    Handle    icon;
    Bool      autoClose;
 
+   property  Bool  enabled;
    property  char* text;
    property  SV  * palette;
 
@@ -93,7 +94,6 @@ object Prima::Application( Prima::Widget)
 
    method Bool   get_capture();
    method Color  get_color_index( int index);
-   method Bool   get_enabled();
    method Color  get_hint_back_color();
    method Color  get_hint_color();
    method Font   get_hint_font();
@@ -114,7 +114,6 @@ object Prima::Application( Prima::Widget)
    method void   set_centered( Bool x, Bool y);
    method void   set_clip_owner( Bool clipOwner);
    method void   set_color_index( Color color, int index);
-   method Bool   set_enabled( Bool enable);
    method void   set_focused( Bool focused);
    method void   set_font( Font font);
    method void   set_help_context( long helpContext);

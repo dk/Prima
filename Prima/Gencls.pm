@@ -24,7 +24,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-# max error is APC056
+# max error is APC058
 
 package Prima::Gencls;
 use strict;
@@ -120,6 +120,8 @@ my ( $warnings,
      $baseFile,
      $baseCType,
      $acc,
+     $proptype,
+     $propextras,
      $id,
      $piped,
      $inherit,
@@ -633,40 +635,69 @@ sub parse_define
    $defines{ $id} = ({%added});
 }
 
+
 sub preload_method
 # loads & parses common methods descriptions tables
 {
-   my $useHandle = pop;
+   my ( $useHandle, $asProperty) = @_;
    # processing result & proc name
-   $acc = getid;
-   my $checkEmptyRes = '';
-   until (($tok = getidsym("*(")) eq "(")
-   {
-      $id = $tok;
-      $acc .= " " . $tok;
-      $checkEmptyRes .= $tok;
+   $propextras = undef;
+   if ( $asProperty) {
+      my $lastTok = '';
+      while ( 1) {
+         $tok = getidsym( "*(;");
+         last if $tok eq ';';
+         $propextras = '', last if $tok eq '(';
+         $id = $tok;
+         $proptype = $lastTok;
+         $lastTok .= "$tok ";
+      }
+      chop $proptype;
+      $acc = "$proptype $id";
+   } else {
+      $acc = getid;
    }
-   error "APC020: Function result haven't been defined" unless $checkEmptyRes;
-   error "APC012: Unexpected (" unless $id;
+   my $checkEmptyRes = '';
+   unless ( $asProperty) {
+      until (($tok = getidsym("*(")) eq "(")
+      {
+         $id = $tok;
+         $acc .= " " . $tok;
+         $checkEmptyRes .= $tok;
+      }
+      error "APC020: Function result haven't been defined" unless $checkEmptyRes;
+      error "APC012: Unexpected (" unless $id;
+   } else {
+      error "APC056: Property cannot be 'void'" if $proptype eq 'void';
+   }
    error "APC013: Method $id already defined"
       if exists($allMethodsHosts{ $id}) && $allMethodsHosts{ $id} eq $className;
 
+   @defParms = ();
+
    $acc .= "( ";
    $acc .= "Handle $hSelf" if $useHandle;
+   if ( $asProperty) {
+      $acc .= ", " if $useHandle;
+      $acc .= "Bool set";
+      unless ( defined $propextras) {
+         $acc .= ", $proptype value);";
+         return; # simple property case
+      }
+   }
 
    #checking 'proc(void) & proc()' cases
    $tok = getidsym(")*...");
    $acc .= ', ' unless ($tok eq "void") || ($tok eq ")") || (! $useHandle);
    if ($tok eq "void") {
-     if ($words[-1] eq "*") {
-        $acc .= ', ';
-     } else {
-        expect(')');
-        $tok = ')';
-     }
+      if ($words[-1] eq "*") {
+         $acc .= ', ';
+      } else {
+         expect(')');
+         $tok = ')';
+      }
    }
 
-   @defParms = ();
    my @types = ();
 
    # pre-parsing function parameters & result - laying own restrictions & other
@@ -691,7 +722,12 @@ sub preload_method
           # parsing parameter description
           my @gp = @parm;
 
-          $acc .= join(' ', @parm);
+          if ( $asProperty && $parm[-1] eq ")") {
+             my $l = $#parm - 1;
+             $acc .= join( ' ', @parm[0..$l]) . ", $proptype value)";
+          } else {
+             $acc .= join(' ', @parm);
+          }
           $acc =~ s/^([^=]*)(=.*)$/$1/; # removing default parms form $acc
           $acc .= $parm[-1] if $2;
 
@@ -703,6 +739,7 @@ sub preload_method
           if ( $tok eq '...') {
              $ellipsis  = 1;
              $hasEllipsis++;
+             error "APC057: Property can not contain ellipsis into parameter list" if $asProperty;
           } else {
              error "APC043: Invalid parameter $parmNo description" unless defined $gp[0];
           }
@@ -725,6 +762,7 @@ sub preload_method
              if ( $_ eq "=")
              {
                 error "APC041: Invalid default parameter $parmNo description" if $hasEqState;
+                error "APC058: Property can not contain default parameters" if $asProperty;
                 $hasEqState = 1;
              }
           }
@@ -737,6 +775,7 @@ sub preload_method
        error "APC055: Ellipsis (...) could be defined only in the end of parameters list"
          if $hasEllipsis > 1 || ( $hasEllipsis == 1 && $ellipsis == 0);
    } else {
+      $acc .= "$proptype value" if $asProperty;
       $acc .= $tok; # should be closing parenthesis
    };
    #  end of parameters description
@@ -752,6 +791,7 @@ sub preload_method
    } else {
       error "APC022: Expected semicolon or => but found $tok" unless $tok eq ';';
    }
+
    $acc .= ';';
 
    # checking default parameters
@@ -954,7 +994,7 @@ sub load_single_part
       {
    # parsing object methods & vars
          if ($tok eq $clsMethod) {
-           preload_method( 1);
+           preload_method( 1, 0);
            store_method;
            unless ($level) {
              if ( parse_parms) {
@@ -965,7 +1005,7 @@ sub load_single_part
              }
            };
          } elsif ($tok eq $clsNotify) {
-           preload_method( 1);
+           preload_method( 1, 0);
            store_method;
            unless ($level) {
              if ( parse_parms) {
@@ -975,7 +1015,7 @@ sub load_single_part
              }
            };
          } elsif ($tok eq $clsImport) {
-           preload_method( 1);
+           preload_method( 1, 0);
            store_method;
            unless ($level) {
               error "APC018: Invalid types in import function $id declaration" unless parse_parms;
@@ -983,7 +1023,7 @@ sub load_single_part
               push (@newMethods, "${id}${acc}") unless $inherit;
            };
          } elsif ($tok eq $clsStatic) {
-           preload_method( 0);
+           preload_method( 0, 0);
            $staticMethods{$id} = 1;
            store_method;
            unless ($level) {
@@ -995,7 +1035,7 @@ sub load_single_part
              }
            };
          } elsif ($tok eq $clsPublic) {
-           preload_method( 1);
+           preload_method( 1, 0);
            $publicMethods{$id} = 1;
            store_method;
            unless ($level) {
@@ -1004,7 +1044,7 @@ sub load_single_part
              push (@newMethods, "${id}${acc}") unless $inherit;
            };
          } elsif ($tok eq $clsWeird) {
-           preload_method( 0);
+           preload_method( 0, 0);
            $staticMethods{$id} = 1;
            $publicMethods{$id} = 1;
            store_method;
@@ -1014,27 +1054,11 @@ sub load_single_part
              push (@newMethods, "${id}${acc}") unless $inherit;
            };
          } elsif ($tok eq $clsC_only) {
-            preload_method( 1);
+            preload_method( 1, 0);
             store_method;
          } elsif ( $tok eq $clsProperty) {
-            error "APC008: Expecting identifier but found ``$tok''" unless $tok =~ /^\w+$/;
-            $acc = '';
-            my $type = '';
-            until (($tok = getidsym("*;[]()+")) eq ";")
-            {
-               $id = $tok;
-               $type = $acc;
-               $acc .= "$tok ";
-            }
-            #$type =~ s/\s//g;
-            chop $type;
-            error "APC056: Property cannot be 'void'" if $type eq 'void';
-            error "APC013: Method $id already defined"
-               if exists($allMethodsHosts{ $id}) && $allMethodsHosts{ $id} eq $className;
-            $acc = "$type $id( Handle self, Bool set, $type value);";
-            @defParms = ();
+            preload_method( 1, 1);
             store_method;
-            $type =~ s/\s//g;
             unless ( $level) {
                if ( parse_parms) {
                   push (@portableMethods, "$id$acc");
@@ -1043,7 +1067,7 @@ sub load_single_part
                   print "Warning: property $id has not been published\n" if $warnings;
                }
             }
-            $properties{$id} = $type;
+            $properties{$id} = $proptype;
          } else {
            # variable workaround
            error "APC008: Expecting identifier but found ``$tok''" unless $tok =~ /^\w+$/;
@@ -1062,7 +1086,7 @@ sub load_single_part
       } else {
          # parsing package
          putback( $tok);
-         preload_method( 0);
+         preload_method( 0, 0);
          $staticMethods{$id} = 1;
          store_method;
          unless ($level) {
@@ -1280,12 +1304,12 @@ sub out_method_profile
       print HEADER "   SAVETMPS;\n";
       print HEADER "   PUSHMARK( sp);\n\n";
       print HEADER "   XPUSHs((( P${ownCType})$hSelf)-> $hMate);\n" if $useHandle;
-      print HEADER " \n   if ( !set) goto CALL_POINT;\n" if $property;
 
       # writing other parameters
       for ( my $j = 0; $j < scalar @parm_ids; $j++)
       {
          $j = 1 if $j == 0 && $property;
+         print HEADER " \n   if ( !set) goto CALL_POINT;\n" if $property && $j == $#parm_ids;
 
          my $lVar = $parm_ids[ $j];
          my $type = $parms[ $j];
@@ -1502,7 +1526,9 @@ LABEL
       my $lastDP    = 0;
       my $property  = defined $properties{$id};
       my $ifpropset;
-      $ifpropset = ( "items > " . ( $nParam - 2)) if $property;
+      my $propparms = 1;
+      my $propextras;
+      $propextras = 1 if $property && $nParam > ( $useHandle ? 3 : 2);
 
       for ( my $k = 0; $k < scalar @defParms; $k++)
       {
@@ -1515,16 +1541,21 @@ LABEL
       my $useHV     = $nParam ? $parms[ $#parms] eq 'HV*' : 0;
       shift @parms if $useHandle;
       shift @parms if $property;
+      my $delta = 0;
       foreach (@parms)
       {                                            # adjust parms count referring
          my $lVar = $_; $lVar =~ s[^\*][];
          if ( exists( $structs{ $lVar}) && !defined( ${$structs{ $lVar}[2]}{hash}))
          {                                         # to possible structs
-            $nParam += scalar @{$structs{$lVar}[0]} - 1;
+            $delta = scalar @{$structs{$lVar}[0]} - 1;
          } elsif ( exists( $arrays{ $lVar})) {     # and arrays
-            $nParam += $arrays{$lVar}[0] - 1;
+            $delta = $arrays{$lVar}[0] - 1;
+         } else {
+            $delta = 0;
          }
+         $nParam += $delta;
       }
+      $propparms += $delta if $property;
 
       if ( $full) {
          print HEADER "XS( ${ownCType}_${id}_FROMPERL)";
@@ -1544,8 +1575,9 @@ LABEL
          print HEADER "(( items - $nParam + 1) % 2 != 0)";
       } else {
          if ( $property) {
-            my $min = $useHandle ? 1 : 0;
+            my $min = $nParam - $propparms - ( $useHandle ? 1 : 2);
             my $max = $nParam - 1;
+            $ifpropset = "items > $min";
             print HEADER "(( items != $min) && ( items != $max))";
          } elsif ( $lastDP) {
             print HEADER "(( items > $nParam) || ( items < ${\($nParam-$lastDP)}))";
@@ -1587,6 +1619,7 @@ LABEL
       unless ($resSub eq "void") { print HEADER "$result $eptr $incRes;\n      "};
       # generating struct local vars
       my $reuseStructVar;
+      my $idparm = 0;
       foreach (@parms)
       {
          my $ptr  = $_ =~ /^\*/ ? "&" : "";
@@ -1594,28 +1627,34 @@ LABEL
          my ( $lp, $rp) = $ptr ? ('(',')') : ('','');
          if ( exists $structs{$lVar} && defined ${$structs{$lVar}[2]}{hash})
          {
-             $reuseStructVar = 1, last if $property && ( $ptr eq "");
+             $reuseStructVar = 1, last if $property && $idparm == $#parms && ( $ptr eq "");
              print HEADER "$lVar $incRes$structCount;\n      ";
              $structCount++;
          } elsif ( exists $arrays{$lVar} || exists $structs{$lVar})
          {
-             $reuseStructVar = 1, last if $property && ( $ptr eq "");
+             $reuseStructVar = 1, last if $property && $idparm == $#parms && ( $ptr eq "");
              print HEADER "$lVar $incRes$structCount;\n      ";
              $structCount++;
          } else { $stn++ };
+         $idparm++;
       }
       my $subId = $full ? "\"${ownClass}_$id\"" : 'subName';
       print HEADER "HV *hv = parse_hv( ax, sp, items, mark, $nParam - 1, $subId);\n      " if $useHV;
       # initializing strings and additional parameters, if any
       $stn = $useHandle ? 1 : 0;
-      $structCount = $reuseStructVar ? '' : 0;
+      $structCount = 0;
       my $paramAuxSet = '';
+      $idparm = 0;
       foreach (@parms)
       {
          my $ptr  = $_ =~ /^\*/ ? "&" : "";
          my $lVar = $_; $lVar =~ s[^\*][];
          my ( $lp, $rp) = $ptr ? ('(',')') : ('','');
          # hash structure
+         if ( $property && $idparm == $#parms) {
+            $structCount = '' if $reuseStructVar;
+            $paramAuxSet .= '****'; # label point
+         }
          if ( exists $structs{$lVar} && defined ${$structs{$lVar}[2]}{hash})
          {
             $paramAuxSet .= "SvHV_$lVar( ST( $stn), \&$incRes$structCount, $subId);\n      ";
@@ -1663,11 +1702,15 @@ LABEL
             $stn += $arrays{$lVar}[0];
             $structCount++;
          } else { $stn++ };
+         $idparm++;
       }
       # generating call
-      my $lpaus = length( $paramAuxSet);
+      my $lpaus = ( length( $paramAuxSet) > 4) || ( $paramAuxSet eq '****');
       if ( $lpaus || $property) {
-         print HEADER "if ( !( $ifpropset)) goto CALL_POINT;\n      " if $property && $lpaus;
+         if ( $property && $lpaus) {
+            my $label =  "if ( !( $ifpropset)) goto CALL_POINT;\n      ";
+            $paramAuxSet =~ s/\*\*\*\*/$label/;
+         }
          print HEADER $paramAuxSet;
          print HEADER "CALL_POINT : " if $property && $lpaus;
       }
@@ -1693,7 +1736,8 @@ LABEL
          print HEADER "         $ifpropset";
       }
 
-      $structCount = $reuseStructVar ? '' : 0;
+      $structCount = 0;
+      $idparm = 0;
       foreach (@parms)
       {
          my $ptr  = $_ =~ /^\*/ ? "&" : "";
@@ -1701,9 +1745,10 @@ LABEL
          $lVar =~ s[^\*][];
          $mtVar = $mapTypes{ $lVar} || $lVar;
          my ( $lp, $rp) = $ptr ? ('(',')') : ('','');
+         $structCount = '' if $property && $reuseStructVar && $idparm == $#parms;
          print HEADER ",\n" if $stn > 0;
          print HEADER "         ";
-         print HEADER "( $ifpropset) ? ( " if $property && !$reuseStructVar;
+         print HEADER "( $ifpropset) ? ( " if $property && !$reuseStructVar && $idparm == $#parms;
          my $defPropParm;
          if ( exists $structs{$lVar} || exists $arrays{$lVar})
          {
@@ -1726,13 +1771,13 @@ LABEL
            $defPropParm = "($lVar)0";
            $stn++;
          }
-         print HEADER ") : $defPropParm" if $property && !$reuseStructVar;
+         print HEADER ") : $defPropParm" if $property && !$reuseStructVar && $idparm == $#parms;
+         $idparm++;
       }
       print HEADER "\n";
       print HEADER "      );\n";
-      print HEADER "      SPAGAIN;\n"     if (!( $resSub eq "void") || $useHV);
+      print HEADER "      SPAGAIN;\n      SP -= items;\n" if (!( $resSub eq "void") || $useHV);
       print HEADER "      if ( $ifpropset) {\n         XSRETURN_EMPTY;\n         return;\n      }\n" if $property;
-      print HEADER "      SP -= items;\n" if (!( $resSub eq "void") || $useHV);
 
       my $pphv = 0;
       # result generation

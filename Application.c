@@ -878,7 +878,6 @@ STMT_START {                                                                    
 void Application_update_sys_handle( Handle self, HV * profile) {}
 
 Bool Application_get_capture( Handle self) { return false; }
-Bool Application_get_enabled( Handle self) { return true; }
 Bool Application_get_tab_stop( Handle self) { return false; }
 Bool Application_get_selectable( Handle self) { return false; }
 Handle Application_get_shape( Handle self) { return nilHandle; }
@@ -895,7 +894,7 @@ void Application_set_help_context( Handle self, long context)
 void Application_set_buffered( Handle self, Bool buffered) {}
 void Application_set_capture( Handle self, Bool capture, Handle confineTo) {}
 void Application_set_centered( Handle self, Bool x, Bool y) {}
-Bool Application_set_enabled( Handle self, Bool enable) { return false;}
+Bool Application_enabled( Handle self, Bool set, Bool enable) { return true;}
 Bool Application_set_visible( Handle self, Bool visible) { return false; }
 void Application_set_grow_mode( Handle self, int flags) {}
 void Application_set_hint_visible( Handle self, Bool visible) {}

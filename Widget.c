@@ -2506,6 +2506,14 @@ Widget_color( Handle self, Bool set, Color color)
    return color;
 }
 
+Bool
+Widget_enabled( Handle self, Bool set, Bool enabled)
+{
+   return set ?
+      apc_widget_set_enabled( self, enabled) :
+      apc_widget_is_enabled( self);
+}
+
 char *
 Widget_hint( Handle self, Bool set, char *hint)
 {

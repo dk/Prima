@@ -502,148 +502,39 @@ AbstractMenu_has_item( Handle self, char * varName)
    return my-> first_that( self, var_match, varName, true) != nil;
 }
 
-void
-AbstractMenu_set_check( Handle self, char * varName, Bool check)
-{
-   PMenuItemReg m;
-   if ( var-> stage > csNormal) return;
-   m = my-> first_that( self, var_match, varName, true);
-   if ( m == nil) return;
-   if ( m-> divider || m-> down) return;
-   m-> checked = check;
-   if ( m-> id > 0) apc_menu_item_set_check( self, m, check);
-}
-
-Bool
-AbstractMenu_get_check   ( Handle self, char * varName)
-{
-   PMenuItemReg m = my-> first_that( self, var_match, varName, true);
-   return ( m) ? m-> checked : false;
-}
-
-Bool
-AbstractMenu_get_enabled ( Handle self, char * varName)
-{
-   PMenuItemReg m = my-> first_that( self, var_match, varName, true);
-   return ( m) ? !m-> disabled : false;
-}
-
-Handle
-AbstractMenu_get_image( Handle self, char * varName)
-{
-   PMenuItemReg m = my-> first_that( self, var_match, varName, true);
-   return m ? m-> bitmap : nilHandle;
-}
 
 char *
-AbstractMenu_get_text ( Handle self, char * varName)
-{
-   PMenuItemReg m = my-> first_that( self, var_match, varName, true);
-   return ( m && m-> text) ? m-> text : "";
-}
-
-char *
-AbstractMenu_get_accel ( Handle self, char * varName)
-{
-   PMenuItemReg m = my-> first_that( self, var_match, varName, true);
-   return ( m && m-> accel) ? m-> accel : "";
-}
-
-SV *
-AbstractMenu_get_action ( Handle self, char * varName)
+AbstractMenu_accel( Handle self, Bool set, char * varName, char * accel)
 {
    PMenuItemReg m;
-   if ( var-> stage > csNormal) return nilSV;
+   if ( var-> stage > csNormal) return "";
    m = my-> first_that( self, var_match, varName, true);
-   if ( m)
-   {
-      if ( m-> code)    return newSVsv( m-> code);
-      if ( m-> perlSub) return newSVpv( m-> perlSub, 0);
-   }
-   return nilSV;
-}
-
-int
-AbstractMenu_get_key ( Handle self, char * varName)
-{
-   PMenuItemReg m = my-> first_that( self, var_match, varName, true);
-   return ( m && !(m-> divider) && !(m-> down)) ? m-> key : kbNoKey;
-}
-
-void
-AbstractMenu_set_enabled ( Handle self, char * varName, Bool enabled)
-{
-   PMenuItemReg m;
-   if ( var-> stage > csNormal) return;
-   m = my-> first_that( self, var_match, varName, true);
-   if ( m == nil) return;
-   if ( m-> divider || m-> down) return;
-   m-> disabled = !enabled;
-   if ( m-> id > 0) apc_menu_item_set_enabled( self, m, enabled);
-}
-
-void
-AbstractMenu_set_image ( Handle self, char * varName, Handle image)
-{
-   PMenuItemReg m;
-   PImage i = ( PImage) image;
-
-   m = my-> first_that( self, var_match, varName, true);
-   if ( var-> stage > csNormal) return;
-   if ( m == nil) return;
-   if ( !m-> bitmap) return;
-   if (( image == nilHandle) || !( kind_of( image, CImage))) {
-      warn("RTC0039: set_image error: invalid image passed");
-      return;
-   }
-   if ( i-> w == 0 || i-> h == 0) {
-      warn("RTC0039: set_image error: invalid image passed");
-      return;
-   }
-
-   my-> attach( self, image);
-   my-> detach( self, m-> bitmap, false);
-   m-> bitmap = image;
-   if ( m-> id > 0) apc_menu_item_set_image( self, m, image);
-}
-
-
-void
-AbstractMenu_set_text ( Handle self, char * varName, char * text)
-{
-   PMenuItemReg m;
-   if ( var-> stage > csNormal) return;
-   m = my-> first_that( self, var_match, varName, true);
-   if ( m == nil) return;
-   if ( m-> text == nil) return;
-   free( m-> text);
-   m-> text = malloc( strlen( text) + 1);
-   strcpy( m-> text, text);
-   if ( m-> id > 0) apc_menu_item_set_text( self, m, text);
-}
-
-void
-AbstractMenu_set_accel ( Handle self, char * varName, char * accel)
-{
-   PMenuItemReg m;
-   if ( var-> stage > csNormal) return;
-   m = my-> first_that( self, var_match, varName, true);
-   if ( m == nil) return;
-   if ( m-> text == nil) return;
+   if ( !m) return "";
+   if ( !set)
+      return m-> accel ? m-> accel : "";
+   if ( m-> text == nil) return "";
    free( m-> accel);
    m-> accel = malloc( strlen( accel) + 1);
    strcpy( m-> accel, accel);
    if ( m-> id > 0) apc_menu_item_set_accel( self, m, accel);
+   return accel;
 }
 
-void
-AbstractMenu_set_action ( Handle self, char * varName, SV * action)
+
+SV *
+AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
 {
    PMenuItemReg m;
-   if ( var-> stage > csNormal) return;
+   if ( var-> stage > csNormal) return nilSV;
    m = my-> first_that( self, var_match, varName, true);
-   if ( m == nil) return;
-   if ( m-> divider || m-> down) return;
+   if ( !m) return nilSV;
+   if ( !set) {
+      if ( m-> code)    return newSVsv( m-> code);
+      if ( m-> perlSub) return newSVpv( m-> perlSub, 0);
+      return nilSV;
+   }
+
+   if ( m-> divider || m-> down) return nilSV;
    if ( SvROK( action))
    {
       if ( m-> code) sv_free( m-> code);
@@ -654,9 +545,7 @@ AbstractMenu_set_action ( Handle self, char * varName, SV * action)
          free( m-> perlSub);
          m-> perlSub = nil;
       }
-   }
-   else
-   {
+   } else {
       char * line = ( char *) SvPV( action, na);
       free( m-> perlSub);
       if ( m-> code) sv_free( m-> code);
@@ -664,20 +553,100 @@ AbstractMenu_set_action ( Handle self, char * varName, SV * action)
       m-> perlSub = malloc( strlen( line) + 1);
       strcpy( m-> perlSub, line);
    }
+   return nilSV;
 }
 
-void
-AbstractMenu_set_key( Handle self, char * varName, char * key)
+Bool
+AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 {
    PMenuItemReg m;
-   int _key;
-   if ( var-> stage > csNormal) return;
+   if ( var-> stage > csNormal) return false;
    m = my-> first_that( self, var_match, varName, true);
-   if ( m == nil) return;
-   _key = key_normalize( key);
-   if ( m-> divider || m-> down) return;
-   m-> key = _key;
-   if ( m-> id > 0) apc_menu_item_set_key( self, m, _key);
+   if ( m == nil) return false;
+   if ( !set)
+      return m ? m-> checked : false;
+   if ( m-> divider || m-> down) return false;
+   m-> checked = checked;
+   if ( m-> id > 0) apc_menu_item_set_check( self, m, checked);
+   return checked;
+}
+
+Bool
+AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
+{
+   PMenuItemReg m;
+   if ( var-> stage > csNormal) return false;
+   m = my-> first_that( self, var_match, varName, true);
+   if ( m == nil) return false;
+   if ( !set)
+      return m ? !m-> disabled : false;
+   if ( m-> divider || m-> down) return false;
+   m-> disabled = !enabled;
+   if ( m-> id > 0) apc_menu_item_set_enabled( self, m, enabled);
+   return enabled;
+}
+
+Handle
+AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
+{
+   PMenuItemReg m;
+   PImage i = ( PImage) image;
+
+   m = my-> first_that( self, var_match, varName, true);
+   if ( var-> stage > csNormal) return nilHandle;
+   if ( m == nil) return nilHandle;
+   if ( !m-> bitmap) return nilHandle;
+   if ( !set)
+      return m-> bitmap;
+
+   if (( image == nilHandle) || !( kind_of( image, CImage))) {
+      warn("RTC0039: invalid object passed to ::image");
+      return nilHandle;
+   }
+   if ( i-> w == 0 || i-> h == 0) {
+      warn("RTC0039: invalid object passed to ::image");
+      return nilHandle;
+   }
+
+   my-> attach( self, image);
+   my-> detach( self, m-> bitmap, false);
+   m-> bitmap = image;
+   if ( m-> id > 0) apc_menu_item_set_image( self, m, image);
+   return nilHandle;
+}
+
+char *
+AbstractMenu_text ( Handle self, Bool set, char * varName, char * text)
+{
+   PMenuItemReg m;
+   if ( var-> stage > csNormal) return "";
+   m = my-> first_that( self, var_match, varName, true);
+   if ( m == nil) return "";
+   if ( m-> text == nil) return "";
+   if ( !set)
+      return m-> text;
+   free( m-> text);
+   m-> text = malloc( strlen( text) + 1);
+   strcpy( m-> text, text);
+   if ( m-> id > 0) apc_menu_item_set_text( self, m, text);
+   return text;
+}
+
+
+SV *
+AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
+{
+   PMenuItemReg m;
+   if ( var-> stage > csNormal) return nilSV;
+   m = my-> first_that( self, var_match, varName, true);
+   if ( m == nil) return nilSV;
+   if ( m-> divider || m-> down) return nilSV;
+   if ( !set)
+      return newSViv( m-> key);
+
+   m-> key = key_normalize( SvPV( key, na));
+   if ( m-> id > 0) apc_menu_item_set_key( self, m, m-> key);
+   return nilSV;
 }
 
 void
@@ -873,4 +842,6 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 
    apc_menu_update( self, branch, branch);
 }
+
+
 

@@ -905,7 +905,6 @@ sub currentWidget   {($#_)?$_[0]->set_current_widget ($_[1]):return $_[0]->get_c
 sub cursorPos        {($#_)? ($_[0]->set_cursor_pos($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_cursor_pos;    }
 sub cursorSize       {($#_)? ($_[0]->set_cursor_size($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_cursor_size;    }
 sub cursorVisible    {($#_)?$_[0]->set_cursor_visible($_[1]):return $_[0]->get_cursor_visible;      }
-sub enabled          {($#_)?$_[0]->set_enabled     ($_[1]):return $_[0]->get_enabled;     }
 sub growMode         {($#_)?$_[0]->set_grow_mode   ($_[1]):return $_[0]->get_grow_mode;   }
 sub dark3DColor      {($#_)?$_[0]->set_color_index ($_[1], ci::Dark3DColor):return $_[0]->get_color_index(ci::Dark3DColor)}
 sub designScale      {($#_)?shift->set_design_scale(@_)                 :return $_[0]->get_design_scale;       }
@@ -1185,22 +1184,22 @@ sub create
    return $self;
 }
 
-sub action  { ( $#_) ? $_[ 0]->{ menu}-> set_action ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_action ( $_[0]->{ id}); }
-sub accel   { ( $#_) ? $_[ 0]->{ menu}-> set_accel  ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_accel  ( $_[0]->{ id}); }
-sub key     { ( $#_) ? $_[ 0]->{ menu}-> set_key    ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_key    ( $_[0]->{ id}); }
-sub text    { ( $#_) ? $_[ 0]->{ menu}-> set_text   ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_text   ( $_[0]->{ id}); }
-sub enabled { ( $#_) ? $_[ 0]->{ menu}-> set_enabled( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_enabled( $_[0]->{ id}); }
-sub image   { ( $#_) ? $_[ 0]->{ menu}-> set_image  ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_image  ( $_[0]->{ id}); }
+sub accel   { my $self = shift;return $self-> {menu}->accel( $self->{id}, @_);}
+sub action  { my $self = shift;return $self-> {menu}->action ( $self->{id}, @_);}
+sub checked { my $self = shift;return $self-> {menu}->checked( $self->{id}, @_);}
+sub enabled { my $self = shift;return $self-> {menu}->enabled( $self->{id}, @_);}
+sub image   { my $self = shift;return $self-> {menu}->image  ( $self->{id}, @_);}
+sub key     { my $self = shift;return $self-> {menu}->key    ( $self->{id}, @_);}
+sub text    { my $self = shift;return $self-> {menu}->text   ( $self->{id}, @_);}
 sub items   { my $i = shift; ( @_) ? $i-> { menu}-> set_items  ( $i->{ id}, @_):return $i->{menu}-> get_items  ( $i->{ id}); }
-sub checked { ( $#_) ? $_[ 0]->{ menu}-> set_check  ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_check  ( $_[0]->{ id}); }
-sub enable  { $_[0]->{menu}-> set_enabled( $_[0]->{ id}, 1) };
-sub disable { $_[0]->{menu}-> set_enabled( $_[0]->{ id}, 0) };
-sub check   { $_[0]->{menu}-> set_check( $_[0]->{ id}, 1) };
-sub uncheck { $_[0]->{menu}-> set_check( $_[0]->{ id}, 0) };
-sub delete  { $_[ 0]->{ menu}-> delete( $_[0]->{ id}) }
+sub enable  { $_[0]->{menu}-> enabled( $_[0]->{ id}, 1) };
+sub disable { $_[0]->{menu}-> enabled( $_[0]->{ id}, 0) };
+sub check   { $_[0]->{menu}-> checked( $_[0]->{ id}, 1) };
+sub uncheck { $_[0]->{menu}-> checked( $_[0]->{ id}, 0) };
+sub delete  { $_[ 0]->{menu}-> delete( $_[0]->{ id}) }
 sub toggle  {
-   my $i = !$_[0]->{ menu}-> get_check($_[0]->{ id});
-   $_[0]->{ menu}-> set_check($_[0]->{ id}, $i);
+   my $i = !$_[0]->{ menu}-> checked($_[0]->{ id});
+   $_[0]->{ menu}-> checked($_[0]->{ id}, $i);
    return $i
 }
 
@@ -1222,26 +1221,16 @@ sub profile_default
 
 sub select     {$_[0]->selected(1)}
 
-sub accel      {($#_>1)?shift->set_accel     (@_)   :return $_[0]->get_accel   ($_[1]);}
-sub action     {($#_>1)?shift->set_action    (@_)   :return $_[0]->get_action  ($_[1]);}
-sub checked    {($#_>1)?shift->set_check     (@_)   :return $_[0]->get_check   ($_[1]);}
-sub image      {($#_>1)?shift->set_image     (@_)   :return $_[0]->get_image   ($_[1]);}
-sub enable     {$_[0]->set_enabled($_[1],1);}
-sub disable    {$_[0]->set_enabled($_[1],0);}
-sub check      {$_[0]->set_check($_[1],1);}
-sub uncheck    {$_[0]->set_check($_[1],0);}
-sub enabled    {($#_>1)?shift->set_enabled   (@_)   :return $_[0]->get_enabled ($_[1]);}
-sub key        {($#_>1)?shift->set_key       (@_)   :return $_[0]->get_key     ($_[1]);}
+sub enable     {$_[0]->enabled($_[1],1);}
+sub disable    {$_[0]->enabled($_[1],0);}
+sub check      {$_[0]->checked($_[1],1);}
+sub uncheck    {$_[0]->checked($_[1],0);}
 sub items      {($#_)?$_[0]->set_items       ($_[1]):return $_[0]->get_items("");      }
-sub text       {($#_>1)?shift->set_text      (@_)   :return $_[0]->get_text    ($_[1]);}
-sub variable   {($#_>1)?shift->set_variable  (@_)   :return $_[0]->get_variable($_[1]);}
 sub toggle     {
-   my $i = !$_[0]-> get_check($_[1]);
-   $_[0]-> set_check($_[1], $i);
+   my $i = !$_[0]-> checked($_[1]);
+   $_[0]-> checked($_[1], $i);
    return $i;
 }
-
-
 
 sub AUTOLOAD
 {

@@ -55,6 +55,7 @@ object Prima::Widget( Prima::Drawable)
 # properties
    property  Color backColor;
    property  Color color;
+   property  Bool  enabled;
    property  char* hint;
    property  SV  * palette;
    property  Bool  selected;
@@ -132,7 +133,6 @@ object Prima::Widget( Prima::Drawable)
    static   Font     get_default_font( char * dummy = "");
    static   Font     get_default_popup_font( char * dummy = "");
    method   NPoint   get_design_scale();
-   method   Bool     get_enabled()                   => apc_widget_is_enabled;
    method   int      get_grow_mode();
    method   Bool     get_first_click()               => apc_widget_get_first_click;
    method   Bool     get_focused()                   => apc_widget_is_focused;
@@ -202,7 +202,6 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     set_cursor_size( int x, int y)    => apc_cursor_set_size;
    method   Bool     set_cursor_visible( Bool visible) => apc_cursor_set_visible;
    method   void     set_design_scale( double x, double y);
-   method   Bool     set_enabled( Bool enable)         => apc_widget_set_enabled;
    method   Bool     set_first_click( Bool firstClick) => apc_widget_set_first_click;
    method   void     set_focused( Bool focused);
    method   void     set_font( Font font);
