@@ -309,10 +309,8 @@ XS( Clipboard_get_standard_clipboards_FROMPERL)
    int i;
    PList l;
 
-   fprintf( stderr, "items: %ld\n", items);
    (void)ax; SP -= items;
    l = apc_get_standard_clipboards();
-   fprintf( stderr, "ilcnt: %d\n", l-> count);
    if ( l && l-> count > 0) {
       EXTEND( sp, l-> count);
       for ( i = 0; i < l-> count; i++) {
