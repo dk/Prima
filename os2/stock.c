@@ -86,7 +86,7 @@ hwnd_enter_paint( Handle self)
    sys psd-> textOpaque  = is_apt( aptTextOpaque);
    sys psd-> textOutB    = is_apt( aptTextOutBaseline);
    apc_gp_set_line_pattern( self,
-      ( sys linePatternLen > 3) ? sys linePattern : (char*)(&sys linePattern), sys linePatternLen);
+      ( sys linePatternLen > 3) ? sys linePattern : (unsigned char*)(&sys linePattern), sys linePatternLen);
 }
 
 void
