@@ -371,8 +371,7 @@ static Bool move_back( PWidget self, PWidget child, int * delta)
    RECT r;
    int oStage = child-> stage;
 
-   if (( child-> growMode & gmDontCare) || !dsys( child) options. aptClipOwner)
-      return false;
+   if ( !dsys( child) options. aptClipOwner) return false;
 
    child-> stage = csFrozen;
    GetWindowRect( DHANDLE( child), &r);
