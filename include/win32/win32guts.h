@@ -156,7 +156,6 @@ typedef struct _WindowData
 typedef struct _TimerData
 {
    int  timeout;
-   Bool active;
 } TimerData;
 
 typedef struct _PrinterData
