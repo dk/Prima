@@ -686,6 +686,7 @@ typedef struct _ObjectOptions_ {
    unsigned optVScaling            : 1;
    unsigned optHScaling            : 1;
    unsigned optAutoPopup           : 1;   /* Popup */
+   unsigned optActive              : 1;   /* Timer */
 } ObjectOptions;
 
 #define opt_set( option)           (PObject(self)-> options. option = 1)
@@ -1170,6 +1171,9 @@ extern Bool
 apc_menu_create( Handle self, Handle owner);
 
 extern void
+apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch);
+
+extern void
 apc_menu_destroy( Handle self);
 
 extern PFont
@@ -1198,6 +1202,9 @@ apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check);
 
 extern void
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled);
+
+extern void
+apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image);
 
 extern void
 apc_menu_item_set_key( Handle self, PMenuItemReg m, int key);
