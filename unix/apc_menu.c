@@ -980,6 +980,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
          if ( guts. currentMenu == self) prima_end_menu();
          w-> sz. x = ev-> xconfigure. width;
          w-> sz. y = ev-> xconfigure. height;
+	 XClearArea( DISP, win, 0, 0, 0, 0, true);
 
 AGAIN:             
          w-> last = -1;
