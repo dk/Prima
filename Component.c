@@ -27,7 +27,7 @@
 #include <ctype.h>
 #include "apricot.h"
 #include "Component.h"
-#include "Component.inc"
+#include <Component.inc>
 
 #undef  my
 #define inherited CObject->
@@ -905,6 +905,30 @@ XS( Component_set_notification_FROMPERL)
 
 void Component_set_notification          ( Handle self, char * name, SV * subroutine) { warn("Invalid call of Component::set_notification"); }
 void Component_set_notification_REDEFINED( Handle self, char * name, SV * subroutine) { warn("Invalid call of Component::set_notification"); }
+
+SV *
+Component_get_delegations( Handle self)
+{
+   HE * he;
+   AV * av = newAV();
+   Handle last = nilHandle;
+   if ( var-> stage > csNormal || var-> eventIDs == nil) newRV_noinc(( SV*) av);
+
+   hv_iterinit( var-> eventIDs);
+   while (( he = hv_iternext( var-> eventIDs)) != nil) {
+      int i;
+      char * event = ( char *) HeKEY( he);
+      PList list = var-> events + ( int) HeVAL( he) - 1;
+      for ( i = 0; i < list-> count; i += 2) {
+         if ( list-> items[i] != last) {
+            last = list-> items[i];
+            av_push( av, newSVsv((( PAnyObject) last)-> mate));
+         }
+         av_push( av, newSVpv( event, 0));
+      }
+   }
+   return newRV_noinc(( SV*) av);
+}
 
 void
 Component_set_delegations( Handle self, SV * delegations)

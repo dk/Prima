@@ -40,6 +40,7 @@ object Prima::Component( Prima::Object)
     method   void      event_error();
     c_only   Handle    first_that_component( void * actionProc, void * params);
     public   void      get_components();
+    method   SV *      get_delegations();
     method   Bool      get_event_flag();
     method   SV      * get_handle();
     method   char    * get_name();
