@@ -1,4 +1,4 @@
-/*-
+/*
  * Copyright (c) 1997-2000 The Protein Laboratory, University of Copenhagen
  * All rights reserved.
  *
@@ -657,22 +657,8 @@ PICK_AGAIN:
          preSize = v;
       } 
 
-      
       f-> flags. height = true;
-      f-> font. height = s-> ascent + s-> descent;
-         
-      /* detailing pixel size */
-      /*
-      if ( XGetFontProperty( s, FXA_PIXEL_SIZE, &v) && v) {
-         XCHECKPOINT;
-         f-> flags. height = true;
-         f-> font. height = v;
-      }*/
-      /* if ( !f-> flags. height && f-> flags. size && f-> flags. yDeviceRes) { */
-         /* XWS 1990 XLFD p. 570 */
-      /*   f-> flags. height = true;
-         f-> font. height = (int)(0.5+f-> font. yDeviceRes*f-> font. size/722.7);
-      } */
+      f-> font. height = s-> max_bounds. ascent + s-> descent;
 
       if ( !f-> flags. xDeviceRes) {
          f-> font. xDeviceRes = guts. resolution. x;
@@ -684,21 +670,14 @@ PICK_AGAIN:
          f-> flags. yDeviceRes = true;
       } 
 
+      f-> flags. internalLeading = true;
+      f-> font. internalLeading = s-> max_bounds. ascent - s-> ascent;
+
+      f-> font. size  = ( f-> font. height - f-> font. internalLeading) * 72.27 / guts. resolution. y + 0.5;
+
       if ( !f-> flags. size) {
-         /* assume internalLeading = 0 */
+         preSize = ( f-> font. height - f-> font. internalLeading) * 722.7 / guts. resolution. y + 0.5;
          f-> flags. size = true;
-         f-> font. size  = f-> font. height * 72.27 / f-> font. yDeviceRes + 0.5;
-         preSize = f-> font. height * 722.7 / f-> font. yDeviceRes + 0.5;
-         f-> flags. internalLeading = true;
-         f-> font. internalLeading  = 0;
-      } else {
-         f-> flags. internalLeading = true;
-         f-> font. internalLeading  = f-> font. height - (int)(0.5+f-> font. yDeviceRes * preSize / 722.7);
-         /* Prima still doesn't define 'font size' term - should it be that value inside
-            the font headers or the size related to Drawable's resolution? The following
-            line sticks to the second definition. Comment it out if the first one is
-            preferable */   
-         f-> font. size = (( f-> font. height - f-> font. internalLeading) * 72.27) / guts. resolution. y + 0.5;
       }
 
       if ( pickable) {
@@ -727,9 +706,9 @@ PICK_AGAIN:
       f-> flags. resolution      = true;
       f-> font. resolution       = f-> font. yDeviceRes * 0x10000 + f-> font. xDeviceRes;
       f-> flags. ascent          = true;
-      f-> font. ascent           = s-> ascent;
+      f-> font. ascent           = s-> max_bounds. ascent;
       f-> flags. descent         = true;
-      f-> font. descent          = s-> descent;
+      f-> font. descent          = s-> descent; 
       f-> flags. defaultChar     = true;
       f-> font. defaultChar      = s-> default_char;
       f-> flags. firstChar       = true;
