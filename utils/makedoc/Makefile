@@ -18,7 +18,7 @@ clean:
 	rm -f Prima.ps Prima.dvi Prima.pdf Prima.tex Prima.log Prima.cache.tex Prima.ind Prima.aux Prima.idx Prima.toc texput.log out.tex *.eps
 
 view: Prima.dvi
-	xvdi Prima.dvi
+	xdvi Prima.dvi
 
 pdfview: Prima.pdf
 	acroread Prima.pdf
