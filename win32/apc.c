@@ -2828,7 +2828,7 @@ apc_system_action( const char * params)
          params += 19;
          
          if ( !guts. console) {
-            EnumWindows( find_console, (LPARAM) &guts. console);
+            EnumWindows((int (__stdcall*)(void)) find_console, (LPARAM) &guts. console);
             if ( strcmp( params, " exists") == 0) return 0;
             if ( !guts. console) {
                 warn("No associated console window found");            
@@ -2838,7 +2838,7 @@ apc_system_action( const char * params)
          
          if ( strcmp( params, " exists") == 0) {
            char * p;
-           sprintf( p = malloc(12), "0x%08x", guts. console);
+           sprintf( p = ( char *) malloc(12), "0x%08x", guts. console);
            return p;
          } else   
          if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else
@@ -2855,7 +2855,7 @@ apc_system_action( const char * params)
                SetWindowText( guts. console, p);
             } else {
                int lc = GetWindowTextLength( guts. console);
-               p = malloc( lc + 2);
+               p = (char*)malloc( lc + 2);
                GetWindowText( guts. console, p, lc+1);
                return p;
             }

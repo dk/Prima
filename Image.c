@@ -405,7 +405,7 @@ Image_set_extended_data( Handle self, HV * profile)
          goto GOOD_RETURN;
       }   
       if ( !pexistType) { // plain repadding
-         ibc_repad( data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 0, 0, nil);
+         ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 0, 0, nil);
          my-> update_change( self);
          goto GOOD_RETURN;
       }   
@@ -442,7 +442,7 @@ Image_set_extended_data( Handle self, HV * profile)
       if ( lineSize == 0)
          lineSize = (( var-> w * ( newType & imBPP) + 31) / 32) * 4;
       // copying using repadding routine
-      ibc_repad( data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 
+      ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 
                  ( newType & imBPP) / 8, ( var-> type & imBPP) / 8, proc
                );
    }   

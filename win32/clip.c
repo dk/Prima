@@ -288,7 +288,6 @@ apc_clipboard_get_handle( Handle self)
    return nilHandle;
 }
 
-
 #ifdef __cplusplus
 }
 #endif
