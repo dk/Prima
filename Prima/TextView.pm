@@ -1344,7 +1344,9 @@ sub on_keydown
       $self-> clear_event; 
    }
 
-   if (( $key == kb::Insert) && ( $mod & km::Ctrl) && $self-> has_selection) {
+   if (((( $key == kb::Insert) && ( $mod & km::Ctrl)) ||
+       chr($code & 0xff) eq "\cC") && $self-> has_selection)
+   {
       $self-> copy;
       $self-> clear_event;
    }

@@ -373,6 +373,29 @@ sub on_keydown
        return;
    }
 
+   my $c = chr($code & 0xff);
+   if ($c eq "\cC") {
+       $self-> copy if $start != $end;
+       $self-> clear_event;
+       return;
+   } elsif ($c eq "\cV") {
+       $self-> paste;
+       $self-> clear_event;
+       return;
+   } elsif ($c eq "\cX") {
+       if ( !$self-> {readOnly} && $start != $end) {
+          my $del;
+          $del = substr( $cap, $start, $end - $start);
+          substr( $cap, $start, $end - $start) = '';
+          $self-> set_selection(0,0);
+          $self-> text( $cap);
+          $self-> charOffset( $start);
+          $::application-> Clipboard->store('Text', $del);
+       }
+       $self-> clear_event;
+       return;
+   }
+
 # typing part
    
    if  (!$self-> {readOnly} &&
