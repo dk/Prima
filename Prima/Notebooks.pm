@@ -306,9 +306,15 @@ PaintEarsThen:
    $canvas-> color( $c3d[0]);
    my @ld = $tm ? ( 0, DefGapY) : ( $size[1] - 0, $size[1] - DefGapY - 1);
    $canvas-> line( $size[0] - 1, $ld[0], $size[0] - 1, $ld[1]);
-   $canvas-> color( $c3d[1]);
-   $canvas-> line( 0, $ld[1], $size[0] - 1, $ld[1]);
-   $canvas-> line( 0, $ld[0], 0, $ld[1]);
+   if ($tm) {
+      $canvas-> color( $c3d[1]);
+      $canvas-> line( 0, $ld[1], $size[0] - 1, $ld[1]);
+      $canvas-> line( 0, $ld[0], 0, $ld[1]);
+   } else {
+      $canvas-> line( 0, $ld[1], $size[0] - 1, $ld[1]);
+      $canvas-> color( $c3d[1]);
+      $canvas-> line( 0, $ld[0], 0, $ld[1]);
+   }
    $canvas-> color( $clr[0]);
    goto EndOfSwappedPaint if $swapDraw;
 
@@ -831,13 +837,18 @@ GENPROC
 
 sub profile_default
 {
-   my $def = $_[ 0]-> SUPER::profile_default;
-      return {
+   return {
       %{Prima::Notebook->profile_default},
       %{$_[ 0]-> SUPER::profile_default},
-      ownerBackColor => 1,
-      tabs           => [],
-      tabIndex       => 0,
+      ownerBackColor      => 1,
+      tabs                => [],
+      tabIndex            => 0,
+      tabsetClass         => 'Prima::TabSet',
+      tabsetProfile       => {},
+      tabsetDelegations   => ['Change'],
+      notebookClass       => 'Prima::Notebook',
+      notebookProfile     => {},
+      notebookDelegations => ['Change'],
    }
 }
 
@@ -847,12 +858,12 @@ sub init
    my %profile = @_;
    my $visible       = $profile{visible};
    my $scaleChildren = $profile{scaleChildren};
-   $profile{visible}       = 0;
+   $profile{visible} = 0;
    $self->{tabs}     = [];
    %profile = $self-> SUPER::init(%profile);
    my @size = $self-> size;
    my $maxh = $self-> font-> height * 2;
-   $self->{tabSet} = Prima::TabSet-> create(
+   $self->{tabSet} = $profile{tabsetClass}-> create(
       owner     => $self,
       name      => 'TabSet',
       left      => 0,
@@ -862,9 +873,10 @@ sub init
       height    => $maxh > 28 ? $maxh : 28,
       buffered  => 1,
       designScale => undef,
-      delegations => ['Change'],
+      delegations => $profile{tabsetDelegations},
+      %{$profile{tabsetProfile}},
    );
-   $self->{notebook} = Prima::Notebook-> create(
+   $self->{notebook} = $profile{notebookClass}-> create(
       owner      => $self,
       name       => 'Notebook',
       origin     => [ DefBorderX + 1, DefBorderX + 1],
@@ -875,7 +887,8 @@ sub init
       (map { $_  => $profile{$_}} keys %notebookProps),
       designScale => undef,
       pageCount  => scalar @{$profile{tabs}},
-      delegations => ['Change'],
+      delegations => $profile{notebookDelegations},
+      %{$profile{tabsetProfile}},
    );
    $self-> {notebook}-> designScale( $self-> designScale); # propagate designScale
    $self-> tabs( $profile{tabs});
@@ -1407,6 +1420,26 @@ page is the current page.
 
 Default value: C<undef>.
 
+=item notebookClass STRING
+
+Assigns the notebook widget class.
+
+Create-only property.
+
+Default value: C<Prima::Notebook>
+
+=item notebookProfile HASH
+
+Assigns hash of properties, passed to the notebook widget during the creation.
+
+Create-only property.
+
+=item notebookDelegations ARRAY
+
+Assigns list of delegated notifications to the notebook widget.
+
+Create-only property.
+
 =item pageIndex INTEGER
 
 Selects the INDEXth page or a tabset widget ( the second-level tab ).
@@ -1433,6 +1466,26 @@ tabs. The tab C<'2nd'> contains three second-level pages.
 The property implicitly operates the underlying notebook's C<pageCount> property.
 When changed at run-time, its effect on the children widgets is therefore the same.
 See L<pageCount> for more information.
+
+=item tabsetClass STRING
+
+Assigns the tab set widget class.
+
+Create-only property.
+
+Default value: C<Prima::TabSet>
+
+=item tabsetProfile HASH
+
+Assigns hash of properties, passed to the tab set widget during the creation.
+
+Create-only property.
+
+=item tabsetDelegations ARRAY
+
+Assigns list of delegated notifications to the tab set widget.
+
+Create-only property.
 
 =back
 
