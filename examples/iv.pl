@@ -334,7 +334,11 @@ $w-> insert( ImageViewer =>
 );
 status($w);
 
-fload( $w, $ARGV[0]) if scalar @ARGV > 0;
+if ( @ARGV && $ARGV[0] =~ /^-z(\d+(\.\d*)?)$/) {
+   $w->IV->zoom($1);
+   shift @ARGV;
+}
+fload( $w, $ARGV[0]) if @ARGV;
 
 run Prima;
 
