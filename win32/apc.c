@@ -973,9 +973,8 @@ apc_window_get_icon( Handle self, Handle icon)
 static void
 map_tildas( WCHAR * buf, int len)
 {
-   int j, newLen;
-   newLen = len;
-   for ( j = 0; j <= len; j++) {
+   int j;
+   for ( j = 0; j < len; j++) {
       if ( buf[ j] == '~') {
           if ( buf[ j + 1] == '~')
              j++;
@@ -983,25 +982,30 @@ map_tildas( WCHAR * buf, int len)
              buf[ j] = '&';
           continue;
       } else if ( buf[ j] == '&') {
-         memmove( &buf[ j + 1], &buf[ j], (++len - j) * sizeof( WCHAR));
+         memmove( buf + j + 1, buf + j, (len - j - 1) * sizeof( WCHAR));
          j++;
-         newLen++;
          continue;
       }
    }
+   buf[len - 1] = 0;
 }
 
 static WCHAR *
 map_text_accel( PMenuItemReg i)
 {
-   int l1, l2 = 0;
+   char * c;
+   int l1, l2 = 0, amps = 0;
    WCHAR * buf;
 
    l1 = 1 + ( i-> flags. utf8_text ? prima_utf8_length( i-> text) : strlen( i-> text));
-   if ( i-> accel) 
+   c = i-> text;  while (*c++) if ( *c == '&') amps++;
+   if ( i-> accel) {
       l2 = 1 + ( i-> flags. utf8_accel ? prima_utf8_length( i-> accel) : strlen( i-> accel));
-   buf = malloc( sizeof( WCHAR) * ( l1 + l2));
+      c = i-> accel; while (*c++) if ( *c == '&') amps++;
+   }
+   buf = malloc( sizeof( WCHAR) * ( l1 + l2 + amps));
    if ( !buf) return nil;
+   memset( buf, 0, sizeof( WCHAR) * ( l1 + l2 + amps));
    
    if ( i-> flags. utf8_text) 
       utf8_to_wchar( i-> text, buf, l1 - 1);
@@ -1014,8 +1018,7 @@ map_text_accel( PMenuItemReg i)
       else
          MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, i-> accel, l2 - 1, buf + l1, l2 * 2 - 2);
    }
-   buf[l1+l2-1] = 0;
-   map_tildas( buf, l1 + l2);
+   map_tildas( buf, l1 + l2 + amps);
    return buf;
 }
 
