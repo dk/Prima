@@ -529,17 +529,15 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 {
 	    int count = PWidget( self)-> widgets. count;
 	    Handle *selves = malloc( count * sizeof( Handle));
-	    int i, stage;
+	    int i;
 
 	    memcpy( selves, PWidget( self)-> widgets. items, count * sizeof( Handle));
 	    for ( i = 0; i < count; i++) {
 	       PWidget child = PWidget( selves[i]);
 
 	       if ( X(selves[i])-> flags. clip_owner && (child-> growMode & gmDontCare) == 0) {
-		  stage = child-> stage;
-		  child-> stage = csFrozen;
-		  apc_widget_set_pos( selves[i], X(selves[i])-> origin. x, X(selves[i])-> origin. y);
-		  child-> stage = stage;
+                  int y = XX-> size. y - X(selves[i])-> size.y - X(selves[i])-> origin.y;
+                  XMoveWindow( DISP, PComponent(selves[i])->handle, X(selves[i])-> origin.x, y);
 	       }
 	    }
 	    free( selves);
