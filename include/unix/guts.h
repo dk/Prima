@@ -430,7 +430,7 @@ typedef struct _drawable_sys_data
    Region stale_region;
    XRectangle clip_rect;
    FillPattern fill_pattern, saved_fill_pattern;
-   Pixmap fp_pixmap, saved_fp_pixmap;
+   Pixmap fp_pixmap;
    int rop, paint_rop;
    int rop2, paint_rop2;
    int line_style;

@@ -445,7 +445,7 @@ void
 prima_prepare_drawable_for_painting( Handle self)
 {
    DEFXX;
-   unsigned long mask = VIRGIN_GC_MASK | GCFillStyle | GCStipple;
+   unsigned long mask = VIRGIN_GC_MASK;
    int w, h;
    XRectangle r;
 
@@ -482,15 +482,10 @@ Unbuffered:
    XX-> flags. zero_line = XX-> flags. saved_zero_line;
    XX-> gcv. clip_mask = None;
    XX-> gtransform = XX-> transform;
-   XX-> saved_fp_pixmap = XX-> fp_pixmap;
-   memcpy( XX-> saved_fill_pattern, XX-> fill_pattern, sizeof( FillPattern));
-   XX-> gcv. fill_style = XX-> fp_pixmap == None ? FillSolid : FillOpaqueStippled;
-   if ( XX-> fp_pixmap == None)
-      mask &= ~GCStipple;
 
    prima_get_gc( XX);
    XX-> gcv. subwindow_mode = (self == application ? IncludeInferiors : ClipByChildren);
-
+   
    XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
    XCHECKPOINT;
    
@@ -532,6 +527,10 @@ Unbuffered:
 
    XF_IN_PAINT(XX) = true;
 
+   memcpy( XX-> saved_fill_pattern, XX-> fill_pattern, sizeof( FillPattern));
+   XX-> fill_pattern[0]++; // force 
+   apc_gp_set_fill_pattern( self, XX-> saved_fill_pattern);
+
    if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
       // fprintf( stderr, "set font g: %s\n", XX-> font-> load_name);
       XSetFont( DISP, XX-> gc, XX-> font-> id);
@@ -562,15 +561,14 @@ prima_cleanup_drawable_after_painting( Handle self)
    }
    prima_release_gc(XX);
    memcpy( XX-> fill_pattern, XX-> saved_fill_pattern, sizeof( FillPattern));
-   if ( XX-> fp_pixmap != None && XX-> fp_pixmap != XX-> saved_fp_pixmap) {
+   if ( XX-> fp_pixmap != None) {
       XFreePixmap( DISP, XX-> fp_pixmap);
-   }
+      XX-> fp_pixmap = None;
+   }   
    if ( XX-> font && ( --XX-> font-> refCnt <= 0)) {
       prima_free_rotated_entry( XX-> font);
       XX-> font-> refCnt = 0;
    }
-   XX-> fp_pixmap = XX-> saved_fp_pixmap;
-   XX-> saved_fp_pixmap = None;
    free(XX->paint_dashes);
    XX-> paint_dashes = nil;
    XX-> paint_ndashes = 0;
@@ -2025,23 +2023,24 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 
    if ( patcmp( pattern, XX-> fill_pattern) == 0)
       return true;
-   if ( XX-> fp_pixmap && XX-> fp_pixmap != XX-> saved_fp_pixmap)
-      XFreePixmap( DISP, XX-> fp_pixmap);
+
    patcpy( XX-> fill_pattern, pattern);
-   XX-> fp_pixmap = None;
    dflt = (patcmp( pattern, fillPatterns[fpSolid]) == 0);
-   if ( !dflt) {
-      XX-> fp_pixmap =
-         XCreateBitmapFromData( DISP, XX-> gdrawable, pattern, 8, 8);
-      if ( XX-> fp_pixmap == None)
-         croak( "UAG_033: error creating stipple");
-   }
+   
    if ( XF_IN_PAINT(XX)) {
+      if ( XX-> fp_pixmap)
+         XFreePixmap( DISP, XX-> fp_pixmap);
+      XX-> fp_pixmap = None;
+      if ( !dflt)
+         if (( XX-> fp_pixmap = XCreateBitmapFromData( 
+               DISP, XX-> gdrawable, pattern, 8, 8)) == None) {
+             warn( "UAG_033: error creating stipple");
+             dflt = true;
+         }      
       XSetFillStyle( DISP, XX-> gc, dflt ? FillSolid : FillOpaqueStippled);
-      if ( XX-> fp_pixmap != None) XSetStipple( DISP, XX-> gc, XX-> fp_pixmap);
+      if ( !dflt) XSetStipple( DISP, XX-> gc, XX-> fp_pixmap);
       XCHECKPOINT;
    }
-
    return true;
 #undef patcmp
 #undef patcpy
