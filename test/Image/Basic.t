@@ -1,5 +1,5 @@
 # $Id$
-print "1..19 create,type check,paintInfo,paint type consistency,load,palette,pixel,paint,get_paint_state(),type,pixel,stretch,pixel bpp1,reverse stretch,bpp4,bpp8,RGB,short,long\n";
+print "1..19 create,type check,paintInfo,paint type consistency,palette,pixel,paint,get_paint_state(),type,pixel,stretch,pixel bpp1,reverse stretch,bpp4,bpp8,RGB,short,long,float\n";
 
 my $i = Prima::Image-> create(
    width => 20,
@@ -66,6 +66,12 @@ for ( im::RGB, im::Short, im::Long) {
    $i-> size( -16, -16);
    ok( $i-> pixel( 12,12) == 0x1234 && $j == 0x1234);
 }
+
+$i-> type( im::Float);
+$i-> pixel( 3, 3, 25);
+$j = $i-> pixel( 3,3);
+$i-> size( -16, -16);
+ok( abs( 25 - $i-> pixel( 12,12)) < 8 && abs( 25-$j) < 8);
 
 $i-> destroy;
 
