@@ -276,9 +276,7 @@ prima_cleanup_drawable_after_painting( Handle self)
    XX-> paint_dashes = nil;
    XX-> paint_ndashes = 0;
    XF_IN_PAINT(XX) = false;
-   if ( XX-> flags. reload_font) {
-      PDrawable( self)-> font = XX-> saved_font;
-   }
+   PDrawable( self)-> font = XX-> saved_font;
    if ( XX-> paint_region) {
       XDestroyRegion( XX-> paint_region);
       XX-> paint_region = nil;
