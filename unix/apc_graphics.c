@@ -469,7 +469,13 @@ apc_gp_done( Handle self)
 Bool
 apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-   DOLBUG( "apc_gp_arc()\n");
+   DEFXX;
+   SHIFT( x, y);
+   if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+      XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+          0, 360 * 64);
+   XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+       angleStart * 64, angleEnd * 64);
    return true;
 }
 
@@ -492,10 +498,24 @@ apc_gp_clear( Handle self)
    return true;
 }
 
+#define GRAD 57.29577951
+
 Bool
 apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-   DOLBUG( "apc_gp_chord()\n");
+   int sy;
+   DEFXX;
+   SHIFT( x, y);
+   sy = REVERT( y);
+   if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+      XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+          0, 360 * 64);
+   XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+       angleStart * 64, angleEnd * 64);
+   XDrawLine( DISP, XX-> drawable, XX-> gc,
+       x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
+       x + cos( angleEnd / GRAD) * radX,   sy - sin( angleEnd / GRAD) * radY
+   );
    return true;
 }
 
@@ -574,21 +594,25 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 Bool
 apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
 {
-   DOLBUG( "apc_gp_ellipse()\n");
+   DEFXX;
+   SHIFT( x, y);
+   XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
    return true;
 }
 
 Bool
 apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-   DOLBUG( "apc_gp_fill_chord()\n");
+
    return true;
 }
 
 Bool
 apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY)
 {
-   DOLBUG( "apc_gp_fill_ellipse()\n");
+   DEFXX;
+   SHIFT( x, y);
+   XFillArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
    return true;
 }
 
@@ -690,7 +714,7 @@ create_image_cache_1_to_1( PImage img, Bool icon)
    static Bool initialized = false;
    int ils;
    unsigned char *idata;
-   
+
    if ( icon) {
       ils = PIcon(img)->maskLine;
       idata = PIcon(img)->mask;
@@ -698,7 +722,7 @@ create_image_cache_1_to_1( PImage img, Bool icon)
       ils = img-> lineSize;
       idata = img-> data;
    }
-   
+
    data = malloc( ls * h);
    if ( !data) croak( "create_image_cache_1_to_1(): no memory");
    if ( guts.bit_order == MSBFirst) {
@@ -729,7 +753,7 @@ create_image_cache_1_to_1( PImage img, Bool icon)
 	 }
       }
    }
-   
+
    if (icon) {
       IMG-> icon_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
 				       1, XYBitmap, 0, data,
@@ -770,7 +794,7 @@ create_rgb_to_16_lut( int ncolors, const PRGBColor pal, U16 *lut)
       lut[i] = 0;
       lut[i] |=
 	 (((pal[i]. r >> 3) << 11) & red_mask) & 0xffff;
-      lut[i] |= 
+      lut[i] |=
 	 (((pal[i]. g >> 2) << 5) & green_mask) & 0xffff;
       lut[i] |=
 	 ((pal[i]. b >> 3) & blue_mask) & 0xffff;
@@ -807,9 +831,9 @@ create_rgb_to_24_lut( int ncolors, const PRGBColor pal, unsigned long *lut)
       lut[i] = 0;
       lut[i] |=
 	 (((pal[i]. r >> rrsh) << rlsh) & rmask);
-      lut[i] |= 
+      lut[i] |=
 	 (((pal[i]. g >> grsh) << glsh) & gmask);
-      lut[i] |= 
+      lut[i] |=
 	 (((pal[i]. b >> brsh) << blsh) & bmask);
    }
 }
@@ -825,7 +849,7 @@ create_image_cache_4_to_16( PImage img)
    int ls = ((img-> w * 16 + 31)/32)*4;
    int h = img-> h, w = img-> w;
    unsigned i;
-   
+
    create_rgb_to_16_lut( 16, img-> palette, lut1);
    for ( i = 0; i < 256; i++) {
       lut[i] = ((U32)lut1[(i & 0xf0) >> 4]) | (((U32)lut1[(i & 0x0f) >> 0]) << 16);
@@ -860,7 +884,7 @@ create_image_cache_8_to_16( PImage img)
    int x, y;
    int ls = ((img-> w * 16 + 31)/32)*4;
    int h = img-> h, w = img-> w;
-   
+
    create_rgb_to_16_lut( img-> palSize, img-> palette, lut);
 
    data = malloc( ls * h);
@@ -893,7 +917,7 @@ create_image_cache_8_to_24( PImage img)
    int x, y;
    int ls = ((img-> w * 24 + 31)/32)*4;
    int h = img-> h, w = img-> w;
-   
+
    create_rgb_to_24_lut( img-> palSize, img-> palette, lut);
 
    data = malloc( ls * h);
@@ -930,7 +954,7 @@ create_image_cache_24_to_16( PImage img)
    RGBColor pal[256];
    int ls = ((img-> w * 16 + 31)/32)*4;
    int h = img-> h, w = img-> w;
-   
+
    if ( initialize) {
       for ( i = 0; i < 256; i++) {
 	 pal[i]. r = i; pal[i]. g = 0; pal[i]. b = 0;
@@ -1097,7 +1121,7 @@ apc_image_begin_paint( Handle self)
 {
    DEFXX;
    PImage img = PImage( self);
-   
+
    XX-> drawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), img-> w, img-> h, guts. depth);
    XCHECKPOINT;
    prima_prepare_drawable_for_painting( self);
@@ -1143,11 +1167,11 @@ convert_16_to_24( XImage *i, PImage img)
 
    if ( initialize) {
       Visual *v = DefaultVisual( DISP, SCREEN);
-     
+
       calc_masks_and_lut_16_to_24( v-> red_mask, &rm1, &rm2, &rbc, lur);
       calc_masks_and_lut_16_to_24( v-> green_mask, &gm1, &gm2, &gbc, lug);
       calc_masks_and_lut_16_to_24( v-> blue_mask, &bm1, &bm2, &bbc, lub);
-      
+
       initialize = false;
    }
 
@@ -1174,7 +1198,7 @@ slurp_image( Handle self, Pixmap px)
    if ( px) {
       i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, AllPlanes, ZPixmap);
       XCHECKPOINT;
-      
+
       target_depth = guts. depth;
       if ( target_depth == 16)
 	 target_depth = 24;
@@ -1231,7 +1255,23 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 Bool
 apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-   DOLBUG( "apc_gp_sector()\n");
+   int sy;
+   DEFXX;
+   SHIFT( x, y);
+   sy = REVERT( y);
+   if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+      XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+          0, 360 * 64);
+   XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+       angleStart * 64, angleEnd * 64);
+   XDrawLine( DISP, XX-> drawable, XX-> gc,
+       x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
+       x, y
+   );
+   XDrawLine( DISP, XX-> drawable, XX-> gc,
+       x, y,
+       x + cos( angleEnd / GRAD) * radX,   sy - sin( angleEnd / GRAD) * radY
+   );
    return true;
 }
 
@@ -1279,7 +1319,7 @@ create_stretched_image( PImage img, int x, int y, int w, int h, int tw, int th)
    int ls = (( img->w * guts.depth + 31) / 32) * 4;
    int tls = (( tw * guts.depth + 31) / 32) * 4;
    XImage *r;
-   
+
    /* XXX this sub is extremely hacky; see Image_stretch and ic_stretch to understand */
    hack = malloc( sizeof( Image));
    if ( !hack) croak( "create_stretched_image(): no memory");
@@ -1324,7 +1364,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    PDrawableSysData IMG = X(image);
    XImage *stretch;
    unsigned long f = 0, b = 0;
-   
+
    if ( xDestLen == xLen && yDestLen == yLen) {
       apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
       return true;
@@ -1334,7 +1374,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    /* 2) XXX - Shared Mem Image Extension! */
    create_image_cache( img, false);
    SHIFT( x, y);
-   
+
    /* fprintf( stderr, "x%d y%d xf%d yf%d xdl%d ydl%d xl%d yl%d\n", x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen); */
    if ( x < 0 || y < 0 || xDestLen > XX-> size.x || yDestLen > XX-> size.y) {
       /* optimization might be necessary */
@@ -1342,7 +1382,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    } else {
       stretch = create_stretched_image( img, xFrom, yFrom, xLen, yLen, xDestLen, yDestLen);
    }
-   
+
    if (( img-> type & imBPP) == 1) {
       f = XX-> fore. pixel;
       b = XX-> back. pixel;
@@ -1402,7 +1442,7 @@ apc_gp_get_clip_rect( Handle self)
    DEFXX;
    XRectangle cr;
    Rect r;
-   
+
    cr. x = 0;
    cr. y = 0;
    cr. width = XX-> size.x;
@@ -1603,7 +1643,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
 
    if ( !XX-> flags. paint)
       return true;
-   
+
    SORT( clipRect. left, clipRect. right);
    SORT( clipRect. bottom, clipRect. top);
    r. x = clipRect. left;
