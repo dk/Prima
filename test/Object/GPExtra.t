@@ -13,7 +13,7 @@ $x-> line( 0, 4, 7, 4);
 $x-> linePattern( lp::Solid);
 my $bl = 0;
 my $i;
-for ( $i = 0; $i < 7; $i++) {
+for ( $i = 0; $i < 8; $i++) {
    $bl++ if $x-> pixel( $i, 4) == 0;
 }
 ok( $bl < 6);
@@ -49,7 +49,7 @@ $x-> bar( 0, 0, 7, 7);
 $x-> color( 0x808080);
 $x-> bar( 0, 0, 7, 7);
 $bl = 0;
-for ( $i = 0; $i < 7; $i++) {
+for ( $i = 0; $i < 8; $i++) {
    $bl++ if $x-> pixel( $i, 4) == 0;
 }
 ok( $bl == 4);
