@@ -58,8 +58,6 @@ sub profile_default
       selectedItems  => [],
       vScroll        => 1,
       widgetClass    => wc::ListBox,
-      onDrawItem     => undef,
-      onSelectItem   => undef,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -863,8 +861,11 @@ sub set_offset
    $w -= 2 * $bw + $dx;
    my $dt = $offset - $oldOfs;
    $self-> reset;
-   $self-> {hScrollBar}-> value( $offset)
-     if $self->{hScroll} && !$self->{multiColumn} && $self->{scrollTransaction} != 2;
+   if ( $self->{hScroll} && !$self->{multiColumn} && $self->{scrollTransaction} != 2) {
+      $self->{scrollTransaction} = 2;
+      $self-> {hScrollBar}-> value( $offset);
+      $self->{scrollTransaction} = 0;
+   }
    $self-> clipRect( $bw, $bw + $dy, $bw + $w, $self-> height - $bw);
    $self-> scroll( -$dt, 0);
    $self-> refresh;
@@ -979,10 +980,18 @@ sub set_top_item
       $self->size, $self->{dx}, $self->{dy});
    my $dt = $topItem - $oldTop;
    $self-> reset;
-   $self-> {vScrollBar}-> value( $topItem)
-      if $self->{scrollTransaction} != 1 && $self->{vScroll};
-   $self-> {hScrollBar}-> value( $topItem)
-      if $self->{scrollTransaction} != 2 && $self->{hScroll} && $self->{multiColumn};
+   if ( $self->{scrollTransaction} != 1 && $self->{vScroll}) {
+      $self->{scrollTransaction} = 1;
+      $self-> {vScrollBar}-> value( $topItem);
+      $self->{scrollTransaction} = 0;
+   }
+
+   if ( $self->{scrollTransaction} != 2 && $self->{hScroll} && $self->{multiColumn}) {
+      $self->{scrollTransaction} = 2;
+      $self-> {hScrollBar}-> value( $topItem);
+      $self->{scrollTransaction} = 0;
+   }
+
    if ( $self->{ multiColumn}) {
       if ( $dt % $self->{rows} == 0) {
          $self-> clipRect( $bw, $bw + $dy, $w - $bw - $dx, $h - $bw);
@@ -1088,8 +1097,6 @@ sub profile_default
    my %prf = (
        items         => [],
        autoWidth     => 1,
-       onStringify   => undef,
-       onMeasureItem => undef,
    );
    @$def{keys %prf} = values %prf;
    return $def;

@@ -83,8 +83,6 @@ sub profile_default {
         mousePromptSelection    =>         1,
         wordRightMode           => tm::WordEnd,
         syncPromptChange        =>         0,
-
-        onExecCommand           =>     undef,
     );
     @$def{keys %prf} = values %prf;
     return $def;

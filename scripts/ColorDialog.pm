@@ -603,7 +603,6 @@ sub profile_default
          height   => 130,
          growMode => 0,
       },
-      onColorify    => undef,
    };
 }
 

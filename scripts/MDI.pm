@@ -95,9 +95,6 @@ sub profile_default
          [],
          [ close   => '~Close' => 'Ctrl+F4' => '^F4' => q(close)],
       ],
-      onActivate            => undef,
-      onDeactivate          => undef,
-      onWindowState         => undef,
    );
    @$def{keys %prf} = values %prf;
    return $def;

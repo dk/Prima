@@ -40,7 +40,6 @@ sub profile_default
       %{$_[ 0]-> SUPER::profile_default},
       pressed      => 0,
       selectable   => 1,
-      onCheck      => undef,
    }
 }
 
@@ -865,12 +864,6 @@ my %RNT = (
 sub notification_types { return \%RNT; }
 }
 
-sub profile_default
-{
-   my $def = $_[ 0]-> SUPER::profile_default;
-   $def->{onRadioClick} = undef;
-   return $def;
-}
 
 sub init
 {

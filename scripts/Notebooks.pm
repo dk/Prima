@@ -44,8 +44,6 @@ sub profile_default
       topMost          => 1,
       tabIndex         => 0,
       tabs             => [],
-      onDrawTab        => undef,
-      onMeasureTab     => undef,
    );
    @$def{keys %prf} = values %prf;
    return $def;

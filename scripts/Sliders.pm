@@ -31,8 +31,6 @@ sub profile_default
 {
    return {
       %{$_[ 0]-> SUPER::profile_default},
-      onIncrement    => undef,
-      onTrackEnd     => undef,
       ownerBackColor => 1,
       color          => cl::Black,
       selectable     => 0,
@@ -518,7 +516,6 @@ sub profile_default
       value          => 0,
       threshold      => 0,
       vertical       => 0,
-      onStringify    => undef,
    }
 }
 

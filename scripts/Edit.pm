@@ -115,7 +115,6 @@ sub profile_default
       widgetClass       => wc::Edit,
       wordDelimiters    => ".()\"',#$@!%^&*{}[]?/|;:<>-= \xff\t",
       wordWrap          => 0,
-      onParseSyntax     => undef,
    }
 }
 

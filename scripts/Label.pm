@@ -176,7 +176,7 @@ sub on_fontchanged
 
 sub on_size
 {
-   $_[0]-> check_auto_size if $_[0]->{wordWrap};
+   $_[0]-> check_auto_size;
 }
 
 sub on_enable { $_[0]-> repaint } sub on_disable { $_[0]-> repaint }
@@ -200,7 +200,7 @@ sub reset_lines
    my @res = ();
    my $maxLines = int($self-> height / $self-> font-> height);
    $maxLines++ if $self->{showPartial} and (($self-> height % $self-> font-> height) > 0);
-   my $opt   = tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::CalcMnemonic;
+   my $opt   = tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::CalcMnemonic|tw::ExpandTabs|tw::CalcTabs;
    my $width = -1;
    $opt |= tw::CollapseTilde unless $self->{showAccelChar};
    $width = $self-> width if $self->{wordWrap};
