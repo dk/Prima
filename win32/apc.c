@@ -23,11 +23,15 @@ apc_application_begin_paint ( Handle self)
    apcErrClear;
    if ( !( sys ps = dc_alloc())) apiErrRet;
    hwnd_enter_paint( self);
-   sys pal = GetCurrentObject( sys ps, OBJ_PAL);
+   if ( sys pal = palette_create( self)) {
+      SelectPalette( sys ps, sys pal, 0);
+      RealizePalette( sys ps);
+   }
    apt_set( aptWinPS);
    apt_set( aptCompatiblePS);
    return true;
 }
+
 
 Bool
 apc_application_begin_paint_info( Handle self)
@@ -88,12 +92,12 @@ void
 apc_application_end_paint   ( Handle self)
 {
    apcErrClear;
-   sys pal = nil;
    hwnd_leave_paint( self);
+   if ( sys pal) DeleteObject( sys pal);
    dc_free();
    apt_clear( aptWinPS);
    apt_clear( aptCompatiblePS);
-   sys ps = nil;
+   sys pal = sys ps = nil;
 }
 
 void
@@ -791,7 +795,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
              map_tildas( buf, strlen( i-> text));
              menuItem. dwTypeData = ( LPTSTR) buf;
           } else if ( i-> bitmap)
-             menuItem. dwTypeData = image_make_bitmap_handle( i-> bitmap);
+             menuItem. dwTypeData = image_make_bitmap_handle( i-> bitmap, nil);
           InsertMenuItem( m, -1, true, &menuItem);
        }
        menuItem. dwItemData = menu;
@@ -1115,12 +1119,27 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       RECT r;
       HBITMAP bm;
       HDC dc;
+      HPALETTE oldPal;
 
       GetClipBox( sys ps, &r);
       var w = r. right  - r. left;
       var h = r. bottom - r. top;
+
       if ( !( dc = CreateCompatibleDC( sys ps))) apiErr;
-      if ( bm = CreateCompatibleBitmap( sys ps, var w, var h)) {
+
+      if ( sys pal = palette_create( self)) {
+         sys stockPalette = SelectPalette( dc, sys pal, 1);
+         RealizePalette( dc);
+         sys pal2 = SelectPalette( sys ps, sys pal, 1);
+         RealizePalette( sys ps);
+      }
+
+      if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
+         apt_clear( aptCompatiblePS);
+
+      bm = CreateCompatibleBitmap( sys ps, var w, var h);
+
+      if ( bm) {
          sys ps2 = sys ps;
          sys ps  = dc;
          if ( !SelectObject( dc, bm)) apiErr;
@@ -1132,7 +1151,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
          apiErr;
    }
    hwnd_enter_paint( self);
-   sys pal = GetCurrentObject( sys ps, OBJ_PAL);
+
    return true;
 }
 
@@ -1146,7 +1165,6 @@ apc_widget_begin_paint_info( Handle self)
    sys transform2. y = 0;
    if ( !( sys ps = GetDC(( HWND) var handle))) apiErrRet;
    hwnd_enter_paint( self);
-   sys pal = GetCurrentObject( sys ps, OBJ_PAL);
    rgn = CreateRectRgn( 0, 0, 0, 0);
    SelectClipRgn( sys ps, rgn);
    DeleteObject( rgn);
@@ -1183,13 +1201,19 @@ apc_widget_end_paint( Handle self)
       if ( !SetViewportOrgEx( sys ps, 0, 0, nil)) apiErr;
       if ( !BitBlt( sys ps2, sys transform2. x, sys transform2. y, var w, var h, sys ps, 0, 0, SRCCOPY)) apiErr;
       DeleteObject( sys bm);
+      if ( sys pal) {
+         SelectPalette( sys ps2, sys pal2, 1);
+         SelectPalette( sys ps, sys stockPalette, 1);
+         DeleteObject( sys pal);
+         sys pal = sys pal2 = nil;
+      }
+
       DeleteDC( sys ps);
       sys ps = sys ps2;
       sys bm = sys ps2 = nil;
    }
 
    hwnd_leave_paint( self);
-   sys pal = nil;
 
    if ( sys ps != nilHandle)
    {
@@ -1198,7 +1222,7 @@ apc_widget_end_paint( Handle self)
       } else if ( is_apt( aptWinPS))
          if ( !ReleaseDC(( HWND) var handle, sys ps)) apiErr;
    }
-   sys ps = nilHandle;
+   sys ps = sys pal = nilHandle;
    apt_clear( aptWinPS);
    apt_clear( aptWM_PAINT);
    apt_clear( aptCompatiblePS);
@@ -1541,6 +1565,13 @@ void
 apc_widget_set_font( Handle self, PFont font)
 {
    SendMessage(( HWND) var handle, WM_FONTCHANGED, 0, 0);
+}
+
+void
+apc_widget_set_palette( Handle self)
+{
+   if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8)
+      palette_change( self);
 }
 
 void

@@ -14,26 +14,57 @@
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
-Bool image_screenable( Handle image)
+Bool image_screenable( Handle image, Handle screen, int * bitCount)
 {
    PImage i = ( PImage) image;
    if (( i-> type & ( imRealNumber | imComplexNumber | imTrigComplexNumber)) ||
-       ( i-> type == imLong || i-> type == imShort)) return false;
+       ( i-> type == imLong || i-> type == imShort)) {
+      if ( bitCount) *bitCount = 8;
+      return false;
+   }
+
+   if ( i-> type == imRGB) {
+      if ( !screen || dsys( screen) options. aptCompatiblePS || !dsys( screen) ps) {
+         if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8) {
+            if ( bitCount) {
+               *bitCount = guts. displayBMInfo. bmiHeader. biBitCount;
+               if ( *bitCount < 4) *bitCount = 1;
+               else if ( *bitCount < 8) *bitCount = 4;
+            }
+            return false;
+         }
+      } else {
+         int bc = GetDeviceCaps( dsys( screen) ps, BITSPIXEL);
+         if ( bc <= 8) {
+            if ( bitCount) {
+               *bitCount = bc;
+               if ( *bitCount < 4) *bitCount = 1;
+               else if ( *bitCount < 8) *bitCount = 4;
+            }
+            return false;
+         }
+      }
+   }
    return true;
 }
 
-Handle image_enscreen( Handle image)
+Handle image_enscreen( Handle image, Handle screen)
 {
    PImage i = ( PImage) image;
-   if ( !image_screenable( image))
+   int lower;
+   if ( !image_screenable( image, screen, &lower))
    {
       Handle j = i-> self-> dup( image);
-      ((( PImage) j)-> self)->resample( j,
-         ((( PImage) j)-> self)->get_stats( j, isRangeLo),
-         ((( PImage) j)-> self)->get_stats( j, isRangeHi),
-         0, 255
-      );
-      ((( PImage) j)-> self)->set_type( j, imByte);
+      if ( i-> type == imRGB) {
+         ((( PImage) j)-> self)->set_type( j, lower);
+      } else {
+         ((( PImage) j)-> self)->resample( j,
+            ((( PImage) j)-> self)->get_stats( j, isRangeLo),
+            ((( PImage) j)-> self)->get_stats( j, isRangeHi),
+            0, 255
+         );
+         ((( PImage) j)-> self)->set_type( j, lower | imGrayScale);
+      }
       return j;
    } else
       return image;
@@ -44,7 +75,7 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
    int i;
    PImage       image = ( PImage) self;
    int          nColors;
-   int          bitCount;
+   int          bitCount, lower;
 
    if ( is_apt( aptDeviceBitmap))
    {
@@ -65,12 +96,12 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
    }
 
 
-   if ( image_screenable( self)) {
+   if ( image_screenable( self, nilHandle, &lower)) {
       nColors  = (( 1 << ( image-> type & imBPP)) & 0x1ff);
       bitCount = image-> type & imBPP;
    } else {
-      nColors  = 256;
-      bitCount = 8;
+      nColors  = 1 << lower;
+      bitCount = lower;
    }
 
    memset( bi, 0, sizeof( BITMAPINFOHEADER) + nColors * sizeof( RGBQUAD));
@@ -93,28 +124,61 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
 }
 
 HBITMAP
-image_make_bitmap_handle( Handle img)
+image_make_bitmap_handle( Handle img, HPALETTE pal)
 {
    HBITMAP bm;
    XBITMAPINFO xbi;
    BITMAPINFO * bi = image_get_binfo( img, &xbi);
-   if ( !( bm = CreateDIBitmap( dc_alloc(), &bi-> bmiHeader, CBM_INIT, (( PImage) img)-> data, bi, DIB_RGB_COLORS))) apiErr;
-   dc_free();
+   HPALETTE old = nil, xpal = pal;
+   HWND foc = GetFocus();
+   HDC dc = GetDC( foc);
+
+   if ( !dc)
+      apiErr;
+
+   if ( xpal == nil)
+      xpal = image_make_bitmap_palette( img);
+
+   if ( xpal) {
+      old = SelectPalette( dc, xpal, 1);
+      RealizePalette( dc);        // m$ suxx !!!
+   }
+
+   if ( !( bm = CreateDIBitmap( dc, &bi-> bmiHeader, CBM_INIT,
+        (( PImage) img)-> data, bi, DIB_RGB_COLORS))) apiErr;
+
+   if ( old) {
+      SelectPalette( dc, old, 1);
+      RealizePalette( dc);
+   }
+
+   if ( xpal != pal)
+      DeleteObject( xpal);
+
    return bm;
 }
 
 HPALETTE
 image_make_bitmap_palette( Handle img)
 {
-   PImage i    = ( PImage) img;
-   int j, nColors = (( 1 << ( i-> type & imBPP)) & 0x1ff);
+   PDrawable i    = ( PDrawable) img;
+   int j, nColors = i-> palSize;
    XLOGPALETTE lp = { 0x300, nColors};
    HPALETTE r;
+   RGBColor  dest[ 256];
+   PRGBColor logp = i-> palette;
    if ( nColors == 0) return nil;
+
+   if ( nColors > 256) {
+      cm_squeeze_palette( i-> palette, nColors, dest, 256);
+      nColors = lp. palNumEntries = 256;
+      logp = dest;
+   }
+
    for ( j = 0; j < nColors; j++) {
-      lp. palPalEntry[ j]. peRed    = i-> palette[ j]. r;
-      lp. palPalEntry[ j]. peGreen  = i-> palette[ j]. g;
-      lp. palPalEntry[ j]. peBlue   = i-> palette[ j]. b;
+      lp. palPalEntry[ j]. peRed    = logp[ j]. r;
+      lp. palPalEntry[ j]. peGreen  = logp[ j]. g;
+      lp. palPalEntry[ j]. peBlue   = logp[ j]. b;
       lp. palPalEntry[ j]. peFlags  = 0;
    }
    if ( !( r = CreatePalette(( LOGPALETTE*) &lp))) apiErrRet;
@@ -124,9 +188,10 @@ image_make_bitmap_palette( Handle img)
 void
 image_set_cache( Handle from, Handle self)
 {
-   if ( sys bm == nil) {
-      sys bm  = image_make_bitmap_handle( from);
+   if ( sys pal == nil)
       sys pal = image_make_bitmap_palette( from);
+   if ( sys bm == nil) {
+      sys bm  = image_make_bitmap_handle( from, sys pal);
       if ( !is_apt( aptDeviceBitmap))
          hash_store( imageMan, &self, sizeof( self), (void*)self);
    }
@@ -137,10 +202,10 @@ image_destroy_cache( Handle self)
 {
    if ( sys bm) {
       if ( !DeleteObject( sys bm)) apiErr;
-      if ( sys pal)
-         if ( !DeleteObject( sys pal)) apiErr;
       hash_delete( imageMan, &self, sizeof( self), false);
    }
+   if ( sys pal)
+      if ( !DeleteObject( sys pal)) apiErr;
    sys bm = sys pal = nilHandle;
 }
 
@@ -224,14 +289,18 @@ apc_image_begin_paint( Handle self)
    apcErrClear;
    if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
    if ( sys bm == nilHandle) {
-      Handle deja  = image_enscreen( self);
-      image_set_cache( self, deja);
+      Handle deja  = image_enscreen( self, self);
+      image_set_cache( deja, self);
       if ( deja != self) Object_destroy( deja);
    }
    sys stockBM = SelectObject( sys ps, sys bm);
-   if ( sys pal)
-      sys stockPalette = SelectPalette( sys ps, sys pal, true);
+   if ( !sys pal)
+      sys pal = image_make_bitmap_palette( self);
    hwnd_enter_paint( self);
+   if ( sys pal) {
+      SelectPalette( sys ps, sys pal, 0);
+      RealizePalette( sys ps);
+   }
    return true;
 }
 
@@ -240,8 +309,7 @@ apc_image_begin_paint_info( Handle self)
 {
    apcErrClear;
    if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
-   if ( sys pal)
-      sys stockPalette = SelectPalette( sys ps, sys pal, true);
+   if ( sys pal) SelectPalette( sys ps, sys pal, 0);
    hwnd_enter_paint( self);
    return true;
 }
@@ -257,10 +325,8 @@ apc_image_end_paint( Handle self)
    hwnd_leave_paint( self);
    if ( sys stockBM)
       SelectObject( sys ps, sys stockBM);
-   if ( sys stockPalette)
-      SelectPalette( sys ps, sys stockPalette, false);
    DeleteDC( sys ps);
-   sys stockBM = sys stockPalette = sys ps = nil;
+   sys stockBM = sys ps = nil;
 }
 
 void
@@ -268,10 +334,8 @@ apc_image_end_paint_info( Handle self)
 {
    apcErrClear;
    hwnd_leave_paint( self);
-   if ( sys stockPalette)
-      SelectPalette( sys ps, sys stockPalette, false);
    DeleteDC( sys ps);
-   sys stockPalette = sys ps = nil;
+   sys ps = nil;
 }
 
 
@@ -298,8 +362,15 @@ apc_dbm_create( Handle self, Bool monochrome)
 
    if ( monochrome)
       sys bm = CreateBitmap( var w, var h, 1, 1, nil);
-   else
+   else {
+      if ( sys pal = palette_create( self)) {
+         sys stockPalette = SelectPalette( sys ps, sys pal, 1);
+         RealizePalette( sys ps);
+      }
       sys bm = CreateCompatibleBitmap( dc_alloc(), var w, var h);
+      if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
+         apt_clear( aptCompatiblePS);
+   }
 
    if ( !sys bm) {
       apiErr;
@@ -310,9 +381,9 @@ apc_dbm_create( Handle self, Bool monochrome)
    if ( !monochrome) dc_free();
 
    sys stockBM = SelectObject( sys ps, sys bm);
-   sys pal     = GetCurrentObject( sys ps, OBJ_PAL);
 
    hwnd_enter_paint( self);
+
    hash_store( imageMan, &self, sizeof( self), (void*)self);
    return true;
 }
@@ -321,21 +392,36 @@ void
 dbm_recreate( Handle self)
 {
    HBITMAP bm, stock;
-   HDC dc;
+   HDC dc, dca;
+   HPALETTE p, std = nil;
    if ((( PDeviceBitmap) self)-> monochrome) return;
 
    if ( !( dc = CreateCompatibleDC( 0))) {
       apiErr;
       return;
    }
-   if ( !( bm = CreateCompatibleBitmap( dc_alloc(), var w, var h))) {
+   dca = dc_alloc();
+
+   if ( sys pal) {
+      p = SelectPalette( dc, sys pal, 1);
+      RealizePalette( dc);
+   }
+
+   if ( !( bm = CreateCompatibleBitmap( dca, var w, var h))) {
       DeleteDC( dc);
       dc_free();
       apiErr;
       return;
    }
    stock = SelectObject( dc, bm);
+
    BitBlt( dc, 0, 0, var w, var h, sys ps, 0, 0, SRCCOPY);
+
+   if ( sys pal) {
+      SelectPalette( sys ps, sys stockPalette, 1);
+      sys stockPalette = p;
+   } else
+      sys stockPalette = GetCurrentObject( dc, OBJ_PAL);
 
    if ( sys stockBM)
       SelectObject( sys ps, sys stockBM);
@@ -353,8 +439,11 @@ apc_dbm_destroy( Handle self)
 {
    apcErrClear;
    hash_delete( imageMan, &self, sizeof( self), false);
+
    hwnd_leave_paint( self);
 
+   if ( sys pal)
+      DeleteObject( sys pal);
    if ( sys stockBM)
      SelectObject( sys ps, sys stockBM);
    DeleteObject( sys bm);
@@ -714,8 +803,11 @@ apc_prn_begin_doc( Handle self, char * docName)
       return false;
    }
 
-   sys pal = GetCurrentObject( sys ps, OBJ_PAL);
    hwnd_enter_paint( self);
+   if ( sys pal = palette_create( self)) {
+      SelectPalette( sys ps, sys pal, 0);
+      RealizePalette( sys ps);
+   }
    return true;
 }
 
@@ -728,7 +820,6 @@ apc_prn_begin_paint_info( Handle self)
    if ( !( sys ps = CreateDC( ppi-> pDriverName, ppi-> pPrinterName, ppi-> pPortName, ppi-> pDevMode)))
       apiErrRet;
 
-   sys pal = GetCurrentObject( sys ps, OBJ_PAL);
    hwnd_enter_paint( self);
    return true;
 }
@@ -742,22 +833,20 @@ apc_prn_end_doc( Handle self)
    if ( EndPage( sys ps) < 0) apiPrnErr;
    if ( EndDoc( sys ps) < 0) apiPrnErr;
 
-   sys pal = nil;
    hwnd_leave_paint( self);
+   if ( sys pal) DeleteObject( sys pal);
    DeleteDC( sys ps);
-   sys ps = nil;
+   sys pal = sys ps = nil;
 }
 
 void
 apc_prn_end_paint_info( Handle self)
 {
    apcErrClear;
-   sys pal = nil;
    hwnd_leave_paint( self);
    DeleteDC( sys ps);
    sys ps = nil;
 }
-
 
 void
 apc_prn_new_page( Handle self)
@@ -771,9 +860,9 @@ apc_prn_abort_doc( Handle self)
 {
    if ( AbortDoc( sys ps) < 0) apiPrnErr;
 
-   sys pal = nil;
    hwnd_leave_paint( self);
+   if ( sys pal) DeleteObject( sys pal);
    DeleteDC( sys ps);
-   sys ps = nil;
+   sys pal = sys ps = nil;
 }
 

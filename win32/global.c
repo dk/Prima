@@ -556,6 +556,12 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          )
          return 0;
       break;
+   case WM_QUERYNEWPALETTE:
+      return palette_change( self);
+   case WM_PALETTECHANGED:
+      if (( HWND) mp1 != win)
+         palette_change( self);
+      break;
    case WM_POSTAL:
       ev. cmd    = cmPost;
       ev. gen. H = ( Handle) mp1;
@@ -732,6 +738,10 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    case WM_SETVISIBLE:
    case WM_ENABLE:
    case WM_FORCEFOCUS:
+   case WM_QUERYNEWPALETTE:
+      return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
+   case WM_PALETTECHANGED:
+      if (( HWND) mp1 == win) return 0;
       return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
