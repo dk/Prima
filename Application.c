@@ -55,7 +55,6 @@ Application_init( Handle self, HV * profile)
    char * hintClass      = pget_c( hintClass);
    if ( application != nilHandle)
       croak( "RTC0010: Attempt to create more than one application instance");
-   var-> printerClass  = duplicate_string( pget_c( printerClass));
 
    CDrawable-> init( self, profile);
    list_create( &var->  widgets, 16, 16);
@@ -85,6 +84,13 @@ Application_init( Handle self, HV * profile)
    var->  text = duplicate_string("");
    opt_set( optModalHorizon);
 
+   // store printer info
+   {
+      HV * hv = ( HV *) SvRV( var-> mate);
+      hv_store( hv, "PrinterClass",  12, newSVpv( pget_c( printerClass),  0), 0);
+      hv_store( hv, "PrinterModule", 13, newSVpv( pget_c( printerModule), 0), 0);
+   }
+   
    {
       HV * profile = newHV();
       static Timer_vmt HintTimerVmt;
@@ -126,17 +132,14 @@ Application_init( Handle self, HV * profile)
 void
 Application_done( Handle self)
 {
-   if ( var-> printer != nilHandle)
-      unprotect_object( var-> printer);
    unprotect_object( var-> hintTimer);
    unprotect_object( var-> hintWidget);
    list_destroy( &var->  modalHorizons);
    list_destroy( &var->  widgets);
-   free( var-> printerClass);
    free( var-> helpFile);
    free( var-> text);
    free( var-> hint);
-   var->  accelTable = var->  printer =
+   var->  accelTable = 
       var-> hintWidget = var-> hintTimer = nilHandle;
    var->  helpFile   = var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
@@ -404,24 +407,6 @@ Application_get_system_info( char * dummy)
    pset_c( guiDescription, gui_desc);
 
    return newRV_noinc(( SV *) profile);
-}
-
-
-Handle
-Application_get_printer( Handle self)
-{
-   if ( var-> printer == nilHandle) {
-      HV * profile = newHV();
-      pset_c( name, "Printer");
-      pset_H( owner, self);
-      var-> printer = create_instance( var-> printerClass);
-      if ( var-> printer == nilHandle)
-         croak("RTC0014: Unable to create printer '%s'", var-> printerClass);
-      protect_object( var-> printer);
-      hv_clear( profile);
-      free( var-> printerClass);
-   }
-   return var-> printer;
 }
 
 Handle

@@ -1283,11 +1283,6 @@ sub profile_check_in
 {
    my ( $self, $p, $default) = @_;
    $self-> SUPER::profile_check_in( $p, $default);
-   my $pm = exists ( $p-> {printerModule}) ? $p-> {printerModule} : $default-> {printerModule};
-   if ( defined( $pm) && length( $pm)) {
-      eval "use $pm;";
-      die "$@" if $@;
-   }
    delete $p-> { printerModule};
    delete $p-> { owner};
    delete $p-> { ownerColor};
@@ -1317,6 +1312,18 @@ sub setup
    }
    $_-> ($self) for @startupNotifications;
    undef @startupNotifications;
+}
+
+sub get_printer
+{
+   unless ( $_[0]-> {Printer}) {
+      if ( length $_[0]-> {PrinterModule}) {
+         eval 'use ' . $_[0]-> {PrinterModule} . ';';
+         die "$@" if $@;
+      }
+      $_[0]-> {Printer} = $_[0]-> {PrinterClass}-> create( owner => $_[0]);
+   }
+   return $_[0]-> {Printer};
 }
 
 sub hintFont      {($#_)?$_[0]->set_hint_font        ($_[1])  :return Prima::Font->new($_[0], "get_hint_font", "set_hint_font")}
