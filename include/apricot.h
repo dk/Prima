@@ -1319,36 +1319,37 @@ apc_show_message( char * message);
 typedef Color ColorSet[ ciMaxId + 1];
 
 /* raster operations */
-#define    ropCopyPut       0  /*     dest  = src */
-#define    ropXorPut        1  /*     dest ^= src */
-#define    ropAndPut        2  /*     dest &= src */
-#define    ropOrPut         3  /*     dest |= src */
-#define    ropNotPut        4  /*     dest = !src */
-#define    ropNotBlack      5  /*     dest = (src <> 0) ? src */
-#define    ropNotDestXor    6  /*     dest = (!dest) ^ src */
-#define    ropNotDestAnd    7  /*     dest = (!dest) & src */
-#define    ropNotDestOr     8  /*     dest = (!dest) | src */
-#define    ropNotSrcXor     9  /*     dest ^= !src */
-#define    ropNotSrcAnd     10 /*    dest &= !src */
-#define    ropNotSrcOr      11 /*    dest |= !src */
-#define    ropNotXor        12 /*    dest = !(src ^ dest) */
-#define    ropNotAnd        13 /*    dest = !(src & dest) */
-#define    ropNotOr         14 /*    dest = !(src | dest) */
-#define    ropNotBlackXor   15 /*    dest ^= (src <> 0) ? src */
-#define    ropNotBlackAnd   16 /*    dest &= (src <> 0) ? src */
-#define    ropNotBlackOr    17 /*    dest |= (src <> 0) ? src */
-#define    ropNoOper        18 /* */
-#define    ropBlackness     19 /*    dest = 0 */
-#define    ropWhiteness     20 /*    dest = white */
-#define    ropErase         21 /*    dest = !dest & !src */
-#define    ropInvert        22 /*    dest = !dest */
-#define    ropPattern       23 /*    dest = pattern */
-#define    ropXorPattern    24 /*    dest ^= pattern */
-#define    ropAndPattern    25 /*    dest &= pattern */
-#define    ropOrPattern     26 /*    dest |= pattern */
-#define    ropNotSrcOrPat   27 /*    dest |= pattern | (!src) */
-#define    ropSrcLeave      28 /*    dest = (src != fore color) ? src : figa */
-#define    ropDestLeave     29 /*    dest = (src != back color) ? src : figa */
+typedef enum {
+   ropCopyPut = 0,	/* dest  = src */
+   ropXorPut,		/* dest ^= src */
+   ropAndPut,		/* dest &= src */
+   ropOrPut,		/* dest |= src */
+   ropNotPut,		/* dest = !src */
+   ropNotBlack,		/* dest = (src <> 0) ? src */
+   ropNotDestXor,	/* dest = (!dest) ^ src */
+   ropNotDestAnd,	/* dest = (!dest) & src */
+   ropNotDestOr,	/* dest = (!dest) | src */
+   ropNotSrcXor,	/* dest ^= !src */
+   ropNotSrcAnd,	/* dest &= !src */
+   ropNotSrcOr,		/* dest |= !src */
+   ropNotXor,		/* dest = !(src ^ dest) */
+   ropNotAnd,		/* dest = !(src & dest) */
+   ropNotOr,		/* dest = !(src | dest) */
+   ropNotBlackXor,	/* dest ^= (src <> 0) ? src */
+   ropNotBlackAnd,	/* dest &= (src <> 0) ? src */
+   ropNotBlackOr,	/* dest |= (src <> 0) ? src */
+   ropNoOper,		/* dest = dest */
+   ropBlackness,	/* dest = 0 */
+   ropWhiteness,	/* dest = white */
+   ropInvert,		/* dest = !dest */
+   ropPattern,		/* dest = pattern */
+   ropXorPattern,	/* dest ^= pattern */
+   ropAndPattern,	/* dest &= pattern */
+   ropOrPattern,	/* dest |= pattern */
+   ropNotSrcOrPat,	/* dest |= pattern | (!src) */
+   ropSrcLeave,		/* dest = (src != fore color) ? src : figa */
+   ropDestLeave,	/* dest = (src != back color) ? src : figa */
+} ROP;
 
 /* line ends */
 #define    leFlat           0
