@@ -471,8 +471,9 @@ sub InputLine_KeyDown
       return;
    }
    if ($key == kb::Enter) {
-      $self-> value( $edit-> text);
-      $edit-> clear_event;
+      my $value = $edit-> text;
+      $self-> value( $value);
+      $edit-> clear_event if $value ne $self-> value;
       return;
    }
 }
