@@ -305,22 +305,23 @@ sub item_changed
 
 sub widget_changed
 {
-   my $how = $_[0];
+   my ( $how, $id) = @_;
    my $self = $VB::inspector;
    return unless $self;
    return unless $self-> {opened};
-   return if $self-> {sync};
-   $self-> {sync} = 1;
-   my $id   = $self->{opened}->{id};
-   my $data = $self-> {opened}-> {widget}-> prf( $id);
-   $self-> {opened}-> set( $data);
+   if ( $id eq $self->{opened}->{id}) {
+      return if $self-> {sync};
+      $self-> {sync} = 1;
+      my $data = $self-> {opened}-> {widget}-> prf( $id);
+      $self-> {opened}-> set( $data);
+      $self-> {sync} = undef;
+   }   
    my $list = $self-> {currentList};
    my $ix = $list->{index}->{$id};
    if ( $list-> {check}->[$ix] == $how) {
       $list-> {check}->[$ix] = $how ? 0 : 1;
       $list-> redraw_items( $ix);
    }
-   $self-> {sync} = undef;
 }
 
 
@@ -532,6 +533,8 @@ sub insert_new_control
    my $j;
    my %prf = exists($profile{profile}) ? ( %{$profile{profile}}) : ();
    eval {
+      eval "use $VB::main->{classes}->{$class}->{RTModule};";
+      die "$@" if $@;
       $j = $self-> insert( $xclass,
          profile => {
             %prf,
@@ -1550,6 +1553,8 @@ sub push_widgets
       for ( $i = 0; $i < scalar @seq; $i += 2) {
          $_ = $seq[$i];
          next unless $owners{$_} eq $id;
+         eval "use $dep{$_}->{module};";
+         Prima::message("Error loading $dep{$_}->{module}:$@"), next if "$@";
          my $c = $VB::form-> insert(
             $classes->{$dep{$_}->{class}}->{class},
             realClass     => $dep{$_}->{realClass},
@@ -1673,7 +1678,7 @@ PREHEAD
    my $c = <<STARTSUB;
 sub
 {
-   return (
+\treturn (
 STARTSUB
 
    my $main = $VB::form-> prf( 'name');
@@ -1686,34 +1691,34 @@ STARTSUB
       my $types = $_->{types};
       my $name = $_-> prf( 'name');
       $c .= <<MEDI;
-      '$name' => {
-	class   => '$class',
-        module  => '$module',
+\t'$name' => {
+\t\tclass   => '$class',
+\t\tmodule  => '$module',
 MEDI
-      $c .= "        parent => 1,\n" if $_ == $VB::form;
+      $c .= "\t\tparent => 1,\n" if $_ == $VB::form;
       my %extras    = $_-> ext_profile;
       if ( scalar keys %extras) {
-          $c .= "        extras => {\n";
+          $c .= "\t\textras => {\n";
           for ( keys %extras) {
               my $val  = $extras{$_};
               my $type = $self-> get_typerec( $types->{$_}, \$val);
               $val = defined($val) ? $type-> write( $_, $val) : 'undef';
-              $c .= "          $_ => $val,\n";
+              $c .= "\t\t$_ => $val,\n";
           }
-          $c .= "        },\n";
+          $c .= "\t\t},\n";
       }
-      %extras    = $_-> act_profile(0);
+      %extras    = $_-> act_profile;
       if ( scalar keys %extras) {
-          $c .= "        actions => {\n";
+          $c .= "\t\tactions => {\n";
           for ( keys %extras) {
               my $val  = $extras{$_};
               my $type = $self-> get_typerec( $types->{$_}, \$val);
               $val = defined($val) ? $type-> write( $_, $val) : 'undef';
-              $c .= "          $_ => $val,\n";
+              $c .= "\t\t$_ => $val,\n";
           }
-          $c .= "        },\n";
+          $c .= "\t\t},\n";
       }
-      $c .= "        profile => {\n";
+      $c .= "\t\tprofile => {\n";
       my ( $x,$prf) = ($_, $_->{profile});
       my @o = $_-> get_o_delta;
       for( keys %{$prf}) {
@@ -1728,13 +1733,13 @@ MEDI
          my $type = $self-> get_typerec( $types->{$_}, \$val);
          $val = defined($val) ? $type-> write( $_, $val) : 'undef';
          $preload_modules{$_} = 1 for $type-> preload_modules();
-         $c .= "          $_ => $val,\n";
+         $c .= "\t\t\t$_ => $val,\n";
       }
-      $c .= "      }},\n";
+      $c .= "\t}},\n";
    }
 
 $c .= <<POSTHEAD;
-   );
+\t);
 }
 POSTHEAD
    $header .= '# [preload] ' . join( ' ', sort keys %preload_modules) . "\n";
