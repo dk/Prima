@@ -227,7 +227,7 @@ Widget_done( Handle self)
 void
 Widget_attach( Handle self, Handle objectHandle)
 {
-   if ( objectHandle == nilHandle || !kind_of( objectHandle, CComponent)) return;
+   if ( objectHandle == nilHandle || !kind_of( objectHandle, CObject)) return;
    if ( kind_of( objectHandle, CWidget)) list_add( &var widgets, objectHandle);
    inherited attach( self, objectHandle);
 }
