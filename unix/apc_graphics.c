@@ -39,6 +39,9 @@
 #define REVERT(a)	(XX-> size. y + XX-> menuHeight - (a) - 1)
 #define SHIFT(a,b)	{ (a) += XX-> gtransform. x + XX-> btransform. x; \
                            (b) += XX-> gtransform. y + XX-> btransform. y; }
+#define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
+#define RANGE2(a,b)     RANGE(a) RANGE(b)
+#define RANGE4(a,b,c,d) RANGE(a) RANGE(b) RANGE(c) RANGE(d)
 #define REVERSE_BYTES_32(x) ((((x)&0xff)<<24) | (((x)&0xff00)<<8) | (((x)&0xff0000)>>8) | (((x)&0xff000000)>>24))
 #define REVERSE_BYTES_24(x) ((((x)&0xff)<<16) | ((x)&0xff00) | (((x)&0xff0000)>>8))
 #define REVERSE_BYTES_16(x) ((((x)&0xff)<<8 ) | (((x)&0xff00)>>8))
@@ -523,6 +526,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
    if ( dX <= 0 || dY <= 0) return false;
+   RANGE4(x, y, dX, dY);
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -548,6 +552,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
+   RANGE4( x1, y1, x2, y2);
    while ( prima_make_brush( XX, mix++)) 
       XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
    XCHECKPOINT;
@@ -569,6 +574,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
    }
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
+   RANGE4( x1, y1, x2, y2);
    
    /* clean color entries, leave just background & foreground. XXX */
    if ( guts. dynamicColors && x1 <= 0 && x2 > XX-> size.x && y1 <= 0 && y2 >= XX-> size.y) {
@@ -605,6 +611,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
    if ( dX <= 0 || dY <= 0) return false;
+   RANGE4(x, y, dX, dY);
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -640,6 +647,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
    for ( i = 0; i < n; i++) {
       p[i].x = pp[i].x + x;
       p[i].y = y - pp[i].y;
+      RANGE2(p[i].x, p[i].y);
    }
 
    PURE_FOREGROUND;
@@ -669,6 +677,7 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
       s[i].y1 = y - pp[i*2].y;
       s[i].x2 = pp[i*2+1].x + x;
       s[i].y2 = y - pp[i*2+1].y;
+      RANGE4(s[i].x1, s[i].y1, s[i].x2, s[i].y2);
    }
 
    PURE_FOREGROUND;
@@ -686,6 +695,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
    if ( dX <= 0 || dY <= 0) return false;
+   RANGE4(x, y, dX, dY);
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -704,6 +714,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
    if ( dX <= 0 || dY <= 0) return false;
+   RANGE4(x, y, dX, dY);
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -740,6 +751,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
    if ( dX <= 0 || dY <= 0) return false;
+   RANGE4(x, y, dX, dY);
    SHIFT( x, y);
    y = REVERT( y);
 
@@ -769,9 +781,11 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    for ( i = 0; i < numPts; i++) {
       p[i]. x = (short)points[i]. x + XX-> gtransform. x + XX-> btransform. x;
       p[i]. y = (short)REVERT(points[i]. y + XX-> gtransform. y + XX-> btransform. y);
+      RANGE2(p[i].x, p[i].y);
    }
    p[numPts]. x = (short)points[0]. x + XX-> gtransform. x + XX-> btransform. x;
    p[numPts]. y = (short)REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
+   RANGE2(p[numPts].x, p[numPts].y);
 
    FILL_ANTIDEFECT_OPEN;
    if ( guts. limits. XFillPolygon >= numPts) {
@@ -797,6 +811,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
    if ( dX <= 0 || dY <= 0) return false;
+   RANGE4(x, y, dX, dY);
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -1244,6 +1259,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
    if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x1, y1); SHIFT( x2, y2);
+   RANGE4(x1, y1, x2, y2); /* not really correct */
    PURE_FOREGROUND;
    if (( XX-> line_width == 0) && (x1 == x2 || y1 == y2)) {
       XGCValues gcv;
@@ -1269,6 +1285,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
+   RANGE4(x1, y1, x2, y2);
    PURE_FOREGROUND;
    XDrawRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
    XCHECKPOINT;
@@ -1284,6 +1301,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
    if ( dX <= 0 || dY <= 0) return false;
+   RANGE4(x, y, dX, dY);
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -1600,6 +1618,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
       free( p); 
    }  
    SHIFT( x, y);
+   RANGE2(x,y);
 
    if ( PDrawable( self)-> font. direction != 0) {
       Bool ret = gp_text_out_rotated( self, text, x, y, len, utf8);
