@@ -38,6 +38,45 @@
 /* Multiple evaluation macro! */
 #define REVERSE_BYTES_32(x) ((((x)&0xff)<<24) | (((x)&0xff00)<<8) | (((x)&0xff0000)>>8) | (((x)&0xff000000)>>24))
 
+#define ColorComponentMask      0xff
+#define LSNibble                0x0f
+#define LSNibbleShift           0
+#define MSNibble                0xf0
+#define MSNibbleShift           4
+#define NPalEntries4            16
+#define NPalEntries8            256
+
+typedef U8 Pixel8;
+typedef unsigned long XPixel;
+typedef U8 ColorComponent;
+
+typedef uint16_t Pixel16;
+
+typedef struct
+{
+   Pixel16 a;
+   Pixel16 b;
+} Duplet16;
+
+typedef struct
+{
+   ColorComponent a0, a1, a2;
+} Pixel24;
+
+typedef struct
+{
+   ColorComponent a0, a1, a2;
+   ColorComponent b0, b1, b2;
+} Duplet24;
+
+typedef uint32_t Pixel32;
+
+typedef struct
+{
+   Pixel32 a;
+   Pixel32 b;
+} Duplet32;
+
 typedef struct _PrimaXImage
 {
    Bool shm;
@@ -82,7 +121,7 @@ prepare_ximage( int width, int height, Bool bitmap)
       i-> bytes_per_line_alias = i-> image-> bytes_per_line;
       i-> xmem. shmid = shmget( IPC_PRIVATE,
                                 i-> image-> bytes_per_line * height + extra_bytes,
-                                IPC_CREAT | 0777);
+                                IPC_CREAT | 0666);
       if ( i-> xmem. shmid < 0) {
          XDestroyImage( i-> image);
          goto normal_way;
@@ -374,7 +413,7 @@ create_image_cache_1_to_1( PImage img, Handle drawable, Bool icon)
 }
 
 static void
-create_rgb_to_16_lut( int ncolors, const PRGBColor pal, U16 *lut)
+create_rgb_to_16_lut( int ncolors, const PRGBColor pal, Pixel16 *lut)
 {
    /* XXX make this 3,2,5,11-independent */
    Visual *v = DefaultVisual( DISP, SCREEN);
@@ -396,9 +435,9 @@ create_rgb_to_16_lut( int ncolors, const PRGBColor pal, U16 *lut)
 }
 
 static void
-calc_shifts_rgb_to_24( unsigned long mask,
-                       int *right,
-                       int *left)
+calc_shifts_rgb_to_xpixel( unsigned long mask,
+                           int *right,
+                           int *left)
 {
    int bc, l;
 
@@ -410,92 +449,17 @@ calc_shifts_rgb_to_24( unsigned long mask,
    *left = l;
 }
 
-static void
-create_rgb_to_24_lut( int ncolors, const PRGBColor pal, unsigned long *lut)
+static int *
+rank_rgb_shifts( void)
 {
-   Visual *v = DefaultVisual( DISP, SCREEN);
-   unsigned long rmask, gmask, bmask;
-   int rrsh, grsh, brsh, rlsh, glsh, blsh;
-   int i;
-
-   calc_shifts_rgb_to_24( rmask = v-> red_mask, &rrsh, &rlsh);
-   calc_shifts_rgb_to_24( gmask = v-> green_mask, &grsh, &glsh);
-   calc_shifts_rgb_to_24( bmask = v-> blue_mask, &brsh, &blsh);
-
-   for ( i = 0; i < ncolors; i++) {
-      lut[i] = 0;
-      lut[i] |=
-	 (((pal[i]. r >> rrsh) << rlsh) & rmask);
-      lut[i] |=
-	 (((pal[i]. g >> grsh) << glsh) & gmask);
-      lut[i] |=
-	 (((pal[i]. b >> brsh) << blsh) & bmask);
-   }
-
-   if ( guts.machine_byte_order != guts.byte_order) {
-      for ( i = 0; i < ncolors; i++) {
-         lut[i] = REVERSE_BYTES_32(lut[i]);
-      }
-   }
-}
-
-static void
-create_image_cache_4_to_16( PImage img)
-{
-   PDrawableSysData IMG = X((Handle)img);
-   U32 lut[ 256];
-   U16 lut1[ 16];
-   unsigned char *data;
-   int x, y;
-   int ls;
-   int h = img-> h, w = img-> w;
-   unsigned i;
-   PrimaXImage *ximage;
-
-   create_rgb_to_16_lut( 16, img-> palette, lut1);
-   for ( i = 0; i < 256; i++) {
-      lut[i] = ((U32)lut1[(i & 0xf0) >> 4]) | (((U32)lut1[(i & 0x0f) >> 0]) << 16);
-   }
-   ximage = prepare_ximage( w, h, false);
-   if ( !ximage) croak( "create_image_cache_4_to_16(): error creating ximage");
-   ls = get_ximage_bytes_per_line( ximage);
-   data = get_ximage_data( ximage);
-   for ( y = h-1; y >= 0; y--) {
-      register unsigned char *line = img-> data + y*img-> lineSize;
-      register U32 *d = (U32*)(ls*(h-y-1)+data);
-      for ( x = 0; x < (w+1)/2; x++) {
-	 *d++ = lut[line[x]];
-      }
-   }
-
-   IMG-> image_cache = ximage;
-}
-
-typedef struct
-{
-   U8 a0, a1, a2;
-   U8 b0, b1, b2;
-} Duplet24;
-
-static void
-create_image_cache_4_to_24( PImage img)
-{
-   PDrawableSysData IMG = X((Handle)img);
-   Duplet24 lut[ 256];
-   U32 lut1[ 16];
-   unsigned char *data;
-   int x, y;
-   int ls;
-   int h = img-> h, w = img-> w;
-   unsigned i;
-   PrimaXImage *ximage;
    static int shift[3];
    static Bool shift_unknown = true;
+   Visual *v;
+   unsigned long m;
+   int xchg;
 
    if ( shift_unknown) {
-      Visual *v = DefaultVisual( DISP, SCREEN);
-      unsigned long m;
-      int xchg;
+      v = DefaultVisual( DISP, SCREEN);
 
       m = v-> red_mask;
       shift[0] = 0;
@@ -525,14 +489,93 @@ create_image_cache_4_to_24( PImage img)
       shift_unknown = false;
    }
 
-   create_rgb_to_24_lut( 16, img-> palette, lut1);
-   for ( i = 0; i < 256; i++) {
-      lut[i]. a0 = (U8)((lut1[(i & 0xf0) >> 4] >> shift[0]) & 0xff);
-      lut[i]. a1 = (U8)((lut1[(i & 0xf0) >> 4] >> shift[1]) & 0xff);
-      lut[i]. a2 = (U8)((lut1[(i & 0xf0) >> 4] >> shift[2]) & 0xff);
-      lut[i]. b0 = (U8)((lut1[(i & 0x0f) >> 0] >> shift[0]) & 0xff);
-      lut[i]. b1 = (U8)((lut1[(i & 0x0f) >> 0] >> shift[1]) & 0xff);
-      lut[i]. b2 = (U8)((lut1[(i & 0x0f) >> 0] >> shift[2]) & 0xff);
+   return shift;
+}
+
+static void
+create_rgb_to_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
+{
+   Visual *v = DefaultVisual( DISP, SCREEN);
+   unsigned long rmask, gmask, bmask;
+   int rrsh, grsh, brsh, rlsh, glsh, blsh;
+   int i;
+
+   calc_shifts_rgb_to_xpixel( rmask = v-> red_mask, &rrsh, &rlsh);
+   calc_shifts_rgb_to_xpixel( gmask = v-> green_mask, &grsh, &glsh);
+   calc_shifts_rgb_to_xpixel( bmask = v-> blue_mask, &brsh, &blsh);
+
+   for ( i = 0; i < ncolors; i++) {
+      lut[i] = 0;
+      lut[i] |=
+	 (((pal[i]. r >> rrsh) << rlsh) & rmask);
+      lut[i] |=
+	 (((pal[i]. g >> grsh) << glsh) & gmask);
+      lut[i] |=
+	 (((pal[i]. b >> brsh) << blsh) & bmask);
+   }
+
+   if ( guts.machine_byte_order != guts.byte_order) {
+      for ( i = 0; i < ncolors; i++) {
+         lut[i] = REVERSE_BYTES_32(lut[i]);
+      }
+   }
+}
+
+static void
+create_image_cache_4_to_16( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   Duplet16 lut[ NPalEntries8];
+   Pixel16 lut1[ NPalEntries4];
+   unsigned char *data;
+   int x, y;
+   int ls;
+   int h = img-> h, w = img-> w;
+   unsigned i;
+   PrimaXImage *ximage;
+
+   create_rgb_to_16_lut( NPalEntries4, img-> palette, lut1);
+   for ( i = 0; i < NPalEntries8; i++) {
+      lut[i]. a = lut1[(i & MSNibble) >> MSNibbleShift];
+      lut[i]. b = lut1[(i & LSNibble) >> LSNibbleShift];
+   }
+   ximage = prepare_ximage( w, h, false);
+   if ( !ximage) croak( "create_image_cache_4_to_16(): error creating ximage");
+   ls = get_ximage_bytes_per_line( ximage);
+   data = get_ximage_data( ximage);
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register Duplet16 *d = (Duplet16*)(ls*(h-y-1)+data);
+      for ( x = 0; x < (w+1)/2; x++) {
+	 *d++ = lut[line[x]];
+      }
+   }
+
+   IMG-> image_cache = ximage;
+}
+
+static void
+create_image_cache_4_to_24( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   Duplet24 lut[ NPalEntries8];
+   XPixel lut1[ NPalEntries4];
+   unsigned char *data;
+   int x, y;
+   int ls;
+   int h = img-> h, w = img-> w;
+   unsigned i;
+   PrimaXImage *ximage;
+   int *shift = rank_rgb_shifts();
+
+   create_rgb_to_xpixel_lut( NPalEntries4, img-> palette, lut1);
+   for ( i = 0; i < NPalEntries8; i++) {
+      lut[i]. a0 = (ColorComponent)((lut1[(i & MSNibble) >> MSNibbleShift] >> shift[0]) & ColorComponentMask);
+      lut[i]. a1 = (ColorComponent)((lut1[(i & MSNibble) >> MSNibbleShift] >> shift[1]) & ColorComponentMask);
+      lut[i]. a2 = (ColorComponent)((lut1[(i & MSNibble) >> MSNibbleShift] >> shift[2]) & ColorComponentMask);
+      lut[i]. b0 = (ColorComponent)((lut1[(i & LSNibble) >> LSNibbleShift] >> shift[0]) & ColorComponentMask);
+      lut[i]. b1 = (ColorComponent)((lut1[(i & LSNibble) >> LSNibbleShift] >> shift[1]) & ColorComponentMask);
+      lut[i]. b2 = (ColorComponent)((lut1[(i & LSNibble) >> LSNibbleShift] >> shift[2]) & ColorComponentMask);
    }
    ximage = prepare_ximage( w, h, false);
    if ( !ximage) croak( "create_image_cache_4_to_24(): error creating ximage");
@@ -549,18 +592,12 @@ create_image_cache_4_to_24( PImage img)
    IMG-> image_cache = ximage;
 }
 
-typedef struct
-{
-   unsigned long a;
-   unsigned long b;
-} Duplet32;
-
 static void
 create_image_cache_4_to_32( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
-   Duplet32 lut[ 256];
-   U32 lut1[ 16];
+   Duplet32 lut[ NPalEntries8];
+   XPixel lut1[ NPalEntries4];
    unsigned char *data;
    int x, y;
    int ls;
@@ -568,10 +605,10 @@ create_image_cache_4_to_32( PImage img)
    unsigned i;
    PrimaXImage *ximage;
 
-   create_rgb_to_24_lut( 16, img-> palette, lut1);
-   for ( i = 0; i < 256; i++) {
-      lut[i]. a = lut1[(i & 0xf0) >> 4];
-      lut[i]. b = lut1[(i & 0x0f) >> 0];
+   create_rgb_to_xpixel_lut( NPalEntries4, img-> palette, lut1);
+   for ( i = 0; i < NPalEntries8; i++) {
+      lut[i]. a = lut1[(i & MSNibble) >> MSNibbleShift];
+      lut[i]. b = lut1[(i & LSNibble) >> LSNibbleShift];
    }
    ximage = prepare_ximage( w, h, false);
    if ( !ximage) croak( "create_image_cache_4_to_32(): error creating ximage");
@@ -592,8 +629,8 @@ static void
 create_image_cache_8_to_16( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
-   U16 lut[ 256];
-   U16 *data;
+   Pixel16 lut[ NPalEntries8];
+   Pixel16 *data;
    int x, y;
    int ls;
    int h = img-> h, w = img-> w;
@@ -608,7 +645,7 @@ create_image_cache_8_to_16( PImage img)
 
    for ( y = h-1; y >= 0; y--) {
       register unsigned char *line = img-> data + y*img-> lineSize;
-      register U16 *d = (U16*)(ls*(h-y-1)+(unsigned char *)data);
+      register Pixel16 *d = (Pixel16*)(ls*(h-y-1)+(unsigned char *)data);
       for ( x = 0; x < w; x++) {
 	 *d++ = lut[line[x]];
       }
@@ -621,14 +658,22 @@ static void
 create_image_cache_8_to_24( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
-   unsigned long lut[ 256];
-   U32 *data;
+   Pixel24 lut[ NPalEntries8];
+   XPixel lut1[ NPalEntries8];
+   Pixel24 *data;
+   int i;
    int x, y;
    int ls;
    int h = img-> h, w = img-> w;
    PrimaXImage *ximage;
+   int *shift = rank_rgb_shifts();
 
-   create_rgb_to_24_lut( img-> palSize, img-> palette, lut);
+   create_rgb_to_xpixel_lut( img-> palSize, img-> palette, lut1);
+   for ( i = 0; i < NPalEntries8; i++) {
+      lut[i]. a0 = (ColorComponent)((lut1[i] >> shift[0]) & ColorComponentMask);
+      lut[i]. a1 = (ColorComponent)((lut1[i] >> shift[1]) & ColorComponentMask);
+      lut[i]. a2 = (ColorComponent)((lut1[i] >> shift[2]) & ColorComponentMask);
+   }
 
    ximage = prepare_ximage( w, h, false);
    if ( !ximage) croak( "create_image_cache_8_to_24(): error creating ximage");
@@ -637,10 +682,9 @@ create_image_cache_8_to_24( PImage img)
 
    for ( y = h-1; y >= 0; y--) {
       register unsigned char *line = img-> data + y*img-> lineSize;
-      register U32 *d = (U32*)(ls*(h-y-1)+(unsigned char *)data);
+      register Pixel24 *d = (Pixel24*)(ls*(h-y-1)+(unsigned char *)data);
       for ( x = 0; x < w; x++) {
 	 *d++ = lut[line[x]];
-         ((unsigned char *)d)--;
       }
    }
 
@@ -651,14 +695,14 @@ static void
 create_image_cache_8_to_32( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
-   unsigned long lut[ 256];
-   U32 *data;
+   XPixel lut[ NPalEntries8];
+   Pixel32 *data;
    int x, y;
    int ls;
    int h = img-> h, w = img-> w;
    PrimaXImage *ximage;
 
-   create_rgb_to_24_lut( img-> palSize, img-> palette, lut);
+   create_rgb_to_xpixel_lut( img-> palSize, img-> palette, lut);
 
    ximage = prepare_ximage( w, h, false);
    if ( !ximage) croak( "create_image_cache_8_to_32(): error creating ximage");
@@ -667,7 +711,7 @@ create_image_cache_8_to_32( PImage img)
 
    for ( y = h-1; y >= 0; y--) {
       register unsigned char *line = img-> data + y*img-> lineSize;
-      register U32 *d = (U32*)(ls*(h-y-1)+(unsigned char *)data);
+      register Pixel32 *d = (Pixel32*)(ls*(h-y-1)+(unsigned char *)data);
       for ( x = 0; x < w; x++) {
 	 *d++ = lut[line[x]];
       }
@@ -680,29 +724,29 @@ static void
 create_image_cache_24_to_16( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
-   static U16 lur[256], lub[256], lug[256];
+   static Pixel16 lur[NPalEntries8], lub[NPalEntries8], lug[NPalEntries8];
    static Bool initialize = true;
    U16 *data;
    int x, y;
    int i;
-   RGBColor pal[256];
+   RGBColor pal[NPalEntries8];
    int ls;
    int h = img-> h, w = img-> w;
    PrimaXImage *ximage;
 
    if ( initialize) {
-      for ( i = 0; i < 256; i++) {
+      for ( i = 0; i < NPalEntries8; i++) {
 	 pal[i]. r = i; pal[i]. g = 0; pal[i]. b = 0;
       }
-      create_rgb_to_16_lut( 256, pal, lur);
-      for ( i = 0; i < 256; i++) {
+      create_rgb_to_16_lut( NPalEntries8, pal, lur);
+      for ( i = 0; i < NPalEntries8; i++) {
 	 pal[i]. r = 0; pal[i]. g = i; pal[i]. b = 0;
       }
-      create_rgb_to_16_lut( 256, pal, lug);
-      for ( i = 0; i < 256; i++) {
+      create_rgb_to_16_lut( NPalEntries8, pal, lug);
+      for ( i = 0; i < NPalEntries8; i++) {
 	 pal[i]. r = 0; pal[i]. g = 0; pal[i]. b = i;
       }
-      create_rgb_to_16_lut( 256, pal, lub);
+      create_rgb_to_16_lut( NPalEntries8, pal, lub);
       initialize = false;
    }
 
@@ -712,11 +756,11 @@ create_image_cache_24_to_16( PImage img)
    data = get_ximage_data(ximage);
 
    for ( y = h-1; y >= 0; y--) {
-      register unsigned char *line = img-> data + y*img-> lineSize;
-      register U16 *d = (U16*)(ls*(h-y-1)+(unsigned char *)data);
+      register Pixel24 *line = (Pixel24*)(img-> data + y*img-> lineSize);
+      register Pixel16 *d = (Pixel16*)(ls*(h-y-1)+(unsigned char *)data);
       for ( x = 0; x < w; x++) {
-	 *d++ = lub[line[0]] | lug[line[1]] | lur[line[2]];
-	 line += 3;
+	 *d++ = lub[line->a0] | lug[line->a1] | lur[line->a2];
+	 line++;
       }
    }
 
@@ -1063,8 +1107,8 @@ static void
 stretch_16( const StretchSeed *xseed, const StretchSeed *yseed,
             Bool xreverse, Bool yreverse,
             Bool xshrink, Bool yshrink,
-            uint16_t *source, int source_line_size,
-            uint16_t *target, int targetwidth, int targetheight,
+            Pixel16 *source, int source_line_size,
+            Pixel16 *target, int targetwidth, int targetheight,
             int target_line_size)
 {
    Fixed xcount, ycount;
@@ -1072,16 +1116,16 @@ stretch_16( const StretchSeed *xseed, const StretchSeed *yseed,
    int xlast, ylast;
    int xfirst, yfirst;
    int x;
-   uint16_t *last_source = nil;
+   Pixel16 *last_source = nil;
 
    ycount = yseed-> count;
    ystep  = yseed-> step;
    ylast  = yseed-> last;
    yfirst = yseed-> source;
 
-   source = (uint16_t*)((Byte*)source + yfirst * source_line_size);
+   source = (Pixel16*)((Byte*)source + yfirst * source_line_size);
    if (yreverse) {
-      target = (uint16_t*)((Byte*)target + (targetheight-1)*target_line_size);
+      target = (Pixel16*)((Byte*)target + (targetheight-1)*target_line_size);
       target_line_size = - target_line_size;
    }
 
@@ -1091,7 +1135,7 @@ stretch_16( const StretchSeed *xseed, const StretchSeed *yseed,
    } else {
       while ( targetheight) {
          if ( ycount.i.i > ylast) {
-            source = (uint16_t*)((Byte*)source + source_line_size);
+            source = (Pixel16*)((Byte*)source + source_line_size);
             ylast = ycount.i.i;
          }
          ycount.l += ystep.l;
@@ -1117,7 +1161,71 @@ stretch_16( const StretchSeed *xseed, const StretchSeed *yseed,
                }
             }
          }
-         target = (uint16_t*)((Byte*)target + target_line_size);
+         target = (Pixel16*)((Byte*)target + target_line_size);
+         targetheight--;
+      }
+   }
+}
+
+static void
+stretch_24( const StretchSeed *xseed, const StretchSeed *yseed,
+            Bool xreverse, Bool yreverse,
+            Bool xshrink, Bool yshrink,
+            Pixel24 *source, int source_line_size,
+            Pixel24 *target, int targetwidth, int targetheight,
+            int target_line_size)
+{
+   Fixed xcount, ycount;
+   Fixed xstep, ystep;
+   int xlast, ylast;
+   int xfirst, yfirst;
+   int x;
+   Pixel24 *last_source = nil;
+
+   ycount = yseed-> count;
+   ystep  = yseed-> step;
+   ylast  = yseed-> last;
+   yfirst = yseed-> source;
+
+   source = (Pixel24*)((Byte*)source + yfirst * source_line_size);
+   if (yreverse) {
+      target = (Pixel24*)((Byte*)target + (targetheight-1)*target_line_size);
+      target_line_size = - target_line_size;
+   }
+
+   if ( yshrink) {
+      while ( targetheight) {
+      }
+   } else {
+      while ( targetheight) {
+         if ( ycount.i.i > ylast) {
+            source = (Pixel24*)((Byte*)source + source_line_size);
+            ylast = ycount.i.i;
+         }
+         ycount.l += ystep.l;
+         if ( last_source == source) {
+            memcpy( target, (Byte*)target - target_line_size, target_line_size < 0 ? - target_line_size : target_line_size);
+         } else {
+            last_source = source;
+            xcount = xseed-> count;
+            xstep  = xseed-> step;
+            xlast  = xseed-> last;
+            xfirst = xseed-> source;
+
+            if ( xshrink) {
+            } else {
+               x = 0;
+               while ( x < targetwidth) {
+                  if ( xcount.i.i > xlast) {
+                     xfirst++;
+                     xlast = xcount.i.i;
+                  }
+                  xcount.l += xstep.l;
+                  target[x++] = source[xfirst];
+               }
+            }
+         }
+         target = (Pixel24*)((Byte*)target + target_line_size);
          targetheight--;
       }
    }
@@ -1127,8 +1235,8 @@ static void
 stretch_32( const StretchSeed *xseed, const StretchSeed *yseed,
             Bool xreverse, Bool yreverse,
             Bool xshrink, Bool yshrink,
-            uint32_t *source, int source_line_size,
-            uint32_t *target, int targetwidth, int targetheight,
+            Pixel32 *source, int source_line_size,
+            Pixel32 *target, int targetwidth, int targetheight,
             int target_line_size)
 {
    Fixed xcount, ycount;
@@ -1136,16 +1244,16 @@ stretch_32( const StretchSeed *xseed, const StretchSeed *yseed,
    int xlast, ylast;
    int xfirst, yfirst;
    int x;
-   uint32_t *last_source = nil;
+   Pixel32 *last_source = nil;
 
    ycount = yseed-> count;
    ystep  = yseed-> step;
    ylast  = yseed-> last;
    yfirst = yseed-> source;
 
-   source = (uint32_t*)((Byte*)source + yfirst * source_line_size);
+   source = (Pixel32*)((Byte*)source + yfirst * source_line_size);
    if (yreverse) {
-      target = (uint32_t*)((Byte*)target + (targetheight-1)*target_line_size);
+      target = (Pixel32*)((Byte*)target + (targetheight-1)*target_line_size);
       target_line_size = - target_line_size;
    }
 
@@ -1155,7 +1263,7 @@ stretch_32( const StretchSeed *xseed, const StretchSeed *yseed,
    } else {
       while ( targetheight) {
          if ( ycount.i.i > ylast) {
-            source = (uint32_t*)((Byte*)source + source_line_size);
+            source = (Pixel32*)((Byte*)source + source_line_size);
             ylast = ycount.i.i;
          }
          ycount.l += ystep.l;
@@ -1181,7 +1289,7 @@ stretch_32( const StretchSeed *xseed, const StretchSeed *yseed,
                }
             }
          }
-         target = (uint32_t*)((Byte*)target + target_line_size);
+         target = (Pixel32*)((Byte*)target + target_line_size);
          targetheight--;
       }
    }
@@ -1348,7 +1456,15 @@ apc_gp_stretch_image( Handle self, Handle image,
                      xDestLen < 0, yDestLen < 0,
                      xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
                      yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,
-                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*sizeof(uint16_t)), sls,
+                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*sizeof(Pixel16)), sls,
+                     (void*)data, xclipsize, yclipsize, tls);
+         break;
+      case 24:
+         stretch_24( &xseed, &yseed,
+                     xDestLen < 0, yDestLen < 0,
+                     xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
+                     yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,
+                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*sizeof(Pixel24)), sls,
                      (void*)data, xclipsize, yclipsize, tls);
          break;
       case 32:
@@ -1356,11 +1472,11 @@ apc_gp_stretch_image( Handle self, Handle image,
                      xDestLen < 0, yDestLen < 0,
                      xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
                      yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,
-                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*sizeof(uint32_t)), sls,
+                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*sizeof(Pixel32)), sls,
                      (void*)data, xclipsize, yclipsize, tls);
          break;
       default:
-         croak( "apc_gp_stretch_image(): internal error 16N16");
+         croak( "apc_gp_stretch_image(): %d-bit stretch is not yet implemented", bit_cache ? 1 : guts.idepth);
       }
    }
    put_ximage( XX-> gdrawable, XX-> gc, stretch,
