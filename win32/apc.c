@@ -705,12 +705,9 @@ apc_window_get_border_style( Handle self)
 }
 
 Point
-apc_sys_get_window_borders( int borderStyle);
-
-Point
 apc_window_get_client_pos( Handle self)
 {
-   Point delta = apc_sys_get_window_borders( sys s. window. borderStyle);
+   Point delta = get_window_borders( sys s. window. borderStyle);
    Handle parent = var self-> get_parent( self);
    Point p = {0,0}, sz   = CWidget( parent)-> get_size( parent);
    RECT  r;
@@ -738,7 +735,7 @@ apc_window_get_client_size( Handle self)
    if ( apc_window_get_window_state( self) == wsMinimized) {
       // cannot acquire client extension at this time. Using euristic calculations.
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
-      Point delta = apc_sys_get_window_borders( sys s. window. borderStyle);
+      Point delta = get_window_borders( sys s. window. borderStyle);
       int   menuY  = (( PWindow) self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0;
       int   titleY = ( sys s. window. borderIcons & biTitleBar) ?
                      GetSystemMetrics( SM_CYCAPTION) : 0;
@@ -883,7 +880,7 @@ apc_window_set_caption( Handle self, char * caption)
 void
 apc_window_set_client_pos( Handle self, int x, int y)
 {
-   Point delta = apc_sys_get_window_borders( sys s. window. borderStyle);
+   Point delta = get_window_borders( sys s. window. borderStyle);
    RECT  r;
    Handle parent = var self-> get_parent( self);
    Point sz = CWidget( parent)-> get_size( parent);
@@ -920,7 +917,7 @@ apc_window_set_client_size( Handle self, int x, int y)
    if (( var stage == csConstructing && ws != wsNormal) || ws == wsMinimized) {
    // if (( var stage == csConstructing) || ws == wsMinimized) {
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
-      Point delta = apc_sys_get_window_borders( sys s. window. borderStyle);
+      Point delta = get_window_borders( sys s. window. borderStyle);
 
       if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
       if ( !GetWindowRect( HANDLE, &c2)) apiErr;
@@ -1462,6 +1459,46 @@ apc_widget_get_size( Handle self)
    }
    return p;
 }
+
+Handle
+apc_widget_get_z_order( Handle self, int zOrderId)
+{
+   Handle h;
+   HWND   w;
+   UINT   cmd1, cmd2;
+   objCheck nilHandle;
+
+   switch ( zOrderId) {
+   case zoFirst:
+      cmd1 = GW_HWNDFIRST;
+      cmd2 = GW_HWNDNEXT;
+      break;
+   case zoLast:
+      cmd1 = GW_HWNDLAST;
+      cmd2 = GW_HWNDPREV;
+      break;
+   case zoNext:
+      cmd1 = cmd2 = GW_HWNDNEXT;
+      break;
+   case zoPrev:
+      cmd1 = cmd2 = GW_HWNDPREV;
+      break;
+   default:
+      return nilHandle;
+   }
+
+   w = GetWindow( HANDLE, cmd1);
+   if ( !w) return nilHandle;
+   h = hwnd_to_view( w);
+   while ( h == nilHandle) {
+      w = GetWindow( w, cmd2);
+      if ( !w) return nilHandle;
+      h = hwnd_to_view( w);
+   }
+
+   return h;
+}
+
 
 Bool
 apc_widget_get_sync_paint( Handle self)
@@ -2317,7 +2354,7 @@ apc_sys_set_insert_mode( Bool insMode)
 }
 
 Point
-apc_sys_get_window_borders( int borderStyle)
+get_window_borders( int borderStyle)
 {
    Point ret = { 0, 0};
    switch ( borderStyle)

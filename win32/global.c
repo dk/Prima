@@ -1038,10 +1038,14 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
          LPMINMAXINFO l = ( LPMINMAXINFO) mp2;
          Point min = var self-> get_size_min( self);
          Point max = var self-> get_size_max( self);
-         l-> ptMinTrackSize. x = min. x;
-         l-> ptMinTrackSize. y = min. y;
-         l-> ptMaxTrackSize. x = max. x;
-         l-> ptMaxTrackSize. y = max. y;
+         Point bor = get_window_borders( sys s. window. borderStyle);
+         int   dy  = 0 +
+            (( sys s. window. borderIcons & biTitleBar) ? GetSystemMetrics( SM_CYCAPTION) : 0) +
+            ( PWindow(self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0);
+         l-> ptMinTrackSize. x = min. x + bor.x * 2;
+         l-> ptMinTrackSize. y = min. y + bor.y * 2 + dy;
+         l-> ptMaxTrackSize. x = max. x + bor.x * 2;
+         l-> ptMaxTrackSize. y = max. y + bor.y * 2 + dy;
       }
       break;
    case WM_WINDOWPOSCHANGED:
