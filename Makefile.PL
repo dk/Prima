@@ -968,10 +968,8 @@ sub clsmake
 		     qd( "include/generic/$classname.tml")
 		    );
     push @allinstall, qd( "include/generic/$classname.h"), $INSTALL_LIB . qd( "/CORE/generic");
-    for (`$^X utils/gencls.pl --depend $clsfile`) {
-	next unless /^ancestor:\s+(.*)$/;
-	$mk .= qd( "include/generic/$1.h $1.cls ");
-    }
+    my @ancestors = gencls( $clsfile, depend => 1);
+    $mk .= qd( "include/generic/$_.h $_.cls ") foreach @ancestors;
     print "\n";
     $mk .= "\n\t$^X utils/gencls.pl " .
 	"--inc --h --tml $clsfile include/generic\n\n";
