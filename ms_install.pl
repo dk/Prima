@@ -222,11 +222,11 @@ D
 
    my $found;
    $ibin = lc $ibin;
-   $ibin =~ s/\\/\//;
+   $ibin =~ s/\\/\//g;
    $ibin =~ s/[\/]*$//;
    for ( split ( $Config{ path_sep}, $ENV{PATH})) {
       my $path = lc;
-      $path =~ s/\\/\//;
+      $path =~ s/\\/\//g;
       $path =~ s/[\/]*$//;
       next if $path ne $ibin;
       $found = 1;
