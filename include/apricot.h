@@ -2787,79 +2787,81 @@ END_TABLE(fdo,UV)
 /* System bitmaps index */
 #define SBMP(const_name) CONSTANT(sbmp,const_name)
 START_TABLE(sbmp,UV)
-#define sbmpCheckBoxChecked              0
+#define sbmpLogo                         0
+SBMP(Logo)
+#define sbmpCheckBoxChecked              1
 SBMP(CheckBoxChecked)
-#define sbmpCheckBoxCheckedPressed       1
+#define sbmpCheckBoxCheckedPressed       2
 SBMP(CheckBoxCheckedPressed)
-#define sbmpCheckBoxUnchecked            2
+#define sbmpCheckBoxUnchecked            3
 SBMP(CheckBoxUnchecked)
-#define sbmpCheckBoxUncheckedPressed     3
+#define sbmpCheckBoxUncheckedPressed     4
 SBMP(CheckBoxUncheckedPressed)
-#define sbmpRadioChecked                 4
+#define sbmpRadioChecked                 5
 SBMP(RadioChecked)
-#define sbmpRadioCheckedPressed          5
+#define sbmpRadioCheckedPressed          6
 SBMP(RadioCheckedPressed)
-#define sbmpRadioUnchecked               6
+#define sbmpRadioUnchecked               7
 SBMP(RadioUnchecked)
-#define sbmpRadioUncheckedPressed        7
+#define sbmpRadioUncheckedPressed        8
 SBMP(RadioUncheckedPressed)
-#define sbmpWarning                      8
+#define sbmpWarning                      9
 SBMP(Warning)
-#define sbmpInformation                  9
+#define sbmpInformation                 10
 SBMP(Information)
-#define sbmpQuestion                    10
+#define sbmpQuestion                    11
 SBMP(Question)
-#define sbmpOutlineCollaps              11
+#define sbmpOutlineCollaps              12
 SBMP(OutlineCollaps)
-#define sbmpOutlineExpand               12
+#define sbmpOutlineExpand               13
 SBMP(OutlineExpand)
-#define sbmpError                       13
+#define sbmpError                       14
 SBMP(Error)
-#define sbmpSysMenu                     14
+#define sbmpSysMenu                     15
 SBMP(SysMenu)
-#define sbmpSysMenuPressed              15
+#define sbmpSysMenuPressed              16
 SBMP(SysMenuPressed)
-#define sbmpMax                         16
+#define sbmpMax                         17
 SBMP(Max)
-#define sbmpMaxPressed                  17
+#define sbmpMaxPressed                  18
 SBMP(MaxPressed)
-#define sbmpMin                         18
+#define sbmpMin                         19
 SBMP(Min)
-#define sbmpMinPressed                  19
+#define sbmpMinPressed                  20
 SBMP(MinPressed)
-#define sbmpRestore                     20
+#define sbmpRestore                     21
 SBMP(Restore)
-#define sbmpRestorePressed              21
+#define sbmpRestorePressed              22
 SBMP(RestorePressed)
-#define sbmpClose                       22
+#define sbmpClose                       23
 SBMP(Close)
-#define sbmpClosePressed                23
+#define sbmpClosePressed                24
 SBMP(ClosePressed)
-#define sbmpHide                        24
+#define sbmpHide                        25
 SBMP(Hide)
-#define sbmpHidePressed                 25
+#define sbmpHidePressed                 26
 SBMP(HidePressed)
-#define sbmpDriveUnknown                26
+#define sbmpDriveUnknown                27
 SBMP(DriveUnknown)
-#define sbmpDriveFloppy                 27
+#define sbmpDriveFloppy                 28
 SBMP(DriveFloppy)
-#define sbmpDriveHDD                    28
+#define sbmpDriveHDD                    29
 SBMP(DriveHDD)
-#define sbmpDriveNetwork                29
+#define sbmpDriveNetwork                30
 SBMP(DriveNetwork)
-#define sbmpDriveCDROM                  30
+#define sbmpDriveCDROM                  31
 SBMP(DriveCDROM)
-#define sbmpDriveMemory                 31
+#define sbmpDriveMemory                 32
 SBMP(DriveMemory)
-#define sbmpGlyphOK                     32
+#define sbmpGlyphOK                     33
 SBMP(GlyphOK)
-#define sbmpGlyphCancel                 33
+#define sbmpGlyphCancel                 34
 SBMP(GlyphCancel)
-#define sbmpSFolderOpened               34
+#define sbmpSFolderOpened               35
 SBMP(SFolderOpened)
-#define sbmpSFolderClosed               35
+#define sbmpSFolderClosed               36
 SBMP(SFolderClosed)
-#define sbmpLast                        35
+#define sbmpLast                        36
 SBMP(Last)
 END_TABLE(sbmp,UV)
 #undef SBMP
