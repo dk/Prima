@@ -293,9 +293,9 @@ property_name( Handle item, void *params)
 static Bool
 __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool readAll)
 {
-    GifFileType *gif;
+    GifFileType *gif = nil;
     GifRecordType gifRecType;
-    GifImageDesc *gifChunk;
+    GifImageDesc *gifChunk = nil;
     GifPixelType **data = nil;
     int lastIndex = -1, lastQueriedIndex = -1;
     Bool succeed = true;
@@ -369,7 +369,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
     done = false;
     do {
-	Byte *extData;
+	Byte *extData = nil;
 	int extCode;
 
 	gifrc = DGifGetRecordType( gif, &gifRecType);
@@ -413,7 +413,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		}
 		else {
 		    int codeSize;
-		    Byte *codeBlock;
+		    Byte *codeBlock = nil;
 		    Bool idxQueried = readAll; /* Presume that we need all indexes... */
 
 		    for ( i = 0; ( i < queriedIdx.count) && ( ! idxQueried); i++) {
@@ -782,7 +782,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		}
 	    }
 	    else if ( index >= 0) {
-		ColorMapObject *palette;
+		ColorMapObject *palette = nil;
 
 		if ( index < imgDescCount) {
 		    int n;
