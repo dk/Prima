@@ -156,8 +156,11 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    int j;
    HDC dc;
    XBITMAPINFO bi = {{
-      sizeof( BITMAPINFOHEADER), guts. pointerSize. x, guts. pointerSize. y, 1, 1
+      sizeof( BITMAPINFOHEADER), 0, 0, 1, 1
    }};
+
+   bi. bmiHeader. biWidth = guts. pointerSize. x;
+   bi. bmiHeader. biHeight = guts. pointerSize. y;
 
    if ( icon == nilHandle)
       apcErrRet( errInvParams);
@@ -184,6 +187,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    dc_free();
    DeleteObject( ii. hbmMask);
    DeleteObject( ii. hbmColor);
+   return true;
 }
 
 Bool

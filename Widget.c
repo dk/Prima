@@ -743,7 +743,9 @@ void Widget_handle_event( Handle self, PEvent event)
 
            if ( !event-> gen. B) my-> first_that( self, size_notify, &event-> gen. R);
            if ( doNotify) {
-              Point oldSize = {event-> gen. R. left, event-> gen. R. bottom};
+              Point oldSize;
+	      oldSize. x = event-> gen. R. left;
+	      oldSize. y = event-> gen. R. bottom;
               my-> notify( self, "<sPP", "Size", oldSize, event-> gen. P);
            }
         }
@@ -1409,7 +1411,11 @@ Widget_get_rect( Handle self)
    enter_method;
    Point p   = my-> get_pos( self);
    Point s   = my-> get_size( self);
-   Rect r = { p. x, p. y, p. x + s. x, p. y + s. y };
+   Rect r;
+   r. left = p. x;
+   r. bottom = p. y;
+   r. right = p. x + s. x;
+   r. top = p. y + s. y;
    return r;
 }
 
@@ -1665,7 +1671,9 @@ void
 Widget_set_color_index( Handle self, Color color, int index)
 {
    enter_method;
-   SingleColor s = { color, index};
+   SingleColor s;
+   s. color = color;
+   s. index = index;
    if (( index < 0) || ( index > ciMaxId)) return;
    if ( !opt_InPaint) my-> first_that( self, single_color_notify, &s);
 
@@ -1702,7 +1710,8 @@ Widget_set_color_index( Handle self, Color color, int index)
 void
 Widget_set_current( Handle self, Bool current)
 {
-   PWidget o = ( PWidget) var-> owner;
+   PWidget o;
+   o = ( PWidget) var-> owner;
    if ( o == nil) return;
    if ( var-> stage > csNormal) return;
    if ( current)
@@ -1958,7 +1967,9 @@ Widget_set_pointer_hot_spot( Handle self, int x, int y)
 {
    enter_method;
    Handle icon;
-   Point hotSpot = {x, y};
+   Point hotSpot;
+   hotSpot. x = x;
+   hotSpot. y =  y;
    if ( var-> stage > csNormal) return;
    icon = my-> get_pointer_icon( self);
    apc_pointer_set_user( self, icon, hotSpot);
@@ -1979,7 +1990,9 @@ void
 Widget_set_pointer_pos( Handle self, int x, int y)
 {
    enter_method;
-   Point p = { x, y};
+   Point p;
+   p. x = x;
+   p. y = y;
    p = my-> client_to_screen( self, p);
    apc_pointer_set_pos( self, p. x, p. y);
 }
@@ -2312,7 +2325,9 @@ Widget_on_paint( Handle self, Handle canvas)
 {
    enter_method;
    PDrawable c = ( PDrawable) canvas;
-   Point size = { c-> self-> get_width( canvas), c-> self-> get_height( canvas)};
+   Point size;
+   size. x = c-> self-> get_width( canvas);
+   size. y = c-> self-> get_height( canvas);
    c-> self-> set_color( canvas, my-> get_back_color( self));
    c-> self-> bar( canvas, 0, 0, size. x - 1, size. y - 1);
 }

@@ -28,7 +28,6 @@
 #include "apricot.h"
 #endif
 #include "win32\win32guts.h"
-#include <gbm.h>
 #include "Window.h"
 #include "Img.h"
 #include "img_api.h"
@@ -249,10 +248,14 @@ image_make_bitmap_palette( Handle img)
 {
    PDrawable i    = ( PDrawable) img;
    int j, nColors = i-> palSize;
-   XLOGPALETTE lp = { 0x300, nColors};
+   XLOGPALETTE lp;
    HPALETTE r;
    RGBColor  dest[ 256];
    PRGBColor logp = i-> palette;
+
+   lp. palVersion = 0x300;
+   lp. palNumEntries = nColors;
+
    if ( nColors == 0) return nil;
 
    if ( !dsys(img)p256) {
@@ -587,12 +590,16 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
 {
    PIcon i = ( PIcon) img;
    HICON    r;
-   ICONINFO ii = { hotSpot ? false : true, hotSpot ? hotSpot-> x : 0, hotSpot ? hotSpot-> y : 0};
+   ICONINFO ii;
    int   j, bpp = i-> type & imBPP;
    Bool  noSZ   = i-> w != size. x || i-> h != size. y;
    Bool  noBPP  = bpp != 1 && bpp != 4 && bpp != 8 && bpp != 24;
    HDC dc;
    XBITMAPINFO bi;
+
+   ii. fIcon = hotSpot ? false : true;
+   ii. xHotspot = hotSpot ? hotSpot-> x : 0;
+   ii. yHotspot = hotSpot ? hotSpot-> y : 0;
 
    if ( noSZ || noBPP)
       ( Handle) i = i-> self-> dup( img);
@@ -970,7 +977,12 @@ Bool
 apc_prn_begin_doc( Handle self, const char* docName)
 {
    LPPRINTER_INFO_2 ppi = &sys s. prn. ppi;
-   DOCINFO doc = { sizeof( DOCINFO), docName, nil, nil, 0};
+   DOCINFO doc;
+   doc. cbSize = sizeof( DOCINFO);
+   doc. lpszDocName = docName;
+   doc. lpszOutput = nil;
+   doc. lpszDatatype = nil;
+   doc. fwType = 0;
 
    objCheck false;
    if ( !( sys ps = CreateDC( ppi-> pDriverName, ppi-> pPrinterName, ppi-> pPortName, ppi-> pDevMode)))
@@ -1061,17 +1073,3 @@ apc_prn_abort_doc( Handle self)
    sys pal = sys ps = nil;
    return apcError == errOk;
 }
-
-Bool
-apc_image_read( const char *filename, PList imgInfo, Bool readData)
-{
-   return true;
-}
-
-Bool
-apc_image_save( const char *filename, const char *format, PList imgInfo)
-{
-   return true;
-}
-
-

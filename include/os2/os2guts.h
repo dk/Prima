@@ -238,6 +238,9 @@ MRESULT EXPENTRY generic_menu_handler     ( HWND win, ULONG msg, MPARAM mp1, MPA
 extern void
 create_logger_window( void);
 
+extern void
+dump_logger(void);
+
 extern PFont gp_get_font   (  HPS ps, PFont font, Point resolution);
 extern PFont view_get_font ( Handle view, PFont font);
 extern Point frame2client( Handle self, Point p, Bool f2c);

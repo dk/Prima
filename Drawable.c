@@ -459,7 +459,9 @@ Drawable_get_palette( Handle self)
 Point
 Drawable_get_size ( Handle self)
 {
-   Point ret = { my-> get_width ( self), my-> get_height ( self)};
+   Point ret;
+   ret. x = my-> get_width ( self);
+   ret. y = my-> get_height ( self);
    return ret;
 }
 
@@ -595,11 +597,18 @@ SV*
 Drawable_text_wrap( Handle self, char * text, int width, int options, int tabIndent, int textLen)
 {
    gpARGS;
-   TextWrapRec t   = {text, textLen, width, tabIndent, options};
-   Bool retChunks  = t. options & twReturnChunks;
+   TextWrapRec t;
+   Bool retChunks;
    char** c;
    int i;
    AV * av;
+
+   t. text = text;
+   t. textLen = textLen;
+   t. width = width;
+   t. tabIndent = tabIndent;
+   t. options = options;
+   retChunks = t. options & twReturnChunks;
 
    av = newAV();
    if ( t. tabIndent < 0) t. tabIndent = 0;
@@ -617,7 +626,8 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    if  ( t. options & ( twCalcMnemonic | twCollapseTilde))
    {
       HV * profile = newHV();
-      char b[2] = {t. t_char, 0};
+      char b[2] = { 0, 0};
+      b[ 0] = t. t_char;
       pset_i( tildeStart, t. t_start);
       pset_i( tildeEnd,   t. t_end);
       pset_i( tildeLine,  t. t_line);

@@ -47,6 +47,7 @@ use vars @ovvars = qw(
     @LIBPATH
     @LIBS
     $PLATFORM
+    $COMPILER
     $PREFIX
     $INSTALL_LIB
     $INSTALL_DL
@@ -56,10 +57,13 @@ use vars @ovvars = qw(
     $RM
     $SHQUOTE
     $MAKETYPE
+    $DEFFILE
 );
 
 use vars qw(
+    $CWD
     $Win32
+    %cc_specs
     %DEFINES
     $ARGV_STR
     @alltml
@@ -72,6 +76,7 @@ use vars qw(
     @footers
     @Makefile_deps
     $PrimaTarget
+    @Prima_exports
 );
 
 sub print_config
@@ -86,6 +91,14 @@ sub qd
     my ( $path_str) = @_;
     $path_str =~ s[/][$dir_sep]g;
     return $path_str;
+}
+
+sub fatal
+{
+    open ERRLOG, ">". qd "$CWD/Makefile.err";
+    print ERRLOG @_;
+    close ERRLOG;
+    die @_;
 }
 
 sub quotemake
@@ -114,11 +127,10 @@ sub cc_command_line
     push @cc, map( { "$CDEFFLAG$_" . ( $DEFINES{ $_} ? "=$DEFINES{ $_}" : '')} keys %DEFINES);
     push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
     push @cc, "$COUTOFLAG$objf" if $Win32 && ! $compile_only;
+    push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH unless $compile_only || ( $COMPILER eq 'msvc');
     push @cc, $srcf;
-    unless ( $compile_only) {
-        push @cc, map { "$LDLIBFLAG$_"} @LIBS;
-        push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH;
-    }
+    push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH if ( ! $compile_only) && ( $COMPILER eq 'msvc');
+    push @cc, map { "$LDLIBFLAG$_"} @LIBS unless $compile_only;
     return @cc;
 }
 
@@ -126,10 +138,38 @@ sub ld_command_line
 {
     my ( $dstf) = shift;
     my @ld = ( $LD, split( ' ', $LDFLAGS));
-    push @ld, map { "$LDLIBPATHFLAG$_"} @LIBPATH;
-    push @ld, "$LDOUTFLAG$dstf", @_;
-    push @ld, map { "$LDLIBFLAG$_"} @LIBS;
+    if ( $COMPILER eq 'bcc32') {
+	push @ld, '-L"' . join( ';', @LIBPATH) . '" c0d32.obj ';
+	push @ld, @_;
+	push @ld, ",", $dstf, ", ,", @LIBS, ",", "win32\\Prima.def,";
+    }
+    else {
+	push @ld, map { "$LDLIBPATHFLAG$_"} @LIBPATH;
+	push @ld, "$LDOUTFLAG$dstf", @_;
+	push @ld, map { "$LDLIBFLAG$_"} @LIBS;
+    }
     return @ld;
+}
+
+sub null_output
+{
+    open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
+    open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
+#    $NULLDEV = $Win32 ? "CON" : "/dev/tty";
+    close STDOUT;
+    close STDERR;
+    open STDOUT, ">$NULLDEV" or fatal "STDOUT redirect failed: $!";
+    open STDERR, ">&STDOUT" or fatal "STDERR redirect failed: $!";
+}
+
+sub restore_output
+{
+    close STDOUT;
+    close STDERR;
+    open STDOUT, ">&OLDSTDOUT" or fatal "STDOUT restoration failed: $!";
+    open STDERR, ">&OLDSTDERR" or fatal "STDERR restoration failed: $!";
+    close OLDSTDOUT;
+    close OLDSTDERR;
 }
 
 sub compile
@@ -138,21 +178,16 @@ sub compile
     my $tmpsrc = qd( tempfile( "$TMPDIR/pmts%04d.c"));
     my $tmpo = qd( tempfile( "$TMPDIR/pmts%04d$OBJ_EXT"));
     my $tmpexe = qd( tempfile( "$TMPDIR/pmts%04d$EXE_EXT"));
+
     open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
     print TMPSRC $text;
     close TMPSRC;
-    open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
-    open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
-#    $NULLDEV = "/dev/tty";
-    open STDOUT, ">$NULLDEV" or die "STDOUT redirect failed: $!";
-    open STDERR, ">&STDOUT" or die "STDERR redirect failed: $!";
-    my $rc = system grep { ! /^-W/} cc_command_line( $tmpsrc, $tmpo, $tmpexe, $compile_only || 0);
-    close STDOUT;
-    close STDERR;
-    open STDOUT, ">&OLDSTDOUT" or die "STDOUT restoration failed: $!";
-    open STDERR, ">&OLDSTDERR" or die "STDERR restoration failed: $!";
-    close OLDSTDOUT;
-    close OLDSTDERR;
+
+    null_output;
+    my @cc = cc_command_line( $tmpsrc, $tmpo, $tmpexe, $compile_only || 0);
+    print STDERR "@cc\n";
+    my $rc = system grep { ! /^-W/i} @cc;
+    restore_output;
     unlink $tmpsrc;
     unlink $tmpo if -w $tmpo;
     unlink $tmpexe if -w $tmpexe;
@@ -162,6 +197,7 @@ sub compile
 sub have_header
 {
     my $header = shift;
+    print "Checking for presence of $header... ";
     my $present = compile( <<ENDP, 1);
 #include <$header>
 ENDP
@@ -170,6 +206,7 @@ ENDP
 	$defname =~ s/\W/_/g;
 	$DEFINES{ $defname} = 1;
     }
+    print( $present ? "yes" : "no", "\n");
     return $present;
 }
 
@@ -231,6 +268,67 @@ ENDP
     return $rc;
 }
 
+sub have_define
+{
+    my ( $defname) = @_;
+    my $cwd = cwd;
+    chdir $TMPDIR;
+    my $tmpsrc = qd( tempfile( "pmts%04d.c"));
+    my $tmpo = $tmpsrc;
+    if ( $Win32) {
+	$tmpo =~ s/\.c$/\.obj/;
+    }
+    else {
+	$tmpo =~ s/\.c$/\.o/;
+    }
+    open TMPSRC, ">$tmpsrc";
+    print TMPSRC <<EOF;
+int
+main()
+{
+#if defined( $defname)
+return 0;
+#else
+#error No
+#endif
+}
+EOF
+    close TMPSRC;
+    null_output;
+    my $ccrc = system( "$CC -c $tmpsrc");
+    restore_output;
+    unlink $tmpsrc, $tmpo;
+    chdir $cwd;
+    return $ccrc == 0;
+}
+
+sub have_type
+{
+    my ( $type, @headers) = @_;
+    print "Checking for presence of type ${ type}... ";
+    my @srchead = map { "#include <$_>\n"} @headers;
+    my $rc = compile( <<ENDP);
+@srchead
+
+int
+main()
+{
+    ${ type} foo;
+    return 0;
+}
+ENDP
+    if ( $rc) {
+	my $defname = "HAVE_" . uc $type;
+	$defname =~ s/\W/_/g;
+	$DEFINES{ $defname} = 1;
+	print "yes\n";
+    }
+    else {
+	print "no\n";
+    }
+    return $rc;
+}
+
 sub setup_variables
 {
     die "Oops! OS/2 isn't supported!\n" if $^O =~ /os2/i;
@@ -240,20 +338,85 @@ sub setup_variables
     else {
 	$PLATFORM = 'unix';
     }
+
+    %cc_specs = (
+		 gcc => {
+			 warnflags => "-Wall -Werror",
+			 cflags => "",
+			 coutoflag => '-o',
+			 coutexeflag => '-o',
+			 cdebugflags => '-g -O',
+			 clibpathflag => '-L',
+			 ldflags => '',
+			 ldoutflag => '-o',
+			 ldlibpathflag => '-L',
+			 ldlibflag => '-l',
+			 lddebugflags => '-g',
+			 name => "GNU",
+			},
+		 msvc => {
+			  warnflags => "-W3 -WX",
+			  cflags => "",
+			  coutoflag => '-Fo',
+			  coutexeflag => '-Fe',
+			  clibpathflag => '/link /LIBPATH:',
+			  cdebugflags => '-Zi',
+			  ldflags => '',
+			  ldoutflag => '/OUT:',
+			  ldlibpathflag => '/DEF:win32/Prima.def /LIBPATH:',
+			  ldlibflag => '',
+			  lddebugflags => '/DEBUG',
+			  name => "Microsoft Visual C++",
+			 },
+		 bcc32 => {
+			   warnflags => "-w", # There is no "treat warnings as errors" parameter.
+			   cflags => "-K",
+			   coutoflag => '-o',
+			   coutexeflag => '-e',
+			   clibpathflag => '-L',
+			   cdebugflags => '-v -y',
+			   ldflags => '',
+			   ldoutflag => '',
+			   ldlibpathflag => '-L',
+			   ldlibflag => '',
+			   lddebugflags => '-v',
+			   name => "Borland C++",
+			  },
+		);
+
+    $TMPDIR = $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp");
+    $NULLDEV = $Win32 ? "NUL" : "/dev/null";
+
     $CC = $Config{ cc};
-    $CFLAGS = $Config{ ccflags} . ( $Win32 ? " -W3 -WX" : " -Wall -Werror");
+
+    print "Determining compiler type... ";
+    if ( have_define( "__GNUC__")) {
+	$COMPILER = 'gcc';
+    }
+    elsif ( have_define( "__BORLANDC__")) {
+	$COMPILER = 'bcc32';
+    }
+    elsif ( have_define( "_MSC_VER")) {
+	$COMPILER = 'msvc';
+    }
+    else {
+	die "Unknown or unsupported compiler\n";
+    }
+    print "$cc_specs{ $COMPILER}->{ name}\n";
+
+    $CFLAGS = $Config{ ccflags} . " $cc_specs{ $COMPILER}->{ warnflags} $cc_specs{ $COMPILER}->{ cflags}";
     $CDLFLAGS = "$Config{ cccdlflags} $Config{ ccdlflags}";
-    $COUTOFLAG = $Win32 ? '-Fo' : '-o';
-    $COUTEXEFLAG = $Win32 ? '-Fe' : '-o';
+    $COUTOFLAG = $cc_specs{ $COMPILER}->{ coutoflag};
+    $COUTEXEFLAG = $cc_specs{ $COMPILER}->{ coutexeflag};
     $CINCPATHFLAG = '-I';
     $CDEFFLAG = '-D';
     $COMPONLYFLAG = '-c';
-    $CLIBPATHFLAG = $Win32 ? '/link /LIBPATH:' : '-L';
+    $CLIBPATHFLAG = $cc_specs{ $COMPILER}->{ clibpathflag};
     $LD = $Config{ ld};
-    $LDFLAGS = "$Config{ ldflags} $Config{ lddlflags}";
-    $LDOUTFLAG = $Win32 ? '/OUT:' : '-o';
-    $LDLIBPATHFLAG = $Win32 ? '/DEF:win32/Prima.def /LIBPATH:' : '-L';
-    $LDLIBFLAG = $Win32 ? '' : '-l';
+    $LDFLAGS = "$Config{ ldflags} $Config{ lddlflags} $cc_specs{ $COMPILER}->{ ldflags}";
+    $LDOUTFLAG = $cc_specs{ $COMPILER}->{ ldoutflag};
+    $LDLIBPATHFLAG = $cc_specs{ $COMPILER}->{ ldlibpathflag};
+    $LDLIBFLAG = $cc_specs{ $COMPILER}->{ ldlibflag};
     $OBJ_EXT = $Config{ _o};
     $LIB_EXT = $Config{ _a};
     $EXE_EXT = $Config{ _exe};
@@ -280,8 +443,8 @@ sub setup_variables
     }
 
     if ( defined $ENV{ PRIMA_DEVEL}) {
-	$CFLAGS .= $Win32 ? " -Zi" : " -g -O";
-	$LDFLAGS .= $Win32 ? " /DEBUG" : " -g";
+	$CFLAGS .= " $cc_specs{ $COMPILER}->{ cdebugflags}";
+	$LDFLAGS .= " $cc_specs{ $COMPILER}->{ lddebugflags}";
     }
     else {
 	$CFLAGS .= " " . ( $Config{ optimize} || '');
@@ -291,12 +454,160 @@ sub setup_variables
     $INSTALL_LIB = $PREFIX . qd( "/Prima");
     $INSTALL_DL = $PREFIX . qd( "/auto/Prima");
 
-    $TMPDIR = $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp");
-    $NULLDEV = $Win32 ? "NUL" : "/dev/null";
-    $MAKETYPE = ( $MAKE = $Config{ make}) =~ /^nmake$/i ? 'nmake' : 'make';
+    $MAKETYPE = lc ( $MAKE = $Config{ make});
+    # Note that Borland's make utility also named 'make'. But its
+    # usage is deprecated, thus we can ignore it.
+    #
+    # In Linux GNU make also has name 'make'. But Makefile been
+    # generated by this script is compatible with it. If it named
+    # 'gmake' then we force $MAKETYPE to contain 'make'.
+    $MAKETYPE = 'make' if $MAKETYPE =~ /^gmake|pmake$/;
+    die "Unknown make utility" unless $MAKETYPE =~ /^make|nmake|dmake$/;
     $RM = $Config{ rm};
     $SHQUOTE = $Win32 ? '"' : "'";
     $PrimaTarget = qd( "auto/Prima/Prima$DL_EXT");
+    $DEFFILE = qd( "win32/Prima.def");
+
+    @Prima_exports = qw(
+  boot_Prima
+  Object_create
+  Object_destroy
+  apc_application_create
+  apc_application_destroy
+  apc_application_get_size
+  apc_application_go
+  apc_application_lock
+  apc_application_unlock
+  apc_component_create
+  apc_component_destroy
+  apc_font_pick
+  apc_fonts
+  apc_gp_arc
+  apc_gp_bar
+  apc_gp_clear
+  apc_gp_done
+  apc_gp_ellipse
+  apc_gp_fill_ellipse
+  apc_gp_flood_fill
+  apc_gp_get_back_color
+  apc_gp_get_color
+  apc_gp_get_fill_pattern
+  apc_gp_get_line_end
+  apc_gp_get_line_pattern
+  apc_gp_get_line_width
+  apc_gp_get_pixel
+  apc_gp_get_rop
+  apc_gp_get_rop2
+  apc_gp_get_text_width
+  apc_gp_get_transform
+  apc_gp_init
+  apc_gp_line
+  apc_gp_put_image
+  apc_gp_rectangle
+  apc_gp_set_back_color
+  apc_gp_set_color
+  apc_gp_set_fill_pattern
+  apc_gp_set_font
+  apc_gp_set_line_end
+  apc_gp_set_line_pattern
+  apc_gp_set_line_width
+  apc_gp_set_pixel
+  apc_gp_set_rop
+  apc_gp_set_rop2
+  apc_gp_set_transform
+  apc_gp_stretch_image
+  apc_gp_text_out
+  apc_image_begin_paint
+  apc_image_end_paint
+  apc_menu_create
+  apc_menu_default_font
+  apc_menu_destroy
+  apc_menu_get_color
+  apc_menu_get_font
+  apc_menu_item_set_accel
+  apc_menu_item_set_check
+  apc_menu_item_set_enabled
+  apc_menu_item_set_key
+  apc_menu_item_set_text
+  apc_menu_set_color
+  apc_menu_set_font
+  apc_message
+  apc_pointer_get_pos
+  apc_popup
+  apc_popup_create
+  apc_popup_default_font
+  apc_show_message
+  apc_system_action
+  apc_timer_create
+  apc_timer_destroy
+  apc_timer_get_timeout
+  apc_timer_set_timeout
+  apc_timer_start
+  apc_timer_stop
+  apc_widget_begin_paint
+  apc_widget_client_to_screen
+  apc_widget_create
+  apc_widget_default_font
+  apc_widget_destroy
+  apc_widget_end_paint
+  apc_widget_get_color
+  apc_widget_get_focused
+  apc_widget_get_pos
+  apc_widget_get_size
+  apc_widget_invalidate_rect
+  apc_widget_is_captured
+  apc_widget_is_enabled
+  apc_widget_is_focused
+  apc_widget_is_visible
+  apc_widget_screen_to_client
+  apc_widget_scroll
+  apc_widget_set_capture
+  apc_widget_set_color
+  apc_widget_set_enabled
+  apc_widget_set_focused
+  apc_widget_set_font
+  apc_widget_set_pos
+  apc_widget_set_size
+  apc_widget_set_visible
+  apc_widget_set_z_order
+  apc_widget_update
+  apc_widget_validate_rect
+  apc_window_close
+  apc_window_create
+  apc_window_get_border_icons
+  apc_window_get_border_style
+  apc_window_get_client_size
+  apc_window_get_window_state
+  apc_window_set_client_size
+  apc_window_set_menu
+  apc_window_set_window_state
+  build_dynamic_vmt
+  build_static_vmt
+  call_perl
+  call_perl_indirect
+  clean_perl_call_method
+  clean_perl_call_pv
+  create_object
+  ctx_remap_def
+  cv_call_perl
+  debug_write
+  eval
+  gimme_the_mate
+  gimme_the_vmt
+  query_method
+  kill_zombies
+  kind_of
+  notify_perl
+  parse_hv
+  pop_hv_for_REDEFINED
+  push_hv
+  push_hv_for_REDEFINED
+  sv_call_perl
+  sv_query_method
+  temporary_prf_Sv
+  readonly_clean_sv_2mortal
+  bzero
+);
 }
 
 sub setup_paths
@@ -333,34 +644,70 @@ sub setup_paths
         push @LIBPATH, $libpath if $libpath;
         push @LIBS, $Config{ libperl};
 
-        $libpath = find_lib( "prigraph$LIB_EXT", "");
-        die "Prima/Win32 requires GBM to work" unless defined $libpath;
-        push @LIBS, "prigraph$LIB_EXT";
+#        $libpath = find_lib( "prigraph$LIB_EXT", "");
+#        die "Prima/Win32 requires GBM to work" unless defined $libpath;
+#        push @LIBS, "prigraph$LIB_EXT";
     }
 }
 
 sub setup_defines
 {
+    have_header( "io.h");
+    have_header( "unistd.h");
     have_func( 'strcasecmp') || have_func( 'stricmp');
+    have_func( 'snprintf');
     have_func( 'reallocf');
+    if ( $Win32) {
+	have_type( "BOOLEAN", "windows.h");
+    }
+}
+
+sub generate_win32_def
+{
+    open PRIMADEF, ">$DEFFILE" or die "Cannot create $DEFFILE: $!";
+    print PRIMADEF <<EOF;
+LIBRARY Prima
+DESCRIPTION 'Prima Guts version 2.00, Copyright (C) the Protein Laboratory 1997'
+CODE LOADONCALL
+DATA LOADONCALL NONSHARED MULTIPLE
+EXPORTS
+EOF
+    print PRIMADEF map { "\t_$_\n\t$_ = _$_\n"} @Prima_exports;
+    if ( $COMPILER eq 'bcc32') {
+	print PRIMADEF <<EOF;
+
+IMPORTS
+\t_gbm_err = prigraph.gbm_err
+\t_gbm_guess_filetype = prigraph.gbm_guess_filetype
+\t_gbm_write = prigraph.gbm_write
+\t_gbm_read_header = prigraph.gbm_read_header
+\t_gbm_read_palette = prigraph.gbm_read_palette
+\t_gbm_read_data = prigraph.gbm_read_data
+EOF
+    }
+    close PRIMADEF;
 }
 
 sub setup_misc
 {
     # Setting up translation tables for quoting string for different make utilities.
-    my ( $make_tbl, $nmake_tbl);
+    my ( $make_tbl, $nmake_tbl, $dmake_tbl);
     $make_tbl = [ map { chr} 0..255];
+    $dmake_tbl = [ map { chr} 0..255];
     $nmake_tbl = [ map { chr} 0..255];
     foreach ( ':', ';', '#', '(', ')', '^', '\\', '{', '}', '!', '@', '-') {
 	$nmake_tbl->[ ord] = "^$_";
     }
     $nmake_tbl->[ ord '%'] = '%%';
     $nmake_tbl->[ ord '$'] = $make_tbl->[ ord '$'] = '$$';
+    $dmake_tbl->[ ord '#'] = '\\#';
     $make_tbl->[ ord '#'] = '\\#';
     %make_trans = (
 		   make => $make_tbl,
 		   nmake => $nmake_tbl,
+		   dmake => $dmake_tbl,
 		  );
+    generate_win32_def if $Win32;
 }
 
 sub process_commandline
@@ -482,8 +829,10 @@ sub cmake
     my $ofile = "$1$OBJ_EXT" if $cfile =~ /^(.*)\.c$/;
     die "Internal error: illegal c file"
 	unless defined $ofile;
-    push @allclean, qd( $ofile);
-    push @allojects, qd( $ofile);
+    $cfile = qd( $cfile);
+    $ofile = qd( $ofile);
+    push @allclean, $ofile;
+    push @allojects, $ofile;
     my @deps = find_cdeps( $cfile);
     return(
 	   "$ofile: Makefile $cfile @deps\n\t" .
@@ -522,6 +871,8 @@ sub clsmake
 #
 # Here we go...
 #
+
+$CWD = cwd;
 
 $dir_sep = ( $path_sep = $Config{ path_sep}) eq ':' ? '/' : '\\';
 
@@ -573,6 +924,9 @@ while (<*.cls>) {
   $make .= clsmake( $_);
 }
 while (<*.c>) {
+  $make .= cmake( $_);
+}
+while (<img/*.c>) {
   $make .= cmake( $_);
 }
 while (<$PLATFORM/*.c>) {

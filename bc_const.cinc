@@ -38,7 +38,7 @@ static Byte     map_halftone8x8_64 [  64] = {
 };
 
 static void
-cm_init_colormap()
+cm_init_colormap( void)
 {
    int i;
    for ( i = 0; i < 256; i++)
@@ -178,9 +178,13 @@ cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette
    Byte * srcData = var->data;                                    \
    Byte colorref[ 256]
 
+#ifdef __BORLANDC__
+#define BCWARN
+#else
 #define BCWARN                                                   \
    (void)srcType; (void)srcLine; (void)dstLine; (void)srcColors; \
    (void)dstColors; (void)srcData; (void)colorref; (void)i;
+#endif
 
 #define BC(from,to,conv) void ic_##from##_##to##_ict##conv( Handle self, Byte * dstData, PRGBColor dstPal, int dstType)
 #define BCCONV srcData, dstData, width

@@ -739,7 +739,9 @@ kmcc ( Handle self, PMenuItemReg m, void * params)
 void
 AbstractMenu_set_command( Handle self, char * key, Bool enabled)
 {
-   Kmcc mcc = { key_normalize( key), enabled};
+   Kmcc mcc;
+   mcc. key = key_normalize( key);
+   mcc. enabled = enabled;
    if ( var-> stage > csNormal) return;
    my-> first_that( self, kmcc, &mcc, true);
 }

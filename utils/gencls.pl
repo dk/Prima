@@ -1819,7 +1819,7 @@ print HEADER "// instance variables \n";
   if ( $genPackage)
   {
      my $whatToReg = $genObject ? "Class" : "Package";
-     print HEADER "extern void register_${ownCType}_${whatToReg}();\n\n";
+     print HEADER "extern void register_${ownCType}_${whatToReg}( void);\n\n";
      print HEADER "//Local methods definitions\n";
      for ( my $i = 0; $i <= $#allMethods; $i++)
      {

@@ -194,7 +194,6 @@ struct _UnixGuts
    /* debugging -  XCHECKPOINT */
    RequestInformation ri[ REQUEST_RING_SIZE];
    int ri_head, ri_tail;
-   Bool dolbug;
 
    /* window manager specifics */
    void *wm_data;
@@ -332,16 +331,10 @@ extern void
 prima_init_font_subsystem( void);
 
 extern void
-prima_init_image_subsystem( void);
-
-extern void
 prima_cleanup_drawable_after_painting( Handle self);
 
 extern void
 prima_cleanup_font_subsystem( void);
-
-extern void
-prima_cleanup_image_subsystem( void);
 
 extern void
 prima_cursor_tick( void);

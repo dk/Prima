@@ -105,6 +105,37 @@ reallocf(void *ptr, size_t size)
 }
 #endif
 
+#ifndef HAVE_SNPRINTF
+/*
+ * It is stupid, but Borland C/C++ 5.02 doesn't have snprintf/vsnprintf in its
+ * RTL.
+ */
+int
+snprintf( char *buf, size_t len, const char *format, ...)
+{
+    int rc;
+    va_list args;
+    va_start( args, format);
+    rc = vsprintf( buf, format, args);
+    va_end( args);
+    return rc;
+}
+
+int
+vsnprintf( char *buf, size_t len, const char *format, va_list args)
+{
+    return vsprintf( buf, format, args);
+}
+#endif
+
+#ifdef __BORLANDC__
+Bool
+SvBOOL( SV *sv)
+{
+   return SvTRUE(sv);
+}
+#endif
+
 PHash primaObjects = nil;
 
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
@@ -965,8 +996,8 @@ kill_objects( void * item, int keyLen, Handle * self, void * dummy)
 Bool appDead = false;
 SV** temporary_prf_Sv;
 
+Bool dolbug;
 Bool waitBeforeQuit;
-extern void dump_logger(void);
 
 #if defined(BROKEN_COMPILER) || defined(__unix)
 double NAN;
@@ -1000,6 +1031,7 @@ XS( prima_cleanup)
    hash_first_that( primaObjects, kill_objects, nil, nil, nil);
    hash_destroy( primaObjects, false);
    primaObjects = nil;
+   prima_cleanup_image_subsystem();
    window_subsystem_cleanup();
    hash_destroy( vmtHash, false);
    list_delete_all( &staticObjects, true);
@@ -1066,6 +1098,8 @@ XS( boot_Prima)
 
    XS_VERSION_BOOTCHECK;
 
+   dolbug = getenv( "PRIMA_DOLBUG") ? true : false;
+
 #ifdef BROKEN_COMPILER
    {
       union {U8 c[8];double d;} nan = {{00, 00, 00, 00, 00, 00, 0xf8, 0xff}};
@@ -1092,6 +1126,7 @@ NAN = 0.0;
       ST(0) = &sv_no;
       XSRETURN(1);
    };
+   prima_init_image_subsystem();
    primaObjects = hash_create();
    vmtHash      = hash_create();
    list_create( &staticObjects, 16, 16);
@@ -1673,3 +1708,15 @@ PList plist_create( int size, int delta) {}
 
 #endif /* PARANOID_MALLOC */
 
+int
+debug_write( const char *format, ...)
+{
+    int rc = 0;
+    if ( dolbug) {
+	va_list args;
+	va_start( args, format);
+	rc = vfprintf( stderr, format, args);
+	va_end( args);
+    }
+    return rc;
+}

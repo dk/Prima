@@ -28,7 +28,6 @@
 #include "apricot.h"
 #endif
 #include "win32\win32guts.h"
-#include <gbm.h>
 #include "Window.h"
 #include "Img.h"
 #include "Icon.h"
@@ -171,9 +170,13 @@ apc_gp_clear( Handle self)
    Bool     ok = true;
    HDC      ps   = sys ps;
    HGDIOBJ  oldp = SelectObject( ps, hPenHollow);
-   LOGBRUSH ers  = { PS_SOLID, apc_gp_get_back_color( self), 0};
-   HGDIOBJ  oldh = CreateBrushIndirect( &ers);
+   LOGBRUSH ers;
+   HGDIOBJ  oldh;
    int      oldrop = GetROP2( ps);
+   ers. lbStyle = PS_SOLID;
+   ers. lbColor = apc_gp_get_back_color( self);
+   ers. lbHatch = 0;
+   oldh = CreateBrushIndirect( &ers);
    if ( oldrop != R2_COPYPEN) SetROP2( ps, R2_COPYPEN);
    oldh = SelectObject( ps, oldh);
    if ( !( ok = Rectangle( sys ps, 0, 0, sys lastSize. x + 1, sys lastSize. y + 1))) apiErr;
@@ -319,8 +322,7 @@ static int ctx_R22R4[] = {
 
 Bool
 apc_gp_fill_poly( Handle self, int numPts, Point * points)
-{objCheck false;{
-   Bool ok = true;
+{Bool ok = true; objCheck false;{
    HDC     ps = sys ps;
    int i,  dy = sys lastSize. y;
 
@@ -335,11 +337,13 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       int j, dx    = sys lastSize. x;
       int rop      = ctx_remap_def( GetROP2( ps), ctx_R22R4, true, SRCCOPY);
       Point bound  = {0,0};
-      Point trans  = {dx,dy};
+      Point trans;
       HBITMAP bmMask, bmSrc, bmJ;
       HDC dc;
       HGDIOBJ old1, old2;
       Bool db = is_apt( aptDeviceBitmap) || is_apt( aptBitmap);
+      trans. x = dx;
+      trans. y = dy;
       for ( i = 0; i < numPts; i++)  {
          if ( points[ i]. x > bound. x) bound. x = points[ i]. x;
          if ( points[ i]. y > bound. y) bound. y = points[ i]. y;
@@ -391,9 +395,8 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       dc_compat_free();
       DeleteObject( bmMask);
       DeleteObject( bmSrc);
-      return ok;
    }
-}}
+}return ok;}
 
 Bool
 apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
@@ -402,11 +405,12 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    HDC     ps = sys ps;
    HGDIOBJ old;
    int newY    = sys lastSize. y - y;
-   POINT   pts[ 3] = {
-      { x + cos( angleEnd / GRAD) * radX,   newY - sin( angleEnd / GRAD) * radY},
-      { x + cos( angleStart / GRAD) * radX, newY - sin( angleStart / GRAD) * radY},
-   };
+   POINT   pts[ 3];
    Bool    comp = stylus_complex( &sys stylus, ps);
+   pts[ 0]. x = x + cos( angleEnd / GRAD) * radX;
+   pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY;
+   pts[ 1]. x = x + cos( angleStart / GRAD) * radX;
+   pts[ 1]. y = newY - sin( angleStart / GRAD) * radY;
    STYLUS_USE_BRUSH( ps);
    y = newY;
    // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
@@ -492,11 +496,12 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
    Bool ok = true;
    HDC     ps = sys ps;
    int     newY = sys lastSize. y - y;
-   POINT   pts[ 2] = {
-      { x + cos( angleEnd / GRAD) * radX,   newY - sin( angleEnd / GRAD) * radY},
-      { x + cos( angleStart / GRAD) * radX, newY - sin( angleStart / GRAD) * radY},
-   };
+   POINT   pts[ 2];
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
+   pts[ 0]. x = x + cos( angleEnd / GRAD) * radX;
+   pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY;
+   pts[ 1]. x = x + cos( angleStart / GRAD) * radX;
+   pts[ 1]. y = newY - sin( angleStart / GRAD) * radY;
    STYLUS_USE_PEN( ps);
    y = newY;
    // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
@@ -634,9 +639,11 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    // if image is actually icon, drawing and-mask
    if ( kind_of( deja, CIcon)) {
       XBITMAPINFO xbi = {
-         { sizeof( BITMAPINFOHEADER), i-> w, i-> h, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
+         { sizeof( BITMAPINFOHEADER), 0, 0, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
          { {0,0,0,0}, {255,255,255,0}}
       };
+      xbi. bmiHeader. biWidth = i-> w;
+      xbi. bmiHeader. biHeight = i-> h;
       StretchDIBits(
          xdc, x, ly - y - yDestLen, xDestLen, yDestLen, xFrom, yFrom, xLen, yLen,
          i-> mask, ( BITMAPINFO*) &xbi, DIB_RGB_COLORS, SRCAND
@@ -1001,7 +1008,7 @@ apc_gp_text_wrap( Handle self, TextWrapRec * t)
          f2[i]. abcfA = ( f2[i]. abcfA < 0) ? -f2[i]. abcfA : 0;
       }
    }
-   gp_text_wrap( self, t);
+   return gp_text_wrap( self, t);
 }}
 
 PFontABC

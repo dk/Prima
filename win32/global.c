@@ -422,7 +422,9 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       break;
    case WM_CONTEXTMENU:
       {
-         POINT a = {( short)LOWORD( mp2), (short)HIWORD( mp2)};
+         POINT a;
+	 a. x = ( short)LOWORD( mp2);
+	 a. y = ( short)HIWORD( mp2);
          ev. cmd       = cmPopup;
          ev. gen. B    = ( GetKeyState( VK_LBUTTON) < 0) | ( GetKeyState( VK_RBUTTON) < 0);
          // mouse event
@@ -585,7 +587,9 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       goto MB_CLICK;
    case WM_MOUSEWHEEL:
       {
-         POINT p = {(short)LOWORD( mp2),(short)HIWORD( mp2)};
+         POINT p;
+	 p. x = (short)LOWORD( mp2);
+	 p. y = (short)HIWORD( mp2);
          ev. cmd         = cmMouseWheel;
          ev. pos. button = ( short) HIWORD( mp1);
          MapWindowPoints( nil, win, &p, 1);
@@ -674,7 +678,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              Point pos  = var self-> get_pos( self);
              ev. cmd    = cmMove;
              ev. gen. P = pos;
-             if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd == 0;
+             if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd = 0;
           }
        }
        break;
@@ -1010,7 +1014,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
              Point pos  = var self-> get_pos( self);
              ev. cmd    = cmMove;
              ev. gen. P = pos;
-             if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd == 0;
+             if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd = 0;
           }
        }
        break;

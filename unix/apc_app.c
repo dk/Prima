@@ -112,7 +112,6 @@ window_subsystem_init( void)
    guts. insert = true;
 
    guts. ri_head = guts. ri_tail = 0;
-   guts. dolbug = getenv( "PRIMA_DOLBUG") ? true : false;
    DISP = XOpenDisplay( nil);
    if (!DISP) return false;
    XSetErrorHandler( x_error_handler);
@@ -169,7 +168,6 @@ window_subsystem_init( void)
    guts. bit_order = BitmapBitOrder( DISP);
    prima_wm_init();
    prima_init_font_subsystem();
-   prima_init_image_subsystem();
 /*    XSynchronize( DISP, true); */
    return true;
 }
@@ -205,7 +203,6 @@ window_subsystem_done( void)
 
    XrmDestroyDatabase( guts.db);
    if (guts.windows) hash_destroy( guts.windows, false);
-   prima_cleanup_image_subsystem();
    prima_cleanup_font_subsystem();
 }
 

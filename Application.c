@@ -319,10 +319,9 @@ Application_get_default_cursor_width( char * dummy)
 Point
 Application_get_default_scrollbar_metrics( char * dummy)
 {
-   Point ret = {
-      apc_sys_get_value( svXScrollbar),
-      apc_sys_get_value( svYScrollbar)
-   };
+   Point ret;
+   ret. x = apc_sys_get_value( svXScrollbar);
+   ret. y = apc_sys_get_value( svYScrollbar);
    return ret;
 }
 
@@ -512,7 +511,9 @@ Application_set_font( Handle self, Font font)
 void
 Application_set_color_index( Handle self, Color color, int index)
 {
-   SingleColor s = { color, index};
+   SingleColor s;
+   s. color = color;
+   s. index = index;
    if ( var->  stage > csNormal) return;
    if (( index < 0) || ( index > ciMaxId)) return;
    if ( !opt_InPaint) my-> first_that( self, single_color_notify, &s);
@@ -556,10 +557,9 @@ Application_get_parent( Handle self)
 Point
 Application_get_scroll_rate( Handle self)
 {
-   Point ret = {
-      apc_sys_get_value( svAutoScrollFirst),
-      apc_sys_get_value( svAutoScrollNext)
-   };
+   Point ret;
+   ret. x = apc_sys_get_value( svAutoScrollFirst);
+   ret. y = apc_sys_get_value( svAutoScrollNext);
    return ret;
 }
 

@@ -37,9 +37,6 @@
 #include "apricot.h"
 #include "Img.h"
 #include "Image.h"
-#ifndef __unix  /* Temporary hack */
-#include "gbm.h"
-#endif /* __unix */
 #include "img_api.h"
 #include <Image.inc>
 #include "Clipboard.h"
@@ -272,11 +269,7 @@ Image_make_empty( Handle self)
 char *
 Image_get_status_string( SV *self)
 {
-#ifdef __unix  /* Temporary hack */
    return (char *)apc_image_get_error_message( nil, 0);
-#else
-   return (char *)gbm_err( var->status);
-#endif /* __unix */
 }
 
 Bool
@@ -607,200 +600,6 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
     }
 }
 
-#ifndef __unix
-
-Bool
-save_image_indirect( Handle self, char *filename, HV *profile)
-#ifndef SCARY_ERRORS
-#define bekilled(__rc) { var->status = __rc; return false;}
-#else
-#define bekilled(__rc) {                                                                    \
-   switch( __rc){                                                                      \
-      ieError:          croak("RTC0102: Error saving %s", filename);                            \
-      ieInvalidType:    croak("RTC0103: Invalid file type to save %s", filename);               \
-      ieFileNotFound:   croak("RTC0104: Cannot open/write %s", filename);                       \
-      ieInvalidOptions: croak("RTC0105: Invalid options given for %s", filename);               \
-      ieNotSupported:   croak("RTC0106: Requested image format not supported for %s", filename);\
-   }                                                                                   \
-   return false;                                                                       \
-}
-#endif
-{
-   int bpp = var->type & imBPP;
-   int file;
-   GBM gbm;
-   GBM_ERR rc = ieOK;
-   int fileType;
-   char options[1024] = {0};
-   char oneOpt[ 256];
-
-   if (( bpp != 1) && ( bpp != 4) && ( bpp != 8) && ( bpp != 24))
-      bekilled( ieInvalidType);
-
-   if (( rc = gbm_guess_filetype( filename, &fileType)) != ieOK)
-      bekilled( ieInvalidType);
-
-   /*
-     gif, iff, lbm - transparent color "transcol=%d"
-     gif      - interlaced             "ilace"
-     tiff     - compressed             "lzw"
-     - description            "imagedescription=%s"
-     - special
-     jpeg     - quality                "quality=%d"
-     - progressive            "prog"
-     png      - compressionLevel       "zlevel=%d"
-     - compression(standard,huffman,filtered) "zstrategy=%c"(d,h,f)
-     - interlaced             "ilace"
-     - description            "Description=%s"
-     - noAutoFilter           "nofilters"
-     - transparent color index"transcol=%d"
-     - transparent color      "transcol=%d/%d/%d"
-     */
-   if ( fileType == itBMP) strcat( options, " inv");  /* GBM is a bad guy */
-   if ( pexist( interlaced))   strcat(options, " ilace");
-   if ( pexist( compressed))   strcat(options, " lzw");
-   if ( pexist( progressive))  strcat(options, " prog");
-   if ( pexist( noAutoFilter)) strcat(options, " nofilters");
-   if ( pexist( quality))
-      strcat(options, (snprintf(oneOpt, 256, " quality=%d",(int) pget_i( quality)), oneOpt));
-   if ( pexist( compressionLevel))
-      strcat(options, (snprintf(oneOpt, 256, " zlevel=%d",(int) pget_i( compressionLevel)), oneOpt));
-   if ( pexist( transparentColorIndex))
-      strcat(options, (snprintf(oneOpt, 256, " transcol=%d",(int) pget_i( transparentColorIndex)), oneOpt));
-   if ( pexist( transparentColorRGB))
-   {
-      SV *sv = pget_sv( transparentColorRGB);
-      AV *av;
-      if ( !SvROK( sv) || ( SvTYPE( SvRV( sv)) != SVt_PVAV)) bekilled( ieInvalidOptions);
-      av = ( AV*) SvRV( sv);
-      if ( av_len( av) != 2) bekilled( ieInvalidOptions);
-      strcat(options, (snprintf(oneOpt, 256, " transcol=%d/%d/%d",
-				(int)SvIV( *av_fetch( av, 2, 0)),
-				(int)SvIV( *av_fetch( av, 1, 0)),
-				(int)SvIV( *av_fetch( av, 0, 0))
-	 ), oneOpt));
-   }
-   if ( pexist( transparentColor))
-   {
-      unsigned long c = pget_i( transparentColor);
-      strcat(options, (snprintf(oneOpt,256, " transcol=%ld/%ld/%ld",
-				( c >> 16) & 0xFF,
-				( c >> 8 ) & 0xFF,
-				c & 0xFF
-	 ), oneOpt));
-   }
-   if ( pexist( compression))
-   {
-      char * c = pget_c( compression);
-      if ( strcmp( c, "standard") == 0) strcat(options, " zstrategy=d");
-      else if ( strcmp( c, "huffman") == 0) strcat(options, " zstrategy=h");
-      else if ( strcmp( c, "filtered") == 0) strcat(options, " zstrategy=f");
-   }
-   if ( pexist( description))
-   {
-      char *cc = oneOpt;
-      strcat(options, (snprintf(oneOpt,256, " Description=\"%s\"",(char *) pget_c( description)), oneOpt));
-      /* tiff */
-      snprintf(oneOpt,256," imagedescription=%s",(char *) pget_c( description));
-      while (*++cc) if (*cc == ' ') *cc='_';
-      strcat( options, oneOpt);
-   }
-
-   file = open( filename, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, S_IREAD | S_IWRITE);
-   if ( file == -1) bekilled( ieFileNotFound);
-
-   gbm. w = var->w;
-   gbm. h = var->h;
-   gbm. bpp = bpp;
-   {
-      RGBColor pal [ 256];
-      cm_reverse_palette( var->palette, pal, 256);
-      rc = gbm_write( filename, file, fileType, &gbm, ( GBMRGB *) pal, var->data, options);
-   }
-   if ( rc != ieOK)
-   {
-      close( file);
-      remove( filename);
-      switch ( rc)
-      {
-      case ieFileNotFound: case ieInvalidType: case ieInvalidOptions: case ieNotSupported:
-	 break;
-      default:
-	 rc = ieError;
-      }
-      bekilled( rc);
-   }
-   close( file);
-   var->status = ieOK;
-   return true;
-}
-
-XS( Image_save_FROMPERL) {
-   dXSARGS;
-   Bool result;
-   Bool as_class = false;
-   Bool wantarray = ( GIMME_V == G_ARRAY);
-   Handle self;
-   char *class_name;
-   PList info = nil;
-   int i;
-   HV *profile;
-
-   if ( items >= 2) {
-      SV *who = ST(0);
-      char *filename = SvPV( ST( 1), na);
-
-      if (!( self = gimme_the_mate( who))) {
-	 PVMT vmt;
-	 if (!SvPOK( who)) {
-	    croak( "Call Image->save() either as instance method or as class method");
-	 }
-	 class_name = SvPV( who, na);
-	 vmt = gimme_the_vmt( class_name);
-	 while ( vmt && vmt != (PVMT)CImage) {
-	    vmt = vmt-> base;
-	 }
-	 if ( !vmt) {
-	    croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
-	 }
-	 as_class = true;
-      } else {
-	 if ( !kind_of( self, CImage)) {
-	    croak( "Are you nuts?  This object is not inherited from ``Image''");
-	 }
-      }
-
-      if ( items > 2 && SvROK( ST( 2)) && SvTYPE( SvRV( ST(2))) == SVt_PVHV) {
-	  /* assuming multi-profile format */
-	  croak ("Invalid usage of Image::save: multiple profiles are not allowed");
-      }
-      else {
-	 /* assuming normal single profile */
-         char buf [ 15];
-         int index = 0;
-	 if ( items % 2 != 0) {
-	    croak ("Invalid usage of Image::save: odd number of optional arguments");
-	 }
-	 profile = parse_hv( ax, sp, items, mark, 2, "Image::save");
-         result = save_image_indirect( self, filename, profile);
-	 sv_free(( SV*) profile);
-      }
-
-      if ( info) {
-	  for ( i = 0; i < info->count; i++) {
-	      free( ( void *) list_at( info, i));
-	  }
-	  plist_destroy( info);
-      }
-
-      PUTBACK;
-      return;
-   }
-   croak ("Invalid usage of %s", "Image::save");
-}
-
-#else /* __unix */
-
 XS( Image_save_FROMPERL) {
     dXSARGS;
    Bool result = false;
@@ -892,8 +691,6 @@ XS( Image_save_FROMPERL) {
     }
     croak ("Invalid usage of %s", "Image::save");
 }
-
-#endif
 
 Bool
 Image_save_REDEFINED( SV *who, char *filename, PList imgInfo)
@@ -1087,218 +884,6 @@ modify_Image( Handle self, PImgInfo imageInfo)
     my->update_change( self);
 }
 
-#ifndef __unix
-
-Bool
-load_image_indirect( Handle self, char *filename, char *subIndex)
-#define checkrc if ( rc != ieOK)  \
-        {                         \
-            var->status = rc;      \
-            free( data);          \
-            free( palette);       \
-            close( file);         \
-            return false;         \
-        }
-{
-   GBM gbm;
-   unsigned char *data = nil;
-   GBM_ERR rc;
-   GBMRGB * palette = nil;
-   int file;
-   int ft;
-   int lineSize, dataSize;
-
-   if ( var->stage > csNormal) return false;
-   if ( opt_InPaint) return false;
-
-   memset( &gbm, 0, sizeof( GBM));
-   file = open( filename, O_RDONLY | O_BINARY);
-   if ( file < 0)
-   {
-      var->status = ieFileNotFound;
-      return false;
-   }
-   ft = image_guess_type( file);
-   if ( ft < 0)
-   {
-      rc = gbm_guess_filetype( filename, &ft);
-      checkrc;
-   }
-
-   if ( ft != itGIF) {
-      int len = strlen( subIndex);
-      if (( len > 2) && (( subIndex[len-1] != '0') || ( subIndex[len-2] != '=')))
-         return false;
-   }
-
-   if ( ft == itBMP) strcat( subIndex, " inv");  /* GBM is baran */
-   rc = gbm_read_header( filename, file, ft, &gbm, subIndex);
-   checkrc;
-
-   palette = malloc( 0x100 * sizeof( GBMRGB));
-   rc = gbm_read_palette( file, ft, &gbm, ( GBMRGB*) palette);
-   checkrc;
-
-   lineSize = (( gbm. w * gbm. bpp + 31) / 32) * 4;
-   dataSize = gbm. h * lineSize;
-   data = ( dataSize > 0) ? malloc( dataSize) : nil;
-   rc = gbm_read_data( file, ft, &gbm, data);
-   checkrc;
-
-   close( file);
-
-   /* init image */
-   my->make_empty( self);
-   var->w        = gbm. w;
-   var->h        = gbm. h;
-   var->type     = gbm. bpp;
-   var->data     = data;
-   var->palette  = ( PRGBColor) palette;
-   var->lineSize = lineSize;
-   var->dataSize = dataSize;
-   var->palSize  = (1 << (var->type & imBPP)) & 0x1ff;
-   cm_reverse_palette( var->palette, var->palette, var->palSize);
-
-   switch( var->type)
-   {
-      case imbpp1:
-         if ( memcmp( var->palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
-            var->type |= imGrayScale;
-         break;
-      case imbpp4:
-         if ( memcmp( var->palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
-            var->type |= imGrayScale;
-         break;
-      case imbpp8:
-         if ( memcmp( var->palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
-            var->type |= imGrayScale;
-         break;
-   }
-   var->status = ieOK;
-   return true;
-}
-
-XS( Image_load_FROMPERL) {
-   dXSARGS;
-   Bool result;
-   Bool as_class = false;
-   Bool wantarray = ( GIMME_V == G_ARRAY);
-   Handle self;
-   char *class_name;
-   PList info = nil;
-   int i;
-   HV *profile;
-
-   if ( items >= 2) {
-      SV *who = ST(0);
-      char *filename = SvPV( ST( 1), na);
-
-      if (!( self = gimme_the_mate( who))) {
-	 PVMT vmt;
-	 if (!SvPOK( who)) {
-	    croak( "Call Image->load() either as instance method or as class method");
-	 }
-	 class_name = SvPV( who, na);
-	 vmt = gimme_the_vmt( class_name);
-	 while ( vmt && vmt != (PVMT)CImage) {
-	    vmt = vmt-> base;
-	 }
-	 if ( !vmt) {
-	    croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
-	 }
-	 as_class = true;
-      } else {
-	 if ( !kind_of( self, CImage)) {
-	    croak( "Are you nuts?  This object is not inherited from ``Image''");
-	 }
-      }
-
-      if ( items > 2 && SvROK( ST( 2)) && SvTYPE( SvRV( ST(2))) == SVt_PVHV) {
-	 /* assuming multi-profile format */
-	 if (!as_class) {
-	    croak ("Invalid usage of Image::load: multiple profiles are not allowed when called as an instance method");
-	 }
-	 for ( i = 2; i < items; i++) {
-	    if ( !SvROK( ST( i)) || SvTYPE( SvRV( ST(i))) != SVt_PVHV) {
-	       croak ("Invalid usage of Image::load: hash reference expected for argument %d", i);
-	    }
-	 }
-         croak( "Sorry, unsupported");
-	 info = plist_create( items - 2, 1);
-	 for ( i = 2; i < items; i++) {
-            add_image_profile( nil, ( HV *)SvRV( ST(i)), info, "Image::load");
-	 }
-      }
-      else {
-	 /* assuming normal single profile */
-         char buf [ 15];
-         int index = 0;
-	 if ( items % 2 != 0) {
-	    croak ("Invalid usage of Image::load: odd number of optional arguments");
-	 }
-	 profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
-         if ( pexist( index)) index = pget_i( index);
-	 if (as_class) croak( "Sorry, unsupported");
-         if ( index >= 0) snprintf( buf, 15, "index=%d", index); else buf[ 0] = 0;
-         result = load_image_indirect( self, filename, buf);
-	 sv_free(( SV*) profile);
-      }
-      SPAGAIN;
-      SP -= items;
-      if ( result) {
-	  if ( as_class) {
-	      Handle *selves;
-	      selves = malloc( info->count * sizeof( Handle));
-	      for ( i = 0; i < info->count; i++) {
-		  self = ( Handle) create_object( class_name, "", nil);
-		  SPAGAIN;
-		  SP -= items;
-		  modify_Image( self, ( PImgInfo) list_at( info, i));
-		  SPAGAIN;
-		  SP -= items;
-		  selves[ i] = self;
-	      }
-	      if ( wantarray) {
-		  for ( i = 0; i < info-> count; i++) {
-		      XPUSHs( sv_mortalcopy( PImage( selves[ i])-> mate));
-		  }
-	      }
-	      else {
-		  AV *av = newAV();
-		  for ( i = 0; i < info-> count; i++) {
-		      av_push( av, newSVsv( PImage( selves[ i])-> mate));
-		  }
-		  XPUSHs( sv_2mortal( newRV_noinc( (SV*) av)));
-	      }
-	      free( selves);
-	  } else {
-	     my-> update_change( self);
-	     SPAGAIN;
-	     SP -= items;
-	     XPUSHs( sv_mortalcopy( PImage( self)-> mate));
-	  }
-      }
-      else {
-	  if ( ! wantarray) {
-	      XPUSHs( &sv_undef);
-	  }
-      }
-
-      if ( info) {
-	  for ( i = 0; i < info->count; i++) {
-	      free( ( void *) list_at( info, i));
-	  }
-	  plist_destroy( info);
-      }
-
-      PUTBACK;
-      return;
-   }
-   croak ("Invalid usage of %s", "Image::load");
-}
-
-#else
-
 XS( Image_load_FROMPERL) {
    dXSARGS;
    Bool result;
@@ -1361,7 +946,17 @@ XS( Image_load_FROMPERL) {
          add_image_profile( nil, hv, info, "Image::load");
 	 sv_free(( SV*)hv);
       }
+      DOLBUG( "Image_load_FROMPERL: calling apc_image_read\n");
       result = apc_image_read( filename, info, true);
+      DOLBUG( "Image_load_FROMPERL: apc_image_read( %s) %s\n",
+	      filename,
+	      result ? "succeed" : "failed"
+	  );
+      if ( ! result) {
+	  char errorBuf[ 1024];
+	  apc_image_get_error_message( errorBuf, 1024);
+	  DOLBUG( "Error message: %s\n", errorBuf);
+      }
       SPAGAIN;
       SP -= items;
       if ( result) {
@@ -1421,7 +1016,6 @@ XS( Image_load_FROMPERL) {
    }
    croak ("Invalid usage of %s", "Image::load");
 }
-#endif /* Image_load_FROMPERL */
 
 Handle
 Image_load_REDEFINED( SV *who, char *filename, PList imgInfo)

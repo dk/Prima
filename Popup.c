@@ -88,8 +88,12 @@ Popup_popup( Handle self, int x, int y, int ancLeft, int ancBottom, int ancRight
    int i;
    PWidget owner = ( PWidget) var-> owner;
    ColorSet color;
-   Rect anchor = {ancLeft, ancBottom, ancRight, ancTop};
+   Rect anchor;
    int stage = owner-> stage;
+   anchor. left = ancLeft;
+   anchor. bottom = ancBottom;
+   anchor. right = ancRight;
+   anchor. top = ancTop;
    if ( var-> stage > csNormal) return;
    owner-> stage = csFrozen;
    memcpy( color, owner-> popupColor, sizeof( ColorSet));

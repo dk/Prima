@@ -386,7 +386,7 @@ prf_find( char * path, List * names, int firstName, char * result)
    char buf[ MAXREGLEN];
    int info;
 
-   _snprintf( buf, MAXREGLEN, "%s\\%s", path, names-> items[ firstName]);
+   snprintf( buf, MAXREGLEN, "%s\\%s", path, names-> items[ firstName]);
    if ( prf_exists( buf, nil)) {
       if ( names-> count > firstName + 1) {
          if ( prf_find( buf, names, firstName + 1, result)) return true;
@@ -396,7 +396,7 @@ prf_find( char * path, List * names, int firstName, char * result)
       }
    }
 
-   _snprintf( buf, MAXREGLEN, "%s\\*", path);
+   snprintf( buf, MAXREGLEN, "%s\\*", path);
    if ( prf_exists( buf, &info)) {
       if ( info & rgxHasSubkeys) {
          int i;
@@ -471,37 +471,3 @@ apc_widget_user_profile( char * name, Handle owner)
    RegCloseKey( hKey);
    return ret;
 }
-
-static const char *debug_file = "C:\\POPUPLOG.W32";
-
-int
-debug_write( const char *format, ...)
-{
-   FILE *f;
-   int rc;
-   va_list arg_ptr;
-
-   if( ( f = fopen( debug_file, "at")) == NULL) return 0;
-   va_start( arg_ptr, format);
-   rc = vfprintf( f, format, arg_ptr);
-   va_end( arg_ptr);
-   fclose( f);
-
-   return ( rc != EOF);
-}
-
-Bool
-log_write( const char *format, ...)
-{
-   int rc;
-   va_list arg_ptr;
-
-   va_start( arg_ptr, format);
-   rc = vfprintf( stderr, format, arg_ptr);
-   va_end( arg_ptr);
-   fprintf( stderr, "\n");
-
-   return ( rc != EOF);
-}
-
-

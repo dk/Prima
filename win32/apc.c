@@ -263,7 +263,11 @@ apc_application_get_os_info( char *system, int slen,
    }
    if ( arch) {
       char * pb = "Unknown";
+#if defined( __BORLANDC__) && ! ( defined( __cplusplus) || defined( _ANONYMOUS_STRUCT))
+      switch ( si. u. s. wProcessorArchitecture) {
+#else
       switch ( si. wProcessorArchitecture) {
+#endif
       case PROCESSOR_ARCHITECTURE_INTEL :   pb = "i386";  break;
       case PROCESSOR_ARCHITECTURE_MIPS  :   pb = "MIPS";  break;
       case PROCESSOR_ARCHITECTURE_ALPHA :   pb = "Alpha"; break;
@@ -369,7 +373,7 @@ apc_application_go( Handle self)
 
 
 static Bool
-lock( Bool lock)
+HWND_lock( Bool lock)
 {
    if ( lock)
    {
@@ -385,13 +389,13 @@ lock( Bool lock)
 Bool
 apc_application_lock( Handle self)
 {
-   return lock( true);
+   return HWND_lock( true);
 }
 
 Bool
 apc_application_unlock( Handle self)
 {
-   return lock( false);
+   return HWND_lock( false);
 }
 
 Bool
@@ -721,12 +725,12 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
      usePos = useSize = 1; // prevent using shell-position flags for recreate
      reset = true;
   }
-  lock( true);
+  HWND_lock( true);
 
   if ( reset || ( var handle == nilHandle))
      if ( !create_group( self, owner, syncPaint, clipOwner,
            taskList, WC_FRAME, style, exstyle, usePos, useSize, &vprf)) {
-        lock( false);
+        HWND_lock( false);
         return false;
      }
   ws. borderStyle = sys s. window. borderStyle = borderStyle;
@@ -752,7 +756,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
     guts. topWindows++;
   }
   apc_window_set_caption( self, var text);
-  lock( false);
+  HWND_lock( false);
   return apcError == 0;
 }
 
@@ -1149,6 +1153,7 @@ window_start_modal( Handle self, Bool shared, Handle insertBefore)
    objCheck false;
    PostMessage( wnd, WM_DLGENTERMODAL, 1, 0);
    guts. focSysDisabled = 0;
+   return true;
 }
 
 Bool
@@ -2378,7 +2383,9 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
    y = dsys( var owner) lastSize. y - y;
    owner = ( HWND)(( PComponent) var owner)-> handle;
    if ( var owner != application) {
-      POINT pt = {x,y};
+      POINT pt;
+      pt. x = x;
+      pt. y = y;
       if ( !MapWindowPoints( owner, nil, &pt, 1)) apiErr;
       x = pt.x;
       y = pt.y;
@@ -2693,9 +2700,9 @@ apc_system_action( const char * params)
          HWND h = GetFocus();
          if ( h) {
             char b[ 256];
-            log_write( "%08x: %s", h, GetWindowText( h, b, 255) ? b : "NULL");
+            DOLBUG( "%08x: %s", h, GetWindowText( h, b, 255) ? b : "NULL");
          } else {
-            log_write( "? No foc");
+            DOLBUG( "? No foc");
          }
       } else if (strncmp( params, "win32.WNetGetUser", 17) == 0) {
          char connection[ 1024];

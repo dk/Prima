@@ -70,15 +70,15 @@
 #define stbText         4
 #define stbBacking      8
 
-#ifndef  SEVERE_DEBUG
-#define apiErr       { rc = GetLastError();    apcError = errApcError; }
-#define apcErr( err)    apcError = err;
-#define apiAltErr( err) { apcError = errApcError; rc = err; }
-#else
+/*  #ifndef  SEVERE_DEBUG */
+/*  #define apiErr       { rc = GetLastError();    apcError = errApcError; } */
+/*  #define apcErr( err)    apcError = err; */
+/*  #define apiAltErr( err) { apcError = errApcError; rc = err; } */
+/*  #else */
 #define apiErr {                                            \
    rc = GetLastError();                                     \
    apcError = errApcError;                                  \
-   log_write("WIN_%d (%s) at line %d in %s", rc,            \
+   debug_write("WIN_%d (%s) at line %d in %s", rc,          \
       err_msg( rc), __LINE__, __FILE__);                    \
 }
 #define apcErr( err) {                                      \
@@ -87,10 +87,10 @@
 #define apiAltErr( err) {                                   \
    apcError = errApcError;                                  \
    rc = err;                                                \
-   log_write("WIN_%d (%s) at line %d at %s", rc,            \
+   debug_write("WIN_%d (%s) at line %d at %s", rc,          \
         err_msg( rc), __LINE__, __FILE__);                  \
 }
-#endif
+/*  #endif */
 #define apiErrRet         { apiErr;               return false; }
 #define apiErrCheckRet    { apiErrCheck; if ( rc) return false; }
 #define apcErrRet(err)    { apcErr(err);          return false; }
@@ -453,16 +453,16 @@ extern Bool         add_font_to_hash( const PFont key, const PFont font, int vec
 extern void         cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
 extern Bool         create_font_hash( void);
 extern void         cursor_update( Handle self);
-extern HDC          dc_alloc();
-extern void         dc_free();
+extern HDC          dc_alloc( void);
+extern void         dc_free( void);
 extern HDC          dc_compat_alloc( HDC compatDC);
-extern void         dc_compat_free();
+extern void         dc_compat_free( void);
 extern void         dbm_recreate( Handle self);
 extern Bool         destroy_font_hash( void);
 extern char *       err_msg( DWORD errId);
 extern PDCFont      font_alloc( Font * data, Point * resolution);
 extern void         font_change( Handle self, Font * font);
-extern void         font_clean();
+extern void         font_clean( void);
 extern void         font_font2logfont( Font * font, LOGFONT * lf);
 extern void         font_free( PDCFont res, Bool permanent);
 extern void         font_logfont2font( LOGFONT * lf, Font * font, Point * resolution);
@@ -496,7 +496,7 @@ extern void         process_transparents( Handle self);
 extern long         remap_color( long clr, Bool toSystem);
 extern PDCStylus    stylus_alloc( PStylus data);
 extern void         stylus_change( Handle self);
-extern void         stylus_clean();
+extern void         stylus_clean( void);
 extern Bool         stylus_complex( PStylus stylus, HDC dc);
 extern Bool         stylus_extpenned( PStylus stylus, int excludeFlags);
 extern void         stylus_free( PDCStylus res, Bool permanent);

@@ -43,12 +43,15 @@
 #ifdef _MSC_VER
    #define BROKEN_COMPILER       1
    #define BROKEN_PERL_PLATFORM  1
-   #define BOOLEAN_DEFINED
    #define __INLINE__            __inline
    #define snprintf              _snprintf
    #define stricmp               _stricmp
    extern double                 NAN;
-   #define HAVE_STRICMP 1
+#elif defined( __BORLANDC__)
+   #define BROKEN_PERL_PLATFORM  1
+   #define BROKEN_COMPILER       1
+   extern double                 NAN;
+   #define __INLINE__
 #else
    #define __INLINE__            __inline__
 #endif
@@ -123,6 +126,13 @@ extern void *
 reallocf(void *ptr, size_t size);
 #endif
 
+#ifndef HAVE_SNPRINTF
+extern int
+snprintf( char *, size_t, const char *, ...);
+
+extern int
+vsnprintf( char *, size_t, const char *, va_list);
+#endif
 
 typedef I32 Bool;
 typedef UV Handle;
@@ -917,9 +927,6 @@ extern Bool
 type_of( Handle object, void *cls);
 
 /* debugging functions */
-extern Bool
-log_write( const char *format, ...);
-
 extern int
 debug_write( const char *format, ...);
 
@@ -1009,7 +1016,9 @@ extern SV **temporary_prf_Sv;
 
 #ifdef __GNUC__
 #define SvBOOL(sv) ({ SV *svsv = sv; SvTRUE(svsv);})
-#else  /* i.e NOT __GNUC__ */
+#elif defined( __BORLANDC__)
+extern Bool SvBOOL( SV *sv);
+#else
 __INLINE__ Bool
 SvBOOL( SV *sv)
 {

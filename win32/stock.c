@@ -35,7 +35,7 @@
 #endif
 #include "win32\win32guts.h"
 #include <ctype.h>
-#include <gbm.h>
+#include "Img.h"
 #include "Window.h"
 #include "Image.h"
 #include "Printer.h"
@@ -77,7 +77,10 @@ stylus_alloc( PStylus data)
          }
       } else {
          int i, delta = p-> lopnWidth. x > 1 ? p-> lopnWidth. x - 1 : 0;
-         LOGBRUSH pb = { BS_SOLID, ret-> s. pen. lopnColor, 0};
+         LOGBRUSH pb;
+	 pb. lbStyle = BS_SOLID;
+	 pb. lbColor = ret-> s. pen. lopnColor;
+	 pb. lbHatch = 0;
          for ( i = 1; i < ret-> s. extPen. patResource-> dotsCount; i += 2)
             ret-> s. extPen. patResource-> dotsPtr[ i] += delta;
          if ( !( ret-> hpen   = ExtCreatePen( ret-> s. extPen. style, p-> lopnWidth. x, &pb,
@@ -1260,7 +1263,7 @@ void dc_free()
    if ( --cachedScreenRC <= 0)
       ReleaseDC( 0, cachedScreenDC);
    if ( cachedScreenRC < 0)
-      cachedScreenRC == 0;
+      cachedScreenRC = 0;
 }
 
 HDC dc_compat_alloc( HDC compatDC)
@@ -1275,7 +1278,7 @@ void dc_compat_free()
    if ( --cachedCompatRC <= 0)
       DeleteDC( cachedCompatDC);
    if ( cachedCompatRC < 0)
-      cachedCompatRC == 0;
+      cachedCompatRC = 0;
 }
 
 void

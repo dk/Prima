@@ -583,7 +583,10 @@ bc_graybyte_rgb( register Byte * source, Byte * dest, register int count)
    while ( count--)
    {
       register Byte  c = *source--;
-      register RGBColor r = {c,c,c};
+      register RGBColor r;
+      r. r = c;
+      r. b = c;
+      r. g = c;
       *rdest-- = r;
    }
 }

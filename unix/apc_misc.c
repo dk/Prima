@@ -41,20 +41,6 @@ log_write( const char *format, ...)
 }
 
 int
-debug_write( const char *format, ...)
-{
-    int rc = 0;
-    if ( guts.dolbug) {
-	va_list args;
-	va_start( args, format);
-	rc = vfprintf( stderr, format, args);
-	va_end( args);
-    }
-    return rc;
-}
-
-
-int
 unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value)
 {
    DEFXX;
