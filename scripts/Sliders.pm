@@ -417,6 +417,7 @@ sub init
       tabStop     => 1,
       borderWidth => 0,
       text        => '',
+      current     => 1,
       (map { $_ => $profile{$_}} keys %editProps),
       %{$profile{editProfile}},
    );
