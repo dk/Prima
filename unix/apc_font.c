@@ -477,6 +477,7 @@ apc_font_default( PFont f)
       font. pitch = fpDefault;
       apc_font_pick( application, &font, &font);
       font. pitch = fpDefault;
+      font. style = fsNormal;
       initialized = true;
    }
    *f = font;
