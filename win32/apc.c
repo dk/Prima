@@ -824,6 +824,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
   ws. state       = sys s. window. state       = windowState;
   apt_assign( aptSyncPaint, syncPaint);
   apt_assign( aptTaskList,  taskList);
+  if ( usePos) apt_set( aptWinPosDetermined);
   if ( reset)
   {
      Handle oldOwner = var owner; var owner = owner;
@@ -1093,6 +1094,7 @@ apc_window_set_client_pos( Handle self, int x, int y)
 
    objCheck false;
    if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
+   apt_set( aptWinPosDetermined);
 
    if ( var stage == csConstructing && apc_window_get_window_state( self) != wsNormal) {
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
@@ -1162,7 +1164,9 @@ apc_window_set_client_size( Handle self, int x, int y)
          r. top - y + ( c. bottom - c. top),
          x + r. right  - r. left - c. right + c. left,
          y + r. bottom - r. top  - c. bottom + c. top,
-         SWP_NOZORDER | SWP_NOACTIVATE);
+         SWP_NOZORDER | SWP_NOACTIVATE | 
+            ( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
+         );
       sys sizeLockLevel--;
    }
    return true;
@@ -1382,6 +1386,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
    if ( reset || ( var handle == nilHandle))
       create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM,
          WS_CHILD, exstyle, 1, 1, &vprf, ( HWND) parentHandle);
+   apt_set( aptWinPosDetermined); 
    if ( reset)
    {
       Handle oldOwner = var owner; var owner = owner;
@@ -2060,6 +2065,7 @@ apc_widget_set_pos( Handle self, int x, int y)
 
    parent = is_apt( aptClipOwner) ? var owner : application;
    sz = ((( PWidget) parent)-> self)-> get_size( parent);
+   apt_set( aptWinPosDetermined);
 
    if ( sys className == WC_FRAME) {
       HWND h = HANDLE;
@@ -2133,7 +2139,9 @@ apc_widget_set_size( Handle self, int width, int height)
    if ( !SetWindowPos( h, 0,
       r. left, r. bottom - height,
       width, height,
-      SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
+      SWP_NOZORDER | SWP_NOACTIVATE | 
+         ( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
+      )) apiErrRet;
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
    return true;
 }
