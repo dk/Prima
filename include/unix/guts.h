@@ -173,8 +173,6 @@ typedef struct _FontFlags {
 typedef struct _FontInfo {
    FontFlags    flags;
    Font         font;
-   char         lc_family[256];
-   char         lc_name[256];
    char        *vecname;
    char        *xname;
    short int    name_offset;
