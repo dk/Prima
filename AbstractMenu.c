@@ -507,7 +507,7 @@ AbstractMenu_set_check( Handle self, char * varName, Bool check)
    if ( m == nil) return;
    if ( m-> divider || m-> down) return;
    m-> checked = check;
-   if ( m-> id) apc_menu_item_set_check( self, m, check);
+   if ( m-> id > 0) apc_menu_item_set_check( self, m, check);
 }
 
 Bool
@@ -577,7 +577,7 @@ AbstractMenu_set_enabled ( Handle self, char * varName, Bool enabled)
    if ( m == nil) return;
    if ( m-> divider || m-> down) return;
    m-> disabled = !enabled;
-   if ( m-> id) apc_menu_item_set_enabled( self, m, enabled);
+   if ( m-> id > 0) apc_menu_item_set_enabled( self, m, enabled);
 }
 
 void
@@ -602,7 +602,7 @@ AbstractMenu_set_image ( Handle self, char * varName, Handle image)
    my-> attach( self, image);
    my-> detach( self, m-> bitmap, false);
    m-> bitmap = image;
-   if ( m-> id) apc_menu_item_set_image( self, m, image);
+   if ( m-> id > 0) apc_menu_item_set_image( self, m, image);
 }
 
 
@@ -617,7 +617,7 @@ AbstractMenu_set_text ( Handle self, char * varName, char * text)
    free( m-> text);
    m-> text = malloc( strlen( text) + 1);
    strcpy( m-> text, text);
-   if ( m-> id) apc_menu_item_set_text( self, m, text);
+   if ( m-> id > 0) apc_menu_item_set_text( self, m, text);
 }
 
 void
@@ -631,7 +631,7 @@ AbstractMenu_set_accel ( Handle self, char * varName, char * accel)
    free( m-> accel);
    m-> accel = malloc( strlen( accel) + 1);
    strcpy( m-> accel, accel);
-   if ( m-> id) apc_menu_item_set_accel( self, m, accel);
+   if ( m-> id > 0) apc_menu_item_set_accel( self, m, accel);
 }
 
 void
@@ -675,7 +675,7 @@ AbstractMenu_set_key( Handle self, char * varName, char * key)
    _key = key_normalize( key);
    if ( m-> divider || m-> down) return;
    m-> key = _key;
-   if ( m-> id) apc_menu_item_set_key( self, m, _key);
+   if ( m-> id > 0) apc_menu_item_set_key( self, m, _key);
 }
 
 void
@@ -731,7 +731,7 @@ kmcc ( Handle self, PMenuItemReg m, void * params)
    if ((( PKmcc) params)-> key == m-> key)
    {
       m-> disabled = !(( PKmcc) params)-> enabled;
-      if ( m-> id) apc_menu_item_set_enabled( self, m, !m-> disabled);
+      if ( m-> id > 0) apc_menu_item_set_enabled( self, m, !m-> disabled);
    }
    return false;
 }
