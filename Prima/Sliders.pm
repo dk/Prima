@@ -2067,7 +2067,7 @@ visual feedback. If 0, the shaft is painted with single default background color
 
 Default value: 0
 
-=item shaftBreath INTEGER
+=item shaftBreadth INTEGER
 
 Breadth of the shaft in pixels.
 
