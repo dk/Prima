@@ -1445,8 +1445,8 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
    }
    memcpy( &sys fillPattern, pattern, sizeof( FillPattern));
    if (( *p1 == 0) && ( *p2 == 0)) {
-      s-> brush. lb. lbStyle = BS_NULL;
-      s-> brush. lb. lbColor = s-> pen. lopnColor;
+      s-> brush. lb. lbStyle = BS_SOLID;
+      s-> brush. lb. lbColor = GetBkColor( ps);
       s-> brush. lb. lbHatch = 0;
       s-> brush. backColor   = 0;
       memset( s-> brush. pattern, 0, sizeof( s-> brush. pattern));
