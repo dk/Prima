@@ -26,7 +26,9 @@
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
 /* $Id$ */
 
+#define Z_PREFIX 
 #include <png.h>
+#undef Byte
 
 #ifndef PNG_GAMMA_THRESHOLD
 #define PNG_GAMMA_THRESHOLD 0.05
