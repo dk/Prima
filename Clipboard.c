@@ -50,7 +50,6 @@ Clipboard_init( Handle self, HV * profile)
 void
 Clipboard_done( Handle self)
 {
-   PApplication app = ( PApplication) application;
    if ( var openCount > 0) apc_clipboard_close();
    while( var formatCount)
        my deregister_format( self, (( PClipboardFormatReg) var formats)-> id);
