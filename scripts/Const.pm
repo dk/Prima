@@ -24,22 +24,21 @@
 #  SUCH DAMAGE.
 #
 package Const;
+use Prima '';
+use Carp;
 
-# notification types
-package nt;
-use constant PrivateFirst  => 0x000;
-use constant CustomFirst   => 0x001;
-use constant Single        => 0x000;
-use constant Multiple      => 0x002;
-use constant Event         => 0x004;
-use constant SMASK         => Multiple | Event;
+sub AUTOLOAD {
+    (my $constname = $AUTOLOAD) =~ s/(.*):://;
+    my $pack = $1;
+    print STDERR "Defining $AUTOLOAD\n";
+    croak "& not defined" if $constname eq 'constant';
+    my $val = eval "\&${pack}::constant(\$constname)";
+    croak $@ if $@;
+    *$AUTOLOAD = sub { $val };
+    goto &$AUTOLOAD;
+}
 
-use constant Default       => PrivateFirst | Multiple;
-use constant Property      => PrivateFirst | Single;
-use constant Request       => PrivateFirst | Event;
-use constant Notification  => CustomFirst  | Multiple;
-use constant Action        => CustomFirst  | Single;
-use constant Command       => CustomFirst  | Event;
+package nt; *AUTOLOAD = \&Const::AUTOLOAD;    # notification types
 
 # keyboard masks
 package kb;
@@ -212,42 +211,7 @@ use constant R9		=> F29;
 use constant F30	=> 0x00081e00;
 use constant R10	=> F30;
 
-# mouse buttons
-package mb;
-use constant b1     => 1;
-use constant b2     => 2;
-use constant b3     => 4;
-use constant b4     => 8;
-use constant b5     => 16;
-use constant b6     => 32;
-use constant b7     => 64;
-use constant b8     => 128;
-use constant Left   => b1;
-use constant Right  => b3;
-use constant Middle => b2;
-
-package mb;
-# message box
-use constant OK           => 0x0001;
-use constant Ok           => OK;
-use constant Yes          => 0x0002;
-use constant Cancel       => 0x0004;
-use constant No           => 0x0008;
-use constant Abort        => 0x0010;
-use constant Retry        => 0x0020;
-use constant Ignore       => 0x0040;
-use constant Help         => 0x0080;
-
-use constant OKCancel     => (OK|Cancel);
-use constant OkCancel     => OKCancel;
-use constant YesNo        => (Yes|No);
-use constant YesNoCancel  => (Yes|No|Cancel);
-
-use constant Error        => 0x0100;
-use constant Warning      => 0x0200;
-use constant Information  => 0x0400;
-use constant Question     => 0x0800;
-use constant NoSound      => 0x1000;
+package mb; *AUTOLOAD = \&Const::AUTOLOAD; # mouse buttons & message box constants
 
 # text alignment
 package ta;

@@ -216,6 +216,118 @@ typedef struct _PostMsg {
    SV   *  info2;
 } PostMsg, *PPostMsg;
 
+/* hashes support */
+/* It's a mere coincidence that hashes in Prima guts implemented */
+/* by means of Perl hashes */
+
+#ifdef POLLUTE_NAME_SPACE
+#define hash_create	   prima_hash_create
+#define hash_destroy	   prima_hash_destroy
+#define hash_fetch	   prima_hash_fetch
+#define hash_delete	   prima_hash_delete
+#define hash_store	   prima_hash_store
+#define hash_count	   prima_hash_count
+#define hash_first_that	prima_hash_first_that
+#endif
+
+typedef HV *PHash;
+typedef Bool HashProc( void * item, int keyLen, void * key, void * params);
+typedef HashProc *PHashProc;
+
+extern PHash primaObjects;
+
+extern PHash
+prima_hash_create( void);
+
+extern void
+prima_hash_destroy( PHash self, Bool killAll);
+
+extern void*
+prima_hash_fetch( PHash self, const void *key, int keyLen);
+
+extern void*
+prima_hash_delete( PHash self, const void *key, int keyLen, Bool kill);
+
+extern Bool
+prima_hash_store( PHash self, const void *key, int keyLen, void *val);
+
+#define prima_hash_count(hash) (HvKEYS(( HV*)hash))
+
+
+extern void*
+prima_hash_first_that( PHash self, void *action, void *params,
+		       int *pKeyLen, void **pKey);
+
+/* tables of constants support */
+
+#ifdef GENERATE_TABLE_GENERATOR
+#define START_TABLE(package,type) \
+typedef struct { \
+   char *name;   \
+   type value;  \
+} ConstTable_##package; \
+ConstTable_##package Prima_Autoload_##package##_constants[] = {
+#define CONSTANT(package,const_name) \
+   { #const_name , package##const_name },
+#define CONSTANT2(package,const_name,string_name) \
+   { #string_name , package##const_name },
+#define END_TABLE(package,type) \
+}; /* end of table */ \
+XS(prima_autoload_##package##_constant) \
+{ \
+   static PHash table = nil; \
+   dXSARGS; \
+   char *name; \
+   int i; \
+   type *r; \
+ \
+   if (!table) { \
+      table = hash_create(); \
+      if (!table) croak( #package "::constant: cannot create hash"); \
+      for ( i = 0; i < sizeof( Prima_Autoload_##package##_constants) \
+	       / sizeof( ConstTable_##package); i++) \
+	 hash_store( table, \
+		     Prima_Autoload_##package##_constants[i]. name, \
+		     strlen( Prima_Autoload_##package##_constants[i]. name), \
+		     &Prima_Autoload_##package##_constants[i]. value); \
+   } \
+ \
+   if ( items != 1) croak( "invalid call to " #package "::constant"); \
+   name = SvPV( ST( 0), na); \
+   SPAGAIN; \
+   SP -= items; \
+   r = (type *)hash_fetch( table, name, strlen( name)); \
+   if ( !r) croak( "invalid value: " #package "::%s", name); \
+   XPUSHs( sv_2mortal( newSViv((IV)*r))); \
+   PUTBACK; \
+   return; \
+} \
+void register_##package##_constants( void) { \
+   HV *unused_hv; \
+   GV *unused_gv; \
+   SV *sv; \
+   int i; \
+ \
+   newXS( #package "::constant", prima_autoload_##package##_constant, #package); \
+   sv = newSVpv("", 0); \
+   for ( i = 0; i < sizeof( Prima_Autoload_##package##_constants) \
+	    / sizeof( ConstTable_##package); i++) { \
+      sv_setpvf( sv, "%s::%s", #package, Prima_Autoload_##package##_constants[i]. name); \
+      sv_2cv(sv, &unused_hv, &unused_gv, true); \
+   } \
+   sv_free( sv); \
+}
+#else
+#define START_TABLE(package,type) \
+typedef struct { \
+   char *name;   \
+   type value;  \
+} ConstTable_##package;
+#define CONSTANT(package,const_name) /* nothing */
+#define CONSTANT2(package,const_name,string_name) /* nothing */
+#define END_TABLE(package,type) /* nothing */
+#endif
+
 /* Object life stages */
 #define csConstructing  -1         /* before create() finished */
 #define csNormal         0         /* normal during life stage */
@@ -227,11 +339,34 @@ typedef struct _PostMsg {
 				      available at this point */
 
 /* Notification types */
+#define NT(const_name) CONSTANT(nt,const_name)
+START_TABLE(nt,UV)
 #define ntPrivateFirst   0x0
+NT(PrivateFirst)
 #define ntCustomFirst    0x1
+NT(CustomFirst)
 #define ntSingle         0x0
+NT(Single)
 #define ntMultiple       0x2
+NT(Multiple)
 #define ntEvent          0x4
+NT(Event)
+#define ntSMASK		ntMultiple | ntEvent
+NT(SMASK)
+#define ntDefault       ntPrivateFirst | ntMultiple
+NT(Default)
+#define ntProperty      ntPrivateFirst | ntSingle
+NT(Property)
+#define ntRequest       ntPrivateFirst | ntEvent
+NT(Request)
+#define ntNotification  ntCustomFirst  | ntMultiple
+NT(Notification)
+#define ntAction        ntCustomFirst  | ntSingle
+NT(Action)
+#define ntCommand       ntCustomFirst  | ntEvent
+NT(Command)
+END_TABLE(nt,UV)
+#undef NT
 
 /* Modality types */
 #define mtNone           0
@@ -307,18 +442,74 @@ typedef struct _PostMsg {
 #define cmDelegateKey    0x0000005B                /* reserved for key mapping */
 #define cmUser           0x00000100                /* first user-defined message */
 
-/* mouse buttons */
+/* mouse buttons & message box constants */
+#define MB(const_name) CONSTANT(mb,const_name)
+#define MB2(const_name,string_name) CONSTANT2(mb,const_name,string_name)
+START_TABLE(mb,UV)
 #define mb1		1
+MB2(1,b1)
 #define mb2		2
+MB2(2,b2)
 #define mb3		4
+MB2(3,b3)
 #define mb4		8
+MB2(4,b4)
 #define mb5		16
+MB2(5,b5)
 #define mb6		32
+MB2(6,b6)
 #define mb7		64
+MB2(7,b7)
 #define mb8		128
+MB2(8,b8)
 #define mbLeft          mb1
+MB(Left)
 #define mbRight         mb3
+MB(Right)
 #define mbMiddle        mb2
+MB(Middle)
+#define mbOK            0x0001
+MB(OK)
+#define mbOk            mbOK
+MB(Ok)
+#define mbYes           0x0002
+MB(Yes)
+#define mbCancel        0x0004
+MB(Cancel)
+#define mbNo            0x0008
+MB(No)
+#define mbAbort         0x0010
+MB(Abort)
+#define mbRetry         0x0020
+MB(Retry)
+#define mbIgnore        0x0040
+MB(Ignore)
+#define mbHelp          0x0080
+MB(Help)
+#define mbOKCancel      (mbOK|mbCancel)
+MB(OKCancel)
+#define mbOkCancel      mbOKCancel
+MB(OkCancel)
+#define mbYesNo         (mbYes|mbNo)
+MB(YesNo)
+#define mbYesNoCancel   (mbYes|mbNo|mbCancel)
+MB(YesNoCancel)
+#ifdef Error
+#undef Error
+#endif
+#define mbError         0x0100
+MB(Error)
+#define mbWarning       0x0200
+MB(Warning)
+#define mbInformation   0x0400
+MB(Information)
+#define mbQuestion      0x0800
+MB(Question)
+#define mbNoSound       0x1000
+MB(NoSound)
+END_TABLE(mb,UV)
+#undef MB
+#undef MB2
 
 /* keyboard masks */
 #define kbCharMask	0x000000ff
@@ -739,49 +930,6 @@ list_first_that( PList self, void * action, void * params);
 
 extern int
 list_index_of( PList self, Handle item);
-
-/* hashes support */
-/* It's a mere coincidence that hashes in Prima guts implemented */
-/* by means of Perl hashes */
-
-#ifdef POLLUTE_NAME_SPACE
-#define hash_create	   prima_hash_create
-#define hash_destroy	   prima_hash_destroy
-#define hash_fetch	   prima_hash_fetch
-#define hash_delete	   prima_hash_delete
-#define hash_store	   prima_hash_store
-#define hash_count	   prima_hash_count
-#define hash_first_that	prima_hash_first_that
-#endif
-
-typedef HV *PHash;
-typedef Bool HashProc( void * item, int keyLen, void * key, void * params);
-typedef HashProc *PHashProc;
-
-extern PHash primaObjects;
-
-extern PHash
-prima_hash_create( void);
-
-extern void
-prima_hash_destroy( PHash self, Bool killAll);
-
-extern void*
-prima_hash_fetch( PHash self, const void *key, int keyLen);
-
-extern void*
-prima_hash_delete( PHash self, const void *key, int keyLen, Bool kill);
-
-extern Bool
-prima_hash_store( PHash self, const void *key, int keyLen, void *val);
-
-#define prima_hash_count(hash) (HvKEYS(( HV*)hash))
-
-
-extern void*
-prima_hash_first_that( PHash self, void *action, void *params,
-		       int *pKeyLen, void **pKey);
-
 
 /* OS types */
 #define apcOS2                  1

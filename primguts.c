@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #endif /* __unix */
 #include <dirent.h>
+#define GENERATE_TABLE_GENERATOR yes
 #include "apricot.h"
 #include "guts.h"
 #include "Object.h"
@@ -1251,6 +1252,13 @@ XS( prima_cleanup)
    XSRETURN(1);
 }
 
+static void
+register_constants( void)
+{
+   register_nt_constants();
+   register_mb_constants();
+}
+
 XS( boot_Prima)
 {
    dXSARGS;
@@ -1298,6 +1306,7 @@ NAN = 0.0;
    newXS( "Object::create",  create_from_Perl, "Object");
    newXS( "Object::destroy", destroy_from_Perl, "Object");
    newXS( "Object::alive", Object_alive_FROMPERL, "Object");
+   register_constants();
    register_Object_Class();
    register_Utils_Package();
    register_Component_Class();
@@ -1436,6 +1445,7 @@ prima( const char *primaPath, int argc, char **argv)
    newXS( "Object::create",  create_from_Perl, "Object");
    newXS( "Object::destroy", destroy_from_Perl, "Object");
    newXS( "Object::alive", Object_alive_FROMPERL, "Object");
+   register_constants();
    register_Object_Class();
    register_Utils_Package();
    register_Component_Class();
