@@ -123,7 +123,6 @@ void
 Image_reset( Handle self, int type, SV * palette)
 {
    Byte * newData = nil;
-   int srcLineSize;
    if ( var->stage > csNormal) return;
    if (!( type & imGrayScale)) {
       switch ( type) {
@@ -147,13 +146,12 @@ Image_reset( Handle self, int type, SV * palette)
       var->type = type;
       return;
    }
-   var->palSize = (1 << ( type & imBPP)) & 0x1ff;
-   srcLineSize = var-> lineSize;
    var->lineSize = (( var->w * ( type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
+   var->palSize = (1 << ( type & imBPP)) & 0x1ff;
    if ( var->dataSize > 0) {
       newData = malloc( var-> dataSize);
-      ic_type_convert( self, newData, var->palette, type, srcLineSize);
+      ic_type_convert( self, newData, var->palette, type);
    }
    free( var->data);
    var->data = newData;
