@@ -126,6 +126,11 @@ apc_query_drives_map( const char *firstDrive, char *map, int len)
    DWORD driveMap;
    int i;
 
+#ifdef __CYGWIN__
+   if ( !map || len <= 0) return true;
+   *map = 0;
+   return true;
+#endif   
    if ( !map) return false;
 
    beg = toupper( *firstDrive);
@@ -166,6 +171,9 @@ int
 apc_query_drive_type( const char *drive)
 {
    char buf[ 256];                        //  Win95 fix
+#ifdef __CYGWIN__
+   return false;
+#endif   
    strncpy( buf, drive, 256);             //     sometimes D: isn't enough for 95,
    if ( buf[1] == ':' && buf[2] == 0) {   //     but ok for D:\.
       buf[2] = '\\';                      //
@@ -188,6 +196,44 @@ apc_get_user_name()
 PList
 apc_getdir( const char *dirname)
 {
+#ifdef __CYGWIN__   
+   DIR *dh;
+   struct dirent *de;
+   PList dirlist = nil;
+   char *type, *dname;
+   char path[ 2048];
+   struct stat s;
+
+   if ( *dirname == '/' && dirname[1] == '/') dirname++;
+   if ( strcmp( dirname, "/") == 0)
+      dname = "";
+   else
+      dname = dirname;
+      
+
+   if (( dh = opendir( dirname)) && (dirlist = plist_create( 50, 50))) {
+      while (( de = readdir( dh))) {
+	 list_add( dirlist, (Handle)duplicate_string( de-> d_name));
+         snprintf( path, 2047, "%s/%s", dname, de-> d_name);
+         type = nil;
+         if ( stat( path, &s) == 0) {
+            switch ( s. st_mode & S_IFMT) {
+            case S_IFIFO:        type = "fifo";  break;
+            case S_IFCHR:        type = "chr";   break;
+            case S_IFDIR:        type = "dir";   break;
+            case S_IFBLK:        type = "blk";   break;
+            case S_IFREG:        type = "reg";   break;
+            case S_IFLNK:        type = "lnk";   break;
+            case S_IFSOCK:       type = "sock";  break;
+            }
+         }
+         if ( !type) type = "reg";
+	 list_add( dirlist, (Handle)duplicate_string( type));
+      }
+      closedir( dh);
+   }
+   return dirlist;
+#else   
     long		len;
     char		scanname[MAX_PATH+3];
     WIN32_FIND_DATA	FindData;
@@ -257,6 +303,7 @@ apc_getdir( const char *dirname)
 #undef FILE
 #undef DIR
     return ret;
+#endif    
 }
 
 Bool

@@ -30,7 +30,7 @@
  */
 
 #include "img.h"
-#include "unix/guts.h"
+#include "img_conv.h"
 #include "Icon.h"
 #include <tiff.h>
 #include <tiffio.h>

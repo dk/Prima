@@ -1379,7 +1379,7 @@ use vars qw(@ISA);
 #  2 : icon width
 #  3 : drive icon, only for roots
 
-my $unix = Prima::Application-> get_system_info->{apc} == apc::Unix;
+my $unix = Prima::Application-> get_system_info->{apc} == apc::Unix || $^O =~ /cygwin/;
 my @images;
 my @drvImages;
 

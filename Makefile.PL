@@ -790,7 +790,7 @@ sub setup_variables
     setvar( 'LIBOFLAG', $cc_specs{ $COMPILER}->{ liboflag});
 
     setvar( 'SCRIPT_EXT',
-            ( $Win32 ? '.bat' : ( $OS2 ? '.cmd' : '')));
+            (( $Win32 && !$cygwin) ? '.bat' : ( $OS2 ? '.cmd' : '')));
     setvar( 'DL_EXT', "." . $Config{ dlext});
     setvar( 'INCPATH', (
                         "include",
@@ -908,7 +908,7 @@ sub setup_variables
        Prima/VB/VB.pl
        Prima/VB/cfgmaint.pl
     );
-    $install_manuals = (!$Win32 && !$OS2);
+    $install_manuals = $cygwin || (!$Win32 && !$OS2);
 
     @Prima_exports = qw(
 apc_application_begin_paint
@@ -1876,7 +1876,7 @@ if ( $#ARGV >= 0 && $ARGV[ 0] =~ /^\-\-cp(bin)?$/) {
             open SRCPL, "<$src" or die "Cannot open $src: $!";
             open DSTPL, ">$dst" or die "Cannot create $dst: $!";
             chmod 0555, $dst unless $Win32 || $OS2;
-            if ( $Win32) {
+            if ( $Win32 && !$cygwin) {
                 print DSTPL <<EOF;
 \@rem = '--*-Perl-*--
 \@echo off
@@ -2327,6 +2327,10 @@ EOF
         $cpbin{$src} = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
     }
     dump_cmd( sub { "$_[0] $cpbin{$_[0]}"}, 'CPBIN', keys %cpbin);
+    
+    print MAKE "\n\t\@echo Updating config...\n";
+    print MAKE "\t$^X Makefile.PL --updateconfig $INSTALLSITEARCH/Prima/Config.pm";
+    print MAKE " $INSTALLSITEARCH/Prima.pm" if $DL_LOAD_FLAGS;
 
     my @man_to_remove;
     if ( $install_manuals) {
@@ -2341,10 +2345,6 @@ EOF
        }
        if ( length $Config{gzip}) { s/$/.gz/ for @man_to_remove }
     }
-
-    print MAKE "\n\t\@echo Updating config...\n";
-    print MAKE "\t$^X Makefile.PL --updateconfig $INSTALLSITEARCH/Prima/Config.pm";
-    print MAKE " $INSTALLSITEARCH/Prima.pm" if $DL_LOAD_FLAGS;
 
     print MAKE "\n\ndeinstall:\n";
     my %dirs_to_rm;

@@ -27,15 +27,16 @@
  *
  */
 
+#include <sys/types.h>
+#include <stdio.h>
+#include <jpeglib.h>
+/* Prima-specific undefs */
+#undef LOCAL
+
 #include "img.h"
 #include "img_conv.h"
 #include "Image.h"
 
-/* Prima-specific undefs */
-#undef HAVE_STDLIB_H
-#undef LOCAL
-#include <stdio.h>
-#include <jpeglib.h>
 
 #ifdef __cplusplus
 extern "C" {
