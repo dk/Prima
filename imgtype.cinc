@@ -1,4 +1,4 @@
-// Color mappers
+/* Color mappers */
 #include "bc_const.cinc"
 #include "bc_color.cinc"
 #include "ic_conv.cinc"
@@ -75,7 +75,7 @@ ic_type_convert( Handle self,
          case imFloat:  ic_MIDCONVERT(mono, float);        break;
          case imDouble: ic_MIDCONVERT(mono, double);       break;
       }
-      break; // imMono
+      break; /* imMono */
 
       case im16: switch( dstType)
       {
@@ -99,7 +99,7 @@ ic_type_convert( Handle self,
          case imFloat:  ic_MIDCONVERT(nibble, float);        break;
          case imDouble: ic_MIDCONVERT(nibble, double);       break;
       }
-      break; // im16
+      break; /* im16 */
 
       case im256: switch( dstType)
       {
@@ -131,7 +131,7 @@ ic_type_convert( Handle self,
          case imFloat:  ic_MIDCONVERT(byte, float);        break;
          case imDouble: ic_MIDCONVERT(byte, double);       break;
       }
-      break; // im256
+      break; /* im256 */
 
       case imByte: switch( dstType)
       {
@@ -162,7 +162,7 @@ ic_type_convert( Handle self,
          case imFloat  : ic_Byte_float( BCPARMS);  break;
          case imDouble : ic_Byte_double( BCPARMS); break;
       }
-      break; // imByte
+      break; /* imByte */
 
       case imShort:  switch ( dstType)
       {
@@ -198,7 +198,7 @@ ic_type_convert( Handle self,
          case imDouble : ic_short_double( BCPARMS); break;
       }
       break;
-      // imShort
+      /* imShort */
 
       case imLong:  switch ( dstType)
       {
@@ -234,7 +234,7 @@ ic_type_convert( Handle self,
          case imDouble : ic_long_double( BCPARMS); break;
       }
       break;
-      // imLong
+      /* imLong */
 
       case imFloat:  switch ( dstType)
       {
@@ -270,7 +270,7 @@ ic_type_convert( Handle self,
          case imDouble : ic_float_double( BCPARMS); break;
       }
       break;
-      // imFloat
+      /* imFloat */
 
 
       case imDouble:  switch ( dstType)
@@ -307,7 +307,7 @@ ic_type_convert( Handle self,
          case imFloat  : ic_double_float( BCPARMS);  break;
       }
       break;
-      // imDouble
+      /* imDouble */
 
       case imRGB: switch( dstType)
       {
@@ -346,7 +346,7 @@ ic_type_convert( Handle self,
          case imFloat:  ic_MIDCONVERT(rgb, float);        break;
          case imDouble: ic_MIDCONVERT(rgb, double);       break;
       }
-      break; // imRGB
+      break; /* imRGB */
    }
 }
 
@@ -366,18 +366,18 @@ static ImageSignatures signatures[] =
    { itPCX, 3, "\x0a\x05\x01" },
    { itTIF, 2, "II" },
    { itTIF, 2, "MM" },
-   // { itTGA, ?, ? },
+   /* { itTGA, ?, ? }, */
    { itLBM, 4, "FORM" },
    { itVID, 6, "YUV12C" },
    { itPGM, 2, "P5" },
    { itPPM, 2, "P6" },
    { itKPS, 8, "DFIMAG00" },
-   // { itIAX,
-   // { itXBM,
-   // { itSPR,
-   // { itPSG,
-   // { itGEM,
-   // { itCVP,
+   /* { itIAX, */
+   /* { itXBM, */
+   /* { itSPR, */
+   /* { itPSG, */
+   /* { itGEM, */
+   /* { itCVP, */
    { itJPG, 4, "\xff\xd8\xff\xe0" },
    { itJPG, 4, "\xe0\xff\xd8\xff" },
    { itPNG, 8, "\x89PNG\r\n\x1a\n"}
@@ -386,16 +386,14 @@ static ImageSignatures signatures[] =
 #define N_SIGS ( sizeof( signatures) / sizeof( signatures[ 0]))
 
 int
-image_guess_type( int file)
+image_guess_type( int fd)
 {
    char buf[ 8];
    int i;
-   long savePos = tell( file);
-
+   off_t savePos = lseek( fd, 0, SEEK_SET);
    memset( buf, 0, 8);
-   lseek( file, 0, SEEK_SET);
-   read( file, buf, 8);
-   lseek( file, savePos, SEEK_SET);
+   read( fd, buf, 8);
+   lseek( fd, savePos, SEEK_SET);
    for ( i = 0; i < N_SIGS; i++)
       if ( memcmp( buf, signatures[ i]. sig, signatures[ i]. size) == 0)
          return signatures[ i]. type;
