@@ -3,6 +3,22 @@
 #include <unistd.h>
 #include <signal.h>
 
+#define GIFPROP_WIDTH 0
+#define GIFPROP_HEIGHT 1
+#define GIFPROP_TYPE 2
+#define GIFPROP_LINESIZE 3
+#define GIFPROP_DATA 4
+#define GIFPROP_PALETTE 5
+#define GIFPROP_INDEX 6
+#define GIFPROP_FORMAT 7
+#define GIFPROP_INTERLACED 8
+#define GIFPROP_X 9
+#define GIFPROP_Y 10
+#define GIFPROP_COLORRESOLUTION 11
+#define GIFPROP_BGCOLOR 12
+#define GIFPROP_PALETTESIZE 13
+#define GIFPROP_PALETTEBPP 14
+
 ImgFormat gifFormat = {
     "GIF", "Graphics Interchange Format",
     ( ImgCapInfo[]) { 
@@ -13,21 +29,22 @@ ImgFormat gifFormat = {
 	{ nil, nil, nil, 0, { Int:0}}
     },
     ( ImgProps[]) {
-	{ "index", "i", "Position in image list"}, /* -1 refers to the whole image file */
-	{ "format", "s", "File format"}, /* May appear only for an image with index == -1 */
-	{ "interlaced", "i", "Image is interlaced"},
-	{ "X", "i", "Left offset"},
-	{ "Y", "i", "Top offset"},
-	{ "width", "i", "Image width"}, /* For index == -1 means screen width */
-	{ "height", "i", "Image height"}, /* For index == -1 means screen height */
-	{ "colorResolution", "i", "How many colors can be generated"},
-	{ "bgColor", "i", "Background color"},
-	{ "paletteSize", "i", "Number of entries in image palette"},
-	{ "paletteBPP", "i", "Image palette BPP"},
-	{ "palette", "b*", "Image palette"},
-	{ "lineSize", "i", "Length of a scan line in bytes"},
-	{ "data", "b*", "Image data"},
-	{ nil, nil, nil}
+	{ "width", GIFPROP_WIDTH, "i", "Image width"}, /* For index == -1 means screen width */
+	{ "height", GIFPROP_HEIGHT, "i", "Image height"}, /* For index == -1 means screen height */
+	{ "type", GIFPROP_TYPE, "i", "Image type (bpp)"}, 
+	{ "lineSize", GIFPROP_LINESIZE, "i", "Length of a scan line in bytes"},
+	{ "data", GIFPROP_DATA, "b*", "Image data"},
+	{ "palette", GIFPROP_PALETTE, "b*", "Image palette"},
+	{ "index", GIFPROP_INDEX, "i", "Position in image list"}, /* -1 refers to the whole image file */
+	{ "format", GIFPROP_FORMAT, "s", "File format"}, /* May appear only for an image with index == -1 */
+	{ "interlaced", GIFPROP_INTERLACED, "i", "Image is interlaced"},
+	{ "X", GIFPROP_X, "i", "Left offset"},
+	{ "Y", GIFPROP_Y, "i", "Top offset"},
+	{ "colorResolution", GIFPROP_COLORRESOLUTION, "i", "How many colors can be generated"},
+	{ "bgColor", GIFPROP_BGCOLOR, "i", "Background color"},
+	{ "paletteSize", GIFPROP_PALETTESIZE, "i", "Number of entries in image palette"},
+	{ "paletteBPP", GIFPROP_PALETTEBPP, "i", "Image palette BPP"},
+	{ nil, 0, nil, nil}
     },
     3,
     __gif_load,
@@ -185,24 +202,24 @@ property_name( Handle item, void *params)
 {
     PImgProperty imgProp = ( PImgProperty) item;
     const char *propName = ( const char *)params;
-    return ( strcmp( imgProp->id, propName) == 0);
+    return ( strcmp( imgProp->name, propName) == 0);
 }
 
 static Bool
-__gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
+__gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool readAll)
 {
     GifFileType *gif;
     GifRecordType gifType;
     GifImageDesc *gifChunks;
     GifPixelType **imageData;
     int lastIndex = -1;
-    Bool succeed = true, readAll = false;
+    Bool succeed = true;
     int imgDescCount = 0;
     int *queriedIdx;
-    int i, gifrc;
+    int i, gifrc, gifSlots;
     Bool done;
 
-    fprintf( stderr, "Queried for %d images\n", imgInfo->count);
+    fprintf( stderr, "Got %d profile(s)\n", imgInfo->count);
     queriedIdx = ( int*) malloc( sizeof( int) * imgInfo->count);
     if ( queriedIdx == NULL) {
 	__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
@@ -218,8 +235,8 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 	    imgProp = ( PImgProperty) list_at( imageInfo->propList, indexPropIdx);
 	}
 	else {
-	    imgProp = apc_image_add_property( imageInfo, "index", -1);
-	    imgProp->val.Int = 0;
+	    imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
+	    imgProp->val.Int = ++lastIndex;
 	}
 	if ( imgProp->size == -1) {
 	    if ( imgProp->val.Int > lastIndex) {
@@ -239,15 +256,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 	return false;
     }
 
-    if ( ( lastIndex == -1) && readData) {
-	printf( "We need all images\n");
-	readAll = true;
-	fprintf( stderr, "Unsupported mode (yet)\n");
-	return false;
-    }
-    else {
-	printf( "We need %d images\n", lastIndex + 1);
-    }
+    printf( "The last index is %d\n", lastIndex);
 
     fprintf( stderr, "opening %s\n", filename);
 
@@ -257,43 +266,49 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 	return false;
     }
 
-    /* XXX this is a subject to change! */
-    gifChunks = ( GifImageDesc *) malloc( sizeof( GifImageDesc) * ( lastIndex + 1));
+    if ( readAll) {
+	gifSlots = 1;
+    }
+    else {
+	gifSlots = lastIndex + 1;
+    }
+    fprintf( stderr, "Using %d slots\n", gifSlots);
+    gifChunks = ( GifImageDesc *) malloc( sizeof( GifImageDesc) * gifSlots);
     if ( gifChunks == NULL) {
 	DGifCloseFile( gif);
 	__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
 	return false;
     }
-    for ( i = 0; i <= lastIndex; i++) {
+    for ( i = 0; i < gifSlots; i++) {
 	gifChunks[ i].ColorMap = NULL;
     }
     if ( readData) {
-	imageData = ( GifPixelType **) malloc( sizeof( GifPixelType *) * ( lastIndex + 1));
+	imageData = ( GifPixelType **) malloc( sizeof( GifPixelType *) * gifSlots);
 	if ( imageData == NULL) {
 	    free( gifChunks);
 	    DGifCloseFile( gif);
 	    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
 	    return false;
 	}
-	for ( i = 0; i <= lastIndex; i++) {
+	for ( i = 0; i < gifSlots; i++) {
 	    imageData[ i] = NULL;
 	}
     }
 
-    if ( gif->SColorMap != NULL) {
-	fprintf( stderr, "GLOBAL: ColorCnt: %d, BPP: %d",
-		 gif->SColorMap->ColorCount,
-		 gif->SColorMap->BitsPerPixel
-	    );
-	for ( i = 0; i < gif->SColorMap->ColorCount; i++) {
-	    fprintf( stderr, ", [%d,%d,%d]",
-		     gif->SColorMap->Colors[ i].Red,
-		     gif->SColorMap->Colors[ i].Green,
-		     gif->SColorMap->Colors[ i].Blue
-		);
-	}
-	fprintf( stderr, "\n");
-    }
+/*      if ( gif->SColorMap != NULL) { */
+/*  	fprintf( stderr, "GLOBAL: ColorCnt: %d, BPP: %d", */
+/*  		 gif->SColorMap->ColorCount, */
+/*  		 gif->SColorMap->BitsPerPixel */
+/*  	    ); */
+/*  	for ( i = 0; i < gif->SColorMap->ColorCount; i++) { */
+/*  	    fprintf( stderr, ", [%d,%d,%d]", */
+/*  		     gif->SColorMap->Colors[ i].Red, */
+/*  		     gif->SColorMap->Colors[ i].Green, */
+/*  		     gif->SColorMap->Colors[ i].Blue */
+/*  		); */
+/*  	} */
+/*  	fprintf( stderr, "\n"); */
+/*      } */
 
     done = false;
     do {
@@ -316,6 +331,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 		fprintf( stderr, "Termination record\n");
 		break;
 	    case IMAGE_DESC_RECORD_TYPE:
+		fprintf( stderr, "Description record\n");
 		gifrc = DGifGetImageDesc( gif);
 		if ( gifrc != GIF_OK) {
 		    __gif_seterror( GIFERRT_GIFLIB, GifLastError());
@@ -361,20 +377,20 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 			}
 			fprintf( stderr, "\n");
 		    }
-		    if ( gifChunks[ imgDescCount].ColorMap != NULL) {
-			fprintf( stderr, "ImgColorMap: cnt: %d, bpp: %d", 
-				 gifChunks[ imgDescCount].ColorMap->ColorCount,
-				 gifChunks[ imgDescCount].ColorMap->BitsPerPixel
-			    );
-			for ( i = 0; i < gifChunks[ imgDescCount].ColorMap->ColorCount; i++) {
-			    fprintf( stderr, ", [%d,%d,%d]",
-				     gifChunks[ imgDescCount].ColorMap->Colors[ i].Red,
-				     gifChunks[ imgDescCount].ColorMap->Colors[ i].Green,
-				     gifChunks[ imgDescCount].ColorMap->Colors[ i].Blue
-				);
-			}
-			fprintf( stderr, "\n");
-		    }
+/*  		    if ( gifChunks[ imgDescCount].ColorMap != NULL) { */
+/*  			fprintf( stderr, "ImgColorMap: cnt: %d, bpp: %d",  */
+/*  				 gifChunks[ imgDescCount].ColorMap->ColorCount, */
+/*  				 gifChunks[ imgDescCount].ColorMap->BitsPerPixel */
+/*  			    ); */
+/*  			for ( i = 0; i < gifChunks[ imgDescCount].ColorMap->ColorCount; i++) { */
+/*  			    fprintf( stderr, ", [%d,%d,%d]", */
+/*  				     gifChunks[ imgDescCount].ColorMap->Colors[ i].Red, */
+/*  				     gifChunks[ imgDescCount].ColorMap->Colors[ i].Green, */
+/*  				     gifChunks[ imgDescCount].ColorMap->Colors[ i].Blue */
+/*  				); */
+/*  			} */
+/*  			fprintf( stderr, "\n"); */
+/*  		    } */
 		    if ( idxQueried && readData) {
 			int pixelCount = gifChunks[ imgDescCount].Width * gifChunks[ imgDescCount].Height;
 			imageData[ imgDescCount] = ( GifPixelType *) malloc( sizeof( GifPixelType) * pixelCount);
@@ -405,6 +421,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 		}
 		break;
 	    case EXTENSION_RECORD_TYPE:
+		fprintf( stderr, "Extension record\n");
 		extCode = -1;
 		gifrc = DGifGetExtension( gif, &extCode, &extData);
 		if ( gifrc == GIF_OK) {
@@ -422,52 +439,58 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 	    default:
 		fprintf( stderr, "Unknown record type\n");
 	}
-	done = done || ( ! succeed) || ( imgDescCount > lastIndex) || ( ! readAll);
+	done = done || ( ! succeed) || ( ( imgDescCount > lastIndex) && ( ! readAll));
     } while( ( gifType != TERMINATE_RECORD_TYPE) && ( ! done));
 
     if ( succeed) {
 	fprintf( stderr, "Got %d images (???)\n", imgDescCount);
 
 	for ( i = 0; ( i < imgInfo->count) && succeed; i++) {
-	    int indexPropIdx, index = -1;
+	    int indexPropIdx, j, index = -1;
 	    PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
 	    indexPropIdx = list_first_that( imageInfo->propList, property_name, ( void*) "index");
 	    if ( indexPropIdx >= 0) {
 		index = ( ( PImgProperty) list_at( imageInfo->propList, indexPropIdx))->val.Int;
 	    }
 	    fprintf( stderr, "idx: %d\n", index);
+	    for ( j = 0; j < imageInfo->propList->count; j++) {
+		apc_image_clear_property( ( PImgProperty) list_at( imageInfo->propList, j));
+	    }
 	    plist_destroy( imageInfo->propList);
 	    imageInfo->propList = plist_create( 5, 5);
 
 	    if ( index == -1) {
 		PImgProperty imgProp;
 
-		imgProp = apc_image_add_property( imageInfo, "index", -1);
+		imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
 		if ( imgProp != NULL) imgProp->val.Int = -1;
 
-		imgProp = apc_image_add_property( imageInfo, "format", -1);
+		imgProp = apc_image_add_property( imageInfo, "format", PROPTYPE_STRING, -1);
 		if ( imgProp != NULL) imgProp->val.String = duplicate_string( gifFormat.id);
 
-		imgProp = apc_image_add_property( imageInfo, "width", -1);
+		imgProp = apc_image_add_property( imageInfo, "width", PROPTYPE_INT, -1);
 		if ( imgProp != NULL) imgProp->val.Int = gif->SWidth;
 
-		imgProp = apc_image_add_property( imageInfo, "height", -1);
+		imgProp = apc_image_add_property( imageInfo, "height", PROPTYPE_INT, -1);
 		if ( imgProp != NULL) imgProp->val.Int = gif->SHeight;
 
-		imgProp = apc_image_add_property( imageInfo, "colorResolution", -1);
+		imgProp = apc_image_add_property( imageInfo, "type", PROPTYPE_INT, -1);
+		if ( imgProp != NULL) imgProp->val.Int = im256;
+
+		imgProp = apc_image_add_property( imageInfo, "colorResolution", PROPTYPE_INT, -1);
 		if ( imgProp != NULL) imgProp->val.Int = gif->SColorResolution;
 
-		imgProp = apc_image_add_property( imageInfo, "bgColor", -1);
+		imgProp = apc_image_add_property( imageInfo, "bgColor", PROPTYPE_INT, -1);
 		if ( imgProp != NULL) imgProp->val.Int = gif->SBackGroundColor;
 
 		if ( gif->SColorMap != NULL) {
-		    imgProp = apc_image_add_property( imageInfo, "paletteSize", -1);
+		    imgProp = apc_image_add_property( imageInfo, "paletteSize", PROPTYPE_INT, -1);
 		    if ( imgProp != NULL) imgProp->val.Int = gif->SColorMap->ColorCount;
 
-		    imgProp = apc_image_add_property( imageInfo, "paletteBPP", -1);
+		    imgProp = apc_image_add_property( imageInfo, "paletteBPP", PROPTYPE_INT, -1);
 		    if ( imgProp != NULL) imgProp->val.Int = gif->SColorMap->ColorCount;
 
-		    imgProp = apc_image_add_property( imageInfo, "palette", 3 * gif->SColorMap->ColorCount);
+		    imgProp = apc_image_add_property( imageInfo, "palette", PROPTYPE_BYTE, 3 * gif->SColorMap->ColorCount);
 		    imgProp->val.pByte = ( Byte *) malloc( imgProp->size);
 		    for ( i = 0; i < gif->SColorMap->ColorCount; i++) {
 			Byte *palEntry = ( imgProp->val.pByte + i * 3);
@@ -481,33 +504,36 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 		PImgProperty imgProp;
 		ColorMapObject *palette;
 
-		imgProp = apc_image_add_property( imageInfo, "index", -1);
+		imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
 		if ( imgProp != NULL) imgProp->val.Int = -1;
 
-		imgProp = apc_image_add_property( imageInfo, "format", -1);
+		imgProp = apc_image_add_property( imageInfo, "format", PROPTYPE_STRING, -1);
 		if ( imgProp != NULL) imgProp->val.String = duplicate_string( gifFormat.id);
 
 		if ( index < imgDescCount) {
-		    imgProp = apc_image_add_property( imageInfo, "width", -1);
+		    imgProp = apc_image_add_property( imageInfo, "width", PROPTYPE_INT, -1);
 		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Width;
 
-		    imgProp = apc_image_add_property( imageInfo, "height", -1);
+		    imgProp = apc_image_add_property( imageInfo, "height", PROPTYPE_INT, -1);
 		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Height;
 
-		    imgProp = apc_image_add_property( imageInfo, "X", -1);
+		    imgProp = apc_image_add_property( imageInfo, "type", PROPTYPE_INT, -1);
+		    if ( imgProp != NULL) imgProp->val.Int = im256;
+
+		    imgProp = apc_image_add_property( imageInfo, "X", PROPTYPE_INT, -1);
 		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Left;
 
-		    imgProp = apc_image_add_property( imageInfo, "Y", -1);
+		    imgProp = apc_image_add_property( imageInfo, "Y", PROPTYPE_INT, -1);
 		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Top;
 
-		    imgProp = apc_image_add_property( imageInfo, "interlaced", -1);
+		    imgProp = apc_image_add_property( imageInfo, "interlaced", PROPTYPE_INT, -1);
 		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Interlace;
 
 		    palette = ( gifChunks[ index].ColorMap != NULL ?
 				gifChunks[ index].ColorMap :
 				gif->SColorMap);
 
-		    imgProp = apc_image_add_property( imageInfo, "palette", 3 * palette->ColorCount);
+		    imgProp = apc_image_add_property( imageInfo, "palette", PROPTYPE_BYTE, 3 * palette->ColorCount);
 		    imgProp->val.pByte = ( Byte *) malloc( imgProp->size);
 		    for ( i = 0; i < palette->ColorCount; i++) {
 			Byte *palEntry = ( imgProp->val.pByte + i * 3);
@@ -519,12 +545,12 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 		    if ( readData) {
 			if ( imageData[ index] != NULL) {
 			    int pixelCount = gifChunks[ index].Width * gifChunks[ index].Height;
-			    imgProp = apc_image_add_property( imageInfo, "data", pixelCount);
+			    imgProp = apc_image_add_property( imageInfo, "data", PROPTYPE_BYTE, pixelCount);
 			    if ( imgProp != NULL) {
 				imgProp->val.pByte = ( Byte*) malloc( sizeof( Byte) * pixelCount);
 				memcpy( imgProp->val.pByte, imageData[ index], pixelCount);
 			    }
-			    imgProp = apc_image_add_property( imageInfo, "lineSize", -1);
+			    imgProp = apc_image_add_property( imageInfo, "lineSize", PROPTYPE_INT, -1);
 			    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Width;
 			}
 			else {
@@ -539,6 +565,9 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 		succeed = false;
 	    }
 	}
+    }
+    else { 
+	fprintf( stderr, "*** FAILED!!! ***\n");
     }
 
     gifrc = DGifCloseFile( gif);
@@ -565,9 +594,9 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData)
 }
 
 Bool
-__gif_load( int fd, const char *filename, PList imgInfo)
+__gif_load( int fd, const char *filename, PList imgInfo, Bool readAll)
 {
-    return __gif_read( fd, filename, imgInfo, true);
+    return __gif_read( fd, filename, imgInfo, true, readAll);
 }
 
 Bool
@@ -590,7 +619,7 @@ __gif_storable( const char *filename, PList imgInfo)
 }
 
 Bool
-__gif_getinfo( int fd, const char *filename, PList imgInfo)
+__gif_getinfo( int fd, const char *filename, PList imgInfo, Bool readAll)
 {
-    return __gif_read( fd, filename, imgInfo, false);
+    return __gif_read( fd, filename, imgInfo, false, readAll);
 }

@@ -19,8 +19,8 @@
 
 #undef  my
 #define inherited CDrawable->
-#define my  ((( PImage) self)-> self)->
-#define var (( PImage) self)->
+#define my  ((( PImage) self)-> self)
+#define var (( PImage) self)
 
 #include "imgtype.cinc"
 #include "imgscale.cinc"
@@ -31,35 +31,35 @@ void
 Image_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
-   var w = pget_i( width);
-   var h = pget_i( height);
-   var conversion = pget_i( conversion);
+   var->w = pget_i( width);
+   var->h = pget_i( height);
+   var->conversion = pget_i( conversion);
    opt_assign( optHScaling, pget_B( hScaling));
    opt_assign( optVScaling, pget_B( vScaling));
-   var type = pget_i( type);
-   var lineSize = (( var w * ( var type & imBPP) + 31) / 32) * 4;
-   var dataSize = ( var lineSize) * var h;
-   var data = ( var dataSize > 0) ? malloc( var dataSize) : nil;
-   free( var palette);
-   var palette = malloc( 0x100 * sizeof( RGBColor));
+   var->type = pget_i( type);
+   var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
+   var->dataSize = ( var->lineSize) * var->h;
+   var->data = ( var->dataSize > 0) ? malloc( var->dataSize) : nil;
+   free( var->palette);
+   var->palette = malloc( 0x100 * sizeof( RGBColor));
    opt_assign( optPreserveType, pget_B( preserveType));
-   var palSize = (1 << (var type & imBPP)) & 0x1ff;
-   Image_read_palette( self, var palette, pget_sv( palette));
-   my set_data( self, pget_sv( data));
-   if ( var type & imGrayScale) switch ( var type & imBPP)
+   var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
+   Image_read_palette( self, var->palette, pget_sv( palette));
+   my->set_data( self, pget_sv( data));
+   if ( var->type & imGrayScale) switch ( var->type & imBPP)
    {
    case imbpp1:
-      memcpy( var palette, stdmono_palette, sizeof( stdmono_palette));
+      memcpy( var->palette, stdmono_palette, sizeof( stdmono_palette));
       break;
    case imbpp4:
-      memcpy( var palette, std16gray_palette, sizeof( std16gray_palette));
+      memcpy( var->palette, std16gray_palette, sizeof( std16gray_palette));
       break;
    case imbpp8:
-      memcpy( var palette, std256gray_palette, sizeof( std256gray_palette));
+      memcpy( var->palette, std256gray_palette, sizeof( std256gray_palette));
       break;
    }
    apc_image_create( self);
-   my update_change( self);
+   my->update_change( self);
 }
 
 static int
@@ -90,26 +90,26 @@ void
 Image_reset( Handle self, int type, SV * palette)
 {
    Byte * newData = nil;
-   if ( var stage > csNormal) return;
+   if ( var->stage > csNormal) return;
    if (!( type & imGrayScale))
-      Image_read_palette( self, var palette, palette);
-   if ( var type == imByte && type == im256)
+      Image_read_palette( self, var->palette, palette);
+   if ( var->type == imByte && type == im256)
    {
-      var type = type;
+      var->type = type;
       return;
    }
-   var lineSize = (( var w * ( type & imBPP) + 31) / 32) * 4;
-   var dataSize = ( var lineSize) * var h;
-   var palSize = (1 << (var type & imBPP)) & 0x1ff;
-   if ( var dataSize > 0)
+   var->lineSize = (( var->w * ( type & imBPP) + 31) / 32) * 4;
+   var->dataSize = ( var->lineSize) * var->h;
+   var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
+   if ( var->dataSize > 0)
    {
-      newData = malloc( var dataSize);
-      ic_type_convert( self, newData, var palette, type);
+      newData = malloc( var->dataSize);
+      ic_type_convert( self, newData, var->palette, type);
    }
-   free( var data);
-   var data = newData;
-   var type = type;
-   my update_change( self);
+   free( var->data);
+   var->data = newData;
+   var->type = type;
+   my->update_change( self);
 }
 
 void
@@ -117,27 +117,27 @@ Image_stretch( Handle self, int width, int height)
 {
    Byte * newData = nil;
    int lineSize;
-   if ( var stage > csNormal) return;
+   if ( var->stage > csNormal) return;
    if ( width  >  65535) width  =  65535;
    if ( height >  65535) height =  65535;
    if ( width  < -65535) width  = -65535;
    if ( height < -65535) height = -65535;
-   if (( width == var w) && ( height == var h)) return;
+   if (( width == var->w) && ( height == var->h)) return;
    if ( width == 0 || height == 0)
    {
-      my create_empty( self, 0, 0, var type);
+      my->create_empty( self, 0, 0, var->type);
       return;
    }
-   lineSize = (( abs( width) * ( var type & imBPP) + 31) / 32) * 4;
+   lineSize = (( abs( width) * ( var->type & imBPP) + 31) / 32) * 4;
    newData = malloc( lineSize * abs( height));
    ic_stretch( self, newData, width, height, is_opt( optHScaling), is_opt( optVScaling));
-   free( var data);
-   var data = newData;
-   var lineSize = lineSize;
-   var dataSize = lineSize * abs( height);
-   var w = abs( width);
-   var h = abs( height);
-   my update_change( self);
+   free( var->data);
+   var->data = newData;
+   var->lineSize = lineSize;
+   var->dataSize = lineSize * abs( height);
+   var->w = abs( width);
+   var->h = abs( height);
+   my->update_change( self);
 }
 
 static int imTypes[] = {
@@ -149,17 +149,17 @@ Image_set( Handle self, HV * profile)
 {
    if ( pexist( conversion))
    {
-      my set_conversion( self, pget_i( conversion));
+      my->set_conversion( self, pget_i( conversion));
       pdelete( conversion);
    }
    if ( pexist( hScaling))
    {
-      my set_h_scaling( self, pget_B( hScaling));
+      my->set_h_scaling( self, pget_B( hScaling));
       pdelete( hScaling);
    }
    if ( pexist( vScaling))
    {
-      my set_v_scaling( self, pget_B( vScaling));
+      my->set_v_scaling( self, pget_B( vScaling));
       pdelete( vScaling);
    }
 
@@ -172,7 +172,7 @@ Image_set( Handle self, HV * profile)
          warn("RTC0100: Invalid image type requested (%04x) in Image::set_type", newType);
       } else {
          if ( !opt_InPaint)
-            my reset( self, newType, pexist( palette) ? pget_sv( palette) : my get_palette( self));
+            my->reset( self, newType, pexist( palette) ? pget_sv( palette) : my->get_palette( self));
       }
       pdelete( palette);
       pdelete( type);
@@ -180,7 +180,7 @@ Image_set( Handle self, HV * profile)
    if ( pexist( width) && pexist( height))
    {
       if ( !opt_InPaint)
-         my set_size( self, pget_i( width), pget_i( height));
+         my->set_size( self, pget_i( width), pget_i( height));
       pdelete( width);
       pdelete( height);
    }
@@ -192,26 +192,26 @@ void
 Image_done( Handle self)
 {
    apc_image_destroy( self);
-   my make_empty( self);
-   var data = nil;
-   var palette = nil;
+   my->make_empty( self);
+   var->data = nil;
+   var->palette = nil;
    inherited done( self);
 }
 
 void
 Image_make_empty( Handle self)
 {
-   free( var data);
-   free( var palette);
-   var w = 0;
-   var h = 0;
-   var type     = 0;
-   var palSize  = 0;
-   var lineSize = 0;
-   var dataSize = 0;
-   var data     = nil;
-   var status   = ieOK;
-   my update_change( self);
+   free( var->data);
+   free( var->palette);
+   var->w = 0;
+   var->h = 0;
+   var->type     = 0;
+   var->palSize  = 0;
+   var->lineSize = 0;
+   var->dataSize = 0;
+   var->data     = nil;
+   var->status   = ieOK;
+   my->update_change( self);
 }
 
 char *
@@ -220,7 +220,7 @@ Image_get_status_string( Handle self)
 #ifdef __unix  /* Temporary hack */
    return (char *)apc_image_get_error_message( nil, 0);
 #else
-   return (char *)gbm_err( var status);
+   return (char *)gbm_err( var->status);
 #endif /* __unix */
 }
 
@@ -257,13 +257,13 @@ Image_set_size( Handle self, int width, int height)
 void
 Image_set_width( Handle self, int width)
 { 
-   my set_size( self, width, var h);  
+   my->set_size( self, width, var->h);  
 }
 
 void
 Image_set_height( Handle self, int height) 
 {
-   my set_size( self, var w, height); 
+   my->set_size( self, var->w, height); 
 }
 
 SV *
@@ -277,8 +277,8 @@ Image_get_handle( Handle self)
 SV *
 Image_get_data( Handle self)
 {
-   if ( var stage > csNormal) return nilSV;
-   return newSVpvn( var data, var dataSize);
+   if ( var->stage > csNormal) return nilSV;
+   return newSVpvn( var->data, var->dataSize);
 }
 
 void
@@ -287,17 +287,17 @@ Image_set_data( Handle self, SV * svdata)
    int dataSize;
    void *data = SvPV( svdata, dataSize);
 
-   if ( var stage > csNormal) return;
+   if ( var->stage > csNormal) return;
    if ( is_opt( optInDraw) || dataSize <= 0) return;
 
-   memcpy( var data, data, dataSize > var dataSize ? var dataSize : dataSize);
-   my update_change( self);
+   memcpy( var->data, data, dataSize > var->dataSize ? var->dataSize : dataSize);
+   my->update_change( self);
 }
 
 Bool
 Image_save( Handle self, char *filename, HV *profile)
 #ifndef SCARY_ERRORS
-#define bekilled(__rc) { var status = __rc; return false;}
+#define bekilled(__rc) { var->status = __rc; return false;}
 #else
 #define bekilled(__rc) {                                                                    \
    switch( __rc){                                                                      \
@@ -314,7 +314,7 @@ Image_save( Handle self, char *filename, HV *profile)
 #ifdef __unix /* Temporary hack */
    return true;
 #else
-   int bpp = var type & imBPP;
+   int bpp = var->type & imBPP;
    int file;
    GBM gbm;
    GBM_ERR rc = ieOK;
@@ -397,13 +397,13 @@ Image_save( Handle self, char *filename, HV *profile)
    file = open( filename, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, S_IREAD | S_IWRITE);
    if ( file == -1) bekilled( ieFileNotFound);
 
-   gbm. w = var w;
-   gbm. h = var h;
+   gbm. w = var->w;
+   gbm. h = var->h;
    gbm. bpp = bpp;
    {
       RGBColor pal [ 256];
-      cm_reverse_palette( var palette, pal, 256);
-      rc = gbm_write( filename, file, fileType, &gbm, ( GBMRGB *) pal, var data, options);
+      cm_reverse_palette( var->palette, pal, 256);
+      rc = gbm_write( filename, file, fileType, &gbm, ( GBMRGB *) pal, var->data, options);
    }
    if ( rc != ieOK)
    {
@@ -419,7 +419,7 @@ Image_save( Handle self, char *filename, HV *profile)
       bekilled( rc);
    }
    close( file);
-   var status = ieOK;
+   var->status = ieOK;
    return true;
 #endif /* __unix */
 }
@@ -427,13 +427,13 @@ Image_save( Handle self, char *filename, HV *profile)
 int
 Image_get_type( Handle self)
 {
-   return var type; 
+   return var->type; 
 }
 
 int
 Image_get_bpp( Handle self) 
 {
-   return var type & imBPP; 
+   return var->type & imBPP; 
 }
 
 
@@ -464,14 +464,14 @@ Image_begin_paint_info( Handle self)
 void
 Image_end_paint( Handle self)
 {
-   int oldType = var type;
+   int oldType = var->type;
    if ( !is_opt( optInDraw)) return;
    apc_image_end_paint( self);
    inherited end_paint( self);
-   if ( is_opt( optPreserveType) && var type != oldType)
-      my reset( self, oldType, nilSV);
+   if ( is_opt( optPreserveType) && var->type != oldType)
+      my->reset( self, oldType, nilSV);
    else
-      my update_change( self);
+      my->update_change( self);
 }
 
 void
@@ -487,7 +487,7 @@ Bool
 load_image_indirect( Handle self, char *filename, char *subIndex)
 #define checkrc if ( rc != ieOK)  \
         {                         \
-            var status = rc;      \
+            var->status = rc;      \
             free( data);          \
             free( palette);       \
             close( file);         \
@@ -505,14 +505,14 @@ load_image_indirect( Handle self, char *filename, char *subIndex)
    int ft;
    int lineSize, dataSize;
 
-   if ( var stage > csNormal) return false;
+   if ( var->stage > csNormal) return false;
    if ( opt_InPaint) return false;
 
    memset( &gbm, 0, sizeof( GBM));
    file = open( filename, O_RDONLY | O_BINARY);
    if ( file < 0)
    {
-      var status = ieFileNotFound;
+      var->status = ieFileNotFound;
       return false;
    }
    ft = image_guess_type( file);
@@ -539,33 +539,33 @@ load_image_indirect( Handle self, char *filename, char *subIndex)
    close( file);
 
    /* init image */
-   my make_empty( self);
-   var w        = gbm. w;
-   var h        = gbm. h;
-   var type     = gbm. bpp;
-   var data     = data;
-   var palette  = ( PRGBColor) palette;
-   var lineSize = lineSize;
-   var dataSize = dataSize;
-   var palSize  = (1 << (var type & imBPP)) & 0x1ff;
-   cm_reverse_palette( var palette, var palette, 256);
+   my->make_empty( self);
+   var->w        = gbm. w;
+   var->h        = gbm. h;
+   var->type     = gbm. bpp;
+   var->data     = data;
+   var->palette  = ( PRGBColor) palette;
+   var->lineSize = lineSize;
+   var->dataSize = dataSize;
+   var->palSize  = (1 << (var->type & imBPP)) & 0x1ff;
+   cm_reverse_palette( var->palette, var->palette, 256);
 
-   switch( var type)
+   switch( var->type)
    {
       case imbpp1:
-         if ( memcmp( var palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
-            var type |= imGrayScale;
+         if ( memcmp( var->palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
+            var->type |= imGrayScale;
          break;
       case imbpp4:
-         if ( memcmp( var palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
-            var type |= imGrayScale;
+         if ( memcmp( var->palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
+            var->type |= imGrayScale;
          break;
       case imbpp8:
-         if ( memcmp( var palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
-            var type |= imGrayScale;
+         if ( memcmp( var->palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
+            var->type |= imGrayScale;
          break;
    }
-   var status = ieOK;
+   var->status = ieOK;
    return true;
 #endif /* __unix */
 }
@@ -619,20 +619,159 @@ add_image_profile( HV *profile, PList imgInfo)
 	    }
 	    propArray[ i] = duplicate_string( SvPV( *elem, na));
 	 }
-	 imgProp = apc_image_add_property( imageInfo, key, n);
+	 imgProp = apc_image_add_property( imageInfo, key, PROPTYPE_STRING, n);
 	 imgProp->val.pString = propArray;
       } else {
 	 /* scalar */
-	 imgProp = apc_image_add_property( imageInfo, key, -1);
+	 imgProp = apc_image_add_property( imageInfo, key, PROPTYPE_STRING, -1);
 	 imgProp->val.String = duplicate_string( SvPV( value, na));
       }
    }
+}
+
+static void
+modify_Image( Handle self, PImgInfo imageInfo)
+{
+    int i;
+    HV *extraInfo = nil;
+    unsigned reqProps = 0;
+#define REQPROP_WIDTH 0x01
+#define REQPROP_HEIGHT 0x02
+#define REQPROP_TYPE 0x04
+#define REQPROP_DATA 0x08
+#define REQPROP_PALETTE 0x10
+#define REQPROP_LINESIZE 0x20
+#define REQPROP_ALL ( REQPROP_WIDTH | REQPROP_HEIGHT | REQPROP_TYPE | \
+		      REQPROP_DATA | REQPROP_PALETTE | REQPROP_LINESIZE)
+
+    my->make_empty( self);
+
+    fprintf( stderr, "Prop. list contains %d entries\n", imageInfo->propList->count);
+
+    for ( i = ( imageInfo->propList->count - 1); i >= 0; i--) {
+	PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, i);
+	if ( strcmp( imgProp->name, "width") == 0) {
+	    reqProps |= REQPROP_WIDTH;
+	    var->w = imgProp->val.Int;
+	}
+	else if ( strcmp( imgProp->name, "height") == 0) {
+	    reqProps |= REQPROP_HEIGHT;
+	    var->h = imgProp->val.Int;
+	}
+	else if ( strcmp( imgProp->name, "type") == 0) {
+	    reqProps |= REQPROP_TYPE;
+	    var->type = imgProp->val.Int;
+	}
+	else if ( strcmp( imgProp->name, "lineSize") == 0) {
+	    reqProps |= REQPROP_LINESIZE;
+	    var->lineSize = imgProp->val.Int;
+	}
+	else if ( strcmp( imgProp->name, "data") == 0) {
+	    reqProps |= REQPROP_DATA;
+	    var->data = imgProp->val.pByte;
+	    var->dataSize = imgProp->size;
+	    imgProp->val.pByte = NULL;
+	    imgProp->size = 0;
+	}
+	else if ( strcmp( imgProp->name, "palette") == 0) {
+	    reqProps |= REQPROP_PALETTE;
+	    var->palette = ( PRGBColor) imgProp->val.pByte;
+	    var->palSize = imgProp->size;
+	    imgProp->val.pByte = NULL;
+	    imgProp->size = 0;
+	}
+	else if ( imageInfo->extraInfo) {
+	    HV *profile = extraInfo;
+
+	    if ( ! profile) {
+		if ( hv_exists( ( HV *) SvRV( var->mate), "extraInfo", 9)) {
+		    SV **prf;
+		    prf = hv_fetch( ( HV *) SvRV( var->mate), "extraInfo", 9, 0);
+		    if ( ! prf
+			 || ! SvROK( *prf)
+			 || SvTYPE( SvRV( *prf)) != SVt_PVHV ) {
+			croak( "Image::load can't fetch ``extraInfo''");
+		    }
+		    profile = ( HV *) SvRV( *prf);
+		    hv_clear( profile);
+		} else {
+		    profile = newHV();
+		    if ( ! profile) {
+			croak( "Image::load: can't create new ``extraInfo'' profile");
+		    }
+		    hv_store( ( HV *) SvRV( var->mate), "extraInfo", 9,
+			      newRV_inc( ( SV *) profile),  0);
+		}
+
+		extraInfo = profile;
+	    }
+
+	    if ( imgProp->size == -1) {
+		switch ( imgProp->flags & PROPTYPE_MASK) {
+		    case PROPTYPE_STRING:
+			pset_c( imgProp->name, imgProp->val.String);
+			break;
+		    case PROPTYPE_DOUBLE:
+			pset_f( imgProp->name, imgProp->val.Double);
+			break;
+		    case PROPTYPE_BYTE:
+			pset_i( imgProp->name, imgProp->val.Byte);
+			break;
+		    case PROPTYPE_INT:
+		    default:
+			pset_i( imgProp->name, imgProp->val.Int);
+			break;
+		}
+	    }
+	    else {
+		AV *av;
+		int j;
+
+		av = newAV();
+		if ( ! av) {
+		    croak( "Image::load: can't allocate an array");
+		}
+
+		for ( j = 0; j < imgProp->size; j++) {
+		    SV *sv;
+		    switch( imgProp->flags & PROPTYPE_MASK) {
+			case PROPTYPE_STRING:
+			    sv = newSVpv( imgProp->val.pString[ j], 0);
+			    break;
+			case PROPTYPE_DOUBLE:
+			    sv= newSVnv( imgProp->val.pDouble[ j]);
+			    break;
+			case PROPTYPE_BYTE:
+			    sv = newSViv( imgProp->val.pByte[ j]);
+			    break;
+			case PROPTYPE_INT:
+			default:
+			    sv = newSViv( imgProp->val.pInt[ j]);
+			    break;
+		    }
+		    av_push( av, sv);
+		}
+		pset_sv( imgProp->name, newRV_inc( ( SV *) av));
+	    }
+	}
+
+	apc_image_clear_property( imgProp);
+	list_delete_at( imageInfo->propList, i);
+    }
+
+    if ( reqProps != REQPROP_ALL) {
+	croak( "*** INTERNAL *** Got an incomplete image information from driver (signature: %04X)", reqProps);
+    }
+    if ( ( var->lineSize * var->h) != var->dataSize) {
+	croak( "Image data/line size inconsistency detected");
+    }
 }
 
 XS( Image_load_FROMPERL) {
    dXSARGS;
    Bool result;
    Bool as_class = false;
+   Bool wantarray = ( GIMME_V == G_ARRAY);
    Handle self;
    char *class_name;
    PList info;
@@ -690,20 +829,22 @@ XS( Image_load_FROMPERL) {
       result = apc_image_read( filename, info, true);
       SPAGAIN;
       SP -= items;
-      if ( GIMME_V == G_ARRAY) {
-	 if ( result) {
-	    /* return all images as a list */
-	 } else {
-	    /* return an empty list */
-	 }
-      } else {
-	 if ( !result) {
-	    /* return nilHandle */
-	    XPUSHs( &sv_undef);
-	 } else {
-	    /* return our image, if just one, or an anonimous array of them */
-	    XPUSHs( &sv_yes);
-	 }
+      if ( result) {
+	  if ( as_class) {
+	  }
+	  else {
+	      if ( info->count > 1) {
+		  croak( "Invalid usage of Image::load: request of multiple images when called as an instance method");
+	      }
+	      else {
+		  modify_Image( self, ( PImgInfo) list_at( info, 0));
+	      }
+	  }
+      }
+      else {
+	  if ( ! wantarray) {
+	      XPUSHs( &sv_undef);
+	  }
       }
       PUTBACK;
       return;
@@ -734,7 +875,7 @@ Image_load( SV *who, char *filename, PList imgInfo)
    char buf[ 15];
    if ( index >= 0) snprintf( buf, 15, "index=%d", index); else buf[ 0] = 0;
    ret = load_image_indirect( self, filename, buf);
-   if ( ret) my update_change( self);
+   if ( ret) my->update_change( self);
    return ret;
 #endif /* __unix */
 }
@@ -743,19 +884,19 @@ void
 Image_update_change( Handle self)
 {
    apc_image_update_change( self);
-   var statsCache = 0;
+   var->statsCache = 0;
 }
 
-int Image_get_conversion( Handle self) { return var conversion;}
+int Image_get_conversion( Handle self) { return var->conversion;}
 
 double
 Image_get_stats( Handle self, int index)
 {
-#define gather_stats(TYP) if ( var data) {                \
-         TYP *src = (TYP*)var data, *stop, *s;            \
+#define gather_stats(TYP) if ( var->data) {                \
+         TYP *src = (TYP*)var->data, *stop, *s;            \
          maxv = minv = *src;                              \
-         for ( y = 0; y < var h; y++) {                   \
-            s = src;  stop = s + var w;                   \
+         for ( y = 0; y < var->h; y++) {                   \
+            s = src;  stop = s + var->w;                   \
             while (s != stop) {                           \
                v = (double)*s;                            \
                sum += v;                                  \
@@ -764,16 +905,16 @@ Image_get_stats( Handle self, int index)
                if ( maxv < v) maxv = v;                   \
                s++;                                       \
             }                                             \
-            src = (TYP*)(((Byte *)src) + var lineSize);   \
+            src = (TYP*)(((Byte *)src) + var->lineSize);   \
          }                                                \
       }
    double sum = 0.0, sum2 = 0.0, minv = 0.0, maxv = 0.0, v;
    int y;
 
    if ( index < 0 || index > isMaxIndex) return NAN;
-   if ( var statsCache & ( 1 << index)) return var stats[ index];
+   if ( var->statsCache & ( 1 << index)) return var->stats[ index];
    /* calculate image stats */
-   switch (var type) {
+   switch (var->type) {
       case imByte:    gather_stats(U8);     break;
       case imShort:   gather_stats(I16);    break;
       case imLong:    gather_stats(I32);    break;
@@ -781,37 +922,37 @@ Image_get_stats( Handle self, int index)
       case imDouble:  gather_stats(double); break;
       default:        return NAN;
    }
-   if ( var w * var h > 0)
+   if ( var->w * var->h > 0)
    {
-      sum /= var w * var h;
-      sum2 /= var w * var h;
+      sum /= var->w * var->h;
+      sum2 /= var->w * var->h;
       sum2 = sum2 - sum*sum;
-      var stats[ isMean] = sum;
-      var stats[ isVariance] = sum2;
-      var stats[ isStdDev] = sqrt(sum2);
-      var stats[ isRangeLo] = minv;
-      var stats[ isRangeHi] = maxv;
+      var->stats[ isMean] = sum;
+      var->stats[ isVariance] = sum2;
+      var->stats[ isStdDev] = sqrt(sum2);
+      var->stats[ isRangeLo] = minv;
+      var->stats[ isRangeHi] = maxv;
    } else {
-      for ( y = 0; y <= isMaxIndex; y++) var stats[ y] = 0;
+      for ( y = 0; y <= isMaxIndex; y++) var->stats[ y] = 0;
    }
-   var statsCache = (1 << (isMaxIndex + 1)) - 1;
+   var->statsCache = (1 << (isMaxIndex + 1)) - 1;
 
-   return var stats[ index];
+   return var->stats[ index];
 }
 
 void
 Image_set_stats( Handle self, double value, int index)
 {
    if ( index < 0 || index > isMaxIndex) return;
-   var stats[ index] = value;
-   var statsCache |= 1 << index;
+   var->stats[ index] = value;
+   var->statsCache |= 1 << index;
 }
 
 void
 Image_resample( Handle self, double srcLo, double srcHi, double dstLo, double dstHi)
 {
-#define RSPARMS self, var data, var type, srcLo, srcHi, dstLo, dstHi
-   switch ( var type)
+#define RSPARMS self, var->data, var->type, srcLo, srcHi, dstLo, dstHi
+   switch ( var->type)
    {
       case imByte:   rs_Byte_Byte     ( RSPARMS); break;
       case imShort:  rs_short_short   ( RSPARMS); break;
@@ -820,7 +961,7 @@ Image_resample( Handle self, double srcLo, double srcHi, double dstLo, double ds
       case imDouble: rs_double_double ( RSPARMS); break;
       default: return;
    }
-   my update_change( self);
+   my->update_change( self);
 }
 
 SV *
@@ -828,9 +969,9 @@ Image_get_palette( Handle self)
 {
    AV * av = newAV();
    int i;
-   int colors = ( 1 << ( var type & imBPP)) & 0x1ff;
-   Byte * pal = ( Byte*) var palette;
-   if (( var type & imGrayScale) && (( var type & imBPP) > imbpp8)) colors = 256;
+   int colors = ( 1 << ( var->type & imBPP)) & 0x1ff;
+   Byte * pal = ( Byte*) var->palette;
+   if (( var->type & imGrayScale) && (( var->type & imBPP) > imbpp8)) colors = 256;
    for ( i = 0; i < colors*3; i++) av_push( av, newSViv( pal[ i]));
    return newRV_noinc(( SV *) av);
 }
@@ -838,42 +979,42 @@ Image_get_palette( Handle self)
 void
 Image_set_palette( Handle self, SV * palette)
 {
-   if ( var stage > csNormal) return;
-   if ( var type & imGrayScale)
+   if ( var->stage > csNormal) return;
+   if ( var->type & imGrayScale)
       return;
-   if ( !var palette)
+   if ( !var->palette)
       return;
 
-   if ( !Image_read_palette( self, var palette, palette))
+   if ( !Image_read_palette( self, var->palette, palette))
       warn("RTC0107: Invalid array reference passed to Image::set_palette");
-   my update_change( self);
+   my->update_change( self);
 }
 
 void Image_set_conversion( Handle self, int conversion)
 {
-   if (( var type & imGrayScale) || (( var type & imBPP) > imbpp8))
-      var conversion = ictNone;
+   if (( var->type & imGrayScale) || (( var->type & imBPP) > imbpp8))
+      var->conversion = ictNone;
    else
-      var conversion = conversion;
+      var->conversion = conversion;
 }
 
 void
 Image_create_empty( Handle self, int width, int height, int type)
 {
-   free( var data);
-   var w = width;
-   var h = height;
-   var type     = type;
-   var lineSize = (( var w * ( var type & imBPP) + 31) / 32) * 4;
-   var dataSize = var lineSize * var h;
-   var palSize  = (1 << (var type & imBPP)) & 0x1ff;
-   if ( var dataSize > 0)
+   free( var->data);
+   var->w = width;
+   var->h = height;
+   var->type     = type;
+   var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
+   var->dataSize = var->lineSize * var->h;
+   var->palSize  = (1 << (var->type & imBPP)) & 0x1ff;
+   if ( var->dataSize > 0)
    {
-      var data = malloc( var dataSize);
-      memset( var data, 0, var dataSize);
+      var->data = malloc( var->dataSize);
+      memset( var->data, 0, var->dataSize);
    } else
-      var data = nil;
-   var status = ieOK;
+      var->data = nil;
+   var->status = ieOK;
 }
 
 void
@@ -891,58 +1032,58 @@ Image_get_preserve_type( Handle self)
 Color
 Image_get_pixel( Handle self,int x,int y)
 {
-    #define BGRto32(pal) ((var palette[pal].r<<16) | (var palette[pal].g<<8) | (var palette[pal].b))
+    #define BGRto32(pal) ((var->palette[pal].r<<16) | (var->palette[pal].g<<8) | (var->palette[pal].b))
     if ( opt_InPaint)
         return inherited get_pixel(self,x,y);
-    if ((x>=var w) || (x<0) || (y>=var h) || (y<0))
+    if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0))
         return clInvalid;
-    switch (var type & imBPP) {
+    switch (var->type & imBPP) {
         case imbpp1:
             {
-                Byte p=var data[var lineSize*y+(x>>3)];
+                Byte p=var->data[var->lineSize*y+(x>>3)];
                 p=(p >> (x & 7)) & 1;
-                return ((var type & imGrayScale) ? (p ? 255 : 0) : BGRto32(p));
+                return ((var->type & imGrayScale) ? (p ? 255 : 0) : BGRto32(p));
             }
         case imbpp4:
             {
-                Byte p=var data[var lineSize*y+(x>>1)];
+                Byte p=var->data[var->lineSize*y+(x>>1)];
                 p=(x&1) ? p & 0x0f : p>>4;
-                return ((var type & imGrayScale) ? (p*255L)/15 : BGRto32(p));
+                return ((var->type & imGrayScale) ? (p*255L)/15 : BGRto32(p));
             }
         case imbpp8:
             {
-                Byte p=var data[var lineSize*y+x];
-                return ((var type & imGrayScale) ? p :  BGRto32(p));
+                Byte p=var->data[var->lineSize*y+x];
+                return ((var->type & imGrayScale) ? p :  BGRto32(p));
             }
         case imbpp16:
             {
-                short p=*(short*)(var data + (var lineSize*y+x*2));
+                short p=*(short*)(var->data + (var->lineSize*y+x*2));
                 return p;
             }
         case imbpp24:
             {
-                RGBColor p=*(PRGBColor)(var data + (var lineSize*y+x*3));
+                RGBColor p=*(PRGBColor)(var->data + (var->lineSize*y+x*3));
                 return (p.r<<16) | (p.g<<8) | p.b;
             }
         case imbpp32:
             {
                 long p;
-                if (var type & imRealNumber) {
-                    float pf=*(float*)(var data + (var lineSize*y+x*4));
-                    p=((pf - var stats[isRangeLo])/(var stats[isRangeHi] - var stats[isRangeLo]))*LONG_MAX;
+                if (var->type & imRealNumber) {
+                    float pf=*(float*)(var->data + (var->lineSize*y+x*4));
+                    p=((pf - var->stats[isRangeLo])/(var->stats[isRangeHi] - var->stats[isRangeLo]))*LONG_MAX;
                 }
                 else {
-                    p=*(long*)(var data + (var lineSize*y+x*4));
+                    p=*(long*)(var->data + (var->lineSize*y+x*4));
                 }
                 return p;
             }
         case imbpp64:
             {
-                double pd=*(double*)(var data + (var lineSize*y+x*8));
-                if ((var type & imComplexNumber) || (var type & imTrigComplexNumber)) {
+                double pd=*(double*)(var->data + (var->lineSize*y+x*8));
+                if ((var->type & imComplexNumber) || (var->type & imTrigComplexNumber)) {
                     return 0;
                 }
-                return ((pd - var stats[isRangeLo])/(var stats[isRangeHi] - var stats[isRangeLo]))*LONG_MAX;
+                return ((pd - var->stats[isRangeLo])/(var->stats[isRangeHi] - var->stats[isRangeLo]))*LONG_MAX;
             }
         default:
             return 0;
@@ -959,23 +1100,23 @@ Image_set_pixel( Handle self,int x,int y,Color color)
         inherited set_pixel(self,x,y,color);
         return;
     }
-    if ((x>=var w) || (x<0) || (y>=var h) || (y<0)) {
+    if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0)) {
         return;
     }
-    switch (var type & imBPP) {
+    switch (var->type & imBPP) {
         case imbpp1  :
             {
                 int x1=7-(x&7);
-                Byte p=(((var type & imGrayScale) ? color/255 : cm_nearest_color(LONGtoBGR(color,rgb),var palSize,var palette)) & 1);
-                Byte *pd=var data+(var lineSize*y+(x>>3));
+                Byte p=(((var->type & imGrayScale) ? color/255 : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette)) & 1);
+                Byte *pd=var->data+(var->lineSize*y+(x>>3));
                 *pd&=~(1 << x1);
                 *pd|=(p << x1);
             }
             break;
         case imbpp4  :
             {
-                Byte p=((var type & imGrayScale) ? (color*15)/255 : cm_nearest_color(LONGtoBGR(color,rgb),var palSize,var palette));
-                Byte *pd=var data+(var lineSize*y+(x>>1));
+                Byte p=((var->type & imGrayScale) ? (color*15)/255 : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette));
+                Byte *pd=var->data+(var->lineSize*y+(x>>1));
                 if (x&1) {
                     *pd&=0xf0;
                 }
@@ -988,44 +1129,44 @@ Image_set_pixel( Handle self,int x,int y,Color color)
             break;
         case imbpp8:
             {
-                if (var type & imGrayScale) {
-                    var data[(var lineSize)*y+x]=color;
+                if (var->type & imGrayScale) {
+                    var->data[(var->lineSize)*y+x]=color;
                 }
                 else {
-                    var data[(var lineSize)*y+x]=cm_nearest_color(LONGtoBGR(color,rgb),(var palSize),(var palette));
+                    var->data[(var->lineSize)*y+x]=cm_nearest_color(LONGtoBGR(color,rgb),(var->palSize),(var->palette));
                 }
             }
             break;
         case imbpp16 :
             {
-                *(short*)(var data+(var lineSize*y+(x<<1)))=color;
+                *(short*)(var->data+(var->lineSize*y+(x<<1)))=color;
             }
             break;
         case imbpp24 :
             {
                 LONGtoBGR(color,rgb);
-                memcpy((var data + (var lineSize*y+x*3)),&rgb,sizeof(RGBColor));
+                memcpy((var->data + (var->lineSize*y+x*3)),&rgb,sizeof(RGBColor));
             }
             break;
         case imbpp32 :
             {
-                if (var type & imRealNumber) {
-                    *(float*)(var data+(var lineSize*y+(x<<2)))=(((float)color)/(LONG_MAX))*(var stats[isRangeHi]-var stats[isRangeLo])+var stats[isRangeLo];
+                if (var->type & imRealNumber) {
+                    *(float*)(var->data+(var->lineSize*y+(x<<2)))=(((float)color)/(LONG_MAX))*(var->stats[isRangeHi]-var->stats[isRangeLo])+var->stats[isRangeLo];
                 }
                 else {
-                    *(long*)(var data+(var lineSize*y+(x<<2)))=color;
+                    *(long*)(var->data+(var->lineSize*y+(x<<2)))=color;
                 }
             }
             break;
         case imbpp64 :
-            if (var type & imRealNumber) {
-                *(double*)(var data+(var lineSize*y+(x<<2)))=(((double)color)/(LONG_MAX))*(var stats[isRangeHi]-var stats[isRangeLo])+var stats[isRangeLo];
+            if (var->type & imRealNumber) {
+                *(double*)(var->data+(var->lineSize*y+(x<<2)))=(((double)color)/(LONG_MAX))*(var->stats[isRangeHi]-var->stats[isRangeLo])+var->stats[isRangeLo];
             }
             break;
         default:
             return;
     }
-    my update_change( self);
+    my->update_change( self);
     #undef LONGtoBGR
 }
 
@@ -1035,10 +1176,10 @@ Image_bitmap( Handle self)
    Handle h;
    HV * profile = newHV();
 
-   pset_H( owner,        var owner);
-   pset_i( width,        var w);
-   pset_i( height,       var h);
-   pset_sv( palette,     my get_palette( self));
+   pset_H( owner,        var->owner);
+   pset_i( width,        var->w);
+   pset_i( height,       var->h);
+   pset_sv( palette,     my->get_palette( self));
    h = Object_create( "DeviceBitmap", profile);
    sv_free(( SV *) profile);
    CDrawable( h)-> put_image( h, 0, 0, self);
@@ -1054,29 +1195,29 @@ Image_dup( Handle self)
    PImage i;
    HV * profile = newHV();
 
-   pset_H( owner,        var owner);
-   pset_i( width,        var w);
-   pset_i( height,       var h);
-   pset_i( type,         var type);
-   pset_i( conversion,   var conversion);
+   pset_H( owner,        var->owner);
+   pset_i( width,        var->w);
+   pset_i( height,       var->h);
+   pset_i( type,         var->type);
+   pset_i( conversion,   var->conversion);
    pset_i( hScaling,     is_opt( optHScaling));
    pset_i( vScaling,     is_opt( optVScaling));
    pset_i( preserveType, is_opt( optPreserveType));
 
-   h = Object_create( var self-> className, profile);
+   h = Object_create( var->self-> className, profile);
    sv_free(( SV *) profile);
    i = ( PImage) h;
-   memcpy( i-> palette, var palette, 768);
-   if ( i-> type != var type) {
+   memcpy( i-> palette, var->palette, 768);
+   if ( i-> type != var->type) {
       /* Object does not support given type, but Image supports them all */
       Handle img = ( Handle) create_object( "Image", "iiii",
-             "width"     , var w,
-             "height"    , var h,
-             "type"      , var type,
-             "conversion", var conversion
+             "width"     , var->w,
+             "height"    , var->h,
+             "type"      , var->type,
+             "conversion", var->conversion
       );
-      memcpy( PImage(img)-> palette, var palette, 768);
-      memcpy( PImage(img)-> data,    var data,    var dataSize);
+      memcpy( PImage(img)-> palette, var->palette, 768);
+      memcpy( PImage(img)-> data,    var->data,    var->dataSize);
       CImage(img)->set_type( img, i-> type);
       if ( i->dataSize != PImage( img)->dataSize)
          croak("RTC0108: Image::dup consistency failed");
@@ -1084,9 +1225,9 @@ Image_dup( Handle self)
       memcpy( i-> palette, PImage(img)-> palette, 768);
       Object_destroy( img);
    } else
-      memcpy( i-> data, var data, var dataSize);
-   memcpy( i-> stats, var stats, sizeof( var stats));
-   i-> statsCache = var statsCache;
+      memcpy( i-> data, var->data, var->dataSize);
+   memcpy( i-> stats, var->stats, sizeof( var->stats));
+   i-> statsCache = var->statsCache;
    --SvREFCNT( SvRV( i-> mate));
    return h;
 }
@@ -1097,46 +1238,46 @@ Image_extract( Handle self, int x, int y, int width, int height)
    Handle h;
    PImage i;
    HV * profile;
-   unsigned char * data = var data;
-   int ls = var lineSize;
+   unsigned char * data = var->data;
+   int ls = var->lineSize;
 
-   if ( var w == 0 || var h == 0) return my dup( self);
+   if ( var->w == 0 || var->h == 0) return my->dup( self);
    if ( x < 0) x = 0;
    if ( y < 0) y = 0;
-   if ( x >= var w) x = var w - 1;
-   if ( y >= var h) y = var h - 1;
-   if ( width  + x > var w) width  = var w - x;
-   if ( height + y > var h) height = var h - y;
-   if ( width <= 0 || height <= 0) return my dup( self);
+   if ( x >= var->w) x = var->w - 1;
+   if ( y >= var->h) y = var->h - 1;
+   if ( width  + x > var->w) width  = var->w - x;
+   if ( height + y > var->h) height = var->h - y;
+   if ( width <= 0 || height <= 0) return my->dup( self);
 
    profile = newHV();
-   pset_H( owner,        var owner);
+   pset_H( owner,        var->owner);
    pset_i( width,        width);
    pset_i( height,       height);
-   pset_i( type,         var type);
-   pset_i( conversion,   var conversion);
+   pset_i( type,         var->type);
+   pset_i( conversion,   var->conversion);
    pset_i( hScaling,     is_opt( optHScaling));
    pset_i( vScaling,     is_opt( optVScaling));
    pset_i( preserveType, is_opt( optPreserveType));
 
-   h = Object_create( var self-> className, profile);
+   h = Object_create( var->self-> className, profile);
    sv_free(( SV *) profile);
    i = ( PImage) h;
-   memcpy( i-> palette, var palette, 768);
-   if (( var type & imBPP) >= 8) {
-      int pixelSize = ( var type & imBPP) / 8;
+   memcpy( i-> palette, var->palette, 768);
+   if (( var->type & imBPP) >= 8) {
+      int pixelSize = ( var->type & imBPP) / 8;
       while ( height > 0) {
          height--;
          memcpy( i-> data + height * i-> lineSize,
                  data + ( y + height) * ls + pixelSize * x,
                  pixelSize * width);
       }
-   } else if (( var type & imBPP) == 4) {
+   } else if (( var->type & imBPP) == 4) {
       while ( height > 0) {
          height--;
          bc_nibble_copy( data + ( y + height) * ls, i-> data + height * i-> lineSize, x, width);
       }
-   } else if (( var type & imBPP) == 1) {
+   } else if (( var->type & imBPP) == 1) {
       while ( height > 0) {
          height--;
          bc_mono_copy( data + ( y + height) * ls, i-> data + height * i-> lineSize, x, width);
@@ -1145,6 +1286,3 @@ Image_extract( Handle self, int x, int y, int width, int height)
    --SvREFCNT( SvRV( i-> mate));
    return h;
 }
-
-
-

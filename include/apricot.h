@@ -1488,7 +1488,8 @@ typedef struct _IMGCapInfo {
 } ImgCapInfo, *PImgCapInfo;
 
 typedef struct _IMGProperties {
-   char *id;
+   char *name;
+   int id;
    /*
     * Property types are the same as for capabilities but with addition of
     * b - byte.
@@ -1498,8 +1499,15 @@ typedef struct _IMGProperties {
 } ImgProps, *PImgProps;
 
 typedef struct _IMGProperty { /* To be passed for Load/Save related operations. */
-   char *id;
+   char *name;
+   int id;
    int size; /* Size of array if property contains an array. */
+   U16 flags;
+#define PROPTYPE_MASK    0x00ff
+#define PROPTYPE_INT     0x0001
+#define PROPTYPE_DOUBLE  0x0002
+#define PROPTYPE_STRING  0x0003
+#define PROPTYPE_BYTE    0x0004
    union {
       int Int;
       double Double;
@@ -1518,7 +1526,7 @@ typedef struct _IMGInfo {
    PList propList;
 } ImgInfo, *PImgInfo;
 
-typedef Bool IMGF_Load( int fd, const char *filename, PList imgInfo);
+typedef Bool IMGF_Load( int fd, const char *filename, PList imgInfo, Bool readAll);
 typedef IMGF_Load *PIMGF_Load;
 typedef Bool IMGF_Save( const char *filename, PList imgInfo);
 typedef IMGF_Save *PIMGF_Save;
@@ -1526,7 +1534,7 @@ typedef Bool IMGF_Loadable( int fd, const char *filename, Byte *preread_buf, U32
 typedef IMGF_Loadable *PIMGF_Loadable;
 typedef Bool IMGF_Storable( const char *filename, PList imgInfo);
 typedef IMGF_Storable *PIMGF_Storable;
-typedef Bool IMGF_GetInfo( int fd, const char *filename, PList imgInfo);
+typedef Bool IMGF_GetInfo( int fd, const char *filename, PList imgInfo, Bool readAll);
 typedef IMGF_GetInfo *PIMGF_GetInfo;
 typedef const char *IMGF_GetErrorMsg( char *errorMsgBuf, int bufLen);
 typedef IMGF_GetErrorMsg *PIMGF_GetErrorMsg;
@@ -1557,13 +1565,16 @@ extern void
 apc_image_destroy( Handle self);
 
 extern PImgProperty
-apc_image_add_property( PImgInfo imageInfo, const char *propName, int propArraySize);
+apc_image_add_property( PImgInfo imageInfo, const char *propName, U16 propType, int propArraySize);
 
 extern Bool
 apc_image_begin_paint( Handle self);
 
 extern Bool
 apc_image_begin_paint_info( Handle self);
+
+extern void
+apc_image_clear_property( PImgProperty imgProp);
 
 extern void
 apc_image_end_paint( Handle self);

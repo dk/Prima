@@ -34,6 +34,8 @@ static int apcErrorType = APCERRT_NONE;
 #define APCIMG_NO_FORMAT 4
 #define APCIMG_INV_PROPERTY_TYPE 5
 #define APCIMG_INV_PROPERTY_VAL 6
+#define APCIMG_INV_INDEX_VAL 7
+#define APCIMG_FORBIDDEN_READALL 8
 static int apcErrorCode = APCIMG_NO_ERROR;
 static int errDriverIdx = -1;
 
@@ -81,6 +83,12 @@ apc_image_get_error_message( char *errorMsgBuf, int bufLen)
 		    break;
 		case APCIMG_INV_PROPERTY_VAL:
 		    msg = "invalid property value";
+		    break;
+		case APCIMG_INV_INDEX_VAL:
+		    msg = "invalid 'index' property value: can't be -1 for load";
+		    break;
+		case APCIMG_FORBIDDEN_READALL:
+		    msg = "'readAll' property is not allowed while more than one profile specified";
 		    break;
 		default:
 		    msg = "*** APC internal: unknown error code";
@@ -295,8 +303,27 @@ load_img_loadable( Handle item, void *params)
 				   load_data->preread_size);
 }
 
+static Bool
+__is_boolean_value( const char *val)
+{
+    return ( ( strcasecmp( val, "yes") == 0)
+	     || ( strcasecmp( val, "on") == 0)
+	     || ( strcasecmp( val, "1") == 0)
+	     || ( strcasecmp( val, "no") == 0)
+	     || ( strcasecmp( val, "off") == 0)
+	     || ( strcasecmp( val, "0") == 0));
+}
+
+static Bool
+__boolean_value( const char *val)
+{
+    return ( ( strcasecmp( val, "yes") == 0)
+	     || ( strcasecmp( val, "on") == 0)
+	     || ( strcasecmp( val, "1") == 0));
+}
+
 Bool
-__apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat)
+__apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool readData, Bool *readAll)
 {
    PImgProps fmtProps = imgFormat->propertyList;
    PList propList = imageInfo->propList;
@@ -305,42 +332,44 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat)
 
    for ( i = ( propList->count - 1); ( i >= 0) && rc; i--) {
        PImgProperty imgProp = ( PImgProperty) list_at( propList, i);
-       if ( strcmp( imgProp->id, "extraInfo") == 0) {
+       Bool isExtraInfo = ( strcmp( imgProp->name, "extraInfo") == 0);
+       Bool isReadAll = ( strcmp( imgProp->name, "readAll") == 0);
+       fprintf( stderr, "Correcting ``%s''\n", imgProp->name);
+       if ( isExtraInfo || isReadAll) {
 	   if ( imgProp->size != -1) {
 	       // We don't expect an array here.
 	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
-	       fprintf( stderr, "Property %s: wrong type\n", imgProp->id);
+	       fprintf( stderr, "Property `%s' is of a wrong type\n", imgProp->name);
 	       rc = false;
 	   }
-	   else if ( ( strcasecmp( imgProp->val.String, "yes") != 0)
-		     && ( strcasecmp( imgProp->val.String, "on") != 0)
-		     && ( strcasecmp( imgProp->val.String, "1") != 0)
-		     && ( strcasecmp( imgProp->val.String, "no") != 0)
-		     && ( strcasecmp( imgProp->val.String, "off") != 0)
-		     && ( strcasecmp( imgProp->val.String, "0") != 0)) {
+	   else if ( ! __is_boolean_value( imgProp->val.String)) {
 	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_VAL);
-	       fprintf( stderr, "Property %s: wrong value \'%s\'\n", imgProp->id, imgProp->val.String);
+	       fprintf( stderr, "Property %s: wrong value \'%s\'\n", imgProp->name, imgProp->val.String);
 	       rc = false;
 	   }
 	   else {
-	       imageInfo->extraInfo = 
-		   ( strcasecmp( imgProp->val.String, "yes") == 0)
-		   || ( strcasecmp( imgProp->val.String, "on") == 0)
-		   || ( strcasecmp( imgProp->val.String, "1") == 0);
+	       if ( isExtraInfo) {
+		   imageInfo->extraInfo = __boolean_value( imgProp->val.String);
+	       }
+	       else if ( isReadAll) {
+		   *readAll = __boolean_value( imgProp->val.String);
+	       }
 	   }
+	   apc_image_clear_property( ( PImgProperty)list_at( propList, i));
 	   list_delete_at( propList, i);
 	   continue;
        }
-       for ( j = 0; fmtProps[ j].id; j++) {
-	   if ( strcmp( imgProp->id, fmtProps[ j].id) == 0) {
+       for ( j = 0; fmtProps[ j].name; j++) {
+	   if ( strcmp( imgProp->name, fmtProps[ j].name) == 0) {
 	       break;
 	   }
        }
-       if ( fmtProps[ j].id) {
+       if ( fmtProps[ j].name) {
 	   if ( ( ( fmtProps[ j].type[ 1] == '*') && imgProp->size == -1)
 		|| ( ( fmtProps[ j].type[ 1] == '\0') && ( imgProp->size >= 0))) {
 	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
-	       fprintf( stderr, "Property %s: wrong type\n", imgProp->id);
+	       fprintf( stderr, "Property %s: wrong type\n", imgProp->name);
+	       apc_image_clear_property( imgProp);
 	       rc = false;
 	   }
 	   else {
@@ -359,7 +388,14 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat)
 			   int prop = atoi( imgProp->val.String);
 			   free( imgProp->val.String);
 			   imgProp->val.Int = prop;
+			   if ( readData
+				&& ( strcmp( imgProp->name, "index") == 0)
+				&& ( prop == -1)) {
+			       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_INDEX_VAL);
+			       rc = false;
+			   }
 		       }
+		       imgProp->flags = ( imgProp->flags & ~PROPTYPE_MASK) || PROPTYPE_INT;
 		       break;
 		   case 'n':
 		       if ( fmtProps[ j].type[ 0] == '*') {
@@ -376,6 +412,7 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat)
 			   free( imgProp->val.String);
 			   imgProp->val.Double = prop;
 		       }
+		       imgProp->flags = ( imgProp->flags & ~PROPTYPE_MASK) || PROPTYPE_DOUBLE;
 		       break;
 		   case 'b':
 		       if ( fmtProps[ j].type[ 0] == '*') {
@@ -392,13 +429,22 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat)
 			   free( imgProp->val.String);
 			   imgProp->val.Byte = prop;
 		       }
+		       imgProp->flags = ( imgProp->flags & ~PROPTYPE_MASK) || PROPTYPE_BYTE;
 		       break;
 	       }
+	       imgProp->id = fmtProps[ j].id;
 	   }
        }
        else {
+	   apc_image_clear_property( ( PImgProperty) list_at( propList, i));
 	   list_delete_at( propList, i);
        }
+   }
+
+   /* In case of errors we have to clean up the rest of the properties */
+   for ( ; i >= 0; i--) {
+       apc_image_clear_property( ( PImgProperty) list_at( propList, i));
+       list_delete_at( propList, i);
    }
 
    fprintf( stderr, "__apc_image_set_error: returning %d\n", ( int) rc);
@@ -432,7 +478,7 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 		    fprintf( stderr, "format_idx: %d\n", format_idx);
 		    if ( format_idx != -1) {
 			int i;
-			Bool correction_succeed = true;
+			Bool correction_succeed = true, readAll = false;
 			PImgFormat imgFormat = ( PImgFormat) list_at( imgFormats, format_idx);
 			fprintf( stderr, "%s for %s as %s\n", 
 				 ( readData ? "Loading image" : "Getting info"), 
@@ -441,12 +487,16 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 			    );
 			for ( i = 0; ( i < imgInfo->count) && correction_succeed; i++) {
 			    PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
-			    correction_succeed = __apc_image_correct_properties( imageInfo, imgFormat);
+			    correction_succeed = __apc_image_correct_properties( imageInfo, imgFormat, readData, &readAll);
+			}
+			if ( readAll && correction_succeed && ( imgInfo->count > 1)) {
+			    __apc_image_set_error( APCERRT_INTERNAL, APCIMG_FORBIDDEN_READALL);
+			    correction_succeed = false;
 			}
 			if ( correction_succeed) {
 			    rc = ( readData ?
-				   imgFormat->load( load_data->fd, load_data->filename, imgInfo) :
-				   imgFormat->getInfo( load_data->fd, load_data->filename, imgInfo));
+				   imgFormat->load( load_data->fd, load_data->filename, imgInfo, readAll) :
+				   imgFormat->getInfo( load_data->fd, load_data->filename, imgInfo, readAll));
 			    if ( ! rc) {
 				fprintf( stderr, "Error in driver %d\n", format_idx);
 				__apc_image_set_error( APCERRT_DRIVER, 0, format_idx);
@@ -563,7 +613,7 @@ apc_image_fetch_more( __PImgLoadData load_data, int preread_size)
 }
 
 PImgProperty
-apc_image_add_property( PImgInfo imageInfo, const char *propName, int propArraySize)
+apc_image_add_property( PImgInfo imageInfo, const char *propName, U16 propType, int propArraySize)
 {
     PImgProperty imgProp;
 
@@ -573,7 +623,8 @@ apc_image_add_property( PImgInfo imageInfo, const char *propName, int propArrayS
 
     imgProp = ( PImgProperty) malloc( sizeof( ImgProperty));
     if ( imgProp != nil) {
-	imgProp->id = duplicate_string( propName);
+	imgProp->name = duplicate_string( propName);
+	imgProp->flags = propType;
 	imgProp->size = propArraySize;
 	list_add( imageInfo->propList, ( Handle) imgProp);
     }
@@ -582,76 +633,112 @@ apc_image_add_property( PImgInfo imageInfo, const char *propName, int propArrayS
 }
 
 void
+apc_image_clear_property( PImgProperty imgProp)
+{
+    if ( imgProp != nil) {
+	free( imgProp->name);
+	if ( imgProp->size == -1) {
+	    if ( ( imgProp->flags & PROPTYPE_MASK) == PROPTYPE_STRING) {
+		free( imgProp->val.String);
+	    }
+	}
+	else {
+	    if ( imgProp->size > 0) {
+		if ( ( imgProp->flags & PROPTYPE_MASK) == PROPTYPE_STRING) {
+		    int i;
+		    for ( i = 0; i < imgProp->size; i++) {
+			free( imgProp->val.pString[ i]);
+		    }
+		}
+		switch ( imgProp->flags & PROPTYPE_MASK) {
+		    case PROPTYPE_INT:
+			free( imgProp->val.pInt);
+			break;
+		    case PROPTYPE_DOUBLE:
+			free( imgProp->val.pDouble);
+			break;
+		    case PROPTYPE_STRING:
+			free( imgProp->val.pString);
+			break;
+		    case PROPTYPE_BYTE:
+		    default:
+			free( imgProp->val.pByte);
+			break;
+		}
+	    }
+	}
+    }
+}
+
+void
 prima_init_image_subsystem( void)
 {
    apc_register_image_format( APCIMG_VERSION, &gifFormat);
 }
 
-void
-___apc_image_test()
-{
-    PList imgInfo = nil;
-    PImgInfo imageInfo;
-    PImgProperty imgProp;
+/*  void */
+/*  ___apc_image_test() */
+/*  { */
+/*      PList imgInfo = nil; */
+/*      PImgInfo imageInfo; */
+/*      PImgProperty imgProp; */
 
-    fprintf( stderr, "___apc_image_test\n");
-    fprintf( stderr, "registering GIF format: %s\n", apc_register_image_format( APCIMG_VERSION, &gifFormat) ? "ok" : "failed");
+/*      fprintf( stderr, "___apc_image_test\n"); */
+/*      fprintf( stderr, "registering GIF format: %s\n", apc_register_image_format( APCIMG_VERSION, &gifFormat) ? "ok" : "failed"); */
 
-    imgInfo = plist_create( 5, 5);
+/*      imgInfo = plist_create( 5, 5); */
 
-    imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo));
-    imageInfo->propList = plist_create( 5, 5);
-    imgProp = ( PImgProperty) malloc( sizeof( ImgProperty));
-    imgProp->id = duplicate_string( "index");
-    imgProp->size = -1;
-    imgProp->val.Int = 5;
-    list_add( imageInfo->propList, ( Handle) imgProp);
-    list_add( imgInfo, ( Handle) imageInfo);
-    fprintf( stderr, "First one\n");
+/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
+/*      imageInfo->propList = plist_create( 5, 5); */
+/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
+/*      imgProp->name = duplicate_string( "index"); */
+/*      imgProp->size = -1; */
+/*      imgProp->val.Int = 5; */
+/*      list_add( imageInfo->propList, ( Handle) imgProp); */
+/*      list_add( imgInfo, ( Handle) imageInfo); */
+/*      fprintf( stderr, "First one\n"); */
 
-    imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo));
-    imageInfo->propList = plist_create( 5, 5);
-    imgProp = ( PImgProperty) malloc( sizeof( ImgProperty));
-    imgProp->id = duplicate_string( "index");
-    imgProp->size = -1;
-    imgProp->val.Int = 2;
-    list_add( imageInfo->propList, ( Handle) imgProp);
-    list_add( imgInfo, ( Handle) imageInfo);
+/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
+/*      imageInfo->propList = plist_create( 5, 5); */
+/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
+/*      imgProp->name = duplicate_string( "index"); */
+/*      imgProp->size = -1; */
+/*      imgProp->val.Int = 2; */
+/*      list_add( imageInfo->propList, ( Handle) imgProp); */
+/*      list_add( imgInfo, ( Handle) imageInfo); */
 
-    imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo));
-    imageInfo->propList = plist_create( 5, 5);
-    imgProp = ( PImgProperty) malloc( sizeof( ImgProperty));
-    imgProp->id = duplicate_string( "index");
-    imgProp->size = -1;
-    imgProp->val.Int = 10;
-    list_add( imageInfo->propList, ( Handle) imgProp);
-    imgProp = ( PImgProperty) malloc( sizeof( ImgProperty));
-    imgProp->id = duplicate_string( "index1");
-    imgProp->size = -1;
-    imgProp->val.Int = 16;
-    list_add( imageInfo->propList, ( Handle) imgProp);
-    list_add( imgInfo, ( Handle) imageInfo);
+/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
+/*      imageInfo->propList = plist_create( 5, 5); */
+/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
+/*      imgProp->name = duplicate_string( "index"); */
+/*      imgProp->size = -1; */
+/*      imgProp->val.Int = 10; */
+/*      list_add( imageInfo->propList, ( Handle) imgProp); */
+/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
+/*      imgProp->name = duplicate_string( "index1"); */
+/*      imgProp->size = -1; */
+/*      imgProp->val.Int = 16; */
+/*      list_add( imageInfo->propList, ( Handle) imgProp); */
+/*      list_add( imgInfo, ( Handle) imageInfo); */
 
-    imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo));
-    imageInfo->propList = plist_create( 5, 5);
-    imgProp = ( PImgProperty) malloc( sizeof( ImgProperty));
-    imgProp->id = duplicate_string( "index");
-    imgProp->size = -1;
-    imgProp->val.Int = 1;
-    list_add( imageInfo->propList, ( Handle) imgProp);
-    list_add( imgInfo, ( Handle) imageInfo);
+/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
+/*      imageInfo->propList = plist_create( 5, 5); */
+/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
+/*      imgProp->name = duplicate_string( "index"); */
+/*      imgProp->size = -1; */
+/*      imgProp->val.Int = 1; */
+/*      list_add( imageInfo->propList, ( Handle) imgProp); */
+/*      list_add( imgInfo, ( Handle) imageInfo); */
 
-    imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo));
-    imageInfo->propList = plist_create( 5, 5);
-    imgProp = ( PImgProperty) malloc( sizeof( ImgProperty));
-    list_add( imgInfo, ( Handle) imageInfo);
+/*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
+/*      imageInfo->propList = plist_create( 5, 5); */
+/*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
+/*      list_add( imgInfo, ( Handle) imageInfo); */
 
-    fprintf( stderr, "Getting info about image...\n");
+/*      fprintf( stderr, "Getting info about image...\n"); */
 
-//    apc_image_read( "/home/voland/src/home_page/ico/email_anim.gif", nil, imgInfo, true);
-    if ( ! apc_image_read( "/home/voland/tmp/eagle8.gif", imgInfo, true)) {
-//    if ( ! apc_image_read( "/home/voland/tmp/powerlogo.bmp", nil, imgInfo, true)) {
-	fprintf( stderr, "getinfo failed: ");
-	fprintf( stderr, "%s\n", apc_image_get_error_message( NULL, 0));
-    }
-}
+/*      if ( ! apc_image_read( "/home/voland/tmp/eagle8.gif", imgInfo, true)) { */
+/*  	fprintf( stderr, "getinfo failed: "); */
+/*  	fprintf( stderr, "%s\n", apc_image_get_error_message( NULL, 0)); */
+/*      } */
+/*  } */
