@@ -61,6 +61,7 @@ sub profile_default
       dragable    => 1,
       minTabWidth => 2,
       vertical    => 0,
+      selectable  => 0,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -77,7 +78,7 @@ sub init
    $self->{fontHeight} = $self-> font-> height;
    $self-> {resetDisabled} = 1;
    $self-> $_( $profile{$_})
-      for ( qw( vertical minTabWidth offset items widths pressed clickable scalable dragable));
+      for ( qw( vertical minTabWidth items widths offset pressed clickable scalable dragable));
    if ( scalar @{$profile{widths}} == 0) {
       $self-> autowidths;
       $self-> repaint;
@@ -223,6 +224,21 @@ sub tab2rect
       ( $offset, 1, $offset + $self-> {widths}->[$id] + 2, $self-> height - 1);
 }
 
+sub reset_transaction
+{
+   my $self = $_[0];
+   my $lim = $self-> {vertical} ? $self-> height : $self-> width;
+   $self-> {swidth} = $self-> tab2offset( $self-> {tabId}) - $self-> {offset};
+   $self-> {maxwidth} = $lim - $self-> {swidth} - 2;
+   $self-> {maxwidth} -= $self-> {minTabWidth} if $self-> {tabId} < $self-> {count} - 1;
+   if ( $self-> {swidth} < 0) {
+      $self-> {minwidth} = -$self-> {swidth} - 1;
+      $self-> {minwidth} = $self-> {minTabWidth} if $self-> {minwidth} > $self-> {minTabWidth};
+   } else {
+      $self-> {minwidth} = $self-> {minTabWidth};
+   }
+}
+
 sub on_mousedown
 {
    my ( $self, $btn, $mod, $x, $y) = @_;
@@ -234,18 +250,9 @@ sub on_mousedown
    if ( $id < 0) {
       $self-> {transaction} = 2;
       $self-> {anchor} = $self-> {vertical} ? $y : $x;
-      my $lim = $self-> {vertical} ? $self-> height : $self-> width;
       $self-> {tabId}  = - $id - 1;
       $self-> {owidth} = $self-> {widths}->[$self-> {tabId}];
-      $self-> {swidth} = $self-> tab2offset( $self-> {tabId}) - $self-> {offset};
-      $self-> {maxwidth} = $lim - $self-> {swidth} - 2;
-      $self-> {maxwidth} -= $self-> {minTabWidth} if $self-> {tabId} < $self-> {count} - 1;
-      if ( $self-> {swidth} < 0) {
-         $self-> {minwidth} = -$self-> {swidth} - 1;
-         $self-> {minwidth} = $self-> {minTabWidth} if $self-> {minwidth} > $self-> {minTabWidth};
-      } else {
-         $self-> {minwidth} = $self-> {minTabWidth};
-      }
+      $self-> reset_transaction;
    } else {
       $self-> {transaction} = 1;
       $self-> {tabId} = $id;
@@ -312,6 +319,13 @@ sub on_mousemove
       return if $p == $o;
       $self-> {clickAllowed} = 0;
       $self-> pointer( cr::Move) if $self->{clickable};
+      if ( $self-> {widths}->[$p] > $self-> {widths}->[$o]) {
+         my @ppos = $self-> pointerPos;
+         $ppos[$self-> {vertical} ? 1 : 0] +=
+            ( $self-> {widths}->[$p] - $self-> {widths}->[$o]) * (( $p > $o) ? 1 : -1);
+         $self-> pointerPos( @ppos);
+      }
+
       splice( @{$self-> {items}}, $p, 0, splice( @{$self-> {items}}, $o, 1));
       splice( @{$self-> {widths}}, $p, 0, splice( @{$self-> {widths}}, $o, 1));
       $self-> {tabId} = $p;
@@ -328,6 +342,7 @@ sub on_mousemove
       return if $nw == $ow;
       $self-> {widths}->[$self-> {tabId}] = $nw;
       my $o  = $self-> {swidth} + $ow;
+      $self-> {maxWidth} += $nw - $ow;
       $self-> {vertical} ?
          $self-> scroll(
              0, $nw - $ow,
@@ -398,11 +413,11 @@ sub offset
 {
    return $_[0]-> {offset} unless $#_;
    my ( $self, $offset) = @_;
-   $self-> protect;
    $offset = 0 if $offset < 0;
    $offset = $self-> {maxWidth} - 5 if $offset >= $self->{maxWidth} - 4;
    return if $offset == $self-> {offset};
    $self-> {offset} = $offset;
+   $self-> reset_transaction if $self-> {transaction};
    $self-> repaint;
 }
 
@@ -467,6 +482,7 @@ sub items
       $self-> notify(q(SizeItems));
    }
    $self-> recalc_maxwidth;
+   $self-> offset( $self-> offset);
    $self-> repaint;
 }
 
@@ -488,6 +504,7 @@ sub widths
       $_ = $self-> {minTabWidth} if $_ < $self-> {minTabWidth};
    }
    $self-> recalc_maxwidth;
+   $self-> offset( $self-> offset);
    $self-> repaint;
    $self-> notify(q(SizeItems));
 }

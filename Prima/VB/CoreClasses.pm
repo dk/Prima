@@ -25,10 +25,6 @@
 #
 package Prima::VB::CoreClasses;
 
-use Prima::Classes;
-use Prima::StdBitmap;
-
-
 sub classes
 {
    return (
@@ -220,6 +216,9 @@ sub classes
       },
    );
 }
+
+use Prima::Classes;
+use Prima::StdBitmap;
 
 package Prima::VB::CommonControl;
 use vars qw(@ISA);

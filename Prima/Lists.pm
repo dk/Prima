@@ -106,7 +106,7 @@ sub init
       { $self->{$_} = 1; }
    $self->{selectedItems} = {};
    my %profile = $self-> SUPER::init(@_);
-   $self-> {indents} = [0,0,0,0];
+   $self-> setup_indents;
    $self->{selectedItems} = {} unless $profile{multiSelect};
    for ( qw( gridColor hScroll vScroll offset multiColumn itemHeight autoHeight itemWidth multiSelect extendedSelect integralHeight focusedItem topItem selectedItems borderWidth))
       { $self->$_( $profile{ $_}); }
@@ -258,6 +258,8 @@ sub on_paint
        $canvas-> color( $c);
    }
    my $focusedState = $self-> focused ? ( exists $self->{unfocState} ? 0 : 1) : 0;
+   $self-> {unfocVeil} = ( $focusedState && $self-> {focusedItem} < 0 && $locWidth > 0) ? 1 : 0;
+   my $foci = $self-> {focusedItem};
    if ( $self->{count} > 0 && $locWidth > 0)
    {
       #my @clipRect = ( $bw, $bw + $dy, $size[0] - $bw - $dx, $size[1] - $bw);
@@ -279,12 +281,14 @@ sub on_paint
                     $itemRect[0] > $invalidRect[2];
             my $sel = $self->{multiSelect} ?
                exists $self->{selectedItems}->{$item} :
-               (( $self->{focusedItem} == $item) ? 1 : 0);
+               (( $foci == $item) ? 1 : 0);
+            my $foc = ( $foci == $item) ? $focusedState : 0;
+            $foc = 1 if $item == 0 && $self-> {unfocVeil};
             push( @paintArray, [
               $item,
               $itemRect[0] - $self->{offset}, $itemRect[1],
               $itemRect[2]-1, $itemRect[3]-1,
-              $sel, $self->{focusedItem} == $item ? $focusedState : 0,
+              $sel, $foc,
               int(( $item - $self->{topItem}) / $rows),
             ]);
          }
@@ -317,11 +321,13 @@ sub on_paint
                   my $sel = $self->{multiSelect} ?
                   exists $self->{selectedItems}->{$item} :
                   (( $self->{focusedItem} == $item) ? 1 : 0);
+                  my $foc = ( $foci == $item) ? $focusedState : 0;
+                  $foc = 1 if $item == 0 && $self-> {unfocVeil};
                   push( @paintArray, [
                     $item,                                              # item number
                     $itemRect[0], $itemRect[1],
                     $itemRect[2]-1, $itemRect[3]-1,
-                    $sel, $self->{focusedItem} == $item ? $focusedState : 0, # selected and focused state
+                    $sel, $foc, # selected and focused state
                     $j                                                   # column
                   ]);
                   $item++;
@@ -340,13 +346,15 @@ sub on_paint
                $item++, next if ( $itemRect[3] < $invalidRect[1] || $itemRect[1] > $invalidRect[3]);
                my $sel = $self->{multiSelect} ?
                  exists $self->{selectedItems}->{$item} :
-                 (( $self->{focusedItem} == $item) ? 1 : 0);
+                 (( $foci == $item) ? 1 : 0);
+               my $foc = ( $foci == $item) ? $focusedState : 0;
+               $foc = 1 if $item == 0 && $self-> {unfocVeil};
                push( @paintArray, [
                   $item,                                               # item number
                   $itemRect[0] - $self->{offset}, $itemRect[1],        # logic rect
                   #$itemRect[2] - 1, $itemRect[3] - 1,                #
                   $itemRect[2], $itemRect[3],                          #
-                  $sel, $self->{focusedItem} == $item ? $focusedState : 0, # selected and focused state
+                  $sel, $foc, # selected and focused state
                   0 #column
                ]);
                $item++;
@@ -356,15 +364,13 @@ sub on_paint
       # $canvas-> color( $clr[0]);
       $self-> draw_items( $canvas, @paintArray);
    }
-   $self-> {unfocVeil} = 0;
-   if ( $focusedState && $self-> {focusedItem} < 0 && $locWidth > 0){
-      my @r = $self-> item2rect( 0, @size);
-      $self-> rect_focus( @r[0,1], $r[2]-1, $r[3]-1, 1);
-      $self-> {unfocVeil} = 1;
-   }
    delete $self->{singlePaint};
 }
 
+sub is_default_selection
+{
+   return $_[0]-> {unfocVeil};
+}
 
 sub on_enable  { $_[0]-> repaint; }
 sub on_disable { $_[0]-> repaint; }

@@ -55,7 +55,7 @@ sub init
    for ( qw( scrollTransaction hScroll vScroll limitX limitY deltaX deltaY borderWidth winX winY))
       { $self->{$_} = 0; }
    my %profile = $self-> SUPER::init(@_);
-   $self-> {indents} = [0,0,0,0];
+   $self-> setup_indents;
    for ( qw( hScroll vScroll borderWidth))
       { $self->$_( $profile{ $_}); }
    $self-> limits( $profile{limitX}, $profile{limitY});

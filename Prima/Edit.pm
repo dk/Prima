@@ -175,7 +175,7 @@ sub init
    for ( qw( selStart selEnd selStartl selEndl)) { $self-> {$_} = [0,0]}
    $self-> {defcw} = $::application-> get_default_cursor_width;
    my %profile = $self-> SUPER::init(@_);
-   $self-> {indents} = [0,0,0,0];
+   $self-> setup_indents;
    $profile{selection} = [@{$profile{selStart}}, @{$profile{selEnd}}];
    for ( qw( hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs
              textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth

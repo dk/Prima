@@ -115,7 +115,7 @@ sub init
       { $self->{$_} = 1; }
    $self->{items}      = [];
    my %profile = $self-> SUPER::init(@_);
-   $self-> {indents} = [0,0,0,0];
+   $self-> setup_indents;
    for ( qw( hScroll vScroll offset itemHeight autoHeight borderWidth indent
       items focusedItem topItem showItemHint dragable))
       { $self->$_( $profile{ $_}); }

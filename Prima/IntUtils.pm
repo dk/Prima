@@ -137,6 +137,11 @@ package Prima::GroupScroller;
 
 use Prima::ScrollBar;
 
+sub setup_indents
+{
+   $_[0]-> {indents} = [ 0,0,0,0];
+}
+
 sub set_border_width
 {
    my ( $self, $bw) = @_;
@@ -274,7 +279,7 @@ sub get_active_area
 {
    my @r = ( scalar @_ > 2) ? @_[2,3] : $_[0]-> size;
    my $i = $_[0]-> {indents};
-   if ( !defined $_[1] || $_[1] == 0) {
+   if ( !defined($_[1]) || $_[1] == 0) {
       # returns inclusive - exclusive
       return $$i[0], $$i[1], $r[0] - $$i[2], $r[1] - $$i[3];
    } elsif ( $_[1] == 1) {
