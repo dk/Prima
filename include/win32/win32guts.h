@@ -37,6 +37,7 @@
 #define WM_MENUCOMMAND                    ( WM_USER + 2)
 #define WM_POSTAL                         ( WM_USER + 3)
 #define WM_DLGENTERMODAL                  ( WM_USER + 4)
+#define WM_ZORDERSYNC                     ( WM_USER + 6)
 #define WM_BREAKMSGLOOP                   ( WM_USER + 5)
 #define WM_COLORCHANGED                   ( WM_USER + 7)
 #define WM_MOUSEENTER                     ( WM_USER + 8)
@@ -443,6 +444,7 @@ extern DWORD        stylus_get_extpen_style( PStylus s);
 extern PDCFont      font_alloc( Font * data, Point * resolution);
 extern void         font_free( PDCFont res);
 extern void         font_change( Handle self, Font * font);
+extern void         font_clean();
 extern void         font_logfont2font( LOGFONT * lf, Font * font, Point * resolution);
 extern void         font_font2logfont( Font * font, LOGFONT * lf);
 extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
