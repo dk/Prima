@@ -156,7 +156,7 @@ apc_window_activate( Handle self)
 
    frame = prima_find_frame_window( PWidget( self)-> handle);
    if ( frame) XRaiseWindow( DISP, frame);
-   XSetInputFocus( DISP, PWidget(self)->handle, RevertToParent, CurrentTime);
+   XSetInputFocus( DISP, PWidget(self)->handle, RevertToParent, guts.last_time);
    return true;
 }
 
