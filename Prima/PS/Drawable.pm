@@ -26,7 +26,6 @@
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
 #
 use strict;
-use POSIX q(setlocale);
 use Prima;
 use Prima::PS::Fonts;
 use Prima::PS::Encodings;
@@ -44,17 +43,11 @@ Prima::PS::Drawable -  PostScript interface to Prima::Drawable
    use Prima;
    use Prima::PS::Drawable;
 
-   package FileSpoolPrinter;
-   use vars qw(@ISA);
-   @ISA = qw(Prima::PS::Drawable);
-
-   sub spool {
+   my $x = Prima::PS::Drawable-> create( onSpool => sub {
       open F, "> ./test.ps";
       print F ($_, "\n") for @{$_[1]};
       close F;
-   }
-   
-   my $x = FileSpoolPrinter-> create;
+   });
    $x-> begin_doc;
    $x-> font-> size( 30);
    $x-> text_out( "hello!", 100, 100);
@@ -88,10 +81,6 @@ amount of copies that PS interpreter should print
 
 could be 0 or 1
 
-=item ::locale
-
-used by default for optimized text operations. Not used if ::useDeviceFonts is 0.
-
 =item ::pageSize 
 
 physical page dimension, in points
@@ -117,9 +106,29 @@ etc.
 
 1 by default; optimizes greatly text operaions, but takes the risk
 that a character could be drawn incorrectly or not drawn at all -
-thsi behavior depends on a particular PS interpreter.
+this behavior depends on a particular PS interpreter.
+
+=item ::useDeviceFontsOnly
+
+If 1, the system fonts, available from Prima::Application
+interfaces can not be used. This property is not to be mapped
+into the user-tunable setup dialog. Its usage is designed for
+developers and the outside-of-Prima applications that wish to
+use PS generation module without graphics. If 1, C<::useDeviceFonts>
+is set to 1 automatically.
+
+Default value is 0
 
 =cut
+
+{
+my %RNT = (
+   %{Prima::Drawable->notification_types()},
+   Spool => nt::Action,
+);
+
+sub notification_types { return \%RNT; }
+}
 
 sub profile_default
 {
@@ -127,7 +136,6 @@ sub profile_default
    my %prf = (
       copies           => 1,
       grayscale        => 0,
-      locale           => undef,
       pageDevice       => undef,
       pageSize         => [ 598, 845],
       pageMargins      => [ 12, 12, 12, 12],
@@ -137,6 +145,7 @@ sub profile_default
       scale            => [ 1, 1],
       textOutBaseline  => 1,
       useDeviceFonts   => 1,
+      useDeviceFontsOnly => 0,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -155,8 +164,9 @@ sub init
    $self-> {font}        = {};
    my %profile = $self-> SUPER::init(@_);
    $self-> $_( $profile{$_}) for qw( grayscale copies pageDevice 
-      useDeviceFonts rotate reversed locale);
+      useDeviceFonts rotate reversed useDeviceFontsOnly);
    $self-> $_( @{$profile{$_}}) for qw( pageSize pageMargins resolution scale);
+   $self-> {localeEncoding} = [];
    return %profile;
 }
 
@@ -207,20 +217,20 @@ sub save_state
    $self-> {saveState} = {};
    $self-> {saveState}-> {$_} = $self-> $_() for qw( 
       color backColor fillPattern lineEnd linePattern lineWidth
-      rop rop2 textOpaque textOutBaseline font locale
+      rop rop2 textOpaque textOutBaseline font
    );
    $self-> {saveState}-> {$_} = [$self-> $_()] for qw( 
       transform clipRect
    );
    $self-> {saveState}-> {localeEncoding} = 
-      $self-> {useDeviceFonts} ? [ @{$self-> {localeEncoding}}] : {};
+      $self-> {useDeviceFonts} ? [ @{$self-> {localeEncoding}}] : [];
 }
 
 sub restore_state
 {
    my $self = $_[0];
    for ( qw( color backColor fillPattern lineEnd linePattern lineWidth
-         rop rop2 textOpaque textOutBaseline font locale)) {
+         rop rop2 textOpaque textOutBaseline font)) {
        $self-> $_( $self-> {saveState}->{$_});     
    }      
    for ( qw( transform clipRect)) {
@@ -422,7 +432,7 @@ sub begin_doc
    $self-> {psData}  = [];
    $self-> {canDraw} = 1;
 
-   $docName = $::application ? $::application-> name : "Prima::PS::Printer"
+   $docName = $::application ? $::application-> name : "Prima::PS::Drawable"
       unless defined $docName;
    my $data = scalar localtime;
    my @b2 = (
@@ -461,7 +471,7 @@ NUMPAGES
    $self-> emit( <<PSHEADER);
 %!PS-Adobe-2.0
 %%Title: $docName
-%%Creator: Prima::PS::Printer
+%%Creator: Prima::PS::Drawable
 %%CreationDate: $data
 %%Pages: (atend)
 %%BoundingBox: @{$self->{pageMargins}}[0,1] @b2
@@ -598,6 +608,7 @@ Prima::PS::Printer handles spooling logic.
 
 sub spool
 {
+   shift-> notify( 'Spool', @_);
  #  my $p = $_[1];
  #  open F, "> ./test.ps";
  #  print F ($_, "\n") for @{$p};
@@ -773,22 +784,26 @@ sub useDeviceFonts
    $_[0]-> {useDeviceFonts} = $_[1] unless $_[0]-> get_paint_state;
 }
 
+sub useDeviceFontsOnly
+{
+   return $_[0]-> {useDeviceFontsOnly} unless $#_;
+   $_[0]-> useDeviceFonts(1) if $_[0]-> {useDeviceFontsOnly} = $_[1];
+}
+
 sub grayscale 
 {
    return $_[0]-> {grayscale} unless $#_;
    $_[0]-> {grayscale} = $_[1] unless $_[0]-> get_paint_state;
 }
 
-sub locale
+sub set_locale
 {
-   return $_[0]-> {locale} unless $#_;
    my ( $self, $loc) = @_;
+   return if !$self-> {useDeviceFonts} || !$self-> {canDraw};
+
    $self-> {locale} = $loc;
-   return unless $self-> {useDeviceFonts};
-   my $lzc = defined($loc) ? $loc : POSIX::setlocale(1);
-   my $le  = $self-> {localeEncoding} = Prima::PS::Encodings::load( $lzc);
-   return unless $self-> {canDraw};
-   
+   my $le  = $self-> {localeEncoding} = Prima::PS::Encodings::load( $loc);
+
    unless ( scalar keys %{$self-> {localeData}}) {
       return if ! defined($loc);
       $self-> emit( <<ENCODER);
@@ -988,7 +1003,8 @@ sub text_out
    }
   
    my $n = $self-> {typeFontMap}-> {$self-> {font}-> {name}};
-   my $spec = exists ( $self-> {font}-> {encoding}) ? ( $self-> {font}-> {encoding} eq 'Specific') : 0;
+   my $spec = exists ( $self-> {font}-> {encoding}) ? 
+      exists ( $Prima::PS::Encodings::fontspecific{ $self-> {font}-> {encoding}}) : 0;
    if ( $n == 1) {
        my $fn = $self-> {font}-> {docname};
        unless ( $spec || 
@@ -1252,20 +1268,46 @@ Returns Prima::Application::font plus those that defined into Prima::PS::Fonts m
 
 =cut
 sub fonts
-{
-   my $f1;
-   if ( $_[0]-> {useDeviceFonts}) {
-      $f1 = Prima::PS::Fonts::enum_fonts($_[1]);
-      return $f1 unless $::application;
+{  
+   my ( $self, $family, $encoding) = @_;
+   $family   = undef if defined $family   && !length $family;
+   $encoding = undef if defined $encoding && !length $encoding;
+
+   my $f1 = $self-> {useDeviceFonts} ? Prima::PS::Fonts::enum_fonts( $family, $encoding) : [];
+   return $f1 if !$::application || $self-> {useDeviceFontsOnly};
+
+   my $f2 = $::application-> fonts( $family, $encoding);
+   if ( !defined($family) && !defined($encoding)) {
+      my %f = map { $_-> {name} => $_ } @$f1;
+      my @add;
+      for ( @$f2) {
+         if ( $f{$_}) {
+            push @{$f{$_}->{encodings}}, @{$_->{encodings}};
+         } else {
+            push @add, $_;
+         }
+      }
+      push @$f1, @add;
    } else {
-      $f1 = {};
+      push @$f1, @$f2;
    }
-   
-   my $f2 = $::application-> fonts;
-   my %f = map { $_-> {name} => $_ } @$f2;
-   $f{$_->{name}} = $_ for @$f1;
-   my @x = map { $f{$_} } sort keys %f;
-   return \@x;
+   return $f1;
+}
+
+sub font_encodings
+{
+   my @r;
+   if ( $_[0]-> {useDeviceFonts}) {
+      @r = Prima::PS::Encodings::unique, keys %Prima::PS::Encodings::fontspecific;
+   }
+   if ( $::application && !$_[0]-> {useDeviceFontsOnly}) {
+      my %h = map { $_ => 1 } @r;
+      for ( @{$::application-> font_encodings}) {
+         next if $h{$_};
+         push @r, $_;
+      }
+   }
+   return \@r;
 }
 
 sub get_font 
@@ -1282,13 +1324,42 @@ sub set_font
    my $n = exists($font-> {name}) ? $font-> {name} : $self-> {font}-> {name};
    $n = $self-> {useDeviceFonts} ? $Prima::PS::Fonts::defaultFontName : 'Default'
       unless defined $n;
-   if ( $self-> {useDeviceFonts} && 
-        ( exists $Prima::PS::Fonts::enum_families{ $n} || 
-        exists $Prima::PS::Fonts::files{ $n})) {
+
+
+   if ( $self-> {useDeviceFontsOnly} || !$::application ||
+         ( $self-> {useDeviceFonts} && 
+           ( 
+           # enter, if there's a device font
+              exists $Prima::PS::Fonts::enum_families{ $n} || 
+              exists $Prima::PS::Fonts::files{ $n} ||
+              (
+                 # or the font encoding is PS::Encodings-specific,
+                 # not present in the GUI space
+                 exists $font->{encoding} &&
+                 (  
+                    exists $Prima::PS::Encodings::fontspecific{$font-> {encoding}} ||
+                    exists $Prima::PS::Encodings::files{$font-> {encoding}}
+                 ) && (
+                    !grep { $_ eq $font->{encoding} } @{$::application-> font_encodings}
+                 )
+              )
+           ) && 
+           # and, the encoding is supported
+           ( 
+              !exists $font->{encoding} || !length ($font->{encoding}) || 
+              (
+                 exists $Prima::PS::Encodings::fontspecific{$font-> {encoding}} ||
+                 exists $Prima::PS::Encodings::files{$font-> {encoding}}
+              )
+           ) 
+        )
+     )
+   {
       $self-> {font} = Prima::PS::Fonts::font_pick( $font, $self-> {font}); 
       $self-> {docFontMap}-> {$self-> {font}-> {docname}} = 1; 
       $self-> {typeFontMap}-> {$self-> {font}-> {name}} = 1; 
-      $self-> {fontWidthDivisor} = $self-> {font}-> {maximalWidth};      
+      $self-> {fontWidthDivisor} = $self-> {font}-> {maximalWidth};
+      $self-> set_locale( $self-> {font}-> {encoding});
    } else {
       my $wscale = $font-> {width};
       delete $font-> {width};
@@ -1344,6 +1415,9 @@ sub plate
 sub plate_glyph
 {
    my $z = $_[0]-> plate;
+   return '' if 
+      $_[0]-> {useDeviceFontsOnly} ||
+      ( $z-> font-> encoding ne $_[0]-> {font}->{encoding} );
    my $x = $_[1];
    my $d  = $z-> font-> descent;
    my ( $dimx, $dimy) = $z-> size;
@@ -1465,7 +1539,9 @@ sub get_rmap
 sub get_font_abc
 {
    my ( $self, $first, $last) = @_;
-   my $lim = ( defined ($self-> {font}-> {encoding}) && $self-> {font}-> {encoding} eq 'Specific') ? 255 : 127;
+   my $lim = ( defined ($self-> {font}-> {encoding}) && 
+               exists($Prima::PS::Encodings::fontspecific{$self-> {font}-> {encoding}})) 
+             ? 255 : 127;
    $first = 0    if !defined $first || $first < 0;
    $first = $lim if $first > $lim;
    $last  = $lim if !defined $last || $last < 0 || $last > $lim;
