@@ -310,6 +310,8 @@ remap_color( HPS ps, long clr, Bool toSystem)
    {
       int * scheme = ( int *) ctx_remap_def( clr & wcMask, ctx_wc2SCHEME, true, ( int) &customScheme);
       if (( clr = ( clr & ~wcMask)) > clMaxSysColor) clr = clMaxSysColor;
+      if ( clr == clSet)   c = 0xffffff; else
+      if ( clr == clClear) c = 0; else
       c = WinQuerySysColor( HWND_DESKTOP, scheme[ clr - 1], 0);
    }
    return c;
