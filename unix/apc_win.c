@@ -95,6 +95,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    Atom atoms[ 2];
    XWMHints wmhints;
    XClassHint *class_hint;
+   XTextProperty client_machine;
 
    if ( border_style != bsSizeable) border_style = bsDialog;
 
@@ -176,6 +177,20 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       class_hint-> res_name = CObject( self)-> className;
       XSetClassHint( DISP, X_WINDOW, class_hint);
       XFree (class_hint);
+   }
+
+   {
+       char *hostname = malloc(256);
+
+       gethostname(hostname, 256);
+       hostname[255] = '\0';
+       if (XStringListToTextProperty((char **)&hostname, 1, &client_machine) != 0) {
+	   XSetWMClientMachine(DISP, X_WINDOW, &client_machine);
+	   XFree(client_machine.value);
+       }
+       free(hostname);
+
+       XSetCommand(DISP, X_WINDOW, PL_origargv, PL_origargc);
    }
 
    XX-> type.drawable = true;
