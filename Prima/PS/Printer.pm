@@ -367,34 +367,33 @@ sub abort_doc
 sub spool
 {
    my ( $self, $data) = @_;
-   if ( $self-> {data}-> {spoolerType} != file) {
-      unless ( $self-> {spoolHandle}) {
-         my @cmds;
-         if ( $self-> {data}-> {spoolerType} == lpr) {
-            push( @cmds, map { $_ . ' ' . $self-> {data}-> {spoolerData}} qw(
-              lp lpr /bin/lp /bin/lpr /usr/bin/lp /usr/bin/lpr));
-         } else {
-            push( @cmds, $self-> {data}-> {spoolerData});
-         } 
-         my $ok = 0;
-         $sigpipe = $SIG{PIPE};
-         $SIG{PIPE} = sub { $piped = 1 };
-         CMDS: for ( @cmds) {
-            $piped = 0;
-            next unless open PSSTREAM, "|$_";
-            my $oldfh = select PSSTREAM;
-            $|=1;
-            select $oldfh;
-            print PSSTREAM $data;
-            select( undef, undef, undef, 0.1); # better than nothing
-            close( PSSTREAM), next if $piped;
-            $ok = 1;
-            $self-> {spoolHandle} = *PSSTREAM;
-            $self-> {spoolName}   = $_;
-            last;
-         }
-         Prima::message("Error printing to $cmds[0]"), return 0 unless $ok;
+   if ( $self-> {data}-> {spoolerType} != file && !$self-> {spoolHandle}) {
+      my @cmds;
+      if ( $self-> {data}-> {spoolerType} == lpr) {
+         push( @cmds, map { $_ . ' ' . $self-> {data}-> {spoolerData}} qw(
+           lp lpr /bin/lp /bin/lpr /usr/bin/lp /usr/bin/lpr));
+      } else {
+         push( @cmds, $self-> {data}-> {spoolerData});
+      } 
+      my $ok = 0;
+      $sigpipe = $SIG{PIPE};
+      $SIG{PIPE} = sub { $piped = 1 };
+      CMDS: for ( @cmds) {
+         $piped = 0;
+         next unless open PSSTREAM, "|$_";
+         my $oldfh = select PSSTREAM;
+         $|=1;
+         select $oldfh;
+         print PSSTREAM $data;
+         select( undef, undef, undef, 0.1); # better than nothing
+         close( PSSTREAM), next if $piped;
+         $ok = 1;
+         $self-> {spoolHandle} = *PSSTREAM;
+         $self-> {spoolName}   = $_;
+         last;
       }
+      Prima::message("Error printing to $cmds[0]") unless $ok;
+      return $ok;
    }
 
    if ( !(print {$self->{spoolHandle}} $data) || 
