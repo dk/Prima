@@ -333,10 +333,11 @@ sub on_mousemove
       return unless defined $p;
       return if $p == $o;
       $self-> {clickAllowed} = 0;
+      my $newpos;
       if ( $self-> {widths}->[$p] > $self-> {widths}->[$o]) {
          $ppos[$self-> {vertical} ? 1 : 0] +=
             ( $self-> {widths}->[$p] - $self-> {widths}->[$o]) * (( $p > $o) ? 1 : -1);
-         $self-> pointerPos( @ppos);
+         $newpos = 1;
       }
 
       splice( @{$self-> {items}}, $p, 0, splice( @{$self-> {items}}, $o, 1));
@@ -344,6 +345,7 @@ sub on_mousemove
       $self-> {tabId} = $p;
       $self-> repaint;
       $self-> notify(q(MoveItem), $o, $p);
+      $self-> pointerPos( @ppos) if $newpos;
    } else {
       my @sz = $self-> size;
       my $d = $self-> {vertical} ? $y : $x;
