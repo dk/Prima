@@ -235,7 +235,7 @@ sub on_paint
                     $itemRect[0] > $invalidRect[2];
             my $sel = $self->{multiSelect} ?
                exists $self->{selectedItems}->{$item} :
-               (( $self->{focusedItem} == $item) ? $focusedState : 0);
+               (( $self->{focusedItem} == $item) ? 1 : 0);
             push( @paintArray, [
               $item,
               $itemRect[0] - $self->{offset}, $itemRect[1],
@@ -265,7 +265,7 @@ sub on_paint
                                    $itemRect[0] > $invalidRect[2];
                   my $sel = $self->{multiSelect} ?
                   exists $self->{selectedItems}->{$item} :
-                  (( $self->{focusedItem} == $item) ? $focusedState : 0);
+                  (( $self->{focusedItem} == $item) ? 1 : 0);
                   push( @paintArray, [
                     $item,                                              # item number
                     $itemRect[0], $itemRect[1],
@@ -287,7 +287,7 @@ sub on_paint
                $item++, next if ( $itemRect[3] < $invalidRect[1] || $itemRect[1] > $invalidRect[3]);
                my $sel = $self->{multiSelect} ?
                  exists $self->{selectedItems}->{$item} :
-                 (( $self->{focusedItem} == $item) ? $focusedState : 0);
+                 (( $self->{focusedItem} == $item) ? 1 : 0);
                push( @paintArray, [
                   $item,                                               # item number
                   $itemRect[0] - $self->{offset}, $itemRect[1],        # logic rect

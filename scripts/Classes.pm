@@ -181,12 +181,14 @@ sub profile_check_in
    my ( $self, $p, $default) = @_;
    my $owner = $p-> { owner} ? $p-> { owner} : $default->{ owner};
    $self-> SUPER::profile_check_in( $p, $default);
-   $p-> { name} = ( ref $self) . ( 1 + map { (ref $self) eq (ref $_) ? 1 : () } $owner-> get_components)
-     unless exists( $p-> { name}) || $default-> { name} ne ref $self;
+   if ( defined $owner) {
+     $p-> { name} = ( ref $self) . ( 1 + map { (ref $self) eq (ref $_) ? 1 : () } $owner-> get_components)
+       unless exists( $p-> { name}) || $default-> { name} ne ref $self;
 
-   $p-> {delegateTo} = $owner if
-         ( defined $p-> {delegateTo} && $p->{delegateTo}==0)
-      || ( !exists($p->{delegateTo}) && defined( $default->{delegateTo}) && ( $default->{delegateTo}==0));
+     $p-> {delegateTo} = $owner if
+           ( defined $p-> {delegateTo} && $p->{delegateTo}==0)
+        || ( !exists($p->{delegateTo}) && defined( $default->{delegateTo}) && ( $default->{delegateTo}==0));
+   }
 }
 
 sub set_owner  {
@@ -320,6 +322,8 @@ sub rect3d
    $lColor = $rColor = cl::Black if $self-> get_bpp == 1;
    $self-> color( $c), return if $width <= 0;
    $self-> color( $lColor);
+   $width = ( $y1 - $y) / 2 if $width > ( $y1 - $y) / 2;
+   $width = ( $x1 - $x) / 2 if $width > ( $x1 - $x) / 2;
    $self-> lineWidth( 0);
    my $i;
    for ( $i = 0; $i < $width; $i++)
@@ -468,7 +472,7 @@ sub draw_text
       $canvas-> text_out( $_, $xx, $y);
    }
 
-   if ( $flags & dt::DrawMnemonic) {
+   if (( $flags & dt::DrawMnemonic) and ( $tildes->{tildeLine} >= 0)) {
       my $tl = $tildes->{tildeLine};
       my $xx = $x;
       if ( $align == dt::Center) {
@@ -690,7 +694,7 @@ sub notification_types { return \%RNT; }
    scaleChildren     => 1,
    selectable        => 0,
    selected          => 0,
-   selectedWidget   => undef,
+   selectedWidget    => undef,
    selectingButtons  => mb::Left,
    showHint          => 1,
    syncPaint         => 1,
@@ -717,9 +721,9 @@ sub profile_default
       cursorPos         => [ 0, 0],
       cursorSize        => [ 12, 3],
       designScale       => [ 0, 0],
-      origin            => [],
-      rect              => [],
-      size              => [],
+      origin            => [ 0, 0],
+      rect              => [ 0, 0, 100, 100],
+      size              => [ 100, 100],
       sizeMin           => [ 0, 0],
       sizeMax           => [ 16384, 16384],
    );
@@ -1001,6 +1005,7 @@ sub profile_default
       menuLight3DColor      => cl::Light3DColor,
       menuDark3DColor       => cl::Dark3DColor,
       menuFont              => $_[ 0]-> get_default_menu_font,
+      modalResult           => cm::Cancel,
       modalHorizon          => 1,
       ownerFont             => 0,
       originDontCare        => 1,

@@ -367,7 +367,7 @@ sub on_paint
    }
    my $shift  = $self->{checked} ? 1 : 0;
    $shift += $self->{pressed} ? 2 : 0;
-   my $capOk = $self-> text;
+   my $capOk = length($self-> text) > 0;
    my ( $fw, $fh) = $capOk ? $self-> caption_box($canvas) : ( 0, 0);
    my ( $textAtX, $textAtY);
 
@@ -712,19 +712,10 @@ package Radio;
 use vars qw(@ISA @images);
 @ISA = qw(Cluster);
 
-{
-my %RNT = (
-   %{Cluster->notification_types()},
-   RadioClick => nt::Default,
-);
-
-sub notification_types { return \%RNT; }
-}
-
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
-   @$def{qw(widgetClass)} = (wc::Radio);
+   @$def{qw(widgetClass onRadioClick)} = (wc::Radio, undef);
    return $def;
 }
 
@@ -864,6 +855,38 @@ sub on_paint
 
 package RadioGroup;
 no strict; @ISA=qw(GroupBox); use strict;
+
+{
+my %RNT = (
+   %{Cluster->notification_types()},
+   RadioClick => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   $def->{onRadioClick} = undef;
+   return $def;
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+   $self-> {__DYNAS__}->{onRadioClick} = $profile{ onRadioClick};
+   return %profile;
+}
+
+sub set
+{
+   my ( $self, %parms) = @_;
+   $self-> SUPER::set( %parms);
+   $self-> {__DYNAS__}->{onRadioClick} = $parms{onRadioClick},
+     delete $parms{onRadioClick} if exists $parms{onRadioClick};
+}
 
 sub on_radioclick
 {

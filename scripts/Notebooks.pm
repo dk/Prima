@@ -565,6 +565,7 @@ sub set_page_index
    my ( $self, $pi) = @_;
    $pi = 0 if $pi < 0;
    $pi = $self->{pageCount} - 1 if $pi > $self->{pageCount} - 1;
+   my $sel = $self-> selected;
    return if $pi == $self->{pageIndex};
    $self-> lock;
    my $cp = $self->{widgets}->[$self->{pageIndex}];
@@ -583,7 +584,7 @@ sub set_page_index
          $$cp[ $i * 3]-> enabled($$cp[ $i * 3 + 1]);
          $$cp[ $i * 3]-> visible($$cp[ $i * 3 + 2]);
       }
-      $$cp[ 0]-> focus if $i;
+      $$cp[ 0]-> select if $i and $sel;
    }
    $self-> unlock;
    $self-> update_view;
@@ -647,11 +648,12 @@ sub insert_to_page
 {
    my $self  = shift;
    my $page  = shift;
+   my $sel   = $self-> selected;
    $page = $self-> {pageCount} - 1 if $page > $self-> {pageCount} - 1 || $page < 0;
    $self-> lock;
    my @ctrls = $self-> SUPER::insert( @_);
    $self-> attach_to_page( $page, @ctrls);
-   $ctrls[0]-> focus if scalar @ctrls && $page == $self->{pageIndex};
+   $ctrls[0]-> select if $sel && scalar @ctrls && $page == $self->{pageIndex};
    $self-> unlock;
    return wantarray ? @ctrls : $ctrls[0];
 }
