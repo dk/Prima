@@ -189,6 +189,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 
 static char **ignore_encodings;
 static int n_ignore_encodings;
+static char *s_ignore_encodings;
 
 static Bool
 xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
@@ -494,7 +495,6 @@ prima_init_font_subsystem( void)
    char **names;
    int count, j , i, bad_fonts = 0, vector_fonts = 0;
    PFontInfo info;
-   char *s_ignore_encodings;
 
    guts. font_names = names = XListFonts( DISP, "*", INT_MAX, &count);
    if ( !names) {
@@ -557,9 +557,6 @@ prima_init_font_subsystem( void)
          bad_fonts++;
    }
 
-   free(ignore_encodings);
-   free(s_ignore_encodings);
-   
    guts. font_info = info;
    guts. n_fonts = j;
    if ( vector_fonts > 0) have_vector_fonts = true;
@@ -772,6 +769,9 @@ prima_cleanup_font_subsystem( void)
    guts. font_names = nil;
    guts. n_fonts = 0;
    guts. font_info = nil;
+   
+   free(ignore_encodings);
+   free(s_ignore_encodings);
 
    if ( guts. font_hash) {
       hash_first_that( guts. font_hash, (void*)free_rotated_entries, nil, nil, nil); 
