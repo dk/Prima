@@ -1152,6 +1152,18 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
       y += -XX-> font-> fs-> ascent + XX-> font-> font. height;
    XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
+
+   if ( PDrawable( self)-> font. style & fsUnderlined) {
+      int lw = apc_gp_get_line_width( self);
+      int tw = apc_gp_get_text_width( self, text, len, true);
+      int d  = XX-> font-> underlinePos;
+      if ( lw != XX-> font-> underlineThickness)
+         apc_gp_set_line_width( self, XX-> font-> underlineThickness);
+      XDrawLine( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y + d), x + tw - 1, REVERT( y + d)); 
+      if ( lw != XX-> font-> underlineThickness) 
+         apc_gp_set_line_width( self, lw);
+   }   
+   
    return true;
 }
 

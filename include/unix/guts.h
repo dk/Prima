@@ -130,6 +130,9 @@ typedef struct _FontFlags {
    int defaultChar      : 1;
    /* extras */
    int bad_vector	: 1;
+   int sloppy           : 1;
+   int disabled         : 1;
+   int funky            : 1;
 } FontFlags;
 
 typedef struct _FontInfo {
@@ -137,7 +140,6 @@ typedef struct _FontInfo {
    Font         font;
    char         lc_family[256];
    char         lc_name[256];
-   Bool         sloppy;
    char        *vecname;
    char        *xname;
 } FontInfo, *PFontInfo;
@@ -148,7 +150,8 @@ typedef struct _CachedFont {
    XFontStruct *fs;
    char        *load_name;
    XFont        id;
-   int          ref_cnt;
+   int          underlinePos;
+   int          underlineThickness;
 } CachedFont, *PCachedFont;
 
 union       _unix_sys_data;
