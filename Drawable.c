@@ -171,38 +171,44 @@ Drawable_font_match( char * dummy, Font * source, Font * dest)
 Bool
 Drawable_font_add( Handle self, Font * source, Font * dest)
 {
-   Bool bySize = (
-      source-> height == C_NUMERIC_UNDEF &&
-      source-> width  == C_NUMERIC_UNDEF &&
-      source-> size   != C_NUMERIC_UNDEF);
-   Bool nameDefined   = strcmp( source-> name, C_STRING_UNDEF) != 0;
-   Bool nullWidth = (
-      ( source-> width  == C_NUMERIC_UNDEF) && (
-      ( source-> pitch  != C_NUMERIC_UNDEF) ||
-      ( source-> height != C_NUMERIC_UNDEF) ||
-      nameDefined                           ||
-      ( source-> size   != C_NUMERIC_UNDEF))
-   );
+   Bool useHeight = source-> height    != C_NUMERIC_UNDEF;
+   Bool useWidth  = source-> width     != C_NUMERIC_UNDEF;
+   Bool useSize   = source-> size      != C_NUMERIC_UNDEF;
+   Bool usePitch  = source-> pitch     != C_NUMERIC_UNDEF;
+   Bool useStyle  = source-> style     != C_NUMERIC_UNDEF;
+   Bool useDir    = source-> direction != C_NUMERIC_UNDEF;
+   Bool useName   = strcmp( source-> name, C_STRING_UNDEF) != 0;
 
    // assignning values
-   if ( source-> height      != C_NUMERIC_UNDEF) dest-> height      = source-> height;
-   if ( source-> width       != C_NUMERIC_UNDEF) dest-> width       = source-> width;
-   if ( source-> direction   != C_NUMERIC_UNDEF) dest-> direction   = source-> direction;
-   if ( source-> style       != C_NUMERIC_UNDEF) dest-> style       = source-> style;
-   if ( source-> pitch       != C_NUMERIC_UNDEF) dest-> pitch       = source-> pitch;
-   if ( bySize                                 ) dest-> size        = source-> size;
-   if ( nameDefined) strcpy( dest-> name, source-> name);
-   if ( nullWidth) dest-> width = 0;
+   if ( useHeight) dest-> height    = source-> height;
+   if ( useWidth ) dest-> width     = source-> width;
+   if ( useDir   ) dest-> direction = source-> direction;
+   if ( useStyle ) dest-> style     = source-> style;
+   if ( usePitch ) dest-> pitch     = source-> pitch;
+   if ( useSize  ) dest-> size      = source-> size;
+   if ( useName  ) strcpy( dest-> name, source-> name);
+
+   // nulling dependencies
+   if ( !useHeight && useSize)
+      dest-> height = 0;
+   if ( !useWidth && ( usePitch || useHeight || useName || useSize || useDir || useStyle))
+      dest-> width = 0;
+   if ( !usePitch && ( useStyle || useName || useDir || useWidth))
+      dest-> pitch = fpDefault;
+   if ( useHeight)
+      dest-> size = 0;
 
    // validating entries
    if ( dest-> height <= 0) dest-> height = 1;
-      else if ( dest-> height > 32768 ) dest-> height = 32768;
+      else if ( dest-> height > 16383 ) dest-> height = 16383;
    if ( dest-> width  <  0) dest-> width  = 1;
-      else if ( dest-> width > 32768  ) dest-> width = 32768;
+      else if ( dest-> width  > 16383 ) dest-> width  = 16383;
    if ( dest-> size   <= 0) dest-> size   = 1;
-      else if ( dest-> size  > 32768  ) dest-> size  = 32768;
+      else if ( dest-> size   > 16383 ) dest-> size   = 16383;
+   if ( dest-> name[0] == 0)
+      strcpy( dest-> name, "Default");
 
-   return bySize;
+   return useSize && !useHeight;
 }
 
 
@@ -382,7 +388,7 @@ Drawable_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle i
 void
 Drawable_text_out( Handle self, char * text, int x, int y, int len)
 {
-   if ( !is_opt( optTextOutBaseLine) && var font. direction == 0) y += var font. metrics. descent;
+   if ( !is_opt( optTextOutBaseLine) && var font. direction == 0) y += var font. descent;
    if ( len < 0) len = strlen( text);
    apc_gp_text_out( self, text, x, y, len);
 }
@@ -460,7 +466,7 @@ Drawable_get_text_box( Handle self, char * text, int len)
    int yAdd = 0;
 
    if ( !is_opt( optTextOutBaseLine) && ( var font. direction == 0))
-      yAdd = var font. metrics. descent;
+      yAdd = var font. descent;
    if ( len < 0) len = strlen( text);
    gpENTER;
    p = apc_gp_get_text_box( self, text, len);

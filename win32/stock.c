@@ -455,7 +455,6 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
      (( lf-> lfWeight >= 700) ? fsBold   : 0);
    f-> pitch               = ((( lf-> lfPitchAndFamily & 3) == DEFAULT_PITCH) ? fpDefault :
       ((( lf-> lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
-   f-> type                = ftDontCare;
    strncpy( f-> name, lf-> lfFaceName, LF_FACESIZE);
    f-> codepage            = lf-> lfCharSet;
    f-> name[ LF_FACESIZE] = 0;
@@ -486,40 +485,33 @@ font_font2logfont( Font * f, LOGFONT * lf)
 void
 font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readonly)
 {
-   fm-> metrics.size                   = ( tm-> tmHeight - tm-> tmInternalLeading) * 72.0 / guts. displayResolution.y + 0.5;
-   fm-> metrics.width                  = tm-> tmAveCharWidth;
-   fm-> metrics.height                 = tm-> tmHeight;
-   fm-> metrics.style                  = 0 |
+   if ( !readonly) {
+      fm-> size                   = ( tm-> tmHeight - tm-> tmInternalLeading) * 72.0 / guts. displayResolution.y + 0.5;
+      fm-> width                  = tm-> tmAveCharWidth;
+      fm-> height                 = tm-> tmHeight;
+      fm-> style                  = 0 |
                                  ( tm-> tmItalic     ? fsItalic     : 0) |
                                  ( tm-> tmUnderlined ? fsUnderlined : 0) |
                                  ( tm-> tmStruckOut  ? fsStruckOut  : 0) |
                                  (( tm-> tmWeight >= 700) ? fsBold   : 0);
-   fm-> metrics.pitch                  =
-      (( tm-> tmPitchAndFamily & TMPF_FIXED_PITCH)               ? fpVariable : fpFixed);
-   fm-> metrics.type                   =
-      (( tm-> tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? ftVector   : ftRaster);
-   fm-> metrics.weight                 = tm-> tmWeight / 100;
-   fm-> metrics.ascent                 = tm-> tmAscent;
-   fm-> metrics.descent                = tm-> tmDescent;
-   fm-> metrics.maximalWidth           = tm-> tmMaxCharWidth;
-   fm-> metrics.internalLeading        = tm-> tmInternalLeading;
-   fm-> metrics.externalLeading        = tm-> tmExternalLeading;
-   fm-> metrics.xDeviceRes             = tm-> tmDigitizedAspectX;
-   fm-> metrics.yDeviceRes             = tm-> tmDigitizedAspectY;
-   fm-> metrics.firstChar              = tm-> tmFirstChar;
-   fm-> metrics.lastChar               = tm-> tmLastChar;
-   fm-> metrics.breakChar              = tm-> tmBreakChar;
-   fm-> metrics.defaultChar            = tm-> tmDefaultChar;
-   fm-> metrics.codepage               = tm-> tmCharSet;
-
-   if ( !readonly) {
-      fm-> size    = fm-> metrics. size;
-      fm-> height  = fm-> metrics. height;
-      fm-> width   = fm-> metrics. width;
-      fm-> style   = fm-> metrics. style;
-      fm-> pitch   = fm-> metrics. pitch;
-      fm-> type    = fm-> metrics. type;
    }
+   fm-> pitch                  =
+      (( tm-> tmPitchAndFamily & TMPF_FIXED_PITCH)               ? fpVariable : fpFixed);
+   fm-> vector                 =
+      (( tm-> tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? true       : false   );
+   fm-> weight                 = tm-> tmWeight / 100;
+   fm-> ascent                 = tm-> tmAscent;
+   fm-> descent                = tm-> tmDescent;
+   fm-> maximalWidth           = tm-> tmMaxCharWidth;
+   fm-> internalLeading        = tm-> tmInternalLeading;
+   fm-> externalLeading        = tm-> tmExternalLeading;
+   fm-> xDeviceRes             = tm-> tmDigitizedAspectX;
+   fm-> yDeviceRes             = tm-> tmDigitizedAspectY;
+   fm-> firstChar              = tm-> tmFirstChar;
+   fm-> lastChar               = tm-> tmLastChar;
+   fm-> breakChar              = tm-> tmBreakChar;
+   fm-> defaultChar            = tm-> tmDefaultChar;
+   fm-> codepage               = tm-> tmCharSet;
 }
 
 
@@ -528,7 +520,6 @@ apc_font_default( PFont font)
 {
    *font = guts. windowFont;
    font-> pitch = fpDefault;
-   font-> type  = ftDontCare;
    return font;
 }
 
@@ -541,8 +532,32 @@ apc_font_load( char * filename)
 #define fgBitmap 0
 #define fgVector 1
 
-static Bool recursiveFF = 0;
 static FAMTEXTMETRIC fmtx;
+
+/*static int
+font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
+{
+#define out( retVal)  if ( !theDC) dc_free(); return retVal
+   HDC  dc = theDC ? theDC : dc_alloc();
+   TEXTMETRIC tm;
+   LOGFONT lf;
+   HFONT hfont;
+
+   if ( forceSize)
+      font-> height = -font-> size * res. y / 72.0 + 0.5;
+
+   font_font2logfont( font, &lf);
+
+   hfont = SelectObject( dc, CreateFontIndirect( &lf));
+   GetTextMetrics( dc, &tm);
+   GetTextFace( dc, 256, font-> name);
+   DeleteObject( SelectObject( dc, hfont));
+   font_textmetric2font( &tm, font, false);
+
+   return ( font-> type == ftVector) ? fgVector : fgBitmap;
+}*/
+
+static Bool recursiveFF = 0;
 
 typedef struct _FEnumStruc
 {
@@ -550,10 +565,10 @@ typedef struct _FEnumStruc
    int           resValue;
    int           heiValue;
    int           widValue;
+   int           fType;
    Bool          useWidth;
    Bool          useVector;
    Bool          usePitch;
-   Bool          usePrecis;
    Bool          forceSize;
    Bool          vecId;
    Bool          matchILead;
@@ -573,6 +588,7 @@ fep( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PFEnumStruc es)
 
 #define do_copy                                                         \
    es-> count++;                                                        \
+   es-> fType = type;                                                   \
    memcpy( &es-> tm, t, sizeof( TEXTMETRIC));                           \
    memcpy( es-> tm. family, e-> elfFullName, LF_FULLFACESIZE);          \
    memcpy( &es-> lf,    &e-> elfLogFont, sizeof( LOGFONT));             \
@@ -647,19 +663,19 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 #define out( retVal)  if ( !theDC) dc_free(); return retVal
    FEnumStruc es;
    HDC  dc            = theDC ? theDC : dc_alloc();
-   Bool useNameSubplacing;
+   Bool useNameSubplacing = false;
 
    es. count          = es. vecId = 0;
    es. resValue       = es. heiValue = es. widValue = INT_MAX;
    es. useWidth       = font-> width != 0;
    es. useVector      = font-> direction != 0;
-   es. usePitch       = useNameSubplacing = font-> pitch != fpDefault;
-   es. usePrecis      = font-> type != ftDontCare;
+   es. usePitch       = font-> pitch != fpDefault;
    es. res            = res;
    es. forceSize      = forceSize;
    es. font           = font;
    es. matchILead     = forceSize ? ( font-> size >= 0) : ( font-> height >= 0);
 
+   useNameSubplacing = es. usePitch;
    if ( font-> height < 0) font-> height *= -1;
    if ( font-> size   < 0) font-> size   *= -1;
 
@@ -674,7 +690,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
       // have resolution ok? so using raster font mtx
       if (
            ( es. heiValue < 2) &&
-           ( !es. usePrecis || ( font-> type == ftRaster)) &&
+           ( es. fType & RASTER_FONTTYPE) &&
            ( !es. useWidth  || (( es. widValue == 0) && ( es. heiValue == 0)))
          )
       {
@@ -682,7 +698,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
          font_textmetric2font( &es. tm. t, font, true);
 
          memcpy( &fmtx, &es. tm, sizeof( fmtx));
-         strncpy( font-> metrics. family, fmtx. family, LF_FULLFACESIZE);
+         strncpy( font-> family, fmtx. family, LF_FULLFACESIZE);
          font-> size     = ( es. tm. t.tmHeight - es. tm. t.tmInternalLeading) * 72.0 / res.y + 0.5;
          font-> width    = es. lf. lfWidth;
          font-> codepage = es. tm. t.tmCharSet;
@@ -719,9 +735,9 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
             font-> width = tm. tmAveCharWidth;
 
          font_textmetric2font( &tm, font, true);
-         strncpy( font-> metrics. family, fmtx. family, LF_FULLFACESIZE);
-         font-> codepage = tm .tmCharSet;
          memcpy( &fmtx, &es. tm, sizeof( fmtx));
+         strncpy( font-> family, fmtx. family, LF_FULLFACESIZE);
+         font-> codepage = tm .tmCharSet;
          out( fgVector);
       }
    }
@@ -731,7 +747,6 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
    {
        int ret;
        int ogp  = font-> pitch;
-       int ogpp = font-> type;
        // setting some other( maybe other) font name
        strcpy( font-> name, font-> pitch == fpFixed ?
           guts. defaultFixedFont : guts. defaultVariableFont);
@@ -805,10 +820,8 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 int CALLBACK
 fep2( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PList lst)
 {
-   PFontMetric fm = malloc( sizeof( FontMetric));
-   Font font;
-   font_textmetric2font(( TEXTMETRIC *) t, &font, false);
-   *fm = font. metrics;
+   PFont fm = malloc( sizeof( Font));
+   font_textmetric2font(( TEXTMETRIC *) t, fm, false);
    strncpy( fm-> name,     e-> elfLogFont. lfFaceName, LF_FACESIZE);
    strncpy( fm-> family,   e-> elfFullName,            LF_FULLFACESIZE);
    list_add( lst, ( Handle) fm);
@@ -816,10 +829,10 @@ fep2( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PList lst)
 }
 
 
-PFontMetric
+PFont
 apc_fonts( char * facename, int * retCount)
 {
-   PFontMetric fmtx = nil;
+   PFont fmtx = nil;
    int  i;
    HDC  dc = dc_alloc();
    List lst;
@@ -830,9 +843,9 @@ apc_fonts( char * facename, int * retCount)
    dc_free();
    if ( lst. count == 0) goto Nothing;
    *retCount = lst. count;
-   fmtx = malloc( *retCount * sizeof( FontMetric));
+   fmtx = malloc( *retCount * sizeof( Font));
    for ( i = 0; i < lst. count; i++)
-      memcpy( &fmtx[ i], ( void *) lst. items[ i], sizeof( FontMetric));
+      memcpy( &fmtx[ i], ( void *) lst. items[ i], sizeof( Font));
    list_delete_all( &lst, true);
 Nothing:
    list_destroy( &lst);

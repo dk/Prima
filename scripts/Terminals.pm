@@ -356,7 +356,7 @@ sub reset {
 
     #print "resetting";
 
-    if ( $self->{ termView}->get_font_metrics( $self->{ termView}->font)->{ pitch} != fp::Fixed) {
+    if ( $self->{ termView}->font)-> pitch != fp::Fixed) {
         $self->{ termView}->font->pitch( fp::Fixed);
         return;
     }
@@ -822,7 +822,7 @@ sub TermView_FontChanged {
     my ( $self, $term) = @_;
     #$self-> SUPER::on_fontchanged( @_);
 
-    if ( $term->get_font_metrics( $term->font)->{ pitch} == fp::Fixed) {
+    if ( $term->font-> pitch == fp::Fixed) {
         #print "TermView_FontChanged->reset";
         $self->reset;
         $self->set_cursor_shape;

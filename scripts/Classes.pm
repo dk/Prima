@@ -118,11 +118,17 @@ for ( qw( size name width height direction style pitch)) {
 GENPROC
 }
 
-sub metrics
-{
-   my ($o,$r) = @{$_[0]}{"OWNER","READ"};
-   my $f = $o->$r();
-   return $f->{metrics};
+for ( qw( ascent descent family weight maximalWidth internalLeading externalLeading
+          xDeviceRes yDeviceRes firstChar lastChar breakChar defaultChar vector
+   )) {
+   eval <<GENPROC;
+   sub $_
+   {
+      my (\$o,\$r) = \@{\$_[0]}{"OWNER","READ"};
+      my \$font = \$o->\$r();
+      return \$#_ ? Object-> raise_ro("Font::$_") : \$font->{$_};
+   }
+GENPROC
 }
 
 
@@ -435,8 +441,8 @@ sub draw_text
    return 0 unless scalar @lines;
 
    my @clipSave;
-   my $fm = $canvas-> font-> metrics;
-   my $fh = $fm-> {height} + (( $flags & dt::QueryHeight) ? $fm->{externalLeading} : 0);
+   my $fh = $canvas-> font-> height +
+            (( $flags & dt::QueryHeight) ? $canvas-> font-> externalLeading : 0);
    my ( $linesToDraw, $retVal);
    my $valign = $flags & 0xC;
 

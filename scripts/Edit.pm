@@ -192,8 +192,8 @@ sub reset
    $size[0] -= $bw * 2 + $self->{dx} - $cw;
    if ( $uC < 2)
    {
-      $self-> {fixed} = $self-> font-> metrics-> {pitch} == fp::Fixed;
-      $self-> {averageWidth} = $self-> font-> metrics-> {width};
+      $self-> {fixed} = $self-> font-> pitch == fp::Fixed;
+      $self-> {averageWidth} = $self-> font-> width;
       $mw                    = $self-> {averageWidth};
       $self-> {maxFixedLength} = int(( $size[0] - $cw) / $mw);
       $self-> {tabs} = ' 'x$ti;
