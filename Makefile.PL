@@ -961,12 +961,12 @@ sub clsmake
 		     qd( "include/generic/$classname.tml")
 		    );
     push @allinstall, qd( "include/generic/$classname.h"), $INSTALL_LIB . qd( "/CORE/generic");
-    for (`perl utils/gencls.pl --depend $clsfile`) {
+    for (`$^X utils/gencls.pl --depend $clsfile`) {
 	next unless /^ancestor:\s+(.*)$/;
 	$mk .= qd( "include/generic/$1.h $1.cls ");
     }
     print "\n";
-    $mk .= "\n\tperl utils/gencls.pl " .
+    $mk .= "\n\t$^X utils/gencls.pl " .
 	"--inc --h --tml $clsfile include/generic\n\n";
 }
 
@@ -997,10 +997,10 @@ if ( $#ARGV >= 0 && $ARGV[ 0] =~ /^\-\-cp(bin)?$/) {
 \@rem = '--*-Perl-*--
 \@echo off
 if "%OS%" == "Windows_NT" goto WinNT
-perl -w -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+$^X -w -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
 goto endofperl
 :WinNT
-perl -w -x -S "%0" %*
+$^X -w -x -S "%0" %*
 if NOT "%COMSPEC%" == "%SystemRoot%\\system32\\cmd.exe" goto endofperl
 if %errorlevel% == 9009 echo You do not have Perl in your PATH.
 goto endofperl
@@ -1081,11 +1081,11 @@ MAKE
     if ( $ENV{ HOME} && ( -d qd( "$ENV{ HOME}/.Makeinc"))) {
 	my $hdir = "$ENV{ HOME}/.Makeinc";
 	if ( -f "$hdir/header.PL") {
-	    push @headers, `perl $hdir/header.PL`;
+	    push @headers, `$^X $hdir/header.PL`;
 	    push @Makefile_deps, "$hdir/header.PL";
 	}
 	if ( -f "$hdir/footer.PL") {
-	    push @footers, `perl $hdir/footer.PL`;
+	    push @footers, `$^X $hdir/footer.PL`;
 	    push @Makefile_deps, "$hdir/footer.PL";
 	}
 	if ( -f "$hdir/Prima.ph") {
@@ -1125,7 +1125,7 @@ MAKE
 
     print MAKE <<MAKE;
 $thunks_tinc: Makefile @alltmldeps
-\tperl utils/tmlink.pl -Iinclude/generic -o$thunks_tinc @alltml
+\t$^X utils/tmlink.pl -Iinclude/generic -o$thunks_tinc @alltml
 
 RM=$^X Makefile.PL --rm
 
