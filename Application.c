@@ -129,6 +129,7 @@ Application_init( Handle self, HV * profile)
    pdelete( popupItems);
 
    my-> set( self, profile);
+   CORE_INIT_TRANSIENT(Application);
 }
 
 void

@@ -81,6 +81,7 @@ Clipboard_init( Handle self, HV * profile)
       Clipboard_register_format_proc( self, "Image", (void*)image_server);
    }
    clipboards++;
+   CORE_INIT_TRANSIENT(Clipboard);
 }
 
 void

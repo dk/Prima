@@ -110,6 +110,7 @@ Image_init( Handle self, HV * profile)
    }
    apc_image_create( self);
    my->update_change( self);
+   CORE_INIT_TRANSIENT(Image);
 }
 
 void

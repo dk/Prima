@@ -383,6 +383,7 @@ AbstractMenu_init( Handle self, HV * profile)
    my-> set_items( self, pget_sv( items));
    if ( var-> system) apc_menu_update( self, nil, var-> tree);
    if ( pget_B( selected)) my-> set_selected( self, true);
+   CORE_INIT_TRANSIENT(AbstractMenu);
 }
 
 void

@@ -50,6 +50,7 @@ Printer_init( Handle self, HV * profile)
    prn = pget_c( printer);
    if ( strlen( prn) == 0) prn = my-> get_default_printer( self);
    my-> set_printer( self, prn);
+   CORE_INIT_TRANSIENT(Printer);
 }
 
 void

@@ -56,6 +56,8 @@ extern List   postDestroys;
 extern int    recursiveCall;
 extern PHash  primaObjects;
 
+#define CORE_INIT_TRANSIENT(cls) ((PObject)self)->transient_class = (void*)C##cls
+
 extern Bool window_subsystem_init( void);
 extern void window_subsystem_cleanup( void);
 extern void window_subsystem_done( void);

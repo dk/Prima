@@ -51,6 +51,7 @@ DeviceBitmap_init( Handle self, HV * profile)
       croak("RTC0110: Cannot create device bitmap");
    inherited begin_paint( self);
    opt_set( optInDraw);
+   CORE_INIT_TRANSIENT(DeviceBitmap);
 }
 
 void

@@ -31,6 +31,7 @@ object Prima::Object
    int  protectCount;
    int  destroyRefCount;
    Handle  owner;
+   void *  transient_class;
    ObjectOptions options;
    method SV*	 can( char *name, Bool cacheIt = 1);
    method void   cleanup();

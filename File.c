@@ -61,6 +61,7 @@ File_init( Handle self, HV * profile)
      ( query_method( self, "on_exception", 0) ? feException : 0);
    File_reset_notifications( self);
    my-> set_file( self, pget_sv( file));
+   CORE_INIT_TRANSIENT(File);
 }
 
 void

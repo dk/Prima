@@ -185,13 +185,17 @@ Object_destroy( Handle self)
       if ( object) ++SvREFCNT( object);
    }
    if ( object) {
+      PObject_vmt v;
       Handle owner;
       var-> stage = csHalfDead;
       recursiveCall++;
     /*  ENTER;
         SAVEINT recursiveCall; */
       protect_chain( owner = var-> owner, 1);
-      if ( enter_stage > csConstructing) my-> cleanup( self);
+      if ( enter_stage > csConstructing) 
+         my-> cleanup( self);
+      else if ( enter_stage == csConstructing && var-> transient_class) 
+         ((PObject_vmt)var-> transient_class)-> cleanup( self);
       if ( var-> stage == csHalfDead) {
          var-> stage = csFinalizing;
          my-> done( self);
@@ -263,10 +267,11 @@ void Object_init    ( Handle self, HV * profile)
 {
    if ( var-> stage != csDeadInInit) croak( "Unexpected call of Object::init");
    var-> stage = csConstructing;
+   CORE_INIT_TRANSIENT(Object);
 }
 
 void Object_cleanup ( Handle self) {}
-void Object_setup   ( Handle self) {}
+void Object_setup( Handle self) {}
 
 #ifdef __cplusplus
 }

@@ -199,6 +199,7 @@ Widget_init( Handle self, HV * profile)
    my-> set_visible     ( self, pget_B( visible));
    if ( pget_B( capture)) my-> set_capture( self, 1, nilHandle);
    if ( pget_B( current)) my-> set_current( self, 1);
+   CORE_INIT_TRANSIENT(Widget);
 }
 
 

@@ -46,6 +46,7 @@ Timer_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
    my-> update_sys_handle( self, profile);
+   CORE_INIT_TRANSIENT(Timer);
 }
 
 void

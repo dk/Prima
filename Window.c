@@ -67,6 +67,7 @@ Window_init( Handle self, HV * profile)
       my-> set_menuItems( self, sv);
    my-> set_modalResult( self, pget_i( modalResult));
    my-> set_modalHorizon( self, pget_B( modalHorizon));
+   CORE_INIT_TRANSIENT(Window);
 }
 
 void

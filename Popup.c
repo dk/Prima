@@ -46,6 +46,7 @@ Popup_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
    opt_assign( optAutoPopup, pget_B( autoPopup));
+   CORE_INIT_TRANSIENT(Popup);
 }
 
 void

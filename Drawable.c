@@ -75,6 +75,7 @@ Drawable_init( Handle self, HV * profile)
    SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::init");
    my-> set_font( self, Font_buffer);
    my-> set_palette( self, pget_sv( palette));
+   CORE_INIT_TRANSIENT(Drawable);
 }
 
 static void

@@ -265,6 +265,7 @@ Icon_init( Handle self, HV * profile)
    my-> set_maskColor( self, pget_i( maskColor));
    my-> set_autoMasking( self, pget_i( autoMasking));
    my-> set_mask( self, pget_sv( mask));
+   CORE_INIT_TRANSIENT(Icon);
 }
 
 
