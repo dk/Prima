@@ -515,143 +515,149 @@ perform_pending_paints( void)
 }
 
 Bool
-apc_application_go( Handle self)
+one_loop_round( void)
 {
-/*NCI*/
    XEvent ev, next_event;
    fd_set read_set, write_set, excpt_set;
    struct timeval timeout;
    int r, n, i;
 
+   if (( n = XEventsQueued( DISP, QueuedAlready))) {
+      goto FetchAndProcess;
+   }
+   read_set = guts.read_set;
+   write_set = guts.write_set;
+   excpt_set = guts.excpt_set;
+   if ( guts. oldest) {
+      if ( gettimeofday( &timeout, nil) != 0) {
+         croak( "apc_application_go/yield() gettimeofday() returned: %s", strerror( errno));
+      }
+      if ( guts. oldest-> when. tv_sec < timeout. tv_sec ||
+           ( guts. oldest-> when. tv_sec == timeout. tv_sec &&
+             guts. oldest-> when. tv_usec <= timeout. tv_usec)) {
+         Event e;
+         PTimerSysData timer = guts. oldest;
+
+         e. cmd = cmTimer;
+         apc_timer_start( timer-> who);
+         if ( timer-> who == CURSOR_TIMER) {
+            prima_cursor_tick();
+         } else {
+            CComponent( timer-> who)-> message( timer-> who, &e);
+         }
+         if ( gettimeofday( &timeout, nil) != 0) {
+            croak( "apc_application_go/yield() gettimeofday() returned: %s", strerror( errno));
+         }
+      }
+      if ( guts. oldest) {
+         if ( guts. oldest-> when. tv_sec < timeout. tv_sec) {
+            timeout. tv_sec = 0;
+            timeout. tv_usec = 0;
+         } else {
+            timeout. tv_sec = guts. oldest-> when. tv_sec - timeout. tv_sec;
+            if ( guts. oldest-> when. tv_usec < timeout. tv_usec) {
+               if ( timeout. tv_sec == 0) {
+                  timeout. tv_sec = 0;
+                  timeout. tv_usec = 0;
+               } else {
+                  timeout. tv_sec--;
+                  timeout. tv_usec = 1000000 - (timeout. tv_usec - guts. oldest-> when. tv_usec);
+               }
+            } else {
+               timeout. tv_usec = guts. oldest-> when. tv_usec - timeout. tv_usec;
+            }
+         }
+         if ( timeout. tv_sec > 0 || timeout. tv_usec > 200000) {
+            timeout. tv_sec = 0;
+            timeout. tv_usec = 200000;
+         }
+      } else {
+         timeout. tv_sec = 0;
+         timeout. tv_usec = 200000;
+      }
+   } else {
+      timeout. tv_sec = 0;
+      timeout. tv_usec = 200000;
+   }
+
+   if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, &timeout)) > 0 &&
+       FD_ISSET( guts.connection, &read_set)) {
+      if (( n = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
+         /* just like tcl/perl tk do, to avoid an infinite loop */
+         sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
+         XNoOp( DISP);
+         XFlush( DISP);
+         (void) signal( SIGPIPE, oldHandler);
+      }
+FetchAndProcess:
+      if (n && application) {
+         XNextEvent( DISP, &ev);
+         XCHECKPOINT;
+         n--;
+         while ( n > 0) {
+            if (!application) return false;
+            XNextEvent( DISP, &next_event);
+            XCHECKPOINT;
+            guts. total_events++;
+            prima_handle_event( &ev, &next_event);
+            n--;
+            memcpy( &ev, &next_event, sizeof( XEvent));
+         }
+         if (!application) return false;
+         guts. total_events++;
+         prima_handle_event( &ev, nil);
+      }
+      XNoOp( DISP);
+      XFlush( DISP);
+   } else if ( r < 0) {
+      list_first_that( guts.files, purge_invalid_watchers, nil);
+   } else {
+      if ( r > 0) {
+         for ( i = 0; i < guts.files->count; i++) {
+            PFile f = (PFile)list_at( guts.files,i);
+            if ( FD_ISSET( f->fd, &read_set)) {
+               Event e;
+               bzero( &e, sizeof e);
+               e. cmd = cmFileRead;
+               f-> self-> message((Handle)f,&e);
+               break;
+            }
+            if ( FD_ISSET( f->fd, &write_set)) {
+               Event e;
+               bzero( &e, sizeof e);
+               e. cmd = cmFileWrite;
+               f-> self-> message((Handle)f,&e);
+               break;
+            }
+            if ( FD_ISSET( f->fd, &excpt_set)) {
+               Event e;
+               bzero( &e, sizeof e);
+               e. cmd = cmFileException;
+               f-> self-> message((Handle)f,&e);
+               break;
+            }
+         }
+      } else {
+         XNoOp( DISP);
+         XFlush( DISP);
+      }
+   }
+   perform_pending_paints();
+   kill_zombies();
+   return true;
+}
+
+Bool
+apc_application_go( Handle self)
+{
+   if (!application) return false;
+
    XNoOp( DISP);
    XFlush( DISP);
-//   XCHECKPOINT;
 
-   for (;;) {
-      if (!application) return false;
-      if (( n = XEventsQueued( DISP, QueuedAlready))) {
-	 goto FetchAndProcess;
-      }
-      read_set = guts.read_set;
-      write_set = guts.write_set;
-      excpt_set = guts.excpt_set;
-      if ( guts. oldest) {
-	 if ( gettimeofday( &timeout, nil) != 0) {
-	    croak( "apc_application_go() gettimeofday() returned: %s", strerror( errno));
-	 }
-	 if ( guts. oldest-> when. tv_sec < timeout. tv_sec ||
-	      ( guts. oldest-> when. tv_sec == timeout. tv_sec &&
-		guts. oldest-> when. tv_usec <= timeout. tv_usec)) {
-	    Event e;
-	    PTimerSysData timer = guts. oldest;
+   while ( one_loop_round())
+      ;
 
-	    e. cmd = cmTimer;
-	    apc_timer_start( timer-> who);
-	    if ( timer-> who == CURSOR_TIMER) {
-	       prima_cursor_tick();
-	    } else {
-	       CComponent( timer-> who)-> message( timer-> who, &e);
-	    }
-            if ( gettimeofday( &timeout, nil) != 0) {
-               croak( "apc_application_go() gettimeofday() returned: %s", strerror( errno));
-            }
-	 }
-	 if ( guts. oldest) {
-	    if ( guts. oldest-> when. tv_sec < timeout. tv_sec) {
-	       timeout. tv_sec = 0;
-	       timeout. tv_usec = 0;
-	    } else {
-	       timeout. tv_sec = guts. oldest-> when. tv_sec - timeout. tv_sec;
-	       if ( guts. oldest-> when. tv_usec < timeout. tv_usec) {
-		  if ( timeout. tv_sec == 0) {
-		     timeout. tv_sec = 0;
-		     timeout. tv_usec = 0;
-		  } else {
-		     timeout. tv_sec--;
-		     timeout. tv_usec = 1000000 - (timeout. tv_usec - guts. oldest-> when. tv_usec);
-		  }
-	       } else {
-		  timeout. tv_usec = guts. oldest-> when. tv_usec - timeout. tv_usec;
-	       }
-	    }
-	    if ( timeout. tv_sec > 0 || timeout. tv_usec > 200000) {
-	       timeout. tv_sec = 0;
-	       timeout. tv_usec = 200000;
-	    }
-	 } else {
-	    timeout. tv_sec = 0;
-	    timeout. tv_usec = 200000;
-	 }
-      } else {
-	 timeout. tv_sec = 0;
-	 timeout. tv_usec = 200000;
-      }
-
-      if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, &timeout)) > 0 &&
-	  FD_ISSET( guts.connection, &read_set)) {
-	 if (( n = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
-	    /* just like tcl/perl tk do, to avoid an infinite loop */
-	    sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
-	    XNoOp( DISP);
-	    XFlush( DISP);
-	    (void) signal( SIGPIPE, oldHandler);
-	 }
-FetchAndProcess:
-	 if (n && application) {
-	    XNextEvent( DISP, &ev);
-	    XCHECKPOINT;
-	    n--;
-	    while ( n > 0) {
-	       if (!application) return true;
-	       XNextEvent( DISP, &next_event);
-	       XCHECKPOINT;
-	       guts. total_events++;
-	       prima_handle_event( &ev, &next_event);
-	       n--;
-	       memcpy( &ev, &next_event, sizeof( XEvent));
-	    }
-	    if (!application) return true;
-	    guts. total_events++;
-	    prima_handle_event( &ev, nil);
-	 }
- 	 XNoOp( DISP);
- 	 XFlush( DISP);
-      } else if ( r < 0) {
-	 list_first_that( guts.files, purge_invalid_watchers, nil);
-      } else {
-	 if ( r > 0) {
-	    for ( i = 0; i < guts.files->count; i++) {
-	       PFile f = (PFile)list_at( guts.files,i);
-	       if ( FD_ISSET( f->fd, &read_set)) {
-		  Event e;
-		  bzero( &e, sizeof e);
-		  e. cmd = cmFileRead;
-		  f-> self-> message((Handle)f,&e);
-		  break;
-	       }
-	       if ( FD_ISSET( f->fd, &write_set)) {
-		  Event e;
-		  bzero( &e, sizeof e);
-		  e. cmd = cmFileWrite;
-		  f-> self-> message((Handle)f,&e);
-		  break;
-	       }
-	       if ( FD_ISSET( f->fd, &excpt_set)) {
-		  Event e;
-		  bzero( &e, sizeof e);
-		  e. cmd = cmFileException;
-		  f-> self-> message((Handle)f,&e);
-		  break;
-	       }
-	    }
-	 } else {
-	    XNoOp( DISP);
-	    XFlush( DISP);
-	 }
-      }
-      perform_pending_paints();
-      kill_zombies();
-   }
    if ( application) Object_destroy( application);
    application = nilHandle;
    return true;
@@ -683,38 +689,10 @@ any_event( Display *d, XEvent *ev, XPointer arg)
 Bool
 apc_application_yield( void)
 {
-/*NCI*/
-/* Timer support */
-/* It should be more like go() */
-   XEvent ev, next_event;
-   int n;
+   if (!application) return false;
 
-   XFlush( DISP);
-   if (( n = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
-      /* just like tcl/perl tk do, to avoid an infinite loop */
-      sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
-      XNoOp( DISP);
-      XFlush( DISP);
-      (void) signal( SIGPIPE, oldHandler);
-   }
-   if (n && application) {
-      XNextEvent( DISP, &ev);
-      XCHECKPOINT;
-      n--;
-      while ( n > 0) {
-	 if (!application) return true;
-	 XNextEvent( DISP, &next_event);
-	 XCHECKPOINT;
-	 guts. total_events++;
-	 prima_handle_event( &ev, &next_event);
-	 n--;
-	 memcpy( &ev, &next_event, sizeof( XEvent));
-      }
-      if (!application) return true;
-      guts. total_events++;
-      prima_handle_event( &ev, nil);
-   }
    XNoOp( DISP);
    XFlush( DISP);
+   one_loop_round();
    return true;
 }
