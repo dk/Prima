@@ -301,15 +301,6 @@ Drawable_get_font_abc( Handle self)
 }
 
 
-FontMetric
-Drawable_get_font_metrics( Handle self, Font font)
-{
-   FontMetric fm;
-   apc_font_metrics( self, &font, &fm);
-   return fm;
-}
-
-
 FillPattern *
 Drawable_get_fill_pattern( Handle self)
 {
@@ -391,7 +382,7 @@ Drawable_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle i
 void
 Drawable_text_out( Handle self, char * text, int x, int y, int len)
 {
-   if ( !is_opt( optTextOutBaseLine) && var font. direction == 0) y += var font. descent;
+   if ( !is_opt( optTextOutBaseLine) && var font. direction == 0) y += var font. metrics. descent;
    if ( len < 0) len = strlen( text);
    apc_gp_text_out( self, text, x, y, len);
 }
@@ -469,7 +460,7 @@ Drawable_get_text_box( Handle self, char * text, int len)
    int yAdd = 0;
 
    if ( !is_opt( optTextOutBaseLine) && ( var font. direction == 0))
-      yAdd = var font. descent;
+      yAdd = var font. metrics. descent;
    if ( len < 0) len = strlen( text);
    gpENTER;
    p = apc_gp_get_text_box( self, text, len);

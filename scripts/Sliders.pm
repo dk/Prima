@@ -949,7 +949,7 @@ sub on_paint
          $canvas-> line($bw - 3, $jp[7]-1, $jp[6]-1, $jp[7]-1);
       }
    } else {
-      my $bw = $canvas->font->averageWidth;
+      my $bw = $canvas->font->metrics->{width};
       my $bh  = ( $size[1] - $sb) / 2;
       my $fh = $canvas-> font-> height;
       return if $size[0] <= DefButtonX * ($self->{readOnly} ? 1 : 0) + 2 * $bw + 2;
@@ -1016,7 +1016,7 @@ sub pos2info
          return 1, $ret1, $y - $val;
       }
    } else {
-      my $bw = $self->font->averageWidth;
+      my $bw = $self->font->metrics->{width};
       my $val = $bw + 1 + abs( $self->{value} - $self->{min}) *
                 ( $size[0] - 2 * $bw - 5) / abs($self->{max} - $self->{min});
       my $ret1 = $self->{min} + ( $x - $bw - 1) * abs($self->{max} - $self->{min}) / ( $size[0] - 2 * $bw - 5);
@@ -1156,7 +1156,7 @@ sub set_value
    } else {
       $sb = $size[1] / 6 unless $sb;
       $sb = 2 unless $sb;
-      my $bw = $self->font->averageWidth;
+      my $bw = $self->font->metrics->{width};
       my $bh  = ( $size[1] - $sb) / 2;
       my $v1  = $bw + 1 + abs( $self->{value} - $self->{min}) *
          ( $size[0] - 2 * $bw - 5) / abs($self->{max} - $self->{min});

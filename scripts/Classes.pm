@@ -82,16 +82,6 @@ sub set {
 
 package Font;
 
-my @metricNames = ( qw(
-   family             facename           nominalSize        weight
-   maxAscent          lcAscent           maxDescent
-   lcDescent          averageWidth       internalLeading    firstChar
-   externalLeading    xDeviceRes         yDeviceRes         defaultChar
-   lastChar           breakChar
-));
-
-my @overlappedNames = ( qw( _width _height _pitch _style));
-
 sub new
 {
    my $class = shift;
@@ -128,39 +118,15 @@ for ( qw( size name width height direction style pitch)) {
 GENPROC
 }
 
-for ( qw( ascent descent)) {
-   eval <<GENPROC;
-   sub $_
-   {
-      my (\$o,\$r) = \@{\$_[0]}{"OWNER","READ"};
-      my \$font = \$o->\$r();
-      return \$#_ ? Object-> raise_ro("Font::$_") : \$font->{$_};
-   }
-GENPROC
-}
-
 sub metrics
 {
-   my ($o,$r) = @{$_[0]}{"OWNER","READ"}; my $font = $o->$r();
-   return $o-> get_font_metrics($font);
+   my ($o,$r) = @{$_[0]}{"OWNER","READ"};
+   my $f = $o->$r();
+   return $f->{metrics};
 }
+
 
 sub DESTROY {}
-
-sub AUTOLOAD
-{
-   no strict;
-   my $self = shift;
-   my $expectedField = $AUTOLOAD;
-   die "There is no such field as \"$expectedMethod\"" if scalar @_;
-   my ($class, $itemName) = split( /::/, $expectedField);
-   unless ( scalar grep {$_ eq $itemName} @metricNames)
-   {
-      die "Unknown font field \"$itemName\"" unless scalar grep {$_ eq $itemName} @overlappedNames;
-      $itemName =~ s/^_//;
-   }
-   return $self-> metrics-> {$itemName};
-}
 
 # class Component
 package Component;

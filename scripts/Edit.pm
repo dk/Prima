@@ -182,7 +182,7 @@ sub reset
    return if $self->{resetDisabled};
    my @size = $self-> size;
    my $bw   = $self-> {borderWidth};
-   my $cw   = $self->{defcw};
+   my $cw   = $self-> {defcw};
    my $ti   = $self-> {tabIndent};
    my $uC   = $self-> {uChange};
    my $mw;
@@ -192,8 +192,8 @@ sub reset
    $size[0] -= $bw * 2 + $self->{dx} - $cw;
    if ( $uC < 2)
    {
-      $self-> {fixed} = $self-> font-> _pitch == fp::Fixed;
-      $self-> {averageWidth} = $self-> font-> averageWidth;
+      $self-> {fixed} = $self-> font-> metrics-> {pitch} == fp::Fixed;
+      $self-> {averageWidth} = $self-> font-> metrics-> {width};
       $mw                    = $self-> {averageWidth};
       $self-> {maxFixedLength} = int(( $size[0] - $cw) / $mw);
       $self-> {tabs} = ' 'x$ti;

@@ -282,11 +282,13 @@ package fp;
 use constant Default       =>  0x000       ;
 use constant Variable      =>  0x001       ;
 use constant Fixed         =>  0x002       ;
-use constant PitchMask     =>  0x00F       ;
+
+# font types
+package ft;
 use constant DontCare      =>  0x000       ;
 use constant Raster        =>  0x010       ;
 use constant Vector        =>  0x020       ;
-use constant PrecisionMask =>  0x0F0       ;
+
 
 # font weights
 package fw;
