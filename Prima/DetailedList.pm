@@ -85,7 +85,9 @@ sub init
 {
    my ( $self, %profile) = @_;
    $self->{noHeader} = 1;
-   $self->{header} = bless [], q\Prima::DetailList::DummyHeader\;
+   $self->{header} = bless {
+      maxWidth => 0,
+   }, q\Prima::DetailList::DummyHeader\;
    $self-> {$_} = 0 for qw( mainColumn);
    %profile = $self-> SUPER::init( %profile);
 
