@@ -96,98 +96,23 @@ sub on_fontchanged
 
 sub draw_items
 {
-   my ($self,$canvas) = (shift,shift);
-   my @clrs = (
-      $self-> color,
-      $self-> backColor,
-      $self-> colorIndex( ci::HiliteText),
-      $self-> colorIndex( ci::Hilite)
-   );
-   my @clipRect = $canvas-> clipRect;
+   shift-> std_draw_text_items( @_);
+}
+
+sub draw_text_items
+{
+   my ( $self, $canvas, $first, $last, $x, $y, $textShift, $clipRect) = @_;
    my $i;
-   my $drawVeilFoc = -1;
-   my $atY    = ( $self-> {itemHeight} - $canvas-> font-> height) / 2;
-   my $ih     = $self->{itemHeight};
-   my $offset = $self->{offset};
-   my $v      = $self->{vector};
-
-   my @colContainer;
-   for ( $i = 0; $i < $self->{columns}; $i++){ push ( @colContainer, [])};
-   for ( $i = 0; $i < scalar @_; $i++) {
-      push ( @{$colContainer[ $_[$i]->[7]]}, $_[$i]);
-      $drawVeilFoc = $i if $_[$i]->[6];
-   }
-   my ( $lc, $lbc) = @clrs[0,1];
-   for ( @colContainer)
+   for ( $i = $first; $i <= $last; $i++)
    {
-      my @normals;
-      my @selected;
-      my ( $lastNormal, $lastSelected) = (undef, undef);
-      my $isSelected = 0;
-      # sorting items in single column
-      { $_ = [ sort { $$a[0]<=>$$b[0] } @$_]; }
-      # calculating conjoint bars
-      for ( $i = 0; $i < scalar @$_; $i++)
-      {
-         my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$_[$i]};
-         if ( $selected)
-         {
-            if ( defined $lastSelected && ( $y2 + 1 == $lastSelected) &&
-               ( ${$selected[-1]}[3] - $lastSelected < 100))
-            {
-               ${$selected[-1]}[1] = $y;
-               ${$selected[-1]}[5] = $$_[$i]->[0];
-            } else {
-               push ( @selected, [ $x, $y, $x2, $y2, $$_[$i]->[0], $$_[$i]->[0], 1]);
-            }
-            $lastSelected = $y;
-            $isSelected = 1;
-         } else {
-            if ( defined $lastNormal && ( $y2 + 1 == $lastNormal) &&
-               ( ${$normals[-1]}[3] - $lastNormal < 100))
-            {
-               ${$normals[-1]}[1] = $y;
-               ${$normals[-1]}[5] = $$_[$i]->[0];
-            } else {
-               push ( @normals, [ $x, $y, $x2, $y2, $$_[$i]->[0], $$_[$i]->[0], 0]);
-            }
-            $lastNormal = $y;
-         }
-      }
-      for ( @selected) { push ( @normals, $_); }
-      # draw items
-      my $yimg = int(( $ih - $imgSize[1]) / 2);
-
-      for ( @normals)
-      {
-         my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
-         my $c = $clrs[ $selected ? 3 : 1];
-         if ( $c != $lbc) {
-            $canvas-> backColor( $c);
-            $lbc = $c;
-         }
-         $canvas-> clear( $x, $y, $x2, $y2);
-         $c = $clrs[ $selected ? 2 : 0];
-         if ( $c != $lc) {
-            $canvas-> color( $c);
-            $lc = $c;
-         }
-         for ( $i = $first; $i <= $last; $i++)
-         {
-             next if $self-> {widths}->[$i] + $offset + $x + 1 < $clipRect[0];
-             $canvas-> text_out( $self->{items}->[$i], $x + 2 + $imgSize[0],
-                $y2 + $atY - ($i-$first+1) * $ih + 1);
-             $canvas-> put_image( $x + 1, $y2 + $yimg - ($i-$first+1) * $ih + 1,
-                $images[ vec($v, $i, 1)],
-             );
-         }
-      }
-   }
-   # draw veil
-   if ( $drawVeilFoc >= 0 && $self->{multiSelect})
-   {
-      my ( $itemIndex, $x, $y, $x2, $y2) = @{$_[$drawVeilFoc]};
-      $canvas-> rect_focus( $x + $self->{offset}, $y, $x2, $y2);
+       next if $self-> {widths}->[$i] + $self->{offset} + $x + 1 < $clipRect-> [0];
+       $canvas-> text_out( $self->{items}->[$i], $x + 2 + $imgSize[0],
+          $y + $textShift - ($i-$first+1) * $self->{itemHeight} + 1);
+       $canvas-> put_image( $x + 1, 
+          $y + int(( $self->{itemHeight} - $imgSize[1]) / 2) - 
+             ($i-$first+1) * $self->{itemHeight} + 1,
+          $images[ vec($self->{vector}, $i, 1)],
+       );
    }
 }
 

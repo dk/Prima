@@ -34,8 +34,8 @@ package Prima::Lists;
 #   AbstractListViewer
 #   ListViewer
 #   ListBox
+#   AbstractListBox
 #   ProtectedListBox
-#   DirectoryListBox
 
 use Carp;
 use Prima::Const;
@@ -1031,6 +1031,96 @@ sub selectedCount {($#_)?$_[0]->raise_ro("selectedCount") :return $_[0]->get_sel
 sub selectedItems {($#_)?shift->set_selected_items    (@_):return $_[0]->get_selected_items;}
 sub topItem       {($#_)?$_[0]->set_top_item       ($_[1]):return $_[0]->{topItem}        }
 
+sub std_draw_text_items
+{
+   my ($self,$canvas) = (shift,shift);
+   my @clrs = (
+      $self-> color,
+      $self-> backColor,
+      $self-> colorIndex( ci::HiliteText),
+      $self-> colorIndex( ci::Hilite)
+   );
+   my @clipRect = $canvas-> clipRect;
+   my $i;
+   my $drawVeilFoc = -1;
+   my $atY    = ( $self-> {itemHeight} - $canvas-> font-> height) / 2;
+   my $ih     = $self->{itemHeight};
+   my $offset = $self->{offset};
+
+   my @colContainer;
+   for ( $i = 0; $i < $self->{columns}; $i++){ push ( @colContainer, [])};
+   for ( $i = 0; $i < scalar @_; $i++) {
+      push ( @{$colContainer[ $_[$i]->[7]]}, $_[$i]);
+      $drawVeilFoc = $i if $_[$i]->[6];
+   }
+   my ( $lc, $lbc) = @clrs[0,1];
+   for ( @colContainer)
+   {
+      my @normals;
+      my @selected;
+      my ( $lastNormal, $lastSelected) = (undef, undef);
+      my $isSelected = 0;
+      # sorting items in single column
+      { $_ = [ sort { $$a[0]<=>$$b[0] } @$_]; }
+      # calculating conjoint bars
+      for ( $i = 0; $i < scalar @$_; $i++)
+      {
+         my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$_[$i]};
+         if ( $selected)
+         {
+            if ( defined $lastSelected && ( $y2 + 1 == $lastSelected) &&
+               ( ${$selected[-1]}[3] - $lastSelected < 100))
+            {
+               ${$selected[-1]}[1] = $y;
+               ${$selected[-1]}[5] = $$_[$i]->[0];
+            } else {
+               push ( @selected, [ $x, $y, $x2, $y2, $$_[$i]->[0], $$_[$i]->[0], 1]);
+            }
+            $lastSelected = $y;
+            $isSelected = 1;
+         } else {
+            if ( defined $lastNormal && ( $y2 + 1 == $lastNormal) &&
+               ( ${$normals[-1]}[3] - $lastNormal < 100))
+            {
+               ${$normals[-1]}[1] = $y;
+               ${$normals[-1]}[5] = $$_[$i]->[0];
+            } else {
+               push ( @normals, [ $x, $y, $x2, $y2, $$_[$i]->[0], $$_[$i]->[0], 0]);
+            }
+            $lastNormal = $y;
+         }
+      }
+      for ( @selected) { push ( @normals, $_); }
+      # draw items
+
+      for ( @normals)
+      {
+         my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
+         my $c = $clrs[ $selected ? 3 : 1];
+         if ( $c != $lbc) {
+            $canvas-> backColor( $c);
+            $lbc = $c;
+         }
+         $canvas-> clear( $x, $y, $x2, $y2);
+
+         $c = $clrs[ $selected ? 2 : 0];
+         if ( $c != $lc) {
+            $canvas-> color( $c);
+            $lc = $c;
+         }
+        
+         $self-> draw_text_items( $canvas, $first, $last, 
+              $x, $y2, $atY, \@clipRect);
+      }
+   }
+   # draw veil
+   if ( $drawVeilFoc >= 0)
+   {
+      my ( $itemIndex, $x, $y, $x2, $y2) = @{$_[$drawVeilFoc]};
+      $canvas-> rect_focus( $x + $self->{offset}, $y, $x2, $y2);
+   }
+}
+
 package Prima::ListViewer;
 use vars qw(@ISA);
 @ISA = qw(Prima::AbstractListViewer);
@@ -1360,98 +1450,76 @@ sub on_measureitem
    $$sref = $self-> get_text_width( $self->{items}->[$index]);
 }
 
+sub draw_items
+{
+   shift-> std_draw_text_items(@_)
+}
+
+sub draw_text_items
+{
+   my ( $self, $canvas, $first, $last, $x, $y, $textShift, $clipRect) = @_;
+   my $i;
+   for ( $i = $first; $i <= $last; $i++)
+   {
+       next if $self-> {widths}->[$i] + $self->{offset} + $x + 1 < $clipRect->[0];
+       $canvas-> text_out( $self->{items}->[$i], 
+          $x, $y + $textShift - ($i-$first+1) * $self->{itemHeight} + 1);
+   }
+}
+
+package Prima::AbstractListBox;
+use vars qw(@ISA);
+@ISA = qw(Prima::AbstractListViewer);
+
+{
+my %RNT = (
+   %{Prima::AbstractListViewer->notification_types()},
+   Stringify   => nt::Action,
+);
+
+sub notification_types { return \%RNT; }
+}
+
+
+sub get_item_text
+{
+   my ( $self, $index) = @_;
+   my $txt = '';
+   $self-> notify(q(Stringify), $index, \$txt);
+   return $txt;
+}
+
+sub get_item_width
+{
+   my ( $self, $index) = @_;
+   my $txt = '';
+   $self-> notify(q(Stringify), $index, \$txt);
+   return $self-> get_text_width($txt);
+}
+
+sub on_stringify
+{
+   my ( $self, $index, $sref) = @_;
+   $$sref = '';
+}
 
 sub draw_items
 {
-   my ($self,$canvas) = (shift,shift);
-   my @clrs = (
-      $self-> color,
-      $self-> backColor,
-      $self-> colorIndex( ci::HiliteText),
-      $self-> colorIndex( ci::Hilite)
-   );
-   my @clipRect = $canvas-> clipRect;
+   shift-> std_draw_text_items(@_)
+}
+
+sub draw_text_items
+{
+   my ( $self, $canvas, $first, $last, $x, $y, $textShift, $clipRect) = @_;
    my $i;
-   my $drawVeilFoc = -1;
-   my $atY    = ( $self-> {itemHeight} - $canvas-> font-> height) / 2;
-   my $ih     = $self->{itemHeight};
-   my $offset = $self->{offset};
-
-   my @colContainer;
-   for ( $i = 0; $i < $self->{columns}; $i++){ push ( @colContainer, [])};
-   for ( $i = 0; $i < scalar @_; $i++) {
-      push ( @{$colContainer[ $_[$i]->[7]]}, $_[$i]);
-      $drawVeilFoc = $i if $_[$i]->[6];
-   }
-   my ( $lc, $lbc) = @clrs[0,1];
-   for ( @colContainer)
+   for ( $i = $first; $i <= $last; $i++)
    {
-      my @normals;
-      my @selected;
-      my ( $lastNormal, $lastSelected) = (undef, undef);
-      my $isSelected = 0;
-      # sorting items in single column
-      { $_ = [ sort { $$a[0]<=>$$b[0] } @$_]; }
-      # calculating conjoint bars
-      for ( $i = 0; $i < scalar @$_; $i++)
-      {
-         my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$_[$i]};
-         if ( $selected)
-         {
-            if ( defined $lastSelected && ( $y2 + 1 == $lastSelected) &&
-               ( ${$selected[-1]}[3] - $lastSelected < 100))
-            {
-               ${$selected[-1]}[1] = $y;
-               ${$selected[-1]}[5] = $$_[$i]->[0];
-            } else {
-               push ( @selected, [ $x, $y, $x2, $y2, $$_[$i]->[0], $$_[$i]->[0], 1]);
-            }
-            $lastSelected = $y;
-            $isSelected = 1;
-         } else {
-            if ( defined $lastNormal && ( $y2 + 1 == $lastNormal) &&
-               ( ${$normals[-1]}[3] - $lastNormal < 100))
-            {
-               ${$normals[-1]}[1] = $y;
-               ${$normals[-1]}[5] = $$_[$i]->[0];
-            } else {
-               push ( @normals, [ $x, $y, $x2, $y2, $$_[$i]->[0], $$_[$i]->[0], 0]);
-            }
-            $lastNormal = $y;
-         }
-      }
-      for ( @selected) { push ( @normals, $_); }
-      # draw items
-
-      for ( @normals)
-      {
-         my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
-         my $c = $clrs[ $selected ? 3 : 1];
-         if ( $c != $lbc) {
-            $canvas-> backColor( $c);
-            $lbc = $c;
-         }
-         $canvas-> clear( $x, $y, $x2, $y2);
-
-         $c = $clrs[ $selected ? 2 : 0];
-         if ( $c != $lc) {
-            $canvas-> color( $c);
-            $lc = $c;
-         }
-
-         for ( $i = $first; $i <= $last; $i++)
-         {
-             next if $self-> {widths}->[$i] + $offset + $x + 1 < $clipRect[0];
-             $canvas-> text_out( $self->{items}->[$i], $x,
-                $y2 + $atY - ($i-$first+1) * $ih + 1);
-         }
-      }
-   }
-   # draw veil
-   if ( $drawVeilFoc >= 0)
-   {
-      my ( $itemIndex, $x, $y, $x2, $y2) = @{$_[$drawVeilFoc]};
-      $canvas-> rect_focus( $x + $self->{offset}, $y, $x2, $y2);
+       my $txt;
+       $self-> notify(q(Stringify), $i, \$txt);
+       next if $canvas-> get_text_width( $txt) + 
+               $self->{offset} + $x + 1 < $clipRect->[0];
+       $canvas-> text_out( $txt, 
+          $x, $y + $textShift - ($i-$first+1) * $self->{itemHeight} + 1);
    }
 }
 
