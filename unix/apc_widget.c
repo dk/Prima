@@ -188,6 +188,8 @@ apc_widget_destroy( Handle self)
 {
    DEFXX;
 
+   if ( guts. focused == self)
+      guts. focused = nilHandle;
    XX-> flags.modal = false;
    if ( XX-> flags. paint_pending) {
       TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
@@ -553,8 +555,9 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
 Bool
 apc_widget_set_focused( Handle self)
 {
-   if ( self && ( self != CApplication( application)-> map_focus( application, self)))
+   if ( self && ( self != CApplication( application)-> map_focus( application, self))) {
       return false;
+   }
    XSetInputFocus( DISP, apc_widget_is_showing( self) ? X_WINDOW : None, RevertToParent, CurrentTime);
    XCHECKPOINT;
    return true;
