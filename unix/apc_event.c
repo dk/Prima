@@ -897,7 +897,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          XX-> ackSize. y - ev-> xconfigure. y;
       if ( XT_IS_WINDOW(XX) && PWindow( self)-> menu) {
          if ( size_changed) {
-            printf("confi 1\n");
             M(PWindow( self)-> menu)-> paint_pending = true;
             XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
                ev-> xconfigure. width, XX-> menuHeight);
