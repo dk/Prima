@@ -126,7 +126,7 @@ built-in set consists of a fixed small amount of classes, coded in C. These
 classes form a baseline for every Prima object written in perl. Although
 usage of C is possible with the toolkit, its full power is revealed in perl
 programming. The external classes are the expandable set of widgets,
-written completely in perl and communicating with the OS using Prima
+written completely in perl and communicating with the system using Prima
 interfaces. The built-in classes can be arrayed in the tree-like hierarchy
 scheme:
 
@@ -185,7 +185,7 @@ Another basic issue is the event loop, which is called by
    run Prima;
 
 sentence and requires a Prima::Application object to be created before.
-Invoking I<Prima> standard module is one of the possible ways to create the application
+Invoking I<Prima::Application> standard module is one of the possible ways to create the application
 object. The program usually terminates after quitting the event loop.
 
 The window is created by invoking 
@@ -206,7 +206,7 @@ the code. The syntax is:
      ...
    );
 
-The parameter names are the class properties name, and differ from class to
+The parameter names are the class properties names, and differ from class to
 class, although many classes share properties, primarily because of the
 object inheritance.
 
@@ -226,12 +226,13 @@ In short, onXxxx properties form a class of I<events>,
 which although share the C<create> syntax but are not
 substitutive but additive ( read more in L<Prima::Object> ). 
 Events are called in the object context when a specific condition occurs. 
-The C<onClick> event here, for example, is called when a 
-user presses ( or activates otherwise ) the button.
+The C<onClick> event here, for example, is called when the 
+user presses ( or otherwise activates ) the button.
 
 =head1 SEE ALSO
 
-The toolkit documentation is divided by subjects, and the information can
+The toolkit documentation is divided by several
+subjects, and the information can
 be found in the following files.
 
 B<Perl programming>:
@@ -242,7 +243,7 @@ B<Perl programming>:
 
 - L<Prima::image-load> - Image subsystem and picture file operations
 
-- L<Prima::Widget> - window management 
+- L<Prima::Widget> - Window management 
 
 B<C programming>
 
@@ -250,7 +251,7 @@ B<C programming>
 
 - L<Prima::codecs>    - Step-by-step image codec creation
 
-- L<gencls>           - gencls tool.
+- L<gencls>           - gencls, a class compiler tool.
 
 B<miscellaneous>:
 
