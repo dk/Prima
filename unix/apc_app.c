@@ -36,6 +36,11 @@
 #include <sys/utsname.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#if !defined(BYTEORDER)
+#error "BYTEORDER is not defined"
+#endif
+#define LSB32   0x1234
+#define MSB32   0x4321
 
 static int
 x_error_handler( Display *d, XErrorEvent *ev)
@@ -226,7 +231,13 @@ window_subsystem_init( void)
    guts. idepth = get_idepth();
    guts. byte_order = ImageByteOrder( DISP);
    guts. bit_order = BitmapBitOrder( DISP);
-   
+   if ( BYTEORDER == LSB32)
+      guts. machine_byte_order = LSBFirst;
+   else if ( BYTEORDER == MSB32)
+      guts. machine_byte_order = MSBFirst;
+   else
+      croak( "Weird machine byte order: %08x", BYTEORDER);
+
    guts. files = plist_create( 16, 16);
    prima_rebuild_watchers();
    prima_wm_init();

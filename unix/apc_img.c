@@ -35,7 +35,8 @@
 #define REVERT(a)	({ XX-> size. y - (a) - 1; })
 #define SHIFT(a,b)	({ (a) += XX-> gtransform. x + XX-> btransform. x; \
                            (b) += XX-> gtransform. y + XX-> btransform. y; })
-// #undef USE_MITSHM
+/* Multiple evaluation macro! */
+#define REVERSE_BYTES_32(x) ((((x)&0xff)<<24) | (((x)&0xff00)<<8) | (((x)&0xff0000)>>8) | (((x)&0xff000000)>>24))
 
 typedef struct _PrimaXImage
 {
@@ -293,6 +294,7 @@ prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int
    int y;
    register int x;
 
+   /* XXX: MSB/LSB */
    if ( guts.bit_order == MSBFirst) {
       for ( y = h-1; y >= 0; y--) {
 	 memcpy( ls*(h-y-1)+data, idata+y*ils, ls);
@@ -419,6 +421,7 @@ create_rgb_to_24_lut( int ncolors, const PRGBColor pal, unsigned long *lut)
    calc_shifts_rgb_to_24( rmask = v-> red_mask, &rrsh, &rlsh);
    calc_shifts_rgb_to_24( gmask = v-> green_mask, &grsh, &glsh);
    calc_shifts_rgb_to_24( bmask = v-> blue_mask, &brsh, &blsh);
+
    for ( i = 0; i < ncolors; i++) {
       lut[i] = 0;
       lut[i] |=
@@ -427,6 +430,12 @@ create_rgb_to_24_lut( int ncolors, const PRGBColor pal, unsigned long *lut)
 	 (((pal[i]. g >> grsh) << glsh) & gmask);
       lut[i] |=
 	 (((pal[i]. b >> brsh) << blsh) & bmask);
+   }
+
+   if ( guts.machine_byte_order != guts.byte_order) {
+      for ( i = 0; i < ncolors; i++) {
+         lut[i] = REVERSE_BYTES_32(lut[i]);
+      }
    }
 }
 
