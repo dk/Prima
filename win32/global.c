@@ -520,6 +520,8 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
                      return 1;
                 }
                 ev. key. code = keys[ 0] & 0xFF;
+                if ( ev. key. mod & kmCtrl && isalpha( ev. key. code))
+                   ev. key. code = toupper( ev. key. code) - '@';
              }
           } else
              if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))

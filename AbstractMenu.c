@@ -64,7 +64,7 @@ key_normalize( const char * key)
    }
    if (!*key) return kbNoKey;  /* #, ^, @ alone are not allowed */
    if (!key[1]) {
-      return r | tolower(*key);
+      return (r&kmCtrl) && isalpha(*key) ? r | (toupper(*key)-'@') : r | tolower(*key);
    } else {
       char *e;
       if (isdigit(*key)) {

@@ -73,11 +73,18 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, Bool release)
 {
    /* if e-> cmd is unset on exit, the event will not be passed to the system-independent part */
    char str_buf[ 256];
-   KeySym keysym;
+   KeySym keysym, keysym2;
    U32 keycode;
    int str_len;
 
    str_len = XLookupString( ev, str_buf, 256, &keysym, nil);
+   /*
+   fprintf( stderr, "keysym: %08lu 0: %08lu, 1: %08lu, 2: %08lu, 3: %08lu\n", keysym,
+            XLookupKeysym(ev,0),
+            XLookupKeysym(ev,1),
+            XLookupKeysym(ev,2),
+            XLookupKeysym(ev,3));
+    */
 
    switch (keysym) {
    /* virtual keys-modifiers */
@@ -201,7 +208,13 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, Bool release)
    if ( str_len == 1 && keycode == kbNoKey && *str_buf == ' ')
       keycode = kbSpace;
    if ( keycode == kbNoKey) {
-      if ( str_len == 1)
+      if ( keysym <= 0x0000007f && !isalpha(keysym & 0x000000ff))
+	 keycode = keysym & 0x000000ff;
+      else if (( ev-> state & ControlMask) && keysym > 0x0000007f
+               && (keysym2 = XLookupKeysym( ev, 0)) <= 0x0000007f
+               && isalpha(keysym2 & 0x0000007f))
+         keycode = toupper(keysym2 & 0x0000007f) - '@';
+      else if ( str_len == 1)
 	 keycode = (uint8_t)*str_buf;
       else if ( keysym < 0xFD00)
 	 keycode = keysym & 0x000000ff;
