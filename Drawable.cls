@@ -5,6 +5,8 @@ object Drawable ( Component)
    Font        font;
    int         w;
    int         h;
+   PRGBColor   palette;		       # logical palette
+   int         palSize;                # logical palette size
 
    # globals
    method void   init( HV * profile);
@@ -29,6 +31,7 @@ object Drawable ( Component)
    method void   set_line_end( int lend)           => apc_gp_set_line_end;
    method void   set_line_pattern( int lpattern)   => apc_gp_set_line_pattern;
    method void   set_line_width( int lwidth)       => apc_gp_set_line_width;
+   method void   set_palette( SV * palette);
    method void   set_rop  ( int rop)               => apc_gp_set_rop;
    method void   set_rop2 ( int rop)               => apc_gp_set_rop2;
    method void   set_transform ( int x, int y)     => apc_gp_set_transform;
@@ -46,6 +49,7 @@ object Drawable ( Component)
    method int           get_line_end()                    => apc_gp_get_line_end;
    method int           get_line_pattern()                => apc_gp_get_line_pattern;
    method int           get_line_width()                  => apc_gp_get_line_width;
+   method SV *          get_palette();
    method Point         get_resolution()                  => apc_gp_get_resolution;
    method int           get_rop()                         => apc_gp_get_rop;
    method int           get_rop2()                        => apc_gp_get_rop2;

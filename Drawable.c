@@ -7,6 +7,7 @@
 #define my  ((( PDrawable) self)-> self)->
 #define var (( PDrawable) self)->
 
+PRGBColor read_palette( int * palSize, SV * palette);
 
 void
 Drawable_init( Handle self, HV * profile)
@@ -43,6 +44,7 @@ Drawable_init( Handle self, HV * profile)
    }
    SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::init");
    my set_font( self, Font_buffer);
+   my set_palette( self, pget_sv( palette));
 }
 
 void
@@ -144,6 +146,17 @@ Drawable_set_font( Handle self, Font font)
    apc_gp_set_font( self, &var font);
 }
 
+void
+Drawable_set_palette( Handle self, SV * palette)
+{
+   int ops = var palSize;
+   free( var palette);
+   var palette = read_palette( &var palSize, palette);
+   if ( ops == 0 && var palSize == 0) return; // do not bother apc
+   apc_gp_set_palette( self);
+}
+
+
 Font *
 Drawable_font_match( char * dummy, Font * source, Font * dest)
 {
@@ -244,6 +257,18 @@ Drawable_get_height( Handle self)
 {
   return var h;
 }
+
+SV *
+Drawable_get_palette( Handle self)
+{
+   AV * av = newAV();
+   int i;
+   int colors = var palSize;
+   Byte * pal = ( Byte*) var palette;
+   for ( i = 0; i < colors * 3; i++) av_push( av, newSViv( pal[ i]));
+   return newRV_noinc(( SV *) av);
+}
+
 
 Bool
 Drawable_get_text_out_baseline( Handle self)
@@ -413,4 +438,34 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
       av_push( av, newRV_noinc(( SV *) profile));
    }
    return newRV_noinc(( SV *) av);
+}
+
+PRGBColor
+read_palette( int * palSize, SV * palette)
+{
+   AV * av;
+   int i, count;
+   Byte * buf;
+
+   if ( !SvROK( palette) || ( SvTYPE( SvRV( palette)) != SVt_PVAV)) {
+      *palSize = 0;
+      return nil;
+   }
+   av = (AV *) SvRV( palette);
+   count = av_len( av) + 1;
+   *palSize = count / 3;
+   count = *palSize * 3;
+   if ( count == 0) return nil;
+
+   buf = malloc( count);
+
+   for ( i = 0; i < count; i++)
+   {
+      SV **itemHolder = av_fetch( av, i, 0);
+      if ( itemHolder == nil)
+         return ( PRGBColor) buf;
+      buf[ i] = SvIV( *itemHolder);
+   }
+
+   return ( PRGBColor) buf;
 }

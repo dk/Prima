@@ -133,6 +133,8 @@ Application_set( Handle self, HV * profile)
    pdelete( growMode);
    pdelete( text);
    pdelete( selectable);
+   pdelete( ownerPalette);
+   pdelete( palette);
    pdelete( ownerShowHint);
    pdelete( ownerBackColor);
    pdelete( ownerColor);
@@ -573,6 +575,12 @@ Application_get_hint_pause( Handle self)
 }
 
 void
+Application_set_palette( Handle self, SV * palette)
+{
+   CDrawable-> set_palette( self, palette);
+}
+
+void
 Application_set_show_hint( Handle self, Bool showHint)
 {
    opt_assign( optShowHint, showHint);
@@ -581,6 +589,11 @@ Application_set_show_hint( Handle self, Bool showHint)
 Handle Application_next( Handle self) { return self;}
 Handle Application_prev( Handle self) { return self;}
 
+SV *
+Application_get_palette( Handle self)
+{
+   return CDrawable-> get_palette( self);
+}
 
 Handle
 Application_top_frame( Handle self, Handle from)
@@ -705,6 +718,7 @@ void Application_set_owner_color( Handle self, Bool ownerColor) {}
 void Application_set_owner_back_color( Handle self, Bool ownerBackColor) {}
 void Application_set_owner_font( Handle self, Bool ownerFont) {}
 void Application_set_owner_show_hint( Handle self, Bool ownerShowHint) {}
+void Application_set_owner_palette( Handle self, Bool ownerPalette) {}
 void Application_set_pos( Handle self, int x, int y) {}
 void Application_set_size( Handle self, int x, int y) {}
 void Application_set_selectable( Handle self, Bool selectable) {}

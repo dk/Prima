@@ -38,6 +38,7 @@ Image_init( Handle self, HV * profile)
    var lineSize = (( var w * ( var type & imBPP) + 31) / 32) * 4;
    var dataSize = ( var lineSize) * var h;
    var data = ( var dataSize > 0) ? malloc( var dataSize) : nil;
+   free( var palette);
    var palette = malloc( 0x100 * sizeof( RGBColor));
    opt_assign( optPreserveType, pget_B( preserveType));
    var palSize = (1 << (var type & imBPP)) & 0x1ff;
@@ -215,6 +216,7 @@ Image_get_status_string( Handle self)
 
 Bool Image_get_h_scaling( Handle self) { return is_opt( optHScaling); }
 Bool Image_get_v_scaling( Handle self) { return is_opt( optVScaling); }
+
 void
 Image_set_h_scaling( Handle self, Bool scaling)
 {
@@ -612,6 +614,9 @@ Image_set_palette( Handle self, SV * palette)
 {
    if ( var type & imGrayScale)
       return;
+   if ( !var palette)
+      return;
+
    if ( !Image_read_palette( self, var palette, palette))
       croak ("RTC0107: Invalid array reference passed to Image::set_palette");
    my update_change( self);
@@ -808,6 +813,7 @@ Image_bitmap( Handle self)
    pset_H( owner,        var owner);
    pset_i( width,        var w);
    pset_i( height,       var h);
+   pset_sv( palette,     my get_palette( self));
    h = Object_create( "DeviceBitmap", profile);
    sv_free(( SV *) profile);
    CDrawable( h)-> put_image( h, 0, 0, self);
