@@ -383,7 +383,14 @@ window_subsystem_init( void)
    guts. icccm_only = do_icccm_only;
    Mdebug("init x11:%d, debug:%x, sync:%d, display:%s\n", do_x11, guts.debug, 
 	  do_sync, do_display ? do_display : "(default)");
-   if ( do_x11) return init_x11();
+   if ( do_x11) {
+      Bool ret = init_x11();
+      if ( !ret && DISP) {
+	 XCloseDisplay(DISP);
+	 DISP = nil;
+      }
+      return ret;
+   }
    return true;
 }
 
