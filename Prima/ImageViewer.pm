@@ -206,17 +206,19 @@ sub set_zoom
    my $dv = int( 100 * ( $zoom - int( $zoom)) + 0.5);
    $dv-- if ($dv % 2) and ( $dv % 5);
    $zoom = int($zoom) + $dv / 100;
+   $dv = 0 if $dv >= 100;
    my ($r,$n,$m) = (1,100,$dv);
    while(1) {
       $r = $m % $n;
       last unless $r;
       ($m,$n) = ($n,$r);
    }
-
    return if $zoom == $self->{zoom};
+
    $self->{zoom} = $zoom;
    $self->{integralScreen} = int( 100 / $n) * int( $zoom) + int( $dv / $n);
    $self->{integralImage}  = int( 100 / $n);
+
 
    return unless defined $self->{image};
    my ( $x, $y) = ($self->{image}-> width, $self-> {image}->height);
