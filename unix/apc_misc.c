@@ -893,7 +893,7 @@ apc_show_message( const char * message)
    Bool ret = true;
 
    if ( !DISP) {
-      warn( message);
+      warn( "%s", message);
       return true;
    }   
   
@@ -910,12 +910,12 @@ apc_show_message( const char * message)
       cf = prima_find_known_font( &f, false, false);
       if ( !cf || !cf-> id) {
          warn( "UAF_007: internal error (cf:%08x)", (IV)cf); /* the font was not cached, can't be */
-         warn( message);
+         warn( "%s", message);
          return false;
       }
       fs = XQueryFont( DISP, cf-> id);
       if (!fs) {
-         warn( message);
+         warn( "%s", message);
          return false;
       }   
       abc = prima_xfont2abc( fs, 0, 255);
@@ -930,14 +930,14 @@ apc_show_message( const char * message)
 
       if ( !( md. widths  = malloc( twr. count * sizeof(int)))) {
          XFreeFontInfo( nil, fs, 1);
-         warn( message);
+         warn( "%s", message);
          return false;
       }
          
       if ( !( md. lengths = malloc( twr. count * sizeof(int)))) {
          free( md. widths);
          XFreeFontInfo( nil, fs, 1);
-         warn( message);
+         warn( "%s", message);
          return false;
       }
 

@@ -2313,8 +2313,7 @@ apc_show_message( const char * message)
       KbdCharIn( &key, IO_WAIT, 0);
       VioEndPopUp(0);
    } else {
-      fprintf( stderr, message);
-      fprintf( stderr, "\n");
+      fprintf( stderr, "%s\n", message);
    }
    return true;
 }

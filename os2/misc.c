@@ -428,7 +428,7 @@ apc_system_action( const char* params)
       (void)i;
    }
    else if ( strnicmp( params, "echo", 4) == 0) {
-      printf((char*) params);
+      printf( "%s", (char*) params);
    }
    return ret;
 }
