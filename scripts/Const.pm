@@ -31,7 +31,7 @@ sub AUTOLOAD {
     my ($pack,$constname) = ($AUTOLOAD =~ /^(.*)::(.*)$/);
     my $val = eval "\&${pack}::constant(\$constname)";
     croak $@ if $@;
-    *$AUTOLOAD = sub { $val };
+    *$AUTOLOAD = sub () { $val };
     goto &$AUTOLOAD;
 }
 

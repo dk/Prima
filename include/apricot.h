@@ -321,6 +321,7 @@ void register_##package##_constants( void) { \
    HV *unused_hv; \
    GV *unused_gv; \
    SV *sv; \
+   CV *cv; \
    int i; \
  \
    newXS( #package "::constant", prima_autoload_##package##_constant, #package); \
@@ -328,7 +329,8 @@ void register_##package##_constants( void) { \
    for ( i = 0; i < sizeof( Prima_Autoload_##package##_constants) \
 	    / sizeof( ConstTable_##package); i++) { \
       sv_setpvf( sv, "%s::%s", #package, Prima_Autoload_##package##_constants[i]. name); \
-      sv_2cv(sv, &unused_hv, &unused_gv, true); \
+      cv = sv_2cv(sv, &unused_hv, &unused_gv, true); \
+      sv_setpv((SV*)cv, ""); \
    } \
    sv_free( sv); \
 }
