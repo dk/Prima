@@ -74,15 +74,15 @@ Drawable_init( Handle self, HV * profile)
    my-> set_textOpaque   ( self, pget_B ( textOpaque));
    my-> set_textOutBaseline( self, pget_B ( textOutBaseline));
    my-> set_splinePrecision( self, pget_i ( splinePrecision));
-   if ( pexist( transform))
+   if ( pexist( translate))
    {
-      AV * av = ( AV *) SvRV( pget_sv( transform));
+      AV * av = ( AV *) SvRV( pget_sv( translate));
       Point tr = {0,0};
       SV ** holder = av_fetch( av, 0, 0);
-      if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
+      if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'translate'");
       holder = av_fetch( av, 1, 0);
-      if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
-      my-> set_transform( self, tr);
+      if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'translate'");
+      my-> set_translate( self, tr);
    }
    SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::init");
    my-> set_font( self, Font_buffer);
@@ -171,16 +171,16 @@ Drawable_set( Handle self, HV * profile)
       my-> set_font( self, Font_buffer);
       pdelete( font);
    }
-   if ( pexist( transform))
+   if ( pexist( translate))
    {
-      AV * av = ( AV *) SvRV( pget_sv( transform));
+      AV * av = ( AV *) SvRV( pget_sv( translate));
       Point tr = {0,0};
       SV ** holder = av_fetch( av, 0, 0);
-      if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
+      if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'translate'");
       holder = av_fetch( av, 1, 0);
-      if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
-      my-> set_transform( self, tr);
-      pdelete( transform);
+      if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'translate'");
+      my-> set_translate( self, tr);
+      pdelete( translate);
    }
    if ( pexist( width) && pexist( height)) {
       Point size;
@@ -1428,11 +1428,11 @@ Drawable_textOutBaseline( Handle self, Bool set, Bool textOutBaseline)
 }
 
 Point
-Drawable_transform( Handle self, Bool set, Point transform)
+Drawable_translate( Handle self, Bool set, Point translate)
 {
    if (!set) return apc_gp_get_transform( self);
-   apc_gp_set_transform( self, transform. x, transform. y);
-   return transform;
+   apc_gp_set_transform( self, translate. x, translate. y);
+   return translate;
 }
 
 SV *

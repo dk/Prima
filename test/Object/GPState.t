@@ -1,5 +1,5 @@
 # $Id$
-print "1..22 color,backColor,fillPattern,lineEnd,lineWidth,linePattern,rop,rop2,transform,textOpaque,textOutBaseline,color,backColor,fillPattern,lineEnd,lineWidth,linePattern,rop,rop2,transform,textOpaque,textOutBaseline";
+print "1..22 color,backColor,fillPattern,lineEnd,lineWidth,linePattern,rop,rop2,translate,textOpaque,textOutBaseline,color,backColor,fillPattern,lineEnd,lineWidth,linePattern,rop,rop2,translate,textOpaque,textOutBaseline";
 
 my $a = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 $a-> color( 0x123456);
@@ -18,8 +18,8 @@ $a-> rop( rop::NotSrcXor);
 ok( $a-> rop == rop::NotSrcXor);
 $a-> rop2( rop::NotSrcXor);
 ok( $a-> rop2 == rop::NotSrcXor);
-$a-> transform( 1, 2);
-my @z = $a-> transform;
+$a-> translate( 1, 2);
+my @z = $a-> translate;
 ok( $z[0] == 1 && $z[1] == 2);
 $a-> textOpaque( 1);
 ok( $a-> textOpaque == 1);
@@ -36,7 +36,7 @@ ok( $a-> lineWidth == 5);
 ok( $a-> linePattern eq lp::Dash);
 ok( $a-> rop == rop::NotSrcXor);
 ok( $a-> rop2 == rop::NotSrcXor);
-@z = $a-> transform;
+@z = $a-> translate;
 ok( $z[0] == 1 && $z[1] == 2);
 ok( $a-> textOpaque == 1);
 ok( $a-> textOutBaseline == 1);

@@ -1,5 +1,5 @@
 # $Id$
-print "1..21 create,pixel,pixel,line,lines,polyline,rectangle,ellipse,arc,bar,fillpoly,fill_ellipse,fill_chord,flood_fill,clipRect,transform,put_image,stretch_image,xor_put,text_out,dbm(put_image)\n";
+print "1..21 create,pixel,pixel,line,lines,polyline,rectangle,ellipse,arc,bar,fillpoly,fill_ellipse,fill_chord,flood_fill,clipRect,translate,put_image,stretch_image,xor_put,text_out,dbm(put_image)\n";
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 # 1
@@ -200,9 +200,9 @@ ok( $x-> pixel( 2,2) == 0 &&
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
-$x-> transform( -1, 1);
+$x-> translate( -1, 1);
 $x-> bar( 2, 2, 3, 3);
-$x-> transform( 0, 0);
+$x-> translate( 0, 0);
 ok( $x-> pixel( 1,4) == 0 &&
     $x-> pixel( 3,2) == 0xFFFFFF
 );
@@ -276,7 +276,7 @@ ok( $bl > 5);
 my $y = Prima::DeviceBitmap-> create( monochrome => 1, width => 2, height => 2);
 $y-> clear;
 $y-> pixel( 0, 0, cl::Black);
-$y-> transform( 1, 1);
+$y-> translate( 1, 1);
 $x-> color( cl::White);
 $x-> bar(0,0,8,8);
 $x-> put_image( 0, 0, $y);

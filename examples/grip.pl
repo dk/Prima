@@ -98,7 +98,7 @@ sub paint
    my ( $self, $canvas) = @_;
    $self-> notify(q(Paint), $canvas);
    $canvas-> clipRect( 0, 0, $self-> size);
-   $canvas-> transform(0, 0);
+   $canvas-> translate(0, 0);
    $canvas-> palette([]);
    my @c = $self-> widgets;
    for ( @c) {

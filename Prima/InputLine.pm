@@ -126,7 +126,7 @@ sub on_paint
    return if $size[0] <= $border * 2 + 2;
    my $cap   = $self-> {line};
    $canvas-> clipRect  ( $border + 1, $border + 1, $size[0] - $border - 2, $size[1] - $border - 2);
-   $canvas-> transform ( $border + 1, $border + 1);
+   $canvas-> translate ( $border + 1, $border + 1);
    $size[0] -= ( $border + 1) * 2;
    $size[1] -= ( $border + 1) * 2;
 

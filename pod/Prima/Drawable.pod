@@ -56,7 +56,7 @@ new state. The code example below illustrates the idea:
    $d-> end_paint_info;
    # lineWidth is 5 again
 
-( Note: C<::region>, C<::clipRect> and C<::transform> properties are exceptions. 
+( Note: C<::region>, C<::clipRect> and C<::translate> properties are exceptions. 
 They can not be used in the disabled state; their values are neither 
 recorded nor used as a template).
 
@@ -567,9 +567,9 @@ For example,
 
 plots a bar that covers 4 pixels: (0,0), (0,1), (1,0) and (1,1).
 
-The coordinate origin can be shifted using C<::transform> property,
+The coordinate origin can be shifted using C<::translate> property,
 that translates the (0,0) point to the given offset. Calls to
-C<::transform>, C<::clipRect> and C<::region> always use the 'physical'
+C<::translate>, C<::clipRect> and C<::region> always use the 'physical'
 (0,0) point, whereas the plotting methods use the transformation result,
 the 'logical' (0,0) point.
 
@@ -792,20 +792,20 @@ If FLAG is 1, then text_out() plots text on a given Y coordinate
 correspondent to font baseline. If FLAG is 0, a Y coordinate is 
 mapped to font descent line. Default is 0. 
 
-=item transform X_OFFSET, Y_OFFSET
+=item translate X_OFFSET, Y_OFFSET
 
 Translates the origin point by X_OFFSET and Y_OFFSET.
 Does not affect C<::clipRect> and C<::region>. Not cumulative, 
 so the call sequence
 
-   $d-> transform( 5, 5);
-   $d-> transform( 15, 15);
+   $d-> translate( 5, 5);
+   $d-> translate( 15, 15);
 
 is equivalent to
 
-   $d-> transform( 15, 15);
+   $d-> translate( 15, 15);
 
-Note: C<::transform> can not be used while the object is in the paint-disabled state,
+Note: C<::translate> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template 
 ( see L<"Graphic context and canvas">).
 

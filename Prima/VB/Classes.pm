@@ -854,7 +854,7 @@ sub prf_types
       lineWidth     => ['lineWidth'],
       rop           => ['rop', 'rop2'],
       bool          => ['textOutBaseline', 'textOpaque'],
-      point         => ['transform'],
+      point         => ['translate'],
       palette       => ['palette'],
       image         => ['region'],
       uiv           => ['splinePrecision'],
@@ -905,7 +905,7 @@ sub prf_adjust_default
       splinePrecision
       textOpaque
       textOutBaseline
-      transform
+      translate
    );
    $def->{text} = '' unless defined $def->{text};
 }

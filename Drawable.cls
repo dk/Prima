@@ -55,7 +55,7 @@ object Prima::Drawable ( Prima::Component)
    property     int           splinePrecision;
    property     Bool          textOpaque;
    property     Bool          textOutBaseline;
-   property     Point         transform;
+   property     Point         translate;
    property     int           width;
 
    # globals

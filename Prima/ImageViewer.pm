@@ -95,7 +95,7 @@ sub on_paint
    $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor) if $bw;
    my @r = $self-> get_active_area( 0, @size);
    $canvas-> clipRect( @r);
-   $canvas-> transform( @r[0,1]);
+   $canvas-> translate( @r[0,1]);
    my $imY  = $self->{imageY};
    my $imX  = $self->{imageX};
    my $z = $self->{zoom};

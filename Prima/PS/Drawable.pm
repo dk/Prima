@@ -136,7 +136,7 @@ sub save_state
       rop rop2 textOpaque textOutBaseline font 
    );
    $self-> {saveState}-> {$_} = [$self-> $_()] for qw( 
-      transform clipRect
+      translate clipRect
    );
    $self-> {saveState}-> {localeEncoding} = 
       $self-> {useDeviceFonts} ? [ @{$self-> {localeEncoding}}] : [];
@@ -149,7 +149,7 @@ sub restore_state
          rop rop2 textOpaque textOutBaseline font)) {
        $self-> $_( $self-> {saveState}->{$_});     
    }      
-   for ( qw( transform clipRect)) {
+   for ( qw( translate clipRect)) {
        $self-> $_( @{$self-> {saveState}->{$_}});
    }      
    $self-> {localeEncoding} = $self-> {saveState}-> {localeEncoding};
@@ -186,7 +186,7 @@ sub change_transform
 {
    return if $_[0]-> {delay};
    
-   my @tp = $_[0]-> transform;
+   my @tp = $_[0]-> translate;
    my @cr = $_[0]-> clipRect;
    my @sc = $_[0]-> scale;
    my $ro = $_[0]-> rotate;
@@ -491,7 +491,7 @@ sub new_page
    $self-> {pages}++;
    $self-> emit('grestore');
    $self-> emit("showpage\n%%Page: $self->{pages} $self->{pages}\n");
-   $self-> $_( @{$self-> {saveState}->{$_}}) for qw( transform clipRect);
+   $self-> $_( @{$self-> {saveState}->{$_}}) for qw( translate clipRect);
    $self-> change_transform(1);
    $self-> emit( $self-> {pagePrefix});
 }
@@ -603,11 +603,11 @@ sub rop2
    $self-> SUPER::rop2( $rop);
 }
 
-sub transform
+sub translate
 {
-   return $_[0]-> SUPER::transform unless $#_;
+   return $_[0]-> SUPER::translate unless $#_;
    my $self = shift;
-   $self-> SUPER::transform(@_);
+   $self-> SUPER::translate(@_);
    $self-> change_transform;
 }
 
@@ -1634,7 +1634,7 @@ Can be called for direct PostScript code injection. Example:
 
 =item pixel2point and point2pixel
 
-Helpers for transformation from pixel to points and vice versa.
+Helpers for translation from pixel to points and vice versa.
 
 =item fill & stroke
 

@@ -180,7 +180,7 @@ sub printer
    $self-> {data} = {};
    $self-> data( $self-> {defaultData});
    $self-> data( $self-> {printers}-> {$printer});
-   $self-> transform( 0, 0);
+   $self-> translation( 0, 0);
    return 1;
 }
 

@@ -125,7 +125,7 @@ my $x = Prima::MainWindow-> create(
       my @eye = ( $sz[0] * $eye, $sz[1] * $eye * 2);
       my @pp = $self-> pointerPos;
       for ( 0..1) {
-         $canvas-> transform( @cc);
+         $canvas-> translate( @cc);
          $canvas-> ellipse( 0, 0, @eye);
          my @dd = ( $pp[0] - $cc[0], $pp[1] - $cc[1]);
          my $angle = atan2( $dd[1], $dd[0]);

@@ -1,5 +1,5 @@
 # $Id$
-print "1..8 onPaint message,update_view,scroll,query invalid area,invalid area consistency,pixel,clipRect,transform\n";
+print "1..8 onPaint message,update_view,scroll,query invalid area,invalid area consistency,pixel,clipRect,translate\n";
 
 $dong = 0;
 $w-> bring_to_front;
@@ -50,9 +50,9 @@ $ww-> set( onPaint => sub {
    $x-> color( cl::White);
    $x-> bar( 0, 0, 7, 7);
    $x-> color( cl::Black);
-   $x-> transform( -1, 1);
+   $x-> translate( -1, 1);
    $x-> bar( 2, 2, 3, 3);
-   $x-> transform( 0, 0);
+   $x-> translate( 0, 0);
    ok( $x-> pixel( 1,4) == 0 &&
        $x-> pixel( 3,2) == $white
    );

@@ -295,7 +295,7 @@ sub profile_default
       splinePrecision => 24,
       textOutBaseline => 0,
       textOpaque      => 0,
-      transform       => [ 0, 0],
+      translate       => [ 0, 0],
    );
    @$def{keys %prf} = values %prf;
    return $def;
