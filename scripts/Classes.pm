@@ -695,6 +695,7 @@ sub notification_types { return \%RNT; }
    syncPaint         => 1,
    tabOrder          => -1,
    tabStop           => 1,
+   text              => undef,
    textOutBaseline   => 0,
    top               => 200,
    transparent       => 0,
@@ -735,7 +736,7 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    delete $p->{ font} unless defined $orgFont;
 
-   $p-> { text} = $p-> { name} if ( $p-> { owner} && !exists( $p-> { text}));
+   $p-> { text} = $p-> { name} if ( $p-> { owner} && !exists( $p-> { text}) && !defined $default->{text});
 
    $p->{showHint} = 1 if ( defined $owner) && ( defined $::application) && ( $owner == $::application) &&
       ( exists $p->{ ownerShowHint} ? $p->{ ownerShowHint} : $default->{ ownerShowHint});
@@ -953,7 +954,7 @@ sub mouse_up    { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseUp
 sub mouse_move  { splice( @_,5,0,0) if $#_ > 4; splice( @_,1,0,0); shift-> mouse_event( cm::MouseMove, @_) }
 sub mouse_wheel { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseWheel, @_) }
 sub mouse_down  { splice( @_,5,0,0) if $#_ > 4;
-                  ($#_>3)?(@_[1..4]=@_[4,1..3]):splice(@_,1,0,0);
+                  ($#_>3)?splice( @_,1,0,splice( @_,4,1)):splice(@_,1,0,0);
                   shift-> mouse_event( cm::MouseDown, @_); }
 sub mouse_click { shift-> mouse_event( cm::MouseClick, @_) }
 sub select      { $_[0]-> set_selected(1); }
