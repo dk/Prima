@@ -58,7 +58,7 @@ File_init( Handle self, HV * profile)
    var-> eventMask2 =
      ( query_method( self, "on_read",    0) ? feRead      : 0) |
      ( query_method( self, "on_write",   0) ? feWrite     : 0) |
-     ( query_method( self, "on_execute", 0) ? feException : 0);
+     ( query_method( self, "on_exception", 0) ? feException : 0);
    File_reset_notifications( self);
    my-> set_file( self, pget_sv( file));
 }

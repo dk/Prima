@@ -247,7 +247,7 @@ my %RNT = (
    %{Prima::Component->notification_types()},
    Read        => nt::Default,
    Write       => nt::Default,
-   Execute     => nt::Default,
+   Exception   => nt::Default,
 );
 
 sub notification_types { return \%RNT; }
