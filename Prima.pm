@@ -435,12 +435,22 @@ L<Prima::gp-problems> - Graphic subsystem portability issues
 
 L<Prima::X11> - usage guide for X11 environment
 
+=item Class information
+
+The Prima manual pages often provide information for more than one Prima class.
+To quickly find out the manual page of a desired class, as well as display the
+inheritance information, use C<p-class> command. The command can produce output in
+text and pod formats; the latter feature is used by the standard Prima documentation
+viewer C<podview> ( see File/Run/p-class ).
+
 =back
 
 =head1 COPYRIGHT
 
-Copyright 1997, 2002 The Protein Laboratory, University of Copenhagen. All
+Copyright 1997, 2003 The Protein Laboratory, University of Copenhagen. All
 rights reserved.
+
+Copyright 2004 Dmitry Karasik. All rights reserved. 
 
 This library is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
