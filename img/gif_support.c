@@ -80,8 +80,7 @@
 
 static int supportedTypes[] = { im256, imByte};
 static ImgCapInfo capabilities[] = {
-/*  type, multi, nullCap */
-    {"type", "i*", "Valid image formats list", 2, supportedTypes},
+    {"type", "i*", "Valid image formats list", 2, val:{ supportedTypes}},
     {"multi", "i", "Supports multiple images", 0, 1},
     {nil, nil, nil, 0, 0}
 };
