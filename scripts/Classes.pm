@@ -277,6 +277,8 @@ package Drawable;
 use vars qw(@ISA);
 @ISA = qw(Component);
 
+my $sysData = Application-> get_system_info;
+
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
@@ -374,9 +376,7 @@ sub rect_focus
    ( $y, $y1) = ( $y1, $y) if $y > $y1;
 
    $width = 1 if !defined $width || $width < 1;
-   my $sys = Application-> get_system_info;
-
-   if (( $width == 1) and ( $sys->{apc} == apc::Win32) and ( $sys->{system} ne 'Windows NT')) {
+   if (( $sysData->{apc} != apc::Win32) or ( $sysData->{system} eq 'Windows NT')) {
       my ( $lp, $cl, $cl2, $rop) = (
          $canvas-> linePattern, $canvas-> color,
          $canvas-> backColor, $canvas-> rop

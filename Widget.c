@@ -1316,16 +1316,24 @@ Widget_update_delegator( Handle self)
    delegator( ZOrderChanged);
 }
 
+static Bool
+repaint_all( Handle owner, Handle self, void * dummy)
+{
+   enter_method;
+   my repaint( self);
+   my first_that( self, repaint_all, nil);
+   return false;
+}
+
 void
 Widget_unlock( Handle self)
 {
    enter_method;
    if ( --var lockCount <= 0) {
       var lockCount = 0;
-      my repaint( self);
+      repaint_all( var owner, self, nil);
    }
 }
-
 
 void
 Widget_update_view( Handle self)
