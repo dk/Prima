@@ -243,6 +243,7 @@ ic_type_convert( Handle self,
             {
                case ictNone:     ic_graybyte_mono_ictNone(BCPARMS);     break;
                case ictHalftone: ic_graybyte_mono_ictHalftone(BCPARMS); break;
+               case ictErrorDiffusion: ic_graybyte_mono_ictErrorDiffusion(BCPARMS); break;
             }
             break;
          case im16  :
@@ -252,6 +253,7 @@ ic_type_convert( Handle self,
             {
                case ictNone:     ic_graybyte_nibble_ictNone(BCPARMS);     break;
                case ictHalftone: ic_graybyte_nibble_ictHalftone(BCPARMS); break;
+               case ictErrorDiffusion: ic_graybyte_nibble_ictErrorDiffusion(BCPARMS); break;
             }
             break;
          case im256:
@@ -281,6 +283,7 @@ ic_type_convert( Handle self,
             {
                case ictNone:     ic_graybyte_mono_ictNone(BCPARMS);     break;
                case ictHalftone: ic_graybyte_mono_ictHalftone(BCPARMS); break;
+               case ictErrorDiffusion: ic_graybyte_mono_ictErrorDiffusion(BCPARMS); break;
             }
             break;
          case im16  :
@@ -290,6 +293,7 @@ ic_type_convert( Handle self,
             {
                case ictNone:     ic_graybyte_nibble_ictNone(BCPARMS);     break;
                case ictHalftone: ic_graybyte_nibble_ictHalftone(BCPARMS); break;
+               case ictErrorDiffusion: ic_graybyte_nibble_ictErrorDiffusion(BCPARMS); break;
             }
             break;
          case im256:
@@ -319,6 +323,7 @@ ic_type_convert( Handle self,
             {
                case ictNone:     ic_graybyte_mono_ictNone(BCPARMS);     break;
                case ictHalftone: ic_graybyte_mono_ictHalftone(BCPARMS); break;
+               case ictErrorDiffusion: ic_graybyte_mono_ictErrorDiffusion(BCPARMS); break;
             }
             break;
          case im16  :
@@ -328,6 +333,7 @@ ic_type_convert( Handle self,
             {
                case ictNone:     ic_graybyte_nibble_ictNone(BCPARMS);     break;
                case ictHalftone: ic_graybyte_nibble_ictHalftone(BCPARMS); break;
+               case ictErrorDiffusion: ic_graybyte_nibble_ictErrorDiffusion(BCPARMS); break;
             }
             break;
          case im256:
@@ -358,6 +364,7 @@ ic_type_convert( Handle self,
             {
                case ictNone:     ic_graybyte_mono_ictNone(BCPARMS);     break;
                case ictHalftone: ic_graybyte_mono_ictHalftone(BCPARMS); break;
+               case ictErrorDiffusion: ic_graybyte_mono_ictErrorDiffusion(BCPARMS); break;
             }
             break;
          case im16  :
@@ -367,6 +374,7 @@ ic_type_convert( Handle self,
             {
                case ictNone:     ic_graybyte_nibble_ictNone(BCPARMS);     break;
                case ictHalftone: ic_graybyte_nibble_ictHalftone(BCPARMS); break;
+               case ictErrorDiffusion: ic_graybyte_nibble_ictErrorDiffusion(BCPARMS); break;
             }
             break;
          case im256:
