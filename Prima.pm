@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
+#  Copyright (c) 1997-2003 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@ require DynaLoader;
 use vars qw($VERSION @ISA $__import);
 @ISA = qw(DynaLoader);
 sub dl_load_flags { 0x00 }
-$VERSION = '1.10';
+$VERSION = '1.11';
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {
    $::application = 0;
