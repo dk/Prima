@@ -6,10 +6,6 @@
 #define my  ((( PObject) self)-> self)->
 #define var (( PObject) self)->
 
-#ifdef PARANOID_MALLOC
-extern PHash objects;
-#endif
-
 SV *
 Object_can( Handle self, char *methodName, Bool cacheIt)
 {
@@ -26,6 +22,9 @@ Object_create( char *className, HV * profile)
 
    SV *xmate;
    SV *profRef;
+
+   if ( primaObjects == nil)
+      return nilHandle;
 
    ENTER;
    SAVETMPS;
@@ -45,9 +44,8 @@ Object_create( char *className, HV * profile)
    my profile_add( self, profRef);
    var stage = csConstructing;
    SPAGAIN;
-#ifdef PARANOID_MALLOC
-   hash_store( objects, &self, sizeof( self), 1);
-#endif
+   if ( primaObjects)
+      hash_store( primaObjects, &self, sizeof( self), (void*)1);
    if ( my init == Object_init_REDEFINED)
    {
       ENTER;
@@ -93,9 +91,8 @@ Object_destroy( Handle self)
          return;
       var stage = csFinalizing;
       my done( self);
-#ifdef PARANOID_MALLOC
-   hash_delete( objects, &self, sizeof( self), false);
-#endif
+      if ( primaObjects)
+         hash_delete( primaObjects, &self, sizeof( self), false);
       var stage = csDead;
       return;
    }
@@ -111,9 +108,8 @@ Object_destroy( Handle self)
       if (var stage == csHalfDead) {
          var stage = csFinalizing;
          my done( self);
-#ifdef PARANOID_MALLOC
-   hash_delete( objects, &self, sizeof( self), false);
-#endif
+         if ( primaObjects)
+            hash_delete( primaObjects, &self, sizeof( self), false);
       }
    }
    var stage = csDead;

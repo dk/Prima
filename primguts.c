@@ -36,8 +36,11 @@ long   apcError = 0;
 
 static PerlInterpreter *myPerl;
 static char evaluation[ 4096];
-static PHash vmtHash;
+static PHash vmtHash = nil;
 static List  staticObjects;
+
+
+PHash primaObjects = nil;
 
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
 I32 clean_perl_call_method( char* methname, I32 flags)
@@ -173,7 +176,7 @@ XS( Object_alive_FROMPERL)
    int ret;
 
    if ( items != 1)
-      croak ("Invalid usage of Object::%s", "alive");
+      croak("Invalid usage of Object::%s", "alive");
    _c_apricot_self_ = gimme_the_real_mate( ST( 0));
    if ( _c_apricot_self_ == nilHandle)
       croak( "Illegal object reference passed to Object::%s", "alive");
@@ -199,7 +202,7 @@ XS( create_from_Perl)
 {
    dXSARGS;
    if (( items - 2 + 1) % 2 != 0)
-      croak ("Invalid usage of Object::create");
+      croak("Invalid usage of Object::create");
    {
       Handle  _c_apricot_res_;
       HV *hv = parse_hv( ax, sp, items, mark, 2 - 1, "Object_create");
@@ -894,6 +897,12 @@ pop_hv_for_REDEFINED( SV **sp, int returned, HV *hv, int expected)
 }
 
 
+static Bool
+kill_objects( void * item, int keyLen, Handle * self, void * dummy) {
+   Object_destroy( *self);
+   return false;
+}
+
 Bool appDead = false;
 SV** temporary_prf_Sv;
 
@@ -1160,7 +1169,6 @@ double NAN;
 
 #ifdef PARANOID_MALLOC
 static void output_mallocs( void);
-extern PHash objects;
 #endif
 
 #if (PERL_PATCHLEVEL == 5)
@@ -1182,6 +1190,9 @@ XS( prima_cleanup)
    (void)items;
 
    appDead = true;
+   hash_first_that( primaObjects, kill_objects, nil, nil, nil);
+   hash_destroy( primaObjects, false);
+   primaObjects = nil;
    window_subsystem_cleanup();
    hash_destroy( vmtHash, false);
    list_delete_all( &staticObjects, true);
@@ -1227,11 +1238,8 @@ NAN = 0.0;
       ST(0) = &sv_no;
       XSRETURN(1);
    };
-
-#ifdef PARANOID_MALLOC
-   objects = hash_create();
-#endif
-   vmtHash = hash_create();
+   primaObjects = hash_create();
+   vmtHash      = hash_create();
    list_create( &staticObjects, 16, 16);
 
    /* register hard coded XSUBs */
@@ -1353,10 +1361,8 @@ prima( const char *primaPath, int argc, char **argv)
 #endif
    perl_parse( myPerl, (void(*)(void))xs_init, pargc, pargv, NULL);
 
-#ifdef PARANOID_MALLOC
-   objects = hash_create();
-#endif
-   vmtHash = hash_create();
+   primaObjects = hash_create();
+   vmtHash      = hash_create();
    list_create( &staticObjects, 16, 16);
 
    { // Construct @INC
@@ -1436,6 +1442,9 @@ prima( const char *primaPath, int argc, char **argv)
       goto NoPerlDying;
    }
    perl_run( myPerl);
+   hash_first_that( primaObjects, kill_objects, nil, nil, nil);
+   hash_destroy( primaObjects, false);
+   primaObjects = nil;
    perl_destruct( myPerl);
    hash_destroy( vmtHash, false);
    list_delete_all( &staticObjects, true);
@@ -1585,7 +1594,8 @@ create_object( const char *objClass, const char *types, ...)
    }
    va_end( params);
    res = Object_create((char *)objClass, profile);
-   --SvREFCNT( SvRV((( PAnyObject) res)-> mate));
+   if ( res)
+      --SvREFCNT( SvRV((( PAnyObject) res)-> mate));
    sv_free(( SV *) profile);
    return (void*)res;
 }
@@ -1800,7 +1810,6 @@ void * hash_first_that( PHash h, void * action, void * params, int * pKeyLen, vo
 #include <sys/timeb.h>
 
 static PHash hash = nil;
-PHash objects = nil;
 Handle self = 0;
 
 static unsigned long timestamp( void)
@@ -1837,7 +1846,7 @@ void *_test_malloc( size_t size, int ln, char *fil, Handle self)
    c2 = strrchr( fil, '\\');
    if (c1<c2) c1 = c2;
    if (c1>0) fil = c1+1;
-   if (self && hash_fetch( objects, &self, sizeof(self))) {
+   if (self && hash_fetch( primaObjects, &self, sizeof(self))) {
       if ( kind_of( self, CComponent) && (( PComponent) self)-> name)
          sprintf( obj, "%s(%s)", ((( PObject) self)-> self)-> className, (( PComponent) self)-> name);
       else
