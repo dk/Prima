@@ -3192,8 +3192,14 @@ sub get
 sub set
 {
    my ( $self, $data) = @_;
-   if ( $data & 0xFF) {
-      $self-> {key}-> text( chr($data & 0xFF));
+   if ( $data & kb::CharMask) {
+      my $d = $data & kb::CharMask;
+      if ( $d >= 1 && $d <= 26) {
+         $self-> {key}-> text( chr($d + ord('@')));
+         $data |= km::Ctrl;
+      } else {
+         $self-> {key}-> text( chr($data & kb::CharMask));
+      }
    } else {
       my $x = 'NoKey';
       my $d = $data & kb::CodeMask;
