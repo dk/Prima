@@ -56,13 +56,19 @@ stylus_alloc( PStylus data)
       LOGBRUSH * b;
       LOGBRUSH   xbrush;
 
-      if ( IS_WIN95 && ( hash_count( stylusMan) > 128))
+      if ( IS_WIN95 && (hash_count( stylusMan) > 128))
          stylus_clean();
 
       ret = malloc( sizeof( DCStylus));
       memcpy( &ret-> s, data, sizeof( Stylus));
       ret-> refcnt = 0;
       p = &ret-> s. pen;
+
+      if ( IS_WIN95 && extPen) {
+         extPen = 0;
+         p-> lopnStyle = PS_SOLID;
+      }
+
       if ( !extPen) {
          if ( !( ret-> hpen = CreatePenIndirect( p))) {
             apiErr;
@@ -119,6 +125,7 @@ stylus_free( PDCStylus res, Bool permanent)
    }
    if ( res-> hpen)   DeleteObject( res-> hpen);
    if ( res-> hbrush) DeleteObject( res-> hbrush);
+   res-> hpen = res-> hpen = nil;
    hash_delete( stylusMan, &res-> s, sizeof( Stylus) - ( res-> s. extPen. actual ? 0 : sizeof( EXTPEN)), true);
 }
 
@@ -236,7 +243,6 @@ patres_fetch( DWORD pattern)
 typedef struct _FontInfo {
    Font          font;
    int           vectored;
-   FAMTEXTMETRIC fm;
 } FontInfo;
 
 typedef struct _FontHashNode
@@ -353,7 +359,7 @@ find_node( const PFont font, Bool bySize)
 }
 
 Bool
-add_font_to_hash( const PFont key, const PFont font, int vectored, FAMTEXTMETRIC * fm, Bool addSizeEntry)
+add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeEntry)
 {
    PFontHashNode node;
    unsigned long i;
@@ -367,7 +373,6 @@ add_font_to_hash( const PFont key, const PFont font, int vectored, FAMTEXTMETRIC
    memcpy( &(node-> key), key, sizeof( Font));
    memcpy( &(node-> value. font), font, sizeof( Font));
    node-> value. vectored = vectored;
-   memcpy( &(node-> value. fm), fm, sizeof( FAMTEXTMETRIC));
    sz = (char *)(&(key-> name)) - (char *)key;
    i = elf_hash((const char *)key, sz) % FONTHASH_SIZE;
    node-> next = fontHash. buckets[ i];
@@ -381,13 +386,12 @@ add_font_to_hash( const PFont key, const PFont font, int vectored, FAMTEXTMETRIC
 }
 
 Bool
-get_font_from_hash( PFont font, int *vectored, FAMTEXTMETRIC * fm, Bool bySize)
+get_font_from_hash( PFont font, int *vectored, Bool bySize)
 {
    PFontHashNode node = find_node( font, bySize);
    if ( node == nil) return false;
    *font = node-> value. font;
    *vectored = node-> value. vectored;
-   if ( fm) memcpy( fm, &(node-> value. fm), sizeof( FAMTEXTMETRIC));
    return true;
 }
 
@@ -420,7 +424,7 @@ destroy_font_hash( void)
 
 
 static Bool _ft_cleaner( PDCFont f, int keyLen, void * key, void * dummy) {
-   if ( f-> refcnt <= 0) font_free( f);
+   if ( f-> refcnt <= 0) font_free( f, true);
    return false;
 }
 
@@ -453,10 +457,17 @@ font_alloc( Font * data, Point * resolution)
 }
 
 void
-font_free( PDCFont res)
+font_free( PDCFont res, Bool permanent)
 {
    if ( !res || --res-> refcnt > 0) return;
-   if ( res-> hfont) DeleteObject( res-> hfont);
+   if ( !permanent) {
+      res-> refcnt = 0;
+      return;
+   }
+   if ( res-> hfont) {
+      DeleteObject( res-> hfont);
+      res-> hfont = nil;
+   }
    hash_delete( fontMan, &res-> font, FONTSTRUCSIZE + strlen( res-> font. name), true);
 }
 
@@ -468,7 +479,7 @@ font_change( Handle self, Font * font)
    if ( is_apt( aptDCChangeLock)) return;
    p    = sys fontResource;
    newP = ( sys fontResource = font_alloc( font, &sys res));
-   font_free( p);
+   font_free( p, false);
    if ( sys ps)
        SelectObject( sys ps, newP-> hfont);
 }
@@ -567,6 +578,33 @@ font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readonly)
 }
 
 
+void
+font_pp2font( char * presParam, Font * f)
+{
+   int i;
+   char * p = strchr( presParam, '.');
+
+   memset( f, 0, sizeof( Font));
+   if ( p) {
+      f-> size = atoi( presParam);
+      p++;
+   } else
+      f-> size = 10;
+
+   strncpy( f-> name, p, 256);
+   p = f-> name;
+   for ( i = strlen( p) - 1; i >= 0; i--)  {
+      if ( p[ i] == '.')  {
+         if ( stricmp( "Italic",    &p[ i + 1]) == 0) f-> style |= fsItalic;
+         if ( stricmp( "Bold",      &p[ i + 1]) == 0) f-> style |= fsBold;
+         if ( stricmp( "Underscore",&p[ i + 1]) == 0) f-> style |= fsUnderlined;
+         if ( stricmp( "StrikeOut", &p[ i + 1]) == 0) f-> style |= fsStruckOut;
+         p[ i] = 0;
+      }
+   }
+   f-> width = f-> height = C_NUMERIC_UNDEF;
+}
+
 PFont
 apc_font_default( PFont font)
 {
@@ -584,31 +622,6 @@ apc_font_load( const char* filename)
 #define fgBitmap 0
 #define fgVector 1
 
-static FAMTEXTMETRIC fmtx;
-
-/*static int
-font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
-{
-#define out( retVal)  if ( !theDC) dc_free(); return retVal
-   HDC  dc = theDC ? theDC : dc_alloc();
-   TEXTMETRIC tm;
-   LOGFONT lf;
-   HFONT hfont;
-
-   if ( forceSize)
-      font-> height = -font-> size * res. y / 72.0 + 0.5;
-
-   font_font2logfont( font, &lf);
-
-   hfont = SelectObject( dc, CreateFontIndirect( &lf));
-   GetTextMetrics( dc, &tm);
-   GetTextFace( dc, 256, font-> name);
-   DeleteObject( SelectObject( dc, hfont));
-   font_textmetric2font( &tm, font, false);
-
-   return ( font-> type == ftVector) ? fgVector : fgBitmap;
-}*/
-
 static Bool recursiveFF = 0;
 
 typedef struct _FEnumStruc
@@ -625,12 +638,12 @@ typedef struct _FEnumStruc
    Bool          vecId;
    Bool          matchILead;
    PFont         font;
-   FAMTEXTMETRIC tm;
+   TEXTMETRIC    tm;
    LOGFONT       lf;
    Point         res;
    char          name[ LF_FACESIZE];
+   char          family[ LF_FULLFACESIZE];
 } FEnumStruc, *PFEnumStruc;
-
 
 int CALLBACK
 fep( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PFEnumStruc es)
@@ -642,7 +655,7 @@ fep( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PFEnumStruc es)
    es-> count++;                                                        \
    es-> fType = type;                                                   \
    memcpy( &es-> tm, t, sizeof( TEXTMETRIC));                           \
-   memcpy( es-> tm. family, e-> elfFullName, LF_FULLFACESIZE);          \
+   memcpy( es-> family, e-> elfFullName, LF_FULLFACESIZE);          \
    memcpy( &es-> lf,    &e-> elfLogFont, sizeof( LOGFONT));             \
    memcpy( es-> name,   e-> elfLogFont. lfFaceName, LF_FACESIZE)
 
@@ -709,7 +722,15 @@ fep( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PFEnumStruc es)
 
 extern int font_font2gp( PFont font, Point res, Bool forceSize, HDC dc);
 
-static int
+static void
+font_logfont2textmetric( HDC dc, LOGFONT * lf, TEXTMETRIC * tm)
+{
+   HFONT hf = SelectObject( dc, CreateFontIndirect( lf));
+   GetTextMetrics( dc, tm);
+   DeleteObject( SelectObject( dc, hf));
+}
+
+int
 font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 {
 #define out( retVal)  if ( !theDC) dc_free(); return retVal
@@ -739,6 +760,35 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
          if ( !es. vecId) useNameSubplacing = 1; // try other font if bitmap wouldn't fit
          es. resValue = es. heiValue = INT_MAX;  // cancel bitmap font selection
       }
+
+      // special synthesized GDI font case
+      if (
+             es. useWidth && ( es. widValue > 0) &&
+           ( es. heiValue == 0) &&
+           ( es. fType & RASTER_FONTTYPE) &&
+           ( font-> style & fsBold)
+         ) {
+            int r;
+            Font xf = *font;
+            xf. width--;
+            xf. style = 0; // any style could affect tmOverhang
+            r = font_font2gp( &xf, res, forceSize, dc);
+            if (( r == fgBitmap) && ( xf. width < font-> width)) {
+               LOGFONT lpf;
+               TEXTMETRIC tm;
+               font_font2logfont( &xf, &lpf);
+               lpf. lfWeight = 700;
+               font_logfont2textmetric( dc, &lpf, &tm);
+               if ( xf. width + tm. tmOverhang == font-> width) {
+                  font_textmetric2font( &tm, font, true);
+                  font-> size   = xf. size;
+                  font-> height = xf. height;
+                  font-> maximalWidth += tm. tmOverhang;
+                  out( fgBitmap);
+               }
+            }
+         }
+
       // have resolution ok? so using raster font mtx
       if (
            ( es. heiValue < 2) &&
@@ -746,22 +796,29 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
            ( !es. useWidth  || (( es. widValue == 0) && ( es. heiValue == 0)))
          )
       {
-         font-> height   = es. tm. t.tmHeight;
-         font_textmetric2font( &es. tm. t, font, true);
-
-         memcpy( &fmtx, &es. tm, sizeof( fmtx));
-         strncpy( font-> family, fmtx. family, LF_FULLFACESIZE);
-         font-> size     = ( es. tm. t.tmHeight - es. tm. t.tmInternalLeading) * 72.0 / res.y + 0.5;
+         font-> height   = es. tm. tmHeight;
+         // if synthesized embolding added, we have to reflect that...
+         // ( 'cos it increments B-extent of a char cell).
+         if ( font-> style & fsBold) {
+            LOGFONT lpf = es. lf;
+            TEXTMETRIC tm;
+            lpf. lfWeight = 700; // ignore italics, it changes tmOverhang also
+            font_logfont2textmetric( dc, &lpf, &tm);
+            es. tm. tmMaxCharWidth += tm. tmOverhang;
+            es. lf. lfWidth        += tm. tmOverhang;
+         }
+         font_textmetric2font( &es. tm, font, true);
+         strncpy( font-> family, es. family, LF_FULLFACESIZE);
+         font-> size     = ( es. tm. tmHeight - es. tm. tmInternalLeading) * 72.0 / res.y + 0.5;
          font-> width    = es. lf. lfWidth;
-         font-> codepage = es. tm.t.tmCharSet | ((es.tm.t.tmPitchAndFamily & FF_MASK) << 8);
+         font-> codepage = es. tm.tmCharSet | ((es.tm.tmPitchAndFamily & FF_MASK) << 8);
          out( fgBitmap);
       }
 
       // or vector font - for any purpose?
-      // if so, it could guranteed that font-> height == t.tmHeight
+      // if so, it could guranteed that font-> height == tmHeight
       if ( es. vecId) {
          LOGFONT lpf = es. lf;
-         HFONT   hf;
          TEXTMETRIC tm;
 
          // since proportional computation of small items as InternalLeading
@@ -774,10 +831,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 
          lpf. lfWidth = es. useWidth ? font-> width : 0;
 
-         hf = SelectObject( dc, CreateFontIndirect( &lpf));
-         GetTextMetrics( dc, &tm);
-         DeleteObject( SelectObject( dc, hf));
-
+         font_logfont2textmetric( dc, &lpf, &tm);
          if ( forceSize)
             font-> height = tm. tmHeight;
          else
@@ -787,8 +841,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
             font-> width = tm. tmAveCharWidth;
 
          font_textmetric2font( &tm, font, true);
-         memcpy( &fmtx, &es. tm, sizeof( fmtx));
-         strncpy( font-> family, fmtx. family, LF_FULLFACESIZE);
+         strncpy( font-> family, es. family, LF_FULLFACESIZE);
          font-> codepage = tm. tmCharSet | ((tm. tmPitchAndFamily & FF_MASK) << 8);
          out( fgVector);
       }
@@ -828,12 +881,9 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
       int r;
       // if not succeeded, to avoid recursive call use "wild guess".
       // This could be achieved if system does not have "System" font
-      // ps - Also on text-only HDCs.
       *font = guts. windowFont;
       font-> pitch = fpDefault;
-      recursiveFF++;
-      r = ( recursiveFF < 3) ? font_font2gp( font, res, forceSize, dc) : fgBitmap;
-      recursiveFF--;
+      r = font_font2gp( font, res, forceSize, dc);
       out( r);
    }
    return fgBitmap;
@@ -848,7 +898,7 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
    Bool addSizeEntry;
 
    font-> resolution = res. y * 0x10000 + res. x;
-   if ( get_font_from_hash( font, &vectored, &fmtx, forceSize))
+   if ( get_font_from_hash( font, &vectored, forceSize))
       return vectored;
    memcpy( &key, font, sizeof( Font));
    vectored = font_font2gp_internal( font, res, forceSize, dc);
@@ -860,7 +910,7 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
       key. size  = font-> size;
       addSizeEntry = vectored ? (( key. height == key. width)  || ( key. width == 0)) : true;
    }
-   add_font_to_hash( &key, font, vectored, &fmtx, addSizeEntry);
+   add_font_to_hash( &key, font, vectored, addSizeEntry);
    return vectored;
 }
 
@@ -1181,7 +1231,7 @@ hwnd_enter_paint( Handle self)
    sys stockFont      = GetCurrentObject( sys ps, OBJ_FONT);
    if ( !sys stockPalette)
       sys stockPalette = GetCurrentObject( sys ps, OBJ_PAL);
-   font_free( sys fontResource);
+   font_free( sys fontResource, false);
    sys stylusResource = nil;
    sys fontResource   = nil;
    sys stylusFlags    = 0;
@@ -1215,7 +1265,6 @@ hwnd_enter_paint( Handle self)
    stylus_change( self);
    apc_gp_set_font( self, &var font);
    var font. resolution = sys res. y * 0x10000 + sys res. x;
-   // SetTextAlign( sys ps, TA_BASELINE);
    SetStretchBltMode( sys ps, COLORONCOLOR);
 }
 
