@@ -1165,7 +1165,6 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    default:
       return -1;
    }
-   return 0;
 }
 
 Bool

@@ -264,7 +264,7 @@ apc_clipboard_close( Handle self)
    if ( XX-> need_write &&
 	XX-> internal[cfUTF8]. size > 0 &&
 	XX-> internal[cfText]. size == 0) {
-      char * src = XX-> internal[cfUTF8]. data;
+      Byte * src = XX-> internal[cfUTF8]. data;
       int len    = utf8_length( src, src + XX-> internal[cfUTF8]. size);
       if (( XX-> internal[cfText]. data = malloc( len))) {
 	  STRLEN charlen;
@@ -272,7 +272,7 @@ apc_clipboard_close( Handle self)
 	  dst = XX-> internal[cfText]. data;
           XX-> internal[cfText]. size = len;
 	  while ( len--) {
-             register UV u = utf8_to_uvchr(( U8*) src, &charlen);
+             register UV u = utf8_to_uvchr( src, &charlen);
 	     *(dst++) = ( u < 0x7f) ? u : '?'; /* XXX employ $LANG and iconv() */
 	     src += charlen;
 	  }
