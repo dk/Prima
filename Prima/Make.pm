@@ -39,7 +39,8 @@ use Exporter;
 use vars qw(@ISA @EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw( init qd dl_name quoted_split setvar env_true addlib dump_command
-          canon_name find_file find_cdeps cc_command_line ld_command_line generate_def);
+          canon_name find_file find_cdeps cc_command_line ld_command_line generate_def
+          find_version);
 
 use vars qw( %make_trans @ovvars $dir_sep $path_sep );
 
@@ -166,7 +167,90 @@ EOF
        shift @argv;
        unlink @argv;
        return 0;
+   } elsif ( $#argv >= 2 && $argv[ 0] eq '--dist') {
+      my $type = lc $argv[1];
+      my $cwd = cwd();
+      my $distname = $argv[2];
+
+      sub clean_dist
+      {
+         my @dirs;
+         return unless -d $distname;
+         print "Cleaning...\n";
+         finddepth( sub {
+            my $f = "$File::Find::dir/$_";
+            -d($f) ? push(@dirs, $f) : unlink($f);
+         }, "$cwd/$distname");
+         rmdir $_ for sort {length($b) <=> length($a)} @dirs;
+         rmdir $distname;
+      }
+
+      sub cleanup
+      {
+         clean_dist;
+         warn("$_[0]:$!\n") if defined $_[0];
+         exit(0);
+      }
+
+      clean_dist;
+      my @dirs;
+      my @files;
+      finddepth( sub {
+         return if $_ eq '.' || $_ eq 'Makefile' || $_ eq 'makefile.log';
+         return if /\.(pdb|ncb|opt|dsp|dsw)$/i; # M$VC
+         my $f = "$File::Find::dir/$_";
+         return if $f =~ /include.generic|CVS/;
+         if ($type eq 'bin') {
+            return if $f =~ /\.(c|cls|h)$/i;
+            return if $f =~ /$cwd.(img|include|os2|win32|unix|Makefile.PL)/i;
+         } else {
+            return if $f =~ /auto/;
+         }
+         if ( -d $f) {
+            $f =~ s/^$cwd/$distname/;
+            push @dirs, $f;
+         } else {
+            return if $f =~ m/$Config{_o}$/;
+            push @files, $f;
+         }
+      }, $cwd);
+
+      print "Creating directories...\n";
+      for ( @dirs) {
+         next if -d $_;
+         cleanup( "Can't mkdir $_") unless mkpath $_;
+      }
+
+      print "Copying files...\n";
+      for ( @files) {
+         my $f = $_;
+         $f =~ s/^$cwd/$distname/;
+         cleanup("") unless copy $_, $f;
+      }
+
+      if ( $type eq 'bin') {
+         my $os_suffix = $^O;
+         $os_suffix =~ s/\s/_/g;
+         my $zipname = "$distname-$os_suffix.zip";
+         unlink $zipname;
+         unlink "$distname/$zipname";
+         system "zip -r $zipname $distname";
+      } elsif ( $type eq 'zip') {
+         my $zipname = "$distname.zip";
+         unlink $zipname;
+         unlink "$distname/$zipname";
+         system "zip -r $zipname $distname";
+      } else { # tar dist
+         my $tarname = "$distname.tar";
+         unlink $tarname;
+         unlink "$distname/$tarname";
+         system "tar -cv -f $tarname $distname"
+      }
+
+      clean_dist;
+      return 0;
    }
+   
 
    %USER_VARS_LINKS = (
       INSTALL_BIN => {
@@ -480,6 +564,20 @@ sub dump_command
        $ret .=  "\t$call";
     }
     $ret .=  "\n";
+}
+
+sub find_version
+{
+   my $name = $_[0];
+   open F, $name or die "Cannot open $name:$!\n";
+   my ($ver1, $ver2);
+   while (<F>) {
+      next unless m/\$VERSION[^\.\d]*(\d+)\.(\d+)/;
+      $ver1 = $1, $ver2 = $2, last;
+   }
+   close F;
+   die "Cannot find VERSION string in $name\n" unless defined $ver1;
+   return ( $ver1, $ver2);
 }
 
 1;
