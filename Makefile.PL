@@ -1348,11 +1348,16 @@ sub setup_xft
 
 	print "Checking for presence of freetype/freetype.h... ";
 	my $incpath = find_header( qd("freetype/freetype.h"), "",
+				   qd("/usr/include/freetype2"),
 				   qd("/usr/X11R6/include/freetype2"),
 				   qd("/usr/X11/include/freetype2"),
 				   qd("/usr/X/include/freetype2"),
 				   qd("/usr/openwin/include/freetype2"),
-				   qd("/usr/local/include/freetype2"));
+				   qd("/usr/local/include/freetype2"),
+				   qd("/usr/gnu/include/freetype2"),
+				   qd("/usr/freeware/include/freetype2"),
+				   qd("/usr/opt/include/freetype2")
+				   );
 	if (defined $incpath) {
 	    print "yes";
 	    print ", in $incpath" if $incpath;
