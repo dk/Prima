@@ -149,7 +149,7 @@ sub prf
       push ( @ret, exists $self->{profile}->{$_} ?
          $self->{profile}->{$_} :
          $self->{default}->{$_});
-      warn( "cannot query $_") unless exists $self->{default}->{$_};
+      warn( "$self: cannot query `$_'") unless exists $self->{default}->{$_};
    }
    return wantarray ? @ret : $ret[0];
 }
@@ -244,6 +244,19 @@ sub prf_types_add
 {
    my ( $self, $pt, $de) = @_;
    for ( keys %{$de}) {
+      # * uncomment this if you suspect property type clash *
+      # 
+      #my $t1 = $_;
+      #for ( @{$de->{$_}}) {
+      #  my $p1 = $_;
+      #  for ( keys %$pt) {
+      #     my $t2 = $_;
+      #     for ( @{$pt->{$_}}) { 
+      #        die "$self: $p1: $t2 vs $t1\n" if $p1 eq $_ && $t2 ne $t1;
+      #     }
+      #  }
+      #}
+
       if ( exists $pt-> {$_}) {
          push( @{$pt->{$_}}, @{$de->{$_}});
       } else {
@@ -252,6 +265,16 @@ sub prf_types_add
    }
 }
 
+sub prf_types_delete
+{
+   my ( $self, $pt) = ( shift, shift);
+   for ( @_) {
+      my $lookup = $_;
+      for ( keys %$pt) {
+         @{$pt->{$_}} = grep { $_ ne $lookup } @{$pt->{$_}};
+      }
+   }
+}
 
 sub init
 {
@@ -3573,6 +3596,11 @@ by the types.
 
 Adds PROFILE2 content to PROFILE1. PROFILE1 and PROFILE2 are 
 hashes in format of result of C<prf_types> method.
+
+=item prf_types_delete PROFILE, @NAMES
+
+Removes @NAMES from PROFILE. Need to be called if property type if redefined
+through the inheritance.
 
 =item remove_hooks @PROPERTIES
 

@@ -231,12 +231,6 @@ sub classes
           page   => 'General',
           icon   => 'VB::classes.gif:33',
       },
-      'Prima::AbstractGrid' => {
-          RTModule => 'Prima::Grids',
-          class  => 'Prima::VB::AbstractGrid',
-          page   => 'Abstract',
-          icon   => 'VB::classes.gif:33',
-      },
    );
 }
 
@@ -795,6 +789,7 @@ sub prf_types
       string     => ['text'],
       items      => ['items'],
    );
+   $_[0]-> prf_types_delete( $pt, qw(text));
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
 }
@@ -1931,6 +1926,7 @@ sub prf_types
       string => ['headerClass'],
       bool   => ['clickable', 'dragable', 'vertical', 'scalable'],
    );
+   $_[0]-> prf_types_delete( $pt, qw(items)); 
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
 }
@@ -2141,9 +2137,5 @@ sub prf_cells
 
 sub prf_columns { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
 sub prf_rows    { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
-
-package Prima::VB::AbstractGrid;
-use vars qw(@ISA);
-@ISA = qw(Prima::VB::Grid);
 
 1;

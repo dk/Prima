@@ -393,6 +393,11 @@ sub point2cell
          }
          $i++;
       }
+      unless ( defined $hints{x}) { # last column grid not catched when $NoGrid is set
+         $hints{x} = 0;
+	 $hints{x_type} = 0; # XXX unsure
+	 $cx = $$colsDraw[-1][0];
+      }
    }
 
    if ( defined $hints{y}) {
@@ -426,6 +431,11 @@ sub point2cell
             last;
          }
          $i++;
+      }
+      unless ( defined $hints{y}) { # last row grid not catched when $NoGrid is set
+         $hints{y} = 0;
+	 $hints{y_type} = 0; # XXX unsure
+	 $cy = $$colsDraw[-1][0];
       }
    }
 
@@ -1891,7 +1901,7 @@ sub profile_default
    my %prf = (
        allowChangeCellHeight => 1,
        allowChangeCellWidth  => 1,
-       cells                 => [[]],
+       cells                 => [['']],
    );
    @$def{keys %prf} = values %prf;
    return $def;
