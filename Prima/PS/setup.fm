@@ -1,0 +1,799 @@
+# VBForm version file=1.1 builder=0.1
+# [preload] Prima::ComboBox
+sub
+{
+	return (
+	'TabbedNotebook1' => {
+		class   => 'Prima::TabbedNotebook',
+		module  => 'Prima::Notebooks',
+		extras => {
+		Radio1 => '0',
+		Radio2 => '0',
+		Radio3 => '0',
+		VBool => '1',
+		Radio4 => '0',
+		CopyCount => '0',
+		Radio6 => '2',
+		Radio7 => '2',
+		LPRadio => '2',
+		Orientation => '0',
+		HelpBtn => '1',
+		AddBtn => '3',
+		LParams => '2',
+		Label1 => '0',
+		Label2 => '0',
+		VList => '1',
+		Label3 => '0',
+		Label4 => '0',
+		RenameBtn => '3',
+		ImportBtn => '3',
+		Scaling => '0',
+		Profiles => '3',
+		VCombo => '1',
+		ValueBox => '1',
+		ImageViewer1 => '0',
+		ImageViewer2 => '0',
+		ValueBook => '1',
+		ImageViewer3 => '0',
+		VHint => '1',
+		ImageViewer4 => '0',
+		Spool => '2',
+		SaveBtn => '3',
+		PaperSize => '0',
+		Resolution => '0',
+		DelBtn => '3',
+		VText => '1',
+		LPLabel => '2',
+		CmdLine => '2',
+		Color => '0',
+		},
+		actions => {
+		onChild => Prima::VB::VBLoader::GO_SUB('$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})'),
+		onChildCreate => Prima::VB::VBLoader::GO_SUB('$_[3]-> origin( $_[3]->left-$_[3]->owner->left, $_[3]-> bottom-$_[3]->owner->bottom);'),
+		},
+		profile => {
+			origin => [ 0, 64],
+			name => 'TabbedNotebook1',
+			tabs => ['Page setup', 'Advanced  ', 'Spooling  ', 'Profiles', ],
+			size => [ 329, 357],
+			owner => 'Form1',
+			growMode => gm::GrowHiX | gm::GrowHiY,
+			pageIndex => 0,
+	}},
+	'Form1' => {
+		class   => 'Prima::Window',
+		module  => 'Prima::Classes',
+		parent => 1,
+		profile => {
+			onExecute => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
+my $x = $self-> TabbedNotebook1-> Notebook;
+$x-> HelpBtn-> notify(\'Click\') if 
+   $x-> ValueBox-> ValueBook-> pageIndex == 3; 
+'),
+			width => 330,
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];      
+$self-> {imgConvProc} = sub {
+  my $self = $_[0];        
+  my $a = $self-> image-> dup;
+  $a-> set( rop => rop::Whiteness, rop2 => rop::Blackness);
+  $a-> map( $a-> pixel( $a-> width - 1, $a-> height - 1));
+  my $x = $self-> image-> dup;
+  $x-> set( rop2 => rop::NoOper, rop => rop::Blackness);
+  $x-> map( $x-> pixel( $x-> width - 1, $a-> height - 1));
+  my $i  = Prima::Icon-> create;
+  $i-> combine( $x, $a);
+  $self-> image(  $i);
+};'),
+			name => 'Form1',
+			text => 'PostScript printer settings',
+			bottom => 368,
+			originDontCare => 0,
+			origin => [ 436, 368],
+			height => 421,
+			size => [ 330, 421],
+			sizeDontCare => 0,
+			left => 436,
+	}},
+	'Label1' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		profile => {
+			origin => [ 20, 252],
+			name => 'Label1',
+			owner => 'TabbedNotebook1',
+			size => [ 100, 20],
+			text => 'Paper si~ze:',
+	}},
+	'PaperSize' => {
+		class   => 'Prima::ComboBox',
+		module  => 'Prima::ComboBox',
+		profile => {
+			origin => [ 125, 252],
+			style => cs::DropDownList,
+			name => 'PaperSize',
+			owner => 'TabbedNotebook1',
+			size => [ 183, 21],
+	}},
+	'Label3' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		profile => {
+			origin => [ 20, 200],
+			name => 'Label3',
+			owner => 'TabbedNotebook1',
+			size => [ 100, 20],
+			text => '~Scaling, %:',
+	}},
+	'Scaling' => {
+		class   => 'Prima::SpinEdit',
+		module  => 'Prima::Sliders',
+		profile => {
+			name => 'Scaling',
+			min => 1,
+			max => 1000,
+			origin => [ 125, 201],
+			size => [ 183, 20],
+			owner => 'TabbedNotebook1',
+			step => 10,
+			value => 100,
+	}},
+	'Label4' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		profile => {
+			origin => [ 20, 174],
+			name => 'Label4',
+			owner => 'TabbedNotebook1',
+			size => [ 100, 20],
+			text => '~Resolution:',
+	}},
+	'Label2' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		profile => {
+			origin => [ 20, 226],
+			name => 'Label2',
+			owner => 'TabbedNotebook1',
+			size => [ 100, 20],
+			text => '~Copy count:',
+	}},
+	'Resolution' => {
+		class   => 'Prima::SpinEdit',
+		module  => 'Prima::Sliders',
+		profile => {
+			name => 'Resolution',
+			min => 25,
+			max => 32000,
+			origin => [ 125, 175],
+			size => [ 183, 20],
+			owner => 'TabbedNotebook1',
+			step => 100,
+			value => 300,
+	}},
+	'Orientation' => {
+		class   => 'Prima::RadioGroup',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 19, 97],
+			name => 'Orientation',
+			owner => 'TabbedNotebook1',
+			size => [ 287, 76],
+			text => 'Orientation',
+	}},
+	'CopyCount' => {
+		class   => 'Prima::SpinEdit',
+		module  => 'Prima::Sliders',
+		profile => {
+			origin => [ 125, 226],
+			name => 'CopyCount',
+			owner => 'TabbedNotebook1',
+			size => [ 183, 20],
+			min => 1,
+			value => 1,
+			max => 1000,
+	}},
+	'ImageViewer1' => {
+		class   => 'Prima::ImageViewer',
+		module  => 'Prima::ImageViewer',
+		profile => {
+			origin => [ 12, 17],
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); '),
+			name => 'ImageViewer1',
+			owner => 'Orientation',
+			image => Prima::Image->create( width=>24, height=>29, type => im::bpp4, 
+palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
+ data => 
+"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00x\x88\x88\x88\x88\x88\x88\x88".
+"\x88\x88\x88\x80\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80\x7f\xff\xff\xff".
+"\xff\xff\xff\xff\xff\xff\xff\x80\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80".
+"\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80\x7f\xff\xff\xff\xff\xff\xff\xff".
+"\xff\xff\xff\x80\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80\x7f\xff\xf7w".
+"\x7f\xff\xf7ww\x7f\xff\x80\x7f\xff\xff\x87\xff\xff\xff\x87x\xff\xff\x80".
+"\x7f\xff\xff\xf7\x8f\xff\xffw\x7f\xff\xff\x80\x7f\xff\xff\xf8\x7f\xff\xf8w".
+"\x8f\xff\xff\x80\x7f\xff\xff\xffwwww\xff\xff\xff\x80\x7f\xff\xff\xff".
+"x\xff\x87x\xff\xff\xff\x80\x7f\xff\xff\xff\x87\xffw\x7f\xff\xff\xff\x80".
+"\x7f\xff\xff\xff\xf7\x8fw\x8f\xff\xff\xff\x80\x7f\xff\xff\xff\xf8ww\xff".
+"\xff\xff\xff\x80\x7f\xff\xff\xff\xffwx\xff\xff\xff\xff\x80\x7f\xff\xff\xff".
+"\xff\x87\x7f\xff\xff\xff\xff\x80\x7f\xff\xff\xff\xff\xf7\x8f\xff\xff\xff\xff\x80".
+"\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80\x7f\xff\xff\xff\xff\xff\xff\xff".
+"\xff\xff\xff\x80\x7f\xff\xff\xff\xff\xff\xff\xff\xf7\x00\x00\x00\x7f\xff\xff\xff".
+"\xff\xff\xff\xff\xf7\xff\x87\x0d\x7f\xff\xff\xff\xff\xff\xff\xff\xf7\xf8p\xdd".
+"\x7f\xff\xff\xff\xff\xff\xff\xff\xf7\x87\x0d\xdd\x7f\xff\xff\xff\xff\xff\xff\xff".
+"\xf7p\xdd\xdd\x7f\xff\xff\xff\xff\xff\xff\xff\xf7\x0d\xdd\xddwwww".
+"wwwww\xdd\xdd\xdd".
+''),
+			size => [ 24, 29],
+	}},
+	'Radio1' => {
+		class   => 'Prima::Radio',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 47, 12],
+			name => 'Radio1',
+			owner => 'Orientation',
+			size => [ 89, 36],
+			text => '~Portrait',
+	}},
+	'ImageViewer2' => {
+		class   => 'Prima::ImageViewer',
+		module  => 'Prima::ImageViewer',
+		profile => {
+			origin => [ 142, 19],
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); '),
+			name => 'ImageViewer2',
+			owner => 'Orientation',
+			image => Prima::Image->create( width=>29, height=>23, type => im::bpp4, 
+palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
+ data => 
+"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01x\x88\x88\x88".
+"\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x00\x01\x7f\xff\xff\xff\xff\xff\xff\xff".
+"\xff\xff\xff\xff\xff\xf8\x00\x01\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff".
+"\xff\xf8\x00\x01\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf8\x00\x01".
+"\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf8\x00\x01\x7f\xff\xff\xf7".
+"w\x7f\xff\xf7ww\x7f\xff\xff\xf8\x00\x01\x7f\xff\xff\xff\x87\xff\xff\xff".
+"\x87x\xff\xff\xff\xf8\x00\x01\x7f\xff\xff\xff\xf7\x8f\xff\xffw\x7f\xff\xff".
+"\xff\xf8\x00\x01\x7f\xff\xff\xff\xf8\x7f\xff\xf8w\x8f\xff\xff\xff\xf8\x00\x01".
+"\x7f\xff\xff\xff\xffwwww\xff\xff\xff\xff\xf8\x00\x01\x7f\xff\xff\xff".
+"\xffx\xff\x87x\xff\xff\xff\xff\xf8\x00\x01\x7f\xff\xff\xff\xff\x87\xffw".
+"\x7f\xff\xff\xff\xff\xf8\x00\x01\x7f\xff\xff\xff\xff\xf7\x8fw\x8f\xff\xff\xff".
+"\xff\xf8\x00\x01\x7f\xff\xff\xff\xff\xf8ww\xff\xff\xff\xff\xff\xf8\x00\x01".
+"\x7f\xff\xff\xff\xff\xffwx\xff\xff\xff\xff\xff\xf8\x00\x01\x7f\xff\xff\xff".
+"\xff\xff\x87\x7f\xff\xff\xffp\x00\x00\x00\x01\x7f\xff\xff\xff\xff\xff\xf7\x8f".
+"\xff\xff\xff\x7f\xf8p\xd0\x01\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x7f".
+"\x87\x0d\xd0\x01\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xffxp\xdd\xd0\x01".
+"\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xffw\x0d\xdd\xd0\x01\x7f\xff\xff\xff".
+"\xff\xff\xff\xff\xff\xff\xffw\xdd\xdd\xd0\x01wwwwwwww".
+"www}\xdd\xdd\xd0\x01".
+''),
+			size => [ 29, 24],
+	}},
+	'Radio2' => {
+		class   => 'Prima::Radio',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 181, 12],
+			name => 'Radio2',
+			owner => 'Orientation',
+			size => [ 100, 36],
+			text => '~Landscape',
+	}},
+	'Color' => {
+		class   => 'Prima::RadioGroup',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 19, 20],
+			name => 'Color',
+			owner => 'TabbedNotebook1',
+			size => [ 287, 76],
+			text => 'Color appearance',
+	}},
+	'ImageViewer3' => {
+		class   => 'Prima::ImageViewer',
+		module  => 'Prima::ImageViewer',
+		profile => {
+			origin => [ 11, 18],
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); '),
+			name => 'ImageViewer3',
+			owner => 'Color',
+			image => Prima::Image->create( width=>26, height=>32, type => im::bpp4, 
+palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
+ data => 
+"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00x\x88\x88\x88".
+"\x88\x88\x88\x88\x88\x88\x88\x88\x80\x00\x00\x00\x7f\xff\xff\xff\xff\xff\xff\xff".
+"\xff\xff\xff\xff\x80\x00\x00\x00\x7f\xf8\x88\x88\x88\x8f\xff\x00\x00\x00\x00\xff".
+"\x80\x00\x00\x00\x7f\x88\x88\x88\x88\x88\xf0\x00\x00\x00\x00\x0f\x80\x00\x00\x00".
+"\x7f\x88\x88\x88\x88\x88\xf0\x00\x00\x00\x00\x0f\x80\x00\x00\x00\x7f\x88\x88\x88".
+"\x88\x88\xf0\x00\x00\x00\x00\x0f\x80\x00\x00\x00\x7f\x88\x88\x88\x88\x88\xf0\x00".
+"\x00\x00\x00\x0f\x80\x00\x00\x00\x7f\xf8\x88\x88\x88\x8f\xff\x00\x00\x00\x00\xff".
+"\x80\x00\x00\x00\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80\x00\x00\x00".
+"\x7f\xf7www\x7f\xffxxxx\xff\x80\x00\x00\x00\x7fwww".
+"ww\xf7\x87\x87\x87\x87\x8f\x80\x00\x00\x00\x7fwwwww\xf8x".
+"xxx\x7f\x80\x00\x00\x00\x7fwwwww\xf7\x87\x87\x87\x87\x8f".
+"\x80\x00\x00\x00\x7fwwwww\xf8xxxx\x7f\x80\x00\x00\x00".
+"\x7f\xf7www\x7f\xff\x87\x87\x87\x87\xff\x80\x00\x00\x00\x7f\xff\xff\xff".
+"\xff\xff\xff\xff\xff\xff\xff\xff\x80\x00\x00\x00\x7f\xff\x8f\x8f\x8f\x8f\xffp".
+"ppp\xff\x80\x00\x00\x00\x7f\xf8\xf8\xf8\xf8\xf8\xf7\x07\x07\x07\x07\x0f".
+"\x80\x00\x00\x00\x7f\x8f\x8f\x8f\x8f\x8f\xf0pppp\x7f\x80\x00\x00\x00".
+"\x7f\xf8\xf8\xf8\xf8\xf8\xf7\x07\x07\x07\x07\x0f\x80\x00\x00\x00\x7f\x8f\x8f\x8f".
+"\x8f\x8f\xf0pppp\x7f\x80\x00\x00\x00\x7f\xf8\xf8\xf8\xf8\xff\xff\x07".
+"\x07\x07\x07\xff\x80\x00\x00\x00\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff".
+"\x80\x00\x00\x00\x7f\xf7www\x7f\xff\x0f\x0f\x0f\x0f\xff\x80\x00\x00\x00".
+"\x7fwwwww\xf0\xf0\xf0\xf7\x00\x00\x00\x00\x00\x00\x7fwww".
+"ww\xff\x0f\x0f\x07\xff\xf7\x0d\x00\x00\x00\x7fwwwww\xf0\xf0".
+"\xf0\xf7\xffp\xdd\x00\x00\x00\x7fwwwww\xff\x0f\x0f\x07\xf7\x0d".
+"\xdd\x00\x00\x00\x7f\xf7www\x7f\xff\xf0\xf0\xf7p\xdd\xdd\x00\x00\x00".
+"\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xf7\x0d\xdd\xdd\x00\x00\x00wwww".
+"wwwwww\xdd\xdd\xdd\x00\x00\x00".
+''),
+			size => [ 26, 32],
+			onMouseClick => Prima::VB::VBLoader::GO_SUB('my ($self, $btn, $mod, $x, $y, $dblclk) = @_;'),
+	}},
+	'ImageViewer4' => {
+		class   => 'Prima::ImageViewer',
+		module  => 'Prima::ImageViewer',
+		profile => {
+			origin => [ 141, 18],
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); '),
+			name => 'ImageViewer4',
+			owner => 'Color',
+			image => Prima::Image->create( width=>26, height=>32, type => im::bpp4, 
+palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
+ data => 
+"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00x\x88\x88\x88".
+"\x88\x88\x88\x88\x88\x88\x88\x88\x80\x00\x00\x00\x7f\xff\xff\xff\xff\xff\xff\xff".
+"\xff\xff\xff\xff\x80\x00\x80\@\x7f\xfe\xee\xee\xee\xef\xff\x11\x11\x11\x11\xff".
+"\x80\x00\x00\x00\x7f\xee\xee\xee\xee\xee\xf1\x11\x11\x11\x11\x1f\x80\x00\x00\x00".
+"\x7f\xee\xee\xee\xee\xee\xf1\x11\x11\x11\x11\x1f\x80\x00\x80\@\x7f\xee\xee\xee".
+"\xee\xee\xf1\x11\x11\x11\x11\x1f\x80\x00\x00\x00\x7f\xee\xee\xee\xee\xee\xf1\x11".
+"\x11\x11\x11\x1f\x80\x00\x00\x00\x7f\xfe\xee\xee\xee\xef\xff\x11\x11\x11\x11\xff".
+"\x80\x00\x80\@\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80\x00\x00\x00".
+"\x7f\xf5UUU_\xff\xaa\xaa\xaa\xaa\xff\x80\x00\x00\x00\x7fUUU".
+"UU\xfa\xaa\xaa\xaa\xaa\xaf\x80\x00\x80\@\x7fUUUUU\xfa\xaa".
+"\xaa\xaa\xaa\xaf\x80\x00\x00\x00\x7fUUUUU\xfa\xaa\xaa\xaa\xaa\xaf".
+"\x80\x00\x00\x00\x7fUUUUU\xfa\xaa\xaa\xaa\xaa\xaf\x80\x00\x80\@".
+"\x7f\xf5UUU_\xff\xaa\xaa\xaa\xaa\xff\x80\x00\x00\x00\x7f\xff\xff\xff".
+"\xff\xff\xff\xff\xff\xff\xff\xff\x80\x00\x00\x00\x7f\xfb\xbb\xbb\xbb\xbf\xff\xcc".
+"\xcc\xcc\xcc\xff\x80\x00\x80\@\x7f\xbb\xbb\xbb\xbb\xbb\xfc\xcc\xcc\xcc\xcc\xcf".
+"\x80\x00\x00\x00\x7f\xbb\xbb\xbb\xbb\xbb\xfc\xcc\xcc\xcc\xcc\xcf\x80\x00\x00\x00".
+"\x7f\xbb\xbb\xbb\xbb\xbb\xfc\xcc\xcc\xcc\xcc\xcf\x80\x00\x80\@\x7f\xbb\xbb\xbb".
+"\xbb\xbb\xfc\xcc\xcc\xcc\xcc\xcf\x80\x00\x00\x00\x7f\xfb\xbb\xbb\xbb\xbf\xff\xcc".
+"\xcc\xcc\xcc\xff\x80\x00\x00\x00\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff".
+"\x80\x00\@\@\x7f\xf9\x99\x99\x99\x9f\xff3333\xff\x80\x00\x00\x00".
+"\x7f\x99\x99\x99\x99\x99\xf3337\x00\x00\x00\x00\x00\x00\x7f\x99\x99\x99".
+"\x99\x99\xf3337\xff\xf7\x0d\x00\xe0\@\x7f\x99\x99\x99\x99\x99\xf33".
+"37\xffp\xdd\x00\x00\x00\x7f\x99\x99\x99\x99\x99\xf3337\xf7\x0d".
+"\xdd\x00\x00\x00\x7f\xf9\x99\x99\x99\x9f\xff337p\xdd\xdd\x00\x80\@".
+"\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xf7\x0d\xdd\xdd\x00\x00\x00wwww".
+"wwwwww\xdd\xdd\xdd\x00\x00\x00".
+''),
+			size => [ 26, 32],
+	}},
+	'Radio3' => {
+		class   => 'Prima::Radio',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 47, 12],
+			name => 'Radio3',
+			owner => 'Color',
+			size => [ 89, 36],
+			text => '~Gray',
+	}},
+	'Radio4' => {
+		class   => 'Prima::Radio',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 180, 12],
+			name => 'Radio4',
+			owner => 'Color',
+			size => [ 100, 36],
+			text => 'C~olor',
+	}},
+	'VList' => {
+		class   => 'Prima::DetailedList',
+		module  => 'Prima::DetailedList',
+		profile => {
+			name => 'VList',
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];        
+$self-> widths([($self->width / 2 ) x 2]);             
+
+$self-> {helpData} = {
+   UseDeviceFonts => <<A,
+Use limited set of device fonts instead of exported bitmap fonts
+A
+   MediaType => <<A,
+An arbitrary string representing special attributes of the medium other
+than its size, color, and weight. This parameter can be used to identify special
+media such as envelopes, letterheads, or preprinted forms.
+A
+   MediaClass => <<A,
+(Level 3) An arbitrary string representing attributes of the medium
+that may require special action by the output device, such as the selection
+of a color rendering dictionary. Devices should use the value of this
+parameter to trigger such media-related actions, reserving the MediaType
+parameter (above) for generic attributes requiring no device-specific action.
+The MediaClass entry in the output device dictionary defines the allowable
+values for this parameter on a given device; attempting to set it to an unsupported 
+value will cause a configuration error.
+A
+   InsertSheet => <<A,
+(Level 3) A flag specifying whether to insert a sheet of some special
+medium directly into the output document. Media coming from a source
+for which this attribute is Yes are sent directly to the output bin without
+passing through the device’s usual imaging mechanism (such as the fuser
+assembly on a laser printer). Consequently, nothing painted on the current
+page is actually imaged on the inserted medium.   
+A
+   LeadingEdge => <<A,
+(Level 3) A value specifying the edge of the input medium that will
+enter the printing engine or imager first and across which data will be imaged.
+Values reflect positions relative to a canonical page in portrait orientation
+(width smaller than height). When duplex printing is enabled, the canonical 
+page orientation refers only to the front (recto) side of the medium.
+A
+   ManualFeed => <<A,
+Flag indicating whether the input medium is to be fed manually by a human
+operator (Yes) or automatically (No). A Yes value asserts that the
+human operator will manually feed media conforming to the specified attributes
+( MediaColor, MediaWeight, MediaType, MediaClass, and InsertSheet). Thus, those 
+attributes are not used to select from available media sources in the normal way, 
+although their values may be presented to the human operator as an aid in selecting 
+the correct medium. On devices that offer more than one manual feeding mechanism, 
+the attributes may select among them.
+A
+   TraySwitch => <<A,
+(Level 3)  A flag specifying whether the output device supports
+automatic switching of media sources. When the originally selected source
+runs out of medium, some devices with multiple media sources can switch
+automatically, without human intervention, to an alternate source with the
+same attributes (such as PageSize and MediaColor) as the original.   
+A
+   MediaPosition => <<A,
+(Level 3) The position number of the media source to be used.
+This parameter does not override the normal media selection process
+described in the text, but if specified it will be honored - provided it can
+satisfy the input media request in a manner consistent with normal media
+selection - even if the media source it specifies is not the best available
+match for the requested attributes.
+A
+   DeferredMediaSelection => <<A,
+(Level 3) A flag determining when to perform media selection.
+If Yes, media will be selected by an independent printing subsystem associated
+with the output device itself.
+A
+   MediaColor => <<AX,
+A string identifying the color of the medium.
+AX
+   MediaWeight => <<A,
+The weight of the medium in grams per square meter. \\"Basis weight\\" or
+or null \\"ream weight\\" in pounds can be converted to grams per square meter by
+multiplying by 3.76; for example, 10-pound paper is approximately 37.6
+grams per square meter.
+A
+  MatchAll => <<A,
+A flag specifying whether input media request should match to all
+non-null values - MediaColor, MediaWeight etc. except UseDeviceFonts.
+A
+
+};
+   '),
+			columns => 2,
+			dragable => 0,
+			items => [['UseDeviceFonts', ' ', '1', '1', ],['MediaType', ' ', '0', ' ', ],['MediaColor', ' ', '0', ' ', ],['MediaWeight', ' ', '0', ' ', ],['MediaClass', ' ', '0', ' ', ],['InsertSheet', ' ', '1', '0', ],['LeadingEdge', ' ', '2', '0', ],['ManualFeed', ' ', '1', '0', ],['TraySwitch', ' ', '1', '0', ],['MediaPosition', ' ', '0', ' ', ],['DeferredMediaSelection', ' ', '1', '0', ],['MatchAll', ' ', '1', '0', ],],
+			scalable => 1,
+			origin => [ 13, 89],
+			clickable => 0,
+			size => [ 299, 188],
+			owner => 'TabbedNotebook1',
+			onSelectItem => Prima::VB::VBLoader::GO_SUB('my ( $self, $index, $selectState) = @_; 
+my @i = @{$self-> get_items( $$index[0])};
+my $vbox = $self-> owner-> ValueBox;
+if ( $vbox-> ValueBook-> pageIndex == 3) {
+    $self-> owner-> HelpBtn-> notify(q(Click));
+    $self-> owner-> HelpBtn-> notify(q(Click));
+    return;
+} 
+$vbox-> ValueBook-> pageIndex( $i[2]);
+$vbox-> text( "Change \'$i[0]\' setting");
+my @vdt = qw(VText VBool VCombo);
+my @vdv = qw(text checked focusedItem);
+$vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);    '),
+			headers => ['Item', 'Setting', ],
+	}},
+	'ValueBox' => {
+		class   => 'Prima::GroupBox',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 15, 14],
+			name => 'ValueBox',
+			owner => 'TabbedNotebook1',
+			size => [ 266, 66],
+			text => '',
+	}},
+	'ValueBook' => {
+		class   => 'Prima::Notebook',
+		module  => 'Prima::Notebooks',
+		extras => {
+		VBool => '1',
+		VCombo => '2',
+		VHint => '3',
+		VText => '0',
+		},
+		actions => {
+		onChild => Prima::VB::VBLoader::GO_SUB('$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})'),
+		},
+		profile => {
+			origin => [ 2, 3],
+			name => 'ValueBook',
+			owner => 'ValueBox',
+			size => [ 260, 47],
+			pageIndex => 4,
+			pageCount => 5,
+	}},
+	'HelpBtn' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 286, 52],
+			name => 'HelpBtn',
+			owner => 'TabbedNotebook1',
+			onClick => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];        
+my $x = $self-> owner-> ValueBox-> ValueBook;
+if ( $x-> pageIndex == 3) {       
+   $x-> pageIndex( $self-> {opa});
+} else {                 
+   my $y = $self-> owner-> VList;
+   my $i  = $y-> get_items( $y-> focusedItem); 
+   $self-> {opa} = $x-> pageIndex;
+   if ( exists $y-> {helpData}-> {$$i[0]}) {
+       $x-> VHint-> text( $y-> {helpData}-> {$$i[0]});
+       $x-> pageIndex( 3); 
+   }
+}'),
+			size => [ 20, 20],
+			text => '?',
+			font => {style => fs::Bold, },
+	}},
+	'VText' => {
+		class   => 'Prima::InputLine',
+		module  => 'Prima::InputLine',
+		profile => {
+			origin => [ 9, 15],
+			name => 'VText',
+			owner => 'ValueBook',
+			onChange => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];        
+my $x = $self-> owner-> owner-> owner-> VList;
+my $i = $x-> get_items( $x-> focusedItem);
+my $t = $self-> text;
+if (  $i-> [0] eq \'MediaPosition\' || 
+      $i-> [0] eq \'MediaWeight\' ) {
+    $t =~ s/^\\s*//; $t =~ s/\\s*$//;
+    if ( length $t) {
+         if ( $i-> [0] eq \'MediaWeight\') {
+             return unless $t =~ m/^\\s*([+-]?)(?=\\d|\\.\\d)\\d*(\\.\\d*)?([Ee]([+-]?\\d+))?\\s*$/;
+         } else {
+             return unless $t =~ m/^\\d+$/;
+         }        
+    }    
+}
+$i-> [1] = $i-> [3] = $t;
+$x-> redraw_items( $x-> focusedItem); '),
+			size => [ 240, 20],
+			text => '',
+	}},
+	'VCombo' => {
+		class   => 'Prima::ComboBox',
+		module  => 'Prima::ComboBox',
+		profile => {
+			origin => [ 13, 14],
+			style => cs::DropDownList,
+			name => 'VCombo',
+			items => ['None', 'Short edge, top of page', 'Long edge, right side of page', 'Short edge, bottom of page', 'Long edge, left side of page', ],
+			owner => 'ValueBook',
+			onChange => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
+my $x = $self-> owner-> owner-> owner-> VList;
+my $i = $x-> get_items( $x-> focusedItem);
+$i->[1] = $self-> text;
+$i-> [3] = $self-> focusedItem;
+$x-> redraw_items( $x-> focusedItem); '),
+			size => [ 233, 23],
+	}},
+	'VBool' => {
+		class   => 'Prima::CheckBox',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 10, 8],
+			name => 'VBool',
+			onCheck => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
+my $x = $self-> owner-> owner-> owner-> VList;
+my $i = $x-> get_items( $x-> focusedItem);
+$i-> [3] = $self-> checked;
+$i->[1] = $i-> [3] ? \'Yes\' : \'No\';
+$x-> redraw_items( $x-> focusedItem); 
+'),
+			owner => 'ValueBook',
+			size => [ 100, 36],
+			text => '',
+	}},
+	'VHint' => {
+		class   => 'Prima::Edit',
+		module  => 'Prima::Edit',
+		profile => {
+			backColor => wc::Dialog | cl::Back,
+			origin => [ 0, 0],
+			name => 'VHint',
+			owner => 'ValueBook',
+			size => [ 260, 47],
+			vScroll => 1,
+			text => '',
+			readOnly => 1,
+			wordWrap => 1,
+	}},
+	'LPRadio' => {
+		class   => 'Prima::Radio',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 14, 148],
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];     
+$self-> enabled( 0) if
+  Prima::Application-> get_system_info->{apc} != apc::Unix;'),
+			name => 'LPRadio',
+			owner => 'Spool',
+			size => [ 272, 36],
+			text => 'Unix ~line printer (LP)',
+	}},
+	'Spool' => {
+		class   => 'Prima::RadioGroup',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 16, 16],
+			name => 'Spool',
+			owner => 'TabbedNotebook1',
+			size => [ 293, 208],
+			text => 'Output',
+	}},
+	'Profiles' => {
+		class   => 'Prima::ListBox',
+		module  => 'Prima::Lists',
+		profile => {
+			origin => [ 15, 16],
+			name => 'Profiles',
+			owner => 'TabbedNotebook1',
+			size => [ 193, 259],
+	}},
+	'LPLabel' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		profile => {
+			origin => [ 14, 121],
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
+$self-> enabled( 0) if
+  Prima::Application-> get_system_info->{apc} != apc::Unix;
+'),
+			name => 'LPLabel',
+			owner => 'Spool',
+			size => [ 74, 20],
+			text => '~Parameters',
+	}},
+	'LParams' => {
+		class   => 'Prima::InputLine',
+		module  => 'Prima::InputLine',
+		profile => {
+			origin => [ 92, 122],
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];    
+$self-> enabled( 0) if
+  Prima::Application-> get_system_info->{apc} != apc::Unix;
+'),
+			name => 'LParams',
+			owner => 'Spool',
+			size => [ 186, 20],
+			text => '',
+	}},
+	'AddBtn' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 213, 240],
+			name => 'AddBtn',
+			owner => 'TabbedNotebook1',
+			size => [ 96, 36],
+			text => '~Add',
+	}},
+	'DelBtn' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 213, 160],
+			name => 'DelBtn',
+			size => [ 96, 36],
+			owner => 'TabbedNotebook1',
+			text => '~Remove',
+	}},
+	'Radio6' => {
+		class   => 'Prima::Radio',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 14, 79],
+			name => 'Radio6',
+			owner => 'Spool',
+			size => [ 272, 36],
+			text => '~File',
+	}},
+	'Radio7' => {
+		class   => 'Prima::Radio',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 14, 41],
+			name => 'Radio7',
+			owner => 'Spool',
+			size => [ 272, 36],
+			text => '~Command',
+	}},
+	'SaveBtn' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 214, 120],
+			name => 'SaveBtn',
+			size => [ 96, 36],
+			owner => 'TabbedNotebook1',
+			text => '~Save',
+	}},
+	'ImportBtn' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 214, 80],
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
+$self-> enabled( 0) if
+  Prima::Application-> get_system_info->{apc} != apc::Unix;
+'),
+			name => 'ImportBtn',
+			size => [ 96, 36],
+			owner => 'TabbedNotebook1',
+			text => '~Import...',
+	}},
+	'RenameBtn' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 213, 200],
+			name => 'RenameBtn',
+			size => [ 96, 36],
+			owner => 'TabbedNotebook1',
+			text => 'Re~name',
+	}},
+	'CmdLine' => {
+		class   => 'Prima::InputLine',
+		module  => 'Prima::InputLine',
+		profile => {
+			origin => [ 37, 18],
+			name => 'CmdLine',
+			owner => 'Spool',
+			size => [ 241, 20],
+			text => '',
+	}},
+	'OK' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 5, 5],
+			name => 'OK',
+			owner => 'Form1',
+			size => [ 96, 36],
+			default => 1,
+			text => '~OK',
+	}},
+	'Cancel' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			origin => [ 110, 5],
+			name => 'Cancel',
+			owner => 'Form1',
+			size => [ 96, 36],
+			onClick => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];    
+$self-> owner-> cancel;'),
+			text => 'Cancel',
+	}},
+	);
+}
