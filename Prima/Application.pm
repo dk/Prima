@@ -230,7 +230,7 @@ is destroyed. Does not influence anything if set to 0.
 This feature is designed to help with general 'one main window' 
 application layouts. 
 
-Default value: 1
+Default value: 0
 
 =item icon OBJECT
 

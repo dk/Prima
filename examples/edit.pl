@@ -40,7 +40,7 @@ Demonstrates use of a standard input line widget
 
 use Prima 'InputLine', Application => { name => 'InputLine sample' };
 
-my $w = Prima::Window-> create( size => [ 700, 300]);
+my $w = Prima::Window-> create( size => [ 700, 300], onDestroy => sub {$::application-> close; });
 
 my $l = $w-> insert( InputLine =>
    text        => '0:::1234 5678 90ab cdef ghij klmn oprq stuv:1::1234 5678 90ab cdef ghij klmn oprq stuv:2::1234 5678 90ab cdef ghij klmn oprq stuv:3::1234 5678 90ab cdef ghij klmn oprq stuv:4::1234 5678 90ab cdef ghij klmn oprq stuv::End',

@@ -65,6 +65,7 @@ $w = Prima::Window-> create(
          $canvas-> text_out("Hello!", $d + $i * 40, $d + $i * 40);
       }
    },
+   onDestroy => sub { $::application-> close},
 );
 
 $w-> insert( Timer =>

@@ -138,6 +138,7 @@ my $x = Prima::Window-> create(
          $cc[0] += $sz[0] / 2;
       }
    },
+   onDestroy => sub { $::application-> close },
 );
 
 $x-> icon( reshape( $x));

@@ -1245,7 +1245,7 @@ sub profile_default
    my $def  = $_[ 0]-> SUPER::profile_default;
    my $unix = Prima::Application-> get_system_info->{apc} == apc::Unix;
    my %prf = (
-      autoClose      => 1,
+      autoClose      => 0,
       pointerType    => cr::Arrow,
       pointerVisible => 1,
       icon           => undef,
