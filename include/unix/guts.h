@@ -549,6 +549,18 @@ typedef union _unix_sys_data
 #define XX		selfxx
 #define WHEEL_DELTA	120
 
+typedef U8 ColorComponent;
+
+typedef struct
+{
+   unsigned long  mask;
+   unsigned long  revMask;
+             int  shift;
+             int  revShift;
+   ColorComponent lut[256];
+} RGBLUTEntry;
+
+
 extern Handle
 prima_xw2h( XWindow win);
 
@@ -589,6 +601,12 @@ void
 prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,
                   int src_x, int src_y, int dst_x, int dst_y,
                   int width, int height);
+
+Bool
+prima_query_image( Handle self, XImage * image);
+
+RGBLUTEntry *
+prima_rgblut(void);
 
 extern void
 prima_cleanup_drawable_after_painting( Handle self);

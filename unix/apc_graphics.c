@@ -39,6 +39,9 @@
 #define REVERT(a)	({ XX-> size. y - (a) - 1; })
 #define SHIFT(a,b)	({ (a) += XX-> gtransform. x + XX-> btransform. x; \
                            (b) += XX-> gtransform. y + XX-> btransform. y; })
+#define REVERSE_BYTES_32(x) ((((x)&0xff)<<24) | (((x)&0xff00)<<8) | (((x)&0xff0000)>>8) | (((x)&0xff000000)>>24))
+#define REVERSE_BYTES_24(x) ((((x)&0xff)<<16) | ((x)&0xff00) | (((x)&0xff0000)>>8))
+#define REVERSE_BYTES_16(x) ((((x)&0xff)<<8 ) | (((x)&0xff00)>>8))
 
 static int rop_map[] = {
    GXcopy	/* ropCopyPut */,		/* dest  = src */
@@ -296,15 +299,21 @@ get_standard_color( long class, int index)
    return standard_colors[ cls][ index];
 }
 
-Color
-apc_widget_map_color( Handle self, Color color)
+static Color 
+map_color( Color color)
 {
    RGBColor r;
-   if ((color < 0) && (( color & wcMask) == 0)) color |= PWidget(self)->widgetClass;
    if ( color >= 0) return color;
    /* XXX - remove this -1: */
    r = get_standard_color(color, (int)((unsigned long)color & ~(unsigned long)(wcMask|0x80000000))-1);
    return ( r.r << 16) | (r.g << 8) | r.b;
+}   
+
+Color
+apc_widget_map_color( Handle self, Color color)
+{
+   if ((color < 0) && (( color & wcMask) == 0)) color |= PWidget(self)->widgetClass;
+   return map_color( color);
 }   
 
 
@@ -350,6 +359,7 @@ prima_allocate_color( Handle self, Color color)
    i++;
    return  i%2 ? black : white;
    */
+
 
    if ( color < 0) {
       /* XXX - remove this -1: */
@@ -952,11 +962,248 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
    return true;
 }
 
-Bool
-apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBorder)
+static int
+get_pixel_depth( int depth) 
 {
-   DOLBUG( "apc_gp_flood_fill()\n");
-   return true;
+   if ( depth ==  1) return  1; else
+   if ( depth <=  4) return  4; else
+   if ( depth <=  8) return  8; else
+   if ( depth <= 16) return 16; else
+   if ( depth <= 24) return 24; else
+   return 32;
+}   
+   
+
+static uint32_t
+color_to_pixel( Color color)
+{
+   uint32_t pv;
+   RGBLUTEntry * lut;
+   int depth = get_pixel_depth( guts. idepth);
+
+   switch ( depth) {
+   case 1:
+      pv = color ? 1 : 0;
+      break;
+   case 4:
+   case 8:
+      warn("UAG_034: Not supported pixel depth");
+      return 0;
+   case 16:   
+   case 24:   
+   case 32:   
+      lut = prima_rgblut(); 
+      pv = 
+         ((( color & 0xFF)     >>        lut[2]. revShift)  << lut[2].shift) |
+         ((( color & 0xFF00)   >> ( 8 +  lut[1]. revShift)) << lut[1].shift) |
+         ((( color & 0xFF0000) >> ( 16 + lut[0]. revShift)) << lut[0].shift);
+      if ( guts.machine_byte_order != guts.byte_order)  
+         switch( depth) {
+         case 16:
+            pv = REVERSE_BYTES_16( pv);
+            break;   
+         case 24:
+            pv = REVERSE_BYTES_24( pv);
+            break;   
+         case 32:
+            pv = REVERSE_BYTES_32( pv);
+            break;            
+         }   
+       break;
+   default:
+      warn("UAG_034: Not supported pixel depth");
+      return 0;
+   }
+   return pv;
+}  
+
+typedef struct {
+   XImage *  i;
+   Rect      clip;
+   uint32_t  color;
+   int       depth;
+   int       y;
+   Bool      singleBorder;
+   XDrawable drawable;
+   GC        gc;
+   int       first;
+   PList  *  lists;
+} FillSession;
+
+static Bool 
+fs_get_pixel( FillSession * fs, int x, int y)
+{
+   if ( x < fs-> clip. left || x > fs-> clip. right || y < fs-> clip. top || y > fs-> clip. bottom)  {
+      return false;
+   }   
+
+   if ( fs-> lists[ y - fs-> first]) {
+      PList l = fs-> lists[ y - fs-> first];
+      int i;
+      for ( i = 0; i < l-> count; i+=2) {
+         if (((int) l-> items[i+1] >= x) && ((int)l->items[i] <= x))
+            return false;
+      }   
+   }   
+   
+   if ( !fs-> i || y != fs-> y) {
+      XCHECKPOINT;
+      if ( fs-> i) XDestroyImage( fs-> i);
+      XCHECKPOINT;
+      fs-> i = XGetImage( DISP, fs-> drawable, fs-> clip. left, y, 
+                          fs-> clip. right - fs-> clip. left + 1, 1, 
+                          ( fs-> depth == 1) ? 1 : AllPlanes, 
+                          ( fs-> depth == 1) ? XYPixmap : ZPixmap);
+      XCHECKPOINT;
+      if ( !fs-> i) {
+         return false;
+      }   
+      fs-> y = y;
+   }   
+
+   x -= fs-> clip. left;
+   
+   switch( fs-> depth) {
+   case 1:
+      {
+         Byte xz = *((Byte*)(fs->i->data) + (x >> 3));
+         uint32_t v = ( guts.bit_order == MSBFirst) ?
+            ( xz & ( 0x80 >> ( x & 7)) ? 1 : 0) :
+            ( xz & ( 0x01 << ( x & 7)) ? 1 : 0);
+         return fs-> singleBorder ? 
+            ( v == fs-> color) : ( v != fs-> color);
+      }   
+      break;
+   case 4:
+      {
+         Byte xz = *((Byte*)(fs->i->data) + (x >> 1));
+         uint32_t v = ( x & 1) ? ( xz & 0xF) : ( xz >> 4);
+         return fs-> singleBorder ? 
+            ( v == fs-> color) : ( v != fs-> color);
+      }
+      break;
+   case 8:
+     return fs-> singleBorder ? 
+       ( fs-> color == *((Byte*)(fs->i->data) + x)) :
+       ( fs-> color != *((Byte*)(fs->i->data) + x));
+   case 16:
+     return fs-> singleBorder ? 
+       ( fs-> color == *((uint16_t*)(fs->i->data) + x)):
+       ( fs-> color != *((uint16_t*)(fs->i->data) + x));
+   case 24:
+      return fs-> singleBorder ? 
+       ( memcmp(( Byte*)(fs->i->data) + x, &fs->color, 3) == 0) :
+       ( memcmp(( Byte*)(fs->i->data) + x, &fs->color, 3) != 0);
+   case 32:
+      return fs-> singleBorder ? 
+       ( fs-> color == *((uint32_t*)(fs->i->data) + x)): 
+       ( fs-> color != *((uint32_t*)(fs->i->data) + x));
+   }  
+   return false;
+}   
+
+static void
+hline( FillSession * fs, int x1, int y, int x2)
+{
+   XFillRectangle( DISP, fs-> drawable, fs-> gc, x1, y, x2 - x1 + 1, 1);
+   
+   if ( y == fs-> y && fs-> i) {
+      XDestroyImage( fs-> i);
+      fs-> i = nil;
+   }   
+   
+   y -= fs-> first;
+   
+   if ( fs-> lists[y] == nil)
+      fs-> lists[y] = plist_create( 32, 128);
+   list_add( fs-> lists[y], ( Handle) x1);
+   list_add( fs-> lists[y], ( Handle) x2);
+}   
+
+static int
+fill( FillSession * fs, int sx, int sy, int d, int pxl, int pxr)
+{
+   int x, xr = sx;
+   while ( sx > fs-> clip. left  && fs_get_pixel( fs, sx - 1, sy)) sx--;
+   while ( xr < fs-> clip. right && fs_get_pixel( fs, xr + 1, sy)) xr++;
+   hline( fs, sx, sy, xr);
+
+   if ( sy + d >= fs-> clip. top && sy + d <= fs-> clip. bottom) {
+      x = sx;
+      while ( x <= xr) {
+         if ( fs_get_pixel( fs, x, sy + d)) {
+            x = fill( fs, x, sy + d, d, sx, xr);
+         }   
+         x++;
+      }   
+   }   
+   
+   if ( sy - d >= fs-> clip. top && sy - d <= fs-> clip. bottom) {
+      x = sx;
+      while ( x < pxl) {
+         if ( fs_get_pixel( fs, x, sy - d)) {
+            x = fill( fs, x, sy - d, -d, sx, xr);
+         }   
+         x++;
+      }   
+      x = pxr;
+      while ( x < xr) {
+         if ( fs_get_pixel( fs, x, sy - d)) {
+            x = fill( fs, x, sy - d, -d, sx, xr);
+         }   
+         x++;
+      }   
+   }   
+   return xr;
+}   
+
+Bool
+apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
+{
+   DEFXX;
+   Bool ret = false;
+   XRectangle cr;
+   FillSession s;
+   
+   if ( !opt_InPaint) return false;
+   
+   s. singleBorder = singleBorder;
+   s. drawable     = XX-> gdrawable;
+   s. gc           = XX-> gc;
+   SHIFT( x, y);
+   y = REVERT( y);
+   color = map_color( color);
+   prima_gp_get_clip_rect( self, &cr);
+
+   s. clip. left   = cr. x;
+   s. clip. top    = cr. y;
+   s. clip. right  = cr. x + cr. width  - 1;
+   s. clip. bottom = cr. y + cr. height - 1;
+   if ( cr. width <= 0 || cr. height <= 0) return false;
+   s. i = nil;
+   
+   s. color = color_to_pixel( color);
+   s. depth = get_pixel_depth( guts. idepth);
+   
+   switch( s. depth) { case 4: case 8: return false;}   /* XXX */
+
+   s. first = s. clip. top;
+   s. lists = malloc(( s. clip. bottom - s. clip. top + 1) * sizeof( void*));
+   bzero( s. lists, ( s. clip. bottom - s. clip. top + 1) * sizeof( void*));
+
+   if ( fs_get_pixel( &s, x, y)) {
+      fill( &s, x, y, -1, x, x);
+      ret = true;
+   }   
+
+   if ( s. i) XDestroyImage( s. i);
+
+   for ( x = 0; x < s. clip. bottom - s. clip. top + 1; x++)
+      if ( s. lists[x]) 
+         plist_destroy( s.lists[x]);
+   free( s. lists);
+
+   return ret;
 }
 
 Color
@@ -966,29 +1213,62 @@ apc_gp_get_pixel( Handle self, int x, int y)
    Color c = 0;
    XImage *im;
    Bool pixmap;
+   uint32_t p32 = 0;
+   static RGBLUTEntry * lut = nil;
 
-   /* XXX implement in full */
+   if ( !opt_InPaint) return clInvalid;
+   SHIFT( x, y);
+
+   if ( x < 0 || x >= XX-> size.x || y < 0 || y >= XX-> size.y)
+      return clInvalid;
 
    if ( XT_IS_DBM(XX)) {
       pixmap = XT_IS_PIXMAP(XX) ? true : false;
-      im = XGetImage( DISP, XX->gdrawable, x, REVERT(y), 1, 1,
-                      pixmap ? AllPlanes : 1,
-                      pixmap ? ZPixmap : XYPixmap);
-      XCHECKPOINT;
-      if ( im) {
-         if ( pixmap) {
-            croak( "UAG_023: not implemented");
-         } else {
-            if ( im-> data[0] & 0x01)
-               c = 0xffffff;
-            else
-               c = 0;
-         }
-         XDestroyImage(im);
-      }
    } else {
-      croak( "UAG_024: not implemented");
-   }
+      pixmap = guts. idepth > 1;
+   }   
+   
+   im = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - 1, 1, 1, 
+                   pixmap ? AllPlanes : 1,
+                   pixmap ? ZPixmap   : XYPixmap);
+   XCHECKPOINT;
+   if ( !im) return clInvalid;
+
+   if ( pixmap) {
+      switch ( guts. idepth) {
+      case 4:
+      case 8:
+         croak( "UAG_023: not implemented");
+      case 16:
+         p32 = *(( uint16_t*)(im-> data));
+         if ( guts.machine_byte_order != guts.byte_order) 
+            p32 = REVERSE_BYTES_16(p32);
+         goto COMP;
+      case 24:   
+         p32 = (im-> data[0] << 16) | (im-> data[1] << 8) | im-> data[2];
+         if ( guts.machine_byte_order != guts.byte_order) 
+            p32 = REVERSE_BYTES_24(p32);
+         goto COMP;
+      case 32:
+         p32 = *(( uint32_t*)(im-> data));
+         if ( guts.machine_byte_order != guts.byte_order) 
+            p32 = REVERSE_BYTES_32(p32);
+      COMP:   
+         if ( !lut) lut = prima_rgblut();
+         c = 
+              lut[2]. lut[(p32 & lut[2]. mask) >> lut[2]. shift] | 
+            ( lut[1]. lut[(p32 & lut[1]. mask) >> lut[1]. shift] << 8) | 
+            ( lut[0]. lut[(p32 & lut[0]. mask) >> lut[0]. shift] << 16);
+         break;
+      }   
+   } else {
+      if ( im-> data[0] & (( guts.bit_order == MSBFirst) ? 0x80 : 1))
+         c = 0xffffff;
+      else
+         c = 0;
+   }   
+
+   XDestroyImage( im);
    return c;
 }
 
@@ -1915,3 +2195,4 @@ apc_gp_set_text_out_baseline( Handle self, Bool baseline)
    }
    return true;
 }
+

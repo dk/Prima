@@ -54,7 +54,6 @@
 
 typedef U8 Pixel8;
 typedef unsigned long XPixel;
-typedef U8 ColorComponent;
 
 typedef uint16_t Pixel16;
 
@@ -891,6 +890,16 @@ get_bpp( Handle self)
    else
       return guts. idepth;
 }
+  
+static int
+get_bpp_depth( int depth)
+{
+   if ( depth == 1) return 1; else
+   if ( depth <= 4) return 4; else
+   if ( depth <= 8) return 8; else
+   return 24;
+}   
+
 
 static ImageCache*
 get_cache( Handle self, Handle drawable)
@@ -1102,11 +1111,13 @@ apc_image_begin_paint( Handle self)
    return true;
 }
 
+
 static void
 calc_masks_and_lut_16or32_to_24( unsigned long mask,
                                  unsigned long *mask1,
                                  unsigned long *mask2,
                                  int *bit_count,
+                                 int *rev_bit_count,
                                  ColorComponent *lut)
 {
    unsigned i;
@@ -1121,30 +1132,46 @@ calc_masks_and_lut_16or32_to_24( unsigned long mask,
    while ( m) { bc++; m >>= 1; }
    bc = 8 - bc;
    *mask1 = mask;
+   *rev_bit_count = bc;
    for ( i = 0; i <= *mask2; i++) {
       lut[i] = i << bc;
    }
 }
 
+static RGBLUTEntry lut[3];
+
+RGBLUTEntry * 
+prima_rgblut( void)
+{
+   static Bool initialize = true;
+   if (initialize) {
+      Visual *v = DefaultVisual( DISP, SCREEN);
+
+      calc_masks_and_lut_16or32_to_24( v-> red_mask,   &lut[0]. mask, &lut[0]. revMask, &lut[0]. shift, &lut[0]. revShift, lut[0]. lut);
+      calc_masks_and_lut_16or32_to_24( v-> green_mask, &lut[1]. mask, &lut[1]. revMask, &lut[1]. shift, &lut[1]. revShift, lut[1]. lut);
+      calc_masks_and_lut_16or32_to_24( v-> blue_mask,  &lut[2]. mask, &lut[2]. revMask, &lut[2]. shift, &lut[2]. revShift, lut[2]. lut);
+      
+      initialize = false;
+   }   
+   return lut;
+}   
+
 static void
 convert_16_to_24( XImage *i, PImage img)
 {
-   /* XXX is ``static'' reliable here?? */
-   static ColorComponent lur[NPalEntries8], lub[NPalEntries8], lug[NPalEntries8];
+   static ColorComponent * lur, * lub, * lug;
    static Bool initialize = true;
-   static unsigned long rm1, bm1, gm1, rm2, bm2, gm2;
+   static unsigned long rm1, bm1, gm1;
    static int rbc, bbc, gbc;
    int y, x, h, w;
    Pixel16 *d;
    Pixel24 *line;
 
    if ( initialize) {
-      Visual *v = DefaultVisual( DISP, SCREEN);
-
-      calc_masks_and_lut_16or32_to_24( v-> red_mask, &rm1, &rm2, &rbc, lur);
-      calc_masks_and_lut_16or32_to_24( v-> green_mask, &gm1, &gm2, &gbc, lug);
-      calc_masks_and_lut_16or32_to_24( v-> blue_mask, &bm1, &bm2, &bbc, lub);
-
+      RGBLUTEntry * r = prima_rgblut();
+      rm1 = r[0]. mask;  gm1 = r[1]. mask;  bm1 = r[2]. mask;
+      rbc = r[0]. shift; gbc = r[1]. shift; bbc = r[2]. shift;
+      lur = r[0]. lut;   lug = r[1]. lut;   lub = r[2]. lut;
       initialize = false;
    }
 
@@ -1164,25 +1191,22 @@ convert_16_to_24( XImage *i, PImage img)
 static void
 convert_32_to_24( XImage *i, PImage img)
 {
-   /* XXX is ``static'' reliable here?? */
-   static ColorComponent lur[NPalEntries8], lub[NPalEntries8], lug[NPalEntries8];
+   static ColorComponent * lur, * lub, *lug;
    static Bool initialize = true;
-   static unsigned long rm1, bm1, gm1, rm2, bm2, gm2;
+   static unsigned long rm1, bm1, gm1;
    static int rbc, bbc, gbc;
    int y, x, h, w;
    Pixel32 *d, dd;
    Pixel24 *line;
 
    if ( initialize) {
-      Visual *v = DefaultVisual( DISP, SCREEN);
-
-      calc_masks_and_lut_16or32_to_24( v-> red_mask, &rm1, &rm2, &rbc, lur);
-      calc_masks_and_lut_16or32_to_24( v-> green_mask, &gm1, &gm2, &gbc, lug);
-      calc_masks_and_lut_16or32_to_24( v-> blue_mask, &bm1, &bm2, &bbc, lub);
-
+      RGBLUTEntry * r = prima_rgblut();
+      rm1 = r[0]. mask;  gm1 = r[1]. mask;  bm1 = r[2]. mask;
+      rbc = r[0]. shift; gbc = r[1]. shift; bbc = r[2]. shift;
+      lur = r[0]. lut;   lug = r[1]. lut;   lub = r[2]. lut;
       initialize = false;
    }
-
+   
    h = img-> h; w = img-> w;
    if ( guts.machine_byte_order != guts.byte_order) {
       for ( y = 0; y < h; y++) {
@@ -1210,59 +1234,67 @@ convert_32_to_24( XImage *i, PImage img)
    }
 }
 
+Bool
+prima_query_image( Handle self, XImage * i)
+{
+   PImage img = PImage( self);
+   int target_depth = get_bpp_depth( guts. idepth);
+
+   if (( img-> type & imBPP) != target_depth) 
+      CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
+
+   if ( target_depth == 1) {
+      prima_copy_xybitmap( img-> data, i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
+   } else {
+      if ( guts. idepth != target_depth) {
+         switch ( guts. idepth) {
+         case 16:
+            switch ( target_depth) {
+            case 24:
+               convert_16_to_24( i, img);
+               break;
+            default: goto slurp_image_unsupported_depth;
+            }
+            break;
+         case 32:
+            switch ( target_depth) {
+            case 24:
+               convert_32_to_24( i, img);
+               break;
+            default: goto slurp_image_unsupported_depth;
+            }
+            break;
+slurp_image_unsupported_depth:
+         default:
+            return false;
+         }
+      } else {
+         /* just copy with care */
+      }
+   }
+   return true;
+}   
+   
+
 static void
 slurp_image( Handle self, Pixmap px)
 {
-   int target_depth;
    XImage *i = nil;
    PImage img = PImage( self);
 
-   if (( img-> type & imBPP) == 1) {
-      if ( px) {
-         i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, 1, XYPixmap);
-         XCHECKPOINT;
-         prima_copy_xybitmap( img-> data, i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
-      }
-   } else {
-      if ( px) {
-         i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, AllPlanes, ZPixmap);
-         XCHECKPOINT;
+   if ( !px) return;
 
-         target_depth = guts. idepth;
-         if ( target_depth == 16 || target_depth == 32)
-            target_depth = 24;
-         if (( img-> type & imBPP) != target_depth) {
-            CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
-         }
-         if ( guts. idepth != target_depth) {
-            switch ( guts. idepth) {
-            case 16:
-               switch ( target_depth) {
-               case 24:
-                  convert_16_to_24( i, img);
-                  break;
-               default: goto slurp_image_unsupported_depth;
-               }
-               break;
-            case 32:
-               switch ( target_depth) {
-               case 24:
-                  convert_32_to_24( i, img);
-                  break;
-               default: goto slurp_image_unsupported_depth;
-               }
-               break;
-slurp_image_unsupported_depth:
-            default:
-               XDestroyImage( i);
-               croak( "UAI_017: unsupported depths combination");
-            }
-         } else {
-            /* just copy with care */
-         }
-      }
-   }
-   if (i) XDestroyImage(i);
+   if (( img-> type & imBPP) == 1)
+      i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, 1, XYPixmap);
+   else
+      i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, AllPlanes, ZPixmap);
+   XCHECKPOINT;
+   if ( i) {
+      Bool res = prima_query_image( self, i);
+      XDestroyImage( i);
+      if ( !res) 
+         croak( "UAI_017: unsupported depths combination");
+   }   
 }
 
 Bool
@@ -1744,4 +1776,40 @@ apc_gp_stretch_image( Handle self, Handle image,
       return apc_gp_put_image( self, image, dst_x, dst_y, src_x, src_y, src_w, src_h, rop);
    return true;
 }
+
+
+Bool
+apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen)
+{
+   DEFXX;
+   Bool inPaint = opt_InPaint, ret = false;
+   XImage * i;
+   
+   if ( !image || PObject(image)-> stage == csDead) return false;
+
+   /* rect validation - questionable but without it the request may be fatal ( by BadMatch) */
+   if ( x < 0) x = 0;
+   if ( y < 0) y = 0;
+   if ( x + xLen > XX-> size. x) xLen = XX-> size. x - x;
+   if ( y + yLen > XX-> size. y) yLen = XX-> size. y - y;
+   if ( xLen <= 0 || yLen <= 0) return false;
+   
+   if ( !inPaint) apc_application_begin_paint( self);
+
+   CImage( image)-> create_empty( image, xLen, yLen, get_bpp_depth( guts. idepth));
+   if ( guts. idepth == 1)
+      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - yLen, xLen, yLen, 1, XYPixmap);
+   else
+      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - yLen, xLen, yLen, AllPlanes, ZPixmap);
+   XCHECKPOINT;
+
+   if ( i) {
+      if ( !( ret = prima_query_image( image, i))) 
+         warn("UAI_017: unsupported depths combination");
+      XDestroyImage( i);
+   }
+   
+   if ( !inPaint) apc_application_end_paint( self);
+   return ret;
+}   
 
