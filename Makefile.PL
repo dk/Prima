@@ -281,7 +281,7 @@ sub setup_variables
 
     if ( defined $ENV{ PRIMA_DEVEL}) {
 	$CFLAGS .= $Win32 ? " -Zi" : " -g -O";
-	$LDFLAGS .= $Win32 ? "" : " -g";
+	$LDFLAGS .= $Win32 ? " /DEBUG" : " -g";
     }
     else {
 	$CFLAGS .= " " . ( $Config{ optimize} || '');
