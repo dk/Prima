@@ -656,6 +656,7 @@ sub on_mousedown
       } else {
          $self-> focus;
          $self-> marked(0,1);
+         $self-> update_view;
          $self-> {transaction} = 1;
          $self-> capture(1);
          $self-> {anchor} = [ $x, $y];
