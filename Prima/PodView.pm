@@ -304,9 +304,9 @@ sub load_link
    my $doBookmark;
 
    unless ( defined $t) { # page / section / item
-      my ( $page, $section, $item) = ( '', undef, 1);
-      if ( $s =~ /^([^\/]*)\/(.*)$/) {
-         ( $page, $section) = ( $1, $2);
+      my ( $page, $section, $item, $lead_slash) = ( '', undef, 1, '');
+      if ( $s =~ /^([^\/]*)(\/)(.*)$/) {
+         ( $page, $lead_slash, $section) = ( $1, $2, $3);
       } else {
          $section = $s;
       }
@@ -333,11 +333,10 @@ sub load_link
             }
          }
          unless ( defined $t) { # no such topic, must be a page?
-            $page = $section;
+            $page = $lead_slash . $section;
             $section = '';
          }
       }
-
       if ( length $page and $page ne $self->{pageName}) { # new page?
          if ( $self-> load_file( $page) != 1) {
             $self-> notify(q(Bookmark), $mark) if $mark; 
