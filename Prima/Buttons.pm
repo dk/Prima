@@ -549,6 +549,7 @@ sub set_modal_result
 sub set_glyphs
 {
    my $maxG = defined $_[0]->{image} ? $_[0]->{image}-> width : 1;
+   $maxG = 1 unless $maxG;
    if ( $_[1] > 0 && $_[1] <= $maxG)
    {
       $_[0]->{glyphs} = $_[1];
