@@ -649,10 +649,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if ( e. cmd == cmMouseDown) {
          if ( XX-> flags. first_click) {
             if ( ! is_opt( optSelectable)) {
-               Handle x = self;
+               Handle x = self, f = guts. focused ? guts. focused : application;
+               while ( f && !X(f)-> type. window && ( f != application)) f = (( PWidget) f)-> owner;
                while ( !X(x)-> type. window && X(x)-> flags. clip_owner &&
                        x != application) x = (( PWidget) x)-> owner;
-               if ( X(x)-> type. window) 
+               if ( x && x != f && X(x)-> type. window) 
                   XSetInputFocus( DISP, PWidget(x)-> handle, RevertToParent, bev-> time);
             }
          } else {
