@@ -2313,7 +2313,10 @@ Widget_set_show_hint( Handle self, Bool showHint )
 void
 Widget_set_shape( Handle self, Handle mask)
 {
-   if ( mask && !kind_of( mask, CImage)) return;
+   if ( mask && !kind_of( mask, CImage)) {
+      warn("RTC008A: Illegal object reference passed to Widget.set_shape");
+      return;
+   }
 
    if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
       Handle i = CImage( mask)-> dup( mask);

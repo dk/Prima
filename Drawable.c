@@ -222,7 +222,10 @@ Drawable_set_palette( Handle self, SV * palette)
 void
 Drawable_set_region( Handle self, Handle mask)
 {
-   if ( mask && !kind_of( mask, CImage)) return;
+   if ( mask && !kind_of( mask, CImage)) {
+      warn("RTC005A: Illegal object reference passed to Drawable.set_region");
+      return;
+   }
 
    if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
       Handle i = CImage( mask)-> dup( mask);
