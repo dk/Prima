@@ -885,8 +885,10 @@ sub fm_duplicate
    return unless $self;
    my @r = ();
    my %wjs  = map { $_->prf('name') => $_} ( $self, $self-> widgets);
+   my @marked = $self-> marked_widgets;
+   $self-> marked(0,1);
 
-   for ( $self-> marked_widgets) {
+   for ( @marked) {
       my %prf = (
          class        => $_->{class},
          manualSelect => 1,
