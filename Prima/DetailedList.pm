@@ -155,7 +155,7 @@ sub columns
    $self-> {umap} = \@umap;
    $h-> items( \@iec);
    $self-> {numColumns} = $c;
-   $self-> refresh;
+   $self-> repaint;
 }
 
 sub autowidths
@@ -327,7 +327,7 @@ sub headers {
    $self-> {header}-> items( @_);
    my $x = $self-> {header}-> items;
    $self-> {umap} = [ 0 .. $#$x];
-   $self-> refresh;
+   $self-> repaint;
 }
 
 sub mainColumn
@@ -343,7 +343,7 @@ sub Header_SizeItems
 {
    $_[0]-> {itemWidth} = $_[0]-> {header}-> {maxWidth} - 1;
    $_[0]-> reset_scrolls;
-   $_[0]-> refresh;
+   $_[0]-> repaint;
 }
 
 sub Header_MoveItem  {
@@ -395,7 +395,7 @@ sub sort
    my $foci = undef;
    $foci = $self-> {items}->[$self-> {focusedItem}] if $self-> {focusedItem} >= 0;
    $self-> notify(q(Sort), $c, $dirSort);
-   $self-> refresh;
+   $self-> repaint;
    return unless defined $foci;
    my $i = 0;
    my $newfoc;

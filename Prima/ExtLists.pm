@@ -113,6 +113,7 @@ sub draw_items
       push ( @{$colContainer[ $_[$i]->[7]]}, $_[$i]);
       $drawVeilFoc = $i if $_[$i]->[6];
    }
+   my ( $lc, $lbc) = @clrs[0,1];
    for ( @colContainer)
    {
       my @normals;
@@ -152,7 +153,7 @@ sub draw_items
       for ( @selected) { push ( @normals, $_); }
       # draw items
       my $yimg = int(( $ih - $imgSize[1]) / 2);
-      my ( $lc, $lbc) = @clrs[0,1];
+
       for ( @normals)
       {
          my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
@@ -196,8 +197,7 @@ sub on_mouseclick
    my $f = vec( $self-> {vector}, $foc, 1) ? 0 : 1;
    vec( $self-> {vector}, $foc, 1) = $f;
    $self-> notify(q(Change), $index, $f);
-   $self-> {singlePaint}->{$foc} = 1;
-   $self-> refresh;
+   $self-> invalidate_rect( $self-> item2rect( $foc));
 }
 
 sub on_click
@@ -208,8 +208,7 @@ sub on_click
    my $f = vec( $self-> {vector}, $foc, 1) ? 0 : 1;
    vec( $self-> {vector}, $foc, 1) = $f;
    $self-> notify(q(Change), $index, $f);
-   $self-> {singlePaint}->{$foc} = 1;
-   $self-> refresh;
+   $self-> invalidate_rect( $self-> item2rect( $index));
 }
 
 

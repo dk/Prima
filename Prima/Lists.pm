@@ -1,5 +1,4 @@
 #
-
 #  Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
@@ -113,18 +112,9 @@ sub init
       { $self->$_( $profile{ $_}); }
    $self-> reset;
    $self-> reset_scrolls;
-   $self->{firstPaint} = 1;
    return %profile;
 }
 
-
-sub refresh
-{
-   my $self = $_[0];
-   $self-> invalidate_rect( $self-> get_active_area);
-   $self-> update_view;
-   delete $self-> {singlePaint};
-}
 
 sub draw_items
 {
@@ -174,15 +164,7 @@ sub on_paint
    my $j;
    my $locWidth = $a[2] - $a[0] + 1;
    my @invalidRect = $canvas-> clipRect;
-   if ( exists $self->{firstPaint})
-   {
-      delete $self->{singlePaint};
-      delete $self->{firstPaint};
-   }
-   unless ( exists $self->{singlePaint})
-   {
-      $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor);
-   }
+   $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor);
    if ( defined $self->{uncover})
    {
       if ( $self->{multiColumn})
@@ -227,96 +209,68 @@ sub on_paint
    if ( $self->{count} > 0 && $locWidth > 0)
    {
       $canvas-> clipRect( @a);
-      my $singlePaint = exists $self->{singlePaint};
       my @paintArray;
       my $rows = $self->{rows} ? $self->{rows} : 1;
-      if ( $singlePaint)
+      my $item = $self->{topItem};
+      if ( $self->{multiColumn})
       {
-         for ( keys %{$self->{singlePaint}} )
+         my $rows = $self->{rows} ? $self->{rows} : 1;
+         MAIN:for ( $j = 0; $j < $self->{activeColumns}; $j++)
          {
-            my $item = $_;
-            next if $item > $self->{lastItem} || $item < 0;
-            my @itemRect = $self-> item2rect( $item, @size);
-            next if $itemRect[3] < $invalidRect[1] ||
-                    $itemRect[1] > $invalidRect[3] ||
-                    $itemRect[2] < $invalidRect[0] ||
-                    $itemRect[0] > $invalidRect[2];
-            my $sel = $self->{multiSelect} ?
-               exists $self->{selectedItems}->{$item} :
-               (( $foci == $item) ? 1 : 0);
-            my $foc = ( $foci == $item) ? $focusedState : 0;
-            $foc = 1 if $item == 0 && $self-> {unfocVeil};
-            push( @paintArray, [
-              $item,
-              $itemRect[0] - $self->{offset}, $itemRect[1],
-              $itemRect[2]-1, $itemRect[3]-1,
-              $sel, $foc,
-              int(( $item - $self->{topItem}) / $rows),
-            ]);
-         }
-      } else {
-         my $item = $self->{topItem};
-         if ( $self->{multiColumn})
-         {
-            my $rows = $self->{rows} ? $self->{rows} : 1;
-            MAIN:for ( $j = 0; $j < $self->{activeColumns}; $j++)
+            for ( $i = 0; $i < $rows; $i++)
             {
-               for ( $i = 0; $i < $rows; $i++)
-               {
-                  last MAIN if $item > $self->{lastItem};
-                  my @itemRect = (
-                      $a[0] + $j * ( $iw + 1),
-                      $a[3] - $ih * ( $i + 1) + 1,
-                      $a[0] + $j * ( $iw + 1) + $iw,
-                      $a[3] - $ih * ( $i + 1) + $ih + 1
-                  );
-                  $item++, next if $itemRect[3] < $invalidRect[1] ||
-                                   $itemRect[1] > $invalidRect[3] ||
-                                   $itemRect[2] < $invalidRect[0] ||
-                                   $itemRect[0] > $invalidRect[2];
-                  my $sel = $self->{multiSelect} ?
-                  exists $self->{selectedItems}->{$item} :
-                  (( $self->{focusedItem} == $item) ? 1 : 0);
-                  my $foc = ( $foci == $item) ? $focusedState : 0;
-                  $foc = 1 if $item == 0 && $self-> {unfocVeil};
-                  push( @paintArray, [
-                    $item,                                              # item number
-                    $itemRect[0], $itemRect[1],
-                    $itemRect[2]-1, $itemRect[3]-1,
-                    $sel, $foc, # selected and focused state
-                    $j                                                   # column
-                  ]);
-                  $item++;
-               }
-            }
-         } else {
-            for ( $i = 0; $i < $self->{rows} + $self-> {tailVisible}; $i++)
-            {
-               last if $item > $self->{lastItem};
+               last MAIN if $item > $self->{lastItem};
                my @itemRect = (
-                  $a[0], $a[3] - $ih * ( $i + 1) + 1,
-                  $a[2], $a[3] - $ih * $i
+                   $a[0] + $j * ( $iw + 1),
+                   $a[3] - $ih * ( $i + 1) + 1,
+                   $a[0] + $j * ( $iw + 1) + $iw,
+                   $a[3] - $ih * ( $i + 1) + $ih + 1
                );
-               $item++, next if ( $itemRect[3] < $invalidRect[1] || $itemRect[1] > $invalidRect[3]);
+               $item++, next if $itemRect[3] < $invalidRect[1] ||
+                                $itemRect[1] > $invalidRect[3] ||
+                                $itemRect[2] < $invalidRect[0] ||
+                                $itemRect[0] > $invalidRect[2];
                my $sel = $self->{multiSelect} ?
-                 exists $self->{selectedItems}->{$item} :
-                 (( $foci == $item) ? 1 : 0);
+               exists $self->{selectedItems}->{$item} :
+               (( $self->{focusedItem} == $item) ? 1 : 0);
                my $foc = ( $foci == $item) ? $focusedState : 0;
                $foc = 1 if $item == 0 && $self-> {unfocVeil};
                push( @paintArray, [
-                  $item,                                               # item number
-                  $itemRect[0] - $self->{offset}, $itemRect[1],        # logic rect
-                  $itemRect[2], $itemRect[3],                          #
-                  $sel, $foc, # selected and focused state
-                  0 #column
+                 $item,                                              # item number
+                 $itemRect[0], $itemRect[1],
+                 $itemRect[2]-1, $itemRect[3]-1,
+                 $sel, $foc, # selected and focused state
+                 $j                                                   # column
                ]);
                $item++;
             }
          }
+      } else {
+         for ( $i = 0; $i < $self->{rows} + $self-> {tailVisible}; $i++)
+         {
+            last if $item > $self->{lastItem};
+            my @itemRect = (
+               $a[0], $a[3] - $ih * ( $i + 1) + 1,
+               $a[2], $a[3] - $ih * $i
+            );
+            $item++, next if ( $itemRect[3] < $invalidRect[1] || $itemRect[1] > $invalidRect[3]);
+            my $sel = $self->{multiSelect} ?
+              exists $self->{selectedItems}->{$item} :
+              (( $foci == $item) ? 1 : 0);
+            my $foc = ( $foci == $item) ? $focusedState : 0;
+            $foc = 1 if $item == 0 && $self-> {unfocVeil};
+            push( @paintArray, [
+               $item,                                               # item number
+               $itemRect[0] - $self->{offset}, $itemRect[1],        # logic rect
+               $itemRect[2], $itemRect[3],                          #
+               $sel, $foc, # selected and focused state
+               0 #column
+            ]);
+            $item++;
+         }
       }
       $self-> draw_items( $canvas, @paintArray);
    }
-   delete $self->{singlePaint};
 }
 
 sub is_default_selection
@@ -509,11 +463,7 @@ sub on_mousemove
    if ( $aux)
    {
       my $top = $self-> {topItem};
-      $self-> {unfocState} = 1;
-      $self-> {singlePaint}->{$self->{focusedItem}} = 1;
-      $self-> refresh;
       $self-> topItem( $self-> {topItem} + $aux);
-      delete $self-> {unfocState};
       $item += (( $top != $self-> {topItem}) ? $aux : 0);
    }
 
@@ -724,7 +674,7 @@ sub set_count
    $self-> reset;
    $self-> reset_scrolls;
    $self-> focusedItem( -1) if $self->{focusedItem} >= $count;
-   $self-> refresh;
+   $self-> repaint;
 }
 
 sub set_extended_select
@@ -761,20 +711,9 @@ sub set_focused_item
          $topSet = $mc ? $foc - $foc % $rows - $rows * ( $cols - 1) : $foc - $rows + 1;
       }
    }
-   $self-> {singlePaint}->{$oldFoc} = 1;
-   if ( defined $topSet)
-   {
-      $self-> {syncScroll} = 1 if abs( $foc - $oldFoc) == 1 && !$self->{multiColumn};
-      $self-> {unfocState} = 1;
-      $self-> refresh;
-      delete $self-> {unfocState};
-      $self-> topItem( $topSet);
-      delete $self-> {syncScroll};
-   }
-   $self-> {singlePaint}->{$foc} = 1;
-   delete $self-> {singlePaint} unless $self->{rows};
-   delete $self-> {singlePaint} if $self-> {unfocVeil};
-   $self-> refresh;
+   $oldFoc = 0 if $oldFoc < 0;
+   $self-> redraw_items( $foc, $oldFoc);
+   $self-> topItem( $topSet) if defined $topSet;
 }
 
 sub colorIndex
@@ -849,7 +788,6 @@ sub set_multi_select
    {
       $self-> extendedSelect( 0);
       $self-> selectedItems([]);
-      $self-> {singlePaint}->{$self-> focusedItem} = 1;
       $self-> repaint;
    } else {
       $self-> selectedItems([$self-> focusedItem]);
@@ -860,7 +798,8 @@ sub set_offset
 {
    my ( $self, $offset) = @_;
    $self->{offset} = 0, return if $self->{multiColumn};
-   my ( $iw, @a) = ( $self->{itemWidth}, $self-> get_active_area);
+   my @sz = $self-> size;
+   my ( $iw, @a) = ( $self->{itemWidth}, $self-> get_active_area( 0, @sz));
    my $lc = $a[2] - $a[0];
    if ( $iw > $lc) {
       $offset = $iw - $lc if $offset > $iw - $lc;
@@ -880,22 +819,17 @@ sub set_offset
    }
    $self-> scroll( -$dt, 0,
                      clipRect => \@a);
-   $self-> update_view;
-   delete $self-> {singlePaint};
    if ( $self-> focused) {
-     my $focId = ( $self-> {focusedItem} >= 0) ? $self-> {focusedItem} : 0;
-     $self-> {singlePaint}->{$focId} = 1;
-     $self-> refresh;
+      my $focId = ( $self-> {focusedItem} >= 0) ? $self-> {focusedItem} : 0;
+      $self-> invalidate_rect( $self-> item2rect( $focId, @sz));
    }
 }
 
 sub redraw_items
 {
    my $self = shift;
-   for ( @_) {
-      $self->{singlePaint}->{$_} = 1;
-   }
-   $self-> refresh;
+   my @sz = $self-> size;
+   $self-> invalidate_rect( $self-> item2rect( $_, @sz)) for @_;
 }
 
 sub set_selected_items
@@ -926,8 +860,7 @@ sub set_selected_items
    $self-> notify(q(SelectItem), [@indeces], 1) if scalar @indeces;
    $::application-> pointer( $ptr);
    return unless scalar @stateChangers;
-   for ( @stateChangers) { $self->{singlePaint}->{$_} = 1; };
-   $self-> refresh;
+   $self-> redraw_items( @stateChangers);
 }
 
 sub get_selected_items
@@ -957,8 +890,7 @@ sub set_item_selected
    return if $sel == exists $self->{selectedItems}->{$index};
    $sel ? $self->{selectedItems}->{$index} = 1 : delete $self->{selectedItems}->{$index};
    $self-> notify(q(SelectItem), [ $index], $sel);
-   $self-> {singlePaint}->{$index} = 1;
-   $self-> refresh;
+   $self-> invalidate_rect( $self-> item2rect( $index));
 }
 
 sub select_item   {  $_[0]-> set_item_selected( $_[1], 1); }
@@ -971,17 +903,17 @@ sub add_selection
    return unless $self->{multiSelect};
    my @notifiers;
    my $count = $self->{count};
+   my @sz = $self-> size;
    for ( @{$items})
    {
       next if $_ < 0 || $_ >= $count;
       next if exists $self->{selectedItems}->{$_} == $sel;
-      $self->{singlePaint}->{$_}  = 1;
       $sel ? $self->{selectedItems}->{$_} = 1 : delete $self->{selectedItems}->{$_};
       push ( @notifiers, $_);
+      $self-> invalidate_rect( $self-> item2rect( $_, @sz));
    }
    return unless scalar @notifiers;
    $self-> notify(q(SelectItem), [ @notifiers], $sel) if scalar @notifiers;
-   $self-> refresh;
 }
 
 sub set_top_item
@@ -1205,7 +1137,7 @@ sub set_items
    $self->{items} = [@{$items}];
    $self-> recalc_widths;
    $self-> reset;
-   scalar @$items == $oldCount ? $self->refresh : $self-> SUPER::count( scalar @$items);
+   scalar @$items == $oldCount ? $self->repaint : $self-> SUPER::count( scalar @$items);
    $self-> itemWidth( $self-> {maxWidth}) if $self->{autoWidth};
    $self-> offset( $self-> offset);
    $self-> selectedItems([]);
@@ -1254,7 +1186,7 @@ sub insert_items
    }
    for ( @shifters) { delete $self->{selectedItems}->{$_};     }
    for ( @shifters) { $self->{selectedItems}->{$_ + $num} = 1; }
-   $self-> refresh if scalar @shifters;
+   $self-> repaint if scalar @shifters;
 }
 
 sub add_items { shift-> insert_items( -1, @_); }
@@ -1444,6 +1376,7 @@ sub draw_items
       push ( @{$colContainer[ $_[$i]->[7]]}, $_[$i]);
       $drawVeilFoc = $i if $_[$i]->[6];
    }
+   my ( $lc, $lbc) = @clrs[0,1];
    for ( @colContainer)
    {
       my @normals;
@@ -1482,7 +1415,7 @@ sub draw_items
       }
       for ( @selected) { push ( @normals, $_); }
       # draw items
-      my ( $lc, $lbc) = @clrs[0,1];
+
       for ( @normals)
       {
          my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
