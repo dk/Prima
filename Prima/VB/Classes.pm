@@ -2523,7 +2523,7 @@ sub write
    my ( $class, $id, $data) = @_;
    return $VB::writeMode ? "sub { $data}" :
        'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data). 
-       "','$Prima::VB::VBLoader::eventContext[0]', '$id')";
+       "\n','$Prima::VB::VBLoader::eventContext[0]', '$id')";
 }
 
 package Prima::VB::Types::FMAction;

@@ -50,7 +50,11 @@ sub check_version
 
 sub GO_SUB
 {
-   return $_[0] if $builderActive;
+   if ( $builderActive) {
+      my $x = $_[0];
+      $x =~ s/\n$//s;
+      return $x;
+   }
    my $x = eval "sub { $_[0] }";
    if ( $@) {
       @eventContext = ( $_[1], $_[2]);
