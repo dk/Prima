@@ -80,6 +80,7 @@ sub init_profiler
    }
    $xt{$_} = 'event' for keys %events;
    $self-> {types} = \%xt;
+   $self-> {prf_types} = $types;
 }
 
 sub add_hooks
@@ -722,7 +723,9 @@ sub mainEvent
 sub prf_name
 {
    my $old = $_[0]->name;
-   $_[0]->name($_[1]);
+   $_[0]-> name($_[1]);
+   $_[0]-> name_changed( $old, $_[1]);
+
    return unless $VB::inspector;
    my $s = $VB::inspector-> Selector;
    $VB::inspector->{selectorChanging}++;
@@ -736,23 +739,24 @@ sub prf_name
    $s-> text( $sn);
    $s-> focusedItem( $si);
    $VB::inspector->{selectorChanging}--;
-
-   $_[0]-> name_changed( $old, $_[1]);
 }
 
 sub name_changed
 {
    return unless $VB::form;
    my ( $self, $oldName, $newName) = @_;
+   print "changing: $oldName => $newName\n";
 
    for ( $VB::form, $VB::form-> widgets) {
-      my $pf = $_-> {types};
+      my $pf = $_-> {prf_types};
       next unless defined $pf->{Handle};
       my $widget = $_;
+      print "wij:".$_->name."\n";
       for ( @{$pf->{Handle}}) {
          my $val = $widget->prf( $_);
          next unless defined $val;
          $widget-> prf_set( $_ => $newName) if $val eq $oldName;
+         print "$_:$val => $newName | $oldName\n";
       }
    }
 }
@@ -794,6 +798,7 @@ sub on_destroy
    my $self = $_[0];
    my $n = $self-> name;
    $self-> remove_hooks;
+   print "delete |$n|\n";
    $self-> name_changed( $n, $VB::form-> name) if $VB::form;
    $self-> owner_changed( $self-> prf('owner'), undef);
    if ( $hooks{DESTROY}) {
