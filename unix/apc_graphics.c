@@ -299,10 +299,12 @@ get_standard_color( long class, int index)
 Color
 apc_widget_map_color( Handle self, Color color)
 {
-   if ((color < 0) && (( color & wcMask) == 0)) color |= var widgetClass;
+   RGBColor r;
+   if ((color < 0) && (( color & wcMask) == 0)) color |= PWidget(self)->widgetClass;
    if ( color >= 0) return color;
    /* XXX - remove this -1: */
-   return ( Color) get_standard_color( color, (int)((unsigned long)color & ~(unsigned long)(wcMask|0x80000000))-1);
+   r = get_standard_color(color, (int)((unsigned long)color & ~(unsigned long)(wcMask|0x80000000))-1);
+   return ( r.r << 16) | (r.g << 8) | r.b;
 }   
 
 
