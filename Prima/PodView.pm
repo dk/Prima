@@ -610,19 +610,18 @@ sub add_formatted
             $self-> {readState}-> {ignoreFormat} = 0;
          } elsif ( $cmd =~ /^img\s*(.*)$/) {
             $cmd = $1;
-            my ( $w, $h, $src, $nobegin);
+            my ( $w, $h, $src, $frame, $nobegin);
+            $frame = 0;
             while ( $cmd =~ m/\s*([a-z]*)\s*\=\s*(?:(?:'([^']*)')|(?:"([^"]*)")|(\S*))\s*/igcs) {
                my ( $option, $value) = ( lc $1, defined($2)?$2:(defined $3?$3:$4));
                if ( $option eq 'width' && $value =~ /^\d+$/) { $w = $value }
                elsif ( $option eq 'height' && $value =~ /^\d+$/) { $h = $value }
+               elsif ( $option eq 'frame' && $value =~ /^\d+$/) { $frame = $value }
                elsif ( $option eq 'src') { $src = $value }
                elsif ( $option eq 'nobegin' ) { $nobegin = $value }
             }
             if ( defined $src) {
                my $index = 0;
-               if ( $src =~ /^(.*)\:(\d+)$/) {
-                  ( $src, $index) = ( $1, $2);
-               }
                unless ( -f $src) {
                   local @INC = 
                       map {( "$_", "$_/pod")} 
@@ -631,7 +630,7 @@ sub add_formatted
                   $src = Prima::find_image( $src);
                   next unless $src;
                }
-               $src = Prima::Image-> load( $src, index => $index);
+               $src = Prima::Image-> load( $src, index => $frame);
                next unless $src;
                $w = $src-> width unless $w;
                $h = $src-> height unless $h;
@@ -641,8 +640,9 @@ sub add_formatted
 
                my @imgop = (
                          tb::wrap(0),
+                         tb::extend( $w, $h),
                          tb::code( \&_imgpaint, $src),
-                         tb::moveto( $w, $h),
+                         tb::moveto( $w, 0),
                          tb::wrap(1));
 
                if ( @{$self-> {model}}) {
@@ -1546,11 +1546,12 @@ It is used in conjunction with the following command, L<img>, to allow
 a POD manpage provide both graphic ('podview', 'html', etc ) and text ( 'text' )
 content. 
 
-=item img src="SRC" [width="WIDTH"] [height="HEIGHT"] [nobegin="NOBEGIN"]
+=item img src="SRC" [width="WIDTH"] [height="HEIGHT"] [nobegin="NOBEGIN"] [frame="FRAME"]
 
 An image inclusion command, where src is a relative or an absolute path to
 an image file. In case if scaling is required, C<width> and C<height> options
-can be set. Special C<nobegin> option, if set to a true value, activates the 
+can be set. When the image is a multiframe image, the frame index can be
+set by C<frame> option. Special C<nobegin> option, if set to a true value, activates the 
 L<nobegin> behavior if ( and only if ) the image load operation was unsuccessful.
 This make possible simultaneous use of 'podview' and 'text' :
 
