@@ -144,7 +144,9 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
    while ( w) {
       PMenuWindow xw = w-> next;
       hash_delete( guts. menu_windows, &w-> w, sizeof( w-> w), false);
+      XFillRectangle( DISP, w-> w, guts. menugc, 0, 0, w-> sz. x, w-> sz. y);
       XDestroyWindow( DISP, w-> w);
+      XFlush( DISP);
       free_unix_items( w);
       free( w);
       w = xw;
@@ -1148,6 +1150,19 @@ prima_end_menu(void)
    apc_timer_stop( MENU_TIMER);
    if ( !guts. currentMenu) return;
    XX = M(guts. currentMenu);
+   {
+      XRectangle r;
+      Region rgn;
+      r. x = 0;
+      r. y = 0;
+      r. width  = guts. displaySize. x; 
+      r. height = guts. displaySize. y; 
+      rgn = XCreateRegion();
+      XUnionRectWithRegion( &r, rgn, rgn);
+      XSetRegion( DISP, guts. menugc, rgn);
+      XDestroyRegion( rgn);
+      XSetForeground( DISP, guts. menugc, XX->c[ciBack]);
+   }
    w = XX-> w;
    if ( XX-> focus)
       XSetInputFocus( DISP, XX-> focus, RevertToNone, CurrentTime);
