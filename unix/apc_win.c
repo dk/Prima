@@ -33,6 +33,8 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#include "Window.h"
+#include "Application.h"
 
 Bool
 apc_window_create( Handle self, Handle owner, Bool sync_paint,
@@ -382,23 +384,68 @@ apc_window_set_window_state( Handle self, int state)
    return true;
 }
 
-Bool
-apc_window_execute( Handle self, Handle insertBefore)
+static Bool
+window_start_modal( Handle self, Bool shared, Handle insert_before)
 {
-   DOLBUG( "apc_window_execute()\n");
-   return false;
+   DEFXX;
+
+   if (( XX-> preexec_focus = apc_widget_get_focused()))
+      protect_object( XX-> preexec_focus);
+   CWindow( self)-> exec_enter_proc( self, shared, insert_before);
+   if (!(XX-> flags. preexec_enabled = apc_widget_is_enabled( self)))
+      apc_widget_set_enabled( self, true);
+   if (!(XX-> flags. preexec_visible = apc_widget_is_visible( self)))
+      apc_widget_set_visible( self, true);
+   prima_simple_message( self, cmExecute, true);
+   return true;
 }
 
 Bool
-apc_window_execute_shared( Handle self, Handle insertBefore)
+apc_window_execute( Handle self, Handle insert_before)
 {
-   DOLBUG( "apc_window_execute_shared()\n");
-   return false;
+   if ( !window_start_modal( self, false, insert_before))
+      return false;
+   if (!application) return false;
+
+   X(self)-> flags.modal = true;
+
+   XNoOp( DISP);
+   XFlush( DISP);
+
+   while ( prima_one_loop_round( true) && X(self)-> flags.modal)
+      ;
+   return true;
+}
+
+Bool
+apc_window_execute_shared( Handle self, Handle insert_before)
+{
+   return window_start_modal( self, true, insert_before);
 }
 
 Bool
 apc_window_end_modal( Handle self)
 {
-   DOLBUG( "apc_window_end_modal()\n");
+   PWindow win = PWindow(self);
+   Handle modal, oldfoc;
+   DEFXX;
+
+   if ( win-> modal == mtExclusive)
+      XX-> flags.modal = false;
+   CWindow( self)-> exec_leave_proc( self);
+   if (!XX-> flags.preexec_visible)
+      apc_widget_set_visible( self, false);
+   if (!XX-> flags.preexec_enabled)
+      apc_widget_set_enabled( self, 0);
+   if ( application) {
+      modal = CApplication(application)->popup_modal( application);
+      if ( !modal && win->owner)
+         CWidget( win->owner)-> set_selected( win->owner, true);
+      if (( oldfoc = XX-> preexec_focus)) {
+         if ( PWidget( oldfoc)-> stage == csNormal)
+            CWidget( oldfoc)-> set_focused( oldfoc, true);
+         unprotect_object( oldfoc);
+      }
+   }
    return true;
 }

@@ -1117,12 +1117,26 @@ apc_help_set_file( Handle self, const char* helpFile)
 /* Messages */
 
 Bool
+prima_simple_message( Handle self, int cmd, Bool is_post)
+{
+   Event e;
+
+   bzero( &e, sizeof(e));
+   e. cmd = cmd;
+   e. gen. source = self;
+   return apc_message( self, &e, is_post);
+}
+
+Bool
 apc_message( Handle self, PEvent e, Bool is_post)
 {
    PendingEvent *pe;
 
    switch ( e-> cmd) {
+   /* XXX  insert more messages here */
    case cmPost:
+      /* FALLTHROUGH */
+   default:
       if ( is_post) {
          pe = alloc1(PendingEvent);
          memcpy( &pe->event, e, sizeof(pe->event));
@@ -1132,8 +1146,6 @@ apc_message( Handle self, PEvent e, Bool is_post)
          CComponent(self)->message( self, e);
       }
       break;
-   default:
-      croak( "UAM_000: not implemented");
    }
    return true;
 }

@@ -368,10 +368,13 @@ typedef struct _drawable_sys_data
       int focused       	        : 1;
       int grab                  	: 1;
       int mapped			: 1;
+      int modal                         : 1;
       int no_size			: 1;
       int paint                 	: 1;
       int paint_base_line               : 1;
       int paint_pending                 : 1;
+      int preexec_enabled               : 1;
+      int preexec_visible               : 1;
       int process_configure_notify	: 1;
       int reload_font			: 1;
       int saved_zero_line       	: 1;
@@ -380,6 +383,7 @@ typedef struct _drawable_sys_data
    } flags;
    ImageCache bitmap_cache;
    ImageCache screen_cache;
+   Handle preexec_focus;
    TAILQ_ENTRY(_drawable_sys_data) paintq_link;
 } DrawableSysData, *PDrawableSysData;
 
@@ -501,8 +505,14 @@ prima_cursor_tick( void);
 extern void
 prima_no_cursor( Handle self);
 
+extern Bool
+prima_one_loop_round( Bool wait);
+
 extern void
 prima_prepare_drawable_for_painting( Handle self);
+
+extern Bool
+prima_simple_message( Handle self, int cmd, Bool is_post);
 
 extern void
 prima_update_cursor( Handle self);

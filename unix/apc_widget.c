@@ -526,7 +526,7 @@ apc_widget_set_color( Handle self, Color color, int i)
 
    e. gen. source = self;
    e. gen. i      = i;
-   CComponent(self)-> message( self, &e);
+   apc_message( self, &e, false);
 
    return true;
 }
@@ -535,13 +535,10 @@ Bool
 apc_widget_set_enabled( Handle self, Bool enable)
 {
    DEFXX;
-   Event e;
 
    if ( enable == XF_ENABLED(XX)) return true;
    XF_ENABLED(XX) = enable;
-   bzero( &e, sizeof( e));
-   e. cmd = enable ? cmEnable : cmDisable;
-   CComponent(self)-> message( self, &e);
+   prima_simple_message(self, enable ? cmEnable : cmDisable, false);
    return true;
 }
 
@@ -565,12 +562,8 @@ apc_widget_set_focused( Handle self)
 Bool
 apc_widget_set_font( Handle self, PFont font)
 {
-   Event ev = {cmFontChanged};
-
    apc_gp_set_font( self, font);
-
-   ev. gen. source = self;
-   CWidget(self)-> message( self, &ev);
+   prima_simple_message( self, cmFontChanged, false);
    return true;
 }
 
@@ -601,7 +594,7 @@ apc_widget_set_pos( Handle self, int x, int y)
    XMoveWindow( DISP, X_WINDOW, x, y);
    DOLBUG( "XMoveWindow: widget (%s) move to (%d,%d)\n", PWidget(self)-> name, x, y);
    XCHECKPOINT;
-   CComponent( self)-> message( self, &e);
+   apc_message( self, &e, false);
    return true;
 }
 
@@ -672,7 +665,7 @@ apc_widget_set_size( Handle self, int width, int height)
       }
       free( selves);
    }
-   CComponent( self)-> message( self, &e);
+   apc_message( self, &e, false);
    return true;
 }
 
@@ -754,15 +747,13 @@ Bool
 apc_widget_update( Handle self)
 {
    DEFXX;
-   Event e;
 
    if ( XX-> region) {
       if ( XX-> flags. paint_pending) {
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
       }
-      e. cmd = cmPaint;
-      CComponent( self)-> message( self, &e);
+      prima_simple_message( self, cmPaint, false);
    }
    return true;
 }

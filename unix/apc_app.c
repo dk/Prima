@@ -534,7 +534,6 @@ static void
 perform_pending_paints( void)
 {
    PDrawableSysData selfxx, next;
-   Event e;
    int stage = csConstructing;
 
    for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
@@ -545,10 +544,8 @@ perform_pending_paints( void)
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
       }
-      if ( stage == csNormal) {
-         e. cmd = cmPaint;
-         CWidget( XX->self)-> message( XX-> self, &e);
-      }
+      if ( stage == csNormal)
+         prima_simple_message( XX-> self, cmPaint, false);
       XX = next;
    }
 }
@@ -564,9 +561,8 @@ send_pending_events( void)
       if (( stage = PComponent( pe->recipient)-> stage) != csConstructing) {
          TAILQ_REMOVE( &guts.peventq, pe, peventq_link);
       }
-      if ( stage == csNormal) {
-         CWidget( pe->recipient)-> message( pe-> recipient, &pe-> event);
-      }
+      if ( stage == csNormal)
+         apc_message( pe-> recipient, &pe-> event, false);
       if ( stage != csConstructing) {
          free( pe);
       }
@@ -575,12 +571,13 @@ send_pending_events( void)
 }
 
 Bool
-one_loop_round( Bool wait)
+prima_one_loop_round( Bool wait)
 {
    XEvent ev, next_event;
    fd_set read_set, write_set, excpt_set;
    struct timeval timeout;
    int r, n, i;
+   PTimerSysData timer;
 
    if (( n = XEventsQueued( DISP, QueuedAlready))) {
       goto FetchAndProcess;
@@ -595,15 +592,12 @@ one_loop_round( Bool wait)
       if ( guts. oldest-> when. tv_sec < timeout. tv_sec ||
            ( guts. oldest-> when. tv_sec == timeout. tv_sec &&
              guts. oldest-> when. tv_usec <= timeout. tv_usec)) {
-         Event e;
-         PTimerSysData timer = guts. oldest;
-
-         e. cmd = cmTimer;
+         timer = guts. oldest;
          apc_timer_start( timer-> who);
          if ( timer-> who == CURSOR_TIMER) {
             prima_cursor_tick();
          } else {
-            CComponent( timer-> who)-> message( timer-> who, &e);
+            prima_simple_message( timer-> who, cmTimer, false);
          }
          if ( gettimeofday( &timeout, nil) != 0) {
             croak( "apc_application_go/yield() gettimeofday() returned: %s", strerror( errno));
@@ -682,24 +676,13 @@ FetchAndProcess:
          for ( i = 0; i < guts.files->count; i++) {
             PFile f = (PFile)list_at( guts.files,i);
             if ( FD_ISSET( f->fd, &read_set)) {
-               Event e;
-               bzero( &e, sizeof e);
-               e. cmd = cmFileRead;
-               f-> self-> message((Handle)f,&e);
+               prima_simple_message((Handle)f, cmFileRead, false);
                break;
-            }
-            if ( FD_ISSET( f->fd, &write_set)) {
-               Event e;
-               bzero( &e, sizeof e);
-               e. cmd = cmFileWrite;
-               f-> self-> message((Handle)f,&e);
+            } else if ( FD_ISSET( f->fd, &write_set)) {
+               prima_simple_message((Handle)f, cmFileWrite, false);
                break;
-            }
-            if ( FD_ISSET( f->fd, &excpt_set)) {
-               Event e;
-               bzero( &e, sizeof e);
-               e. cmd = cmFileException;
-               f-> self-> message((Handle)f,&e);
+            } else if ( FD_ISSET( f->fd, &excpt_set)) {
+               prima_simple_message((Handle)f, cmFileException, false);
                break;
             }
          }
@@ -722,7 +705,7 @@ apc_application_go( Handle self)
    XNoOp( DISP);
    XFlush( DISP);
 
-   while ( one_loop_round( true))
+   while ( prima_one_loop_round( true))
       ;
 
    if ( application) Object_destroy( application);
@@ -760,6 +743,6 @@ apc_application_yield( void)
 
    XNoOp( DISP);
    XFlush( DISP);
-   one_loop_round( false);
+   prima_one_loop_round( false);
    return true;
 }
