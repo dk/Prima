@@ -757,6 +757,7 @@ AbstractMenu_translate_accel( Handle self, char * accel)
 int
 AbstractMenu_translate_key( Handle self, int code, int key, int mod)
 {
+   mod &= kmAlt | kmShift | kmCtrl;
    key = ( key != kbNoKey ? key : code) | mod;
    keyRealize( key);
    return key;
