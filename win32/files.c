@@ -196,7 +196,7 @@ apc_file_attach( Handle self)
    {
       int  _data, _sz = sizeof( int);
       int result = SOCKETS_AS_HANDLES ?
-          WSAAsyncSelect((SOCKET) sys s. file. object, dsys( application) handle, 0, 0) :
+          WSAAsyncSelect((SOCKET) sys s. file. object, nilHandle, 0, 0) :
           getsockopt(( SOCKET) sys s. file. object, SOL_SOCKET, SO_TYPE, (char*)&_data, &_sz);
       if ( result != 0)
          fhtype = ( WSAGetLastError() == WSAENOTSOCK) ? FHT_OTHER : FHT_SOCKET;
