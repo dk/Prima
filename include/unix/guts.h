@@ -211,6 +211,7 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
       int reloadFont		: 1;
       int doSizeHints		: 1;
    } flags;
+   XImage *imageCache;
 } DrawableSysData, *PDrawableSysData;
 
 typedef struct _timer_sys_data
