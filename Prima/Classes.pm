@@ -33,9 +33,9 @@ use Prima::Const;
 
 # class Object; base class of all Prima classes
 package Prima::Object;
+use vars qw(@hooks);
 use strict;
 use Carp;
-
 
 sub CREATE
 {
@@ -57,7 +57,7 @@ sub profile_add
 {
    my ($self,$profile) = @_;
    my $default  = $_[0]-> profile_default;
-
+   $_->( $self, $profile, $default) for @hooks;
    $self-> profile_check_in( $profile, $default);
    delete @$default{keys %$profile};
    @$profile{keys %$default}=values %$default;
