@@ -452,7 +452,7 @@ LRESULT CALLBACK    generic_view_handler     ( HWND win, UINT  msg, WPARAM mp1, 
 extern Bool         add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeEntry);
 extern void         cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
 extern Bool         create_font_hash( void);
-extern void         cursor_update( Handle self);
+extern Bool         cursor_update( Handle self);
 extern HDC          dc_alloc( void);
 extern void         dc_free( void);
 extern HDC          dc_compat_alloc( HDC compatDC);
