@@ -11,7 +11,7 @@ void
 Timer_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
-   ((( PComponent) var owner)-> self)-> attach( var owner, self);
+   CComponent( var owner)-> attach( var owner, self);
    my update_sys_handle( self, profile);
    if ( pexist( onTick))
    {
@@ -52,7 +52,10 @@ Timer_handle_event( Handle self, PEvent event)
    }
 }
 
-void Timer_on_tick( Handle self){}
+void
+Timer_on_tick( Handle self)
+{
+}
 
 void
 Timer_set( Handle self, HV * profile)
@@ -83,5 +86,3 @@ Timer_update_delegator( Handle self)
    profile = my get_delegators( self);
    if ( pexist( Tick)) dmopt_set( dmTick);
 }
-
-
