@@ -38,15 +38,14 @@ use File::Find;
 use File::Basename;
 use IO::File;
 use Cwd;
-use vars qw( $dir_sep %make_trans);
-use vars qw(
+use vars qw( %make_trans @ovvars $dir_sep $path_sep );
+use vars @ovvars = qw(
     $CC $CFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG
     $LD $LDFLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
     $OBJ_EXT $LIB_EXT $EXE_EXT $DL_EXT
     @INCPATH
     @LIBPATH
     @LIBS
-    %DEFINES
     $PLATFORM
     $PREFIX
     $INSTALL_LIB
@@ -56,10 +55,12 @@ use vars qw(
     $MAKE
     $RM
     $SHQUOTE
-    $Win32
     $MAKETYPE
 );
+
 use vars qw(
+    $Win32
+    %DEFINES
     @alltml
     @allclean
     @allojects
@@ -106,7 +107,7 @@ sub cc_command_line
     push @cc, split ' ', $CDLFLAGS if $dl;
     push @cc, $COMPONLYFLAG if $compile_only;
     push @cc, map( { "$CINCPATHFLAG$_"} @INCPATH);
-    push @cc, map( { "$CDEFFLAG$_=" . ( $DEFINES{ $_} || "")} keys %DEFINES);
+    push @cc, map( { "$CDEFFLAG$_" . ( $DEFINES{ $_} ? "=$DEFINES{ $_}" : '')} keys %DEFINES);
     push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
     push @cc, "$COUTOFLAG$objf" if $Win32 && ! $compile_only;
     push @cc, $srcf;
@@ -269,6 +270,10 @@ sub setup_variables
     $DEFINES{ PARANOID_MALLOC} = 1
 	if ( $ENV{ PRIMA_PARANOID_MALLOC}
 	     && $ENV{ PRIMA_PARANOID_MALLOC} =~ /^1|yes|on|true$/i);
+    while ( $CFLAGS =~ s/-D(\w+)(?:=(\S+))?\s*//) {
+	my ( $defname, $defvalue) = ( $1, $2 || '');
+	$DEFINES{ $defname} = $defvalue;
+    }
 
     if ( defined $ENV{ PRIMA_DEVEL}) {
 	$CFLAGS .= $Win32 ? " -Zi" : " -g -O";
@@ -278,7 +283,7 @@ sub setup_variables
 	$CFLAGS .= " " . ( $Config{ optimize} || '');
     }
 
-    $PREFIX = qd( "/home/voland/tmp/lib"); #$Config{ installsitearch};
+    $PREFIX = $Config{ installsitearch};
     $INSTALL_LIB = $PREFIX . qd( "/Prima");
     $INSTALL_DL = $PREFIX . qd( "/auto/Prima");
 
@@ -350,6 +355,53 @@ sub setup_misc
 		   make => $make_tbl,
 		   nmake => $nmake_tbl,
 		  );
+}
+
+sub process_commandline
+{
+    my %overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
+    foreach my $arg ( @ARGV) {
+	if ( $arg =~ /^\s*(\w+)\s*(\+?)\=(.*)$/) {
+	    my ( $varname, $setmode, $varval) = ( $1, $2 || '', $3);
+	    die "Unknown variable $varname" unless $overrideable{ $varname};
+	    if ( $overrideable{ $varname} eq '$') {
+		if ( $setmode eq '+') {
+		    eval "\$$varname = \$$varname . \$varval";
+		}
+		else {
+		    eval "\$$varname = \$varval";
+		}
+		die $@ if $@;
+	    }
+	    elsif ( $overrideable{ $varname} eq '@') {
+		my @values = split /$path_sep/, $varval;
+		if ( $setmode eq '+') {
+		    eval "push \@$varname, \@values";
+		}
+		else {
+		    eval "\@$varname = \@values";
+		}
+		die $@ if $@;
+	    }
+	}
+	elsif ( $arg =~ /^-(D|U)(\w+)(?:(\+?)=(.*))?$/) {
+	    my ( $defmode, $defname, $setmode, $value) = ( $1, $2, $3 || '', $4 || '');
+	    if ( $defmode eq 'U') {
+		delete $DEFINES{ $defname} if exists $DEFINES{ $defname};
+	    }
+	    else {
+		if ( $setmode eq '+') {
+		    $DEFINES{ $defname} = $DEFINES{ $defname} . $value;
+		}
+		else {
+		    $DEFINES{ $defname} = $value;
+		}
+	    }
+	}
+	else {
+	    die "Unknown command line argument or wrong syntax: '$arg'";
+	}
+    }
 }
 
 sub find_file
@@ -464,7 +516,7 @@ sub clsmake
 # Here we go...
 #
 
-$dir_sep = $Config{ path_sep} eq ':' ? '/' : '\\';
+$dir_sep = ( $path_sep = $Config{ path_sep}) eq ':' ? '/' : '\\';
 
 die "This script should be launched from Prima root directory\n"
     unless -r qd( "include/apricot.h") && -d "Prima";
@@ -476,6 +528,7 @@ setup_variables;
 setup_paths;
 setup_defines;
 setup_misc;
+process_commandline;
 
 push @alldirs, qd( "include/generic"), qd( "auto/Prima");
 
