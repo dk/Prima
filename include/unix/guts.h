@@ -362,6 +362,8 @@ typedef struct _UnixGuts
    Atom                         fxa_resolution_x;
    Atom                         fxa_resolution_y;
    Atom                         fxa_spacing;
+   Atom                         fxa_charset_encoding;
+   Atom                         fxa_charset_registry;
    int                          n_fonts;
    XFontStruct                 *pointer_font;
    Font                         default_font;
@@ -370,6 +372,7 @@ typedef struct _UnixGuts
    Font                         default_msg_font;
    Font                         default_caption_font;
    int                          font_encoding_hack_type; /* see FEHT constants */
+   Bool                         font_detail_names;
    /* Resource management */
    XrmDatabase                  db;
    XrmQuark                     qBackground;
@@ -489,6 +492,7 @@ typedef struct _UnixGuts
    XGCValues                    cursor_gcv;
    TimerSysData                 sys_timers[ LAST_SYS_TIMER - FIRST_SYS_TIMER + 1];
    Bool                         applicationClose;
+   char                         locale[32];
 } UnixGuts;
 
 extern UnixGuts guts;
@@ -503,6 +507,8 @@ extern UnixGuts guts;
 #define FXA_FOUNDRY guts. fxa_foundry
 #define FXA_FAMILY_NAME XA_FAMILY_NAME
 #define FXA_AVERAGE_WIDTH guts. fxa_average_width
+#define FXA_CHARSET_REGISTRY guts. fxa_charset_registry
+#define FXA_CHARSET_ENCODING guts. fxa_charset_encoding
 
 #define FEHT_NONE                      0
 #define FEHT_MIXED_NAMES               1
