@@ -48,15 +48,15 @@ Image_init( Handle self, HV * profile)
    my set_data( self, pget_sv( data));
    if ( var type & imGrayScale) switch ( var type & imBPP)
    {
-      case imbpp1:
-         memcpy( var palette, stdmono_palette, sizeof( stdmono_palette));
-         break;
-      case imbpp4:
-         memcpy( var palette, std16gray_palette, sizeof( std16gray_palette));
-         break;
-      case imbpp8:
-         memcpy( var palette, std256gray_palette, sizeof( std256gray_palette));
-         break;
+   case imbpp1:
+      memcpy( var palette, stdmono_palette, sizeof( stdmono_palette));
+      break;
+   case imbpp4:
+      memcpy( var palette, std16gray_palette, sizeof( std16gray_palette));
+      break;
+   case imbpp8:
+      memcpy( var palette, std256gray_palette, sizeof( std256gray_palette));
+      break;
    }
    apc_image_create( self);
    my update_change( self);
@@ -218,14 +218,23 @@ char *
 Image_get_status_string( Handle self)
 {
 #ifdef __unix  /* Temporary hack */
-   return ieOK;
+   return (char *)apc_image_get_error_message( nil, 0);
 #else
    return (char *)gbm_err( var status);
 #endif /* __unix */
 }
 
-Bool Image_get_h_scaling( Handle self) { return is_opt( optHScaling); }
-Bool Image_get_v_scaling( Handle self) { return is_opt( optVScaling); }
+Bool
+Image_get_h_scaling( Handle self)
+{
+   return is_opt( optHScaling);
+}
+
+Bool
+Image_get_v_scaling( Handle self)
+{
+   return is_opt( optVScaling); 
+}
 
 void
 Image_set_h_scaling( Handle self, Bool scaling)
@@ -239,13 +248,23 @@ Image_set_v_scaling( Handle self, Bool scaling)
    opt_assign( optVScaling, scaling);
 }
 
-void Image_set_size( Handle self, int width, int height)
+void
+Image_set_size( Handle self, int width, int height)
 {
    Image_stretch( self, width, height);
 }
 
-void Image_set_width( Handle self, int width)   { my set_size( self, width, var h);  }
-void Image_set_height( Handle self, int height) { my set_size( self, var w, height); }
+void
+Image_set_width( Handle self, int width)
+{ 
+   my set_size( self, width, var h);  
+}
+
+void
+Image_set_height( Handle self, int height) 
+{
+   my set_size( self, var w, height); 
+}
 
 SV *
 Image_get_handle( Handle self)
@@ -313,19 +332,19 @@ Image_save( Handle self, char *filename, HV *profile)
      gif, iff, lbm - transparent color "transcol=%d"
      gif      - interlaced             "ilace"
      tiff     - compressed             "lzw"
-              - description            "imagedescription=%s"
-              - special
+     - description            "imagedescription=%s"
+     - special
      jpeg     - quality                "quality=%d"
-              - progressive            "prog"
+     - progressive            "prog"
      png      - compressionLevel       "zlevel=%d"
-              - compression(standard,huffman,filtered) "zstrategy=%c"(d,h,f)
-              - interlaced             "ilace"
-              - description            "Description=%s"
-              - noAutoFilter           "nofilters"
-              - transparent color index"transcol=%d"
-              - transparent color      "transcol=%d/%d/%d"
-   */
-   if ( fileType == itBMP) strcat( options, " inv");  // GBM баран опять:)
+     - compression(standard,huffman,filtered) "zstrategy=%c"(d,h,f)
+     - interlaced             "ilace"
+     - description            "Description=%s"
+     - noAutoFilter           "nofilters"
+     - transparent color index"transcol=%d"
+     - transparent color      "transcol=%d/%d/%d"
+     */
+   if ( fileType == itBMP) strcat( options, " inv");  /* GBM is a bad guy */
    if ( pexist( interlaced))   strcat(options, " ilace");
    if ( pexist( compressed))   strcat(options, " lzw");
    if ( pexist( progressive))  strcat(options, " prog");
@@ -344,19 +363,19 @@ Image_save( Handle self, char *filename, HV *profile)
       av = ( AV*) SvRV( sv);
       if ( av_len( av) != 2) bekilled( ieInvalidOptions);
       strcat(options, (snprintf(oneOpt, 256, " transcol=%d/%d/%d",
-         (int)SvIV( *av_fetch( av, 2, 0)),
-         (int)SvIV( *av_fetch( av, 1, 0)),
-         (int)SvIV( *av_fetch( av, 0, 0))
-      ), oneOpt));
+				(int)SvIV( *av_fetch( av, 2, 0)),
+				(int)SvIV( *av_fetch( av, 1, 0)),
+				(int)SvIV( *av_fetch( av, 0, 0))
+	 ), oneOpt));
    }
    if ( pexist( transparentColor))
    {
       unsigned long c = pget_i( transparentColor);
       strcat(options, (snprintf(oneOpt,256, " transcol=%ld/%ld/%ld",
-         ( c >> 16) & 0xFF,
-         ( c >> 8 ) & 0xFF,
-         c & 0xFF
-      ), oneOpt));
+				( c >> 16) & 0xFF,
+				( c >> 8 ) & 0xFF,
+				c & 0xFF
+	 ), oneOpt));
    }
    if ( pexist( compression))
    {
@@ -369,7 +388,7 @@ Image_save( Handle self, char *filename, HV *profile)
    {
       char *cc = oneOpt;
       strcat(options, (snprintf(oneOpt,256, " Description=\"%s\"",(char *) pget_c( description)), oneOpt));
-      // tiff
+      /* tiff */
       snprintf(oneOpt,256," imagedescription=%s",(char *) pget_c( description));
       while (*++cc) if (*cc == ' ') *cc='_';
       strcat( options, oneOpt);
@@ -392,10 +411,10 @@ Image_save( Handle self, char *filename, HV *profile)
       remove( filename);
       switch ( rc)
       {
-         case ieFileNotFound: case ieInvalidType: case ieInvalidOptions: case ieNotSupported:
-            break;
-         default:
-            rc = ieError;
+      case ieFileNotFound: case ieInvalidType: case ieInvalidOptions: case ieNotSupported:
+	 break;
+      default:
+	 rc = ieError;
       }
       bekilled( rc);
    }
@@ -405,8 +424,17 @@ Image_save( Handle self, char *filename, HV *profile)
 #endif /* __unix */
 }
 
-int Image_get_type  ( Handle self) { return var type; }
-int Image_get_bpp   ( Handle self) { return var type & imBPP; }
+int
+Image_get_type( Handle self)
+{
+   return var type; 
+}
+
+int
+Image_get_bpp( Handle self) 
+{
+   return var type & imBPP; 
+}
 
 
 Bool
@@ -441,22 +469,22 @@ Image_end_paint( Handle self)
    apc_image_end_paint( self);
    inherited end_paint( self);
    if ( is_opt( optPreserveType) && var type != oldType)
-     my reset( self, oldType, nilSV);
+      my reset( self, oldType, nilSV);
    else
-     my update_change( self);
+      my update_change( self);
 }
 
 void
 Image_end_paint_info( Handle self)
 {
-  if ( !is_opt( optInDrawInfo)) return;
-  apc_image_end_paint_info( self);
-  inherited end_paint_info( self);
+   if ( !is_opt( optInDrawInfo)) return;
+   apc_image_end_paint_info( self);
+   inherited end_paint_info( self);
 }
 
 
 Bool
-load_image_indirect( Handle self, char * filename, char * subIndex)
+load_image_indirect( Handle self, char *filename, char *subIndex)
 #define checkrc if ( rc != ieOK)  \
         {                         \
             var status = rc;      \
@@ -494,7 +522,7 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
       checkrc;
    }
 
-   if ( ft == itBMP) strcat( subIndex, " inv");  // GBM баран :)
+   if ( ft == itBMP) strcat( subIndex, " inv");  /* GBM is baran */
    rc = gbm_read_header( filename, file, ft, &gbm, subIndex);
    checkrc;
 
@@ -510,7 +538,7 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
 
    close( file);
 
-   // init image
+   /* init image */
    my make_empty( self);
    var w        = gbm. w;
    var h        = gbm. h;
@@ -542,15 +570,173 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
 #endif /* __unix */
 }
 
-Bool
-Image_load( Handle self, char *filename, int index)
+static void
+add_image_profile( HV *profile, PList imgInfo)
 {
+   SV *value;
+   char *key;
+   /* int keyLen; */
+   AV *ary;
+   SV **elem;
+   PImgInfo imageInfo;
+   PImgProperty imgProp;
+   HE *he;
+
+   imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo));
+   bzero( imageInfo, sizeof( ImgInfo));
+   list_add( imgInfo, ( Handle) imageInfo);
+   imageInfo->propList = plist_create( HvKEYS( profile), 1);
+
+   hv_iterinit( profile);
+   for (;;)
+   {
+      if (( he = hv_iternext( profile)) == nil)
+         break;
+      value = HeVAL( he);
+      key = HeKEY( he);
+      /* keyLen = HeKLEN( he); */
+
+      if ( SvROK( value)) {
+	 int i, n;
+	 char **propArray;
+
+	 if ( SvTYPE( SvRV( value)) != SVt_PVAV) {
+	    croak( "Invalid usage of Image::load: illegal reference type for key ``%s''", key);
+	 }
+	 /* Reference to an array */
+	 ary = (AV*)SvRV( value);
+	 n = av_len( ary) + 1;
+	 propArray = n ? malloc( sizeof( char *) * n) : nil;
+	 for ( i = 0; i < n; i++) {
+	    elem = av_fetch( ary, i, false);
+	    if ( ! elem) {
+	       free( propArray);
+	       croak( "Image::load: cannot fetch element %d of ``%s''", i, key);
+	    }
+	    if ( SvROK(*elem)) {
+	       free( propArray);
+	       croak( "Invalid usage of Image::load: array element %d of key ``%s'' cannot be a reference", i, key);
+	    }
+	    propArray[ i] = duplicate_string( SvPV( *elem, na));
+	 }
+	 imgProp = apc_image_add_property( imageInfo, key, n);
+	 imgProp->val.pString = propArray;
+      } else {
+	 /* scalar */
+	 imgProp = apc_image_add_property( imageInfo, key, -1);
+	 imgProp->val.String = duplicate_string( SvPV( value, na));
+      }
+   }
+}
+
+XS( Image_load_FROMPERL) {
+   dXSARGS;
+   Bool result;
+   Bool as_class = false;
+   Handle self;
+   char *class_name;
+   PList info;
+   int i;
+   HV *hv;
+
+   if ( items >= 2) {
+      SV *who = ST(0);
+      char *filename = SvPV( ST( 1), na);
+
+      if (!( self = gimme_the_mate( who))) {
+	 PVMT vmt;
+	 if (!SvPOK( who)) {
+	    croak( "Call Image->load() either as instance method or as class method");
+	 }
+	 class_name = SvPV( who, na);
+	 vmt = gimme_the_vmt( class_name);
+	 while ( vmt && vmt != (PVMT)CImage) {
+	    vmt = vmt-> base;
+	 }
+	 if ( !vmt) {
+	    croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
+	 }
+	 as_class = true;
+      } else {
+	 if ( !kind_of( self, CImage)) {
+	    croak( "Are you nuts?  This object is not inherited from ``Image''");
+	 }
+      }
+
+      if ( items > 2 && SvROK( ST( 2)) && SvTYPE( SvRV( ST(2))) == SVt_PVHV) {
+	 /* assuming multi-profile format */
+	 if (!as_class) {
+	    croak ("Invalid usage of Image::load: multiple profiles are not allowed when called as an instance method");
+	 }
+	 for ( i = 2; i < items; i++) {
+	    if ( !SvROK( ST( i)) || SvTYPE( SvRV( ST(i))) != SVt_PVHV) {
+	       croak ("Invalid usage of Image::load: hash reference expected for argument %d", i);
+	    }
+	 }
+	 info = plist_create( items - 2, 1);
+	 for ( i = 2; i < items; i++) {
+	    add_image_profile(( HV *)SvRV( ST(i)), info);
+	 }
+      } else {
+	 /* assuming normal single profile */
+	 if ( items % 2 != 0) {
+	    croak ("Invalid usage of Image::load: odd number of optional arguments");
+	 }
+	 info = plist_create( 1, 1);
+	 hv = parse_hv( ax, sp, items, mark, 2, "Image::load");
+	 add_image_profile( hv, info);
+	 sv_free(( SV*)hv);
+      }
+      result = apc_image_read( filename, info, true);
+      SPAGAIN;
+      SP -= items;
+      if ( GIMME_V == G_ARRAY) {
+	 if ( result) {
+	    /* return all images as a list */
+	 } else {
+	    /* return an empty list */
+	 }
+      } else {
+	 if ( !result) {
+	    /* return nilHandle */
+	    XPUSHs( &sv_undef);
+	 } else {
+	    /* return our image, if just one, or an anonimous array of them */
+	    XPUSHs( &sv_yes);
+	 }
+      }
+      PUTBACK;
+      return;
+   }
+   croak ("Invalid usage of %s", "Image::load");
+}
+
+Handle
+Image_load_REDEFINED( SV *who, char *filename, PList imgInfo)
+{
+   /* XXX - one day we might want to implement this function in a more clever way */
+   warn( "Invalid call of Image::load(): ask developers to make it valid");
+   return nilHandle;
+}
+
+Handle
+Image_load( SV *who, char *filename, PList imgInfo)
+{
+#ifdef __unix
+   (void)who;
+   if ( apc_image_read( filename, imgInfo, true)) {
+      return nilHandle;
+   } else {
+      return nilHandle;
+   }
+#else
    Bool ret;
-   char buf [ 15];
+   char buf[ 15];
    if ( index >= 0) snprintf( buf, 15, "index=%d", index); else buf[ 0] = 0;
    ret = load_image_indirect( self, filename, buf);
    if ( ret) my update_change( self);
    return ret;
+#endif /* __unix */
 }
 
 void
@@ -586,7 +772,7 @@ Image_get_stats( Handle self, int index)
 
    if ( index < 0 || index > isMaxIndex) return NAN;
    if ( var statsCache & ( 1 << index)) return var stats[ index];
-   // calculate image stats
+   /* calculate image stats */
    switch (var type) {
       case imByte:    gather_stats(U8);     break;
       case imShort:   gather_stats(I16);    break;
@@ -882,7 +1068,7 @@ Image_dup( Handle self)
    i = ( PImage) h;
    memcpy( i-> palette, var palette, 768);
    if ( i-> type != var type) {
-      // Object does not support given type, but Image supports them all
+      /* Object does not support given type, but Image supports them all */
       Handle img = ( Handle) create_object( "Image", "iiii",
              "width"     , var w,
              "height"    , var h,
