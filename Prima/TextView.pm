@@ -1144,7 +1144,6 @@ sub on_mousedown
 {
    my ( $self, $btn, $mod, $x, $y) = @_;
    return if $self->{mouseTransaction};
-   return if $btn != mb::Left;
 
    my @size = $self-> size;
    my @aa = $self-> get_active_area( 0, @size);
@@ -1158,6 +1157,8 @@ sub on_mousedown
          return;
       }
    }
+
+   return if $btn != mb::Left;
    
    my ( $text_offset, $bid) = $self-> xy2info( $x, $y);
 

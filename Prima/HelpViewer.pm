@@ -89,6 +89,17 @@ sub load_file
    return $ret;
 }
 
+sub link_click
+{
+   my ( $self, $s, $btn, $mod, $x, $y) = @_;
+   $self-> SUPER::link_click( $s, $btn, $mod, $x, $y);
+   return if $btn != mb::Right;
+   my $new = ref($self-> owner)-> create;
+   $new-> {text}-> update_view;
+   $new-> {text}-> load_link( $s);
+   $new-> select;
+}
+
 sub load_link
 {
    my ( $self, $link) = @_;
