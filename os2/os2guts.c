@@ -454,7 +454,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
             hiStage = true;
             ev. cmd    = cmMenu;
             ev. gen. H = ( Handle) mp1;
-            ev. gen. p = ( char*)  mp2;
+            ev. gen. i = ( int)    mp2;
          }
          break;
       case WM_ADJUSTWINDOWPOS:
@@ -1094,9 +1094,9 @@ generic_menu_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
             PComponent owner = ( PComponent)(( PComponent)( md-> menu))-> owner;
             m = AbstractMenu_first_that( mwd-> menu, find_oid, (void*)mwd->id, true);
             if ( m)
-               WinSendMsg( owner-> handle, WM_ACTIVATEMENU, MPFROMLONG( md-> menu), MPFROMLONG( m-> variable));
+               WinSendMsg( owner-> handle, WM_ACTIVATEMENU, MPFROMLONG( md-> menu), ( MPARAM) m-> id);
             else
-               WinSendMsg( owner-> handle, WM_ACTIVATEMENU, MPFROMLONG( md-> menu), ( MPARAM) "");
+               WinSendMsg( owner-> handle, WM_ACTIVATEMENU, MPFROMLONG( md-> menu), ( MPARAM) 0);
          }
       }
       break;

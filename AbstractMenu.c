@@ -92,6 +92,17 @@ key_normalize( const char * key)
    }
 }
 
+static int
+is_var_id_name( char * name)
+{
+   int ret;
+   char * e;
+   if ( !name || *(name++) != '#') return 0;
+   ret = strtol( name, &e, 10);
+   if ( *e || ret < 0) return 0;
+   return ret;
+}
+
 void
 AbstractMenu_dispose_menu( Handle self, void * menu)
 {
@@ -255,26 +266,27 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       {
          #define s r-> variable
          int i, decr = 0;
-         for ( i = 0; i < 2; i++)
-         {
-           if ( s[i] == '-') r-> flags. disabled = ( ++decr > 0) ? 1 : 0; else
-           if ( s[i] == '*') r-> flags. checked  = ( ++decr > 0) ? 1 : 0; /* e.g. true */
+         for ( i = 0; i < 2; i++) {
+	    switch ( s[i]) {
+	    case '-':
+	       r-> flags. disabled = 1;
+	       decr++;
+	       break;
+	    case '*':
+	       r-> flags. checked = 1;
+	       decr++;
+	       break;
+	    default:
+	       break;
+	    }
          }
          if ( decr) memmove( s, s + decr, strlen( s) + 1 - decr);
-         if ( strlen( s) == 0) {
+         if ( strlen( s) == 0 || is_var_id_name( s) != 0) {
             free( r-> variable);
             r-> variable = nil;
-         }
+	 }
          #undef s
       }
-
-      if ( r-> variable == nil)
-      {
-         char b[256];    /* auto enumeration */
-         snprintf( b, 256, "MenuItem%d", r-> id);
-         r-> variable = duplicate_string( b);
-      }
-      /* log_write( r-> variable); */
 
       /* parsing text */
       if ( l_text >= 0)
@@ -428,26 +440,35 @@ new_av(  PMenuItemReg m, int level)
    while ( m)
    {
       AV * loc = newAV();
-      if ( !m-> flags. divider)
-      {
-         if ( m-> variable)
-         {
+      if ( !m-> flags. divider) {
+         if ( m-> variable) { /* has name */
+	    SV * sv;
             int shift = ( m-> flags. checked ? 1 : 0) + ( m-> flags. disabled ? 1 : 0);
-            char * varName = allocs( strlen( m-> variable) + 1 + shift);
-            if ( varName) {
-               SV * sv;
-               strcpy( &varName[ shift], m-> variable);
-               if ( m-> flags. checked)  varName[ --shift] = '*';
-               if ( m-> flags. disabled) varName[ --shift] = '-';
-               sv = newSVpv( varName, 0);
-               if ( m-> flags. utf8_variable) SvUTF8_on( sv);
-               av_push( loc, sv);
-               free( varName);
-            } else {
-               av_push( loc, newSVpv( "undefined", 0));
-	    }
-         } else {
-            av_push( loc, newSVpv( "undefined", 0));
+	    if ( shift > 0) { /* has flags */
+	       int len = strlen( m-> variable);
+               char * name = allocs( len + shift);
+	       if ( name) {
+		  int slen = len + shift;
+		  memcpy( name + shift, m-> variable, len);
+		  if ( m-> flags. checked)  name[ --shift] = '*';
+		  if ( m-> flags. disabled) name[ --shift] = '-';
+                  sv = newSVpv( name, slen);
+	       } else 
+                  sv = newSVpv( m-> variable, len);
+	    } else /* has name but no flags */
+               sv = newSVpv( m-> variable, 0);
+
+            if ( m-> flags. utf8_variable) 
+	       SvUTF8_on( sv);
+            av_push( loc, sv);
+         } else { /* has flags but no name - autogenerate */
+	    int len;
+	    char buffer[20];
+	    len = sprintf( buffer, "%s%s#%d", 
+                m-> flags. disabled ? "-" : "",
+                m-> flags. checked  ? "*" : "",
+		m-> id);
+            av_push( loc, newSVpv( buffer, ( STRLEN) len));
 	 }
 
          if ( m-> bitmap) {
@@ -461,8 +482,7 @@ new_av(  PMenuItemReg m, int level)
             av_push( loc, sv);
          }
 
-         if ( m-> accel)
-         {
+         if ( m-> accel) {
             SV * sv = newSVpv( m-> accel, 0);
             av_push( loc, sv);
             if ( m-> flags. utf8_accel) SvUTF8_on( sv);
@@ -486,10 +506,13 @@ new_av(  PMenuItemReg m, int level)
          if ( m-> data) 
 	    av_push( loc, newSVsv( m-> data));
       } else {
-         if ( m-> variable)
-            av_push( loc, newSVpv( m-> variable, 0));
-	 else
-            av_push( loc, newSVpv( "undefined", 0));
+	 /* divider */
+         if ( m-> variable) {
+	    SV * sv = newSVpv( m-> variable, 0);
+            if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
+            av_push( loc, sv);
+	 } else
+            av_push( loc, newSVsv( nilSV));
       }
       av_push( glo, newRV_noinc(( SV *) loc));
       m = m-> next;
@@ -498,21 +521,50 @@ new_av(  PMenuItemReg m, int level)
 }
 
 static Bool
-var_match ( Handle self, PMenuItemReg m, void * params)
+var_match( Handle self, PMenuItemReg m, void * params)
 {
+   if ( m-> variable == nil) return false;
    return ( strcmp( m-> variable, ( char *) params) == 0);
 }
 
 static Bool
-id_match ( Handle self, PMenuItemReg m, void * params)
+id_match( Handle self, PMenuItemReg m, void * params)
 {
    return m-> id == *(( int*) params);
 }
 
 static Bool
-key_match ( Handle self, PMenuItemReg m, void * params)
+key_match( Handle self, PMenuItemReg m, void * params)
 {
    return (( m-> key == *(( int*) params)) && ( m-> key != kbNoKey) && !( m-> flags. disabled));
+}
+
+static PMenuItemReg
+find_menuitem( Handle self, char * var_name, Bool match_disabled)
+{
+   int num;
+   if ( !var_name) return nil;
+   /* match special case /^#\d+$/ */
+   if (( num = is_var_id_name( var_name)) != 0)
+      return ( PMenuItemReg) my-> first_that( self, (void*)id_match, &num, match_disabled);
+   else
+      return ( PMenuItemReg) my-> first_that( self, (void*)var_match, var_name, match_disabled);
+}
+
+char *
+AbstractMenu_make_var_context( Handle self, PMenuItemReg m, char * buffer)
+{
+   if ( !m) return "";
+   if ( m-> variable)
+      return m-> variable;
+   sprintf( buffer, "#%d", m-> id);
+   return buffer;
+}
+
+char *
+AbstractMenu_make_id_context( Handle self, int id, char * buffer)
+{
+   return my-> make_var_context( self, my-> first_that( self, (void*)id_match, &id, true), buffer);
 }
 
 SV *
@@ -521,7 +573,7 @@ AbstractMenu_get_items( Handle self, char * varName)
    if ( var-> stage > csFrozen) return nilSV;
    if ( strlen( varName))
    {
-      PMenuItemReg m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+      PMenuItemReg m = find_menuitem( self, varName, true);
       if ( m && m-> down) {
 	 return new_av( m-> down, 1);
       } else if ( m) {
@@ -577,16 +629,15 @@ AbstractMenu_first_that( Handle self, void * actionProc, void * params, Bool use
 Bool
 AbstractMenu_has_item( Handle self, char * varName)
 {
-   return my-> first_that( self, (void*)var_match, varName, true) != nil;
+   return find_menuitem( self, varName, true) != nil;
 }
-
 
 SV *
 AbstractMenu_accel( Handle self, Bool set, char * varName, SV * accel)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return nilSV;
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( !m) return nilSV;
    if ( !set) { 
       SV * sv = newSVpv( m-> accel ? m-> accel : "", 0);
@@ -610,7 +661,7 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return nilSV;
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( !m) return nilSV;
    if ( !set) {
       if ( m-> code)    return newSVsv( m-> code);
@@ -650,7 +701,7 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return false;
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( m == nil) return false;
    if ( !set)
       return m ? m-> flags. checked : false;
@@ -663,11 +714,11 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 }
 
 SV *
-AbstractMenu_data ( Handle self, Bool set, char * varName, SV * data)
+AbstractMenu_data( Handle self, Bool set, char * varName, SV * data)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return nilSV;
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( m == nil) return nilSV;
    if ( !set)
       return m-> data ? newSVsv( m-> data) : nilSV;
@@ -681,7 +732,7 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return false;
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( m == nil) return false;
    if ( !set)
       return m ? !m->  flags. disabled : false;
@@ -701,7 +752,7 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 
    if ( var-> stage > csFrozen) return nilHandle;
 
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( m == nil) return nilHandle;
    if ( !m-> bitmap) return nilHandle;
    if ( !set) { 
@@ -735,7 +786,7 @@ AbstractMenu_text( Handle self, Bool set, char * varName, SV * text)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return nilSV;
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( m == nil) return nilSV;
    if ( m-> text == nil) return nilSV;
    if ( !set) {
@@ -757,7 +808,7 @@ AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return nilSV;
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( m == nil) return nilSV;
    if ( m-> flags. divider || m-> down) return nilSV;
    if ( !set)
@@ -775,39 +826,51 @@ AbstractMenu_set_variable( Handle self, char * varName, SV * newName)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return;
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( m == nil) return;
    free( m-> variable);
-   m-> variable = duplicate_string( SvPV( newName, na));
-   m-> flags. utf8_variable = SvUTF8( newName) ? 1 : 0;
+   if ( SvTYPE(newName) != SVt_NULL) {
+      STRLEN len;
+      char * v;
+      v = SvPV( newName, len);
+      if ( len > 0) {
+	 m-> variable = duplicate_string( v);
+	 m-> flags. utf8_variable = SvUTF8( newName) ? 1 : 0;
+	 return;
+      }
+   }
+   m-> variable = nil;
+   m-> flags. utf8_variable = 0;
 }
 
 Bool
 AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 {
+   char buffer[16], *context;
    if ( m == nil) return false;
+   context = AbstractMenu_make_var_context( self, m, buffer);
    if ( m-> code) {
       if ( m-> flags. utf8_variable) {
-         SV * sv = newSVpv( m-> variable, 0);
+         SV * sv = newSVpv( context, 0);
          SvUTF8_on( sv);
          cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "S", sv);
          sv_free( sv);
       } else
-         cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "s", m-> variable);
+         cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "s", context);
    } else if ( m-> perlSub) {
       if ( m-> flags. utf8_variable) {
-         SV * sv = newSVpv( m-> variable, 0);
+         SV * sv = newSVpv( context, 0);
          SvUTF8_on( sv);
          call_perl( var-> owner, m-> perlSub, "S", sv);
          sv_free( sv);
       } else
-         call_perl( var-> owner, m-> perlSub, "s", m-> variable);
+         call_perl( var-> owner, m-> perlSub, "s", context);
    }
    return true;
 }
 
 Bool
-AbstractMenu_sub_call_id ( Handle self, int sysId)
+AbstractMenu_sub_call_id( Handle self, int sysId)
 {
    return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, (void*)id_match, &sysId, false));
 }
@@ -910,7 +973,7 @@ AbstractMenu_remove( Handle self, char * varName)
 {
    PMenuItemReg up, prev, m;
    if ( var-> stage > csFrozen) return;
-   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
+   m = find_menuitem( self, varName, true);
    if ( m == nil) return;
    if ( var-> stage <= csNormal && var-> system)
       apc_menu_item_delete( self, m);
@@ -921,12 +984,6 @@ AbstractMenu_remove( Handle self, char * varName)
    if ( m == var-> tree) var-> tree = m-> next;
    m-> next = nil;
    my-> dispose_menu( self, m);
-}
-
-static Bool increase_id( Handle self, PMenuItemReg m, int * params)
-{
-   if ( m-> id > 0) m-> id += *params;
-   return false;
 }
 
 void
@@ -952,7 +1009,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       up = &var-> tree;
       level = 0;
    } else {
-      branch = m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, rootName, true);
+      branch = m = find_menuitem( self, rootName, true);
       if ( m == nil) return;
       if ( m-> down) index = 0;
       up = &m-> down;

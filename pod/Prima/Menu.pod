@@ -45,18 +45,24 @@ that imply default or special cases. These base six fields are:
 
 =item Menu item name
 
-An unique string, assigned to every menu item. Menu items can be
-accessed individually by their names, and the following fields
-can be managed by calling elemental properties, that require an item
-name. The name itself can be dynamically changed by C<set_variable()>
-method. If the menu name was not given explicitly, it is formed 
-by C<sprintf("MenuItem_%d", unique number)> string automatically.
+A string identifier.  Menu items can be accessed individually by their names,
+and the following fields can be managed by calling elemental properties, that
+require an item name. If not given, or empty, item name is assigned a string in
+a form '#ID' where ID is the unique integer value within the menu object. 
 
-If the name is prepended by '-' or '*' characters, or both,
-these are not treated as part of the name but as indicator that
-the item is disabled  ( '-' character ) or checked ( '*' character ).
-This syntax is valid only for C<::items> and C<insert()> functions,
-not for C<set_variable()> method.
+IDs are set for each menu item, disregarding whether they have names or not.
+Any menu item can be uniquely identifed by its ID value, by supplying the '#ID'
+string, in the same fashion as named menu items.  When creating or copying menu
+items, names in format '#ID' are not accepted, and treated as if an empty
+string is passed. When copying menu items to another menu object, all menu
+items to be copied change their IDs, but explicitly set names are preserved.
+Since the anonymous menu items do not have name, their auto-generated names
+change also.
+ 
+If the name is prepended by '-' or '*' characters, or both, these are not
+treated as part of the name but as indicator that the item is disabled  ( '-'
+character ) or checked ( '*' character ).  This syntax is valid only for
+C<::items> and C<insert()> functions, not for C<set_variable()> method.
 
 =item Menu text / menu image
 
@@ -559,6 +565,8 @@ key combinations KEY.
 =item set_variable NAME, NEW_NAME
 
 Changes the name of a menu item with NAME to NEW_NAME.
+NEW_NAME must not be an empty string and must not be in a
+'#integer' form.
 
 =item toggle NAME / Prima::MenuItem::toggle
 

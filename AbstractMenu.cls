@@ -65,4 +65,6 @@ object Prima::AbstractMenu ( Prima::Component)
    c_only Bool   sub_call( PMenuItemReg m);
    c_only Bool   sub_call_id ( int sysId);
    c_only Bool   sub_call_key ( int key);
+   c_only char * make_var_context( PMenuItemReg m, char * buffer);
+   c_only char * make_id_context( int id, char * buffer);
 }

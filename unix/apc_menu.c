@@ -522,7 +522,7 @@ send_cmMenu( Handle self, PMenuItemReg m)
     bzero( &ev, sizeof( ev));
     ev. cmd = cmMenu;
     ev. gen. H = self;
-    ev. gen. p = m ? m-> variable : ""; 
+    ev. gen. i = m ? m-> id : 0; 
     CComponent(owner)-> message( owner, &ev);
     if ( PComponent( owner)-> stage == csDead ||
          PComponent( self)->  stage == csDead) return false;

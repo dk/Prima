@@ -586,7 +586,11 @@ void Widget_handle_event( Handle self, PEvent event)
            apc_menu_get_font( event-> gen. source, &var-> popupFont);
         break;
       case cmMenu:
-         my-> notify( self, "<sHs", "Menu", event-> gen. H, event-> gen. p);
+	 if ( event-> gen. H) {
+	     char buffer[16], *context;
+             context = ((( PAbstractMenu) event-> gen. H)-> self)-> make_id_context( event-> gen. H, event-> gen. i, buffer);
+             my-> notify( self, "<sHs", "Menu", event-> gen. H, context);
+	 }
          break;
       case cmMouseClick:
          my-> notify( self, "<siiPi", "MouseClick",

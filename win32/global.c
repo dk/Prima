@@ -681,7 +681,7 @@ AGAIN:
             hiStage    = true;
             ev. cmd    = cmMenu;
             ev. gen. H = mwd-> menu;
-            ev. gen. p = m ? m-> variable : "";
+            ev. gen. i = m ? m-> id : 0;
          }
          if (( msg == WM_INITMENUPOPUP) && ( m == nil))
             ev. cmd = 0;
