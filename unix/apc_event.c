@@ -31,10 +31,27 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#include "AbstractMenu.h"
 #define XK_MISCELLANY
 #define XK_LATIN1
 #define XK_XKB_KEYS
 #include <X11/keysymdef.h>
+
+void
+prima_send_create_event( XWindow win)
+{
+   XClientMessageEvent ev;
+   
+   bzero( &ev, sizeof(ev));
+   ev. type = ClientMessage;
+   ev. display = DISP;
+   ev. window = win;
+   ev. message_type = guts. create_event;
+   ev. format = 32;
+   ev. data. l[0] = 0;
+   XSendEvent( DISP, win, false, 0, (XEvent*)&ev);
+   XCHECKPOINT;
+}
 
 Handle
 prima_xw2h( XWindow win)
@@ -42,7 +59,11 @@ prima_xw2h( XWindow win)
     tries to map X window to Prima's native handle
  */
 {
-   return (Handle)hash_fetch( guts.windows, (void*)&win, sizeof(win));
+   Handle self;
+   self = (Handle)hash_fetch( guts.windows, (void*)&win, sizeof(win));
+   if (!self)
+      self = (Handle)hash_fetch( guts.menu_windows, (void*)&win, sizeof(win));
+   return self;
 }
 
 extern Bool appDead;
@@ -250,6 +271,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    self = prima_xw2h( win);
    if (!self)
       return;
+   if ( kind_of( self, CAbstractMenu)) {
+      prima_handle_menu_event( ev, win, self);
+      return;
+   }
    e. gen. source = self;
    XX = X(self);
    disabled = !XX-> flags. enabled;
@@ -312,6 +337,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 secondary. pos. where. y = e. pos. where. y;
 	 secondary. pos. mod = e. pos. mod;
 	 secondary. pos. button = bev-> button == guts. mouse_wheel_up ? WHEEL_DELTA : -WHEEL_DELTA;
+      } else if ( e. cmd == cmMouseDown && e. pos. button == mbRight) {
+	 secondary. cmd = cmPopup;
+         secondary. gen. B = true;
+         secondary. gen. P. x = e. pos. where. x;
+         secondary. gen. P. y = e. pos. where. y;
       }
       break;
    }
@@ -592,8 +622,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case ClientMessage: {
-      if ( guts. wm_translate_event)
+      if ( ev-> xclient. message_type == guts. create_event) {
+	 e. cmd = cmSetup;
+      } else if ( guts. wm_translate_event) {
 	 guts. wm_translate_event( self, ev, &e);
+      }
       break;
    }
    case MappingNotify: {
