@@ -236,16 +236,22 @@ apc_pointer_get_visible( Handle self)
 
 int ctx_cr2SPTR[] =
 {
-   crArrow,    SPTR_ARROW,
-   crText,     SPTR_TEXT,
-   crWait,     SPTR_WAIT,
-   crSize,     SPTR_MOVE,
-   crMove,     SPTR_MOVE,
-   crSizeWE,   SPTR_SIZEWE,
-   crSizeNS,   SPTR_SIZENS,
-   crSizeNWSE, SPTR_SIZENWSE,
-   crSizeNESW, SPTR_SIZENESW,
-   crInvalid,  SPTR_ILLEGAL,
+   crArrow,      SPTR_ARROW,
+   crText,       SPTR_TEXT,
+   crWait,       SPTR_WAIT,
+   crSize,       SPTR_MOVE,
+   crMove,       SPTR_MOVE,
+   crSizeWest,   SPTR_SIZEWE,
+   crSizeEast,   SPTR_SIZEWE,
+   crSizeWE,     SPTR_SIZEWE,
+   crSizeNorth,  SPTR_SIZENS,
+   crSizeSouth,  SPTR_SIZENS,
+   crSizeNS,     SPTR_SIZENS,
+   crSizeNW,     SPTR_SIZENWSE,
+   crSizeSE,     SPTR_SIZENWSE,
+   crSizeNE,     SPTR_SIZENESW,
+   crSizeSW,     SPTR_SIZENESW,
+   crInvalid,    SPTR_ILLEGAL,
    endCtx
 };
 
