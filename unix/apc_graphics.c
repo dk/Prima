@@ -160,7 +160,7 @@ prima_release_gc( PDrawableSysData selfxx)
 	 if (( on = !on)) {\
 	    if ( w > 1) w *= df_lw;\
 	 } else {\
-	    w = ( w + 1) * df_lw;\
+	    w = w * df_lw + 1;\
 	 }\
 	 if ( w > 255) w = 255;\
 	 *((unsigned char*)df_dst++) = w;\
