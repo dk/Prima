@@ -516,7 +516,7 @@ perform_pending_paints( void)
 }
 
 Bool
-one_loop_round( void)
+one_loop_round( Bool wait)
 {
    XEvent ev, next_event;
    fd_set read_set, write_set, excpt_set;
@@ -550,7 +550,7 @@ one_loop_round( void)
             croak( "apc_application_go/yield() gettimeofday() returned: %s", strerror( errno));
          }
       }
-      if ( guts. oldest) {
+      if ( guts. oldest && wait) {
          if ( guts. oldest-> when. tv_sec < timeout. tv_sec) {
             timeout. tv_sec = 0;
             timeout. tv_usec = 0;
@@ -574,11 +574,17 @@ one_loop_round( void)
          }
       } else {
          timeout. tv_sec = 0;
-         timeout. tv_usec = 200000;
+         if ( wait)
+            timeout. tv_usec = 200000;
+         else
+            timeout. tv_usec = 0;
       }
    } else {
       timeout. tv_sec = 0;
-      timeout. tv_usec = 200000;
+      if ( wait)
+         timeout. tv_usec = 200000;
+      else
+         timeout. tv_usec = 0;
    }
 
    if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, &timeout)) > 0 &&
@@ -656,7 +662,7 @@ apc_application_go( Handle self)
    XNoOp( DISP);
    XFlush( DISP);
 
-   while ( one_loop_round())
+   while ( one_loop_round( true))
       ;
 
    if ( application) Object_destroy( application);
@@ -694,6 +700,6 @@ apc_application_yield( void)
 
    XNoOp( DISP);
    XFlush( DISP);
-   one_loop_round();
+   one_loop_round( false);
    return true;
 }
