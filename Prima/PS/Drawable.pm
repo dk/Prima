@@ -134,7 +134,7 @@ sub save_state
    $self-> set_font( $self-> get_font) if $self-> {useDeviceFonts};
    $self-> {saveState}-> {$_} = $self-> $_() for qw( 
       color backColor fillPattern lineEnd linePattern lineWidth
-      rop rop2 textOpaque textOutBaseline font 
+      rop rop2 textOpaque textOutBaseline font lineJoin fillWinding
    );
    $self-> {saveState}-> {$_} = [$self-> $_()] for qw( 
       translate clipRect
@@ -147,7 +147,7 @@ sub restore_state
 {
    my $self = $_[0];
    for ( qw( color backColor fillPattern lineEnd linePattern lineWidth
-         rop rop2 textOpaque textOutBaseline font)) {
+         rop rop2 textOpaque textOutBaseline font lineJoin fillWinding)) {
        $self-> $_( $self-> {saveState}->{$_});     
    }      
    for ( qw( translate clipRect)) {
@@ -214,7 +214,7 @@ CLIP
    $_[0]-> emit("@tp T") if $doTR;
    $_[0]-> emit("@sc Z") if $doSC;
    $_[0]-> emit("$ro R") if $ro != 0;
-   $_[0]-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineEnd font);
+   $_[0]-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd font);
 }
 
 sub fill
@@ -318,6 +318,12 @@ sub stroke
          my $id = ( $le == le::Round) ? 1 : (( $le == le::Square) ? 2 : 0);
          $self-> emit( "$id SL");
       }
+      
+      if ( $self-> {changed}-> {lineJoin}) { 
+         my $lj = $self-> lineJoin;
+         my $id = ( $lj == lj::Round) ? 1 : (( $lj == lj::Bevel) ? 2 : 0);
+         $self-> emit( "$id SJ");
+      }
 
       if ( $self-> {changed}-> {fill}) {
          $self-> emit( $self-> cmd_rgb( $fk));
@@ -392,6 +398,7 @@ d/T/translate , d/R/rotate , d/P/showpage , d/Z/scale , d/I/imagemask ,
 d/@/dup , d/G/setgray , d/A/setrgbcolor , d/l/lineto , d/F/fill ,
 d/FF/findfont , d/XF/scalefont , d/SF/setfont , 
 d/O/stroke , d/SD/setdash , d/SL/setlinecap , d/SW/setlinewidth , 
+d/SJ/setlinejoin , d/E/eofill , 
 d/SS/setcolorspace , d/SC/setcolor , d/SM/setmatrix , d/SPD/setpagedevice ,
 d/SP/setpattern , d/CP/currentpoint , d/MX/matrix , d/MP/makepattern , 
 d/b/begin , d/e/end , d/t/true , d/f/false , d/?/ifelse , d/a/arc ,
@@ -411,7 +418,8 @@ PREFIX
 
    $self-> {pagePrefix} .= "0 0 M 90 R 0 -$x T\n" if $self-> {reversed};
 
-   $self-> {changed} = { map { $_ => 0 } qw(fill lineEnd linePattern lineWidth font)};
+   $self-> {changed} = { map { $_ => 0 } qw(fill lineEnd linePattern lineWidth 
+      lineJoin font)};
    $self-> {docFontMap} = {};
    
    $self-> SUPER::begin_paint;
@@ -577,8 +585,19 @@ sub lineEnd
    $_[0]-> {changed}-> {lineEnd} = 1; 
 }
 
-sub lineJoin { lj::Round } # XXX
-sub fillWinding { 0 }      # XXX
+sub lineJoin
+{
+   return $_[0]-> SUPER::lineJoin unless $#_;
+   $_[0]-> SUPER::lineJoin($_[1]);
+   return unless $_[0]-> {canDraw};
+   $_[0]-> {changed}-> {lineJoin} = 1; 
+}
+
+sub fillWinding
+{
+   return $_[0]-> SUPER::fillWinding unless $#_;
+   $_[0]-> SUPER::fillWinding($_[1]);
+}
 
 sub linePattern
 {
@@ -838,13 +857,14 @@ sub fill_chord
    ( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
    my $rx = $dx / 2;
    $end -= $start;
+   my $F = $self-> fillWinding ? 'F' : 'E';
    $self-> fill( <<START,
 $x $y M
 :   
 $x $y T
 1 $try Z
 START
-     "N $rx 0 M 0 0 $rx 0 $end a X F",
+     "N $rx 0 M 0 0 $rx 0 $end a X $F",
      ";");
 }
 
@@ -888,6 +908,7 @@ sub fill_sector
    ( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
    my $rx = $dx / 2;
    $end -= $start;
+   my $F = $self-> fillWinding ? 'F' : 'E';
    $self-> fill(<<ARC,
 $x $y M
 :   
@@ -895,7 +916,7 @@ $x $y T
 1 $try Z $start R
 ARC
 
-     "N 0 0 M 0 0 $rx 0 $end a 0 0 l F",
+     "N 0 0 M 0 0 $rx 0 $end a 0 0 l $F",
      ";");
 }
 
@@ -1078,7 +1099,7 @@ sub fillpoly
    for ( $i = 2; $i < $c; $i += 2) {
       $x .= "@a[$i,$i+1] l ";
    }
-   $x .= "X F";
+   $x .= 'X ' . ($self-> fillWinding ? 'F' : 'E');
    $self-> fill( '', $x, '');
 }
 
