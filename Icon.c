@@ -41,7 +41,7 @@ extern "C" {
 #define my  ((( PIcon) self)-> self)
 #define var (( PIcon) self)
 
-void
+static void
 produce_mask( Handle self)
 {
    Byte * area8 = var-> data;
