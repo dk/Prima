@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-object Clipboard( Component)
+object Prima::Clipboard( Prima::Component)
 {
    int    openCount;
    int    formatCount;

@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-object DeviceBitmap( Drawable)
+object Prima::DeviceBitmap( Prima::Drawable)
 {
    Bool monochrome;
    method Bool   begin_paint();

@@ -29,7 +29,7 @@ local @IconHandle
    Handle andMask;
 }
 
-object Icon( Image)
+object Prima::Icon( Prima::Image)
 {
    unsigned char*    mask;
    int               maskLine;

@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-package Utils
+package Prima::Utils
 {
    SV * query_drives_map( char *firstDrive = "A:");
    int  query_drive_type( char *drive) => apc_query_drive_type;

@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-object Component( Object)
+object Prima::Component( Prima::Object)
 {
     void        *sysData;            # system-dependent data, defined by apc
     char        *name;

@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-object AbstractMenu ( Component)
+object Prima::AbstractMenu ( Prima::Component)
 {
    PMenuItemReg  tree;
    method void   done();

@@ -103,7 +103,7 @@ Application_init( Handle self, HV * profile)
       pset_H( owner, self);
       pset_i( timeout, hintPause);
       pset_c( name, "HintTimer");
-      var hintTimer = create_instance( "Timer");
+      var hintTimer = create_instance( "Prima::Timer");
       protect_object( var hintTimer);
       hv_clear( profile);
       memcpy( &HintTimerVmt, CTimer, sizeof( HintTimerVmt));
@@ -728,7 +728,7 @@ Application_get_image( Handle self, int x, int y, int xLen, int yLen)
    if ( xLen <= 0 || yLen <= 0) return nilHandle;
 
    profile = newHV();
-   i = Object_create( "Icon", profile);
+   i = Object_create( "Prima::Icon", profile);
    sv_free(( SV *) profile);
    ret = apc_application_get_bitmap( self, i, x, y, xLen, yLen);
    --SvREFCNT( SvRV((( PAnyObject) i)-> mate));

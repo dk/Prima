@@ -25,7 +25,7 @@
 #
 local @ImageStats double[7];
 
-object Image( Drawable)
+object Prima::Image( Prima::Drawable)
 {
    # variables
    int            type;              # imXXXX

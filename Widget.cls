@@ -27,7 +27,7 @@
 #  Main widget description
 #
 
-object Widget( Drawable)
+object Prima::Widget( Prima::Drawable)
 {
 # user variables
    Handle    accelTable;	       # accelerator table

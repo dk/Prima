@@ -605,7 +605,7 @@ Window_get_icon( Handle self)
    if ( var stage > csNormal) return nilHandle;
    if ( apc_window_get_icon( self, nilHandle)) {
       HV * profile = newHV();
-      Handle i = Object_create( "Icon", profile);
+      Handle i = Object_create( "Prima::Icon", profile);
       sv_free(( SV *) profile);
       apc_window_get_icon( self, i);
       --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
@@ -661,7 +661,7 @@ Window_set_menu_items( Handle self, SV * menuItems)
          pset_sv( items, menuItems);
          pset_H ( owner, self);
          pset_i ( selected, false);
-         my set_menu( self, create_instance( "Menu"));
+         my set_menu( self, create_instance( "Prima::Menu"));
          sv_free(( SV *) profile);
       }
    }

@@ -1679,7 +1679,7 @@ Image_bitmap( Handle self)
    pset_i( width,        var->w);
    pset_i( height,       var->h);
    pset_sv( palette,     my->get_palette( self));
-   h = Object_create( "DeviceBitmap", profile);
+   h = Object_create( "Prima::DeviceBitmap", profile);
    sv_free(( SV *) profile);
    CDrawable( h)-> put_image( h, 0, 0, self);
    --SvREFCNT( SvRV( PDrawable( h)-> mate));
@@ -1709,7 +1709,7 @@ Image_dup( Handle self)
    memcpy( i-> palette, var->palette, 768);
    if ( i-> type != var->type) {
       /* Object does not support given type, but Image supports them all */
-      Handle img = ( Handle) create_object( "Image", "iiii",
+      Handle img = ( Handle) create_object( "Prima::Image", "iiii",
              "width"     , var->w,
              "height"    , var->h,
              "type"      , var->type,

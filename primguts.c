@@ -221,40 +221,12 @@ gimme_the_mate( SV *perlObject)
    return (( cMate == nilHandle) || ((( PObject) cMate)-> stage == csDead)) ? nilHandle : cMate;
 }
 
-XS( Object_alive_FROMPERL)
-{
-   dXSARGS;
-   Handle _c_apricot_self_;
-   int ret;
-
-   if ( items != 1)
-      croak("Invalid usage of Object::%s", "alive");
-   _c_apricot_self_ = gimme_the_real_mate( ST( 0));
-   if ( _c_apricot_self_ == nilHandle)
-      croak( "Illegal object reference passed to Object::%s", "alive");
-   SPAGAIN;
-   SP -= items;
-
-   switch ((( PObject) _c_apricot_self_)-> stage) {
-   case csConstructing:
-       ret = 2;
-       break;
-   case csNormal:
-       ret = 1;
-       break;
-   default:
-       ret = 0;
-   }
-   XPUSHs( sv_2mortal( newSViv( ret)));
-   PUTBACK;
-   return;
-}
 
 XS( create_from_Perl)
 {
    dXSARGS;
    if (( items - 2 + 1) % 2 != 0)
-      croak("Invalid usage of Object::create");
+      croak("Invalid usage of Prima::Object::create");
    {
       Handle  _c_apricot_res_;
       HV *hv = parse_hv( ax, sp, items, mark, 2 - 1, "Object_create");
@@ -282,10 +254,10 @@ XS( destroy_from_Perl)
    dXSARGS;
    Handle self;
    if ( items != 1)
-      croak ("Invalid usage of Object::destroy");
+      croak ("Invalid usage of Prima::Object::destroy");
    self = gimme_the_real_mate( ST( 0));
    if ( self == nilHandle)
-      croak( "Illegal object reference passed to Object::destroy");
+      croak( "Illegal object reference passed to Prima::Object::destroy");
    {
       Object_destroy( self);
    }
@@ -1088,11 +1060,11 @@ NAN = 0.0;
    newXS( "TiedStdOut::PRINT", ext_std_print, MODULE);
    newXS( "::destroy_mate", destroy_mate, MODULE);
    newXS( "Prima::cleanup", prima_cleanup, "Prima");
-   newXS( "Utils::getdir", Utils_getdir_FROMPERL, "Utils");
+   newXS( "Prima::Utils::getdir", Utils_getdir_FROMPERL, "Prima::Utils");
    /* register built-in classes */
-   newXS( "Object::create",  create_from_Perl, "Object");
-   newXS( "Object::destroy", destroy_from_Perl, "Object");
-   newXS( "Object::alive", Object_alive_FROMPERL, "Object");
+   newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
+   newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");
+   newXS( "Prima::Object::alive", Object_alive_FROMPERL, "Prima::Object");
    register_constants();
    register_Object_Class();
    register_Utils_Package();
@@ -1281,7 +1253,7 @@ XS(Utils_getdir_FROMPERL) {
    int i;
 
    if ( items >= 2) {
-      croak( "invalid usage of Utils::getdir");
+      croak( "invalid usage of Prima::Utils::getdir");
    }
    dirname = SvPV( ST( 0), na);
    dirlist = apc_getdir( dirname);

@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-object Popup( AbstractMenu)
+object Prima::Popup( Prima::AbstractMenu)
 {
    method Bool   get_auto();
    method Bool   get_selected();

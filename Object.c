@@ -143,6 +143,36 @@ Object_destroy( Handle self)
    if ( mate && object) sv_free( mate);
 }
 
+XS( Object_alive_FROMPERL)
+{
+   dXSARGS;
+   Handle _c_apricot_self_;
+   int ret;
+
+   if ( items != 1)
+      croak("Invalid usage of Prima::Object::%s", "alive");
+   _c_apricot_self_ = gimme_the_real_mate( ST( 0));
+   if ( _c_apricot_self_ == nilHandle)
+      croak( "Illegal object reference passed to Prima::Object::%s", "alive");
+   SPAGAIN;
+   SP -= items;
+
+   switch ((( PObject) _c_apricot_self_)-> stage) {
+   case csConstructing:
+       ret = 2;
+       break;
+   case csNormal:
+       ret = 1;
+       break;
+   default:
+       ret = 0;
+   }
+   XPUSHs( sv_2mortal( newSViv( ret)));
+   PUTBACK;
+   return;
+}
+
+
 void Object_done    ( Handle self) {}
 void Object_init    ( Handle self, HV * profile) {}
 void Object_cleanup ( Handle self) {}

@@ -552,7 +552,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          // could be guaranteed either when you Blt source DC = CreateCompatibleDC( dest DC),
          // not when source = CCDC( thirdDC), dest = CCDC( thirdDC) - that's right, I mean it!
          // or just SetDIBits; - latter is slow, stupid, memory-greedy - but surely can be trusted.
-         Handle img      = ( Handle) create_object("Image", "");
+         Handle img      = ( Handle) create_object("Prima::Image", "");
          HDC adc         = dsys( image) ps;
          HBITMAP abitmap = dsys( image) bm;
          dsys( img) ps   = dsys( image) ps;

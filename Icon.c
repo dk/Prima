@@ -265,7 +265,7 @@ Icon_split( Handle self)
    pset_i( width,        var w);
    pset_i( height,       var h);
    pset_i( type,         imMono|imGrayScale);
-   ret. andMask = Object_create( "Image", profile);
+   ret. andMask = Object_create( "Prima::Image", profile);
    sv_free(( SV *) profile);
    i = ( PImage) ret. andMask;
    memcpy( i-> data, var mask, var maskSize);

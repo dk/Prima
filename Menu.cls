@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-object Menu ( AbstractMenu)
+object Prima::Menu ( Prima::AbstractMenu)
 {
    method Bool   get_selected();
    method void   set_selected( Bool selected);

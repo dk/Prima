@@ -331,7 +331,7 @@ Drawable_get_region( Handle self)
    if ( var stage > csNormal) return nilHandle;
    if ( apc_gp_get_region( self, nilHandle)) {
       HV * profile = newHV();
-      Handle i = Object_create( "Image", profile);
+      Handle i = Object_create( "Prima::Image", profile);
       sv_free(( SV *) profile);
       apc_gp_get_region( self, i);
       --SvREFCNT( SvRV((( PAnyObject) i)-> mate));

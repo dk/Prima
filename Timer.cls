@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-object Timer( Component)
+object Prima::Timer( Prima::Component)
 {
    method void   done();
    method Bool   get_active();

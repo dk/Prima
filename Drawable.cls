@@ -25,7 +25,7 @@
 #
 use Types;
 
-object Drawable ( Component)
+object Prima::Drawable ( Prima::Component)
 {
    Font        font;
    int         w;

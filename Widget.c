@@ -1530,7 +1530,7 @@ Widget_get_pointer_icon( Handle self)
    if ( var stage > csNormal) return nilHandle;
    {
       HV * profile = newHV();
-      Handle icon = Object_create( "Icon", profile);
+      Handle icon = Object_create( "Prima::Icon", profile);
       sv_free(( SV *) profile);
       apc_pointer_get_bitmap( self, icon);
       --SvREFCNT( SvRV((( PAnyObject) icon)-> mate));
@@ -1670,7 +1670,7 @@ Widget_get_shape( Handle self)
    if ( var stage > csNormal) return nilHandle;
    if ( apc_widget_get_shape( self, nilHandle)) {
       HV * profile = newHV();
-      Handle i = Object_create( "Image", profile);
+      Handle i = Object_create( "Prima::Image", profile);
       sv_free(( SV *) profile);
       apc_widget_get_shape( self, i);
       --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
@@ -1755,7 +1755,7 @@ Widget_set_accel_items( Handle self, SV * accelItems)
       HV * profile = newHV();
       if ( SvTYPE( accelItems)) pset_sv( items, accelItems);
       pset_H ( owner, self);
-      my set_accel_table( self, create_instance( "AccelTable"));
+      my set_accel_table( self, create_instance( "Prima::AccelTable"));
       sv_free(( SV *) profile);
    }
    else
@@ -2196,7 +2196,7 @@ Widget_set_popup_items( Handle self, SV * popupItems)
          HV * profile = newHV();
          pset_sv( items, popupItems);
          pset_H ( owner, self);
-         my set_popup( self, create_instance( "Popup"));
+         my set_popup( self, create_instance( "Prima::Popup"));
          sv_free(( SV *) profile);
       }
    }

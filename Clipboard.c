@@ -348,7 +348,7 @@ image_server( PClipboardFormatReg instance, int function, SV * data)
       case cefFetch:
          {
             HV * profile = newHV();
-            Handle self = Object_create( "Image", profile);
+            Handle self = Object_create( "Prima::Image", profile);
             sv_free(( SV *) profile);
             if ( apc_clipboard_get_data( cfBitmap, (void*)(&self)) != nil) {
                --SvREFCNT( SvRV( var mate));

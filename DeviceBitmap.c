@@ -79,8 +79,8 @@ static Handle xdup( Handle self, char * className)
    return h;
 }
 
-Handle DeviceBitmap_image( Handle self) { return xdup( self, "Image"); }
-Handle DeviceBitmap_icon( Handle self) { return xdup( self, "Icon"); }
+Handle DeviceBitmap_image( Handle self) { return xdup( self, "Prima::Image"); }
+Handle DeviceBitmap_icon( Handle self) { return xdup( self, "Prima::Icon"); }
 
 SV *
 DeviceBitmap_get_handle( Handle self)
