@@ -265,14 +265,16 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
    if ( !xStretch && !yStretch && ( w > 0))
    {
       int y;
-      int xMin = ( srcLine > dstLine) ? dstLine : srcLine;
+      int xMin = (( type & imBPP) < 8) ? 
+                  ( srcLine > dstLine) ? dstLine : srcLine :
+                  (((( srcW > absw) ? absw : srcW) * ( type & imBPP)) / 8);
       if ( srcW < w || srcH < absh) memset( dstData, 0, dstLine * absh);
       if ( h < 0)
       {
          dstData += dstLine * ( yMin - 1);
          dstLine =- dstLine;
       }
-      for ( y = 0; y < yMin; y++, srcData += srcLine, dstData += dstLine)
+      for ( y = 0; y < yMin; y++, srcData += srcLine, dstData += dstLine) 
          memcpy( dstData, srcData, xMin);
       return;
    }
@@ -280,7 +282,9 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
 /* y-only stretch case */
    if ( !xStretch && yStretch && ( w > 0))
    {
-      int xMin = ( srcLine > dstLine) ? dstLine : srcLine;
+      int xMin = (( type & imBPP) < 8) ? 
+         ( srcLine > dstLine) ? dstLine : srcLine :
+         (((( srcW > absw) ? absw : srcW) * ( type & imBPP)) / 8);
       count. l = 0;
       if ( srcW < w) memset( dstData, 0, dstLine * absh);
       if ( h < 0)
