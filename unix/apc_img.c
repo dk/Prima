@@ -39,6 +39,7 @@
                            (b) += XX-> gtransform. y + XX-> btransform. y; })
 /* Multiple evaluation macro! */
 #define REVERSE_BYTES_32(x) ((((x)&0xff)<<24) | (((x)&0xff00)<<8) | (((x)&0xff0000)>>8) | (((x)&0xff000000)>>24))
+#define REVERSE_BYTES_16(x) ((((x)&0xff)<<8 ) | (((x)&0xff00)>>8))
 
 #define ByteBits                8
 #define ByteMask                0xff
@@ -469,37 +470,15 @@ create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
 static void
 create_rgb_to_16_lut( int ncolors, const PRGBColor pal, Pixel16 *lut)
 {
-   /* XXX make this 3,2,5,11-independent */
-   unsigned long red_mask, green_mask, blue_mask;
    int i;
-
-   red_mask   = guts. visual. red_mask;
-   green_mask = guts. visual. green_mask;
-   blue_mask  = guts. visual. blue_mask;
-   for ( i = 0; i < ncolors; i++) {
-      lut[i] = 0;
-      lut[i] |=
-	 (((pal[i]. r >> 3) << 11) & red_mask) & 0xffff;
-      lut[i] |=
-	 (((pal[i]. g >> 2) << 5) & green_mask) & 0xffff;
-      lut[i] |=
-	 ((pal[i]. b >> 3) & blue_mask) & 0xffff;
-   }
-}
-
-static void
-calc_shifts_rgb_to_xpixel( unsigned long mask,
-                           int *right,
-                           int *left)
-{
-   int bc, l;
-
-   l = 0;
-   while (( mask & 1) == 0) { l++; mask >>= 1; }
-   bc = 0;
-   while ( mask) { bc++; mask >>= 1; }
-   *right = 8-bc;
-   *left = l;
+   for ( i = 0; i < ncolors; i++) 
+      lut[i] = 
+         guts. red_lut[pal[i].r] | 
+         guts. green_lut[pal[i].g] | 
+         guts. blue_lut[pal[i].b];
+   if ( guts.machine_byte_order != guts.byte_order) 
+      for ( i = 0; i < ncolors; i++) 
+         lut[i] = REVERSE_BYTES_16(lut[i]);
 }
 
 static int *
@@ -507,27 +486,20 @@ rank_rgb_shifts( void)
 {
    static int shift[3];
    static Bool shift_unknown = true;
-   XVisualInfo *v;
-   unsigned long m;
-   int xchg;
 
    if ( shift_unknown) {
-      v = &guts. visual;
-
-      m = v-> red_mask;
-      shift[0] = 0;
-      while ((m & 1) == 0) { shift[0]++; m >>= 1; }
-      m = v-> green_mask;
-      shift[1] = 0;
-      while ((m & 1) == 0) { shift[1]++; m >>= 1; }
+      int xchg;
+      unsigned long m;
+      XVisualInfo *v = &guts.visual;
+      shift[0] = guts. red_shift;
+      shift[1] = guts. green_shift;
       if ( shift[1] < shift[0]) {
          xchg = shift[0];
          shift[0] = shift[1];
          shift[1] = xchg;
       }
       m = v-> blue_mask;
-      shift[2] = 0;
-      while ((m & 1) == 0) { shift[2]++; m >>= 1; }
+      shift[2] = guts. blue_shift;
       if ( shift[2] < shift[0]) {
          xchg = shift[2];
          shift[2] = shift[1];
@@ -548,30 +520,15 @@ rank_rgb_shifts( void)
 static void
 create_rgb_to_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
 {
-   XVisualInfo *v = &guts. visual;
-   unsigned long rmask, gmask, bmask;
-   int rrsh, grsh, brsh, rlsh, glsh, blsh;
    int i;
-
-   calc_shifts_rgb_to_xpixel( rmask = v-> red_mask, &rrsh, &rlsh);
-   calc_shifts_rgb_to_xpixel( gmask = v-> green_mask, &grsh, &glsh);
-   calc_shifts_rgb_to_xpixel( bmask = v-> blue_mask, &brsh, &blsh);
-
-   for ( i = 0; i < ncolors; i++) {
-      lut[i] = 0;
-      lut[i] |=
-	 (((pal[i]. r >> rrsh) << rlsh) & rmask);
-      lut[i] |=
-	 (((pal[i]. g >> grsh) << glsh) & gmask);
-      lut[i] |=
-	 (((pal[i]. b >> brsh) << blsh) & bmask);
-   }
-
-   if ( guts.machine_byte_order != guts.byte_order) {
-      for ( i = 0; i < ncolors; i++) {
+   for ( i = 0; i < ncolors; i++) 
+      lut[i] = 
+         guts. red_lut[pal[i].r] | 
+         guts. green_lut[pal[i].g] | 
+         guts. blue_lut[pal[i].b];
+   if ( guts.machine_byte_order != guts.byte_order) 
+      for ( i = 0; i < ncolors; i++) 
          lut[i] = REVERSE_BYTES_32(lut[i]);
-      }
-   }
 }
 
 static Bool

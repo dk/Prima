@@ -265,7 +265,6 @@ apc_widget_map_color( Handle self, Color color)
 }   
 
 
-static PHash  globalColors = nil;
 static PHash  hatches;
 static Bool   kill_hatches( Pixmap pixmap, int keyLen, void * key, void * dummy);
 static Bool   prima_color_new( XColor * xc);
@@ -485,26 +484,9 @@ ENOUGH:;
                (( p[LPAL_ADDR(brush->secondary)]&LPAL_MASK(brush->secondary)) == 0)) 
                prima_color_add_ref( self, brush-> secondary, RANK_NORMAL);
          }
-      } else {
-         XColor * xc;
-         brush-> primary = guts. monochromeMap[1];
-         if ( !globalColors) 
-            globalColors = hash_create();
-         xc = hash_fetch( globalColors, &color, sizeof(color));
-         if ( !xc) {
-            if (!( xc = malloc( sizeof( XColor)))) goto RET;
-            xc-> red   = COLOR_R16(color);
-            xc-> green = COLOR_G16(color);
-            xc-> blue  = COLOR_B16(color);
-            xc-> flags = DoRed | DoGreen | DoBlue;
-            if ( XAllocColor( DISP, guts. defaultColormap, xc)) {
-               hash_store( globalColors, &color, sizeof( color), xc);
-               brush-> primary = xc-> pixel;
-            }
-         } 
-      }
+      } else  
+         brush-> primary = guts.red_lut[a[0]] | guts.green_lut[a[1]] | guts.blue_lut[a[2]];
    }
-RET:      
    return brush-> primary;
 }
 
@@ -808,6 +790,55 @@ BLACK_WHITE_ALLOCATED:
          warn("not enough memory\n");
          return false;
       }
+   } else {
+      int i, j, from[3] = {0,0,0}, to[3] = {0,0,0}, stage[3] = {0,0,0}, lim[3]; 
+      unsigned long mask[3] = {guts. visual. red_mask, guts. visual. green_mask, guts. visual. blue_mask};
+      // find color bounds and test if they are continuous
+      for ( j = 0; j < 3; j++) {
+         for ( i = 0; i < 32; i++) {
+            switch ( stage[j]) {
+            case 0:
+               if (( mask[j] & ( 1 << i)) != 0) {
+                  from[j] = i;
+                  stage[j]++;
+               }
+               break;
+            case 1:
+               if (( mask[j] & ( 1 << i)) == 0) {
+                  to[j] = i;
+                  stage[j]++;
+               }
+               break;
+            case 2:
+               if (( mask[j] & ( 1 << i)) != 0) {
+                  warn("panic: unsupported pixel representation (0x%08lx,0x%08lx,0x%08lx)\n", 
+                     mask[0], mask[1], mask[2]);
+                  return false;
+               }
+            }
+         }
+         if ( to[j] == 0) to[j] = 32;
+         lim[j] = 1 << (to[j] - from[j]);
+      }
+
+      if (!( guts. red_lut   = malloc( 256 * sizeof( unsigned long))) ||
+          (!(guts. green_lut = malloc( 256 * sizeof( unsigned long)))) ||
+          (!(guts. blue_lut  = malloc( 256 * sizeof( unsigned long))))) {
+         warn("not enough memory\n");
+         return false;
+      }
+      for ( i = 0; i < 256; i++) {
+         unsigned long c = ( unsigned long) i * 256;
+         guts. red_lut[i]   = (c / lim[0]) << from[0];
+         guts. green_lut[i] = (c / lim[1]) << from[1];
+         guts. blue_lut[i]  = (c / lim[2]) << from[2];
+      }
+      guts. red_shift   = from[0];
+      guts. green_shift = from[1];
+      guts. blue_shift  = from[2];
+      guts. red_range   = lim[0];
+      guts. green_range = lim[1];
+      guts. blue_range  = lim[2];
    }
    guts. localPalSize = guts. palSize / 4 + ((guts. palSize % 4) ? 1 : 0);
    hatches = hash_create();
@@ -820,18 +851,6 @@ typedef struct
    unsigned long free[256];
 } FreeColorsStruct;
 
-static Bool 
-kill_colors( XColor * xc, int keyLen, void * key, FreeColorsStruct * fc)
-{
-   fc-> free[ fc-> count++] = xc-> pixel;
-   free( xc);
-   if ( fc-> count == 256) {
-     XFreeColors( DISP, guts. defaultColormap, fc-> free, 256, 0);
-     fc-> count = 0;
-   }
-   return false;
-}
-
 void
 prima_done_color_subsystem( void)
 {
@@ -841,15 +860,6 @@ prima_done_color_subsystem( void)
    if ( DISP) {
       hash_first_that( hatches, kill_hatches, nil, nil, nil);
       fc. count = 0;
-      if ( globalColors) {
-         hash_first_that( globalColors, kill_colors, &fc, nil, nil);
-         if ( fc. count > 0) {
-            XFreeColors( DISP, guts. defaultColormap, fc. free, fc. count, 0);
-            fc. count = 0;
-         }
-         hash_destroy( globalColors, false);
-         globalColors = nil;
-      }
       
       for ( i = 0; i < guts. palSize; i++) {
          list_destroy( &guts. palette[i]. users);
@@ -867,17 +877,21 @@ prima_done_color_subsystem( void)
          XFreeColors( DISP, guts. defaultColormap, fc. free, fc. count, 0);
       XFreeColormap( DISP, guts. defaultColormap);
    }
-   
+
    hash_destroy( hatches, false);
    guts. defaultColormap = 0;
    free( guts. mappingPlace);
    free( guts. ditherPatterns);
    free( guts. palette);
    free( guts. systemColorMap);
+   free( guts. red_lut);
+   free( guts. green_lut);
+   free( guts. blue_lut);
    guts. palette = nil;
    guts. systemColorMap = nil;
    guts. ditherPatterns = nil;
    guts. mappingPlace = nil;
+   guts. red_lut = guts. green_lut = guts. blue_lut = nil;
 }
 
 int
