@@ -530,6 +530,14 @@ although not by default.
 is the easiest ( see L<Prima::Application> ) way to initiate UTF8 clipboard
 text exchange.
 
+Due to the fact that any application can take ownership over the clipboard
+at any time, C<open>/C<close> brackets are not strictly respected in X11
+implementation. Practically, this means that when modern X11 clipboard daemons
+( KDE klipper, for example ) interfere with Prima clipboard, the results may
+not be consistent from the programmer's view, for example, clipboard contains
+data after C<clear> call, and the like. It must be noted though that this
+behavior is expected by the users.
+
 =head1 Other XRDB resources
 
 =head2 Timeouts

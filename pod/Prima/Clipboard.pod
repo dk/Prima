@@ -45,8 +45,7 @@ the following:
    $c-> text( $string);
    
 
-This simplistic code hides other aspects of Prima::Clipboard class,
-although it is fully functional.
+This simplistic code hides other aspects of Prima::Clipboard class.
 
 First, the default clipboard is accessible by an implicit name call,
 as an object named 'Clipboard'. This scheme makes it easily overridable.
@@ -58,10 +57,13 @@ clipboard, however. C<get_standard_clipboards()> method
 returns strings for the clipboards, provided by the system.
 
 Second, code for fetching and storing multi-format data is
-somewhat different. Clipboard is a shared system resource,
+somewhat different. Clipboard is viewed as a shared system resource,
 and have to be 'opened', before a process can grab it, so other
 processes can access the clipboard data only after the clipboard
-is 'closed'. C<fetch()> and C<store()> implicitly call C<open()>
+is 'closed' ( Note: It is not so under X11, where there the clipboard locking
+is advisory, and any process can grab clipboard at any time) .
+
+C<fetch()> and C<store()> implicitly call C<open()>
 and C<close()>, but these functions must be called explicitly
 for the multi-format data handling. The code below illustrates the
 said:
