@@ -1159,6 +1159,51 @@ Image_codecs( SV * dummy)
    return newRV_noinc(( SV *) av); 
 }
 
+void
+Image_put_image( Handle self, int x , int y , Handle image )
+{
+   Point size;
+   if ( is_opt( optInDrawInfo)) return;
+   if ( image == nilHandle) return;
+   if ( is_opt( optInDraw)) {
+      inherited put_image( self, x, y, image);
+      return;
+   }
+   if ( !kind_of( image, CImage)) return;
+   size = ((( PDrawable) image)-> self)-> get_size( image);
+   img_put( self, image, x, y, 0, 0, size.x, size.y, size.x, size.y, my-> get_rop( self));
+   my-> update_change( self);
+}
+
+void
+Image_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle image)
+{
+   if ( is_opt( optInDrawInfo)) return;
+   if ( image == nilHandle) return;
+   if ( is_opt( optInDraw)) {
+      inherited stretch_image( self, x, y, xDest, yDest, image);
+      return;
+   }
+   if ( !kind_of( image, CImage)) return;
+   img_put( self, image, x, y, 0, 0, xDest, yDest, PImage(image)-> w, PImage(image)-> h, my-> get_rop( self));
+   my-> update_change( self);
+}
+
+void
+Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
+{
+   if ( is_opt( optInDrawInfo)) return;
+   if ( image == nilHandle) return;
+   if ( is_opt( optInDraw)) {
+      inherited put_image_indirect( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+      return;
+   }
+   if ( !kind_of( image, CImage)) return;
+   img_put( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+   my-> update_change( self);
+}
+
+
 #ifdef __cplusplus
 }
 #endif

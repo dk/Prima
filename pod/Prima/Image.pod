@@ -64,9 +64,20 @@ and as a drawing tool:
     $a-> color( cl::Green);
     $a-> fill_ellipse( 50, 50, 30, 30);
     $a-> end_paint;
+    $a-> rop( rop::XorPut);
+    $a-> put_image( 10, 10, $a);
     $::application-> begin_paint;
     $::application-> put_image( 0, 0, $a);
     $::application-> end_paint;
+
+It must be noted, that C<put_image>, C<stretch_image> and C<put_image_indirect>
+are only painting methods that allow drawing on an image that is in its 
+paint-disabled state. Moreover, in such context they only allow C<Prima::Image>
+descendants to be passed as a source image object. This functionality does not
+imply that the image is internally switched to the paint-enabled state and
+back; the painting is performed without switching and without interference with
+the system's graphical layer.
+
 
 =head2 File input and output
 

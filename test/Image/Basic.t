@@ -1,5 +1,5 @@
 # $Id$
-print "1..19 create,type check,paintInfo,paint type consistency,palette,pixel,paint,get_paint_state(),type,pixel,stretch,pixel bpp1,reverse stretch,bpp4,bpp8,RGB,short,long,float\n";
+print "1..20 create,type check,paintInfo,paint type consistency,palette,pixel,paint,get_paint_state(),type,pixel,stretch,pixel bpp1,reverse stretch,bpp4,bpp8,RGB,short,long,float,offline put_image\n";
 
 my $i = Prima::Image-> create(
    width => 20,
@@ -72,6 +72,20 @@ $i-> pixel( 3, 3, 25);
 $j = $i-> pixel( 3,3);
 $i-> size( -16, -16);
 ok( abs( 25 - $i-> pixel( 12,12)) < 8 && abs( 25-$j) < 8);
+
+$i-> type( im::Byte);
+$i-> size( 2, 2);
+$i-> pixel( 0, 0, 193);
+$i-> pixel( 0, 1, 1);
+$i-> pixel( 1, 1, 63);
+$i-> pixel( 1, 0, 7);
+$i-> put_image_indirect( $i, 0, 0, -1, -1, 2, 2, 2, 2, rop::NotAnd);
+ok( 
+  ($i-> pixel( 0, 0) == 255) &&
+  ($i-> pixel( 0, 1) == 255) &&
+  ($i-> pixel( 1, 0) == 255) &&
+  ($i-> pixel( 1, 1) == 254) 
+);
 
 $i-> destroy;
 
