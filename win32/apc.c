@@ -1001,7 +1001,7 @@ apc_window_set_client_size( Handle self, int x, int y)
          x + r. right  - r. left - c. right + c. left,
          y + r. bottom - r. top  - c. bottom + c. top,
          SWP_NOZORDER | SWP_NOACTIVATE);
-      sys sizeLockLevel++;
+      sys sizeLockLevel--;
    }
 }
 
