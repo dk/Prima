@@ -198,6 +198,8 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
       dest-> pitch = fpDefault;
    if ( useHeight)
       dest-> size = 0;
+   if ( !useHeight && !useSize && ( dest-> height <= 0 || dest-> height > 16383)) 
+      useSize = 1;
 
    /* validating entries */
    if ( dest-> height <= 0) dest-> height = 1;
@@ -208,6 +210,12 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
       else if ( dest-> size   > 16383 ) dest-> size   = 16383;
    if ( dest-> name[0] == 0)
       strcpy( dest-> name, "Default");
+   if ( dest-> pitch < fpDefault || dest-> pitch > fpFixed)
+      dest-> pitch = fpDefault;
+   if ( dest-> direction == C_NUMERIC_UNDEF)
+      dest-> direction = 0;
+   if ( dest-> style == C_NUMERIC_UNDEF)
+      dest-> style = 0;
 
    return useSize && !useHeight;
 }
