@@ -969,7 +969,8 @@ sub clsmake
         unless defined $classname;
     my $mk = qd( "include/generic/$classname.h"
                ) . ": Makefile " .
-                   "$clsfile " . qd( "utils/gencls.pl ");
+                   "$clsfile " . qd( "utils/gencls.pl ") . 
+		   qd( "Prima/Gencls.pm ");
     push @alltml, qd( "include/generic/$classname.tml");
     push @alltmldeps, qd( "include/generic/$classname.h");
     push @allclean, (
