@@ -873,10 +873,11 @@ sub prf_types
       fillPattern   => ['fillPattern'],
       font          => ['font'],
       lineEnd       => ['lineEnd'],
+      lineJoin      => ['lineJoin'],
       linePattern   => ['linePattern'],
       lineWidth     => ['lineWidth'],
       rop           => ['rop', 'rop2'],
-      bool          => ['textOutBaseline', 'textOpaque'],
+      bool          => ['textOutBaseline', 'textOpaque', 'fillWinding'],
       point         => ['translate'],
       palette       => ['palette'],
       image         => ['region'],
@@ -919,9 +920,11 @@ sub prf_adjust_default
       rect
 
       lineEnd
+      lineJoin
       linePattern
       lineWidth
       fillPattern
+      fillWinding
       region
       rop
       rop2
