@@ -1040,7 +1040,7 @@ static int sliderScheme[] = {
 };
 
 static int dialogScheme[] = {
-   COLOR_WINDOWTEXT, COLOR_WINDOW,
+   COLOR_WINDOWTEXT, COLOR_BTNFACE,
    COLOR_CAPTIONTEXT, COLOR_ACTIVECAPTION,
    COLOR_INACTIVECAPTIONTEXT, COLOR_INACTIVECAPTION,
    std3d
@@ -1065,7 +1065,7 @@ static int menuScheme[] = {
 };
 
 static int scrollScheme[] = {
-   COLOR_WINDOWTEXT,    COLOR_SCROLLBAR,
+   COLOR_WINDOWTEXT,    COLOR_BTNFACE,
    stdHilite,
    stdDisabled,
    std3d
