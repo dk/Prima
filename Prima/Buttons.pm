@@ -464,6 +464,7 @@ sub on_paint
    }
    $canvas-> color( $clr[0]);
    $self-> draw_caption( $canvas, $textAtX, $textAtY) if $capOk;
+   $canvas-> rect_focus( 4, 4, $size[0] - 5, $size[1] - 5 ) if !$capOk && $self-> focused;
 }
 
 sub on_keydown
