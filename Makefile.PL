@@ -845,16 +845,16 @@ sub setup_defines
     have_types_in( "sys/types.h",
                    qw(int8_t int16_t int32_t));
     have_types_in( "sys/types.h",
-                   qw(uint8_t uint16_t uint32_t));
+                   qw(uint8_t uint16_t uint32_t uint64_t));
     have_types_in( "sys/types.h",
-                   qw(u_int8_t u_int16_t u_int32_t));
+                   qw(u_int8_t u_int16_t u_int32_t u_int64_t));
 
     have_types_in( "stdint.h",
                    qw(int8_t int16_t int32_t));
     have_types_in( "stdint.h",
-                   qw(uint8_t uint16_t uint32_t));
+                   qw(uint8_t uint16_t uint32_t uint64_t));
     have_types_in( "stdint.h",
-                   qw(u_int8_t u_int16_t u_int32_t));
+                   qw(u_int8_t u_int16_t u_int32_t u_int64_t));
 
     if ( $NeedX11) {
        have_header( "sys/ipc.h", "sys/types.h");
