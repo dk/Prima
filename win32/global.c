@@ -225,6 +225,7 @@ window_subsystem_init()
    list_create( &guts. transp, 8, 8);
    // list_create( &guts. files, 8, 8);
    list_create( &guts. sockets, 8, 8);
+   list_create( &guts. eventHooks, 1, 1);
 
    // selecting locale layout, more or less latin-like
 
@@ -279,6 +280,7 @@ window_subsystem_done()
       CloseHandle( guts. socketMutex);
    }
 
+   list_destroy( &guts. eventHooks);
    list_destroy( &guts. sockets);
    list_destroy( &guts. transp);
    destroy_font_hash();
@@ -305,6 +307,47 @@ window_subsystem_cleanup()
       guts. pointerLock++;
    }
 }
+
+Bool
+apc_register_hook( int hookType, void * hookProc)
+{
+   if ( hookType != HOOK_EVENT_LOOP) return false;
+   list_add( &guts. eventHooks, ( Handle) hookProc);
+   return true;
+}   
+
+Bool
+apc_deregister_hook( int hookType, void * hookProc)
+{
+   if ( hookType != HOOK_EVENT_LOOP) return false;
+   list_delete( &guts. eventHooks, ( Handle) hookProc); 
+   return true;
+}   
+
+Bool
+apc_register_event( void * sysMessage)
+{
+   UINT i;
+   for ( i = 0; i < WM_LAST_USER_MESSAGE - WM_FIRST_USER_MESSAGE; i++) {
+      if (( guts. msgMask[ i >> 3] & (1 << (i & 7))) == 0) {
+         guts. msgMask[ i >> 3] |= 1 << (i & 7);
+         *(( UINT*) sysMessage) = WM_FIRST_USER_MESSAGE + i; 
+         return true; 
+      }   
+   }   
+   return false;
+}   
+
+Bool
+apc_deregister_event( void * sysMessage)
+{
+   UINT i = *((UINT*) sysMessage);
+   if (( guts. msgMask[ i >> 3] & (1 << (i & 7))) == 0) 
+      return false;
+   guts. msgMask[ i >> 3] &= ~(1 << (i & 7));
+   return true;
+}   
+
 
 static char buf[ 256];
 char * err_msg( DWORD errId, char * buffer)
@@ -432,11 +475,17 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    UINT    orgMsg = msg;
    Event   ev;
    Bool    hiStage   = false;
-   int     orgCmd;
+   int     i, orgCmd;
 
    if ( !self || appDead)
       return DefWindowProc( win, msg, mp1, mp2);
 
+   for ( i = 0; i < guts. eventHooks. count; i++) {
+      MSG ms = { win, msg, mp1, mp2, 0};
+      if ((( PrimaHookProc *)( guts. eventHooks. items[i]))((void*) &msg))
+         return 0;
+   }    
+   
    memset( &ev, 0, sizeof (ev));
    ev. gen. source = self;
 
@@ -972,10 +1021,16 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    UINT    orgMsg = msg;
    Event   ev;
    Bool    hiStage   = false;
-   int     orgCmd;
+   int     i, orgCmd;
 
    if ( !self)
       return DefWindowProc( win, msg, mp1, mp2);
+
+   for ( i = 0; i < guts. eventHooks. count; i++) {
+      MSG ms = { win, msg, mp1, mp2, 0};
+      if ((( PrimaHookProc *)( guts. eventHooks. items[i]))((void*) &ms))
+         return 0;
+   }    
 
    memset( &ev, 0, sizeof (ev));
    ev. gen. source = self;
@@ -1249,6 +1304,7 @@ static Bool kill_img_cache( Handle self, int keyLen, void * key, void * killDBM)
 LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {
    int command;
+   
    switch ( msg) {
       case WM_DISPLAYCHANGE:
          {

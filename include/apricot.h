@@ -468,6 +468,14 @@ prima_normalize_resource_string( char *name, Bool isClass);
 /* tables of constants support */
 
 #ifdef GENERATE_TABLE_GENERATOR
+#ifndef TABLE_GENERATOR_NEWSVSTRING
+#define TABLE_GENERATOR_NEWSVSTRING
+static SV*
+newSVstring( char *s)
+{
+   return newSVpv( s, 0);
+}
+#endif
 #define START_TABLE(package,type) \
 typedef struct { \
    char *name;   \
@@ -1140,9 +1148,6 @@ extern FillPattern fillPatterns[];
 extern Bool
 kind_of( Handle object, void *cls);
 
-extern Bool
-type_of( Handle object, void *cls);
-
 /* debugging functions */
 extern int
 debug_write( const char *format, ...);
@@ -1163,6 +1168,9 @@ clean_perl_call_method( char* methname, I32 flags);
 extern I32
 clean_perl_call_pv( char* subname, I32 flags);
 #endif
+
+extern void
+build_static_vmt( void *vmt);
 
 extern Bool
 build_dynamic_vmt( void *vmt, const char *ancestorName, int ancestorVmtSize);
@@ -1212,6 +1220,9 @@ protect_object( Handle obj);
 
 extern void
 unprotect_object( Handle obj);
+
+extern void
+kill_zombies( void);
 
 extern HV*
 parse_hv( I32 ax, SV **sp, I32 items, SV **mark,
@@ -1711,6 +1722,9 @@ extern long   apcError;
 *  apc functions   *
 ***************** */
 
+extern Handle
+apc_get_application(void);
+
 /* Application management */
 extern Bool
 apc_application_begin_paint( Handle self);
@@ -1975,9 +1989,6 @@ apc_widget_set_z_order( Handle self, Handle behind, Bool top);
 
 extern Bool
 apc_widget_update( Handle self);
-
-extern PHash
-apc_widget_user_profile( char * name, Handle owner);
 
 extern Bool
 apc_widget_validate_rect( Handle self, Rect rect);
@@ -3187,6 +3198,25 @@ apc_getdir( const char *dirname);
 
 extern void*
 apc_dlopen(char *path, int mode);
+
+
+#define HOOK_EVENT_LOOP 0
+
+typedef Bool PrimaHookProc( void * message);
+
+extern  Bool
+apc_register_hook( int hookType, void * hookProc);
+
+extern  Bool
+apc_deregister_hook( int hookType, void * hookProc);
+
+extern  Bool
+apc_register_event( void * sysMessage);
+
+extern  Bool
+apc_deregister_event( void * sysMessage);
+
+
 
 /* Memory bugs debugging tools */
 #ifdef PARANOID_MALLOC

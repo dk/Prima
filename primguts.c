@@ -1167,12 +1167,6 @@ XS( prima_cleanup)
    XSRETURN(1);
 }
 
-static SV*
-newSVstring( char *s)
-{
-   return newSVpv( s, 0);
-}
-
 static void
 register_constants( void)
 {
@@ -1444,6 +1438,12 @@ create_object( const char *objClass, const char *types, ...)
    sv_free(( SV *) profile);
    return (void*)res;
 }
+
+Handle 
+apc_get_application(void)
+{
+   return application;
+}   
 
 FillPattern fillPatterns[] = {
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},

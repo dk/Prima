@@ -67,6 +67,9 @@ typedef HANDLE WINHANDLE;
 #define WM_FILE                           ( WM_USER + 19)
 #define WM_CROAK                          ( WM_USER + 20)
 #define WM_TERMINATE                      ( WM_USER + 99)
+#define WM_FIRST_USER_MESSAGE             ( WM_USER +100)
+#define WM_LAST_USER_MESSAGE              ( WM_USER +900)
+
 
 #define WC_CUSTOM       0
 #define WC_DLG          1
@@ -184,6 +187,8 @@ typedef struct _WinGuts
     Bool           popupActive;        // flag to avoid double popup activation
     Bool           pointerInvisible;      
     HWND           console;            // win32-bound console window
+    List           eventHooks;         // event hook list
+    Byte           msgMask[100];       // 800 user-defined messages allowed
 // socket variables
     List           sockets;            // List of watchable sockets
     HANDLE         socketMutex;        // thread semaphore
