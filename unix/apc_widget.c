@@ -559,6 +559,8 @@ apc_widget_set_focused( Handle self)
       return false;
    }
    /* fprintf( stderr, "set pokus %s\n", PComponent(self)->name); */
+   if (XT_IS_WINDOW(X(self))) return true; /* already done in activate() */
+   /* fprintf( stderr, "set pokus %s\n", PComponent(self)->name); */
    XSetInputFocus( DISP, apc_widget_is_showing( self) ? X_WINDOW : None, RevertToParent, CurrentTime);
    XCHECKPOINT;
    return true;
