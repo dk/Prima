@@ -1081,7 +1081,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
               pass-> palette[i].g,
               pass-> palette[i].b
             ), -1, nil, maxRank);
-          if ( p && (( p[LPAL_ADDR(j)] & LPAL_MASK(j)) == 0))
+          if ( p && ( prima_lpal_get( p, j) == RANK_FREE))
              prima_color_add_ref(( Handle) img, j, RANK_LOCKED);
       }
       
@@ -1227,13 +1227,10 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    
    if ( guts. dynamicColors) {
       int i;
-      Byte * p1 = X(image)-> palette;
-      Byte * p2 = XX-> palette;
-      for ( i = 0; i < guts. palSize; i++) {
-         if ((( p1[LPAL_ADDR(i)] & LPAL_MASK(i)) == 0) &&
-             (( p2[LPAL_ADDR(i)] & LPAL_MASK(i)) != 0))
+      for ( i = 0; i < guts. palSize; i++) 
+         if (( wlpal_get( image, i) == RANK_FREE) &&
+             ( wlpal_get( self,  i) != RANK_FREE))
             prima_color_add_ref( self, i, RANK_LOCKED);
-      }
    }
    SHIFT( x, y);
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
@@ -1999,13 +1996,10 @@ apc_gp_stretch_image( Handle self, Handle image,
 
    if ( guts. dynamicColors) {
       int i;
-      Byte * p1 = X(image)-> palette;
-      Byte * p2 = XX-> palette;
-      for ( i = 0; i < guts. palSize; i++) {
-         if ((( p1[LPAL_ADDR(i)] & LPAL_MASK(i)) == 0) &&
-             (( p2[LPAL_ADDR(i)] & LPAL_MASK(i)) != 0))
+      for ( i = 0; i < guts. palSize; i++) 
+         if (( wlpal_get( image, i) == RANK_FREE) &&
+             ( wlpal_get( self,  i) != RANK_FREE))
             prima_color_add_ref( self, i, RANK_LOCKED);
-      }
    }
    
    SHIFT( dst_x, dst_y);

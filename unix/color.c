@@ -507,11 +507,10 @@ ENOUGH:;
          }
          
          if ( dyna) {
-            Byte * p = X(self)-> palette; 
-            if (( p[LPAL_ADDR(brush->primary)]&LPAL_MASK(brush->primary)) == 0) 
+            if ( wlpal_get( self, brush-> primary) == RANK_FREE) 
                prima_color_add_ref( self, brush-> primary, RANK_NORMAL);
             if (( brush-> balance > 0) &&
-               (( p[LPAL_ADDR(brush->secondary)]&LPAL_MASK(brush->secondary)) == 0)) 
+               ( wlpal_get( self, brush->secondary) == RANK_FREE)) 
                prima_color_add_ref( self, brush-> secondary, RANK_NORMAL);
          }
       } else  
@@ -951,13 +950,12 @@ prima_color_find( Handle self, long color, int maxDiff, int * diff, int maxRank)
          }
       }
    } else {
-      Byte * p = X(self)-> palette;
       for ( j = 0; j < guts. systemColorMapSize + guts. palSize; j++) {
          if ( j < guts. systemColorMapSize) 
             i = guts. systemColorMap[j];
          else {
             i = j - guts. systemColorMapSize;
-            if (( p[LPAL_ADDR(i)] & LPAL_MASK(i)) == 0) continue;
+            if ( wlpal_get( self, i) == RANK_FREE) continue;
          }
          if ( lossy) {
             int d = 
@@ -1005,19 +1003,16 @@ prima_color_new( XColor * xc)
 Bool
 prima_color_add_ref( Handle self, int index, int rank)
 {
-   Byte * p;
    int r, nr = (rank == RANK_PRIORITY) ? 2 : 1;
    if ( index < 0 || index >= guts. palSize) return false;
    if ( guts. palette[index]. rank == RANK_IMMUTABLE) return false;
    if ( !self || ( self == application)) return false;
-   p = X(self)-> palette;
-   r = LPAL_GET(index,p[LPAL_ADDR(index)]);
+   r = wlpal_get(self, index);
    if ( r != 0 && r <= nr) return false;
    if ( r == 0) list_add( &guts. palette[index]. users, self);
    if ( rank > guts. palette[index]. rank)
       guts. palette[index]. rank = rank;
-   p[LPAL_ADDR(index)] &=~ LPAL_MASK(index);
-   p[LPAL_ADDR(index)] |=  LPAL_SET(index, nr);
+   wlpal_set( self, index, nr);
    /* printf("%s %s %d %d\n", PWidget(self)-> name, r ? "raised to " : "added as", nr, index); */
    return true;
 }
@@ -1035,7 +1030,7 @@ prima_color_sync( void)
          for ( j = 0; j < p-> users. count; j++) {
             int rank;
             if ( X(p-> users. items[j])-> type. widget) {
-               rank = LPAL_GET(i,X(p-> users. items[j])-> palette[ LPAL_ADDR(i)]);
+               rank = wlpal_get( p-> users. items[j], i);
                if ( rank > 0)
                   rank = ( rank > 1) ? RANK_PRIORITY : RANK_NORMAL;
             } else
@@ -1204,8 +1199,8 @@ ALLOC_STAGE:
                 Handle wij = p-> users. items[j];
                 if ( list_index_of( &widgets, wij) < 0)
                    list_add( &widgets, wij);
-                if ( LPAL_GET(i,X(wij)-> palette[LPAL_ADDR(i)]) == 1)
-                   X(wij)-> palette[LPAL_ADDR(i)] &=~ LPAL_MASK(i);
+                if ( wlpal_get(wij, i) == RANK_NORMAL) 
+                   wlpal_set( wij, i, RANK_FREE); 
              }
              list_delete_all( &p-> users, false);
              p-> touched = true;
@@ -1228,7 +1223,7 @@ ALLOC_STAGE:
             Handle wij = p-> users. items[j];
             if ( X(wij)-> type. widget && list_index_of( &widgets, wij) < 0)
                list_add( &widgets, wij);
-            X(wij)-> palette[LPAL_ADDR(i)] &=~ LPAL_MASK(i);
+            wlpal_set( wij, i, RANK_FREE);
          }
          list_delete_all( &p-> users, false);
          p-> touched = true;
@@ -1366,13 +1361,11 @@ void
 prima_palette_free( Handle self, Bool priority)
 {
    int i, max = priority ? 2 : 1;
-   Byte * p;
    if ( !guts. dynamicColors) return;
-   p = X(self)-> palette;   
    for ( i = 0; i < guts. palSize; i++) {
-      int rank = LPAL_GET(i,p[LPAL_ADDR(i)]);
-      if ( rank > 0 && max >= rank) {
-         p[LPAL_ADDR(i)] &=~ LPAL_MASK(i);
+      int rank = wlpal_get(self,i);
+      if ( rank > RANK_FREE && max >= rank) {
+         wlpal_set( self, i, RANK_FREE);
          list_delete( &guts. palette[i]. users, self);
          /* printf("%s free %d, %d\n", PWidget(self)-> name, i, p[LPAL_ADDR(i)] & LPAL_MASK(i)); */
          guts. palette[i]. touched = true;
@@ -1387,6 +1380,20 @@ prima_palette_free( Handle self, Bool priority)
    printf(":%s for %s\n", priority ? "PRIO" : "", PWidget(self)-> name);
    */
 }
+
+int
+prima_lpal_get( Byte * palette, int index)
+{
+   return LPAL_GET( index, palette[ LPAL_ADDR( index ) ]);
+}
+
+void 
+prima_lpal_set( Byte * palette, int index, int rank )
+{
+   palette[ LPAL_ADDR( index ) ] &=~ LPAL_MASK( index);
+   palette[ LPAL_ADDR( index ) ] |=  LPAL_SET( index, rank);
+}
+          
 
 static Bool kill_hatches( Pixmap pixmap, int keyLen, void * key, void * dummy)
 {

@@ -295,6 +295,15 @@ typedef struct _WmGenericData {
 #define LPAL_SET(i,j) (((j)&3)<<(((i)&3)*2))
 #define LPAL_GET(i,j) (((j)>>(((i)&3)*2))&3)
 
+extern int
+prima_lpal_get( Byte * palette, int index);
+
+extern void
+prima_lpal_set( Byte * palette, int index, int rank);
+
+#define wlpal_get(widget,index)      prima_lpal_get(X(widget)->palette,index)
+#define wlpal_set(widget,index,rank) prima_lpal_set(X(widget)->palette,index,rank)
+
 /* Every color cell in guts.palette is assigned a rank. Its purpose
  is to maintain reasonable sharing of available system colors.
  See prima_palette_replace which preforms sharing. */
