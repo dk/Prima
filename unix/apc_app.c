@@ -189,7 +189,7 @@ init_x11( void)
       "_NET_WM_STATE",
       "_NET_WM_STATE_SKIP_TASKBAR",
       "_NET_WM_STATE_MAXIMIZED_VERT",
-      "_NET_WM_STATE_MAXIMIZED_HORIZ",
+      "_NET_WM_STATE_MAXIMIZED_HORZ",
       "_NET_WM_NAME",
       "_NET_WM_ICON_NAME",
       "UTF8_STRING",
@@ -199,7 +199,8 @@ init_x11( void)
       "FOREGROUND",
       "BACKGROUND",
       "_MOTIF_WM_HINTS",
-      "_NET_WM_STATE_MODAL"
+      "_NET_WM_STATE_MODAL",
+      "_NET_SUPPORTED"
    };
    char hostname_buf[256], *hostname = hostname_buf;
 

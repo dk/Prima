@@ -493,7 +493,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
                for ( i = 0; i < n; i++) {
                   if ( prop[i] == NET_WM_STATE_MAXIMIZED_VERT) 
                      vert = 1;
-                  else if ( prop[i] == NET_WM_STATE_MAXIMIZED_HORIZ) 
+                  else if ( prop[i] == NET_WM_STATE_MAXIMIZED_HORZ) 
                      horiz = 1;
                }
                XFree(( unsigned char *) prop);

@@ -381,7 +381,7 @@ typedef struct {
 #define AI_NET_WM_STATE                  13
 #define AI_NET_WM_STATE_SKIP_TASKBAR     14
 #define AI_NET_WM_STATE_MAXIMIZED_VERT   15
-#define AI_NET_WM_STATE_MAXIMIZED_HORIZ  16
+#define AI_NET_WM_STATE_MAXIMIZED_HORZ   16
 #define AI_NET_WM_NAME                   17
 #define AI_NET_WM_ICON_NAME              18
 #define AI_UTF8_STRING                   19
@@ -392,7 +392,8 @@ typedef struct {
 #define AI_BACKGROUND                    24
 #define AI_MOTIF_WM_HINTS                25
 #define AI_NET_WM_STATE_MODAL            26
-#define AI_count                         27
+#define AI_NET_SUPPORTED                 27
+#define AI_count                         28
 
 #define FXA_RESOLUTION_X guts. atoms[ AI_FXA_RESOLUTION_X]
 #define FXA_RESOLUTION_Y guts. atoms[ AI_FXA_RESOLUTION_Y]
@@ -414,7 +415,7 @@ typedef struct {
 #define NET_WM_STATE guts. atoms[ AI_NET_WM_STATE]
 #define NET_WM_STATE_SKIP_TASKBAR guts. atoms[ AI_NET_WM_STATE_SKIP_TASKBAR]
 #define NET_WM_STATE_MAXIMIZED_VERT guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_VERT]
-#define NET_WM_STATE_MAXIMIZED_HORIZ guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_HORIZ]
+#define NET_WM_STATE_MAXIMIZED_HORZ guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_HORZ]
 #define NET_WM_NAME guts. atoms[ AI_NET_WM_NAME]
 #define NET_WM_ICON_NAME guts. atoms[ AI_NET_WM_ICON_NAME]
 #define UTF8_STRING guts. atoms[ AI_UTF8_STRING]
@@ -425,6 +426,7 @@ typedef struct {
 #define CF_BACKGROUND guts. atoms[ AI_BACKGROUND]
 #define XA_MOTIF_WM_HINTS guts. atoms[ AI_MOTIF_WM_HINTS]
 #define NET_WM_STATE_MODAL guts. atoms[ AI_NET_WM_STATE_MODAL]
+#define NET_SUPPORTED guts. atoms[ AI_NET_SUPPORTED]
 
 typedef struct _UnixGuts
 {

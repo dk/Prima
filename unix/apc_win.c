@@ -40,10 +40,11 @@
 
 /* Tell a NET-compliant window manager that the window needs special treatment.
     See freedesktop.org for docs 
-   XXX - want working code with NET_WM_STATE_MAXIMIZED_VERT/HORIZ.
+
+    params - -1 - don't touch, 0 - clear, 1 - set
  */
 static void
-set_net_hints( XWindow window, Bool task_listed, Bool modal)
+set_net_hints( XWindow window, int task_listed, int modal, int zoom)
 {
    Atom data[40], type, * prop;
    int count = 0, format;
@@ -55,9 +56,13 @@ set_net_hints( XWindow window, Bool task_listed, Bool modal)
           &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
      if ( prop) {
          if ( n > 32) n = 32;
-         for ( i = 0; i < n; i++) 
-            if ( prop[i] != NET_WM_STATE_SKIP_TASKBAR && prop[i] != NET_WM_STATE_MODAL)
+         for ( i = 0; i < n; i++) {
+            if (( prop[i] != NET_WM_STATE_SKIP_TASKBAR || task_listed >= 0) && 
+                ( prop[i] != NET_WM_STATE_MODAL || modal >= 0) && 
+                (( prop[i] != NET_WM_STATE_MAXIMIZED_VERT && 
+                   prop[i] != NET_WM_STATE_MAXIMIZED_HORZ) || ( zoom >= 0)))
                data[ count++] = prop[i];
+         }
          XFree(( unsigned char *) prop);
       }
    }
@@ -76,19 +81,34 @@ set_net_hints( XWindow window, Bool task_listed, Bool modal)
       _NET_WM_STATE_ADD           1    // add/set property 
       _NET_WM_STATE_TOGGLE        2    // toggle property  
     */
-   ev. data. l[0] = task_listed ? 0 : 1;
-   ev. data. l[1] = ( long) NET_WM_STATE_SKIP_TASKBAR;
-   ev. data. l[2] = 0;
-   XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
 
-   ev. data. l[0] = modal ? 1 : 0;
-   ev. data. l[1] = ( long) NET_WM_STATE_MODAL;
-   XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
-   XCHECKPOINT;
+   if ( task_listed >= 0) {
+      ev. data. l[0] = ( task_listed > 0) ? 0 : 1;
+      ev. data. l[1] = ( long) NET_WM_STATE_SKIP_TASKBAR;
+      ev. data. l[2] = 0;
+      XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
+   }
+
+   if ( modal > 0) {
+      ev. data. l[0] = ( modal > 0) ? 1 : 0;
+      ev. data. l[1] = ( long) NET_WM_STATE_MODAL;
+      XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
+   }
+
+   if ( zoom > 0) {
+      ev. data. l[0] = ( zoom > 0) ? 1 : 0;
+      ev. data. l[1] = ( long) NET_WM_STATE_MAXIMIZED_VERT;
+      ev. data. l[2] = ( long) NET_WM_STATE_MAXIMIZED_HORZ;
+      XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
+   }
 
    /* finally reset the list of properties */
-   if ( !task_listed) data[ count++] = NET_WM_STATE_SKIP_TASKBAR;
-   if (  modal)       data[ count++] = NET_WM_STATE_MODAL;
+   if (  task_listed == 0) data[ count++] = NET_WM_STATE_SKIP_TASKBAR;
+   if (  modal > 0) data[ count++] = NET_WM_STATE_MODAL;
+   if (  zoom > 0)  {
+      data[ count++] = NET_WM_STATE_MAXIMIZED_VERT;
+      data[ count++] = NET_WM_STATE_MAXIMIZED_HORZ;
+   }
    XChangeProperty( DISP, window, NET_WM_STATE, XA_ATOM, 32,
        PropModeReplace, ( unsigned char *) data, count);
 } 
@@ -99,7 +119,7 @@ apc_window_task_listed( Handle self, Bool task_list)
 {
    DEFXX;
    XX-> flags. task_listed = ( task_list ? 1 : 0);
-   set_net_hints( X_WINDOW, XX-> flags.task_listed, XX-> flags.modal);
+   set_net_hints( X_WINDOW, XX-> flags.task_listed, -1, -1);
 } 
 
 static void
@@ -324,8 +344,10 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       XX-> zoomRect. top   = XX-> size. y;
       XX-> size. x *= 0.75;
       XX-> size. y *= 0.75;
-   } else
+   } else {
       XX-> flags. zoomed = 1;
+      set_net_hints( X_WINDOW, -1, -1, 1);
+   }
    XX-> origin. x = XX-> origin. y = 
    XX-> ackOrigin. x = XX-> ackOrigin. y = 
    XX-> ackSize. x = XX-> ackOrigin. y = 
@@ -974,6 +996,7 @@ apc_window_set_window_state( Handle self, int state)
       XX-> zoomRect. top    = XX-> size.y;
       apc_window_set_rect( self, dx * 2, dy * 2, 
               guts. displaySize.x - dx * 4, guts. displaySize. y - XX-> menuHeight - dy * 4);
+      
       if ( !XX-> flags. zoomed) sync = ConfigureNotify;
       XX-> flags. zoomed = 1;
    }
@@ -1019,7 +1042,7 @@ apc_window_execute( Handle self, Handle insert_before)
 {
    DEFXX;
    XX-> flags.modal = true;
-   set_net_hints( X_WINDOW, XX-> flags.task_listed, XX-> flags.modal);
+   set_net_hints( X_WINDOW, -1, XX-> flags.modal, -1);
    if ( !window_start_modal( self, false, insert_before))
       return false;
    if (!application) return false;
@@ -1029,7 +1052,7 @@ apc_window_execute( Handle self, Handle insert_before)
    XSync( DISP, false);
    while ( prima_one_loop_round( true, true) && XX && XX-> flags.modal)
       ;
-   if ( XX) set_net_hints( X_WINDOW, XX-> flags.task_listed, XX-> flags.modal);
+   if ( XX) set_net_hints( X_WINDOW, -1, XX-> flags.modal, -1);
    unprotect_object( self);
    return true;
 }
