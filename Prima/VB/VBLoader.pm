@@ -26,10 +26,10 @@
 # $Id$
 package Prima::VB::VBLoader;
 use strict;
-use vars qw($builderActive $fileVersion);
+use vars qw($builderActive $fileVersion @eventContext);
 
-$builderActive = 0;
 $fileVersion   = '1.1';
+@eventContext  = ('', '');
 
 my %fileVerCompat = (
    '1'   => '1.0',
@@ -52,7 +52,10 @@ sub GO_SUB
 {
    return $_[0] if $builderActive;
    my $x = eval "sub { $_[0] }";
-   if ( $@) { printf( STDERR "VBLoader: $@. Code: ---\n$_[0]\n---\n" ); return sub {}};
+   if ( $@) {
+      @eventContext = ( $_[1], $_[2]);
+      die $@;
+   }
    return $x;
 }
 

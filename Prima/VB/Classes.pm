@@ -2520,9 +2520,10 @@ sub open
 
 sub write
 {
-   my ( $class, $id, $data, $asPL) = @_;
-   return $asPL ? "sub { $data}" :
-      'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data).'\')';
+   my ( $class, $id, $data) = @_;
+   return $VB::writeMode ? "sub { $data}" :
+       'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data). 
+       "','$Prima::VB::VBLoader::eventContext[0]', '$id')";
 }
 
 package Prima::VB::Types::FMAction;
@@ -3032,7 +3033,7 @@ sub get
 
 sub write
 {
-   my ( $class, $id, $data, $asPL) = @_;
+   my ( $class, $id, $data) = @_;
    return 'undef' unless defined $data;
    my $c = '';
    my $traverse;
@@ -3057,7 +3058,7 @@ sub write
             $_ = 'image';
          }
          my $type = $VB::main-> get_typerec( $menuProps{$_}, $$data[$i]);
-         $c .= $type-> write( $_, $$data[$i], $asPL) . ', ';
+         $c .= $type-> write( $_, $$data[$i]) . ', ';
          $i++;
       }
 
@@ -3069,7 +3070,7 @@ sub write
          $level--;
       } elsif ( $sc > 1) {
          $c .= $VB::main-> get_typerec( $menuProps{'action'}, $$data[$i])->
-            write( 'action', $$data[$i], $asPL);
+            write( 'action', $$data[$i]);
       }
       $c .= "], \n";
    };
