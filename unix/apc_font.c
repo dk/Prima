@@ -605,6 +605,39 @@ prima_init_font_subsystem( void)
       fill_default_font( &guts. default_font);
       apc_font_pick( application, &guts. default_font, &guts. default_font);
       guts. default_font. pitch = fpDefault;
+      /*
+          Although apc_font_pick() does respect $LANG, it does not always picks
+          up a font with the correct encoding here, because we use a hard-coded
+          string "Helvetica". Whereas users can set an alias for "Helvetica",
+          or set the default font via XRDB:Prima.font option, it is not done by
+          default, so here we pick such a font that contains the user-specified
+          encoding, and has more or less reasonable metrics.
+       */
+      if ( guts. locale[0] && (strcmp( guts. locale, guts. default_font. encoding) != 0)) {
+         int i, best = -1, best_weight = 0;
+         for ( i = 0, info = guts. font_info; i < guts. n_fonts; i++, info++) {
+            if ( strcmp( info-> font. encoding, guts. locale) == 0) {
+               int weight = 0;
+               if ( info-> font. style == fsNormal) weight++;
+               if ( info-> font. weight == fwMedium) weight++;
+               if ( info-> font. pitch == fpVariable) weight++;
+               if ( info-> font. vector) weight++;
+               if ( weight > best_weight) {
+                  best_weight = weight;
+                  best = i;
+                  if ( weight == 4) break;
+               }
+            }
+         }
+
+         if ( best >= 0) {
+            fill_default_font( &guts. default_font);
+            strcpy( guts. default_font. name, guts. font_info[best].font.name);
+            strcpy( guts. default_font. encoding, guts. locale);
+            apc_font_pick( application, &guts. default_font, &guts. default_font);
+            guts. default_font. pitch = fpDefault;
+         }
+      }
    }
    guts. default_font_ok = 1;
    if ( !apc_fetch_resource( "Prima", "", "Font", "menu_font", 
