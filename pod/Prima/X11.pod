@@ -38,7 +38,7 @@ Sets X visual, to be used by default. Example:
 
 =item C<--sync>
 
-Turn of X synchronization
+Turn off X synchronization
 
 =item C<--bg>, C<--fg>
 
@@ -54,7 +54,7 @@ Sets default font. Example:
 
 =item C<--no-x11>
 
-Runs Prima without X11 display intialized. This switch can be used for programs
+Runs Prima without X11 display initialized. This switch can be used for programs
 that use only OS-independent parts of Prima, such as image subsystem or PostScript
 generator, in environments where X is not present, for example, a CGI script.
 Obviously, any attempt to create instance of C<Prima::Application> or otherwise
@@ -69,7 +69,7 @@ values stored on the X server. Each key is a combination of names and classes
 of widgets, each in string form. The key is constructed so the leftmost
 substring ( name or class ) corresponds to the top-level item in the hierarchy,
 usually the application name or class. Although the XRDB can be changed via
-native X API, it is rarely doen by applications. Instead, the user creates a
+native X API, it is rarely done by applications. Instead, the user creates a
 file, usually named .Xdefaults, which contains the database in the string form.
 
 The format of .Xdefaults directly reflects XRDB capabilities, one of the most
@@ -86,7 +86,7 @@ The application itself is responsible for parsing the strings and querying the
 XRDB.  Also, both class names and widget names, as well as database values are
 fully defined in terms of the application. There are some guidelines though,
 for example, colors and fonts best described in terms, native to the X server.
-Also, classes and names are distingushed by the case: classes must begin with
+Also, classes and names are distinguished by the case: classes must begin with
 the upper register letter. Also, not every character can be stored in the
 XRDB database ( space, for example, cannot) , and therefore XRDB API
 automatically converts these to _ ( underscore ) characters.
@@ -110,7 +110,7 @@ with
    Prima*font: some-font
 
 The former syntax is a general setting, and sets the default Prima font.  The
-latter is a per-widget assignmemt, and explicitly sets font to B<all> Prima
+latter is a per-widget assignment, and explicitly sets font to B<all> Prima
 widgets, effectively ruining the toolkit font inheritance scheme. The same is
 valid for an even more oppressive 
 
@@ -135,7 +135,7 @@ or
    Prima.submenudelay: 10
 
 syntax. Despite that these calls are different, in a way that one reaches for
-the whole class and another for the name, for the majority of these properies it
+the whole class and another for the name, for the majority of these properties it
 does not matter. To avoid confusion, for all properties their names and class
 are given as C<PropetyClass.propertyname> index.
 
@@ -204,10 +204,10 @@ C<Prima.font> must contain one.
 Alternatively, and/or to reduce X font traffic, one may set
 C<IgnoreEncodings.ignoreEncodings> property, which is a semicolon- separated
 list of encodings Prima must not account. This feature has limited usability
-when for example fonts in asian encodings result in large font requests.
+when for example fonts in Asian encodings result in large font requests.
 Another drastic measure to decrease font traffic is a boolean property
 C<Noscaledfonts.noscaledfonts>, which, if set to 1, restricts the choice of
-fonts to the nonscalable fonts only.
+fonts to the non-scalable fonts only.
 
 =head2 Xft fonts
 
@@ -237,7 +237,7 @@ can be used to disable use of the Xft library.
 
 X traditionally contains a color names database, usually a text file named
 F<rgb.txt>.  Check your X manual where exactly this file resides and what is
-its format.  The idea behind it is that users can benefit from protable literal
+its format.  The idea behind it is that users can benefit from portable literal
 color names, with color values transparently adjustable to displays
 capabilities.  Thus, it is customary to write 
 
@@ -305,7 +305,7 @@ X protocol works with explicitly defined pixel values only.  A pixel value,
 maximum 32-bit value, represents a color in a display. There are two different
 color coding schemes - direct color and indexed color. The direct color-coded
 pixel value can unambiguously be converted into a RGB-value, without any
-extrenal informartion.  The indexed-color scheme represents pixel value as an
+external information.  The indexed-color scheme represents pixel value as an
 index in a palette, which resided on X server. Depending on the color cell
 value of the palette, RGB color representation can be computed. A X display can
 contain more than one palette, and allow ( or disallow ) modification of
@@ -379,7 +379,7 @@ I<DirectColor> visual.
 
 As described in the previous section, X does not standardize pixel memory
 format for I<TrueColor> and C<DirectColor> visuals, so there is a chance that
-Prima woudln't work on some bizarre hardware. Currently, Prima knows how to
+Prima wouldn't work on some bizarre hardware. Currently, Prima knows how to
 compose pixels of 15, 16, 24, and 32 bit depth, of contiguous ( not
 interspersed ) red-green-blue memory layout. Any other pixel memory layout
 causes Prima to fail.
@@ -406,10 +406,10 @@ The original design of X protocol did not include the notion of a window
 manager, and latter is was implemented as an ad-hoc patch, which results in
 race conditions when configuring widgets. The extreme situation may well happen
 when even a non-top level widget may be influenced by a window manager, when
-for example a top-level widget was reparenteted into another widget, but the
+for example a top-level widget was reparented into another widget, but the
 window manager is not aware or this yet.
 
-The consequences of this, as well as programming gudances are described in
+The consequences of this, as well as programming guidances are described in
 C<Prima::Window>. Here, we describe other aspects of interactions with WMs, as
 WM protocols, hints, and properties. 
 
@@ -420,7 +420,7 @@ and in no-WM environment.
 =head2 Protocols
 
 Prima makes use of C<WM_DELETE_WINDOW> and C<WM_TAKE_FOCUS> protocols.  While
-C<WM_DELETE_WINDOW> use is straighforward and needs no further attention,
+C<WM_DELETE_WINDOW> use is straightforward and needs no further attention,
 C<WM_TAKE_FOCUS> can be tricky, since X defines several of input modes for a
 widget, which behave differently for each WM.  In particular, 'focus follows
 pointer' gives pains under twm and mwm, where navigation of drop-down combo
@@ -466,13 +466,13 @@ combines several fonts under one descriptor, or a similarly implemented
 technique is the only way to provide correct unicode display.
 
 Also, core font transfer protocol suffers from ineffective memory
-representation, which results in sufficient latency when fonts with large span
+representation, which creates latency when fonts with large span
 of glyphs is loaded. Such fonts, in still uncommon though standard iso10646
 encoding, are the only media to display multi-encoding text without falling
 back to hacks similar to C<XCreateFontSet>.
 
 These, and some other problems are efficiently solved by Xft library, a
-superset of X core font functionality. Xft features Level 1 ( november 2003 )
+superset of X core font functionality. Xft features Level 1 ( November 2003 )
 unicode display and supports 32-bit text strings as well as UTF8-coded strings.
 Xft does not operate with charset encodings, and these are implemented in Prima
 using iconv charset convertor library.
@@ -491,7 +491,7 @@ although not by default.
    Prima::Application-> wantUnicodeInput(1)
 
 is the documented ( see L<Prima::Application> ) way to initiate UTF8 clipboard
-text echange.
+text exchange.
 
 =head1 Other XRDB resources
 
@@ -539,7 +539,7 @@ When the used clicks on a menu item, which points to a lower-level menu window,
 the latter is displayed after MSEC milliseconds.
 
 Default value: 200
-      
+
 =item Scrollfirst.scrollfirst MSEC
 
 When an auto-repetitive action, similar to keystroke events resulting from a
@@ -575,7 +575,7 @@ workstation setup has 8-bit default visual selected), so this property can be
 used to fix things. List of visuals, supported by a X display can be produced
 interactively by standard C<xdpyinfo> command from X distribution. 
 
-Indentical to C<--visual> command-line argument.
+Identical to C<--visual> command-line argument.
 
 See L<Color> for more information.
 
