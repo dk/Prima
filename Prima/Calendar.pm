@@ -1,0 +1,490 @@
+#
+#  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+#  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+#  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+#  SUCH DAMAGE.
+#
+#  Created by Dmitry Karasik <dk@plab.ku.dk>
+#
+#  $Id$
+
+use strict;
+
+use Prima;
+use Prima::Classes;
+use Prima::Label;
+use Prima::ComboBox;
+use Prima::Sliders;
+
+package Calendar;
+use vars qw(@ISA @non_locale_months @days_in_months);
+@ISA = qw(Prima::Widget);
+
+my $posix_state;
+
+my @non_locale_months = qw(
+   January February March April May June
+   July August September October November December);
+
+@days_in_months = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+
+sub profile_default
+{
+   my @date = (localtime(time))[3,4,5];
+   return {
+      %{$_[ 0]-> SUPER::profile_default},
+      scaleChildren => 0,
+      date          => \@date,
+      useLocale     => 1,
+      day           => $date[0],
+      month         => $date[1],
+      year          => $date[2],
+   }
+}
+
+sub profile_check_in
+{
+   my ( $self, $p, $default) = @_;
+   $p-> {date} = $default-> {date};
+   $p-> {date}-> [0] = $p-> {day}   if exists $p-> {day};
+   $p-> {date}-> [1] = $p-> {month} if exists $p-> {month};
+   $p-> {date}-> [2] = $p-> {year}  if exists $p-> {year};
+   $self-> SUPER::profile_check_in( $p, $default);
+}
+
+sub init
+{
+   my $self = shift;
+   $self-> {$_} = 0 for qw( day month year useLocale);
+   $self-> {date} = [0,0,0];
+   my %profile = $self-> SUPER::init(@_);
+   $self-> {useLocale} = can_use_locale() if $profile{useLocale};
+
+   my $fh = $self-> font-> height;
+   my ( $w, $h) = $self-> size;
+
+   $self-> insert( ComboBox => 
+      origin   => [ 5, $h - $fh * 2 - 10 ],
+      size     => [ $w - 115, $fh + 4],
+      name     => 'Month',
+      items    => $self-> make_months,
+      style    => cs::DropDownList,
+      growMode => gm::GrowHiX | gm::GrowLoY,
+      delegations => [ 'Change' ],
+   );
+
+   $self-> insert( Label => 
+      origin => [ 5, $h - $fh - 4],
+      size   => [ $w - 115, $fh + 2],
+      text   => '~Month',
+      focusLink => $self-> Month,
+      growMode => gm::GrowHiX | gm::GrowLoY,
+   );
+   
+   $self-> insert( SpinEdit => 
+      origin => [ $w - 105, $h - $fh * 2 - 10 ],
+      size   => [ 100, $fh + 4],
+      name   => 'Year',
+      min    => 1900,
+      max    => 2099,
+      growMode => gm::GrowLoX | gm::GrowLoY,
+      delegations => [ 'Change' ],
+   );
+
+   $self-> insert( Label => 
+      origin => [ $w - 105, $h - $fh - 4],
+      size   => [ 100, $fh + 2],
+      text   => '~Year',
+      focusLink => $self-> Year,
+      growMode => gm::GrowLoX | gm::GrowLoY,
+   );
+
+   $self-> insert( Widget =>
+      origin      => [ 5, 5 ],
+      size        => [ $w - 10, $h - $fh * 3 - 22 ],
+      name        => 'Day',
+      selectable  => 1,
+      delegations => [ qw( Paint MouseDown KeyDown Size FontChanged Enter Leave)],
+      growMode    => gm::Client,
+   );
+   
+   $self-> insert( Label => 
+      origin => [ 5, $h - $fh * 3 - 15],
+      size   => [ $w - 10, $fh + 2],
+      text   => '~Day',
+      focusLink => $self-> Day,
+      growMode => gm::GrowHiX | gm::GrowLoY,
+   );
+   $self-> $_($profile{$_}) for qw( date useLocale);
+}
+
+
+sub can_use_locale
+{
+   return $posix_state if defined $posix_state;
+   undef $@;
+   eval "use POSIX q(strftime);"; 
+   return $posix_state = 1 unless $@;
+   return $posix_state = 0;
+}
+
+sub month2str
+{
+   return $non_locale_months[$_[1]] unless $_[0]-> {useLocale};
+   return POSIX::strftime ( "%B", 0, 0, 0, 0, $_[1], 0 );
+}
+
+sub make_months
+{
+   return \@non_locale_months unless $_[0]-> {useLocale};
+   return [ map {
+      POSIX::strftime ( "%B", 0, 0, 0, 0, $_, 0 )
+   } 0 .. 11 ];
+}
+
+sub day_of_week
+{
+   my ( $self, $day, $month, $year) = @_;
+   $day++; $month++; $year += 1900;
+
+   if ( $month < 3) {
+      $month += 10; 
+      $year--;
+   } else {
+      $month += 2;
+   }
+   my $century = int($year / 100);
+   $year %= 100;
+   my $dow = ( int(( 26 * $month - 2) / 10) + $day + $year + int($year / 4) +
+      int($century / 4) - ( 2 * $century)) % 7;
+   return ($dow < 0) ? $dow + 7 : $dow;
+}
+
+sub useLocale
+{
+   return $_[0]-> {useLocale} unless $#_;
+   my ( $self, $useLocale) = @_;
+   $useLocale = can_use_locale if $useLocale;
+   $self-> {useLocale} = $useLocale;
+   $self-> Month-> items( $self-> make_months);
+   $self-> Month-> text( $self-> Month-> List-> get_item_text( $self-> Month-> focusedItem));
+   $self-> {days} = $useLocale ?
+     [ map { uc(substr( strftime("%A", 0, 0, 0, 0, 0, 0, $_), 0, 1)) } 0 .. 6 ] :
+     [ qw( S M T W T F S ) ];
+}
+
+sub Day_Paint 
+{
+   my ( $owner, $self, $canvas) = @_;
+
+   my @sz = $self-> size;
+   $canvas-> set( color => $self-> disabledColor, backColor => $self-> disabledBackColor) 
+      unless $self-> enabled;
+   $canvas-> rect3d( 0, 0, $sz[0]-1, $sz[1]-1, 2, $self-> dark3DColor, $self-> light3DColor, $self-> backColor);
+
+   my @zs = ( $self-> {X}, $self-> {Y}, $self-> {CX1}, $self-> {CY}); 
+   my $i;
+   my $c = $canvas-> color;
+   my $b = $canvas-> backColor;
+   $canvas-> color( int((($b & 0xff0000)>>16)*0.8)<<16 |
+                  int((($b & 0xff00)>>8)*0.8)<<8 |
+                  int((($b & 0xff))*0.8));
+   $canvas-> bar( 2, $sz[1] - $zs[1] - 3, $sz[0] - 3, $sz[1] - 3);
+   $canvas-> color($c);
+   $canvas-> clipRect( 2, 2, $sz[0] - 3, $sz[1] - 3);
+   for ( $i = 0; $i < 7; $i++) {
+      $canvas-> text_out( $owner-> {days}-> [$i], 
+         $i * $zs[0] + $zs[2] , $sz[1]-$zs[1]+$zs[3],
+      );
+   }
+
+   my ( $d, $m, $y) = @{$owner->{date}};
+   my $dow = $owner-> day_of_week( 0, $m, $y);
+   my $v = $days_in_months[ $m] + (((( $y % 4) == 0) && ( $m == 1)) ? 1 : 0);
+   $y = $sz[1] - $zs[1] * 2 + $zs[3] - 3;
+   for ( $i = 0; $i < $v; $i++) {
+      if ( $d == $i) {
+         $self-> color( cl::Hilite);
+         $self-> bar( $dow * $zs[0] + 2, $y - $zs[3], ( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1);
+         $self-> color( cl::HiliteText);
+         $canvas-> text_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
+         $self-> rect_focus( $dow * $zs[0] + 2, $y - $zs[3], 
+            ( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1) if $self-> focused;
+         $self-> color( $c);
+      } else {
+         $canvas-> text_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
+      }
+      $zs[2] = $self-> {CX2} if $i == 8;
+      next unless $dow++ == 6;
+      $y -= $zs[1];
+      $dow = 0;
+   }
+}
+
+sub Day_KeyDown
+{
+   my ( $owner, $self, $code, $key, $mod, $repeat) = @_;
+   return unless grep { $key == $_ } (kb::Left, kb::Right, kb::Down, kb::Up);
+   my ( $d, $m, $y) = @{$owner-> {date}};
+   $d--  if $key == kb::Left;
+   $d++  if $key == kb::Right;
+   $d+=7 if $key == kb::Down;
+   $d-=7 if $key == kb::Up;
+   $self-> clear_event;
+   $owner-> date( $d, $m, $y);
+}
+
+sub Day_MouseDown
+{
+   my ( $owner, $self, $btn, $mod, $x, $y) = @_;
+   my ( $day, $month, $year) = @{$owner->{date}};
+   my @zs = ( $self-> {X}, $self-> {Y});
+   my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
+   my @sz = $self-> size;
+   $day = (int(($sz[1] - $y - 2) / $zs[1]) - 1) * 7 + 
+           int(($x - 2) / $zs[0]) - $owner-> day_of_week( 0, $month, $year);
+   $self-> clear_event;
+   return if $day < 0 || $day >= $v;
+   $owner-> date( $day, $month, $year);
+}
+
+sub day_reset
+{
+   my ( $owner, $self, $x, $y) = @_;
+   $self-> {X} = int(( $x - 4) / 7 );
+   $self-> {Y} = int(( $y - 4) / 7 );
+   ($x,$y) = ($self-> font-> maximalWidth * 2, $self-> font-> height);
+   $self-> {X} = $x if $self->{X} < $x;
+   $self-> {Y} = $y if $self->{Y} < $y;
+   $self-> {CX1} = int(( $self-> {X} - $x / 2 ) / 2) + 4;
+   $self-> {CX2} = int(( $self-> {X} - $x ) / 2) + 4;
+   $self-> {CY} = int(( $self-> {Y} - $y ) / 2);
+}
+
+sub Day_Size
+{
+   my ( $owner, $self, $ox, $oy, $x, $y) = @_;
+   $owner-> day_reset( $self, $x, $y); 
+}
+
+sub Day_FontChanged
+{
+   $_[0]-> day_reset( $_[1], $_[1]-> size);
+}
+
+sub Day_Enter { $_[1]-> repaint }
+sub Day_Leave { $_[1]-> repaint }
+
+sub Month_Change
+{
+   my ( $owner, $self) = @_;
+   $owner-> month( $self-> focusedItem);
+}
+
+sub Year_Change
+{
+   my ( $owner, $self) = @_;
+   $owner-> year( $self-> value - 1900);
+}
+
+sub date
+{
+   return @{$_[0]->{date}} unless $#_;
+   my $self = shift;
+   my ($day, $month, $year) = $#_ ? @_ : @{$_[0]} ;
+   $month = 11 if $month > 11;
+   $month = 0 if $month < 0;
+   $year = 0 if $year < 0;
+   $year = 199 if $year > 199;
+   $day = 0 if $day < 0;
+   my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
+   $day = $v - 1 if $day >= $v;
+   my @od = @{$self-> {date}};
+   return if $day == $od[0] && $month == $od[1] && $year == $od[2];
+   $self-> {date} = [ $day, $month, $year ];
+   $self-> Year-> value( $year + 1900);
+   $self-> Month-> focusedItem( $month);
+   $self-> Day-> repaint;
+   $self-> notify(q(Change));
+}
+
+sub day
+{
+   return $_[0]-> {date}->[0] unless $#_;
+   return if $_[0]->{date}->[0] == $_[1];
+   $_[0]-> date( $_[1], $_[0]->{date}->[1],$_[0]->{date}->[2]);
+}
+
+sub month
+{
+   return $_[0]-> {date}->[1] unless $#_;
+   return if $_[0]->{date}->[1] == $_[1];
+   $_[0]-> date( $_[0]->{date}->[0],$_[1],$_[0]->{date}->[2]);
+}
+
+sub year
+{
+   return $_[0]-> {date}->[2] unless $#_;
+   return if $_[0]->{date}->[2] == $_[1];
+   $_[0]-> date( $_[0]->{date}->[0],$_[0]->{date}->[1],$_[1]);
+}
+
+sub date_as_string
+{
+   my $self = shift;
+   my ( $d, $m, $y) = ( @_ ? ( $#_ ? @_ : @{$_[0]}) : @{ $self-> {date}});
+   $d++;
+   $y += 1900;
+   return $self-> month2str( $m) . " $d, $y";
+}
+
+sub date_from_time
+{
+   $_[0]-> date( @_[4,5,6]);
+}
+
+1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Calendar - standard calendar widget
+
+=head1 DESCRIPTION
+
+Provides interactive selection of a date between 1900 and 2099 years.
+The main property, L<date>, is a three-integer array, day, month, and year,
+if the format of perl localtime ( see L<perlfunc/localtime> ) - 
+day can be in range from 0 to 30,month from 0 to 11, year from 0 to 199.
+
+=head1 SYNPOSIS
+
+   use Prima::Calendar;
+   my $cal = Prima::Calendar-> create(
+      useLocale => 1,
+      onChange  => sub {
+         print $_[0]-> date_as_string, "\n";
+      },
+   );
+   $cal-> date_from_time( localtime( time));
+   $cal-> month( 5);
+
+
+=head1 API
+
+=head2 Events
+
+=over
+
+=item Change
+
+Called when the L<date> property is changed.
+
+=back
+
+=head2 Properties
+
+=over
+
+=item date DAY, MONTH, YEAR
+
+Accepts three integers in format of C<localtime>.
+DAY can be from 0 to 30, MONTH from 0 to 11, YEAR from 0 to 199.
+
+Default value: today's date.
+
+=item day INTEGER
+
+Selects the day in month.
+
+=item month
+
+Selects the month.
+
+=item useLocale BOOLEAN
+
+If 1, the locale-specified names of months and days of week are used.
+These are read by calling C<POSIX::strftime>. If invoking POSIX module
+is failed, the property is automatically assigned to 0.
+
+If 0, the english names of months and days of week are used.
+
+Default value: 1
+
+See also: L<date_as_string>
+
+=item year
+
+Selects the year.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item can_use_locale
+
+Returns boolean value, whether the locale information can be retrieved
+by calling C<strftime>.
+
+=item month2str MONTH
+
+Returns MONTH name accoring to L<useLocale> value.
+
+=item make_months
+
+Returns array of 12 month names accoring to L<useLocale> value.
+
+=item day_of_week DAY, MONTH, YEAR
+
+Returns integer value, from 0 to 6, of the day of week on
+DAY, MONTH, YEAR date. The switch from Julian to Gregorian calendar
+is ignored.
+
+=item date_as_string [ DAY, MONTH, YEAR ]
+
+Returns string representation of date on DAY, MONTH, YEAR according
+to L<useLocale> property value.
+
+=item date_from_time SEC, MIN, HOUR, M_DAY, MONTH, YEAR, ...
+
+Copies L<date> from C<localtime> or C<gmtime> result. This helper method
+allows the following syntax:
+
+    $calendar-> date_from_time( localtime( time));
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<POSIX>, L<perlfunc/localtime>, L<perlfunc/time>,
+F<examples/calendar.pl>.
+
+=cut
