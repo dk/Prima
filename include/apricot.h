@@ -1153,8 +1153,8 @@ list_index_of( PList self, Handle item);
 /* OS types */
 #define APC(const_name) CONSTANT(apc,const_name)
 START_TABLE(apc,UV)
-#define apcOS2                  1
-APC(OS2)
+#define apcOs2                  1
+APC(Os2)
 #define apcWin32                2
 APC(Win32)
 #define apcUnix                 3
@@ -2926,3 +2926,4 @@ extern Handle self;
 #endif /* PARANOID_MALLOC */
 
 #endif
+
