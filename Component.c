@@ -164,8 +164,7 @@ Component_detach( Handle self, Handle object, Bool kill)
          list_delete_at( var components, index);
          SvREFCNT_dec( SvRV(( PObject( object))-> mate));
          if ( kill) Object_destroy( object);
-      } else
-        warn( "RTC0040: Object detach failed");
+      }
    }
 }
 
