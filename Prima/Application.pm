@@ -24,7 +24,6 @@
 #  SUCH DAMAGE.
 #
 package main;
-use vars qw($clipboard);
 
 package Prima::Application;
 use strict;
@@ -35,7 +34,6 @@ sub import {
    shift;
    my %profile = ( name => q(Prima), @_);
    $::application ||= Prima::Application-> create( %profile);
-   $::application and $::clipboard = $::application-> get_clipboard;
    $uses++;
 }
 

@@ -1413,7 +1413,7 @@ sub copy
       }
       chomp( $text);
    }
-   $::application-> get_clipboard-> store( 'Text', $text);
+   $::application-> Clipboard-> store( 'Text', $text);
 }
 
 sub lock_change
@@ -1435,7 +1435,7 @@ sub paste
 {
    my $self = $_[0];
    return if $self->{readOnly};
-   my $s = $::application-> get_clipboard-> fetch( 'Text');
+   my $s = $::application-> Clipboard-> fetch( 'Text');
    return if !defined($s) or length( $s) == 0;
    $self-> cancel_block unless $self->{blockType} == bt::CUA;
    my @cs = $self-> cursor;
