@@ -751,13 +751,13 @@ sub profile_check_in
 
    (my $cls = ref $self) =~ s/^Prima:://;
 
-   for my $fore (qw(color hiliteColor disabledColor)) {
+   for my $fore (qw(color hiliteBackColor disabledColor dark3DColor)) {
       unless (exists $p->{$fore}) {
          my $clr = Prima::Widget::fetch_resource( $cls, $name, 'Foreground', $fore, $owner, fr::Color);
          $p->{$fore} = $clr if defined $clr;
       }
    }
-   for my $back (qw(backColor hiliteBackColor disabledBackColor)) {
+   for my $back (qw(backColor hiliteColor disabledBackColor light3DColor)) {
       unless (exists $p->{$back}) {
          my $clr = Prima::Widget::fetch_resource( $cls, $name, 'Background', $back, $owner, fr::Color);
          $p->{$back} = $clr if defined $clr;
