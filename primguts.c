@@ -1248,6 +1248,7 @@ NAN = 0.0;
    }
 #endif /* __unix */
 
+   list_create( &staticObjects, 16, 16);
    if ( !window_subsystem_init()) {
       apc_show_message( "Error initializing PRIMA");
       ST(0) = &sv_no;
@@ -1257,7 +1258,6 @@ NAN = 0.0;
    prima_init_image_subsystem();
    primaObjects = hash_create();
    vmtHash      = hash_create();
-   list_create( &staticObjects, 16, 16);
    list_create( &postDestroys, 16, 16);
 
    /* register hard coded XSUBs */
