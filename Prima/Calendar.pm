@@ -36,7 +36,7 @@ use Prima::ComboBox;
 use Prima::Sliders;
 
 package Prima::Calendar;
-use vars qw(@ISA @non_locale_months @days_in_months);
+use vars qw(@ISA @non_locale_months @days_in_months $OB_format);
 @ISA = qw(Prima::Widget);
 
 my $posix_state;
@@ -157,8 +157,16 @@ sub month2str
 sub make_months
 {
    return \@non_locale_months unless $_[0]-> {useLocale};
+   unless ( defined $OB_format) {
+      # %OB is a BSD extension for locale-specific date string
+      # for use without date
+      $OB_format = (
+         POSIX::strftime ( "%OB", 0, 0, 0, 0, 0, 0 ) eq
+         POSIX::strftime ( "%OB", 0, 0, 0, 0, 1, 0 )
+      ) ? '%B' : '%OB';
+   }
    return [ map {
-      POSIX::strftime ( "%B", 0, 0, 0, 0, $_, 0 )
+      POSIX::strftime ( $OB_format, 0, 0, 0, 0, $_, 0 )
    } 0 .. 11 ];
 }
 
