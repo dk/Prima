@@ -32,8 +32,8 @@
 
 #undef  my
 #define inherited CWidget->
-#define my  ((( PApplication) self)-> self)->
-#define var (( PApplication) self)->
+#define my  ((( PApplication) self)-> self)
+#define var (( PApplication) self)
 
 Handle application = nilHandle;
 
@@ -56,32 +56,32 @@ Application_init( Handle self, HV * profile)
       croak( "RTC0010: Attempt to create more than one application instance");
 
    CDrawable-> init( self, profile);
-   list_create( &var widgets, 16, 16);
-   list_create( &var modalHorizons, 0, 8);
+   list_create( &var->  widgets, 16, 16);
+   list_create( &var->  modalHorizons, 0, 8);
    application = self;
    if ( !apc_application_create( self))
       croak( "RTC0011: Error creating application");
 // Widget init
    SvHV_Font( pget_sv( font), &Font_buffer, "Application::init");
-   my set_font( self, Font_buffer);
+   my-> set_font( self, Font_buffer);
    SvHV_Font( pget_sv( popupFont), &Font_buffer, "Application::init");
-   my set_popup_font( self, Font_buffer);
+   my-> set_popup_font( self, Font_buffer);
    {
       AV * av = ( AV *) SvRV( pget_sv( designScale));
       SV ** holder = av_fetch( av, 0, 0);
       if ( holder)
-         var designScale. x = SvNV( *holder);
+         var->  designScale. x = SvNV( *holder);
       else
          warn("RTC0012: Array panic on 'designScale'");
       holder = av_fetch( av, 1, 0);
       if ( holder)
-         var designScale. y = SvNV( *holder);
+         var->  designScale. y = SvNV( *holder);
       else
          warn("RTC0012: Array panic on 'designScale'");
       pdelete( designScale);
    }
-   var text = malloc( 1);
-   var text[ 0] = 0;
+   var->  text = malloc( 1);
+   var->  text[ 0] = 0;
    opt_set( optModalHorizon);
 
    {
@@ -90,25 +90,25 @@ Application_init( Handle self, HV * profile)
 
       pset_c( name, "Clipboard");
       pset_H( owner, self);
-      var clipboard = create_instance( clipboardClass);
-      protect_object( var clipboard);
+      var->  clipboard = create_instance( clipboardClass);
+      protect_object( var->  clipboard);
       hv_clear( profile);
 
       pset_c( name, "Printer");
       pset_H( owner, self);
-      var printer = create_instance( printerClass);
-      protect_object( var printer);
+      var->  printer = create_instance( printerClass);
+      protect_object( var->  printer);
       hv_clear( profile);
 
       pset_H( owner, self);
       pset_i( timeout, hintPause);
       pset_c( name, "HintTimer");
-      var hintTimer = create_instance( "Prima::Timer");
-      protect_object( var hintTimer);
+      var->  hintTimer = create_instance( "Prima::Timer");
+      protect_object( var->  hintTimer);
       hv_clear( profile);
       memcpy( &HintTimerVmt, CTimer, sizeof( HintTimerVmt));
       HintTimerVmt. on_tick = Application_HintTimer_Tick;
-      (( PTimer) var hintTimer)-> self = &HintTimerVmt;
+      (( PTimer) var->  hintTimer)-> self = &HintTimerVmt;
 
       pset_H( owner, self);
       pset_i( color, hintColor);
@@ -118,30 +118,30 @@ Application_init( Handle self, HV * profile)
       pset_i( showHint, 0);
       pset_c( name, "HintWidget");
       pset_sv( font, hintFont);
-      var hintWidget = create_instance( hintClass);
-      protect_object( var hintWidget);
+      var->  hintWidget = create_instance( hintClass);
+      protect_object( var->  hintWidget);
       sv_free(( SV *) profile);
    }
-   my set( self, profile);
+   my-> set( self, profile);
 }
 
 void
 Application_done( Handle self)
 {
-   my close_help( self);
-   my first_that( self, kill_all, nil);
-   my first_that_component( self, kill_all, nil);
-   unprotect_object( var clipboard);
-   unprotect_object( var printer);
-   unprotect_object( var hintTimer);
-   unprotect_object( var hintWidget);
-   list_destroy( &var modalHorizons);
-   list_destroy( &var widgets);
-   free( var helpFile);
-   free( var text);
-   free( var hint);
-   var accelTable = var printer = var clipboard = var hintWidget = var hintTimer = nilHandle;
-   var helpFile   = var text    = var hint      = nil;
+   my-> close_help( self);
+   my-> first_that( self, kill_all, nil);
+   my-> first_that_component( self, kill_all, nil);
+   unprotect_object( var->  clipboard);
+   unprotect_object( var->  printer);
+   unprotect_object( var->  hintTimer);
+   unprotect_object( var->  hintWidget);
+   list_destroy( &var->  modalHorizons);
+   list_destroy( &var->  widgets);
+   free( var->  helpFile);
+   free( var->  text);
+   free( var->  hint);
+   var->  accelTable = var->  printer = var->  clipboard = var->  hintWidget = var->  hintTimer = nilHandle;
+   var->  helpFile   = var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
    application = nilHandle;
@@ -195,7 +195,7 @@ void Application_handle_event( Handle self, PEvent event)
       {
          ((( PComponent) event-> gen. H)-> self)-> message( event-> gen. H, event);
          event-> cmd = 0;
-         if ( var stage > csNormal) return;
+         if ( var->  stage > csNormal) return;
       }
       break;
    }
@@ -235,11 +235,11 @@ void
 Application_detach( Handle self, Handle objectHandle, Bool kill)
 {
    inherited detach( self, objectHandle, kill);
-   if ( var autoClose &&
-        ( var widgets. count == 1) &&
+   if ( var->  autoClose &&
+        ( var->  widgets. count == 1) &&
         kind_of( objectHandle, CWidget) &&
-        ( objectHandle != var hintWidget)
-       ) my close( self);
+        ( objectHandle != var->  hintWidget)
+       ) my-> close( self);
 }
 
 void
@@ -393,13 +393,13 @@ Application_get_system_info( char * dummy)
 Handle
 Application_get_clipboard( Handle self)
 {
-   return var clipboard;
+   return var->  clipboard;
 }
 
 Handle
 Application_get_printer( Handle self)
 {
-   return var printer;
+   return var->  printer;
 }
 
 Point
@@ -423,22 +423,22 @@ Application_get_widget_from_handle( Handle self, SV * handle)
 Handle
 Application_get_hint_widget( Handle self)
 {
-   return var hintWidget;
+   return var->  hintWidget;
 }
 
 char *
 Application_get_help_file ( Handle self)
 {
-   return var helpFile ? var helpFile : "";
+   return var->  helpFile ? var->  helpFile : "";
 }
 
 void
 Application_set_help_file( Handle self, char * helpFile)
 {
-   if ( var stage > csNormal) return;
-   if ( var helpFile && ( strcmp( var helpFile, helpFile) == 0)) return;
-   free( var helpFile);
-   strcpy( var helpFile = malloc( strlen ( helpFile) + 1), helpFile);
+   if ( var->  stage > csNormal) return;
+   if ( var->  helpFile && ( strcmp( var->  helpFile, helpFile) == 0)) return;
+   free( var->  helpFile);
+   strcpy( var->  helpFile = malloc( strlen ( helpFile) + 1), helpFile);
    apc_help_set_file( self, helpFile);
 }
 
@@ -457,14 +457,14 @@ Application_get_active_window( Handle self)
 Bool
 Application_get_auto_close( Handle self)
 {
-   return var autoClose;
+   return var->  autoClose;
 }
 
 
 void
 Application_set_auto_close( Handle self, Bool autoClose)
 {
-   var autoClose = autoClose;
+   var->  autoClose = autoClose;
 }
 
 
@@ -492,30 +492,30 @@ Application_get_color_index( Handle self, int index)
    {
      case ciFore:
         return opt_InPaint ?
-           CDrawable-> get_color ( self) : var colors[ index];
+           CDrawable-> get_color ( self) : var->  colors[ index];
      case ciBack:
         return opt_InPaint ?
-           CDrawable-> get_back_color ( self) : var colors[ index];
+           CDrawable-> get_back_color ( self) : var->  colors[ index];
      default:
-        return  var colors[ index];
+        return  var->  colors[ index];
    }
 }
 
 void
 Application_set_font( Handle self, Font font)
 {
-   if ( !opt_InPaint) my first_that( self, font_notify, &font);
-   apc_font_pick( self, &font, & var font);
-   if ( opt_InPaint) apc_gp_set_font ( self, & var font);
+   if ( !opt_InPaint) my-> first_that( self, font_notify, &font);
+   apc_font_pick( self, &font, & var->  font);
+   if ( opt_InPaint) apc_gp_set_font ( self, & var->  font);
 }
 
 void
 Application_set_color_index( Handle self, Color color, int index)
 {
    SingleColor s = { color, index};
-   if ( var stage > csNormal) return;
+   if ( var->  stage > csNormal) return;
    if (( index < 0) || ( index > ciMaxId)) return;
-   if ( !opt_InPaint) my first_that( self, single_color_notify, &s);
+   if ( !opt_InPaint) my-> first_that( self, single_color_notify, &s);
    if ( opt_InPaint) switch ( index)
    {
       case ciFore:
@@ -525,14 +525,14 @@ Application_set_color_index( Handle self, Color color, int index)
          CDrawable-> set_back_color ( self, color);
          break;
     }
-   var colors[ index] = color;
+   var->  colors[ index] = color;
 }
 
 Bool
 Application_close( Handle self)
 {
-   if ( var stage > csNormal) return true;
-   return my can_close( self) ? ( apc_application_close( self), true) : false;
+   if ( var->  stage > csNormal) return true;
+   return my-> can_close( self) ? ( apc_application_close( self), true) : false;
 }
 
 Bool
@@ -565,18 +565,18 @@ Application_get_scroll_rate( Handle self)
 
 static void hshow( Handle self)
 {
-   PWidget_vmt hintUnder = CWidget( var hintUnder);
-   char * text = hintUnder-> get_hint( var hintUnder);
-   Point size  = hintUnder-> get_size( var hintUnder);
-   Point s = my get_size( self);
+   PWidget_vmt hintUnder = CWidget( var->  hintUnder);
+   char * text = hintUnder-> get_hint( var->  hintUnder);
+   Point size  = hintUnder-> get_size( var->  hintUnder);
+   Point s = my-> get_size( self);
    Point fin = {0,0};
-   Point pos = hintUnder-> client_to_screen( var hintUnder, fin);
-   Point mouse = my get_pointer_pos( self);
+   Point pos = hintUnder-> client_to_screen( var->  hintUnder, fin);
+   Point mouse = my-> get_pointer_pos( self);
    Point hintSize;
-   PWidget_vmt hintWidget = CWidget( var hintWidget);
+   PWidget_vmt hintWidget = CWidget( var->  hintWidget);
 
-   hintWidget-> set_text( var hintWidget, text);
-   hintSize = hintWidget-> get_size( var hintWidget);
+   hintWidget-> set_text( var->  hintWidget, text);
+   hintSize = hintWidget-> get_size( var->  hintWidget);
 
    fin. x = mouse. x - 16;
    fin. y = pos. y - hintSize. y - 1;
@@ -588,30 +588,30 @@ static void hshow( Handle self)
    if ( fin. y < 0) fin. y = pos. y + size. y + 1;
    if ( fin. y < 0) fin. y = 0;
 
-   hintWidget-> set_pos( var hintWidget, fin. x, fin. y);
-   hintWidget-> show( var hintWidget);
-   hintWidget-> bring_to_front( var hintWidget);
+   hintWidget-> set_pos( var->  hintWidget, fin. x, fin. y);
+   hintWidget-> show( var->  hintWidget);
+   hintWidget-> bring_to_front( var->  hintWidget);
 }
 
 void
 Application_HintTimer_Tick( Handle timer)
 {
    Handle self = application;
-   Point pos = my get_pointer_pos( self);
+   Point pos = my-> get_pointer_pos( self);
    ((( PTimer) timer)-> self)-> stop( timer);
-   if ( var hintActive == 1)
+   if ( var->  hintActive == 1)
    {
       Event ev = {cmHint};
-      if ( pos. x != var hintMousePos. x || pos. y != var hintMousePos. y) return;
-      if ( !var hintUnder || (( PObject) var hintUnder)-> stage != csNormal) return;
+      if ( pos. x != var->  hintMousePos. x || pos. y != var->  hintMousePos. y) return;
+      if ( !var->  hintUnder || (( PObject) var->  hintUnder)-> stage != csNormal) return;
       ev. gen. B = true;
-      ev. gen. H = var hintUnder;
-      var hintVisible = 1;
-      if (( PWidget( var hintUnder)-> stage == csNormal) &&
-          ( CWidget( var hintUnder)-> message( var hintUnder, &ev)))
+      ev. gen. H = var->  hintUnder;
+      var->  hintVisible = 1;
+      if (( PWidget( var->  hintUnder)-> stage == csNormal) &&
+          ( CWidget( var->  hintUnder)-> message( var->  hintUnder, &ev)))
           hshow( self);
-   } else if ( var hintActive == -1)
-      var hintActive = 0;
+   } else if ( var->  hintActive == -1)
+      var->  hintActive = 0;
 }
 
 void
@@ -620,42 +620,42 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
    if ( show && !is_opt( optShowHint)) return;
    if ( show)
    {
-      var hintMousePos = my get_pointer_pos( self);
-      var hintUnder = view;
-      if ( var hintActive == -1)
+      var->  hintMousePos = my-> get_pointer_pos( self);
+      var->  hintUnder = view;
+      if ( var->  hintActive == -1)
       {
          Event ev = {cmHint};
          ev. gen. B = true;
          ev. gen. H = view;
-         ((( PTimer) var hintTimer)-> self)-> stop( var hintTimer);
-         var hintVisible = 1;
+         ((( PTimer) var->  hintTimer)-> self)-> stop( var->  hintTimer);
+         var->  hintVisible = 1;
          if (( PWidget( view)-> stage == csNormal) &&
              ( CWidget( view)-> message( view, &ev)))
              hshow( self);
       } else {
-         if ( !byMouse && var hintActive == 1) return;
-         CTimer( var hintTimer)-> start( var hintTimer);
+         if ( !byMouse && var->  hintActive == 1) return;
+         CTimer( var->  hintTimer)-> start( var->  hintTimer);
       }
-      var hintActive = 1;
+      var->  hintActive = 1;
    } else {
-      int oldHA = var hintActive;
-      int oldHV = var hintVisible;
+      int oldHA = var->  hintActive;
+      int oldHV = var->  hintVisible;
       if ( oldHA != -1)
-         ((( PTimer) var hintTimer)-> self)-> stop( var hintTimer);
-      if ( var hintVisible)
+         ((( PTimer) var->  hintTimer)-> self)-> stop( var->  hintTimer);
+      if ( var->  hintVisible)
       {
          Event ev = {cmHint};
          ev. gen. B = false;
          ev. gen. H = view;
-         var hintVisible = 0;
+         var->  hintVisible = 0;
          if (( PWidget( view)-> stage != csNormal) ||
               ( CWidget( view)-> message( view, &ev)))
-            CWidget( var hintWidget)-> hide( var hintWidget);
+            CWidget( var->  hintWidget)-> hide( var->  hintWidget);
       }
-      if ( oldHA != -1) var hintActive = 0;
+      if ( oldHA != -1) var->  hintActive = 0;
       if ( byMouse && oldHV) {
-         var hintActive = -1;
-         CTimer( var hintTimer)-> start( var hintTimer);
+         var->  hintActive = -1;
+         CTimer( var->  hintTimer)-> start( var->  hintTimer);
       }
    }
 }
@@ -663,50 +663,50 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
 void
 Application_set_hint_color( Handle self, Color hintColor)
 {
-   CWidget( var hintWidget)-> set_color( var hintWidget, hintColor);
+   CWidget( var->  hintWidget)-> set_color( var->  hintWidget, hintColor);
 }
 
 void
 Application_set_hint_back_color( Handle self, Color hintBackColor)
 {
-   CWidget( var hintWidget)-> set_back_color( var hintWidget, hintBackColor);
+   CWidget( var->  hintWidget)-> set_back_color( var->  hintWidget, hintBackColor);
 }
 
 void
 Application_set_hint_font( Handle self, Font hintFont)
 {
-   CWidget( var hintWidget)-> set_font( var hintWidget, hintFont);
+   CWidget( var->  hintWidget)-> set_font( var->  hintWidget, hintFont);
 }
 
 
 void
 Application_set_hint_pause( Handle self, int hintPause)
 {
-   CTimer( var hintTimer)-> set_timeout( var hintTimer, hintPause);
+   CTimer( var->  hintTimer)-> set_timeout( var->  hintTimer, hintPause);
 }
 
 Color
 Application_get_hint_color( Handle self)
 {
-   return CWidget( var hintWidget)-> get_color( var hintWidget);
+   return CWidget( var->  hintWidget)-> get_color( var->  hintWidget);
 }
 
 Color
 Application_get_hint_back_color( Handle self)
 {
-   return CWidget( var hintWidget)-> get_back_color( var hintWidget);
+   return CWidget( var->  hintWidget)-> get_back_color( var->  hintWidget);
 }
 
 Font
 Application_get_hint_font( Handle self)
 {
-   return CWidget( var hintWidget)-> get_font( var hintWidget);
+   return CWidget( var->  hintWidget)-> get_font( var->  hintWidget);
 }
 
 int
 Application_get_hint_pause( Handle self)
 {
-   return CTimer( var hintTimer)-> get_timeout( var hintTimer);
+   return CTimer( var->  hintTimer)-> get_timeout( var->  hintTimer);
 }
 
 void
@@ -749,7 +749,7 @@ Application_get_image( Handle self, int x, int y, int xLen, int yLen)
    HV * profile;
    Handle i;
    Bool ret;
-   if ( var stage > csNormal) return nilHandle;
+   if ( var->  stage > csNormal) return nilHandle;
    if ( xLen <= 0 || yLen <= 0) return nilHandle;
 
    profile = newHV();
@@ -764,24 +764,24 @@ Application_get_image( Handle self, int x, int y, int xLen, int yLen)
 Handle
 Application_map_focus( Handle self, Handle from)
 {
-   Handle topFrame = my top_frame( self, from);
+   Handle topFrame = my-> top_frame( self, from);
    Handle topShared;
 
-   if ( var topExclModal)
-      return ( topFrame == var topExclModal) ? from : var topExclModal;
+   if ( var->  topExclModal)
+      return ( topFrame == var->  topExclModal) ? from : var->  topExclModal;
 
-   if ( !var topSharedModal && var modalHorizons. count == 0)
+   if ( !var->  topSharedModal && var->  modalHorizons. count == 0)
       return from; // return from if no shared modals active
 
   if ( topFrame == self) {
-      if ( !var topSharedModal) return from;
-      topShared = var topSharedModal;
+      if ( !var->  topSharedModal) return from;
+      topShared = var->  topSharedModal;
    } else {
       Handle horizon =
          ( !CWindow( topFrame)-> get_modal_horizon( topFrame)) ?
          CWindow( topFrame)-> get_horizon( topFrame) : topFrame;
       if ( horizon == self)
-         topShared = var topSharedModal;
+         topShared = var->  topSharedModal;
       else
          topShared = PWindow( horizon)-> topSharedModal;
    }
@@ -808,9 +808,9 @@ STMT_START {							                     \
 } STMT_END
 
 
-   if ( var topExclModal) {
+   if ( var->  topExclModal) {
    // checking exclusive modal chain
-      xTop = ( !ha || ( PWindow(ha)->modal == 0)) ? var exclModal : ha;
+      xTop = ( !ha || ( PWindow(ha)->modal == 0)) ? var->  exclModal : ha;
       while ( xTop) {
          if ( PWindow(xTop)-> nextExclModal) {
             CWindow(xTop)-> bring_to_front( xTop);
@@ -821,14 +821,14 @@ STMT_START {							                     \
          }
       }
    } else {
-      if ( !var topSharedModal && var modalHorizons. count == 0)
+      if ( !var->  topSharedModal && var->  modalHorizons. count == 0)
          return nilHandle; // return from if no shared modals active
       // checking shared modal chains
       if ( ha) {
          xTop = ( PWindow(ha)->modal == 0) ? CWindow(ha)->get_horizon(ha) : ha;
-         if ( xTop == application) xTop = var sharedModal;
+         if ( xTop == application) xTop = var->  sharedModal;
       } else
-         xTop = var sharedModal ? var sharedModal : var modalHorizons. items[ 0];
+         xTop = var->  sharedModal ? var->  sharedModal : var->  modalHorizons. items[ 0];
 
       while ( xTop) {
          if ( PWindow(xTop)-> nextSharedModal) {

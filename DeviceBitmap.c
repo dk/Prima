@@ -30,17 +30,17 @@
 
 #undef  my
 #define inherited CDrawable->
-#define my  ((( PDeviceBitmap) self)-> self)->
-#define var (( PDeviceBitmap) self)->
+#define my  ((( PDeviceBitmap) self)-> self)
+#define var (( PDeviceBitmap) self)
 
 void
 DeviceBitmap_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
-   var w = pget_i( width);
-   var h = pget_i( height);
-   var monochrome = pget_B( monochrome);
-   if ( !apc_dbm_create( self, var monochrome))
+   var-> w = pget_i( width);
+   var-> h = pget_i( height);
+   var-> monochrome = pget_B( monochrome);
+   if ( !apc_dbm_create( self, var-> monochrome))
       croak("RTC0110: Cannot create device bitmap");
    inherited begin_paint( self);
    opt_set( optInDraw);
@@ -56,7 +56,7 @@ DeviceBitmap_done( Handle self)
 Bool DeviceBitmap_begin_paint      ( Handle self) { return true;}
 Bool DeviceBitmap_begin_paint_info ( Handle self) { return true;}
 void DeviceBitmap_end_paint        ( Handle self) { return;}
-Bool DeviceBitmap_get_monochrome   ( Handle self) { return var monochrome; }
+Bool DeviceBitmap_get_monochrome   ( Handle self) { return var-> monochrome; }
 
 static Handle xdup( Handle self, char * className)
 {
@@ -64,10 +64,10 @@ static Handle xdup( Handle self, char * className)
    PDrawable i;
    HV * profile = newHV();
 
-   pset_H( owner,        var owner);
-   pset_i( width,        var w);
-   pset_i( height,       var h);
-   pset_i( type,         var monochrome ? imMono : imRGB);
+   pset_H( owner,        var-> owner);
+   pset_i( width,        var-> w);
+   pset_i( height,       var-> h);
+   pset_i( type,         var-> monochrome ? imMono : imRGB);
 
    h = Object_create( className, profile);
    sv_free(( SV *) profile);

@@ -31,12 +31,12 @@
 
 #undef my
 #define inherited CComponent->
-#define my  ((( PDrawable) self)-> self)->
-#define var (( PDrawable) self)->
+#define my  ((( PDrawable) self)-> self)
+#define var (( PDrawable) self)
 
 #define gpARGS            Bool inPaint = opt_InPaint
-#define gpENTER           if ( !inPaint) my begin_paint_info( self)
-#define gpLEAVE           if ( !inPaint) my end_paint_info( self)
+#define gpENTER           if ( !inPaint) my-> begin_paint_info( self)
+#define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
 
 PRGBColor read_palette( int * palSize, SV * palette);
 
@@ -45,9 +45,9 @@ Drawable_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
    apc_gp_init( self);
-   var w = var h = 0;
-   my set_color        ( self, pget_i ( color));
-   my set_back_color   ( self, pget_i ( backColor));
+   var-> w = var-> h = 0;
+   my-> set_color        ( self, pget_i ( color));
+   my-> set_back_color   ( self, pget_i ( backColor));
    {
       SV * sv = pget_sv( fillPattern);
       if ( SvROK( sv)) {
@@ -63,22 +63,22 @@ Drawable_init( Handle self, HV * profile)
                }
                fp[ i] = SvIV( *holder);
             }
-            my set_fill_pattern( self, fp);
+            my-> set_fill_pattern( self, fp);
          } else {
             warn("RTC0056: Illegal fillPattern passed to Drawable::init");
-            my set_fill_pattern_id( self, fpSolid);
+            my-> set_fill_pattern_id( self, fpSolid);
          }
       } else
-         my set_fill_pattern_id( self, SvIV( sv));
+         my-> set_fill_pattern_id( self, SvIV( sv));
    }
-   my set_line_end     ( self, pget_i ( lineEnd));
-   my set_line_pattern ( self, pget_i ( linePattern));
-   my set_line_width   ( self, pget_i ( lineWidth));
-   my set_region       ( self, pget_H ( region));
-   my set_rop          ( self, pget_i ( rop));
-   my set_rop2         ( self, pget_i ( rop2));
-   my set_text_opaque  ( self, pget_B ( textOpaque));
-   my set_text_out_baseline( self, pget_B ( textOutBaseline));
+   my-> set_line_end     ( self, pget_i ( lineEnd));
+   my-> set_line_pattern ( self, pget_i ( linePattern));
+   my-> set_line_width   ( self, pget_i ( lineWidth));
+   my-> set_region       ( self, pget_H ( region));
+   my-> set_rop          ( self, pget_i ( rop));
+   my-> set_rop2         ( self, pget_i ( rop2));
+   my-> set_text_opaque  ( self, pget_B ( textOpaque));
+   my-> set_text_out_baseline( self, pget_B ( textOutBaseline));
    if ( pexist( transform))
    {
       AV * av = ( AV *) SvRV( pget_sv( transform));
@@ -87,11 +87,11 @@ Drawable_init( Handle self, HV * profile)
       if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
       holder = av_fetch( av, 1, 0);
       if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
-      my set_transform( self, tr.x, tr.y);
+      my-> set_transform( self, tr.x, tr.y);
    }
    SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::init");
-   my set_font( self, Font_buffer);
-   my set_palette( self, pget_sv( palette));
+   my-> set_font( self, Font_buffer);
+   my-> set_palette( self, pget_sv( palette));
 }
 
 void
@@ -105,16 +105,16 @@ void
 Drawable_cleanup( Handle self)
 {
    if ( is_opt( optInDrawInfo))
-      my end_paint_info( self);
+      my-> end_paint_info( self);
    if ( is_opt( optInDraw))
-      my end_paint( self);
+      my-> end_paint( self);
    inherited cleanup( self);
 }
 
 Bool
 Drawable_begin_paint( Handle self)
 {
-   if ( is_opt( optInDrawInfo)) my end_paint_info( self);
+   if ( is_opt( optInDrawInfo)) my-> end_paint_info( self);
    opt_set( optInDraw);
    return true;
 }
@@ -146,7 +146,7 @@ void Drawable_set( Handle self, HV * profile)
    if ( pexist( font))
    {
       SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::set");
-      my set_font( self, Font_buffer);
+      my-> set_font( self, Font_buffer);
       pdelete( font);
    }
    if ( pexist( transform))
@@ -157,7 +157,7 @@ void Drawable_set( Handle self, HV * profile)
       if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
       holder = av_fetch( av, 1, 0);
       if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'transform'");
-      my set_transform( self, tr.x, tr.y);
+      my-> set_transform( self, tr.x, tr.y);
       pdelete( transform);
    }
    if ( pexist( fillPattern))
@@ -177,11 +177,11 @@ void Drawable_set( Handle self, HV * profile)
                }
                fp[ i] = SvIV( *holder);
             }
-            my set_fill_pattern( self, fp);
+            my-> set_fill_pattern( self, fp);
          } else
             warn("RTC0057: Illegal fillPattern passed to Drawable::set");
       } else
-         my set_fill_pattern_id( self, SvIV( sv));
+         my-> set_fill_pattern_id( self, SvIV( sv));
       pdelete( fillPattern);
    }
    inherited set( self, profile);
@@ -197,24 +197,24 @@ void
 Drawable_set_fill_pattern_id( Handle self, int patternId )
 {
    if (( patternId < 0) || ( patternId > fpMaxId)) patternId = fpSolid;
-   my set_fill_pattern( self, fillPatterns[ patternId]);
+   my-> set_fill_pattern( self, fillPatterns[ patternId]);
 }
 
 void
 Drawable_set_font( Handle self, Font font)
 {
-   apc_font_pick( self, &font, &var font);
-   apc_gp_set_font( self, &var font);
+   apc_font_pick( self, &font, &var-> font);
+   apc_gp_set_font( self, &var-> font);
 }
 
 void
 Drawable_set_palette( Handle self, SV * palette)
 {
-   int ops = var palSize;
-   if ( var stage > csNormal) return;
-   free( var palette);
-   var palette = read_palette( &var palSize, palette);
-   if ( ops == 0 && var palSize == 0) return; // do not bother apc
+   int ops = var-> palSize;
+   if ( var-> stage > csNormal) return;
+   free( var-> palette);
+   var-> palette = read_palette( &var-> palSize, palette);
+   if ( ops == 0 && var-> palSize == 0) return; // do not bother apc
    apc_gp_set_palette( self);
 }
 
@@ -328,7 +328,7 @@ Drawable_get_nearest_color( Handle self, Color color)
 Handle
 Drawable_get_region( Handle self)
 {
-   if ( var stage > csNormal) return nilHandle;
+   if ( var-> stage > csNormal) return nilHandle;
    if ( apc_gp_get_region( self, nilHandle)) {
       HV * profile = newHV();
       Handle i = Object_create( "Prima::Image", profile);
@@ -406,7 +406,7 @@ Drawable_get_fill_pattern( Handle self)
 Font
 Drawable_get_font( Handle self)
 {
-   return var font;
+   return var-> font;
 }
 
 SV *
@@ -421,7 +421,7 @@ Drawable_get_handle( Handle self)
 int
 Drawable_get_height( Handle self)
 {
-  return var h;
+  return var-> h;
 }
 
 SV *
@@ -429,8 +429,8 @@ Drawable_get_palette( Handle self)
 {
    AV * av = newAV();
    int i;
-   int colors = var palSize;
-   Byte * pal = ( Byte*) var palette;
+   int colors = var-> palSize;
+   Byte * pal = ( Byte*) var-> palette;
    for ( i = 0; i < colors * 3; i++) av_push( av, newSViv( pal[ i]));
    return newRV_noinc(( SV *) av);
 }
@@ -439,14 +439,14 @@ Drawable_get_palette( Handle self)
 Point
 Drawable_get_size ( Handle self)
 {
-   Point ret = { my get_width ( self), my get_height ( self)};
+   Point ret = { my-> get_width ( self), my-> get_height ( self)};
    return ret;
 }
 
 int
 Drawable_get_width( Handle self)
 {
-   return var w;
+   return var-> w;
 }
 
 void
@@ -455,7 +455,7 @@ Drawable_put_image( Handle self, int x , int y , Handle image )
    Point size;
    if ( image == nilHandle) return;
    size = ((( PDrawable) image)-> self)-> get_size( image);
-   apc_gp_put_image ( self, image, x, y, 0, 0, size.x, size.y, my get_rop( self));
+   apc_gp_put_image ( self, image, x, y, 0, 0, size.x, size.y, my-> get_rop( self));
 }
 
 void
@@ -464,7 +464,7 @@ Drawable_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle i
    Point size;
    if ( image == nilHandle) return;
    size = ((( PDrawable) image)-> self)-> get_size( image);
-   apc_gp_stretch_image ( self, image, x, y, 0, 0, xDest, yDest, size.x, size.y,  my get_rop( self));
+   apc_gp_stretch_image ( self, image, x, y, 0, 0, xDest, yDest, size.x, size.y,  my-> get_rop( self));
 }
 
 void

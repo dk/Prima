@@ -31,8 +31,8 @@
 
 #undef  my
 #define inherited CAbstractMenu->
-#define my  ((( PPopup) self)-> self)->
-#define var (( PPopup) self)->
+#define my  ((( PPopup) self)-> self)
+#define var (( PPopup) self)
 
 void
 Popup_init( Handle self, HV * profile)
@@ -44,9 +44,9 @@ Popup_init( Handle self, HV * profile)
 void
 Popup_update_sys_handle( Handle self, HV * profile)
 {
-   Handle xOwner = pexist( owner) ? pget_H( owner) : var owner;
-   if ( var owner && ( xOwner != var owner))
-      ((( PWidget) var owner)-> self)-> set_popup( var owner, nilHandle);
+   Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
+   if ( var-> owner && ( xOwner != var-> owner))
+      ((( PWidget) var-> owner)-> self)-> set_popup( var-> owner, nilHandle);
    if ( !pexist( owner)) return;
    if ( !apc_popup_create( self, xOwner))
       croak("RTC0061: Cannot create popup");
@@ -71,26 +71,26 @@ Popup_set_selected( Handle self, Bool selected)
 {
    inherited set_selected( self, selected);
    if ( selected)
-      ((( PWidget) var owner)-> self)-> set_popup( var owner, self);
-   else if ( my get_selected( self))
-      ((( PWidget) var owner)-> self)-> set_popup( var owner, nilHandle);
+      ((( PWidget) var-> owner)-> self)-> set_popup( var-> owner, self);
+   else if ( my-> get_selected( self))
+      ((( PWidget) var-> owner)-> self)-> set_popup( var-> owner, nilHandle);
 }
 
 Bool
 Popup_get_selected( Handle self)
 {
-   return (((( PWidget) var owner)-> self)-> get_popup( var owner) == self);
+   return (((( PWidget) var-> owner)-> self)-> get_popup( var-> owner) == self);
 }
 
 void
 Popup_popup( Handle self, int x, int y, int ancLeft, int ancBottom, int ancRight, int ancTop)
 {
    int i;
-   PWidget owner = ( PWidget) var owner;
+   PWidget owner = ( PWidget) var-> owner;
    ColorSet color;
    Rect anchor = {ancLeft, ancBottom, ancRight, ancTop};
    int stage = owner-> stage;
-   if ( var stage > csNormal) return;
+   if ( var-> stage > csNormal) return;
    owner-> stage = csFrozen;
    memcpy( color, owner-> popupColor, sizeof( ColorSet));
    for ( i = 0; i < ciMaxId + 1; i++)

@@ -32,8 +32,8 @@
 
 #undef  my
 #define inherited CComponent->
-#define my  ((( PClipboard) self)-> self)->
-#define var (( PClipboard) self)->
+#define my  ((( PClipboard) self)-> self)
+#define var (( PClipboard) self)
 
 #define cefInit     0
 #define cefDone     1
@@ -76,9 +76,9 @@ Clipboard_init( Handle self, HV * profile)
 void
 Clipboard_done( Handle self)
 {
-   if ( var openCount > 0) apc_clipboard_close();
-   while( var formatCount)
-       my deregister_format( self, (( PClipboardFormatReg) var formats)-> id);
+   if ( var->  openCount > 0) apc_clipboard_close();
+   while( var->  formatCount)
+       my-> deregister_format( self, (( PClipboardFormatReg) var->  formats)-> id);
    CComponent( application)-> detach( application, self, false);
    apc_clipboard_destroy();
    inherited done( self);
@@ -91,9 +91,9 @@ static PClipboardFormatReg
 first_that( Handle self, void * actionProc, void * params)
 {
    int i;
-   PClipboardFormatReg list = ( PClipboardFormatReg) var formats;
+   PClipboardFormatReg list = ( PClipboardFormatReg) var->  formats;
    if ( actionProc == nil) return nilHandle;
-   for ( i = 0; i < var formatCount; i++)
+   for ( i = 0; i < var->  formatCount; i++)
    {
       if ((( PActionProc) actionProc)( self, list+i, params))
          return list+i;
@@ -114,16 +114,16 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
    if ( list)
    {
       list = ( PClipboardFormatReg)( list-> server);
-      my deregister_format( self, format);
+      my-> deregister_format( self, format);
    }
-   list = malloc( sizeof( ClipboardFormatReg) * ( var formatCount + 1));
-   if ( var formats != nil)
+   list = malloc( sizeof( ClipboardFormatReg) * ( var->  formatCount + 1));
+   if ( var->  formats != nil)
    {
-      memcpy( list, var formats, sizeof( ClipboardFormatReg) * var formatCount);
-      free( var formats);
+      memcpy( list, var->  formats, sizeof( ClipboardFormatReg) * var->  formatCount);
+      free( var->  formats);
    }
-   var formats = list;
-   list += var formatCount++;
+   var->  formats = list;
+   list += var->  formatCount++;
    strcpy( list-> id  = malloc( strlen( format) + 1), format);
    list-> server      = ( ClipboardExchangeFunc *) serverProc;
    list-> sysId       = ( long) list-> server( list, cefInit, nilSV);
@@ -134,40 +134,40 @@ void
 Clipboard_deregister_format( Handle self, char * format)
 {
    PClipboardFormatReg fr = first_that( self, find_format, format);
-   PClipboardFormatReg list = ( PClipboardFormatReg) var formats;
+   PClipboardFormatReg list = ( PClipboardFormatReg) var->  formats;
    if ( fr == nil) return;
    fr-> server( fr, cefDone, nilSV);
    free( fr-> id);
-   var formatCount--;
-   memcpy( fr, fr + 1, sizeof( ClipboardFormatReg) * ( var formatCount - ( fr - list)));
-   if ( var formatCount > 0)
+   var->  formatCount--;
+   memcpy( fr, fr + 1, sizeof( ClipboardFormatReg) * ( var->  formatCount - ( fr - list)));
+   if ( var->  formatCount > 0)
    {
-      fr = malloc( sizeof( ClipboardFormatReg) * var formatCount);
-      memcpy( fr, list, sizeof( ClipboardFormatReg) * var formatCount);
+      fr = malloc( sizeof( ClipboardFormatReg) * var->  formatCount);
+      memcpy( fr, list, sizeof( ClipboardFormatReg) * var->  formatCount);
    } else
       fr = nil;
-   free( var formats);
-   var formats = fr;
+   free( var->  formats);
+   var->  formats = fr;
 }
 
 Bool
 Clipboard_open( Handle self)
 {
-   var openCount++;
-   if ( var openCount > 1) return true;
+   var->  openCount++;
+   if ( var->  openCount > 1) return true;
    return apc_clipboard_open();
 }
 
 void
 Clipboard_close( Handle self)
 {
-   if ( var openCount > 0)
+   if ( var->  openCount > 0)
    {
-     var openCount--;
-     if ( var openCount > 0) return;
+     var->  openCount--;
+     if ( var->  openCount > 0) return;
      apc_clipboard_close();
    } else
-      var openCount = 0;
+      var->  openCount = 0;
 }
 
 Bool
@@ -176,9 +176,9 @@ Clipboard_format_exists( Handle self, char * format)
    Bool ret;
    PClipboardFormatReg fr = first_that( self, find_format, format);
    if ( !fr) return false;
-   my open( self);
+   my-> open( self);
    ret = apc_clipboard_has_format( fr-> sysId);
-   my close( self);
+   my-> close( self);
    return ret;
 }
 
@@ -187,12 +187,12 @@ Clipboard_fetch( Handle self, char * format)
 {
    PClipboardFormatReg fr = first_that( self, find_format, format);
    SV * ret;
-   my open( self);
-   if ( !fr || !my format_exists( self, format))
+   my-> open( self);
+   if ( !fr || !my-> format_exists( self, format))
       ret = newSVsv( nilSV);
    else
       ret = fr-> server( fr, cefFetch, nilSV);
-   my close( self);
+   my-> close( self);
    return ret;
 }
 
@@ -201,32 +201,32 @@ Clipboard_store( Handle self, char * format, SV * data)
 {
    PClipboardFormatReg fr = first_that( self, find_format, format);
    if ( !fr) return;
-   my open( self);
-   if ( var openCount == 1) apc_clipboard_clear();
+   my-> open( self);
+   if ( var->  openCount == 1) apc_clipboard_clear();
    fr-> server( fr, cefStore, data);
-   my close( self);
+   my-> close( self);
 }
 
 void
 Clipboard_clear( Handle self)
 {
-   my open( self);
+   my-> open( self);
    apc_clipboard_clear();
-   my close( self);
+   my-> close( self);
 }
 
 int
 Clipboard_get_format_count( Handle self)
 {
-   PClipboardFormatReg list = ( PClipboardFormatReg) var formats;
+   PClipboardFormatReg list = ( PClipboardFormatReg) var->  formats;
    int i, ret = 0;
-   my open( self);
-   for ( i = 0; i < var formatCount; i++)
+   my-> open( self);
+   for ( i = 0; i < var->  formatCount; i++)
    {
       if ( !apc_clipboard_has_format( list[ i]. sysId)) continue;
       ret++;
    }
-   my close( self);
+   my-> close( self);
    return ret;
 }
 
@@ -242,7 +242,7 @@ Clipboard_get_handle( Handle self)
 int
 Clipboard_get_registered_format_count( Handle self)
 {
-   return var formatCount;
+   return var->  formatCount;
 }
 
 Bool
@@ -271,14 +271,14 @@ XS( Clipboard_get_formats_FROMPERL)
    self = gimme_the_mate( ST( 0));
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Clipboard.get_formats");
-   my open( self);
-   list = ( PClipboardFormatReg) var formats;
-   for ( i = 0; i < var formatCount; i++)
+   my-> open( self);
+   list = ( PClipboardFormatReg) var->  formats;
+   for ( i = 0; i < var->  formatCount; i++)
    {
       if ( !apc_clipboard_has_format( list[ i]. sysId)) continue;
       XPUSHs( sv_2mortal( newSVpv( list[ i]. id, 0)));
    }
-   my close( self);
+   my-> close( self);
    PUTBACK;
 }
 
@@ -295,9 +295,9 @@ XS( Clipboard_get_registered_formats_FROMPERL)
    self = gimme_the_mate( ST( 0));
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Clipboard.get_registered_formats");
-   list = ( PClipboardFormatReg) var formats;
-   EXTEND( sp, var formatCount);
-   for ( i = 0; i < var formatCount; i++)
+   list = ( PClipboardFormatReg) var->  formats;
+   EXTEND( sp, var->  formatCount);
+   for ( i = 0; i < var->  formatCount; i++)
       PUSHs( sv_2mortal( newSVpv( list[ i]. id, 0)));
    PUTBACK;
 }
@@ -351,8 +351,8 @@ image_server( PClipboardFormatReg instance, int function, SV * data)
             Handle self = Object_create( "Prima::Image", profile);
             sv_free(( SV *) profile);
             if ( apc_clipboard_get_data( cfBitmap, (void*)(&self)) != nil) {
-               --SvREFCNT( SvRV( var mate));
-               return newSVsv( var mate);
+               --SvREFCNT( SvRV( var->  mate));
+               return newSVsv( var->  mate);
             }
             Object_destroy( self);
          }

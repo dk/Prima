@@ -29,26 +29,26 @@
 #include "Printer.inc"
 #undef  my
 #define inherited CDrawable->
-#define my  ((( PPrinter) self)-> self)->
-#define var (( PPrinter) self)->
+#define my  ((( PPrinter) self)-> self)
+#define var (( PPrinter) self)
 
 void
 Printer_init( Handle self, HV * profile)
 {
    char * prn;
    inherited init( self, profile);
-   CComponent( var owner)-> attach( var owner, self);
+   CComponent( var-> owner)-> attach( var-> owner, self);
    if ( !apc_prn_create( self))
       croak("RTC0070: Cannot create printer");
    prn = pget_c( printer);
-   if ( strlen( prn) == 0) prn = my get_default_printer( self);
-   my set_printer( self, prn);
+   if ( strlen( prn) == 0) prn = my-> get_default_printer( self);
+   my-> set_printer( self, prn);
 }
 
 void
 Printer_done( Handle self)
 {
-   CComponent( var owner)-> detach( var owner, self, false);
+   CComponent( var-> owner)-> detach( var-> owner, self, false);
    apc_prn_destroy( self);
    inherited done( self);
 }
@@ -64,7 +64,7 @@ Printer_begin_doc( Handle self, char * docName)
       docName = buf;
    }
    if ( is_opt( optInDrawInfo))
-      my end_paint_info( self);
+      my-> end_paint_info( self);
    inherited begin_paint( self);
    if ( !( ok = apc_prn_begin_doc( self, docName)))
       inherited end_paint( self);
@@ -97,13 +97,13 @@ Printer_abort_doc( Handle self)
 Bool
 Printer_set_printer( Handle self, char * printerName)
 {
-   if ( is_opt( optInDraw))     my end_paint( self);
-   if ( is_opt( optInDrawInfo)) my end_paint_info( self);
+   if ( is_opt( optInDraw))     my-> end_paint( self);
+   if ( is_opt( optInDrawInfo)) my-> end_paint_info( self);
    return apc_prn_select( self, printerName);
 }
 
-Bool Printer_begin_paint( Handle self) { return my begin_doc( self, ""); }
-void Printer_end_paint( Handle self) { my abort_doc( self); }
+Bool Printer_begin_paint( Handle self) { return my-> begin_doc( self, ""); }
+void Printer_end_paint( Handle self) { my-> abort_doc( self); }
 
 Bool
 Printer_begin_paint_info( Handle self)
@@ -140,14 +140,14 @@ Printer_printers( Handle self)
 int
 Printer_get_width( Handle self)
 {
-   Point p = my get_size( self);
+   Point p = my-> get_size( self);
    return p. x;
 }
 
 int
 Printer_get_height( Handle self)
 {
-   Point p = my get_size( self);
+   Point p = my-> get_size( self);
    return p. y;
 }
 

@@ -31,8 +31,8 @@
 
 #undef  my
 #define inherited CObject->
-#define my  ((( PComponent) self)-> self)->
-#define var (( PComponent) self)->
+#define my  ((( PComponent) self)-> self)
+#define var (( PComponent) self)
 
 typedef Bool ActionProc ( Handle self, Handle item, void * params);
 typedef ActionProc *PActionProc;
@@ -44,7 +44,7 @@ dyna_set( Handle self, HV * profile)
    Component_set_dyna_method( self,		\
 			      "on" # Method,	\
 			      (SV*)profile,	\
-			      &var on##Method)
+			      &var-> on##Method)
    dyna( Create);
    dyna( Destroy);
    dyna( PostMessage);
@@ -57,12 +57,12 @@ Component_init( Handle self, HV * profile)
    if (( owner != nilHandle) && (((( PObject) owner)-> stage > csNormal) || !kind_of( owner, CComponent)))
       croak( "Illegal object reference passed to Component.init");
    inherited init( self, profile);
-   var owner = owner;
-   my set_name( self, pget_c( name));
-   my set_delegate_to( self, pget_H( delegateTo));
+   var-> owner = owner;
+   my-> set_name( self, pget_c( name));
+   my-> set_delegate_to( self, pget_H( delegateTo));
    dyna_set( self, profile);
-   var evQueue = malloc( sizeof( List));
-   list_create( var evQueue,  8, 8);
+   var-> evQueue = malloc( sizeof( List));
+   list_create( var-> evQueue,  8, 8);
    apc_component_create( self);
 }
 
@@ -71,7 +71,7 @@ Component_setup( Handle self)
 {
    Event ev = {cmCreate};
    ev. gen. source = self;
-   my message( self, &ev);
+   my-> message( self, &ev);
 }
 
 static Bool bring_by_name( Handle self, PComponent item, char * name)
@@ -82,7 +82,7 @@ static Bool bring_by_name( Handle self, PComponent item, char * name)
 Handle
 Component_bring( Handle self, char * componentName)
 {
-   return my first_that_component( self, bring_by_name, componentName);
+   return my-> first_that_component( self, bring_by_name, componentName);
 }
 
 void
@@ -90,11 +90,11 @@ Component_cleanup( Handle self)
 {
    Event ev = {cmDestroy};
    ev. gen. source = self;
-   my message( self, &ev);
+   my-> message( self, &ev);
 }
 
 static Bool
-free_private_posts( PostMsg * msg, void * dummy )
+free_private_posts( PostMsg * msg, void * dummy)
 {
    sv_free( msg-> info1);
    sv_free( msg-> info2);
@@ -112,14 +112,14 @@ free_queue( PEvent event, void * dummy)
 static Bool
 free_reference( Handle self, void * dummy)
 {
-   var delegateTo = nilHandle;
+   var-> delegateTo = nilHandle;
    return false;
 }
 
 static Bool
 detach_all( Handle child, Handle self)
 {
-   my detach( self, child, true);
+   my-> detach( self, child, true);
    return false;
 }
 
@@ -130,52 +130,52 @@ detach_all( Handle child, Handle self)
 void
 Component_done( Handle self)
 {
-   if ( var delegateTo && (( PComponent) var delegateTo)-> refList)
-      list_delete((( PComponent) var delegateTo)-> refList, self);
-   if ( var refList != nil) {
-      list_first_that( var refList, free_reference, nil);
-      list_destroy( var refList);
-      free( var refList);
-      var refList = nil;
+   if ( var-> delegateTo && (( PComponent) var-> delegateTo)-> refList)
+      list_delete((( PComponent) var-> delegateTo)-> refList, self);
+   if ( var-> refList != nil) {
+      list_first_that( var-> refList, free_reference, nil);
+      list_destroy( var-> refList);
+      free( var-> refList);
+      var-> refList = nil;
    }
-   if ( var postList != nil) {
-      list_first_that( var postList, free_private_posts, nil);
-      list_destroy( var postList);
-      free( var postList);
-      var postList = nil;
+   if ( var-> postList != nil) {
+      list_first_that( var-> postList, free_private_posts, nil);
+      list_destroy( var-> postList);
+      free( var-> postList);
+      var-> postList = nil;
    }
-   if ( var evQueue != nil)
+   if ( var-> evQueue != nil)
    {
-      list_first_that( var evQueue, free_queue, nil);
-      list_destroy( var evQueue);
-      free( var evQueue);
-      var evQueue = nil;
+      list_first_that( var-> evQueue, free_queue, nil);
+      list_destroy( var-> evQueue);
+      free( var-> evQueue);
+      var-> evQueue = nil;
    }
-   if ( var components != nil) {
-      list_first_that( var components, detach_all, ( void*) self);
-      list_destroy( var components);
-      free( var components);
-      var components = nil;
+   if ( var-> components != nil) {
+      list_first_that( var-> components, detach_all, ( void*) self);
+      list_destroy( var-> components);
+      free( var-> components);
+      var-> components = nil;
    }
    apc_component_destroy( self);
-   free( var name);
-   var name = nil;
-   free( var evStack);
-   var evStack = nil;
+   free( var-> name);
+   var-> name = nil;
+   free( var-> evStack);
+   var-> evStack = nil;
    inherited done( self);
 }
 
 void
 Component_attach( Handle self, Handle object)
 {
-   if ( var stage > csNormal) return;
+   if ( var-> stage > csNormal) return;
 
    if ( object && kind_of( object, CComponent)) {
-      if ( var components == nil) {
-         var components = malloc( sizeof( List));
-         list_create( var components, 8, 8);
+      if ( var-> components == nil) {
+         var-> components = malloc( sizeof( List));
+         list_create( var-> components, 8, 8);
       }
-      list_add( var components, object);
+      list_add( var-> components, object);
       SvREFCNT_inc( SvRV(( PObject( object))-> mate));
    } else
        warn( "RTC0040: Object attach failed");
@@ -184,10 +184,10 @@ Component_attach( Handle self, Handle object)
 void
 Component_detach( Handle self, Handle object, Bool kill)
 {
-   if ( object && ( var components != nil)) {
-      int index = list_index_of( var components, object);
+   if ( object && ( var-> components != nil)) {
+      int index = list_index_of( var-> components, object);
       if ( index >= 0) {
-         list_delete_at( var components, index);
+         list_delete_at( var-> components, index);
          SvREFCNT_dec( SvRV(( PObject( object))-> mate));
          if ( kill) Object_destroy( object);
       }
@@ -197,19 +197,19 @@ Component_detach( Handle self, Handle object, Bool kill)
 char *
 Component_get_name( Handle self)
 {
-   return var name ? var name : "";
+   return var-> name ? var-> name : "";
 }
 
 Handle
 Component_get_owner( Handle self)
 {
-  return var owner;
+  return var-> owner;
 }
 
 Handle
 Component_get_delegate_to( Handle self)
 {
-   return var delegateTo;
+   return var-> delegateTo;
 }
 
 void
@@ -217,16 +217,16 @@ Component_set( Handle self, HV * profile)
 {
    /* this can eliminate unwilling items */
    /* from HV before indirect Object::set */
-   my update_sys_handle( self, profile);
+   my-> update_sys_handle( self, profile);
 
    if ( pexist( owner))
    {
       Handle theOwner;
-      var owner = pget_H( owner);
-      if (( var owner != nilHandle) && !kind_of( var owner, CComponent))
+      var-> owner = pget_H( owner);
+      if (( var-> owner != nilHandle) && !kind_of( var-> owner, CComponent))
          croak( "RTC0047: Illegal object reference passed to Component::set_owner");
-      if ( var owner == nilHandle) var owner = application;
-      theOwner = var owner;
+      if ( var-> owner == nilHandle) var-> owner = application;
+      theOwner = var-> owner;
 
       while ( theOwner) {
          if ( theOwner == self)
@@ -243,28 +243,28 @@ Component_set( Handle self, HV * profile)
 void
 Component_set_name( Handle self, char * name)
 {
-   if ( var stage > csNormal) return;
-   free( var name);
-   var name = malloc( strlen ( name) + 1);
-   strcpy( var name, name);
+   if ( var-> stage > csNormal) return;
+   free( var-> name);
+   var-> name = malloc( strlen ( name) + 1);
+   strcpy( var-> name, name);
    apc_component_fullname_changed_notify( self);
-   if ( var stage == csNormal)
-      my update_delegator( self);
+   if ( var-> stage == csNormal)
+      my-> update_delegator( self);
 }
 
 void
 Component_set_delegate_to( Handle self, Handle delegateTo)
 {
-   Handle old = var delegateTo;
-   if ( var stage > csNormal) return;
+   Handle old = var-> delegateTo;
+   if ( var-> stage > csNormal) return;
    if ( old == delegateTo) return;
-   var delegateTo = delegateTo;
-   if ( var stage == csNormal)
-      my update_delegator( self);
+   var-> delegateTo = delegateTo;
+   if ( var-> stage == csNormal)
+      my-> update_delegator( self);
    if ( old && (( PComponent) old)-> refList)
       list_delete((( PComponent) old)-> refList, self);
    if ( delegateTo) {
-      PComponent next = ( PComponent) var owner;
+      PComponent next = ( PComponent) var-> owner;
       while ( next && (( Handle) next != delegateTo))
          next = ( PComponent) (( PComponent) next)-> owner;
       if ( next == nil) {
@@ -286,16 +286,16 @@ Bool
 Component_message( Handle self, PEvent event)
 {
    Bool ret      = false;
-   if ( var stage == csNormal) {
+   if ( var-> stage == csNormal) {
 ForceProcess:
       protect_object( self);
-      my push_event( self);
-      my handle_event( self, event);
-      ret = my pop_event( self);
+      my-> push_event( self);
+      my-> handle_event( self, event);
+      ret = my-> pop_event( self);
       if ( !ret) event-> cmd = 0;
       unprotect_object( self);
-   } else if ( var stage == csConstructing) {
-      if ( var evQueue == nil)
+   } else if ( var-> stage == csConstructing) {
+      if ( var-> evQueue == nil)
           croak("RTC0041: Object set twice to constructing stage");
       switch ( event-> cmd & ctQueueMask) {
       case ctDiscardable:
@@ -304,13 +304,13 @@ ForceProcess:
          goto ForceProcess;
       case ctSingle:
          event-> cmd = ( event-> cmd & ~ctQueueMask) | ctSingleResponse;
-         if ( list_first_that( var evQueue, find_dup_msg, (void*) event-> cmd) >= 0)
+         if ( list_first_that( var-> evQueue, find_dup_msg, (void*) event-> cmd) >= 0)
 	      break;
       default:
-	      list_add( var evQueue, ( Handle) memcpy( malloc( sizeof( Event)),
+	      list_add( var-> evQueue, ( Handle) memcpy( malloc( sizeof( Event)),
 				event, sizeof( Event)));
       }
-   } else if (( var stage < csFinalizing) && ( event-> cmd & ctNoInhibit))
+   } else if (( var-> stage < csFinalizing) && ( event-> cmd & ctNoInhibit))
       goto ForceProcess;
    return ret;
 }
@@ -319,66 +319,66 @@ ForceProcess:
 Bool
 Component_can_event( Handle self)
 {
-   return var stage == csNormal;
+   return var-> stage == csNormal;
 }
 
 void
 Component_clear_event( Handle self)
 {
-   my set_event_flag( self, 0);
+   my-> set_event_flag( self, 0);
 }
 
 void
 Component_push_event( Handle self)
 {
-   if ( var stage == csDead)
+   if ( var-> stage == csDead)
       return;
-   if ( var evPtr == var evLimit) {
-      char * newStack = malloc( 16 + var evLimit);
-      if ( var evStack) {
-         memcpy( newStack, var evStack, var evLimit);
-         free( var evStack);
+   if ( var-> evPtr == var-> evLimit) {
+      char * newStack = malloc( 16 + var-> evLimit);
+      if ( var-> evStack) {
+         memcpy( newStack, var-> evStack, var-> evLimit);
+         free( var-> evStack);
       }
-      var evStack = newStack;
-      var evLimit += 16;
+      var-> evStack = newStack;
+      var-> evLimit += 16;
    }
-   var evStack[ var evPtr++] = 1;
+   var-> evStack[ var-> evPtr++] = 1;
 }
 
 Bool
 Component_pop_event( Handle self)
 {
-   if ( var stage == csDead)
+   if ( var-> stage == csDead)
       return false;
-   if ( !var evStack || var evPtr <= 0) {
+   if ( !var-> evStack || var-> evPtr <= 0) {
       warn("RTC0042: Component::pop_event call not within message()");
       return false;
    }
-   return var evStack[ --var evPtr];
+   return var-> evStack[ --var-> evPtr];
 }
 
 void
 Component_set_event_flag( Handle self, Bool eventFlag)
 {
-   if ( var stage == csDead)
+   if ( var-> stage == csDead)
       return;
-   if ( !var evStack || var evPtr <= 0) {
+   if ( !var-> evStack || var-> evPtr <= 0) {
       warn("RTC0043: Component::eventFlag call not within message()");
       return;
    }
-   var evStack[ var evPtr - 1] = eventFlag;
+   var-> evStack[ var-> evPtr - 1] = eventFlag;
 }
 
 Bool
 Component_get_event_flag( Handle self)
 {
-   if ( var stage == csDead)
+   if ( var-> stage == csDead)
       return false;
-   if ( !var evStack || var evPtr <= 0) {
+   if ( !var-> evStack || var-> evPtr <= 0) {
       warn("RTC0044: Component::eventFlag call not within message()");
       return false;
    }
-   return var evStack[ var evPtr - 1];
+   return var-> evStack[ var-> evPtr - 1];
 }
 
 void
@@ -396,7 +396,7 @@ Component_get_handle( Handle self)
 static Bool
 oversend( PEvent event, Handle self)
 {
-   my message( self, event);
+   my-> message( self, event);
    free( event);
    return false;
 }
@@ -406,30 +406,30 @@ Component_handle_event( Handle self, PEvent event)
 {
 #undef dyna
 #define dyna( Method)					\
-   if ( var on##Method)					\
-      cv_call_perl( var mate, var on##Method, "")
-#define objCheck   if ( var stage > csNormal) return
-#define objCheckEx if ( var stage >= csDead) return
+   if ( var-> on##Method)					\
+      cv_call_perl( var-> mate, var-> on##Method, "")
+#define objCheck   if ( var-> stage > csNormal) return
+#define objCheckEx if ( var-> stage >= csDead) return
    switch ( event-> cmd)
    {
    case cmCreate:
-      my update_delegator( self);
-      my on_create( self);
+      my-> update_delegator( self);
+      my-> on_create( self);
       objCheck;
       if ( is_dmopt( dmCreate)) delegate_sub( self, "Create", "H", self);
       objCheck;
       dyna( Create);
-      if ( var stage == csNormal)
+      if ( var-> stage == csNormal)
       {
-         if ( var evQueue-> count > 0)
-            list_first_that( var evQueue, oversend, ( void*) self);
-         list_destroy( var evQueue);
-         free( var evQueue);
-         var evQueue = nil;
+         if ( var-> evQueue-> count > 0)
+            list_first_that( var-> evQueue, oversend, ( void*) self);
+         list_destroy( var-> evQueue);
+         free( var-> evQueue);
+         var-> evQueue = nil;
       }
       break;
    case cmDestroy:
-      my on_destroy( self);
+      my-> on_destroy( self);
       objCheckEx;
       if ( is_dmopt( dmDestroy)) delegate_sub( self, "Destroy", "H", self);
       objCheckEx;
@@ -438,18 +438,18 @@ Component_handle_event( Handle self, PEvent event)
    case cmPost:
       {
          PPostMsg p = ( PPostMsg) event-> gen. p;
-         my on_postmessage( self, p-> info1, p-> info2);
+         my-> on_postmessage( self, p-> info1, p-> info2);
          objCheck;
          if ( is_dmopt( dmPostMessage))
             delegate_sub( self, "PostMessage", "HSS", self, p-> info1, p-> info2);
          objCheck;
-         if ( var onPostMessage)
-            cv_call_perl( var mate, var onPostMessage, "SS", p-> info1, p-> info2);
+         if ( var-> onPostMessage)
+            cv_call_perl( var-> mate, var-> onPostMessage, "SS", p-> info1, p-> info2);
          objCheck;
          if ( p-> info1) sv_free( p-> info1);
          if ( p-> info2) sv_free( p-> info2);
          free( p);
-         list_delete( var postList, ( Handle) p);
+         list_delete( var-> postList, ( Handle) p);
       }
    break;
    }
@@ -458,7 +458,7 @@ Component_handle_event( Handle self, PEvent event)
 Bool
 Component_migrate( Handle self, Handle attachTo)
 {
-    PComponent detachFrom = PComponent( var owner ? var owner : application);
+    PComponent detachFrom = PComponent( var-> owner ? var-> owner : application);
     PComponent attachTo_  = PComponent( attachTo  ? attachTo  : application);
     Handle     theOwner   = ( Handle) attachTo_;
 
@@ -482,8 +482,8 @@ void
 Component_recreate( Handle self)
 {
    HV * profile = newHV();
-   pset_H( owner, var owner);
-   my update_sys_handle( self, profile);
+   pset_H( owner, var-> owner);
+   my-> update_sys_handle( self, profile);
    sv_free(( SV *) profile);
 }
 
@@ -494,12 +494,12 @@ Component_first_that_component( Handle self, void * actionProc, void * params)
    int i, count;
    Handle * list = nil;
 
-   if ( actionProc == nil || var components == nil)
+   if ( actionProc == nil || var-> components == nil)
       return nilHandle;
-   count = var components-> count;
+   count = var-> components-> count;
    if ( count == 0) return nilHandle;
    list = malloc( sizeof( Handle) * count);
-   memcpy( list, var components-> items, sizeof( Handle) * count);
+   memcpy( list, var-> components-> items, sizeof( Handle) * count);
 
    for ( i = 0; i < count; i++)
    {
@@ -518,14 +518,14 @@ Component_post_message( Handle self, SV * info1, SV * info2)
 {
    PPostMsg p;
    Event ev = { cmPost};
-   if ( var stage > csNormal) return;
+   if ( var-> stage > csNormal) return;
    p = malloc( sizeof( PostMsg));
    p-> info1  = newSVsv( info1);
    p-> info2  = newSVsv( info2);
    p-> h      = self;
-   if ( var postList == nil)
-      list_create( var postList = malloc( sizeof( List)), 8, 8);
-   list_add( var postList, ( Handle) p);
+   if ( var-> postList == nil)
+      list_create( var-> postList = malloc( sizeof( List)), 8, 8);
+   list_add( var-> postList, ( Handle) p);
    ev. gen. p = p;
    ev. gen. source = ev. gen. H = self;
    apc_message( application, &ev, true);
@@ -555,14 +555,14 @@ Component_on_postmessage( Handle self, SV * info1, SV * info2)
 HV *
 Component_get_dynas( Handle self)
 {
-   return ( HV*) SvRV( *hv_fetch(( HV*) SvRV( var mate),
+   return ( HV*) SvRV( *hv_fetch(( HV*) SvRV( var-> mate),
 				 "__DYNAS__", 9, 0));
 }
 
 HV *
 Component_get_delegators( Handle self)
 {
-   return ( HV*) SvRV( *hv_fetch(( HV*) SvRV( var mate),
+   return ( HV*) SvRV( *hv_fetch(( HV*) SvRV( var-> mate),
 				 "__DELEGATORS__", 14, 0));
 }
 
@@ -572,10 +572,10 @@ Component_update_delegator( Handle self)
 {
    HV * profile;
    call_perl( self, "__update_delegator", "");
-   memset( &var delegatedMessages, 0, sizeof( var delegatedMessages));
-   if ( var delegateTo == nilHandle)
+   memset( &var-> delegatedMessages, 0, sizeof( var-> delegatedMessages));
+   if ( var-> delegateTo == nilHandle)
       return;
-   profile = my get_delegators( self);
+   profile = my-> get_delegators( self);
 #define delegator( MsgName) if ( pexist( MsgName)) dmopt_set( dm##MsgName)
    delegator( Create);
    delegator( Destroy);
@@ -605,7 +605,7 @@ Component_set_dyna_method( Handle self, char * methodName,
    if ( is_hash)
       hv_delete( profile, methodName, len, G_DISCARD);
    if ( assign) {
-      profile = ( HV*) SvRV( *hv_fetch(( HV*) SvRV( var mate),
+      profile = ( HV*) SvRV( *hv_fetch(( HV*) SvRV( var-> mate),
 				       "__DYNAS__", 9, 0));
       hv_store( profile, methodName, len, container, 0);
       *variable = ( container == nilSV) ? nil : SvRV( container);
@@ -653,10 +653,10 @@ XS( Component_notify_FROMPERL)
       LEAVE;                                                                         \
    }                                                                                 \
    SPAGAIN;                                                                          \
-   if ( var stage != csNormal || var evPtr != evPtr) is0 = is1 = is2 = false;        \
+   if ( var-> stage != csNormal || var-> evPtr != evPtr) is0 = is1 = is2 = false;        \
 }
 
-#define evOK  ( var evStack[ var evPtr - 1])
+#define evOK  ( var-> evStack[ var-> evPtr - 1])
 
    if ( items < 2)
       croak ("Invalid usage of Component.notify");
@@ -666,8 +666,8 @@ XS( Component_notify_FROMPERL)
    noteLen = strlen( note);
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Component.notify");
-   if ( var stage != csNormal) XSRETURN_EMPTY;
-   res = my notification_types( self);
+   if ( var-> stage != csNormal) XSRETURN_EMPTY;
+   res = my-> notification_types( self);
    hv = ( HV *) SvRV( res);
 
    SPAGAIN;
@@ -675,7 +675,7 @@ XS( Component_notify_FROMPERL)
    {
      temporary_prf_Sv = hv_fetch( hv, note, noteLen, 0);
      if ( !temporary_prf_Sv || !SvOK(*temporary_prf_Sv) || SvTYPE(*temporary_prf_Sv) == SVt_NULL)
-        croak("RTC0045: Inconsistent storage in %s::notification_types for %s during Component.notify", var self-> className, note);
+        croak("RTC0045: Inconsistent storage in %s::notification_types for %s during Component.notify", var-> self-> className, note);
      rnt = SvIV( *temporary_prf_Sv);
      snt = rnt & (ntEvent | ntMultiple);
    } else {
@@ -694,13 +694,13 @@ XS( Component_notify_FROMPERL)
       else {
          if ( !SvROK(*temporary_prf_Sv) ||
               SvTYPE(SvRV(*temporary_prf_Sv)) != SVt_PVCV)
-            croak("RTC0046: Inconsistent storage in %s::__DYNAS__ for %s during Component.notify", var self-> className, note);
+            croak("RTC0046: Inconsistent storage in %s::__DYNAS__ for %s during Component.notify", var-> self-> className, note);
         dyna = *temporary_prf_Sv;
       }
    }
    is2 = dyna != nil;
 
-   owner = ( PComponent) var delegateTo;
+   owner = ( PComponent) var-> delegateTo;
    if ( owner && owner-> stage != csNormal) owner = nil;
    if ( owner) {
       hv = ( HV*) SvRV( *hv_fetch(( HV*) SvRV( ST( 0)), "__DELEGATORS__", 14, 0));
@@ -711,7 +711,7 @@ XS( Component_notify_FROMPERL)
          else {
             if ( !SvROK(*temporary_prf_Sv) ||
                  SvTYPE(SvRV(*temporary_prf_Sv)) != SVt_PVCV)
-               croak("RTC0046: Inconsistent storage in %s::__DELEGATORS__ for %s during Component.notify", var self-> className, note);
+               croak("RTC0046: Inconsistent storage in %s::__DELEGATORS__ for %s during Component.notify", var-> self-> className, note);
             delegator = *temporary_prf_Sv;
          }
       } else
@@ -733,9 +733,9 @@ XS( Component_notify_FROMPERL)
    }
    argsv[ 0] = ST( 0);
 
-   my push_event( self);
+   my-> push_event( self);
    SPAGAIN;
-   evPtr = var evPtr;
+   evPtr = var-> evPtr;
 
    if ( rnt & ntCustomFirst)
    {
@@ -776,7 +776,7 @@ XS( Component_notify_FROMPERL)
       }
    }
 
-   if ( var stage < csDead) ret = my pop_event( self);
+   if ( var-> stage < csDead) ret = my-> pop_event( self);
    SPAGAIN;
    SP -= items;
    XPUSHs( sv_2mortal( newSViv( ret)));
@@ -812,9 +812,9 @@ XS( Component_get_components_FROMPERL)
    self = gimme_the_mate( ST( 0));
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Component.get_components");
-   if ( var components) {
-      count = var components-> count;
-      list  = var components-> items;
+   if ( var-> components) {
+      count = var-> components-> count;
+      list  = var-> components-> items;
       EXTEND( sp, count);
       for ( i = 0; i < count; i++)
          PUSHs( sv_2mortal( newSVsv((( PAnyObject) list[ i])-> mate)));

@@ -30,8 +30,8 @@
 
 #undef  my
 #define inherited CImage->
-#define my  ((( PIcon) self)-> self)->
-#define var (( PIcon) self)->
+#define my  ((( PIcon) self)-> self)
+#define var (( PIcon) self)
 
 extern void ic_nibble_byte_ictNone( Handle, void *, PRGBColor, int);
 extern void ic_rgb_byte_ictNone( Handle, void *, PRGBColor, int);
@@ -40,38 +40,38 @@ extern void ic_rgb_byte_ictNone( Handle, void *, PRGBColor, int);
 void
 produce_mask( Handle self)
 {
-   Byte * area8 = var data;
-   Byte * dest = var mask;
+   Byte * area8 = var-> data;
+   Byte * dest = var-> mask;
    Byte * src;
    Byte color;
    int i;
-   int line8Size = (( var w * 8 + 31) / 32) * 4;
-   int bpp = var type & imBPP;
+   int line8Size = (( var-> w * 8 + 31) / 32) * 4;
+   int bpp = var-> type & imBPP;
 
-   if ( var w == 0 || var h == 0) return;
+   if ( var-> w == 0 || var-> h == 0) return;
 
    if ( bpp == imMono)
    {
       // mono case simplifies our task
-      int j = var maskSize;
-      Byte * mask = var mask;
-      memcpy ( var mask, var data, var dataSize);
+      int j = var-> maskSize;
+      Byte * mask = var-> mask;
+      memcpy ( var-> mask, var-> data, var-> dataSize);
       while ( j--) mask[ j] = ~mask[ j];
-      var palette[0]. r = var palette[0]. g = var palette[0]. b = 0;
+      var-> palette[0]. r = var-> palette[0]. g = var-> palette[0]. b = 0;
       return;
    }
 
    if ( bpp != im256)
    {
-      area8 = malloc ( var h * line8Size);
+      area8 = malloc ( var-> h * line8Size);
       // convert to 8 bit
       switch ( bpp)
       {
          case im16:
-            ic_nibble_byte_ictNone( self, area8, var palette, im256);
+            ic_nibble_byte_ictNone( self, area8, var-> palette, im256);
             break;
          case imRGB:
-            ic_rgb_byte_ictNone( self, area8, var palette, im256);
+            ic_rgb_byte_ictNone( self, area8, var-> palette, im256);
             break;
       }
    }
@@ -83,16 +83,16 @@ produce_mask( Handle self)
 
       // retrieving corner pixels
       corners[ 0] = area8[ 0];
-      corners[ 1] = area8[ var w - 1];
-      corners[ 2] = area8[ line8Size * var h - line8Size];
-      corners[ 3] = area8[ line8Size * ( var h - 1) + var w - 1];
+      corners[ 1] = area8[ var-> w - 1];
+      corners[ 2] = area8[ line8Size * var-> h - line8Size];
+      corners[ 3] = area8[ line8Size * ( var-> h - 1) + var-> w - 1];
 
       // preliminary ponos comparison
       for ( j = 0; j < 4; j++) {
          if (
-             (( var palette[ corners[ j]]. b) == 0) &&
-             (( var palette[ corners[ j]]. g) == 128) &&
-             (( var palette[ corners[ j]]. r) == 128)) {
+             (( var-> palette[ corners[ j]]. b) == 0) &&
+             (( var-> palette[ corners[ j]]. g) == 128) &&
+             (( var-> palette[ corners[ j]]. r) == 128)) {
             color = corners[ j];
             goto colorFound;
          }
@@ -127,11 +127,11 @@ produce_mask( Handle self)
 
          // compare to ponos
          for ( j = 0; j < colorsToCompare; j++)
-            if (( var palette[ corners[ j]]. b < 20) &&
-                ( var palette[ corners[ j]]. r > 100) &&
-                ( var palette[ corners[ j]]. r < 150) &&
-                ( var palette[ corners[ j]]. g > 100) &&
-                ( var palette[ corners[ j]]. g < 150))
+            if (( var-> palette[ corners[ j]]. b < 20) &&
+                ( var-> palette[ corners[ j]]. r > 100) &&
+                ( var-> palette[ corners[ j]]. r < 150) &&
+                ( var-> palette[ corners[ j]]. g > 100) &&
+                ( var-> palette[ corners[ j]]. g < 150))
             {
                color = corners[ j];
                goto colorFound;
@@ -139,9 +139,9 @@ produce_mask( Handle self)
 
          // compare to ponos in a MicroSoft's terminology
          for ( j = 0; j < colorsToCompare; j++)
-            if (( var palette[ corners[ j]]. g < 20) &&
-                ( var palette[ corners[ j]]. r > 200) &&
-                ( var palette[ corners[ j]]. b > 200))
+            if (( var-> palette[ corners[ j]]. g < 20) &&
+                ( var-> palette[ corners[ j]]. r > 200) &&
+                ( var-> palette[ corners[ j]]. b > 200))
             {
                color = corners[ j];
                goto colorFound;
@@ -153,12 +153,12 @@ colorFound:;
    }
 
    // processing transparency
-   memset( var mask, 0, var maskSize);
+   memset( var-> mask, 0, var-> maskSize);
    src  = area8;
-   for ( i = 0; i < var h; i++, dest += var maskLine, src += line8Size)
+   for ( i = 0; i < var-> h; i++, dest += var-> maskLine, src += line8Size)
    {
       int j;
-      for ( j = 0; j < var w; j++)
+      for ( j = 0; j < var-> w; j++)
          if ( src[ j] == color)
             dest[ j >> 3] |= 1 << (7 - ( j & 7));
    }
@@ -166,29 +166,29 @@ colorFound:;
    // finalize
    if ( bpp != im256)
    {
-      free ( var data);
-      var data = area8;
-      var type = im256;
-      var lineSize = line8Size;
-      var dataSize = line8Size * var h;
+      free ( var-> data);
+      var-> data = area8;
+      var-> type = im256;
+      var-> lineSize = line8Size;
+      var-> dataSize = line8Size * var-> h;
    }
 
-   var palette[ color]. r = var palette[ color]. b = var palette[ color]. g = 0;
+   var-> palette[ color]. r = var-> palette[ color]. b = var-> palette[ color]. g = 0;
 }
 
 void
 Icon_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
-   my set_mask( self, pget_sv( mask));
+   my-> set_mask( self, pget_sv( mask));
 }
 
 
 SV *
 Icon_get_mask( Handle self)
 {
-   if ( var stage > csNormal) return nilSV;
-   return newSVpvn( var mask, var maskSize);
+   if ( var-> stage > csNormal) return nilSV;
+   return newSVpvn( var-> mask, var-> maskSize);
 }
 
 void
@@ -197,10 +197,10 @@ Icon_set_mask( Handle self, SV * svmask)
    int maskSize;
    void * mask = SvPV( svmask, maskSize);
 
-   if ( var stage > csNormal) return;
+   if ( var-> stage > csNormal) return;
    if ( is_opt( optInDraw) || maskSize <= 0) return;
 
-   memcpy( var mask, mask, maskSize > var maskSize ? var maskSize : maskSize);
+   memcpy( var-> mask, mask, maskSize > var-> maskSize ? var-> maskSize : maskSize);
 }
 
 
@@ -208,22 +208,22 @@ void
 Icon_update_change( Handle self)
 {
    inherited update_change( self);
-   free( var mask);
-   if ( var data)
+   free( var-> mask);
+   if ( var-> data)
    {
-      var maskLine = (( var w + 31) / 32) * 4;
-      var maskSize = var maskLine * var h;
-      var mask = malloc ( var maskSize);
+      var-> maskLine = (( var-> w + 31) / 32) * 4;
+      var-> maskSize = var-> maskLine * var-> h;
+      var-> mask = malloc ( var-> maskSize);
       produce_mask( self);
    }
    else
-      var mask = nil;
+      var-> mask = nil;
 }
 
 void
 Icon_update_mask_change( Handle self)
 {
-   if ( !var data) return;
+   if ( !var-> data) return;
    produce_mask( self);
 }
 
@@ -231,16 +231,16 @@ void
 Icon_create_empty( Handle self, int width, int height, int type)
 {
    inherited create_empty( self, width, height, type);
-   free( var mask);
-   if ( var data)
+   free( var-> mask);
+   if ( var-> data)
    {
-      var maskLine = (( var w + 31) / 32) * 4;
-      var maskSize = var maskLine * var h;
-      var mask = malloc ( var maskSize);
-      memset( var mask, 0, var maskSize);
+      var-> maskLine = (( var-> w + 31) / 32) * 4;
+      var-> maskSize = var-> maskLine * var-> h;
+      var-> mask = malloc ( var-> maskSize);
+      memset( var-> mask, 0, var-> maskSize);
    }
    else
-      var mask = nil;
+      var-> mask = nil;
 }
 
 Handle
@@ -248,7 +248,7 @@ Icon_dup( Handle self)
 {
    Handle h = inherited dup( self);
    PIcon  i = ( PIcon) h;
-   memcpy( i-> mask, var mask, var maskSize);
+   memcpy( i-> mask, var-> mask, var-> maskSize);
    return h;
 }
 
@@ -258,20 +258,20 @@ Icon_split( Handle self)
    IconHandle ret = {0,0};
    PImage i;
    HV * profile = newHV();
-   char* className = var self-> className;
+   char* className = var-> self-> className;
 
-   pset_H( owner,        var owner);
-   pset_i( width,        var w);
-   pset_i( height,       var h);
+   pset_H( owner,        var-> owner);
+   pset_i( width,        var-> w);
+   pset_i( height,       var-> h);
    pset_i( type,         imMono|imGrayScale);
    ret. andMask = Object_create( "Prima::Image", profile);
    sv_free(( SV *) profile);
    i = ( PImage) ret. andMask;
-   memcpy( i-> data, var mask, var maskSize);
+   memcpy( i-> data, var-> mask, var-> maskSize);
 
-   var self-> className = inherited className;
+   var-> self-> className = inherited className;
    ret. xorMask         = inherited dup( self);
-   var self-> className = className;
+   var-> self-> className = className;
 
    --SvREFCNT( SvRV( i-> mate));
    return ret;
@@ -283,22 +283,22 @@ Icon_combine( Handle self, Handle xorMask, Handle andMask)
    Bool killAM = 0;
    if ( !kind_of( xorMask, CImage) || !kind_of( andMask, CImage))
       return;
-   my create_empty( self, PImage( xorMask)-> w, PImage( xorMask)-> h, PImage( xorMask)-> type);
+   my-> create_empty( self, PImage( xorMask)-> w, PImage( xorMask)-> h, PImage( xorMask)-> type);
    if (( PImage( andMask)-> type & imBPP) != imMono) {
       killAM = 1;
       andMask = CImage( andMask)-> dup( andMask);
       CImage( andMask)-> set_type( andMask, imMono);
    }
-   if ( var w != PImage( andMask)-> w || var h != PImage( andMask)-> h) {
+   if ( var-> w != PImage( andMask)-> w || var-> h != PImage( andMask)-> h) {
       if ( !killAM) {
          killAM = 1;
          andMask = CImage( andMask)-> dup( andMask);
       }
-      CImage( andMask)-> set_size( andMask, var w, var h);
+      CImage( andMask)-> set_size( andMask, var-> w, var-> h);
    }
 
-   memcpy( var data, PImage( xorMask)-> data, var dataSize);
-   memcpy( var mask, PImage( andMask)-> data, var maskSize);
+   memcpy( var-> data, PImage( xorMask)-> data, var-> dataSize);
+   memcpy( var-> mask, PImage( andMask)-> data, var-> maskSize);
 
    if ( killAM) Object_destroy( andMask);
 }

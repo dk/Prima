@@ -30,19 +30,19 @@
 
 #undef  my
 #define inherited CComponent->
-#define my  ((( PTimer) self)-> self)->
-#define var (( PTimer) self)->
+#define my  ((( PTimer) self)-> self)
+#define var (( PTimer) self)
 
 void
 Timer_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
-   CComponent( var owner)-> attach( var owner, self);
-   my update_sys_handle( self, profile);
+   CComponent( var-> owner)-> attach( var-> owner, self);
+   my-> update_sys_handle( self, profile);
    if ( pexist( onTick))
    {
       SV ** psv  = hv_fetch( profile, "onTick", 6, 0);
-      var onTick = ( SvROK( *psv) && ( SvTYPE( SvRV( *psv)) == SVt_PVCV))
+      var-> onTick = ( SvROK( *psv) && ( SvTYPE( SvRV( *psv)) == SVt_PVCV))
          ? SvRV( newSVsv( *psv))
          : nil;
       pdelete( onTick);
@@ -52,32 +52,32 @@ Timer_init( Handle self, HV * profile)
 void
 Timer_update_sys_handle( Handle self, HV * profile)
 {
-   Handle xOwner = pexist( owner) ? pget_H( owner) : var owner;
-   if ( var owner) my migrate( self, xOwner);
+   Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
+   if ( var-> owner) my-> migrate( self, xOwner);
    if (!( pexist( owner))) return;
    if ( !apc_timer_create( self, xOwner, pexist( timeout)
                            ? pget_i( timeout)
-                           : my get_timeout( self)))
+                           : my-> get_timeout( self)))
       croak("RTC0063: cannot create timer");
    pdelete( owner);
    if ( pexist( timeout)) pdelete( timeout);
-   var owner = xOwner;
+   var-> owner = xOwner;
 }
 
 void
 Timer_handle_event( Handle self, PEvent event)
 {
-#define objCheck if ( var stage > csNormal) return
+#define objCheck if ( var-> stage > csNormal) return
    inherited handle_event ( self, event);
    switch ( event-> cmd)
    {
       case cmTimer:
-         my on_tick( self);
+         my-> on_tick( self);
          objCheck;
          if ( is_dmopt( dmTick))
             delegate_sub( self, "Tick", "H", self);
          objCheck;
-         if ( var onTick) cv_call_perl( var mate, var onTick, "");
+         if ( var-> onTick) cv_call_perl( var-> mate, var-> onTick, "");
          break;
    }
 }
@@ -93,7 +93,7 @@ Timer_set( Handle self, HV * profile)
    if ( pexist( onTick))
    {
       SV ** psv  = hv_fetch( profile, "onTick", 6, 0);
-      var onTick = ( SvROK( *psv) && ( SvTYPE( SvRV( *psv)) == SVt_PVCV))
+      var-> onTick = ( SvROK( *psv) && ( SvTYPE( SvRV( *psv)) == SVt_PVCV))
                      ? SvRV( newSVsv( *psv))
                      : nil;
       pdelete( onTick);
@@ -120,8 +120,8 @@ Timer_stop( Handle self)
 void
 Timer_done( Handle self)
 {
-   my stop( self);
-   CComponent( var owner)-> detach( var owner, self, false);
+   my-> stop( self);
+   CComponent( var-> owner)-> detach( var-> owner, self, false);
    apc_timer_destroy( self);
    inherited done( self);
 }
@@ -131,8 +131,8 @@ Timer_update_delegator( Handle self)
 {
    HV * profile;
    inherited update_delegator( self);
-   if ( var delegateTo == nilHandle) return;
-   profile = my get_delegators( self);
+   if ( var-> delegateTo == nilHandle) return;
+   profile = my-> get_delegators( self);
    if ( pexist( Tick)) dmopt_set( dmTick);
 }
 

@@ -29,8 +29,8 @@
 #include "Object.inc"
 
 #undef  my
-#define my  ((( PObject) self)-> self)->
-#define var (( PObject) self)->
+#define my  ((( PObject) self)-> self)
+#define var (( PObject) self)
 
 SV *
 Object_can( Handle self, char *methodName, Bool cacheIt)
@@ -61,23 +61,23 @@ Object_create( char *className, HV * profile)
    SPAGAIN;
    xmate = newRV_inc( SvRV( POPs));
    self = create_mate( xmate);
-   var mate = xmate;
+   var-> mate = xmate;
    PUTBACK;
    FREETMPS;
    LEAVE;
 
    profRef = newRV_inc(( SV *) profile);
-   my profile_add( self, profRef);
-   var stage = csConstructing;
+   my-> profile_add( self, profRef);
+   var-> stage = csConstructing;
    SPAGAIN;
    if ( primaObjects)
       hash_store( primaObjects, &self, sizeof( self), (void*)1);
-   if ( my init == Object_init_REDEFINED)
+   if ( my-> init == Object_init_REDEFINED)
    {
       ENTER;
       SAVETMPS;
       PUSHMARK( sp);
-      XPUSHs( var mate);
+      XPUSHs( var-> mate);
       sp = push_hv_for_REDEFINED( sp, profile);
       PUTBACK;
       PERL_CALL_METHOD( "init", G_VOID|G_DISCARD);
@@ -88,16 +88,16 @@ Object_create( char *className, HV * profile)
    }
    else
    {
-      my init( self, profile);
+      my-> init( self, profile);
    }
    SvREFCNT_dec( profRef);
-   if ( var stage != csConstructing) {
-      if ( var mate && ( var mate != nilSV) && SvRV( var mate))
-         --SvREFCNT( SvRV( var mate));
+   if ( var-> stage != csConstructing) {
+      if ( var-> mate && ( var-> mate != nilSV) && SvRV( var-> mate))
+         --SvREFCNT( SvRV( var-> mate));
       return nilHandle;
    }
-   var stage = csNormal;
-   my setup( self);
+   var-> stage = csNormal;
+   my-> setup( self);
    return self;
 }
 
@@ -107,39 +107,39 @@ void
 Object_destroy( Handle self)
 {
    SV *mate, *object = nil;
-   if ( var stage > csNormal && var stage != csHalfDead)
+   if ( var-> stage > csNormal && var-> stage != csHalfDead)
       return;
-   if ( var stage == csHalfDead) {
-      if ( !var mate || ( var mate == nilSV))
+   if ( var-> stage == csHalfDead) {
+      if ( !var-> mate || ( var-> mate == nilSV))
          return;
-      object = SvRV( var mate);
+      object = SvRV( var-> mate);
       if ( !object)
          return;
-      var stage = csFinalizing;
-      my done( self);
+      var-> stage = csFinalizing;
+      my-> done( self);
       if ( primaObjects)
          hash_delete( primaObjects, &self, sizeof( self), false);
-      var stage = csDead;
+      var-> stage = csDead;
       return;
    }
-   var stage = csDestroying;
-   mate = var mate;
+   var-> stage = csDestroying;
+   mate = var-> mate;
    if ( mate && ( mate != nilSV)) {
       object = SvRV( mate);
       if ( object) ++SvREFCNT( object);
    }
    if ( object) {
-      var stage = csHalfDead;
-      my cleanup( self);
-      if (var stage == csHalfDead) {
-         var stage = csFinalizing;
-         my done( self);
+      var-> stage = csHalfDead;
+      my-> cleanup( self);
+      if (var-> stage == csHalfDead) {
+         var-> stage = csFinalizing;
+         my-> done( self);
          if ( primaObjects)
             hash_delete( primaObjects, &self, sizeof( self), false);
       }
    }
-   var stage = csDead;
-   var mate = nilSV;
+   var-> stage = csDead;
+   var-> mate = nilSV;
    if ( mate && object) sv_free( mate);
 }
 
