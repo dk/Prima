@@ -32,6 +32,7 @@ object Prima::AbstractMenu ( Prima::Component)
    property char * accel  ( char * varName);
    property SV   * action ( char * varName);
    property Bool   checked( char * varName);
+   property SV   * data   ( char * varName);
    property Bool   enabled( char * varName);
    property Handle image  ( char * varName);
    property SV   * key    ( char * varName);

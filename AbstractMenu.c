@@ -101,6 +101,7 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
    free( m-> variable);
    free( m-> perlSub);
    if ( m-> code) sv_free( m-> code);
+   if ( m-> data) sv_free( m-> data);
    if ( m-> bitmap) {
       if ( PObject( m-> bitmap)-> stage < csDead)
          SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate)); 
@@ -160,6 +161,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
       int l_sub   = -1;
       int l_accel = -1;
       int l_key   = -1;
+      int l_data  = -1;
       Bool addToSubs = true;
 
       if ( itemHolder == nil)
@@ -176,7 +178,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
       /* entering item description */
       item = ( AV *) SvRV( *itemHolder);
       count = av_len( item) + 1;
-      if ( count > 5) {
+      if ( count > 6) {
          warn("RTC0032: menu build error: extra declaration");
          count = 5;
       }
@@ -200,12 +202,19 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
          l_accel = 1;
          l_key   = 2;
          l_sub   = 3;
+      } else if ( count == 5) {
+         l_var   = 0;
+         l_text  = 1;
+         l_accel = 2;
+         l_key   = 3;
+         l_sub   = 4;
       } else {
          l_var   = 0;
          l_text  = 1;
          l_accel = 2;
          l_key   = 3;
          l_sub   = 4;
+         l_data  = 5;
       }
 
       if ( m) curr = curr-> next = r; else curr = m = r; /* adding to list */
@@ -329,6 +338,18 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
          }
          if ( addToSubs) r-> id = ++(*subCount);
       }
+
+      /* parsing data */
+      if ( l_data >= 0)
+      {
+         holder = av_fetch( item, l_data, 0);
+         if ( !holder) {
+            warn("RTC003D: menu build error: array panic");
+            my-> dispose_menu( self, m);
+            return nil;
+         }
+         r-> data = newSVsv( *holder);
+      }
    }
    /* log_write("%s}", buf); */
 /* log_write("adda bunch:"); 
@@ -436,6 +457,8 @@ new_av(  PMenuItemReg m, int level)
             if ( m-> code) av_push( loc, newSVsv( m-> code)); else
             if ( m-> perlSub) av_push( loc, newSVpv( m-> perlSub, 0));
          }
+
+         if ( m-> data) av_push( loc, newSVsv( m-> data));
       }
       av_push( glo, newRV_noinc(( SV *) loc));
       m = m-> next;
@@ -586,6 +609,20 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
       if ( var-> stage <= csNormal && var-> system)
          apc_menu_item_set_check( self, m, checked);
    return checked;
+}
+
+SV *
+AbstractMenu_data ( Handle self, Bool set, char * varName, SV * data)
+{
+   PMenuItemReg m;
+   if ( var-> stage > csFrozen) return nilSV;
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   if ( m == nil) return nilSV;
+   if ( !set)
+      return m-> data ? newSVsv( m-> data) : nilSV;
+   sv_free( m-> data);
+   m-> data = newSVsv( data);
+   return nilSV;
 }
 
 Bool

@@ -1114,6 +1114,7 @@ sub accel   { my $self = shift;return $self-> {menu}->accel( $self->{id}, @_);}
 sub action  { my $self = shift;return $self-> {menu}->action ( $self->{id}, @_);}
 sub checked { my $self = shift;return $self-> {menu}->checked( $self->{id}, @_);}
 sub enabled { my $self = shift;return $self-> {menu}->enabled( $self->{id}, @_);}
+sub data    { my $self = shift;return $self-> {menu}->data   ( $self->{id}, @_);}
 sub image   { my $self = shift;return $self-> {menu}->image  ( $self->{id}, @_);}
 sub key     { my $self = shift;return $self-> {menu}->key    ( $self->{id}, @_);}
 sub text    { my $self = shift;return $self-> {menu}->text   ( $self->{id}, @_);}

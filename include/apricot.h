@@ -2183,6 +2183,7 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
    Bool   divider;              /* true if it's line divider */
    Handle bitmap;               /* bitmap if not nil */
    SV *   code;                 /* code if not nil */
+   SV *   data;                 /* use data if not nil */
    struct _MenuItemReg* down;   /* pointer to submenu */
    struct _MenuItemReg* next;   /* pointer to next item */
 } MenuItemReg, *PMenuItemReg;
