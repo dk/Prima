@@ -476,7 +476,7 @@ apc_font_default( PFont f)
       font. style = fsNormal;
       font. pitch = fpDefault;
       apc_font_pick( application, &font, &font);
-/* XXX      font. pitch = fpDefault; */
+      font. pitch = fpDefault;
       initialized = true;
    }
    *f = font;
@@ -502,6 +502,17 @@ dump_font( PFont f)
    DOLBUG( "name: %s\n", f-> name ? f-> name : "NONAME");
    DOLBUG( "size: %d\n", f-> size);
    DOLBUG( "*** END FONT DUMP ***\n");
+}
+
+static char*
+micro_dump( PFont f)
+{
+   static char buf[ 1024];
+   snprintf( buf, 1024, "%s.%d: %dx%d p%d s%d d%d",
+	     f-> name ? f-> name : "NONAME",
+	     f-> size, f-> height, f-> width,
+	     f-> pitch, f-> style, f-> direction);
+   return buf;
 }
 
 typedef struct _FontKey
@@ -577,6 +588,7 @@ detail_font_info( PFontInfo f, PFont font)
    int weight;
    FontKey key;
    Bool detailed = vector && !f-> sloppy;
+   Bool askedDefaultPitch;
 
    if ( f-> sloppy || vector) {
       if ( vector) {
@@ -757,9 +769,23 @@ detail_font_info( PFontInfo f, PFont font)
   FAQ> 	{ "CHARSET_ENCODING", 0, atom, 0},
   */
 
-      memcpy( font, &f-> font, sizeof( Font));
       build_font_key( &key, font);
       add_font_to_cache( &key, f, name, s);
+      askedDefaultPitch = font-> pitch == fpDefault;
+      memcpy( font, &f-> font, sizeof( Font));
+      build_font_key( &key, font);
+      if ( !hash_fetch( guts. font_hash, &key, sizeof( FontKey))) {
+	add_font_to_cache( &key, f, name, s);
+      }
+      if ( askedDefaultPitch && font-> pitch != fpDefault) {
+	int pitch = font-> pitch;
+	font-> pitch = fpDefault;
+	build_font_key( &key, font);
+	if ( !hash_fetch( guts. font_hash, &key, sizeof( FontKey))) {
+	  add_font_to_cache( &key, f, name, s);
+	}
+	font-> pitch = pitch;
+      }
    }
 }
 
