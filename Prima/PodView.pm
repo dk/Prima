@@ -899,11 +899,11 @@ sub add
 
    if ( $style == STYLE_CODE) { 
       push @$g, tb::text( 0, length $p),
-   } elsif (( $style == STYLE_ITEM) && ( $p eq '*' || $p =~ /^\d+\.?$/)) {
+   } elsif (( $style == STYLE_ITEM) && ( $p =~ /^\*\s*$/ || $p =~ /^\d+\.?$/)) {
       push @$g, 
          tb::wrap(0),
          tb::color(0),
-         tb::code( \&_bulletpaint, ($p eq '*') ? 1 : 0),
+         tb::code( \&_bulletpaint, ($p =~ /^\*\s*$/) ? 1 : 0),
          tb::moveto( 1, 0, tb::X_DIMENSION_FONT_HEIGHT),
          tb::wrap(1);
       $r-> {bulletMode} = 1;
