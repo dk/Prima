@@ -359,7 +359,6 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
    case cefFetch:
       s = (char*)apc_clipboard_get_data( self, cfText, (int*)&len);
       if (s) {
-         if ( len > 0 && s[len-1] == '\0') len--; 
          data = newSVpv( s, len);
          free(s);
          return data;
@@ -368,7 +367,7 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 
    case cefStore:
       s = SvPV( data, len);
-      apc_clipboard_set_data( self, cfText, (void*)s, len+1);
+      apc_clipboard_set_data( self, cfText, (void*)s, len);
       break;
    }
    return nilSV;
