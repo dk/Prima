@@ -1713,85 +1713,23 @@ erratic_line( Handle self)
 }
 
 
-static __INLINE__ void
-get_line_end( int x1, int y1, int x2, int y2, int offset, int delta, int * x3, int * y3, int * x4, int * y4)
-{
-   if ( x1 == x2)  {
-      if ( y1 < y2) {
-         *y3 = y1 + offset;
-         *y4 = *y3 + delta;
-         if ( *y4 > y2) *y4 = y2;
-      } else {
-         *y3 = y1 - offset;
-         *y4 = *y3 - delta;
-         if ( *y4 < y2) *y4 = y2;
-      }
-      *x3 = *x4 = x1;
-   } else if ( y1 == y2)  {
-      if ( x1 < x2) {
-         *x3 = x1 + offset;
-         *x4 = *x3 + delta;
-         if ( *x4 > x2) *x4 = x2;
-      } else {
-         *x3 = x1 - offset;
-         *x4 = *x3 - delta;
-         if ( *x4 < x2) *x4 = x2;
-      }
-      *y3 = *y4 = y1;
-   } else  {
-      int d;
-      long tan = ( y2 - y1) * 1000L / ( x2 - x1);
-      Bool directx = x2 > x1, directy = y2 > y1;
-      if ( tan < 1000 && tan > -1000) {
-         d = directx ? offset : -offset;
-         *x3 = x1 + d;
-         *y3 = (int)( y1 + d * tan / 1000L);
-         d = directx ? ( offset + delta) : ( - offset - delta);
-         *x4 = x1 + d;
-         *y4 = (int)( y1 + d * tan / 1000L);
-      } else {
-         d = directy ? offset : -offset;
-         *y3 = y1 + d;
-         *x3 = (int)( x1 + d * 1000L / tan);
-         d = directy ? ( offset + delta) : ( - offset - delta);
-         *y4 = y1 + d;
-         *x4 = (int)( x1 + d * 1000L / tan);
-      }
-      if ( directx  && ( *x4 > x2)) *x4 = x2;
-      if ( !directx && ( *x4 < x2)) *x4 = x2;
-      if ( directy  && ( *y4 > y2)) *y4 = y2;
-      if ( !directy && ( *y4 < y2)) *y4 = y2;
-   }
-}
-
-static int
-get_line_length( int x1, int y1, int x2, int y2)
-{
-   if ( x1 == x2) {
-      return ( y1 < y2) ? y2 - y1 : y1 - y2;
-   } else if ( y1 == y2) {
-      return ( x1 < x2) ? x2 - x1 : x1 - x2;
-   } else {
-      long tan = ( y2 - y1) * 1000L / ( x2 - x1);
-      if ( tan < 1000 && tan > -1000)
-         return ( x1 < x2) ? x2 - x1 : x1 - x2;
-      else
-         return ( y1 < y2) ? y2 - y1 : y1 - y2;
-   }
-}
-
 int
 gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
 {
    int x3, y3, x4, y4;
    int len = sys linePatternLen2, ptr = 0, offset = 0, cumul = drawState, delta = 0;
-   int llen = get_line_length( x1, y1, x2, y2);
+   int dx = x2 - x1, dy = y2 - y1;
+   int llen = sqrt( dx * dx + dy * dy);
    int lw = sys stylus. pen. lopnWidth. x + 1;
    unsigned char * lp = ( len > 3) ? sys linePattern2 : (char*) &sys linePattern2;
    HDC ps = sys ps;
    Bool draw = 1;
 
    MoveToEx( ps, x1, y1, nil);
+
+#define DELTA(x,y,offs) \
+  x = x1 + ((offs) * dx) / llen;\
+  y = y1 + ((offs) * dy) / llen
 
    if ( GetBkMode( ps) != TRANSPARENT) {
       HPEN pen = SelectObject( ps, CreatePen( PS_SOLID, lw, sys lbs[1]));
@@ -1806,7 +1744,8 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
       if ( drawState < 0) {
          offset -= drawState;
          if ( draw) {
-            get_line_end( x1, y1, x2, y2, 0, offset - 1, &x3, &y3, &x4, &y4);
+            DELTA( x3, y3, 0);
+            DELTA( x4, y4, offset - 1);
             MoveToEx( ps, x3, y3, nil);
             LineTo( ps, x4, y4);
          }
@@ -1819,9 +1758,13 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
    }
 
    while ( offset < llen) {
+      int d2;
       delta = lp[ ptr];
       if ( !draw) delta += lw;
-      get_line_end( x1, y1, x2, y2, offset, delta - 1, &x3, &y3, &x4, &y4);
+      d2 = offset + delta - 1;
+      if ( d2 > llen) d2 == llen;
+      DELTA( x3, y3, offset);
+      DELTA( x4, y4, d2);
       offset += delta;
       cumul += delta;
       if ( draw) {
@@ -1835,11 +1778,11 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
          draw = 1;
       }
    }
+#undef DELTA
 
    cumul -= offset - llen;
    return cumul;
 }
-
 
 static int
 is_y( double angle)
