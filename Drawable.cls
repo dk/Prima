@@ -16,7 +16,7 @@ object Drawable ( Component)
    method Bool   begin_paint_info();
    method void   end_paint();
    method void   end_paint_info();
-   static Font * font_match( char * dummy, Font * source, Font * dest);
+   static Font * font_match( char * dummy, Font * source, Font * dest, Bool pick = true);
    c_only Bool	 font_add( Font * source, Font * dest);
    import SV *   profile_default();
 
