@@ -649,6 +649,8 @@ prima_init_font_subsystem( void)
       }
    }
    guts. default_font_ok = 1;
+#define DEBUG_FONT(font) font.height,font.width,font.size,font.name,font.encoding
+   Fdebug("default font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_font));
    if ( do_menu_font) {
       prima_font_pp2font( do_menu_font, &guts. default_menu_font);
       free( do_menu_font);
@@ -657,6 +659,7 @@ prima_init_font_subsystem( void)
                              nilHandle, frFont, &guts. default_menu_font)) {
       memcpy( &guts. default_menu_font, &guts. default_font, sizeof( Font));
    }
+   Fdebug("menu font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_menu_font));
    
    if ( do_widget_font) {
       prima_font_pp2font( do_widget_font, &guts. default_widget_font);
@@ -666,6 +669,7 @@ prima_init_font_subsystem( void)
                              nilHandle, frFont, &guts. default_widget_font)) {
       memcpy( &guts. default_widget_font, &guts. default_font, sizeof( Font));
    }
+   Fdebug("widget font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_widget_font));
    
    if ( do_msg_font) {
       prima_font_pp2font( do_msg_font, &guts. default_msg_font);
@@ -675,6 +679,7 @@ prima_init_font_subsystem( void)
                              nilHandle, frFont, &guts. default_msg_font)) {
       memcpy( &guts. default_msg_font, &guts. default_font, sizeof( Font));
    }
+   Fdebug("msg font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_msg_font));
    
    if ( do_caption_font) {
       prima_font_pp2font( do_caption_font, &guts. default_caption_font);
@@ -684,6 +689,7 @@ prima_init_font_subsystem( void)
 				    nilHandle, frFont, &guts. default_caption_font)) {
       memcpy( &guts. default_caption_font, &guts. default_font, sizeof( Font));
    }
+   Fdebug("caption font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_caption_font));
 
    return true;
 }
@@ -698,31 +704,31 @@ prima_font_subsystem_set_option( char * option, char * value)
    } else
    if ( strcmp( option, "font") == 0) {
       free( do_default_font);
-      do_default_font = duplicate_string( do_default_font);
+      do_default_font = duplicate_string( value);
       Mdebug( "set default font: %s\n", do_default_font);
       return true;
    } else 
    if ( strcmp( option, "menu-font") == 0) {
       free( do_menu_font);
-      do_menu_font = duplicate_string( do_menu_font);
+      do_menu_font = duplicate_string( value);
       Mdebug( "set menu font: %s\n", do_menu_font);
       return true;
    } else 
    if ( strcmp( option, "widget-font") == 0) {
       free( do_widget_font);
-      do_widget_font = duplicate_string( do_widget_font);
+      do_widget_font = duplicate_string( value);
       Mdebug( "set menu font: %s\n", do_widget_font);
       return true;
    } else 
    if ( strcmp( option, "msg-font") == 0) {
       free( do_msg_font);
-      do_msg_font = duplicate_string( do_msg_font);
+      do_msg_font = duplicate_string( value);
       Mdebug( "set msg font: %s\n", do_msg_font);
       return true;
    } else 
    if ( strcmp( option, "caption-font") == 0) {
       free( do_caption_font);
-      do_caption_font = duplicate_string( do_caption_font);
+      do_caption_font = duplicate_string( value);
       Mdebug( "set caption font: %s\n", do_caption_font);
       return true;
    }  
