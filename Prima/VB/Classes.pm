@@ -904,7 +904,7 @@ sub prf_types
       bool          => ['briefKeys','buffered','capture','clipOwner',
          'centered','current','cursorVisible','enabled','firstClick','focused',
          'hintVisible','ownerColor','ownerBackColor','ownerFont','ownerHint',
-         'ownerShowHint','ownerPalette','pointerVisible','scaleChildren',
+         'ownerShowHint','ownerPalette','scaleChildren',
          'selectable','selected','showHint','syncPaint','tabStop','transparent',
          'visible','x_centered','y_centered','originDontCare','sizeDontCare',
       ],
@@ -1044,7 +1044,6 @@ sub prf_adjust_default
       pointerType
       pointerHotSpot
       pointerIcon
-      pointerVisible
       scaleChildren
       selectable
       selectingButtons

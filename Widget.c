@@ -2205,14 +2205,6 @@ Widget_pointerPos( Handle self, Bool set, Point p)
    return p;
 }
 
-Bool
-Widget_pointerVisible( Handle self, Bool set, Bool pointerVisible)
-{
-   if ( !set)
-      return apc_pointer_get_visible( self);
-   return apc_pointer_set_visible( self, pointerVisible);
-}
-
 Handle
 Widget_popup( Handle self, Bool set, Handle popup)
 {
