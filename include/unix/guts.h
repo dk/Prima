@@ -626,6 +626,7 @@ typedef struct _drawable_sys_data
       unsigned process_configure_notify	: 1;
       unsigned reload_font		: 1;
       unsigned sizeable                 : 1;
+      unsigned sizemax_set              : 1;
       unsigned size_determined          : 1;
       unsigned sync_paint               : 1;
       unsigned task_listed              : 1;
@@ -912,6 +913,9 @@ process_transparents( Handle self);
 
 extern Bool
 apc_window_set_visible( Handle self, Bool show);
+
+extern void
+apc_SetWMNormalHints( Handle self, XSizeHints * hints);
 
 extern Bool
 prima_window_reset_menu( Handle self, int newMenuHeight);

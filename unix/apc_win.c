@@ -412,15 +412,23 @@ prima_get_frame_info( Handle self, PRect r)
    return true;
 }
 
-static void
+void
 apc_SetWMNormalHints( Handle self, XSizeHints * hints)
 {
    DEFXX;
+   hints-> flags |= PMinSize | PMaxSize;
    if ( XX-> flags. sizeable) {
       hints-> min_width  = PWidget(self)-> sizeMin.x;
       hints-> min_height = PWidget(self)-> sizeMin.y + XX-> menuHeight;
       hints-> max_width  = PWidget(self)-> sizeMax.x;
       hints-> max_height = PWidget(self)-> sizeMax.y + XX-> menuHeight;
+      if ( !XX-> flags. sizemax_set && 
+         PWidget(self)-> sizeMax.x == 16384 &&
+         PWidget(self)-> sizeMax.y == 16384) {
+         hints-> flags &= ~ PMaxSize;
+      }
+      else 
+         XX-> flags. sizemax_set = 1;
    } else {   
       Point who; 
       who. x = ( hints-> flags & USSize) ? hints-> width  : XX-> size. x;
@@ -429,8 +437,8 @@ apc_SetWMNormalHints( Handle self, XSizeHints * hints)
       hints-> min_height = who. y;
       hints-> max_width  = who. x;
       hints-> max_height = who. y;
+      XX-> flags. sizemax_set = 1;
    }
-   hints-> flags |= PMinSize | PMaxSize;
    XSetWMNormalHints( DISP, X_WINDOW, hints);
    XCHECKPOINT;
 }   

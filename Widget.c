@@ -157,15 +157,16 @@ Widget_init( Handle self, HV * profile)
 
    /* size, position, enabling, visibliity etc. runtime */
    {
-      Point set;
+      Point set, set2;
       AV * av;
       SV ** holder;
       NPoint ds = {1,1};
 
       prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
+      prima_read_point( pget_sv( sizeMax), (int*)&set2, 2, "RTC0083: Array panic on 'sizeMax'");
+      var-> sizeMax = set2;
       my-> set_sizeMin( self, set);
-      prima_read_point( pget_sv( sizeMax), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
-      my-> set_sizeMax( self, set);
+      my-> set_sizeMax( self, set2);
       prima_read_point( pget_sv( cursorSize), (int*)&set, 2, "RTC0084: Array panic on 'cursorSize'");
       my-> set_cursorSize( self, set);
       prima_read_point( pget_sv( cursorPos), (int*)&set, 2, "RTC0085: Array panic on 'cursorPos'");
