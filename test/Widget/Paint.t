@@ -32,6 +32,8 @@ $ww-> buffered(1);
 $ww-> set( onPaint => sub {
    my $x = $_[1];
    $_[0]-> on_paint( $x);
+   $x-> set_pixel( 0,0,cl::White);
+   my $white = $x-> get_pixel(0,0);
    $x-> set_pixel( 0,0,cl::Black);
    ok( $x-> get_pixel(0,0) == 0);
    $x-> color( cl::White);
@@ -40,7 +42,7 @@ $ww-> set( onPaint => sub {
    $x-> clipRect( 2, 2, 3, 3);
    $x-> bar( 1, 1, 2, 2);
    $x-> clipRect( 0, 0, $x-> size);
-   ok( $x-> get_pixel( 2,2) == 0 && $x-> get_pixel( 1,1) == 0xFFFFFF);
+   ok( $x-> get_pixel( 2,2) == 0 && $x-> get_pixel( 1,1) == $white);
 
    $x-> color( cl::White);
    $x-> bar( 0, 0, 7, 7);
@@ -49,7 +51,7 @@ $ww-> set( onPaint => sub {
    $x-> bar( 2, 2, 3, 3);
    $x-> transform( 0, 0);
    ok( $x-> get_pixel( 1,4) == 0 &&
-       $x-> get_pixel( 3,2) == 0xFFFFFF
+       $x-> get_pixel( 3,2) == $white
    );
 });
 $ww-> repaint;
