@@ -1,6 +1,5 @@
 object Popup( AbstractMenu)
 {
-   method void   done();
    method Bool   get_auto();
    method Bool   get_selected();
    method void   init( HV * profile);
