@@ -668,12 +668,10 @@ Color
 Image_get_pixel( Handle self,int x,int y)
 {
     #define BGRto32(pal) ((var palette[pal].r<<16) | (var palette[pal].g<<8) | (var palette[pal].b))
-    if ( opt_InPaint) {
+    if ( opt_InPaint)
         return inherited get_pixel(self,x,y);
-    }
-    if ((x>=var w) || (x<0) || (y>=var h) || (y<0)) {
-        return 0;
-    }
+    if ((x>=var w) || (x<0) || (y>=var h) || (y<0))
+        return clInvalid;
     switch (var type & imBPP) {
         case imbpp1:
             {
@@ -845,7 +843,10 @@ Image_dup( Handle self)
    sv_free(( SV *) profile);
    i = ( PImage) h;
    memcpy( i-> palette, var palette, 768);
-   memcpy( i-> data, var data, var dataSize);
+   if ( i-> type != var type)
+      ic_type_convert( self, i-> data, i-> palette, i-> type);
+   else
+      memcpy( i-> data, var data, var dataSize);
    memcpy( i-> stats, var stats, sizeof( var stats));
    i-> statsCache = var statsCache;
    --SvREFCNT( SvRV( i-> mate));
