@@ -158,7 +158,7 @@ void Drawable_set( Handle self, HV * profile)
 Font *
 Drawable_font_match( char * dummy, Font * source, Font * dest, Bool pick)
 {
-   if ( pick)
+   if ( pick) 
       apc_font_pick( nilHandle, source, dest);
    else
       Drawable_font_add( nilHandle, source, dest);
@@ -183,7 +183,8 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
    if ( useStyle ) dest-> style     = source-> style;
    if ( usePitch ) dest-> pitch     = source-> pitch;
    if ( useSize  ) dest-> size      = source-> size;
-   if ( useName  ) strcpy( dest-> name, source-> name);
+   if ( useName  ) 
+      strcpy( dest-> name, source-> name);
 
    // nulling dependencies
    if ( !useHeight && useSize)
@@ -487,9 +488,8 @@ Drawable_get_text_box( Handle self, char * text, int len)
 }
 
 static char **
-do_text_wrap( Handle self, TextWrapRec *t)
+do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
 {
-   PFontABC abc;
    float width[ 256];
    int start = 0, i, lSize = 16;
    float w = 0, inc = 0;
@@ -498,9 +498,6 @@ do_text_wrap( Handle self, TextWrapRec *t)
    Bool doWidthBreak = t-> width >= 0;
    int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset = 0;
    unsigned char * text    = ( unsigned char*) t-> text;
-
-   abc = apc_gp_get_font_abc( self, 0, 255);
-   if ( abc == nil) return nil;
 
    ret = allocn( char*, lSize);
    for ( i = 0; i < 256; i++) {
@@ -596,6 +593,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
              winc = width[ text[ i]];
              inc  = abc[ text[ i]]. c;
        }
+       
        if ( doWidthBreak && w + winc + inc > t-> width)
        {
           if (( i - start == 0) || (( i - 1 == tildeIndex) && ( i - start == 1))) {
@@ -700,7 +698,6 @@ do_text_wrap( Handle self, TextWrapRec *t)
           ret[ i] = n;
        }
     }
-    free( abc);
     return ret;
 }
 
@@ -713,6 +710,7 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    char** c;
    int i;
    AV * av;
+   PFontABC abc;
 
    t. text = text;
    t. textLen = textLen;
@@ -725,9 +723,37 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    if ( t. tabIndent < 0) t. tabIndent = 0;
    if ( t. textLen   < 0) t. textLen   = strlen( t. text);
 
-   gpENTER;
-   c = do_text_wrap( self, &t);
-   gpLEAVE;
+   if ( my-> get_font_abc == Drawable_get_font_abc) {
+      gpENTER;
+      abc = apc_gp_get_font_abc( self, 0, 255);
+      gpLEAVE;
+   } else {
+      SV * sv = my-> get_font_abc( self, 0, 255);
+      if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
+         AV * av = ( AV*) SvRV( sv);
+         int n   = av_len( av) + 1;
+         if ( n > 256 * 3) n = 256 * 3;
+         n = ( n / 3) * 3;
+         if (( abc = malloc( 256 * sizeof( FontABC)))) {
+            int i, j = 0;
+            if ( n < 256) memset( abc, 0, 256 * sizeof( FontABC));
+            for ( i = 0; i < n; i += 3) {
+               SV ** holder = av_fetch( av, i, 0);
+               if ( holder) abc[j]. a = ( float) SvNV( *holder);
+               holder = av_fetch( av, i + 1, 0);
+               if ( holder) abc[j]. b = ( float) SvNV( *holder);
+               holder = av_fetch( av, i + 2, 0);
+               if ( holder) abc[j]. c = ( float) SvNV( *holder);
+               j++;
+            }   
+         } 
+      } 
+      sv_free( sv);
+   }
+   if ( abc == nil) return nil;
+   
+   c = do_text_wrap( self, &t, abc);
+   free( abc);
 
    for ( i = 0; i < t. count; i++) {
       av_push( av, retChunks ? ( newSViv(( int) c[ i])) : ( newSVpv( c[ i], 0)));
