@@ -33,10 +33,11 @@ package MonoDeviceBitmap;
 use vars qw(@ISA);
 @ISA = qw(Prima::DeviceBitmap);
 
-sub set_color
+sub color
 {
+   return $_[0]->SUPER::color unless $#_;
    my ( $self, $color) = @_;
-   $self-> SUPER::set_color( $self-> get_nearest_color( $color));
+   $self-> SUPER::color( $self-> get_nearest_color( $color));
 }
 
 sub set_back_color
