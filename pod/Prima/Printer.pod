@@ -188,6 +188,8 @@ Returns a string, identifying a default printer device.
 
 Returns a system handle for a printer object.
 
+=back
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
