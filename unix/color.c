@@ -1116,8 +1116,10 @@ prima_palette_replace( Handle self, Bool fast)
                count = 0;
             }
          }
-      if ( count > 0) 
+      if ( count > 0) {
+         XQueryColors( DISP, guts. defaultColormap, xc, count);
          for ( j = 0; j < count; j++) prima_color_new( &xc[j]);
+      }
    }
    
    /* printf("%s find match for %d colors\n", PWidget(self)-> name, psz); */
