@@ -1028,9 +1028,6 @@ sub add
             }
          } else { # close
             if ( $$_[1] eq 'i' || $$_[1] eq 'f' || $$_[1] eq 'b') {
-               if (( $val{fontStyle} & fs::Italic) && !( $stack{fontStyle}->[-1] & fs::Italic)) {
-                  push @$g, tb::moveto( 0.5, 0, tb::X_DIMENSION_FONT_HEIGHT);
-               }
                push @$g, tb::fontStyle( $val{fontStyle} = pop @{$stack{fontStyle}});
             } elsif ( $$_[1] eq 'c') {
                my $z = $styles->[STYLE_CODE];
