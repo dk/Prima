@@ -247,6 +247,8 @@ B<Perl programming>:
 
 - L<Prima::Window> - Window and Dialog - top-level window management
 
+- L<Prima::Menu> - pull-down and pop-up menu objects
+
 B<C programming>
 
 - L<Prima::internals> - Internal architecture
