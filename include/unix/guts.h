@@ -491,6 +491,12 @@ prima_rop_map( int rop);
 extern void
 prima_gp_get_clip_rect( Handle self, XRectangle *cr);
 
+extern XWindow
+prima_find_frame_window( XWindow w);
+
+extern Bool
+prima_get_frame_info( Handle self, PRect r);
+
 typedef Bool (*prima_wm_hook)( void);
 
 #endif

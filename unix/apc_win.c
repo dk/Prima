@@ -226,12 +226,14 @@ apc_window_set_caption( Handle self, const char *caption)
    return true;
 }
 
-static XWindow
-find_frame_window( XWindow w)
+XWindow
+prima_find_frame_window( XWindow w)
 {
    XWindow r, p, *c;
    int nc;
 
+   if ( w == None)
+      return None;
    while ( XQueryTree( DISP, w, &r, &p, &c, &nc)) {
       if (c)
          XFree(c);
@@ -242,15 +244,15 @@ find_frame_window( XWindow w)
    return None;
 }
 
-static Bool
-get_frame_info( Handle self, PRect r)
+Bool
+prima_get_frame_info( Handle self, PRect r)
 {
    DEFXX;
    XWindow p, dummy;
    int px, py;
    unsigned int pw, ph, pb, pd;
 
-   if (( p = find_frame_window( X_WINDOW)) == None) {
+   if (( p = prima_find_frame_window( X_WINDOW)) == None) {
       return false;
    } else if ( p == X_WINDOW) {
       r-> left = r-> bottom = r-> right = r-> top = 0;
@@ -277,7 +279,7 @@ apc_window_set_client_pos( Handle self, int x, int y)
    if (0) {
       Rect r;
 
-      get_frame_info( self, &r);
+      prima_get_frame_info( self, &r);
       fprintf( stderr, "%s: to: %d, %d; frame info: left(%d), top(%d), right(%d), bottom(%d) pixels\n",
                PComponent(self)->name, x, y, r.left, r.top, r.right, r.bottom);
    }
