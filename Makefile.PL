@@ -717,15 +717,17 @@ sub setup_variables
     $extralibs = qd("auto/Prima/Prima.lib") if $OS2;
     setvar( 'DEFFILE', $Win32 ? qd( "win32/Prima.def") : ( $OS2 ? qd( "os2/Prima.def") : ''));
     open F, 'Prima.pm' or die "Cannot open Prima.pm:$!\n";
-    my $ver;
+    my ($ver1, $ver2);
     while (<F>) {
-       next unless m/\$VERSION[^\.\d]*([\.\d]+)/;
-       $ver = $1, last;
+       next unless m/\$VERSION[^\.\d]*(\d+)\.(\d+)/;
+       $ver1 = $1, $ver2 = $2, last;
     }
     close F;
-    die "Cannot find VERSION string in Prima.pm\n" unless defined $ver;
-    print "Version: $ver\n";
-    setvar( 'DISTNAME', "Prima-$ver");
+    die "Cannot find VERSION string in Prima.pm\n" unless defined $ver1;
+    print "Version: $ver1.$ver2\n";
+    $DEFINES{PRIMA_VERSION} = $ver1;
+    $DEFINES{PRIMA_SUBVERSION} = $ver2;
+    setvar( 'DISTNAME', "Prima-$ver1.$ver2");
     setvar( 'WANTNOCODECS', 0);
 
     @Prima_exports = qw(
