@@ -885,7 +885,7 @@ sub max         {($#_)?$_[0]-> set_bound($_[1],q(max)):return $_[0]->{max};}
 
 
 # linear slider tick alignment
-package ta;
+package tka;
 use constant Normal      => 0;
 use constant Alternative => 1;
 use constant Dual        => 2;
@@ -910,7 +910,7 @@ sub profile_default
       %{$_[ 0]-> SUPER::profile_default},
       ribbonStrip    => 0,
       shaftBreadth   => 6,
-      tickAlign      => ta::Normal,
+      tickAlign      => tka::Normal,
       vertical       => 0,
    }
 }
@@ -938,8 +938,8 @@ sub on_paint
    ( $self->{shaftBreadth}, $self->{vertical}, abs($self->{max} - $self->{min})||1, $self->{min},
      $self->{tickVal}, $self-> {tickLen}, $self->{tickTxt}, $self->{tickAlign},
    );
-   if ( $ta == ta::Normal)      { $ta = 1; } elsif
-      ( $ta == ta::Alternative) { $ta = 2; } else { $ta = 3; }
+   if ( $ta == tka::Normal)      { $ta = 1; } elsif
+      ( $ta == tka::Alternative) { $ta = 2; } else { $ta = 3; }
 
    unless ( $self->transparent) {
       $canvas-> color( $clr[1]);
@@ -1157,7 +1157,7 @@ sub set_vertical
 sub set_tick_align
 {
    my ( $self, $ta) = @_;
-   $ta = ta::Normal if $ta != ta::Alternative and $ta != ta::Dual;
+   $ta = tka::Normal if $ta != tka::Alternative and $ta != tka::Dual;
    return if $ta == $self-> {tickAlign};
    $self-> {tickAlign} = $ta;
    $self-> repaint;
@@ -1219,8 +1219,8 @@ sub value
          $v1 -= DefButtonX / 2;
          $v2 += DefButtonX / 2 + 1;
          my $xd = 0;
-         $xd = (( $self-> {tickAlign} == ta::Normal) ? 1 : -1) *
-           ( $bw - $sb - DefButtonX) if $self-> {tickAlign} != ta::Dual;
+         $xd = (( $self-> {tickAlign} == tka::Normal) ? 1 : -1) *
+           ( $bw - $sb - DefButtonX) if $self-> {tickAlign} != tka::Dual;
          $self-> invalidate_rect( $bw - 4 + $xd, $v1, $bw + $sb + 9 + $xd, $v2);
       } else {
          $sb = $size[1] / 6 unless $sb;
@@ -1235,8 +1235,8 @@ sub value
          $v1 -= DefButtonX / 2;
          $v2 += DefButtonX / 2 + 1;
          my $yd = 0;
-         $yd = (( $self-> {tickAlign} == ta::Normal) ? -1 : 1) *
-           ( $bh - $sb - DefButtonX) if $self-> {tickAlign} != ta::Dual;
+         $yd = (( $self-> {tickAlign} == tka::Normal) ? -1 : 1) *
+           ( $bh - $sb - DefButtonX) if $self-> {tickAlign} != tka::Dual;
          $self-> invalidate_rect( $v1, $bh - 9 + $yd, $v2, $bh + $sb + 4 + $yd);
       }
       $self-> notify(q(Change), $self-> {mouseTransaction});
