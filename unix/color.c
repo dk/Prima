@@ -161,8 +161,8 @@ static Color standard_radio_colors[] = {
 static Color standard_scrollbar_colors[] = {
    0x000000,	/* Prima.Scrollbar.foreground */
    0xcccccc,        /* Prima.Scrollbar.background */
-   0x000000,	/* Prima.Scrollbar.hilitefore */
-   0xcccccc,        /* Prima.Scrollbar.hiliteback */
+   0xcccccc,        /* Prima.Scrollbar.hilitefore */
+   0x000000,	/* Prima.Scrollbar.hiliteback */
    0x606060,        /* Prima.Scrollbar.disabledfore */
    0xcccccc,        /* Prima.Scrollbar.disabledback */
    0xffffff,        /* Prima.Scrollbar.light3d */
@@ -183,8 +183,8 @@ static Color standard_slider_colors[] = {
 static Color standard_widget_colors[] = {
    0x000000,	/* Prima.Widget.foreground */
    0xcccccc,        /* Prima.Widget.background */
-   0x000000,	/* Prima.Widget.hilitefore */
-   0xcccccc,        /* Prima.Widget.hiliteback */
+   0xcccccc,        /* Prima.Widget.hilitefore */
+   0x000000,	    /* Prima.Widget.hiliteback */
    0x606060,        /* Prima.Widget.disabledfore */
    0xcccccc,        /* Prima.Widget.disabledback */
    0xffffff,        /* Prima.Widget.light3d */
