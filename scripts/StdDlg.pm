@@ -268,7 +268,7 @@ sub Dir_Change
 {
    my ( $self, $dir) = @_;
    my $mask = $self-> {mask};
-   my @a = grep { /$mask/i; } $dir-> files( '-f');
+   my @a = grep { /$mask/i; } $dir-> files( 'reg');
    @a = sort {uc($a) cmp uc($b)} @a if $self->{sorted};
    $self-> Files-> items([@a]);
    $self-> Directory_FontChanged( $self-> Directory);
