@@ -38,7 +38,6 @@ use File::Find;
 use File::Basename;
 use File::Path;
 use File::Copy;
-use IO::File;
 use Cwd;
 use vars qw( %make_trans @ovvars $dir_sep $path_sep );
 use vars @ovvars = qw(
@@ -842,9 +841,9 @@ sub find_cdeps
     $alldeps{ $cfile} = [];
     return () unless -f $cfile;
 
-    my $cf = new IO::File;
-    open $cf, "<$cfile" or die "Cannot open $cfile: $!";
-    while ( <$cf>) {
+    local *CF;
+    open CF, "<$cfile" or die "Cannot open $cfile: $!";
+    while ( <CF>) {
 	chomp;
 	next unless /^\s*\#\s*include\s+"([^\"]+)"/;
 	my $incfile = $1;
@@ -861,7 +860,7 @@ sub find_cdeps
 	push @{ $deps->{ $cfile}}, @subdeps;
 	push @{ $alldeps{ $cfile}}, @subdeps;
     }
-    close $cf;
+    close CF;
     return @{ $deps->{ $cfile}};
 }
 
