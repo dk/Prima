@@ -242,7 +242,7 @@ static unsigned long
 elf_hash_by_size( const Font *f)
 {
    unsigned long   h = 0, g;
-   char *name = (char *)&(f-> style);
+   char *name = (char *)&(f-> width);
    int size = (char *)(&(f-> name)) - (char *)name;
 
    while ( size)
@@ -282,7 +282,7 @@ find_node( const PFont font, Bool bySize)
 
    if ( font == nil) return nil;
    if (bySize) {
-      sz = (char *)(&(font-> name)) - (char *)&(font-> style);
+      sz = (char *)(&(font-> name)) - (char *)&(font-> width);
       i = elf_hash_by_size( font) % FONTHASH_SIZE;
    } else {
       sz = (char *)(&(font-> name)) - (char *)font;
@@ -295,7 +295,7 @@ find_node( const PFont font, Bool bySize)
    if ( bySize) {
       while ( node != nil)
       {
-         if (( memcmp( &(font-> style), &(node-> key. style), sz) == 0) &&
+         if (( memcmp( &(font-> width), &(node-> key. width), sz) == 0) &&
              ( strcmp( font-> name, node-> key. name) == 0 ) &&
              (font-> size == node-> key. size))
             return node;
@@ -439,6 +439,11 @@ font_clean()
     hash_first_that( fontMan, _ft_cleaner, nil, nil, nil);
 }
 
+
+#define MASK_CODEPAGE  0x00FF
+#define MASK_FAMILY    0xFF00
+#define FF_MASK        0x00F0
+
 void
 font_logfont2font( LOGFONT * lf, Font * f, Point * res)
 {
@@ -463,7 +468,7 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
    f-> pitch               = ((( lf-> lfPitchAndFamily & 3) == DEFAULT_PITCH) ? fpDefault :
       ((( lf-> lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
    strncpy( f-> name, lf-> lfFaceName, LF_FACESIZE);
-   f-> codepage            = lf-> lfCharSet;
+   f-> codepage            = lf-> lfCharSet | ((lf-> lfPitchAndFamily & FF_MASK) << 8);
    f-> name[ LF_FACESIZE] = 0;
 }
 
@@ -478,12 +483,12 @@ font_font2logfont( Font * f, LOGFONT * lf)
    lf-> lfItalic           = ( f-> style & fsItalic)     ? 1 : 0;
    lf-> lfUnderline        = ( f-> style & fsUnderlined) ? 1 : 0;
    lf-> lfStrikeOut        = ( f-> style & fsStruckOut)  ? 1 : 0;
-   lf-> lfCharSet          = f-> codepage;
+   lf-> lfCharSet          = f-> codepage & MASK_CODEPAGE;
    lf-> lfOutPrecision     = OUT_TT_PRECIS;
    lf-> lfClipPrecision    = CLIP_DEFAULT_PRECIS;
    lf-> lfQuality          = PROOF_QUALITY;
 
-   lf-> lfPitchAndFamily   = FF_DONTCARE |
+   lf-> lfPitchAndFamily   = (( f-> codepage & MASK_FAMILY) >> 8) |
       (( f-> pitch == fpDefault)  ? DEFAULT_PITCH :
       (( f-> pitch == fpVariable) ? VARIABLE_PITCH : FIXED_PITCH));
    strncpy( lf-> lfFaceName, f-> name, LF_FACESIZE);
@@ -518,7 +523,7 @@ font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readonly)
    fm-> lastChar               = tm-> tmLastChar;
    fm-> breakChar              = tm-> tmBreakChar;
    fm-> defaultChar            = tm-> tmDefaultChar;
-   fm-> codepage               = tm-> tmCharSet;
+   fm-> codepage               = tm-> tmCharSet | ((tm-> tmPitchAndFamily & FF_MASK) << 8);
 }
 
 
@@ -708,7 +713,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
          strncpy( font-> family, fmtx. family, LF_FULLFACESIZE);
          font-> size     = ( es. tm. t.tmHeight - es. tm. t.tmInternalLeading) * 72.0 / res.y + 0.5;
          font-> width    = es. lf. lfWidth;
-         font-> codepage = es. tm. t.tmCharSet;
+         font-> codepage = es. tm.t.tmCharSet | ((es.tm.t.tmPitchAndFamily & FF_MASK) << 8);
          out( fgBitmap);
       }
 
@@ -744,7 +749,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
          font_textmetric2font( &tm, font, true);
          memcpy( &fmtx, &es. tm, sizeof( fmtx));
          strncpy( font-> family, fmtx. family, LF_FULLFACESIZE);
-         font-> codepage = tm .tmCharSet;
+         font-> codepage = tm. tmCharSet | ((tm. tmPitchAndFamily & FF_MASK) << 8);
          out( fgVector);
       }
    }
@@ -1352,7 +1357,7 @@ palette_change( Handle self)
    DeleteObject( SelectPalette( dc, pal, 0));
    ReleaseDC( HANDLE, dc);
 
-   if ( rCol > 0) apc_widget_invalidate_rect( self, nil);
+   if ( rCol > 0) apc_widget_repaint( self);
 
    list_destroy( &l.l);
    return true;
