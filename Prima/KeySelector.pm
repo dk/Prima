@@ -55,6 +55,7 @@ sub profile_default
    return {
       %{$_[ 0]-> SUPER::profile_default},
       key => kb::NoKey,
+      scaleChildren => 0,
    }
 }
 
