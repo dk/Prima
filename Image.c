@@ -1257,11 +1257,13 @@ XS( Image_load_FROMPERL) {
               filename,
               result ? "succeed" : "failed"
           ); */
+/*
       if ( ! result) {
           char errorBuf[ 1024];
           apc_image_get_error_message( errorBuf, 1024);
-/*        DOLBUG( "Error message: %s\n", errorBuf); */
+          DOLBUG( "Error message: %s\n", errorBuf);
       }
+*/
       SPAGAIN;
       SP -= items;
       if ( result) {
