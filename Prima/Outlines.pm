@@ -142,7 +142,7 @@ sub set
 
 sub iterate
 {
-   my ( $self, $sub) = @_;
+   my ( $self, $sub, $full) = @_;
    my $position = 0;
    my $traverse;
    $traverse = sub {
@@ -150,7 +150,7 @@ sub iterate
       return $current if $sub->( $current, $position, $level, $lastChild);
       $position++;
       $level++;
-      if ( $current->[1] && $current->[2]) {
+      if ( $current->[1] && ( !$full || $current->[2])) {
          my $c = scalar @{$current->[1]};
          for ( @{$current->[1]}) {
             my $ret = $traverse->( $_, $level, --$c ? 0 : 1);
@@ -158,16 +158,11 @@ sub iterate
          }
       }
    };
-#  if ( $startNode) {
-#     $position = $startIndex if defined $startIndex;
-#     return $traverse->( $startNode, defined $startLevel ? $startLevel : 0, 1);
-#  } else {
-      my $c = scalar @{$self->{items}};
-      for ( @{$self->{items}}) {
-         my $ret = $traverse->( $_, 0, --$c ? 0 : 1);
-         return $ret if $ret;
-      }
-#  }
+   my $c = scalar @{$self->{items}};
+   for ( @{$self->{items}}) {
+      my $ret = $traverse->( $_, 0, --$c ? 0 : 1);
+      return $ret if $ret;
+   }
 }
 
 sub adjust
@@ -745,7 +740,7 @@ sub reset
    $size[0] -= $bw * 2 + $self->{dx};
    $self->{rows}  = int( $size[1] / $ih);
    $self->{rows}  = 0 if $self->{rows} < 0;
-   $self->{yedge} = $size[1] - $self->{rows} * $ih;
+   $self->{yedge} = ( $size[1] - $self->{rows} * $ih) ? 1 : 0;
 }
 
 sub reset_scrolls
@@ -755,7 +750,7 @@ sub reset_scrolls
    if ( $self-> {scrollTransaction} != 1 && $self->{vScroll})
    {
       $self-> {vScrollBar}-> set(
-         max      => $self-> {count} -  $self->{rows},
+         max      => $self-> {count} - $self->{rows},
          pageStep => $self-> {rows},
          whole    => $self-> {count},
          partial  => $self-> {rows},
@@ -967,6 +962,7 @@ sub set_items
    $self-> reset_tree;
    $self-> update_tree;
    $self-> repaint;
+   $self-> reset_scrolls;
 }
 
 sub insert_items
@@ -986,6 +982,7 @@ sub insert_items
    $self-> reset_tree;
    $self-> update_tree;
    $self-> repaint;
+   $self-> reset_scrolls;
 }
 
 sub delete_items
@@ -1003,6 +1000,7 @@ sub delete_items
    $self-> reset_tree;
    $self-> update_tree;
    $self-> repaint;
+   $self-> reset_scrolls;
 }
 
 sub delete_item
@@ -1022,6 +1020,7 @@ sub delete_item
       $self-> update_tree;
       $self-> focusedItem( -1) if $x == $self->{focusedItem};
       $self-> repaint;
+      $self-> reset_scrolls;
    }
 }
 
