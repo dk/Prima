@@ -47,7 +47,9 @@ use Prima::Buttons;
 use Prima::DockManager;
 
 package dmfp;
-use constant Edit => 0x100000;
+use constant Edit       => 0x100000;
+use constant Vertical   => 0x200000;
+use constant Horizontal => 0x400000;
 
 # This is the main window. it's responsible for 
 # command handling and bar visiblity; 
@@ -78,7 +80,7 @@ sub init
    );
    $self-> {mainDock} = $self-> insert( FourPartDocker => 
       rect        => [ 0, 0, $self-> size],
-      fingerprint => dmfp::Tools|dmfp::Toolbar|dmfp::Edit,
+      fingerprint => dmfp::Tools|dmfp::Toolbar|dmfp::Edit|dmfp::Horizontal|dmfp::Vertical,
       dockup      => $self-> instance,
       dockerCommonProfile => {
          hasPocket => 0,
@@ -92,6 +94,10 @@ sub init
       dockerProfileClient => { # allow docking only to Edit
          fingerprint => dmfp::Edit,
       },   
+      dockerProfileLeft   => { fingerprint => dmfp::Vertical },   
+      dockerProfileRight  => { fingerprint => dmfp::Vertical },   
+      dockerProfileTop    => { fingerprint => dmfp::Horizontal },   
+      dockerProfileBottom => { fingerprint => dmfp::Horizontal },
    );
    $self-> instance-> add_notification( 'ToolbarChange', \&on_toolbarchange, $self);
    $self-> instance-> add_notification( 'PanelChange',   \&on_toolbarchange, $self);
@@ -387,7 +393,10 @@ $i-> register_panel( 'Edit' => {
 $i-> register_panel( 'Banner' => {
    class => 'Banner',
    text  => 'Banner window',
-   dockerProfile => { size => [ 200, 30]},
+   dockerProfile => { 
+     fingerprint => dmfp::Horizontal,
+     size => [ 200, 30]
+   },
 });   
 
 
