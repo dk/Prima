@@ -1355,13 +1355,14 @@ sub plate_glyph
    my $xsf = 0;
    $x = $f if $x < $f || $x > $l;
 
-   $z-> begin_paint;
    my $abc = $z-> {ABC};
    my ( $a, $b, $c) = (
       $abc->[ ( $x - $f) * 3],
       $abc->[ ( $x - $f) * 3 + 1],
       $abc->[ ( $x - $f) * 3 + 2],
    );
+   return '' if $b <= 0;
+   $z-> begin_paint;
    $z-> clear;
    $z-> text_out( chr( $x), ($a < 0) ? -$a : 0, $d - 1);
    $z-> end_paint;
@@ -1409,6 +1410,7 @@ sub plate_glyph
       for ( $j = 0; $j < length $cd; $j++) {
          $cdz .= sprintf("%02x", ord substr( $cd, $j, 1));
       }
+
       $_[0]-> {plate}-> {yd} = $bbox[1] * 72.27 / $_[0]-> {resolution}-> [1];
       my $scalex = 72.27 * $b   / $_[0]-> {resolution}-> [0];
       my $scaley = 72.27 * $bby / $_[0]-> {resolution}-> [1];
