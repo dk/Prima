@@ -283,13 +283,6 @@ use constant Default       =>  0x000       ;
 use constant Variable      =>  0x001       ;
 use constant Fixed         =>  0x002       ;
 
-# font types
-package ft;
-use constant DontCare      =>  0x000       ;
-use constant Raster        =>  0x010       ;
-use constant Vector        =>  0x020       ;
-
-
 # font weights
 package fw;
 use constant UltraLight =>  1 ;
