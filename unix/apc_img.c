@@ -1184,8 +1184,8 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
          XSetForeground( DISP, XX-> gc, 1);
          XSetBackground( DISP, XX-> gc, 0);
       } else {
-         XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
-         XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+         XSetForeground( DISP, XX-> gc, 0xFFFFFFFF);
+         XSetBackground( DISP, XX-> gc, 0x00000000);
       }
       XX-> flags. brush_fore = 0;
       XX-> flags. brush_back = 0;
@@ -1931,8 +1931,8 @@ apc_gp_stretch_image( Handle self, Handle image,
             XSetForeground( DISP, XX-> gc, 1);
             XSetBackground( DISP, XX-> gc, 0);
          } else {
-            XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
-            XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+            XSetForeground( DISP, XX-> gc, 0xFFFFFFFF);
+            XSetBackground( DISP, XX-> gc, 0x00000000);
          }
          XX-> flags. brush_fore = 0;
          XX-> flags. brush_back = 0;
