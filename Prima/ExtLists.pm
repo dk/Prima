@@ -46,7 +46,7 @@ my @images = (
 );
 
 my @imgSize = (0,0);
-@imgSize = $images[0]-> size;
+@imgSize = $images[0]-> size if $images[0];
 
 sub profile_default
 {
