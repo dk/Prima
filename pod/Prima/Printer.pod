@@ -1,0 +1,183 @@
+=head1 NAME
+
+Printer - system printing services
+
+=head1 DESCRIPTION
+
+I<Prima::Printer> is a descendant of I<Prima::Drawable> class.
+It provides access to the system printing services, where
+available. If the system provides no graphics printing,
+the default PostScript (tm) interface module I<Prima::PS::Printer>
+is used instead.
+
+=head1 Usage
+
+I<Prima::Printer> objects are never created directly. During the life
+of a program, there exists only one instance of a printer 
+object, created automatically by I<Prima::Application>.
+I<Prima::Printer> object is created only when the system provides
+graphic printing capabilities - drawing and painting procedures 
+on a graphic device.
+If there are no such API, I<Prima::Application> creates an
+instance of I<Prima::PS::Printer> instead, which emulates
+a graphic device, producing PostScript output.
+The discretion between I<Prima::Printer> and I<Prima::PS::Printer>
+is transparent for both the user and the programmer, unless 
+printer device specific adjustments desired.
+
+A printing session is started by C<begin_doc()>, which switches
+the object into the painting state. If finished by C<end_doc()>,
+the document is delivered to a printer device. Alternative finishing
+method, C<abort_doc()>, terminates the printing session with
+no information printed, unless the document is multi-paged
+and pages were sent to the printer via C<new_page()>.
+
+A printer object ( that means, both I<Prima::Printer> and I<Prima::PS::Printer> )
+provides selection of the printer mechanism. C<printers()> method
+returns array of hashes, each describing a printer device; C<get_default_printer()>
+returns a default printer string identifier. A printer device can be selected
+via the C<::printer> property.
+
+The capabilites of the selected printer can be adjusted via C<setup_dialog()>
+method, that invokes a system-provided ( or, in case of I<Prima::PS::Printer>,
+toolkit-provided ) printer setup dialog, so the user can adjust settings of a
+printer device.
+It depends on the system, whether the setup changes only the instance settings, or
+the default behavior of a printer driver is affected for all programs.
+
+Some printer capabilities can be queried by the C<::size()> property,
+that reports the dimension of the page, the C<::resolution()> property,
+that reports the DPI resolution selected by a printer driver and
+font list ( by C<fonts()> method ), available for usage.
+
+Typical code that prints the document looks like
+
+   my $p = $::application-> get_printer;
+   if ( $p-> begin_doc) {
+      ... draw ...
+      $p-> end_doc;
+   }
+
+In addition, a standard package I<Prima::PrintDialog> can be recommended
+so the user can select a printer device and adjust its setup interactively.
+
+=head1 API
+
+=head2 Properties
+
+=over
+
+=item printer STRING
+
+Selects a printer device, specified by its STRING identifier.
+Can not select a device if a printing session is started.
+
+=item resolution X, Y
+
+A read-only property; returns a DPI horizontal and vertical resolution,
+currently selected for a printer device. The user can change this,
+if the printer device supports several resolutions, inside C<setup_dialog()>.
+
+=item size WIDTH, HEIGHT
+
+A read-only property; returns dimensions of a printer device page.
+The user can change this, if the printer device supports several 
+resolutions or page formats, inside C<setup_dialog()>.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item abort_doc
+
+Stops the printing session, returns the object to the disabled paiinting state.
+Since the document can be passed to the system spooler, parts of it could have been sent
+to a printing device when C<abort_doc()> is called, so some information
+could still been printed.
+
+=item begin_doc DOCUMENT_NAME = ""
+
+Initiates the printing session, and triggers the object into the enabled painting
+state. The document is assigned DOCUMENT_NAME string identifier.
+
+=item begin_paint
+
+Identical to C<begin_doc("")> call.
+
+=item begin_paint_info
+
+Triggers the object into the information painting state. In this state,
+all graphic functions can be accessed, but no data is printed. Neither
+C<new_page()> and C<abort_doc()> methods work. The information
+mode is exited via C<end_paint_info()> method.
+
+=item end_doc
+
+Quits the printing session and delivers the document to a printer device.
+Does not report eventual errors, occured during the spooling process -
+the system is expected to take care about such situations.
+
+=item end_paint
+
+Identical to C<abort_doc()>.
+
+=item end_paint_info
+
+Quits the information painting mode, initiated by C<begin_paint_info()>
+and returns the object into the disabled painting state.
+
+=item fonts NAME = ''
+
+Returns hash of font hashes ( see L<Prima::Drawable>, Fonts section )
+describing fonts of NAME font family. If NAME is '' or C<undef>,
+returns one fonts hash for each of the font families.
+
+=item new_page
+
+Finalizes the current page and starts a new blank page.
+
+=item printers
+
+Returns array of hashes, where each entry describes a printer device.
+The hash consists of the following entries:
+
+=over
+
+=item name
+
+A printer device name
+
+=item device
+
+A physical device name, that the printer is connected to
+
+=item defaultPrinter
+
+A boolean flag, 1 if the printer is default, 0 otherwise.
+
+=back
+
+=item setup_dialog
+
+Invokes the system-provided printer device setup dialog.
+In this setup, the user can adjust the capablities of the printer,
+such as page setup, resolution, color, etc etc. 
+
+=item get_default_printer
+
+Returns a string, identifying a default printer device.
+
+=item get_handle
+
+Returns a system handle for a printer object.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Drawable>, L<Prima::PS::Printer>
+

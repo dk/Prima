@@ -255,6 +255,8 @@ B<Perl programming>:
 
 - L<Prima::Application> - root of widget objects hierarchy 
 
+- L<Prima::Printer> - system printing services 
+
 B<C programming>
 
 - L<Prima::internals> - Internal architecture
