@@ -250,10 +250,8 @@ Image_set( Handle self, HV * profile)
       if ( !itype_supported( newType))
          warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", newType);
       else 
-         if ( !opt_InPaint) {
-            if ( pexist( palette)) 
-               Image_reset_sv( self, newType, pget_sv( palette));
-         }
+         if ( !opt_InPaint) 
+            Image_reset_sv( self, newType, pexist( palette) ? pget_sv( palette) : nilSV);
       pdelete( palette);
       pdelete( type);
    }
