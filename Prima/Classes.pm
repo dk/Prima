@@ -603,8 +603,6 @@ sub profile_default
    return $def;
 }
 
-sub monochrome {($#_)?$_[0]->raise_ro("monochrome") :return $_[0]->get_monochrome;}
-
 # class Timer
 package Prima::Timer;
 use vars qw(@ISA);
