@@ -41,6 +41,12 @@ package Prima::OutlineViewer;
 use vars qw(@ISA @images @imageSize);
 @ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
 
+use constant DATA     => 0;
+use constant DOWN     => 1;
+use constant EXPANDED => 2;
+use constant WIDTH    => 3;
+use constant SELECTED => 4;
+
 # node record:
 #  user fields:
 #  0 : item text of ID
@@ -48,6 +54,7 @@ use vars qw(@ISA @images @imageSize);
 #  2 : expanded flag
 #  private fields
 #  3 : item width
+#  4 : selected flag
 
 {
 my %RNT = (
@@ -72,12 +79,14 @@ sub profile_default
       autoHScroll    => 1,
       autoVScroll    => 1,
       borderWidth    => 2,
+      extendedSelect => 0,
       dragable       => 1,
       hScroll        => 0,
       focusedItem    => -1,
       indent         => 12,
       itemHeight     => $def->{font}->{height},
       items          => [],
+      multiSelect    => 0,
       topItem        => 0,
       offset         => 0,
       scaleChildren  => 0,
@@ -97,6 +106,8 @@ sub profile_check_in
    $p-> { autoHeight}     = 0 if exists $p-> { itemHeight} && !exists $p->{autoHeight};
    $p-> {autoHScroll} = 0 if exists $p-> {hScroll};
    $p-> {autoVScroll} = 0 if exists $p-> {vScroll};
+   $p-> { multiSelect}    = 1 
+   	if exists $p-> { extendedSelect} && $p-> {extendedSelect} && !exists $p->{multiSelect};
 }
 
 use constant STACK_FRAME => 64;
@@ -118,7 +129,7 @@ sub init
    for ( qw( topItem focusedItem))
       { $self->{$_} = -1; }
    for ( qw( autoHScroll autoVScroll scrollTransaction dx dy hScroll vScroll 
-      offset count autoHeight borderWidth
+      offset count autoHeight borderWidth multiSelect extendedSelect
       rows maxWidth hintActive showItemHint dragable))
       { $self->{$_} = 0; }
    for ( qw( itemHeight indent))
@@ -127,7 +138,7 @@ sub init
    my %profile = $self-> SUPER::init(@_);
    $self-> setup_indents;
    for ( qw( autoHScroll autoVScroll hScroll vScroll offset itemHeight autoHeight borderWidth 
-      indent items focusedItem topItem showItemHint dragable))
+      indent items focusedItem topItem showItemHint dragable multiSelect extendedSelect))
       { $self->$_( $profile{ $_}); }
    $self-> reset;
    $self-> reset_scrolls;
@@ -142,6 +153,7 @@ sub init
 # 3 - index of the current item into items
 # 4 - level of the item ( 0 is topmost)
 # 5 - boolean, whether the current item is last item (e.g.$parent->[1]->[-1] == $parent->[1]->[$_[5]]).
+# 6 - index of the current item if visible; undef otherwise. Equal to [3] if $full is 0.
 #
 # $full - if 0, iterates only expanded ( visible) items, if 1 - all items into the tree
 
@@ -149,20 +161,31 @@ sub iterate
 {
    my ( $self, $sub, $full) = @_;
    my $position = 0;
+   my $visible = 1;
+   my $visual_position = 0;
    my $traverse;
    $traverse = sub {
       my ( $current, $parent, $index, $level, $lastChild) = @_;
-      return $current if $sub->( $current, $parent, $index, $position, $level, $lastChild);
+      return $current if $sub->( $current, $parent, $index, $position, $level, 
+         $lastChild, $visible ? $visual_position : undef);
       $position++;
       $level++;
-      if ( $current->[1] && ( $full || $current->[2])) {
-         my $c = scalar @{$current->[1]};
+      $visual_position++ if $visible;
+      if ( $current->[DOWN] && ( $full || $current->[EXPANDED])) {
+         my $c = scalar @{$current->[DOWN]};
          my $i = 0;
-         for ( @{$current->[1]}) {
+	 my $dive;
+	 if ( $visible && $full && !$current->[EXPANDED]) {
+	     $visible = 0;
+	     $dive = 1;
+	 }
+         for ( @{$current->[DOWN]}) {
             my $ret = $traverse->( $_, $current, $i++, $level, --$c ? 0 : 1);
             return $ret if $ret;
          }
-      }
+	 $visible = 1 if $dive;
+      };
+      0;
    };
    my $c = scalar @{$self->{items}};
    my $i = 0;
@@ -179,10 +202,10 @@ sub adjust
    return unless defined $index;
    my ($node, $lev) = $self-> get_item( $index);
    return unless $node;
-   return unless $node->[1];
-   return if $node->[2] == $action;
+   return unless $node->[DOWN];
+   return if $node->[EXPANDED] == $action;
    $self-> notify(q(Expand), $node, $action);
-   $node->[2] = $action;
+   $node->[EXPANDED] = $action;
    my $c = $self->{count};
    my $f = $self->{focusedItem};
    $self-> reset_tree;
@@ -219,13 +242,13 @@ sub expand_all
    my ( $self, $node) = @_;
    $node = [ 0, $self->{items}, 1] unless $node;
    $self->{expandAll}++;
-   if ( $node->[1]) {
+   if ( $node->[DOWN]) {
       #  - light version of adjust
-      unless ( $node->[2]) {
-          $node->[2] = 1;
+      unless ( $node->[EXPANDED]) {
+          $node->[EXPANDED] = 1;
           $self-> notify(q(Expand), $node, 1);
       }
-      $self-> expand_all( $_) for @{$node->[1]};
+      $self-> expand_all( $_) for @{$node->[DOWN]};
    };
    return if --$self->{expandAll};
    delete $self->{expandAll};
@@ -302,12 +325,12 @@ sub on_paint
          my $k;
          for ( $k = 0; $k < scalar @{$i} - 1; $k++) {
             $idx   = $i->[$k] + 1;
-            $lim   = scalar @{$array->[1]};
+            $lim   = scalar @{$array->[DOWN]};
             push( @stack, [ $array, $idx, $lim]);
             $array = $array->[1]->[$idx - 1];
          }
          $idx   = $$i[$k];
-         $lim   = scalar @{$array->[1]};
+         $lim   = scalar @{$array->[DOWN]};
          $level = scalar @$i - 1;
          $i = $self->{lineDefs}->[$j];
          $lines[$k] = $$i[$k] while $k--;
@@ -318,7 +341,7 @@ sub on_paint
 # so we can manipulate with stack
    if ( $position <= $lastItem) {
    while (1) {
-      my $node      = $array->[1]->[$idx++];
+      my $node      = $array->[DOWN]->[$idx++];
       my $lastChild = $idx == $lim;
 
       # outlining part
@@ -341,13 +364,15 @@ sub on_paint
       }
       if ( $position >= $timin) {
          $canvas-> bar( $l + 1, $lineY + $ih/2, $l + $indent - 1, $lineY + $ih/2);
-         if ( defined $node->[1]) {
-            my $i = $images[($node->[2] == 0) ? 1 : 0];
+         if ( defined $node->[DOWN]) {
+            my $i = $images[($node->[EXPANDED] == 0) ? 1 : 0];
             push( @marks, [$l - $dxim, $lineY + $dyim, $i]) if $i;
          };
          push ( @texts, [ $node, $l + $indent * 1.5, $lineY,
-            $l + $indent * 1.5 + $node->[3] - 1, $lineY + $ih - 1,
-            $position, ( $foc == $position) ? 1 : 0]);
+            $l + $indent * 1.5 + $node->[WIDTH] - 1, $lineY + $ih - 1,
+            $position, 
+	    	$self->{multiSelect} ? $node->[SELECTED] : ($foc == $position),
+		$foc == $position]);
          $lineY -= $ih;
       }
       last if $position >= $lastItem;
@@ -355,12 +380,12 @@ sub on_paint
       # recursive part
       $position++;
 
-      if ( $node->[1] && $node->[2] && scalar @{$node->[1]}) {
+      if ( $node->[DOWN] && $node->[EXPANDED] && scalar @{$node->[DOWN]}) {
          $level++;
          push ( @stack, [ $array, $idx, $lim]);
          $idx   = 0;
          $array = $node;
-         $lim   = scalar @{$node->[1]};
+         $lim   = scalar @{$node->[DOWN]};
          next;
       }
       while ( $lastChild) {
@@ -421,7 +446,6 @@ sub on_mousedown
    my $bw = $self-> { borderWidth};
    my @size = $self-> size;
    $self-> clear_event;
-   # my ($dx,$dy,$o,$i) = ( $self->{dx}, $self->{dy}, $self->{offset}, $self->{indent});
    my ($o,$i,@a) = ( $self->{offset}, $self->{indent}, $self-> get_active_area(0, @size));
    return if $btn != mb::Left;
    return if defined $self->{mouseTransaction} ||
@@ -429,6 +453,7 @@ sub on_mousedown
 
    my $item   = $self-> point2item( $y, $size[1]);
    my ( $rec, $lev) = $self-> get_item( $item);
+   
    if ( $rec &&
          ( $x >= ( 1 + $lev) * $i + $a[0] - $o - $imageSize[0] / 2) &&
          ( $x <  ( 1 + $lev) * $i + $a[0] - $o + $imageSize[0] / 2)
@@ -436,8 +461,24 @@ sub on_mousedown
       $self-> adjust( $item, $rec->[2] ? 0 : 1) if $rec->[1];
       return;
    }
+   
+   my $foc = $item >= 0 ? $item : 0;
+   if ( $self->{multiSelect}) {
+      if ( $self->{extendedSelect}) {
+         if ($mod & km::Shift) {
+            my $foc = $self-> focusedItem;
+            return $self->selectedItems(( $foc < $item) ? [$foc..$item] : [ $item..$foc]);
+	 } elsif ( $mod & km::Ctrl) {
+            return $self-> toggle_item( $item);
+	 }
+         $self-> {anchor} = $item;
+         $self-> selectedItems([$foc]);
+      } elsif ( $mod & (km::Ctrl||km::Shift)) {
+         return $self->toggle_item( $item);
+      }
+   }
 
-   $self-> {mouseTransaction} = (( $mod & km::Ctrl) && $self->{dragable}) ? 2 : 1;
+   $self-> {mouseTransaction} = (( $mod & km::Alt) && $self->{dragable}) ? 2 : 1;
    $self-> focusedItem( $item >= 0 ? $item : 0);
    $self-> {mouseTransaction} = 1 if $self-> focusedItem < 0;
    if ( $self-> {mouseTransaction} == 2) {
@@ -462,7 +503,7 @@ sub on_mouseclick
          ( $x >= ( 1 + $lev) * $i + $self->{indents}->[0] - $o - $imageSize[0] / 2) &&
          ( $x <  ( 1 + $lev) * $i + $self->{indents}->[0] - $o + $imageSize[0] / 2)
       ) {
-      $self-> adjust( $item, $rec->[2] ? 0 : 1) if $rec->[1];
+      $self-> adjust( $item, $rec->[EXPANDED] ? 0 : 1) if $rec->[DOWN];
       return;
    }
    $self-> notify( q(Click)) if $self->{count};
@@ -588,6 +629,27 @@ sub on_mousemove
    } else {
       $self-> scroll_timer_stop;
    }
+   if ( $self->{multiSelect} && $self-> {extendedSelect} && exists $self->{anchor})
+   {
+       my ( $a, $b, $c) = ( $self->{anchor}, $item, $self->{focusedItem});
+       my $globSelect = 0;
+       if (( $b <= $a && $c > $a) || ( $b >= $a && $c < $a)) { 
+          $globSelect = 1
+       } elsif ( $b > $a) {
+          if ( $c < $b) { $self-> add_selection([$c + 1..$b], 1) }
+          elsif ( $c > $b) { $self-> add_selection([$b + 1..$c], 0) }
+          else { $globSelect = 1 }
+       } elsif ( $b < $a) {
+          if ( $c < $b) { $self-> add_selection([$c..$b], 0) }
+          elsif ( $c > $b) { $self-> add_selection([$b..$c], 1) }
+          else { $globSelect = 1 }
+       } else { $globSelect = 1 }
+       if ( $globSelect )
+       {
+          ( $a, $b) = ( $b, $a) if $a > $b;
+          $self-> selectedItems([$a..$b]);
+       }
+   }
    $self-> focusedItem( $item >= 0 ? $item : 0);
    $self-> offset( $self->{offset} + 5 * (( $x < $a[0]) ? -1 : 1)) if $x >= $a[2] || $x < $a[0];
 }
@@ -647,7 +709,7 @@ sub on_keydown
          return;
       } elsif ( chr( $code) eq '-') {
          my ( $item, $lev) = $self-> get_item( $self->{focusedItem});
-         if ( $item->[1] && $item->[2]) {
+         if ( $item->[DOWN] && $item->[EXPANDED]) {
             $self-> adjust( $self->{focusedItem}, 0);
             $self-> clear_event;
             return;
@@ -686,19 +748,38 @@ sub on_keydown
       return;
    }
 
-   return if $mod != 0;
-
    if ( scalar grep { $key == $_ } (kb::Left,kb::Right,kb::Up,kb::Down,kb::Home,kb::End,kb::PgUp,kb::PgDn))
    {
+      my $doSelect = 0;
       my $newItem = $self->{focusedItem};
-      my $pgStep  = $self->{rows} - 1;
-      $pgStep = 1 if $pgStep <= 0;
-      if ( $key == kb::Up)   { $newItem--; };
-      if ( $key == kb::Down) { $newItem++; };
-      if ( $key == kb::Home) { $newItem = $self->{topItem} };
-      if ( $key == kb::End)  { $newItem = $self->{topItem} + $pgStep; };
-      if ( $key == kb::PgDn) { $newItem += $pgStep };
-      if ( $key == kb::PgUp) { $newItem -= $pgStep};
+      if ( $mod == 0 || (( $mod & km::Shift) && $self-> {multiSelect} && $self->{ extendedSelect})) {
+         my $pgStep  = $self->{rows} - 1;
+         $pgStep = 1 if $pgStep <= 0;
+         if ( $key == kb::Up)   { $newItem--; };
+         if ( $key == kb::Down) { $newItem++; };
+         if ( $key == kb::Home) { $newItem = $self->{topItem} };
+         if ( $key == kb::End)  { $newItem = $self->{topItem} + $pgStep; };
+         if ( $key == kb::PgDn) { $newItem += $pgStep };
+         if ( $key == kb::PgUp) { $newItem -= $pgStep};
+         $doSelect = $mod & km::Shift;
+      }
+      if (( $mod & km::Ctrl) ||
+         ((( $mod & ( km::Shift|km::Ctrl))==(km::Shift|km::Ctrl)) && $self->{multiSelect} && $self->{ extendedSelect}))
+      {
+         if ( $key == kb::PgUp || $key == kb::Home) { $newItem = 0};
+         if ( $key == kb::PgDn || $key == kb::End)  { $newItem = $self->{count} - 1};
+         $doSelect = $mod & km::Shift;
+      }
+      if ( $doSelect ) {
+         my ( $a, $b) = ( defined $self->{anchor} ? $self->{anchor} : $self->{focusedItem}, $newItem);
+         ( $a, $b) = ( $b, $a) if $a > $b;
+         $self-> selectedItems([$a..$b]);
+         $self->{anchor} = $self->{focusedItem} unless defined $self->{anchor};
+      } else {
+         $self-> selectedItems([$self-> focusedItem]) if exists $self->{anchor};
+         delete $self->{anchor};
+      }
+      
       $self-> offset( $self->{offset} + $self->{indent} * (( $key == kb::Left) ? -1 : 1))
          if $key == kb::Left || $key == kb::Right;
       $self-> focusedItem( $newItem >= 0 ? $newItem : 0);
@@ -706,7 +787,7 @@ sub on_keydown
       return;
    }
 
-   if ( $key == kb::Enter)  {
+   if ( $mod == 0 && $key == kb::Enter)  {
       $self-> adjust( $self->{focusedItem}, 1);
       $self-> clear_event;
       return;
@@ -777,10 +858,10 @@ sub reset_tree
       }
       $i++;
       $level++;
-      if ( $node->[1] && $node->[2]) {
+      if ( $node->[DOWN] && $node->[EXPANDED]) {
          $stack[$level] = 0;
-         my $c = @{$node->[1]};
-         for ( @{$node->[1]}) {
+         my $c = @{$node->[DOWN]};
+         for ( @{$node->[DOWN]}) {
             $traverse->( $_, $level, --$c ? 0 : 1);
             $stack[$level]++;
          }
@@ -804,11 +885,11 @@ sub reset_tree
    $self-> push_event;
    $self-> begin_paint_info;
    $self-> iterate( sub {
-      my ( $current, $parent, $index, $position, $level) = @_;
-      my $iw = $fullc ? undef : $current->[3];
+      my ( $current, $parent, $index, $position, $level, $visibility) = @_;
+      my $iw = $fullc ? undef : $current->[WIDTH];
       unless ( defined $iw) {
          $notifier->( @notifyParms, $current, \$iw);
-         $current->[3] = $iw;
+         $current->[WIDTH] = $iw;
       }
       my $iwc = $iw + ( 2.5 + $level) * $indent;
       $maxWidth = $iwc if $maxWidth < $iwc;
@@ -865,6 +946,12 @@ sub set_border_width
    $self-> repaint;
 }
 
+sub set_extended_select
+{
+   my ( $self, $esel) = @_;
+   $self-> {extendedSelect} = $esel;
+}
+
 sub set_focused_item
 {
    my ( $self, $foc) = @_;
@@ -874,7 +961,9 @@ sub set_focused_item
    return if $self->{focusedItem} == $foc;
    return if $foc < -1;
    $self-> {focusedItem} = $foc;
-   $self-> notify(q(SelectItem), $foc) if $foc >= 0;
+   $self-> selectedItems([$foc]) 
+      if $self->{multiSelect} && $self->{extendedSelect} && ! exists $self->{anchor};
+   $self-> notify(q(SelectItem), [[$foc, undef, 1]]) if $foc >= 0;
    return if $self-> {doingExpand};
    my $topSet = undef;
    if ( $foc >= 0)
@@ -936,9 +1025,9 @@ sub validate_items
    $traverse = sub {
       my $current  = $_[0];
       my $spliceTo = 3;
-      if ( ref $current->[1] eq 'ARRAY') {
-         $traverse->( $_) for @{$current->[1]};
-         $current->[2] = 0 unless defined $current->[2];
+      if ( ref $current->[DOWN] eq 'ARRAY') {
+         $traverse->( $_) for @{$current->[DOWN]};
+         $current->[EXPANDED] = 0 unless defined $current->[EXPANDED];
       } else {
          $spliceTo = 1;
       }
@@ -967,12 +1056,12 @@ sub insert_items
    my $forceReset = 0;
    $where = [0, $self->{items}], $forceReset = 1 unless $where;
    $self-> validate_items( $_) for @items;
-   return unless $where->[1];
-   my $ch = scalar @{$where->[1]};
+   return unless $where->[DOWN];
+   my $ch = scalar @{$where->[DOWN]};
    $at = 0 if $at < 0;
    $at = $ch if $at > $ch;
    my ( $x, $l) = $self-> get_index( $where);
-   splice( @{$where->[1]}, $at, 0, @items);
+   splice( @{$where->[DOWN]}, $at, 0, @items);
    return if $x < 0 && !$forceReset;
    $self-> reset_tree;
    $self-> update_tree;
@@ -984,11 +1073,11 @@ sub delete_items
 {
    my ( $self, $where, $at, $amount) = @_;
    $where = [0, $self->{items}] unless $where;
-   return unless $where->[1];
+   return unless $where->[DOWN];
    my ( $x, $l) = $self-> get_index( $where);
    $at = 0 unless defined $at;
-   $amount = scalar @{$where->[1]} unless defined $amount;
-   splice( @{$where->[1]}, $at, $amount);
+   $amount = scalar @{$where->[DOWN]} unless defined $amount;
+   splice( @{$where->[DOWN]}, $at, $amount);
    return if $x < 0;
    my $f = $self->{focusedItem};
    $self-> focusedItem( -1) if $f >= $x && $f < $x + $amount;
@@ -1006,7 +1095,7 @@ sub delete_item
 
    my ( $parent, $offset) = $self-> get_item_parent( $item);
    if ( defined $parent) {
-      splice( @{$parent->[1]}, $offset, 1);
+      splice( @{$parent->[DOWN]}, $offset, 1);
    } else {
       splice( @{$self->{items}}, $offset, 1) if defined $offset;
    }
@@ -1030,6 +1119,19 @@ sub get_item_parent
       $parent = $par, $offset = $idx, return 1 if $cur == $item;
    }, 1);
    return $parent, $offset;
+}
+
+sub set_multi_select
+{
+   my ( $self, $ms) = @_;
+   return if $ms == $self->{multiSelect};
+   unless ( $self-> {multiSelect} = $ms)
+   {
+      $self-> deselect_all(1);
+      $self-> repaint;
+   } else {
+      $self-> selectedItems([$self-> focusedItem]);
+   }
 }
 
 sub set_offset
@@ -1144,7 +1246,7 @@ sub get_index
    my $lev;
    my $rec = -1;
    $self-> iterate( sub {
-      my ( $current, $parent, $index, $position, $level, $lastChild) = @_;
+      my ( $current, $parent, $index, $position, $level, $lastChild, $visibility) = @_;
       $lev = $level, $rec = $position, return 1 if $current == $item;
    });
   return $rec, $lev;
@@ -1167,28 +1269,28 @@ sub get_item
          my $k;
          for ( $k = 0; $k < scalar @{$i} - 1; $k++) {
             $idx   = $i->[$k] + 1;
-            $lim   = scalar @{$array->[1]};
+            $lim   = scalar @{$array->[DOWN]};
             push( @stack, [ $array, $idx, $lim]);
-            $array = $array->[1]->[$idx - 1];
+            $array = $array->[DOWN]->[$idx - 1];
          }
          $idx   = $$i[$k];
-         $lim   = scalar @{$array->[1]};
+         $lim   = scalar @{$array->[DOWN]};
          $level = scalar @$i - 1;
       }   
    }
 
    die "Internal error\n" if $position > $item;
    while (1) {
-      my $node      = $array->[1]->[$idx++];
+      my $node      = $array->[DOWN]->[$idx++];
       my $lastChild = $idx == $lim;
       return $node, $level if $position == $item;
       $position++;
-      if ( $node->[1] && $node->[2] && scalar @{$node->[1]}) {
+      if ( $node->[DOWN] && $node->[EXPANDED] && scalar @{$node->[DOWN]}) {
          $level++;
          push ( @stack, [ $array, $idx, $lim]);
          $idx   = 0;
          $array = $node;
-         $lim   = scalar @{$node->[1]};
+         $lim   = scalar @{$node->[DOWN]};
          next;
       }
       while ( $lastChild) {
@@ -1209,7 +1311,7 @@ sub get_item_text
 
 sub get_item_width
 {
-   return $_[1]->[3];
+   return $_[1]->[WIDTH];
 }
 
 sub get_index_text
@@ -1225,12 +1327,12 @@ sub get_index_width
 {
    my ( $self, $index) = @_;
    my ( $node, $lev) = $self-> get_item( $index);
-   return $node->[3];
+   return $node->[WIDTH];
 }
 
 sub on_drawitem
 {
-#  my ( $self, $canvas, $node, $left, $bottom, $right, $top, $position, $focused) = @_;
+#  my ( $self, $canvas, $node, $left, $bottom, $right, $top, $position, $selected, $focused) = @_;
 }
 
 sub on_measureitem
@@ -1245,7 +1347,7 @@ sub on_stringify
 
 sub on_selectitem
 {
-#   my ( $self, $index) = @_;
+#   my ( $self, $index_array, $flag) = @_;
 }
 
 sub on_expand
@@ -1266,9 +1368,9 @@ sub on_dragitem
     $traverse = sub {
        my $current = $_[0];
        $found_inv = 1, return if $current == $tx;
-       if ( $current->[1] && $current->[2]) {
-          my $c = scalar @{$current->[1]};
-          for ( @{$current->[1]}) {
+       if ( $current->[DOWN] && $current->[EXPANDED]) {
+          my $c = scalar @{$current->[DOWN]};
+          for ( @{$current->[DOWN]}) {
              my $ret = $traverse->( $_);
              return $ret if $ret;
           }
@@ -1280,15 +1382,15 @@ sub on_dragitem
 
 
     if ( $fpx) {
-      splice( @{$fpx->[1]}, $fpo, 1);
+      splice( @{$fpx->[DOWN]}, $fpo, 1);
     } else {
        splice( @{$self->{items}}, $fpo, 1);
     }
-    unless ( $tx-> [1]) {
-       $tx->[1] = [$fx];
-       $tx->[2] = 1;
+    unless ( $tx-> [DOWN]) {
+       $tx->[DOWN] = [$fx];
+       $tx->[EXPANDED] = 1;
     } else {
-       splice( @{$tx->[1]}, 0, 0, $fx);
+       splice( @{$tx->[DOWN]}, 0, 0, $fx);
     }
     $self-> reset_tree;
     $self-> update_tree;
@@ -1296,13 +1398,145 @@ sub on_dragitem
     $self-> clear_event;
 }
 
+sub is_selected 
+{ 
+   my ( $self, $index, $item, $sel) = @_;
+   unless ( defined $item) {
+      my ($node, $lev) = $self-> get_item( $index);
+      return 0 unless $node;
+      $item = $node;
+   }
+   return $item-> [SELECTED];
+}
+
+sub set_item_selected
+{
+   my ( $self, $index, $item, $sel) = @_;
+   return unless $self->{multiSelect};
+   unless ( defined $item) {
+      my ($node, $lev) = $self-> get_item( $index);
+      return unless $node;
+      $item = $node;
+   }
+   $sel ||= 0;
+   return if $sel == ( $item->[SELECTED] ? 1 : 0);
+   $item->[SELECTED] = $sel;
+
+   if ( !defined $index) {
+      my ( $x, $lev) = $self-> get_index( $item);
+      if ( $x < 0) {
+         $self-> notify(q(SelectItem), [[ undef, $item, $sel ]]);
+         return 0;
+      }
+      $index = $x;
+   }
+   $self-> notify(q(SelectItem), [[ $index, $item, $sel]]);
+   my ( $ih, @a) = ( $self->{itemHeight}, $self-> get_active_area);
+   $self-> invalidate_rect(
+      $a[0], $a[3] - ( $index - $self->{topItem} + 1) * $ih,
+      $a[2], $a[3] - ( $index - $self->{topItem}) * $ih
+   );
+}
+
+sub select_all
+{
+   my ( $self, $full) = @_;
+   $self-> iterate( sub { $_[0]->[SELECTED] = 1; 0 }, $full);
+   $self-> repaint;
+}
+
+sub deselect_all
+{
+   my ( $self, $full) = @_;
+   $self-> iterate( sub { $_[0]->[SELECTED] = 0 }, $full);
+   $self-> repaint;
+}
+
+sub add_selection
+{
+   my ( $self, $array, $flag) = @_;
+   return unless $self->{multiSelect};
+   my %items = map { $_ => 1 } @$array;
+   $flag ||= 0;
+   my ( $ih, @a) = ( $self->{itemHeight}, $self-> get_active_area);
+   my @sel;
+   
+   $self-> iterate( sub {
+      my ( $current, $parent, $index, $position, $level, $lastChild) = @_;
+      return 0 unless $items{$position};
+      return 0 if $flag == ($current->[SELECTED] ? 1 : 0);
+      $current->[SELECTED] = $flag;
+      push @sel, [ $position, $current, 1];
+      $self-> invalidate_rect(
+         $a[0], $a[3] - ( $position - $self->{topItem} + 1) * $ih,
+         $a[2], $a[3] - ( $position - $self->{topItem}) * $ih
+      );
+      0;
+   });
+   $self-> notify(q(SelectItem), \@sel) if @sel;
+}
+
+sub get_selected_items
+{
+   my $self = $_[0];
+   my @ret;
+   $self-> iterate( sub { push @ret, $_[3] if $_[0]->[SELECTED]; 0 });
+   return @ret;
+}
+
+sub set_selection
+{
+   my ( $self, $array, $flag) = @_;
+   return unless $self->{multiSelect};
+   my %items = map { $_ => 1 } @$array;
+   $flag ||= 0;
+   my ( $ih, @a) = ( $self->{itemHeight}, $self-> get_active_area);
+   my @sel;
+
+   $self-> iterate( sub {
+      my ( $current, $parent, $index, $position, $level, $lastChild, $visibility) = @_;
+      if ( defined $visibility) {
+         my $new_val = $items{$visibility} ? $flag : !$flag;
+         return 0 if $new_val == ($current->[SELECTED] ? 1 : 0);
+         $current->[SELECTED] = $new_val;
+	 push @sel, [ $visibility, $current, $new_val];
+         $self-> invalidate_rect(
+            $a[0], $a[3] - ( $visibility - $self->{topItem} + 1) * $ih,
+            $a[2], $a[3] - ( $visibility - $self->{topItem}) * $ih
+         );
+      } elsif ( $flag != ( $current->[SELECTED] ? 1 : 0)) {
+         $current->[SELECTED] = $flag;
+	 push @sel, [ undef, $current, $flag];
+      };
+      0;
+   }, 1);
+
+   $self-> notify(q(SelectItem), \@sel) if @sel;
+}
+
+sub toggle_item
+{  
+   my ( $self, $index, $item) = @_;
+   unless ( defined $item) {
+      my ($node, $lev) = $self-> get_item( $index);
+      return unless $node;
+      $item = $node;
+   }
+   $self-> set_item_selected( $index, $item, $item-> [SELECTED] ? 0 : 1);
+}
+
+sub select_item   {  $_[0]-> set_item_selected( $_[1], $_[2], 1); }
+sub unselect_item {  $_[0]-> set_item_selected( $_[1], $_[2], 0); }
 
 sub autoHeight    {($#_)?$_[0]->set_auto_height    ($_[1]):return $_[0]->{autoHeight}     }
+sub extendedSelect{($#_)?$_[0]->set_extended_select($_[1]):return $_[0]->{extendedSelect} }
 sub focusedItem   {($#_)?$_[0]->set_focused_item   ($_[1]):return $_[0]->{focusedItem}    }
 sub indent        {($#_)?$_[0]->set_indent( $_[1])        :return $_[0]->{indent}         }
 sub items         {($#_)?$_[0]->set_items( $_[1])         :return $_[0]->{items}          }
 sub itemHeight    {($#_)?$_[0]->set_item_height    ($_[1]):return $_[0]->{itemHeight}     }
+sub multiSelect   {($#_)?$_[0]->set_multi_select   ($_[1]):return $_[0]->{multiSelect}    }
 sub offset        {($#_)?$_[0]->set_offset         ($_[1]):return $_[0]->{offset}         }
+sub selectedItems {($#_)?$_[0]->set_selection      ($_[1],1):return $_[0]->get_selected_items}
 sub topItem       {($#_)?$_[0]->set_top_item       ($_[1]):return $_[0]->{topItem}        }
 
 package Prima::StringOutline;
@@ -1313,8 +1547,8 @@ sub draw_items
 {
    my ($self, $canvas, $paintStruc) = @_;
    for ( @$paintStruc) {
-      my ( $node, $left, $bottom, $right, $top, $position, $focused) = @$_;
-      if ( $focused) {
+      my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused) = @$_;
+      if ( $selected) {
          my $c = $canvas-> color;
          $canvas-> color( $self-> hiliteBackColor);
          $canvas-> bar( $left, $bottom, $right, $top);
@@ -1324,6 +1558,7 @@ sub draw_items
       } else {
          $canvas-> text_out( $node->[0], $left, $bottom);
       }
+      $canvas-> rect_focus( $left, $bottom, $right, $top) if $focused;
    }
 }
 
@@ -1347,8 +1582,8 @@ sub draw_items
 {
    my ($self, $canvas, $paintStruc) = @_;
    for ( @$paintStruc) {
-      my ( $node, $left, $bottom, $right, $top, $position, $focused) = @$_;
-      if ( $focused) {
+      my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused) = @$_;
+      if ( $selected) {
          my $c = $canvas-> color;
          $canvas-> color( $self-> hiliteBackColor);
          $canvas-> bar( $left, $bottom, $right, $top);
@@ -1358,6 +1593,7 @@ sub draw_items
       } else {
          $canvas-> text_out( $node->[0]->[0], $left, $bottom);
       }
+      $canvas-> rect_focus( $left, $bottom, $right, $top) if $focused;
    }
 }
 
@@ -1460,12 +1696,12 @@ sub draw_items
 {
    my ($self, $canvas, $paintStruc) = @_;
    for ( @$paintStruc) {
-      my ( $node, $left, $bottom, $right, $top, $position, $focused) = @$_;
+      my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused) = @$_;
       my $c;
       my $dw = length $node->[0]->[1] ?
          $self->{iconSizes}->[0] :
          $node->[0]->[2];
-      if ( $focused) {
+      if ( $selected) {
          $c = $canvas-> color;
          $canvas-> color( $self-> hiliteBackColor);
          $canvas-> bar( $left - $self->{indent} / 4, $bottom, $right, $top);
@@ -1479,7 +1715,8 @@ sub draw_items
         $icon);
       $canvas-> text_out( $node->[0]->[0], $left + $dw,
         int($bottom + ( $self->{itemHeight} - $self->{fontHeight}) / 2));
-      $canvas-> color( $c) if $focused;
+      $canvas-> color( $c) if $selected;
+      $canvas-> rect_focus( $left - $self->{indent} / 4, $bottom, $right, $top) if $focused;
    }
 }
 
@@ -1825,6 +2062,16 @@ together with left mouse button. If 0, item dragging is disabled.
 
 Default value: 1
 
+=item extendedSelect BOOLEAN
+
+Regards the way the user selects multiple items and is only actual
+when C<multiSelect> is 1. If 0, the user must click each item
+in order to mark as selected. If 1, the user can drag mouse
+or use C<Shift> key plus arrow keys to perform range selection;
+the C<Control> key can be used to select individual items.
+
+Default value: 0
+
 =item focusedItem INTEGER
 
 Selects the focused item index. If -1, no item is focused.
@@ -1853,13 +2100,29 @@ described in the opening article ( see L<Prima::OutlineViewer> ).
 
 Default value: []
 
+=item multiSelect BOOLEAN
+
+If 0, the user can only select one item, and it is reported by
+the C<focusedItem> property. If 1, the user can select more than one item. 
+In this case, C<focusedItem>'th item is not necessarily selected.
+To access selected item list, use C<selectedItems> property.
+
+Default value: 0
+
 =item offset INTEGER
 
 Horizontal offset of an item list in pixels.
 
-=item topItem INTEGER
+=item selectedItems ARRAY
 
-Selects the first item drawn.
+ARRAY is an array of integer indices of selected items. Note, that these are
+the items visible on the screen only. The property doesn't handle the
+selection status of the collapsed items.
+
+The widget keeps the selection status on each node, visible and invisible (
+e.g. the node is invisible if its parent node is collapsed). However, C<selectedItems>
+accounts for the visible nodes only; to manipulate the node status or both visible
+and invisible nodes, use C<select_item>, C<unselect_item>, C<toggle_item> methods.
 
 =item showItemHint BOOLEAN
 
@@ -1871,11 +2134,26 @@ See also: L<makehint>.
 
 Default value: 1
 
+=item topItem INTEGER
+
+Selects the first item drawn.
+
+
 =back
 
 =head2 Methods
 
 =over
+
+=item add_selection ARRAY, FLAG
+
+Sets item indices from ARRAY in selected
+or deselected state, depending on FLAG value, correspondingly 1 or 0.
+
+Note, that these are the items visible on the screen only. The method doesn't
+handle the selection status of the collapsed items.
+
+Only for multi-select mode.
 
 =item adjust INDEX, EXPAND
 
@@ -1896,6 +2174,12 @@ is C<undef>, all items after OFFSET are deleted.
 =item delete_item NODE
 
 Deletes NODE from the item list.
+
+=item deselect_all
+
+Removes selection from all items.
+
+Only for multi-select mode.
 
 =item draw_items CANVAS, PAINT_DATA
 
@@ -1999,7 +2283,23 @@ Node depth level. 0 means the root node.
 A boolean flag, set to 1 if the node is the last child in parent node list,
 set to 0 otherwise.
 
+=item 6
+
+Visibility index. When C<iterate> is called with C<FULL = 1>, the index is
+the item index as seen of the screen. If the item is not visible, the index
+is C<undef>. 
+
+When C<iterate> is called with C<FULL = 1>, the index is always the same 
+as C<node index>.
+
 =back
+
+=item is_selected INDEX, ITEM
+
+Returns 1 if an item is selected, 0 if it is not.
+
+The method can address the item either directly ( ITEM ) or
+by its INDEX in the screen position.
 
 =item makehint SHOW, INDEX
 
@@ -2016,6 +2316,41 @@ If HEIGHT is specified, it must be the widget height; if it is
 not, the value is fetched by calling C<Prima::Widget::height>.
 If the value is known, passing it to C<point2item> thus achieves
 some speed-up.
+
+=item select_all
+
+Selects all items.
+
+Only for multi-select mode.
+
+=item set_item_selected INDEX, ITEM, FLAG
+
+Sets selection flag of an item.
+If FLAG is 1, the item is selected. If 0, it is deselected.
+
+The method can address the item either directly ( ITEM ) or
+by its INDEX in the screen position. Only for multi-select mode.
+
+=item select_item INDEX, ITEM
+
+Selects an item.
+
+The method can address the item either directly ( ITEM ) or
+by its INDEX in the screen position. Only for multi-select mode.
+
+=item toggle_item INDEX, ITEM
+
+Toggles selection of an item.
+
+The method can address the item either directly ( ITEM ) or
+by its INDEX in the screen position. Only for multi-select mode.
+
+=item unselect_item INDEX, ITEM
+
+Deselects an item.
+
+The method can address the item either directly ( ITEM ) or
+by its INDEX in the screen position. Only for multi-select mode.
 
 =item validate_items ITEMS
 
@@ -2040,12 +2375,12 @@ Called when the user finishes the drag of an item
 from OLD_INDEX to NEW_INDEX position. The default action
 rearranges the item list in accord with the dragging action.
 
-=item DrawItem CANVAS, NODE, X1, Y1, X2, Y2, INDEX, FOCUSED
+=item DrawItem CANVAS, NODE, X1, Y1, X2, Y2, INDEX, SELECTED, FOCUSED
 
 Called when INDEXth item, contained in NODE is to be drawn on 
 CANVAS. X1, Y1, X2, Y2 coordinated define the exterior rectangle
-of the item in widget coordinates. FOCUSED boolean flag is set to
-1 if the item is focused; 0 otherwise.
+of the item in widget coordinates. SELECTED and FOCUSED boolean flags are set to
+1 if the item is selected or focused, respectively; 0 otherwise.
 
 =item MeasureItem NODE, REF
 
@@ -2053,9 +2388,15 @@ Puts width of NODE item in pixels into REF
 scalar reference. This notification must be called 
 from within C<begin_paint_info/end_paint_info> block.
 
-=item SelectItem INDEX
+=item SelectItem [[INDEX, ITEM, SELECTED], [INDEX, ITEM, SELECTED], ...]
 
-Called when INDEXth item gets focused.
+Called when an item gets selected or deselected. The array
+passed contains set of arrays for each items, where the item
+can be defined either as integer INDEX, or directly as ITEM, or both.
+In case INDEX is undef, the item is invisible; if ITEM is undef, then
+the caller didn't bother to call C<get_item> for the speed reasons, and
+the received should call this function. The SELECTED flag contains
+the new value of the item.
 
 =item Stringify NODE, TEXT_REF
 

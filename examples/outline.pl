@@ -52,22 +52,25 @@ popupItems => [
      my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
      my ( $p, $o) = $_[0]-> get_item_parent( $x);
      $_[0]-> insert_items( $p, $o + 1, [
-        ['C:', ''], [], 0
-        #'C:', [], 0
+        [ $^O =~ /win32|os2/ ? 'C:' : '/', ''], [], 0
      ]);
   }],
   ['Insert updir inside' => sub{
      my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
      $_[0]-> insert_items( $x, 0, [
-        ['C:', ''], [], 0
-        #'C:', [], 0
+        [ $^O =~ /win32|os2/ ? 'C:' : '/', ''], [], 0
      ]);
   }],
   ['Expand this' => sub{
      my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
      $_[0]-> expand_all( $x);
   }],
+  ['Toogle multi select' => sub {
+     $_[0]-> multiSelect( !$_[0]-> multiSelect);
+  }],
 ],
+multiSelect => 0,
+extendedSelect => 1,
 path => '.',
 buffered => 1,
 pack => { expand => 1, fill => 'both'},
