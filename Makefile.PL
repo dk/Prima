@@ -297,6 +297,7 @@ ENDP
 sub have_func
 {
     my ( $funcname, @headers) = @_;
+    die "have_func() without any header is deprecated" unless @headers;
     my $defname = "HAVE_" . uc $funcname;
     my @srchead = map { "#include <$_>\n"} @headers;
     $defname =~ s/\W/_/g;
@@ -844,10 +845,10 @@ sub setup_defines
             warn "PRIMA_PMPRINTF defined, but there is no pmprintf.h in include path";
         }
     }
-    have_func( 'strcasecmp') || have_funcs_in( 'strings.h', 'stricmp');
+    have_funcs_in( 'string.h', 'strcasecmp') || have_funcs_in( 'strings.h', 'stricmp');
     have_funcs_in( 'stdio.h', 'snprintf') || have_funcs_in( 'stdio.h', '_snprintf');
-    have_func( 'reallocf');
-    have_func( 'bzero');
+    have_funcs_in( 'stdlib.h', 'reallocf');
+    have_funcs_in( 'string.h', 'bzero');
     if ( $Win32) {
         have_type( "BOOLEAN", "windows.h");
     }
