@@ -1,22 +1,23 @@
+DESCRIPTION
+===========
 
 PRIMA is a general purpose extensible graphical user interface 
 toolkit with a rich set of standard widgets and an emphasis on 
 2D image processing tasks. A Perl program using PRIMA looks 
 and behaves identically on X, Win32 and OS/2 PM. 
 
-INSTALLATION
-============
+SOURCE DISTRIBUTION INSTALLATION
+================================
 
 Create a makefile by running Makefile.PL using perl
-and then run make ( nmake for Win32 and OS/2, or gmake 
-for sgi):
+and then run make ( or gmake, or nmake for Win32 and OS/2):
 
     perl Makefile.PL
     make
     make test
     make install
 
-If 'perl Makefile.PL' fails, compilation history along with errors 
+If 'perl Makefile.PL' fails, the compilation history along with errors 
 can be found in makefile.log. 
 
 If make fails with message
@@ -45,25 +46,30 @@ directory:
     perl Makefile.PL PREFIX=$HOME/lib/perl
 
 If compilation process fails because Makefile contains
-invalid switches for your compile or linker, try change
-these with arguments to Makefile.PL. Most useful of these
-are:
+invalid switches for your compiler or linker, try changing
+these by specifying arguments to Makefile.PL, where the most useful are:
+
    COMPILER - type of compiler ( gcc, emx, mscv32, bcc32, irixcc)
-   CC - compiler command
-   CFLAGS - compiler arguments
-   LD - linked command
-   LDFLAGS - linker arguments
+   CC       - compiler command
+   CFLAGS   - compiler arguments
+   LD       - linked command
+   LDFLAGS  - linker arguments
 
 Look in Makefile.PL for details.
-  
 
 BINARY DISTRIBUTION INSTALLATION
 ================================
 
-Copy all files to the perl distribution with the hierarchy 
-structure preserved. You have to patch Prima::Config.pm 
-manually if you need to compile prima-dependent modules.
+Available only for MSWin32 and OS/2. Please use
+installation from source for the other platforms.
 
+To install the toolkit from the binary distribution 
+run 
+
+   perl ms_install.pl
+
+You have to patch Prima::Config.pm 
+manually if you need to compile prima-dependent modules.
 
 EXAMPLES
 ========
@@ -93,17 +99,25 @@ which is an event loop call. Try to begin from the followind code:
    run Prima;
 
 Or, alternatively, start the VB program, which is
-a semi-demonstration visual builder. All examples and
+the toolkit visual builder. All examples and
 programs included into the distribution can be run
 either by their name or with perl as argument - for 
 example, ..../generic or perl ..../generic . 
 ( perl ..../generic.bat for win32 )
 
+MORE INFORMATION
+================
+
+Visit http://www.prima.eu.org/ for the recent versions
+of the toolkit. You can use cvs update feature to keep
+in touch. The mailing list on the toolkit is avialable,
+you can ask questions there. See the Prima homepage for
+details.
 
 COPYRIGHT
 =========
 
-(c) 1997-2001 The Protein Laboratory, University of Copenhagen
+(c) 1997-2002 The Protein Laboratory, University of Copenhagen
 
 AUTHORS
 =======
