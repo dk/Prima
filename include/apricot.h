@@ -320,6 +320,14 @@ typedef u_int32_t       uint32_t;
 typedef unsigned long   uint32_t;
 #endif
 #endif
+#if !defined(HAVE_UINT64_T)
+#if defined(HAVE_U_INT64_T)
+typedef u_int64_t       uint64_t;
+#else
+typedef unsigned long   uint64_t;
+#endif
+#endif
+
 
 typedef uint8_t         Byte;
 typedef int16_t         Short;
