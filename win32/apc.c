@@ -389,7 +389,7 @@ typedef struct _ViewProfile {
   Bool     enabled;
   Bool     visible;
   Bool     focused;
-  Bool     capture;
+  Handle   capture;
 } ViewProfile, *PViewProfile;
 
 static void
@@ -418,7 +418,7 @@ set_view_ex( Handle self, PViewProfile p)
   apc_widget_set_enabled( self, p-> enabled);
   if ( p-> focused) apc_widget_set_focused( self);
   apc_widget_set_visible( self, p-> visible);
-  if ( p-> capture) apc_widget_set_capture( self, 1);
+  if ( p-> capture) apc_widget_set_capture( self, 1, p-> capture);
   if ( sys timeDefs) for ( i = 0; i < sys timeDefsCount; i++)
      if ( sys timeDefs[ i]. item)
      {
@@ -1582,13 +1582,20 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Bool scrollChildr
 }
 
 void
-apc_widget_set_capture( Handle self, Bool capture)
+apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 {
    objCheck;
-   if ( capture)
+   if ( capture) {
       SetCapture(( HWND) var handle);
-   else
+      if ( confineTo) {
+         RECT r;
+         GetWindowRect(( HWND) PComponent( confineTo)-> handle, &r);
+         if ( !ClipCursor( &r)) apiErr;
+      }
+   } else {
       if ( !ReleaseCapture()) apiErr;
+      if ( !ClipCursor( NULL)) apiErr;
+   }
 }
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
@@ -2299,6 +2306,11 @@ apc_sys_get_value( int sysValue)
    case svFullDrag       :
        RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Desktop", 0, KEY_READ, &hKey);
        RegQueryValueEx( hKey, "DragFullWindows", nil, &valType, buf, &valSize);
+       RegCloseKey( hKey);
+       return atol( buf);
+   case svDblClickDelay   :
+       RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Mouse", 0, KEY_READ, &hKey);
+       RegQueryValueEx( hKey, "DoubleClickSpeed", nil, &valType, buf, &valSize);
        RegCloseKey( hKey);
        return atol( buf);
    case svWheelPresent    : return GetSystemMetrics( SM_MOUSEWHEELPRESENT);

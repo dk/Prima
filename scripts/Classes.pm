@@ -863,7 +863,7 @@ sub accelItems       {($#_)?$_[0]->set_accel_items     ($_[1]):return $_[0]->get
 sub briefKeys        {($#_)?$_[0]->set_brief_keys  ($_[1]):return $_[0]->get_brief_keys;  }
 sub bottom           {($#_)?$_[0]->set_bottom      ($_[1]):return $_[0]->get_bottom;      }
 sub buffered         {($#_)?$_[0]->set_buffered    ($_[1]):return $_[0]->get_buffered;    }
-sub capture          {($#_)?$_[0]->set_capture     ($_[1]):return $_[0]->get_capture;     }
+sub capture          {($#_)?shift->set_capture     (@_)   :return $_[0]->get_capture;     }
 sub centered         {($#_)?$_[0]->set_centered(1,1)      :$_[0]->raise_wo("centered");   }
 sub clipOwner        {($#_)?$_[0]->set_clip_owner  ($_[1]):return $_[0]->get_clip_owner;  }
 sub current          {($#_)?$_[0]->set_current($_[1])     :$_[0]->get_current;            }
