@@ -108,12 +108,14 @@ Bool
 apc_clipboard_has_format( Handle self, long id)
 {
    ULONG flags;
+   if ( id == cfUTF8) return false;
    return WinQueryClipbrdFmtInfo( guts. anchor, cf2CF( id), &flags);
 }
 
 Bool
 apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
 {
+   if ( id == cfUTF8) return false;
    id = cf2CF( id);
    switch( id)
    {
@@ -156,33 +158,32 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
          break;
       case CF_TEXT:
          {
-             char * ptr = (char*) WinQueryClipbrdData( guts. anchor, id);
-             STRLEN i, len = c-> text. length = strlen( ptr);
-             c-> text. utf8 = false;
+             Byte * ptr = (Byte*) WinQueryClipbrdData( guts. anchor, id);
+             STRLEN i, len = c-> length = strlen( ptr);
              if ( ptr == nil) {
                 apcErr( errInvClipboardData);
                 return false;
              }
-             if ( !( c-> text. text = malloc( c-> text. length)))
+             if ( !( c-> data = malloc( c-> length)))
                 return false;
-             c-> text. length = 0;
+             c-> length = 0;
              for ( i = 0; i < len; i++)
                 if ( ptr[ i] != '\r')
-                   c-> text. text[ c-> text. length++] = ptr[i];
+                   c-> data[ c-> length++] = ptr[i];
              return true;
          }
          break;
       default:
          {
-            char * ptr = (char*) WinQueryClipbrdData( guts. anchor, id);
+            Byte * ptr = (Byte*) WinQueryClipbrdData( guts. anchor, id);
             if ( ptr == nil) {
                apcErr( errInvClipboardData);
                return false;
             }
-            c-> binary. length = *(( int*) ptr);
+            c-> length = *(( int*) ptr);
             ptr += sizeof( int);
-            if (( c-> binary. data = malloc( c-> binary. length)))
-               memcpy( c-> binary. data, ptr, c-> binary. length);
+            if (( c-> data = malloc( c-> length)))
+               memcpy( c-> data, ptr, c-> length);
             return true;
          }
    }
@@ -192,6 +193,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
 Bool
 apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
 {
+   if ( id == cfUTF8) return false;
    id = cf2CF( id);
    switch ( id)
    {
@@ -206,20 +208,20 @@ apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
       case CF_TEXT:
          {
              char * ptr;
-             rc = DosAllocSharedMem(( PVOID) &ptr, nil, c-> text. length + 1, PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
+             rc = DosAllocSharedMem(( PVOID) &ptr, nil, c-> length + 1, PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
              if ( rc != 0) { apiAltErr( rc); return false; };
-             memcpy( ptr, c-> text. text, c-> text. length);
-             ptr[c-> text. length] = 0;
+             memcpy( ptr, c-> data, c-> length);
+             ptr[c-> length] = 0;
              if ( !WinSetClipbrdData( guts. anchor, (ULONG)ptr, id, CFI_POINTER)) apiErrRet;
          }
          break;
       default:
          {
              char * ptr;
-             rc = DosAllocSharedMem(( PPVOID) &ptr, nil, c-> binary.length+sizeof(int), PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
+             rc = DosAllocSharedMem(( PPVOID) &ptr, nil, c-> length+sizeof(int), PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
              if ( rc != 0) { apiAltErr( rc); return false; };
-             memcpy( ptr+sizeof(int), c-> binary.data, c-> binary.length);
-             memcpy( ptr, &c-> binary.length, sizeof(int));
+             memcpy( ptr+sizeof(int), c-> data, c-> length);
+             memcpy( ptr, &c-> length, sizeof(int));
              if ( !WinSetClipbrdData( guts. anchor, (ULONG)ptr, id, CFI_POINTER)) apiErrRet;
          }
     }

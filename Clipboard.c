@@ -57,14 +57,17 @@ typedef struct _ClipboardFormatReg
    long                          sysId;
    ClipboardExchangeFunc         *server;
    void                          *data;
+   Bool                           written;
 } ClipboardFormatReg, *PClipboardFormatReg;
 
 static SV * text_server  ( Handle self, PClipboardFormatReg, int, SV *);
+static SV * utf8_server  ( Handle self, PClipboardFormatReg, int, SV *);
 static SV * image_server ( Handle self, PClipboardFormatReg, int, SV *);
 static SV * binary_server( Handle self, PClipboardFormatReg, int, SV *);
 
 static int clipboards = 0;
 static int formatCount = 0;
+static Bool protect_formats = false;
 static PClipboardFormatReg formats = nil;
 
 void *
@@ -78,7 +81,9 @@ Clipboard_init( Handle self, HV * profile)
       croak( "RTC0022: Cannot create clipboard");
    if (clipboards == 0) {
       Clipboard_register_format_proc( self, "Text",  (void*)text_server);
+      Clipboard_register_format_proc( self, "UTF8",  (void*)utf8_server);
       Clipboard_register_format_proc( self, "Image", (void*)image_server);
+      protect_formats = 1;
    }
    clipboards++;
    CORE_INIT_TRANSIENT(Clipboard);
@@ -89,6 +94,7 @@ Clipboard_done( Handle self)
 {
    clipboards--;
    if ( clipboards == 0) {
+      protect_formats = 0;
       while( formatCount)
          my-> deregister_format( self, formats-> id);
    }
@@ -126,6 +132,13 @@ find_format( Handle self, PClipboardFormatReg item, char *format)
    return strcmp( item-> id, format) == 0;
 }
 
+static Bool
+reset_written( Handle self, PClipboardFormatReg item, char *format)
+{
+   item-> written = false;
+   return false;
+}
+
 void *
 Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
 {
@@ -150,9 +163,18 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
 void
 Clipboard_deregister_format( Handle self, char * format)
 {
-   PClipboardFormatReg fr = first_that( self, (void*)find_format, format);
-   PClipboardFormatReg list = formats;
+   PClipboardFormatReg fr, list; 
+
+   if ( protect_formats && (
+       ( strlen( format) == 0)          ||
+       ( strcmp( format, "Text") == 0)  ||
+       ( strcmp( format, "UTF8") == 0)  ||
+       ( strcmp( format, "Image") == 0)))
+      return;
+
+   fr = first_that( self, (void*)find_format, format);
    if ( fr == nil) return;
+   list = formats;
    fr-> server( self, fr, cefDone, nilSV);
    free( fr-> id);
    formatCount--;
@@ -171,6 +193,7 @@ Clipboard_open( Handle self)
 {
    var-> openCount++;
    if ( var-> openCount > 1) return true;
+   first_that( self, (void*) reset_written, nil);
    return apc_clipboard_open( self);
 }
 
@@ -178,11 +201,32 @@ void
 Clipboard_close( Handle self)
 {
    if ( var->  openCount > 0) {
-     var->  openCount--;
+     PClipboardFormatReg text, utf8;
+     var-> openCount--;
      if ( var->  openCount > 0) return;
+     text = formats + cfText;
+     utf8 = formats + cfUTF8;
+     /* automatically downgrade UTF8 to TEXT */
+     if ( utf8-> written && !text-> written) {
+	 SV *utf8_sv, *text_sv;
+	 if (( utf8_sv = utf8-> server( self, utf8, cefFetch, nilSV))) {
+	    STRLEN l, charlen;
+	    U8 * src;
+	    src = ( U8 *) SvPV( utf8_sv, l);
+	    text_sv = newSVpvn("", 0);
+	    while ( l--) {
+               register UV u = utf8_to_uvchr( src, &charlen);
+	       char c = ( u < 0x7f) ? u : '?';
+	       src += charlen;
+	       sv_catpvn( text_sv, &c, 1);
+	    }
+	    text-> server( self, text, cefFetch, text_sv);
+	    sv_free( text_sv);
+	 }
+     }
      apc_clipboard_close( self);
    } else
-      var->  openCount = 0;
+     var-> openCount = 0;
 }
 
 Bool
@@ -218,7 +262,10 @@ Clipboard_store( Handle self, char * format, SV * data)
 
    if ( !fr) return;
    my-> open( self);
-   if ( var->  openCount == 1) apc_clipboard_clear( self);
+   if ( var->  openCount == 1) {
+      first_that( self, (void*) reset_written, nil);
+      apc_clipboard_clear( self);
+   }
    fr-> server( self, fr, cefStore, data);
    my-> close( self);
 }
@@ -227,6 +274,7 @@ void
 Clipboard_clear( Handle self)
 {
    my-> open( self);
+   first_that( self, (void*) reset_written, nil);
    apc_clipboard_clear( self);
    my-> close( self);
 }
@@ -246,6 +294,7 @@ Clipboard_register_format( Handle self, char * format)
    void * proc;
    if (( strlen( format) == 0)          ||
        ( strcmp( format, "Text") == 0)  ||
+       ( strcmp( format, "UTF8") == 0)  ||
        ( strcmp( format, "Image") == 0))
       return false;
    proc = Clipboard_register_format_proc( self, format, (void*)binary_server);
@@ -336,18 +385,47 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 
    case cefFetch:
       if ( apc_clipboard_get_data( self, cfText, &c)) {
-         data = newSVpv( c. text. text, c. text. length);
-         if ( c. text. utf8)
-            SvUTF8_on( data);
-         free( c. text. text);
+         data = newSVpv(( char*) c. data, c. length);
+         free( c. data);
          return data;
       }
       break;
 
    case cefStore:
-      c. text. text = SvPV( data, c. text. length);
-      c. text. utf8 = SvUTF8( data);
-      apc_clipboard_set_data( self, cfText, &c);
+      if ( SvUTF8( data)) {
+	 /* jump to UTF8. close() will later downgrade data to ascii, if any */
+         instance = formats + cfUTF8;
+         return instance-> server( self, instance, cefStore, data);
+      } else {
+         c. data = ( Byte*) SvPV( data, c. length);
+         instance-> written = apc_clipboard_set_data( self, cfText, &c);
+      }
+      break;
+   }
+   return nilSV;
+}
+
+static SV *
+utf8_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
+{
+   ClipboardDataRec c;
+
+   switch( function) {
+   case cefInit:
+      return ( SV *) cfUTF8;
+
+   case cefFetch:
+      if ( apc_clipboard_get_data( self, cfUTF8, &c)) {
+         data = newSVpv( c. data, c. length);
+         SvUTF8_on( data);
+         free( c. data);
+         return data;
+      }
+      break;
+
+   case cefStore:
+      c. data = SvPV( data, c. length);
+      instance-> written = apc_clipboard_set_data( self, cfUTF8, &c);
       break;
    }
    return nilSV;
@@ -379,7 +457,7 @@ image_server( Handle self, PClipboardFormatReg instance, int function, SV * data
           warn("RTC0023: Not an image passed to clipboard");
           return nilSV;
        }
-       apc_clipboard_set_data( self, cfBitmap, &c);
+       instance-> written = apc_clipboard_set_data( self, cfBitmap, &c);
        break;
     }
     return nilSV;
@@ -397,14 +475,14 @@ binary_server( Handle self, PClipboardFormatReg instance, int function, SV * dat
       break;
    case cefFetch:
       if ( apc_clipboard_get_data( self, instance-> sysId, &c)) {
-         SV * ret = newSVpv((char*) c. binary. data, c. binary. length);
-         free( c. binary. data);
+         SV * ret = newSVpv((char*) c. data, c. length);
+         free( c. data);
          return ret;
       }
       break;
    case cefStore:
-      c. binary. data = (Byte*) SvPV( data, c. binary. length);
-      apc_clipboard_set_data( self, instance-> sysId, &c);
+      c. data = (Byte*) SvPV( data, c. length);
+      instance-> written = apc_clipboard_set_data( self, instance-> sysId, &c);
       break;
    }
    return nilSV;

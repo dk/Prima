@@ -99,6 +99,7 @@ object Prima::Application( Prima::Widget)
    method Bool   lock()                        => apc_application_lock;
    method void   insert_behind( Handle widget);
    method Handle next();
+   import SV *   notification_types();
    method Handle prev();
    method void   send_to_back();
    import void   setup();

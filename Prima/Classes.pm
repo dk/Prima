@@ -257,7 +257,19 @@ sub profile_default
    $def->{name} = 'Clipboard';
    return $def;
 }
-sub text  { $#_ ? $_[0]-> store( 'Text',  $_[1]) : return $_[0]-> fetch('Text')  }
+sub text
+{ 
+   if ($#_) {
+      $_[0]-> store( 'Text',  $_[1]);
+   } else {
+      my $text;
+      print "init\n";
+      $::application-> notify( 'PasteText', $_[0], \$text);
+      print "done:$text\n";
+      return $text;
+   }
+}
+
 sub image { $#_ ? $_[0]-> store( 'Image', $_[1]) : return $_[0]-> fetch('Image') }
 
 # class Drawable
@@ -1310,6 +1322,15 @@ package Prima::Application;
 use vars qw(@ISA @startupNotifications);
 @ISA = qw(Prima::Widget);
 
+{
+my %RNT = (
+   %{Prima::Widget->notification_types()},
+   PasteText   => nt::Action,
+);
+
+sub notification_types { return \%RNT; }
+}
+
 sub profile_default
 {
    my $def  = $_[ 0]-> SUPER::profile_default;
@@ -1414,6 +1435,17 @@ sub open_help
    return unless length $link;
    return unless $self-> help_init;
    return $self-> {HelpClass}-> open($link);
+}
+
+sub on_pastetext
+{
+   my ( $self, $clipboard, $ref) = @_;
+   print "pastetext\n";
+   my @targets = qw(Text UTF8);
+   @targets = reverse @targets if $self-> wantUnicodeInput;
+   return if defined ( $$ref = $clipboard-> fetch( $targets[0]));
+   $$ref = $clipboard-> fetch( $targets[1]);
+   undef;
 }
 
 1;

@@ -2244,19 +2244,13 @@ apc_kbd_get_state( Handle self);
 #define cfText     0
 #define cfBitmap   1
 #define cfImage    cfBitmap
-#define cfCustom   2
+#define cfUTF8     2
+#define cfCustom   3
 
-typedef union {
-   struct {
-      char * text;
-      STRLEN length;
-      Bool   utf8;
-   } text;
+typedef struct {
    Handle image;
-   struct {
-      Byte * data;
-      STRLEN length;
-   } binary;
+   Byte * data;
+   STRLEN length;
 } ClipboardDataRec, *PClipboardDataRec;
 
 extern PList

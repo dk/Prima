@@ -805,13 +805,13 @@ typedef struct _menu_sys_data
    PMenuWindow          focused;
 } MenuSysData, *PMenuSysData;
 
-#define cfTargets 2
-#define cfCOUNT   3
+#define cfTargets    (cfCustom  + 0)
+#define cfCOUNT      (cfTargets + 1)
 /* XXX not implemented
-#define cfPalette 3
-#define cfForeground 4
-#define cfBackground 5
-#define cfCOUNT 6
+#define cfPalette    (cfCustom  + 1)
+#define cfForeground (cfCustom  + 2)
+#define cfBackground (cfCustom  + 3)
+#define cfCOUNT      (cfCustom  + 4)
 */
 
 typedef struct {
