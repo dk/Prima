@@ -1399,7 +1399,26 @@ convert_16_to_24( XImage *i, PImage img)
 {
    int y, x, h, w;
    Pixel16 *d;
-   Pixel24 *line;
+   register Pixel24 *line;
+
+   /*
+      Compensate less than 8-bit true-color memory layout depth converted into
+      real 8 bit, a bit slower but more error-prone in general sense. Although
+      Prima::gp-problems advises not to check against 0xffffff as white, since
+      white is 0xf8f8f8 on 15-bit displays for example, it is not practical to
+      use this check fro example when a RGB image is to be converted into a
+      low-palette image with RGB(0xff,0xff,0xff) expected and desirable palette
+      slot value.
+
+      XXX - apc_gp_get_pixel probably needs this fix too
+    */
+
+   int rmax = 0xff & ( 0xff << ( 8 - guts. red_range));
+   int gmax = 0xff & ( 0xff << ( 8 - guts. green_range));
+   int bmax = 0xff & ( 0xff << ( 8 - guts. blue_range));
+   if ( rmax == 0 ) rmax = 0xff;
+   if ( gmax == 0 ) gmax = 0xff;
+   if ( bmax == 0 ) bmax = 0xff;
 
    h = img-> h; w = img-> w;
    for ( y = 0; y < h; y++) {
@@ -1411,6 +1430,9 @@ convert_16_to_24( XImage *i, PImage img)
             line-> a0 = (((dd & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range; 
             line-> a1 = (((dd & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range;
             line-> a2 = (((dd & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range;
+            if ( line-> a0 == bmax) line-> a0 = 0xff;
+            if ( line-> a1 == gmax) line-> a1 = 0xff;
+            if ( line-> a2 == rmax) line-> a2 = 0xff;
             line++; d++;
          }
       } else {
@@ -1418,6 +1440,9 @@ convert_16_to_24( XImage *i, PImage img)
             line-> a0 = (((*d & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range; 
             line-> a1 = (((*d & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range;
             line-> a2 = (((*d & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range;
+            if ( line-> a0 == bmax) line-> a0 = 0xff;
+            if ( line-> a1 == gmax) line-> a1 = 0xff;
+            if ( line-> a2 == rmax) line-> a2 = 0xff;
             line++; d++;
          }
       }
