@@ -1730,34 +1730,30 @@ sub process_commandline
     }
 }
 
-sub find_file
+sub _find_file
 {
     my ( $fname, $dir) = @_;
-    $fname =~ s/\\/\//g;
-    my $pathname = qd( "$dir/$fname");
-    if ( exists $cache_find_files{$pathname}) {
-       if ($cache_find_files{$pathname}) {
-       	   return ( $pathname, 1);
-       } else {
-       	   return ( $fname, 0);
-       }
-    }
-    if ( -e $pathname) {
-        $cache_find_files{$pathname} = 1;
-        return ( $pathname, 1);
-    }
+    my ( $pathname, $found);
+    $pathname = qd( "$dir/$fname");
+    return $pathname if -e $pathname;
     opendir D, $dir or die "Cannot open dir $dir: $!";
     my @entries = map { qd( "$dir/$_")} grep { /^[^.]/ && -d qd( "$dir/$_")} readdir D;
     closedir D;
-    my $found;
     foreach my $entry ( @entries) {
-        ( $pathname, $found) = find_file( $fname, $entry);
-	next unless $found;
-        $cache_find_files{$pathname} = 1;
-        return ( $pathname, 1);
+        $pathname = _find_file( $fname, $entry);
+	next unless defined $pathname;
+        return $pathname;
     }
-    $cache_find_files{$pathname} = 0;
-    return ( $fname, 0);
+    return undef;
+}
+
+sub find_file
+{
+    my ( $fname) = @_;
+    $fname =~ s/\\/\//g;
+    $fname = qd($fname);
+    return $cache_find_files{$fname} if exists $cache_find_files{$fname};
+    return $cache_find_files{$fname} = _find_file( $fname, '.');
 }
 
 sub canon_name
@@ -1789,9 +1785,8 @@ sub find_cdeps
         chomp;
         next unless /^\s*\#\s*include\s+"([^\"]+)"/;
         my $incfile = $1;
-        my $found = 0;
-        ( $incfile, $found) = find_file( $incfile, ".");
-        $incfile = qd( "include/generic/$incfile") unless $found;
+        my $i = find_file( $incfile);
+        $incfile = defined($i) ? $i : qd( "include/generic/$incfile");
         $incfile = canon_name( $incfile);
         unless ( exists $included->{ $incfile}) {
             push @{ $alldeps{ $cfile}}, $incfile;
