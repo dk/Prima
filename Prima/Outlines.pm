@@ -1663,7 +1663,7 @@ sub get_directory_tree
          @dd = grep { !/\./ } $self-> files( 'dir');
          push @dd, grep { !/\./ && -d "$pathp/$_" } $self-> files( 'lnk');
       }
-      push @lb, [[ $_, "$path/"], scalar @dd ? [] : undef, 0];
+      push @lb, [[ $_, $path . ( $path eq '/' ? '' : '/')], scalar @dd ? [] : undef, 0];
    }
    $::application-> pointer( $oldPointer);
    return \@lb;
