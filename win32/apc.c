@@ -2986,6 +2986,161 @@ apc_message( Handle self, PEvent ev, Bool post)
    return true;
 }
 
+/* convert explorer-string format (asciiz,asciiz,...,0) into
+   ""-quoted string */
+static char *
+duplicate_zz_string( const char * c)
+{
+   int sz = 2;
+   char * d = ( char *) c, * ret;
+   while ( d[0] || d[1]) {
+      if ( !*d) sz += 3;
+      if ( *d == '"' || *d == '\\') sz++;
+      sz++;
+      d++;
+   }
+   if ( !( ret = d = malloc( sz))) return nil;
+   if ( sz > 2) *d++ = '"';
+   while ( c[0] || c[1]) {
+      if ( !*c) {
+	 *d++ = '"';
+	 *d++ = ' ';
+	 *d++ = '"';
+	 c++;
+	 continue;
+      }
+      if ( *c == '"' || *c == '\\') 
+	 *d++ = '\\';
+      *d++ = *c++;
+   }
+   if ( sz > 2) *d++ = '"';
+   return ret;
+}
+
+/* performs non-standard windows open file function */
+static char *
+win32_openfile( const char * params)
+{
+   static OPENFILENAME o;
+   static Bool initialized = false;
+   static char filter[2048] = "";
+   static char defext[32] = "";
+   static char directory[2048] = "";
+   static char filters[20480];
+   char filename[20480] = "";
+
+   if ( !initialized) {
+      memset( &o, 0, sizeof(o));
+      o. lStructSize = sizeof(o);
+      o. nMaxFile = 20479;
+      o. lpstrFile = filename;
+      o. nMaxCustFilter = 2047;
+      initialized = true;
+   }
+
+   if ( strncmp( params, "filters=", 8) == 0) {
+      params += 8;
+      if ( strcmp( params, "NULL") == 0) {
+         o. lpstrFilter = NULL;
+      } else {
+	 /* copy \0\0-terminated string */
+	 char * fb = filters;
+	 int fbsz = 20477;
+	 while (( params[0] || params[1]) && fbsz--) 
+	    *fb++ = *params++;
+	 *fb = *params;
+         o. lpstrFilter = filters;
+      }
+   } else if ( strncmp( params, "directory", 9) == 0) {
+      params += 9;
+      if ( *params == '=') {
+	 if ( strcmp( params, "NULL") == 0) {
+	    o. lpstrInitialDir = NULL;
+	 } else {
+	    strncpy( directory, params, 2047);
+	    o. lpstrInitialDir = directory;
+	 }
+      } else {
+	 return duplicate_string( directory);
+      }
+   } else if ( strncmp( params, "defext=", 7) == 0) {
+      params += 7;
+      if ( strcmp( params, "NULL") == 0) {
+         o. lpstrDefExt = NULL;
+      } else {
+	 strncpy( defext, params, 31);
+         o. lpstrDefExt = defext;
+      }
+   } else if ( strncmp( params, "filter=", 7) == 0) {
+      params += 7;
+      if ( strcmp( params, "NULL") == 0) {
+         o. lpstrCustomFilter = NULL;
+      } else if ( strcmp( params, "DEFAULT") == 0) {
+         o. lpstrCustomFilter = filter;
+      } else {
+	 strncpy( filter, params, 2047);
+         o. lpstrCustomFilter = filter;
+      }
+   } else if ( strncmp( params, "filterindex=", 12) == 0) {
+      int fi = 0, i = sscanf( params + 12, "%d", &fi);
+      o. nFilterIndex = fi;
+   } else if ( strncmp( params, "flags=", 6) == 0) {
+      params += 6;
+      o. Flags = 0;
+      while ( *params) {
+         char * cp = ( char *) params, pp;
+	 while ( *cp && *cp != ',') *cp++;
+	 pp = *cp;
+	 *cp = 0;
+	 if ( stricmp( params, "READONLY") == 0) o. Flags |=              OFN_READONLY; else
+	 if ( stricmp( params, "OVERWRITEPROMPT") == 0) o. Flags |=       OFN_OVERWRITEPROMPT; else
+	 if ( stricmp( params, "HIDEREADONLY") == 0) o. Flags |=          OFN_HIDEREADONLY; else
+	 if ( stricmp( params, "NOCHANGEDIR") == 0) o. Flags |=           OFN_NOCHANGEDIR; else
+	 if ( stricmp( params, "SHOWHELP") == 0) o. Flags |=              OFN_SHOWHELP; else
+	 if ( stricmp( params, "NOVALIDATE") == 0) o. Flags |=            OFN_NOVALIDATE; else
+	 if ( stricmp( params, "ALLOWMULTISELECT") == 0) o. Flags |=      OFN_ALLOWMULTISELECT; else
+	 if ( stricmp( params, "EXTENSIONDIFFERENT") == 0) o. Flags |=    OFN_EXTENSIONDIFFERENT; else
+	 if ( stricmp( params, "PATHMUSTEXIST") == 0) o. Flags |=         OFN_PATHMUSTEXIST; else
+	 if ( stricmp( params, "FILEMUSTEXIST") == 0) o. Flags |=         OFN_FILEMUSTEXIST; else
+	 if ( stricmp( params, "CREATEPROMPT") == 0) o. Flags |=          OFN_CREATEPROMPT; else
+	 if ( stricmp( params, "SHAREAWARE") == 0) o. Flags |=            OFN_SHAREAWARE; else
+	 if ( stricmp( params, "NOREADONLYRETURN") == 0) o. Flags |=      OFN_NOREADONLYRETURN; else
+	 if ( stricmp( params, "NOTESTFILECREATE") == 0) o. Flags |=      OFN_NOTESTFILECREATE; else
+	 if ( stricmp( params, "NONETWORKBUTTON") == 0) o. Flags |=       OFN_NONETWORKBUTTON; else
+	 if ( stricmp( params, "NOLONGNAMES") == 0) o. Flags |=           OFN_NOLONGNAMES; else
+#ifndef OFN_EXPLORER
+#define OFN_EXPLORER 0
+#define OFN_NODEREFERENCELINKS 0
+#define OFN_LONGNAMES 0
+#endif	    
+	 if ( stricmp( params, "EXPLORER") == 0) o. Flags |=              OFN_EXPLORER; else
+	 if ( stricmp( params, "NODEREFERENCELINKS") == 0) o. Flags |=    OFN_NODEREFERENCELINKS; else
+	 if ( stricmp( params, "LONGNAMES") == 0) o. Flags |=             OFN_LONGNAMES; else
+	 warn("win32.OpenFile: Unknown constant OFN_%s", params);
+	 params = cp + 1;
+	 if ( !pp) break;
+      }
+   } else if (( strncmp( params, "open", 4) == 0) || 
+              ( strncmp( params, "save", 4) == 0)) {
+      Bool ret;
+      guts. focSysDialog = 1;
+      ret = (strncmp( params, "open", 4) == 0) ? 
+	 GetOpenFileName( &o) :
+         GetSaveFileName( &o);
+      guts. focSysDialog = 0;
+      if ( !ret) return 0;
+      strncpy( directory, o. lpstrFile, o. nFileOffset);
+      if (( o. Flags & ( OFN_ALLOWMULTISELECT | OFN_EXPLORER)) == (OFN_ALLOWMULTISELECT|OFN_EXPLORER) 
+	  && OFN_EXPLORER) 
+	 return duplicate_zz_string( o. lpstrFile + o. nFileOffset );
+      return duplicate_string( o. lpstrFile);
+   } else {
+      warn("win32.OpenFile: Unknown function %s", params);
+   }
+   
+   return 0;
+}
+
 static BOOL CALLBACK
 find_console( HWND w, LPARAM ptr)
 {
@@ -3110,6 +3265,9 @@ apc_system_action( const char * params)
             warn( "Bad parameters '%s' to sysaction win32.ConsoleWindow", params);
             return 0;
          }
+      } else if ( strncmp( params, "win32.OpenFile.", 15) == 0) {
+	 params += 15;
+	 return win32_openfile( params);
       } else
          goto DEFAULT;
       break;

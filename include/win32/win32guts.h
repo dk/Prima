@@ -200,6 +200,7 @@ typedef struct _WinGuts
     int            topWindows;         // count of top-level windows in app
     Bool           focSysDisabled;     // focus system disabled
     Bool           focSysGranted;      // SetFocus() was called inside apc_widget_set_focused
+    Bool           focSysDialog;       // system dialog is in action
     UINT           errorMode;          // SetErrorMode() result
     DWORD          version;            // GetVersion() cached result
     Point          smDblClk;           // cached SM_CxDOUBLECLK values

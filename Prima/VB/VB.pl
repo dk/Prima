@@ -75,6 +75,7 @@ sub open_dialog
    $openFileDlg = Prima::OpenDialog-> create( 
       icon => $VB::ico, 
       directory => $VB::main-> {ini}-> {OpenPath},
+      system => 1,
    ) unless $openFileDlg;
    $openFileDlg-> set( %profile);
    return $openFileDlg;
@@ -86,6 +87,7 @@ sub save_dialog
    $saveFileDlg = Prima::SaveDialog-> create( 
       icon => $VB::ico,
       directory => $VB::main-> {ini}-> {SavePath},
+      system => 1,
    ) unless $saveFileDlg;
    $saveFileDlg-> set( %profile);
    return $saveFileDlg;

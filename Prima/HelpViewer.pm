@@ -399,6 +399,7 @@ sub load_dialog
         ['Documentation' => '*.pod;*.pm;*.pl'],
         ['All files' => '*']],
       text     => 'Open manpage',
+      system => 1,
     ) unless $loaddlg;
     return unless $loaddlg-> execute;
     my $mark = $self-> {text}-> make_bookmark;

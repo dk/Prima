@@ -664,10 +664,27 @@ sub profile_default
       showDotFiles       => 0,
 
       openMode           => 1,
+      system             => 0,
    }
 }
 
-my $unix = (Prima::Application-> get_system_info->{apc} == apc::Unix) || ($^O =~ /cygwin/);
+my $unix  = ($^O =~ /cygwin/) || (Prima::Application-> get_system_info->{apc} == apc::Unix);
+my $win32 = (Prima::Application-> get_system_info->{apc} == apc::Win32);
+
+sub create
+{
+   my ( $class, %params) = @_;
+   if ( $params{system} && $win32) {
+      if ( $class =~ /^Prima::(Open|Save|File)Dialog$/) {
+	 undef $@;
+	 eval "use Prima::sys::win32::FileDialog";
+	 die $@ if $@;
+         $class =~ s/(Prima)/$1::sys::win32/;
+	 return $class-> create(%params);
+      }
+   }
+   return $class->SUPER::create(%params);
+}
 
 sub canonize_mask
 {
@@ -1779,6 +1796,16 @@ Default value: 1
 Selects whether the file list appears sorted by name ( 1 ) or not ( 0 ).
 
 Default value : 1
+
+=item system BOOLEAN
+
+Create-only property. If set to 1, C<Prima::FileDialog> returns
+instance of C<Prima::sys::XXX::FileDialog> system-specific file dialog, 
+if available for the I<XXX> platform.
+
+C<system> knows only how to map C<FileDialog>, C<OpenDialog>, and C<SaveDialog>
+classes onto the system-specific file dialog classes; the inherited classes 
+are not affected.
 
 =back
 

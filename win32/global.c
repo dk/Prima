@@ -844,6 +844,7 @@ AGAIN:
       }
       break;
    case WM_NCHITTEST:
+      if ( guts. focSysDialog) return HTERROR;
       // dlg protect code - protecting from user actions
       if ( !guts. focSysDisabled && ( Application_map_focus( application, self) != self))
          return HTERROR;
@@ -876,6 +877,7 @@ AGAIN:
       ev. cmd = cmSetup;
       break;
    case WM_SETFOCUS:
+      if ( guts. focSysDialog) return 1;
       // dlg protect code - general case
       if ( !guts. focSysDisabled && !guts. focSysGranted) {
          Handle hf = Application_map_focus( application, self);
@@ -1027,6 +1029,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 
    switch ( msg) {
    case WM_ACTIVATE:
+       if ( guts. focSysDialog) return 1;
        // dlg protect code - protecting from window activation
        if ( LOWORD( mp1) && !guts. focSysDisabled) {
           Handle hf = Application_map_focus( application, self);
@@ -1074,6 +1077,8 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    case WM_ERASEBKGND:
        return 1;
    case WM_NCACTIVATE:
+      if ( guts. focSysDialog) return 1;
+       
       if (( mp1 == 0) && ( mp2 != 0)) {
          Handle x = hwnd_to_view(( HWND) mp2);
          if ( is_declipped_child( x) && Widget_is_child( x, self)) {
@@ -1093,6 +1098,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
       }
       break;
    case WM_NCHITTEST:
+      if ( guts. focSysDialog) return HTERROR;
       // dlg protect code - protecting from user actions
       if ( !guts. focSysDisabled) {
          Handle foc = Application_map_focus( application, self);
@@ -1102,6 +1108,8 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
       }
       break;
    case WM_SETFOCUS:
+       if ( guts. focSysDialog) return 1;
+      
        // dlg protect code - general case
        if ( !guts. focSysDisabled && !guts. focSysGranted) {
           Handle hf = Application_map_focus( application, self);
