@@ -135,18 +135,6 @@ void Window_update_sys_handle( Handle self, HV * profile)
 extern Bool accel_notify ( Handle group, Handle self, PEvent event);
 extern Bool find_accel( Handle self, Handle item, int * key);
 
-static Bool
-find_0tab( Handle owner, Handle self, Handle * add)
-{
-   if ( my get_enabled( self) && my get_selectable( self) && my get_tab_stop( self))
-   {
-      if ( *add == nilHandle) *add = self; else
-         if ( PWidget( *add)-> tabOrder > var tabOrder) *add = self;
-   }
-   return false;
-}
-
-
 void Window_handle_event( Handle self, PEvent event)
 {
 #define evOK ( var evStack[ var evPtr - 1])

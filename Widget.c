@@ -49,13 +49,11 @@ typedef struct _SingleColor
    int   index;
 } SingleColor, *PSingleColor;
 
-static int locCount;
 static Bool unshift_ordering( Handle owner, Handle self, int tabOrder);
 static Bool find_dup_msg( PEvent event, int cmd);
 static Bool pquery ( Handle window, Handle self, void * v);
 static Bool get_top_current( Handle self);
 static Bool sptr( Handle window, Handle self, void * v);
-static Bool find_ordering( Handle owner, Handle self, int tabOrder);
 static Bool size_notify( Handle self, Handle child, const Rect* metrix);
 static Bool move_notify( Handle self, Handle child, Point * moveTo);
 static void dyna_set( Handle self, HV * profile);
@@ -2588,14 +2586,6 @@ sptr( Handle window, Handle self, void * v)
       my set_pointer_type( self, crDefault);
    return false;
 }
-
-static Bool
-find_ordering( Handle owner, Handle self, int tabOrder)
-{
-   locCount++;
-   return var tabOrder == tabOrder;
-}
-
 
 /* static iterators for ownership notifications */
 
