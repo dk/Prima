@@ -1080,7 +1080,7 @@ apc_window_set_window_state( Handle self, int state)
       XX-> flags. zoomed = 1;
       did_net_zoom = 1;
       sync = 0;
-   FALL_THROUGH:
+   FALL_THROUGH:;
    }
 
    if ( !XX-> flags. withdrawn) {
