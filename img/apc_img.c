@@ -209,7 +209,8 @@ __apc_image_correct_property( PImgProps fmtProps,
 			      PList propList,
 			      PList outPropList,
 			      Bool *readAll,
-			      Bool *extraInfo
+			      Bool *extraInfo,
+			      int *convertionAllowed
     )
 {
     PImgProperty imgProp, outImgProp = nil;
@@ -217,12 +218,15 @@ __apc_image_correct_property( PImgProps fmtProps,
     Bool rc = true;
 
     for ( i = ( propList->count - 1); ( i >= 0); i--) {
-	Bool isExtraInfo, isReadAll;
+	Bool isExtraInfo, isReadAll, isConvertionAllowed;
 	imgProp = ( PImgProperty) list_at( propList, i);
-	if ( readAll || extraInfo) {
+	if ( readAll || extraInfo || convertionAllowed) {
 	    isExtraInfo = ( strcmp( imgProp->name, "extraInfo") == 0);
 	    isReadAll = ( strcmp( imgProp->name, "readAll") == 0);
-	    if ( isExtraInfo || isReadAll) {
+	    isConvertionAllowed = ( strcmp( imgProp->name, "convertionAllowed") == 0);
+	    if ( isExtraInfo
+		 || isReadAll
+		 || isConvertionAllowed) {
 		if ( ( imgProp->flags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY) {
 		    // We don't expect an array here.
 		    __apc_image_set_error( "__apc_image_correct_property: standard property ``%s'' cannot be an array", imgProp->name);
@@ -232,8 +236,9 @@ __apc_image_correct_property( PImgProps fmtProps,
 		    __apc_image_set_error( "__apc_image_correct_property: property ``%s'' must be of scalar type", imgProp->name);
 		    rc = false;
 		}
-		else if ( ! __is_boolean_value( imgProp->val.Binary.data)) {
-		    __apc_image_set_error( "__apc_image_correct_property: property ``%s'' does not contain a boolean value", imgProp->name);
+		else if ( ! isConvertionAllowed 
+			  && ! __is_boolean_value( imgProp->val.Binary.data)) {
+		    __apc_image_set_error( "__apc_image_correct_property: property ``%s'' does not contain a boolean value as it supposed to be", imgProp->name);
 		    rc = false;
 		}
 		else {
@@ -243,8 +248,11 @@ __apc_image_correct_property( PImgProps fmtProps,
 		    if ( isReadAll && readAll) {
 			*readAll = __boolean_value( imgProp->val.Binary.data);
 		    }
+		    if ( isConvertionAllowed && convertionAllowed) {
+			*convertionAllowed = atoi( imgProp->val.Binary.data);
+		    }
 		}
-		/* That was readAll or extraInfo properties... */
+		/* That was readAll, extraInfo or convertionAllowed properties... */
 		continue;
 	    }
 	}
@@ -443,7 +451,9 @@ __apc_image_correct_property( PImgProps fmtProps,
 									 imgProp->val.pProperties + n,
 									 outImgProp->val.pProperties + n,
 									 nil,
-									 nil);
+									 nil,
+									 nil
+					    );
 				}
 			    }
 			    else {
@@ -455,6 +465,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 				    && __apc_image_correct_property( fmtProps[ j].subProps,
 								     &imgProp->val.Properties,
 								     &outImgProp->val.Properties,
+								     nil,
 								     nil,
 								     nil
 					);
@@ -493,7 +504,8 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool *
 					 propList,
 					 outImageInfo->propList,
 					 readAll,
-					 &outImageInfo->extraInfo
+					 &outImageInfo->extraInfo,
+					 &outImageInfo->convertionAllowed
 	    );
     if ( rc) {
 	/* Clearing the old properties list. */
@@ -711,6 +723,7 @@ save_img_compatible( Handle item, void *params)
 	__apc_image_correct_property( imgFormat->propertyList,
 				      imageInfo->propList,
 				      outImageInfo->propList,
+				      nil,
 				      nil,
 				      nil
 	    );

@@ -786,7 +786,8 @@ modify_Image( Handle self, PImgInfo imageInfo)
 {
     int i;
     HV *extraInfo = nil;
-    unsigned reqProps = 0;
+    unsigned gotProps = 0;
+    unsigned paletteType = 0;
 #define REQPROP_WIDTH 0x01
 #define REQPROP_HEIGHT 0x02
 #define REQPROP_TYPE 0x04
@@ -794,6 +795,7 @@ modify_Image( Handle self, PImgInfo imageInfo)
 #define REQPROP_PALETTE 0x10
 #define REQPROP_LINESIZE 0x20
 #define REQPROP_PALETTESIZE 0x40
+#define EXISTPROP_PALETTETYPE 0x80
 #define REQPROP_ALL ( REQPROP_WIDTH | REQPROP_HEIGHT | REQPROP_TYPE | \
                       REQPROP_DATA | REQPROP_PALETTE | REQPROP_LINESIZE | \
                       REQPROP_PALETTESIZE)
@@ -804,36 +806,36 @@ modify_Image( Handle self, PImgInfo imageInfo)
     for ( i = 0 ; i < imageInfo->propList->count; i++) {
         PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, i);
         if ( strcmp( imgProp->name, "width") == 0) {
-            reqProps |= REQPROP_WIDTH;
+            gotProps |= REQPROP_WIDTH;
             var->w = imgProp->val.Int;
         }
         else if ( strcmp( imgProp->name, "height") == 0) {
-            reqProps |= REQPROP_HEIGHT;
+            gotProps |= REQPROP_HEIGHT;
             var->h = imgProp->val.Int;
         }
         else if ( strcmp( imgProp->name, "type") == 0) {
-            reqProps |= REQPROP_TYPE;
+            gotProps |= REQPROP_TYPE;
             var->type = imgProp->val.Int;
         }
         else if ( strcmp( imgProp->name, "lineSize") == 0) {
-            reqProps |= REQPROP_LINESIZE;
+            gotProps |= REQPROP_LINESIZE;
             var->lineSize = imgProp->val.Int;
         }
         else if ( strcmp( imgProp->name, "data") == 0) {
-            reqProps |= REQPROP_DATA;
+            gotProps |= REQPROP_DATA;
             var->data = imgProp->val.pByte;
             var->dataSize = imgProp->size;
             imgProp->val.pByte = NULL;
             imgProp->size = 0;
         }
         else if ( strcmp( imgProp->name, "palette") == 0) {
-            reqProps |= REQPROP_PALETTE;
+            gotProps |= REQPROP_PALETTE;
             var->palette = ( PRGBColor) imgProp->val.pByte;
             imgProp->val.pByte = NULL;
             imgProp->size = 0;
         }
         else if ( strcmp( imgProp->name, "paletteSize") == 0) {
-            reqProps |= REQPROP_PALETTESIZE;
+            gotProps |= REQPROP_PALETTESIZE;
             var->palSize = imgProp->val.Int;
         }
         else if ( strcmp( imgProp->name, "name") == 0) {
@@ -841,6 +843,10 @@ modify_Image( Handle self, PImgInfo imageInfo)
             free( imgProp->val.String);
             imgProp->val.String = nil;
         }
+	else if ( strcmp( imgProp->name, "paletteType") == 0) {
+	    gotProps |= EXISTPROP_PALETTETYPE;
+	    paletteType = imgProp->val.Int;
+	}
         else if ( imageInfo->extraInfo) {
             HV *profile = extraInfo;
             if ( ! profile) {
@@ -870,14 +876,21 @@ modify_Image( Handle self, PImgInfo imageInfo)
         }
     }
 
-    if ( reqProps != REQPROP_ALL) {
-        croak( "*** INTERNAL *** Got an incomplete image information from driver (signature: %04X)", reqProps);
+    if ( ( gotProps & REQPROP_ALL) != REQPROP_ALL) {
+        croak( "*** INTERNAL *** Got an incomplete image information from driver (signature: %04X)", gotProps);
     }
     if ( ( var->lineSize * var->h) != var->dataSize) {
         croak( "Image data/line size inconsistency detected");
     }
+    if ( ( imageInfo->convertionAllowed >= ICL_NONDESTRUCTIVE)
+	 && ( ( gotProps & EXISTPROP_PALETTETYPE) == EXISTPROP_PALETTETYPE)
+	 && ( paletteType != var->type)) {
+	DOLBUG( "Setting palette to type %02x from %02x, palsize: %d\n", paletteType, var->type, var->palSize);
+	my->set_type( self, paletteType);
+    }
     --SvREFCNT( SvRV(PImage(self)->mate));
     my->update_change( self);
+    DOLBUG( "Got type: %02x\n", var->type);
 }
 
 XS( Image_load_FROMPERL) {

@@ -53,6 +53,7 @@ img_info_create( int propCount)
 	}
 	/* To avoid possible floating errors all structure fields must be initialized. */
 	imgInfo->extraInfo = false;
+	imgInfo->convertionAllowed = ICL_NONDESTRUCTIVE;
     }
     /* Function returns either nil or correctly initialized structure. */
     /* All other options are forbidden! */

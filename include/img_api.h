@@ -33,41 +33,41 @@
 #include "apricot.h"
 
 typedef struct _IMGCapInfo {
-   char *id;
-   /*
-    * Type characters:
-    * i - int
-    * n - double
-    * s - string
-    *
-    * A type character suffixed with asterisks means array.
-    */
-   char *type;
-   char *descr;
-   int size;
-   union {
-      int Int;
-      double Double;
-      char *String;
+    char *id;
+    /*
+     * Type characters:
+     * i - int
+     * n - double
+     * s - string
+     *
+     * A type character suffixed with asterisks means array.
+     */
+    char *type;
+    char *descr;
+    int size;
+    union {
+	int Int;
+	double Double;
+	char *String;
 
-      int *pInt;
-      double *pDouble;
-      char **pString;
-   } val;
+	int *pInt;
+	double *pDouble;
+	char **pString;
+    } val;
 } ImgCapInfo, *PImgCapInfo;
 
 typedef struct _IMGProperties {
-   char *name;
-   int id;
-   /*
-    * Property types are the same as for capabilities but with addition of
-    * b - byte.
-    * B - binary data.
-    * p - property.
-    */
-   char *type;
-   char *descr;
-   struct _IMGProperties *subProps; /* This field contains a list of subproperties for property type. */
+    char *name;
+    int id;
+    /*
+     * Property types are the same as for capabilities but with addition of
+     * b - byte.
+     * B - binary data.
+     * p - property.
+     */
+    char *type;
+    char *descr;
+    struct _IMGProperties *subProps; /* This field contains a list of subproperties for property type. */
 } ImgProps, *PImgProps;
 
 typedef struct _IMGBinaryData {
@@ -76,11 +76,11 @@ typedef struct _IMGBinaryData {
 } IMGBinaryData, *PIMGBinaryData;
 
 typedef struct _IMGProperty { /* To be passed for Load/Save related operations. */
-   char *name;
-   int id;
-   int size; /* Size of array if property contains an array. */
-   int used; /* Number of used elements in the array */
-   U16 flags;
+    char *name;
+    int id;
+    int size; /* Size of array if property contains an array. */
+    int used; /* Number of used elements in the array */
+    U16 flags;
 #define PROPTYPE_MASK    0x00ff
 #define PROPTYPE_INT     0x0001
 #define PROPTYPE_DOUBLE  0x0002
@@ -89,26 +89,31 @@ typedef struct _IMGProperty { /* To be passed for Load/Save related operations. 
 #define PROPTYPE_BIN     0x0005
 #define PROPTYPE_PROP    0x0006 /* Value is another property. */
 #define PROPTYPE_ARRAY   0x0100 /* Property contains an array of elements of specified type. */
-   union {
-      int Int;
-      double Double;
-      char *String;
-      Byte Byte;
-      IMGBinaryData Binary;
-      List Properties; /* List of PImgProperty. */
+    union {
+	int Int;
+	double Double;
+	char *String;
+	Byte Byte;
+	IMGBinaryData Binary;
+	List Properties; /* List of PImgProperty. */
 
-      int *pInt;
-      double *pDouble;
-      char **pString;
-      Byte *pByte;
-      PIMGBinaryData pBinary;
-      PList pProperties;
-   } val;
+	int *pInt;
+	double *pDouble;
+	char **pString;
+	Byte *pByte;
+	PIMGBinaryData pBinary;
+	PList pProperties;
+    } val;
 } ImgProperty, *PImgProperty;
 
 typedef struct _IMGInfo {
-   Bool extraInfo;
-   PList propList;
+    Bool extraInfo;
+/* Image convertion levels */
+#define ICL_NONE 0
+#define ICL_NONDESTRUCTIVE 1
+#define ICL_ANY 2
+    int convertionAllowed;
+    PList propList;
 } ImgInfo, *PImgInfo;
 
 typedef Bool IMGF_Load( int fd, const char *filename, PList imgInfo, Bool readAll);

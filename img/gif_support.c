@@ -32,8 +32,6 @@
 #define _POSIX_
 #endif
 
-#include "img_api.h"
-#include "gif_support.h"
 #ifdef HAVE_IO_H
 #include <io.h>
 #endif
@@ -43,6 +41,10 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <limits.h>
+
+#include "img_api.h"
+#include "img_conv.h"
+#include "gif_support.h"
 
 #ifndef F_OK
 /*
@@ -72,7 +74,7 @@
 #define GIFPROP_COLORRESOLUTION 11
 #define GIFPROP_BGCOLOR 12
 #define GIFPROP_PALETTESIZE 13
-#define GIFPROP_PALETTEBPP 14
+#define GIFPROP_PALETTETYPE 14
 #define GIFPROP_NAME 15
 #define GIFPROP_DISPOSALMETHOD 16
 #define GIFPROP_USERINPUT 17
@@ -270,6 +272,42 @@ __gif_geterror( char *errorMsgBuf, int bufLen)
     p[ len - 1] = 0;
 
     return p;
+}
+
+static int
+__gif_correct_bpp( int bpp)
+{
+    switch ( bpp) {
+	case 1:
+	    return imbpp1;
+	case 2: case 3: case 4:
+	    return imbpp4;
+    }
+    return imbpp8;
+}
+
+static int
+__gif_get_palette_type( ColorMapObject *palette, PImgProperty paletteType, PImgProperty paletteProp)
+{
+    int type = paletteType->val.Int;
+    switch ( __gif_correct_bpp( palette->BitsPerPixel)) {
+	case 1:
+	    if ( memcmp( paletteProp->val.pByte, stdmono_palette, 6) == 0) {
+		type = imBW;
+	    }
+	    break;
+	case 4:
+	    if ( memcmp( paletteProp->val.pByte, std16gray_palette, 16 * 3) == 0) {
+		type |= imGrayScale;
+	    }
+	    break;
+	case 8:
+	    if ( memcmp( paletteProp->val.pByte, std256gray_palette, 256 * 3) == 0) {
+		type = imByte;
+	    }
+	    break;
+    }
+    return type;
 }
 
 static Bool
@@ -543,7 +581,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	for ( i = 0; ( i < imgInfo->count) && succeed; i++) {
 	    int indexPropIdx = -1, j, index = -1;
 	    PImgInfo imageInfo;
-	    PImgProperty imgProp;
+	    PImgProperty imgProp, paletteType = nil;
 
 	    imageInfo = ( PImgInfo) list_at( imgInfo, i);
 	    indexPropIdx = list_first_that( imageInfo->propList, property_name, ( void *) "index");
@@ -569,7 +607,6 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
 	    imgProp = img_info_add_property( imageInfo, "index", PROPTYPE_INT, -1, index);
 	    if ( imgProp != nil) imgProp = img_info_add_property( imageInfo, "format", PROPTYPE_STRING, -1, gifFormat.id);
-	    if ( imgProp != nil) imgProp = img_info_add_property( imageInfo, "type", PROPTYPE_INT, -1, im256);
 	    if ( imgProp == nil) {
 		succeed = false;
 		__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
@@ -748,25 +785,41 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		}
 
 		if ( gif->SColorMap != NULL) {
-		    int n;
+		    int n, colorCnt, bpp;
+		    bpp = __gif_correct_bpp( gif->SColorMap->BitsPerPixel);
+		    colorCnt = 2 << ( bpp - 1);
 
-		    imgProp = img_info_add_property( imageInfo, "paletteSize", PROPTYPE_INT, -1, gif->SColorMap->ColorCount);
+		    imgProp = img_info_add_property( imageInfo, "paletteSize", PROPTYPE_INT, -1, 256);
 		    if ( imgProp != nil) {
-			imgProp = img_info_add_property( imageInfo, "paletteBPP", PROPTYPE_INT, -1, gif->SColorMap->BitsPerPixel);
+			/* We can setup the paletteType property directly
+                           from BitsPerPixel because their values are the
+                           same; i.e. BitsPerPixel==1 means imbpp1 and so
+                           on. */
+			paletteType =
+			    imgProp = img_info_add_property( imageInfo, "paletteType", PROPTYPE_INT, -1, bpp);
 		    }
 		    if ( imgProp != nil) {
 			succeed =
 			    ( imgProp = img_info_add_property( imageInfo,
 							       "palette",
 							       PROPTYPE_BYTE | PROPTYPE_ARRAY,
-							       3 * gif->SColorMap->ColorCount
+							       3 * 256
 				)) != nil;
-			for ( n = 0; ( n < gif->SColorMap->ColorCount) && succeed; n++) {
+			for ( n = 0; ( n < gif->SColorMap->ColorCount) && ( n < colorCnt) && succeed; n++) {
 			    succeed =
 				img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Blue)
 				&& img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Green)
 				&& img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Red);
 			}
+			paletteType->val.Int = __gif_get_palette_type( gif->SColorMap,
+								       paletteType, 
+								       imgProp);
+			imgProp = img_info_add_property( imageInfo, 
+							 "type", 
+							 PROPTYPE_INT, 
+							 -1,
+							 paletteType->val.Int
+			    );
 		    }
 		    if ( ! succeed) {
 			continue;
@@ -798,9 +851,6 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    imgProp = img_info_add_property( imageInfo, "height", PROPTYPE_INT, -1, gifChunk->Height);
 		}
 		if ( imgProp != nil) {
-		    imgProp = img_info_add_property( imageInfo, "type", PROPTYPE_INT, -1, im256);
-		}
-		if ( imgProp != nil) {
 		    imgProp = img_info_add_property( imageInfo, "XOffset", PROPTYPE_INT, -1, gifChunk->Left);
 		}
 		if ( imgProp != nil) {
@@ -810,14 +860,17 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    imgProp = img_info_add_property( imageInfo, "interlaced", PROPTYPE_INT, -1, gifChunk->Interlace ? 1 : 0);
 		}
 		if ( imgProp != nil) {
+		    int bpp, colorCnt;
 		    palette = ( gifChunk->ColorMap != NULL ?
 				gifChunk->ColorMap :
 				gif->SColorMap);
+		    bpp = __gif_correct_bpp( palette->BitsPerPixel);
+		    colorCnt = 2 << ( bpp - 1);
 		    succeed = ( imgProp = img_info_add_property( imageInfo,
 								 "paletteSize",
 								 PROPTYPE_INT,
 								 -1,
-								 palette->ColorCount
+								 256
 			)) != nil;
 /*  			if ( succeed) { */
 /*  			    DOLBUG( "GIF palette size: %d from %d\n", imgProp->val.Int, palette->ColorCount); */
@@ -826,26 +879,36 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 /*  			    DOLBUG( "GIF SHIT HAPPENED\n"); */
 /*  			} */
 		    if ( succeed) {
-			succeed = img_info_add_property( imageInfo,
-							 "paletteBPP",
-							 PROPTYPE_INT,
-							 -1,
-							 palette->BitsPerPixel
-			    ) != nil;
+			succeed = ( paletteType = img_info_add_property( imageInfo,
+									 "paletteType",
+									 PROPTYPE_INT,
+									 -1,
+									 bpp
+			    )) != nil;
 		    }
 		    if ( succeed) {
 			succeed = ( imgProp = img_info_add_property( imageInfo,
 								     "palette",
 								     PROPTYPE_BYTE | PROPTYPE_ARRAY,
-								     3 * palette->ColorCount
+								     3 * 256
 			    )) != nil;
 		    }
-		    for ( n = 0; ( n < palette->ColorCount) && succeed; n++) {
+		    for ( n = 0; ( n < palette->ColorCount) && ( n < colorCnt) && succeed; n++) {
 			succeed =
 			    img_push_property_value( imgProp, palette->Colors[ n].Blue)
 			    && img_push_property_value( imgProp, palette->Colors[ n].Green)
 			    && img_push_property_value( imgProp, palette->Colors[ n].Red);
 		    }
+		    paletteType->val.Int = __gif_get_palette_type( palette,
+								   paletteType,
+								   imgProp
+			);
+		    imgProp = img_info_add_property( imageInfo,
+						     "type",
+						     PROPTYPE_INT,
+						     -1,
+						     paletteType->val.Int
+			);
 		}
 
 		if ( ! succeed) {
@@ -857,37 +920,55 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    if ( *data != nil) {
 			int pixelCount = gifChunk->Width * gifChunk->Height;
 			int pass = 0, Y; /* Pass number for interlaced images. */
+			int imageBPP = __gif_correct_bpp( gifChunk->ColorMap ? 
+							  gifChunk->ColorMap->BitsPerPixel :
+							  gif->SColorMap->BitsPerPixel);
+			int dstLineSize, dstBytes;
+			if ( imageBPP == 2) {
+			    imageBPP = 4;
+			}
+			dstLineSize = ( ( gifChunk->Width * imageBPP / 8)
+					+ ( gifChunk->Width % ( 8 / imageBPP) ? 1 : 0));
+			dstBytes = dstLineSize * gifChunk->Height;
 			imgProp = img_info_add_property(
 				imageInfo,
 				"data",
 				PROPTYPE_BYTE | PROPTYPE_ARRAY,
-				pixelCount
+				dstBytes
 			    );
 			if ( imgProp != nil) {
 			    int ySrc, yDst;
 			    for ( ySrc = 0, yDst = 0, Y = 0;
 				  ySrc < pixelCount;
 				  ySrc += gifChunk->Width) {
-				memcpy( imgProp->val.pByte + pixelCount - yDst - gifChunk->Width,
-					*data + ySrc,
-					gifChunk->Width
-				    );
+				Byte *dst = imgProp->val.pByte + dstBytes - yDst - dstLineSize;
+				Byte *src = *data + ySrc;
+				switch ( imageBPP) {
+				    case 1:
+					bc_byte_mono_cr( src, dst, gifChunk->Width, map_stdcolorref);
+					break;
+				    case 4:
+					bc_byte_nibble_cr( src, dst, gifChunk->Width, map_stdcolorref);
+					break;
+				    default:
+					memcpy( dst, src, dstLineSize);
+				}
 				if ( gifChunk->Interlace) {
-				    yDst += gifChunk->Width * interlaceStep[ pass];
+				    yDst += dstLineSize * interlaceStep[ pass];
 				    Y += interlaceStep[ pass];
-				    if ( yDst >= pixelCount) {
+				    if ( yDst >= dstBytes) {
 					pass++;
 					Y = interlaceOffs[ pass];
-					yDst = gifChunk->Width * interlaceOffs[ pass];
+					yDst = dstLineSize * interlaceOffs[ pass];
 				    }
 				}
 				else {
-				    yDst += gifChunk->Width;
+				    yDst += dstLineSize;
 				}
 			    }
 			}
 			if ( imgProp != nil) {
-			    imgProp = img_info_add_property( imageInfo, "lineSize", PROPTYPE_INT, -1, gifChunk->Width);
+			    imgProp = img_info_add_property( imageInfo, "lineSize", PROPTYPE_INT, -1, dstLineSize);
 			}
 			if ( ! ( succeed = imgProp != nil)) {
 			    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
@@ -991,7 +1072,10 @@ __gif_compatible( PList imgInfo)
 	for ( j = 0; ( j < imageInfo->propList->count) && rc; j++) {
 	    PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, j);
 	    if ( imgProp->id == GIFPROP_TYPE) {
-		rc = ( ( imgProp->val.Int & imBPP) == imbpp8);
+		rc = ( ( ( imgProp->val.Int & imBPP) == imbpp8
+			 || ( imgProp->val.Int & imBPP) == imbpp4
+			 || ( imgProp->val.Int & imBPP) == imbpp1)
+		       && ( imgProp->val.Int & ~( imBPP | imGrayScale)) == 0);
 	    }
 	}
     }
@@ -1305,10 +1389,22 @@ __gif_save( const char *filename, PList imgInfo)
 		    int height = imgList[ i].imgProp[ GIFPROP_HEIGHT]->val.Int;
 		    int width = imgList[ i].imgProp[ GIFPROP_WIDTH]->val.Int;
 		    int lineSize = imgList[ i].imgProp[ GIFPROP_LINESIZE]->val.Int;
-		    Byte *data = imgList[ i].imgProp[ GIFPROP_DATA]->val.pByte;
+		    int imageBPP = imgList[ i].imgProp[ GIFPROP_TYPE]->val.Int & imBPP;
+		    GifPixelType *data = ( Byte *) malloc( width);
 		    for ( h = 0; ( h < height) && succeed; h++) {
+			Byte *src = imgList[ i].imgProp[ GIFPROP_DATA]->val.pByte + ( height - row - 1) * lineSize;
+			switch ( imageBPP) {
+			    case imbpp1:
+				bc_mono_byte( src, data, width);
+				break;
+			    case imbpp4:
+				bc_nibble_byte( src, data, width);
+				break;
+			    default:
+				memcpy( data, src, width);
+			}
 			gifrc = EGifPutLine( ogif,
-					     data + ( height - row - 1) * lineSize,
+					     data,
 					     width
 			    );
 			if ( gifrc != GIF_OK) {
@@ -1328,6 +1424,7 @@ __gif_save( const char *filename, PList imgInfo)
 			    }
 			}
 		    }
+		    free( data);
 		}
 		if ( succeed && ( imgList[ i].imgProp[ GIFPROP_COMMENTS] != nil)) {
 		    int cnum;
@@ -1566,7 +1663,7 @@ __gif_save( const char *filename, PList imgInfo)
 }
 
 static ImgCapInfo gif_caps[ 3];
-static int supportedTypes[ 2] = { im256, imByte};
+static int supportedTypes[ 6] = { im256, imByte, imbpp1, imbpp4, imBW, im16|imGrayScale};
 static ImgProps propExtProps[ 3];
 static ImgProps gif_props[ GIFPROP_TOTAL];
 
@@ -1722,10 +1819,10 @@ __gif_init()
     gif_props[ i].descr = "Number of entries in image palette";
     gif_props[ i].subProps = nil;
 
-    gif_props[ ++i].name = "paletteBPP";
-    gif_props[ i].id = GIFPROP_PALETTEBPP;
+    gif_props[ ++i].name = "paletteType";
+    gif_props[ i].id = GIFPROP_PALETTETYPE;
     gif_props[ i].type = "i";
-    gif_props[ i].descr = "Image palette BPP";
+    gif_props[ i].descr = "Image palette BPP and type";
     gif_props[ i].subProps = nil;
 
     gif_props[ ++i].name = "disposalMethod";
