@@ -1223,6 +1223,7 @@ Widget_get_color( Handle self)
 Color
 Widget_get_color_index( Handle self, int index)
 {
+   if ( index < 0 || index > ciMaxId) return clInvalid;
    switch ( index)
    {
      case ciFore:
