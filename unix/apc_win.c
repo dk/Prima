@@ -602,13 +602,10 @@ prima_window_reset_menu( Handle self, int newMenuHeight)
 {
    DEFXX;
    int ret = true;
-   int oh = XX-> menuHeight;
    if ( newMenuHeight != XX-> menuHeight) {
       XX-> menuHeight = newMenuHeight;
       if ( PWindow(self)-> stage <= csNormal && XX-> flags. size_determined)
          ret = window_set_client_size( self, XX-> size.x, XX-> size.y);
-      else
-         XX-> size. y -= newMenuHeight + oh;
       
      if ( XX-> shape_extent. x != 0 || XX-> shape_extent. y != 0) {
         int ny = XX-> size. y + XX-> menuHeight - XX-> shape_extent. y;
