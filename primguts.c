@@ -1014,6 +1014,12 @@ XS( prima_cleanup)
    XSRETURN(1);
 }
 
+static SV*
+newSVstring( char *s)
+{
+   return newSVpv( s, 0);
+}
+
 static void
 register_constants( void)
 {

@@ -186,7 +186,8 @@ typedef struct _PaintSaveData
    Color       lbs[2];
    int         lineWidth;
    int         lineEnd;
-   int         linePattern;
+   char *      linePattern;
+   int         linePatternLen;
    FillPattern fillPattern;
    int         rop;
    int         rop2;
@@ -198,8 +199,7 @@ typedef struct _PaintSaveData
 
 typedef struct _PatResource
 {
-   DWORD  style;
-   DWORD  styleCount;
+   DWORD  dotsCount;
    DWORD* dotsPtr;
    DWORD  dots[ 1];
 } PatResource, *PPatResource;
@@ -300,7 +300,8 @@ typedef struct _DrawableData
    Color          lbs[2];
    int            lineWidth;
    int            lineEnd;
-   int            linePattern;
+   char *         linePattern;
+   int            linePatternLen;
    FillPattern    fillPattern;
    FillPattern    fillPattern2;
    int            rop;
@@ -402,6 +403,11 @@ typedef struct _MusClkRec {
       sys stylusFlags |= stbBacking;                       \
    }
 
+#define psDot         "\3\3"
+#define psDash        "\x16\6"
+#define psDashDot     "\x9\6\3\6"
+#define psDashDotDot  "\x9\3\3\3\3\3"
+
 #define csAxEvents csFrozen
 
 #define apt_set( option)           ( sys options. option = 1)
@@ -484,7 +490,8 @@ extern BYTE *       mod_select( int mod);
 extern Bool         palette_change( Handle self);
 extern long         palette_match( Handle self, long color);
 extern int          palette_match_color( XLOGPALETTE * lp, long clr, int * diffFactor);
-extern PPatResource patres_fetch( DWORD pattern);
+extern PPatResource patres_fetch( char * pattern, int len);
+extern UINT         patres_user( char * pattern, int len);
 extern void         process_transparents( Handle self);
 extern long         remap_color( long clr, Bool toSystem);
 extern PDCStylus    stylus_alloc( PStylus data);

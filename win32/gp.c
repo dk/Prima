@@ -69,10 +69,12 @@ apc_gp_done( Handle self)
          }
       }
    }
+   if ( sys linePatternLen > 3) free( sys linePattern);
    font_free( sys fontResource, false);
    if ( sys p256) free( sys p256);
    sys bm = sys pal = sys ps = sys bm = sys p256 = nilHandle;
    sys fontResource = nil;
+   sys linePattern = nil;
    free( sys charTable);
    free( sys charTable2);
    return true;
@@ -513,7 +515,7 @@ Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
    objCheck false;
-   if ( !SetPixelV( sys ps, x, sys lastSize. y - y - 1, remap_color( color, true))) apiErrRet;
+   SetPixelV( sys ps, x, sys lastSize. y - y - 1, remap_color( color, true));
    return true;
 }
 
@@ -1072,24 +1074,45 @@ apc_gp_get_line_width( Handle self)
    return sys stylus. pen. lopnWidth. x;
 }
 
-static int ctx_lp2PS[] = {
-    lpSolid,          PS_SOLID             ,
-    lpNull,           PS_NULL              ,
-    lpShortDash,      PS_DOT               ,
-    lpDash,           PS_DASH              ,
-    lpDashDot,        PS_DASHDOT           ,
-    lpDashDotDot,     PS_DASHDOTDOT        ,
-    endCtx
-};
-
-int
-apc_gp_get_line_pattern( Handle self)
+char *
+apc_gp_get_line_pattern( Handle self, int * len)
 {
-   objCheck 0;
-   if ( !sys ps) return sys linePattern;
-   return ( sys stylus. pen. lopnStyle == PS_USERSTYLE) ?
-      sys stylus. extPen. patResource-> style :
-      ctx_remap_def( sys stylus. pen. lopnStyle, ctx_lp2PS, false, lpSolid);
+   objCheck nil;
+   if ( !sys ps) {
+      *len = sys linePatternLen;
+      return ( *len > 3) ? sys linePattern : ( char*)&sys linePattern;
+   }
+
+   switch ( sys stylus. pen. lopnStyle) {
+   case PS_NULL:
+       *len = 0;
+       return "";
+   case PS_DASH:
+       *len = 2;
+       return psDash;
+   case PS_DOT:
+       *len = 2;
+       return psDot;
+   case PS_DASHDOT:
+       *len = 4;
+       return psDashDot;
+   case PS_DASHDOTDOT:
+       *len = 6;
+       return psDashDotDot;
+   case PS_USERSTYLE:
+       {
+          int i;
+          static char buf[ 256];
+          *len = sys stylus. extPen. patResource-> dotsCount;
+          if ( *len > 255) *len = 255;
+          for ( i = 0; i < *len; i++)
+             buf[ i] = sys stylus. extPen. patResource-> dots[ i];
+          return buf;
+       }
+   default:
+       *len = 1;
+       return "\1";
+   }
 }
 
 Color
@@ -1551,16 +1574,25 @@ apc_gp_set_line_width( Handle self, int lineWidth)
 }
 
 Bool
-apc_gp_set_line_pattern( Handle self, int pattern)
+apc_gp_set_line_pattern( Handle self, char * pattern, int len)
 {
    objCheck false;
-   if ( !sys ps) sys linePattern = pattern; else {
+   if ( !sys ps) {
+      if ( sys linePatternLen > 3)
+         free( sys linePattern);
+      if ( len > 3)
+         memcpy( sys linePattern = malloc( len), pattern, len);
+      else
+         memcpy( &sys linePattern, pattern, len);
+      sys linePatternLen = len;
+   } else {
       PStylus s           = &sys stylus;
       PEXTPEN ep          = &s-> extPen;
-      s-> pen. lopnStyle  = ctx_remap_def( pattern, ctx_lp2PS, true, PS_USERSTYLE);
+      s-> pen. lopnStyle  = patres_user( pattern, len);
       if ( ep-> actual    = stylus_extpenned( s, 0 & exsLinePattern)) {
          ep-> style       = stylus_get_extpen_style( s);
-         ep-> patResource = ( s-> pen. lopnStyle == PS_USERSTYLE) ? patres_fetch( pattern) : &hPatHollow;
+         ep-> patResource = ( s-> pen. lopnStyle == PS_USERSTYLE) ?
+            patres_fetch( pattern, len) : &hPatHollow;
       } else
          ep-> patResource = &hPatHollow;
       stylus_change( self);

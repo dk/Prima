@@ -76,14 +76,19 @@ stylus_alloc( PStylus data)
             ret-> hpen = CreatePen( PS_SOLID, 0, 0);
          }
       } else {
+         int i, delta = p-> lopnWidth. x > 1 ? p-> lopnWidth. x - 1 : 0;
          LOGBRUSH pb = { BS_SOLID, ret-> s. pen. lopnColor, 0};
+         for ( i = 1; i < ret-> s. extPen. patResource-> dotsCount; i += 2)
+            ret-> s. extPen. patResource-> dotsPtr[ i] += delta;
          if ( !( ret-> hpen   = ExtCreatePen( ret-> s. extPen. style, p-> lopnWidth. x, &pb,
-            ret-> s. extPen. patResource-> styleCount,
+            ret-> s. extPen. patResource-> dotsCount,
             ret-> s. extPen. patResource-> dotsPtr
          ))) {
             if ( !IS_WIN95) apiErr;
             ret-> hpen = CreatePen( PS_SOLID, 0, 0);
          }
+         for ( i = 1; i < ret-> s. extPen. patResource-> dotsCount; i += 2)
+            ret-> s. extPen. patResource-> dotsPtr[ i] -= delta;
       }
       b = &ret-> s. brush. lb;
       if ( ret-> s. brush. lb. lbStyle == BS_DIBPATTERNPT) {
@@ -197,40 +202,66 @@ stylus_get_extpen_style( PStylus s)
 }
 
 PPatResource
-patres_fetch( DWORD pattern)
+patres_fetch( char * pattern, int len)
 {
-   PPatResource r = hash_fetch( patMan, &pattern, sizeof( DWORD));
-   DWORD storage[ 16];
-   int i, cnt, idx, last;
-   DWORD pat = pattern;
+   int i;
+   PPatResource r = hash_fetch( patMan, pattern, len);
    if ( r)
       return r;
-   if ( pattern == 0)
-      croak(__FILE__);
-   last = 2;
-   idx  = -1;
 
-   while(( pattern & ( 1 << 15)) == 0) pattern <<= 1;
+   r = malloc( sizeof( PatResource) + sizeof( DWORD) * len);
+   r-> dotsCount = len;
+   r-> dotsPtr   = r-> dots;
+   for ( i = 0; i < len; i++) {
+      DWORD x = ( DWORD) pattern[ i];
+      if ( i & 1)
+         x++;
+      else
+         if ( x > 0) x--;
+      r-> dots[ i] = x;
+   }
+   hash_store( patMan, pattern, len, r);
+   return r;
+}
 
-   for ( i = 0; i < 16; i++) {
-      int mark = ( pattern & ( 1 << ( 15 - i))) ? 1 : 0;
-      if ( mark == last)
-         cnt++;
-      else {
-         if ( idx >= 0) storage[ idx] = cnt;
-         idx++;
-         cnt  = mark ? 0 : 2;
-         last = mark;
+UINT
+patres_user( char * pattern, int len)
+{
+   if ( IS_WIN95) {
+      // no user line patterns
+      switch ( len) {
+      case 0:
+         return PS_NULL;
+      case 1:
+         return pattern[0] ? PS_SOLID : PS_NULL;
+      case 2:
+         if ( memcmp( pattern, psDot, 2) == 0)
+            return PS_DOT;
+         if ( memcmp( pattern, lpDot, 2) == 0)
+            return PS_DOT;
+         if ( memcmp( pattern, psDash, 2) == 0)
+            return PS_DASH;
+         if ( memcmp( pattern, lpDash, 2) == 0)
+            return PS_DASH;
+         return PS_DOT;
+      case 4:
+         return PS_DASHDOT;
+      case 5:
+      case 6:
+         return PS_DASHDOTDOT;
+      default:
+         return PS_SOLID;
+      }
+   } else {
+      switch ( len) {
+      case 0:
+         return PS_NULL;
+      case 1:
+         return pattern[0] ? PS_SOLID : PS_NULL;
+      default:
+         return PS_USERSTYLE;
       }
    }
-   storage[ idx] = cnt;
-   r = malloc( sizeof( PatResource) + sizeof( DWORD) * idx);
-   r-> style      = pat;
-   r-> styleCount = ++idx;
-   r-> dotsPtr = r-> dots;
-   memcpy( r-> dotsPtr, storage, sizeof( DWORD) * idx);
-   hash_store( patMan, &pattern, sizeof( DWORD), r);
-   return r;
 }
 
 // Stylus end
@@ -1272,20 +1303,23 @@ hwnd_enter_paint( Handle self)
    apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
    apc_gp_set_line_width( self, sys lineWidth);
    apc_gp_set_line_end( self, sys lineEnd);
-   apc_gp_set_line_pattern( self, sys linePattern);
+   apc_gp_set_line_pattern( self,
+       ( sys linePatternLen > 3) ? sys linePattern : ( char*)&sys linePattern,
+       sys linePatternLen);
    apc_gp_set_rop( self, sys rop);
    apc_gp_set_rop2( self, sys rop2);
    apc_gp_set_transform( self, sys transform. x, sys transform. y);
    apc_gp_set_fill_pattern( self, sys fillPattern2);
-   sys psd-> font        = var font;
-   sys psd-> lineWidth   = sys lineWidth;
-   sys psd-> lineEnd     = sys lineEnd;
-   sys psd-> linePattern = sys linePattern;
-   sys psd-> rop         = sys rop;
-   sys psd-> rop2        = sys rop2;
-   sys psd-> transform   = sys transform;
-   sys psd-> textOpaque  = is_apt( aptTextOpaque);
-   sys psd-> textOutB    = is_apt( aptTextOutBaseline);
+   sys psd-> font           = var font;
+   sys psd-> lineWidth      = sys lineWidth;
+   sys psd-> lineEnd        = sys lineEnd;
+   sys psd-> linePattern    = sys linePattern;
+   sys psd-> linePatternLen = sys linePatternLen;
+   sys psd-> rop            = sys rop;
+   sys psd-> rop2           = sys rop2;
+   sys psd-> transform      = sys transform;
+   sys psd-> textOpaque     = is_apt( aptTextOpaque);
+   sys psd-> textOutB       = is_apt( aptTextOutBaseline);
 
    apt_clear( aptDCChangeLock);
    stylus_change( self);
@@ -1304,13 +1338,14 @@ hwnd_leave_paint( Handle self)
    sys stockPen = sys stockBrush = sys stockFont = sys stockPalette = nilHandle;
    stylus_free( sys stylusResource, false);
    if ( sys psd != nil) {
-      var font        = sys psd-> font;
-      sys lineWidth   = sys psd-> lineWidth;
-      sys lineEnd     = sys psd-> lineEnd;
-      sys linePattern = sys psd-> linePattern;
-      sys rop         = sys psd-> rop;
-      sys rop2        = sys psd-> rop2;
-      sys transform   = sys psd-> transform;
+      var font           = sys psd-> font;
+      sys lineWidth      = sys psd-> lineWidth;
+      sys lineEnd        = sys psd-> lineEnd;
+      sys linePattern    = sys psd-> linePattern;
+      sys linePatternLen = sys psd-> linePatternLen;
+      sys rop            = sys psd-> rop;
+      sys rop2           = sys psd-> rop2;
+      sys transform      = sys psd-> transform;
       apt_assign( aptTextOpaque, sys psd-> textOpaque);
       apt_assign( aptTextOutBaseline, sys psd-> textOutB);
       free( sys psd);

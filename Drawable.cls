@@ -54,7 +54,7 @@ object Prima::Drawable ( Prima::Component)
    method void   set_fill_pattern_id ( int patternId);
    method void   set_font( Font font);
    method Bool   set_line_end( int lend)           => apc_gp_set_line_end;
-   method Bool   set_line_pattern( int lpattern)   => apc_gp_set_line_pattern;
+   method Bool   set_line_pattern( SV * pattern);
    method Bool   set_line_width( int lwidth)       => apc_gp_set_line_width;
    method void   set_palette( SV * palette);
    method void   set_region( Handle mask);
@@ -74,7 +74,7 @@ object Prima::Drawable ( Prima::Component)
    method SV *          get_handle();
    method int           get_height();
    method int           get_line_end()                    => apc_gp_get_line_end;
-   method int           get_line_pattern()                => apc_gp_get_line_pattern;
+   method SV *          get_line_pattern();
    method int           get_line_width()                  => apc_gp_get_line_width;
    method Color         get_nearest_color( Color color);
    method int           get_paint_state();

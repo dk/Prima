@@ -125,9 +125,8 @@ window_subsystem_init()
       Font f;
       hPenHollow        = CreatePen( PS_NULL, 0, 0);
       hBrushHollow      = CreateBrushIndirect( &b);
-      hPatHollow. style = PS_NULL;
-      hPatHollow. styleCount = 0;
-      hPatHollow. dotsPtr = nil;
+      hPatHollow. dotsCount = 0;
+      hPatHollow. dotsPtr   = nil;
       FONTSTRUCSIZE    = (char *)(&(f. name)) - (char *)(&f);
       FONTSTRUCSIZE2   = (char *)(&(f. name)) - (char *)(&f. style);
    }

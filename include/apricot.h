@@ -257,8 +257,9 @@ ConstTable_##package Prima_Autoload_##package##_constants[] = {
    { #const_name , package##const_name },
 #define CONSTANT2(package,const_name,string_name) \
    { #string_name , package##const_name },
-#define END_TABLE(package,type) \
+#define END_TABLE4(package,type,suffix,conversion) \
 }; /* end of table */ \
+static SV* newSVstring( char *s); \
 XS(prima_autoload_##package##_constant) \
 { \
    static PHash table = nil; \
@@ -284,7 +285,7 @@ XS(prima_autoload_##package##_constant) \
    SP -= items; \
    r = (type *)hash_fetch( table, name, strlen( name)); \
    if ( !r) croak( "invalid value: " #package "::%s", name); \
-   XPUSHs( sv_2mortal( newSViv((IV)*r))); \
+   XPUSHs( sv_2mortal( newSV##suffix((conversion)*r))); \
    PUTBACK; \
    return; \
 } \
@@ -313,8 +314,10 @@ typedef struct { \
 } ConstTable_##package;
 #define CONSTANT(package,const_name) /* nothing */
 #define CONSTANT2(package,const_name,string_name) /* nothing */
-#define END_TABLE(package,type) /* nothing */
+#define END_TABLE4(package,type,suffix,conversion) /* nothing */
 #endif
+#define END_TABLE(package,type) END_TABLE4(package,type,iv,IV)
+#define END_TABLE_CHAR(package,type) END_TABLE4(package,type,string,char*)
 
 /* Object life stages */
 #define csConstructing  -1         /* before create() finished */
@@ -2153,26 +2156,26 @@ END_TABLE(le,UV)
 
 /* line patterns */
 #define LP(const_name) CONSTANT(lp,const_name)
-START_TABLE(lp,UV)
-#define    lpNull           0x0000     /* */
+START_TABLE(lp,char*)
+#define    lpNull           ""              /* */
 LP(Null)
-#define    lpSolid          0xFFFF     /* ___________ */
+#define    lpSolid          "\1"            /* ___________  */
 LP(Solid)
-#define    lpDash           0xF0F0     /* __ __ __ __ */
+#define    lpDash           "\x9\3"         /* __ __ __ __  */
 LP(Dash)
-#define    lpLongDash       0xFF00     /* _____ _____ */
+#define    lpLongDash       "\x16\6"        /* _____ _____  */
 LP(LongDash)
-#define    lpShortDash      0xCCCC     /* _ _ _ _ _ _ */
+#define    lpShortDash      "\3\3"          /* _ _ _ _ _ _  */
 LP(ShortDash)
-#define    lpDot            0x5555     /* . . . . . . */
+#define    lpDot            "\1\3"          /* . . . . . .  */
 LP(Dot)
-#define    lpDotDot         0x4444     /* ............ */
+#define    lpDotDot         "\1\1"          /* ............ */
 LP(DotDot)
-#define    lpDashDot        0xFAFA     /* _._._._._._ */
+#define    lpDashDot        "\x9\6\1\3"     /* _._._._._._  */
 LP(DashDot)
-#define    lpDashDotDot     0xEAEA     /* _.._.._.._.. */
+#define    lpDashDotDot     "\x9\3\1\3\1\3" /* _.._.._.._.. */
 LP(DashDotDot)
-END_TABLE(lp,UV)
+END_TABLE_CHAR(lp,char*)
 #undef LP
 
 /* font styles */
@@ -2676,8 +2679,8 @@ apc_gp_get_line_end( Handle self);
 extern int
 apc_gp_get_line_width( Handle self);
 
-extern int
-apc_gp_get_line_pattern( Handle self);
+extern char *
+apc_gp_get_line_pattern( Handle self, int * len);
 
 extern Color
 apc_gp_get_nearest_color( Handle self, Color color);
@@ -2734,7 +2737,7 @@ extern Bool
 apc_gp_set_line_width( Handle self, int lineWidth);
 
 extern Bool
-apc_gp_set_line_pattern( Handle self, int pattern);
+apc_gp_set_line_pattern( Handle self, char * pattern, int len);
 
 extern Bool
 apc_gp_set_palette( Handle self);

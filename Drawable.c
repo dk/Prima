@@ -72,7 +72,7 @@ Drawable_init( Handle self, HV * profile)
          my-> set_fill_pattern_id( self, SvIV( sv));
    }
    my-> set_line_end     ( self, pget_i ( lineEnd));
-   my-> set_line_pattern ( self, pget_i ( linePattern));
+   my-> set_line_pattern ( self, pget_sv( linePattern));
    my-> set_line_width   ( self, pget_i ( lineWidth));
    my-> set_region       ( self, pget_H ( region));
    my-> set_rop          ( self, pget_i ( rop));
@@ -185,6 +185,15 @@ void Drawable_set( Handle self, HV * profile)
       pdelete( fillPattern);
    }
    inherited set( self, profile);
+}
+
+Bool
+Drawable_set_line_pattern( Handle self, SV * pattern)
+{
+   int len;
+   char *pat = ( char *) SvPV( pattern, len);
+   if ( var->stage > csNormal) return false;
+   return apc_gp_set_line_pattern( self, pat, len);
 }
 
 void
@@ -313,6 +322,16 @@ Drawable_get_bpp( Handle self)
    ret = apc_gp_get_bpp( self);
    gpLEAVE;
    return ret;
+}
+
+SV *
+Drawable_get_line_pattern( Handle self)
+{
+   char * ret;
+   int len;
+   if ( var->stage > csNormal) return nilSV;
+   ret = apc_gp_get_line_pattern( self, &len);
+   return newSVpvn( ret, len);
 }
 
 Color
