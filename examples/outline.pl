@@ -55,7 +55,7 @@ popupItems => [
      $_[0]-> expand_all( $x);
   }],
 ],
-path => 'c:\home\Prima\src',
+path => '.',
 origin => [0,0],
 buffered => 1,
 hScroll => 1,
