@@ -1258,6 +1258,7 @@ apc_show_message( char * message);
 #define    clYellow           ARGB(255,255,0)
 #define    clWhite            ARGB(255,255,255)
 #define    clGray             ARGB(128,128,128)
+#define    clInvalid          (long)(0x80000000)
 #define    clNormalText       (long)(0x80000001)
 #define    clFore             (long)(0x80000001)
 #define    clNormal           (long)(0x80000002)
@@ -1552,7 +1553,7 @@ extern void
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2);
 
 extern void
-apc_gp_put_image( Handle self, Handle image, int x, int y, 
+apc_gp_put_image( Handle self, Handle image, int x, int y,
 		  int xFrom, int yFrom, int xLen, int yLen, int rop);
 extern void
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2);
@@ -1565,7 +1566,7 @@ extern void
 apc_gp_set_pixel( Handle self, int x, int y, Color color);
 
 extern void
-apc_gp_stretch_image( Handle self, Handle image, 
+apc_gp_stretch_image( Handle self, Handle image,
 		      int x, int y, int xFrom, int yFrom,
 		      int xDestLen, int yDestLen, int xLen, int yLen,
 		      int rop);
@@ -1579,6 +1580,9 @@ apc_gp_text_wrap( Handle self, TextWrapRec * t);
 /* gpi settings */
 extern Color
 apc_gp_get_back_color( Handle self);
+
+extern int
+apc_gp_get_bpp( Handle self);
 
 extern Color
 apc_gp_get_color( Handle self);
@@ -1600,6 +1604,12 @@ apc_gp_get_line_width( Handle self);
 
 extern int
 apc_gp_get_line_pattern( Handle self);
+
+extern Color
+apc_gp_get_nearest_color( Handle self, Color color);
+
+extern PRGBColor
+apc_gp_get_physical_palette( Handle self, int * colors);
 
 extern Point
 apc_gp_get_resolution( Handle self);
@@ -1757,6 +1767,9 @@ apc_beep( int style);
 
 extern void
 apc_beep_tone( int freq, int duration);
+
+extern Color
+apc_lookup_color( const char *colorName);
 
 extern char *
 apc_system_action( char *params);
