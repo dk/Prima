@@ -215,7 +215,7 @@ Image_make_empty( Handle self)
 }
 
 char *
-Image_get_status_string( Handle self)
+Image_get_status_string( SV *self)
 {
 #ifdef __unix  /* Temporary hack */
    return (char *)apc_image_get_error_message( nil, 0);
@@ -543,6 +543,105 @@ add_image_profile( HV *profile, PList imgInfo)
 }
 
 static void
+add_Image_property_to_profile( HV *profile, PImgProperty imgProp, const char *calledFrom)
+{
+    if ( imgProp->size == -1) {
+	switch ( imgProp->flags & PROPTYPE_MASK) {
+	    case PROPTYPE_STRING:
+		hv_store( profile,
+			  imgProp->name,
+			  strlen( imgProp->name),
+			  newSVpv( imgProp->val.String, 0),
+			  0
+		    );
+		break;
+	    case PROPTYPE_BIN:
+		{
+		    int ti;
+		    fprintf( stderr, "[");
+		    for ( ti = 0; ti < imgProp->val.Binary.size; ti++) {
+			fprintf( stderr, "%02x ", imgProp->val.Binary.data[ ti]);
+		    }
+		    fprintf( stderr, "]\n");
+		}
+		hv_store( profile,
+			  imgProp->name,
+			  strlen( imgProp->name),
+			  newSVpv( imgProp->val.Binary.data, imgProp->val.Binary.size),
+			  0
+		    );
+		break;
+	    case PROPTYPE_DOUBLE:
+		hv_store( profile,
+			  imgProp->name,
+			  strlen( imgProp->name),
+			  newSVnv( imgProp->val.Double),
+			  0
+		    );
+		break;
+	    case PROPTYPE_BYTE:
+		hv_store( profile,
+			  imgProp->name,
+			  strlen( imgProp->name),
+			  newSViv( imgProp->val.Byte),
+			  0
+		    );
+		break;
+	    case PROPTYPE_INT:
+	    default:
+		hv_store( profile,
+			  imgProp->name,
+			  strlen( imgProp->name),
+			  newSViv( imgProp->val.Int),
+			  0
+		    );
+		break;
+	}
+    }
+    else {
+	AV *av;
+	int j;
+
+	av = newAV();
+	if ( ! av) {
+	    croak( "%s: can't allocate an array", calledFrom);
+	}
+
+	for ( j = 0; j < imgProp->size; j++) {
+	    SV *sv;
+	    switch( imgProp->flags & PROPTYPE_MASK) {
+		case PROPTYPE_STRING:
+		    sv = newSVpv( imgProp->val.pString[ j], 0);
+		    break;
+		case PROPTYPE_BIN:
+		    {
+			int ti;
+			fprintf( stderr, "from entry #%d: [", j);
+			for ( ti = 0; ti < imgProp->val.pBinary[ j].size; ti++) {
+			    fprintf( stderr, "%02x ", imgProp->val.pBinary[ j].data[ ti]);
+			}
+			fprintf( stderr, "]\n");
+		    }
+		    sv = newSVpv( imgProp->val.pBinary[ j].data, imgProp->val.pBinary[ j].size);
+		    break;
+		case PROPTYPE_DOUBLE:
+		    sv= newSVnv( imgProp->val.pDouble[ j]);
+		    break;
+		case PROPTYPE_BYTE:
+		    sv = newSViv( imgProp->val.pByte[ j]);
+		    break;
+		case PROPTYPE_INT:
+		default:
+		    sv = newSViv( imgProp->val.pInt[ j]);
+		    break;
+	    }
+	    av_push( av, sv);
+	}
+	hv_store( profile, imgProp->name, strlen( imgProp->name), newRV_inc( ( SV *) av), 0);
+    }
+}
+
+static void
 modify_Image( Handle self, PImgInfo imageInfo)
 {
     int i;
@@ -622,58 +721,13 @@ modify_Image( Handle self, PImgInfo imageInfo)
 		extraInfo = profile;
 	    }
 
-	    if ( imgProp->size == -1) {
-		switch ( imgProp->flags & PROPTYPE_MASK) {
-		    case PROPTYPE_STRING:
-			hv_store( profile, imgProp->name, strlen( imgProp->name), newSVpv( imgProp->val.String, 0), 0);
-			break;
-		    case PROPTYPE_DOUBLE:
-			hv_store( profile, imgProp->name, strlen( imgProp->name), newSVnv( imgProp->val.Double), 0);
-			break;
-		    case PROPTYPE_BYTE:
-			hv_store( profile, imgProp->name, strlen( imgProp->name), newSViv( imgProp->val.Byte), 0);
-			break;
-		    case PROPTYPE_INT:
-		    default:
-			hv_store( profile, imgProp->name, strlen( imgProp->name), newSViv( imgProp->val.Int), 0);
-			break;
-		}
-	    }
-	    else {
-		AV *av;
-		int j;
-
-		av = newAV();
-		if ( ! av) {
-		    croak( "Image::load: can't allocate an array");
-		}
-
-		for ( j = 0; j < imgProp->size; j++) {
-		    SV *sv;
-		    switch( imgProp->flags & PROPTYPE_MASK) {
-			case PROPTYPE_STRING:
-			    sv = newSVpv( imgProp->val.pString[ j], 0);
-			    break;
-			case PROPTYPE_DOUBLE:
-			    sv= newSVnv( imgProp->val.pDouble[ j]);
-			    break;
-			case PROPTYPE_BYTE:
-			    sv = newSViv( imgProp->val.pByte[ j]);
-			    break;
-			case PROPTYPE_INT:
-			default:
-			    sv = newSViv( imgProp->val.pInt[ j]);
-			    break;
-		    }
-		    av_push( av, sv);
-		}
-		hv_store( profile, imgProp->name, strlen( imgProp->name), newRV_inc( ( SV *) av), 0);
-	    }
+	    add_Image_property_to_profile( profile, imgProp, "Image::load");
 	}
 
 	apc_image_clear_property( imgProp);
-	list_delete_at( imageInfo->propList, i);
+	free( ( void *) list_at( imageInfo->propList, i));
     }
+    plist_destroy( imageInfo->propList);
 
     if ( reqProps != REQPROP_ALL) {
 	croak( "*** INTERNAL *** Got an incomplete image information from driver (signature: %04X)", reqProps);
@@ -776,7 +830,7 @@ XS( Image_load_FROMPERL) {
    Bool wantarray = ( GIMME_V == G_ARRAY);
    Handle self;
    char *class_name;
-   PList info;
+   PList info = nil;
    int i;
    HV *profile;
 
@@ -839,7 +893,6 @@ XS( Image_load_FROMPERL) {
 	  if ( as_class) {
 	      Handle *selves;
 	      selves = malloc( info->count * sizeof( Handle));
-	      setbuf( stdout, nil);
 	      for ( i = 0; i < info->count; i++) {
 		  self = ( Handle) create_object( class_name, "", nil);
 		  SPAGAIN;
@@ -862,21 +915,11 @@ XS( Image_load_FROMPERL) {
 		  XPUSHs( sv_2mortal( newRV_noinc( (SV*) av)));
 	      }
 	      free( selves);
-	      list_delete_all( info, 0);
 	  } else {
-             /*
-	      if ( info->count > 1) {
-		  croak( "Invalid usage of Image::load: request of multiple images when called as an instance method");
-	      }
-	      else {
-              */
-                  my-> update_change( self);
-                  SPAGAIN;
-                  SP -= items;
-                  XPUSHs( sv_mortalcopy( PImage( self)-> mate));
-                  /*
-	      }
-              */
+	     my-> update_change( self);
+	     SPAGAIN;
+	     SP -= items;
+	     XPUSHs( sv_mortalcopy( PImage( self)-> mate));
 	  }
       }
       else {
@@ -884,6 +927,14 @@ XS( Image_load_FROMPERL) {
 	      XPUSHs( &sv_undef);
 	  }
       }
+
+      if ( info) {
+	  for ( i = 0; i < info->count; i++) {
+	      free( ( void *) list_at( info, i));
+	  }
+	  plist_destroy( info);
+      }
+
       PUTBACK;
       return;
    }
@@ -895,9 +946,10 @@ XS( Image_load_FROMPERL) {
    Bool result;
    Bool as_class = false;
    Bool wantarray = ( GIMME_V == G_ARRAY);
+   Bool singleProfile = true;
    Handle self;
    char *class_name;
-   PList info;
+   PList info = nil;
    int i;
    HV *hv;
 
@@ -927,6 +979,7 @@ XS( Image_load_FROMPERL) {
 
       if ( items > 2 && SvROK( ST( 2)) && SvTYPE( SvRV( ST(2))) == SVt_PVHV) {
 	 /* assuming multi-profile format */
+	 singleProfile = false;
 	 if (!as_class) {
 	    croak ("Invalid usage of Image::load: multiple profiles are not allowed when called as an instance method");
 	 }
@@ -966,7 +1019,7 @@ XS( Image_load_FROMPERL) {
 		  SP -= items;
 		  selves[ i] = self;
 	      }
-	      if ( wantarray) {
+	      if ( wantarray || ( singleProfile && ( info->count <= 1))) {
 		  for ( i = 0; i < info-> count; i++) {
 		      XPUSHs( sv_mortalcopy( PImage( selves[ i])-> mate));
 		  }
@@ -979,9 +1032,6 @@ XS( Image_load_FROMPERL) {
 		  XPUSHs( sv_2mortal( newRV_noinc( (SV*) av)));
 	      }
 	      free( selves);
-	      while ( info->count) {
-		  list_delete_at( info, 0);
-	      }
 	  }
 	  else {
 	      if ( info->count > 1) {
@@ -1000,6 +1050,14 @@ XS( Image_load_FROMPERL) {
 	      XPUSHs( &sv_undef);
 	  }
       }
+
+      if ( info) {
+	  for ( i = 0; i < info->count; i++) {
+	      free( ( void *) list_at( info, i));
+	  }
+	  plist_destroy( info);
+      }
+
       PUTBACK;
       return;
    }
@@ -1024,6 +1082,141 @@ Image_load( SV *who, char *filename, PList imgInfo)
    } else {
       return nilHandle;
    }
+}
+
+#ifndef __unix
+XS( Image_get_info_FROMPERL)
+{
+   warn( "Image::get_info() is unsupported in this version yet.");
+   return nilHandle;
+}
+#else 
+XS( Image_get_info_FROMPERL)
+{
+   dXSARGS;
+   Bool result;
+   Bool wantarray = ( GIMME_V == G_ARRAY);
+   Bool singleProfile = true;
+   Handle self;
+   char *class_name;
+   PList info = nil;
+   int i;
+   HV *hv;
+
+   if ( items >= 2) {
+      SV *who = ST(0);
+      char *filename = SvPV( ST( 1), na);
+
+      if ( ! ( self = gimme_the_mate( who))) {
+	 PVMT vmt;
+	 if (!SvPOK( who)) {
+	    croak( "Image->get_info() called not as class method");
+	 }
+	 class_name = SvPV( who, na);
+	 vmt = gimme_the_vmt( class_name);
+	 while ( vmt && vmt != (PVMT)CImage) {
+	    vmt = vmt-> base;
+	 }
+	 if ( !vmt) {
+	    croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
+	 }
+      } else {
+	  croak( "Image::get_info cannot be called as an instance method");
+      }
+
+      if ( items > 2 && SvROK( ST( 2)) && SvTYPE( SvRV( ST(2))) == SVt_PVHV) {
+	 /* assuming multi-profile format */
+	 singleProfile = false;
+	 for ( i = 2; i < items; i++) {
+	    if ( !SvROK( ST( i)) || SvTYPE( SvRV( ST(i))) != SVt_PVHV) {
+	       croak ("Invalid usage of Image::get_info: hash reference expected for argument %d", i);
+	    }
+	 }
+	 info = plist_create( items - 2, 1);
+	 for ( i = 2; i < items; i++) {
+	    add_image_profile(( HV *)SvRV( ST(i)), info);
+	 }
+      } else {
+	 /* assuming normal single profile */
+	 if ( items % 2 != 0) {
+	    croak ("Invalid usage of Image::get_info: odd number of optional arguments");
+	 }
+	 info = plist_create( 1, 1);
+	 hv = parse_hv( ax, sp, items, mark, 2, "Image::get_info");
+	 add_image_profile( hv, info);
+	 sv_free(( SV*)hv);
+      }
+      result = apc_image_read( filename, info, false);
+      SPAGAIN;
+      SP -= items;
+      if ( result) {
+	  HV **hvInfo;
+	  hvInfo = malloc( info->count * sizeof( HV *));
+	  for ( i = 0; i < info->count; i++) {
+	      int j;
+	      PImgInfo imageInfo = ( PImgInfo) list_at( info, i);
+	      SPAGAIN;
+	      SP -= items;
+	      hvInfo[ i] = newHV();
+	      for ( j = 0; j < imageInfo->propList->count; j++) {
+		  PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, j);
+		  add_Image_property_to_profile( hvInfo[ i], imgProp, "Image::get_info");
+		  apc_image_clear_property( imgProp);
+		  free( ( void *) list_at( imageInfo->propList, j));
+	      }
+	      plist_destroy( imageInfo->propList);
+	  }
+	  if ( wantarray || ( singleProfile && ( info->count <= 1))) {
+	      if ( wantarray && singleProfile && ( info->count <= 1)) {
+		  hv_delete( hvInfo[ 0], "__ORDER__", 9, G_DISCARD);
+		  push_hv( ax, sp, items, mark, 0, hvInfo[ 0]);
+		  SPAGAIN;
+	      } else {
+		  for( i = 0; i < info->count; i++) {
+		      XPUSHs( sv_2mortal( newRV_noinc( (SV*) hvInfo[ i])));
+		  }
+	      }
+	  }
+	  else {
+	      AV *av = newAV();
+	      for ( i = 0; i < info-> count; i++) {
+		  av_push( av, newRV_noinc( ( SV*) hvInfo[ i]));
+	      }
+	      XPUSHs( sv_2mortal( newRV_noinc( (SV*) av)));
+	  }
+	  free( hvInfo);
+      }
+      else {
+	  if ( ! wantarray) {
+	      XPUSHs( &sv_undef);
+	  }
+      }
+      if ( info) {
+	  for ( i =0; i <  info->count; i++) {
+	      free( ( void *) list_at( info, i));
+	  }
+	  plist_destroy( info);
+      }
+      PUTBACK;
+      return;
+   }
+   croak ("Invalid usage of %s", "Image::get_info");
+}
+#endif
+
+Handle
+Image_get_info_REDEFINED( SV *who, char *filename)
+{
+   /* XXX - one day we might want to implement this function in a more clever way */
+   warn( "Invalid call of Image::get_info(): ask developers to make it valid");
+   return nilHandle;
+}
+
+Handle
+Image_get_info( SV *who, char *filename)
+{
+   (void)who;
+   return nilHandle;
 }
 
 void
