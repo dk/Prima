@@ -460,3 +460,11 @@ hwnd_check_limits( int x, int y, Bool uint)
 }
 
 
+Bool
+apc_fetch_resource( const char *className, const char *name,
+                    const char *resClass, const char *resName,
+                    Handle owner, int resType,
+                    void *val)
+{
+   return false;
+}
