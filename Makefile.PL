@@ -1689,7 +1689,12 @@ FOOTER
       return if /\.pdb$/i; # M$VC
       my $f = "$File::Find::dir/$_";
       return if $f =~ /include.generic/;
-      return if ($type ne 'bin') && $f =~ /auto/;
+      if ($type eq 'bin') {
+         return if $f =~ /\.c$|\.cls$|\.h$|CVS/;
+         return if $f =~ /$cwd.(img|include|os2|win32|unix|utils|Makefile)/i;
+      } else {
+         return if $f =~ /auto/;
+      }
       if ( -d $f) {
          $f =~ s/^$cwd/$distname/;
          push @dirs, $f;
