@@ -440,27 +440,6 @@ apc_widget_user_profile( char * name, Handle owner)
    return nil;
 }
 
-/* XXX no file events at the time */
-
-Bool
-apc_file_attach( Handle self)
-{
-   return false;
-}
-
-Bool
-apc_file_detach( Handle self)
-{
-   return false;
-}
-
-Bool
-apc_file_change_mask( Handle self)
-{
-   return false;
-}
-
-
 Bool
 hwnd_check_limits( int x, int y, Bool uint)
 {

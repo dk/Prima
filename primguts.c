@@ -199,7 +199,7 @@ snprintf( char *buf, size_t len, const char *format, ...)
 }
 #endif
 
-#if defined(__BORLANDC__) || defined(sgi) 
+#if defined(__BORLANDC__) || defined(sgi)
 Bool
 SvBOOL( SV *sv)
 {
@@ -229,7 +229,7 @@ clean_perl_call_method( char* methname, I32 flags)
       CLOSE_G_EVAL;
       croak( SvPV( GvSV( errgv), na));
    }
-   
+
    if ( !( flags & G_EVAL)) { CLOSE_G_EVAL; }
    return ret;
 }
@@ -254,7 +254,7 @@ clean_perl_call_pv( char* subname, I32 flags)
       CLOSE_G_EVAL;
       croak( SvPV( GvSV( errgv), na));
    }
-   
+
    if ( !( flags & G_EVAL)) { CLOSE_G_EVAL; }
    return ret;
 }
@@ -901,7 +901,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
             PUB_CHECK;
             CLOSE_G_EVAL;
             croak( SvPV( GvSV( errgv), na));    /* propagate */
-         } 
+         }
          CLOSE_G_EVAL;
 #else
          retCount = ( coderef) ?
@@ -932,7 +932,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
             PUB_CHECK;
             CLOSE_G_EVAL;
             croak( SvPV( GvSV( errgv), na));    /* propagate */
-         } 
+         }
          CLOSE_G_EVAL;
 #else
          if ( coderef) perl_call_sv(( SV *) subName, G_DISCARD);
@@ -1214,7 +1214,7 @@ XS( boot_Prima)
 
 #define TYPECHECK(s1,s2) \
   if (sizeof(s1) != (s2)) { \
-      printf("Error: type %s is %d bytes long (expected to be %d)", #s1, sizeof(s1), s2); \
+      printf("Error: type %s is %d bytes long (expected to be %d)", #s1, (int)sizeof(s1), s2); \
       ST(0) = &sv_no; \
       XSRETURN(1); \
   }
@@ -1328,7 +1328,7 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
 
       /* First way build hash */
       hash = ( PRemapHash)  malloc( sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1) + sizeof( RemapHashNode) * sz);
-      if ( !hash) return default_value;  
+      if ( !hash) return default_value;
       bzero( hash, sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
       tbl = table;
       next = ( PRemapHashNode )(((char *)hash) + sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));

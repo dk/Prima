@@ -884,6 +884,8 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
       int i;
       for ( i = 0; i < 8; i++) core[ i] = pattern[ i];
       if ( sys fillBitmap) {
+         GpiSetPatternSet( sys ps, LCID_DEFAULT);
+         GpiDeleteSetId( sys ps, 3);
          GpiDeleteBitmap( sys fillBitmap);
          sys fillBitmap = nilHandle;
       }
@@ -918,13 +920,14 @@ apc_gp_set_font( Handle self, PFont font)
 {
    // very simple & uneffective gpi font management;
    // does not caches fonts, uses only one local ID = 1.
+   USHORT cp = font_enc2cp( font-> encoding);
    FATTRS f = {
       sizeof ( FATTRS),
       0,
       0,                   // does not force match
       "",                  // facename
       0,                   // default registry
-      guts. codePage,      // current code page
+      ( cp == 65535) ? guts. codePage : cp, // the selected or the default codepage
       0,                   // height
       0,                   // width
       0,

@@ -141,8 +141,9 @@ my $re_size = sub {
       } else {
          push ( @sizes, $_->{size});
       }
-   }
-   @sizes = sort { $a <=> $b } keys %{{(map { $_ => 1 } @sizes)}};
+   }   
+   my %k = map { $_ => 1 } @sizes;
+   @sizes = sort { $a <=> $b } keys %k;
    @sizes = (10) unless scalar @sizes;
 
    my $i;

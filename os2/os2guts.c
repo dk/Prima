@@ -164,6 +164,7 @@ window_subsystem_init( void)
    list_create( &guts. psList, 8, 8);
    list_create( &guts. winPsList, 8, 8);
    list_create( &guts. eventHooks, 1, 1);
+   list_create( &guts. files, 8, 8);
    guts. appLock = 0;
    guts. pointerLock = 0;
 
@@ -214,6 +215,15 @@ void
 window_subsystem_done( void)
 {
    HDC dc = GpiQueryDevice( guts. ps);
+
+   if ( guts. socketMutex) {
+      // appDead must be TRUE for this moment!
+      appDead = true;
+      DosCloseMutexSem( guts. socketMutex);
+   }
+
+   
+   list_destroy( &guts. files);
    list_destroy( &guts. eventHooks);
    list_destroy( &guts. transp);
    list_first_that( &guts. psList, freePS, nil);

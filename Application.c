@@ -90,7 +90,7 @@ Application_init( Handle self, HV * profile)
       hv_store( hv, "PrinterClass",  12, newSVpv( pget_c( printerClass),  0), 0);
       hv_store( hv, "PrinterModule", 13, newSVpv( pget_c( printerModule), 0), 0);
    }
-   
+
    {
       HV * profile = newHV();
       static Timer_vmt HintTimerVmt;
@@ -139,7 +139,7 @@ Application_done( Handle self)
    free( var-> helpFile);
    free( var-> text);
    free( var-> hint);
-   var->  accelTable = 
+   var->  accelTable =
       var-> hintWidget = var-> hintTimer = nilHandle;
    var->  helpFile   = var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
@@ -294,7 +294,7 @@ Application_fonts( Handle self, char * name, char * encoding)
 {
    int count, i;
    AV * glo = newAV();
-   PFont fmtx = apc_fonts( self, name[0] ? name : nil, 
+   PFont fmtx = apc_fonts( self, name[0] ? name : nil,
       encoding[0] ? encoding : nil, &count);
    for ( i = 0; i < count; i++) {
       SV * sv      = sv_Font2HV( &fmtx[ i]);
@@ -302,7 +302,7 @@ Application_fonts( Handle self, char * name, char * encoding)
       if ( name[0] == 0 && encoding[0] == 0) {
          /* Read specially-coded (const char*) encodings[] vector,
             stored in fmtx[i].encoding. First pointer is filled with 0s,
-            except the last byte which is a counter. Such scheme 
+            except the last byte which is a counter. Such scheme
             allows max 31 encodings per entry to be coded with sizeof(char*)==8.
             The interface must be re-implemented, but this requires
             either change in gencls syntax so arrays can be members of hashes,
@@ -310,8 +310,8 @@ Application_fonts( Handle self, char * name, char * encoding)
           */
          char ** enc = (char**) fmtx[i].encoding;
          unsigned char * shift = (unsigned char*) enc + sizeof(char *) - 1, j = *shift;
-         AV * loc = newAV(); 
-         pset_sv( encoding, newSVpv(*(++enc),0));
+         AV * loc = newAV();
+         pset_sv( encoding, newSVpv(( j > 0) ? *(++enc) : "", 0));
          while ( j--) av_push( loc, newSVpv(*(enc++),0));
          pset_sv( encodings, newRV_noinc(( SV*) loc));
       }
@@ -325,12 +325,12 @@ Application_fonts( Handle self, char * name, char * encoding)
 
 SV*
 Application_font_encodings( Handle self, char * encoding)
-{   
+{
    AV * glo = newAV();
    HE *he;
    PHash h = apc_font_encodings( self);
 
-   if ( !h) return newRV_noinc(( SV *) glo); 
+   if ( !h) return newRV_noinc(( SV *) glo);
    hv_iterinit(( HV*) h);
    for (;;)
    {
@@ -785,9 +785,9 @@ Handle
 Application_top_frame( Handle self, Handle from)
 {
    while ( from) {
-      if ( kind_of( from, CWindow) && 
-             (( PWidget( from)-> owner == application) || !CWidget( from)-> get_clipOwner(from))                           
-         )                              
+      if ( kind_of( from, CWindow) &&
+             (( PWidget( from)-> owner == application) || !CWidget( from)-> get_clipOwner(from))
+         )
          return from;
       from = PWidget( from)-> owner;
    }

@@ -314,6 +314,20 @@ sub find_lib
 {
     my $lib = shift;
     my ( $libpath, $present);
+
+    if ( $OS2) { # link386 is broken - warns, not dies if no library found
+       if ( -f $lib) {
+          $lib =~ s/(\\|\/[^\\|\/]*)$//g;
+          return $lib;
+       }
+       for ( @LIBPATH) {
+          return $_ if -f "$_/$lib";
+          return $_ if -f "$_/$lib.lib";
+          return $_ if -f "$_/$lib.a";
+       }
+       return undef;
+    }
+
     local @LIBS = @LIBS;
     push @LIBS, $lib;
     foreach $libpath ( @_) {
@@ -520,7 +534,7 @@ sub setup_variables
                         },
                  irixcc  => {
                          warnflags => "-fullwarn",
-                         cflags => "-diag_error 1035 -woff 1011,1042,1048,1140,1164,1174,1209,1506,1515,1552", 
+                         cflags => "-diag_error 1035 -woff 1011,1042,1048,1140,1164,1174,1209,1506,1515,1552",
                          coutoflag => '-o',
                          coutexeflag => '-o',
                          cdebugflags => '-g -O0',
@@ -600,12 +614,12 @@ sub setup_variables
     if ( defined $USER_VARS{ COMPILER}) {
         $COMPILER = $USER_VARS{ COMPILER};
         die "Compiler type $COMPILER is unknown" unless defined $cc_specs{ $COMPILER};
-    } 
+    }
     elsif ( $^O =~ /irix/ && $CC =~ /^(\S*\/)?cc\b/) {
         # this code should be put first, as cc call does not treat #error as error,
         # and have_define() is therefore always true
-        $COMPILER = 'irixcc'; 
-    } 
+        $COMPILER = 'irixcc';
+    }
     elsif ( have_define( "__EMX__")) {
         $COMPILER = 'emx';
     }
@@ -629,7 +643,7 @@ sub setup_variables
     # Checking some Config.pm - were empty for ActiveState 626
     $Config{PATCHLEVEL} = $Config{patchlevel} if !defined $Config{PATCHLEVEL} || !length $Config{PATCHLEVEL};
     $Config{SUBVERSION} = $Config{subversion} if !defined $Config{SUBVERSION} || !length $Config{SUBVERSION};
-    $Config{ld} = ($Win32 ? 'link' : 'ld'), print("** warning: malformed Config.pm\n") 
+    $Config{ld} = ($Win32 ? 'link' : 'ld'), print("** warning: malformed Config.pm\n")
        unless length $Config{ld};
 
     my $ccflags   = $Config{ ccflags};
@@ -736,7 +750,7 @@ sub setup_variables
         my ( $defname, $defvalue) = ( $1, $2 || 1);
         $DEFINES{ $defname} = $defvalue;
     }
-    
+
     # find common denominator with installsitearch and installscript
     my @a = split( '\\\\|\/', $Config{installscript});
     my @b = split( '\\\\|\/', $Config{installsitearch});
@@ -746,7 +760,7 @@ sub setup_variables
        $i++;
     }
     my $prefix = qd(($i ? join( '/', @a[0..$i-1]) : ''));
-    
+
     setvar( 'PREFIX',           $prefix);
     setvar( 'INSTALLSCRIPT',    $PREFIX . qd( '/' . join( '/', @a[$i .. $#a])));
     setvar( 'INSTALLSITEARCH',  $PREFIX . qd( '/' . join( '/', @b[$i .. $#b])));
@@ -1241,8 +1255,8 @@ sub setup_misc
 {
     # finding image codecs
     my %libs = map { $_ => 1 } @LIBS;
-    while (<img/codec_*.c>) { 
-       m/codec_(.*)\.c$/i; 
+    while (<img/codec_*.c>) {
+       m/codec_(.*)\.c$/i;
        my ( $fn, $lib) = ( $_, $1);
        $lib.='.lib' if $Win32 || $OS2;
        if ( $libs{$lib} || defined find_lib( $lib,'')) {
@@ -1291,7 +1305,7 @@ NOCODECS
 sub process_commandline
 {
     %overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
-    my %expand = map { /^.(.*)$/; $1 => 1 } @path_expand_ovvars; 
+    my %expand = map { /^.(.*)$/; $1 => 1 } @path_expand_ovvars;
     $ARGV_STR = join( " ", map { "\"$_\""} @ARGV);
     foreach my $arg ( @ARGV) {
         if ( $arg =~ /^\s*(\w+)\s*(\+?)\=(.*)$/) {
@@ -1499,7 +1513,7 @@ sub create_config_pm
    my $pt = qqd( $PrimaTarget);
    my $iscr = qqd($INSTALLSCRIPT);
    my $isa  = qqd($INSTALLSITEARCH);
-   
+
 
    open F, "> Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
    print F <<CONFIG;
@@ -1566,11 +1580,11 @@ sub create_codecs_c
 
    my $def1 = join("\n", map { "extern void apc_img_codec_$_(void);"} @ACTIVE_CODECS);
    my $def2 = join("\n", map { "   apc_img_codec_$_();"} @ACTIVE_CODECS);
-   
+
    print F <<CONTENT;
-/* 
+/*
   This file was automatically generated.
-  Do not edit, you'll loose your changes anyway. 
+  Do not edit, you'll loose your changes anyway.
 */
 
 #include "img.h"
@@ -1581,18 +1595,18 @@ extern "C" {
 
 $def1
 
-void 
+void
 prima_cleanup_image_subsystem(void)
 {
    apc_img_done();
 }
 
-void 
+void
 prima_init_image_subsystem(void)
 {
    apc_img_init();
 $def2
-}   
+}
 
 #ifdef __cplusplus
 }
@@ -1698,7 +1712,7 @@ elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--updateconfig') {
    open FF, "> $fn.tmp" or die "cannot open $fn.tmp:$!\n";
    my ( $c_state, $ci_state) = (0,0);
    my %ci;
-   
+
    print FF <<HEADER;
 # This file was automatically generated.
 package Prima::Config;
@@ -1753,7 +1767,7 @@ FOOTER
       my @dirs;
       return unless -d $distname;
       print "Cleaning...\n";
-      finddepth( sub { 
+      finddepth( sub {
          my $f = "$File::Find::dir/$_";
          -d($f) ? push(@dirs, $f) : unlink($f);
       }, "$cwd/$distname");
@@ -1771,7 +1785,7 @@ FOOTER
    clean_dist;
    my @dirs;
    my @files;
-   finddepth( sub { 
+   finddepth( sub {
       return if $_ eq '.';
       return if /\.pdb$/i; # M$VC
       my $f = "$File::Find::dir/$_";
@@ -1833,7 +1847,7 @@ FOOTER
     $| = 1;
 
     print "Setting up working environment.\n";
-=pod    
+=pod
     %USER_VARS_LINKS = (
         INSTALLSCRIPT => {
             src => 'PREFIX',
@@ -1844,7 +1858,7 @@ FOOTER
             format => '%s',
         },
     );
-=cut    
+=cut
     process_commandline;
     setup_variables;
     setup_paths;
@@ -1903,7 +1917,7 @@ EOF
         $make .= cmake( $_);
     }
     while ( <img/*.c>) {
-        next if exists $PASSIVE_CODECS{$_};    
+        next if exists $PASSIVE_CODECS{$_};
         $make .= cmake( $_);
     }
     while ( <$PLATFORM/*.c>) {
@@ -1920,7 +1934,7 @@ EOF
     push @allbins, "utils/tmlink.pl", $INSTALLSCRIPT;
     push @allbins, "Prima/VB/VB.pl", $INSTALLSCRIPT;
     push @allbins, "Prima/VB/cfgmaint.pl", $INSTALLSCRIPT;
-    
+
 
     my $thunks_tinc = qd( "include/generic/thunks.tinc");
     push @allclean, $thunks_tinc;
@@ -1950,7 +1964,7 @@ MD=$^X Makefile.PL --md
 RM=$^X Makefile.PL --rm
 RMDIR=$^X Makefile.PL --rmdir
 
-dirs: 
+dirs:
 \t\@echo Creating directories...
 \t\@\$(MD) @alldirs
 
@@ -1997,7 +2011,7 @@ EOF
     $cp{$PrimaTarget} = $INSTALL_DL;
     $cp{$PrimaLib}    = $INSTALLSITEARCH;
     $cp{"Prima.pm"}   = $INSTALLSITEARCH;
-    
+
     my $cwd = cwd();
     finddepth( sub {
         return if $File::Find::dir =~ /CVS/ || m/CVS/;
@@ -2006,7 +2020,7 @@ EOF
 
     delete $cp{qd("Prima/VB/VB.pl")};
     delete $cp{qd("Prima/VB/cfgmaint.pl")};
-   
+
     while (@allinstall) {
        my ( $src, $dst) = ( shift(@allinstall), shift(@allinstall));
        next if $src =~ /CVS/;
@@ -2023,7 +2037,7 @@ EOF
         $cp{$_} = dirname( qd( "$INSTALL_LIB/$dst"));
     }
     my $i = 0;
-    print MAKE "\ninstall: all"; 
+    print MAKE "\ninstall: all";
     for ( keys %cp) {
        print MAKE "\n\t\@\$(CP) \\\n" if ( $i++ % 20) == 0;
        print MAKE "\t$_ $cp{$_} \\\n";

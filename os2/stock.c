@@ -471,7 +471,7 @@ double fixed2float( FIXED f)
 static int
 font_font2gp_internal( PFont font, Point res, Bool forceSize)
 {
-   int i, count, resId, resValue, vecId, widValue, heiValue, ascent, descent;
+   int i, count, resId, resValue, vecId, widValue, heiValue, ascent, descent, cp, cppassed = 0;
    PFONTMETRICS fm;
    Bool useWidth       = font-> width != 0;
    Bool useDirection   = font-> direction   != 0;
@@ -485,6 +485,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize)
        ascent = fontmtx.  lMaxAscender;    \
        descent = fontmtx.  lMaxDescender;
 
+   cp = font_enc2cp( font-> encoding);
 
    i = 0;
    // querying font for given name
@@ -507,6 +508,9 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize)
    for ( i = 0; i < count; i++)
    {
       PFONTMETRICS f = &fm[ i];
+
+      if ( cp != 65535 && cp != f-> usCodePage) continue;
+      cppassed++;
 
       if ( usePitch)
       {
@@ -542,6 +546,11 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize)
          }
       } // end else
    } // end loop
+
+   if ( cppassed == 0 && cp != 65535) { // no codepage
+      font-> encoding[0] = 0;
+      return font_font2gp_internal( font, res, forceSize);
+   }
 
  // is font aspectable?
    if ( useDirection) {
@@ -751,6 +760,38 @@ font_style( PFONTMETRICS fm)
    return style;
 }
 
+USHORT
+font_enc2cp( const char * encoding)
+{
+   if ( !encoding || !encoding[0]) return 65535;
+   if ( stricmp( encoding, FONT_FONTSPECIFIC) == 0)
+      return 65400;
+   return ( USHORT) atoi( encoding);
+}
+
+char *
+font_cp2enc( USHORT codepage)
+{
+   static Bool initialized = false;
+   static PHash hash = nil;
+   char * d, buf[32];
+   void * r;
+   if ( !initialized) {
+      hash = hash_create();
+      initialized = true;
+   }
+   if ( codepage == 65400)
+      d = FONT_FONTSPECIFIC;
+   else
+      sprintf( d = buf, "%d", codepage);
+   r = hash_fetch( hash, d, strlen( d));
+   if ( r) return ( char*) r;
+   d = duplicate_string( d);
+   hash_store( hash, d, strlen( d), d);
+   return d;
+}
+
+
 void
 font_fontmetrics2font( PFONTMETRICS m, PFont f, Bool readonly)
 {
@@ -780,17 +821,93 @@ font_fontmetrics2font( PFONTMETRICS m, PFont f, Bool readonly)
    f-> lastChar           = m-> sLastChar        ;
    f-> breakChar          = m-> sBreakChar       ;
    f-> defaultChar        = m-> sDefaultChar     ;
-   f-> codepage           = 0; /* XXX */
+   strcpy( f-> encoding, font_cp2enc( m-> usCodePage));
+}
+
+static PFont
+spec_fonts( int count, PFONTMETRICS fm, int * retCount)
+{
+   int i;
+   List list;
+   PHash hash = nil;
+   PFont fmtx = nil;
+
+   list_create( &list, 256, 256);
+   if ( !( hash = hash_create())) {
+      list_destroy( &list);
+      return nil;
+   }
+
+   for ( i = 0; i < count; i++) {
+      PFont f;
+
+      f = hash_fetch( hash, fm[i]. szFacename, strlen( fm[ i]. szFacename));
+      if ( f) {
+         char ** enc = (char**) f-> encoding;
+         unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;
+         if ( *shift + 2 < 256 / sizeof(char*)) {
+            int j, exists = 0;
+            char * e = font_cp2enc( fm[i]. usCodePage);
+            for ( j = 1; j <= *shift; j++) {
+               if ( strcmp( enc[j], e) == 0) {
+                  exists = 1;
+                  break;
+               }
+            }
+            if ( exists) continue;
+            *(enc + ++(*shift)) = e;
+         }
+         continue;
+      }
+
+      if ( !( f = ( PFont) malloc( sizeof( Font)))) {
+         if ( hash) hash_destroy( hash, false);
+         list_delete_all( &list, true);
+         list_destroy( &list);
+         return nil;
+      }
+
+      font_fontmetrics2font( &fm[ i], f, false);
+
+      { /* multi-encoding format */
+         char ** enc = (char**) f-> encoding;
+         unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;
+         memset( f-> encoding, 0, 256);
+         *(enc + ++(*shift)) = font_cp2enc( fm[i]. usCodePage);
+         hash_store( hash, fm[i]. szFacename, strlen( fm[ i]. szFacename), f);
+      }
+      list_add( &list, ( Handle) f);
+   }
+   if ( hash) hash_destroy( hash, false);
+
+   if ( list. count == 0) goto Nothing;
+
+   fmtx = ( PFont) malloc( list. count * sizeof( Font));
+   if ( !fmtx) {
+      list_delete_all( &list, true);
+      list_destroy( &list);
+      return nil;
+   }
+
+   *retCount = list. count;
+      for ( i = 0; i < list. count; i++)
+         memcpy( fmtx + i, ( void *) list. items[ i], sizeof( Font));
+   list_delete_all( &list, true);
+
+Nothing:
+   list_destroy( &list);
+   return fmtx;
 }
 
 PFont
-apc_fonts( Handle self, const char* facename, int * retCount)
+apc_fonts( Handle self, const char* facename, const char * encoding, int * retCount)
 {
    PFont fmtx;
    PFONTMETRICS fm;
    int i = 0, j, count;
    Bool hasdc = 0;
    HPS ps;
+   USHORT cp = 65535;
 
    if ( self == nilHandle || self == application)
       ps = guts. ps;
@@ -804,6 +921,7 @@ apc_fonts( Handle self, const char* facename, int * retCount)
       return nil;
 
    apcErrClear;
+   if ( encoding) cp = font_enc2cp( encoding);
    count = GpiQueryFonts( guts. ps, QF_PUBLIC, facename, ( PLONG)&i, sizeof( FONTMETRICS), nil);
    if ( count < 0) { apiErr; return nil; }
    if ( !( fm = malloc( count * sizeof( FONTMETRICS)))) {
@@ -816,8 +934,16 @@ apc_fonts( Handle self, const char* facename, int * retCount)
        if ( hasdc) CPrinter( self)-> end_paint_info( self);
        return nil;
    }
-   if ( facename == nil)
-   {
+
+   if ( facename == nil && encoding == nil) {
+      fmtx = spec_fonts( count, fm, retCount);
+      free( fm);
+      if ( hasdc) CPrinter( self)-> end_paint_info( self);
+      return fmtx;
+   }
+
+
+   if ( facename == nil) {
       int     rc = 0;
       char ** table = malloc( count * sizeof( char*));
       if ( !table) {
@@ -828,6 +954,12 @@ apc_fonts( Handle self, const char* facename, int * retCount)
       for ( i = 0; i < count; i++)
       {
          Bool found = false;
+
+         if ( cp != 65535 && cp != fm[ i]. usCodePage) {
+            fm[ i].szFacename[0] = 0;
+            continue;
+         }
+
          for ( j = 0; j < rc; j++)
          {
             // if ( strcmp( fm[ i].szFamilyname, table[ j]) == 0)
@@ -842,14 +974,24 @@ apc_fonts( Handle self, const char* facename, int * retCount)
       }
       free( table);
       *retCount = rc;
-   } else *retCount = count;
-   
+   } else {
+      *retCount = 0;
+      for ( i = 0; i < count; i++) {
+         if ( cp != 65535 && cp != fm[ i]. usCodePage) {
+            fm[ i].szFacename[0] = 0;
+            continue;
+         }
+         (*retCount)++;
+      }
+   }
+
    if ( !( fmtx = malloc( *retCount * sizeof( Font)))) {
       free( fm);
       if ( hasdc) CPrinter( self)-> end_paint_info( self);
       *retCount = 0;
       return nil;
    }
+   memset( fmtx, 0, *retCount * sizeof( Font));
 
    for ( i = 0, j = 0; i < count; i++)
    {
@@ -860,6 +1002,57 @@ apc_fonts( Handle self, const char* facename, int * retCount)
    free( fm);
    if ( hasdc) CPrinter( self)-> end_paint_info( self);
    return fmtx;
+}
+
+PHash
+apc_font_encodings( Handle self)
+{
+   PHash ret = nil;
+   PFONTMETRICS fm;
+   Bool hasdc = 0;
+   HPS ps;
+   char buf[64], *fontspecific = FONT_FONTSPECIFIC;
+   int i, count, len, fslen = strlen( fontspecific);
+
+   if ( self == nilHandle || self == application)
+      ps = guts. ps;
+   else if ( kind_of( self, CPrinter)) {
+      if ( !is_opt( optInDraw) && !is_opt( optInDrawInfo)) {
+         hasdc = 1;
+         CPrinter( self)-> begin_paint_info( self);
+      }
+      ps = sys ps;
+   } else
+      return nil;
+
+   apcErrClear;
+   count = GpiQueryFonts( guts. ps, QF_PUBLIC, NULL, ( PLONG)&i, sizeof( FONTMETRICS), nil);
+   if ( count < 0) { apiErr; return nil; }
+   if ( !( fm = malloc( count * sizeof( FONTMETRICS)))) {
+      if ( hasdc) CPrinter( self)-> end_paint_info( self);
+      return nil;
+   }
+   if ( GpiQueryFonts( guts. ps, QF_PUBLIC, NULL, ( PLONG)&count, sizeof( FONTMETRICS), fm) < 0) {
+       apiErr;
+       free( fm);
+       if ( hasdc) CPrinter( self)-> end_paint_info( self);
+       return nil;
+   }
+
+   for ( i = 0; i < count; i++) {
+       char * x;
+       if ( fm[ i]. usCodePage == 65400) {
+          x = fontspecific;
+          len = fslen;
+       } else
+          len = sprintf( x = buf, "%d", fm[i]. usCodePage);
+       hash_store( ret, x, len, (void*)1);
+   }
+
+   free( fm);
+   if ( hasdc) CPrinter( self)-> end_paint_info( self);
+
+   return ret;
 }
 
 Bool

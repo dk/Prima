@@ -43,6 +43,7 @@
 #include <fcntl.h>
 #include "os2/os2guts.h"
 #include "Menu.h"
+#include "File.h"
 #include "Window.h"
 #include "Image.h"
 #include "Application.h"
@@ -261,6 +262,46 @@ apc_application_get_widget_from_point( Handle self, Point point)
    return hwnd_to_view( WinWindowFromPoint( HWND_DESKTOP, ( PPOINTL) &point, 1));
 }
 
+static Bool
+process_msg( QMSG * msg)
+{
+   switch( msg-> msg) {
+   case WM_TERMINATE:
+   case WM_QUIT:
+      return false;
+   case WM_SOCKET:
+      {
+         int i;
+         int socket = ( int) msg-> mp2;
+         for ( i = 0; i < guts. files. count; i++) {
+            Handle self = guts. files. items[ i];
+            if (( sys s. file == socket) &&
+                ( PFile( self)-> eventMask & (int) msg-> mp1)) {
+               Event ev;
+               ev. cmd = ((int) msg-> mp1 == feRead) ? cmFileRead :
+                         (( (int) msg-> mp1 == feWrite) ? cmFileWrite : cmFileException);
+               CComponent( self)-> message( self, &ev);
+               break;
+            }
+         }
+         guts. socketPostSync = 0; // clear semaphore
+      }
+      return true;
+   case WM_SOCKET_REHASH:
+      socket_rehash();
+      guts. socketPostSync = 0; // clear semaphore
+      return true;
+   case WM_CROAK:
+      if ( msg-> mp1)
+         croak(( char *) msg-> mp2);
+      else
+         warn(( char *) msg-> mp2);
+      return true;
+
+   }
+   return true;
+}
+
 Bool
 apc_application_go( Handle self)
 {
@@ -268,7 +309,7 @@ apc_application_go( Handle self)
 
    while ( WinGetMsg( guts. anchor, &message, 0, 0, 0))
    {
-      if ( message .msg == WM_TERMINATE) break;
+      if ( !process_msg( &message)) break;
       WinDispatchMsg( guts. anchor, &message);
       kill_zombies();
    }
@@ -310,17 +351,13 @@ apc_application_yield( void)
 
    while ( WinPeekMsg( guts. anchor, &message, 0, 0, 0, PM_REMOVE))
    {
-      switch( message. msg)
-      {
-        case WM_QUIT:
-        case WM_TERMINATE:
-           if ( message. hwnd)
-              WinSendMsg( message. hwnd, WM_CLOSE, MPVOID, MPVOID);
-           break;
-        default:
-           WinDispatchMsg( guts. anchor, &message);
-           kill_zombies();
+      if ( !process_msg( &message)) {
+         if ( message. hwnd)
+            WinSendMsg( message. hwnd, WM_CLOSE, MPVOID, MPVOID);
+         break;
       }
+      WinDispatchMsg( guts. anchor, &message);
+      kill_zombies();
    }
    return true;
 }
@@ -1051,8 +1088,8 @@ Color
 apc_widget_map_color( Handle self, Color color)
 {
    if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0)) color |= var widgetClass;
-   return remap_color( NULLHANDLE, color, true); 
-}   
+   return remap_color( NULLHANDLE, color, true);
+}
 
 #define need_view_recreate    (( DHANDLE( owner) != sys owner)        \
                              || ( syncPaint != is_apt( aptSyncPaint)) \
@@ -1699,7 +1736,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
       )
    {
       HWND h = HANDLE;
-      if ( sys s. window. state == wsMinimized) 
+      if ( sys s. window. state == wsMinimized)
          sys s. window. hiddenPos = ( Point){ x, y};
       if ( !WinSetWindowUShort( h, QWS_XRESTORE, x)) apiErr;
       if ( !WinSetWindowUShort( h, QWS_YRESTORE, y)) apiErrRet;
@@ -1729,7 +1766,7 @@ Bool
 apc_widget_set_size_bounds( Handle self, Point min, Point max)
 {
    return true;
-}   
+}
 
 /* XXX */
 Bool
@@ -1888,7 +1925,7 @@ add_item( HWND w, Handle menu, PMenuItemReg i)
        menuItem. afAttribute |= ( i-> checked)  ? MIA_CHECKED        : 0;
        menuItem. afAttribute |= ( i-> disabled) ? MIA_DISABLED       : 0;
        menuItem. id    = i-> id + MENU_ID_AUTOSTART + 1;
-       menuItem. hItem = ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead) ? 
+       menuItem. hItem = ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead) ?
           bitmap_make_handle( i-> bitmap) : 0;
        menuItem. hwndSubMenu = add_item( m, menu, i-> down);
        if (!( i-> divider && i-> rightAdjust))
