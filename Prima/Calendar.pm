@@ -35,7 +35,7 @@ use Prima::Label;
 use Prima::ComboBox;
 use Prima::Sliders;
 
-package Calendar;
+package Prima::Calendar;
 use vars qw(@ISA @non_locale_months @days_in_months);
 @ISA = qw(Prima::Widget);
 

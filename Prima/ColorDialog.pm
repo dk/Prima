@@ -882,7 +882,7 @@ __DATA__
 
 =head1 NAME
 
-Color selection facilities
+Prima::ColorDialog - standard color selection facilities
 
 =head1 DESCRIPTION
 

@@ -2570,7 +2570,7 @@ See also: L<cursor_left>, L<cursor_right>, L<word_left>, L<word_right>.
 =item insertMode BOOLEAN
 
 Governs the typing mode - if 1, the typed text is inserted, if 0, the text overwrites
-the old text. When C<insertMode> is 0, the cursor shape covers is thick and covers the whole
+the old text. When C<insertMode> is 0, the cursor shape is thick and covers the whole
 character; when 1, it is of default width.
 
 Default toggle key: Insert
@@ -2717,9 +2717,12 @@ Default value: 1
 
 =item wordDelimiters STRING
 
-Contains string of character that are used for word breaking. 
+Contains string of character that are used for locating a word break. 
 Default STRING value consists of punctuation marks, space and tab characters,
 and C<\xff> character.
+
+See also: L<word_left>, L<word_right>
+
 
 =item wordWrap BOOLEAN
 

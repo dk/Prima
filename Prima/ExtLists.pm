@@ -162,7 +162,7 @@ __DATA__
 
 =head1 NAME
 
-Extended functionality for list boxes
+Prima::ExtLists - extended functionality for list boxes
 
 =head1 DESCRIPTION 
 

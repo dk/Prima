@@ -597,7 +597,7 @@ __DATA__
 
 =head1 NAME
 
-Standard combo box widget
+Prima::ComboBox - standard combo box widget
 
 =head1 DESCRIPTION
 
