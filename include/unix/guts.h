@@ -945,6 +945,11 @@ prima_msgdlg_event( XEvent* ev, struct MsgDlg * md);
 
 typedef void (*RETSIGTYPE)(int);
 
+#undef XDestroyImage
+#define XDestroyImage prima_XDestroyImage
+extern void 
+prima_XDestroyImage( XImage * x);
+
 #endif
 
 /* this does not belong here */

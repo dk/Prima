@@ -185,6 +185,18 @@ normal_way:
    return i;
 }
 
+void
+prima_XDestroyImage( XImage * i)
+{
+   if ( i) {
+      if ( i-> data) {
+         free( i-> data);
+         i-> data = nil;
+      }
+      ((*((i)->f.destroy_image))((i)));
+   }
+}
+
 Bool
 prima_free_ximage( PrimaXImage *i) 
 {
