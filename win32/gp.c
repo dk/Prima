@@ -580,6 +580,13 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
       gp_line( self, x2, y2, x2, y1 + 1, draw);
    } else {
       check_swap( y1, y2);
+      if ( sys stylus. pen. lopnWidth. x > 1 &&
+           (sys stylus. pen. lopnWidth. x % 2) == 0
+	 ) {
+	 /* change up-winding to down-winding */
+	 y1--;
+	 y2--;
+      }
       if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1))) apiErr;
    }
    SelectObject( ps, old);
