@@ -76,13 +76,13 @@ use constant STYLE_ITEM   => 4;
 use constant STYLE_LINK   => 5;
 use constant STYLE_MAX_ID => 5;
 
-# model layout indeces
+# model layout indices
 use constant M_INDENT      => 0; # pod-content driven indent
 use constant M_TEXT_OFFSET => 1; # contains same info as BLK_TEXT_OFFSET
 use constant M_FONT_ID     => 2; # 0 or 1 ( i.e., variable or fixed )
 use constant M_START       => 3; # start of data, same purpose as BLK_START
 
-# topic layout indeces
+# topic layout indices
 use constant T_MODEL_START => 0; # beginning of topic
 use constant T_MODEL_END   => 1; # length of a topic
 use constant T_DESCRIPTION => 2; # topic name
@@ -1626,7 +1626,7 @@ the man page is viewed by topics or as a whole. When it is viewed as topics,
 C<{modelRange}> array selects the model blocks that include the topic.
 Thus, having a single model loaded, text blocks change dynamically.
 
-Topics contained in C<{topics}> array, each is an array with indeces of C<T_XXX>
+Topics contained in C<{topics}> array, each is an array with indices of C<T_XXX>
 constants:
 
     T_MODEL_START - beginning of topic

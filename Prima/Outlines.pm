@@ -1752,7 +1752,7 @@ C<Prima::StringOutline>, C<Prima::Outline>, and C<Prima::DirectoryOutline>.
 Presents a generic interface for browsing the tree-like lists.
 A node in a linked list represents each item.
 The format of node is predefined, and is an anonymous array
-with the following definitions of indeces:
+with the following definitions of indices:
 
 =over
 
@@ -1778,7 +1778,7 @@ Width of an item in pixels.
 
 =back
 
-The indeces above 3 should not be used, because eventual changes to the
+The indices above 3 should not be used, because eventual changes to the
 implementation of the class may use these. It should be enough item 0 to store 
 any value.
 

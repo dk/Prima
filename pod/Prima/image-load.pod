@@ -64,9 +64,9 @@ Example:
 
 =item map
 
-Contains an anonymous array of frame indeces to load. 
-Valid indeces are above zero, negative ones can't be counted in a way
-perl array indeces are. Example:
+Contains an anonymous array of frame indices to load. 
+Valid indices are above zero, negative ones can't be counted in a way
+perl array indices are. Example:
 
          map => [0, 10, 15..20]
 
@@ -235,7 +235,7 @@ is never extracted from objects but passed to 'images' array instead.
        $x-> {extras}-> {codecID} = 1;
        $x-> save( $f);
 
-Actual correspondence between codecs and their indeces is described latter.
+Actual correspondence between codecs and their indices is described latter.
 
 NB - if codecID is not given, codec is selected by the file extension.
 

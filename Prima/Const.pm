@@ -46,7 +46,7 @@ package km; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# keyboard modifiers
 package mb; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# mouse buttons & message box constants
 package ta; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text alignment
 package cl; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# colors
-package ci; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# color indeces
+package ci; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# color indices
 package wc; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# widget classes
 package cm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# commands
 package rop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# raster operations
@@ -139,7 +139,7 @@ See L<Prima::Window/borderStyle>
   bs::Dialog    - thick border
   bs::Sizeable  - thick border with interactive resize capabilities
 
-=head2 ci::  - color indeces
+=head2 ci::  - color indices
 
 See L<Prima::Widget/colorIndex>
 
@@ -353,7 +353,7 @@ See L<Prima::File>
   fe::Write
   fe::Exception
 
-=head2 fp::  - standard fill pattern indeces
+=head2 fp::  - standard fill pattern indices
 
 See L<Prima::Drawable/fillPattern>
 
@@ -552,7 +552,7 @@ See L<Prima::Image/conversion>.
   ict::Optimized       - error diffusion dithering with optimized palette
   
 
-=head2 is::  - image statistics indeces
+=head2 is::  - image statistics indices
 
 See L<Prima::Image/stats>.
 
@@ -741,7 +741,7 @@ See L<Prima::Drawable/Raster operations>
   rop::SrcLeave       #   /* dest = (src != fore color) ? src : dest */
   rop::DestLeave      #   /* dest = (src != back color) ? src : dest */
 
-=head2 sbmp:: - system bitmaps indeces
+=head2 sbmp:: - system bitmaps indices
 
 See also L<Prima::StdBitmap>.
 
@@ -784,7 +784,7 @@ See also L<Prima::StdBitmap>.
   sbmp::SFolderClosed
   sbmp::Last
 
-=head2 sv::  - system value indeces
+=head2 sv::  - system value indices
 
 See also L<Prima::Application/get_system_value>
 

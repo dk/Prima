@@ -875,16 +875,16 @@ sub set_selected_items
       next if exists $newItems{$k};
       push( @stateChangers, $k);
    };
-   my @indeces;
+   my @indices;
    my $sel = $self->{selectedItems};
    $self->{selectedItems} = \%newItems;
    $self-> notify(q(SelectItem), [@stateChangers], 0) if scalar @stateChangers;
    while (defined($k = each %newItems)) {
       next if exists $sel->{$k};
       push( @stateChangers, $k);
-      push( @indeces, $k);
+      push( @indices, $k);
    };
-   $self-> notify(q(SelectItem), [@indeces], 1) if scalar @indeces;
+   $self-> notify(q(SelectItem), [@indices], 1) if scalar @indices;
    $::application-> pointer( $ptr);
    return unless scalar @stateChangers;
    $self-> redraw_items( @stateChangers);
@@ -1340,25 +1340,25 @@ sub delete_items
 {
    my $self = shift;
    my ( $is, $iw, $mw) = ( $self-> {items}, $self-> {widths}, $self->{maxWidth});
-   my %indeces;
+   my %indices;
    if (@_ == 1 and ref($_[0]) eq q(ARRAY)) {
       return unless scalar @{$_[0]};
-      %indeces = map{$_=>1}@{$_[0]};
+      %indices = map{$_=>1}@{$_[0]};
    } else {
       return unless scalar @_;
-      %indeces = map{$_=>1}@_;
+      %indices = map{$_=>1}@_;
    }
    my @removed;
    my $wantarray = wantarray;
    my @newItems;
    my @newWidths;
    my $i;
-   my $num = scalar keys %indeces;
+   my $num = scalar keys %indices;
    my ( $items, $widths) = ( $self->{items}, $self-> {widths});
-   $self-> focusedItem( -1) if exists $indeces{$self->{focusedItem}};
+   $self-> focusedItem( -1) if exists $indices{$self->{focusedItem}};
    for ( $i = 0; $i < scalar @{$self->{items}}; $i++)
    {
-      unless ( exists $indeces{$i})
+      unless ( exists $indices{$i})
       {
          push ( @newItems,  $$items[$i]);
          push ( @newWidths, $$widths[$i]);
@@ -1367,13 +1367,13 @@ sub delete_items
       }
    }
    my $newFoc = $self->{focusedItem};
-   for ( keys %indeces) { $newFoc-- if $newFoc >= 0 && $_ < $newFoc; }
+   for ( keys %indices) { $newFoc-- if $newFoc >= 0 && $_ < $newFoc; }
 
    my @selected = sort {$a<=>$b} keys %{$self->{selectedItems}};
    $i = 0;
    my $dec = 0;
    my $d;
-   for $d ( sort {$a<=>$b} keys %indeces)
+   for $d ( sort {$a<=>$b} keys %indices)
    {
       while ($i < scalar(@selected) and $d > $selected[$i]) { $selected[$i] -= $dec; $i++; }
       last if $i >= scalar @selected;
@@ -1658,7 +1658,7 @@ A read-only property. Returns number of selected items.
 
 =item selectedItems ARRAY
 
-ARRAY is an array of integer indeces of selected items.
+ARRAY is an array of integer indices of selected items.
 
 =back
 
@@ -1668,7 +1668,7 @@ ARRAY is an array of integer indeces of selected items.
 
 =item add_selection ARRAY, FLAG
 
-Sets item indeces from ARRAY in selected
+Sets item indices from ARRAY in selected
 or deselected state, depending on FLAG value, correspondingly 1 or 0.
 
 Only for multi-select mode.
@@ -1698,7 +1698,7 @@ See L<DrawItem> for parameters description.
 =item draw_text_items CANVAS, FIRST, LAST, X, Y, OFFSET, CLIP_RECT
 
 Called by C<std_draw_text_items> to draw sequence of text items with 
-indeces from FIRST to LAST on CANVAS, starting at point X, Y, and
+indices from FIRST to LAST on CANVAS, starting at point X, Y, and
 incrementing the vertical position with OFFSET. CLIP_RECT is a reference
 to array of four integers with inclusive-inclusive coordinates of the active 
 clipping rectangle.
@@ -1870,7 +1870,7 @@ C<autoWidth> is set.
 =item delete_items ITEMS
 
 Deletes items from the list. ITEMS can be either an array,
-or a reference to an array of item indeces.
+or a reference to an array of item indices.
 
 =item get_item_width INDEX
 
@@ -1879,7 +1879,7 @@ Returns width in pixels of INDEXth item from internal cache.
 =item get_items ITEMS
 
 Returns array of items. ITEMS can be either an array,
-or a reference to an array of item indeces.
+or a reference to an array of item indices.
 Depending on the caller context, the results are different:
 in array context the item list is returned; in scalar -
 only the first item from the list. The semantic of the last
@@ -1892,7 +1892,7 @@ Offset must be a valid index; to insert items at the end of
 the list use C<add_items> method.
 
 ITEMS can be either an array, or a reference to an array of 
-item indeces.
+item indices.
 
 =back
 

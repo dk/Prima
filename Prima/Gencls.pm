@@ -200,7 +200,7 @@ sub init_variables
     @allMethods = ();	        # methods names
     @allMethodsBodies = ();	# methods bodies, as is
     @allMethodsDefaults = ();   # methods default parameters
-    %allMethods = ();	        # hash, containing indeces of methods
+    %allMethods = ();	        # hash, containing indices of methods
     %allMethodsHosts = ();	# hash, bonded methods => hosts
     @portableMethods = ();	# c & perl portable methods
     @newMethods = ();        	# portable methods that declared first time

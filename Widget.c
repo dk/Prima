@@ -969,7 +969,7 @@ Widget_next_positional( Handle self, int dx, int dy)
    /*
       In order to compute positional difference, using four penalties.
       To simplify algorithm, Rect will be translated to int[4] and
-      minor, major and extraDiff assigned to array indeces for those 
+      minor, major and extraDiff assigned to array indices for those 
       steps - minor for first and third, major for second and extraDiff for last one.
     */
    

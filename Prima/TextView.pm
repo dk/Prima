@@ -64,7 +64,7 @@ use constant BACKCOLOR_FLAG        => 0x02000000; # OP_COLOR flag for backColor
 use constant BACKCOLOR_DEFAULT     => BACKCOLOR_FLAG|COLOR_INDEX|1;
 use constant COLOR_MASK            => 0xFCFFFFFF;
 
-# OP_TRANSPOSE - indeces
+# OP_TRANSPOSE - indices
 use constant X_X     => 1;
 use constant X_Y     => 2;
 use constant X_FLAGS => 3;
@@ -75,7 +75,7 @@ use constant X_DIMENSION_FONT_HEIGHT => 1; # used only in formatting
 use constant X_TRANSPOSE             => 0;
 use constant X_EXTEND                => 2;
 
-# block header indeces
+# block header indices
 use constant  BLK_FLAGS            => 0;
 use constant  BLK_WIDTH            => 1;
 use constant  BLK_HEIGHT           => 2;

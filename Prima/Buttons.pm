@@ -1195,8 +1195,8 @@ can be logically split vertically into several equal sub-images. This allows
 the button resource to contain all button states into one image file. 
 The C<glyphs> property assigns how many such sub-images the image object contains.
 
-The sub-image indeces can be assigned for rendition of the different states.
-These indeces are selected by the following integer properties: L<defaultGlyph>,
+The sub-image indices can be assigned for rendition of the different states.
+These indices are selected by the following integer properties: L<defaultGlyph>,
 L<hiliteGlyph>, L<disabledGlyph>, L<pressedGlyph>, L<holdGlyph>.
 
 Default value: 1
@@ -1339,7 +1339,7 @@ Reverts the C<checked> state of the button and returns the new state.
 Represents a standard radio button, that can be either in checked, or in unchecked state.
 When checked, delivers L<RadioClick> event to the owner ( if the latter provides one ).
 
-The button uses the standard toolkit images with C<sbmp::RadioXXX> indeces. 
+The button uses the standard toolkit images with C<sbmp::RadioXXX> indices. 
 If the images can not be loaded, the button is drawn with the graphic primitives.
 
 =head2 Events
@@ -1356,7 +1356,7 @@ Called when a button is checked.
 
 Represents a standard check box button, that can be either in checked, or in unchecked state.
 
-The button uses the standard toolkit images with C<sbmp::CheckBoxXXX> indeces. 
+The button uses the standard toolkit images with C<sbmp::CheckBoxXXX> indices. 
 If the images can not be loaded, the button is drawn with graphic primitives.
 
 =head1 Prima::GroupBox

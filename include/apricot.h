@@ -2421,7 +2421,7 @@ CL(MaxSysColor)
 END_TABLE(cl,UV)
 #undef CL
 
-/* color indeces */
+/* color indices */
 #define CI(const_name) CONSTANT(ci,const_name)
 START_TABLE(ci,UV)
 #define    ciNormalText    0

@@ -195,13 +195,13 @@ sub draw_cells
 
 sub draw_text_cells
 {
-   my ( $self, $canvas, $screen_rects, $cell_rects, $cell_indeces, $font_height) = @_;
+   my ( $self, $canvas, $screen_rects, $cell_rects, $cell_indices, $font_height) = @_;
    my $i;
    my @clip = $canvas-> clipRect if $self->{clipCells} == 2; 
    for ( $i = 0; $i < @$screen_rects; $i++) {
        my @r = @{$$cell_rects[$i]};
        $canvas-> clipRect( @{$$screen_rects[$i]}) if $self->{clipCells} == 2;
-       $canvas-> text_out( $self-> get_cell_text( @{$$cell_indeces[$i]}), 
+       $canvas-> text_out( $self-> get_cell_text( @{$$cell_indices[$i]}), 
           $r[0], ($r[3] + $r[1] - $font_height)/2);
    }
    $canvas-> clipRect( @clip) if $self->{clipCells} == 2;
@@ -2487,12 +2487,12 @@ and explained below:
     gsci::V_FULL    - cell is fully visible
     
     gsci::V_LEFT    - inclusive-inclusive rectangle of the visible
-    gsci::V_BOTTOM    part of the cell. These four indeces are grouped
+    gsci::V_BOTTOM    part of the cell. These four indices are grouped
     gsci::V_RIGHT     under list constant, gsci::V_RECT.
     gsci::V_TOP    
 
     gsci::LEFT      - inclusive-inclusive rectangle of the cell, as if
-    gsci::BOTTOM      it is fully visible. These four indeces are grouped
+    gsci::BOTTOM      it is fully visible. These four indices are grouped
     gsci::RIGHT       under list constant, gsci::RECT. If gsci::V_FULL
     gsci::TOP         is 1, these values are identical to these in gsci::V_RECT.
       
@@ -2552,7 +2552,7 @@ Also values of C<x_left>/C<x_right> or C<y_bottom>/C<y_top> might be set.
 
 =item C<x_left>/C<x_right> and C<y_bottom>/C<y_top>
 
-Present together with C<x_grid> or C<y_grid>. Select indeces of
+Present together with C<x_grid> or C<y_grid>. Select indices of
 cells adjacent to the grid line.
 
 =item C<x_gap> and C<y_gap>

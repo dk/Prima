@@ -6,7 +6,7 @@ Data is stored as an array of lines.
 Lines are stored with bottom line first, moving upwards.
 Each line is an array of pixels, leftmost first.
 Lines are padded to be a multiple of a dword long.
-Palettised pixels are either a 1 bit, 4 bit, or 8 bit indeces.
+Palettised pixels are either a 1 bit, 4 bit, or 8 bit indices.
 Alternately a B, G, R triple in that order is stored.
 This format exactly matches the format used by OS/2 and Windows bitmaps.
 
