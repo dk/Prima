@@ -319,7 +319,7 @@ propagate( Handle self, UINT msg, PEvent ev, WPARAM mp1, LPARAM mp2)
       mp2 = MAKELPARAM( pt. x, pt. y);
    }
 
-   PostMessage( prop, msg, mp1, mp2);
+   PostMessage( prop, msg + 0x400, mp1, mp2);
 }
 
 
@@ -478,6 +478,13 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
         DestroyCaret();
       }
       break;
+   case WM_LBUTTONDBLCLK + 0x400: case WM_LBUTTONUP + 0x400:   case WM_LBUTTONDOWN + 0x400:
+   case WM_MBUTTONDBLCLK + 0x400: case WM_MBUTTONUP + 0x400:   case WM_MBUTTONDOWN + 0x400:
+   case WM_RBUTTONDBLCLK + 0x400: case WM_RBUTTONUP + 0x400:   case WM_RBUTTONDOWN + 0x400:
+   case WM_RMOUSECLICK   + 0x400: case WM_MMOUSECLICK + 0x400: case WM_LMOUSECLICK + 0x400:
+   case WM_MOUSEWHEEL    + 0x400: case WM_KEYDOWN     + 0x400: case WM_KEYUP + 0x400:
+       SendMessage( win, msg - 0x400, mp1, mp2);
+       return 0;
    case WM_LBUTTONDOWN:
       ev. pos. button = mbLeft;
       goto MB_DOWN;
@@ -737,12 +744,13 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       if ( ev. cmd == 0)
          return ( LRESULT)1;
 // propagate message
-      propagate( self, orgMsg, &ev, mp1, mp2);
+      if ( var stage <= csNormal)
+         propagate( self, orgMsg, &ev, mp1, mp2);
       break;
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
        ev. cmd = 1; // force call DefWindowProc
-       if ( ev. cmd)
+       if ( ev. cmd && ( var stage <= csNormal))
           propagate( self, orgMsg, &ev, mp1, mp2);
        break;
    case WM_MOUSEMOVE:
