@@ -85,7 +85,7 @@ sub init
    $self-> {defcw} = $::application-> get_default_cursor_width;
    $self-> {resetDisabled} = 1;
    my %profile = $self-> SUPER::init(@_);
-   for ( qw( autoHeight writeOnly borderWidth passwordChar maxLen alignment autoTab autoSelect firstChar readOnly selEnd selStart charOffset wordDelimiters))
+   for ( qw( writeOnly borderWidth passwordChar maxLen alignment autoTab autoSelect firstChar readOnly selEnd selStart charOffset wordDelimiters))
       { $self->$_( $profile{ $_}); }
    $self-> {resetDisabled} = 0;
    $self-> {resetLevel}    = 0;
@@ -93,6 +93,7 @@ sub init
    $self->{font_height} = $font->height;
    $self->{font_width} = $font->width;
    $self-> reset;
+   $self-> autoHeight( $profile{autoHeight});
    return %profile;
 }
 
@@ -394,7 +395,7 @@ sub on_keydown
 sub check_auto_size
 {
    my $self = $_[0];
-   $self-> height( $self-> font-> height + 4) if $self-> {autoHeight};
+   $self-> height( $self-> font-> height + 2 + $self-> {borderWidth} * 2) if $self-> {autoHeight};
 }
 
 sub copy
@@ -566,6 +567,7 @@ sub set_border_width
    my ( $self, $width) = @_;
    $width = 0 if $width < 0;
    $self->{borderWidth} = $width;
+   $self->check_auto_size;
    $self->reset;
    $self->repaint;
 }
