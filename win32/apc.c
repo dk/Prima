@@ -754,7 +754,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 
 // Window
 Bool
-apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, int borderIcons,
+apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
                    int borderStyle, Bool taskList, int windowState, Bool usePos, Bool useSize)
 {
   Bool reset = false;
@@ -788,7 +788,6 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
     || ( borderStyle != sys s. window. borderStyle)
     || ( borderIcons != sys s. window. borderIcons)
     || ( taskList    != is_apt( aptTaskList))
-    || ( clipOwner   != is_apt( aptClipOwner))
   ))
   {
      apc_window_set_window_state( self, windowState);
@@ -807,7 +806,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
   HWND_lock( true);
 
   if ( reset || ( var handle == nilHandle))
-     if ( !create_group( self, owner, syncPaint, clipOwner,
+     if ( !create_group( self, owner, syncPaint, false,
            taskList, WC_FRAME, style, exstyle, usePos, useSize, &vprf)) {
         HWND_lock( false);
         return false;

@@ -492,7 +492,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
      case WC_FRAME:
        {
           Handle frame;
-          if ( !clipOwner) parentView = HWND_DESKTOP;
+          parentView = HWND_DESKTOP;
           if ( !( frame = WinCreateStdWindow( parentView, 0, &style, "GeNeRiC",
             "", WS_CLIPCHILDREN
             | ( syncPaint ? WS_SYNCPAINT : 0)
@@ -552,7 +552,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 }
 
 Bool
-apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, int borderIcons,
+apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
                    int borderStyle, Bool taskList, int windowState, Bool usePos, Bool useSize)
 {
    Bool reset = false;
@@ -584,7 +584,6 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
      || ( borderIcons != sys s. window. borderIcons)
      || ( syncPaint   != is_apt( aptSyncPaint))
      || ( taskList    != is_apt( aptTaskList))
-     || ( clipOwner   != is_apt( aptClipOwner))
    ))
    {
       HWND h = HANDLE;
@@ -605,7 +604,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
       reset = true;
    }
    if ( reset || ( var handle == nilHandle))
-      if ( !create_group( self, owner, syncPaint, clipOwner, WC_FRAME, frameFlags, &vprf)) {
+      if ( !create_group( self, owner, syncPaint, false, WC_FRAME, frameFlags, &vprf)) {
          lock( false);
          return false;
       }

@@ -234,7 +234,7 @@ sub rundir
       if ( -d $ff) {
          rundir( $ff);
       } elsif ( -f $ff) {
-         next unless $_ =~ /.t$/;
+         next unless $_ =~ /\.t$/;
          next if defined($filter) && $ff !~ /$filter$/;
          runfile( $ff);
       }

@@ -1750,8 +1750,7 @@ apc_component_fullname_changed_notify( Handle self);
 
 /* Window */
 extern Bool
-apc_window_create( Handle self, Handle owner, Bool syncPaint,
-                   Bool clipOwner, int borderIcons, int borderStyle,
+apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons, int borderStyle,
                    Bool taskList, int windowState, Bool useOrigin, Bool useSize);
 
 extern Bool

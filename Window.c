@@ -105,16 +105,13 @@ void Window_update_sys_handle( Handle self, HV * profile)
        pexist( owner) ||
        pexist( syncPaint) ||
        pexist( taskListed) ||
-       pexist( clipOwner) ||
        pexist( borderIcons) ||
        pexist( borderStyle)
     )) return;
    if ( pexist( owner)) my-> cancel_children( self);
-   if ( pexist( clipOwner) && pget_B( clipOwner)) my-> set_modalHorizon( self, false);
    if ( !apc_window_create( self,
       pexist( owner )      ? pget_H( owner )      : var-> owner ,
       pexist( syncPaint)   ? pget_B( syncPaint)   : my-> get_syncPaint( self),
-      pexist( clipOwner)   ? pget_B( clipOwner)   : my-> get_clipOwner( self),
       pexist( borderIcons) ? pget_i( borderIcons) : my-> get_borderIcons( self),
       pexist( borderStyle) ? pget_i( borderStyle) : my-> get_borderStyle( self),
       pexist( taskListed)  ? pget_B( taskListed)  : my-> get_taskListed( self),
@@ -127,9 +124,7 @@ void Window_update_sys_handle( Handle self, HV * profile)
    pdelete( borderIcons);
    pdelete( syncPaint);
    pdelete( taskListed);
-   pdelete( clipOwner);
    pdelete( windowState);
-   pdelete( clipOwner);
    pdelete( owner);
 }
 
@@ -449,7 +444,7 @@ Window_cancel_children( Handle self)
 int
 Window_execute( Handle self, Handle insertBefore)
 {
-   if ( var-> modal || my-> get_clipOwner( self))
+   if ( var-> modal)
       return cmCancel;
 
    protect_object( self);
@@ -468,7 +463,7 @@ Window_execute( Handle self, Handle insertBefore)
 Bool
 Window_execute_shared( Handle self, Handle insertBefore)
 {
-   if ( var-> modal || my-> get_clipOwner( self) || var-> nextSharedModal) return false;
+   if ( var-> modal || var-> nextSharedModal) return false;
    if ( insertBefore &&
          (( insertBefore == self) ||
          ( !kind_of( insertBefore, CWindow)) ||
@@ -484,7 +479,6 @@ Window_modalHorizon( Handle self, Bool set, Bool modalHorizon)
    if ( !set)
       return is_opt( optModalHorizon);
    if ( is_opt( optModalHorizon) == modalHorizon) return false;
-   if ( modalHorizon && my-> get_clipOwner( self)) return false;
    my-> cancel_children( self);
    opt_assign( optModalHorizon, modalHorizon);
    return modalHorizon;

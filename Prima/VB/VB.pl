@@ -613,12 +613,6 @@ sub on_close
    }
 }
 
-sub on_enterx
-{
-   ObjectInspector::enter_widget( $_[0]);
-};
-
-
 sub on_destroy
 {
    if ( $VB::form && ( $VB::form == $_[0])) {
@@ -675,6 +669,7 @@ sub on_mousedown
          $self-> {anchor} = [ $x, $y];
          $self-> {dim}    = [ $x, $y];
          $self-> veil;
+         ObjectInspector::enter_widget( $self);
       }
    }
 }

@@ -37,8 +37,7 @@
 #include "Application.h"
 
 Bool
-apc_window_create( Handle self, Handle owner, Bool sync_paint,
-		   Bool clip_owner, int border_icons,
+apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		   int border_style, Bool task_list,
 		   int window_state, Bool use_origin, Bool use_size)
 {
@@ -54,16 +53,8 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint,
 
    /* Transparency is ignored for now */
 
-   if ( !clip_owner) {
-      parent = RootWindow( DISP, SCREEN);
-      real_owner = application;
-   } else if ( owner == application) {
-      parent = RootWindow( DISP, SCREEN);
-      real_owner = application;
-   } else {
-      parent = RootWindow( DISP, SCREEN);    /* XXX for now  :-(  */
-      real_owner = owner;
-   }
+   parent = RootWindow( DISP, SCREEN);
+   real_owner = application;
 
    old = X_WINDOW;
    if ( old && XX-> parent != parent) {
@@ -132,7 +123,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint,
    XX-> parent = parent;
    XX-> udrawable = XX-> gdrawable = X_WINDOW;
 
-   XX-> flags. clip_owner = clip_owner;
+   XX-> flags. clip_owner = false;
    XX-> flags. sync_paint = sync_paint;
    XX-> flags. do_size_hints = true;
    XX-> flags. no_size = true;
@@ -309,7 +300,7 @@ apc_window_set_client_pos( Handle self, int x, int y)
    hints. max_width = PWidget(self)-> sizeMax. x;
    hints. max_height = PWidget(self)-> sizeMax. y;
    XX-> flags. do_size_hints = false;
-       
+
    XMoveWindow( DISP, X_WINDOW, x, y);
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;

@@ -630,7 +630,7 @@ sub setup_variables
         if ( $ENV{ PRIMA_PARANOID_MALLOC}
              && $ENV{ PRIMA_PARANOID_MALLOC} =~ /^1|yes|on|true$/i);
     while ( $CFLAGS =~ s/-D(\w+)(?:=(\S+))?\s*//) {
-        my ( $defname, $defvalue) = ( $1, $2 || 'yep');
+        my ( $defname, $defvalue) = ( $1, $2 || 1);
         $DEFINES{ $defname} = $defvalue;
     }
 
@@ -1259,7 +1259,7 @@ EOF
 #define __GENERIC_CONFIG_H__
 EOF
     foreach my $define ( sort keys %DEFINES) {
-        print CONFIG "#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
+        print CONFIG "#undef $define\n#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
     }
     print CONFIG <<EOF;
 #endif
