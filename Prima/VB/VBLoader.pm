@@ -1,6 +1,13 @@
 package Prima::VB::VBLoader;
 use strict;
-use vars qw(*do_layer);
+use vars qw($builderActive);
+
+$builderActive = 0;
+
+sub GO_SUB
+{
+   return $builderActive ? $_[0] : eval "sub { $_[0] }";
+}
 
 sub AUTOFORM_REALIZE
 {
@@ -19,7 +26,6 @@ sub AUTOFORM_REALIZE
       $modules{$dep{$_}->{module}} = 1 if $dep{$_}->{module};
       $main = $_ if $dep{$_}->{parent};
    }
-
    for ( keys %modules) {
       my $c = $_;
       eval("use $c;");
@@ -27,10 +33,6 @@ sub AUTOFORM_REALIZE
    }
 
    delete $dep{$main}->{profile}->{owner};
-   for ( keys %{$dep{$main}->{profile}}) {
-      next unless /^on[A-Z]/;
-      $dep{$main}->{profile}->{$_} = eval "sub { $dep{$main}->{profile}{$_}}";
-   }
    $ret{$main} = $dep{$main}->{class}-> create(
       %{$dep{$main}->{profile}},
       %{$parms->{$main}},
@@ -44,7 +46,8 @@ sub AUTOFORM_REALIZE
       delete $dep{$_}->{profile}->{owner};
    }
 
-   local *do_layer = sub
+   my $do_layer;
+   $do_layer = sub
    {
       my $id = $_[0];
       my $i;
@@ -52,20 +55,15 @@ sub AUTOFORM_REALIZE
          $_ = $$seq[$i];
          next unless $owners{$_} eq $id;
          $owners{$_} = $main unless exists $ret{$owners{$_}}; # validating owner entry
-         my $phash = $dep{$_}->{profile};
-         for ( keys %{$phash}) {
-            next unless /^on[A-Z]/;
-            $phash->{$_} = eval "sub { $phash->{$_}}";
-         }
          $ret{$_} = $ret{$owners{$_}}-> insert(
             $dep{$_}->{class},
-            %{$phash},
+            %{$dep{$_}->{profile}},
             %{$parms->{$_}},
          );
-         &do_layer( $_);
+         $do_layer->( $_);
       }
    };
-   &do_layer( $main, \%owners);
+   $do_layer->( $main, \%owners);
 
    return %ret;
 }
@@ -74,7 +72,6 @@ sub AUTOFORM_CREATE
 {
    my ( $filename, %parms) = @_;
    my $contents;
-
    {
       local $/;
       open F, $filename or die "Cannot open $filename";

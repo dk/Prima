@@ -721,7 +721,7 @@ sub prf_types
       widget        => ['currentWidget', 'selectedWidget'],
       pointer       => ['pointer',],
       growMode      => ['growMode'],
-      helpContext   => ['helpContext'],
+      uiv           => ['helpContext'],
       string        => ['hint'],
       text          => ['text'],
       selectingButtons=> ['selectingButtons'],
@@ -982,6 +982,18 @@ sub open
    );
 }
 
+package Prima::VB::Types::char;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::string);
+
+sub open
+{
+   my $self = $_[0];
+   $self-> SUPER::init( @_);
+   $self-> {A}-> maxLen( 1);
+}
+
+
 package Prima::VB::Types::name;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::string);
@@ -1173,6 +1185,33 @@ sub write
 {
    my ( $class, $id, $data) = @_;
    return $data ? 1 : 0;
+}
+
+package Prima::VB::Types::tabOrder;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::iv);
+
+sub change
+{
+   my $self = $_[0];
+   $self-> SUPER::change;
+   my $val = $self-> {A}-> value;
+   return if $val < 0;
+   my @mine = ();
+   my $owner = $self-> {widget}-> prf('owner');
+   my $match = 0;
+   for ( $VB::form-> widgets) {
+      next unless $_-> prf('owner') eq $owner;
+      next if $_ == $self->{widget};
+      push( @mine, $_);
+      $match = 1 if $_->prf('tabOrder') == $val;
+   }
+   return unless $match;
+   for ( @mine) {
+      my $to = $_->prf('tabOrder');
+      next if $to < $val;
+      $_-> prf_set( tabOrder => $to + 1);
+   }
 }
 
 package Prima::VB::Types::Handle;
@@ -2203,11 +2242,19 @@ package Prima::VB::Types::event;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::text);
 
+sub open
+{
+   my $self = shift;
+   $self-> SUPER::open( @_);
+   $self-> {A}-> syntaxHilite(1);
+}
+
+
 sub write
 {
    my ( $class, $id, $data, $flag) = @_;
-   return "'". Prima::VB::Types::generic::quotable($data)."'" unless $flag;
-   return "sub { $data}";
+   return $flag ? "sub { $data}" :
+      'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data).'\')';
 }
 
 package MenuOutline;
@@ -2241,8 +2288,8 @@ sub new
       [['New Item', { text => 'New Item',
       action => $Prima::VB::Types::menuItems::menuDefaults{action}}], undef, 0],
    );
-   ObjectInspector::item_changed();
    $_[0]-> {master}-> enter_menuitem( $x);
+   $_[0]-> {master}-> change;
 }
 
 sub makenode
@@ -2257,6 +2304,7 @@ sub makenode
       $_[0]-> reset_tree;
       $_[0]-> update_tree;
       $_[0]-> repaint;
+      $_[0]-> reset_scrolls;
    } else {
       $x-> [1] = [
          [['New Item', { text => 'New Item',
@@ -2266,15 +2314,25 @@ sub makenode
    }
    $_[0]-> adjust( $_[0]-> focusedItem, 1);
    $_[0]-> {master}-> enter_menuitem( $x);
+   $_[0]-> {master}-> change;
 }
 
 sub del
 {
    my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
    $_[0]-> delete_item( $x);
+   ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
    $_[0]-> {master}-> enter_menuitem( $x);
+   $_[0]-> {master}-> change;
 }
 
+
+sub on_dragitem
+{
+   my $self = shift;
+   $self-> SUPER::on_dragitem( @_);
+   $self-> {master}-> change;
+}
 
 package MPropListViewer;
 use vars qw(@ISA);
@@ -2290,8 +2348,10 @@ sub on_click
    $self-> SUPER::on_click;
    if ( $self->{check}->[$index]) {
       $current-> [0]->[1]-> {$id} = $Prima::VB::Types::menuItems::menuDefaults{$id};
+      $self->{master}-> item_changed;
    } else {
       delete $current-> [0]->[1]-> {$id};
+      $self->{master}-> item_deleted;
    }
 }
 
@@ -2305,7 +2365,7 @@ use vars qw(@ISA %menuProps %menuDefaults);
    'key'     => 'key',
    'accel'   => 'string',
    'text'    => 'string',
-   'name'    => 'string',
+   'name'    => 'menuname',
    'enabled' => 'bool',
    'checked' => 'bool',
    'image'   => 'image',
@@ -2475,7 +2535,7 @@ sub open_item
       $p-> pageIndex( $p-> pageCount - 1);
       $p->{pages}->{$type} = $p-> pageIndex;
       $self-> {opened} = $type-> new( $p, $id, $self);
-      $self-> {opened}-> {changeProc} = \&Prima::VB::Types::menuItems::item_changed;
+      $self-> {opened}-> {changeProc} = \&Prima::VB::Types::menuItems::item_changed_from_notebook;
       $self-> {typeCache}->{$type} = $self-> {opened};
    }
    my $drec = $self-> {current}->[0]->[1];
@@ -2486,10 +2546,38 @@ sub open_item
    $p-> pageIndex( $pageset) if defined $pageset;
 }
 
+sub item_changed_from_notebook
+{
+   item_changed( $_[0]->{widget});
+}
+
+sub item_deleted
+{
+   my $self = $_[0];
+   return unless $self;
+   return unless $self-> {opened};
+   return if $self-> {sync};
+   $self-> {sync} = 1;
+   my $id = $self->{A}->{id}->[$self->{A}-> focusedItem];
+   $self-> {opened}-> set( $menuDefaults{$id});
+   $self-> change;
+   my $hash = $self->{current}->[0]->[1];
+   if ( !exists $hash->{name} && !exists $hash->{text}) {
+      my $newname = exists $hash->{image} ? 'Image' : '---';
+      if ( $self->{current}->[0]->[0] ne $newname) {
+         $self->{current}->[0]->[0] = $newname;
+         $self->{B}-> reset_tree;
+         $self->{B}-> update_tree;
+         $self->{B}-> repaint;
+      }
+   }
+   $self-> {sync} = 0;
+}
+
 
 sub item_changed
 {
-   my $self = $_[0]-> {widget};
+   my $self = $_[0];
    return unless $self;
    return unless $self-> {opened};
    return if $self-> {sync};
@@ -2502,24 +2590,28 @@ sub item_changed
          my $data = $self-> {opened}-> get;
          my $c = $self->{opened}->{widget}->{current};
          $c->[0]->[1]->{$self->{opened}->{id}} = $data;
-         if ( $self->{opened}->{id} eq 'name') {
+         if ( $self->{opened}->{id} eq 'text') {
             $c->[0]->[0] = $data;
             $self->{B}-> reset_tree;
             $self->{B}-> update_tree;
             $self->{B}-> repaint;
-         } elsif ( $self->{opened}->{id} eq 'text' && !exists $c->[0]->[1]->{name}) {
+         } elsif (( $self->{opened}->{id} eq 'name') && !exists $c->[0]->[1]->{text}) {
             $c->[0]->[0] = $data;
             $self->{B}-> reset_tree;
             $self->{B}-> update_tree;
             $self->{B}-> repaint;
-         } elsif  ( $self->{opened}->{id} eq 'key' && !exists $c->[0]->[1]->{accel}) {
+         } elsif  (( $self->{opened}->{id} eq 'key') && !exists $c->[0]->[1]->{accel}) {
             $c->[0]->[1]->{accel} = $menuDefaults{accel};
             $list-> {check}->[$list-> {index}->{accel}] = 1;
             $list-> redraw_items($list-> {index}->{accel});
-         } elsif  ( $self->{opened}->{id} eq 'accel' && !exists $c->[0]->[1]->{key}) {
+         } elsif  (( $self->{opened}->{id} eq 'accel') && !exists $c->[0]->[1]->{key}) {
             $c->[0]->[1]->{key} = $menuDefaults{key};
             $list-> {check}->[$list-> {index}->{key}] = 1;
             $list-> redraw_items($list-> {index}->{key});
+         } elsif  (( $self->{opened}->{id} eq 'image') && exists $c->[0]->[1]->{text}) {
+            delete $c->[0]->[1]->{text};
+            $list-> {check}->[$list-> {index}->{text}] = 0;
+            $list-> redraw_items($list-> {index}->{text});
          }
 
          my $ix = $list-> {index}->{$self->{opened}->{id}};
@@ -2527,36 +2619,73 @@ sub item_changed
             $list-> {check}->[$ix] = 1;
             $list-> redraw_items( $ix);
          }
+         $self-> change;
          $self->{sync} = undef;
       }
    }
 }
 
+#use Data::Dumper;
 
 sub set
 {
    my ( $self, $data) = @_;
    $self-> {sync} = 1;
-   $self-> {B}-> items( $data);
+   my $setData = [];
+   my $traverse;
+   $traverse = sub {
+      my ( $data, $set) = @_;
+      my $c   = scalar @$data;
+      my %items = ();
+      if ( $c == 5) {
+         @items{qw(name text accel key)} = @$data;
+      } elsif ( $c == 4) {
+         @items{qw(text accel key)} = @$data;
+      } elsif ( $c == 3) {
+         @items{qw(name text)} = @$data;
+      } elsif ( $c == 2) {
+         $items{text} = $$data[0];
+      }
+      if ( ref($items{text}) && $items{text}-> isa('Prima::Image')) {
+         $items{image} = $items{text};
+         delete $items{text};
+      }
+      if ( exists $items{name}) {
+         $items{enabled} = 0 if $items{name} =~ s/^\-//;
+         $items{checked} = 1 if $items{name} =~ s/^\*//;
+         delete $items{name} unless length $items{name};
+      }
+      my @record = ([ defined $items{text} ? $items{text} :
+       ( defined $items{text} ? $items{text} :
+          ( defined $items{name} ? $items{name} :
+             ( defined $items{image} ? "Image" : "---")
+       )) , \%items], undef, 0);
+      if ( ref($$data[-1]) eq 'ARRAY') {
+         $record[1] = [];
+         $record[2] = 1;
+         $traverse-> ( $_, $record[1]) for @{$$data[-1]};
+      } elsif ( $c > 1) {
+         $items{action} = $$data[-1];
+      }
+      push( @$set, \@record);
+   };
+   $traverse->( $_, $setData) for @$data;
+#print "set:";
+#print Dumper( $setData);
+   $self-> {B}-> items( $setData);
    $self-> {sync} = 0;
 }
 
 sub get
 {
    my $self = $_[0];
-   return $self-> {B}-> items;
-}
-
-
-sub write
-{
-   my ( $class, $id, $data, $flag) = @_;
-   return 'undef' unless defined $data;
-   my $c = '';
+   my $retData = [];
    my $traverse;
    $traverse = sub {
-      my ($current, $level) = @_;
-      $c .= ' ' x ( $level * 3).'[ ';
+      my ($current, $ret) = @_;
+      my @in = ();
+      my @cmd = ();
+      my $haschild = 0;
       my $i = $current->[0]->[1];
       my $hastext  = exists $i->{text};
       my $hasname  = exists $i->{name};
@@ -2567,9 +2696,9 @@ sub write
       my $hassub   = exists $i->{action};
       my $namepfx  = (( exists $i->{enabled} && !$i->{enabled}) ? '-' : '').
                      (( exists $i->{checked} &&  $i->{checked}) ? '*' : '');
-      my @cmd = ();
 
-      if ( $current-> [1]) {
+      if ( $current-> [1] && scalar @{$current->[1]}) {
+         $haschild = 1;
          $hasacc = $haskey = $hasact = 0;
          if ( $hastext || $hasimage) {
             push ( @cmd, qw(name text));
@@ -2588,18 +2717,65 @@ sub write
          } elsif ( $_ eq 'name') {
             $val = '' unless defined $val;
             $val = "$namepfx$val";
+            next unless length $val;
          }
-         my $type = $VB::main-> get_typerec( $menuProps{$_});
-         $c .= $type-> write( $_, $val, $flag) . ', ';
+         push( @in, $val);
       }
 
-      if ( $current->[1] && $current->[2]) {
-         $c .= "[\n";
-         $level++;
-         $traverse->( $_, $level) for @{$current->[1]};
-         $level--;
-         $c .= ' ' x ( $level * 3).']';
+      if ( $haschild) {
+         my $cx = [];
+         $traverse->( $_, $cx) for @{$current->[1]};
+         push @in, $cx;
+      }
+      push @$ret, \@in;
+   };
+   $traverse->( $_, $retData) for @{$self->{B}-> items};
+#print "get:";
+#print Dumper( $retData);
+   return $retData;
+}
 
+
+sub write
+{
+   my ( $class, $id, $data, $flag) = @_;
+   return 'undef' unless defined $data;
+   my $c = "\n";
+   my $traverse;
+   $traverse = sub {
+      my ( $data, $level) = @_;
+      my $sc    = scalar @$data;
+      my @cmd   = ();
+      if ( $sc == 5) {
+         @cmd = qw( name text accel key);
+      } elsif ( $sc == 4) {
+         @cmd = qw( text accel key);
+      } elsif ( $sc == 3) {
+         @cmd = qw( name text);
+      } elsif ( $sc == 2) {
+         @cmd = qw( text);
+      }
+
+      $c .= ' ' x ( $level * 3).'[ ';
+      my $i = 0;
+      for ( @cmd) {
+         if ( $_ eq 'text' && ref($$data[$i]) && $$data[$i]-> isa('Prima::Image')) {
+            $_ = 'image';
+         }
+         my $type = $VB::main-> get_typerec( $menuProps{$_}, $$data[$i]);
+         $c .= $type-> write( $_, $$data[$i], $flag) . ', ';
+         $i++;
+      }
+
+      if ( ref($$data[-1]) eq 'ARRAY') {
+         $level++;
+         $c .= "[\n";
+         $traverse-> ( $_, $level) for @{$$data[-1]};
+         $c .= ' ' x ( $level * 3).']';
+         $level--;
+      } elsif ( $sc > 1) {
+         $c .= $VB::main-> get_typerec( $menuProps{'action'}, $$data[$i])->
+            write( 'action', $$data[$i], $flag);
       }
       $c .= "], \n";
    };
@@ -2619,13 +2795,13 @@ sub valid
    my $tx = $self->{A}->text;
    $self->wake, return 0 unless length( $tx);
    $self->wake, return 0 if $tx =~ /[\s\\\~\!\@\#\$\%\^\&\*\(\)\-\+\=\[\]\{\}\.\,\?\;\|\`\'\"]/;
-   my $s = $VB::inspector-> {current}-> {A};
+   my $s = $self-> {widget}-> {B};
    my $ok = 1;
    $s-> iterate( sub {
       my ( $current, $position, $level) = @_;
       $ok = 0, return 1 if defined $current->[0]->[1]->{name} && $current->[0]->[1]->{name} eq $tx;
       return 0;
-   });
+   }, 1);
    $self->wake unless $ok;
    return $ok;
 }
@@ -2667,11 +2843,10 @@ sub open
    $sz[1] -= $fh * 4 + 28;
    $self->{mod} = $i-> insert( GroupBox =>
       origin   => [ 5, $sz[1]],
-      size     => [ $sz[0] - 5, $fh * 4 + 28],
+      size     => [ $sz[0] - 10, $fh * 4 + 28],
       growMode => gm::Ceiling,
       style    => cs::DropDown,
       text     => '',
-      onChange => sub { $self-> change(); },
    );
 
    my @esz = $self->{mod}->size;
@@ -2701,6 +2876,36 @@ sub open
       growMode => gm::GrowHiX,
       onClick => sub { $self-> change(); },
    );
+
+
+   $sz[1] -= $fh + 6;
+   $i-> insert( Label =>
+      origin     => [ 5, $sz[1]],
+      size       => [ $sz[0] - 10, $fh + 2],
+      growMode   => gm::GrowHiX,
+      text       => 'Press shortcut key:',
+   );
+
+   $sz[1] -= $fh + 6;
+   $self->{keyhook} = $i->insert( Widget =>
+      origin     => [ 5, $sz[1]],
+      size       => [ $sz[0] - 10, $fh + 2],
+      growMode   => gm::Ceiling,
+      selectable => 1,
+      cursorPos  => [ 4, 1],
+      cursorSize => [ 1, $fh],
+      cursorVisible => [ 1, $fh],
+      onPaint    => sub {
+         my ( $self, $canvas) = @_;
+         $canvas-> rect3d( 0, 0, $canvas-> width - 1, $canvas-> height - 1, 1,
+            $self-> dark3DColor, $self-> light3DColor, $self-> backColor);
+      },
+      onKeyDown => sub {
+         my ( $me, $code, $key, $mod) = @_;
+         $self-> set( Prima::AbstractMenu-> translate_key( $code, $key, $mod));
+         $self-> change;
+      },
+   );
 }
 
 sub get
@@ -2723,10 +2928,10 @@ sub set
       $self-> {key}-> text( chr($data & 0xFF));
    } else {
       my $x = 'NoKey';
-      $data &= kb::CodeMask;
+      my $d = $data & kb::CodeMask;
       for ( keys %vkeys) {
          next if $_ eq 'constant';
-         $x = $_, last if $data == $vkeys{$_};
+         $x = $_, last if $d == $vkeys{$_};
       }
       $self-> {key}-> text( $x);
    }
@@ -2743,9 +2948,9 @@ sub write
       $txt = 'ord(\''.chr($data & 0xFF).'\')';
    } else {
       my $x = 'NoKey';
-      $data &= kb::CodeMask;
+      my $d = $data & kb::CodeMask;
       for ( keys %vkeys) {
-         $x = $_, last if $vkeys{$_} == $data;
+         $x = $_, last if $vkeys{$_} == $d;
       }
       $txt = 'kb::'.$x;
    }

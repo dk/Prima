@@ -8,6 +8,8 @@ use Prima::StdDlg;
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 
+
+$Prima::VB::VBLoader::builderActive = 1;
 my $config  = 'Prima::VB::Config';
 my $classes = 'Prima::VB::Classes';
 
@@ -397,7 +399,7 @@ sub profile_default
       height         => 200,
       centered       => 1,
       class          => 'Prima::Window',
-      module         => $classes,
+      module         => 'Prima::Classes',
       selectable     => 1,
       popupItems     => $VB::main-> menu-> get_items( 'edit'),
    );
@@ -1606,7 +1608,9 @@ sub form_run
          Prima::MsgBox::message_box( $myText, "$@", mb::OK|mb::Error);
          return;
       }
+      $Prima::VB::VBLoader::builderActive = 0;
       my @d = &AUTOFORM::AUTOFORM_DEPLOY();
+      $Prima::VB::VBLoader::builderActive = 1;
       my %r = Prima::VB::VBLoader::AUTOFORM_REALIZE( \@d, {});
       my $f = $r{$VB::form->prf('name')};
       $okCreate = 1;
@@ -1619,6 +1623,7 @@ sub form_run
          $VB::inspector-> hide if $VB::inspector;
       };
    };
+   $Prima::VB::VBLoader::builderActive = 1;
    Prima::MsgBox::message_box( $myText, "$@", mb::OK|mb::Error) if $@;
 }
 
