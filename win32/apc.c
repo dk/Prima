@@ -126,7 +126,7 @@ apc_application_destroy( Handle self)
 }
 
 void
-apc_application_end_paint   ( Handle self)
+apc_application_end_paint( Handle self)
 {
    apcErrClear;
    objCheck;
