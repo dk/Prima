@@ -207,22 +207,22 @@ apc_pointer_set_pos( Handle self, int x, int y)
 
 int ctx_cr2IDC[] =
 {
-   crArrow,    ( int) IDC_ARROW,
-   crText,     ( int) IDC_IBEAM,
-   crWait,     ( int) IDC_WAIT,
-   crSize,     ( int) IDC_SIZEALL,
-   crMove,     ( int) IDC_SIZEALL,
-   crSizeWest,   IDC_SIZEWE,
-   crSizeEast,   IDC_SIZEWE,
-   crSizeWE,     IDC_SIZEWE,
-   crSizeNorth,  IDC_SIZENS,
-   crSizeNE,     IDC_SIZENS,
-   crSizeSouth,  IDC_SIZENS,
-   crSizeNW,     IDC_SIZENWSE,
-   crSizeSE,     IDC_SIZENWSE,
-   crSizeNE,     IDC_SIZENESW,
-   crSizeSW,     IDC_SIZENESW,
-   crInvalid,    IDC_NO,
+   crArrow,     ( int) IDC_ARROW,
+   crText,      ( int) IDC_IBEAM,
+   crWait,      ( int) IDC_WAIT,
+   crSize,      ( int) IDC_SIZEALL,
+   crMove,      ( int) IDC_SIZEALL,
+   crSizeWest,  ( int) IDC_SIZEWE,
+   crSizeEast,  ( int) IDC_SIZEWE,
+   crSizeWE,    ( int) IDC_SIZEWE,
+   crSizeNorth, ( int) IDC_SIZENS,
+   crSizeSouth, ( int) IDC_SIZENS,
+   crSizeNS,    ( int) IDC_SIZENS,
+   crSizeNW,    ( int) IDC_SIZENWSE,
+   crSizeSE,    ( int) IDC_SIZENWSE,
+   crSizeNE,    ( int) IDC_SIZENESW,
+   crSizeSW,    ( int) IDC_SIZENESW,
+   crInvalid,   ( int) IDC_NO,
    endCtx
 };
 
