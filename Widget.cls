@@ -141,6 +141,7 @@ object Widget( Drawable)
    method   int      get_height();
    method   long     get_help_context();
    method   int      get_left();
+   method   Bool     get_locked();
    method   int      get_mouse_state()               => apc_pointer_get_state;
    method   Handle   get_popup();
    method   SV *     get_popup_items();

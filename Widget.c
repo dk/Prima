@@ -411,10 +411,10 @@ void Widget_handle_event( Handle self, PEvent event)
         }
         break;
       case cmRepaint:
-        if ( var lockCount == 0) my repaint( self);
+        my repaint( self);
         break;
       case cmPaint        :
-        if ( !opt_InPaint && ( var lockCount == 0))
+        if ( !opt_InPaint && !my get_locked( self))
           if ( inherited begin_paint( self)) {
              if ( apc_widget_begin_paint( self, true)) {
                 if ( var onPaint) cv_call_perl( var mate, var onPaint, "H", self);
@@ -914,7 +914,8 @@ Widget_insert_behind ( Handle self, Handle widget)
 void
 Widget_invalidate_rect( Handle self, Rect rect)
 {
-   if ( !opt_InPaint && ( var stage == csNormal) && ( var lockCount == 0))
+   enter_method;
+   if ( !opt_InPaint && ( var stage == csNormal) && !my get_locked( self))
       apc_widget_invalidate_rect( self, &rect);
 }
 
@@ -1039,7 +1040,8 @@ Widget_process_accel( Handle self, int key)
 void
 Widget_repaint( Handle self)
 {
-   if ( !opt_InPaint && ( var stage == csNormal) && ( var lockCount == 0))
+   enter_method;
+   if ( !opt_InPaint && ( var stage == csNormal) && !my get_locked( self))
       apc_widget_invalidate_rect( self, nil);
 }
 
@@ -1047,14 +1049,16 @@ Widget_repaint( Handle self)
 void
 Widget_scroll( Handle self, int horiz, int vert, Bool scrollChildren)
 {
-   if ( !opt_InPaint && ( var stage == csNormal) && ( var lockCount == 0))
+   enter_method;
+   if ( !opt_InPaint && ( var stage == csNormal) && !my get_locked( self))
       apc_widget_scroll( self, horiz, vert, nil, scrollChildren);
 }
 
 void
 Widget_scroll_rect( Handle self, int horiz, int vert, Rect rect, Bool scrollChildren)
 {
-   if ( !opt_InPaint && ( var stage == csNormal) && ( var lockCount == 0))
+   enter_method;
+   if ( !opt_InPaint && ( var stage == csNormal) && !my get_locked( self))
       apc_widget_scroll( self, horiz, vert, &rect, scrollChildren);
 }
 
@@ -1451,6 +1455,17 @@ Widget_get_left( Handle self)
    enter_method;
    return my get_pos( self). x;
 }
+
+Bool
+Widget_get_locked( Handle self)
+{
+   while ( self) {
+      if ( var lockCount != 0) return true;
+      self = var owner;
+   }
+   return false;
+}
+
 
 Bool Widget_get_owner_color( Handle self)      { return is_opt( optOwnerColor); }
 Bool Widget_get_owner_back_color( Handle self) { return is_opt( optOwnerBackColor); }
