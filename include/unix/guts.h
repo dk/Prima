@@ -292,6 +292,10 @@ struct  _drawable_sys_data;
                         |       GCClipMask      \
                         |       GCForeground    \
                         |       GCFunction      \
+                        |       GCJoinStyle     \
+                        |       GCFillRule      \
+                        |       GCTileStipXOrigin \
+                        |       GCTileStipYOrigin \
                         |       GCLineStyle     \
                         |       GCLineWidth     \
                         |       GCSubwindowMode )

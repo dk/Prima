@@ -179,6 +179,7 @@ prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint)
 
    XF_IN_PAINT(XX) = true;
    XX-> btransform. x = XX-> btransform. y = 0;
+   XX-> gcv. ts_x_origin = XX-> gcv. ts_y_origin = 0;
    if ( inside_on_paint && XX-> udrawable && is_opt( optBuffered) && !is_opt( optInDrawInfo) ) {
       if ( XX-> invalid_region) {
          XClipBox( XX-> invalid_region, &r);
@@ -187,6 +188,7 @@ prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint)
          XX-> btransform. x = - r. x;
          XX-> btransform. y = r. y;
       } else {
+	 r. x = r. y = 0;
          XX-> bsize. x = w = XX-> size. x;
          XX-> bsize. y = h = XX-> size. y;
       }
@@ -194,6 +196,8 @@ prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint)
       XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, w, h, guts.depth);
       XCHECKPOINT;
       if (!XX-> gdrawable) goto Unbuffered;
+      XX-> gcv. ts_x_origin = -r.x;
+      XX-> gcv. ts_y_origin = -r.y;
    } else if ( XX-> udrawable && !XX-> gdrawable) {
 Unbuffered:
       XX-> gdrawable = XX-> udrawable;
