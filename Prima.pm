@@ -31,10 +31,11 @@ package Prima;
 
 use strict;
 require DynaLoader;
-use vars qw($VERSION @ISA $__import);
+use vars qw($VERSION @ISA $__import $runlevel);
 @ISA = qw(DynaLoader);
 sub dl_load_flags { 0x00 }
 $VERSION = '1.12';
+$runlevel = 1 unless defined $runlevel;
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {
    $::application = 0;
@@ -43,7 +44,8 @@ unless ( UNIVERSAL::can('Prima', 'init')) {
 $::application = undef;
 require Prima::Const;
 require Prima::Classes;
-init Prima $VERSION;
+Prima::init($VERSION);
+Prima::Application-> runLevel($runlevel);
 
 sub END
 {

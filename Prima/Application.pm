@@ -323,6 +323,30 @@ If 0, hides the pointer so it is not visible in all
 system windows. Therefore this property usage must be considered 
 with care.
 
+=item runLevel INTEGER
+
+Selects Prima run level, which operates the amount of functionality available.
+Currently, there are available two run-levels, 0 and 1. On the level 0,
+the functionality that does not depend upon OS is usable - the basic image processing
+functionality of classes C<Prima::Image> and C<Prima::Icon>. It is not advised to
+use anything beyond these in the runlevel 0. Level 1 is the default, full-functioning level.
+The difference is actual currently on X11 systems only, where run-level 0
+starts Prima without being connected to a X display.
+
+Since by default the run-level is 1, to start Prima in run-level 0 use the following 
+code:
+   
+    $Prima::runlevel = 0;
+    use Prima;
+
+Note that C<$Prima::runlevel = 0> part must be executed before first C<use Prima> call,
+before Prima shared library code is actually initialized.
+The run-level can only be increased, so call
+
+    Prima::Application->runLevel(1);
+
+is to be used. The call may throw an exception in case of failure.
+
 =item size WIDTH, HEIGHT
 
 A read-only property.

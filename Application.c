@@ -916,6 +916,20 @@ Application_pointerVisible( Handle self, Bool set, Bool pointerVisible)
    return apc_pointer_set_visible( self, pointerVisible);
 }
 
+int
+Application_runLevel( char * dummy, int runLevel)
+{
+   static int run_level = 0;
+   if ( runLevel < 0) return run_level;
+   if ( runLevel > 1) runLevel = 1; 
+   if ( runLevel > run_level) {
+      if ( !window_subsystem_set_runlevel( runLevel)) 
+         croak("Error setting runlevel %d", runLevel);
+      run_level = runLevel;
+   }
+   return run_level;
+}
+
 Point
 Application_size( Handle self, Bool set, Point size)
 {

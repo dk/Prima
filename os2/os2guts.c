@@ -175,6 +175,12 @@ window_subsystem_init( void)
    return true;
 }
 
+Bool
+window_subsystem_set_runlevel( int runlevel)
+{
+   return true;
+}
+
 Bool freePS( HPS ps, void * dummy)    { WinEndPaint ( ps); return false; }
 Bool freeWinPS( HPS ps, void * dummy) { WinReleasePS( ps); return false; }
 

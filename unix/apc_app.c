@@ -150,8 +150,8 @@ get_idepth( void)
    return idepth;
 }
 
-Bool
-window_subsystem_init( void)
+static Bool
+init_x11( void)
 {
    /*XXX*/ /* Namely, support for -display host:0.0 etc. */
    XrmQuark common_quarks_list[26];  /*XXX change number of elements if necessary */
@@ -201,15 +201,6 @@ window_subsystem_init( void)
       "_MOTIF_WM_HINTS"
    };
    char hostname_buf[256], *hostname = hostname_buf;
-   
-   bzero( &guts, sizeof( guts));
-   {
-      char * noX = getenv("PRIMA_DEVEL_WANT_NO_X");
-      if ( noX && strcmp( noX, "YES") == 0) {
-         fprintf( stderr, "** warning: PRIMA_DEVEL_WANT_NO_X environment variable is set, proceed on your own risk!\n");
-         return true;
-      }
-   }
 
    guts. click_time_frame = 200;
    guts. double_click_time_frame = 200;
@@ -367,6 +358,20 @@ window_subsystem_init( void)
    XStringListToTextProperty((char **)&hostname, 1, &guts. hostname);
 
 /*    XSynchronize( DISP, true); */
+   return true;
+}
+
+Bool
+window_subsystem_init( void)
+{
+   bzero( &guts, sizeof( guts));
+   return true;
+}
+
+Bool
+window_subsystem_set_runlevel( int runlevel)
+{
+   if ( runlevel == 1) return init_x11();
    return true;
 }
 

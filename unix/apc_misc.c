@@ -1146,7 +1146,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svCanUTF8_Input:        return 1;
    case svCanUTF8_Output:       return 1;
    default:
-      warn( "apc_sys_get_value(): illegal query: %d", v);
+      return -1;
    }
    return 0;
 }

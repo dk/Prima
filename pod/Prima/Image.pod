@@ -201,6 +201,15 @@ I<Prima::Image> itself provides only the simplest statistic information, namely:
 lowest and highest pixel values, pixel sum, sum of square pixels, mean, variance, 
 and standard deviation.
 
+=head2 Standalone usage
+
+The image functionality can be used standalone, with all other parts of the
+toolkit being uninitialized. This is useful in non-interactive programs,
+running in evnironments with no GUI access, a cgi-script with no access to
+X11 display, for example. Normally, Prima fails to start in such situations,
+but can be told not to initialize its GUI part by explicitly setting its
+runlevel to 0 ( see L<Prima::Application/runLevel> ).
+
 =head2 Prima::Icon
 
 I<Prima::Icon> inherits all properties of I<Prima::Image>, 

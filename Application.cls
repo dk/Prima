@@ -100,6 +100,7 @@ object Prima::Application( Prima::Widget)
    method void   insert_behind( Handle widget);
    method Handle next();
    method Handle prev();
+   static int    runLevel( char * dummy = "", int runlevel = -1);
    method void   send_to_back();
    import void   setup();
    c_only void   set_hint_action( Handle widget, Bool show, Bool mouseEvent);
@@ -131,6 +132,7 @@ object Prima::Application( Prima::Widget)
    Handle  sharedModal;
    List    modalHorizons;
    Bool    wantUnicodeInput;
+   int     runLevel;
 
    c_only  Handle map_focus( Handle from);
    c_only  Handle top_frame( Handle from);

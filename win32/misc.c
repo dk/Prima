@@ -410,7 +410,7 @@ apc_sys_get_value( int sysValue)
    case svCanUTF8_Input   : return HAS_WCHAR;
    case svCanUTF8_Output  : return HAS_WCHAR;
    default:
-      apcErr( errInvParams);
+      return -1;
    }
    return 0;
 }

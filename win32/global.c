@@ -269,6 +269,12 @@ window_subsystem_init()
    return true;
 }
 
+Bool
+window_subsystem_set_runlevel( int runlevel)
+{
+   return true;
+}
+
 void
 window_subsystem_done()
 {
