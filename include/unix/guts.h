@@ -482,7 +482,7 @@ typedef struct _UnixGuts
    Point                        ellipseDivergence;
    int                          appLock;
    XGCValues                    cursor_gcv;
-   TimerSysData                 sys_timers[ LAST_SYS_TIMER - FIRST_SYS_TIMER];
+   TimerSysData                 sys_timers[ LAST_SYS_TIMER - FIRST_SYS_TIMER + 1];
 } UnixGuts;
 
 extern UnixGuts guts;
