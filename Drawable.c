@@ -466,7 +466,8 @@ polypoints( Handle self, SV * points, char * procName, int mod, void (*procPtr)(
    av = ( AV *) SvRV( points);
    count = av_len( av) + 1;
    if ( count % mod) {
-      warn("RTC0051: Array contains even number of elements on Drawable::%s", procName);
+      warn("RTC0051: Drawable::%s: Number of elements in an array must be a multiple of %d",
+	   procName, mod);
       return;
    }
    count /= 2;
