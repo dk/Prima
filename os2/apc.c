@@ -2796,7 +2796,7 @@ static int ctx_rop2ROP[] = {
    ropXorPut,       ROP_SRCINVERT,
    ropNotPut,       ROP_NOTSRCCOPY,
    ropNotDestAnd,   ROP_NOTSRCERASE,
-   ropErase,        ROP_NOTSRCERASE,
+/*    ropErase,        ROP_NOTSRCERASE, */ /* XXX - change to ropNotOr ? */
    ropAndPattern,   ROP_MERGECOPY,
    ropNotSrcOr,     ROP_MERGEPAINT,
    ropPattern,      ROP_PATCOPY,
