@@ -1765,15 +1765,15 @@ realclean: clean
 bindist: all
 \t\$(RM) $distname-$os_suffix.zip
 \t\@zip -r $distname-$os_suffix.zip $bindist_files
-\t\@perl -e "if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname-$os_suffix.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
+\t\@perl -e ${SHQUOTE}if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname-$os_suffix.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }$SHQUOTE;
 
 zipdist:
 \t\$(RM) $distname.zip
 \t\@zip -r $distname.zip $srcdist_files
-\t\@perl -e "if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
+\t\@perl -e ${SHQUOTE}if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }$SHQUOTE;
 
 tardist:
-\t\@perl -e 'if(!-f q(.dist-exclude)) { open F, q(>.dist-exclude) or die qq(Cannot open .dist-exclude:\$\$!); print F qq(*.obj\\n*/*.obj\\n*/*.obj\\ninclude/generic/*.*); close F;}}'
+\t\@perl -e ${SHQUOTE}if(!-f q(.dist-exclude)) { open F, q(>.dist-exclude) or die qq(Cannot open .dist-exclude:\$\$!); print F qq(*.obj\\n*/*.obj\\n*/*.obj\\ninclude/generic/*.*); close F;}$SHQUOTE
 \t\$(RM) $distname.tar
 \t\@tar -cv -X .dist-exclude -f $distname.tar $srcdist_files
 
