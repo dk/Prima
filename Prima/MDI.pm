@@ -308,7 +308,7 @@ sub frame2client
 {
    my ( $self, $x1, $y1, $x2, $y2) = @_;
    my $bw = $self-> { border};
-   my @r = ( $x1 - $bw, $y1 - $bw, $x2 + $bw, $y2 + $bw);
+   my @r = ( $x1 + $bw, $y1 + $bw, $x2 - $bw, $y2 - $bw);
    $r[3] -= $self->{titleY} + 1 if $self->{borderIcons} & mbi::TitleBar;
    $r[3] = $r[1] if $r[3] < $r[1];
    return @r;
@@ -1139,6 +1139,7 @@ sub set_window_state
       $popup-> enable( $_)  for ( qw( min restore));
       $popup-> disable( $_) for ( qw( max move size));
    } else {
+      $self-> {windowState} = ws::Normal;
       return unless $self->{borderIcons} & (mbi::Maximize|mbi::Minimize);
       $self-> clipOwner(0) 
          if $ows == ws::Minimized && !$self->{saveClipOwner};
@@ -1213,7 +1214,6 @@ sub iconRestorePressed { return shift-> __icon( pRESTORE, @_)};
 sub maximize    { $_[0]-> windowState( ws::Maximized)}
 sub minimize    { $_[0]-> windowState( ws::Minimized)}
 sub restore     { $_[0]-> windowState( ws::Normal)}
-sub close       { $_[0]-> SUPER::close; }
 
 sub borderIcons          {($#_)?$_[0]->set_border_icons($_[1])                        :return $_[0]->{borderIcons}}
 sub borderStyle          {($#_)?$_[0]->set_border_style($_[1])                        :return $_[0]->{borderStyle}}
@@ -1230,46 +1230,16 @@ package Prima::MDIExternalDockerShuttle;
 use vars qw(@ISA);
 @ISA = qw(Prima::MDI);
 
-my ($imgc1, $imgc2);
-
-sub __create_icons {
-$imgc1 = Prima::Image->create( width=>16, height=>16, type => im::bpp4, 
-palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
- data => 
-"\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88".
-"\x88\x88\x88\x88\x88\x88\x88\x00\x88\x88\x88\x88\x88\x88\x88\x00\x08\x88\x80\x08".
-"\x88\x88\x88\x07\x00\x00\x00\x08\x88\x88\x88\x07\x00\x00\x07\x08\x80\x00\x00\x08".
-"pw\x08\x08www\x08\x87\x88x\x08\x88\x88\x88\x08\xf7\xff\x7f\x08".
-"\x88\x88\x88\x08\xf0\x00\x0f\x08\x88\x88\x88\x0f\x08\x88\x80\x08\x88\x88\x88\x00".
-"\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88".
-"\x88\x88\x88\x88\x88\x88\x88\x88".
-'');
-$imgc2 = Prima::Image->create( width=>16, height=>16, type => im::bpp4, 
-palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
- data => 
-"\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88".
-"\x88\x88\x88\x88\x88\x88\x88\x00\x88\x88\x88\x88\x88\x88\x88\x0f\x08\x88\x80\x08".
-"\x88\x88\x88\x08\xf0\x00\x0f\x08\x88\x88\x88\x08\xff\xff\xf8\x08www\x07".
-"\x8f\x88\xf7\x08\x00\x00\x00\x07xw\x87\x08\x88\x88\x88\x07\x08\x00\x80\x08".
-"\x88\x88\x88\x07\x00\x00\x00\x08\x88\x88\x88\x00\x08\x88\x80\x08\x88\x88\x88\x00".
-"\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88".
-"\x88\x88\x88\x88\x88\x88\x88\x88".
-'');
-}
-
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my $fh = int($def->{font}->{height} / 1.5);
-   __create_icons unless $imgc1;
    my %prf = (
       font           => { height => $fh, width => 0, },
       titleHeight    => $fh + 4,
-      borderIcons    => mbi::TitleBar | mbi::Maximize | mbi::Close,
+      borderIcons    => mbi::TitleBar | mbi::Close,
       clipOwner      => 0,
       shuttle        => undef,
-      iconMax        => $imgc1,
-      iconMaxPressed => $imgc2,
    );
    @$def{keys %prf} = values %prf;
    return $def;   
@@ -1307,8 +1277,19 @@ sub on_mousedown
    } else {
       $s-> rect( $self-> frame2client( $self-> rect));
    }   
-   $s-> drag( 1, [ $self-> rect]);
+   $s-> drag( 1, [ $self-> rect], $s-> screen_to_client( $self-> client_to_screen($x, $y)));
    $self-> clear_event;
+}   
+
+sub on_mouseclick
+{
+   my ( $self, $btn, $mod, $x, $y, $dbl) = @_; 
+   if (!$dbl || (q(caption) ne $self-> xy2part( $x, $y))) {
+      $self-> SUPER::on_mouseclick( $btn, $mod, $x, $y, $dbl); 
+      return;
+   }   
+   $self-> clear_event;
+   $self-> shuttle-> dock_back;
 }   
 
 sub windowState
