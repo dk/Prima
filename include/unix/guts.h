@@ -53,7 +53,8 @@
 #endif
 #if defined(HAVE_X11_XFT_XFT_H) && defined(HAVE_FONTCONFIG_FONTCONFIG_H) && defined(HAVE_X11_EXTENSIONS_XRENDER_H)
 #include <X11/Xft/Xft.h>
-#  if XFT_MAJOR > 1
+#include <fontconfig/fontconfig.h>
+#  if XFT_MAJOR > 1 && FC_MAJOR > 1
 #     define USE_XFT
 #  endif
 #endif
