@@ -124,7 +124,11 @@ File_set_file( Handle self, SV * file)
       } else {
          var-> file = newSVsv( file);
          var-> fd = PerlIO_fileno( f);
-         apc_file_attach( self);
+         if ( !apc_file_attach( self)) {
+            sv_free( var-> file);
+            var-> file = nil;
+            var-> fd   = -1;
+         }
       }
    }
 }
