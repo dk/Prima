@@ -532,6 +532,8 @@ use constant UseExternalLeading       => 0x0800;
 use constant UseClip                  => 0x1000;
 use constant QueryHeight              => 0x2000;
 use constant QueryLinesDrawn          => 0x0000;
+use constant NoWordWrap               => 0x4000;
+use constant WordWrap                 => 0x0000;
 use constant Default                  => NewLineBreak|WordBreak|ExpandTabs|UseExternalLeading;
 
 
