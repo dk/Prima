@@ -297,7 +297,7 @@ sub is_default_selection
 
 sub on_enable  { $_[0]-> repaint; }
 sub on_disable { $_[0]-> repaint; }
-sub on_enter   { $_[0]-> repaint; }
+sub on_enter   { $_[0]-> redraw_items( $_[0]-> focusedItem); }
 
 sub on_keydown
 {
@@ -383,9 +383,8 @@ sub on_leave
       $self-> capture(0) if $self->{mouseTransaction};
       $self->{mouseTransaction} = undef;
    }
-   $self-> repaint;
+   $self-> redraw_items( $self-> focusedItem);
 }
-
 
 sub point2item
 {

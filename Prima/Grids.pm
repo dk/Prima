@@ -830,7 +830,7 @@ sub on_size
 
 sub on_disable { $_[0]-> repaint; }
 sub on_enable  { $_[0]-> repaint; }
-sub on_enter   { $_[0]-> repaint; }
+sub on_enter   { $_[0]-> redraw_cell( $_[0]-> focusedCell); }
 
 sub on_keydown
 {
@@ -900,7 +900,7 @@ sub on_leave
       $self-> capture(0) if $self->{mouseTransaction};
       $self->{mouseTransaction} = undef;
    }
-   $self-> repaint;
+   $self-> redraw_cell( $self-> focusedCell);
 }
 
 sub on_mouseclick
