@@ -217,17 +217,6 @@ sub draw_items
 
    # sorting items by index
    $iref = [ sort { $$a[0]<=>$$b[0] } @$iref];
-   # calculating conjoint bars
-   for ( $i = 0; $i < $icount; $i++)
-   {
-      my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$iref[$i]};
-      if ( defined $lastNormal && ( $y2 + 1 == $lastNormal)) {
-         ${$normals[-1]}[1] = $y;
-      } else {
-         push ( @normals, [ $x, $y, $x2, $y2]);
-      }
-      $lastNormal = $y;
-   }
 
    # calculating conjoint bars for normals / selected
    @normals = ();
