@@ -247,6 +247,7 @@ sub on_paint
             height => $dy,
             font   => $canvas-> font,
          );
+         my $x = $canvas-> font;
          $dbm-> color( $ct[1]);
          $dbm-> bar( 0, 0, $dbm-> size);
          $dbm-> color( $ct[0]);
@@ -1237,13 +1238,14 @@ sub profile_default
    my $def = $_[ 0]-> SUPER::profile_default;
    my $fh = int($def->{font}->{height} / 1.5);
    my %prf = (
-      font           => { height => $fh, width => 0, },
       titleHeight    => $fh + 4,
       borderIcons    => mbi::TitleBar | mbi::Close,
       clipOwner      => 0,
       shuttle        => undef,
    );
    @$def{keys %prf} = values %prf;
+   $def->{font}->{height} = $fh;
+   $def->{font}->{width}  = 0;
    return $def;   
 }   
 
