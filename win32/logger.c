@@ -26,6 +26,7 @@ static int hp[2];
 
 #define CM_WRITEHOG                0x6401
 #define CM_CLEANHOG                0x6402
+#define CM_HIDE                    0x6403
 
 
 static void setLoggerLine( short index, unsigned char *str)
@@ -173,6 +174,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
            case CM_CLEANHOG:
                SendMessage( guts. loggerListBox, LB_RESETCONTENT, 0, 0);
                return 0;
+           case CM_HIDE:
+               SetWindowPos( guts. logger, 0,0,0,0,0,SWP_NOSIZE|SWP_NOMOVE|SWP_NOZORDER|SWP_HIDEWINDOW);
+               return 0;
            }
          goto DEFAULT;
       case WM_WRITE_TO_LOG:
@@ -312,6 +316,7 @@ create_logger_window2( void * dummy)
    SendMessage( guts. loggerListBox, LB_SETHORIZONTALEXTENT, 4000, 0);
 
    sm = GetSystemMenu( guts. logger, false);
+   AppendMenu( sm, MF_STRING,    CM_HIDE    , "&Hide");
    AppendMenu( sm, MF_SEPARATOR, 0, nil);
    AppendMenu( sm, MF_STRING,    CM_WRITEHOG, "&Write log to disk");
    AppendMenu( sm, MF_STRING,    CM_CLEANHOG, "Cle&an log");
