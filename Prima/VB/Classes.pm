@@ -399,6 +399,17 @@ sub maintain_children_origin
    }
 }
 
+sub iterate_children
+{
+   my ( $self, $sub, @xargs) = @_;
+   my $name = $self-> name;
+   for ( $VB::form-> widgets) {
+      next unless $_->prf('owner') eq $name;
+      $sub-> ( $_, $self, @xargs);
+      $_-> iterate_children( $sub, @xargs);
+   }
+}   
+
 sub on_mousedown
 {
    my ( $self, $btn, $mod, $x, $y) = @_;
@@ -413,20 +424,18 @@ sub on_mousedown
          $self-> focus;
          return;
       }
+      
+      $self-> bring_to_front;
+      $self-> focus;
+      $self-> marked(1,1);
+      ObjectInspector::enter_widget( $self);
+      $self-> iterate_children( sub { $_[0]-> bring_to_front; $_[0]-> update_view; }); 
+      
 
       my $part = $self-> xy2part( $x, $y);
-      my @mw = ();
-      if ( $part eq q(client)) {
-         if ( $self-> focused) {
-            @mw = $VB::form-> marked_widgets;
-         } else {
-            @mw = $VB::form-> marked_widgets if $self-> marked;
-            $self-> bring_to_front;
-            $self-> focus;
-            $self-> marked(1,1);
-            ObjectInspector::enter_widget( $self);
-         }
-      }
+      my @mw;
+      @mw = $VB::form-> marked_widgets if $part eq q(client) && 
+          ($self-> focused || $self-> marked);
       $self-> clear_event;
       $self-> capture(1, $self-> owner);
       $self-> {spotX} = $x;
@@ -450,11 +459,6 @@ sub on_mousedown
          $self-> xorrect( @{$self-> {prevRect}}, 1);
          return;
       }
-
-      $self-> bring_to_front;
-      $self-> focus;
-      $self-> marked(1,1);
-      ObjectInspector::enter_widget( $self);
 
       if ( $part =~ /^Size/) {
          $self-> {sav} = [$self-> rect];

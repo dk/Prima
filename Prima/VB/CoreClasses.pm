@@ -1592,7 +1592,7 @@ sub init
       items => [
          ['~Next page' => '+' => '+' => sub { $self-> pg_inc(1); }],
          ['~Previous page' => '-' => '-' => sub { $self-> pg_inc(-1); }],
-         ['~Move to page...' => 'Ctrl+M' => '^M' => q(widget_repage)],
+         ['~Move widget to page...' => 'Ctrl+M' => '^M' => q(widget_repage)],
       ],
    )-> selected(0);
    $self-> add_hooks(qw(name owner DESTROY));
