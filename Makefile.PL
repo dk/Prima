@@ -537,7 +537,7 @@ sub setup_variables
                          liboflag => '',
                         },
                  emx => {
-                         warnflags => "-Wall -Werror",
+                         warnflags => "-Wall",
                          cflags => "",
                          coutoflag => '-o',
                          coutexeflag => '-o',
