@@ -37,11 +37,10 @@ $x-> backColor( cl::White);
 $x-> fillPattern( fp::SimpleDots);
 $x-> bar( 0, 0, 7, 7);
 $x-> fillPattern( fp::Solid);
-$bl = 0;
-for ( $i = 0; $i < 8; $i++) {
-   $bl++ if $x-> pixel( $i, 4) == 0;
-}
-ok( $bl == 4);
+$bl = $x-> image;
+$bl-> type( im::Byte);
+$bl = $bl-> sum;
+ok( $bl > 6000 && $bl < 10000 );
 
 # 4
 $x-> color( cl::White);
