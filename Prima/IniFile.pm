@@ -1,0 +1,583 @@
+#
+#  Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+#  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+#  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+#  SUCH DAMAGE.
+#
+package IniFile;
+
+#
+# Version: 0.01 19980115
+#
+
+require 5.003;       # probably
+$VERSION = 0.01;
+
+use strict;
+use Carp;
+
+=head1 NAME
+
+IniFile - support of Windows-like initialization files
+
+=head1 SYNOPSIS
+
+   use IniFile;
+
+   my $ini = create IniFile;
+   my $ini = create IniFile FILENAME;
+   my $ini = create IniFile FILENAME,
+               default => HASHREF_OR_ARRAYREF;
+   my $ini = create IniFile file => FILENAME,
+               default => HASHREF_OR_ARRAYREF;
+
+   my @sections = $ini->sections;
+   my @items = $ini->items(SECTION);
+   my @items = $ini->items(SECTION, 1);
+   my @items = $ini->items(SECTION, all => 1);
+
+   my $value = $ini-> get_values(SECTION, ITEM);
+   my @vals = $ini-> get_values(SECTION, ITEM);
+   my $nvals = $ini-> nvalues(SECTION, ITEM);
+
+   $ini-> set_values(SECTION, ITEM, LIST);
+   $ini-> add_values(SECTION, ITEM, LIST);
+   $ini-> replace_values(SECTION, ITEM, LIST);
+
+   $ini-> write;
+   $ini-> clean;
+   $ini-> read( FILENAME);
+   $ini-> read( FILENAME, default => HASHREF_OR_ARRAYREF);
+
+   my $sec = $ini->section(SECTION);
+   $sec->{ITEM} = VALUE;
+   my $val = $sec->{ITEM};
+   delete $sec->{ITEM};
+   my %everything = %$sec;
+   %$sec = ();
+   for ( keys %$sec) { ... }
+   while ( my ($k,$v) = each %$sec) { ... }
+
+=head1 DESCRIPTION
+
+   Wait, may be I'll write it...
+
+=head1 VERSION
+
+Version 0.01
+
+=head1 AUTHOR
+
+  Anton Berezin
+    E-Mail:        tobez@plab.ku.dk
+    WWW Home Page: http://www.plab.ku.dk/tobez/
+
+=head1 COPYRIGHT
+
+Copyright (c) 1998 The Protein Laboratory, University of Copenhagen.
+All rights reserved. This program is free software; you can redistribute
+it and/or modify it under the same terms as Perl itself.
+
+=cut
+
+sub new { shift-> create(@_); }     # a shortcut
+
+sub create
+{
+   my $class = shift;
+   my %profile = ();
+   %profile = @_ if scalar(@_)%2==0;
+   %profile = (file => shift) if scalar(@_)%2==1;
+   %profile = (%profile, @_) if scalar(@_)%2==0;
+   my $self = {};
+   bless( $self, $class);
+   $self-> clean;
+   $self->{fileName} = $profile{-file} if exists $profile{-file};
+   $self->{fileName} = $profile{file} if exists $profile{file};
+   $self-> read($self->{fileName}, %profile) if exists $self->{fileName};
+   return $self;
+}
+
+sub DESTROY
+{
+   my $self = shift;
+   $self-> write;
+}
+
+sub read
+{
+   my ($self, $fname, %profile) = @_;
+   $self-> write;             # save the old contents
+   $self-> clean;
+   $self->{fileName} = $fname;
+   eval
+   {
+      open FILE, "$fname" or do
+      {
+         open FILE, ">$fname" or die "Cannot create $fname: $!\n";
+         close FILE;
+         open FILE, "$fname" or die "Cannot open $fname: $!\n";
+      };
+      my @chunks = ();
+      my %sectionChunks = ('' => [0]);
+      my %sectionItems = ('' => []);
+      my $currentChunk = [];
+      my $items = {};
+      my $chunkNum = 0;
+      my $line = 0;
+      push @chunks, $currentChunk;
+      push @{$sectionItems{''}}, $items;
+      while (<FILE>)
+      {
+         chomp;
+         if ( /^\s*\[(.*?)\]/)         # new section?
+         {
+            my $section = $1;
+            $currentChunk = [];
+            $items = {};
+            push @chunks, $currentChunk;
+            $chunkNum++;
+            $line = 0;
+            if ( exists $sectionChunks{$section})
+            {
+               push @{$sectionChunks{$section}}, $chunkNum;
+               push @{$sectionItems{$section}}, $items;
+            }
+            else
+            {
+               $sectionChunks{$section} = [$chunkNum];
+               $sectionItems{$section} = [$items];
+            }
+            next;
+         }
+         next   if /^\s*[;#]/;      # comment
+         next   unless /^\s*(.*?)\s*=/;
+         # another value found
+         my $item = $1;
+         if ( exists $items->{$item})
+         {
+            # duplicate
+            push @{$items->{$item}}, $line;
+         }
+         else
+         {
+            # first such $item in this portion of the $section
+            $items->{$item} = [$line];
+         }
+      }
+      continue
+      {
+         push( @$currentChunk, $_);
+         $line++;
+      }
+      close FILE;
+      push( @{$chunks[-1]}, '') if scalar(@{$chunks[-1]}) && $chunks[-1]->[-1] !~ /^\s*$/;
+      $self->{chunks} = [@chunks];
+      $self->{sectionChunks} = {%sectionChunks};
+      $self->{sectionItems} = {%sectionItems};
+
+      # default values
+      my $def;
+      $def = $profile{default} || $profile{-default};
+      # flatten hash to an array if neccessary
+      $def = [%$def] if ref($def) eq q/HASH/;
+      if ( ref($def) eq q/ARRAY/ && scalar(@$def)%2 == 0)
+      {
+         while (scalar(@$def))
+         {
+            my $sectName = shift @$def;
+            my $sectValue = shift @$def;
+            # flatten hash to an array if neccessary
+            $sectValue = [%$sectValue] if ref($sectValue) eq q/HASH/;
+            if ( ref($sectValue) eq q/ARRAY/ && scalar(@$sectValue)%2 == 0)
+            {
+               while (scalar(@$sectValue))
+               {
+                  my $itemName = shift @$sectValue;
+                  my $itemValue = shift @$sectValue;
+                  my @defaultValues = (ref($itemValue) eq q/ARRAY/ ? (@$itemValue) : ($itemValue));
+                  my @vals = $self-> get_values( $sectName, $itemName);
+                  if (scalar(@defaultValues) > scalar(@vals))
+                  {
+                     splice @defaultValues, 0, scalar(@vals);
+                     $self-> add_values( $sectName, $itemName, @defaultValues);
+                  }
+               }
+            }
+         }
+      }
+   };
+   $self-> clean if $@;
+   warn($@) if $@;
+}
+
+sub clean
+{
+   my $self = $_[0];
+   $self->{fileName} = undef;
+   $self->{changed} = undef;
+   $self->{chunks} = undef;
+   $self->{sectionChunks} = undef;
+   $self->{sectionItems} = undef;
+}
+
+sub sections
+{
+   my $self = $_[0];
+   if ( wantarray)
+   {
+      return () unless defined $self->{fileName};
+      my $h = $self->{sectionChunks};
+      return sort { $h->{$a}->[0] <=> $h->{$b}->[0] } keys %$h;
+   }
+   else
+   {
+      return 0 unless defined $self->{fileName};
+      return scalar values %{$self->{sectionChunks}};
+   }
+}
+
+sub items
+{
+   my ($self,$section) = @_;
+   my $all = ($#_ == 2) ? ($_[2]) : ( $#_ == 3 && ($_[2] eq 'all' || $_[2] eq '-all') ? $_[3] : 0);
+   return wantarray ? () : 0
+      unless defined($self->{fileName}) &&
+             defined($section) &&
+             defined($self->{sectionItems}->{$section});
+   my %items = ();
+   my @items = ();
+   if ( $all)
+   {
+      for ( @{$self->{sectionChunks}->{$section}})
+      {
+         # analyze every chunk once-again
+         for ( @{$self->{chunks}->[$_]})
+         {
+            next   if /^\s*\[(.*?)\]/;     # section header
+            next   if /^\s*[;#]/;          # comment
+            next   unless /^\s*(.*?)\s*=/; # not item=value pair
+            push @items, $1;
+         }
+      }
+   }
+   else
+   {
+      for ( @{$self->{sectionItems}->{$section}})
+      {
+         push @items, map { if (exists $items{$_}) {()} else { $items{$_}=1; $_ }} sort { $_->{$a}->[0] <=> $_->{$b}->[0] } keys %$_;
+      }
+   }
+   return @items;
+}
+
+sub nvalues
+{
+   my ($self,$section,$item) = @_;
+   return 0
+      unless defined($self->{fileName}) &&
+             defined($section) &&
+             defined($self->{sectionItems}->{$section}) &&
+             defined($item);
+   my $n = 0;
+   for (@{$self->{sectionItems}->{$section}})
+   {
+      next unless exists $_->{$item};
+      $n += scalar @{$_->{$item}}
+   }
+   return $n;
+}
+
+sub get_values
+{
+   my ($self,$section,$item) = @_;
+   return wantarray ? () : undef
+      unless defined($self->{fileName}) &&
+             defined($section) &&
+             defined($self->{sectionItems}->{$section}) &&
+             defined($item);
+   my @vals = ();
+   my $chunk = 0;
+   for (@{$self->{sectionItems}->{$section}})
+   {
+      next unless exists $_->{$item};
+      my $txt = $self-> {chunks}-> [$self->{sectionChunks}->{$section}->[$chunk]];
+      for (@{$_->{$item}})
+      {
+         my $line = $txt->[$_];
+         warn( "IniFile: Internal error 1\n"), next
+            unless $line =~ /^\s*(.*?)\s*=(.*)$/ && $1 eq $item;
+         push @vals, $2;
+      }
+   }
+   continue
+   {
+      $chunk++;
+   }
+   return wantarray ? @vals : (scalar @vals ? $vals[0] : undef);
+}
+
+sub set_values
+{
+   my ($self,$section,$item,@vals) = @_;
+   return unless defined($self->{fileName}) &&
+                 defined($section) &&
+                 defined($item) &&
+                 scalar(@vals);
+   @vals = map { defined $_ ? $_ : '' } @vals;
+
+   $self->{changed} = 1;
+
+   my $chunk = 0;
+   my $lastLine = -1;
+   my $lastChunk = -1;
+   if (!defined($self->{sectionItems}->{$section}))
+   {
+      # No such section, adding
+      push @{$self->{chunks}}, ["[$section]",''];
+      $self->{sectionChunks}->{$section} = [scalar(@{$self->{chunks}}) - 1];
+      $self->{sectionItems}->{$section} = [{}];
+   }
+   SECTION: for (@{$self->{sectionItems}->{$section}})
+   {
+      next unless exists $_->{$item};
+      my $txt = $self-> {chunks}-> [$self->{sectionChunks}->{$section}->[$chunk]];
+      for (@{$_->{$item}})
+      {
+         warn( "IniFile: Internal error 2\n"), next
+            unless $txt->[$_] =~ /^\s*(.*?)\s*=(.*)$/ && $1 eq $item;
+         $txt->[$_] =~ s{^(\s*.*?\s*=).*$}{$1$vals[0]};
+         shift @vals;
+         last SECTION unless scalar @vals;
+         $lastChunk = $chunk;
+         $lastLine = $_;
+      }
+   }
+   continue
+   {
+      $chunk++;
+   }
+   return unless scalar @vals;
+   if ( $lastChunk < 0)
+   {
+      # there was no such $item, not a single time
+      $lastChunk = $chunk - 1;
+      # find last non-empty line in the chunk
+      my $txt = $self-> {chunks}-> [$self->{sectionChunks}->{$section}->[$lastChunk]];
+      $lastLine = scalar(@$txt) - 1;
+      $lastLine-- while ($lastLine >= 0) && (($txt->[$lastLine] =~ /^\s*$/) || ($txt->[$lastLine] =~ /^\s*[;#]/));
+      warn( "IniFile: Internal error 3\n"), return if $lastLine < 0;
+   }
+   # add the rest
+   while ( scalar @vals)
+   {
+      $lastLine++;
+      my $txt = $self-> {chunks}-> [$self->{sectionChunks}->{$section}->[$lastChunk]];
+      my $items = $self-> {sectionItems}-> {$section}-> [$lastChunk];
+      splice @$txt, $lastLine, 0, "$item=$vals[0]";
+      shift @vals;
+      # modify line numbering
+      for (keys %$items)
+      {
+         my $ary = $items-> {$_};
+         for (@$ary)
+         {
+            $_++ if $_ >= $lastLine;
+         }
+      }
+      if (exists $items->{$item})
+      {
+         push @{$items->{$item}}, $lastLine;
+      }
+      else
+      {
+         $items->{$item} = [$lastLine];
+      }
+   }
+}
+
+sub add_values
+{
+   my ($self,$section,$item,@vals) = @_;
+   return unless defined($self->{fileName}) &&
+                 defined($section) &&
+                 defined($item) &&
+                 scalar(@vals);
+   @vals = map { defined $_ ? $_ : '' } @vals;
+   $self-> set_values($section,$item,$self-> get_values($section,$item),@vals);
+}
+
+sub replace_values
+{
+   my ($self,$section,$item,@vals) = @_;
+   return unless defined($self->{fileName}) &&
+                 defined($section) &&
+                 defined($item);
+   @vals = () if $#vals == 0 && !defined $vals[0];
+   @vals = map { defined $_ ? $_ : '' } @vals;
+   my $nv = scalar @vals;
+   $self->{changed} = 1;
+   $self-> set_values($section,$item,@vals);
+   return unless defined($self->{sectionItems}->{$section});
+   # and now circle through and delete the rest
+   my $chunk = 0;
+   my $n = 0;
+   for (@{$self->{sectionItems}->{$section}})
+   {
+      next unless exists $_->{$item};
+      my $txt = $self-> {chunks}-> [$self->{sectionChunks}->{$section}->[$chunk]];
+      my $ary = $_->{$item};
+      for (my $i = 0; $i < scalar(@$ary); $i++)
+      {
+         if ( $n >= $nv)
+         {
+            # actual deletion
+            my $line = $ary->[$i];
+            splice @$txt, $ary->[$i], 1;
+            splice @$ary, $i, 1;
+            $i--;
+            # and line numbering adjustment
+            my $items = $_;
+            for (keys %$items)
+            {
+               my $ary = $items-> {$_};
+               for (@$ary)
+               {
+                  $_-- if $_ > $line;
+               }
+            }
+         }
+         else
+         {
+            $n++;
+         }
+      }
+      if (scalar(@$ary) == 0)
+      {
+         delete $_->{$item};
+      }
+   }
+   continue
+   {
+      $chunk++;
+   }
+}
+
+package IniFile::Section::Helper::to::Tie;
+
+sub TIEHASH
+{
+   my ($class, $ini, $section) = @_;
+   my $self = {
+      ini     => $ini,
+      section => $section,
+   };
+   bless( $self, $class);
+   return $self;
+}
+
+sub DESTROY
+{
+}
+
+sub FETCH
+{
+   my ($self, $item) = @_;
+   my @vals = $self->{ini}-> get_values($self->{section}, $item);
+   return scalar(@vals) ? ($#vals ? [@vals] : $vals[0]) : undef;
+}
+
+sub STORE
+{
+   my ($self, $item, $val) = @_;
+   $self->{ini}-> replace_values($self->{section}, $item, ref($val) eq q/ARRAY/ ? @$val : ($val));
+}
+
+sub DELETE
+{
+   my ($self, $item) = @_;
+   $self->{ini}-> replace_values($self->{section}, $item);
+}
+
+sub CLEAR         # Well, dangerous
+{
+   my $self = $_[0];
+   my @items = $self->{ini}->items($self->{section});
+   for (@items)
+   {
+      $self->{ini}-> replace_values($self->{section}, $_);
+   }
+}
+
+sub EXISTS
+{
+   my ($self, $item) = @_;
+   return $self->{ini}->nvalues($self->{section},$item) > 0;
+}
+
+sub FIRSTKEY
+{
+   my $self = $_[0];
+   $self->{iterator} = [$self->{ini}->items($self->{section})];
+   return $self-> NEXTKEY;
+}
+
+sub NEXTKEY
+{
+   my $self = $_[0];
+   unless ( exists $self->{iterator} && scalar @{$self->{iterator}})
+   {
+      return wantarray ? () : undef;
+   }
+   my $key = shift @{$self->{iterator}};
+   return wantarray ? ($key, $self-> FETCH($key)) : $key;
+}
+
+package IniFile;
+
+sub section
+{
+   my %tied;
+   tie %tied, q/IniFile::Section::Helper::to::Tie/, $_[0], $_[1];
+   return \%tied;
+}
+
+sub write
+{
+   my $self = $_[0];
+   return unless defined($self->{fileName}) && $self->{changed};
+   my $fname = $self->{fileName};
+   eval {
+      open FILE, ">$fname" or die "Cannot write to the $fname: $!\n";
+      pop @{$self-> {chunks}->[-1]} if scalar(@{$self->{chunks}->[-1]}) && $self->{chunks}->[-1]->[-1] =~ /^\s*$/;
+      for ( @{$self-> {chunks}})
+      {
+         for (@$_) { print FILE "$_\n"; }
+      }
+      push( @{$self-> {chunks}->[-1]}, '') if scalar(@{$self->{chunks}->[-1]}) && $self->{chunks}->[-1]->[-1] !~ /^\s*$/;
+      close FILE;
+   };
+   $self-> {changed} = undef if $@;
+   warn($@) if $@;
+}
+
+1;
