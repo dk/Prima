@@ -1481,23 +1481,13 @@ sub profile_default
       closedGlyphs   => 1,
       openedIcon     => undef,
       closedIcon     => undef,
+      showDotDirs    => 0,
    }
 }
 
-sub init
+sub init_tree
 {
-   my $self = shift;
-   my %profile = @_;
-   $profile{items} = [];
-   %profile = $self-> SUPER::init( %profile);
-   for ( qw( files filesStat items))             { $self->{$_} = []; }
-   for ( qw( openedIcon closedIcon openedGlyphs closedGlyphs indent))
-      { $self->{$_} = $profile{$_}}
-   $self-> {openedIcon} = $images[0] unless $self-> {openedIcon};
-   $self-> {closedIcon} = $images[1] unless $self-> {closedIcon};
-   $self->{fontHeight} = $self-> font-> height;
-   $self-> recalc_icons;
-
+   my $self = $_[0];
    my @tree;
    if ( $unix) {
       push ( @tree, [[ '/', ''], [], 0]);
@@ -1509,6 +1499,22 @@ sub init
       }
    }
    $self-> items( \@tree);
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = @_;
+   $profile{items} = [];
+   %profile = $self-> SUPER::init( %profile);
+   for ( qw( files filesStat items))             { $self->{$_} = []; }
+   for ( qw( openedIcon closedIcon openedGlyphs closedGlyphs indent showDotDirs))
+      { $self->{$_} = $profile{$_}}
+   $self-> {openedIcon} = $images[0] unless $self-> {openedIcon};
+   $self-> {closedIcon} = $images[1] unless $self-> {closedIcon};
+   $self->{fontHeight} = $self-> font-> height;
+   $self-> recalc_icons;
+   $self-> init_tree;
    $self-> {cPath} = $profile{path};
    return %profile;
 }
@@ -1627,8 +1633,14 @@ sub get_directory_tree
 
    $self-> {files}     = \@fs1;
    $self-> {filesStat} = \@fs2;
-   my @d   = grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
-   push @d, grep { -d "$path/$_" } $self-> files( 'lnk');
+   my @d;
+   if ( $self->{showDotDirs}) {
+      @d   = grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
+      push @d, grep { -d "$path/$_" } $self-> files( 'lnk');
+   } else {
+      @d = grep { !/\./ } $self-> files( 'dir');
+      push @d, grep { !/\./ && -d "$path/$_" } $self-> files( 'lnk');
+   }
    @d = sort @d;
    my $ind = 0;
    my @lb;
@@ -1643,9 +1655,14 @@ sub get_directory_tree
       }
       $self-> {files}     = \@fs1;
       $self-> {filesStat} = \@fs2;
-      my @dd   = grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
-      push @dd, grep { -d "$pathp/$_" } $self-> files( 'lnk');
-      @dd = sort @dd;
+      my @dd;
+      if ( $self-> {showDotDirs}) {
+         @dd   = grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
+         push @dd, grep { -d "$pathp/$_" } $self-> files( 'lnk');
+      } else {
+         @dd = grep { !/\./ } $self-> files( 'dir');
+         push @dd, grep { !/\./ && -d "$pathp/$_" } $self-> files( 'lnk');
+      }
       push @lb, [[ $_, "$path/"], scalar @dd ? [] : undef, 0];
    }
    $::application-> pointer( $oldPointer);
@@ -1687,6 +1704,7 @@ sub path
    $p = eval { Cwd::abs_path($p) };
    $p = "." if $@;
    $p = "" unless -d $p;
+   $p = '' if !$self->{showDotDirs} && $p =~ /\./;
    $p .= '/' unless $p =~ m![/\\]$!;
    $self-> {path} = $p;
    if ( $p eq '/') {
@@ -1759,6 +1777,16 @@ sub closedGlyphs
    $_[0]->{closedGlyphs} = $_[1];
    $_[0]-> recalc_icons;
    $_[0]-> calibrate;
+}
+
+sub showDotDirs
+{
+   return $_[0]->{showDotDirs} unless $#_;
+   my $p = $_[0]-> path;
+   $_[0]->{showDotDirs} = $_[1];
+   $_[0]-> init_tree;
+   $_[0]->{path} = '';
+   $_[0]->path($p);
 }
 
 1;
