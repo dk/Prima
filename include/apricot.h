@@ -139,22 +139,6 @@ typedef struct _TrigDComplex { double r,  ph; } TrigDComplex;
 #define true TRUE
 #define false FALSE
 
-/* general structures */
-
-typedef struct _Point
-{
-   int x;
-   int y;
-} Point;
-
-typedef struct _Rect
-{
-   int left;
-   int bottom;
-   int right;
-   int top;
-} Rect;
-
 /* Event structures */
 
 typedef struct _KeyEvent {
@@ -375,9 +359,6 @@ extern FillPattern fillPatterns[];
 #define C_NUMERIC_UNDEF   -90909090
 #define C_STRING_UNDEF    "__C_CHAR_UNDEF__"
 #define C_POINTER_UNDEF   nilSV
-
-extern Rect  Rect_buffer;
-extern Point Point_buffer;
 
 /* run-time class information functions */
 
@@ -1148,11 +1129,6 @@ apc_clipboard_deregister_format( long id);
 
 /* Menus & popups */
 
-typedef struct _ItemRegRec {
-  int   cmd;
-  void *item;
-} ItemRegRec, *PItemRegRec;
-
 typedef struct _MenuItemReg {   /* Menu item registration record */
    char * variable;             /* perl variable name */
    char * text;                 /* menu text */
@@ -1509,11 +1485,10 @@ apc_dbm_get_handle( Handle self);
 
 typedef struct _TextWrapRec {
    char * text;                        /* text to be wrapped */
+   int    textLen;                     /* text length */
    int    width;                       /* width to wrap with */
    int    tabIndent;                   /* \t replace to tabIndent spaces */
-   Font * font;                        /* optional font */
    int    options;                     /* twXXX constants */
-   int    textLen;                     /* text lenght */
    int    count;                       /* count of lines returned */
    int    t_start;                     /* ~ starting point */
    int    t_end;                       /* ~ ending point */
