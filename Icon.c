@@ -315,12 +315,14 @@ Icon_update_change( Handle self)
       var-> mask = nil;
 }
 
+/*
 void
 Icon_update_mask_change( Handle self)
 {
    if ( !var-> data) return;
    produce_mask( self);
 }
+*/
 
 void
 Icon_create_empty( Handle self, int width, int height, int type)
