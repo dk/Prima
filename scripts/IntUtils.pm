@@ -29,8 +29,7 @@ sub stop_scroll_timer
 {
    my $self = $_[0];
    return unless exists $self->{scrollTimer};
-   $self->{scrollTimer}-> destroy;
-   delete $self->{scrollTimer};
+   $self->{scrollTimer}-> stop;
 }
 
 sub start_scroll_timer
@@ -42,7 +41,7 @@ sub start_scroll_timer
       owner   => $self,
       timeout => $rates[0],
       name    => q(ScrollTimer),
-   );
+   ) unless exists $self-> {scrollTimer};
    $self->{scrollTimer}->{newRate} = $rates[1];
    $self->{scrollTimer}->{semaphore} = 1;
    $self->{scrollTimer}->start;
