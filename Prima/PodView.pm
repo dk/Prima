@@ -1056,7 +1056,7 @@ sub add
 
       # add topic
       if ( $style == STYLE_HEAD_1 || $style == STYLE_HEAD_2 || 
-         ( $style == STYLE_ITEM && $p !~ /^\*|\d+\.?$/)) {
+         (( $style == STYLE_ITEM) && $p !~ /^[0-9*]+\.?$/)) {
          my $itemDepth = ( $style == STYLE_ITEM) ?
             scalar @{$r-> {indentStack}} : 0;
          my $pp = $p;
