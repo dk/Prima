@@ -1112,6 +1112,84 @@ apc_widget_set_size( Handle self, int width, int height)
    return true;
 }
 
+
+Bool
+apc_widget_set_rect( Handle self, int x, int y, int width, int height)
+{
+   DEFXX;
+   Point sz = XX-> size;
+   PWidget widg = PWidget( self);
+   Event e;
+
+   if ( XX-> type. window) {
+      Rect rc;
+      prima_get_frame_info( self, &rc);
+      return apc_window_set_client_rect( self, x + rc. left, y + rc. bottom, 
+          width - rc. left - rc. right, height - rc. bottom - rc. top);
+   }   
+   
+   widg-> virtualSize. x = width;
+   widg-> virtualSize. y = height;
+
+   width = ( width > 0)
+      ? (( width >= widg-> sizeMin. x)
+	  ? (( width <= widg-> sizeMax. x)
+	      ? width
+	      : widg-> sizeMax. x)
+	  : widg-> sizeMin. x)
+      : 0;
+
+   height = ( height > 0)
+      ? (( height >= widg-> sizeMin. y)
+	  ? (( height <= widg-> sizeMax. y)
+	      ? height
+	      : widg-> sizeMax. y)
+	  : widg-> sizeMin. y)
+      : 0;
+   
+   if ( XX-> parentHandle == nilHandle && 
+        XX-> size. x == width && XX-> size. y == height &&
+        x == XX-> origin.x && y == XX-> origin. y)
+      return true;
+
+   if ( X_WINDOW == guts. grab_redirect) {
+      XWindow rx;
+      XTranslateCoordinates( DISP, X_WINDOW, guts. root, 0, 0, 
+         &guts. grab_translate_mouse.x, &guts. grab_translate_mouse.y, &rx);
+   }
+
+
+   XX-> size. x = width;
+   XX-> size. y = height;
+
+   bzero( &e, sizeof( e));
+   e. cmd = cmMove;
+   e. gen. source = self;
+   XX-> origin. x = e. gen. P. x = x;
+   XX-> origin. y = e. gen. P. y = y;
+   y = X(XX-> owner)-> size. y + X(XX-> owner)-> menuHeight - height - XX-> origin. y;
+   if ( XX-> parentHandle) {
+      XWindow cld;
+      XTranslateCoordinates( DISP, PWidget(XX-> owner)-> handle, XX-> parentHandle, x, y, &x, &y, &cld);
+   } 
+   if ( width != 0 && height != 0) {
+      XMoveResizeWindow( DISP, X_WINDOW, x, y, width, height);
+      if ( XX-> flags. falsely_hidden) {
+         if ( XX-> flags. want_visible) XMapWindow( DISP, X_WINDOW);
+         XX-> flags. falsely_hidden = 0;
+      }   
+   } else {
+      if ( XX-> flags. want_visible) XUnmapWindow( DISP, X_WINDOW);  
+      XMoveResizeWindow( DISP, X_WINDOW, x, y, ( width == 0) ? 1 : width, ( height == 0) ? 1 : height);
+      XX-> flags. falsely_hidden = 1;
+   }   
+   apc_message( self, &e, false);
+   prima_send_cmSize( self, sz);
+   if ( XX-> flags. transparent)
+      apc_widget_invalidate_rect( self, nil);
+   return true;
+}
+
 Bool
 apc_widget_set_size_bounds( Handle self, Point min, Point max)
 {

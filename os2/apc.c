@@ -428,8 +428,7 @@ set_view_ex( Handle self, PViewProfile p)
   apc_widget_set_visible( self, false);
   for ( i = 0; i <= ciMaxId; i++) apc_widget_set_color( self, p-> colors[i], i);
   apc_widget_set_font( self, &var font);
-  apc_widget_set_pos( self, p-> pos. x, p-> pos. y);
-  apc_widget_set_size( self, p-> size. x, p-> size. y);
+  apc_widget_set_rect( self, p-> pos. x, p-> pos. y, p-> size. x, p-> size. y);
   var virtualSize = p-> virtSize;
   apc_widget_set_enabled( self, p-> enabled);
   if ( p-> focused) apc_widget_set_focused( self);
@@ -540,8 +539,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    {
       int i;
       Handle oldOwner = owner; var owner = owner;
-      apc_widget_set_pos( self, vprf-> pos. x, vprf-> pos. y);
-      apc_widget_set_size( self, vprf-> size. x, vprf-> size. y);
+      apc_widget_set_rect( self, vprf-> pos. x, vprf-> pos. y, vprf-> size.x, vprf-> size.y);
       var owner = oldOwner;
       for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
       if ( sys className == WC_FRAME)
@@ -824,6 +822,41 @@ apc_window_set_client_size( Handle self, int x, int y)
    }
    return ok;
 }
+
+Bool
+apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
+{
+   Bool ok = true;
+   Point d = get_window_borders( sys s. window. borderStyle);
+   if ( sys s. window. state == wsMinimized)
+   {
+      var virtualSize = ( Point){width, height};
+      if ( width < 0) width = 0;
+      if ( height < 0) height = 0;
+      sys s. window. lastFrameSize. x += sys s. window. lastFrameSize. x - sys s. window. lastClientSize. x + width;
+      sys s. window. lastFrameSize. y += sys s. window. lastFrameSize. y - sys s. window. lastClientSize. y + height;
+      sys s. window. hiddenPos = ( Point){x - d.x, y - d.y};
+      sys s. window. hiddenSize = sys s. window. lastClientSize = ( Point){width, height};
+   } else {
+      Point p = frame2client( self, ( Point){width, height}, false);
+      if ( var stage == csConstructing && sys s. window. state != wsNormal)
+      {
+         HWND h = HANDLE;
+         if ( !( ok = WinSetWindowUShort( h, QWS_CXRESTORE, p. x))) apiErr;
+         if ( !( ok &= WinSetWindowUShort( h, QWS_CYRESTORE, p. y))) apiErr;
+         if ( !( ok &= WinSetWindowUShort( h, QWS_XRESTORE, x - d.x))) apiErr;
+         if ( !( ok &= WinSetWindowUShort( h, QWS_YRESTORE, y - d.y))) apiErr;
+         var virtualSize = ( Point){width, height};
+      } else {
+         sys sizeLockLevel++;
+         var virtualSize = ( Point){width, height};
+         if ( !( ok = WinSetWindowPos( HANDLE, 0, x - d.x, y - d.y, p. x, p. y, SWP_SIZE|SWP_MOVE))) apiErr;
+         sys sizeLockLevel--;
+      }
+   }
+   return ok;
+}
+
 
 Bool
 apc_window_set_client_pos( Handle self, int x, int y)
@@ -1650,6 +1683,43 @@ apc_widget_set_size( Handle self, int width, int height)
       sys sizeLockLevel++;
       var virtualSize = ( Point) {width, height};
       if ( !WinSetWindowPos( HANDLE, 0, 0, 0, width, height, SWP_SIZE)) apiErr;
+      sys sizeLockLevel--;
+   }
+   return true;
+}
+
+Bool
+apc_widget_set_rect( Handle self, int x, int y, int width, int height)
+{
+   if (
+        ( sys className == WC_FRAME) && (
+           ( var stage == csConstructing && sys s. window. state != wsNormal) ||
+           ( sys s. window. state == wsMinimized)
+        )
+      )
+   {
+      HWND h = HANDLE;
+      if ( sys s. window. state == wsMinimized) 
+         sys s. window. hiddenPos = ( Point){ x, y};
+      if ( !WinSetWindowUShort( h, QWS_XRESTORE, x)) apiErr;
+      if ( !WinSetWindowUShort( h, QWS_YRESTORE, y)) apiErrRet;
+      if ( !WinSetWindowUShort( h, QWS_CXRESTORE, width)) apiErr;
+      if ( !WinSetWindowUShort( h, QWS_CYRESTORE, height)) apiErrRet;
+      sys s. window. lastClientSize. x += sys s. window. lastClientSize. x - sys s. window. lastFrameSize. x + width;
+      sys s. window. lastClientSize. y += sys s. window. lastClientSize. y - sys s. window. lastFrameSize. y + height;
+      sys s. window. lastFrameSize = ( Point){ width, height};
+      var virtualSize = sys s. window. hiddenSize = sys s. window. lastClientSize;
+   }
+   else {
+      if ( sys parentHandle) {
+         POINTL ppos = { x, y};
+         WinMapWindowPoints( HWND_DESKTOP, sys parentHandle, &ppos, 1);
+         x = ppos. x;
+         y = ppos. y;
+      }
+      sys sizeLockLevel++;
+      var virtualSize = ( Point) {width, height};
+      if ( !WinSetWindowPos( HANDLE, 0, x, y, width, height, SWP_SIZE|SWP_MOVE)) apiErr;
       sys sizeLockLevel--;
    }
    return true;

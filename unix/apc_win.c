@@ -423,6 +423,24 @@ apc_window_set_client_pos( Handle self, int x, int y)
    return true;
 }
 
+static void
+apc_window_set_rect( Handle self, int x, int y, int szx, int szy)
+{
+    XSizeHints hints;
+
+    bzero( &hints, sizeof( XSizeHints));
+    hints. flags = USPosition | USSize;
+    hints. x = x - X(self)-> decorationSize. x;
+    hints. y = guts. displaySize. y - szy - X(self)-> menuHeight - y - X(self)-> decorationSize. y;
+    hints. width  = szx;
+    hints. height = szy + X(self)-> menuHeight;
+    X(self)-> flags. size_determined = 1;
+    X(self)-> flags. position_determined = 1;
+    XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, hints. width, hints. height);
+    apc_SetWMNormalHints( self, &hints);
+    prima_wm_sync( self, ConfigureNotify);
+}   
+
 static Bool
 window_set_client_size( Handle self, int width, int height)
 {
@@ -481,6 +499,48 @@ window_set_client_size( Handle self, int width, int height)
    }
    return true;
 }
+  
+Bool
+apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
+{
+   DEFXX;
+   PWidget widg = PWidget( self);
+   
+   if ( !XX-> flags. zoomed) {
+      widg-> virtualSize. x = width;
+      widg-> virtualSize. y = height;
+  } 
+
+   width = ( width > 0)
+      ? (( width >= widg-> sizeMin. x)
+	  ? (( width <= widg-> sizeMax. x)
+              ? width 
+	      : widg-> sizeMax. x)
+	  : widg-> sizeMin. x)
+      : 1; 
+   height = ( height > 0)
+      ? (( height >= widg-> sizeMin. y)
+	  ? (( height <= widg-> sizeMax. y)
+	      ? height
+	      : widg-> sizeMax. y)
+	  : widg-> sizeMin. y)
+      : 1;
+
+   if ( XX-> flags. zoomed) {
+      XX-> zoomRect. left = x;
+      XX-> zoomRect. bottom = y;
+      XX-> zoomRect. right = width;
+      XX-> zoomRect. top   = height;
+      return true;
+   }
+   
+   if ( x == XX-> origin. x && y == XX-> origin. y && 
+        width == XX-> size. x && height == XX-> size. y ) return true;
+   
+   apc_window_set_rect( self, x, y, width, height);
+   return true;
+}
+
 
 Bool
 apc_window_set_client_size( Handle self, int width, int height)
@@ -632,24 +692,6 @@ FAIL:
    if (( Handle) i != icon) Object_destroy(( Handle) i);
    return false;
 }
-
-static void
-apc_window_set_rect( Handle self, int x, int y, int szx, int szy)
-{
-    XSizeHints hints;
-
-    bzero( &hints, sizeof( XSizeHints));
-    hints. flags = USPosition | USSize;
-    hints. x = x - X(self)-> decorationSize. x;
-    hints. y = guts. displaySize. y - szy - X(self)-> menuHeight - y - X(self)-> decorationSize. y;
-    hints. width  = szx;
-    hints. height = szy + X(self)-> menuHeight;
-    X(self)-> flags. size_determined = 1;
-    X(self)-> flags. position_determined = 1;
-    XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, hints. width, hints. height);
-    apc_SetWMNormalHints( self, &hints);
-    prima_wm_sync( self, ConfigureNotify);
-}   
 
 Bool
 apc_window_set_window_state( Handle self, int state)

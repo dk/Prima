@@ -608,8 +608,7 @@ set_view_ex( Handle self, PViewProfile p)
   apc_widget_set_visible( self, false);
   for ( i = 0; i <= ciMaxId; i++) apc_widget_set_color( self, p-> colors[i], i);
   apc_widget_set_font( self, &var font);
-  apc_widget_set_pos( self, p-> pos. x, p-> pos. y);
-  apc_widget_set_size( self, p-> size. x, p-> size. y);
+  apc_widget_set_rect( self, p-> pos. x, p-> pos. y, p-> size.x, p-> size.y);
   var virtualSize = p-> virtSize;
   apc_widget_set_enabled( self, p-> enabled);
   if ( p-> focused) apc_widget_set_focused( self);
@@ -745,8 +744,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    {
       int i;
       Handle oldOwner = var owner; var owner = owner;
-      apc_widget_set_pos( self, vprf-> pos. x, vprf-> pos. y);
-      apc_widget_set_size( self, vprf-> size. x, vprf-> size. y);
+      apc_widget_set_rect( self, vprf-> pos. x, vprf-> pos. y, vprf-> size. x, vprf-> size. y);
       var owner = oldOwner;
       for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
       if ( sys className == WC_FRAME)
@@ -1173,6 +1171,70 @@ apc_window_set_client_size( Handle self, int x, int y)
          SWP_NOZORDER | SWP_NOACTIVATE | 
             ( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
          );
+      sys sizeLockLevel--;
+   }
+   return true;
+}
+
+Bool
+apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
+{
+   RECT r, c, c2;
+   HWND h;
+   int  ws = apc_window_get_window_state( self);
+   Point delta = get_window_borders( sys s. window. borderStyle);
+   Handle parent = var self-> get_parent( self);
+   Point sz = CWidget( parent)-> get_size( parent);
+
+   objCheck false;
+   if ( !hwnd_check_limits( x, y, false)) apcErrRet( errInvParams);
+   if ( !hwnd_check_limits( width, height, false)) apcErrRet( errInvParams);
+   apt_set( aptWinPosDetermined);
+
+   h = HANDLE;
+   if (( var stage == csConstructing && ws != wsNormal) || ws == wsMinimized) {
+      WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
+      Point delta = get_window_borders( sys s. window. borderStyle);
+
+      var virtualSize. x = width;
+      var virtualSize. y = height;
+      if ( width < 0) width = 0;
+      if ( height < 0) height = 0;
+      if ( !GetWindowPlacement( h, &w)) apiErr;
+      if ( !GetWindowRect( h, &c2)) apiErr;
+      if ( ws == wsMaximized) {
+         if ( !GetClientRect( h, &c)) apiErr;
+      }
+      else {
+         // cannot acquire client extension at this time. Using euristic calculations.
+         int  menuY = (( PWindow) self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0;
+         int   titleY = ( sys s. window. borderIcons & biTitleBar) ?
+                         GetSystemMetrics( SM_CYCAPTION) : 0;
+         c = c2;
+         c. right  -= delta. x * 2;
+         c. bottom -= delta. y * 2 + menuY + titleY;
+      }
+      w. rcNormalPosition. bottom = sz. y - y + delta. y;
+      w. rcNormalPosition. left   = x - delta. x;
+      w. rcNormalPosition. top    = w. rcNormalPosition. bottom - height - ( c2. bottom - c2. top - c. bottom + c. top);
+      w. rcNormalPosition. right  = width + ( c2. right - c2. left - c. right + c. left) + w. rcNormalPosition. left;
+      w. flags   = 0;
+      if ( !SetWindowPlacement( h, &w)) apiErr;
+   } else {
+      if ( !GetWindowRect( h, &r)) apiErr;
+      if ( !GetClientRect( h, &c)) apiErr;
+      sys sizeLockLevel++;
+      x -= delta. x;
+      y  = sz. y - y - height - ( r. bottom - r. top  - c. bottom + c. top) + delta. y;
+      var virtualSize. x = width;
+      var virtualSize. y = height;
+      if ( width < 0) width = 0;
+      if ( height < 0) height = 0;
+      SetWindowPos( h, 0,
+         x, y,
+         width + r. right  - r. left - c. right + c. left,
+         height + r. bottom - r. top  - c. bottom + c. top,
+         SWP_NOZORDER | SWP_NOACTIVATE);
       sys sizeLockLevel--;
    }
    return true;
@@ -2182,6 +2244,68 @@ apc_widget_set_size( Handle self, int width, int height)
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
    return true;
 }
+  
+Bool
+apc_widget_set_rect( Handle self, int x, int y, int width, int height)
+{
+   RECT r;
+   HWND h;
+   Handle parent;
+   Point sz;
+   objCheck false;
+
+   if ( !hwnd_check_limits( width, height, false)) apcErrRet( errInvParams);
+   if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
+
+   parent = is_apt( aptClipOwner) ? var owner : application;
+   sz = ((( PWidget) parent)-> self)-> get_size( parent);
+   apt_set( aptWinPosDetermined);
+
+   h = HANDLE;
+   if ( sys className == WC_FRAME) {
+      int  ws = apc_window_get_window_state( self);
+      if (( var stage == csConstructing && ws != wsNormal) || ( ws == wsMinimized)) {
+         WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
+         if ( !GetWindowPlacement( h, &w)) apiErrRet;
+         if ( width  < 0) width = 0;
+         if ( height < 0) height = 0;
+         w. rcNormalPosition. left    = x;
+         w. rcNormalPosition. bottom  = sz. y - y;
+         w. rcNormalPosition. right   = x + width;
+         w. rcNormalPosition. top     = sz. y - y - height;
+         w. flags = 0;
+         if ( !SetWindowPlacement( h, &w)) apiErrRet;
+         return true;
+      }
+   }
+   if ( !GetWindowRect( h, &r)) apiErrRet;
+   if ( is_apt( aptClipOwner) && ( var owner != application))
+      MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
+
+   if ( sys className != WC_FRAME) {
+      sys sizeLockLevel++;
+      var virtualSize. x = width;
+      var virtualSize. y = height;
+   }
+   if ( height < 0) height = 0;
+   if ( width  < 0) width  = 0;
+   if ( sys parentHandle) {
+      POINT ppos;
+      ppos. x = x;
+      ppos. y = dsys( application) lastSize. y - y;
+      MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&ppos, 1);
+      GetWindowRect( sys parentHandle, &r);
+      x = ppos. x;
+      y = ppos. y;
+   } else
+      y = sz. y - y - height;
+   
+   if ( !SetWindowPos( h, 0, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE)) 
+      apiErrRet;
+   if ( sys className != WC_FRAME) sys sizeLockLevel--;
+   return true;
+}
+
 
 Bool
 apc_widget_set_size_bounds( Handle self, Point min, Point max)
