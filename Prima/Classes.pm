@@ -1044,8 +1044,8 @@ sub mouse_down  { splice( @_,5,0,0) if $#_ > 4;
                   splice( @_,2,0,0) if $#_ < 4;
                   shift-> mouse_event( cm::MouseDown, @_);}
 sub mouse_click { shift-> mouse_event( cm::MouseClick, @_) }
-sub select      { $_[0]-> set_selected(1); }
-sub deselect    { $_[0]-> set_selected(0); }
+sub select      { $_[0]-> selected(1); }
+sub deselect    { $_[0]-> selected(0); }
 sub focus       { $_[0]-> set_focused(1); }
 sub defocus     { $_[0]-> set_focused(0); }
 
@@ -1235,7 +1235,7 @@ sub profile_default
    return $def;
 }
 
-sub select     {$_[0]->set_selected(1)}
+sub select     {$_[0]->selected(1)}
 
 sub accel      {($#_>1)?shift->set_accel     (@_)   :return $_[0]->get_accel   ($_[1]);}
 sub action     {($#_>1)?shift->set_action    (@_)   :return $_[0]->get_action  ($_[1]);}
