@@ -1075,6 +1075,7 @@ Image_map( Handle self, Color color)
    int   type = var-> type, height = var-> h, i, ls;
    int   rop[2]; 
    RGBColor r[2];
+   int b[2], bc;
 
    if ( var-> data == nil) return;
 
@@ -1102,6 +1103,11 @@ Image_map( Handle self, Color color)
          r[i]. g = ( c >> 8) & 0xff;
          r[i]. b = c & 0xff;
       }} 
+               
+      if (( type & imBPP) <= 8) {
+         b[0] = cm_nearest_color( r[0], var-> palSize, var-> palette);
+         b[1] = cm_nearest_color( r[1], var-> palSize, var-> palette);
+      }
       
       switch ( rop[i]) {
       case ropNotPut:
@@ -1121,48 +1127,95 @@ Image_map( Handle self, Color color)
       }
    }         
 
+
    c. r = ( color >> 16) & 0xff;
    c. g = ( color >> 8) & 0xff;
    c. b = color & 0xff;
-   
-   my-> set_type( self, imRGB);
+   if (( type & imBPP) <= 8) {
+      Color cc;
+      bc = cm_nearest_color( c, var-> palSize, var-> palette);
+      cc = ARGB( var->palette[bc].r, var->palette[bc].g, var->palette[bc].b);
+      if ( cc != color) bc = 0xffff; /* no exact color found */
+   }
+  
+   if (( type & imBPP) < 8) {
+      if ( type & imGrayScale)
+         my-> set_type( self, imbpp8 | imGrayScale);
+      else
+         my-> set_type( self, imbpp8);
+   }
 
    d = ( Byte * ) var-> data;
    ls = var-> lineSize;
    
    while ( height--) {
-      PRGBColor data = ( PRGBColor) d;
-      for ( i = 0; i < var-> w; i++) {
-         int z = ( data-> r == c.r && data-> g == c.g && data-> b == c.b) ? 0 : 1;
-         switch( rop[z]) {
-         case ropAndPut:     
-            data-> r &= r[z]. r; data-> g &= r[z]. g; data-> b &= r[z]. b; break;
-         case ropXorPut:     
-            data-> r ^= r[z]. r; data-> g ^= r[z]. g; data-> b ^= r[z]. b; break;
-         case ropOrPut:      
-            data-> r |= r[z]. r; data-> g |= r[z]. g; data-> b |= r[z]. b; break;
-         case ropNotDestAnd: 
-            data-> r = ( ~data-> r) & r[z].r; data-> g = ( ~data-> g) & r[z].g; data-> b = ( ~data-> b) & r[z].b; break;
-         case ropNotDestOr:  
-            data-> r = ( ~data-> r) | r[z].r; data-> g = ( ~data-> g) | r[z].g; data-> b = ( ~data-> b) | r[z].b; break;
-         case ropNotDestXor: 
-            data-> r = ( ~data-> r) ^ r[z].r; data-> g = ( ~data-> g) ^ r[z].g; data-> b = ( ~data-> b) ^ r[z].b; break;
-         case ropNotAnd:     
-            data-> r = ~(data-> r & r[z].r); data-> g = ~(data-> g & r[z].g); data-> b = ~(data-> b & r[z].b); break;
-         case ropNotOr:      
-            data-> r = ~(data-> r | r[z].r); data-> g = ~(data-> g | r[z].g); data-> b = ~(data-> b | r[z].b); break;
-         case ropNotXor:     
-            data-> r = ~(data-> r ^ r[z].r); data-> g = ~(data-> g ^ r[z].g); data-> b = ~(data-> b ^ r[z].b); break;
-         case ropNoOper:     
-            break;   
-         case ropInvert:     
-            data-> r = ~r[z]. r; data-> g = ~r[z]. g; data-> b = ~r[z]. b; break;
-         default:            
-            data-> r = r[z]. r; data-> g = r[z]. g; data-> b = r[z]. b;
-         }      
-         data++;
-      }   
-      d += ls;
+      if (( type & imBPP) < 8) {
+         PRGBColor data = ( PRGBColor) d;
+         for ( i = 0; i < var-> w; i++) {
+            int z = ( data-> r == c.r && data-> g == c.g && data-> b == c.b) ? 0 : 1;
+            switch( rop[z]) {
+            case ropAndPut:     
+               data-> r &= r[z]. r; data-> g &= r[z]. g; data-> b &= r[z]. b; break;
+            case ropXorPut:     
+               data-> r ^= r[z]. r; data-> g ^= r[z]. g; data-> b ^= r[z]. b; break;
+            case ropOrPut:      
+               data-> r |= r[z]. r; data-> g |= r[z]. g; data-> b |= r[z]. b; break;
+            case ropNotDestAnd: 
+               data-> r = ( ~data-> r) & r[z].r; data-> g = ( ~data-> g) & r[z].g; data-> b = ( ~data-> b) & r[z].b; break;
+            case ropNotDestOr:  
+               data-> r = ( ~data-> r) | r[z].r; data-> g = ( ~data-> g) | r[z].g; data-> b = ( ~data-> b) | r[z].b; break;
+            case ropNotDestXor: 
+               data-> r = ( ~data-> r) ^ r[z].r; data-> g = ( ~data-> g) ^ r[z].g; data-> b = ( ~data-> b) ^ r[z].b; break;
+            case ropNotAnd:     
+               data-> r = ~(data-> r & r[z].r); data-> g = ~(data-> g & r[z].g); data-> b = ~(data-> b & r[z].b); break;
+            case ropNotOr:      
+               data-> r = ~(data-> r | r[z].r); data-> g = ~(data-> g | r[z].g); data-> b = ~(data-> b | r[z].b); break;
+            case ropNotXor:     
+               data-> r = ~(data-> r ^ r[z].r); data-> g = ~(data-> g ^ r[z].g); data-> b = ~(data-> b ^ r[z].b); break;
+            case ropNoOper:     
+               break;   
+            case ropInvert:     
+               data-> r = ~r[z]. r; data-> g = ~r[z]. g; data-> b = ~r[z]. b; break;
+            default:            
+               data-> r = r[z]. r; data-> g = r[z]. g; data-> b = r[z]. b;
+            }      
+            data++;
+         }   
+         d += ls;
+      } else {
+         Byte * data = d;
+         for ( i = 0; i < var-> w; i++) {
+            int z = ( *data == bc) ? 0 : 1;
+            switch( rop[z]) {
+            case ropAndPut:     
+               *data &= b[z]; break;
+            case ropXorPut:     
+               *data ^= b[z]; break;
+            case ropOrPut:      
+               *data |= b[z]; break;
+            case ropNotDestAnd: 
+               *data = (~(*data)) & b[z]; break;
+            case ropNotDestOr:  
+               *data = (~(*data)) | b[z]; break;
+            case ropNotDestXor: 
+               *data = (~(*data)) ^ b[z]; break;
+            case ropNotAnd:     
+               *data = ~(*data & b[z]); break;
+            case ropNotOr:      
+               *data = ~(*data | b[z]); break;
+            case ropNotXor:     
+               *data = ~(*data ^ b[z]); break;
+            case ropNoOper:     
+               break;   
+            case ropInvert:     
+               *data = ~b[z]; break;
+            default:            
+               *data = b[z]; break;
+            }      
+            data++;
+         }   
+         d += ls;
+      }
    }   
 
    if ( is_opt( optPreserveType) && var->type != type) 
