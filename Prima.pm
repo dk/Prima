@@ -45,6 +45,10 @@ BEGIN {
 
 $VERSION = '1.02';
 bootstrap Prima $VERSION;
+unless ( UNIVERSAL::can('Prima', 'init')) {
+   $::application = 0;
+   return 1;
+}
 $::application = undef;
 require Prima::Const;
 require Prima::Classes;
@@ -52,12 +56,12 @@ init Prima $VERSION;
 
 sub END
 {
-   &Prima::cleanup();
+   &Prima::cleanup() if UNIVERSAL::can('Prima', 'cleanup');
 }
 
 sub run
 {
-   die "Prima was not properly initialized\n" unless defined $::application;
+   die "Prima was not properly initialized\n" unless $::application;
    $::application-> go if $::application-> alive;
    $::application = undef if $::application and not $::application->alive;
 }
