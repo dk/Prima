@@ -35,6 +35,9 @@ my @all_defines = ("-DPERL_PATCHLEVEL=$Config{patchlevel}",
 		   "-DPERL_SUBVERSION=$Config{subversion}",
 		   "-DPRIMA_CORE=1",
 		   "-DPERL_POLLUTE=1");
+if ( defined( $ENV{ 'PRIMA_PARANOID_MALLOC'}) && $ENV{ 'PRIMA_PARANOID_MALLOC'} =~ /^(1|yes|on|true)$/i) {
+    push @all_defines, "-DPARANOID_MALLOC=1";
+}
 
 my @cc;
 push @cc, $Config{cc}, $extraccflags,
