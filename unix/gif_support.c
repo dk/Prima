@@ -494,9 +494,9 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    imgProp->val.pByte = ( Byte *) malloc( imgProp->size);
 		    for ( i = 0; i < gif->SColorMap->ColorCount; i++) {
 			Byte *palEntry = ( imgProp->val.pByte + i * 3);
-			palEntry[ 0] = gif->SColorMap->Colors[ i].Red;
+			palEntry[ 0] = gif->SColorMap->Colors[ i].Blue;
 			palEntry[ 1] = gif->SColorMap->Colors[ i].Green;
-			palEntry[ 2] = gif->SColorMap->Colors[ i].Blue;
+			palEntry[ 2] = gif->SColorMap->Colors[ i].Red;
 		    }
 		}
 	    }
@@ -537,9 +537,9 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    imgProp->val.pByte = ( Byte *) malloc( imgProp->size);
 		    for ( i = 0; i < palette->ColorCount; i++) {
 			Byte *palEntry = ( imgProp->val.pByte + i * 3);
-			palEntry[ 0] = palette->Colors[ i].Red;
+			palEntry[ 0] = palette->Colors[ i].Blue;
 			palEntry[ 1] = palette->Colors[ i].Green;
-			palEntry[ 2] = palette->Colors[ i].Blue;
+			palEntry[ 2] = palette->Colors[ i].Red;
 		    }
 
 		    if ( readData) {
@@ -547,8 +547,13 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			    int pixelCount = gifChunks[ index].Width * gifChunks[ index].Height;
 			    imgProp = apc_image_add_property( imageInfo, "data", PROPTYPE_BYTE, pixelCount);
 			    if ( imgProp != NULL) {
-				imgProp->val.pByte = ( Byte*) malloc( sizeof( Byte) * pixelCount);
-				memcpy( imgProp->val.pByte, imageData[ index], pixelCount);
+				int ySrc, yDst;
+				imgProp->val.pByte = malloc( sizeof( Byte) * pixelCount);
+				for ( ySrc = ( pixelCount - gifChunks[ index].Width), yDst = 0; 
+				      yDst < pixelCount; 
+				      ySrc -= gifChunks[ index].Width, yDst += gifChunks[ index].Width) {
+				    memcpy( imgProp->val.pByte + yDst, imageData[ index] + ySrc, gifChunks[ index].Width);
+				}
 			    }
 			    imgProp = apc_image_add_property( imageInfo, "lineSize", PROPTYPE_INT, -1);
 			    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Width;
