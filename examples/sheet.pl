@@ -90,7 +90,6 @@ my $l = $w-> insert( DetailedList =>
    origin => [0,0],
    size   => [ $w-> size],
    growMode => gm::Client,
-   hScroll => 1,
    items   => \@items,
    headers => [ 'Service' , 'Port', 'Protocol', 'Description'],
    columns => 4,

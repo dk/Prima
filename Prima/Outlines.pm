@@ -69,6 +69,8 @@ sub profile_default
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
       autoHeight     => 1,
+      autoHScroll    => 1,
+      autoVScroll    => 1,
       borderWidth    => 2,
       dragable       => 1,
       hScroll        => 0,
@@ -93,6 +95,8 @@ sub profile_check_in
    my ( $self, $p, $default) = @_;
    $self-> SUPER::profile_check_in( $p, $default);
    $p-> { autoHeight}     = 0 if exists $p-> { itemHeight} && !exists $p->{autoHeight};
+   $p-> {autoHScroll} = 0 if exists $p-> {hScroll};
+   $p-> {autoVScroll} = 0 if exists $p-> {vScroll};
 }
 
 use constant STACK_FRAME => 64;
@@ -113,7 +117,8 @@ sub init
    }
    for ( qw( topItem focusedItem))
       { $self->{$_} = -1; }
-   for ( qw( scrollTransaction dx dy hScroll vScroll offset count autoHeight borderWidth
+   for ( qw( autoHScroll autoVScroll scrollTransaction dx dy hScroll vScroll 
+      offset count autoHeight borderWidth
       rows maxWidth hintActive showItemHint dragable))
       { $self->{$_} = 0; }
    for ( qw( itemHeight integralHeight indent))
@@ -121,8 +126,8 @@ sub init
    $self->{items}      = [];
    my %profile = $self-> SUPER::init(@_);
    $self-> setup_indents;
-   for ( qw( hScroll vScroll offset itemHeight autoHeight borderWidth indent
-      items focusedItem topItem showItemHint dragable))
+   for ( qw( autoHScroll autoVScroll hScroll vScroll offset itemHeight autoHeight borderWidth 
+      indent items focusedItem topItem showItemHint dragable))
       { $self->$_( $profile{ $_}); }
    $self-> reset;
    $self-> reset_scrolls;
@@ -723,26 +728,33 @@ sub reset_scrolls
 {
    my $self = $_[0];
    $self-> makehint(0);
-   if ( $self-> {scrollTransaction} != 1 && $self->{vScroll})
-   {
+   if ( $self-> {scrollTransaction} != 1) {
+      $self-> vScroll( $self-> {rows} < $self-> {count} ) if $self-> {autoVScroll};
       $self-> {vScrollBar}-> set(
          max      => $self-> {count} - $self->{rows},
          pageStep => $self-> {rows},
          whole    => $self-> {count},
          partial  => $self-> {rows},
          value    => $self-> {topItem},
-      );
+      ) if $self-> {vScroll};
    }
-   if ( $self->{scrollTransaction} != 2 && $self->{hScroll})  {
+   if ( $self->{scrollTransaction} != 2) { 
       my @sz = $self-> get_active_area( 2);
       my $iw = $self->{maxWidth};
+      if ( $self-> {autoHScroll}) {
+         my $hs = ($sz[0] < $iw) ? 1 : 0;
+         if ( $hs != $self-> {hScroll}) {
+            $self-> hScroll( $hs);
+            @sz = $self-> get_active_area( 2);
+         }
+      }
       $self-> {hScrollBar}-> set(
          max      => $iw - $sz[0],
          whole    => $iw,
          value    => $self-> {offset},
          partial  => $sz[0],
          pageStep => $iw / 5,
-      );
+      ) if $self-> {hScroll};
    }
 }
 

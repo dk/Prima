@@ -72,7 +72,6 @@ popupItems => [
 path => '.',
 origin => [0,0],
 buffered => 1,
-hScroll => 1,
 size=>[200,200],growMode => gm::Client,
 onSelectItem => sub {
    my ($self, $index) = @_;

@@ -228,7 +228,7 @@ sub on_drawitem
    $canvas-> clear( $left, $bottom, $right, $top);
    my $text = $me->{id}->[$index];
    my $x = $left + 2;
-   $canvas-> text_out( $text, $x, ($top + $bottom - $me->{fHeight}) / 2);
+   $canvas-> text_out( $text, $x, ($top + $bottom + 1 - $me->{fHeight}) / 2);
    $canvas-> backColor( $bc) if $hilite;
    $canvas-> color( $c) if $hilite || !$ena
 }
@@ -264,8 +264,6 @@ sub profile_default
       syntaxHilite => 1,
       wordWrap     => 0,
       text         => '',
-      hScroll      => 1,
-      vScroll      => 1,
       ownerFont    => 0,
    }
 }

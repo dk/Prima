@@ -39,6 +39,8 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
+      autoHScroll    => 1,
+      autoVScroll    => 1,
       borderWidth    => 0,
       hScroll        => 0,
       vScroll        => 0,
@@ -51,15 +53,23 @@ sub profile_default
    return $def;
 }
 
+sub profile_check_in
+{
+   my ( $self, $p, $default) = @_;
+   $self-> SUPER::profile_check_in( $p, $default);
+   $p-> {autoHScroll} = 0 if exists $p-> {hScroll};
+   $p-> {autoVScroll} = 0 if exists $p-> {vScroll};
+}
 
 sub init
 {
    my $self = shift;
-   for ( qw( scrollTransaction hScroll vScroll limitX limitY deltaX deltaY borderWidth winX winY))
+   for ( qw( autoHScroll autoVScroll scrollTransaction hScroll vScroll 
+             limitX limitY deltaX deltaY borderWidth winX winY))
       { $self->{$_} = 0; }
    my %profile = $self-> SUPER::init(@_);
    $self-> setup_indents;
-   for ( qw( hScroll vScroll borderWidth))
+   for ( qw( autoHScroll autoVScroll hScroll vScroll borderWidth))
       { $self->$_( $profile{ $_}); }
    $self-> limits( $profile{limitX}, $profile{limitY});
    $self-> deltas( $profile{deltaX}, $profile{deltaY});
@@ -72,8 +82,27 @@ sub reset_scrolls
    my $self = $_[0];
    my ($x, $y) = $self-> get_active_area(2);
    my ($w, $h) = $self-> limits;
+   my $reread;
    $self-> {winX} = $x;
    $self-> {winY} = $y;
+
+   if ( $self-> {autoHScroll}) {
+      my $hs = ( $x < $w) ? 1 : 0;
+      if ( $hs != $self-> {hScroll}) {
+         $self-> hScroll( $hs);
+         $reread = 1;
+      }
+   }
+   if ( $self-> {autoVScroll}) {
+      my $vs = ( $y < $h) ? 1 : 0;
+      if ( $vs != $self-> {vScroll}) {
+         $self-> vScroll( $vs);
+         $reread = 1;
+      }
+   }
+   if ( $reread) {
+      ($x, $y) = $self-> get_active_area(2);
+   }
 
    if ( $self-> {hScroll}) {
       $self-> {hScrollBar}-> set(

@@ -2744,8 +2744,6 @@ sub open
       origin => [ 0, 0],
       size   => [ 100, $divx],
       growMode => gm::Client,
-      hScroll => 1,
-      vScroll => 1,
       onSelectItem => sub {
          $self-> close_item;
          $self-> open_item;
@@ -2775,8 +2773,6 @@ sub open
       origin => [ 0, $divx + 6],
       size   => [ 100, $h - $divx - 6],
       growMode => gm::Ceiling,
-      hScroll => 1,
-      vScroll => 1,
       popupItems => [
          ['~New' => q(new),],
          ['~Make node' => q(makenode),],
@@ -2790,7 +2786,7 @@ sub open
    );
    $self-> {B}->{master} = $self;
 
-   my $xb = $self-> {B}-> {vScrollBar}-> width;
+   my $xb = $self-> {B}-> {vScroll} ? $self-> {B}-> {vScrollBar}-> width : 0;
    $self-> {B}-> insert( Button => 
       origin => [ $self-> {B}-> width - $xb - $self-> {B}-> indents()-> [2], 
                  $self-> {B}-> height - $xb - $self-> {B}-> indents()-> [3]],
@@ -3235,8 +3231,6 @@ sub open
       origin => [ 0, $fh + 4],
       size   => [ $w - 1, $h - $fh - 4],
       growMode => gm::Client,
-      hScroll => 1,
-      vScroll => 1,
       popupItems => [
          ['~New' => q(new),],
          ['~Make node' => q(makenode),],
@@ -3248,7 +3242,7 @@ sub open
       },
    );
    $self-> {A}->{master} = $self;
-   my $xb = $self-> {A}-> {vScrollBar}-> width;
+   my $xb = $self-> {A}-> {vScroll} ? $self-> {A}-> {vScrollBar}-> width : 0;
    $self-> {A}-> insert( Button => 
       origin => [ $self-> {A}-> width - $xb - $self-> {A}-> indents()-> [2], 
                  $self-> {A}-> height - $xb - $self-> {A}-> indents()-> [3]],

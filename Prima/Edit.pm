@@ -113,6 +113,8 @@ sub profile_default
          [ Paste          => 0, 0, km::Shift|kb::Insert, q(paste)],
       ],
       autoIndent        => 1,
+      autoHScroll       => 1,
+      autoVScroll       => 1,
       blockType         => bt::CUA,
       borderWidth       => 1,
       cursorSize        => [ $::application-> get_default_cursor_width, $font-> { height}],
@@ -162,6 +164,8 @@ sub profile_check_in
        $p-> {selEnd  } = [$$s[2], $$s[3]];
    }
    $p-> { text} = '' if exists( $p->{ textRef});
+   $p-> {autoHScroll} = 0 if exists $p-> {hScroll};
+   $p-> {autoVScroll} = 0 if exists $p-> {vScroll};
 }
 
 sub init
@@ -173,7 +177,7 @@ sub init
    for ( qw( wordWrap hScroll vScroll rows maxLineCount maxLineLength maxLineWidth
              scrollTransaction maxLine maxChunk capLen cursorY cursorX cursorWrap
              cursorXl cursorYl syntaxHilite hiliteNumbers hiliteQStrings hiliteQQStrings
-             notifyChangeLock modified borderWidth
+             notifyChangeLock modified borderWidth autoHScroll autoVScroll
         ))
    { $self->{$_} = 0;}
    $self-> { insertMode}   = $::application-> insertMode;
@@ -184,6 +188,7 @@ sub init
    $self-> setup_indents;
    $profile{selection} = [@{$profile{selStart}}, @{$profile{selEnd}}];
    for ( qw( hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs
+             autoHScroll autoVScroll
              textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
              topLine  tabIndent readOnly offset wordDelimiters wantTabs wantReturns
              wordWrap cursorWrap markers))
@@ -323,21 +328,27 @@ sub reset_render
 sub reset_scrolls
 {
    my $self = $_[0];
-   if ( $self-> {scrollTransaction} != 1 && $self->{vScroll})
-   {
+   return if $self-> {resetDisabled};
+   if ( $self-> {scrollTransaction} != 1) {
+      $self-> vScroll( $self-> {maxChunk} >= $self->{rows}) if $self-> {autoVScroll};
       $self-> {vScrollBar}-> set(
          max      => $self-> {maxChunk} - $self->{rows} + 1,
          pageStep => $self-> {rows},
          whole    => $self-> {maxChunk} + 1,
          partial  => $self-> {rows},
          value    => $self-> {topLine },
-      );
+      ) if $self->{vScroll};
    }
-   if ( $self->{scrollTransaction} != 2 && $self->{hScroll})
-   {
-       # my $w = $self-> width - $self->{borderWidth} * 2 - $self->{dx};
+   if ( $self->{scrollTransaction} != 2) {
        my $w = $self-> width - $self->{indents}->[0] - $self->{indents}->[2];
        my $lw = $self->{maxLineWidth};
+       if ( $self-> {autoHScroll}) {
+          my $hs = ( $lw > $w) ? 1 : 0;
+          if ( $hs != $self-> {hScroll}) {
+             $self-> hScroll( $hs);
+             $w = $self-> width - $self->{indents}->[0] - $self->{indents}->[2];
+          }
+       }
        $self-> {hScrollBar}-> set(
           max      => $self-> {wordWrap} ? 0 : $lw - $w,
           whole    => $lw < $w ? $w : $lw,
@@ -345,7 +356,7 @@ sub reset_scrolls
           partial  => $w,
           pageStep => $lw / 5,
           step     => $self-> font-> width,
-      );
+      ) if $self-> {hScroll};
    }
 }
 
@@ -1077,7 +1088,6 @@ sub set_cursor
    my $chunk  = $self-> get_chunk( $ly);
    my $atX    = $self-> get_chunk_width( $chunk, 0, $lx);
    my $deltaX = $self-> get_chunk_width( $chunk, $lx, 1);
-   # my $actualWidth = $self-> width - $self->{dx} - $self->{borderWidth} * 2 - $self-> {defcw};
    my $actualWidth = $self-> width - $self->{indents}->[0] - $self->{indents}->[2] - $self-> {defcw};
    my $ofs = $self-> {offset};
    my $avg = $self-> {averageWidth};
@@ -1110,7 +1120,7 @@ sub set_top_line
    }
    my $dt = $tl - $self->{topLine };
    $self->{topLine } = $tl;
-   if ( $self->{vScroll} && $self->{scrollTransaction} != 1) {
+   if ( $self-> {vScroll} && $self->{scrollTransaction} != 1) {
       $self->{scrollTransaction} = 1;
       $self-> {vScrollBar}-> value( $tl);
       $self->{scrollTransaction} = 0;
@@ -1836,6 +1846,7 @@ sub set_line
       if ( $oldDim == $newDim) {
          ( $_from, $_to) = ( $ry, $ry + $oldDim);
       } else {
+         $self-> vScroll( $self-> {maxChunk} >= $self->{rows}) if $self-> {autoVScroll};
          $self->{vScrollBar}-> set(
             max   => $self-> {maxChunk} - $self->{rows} + 1,
             whole => $self-> {maxChunk} + 1,
@@ -1861,6 +1872,14 @@ sub set_line
             $self-> reset if $needReset;
          }
          my $lw = $self->{maxLineWidth};
+         if ( $self-> {autoHScroll}) {
+            my $hs = ( $lw > $sz[0] ) ? 1 : 0;
+            if ( $hs != $self-> {hScroll}) {
+               $self-> hScroll( $hs);
+               @a = $self-> get_active_area;
+               @sz = ( $a[2] - $a[0], $a[3] - $a[1]);
+            }
+         }
          $self-> {hScrollBar}-> set(
             max      => $lw - $sz[0],
             whole    => $lw,
@@ -1974,6 +1993,7 @@ sub insert_empty_line
       $self-> scroll( 0, -$fh * $len,
                            confineRect => [ @a[0..2], $a[3] - $fh * ( $y - $tl)]);
    }
+   $self-> vScroll( $self-> {maxChunk} >= $self->{rows}) if $self-> {autoVScroll};
    $self->{vScrollBar}-> set(
       max      => $self-> {maxChunk} - $self->{rows} + 1,
       whole    => $self-> {maxChunk} + 1,
@@ -2039,6 +2059,7 @@ sub delete_line
       delete $self->{anchor};
       $self-> cancel_block unless $self-> has_selection;
    }
+   $self-> vScroll( $self-> {maxChunk} >= $self->{rows}) if $self-> {autoVScroll};
    $self->{vScrollBar}-> set(
       max   => $self-> {maxChunk} - $self->{rows} + 1,
       whole => $self-> {maxChunk} + 1,
@@ -2051,6 +2072,13 @@ sub delete_line
             $self-> reset;
             my $lw = $self->{maxLineWidth};
             my $w  = $self->width - $self->{indents}->[0] - $self->{indents}->[2];
+            if ( $self-> {autoHScroll}) {
+               my $hs = ( $lw > $w) ? 1 : 0;
+               if ( $hs != $self-> {hScroll}) {
+                  $self-> hScroll( $hs);
+                  $w = $self->width - $self->{indents}->[0] - $self->{indents}->[2];
+               }
+            }
             $self-> {hScrollBar}-> set(
                max      => $lw - $w,
                whole    => $lw,
@@ -2542,12 +2570,6 @@ See also: L<mark_horizontal>
 
 =back
 
-=item borderWidth INTEGER
-
-Width of 3d-shade border around the widget.
-
-Default value: 2
-
 =item cursor X, Y
 
 Selects physical position of the cursor
@@ -2604,12 +2626,6 @@ a color value.
 Array of scalar pairs, that define character patterns to be highlighted.
 The first item in the pair is a perl regular expression; the second item is
 a color value.
-
-=item hScroll BOOLEAN
-
-Selects if the horizontal scrollbar is visible.
-
-See also: L<vScroll>
 
 =item mark MARK [ BLOCK_TYPE ]
 
@@ -2689,12 +2705,6 @@ See also: L<text>.
 =item topLine INTEGER
 
 Selects the first line of the text drawn. 
-
-=item vScroll BOOLEAN
-
-Selects if the vertical scrollbar is visible.
-
-See also: L<hScroll>
 
 =item wantTabs BOOLEAN
 

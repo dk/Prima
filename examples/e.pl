@@ -55,8 +55,6 @@ sub profile_default
    my %d = %{$_[ 0]-> SUPER::profile_default};
    return {
       %d,
-      hScroll  => 1,
-      vScroll  => 1,
       zoom     => 1,
       growMode => gm::Client,
    }

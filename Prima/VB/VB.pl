@@ -229,7 +229,6 @@ sub init
    $self-> {plist} = $self-> {monger}-> insert_to_page( 0, OPropListViewer =>
       origin   => [ 0, 0],
       size     => [ 100, $sz[1] - $fh * 2],
-      hScroll  => 1,
       name       => 'PList',
       growMode   => gm::Client,
    );
@@ -237,7 +236,6 @@ sub init
    $self-> {elist} = $self-> {monger}-> insert_to_page( 1, OPropListViewer =>
       origin   => [ 0, 0],
       size     => [ 100, $sz[1] - $fh * 2],
-      hScroll  => 1,
       name       => 'EList',
       growMode   => gm::Client,
    );

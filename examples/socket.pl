@@ -55,8 +55,6 @@ my $e = $w-> insert( Edit =>
    origin => [ 0, 30],
    size => [ $w-> width, $w-> height - 30],
    text => '',
-   hScroll => 1,
-   vScroll => 1,
    growMode => gm::Client,
    wordWrap => 1,
 );

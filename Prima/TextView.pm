@@ -168,6 +168,8 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
+      autoHScroll       => 1,
+      autoVScroll       => 0,
       borderWidth     => 2,
       colorMap        => [ $def-> {color}, $def-> {backColor} ],
       fontPalette     => [ { 
@@ -202,13 +204,15 @@ sub profile_check_in
       $p-> { paneHeight} = $p-> { paneSize}-> [ 1];
    }
    $p-> { text} = '' if exists( $p->{ textRef});
+   $p-> {autoHScroll} = 0 if exists $p-> {hScroll};
+   $p-> {autoVScroll} = 0 if exists $p-> {vScroll};
 }   
 
 sub init
 {
    my $self = shift;
    for ( qw( topLine scrollTransaction hScroll vScroll offset 
-             paneWidth paneHeight borderWidth))
+             paneWidth paneHeight borderWidth autoVScroll autoHScroll))
       { $self->{$_} = 0; }
    my %profile = $self-> SUPER::init(@_);
    $self-> {paneSize} = [0,0];
@@ -220,18 +224,25 @@ sub init
    $self-> {selectionPaintMode} = 0;
    $self-> {ymap} = [];
    $self-> setup_indents;
-   for ( qw( colorMap fontPalette hScroll vScroll borderWidth paneWidth paneHeight offset topLine textRef))
+   for ( qw( autoHScroll autoVScroll colorMap fontPalette 
+             hScroll vScroll borderWidth paneWidth paneHeight 
+             offset topLine textRef))
       { $self->$_( $profile{ $_}); }
    return %profile;
 }
-
 
 sub reset_scrolls
 {
    my $self = shift;
    my @sz = $self-> get_active_area( 2, @_);
-   if ( $self-> {scrollTransaction} != 1 && $self->{vScroll})
-   {
+   if ( $self-> {scrollTransaction} != 1) {
+      if ( $self-> {autoVScroll}) {
+         my $vs = ($self-> {paneHeight} > $sz[1]) ? 1 : 0;
+         if ( $vs != $self-> {vScroll}) {
+            $self-> vScroll( $vs);
+            @sz = $self-> get_active_area( 2, @_);
+         }
+      }
       $self-> {vScrollBar}-> set(
          max      => $self-> {paneHeight} - $sz[1],
          pageStep => int($sz[1] * 0.9),
@@ -239,17 +250,23 @@ sub reset_scrolls
          whole    => $self-> {paneHeight},
          partial  => $sz[1],
          value    => $self-> {topLine},
-      );
+      ) if $self-> {vScroll};
    }
-   if ( $self->{scrollTransaction} != 2 && $self->{hScroll})
-   {
-       $self-> {hScrollBar}-> set(
-          max      => $self-> {paneWidth} - $sz[0],
-          whole    => $self-> {paneWidth},
-          value    => $self-> {offset},
-          partial  => $sz[0],
-          pageStep => int($sz[0] * 0.75),
-       );
+   if ( $self->{scrollTransaction} != 2) {
+      if ( $self-> {autoHScroll}) {
+         my $hs = ($self-> {paneWidth} > $sz[0]) ? 1 : 0;
+         if ( $hs != $self-> {hScroll}) {
+            $self-> hScroll( $hs); 
+            @sz = $self-> get_active_area( 2, @_);
+         }
+      }
+      $self-> {hScrollBar}-> set(
+         max      => $self-> {paneWidth} - $sz[0],
+         whole    => $self-> {paneWidth},
+         value    => $self-> {offset},
+         partial  => $sz[0],
+         pageStep => int($sz[0] * 0.75),
+      ) if $self-> {hScroll};
    }
 }
 

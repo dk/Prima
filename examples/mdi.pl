@@ -111,8 +111,6 @@ $i->load('Hand.gif');
 $w-> client-> insert( ImageViewer =>
   origin => [0,0],
   size   => [ $w-> client-> size],
-  hScroll=> 1,
-  vScroll=> 1,
   growMode => gm::Client,
   image => $i,
 );

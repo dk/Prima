@@ -259,6 +259,22 @@ sub set_v_scroll
    }
 }
 
+sub autoHScroll
+{
+   return $_[0]-> {autoHScroll} unless $#_;
+   my $v = ( $_[1] ? 1 : 0);
+   return unless $v != $_[0]-> {autoHScroll};
+   $_[0]-> {autoHScroll} = $v;
+}
+
+sub autoVScroll
+{
+   return $_[0]-> {autoVScroll} unless $#_;
+   my $v = ( $_[1] ? 1 : 0);
+   return unless $v != $_[0]-> {autoVScroll};
+   $_[0]-> {autoVScroll} = $v;
+}
+
 sub borderWidth     {($#_)?($_[0]->set_border_width( $_[1])):return $_[0]->{borderWidth}}
 sub hScroll         {($#_)?$_[0]->set_h_scroll       ($_[1]):return $_[0]->{hScroll}}
 sub vScroll         {($#_)?$_[0]->set_v_scroll       ($_[1]):return $_[0]->{vScroll}}
@@ -392,7 +408,8 @@ The descendant classes must follow the guidelines:
 
 =item *
 
-A class must provide C<borderWidth>, C<hScroll>, and C<vScroll> property keys in profile_default()
+A class must provide C<borderWidth>, C<hScroll>, and C<vScroll> property keys in profile_default() .
+A class may provide C<autoHScroll> and C<autoVScroll> property keys in profile_default() .
 
 =item *
 
@@ -400,9 +417,13 @@ A class' init() method must set C<{borderWidth}>, C<{hScroll}>, and C<{vScroll}>
 variables to 0 before the initialization, call C<setup_indents> method,
 and then assign the properties from the object profile.
 
+If a class provides C<autoHScroll> and C<autoVScroll> properties, these must be set to 
+0 before the initialization.
+
 =item *
 
-If a class needs to overload one of C<borderWidth>, C<hScroll>, and C<vScroll> properties,
+If a class needs to overload one of C<borderWidth>, C<hScroll>, C<vScroll>,
+C<autoHScroll>, and C<autoVScroll> properties,
 it is mandatory to call the inherited properties.
 
 =item *
@@ -419,6 +440,8 @@ A class must not use the reserved variable names, which are:
    {hScrollBar}   - pointer to the horizontal scroll bar
    {vScrollBar}   - pointer to the vertical scroll bar
    {bone}         - rectangular widget between the scrollbars
+   {autoHScroll}  - internal autoHScroll value storage
+   {autoVScroll}  - internal autoVScroll value storage
 
 The reserved method names:
 
@@ -427,6 +450,8 @@ The reserved method names:
    insert_bone
    setup_indents
    borderWidth
+   autoHScroll
+   autoVScroll
    hScroll
    vScroll
 
@@ -441,6 +466,16 @@ The reserved widget names:
 =head2 Properties
 
 =over
+
+=item autoHScroll BOOLEAN
+
+Selects if the horizontal scrollbar is to be shown and hidden dynamically,
+depending on the widget layout.
+
+=item autoVScroll BOOLEAN
+
+Selects if the vertical scrollbar is to be shown and hidden dynamically,
+depending on the widget layout.
 
 =item borderWidth INTEGER
 

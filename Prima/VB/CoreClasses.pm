@@ -601,15 +601,17 @@ sub paint_exterior
    my ( $self, $canvas) = @_;
    my @sz = $canvas-> size;
    my $cl = $self-> color;
-   my ( $bw, $hs, $vs) = $self-> prf(qw( borderWidth hScroll vScroll));
+   my ( $bw, $hs, $vs, $ahs, $avs) = $self-> prf(qw( borderWidth hScroll vScroll autoHScroll autoVScroll));
+   $hs ||= $ahs;
+   $vs ||= $avs;
    $canvas-> rect3d( 0,0,$sz[0]-1,$sz[1]-1,$bw,$self->dark3DColor,$self->light3DColor,$self-> backColor);
-   $canvas-> color( $cl);
    my $sw = 12;
    my $sl = 16;
    $hs = $hs ? $sw : 0;
    $vs = $vs ? $sw : 0;
    my @r = ( $bw, $bw+$hs, $sz[0]-$bw-1-$vs,$sz[1]-$bw-1);
    if ( $hs) {
+      $self-> color( $ahs ? cl::Gray : cl::Black);
       $canvas-> rectangle( $r[0], $bw, $r[2], $r[1]);
       if ($r[0]+4+$sl < $r[2]-2-$sl) {
          $canvas-> rectangle( $r[0]+2, $bw+2, $r[0]+2+$sl, $r[1]-2);
@@ -617,16 +619,20 @@ sub paint_exterior
       }
    }
    if ( $vs) {
+      $self-> color( $avs ? cl::Gray : cl::Black);
       $canvas-> rectangle( $sz[0]-$bw-1-$sw,$hs+2,$sz[0]-$bw-1,$r[3]-0);
       if ( $r[3]-$sl > $hs+2+$sl) {
          $canvas-> rectangle( $sz[0]-$bw+1-$sw,$hs+4,$sz[0]-$bw-3,$hs+2+$sl);
          $canvas-> rectangle( $sz[0]-$bw+1-$sw,$r[3]-2-$sl,$sz[0]-$bw-3,$r[3]-2);
       }
    }
+   $canvas-> color( $cl);
    return if ( $r[0] > $r[2]) || ( $r[1] >= $r[3]);
    return @r;
 }
 
+sub prf_autoHScroll   { $_[0]->repaint; }
+sub prf_autoVScroll   { $_[0]->repaint; }
 sub prf_borderWidth   { $_[0]->repaint; }
 sub prf_hScroll       { $_[0]->repaint; }
 sub prf_vScroll       { $_[0]->repaint; }
@@ -658,11 +664,11 @@ sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
-      bool    => ['autoWidth', 'vScroll','hScroll','multiSelect','extendedSelect',
-                  'autoHeight','integralHeight','multiColumn'],
-      uiv     => ['itemHeight','itemWidth','focusedItem','borderWidth','offset','topItem',],
-      color   => ['gridColor',],
-      items   => ['items', 'selectedItems'],
+      bool    => [qw(autoWidth vScroll hScroll multiSelect extendedSelect
+                     autoHeight integralHeight multiColumn autoHScroll autoVScroll)],
+      uiv     => [qw(itemHeight itemWidth focusedItem borderWidth offset topItem)],
+      color   => [qw(gridColor)],
+      items   => [qw(items selectedItems)],
    );
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
@@ -839,7 +845,8 @@ sub prf_adjust_default
        firstChar        itemWidth       listProfile
        charOffset       offset          listVisible
        passwordChar     topItem         listClass
-       wordDelimiters   gridColor
+       wordDelimiters   gridColor       autoHScroll
+       autoVScroll
    );
 }
 
@@ -937,6 +944,7 @@ sub prf_types
    my %de = (
       bool    => [qw(autoIndent cursorWrap insertMode hScroll vScroll
             persistentBlock readOnly syntaxHilite wantTabs wantReturns wordWrap
+            autoHScroll autoVScroll
          )],
       uiv     => [qw(borderWidth tabIndent)],
       editBlockType => ['blockType',],
@@ -986,7 +994,7 @@ sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
-      bool    => [qw(hScroll vScroll quality)],
+      bool    => [qw(hScroll vScroll quality autoHScroll autoVScroll )],
       uiv     => [qw(borderWidth zoom)],
       image   => ['image'],
       align   => ['alignment',],
@@ -1053,7 +1061,7 @@ sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
-      bool    => [qw(hScroll vScroll)],
+      bool    => [qw(autoHScroll autoVScroll hScroll vScroll)],
       uiv     => [qw(borderWidth deltaX deltaY limitX limitY)],
    );
    $_[0]-> prf_types_add( $pt, \%de);
@@ -1488,12 +1496,11 @@ sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
-      bool    => [ 'vScroll','hScroll', 'dragable','autoHeight', 'showItemHint'],
-      uiv     => ['itemHeight','itemWidth','focusedItem','borderWidth','offset','topItem', 'indent',
-        'openedGlyphs', 'closedGlyphs',
-      ],
-      treeItems => ['items'],
-      icon      => ['closedIcon', 'openedIcon'],
+      bool    => [ qw(autoHScroll autoVScroll vScroll hScroll dragable autoHeight showItemHint)],
+      uiv     => [ qw(itemHeight itemWidth focusedItem borderWidth offset topItem indent
+                      openedGlyphs closedGlyphs)],
+      treeItems => [qw(items)],
+      icon      => [qw(closedIcon openedIcon)],
    );
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
