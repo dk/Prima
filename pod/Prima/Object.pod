@@ -1029,6 +1029,10 @@ SCALAR1 and SCALAR2 are the data passed to post_message().
 
 =back
 
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
 =head1 SEE ALSO
 
 L<Prima>, L<Prima::internals>
