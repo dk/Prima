@@ -1011,6 +1011,8 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    Bool underlined = dest-> style & fsUnderlined;
    Bool struckout  = dest-> style & fsStruckOut;
    int  direction  = dest-> direction;
+
+   if ( n == 0) return false;
   
    /*
    if ( by_size) {
