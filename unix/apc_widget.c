@@ -357,12 +357,10 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
 
    if ( !XX-> region) {
       XX-> region = XCreateRegion();
-      XX-> exposed_rect = r;
-      if ( !XX-> flags. paint_pending)
+      if ( !XX-> flags. paint_pending) {
          TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
-      XX-> flags. paint_pending = true;
-   } else {
-      prima_rect_union( &XX-> exposed_rect, &r);
+         XX-> flags. paint_pending = true;
+      }
    }
 
    XUnionRectWithRegion( &r, XX-> region, XX-> region);
@@ -391,18 +389,24 @@ apc_widget_screen_to_client( Handle self, Point p)
 
 Bool
 apc_widget_scroll( Handle self, int horiz, int vert,
-		   Rect *r, Rect *scroll_rect, Bool withChildren)
+		   Rect *confine, Rect *clip, Bool withChildren)
 {
    DEFXX;
    int src_x, src_y, w, h, dst_x, dst_y;
-   XRectangle xr, ir;
+   XRectangle r;
    Region invalid, reg;
 
-   if ( r) {
-      src_x = r-> left;
-      src_y = XX-> size. y - r-> top;
-      w = r-> right - src_x;
-      h = r-> top - r-> bottom;
+   prima_no_cursor( self);
+   prima_get_gc( XX);
+   XX-> gcv. clip_mask = None;
+   XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &XX-> gcv);
+   XCHECKPOINT;
+   
+   if ( confine) {
+      src_x = confine-> left;
+      src_y = XX-> size. y - confine-> top;
+      w = confine-> right - src_x;
+      h = confine-> top - confine-> bottom;
    } else {
       src_x = 0;
       src_y = 0;
@@ -413,32 +417,23 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    dst_x = src_x + horiz;
    dst_y = src_y - vert;
 
-   prima_no_cursor( self);
-   prima_get_gc( XX);
-   
-   XX-> gcv. clip_mask = None;
-   XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &XX-> gcv);
-   XCHECKPOINT;
-   if (scroll_rect) {
-      Region region;
-      Rect rect;
+   if (clip) {
       XRectangle cpa;
      
-      rect = *scroll_rect;
-      xr. x = rect. left;
-      xr. y = REVERT( rect. top) + 1;
-      xr. width = rect. right - rect. left;
-      xr. height = rect. top - rect. bottom;
-      region = XCreateRegion();
-      XUnionRectWithRegion( &xr, region, region);
-      XSetRegion( DISP, XX-> gc, region);
+      r. x = clip-> left;
+      r. y = REVERT( clip-> top) + 1;
+      r. width = clip-> right - clip-> left;
+      r. height = clip-> top - clip-> bottom;
+      reg = XCreateRegion();
+      XUnionRectWithRegion( &r, reg, reg);
+      XSetRegion( DISP, XX-> gc, reg);
       XCHECKPOINT;
-      XDestroyRegion( region);
+      XDestroyRegion( reg);
       cpa. x = src_x;
       cpa. y = src_y;
       cpa. width = w;
       cpa. height = h;
-      prima_rect_intersect( &cpa, &xr);
+      prima_rect_intersect( &cpa, &r);
       dst_x += -src_x + cpa. x;
       dst_y += -src_y + cpa. y;
       src_x = cpa. x;
@@ -447,56 +442,42 @@ apc_widget_scroll( Handle self, int horiz, int vert,
       h = cpa. height;
    }
 
-   xr. x = src_x;
-   xr. y = src_y;
-   xr. width = w;
-   xr. height = h;
-   ir = xr;
-   invalid = XCreateRegion();
-   XUnionRectWithRegion( &xr, invalid, invalid);
-   xr. x = dst_x;
-   xr. y = dst_y;
-   reg = XCreateRegion();
-   XUnionRectWithRegion( &xr, reg, reg);
-   if ( horiz == 0) {
-      if ( vert < 0)
-	 ir. height = -vert;
-      else {
-	 ir. y += ir. height - vert;
-	 ir. height = vert;
-      }
-   } else if ( vert == 0) {
-      if ( horiz < 0) {
-	 ir. x += ir. width + horiz;
-	 ir. width = -horiz;
-      } else {
-	 ir. width = horiz;
-      }
-   }
-   XUnionRectWithRegion( &ir, invalid, invalid);
-   XSubtractRegion( invalid, reg, invalid);
-   XDestroyRegion( reg);
-
    XCopyArea( DISP, XX-> udrawable, XX-> udrawable, XX-> gc,
 	      src_x, src_y, w, h, dst_x, dst_y);
+   prima_release_gc( XX);
    XCHECKPOINT;
 
-   prima_release_gc( XX);
+   r. x = src_x;
+   r. y = src_y;
+   r. width = w;
+   r. height = h;
+   invalid = XCreateRegion();
+   XUnionRectWithRegion( &r, invalid, invalid);
 
-   if ( !XX-> region) {
-      XX-> region = XCreateRegion();
-      XX-> exposed_rect = ir;
+   if ( XX-> region) {
+      reg = XCreateRegion();
+      XUnionRegion( XX-> region, reg, reg);
+      XIntersectRegion( reg, invalid, reg);
+      XSubtractRegion( XX-> region, reg, XX-> region);
+      XOffsetRegion( reg, horiz, -vert);
+      XUnionRegion( XX-> region, reg, XX-> region);
+      XDestroyRegion( reg);
    } else {
-      XX-> exposed_rect. x += horiz;
-      XX-> exposed_rect. y -= vert;
-      prima_rect_union( &XX-> exposed_rect, &ir);
-      XOffsetRegion( XX-> region, horiz, -vert);
+      XX-> region = XCreateRegion();
    }
+
+   r. x = dst_x;
+   r. y = dst_y;
+   reg = XCreateRegion();
+   XUnionRectWithRegion( &r, reg, reg);
+   XSubtractRegion( invalid, reg, invalid);
+   XDestroyRegion( reg);
    XUnionRegion( XX-> region, invalid, XX-> region);
    XDestroyRegion( invalid);
-   if ( !XX-> flags. paint_pending)
+   if ( !XX-> flags. paint_pending) {
       TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
-   XX-> flags. paint_pending = true;
+      XX-> flags. paint_pending = true;
+   }
    return true;
 }
 

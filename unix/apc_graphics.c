@@ -452,14 +452,16 @@ prima_prepare_drawable_for_painting( Handle self)
 {
    DEFXX;
    unsigned long mask = VIRGIN_GC_MASK;
+   int w, h;
+   XRectangle r;
 
    if ( XX-> udrawable && is_opt( optBuffered)) {
-      int w, h;
       if ( XX-> region) {
-         XX-> bsize. x = w = XX-> exposed_rect. width;
-         XX-> bsize. y = h = XX-> exposed_rect. height;
-         XX-> btransform. x = - XX-> exposed_rect. x;
-         XX-> btransform. y = XX-> exposed_rect. y;
+         XClipBox( XX-> region, &r);
+         XX-> bsize. x = w = r. width;
+         XX-> bsize. y = h = r. height;
+         XX-> btransform. x = - r. x;
+         XX-> btransform. y = r. y;
       } else {
          XX-> bsize. x = w = XX-> size. x;
          XX-> bsize. y = h = XX-> size. y;
@@ -997,13 +999,16 @@ void
 prima_gp_get_clip_rect( Handle self, XRectangle *cr)
 {
    DEFXX;
+   XRectangle r;
 
    cr-> x = 0;
    cr-> y = 0;
    cr-> width = XX-> size.x;
    cr-> height = XX-> size.y;
    if ( XX-> flags. paint && ( XX-> region || XX-> stale_region)) {
-      prima_rect_intersect( cr, &XX-> exposed_rect);
+      XClipBox( XX-> region ? XX-> region : XX-> stale_region,
+                &r);
+      prima_rect_intersect( cr, &r);
    }
    if ( XX-> clip_rect. x != 0
         || XX-> clip_rect. y != 0
@@ -1238,10 +1243,6 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    r. width = clipRect. right - clipRect. left+1;
    r. height = clipRect. top - clipRect. bottom+1;
    XX-> clip_rect = r;
-   {
-      XRectangle rr = XX-> exposed_rect;
-      prima_rect_intersect( &rr, &r);
-   }
    region = XCreateRegion();
    XUnionRectWithRegion( &r, region, region);
    if ( XX-> stale_region) {

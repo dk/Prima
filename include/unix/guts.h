@@ -298,7 +298,6 @@ typedef struct _drawable_sys_data
    ColorSet colors;
    Region region;
    Region stale_region;
-   XRectangle exposed_rect;
    XRectangle clip_rect;
    FillPattern fill_pattern;
    int rop, paint_rop;
