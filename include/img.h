@@ -96,8 +96,10 @@ typedef struct _ImgCodecInfo {
    int     versionMin;        // 0
    char ** fileExtensions;    // duf, duff
    char  * fileType;          // Dumb File Format 
+   char  * fileShortType;     // DUFF
    char ** featuresSupported; // duff-version 1, duff-rgb, duff-cmyk
-   char  * primaModule;       // Prima::ImgPlugins::duff
+   char  * primaModule;       // Prima::ImgPlugins::duff.pm
+   char  * primaPackage;      // Prima::ImgPlugins::duff
    Bool    canLoad;
    Bool    canLoadMultiple;  
    Bool    canSave;          

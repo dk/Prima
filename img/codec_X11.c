@@ -47,8 +47,10 @@ static ImgCodecInfo codec_info = {
    X_PROTOCOL, 5,    // version
    xbmext,    // extension
    "X11 Bitmap File",     // file type
+   "XBM", // short type
    nil,    // features 
    "",     // module
+   "",     // package
    true,   // canLoad
    false,  // canLoadMultiple 
    true,   // canSave

@@ -61,6 +61,8 @@ use vars qw($inspector
 $fastLoad = 1;
 my $openFileDlg;
 my $saveFileDlg;
+my $openImageDlg;
+my $saveImageDlg;
 
 
 sub open_dialog
@@ -85,6 +87,27 @@ sub save_dialog
    return $saveFileDlg;
 }
 
+sub image_open_dialog
+{
+   my %profile = @_;
+   $openImageDlg = Prima::ImageOpenDialog-> create( 
+      icon => $VB::ico, 
+      directory => $VB::main-> {ini}-> {OpenPath},
+   ) unless $openImageDlg;
+   $openImageDlg-> set( %profile);
+   return $openImageDlg;
+}
+
+sub image_save_dialog
+{
+   my %profile = @_;
+   $saveImageDlg = Prima::ImageSaveDialog-> create( 
+      icon => $VB::ico,
+      directory => $VB::main-> {ini}-> {SavePath},
+   ) unless $saveImageDlg;
+   $saveImageDlg-> set( %profile);
+   return $saveImageDlg;
+}
 sub accelItems
 {
    return [

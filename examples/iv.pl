@@ -141,23 +141,13 @@ sub menuadd
 sub fdopen
 {
    my $self = $_[0]-> IV;
-   my $dlg  = Prima::OpenDialog-> create(
-      filter    => [
-         ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
-         ['All files' => '*']
-      ],
-   );
-   if ( $dlg-> execute) {
-      my $i = Prima::Image-> create;
-      my $f = $dlg-> fileName;
-      if ( $i-> load( $f)) {
-         menuadd( $_[0]);
-         $self-> image( $i);
-         $self-> {fileName} = $f;
-         status( $_[0]);
-      } else {
-         Prima::MsgBox::message("Cannot load $f");
-      }
+   my $dlg  = Prima::ImageOpenDialog-> create();
+   my $i    = $dlg-> load;
+   if ( $i) {
+      menuadd( $_[0]);
+      $self-> image( $i);
+      $self-> {fileName} = $dlg-> fileName;
+      status( $_[0]);
    }
    $dlg-> destroy;
 }
@@ -166,44 +156,35 @@ sub freopen
 {
    my $self = $_[0]-> IV;
    my $i = Prima::Image-> create;
-   if ( $i-> load( $self-> {fileName})) {
+   if ( $i-> load( $self-> {fileName}, loadExtras => 1)) {
       $self-> image( $i);
       status( $_[0]);
    } else {
-      Prima::MsgBox::message("Cannot reload ". $self-> {fileName});
+      Prima::MsgBox::message("Cannot reload ". $self-> {fileName}. ":$@");
    }
 }
 
 sub fnewopen
 {
    my $self = $_[0]-> IV;
-   my $dlg  = Prima::OpenDialog-> create(
-      filter    => [
-         ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
-         ['All files' => '*']
-      ],
-   );
-   if ( $dlg-> execute) {
-      my $i = Prima::Image-> create;
-      my $f = $dlg-> fileName;
-      if ( $i-> load( $f)) {
-         my $w = Prima::Window-> create(
-            onDestroy => \&iv_destroy,
-            menuItems => $_[0]-> menuItems,
-            onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
-         );
-         $winCount++;
-         $w-> insert( ImageViewer =>
-             size   => [ $w-> size],
-             %iv_prf,
-         );
-         $w-> IV-> image( $i);
-         $w-> IV-> {fileName} = $f;
-         $w-> select;
-         status($w);
-      } else {
-         Prima::MsgBox::message("Cannot load $f");
-      }
+   my $dlg  = Prima::ImageOpenDialog-> create();
+   my $i = $dlg-> load;
+   if ( $i) {
+      my $w = Prima::Window-> create(
+         onDestroy => \&iv_destroy,
+         menuItems => $_[0]-> menuItems,
+         onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
+      );
+      $winCount++;
+      $w-> insert( ImageViewer =>
+          size   => [ $w-> size],
+          %iv_prf,
+      );
+      $w-> IV-> image( $i);
+      $w-> IV-> {fileName} = $dlg-> fileName;
+      $w-> {omenuID} = $self-> owner-> {omenuID};
+      $w-> select;
+      status($w);
    }
    $dlg-> destroy;
 }
@@ -214,13 +195,13 @@ sub fload
    my $self = $_[0]-> IV;
    my $f = $_[1];
    my $i = Prima::Image-> create;
-   if ( $i-> load( $f)) {
+   if ( $i-> load( $f, loadExtras => 1)) {
       menuadd( $_[0]);
       $self-> image( $i);
       $self-> {fileName} = $f;
       status( $_[0]);
    } else {
-      Prima::MsgBox::message("Cannot load $f");
+      Prima::MsgBox::message("Cannot load $f:$@");
    }
 }
 
@@ -228,27 +209,15 @@ sub fload
 sub fsave
 {
    my $iv = $_[0]->IV;
-   Prima::MsgBox::message('Cannot save '.$iv->{fileName})
+   Prima::MsgBox::message('Cannot save '.$iv->{fileName}. ":$@")
       unless $iv->image->save( $iv->{fileName});
 }
 
 sub fsaveas
 {
    my $iv = $_[0]->IV;
-   my $dlg  = Prima::SaveDialog-> create(
-      filter    => [
-         ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
-         ['All files' => '*']
-      ],
-   );
-   if ( $dlg-> execute) {
-      if ( $iv->image->save( $dlg-> fileName)) {
-         $iv->{fileName} = $dlg-> fileName;
-         status( $_[0]);
-      } else {
-         Prima::MsgBox::message('Cannot save '.$iv->{fileName}. ' as '.$dlg-> fileName);
-      }
-   }
+   my $dlg  = Prima::ImageSaveDialog-> create( image => $iv-> image);
+   $iv->{fileName} = $dlg-> fileName if $dlg-> save( $iv-> image);
    $dlg-> destroy;
 }
 
@@ -299,7 +268,6 @@ sub zbestfit
    my $x = $szB[0]/$szA[0];
    my $y = $szB[1]/$szA[1];
    $iv-> zoom( $x < $y ? $x : $y);
-
 }
 
 sub iv_mousedown

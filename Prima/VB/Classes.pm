@@ -2320,73 +2320,63 @@ sub open
       glyphs => $VB::main-> {openbutton}-> glyphs,
       growMode => gm::GrowLoY,
       onClick => sub {
-         my $d = VB::open_dialog(
-            filter    => [
-               ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
-               ['All files' => '*.*']
-            ],
+         my @r = VB::image_open_dialog-> load( 
+            className => $self-> imgClass,
+            loadAll   => 1
          );
-         if ( $d-> execute) {
-            my $in = $self-> imgClass();
-            my $i = $in-> create;
-            my $f = $d-> fileName;
-            if ( $i-> load( $f, index => 0)) {
-               my $i1 = $in-> create;
-               my $ix = 2;
-               my @images = ( $i, $i1);
-               if ( $i1-> load( $f, index => 1)) {
-                   my $maxH = $i1-> height;
-                   my $maxW = $i1-> width;
-                   while ( 1) {
-                      my $j = $in-> create;
-                      last unless $j-> load( $f, index => $ix++);
-                      push ( @images, $j);
-                      my @sz = $j-> size;
-                      $maxH = $sz[1] if $sz[1] > $maxH;
-                      $maxW = $sz[0] if $sz[0] > $maxW;
-                   }
-                   my $dd = Prima::Dialog-> create(
-                      centered => 1,
-                      visible  => 0,
-                      borderStyle => bs::Sizeable,
-                      size     => [ 300, 300],
-                      name     => 'Select image',
-                   );
-                   my $l = $dd-> insert( ListViewer =>
-                      size     => [ $dd-> size],
-                      origin   => [ 0,0],
-                      itemHeight => $maxH,
-                      itemWidth  => $maxW,
-                      multiColumn => 1,
-                      autoWidth   => 0,
-                      growMode    => gm::Client,
-                      onDrawItem => sub {
-                         my ($self, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focusedItem) = @_;
-                         my $bc;
-                         if ( $hilite) {
-                            $bc = $self-> backColor;
-                            $self-> backColor( $self-> hiliteBackColor);
-                         }
-                         $canvas-> clear( $left, $bottom, $right, $top);
-                         $canvas-> put_image( $left, $bottom, $images[$index]);
-                         $self-> backColor( $bc) if $hilite;
-                      },
-                      onClick => sub {
-                          my $self = $_[0];
-                          $i = $images[ $self-> focusedItem];
-                          $dd-> ok;
-                      },
-                   );
-                   $l-> set_count( scalar @images);
-                   $dd-> destroy, goto FAIL unless $dd-> execute == cm::OK;
-               }
+         return unless $r[-1];
+         my $i = $r[0];
+         my ( $maxH, $maxW) = (0,0);
+         if ( @r > 1) {
+            for ( @r) {
+               my @sz = $_-> size;
+               $maxH = $sz[1] if $sz[1] > $maxH;
+               $maxW = $sz[0] if $sz[0] > $maxW;
+            }
+            $maxW += 2;
+            $maxH += 2;
+            my $dd = Prima::Dialog-> create(
+               centered => 1,
+               visible  => 0,
+               borderStyle => bs::Sizeable,
+               size     => [ 300, 300],
+               name     => 'Select image',
+            );
+            my $l = $dd-> insert( ListViewer =>
+               size     => [ $dd-> size],
+               origin   => [ 0,0],
+               itemHeight => $maxH,
+               itemWidth  => $maxW,
+               multiColumn => 1,
+               autoWidth   => 0,
+               growMode    => gm::Client,
+               onDrawItem => sub {
+                  my ($self, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focusedItem) = @_;
+                  my $bc;
+                  if ( $hilite) {
+                     $bc = $self-> backColor;
+                     $self-> backColor( $self-> hiliteBackColor);
+                  }
+                  $canvas-> clear( $left, $bottom, $right, $top);
+                  $canvas-> put_image( $left, $bottom, $r[$index]);
+                  $self-> backColor( $bc) if $hilite;
+               },
+               onClick => sub {
+                   my $self = $_[0];
+                   $i = $r[ $self-> focusedItem];
+                   $dd-> ok;
+               },
+            );
+            $l-> set_count( scalar @r);
+            if ( $dd-> execute == cm::OK) {
                $self-> set( $i);
                $self-> change;
-            } else {
-               Prima::MsgBox::message("Cannot load $f");
             }
+            $dd-> destroy;
+         } else {
+            $self-> set( $i);
+            $self-> change;
          }
-      FAIL:
       },
    );
    $self->{B} = $i-> insert( SpeedButton =>
@@ -2397,17 +2387,7 @@ sub open
       glyphs => $VB::main-> {savebutton}-> glyphs,
       growMode => gm::GrowLoY,
       onClick => sub {
-         my $dlg  = VB::save_dialog(
-            filter    => [
-               ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
-               ['All files' => '*.*']
-            ],
-         );
-         if ( $dlg-> execute) {
-            unless ( $self->{A}->{icon}->save( $dlg-> fileName)) {
-               Prima::MsgBox::message('Cannot save '.$dlg-> fileName);
-            }
-         }
+         VB::image_save_dialog-> save( $self->{A}->{icon});
       },
    );
    $self->{C} = $i-> insert( SpeedButton =>

@@ -40,6 +40,8 @@
 #   Prima::ReplaceDialog    => Prima/EditDialog.pm
 #   Prima::PrintSetupDialog => Prima/PrintDialog.pm
 #   Prima::ColorDialog      => Prima/ColorDialog.pm
+#   Prima::ImageOpenDialog  => Prima/ImageDialog.pm
+#   Prima::ImageSaveDialog  => Prima/ImageDialog.pm
 
 no strict;
 
@@ -130,6 +132,28 @@ sub AUTOLOAD
    my ($method) = $Prima::PrintSetupDialog::AUTOLOAD =~ /::([^:]+)$/;
    delete ${Prima::PrintSetupDialog::}{AUTOLOAD};
    require Prima::PrintDialog;
+   shift->$method(@_);
+}
+
+package Prima::ImageOpenDialog;
+
+sub AUTOLOAD
+{
+   my ($method) = $Prima::ImageOpenDialog::AUTOLOAD =~ /::([^:]+)$/;
+   delete ${Prima::ImageOpenDialog::}{AUTOLOAD};
+   delete ${Prima::ImageSaveDialog::}{AUTOLOAD};
+   require Prima::ImageDialog;
+   shift->$method(@_);
+}
+
+package Prima::ImageSaveDialog;
+
+sub AUTOLOAD
+{
+   my ($method) = $Prima::ImageSaveDialog::AUTOLOAD =~ /::([^:]+)$/;
+   delete ${Prima::ImageOpenDialog::}{AUTOLOAD};
+   delete ${Prima::ImageSaveDialog::}{AUTOLOAD};
+   require Prima::ImageDialog;
    shift->$method(@_);
 }
 

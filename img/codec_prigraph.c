@@ -74,6 +74,11 @@ static int t_no24[] = {
    0
 };   
 
+static int t_1g[] = { 
+   imbpp1  | imGrayScale,
+   0
+};   
+
 static int t_1[] = { 
    imbpp1,  imbpp1  | imGrayScale,
    0
@@ -95,8 +100,10 @@ static ImgCodecInfo codec_info = {
    0, 0,   // version
    nil,    // extension
    "",     // file type
+   "",     // short type
    nil,    // features 
    "",     // module
+   "",     // package
    true,   // canLoad
    false,  // canLoadMultiple 
    true,   // canSave
@@ -129,6 +136,7 @@ init( ImgCodecInfo ** info, void * param)
    
    memcpy( *info, &codec_info, sizeof( ImgCodecInfo));
    (*info)-> fileType = gft. long_name;
+   (*info)-> fileShortType = gft. short_name;
    c = gft. extensions;
    while ( 1) {
       if ( *c == '\0' || *c == ' ') count++;
@@ -156,6 +164,15 @@ init( ImgCodecInfo ** info, void * param)
    switch ((int)param) {
       case itGIF:
          (*info)-> canLoadMultiple = true;
+         (*info)-> saveTypes = t_no24;
+         (*info)-> primaModule  = "Prima::Image::GBM";
+         (*info)-> primaPackage = "Prima::Image::GBM::gif";
+         break;
+      case itLBM:
+         (*info)-> saveTypes = t_no24;
+         (*info)-> primaModule  = "Prima::Image::GBM";
+         (*info)-> primaPackage = "Prima::Image::GBM::lbm";
+         break;
       case itSPR:
          (*info)-> saveTypes = t_no24;
          break;
@@ -165,11 +182,18 @@ init( ImgCodecInfo ** info, void * param)
          (*info)-> saveTypes = t_8;
          break;
       case itPPM:
+         (*info)-> saveTypes = t_24;
+         break;
       case itJPG:
          (*info)-> saveTypes = t_24;
+         (*info)-> primaModule  = "Prima::Image::jpeg";
+         (*info)-> primaPackage = "Prima::Image::jpeg";
          break;
       case itPSG:
          (*info)-> saveTypes = t_1;
+         break;
+      case itXBM:
+         (*info)-> saveTypes = t_1g;
          break;
       case itCVP:   
          (*info)-> canSave = false;
@@ -383,11 +407,9 @@ save_defaults( PImgCodec c)
    case itGIF:
       pset_i( interlaced, 0);
       pset_i( transparentColorIndex, -1);
-      pset_i( transparentColor,      clInvalid);
       break;   
    case itLBM:
       pset_i( transparentColorIndex, -1);
-      pset_i( transparentColor,      clInvalid);
       break;   
    case itTIF:
       pset_i( compressed, 1); 
@@ -399,7 +421,6 @@ save_defaults( PImgCodec c)
       break;   
    case itPNG:
       pset_i( transparentColorIndex, -1);
-      pset_i( transparentColor,      clInvalid);
       pset_i( noAutoFilter, 0);
       pset_i( compressionLevel, -1); // GBM knows better
       pset_c( compression, ""); // alias "standard"
@@ -465,7 +486,6 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
      gif      - interlaced             "ilace"
      tiff     - compressed             "lzw"
               - description            "imagedescription=%s"
-              - special
      jpeg     - quality                "quality=%d"
               - progressive            "prog"
      png      - compressionLevel       "zlevel=%d"
@@ -518,14 +538,6 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    if ( g-> ft == itGIF || g-> ft == itPNG || g-> ft == itLBM) {
       if ( pexist( transparentColorIndex) && pget_i( transparentColorIndex) >= 0)
          strcat(g-> params, (snprintf(oneOpt, 256, " transcol=%d",(int) pget_i( transparentColorIndex)), oneOpt));
-      if ( pexist( transparentColor) && pget_i( transparentColor) != clInvalid) {
-         unsigned long c = pget_i( transparentColor);
-         strcat(g-> params, (snprintf(oneOpt,256, " transcol=%ld/%ld/%ld",
-            ( c >> 16) & 0xFF,
-            ( c >> 8 ) & 0xFF,
-            c & 0xFF
-         ), oneOpt));
-      }
    }
 
    cm_reverse_palette( i-> palette, pal, 256);

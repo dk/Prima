@@ -359,7 +359,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    }
 
    if ( fi. loadExtras && c-> info-> fileType) 
-      hv_store( fi. fileProperties, "codec", 6, newSViv( codecID), 0);
+      hv_store( fi. fileProperties, "codecID", 7, newSViv( codecID), 0);
 
    // loading
    for ( i = 0; i < fi. frameMapSize; i++) {
@@ -367,7 +367,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
       char * className = "Prima::Image";
 
       fi. frame = incrementalLoad ? i : fi. frameMap[ i];
-      if (( fi. frameCount >= 0 && fi. frameCount >= fi. frameCount) || 
+      if (( fi. frameCount >= 0 && fi. frame >= fi. frameCount) || 
           ( !c-> info-> canLoadMultiple && fi. frame > 0)) { 
          if ( !c-> info-> canLoadMultiple && fi. frameCount < 0)
             fi. frameCount = i; 
@@ -443,6 +443,10 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          if ( fi. object != self)
             Object_destroy( fi. object);
          if ( fi. profile != def) sv_free(( SV *) fi. profile);
+         if ( incrementalLoad && fi. frameCount < 0) {
+            fi. frameCount = fi. frame;
+            goto EXIT_NOW; // EOF, report no error
+         }   
          out( fi. errbuf);
       }  
 
@@ -756,19 +760,19 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
          } 
       }
 
-      // checking 'codec', if available
+      // checking 'codecID', if available
       {
          SV * c = nil;
-         if ( pexist( codec))
-            c = pget_sv( codec);
+         if ( pexist( codecID))
+            c = pget_sv( codecID);
          else if ( self && 
                    hv_exists(( HV*)SvRV((( PAnyObject) self)-> mate), 
                               "extras", 6)) {
             SV ** sv = hv_fetch(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6, 0);
             if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV) {
                HV * profile = ( HV *) SvRV( *sv);
-               if ( pexist( codec)) 
-                  c = pget_sv( codec);
+               if ( pexist( codecID)) 
+                  c = pget_sv( codecID);
             }   
          }
          if ( c && SvOK( c)) { // accept undef
@@ -1038,8 +1042,10 @@ apc_img_info2hash( PImgCodec codec)
    pset_i( versionMinor, c-> versionMin);
    fill_plist( "fileExtensions", c-> fileExtensions, profile);
    pset_c( fileType, c-> fileType);
+   pset_c( fileShortType, c-> fileShortType);
    fill_plist( "featuresSupported", c-> featuresSupported, profile);
-   pset_c( module, c-> primaModule);
+   pset_c( module,  c-> primaModule);
+   pset_c( package, c-> primaPackage);
    pset_i( canLoad,         c-> canLoad);
    pset_i( canSave        , c-> canSave);
    pset_i( canLoadMultiple, c-> canLoadMultiple);

@@ -46,8 +46,10 @@ static ImgCodecInfo codec_info = {
    6, 1,    // version
    jpgext,    // extension
    "JPEG File Interchange Format",     // file type
+   "JPEG", // short type
    nil,    // features 
-   "",     // module
+   "Prima::Image::jpeg",  // module
+   "Prima::Image::jpeg",  // package
    true,   // canLoad
    false,  // canLoadMultiple 
    true,   // canSave

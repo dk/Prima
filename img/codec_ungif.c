@@ -67,8 +67,10 @@ static ImgCodecInfo codec_info = {
    1, 0,      // version
    gifext,    // extension
    "Graphics Interchange Format",     // file type
+   "GIF", // short type
    gifver,    // features 
-   "",     // module
+   "Prima::Image::gif",     // module
+   "Prima::Image::gif",     // package
    true,   // canLoad
    true,   // canLoadMultiple 
    true,   // canSave
