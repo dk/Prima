@@ -165,12 +165,7 @@ $l = $w-> insert( ListBox =>
       }
 
       $w-> menu-> A2-> enabled( 1);
-
-      if ( !$p-> set_printer( $name))
-      {
-         message_box($w-> name, "Error selecting printer ".$printers[$$ref[0]]->{name}, mb::Ok | mb::Error);
-         $self-> focusedItem( -1);
-      };
+      $p-> printer( $name);
    },
 );
 
