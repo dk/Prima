@@ -666,6 +666,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    HDC dc;
    DWORD theRop;
    Bool ok = true, db, dcmono;
+   POINT tr = {0, 0};
 
    COLORREF oFore, oBack;
 
@@ -703,6 +704,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       }
 
       dc = dsys( image) ps;
+      SetViewportOrgEx( dc, 0, 0, &tr);
    } else {
       if ( is_apt( aptCompatiblePS))
          dc = CreateCompatibleDC( xdc);
@@ -831,6 +833,9 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       SetTextColor( sys ps, oFore);
       SetBkColor( sys ps, oBack);
    }
+
+   if ( dc && tr. x != 0 && tr. y != 0) 
+      SetViewportOrgEx( dc, tr. x, tr. y, NULL);
 
    if ( !db) {
       if ( dc) DeleteDC( dc);
