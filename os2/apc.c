@@ -635,8 +635,11 @@ Bool
 apc_window_activate( Handle self)
 {
    Bool ok = false;
-   if ( self)
+   if ( self) {
+      if ( self != Application_map_focus( application, self))
+         return false;
       if ( !( ok = WinSetActiveWindow( HWND_DESKTOP, HANDLE))) apiErr;
+   }
    return ok;
 }
 
@@ -1502,6 +1505,8 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
 Bool
 apc_widget_set_focused( Handle self)
 {
+   if ( self && ( self != Application_map_focus( application, self)))
+      return false;
    guts. focSysGranted++;
    if ( self)
       WinFocusChange( HWND_DESKTOP, var handle, is_apt( aptClipOwner) ? 0
