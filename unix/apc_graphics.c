@@ -666,6 +666,43 @@ create_rgb_to_16_lut( int ncolors, const PRGBColor pal, U16 *lut)
 }
 
 static void
+create_image_cache_4_to_16( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   U32 lut[ 256];
+   U16 lut1[ 16];
+   unsigned char *data;
+   int x, y;
+   int ls = ((img-> w * 16 + 31)/32)*4;
+   int h = img-> h, w = img-> w;
+   unsigned i;
+   
+   create_rgb_to_16_lut( 16, img-> palette, lut1);
+   for ( i = 0; i < 256; i++) {
+      lut[i] = ((U32)lut1[(i & 0xf0) >> 4]) | (((U32)lut1[(i & 0x0f) >> 0]) << 16);
+   }
+   data = malloc( ls * h);
+   if ( !data) {
+      croak( "create_image_cache_4_to_16(): no memory");
+   }
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register U32 *d = (U32*)(ls*(h-y-1)+data);
+      for ( x = 0; x < (w+1)/2; x++) {
+	 *d++ = lut[line[x]];
+      }
+   }
+
+   IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+				     guts. depth, ZPixmap, 0, data,
+				     w, h, 32, ls);
+   if (!IMG-> image_cache) {
+      free( data);
+      croak( "create_image_cache_4_to_16(): error during XCreateImage()");
+   }
+}
+
+static void
 create_image_cache_8_to_16( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
@@ -759,6 +796,15 @@ create_image_cache( PImage img)
 	 croak( "create_image_cache(): no palette, ouch!");
       }
       switch (img-> type & imBPP) {
+      case 4:
+	 switch (guts.depth) {
+	 case 16:
+	    create_image_cache_4_to_16( img);
+	    break;
+	 default:
+	    croak( "create_image_cache(): unsupported screen depth for 4-bit images");
+	 }
+	 break;
       case 8:
 	 switch (guts.depth) {
 	 case 16:
