@@ -124,6 +124,9 @@ struct _UnixGuts
    GCList *used_gcl;
    PPaintList paint_list;
    struct _timer_sys_data *oldest;
+   struct _timer_sys_data *cursor_timer;
+   Pixmap cursor_save, cursor_xor;
+   Point cursor_pixmap_size;
    struct {
       long request_length;
       long XDrawLines;

@@ -454,51 +454,74 @@ inactivate_timer( PTimerSysData sys)
    sys-> younger = nil;
 }
 
+static void
+fetch_sys_timer( Handle self, PTimerSysData *s, Bool *real_timer)
+{
+   if ( self == 0) {
+      *s = nil;
+      *real_timer = false;
+   } else if ( self == CURSOR_TIMER) {
+      *s = guts. cursor_timer;
+      *real_timer = false;
+   } else {
+      *s = ((PTimerSysData)(PComponent((self))-> sysData));
+      *real_timer = true;
+   }
+}
+
+#define ENTERTIMER \
+	PTimerSysData sys; \
+	Bool real; \
+	\
+	fetch_sys_timer( self, &sys, &real)
+
 Bool
 apc_timer_create( Handle self, Handle owner, int timeout)
 {
-   PTimerSysData sys = ((PTimerSysData)(PComponent((self))-> sysData));
+   ENTERTIMER;
 
    inactivate_timer( sys);
    sys-> timeout = timeout;
-   opt_clear( optActive);
    sys-> who = self;
-   apc_component_fullname_changed_notify( self);
-
+   if (real) {
+      opt_clear( optActive);
+      apc_component_fullname_changed_notify( self);
+   }
    return true;
 }
 
 void
 apc_timer_destroy( Handle self)
 {
-   PTimerSysData sys = ((PTimerSysData)(PComponent((self))-> sysData));
+   ENTERTIMER;
 
    inactivate_timer( sys);
    sys-> timeout = 0;
-   opt_clear( optActive);
+   if (real) opt_clear( optActive);
 }
 
 int
 apc_timer_get_timeout( Handle self)
 {
-   return ((PTimerSysData)(PComponent((self))-> sysData))-> timeout;
+   ENTERTIMER;
+   return sys-> timeout;
 }
 
 void
 apc_timer_set_timeout( Handle self, int timeout)
 {
-   PTimerSysData sys = ((PTimerSysData)(PComponent((self))-> sysData));
+   ENTERTIMER;
 
    sys-> timeout = timeout;
-   if ( is_opt( optActive))
+   if ( !real || is_opt( optActive))
       apc_timer_start( self);
 }
 
 Bool
 apc_timer_start( Handle self)
 {
-   PTimerSysData sys = ((PTimerSysData)(PComponent((self))-> sysData));
    PTimerSysData before;
+   ENTERTIMER;
 
    inactivate_timer( sys);
    if ( gettimeofday( &sys-> when, nil) != 0) {
@@ -532,17 +555,17 @@ apc_timer_start( Handle self)
       guts. oldest = sys;
    }
 
-   opt_set( optActive);
+   if ( real) opt_set( optActive);
    return true;
 }
 
 void
 apc_timer_stop( Handle self)
 {
-   PTimerSysData sys = ((PTimerSysData)(PComponent((self))-> sysData));
+   ENTERTIMER;
 
    inactivate_timer( sys);
-   opt_clear( optActive);
+   if ( real) opt_clear( optActive);
 }
 
 
