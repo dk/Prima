@@ -2722,9 +2722,9 @@ apc_system_action( const char * params)
          HWND h = GetFocus();
          if ( h) {
             char b[ 256];
-            DOLBUG( "%08x: %s", h, GetWindowText( h, b, 255) ? b : "NULL");
+            debug_write( "%08x: %s", h, GetWindowText( h, b, 255) ? b : "NULL");
          } else {
-            DOLBUG( "? No foc");
+            debug_write( "? No foc");
          }
       } else if (strncmp( params, "win32.WNetGetUser", 17) == 0) {
          char connection[ 1024];
