@@ -1226,10 +1226,10 @@ sub init
    )) { $self->{$_} = $profile{$_} }
 
    $self-> insert( DirectoryListBox =>
-      origin   => [ 10, $drives ? 40 : 10],
+      origin   => [ 10, 40],
       width    => 480,
       growMode => gm::Client,
-      height   => $drives ? 160 : 190,
+      height   => 160,
       name     => 'Dir',
       current  => 1,
       path     => $self-> { directory},
