@@ -29,7 +29,7 @@
 
 #include "unix/guts.h"
 #include "Image.h"
-#include "unix/img_api.h"
+#include "img_api.h"
 #include "unix/gif_support.h"
 
 #define APCIMG_VERSION		1
@@ -38,119 +38,32 @@ PList imgFormats = nil;
 U32 maxPrereadSize = 0;
 
 #define APCERRBUF_LENGTH 1024
-
-#define APCERRT_NONE 0
-#define APCERRT_DRIVER 1
-#define APCERRT_INTERNAL 2
-#define APCERRT_LIBC 3
-static int apcErrorType = APCERRT_NONE;
-
-/* apc_image internal error codes */
-#define APCIMG_NO_ERROR 0
-#define APCIMG_FORMAT_REGISTERED 1
-#define APCIMG_EMPTY_FORMAT_LIST 2
-#define APCIMG_NOT_ENOUGH_MEMORY 3
-#define APCIMG_NO_FORMAT 4
-#define APCIMG_INV_PROPERTY_TYPE 5
-#define APCIMG_INV_PROPERTY_VAL 6
-#define APCIMG_INV_INDEX_VAL 7 /* Obsolete for now; the code is free for use */
-#define APCIMG_FORBIDDEN_READALL 8
-static int apcErrorCode = APCIMG_NO_ERROR;
-static int errDriverIdx = -1;
+static char apcImageErrorMsg[ APCERRBUF_LENGTH];
 
 const char *
 apc_image_get_error_message( char *errorMsgBuf, int bufLen)
 {
-    static char errBuf[ APCERRBUF_LENGTH];
-    char *p = errBuf, *msg = "*** error missed ***";
-    int len = APCERRBUF_LENGTH;
-
-    if ( errorMsgBuf != NULL) {
-	p = errorMsgBuf;
-	len = bufLen;
+    const char *p = apcImageErrorMsg;
+    if ( errorMsgBuf) {
+	p = strncpy( errorMsgBuf, apcImageErrorMsg, bufLen - 1);
+	errorMsgBuf[ bufLen - 1] = 0; /* Strange design of strncpy, isn't it? 8-\ */
     }
-
-    strncpy( p, "no error", len);
-    p[ len - 1] = 0;
-
-    switch ( apcErrorType) {
-	case APCERRT_NONE:
-	    msg = "no error";
-	    break;
-	case APCERRT_LIBC:
-	    msg = strerror( apcErrorCode);
-	    break;
-	case APCERRT_INTERNAL:
-	    switch ( apcErrorCode) {
-		case APCIMG_NO_ERROR:
-		    msg = "no error";
-		    break;
-		case APCIMG_FORMAT_REGISTERED:
-		    msg = "image format already registered";
-		    break;
-		case APCIMG_EMPTY_FORMAT_LIST:
-		    msg = "no formats registered";
-		    break;
-		case APCIMG_NOT_ENOUGH_MEMORY:
-		    msg = "not enough memory";
-		    break;
-		case APCIMG_NO_FORMAT:
-		    msg = "no appropriate format found";
-		    break;
-		case APCIMG_INV_PROPERTY_TYPE:
-		    msg = "invalid property type";
-		    break;
-		case APCIMG_INV_PROPERTY_VAL:
-		    msg = "invalid property value";
-		    break;
-		case APCIMG_INV_INDEX_VAL:
-		    msg = "invalid 'index' property value: can't be -1 for load";
-		    break;
-		case APCIMG_FORBIDDEN_READALL:
-		    msg = "'readAll' property is not allowed while more than one profile specified";
-		    break;
-		default:
-		    msg = "*** APC internal: unknown error code";
-	    }
-	    break;
-	case APCERRT_DRIVER:
-	    {
-		PImgFormat imgf;
-		if ( ( errDriverIdx >= 0) && ( errDriverIdx < imgFormats->count)) {
-		    imgf = ( PImgFormat) list_at( imgFormats, errDriverIdx);
-		    msg = ( char *) imgf->getError( NULL, 0);
-		}
-		else {
-		    msg = "internal error: wrong driver index!";
-		}
-	    }
-	    break;
-	default:
-	    msg = "*** APC internal: unknown error type";
-    }
-    strncpy( p, msg, len);
-    p[ len - 1] = 0;
-
     return p;
 }
 
 static void
-__apc_image_set_error( int type, int code, ...)
+__apc_image_set_error( const char *fmt, ...)
 {
-    apcErrorType = type;
-    apcErrorCode = code;
-    if ( type == APCERRT_DRIVER) {
-	va_list args;
-	va_start( args, code);
-	errDriverIdx = va_arg( args, int);
-	va_end( args);
-    }
+    va_list args;
+    va_start( args, fmt);
+    vsnprintf( apcImageErrorMsg, APCERRBUF_LENGTH, fmt, args);
+    va_end( args);
 }
 
 static void
 __apc_image_clear_error()
 {
-    __apc_image_set_error( APCERRT_NONE, APCIMG_NO_ERROR);
+    apcImageErrorMsg[ 0] = 0;
 }
 
 /* image & bitmaps */
@@ -254,9 +167,9 @@ apc_register_image_format( int version, PImgFormat imgf)
 	imgFormats = plist_create( 10, 5);
     }
 
-    if ( list_first_that( imgFormats, image_format_exists, ( void*)imgf->id) >= 0) {
+    if ( list_first_that( imgFormats, image_format_exists, ( void *) imgf->id) >= 0) {
 	/* The format already registered */
-	__apc_image_set_error( APCERRT_INTERNAL, APCIMG_FORMAT_REGISTERED);
+	__apc_image_set_error( "apc_register_image_format: a driver for format id ``%s'' already registered", imgf->id);
 	return false;
     }
 
@@ -295,7 +208,7 @@ load_prepare_data()
 	load_data->fd = -1; /* The only valid value to indicate uninitialized file descriptor */
     }
     else {
-	__apc_image_set_error( APCERRT_INTERNAL, APCIMG_NOT_ENOUGH_MEMORY);
+	__apc_image_set_error( "load_prepare_data: out of memory");
     }
     return load_data;
 }
@@ -348,46 +261,49 @@ __boolean_value( const char *val)
 	     || ( strcasecmp( val, "1") == 0));
 }
 
-Bool
-__apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool readData, Bool *readAll)
+static Bool
+__apc_image_correct_property( PImgProps fmtProps,
+			      PList propList,
+			      PList outPropList,
+			      Bool *readAll,
+			      Bool *extraInfo
+    )
 {
-    PImgProps fmtProps = imgFormat->propertyList;
     PImgProperty imgProp, outImgProp;
-    PImgInfo outImageInfo;
-    PList propList = imageInfo->propList;
     int i, j, n;
     Bool rc = true;
 
-    rc = ( outImageInfo = img_info_create( propList->count)) != nil;
-
-    DOLBUG( "Have %d properties on entering __apc_image_correct_properties\n", propList->count);
     for ( i = ( propList->count - 1); ( i >= 0) && rc; i--) {
 	Bool isExtraInfo, isReadAll;
 	imgProp = ( PImgProperty) list_at( propList, i);
-	isExtraInfo = ( strcmp( imgProp->name, "extraInfo") == 0);
-	isReadAll = ( strcmp( imgProp->name, "readAll") == 0);
-	DOLBUG( "Correcting ``%s''\n", imgProp->name);
-	if ( isExtraInfo || isReadAll) {
-	    if ( ( imgProp->flags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY) {
-		// We don't expect an array here.
-		__apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
-		DOLBUG( "Property `%s' is of a wrong type\n", imgProp->name);
-		rc = false;
-	    }
-	    else if ( ! __is_boolean_value( imgProp->val.String)) {
-		__apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_VAL);
-		DOLBUG( "Property %s: wrong value \'%s\'\n", imgProp->name, imgProp->val.String);
-		rc = false;
-	    }
-	    else {
-		if ( isExtraInfo) {
-		    outImageInfo->extraInfo = __boolean_value( imgProp->val.String);
+	if ( readAll || extraInfo) {
+	    isExtraInfo = ( strcmp( imgProp->name, "extraInfo") == 0);
+	    isReadAll = ( strcmp( imgProp->name, "readAll") == 0);
+	    if ( isExtraInfo || isReadAll) {
+		if ( ( imgProp->flags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY) {
+		    // We don't expect an array here.
+		    __apc_image_set_error( "__apc_image_correct_property: standard property ``%s'' cannot be an array", imgProp->name);
+		    rc = false;
 		}
-		else if ( isReadAll) {
-		    *readAll = __boolean_value( imgProp->val.String);
+		else if ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_BIN) {
+		    __apc_image_set_error( "__apc_image_correct_property: property ``%s'' must be of scalar type", imgProp->name);
+		    rc = false;
 		}
+		else if ( ! __is_boolean_value( imgProp->val.Binary.data)) {
+		    __apc_image_set_error( "__apc_image_correct_property: property ``%s'' does not contain a boolean value", imgProp->name);
+		    rc = false;
+		}
+		else {
+		    if ( isExtraInfo && extraInfo) {
+			*extraInfo = __boolean_value( imgProp->val.Binary.data);
+		    }
+		    if ( isReadAll && readAll) {
+			*readAll = __boolean_value( imgProp->val.Binary.data);
+		    }
+		}
+		/* That was readAll or extraInfo properties... */
+		continue;
 	    }
-	    continue;
 	}
 	for ( j = 0; fmtProps[ j].name; j++) {
 	    if ( strcmp( imgProp->name, fmtProps[ j].name) == 0) {
@@ -395,92 +311,150 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool r
 	    }
 	}
 	if ( fmtProps[ j].name) {
-	    if ( ( ( fmtProps[ j].type[ 1] == '*') 
-		   && ( ( imgProp->flags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY))
-		 || ( ( fmtProps[ j].type[ 1] == '\0') 
-		      && ( ( imgProp->flags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY))) {
-		__apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
-		DOLBUG( "Property %s: wrong type\n", imgProp->name);
+	    if ( ( fmtProps[ j].type[ 1] == '*') 
+		 && ( ( imgProp->flags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY)) {
+		__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is expected to be an array", imgProp->name);
+		rc = false;
+	    }
+	    else if ( ( fmtProps[ j].type[ 1] == '\0')
+		      && ( ( imgProp->flags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY)) {
+		__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is not expected to be an array", imgProp->name);
+		rc = false;
+	    }
+	    else if ( ( fmtProps[ j].type[ 0] == 'p')
+		      && ( ( imgProp->flags & PROPTYPE_MASK) != PROPTYPE_PROP)) {
+		__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is expected to be a profile", imgProp->name);
 		rc = false;
 	    }
 	    else {
 		switch ( fmtProps[ j].type[ 0]) {
 		    case 'i':
-			if ( fmtProps[ j].type[ 0] == '*') {
-			    rc = ( outImgProp = img_info_add_property( outImageInfo,
-								       imgProp->name,
-								       PROPTYPE_ARRAY | PROPTYPE_INT,
-								       imgProp->used)) != nil;
+			if ( fmtProps[ j].type[ 1] == '*') {
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_ARRAY | PROPTYPE_INT,
+								   imgProp->used)) != nil;
 			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, atoi( imgProp->val.pString[ n]));
+				rc = img_push_property_value( outImgProp, atoi( imgProp->val.pBinary[ n].data));
 			    }
 			}
 			else {
-			    rc = ( outImgProp = img_info_add_property( outImageInfo,
-								       imgProp->name,
-								       PROPTYPE_INT,
-								       0,
-								       atoi( imgProp->val.String))) != nil;
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_INT,
+								   0,
+								   atoi( imgProp->val.Binary.data))) != nil;
 			}
 			break;
 		    case 'n':
-			if ( fmtProps[ j].type[ 0] == '*') {
-			    rc = ( outImgProp = img_info_add_property( outImageInfo,
-								       imgProp->name,
-								       PROPTYPE_ARRAY | PROPTYPE_DOUBLE,
-								       imgProp->used)) != nil;
+			if ( fmtProps[ j].type[ 1] == '*') {
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_ARRAY | PROPTYPE_DOUBLE,
+								   imgProp->used)) != nil;
 			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, atof( imgProp->val.pString[ n]));
+				rc = img_push_property_value( outImgProp, atof( imgProp->val.pBinary[ n].data));
 			    }
 			}
 			else {
-			    rc = ( outImgProp = img_info_add_property( outImageInfo,
-								       imgProp->name,
-								       PROPTYPE_DOUBLE,
-								       0,
-								       atof( imgProp->val.String))) != nil;
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_DOUBLE,
+								   0,
+								   atof( imgProp->val.Binary.data))) != nil;
 			}
 			break;
 		    case 's':
-			if ( fmtProps[ j].type[ 0] == '*') {
-			    rc = ( outImgProp = img_info_add_property( outImageInfo,
-								       imgProp->name,
-								       PROPTYPE_ARRAY | PROPTYPE_STRING,
-								       imgProp->used)) != nil;
+			if ( fmtProps[ j].type[ 1] == '*') {
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_ARRAY | PROPTYPE_STRING,
+								   imgProp->used)) != nil;
 			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, imgProp->val.pString[ n]);
+				rc = img_push_property_value( outImgProp, imgProp->val.pBinary[ n].data);
 			    }
 			}
 			else {
-			    rc = ( outImgProp = img_info_add_property( outImageInfo,
-								       imgProp->name,
-								       PROPTYPE_STRING,
-								       0,
-								       imgProp->val.String)) != nil;
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_STRING,
+								   0,
+								   imgProp->val.Binary.data)) != nil;
 			}
 			break;
 		    case 'b':
-			if ( fmtProps[ j].type[ 0] == '*') {
-			    rc = ( outImgProp = img_info_add_property( outImageInfo,
-								       imgProp->name,
-								       PROPTYPE_ARRAY | PROPTYPE_BYTE,
-								       imgProp->used)) != nil;
+			if ( fmtProps[ j].type[ 1] == '*') {
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_ARRAY | PROPTYPE_BYTE,
+								   imgProp->used)) != nil;
 			    for ( n = 0; n < imgProp->used && rc; n++) {
-				rc = img_push_property_value( outImgProp, atoi( imgProp->val.pString[ n]));
+				rc = img_push_property_value( outImgProp, atoi( imgProp->val.pBinary[ n].data));
 			    }
 			}
 			else {
-			    rc = ( outImgProp = img_info_add_property( outImageInfo,
-								       imgProp->name,
-								       PROPTYPE_BYTE,
-								       0,
-								       atoi( imgProp->val.String))) != nil;
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_BYTE,
+								   0,
+								   atoi( imgProp->val.Binary.data))) != nil;
+			}
+			break;
+		    case 'B':
+			/* The size of binary data must be decreased by 1 because it was
+			   choosen in a way to preserve trailing zero in the Perl string. */
+			if ( fmtProps[ j].type[ 1] == '*') {
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_ARRAY | PROPTYPE_BIN,
+								   imgProp->used)) != nil;
+			    for ( n = 0; n < imgProp->used && rc; n++) {
+				rc = img_push_property_value( outImgProp, imgProp->val.pBinary[ n].size - 1, imgProp->val.pBinary[ n].data);
+			    }
+			}
+			else {
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_BIN,
+								   0,
+								   imgProp->val.Binary.size - 1,
+								   imgProp->val.Binary.data)) != nil;
+			}
+			break;
+		    case 'p':
+			if ( fmtProps[ j].type[ 1] == '*') {
+			    rc = ( outImgProp = img_push_property( outPropList,
+								   imgProp->name,
+								   PROPTYPE_ARRAY | PROPTYPE_PROP,
+								   imgProp->used)) != nil;
+			    for ( n = 0; n < imgProp->used && rc; n++) {
+				rc = img_push_property_value( outImgProp, 
+							      imgProp->val.pProperties[ n].count)
+				    && __apc_image_correct_property( fmtProps[ j].subProps,
+								   imgProp->val.pProperties + n,
+								   outImgProp->val.pProperties + n,
+								   nil,
+								   nil);
+			    }
+			}
+			else {
+			    rc = ( ( outImgProp = img_push_property( outPropList, 
+								     imgProp->name,
+								     PROPTYPE_PROP,
+								     0,
+								     imgProp->val.Properties.count)) != nil)
+				&& __apc_image_correct_property( fmtProps[ j].subProps,
+								 &imgProp->val.Properties,
+								 &outImgProp->val.Properties,
+								 nil,
+								 nil
+				    );
 			}
 			break;
 		    default:
-			DOLBUG( "Unsupported property type `%s' for property `%s'\n", 
-				fmtProps[ j].type[ 0],
-				imgProp->name
+			__apc_image_set_error( "__apc_image_correct_property: unsupported property type ``%s'' of property ``%s''\n",
+					       fmtProps[ j].type,
+					       imgProp->name
 			    );
 			rc = false;
 		}
@@ -490,7 +464,23 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool r
 	    }
 	}
     }
+    return rc;
+}
 
+static Bool
+__apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool *readAll)
+{
+    PImgInfo outImageInfo;
+    PList propList = imageInfo->propList;
+    Bool rc = true;
+
+    rc = ( ( outImageInfo = img_info_create( propList->count)) != nil)
+	&& __apc_image_correct_property( imgFormat->propertyList, 
+					 propList, 
+					 outImageInfo->propList, 
+					 readAll, 
+					 &outImageInfo->extraInfo
+	    );
     if ( rc) {
 	/* Clearing the old properties list. */
 	img_destroy_properties( imageInfo->propList);
@@ -501,9 +491,6 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool r
     }
 
     img_info_destroy( outImageInfo);
-
-    DOLBUG( "__apc_image_correct_properties: returning %d\n", ( int) rc);
-    DOLBUG( "Have %d properties on exiting __apc_image_correct_properties\n", imageInfo->propList->count);
 
     return rc;
 }
@@ -532,26 +519,16 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 		load_data->preread_size = read( load_data->fd, load_data->preread_buf, load_data->preread_size);
 		if ( load_data->preread_size != -1) {
 		    int format_idx = list_first_that( imgFormats, load_img_loadable, load_data);
-		    DOLBUG( "format_idx: %d\n", format_idx);
 		    if ( format_idx != -1) {
 			int i;
 			Bool correction_succeed = true, readAll = false;
 			PImgFormat imgFormat = ( PImgFormat) list_at( imgFormats, format_idx);
-			DOLBUG( "%s for %s as %s\n", 
-				( readData ? "Loading image" : "Getting info"), 
-				load_data->filename, 
-				imgFormat->id
-			    );
 			for ( i = 0; ( i < imgInfo->count) && correction_succeed; i++) {
 			    PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
-			    correction_succeed = __apc_image_correct_properties( imageInfo, 
-										 imgFormat, 
-										 readData, 
-										 &readAll
-				);
+			    correction_succeed = __apc_image_correct_properties( imageInfo, imgFormat, &readAll);
 			}
 			if ( readAll && correction_succeed && ( imgInfo->count > 1)) {
-			    __apc_image_set_error( APCERRT_INTERNAL, APCIMG_FORBIDDEN_READALL);
+			    __apc_image_set_error( "apc_image_read(%s): readAll cannot be used with multiple image profiles", filename);
 			    correction_succeed = false;
 			}
 			if ( correction_succeed) {
@@ -559,29 +536,34 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 				   imgFormat->load( load_data->fd, load_data->filename, imgInfo, readAll) :
 				   imgFormat->getInfo( load_data->fd, load_data->filename, imgInfo, readAll));
 			    if ( ! rc) {
-				DOLBUG( "Error in driver %d\n", format_idx);
-				__apc_image_set_error( APCERRT_DRIVER, 0, format_idx);
+				__apc_image_set_error( "apc_image_read(%s): error in %s driver: %s",
+						       filename,
+						       imgFormat->getError( NULL, 0));
 			    }
 			}
 		    }
 		    else {
-			__apc_image_set_error( APCERRT_INTERNAL, APCIMG_NO_FORMAT);
+			__apc_image_set_error( "apc_image_read(%s): no appropriate image format found",
+					       filename);
 		    }
 		}
 		else {
-		    __apc_image_set_error( APCERRT_LIBC, errno);
+		    __apc_image_set_error( "apc_image_read: image preread failed for %s: %s", 
+					   filename,
+					   strerror( errno));
 		}
 	    }
 	    else {
-		__apc_image_set_error( APCERRT_LIBC, errno);
+		__apc_image_set_error( "apc_image_read(%s): open failed: %s",
+				       filename,
+				       strerror( errno));
 	    }
 	    load_cleanup_data( &load_data);
 	}
     }
     else {
-	__apc_image_set_error( APCERRT_INTERNAL, APCIMG_EMPTY_FORMAT_LIST);
+	__apc_image_set_error( "apc_image_read(%s): no any image format driver registered yet", filename);
     }
-    DOLBUG( "apc_image_read: returning %d\n", ( int) rc);
     return rc;
 }
 
