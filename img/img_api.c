@@ -1,7 +1,7 @@
 /*-
  * $Id$
  *
- * Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
+ * Copyright (c) 1997-2000 The Protein Laboratory, University of Copenhagen
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
