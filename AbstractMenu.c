@@ -68,10 +68,13 @@ key_normalize( const char * key)
    } else {
       char *e;
       if (isdigit(*key)) {
-	 if (r) return kbNoKey;
-	 r = strtol( key, &e, 10);
-	 if (*e) return kbNoKey;
-	 return r;
+         if (r) return kbNoKey;
+         r = strtol( key, &e, 10);
+         if (*e) return kbNoKey;
+         if (( r & kmCtrl) == 0) return r;
+         return (( r & kmCtrl) && isalpha( r & ~kmCtrl)) ?
+            kmCtrl | ( toupper( r & ~kmCtrl)-'@') :
+            r;
       } else if (tolower(*key) != 'f')
 	 return kbNoKey;
       key++;
