@@ -55,13 +55,14 @@ hwnd_enter_paint( Handle self)
    sys fontHash = create_fontid_hash();
    apc_gp_set_font( self, &var font);
 
-   if ( is_apt( aptWinPS)) {
+   if ( is_apt( aptWinPS) && self != application) {
       apc_gp_set_color( self, apc_widget_get_color( self, ciFore));
       apc_gp_set_back_color( self, apc_widget_get_color( self, ciBack));
    } else {
       apc_gp_set_color( self, sys lbs[0]);
       apc_gp_set_back_color( self, sys lbs[1]);
    }
+
    if ( !DevQueryCaps( GpiQueryDevice( sys ps), CAPS_COLOR_PLANES, 2, lset)) apiErr;
    sys bpp = lset[0] * lset[1];
 // printf("checkpoint: bpp is %d", sys bpp);
@@ -462,7 +463,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize)
          resId >= 0 &&                                  // if resolution match found
          resValue < 16 &&                               // and difference is no more than 4 points
          ( forceSize ||                                 // enough for size pickup -
-            ( heiValue < 16 &&                          // but if picking for height,
+            ( heiValue < 5 &&                           // but if picking for height,
                ( !useWidth ||                           // 4 pts y-difference is ok, and enough
                   ( widValue == 0 && heiValue == 0)     // if no width pickup specified, else
                )                                        // same 4 pts x-diff check.
@@ -788,8 +789,7 @@ gp_get_font( HPS ps, PFont font, Point res)
       GpiQueryCharAngle( ps, &g);
       if ( g. x != 0 || g. y != 0) font-> direction   = atan2( g. y, g. x) * GRAD;
    } else {
-      font-> height = fmtx. lMaxBaselineExt;
-      font-> width  = fmtx. lMaxCharInc;
+      font-> height = font-> width = C_NUMERIC_UNDEF;
       font-> size   = fmtx. sNominalPointSize / 10;
    }
    font-> style = font_style( &fmtx);

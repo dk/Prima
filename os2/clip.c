@@ -109,6 +109,7 @@ apc_clipboard_get_data( long id, int * length)
              HBITMAP b2, bsave;
              BITMAPINFOHEADER bh;
              PBITMAPINFO2 bi;
+             int type;
              POINTL pt [4] = {{0,0},{0,0},{0,0},{0,0}};
              if ( b == nilHandle) {
                 apcErr( errInvClipboardData);
@@ -116,7 +117,8 @@ apc_clipboard_get_data( long id, int * length)
              }
              if ( !GpiQueryBitmapParameters( b, &bh)) apiErr;
              if (bh. cBitCount > 8) bh. cBitCount = 24;
-             image_begin_query( bh. cBitCount, ( int *)&bh. cBitCount);
+             image_begin_query( bh. cBitCount, &type);
+             bh. cBitCount = type;
              image-> self-> create_empty( self, bh. cx, bh. cy, bh. cBitCount);
              pt[ 1]. x = pt[ 3]. x = bh. cx;
              pt[ 1]. y = pt[ 3]. y = bh. cy;

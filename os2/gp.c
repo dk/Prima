@@ -76,16 +76,16 @@ apc_gp_done( Handle self)
                                   if ( !GpiMove( ps, &___p)) apiErr;         \
                                }
 
-#define apc_gp_fix             if ( sys lineWidth > 0) {                     \
-                                  if ( !GpiBeginPath( sys ps, 1)) apiErr;    \
+#define apc_gp_fix             if ( sys lineWidth > 0 || sys linePatternLen < 2) { \
+                                  if ( !GpiBeginPath( sys ps, 1)) apiErr;\
                                }
 
-#define apc_gp_fix_end         if ( sys lineWidth > 0) {                     \
+
+#define apc_gp_fix_end         if ( sys lineWidth > 0 || sys linePatternLen < 2) {\
                                   if ( !GpiEndPath( sys ps)) apiErr;         \
                                   if ( !GpiModifyPath( sys ps, 1, MPATH_STROKE)) apiErr;    \
-                                  if ( GpiFillPath( sys ps, 1, FPATH_WINDING) == GPI_ERROR) \
-                                      apiErr;                                \
-                                }
+                                  if ( GpiFillPath( sys ps, 1, FPATH_WINDING) == GPI_ERROR); \
+                               }
 
 #define gp_arc_set {               \
   ARCPARAMS arc;                   \
@@ -165,7 +165,7 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 {
    apc_gp_move( sys ps, points[0].x, points[0].y);
    apc_gp_fix;
-   if ( GpiPolyLineDisjoint( sys ps, numPts - 1, ( PPOINTL)&points[1]) == GPI_ERROR) apiErr;
+   if ( GpiPolyLineDisjoint( sys ps, numPts, ( PPOINTL) points) == GPI_ERROR) apiErr;
    apc_gp_fix_end;
    return true;
 }
@@ -256,7 +256,12 @@ Color
 apc_gp_get_pixel ( Handle self, int x, int y)
 {
    POINTL p = {x, y};
-   return remap_color( sys ps, GpiQueryPel ( sys ps, &p), false);
+   LONG ret = GpiQueryPel ( sys ps, &p);
+   if ( ret == GPI_ALTERROR) {
+      apiErr;
+      return clInvalid;
+   }
+   return remap_color( sys ps, ret, false);
 }
 
 ApiHandle
@@ -364,7 +369,7 @@ apc_gp_set_pixel ( Handle self, int x, int y, Color color)
    POINTL p = {x, y};
    LONG c = GpiQueryColor ( sys ps);
    GpiSetColor( sys ps, remap_color( sys ps, color, true));
-   if ( !GpiSetPel( sys ps, &p)) apiErr;
+   if ( GpiSetPel( sys ps, &p) == GPI_ERROR) apiErr;
    GpiSetColor( sys ps, c);
    return true;
 }
@@ -412,7 +417,6 @@ apc_gp_stretch_image ( Handle self, Handle image, int x, int y, int xFrom, int y
       lrop = ROP_SRCINVERT;
    } else
       lrop = ctx_remap( rop, ctx_rop2ROP, true);
-
    if ( b-> cBitCount == imMono)
    {
       long cr[ 2];
@@ -432,13 +436,15 @@ apc_gp_stretch_image ( Handle self, Handle image, int x, int y, int xFrom, int y
       GpiSetColor( ps, cr[1]);
       GpiSetBackColor( ps, cr[0]);
    }
-
    if ( db) {
+      HBITMAP bmSave = GpiSetBitmap( dsys( image) ps, nilHandle); // avoid PMERR_BITMAP_IN_USE
       if ( GpiWCBitBlt( ps, dsys( image) bm, 4, pt, lrop, BBO_IGNORE) == GPI_ERROR) apiErr;
+      GpiSetBitmap( dsys( image) ps, bmSave);
    } else {
       if ( is_apt( aptCompatiblePS)) {
          image_set_cache( deja, image);
-         if ( GpiDrawBits( ps, dsys( image) bmRaw, dsys( image) bmInfo, 4, pt, lrop, BBO_IGNORE) == GPI_ERROR) apiErr;
+         if ( dsys( image) bmRaw)
+            if ( GpiDrawBits( ps, dsys( image) bmRaw, dsys( image) bmInfo, 4, pt, lrop, BBO_IGNORE) == GPI_ERROR) apiErr;
       } else {
          HBITMAP bm = ( dsys( image) bm == nilHandle) ? (( HBITMAP) bitmap_make_handle( deja)) : ( dsys( image) bm);
          if ( bm)
@@ -588,10 +594,6 @@ apc_gp_get_clip_rect( Handle self)
       return r;
    }
    if ( GpiQueryClipBox( sys ps, ( PRECTL)&r) == RGN_ERROR) apiErr;
-   r. left   += sys transform2. x;
-   r. right  += sys transform2. x;
-   r. top    += sys transform2. y;
-   r. bottom += sys transform2. y;
    return r;
 }
 
@@ -825,7 +827,7 @@ apc_gp_set_font( Handle self, PFont font)
       0,
       FATTR_FONTUSE_TRANSFORMABLE
    };
-   Bool vectored;
+   int vectored;
    SIZEF sz;
    int fontId;
 
@@ -837,7 +839,7 @@ apc_gp_set_font( Handle self, PFont font)
       int fontId;
       font-> resolution = sys res.y * 0x10000 + sys res. x;
       /* XXX check whether hash data are relevant */
-      fontId = get_fontid_from_hash( sys fontHash, font, &sz, (int*)&vectored);
+      fontId = get_fontid_from_hash( sys fontHash, font, &sz, &vectored);
       if ( fontId)
       {
          gp_set_font_extra( self, sys ps, fontId, &sz, vectored, font);
@@ -902,7 +904,8 @@ apc_gp_set_line_width( Handle self, int lineWidth)
    sys lineWidth = lineWidth;
    if ( !sys ps) return true;
    if ( lineWidth == 0) {
-      if ( !GpiSetLineWidth( sys ps, MAKEFIXED( lineWidth, 0))) apiErrRet;
+      if ( !GpiSetLineWidthGeom( sys ps, 1)) apiErrRet;
+      if ( !GpiSetLineWidth( sys ps, LINEWIDTH_NORMAL)) apiErrRet;
    } else {
       if ( !GpiSetLineWidthGeom( sys ps, lineWidth)) apiErrRet;
    }

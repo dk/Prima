@@ -48,6 +48,14 @@
 
 // Pointer
 
+#define putbmp(x,y,bm) {                                          \
+  POINTL point = {x,y};                                               \
+  HPS display = WinGetScreenPS( HWND_DESKTOP);                    \
+  WinDrawBitmap(display,bm,nil,&point,CLR_WHITE,CLR_BLACK,DBM_NORMAL);\
+  WinReleasePS( display);                                         \
+}
+
+
 HPOINTER
 pointer_make_handle( Handle self, Handle icon, Point hotSpot)
 {
@@ -63,22 +71,24 @@ pointer_make_handle( Handle self, Handle icon, Point hotSpot)
     if ( kind_of( icon, CIcon))
     {
        mbuf = malloc( i-> maskSize * 2);
-       memset( &mbuf[ 0], 0xFF, i-> maskSize);
+       memset( &mbuf[ 0], 0, i-> maskSize);
        memcpy( &mbuf[ i-> maskSize], i-> mask, i-> maskSize);
     } else {
        int maskSize = (( i-> w + 31) / 32) * 4 * i-> h;
        mbuf = malloc( maskSize * 2);
-       memset( mbuf, 0xFF, maskSize * 2);
+       memset( mbuf, 0, maskSize * 2);
     }
+
     if ((( i-> type & imBPP) != imMono) ||
          ( ARGB( i-> palette[0].r, i-> palette[0].g, i-> palette[0].b) != clBlack) ||
          ( ARGB( i-> palette[1].r, i-> palette[1].g, i-> palette[1].b) != clWhite)
-       )
+       ) {
        b = ( HBITMAP) bitmap_make_handle( icon);
+    }
     else
     {
-       int j;
-       for ( j = 0; j < i-> dataSize; j++) mbuf[ j] = ~i-> data[ j];
+       int j, d = i-> dataSize;
+       for ( j = 0; j < d; j++) mbuf[ j] = i-> data[ j];
     }
 
     memset( &bm, 0, sizeof ( bm));
@@ -87,8 +97,8 @@ pointer_make_handle( Handle self, Handle icon, Point hotSpot)
     bm. h            = i-> h * 2;
     bm. bpp          = 1;
     bm. planes       = 1;
-    bm. palette[1].bRed = bm. palette[1].bGreen = bm. palette[1].bBlue = 0;
-    bm. palette[0].bRed = bm. palette[0].bGreen = bm. palette[0].bBlue = 0xFF;
+    bm. palette[1].bRed = bm. palette[1].bGreen = bm. palette[1].bBlue = 0xFF;
+    bm. palette[0].bRed = bm. palette[0].bGreen = bm. palette[0].bBlue = 0;
     m = GpiCreateBitmap( guts. ps, ( PBITMAPINFOHEADER2) &bm, CBM_INIT, mbuf, ( PBITMAPINFO2) &bm);
     free( mbuf);
     if ( m == nilHandle) {
@@ -282,7 +292,6 @@ apc_pointer_set_visible( Handle self, Bool visible)
 Bool
 apc_pointer_get_bitmap( Handle self, Handle icon)
 {
-   int j;
    BInfo2 bi;
    HBITMAP bDup = nilHandle, bSave;
    POINTERINFO p;
@@ -305,10 +314,12 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    if ( p. hbmColor)
    {
       // pointer have a color bitmap
+      int type;
       if ( !GpiQueryBitmapParameters( p. hbmColor, &bh)) apiErrRet;
       // creating storage
       if ( bh. cBitCount > 8) bh. cBitCount = 24;
-      image_begin_query( bh. cBitCount, ( int *)&bh. cBitCount);
+      image_begin_query( bh. cBitCount, &type);
+      bh. cBitCount = type;
       i-> self-> create_empty( icon, bh. cx, bh. cy, bh. cBitCount);
       // reading color map
       apcErrClear;
@@ -341,10 +352,12 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       image_query( icon, guts. ps);
       if ( apcError) ret = false;
    } else {
+      int type;
       // pointer does not have color bitmap
       if ( !GpiQueryBitmapParameters( p. hbmPointer, &bh)) apiErrRet;
       if (bh. cBitCount > 8) bh. cBitCount = 24;
-      image_begin_query( bh. cBitCount, ( int *)&bh. cBitCount);
+      image_begin_query( bh. cBitCount, &type);
+      bh. cBitCount = type;
       i-> self-> create_empty( icon, bh. cx, bh. cy / 2, bh. cBitCount);
       bSave = GpiSetBitmap( guts. ps, p. hbmPointer);
       if ( bSave == HBM_ERROR) apiErr;
@@ -360,7 +373,6 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    if ( GpiSetBitmap( guts. ps, p. hbmPointer) == HBM_ERROR) apiErr;
    if ( bDup) if ( !GpiDeleteBitmap( bDup)) apiErr;
    if ( GpiQueryBitmapBits( guts. ps, i-> h, i-> h, (PBYTE)i-> mask, ( PBITMAPINFO2)&bi) < 0) ret = false;
-   for ( j = 0; j < i-> maskSize; j++) i-> mask[ j] = ~i-> mask[ j];
    // end up
    if ( GpiSetBitmap( guts. ps, bSave) == HBM_ERROR) apiErrRet;
    return ret;

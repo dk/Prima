@@ -49,11 +49,16 @@ bitmap_make_ps( Handle img, HPS * hps, HDC * hdc, PBITMAPINFO2 * bm, int createB
    HBITMAP ret;
    *bm  = nil;
    *hps = nilHandle;
-   *hdc = DevOpenDC ( guts. anchor, OD_MEMORY, "*", 0, nil, nilHandle );
-   if ( *hdc == nilHandle ) { apiErr; return nilHandle;}
+   *hdc = nilHandle;
 
    sizl . cx = (( PDrawable) img)-> w;
    sizl . cy = (( PDrawable) img)-> h;
+
+   if ( createBitmap && ( sizl. cx == 0 || sizl. cy == 0)) return false;
+
+   *hdc = DevOpenDC ( guts. anchor, OD_MEMORY, "*", 0, nil, nilHandle );
+   if ( *hdc == nilHandle ) { apiErr; return nilHandle;}
+
    *hps = GpiCreatePS ( guts. anchor, *hdc, &sizl,
                        PU_PELS | GPIF_DEFAULT | GPIT_MICRO | GPIA_ASSOC ) ;
    if ( *hps == nilHandle)
@@ -68,6 +73,7 @@ bitmap_make_ps( Handle img, HPS * hps, HDC * hdc, PBITMAPINFO2 * bm, int createB
    if ( createBitmap) {
       Handle deja = nilHandle;
       PImage image;
+
       if ( createBitmap == cbImage) {
          deja  = cmono_enscreen( img);
          image = ( PImage) deja;
@@ -278,10 +284,14 @@ bitmap_make_cache( Handle from, Handle self)
     HPS hps;
     PBITMAPINFO2 bi, br;
     HBITMAP bm = bitmap_make_ps( from, &hps, &hdc, &bi, cbImage);
-    if ( bm == nilHandle) return;
 
     if ( sys bmInfo) free( sys bmInfo);
     if ( sys bmRaw)  free( sys bmRaw);
+    if ( bm == nilHandle) {
+       sys bmInfo = nil;
+       sys bmRaw  = nil;
+       return;
+    }
 
     br = get_screen_binfo();
     sys bmRaw = malloc((( br-> cBitCount * bi-> cx + 31) / 32) * br-> cPlanes * 4 * bi-> cy);
@@ -349,6 +359,8 @@ apc_image_begin_paint( Handle self)
    HBITMAP cached = sys bm;
    HBITMAP ret;
    Handle deja = self;
+
+   if ( PImage( self)-> w == 0 || PImage( self)-> h == 0) return false;
 
    apcErrClear;
    sys bm = nilHandle;

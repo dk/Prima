@@ -346,23 +346,32 @@ get_view_ex( Handle self, PViewProfile p)
 void
 process_transparents( Handle self)
 {
-// int i;
-// RECT mr;
-// objCheck;
-// GetWindowRect(( HWND) var handle, &mr);
-// for ( i = 0; i < var widgets. count; i++) {
-//    HWND xwnd;
-//    Handle x = var widgets. items[ i];
-//    dobjCheck(x);
-//    xwnd = DHANDLE(x);
-//    if ( dsys(x) options. aptTransparent && IsWindowVisible( xwnd)) {
-//       RECT r, dr;
-//       GetWindowRect( xwnd, &r);
-//       IntersectRect( &dr, &r, &mr);
-//       if ( !IsRectEmpty( &dr))
-//          InvalidateRect( xwnd, nil, false);
-//    }
-// }
+   int i;
+   SWP swp, rswp;
+   RECTL mr, r, dr;
+   objCheck;
+   WinQueryWindowPos(( HWND) var handle, &swp);
+   mr. xLeft   = 0;
+   mr. yBottom = 0;
+   mr. xRight  = swp. cx;
+   mr. yTop    = swp. cy;
+   for ( i = 0; i < var widgets. count; i++) {
+      HWND xwnd;
+      Handle x = var widgets. items[ i];
+      dobjCheck(x);
+      xwnd = DHANDLE(x);
+      if (( dsys(x) options & aptTransparent) && WinIsWindowVisible( xwnd)) {
+         WinQueryWindowPos( xwnd, &rswp);
+         r. xLeft   = rswp. x;
+         r. yBottom = rswp. y;
+         r. xRight  = rswp. x + rswp. cx;
+         r. yTop    = rswp. y + rswp. cy;
+         WinIntersectRect( guts. anchor, &dr, &r, &mr);
+         if ( !WinIsRectEmpty( guts. anchor, &dr)) {
+            WinInvalidateRect( xwnd, nil, false);
+         }
+      }
+   }
 }
 
 
@@ -518,7 +527,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
       | (( borderStyle == bsSingle  )   ? FCF_BORDER        : 0)
       | (( borderStyle == bsDialog  )   ? FCF_DLGBORDER     : 0)
       | (  taskList                     ? FCF_TASKLIST      : 0)
-      | (( !usePos && !useSize      )   ? FCF_SHELLPOSITION : 0)
+      | (( !usePos && !useSize && windowState != wsMaximized) ? FCF_SHELLPOSITION : 0)
    ;
 
    objCheck false;
@@ -733,11 +742,12 @@ apc_window_set_caption( Handle self, const char * caption)
 }
 
 Bool
-apc_window_set_client_size  ( Handle self, int x, int y)
+apc_window_set_client_size( Handle self, int x, int y)
 {
    Bool ok = true;
    if ( sys s. window. state == wsMinimized)
    {
+      var virtualSize = ( Point){x, y};
       if ( x < 0) x = 0;
       if ( y < 0) y = 0;
       sys s. window. lastFrameSize. x += sys s. window. lastFrameSize. x - sys s. window. lastClientSize. x + x;
@@ -750,8 +760,13 @@ apc_window_set_client_size  ( Handle self, int x, int y)
          HWND h = HANDLE;
          if ( !( ok = WinSetWindowUShort( h, QWS_CXRESTORE, p. x))) apiErr;
          if ( !( ok &= WinSetWindowUShort( h, QWS_CYRESTORE, p. y))) apiErr;
-      } else
+         var virtualSize = ( Point){x, y};
+      } else {
+         sys sizeLockLevel++;
+         var virtualSize = ( Point){x, y};
          if ( !( ok = WinSetWindowPos( HANDLE, 0, 0, 0, p. x, p. y, SWP_SIZE))) apiErr;
+         sys sizeLockLevel--;
+      }
    }
    return ok;
 }
@@ -770,8 +785,9 @@ apc_window_set_client_pos( Handle self, int x, int y)
       {
          if ( !( ok = WinSetWindowUShort( h, QWS_XRESTORE, x - d.x))) apiErr;
          if ( !( ok &= WinSetWindowUShort( h, QWS_YRESTORE, y - d.y))) apiErr;
-      } else
+      } else {
          if ( !( ok = WinSetWindowPos( h, 0, x - d.x, y - d.y, 0, 0, SWP_MOVE))) apiErr;
+      }
    }
    return ok;
 }
@@ -843,6 +859,7 @@ window_start_modal( Handle self, Bool shared, Handle insertBefore)
       WinSetWindowPos( wnd, nilHandle, 0, 0, 0, 0, SWP_RESTORE);
    if ( !insertBefore) {
       WinSetActiveWindow( HWND_DESKTOP, wnd);
+      CWidget( self)-> set_selected( self, 1);
    } else {
       HWND zorder;
       dobjCheck( insertBefore) false;
@@ -1044,15 +1061,27 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       Handle owner = var owner;
       Point tr = dsys(owner)transform2;
       Point ed = apc_widget_get_pos( self);
+      Color f, b, f1, b1;
+
 
       CWidget(owner)-> begin_paint( owner);
+      f  = apc_gp_get_color( owner);
+      b  = apc_gp_get_back_color( owner);
+      f1 = apc_gp_get_color( self);
+      b1 = apc_gp_get_back_color( self);
+
       ps = dsys( owner) ps;
-      dsys( owner) ps = sys ps;
+      dsys(owner) ps = sys ps;
       dsys(owner) transform2. x += ed. x;
       dsys(owner) transform2. y += ed. y;
       apc_gp_set_transform( owner, 0, 0);
+      apc_gp_set_color( owner, f);
+      apc_gp_set_back_color( owner, b);
 
       CWidget( owner)-> notify( owner, "sH", "Paint", owner);
+      apc_gp_set_color( owner, f1);
+      apc_gp_set_back_color( owner, b1);
+
       dsys(owner)transform2 = tr;
       apc_gp_set_transform( owner, 0, 0);
       dsys(owner) ps = ps;
@@ -1249,8 +1278,8 @@ Point
 apc_widget_get_pos( Handle self)
 {
    SWP  swp;
-   if ( !WinQueryWindowPos ( HANDLE, &swp)) apiErr;
-   if ( swp. fl & SWP_MINIMIZE && kind_of( self, CWindow)) return sys s. window. hiddenPos;
+   if ( swp. fl & SWP_MINIMIZE && ( sys className == WC_FRAME)) return sys s. window. hiddenPos;
+   if ( !WinQueryWindowPos( HANDLE, &swp)) apiErr;
    return ( Point){ swp. x, swp. y};
 }
 
@@ -1374,6 +1403,8 @@ Bool
 apc_widget_invalidate_rect( Handle self, Rect * rect)
 {
    if ( !WinInvalidateRect ( var handle, ( PRECTL) rect, false)) apiErrRet;
+   objCheck false;
+   process_transparents( self);
    return true;
 }
 
@@ -1503,32 +1534,50 @@ apc_widget_set_palette( Handle self)
 Bool
 apc_widget_set_pos( Handle self, int x, int y)
 {
+   HWND h = HANDLE;
+   SWP swp;
    if ( sys className == WC_FRAME)
    {
-      HWND h = HANDLE;
+
       if ( sys s. window. state == wsMinimized) sys s. window. hiddenPos = ( Point){ x, y};
       if ( var stage == csConstructing && sys s. window. state != wsNormal)
       {
          if ( !WinSetWindowUShort( h, QWS_XRESTORE, x)) apiErr;
          if ( !WinSetWindowUShort( h, QWS_YRESTORE, y)) apiErrRet;
-      } else
-         if ( !WinSetWindowPos( h, 0, x, y, 0, 0, SWP_MOVE)) apiErrRet;
-   } else
-      if ( !WinSetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_MOVE)) apiErrRet;
+      }
+      return true;
+   }
+   WinQueryWindowPos( h, &swp);
+   if ( x == swp. x && y == swp. y) return true;
+   if ( !WinSetWindowPos( h, 0, x, y, 0, 0, SWP_MOVE)) apiErrRet;
    return true;
 }
 
 Bool
 apc_widget_set_size( Handle self, int width, int height)
 {
-   if (( sys className == WC_FRAME) && ( sys s. window. state == wsMinimized))
+   if (
+        ( sys className == WC_FRAME) && (
+           ( var stage == csConstructing && sys s. window. state != wsNormal) ||
+           ( sys s. window. state == wsMinimized)
+        )
+      )
    {
+      HWND h = HANDLE;
+      if ( !WinSetWindowUShort( h, QWS_CXRESTORE, width)) apiErr;
+      if ( !WinSetWindowUShort( h, QWS_CYRESTORE, height)) apiErrRet;
       sys s. window. lastClientSize. x += sys s. window. lastClientSize. x - sys s. window. lastFrameSize. x + width;
       sys s. window. lastClientSize. y += sys s. window. lastClientSize. y - sys s. window. lastFrameSize. y + height;
-      sys s. window. lastClientSize = sys s. window. hiddenSize = ( Point){ width, height};
+      sys s. window. lastFrameSize = ( Point){ width, height};
+      var virtualSize = sys s. window. hiddenSize = sys s. window. lastClientSize;
    }
-   else
-      if ( !WinSetWindowPos( HANDLE, 0, 0, 0, width, height, SWP_SIZE)) apiErrRet;
+   else {
+      if ( width == var virtualSize. x && height == var virtualSize. y) return true;
+      sys sizeLockLevel++;
+      var virtualSize = ( Point) {width, height};
+      if ( !WinSetWindowPos( HANDLE, 0, 0, 0, width, height, SWP_SIZE)) apiErr;
+      sys sizeLockLevel--;
+   }
    return true;
 }
 
@@ -1542,7 +1591,9 @@ apc_widget_set_shape( Handle self, Handle mask)
 Bool
 apc_widget_set_visible( Handle self, Bool show)
 {
-   if ( !WinSetWindowPos( HANDLE, 0, 0, 0, 0, 0, show ? SWP_SHOW : SWP_HIDE)) apiErrRet;
+   HWND h = HANDLE;
+   if ( show == WinIsWindowVisible( h)) return true;
+   if ( !WinSetWindowPos( h, 0, 0, 0, 0, 0, show ? SWP_SHOW : SWP_HIDE)) apiErrRet;
    if ( !is_apt( aptClipOwner)) {
       WinInvalidateRect(( HWND) var handle, nil, false);
       objCheck false;
