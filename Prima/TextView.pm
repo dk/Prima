@@ -97,6 +97,7 @@ use constant  BLK_START            => BLK_DATA_END + 1;
 use constant  F_ID    => BLK_FONT_ID;
 use constant  F_SIZE  => BLK_FONT_SIZE;
 use constant  F_STYLE => BLK_FONT_STYLE;
+use constant  F_HEIGHT=> 1000000; 
 
 # BLK_FLAGS constants
 use constant T_SIZE      => 0x1;
@@ -138,13 +139,14 @@ sub opcode
 }
 
 
-sub text           { return OP_TEXT, $_[0], $_[1], 0 }
+sub text           { return OP_TEXT, $_[0], $_[1], $_[2] || 0 }
 sub color          { return OP_COLOR, $_[0] } 
 sub backColor      { return OP_COLOR, $_[0] | BACKCOLOR_FLAG}
 sub colorIndex     { return OP_COLOR, $_[0] | COLOR_INDEX }  
 sub backColorIndex { return OP_COLOR, $_[0] | COLOR_INDEX | BACKCOLOR_FLAG}  
 sub fontId         { return OP_FONT, F_ID, $_[0] }
 sub fontSize       { return OP_FONT, F_SIZE, $_[0] }
+sub fontHeight     { return OP_FONT, F_SIZE, $_[0] + F_HEIGHT }
 sub fontStyle      { return OP_FONT, F_STYLE, $_[0] }
 sub moveto         { return OP_TRANSPOSE, $_[0], $_[1],  $_[2] || 0 } 
 sub extend         { return OP_TRANSPOSE, $_[0], $_[1], ($_[2] || 0) | X_EXTEND } 
@@ -422,10 +424,17 @@ sub create_state
 sub realize_state
 {
    my ( $self, $canvas, $state, $mode) = @_;
-   my %f = %{$self-> {fontPalette}->[ $$state[ tb::BLK_FONT_ID]]};
-   $f{size} = $$state[ tb::BLK_FONT_SIZE];
-   $f{style} = $$state[ tb::BLK_FONT_STYLE];
-   $canvas-> set_font( \%f) if $mode & tb::REALIZE_FONTS;
+
+   if ( $mode & tb::REALIZE_FONTS) {
+      my %f = %{$self-> {fontPalette}->[ $$state[ tb::BLK_FONT_ID]]};
+      if ( $$state[ tb::BLK_FONT_SIZE] > tb::F_HEIGHT) {
+         $f{height} = $$state[ tb::BLK_FONT_SIZE] - tb::F_HEIGHT;
+      } else {
+         $f{size} = $$state[ tb::BLK_FONT_SIZE];
+      }
+      $f{style} = $$state[ tb::BLK_FONT_STYLE];
+      $canvas-> set_font( \%f);
+   }
 
    return unless $mode & tb::REALIZE_COLORS;
    if ( $self-> {selectionPaintMode}) {
@@ -594,7 +603,7 @@ sub block_wrap
          $wrapmode = $$b[ $i + 1];
 # print "wrap: $wrapmode\n";
       } elsif ( $cmd == tb::OP_FONT) {
-         if ( $$b[$i + 1] == tb::F_SIZE) {
+         if ( $$b[$i + 1] == tb::F_SIZE && $$b[$i + 2] < tb::F_HEIGHT ) {
             $$state[ $$b[$i + 1]] = $self-> {defaultFontSize} + $$b[$i + 2];
          } else {
             $$state[ $$b[$i + 1]] = $$b[$i + 2];
@@ -671,7 +680,7 @@ sub block_wrap
             $$b[ $i + 1] -= $lastBlockOffset - $$b[ tb::BLK_TEXT_OFFSET];
 #            print "$$b[$i+1]\n";
          } elsif ( $cmd == tb::OP_FONT) {
-            if ( $$b[$i + 1] == tb::F_SIZE) {
+            if ( $$b[$i + 1] == tb::F_SIZE && $$b[$i + 2] < tb::F_HEIGHT ) {
                $$state[ $$b[$i + 1]] = $self-> {defaultFontSize} + $$b[$i + 2];
             } else {
                $$state[ $$b[$i + 1]] = $$b[$i + 2];
@@ -857,7 +866,7 @@ sub block_draw
          }
          $x += $$b[ $i + 3];
       } elsif ( $cmd == tb::OP_FONT) {
-         if ( $$b[$i + 1] == tb::F_SIZE) {
+         if ( $$b[$i + 1] == tb::F_SIZE && $$b[$i + 2] < tb::F_HEIGHT ) {
             $state[ $$b[$i + 1]] = $self-> {defaultFontSize} + $$b[$i + 2];
          } else {
             $state[ $$b[$i + 1]] = $$b[$i + 2];
@@ -1000,7 +1009,7 @@ sub xy2info
          } elsif (( $cmd == tb::OP_TRANSPOSE) && !($$b[ $i + tb::X_FLAGS] & tb::X_EXTEND)) {
             $px += $$b[ $i + tb::X_X];
          } elsif ( $cmd == tb::OP_FONT) {
-            if ( $$b[$i + 1] == tb::F_SIZE) {
+            if ( $$b[$i + 1] == tb::F_SIZE && $$b[$i + 2] < tb::F_HEIGHT ) {
                $state[ $$b[$i + 1]] = $self-> {defaultFontSize} + $$b[$i + 2];
             } else {
                $state[ $$b[$i + 1]] = $$b[$i + 2];
@@ -1069,7 +1078,7 @@ sub text2xoffset
        } elsif (( $cmd == tb::OP_TRANSPOSE) && !($$b[ $i + tb::X_FLAGS] & tb::X_EXTEND)) {
           $px += $$b[ $i + tb::X_X];
        } elsif ( $cmd == tb::OP_FONT) {
-          if ( $$b[$i + 1] == tb::F_SIZE) {
+          if ( $$b[$i + 1] == tb::F_SIZE && $$b[$i + 2] < tb::F_HEIGHT ) {
              $state[ $$b[$i + 1]] = $self-> {defaultFontSize} + $$b[$i + 2];
           } else {
              $state[ $$b[$i + 1]] = $$b[$i + 2];
@@ -1631,6 +1640,10 @@ size. As such, 0 is a default value, and -2 is the widget's default font decreas
 2 points. Prima::TextView provides no range checking ( but the toolkit does ), so
 while it is o.k. to set the negative C<F_SIZE> values larger than the default font size,
 one must be vary when relying on the combined font size value .
+
+If C<F_SIZE> value is added to a C<F_HEIGHT> constant, then it is treated as a font height
+in pixels rather than font size in points. The macros for these opcodes are named respectively
+C<tb::fontSize> and C<tb::fontHeight>, while the opcode is the same.
 
 =item F_ID
 
