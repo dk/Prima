@@ -664,7 +664,7 @@ sub scale
 
 sub reversed
 {
-   return @{$_[0]-> {reversed}} unless $#_;
+   return $_[0]-> {reversed} unless $#_;
    my $self = $_[0];
    $self-> {reversed} = $_[1] unless $self-> get_paint_state;
    $self-> calc_page;
@@ -1306,7 +1306,7 @@ AGAIN:
       delete $self-> {font}-> {size};
       unless ( $gui_font) {
 	 $gui_font = Prima::Drawable-> font_match( $font, $self-> {font});
-	 if ( $gui_font->{name} ne $font->{name} && $self-> {useDeviceFonts}) {
+	 if ( $gui_font->{name} ne $n && $self-> {useDeviceFonts}) {
 	    # back up
 	    my $pitch = (exists ( $font-> {pitch} ) ? $font-> {pitch} : $self-> {font}->{pitch}) || fp::Variable;
 	    $n = $font-> {name} = ( $pitch == fp::Variable) ? 
