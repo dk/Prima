@@ -73,7 +73,7 @@ package Prima::SaveDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::ChDirDialog::AUTOLOAD =~ /::([^:]+)$/;
+   my ($method) = $Prima::SaveDialog::AUTOLOAD =~ /::([^:]+)$/;
    delete ${Prima::OpenDialog::}{AUTOLOAD};
    delete ${Prima::SaveDialog::}{AUTOLOAD};
    delete ${Prima::ChDirDialog::}{AUTOLOAD};
