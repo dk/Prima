@@ -466,7 +466,7 @@ sub InputLine_KeyDown
       return;
    }
    if ($key == kb::Enter) {
-      $self-> value( $edit-> get_text);
+      $self-> value( $edit-> text);
       $edit-> clear_event;
       return;
    }
@@ -521,11 +521,11 @@ sub value
       } else {
          $value = $self->{min};
       }
-      return if $value eq $self-> {edit}-> get_text;
-      $self-> {edit}-> set_text( $value);
+      return if $value eq $self-> {edit}-> text;
+      $self-> {edit}-> text( $value);
    } else {
       my $self = $_[0];
-      my $value = $self-> {edit}-> get_text;
+      my $value = $self-> {edit}-> text;
       if ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
          $value = $self->{min} if $value < $self->{min};
          $value = $self->{max} if $value > $self->{max};
@@ -1274,9 +1274,10 @@ sub setup
    $_[0]-> repaint;
 }
 
-sub set_text
+sub text
 {
-   $_[0]-> SUPER::set_text( $_[1]);
+   return $_[0]->SUPER::text unless $#_;
+   $_[0]-> SUPER::text( $_[1]);
    $_[0]-> repaint;
 }
 
@@ -1399,8 +1400,8 @@ sub on_paint
      if $ttw < $rad || !$self->{circAlive};
    return if defined $self->{singlePaint};
 
-   $ttw = $canvas-> get_text_width( $self-> get_text);
-   $canvas-> text_out( $self-> get_text, ( $size[0] - $ttw) / 2, 2);
+   $ttw = $canvas-> get_text_width( $self-> text);
+   $canvas-> text_out( $self-> text, ( $size[0] - $ttw) / 2, 2);
 
    if ( $self-> {buttons}) {
       my $s = $self-> {pressState};
@@ -1422,7 +1423,7 @@ sub on_paint
    }
 
    $canvas-> rect_focus(( $size[0] - $ttw) / 2 - 1, 1, ( $size[0] + $ttw) / 2 + 1, $fh + 2)
-      if $self-> focused && ( length( $self-> get_text) > 0);
+      if $self-> focused && ( length( $self-> text) > 0);
 }
 
 sub on_keydown

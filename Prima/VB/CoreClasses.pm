@@ -276,7 +276,7 @@ sub profile_default
 sub caption_box
 {
    my ($self,$canvas) = @_;
-   my $cap = $self-> get_text;
+   my $cap = $self-> text;
    $cap =~ s/~//;
    return $canvas-> get_text_width( $cap), $canvas-> font-> height;
 }

@@ -982,7 +982,6 @@ sub sizeMin          {($#_)? ($_[0]->set_size_min($#_ > 1 ? @_[1..$#_] : @{$_[1]
 sub syncPaint        {($#_)?$_[0]->set_sync_paint  ($_[1]):return $_[0]->get_sync_paint;  }
 sub tabOrder         {($#_)?$_[0]->set_tab_order   ($_[1]):return $_[0]->get_tab_order;   }
 sub tabStop          {($#_)?$_[0]->set_tab_stop    ($_[1]):return $_[0]->get_tab_stop;    }
-sub text             {($#_)?$_[0]->set_text        ($_[1]):return $_[0]->get_text;     }
 sub top              {($#_)?$_[0]->set_top         ($_[1]):return $_[0]->get_top;         }
 sub transparent      {($#_)?$_[0]->set_transparent ($_[1]):return $_[0]->get_transparent; }
 sub visible          {($#_)?$_[0]->set_visible     ($_[1]):return $_[0]->get_visible;     }
@@ -1319,15 +1318,6 @@ sub profile_default
    return $def;
 }
 
-
-sub set_text
-{
-   my $self = $_[0];
-   $self-> SUPER::set_text( $_[1]);
-   $self-> notify( 'Change');
-   $self-> repaint;
-}
-
 sub on_change
 {
    my $self = $_[0];
@@ -1356,6 +1346,15 @@ sub on_paint
        $canvas-> text_out( $_, $x, $y);
        $y -= $fh;
    }
+}
+
+sub text
+{
+   return $_[0]->SUPER::text unless $#_;
+   my $self = $_[0];
+   $self-> SUPER::text( $_[1]);
+   $self-> notify( 'Change');
+   $self-> repaint;
 }
 
 package Prima::Application;

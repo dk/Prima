@@ -33,6 +33,8 @@ object Prima::Application( Prima::Widget)
    Handle    icon;
    Bool      autoClose;
 
+   property  char* text;
+
    method Bool   begin_paint();
    method Bool   begin_paint_info();
    method void   bring_to_front();
@@ -103,7 +105,6 @@ object Prima::Application( Prima::Widget)
    method Handle get_shape();
    method Bool   get_sync_paint();
    method Bool   get_tab_stop();
-   method char * get_text();
    method Handle get_widget_from_point( Point p) => apc_application_get_widget_from_point;
    method Bool   get_visible();
 
@@ -136,7 +137,6 @@ object Prima::Application( Prima::Widget)
    method void   set_sync_paint( Bool syncPaint);
    method Bool   set_size( int x, int y);
    method void   set_show_hint( Bool showHint);
-   method void   set_text( char * text);
    method Bool   set_visible( Bool visible);
    method void   set_tab_order( int tabOrder);
    method void   set_tab_stop( Bool tabStop);

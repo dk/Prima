@@ -69,16 +69,6 @@ sub profile_default
    }
 }
 
-sub set_text
-{
-   my ( $self, $caption) = @_;
-   my $cap = $caption;
-   $cap =~ s/^([^~]*)\~(.*)$/$1$2/;
-   my $ac = $self-> { accel} = length($2) ? lc substr( $2, 0, 1) : undef;
-   $self-> SUPER::set_text( $caption);
-   $self-> repaint;
-}
-
 sub on_translateaccel
 {
    my ( $self, $code, $key, $mod) = @_;
@@ -246,7 +236,7 @@ sub draw_veil
 sub draw_caption
 {
    my ( $self, $canvas, $x, $y) = @_;
-   my $cap = $self-> get_text;
+   my $cap = $self-> text;
    $cap =~ s/^([^~]*)\~(.*)$/$1$2/;
    my ( $leftPart, $accel) = ( $1, length($2) ? substr( $2, 0, 1) : undef);
    my ( $fw, $fh, $enabled) = (
@@ -287,12 +277,24 @@ sub draw_caption
 sub caption_box
 {
    my ($self,$canvas) = @_;
-   my $cap = $self-> get_text;
+   my $cap = $self-> text;
    $cap =~ s/~//;
    return $canvas-> get_text_width( $cap), $canvas-> font-> height;
 }
 
 sub pressed      {($#_)?$_[0]->set_pressed     ($_[1]):return $_[0]->{pressed}     }
+
+sub text
+{
+   return $_[0]->SUPER::text unless $#_;
+   my ( $self, $caption) = @_;
+   my $cap = $caption;
+   $cap =~ s/^([^~]*)\~(.*)$/$1$2/;
+   my $ac = $self-> { accel} = length($2) ? lc substr( $2, 0, 1) : undef;
+   $self-> SUPER::text( $caption);
+   $self-> repaint;
+}
+
 
 sub on_enable  { $_[0]-> repaint; }
 sub on_disable { $_[0]-> cancel_transaction; $_[0]-> repaint; }

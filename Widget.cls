@@ -54,6 +54,7 @@ object Prima::Widget( Prima::Drawable)
 
 # properties
    property  char* hint;
+   property  char* text;
 
 # direct call methods
    method   void     attach( Handle objectHandle);
@@ -176,7 +177,6 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     get_sync_paint()                => apc_widget_get_sync_paint;
    method   int      get_tab_order();
    method   Bool     get_tab_stop();
-   method   char *   get_text();
    method   Bool     get_transparent()               => apc_widget_get_transparent;
    method   int      get_top();
    method   Point    get_virtual_size();
@@ -244,7 +244,6 @@ object Prima::Widget( Prima::Drawable)
    import   void     set_sync_paint( Bool syncPaint);
    method   void     set_tab_order( int tabOrder);
    method   void     set_tab_stop( Bool tabStop);
-   method   void     set_text( char * text);
    method   void     set_top( int top);
    import   void     set_transparent( Bool transparent);
    method   Bool     set_visible( Bool visible)         => apc_widget_set_visible;

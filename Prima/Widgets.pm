@@ -128,9 +128,10 @@ sub set_border_width
    $self-> repaint;
 }
 
-sub set_text
+sub text
 {
-   $_[0]-> SUPER::set_text( $_[1]);
+   return $_[0]->SUPER::text unless $#_;
+   $_[0]-> SUPER::text( $_[1]);
    $_[0]-> repaint;
 }
 

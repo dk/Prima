@@ -939,11 +939,6 @@ sub unlock
    $self-> repaint;
 }
 
-sub set_text
-{
-   $_[0]-> textRef( \$_[1]);
-}
-
 sub set_text_ref
 {
    my ( $self, $ref) = @_;
@@ -965,10 +960,14 @@ sub set_text_ref
    }
 }
 
-sub get_text
+sub text
 {
-   my $hugeScalarRef = $_[0]-> textRef;
-   return $$hugeScalarRef;
+   unless ($#_) {
+      my $hugeScalarRef = $_[0]-> textRef;
+      return $$hugeScalarRef;
+   } else {
+      $_[0]-> textRef( \$_[1]);
+   }
 }
 
 sub get_text_ref

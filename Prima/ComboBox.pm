@@ -599,10 +599,11 @@ sub profile_default
    }
 }
 
-sub set_text
+sub text
 {
+   return $_[0]->SUPER::text unless $#_;
    my ($self,$cap) = @_;
-   $self-> SUPER::set_text( $cap);
+   $self-> SUPER::text( $cap);
    $self-> notify(q(Change));
    $self-> repaint;
 }

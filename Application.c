@@ -883,7 +883,6 @@ STMT_START {                                                                    
 
 void Application_update_sys_handle( Handle self, HV * profile) {}
 
-char * Application_get_text( Handle self) { return ""; }
 Bool Application_get_capture( Handle self) { return false; }
 Bool Application_get_enabled( Handle self) { return true; }
 Bool Application_get_tab_stop( Handle self) { return false; }
@@ -899,7 +898,6 @@ void Application_set_help_context( Handle self, long context)
    inherited set_help_context( self, context);
 }
 
-void Application_set_text( Handle self, char * text) {}
 void Application_set_buffered( Handle self, Bool buffered) {}
 void Application_set_capture( Handle self, Bool capture, Handle confineTo) {}
 void Application_set_centered( Handle self, Bool x, Bool y) {}
@@ -923,3 +921,9 @@ void Application_set_clip_owner( Handle self, Bool clipOwner) {}
 void Application_set_tab_order( Handle self, int tabOrder) {}
 void Application_set_tab_stop( Handle self, Bool tabStop) {}
 void Application_set_transparent( Handle self, Bool transparent) {}
+
+char *
+Application_text( Handle self, Bool set, char *text)
+{
+   return ""; 
+}

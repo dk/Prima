@@ -151,11 +151,12 @@ sub on_paint
 }
 
 
-sub set_text
+sub text
 {
+   return $_[0]->SUPER::text unless $#_;
    my ( $self, $caption) = @_;
    my $cap = $caption;
-   $self-> SUPER::set_text( $caption);
+   $self-> SUPER::text( $caption);
    $self-> check_auto_size;
    $self-> repaint;
 }
@@ -229,7 +230,7 @@ sub reset_lines
    my $width = -1;
    $opt |= tw::CollapseTilde unless $self->{showAccelChar};
    $width = $self-> width if $self->{wordWrap};
-   my $lines = $self-> text_wrap( $self-> get_text, $width, $opt);
+   my $lines = $self-> text_wrap( $self-> text, $width, $opt);
    my $lastRef = pop @{$lines};
    for( qw( tildeStart tildeEnd tildeLine)) {$self->{$_} = $lastRef->{$_}}
    $self-> {accel} = $self->{tildeStart} < 0 ? undef : lc( $lastRef->{tildeChar});
