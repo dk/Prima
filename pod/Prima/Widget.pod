@@ -355,7 +355,7 @@ by C<::geometry> property, and is one of C<gt::XXX> constants. The native
 algorithm ( C<gt::GrowMode> ). The currently implemented Tk managers are
 packer ( C<gt::Pack> ) and placer ( C<gt::Place>). Each has its own set of
 options and methods, and their manuals are provided separately in
-L<Prima::pack> and L<Prima::place> ( the manpages are also imported from Tk ).
+L<Prima::Widget::pack> and L<Prima::Widget::place> ( the manpages are also imported from Tk ).
 
 Another concept that comes along with geometry managers is the 'geometry request size'.
 It is realized as a two-integer property C<::geomSize>, which reflects the size
@@ -1226,7 +1226,7 @@ integer constants are:
    gt::Pack                  - Tk packer
    gt::Place                 - Tk placer
 
-See C<growMode>, L<Prima::pack>, L<Prima::place>.
+See C<growMode>, L<Prima::Widget::pack>, L<Prima::Widget::place>.
 
 =item growMode MODE
 
@@ -1428,7 +1428,7 @@ C<growMode>, C<Move>
 
 =item packInfo %OPTIONS
 
-See L<Prima::pack>
+See L<Prima::Widget::pack>
 
 =item palette [ @PALETTE ]
 
@@ -1452,7 +1452,7 @@ See also: C<clipOwner>
 
 =item placeInfo %OPTIONS
 
-See L<Prima::place>
+See L<Prima::Widget::place>
 
 =item pointer cr::XXX or ICON
 
@@ -2152,11 +2152,11 @@ See also: C<next_tab>, C<origin>
 
 =item pack, packForget, packSlaves
 
-See L<Prima::pack>
+See L<Prima::Widget::pack>
 
 =item place, placeForget, placeSlaves
 
-See L<Prima::place>
+See L<Prima::Widget::place>
 
 =item prev
 

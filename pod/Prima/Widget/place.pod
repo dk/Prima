@@ -37,9 +37,7 @@
 
 =head1 NAME
 
-Tk::place - Geometry manager for fixed or rubber-sheet placement
-
-=for category  Tk Geometry Management
+Prima::Widget::place - Geometry manager for fixed or rubber-sheet placement
 
 =head1 SYNOPSIS
 

@@ -244,6 +244,14 @@ L<Prima::image-load> - image subsystem and file operations
 
 L<Prima::Widget> - window management 
 
+=over 2
+
+L<Prima::Widget::pack> - Tk::pack geometry manager
+
+L<Prima::Widget::place> - Tk::place geometry manager
+
+=back
+
 L<Prima::Window> - top-level window management
 
 L<Prima::Menu> - pull-down and pop-up menu objects
