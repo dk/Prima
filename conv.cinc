@@ -7,71 +7,70 @@
 #define minimum_longValue LONG_MIN
 #define maximum_longValue LONG_MAX
 
-#define macro_asis(SourceType,DestType)                                        \
-void ic_##SourceType##_##DestType( Handle self,                           \
-      Byte *dstData, PRGBColor dstPal, int dstType)                            \
-{                                                                              \
-   SourceType *src = (SourceType*) var->data;                                   \
-   DestType *dst = (DestType*) dstData;                                        \
-   int y;                                                                      \
-   int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
-   for ( y = 0; y < var->h; y++)                                                \
-   {                                                                           \
-      SourceType *s = src;                                                     \
-      DestType *d = dst;                                                       \
-      SourceType *stop = s + width;                                            \
-      while ( s != stop) *d++ = (DestType)*s++;                                \
-      src = (SourceType*)(((Byte*)src) + srcLine);                             \
-      dst = (DestType*)(((Byte*)dst) + dstLine);                               \
-   }                                                                           \
-   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                     \
+#define macro_asis(SourceType,DestType)                                            \
+void ic_##SourceType##_##DestType( Handle self,                                    \
+      Byte *dstData, PRGBColor dstPal, int dstType, int srcLine)                   \
+{                                                                                  \
+   SourceType *src = (SourceType*) var->data;                                      \
+   DestType *dst = (DestType*) dstData;                                            \
+   int y;                                                                          \
+   int  width = var->w;                                                            \
+   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                    \
+   for ( y = 0; y < var->h; y++)                                                   \
+   {                                                                               \
+      SourceType *s = src;                                                         \
+      DestType *d = dst;                                                           \
+      SourceType *stop = s + width;                                                \
+      while ( s != stop) *d++ = (DestType)*s++;                                    \
+      src = (SourceType*)(((Byte*)src) + srcLine);                                 \
+      dst = (DestType*)(((Byte*)dst) + dstLine);                                   \
+   }                                                                               \
+   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                         \
 }
 
-#define macro_int_int(SourceType,DestType)                                     \
-void rs_##SourceType##_##DestType( Handle self,                                \
-     Byte * dstData, int dstType,                                              \
-     double srcLo, double srcHi, double dstLo, double dstHi)                   \
-{                                                                              \
-   SourceType *src = (SourceType*) var->data;                                   \
-   DestType *dst = (DestType*) dstData;                                        \
-   int y;                                                                      \
-   long aNumerator      = dstHi - dstLo;                                       \
-   long bNumerator      = dstLo * srcHi - dstHi * srcLo;                       \
-   long denominator     = srcHi - srcLo;                                       \
-   int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
-   if ( denominator == 0 || dstHi == dstLo)                                    \
-   {                                                                           \
+#define macro_int_int(SourceType,DestType)                                         \
+void rs_##SourceType##_##DestType( Handle self,                                    \
+     Byte * dstData, int dstType,                                                  \
+     double srcLo, double srcHi, double dstLo, double dstHi)          \
+{                                                                                  \
+   SourceType *src = (SourceType*) var->data;                                      \
+   DestType *dst = (DestType*) dstData;                                            \
+   int y;                                                                          \
+   long aNumerator      = dstHi - dstLo;                                           \
+   long bNumerator      = dstLo * srcHi - dstHi * srcLo;                           \
+   long denominator     = srcHi - srcLo;                                           \
+   int  width = var->w;                                                            \
+   int srcLine = var->lineSize;                                                    \
+   int dstLine = srcLine;                                                          \
+   if ( denominator == 0 || dstHi == dstLo)                                        \
+   {                                                                               \
       DestType v = (dstLo<minimum_##DestType##Value) ? minimum_##DestType##Value : \
           ((dstLo>maximum_##DestType##Value) ? maximum_##DestType##Value : dstLo); \
-      for ( y = 0; y < var->h; y++)                                             \
-      {                                                                        \
-         DestType *d = dst;                                                    \
-         DestType *stop = d + width;                                           \
-         while ( d != stop) *d++=v;                                            \
-         dst = (DestType*)(((Byte*)dst) + dstLine);                            \
-      }                                                                        \
-      return;                                                                  \
-   }                                                                           \
-   for ( y = 0; y < var->h; y++)                                                \
-   {                                                                           \
-      SourceType *s = src;                                                     \
-      DestType *d = dst;                                                       \
-      SourceType *stop = s + width;                                            \
-      long v;                                                                  \
-      while ( s != stop)                                                       \
-      {                                                                        \
-         v = (aNumerator**s+++bNumerator)/denominator;                         \
-         v = (v<minimum_##DestType##Value) ? minimum_##DestType##Value :       \
-             ((v>maximum_##DestType##Value) ? maximum_##DestType##Value : v);  \
-         *d++ = v;                                                             \
-      }                                                                        \
-      src = (SourceType*)(((Byte*)src) + srcLine);                             \
-      dst = (DestType*)(((Byte*)dst) + dstLine);                               \
-   }                                                                           \
+      for ( y = 0; y < var->h; y++)                                                \
+      {                                                                            \
+         DestType *d = dst;                                                        \
+         DestType *stop = d + width;                                               \
+         while ( d != stop) *d++=v;                                                \
+         dst = (DestType*)(((Byte*)dst) + dstLine);                                \
+      }                                                                            \
+      return;                                                                      \
+   }                                                                               \
+   for ( y = 0; y < var->h; y++)                                                   \
+   {                                                                               \
+      SourceType *s = src;                                                         \
+      DestType *d = dst;                                                           \
+      SourceType *stop = s + width;                                                \
+      long v;                                                                      \
+      while ( s != stop)                                                           \
+      {                                                                            \
+         v = (aNumerator**s+++bNumerator)/denominator;                             \
+         v = (v<minimum_##DestType##Value) ? minimum_##DestType##Value :           \
+             ((v>maximum_##DestType##Value) ? maximum_##DestType##Value : v);      \
+         *d++ = v;                                                                 \
+      }                                                                            \
+      src = (SourceType*)(((Byte*)src) + srcLine);                                 \
+      dst = (DestType*)(((Byte*)dst) + dstLine);                                   \
+   }                                                                               \
 }
 
 #define macro_float_float__int_float(SourceType,DestType)                      \
@@ -84,8 +83,8 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    int y;                                                                      \
    double a, b;                                                                \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = var->lineSize;                                                \
+   int dstLine = srcLine;                                                      \
    if ( srcHi == srcLo || dstHi == dstLo)                                      \
    {                                                                           \
       for ( y = 0; y < var->h; y++)                                             \
@@ -121,8 +120,8 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    int y;                                                                      \
    double a, b;                                                                \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = var->lineSize;                                                    \
+   int dstLine = srcLine;                                                          \
    if ( srcHi == srcLo || dstHi == dstLo)                                      \
    {                                                                           \
       DestType v = (dstLo<minimum_##DestType##Value) ? minimum_##DestType##Value : \
