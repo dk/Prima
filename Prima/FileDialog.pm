@@ -1359,7 +1359,7 @@ dialogs.
 
 =head1 Prima::DirectoryListBox
 
-A direstory listing list box. Shows the list of 
+A directory listing list box. Shows the list of 
 subdirectories and upper directories, hierarchy-mapped,
 with the folder images and outlines.
 

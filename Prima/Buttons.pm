@@ -1039,7 +1039,7 @@ Prima::AbstractButton realizes common functionality of buttons.
 It provides reaction on mouse and keyboard events, and calls
 L<Click> notification when the user activates the button. The
 mouse activation is performed either by mouse double click or
-successive mouse down and mouse up events withing the button
+successive mouse down and mouse up events within the button
 boundaries. The keyboard activation is performed on the following conditions:
 
 =over
@@ -1051,14 +1051,14 @@ The spacebar key is pressed
 =item *
 
 C<{default}> ( see L<default> property ) boolean variable is
-set and enter key is pressed. This contition holds even if the button is out of focus.
+set and enter key is pressed. This condition holds even if the button is out of focus.
 
 =item *
 
 C<{accel}> character variable is assigned and the corresponding character key 
 is pressed. C<{accel}> variable is extracted automatically from the text string
 passed to L<text> property. 
-This contition holds even if the button is out of focus.
+This condition holds even if the button is out of focus.
 
 =back
 
@@ -1089,7 +1089,7 @@ Default value: 0
 =item text STRING
 
 The text that is drawn in the button. If STRING contains ~ ( tilde ) character,
-the the following character is treated as a hot key, and the character is
+the following character is treated as a hot key, and the character is
 underlined. If the user presses the corresponding character key then 
 L<Click> event is called. This is true even when the button is out of focus.
 
@@ -1195,8 +1195,8 @@ can be logically split vertically into several equal sub-images. This allows
 the button resource to contain all button states into one image file. 
 The C<glyphs> property assigns how many such sub-images the image object contains.
 
-The sub-image indeces can be assigned for rendition of the different states.
-These indeces are selected by the following integer properties: L<defaultGlyph>,
+The sub-image indexes can be assigned for rendition of the different states.
+These indexes are selected by the following integer properties: L<defaultGlyph>,
 L<hiliteGlyph>, L<disabledGlyph>, L<pressedGlyph>, L<holdGlyph>.
 
 Default value: 1
@@ -1337,7 +1337,7 @@ Reverts the C<checked> state of the button and returns the new state.
 Represents a standard radio button, that can be either in checked, or in unchecked state.
 When checked, delivers L<RadioClick> event to the owner ( if the latter provides one ).
 
-The button uses the standard toolkit images with C<sbmp::RadioXXX> indeces. 
+The button uses the standard toolkit images with C<sbmp::RadioXXX> indexes. 
 If the images can not be loaded, the button is drawn with the graphic primitives.
 
 =head2 Events
@@ -1354,7 +1354,7 @@ Called when a button is checked.
 
 Represents a standard check box button, that can be either in checked, or in unchecked state.
 
-The button uses the standard toolkit images with C<sbmp::CheckBoxXXX> indeces. 
+The button uses the standard toolkit images with C<sbmp::CheckBoxXXX> indexes. 
 If the images can not be loaded, the button is drawn with graphic primitives.
 
 =head1 Prima::GroupBox
@@ -1368,7 +1368,7 @@ paint its background.
 
 The class does not provide a method to calculate the extension of the inner rectangle.
 However, it can be safely assumed that all offsets except the upper are 5 pixels.
-The upper offset is dependent on a font, and consitutes the half of the font height.
+The upper offset is dependent on a font, and constitutes the half of the font height.
 
 =head2 Events
 

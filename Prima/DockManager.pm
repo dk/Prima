@@ -1136,7 +1136,7 @@ state, the size change might result in change of position or docking state.
 
 The class is derived from C<Prima::LinearDockerShuttle>, and
 is different only in that C<instance> property is introduced,
-and the extrenal shuttle can be resized interactively.
+and the external shuttle can be resized interactively.
 
 The class is to be used as a simple host to sizeable widgets.
 The user can dispose of the panel bar by clicking close button
@@ -1154,7 +1154,7 @@ C<Prima::DockManager> instance, the docking hierarchy root.
 
 =head1 Prima::DockManager
 
-A binder class, constains set of functions that groups
+A binder class, contains set of functions that groups
 toolbars, panels, and command widgets together under the docking
 hierarchy. 
 
@@ -1171,7 +1171,7 @@ In addition to CLSID, the commands can be grouped by sections.
 Both CLSID and group descriptor scalars are defined by the programmer.
 
 Second, C<create_manager> method presents a standard configuration
-widget, that allows rearranging of normally undockable command widgets,
+widget, that allows rearranging of normally non-dockable command widgets,
 by presenting a full set of available commands to the user as icons.
 Dragging the icons to toolbars, dock widgets or merely outside the
 configuration widget automatically creates the corresponding command widget.
@@ -1488,7 +1488,7 @@ Client widget class
 
 =item text STRING
 
-String, displayed in the panel titlebar
+String, displayed in the panel title bar
 
 =item dockerProfile HASH
 
@@ -1538,8 +1538,8 @@ Returns all toolbar widgets in an array.
 
 =item windowState INTEGER
 
-Mimics interface of C<Prima::Window::windowState>, and maintanis
-visibility of toolbars and panels. If the paramater is C<ws::Minimized>,
+Mimics interface of C<Prima::Window::windowState>, and maintains
+visibility of toolbars and panels. If the parameter is C<ws::Minimized>,
 the toolbars and panels are hidden. On any other parameter these are shown.
 
 To be used inside a callback code of a main window, that has the toolbars 

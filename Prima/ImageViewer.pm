@@ -411,7 +411,7 @@ Default value: C<ta::Bottom>
 
 Selects zoom level for image display. The acceptable value range
 is between 0.02 and 100. The zoom value
-is rounded to fiftieth and twentieth fractionals - 
+is rounded to fiftieth and twentieth fractional values - 
 .02, .04, .05, .06, .08, and 0.1 .
 
 Default value: 1
@@ -439,7 +439,7 @@ Performs translation of integer pairs as (X,Y)-points from image pixel offset
 to widget image coordinates. Takes in account zoom level,
 image alignments, and offsets. Returns array of same length as the input.
 
-Useful for detemining a screen location of an image point.
+Useful for determining a screen location of an image point.
 
 The reverse function is C<screen2point>.
 

@@ -1788,8 +1788,8 @@ wish to dock to. C<Prima::InternalDockerShuttle> introduces C<dockingRoot> prope
 for this purpose.
 
 The conversation between parties starts when a dockable widget
-calls C<open_session> method of the dock. The dockable widget passess
-set of parameters signalling if the widget is ready to change its size
+calls C<open_session> method of the dock. The dockable widget passes
+set of parameters signaling if the widget is ready to change its size
 in case the dock widget requires so, and how. C<open_session> method can either refuse
 or accept the widget.
 In case of the positive answer from C<open_session>, the dockable widget
@@ -1841,7 +1841,7 @@ widget functionality. It also employs a top-level window-like wrapper widget
 for the dockable widget when it is not docked. 
 By default, C<Prima::ExternalDockerShuttle> is used as the wrapper widget class.
 
-It it not required, however, to use neither C<Prima::InternalDockerShuttle>
+It is not required, however, to use neither C<Prima::InternalDockerShuttle>
 nor C<Prima::AbstractDocker::Interface> to implement a dockable widget;
 the only requirements to one is to respect C<open_session>/C<close_session>
 protocol.
@@ -1939,7 +1939,7 @@ Closes docking SESSION and frees the associated resources.
 
 =item dock WIDGET
 
-Called after WIDGET is succesfully finished negotiation with
+Called after WIDGET is successfully finished negotiation with
 the dock widget and changed its C<owner> property. The method
 adapts the dock widget layout and lists WIDGET into list of
 docked widgets. The method does not change C<owner> property of WIDGET.
@@ -2100,7 +2100,7 @@ that select if the widget can be grown to the direction shown.
 These do not change meaning when C<vertical> changes, though they do
 change the dock widget behavior. The second set does not affect
 dock widget behavior when C<vertical> changes, however the names
-are not that illustratory:
+are not that illustrative:
 
     grow::MajorLess  grow::ForwardMajorLess  grow::BackMajorLess
     grow::MajorMore  grow::ForwardMajorMore  grow::BackMajorMore
@@ -2399,9 +2399,9 @@ Docks to the recent dock widget, if it is still available.
 Initiates or aborts the dragging session, depending on STATE boolean
 flag. 
 
-If it is 1, RECT is an array with the coordinates of the shuttle rectange
+If it is 1, RECT is an array with the coordinates of the shuttle rectangle
 before the drag has started; ANCHOR_X and ANCHOR_Y are coordinates of the 
-aperture point where the mouse event occured that has initiated the drag.
+aperture point where the mouse event occurred that has initiated the drag.
 Depending on how the drag session ended, the shuttle can be relocated to
 another dock, undocked, or left intact. Also, C<Dock>, C<Undock>, or
 C<FailDock> notifications can be triggered.
@@ -2410,7 +2410,7 @@ If STATE is 0, RECT, ANCHOR_X ,and ANCHOR_Y parameters are not used.
 
 =item find_docking DOCK, [ POSITION ]
 
-Opens a session with DOCK, unless it it already done,
+Opens a session with DOCK, unless it is already opened,
 and negotiates about the possibility of landing (
 at particular POSITION, if this parameter is present ).
 
@@ -2456,7 +2456,7 @@ Called when shuttle is docked.
 
 =item EDSClose
 
-Triggered when the user presses close button or otherwise activeates the
+Triggered when the user presses close button or otherwise activates the
 C<close> function of the EDS ( external docker shuttle ). To cancel
 the closing, C<clear_event> must be called inside the event handler.
 

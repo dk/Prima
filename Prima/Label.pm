@@ -388,7 +388,7 @@ of the escaped character with the C<Alt> key, the C<focusLink>
 widget is explicitly focused.
 
 If 1, the text is showed as is, and no hot character is underlined.
-Key combionations with C<Alt> key are not recognized.
+Key combinations with C<Alt> key are not recognized.
 
 Default value: 0
 

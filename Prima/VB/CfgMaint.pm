@@ -217,7 +217,7 @@ Prima::VB::CfgMaint - maintains visual builder widget palette configuration.
 =head1 DESCRIPTION
 
 The module is used by the Visual Builder and C<cfgmaint> programs, to maintain
-the former's widget palette. The installed widgets are displayed
+the Visual Builder widget palette. The installed widgets are displayed
 in main panel of the Visual Builder, and can be maintained by C<cfgmaint>.
 
 =head1 USAGE

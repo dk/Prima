@@ -718,8 +718,8 @@ Default value: 21
 =item pageStep INTEGER
 
 This determines the increment/decrement to
-C<value> during "page"-related operations, like clicking the mouse
-somewhere on the strip outside the thumb, or pressing C<PgDn> or C<PgUp>.
+C<value> during "page"-related operations, for example clicking the mouse
+on the strip outside the thumb, or pressing C<PgDn> or C<PgUp>.
 
 Default value: 10
 

@@ -2304,7 +2304,7 @@ buttons. If the user presses a widget button, and then clicks the mouse
 on the form window, the designated widget is inserted into the form
 and becomes a child of the form window.  If the click was made on a visible 
 widget in the form window, the newly inserted widget becomes a children of 
-that widget. After the widget is inserted, its properties are acceissible 
+that widget. After the widget is inserted, its properties are accessible 
 via the object inspector window.
 
 The menu bar contains the following commands:
@@ -2321,7 +2321,7 @@ Closes the current form and opens a new, empty form.
 If the old form was not saved, the user is asked if the changes made 
 have to be saved.
 
-This command is aliased to a 'new file' icon on the panel.
+This command is an alias to a 'new file' icon on the panel.
 
 =item Open
 
@@ -2329,7 +2329,7 @@ Invokes a file open dialog, so a I<.fm> form file can be opened.
 After the successful file load, all form widgets are visible and 
 available for editing.
 
-This command is aliased to an 'open folder' icon on the panel.
+This command is an alias to an 'open folder' icon on the panel.
 
 =item Save
 
@@ -2344,7 +2344,7 @@ without the builder or any supplementary code.
 Once the user assigned a name and a type for the form, it is
 never asked when selecting this command.
 
-This command is aliased to a 'save on disk' icon on the panel.
+This command is an alias to a 'save on disk' icon on the panel.
 
 =item Save as
 
@@ -2462,7 +2462,7 @@ This command hides the form and object inspector windows and
 The execution session ends either by closing the form window
 or by calling L<Break> command.
 
-This command is aliased to a 'run' icon on the panel.
+This command is an alias to a 'run' icon on the panel.
 
 =item Break
 
@@ -2506,7 +2506,7 @@ functionality.
 =item Guidelines
 
 The form window contains two guidelines, the horizontal and the vertical,
-drawn as blue dashed lines. These lines can be moved by dragging with the mouse.
+drawn as blue dashed lines. Dragging with the mouse can move these lines.
 If menu option L<Snap to guidelines> is on, the widgets moving and sizing
 operations treat the guidelines as the snapping areas.
 
@@ -2521,7 +2521,7 @@ call L<Select all> command from the menu.
 
 =item Moving
 
-The selected widgets can be moved by dragging the mouse. The widgets
+Dragging the mouse can move the selected widgets. The widgets
 can be snapped to the grid or the guidelines during the move. If one of
 the moving widgets is selected in the object inspector window, 
 the coordinate changes are reflected in the C<origin> property.

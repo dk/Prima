@@ -40,7 +40,7 @@ use Prima::PS::Fonts;
 =head1 DESCRIPTION
 
 This module primary use is to be invoked from Prima::PS::Drawable module.
-Assumed that some common fonts like Times and Couries are supported by PS
+Assumed that some common fonts like Times and Courier are supported by PS
 interpreter, and it is assumed that typeface is preserved more-less the
 same, so typesetting based on font's a-b-c metrics can be valid. 
 35 font files are supplied with 11 font families. Font files with metrics

@@ -1610,7 +1610,7 @@ Relative to: C<tb::BLK_COLOR>, C<tb::BLK_BACKCOLOR>.
 =item OP_FONT - KEY, VALUE
 
 As the font is a complex property, that itself includes font name, size, 
-direction etc etc keys, C<OP_FONT> KEY represents one of the three
+direction, etc keys, C<OP_FONT> KEY represents one of the three
 parameters - C<tb::F_ID>, C<tb::F_SIZE>, C<tb::F_STYLE>. All three
 have different VALUE meaning. 
 
@@ -1644,7 +1644,7 @@ set, and the other font keys can be also selected.
 =item OP_TRANSPOSE X, Y, FLAGS
 
 Contains a mark for an empty space. The space is extended to the relative coordinates (X,Y), 
-so the block extension algorithms take in account this opcode. If FLAGS does not contain
+so the block extension algorithms take this opcode in the account. If FLAGS does not contain
 C<tb::X_EXTEND>, then in addition to the block expansion, current coordinate is also
 moved to (X,Y). In this regard, C<(OP_TRANSPOSE,0,0,0)> and C<(OP_TRANSPOSE,0,0,X_EXTEND)> are
 identical and are empty operators. A special flag C<X_DIMENSION_FONT_HEIGHT> is only in effect with
@@ -1675,7 +1675,7 @@ C<OP_WRAP> is only in effect in L<block_wrap> method. ON_OFF is a boolean flag,
 selecting if the wrapping is turned on or off. L<block_wrap> does not support 
 stacking for the wrap commands, so the C<(OP_WRAP,1,OP_WRAP,1,OP_WRAP,0)> has 
 same effect as C<(OP_WRAP,0)>. If ON_OFF is 1, wrapping is disabled - all following
-commands threated an non-wrappable until C<(OP_WRAP,0)> is met.
+commands treated an non-wrapable until C<(OP_WRAP,0)> is met.
 
 =item OP_MARK PARAMETER, X, Y
 
@@ -1741,11 +1741,11 @@ The block header values BLK_X and BLK_Y are in document coordinates, and
 the widget's pane extents ( regulated by C<::paneSize>, C<::paneWidth> and
 C<::paneHeight> properties ) are also in document coordinates.
 
-The block coordinate system in anisometric - its second axis, BLOCK, is an index
+The block coordinate system in an-isometric - its second axis, BLOCK, is an index
 of a text block in the widget's blocks storage, C<$self-E<gt>{blocks}>, and
 its first axis, TEXT_OFFSET is a text offset from the beginning of the block.
 
-Below described different coordinate system convertors
+Below described different coordinate system converters
 
 =over
 
@@ -1793,7 +1793,7 @@ If its value is assigned to (-1,-1,-1,-1) this indicates that there is
 no selection. For convenience the C<has_selection> method is introduced.
 
 Also, C<get_selected_text> returns the text within the selection
-(or undef with no selelection ), and C<copy> copies automatically 
+(or undef with no selection ), and C<copy> copies automatically 
 the selected text into the clipboard. The latter action is bound to 
 C<Ctrl+Insert> key combination.
 

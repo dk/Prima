@@ -1736,7 +1736,7 @@ the class is less functional but has more stylish look.
 The class is a numerical input line, paired with a spin button.
 The input line value can be change three ways - either as a direct
 traditional keyboard input, or as spin button actions, or as mouse
-wheel reposnse. The class provides value storage and range 
+wheel response. The class provides value storage and range 
 selection properties.
 
 =head2 Properties
@@ -1893,7 +1893,7 @@ are reflected immediately or deferred until the value is changed more
 significantly. When 0, all calls to C<value> result in an immediate
 repaint request.
 
-Defaule value: 0
+Default value: 0
 
 =item value INTEGER
 
@@ -1984,7 +1984,7 @@ Default value: 0
 =item ticks ARRAY
 
 Selects the tick marks representation along the sliding axis or circle.
-ARRAY conists of hashes, each for one tick. The hash must contain
+ARRAY consists of hashes, each for one tick. The hash must contain
 at least C<value> key, with integer value. The two additional keys,
 C<height> and C<text>, select the height of a tick mark in pixels
 and the text drawn near the mark, correspondingly.
@@ -2130,7 +2130,7 @@ Offset in pixels along the shaft axis.
 
 Presents a slider widget with the dial and two increment / decrement buttons.
 The tick marks are drawn around the perimeter of the dial; current value
-is displayed in the centre of the dial.
+is displayed in the center of the dial.
 
 =head2 Properties
 
@@ -2187,7 +2187,7 @@ and 0 otherwise.
 =item Stringify VALUE, REF
 
 Converts integer VALUE into a string format and puts into REF scalar reference.
-The resulting string is displayed in the centre of the dial. 
+The resulting string is displayed in the center of the dial. 
 
 Default conversion routine simply copies VALUE to REF as is.
 

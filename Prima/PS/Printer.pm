@@ -41,7 +41,7 @@ use Prima::PS::Printer;
 
 Realizes the Prima printer interface to PostScript level 2 document language
 through Prima::PS::Drawable module. Allows different user profiles to be
-created and mananaged with GUI setup dialog. The module is designed to be 
+created and managed with GUI setup dialog. The module is designed to be 
 compliant with Prima::Printer interface.
 
 =cut

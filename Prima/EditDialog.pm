@@ -288,7 +288,7 @@ to find and replace options selection.
 The module provides two classes - Prima::FindDialog and Prima::ReplaceDialog;
 Prima::ReplaceDialog is exactly same as Prima::FindDialog except that 
 its default L<findStyle> property value is set to 0. One can use a dialog-caching
-technique, abritrating between L<findStyle> value 0 and 1, and use only one
+technique, arbitrating between L<findStyle> value 0 and 1, and use only one
 instance of Prima::FindDialog.
 
 The module does not provide the actual search algorithm; this must be implemented

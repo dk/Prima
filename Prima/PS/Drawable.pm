@@ -100,12 +100,12 @@ if 1, a 90 degrees rotated document layout is assumed
 along with Prima::Drawable::translate provide PS-specific
 transformation matrix manipulations. ::rotate is number,
 measured in degrees, counter-clockwise. ::scale is array of
-two numbers, respecively x- and y-scale. 1 is 100%, 2 is 200% 
+two numbers, respectively x- and y-scale. 1 is 100%, 2 is 200% 
 etc.
 
 =item ::useDeviceFonts
 
-1 by default; optimizes greatly text operaions, but takes the risk
+1 by default; optimizes greatly text operations, but takes the risk
 that a character could be drawn incorrectly or not drawn at all -
 this behavior depends on a particular PS interpreter.
 

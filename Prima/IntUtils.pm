@@ -416,7 +416,7 @@ A class must not use the reserved variable names, which are:
    {borderWidth}  - internal borderWidth storage
    {hScroll}      - internal hScroll value storage
    {vScroll}      - internal vScroll value storage
-   {hScrollBar}   - pointer to the horizontall scroll bar
+   {hScrollBar}   - pointer to the horizontal scroll bar
    {vScrollBar}   - pointer to the vertical scroll bar
    {bone}         - rectangular widget between the scrollbars
 

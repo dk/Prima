@@ -761,17 +761,17 @@ Unlinks one or more FILEs.
 
 If none of the options found, it is assumed that module is
 called for generation of C<Makefile>. The command line
-is parsed to see if it contains overrided variables. 
+is parsed to see if it contains overridden variables. 
 This allows the user to add, for example, paths to include and library files,
-select installation directories, compiling and debugging switches etc etc.
+select installation directories, compiling and debugging switches etc.
 
-The list of the user-overridable variables is described in L<Variables> below.
+The list of the user-overrideable variables is described in L<Variables> below.
 
 =item find_cdeps C_FILE, DEPENDENCIES, INCLUDES
 
 Scans C_FILE for the eventual dependencies of local include files.
 DEPENDENCIES and INCLUDES are hash references, used for
-global dependancy accounting. DEPENDENCIES keys are C files,
+global dependency accounting. DEPENDENCIES keys are C files,
 and its values are arrays of include files. INCLUDES keys are include
 files, and values are always 1. All dependencies are also
 cached internally, so successive calls to same C or include file do 

@@ -1426,7 +1426,7 @@ Default value: 1
 
 =item titleHeight INTEGER
 
-Selects height of the titlebar in pixels. If 0, the default system
+Selects height of the title bar in pixels. If 0, the default system
 value is used.
 
 Default value: 0
@@ -1466,7 +1466,7 @@ Arranges geometrically the minimized sibling MDI windows.
 Arranges sibling MDI windows so they form a cascade-like
 structure: the lowest window is expanded to the full owner window
 inferior rectangle, window next to the lowest occupies the inferior
-rectangle of the lowest window, etc etc. 
+rectangle of the lowest window, etc. 
 
 Only windows with C<tileable> property set to 1 are processed.
 
@@ -1485,16 +1485,16 @@ rectangle.
 =item get_client_rect [ WIDTH, HEIGHT ]
 
 Returns a rectangle in the window coordinate system that the
-client would occopy if the window extensions are WIDTH and HEIGHT.
+client would occupy if the window extensions are WIDTH and HEIGHT.
 If WIDTH and HEIGHT are undefined, the current window size is used.
 
 =item keyMove
 
-Initiates window moving session, navigated by the keybord.
+Initiates window moving session, navigated by the keyboard.
 
 =item keySize
 
-Initiates window resizing session, navigated by the keybord.
+Initiates window resizing session, navigated by the keyboard.
 
 =item mdis
 
@@ -1517,7 +1517,7 @@ accepts following string commands: C<min>, C<max>, C<restore>, C<close>.
 
 =item repaint_title [ STRING = C<title> ]
 
-Invalidates rectangle on the titlebar, corresponding to STRING,
+Invalidates rectangle on the title bar, corresponding to STRING,
 which can be one of the following:
 
     left    - redraw the menu button
@@ -1612,7 +1612,7 @@ The package contains several methods for a class that is to be
 used as a MDI windows owner. It is enough
 to add class inheritance to C<Prima::MDIMethods> to use the functionality. This step, however,
 is not required for a widget to become a MDI windows owner; the package
-contains helper functions only, which mostly mirror the arragment
+contains helper functions only, which mostly mirror the arrangement
 functions of C<Prima::MDI> class.
 
 =over
@@ -1645,7 +1645,7 @@ A predeclared descendant class of C<Prima::Widget> and C<Prima::MDIMethods>.
 
 =head1 Prima::MDIWindowOwner
 
-A predeclared descendant class of C<Prima::Window> and C<Prima::MDIMethods>.
+A pre-declared descendant class of C<Prima::Window> and C<Prima::MDIMethods>.
 
 =head1 AUTHOR
 

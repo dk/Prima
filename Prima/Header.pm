@@ -575,7 +575,7 @@ Called when the user clicks on the tab, positioned at INDEX.
 
 A callback used to draw the tabs. CANVAS is the output object;
 INDEX is the index of a tab.
-X1,Y2,X2,Y2 are the coordinates of the boudaries of the tab rectangle;
+X1,Y2,X2,Y2 are the coordinates of the boundaries of the tab rectangle;
 TEXT_BASELINE is a pre-calculated vertical position for eventual
 centered text output.
 
@@ -653,11 +653,11 @@ Default value: 1
 
 =item vertical BOOLEAN
 
-If 1, the tabs are aligned verically;
+If 1, the tabs are aligned vertically;
 the L<offset>, L<widths> property and extent parameters of the callback
 notification assume heights of the tabs.
 
-If 0, the tabs are aligned horizintally, and the extent properties 
+If 0, the tabs are aligned horizontally, and the extent properties 
 and parameters assume tab widths.
 
 =item widths ARRAY

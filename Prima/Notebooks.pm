@@ -1226,7 +1226,7 @@ flag value is returned instead.
 =item widget_set WIDGET, %PROFILE
 
 Calls C<set> on WIDGET with PROFILE and
-updates the internal visibile, enabled, and current flags
+updates the internal visible, enabled, and current flags
 if these are present in PROFILE. 
 
 See L<Prima::Object/set>.   
@@ -1255,7 +1255,7 @@ the notification execution.
 
 Since the notebook operates directly on children widgets'
 C<::visible> and C<::enable> properties, there is a problem when
-a widget associated with a non-active page must explicity be hidden 
+a widget associated with a non-active page must be explicitly hidden 
 or disabled. As a result, such a widget would become visible and enabled anyway.
 This happens because Prima API does not cache property requests. For example,
 after execution of the following code

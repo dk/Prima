@@ -914,7 +914,7 @@ by frames; isolation of different frames from each other.
 This module defines C<fra::> and C<frr::> packages for constants, used by L<arrangement>
 and L<resizeMethod> properties, respectively.
 
-Two additional auxliliary packageg are defined within this module: L<Prima::FrameSet::Frame>
+Two additional auxiliary packages are defined within this module: L<Prima::FrameSet::Frame>
 and L<Prima::FrameSet::Slider>.
 
 =head1 SYNOPSIS

@@ -352,7 +352,7 @@ modifiers are allowed.
 =head2 Methods
 
 All methods here can ( and must ) be called without the object
-syntax; - the firts parameter must not be neither package nor 
+syntax; - the first parameter must not be neither package nor 
 widget.
 
 =over

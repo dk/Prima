@@ -2473,7 +2473,7 @@ where X is character offset and Y is line number. The addressing can be
 The difference can be observed if L<wordWrap> property is set to 1, when a single 
 text string can be shown as several sub-strings, called I<chunks>.
 
-The text is stored linewise in C<{lines}> array; to access it use L<get_line> method.
+The text is stored line-wise in C<{lines}> array; to access it use L<get_line> method.
 To access the text chunk-wise, use L<get_chunk> method.
 
 All keyboard events, except the character input and tab key handling, are 
@@ -2621,7 +2621,7 @@ unset the value of L<blockType> is used.
 =item markers ARRAY
 
 Array of arrays with integer pairs, X and Y, where each represents
-a physical coordinates in text. Used as anchor storage for the fast navigations.
+a physical coordinates in text. Used as anchor storage for fast navigation.
 
 See also: L<add_marker>, L<delete_marker>
 
