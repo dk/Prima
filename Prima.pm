@@ -315,8 +315,6 @@ L<Prima::Docks> - dockable widgets
 
 L<Prima::Edit> - text editor widget
 
-L<Prima::EventHook> - event filtering
-
 L<Prima::ExtLists> - listbox with checkboxes
 
 L<Prima::FrameSet> - frameset widget class
@@ -410,6 +408,8 @@ L<Prima::Make> - module for automated Makefile creation
 =item Miscellaneous
 
 L<Prima::Const> - predefined toolkit constants 
+
+L<Prima::EventHook> - event filtering
 
 L<Prima::IniFile> - support of Windows-like initialization files
 
