@@ -27,7 +27,7 @@ use strict;
 use Prima;
 use Prima::Application name => 'Generic';
 
-Prima::Window-> create(
+my $w = Prima::Window-> create(
     text => "Hello, world!",
     onDestroy => sub { $::application-> close},
     onPaint   => sub {
@@ -39,5 +39,12 @@ Prima::Window-> create(
        $canvas-> text_out( $self-> text, 10, 10);
     },
 );
+
+$w-> insert( Timer =>
+  timeout => 2000,
+  onTick => sub { 
+     $w-> width( $w-> width - 50);
+  },   
+) -> start;
 
 run Prima;

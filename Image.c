@@ -77,9 +77,12 @@ Image_init( Handle self, HV * profile)
       }   
    var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
-   var->data = ( var->dataSize > 0) ? allocb( var->dataSize) : nil;
-   if ( var-> data == nil) 
-      croak("Image::init: cannot allocate %d bytes", var-> dataSize);
+   if ( var-> dataSize > 0) {
+      var->data = allocb( var->dataSize);
+      if ( var-> data == nil) 
+         croak("Image::init: cannot allocate %d bytes", var-> dataSize);
+   } else 
+      var-> data = nil;
    free( var->palette);
    var->palette = allocn( RGBColor, 256);
    if ( var-> palette == nil) {
@@ -1379,9 +1382,12 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
 
    lineSize = (( gbm. w * gbm. bpp + 31) / 32) * 4;
    dataSize = gbm. h * lineSize;
-   data = ( dataSize > 0) ? allocb( dataSize) : nil;
-   if ( data == nil) 
-      croak("Image::load: cannot allocate %d bytes", var-> dataSize);
+   if ( dataSize > 0) {
+      data = allocb( dataSize);
+      if ( data == nil) 
+         croak("Image::load: cannot allocate %d bytes", var-> dataSize);
+   } else
+      data = nil;
    rc = gbm_read_data( file, ft, &gbm, data);
    checkrc;
 
@@ -1566,7 +1572,7 @@ XS( Image_get_info_FROMPERL)
           HV **hvInfo;
           hvInfo = allocn( HV*, info->count);
           if ( hvInfo == nil)
-             croak("Image::get_info: cannot allocate %d bytes", sizeof(HV*)*info->count)
+             croak("Image::get_info: cannot allocate %d bytes", sizeof(HV*)*info->count);
           for ( i = 0; i < info->count; i++) {
               int j;
               PImgInfo imageInfo = ( PImgInfo) list_at( info, i);

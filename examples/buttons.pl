@@ -73,6 +73,34 @@ sub on_paint
   }
 }
 
+sub clone
+{
+   my ( $self, %profile) = @_;
+   my %d = %{$self-> profile_default};
+   my %readfilter = (
+      x_centered  => 1,   
+      y_centered  => 1,   
+      centered    => 1,   
+      delegations => 1,
+      designScale => 1,
+   );
+   my %hashed = (
+      font      => 1,
+      popupFont => 1,
+      menuFont  => 1,
+   );
+   for ( keys %readfilter) { delete $d{$_}};
+   for ( keys %d) {
+      my @res = $self-> $_();
+      $d{$_} = @res ? ($#res ? (
+         $hashed{$_} ? {@res} : [@res]
+      ) : $res[0]) : undef;
+   }   
+   return ref($self)-> create( %d, %profile);
+}   
+
+package main;
+
 
 my $w = Prima::Window-> create(
   onDestroy => sub { $::application-> close} ,
@@ -82,7 +110,8 @@ my $w = Prima::Window-> create(
    width     => 400,
 );
 $w-> insert( "Button"     , origin => [  50,180], pressed => 1);
-$w-> insert( "UserButton" , origin => [ 250,180], autoRepeat => 1);
+my $l = $w-> insert( "UserButton" , origin => [ 250,180], autoRepeat => 1);
+$l-> clone( origin => [ 250, 290]);
 $w-> insert( "Radio"      , origin => [  50,140]);
 
 run Prima;
