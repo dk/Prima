@@ -95,7 +95,6 @@ sub link_click
    $self-> SUPER::link_click( $s, $btn, $mod, $x, $y);
    return if $btn != mb::Right;
    my $new = ref($self-> owner)-> create;
-   print $s;
    if ( $s =~ /^\//) {
       $s = "$self->{pageName}$s";
    } elsif ( $s =~ /^"(.*)"$/) {
