@@ -78,6 +78,7 @@ static Handle xdup( Handle self, char * className)
    Handle h;
    PDrawable i;
    HV * profile = newHV();
+   Point s;
 
    pset_H( owner,        var-> owner);
    pset_i( width,        var-> w);
@@ -87,8 +88,9 @@ static Handle xdup( Handle self, char * className)
    h = Object_create( className, profile);
    sv_free(( SV *) profile);
    i = ( PDrawable) h;
+   s = i-> self-> get_size( h);
    i-> self-> begin_paint( h);
-   i-> self-> put_image( h, 0, 0, self);
+   i-> self-> put_image_indirect( h, self, 0, 0, 0, 0, s.x, s.y, s.x, s.y, ropCopyPut);
    i-> self-> end_paint( h);
    --SvREFCNT( SvRV( i-> mate));
    return h;

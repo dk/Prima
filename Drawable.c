@@ -435,25 +435,6 @@ Drawable_width( Handle self, Bool set, int width)
 }
 
 Bool
-Drawable_put_image( Handle self, int x , int y , Handle image )
-{
-   Point size;
-   if ( image == nilHandle) return false;
-   size = ((( PDrawable) image)-> self)-> get_size( image);
-   return apc_gp_put_image ( self, image, x, y, 0, 0, size.x, size.y, my-> get_rop( self));
-}
-
-Bool
-Drawable_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle image)
-{
-   if ( image == nilHandle) return false;
-   if ( xDest == PImage(image)-> w && yDest == PImage(image)-> h) 
-      return apc_gp_put_image( self, image, x, y, 0, 0, xDest, yDest, my-> get_rop( self));
-   else
-      return apc_gp_stretch_image( self, image, x, y, 0, 0, xDest, yDest, PImage(image)-> w, PImage(image)-> h, my-> get_rop( self));
-}
-
-Bool
 Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
    if ( image == nilHandle) return false;

@@ -98,13 +98,11 @@ object Prima::Drawable ( Prima::Component)
    method Bool  flood_fill( int x, int y, Color color, Bool singleBorder = 1) => apc_gp_flood_fill;
    method Bool  line(int x1, int y1, int x2, int y2)       => apc_gp_line;
    method Bool  lines( SV * points);
-   method Bool  put_image(int x, int y, Handle image);
    method Bool  polyline( SV * points);
    method Bool  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
    method Bool  rectangle(int x1, int y1, int x2, int y2)  => apc_gp_rectangle;
    method Bool  sector( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_sector;
    method Bool  spline( SV * points);
-   method Bool  stretch_image(int x, int y, int xDest, int yDest, Handle image);
    method Bool  text_out( SV * text, int x, int y, int len = -1);
    method SV*   text_wrap( SV * text, int width, int options = twDefault, int tabIndent = 8, int textLen = -1);
 

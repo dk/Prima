@@ -1004,10 +1004,11 @@ Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
 See also: fillpoly().
 
 
-=item put_image X, Y, OBJECT
+=item put_image X, Y, OBJECT, [ ROP ]
 
 Draws an OBJECT at coordinates (X,Y). OBJECT must be Prima::Image,
-Prima::Icon or Prima::DeviceBitmap.
+Prima::Icon or Prima::DeviceBitmap. If ROP raster operation is specified,
+it is used. Otherwise, value of C<::rop> property is used. 
 
 Context used: rop; color and backColor for a monochrome DeviceBitmap 
 
@@ -1065,13 +1066,16 @@ Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
 
 See also: fill_spline, splinePrecision.
 
-=item stretch_image X, Y, DEST_WIDTH, DEST_HEIGHT, OBJECT
+=item stretch_image X, Y, DEST_WIDTH, DEST_HEIGHT, OBJECT, [ ROP ]
 
 Copies a OBJECT into a destination rectangle, stretching or compressing 
 the OBJECT to fit the dimensions of the destination rectangle, if necessary.
 If DEST_WIDTH or DEST_HEIGHT are negative, a mirroring is performed.
 The destination rectangle starts at (X,Y) and is DEST_WIDTH pixels wide
 and DEST_HEIGHT pixels tall.
+
+If ROP raster operation is specified, it is used. Otherwise, value of C<::rop>
+property is used. 
 
 OBJECT must be Prima::Image, Prima::Icon or Prima::DeviceBitmap.
 

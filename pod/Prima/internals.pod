@@ -437,6 +437,7 @@ A piece of real code from DeviceBitmap.c would serve as an example:
    Handle xdup( Handle self, char * className)
    {
       Handle h;
+      Point s;
       PDrawable i;
 
       // allocate a parameters hash
@@ -455,8 +456,9 @@ A piece of real code from DeviceBitmap.c would serve as an example:
       sv_free(( SV *) profile);
 
       i = ( PDrawable) h;
+      s = i-> self-> get_size( h);
       i-> self-> begin_paint( h);
-      i-> self-> put_image( h, 0, 0, self);
+      i-> self-> put_image_indirect( h, self, 0, 0, 0, 0, s.x, s.y, s.x, s.y, ropCopyPut);
       i-> self-> end_paint( h);
 
       // decrement reference count

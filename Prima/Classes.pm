@@ -311,6 +311,9 @@ sub profile_check_in
 
 sub font       {($#_)?$_[0]->set_font($#_>1?{@_[1..$#_]}:$_[1]):return Prima::Font->new($_[0], "get_font", "set_font")}
 
+sub put_image     { $_[0]-> put_image_indirect( @_[3,1,2], 0,0, ($_[3]->size) x 2, defined ($_[4]) ? $_[4] : $_[0]-> rop) }
+sub stretch_image { $_[0]-> put_image_indirect( @_[5,1,2], 0,0, @_[3,4], $_[5]->size, defined ($_[6]) ? $_[6] : $_[0]-> rop) } 
+
 sub rect3d
 {
    my ( $self, $x, $y, $x1, $y1, $width, $lColor, $rColor, $backColor) = @_;

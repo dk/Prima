@@ -1156,8 +1156,6 @@ sub get_bpp              { return $_[0]-> {grayscale} ? 8 : 24 }
 sub get_nearest_color    { return $_[1] }
 sub get_physical_palette { return $_[0]-> {grayscale} ? [map { $_, $_, $_ } 0..255] : 0 }
 sub get_handle           { return 0 }
-sub put_image            { $_[0]-> put_image_indirect( $_[3], $_[1], $_[2], 0, 0, $_[3]-> size, $_[3]-> size, $_[0]-> rop) }
-sub stretch_image        { $_[0]-> put_image_indirect( $_[5], $_[1], $_[2], 0, 0, $_[3], $_[4], $_[5]-> size, $_[0]-> rop) }
 
 # fonts
 sub fonts
