@@ -1052,10 +1052,12 @@ sub text_out
          my $adv2 = $adv + $$xr[1] * 72.27 / $self-> {resolution}-> [0]; 
          $adv2 = int( $adv * 100 + 0.5) / 100;
          my $pg = $self-> plate_glyph( ord $j);
-         $self-> emit( "$adv2 $self->{plate}->{yd} moveto");
-         $self-> emit("gsave currentpoint translate");
-         $self-> emit( $pg);
-         $self-> emit("grestore");
+         if ( length $pg) {
+            $self-> emit( "$adv2 $self->{plate}->{yd} moveto");
+            $self-> emit("gsave currentpoint translate");
+            $self-> emit( $pg);
+            $self-> emit("grestore");
+         }
       } 
       $adv += ( $$xr[1] + $$xr[2] + $$xr[3]) * 72.27 / $self-> {resolution}-> [0];
    }
@@ -1330,6 +1332,8 @@ sub plate
       backColor => cl::Black,
       color     => cl::White,
       textOutBaseline => 1,
+      preserveType => 1,
+      conversion   => ict::None,
    );
    my ( $f, $l) = ( $self-> {plate}-> font-> {firstChar}, $self-> {plate}-> font-> {lastChar});
    my $x = $self-> {plate}-> {ABC} = $self-> {plate}-> get_font_abc( $f, $l);

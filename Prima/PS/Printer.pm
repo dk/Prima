@@ -327,16 +327,13 @@ sub spool
          push( @cmds, $self-> {data}-> {spoolerData});
       }
       my $ok;
-      if ( !$unix || !fork) {
-         for ( @cmds) {
-            next unless open F, "|$_";
-            print F ( $_, "\n"), for @$data;
-            close F;
-            $ok = 1;
-         }
-         Prima::message("Error printing to $cmds[0]") unless $ok;
-         exit if $unix;
+      for ( @cmds) {
+         next unless open F, "|$_";
+         print F ( $_, "\n"), for @$data;
+         close F;
+         $ok = 1;
       }
+      Prima::message("Error printing to $cmds[0]") unless $ok;
    }
 }
 
