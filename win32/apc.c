@@ -2200,7 +2200,7 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
 
    DeleteMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
    DrawMenuBar( DHANDLE( var owner));
-   if ( resize && apc_window_get_window_state( self) == wsNormal)
+   if ( resize && apc_window_get_window_state( var owner) == wsNormal)
       owner-> self-> set_size( var owner, size.x, size. y);
    return true;
 }
@@ -2328,7 +2328,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
       var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
       SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : nilHandle);
       DrawMenuBar( DHANDLE( var owner));
-      if ( apc_window_get_window_state( self) == wsNormal)
+      if ( apc_window_get_window_state( var owner) == wsNormal)
          owner-> self-> set_size( var owner, size.x, size. y);
    } else {
       if ( var handle)
