@@ -56,6 +56,7 @@ Printer_done( Handle self)
 Bool
 Printer_begin_doc( Handle self, char * docName)
 {
+   Bool ok;
    char buf[ 256];
    if ( is_opt( optInDraw)) return false;
    if ( !docName || *docName == '\0') {
@@ -65,8 +66,9 @@ Printer_begin_doc( Handle self, char * docName)
    if ( is_opt( optInDrawInfo))
       my end_paint_info( self);
    inherited begin_paint( self);
-   if ( !apc_prn_begin_doc( self, docName)) return false;
-   return true;
+   if ( !( ok = apc_prn_begin_doc( self, docName)))
+      inherited end_paint( self);
+   return ok;
 }
 
 void

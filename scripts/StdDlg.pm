@@ -62,7 +62,7 @@ sub profile_default
       filter      => [[ 'All files' => '*']],
       filterIndex => 0,
       directory   => '',
-      designScale => [8, 20],
+      designScale => [ 8, 20],
 
       createPrompt       => 0,
       multiSelect        => 0,
@@ -135,7 +135,6 @@ sub init
       name      => 'Name',
       origin    => [ 14, 343],
       size      => [ 245, 25],
-      width     => 200,
       text      => $profile{fileName},
       maxLen    => 32768,
    );

@@ -368,6 +368,8 @@ sub rect3d
 sub rect_focus
 {
    my ( $canvas, $x, $y, $x1, $y1, $width) = @_;
+   ( $x, $x1) = ( $x1, $x) if $x > $x1;
+   ( $y, $y1) = ( $y1, $y) if $y > $y1;
 
    $width = 1 if !defined $width || $width < 1;
    my $sys = Application-> get_system_info;

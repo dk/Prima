@@ -375,6 +375,7 @@ start_logger( void)
    guts. ioThread = ( HANDLE) _beginthread( docatch, 40960, NULL);
    SetThreadPriority( guts. ioThread, THREAD_PRIORITY_ABOVE_NORMAL);
    _beginthread( ( void ( *)( void*))create_logger_window2, 40960, NULL);
+   guts. loggerIcon = NULL;
 }
 
 

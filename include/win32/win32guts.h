@@ -80,7 +80,6 @@
 }
 #define apcErr( err) {                                      \
    apcError = err;                                          \
-   log_write("APC_%d at line %d in %s", err, __LINE__, __FILE__);  \
 }
 #define apiAltErr( err) {                                   \
    apcError = errApcError;                                  \
@@ -126,6 +125,7 @@ typedef struct _WinGuts
     int            cmdShow;            // run command state
     HWND           logger;             // logger window
     HWND           loggerListBox;      // logger box for stdout/stderr
+    HICON          loggerIcon;         // logger icon
     int            appLock;            // application lock count
     int            pointerLock;        // pointer lock count
     HANDLE         ioThread;           // handle of input-output thread

@@ -83,6 +83,7 @@ sub on_paint
 {
    my ( $self, $canvas) = @_;
    my @size   = $canvas-> size;
+
    my $clr    = $self-> backColor;
    my $bw     = $self-> {borderWidth};
    my @c3d    = ( $self-> light3DColor, $self-> dark3DColor);
@@ -111,7 +112,7 @@ sub on_paint
    while ( $x < $size[0]) {
       $y = $bw;
       while ( $y < $size[1]) {
-         $self-> stretch_image( $x, $y, $dx, $dy, $self->{image});
+         $canvas-> stretch_image( $x, $y, $dx, $dy, $self->{image});
          $y += $dy;
       }
       $x += $dx;
