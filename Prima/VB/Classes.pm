@@ -427,15 +427,16 @@ sub on_mousedown
       
       $self-> bring_to_front;
       $self-> focus;
-      $self-> marked(1,1);
+      $VB::inspector->{selectorChanging} = 1; # disallow auto single-select
       ObjectInspector::enter_widget( $self);
+      $VB::inspector->{selectorChanging} = 0;
+
       $self-> iterate_children( sub { $_[0]-> bring_to_front; $_[0]-> update_view; }); 
-      
 
       my $part = $self-> xy2part( $x, $y);
       my @mw;
-      @mw = $VB::form-> marked_widgets if $part eq q(client) && 
-          ($self-> focused || $self-> marked);
+      @mw = $VB::form-> marked_widgets if $part eq q(client) && $self-> marked;
+      $self-> marked( 1, 1) unless @mw;    
       $self-> clear_event;
       $self-> capture(1, $self-> owner);
       $self-> {spotX} = $x;
