@@ -1177,12 +1177,15 @@ XS( Object_alive_FROMPERL);
 
 XS( boot_Prima)
 {
+   char *dolbug_str;
    dXSARGS;
    (void)items;
 
    XS_VERSION_BOOTCHECK;
 
-   dolbug = getenv( "PRIMA_DOLBUG") ? true : false;
+   if ( ( dolbug_str = getenv( "PRIMA_DOLBUG")) != NULL) {
+      dolbug = ( Bool) atoi( dolbug_str);
+   }
 
 #define TYPECHECK(s1,s2) \
   if (sizeof(s1) != (s2)) { \
