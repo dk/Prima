@@ -129,8 +129,9 @@ was implicitly converted inside C<end_paint()> call, and reverts it to
 its previous pixel format.
 
 There are situations, when a pixel format conversion must be made with
-down-sampling. One of three down-sampling methods can be selected -
-normal, 8x8 half-toning and error diffusion. These can be set to
+down-sampling. One of four down-sampling methods can be selected -
+normal, 8x8 ordered halftoning, error diffusion, and error diffusion
+combined with optimized palette. These can be set to
 the C<::conversion> property with one of C<ict::XXX> constants.
 When there is no information loss, C<::conversion> property is not used.
 
@@ -153,9 +154,17 @@ data, but overwrites palette information. A proper call syntax is
      type    => im::bpp4,
   );
 
-This call produce correct results, if palette pixel mapping is desired.
-NB: C<im::bpp4> type in the examples above is a 16-color pixel format,
-but it can be any indexed format. 
+This call produces correct results, if palette pixel mapping is desired.
+The most power of this syntax is available when conversion is C<ict::Optimized>
+( by default ). This does not only allows remapping or downsampling to a
+predefined colors set, but also can be used to limit palette size to a 
+particular number, without actual color cells values knowledge. For example,
+for an 24-bit image,
+
+  $image-> set( type => im::bpp8, palette => 32);
+
+call would calculate colors in the image, compress them to a palette of
+32 cells and converts to a 8-bit format.
 
 =head2 Data access 
 
@@ -227,7 +236,7 @@ takes place. TYPE is one of C<ict::XXX> constants:
    ict::ErrorDiffusion  - error diffusion dithering with static palette
    ict::Optimized       - error diffusion dithering with optimized palette
 
-As an example, if a 4x4 color image with every pixel set to RGB(64,64,64),
+As an example, if a 4x4 color image with every pixel set to RGB(32,32,32),
 converted to a 1-bit image, the following results occur:
 
    ict::None:
@@ -238,15 +247,15 @@ converted to a 1-bit image, the following results occur:
 
    ict::Halftone:
      [ 0 0 0 0 ]
-     [ 0 1 0 1 ]
+     [ 0 0 1 0 ]
      [ 0 0 0 0 ]
-     [ 0 1 0 1 ]
+     [ 1 0 0 0 ]
 
    ict::ErrorDiffusion, ict::Ordered:
-     [ 0 0 0 1 ]
-     [ 0 0 0 1 ]
-     [ 0 0 0 1 ]
      [ 0 0 1 0 ]
+     [ 0 0 0 1 ]
+     [ 0 0 0 0 ]
+     [ 0 0 0 0 ]
 
 =item data SCALAR
 
