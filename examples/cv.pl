@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-use Prima 'ColorDialog', Application => { name => 'CV' };
+use Prima 'StdDlg', Application => { name => 'CV' };
 
 my $p = Prima::ColorDialog-> create(
   value => 0x3030F0,
