@@ -2741,6 +2741,20 @@ char *
 apc_system_action( const char * params)
 {
    switch ( *params) {
+   case 'b':
+#define STR "browser"
+      if ( strncmp( params, STR, strlen( STR)) == 0) {
+#undef STR   
+         HKEY k;
+         DWORD valSize = MAX_PATH, valType = REG_SZ, res;
+         char buf[ MAX_PATH] = "";
+         RegOpenKeyEx( HKEY_CLASSES_ROOT, "http\\shell\\open\\command", 0, KEY_READ, &k);
+         res = RegQueryValueEx( k, nil, nil, &valType, ( LPBYTE)buf, &valSize);
+         RegCloseKey( k);
+         if ( res != ERROR_SUCCESS) return nil;
+         return duplicate_string( buf);
+      }   
+      break;   
    case 'w':
       if ( strcmp( params, "wait.before.quit") == 0) {
          waitBeforeQuit = 1;
