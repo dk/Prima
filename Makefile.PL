@@ -41,7 +41,7 @@ use File::Copy;
 use Cwd;
 use DynaLoader;
 use Prima::Gencls;
-use vars qw( %make_trans @ovvars $dir_sep $path_sep );
+use vars qw( %make_trans @ovvars @path_expand_ovvars $dir_sep $path_sep );
 use vars @ovvars = qw(
     $CC $CFLAGS $CCCDLFLAGS $CDLFLAGS $C_FLAGS $CDEBUGFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
     $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG $CLINKPREFIX
@@ -65,6 +65,23 @@ use vars @ovvars = qw(
     $RM
     $SHQUOTE
     $MAKETYPE
+    $DEFFILE
+);
+
+use vars @path_expand_ovvars = qw(
+    @INCPATH
+    @LIBPATH
+    @LIBS
+    $COMPILER
+    $PREFIX
+    $PREFIX_BIN
+    $INSTALL_BIN
+    $INSTALL_LIB
+    $INSTALL_DL
+    $INSTALL_EXAMPLES
+    $TMPDIR
+    $MAKE
+    $RM
     $DEFFILE
 );
 
@@ -1207,11 +1224,13 @@ sub setup_misc
 sub process_commandline
 {
     %overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
+    my %expand = map { /^.(.*)$/; $1 => 1 } @path_expand_ovvars; 
     $ARGV_STR = join( " ", map { "\"$_\""} @ARGV);
     foreach my $arg ( @ARGV) {
         if ( $arg =~ /^\s*(\w+)\s*(\+?)\=(.*)$/) {
             my ( $varname, $setmode, $varval) = ( $1, $2 || '', $3);
             die "Unknown variable $varname" unless $overrideable{ $varname};
+            $varval =~ s/~/$ENV{HOME}/g if $expand{ $varname};
             if ( $overrideable{ $varname} eq '$') {
                 if ( $setmode eq '+') {
                     push @{ $USER_VARS_ADDONS{ $varname}}, $varval;
@@ -1223,6 +1242,9 @@ sub process_commandline
             }
             elsif ( $overrideable{ $varname} eq '@') {
                 my @values = split /$path_sep/, $varval;
+                if ( $expand{ $varname}) {
+                   s/~/$ENV{HOME}/g for @values;
+                }
                 if ( $setmode eq '+') {
                     push @{ $USER_VARS_ADDONS{ $varname}}, @values;
                 }
@@ -1581,6 +1603,10 @@ elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--rm') {
     shift @ARGV;
     unlink @ARGV;
 }
+elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--rmdir') {
+    shift @ARGV;
+    rmdir for @ARGV;
+}
 elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--updateconfig') {
    shift @ARGV;
    my ( $from, $fn) = ( quotemeta(shift @ARGV), shift @ARGV);
@@ -1754,7 +1780,11 @@ OS2D
 $thunks_tinc: Makefile @alltmldeps
 \t$^X utils/tmlink.pl -Iinclude/generic -o$thunks_tinc @alltml
 
+CP=$^X Makefile.PL --cp
+CPBIN=$^X Makefile.PL --cpbin
+MD=$^X Makefile.PL --md
 RM=$^X Makefile.PL --rm
+RMDIR=$^X Makefile.PL --rmdir
 
 clean:
 \t\$(RM) @allclean $PrimaTarget $distname-$os_suffix.zip
@@ -1773,7 +1803,7 @@ zipdist:
 \t\@perl -e ${SHQUOTE}if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }$SHQUOTE;
 
 tardist:
-\t\@perl -e ${SHQUOTE}if(!-f q(.dist-exclude)) { open F, q(>.dist-exclude) or die qq(Cannot open .dist-exclude:\$\$!); print F qq(*.obj\\n*/*.obj\\n*/*.obj\\ninclude/generic/*.*); close F;}$SHQUOTE
+\t\@perl -e ${SHQUOTE}if(!-f q(.dist-exclude)) { open F, q(>.dist-exclude) or die qq(Cannot open .dist-exclude:\$\$!); print F qq(*$OBJ_EXT\\n*/*$OBJ_EXT\\n*/*$OBJ_EXT\\ninclude/generic/*.*); close F;}$SHQUOTE
 \t\$(RM) $distname.tar
 \t\@tar -cv -X .dist-exclude -f $distname.tar $srcdist_files
 
@@ -1786,6 +1816,9 @@ prima: dirs $PrimaTarget
 $PrimaTarget: @allojects $extralibs
 \t${ \eval{ return join ' ', ld_command_line( $PrimaTarget, @allojects)}}
 
+test: all
+\t\@perl -w test/Tester.pl
+
 Makefile: Makefile.PL @Makefile_deps
 \t\@echo Rebuilding Makefile...
 \t\@$^X Makefile.PL $ARGV_STR
@@ -1793,76 +1826,73 @@ Makefile: Makefile.PL @Makefile_deps
 \t\@echo You are safe to ignore the following error...
 \t\@false
 
-CP=$^X Makefile.PL --cp
-CPBIN=$^X Makefile.PL --cpbin
-
-install: all
-\t\@\$(CP) \\
-\t$PrimaTarget $INSTALL_DL \\
-\t$PrimaLib    $PREFIX \\
 EOF
-    my ( $instcnt, $maxcnt) = ( 1, 20);
+
+    my %cp;
+    my %cpbin;
+    $cp{$PrimaTarget} = $INSTALL_DL;
+    $cp{$PrimaLib}    = $PREFIX;
+    $cp{"Prima.pm"}   = $PREFIX;
+    
     my $cwd = cwd();
-    finddepth(
-              sub
-              {
-                  unless ( -d $_) {
-                      print MAKE "\t", qd( "$File::Find::dir/$_ $PREFIX/$File::Find::dir");
-                      if ( ( $instcnt % $maxcnt) == 0) {
-                          print MAKE "\n\t\@\$(CP)";
-                      }
-                      $instcnt++;
-                      print MAKE " \\\n";
-                  }
-              }, 'Prima');
-    while ( scalar @allinstall) {
-        my ( $src, $dst) = ( shift @allinstall, shift @allinstall);
-        print MAKE "\t$src $dst";
-        if ( ( $instcnt % $maxcnt) == 0) {
-            print MAKE "\n\t\@\$(CP)";
-        }
-        $instcnt++;
-        print MAKE " \\\n";
+    finddepth( sub {
+        $cp{qd("$File::Find::dir/$_")} = qd("$PREFIX/$File::Find::dir") unless -d $_;
+    }, 'Prima');
+
+   
+    while (@allinstall) {
+       my ( $src, $dst) = ( shift(@allinstall), shift(@allinstall));
+       $cp{$src} = $dst;
     }
     while ( <include/*.h>) {
-        my ( $dsth) = $_;
-        $dsth =~ s/^include/CORE/;
-        print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth"));
-        if ( ( $instcnt % $maxcnt) == 0) {
-            print MAKE "\n\t\@\$(CP)";
-        }
-        $instcnt++;
-        print MAKE " \\\n";
+        my $dst = $_;
+        $dst =~ s/^include/CORE/;
+        $cp{$_} = dirname( qd( "$INSTALL_LIB/$dst"));
     }
     while ( <include/$PLATFORM/*.h>) {
-        my ( $dsth) = $_;
-        $dsth =~ s/^include/CORE/;
-        print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth"));
-        if ( ( $instcnt % $maxcnt) == 0) {
-            print MAKE "\n\t\@\$(CP)";
-        }
-        $instcnt++;
-        print MAKE " \\\n";
+        my $dst = $_;
+        $dst =~ s/^include/CORE/;
+        $cp{$_} = dirname( qd( "$INSTALL_LIB/$dst"));
     }
-    print MAKE "\tPrima.pm $PREFIX\n";
-
-    print MAKE "\t\@\$(CPBIN)";
-    $instcnt = 1;
+    my $i = 0;
+    print MAKE "\ninstall: all"; 
+    for ( keys %cp) {
+       print MAKE "\n\t\@\$(CP) \\\n" if ( $i++ % 20) == 0;
+       print MAKE "\t$_ $cp{$_} \\\n";
+    }
+    $i = 0;
     while ( scalar @allbins) {
         my ( $src, $dst) = ( shift @allbins, shift @allbins);
-        if ( ( $instcnt % $maxcnt) == 0) {
-            print MAKE "\n\t\@\$(CPBIN)";
-        }
-        $dst = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
-        print MAKE " \\\n\t$src $dst"
+        $cp{qd( basename( $src, '.pl') . $SCRIPT_EXT)} = $dst;
+        $cpbin{$src} = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
     }
-    print MAKE "\n";
-    print MAKE "\t\@echo Updating config...\n";
+    for ( keys %cpbin) {
+       print MAKE "\n\t\@\$(CPBIN) \\\n" if ( $i++ % 20) == 0;
+       print MAKE "\t$_ $cpbin{$_} \\\n";
+    }
+
+    print MAKE "\n\t\@echo Updating config...\n";
     print MAKE "\t$^X Makefile.PL --updateconfig $cwd $PREFIX/Prima/Config.pm\n";
 
-    print MAKE <<EOF;
+    print MAKE "\ndeinstall:";
+    $i = 0;
+    my %dirs_to_rm;
+    for ( keys %cp) {
+       my $fn = $_;
+       print MAKE "\n\t\@\$(RM) \\\n" if ( $i++ % 40) == 0;
+       $fn =~ /(\\|\/)?([^\\|\/]+)$/;
+       print MAKE "\t$cp{$_}$dir_sep$2 \\\n";
+       $dirs_to_rm{$cp{$_}} = 1;
+    }
+    delete $dirs_to_rm{$PREFIX};
+    delete $dirs_to_rm{$INSTALL_BIN};
+    print MAKE "\n\t\@\$(RMDIR) \\\n";
+    for ( sort { length($b) <=> length($a) } keys %dirs_to_rm) {
+       print MAKE "\t$_ \\\n";
+    }
+    print MAKE "\n";
 
-MD=$^X Makefile.PL --md
+    print MAKE <<EOF;
 
 dirs: @alldirs
 
@@ -1878,4 +1908,3 @@ EOF
     print "\nAll done.  Now you can run ${ MAKE}.\n";
 }
 
-exit;
