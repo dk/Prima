@@ -181,6 +181,27 @@ apc_window_task_listed( Handle self, Bool task_list)
    set_net_hints( X_WINDOW, XX-> flags.task_listed, -1, -1);
 } 
 
+/* Motif window hints */
+#define MWM_HINTS_FUNCTIONS           (1L << 0)
+#define MWM_HINTS_DECORATIONS         (1L << 1)
+
+/* bit definitions for MwmHints.functions */
+#define MWM_FUNC_ALL            (1L << 0)
+#define MWM_FUNC_RESIZE         (1L << 1)
+#define MWM_FUNC_MOVE           (1L << 2)
+#define MWM_FUNC_MINIMIZE       (1L << 3)
+#define MWM_FUNC_MAXIMIZE       (1L << 4)
+#define MWM_FUNC_CLOSE          (1L << 5)
+
+/* bit definitions for MwmHints.decorations */
+#define MWM_DECOR_ALL                 (1L << 0)
+#define MWM_DECOR_BORDER              (1L << 1)
+#define MWM_DECOR_RESIZEH             (1L << 2)
+#define MWM_DECOR_TITLE               (1L << 3)
+#define MWM_DECOR_MENU                (1L << 4)
+#define MWM_DECOR_MINIMIZE            (1L << 5)
+#define MWM_DECOR_MAXIMIZE            (1L << 6)
+
 static void
 set_motif_hints( XWindow window, int border_style, int border_icons)
 {
@@ -193,19 +214,27 @@ set_motif_hints( XWindow window, int border_style, int border_icons)
    if ( guts. icccm_only) return;
 
    bzero( &mwmhints, sizeof(mwmhints));
-   mwmhints.flags |= (1L << 1); /*  MWM_HINTS_DECORATIONS */
+   mwmhints.flags |= MWM_HINTS_DECORATIONS;
+   mwmhints.flags |= MWM_HINTS_FUNCTIONS;
    if ( border_style == bsSizeable) {
-      mwmhints.decorations |= (1L << 1); /* MWM_DECOR_BORDER */
-        mwmhints.decorations |= (1L << 2); /* MWM_DECOR_RESIZEH */
+      mwmhints.decorations |= MWM_DECOR_BORDER;
+      mwmhints.decorations |= MWM_DECOR_RESIZEH;
+      mwmhints.functions |= MWM_FUNC_RESIZE;
    }
+   mwmhints. functions |= MWM_FUNC_MOVE;
+   mwmhints.functions |= MWM_FUNC_CLOSE;
    if ( border_icons & biTitleBar)
-      mwmhints.decorations |= (1L << 3); /* MWM_DECOR_TITLE */
+      mwmhints.decorations |= MWM_DECOR_TITLE;
    if ( border_icons & biSystemMenu)
-      mwmhints.decorations |= (1L << 4); /* MWM_DECOR_MENU */
-   if ( border_icons & biMinimize)
-      mwmhints.decorations |= (1L << 5); /* MWM_DECOR_MINIMIZE */
-   if (( border_icons & biMaximize) && ( border_style == bsSizeable))
-      mwmhints.decorations |= (1L << 6); /* MWM_DECOR_MAXIMIZE */
+      mwmhints.decorations |= MWM_DECOR_MENU;
+   if ( border_icons & biMinimize) {
+      mwmhints.decorations |= MWM_DECOR_MINIMIZE;
+      mwmhints.functions |= MWM_FUNC_MINIMIZE;
+   }
+   if (( border_icons & biMaximize) && ( border_style == bsSizeable)) {
+      mwmhints.decorations |= MWM_DECOR_MAXIMIZE;
+      mwmhints.functions |= MWM_FUNC_MAXIMIZE;
+   }
 
    XChangeProperty(DISP, window, XA_MOTIF_WM_HINTS, XA_MOTIF_WM_HINTS, 32,
        PropModeReplace, (unsigned char *) &mwmhints, 5);
