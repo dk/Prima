@@ -846,7 +846,7 @@ AGAIN:
       DEFMM;
       int px, first = 0;
       PMenuWindow w;
-      XWindow focus = nil;
+      XWindow focus = nilHandle;
       if ( prima_no_input( X(PComponent(self)->owner), false, true)) return;
       if ( ev-> xbutton. button != Button1) return;
 
