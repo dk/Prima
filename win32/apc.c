@@ -75,7 +75,10 @@ apc_application_create( Handle self)
 void
 apc_application_close( Handle self)
 {
-   if ( !PostMessage( guts. logger, WM_CLOSE, 0, 0)) apiErr;
+   if ( guts. logger) {
+      if ( !PostMessage( guts. logger, WM_CLOSE, 0, 0)) apiErr;
+   } else
+      PostQuitMessage(0);
 }
 
 void
@@ -86,10 +89,13 @@ apc_application_destroy( Handle self)
       if ( !KillTimer( sys handle, TID_USERMAX)) apiErr;
       if ( !DestroyWindow( sys handle)) apiErr;
    }
+   free( sys timeDefs);
    if ( !loggerDead)
       PostMessage( guts. logger, WM_QUIT, 0, 0);
    PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
    loggerDead = true;
+   if ( !guts. logger)
+      PostQuitMessage(0);
 }
 
 void
@@ -363,7 +369,6 @@ process_transparents( Handle self)
    RECT mr;
    objCheck;
    GetWindowRect(( HWND) var handle, &mr);
-again:
    for ( i = 0; i < var widgets. count; i++) {
       Handle x = var widgets. items[ i];
       dobjCheck(x);
@@ -374,10 +379,6 @@ again:
          if ( !IsRectEmpty( &dr))
             InvalidateRect( DHANDLE( x), nil, false);
       }
-   }
-   if ( self != application) {
-      self = application;
-      goto again;
    }
 }
 
@@ -488,7 +489,8 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
               parentView = DHANDLE( application);
           if ( !usePos)  rcp[0] = rcp[1] = CW_USEDEFAULT;
           if ( !useSize) rcp[2] = rcp[3] = CW_USEDEFAULT;
-          if ( !( frame = CreateWindowEx( exstyle, "GenericFrame", "", style,
+          if ( !( frame = CreateWindowEx( exstyle, "GenericFrame", "",
+                style | WS_CLIPCHILDREN,
                 rcp[0], rcp[1], rcp[2], rcp[3],
                 parentView, nilHandle, guts. instance, nil)))
              apiErrRet;
@@ -501,7 +503,8 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
                    0,0,0,0,SWP_NOMOVE | SWP_NOSIZE  | SWP_NOACTIVATE))
                 apiErr;
           GetClientRect( frame, &r);
-          if ( !( ret = CreateWindowEx( 0,  "Generic", "", WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
+          if ( !( ret = CreateWindowEx( 0,  "Generic", "",
+                WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
                 0, 0, r. right - r. left, r. bottom - r. top, frame, nilHandle,
                 guts. instance, nil)))
              apiErr;
@@ -519,7 +522,8 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
             // style |= WS_SYSMENU | WS_DLGFRAME | WS_THICKFRAME;
             exstyle |= WS_EX_TOOLWINDOW;
        }
-       if ( !( ret = CreateWindowEx( exstyle,  "Generic", "", style, 0, 0, 0, 0,
+       if ( !( ret = CreateWindowEx( exstyle,  "Generic", "",
+             style | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0,
              parentView, nilHandle, guts. instance, nil)))
           apiErrRet;
        if ( !SetWindowPos( ret, behind, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE))
@@ -953,10 +957,13 @@ apc_window_set_menu( Handle self, Handle menu)
    Point size  = var self-> get_size( self);
    HMENU wMenu = GetMenu( HANDLE);
    objCheck false;
-   if ( menu)
+   if ( menu) {
+      DestroyMenu(( HMENU) (( PComponent) menu)-> handle);
       (( PComponent) menu)-> handle = nilHandle;
+   }
    apcErrClear;
-   if ( wMenu) DestroyMenu( wMenu);
+   if ( wMenu)
+      DestroyMenu( wMenu);
    if ( menu)
       (( PComponent) menu)-> handle = ( Handle) add_item( true, menu, (( PMenu) menu)-> tree);
    SetMenu( HANDLE, menu ? ( HMENU) (( PComponent) menu)-> handle : nilHandle);
@@ -1155,15 +1162,16 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
    {
       if ( IsWindowVisible(( HWND) var handle))
       {
-         HWND parent = dsys((( PWidget) self)-> owner) parent;
+         HWND parent = GetParent( HANDLE);
          MSG  msg;
          list_add( &guts. transp, self);
          WinHideWindow(( HWND) var handle);
-         UpdateWindow( parent);
+         if ( parent) UpdateWindow( parent);
          while ( PeekMessage( &msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE))
             DispatchMessage( &msg);
-         if ( parent == HWND_DESKTOP) Sleep( 1);
+         if ( !parent) Sleep( 1);
          WinShowWindow(( HWND) var handle);
+         UpdateWindow(( HWND) var handle);
          list_delete( &guts. transp, self);
       }
    }
@@ -1814,7 +1822,7 @@ apc_menu_destroy( Handle self)
 {
    if ( var handle) {
       objCheck;
-      if ( IsWindow(( HWND) var handle) && !DestroyMenu(( HMENU) var handle)) apiErr;
+      if ( IsMenu(( HMENU) var handle) && !DestroyMenu(( HMENU) var handle)) apiErr;
       hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
    }
 }
@@ -1972,9 +1980,16 @@ Bool
 apc_popup( Handle self, int x, int y)
 {
    objCheck false;
+   y = dsys( var owner) lastSize. y - y;
+   if ( var owner != application) {
+      POINT pt = {x,y};
+      if ( !MapWindowPoints(( HWND)(( PComponent) var owner)-> handle, nil, &pt, 1)) apiErr;
+      x = pt.x;
+      y = pt.y;
+   }
    if ( !TrackPopupMenuEx(
       ( HMENU) var handle, TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_RIGHTBUTTON,
-       x, dsys( var owner) lastSize. y - y, ( HWND)(( PComponent) var owner)-> handle, NULL)
+       x, y, ( HWND)(( PComponent) var owner)-> handle, NULL)
       ) apiErrRet;
    return true;
 }

@@ -79,8 +79,8 @@ apc_timer_destroy ( Handle self)
    objCheck;
    if ( var handle && IsWindow(( HWND)(( PWidget) var owner)-> handle)) {
       if ( !KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle)) apiErr;
-      remove_timer( self, var owner);
    }
+   remove_timer( self, var owner);
 }
 
 int

@@ -394,7 +394,7 @@ font_alloc( Font * data, Point * resolution)
       PFont   f;
 
       if ( IS_WIN95 && ( hash_count( fontMan) > 128))
-         hash_first_that( fontMan, _ft_cleaner, nil, nil, nil);
+         font_clean();
 
       ret = malloc( sizeof( DCFont));
       memcpy( f = &ret-> font, data, sizeof( Font));
@@ -404,7 +404,7 @@ font_alloc( Font * data, Point * resolution)
          LOGFONT lf;
          apiErr;
          memset( &lf, 0, sizeof( lf));
-         CreateFontIndirect( &lf);
+         ret-> hfont = CreateFontIndirect( &lf);
       }
       hash_store( fontMan, &ret-> font, FONTSTRUCSIZE + strlen( ret-> font. name), ret);
    }
@@ -429,7 +429,14 @@ font_change( Handle self, Font * font)
    p    = sys fontResource;
    newP = ( sys fontResource = font_alloc( font, &sys res));
    font_free( p);
-   SelectObject( sys ps, newP-> hfont);
+   if ( sys ps)
+       SelectObject( sys ps, newP-> hfont);
+}
+
+void
+font_clean()
+{
+    hash_first_that( fontMan, _ft_cleaner, nil, nil, nil);
 }
 
 void
@@ -446,7 +453,7 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
    if ( !res) res = &guts. displayResolution;
    f-> height              = tm. tmHeight;
    f-> size                = ( f-> height - tm. tmInternalLeading) * 72.0 / res-> y + 0.5;
-   f-> width               = lf-> lfWidth ? lf-> lfWidth : C_NUMERIC_UNDEF;
+   f-> width               = lf-> lfWidth;
    f-> direction           = lf-> lfEscapement;
    f-> style               = 0 |
       ( lf-> lfItalic     ? fsItalic     : 0) |
@@ -1128,6 +1135,7 @@ hwnd_enter_paint( Handle self)
    sys stockFont      = GetCurrentObject( sys ps, OBJ_FONT);
    if ( !sys stockPalette)
       sys stockPalette = GetCurrentObject( sys ps, OBJ_PAL);
+   font_free( sys fontResource);
    sys stylusResource = nil;
    sys fontResource   = nil;
    sys stylusFlags    = 0;

@@ -42,8 +42,10 @@ apc_gp_done( Handle self)
          }
       }
    }
+   font_free( sys fontResource);
    if ( sys p256) free( sys p256);
    sys bm = sys pal = sys ps = sys bm = sys p256 = nilHandle;
+   sys fontResource = nil;
    free( sys charTable);
    free( sys charTable2);
    free( sys saveFont);
@@ -1327,6 +1329,8 @@ void
 apc_gp_set_font( Handle self, PFont font)
 {
    objCheck;
+   if ( !sys ps)
+      return;
    font_change( self, font);
    free( sys charTable);
    free( sys charTable2);
