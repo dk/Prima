@@ -1580,6 +1580,13 @@ sub prf_types
    return $pt;
 }
 
+sub prf_adjust_default
+{
+   my ( $self, $p, $pf) = @_;
+   $self-> SUPER::prf_adjust_default( $p, $pf);
+   delete $pf->{defaultInsertPage};
+}
+
 sub init
 {
    my $self = shift;
