@@ -19,10 +19,17 @@ log_write( const char *format, ...)
    return false;
 }
 
-Bool
+int
 debug_write( const char *format, ...)
 {
-   return false;
+    int rc = 0;
+    if ( guts.dolbug) {
+	va_list args;
+	va_start( args, format);
+	rc = vfprintf( stderr, format, args);
+	va_end( args);
+    }
+    return rc;
 }
 
 

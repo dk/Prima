@@ -57,6 +57,7 @@ window_subsystem_init( void)
 {
 /*XXX*/ /* Namely, support for -display host:0.0 etc. */
    guts. riHead = guts. riTail = 0;
+   guts. dolbug = getenv( "PRIMA_DOLBUG") ? true : false;
    DISP = XOpenDisplay( nil);
    if (!DISP) return false;
    XSetErrorHandler( x_error_handler);

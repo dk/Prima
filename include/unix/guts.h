@@ -140,6 +140,7 @@ struct _UnixGuts
    /* debugging -  XCHECKPOINT */
    RequestInformation ri[ REQUEST_RING_SIZE];
    int riHead, riTail;
+   Bool dolbug;
 
    /* window manager specifics */
    void *wmData;
