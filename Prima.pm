@@ -30,6 +30,14 @@ require DynaLoader;
 use vars qw($VERSION @ISA);
 @ISA = qw(DynaLoader);
 
+BEGIN { # nasty hack ahead
+   if ( $^O eq 'freebsd'
+        && "4.0-CURRENT\n" eq `/usr/bin/uname -r`
+        && (stat("/kernel"))[9] >= 936144000) { # i.e. 199909010000 UTC
+      eval "sub dl_load_flags { 0x01 }";
+   }
+}
+
 $VERSION = '0.01';
 bootstrap Prima $VERSION;
 $::application = undef;
