@@ -34,7 +34,8 @@ my @extras  = ();
 my @extraTestNames  = ();
 my $ok_count;
 my $testsRan = 0;
-
+my ( $skipped, $passed, $failed) = (0,0,0);
+my ( $eskipped, $epassed, $efailed) = (0,0,0);
 
 BEGIN
 {
@@ -169,6 +170,14 @@ sub runfile
    if ( $@) {
        print "test error: $@\n"
    } else {
+      my $res = 3;
+      for ( @results) {
+         if ( $_ < 0) { $skipped++} elsif ( $_ > 0) { $passed++} else { $failed++};   
+         next if $_ < 0;
+         $res &= $_ ? 1 : 0;
+      }   
+      if ( $res == 3) { $eskipped++} elsif ( $res) { $epassed++} else { $efailed++};
+      
       if ( $verbose) {
          my $i = 0;
          print "\n";
@@ -243,5 +252,7 @@ sub rundir
 }
 
 rundir('.');
+print("Atomic tests passed:$passed, skipped:$skipped, failed:$failed\n") if $verbose;
+print("Total tests passed:$epassed, skipped:$eskipped, failed:$efailed\n");
 
 
