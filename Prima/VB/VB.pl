@@ -41,6 +41,7 @@ $Prima::VB::VBLoader::builderActive = 1;
 my $classes = 'Prima::VB::Classes';
 if ( $lite) {
    $classes = 'Prima::VB::Lite::Classes';
+   $Prima::VB::CfgMaint::systemWide = 1;
    $Prima::VB::CfgMaint::rootCfg = 'Prima/VB/Lite/Config.pm';
 }
 
@@ -141,7 +142,7 @@ sub init
       origin   => [ 0, $sz[1] - $fh],
       size     => [ $sz[0], $fh],
       growMode => gm::Ceiling,
-      style    => cs::DropDownList,
+      style    => cs::DropDown,
       name     => 'Selector',
       items    => [''],
       delegations => [qw(Change)],
@@ -359,12 +360,11 @@ sub enter_widget
    if ( $self-> {current}) {
       my %df = %{$_[0]->{default}};
       my $pf = $_[0]->{profile};
-
       my @ef = sort keys %{$self->{current}-> {events}};
       my $ep = $self-> {elist};
+      my $num = 0;
       my @check = ();
       my %ix = ();
-      my $num = 0;
       for ( @ef) {
          push( @check, exists $pf->{$_} ? 1 : 0);
          $ix{$_} = $num++;
@@ -523,6 +523,7 @@ sub insert_new_control
    }
    $self->{modified} = 1;
    $j-> select;
+   $j-> marked(1,1);
 }
 
 sub on_paint
