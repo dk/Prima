@@ -28,7 +28,7 @@
 #
 
 use strict;
-use Prima qw(ImageViewer StdDlg);
+use Prima qw(ImageViewer StdDlg MsgBox);
 use Prima::Application name => "IV";
 
 my $ico = Prima::Icon-> create;
