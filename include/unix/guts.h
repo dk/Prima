@@ -1,6 +1,9 @@
 #ifndef _UNIX_GUTS_H_
 #define _UNIX_GUTS_H_
 
+#if defined(HAVE_CONFIG_H)
+#include "generic/config.h"
+#endif
 #define Drawable        XDrawable
 #define Font            XFont
 #define Window          XWindow

@@ -1254,9 +1254,16 @@ EOF
         mkdir "include/generic", 0777;
     }
     open CONFIG, ">include/generic/config.h" or die "Creation of config.h failed: $!";
+    print CONFIG <<EOF;
+#ifndef __GENERIC_CONFIG_H__
+#define __GENERIC_CONFIG_H__
+EOF
     foreach my $define ( sort keys %DEFINES) {
         print CONFIG "#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
     }
+    print CONFIG <<EOF;
+#endif
+EOF
     close CONFIG;
 
     print "Writing Makefile...";
