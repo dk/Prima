@@ -239,11 +239,11 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, Bool release)
 }
 
 static Bool
-input_disabled( PDrawableSysData XX)
+input_disabled( PDrawableSysData XX, Bool ignore_horizon)
 {
    Handle horizon = application;
 
-   if ( guts. modal_count > 0)
+   if ( guts. modal_count > 0 && !ignore_horizon)
       horizon = CApplication(application)-> map_focus( application, XX-> self);
    while (XX->self && XX-> self != horizon && XX-> self != application) {
       if (!XF_ENABLED(XX)) return true;
@@ -253,9 +253,9 @@ input_disabled( PDrawableSysData XX)
 }
 
 static Bool
-no_input( PDrawableSysData XX, Bool beep)
+no_input( PDrawableSysData XX, Bool ignore_horizon, Bool beep)
 {
-   if ( input_disabled( XX)) {
+   if ( input_disabled(XX, ignore_horizon)) {
       if ( beep) {
          apc_beep( mbWarning);
       }
@@ -343,19 +343,19 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    switch ( ev-> type) {
    case KeyPress: {
       guts. last_time = ev-> xkey. time;
-      if (no_input(XX, true)) return;
+      if (no_input(XX, false, true)) return;
       handle_key_event( self, &ev-> xkey, &e, false);
       break;
    }
    case KeyRelease: {
       guts. last_time = ev-> xkey. time;
-      if (no_input(XX, false)) return;
+      if (no_input(XX, false, false)) return;
       handle_key_event( self, &ev-> xkey, &e, true);
       break;
    }
    case ButtonPress: {
       guts. last_time = ev-> xbutton. time;
-      if (no_input(XX, true)) return;
+      if (no_input(XX, false, true)) return;
       bev = &ev-> xbutton;
       e. cmd = cmMouseDown;
      ButtonEvent:
@@ -438,14 +438,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case ButtonRelease: {
       guts. last_time = ev-> xbutton. time;
-      if (no_input(XX, false)) return;
+      if (no_input(XX, false, false)) return;
       bev = &ev-> xbutton;
       e. cmd = cmMouseUp;
       goto ButtonEvent;
    }
    case MotionNotify: {
       guts. last_time = ev-> xmotion. time;
-      if (no_input(XX, false)) return;
+      if (no_input(XX, true, false)) return;
       e. cmd = cmMouseMove;
       e. pos. where. x = ev-> xmotion. x;
       e. pos. where. y = XX-> size. y - ev-> xmotion. y - 1;
@@ -472,7 +472,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);
       }   
       guts. last_time = ev-> xcrossing. time;
-      if (no_input(XX, false)) {
+      if (no_input(XX, true, false)) {
 	 return;
       }
       e. cmd = cmMouseEnter;
@@ -484,7 +484,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case LeaveNotify: {
       guts. last_time = ev-> xcrossing. time;
-      if (no_input(XX, false)) {
+      if (no_input(XX, true, false)) {
 	 return;
       }
       e. cmd = cmMouseLeave;
