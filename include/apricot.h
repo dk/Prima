@@ -45,6 +45,7 @@
    #define BROKEN_PERL_PLATFORM  1
    #define __INLINE__            __inline
    #define snprintf              _snprintf
+   #define vsnprintf             _vsnprintf
    #define stricmp               _stricmp
    extern double                 NAN;
 #elif defined( __BORLANDC__)
@@ -126,7 +127,7 @@ extern void *
 reallocf(void *ptr, size_t size);
 #endif
 
-#ifndef HAVE_SNPRINTF
+#if ! ( defined( HAVE_SNPRINTF) || defined( HAVE__SNPRINTF))
 extern int
 snprintf( char *, size_t, const char *, ...);
 

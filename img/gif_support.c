@@ -33,7 +33,7 @@
 #endif
 
 #include "img_api.h"
-#include "unix/gif_support.h"
+#include "gif_support.h"
 #ifdef HAVE_IO_H
 #include <io.h>
 #endif
@@ -574,7 +574,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	    }
 	}
 
-	/* At this stage we must have fully prepared imgInfo list in which all the items 
+	/* At this stage we must have fully prepared imgInfo list in which all the items
 	   already contains valid `index' properties. */
 	for ( i = 0; ( i < imgInfo->count) && succeed; i++) {
 	    int indexPropIdx = -1, j, index = -1;
@@ -653,9 +653,9 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 				    PImgProperty imgProp;
 				    int commentsPropIdx = list_first_that( imageInfo->propList, ( void *) property_name, "comments");
 				    if ( commentsPropIdx == -1) {
-					if ( ( imgProp = img_info_add_property( imageInfo, 
-										"comments", 
-										PROPTYPE_STRING | PROPTYPE_ARRAY, 
+					if ( ( imgProp = img_info_add_property( imageInfo,
+										"comments",
+										PROPTYPE_STRING | PROPTYPE_ARRAY,
 										1)) == nil) {
 					    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
 					}
@@ -701,9 +701,9 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
 			if ( imgProp == nil) {
 			    imgProp = img_info_add_property(
-				    imageInfo, 
-				    "extensions", 
-				    PROPTYPE_PROP | PROPTYPE_ARRAY, 
+				    imageInfo,
+				    "extensions",
+				    PROPTYPE_PROP | PROPTYPE_ARRAY,
 				    gifExtensions->extensions.count - processedCount
 				);
 			}
@@ -786,14 +786,14 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			imgProp = img_info_add_property( imageInfo, "paletteBPP", PROPTYPE_INT, -1, gif->SColorMap->BitsPerPixel);
 		    }
 		    if ( imgProp != nil) {
-			succeed = 
+			succeed =
 			    ( imgProp = img_info_add_property( imageInfo,
 							       "palette",
 							       PROPTYPE_BYTE | PROPTYPE_ARRAY,
 							       3 * gif->SColorMap->ColorCount
 				)) != nil;
 			for ( n = 0; ( n < gif->SColorMap->ColorCount) && succeed; n++) {
-			    succeed = 
+			    succeed =
 				img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Blue)
 				&& img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Green)
 				&& img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Red);
@@ -806,10 +806,10 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
 		if ( readData) {
 		    /* New array property is always zeroed. */
-		    imgProp = img_info_add_property( 
-			    imageInfo, 
-			    "data", 
-			    PROPTYPE_BYTE | PROPTYPE_ARRAY, 
+		    imgProp = img_info_add_property(
+			    imageInfo,
+			    "data",
+			    PROPTYPE_BYTE | PROPTYPE_ARRAY,
 			    gif->SWidth * gif->SHeight
 			);
 		    if ( imgProp != nil) {
@@ -828,7 +828,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    if ( imgProp != nil) {
 			imgProp = img_info_add_property( imageInfo, "height", PROPTYPE_INT, -1, gifChunk->Height);
 		    }
-		    if ( imgProp != nil) { 
+		    if ( imgProp != nil) {
 			imgProp = img_info_add_property( imageInfo, "type", PROPTYPE_INT, -1, im256);
 		    }
 		    if ( imgProp != nil) {
@@ -888,7 +888,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			if ( *data != nil) {
 			    int pixelCount = gifChunk->Width * gifChunk->Height;
 			    int pass = 0, Y; /* Pass number for interlaced images. */
-			    imgProp = img_info_add_property( 
+			    imgProp = img_info_add_property(
 				    imageInfo,
 				    "data",
 				    PROPTYPE_BYTE | PROPTYPE_ARRAY,
@@ -896,7 +896,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 				);
 			    if ( imgProp != nil) {
 				int ySrc, yDst;
-				for ( ySrc = 0, yDst = 0, Y = 0; 
+				for ( ySrc = 0, yDst = 0, Y = 0;
 				      ySrc < pixelCount;
 				      ySrc += gifChunk->Width) {
 				    memcpy( imgProp->val.pByte + pixelCount - yDst - gifChunk->Width,
@@ -1092,7 +1092,7 @@ __gif_save( const char *filename, PList imgInfo)
     int lastIndex = -1, index;
     GifFileType *ogif = nil, *igif = nil;
     GifRecordType gifRecType;
-    
+
     DOLBUG( "Processing %d image profiles\n", imgInfo->count);
 
     /* Preparing slots for collecting & sorting images properties */
@@ -1496,7 +1496,7 @@ __gif_save( const char *filename, PList imgInfo)
 				}
 				if ( gifrc == GIF_OK) {
 				    DOLBUG( "Writing (trying) extension with code %d (%d<=>%d)\n", extCode, lastIndex, index);
-				    if ( ( extCode == GRAPHICS_EXT_FUNC_CODE) 
+				    if ( ( extCode == GRAPHICS_EXT_FUNC_CODE)
 					 && ( lastIndex == index)) {
 					/* Yeah, necessary image is in output already! */
 					done = true;

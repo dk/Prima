@@ -105,7 +105,7 @@ reallocf(void *ptr, size_t size)
 }
 #endif
 
-#ifndef HAVE_SNPRINTF
+#if ! ( defined( HAVE_SNPRINTF) || defined( HAVE__SNPRINTF))
 /*
  * It is stupid, but Borland C/C++ 5.02 doesn't have snprintf/vsnprintf in its
  * RTL.

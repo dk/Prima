@@ -656,6 +656,7 @@ sub setup_defines
     have_header( "unistd.h");
     have_func( 'strcasecmp') || have_func( 'stricmp');
     have_func( 'snprintf');
+    have_func( '_snprintf');
     have_func( 'reallocf');
     if ( $Win32) {
 	have_type( "BOOLEAN", "windows.h");

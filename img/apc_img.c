@@ -34,7 +34,7 @@
 
 #include <fcntl.h>
 #include "img_api.h"
-#include "unix/gif_support.h"
+#include "gif_support.h"
 
 #define APCIMG_VERSION		1
 
@@ -124,7 +124,7 @@ typedef struct {
     int fd;               /* Image file descriptor */
     char *preread_buf;    /* Preread data */
     int preread_size;     /* This field's value could differ from
-			     maxPrereadSize depending on result 
+			     maxPrereadSize depending on result
 			     of read() or further calls to
 			     apc_image_fetch_more. */
     const char *desiredFormat;
@@ -173,9 +173,9 @@ load_img_loadable( Handle item, void *params)
 	      && ( strcasecmp( load_data->desiredFormat, imgFormat->id) != 0))) {
 	return false;
     }
-    return imgFormat->is_loadable( load_data->fd, 
-				   load_data->filename, 
-				   load_data->preread_buf, 
+    return imgFormat->is_loadable( load_data->fd,
+				   load_data->filename,
+				   load_data->preread_buf,
 				   load_data->preread_size);
 }
 
@@ -248,7 +248,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 	    }
 	}
 	if ( fmtProps[ j].name) {
-	    if ( ( fmtProps[ j].type[ 1] == '*') 
+	    if ( ( fmtProps[ j].type[ 1] == '*')
 		 && ( ( imgProp->flags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY)) {
 		__apc_image_set_error( "__apc_image_correct_property: property ``%s'' is expected to be an array", imgProp->name);
 		rc = false;
@@ -431,7 +431,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 								       PROPTYPE_ARRAY | PROPTYPE_PROP,
 								       imgProp->used)) != nil;
 				for ( n = 0; n < imgProp->used && rc; n++) {
-				    rc = img_push_property_value( outImgProp, 
+				    rc = img_push_property_value( outImgProp,
 								  imgProp->val.pProperties[ n].count)
 					&& __apc_image_correct_property( fmtProps[ j].subProps,
 									 imgProp->val.pProperties + n,
@@ -441,7 +441,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 				}
 			    }
 			    else {
-				rc = ( ( outImgProp = img_push_property( outPropList, 
+				rc = ( ( outImgProp = img_push_property( outPropList,
 									 imgProp->name,
 									 PROPTYPE_PROP,
 									 0,
@@ -483,10 +483,10 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool *
     Bool rc;
 
     rc = ( ( outImageInfo = img_info_create( propList->count)) != nil)
-	&& __apc_image_correct_property( imgFormat->propertyList, 
-					 propList, 
-					 outImageInfo->propList, 
-					 readAll, 
+	&& __apc_image_correct_property( imgFormat->propertyList,
+					 propList,
+					 outImageInfo->propList,
+					 readAll,
 					 &outImageInfo->extraInfo
 	    );
     if ( rc) {
@@ -504,7 +504,7 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool *
 }
 
 static Bool
-adjust_line_size( PList imgInfo) 
+adjust_line_size( PList imgInfo)
 {
     int i;
 
@@ -620,7 +620,7 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 		    }
 		}
 		else {
-		    __apc_image_set_error( "apc_image_read: image preread failed for %s: %s", 
+		    __apc_image_set_error( "apc_image_read: image preread failed for %s: %s",
 					   filename,
 					   strerror( errno));
 		}
