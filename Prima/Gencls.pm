@@ -2131,7 +2131,7 @@ SD
           print HEADER "$_ * SvHV_$_( SV * hashRef, $_ * strucRef, char * errorAt)\n{\n";
           print HEADER "   char * err = errorAt ? errorAt : \"$_\";\n";
           print HEADER "   HV * $incHV = ( HV*)\n   ".
-          "(( SvTYPE( SvRV( hashRef)) == SVt_PVHV) ? SvRV( hashRef)\n      ".
+          "(( SvROK( hashRef) && ( SvTYPE( SvRV( hashRef)) == SVt_PVHV)) ? SvRV( hashRef)\n      ".
           ": ( croak( \"Illegal hash reference passed to %s\", err), nil));\n";
           for ( my $j = 0; $j < scalar @{$structs{$_}[0]}; $j++)
           {
