@@ -237,7 +237,7 @@ sub on_mousedown
    my ( $self, $btn, $mod, $x, $y) = @_;
    return if $self->{mouseTransaction};
    return if $btn != mb::Left;
-   $self->{ mouseTransaction} = (( $x * $self-> height / $self-> width) > $y) ? 2 : 1;
+   $self->{ mouseTransaction} = (( $x * $self-> height / ( $self-> width || 1)) > $y) ? 2 : 1;
    $self->{ lastMouseOver}  = 1;
    $self-> state( $self->{ mouseTransaction});
    $self-> capture(1);
@@ -605,7 +605,8 @@ sub on_paint
    my ($clComplete,$clBack,$clFore,$clHilite) = ($self-> hiliteBackColor, $self-> backColor, $self-> color, $self-> hiliteColor);
    my $v = $self-> {vertical};
    my $complete = $v ? $y : $x;
-   $complete = int(($complete - $i*2) * $self->{value} / ($self-> {max} - $self-> {min}) + 0.5);
+   my $range = ($self-> {max} - $self-> {min}) || 1;
+   $complete = int(($complete - $i*2) * $self->{value} / $range + 0.5);
    my ( $l3, $d3) = ( $self-> light3DColor, $self-> dark3DColor);
    $canvas-> color( $clComplete);
    $canvas-> bar ( $v ? ($i, $i, $x-$i-1, $i+$complete) : ( $i, $i, $i + $complete, $y-$i-1));
@@ -678,7 +679,7 @@ sub value
    {
       my ($x, $y) = $_[0]-> get_size;
       my $i = $_[0]-> {indent};
-      my $range = $_[0]-> {max} - $_[0]-> {min} + 1;
+      my $range = ( $_[0]-> {max} - $_[0]-> {min}) || 1;
       my $x1 = $i + ($x - $i*2) * $old / $range;
       my $x2 = $i + ($x - $i*2) * $v   / $range;
       if ( $x1 > $x2)
@@ -699,7 +700,7 @@ sub value
 sub on_stringify
 {
    my ( $self, $value, $sref) = @_;
-   $$sref = sprintf( "%2d%%", $value * 100.0 / ($_[0]-> max - $_[0]-> min));
+   $$sref = sprintf( "%2d%%", $value * 100.0 / (($_[0]-> {max} - $_[0]-> {min})||1));
    $self-> clear_event;
 }
 
@@ -928,7 +929,7 @@ sub on_paint
    my @cht  = ( $self-> hiliteColor, $self-> hiliteBackColor);
    my @size = $canvas-> size;
    my ( $sb, $v, $range, $min, $tval, $tlen, $ttxt, $ta) =
-   ( $self->{shaftBreadth}, $self->{vertical}, abs($self->{max} - $self->{min}), $self->{min},
+   ( $self->{shaftBreadth}, $self->{vertical}, abs($self->{max} - $self->{min})||1, $self->{min},
      $self->{tickVal}, $self-> {tickLen}, $self->{tickTxt}, $self->{tickAlign},
    );
    if ( $ta == ta::Normal)      { $ta = 1; } elsif
@@ -1048,8 +1049,8 @@ sub pos2info
    if ( $self-> {vertical}) {
       my $bh  = $self-> font-> height;
       my $val = $bh + 1 + abs( $self->{value} - $self->{min}) *
-                ( $size[1] - 2 * $bh - 5) / abs($self->{max} - $self->{min});
-      my $ret1 = $self->{min} + ( $y - $bh - 1) * abs($self->{max} - $self->{min}) / ( $size[1] - 2 * $bh - 5);
+                ( $size[1] - 2 * $bh - 5) / ( abs($self->{max} - $self->{min})||1);
+      my $ret1 = $self->{min} + ( $y - $bh - 1) * abs($self->{max} - $self->{min}) / (( $size[1] - 2 * $bh - 5)||1);
       if ( $y < $val - DefButtonX / 2 or $y >= $val + DefButtonX / 2) {
          return 0, $ret1;
       } else {
@@ -1058,8 +1059,8 @@ sub pos2info
    } else {
       my $bw = $self->font->width;
       my $val = $bw + 1 + abs( $self->{value} - $self->{min}) *
-                ( $size[0] - 2 * $bw - 5) / abs($self->{max} - $self->{min});
-      my $ret1 = $self->{min} + ( $x - $bw - 1) * abs($self->{max} - $self->{min}) / ( $size[0] - 2 * $bw - 5);
+                ( $size[0] - 2 * $bw - 5) / (abs($self->{max} - $self->{min})||1);
+      my $ret1 = $self->{min} + ( $x - $bw - 1) * abs($self->{max} - $self->{min}) / (( $size[0] - 2 * $bw - 5)||1);
       if ( $x < $val - DefButtonX / 2 or $x >= $val + DefButtonX / 2) {
          return 0, $ret1;
       } else {
@@ -1186,9 +1187,9 @@ sub set_value
       my $bh = $self->font->height;
       my $bw  = ( $size[0] - $sb) / 2;
       my $v1  = $bh + 1 + abs( $self->{value} - $self->{min}) *
-         ( $size[1] - 2 * $bh - 5) / abs($self->{max} - $self->{min});
+         ( $size[1] - 2 * $bh - 5) / (abs($self->{max} - $self->{min})||1);
       my $v2  = $bh + 1 + abs( $old - $self->{min}) *
-         ( $size[1] - 2 * $bh - 5) / abs($self->{max} - $self->{min});
+         ( $size[1] - 2 * $bh - 5) / (abs($self->{max} - $self->{min})||1);
       ( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
       $v1 -= DefButtonX / 2;
       $v2 += DefButtonX / 2 + 1;
@@ -1199,9 +1200,9 @@ sub set_value
       my $bw = $self->font->width;
       my $bh  = ( $size[1] - $sb) / 2;
       my $v1  = $bw + 1 + abs( $self->{value} - $self->{min}) *
-         ( $size[0] - 2 * $bw - 5) / abs($self->{max} - $self->{min});
+         ( $size[0] - 2 * $bw - 5) / (abs($self->{max} - $self->{min})||1);
       my $v2  = $bw + 1 + abs( $old - $self->{min}) *
-         ( $size[0] - 2 * $bw - 5) / abs($self->{max} - $self->{min});
+         ( $size[0] - 2 * $bw - 5) / (abs($self->{max} - $self->{min})||1);
       ( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
       $v1 -= DefButtonX / 2;
       $v2 += DefButtonX / 2 + 1;
@@ -1300,7 +1301,7 @@ sub offset2pt
 {
    my ( $self, $width, $height, $value, $radius) = @_;
    my $a = 225 * 3.14159 / 180 - ( 270 * 3.14159 / 180) * ( $value - $self->{min}) /
-           abs( $self->{min} - $self->{max});
+           (abs( $self->{min} - $self->{max})||1);
    return $width + $radius * cos($a), $height + $radius * sin($a);
 }
 
@@ -1308,7 +1309,7 @@ sub offset2data
 {
    my ( $self, $value) = @_;
    my $a = 225 * 3.14159 / 180 - ( 270 * 3.14159 / 180) * abs( $value - $self->{min})/
-           abs( $self->{min} - $self->{max});
+           (abs( $self->{min} - $self->{max})||1);
    return cos($a), sin($a);
 }
 
