@@ -52,7 +52,7 @@ stylus_alloc( PStylus data)
    Bool extPen = data-> extPen. actual;
    PDCStylus ret = hash_fetch( stylusMan, data, sizeof( Stylus) - ( extPen ? 0 : sizeof( EXTPEN)));
    if ( ret == nil) {
-      LOGPEN * p;
+      LOGPEN p;
       LOGBRUSH * b;
       LOGBRUSH   xbrush;
 
@@ -62,27 +62,27 @@ stylus_alloc( PStylus data)
       ret = malloc( sizeof( DCStylus));
       memcpy( &ret-> s, data, sizeof( Stylus));
       ret-> refcnt = 0;
-      p = &ret-> s. pen;
+      p = ret-> s. pen;
 
       if ( IS_WIN95 && extPen) {
          extPen = 0;
-         p-> lopnStyle = PS_SOLID;
+         p. lopnStyle = PS_SOLID;
       }
 
       if ( !extPen) {
-         if ( !( ret-> hpen = CreatePenIndirect( p))) {
+         if ( !( ret-> hpen = CreatePenIndirect( &p))) {
             apiErr;
             ret-> hpen = CreatePen( PS_SOLID, 0, 0);
          }
       } else {
-         int i, delta = p-> lopnWidth. x > 1 ? p-> lopnWidth. x - 1 : 0;
+         int i, delta = p. lopnWidth. x > 1 ? p. lopnWidth. x - 1 : 0;
          LOGBRUSH pb;
          pb. lbStyle = BS_SOLID;
          pb. lbColor = ret-> s. pen. lopnColor;
          pb. lbHatch = 0;
          for ( i = 1; i < ret-> s. extPen. patResource-> dotsCount; i += 2)
             ret-> s. extPen. patResource-> dotsPtr[ i] += delta;
-         if ( !( ret-> hpen   = ExtCreatePen( ret-> s. extPen. style, p-> lopnWidth. x, &pb,
+         if ( !( ret-> hpen   = ExtCreatePen( ret-> s. extPen. style, p. lopnWidth. x, &pb,
             ret-> s. extPen. patResource-> dotsCount,
             ret-> s. extPen. patResource-> dotsPtr
          ))) {
@@ -117,7 +117,7 @@ stylus_alloc( PStylus data)
          apiErr;
          ret-> hbrush = CreateSolidBrush( RGB( 255, 255, 255));
       }
-      hash_store( stylusMan, &ret-> s, sizeof( Stylus) - ( extPen ? 0 : sizeof( EXTPEN)), ret);
+      hash_store( stylusMan, &ret-> s, sizeof( Stylus) - ( data-> extPen. actual ? 0 : sizeof( EXTPEN)), ret);
    }
    ret-> refcnt++;
    return ret;
@@ -1255,8 +1255,10 @@ static int cachedCompatRC = 0;
 
 HDC dc_alloc()
 {
-   if ( cachedScreenRC++ == 0)
-      cachedScreenDC = GetDC( 0);
+   if ( cachedScreenRC++ == 0) {
+      if ( !( cachedScreenDC = GetDC( 0)))
+         apiErr;
+   }
    return cachedScreenDC;
 }
 
@@ -1270,8 +1272,10 @@ void dc_free()
 
 HDC dc_compat_alloc( HDC compatDC)
 {
-   if ( cachedCompatRC++ == 0)
-      cachedCompatDC = CreateCompatibleDC( compatDC);
+   if ( cachedCompatRC++ == 0) {
+      if ( !( cachedCompatDC = CreateCompatibleDC( compatDC)))
+         apiErr;
+   }
    return cachedCompatDC;
 }
 
@@ -1347,6 +1351,11 @@ hwnd_leave_paint( Handle self)
    SelectPalette( sys ps, sys stockPalette, 0);
    sys stockPen = sys stockBrush = sys stockFont = sys stockPalette = nilHandle;
    stylus_free( sys stylusResource, false);
+   if ( IS_WIN95) {
+      if ( sys linePatternLen2 > 3) free( sys linePattern2);
+      sys linePatternLen2 = 0;
+      sys linePattern2 = nil;
+   }
    if ( sys psd != nil) {
       var font           = sys psd-> font;
       sys lineWidth      = sys psd-> lineWidth;
@@ -1695,3 +1704,117 @@ region_create( Handle mask)
 
    return rgn;
 }
+
+
+Bool
+erratic_line( Handle self)
+{
+   return IS_WIN95 && sys stylus. pen. lopnWidth. x > 1 && sys linePatternLen2 > 1;
+}
+
+
+static __INLINE__ void
+get_line_end( int x1, int y1, int x2, int y2, int offset, int delta, int * x3, int * y3, int * x4, int * y4)
+{
+   if ( x1 == x2)  {
+      if ( y1 < y2) {
+         *y3 = y1 + offset;
+         *y4 = *y3 + delta;
+         if ( *y4 > y2) *y4 = y2;
+      } else {
+         *y3 = y1 - offset;
+         *y4 = *y3 - delta;
+         if ( *y4 < y2) *y4 = y2;
+      }
+      *x3 = *x4 = x1;
+   } else if ( y1 == y2)  {
+      if ( x1 < x2) {
+         *x3 = x1 + offset;
+         *x4 = *x3 + delta;
+         if ( *x4 > x2) *x4 = x2;
+      } else {
+         *x3 -= x1 - offset;
+         *x4 = *x3 - delta;
+         if ( *x4 < x2) *x4 = x2;
+      }
+      *y3 = *y4 = y1;
+   } else  {
+      int d;
+      long tan = ( y2 - y1) * 1000L / ( x2 - x1);
+      Bool directx = x2 > x1, directy = y2 > y1;
+      if ( tan < 1000 && tan > -1000) {
+         d = directx ? offset : -offset;
+         *x3 = x1 + d;
+         *y3 = (int)( y1 + d * tan / 1000L);
+         d = directx ? ( offset + delta) : ( - offset - delta);
+         *x4 = x1 + d;
+         *y4 = (int)( y1 + d * tan / 1000L);
+      } else {
+         d = directy ? offset : -offset;
+         *y3 = y1 + d;
+         *x3 = (int)( x1 + d * 1000L / tan);
+         d = directy ? ( offset + delta) : ( - offset - delta);
+         *y4 = y1 + d;
+         *x4 = (int)( x1 + d * 1000L / tan);
+      }
+      if ( directx  && ( *x4 > x2)) *x4 = x2;
+      if ( !directx && ( *x4 < x2)) *x4 = x2;
+      if ( directy  && ( *y4 > y2)) *y4 = y2;
+      if ( !directy && ( *y4 < y2)) *y4 = y2;
+   }
+}
+
+static int
+get_line_length( int x1, int y1, int x2, int y2)
+{
+   if ( x1 == x2) {
+      return ( y1 < y2) ? y2 - y1 : y1 - y2;
+   } else if ( y1 == y2) {
+      return ( x1 < x2) ? x2 - x1 : x1 - x2;
+   } else {
+      long tan = ( y2 - y1) * 1000L / ( x2 - x1);
+      if ( tan < 1000 && tan > -1000)
+         return ( x1 < x2) ? x2 - x1 : x1 - x2;
+      else
+         return ( y1 < y2) ? y2 - y1 : y1 - y2;
+
+   }
+}
+
+int
+gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
+{
+   int x3, y3, x4, y4;
+   int len = sys linePatternLen2, ptr = 0, offset = 0;
+   int llen = get_line_length( x1, y1, x2, y2);
+   int lw = sys stylus. pen. lopnWidth. x + 1;
+   char * lp = ( len > 3) ? sys linePattern2 : (char*) &sys linePattern2;
+   HDC ps = sys ps;
+   Bool draw = 1;
+
+   MoveToEx( ps, x1, y1, nil);
+
+   if ( GetBkMode( ps) != TRANSPARENT)
+      if ( !LineTo( ps, x2, sys lastSize. y - y2 - 1)) apiErr;
+
+   if ( drawState > 0) offset += drawState;
+
+   while ( offset < llen) {
+      int delta = lp[ ptr];
+      if ( !draw) delta += lw;
+      get_line_end( x1, y1, x2, y2, offset, delta - 1, &x3, &y3, &x4, &y4);
+      offset += delta;
+      if ( draw) {
+         MoveToEx( ps, x3, y3, nil);
+         LineTo( ps, x4, y4);
+      }
+      draw = !draw;
+      if ( ++ptr >= len) {
+         ptr = 0;
+         draw = 1;
+      }
+   }
+
+   return draw ? 0 : lp[ ptr];
+}
+

@@ -67,7 +67,9 @@ apc_gp_done( Handle self)
          }
       }
    }
-   if ( sys linePatternLen > 3) free( sys linePattern);
+   if ( sys linePatternLen  > 3) free( sys linePattern);
+
+   if ( IS_WIN95 && sys linePatternLen2 > 3) free( sys linePattern2);
    font_free( sys fontResource, false);
    if ( sys p256) free( sys p256);
    sys bm = sys pal = sys ps = sys bm = sys p256 = nilHandle;
@@ -76,7 +78,7 @@ apc_gp_done( Handle self)
    return true;
 }
 
-static __INLINE__ void
+void
 adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
 {
    if ( forth) {
@@ -125,6 +127,7 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
       }
    }
 }
+
 
 #define GRAD 57.29577951
 
@@ -221,7 +224,13 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
    if ( points[ 0]. x != points[ numPts - 1].x || points[ 0]. y != points[ numPts - 1].y)
       adjust_line_end( points[ numPts - 2].x, points[ numPts - 2].y, &points[ numPts - 1].x, &points[ numPts - 1].y, true);
    STYLUS_USE_PEN( sys ps);
-   if ( !Polyline( sys ps, ( POINT*) points, numPts)) apiErrRet;
+   if ( erratic_line( self)) {
+      int draw = 1;
+      for ( i = 0; i < numPts - 1; i++)
+         draw = gp_line( self, points[i].x, points[i].y, points[i+1].x, points[i+1].y, draw);
+   } else {
+      if ( !Polyline( sys ps, ( POINT*) points, numPts)) apiErrRet;
+   }
    return true;
 }}
 
@@ -238,7 +247,13 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
          adjust_line_end( points[ i - 1].x, points[ i - 1].y, &points[ i].x, &points[ i].y, true);
    }
    STYLUS_USE_PEN( sys ps);
-   if ( !( ok = PolyPolyline( sys ps, ( POINT*) points, pts, numPts/2))) apiErr;
+   if ( erratic_line( self)) {
+      for ( i = 0; i < numPts; i++)  {
+         if ( i & 1)
+            gp_line( self, points[ i - 1].x, points[ i - 1].y, points[ i].x, points[ i].y, 1);
+      }
+   } else
+      if ( !( ok = PolyPolyline( sys ps, ( POINT*) points, pts, numPts/2))) apiErr;
    free( pts);
    return ok;
 }}
@@ -479,14 +494,23 @@ apc_gp_get_handle( Handle self)
    return ( ApiHandle) sys ps;
 }
 
+
 Bool
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
    HDC ps = sys ps;
-   adjust_line_end( x1, y1, &x2, &y2, true);
+
    STYLUS_USE_PEN( ps);
-   MoveToEx( ps, x1, sys lastSize. y - y1 - 1, nil);
-   if ( !LineTo(   ps, x2, sys lastSize. y - y2 - 1)) apiErrRet;
+
+   adjust_line_end( x1, y1, &x2, &y2, true);
+   y1 = sys lastSize. y - y1 - 1;
+   y2 = sys lastSize. y - y2 - 1;
+   if ( erratic_line( self))
+      gp_line( self, x1, y1, x2, y2, 0);
+   else {
+      MoveToEx( ps, x1, y1, nil);
+      if ( !LineTo( ps, x2, y2)) apiErrRet;
+   }
    return true;
 }}
 
@@ -504,8 +528,19 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
    STYLUS_USE_PEN( ps);
    check_swap( x1, x2);
-   check_swap( y1, y2);
-   if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1))) apiErr;
+   if ( erratic_line( self)) {
+      int draw;
+      y1 = sys lastSize. y - y1 - 1;
+      y2 = sys lastSize. y - y2 - 1;
+      check_swap( y1, y2);
+      draw = gp_line( self, x1, y1, x2 + 1, y1, 0);
+      draw = gp_line( self, x2, y1, x2, y2 + 1, draw);
+      draw = gp_line( self, x1, y2, x2, y2, draw);
+      gp_line( self, x1, y1, x1, y2, draw);
+   } else {
+      check_swap( y1, y2);
+      if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1))) apiErr;
+   }
    SelectObject( ps, old);
    return ok;
 }}
@@ -596,6 +631,8 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    dobjCheck(image) false;
    db = dsys( image) options. aptDeviceBitmap || i-> options. optInDraw;
 
+   if ( xLen == 0 || yLen == 0) return false;
+
    // Determinig whether we have bitmap adapted for output or it's just bare bits
    if ( db) {
       if (
@@ -661,6 +698,21 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          : RGB( 0xff, 0xff, 0xff));
    }
 
+   // Winsloth 95 is morbid, but 98 is yet formidable!
+   if ( IS_WIN95) {
+      if ( xLen + xFrom > i-> w) {
+         xDestLen = xDestLen * ( i-> w - xFrom) / xLen;
+         xLen = i-> w - xFrom;
+      }
+      if ( yFrom < 0) {
+         y -= yFrom * yDestLen / yLen;
+         yDestLen += yFrom * yDestLen / yLen;
+         yLen  += yFrom;
+         yFrom = 0;
+      }
+   }
+
+
    // if image is actually icon, drawing and-mask
    if ( kind_of( deja, CIcon)) {
       XBITMAPINFO xbi = {
@@ -669,10 +721,13 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       };
       xbi. bmiHeader. biWidth = i-> w;
       xbi. bmiHeader. biHeight = i-> h;
-      StretchDIBits(
+      if ( StretchDIBits(
          xdc, x, ly - y - yDestLen, xDestLen, yDestLen, xFrom, yFrom, xLen, yLen,
          i-> mask, ( BITMAPINFO*) &xbi, DIB_RGB_COLORS, SRCAND
-      );
+         ) == GDI_ERROR) {
+         ok = false;
+         apiErr;
+      }
       theRop = SRCINVERT;
    } else {
       theRop = ctx_remap_def( rop, ctx_rop2R4, true, SRCCOPY);
@@ -714,10 +769,13 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    } else {
       XBITMAPINFO xbi;
       BITMAPINFO * bi = image_get_binfo( deja, &xbi);
-      if ( !( ok = StretchDIBits( xdc, x, ly - y - yDestLen, xDestLen, yDestLen,
+      if ( StretchDIBits( xdc, x, ly - y - yDestLen, xDestLen, yDestLen,
             xFrom, yFrom,
             xLen, yLen, ((PImage) deja)-> data, bi,
-            DIB_RGB_COLORS, theRop))) apiErr;
+            DIB_RGB_COLORS, theRop) == GDI_ERROR) {
+         ok = false;
+         apiErr;
+      }
    }
 
    // restoring gdiobjects back
@@ -1385,6 +1443,17 @@ apc_gp_set_line_pattern( Handle self, char * pattern, int len)
    } else {
       PStylus s           = &sys stylus;
       PEXTPEN ep          = &s-> extPen;
+
+      if ( IS_WIN95) {
+         if ( sys linePatternLen2 > 3)
+            free( sys linePattern2);
+         if ( len > 3)
+            memcpy( sys linePattern2 = malloc( len), pattern, len);
+         else
+            memcpy( &sys linePattern2, pattern, len);
+         sys linePatternLen2 = len;
+      }
+
       s-> pen. lopnStyle  = patres_user( pattern, len);
       if ( ep-> actual    = stylus_extpenned( s, 0 & exsLinePattern)) {
          ep-> style       = stylus_get_extpen_style( s);

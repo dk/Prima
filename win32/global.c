@@ -74,6 +74,14 @@ window_subsystem_init()
    HBITMAP hbm;
 
    guts. version  = GetVersion();
+   if ( IS_WIN95) {
+      OSVERSIONINFO os = { sizeof( OSVERSIONINFO)};
+      GetVersionEx( &os);
+      if ((os.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) &&
+         ((os.dwMajorVersion > 4) ||
+         ((os.dwMajorVersion == 4) && (os.dwMinorVersion > 0))))
+         guts. is98 = 1;
+   }
    guts. mainThreadId = GetCurrentThreadId();
    guts. errorMode = SetErrorMode( SEM_FAILCRITICALERRORS);
 

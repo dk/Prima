@@ -10,6 +10,7 @@
 #define IS_NT      (BOOL)( guts. version < 0x80000000)
 #define IS_WIN32S  (BOOL)(!(IS_NT) && (LOBYTE(LOWORD(guts. version))<4))
 #define IS_WIN95   (BOOL)(!(IS_NT) && !(IS_WIN32S))
+#define IS_WIN98   (BOOL)( guts. is98)
 
 #ifdef UNICODE
 #error This version of apc_Win32 does not support Unicode
@@ -157,6 +158,7 @@ typedef struct _WinGuts
     Point          smDblClk;           // cached SM_CxDOUBLECLK values
     HANDLE         objects[ MAXIMUM_WAIT_OBJECTS]; // handle objects dynamic list
     List           files;              // List of active File objects
+    Bool           is98;               // is win98
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
@@ -301,6 +303,8 @@ typedef struct _DrawableData
    int            lineEnd;
    char *         linePattern;
    int            linePatternLen;
+   char *         linePattern2;
+   int            linePatternLen2;
    FillPattern    fillPattern;
    FillPattern    fillPattern2;
    int            rop;
@@ -450,6 +454,7 @@ LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, 
 LRESULT CALLBACK    generic_view_handler     ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 
 extern Bool         add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeEntry);
+extern void         adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth);
 extern void         cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
 extern Bool         create_font_hash( void);
 extern Bool         cursor_update( Handle self);
@@ -460,6 +465,7 @@ extern void         dc_compat_free( void);
 extern void         dbm_recreate( Handle self);
 extern Bool         destroy_font_hash( void);
 extern char *       err_msg( DWORD errId);
+extern Bool         erratic_line( Handle self);
 extern PDCFont      font_alloc( Font * data, Point * resolution);
 extern void         font_change( Handle self, Font * font);
 extern void         font_clean( void);
@@ -470,6 +476,7 @@ extern void         font_pp2font( char * presParam, Font * font);
 extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
 extern Bool         get_font_from_hash( PFont font, int *vectored, Bool bySize);
 extern Point        get_window_borders( int borderStyle);
+extern int          gp_line( Handle self, int x1, int y1, int x2, int y2, int draw);
 extern Bool         hwnd_check_limits( int x, int y, Bool uint);
 extern void         hwnd_enter_paint( Handle self);
 extern Handle       hwnd_frame_top_level( Handle self);
