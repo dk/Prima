@@ -243,7 +243,7 @@ prima_map_color( Color clr, int * hint)
    if (( clr & clSysFlag) == 0) return clr;
    
    cls = (clr & wcMask) >> 16;
-   if ( cls <= 0 || cls > MAX_COLOR_CLASS) cls = wcWidget;
+   if ( cls <= 0 || cls > MAX_COLOR_CLASS) cls = (wcWidget) >> 16;
    if (( clr = ( clr & ~wcMask)) > clMaxSysColor) clr = clMaxSysColor;
    if ( clr == clSet)   {
       if ( hint) *hint = COLORHINT_WHITE;
