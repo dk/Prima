@@ -83,24 +83,38 @@ my %sides = (
   '5:10' => 8, '6:10' => 8, '7:10' => 8, '8:10' => 8, '9:10' => 8,
 );
 
-my $g = $w-> insert( 'Prima::GridViewer' => 
+package Periodic;
+use vars qw(@ISA);
+@ISA = qw(Prima::GridViewer);
+
+sub focusedCell
+{
+   return $_[0]-> SUPER::focusedCell unless $#_;
+   my ($self,$x,$y) = @_;
+   ($x, $y) = @$x if !defined $y && ref($x) eq 'ARRAY';
+   return unless $y >= 0 && $x >= 0 && $self-> {cells}-> [$y] && 
+      $self-> {cells}-> [$y]-> [$x] && length $self-> {cells}-> [$y]-> [$x];
+   $self-> SUPER::focusedCell( $x, $y);
+}
+
+my $g = $w-> insert( Periodic => 
    origin => [0,0],
    size   => [$w-> size],
    growMode => gm::Client,
    cells  => [
-      ['H',  '',   '',   '',   '',   '',   '',   '',   '',   '', 'He','','',''],
-      ['Li', 'Be', 'B',  'C',  'N',  'O',  'F',  '',   '',   '', 'Ne','','',''],
-      ['Na', 'Mg', 'Al', 'Si', 'P',  'S',  'Cl', '',   '',   '', 'Ar','','',''],
-      ['K',  'Ca', 'Sc', 'Ti', 'V',  'Cr', 'Mn', 'Fe', 'Co', 'Ni', '','','',''],
-      ['Cu',  'Zn', 'Ga', 'Ge', 'As',  'Se', 'Br', '', '', '', 'Kr','','',''],
-      ['Rb',  'Sr', 'Y', 'Zr', 'Nb',  'Mo', 'Tc', 'Ru', 'Rh', 'Pd', '','','',''],
-      ['Ag',  'Cd', 'In', 'Sn', 'Sb',  'Te', 'J', '', '', '', 'Xe','','',''],
-      ['Cs',  'Ba', 'La', 'Hf', 'Ta',  'W', 'Re', 'Os', 'Ir', 'Pt', '','','',''],
-      ['Au',  'Hg', 'Tl', 'Pb', 'Bi',  'Po', 'At', '', '', '', 'Rn','','',''],
-      ['Fr',  'Ra', 'Ac', 'Rf',  'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds','','','',''],
-      ['',  '', '', '', '',  '', '', '', '', '', '','','',''],
-      ['Ce',  'Pr', 'Nd', 'Pm', 'Sm', 'Eu',  'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb','Lu'],
-      ['Th',  'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No','Lr'],
+      ['H',  ('')x9,                    'He',   ('')x3],
+      [qw(Li Be B  C  N  O  F),  ('')x3,'Ne',   ('')x3],
+      [qw(Na Mg Al Si P  S  Cl), ('')x3,'Ar',   ('')x3],
+      [qw(K  Ca Sc Ti V  Cr Mn Fe Co Ni),       ('')x4],
+      [qw(Cu Zn Ga Ge As Se Br), ('')x3,'Kr',   ('')x3],
+      [qw(Rb Sr Y  Zr Nb Mo Tc Ru Rh Pd),       ('')x4],
+      [qw(Ag Cd In Sn Sb Te J),  ('')x3,'Xe',   ('')x3],
+      [qw(Cs Ba La Hf Ta W  Re Os Ir Pt),       ('')x4],
+      [qw(Au Hg Tl Pb Bi Po At), ('')x3,'Rn',   ('')x3],
+      [qw(Fr Ra Ac Rf Db Sg Bh Hs Mt Ds),       ('')x4],
+      [('') x 14],
+      [qw(Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu)],
+      [qw(Th Pa U  Np Pu Am Cm Bk Cf Es Fm Md No Lr)],
    ],
    drawHGrid => 0,
    drawVGrid => 0,
