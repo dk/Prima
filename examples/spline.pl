@@ -33,9 +33,9 @@ A spline demo
 
 =item FEATURES
 
-Demonstrates parabolic splines are graphic primitives.
-The points abount the filled shapes are spline vertexes,
-which are drawable by the mouse
+Demonstrates parabolic splines as graphic primitives.
+The points arount the filled shapes are spline vertexes,
+which are dragable by the mouse
 
 =cut
 
