@@ -726,10 +726,10 @@ XS( Component_get_components_FROMPERL)
       count = var-> components-> count;
       list  = var-> components-> items;
       EXTEND( sp, count);
-      for ( i = 0; i < count; i++)
+      for ( i = 0; i < count; i++) 
          PUSHs( sv_2mortal( newSVsv((( PAnyObject) list[ i])-> mate)));
-      PUTBACK;
    }
+   PUTBACK;
    return;
 }
 
