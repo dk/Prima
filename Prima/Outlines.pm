@@ -241,6 +241,7 @@ sub on_paint
       #$canvas-> color( $clr[ 1]);
       #$canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
       $canvas-> clipRect( @a);
+      $canvas-> color( $clr[1]);
       $canvas-> bar( 0, 0, @size);
    } else {
       $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor, $clr[1]);
@@ -277,7 +278,7 @@ sub on_paint
       fillPattern => fp::SimpleDots,
       color       => cl::White,
       backColor   => cl::Black,
-      rop         => rop::XorPut,
+      # rop         => rop::XorPut,
    );
 
 
@@ -409,7 +410,7 @@ sub on_paint
       fillPattern => fp::Solid,
       color       => $clr[0],
       backColor   => $clr[1],
-      rop         => rop::CopyPut,
+      # rop         => rop::CopyPut,
    );
 
 #
@@ -536,8 +537,8 @@ sub makehint
 
 #  if ( $w + $ofs <= $x) {
    if ( $w + $ofs <= $a[2]) {
-      $self-> makehint(0);
-      return;
+     $self-> makehint(0);
+     return;
    }
 
    $self->{unsuccessfullId} = undef;
