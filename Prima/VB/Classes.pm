@@ -2340,12 +2340,14 @@ sub open
                       growMode    => gm::Client,
                       onDrawItem => sub {
                          my ($self, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focusedItem) = @_;
-                         my $clrSave = $self-> color;
-                         my $backColor = $hilite ? $self-> hiliteBackColor : $self-> backColor;
-                         $canvas-> color( $backColor);
-                         $canvas-> bar( $left, $bottom, $right, $top);
-                         $canvas-> color( $clrSave);
+                         my $bc;
+                         if ( $hilite) {
+                            $bc = $self-> backColor;
+                            $self-> backColor( $self-> hiliteBackColor);
+                         }
+                         $canvas-> clear( $left, $bottom, $right, $top);
                          $canvas-> put_image( $left, $bottom, $images[$index]);
+                         $self-> backColor( $bc) if $hilite;
                       },
                       onClick => sub {
                           my $self = $_[0];

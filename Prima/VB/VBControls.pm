@@ -200,7 +200,6 @@ sub on_measureitem
 sub on_drawitem
 {
    my ( $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused) = @_;
-   my $clrSave = $canvas-> color;
    my $ena = $me->{check}->[$index];
    unless ( defined $me->{hBenchColor}) {
       $me->color( $me-> hiliteBackColor);
@@ -217,15 +216,22 @@ sub on_drawitem
       $me->{hBenchColor} = $b1 | ( $g1 << 8) | ( $r1 << 16);
       $me->{hBenchColor} = $i1 if $me->{hBenchColor} == $i2;
    }
-   my $backColor = $hilite ? ( $ena ? $me-> hiliteBackColor : $me-> {hBenchColor}) : $me-> backColor;
-   my $color = $hilite ? $me-> hiliteColor : $clrSave;
-   $canvas-> color( $backColor);
-   $canvas-> bar( $left, $bottom, $right, $top);
-   $canvas-> color( $ena ? $color : cl::Gray);
+   my ( $c, $bc);
+   if ( $hilite) {
+      $bc = $canvas-> backColor;
+      $canvas-> backColor( $ena ? $me-> hiliteBackColor : $me-> {hBenchColor});
+   }
+   if ( $hilite || !$ena) {
+      $c = $canvas-> color;
+      $canvas-> color( $ena ? $me-> hiliteColor : cl::Gray);
+   }
+
+   $canvas-> clear( $left, $bottom, $right, $top);
    my $text = $me->{id}->[$index];
    my $x = $left + 2;
    $canvas-> text_out( $text, $x, ($top + $bottom - $me->{fHeight}) / 2);
-   $canvas-> color( $clrSave);
+   $canvas-> backColor( $bc) if $hilite;
+   $canvas-> color( $c) if $hilite || !$ena
 }
 
 
