@@ -87,12 +87,15 @@ prepare_ximage( int width, int height, Bool bitmap)
       }
       i-> xmem. readOnly = false;
       if ( XShmAttach( DISP, &i->xmem) == 0) {
+         XCHECKPOINT;
          XDestroyImage( i-> image);
          shmdt( i-> xmem. shmaddr);
          shmctl( i-> xmem. shmid, IPC_RMID, 0);
          goto normal_way;
       }
+      XCHECKPOINT;
       XSync(DISP,false);
+      XCHECKPOINT;
       shmctl( i-> xmem. shmid, IPC_RMID, 0);
       i-> data_alias = i-> image-> data;
       i-> shm = true;
