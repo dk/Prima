@@ -362,6 +362,31 @@ apc_dbm_destroy( Handle self)
    sys pal = sys stockBM = sys ps = sys bm = nil;
 }
 
+/*
+static void
+bm_put_zs( HBITMAP hbm, int x, int y, int z)
+{
+   HDC dc = dc_alloc();
+   HDC xdc = CreateCompatibleDC( 0);
+   BITMAPINFO bm;
+   int cx, cy;
+
+
+   bm. bmiHeader. biBitCount = 0;
+   bm. bmiHeader. biSize = sizeof( BITMAPINFO);
+   SelectObject( xdc, hbm);
+   GetDIBits( xdc, hbm, 0, 0, NULL, &bm, DIB_PAL_COLORS);
+   cx = bm. bmiHeader. biWidth;
+   cy = bm. bmiHeader. biHeight;
+
+   StretchBlt( dc, x, y, z * cx, z * cy, xdc, 0, 0, cx, cy, SRCCOPY);
+
+   DeleteDC( xdc);
+   dc_free();
+}
+*/
+
+
 HICON
 image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 {
@@ -371,6 +396,8 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
    int   j, bpp = i-> type & imBPP;
    Bool  noSZ   = i-> w != size. x || i-> h != size. y;
    Bool  noBPP  = bpp != 1 && bpp != 4 && bpp != 8 && bpp != 24;
+   HDC dc;
+   XBITMAPINFO bi;
 
    ( Handle) i = i-> self-> dup( img);
    if ( noSZ || noBPP) {
@@ -383,9 +410,20 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
              (( bpp < 24) ? 8 : 24))
       );
    }
+
    for ( j = 0; j < i-> maskSize; j++) i-> mask[ j] = ~i-> mask[ j];
-   ii. hbmMask  = CreateBitmap( size. x, size. y, 1, 1, i-> mask);
-   ii. hbmColor = image_make_bitmap_handle(( Handle) i);
+
+   dc = dc_alloc();
+   image_get_binfo(( Handle)i, &bi);
+   if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+       i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+   bi. bmiHeader. biBitCount = 1;
+   bi. bmiColors[ 0]. rgbRed = bi. bmiColors[ 0]. rgbGreen = bi. bmiColors[ 0]. rgbBlue = 0;
+   bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
+
+   if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+       i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+   dc_free();
    if ( !( r = CreateIconIndirect( &ii))) apiErr;
 
    DeleteObject( ii. hbmColor);
