@@ -37,8 +37,6 @@
 #    InternalDockerShuttle 
 #      LinearDockerShuttle 
 #      SingleLinearWidgetDocker 
-#
-# provides basic interface and basic widgets for dockable widgets
 
 package Prima::Docks;
 
@@ -46,28 +44,7 @@ use Prima;
 use strict;
 use Tie::RefHash;
 
-# This is the interface to a dock widget where other widgets can be set in.
-# The followings subs provide minimal necessary interface for negotiating between
-# two parties.
-
 package Prima::AbstractDocker::Interface;
-
-# ::open_session:
-# Opens a docking session. When a client wants to dock, it could easily trash down
-# the server with its ::mouse_move's, if one would be called on an every event docking 
-# request. The 'sessions' are used to calculate as much as possible once, to make
-# ::query call lighter. Default behaviour caches all children docks, and provides
-# queue-like invocation on ::next_docker. The ::query call returns either a docking
-# position ( should be implemented in descendants) or a child dock. In latter case
-# ::query and ::next_docker work like findfirst/findnext sequence. The ::query call
-# implemented here resets the children dock queue pointer to the start.
-# 
-# profile format:
-#   self  => InternalDockerShuttle descendant
-#   sizes => [[x,y], [x,y], [x,y], ...] set of shapes that a docking window can shift to
-#   position => [ x, y], the wanted position ( in widget's coordinates)
-#   sizeable => [ bool, bool], if none of shapes accepted, whether docking window can resize itself
-#   sizeMin  => [ x, y], the minimal size that a docking window can accept ( used only if sizeable)
 
 sub open_session
 {
@@ -84,8 +61,6 @@ sub open_session
    };
 }
 
-
-# more-less debugging-state function
 sub check_session
 {
    my $p = $_[1];
@@ -110,11 +85,6 @@ sub check_session
    return 1;
 }   
 
-# this sub returns either rectangle, where widget can be set, or the another dock manager.
-# @rect may be empty, then ::query finds first appropriate answer.
-# Once a client finds the ::query' answer suitable, it changes its owner to $self,
-# changes it's origin and size correspondingly to the ::query response, and then
-# calls ->dock.
 sub query
 {
    my ( $self, $session_id, @rect) = @_;
@@ -123,9 +93,6 @@ sub query
    $session_id->{SUBMGR_ID} = 0;
    return $session_id-> {SUBMGR}-> [0]; 
 }
-
-# once ::query returned the dock manager, it's possible to enumerate all of
-# the dock managers that $self can offer.
 
 sub next_docker
 {
@@ -141,7 +108,6 @@ sub next_docker
    undef;
 }   
 
-# close_session must be called as soon as the session is over.
 sub close_session
 {
 #  my ( $self, $session_id) = @_;   
@@ -149,10 +115,6 @@ sub close_session
 }   
 
 
-# these two subs must not be called directly, but only to a client
-# response on being docked or undocked.
-# $self usually reshapes itself or rearranges it's docklings within
-# these subs.
 sub undock
 {
    my ( $self, $who) = @_;
@@ -233,10 +195,6 @@ sub rearrange
    $self-> redock_widget($_) for @r;
 }
 
-# result of the ::fingerprint doesn't serve any particular reason, however
-# in the InternalDockerShuttle implementation it's value AND'ed with client's
-# fingerprint value, thus rejecting non-suitable docks in early stage.
-
 sub fingerprint {
    return exists($_[0]->{fingerprint})?$_[0]->{fingerprint}:0xFFFF unless $#_;
    $_[0]->{fingerprint} = $_[1];
@@ -262,7 +220,6 @@ sub dockup
    $_[1]-> add_subdocker( $_[0]) if $_[1];
 }   
 
-# very simple dock, accepts everything that fits in; allows tiling
 package Prima::SimpleWidgetDocker;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::AbstractDocker::Interface);
@@ -337,7 +294,6 @@ package Prima::ClientWidgetDocker;
 use vars qw(@ISA);
 @ISA = qw(Prima::SimpleWidgetDocker);
 
-
 sub open_session
 {
    my ( $self, $profile) = @_;
@@ -407,10 +363,6 @@ use constant MinorMore        => ForwardMinorMore | BackMinorMore;
 # masks
 use constant Forward          => 0x0F0F;
 use constant Back             => 0xF0F0;
-
-# Implementation of the dock useful for toolbars etc.
-# Doesn't allow tiling, and is smart enough to reshape itself and
-# to rearrange it's docklings if necessary. 
 
 package Prima::LinearWidgetDocker;
 use vars qw(@ISA);
@@ -528,6 +480,7 @@ sub read_growable
    my $gMaxL = ( $g & grow::MajorLess) || ($g & ($xid ? grow::Left  : grow::Down));
    my $gMinG = ( $g & grow::MinorMore) || ($g & ($xid ? grow::Up    : grow::Right));
    my $gMinL = ( $g & grow::MinorLess) || ($g & ($xid ? grow::Down  : grow::Left));
+   
    return ( $gMaxG, $gMaxL, $gMinG, $gMinL);
 }
 
@@ -904,8 +857,40 @@ sub on_dockerror
    $self-> redock_widget( $urchin);
 }   
 
-# implementation of a MFC-like docking window, where the four sides
-# of a window are 'rubber' docking areas.
+package Prima::SingleLinearWidgetDocker;
+use vars qw(@ISA);
+@ISA = qw(Prima::LinearWidgetDocker);
+
+sub profile_default
+{
+   my $def = $_[0]-> SUPER::profile_default;
+   my %prf = (
+      growMode    => gm::Client,
+      hasPocket   => 0,
+      growable    => grow::MajorMore,
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}   
+
+sub open_session
+{
+   my ( $self, $profile) = @_; 
+   my $res = $self-> SUPER::open_session( $profile);
+   return unless $res;
+# keep only one row of docklings
+   my %hmap = %{$res->{hmap}};
+   my @k    = keys %hmap;
+   for ( @k) {
+      delete $hmap{$_} if $_ != 0;
+   }  
+   $res->{noDownSide} = 1;
+   return $res if scalar(keys %hmap) == scalar(@k);
+   $res->{hmap} = \%hmap;
+   $res->{rows} = scalar keys %hmap;
+   $res->{vmap} = [sort { $a <=> $b } keys %hmap];
+   return $res;    
+} 
 
 package Prima::FourPartDocker;
 use vars qw(@ISA);
@@ -946,7 +931,7 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    for ( qw( Left Right Top Bottom)) {
       my $x = "dockerDelegations$_"; 
-      # append user-specified delegations - it may not be known beforehead
+      # append user-specified delegations - it may not be known beforehand
       # which delegations we are using internally
       next unless exists $p->{$x};
       splice( @{$p->{$x}}, scalar(@{$p->{$x}}), 0, @{$default->{$x}});
@@ -1078,208 +1063,6 @@ sub BottomDocker_Size
    $self-> repaint;
 }   
 
-
-# Shuttles ( the clients)
-# This object servers as a 'shuttle' for a docking object while it's not docked.
-# It's very simple implementation, and more useful one could be found in MDI.pm
-# - see Prima::MDIExternalDockerShuttle.
-#
-# The interface for successful substitution must contain properties 
-# ::shuttle and ::client and subs client2frame and frame2client.
-
-package Prima::ExternalDockerShuttle;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget);
-
-sub profile_default
-{
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my $fh = int($def->{font}->{height} / 1.5);
-   my %prf = (
-      font           => { height => $fh, width => 0, },
-      titleHeight    => $fh + 4,
-      clipOwner      => 0,
-      shuttle        => undef,
-      widgetClass    => wc::Window,
-   );
-   @$def{keys %prf} = values %prf;
-   return $def;   
-}   
-
-
-sub init
-{
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   $self->$_($profile{$_}) for qw(shuttle titleHeight);
-   $self->{client} = $self-> insert( Widget => 
-      rect => [ $self-> get_client_rect],
-      growMode => gm::Client,
-   );
-   return %profile;
-}   
-
-sub shuttle
-{
-   return $_[0]-> {shuttle} unless $#_;
-   $_[0]-> {shuttle} = $_[1];
-}   
-
-sub titleHeight
-{
-   return $_[0]-> {titleHeight} unless $#_;
-   $_[0]-> {titleHeight} = $_[1];
-   $_[0]-> repaint;
-}   
-
-sub client
-{
-   return $_[0]-> {client} unless $#_;
-   my ( $self, $c) = @_;
-   $c-> owner( $self);
-   $c-> clipOwner(1);
-   $c-> growMode( gm::Client);
-   $c-> rect( $self-> get_client_rect);
-   if ( $self-> {client}) {
-      my $d = $self-> {client};
-      $self-> {client} = $c;   
-      $d-> destroy;
-   } else {
-      $self-> {client} = $c;
-   }   
-}   
-
-sub get_client_rect
-{
-   my ( $self, $x, $y) = @_;
-   ( $x, $y) = $self-> size unless defined $x;
-   my $bw = 1;
-   my @r = ( $bw, $bw, $x - $bw, $y - $bw);
-   $r[3] -= $self->{titleHeight} + 1;
-   $r[3] = $r[1] if $r[3] < $r[1];
-   return @r;
-}
-
-sub client2frame
-{
-   my ( $self, $x1, $y1, $x2, $y2) = @_;
-   my $bw = 1;
-   my @r = ( $x1 - $bw, $y1 - $bw, $x2 + $bw, $y2 + $bw);
-   $r[3] += $self->{titleHeight} + 1;
-   return @r;
-}
-
-sub frame2client
-{
-   my ( $self, $x1, $y1, $x2, $y2) = @_;
-   my $bw = 1;
-   my @r = ( $x1 + $bw, $y1 + $bw, $x2 - $bw, $y2 - $bw);
-   $r[3] -= $self->{titleHeight} + 1;
-   $r[3] = $r[1] if $r[3] < $r[1];
-   return @r;
-}
-
-sub on_paint
-{
-   my ( $self, $canvas) = @_;
-   my @sz = $self-> size;
-   my $th = $self-> {titleHeight};
-   my @rc = ($self-> light3DColor, $self-> dark3DColor);
-   $canvas-> rect3d( 0, 0, $sz[0]-1, $sz[1]-1, 1, @rc);
-   $canvas-> clear( 1, 1, $sz[0] - 2, $sz[1] - $th - 3);
-   my ( $x, $y) = ( $th / 2 - 1, );
-   my $i = Prima::StdBitmap::image( $self-> {pressState} ? sbmp::ClosePressed : sbmp::Close);
-   $canvas-> stretch_image( 1, $sz[1] - $th - 2, $th+1, $th+1, $i);
-   $canvas-> backColor( $self-> hiliteBackColor);
-   $canvas-> color( $self-> hiliteColor);
-   $canvas-> clear( $th + 2, $sz[1] - $th - 2, $sz[0] - 2, $sz[1] - 2);
-   $canvas-> clipRect( 1, 1, $sz[0] - 2, $sz[1] - 2);
-   my $tx = $self-> text;
-   my $w  = $sz[0] - $th - 8;
-   if ( $canvas-> get_text_width( $tx) > $w) {
-      $w -= $canvas-> get_text_width( '...');
-      $tx = $canvas-> text_wrap( $tx, $w, 0)->[0].'...';
-   }
-   $canvas-> text_out( $tx, $th + 6, ( $th - $canvas-> font-> height) / 2 + $sz[1] - $th - 2);
-}   
-
-sub on_mousedown
-{
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   return if $btn != mb::Left;
-   return if $self-> {mouseTransaction};
-   $self-> clear_event;
-   my @sz = $self-> size;
-   my $th = $self-> {titleHeight};
-   return if $x < 2 || $x > $sz[0] - 2 || $y > $sz[1] - 2 || $y < $sz[1] - 2 - $th;
-   if ( $x < $th + 2) {
-      $self-> {pressState} = 1;
-      $self-> {mouseTransaction} = 1;
-      $self-> capture(1);
-      $self-> invalidate_rect( 1, $sz[1] - 2 - $th, $th + 3, $sz[1] - 1);
-   } else {
-      my $s = $self-> shuttle;
-      if ( $s-> client) {
-         $s-> rect( $s-> client2frame( $s-> client-> rect));
-      } else {
-         $s-> rect( $self-> frame2client( $self-> rect));
-      }
-      $self-> bring_to_front;
-      $self-> update_view;
-      $s-> drag( 1, [ $self-> rect], $s-> screen_to_client( $self-> client_to_screen($x, $y)));
-   }   
-}   
-
-sub on_mousemove
-{
-   my ( $self, $mod, $x, $y) = @_;
-   return unless $self-> {mouseTransaction};
-   $self-> clear_event; 
-   my @sz = $self-> size;
-   my $th = $self-> {titleHeight};
-   my $ps = ( $x < 2 || $x > $th + 2 || $y > $sz[1] - 2 || $y < $sz[1] - 2 - $th) ? 0 : 1;
-   return if $ps == $self-> {pressState};
-   $self-> {pressState} = $ps;
-   $self-> invalidate_rect( 1, $sz[1] - 2 - $th, $th + 3, $sz[1] - 1);
-}   
-
-sub on_mouseclick
-{
-   my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
-   my @sz = $self-> size;
-   my $th = $self-> {titleHeight};
-   return if $x < 2 || $x > $sz[0] - 2 || $y > $sz[1] - 2 || $y < $sz[1] - 2 - $th; 
-   return unless $dbl;
-   $self-> clear_event;
-   if ( $x < $th + 2) {
-      $self-> notify(q(MouseDown), $btn, $mod, $x, $y);
-   } else {
-      $self-> shuttle-> dock_back; 
-   }   
-}   
-
-sub on_mouseup
-{
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   return if $btn != mb::Left;
-   return unless $self-> {mouseTransaction};
-   $self-> clear_event;
-   $self-> {pressState} = 0;
-   my @sz = $self-> size;
-   my $th = $self-> {titleHeight};
-   delete $self-> {mouseTransaction};
-   $self-> invalidate_rect( 1, $sz[1] - 2 - $th, $th + 3, $sz[1] - 1);
-   $self-> capture(0);
-   return if $x < 2 || $x > $th + 2 || $y > $sz[1] - 2 || $y < $sz[1] - 2 - $th;
-   $self-> close;
-}   
-
-# This shuttle hosts widgets while it's docked to an AbstractDocker::Interface 
-# descendant. It communicates with different dock widgets, and provides the UI for dragging itself
-# with respect of the suggested positions. Although the code piece is quite large, it's just
-# an implementation of a 'widget that can dock' idea, because all the API is already provided by
-# AbstractDocker::Interface.
-
 package Prima::InternalDockerShuttle;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
@@ -1302,14 +1085,16 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      externalDockerClass => 'Prima::ExternalDockerShuttle',
-      dockingRoot         => undef,
-      dock                => undef,
-      snapDistance        => 10, # undef for none
-      indents             => [ 5, 5, 5, 5],
-      x_sizeable          => 0,
-      y_sizeable          => 0,
-      fingerprint         => 0x0000FFFF,
+      externalDockerClass     => 'Prima::ExternalDockerShuttle',
+      externalDockerModule    => 'Prima::MDI',
+      externalDockerProfile   => {},
+      dockingRoot             => undef,
+      dock                    => undef,
+      snapDistance            => 10, # undef for none
+      indents                 => [ 5, 5, 5, 5],
+      x_sizeable              => 0,
+      y_sizeable              => 0,
+      fingerprint             => 0x0000FFFF,
    );
    @$def{keys %prf} = values %prf;
    return $def;   
@@ -1320,7 +1105,7 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init( @_);
    $self-> $_( $profile{$_}) for ( qw( indents x_sizeable y_sizeable
-      externalDockerClass fingerprint
+      externalDockerClass externalDockerModule externalDockerProfile fingerprint
       dockingRoot snapDistance));
    $self-> {__dock__} = $profile{dock};
    return %profile;
@@ -1355,6 +1140,16 @@ sub snapDistance {
 sub externalDockerClass { 
    return $_[0]->{externalDockerClass} unless $#_;
    $_[0]->{externalDockerClass} = $_[1];
+}
+
+sub externalDockerModule { 
+   return $_[0]->{externalDockerModule} unless $#_;
+   $_[0]->{externalDockerModule} = $_[1];
+}
+
+sub externalDockerProfile { 
+   return $_[0]->{externalDockerProfile} unless $#_;
+   $_[0]->{externalDockerProfile} = $_[1];
 }
 
 sub dockingRoot {
@@ -1555,7 +1350,6 @@ sub on_getcaps
    $prf-> {sizeMin}  = [ $self-> {indents}->[2] + $self-> {indents}->[0], $self-> {indents}->[3] + $self-> {indents}-> [1]]; 
 }   
 
-# returns ( docker, rectangle)
 sub find_docking
 {
    my ( $self, $dm, $pos) = @_;
@@ -1681,7 +1475,7 @@ AGAIN:
 
       unless ( $stage) {
          $self-> {dock}-> undock( $self) if $self-> {dock};
-   # during the undock $dm may change it's position ( and/or size), so retrying
+   # during the undock $dm may change its position ( and/or size), so retrying
          my @s2rc = $dm-> rect;
          if ( grep { $s1rc[$_] != $s2rc[$_] } (0..3)) {
             $stage = 1;
@@ -1719,7 +1513,12 @@ AGAIN:
       return if $self-> {externalDocker};  
       my $c = $self-> client;
       my $s = $c || $self;
+      if ( defined $self-> {externalDockerModule}) {
+         eval "use $self->{externalDockerModule};";
+         die $@ if $@;
+      }
       my $ed = $self->{externalDockerClass}-> create( 
+         %{$self->{externalDockerProfile}},
          visible => 0,
          shuttle => $self,
          owner   => $::application,
@@ -1787,9 +1586,84 @@ sub text
    $_[0]-> {externalDocker}-> text($_[1]) if $_[0]-> {externalDocker};
 }   
 
+package Prima::ExternalDockerShuttle;
+use vars qw(@ISA);
+@ISA = qw(Prima::MDI);
 
-# the client that is useful for the oriented toolbars. 
-# draws a tiny header along the major axis
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my $fh = int($def->{font}->{height} / 1.5);
+   my %prf = (
+      titleHeight    => $fh + 4,
+      borderIcons    => bi::TitleBar | ( bi::TitleBar << 1 ),
+      clipOwner      => 0,
+      shuttle        => undef,
+      borderStyle    => bs::Dialog,
+   );
+   @$def{keys %prf} = values %prf;
+   $def->{font}->{height} = $fh;
+   $def->{font}->{width}  = 0;
+   return $def;   
+}   
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+   $self->$_($profile{$_}) for qw(shuttle);
+   return %profile;
+}   
+
+sub shuttle
+{
+   return $_[0]-> {shuttle} unless $#_;
+   $_[0]-> {shuttle} = $_[1];
+}   
+
+sub on_mousedown
+{
+   my ( $self, $btn, $mod, $x, $y) = @_;
+   if (q(caption) ne $self-> xy2part( $x, $y)) {
+      $self-> SUPER::on_mousedown( $btn, $mod, $x, $y);
+      return;
+   }   
+   $self-> clear_event;
+   return if $self-> {mouseTransaction};
+   $self-> bring_to_front;
+   $self-> select;
+   return if $btn != mb::Left;
+   my $s = $self-> shuttle;
+   if ( $s-> client) {
+      $s-> rect( $s-> client2frame( $s-> client-> rect));
+   } else {
+      $s-> rect( $self-> frame2client( $self-> rect));
+   }   
+   $s-> drag( 1, [ $self-> rect], $s-> screen_to_client( $self-> client_to_screen($x, $y)));
+   $self-> clear_event;
+}   
+
+sub on_mouseclick
+{
+   my ( $self, $btn, $mod, $x, $y, $dbl) = @_; 
+   if (!$dbl || (q(caption) ne $self-> xy2part( $x, $y))) {
+      $self-> SUPER::on_mouseclick( $btn, $mod, $x, $y, $dbl); 
+      return;
+   }   
+   $self-> clear_event;
+   $self-> shuttle-> dock_back;
+}   
+
+sub windowState
+{
+   return $_[0]->{windowState} unless $#_;
+   my ( $self, $ws) = @_;
+   if ( $ws == ws::Maximized) {
+      $self-> shuttle-> dock_back;
+   } else {
+      $self-> SUPER::windowState( $ws);
+   }   
+}
 
 package Prima::LinearDockerShuttle;
 use vars qw(@ISA);
@@ -1877,43 +1751,803 @@ sub on_paint
         $canvas-> rect3d( $i, $sz[1] - 3 - $j, $sz[0] - $i - 1, $sz[1] - 1 - $j, 1, @rc) :
         $canvas-> rect3d( $j, $i, $j+2, $sz[1] - $i - 1, 1, @rc); 
    }   
-}  
+}
 
-# allows only one row of docklings; useful for button bars
+1;
 
-package Prima::SingleLinearWidgetDocker;
-use vars qw(@ISA);
-@ISA = qw(Prima::LinearWidgetDocker);
+__DATA__
 
-sub profile_default
-{
-   my $def = $_[0]-> SUPER::profile_default;
-   my %prf = (
-      growMode    => gm::Client,
-      hasPocket   => 0,
-      growable    => grow::ForwardMajorMore,
-   );
-   @$def{keys %prf} = values %prf;
-   return $def;
-}   
+=pod
 
+=head1 NAME
 
-sub open_session
-{
-   my ( $self, $profile) = @_; 
-   my $res = $self-> SUPER::open_session( $profile);
-   return unless $res;
-# keep only one row of docklings
-   my %hmap = %{$res->{hmap}};
-   my @k    = keys %hmap;
-   for ( @k) {
-      delete $hmap{$_} if $_ != 0;
-   }  
-   $res->{noDownSide} = 1;
-   return $res if scalar(keys %hmap) == scalar(@k);
-   $res->{hmap} = \%hmap;
-   $res->{rows} = scalar keys %hmap;
-   $res->{vmap} = [sort { $a <=> $b } keys %hmap];
-   return $res;    
-} 
+Prima::Docks - dockable widgets
 
+=head1 DESCRIPTION
+
+The module contains a set of classes and an implementation of dockable widgets
+interface. The interface assumes two parties, the dockable widget
+and the dock widget; the generic methods for the dock widget class are contained in
+C<Prima::AbstractDocker::Interface> package.
+
+=head1 USAGE
+
+A dockable widget is required to take particular steps before 
+it can dock to a dock widget. It needs to talk to the dock and
+find out if it is allowed to land, or if the dock contains lower-level dock widgets
+that might suit better for docking. If there's more than one dock
+widget in the program, the dockable widget can select between the targets; this is 
+especially actual when a dockable widget is dragged by mouse and
+the arbitration is performed on geometrical distance basis.
+
+The interface implies that there exists at least one tree-like hierarchy of dock widgets,
+linked up to a root dock widget. The hierarchy is not required to follow
+parent-child relationships, although this is the default behavior.
+All dockable widgets are expected to know explicitly what hierarchy tree they
+wish to dock to. C<Prima::InternalDockerShuttle> introduces C<dockingRoot> property
+for this purpose.
+
+The conversation between parties starts when a dockable widget
+calls C<open_session> method of the dock. The dockable widget passess
+set of parameters signalling if the widget is ready to change its size
+in case the dock widget requires so, and how. C<open_session> method can either refuse
+or accept the widget.
+In case of the positive answer from C<open_session>, the dockable widget
+calls C<query> method, which either returns a new rectangle, or another dock widget.
+In the latter case, the caller can enumerate all available dock widgets by
+repetitive calls to C<next_docker> method. The session is closed by C<close_session>
+call; after that, the widget is allowed to dock by setting its C<owner>
+to the dock widget, the C<rect> property to the negotiated position and size, and 
+calling C<dock> method.
+
+C<open_session>/C<close_session> brackets are used to cache all necessary 
+calculations once, making C<query> call as light as possible. This design allows
+a dockable widget, when dragged, repeatedly ask all reachable docks in an 
+optimized way. The docking sessions are kept open until the drag 
+session is finished.
+
+The conversation can be schematized in the following code:
+
+   my $dock = $self-> dockingRoot;
+   my $session_id = $dock-> open_session({ self => $self });
+   return unless $session_id;
+   my @result = $dock-> query( $session_id, $self-> rect );
+   if ( 4 == scalar @result) {       # new rectangle is returned
+       if ( ..... is new rectangle acceptable ? ... ) {
+           $dock-> close_session( $session_id);
+           $dock-> dock( $self);
+           return;
+       }
+   } elsif ( 1 == scalar @result) {  # another dock returned
+      my $next = $result[0];
+      while ( $next) {
+          if ( ... is new docker acceptable? ....) {
+             $dock-> close_session( $session_id);
+             $next-> dock( $self);
+             return;
+          }
+          $next = $dock-> next_docker( $session_id, $self-> origin );
+      }
+   }
+   $dock-> close_session( $session_id);
+
+Since even the simplified code is quite cumbersome, direct calls to
+C<open_session> are rare. Instead, C<Prima::InternalDockerShuttle>
+implements C<find_docking> method which performs the arbitration automatically
+and returns the appropriate dock widget. 
+
+C<Prima::InternalDockerShuttle> is a class that implements dockable
+widget functionality. It also employs a top-level window-like wrapper widget
+for the dockable widget when it is not docked. 
+By default, C<Prima::ExternalDockerShuttle> is used as the wrapper widget class.
+
+It it not required, however, to use neither C<Prima::InternalDockerShuttle>
+nor C<Prima::AbstractDocker::Interface> to implement a dockable widget;
+the only requirements to one is to respect C<open_session>/C<close_session>
+protocol.
+
+C<Prima::InternalDockerShuttle> initiates a class hierarchy of dockable widgets.
+Its descendants are C<Prima::LinearWidgetDocker> and, in turn, C<Prima::SingleLinearWidgetDocker>.
+C<Prima::SimpleWidgetDocker> and C<Prima::LinearWidgetDocker>, derived from 
+C<Prima::AbstractDocker::Interface>, begin hierarchy of dock widgets.
+The full hierarchy is as follows:
+
+    Prima::AbstractDocker::Interface
+      Prima::SimpleWidgetDocker
+      Prima::ClientWidgetDocker
+      Prima::LinearWidgetDocker 
+      Prima::FourPartDocker
+
+    Prima::InternalDockerShuttle 
+      Prima::LinearDockerShuttle 
+      Prima::SingleLinearWidgetDocker 
+      
+    Prima::ExternalDockerShuttle
+
+All docker widget classes are derived from C<Prima::AbstractDocker::Interface>.
+Depending on the specialization, they employ more or less sophisticated schemes
+for arranging dockable widgets inside. The most complicated scheme is implemented
+in C<Prima::LinearWidgetDocker>; it does not allow children overlapping and is
+able to rearrange with children and resize itself when a widget is docked or undocked.
+
+The package provides only basic functionality. Module C<Prima::DockManager>
+provides common dockable controls, - toolbars, panels, speed buttons etc.
+based on C<Prima::Docks> module. See L<Prima::DockManager>.
+
+=head1 Prima::AbstractDocker::Interface
+
+Implements generic functionality of a docket widget. The class is
+not derived from C<Prima::Widget>; is used as a secondary ascendant class
+for dock widget classes.
+
+=head2 Properties
+
+Since the class is not C<Prima::Object> descendant, it provides
+only run-time implementation of its properties. It is up to the
+descendant object whether the properties are recognized on the creation stage
+or not.
+
+=over
+
+=item fingerprint INTEGER
+
+A custom bit mask, to be used by docking widgets to reject inappropriate
+dock widgets on early stage. The C<fingerprint> property is not part
+of the protocol, and is not required to be present in a dockable widget implementation.
+
+Default value: C<0x0000FFFF> 
+
+=item dockup DOCK_WIDGET
+
+Selects the upper link in dock widgets hierarchy tree. The upper
+link is required to be a dock widget, but is not required to be
+a direct or an indirect parent. In this case, however, the maintenance
+of the link must be implemented separately, for example:
+
+    $self-> dockup( $upper_dock_not_parent );
+    
+    $upper_dock_not_parent-> add_notification( 'Destroy', sub {
+       return unless $_[0] == $self-> dockup;
+       undef $self-> {dockup_event_id};
+       $self-> dockup( undef );
+    }, $self);
+
+    $self-> {destroy_id} = $self-> add_notification( 'Destroy', sub { 
+       $self-> dockup( undef );
+    } unless $self-> {destroy_id};
+
+=back
+
+=head2 Methods
+
+=over
+
+=item add_subdocker SUBDOCK
+
+Appends SUBDOCK to the list of lower-level docker widgets. The items of the list are
+returned by C<next_docker> method.
+
+=item check_session SESSION
+
+Debugging procedure; checks SESSION hash, warns if its members are
+invalid or incomplete. Returns 1 if no fatal errors were encountered;
+0 otherwise.
+
+=item close_session SESSION
+
+Closes docking SESSION and frees the associated resources.
+
+=item dock WIDGET
+
+Called after WIDGET is succesfully finished negotiation with
+the dock widget and changed its C<owner> property. The method
+adapts the dock widget layout and lists WIDGET into list of
+docked widgets. The method does not change C<owner> property of WIDGET.
+
+The method must not be called directly.
+
+=item dock_bunch @WIDGETS
+
+Effectively docks set of WIDGETS by updating internal structures
+and calling C<rearrange>.
+
+=item docklings
+
+Returns array of docked widgets.
+
+=item next_docker SESSION, [ X, Y ] 
+
+Enumerates lower-level docker widgets within SESSION; returns 
+one docker widget at a time. After the last widget returns
+C<undef>.
+
+The enumeration pointer is reset by C<query> call.
+
+X and Y are coordinates of the point of interest.
+
+=item open_session PROFILE
+
+Opens docking session with parameters stored in PROFILE
+and returns session ID scalar in case of success, or C<undef> otherwise.
+The following keys must be set in PROFILE:
+
+=over
+
+=item position ARRAY
+
+Contains two integer coordinates of the desired position of 
+a widget in (X,Y) format in screen coordinate system.
+
+=item self WIDGET
+
+Widget that is about to dock.
+
+=item sizeable ARRAY
+
+Contains two boolean flags, representing if the widget can be resized
+to an arbitrary size, horizontally and vertically. The arbitrary resize
+option used as last resort if C<sizes> key does not contain the desired
+size.
+
+=item sizeMin ARRAY
+
+Two integers; minimal size that the widget can accept.
+
+=item sizes ARRAY
+
+Contains arrays of points in (X,Y) format; each point represents an
+acceptable size of the widget. If C<sizeable> flags are set to 0,
+and none of C<sizes> can be accepted by the dock widget, C<open_session>
+fails.
+
+=back
+
+=item query SESSION [ X1, Y1, X2, Y2 ]
+
+Checks if a dockable widget can be landed into the dock. 
+If it can, returns a rectangle that the widget must be set to.
+If coordinates ( X1 .. Y2 ) are specified, returns the 
+rectangle closest to these. If C<sizes> or C<sizeable>
+keys of C<open_session> profile were set, the returned size 
+might be different from the current docking widget size.
+
+Once the caller finds the result appropriate, it is allowed to change
+its owner to the dock; after that, it must change its origin and size correspondingly 
+to the result, and then call C<dock>. 
+
+If the dock cannot accept the widget, but contains lower-lever
+dock widgets, returns the first lower-lever widget. The caller
+can use subsequent calls to C<next_docker> to enumerate all
+lower-level dock widgets. A call to C<query> 
+resets the internal enumeration pointer.
+
+If the widget cannot be landed, an empty array is returned.
+
+=item rearrange
+
+Effectively re-docks all the docked widgets. The effect is
+as same as of 
+
+   $self-> redock_widget($_) for $self-> docklings;
+
+but usually C<rearrange> is faster.
+
+=item redock_widget WIDGET
+
+Effectively re-docks the docked WIDGET. If WIDGET has C<redock>
+method in its namespace, it is called instead.
+
+=item remove_subdocker SUBDOCK
+
+Removes SUBDOCK from the list of lower-level docker widgets.
+See also L<add_subdocker>.
+
+=item replace FROM, TO
+
+Assigns widget TO same owner and rectangle as FROM. The FROM widget
+must be a docked widget.
+
+=item undock WIDGET
+
+Removes WIDGET from list of docked widgets. The layout of the dock widget
+can be changed after execution of this method. The method does not
+change C<owner> property of WIDGET.
+
+The method must not be called directly.
+
+=back
+
+=head1 Prima::SimpleWidgetDocker
+
+A simple dock widget; accepts any widget that geometrically fits into.
+Allows overlapping of the docked widgets.
+
+=head1 Prima::ClientWidgetDocker
+
+A simple dock widget; accepts any widget that can be fit to cover all
+dock's interior.
+
+=head1 Prima::LinearWidgetDocker
+
+A toolbar-like docking widget class. The implementation does
+not allow tiling, and can reshape the dock widget and rearrange
+the docked widgets if necessary. 
+
+C<Prima::LinearWidgetDocker> is orientation-dependent; its main axis,
+governed by C<vertical> property, is used to align docked widgets in
+'lines', which in turn are aligned by the opposite axis ( 'major' and 'minor' terms
+are used in the code for the axes ).
+
+=head2 Properties
+
+=over
+
+=item growable INTEGER
+
+A combination of C<grow::XXX> constants, that describes how
+the dock widget can be resized. The constants are divided in two
+sets, direct and indirect, or, C<vertical> property independent and
+dependent. 
+
+The first set contains explicitly named constants: 
+   
+    grow::Left       grow::ForwardLeft       grow::BackLeft
+    grow::Down       grow::ForwardDown       grow::BackDown
+    grow::Right      grow::ForwardRight      grow::BackRight
+    grow::Up         grow::ForwardUp         grow::BackUp
+
+that select if the widget can be grown to the direction shown.
+These do not change meaning when C<vertical> changes, though they do
+change the dock widget behavior. The second set does not affect
+dock widget behavior when C<vertical> changes, however the names
+are not that illustratory:
+
+    grow::MajorLess  grow::ForwardMajorLess  grow::BackMajorLess
+    grow::MajorMore  grow::ForwardMajorMore  grow::BackMajorMore
+    grow::MinorLess  grow::ForwardMinorLess  grow::BackMinorLess
+    grow::MinorMore  grow::ForwardMinorMore  grow::BackMinorMore
+
+C<Forward> and C<Back> prefixes select if the dock widget can be 
+respectively expanded or shrunk in the given direction. C<Less> and
+C<More> are equivalent to C<Left> and C<Right> when C<vertical> is 0,
+and to C<Up> and C<Down> otherwise.
+
+The use of constants from the second set is preferred.
+
+Default value: 0
+
+=item hasPocket BOOLEAN
+
+A boolean flag, affects the possibility of a docked widget to reside
+outside the dock widget inferior. If 1, a docked wigdet is allowed
+to stay docked ( or dock into a position ) further on the major axis
+( to the right when C<vertical> is 0, up otherwise ), as if there's
+a 'pocket'. If 0, a widget is neither allowed to dock outside the
+inferior, nor is allowed to stay docked ( and is undocked automatically )
+when the dock widget shrinks so that the docked widget cannot stay in
+the dock boundaries.
+
+Default value: 1
+
+=item vertical BOOLEAN
+
+Selects the major axis of the dock widget. If 1, it is vertical,
+horizontal otherwise.
+
+Default value: 0
+
+=back
+
+=head2 Events
+
+=over
+
+=item Dock
+
+Called when C<dock> is successfully finished.
+
+=item DockError WIDGET
+
+Called when C<dock> is unsuccessfully finished. This only 
+happens if WIDGET does not follow the docking protocol, and inserts
+itself into a non-approved area.
+
+=item Undock
+
+Called when C<undock> is finished.
+
+=back
+
+=head1 Prima::SingleLinearWidgetDocker
+
+Descendant of C<Prima::LinearWidgetDocker>. In addition
+to the constraints, introduced by the ascendant class,
+C<Prima::SingleLinearWidgetDocker> allows only one line ( or row,
+depending on C<vertical> property value ) of docked widgets.
+
+=head1 Prima::FourPartDocker
+
+Implementation of a docking widget, with its four sides
+acting as 'rubber' docking areas.
+
+=head2 Properties
+
+=over
+
+=item indents ARRAY
+
+Contains four integers, specifying the breadth of offset for
+each side. The first integer is width of the left side, the second - height
+of the bottom side, the third - width of the right side, the fourth - height
+of the top side.
+
+=item dockerClassLeft STRING
+
+Assigns class of left-side dock window.
+
+Default value: C<Prima::LinearWidgetDocker>.
+Create-only property.
+
+=item dockerClassRight STRING
+
+Assigns class of right-side dock window.
+
+Default value: C<Prima::LinearWidgetDocker>.
+Create-only property.
+
+=item dockerClassTop STRING
+
+Assigns class of top-side dock window.
+
+Default value: C<Prima::LinearWidgetDocker>.
+Create-only property.
+
+=item dockerClassBottom STRING
+
+Assigns class of bottom-side dock window.
+
+Default value: C<Prima::LinearWidgetDocker>.
+Create-only property.
+
+=item dockerClassClient STRING
+
+Assigns class of center dock window.
+
+Default value: C<Prima::ClientWidgetDocker>.
+Create-only property.
+
+=item dockerProfileLeft HASH
+
+Assigns hash of properties, passed to the left-side dock widget during the creation.
+
+Create-only property.
+
+=item dockerProfileRight HASH
+
+Assigns hash of properties, passed to the right-side dock widget during the creation.
+
+Create-only property.
+
+=item dockerProfileTop HASH
+
+Assigns hash of properties, passed to the top-side dock widget during the creation.
+
+Create-only property.
+
+=item dockerProfileBottom HASH
+
+Assigns hash of properties, passed to the bottom-side dock widget during the creation.
+
+Create-only property.
+
+=item dockerProfileClient HASH
+
+Assigns hash of properties, passed to the center dock widget during the creation.
+
+Create-only property.
+
+=item dockerDelegationsLeft ARRAY
+
+Assigns the left-side dock list of delegated notifications.
+
+Create-only property.
+
+=item dockerDelegationsRight ARRAY
+
+Assigns the right-side dock list of delegated notifications.
+
+Create-only property.
+
+=item dockerDelegationsTop ARRAY
+
+Assigns the top-side dock list of delegated notifications.
+
+Create-only property.
+
+=item dockerDelegationsBottom ARRAY
+
+Assigns the bottom-side dock list of delegated notifications.
+
+Create-only property.
+
+=item dockerDelegationsClient ARRAY
+
+Assigns the center dock list of delegated notifications.
+
+Create-only property.
+
+=item dockerCommonProfile HASH
+
+Assigns hash of properties, passed to all five dock widgets during the creation.
+
+Create-only property.
+
+=back
+
+=head1 Prima::InternalDockerShuttle
+
+The class provides a container, or a 'shuttle', for a client widget, while is docked to 
+an C<Prima::AbstractDocker::Interface> descendant instance. The functionality includes 
+communicating with dock widgets, the user interface for dragging and interactive dock selection,
+and a client widget container for non-docked state. The latter is implemented by
+reparenting of the client widget to an external shuttle widget, selected by C<externalDockerClass>
+property. Both user interfaces for the docked and the non-docked shuttle states are minimal.
+
+The class implements dockable widget functionality, served by C<Prima::AbstractDocker::Interface>,
+while itself it is derived from C<Prima::Widget> only. 
+
+See also: L</Prima::ExternalDockerShuttle>.
+
+=head2 Properties
+
+=over
+
+=item client WIDGET
+
+Provides access to the client widget, which always resides either in 
+the internal or the external shuttle. By default there is no client,
+and any widget capable of changing its parent can be set as one.
+After a widget is assigned as a client, its C<owner> and C<clipOwner>
+properties must not be used.
+
+Run-time only property.
+
+=item dock WIDGET
+
+Selects the dock widget that the shuttle is landed on. If C<undef>,
+the shuttle is in the non-docked state.
+
+Default value: C<undef>
+
+=item dockingRoot WIDGET
+
+Selects the root of dock widgets hierarchy. 
+If C<undef>, the shuttle can only exist in the non-docked state.
+
+Default value: C<undef>
+
+See L</USAGE> for reference.
+
+=item externalDockerClass STRING
+
+Assigns class of external shuttle widget.
+
+Default value: C<Prima::ExternalDockerShuttle>
+
+=item externalDockerModule STRING
+
+Assigns module that contains the external shuttle widget class.
+
+Default value: C<Prima::MDI> ( C<Prima::ExternalDockerShuttle> is derived from C<Prima::MDI> ).
+
+=item externalDockerProfile HASH
+
+Assigns hash of properties, passed to the external shuttle widget during the creation.
+
+=item fingerprint INTEGER
+
+A custom bit mask, used to reject inappropriate dock widgets on early stage.
+
+Default value: C<0x0000FFFF>
+
+=item indents ARRAY
+
+Contains four integers, specifying the breadth of offset in pixels for each 
+widget side in the docked state.
+
+Default value: C<5,5,5,5>.
+
+=item snapDistance INTEGER
+
+A maximum offset, in pixels, between the actual shuttle coordinates and the coordinates
+proposed by the dock widget, where the shuttle is allowed to land.
+In other words, it is the distance between the dock and the shuttle when the latter
+'snaps' to the dock during the dragging session.
+
+Default value: 10
+
+=item x_sizeable BOOLEAN
+
+Selects whether the shuttle can change its width in case the dock widget suggests so.
+
+Default value: 0
+
+=item y_sizeable BOOLEAN
+
+Selects whether the shuttle can change its height in case the dock widget suggests so.
+
+Default value: 0
+
+=back
+
+=head2 Methods
+
+=over
+
+=item client2frame X1, Y1, X2, Y2
+
+Returns a rectangle that the shuttle would occupy if
+its client rectangle is assigned to X1, Y1, X2, Y2 
+rectangle.
+
+=item dock_back
+
+Docks to the recent dock widget, if it is still available. 
+
+=item drag STATE, RECT, ANCHOR_X, ANCHOR_Y
+
+Initiates or aborts the dragging session, depending on STATE boolean
+flag. 
+
+If it is 1, RECT is an array with the coordinates of the shuttle rectange
+before the drag has started; ANCHOR_X and ANCHOR_Y are coordinates of the 
+aperture point where the mouse event occured that has initiated the drag.
+Depending on how the drag session ended, the shuttle can be relocated to
+another dock, undocked, or left intact. Also, C<Dock>, C<Undock>, or
+C<FailDock> notifications can be triggered.
+
+If STATE is 0, RECT, ANCHOR_X ,and ANCHOR_Y parameters are not used.
+
+=item find_docking DOCK, [ POSITION ]
+
+Opens a session with DOCK, unless it it already done,
+and negotiates about the possibility of landing (
+at particular POSITION, if this parameter is present ).
+
+C<find_docking> caches the dock widget sessions, and provides a
+possibility to select different parameters passed to C<open_session>
+for different dock widgets. To achieve this, C<GetCaps> request
+notification is triggered, which fills the parameters. The default
+action sets C<sizeable> options according to C<x_sizeable>
+and C<y_sizeable> properties.
+
+In case an appropriate landing area is found, C<Landing>
+notification is triggered with the proposed dock widget
+and the target rectangle. The area can be rejected on this stage
+if C<Landing> returns negative answer.
+
+On success, returns a dock widget found and the target rectangle; 
+the widget is never docked though. On failure returns an empty array.
+
+This method is used by the dragging routine to provide a visual feedback to
+the user, to indicate that a shuttle may or may not land in a particular 
+area.
+
+=item frame2client X1, Y1, X2, Y2
+
+Returns a rectangle that the client would occupy if
+the shuttle rectangle is assigned to X1, Y1, X2, Y2 
+rectangle.
+
+=item redock
+
+If docked, undocks form the dock widget and docks back.
+If not docked, does not perform anything.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Dock
+
+Called when shuttle is docked.
+
+=item EDSClose
+
+Triggered when the user presses close button or otherwise activeates the
+C<close> function of the EDS ( external docker shuttle ). To cancel
+the closing, C<clear_event> must be called inside the event handler.
+
+=item FailDock X, Y
+
+Called after the dragging session in the non-docked stage is finished,
+but did not result in docking. X and Y are the coordinates
+of the new external shuttle position.
+
+=item GetCaps DOCK, PROFILE
+
+Called before the shuttle opens a docking session with DOCK
+widget. PROFILE is a hash reference, which is to be filled
+inside the event handler. After that PROFILE is passed
+to C<open_session> call.
+
+The default action sets C<sizeable> options according to C<x_sizeable>
+and C<y_sizeable> properties.
+
+=item Landing DOCK, X1, Y1, X2, Y2
+
+Called inside the docking session, after an appropriate dock
+widget is selected and the landing area is defined as
+X1, Y1, X2, Y2. To reject the landing on either DOCK or
+area, C<clear_event> must be called.
+
+=item Undock
+
+Called when shuttle is switched to the non-docked state.
+
+=back
+
+=head1 Prima::ExternalDockerShuttle
+
+A shuttle class, used to host a client of C<Prima::InternalDockerShuttle>
+widget when it is in the non-docked state. The class represents an
+emulation of a top-level window, which can be moved, resized ( this
+feature is not on by default though ), and closed. 
+
+C<Prima::ExternalDockerShuttle> is inherited from C<Prima::MDI> class, and
+its window emulating functionality is a subset of its ascendant.
+See also L<Prima::MDI>.
+
+=head2 Properties
+
+=over
+
+=item shuttle WIDGET
+
+Contains reference to the dockable WIDGET
+
+=back
+
+=head1 Prima::LinearDockerShuttle
+
+A simple descendant of C<Prima::InternalDockerShuttle>, used
+for toolbars. Introduces orientation and draws a tiny header along
+the minor shuttle axis. All its properties concern only
+the way the shuttle draws itself.
+
+=head2 Properties
+
+=over
+
+=item headerBreadth INTEGER
+
+Breadth of the header in pixels.
+
+Default value: 8
+
+=item indent INTEGER
+
+Provides a wrapper to C<indents> property; besides the
+space for the header, all indents are assigned to C<indent>
+property value.
+
+=item vertical BOOLEAN
+
+If 1, the shuttle is drawn as a vertical bar. 
+If 0, the shuttle is drawn as a horizontal bar. 
+
+Default value: 0
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<Prima::MDI>, L<Prima::DockManager>, F<examples/dock.pl>
+
+=cut
