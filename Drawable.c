@@ -209,6 +209,22 @@ Drawable_set_text_out_baseline( Handle self, Bool baseline)
 }
 
 SV *
+Drawable_get_physical_palette( Handle self)
+{
+   int i, nCol;
+   AV * av = newAV();
+   PRGBColor r = apc_gp_get_physical_palette( self, &nCol);
+
+   for ( i = 0; i < nCol; i++) {
+      av_push( av, newSViv( r[ i].b));
+      av_push( av, newSViv( r[ i].g));
+      av_push( av, newSViv( r[ i].r));
+   }
+   free( r);
+   return newRV_noinc(( SV *) av);
+}
+
+SV *
 Drawable_get_font_abc( Handle self)
 {
    int i;

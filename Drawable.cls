@@ -38,6 +38,7 @@ object Drawable ( Component)
    method void   set_text_opaque( Bool opaque)     => apc_gp_set_text_opaque;
    method void   set_text_out_baseline ( Bool baseline);
 
+   method int           get_bpp()                         => apc_gp_get_bpp;
    method Color         get_back_color()                  => apc_gp_get_back_color;
    method Rect          get_clip_rect()                   => apc_gp_get_clip_rect;
    method Color         get_color()                       => apc_gp_get_color;
@@ -49,7 +50,9 @@ object Drawable ( Component)
    method int           get_line_end()                    => apc_gp_get_line_end;
    method int           get_line_pattern()                => apc_gp_get_line_pattern;
    method int           get_line_width()                  => apc_gp_get_line_width;
+   method Color         get_nearest_color( Color color)   => apc_gp_get_nearest_color;
    method SV *          get_palette();
+   method SV *          get_physical_palette();
    method Point         get_resolution()                  => apc_gp_get_resolution;
    method int           get_rop()                         => apc_gp_get_rop;
    method int           get_rop2()                        => apc_gp_get_rop2;
