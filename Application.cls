@@ -51,6 +51,7 @@ object Prima::Application( Prima::Widget)
    property  int    hintPause;
    property  Bool   modalHorizon;
    property  SV  *  palette;
+   property  Bool   pointerVisible;
    property  Point  origin;
    property  Handle owner;
    property  Bool   ownerBackColor;

@@ -45,7 +45,7 @@ my %grep_out = (
 
 my @a = sort { &{$cr::{$a}}() <=> &{$cr::{$b}}()} grep { !exists $grep_out{$_}} keys %cr::;
 shift @a;
-$w-> pointerVisible(0);
+$::application-> pointerVisible(0);
 my $i = 1;
 
 for my $c ( @a[0..$#a-1])
@@ -105,6 +105,6 @@ $b-> insert( Timer =>
 )-> start;
 
 $w-> pointer( cr::Default);
-$w-> pointerVisible(1);
+$::application-> pointerVisible(1);
 
 run Prima;

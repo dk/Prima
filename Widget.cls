@@ -91,7 +91,6 @@ object Prima::Widget( Prima::Drawable)
    property  Handle pointerIcon;
    property  Point  pointerPos;
    property  int    pointerType;
-   property  Bool   pointerVisible;
    property  Color  popupColorIndex( int index);
    property  Rect   rect;
    property  int    right;

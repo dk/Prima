@@ -868,6 +868,14 @@ Application_helpContext( Handle self, Bool set, long int context)
    return inherited helpContext( self, set, context);
 }
 
+Bool
+Application_pointerVisible( Handle self, Bool set, Bool pointerVisible)
+{
+   if ( !set)
+      return apc_pointer_get_visible( self);
+   return apc_pointer_set_visible( self, pointerVisible);
+}
+
 Point
 Application_size( Handle self, Bool set, Point size)
 {

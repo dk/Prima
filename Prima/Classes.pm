@@ -680,7 +680,6 @@ sub notification_types { return \%RNT; }
    pointerIcon       => undef,
    pointer           => cr::Default,
    pointerType       => cr::Default,
-   pointerVisible    => 1,
    popup             => undef,
    popupColor             => cl::NormalText,
    popupBackColor         => cl::Normal,
@@ -1252,6 +1251,7 @@ sub profile_default
    my %prf = (
       autoClose      => 1,
       pointerType    => cr::Arrow,
+      pointerVisible => 1,
       icon           => undef,
       owner          => undef,
       scaleChildren  => 0,
