@@ -88,6 +88,7 @@ Widget_init( Handle self, HV * profile)
    my set_color_index( self, pget_i( disabledBackColor), ciDisabled);
    my set_color_index( self, pget_i( light3DColor),      ciLight3DColor);
    my set_color_index( self, pget_i( dark3DColor),       ciDark3DColor);
+   my set_palette( self, pget_sv( palette));
 
    /* light props */
    my set_brief_keys         ( self, pget_B(  briefKeys));
@@ -940,7 +941,7 @@ Widget_set( Handle self, HV * profile)
    {
       postOwner = pget_H( owner);
       if ( !kind_of( postOwner, CWidget))
-        croak("RTC0081: Illegal object reference passed to Widget.set( owner)");
+         croak("RTC0081: Illegal object reference passed to Widget::set_owner");
       if ( my migrate( self, postOwner))
       {
          ((( PWidget) var owner)-> self)-> first_that( var owner, unshift_ordering, (void*) var tabOrder);
@@ -1855,6 +1856,7 @@ void
 Widget_set_palette( Handle self, SV * palette)
 {
    int oclrs = var palSize;
+   if ( var handle == nilHandle) return; /* aware of call from Drawable::init */
    free( var palette);
    var palette = read_palette( &var palSize, palette);
    opt_clear( optOwnerPalette);
@@ -1890,7 +1892,7 @@ Widget_set_pointer_icon( Handle self, Handle icon, Point hotSpot)
 {
    SV *oldp;
    if ( icon != nilHandle && !kind_of( icon, CIcon))
-      croak("RTC082: Illegal object reference passed to Widget.set_pointer_icon");
+      croak("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
    apc_pointer_set_user( self, icon, hotSpot);
    oldp = var pointer;
    if ( icon)
