@@ -288,6 +288,7 @@ Component_message( Handle self, PEvent event)
 {
    Bool ret      = false;
    if ( var-> stage == csNormal) {
+      if ( var-> evQueue) goto Constructing;
 ForceProcess:
       protect_object( self);
       my-> push_event( self);
@@ -298,6 +299,7 @@ ForceProcess:
    } else if ( var-> stage == csConstructing) {
       if ( var-> evQueue == nil)
           croak("RTC0041: Object set twice to constructing stage");
+Constructing:      
       switch ( event-> cmd & ctQueueMask) {
       case ctDiscardable:
          break;
@@ -402,11 +404,12 @@ Component_handle_event( Handle self, PEvent event)
       my-> notify( self, "<s", "Create");
       if ( var-> stage == csNormal)
       {
-         if ( var-> evQueue-> count > 0)
-            list_first_that( var-> evQueue, oversend, ( void*) self);
-         list_destroy( var-> evQueue);
-         free( var-> evQueue);
+         PList q = var-> evQueue;
          var-> evQueue = nil;
+         if ( q-> count > 0)
+            list_first_that( q, oversend, ( void*) self);
+         list_destroy( q);
+         free( q);
       }
       break;
    case cmDestroy:

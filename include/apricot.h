@@ -625,10 +625,9 @@ CM(Ok)
 CM(Cancel)
 #define cmClose         (0x00000005|ctDiscardable)
 CM(Close)
-                                        /* on dialog close, WM_CLOSE analog */
-#define cmCreate         0x0000000A     /* WM_CREATE analog */
+#define cmCreate        (0x0000000A|ctPassThrough)
 CM(Create)
-#define cmDestroy       (0x0000000B|ctPassThrough|ctNoInhibit) /* WM_DESTROY analog */
+#define cmDestroy       (0x0000000B|ctPassThrough|ctNoInhibit) 
 CM(Destroy)
 #define cmHide          (0x0000000C|ctDiscardable) /* visible flag aware */
 CM(Hide)

@@ -754,7 +754,7 @@ void Widget_handle_event( Handle self, PEvent event)
          {
             Bool doNotify = false;
             Point oldP;
-            if ( var-> stage == csNormal) {
+            if ( var-> stage == csNormal && var-> evQueue == nil) {
                doNotify = true;
             } else if ( var-> stage > csNormal) {
                break;
@@ -775,7 +775,9 @@ void Widget_handle_event( Handle self, PEvent event)
                my-> first_that( self, move_notify, &event-> gen. P);
             if ( doNotify) oldP = var-> pos;
             var-> pos = event-> gen. P;
-            if ( doNotify) {
+            if ( doNotify && 
+                 (oldP. x != event-> gen. P. x || 
+                  oldP. y != event-> gen. P. y)) {
                my-> notify( self, "<sPP", "Move", oldP, event-> gen. P);
                objCheck;
                if ( var-> growMode & gmCenter) my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
@@ -807,7 +809,7 @@ void Widget_handle_event( Handle self, PEvent event)
         /* expecting new size in P, old & new size in R. */
         {
            Bool doNotify = false;
-           if ( var-> stage == csNormal) {
+           if ( var-> stage == csNormal && var-> evQueue == nil) {
               doNotify = true;
            } else if ( var-> stage > csNormal) {
               break;
