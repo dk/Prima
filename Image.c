@@ -1353,6 +1353,7 @@ XS( Image_load_FROMPERL) {
       self = Object_create( class_name, profile);
       sv_free(( SV *) profile);
       if ( !self) {
+         XPUSHs( sv_2mortal( newSViv( 0)));
          PUTBACK;
          return;
       }
@@ -1360,6 +1361,7 @@ XS( Image_load_FROMPERL) {
 
    if ( !load_image_indirect( self, filename, buf)) {
       if ( as_class) Object_destroy( self);
+      XPUSHs( sv_2mortal( newSViv( 0)));
       PUTBACK;
       return;
    }
