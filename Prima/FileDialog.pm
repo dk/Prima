@@ -614,7 +614,7 @@ sub profile_default
       fileName    => '',
       filter      => [[ 'All files' => '*']],
       filterIndex => 0,
-      directory   => '',
+      directory   => '.',
       designScale => [ 8, 20],
 
       createPrompt       => 0,
