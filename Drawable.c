@@ -607,7 +607,6 @@ do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                    ret[ 0] = duplicate_string("");
                 }
                 t-> count = 0;
-                free( abc);
                 return ret;
              } else
                 // or fit this character
