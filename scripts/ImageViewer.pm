@@ -13,6 +13,7 @@ sub profile_default
       zoom         => 1,
       alignment    => ta::Left,
       valignment   => ta::Bottom,
+      quality      => 1,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -35,13 +36,13 @@ sub init
    my $self = shift;
    for ( qw( image ImageFile))
       { $self->{$_} = undef; }
-   for ( qw( alignment valignment))
+   for ( qw( alignment quality valignment))
       { $self->{$_} = 0; }
    for ( qw( zoom integralScreen integralImage))
       { $self->{$_} = 1; }
    my %profile = $self-> SUPER::init(@_);
    $self-> { imageFile}     = $profile{ imageFile};
-   for ( qw( image zoom alignment valignment)) {
+   for ( qw( image zoom alignment valignment quality)) {
       $self->$_($profile{$_});
    }
    return %profile;
@@ -147,7 +148,7 @@ sub set_image
    $x *= $self->{zoom};
    $y *= $self->{zoom};
    $self-> limits($x,$y);
-   $self-> palette( $img->palette);
+   $self-> palette( $img->palette) if $self->{quality};
    $self-> repaint;
 }
 
@@ -158,6 +159,16 @@ sub set_image_file
    return unless $img-> load($file);
    $self->{imageFile} = $file;
    $self->image($img);
+}
+
+sub set_quality
+{
+   my ( $self, $quality) = @_;
+   return if $quality == $self->{quality};
+   $self->{quality} = $quality;
+   return unless defined $self->{image};
+   $self-> palette( $quality ? $self->{image}-> palette : []);
+   $self-> repaint;
 }
 
 sub set_zoom
@@ -199,5 +210,6 @@ sub valignment   {($#_)?($_[0]->set_valignment(    $_[1]))              :return 
 sub image        {($#_)?$_[0]->set_image($_[1]):return $_[0]->{image} }
 sub imageFile    {($#_)?$_[0]->set_image_file($_[1]):return $_[0]->{imageFile}}
 sub zoom         {($#_)?$_[0]->set_zoom($_[1]):return $_[0]->{zoom}}
+sub quality      {($#_)?$_[0]->set_quality($_[1]):return $_[0]->{quality}}
 
 1;
