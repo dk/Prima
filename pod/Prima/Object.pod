@@ -665,6 +665,11 @@ finishes. Never called directly.
 Note: the eventual child objects are destroyed inside done()
 call.
 
+=item get @PARAMETERS
+
+Returns hash where keys are @PARAMETERS and values are
+the corresponding object properties.
+
 =item init %PARAMETERS
 
 The most important stage of object creation process.

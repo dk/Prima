@@ -84,6 +84,15 @@ sub set {
    return;
 }
 
+sub get
+{
+   my $self = shift;
+   map {
+      my @val = $self-> $_();
+      $_ => ((1 == @val) ? $val[0] : \@val)
+   } @_;
+}
+
 package Prima::Font;
 
 sub new
