@@ -101,7 +101,7 @@ sub sdlg_exec
       my $fi = Prima::find_image( 'Prima::PS', 'setup.fm');
       unless ( defined $fi) { Prima::message( "Cannot find resource: Prima::PS::setup.fm"); return }
       eval { $self-> {setupDlg} = { Prima::VB::VBLoader::AUTOFORM_CREATE( $fi,
-        'Form1'     => { visible => 0, },
+        'Form1'     => { visible => 0, centered => 1},
         'PaperSize' => { items => [ sort keys %pageSizes ], },
         'OK'        => {
            onClick => sub { 
@@ -226,6 +226,8 @@ sub sdlg_exec
            }
            print F "}\n";
            close F;
+           $self-> {printers} = { map { $_ => deepcopy($self-> {vprinters}->{$_}) } 
+              keys %{$self-> {vprinters}}};
            $self-> {bigChange} = 0;
         }},
         'ImportBtn' => { onClick => sub {

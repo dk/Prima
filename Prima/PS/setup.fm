@@ -487,13 +487,15 @@ A
 			onSelectItem => Prima::VB::VBLoader::GO_SUB('my ( $self, $index, $selectState) = @_; 
 my @i = @{$self-> get_items( $$index[0])};
 my $vbox = $self-> owner-> ValueBox;
+$vbox-> text( "Change \'$i[0]\' setting");
 if ( $vbox-> ValueBook-> pageIndex == 3) {
+    $vbox-> ValueBook-> lock;
     $self-> owner-> HelpBtn-> notify(q(Click));
     $self-> owner-> HelpBtn-> notify(q(Click));
+    $vbox-> ValueBook-> unlock;
     return;
 } 
 $vbox-> ValueBook-> pageIndex( $i[2]);
-$vbox-> text( "Change \'$i[0]\' setting");
 my @vdt = qw(VText VBool VCombo);
 my @vdv = qw(text checked focusedItem);
 $vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);    '),
