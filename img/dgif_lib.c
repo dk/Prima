@@ -11,7 +11,9 @@
 *  3 Sep 90 - Version 1.1 by Gershon Elber (Support for Gif89, Unique names). *
 ******************************************************************************/
 
-
+#if defined( HAVE_CONFIG_H)
+#include "generic/config.h"
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 

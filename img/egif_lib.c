@@ -13,7 +13,9 @@
 ******************************************************************************/
 
 
-
+#if defined( HAVE_CONFIG_H)
+#include "generic/config.h"
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef R6000
