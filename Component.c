@@ -790,13 +790,16 @@ XS( Component_notify_FROMPERL)
 }
 
 void
-Component_notify( Handle self, char * methodName)
+Component_notify( Handle self, char * format, ...)
 {
-   warn("Invalid call of of Component::notify");
+   va_list args;
+   va_start( args, format);
+   call_perl_indirect( self, "notify", format, true, false, args);
+   va_end( args);
 }
 
 void
-Component_notify_REDEFINED( Handle self, char * methodName)
+Component_notify_REDEFINED( Handle self, char * format, ...)
 {
    warn("Invalid call of of Component::notify");
 }

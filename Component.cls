@@ -52,7 +52,7 @@ object Component( Object)
     c_only   Bool      message( PEvent event);
     c_only   Bool      migrate( Handle attachTo);
     import   SV *      notification_types();
-    public   void      notify( char * methodName);
+    public   void      notify( char * format, ...);
     method   Bool      pop_event();
     method   void      post_message( SV * info1, SV * info2);
     import   SV *      profile_default();
