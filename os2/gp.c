@@ -131,12 +131,37 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)      /* no fix */
 {
-   if ( !GpiErase( sys ps)) apiErrRet;
+   POINTL p;
+   HPS ps = sys ps;
+   LONG patternId, pattern, color;
+   if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
+      SIZEL sz;
+      GpiQueryPS( ps, &sz);
+      x1 = y1 = 0;
+      x2 = sz. cx - 1;
+      y2 = sz. cy - 1;
+   }
+   apc_gp_move( ps, x1, y1);
+   p. x = x2; p. y = y2;
+   patternId = GpiQueryPatternSet( ps);
+   if ( patternId != 0) {
+      GpiSetPatternSet( ps, 0);
+   }
+   pattern = GpiQueryPattern( ps);
+   if ( pattern != PATSYM_SOLID) GpiSetPattern( ps, PATSYM_SOLID);
+   color = GpiQueryColor( ps);
+   GpiSetColor( ps, GpiQueryBackColor( ps));
+
+   if ( GpiBox( ps, DRO_FILL, &p, 0, 0) == GPI_ERROR) apiErrRet;
+
+   GpiSetColor( ps, color);
+   if ( pattern   != PATSYM_SOLID) GpiSetPattern( ps, pattern);
+   if ( patternId != 0) GpiSetPatternSet( ps, patternId);
    return true;
 }
 
 Bool
-apc_gp_chord ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
+apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
    POINTL ptl = { x, y};
    LONG lType = GpiQueryLineType( sys ps);
@@ -466,7 +491,6 @@ apc_gp_stretch_image ( Handle self, Handle image, int x, int y, int xFrom, int y
 }
 
 
-/* XXX - no respect to textOutBaseline currently */
 Bool                                                        /* no fix */
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
 {
@@ -626,19 +650,45 @@ apc_gp_get_line_pattern( Handle self, char * buffer)
    return sys linePatternLen;
 }
 
-/* XXX */
+/* XXX palette! */
 Color
 apc_gp_get_nearest_color( Handle self, Color color)
 {
-   return clInvalid;
+   HPS ps = sys ps;
+   return remap_color( ps, GpiQueryNearestColor( ps, 0, remap_color( ps, color, true)), false);
 }
 
-/* XXX */
+/* XXX palette! */
 PRGBColor
 apc_gp_get_physical_palette( Handle self, int * color)
 {
+   HPAL pal;
+   LONG count;
+   PRGBColor ret;
+   PULONG buf;
+   int i;
+
    *color = 0;
-   return nil;
+   pal = GpiQueryPalette( sys ps);
+   if ( !pal) return nil;
+   count = GpiQueryPaletteInfo( pal, sys ps, 0, 0, 0, nil);
+   if ( count == PAL_ERROR) { apiErr; return nil; };
+   buf = ( PULONG) malloc( sizeof( LONG) * count);
+   ret = ( PRGBColor) malloc( sizeof( RGBColor) * count);
+   if ( GpiQueryPaletteInfo( pal, sys ps, 0, 0, count, buf) == PAL_ERROR) {
+      apiErr;
+      free( buf);
+      free( ret);
+      return nil;
+   }
+   *color = count;
+   for ( i = 0; i < count; i++) {
+      ret[ i]. b = buf[ i] & 0xFF;
+      ret[ i]. g = ( buf[ i] >> 8)  & 0xFF;
+      ret[ i]. r = ( buf[ i] >> 16) & 0xFF;
+   }
+   free( buf);
+   return ret;
 }
 
 /* XXX */

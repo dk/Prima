@@ -39,6 +39,7 @@
 #include "os2/os2guts.h"
 #include "Menu.h"
 #include "Window.h"
+#include "Image.h"
 #include "Application.h"
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
@@ -144,11 +145,50 @@ apc_application_get_gui_info( char * description, int len)
    return guiPM;
 }
 
-/* XXX */
+/* XXX !palette */
 Bool
 apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen)
 {
-   return false;
+   HBITMAP bm;
+   HPS ps, ps2;
+   HDC dc;
+   PBITMAPINFO2 bmInfo;
+   POINTL pt [3] = {
+      {0, 0},
+      {xLen - 1, yLen - 1},
+      {x, y},
+   };
+   int type = guts. bmf[ 1];
+
+   if ( image == nilHandle) apcErrRet( errInvParams);
+   dobjCheck( image) false;
+
+   apcErrClear;
+
+   if ( type > 8) type = 24;
+   image_begin_query( type, &type);
+   CImage( image)-> create_empty( image, xLen, yLen, type);
+
+   bm = bitmap_make_ps( image, &ps, &dc, &bmInfo, cbScreen);
+   if ( bm == nilHandle)
+      return false;
+
+
+   free( bmInfo);
+   if ( GpiSetBitmap( ps, bm) == HBM_ERROR) apiErr;
+   ps2 = WinGetScreenPS( HWND_DESKTOP);
+
+   if ( GpiBitBlt( ps, ps2, 3, pt, ROP_SRCCOPY, BBO_IGNORE) == GPI_ERROR) apiErr;
+
+   WinReleasePS( ps2);
+
+   image_query( image, ps);
+
+   GpiSetBitmap( ps, nilHandle);
+   GpiDeleteBitmap( bm);
+   GpiDestroyPS( ps);
+   DevCloseDC( dc);
+   return true;
 }
 
 Handle
@@ -1924,8 +1964,10 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
 {
    char buf [ 1024];
    char * t = m-> accel ? buf : ( char*)text;
+
    if (!var handle) return false;
    if ( m-> accel) snprintf( buf, 1024, "%s\t%s", text, m-> accel);
+
    WinSendMsg( var handle, MM_SETITEMTEXT, MPFROM2SHORT( m->id, true), ( MPARAM) t);
    return true;
 }
@@ -1936,11 +1978,17 @@ apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
    return true;
 }
 
-/* XXX */
+/* XXX - fails to set MIS_BITMAP from MIS_TEXT */
 Bool
 apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
 {
-   return false;
+   MENUITEM mi;
+   if ( !var handle) return false;
+   if ( !WinSendMsg( var handle, MM_QUERYITEM, MPFROM2SHORT( m-> id, true), &mi)) apiErr;
+   mi. afStyle = ( mi. afStyle & ~MIS_TEXT) | MIS_BITMAP;
+   mi. hItem   = image ? bitmap_make_handle( image) : 0;
+   if ( !WinSendMsg( var handle, MM_SETITEM, MPFROM2SHORT( m-> id, true), &mi)) apiErr;
+   return true;
 }
 
 ApiHandle

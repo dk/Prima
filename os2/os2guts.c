@@ -905,7 +905,7 @@ generic_frame_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
 }
 
 static Bool
-find_accel( PAbstractMenu menu, PMenuItemReg m, int * key)
+locate_accel( PAbstractMenu menu, PMenuItemReg m, int * key)
 {
    return menu-> self-> translate_accel(( Handle) menu, m-> text) == *key;
 }
@@ -945,7 +945,7 @@ generic_menu_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
                PAbstractMenu menu = ( PAbstractMenu)( md-> menu);
                PWidget owner = ( PWidget)( menu-> owner);
                int xkey = menu-> self-> translate_key(( Handle) menu, key, code, mod);
-               if ( menu-> self-> first_that(( Handle) menu, find_accel, &xkey, false))
+               if ( menu-> self-> first_that(( Handle) menu, locate_accel, &xkey, false))
                   break; // suspect that menu shortcut found. Do not touch it.
                if ( menu-> self-> sub_call_key(( Handle) menu, xkey)    ||
                     owner-> self-> process_accel(( Handle) owner, xkey))

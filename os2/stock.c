@@ -39,6 +39,7 @@
 #include "os2/os2guts.h"
 #include "Menu.h"
 #include "Window.h"
+#include "Printer.h"
 #include "Application.h"
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
@@ -687,19 +688,33 @@ font_fontmetrics2font( PFONTMETRICS m, PFont f, Bool readonly)
    f-> codepage           = 0; /* XXX */
 }
 
-/* XXX - no code for printer */
 PFont
 apc_fonts( Handle self, const char* facename, int * retCount)
 {
    PFont fmtx;
    PFONTMETRICS fm;
    int i = 0, j, count;
+   Bool hasdc = 0;
+   HPS ps;
+
+   if ( self == nilHandle || self == application)
+      ps = guts. ps;
+   else if ( kind_of( self, CPrinter)) {
+      if ( !is_opt( optInDraw) && !is_opt( optInDrawInfo)) {
+         hasdc = 1;
+         CPrinter( self)-> begin_paint_info( self);
+      }
+      ps = sys ps;
+   } else
+      return nil;
+
    apcErrClear;
    count = GpiQueryFonts( guts. ps, QF_PUBLIC, facename, ( PLONG)&i, sizeof( FONTMETRICS), nil);
    if ( count < 0) { apiErr; return nil; }
    fm    = malloc( count * sizeof( FONTMETRICS));
    if ( GpiQueryFonts( guts. ps, QF_PUBLIC, facename, ( PLONG)&count, sizeof( FONTMETRICS), fm) < 0) {
        apiErr;
+       if ( hasdc) CPrinter( self)-> end_paint_info( self);
        return nil;
    }
    if ( facename == nil)
@@ -733,6 +748,7 @@ apc_fonts( Handle self, const char* facename, int * retCount)
       j++;
    }
    free( fm);
+   if ( hasdc) CPrinter( self)-> end_paint_info( self);
    return fmtx;
 }
 
