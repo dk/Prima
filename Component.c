@@ -66,9 +66,9 @@ static Bool free_reference( Handle self, void * dummy) {
    return false;
 }
 
-// #ifdef PARANOID_MALLOC
-// #include "Image.h"
-// #endif
+/* #ifdef PARANOID_MALLOC */
+/* #include "Image.h" */
+/* #endif */
 
 void
 Component_done( Handle self)
@@ -106,10 +106,10 @@ Component_done( Handle self)
       my detach( self, object, true);
    }
    apc_component_destroy( self);
-// #ifdef PARANOID_MALLOC
-// if ( kind_of( self, CImage))
-//    debug_write( "Freeing image %s\n", var name);
-// #endif
+/* #ifdef PARANOID_MALLOC */
+/* if ( kind_of( self, CImage)) */
+/*    debug_write( "Freeing image %s\n", var name); */
+/* #endif */
    free( var name);
    free( var evStack);
    inherited done( self);
@@ -170,15 +170,15 @@ Component_get_delegate_to( Handle self)
 void
 Component_set( Handle self, HV * profile)
 {
-   my update_sys_handle( self, profile);  // this can eliminate unwilling items
-                                          // from HV before indirect Object::set
+   my update_sys_handle( self, profile);  /* this can eliminate unwilling items */
+                                          /* from HV before indirect Object::set */
    if ( pexist( owner))
    {
       var owner = pget_H( owner);
       if (( var owner != nilHandle) && !kind_of( var owner, CComponent))
          croak( "Illegal object reference passed to Component.set");
       if ( var owner == nilHandle) var owner = application;
-      pdelete( owner);                    // like this.
+      pdelete( owner);                    /* like this. */
    }
    dyna_set( self, profile);
    inherited set ( self, profile);
@@ -667,5 +667,14 @@ XS( Component_notify_FROMPERL)
    PUTBACK;
 }
 
-void Component_notify( Handle self, char * methodName)           { croak("Invalid call of of Component::notify"); }
-void Component_notify_REDEFINED( Handle self, char * methodName) { croak("Invalid call of of Component::notify"); }
+void
+Component_notify( Handle self, char * methodName)
+{
+   croak("Invalid call of of Component::notify");
+}
+
+void
+Component_notify_REDEFINED( Handle self, char * methodName)
+{
+   croak("Invalid call of of Component::notify");
+}
