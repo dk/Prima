@@ -31,7 +31,11 @@ download http://www.prima.eu.org/download/gbm-bin-win32.zip.
 The zip file is to be unpacked and prigraph.dll and zlib.dll to be put 
 in the same directory as Prima.dll ( which appears 
 after successful compilation in auto/Prima subdirectory ), and 
-prigraph.lib should be put into LIBPATH. For OS/2 system 
+prigraph.lib should be put into LIBPATH. For cygwin 
+download http://www.prima.eu.org/download/gbm-bin-cygwin.zip.
+The zip file is to be unpacked and prigraph.dll to be put 
+into PATH, and libprigraph.a should be put into LIBPATH. 
+For OS/2 system 
 download http://www.prima.eu.org/download/gbm-bin-os2.zip.
 The zip file is to be unpacked and prigraph.dll and priz.dll to be put 
 into PATH, and prigraph.lib should be put into LIBPATH. 
