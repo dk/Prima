@@ -503,7 +503,7 @@ extern void         font_pp2font( char * presParam, Font * font);
 extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
 extern Bool         get_font_from_hash( PFont font, int *vectored, Bool bySize);
 extern Point        get_window_borders( int borderStyle);
-extern int          gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd, int drawState);
+extern int          gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd, int drawState);
 extern int          gp_line( Handle self, int x1, int y1, int x2, int y2, int draw);
 extern Bool         hwnd_check_limits( int x, int y, Bool uint);
 extern void         hwnd_enter_paint( Handle self);

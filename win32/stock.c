@@ -1802,7 +1802,7 @@ d_octet( double angle)
 }
 
 static void
-arc_offset( int delta, int radX, int radY, int * quarter, int * x1, int * y1)
+arc_offset( int delta, double radX, double radY, int * quarter, int * x1, int * y1)
 {
 AGAIN:
    switch ( *quarter) {
@@ -1897,7 +1897,7 @@ quarter( double angle)
 */
 
 int
-gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd, int drawState)
+gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd, int drawState)
 {
    int x1, y1, x2, y2;
    int len = sys linePatternLen2, ptr = 0, offset = 0, cumul = drawState, delta = 0;
@@ -1932,13 +1932,13 @@ gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double
           abs( radX * (( qend == 3) ? -1 : 1) - xend);
        if ( qe2 <= qstart) qe2 += 4;
        for ( i = qstart + 1; i < qe2; i++)
-          llen += abs( 2 * (( i % 2) ? radX : radY));
+          llen += abs( 2 * (( i % 2) ? ( radX + 0.5) : ( radY + 0.5)));
     }
 
     // drawing arc
     if ( GetBkMode( ps) != TRANSPARENT) {
        HPEN pen = SelectObject( ps, CreatePen( PS_SOLID, lw, sys lbs[1]));
-       if ( !Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
+       if ( !Arc( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
           x + xstart, y - ystart, x + xend, y - yend
        )) apiErr;
        DeleteObject( SelectObject( ps, pen));
@@ -1965,7 +1965,7 @@ gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double
           arc_offset( d, radX, radY, &qplane, &x1, &y1);
           if ( draw) {
              Arc( ps,
-                x - radX, y - radY - 1, x + radX + 1, y + radY,
+                x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
                 x + x2, y - y2,
                 x + x1, y - y1
              );
@@ -1991,7 +1991,7 @@ gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double
        if ( draw) {
           // if ( lim-- == 0) break;
           Arc( ps,
-             x - radX, y - radY - 1, x + radX + 1, y + radY,
+             x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
              x + x2, y - y2,
              x + x1, y - y1
           );

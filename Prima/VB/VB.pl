@@ -24,7 +24,7 @@
 #  SUCH DAMAGE.
 #
 use strict;
-use Prima qw(StdDlg Notebooks MsgBox ComboBox);
+use Prima qw(StdDlg Notebooks MsgBox ComboBox ColorDialog);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
