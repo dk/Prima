@@ -1208,8 +1208,6 @@ sub generate_win32_def
     print PRIMADEF <<EOF;
 LIBRARY Prima
 DESCRIPTION 'Prima Guts version 2.00, Copyright (C) the Protein Laboratory 1997'
-CODE LOADONCALL
-DATA LOADONCALL NONSHARED MULTIPLE
 EXPORTS
 EOF
     if ( $COMPILER eq 'bcc32') {
