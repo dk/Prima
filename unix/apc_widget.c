@@ -33,6 +33,7 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#include "Application.h"
 
 #define SORT(a,b)       ({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
 #define REVERT(a)       ({ XX-> size. y - (a) - 1; })
@@ -71,6 +72,9 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    DEFXX;
 
    /* Transparency is ignored for now */
+
+   XX-> type.drawable = true;
+   XX-> type.widget = true;
 
    if ( !clip_owner) {
       parent = RootWindow( DISP, SCREEN);
@@ -551,6 +555,8 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
 Bool
 apc_widget_set_focused( Handle self)
 {
+   if ( self && ( self != CApplication( application)-> map_focus( application, self)))
+      return false;
    XSetInputFocus( DISP, apc_widget_is_showing( self) ? X_WINDOW : None, RevertToParent, CurrentTime);
    XCHECKPOINT;
    return true;

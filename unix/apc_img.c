@@ -266,8 +266,9 @@ Bool
 apc_image_create( Handle self)
 {
    DEFXX;
-   XF_IS_IMAGE(XX)              = true;
-   XF_IS_ICON(XX)               = !!kind_of(self, CIcon);
+   XX-> type.image = true;
+   XX-> type.icon = !!kind_of(self, CIcon);
+   XX-> type.drawable = true;
    XX->bitmap_cache. bitmap     = true;
    XX->screen_cache. bitmap     = false;
    XX->size. x                  = PImage(self)-> w;
@@ -321,6 +322,8 @@ apc_image_update_change( Handle self)
 
    XX-> size. x = img-> w;
    XX-> size. y = img-> h;
+   XX-> type.pixmap = (img-> type & imBPP) != 1;
+   XX-> type.bitmap = (img-> type & imBPP) == 1;
    return true;
 }
 
@@ -328,8 +331,10 @@ Bool
 apc_dbm_create( Handle self, Bool monochrome)
 {
    DEFXX;
-   XF_IS_BITMAP(XX)     = !!monochrome;
-   XF_IS_PIXMAP(XX)     = !monochrome;
+   XX-> type.bitmap = !!monochrome;
+   XX-> type.pixmap = !monochrome;
+   XX-> type.dbm = true;
+   XX-> type.drawable = true;
    XX->size. x          = ((PDeviceBitmap)(self))-> w;
    XX->size. y          = ((PDeviceBitmap)(self))-> h;
    XX->gdrawable        = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), XX->size. x, XX->size. y,
@@ -809,9 +814,9 @@ create_cache24_32( Image *img, ImageCache *cache)
 static int
 get_bpp( Handle self)
 {
-   if ( self == nilHandle)
-      return 1;
-   else if ( XF_IS_IMAGE(X(self)) && (PImage(self)->type & imBPP) == 1)
+   if ( self == nilHandle || X(self) == nil)
+      return 1; /* XXX */
+   else if ( XT_IS_BITMAP(X(self)))
       return 1;
    else
       return guts. idepth;
@@ -823,7 +828,7 @@ get_cache( Handle self, Handle drawable)
    DEFXX;
    if ( drawable == nilHandle)
       return & XX-> bitmap_cache;
-   else if ( XF_IS_IMAGE(X(drawable)) && (PImage(drawable)->type & imBPP) == 1)
+   else if ( XT_IS_BITMAP(X(drawable)))
       return & XX->bitmap_cache;
    else
       return & XX->screen_cache;
@@ -876,7 +881,7 @@ prima_create_image_cache( PImage img, Handle drawable)
 
    if ( img-> palette == nil)
       croak( "UAI_014: image has no palette");
-   if ( XF_IS_ICON(IMG) && cache-> icon == nil)
+   if ( XT_IS_ICON(IMG) && cache-> icon == nil)
       create_cache1_1( img, cache, true);
    if ( cache-> image == nil) {
       switch ( img-> type & imBPP) {
@@ -951,7 +956,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    XGCValues gcv;
    ImageCache *cache;
 
-   if ( XF_IS_BITMAP(X(image)) || XF_IS_PIXMAP(X(image)))
+   if ( XT_IS_DBM(X(image)))
       return put_pixmap( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
    cache = prima_create_image_cache( img, self);
    SHIFT( x, y);
@@ -1702,7 +1707,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    XGCValues gcv;
    int x, y, w, h;
 
-   if ( XF_IS_BITMAP(X(image)) || XF_IS_PIXMAP(X(image)))
+   if ( XT_IS_DBM(X(image)))
       croak( "UAI_021: not implemented");
 
    cache = prima_create_image_cache( img, self);

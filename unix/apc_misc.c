@@ -994,6 +994,7 @@ apc_timer_create( Handle self, Handle owner, int timeout)
    Bool recreate;
    ENTERTIMER;
 
+   sys-> type.timer = true;
    recreate = real && sys-> who != nilHandle;
    inactivate_timer( sys);
    sys-> timeout = timeout;

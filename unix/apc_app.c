@@ -324,6 +324,11 @@ apc_application_create( Handle self)
    XSetWindowAttributes attrs;
    DEFXX;
 
+   XX-> type.application = true;
+   XX-> type.window = true;
+   XX-> type.widget = true;
+   XX-> type.drawable = true;
+
    attrs. event_mask = StructureNotifyMask;
    X_WINDOW = XCreateWindow( DISP, RootWindow( DISP, SCREEN),
 			     0, 0, 1, 1, 0, CopyFromParent,

@@ -46,6 +46,10 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint,
    Handle real_owner;
    DEFXX;
 
+   XX-> type.drawable = true;
+   XX-> type.widget = true;
+   XX-> type.window = true;
+
    /* Transparency is ignored for now */
 
    if ( !clip_owner) {

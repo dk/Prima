@@ -281,12 +281,39 @@ struct _UnixGuts
 #define APC_BAD_SIZE INT_MAX
 #define APC_BAD_ORIGIN INT_MAX
 
-#define COMPONENT_SYS_DATA \
-   Handle self; \
-   XrmQuarkList q_class_name; \
-   XrmQuarkList q_instance_name; \
-   int n_class_name; \
+#define COMPONENT_SYS_DATA                                                    \
+   Handle self;                                                               \
+   struct {                                                                   \
+      int application           : 1;                                          \
+      int bitmap                : 1;                                          \
+      int dbm                   : 1;                                          \
+      int drawable              : 1;                                          \
+      int icon                  : 1;                                          \
+      int image                 : 1;                                          \
+      int menu                  : 1;                                          \
+      int pixmap                : 1;                                          \
+      int popup                 : 1;                                          \
+      int timer                 : 1;                                          \
+      int widget                : 1;                                          \
+      int window                : 1;                                          \
+   } type;                                                                    \
+   XrmQuarkList q_class_name;                                                 \
+   XrmQuarkList q_instance_name;                                              \
+   int n_class_name;                                                          \
    int n_instance_name
+
+#define XT_IS_APPLICATION(x)    ((x)->type.application)
+#define XT_IS_BITMAP(x)         ((x)->type.bitmap)
+#define XT_IS_DBM(x)            ((x)->type.dbm)
+#define XT_IS_DRAWABLE(x)       ((x)->type.drawable)
+#define XT_IS_ICON(x)           ((x)->type.icon)
+#define XT_IS_IMAGE(x)          ((x)->type.image)
+#define XT_IS_MENU(x)           ((x)->type.menu)
+#define XT_IS_PIXMAP(x)         ((x)->type.pixmap)
+#define XT_IS_POPUP(x)          ((x)->type.popup)
+#define XT_IS_TIMER(x)          ((x)->type.timer)
+#define XT_IS_WIDGET(x)         ((x)->type.widget)
+#define XT_IS_WINDOW(x)         ((x)->type.window)
 
 struct _PrimaXImage;
 
@@ -340,10 +367,6 @@ typedef struct _drawable_sys_data
       int exposed			: 1;
       int focused       	        : 1;
       int grab                  	: 1;
-      int is_bitmap                     : 1;
-      int is_icon                       : 1;
-      int is_image                      : 1;
-      int is_pixmap                     : 1;
       int mapped			: 1;
       int no_size			: 1;
       int paint                 	: 1;
@@ -362,10 +385,6 @@ typedef struct _drawable_sys_data
 
 #define XF_ENABLED(x)   ((x)->flags.enabled)
 #define XF_IN_PAINT(x)  ((x)->flags.paint)
-#define XF_IS_BITMAP(x) ((x)->flags.is_bitmap)
-#define XF_IS_IMAGE(x)  ((x)->flags.is_image)
-#define XF_IS_ICON(x)   ((x)->flags.is_icon)
-#define XF_IS_PIXMAP(x) ((x)->flags.is_pixmap)
 
 #define CURSOR_TIMER	((Handle)11)
 

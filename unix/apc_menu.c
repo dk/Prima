@@ -308,8 +308,8 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
 Bool
 apc_menu_create( Handle self, Handle owner)
 {
+   X(self)-> type.menu = true;
    return true;
-   return false;
 }
 
 Bool
@@ -408,7 +408,9 @@ apc_menu_get_handle( Handle self)
 Bool
 apc_popup_create( Handle self, Handle owner)
 {
-   fprintf( stderr, "dudki\n");
+   DEFXX;
+   XX-> type.menu = true;
+   XX-> type.popup = true;
    return true;
 }
 

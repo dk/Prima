@@ -34,6 +34,7 @@
 
 #include "unix/guts.h"
 #include "AbstractMenu.h"
+#include "Application.h"
 #define XK_MISCELLANY
 #define XK_LATIN1
 #define XK_XKB_KEYS
@@ -304,7 +305,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    self = prima_xw2h( win);
    if (!self)
       return;
-   if ( kind_of( self, CAbstractMenu)) {
+   if ( XT_IS_MENU(X(self))) {
       prima_handle_menu_event( ev, win, self);
       return;
    }
@@ -422,6 +423,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       goto CrossingEvent;
    }
    case FocusIn: {
+      Handle frame = self;
       switch ( ev-> xfocus. detail) {
       case NotifyVirtual:
       case NotifyNonlinearVirtual: /* XXX ? */
@@ -430,16 +432,17 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       case NotifyDetailNone: /* XXX ? */
 	 return;
       }
+      if (!XT_IS_WINDOW(XX))
+         frame = CApplication(application)-> top_frame( application, self);
+      if ( CApplication(application)-> map_focus( application, frame) != frame) {
+         CApplication(application)-> popup_modal( application);
+         break;
+      }
       XX-> flags. focused = 1;
       if ( guts. focused) prima_no_cursor( guts. focused);
       guts. focused = self;
       prima_update_cursor( guts. focused);
       e. cmd = cmReceiveFocus;
-      DOLBUG( "~~~~~~~~~ receive focus to %s, mode: %d, sent: %d, detail: %d\n",
-	      PWidget(self)-> name,
-	      ev-> xfocus. mode,
-	      ev-> xfocus. send_event,
-	      ev-> xfocus. detail);
       break;
    }
    case FocusOut: {

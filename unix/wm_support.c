@@ -33,6 +33,7 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#include "Application.h"
 
 /* Generic Window Manager Support */
 
@@ -79,13 +80,14 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
 	 ev-> cmd = cmClose;
 	 return true;
       } else if ((Atom) xev-> data. l[0] == wm-> takeFocus) {
-	 Handle toSelect = CWidget( self)-> get_selectee( self);
+	 Handle toSelect = CApplication(application)->map_focus( application, self);
+         CWidget( toSelect)-> set_selected( toSelect, true);
+         /* XXX old code for reference 
+         toSelect = CWidget( toSelect)-> get_selectee( toSelect);
 	 XWindow s = toSelect ? PWidget(toSelect)-> handle : PWidget(self)-> handle;
-	 DOLBUG( "~~~~~~~~~~~~~~ Whoa there! Got take focus: %s to %s\n", 
-		 PWidget(self)-> name,
-		 toSelect ? PWidget( toSelect)-> name : "itself");
 	 XSetInputFocus( DISP, s, RevertToParent, CurrentTime);
 	 XCHECKPOINT;
+         */
 	 return false;
       }
    }

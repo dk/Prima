@@ -347,8 +347,8 @@ prima_allocate_color( Handle self, Color color)
    }
 
    if ( self == nilHandle ||
-        ( XF_IS_IMAGE(X(self)) && (PImage(self)-> type & imBPP) == 1) ||
-        XF_IS_BITMAP(X(self))
+        ( XT_IS_IMAGE(X(self)) && (PImage(self)-> type & imBPP) == 1) ||
+        XT_IS_BITMAP(X(self))
       ) {
       if ((unsigned short)c.r + (unsigned short)c.g + (unsigned short)c.b > 381)
          return &bitmap_white;
@@ -387,7 +387,7 @@ prima_get_gc( PDrawableSysData selfxx)
 
    if ( XX-> gc || XX-> gcl) croak( "UAG_004: internal error");
 
-   bitmap = ( XF_IS_IMAGE(XX) && (PImage(XX->self)-> type & imBPP) == 1) || XF_IS_BITMAP(XX);
+   bitmap = XT_IS_BITMAP(XX);
    if ( bitmap) {
       free_gcl = &guts. bitmap_free_gcl;
       used_gcl = &guts. bitmap_used_gcl;
@@ -420,7 +420,7 @@ prima_release_gc( PDrawableSysData selfxx)
 
    if ( XX-> gc) {
       if ( XX-> gcl == nil) croak( "UAG_005: internal error");
-      bitmap = (XF_IS_IMAGE(XX) && (PImage(XX->self)-> type & imBPP) == 1) || XF_IS_BITMAP(XX);
+      bitmap = XT_IS_BITMAP(XX);
       if ( bitmap) {
          free_gcl = &guts. bitmap_free_gcl;
          used_gcl = &guts. bitmap_used_gcl;
@@ -938,16 +938,18 @@ apc_gp_get_pixel( Handle self, int x, int y)
    DEFXX;
    Color c = 0;
    XImage *im;
+   Bool pixmap;
 
    /* XXX implement in full */
 
-   if ( XF_IS_BITMAP(XX) || XF_IS_PIXMAP(XX)) {
+   if ( XT_IS_DBM(XX)) {
+      pixmap = XT_IS_PIXMAP(XX);
       im = XGetImage( DISP, XX->gdrawable, x, REVERT(y), 1, 1,
-                      XF_IS_PIXMAP(XX) ? AllPlanes : 1,
-                      XF_IS_PIXMAP(XX) ? ZPixmap : XYPixmap);
+                      pixmap ? AllPlanes : 1,
+                      pixmap ? ZPixmap : XYPixmap);
       XCHECKPOINT;
       if ( im) {
-         if ( XF_IS_PIXMAP(XX)) {
+         if ( pixmap) {
             croak( "UAG_021: not implemented");
          } else {
             if ( im-> data[0] & 0x01)
