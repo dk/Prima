@@ -453,8 +453,8 @@ sub on_mousemove
       $self-> stop_scroll_timer;
       return;
    }
-   my $firstAct = !exists $self->{scrollTimer};
-   $self-> start_scroll_timer unless exists $self->{scrollTimer};
+   my $firstAct = ! $self-> scroll_timer_active;
+   $self-> start_scroll_timer if $firstAct;
    return unless $self->{scrollTimer}->{semaphore};
    $self->{scrollTimer}->{semaphore} = 0;
    if ( $firstAct)
@@ -581,24 +581,12 @@ sub set_first_char
    $self-> reset;
    my $border = $self-> {borderWidth} + 1;
    my @size = $self-> size;
-   if ( $ofc > $pos) {
-      my $scw = $self-> get_text_width( substr( $self->{line}, 0, $ofc - $pos));
-      if ( $scw < ( $size[0] - $border * 2) / 2) {
-         $self-> scroll_rect( $scw, 0,
-            $border, $border,
-            $size[0] - $border - $scw, $size[1] - $border);
-         return;
-      }
-   } else {
-      my $scw = $self-> get_text_width( substr( $oline, 0, $pos - $ofc));
-      if ( $scw < ( $size[0] - $border * 2) / 2) {
-         $self-> scroll_rect( -$scw, 0,
-            $border + $scw, $border,
-            $size[0] - $border, $size[1] - $border);
-         return;
-      }
-   }
-   $self-> repaint;
+   $self-> clipRect( $border, $border, $size[0] - $border, $size[1] - $border);
+   $self-> scroll(
+     ( $ofc > $pos) ?
+        $self-> get_text_width( substr( $self->{line}, 0, $ofc - $pos)) :
+      - $self-> get_text_width( substr( $oline,        0, $pos - $ofc))
+   , 0);
 }
 
 sub set_write_only

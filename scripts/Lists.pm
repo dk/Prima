@@ -481,7 +481,7 @@ sub on_mousemove
    my ($dx,$dy)     = ( $self->{dx}, $self->{dy});
    if ( $y >= $size[1] - $bw || $y < $bw + $dx || $x >= $size[0] - $bw - $dx || $x < $bw)
    {
-      $self-> start_scroll_timer unless exists $self->{scrollTimer};
+      $self-> start_scroll_timer unless $self-> scroll_timer_active;
       return unless $self->{scrollTimer}->{semaphore};
       $self->{scrollTimer}->{semaphore} = 0;
    } else {
@@ -853,20 +853,8 @@ sub set_offset
    $self-> reset;
    $self-> {hScrollBar}-> value( $offset)
      if $self->{hScroll} && !$self->{multiColumn} && $self->{scrollTransaction} != 2;
-   if (( $dt > 0) && ( $dt < $w / 2))
-   {
-      $self-> scroll_rect( -$dt, 0, $bw + $dt, $bw + $dy, $bw + $w, $self-> height - $bw);
-      $self-> {singlePaint}->{$self->{focusedItem}} = 1;
-      $self-> refresh;
-      return;
-   }
-   if (( $dt < 0) && ( -$dt < $w / 2))
-   {
-      $self-> scroll_rect( -$dt, 0, $bw, $bw + $dy, $bw + $w + $dt, $self-> height - $bw);
-      $self-> {singlePaint}->{$self->{focusedItem}} = 1;
-      $self-> refresh;
-      return;
-   }
+   $self-> clipRect( $bw, $bw + $dy, $bw + $w, $self-> height - $bw);
+   $self-> scroll( -$dt, 0);
    $self-> refresh;
 }
 
@@ -975,108 +963,19 @@ sub set_top_item
       if $self->{scrollTransaction} != 1 && $self->{vScroll};
    $self-> {hScrollBar}-> value( $topItem)
       if $self->{scrollTransaction} != 2 && $self->{hScroll} && $self->{multiColumn};
-   if ( $self->{ multiColumn})
-   {
-      if ( $dt % $self->{rows} == 0)
-      {
-         my ($gx,$r) = ( $dt / $self->{rows}, $self->{rows});
-         my $i;
-         if ( $gx > 0 && ($gx * ($iw + 1) < ($w - $dx) / 2 - $bw))
-         {
-            for ( $i = $oldTop + $r * ($self->{columns}-$self->{xTailVisible});
-                  $i <= $self->{lastItem}; $i++)
-               { $self->{singlePaint}->{$i} = 1; }
-            $self-> scroll_rect(
-               - $gx * ($iw + 1), 0,
-               $bw + $gx * ($iw + 1), $bw + $dy, $w - $bw - $dx, $h - $bw,
-            );
-            $self-> update_view;
-            return;
-         }
-         if ( $gx < 0 && (-$gx * ($iw + 1) < $w / 2 - $bw))
-         {
-            for ( $i = 0; $i > $dt; $i--)
-               { $self->{singlePaint}->{$topItem-$i} = 1;}
-            $self-> scroll_rect(
-               - $gx * ($iw + 1), 0,
-               $bw, $bw + $dy, $w - $bw + $gx * ($iw + 1) - $dx, $h - $bw,
-            );
-            $self-> update_view;
-            return;
-         }
-      }
-      if ( abs($dt) < $self->{rows} / 2)
-      {
-         my ( $i, $j);
-         if ( $dt < 0)
-         {
-            for ( $j = 0; $j < -$dt; $j++){
-               for ( $i = 0; $i < $self->{columns}; $i++){
-                  $self->{singlePaint}->{$topItem+$i*$self->{rows}+$j} = 1;
-               }
-            }
-            $self-> scroll_rect(
-               0,   $ih * $dt,
-               $bw, $bw + $self->{yedge} - $ih * $dt + $dy,
-               $w - $bw - $dx, $h - $bw
-            );
-            $self-> update_view;
-            return;
-         }
-         if ( $dt > 0)
-         {
-            for ( $j = 0; $j < $dt; $j++){
-               for ( $i = 0; $i < $self->{columns}; $i++){
-                  $self->{singlePaint}->{$topItem+$i*$self->{rows}+$j+$self->{rows}-$dt} = 1;
-               }
-            }
-            $self-> scroll_rect(
-               0,   $ih * $dt,
-               $bw, $bw + $self->{yedge} + $dy,
-               $w - $bw - $dx, $h - $bw - $dt * $ih
-            );
-            $self-> update_view;
-            return;
-         }
+   if ( $self->{ multiColumn}) {
+      if ( $dt % $self->{rows} == 0) {
+         $self-> clipRect( $bw, $bw + $dy, $w - $bw - $dx, $h - $bw);
+         $self-> scroll( -( $dt / $self->{rows}) * ($iw + 1), 0);
+      } else {
+         $self-> clipRect( $bw, $bw + $dy + $self->{yedge}, $w - $bw - $dx, $h - $bw);
+         $self-> scroll( 0, $ih * $dt);
       }
    } else {
-      my $sync = exists $self->{syncScroll} ? 1 : 0;
-      if ( $dt > 0 && ( $dt * $ih < ($h - $dy) / 2 - $bw))
-      {
-         my $i;
-         my $z;
-         for ( $i = $self->{rows} - $dt + $topItem - 1;
-               $i <= $self->{lastItem}; $i++)
-            { $self->{singlePaint}->{$i} = 1;}
-         $self-> scroll_rect(0, $dt * $ih,
-            $bw,            $bw + $sync * ( $self->{yedge} + $ih) + $dy,
-            $w - $bw - $dx, $h - $bw - $dt * $ih,
-         );
-         if ( $sync)
-         {
-           $self-> {singlePaint}->{$self->{lastItem}}   = 1;
-           $self-> {singlePaint}->{$self->{lastItem}-1} = 1 if $self->{tailVisible};
-           $self-> refresh;
-         } else {
-           $self-> update_view;
-         }
-         return;
-      }
-#     if ( $dt < 0 && ( - $dt * $ih < ( $h - $dy) / 2 - $bw))
-      if ( $dt < 0 && (($h - $bw * 2 - $dy - $ih * ( $sync - 2 * $dt)) > 0))
-      {
-         my $i;
-         for ( $i = $oldTop + $dt; $i <= $oldTop; $i++)
-            { $self->{singlePaint}->{$i} = 1; }
-         $self-> scroll_rect(0, $dt * $ih,
-            $bw,             $bw - $dt * $ih + $dy,
-            $w - $bw - $dx,  $h - $bw - $sync * $ih
-         );
-         $self-> update_view;
-         return;
-      }
+      $self-> clipRect( $bw, $bw + $dy, $w - $bw - $dx, $h - $bw);
+      $self-> scroll( 0, $dt * $ih);
    }
-   $self-> refresh;
+   $self-> update_view;
 }
 
 

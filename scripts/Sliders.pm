@@ -153,7 +153,7 @@ sub on_mousemove
         if int( $self-> {increment}) != int( $d);
       $self-> {increment}  = $d;
    } elsif ( $self->{pressState} > 0) {
-      $self-> start_scroll_timer unless exists $self->{scrollTimer};
+      $self-> start_scroll_timer unless $self-> scroll_timer_active;
       return unless $self->{scrollTimer}->{semaphore};
       $self->{scrollTimer}->{semaphore} = 0;
       $self-> notify( 'Increment', $self->{mouseTransaction} == 1 ? 1 : -1);
@@ -261,7 +261,7 @@ sub on_mousemove
       if $self-> { lastMouseOver} != $mouseOver;
    $self-> { lastMouseOver} = $mouseOver;
    if ( $self->{pressState}) {
-      $self-> start_scroll_timer unless exists $self->{scrollTimer};
+      $self-> start_scroll_timer unless $self-> scroll_timer_active;
       return unless $self->{scrollTimer}->{semaphore};
       $self->{scrollTimer}->{semaphore} = 0;
       $self-> notify( 'Increment', $self->{mouseTransaction} == 1 ? 1 : -1);
@@ -1517,7 +1517,7 @@ sub on_mousemove
    if ( $self->{mouseTransaction} == 3) {
       $self-> value( $self-> xy2val( $x, $y));
    } elsif ( $self->{pressState} > 0) {
-      $self-> start_scroll_timer unless exists $self->{scrollTimer};
+      $self-> start_scroll_timer unless $self-> scroll_timer_active;
       return unless $self->{scrollTimer}->{semaphore};
       $self->{scrollTimer}->{semaphore} = 0;
       $self-> value( $self-> value + $self-> step * (( $self->{mouseTransaction} == 1) ? -1 : 1));

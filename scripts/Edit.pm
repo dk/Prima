@@ -722,7 +722,7 @@ sub on_mousemove
    {
       $self-> stop_scroll_timer;
    } else {
-      $self-> start_scroll_timer unless exists $self->{scrollTimer};
+      $self-> start_scroll_timer unless $self-> scroll_timer_active;
       return unless $self->{scrollTimer}->{semaphore};
       $self->{scrollTimer}->{semaphore} = 0;
    }
@@ -1004,28 +1004,10 @@ sub set_first_col
       $self->{scrollTransaction} = 0;
    }
    $self-> reset_cursor;
-   if ( abs($dt) < $self->{rows} / 2)
-   {
-      my ( $bw, $dx, $dy, $x, $y, $fh) =
-        ($self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> size, $self-> font-> height);
-      if ( $dt > 0)
-      {
-         $self-> scroll_rect(
-             0, $dt * $fh,
-             $bw, $bw + $dy, $x - $bw - $dx, $y - $bw  - $dt * $fh,
-         );
-         return;
-      }
-      if ( $dt < 0)
-      {
-         $self-> scroll_rect(
-             0, $dt * $fh,
-             $bw, $bw + $dy - $dt * $fh, $x - $bw - $dx, $y - $bw,
-         );
-         return;
-      }
-   }
-   $self-> repaint;
+   my ( $bw, $dx, $dy, $x, $y, $fh) =
+       ($self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> size, $self-> font-> height);
+   $self-> clipRect( $bw, $bw + $dy, $x - $bw - $dx, $y - $bw);
+   $self-> scroll( 0, $dt * $fh);
 }
 
 sub set_h_scroll
@@ -1137,26 +1119,8 @@ sub set_offset
    my ( $x, $y) = $self->size;
    my ( $bw, $dx, $dy) = ($self->{borderWidth}, $self->{dx}, $self->{dy});
    $self-> reset_cursor;
-   if ( abs($dt) < ($x-$bw-$bw-$dx) / 2)
-   {
-      if ( $dt > 0)
-      {
-         $self-> scroll_rect(
-            -$dt, 0,
-            $bw + $dt, $bw + $dy, $x - $dx - $bw, $y - $bw
-         );
-         return;
-      }
-      if ( $dt < 0)
-      {
-         $self-> scroll_rect(
-            -$dt, 0,
-            $bw, $bw + $dy, $x - $dx - $bw + $dt, $y - $bw
-         );
-         return;
-      }
-   }
-   $self-> repaint;
+   $self-> clipRect( $bw, $bw + $dy, $x - $dx - $bw, $y - $bw);
+   $self-> scroll( -$dt, 0);
 }
 
 

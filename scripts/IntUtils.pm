@@ -25,11 +25,19 @@ package MouseScroller;
 #     MouseScroller also use semaphore named "mouseTransaction", which should
 #   be true when widget is in mouse capture state.
 
+sub scroll_timer_active
+{
+   my $self = $_[0];
+   return 0 unless exists $self->{scrollTimer};
+   return $self->{scrollTimer}-> {active};
+}
+
 sub stop_scroll_timer
 {
    my $self = $_[0];
    return unless exists $self->{scrollTimer};
    $self->{scrollTimer}-> stop;
+   $self->{scrollTimer}-> {active} = 0;
    $self->{scrollTimer}-> timeout( $self->{scrollTimer}-> {firstRate});
    $self->{scrollTimer}-> {newRate} = $self->{scrollTimer}-> {nextRate};
 }
@@ -48,6 +56,7 @@ sub start_scroll_timer
       @{$self-> {scrollTimer}}{qw(firstRate nextRate newRate)} = (@rates,$rates[1]);
    }
    $self->{scrollTimer}->{semaphore} = 1;
+   $self->{scrollTimer}-> {active} = 1;
    $self->{scrollTimer}->start;
 }
 
