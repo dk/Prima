@@ -1781,7 +1781,9 @@ sub path
    return $_[0]-> {path} unless $#_;
    my $p = $_[1];
    $p =~ s{^([^\\\/]*[\\\/][^\\\/]*)[\\\/]$}{$1};
-   $p = Cwd::abs_path($p);
+   $p = eval { Cwd::abs_path($p) };
+   $p = "." if $@;
+   $p = "" unless -d $p;
    $p .= '/' unless $p =~ m![/\\]$!;
    $_[0]-> {path} = $p;
    $_[0]-> new_directory;
