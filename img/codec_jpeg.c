@@ -30,6 +30,9 @@
 #include "img.h"
 #include "img_conv.h"
 #include "Image.h"
+#undef LOCAL
+#undef HAVE_STDDEF_H
+#undef HAVE_STDLIB_H
 #include <sys/types.h>
 #include <stdio.h>
 #include <jpeglib.h>
