@@ -204,12 +204,6 @@ sub on_mousemove
    $self-> notify(q(Click));
 }
 
-sub set_pressed
-{
-   $_[0]-> { pressed} = $_[1];
-   $_[0]-> repaint;
-}
-
 sub draw_veil
 {
     my ($self,$canvas) = (shift, shift);
@@ -282,7 +276,13 @@ sub caption_box
    return $canvas-> get_text_width( $cap), $canvas-> font-> height;
 }
 
-sub pressed      {($#_)?$_[0]->set_pressed     ($_[1]):return $_[0]->{pressed}     }
+sub pressed
+{
+   return $_[0]->{pressed} unless $#_;
+   $_[0]-> { pressed} = $_[1];
+   $_[0]-> repaint;
+}
+
 
 sub text
 {
@@ -511,8 +511,43 @@ sub on_mouseleave
    }
 }
 
-sub set_default
+sub autoRepeat
 {
+   return $_[0]-> {autoRepeat} unless $#_;
+   $_[0]-> {autoRepeat} = $_[1];
+}
+
+sub borderWidth
+{
+   return $_[0]->{borderWidth} unless $#_;
+   my ( $self, $bw) = @_;
+   $bw = 0 if $bw < 0;
+   $bw = int( $bw);
+   return if $bw == $self->{borderWidth};
+   $self->{borderWidth} = $bw;
+   $self-> repaint;
+}
+
+sub checkable
+{
+   return $_[0]->{checkable} unless $#_;
+   $_[0]-> checked( 0) unless $_[0]-> {checkable} == $_[1];
+   $_[0]-> {checkable} = $_[1];
+}
+
+sub checked
+{
+   return $_[0]->{checked} unless $#_;
+   return unless $_[0]-> { checkable};
+   return if $_[0]->{checked}+0 == $_[1]+0;
+   $_[0]->{checked} = $_[1];
+   $_[0]-> repaint;
+   $_[0]-> notify( 'Check', $_[0]->{checked});
+}
+
+sub default
+{
+   return $_[0]->{default} unless $#_;
    my $self = $_[0];
    return if $self->{default} == $_[1];
    if ( $self-> { default} = $_[1])
@@ -527,56 +562,16 @@ sub set_default
    $self-> repaint;
 }
 
-sub set_border_width
+sub defaultGlyph {($#_)?($_[0]->{defaultGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{defaultGlyph}     }
+sub hiliteGlyph  {($#_)?($_[0]->{hiliteGlyph}  = $_[1],$_[0]->repaint) :return $_[0]->{hiliteGlyph}     }
+sub disabledGlyph{($#_)?($_[0]->{disabledGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{disabledGlyph}     }
+sub pressedGlyph {($#_)?($_[0]->{pressedGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{pressedGlyph}     }
+sub holdGlyph    {($#_)?($_[0]->{holdGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{holdGlyph}     }
+sub flat         {($#_)?($_[0]->{flat}      = $_[1],$_[0]->repaint) :return $_[0]->{flat}          }
+sub image        {($#_)?($_[0]->{image}=$_[1], $_[0]->repaint):return $_[0]->{image} }
+sub imageFile
 {
-   my ( $self, $bw) = @_;
-   $bw = 0 if $bw < 0;
-   $bw = int( $bw);
-   return if $bw == $self->{borderWidth};
-   $self->{borderWidth} = $bw;
-   $self-> repaint;
-}
-
-sub set_modal_result
-{
-   my $self = $_[0];
-   $self-> { modalResult} = $_[1];
-   my $owner = $self-> owner;
-   if ( $owner-> isa(q(Prima::Window)) && $owner-> get_modal && $self-> {modalResult})
-   {
-      $owner-> modalResult( $self-> { modalResult});
-      $owner-> end_modal;
-   }
-}
-
-sub set_glyphs
-{
-   my $maxG = defined $_[0]->{image} ? $_[0]->{image}-> width : 1;
-   $maxG = 1 unless $maxG;
-   if ( $_[1] > 0 && $_[1] <= $maxG)
-   {
-      $_[0]->{glyphs} = $_[1];
-      $_[0]-> repaint;
-   }
-}
-
-sub set_checkable
-{
-   $_[0]-> checked( 0) unless $_[0]-> {checkable} == $_[1];
-   $_[0]-> {checkable} = $_[1];
-}
-
-sub set_checked
-{
-   return unless $_[0]-> { checkable};
-   return if $_[0]->{checked}+0 == $_[1]+0;
-   $_[0]->{checked} = $_[1];
-   $_[0]-> repaint;
-   $_[0]-> notify( 'Check', $_[0]->{checked});
-}
-
-sub set_image_file
-{
+   return $_[0]->{imageFile} unless $#_;
    my ($self,$file) = @_;
    $self-> image(undef), return unless defined $file;
    my $img = Prima::Icon-> create;
@@ -588,28 +583,32 @@ sub set_image_file
    $self->image($img);
 }
 
-sub autoRepeat
-{
-   return $_[0]-> {autoRepeat} unless $#_;
-   $_[0]-> {autoRepeat} = $_[1];
-}
-
-sub borderWidth  {($#_)?$_[0]->set_border_width($_[1]):return $_[0]->{borderWidth} }
-sub checkable    {($#_)?$_[0]->set_checkable   ($_[1]):return $_[0]->{checkable}   }
-sub checked      {($#_)?$_[0]->set_checked     ($_[1]):return $_[0]->{checked}     }
-sub default      {($#_)?$_[0]->set_default     ($_[1]):return $_[0]->{default}     }
-sub defaultGlyph {($#_)?($_[0]->{defaultGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{defaultGlyph}     }
-sub hiliteGlyph  {($#_)?($_[0]->{hiliteGlyph}  = $_[1],$_[0]->repaint) :return $_[0]->{hiliteGlyph}     }
-sub disabledGlyph{($#_)?($_[0]->{disabledGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{disabledGlyph}     }
-sub pressedGlyph {($#_)?($_[0]->{pressedGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{pressedGlyph}     }
-sub holdGlyph    {($#_)?($_[0]->{holdGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{holdGlyph}     }
-sub flat         {($#_)?($_[0]->{flat}      = $_[1],$_[0]->repaint) :return $_[0]->{flat}          }
-sub image        {($#_)?($_[0]->{image}=$_[1], $_[0]->repaint):return $_[0]->{image} }
-sub imageFile    {($#_)?$_[0]->set_image_file($_[1]):return $_[0]->{imageFile}}
 sub imageScale   {($#_)?($_[0]->{imageScale}=$_[1], $_[0]->repaint):return $_[0]->{imageScale} }
 sub vertical     {($#_)?($_[0]->{vertical}=$_[1], $_[0]->repaint):return $_[0]->{vartical} }
-sub modalResult  {($#_)?$_[0]->set_modal_result($_[1]):return $_[0]->{modalResult} }
-sub glyphs       {($#_)?$_[0]->set_glyphs      ($_[1]):return $_[0]->{glyphs}      }
+sub modalResult
+{
+   return $_[0]->{modalResult} unless $#_;
+   my $self = $_[0];
+   $self-> { modalResult} = $_[1];
+   my $owner = $self-> owner;
+   if ( $owner-> isa(q(Prima::Window)) && $owner-> get_modal && $self-> {modalResult})
+   {
+      $owner-> modalResult( $self-> { modalResult});
+      $owner-> end_modal;
+   }
+}
+
+sub glyphs
+{
+   return $_[0]->{glyphs} unless $#_;
+   my $maxG = defined $_[0]->{image} ? $_[0]->{image}-> width : 1;
+   $maxG = 1 unless $maxG;
+   if ( $_[1] > 0 && $_[1] <= $maxG)
+   {
+      $_[0]->{glyphs} = $_[1];
+      $_[0]-> repaint;
+   }
+}
 
 
 package Prima::Cluster;
@@ -666,8 +665,10 @@ sub on_enter
    $self-> SUPER::on_enter;
 }
 
-sub set_checked
+sub auto         { ($#_)?$_[0]->{auto}          =$_[1] :return $_[0]->{auto}}
+sub checked
 {
+   return $_[0]->{checked} unless $#_;
    my $old = $_[0]-> {checked};
    my $new = $_[1] ? 1 : 0;
    if ( $old != $new) {
@@ -677,11 +678,9 @@ sub set_checked
    }
 }
 
-sub auto         { ($#_)?$_[0]->{auto}          =$_[1] :return $_[0]->{auto}}
-sub checked      { ($#_)?$_[0]->set_checked     ($_[1]):return $_[0]->{checked}}
 sub toggle       { my $i = $_[0]-> checked; $_[0]-> checked( !$i); return !$i;}
-sub check        { $_[0]->set_checked(1)}
-sub uncheck      { $_[0]->set_checked(0)}
+sub check        { $_[0]->checked(1)}
+sub uncheck      { $_[0]->checked(0)}
 
 
 package Prima::CheckBox;
@@ -830,8 +829,9 @@ sub on_click
    $self-> checked( 1) unless $self-> checked;
 }
 
-sub set_checked
+sub checked
 {
+   return $_[0]->{checked} unless $#_;
    my $self = $_[0];
    my $chkOk = $self->{checked};
 
@@ -846,7 +846,6 @@ sub set_checked
    }
 }
 
-sub checked  { ($#_)?$_[0]->set_checked ($_[1]):return $_[0]->{checked}     }
 
 package Prima::SpeedButton;
 use vars qw(@ISA);
