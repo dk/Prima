@@ -746,14 +746,6 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
 
    if ( !font) font = &dummy;
    
-   memset( font, 0, sizeof( Font));
-
-   for ( i = 0; i < guts. n_fonts; i++) {
-      if ( strcmp( guts. font_info[i]. xname, ppFontNameSize) == 0) {
-         *font = guts. font_info[i]. font;
-         return;
-      }
-   }
 
    /* check if font is XLFD and ends in -*-*, so we can replace it with $LANG */
    len = strlen( ppFontNameSize);
@@ -767,7 +759,15 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
       ppFontNameSize = buf;
       len = strlen( ppFontNameSize);
    }
-   
+
+   /* check if the parsed font already present */
+   memset( font, 0, sizeof( Font));
+   for ( i = 0; i < guts. n_fonts; i++) {
+      if ( strcmp( guts. font_info[i]. xname, ppFontNameSize) == 0) {
+         *font = guts. font_info[i]. font;
+         return;
+      }
+   }
    
    xf = ( XFontStruct * ) hash_fetch( xfontCache, ppFontNameSize, len);
 
@@ -822,7 +822,8 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
          guts. font_info[ guts. n_fonts++] = fi;
       }
    }
-   Fdebug("font: %s parsed to: %d.[w=%d,s=%d].%s.%s\n", ppFontNameSize, DEBUG_FONT((*font)));
+   Fdebug("font: %s%s parsed to: %d.[w=%d,s=%d].%s.%s\n", 
+	  newEntry ? "new " : "", ppFontNameSize, DEBUG_FONT((*font)));
 }
 
 void
