@@ -6,6 +6,7 @@
 #include "Window.h"
 #include "Img.h"
 #include "Icon.h"
+#include "DeviceBitmap.h"
 
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
@@ -501,6 +502,9 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    HDC dc;
    DWORD theRop;
    Bool db;
+   int dcmono = 0;
+
+   COLORREF oFore, oBack;
 
    dobjCheck(image);
    db = dsys( image) options. aptDeviceBitmap || i-> options. optInDraw;
@@ -532,6 +536,25 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       }
 
       dc = dsys( image) ps;
+
+      // actions for mono images
+      if ( dcmono = dsys( image) options. aptDeviceBitmap ?
+         (( PDeviceBitmap) image)-> monochrome :
+         ( dsys( image) bpp == 1))
+      {
+         PRGBColor pal = (( PDeviceBitmap) image)-> palette;
+         dcmono = 1;
+         oFore  = GetTextColor( sys ps);
+         oBack  = GetBkColor( sys ps);
+         SetTextColor( sys ps,
+            (( PDeviceBitmap) image)-> palSize > 1
+            ? RGB( pal[0].r, pal[0].g, pal[0].b)
+            : RGB( 0, 0, 0));
+         SetBkColor( sys ps,
+            (( PDeviceBitmap) image)-> palSize > 2
+            ? RGB( pal[1].r, pal[1].g, pal[1].b)
+            : RGB( 0xff, 0xff, 0xff));
+      }
    } else {
       if ( is_apt( aptCompatiblePS))
          dc = CreateCompatibleDC( xdc);
@@ -610,7 +633,12 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    if ( p2) SelectPalette( xdc, p2, 1);
    if ( b1) SelectObject( dc, b1);
 
-   if ( !db) {
+   if ( db) {
+      if ( dcmono) {
+         SetTextColor( sys ps, oFore);
+         SetBkColor( sys ps, oBack);
+      }
+   } else {
       if ( dc) DeleteDC( dc);
       if ( deja != image) Object_destroy( deja);
    }
@@ -1214,10 +1242,9 @@ apc_gp_set_back_color( Handle self, Color color)
       PStylus s = & sys stylus;
       if ( pal_ok) clr = palette_match( self, clr);
       if ( SetBkColor( sys ps, clr) == CLR_INVALID) apiErr;
-      if ( s-> brush. lb. lbStyle == BS_DIBPATTERNPT) {
-         s-> brush. backColor = color;
+      s-> brush. backColor = color;
+      if ( s-> brush. lb. lbStyle == BS_DIBPATTERNPT)
          stylus_change( self);
-      }
    }
    sys lbs[1] = clr;
 }
