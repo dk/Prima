@@ -1065,7 +1065,6 @@ sub profile_default
       menuFont              => $_[ 0]-> get_default_menu_font,
       modalResult           => mb::Cancel,
       modalHorizon          => 1,
-      ownerFont             => 0,
       ownerIcon             => 1,
       originDontCare        => 1,
       sizeDontCare          => 1,
