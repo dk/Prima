@@ -27,13 +27,6 @@
  */
 
 #include "img.h"
-
-#ifndef __unix
-#   include <io.h>
-#else
-#   include <unistd.h>
-#endif /* __unix */
-#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <limits.h>
@@ -43,6 +36,7 @@
 #include "img_conv.h"
 #include <Image.inc>
 #include "Clipboard.h"
+
 
 #ifdef __cplusplus
 extern "C" {

@@ -26,15 +26,15 @@
  */
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
 
-#ifdef __unix
+#include "img.h"
+#include "img_conv.h"
+#include "Image.h"
+
+#if PRIMA_PLATFORM == apcUnix
 #include <unistd.h>
 #else
 #include <stdlib.h>
 #endif 
-
-#include "img.h"
-#include "img_conv.h"
-#include "Image.h"
 
 #ifdef __cplusplus
 extern "C" {

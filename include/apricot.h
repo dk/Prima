@@ -47,7 +47,6 @@
 #ifdef _MSC_VER
    #define BROKEN_COMPILER       1
    #define BROKEN_PERL_PLATFORM  1
-   #define __INLINE__            __inline
    #define snprintf              _snprintf
    #define vsnprintf             _vsnprintf
    #define stricmp               _stricmp
@@ -58,18 +57,9 @@
    #define BROKEN_PERL_PLATFORM  1
    #define BROKEN_COMPILER       1
    extern double                 NAN;
-   #define __INLINE__
-#elif defined(sgi) && !defined(__GNUC__)
-   #define __INLINE__           
-#else
-   #define __INLINE__            __inline__
 #endif
 
-#if !defined(__unix) && defined(unix)
-#define __unix unix
-#endif    
-
-#ifdef __unix   /* This is wrong, not every unix */
+#if PRIMA_PLATFORM == 3
    extern double NAN;
 #endif
 
@@ -318,40 +308,42 @@ typedef long Color;
 #include "Types.h"
 
 #if !defined(HAVE_INT8_T)
-typedef signed char     int8_t;
+typedef I8 int8_t;
 #endif
 #if !defined(HAVE_INT16_T)
-typedef signed short    int16_t;
+typedef I16  int16_t;
 #endif
 #if !defined(HAVE_INT32_T)
-typedef signed long     int32_t;
+typedef I32  int32_t;
 #endif
 #if !defined(HAVE_UINT8_T)
 #if defined(HAVE_U_INT8_T)
 typedef u_int8_t        uint8_t;
 #else
-typedef unsigned char   uint8_t;
+typedef U8 uint8_t;
 #endif
 #endif
 #if !defined(HAVE_UINT16_T)
 #if defined(HAVE_U_INT16_T)
 typedef u_int16_t       uint16_t;
 #else
-typedef unsigned short  uint16_t;
+typedef U16 uint16_t;
 #endif
 #endif
 #if !defined(HAVE_UINT32_T)
 #if defined(HAVE_U_INT32_T)
 typedef u_int32_t       uint32_t;
 #else
-typedef unsigned long   uint32_t;
+typedef U32 uint32_t;
 #endif
 #endif
 #if !defined(HAVE_UINT64_T)
 #if defined(HAVE_U_INT64_T)
 typedef u_int64_t       uint64_t;
+#elif defined U64
+typedef U64 uint64_t;
 #else
-typedef unsigned long   uint64_t;
+typedef unsigned long uint64_t;
 #endif
 #endif
 

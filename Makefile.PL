@@ -452,6 +452,33 @@ sub have_funcs_in
     }
 }
 
+
+sub find_inline
+{
+    print "Checking for inline...";
+    for ( qw( inline __inline inline__ __inline__
+              INLINE __INLINE INLINE__ __INLINE__)) {
+       my $i = $_;    
+       my $rc = compile( <<EOF);
+
+$_ void a( void) {};
+
+int
+main()
+{
+    return 0;
+}
+EOF
+       if ( $rc) {
+           $DEFINES{__INLINE__} = $i;
+           print "$i\n";
+           return;
+       }
+    }
+    print "none found\n";
+    $DEFINES{__INLINE__} = 'static'; # nasty hack, but better than #pragma inline
+}
+
 sub setvar
 {
     my ( $varname) = shift;
@@ -501,7 +528,7 @@ sub setup_variables
 {
     my $platform;
     $NeedX11 = 0;
-    if ( $Win32) {              # XXX Correct for NT.
+    if ( $Win32) {              
         $platform = 'win32';
     }
     elsif ( $OS2) {
@@ -514,6 +541,24 @@ sub setup_variables
     setvar( 'PLATFORM', $platform);
 
     %cc_specs = (
+                 cc => {
+                         warnflags => "",
+                         cflags => "",
+                         coutoflag => '-o ',
+                         coutexeflag => '-o ',
+                         cdebugflags => '-g -O',
+                         clinkprefix => '',
+                         clibpathflag => '-L',
+                         ldflags => '',
+                         ldoutflag => '-o ',
+                         ldlibpathflag => '-L',
+                         ldlibflag => '-l',
+                         ldlibext  => '',
+                         lddebugflags => '-g',
+                         name => "CC",
+                         lib  => '',
+                         liboflag => '',
+                        },
                  gcc => {
                          warnflags => "-Wall",
                          cflags => "",
@@ -631,6 +676,8 @@ sub setup_variables
     }
     elsif ( have_define( "_MSC_VER")) {
         $COMPILER = 'msvc';
+    } elsif ( $CC =~ /^(\S*\/)?cc\b/ ) {
+        $COMPILER = 'cc';
     } else {
         print "($CC is unknown, using gcc instead) ";
         $COMPILER = 'gcc';
@@ -736,6 +783,7 @@ sub setup_variables
                 PRIMA_CORE => 1,
                 PERL_POLLUTE => 1,
                );
+     $DEFINES{PRIMA_PLATFORM} = $OS2 ? 1 : ( $Win32 ? 2 : 3);
     if ( env_true( 'PRIMA_PARANOID_MALLOC')) {
         $DEFINES{ PARANOID_MALLOC} = 1;
     }
@@ -1170,6 +1218,13 @@ sub setup_defines
                    qw(uint8_t uint16_t uint32_t uint64_t));
     have_types_in( "sys/types.h",
                    qw(u_int8_t u_int16_t u_int32_t u_int64_t));
+                   
+    have_types_in( "sys/bitypes.h",
+                   qw(int8_t int16_t int32_t));
+    have_types_in( "sys/bitypes.h",
+                   qw(uint8_t uint16_t uint32_t uint64_t));
+    have_types_in( "sys/bitypes.h",
+                   qw(u_int8_t u_int16_t u_int32_t u_int64_t));
 
     have_types_in( "stdint.h",
                    qw(int8_t int16_t int32_t));
@@ -1205,6 +1260,7 @@ sub setup_defines
     if ( $Win32) {
         have_type( "BOOLEAN", "windows.h");
     }
+    find_inline();
 
     foreach my $defname ( keys %USER_DEFINES) {
         if ( defined $USER_DEFINES{ $defname}) {
@@ -1566,6 +1622,7 @@ use vars qw(%Config %Config_inst);
   ldpaths               => [$libpath],
   ldlibs                => [$libs],
   ldlibext              =>'$cc_specs{$COMPILER}->{ldlibext}',
+  inline                => '$DEFINES{__INLINE__}',
   perl                  => '$perl',
 );
 
@@ -1877,7 +1934,8 @@ FOOTER
 #define __GENERIC_CONFIG_H__
 EOF
     foreach my $define ( sort keys %DEFINES) {
-        print CONFIG "#undef $define\n#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
+        print CONFIG "#undef $define\n";
+        print CONFIG "#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
     }
     print CONFIG <<EOF;
 #endif
