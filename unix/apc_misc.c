@@ -1285,7 +1285,8 @@ apc_query_drive_type( const char *drive)
 char *
 apc_get_user_name( void)
 {
-   return getlogin();
+   char * c = getlogin();
+   return c ? c : "";
 }
 
 Bool
