@@ -1760,7 +1760,7 @@ sub load_file
    }
    $VB::form-> prf_set( %{$mf->{profile}});
    $VB::inspector->{selectorChanging} = 1 if $VB::inspector;
-   my $loaded = 1;
+   my $loaded;
    $self-> push_widgets( sub {
      $loaded++;
      $self-> text( sprintf( "Loaded %d%%", ($loaded / $maxwij) * 100)); 
