@@ -1727,24 +1727,31 @@ sub new_directory
 {
    my $self = shift;
    my $p = $self-> path;
-   opendir DIR, $p or do
-   {
+   my @fs = Utils::getdir( $p);
+   unless ( scalar @fs) {
       $self-> path('.'), return unless $p =~ tr{/\\}{} > 1;
       $self-> {path} =~ s{[/\\][^/\\]+[/\\]?$}{/};
       $self-> path('.'), return if $p eq $self-> {path};
       $self-> path($self-> {path});
       return;
-   };
+   }
 
    my $oldPointer = $::application-> pointer;
    $::application-> pointer( cr::Wait);
-   $self-> {files} = [(readdir DIR)];
-   closedir DIR;
-   $self-> {filesStat} = [map { (stat("$p$_"))[2] || 0; } @{$self-> {files}}];
-   my @d = sort grep { $_ ne '.' && $_ ne '..' } $self-> files( '-d');
+   my $i;
+   my @fs1 = ();
+   my @fs2 = ();
+   for ( $i = 0; $i < scalar @fs; $i += 2) {
+      push( @fs1, $fs[ $i]);
+      push( @fs2, $fs[ $i + 1]);
+   }
+
+   $self-> {files}     = \@fs1;
+   $self-> {filesStat} = \@fs2;
+   my @d   = sort grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
    my $ind = 0;
    my @ups = split /[\/\\]/, $p;
-   my @lb = ();
+   my @lb  = ();
    my $wasRoot = 0;
    for ( @ups)
    {
@@ -1769,7 +1776,7 @@ sub new_directory
       };
    }
    $lb[-1]-> {type} = LAST_LEAF if scalar @d;
-   $self->items([@lb]);
+   $self-> items([@lb]);
    $self-> focusedItem( $foc);
    $self-> notify( q(Change));
    $::application-> pointer( $oldPointer);
@@ -1790,17 +1797,12 @@ sub path
 }
 
 sub files {
-   return wantarray ? @{$_[0]->{files}} : $_[0]->{files} unless ($#_);
-   return wantarray ? () : undef unless $_[1] =~ /-[fd]/;
-   my $tst;
-   $tst = 0040000 if $_[1] eq q/-d/;
-   $tst = 0100000 if $_[1] eq q/-f/;
+   my ( $fn, $fs) = ( $_[0]->{files}, $_[0]-> {filesStat});
+   return wantarray ? @$fn : $fn unless ($#_);
    my @f = ();
-   for ( my $i = 0; $i < scalar @{$_[0]->{files}}; $i++)
+   for ( my $i = 0; $i < scalar @$fn; $i++)
    {
-      next unless defined($_[0]-> {filesStat}-> [$i]) &&
-         ($_[0]-> {filesStat}-> [$i] & $tst) == $tst;
-      push @f, $_[0]-> {files}-> [$i];
+      push ( @f, $$fn[$i]) if $$fs[$i] eq $_[1];
    }
    return wantarray ? @f : \@f;
 }
