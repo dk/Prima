@@ -810,7 +810,7 @@ sub print
       $self-> {text}-> {fontPalette}-> [1]-> {name} = $printer_font->{name};
    }
 
-   $self-> {text}-> print( $p, sub {
+   my $ok = $self-> {text}-> print( $p, sub {
       $self-> status("Printing page $pc. Press ESC to cancel");
       $pc++;
       $::application-> yield;
@@ -818,7 +818,7 @@ sub print
       1;
    });
    
-   if ( $self-> {printing} > 0) {
+   if ( $ok) {
       $p-> end_doc;
       $self-> status("Printing done");
    } else {

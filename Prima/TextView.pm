@@ -854,6 +854,7 @@ sub block_draw
 {
    my ( $self, $canvas, $b, $x, $y) = @_;
    my ( $i, $lim) = ( tb::BLK_START, scalar @$b);
+   my $ret = 1;
 
    my $cmd;
    my ( $t, $o) = ( $self-> {text}, $$b[ tb::BLK_TEXT_OFFSET]);
@@ -878,7 +879,7 @@ sub block_draw
                $self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
                $c_taint = 1;
             }
-            $canvas-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), 
+            $ret = $canvas-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), 
                               $x, $y, $$b[ $i + 2]);
          }
          $x += $$b[ $i + 3];
@@ -907,6 +908,8 @@ sub block_draw
          $c_taint = undef;
       }
    }
+
+   return $ret;
 }
 
 sub xy2info

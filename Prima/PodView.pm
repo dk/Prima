@@ -1315,7 +1315,8 @@ sub print
    my ( $self, $canvas, $callback) = @_;
    
    my ( $min, $max, $linkIdStart) = @{$self-> {modelRange}};
-   return if $min >= $max;
+   return 1 if $min >= $max;
+   my $ret = 0;
 
    goto ABORT if $callback && ! $callback->();
 
@@ -1351,26 +1352,28 @@ sub print
          if ( $y < $$b[ tb::BLK_HEIGHT]) {
             if ( $$b[ tb::BLK_HEIGHT] < $formatHeight) {
                goto ABORT if $callback && ! $callback->();
-               $canvas-> new_page;
+               goto ABORT unless $canvas-> new_page;
                $y = $formatHeight - $$b[ tb::BLK_HEIGHT];
                $self-> block_draw( $canvas, $b, $indent, $y);
             } else { 
                $y -= $$b[ tb::BLK_HEIGHT];
                while ( $y < 0) {
                   goto ABORT if $callback && ! $callback->();
-                  $canvas-> new_page;
+                  goto ABORT unless $canvas-> new_page;
                   $self-> block_draw( $canvas, $b, $indent, $y);
                   $y += $formatHeight;
                }
             }
          } else {
             $y -= $$b[ tb::BLK_HEIGHT];
-            $self-> block_draw( $canvas, $b, $indent, $y);
+            goto ABORT unless $self-> block_draw( $canvas, $b, $indent, $y);
          }
       }
    }
 
+   $ret = 1;
 ABORT:
+   return $ret;
 }
 
 sub select_text_offset
