@@ -387,12 +387,14 @@ sub reset_syntax
       $#syntax = $self-> {maxLine};
       @syntax = ();
       my $i = 0;
+      $self-> push_event;
       for ( @{$self->{lines}}) {
          my $sref = undef;
          $notifier->( @notifyParms, $_, $sref);
          push( @syntax, $sref);
          last if $i++ > 50; # test speed...
       }
+      $self-> pop_event;
       $self->{syntax} = \@syntax;
    } else {
       $self->{syntax} = undef;
