@@ -139,13 +139,14 @@ void
 prima_xft_init(void)
 {
    CharSetInfo *csi;
-   unsigned char in[128], *iptr;
-   uint32_t *optr;
-   int i, j;
-   size_t ibl, obl;
+   int i;
    FcCharSet * fcs_ascii;
 #ifdef HAVE_ICONV_H
    iconv_t ii;
+   unsigned char in[128], *iptr;
+   size_t ibl, obl;
+   uint32_t *optr;
+   int j;
 #endif  
 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
