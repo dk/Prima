@@ -695,3 +695,32 @@ apc_dlopen(char *path, int mode)
    DOLBUG( "apc_dlopen()\n");
    return nil;
 }
+
+PList
+apc_getdir( const char *dirname)
+{
+   DIR *dh;
+   struct dirent *de;
+   PList dirlist = nil;
+   char *type;
+
+   if (( dh = opendir( dirname)) && (dirlist = plist_create( 50, 50))) {
+      while (( de = readdir( dh))) {
+	 list_add( dirlist, (Handle)duplicate_string( de-> d_name));
+	 switch ( de-> d_type) {
+	 case DT_FIFO:	type = "fifo";	break;
+	 case DT_CHR:	type = "chr";	break;
+	 case DT_DIR:	type = "dir";	break;
+	 case DT_BLK:	type = "blk";	break;
+	 case DT_REG:	type = "reg";	break;
+	 case DT_LNK:	type = "lnk";	break;
+	 case DT_SOCK:	type = "sock";	break;
+	 case DT_WHT:	type = "wht";	break;
+	 default:	type = "unknown";
+	 }
+	 list_add( dirlist, (Handle)duplicate_string( type));
+      }
+      closedir( dh);
+   }
+   return dirlist;
+}

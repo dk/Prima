@@ -31,7 +31,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT = ();
 @EXPORT_OK = qw(query_drives_map query_drive_type
-                get_os get_gui
+                getdir get_os get_gui
                 beep sound
                 username
                 xcolor

@@ -32,6 +32,7 @@
 #include <floatingpoint.h>
 #include <sys/types.h>
 #endif /* __unix */
+#include <dirent.h>
 #include "apricot.h"
 #include "guts.h"
 #include "Object.h"
@@ -1225,6 +1226,7 @@ static void output_mallocs( void);
 #define PRIMAPERL_endav endav
 #endif
 
+XS(Utils_getdir_FROMPERL);
 
 XS( prima_cleanup)
 {
@@ -1291,6 +1293,7 @@ NAN = 0.0;
    newXS( "TiedStdOut::PRINT", ext_std_print, MODULE);
    newXS( "::destroy_mate", destroy_mate, MODULE);
    newXS( "Prima::cleanup", prima_cleanup, "Prima");
+   newXS( "Utils::getdir", Utils_getdir_FROMPERL, "Utils");
    /* register built-in classes */
    newXS( "Object::create",  create_from_Perl, "Object");
    newXS( "Object::destroy", destroy_from_Perl, "Object");
@@ -1664,6 +1667,44 @@ FillPattern fillPatterns[] = {
   {0x02, 0x27, 0x05, 0x00, 0x20, 0x72, 0x50, 0x00}
 };
 
+
+XS(Utils_getdir_FROMPERL) {
+   dXSARGS;
+   Bool wantarray = ( GIMME_V == G_ARRAY);
+   char *dirname;
+   PList dirlist;
+   int i;
+
+   if ( items >= 2) {
+      croak( "invalid usage of Utils::getdir");
+   }
+   dirname = SvPV( ST( 0), na);
+   dirlist = apc_getdir( dirname);
+   SPAGAIN;
+   SP -= items;
+   if ( wantarray) {
+      if ( dirlist) {
+	 EXTEND( sp, dirlist-> count);
+	 for ( i = 0; i < dirlist-> count; i++) {
+	    PUSHs( sv_2mortal(newSVpv(( char *)dirlist-> items[i], 0)));
+	    free(( char *)dirlist-> items[i]);
+	 }
+	 plist_destroy( dirlist);
+      }
+   } else {
+      if ( dirlist) {
+	 XPUSHs( sv_2mortal( newSViv( dirlist-> count / 2)));
+	 for ( i = 0; i < dirlist-> count; i++) {
+	    free(( char *)dirlist-> items[i]);
+	 }
+	 plist_destroy( dirlist);
+      } else {
+	 XPUSHs( &sv_undef);
+      }
+   }
+   PUTBACK;
+   return;
+}
 
 // list section
 

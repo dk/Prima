@@ -1981,6 +1981,9 @@ apc_query_drive_type( const char *drive);
 extern char*
 apc_get_user_name( void);
 
+extern PList
+apc_getdir( const char *dirname);
+
 extern void*
 apc_dlopen(char *path, int mode);
 
