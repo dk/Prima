@@ -1351,6 +1351,11 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
    SORT( x1, x2); SORT( y1, y2);
    RANGE4(x1, y1, x2, y2);
    PURE_FOREGROUND;
+   if ( XX-> line_width > 0 &&
+	(XX-> line_width % 2) == 0) {
+      y2--;
+      y1--;
+   }
    XDrawRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
    XCHECKPOINT;
    return true;
