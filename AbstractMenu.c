@@ -30,6 +30,7 @@
 #include "AbstractMenu.h"
 #include "Image.h"
 #include "Menu.h"
+#include "Widget.h"
 #include <AbstractMenu.inc>
 
 #ifdef __cplusplus
@@ -373,6 +374,8 @@ void
 AbstractMenu_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
+   if ( !kind_of( var-> owner, CWidget)) 
+      croak("Illegal owner object reference passed to AbstractMenu::init");
    ((( PComponent) var-> owner)-> self)-> attach( var-> owner, self);
    var-> anchored = kind_of( self, CMenu);
    my-> update_sys_handle( self, profile);
@@ -407,6 +410,8 @@ AbstractMenu_set( Handle self, HV * profile)
    if ( pexist( owner))
    {
       postOwner = pget_H( owner);
+      if ( !kind_of( postOwner, CWidget))
+         croak("RTC003F: Illegal object reference passed to AbstractMenu::set_owner");
       my-> migrate( self, postOwner);
    }
    if ( pexist( selected))

@@ -28,5 +28,6 @@
 object Prima::Menu ( Prima::AbstractMenu)
 {
    property Bool selected;
+   method void   set( HV * profile);
    c_only void   update_sys_handle( HV * profile);
 }

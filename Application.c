@@ -145,7 +145,7 @@ Application_done( Handle self)
    var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
-   application = nilHandle;
+   if ( self == application) application = nilHandle;
 }
 
 void

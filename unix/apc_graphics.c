@@ -417,6 +417,7 @@ apc_gp_init( Handle self)
 Bool
 apc_gp_done( Handle self)
 {
+   if ( !X(self)) return false;
    if ( guts. dynamicColors) {
       prima_palette_free( self, true);
       free(X(self)-> palette);

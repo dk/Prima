@@ -50,6 +50,8 @@ Menu_update_sys_handle( Handle self, HV * profile)
    if ( var-> owner && ( xOwner != var-> owner))
       ((( PWindow) var-> owner)-> self)-> set_menu( var-> owner, nilHandle);
    if ( !pexist( owner)) return;
+   if ( !kind_of( xOwner, CWindow)) 
+      croak("Illegal owner object reference passed to Menu::init");
    if ( !apc_menu_create( self, xOwner))
       croak("RTC0060: Cannot create menu");
    pdelete( owner);
@@ -69,6 +71,15 @@ Menu_selected( Handle self, Bool set, Bool selected)
    return false;
 }
 
+void
+Menu_set( Handle self, HV * profile)
+{
+   if ( pexist( owner)) {
+      if ( !kind_of( pget_H( owner), CWindow))
+         croak("RTC0061: Illegal object reference passed to Menu::set_owner");
+   }
+   inherited set( self, profile);
+}
 
 #ifdef __cplusplus
 }
