@@ -62,7 +62,8 @@ typedef struct _ImgLoadFileInstance {
   // internal variables
   int             frameMapSize;   
   int           * frameMap;
-  char            errbuf[256];    // $! value
+  Bool            stop;
+  char          * errbuf;         // $! value
 } ImgLoadFileInstance, *PImgLoadFileInstance;
 
 // common data, request for a whole file save
@@ -85,7 +86,7 @@ typedef struct _ImgSaveFileInstance {
   // internal variables
   int             frameMapSize;   
   Handle        * frameMap;
-  char            errbuf[256];    // $! value
+  char          * errbuf;         // $! value
 } ImgSaveFileInstance, *PImgSaveFileInstance;
 
 // codec info

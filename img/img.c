@@ -212,11 +212,13 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    if ( !ret) out("Not enough memory")
 
    snprintf( error, 256, "Error loading %s", fileName);
+   fi. errbuf = error;
 
    // open file
    if (( fi. f = ( FILE *) fopen( fileName, "rb")) == NULL)
       out( strerror( errno));
    fi. fileName = fileName;
+   fi. stop = false;
 
    // assigning user file profile
    if ( pexist( index)) {
@@ -316,6 +318,8 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
                codecID = i;
                break;
             }   
+
+            if ( fi. stop) { err = true; goto EXIT_NOW; }
          }   
          c = nil;
       }   
@@ -331,6 +335,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
                codecID = i;
                break;
             }   
+            if ( fi. stop) { err = true; goto EXIT_NOW; }
             c = nil;
          }
       }
@@ -447,7 +452,8 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
             if ( fi. frameCount < 0) fi. frameCount = fi. frame;
             goto EXIT_NOW; // EOF, report no error
          }   
-         out( fi. errbuf);
+         err = true;
+	 goto EXIT_NOW;
       }  
 
       // updating image
@@ -696,6 +702,7 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
       if ( !f) fi. append = false;
    }   
    
+   fi. errbuf = error;
    if (( fi. f = ( FILE *) fopen( fileName, fi. append ? "rb+" : "wb+" )) == NULL)
       out( strerror( errno));
 
@@ -930,7 +937,8 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
       if ( !c-> vmt-> save( c, &fi)) {
          c-> vmt-> close_save( c, &fi);
          if ( fi. objectExtras != commonHV) sv_free(( SV *) fi. objectExtras);
-         out( fi. errbuf);
+	 err = true;
+	 goto EXIT_NOW;
       }  
 
       if ( fi. objectExtras != commonHV) sv_free(( SV *) fi. objectExtras);
