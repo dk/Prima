@@ -112,7 +112,7 @@ sub on_paint
 
    return if $size[0] <= $border * 2 + 2;
    my $cap   = $self-> {line};
-   $canvas-> clipRect  ( $border + 1, $border + 1, $size[0] - $border - 1, $size[1] - $border - 1);
+   $canvas-> clipRect  ( $border + 1, $border + 1, $size[0] - $border - 2, $size[1] - $border - 2);
    $canvas-> transform ( $border + 1, $border + 1);
    $size[0] -= ( $border + 1) * 2;
    $size[1] -= ( $border + 1) * 2;
@@ -219,6 +219,7 @@ sub set_text
 sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
+   $mod &= ( km::Shift|km::Ctrl|km::Alt);
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
    my $offset = $self-> charOffset;
    my $cap    = $self-> text;
@@ -600,17 +601,18 @@ sub set_first_char
    $pos = 0 if ( $self->{alignment} != ta::Left) &&
                ( $self->get_text_width( $self-> {wholeLine}) <= $self-> width - $self->borderWidth * 2 - 2);
    my $ofc = $self->{firstChar};
-   my $oline = $self->{line};
    return if $self->{firstChar} == $pos;
+   my $oline = $self-> {line};
    $self->{firstChar} = $pos;
    $self-> reset;
    my $border = $self-> {borderWidth} + 1;
    my @size = $self-> size;
+
    $self-> clipRect( $border, $border, $size[0] - $border, $size[1] - $border);
    $self-> scroll(
      ( $ofc > $pos) ?
         $self-> get_text_width( substr( $self->{line}, 0, $ofc - $pos)) :
-      - $self-> get_text_width( substr( $oline,        0, $pos - $ofc))
+      - $self-> get_text_width( substr( $oline, 0, $pos - $ofc))
    , 0);
 }
 
