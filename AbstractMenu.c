@@ -70,7 +70,7 @@ key_normalize( const char * key)
 	 if (r) return kbNoKey;
 	 r = strtol( key, &e, 10);
 	 if (*e) return kbNoKey;
-	 return r | '0';
+	 return r;
       } else if (tolower(*key) != 'f')
 	 return kbNoKey;
       key++;
