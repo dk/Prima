@@ -636,10 +636,10 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
    XEvent ev, next_event;
    fd_set read_set, write_set, excpt_set;
    struct timeval timeout;
-   int r, i;
+   int r, i, queued_events;
    PTimerSysData timer;
 
-   if (( guts. queued_events = XEventsQueued( DISP, QueuedAlready))) {
+   if (( queued_events = XEventsQueued( DISP, QueuedAlready))) {
       goto FetchAndProcess;
    }
    read_set = guts.read_set;
@@ -704,7 +704,7 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
    }
    if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, &timeout)) > 0 &&
        FD_ISSET( guts.connection, &read_set)) {
-      if (( guts. queued_events = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
+      if (( queued_events = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
          /* just like tcl/perl tk do, to avoid an infinite loop */
          sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
          XNoOp( DISP);
@@ -712,17 +712,17 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
          (void) signal( SIGPIPE, oldHandler);
       }
 FetchAndProcess:
-      if ( guts. queued_events && ( application || !careOfApplication)) {
+      if ( queued_events && ( application || !careOfApplication)) {
          XNextEvent( DISP, &ev);
          XCHECKPOINT;
-         guts. queued_events--;
-         while ( guts. queued_events > 0) {
+         queued_events--;
+         while ( queued_events > 0) {
             if (!application && careOfApplication) return false;
             XNextEvent( DISP, &next_event);
             XCHECKPOINT;
-            guts. total_events++;
-            guts. queued_events--;
             prima_handle_event( &ev, &next_event);
+            guts. total_events++;
+            queued_events = XEventsQueued( DISP, QueuedAlready);
             memcpy( &ev, &next_event, sizeof( XEvent));
          }
          if (!application && careOfApplication) return false;

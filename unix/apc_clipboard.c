@@ -224,7 +224,6 @@ query_data( Handle self, long id, Atom * ret_type)
       XX-> selection, WIN, CurrentTime);
    while ( 1) {
       XIfEvent( DISP, &ev, (void*)selection_filter, (char*)XX);
-      guts. queued_events = XEventsQueued( DISP, QueuedAlready);
 
       if ( ev. type == SelectionNotify) {
          Atom type;

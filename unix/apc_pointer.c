@@ -247,7 +247,6 @@ apc_pointer_set_pos( Handle self, int x, int y)
    XSync( DISP, false);
    while ( XCheckMaskEvent( DISP, PointerMotionMask, &ev))
       prima_handle_event( &ev, nil);
-   guts. queued_events = XEventsQueued( DISP, QueuedAlready);
    return true;   
 }
 

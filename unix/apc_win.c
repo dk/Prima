@@ -180,7 +180,6 @@ apc_window_activate( Handle self)
    XSync( DISP, false);
    while ( XCheckMaskEvent( DISP, FocusChangeMask|ExposureMask, &ev))
       prima_handle_event( &ev, nil);
-   guts. queued_events = XEventsQueued( DISP, QueuedAlready);
    return true;
 }
 

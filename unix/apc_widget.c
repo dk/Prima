@@ -302,7 +302,6 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
                TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
                XX-> flags. paint_pending = false;
             }
-            guts. queued_events = XEventsQueued( DISP, QueuedAlready);
             XX-> flags. transparent_busy = 0;
          } else
             useRPDraw = true;
@@ -833,7 +832,6 @@ apc_widget_set_focused( Handle self)
    XSync( DISP, false);
    while ( XCheckMaskEvent( DISP, FocusChangeMask|ExposureMask, &ev))
       prima_handle_event( &ev, nil);
-   guts. queued_events = XEventsQueued( DISP, QueuedAlready);
    return true;
 }
 

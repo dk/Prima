@@ -1011,8 +1011,9 @@ static int
 copy_events( Handle self, PList events, WMSyncData * w, int eventType)
 {
    int ret = 0;
-   if ( guts. queued_events <= 0) return 0;
-   while ( guts. queued_events--) {
+   int queued_events = XEventsQueued( DISP, QueuedAlready);
+   if ( queued_events <= 0) return 0;
+   while ( queued_events--) {
       XEvent * x = malloc( sizeof( XEvent));
       if ( !x) {
          list_delete_all( events, true);
@@ -1089,8 +1090,8 @@ prima_wm_sync( Handle self, int eventType)
    gettimeofday( &start_time, nil);
    
    // browse & copy queued events
-   evx = guts. queued_events = XEventsQueued( DISP, QueuedAlready);
-   if ( !( events = plist_create( guts. queued_events + 32, 32)))
+   evx = XEventsQueued( DISP, QueuedAlready);
+   if ( !( events = plist_create( evx + 32, 32)))
       return;
    r = copy_events( self, events, &wmsd, eventType);
    if ( r < 0) return;
@@ -1105,7 +1106,7 @@ prima_wm_sync( Handle self, int eventType)
 
    // got response already? happens if no wm present or 
    // sometimes if wm is local to server
-   evx = guts. queued_events = XEventsQueued( DISP, QueuedAlready);
+   evx = XEventsQueued( DISP, QueuedAlready);
    r = copy_events( self, events, &wmsd, eventType);
    if ( r < 0) return;
    // printf("pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
@@ -1135,7 +1136,7 @@ prima_wm_sync( Handle self, int eventType)
          quit_by_timeout = true;
          break; 
       }
-      if (( evx = guts. queued_events = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
+      if (( evx = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
          /* just like tcl/perl tk do, to avoid an infinite loop */
          sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
          XNoOp( DISP);
@@ -1168,7 +1169,7 @@ prima_wm_sync( Handle self, int eventType)
       free(( void*) events-> items[ r]);
    }
    plist_destroy( events);
-   evx = guts. queued_events = XEventsQueued( DISP, QueuedAlready);
+   evx = XEventsQueued( DISP, QueuedAlready);
 
    // printf("exit syncer, size: %d %d\n", wmsd.size.x, wmsd.size.y);
    process_wm_sync_data( self, &wmsd);

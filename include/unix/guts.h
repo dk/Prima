@@ -328,7 +328,6 @@ struct _UnixGuts
    long                         total_events;
    long                         skipped_events;
    long                         unhandled_events;
-   long                         queued_events;
    fd_set                       write_set;
    /* Graphics */
    struct gc_head               bitmap_gc_pool;
