@@ -20,6 +20,7 @@ sub profile_default
       ownerBackColor => 1,
       selectable     => 0,
       showAccelChar  => 0,
+      showPartial    => 1,
       tabStop        => 0,
       widgetClass    => wc::Label,
       wordWrap       => 0,
@@ -49,6 +50,7 @@ sub init
    $self-> { wordWrap}      = $profile{ wordWrap};
    $self-> { focusLink}     = $profile{ focusLink};
    $self-> { showAccelChar} = $profile{ showAccelChar};
+   $self-> { showPartial}   = $profile{ showPartial};
    $self-> check_auto_size;
    return %profile;
 }
@@ -196,11 +198,12 @@ sub reset_lines
 {
    my $self = $_[0];
    my @res = ();
-   my $maxLines = $self-> height / $self-> font-> height;
+   my $maxLines = int($self-> height / $self-> font-> height);
+   $maxLines++ if $self->{showPartial} and (($self-> height % $self-> font-> height) > 0);
    my $opt   = tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::CalcMnemonic;
    my $width = -1;
    $opt |= tw::CollapseTilde unless $self->{showAccelChar};
-   $width = $self-> width   if $self->{wordWrap};
+   $width = $self-> width if $self->{wordWrap};
    my $lines = $self-> text_wrap( $self-> get_text, $width, $opt);
    my $lastRef = pop @{$lines};
    for( qw( tildeStart tildeEnd tildeLine)) {$self->{$_} = $lastRef->{$_}}
@@ -252,6 +255,13 @@ sub set_show_accel_char
    $_[0]-> check_auto_size;
 }
 
+sub set_show_partial
+{
+   $_[0]->{showPartial} = $_[1];
+   $_[0]-> check_auto_size;
+}
+
+
 sub get_lines
 {
    return @{$_[0]->{words}};
@@ -259,6 +269,7 @@ sub get_lines
 
 
 sub showAccelChar {($#_)?($_[0]->set_show_accel_char($_[1]))             :return $_[0]->{showAccelChar}}
+sub showPartial   {($#_)?($_[0]->set_show_partial($_[1]))                :return $_[0]->{showPartial}}
 sub focusLink     {($#_)?($_[0]->{focusLink}     = $_[1])                :return $_[0]->{focusLink}    }
 sub alignment     {($#_)?($_[0]->set_alignment(    $_[1]))               :return $_[0]->{alignment}    }
 sub valignment    {($#_)?($_[0]->set_valignment(    $_[1]))              :return $_[0]->{valignment}   }
