@@ -237,7 +237,7 @@ sub List_KeyDown
    }
    elsif ( $key == kb::Enter)
    {
-      $list-> click;
+      $list-> notify(q(Click));
       $list-> clear_event;
    }
 }
