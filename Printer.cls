@@ -35,6 +35,7 @@ object Prima::Printer( Prima::Drawable)
    method Bool   begin_doc( char * docName = "");
    method Bool   begin_paint();
    method Bool   begin_paint_info();
+   method void   cleanup();
    method void   done();
    method void   end_doc();
    method void   end_paint();

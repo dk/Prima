@@ -72,6 +72,7 @@ object Prima::Application( Prima::Widget)
    method Bool   begin_paint();
    method Bool   begin_paint_info();
    method void   bring_to_front();
+   method void   cleanup();
    method Bool   close();
    method Bool   close_help()                                 => apc_help_close;
    method void   done();

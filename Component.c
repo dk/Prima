@@ -93,10 +93,21 @@ Component_bring( Handle self, char * componentName)
    return my-> first_that_component( self, bring_by_name, componentName);
 }
 
+static Bool
+detach_all( Handle child, Handle self)
+{
+   my-> detach( self, child, true);
+   return false;
+}
+
 void
 Component_cleanup( Handle self)
 {
    Event ev = {cmDestroy};
+
+   if ( var-> components != nil)
+      list_first_that( var-> components, detach_all, ( void*) self);
+
    ev. gen. source = self;
    my-> message( self, &ev);
 }
@@ -122,13 +133,6 @@ free_eventref( Handle self, Handle * org)
 {
    if ( var-> refs) list_delete( var-> refs, *org);
    my-> unlink_notifier( self, *org);
-   return false;
-}
-
-static Bool
-detach_all( Handle child, Handle self)
-{
-   my-> detach( self, child, true);
    return false;
 }
 
@@ -176,7 +180,6 @@ Component_done( Handle self)
       var-> evQueue = nil;
    }
    if ( var-> components != nil) {
-      list_first_that( var-> components, detach_all, ( void*) self);
       list_destroy( var-> components);
       free( var-> components);
       var-> components = nil;

@@ -121,6 +121,7 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     begin_paint_info();
    method   void     bring_to_front();
    method   Bool     can_close();
+   method   void     cleanup();
    method   void     click();
    public   void     client_to_screen();
    method   Bool     close();

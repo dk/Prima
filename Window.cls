@@ -54,7 +54,7 @@ object Prima::Window( Prima::Widget)
    property int      windowState;
 
    method   void     cancel();
-   method   void     done();
+   method   void     cleanup();
    method   void     end_modal();
    method   int      execute( Handle insertBefore = nilHandle);
    method   Bool     execute_shared( Handle insertBefore = nilHandle);

@@ -290,7 +290,7 @@ Icon_mask( Handle self, Bool set, SV * svmask)
 {
    STRLEN maskSize;
    void * mask;
-   if ( var-> stage > csNormal) return nilSV;
+   if ( var-> stage > csFrozen) return nilSV;
    if ( !set)
       return newSVpvn(( char *) var-> mask, var-> maskSize);
    mask = SvPV( svmask, maskSize);

@@ -129,7 +129,7 @@ void
 Image_reset( Handle self, int type, SV * palette)
 {
    Byte * newData = nil;
-   if ( var->stage > csNormal) return;
+   if ( var->stage > csFrozen) return;
    if (!( type & imGrayScale)) {
       switch ( type) {
       case im16:
@@ -170,7 +170,7 @@ Image_stretch( Handle self, int width, int height)
 {
    Byte * newData = nil;
    int lineSize;
-   if ( var->stage > csNormal) return;
+   if ( var->stage > csFrozen) return;
    if ( width  >  65535) width  =  65535;
    if ( height >  65535) height =  65535;
    if ( width  < -65535) width  = -65535;
@@ -325,7 +325,7 @@ Image_data( Handle self, Bool set, SV * svdata)
    void *data;
    STRLEN dataSize;
 
-   if ( var->stage > csNormal) return nilSV;
+   if ( var->stage > csFrozen) return nilSV;
 
    if ( !set)
       return newSVpvn(( char *) var-> data, var-> dataSize);
@@ -902,8 +902,8 @@ Bool
 Image_begin_paint( Handle self)
 {
    Bool ok;
-   if ( is_opt( optInDraw)) return false;
-   inherited begin_paint( self);
+   if ( !inherited begin_paint( self))
+      return false;
    if ( !( ok = apc_image_begin_paint( self)))
       inherited end_paint( self);
    return ok;
@@ -914,8 +914,8 @@ Image_begin_paint_info( Handle self)
 {
    Bool ok;
    if ( is_opt( optInDraw))     return true;
-   if ( is_opt( optInDrawInfo)) return false;
-   inherited begin_paint_info( self);
+   if ( !inherited begin_paint_info( self))
+      return false;
    if ( !( ok = apc_image_begin_paint_info( self)))
       inherited end_paint_info( self);
    return ok;
@@ -1596,7 +1596,7 @@ Image_resample( Handle self, double srcLo, double srcHi, double dstLo, double ds
 SV *
 Image_palette( Handle self, Bool set, SV * palette)
 {
-   if ( var->stage > csNormal) return nilSV;
+   if ( var->stage > csFrozen) return nilSV;
    if ( set) {
       if ( var->type & imGrayScale) return nilSV;
       if ( !var->palette)           return nilSV;

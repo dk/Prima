@@ -133,13 +133,6 @@ Application_init( Handle self, HV * profile)
 void
 Application_done( Handle self)
 {
-   my-> close_help( self);
-   my-> first_that( self, kill_all, nil);
-   if ( var-> icon)
-      my-> detach( self, var-> icon, true);
-   var-> icon = nilHandle;
-
-   my-> first_that_component( self, kill_all, nil);
    unprotect_object( var-> printer);
    unprotect_object( var-> hintTimer);
    unprotect_object( var-> hintWidget);
@@ -155,6 +148,21 @@ Application_done( Handle self)
    CDrawable-> done( self);
    application = nilHandle;
 }
+
+void
+Application_cleanup( Handle self)
+{
+   my-> close_help( self);
+   my-> first_that( self, kill_all, nil);
+   if ( var-> icon)
+      my-> detach( self, var-> icon, true);
+   var-> icon = nilHandle;
+
+   my-> first_that_component( self, kill_all, nil);
+
+   CDrawable-> cleanup( self);
+}
+
 
 void
 Application_set( Handle self, HV * profile)
@@ -223,8 +231,8 @@ Bool
 Application_begin_paint( Handle self)
 {
    Bool ok;
-   if ( is_opt( optInDraw)) return false;
-   CDrawable-> begin_paint( self);
+   if ( !CDrawable-> begin_paint( self))
+      return false;
    if ( !( ok = apc_application_begin_paint( self)))
       CDrawable-> end_paint( self);
    return ok;
@@ -235,8 +243,8 @@ Application_begin_paint_info( Handle self)
 {
    Bool ok;
    if ( is_opt( optInDraw))     return true;
-   if ( is_opt( optInDrawInfo)) return false;
-   CDrawable-> begin_paint_info( self);
+   if ( !CDrawable-> begin_paint_info( self))
+      return false;
    if ( !( ok = apc_application_begin_paint_info( self)))
       CDrawable-> end_paint_info( self);
    return ok;
@@ -438,7 +446,7 @@ icon_notify ( Handle self, Handle child, Handle icon)
 Handle
 Application_icon( Handle self, Bool set, Handle icon)
 {
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
 
    if ( !set)
       return var-> icon;
@@ -463,7 +471,7 @@ Application_icon( Handle self, Bool set, Handle icon)
 char *
 Application_helpFile( Handle self, Bool set, char * helpFile)
 {
-   if ( var-> stage > csNormal) return "";
+   if ( var-> stage > csFrozen) return "";
    if ( !set)
       return var-> helpFile ? var-> helpFile : "";
 
@@ -513,7 +521,7 @@ typedef struct _SingleColor
 Color
 Application_colorIndex( Handle self, Bool set, int index, Color color)
 {
-   if ( var->  stage > csNormal) return clInvalid;
+   if ( var->  stage > csFrozen) return clInvalid;
    if (( index < 0) || ( index > ciMaxId)) return clInvalid;
    if ( !set) {
       switch ( index) {
@@ -757,7 +765,7 @@ Application_get_image( Handle self, int x, int y, int xLen, int yLen)
    HV * profile;
    Handle i;
    Bool ret;
-   if ( var->  stage > csNormal) return nilHandle;
+   if ( var->  stage > csFrozen) return nilHandle;
    if ( xLen <= 0 || yLen <= 0) return nilHandle;
 
    profile = newHV();

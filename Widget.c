@@ -233,23 +233,6 @@ Widget_update_sys_handle( Handle self, HV * profile)
 void
 Widget_done( Handle self)
 {
-   enter_method;
-   char name[ 256];
-   PComponent detachFrom = ( PComponent) var-> owner;
-   strcpy( name, var-> name);
-
-   if ((( PApplication) application)-> hintUnder == self)
-      my-> set_hintVisible( self, 0);
-
-   my-> first_that( self, kill_all, nil);
-   if ( var-> accelTable)
-      my-> detach( self, var-> accelTable, true);
-   var-> accelTable = nilHandle;
-
-   detachFrom-> self-> detach( var-> owner, self, false);
-   my-> detach( self, var-> popupMenu, true);
-   var-> popupMenu = nilHandle;
-
    free( var-> text);
    apc_widget_destroy( self);
    free( var-> hint);
@@ -275,8 +258,8 @@ Bool
 Widget_begin_paint( Handle self)
 {
    Bool ok;
-   if ( is_opt( optInDraw)) return false;
-   inherited-> begin_paint( self);
+   if ( !inherited-> begin_paint( self))
+      return false;
    if ( !( ok = apc_widget_begin_paint( self, false)))
       inherited-> end_paint( self);
    return ok;
@@ -287,8 +270,8 @@ Widget_begin_paint_info( Handle self)
 {
    Bool ok;
    if ( is_opt( optInDraw))     return true;
-   if ( is_opt( optInDrawInfo)) return false;
-   inherited-> begin_paint_info( self);
+   if ( !inherited-> begin_paint_info( self))
+      return false;
    if ( !( ok = apc_widget_begin_paint_info( self)))
       inherited-> end_paint_info( self);
    return ok;
@@ -310,6 +293,28 @@ Widget_can_close( Handle self)
    Event ev = { cmClose};
    return ( var-> stage <= csNormal) ? my-> message( self, &ev) : true;
 }
+
+void
+Widget_cleanup( Handle self)
+{
+   enter_method;
+   PComponent detachFrom = ( PComponent) var-> owner;
+   if ((( PApplication) application)-> hintUnder == self)
+      my-> set_hintVisible( self, 0);
+
+   my-> first_that( self, kill_all, nil);
+
+   if ( var-> accelTable)
+      my-> detach( self, var-> accelTable, true);
+   var-> accelTable = nilHandle;
+
+   detachFrom-> self-> detach( var-> owner, self, false);
+   my-> detach( self, var-> popupMenu, true);
+   var-> popupMenu = nilHandle;
+
+   inherited-> cleanup( self);
+}
+
 
 void
 Widget_click( Handle self)

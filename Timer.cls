@@ -28,6 +28,7 @@
 object Prima::Timer( Prima::Component)
 {
    property int timeout;
+   method void   cleanup();
    method void   done();
    method Bool   get_active();
    method SV *   get_handle();

@@ -74,6 +74,8 @@ Popup_selected( Handle self, Bool set, Bool selected)
 {
    if ( !set)
        return CWidget( var-> owner)-> get_popup( var->  owner) == self;
+   if ( var-> stage > csFrozen)
+      return false;
    if ( selected)
       CWidget( var-> owner)-> set_popup( var-> owner, self);
    else if ( my-> get_selected( self))
@@ -89,11 +91,11 @@ Popup_popup( Handle self, int x, int y, int ancLeft, int ancBottom, int ancRight
    ColorSet color;
    Rect anchor;
    int stage = owner-> stage;
+   if ( var-> stage > csNormal) return;
    anchor. left = ancLeft;
    anchor. bottom = ancBottom;
    anchor. right = ancRight;
    anchor. top = ancTop;
-   if ( var-> stage > csNormal) return;
    owner-> stage = csFrozen;
    memcpy( color, owner-> popupColor, sizeof( ColorSet));
    for ( i = 0; i < ciMaxId + 1; i++)

@@ -90,12 +90,12 @@ Window_ok( Handle self)
 
 
 void
-Window_done( Handle self)
+Window_cleanup( Handle self)
 {
    if ( var-> modal) my-> cancel( self);
    my-> detach( self, var-> menu, true);
    var-> menu = nilHandle;
-   inherited done( self);
+   inherited cleanup( self);
 }
 
 void Window_update_sys_handle( Handle self, HV * profile)

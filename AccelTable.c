@@ -50,7 +50,7 @@ AccelTable_init( Handle self, HV * profile)
 void
 AccelTable_set_items( Handle self, SV * menuItems)
 {
-   if ( var->  stage > csNormal) return;
+   if ( var-> stage > csFrozen) return;
    my-> dispose_menu( self, var->  tree);
    var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
 }
@@ -59,7 +59,9 @@ Bool
 AccelTable_selected( Handle self, Bool set, Bool selected)
 {
    if ( !set)
-       return CWidget( var-> owner)-> get_accelTable( var->  owner) == self;
+       return CWidget( var-> owner)-> get_accelTable( var-> owner) == self;
+   if ( var-> stage > csFrozen)
+      return false;
    if ( selected)
       CWidget( var-> owner)-> set_accelTable( var->  owner, self);
    else if ( my-> get_selected( self))

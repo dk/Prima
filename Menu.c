@@ -59,6 +59,8 @@ Menu_selected( Handle self, Bool set, Bool selected)
 {
    if ( !set)
        return CWindow( var-> owner)-> get_menu( var->  owner) == self;
+   if ( var-> stage > csFrozen)
+      return false;
    if ( selected)
       CWindow( var-> owner)-> set_menu( var-> owner, self);
    else if ( my-> get_selected( self))

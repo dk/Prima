@@ -37,6 +37,7 @@ object Prima::AbstractMenu ( Prima::Component)
    property SV   * key    ( char * varName);
    property char * text   ( char * varName);
 
+   method void   cleanup();
    method void   done();
    method void   remove( char * varName);
    c_only void * first_that( void * actionProc, void * params, Bool useDisabled);

@@ -94,10 +94,16 @@ Timer_stop( Handle self)
 void
 Timer_done( Handle self)
 {
-   my-> stop( self);
-   CComponent( var-> owner)-> detach( var-> owner, self, false);
    apc_timer_destroy( self);
    inherited done( self);
+}
+
+void
+Timer_cleanup( Handle self)
+{
+   my-> stop( self);
+   CComponent( var-> owner)-> detach( var-> owner, self, false);
+   inherited cleanup( self);
 }
 
 Bool

@@ -97,6 +97,7 @@ Drawable_cleanup( Handle self)
 Bool
 Drawable_begin_paint( Handle self)
 {
+   if ( var-> stage > csFrozen) return false;
    if ( is_opt( optInDrawInfo)) my-> end_paint_info( self);
    opt_set( optInDraw);
    return true;
@@ -111,6 +112,7 @@ Drawable_end_paint( Handle self)
 Bool
 Drawable_begin_paint_info( Handle self)
 {
+   if ( var-> stage > csFrozen) return false;
    if ( is_opt( optInDraw))     return true;
    if ( is_opt( optInDrawInfo)) return false;
    opt_set( optInDrawInfo);

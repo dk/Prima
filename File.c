@@ -64,10 +64,10 @@ File_init( Handle self, HV * profile)
 }
 
 void
-File_done( Handle self)
+File_cleanup( Handle self)
 {
    my-> set_file( self, nilSV);
-   inherited->  done( self);
+   inherited-> cleanup( self);
 }
 
 Bool

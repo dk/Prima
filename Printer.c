@@ -56,10 +56,17 @@ Printer_init( Handle self, HV * profile)
 void
 Printer_done( Handle self)
 {
-   CComponent( var-> owner)-> detach( var-> owner, self, false);
    apc_prn_destroy( self);
    inherited done( self);
 }
+
+void
+Printer_cleanup( Handle self)
+{
+   CComponent( var-> owner)-> detach( var-> owner, self, false);
+   inherited cleanup( self);
+}
+
 
 Bool
 Printer_begin_doc( Handle self, char * docName)
@@ -73,7 +80,8 @@ Printer_begin_doc( Handle self, char * docName)
    }
    if ( is_opt( optInDrawInfo))
       my-> end_paint_info( self);
-   inherited begin_paint( self);
+   if ( !inherited begin_paint( self))
+      return false;
    if ( !( ok = apc_prn_begin_doc( self, docName)))
       inherited end_paint( self);
    return ok;
@@ -120,8 +128,8 @@ Printer_begin_paint_info( Handle self)
 {
    Bool ok;
    if ( is_opt( optInDraw))     return true;
-   if ( is_opt( optInDrawInfo)) return false;
-   inherited begin_paint_info( self);
+   if ( !inherited begin_paint_info( self))
+      return false;
    if ( !( ok = apc_prn_begin_paint_info( self)))
       inherited end_paint_info( self);
    return ok;

@@ -38,7 +38,7 @@ object Prima::File( Prima::Component)
 
    method   long      add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
    method   void      init( HV * profile);
-   method   void      done();
+   method   void      cleanup();
    method   SV      * get_handle();
    c_only   void      handle_event( PEvent event);
    method   Bool      is_active( Bool autoDetach = false);
