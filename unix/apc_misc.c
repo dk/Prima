@@ -50,11 +50,15 @@ static XrmQuark
 get_class_quark( const char *name)
 {
    XrmQuark quark;
-   char *s;
+   char *s, *t;
 
-   s = duplicate_string( name);
-   quark = XrmStringToQuark( prima_normalize_resource_string( s, true));
-   free( s);
+   t = s = prima_normalize_resource_string( duplicate_string( name), true);
+   if ( t && *t == 'P' && strncmp( t, "Prima__", 7) == 0)
+      s = t + 7;
+   if ( s && *s == 'A' && strcmp( s, "Application") == 0)
+      strcpy( s, "Prima"); /* we have enough space */
+   quark = XrmStringToQuark( s);
+   free( t);
    return quark;
 }
 

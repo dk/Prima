@@ -522,7 +522,7 @@ Unbuffered:
       XX-> region = nil;
    }
 
-   XX-> flags. paint = true;
+   XF_IN_PAINT(XX) = true;
 
    if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
       // fprintf( stderr, "set font g: %s\n", XX-> font-> load_name);
@@ -562,7 +562,7 @@ prima_cleanup_drawable_after_painting( Handle self)
    free(XX->paint_dashes);
    XX-> paint_dashes = nil;
    XX-> paint_ndashes = 0;
-   XX-> flags. paint = false;
+   XF_IN_PAINT(XX) = false;
    if ( XX-> flags. reload_font) {
       PDrawable( self)-> font = XX-> saved_font;
    }
@@ -631,8 +631,14 @@ arc_completion( double * angleStart, double * angleEnd, int * needFigure)
 Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
-   int compl, needf;
    DEFXX;
+   int compl, needf;
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_007: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x, y);
    y = REVERT( y);
    compl = arc_completion( &angleStart, &angleEnd, &needf);
@@ -649,6 +655,11 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
 
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_008: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
    XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
@@ -660,6 +671,11 @@ Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_009: put begin_paint somewhere");
+      return false;
+   }
 
    if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
       x1 = 0; y1 = 0;
@@ -682,6 +698,12 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 {
    int compl, needf;
    DEFXX;
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_010: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x, y);
    y = REVERT( y);
    compl = arc_completion( &angleStart, &angleEnd, &needf);
@@ -703,10 +725,15 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
    int i;
    int x = XX-> gtransform. x + XX-> btransform. x;
    int y = XX-> size. y - 1 - XX-> gtransform. y - XX-> btransform. y;
-   XPoint *p = malloc( sizeof( XPoint)*n);
+   XPoint *p;
 
-   if (!p)
-      croak( "UAG_007: no memory");
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_011: put begin_paint somewhere");
+      return false;
+   }
+
+   if ((p = malloc( sizeof( XPoint)*n)) == nil)
+      croak( "UAG_012: no memory");
 
    for ( i = 0; i < n; i++) {
       p[i].x = pp[i].x + x;
@@ -772,6 +799,12 @@ Bool
 apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 {
    DEFXX;
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_013: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x, y);
    y = REVERT( y);
    XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
@@ -783,6 +816,12 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 {
    DEFXX;
    int compl, needf;
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_014: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x, y);
    y = REVERT( y);
 
@@ -801,6 +840,12 @@ Bool
 apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 {
    DEFXX;
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_015: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x, y);
    y = REVERT( y);
    XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
@@ -816,11 +861,16 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    DEFXX;
    int i;
 
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_016: put begin_paint somewhere");
+      return false;
+   }
+
    if ( numPts >= size) {
       free( p);
       size = numPts + 1;
       p = malloc( size * sizeof( XPoint));
-      if ( !p) croak( "UAG_008: no memory");
+      if ( !p) croak( "UAG_017: no memory");
    }
 
    for ( i = 0; i < numPts; i++) {
@@ -834,13 +884,13 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
       XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
       XCHECKPOINT;
    } else {
-      warn( "UAG_009: request too large");
+      warn( "UAG_018: request too large");
    }
    if ( guts. limits. XDrawLines > numPts) {
       XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
       XCHECKPOINT;
    } else {
-      warn( "UAG_010: request too large");
+      warn( "UAG_019: request too large");
    }
    return true;
 }
@@ -850,6 +900,11 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 {
    DEFXX;
    int compl, needf;
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_020: put begin_paint somewhere");
+      return false;
+   }
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -894,6 +949,11 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
    /* XXX - implement a general case of line end correction */
    DEFXX;
 
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_021: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x1, y1); SHIFT( x2, y2);
    if ( y1 == y2) {
       SORT( x1, x2); x2++;
@@ -909,6 +969,11 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
 
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_022: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
    XDrawRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
@@ -921,6 +986,12 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
 {
    int compl, needf;
    DEFXX;
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_023: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x, y);
    y = REVERT( y);
 
@@ -963,6 +1034,11 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    XColor *c = prima_allocate_color( self, color);
    unsigned long old = XX-> fore. pixel;
 
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_024: put begin_paint somewhere");
+      return false;
+   }
+
    SHIFT( x, y);
    XSetForeground( DISP, XX-> gc, c-> pixel);
    XCHECKPOINT;
@@ -978,6 +1054,11 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 {
    DEFXX;
    SHIFT( x, y);
+
+   if ( !XF_IN_PAINT(XX)) {
+      warn( "UAG_025: put begin_paint somewhere");
+      return false;
+   }
 
    if (0) {
       fprintf( stderr, "H: %d, D: %d, A: %d, BD: %d, BA: %d\n",
@@ -1001,7 +1082,7 @@ Color
 apc_gp_get_back_color( Handle self)
 {
    DEFXX;
-   XColor c = ( XX-> flags. paint) ? XX-> back : XX-> saved_back;
+   XColor c = ( XF_IN_PAINT(XX)) ? XX-> back : XX-> saved_back;
    return ARGB( c. red >> 8, c. green >> 8, c. blue >> 8);
 }
 
@@ -1015,7 +1096,7 @@ Color
 apc_gp_get_color( Handle self)
 {
    DEFXX;
-   XColor c = ( XX-> flags. paint) ? XX-> fore : XX-> saved_fore;
+   XColor c = ( XF_IN_PAINT(XX)) ? XX-> fore : XX-> saved_fore;
    return ARGB( c. red >> 8, c. green >> 8, c. blue >> 8);
 }
 
@@ -1029,7 +1110,7 @@ prima_gp_get_clip_rect( Handle self, XRectangle *cr)
    cr-> y = 0;
    cr-> width = XX-> size.x;
    cr-> height = XX-> size.y;
-   if ( XX-> flags. paint && ( XX-> region || XX-> stale_region)) {
+   if ( XF_IN_PAINT(XX) && ( XX-> region || XX-> stale_region)) {
       XClipBox( XX-> region ? XX-> region : XX-> stale_region,
                 &r);
       prima_rect_intersect( cr, &r);
@@ -1099,9 +1180,9 @@ apc_gp_get_line_end( Handle self)
    int cap;
    XGCValues gcv;
 
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       if ( XGetGCValues( DISP, XX-> gc, GCCapStyle, &gcv) == 0) {
-         warn( "UAG_011: error querying GC values");
+         warn( "UAG_026: error querying GC values");
          cap = CapButt;
       } else {
          cap = gcv. cap_style;
@@ -1123,12 +1204,12 @@ apc_gp_get_line_width( Handle self)
    int w;
    XGCValues gcv;
 
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       if ( XX-> flags. zero_line)
 	 w = 0;
       else {
 	 if ( XGetGCValues( DISP, XX-> gc, GCLineWidth, &gcv) == 0) {
-            warn( "UAG_012: error querying GC values");
+            warn( "UAG_027: error querying GC values");
 	 }
 	 w = gcv. line_width;
       }
@@ -1147,7 +1228,7 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
    DEFXX;
    int n;
 
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       n = XX-> paint_ndashes;
       memcpy( dashes, XX-> paint_dashes, n);
    } else {
@@ -1178,7 +1259,7 @@ int
 apc_gp_get_rop( Handle self)
 {
    DEFXX;
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       return XX-> paint_rop;
    } else {
       return XX-> rop;
@@ -1214,7 +1295,7 @@ Point
 apc_gp_get_transform( Handle self)
 {
    DEFXX;
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       return XX-> gtransform;
    } else {
       return XX-> transform;
@@ -1232,7 +1313,7 @@ Bool
 apc_gp_get_text_out_baseline( Handle self)
 {
    DEFXX;
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       return XX-> flags. paint_base_line;
    } else {
       return XX-> flags. base_line;
@@ -1245,7 +1326,7 @@ apc_gp_set_back_color( Handle self, Color color)
    DEFXX;
    XColor *c = prima_allocate_color( self, color);
 
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       XX-> back = *c;
       XSetBackground( DISP, XX-> gc, c-> pixel);
       XCHECKPOINT;
@@ -1263,7 +1344,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    Region region;
    XRectangle r;
 
-   if ( !XX-> flags. paint)
+   if ( !XF_IN_PAINT(XX))
       return false;
 
    SORT( clipRect. left, clipRect. right);
@@ -1292,7 +1373,7 @@ apc_gp_set_color( Handle self, Color color)
    DEFXX;
    XColor *c = prima_allocate_color( self, color);
 
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       XX-> fore = *c;
       XSetForeground( DISP, XX-> gc, c-> pixel);
       XCHECKPOINT;
@@ -1322,9 +1403,9 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
       XX-> fp_pixmap =
          XCreateBitmapFromData( DISP, XX-> gdrawable, pattern, 8, 8);
       if ( XX-> fp_pixmap == None)
-         croak( "UAG_013: error creating stipple");
+         croak( "UAG_028: error creating stipple");
    }
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       XSetFillStyle( DISP, XX-> gc, dflt ? FillSolid : FillOpaqueStippled);
       if ( XX-> fp_pixmap != None) XSetStipple( DISP, XX-> gc, XX-> fp_pixmap);
       XCHECKPOINT;
@@ -1354,7 +1435,7 @@ apc_gp_set_line_end( Handle self, int lineEnd)
    else if ( lineEnd == leRound)
       cap = CapRound;
 
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       gcv. cap_style = cap;
       XChangeGC( DISP, XX-> gc, GCCapStyle, &gcv);
       XCHECKPOINT;
@@ -1374,7 +1455,7 @@ apc_gp_set_line_width( Handle self, int line_width)
    if ( zero_line)
       line_width = 1;
 
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       XX-> flags. zero_line = zero_line;
       gcv. line_width = line_width;
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
@@ -1392,7 +1473,7 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
    DEFXX;
    XGCValues gcv;
 
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       if ( len == 0 || (len == 1 && pattern[0] == 1)) {
 	 gcv. line_style = LineSolid;
 	 XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
@@ -1436,7 +1517,7 @@ apc_gp_set_rop( Handle self, int rop)
    else
       function = rop_map[ rop];
 
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       XX-> paint_rop = rop;
       XSetFunction( DISP, XX-> gc, function);
       XCHECKPOINT;
@@ -1458,7 +1539,7 @@ Bool
 apc_gp_set_transform( Handle self, int x, int y)
 {
    DEFXX;
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       XX-> gtransform. x = x;
       XX-> gtransform. y = y;
    } else {
@@ -1479,7 +1560,7 @@ Bool
 apc_gp_set_text_out_baseline( Handle self, Bool baseline)
 {
    DEFXX;
-   if ( XX-> flags. paint) {
+   if ( XF_IN_PAINT(XX)) {
       XX-> flags. paint_base_line = !!baseline;
    } else {
       XX-> flags. base_line = !!baseline;
