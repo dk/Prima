@@ -174,6 +174,11 @@ Bool
 apc_widget_destroy( Handle self)
 {
    DEFXX;
+
+   if ( XX-> flags. paint_pending) {
+      TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+      XX-> flags. paint_pending = false;
+   }
    free(XX-> dashes);
    XX-> dashes = nil;
    XX-> ndashes = 0;
@@ -336,7 +341,6 @@ Bool
 apc_widget_invalidate_rect( Handle self, Rect *rect)
 {
    XRectangle r;
-   XExposeEvent ev;
    DEFXX;
 
    if ( rect) {
@@ -353,19 +357,10 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
 
    if ( !XX-> region) {
       XX-> region = XCreateRegion();
-      ev. type = Expose;
-      ev. window = XX->udrawable;
-      ev. count = 0;
-      ev. x = r. x;
-      ev. y = r. y;
-      ev. width = r. width;
-      ev. height = r. height;
       XX-> exposed_rect = r;
-
-      if ( !XX-> flags. sync_paint) {
-	 XSendEvent( DISP, XX->udrawable, false, 0, (XEvent*)&ev);
-	 XCHECKPOINT;
-      }
+      if ( !XX-> flags. paint_pending)
+         TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
+      XX-> flags. paint_pending = true;
    } else {
       prima_rect_union( &XX-> exposed_rect, &r);
    }
@@ -402,7 +397,6 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    int src_x, src_y, w, h, dst_x, dst_y;
    XRectangle xr, ir;
    Region invalid, reg;
-   PPaintList pl;
 
    if ( r) {
       src_x = r-> left;
@@ -500,18 +494,9 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    }
    XUnionRegion( XX-> region, invalid, XX-> region);
    XDestroyRegion( invalid);
-
-   pl = guts. paint_list;
-   while ( pl) {
-      if ( pl-> obj == self)
-	 return true;
-      pl = pl-> next;
-   }
-   pl = malloc( sizeof( PaintList));
-   if (!pl) croak( "no memory");
-   pl-> obj = self;
-   pl-> next = guts. paint_list;
-   guts. paint_list = pl;
+   if ( !XX-> flags. paint_pending)
+      TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
+   XX-> flags. paint_pending = true;
    return true;
 }
 
@@ -774,8 +759,14 @@ apc_widget_set_z_order( Handle self, Handle behind, Bool top)
 Bool
 apc_widget_update( Handle self)
 {
+   DEFXX;
    Event e;
-   if ( X(self)-> region) {
+
+   if ( XX-> region) {
+      if ( XX-> flags. paint_pending) {
+         TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+         XX-> flags. paint_pending = false;
+      }
       e. cmd = cmPaint;
       CComponent( self)-> message( self, &e);
    }

@@ -196,6 +196,7 @@ window_subsystem_init( void)
 		     &guts. cursor_height);
    XCHECKPOINT;
 
+   TAILQ_INIT( &guts.paintq);
    guts. clipboards = hash_create();
    guts. windows = hash_create();
    guts. menu_windows = hash_create();
@@ -491,6 +492,28 @@ purge_invalid_watchers( Handle self, void *dummy)
    return false;
 }
 
+static void
+perform_pending_paints( void)
+{
+   PDrawableSysData selfxx, next;
+   Event e;
+
+   for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
+      next = TAILQ_NEXT( XX, paintq_link);
+      if ( XX-> flags. paint_pending) {
+         TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+         XX-> flags. paint_pending = false;
+      } else {
+         croak( "assertion !paint_pending failed");
+      }
+      if ( PWidget( XX->self)-> stage == csNormal) {
+         e. cmd = cmPaint;
+         CWidget( XX->self)-> message( XX-> self, &e);
+      }
+      XX = next;
+   }
+}
+
 Bool
 apc_application_go( Handle self)
 {
@@ -626,20 +649,7 @@ FetchAndProcess:
 	    XFlush( DISP);
 	 }
       }
-      {
-	 PPaintList pl = guts. paint_list;
-	 Event e;
-	 while ( pl) {
-	    PPaintList cur = pl;
-	    Handle self = cur-> obj;
-	    guts. paint_list = pl = pl-> next;
-
-	    /* if ( alive_check) */
-	    e. cmd = cmPaint;
-	    CComponent( self)-> message( self, &e);
-	    free( cur);
-	 }
-      }
+      perform_pending_paints();
       kill_zombies();
    }
    if ( application) Object_destroy( application);

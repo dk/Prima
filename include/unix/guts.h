@@ -134,12 +134,6 @@ typedef struct _gc_list
    struct _drawable_sys_data *holder;
 } GCList;
 
-typedef struct _paint_list
-{
-   struct _paint_list *next;
-   Handle obj;
-} PaintList, *PPaintList;
-
 struct _UnixGuts
 {
    /* Event management */
@@ -156,13 +150,13 @@ struct _UnixGuts
    long                         unhandled_events;
    fd_set                       write_set;
    /* Graphics */
-   GCList                      *bitmap_free_gcl;
-   GCList                      *bitmap_used_gcl;
-   GCList                      *free_gcl;
-   GC                           menugc;
-   PPaintList                   paint_list;
-   GCList                      *used_gcl;
-   PHash                        ximages;
+   GCList                              *bitmap_free_gcl;
+   GCList                              *bitmap_used_gcl;
+   GCList                              *free_gcl;
+   GC                                   menugc;
+   TAILQ_HEAD(,_drawable_sys_data)      paintq;
+   GCList                              *used_gcl;
+   PHash                                ximages;
    /* Font management */
    PHash                        font_hash;
    PFontInfo                    font_info;
@@ -320,21 +314,22 @@ typedef struct _drawable_sys_data
    Pixmap user_p_mask;
    struct {
       int clip_owner			: 1;
-      int sync_paint			: 1;
-      int mapped			: 1;
-      int exposed			: 1;
-      int paint                 	: 1;
-      int saved_zero_line       	: 1;
-      int zero_line             	: 1;
-      int grab                  	: 1;
-      int enabled               	: 1;
-      int focused       	        : 1;
-      int reload_font			: 1;
-      int do_size_hints			: 1;
-      int no_size			: 1;
       int cursor_visible		: 1;
-      int process_configure_notify	: 1;
+      int do_size_hints			: 1;
+      int enabled               	: 1;
+      int exposed			: 1;
+      int focused       	        : 1;
+      int grab                  	: 1;
       int is_image                      : 1;
+      int mapped			: 1;
+      int no_size			: 1;
+      int paint                 	: 1;
+      int paint_pending                 : 1;
+      int process_configure_notify	: 1;
+      int reload_font			: 1;
+      int saved_zero_line       	: 1;
+      int sync_paint			: 1;
+      int zero_line             	: 1;
    } flags;
    struct _PrimaXImage *image_cache;
    struct _PrimaXImage *icon_cache;
@@ -342,6 +337,7 @@ typedef struct _drawable_sys_data
    struct _PrimaXImage *icon_bit_cache;
    XColor bitmap_fore, bitmap_back;
    XColor bitmap_bit_fore, bitmap_bit_back;
+   TAILQ_ENTRY(_drawable_sys_data) paintq_link;
 } DrawableSysData, *PDrawableSysData;
 
 #define CURSOR_TIMER	((Handle)11)

@@ -466,7 +466,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case Expose: {
       XRectangle r;
-      PPaintList pl;
 
       if ( !was_sent) {
 	 r. x = ev-> xexpose. x;
@@ -482,20 +481,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 XUnionRectWithRegion( &r, XX-> region, XX-> region);
       }
 
-      if ( ev-> xexpose. count)
-	 return;
-
-      pl = guts. paint_list;
-      while ( pl) {
-	 if ( pl-> obj == self)
-	    return;
-	 pl = pl-> next;
+      if ( ev-> xexpose. count == 0 && !XX-> flags. paint_pending) {
+         TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
+         XX-> flags. paint_pending = true;
       }
-      pl = malloc( sizeof( PaintList));
-      if (!pl) croak( "no memory");
-      pl-> obj = self;
-      pl-> next = guts. paint_list;
-      guts. paint_list = pl;
       return;
    }
    case GraphicsExpose: {
@@ -695,7 +684,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 CComponent( self)-> message( self, &secondary);
       }
    } else {
-      /* Unhandled event, just do nothing */
+      /* Unhandled event, do nothing */
       DOLBUG( "*** event %u to %s ***\n", ev-> type, PWidget( self)-> name);
       guts. unhandled_events++;
    }
