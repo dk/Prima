@@ -265,6 +265,10 @@ be found in the following files:
 
 =over
 
+=item Tutorials
+
+L<Prima::tutorial> - introductory tutorial
+
 =item Core toolkit classes
 
 L<Prima::Object> - basic object concepts, properties, events

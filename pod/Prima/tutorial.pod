@@ -1,0 +1,241 @@
+=for rcs $Id$
+
+=head1 NAME
+
+basetut - introductory tutorial
+
+=head1 DESCRIPTION
+
+Programming graphic interfaces is often considered somewhat boring, and not
+without a cause. It is a small pride in knowing that your buttons and
+scrollbars are working exactly as millions of others buttons and scrollbars do,
+so whichever GUI toolkit is chosen, it is usually regarded as a tool of small
+importance, and the more unobtrusive, the better.
+
+There are not many toolkits that satisfy visual requirements of the majority of
+both programmers and users, and the abundance of the strange-looking GUI
+libraries. Probably, these are compensated by the advantages of their usage by
+the programmer. Whether this is correct or not, the way one has to program in
+order to use a particular GUI toolkit, is one of the important estimation factors.
+
+=head1 Introduction - a "Hello world" program
+
+Prima is written and is expected to be used in some traditions of Perl coding,
+such as DWIM ( do what I mean ) or TMTOWTDI ( there are more than one way to do it).
+Perl itself is language (arguably) most effective in small programs, as the programmer
+doesn't need to include lines and lines of prerequisite code before even getting
+to the problem itself. Prima can't compete with that, but the intdocution fee
+is low; a minimal working 'Hello world' can be written in three lines of code:
+
+	use Prima qw(Application);
+	Prima::MainWindow-> new( text => 'Hello world!');
+	run Prima;
+
+
+=for podview <img src="tutorial/hello1.gif">
+
+Line 1 here is the invocation of modules I<Prima> and I<Prima::Application>. Sure,
+one can explicitly invoke both C<use Prima> and C<use Prima::Application> etc etc,
+but as module Prima doesn't export method names, the exemplified syntax is well-suited
+for such a compression.
+
+Line 2 creates a window of I<Prima::MainWindow> class, which is visualized as a
+screen window, titled as 'Hello world'. The class terminates the application
+when the window is closed; this is the only difference from 'Window' windows,
+that donothing after their closing. From here, C<Prima::> prefix in class names
+will be omitted, and will be used only when necessary, such as in code
+examples.
+
+Line 3 enters the Prima event loop. The loop is terminated when the only instance
+of I<Application> class, created by C<use Prima::Application> invocation and
+stored in C<$::application> scalar, is destroyed.
+
+Strictly speaking, a minimal 'hello world' program can be written even in two
+lines:
+
+	use Prima;
+	Prima::message('Hello world');
+
+
+=for podview <img src="tutorial/hello2.gif">
+
+but it is not illustrative and not useful. C<Prima::message> is rarely used, 
+and is one of few methods contained in C<Prima::> namespace. To display a 
+message, the I<MsgBox> module is often preferred, with its control over message
+buttons and pre-defined icons. With its use, the coode above can be rewritten
+as
+
+	use Prima qw(Application MsgBox);
+	message('Hello world');
+
+
+=for podview <img src="tutorial/hello3.gif">
+
+but where C<Prima::message> accepts the only text scalar parameters, C<Prima::MsgBox::message>
+can do lot more. For example 
+
+	use Prima qw(Application MsgBox);
+	message('Hello world', mb::OkCancel|mb::Information);
+
+
+=for podview <img src="tutorial/hello4.gif">
+
+displays two buttons and an icon. A little excitement, but the following is a bit more interesting:
+
+	use Prima qw(Application MsgBox);
+	message('Hello world', mb::OkCancel|mb::Information, {
+		buttons => {
+			mb::Cancel => {
+				# there are predefined color constants to use
+				backColor => cl::LightGreen,
+				# but RGB integers are also o.k. 
+				color     => 0xFFFFFF,
+			},
+			mb::Ok => {
+				text 	=> 'Indeed',
+			},
+		}
+	});
+
+
+=for podview <img src="tutorial/hello5.gif">
+
+The definition of set of properties at once is a major feature of Prima, and is seen
+throughout the toolkit. Returning back to the very first example, we can demonstrate
+the manipulation of the window properties in the same fashion:
+
+	use Prima qw(Application);
+	my $window = Prima::MainWindow-> new( 
+		text => 'Hello world!',
+		backColor => cl::Yellow,
+		size => [ 200, 200],
+	);
+	run Prima;
+
+Note that the C<size> property is a two-integer array, and color constant is registered
+in C<cl::> namespace. In Prima there is a number of such two- and three-letter namespaces,
+containing usually integer constants for various purposes. The design reason for chosing
+such syntax over string constants ( as in Perl-Tk, such as C<color => 'yellow'> ) is that
+the syntax is checked on the compilation stage, thus narrowing the possibility of a bug.
+
+There are over a hunder properties, such as color, text, or size, defined on descendants
+of I<Widget> class. These can be set in C<new> ( alias C<create> ) call, or referred later,
+either individually
+
+	$window-> size( 300, 150);
+
+or in a group
+
+	$window-> set(
+		text => 'Hello again',
+		color => cl::Black,
+	);
+
+In addition to these, there are also more than 30 events, called whenever a certain
+action is performed, sharing the syntax with properties. Changing the code again,
+we can catch a mouse click on the window:
+
+	use Prima qw(Application MsgBox);
+	my $window = Prima::MainWindow-> new( 
+		text => 'Hello world!',
+		size => [ 200, 200],
+		onMouseDown => sub {
+			my ( $self, $button, $mod, $x, $y) = @_;
+			message("Aww! You've clicked me right in $x:$y!");
+		},
+	);
+	run Prima;
+
+While an interesting concept, it is not really practical if the only thing
+you want is to catch a click, and this is the part where a standard button 
+is probably should be preferred:
+
+	use Prima qw(Application Buttons MsgBox);
+	my $window = Prima::MainWindow-> new( 
+		text     => 'Hello world!',
+		size     => [ 200, 200],
+	);
+	$window-> insert( Button => 
+		text     => 'Click me',
+		growMode => gm::Center,
+		onClick  => sub { message("Hello!") }
+	);
+	run Prima;
+
+
+=for podview <img src="tutorial/hello6.gif">
+
+For those who know Perl-Tk and prefer its ways to position a widget, Prima
+provides I<pack> and I<place> interfaces. Here one can replace the line
+
+	growMode => gm::Center,
+	
+to 
+
+	pack     => { expand => 1 },
+
+with exactly the same effect.
+
+=head1 Widgets overview
+
+Prima contains a set of standard ( in GUI terms ) widgets, such as
+buttons, input lines, list boxes, scroll bars, etc etc. These are
+diluted with the other more exotic widgets, such as POD viewer
+or docking windows. Technically, these are collected in C<Prima/*.pm>
+modules and each contains its own manual page, but for informational
+reasons here is the table of these, an excerpt of C<Prima> manpage:
+
+L<Prima::Buttons> - buttons and button grouping widgets 
+
+L<Prima::Calendar> - calendar widget 
+
+L<Prima::ComboBox> - combo box widget 
+
+L<Prima::DetailedList> - multi-column list viewer with controlling header widget
+
+L<Prima::DetailedOutline> - a multi-column outline viewer with controlling header widget
+
+L<Prima::DockManager> - advanced dockable widgets
+
+L<Prima::Docks> - dockable widgets
+
+L<Prima::Edit> - text editor widget
+
+L<Prima::ExtLists> - listbox with checkboxes
+
+L<Prima::FrameSet> - frameset widget class
+
+L<Prima::Grids> - grid widgets
+
+L<Prima::Header> - a multi-tabbed header widget
+
+L<Prima::ImageViewer> - bitmap viewer
+
+L<Prima::InputLine> - input line widget
+
+L<Prima::Label> - static text widget 
+
+L<Prima::Lists> - user-selectable item list widgets
+
+L<Prima::MDI> - top-level windows emulation classes
+
+L<Prima::Notebooks> - multipage widgets
+
+L<Prima::Outlines> - tree view widgets
+
+L<Prima::PodView> - POD browser widget
+
+L<Prima::ScrollBar> - scroll bars
+
+L<Prima::Sliders> - sliding bars, spin buttons and input lines, dial widget etc.
+
+L<Prima::TextView> - rich text browser widget
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>
+
