@@ -17,6 +17,16 @@
 #define XBool int
 #undef Complex
 
+#ifndef Button6
+#define Button6		6
+#endif
+#ifndef Button7
+#define Button7		7
+#endif
+#ifndef Button8
+#define Button8		8
+#endif
+
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>

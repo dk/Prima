@@ -63,9 +63,17 @@ use constant F16       =>  0x2f00 ;
 
 # mouse buttons
 package mb;
-use constant Left   => 1;
-use constant Right  => 2;
-use constant Middle => 4;
+use constant b1     => 1;
+use constant b2     => 2;
+use constant b3     => 4;
+use constant b4     => 8;
+use constant b5     => 16;
+use constant b6     => 32;
+use constant b7     => 64;
+use constant b8     => 128;
+use constant Left   => b1;
+use constant Right  => b3;
+use constant Middle => b2;
 
 package mb;
 # message box

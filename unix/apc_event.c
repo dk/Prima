@@ -93,16 +93,31 @@ handle_event( XEvent *ev, XEvent *next_event)
      ButtonEvent:
       switch (bev-> button) {
       case Button1:
-	 e. pos. button = mbLeft;
+	 e. pos. button = mb1;
 	 break;
       case Button2:
-	 e. pos. button = mbMiddle;
+	 e. pos. button = mb2;
 	 break;
       case Button3:
-	 e. pos. button = mbRight;
+	 e. pos. button = mb3;
+	 break;
+      case Button4:
+	 e. pos. button = mb4;
+	 break;
+      case Button5:
+	 e. pos. button = mb5;
+	 break;
+      case Button6:
+	 e. pos. button = mb6;
+	 break;
+      case Button7:
+	 e. pos. button = mb7;
+	 break;
+      case Button8:
+	 e. pos. button = mb8;
 	 break;
       default:
-	 e. pos. button = 0;
+	 return;
       }
       e. pos. where. x = bev-> x;
       e. pos. where. y = XX-> size. y - bev-> y - 1;

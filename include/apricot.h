@@ -282,9 +282,17 @@ typedef struct _PostMsg {
 #define cmUser           0x00000100                /* first user-defined message */
 
 /* mouse buttons */
-#define mbLeft          1
-#define mbRight         2
-#define mbMiddle        4
+#define mb1		1
+#define mb2		2
+#define mb3		4
+#define mb4		8
+#define mb5		16
+#define mb6		32
+#define mb7		64
+#define mb8		128
+#define mbLeft          mb1
+#define mbRight         mb3
+#define mbMiddle        mb2
 
 /* key constants */
 #define kbShift         0x100000
