@@ -214,8 +214,8 @@ void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx
 void
 ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch)
 {
-   int  absh = abs( h);
-   int  absw = abs( w);
+   int  absh = h < 0 ? -h : h;
+   int  absw = w < 0 ? -w : w;
    int  srcLine = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    int  dstLine = (( absw  * ( var->type & imBPP) + 31) / 32) * 4;
    Byte * srcData = var->data;
