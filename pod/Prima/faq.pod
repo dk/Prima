@@ -54,7 +54,7 @@ You can do this is several ways. The project would probably best benefit from
 the advocacy, because not many people use it. Of course, you can send it new
 widgets, patches, suggestions, or even donations. Also, documentation is the
 thing that needs a particular attention, since my native language is not
-English, so if there are volunteers for polishing the of Prima does, you are
+English, so if there are volunteers for polishing of the Prima docs, you are
 very welcome.
 
 =head1 INSTALLATION
@@ -67,7 +67,7 @@ documentation, and some other useful info.
 
 =head2 What is better, source or binary?
 
-Depends where your are and what are your goal. On unix, the best is to use the
+Depends where your are and what are your goals. On unix, the best is to use the
 source. On win32 and os2 the binaries probably are preferred. If you happen to
 use cygwin you probably still better off using the source.
 
@@ -81,7 +81,7 @@ version shouldn't be a problem, for example, binary distribution for Perl build
 To install, unpack the archive and type 'perl ms_install.pl'.  The files will
 be copied into the perl tree.
 
-=head2 How to compile from source?
+=head2 How to compile Prima from source?
 
 Type the following:
 
@@ -90,7 +90,7 @@ Type the following:
    make install
 
 If the 'perl Makefile.PL' fails complaining to strange errors, you can check
-makefile.log to see whether anything is wrong. A typical situation here is that
+makefile.log to see if anything is wrong. A typical situation here is that
 Makefile.PL may report that is cannot find Perl library, for example, where
 there actually it invokes the compiler in a wrong way.
 
@@ -141,7 +141,7 @@ although at cost of a lacking support for a graphic format.
 The library is probably located in a weird directory so Makefile.PL must be
 told to use it by adding LIBPATH+=/some/weird/lib, and possibly
 INCPATH+=/some/weird/include in the command line. Check makefile.log created by
-Makefile.PL to check the actual errors reported when it tries to use the
+Makefile.PL for the actual errors reported when it tries to use the
 library.
 
 =head2 Compile error
@@ -174,7 +174,7 @@ to copy these files into your PATH, for example in C:/WINNT .
 This error happens when you've compiled Prima for X11, and no connection to X11
 display can be established. Check your DISPLAY environment variable, or use
 --display parameter when running Prima. If you do not want Prima to connect to
-the display, for example, to use it inside a CGI script, either use --no-x11
+the display, for example, to use it inside of a CGI script, either use --no-x11
 parameter or include C<use Prima::noX11> statement in your program.
 
 =head2 X11: my fonts are bad!
@@ -191,7 +191,7 @@ of the Prima documentation. Other pages can be invoked as 'perldoc Prima::Button
 say, or, for the graphical pod reader, 'podview Prima::Buttons'. podview
 is the Prima doc viewer, which is also capable of displaying any POD page.
 
-There are also a pdf file on the Prima web site www.prima.eu.org, which contains
+There is also a pdf file on the Prima web site www.prima.eu.org, which contains
 the same set of documentation but composed as a single book. Its sources are
 in utils/makedoc directory, somewhat rudimentary and require an installation
 of latex and dvips to produce one of tex, dvi, ps, or pdf targets.
@@ -266,7 +266,7 @@ purpose:
 =head2 How would I write a widget class myself?
 
 There are lots and lots of examples of this. Find a widget class similar to
-what you are about to write, and follow the idea. There are, though, some inevident
+what you are about to write, and follow the idea. There are, though, some non-evident
 moments worth to enumerate.
 
 =over
@@ -279,7 +279,7 @@ parent sizes, widget properties such as buffered and visible.
 =item *
 
 Try to avoid special properties for C<create>, where for example a particular property
-must always be supplied, or not supplied, or a particular combination of properties is
+must always be supplied, or never supplied, or a particular combination of properties is
 expected. See if the DWIM principle can be applied instead.
 
 =item *
@@ -305,9 +305,7 @@ Avoid using pre-cooked data in C<on_paint>, such as when for example only a
 particular part of a widget was invalidated, and this fact is stored in an
 internal variable. This is because when the actual C<on_paint> call is
 executed, the invalid area may be larger than was invalidated by the class
-actions. 
-
-If you must though, compare values of C<clipRect> property to see
+actions. If you must though, compare values of C<clipRect> property to see
 whether the invalid area is indeed the same as it is expected. 
 
 Remember, that inside on_paint all coordinates are inclusive-inclusive, 
