@@ -38,6 +38,7 @@ my $ok_count;
 my $testsRan = 0;
 my ( $skipped, $passed, $failed) = (0,0,0);
 my ( $eskipped, $epassed, $efailed) = (0,0,0);
+my @filters;
 
 BEGIN
 {
@@ -117,7 +118,6 @@ use Prima;
 use Prima::Const;
 use Prima::Classes;
 use Prima::Application name => 'failtester';
-my $filter = undef;
 
 for ( @ARGV) {
    if ( /^-(.*)/) {
@@ -125,8 +125,7 @@ for ( @ARGV) {
          $verbose = 1;
       }
    } else {
-      $filter = $_;
-      last;
+      push( @filters, $_);
    }
 }
 
@@ -262,7 +261,13 @@ sub rundir
          rundir( $ff);
       } elsif ( -f $ff) {
          next unless $_ =~ /\.t$/;
-         next if defined($filter) && $ff !~ /$filter$/;
+         if ( scalar @filters) {
+            my $match;
+            for ( @filters) {
+               $match = 1, last if $ff =~ /$_$/;
+            }
+            next unless $match;
+         }
          runfile( $ff);
       }
    }
