@@ -951,7 +951,7 @@ sub on_radioclick
 sub index
 {
    my $self = $_[0];
-   my @c    = $self-> widgets;
+   my @c    = grep { $_-> isa(q(Prima::Radio))} $self-> widgets;
    if ( $#_) {
       my $i = $_[1];
       $i = 0 if $i < 0;
@@ -990,7 +990,7 @@ sub init
 sub value
 {
    my $self = $_[0];
-   my @c    = $self-> widgets;
+   my @c    = grep { $_-> isa(q(Prima::CheckBox))} $self-> widgets;
    my $i;
    if ( $#_) {
       my $value = $_[1];
