@@ -109,7 +109,7 @@ Prima - a perl graphic toolkit
 
   use Prima qw(Application Buttons);
 
-  Prima::MainWindow-> create(
+  new Prima::MainWindow(
       text     => 'Hello world!',
       size     => [ 200, 200],
   )-> insert( Button =>
