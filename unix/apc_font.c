@@ -591,7 +591,7 @@ detail_font_info( PFontInfo f, PFont font)
    FontKey key;
    Bool detailed = vector && !f-> sloppy;
    Bool askedDefaultPitch;
-
+ 
    if ( f-> sloppy || vector) {
       if ( vector) {
 	 memcpy( &fi, f, sizeof( fi));
@@ -732,7 +732,7 @@ detail_font_info( PFontInfo f, PFont font)
 	    f-> font. style |= fsBold;
 	    of-> font. style |= fsBold;
 	 }
-	 of-> font. style = f-> font. style = 2; /* XXX */
+	 /* of-> font. style = f-> font. style = 2; */ /* Kakogo hrena??????? XXX */
 	 of-> flags. weight = f-> flags. weight = true;
 	 weight = (v + 5)/10;
 	 if (weight >= 10) weight--;
@@ -843,7 +843,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 
    for ( i = 0; i < n; i++) {
       diff = 0.0;
-
+      
       if ( info[i]. flags. pitch) {
 	 if ( f-> pitch == fpDefault && info[i]. font. pitch == fpFixed) {
 	    diff += 1.0;
