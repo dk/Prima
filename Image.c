@@ -1113,7 +1113,7 @@ XS( Image_load_FROMPERL) {
    Bool wantarray = ( GIMME_V == G_ARRAY);
    Bool singleProfile = true;
    Handle self;
-   char *class_name;
+   char *class_name = nil;
    PList info = nil;
    int i;
    HV *hv;
