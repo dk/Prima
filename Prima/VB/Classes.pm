@@ -540,12 +540,12 @@ sub on_mousemove
       $self-> xorrect( @{$self-> {prevRect}});
       my @sz = $self-> size;
       my @og = $self-> origin;
-      if ( $VB::main-> {dsnap}) {
+      if ( $VB::main-> {ini}-> {SnapToGrid}) {
          $x -= ( $x - $self->{spotX} + $og[0]) % 4;
          $y -= ( $y - $self->{spotY} + $og[1]) % 4;
       }
 
-      if ( $VB::main-> {gsnap}) {
+      if ( $VB::main-> {ini}-> {SnapToGuidelines}) {
          my $xline = $VB::form->{guidelineX} - $og[0];
          my $yline = $VB::form->{guidelineY} - $og[1];
          $x = $xline + $self->{spotX} if abs( $xline - $x + $self->{spotX}) < 8;
@@ -565,12 +565,12 @@ sub on_mousemove
             my @og = $self-> origin;
             my ( $xa, $ya) = @{$self->{dirData}};
 
-            if ( $VB::main-> {dsnap}) {
+            if ( $VB::main-> {ini}-> {SnapToGrid}) {
                $x -= ( $x - $self->{spotX} + $og[0]) % 4;
                $y -= ( $y - $self->{spotY} + $og[1]) % 4;
             }
 
-            if ( $VB::main-> {gsnap}) {
+            if ( $VB::main-> {ini}-> {SnapToGuidelines}) {
                my @sz = $self-> size;
                my $xline = $VB::form->{guidelineX} - $og[0];
                my $yline = $VB::form->{guidelineY} - $og[1];

@@ -57,7 +57,10 @@ sub open_cfg
       eval "require \"$file\";";
    } else {
       my $home = $ENV{HOME};
-      return ( 0, 'HOME environment variable not set') unless defined $home;
+      unless ( defined $home) {
+         warn "HOME environment variable is not set\n";
+         $home = '.';
+      }
       $home =~ s[\\][/]g;
       $home =~ s/\\$//;
       $home =~ s/\/$//;

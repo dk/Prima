@@ -25,7 +25,7 @@
 #
 # $Id$
 use strict;
-use Prima qw(StdDlg Notebooks MsgBox ComboBox ColorDialog);
+use Prima qw(StdDlg Notebooks MsgBox ComboBox ColorDialog IniFile);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
@@ -66,8 +66,10 @@ my $saveFileDlg;
 sub open_dialog
 {
    my %profile = @_;
-   $openFileDlg = Prima::OpenDialog-> create( icon => $VB::ico)
-      unless $openFileDlg;
+   $openFileDlg = Prima::OpenDialog-> create( 
+      icon => $VB::ico, 
+      directory => $VB::main-> {ini}-> {OpenPath},
+   ) unless $openFileDlg;
    $openFileDlg-> set( %profile);
    return $openFileDlg;
 }
@@ -75,8 +77,10 @@ sub open_dialog
 sub save_dialog
 {
    my %profile = @_;
-   $saveFileDlg = Prima::SaveDialog-> create( icon => $VB::ico)
-      unless $saveFileDlg;
+   $saveFileDlg = Prima::SaveDialog-> create( 
+      icon => $VB::ico,
+      directory => $VB::main-> {ini}-> {SavePath},
+   ) unless $saveFileDlg;
    $saveFileDlg-> set( %profile);
    return $saveFileDlg;
 }
@@ -146,6 +150,9 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
 
+   my @rx = split( ' ', $VB::main-> {ini}-> {ObjectInspectorRect});
+   $self-> rect( @rx) if scalar grep { $_ != -1 } @rx;
+
    my @sz = $self-> size;
 
    my $fh = $self-> font-> height + 6;
@@ -214,7 +221,6 @@ sub init
    $self-> {panel}->{pages} = {};
 
    $self->{current} = undef;
-
    return %profile;
 }
 
@@ -455,6 +461,7 @@ sub on_destroy
 {
    $VB::inspector-> item_changed;
    $VB::inspector = undef;
+   $VB::main-> {ini}-> {ObjectInspectorRect} = join( ' ', $_[0]-> rect);
 }
 
 package Form;
@@ -622,6 +629,7 @@ sub on_destroy
          $VB::main->update_menu();
          $VB::main->update_markings();
       }
+      $VB::main-> {ini}-> {ObjectInspectorRect} = join( ' ', $_[0]-> rect);
    }
    ObjectInspector::renew_widgets;
 }
@@ -1022,10 +1030,6 @@ sub profile_default
       originDontCare => 0,
       height         => 100,
       icon           => $VB::ico,
-      onDestroy      => sub {
-         $VB::main = undef;
-         $::application-> close;
-      },
       menuItems      => [
          ['~File' => [
             ['newitem' => '~New' => sub {$_[0]->new;}],
@@ -1055,8 +1059,8 @@ sub profile_default
            ['~Add widgets...' => q(add_widgets)],
            [],
            ['Reset ~guidelines' => sub { Form::fm_resetguidelines(); } ],
-           ['*gsnap' => 'Snap to guid~elines' => sub { $VB::main-> {gsnap} = $VB::main-> menu-> toggle( 'gsnap'); } ],
-           ['*dsnap' => 'Snap to gri~d'       => sub { $VB::main-> {dsnap} = $VB::main-> menu-> toggle( 'dsnap'); } ],
+           ['*gsnap' => 'Snap to guid~elines' => sub { $VB::main-> {ini}-> {SnapToGuidelines} = $VB::main-> menu-> toggle( 'gsnap') ? 1 : 0; } ],
+           ['*dsnap' => 'Snap to gri~d'       => sub { $VB::main-> {ini}-> {SnapToGrid} = $VB::main-> menu-> toggle( 'dsnap') ? 1 : 0; } ],
            [],
            ['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => \&form_run ],
            ['-breakitem' => '~Break' => \&form_cancel ],
@@ -1191,8 +1195,27 @@ sub init
    $self->{classes} = \%classes;
    $self->{pages}   = \@pages;
    $self->{gridAlert} = 5;
-   $self->{gsnap}     = 1;
-   $self->{dsnap}     = 1;
+   
+   my $home = ( defined $ENV{HOME}) ? $ENV{HOME} : '.';
+   $self-> {iniFile} = Prima::IniFile-> create( 
+      file    => $home . '/.vb',
+      default => [
+         'View' => [
+            'SnapToGrid' => 1,
+            'SnapToGuidelines' => 1,
+            'ObjectInspectorVisible' => 1,
+            'ObjectInspectorRect' => '-1 -1 -1 -1',
+            'MainPanelRect' => '-1 -1 -1 -1',
+            'OpenPath' => '.',
+            'SavePath' => '.',
+         ],
+      ],
+   );
+   my $i = $self-> {ini} = $self-> {iniFile}-> section( 'View' );
+   $self-> menu-> dsnap-> checked( $i-> {SnapToGrid});
+   $self-> menu-> gsnap-> checked( $i-> {SnapToGuidelines});
+   my @rx = split( ' ', $i->{MainPanelRect});
+   $self-> rect( @rx) if scalar grep { $_ != -1 } @rx;
    return %profile;
 }
 
@@ -1201,10 +1224,25 @@ sub on_create
    $_[0]-> reset_tabs;
 }
 
+
 sub on_close
 {
-   $_[0]-> clear_event if $VB::form && !$VB::form->close;
+   return unless $VB::form;
+   $_[0]-> clear_event, return if !$VB::form->close;
 }
+
+sub on_destroy
+{
+   $_[0]-> {ini}-> {MainPanelRect} = join( ' ', $_[0]-> rect);
+   my @rx = ( $_[0]-> {ini}-> {ObjectInspectorVisible} = ( $VB::inspector ? 1 : 0)) 
+      ? $VB::inspector-> rect : ((-1)x4);
+   $_[0]-> {ini}-> {ObjectInspectorRect} = join( ' ', @rx);
+   $_[0]-> {ini}-> {OpenPath} = $openFileDlg-> directory if $openFileDlg;
+   $_[0]-> {ini}-> {SavePath} = $saveFileDlg-> directory if $saveFileDlg;
+   $VB::main = undef;
+   $::application-> close;
+}
+
 
 sub reset_tabs
 {
@@ -1930,8 +1968,8 @@ $::application-> accelItems( VB::accelItems);
 $VB::main = MainPanel-> create;
 $VB::inspector = ObjectInspector-> create(
    top => $VB::main-> bottom - 12 - $::application-> get_system_value(sv::YTitleBar)
-);
-$VB::form = Form-> create;
+) if $VB::main-> {ini}-> {ObjectInspectorVisible};
+$VB::form = Form-> create; 
 ObjectInspector::renew_widgets;
 ObjectInspector::preload() unless $VB::fastLoad;
 $VB::main-> update_menu();
