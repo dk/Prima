@@ -145,6 +145,7 @@ sub message_box
             $self-> put_image( 0, 0, $icon);
          },
       );
+
       $iconRight = $iconView-> right;
    }
 
