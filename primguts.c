@@ -154,6 +154,30 @@ stricmp(const char *s1, const char *s2)
    return (tolower(*u1) - tolower(*--u2));
 }
 #endif
+    
+#ifndef HAVE_STRCASESTR
+/* Code was taken from FreeBSD 4.8 /usr/src/lib/libc/string/strcasestr.c */
+char *
+strcasestr( register const char * s,  register const char * find)
+{
+        register char c, sc;
+        register size_t len;
+
+        if ((c = *find++) != 0) {
+                c = tolower((unsigned char)c);
+                len = strlen(find);
+                do {
+                        do {
+                                if ((sc = *s++) == 0)
+                                        return (NULL);
+                        } while ((char)tolower((unsigned char)sc) != c);
+                } while (strncasecmp(s, find, len) != 0);
+                s--;
+        }
+        return ((char *)s);
+}
+#endif
+
 
 #ifndef HAVE_REALLOCF
 /*

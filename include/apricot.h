@@ -264,6 +264,9 @@ extern int
 stricmp(const char *s1, const char *s2);
 #endif
 #endif
+#ifndef HAVE_STRCASESTR
+char * strcasestr( const char * s, const char * find);
+#endif
 #ifndef HAVE_REALLOCF
 extern void *
 reallocf(void *ptr, size_t size);

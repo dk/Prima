@@ -1318,6 +1318,7 @@ sub setup_defines
     }
 
     have_funcs_in( 'string.h', 'strcasecmp');
+    have_funcs_in( 'string.h', 'strcasestr');
     have_funcs_in( 'strings.h', 'stricmp');
     have_funcs_in( 'stdio.h', 'snprintf');
     have_funcs_in( 'stdio.h', '_snprintf');
