@@ -69,13 +69,13 @@ Object_create( char *className, HV * profile)
    xmate = newRV_inc( SvRV( POPs));
    self = create_mate( xmate);
    var-> mate = xmate;
+   var-> stage = csConstructing;
    PUTBACK;
    FREETMPS;
    LEAVE;
 
    profRef = newRV_inc(( SV *) profile);
    my-> profile_add( self, profRef);
-   var-> stage = csConstructing;
    SPAGAIN;
    {
       dG_EVAL_ARGS;
