@@ -807,9 +807,21 @@ AbstractMenu_get_handle( Handle self)
 int
 AbstractMenu_translate_accel( Handle self, char * accel)
 {
-   if ( !accel) return false;
-   accel = strchr( accel, '~');
-   return ( !accel || !isalnum( accel[1])) ? kbNoKey : tolower( accel[1]);
+   if ( !accel) return 0;
+   while ( *accel) {
+      if ( *(accel++) == '~') {
+         switch ( *accel) {
+         case '~' : 
+            accel++;
+            break;
+         case 0:
+            return 0;
+         default:
+            return isalnum( *accel) ? *accel : tolower( *accel);
+         }
+      }
+   }
+   return 0;
 }
 
 int
