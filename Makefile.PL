@@ -1366,8 +1366,10 @@ sub create_config_pm
    } else {
       push @libs, $perllib;
    }
-   push @libpath, "$_cwd/auto/Prima";
-   push @libs, 'Prima' . $cc_specs{$COMPILER}->{ldlibext};
+   unless ( $PLATFORM eq 'unix') {
+      push @libpath, "$_cwd/auto/Prima";
+      push @libs, 'Prima' . $cc_specs{$COMPILER}->{ldlibext};
+   }
    my $libpath = qqd(join( ',', map {"'$_'"} @libpath));
    my $libs    = qqd(join( ',', map {"'$_'"} @libs));
    my $perl    = qqd($^X);
