@@ -1467,6 +1467,8 @@ static Bool
 repaint_all( Handle owner, Handle self, void * dummy)
 {
    objCheck false;
+   if ( !is_apt( aptClipOwner))
+      return false;
    if ( !is_apt( aptTransparent)) {
       if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
       if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
