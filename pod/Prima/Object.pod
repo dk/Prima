@@ -702,6 +702,10 @@ creation of several objects:
 With such syntax, all newly created objects would have $owner
 set to their 'owner' properties.
 
+=item new CLASS, %PARAMETERS
+
+Same as L<create>.
+
 =item profile_add PROFILE
 
 The first stage of object creation process.

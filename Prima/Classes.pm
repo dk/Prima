@@ -37,6 +37,8 @@ use vars qw(@hooks);
 use strict;
 use Carp;
 
+sub new { shift->create(@_) }
+
 sub CREATE
 {
    my $class = shift;

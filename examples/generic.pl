@@ -41,7 +41,7 @@ use strict;
 use Prima;
 use Prima::Application name => 'Generic';
 
-my $w = Prima::MainWindow-> create(
+my $w = new Prima::MainWindow(
     text => "Hello, world!",
     onPaint   => sub {
        my ( $self, $canvas) = @_;

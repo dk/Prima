@@ -44,7 +44,7 @@ use Prima::Application name => 'Calendar';
 use Prima::Calendar;
 
 my $cal;
-my $w = Prima::MainWindow-> create(
+my $w = new Prima::MainWindow(
     text => "Calendar example",
     size => [ 200, 200],
     menuItems => [[ "~Options" => [

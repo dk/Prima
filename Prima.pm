@@ -187,7 +187,11 @@ is finished.
 
 The window is created by invoking 
 
-  Prima::Window-> create()
+   new Prima::Window();
+
+or
+
+   Prima::Window-> create()
 
 code with the additional parameters. Actually, all Prima objects are created by such a
 scheme. The class name is passed as the first parameter, and a custom set
@@ -195,7 +199,7 @@ of parameters is passed afterwards. These parameters are usually
 represented in a hash syntax, although actually passed as an array.
 The hash syntax is preferred for the code readability:
 
-   $new_object = Class-> create(
+   $new_object = new Class(
      parameter => value,
      parameter => value,
      ...
@@ -218,7 +222,7 @@ here, C<::text> property accepts a string, C<::size> - an anonymous array
 of two integers and C<onClick> - a sub.
 
 onXxxx are special properties that form a class of I<events>, 
-which share the C<create> syntax, and are additive when 
+which share the C<new>/C<create> syntax, and are additive when 
 the regular properties are substitutive (read more in L<Prima::Object>). 
 Events are called in the object context when a specific condition occurs. 
 The C<onClick> event here, for example, is called when the 
