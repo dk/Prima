@@ -111,6 +111,7 @@ sub profile_default
       windowState           => ws::Normal,
       clientClass           => 'Widget',
       clientProfile         => {},
+      firstClick            => 1,
       popupItems            => [
          [ restore => '~Restore'  => 'Ctrl+F5' => '^F5' => q(restore)],
          [ min     => 'Mi~nimize' => q(minimize)],
