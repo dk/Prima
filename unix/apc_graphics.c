@@ -793,9 +793,9 @@ color_to_pixel( Handle self, Color color, int depth)
       case 24:   
       case 32:   
          pv = 
-            (((COLOR_R(color) << 8) >> guts. red_range  ) << guts.   red_shift) |
-            (((COLOR_G(color) << 8) >> guts. green_range) << guts. green_shift) |
-            (((COLOR_B(color) << 8) >> guts. blue_range ) << guts.  blue_shift);
+            (((COLOR_R(color) << guts. red_range  ) >> 8) << guts.   red_shift) |
+            (((COLOR_G(color) << guts. green_range) >> 8) << guts. green_shift) |
+            (((COLOR_B(color) << guts. blue_range ) >> 8) << guts.  blue_shift);
          if ( guts.machine_byte_order != guts.byte_order)  
             switch( depth) {
             case 16:
@@ -1074,9 +1074,9 @@ apc_gp_get_pixel( Handle self, int x, int y)
                p32 = REVERSE_BYTES_32(p32);
          COMP:   
             c = 
-              (((p32 & guts. visual. blue_mask)  >> guts. blue_shift) << (8-guts. blue_range)) |
-              ((((p32 & guts. visual. green_mask) >> guts. green_shift) << (8-guts. green_range)) << 8) |
-              ((((p32 & guts. visual. red_mask)   >> guts. red_shift) << (8-guts. red_range)) << 16);
+              ((((p32 & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range) |
+              (((((p32 & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range) << 8) |
+              (((((p32 & guts. visual. red_mask)   >> guts. red_shift)   << 8) >> guts. red_range) << 16);
             break;
          default:
             warn("UAG_009: get_pixel not implemented for %d depth", guts.idepth);

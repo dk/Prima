@@ -484,9 +484,9 @@ ENOUGH:;
          }
       } else  
          brush-> primary = 
-            (((a[0] << 8) >> guts. red_range  ) << guts.   red_shift) |
-            (((a[1] << 8) >> guts. green_range) << guts. green_shift) |
-            (((a[2] << 8) >> guts. blue_range ) << guts.  blue_shift);
+            (((a[0] << guts. red_range  ) >> 8) << guts.   red_shift) |
+            (((a[1] << guts. green_range) >> 8) << guts. green_shift) |
+            (((a[2] << guts. blue_range ) >> 8) << guts.  blue_shift);
    }
    return brush-> primary;
 }
