@@ -52,6 +52,7 @@ strlwr( char *d, const char *s)
 static void
 fill_default_font( Font * font )
 {
+   bzero( font, sizeof( Font));
    strcpy( font-> name, "Helvetica");
    font-> height = C_NUMERIC_UNDEF;
    font-> size = 12;
@@ -66,40 +67,41 @@ font_query_name( XFontStruct * s, PFontInfo f)
    unsigned long v;
    char * c;
 
-   c = nil;
-   if ( XGetFontProperty( s, FXA_CHARSET_REGISTRY, &v) && v) {
-      XCHECKPOINT;
-      c = XGetAtomName( DISP, (Atom)v);
-      XCHECKPOINT;
-      if ( c) {
-         f-> flags. encoding = true;
-         strlwr( f-> font. encoding, c);
-         XFree( c);
-      } 
-   }
-
-   if ( c) {
+   if ( !f-> flags. encoding) {
       c = nil;
-      if ( XGetFontProperty( s, FXA_CHARSET_ENCODING, &v) && v) {
+      if ( XGetFontProperty( s, FXA_CHARSET_REGISTRY, &v) && v) {
          XCHECKPOINT;
          c = XGetAtomName( DISP, (Atom)v);
          XCHECKPOINT;
          if ( c) {
-            strcat( f-> font. encoding, "-");
-            strlwr( f-> font. encoding + strlen( f-> font. encoding), c);
+            f-> flags. encoding = true;
+            strlwr( f-> font. encoding, c);
             XFree( c);
          } 
       }
-   }
 
-   
-   if ( !c) {
-      f-> flags. encoding = false;
-      f-> font. encoding[0] = 0;
+      if ( c) {
+         c = nil;
+         if ( XGetFontProperty( s, FXA_CHARSET_ENCODING, &v) && v) {
+            XCHECKPOINT;
+            c = XGetAtomName( DISP, (Atom)v);
+            XCHECKPOINT;
+            if ( c) {
+               strcat( f-> font. encoding, "-");
+               strlwr( f-> font. encoding + strlen( f-> font. encoding), c);
+               XFree( c);
+            } 
+         }
+      }
+      
+      if ( !c) {
+         f-> flags. encoding = false;
+         f-> font. encoding[0] = 0;
+      }
    }
 
    /* detailing family */   
-   if ( XGetFontProperty( s, FXA_FAMILY_NAME, &v) && v) {
+   if ( ! f-> flags. family && XGetFontProperty( s, FXA_FOUNDRY, &v) && v) {
       XCHECKPOINT;
       c = XGetAtomName( DISP, (Atom)v);
       XCHECKPOINT;
@@ -113,13 +115,13 @@ font_query_name( XFontStruct * s, PFontInfo f)
    } 
 
    /* detailing name */
-   if ( XGetFontProperty( s, FXA_FOUNDRY, &v) && v) {
+   if ( ! f-> flags. name && XGetFontProperty( s, FXA_FAMILY_NAME, &v) && v) {
       XCHECKPOINT;
       c = XGetAtomName( DISP, (Atom)v);
       XCHECKPOINT;
       if ( c) {
          f-> flags. name = true;
-         snprintf( f-> font. name, 256, "%s %s", f-> font. family, c);
+         strncpy( f-> font. name, c, 255);  f-> font. name[255] = '\0';
          strlwr( f-> lc_name, f-> font. name);
          strcpy( f-> font. name, f-> lc_name);
          XFree( c);
@@ -183,8 +185,306 @@ font_query_name( XFontStruct * s, PFontInfo f)
       strlwr( f-> lc_name, f-> font. name);
       f-> flags. name = true;
    }
-
 }   
+
+static char *s_ignore_encodings;
+static char **ignore_encodings;
+static int n_ignore_encodings;
+
+static Bool
+xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
+{
+   char *b, *t, *c = xlfd_name;
+   int nh = 0;
+   Bool conformant = 0;
+   int style = 0;    /* must become 2 if we know it */
+   int vector = 0;   /* must become 5, or 3 if we know it */
+
+   /*
+    * The code below tries to deduce several values from the name
+    * of a font, which cannot be relied upon (as specified by XLFD).
+    *
+    * Recognizing the bad side of such practice, I cannot think of any
+    * other way to get certain font characteristics we need without
+    * loading the font information, which is prohibitively expensive
+    * here due to enumeration of all the fonts in the system.
+    */
+
+   while (*c) if ( *c++ == '-') nh++;
+   c = xlfd_name;
+   if ( nh == 14) {
+      if ( *c == '+') while (*c && *c != '-')  c++;	    /* skip VERSION */
+      /* from now on *c == '-' is true (on this level) for all valid XLFD names */
+      t = info-> font. family;
+      if ( *c == '-') {
+         /* advance through FOUNDRY */
+         ++c; 
+         while ( *c && *c != '-') { *t++ = *c++; }
+         *t++ = '\0';
+      }
+      if ( *c == '-') {
+         /* advance through FAMILY_NAME */
+         ++c;  b = t;
+         while ( *c && *c != '-') { *t++ = *c++; }
+         info-> name_offset = c - xlfd_name;
+         *t = '\0';
+         info-> flags. name = true;
+         info-> flags. family = true;
+         strcpy( info-> font. name, b);
+       
+         if (
+               ( info-> font.family[0] == '*' && info-> font.family[1] == 0)  ||
+               ( b[0] == '*' && b[1] == 0)
+            ) {
+            Font xf;
+            int noname =  ( b[0] == '*' && b[1] == 0);
+            int nofamily = ( info-> font.family[0] == '*' && info-> font.family[1] == 0);
+            fill_default_font( &xf);
+            if ( !nofamily) strcpy( xf. family, info-> font. family);
+            if ( !noname)   strcpy( xf. name, info-> font. name);
+            apc_font_pick( nilHandle, &xf, &xf);
+            if ( noname)   strcpy( info-> font. name,   xf. name);
+            if ( nofamily) strcpy( info-> font. family, xf. family);
+         }
+         
+         strlwr( info-> lc_family, info-> font. family);
+         strlwr( info-> lc_name, info-> font. name);
+      }
+
+      if ( *c == '-') {
+         /* advance through WEIGHT_NAME */
+         b = ++c;
+         while ( *c && *c != '-') c++;
+         if ( c-b == 0 ||
+     	 (c-b == 6 && strncasecmp( b, "medium", 6) == 0) ||
+     	 (c-b == 7 && strncasecmp( b, "regular", 7) == 0)) {
+            info-> font. style = fsNormal;
+            style++;
+            info-> font. weight = fwMedium;
+            info-> flags. weight = true;
+         } else if ( c-b == 4 && strncasecmp( b, "bold", 4) == 0) {
+            info-> font. style = fsBold;
+            style++;
+            info-> font. weight = fwBold;
+            info-> flags. weight = true;
+         } else if ( c-b == 8 && strncasecmp( b, "demibold", 8) == 0) {
+            info-> font. style = fsBold;
+            style++;
+            info-> font. weight = fwSemiBold;
+            info-> flags. weight = true;
+         } else if ( c-b == 1 && *b == '*') {
+            info-> font. style  = fsNormal;
+            style++;
+            info-> font. weight = fwMedium;
+            info-> flags. weight = true;
+         }
+      }
+      if ( *c == '-') {
+         /* advance through SLANT */
+         b = ++c;
+         while ( *c && *c != '-') c++;
+         if ( c-b == 1 && (*b == 'R' || *b == 'r')) {
+            style++;
+         } else if ( c-b == 1 && (*b == 'I' || *b == 'i')) {
+            info-> font. style |= fsItalic;
+            style++;
+         } else if ( c-b == 1 && (*b == 'O' || *b == 'o')) {
+            info-> font. style |= fsItalic;   /* XXX Oblique? */
+            style++;
+         } else if ( c-b == 2 && (*b == 'R' || *b == 'r') && (b[1] == 'I' || b[1] == 'i')) {
+            info-> font. style |= fsItalic;   /* XXX Reverse Italic? */
+            style++;
+         } else if ( c-b == 2 && (*b == 'R' || *b == 'r') && (b[1] == 'O' || b[1] == 'o')) {
+            info-> font. style |= fsItalic;   /* XXX Reverse Oblique? */
+            style++;
+         }
+      }
+      if ( *c == '-') {
+         /* advance through SETWIDTH_NAME; just skip it;  XXX */
+         ++c;
+         while ( *c && *c != '-') c++;
+      }
+      if ( *c == '-') {
+         /* advance through ADD_STYLE_NAME; just skip it;  XXX */
+         ++c;
+         while ( *c && *c != '-') c++;
+      }
+      if ( *c == '-') {
+         /* advance through PIXEL_SIZE */
+         c++; b = c;
+         if ( *c != '-')
+            info-> font. height = strtol( c, &b, 10);
+         if ( c != b) {
+            if ( info-> font. height) {
+     	       info-> flags. height = true;
+            } else {
+     	       vector++;
+            }
+            c = b;
+         } else if ( strncmp( c, "*-", 2) == 0) c++;
+      }
+      if ( *c == '-') {
+         /* advance through POINT_SIZE */
+         c++; b = c;
+         if ( *c != '-')
+            info-> font. size = strtol( c, &b, 10);
+         if ( c != b) {
+            if ( info-> font. size) {
+               info-> flags. size = true;
+               info-> font. size  = ( info-> font. size < 10) ? 
+                  1 : ( info-> font. size / 10);
+            } else {
+               vector++;
+            }
+            c = b;
+         } else if ( strncmp( c, "*-", 2) == 0) c++;
+      }
+      if ( *c == '-') {
+         /* advance through RESOLUTION_X */
+         c++; b = c;
+         if ( *c != '-')
+            info-> font. xDeviceRes = strtol( c, &b, 10);
+         if ( c != b) {
+            if ( info-> font. xDeviceRes) {
+     	       info-> flags. xDeviceRes = true;
+            } else {
+     	       vector++;
+            }
+            c = b;
+         } else if ( strncmp( c, "*-", 2) == 0) c++;
+      }
+      if ( *c == '-') {
+         /* advance through RESOLUTION_Y */
+         c++; b = c;
+         if ( *c != '-')
+            info-> font. yDeviceRes = strtol( c, &b, 10);
+         if ( c != b) {
+            if ( info-> font. yDeviceRes) {
+     	       info-> flags. yDeviceRes = true;
+            } else {
+     	       vector++;
+            }
+            c = b;
+         } else if ( strncmp( c, "*-", 2) == 0) c++;
+      }
+      if ( *c == '-') {
+         /* advance through SPACING */
+         b = ++c;
+         while ( *c && *c != '-') c++;
+         if ( c - b == 1) {
+            if ( strchr( "pP", *b)) {
+               info-> font. pitch = fpVariable;
+               info-> flags. pitch = true;
+            } else if ( strchr( "mMcC", *b)) {
+               info-> font. pitch = fpFixed;
+               info-> flags. pitch = true;
+            } else if ( *b == '*') {
+               info-> font. pitch = fpDefault;
+               info-> flags. pitch = true;
+            }
+         }
+      }
+      if ( *c == '-') {
+         /* advance through AVERAGE_WIDTH */
+         c++; b = c;
+         if ( *c != '-')
+            info-> font. width = strtol( c, &b, 10);
+         if ( c != b) {
+            if ( info-> font. width) {
+     	       info-> flags. width = true;
+               info-> font. width  = ( info-> font. width < 10) ? 
+                    1 : ( info-> font. width / 10);
+            } else {
+     	       vector++;
+            }
+            c = b;
+         } else if ( strncmp( c, "*-", 2) == 0) c++;
+      }
+      if ( *c == '-') {
+         /* advance through CHARSET_REGISTRY;  */
+         ++c;
+         info-> info_offset = c - xlfd_name;
+         if ( strchr( c, '*') == nil) {
+            info-> flags. encoding = 1;
+            strcpy( info-> font. encoding, c);
+            hash_store( encodings, c, strlen( c), (void*)1);
+         } else
+            info-> font. encoding[0] = 0;
+         if (
+              ( strncasecmp( c, "sunolglyph",  strlen("sunolglyph")) == 0) ||
+              ( strncasecmp( c, "sunolcursor", strlen("sunolcursor")) == 0) ||
+              ( strncasecmp( c, "misc",        strlen("misc")) == 0)
+            )
+              info-> flags. funky = 1;
+         
+         while ( *c && *c != '-') c++;
+      }
+      if ( *c == '-') {
+         int m;
+         c++;
+         for (m = 0; m < n_ignore_encodings; m++) {
+            if (strcmp(c, ignore_encodings[m]) == 0)
+               goto skip_font;
+         }
+         if ( 
+             (strncmp( c, "0",  strlen("0")) == 0) || 
+             (strncmp( c, "fontspecific", strlen("fontspecific")) == 0) ||
+             (strncmp( c, "special", strlen("special")) == 0)
+            ) 
+            info-> flags. funky = 1; 
+         
+         /* advance through CHARSET_ENCODING; just skip it;  XXX */
+         while ( *c && *c != '-') c++;
+         if ( !*c && info-> flags. pitch && 
+     	      ( !do_vector_fonts || vector == 5 || vector == 3 || 
+              ( info-> flags. height &&
+                info-> flags. size &&
+                info-> flags. xDeviceRes &&
+                info-> flags. yDeviceRes &&
+                info-> flags. width))) {
+            conformant = true;
+            if ( style == 2) info-> flags. style = true;
+
+            if ( do_vector_fonts && ( vector == 5 || vector == 3)) {
+                char pattern[ 1024], *pat = pattern;
+                int dash = 0;
+                info-> font. vector = true;
+                info-> flags. bad_vector = (vector == 3);
+
+                c = xlfd_name;
+                while (*c) {
+                   if ( *c == '%') {
+                      *pat++ = *c;
+                      *pat++ = *c++;
+                   } else if ( *c == '-') {
+                      dash++;
+                      *pat++ = *c++;
+                      switch ( dash) {
+                      case 9: case 10:
+                         if ( vector == 3)
+                            break;
+                      case 7: case 8: case 12:
+                         *pat++ = '%';
+                         *pat++ = 'd';
+                         while (*c && *c != '-') c++;
+                         break;
+                      }
+                   } else {
+                      *pat++ = *c++;
+                   }
+                }
+                *pat++ = '\0';
+                if (( info-> vecname = malloc( pat - pattern)))
+                   strcpy( info-> vecname, pattern);
+          } else
+     	    info-> font. vector = false;
+            info-> flags. vector = true;
+         }
+      }
+   }
+skip_font:
+   return conformant;
+}
 
 Bool
 prima_init_font_subsystem( void)
@@ -192,9 +492,6 @@ prima_init_font_subsystem( void)
    char **names;
    int count, j , i, bad_fonts = 0, vector_fonts = 0;
    PFontInfo info;
-   char *s_ignore_encodings;
-   char **ignore_encodings;
-   int n_ignore_encodings;
 
    FXA_RESOLUTION_X = XInternAtom( DISP, "RESOLUTION_X", false);
    FXA_RESOLUTION_Y = XInternAtom( DISP, "RESOLUTION_Y", false);
@@ -256,282 +553,12 @@ prima_init_font_subsystem( void)
    encodings = hash_create();
 
    for ( i = 0, j = 0; i < count; i++) {
-      char *b, *t, *c = names[ i];
-      int nh = 0;
-      Bool conformant = 0;
-      int style = 0;    /* must become 2 if we know it */
-      int vector = 0;   /* must become 5, or 3 if we know it */
-
-      /*
-       * The code below tries to deduce several values from the name
-       * of a font, which cannot be relied upon (as specified by XLFD).
-       *
-       * Recognizing the bad side of such practice, I cannot think of any
-       * other way to get certain font characteristics we need without
-       * loading the font information, which is prohibitively expensive
-       * here due to enumeration of all the fonts in the system.
-       */
-
-      while (*c) if ( *c++ == '-') nh++;
-      c = names[ i];
-      if ( nh == 14) {
-	 if ( *c == '+') while (*c && *c != '-')  c++;	    /* skip VERSION */
-	 /* from now on *c == '-' is true (on this level) for all valid XLFD names */
-         t = info[j]. font. name;
-	 if ( *c == '-') {
-	    /* advance through FOUNDRY */
-	    ++c; 
-	    while ( *c && *c != '-') { *t++ = *c++; }
-	    *t++ = ' ';
-	 }
-	 if ( *c == '-') {
-	    /* advance through FAMILY_NAME */
-	    ++c;  b = t;
-	    while ( *c && *c != '-') { *t++ = *c++; }
-            info[j]. name_offset = c - names[i];
-	    *t = '\0';
-	    strcpy( info[j]. font. family, b);
-	    info[j]. flags. name = true;
-	    info[j]. flags. family = true;
-
-	    strlwr( info[j]. lc_family, info[j]. font. family);
-	    strlwr( info[j]. lc_name, info[j]. font. name);
-
-	 }
-
-	 if ( *c == '-') {
-	    /* advance through WEIGHT_NAME */
-	    b = ++c;
-	    while ( *c && *c != '-') c++;
-	    if ( c-b == 0 ||
-		 (c-b == 6 && strncasecmp( b, "medium", 6) == 0) ||
-		 (c-b == 7 && strncasecmp( b, "regular", 7) == 0)) {
-	       info[j]. font. style = fsNormal;
-	       style++;
-	       info[j]. font. weight = fwMedium;
-	       info[j]. flags. weight = true;
-	    } else if ( c-b == 4 && strncasecmp( b, "bold", 4) == 0) {
-	       info[j]. font. style = fsBold;
-	       style++;
-	       info[j]. font. weight = fwBold;
-	       info[j]. flags. weight = true;
-	    } else if ( c-b == 8 && strncasecmp( b, "demibold", 8) == 0) {
-	       info[j]. font. style = fsBold;
-	       style++;
-	       info[j]. font. weight = fwSemiBold;
-	       info[j]. flags. weight = true;
-	    }
-	 }
-	 if ( *c == '-') {
-	    /* advance through SLANT */
-	    b = ++c;
-	    while ( *c && *c != '-') c++;
-	    if ( c-b == 1 && (*b == 'R' || *b == 'r')) {
-	       style++;
-	    } else if ( c-b == 1 && (*b == 'I' || *b == 'i')) {
-	       info[j]. font. style |= fsItalic;
-	       style++;
-	    } else if ( c-b == 1 && (*b == 'O' || *b == 'o')) {
-	       info[j]. font. style |= fsItalic;   /* XXX Oblique? */
-	       style++;
-	    } else if ( c-b == 2 && (*b == 'R' || *b == 'r') && (b[1] == 'I' || b[1] == 'i')) {
-	       info[j]. font. style |= fsItalic;   /* XXX Reverse Italic? */
-	       style++;
-	    } else if ( c-b == 2 && (*b == 'R' || *b == 'r') && (b[1] == 'O' || b[1] == 'o')) {
-	       info[j]. font. style |= fsItalic;   /* XXX Reverse Oblique? */
-	       style++;
-	    }
-	 }
-	 if ( *c == '-') {
-	    /* advance through SETWIDTH_NAME; just skip it;  XXX */
-	    ++c;
-	    while ( *c && *c != '-') c++;
-	 }
-	 if ( *c == '-') {
-	    /* advance through ADD_STYLE_NAME; just skip it;  XXX */
-	    ++c;
-	    while ( *c && *c != '-') c++;
-	 }
-	 if ( *c == '-') {
-	    /* advance through PIXEL_SIZE */
-	    c++; b = c;
-	    if ( *c != '-')
-	       info[j]. font. height = strtol( c, &b, 10);
-	    if ( c != b) {
-	       if ( info[j]. font. height) {
-		  info[j]. flags. height = true;
-	       } else {
-		  vector++;
-	       }
-	       c = b;
-	    }
-	 }
-	 if ( *c == '-') {
-	    /* advance through POINT_SIZE */
-	    c++; b = c;
-	    if ( *c != '-')
-	       info[j]. font. size = strtol( c, &b, 10);
-	    if ( c != b) {
-	       if ( info[j]. font. size) {
-		  info[j]. flags. size = true;
-                  info[j]. font. size  = ( info[j]. font. size < 10) ? 
-                       1 : ( info[j]. font. size / 10);
-	       } else {
-		  vector++;
-	       }
-	       c = b;
-	    }
-	 }
-	 if ( *c == '-') {
-	    /* advance through RESOLUTION_X */
-	    c++; b = c;
-	    if ( *c != '-')
-	       info[j]. font. xDeviceRes = strtol( c, &b, 10);
-	    if ( c != b) {
-	       if ( info[j]. font. xDeviceRes) {
-		  info[j]. flags. xDeviceRes = true;
-	       } else {
-		  vector++;
-	       }
-	       c = b;
-	    }
-	 }
-	 if ( *c == '-') {
-	    /* advance through RESOLUTION_Y */
-	    c++; b = c;
-	    if ( *c != '-')
-	       info[j]. font. yDeviceRes = strtol( c, &b, 10);
-	    if ( c != b) {
-	       if ( info[j]. font. yDeviceRes) {
-		  info[j]. flags. yDeviceRes = true;
-	       } else {
-		  vector++;
-	       }
-	       c = b;
-	    }
-	 }
-	 if ( *c == '-') {
-	    /* advance through SPACING */
-	    b = ++c;
-	    while ( *c && *c != '-') c++;
-	    if ( c-b == 1 && (*b == 'p' || *b == 'P')) {
-	       info[j]. font. pitch = fpVariable;
-	       info[j]. flags. pitch = true;
-	    } else if ( c-b == 1 && (*b == 'm' || *b == 'M')) {
-	       info[j]. font. pitch = fpFixed;
-	       info[j]. flags. pitch = true;
-	    } else if ( c-b == 1 && (*b == 'c' || *b == 'C')) {
-	       info[j]. font. pitch = fpFixed;
-	       info[j]. flags. pitch = true;
-	    }
-	 }
-	 if ( *c == '-') {
-	    /* advance through AVERAGE_WIDTH */
-	    c++; b = c;
-	    if ( *c != '-')
-	       info[j]. font. width = strtol( c, &b, 10);
-	    if ( c != b) {
-	       if ( info[j]. font. width) {
-		  info[j]. flags. width = true;
-                  info[j]. font. width  = ( info[j]. font. width < 10) ? 
-                       1 : ( info[j]. font. width / 10);
-	       } else {
-		  vector++;
-	       }
-	       c = b;
-	    }
-	 }
-	 if ( *c == '-') {
-	    /* advance through CHARSET_REGISTRY; just skip it;  XXX */
-	    ++c;
-            info[j]. info_offset = c - names[i];
-            info[j]. flags. encoding = 1;
-            strcpy( info[j]. font. encoding, c);
-            hash_store( encodings, c, strlen( c), (void*)1);
-            if (
-                 ( strncasecmp( c, "sunolglyph",  strlen("sunolglyph")) == 0) ||
-                 ( strncasecmp( c, "sunolcursor", strlen("sunolcursor")) == 0) ||
-                 ( strncasecmp( c, "misc",        strlen("misc")) == 0)
-               )
-                 info[j]. flags. funky = 1;
-            
-	    while ( *c && *c != '-') c++;
-	 }
-	 if ( *c == '-') {
-            int m;
-            c++;
-            for (m = 0; m < n_ignore_encodings; m++) {
-               if (strcmp(c, ignore_encodings[m]) == 0)
-                  goto skip_font;
-            }
-            if ( 
-                (strncmp( c, "0",  strlen("0")) == 0) || 
-                (strncmp( c, "fontspecific", strlen("fontspecific")) == 0) ||
-                (strncmp( c, "special", strlen("special")) == 0)
-               ) 
-               info[j]. flags. funky = 1; 
-            
-
-            /* advance through CHARSET_ENCODING; just skip it;  XXX */
-	    while ( *c && *c != '-') c++;
-	    if ( !*c  && info[j]. flags. pitch && 
-		 ( vector == 5 || vector == 3 || 
-		 /* ( vector == 5 ||  */
-		   ( info[j]. flags. height &&
-		     info[j]. flags. size &&
-		     info[j]. flags. xDeviceRes &&
-		     info[j]. flags. yDeviceRes &&
-		     info[j]. flags. width))) {
-	       conformant = true;
-	       if ( style == 2)
-		  info[j]. flags. style = true;
-
-	       if ( vector == 5 || vector == 3) {
-		  char pattern[ 1024], *pat = pattern;
-		  int dash = 0;
-		  info[j]. font. vector = true;
-		  info[j]. flags. bad_vector = (vector == 3);
-
-		  c = names[ i];
-		  while (*c) {
-		     if ( *c == '%') {
-			*pat++ = *c;
-			*pat++ = *c++;
-		     } else if ( *c == '-') {
-			dash++;
-			*pat++ = *c++;
-			switch ( dash) {
-			case 9: case 10:
-			   if ( vector == 3)
-			      break;
-			case 7: case 8: case 12:
-			   *pat++ = '%';
-			   *pat++ = 'd';
-			   while (*c && *c != '-') c++;
-			   break;
-			}
-		     } else {
-			*pat++ = *c++;
-		     }
-		  }
-		  *pat++ = '\0';
-		  if (( info[j]. vecname = malloc( pat - pattern)))
-  		     strcpy( info[j]. vecname, pattern);
-	       } else
-		  info[j]. font. vector = false;
-	       info[j]. flags. vector = true;
-	       vector_fonts += info[j]. font. vector;
-	    }
-	 }
-      }
-skip_font:
-      if ( !conformant) {
-	 bad_fonts++;
-         continue;
-      }
-      info[j]. xname = names[ i];
-//      info[j]. flags. sloppy = true; 
-      j++;
+      if ( xlfd_parse_font( names[i], info + j, true)) {
+         vector_fonts += info[j]. font. vector;
+         info[j]. xname = names[ i];
+         j++;
+      } else
+         bad_fonts++;
    }
 
    free(ignore_encodings);
@@ -594,7 +621,7 @@ skip_font:
 void
 prima_font_pp2font( char * ppFontNameSize, PFont font)
 {
-   int i, newEntry = 0;
+   int i, newEntry = 0, detail;
    FontInfo fi;
    XFontStruct * xf;
    Font dummy;
@@ -631,20 +658,17 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
    bzero( &fi, sizeof( fi));
    fi. flags. sloppy = true;
    fi. xname = ppFontNameSize;
+   detail = xlfd_parse_font( ppFontNameSize, &fi, false);
    font_query_name( xf, &fi);
-   detail_font_info( &fi, font, false, false);
+   if ( !detail) detail_font_info( &fi, font, false, false);
    *font = fi. font;
-
-   if ( newEntry) {
-      Font sf = *font;
-      sf. pitch  = fpDefault;
-      sf. width  = C_NUMERIC_UNDEF;
-      apc_font_pick( application, &sf, &sf);
-      if (
-          ( stricmp( sf. family, fi. lc_family) == 0) &&
-          ( stricmp( sf. name, fi. lc_name) == 0)
-         ) newEntry = 0;
-   }
+   if ( font-> height == 0) font-> height = C_NUMERIC_UNDEF;
+   if ( font-> size   == 0) font-> size   = C_NUMERIC_UNDEF;
+   apc_font_pick( application, font, font);
+   if (
+       ( stricmp( font-> family, fi. lc_family) == 0) &&
+       ( stricmp( font-> name, fi. lc_name) == 0)
+      ) newEntry = 0;
    
    if ( newEntry ) {
       PFontInfo n = realloc( guts. font_info, sizeof( FontInfo) * (guts. n_fonts + 1));
@@ -738,7 +762,8 @@ dump_font( PFont f)
    fprintf( stderr, "style: %d\n", f-> style);
    fprintf( stderr, "pitch: %d\n", f-> pitch);
    fprintf( stderr, "direction: %d\n", f-> direction);
-   fprintf( stderr, "name: %s\n", f-> name ? f-> name : "NONAME");
+   fprintf( stderr, "name: %s\n", f-> name);
+   fprintf( stderr, "family: %s\n", f-> family);
    fprintf( stderr, "size: %d\n", f-> size);
    fprintf( stderr, "*** END FONT DUMP ***\n");
 }
@@ -1136,7 +1161,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
       dest-> direction = direction;
       return true;
    }
-   
+  
    /*
    if ( by_size) {
       printf("reqS:%d.[%d]{%d}(%d).%s/%s\n", dest-> size, dest-> height, dest-> style, dest-> pitch, dest-> name, dest-> encoding);
