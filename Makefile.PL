@@ -61,6 +61,7 @@ use vars @ovvars = qw(
 use vars qw(
     $Win32
     %DEFINES
+    $ARGV_STR
     @alltml
     @allclean
     @allojects
@@ -314,7 +315,7 @@ sub setup_paths
 	    push @INCPATH, $incpath if $incpath;
 	    $DEFINES{ HAVE_GIFLIB} = 1;
 	    $libpath = find_lib( 'gif', '', '/usr/local/lib');
-	    die "GifLib libraries not found!\n" unless defined $libpath;
+	    die "GifLib libraries not found!" unless defined $libpath;
 	    push @LIBS, 'gif';
 	    if ( $libpath) {
 		print "Adding $libpath to LIBPATH.\n";
@@ -362,6 +363,7 @@ sub setup_misc
 sub process_commandline
 {
     my %overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
+    $ARGV_STR = join( " ", map { "\"$_\""} @ARGV);
     foreach my $arg ( @ARGV) {
 	if ( $arg =~ /^\s*(\w+)\s*(\+?)\=(.*)$/) {
 	    my ( $varname, $setmode, $varval) = ( $1, $2 || '', $3);
@@ -584,7 +586,7 @@ Makefile: Makefile.PL
 #\t\@echo Cleaning up...
 #\t\@$MAKE clean
 \t\@echo Rebuilding Makefile...
-\t\@$^X Makefile.PL
+\t\@$^X Makefile.PL $ARGV_STR
 \t\@$MAKE
 \t\@echo You are safe to ignore the following error...
 \t\@false
