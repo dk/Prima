@@ -221,7 +221,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
    parentHandle = pexist( parentHandle) ? pget_i( parentHandle) : apc_widget_get_parent_handle( self);
 
    if ( parentHandle) {
-      if (( owner != application) && clipOwner)
+      if (( owner != application) && clipOwner) 
          croak("RTC008D: Cannot accept 'parentHandle' for non-application child and clip-owner widget");
    }
    
@@ -1559,7 +1559,6 @@ Bool
 Widget_validate_owner( Handle self, Handle * owner, HV * profile)
 {
    *owner = pget_H( owner);
-   if ( *owner == nilHandle) *owner = application;
    if ( !kind_of( *owner, CWidget)) return false;
    return inherited-> validate_owner( self, owner, profile);
 }

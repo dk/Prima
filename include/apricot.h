@@ -572,6 +572,7 @@ typedef struct { \
 #define END_TABLE_CHAR(package,type) END_TABLE4(package,type,string,char*)
 
 /* Object life stages */
+#define csDeadInInit    -2         /* dead before any init() code */
 #define csConstructing  -1         /* before create() finished */
 #define csNormal         0         /* normal during life stage */
 #define csDestroying     1         /* destroy() started */

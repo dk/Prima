@@ -94,7 +94,6 @@ Bool
 Timer_validate_owner( Handle self, Handle * owner, HV * profile)
 {
    *owner = pget_H( owner);
-   if ( *owner == nilHandle) *owner = application;
    if ( !kind_of( *owner, CWidget)) return false;
    return inherited validate_owner( self, owner, profile);
 }

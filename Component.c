@@ -51,8 +51,10 @@ Component_init( Handle self, HV * profile)
    HV * hv;
    HE * he;
    inherited init( self, profile);
-   if ( !my-> validate_owner( self, &var-> owner, profile))
+   if ( !my-> validate_owner( self, &var-> owner, profile)) {
+      var-> stage = csDeadInInit;
       croak( "Illegal 'owner' reference passed to %s::%s", my-> className, "init");
+   }
    if ( var-> owner)
       ((( PComponent) var-> owner)-> self)-> attach( var-> owner, self);
    my-> set_name( self, pget_sv( name));

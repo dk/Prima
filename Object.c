@@ -130,6 +130,21 @@ Object_destroy( Handle self)
    SV *mate, *object = nil;
    int enter_stage = var-> stage;
 
+   if ( var-> stage == csDeadInInit) {
+      /* lightweight destroy */
+      if ( is_opt( optInDestroyList)) {
+         list_delete( &postDestroys, self);
+         opt_clear( optInDestroyList);
+      }
+      if ( primaObjects)
+         hash_delete( primaObjects, &self, sizeof( self), false);
+      mate = var-> mate;
+      var-> stage = csDead;
+      var-> mate = nilSV;
+      if ( mate && object) sv_free( mate);
+      return;
+   }
+
    if ( var-> stage > csNormal && var-> stage != csHalfDead)
       return;
 
