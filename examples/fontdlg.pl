@@ -373,7 +373,7 @@ $w-> insert( Button =>
             push @ranges, [$_];
      }
      my $count = 0;
-     $count += $$_[1] - $$_[0] for @ranges;
+     $count += $$_[1] - $$_[0] + 1 for @ranges;
      my $ih = int($f-> height * 1.5);
      my $l = $ww-> insert( AbstractListViewer => 
         origin => [0,0],
@@ -389,7 +389,7 @@ $w-> insert( Button =>
            my ( $self, $item, $sel) = @_;
            $item = $item->[0];
            for ( @ranges) {
-              my $d = $$_[1] - $$_[0];
+              my $d = $$_[1] - $$_[0] + 1;
               if ( $item < $d) {
                  my $c = $$_[0] + $item;
                  $self-> hint( sprintf( "0x%x", $c));
@@ -411,7 +411,7 @@ $w-> insert( Button =>
            }
            $canvas-> clear( $x, $y + 1, $x2, $y2);
            for ( @ranges) {
-              my $d = $$_[1] - $$_[0];
+              my $d = $$_[1] - $$_[0] + 1;
               if ( $itemIndex < $d) {
                  my $c = chr($$_[0] + $itemIndex);
                  $canvas-> text_out( $c, $x + $ih / 4, $y + $ih / 4);
