@@ -132,7 +132,7 @@ sub set_offset
 {
    my ( $self, $o) = @_;
    $self-> SUPER::set_offset( $o);
-   $self-> { header}-> offset( $o) unless $self-> {noHeader};
+   $self-> { header}-> offset( $self-> {offset}) unless $self-> {noHeader};
 }
 
 sub columns
