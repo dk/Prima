@@ -2651,7 +2651,7 @@ sub open
 sub write
 {
    my ( $class, $id, $data) = @_;
-   return $VB::writeMode ? "sub { $data}" :
+   return $VB::writeMode ? "sub { $data\n}" :
        'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data). 
        "\n','$Prima::VB::VBLoader::eventContext[0]', '$id')";
 }

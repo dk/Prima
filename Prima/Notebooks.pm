@@ -714,11 +714,10 @@ sub widgets_from_page
    return @r;
 }
 
-sub detach
+sub on_childleave
 {
-   my ( $self, $widget, $killFlag) = @_;
+   my ( $self, $widget) = @_;
    $self-> detach_from_page( $widget);
-   $self->SUPER::detach( $widget, $killFlag);
 }
 
 sub detach_from_page

@@ -1901,7 +1901,7 @@ $VB::code
 
 package ${main}Window;
 use vars qw(\@ISA);
-\@ISA = qw(Prima::Window);
+\@ISA = qw(Prima::MainWindow);
 
 sub profile_default
 {
@@ -2031,11 +2031,6 @@ AGAIN:
 $c .= <<POSTHEAD;
    \$self-> unlock;
    return \%profile;
-}
-
-sub on_destroy
-{
-   \$::application-> close;
 }
 
 package ${main}Auto;
