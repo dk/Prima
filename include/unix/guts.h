@@ -366,6 +366,7 @@ typedef struct _drawable_sys_data
    Font saved_font;
    Point cursor_pos;
    Point cursor_size;
+   Point pointer_hot_spot;
    int pointer_id;
    Cursor user_pointer;
    Pixmap user_p_source;

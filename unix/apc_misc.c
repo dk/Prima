@@ -573,11 +573,59 @@ predefined_cursors[] = {
    None
 };
 
+static int
+get_cursor( Handle self, Pixmap *source, Pixmap *mask, Point *hot_spot, Cursor *cursor)
+{
+   int id = X(self)-> pointer_id;
+
+   while ( self && ( id = X(self)-> pointer_id) == crDefault)
+      self = PWidget(self)-> owner;
+   if ( id == crDefault) {
+      id = crArrow;
+   } else if ( id == crUser) {
+      if (source)       *source   = X(self)-> user_p_source;
+      if (mask)         *mask     = X(self)-> user_p_mask;
+      if (hot_spot)     *hot_spot = X(self)-> pointer_hot_spot;
+      if (cursor)       *cursor   = X(self)-> user_pointer;
+   }
+
+   return id;
+}
+
+static Bool
+load_pointer_font( void)
+{
+   if ( !guts.pointer_font)
+      guts.pointer_font = XLoadQueryFont( DISP, "cursor");
+   if ( !guts.pointer_font) {
+      warn( "cannot load cursor font");
+      return false;
+   }
+   return true;
+}
+
 Point
 apc_pointer_get_hot_spot( Handle self)
 {
-   DOLBUG( "apc_pointer_get_hot_spot()\n");
-   return (Point){0,0};
+   Point hot_spot;
+   int idx;
+   int id = get_cursor(self, nil, nil, &hot_spot, nil);
+   XFontStruct *fs;
+   XCharStruct *cs;
+
+   if ( id < crDefault || id > crUser)  return (Point){0,0};
+   if ( id == crUser)                   return hot_spot;
+   if ( !load_pointer_font())           return (Point){0,0};
+
+   idx = *((char*)&(cursor_map[id]));
+   fs = guts.pointer_font;
+   if ( !fs-> per_char)
+      cs = &fs-> min_bounds;
+   else if ( idx < fs-> min_char_or_byte2 || idx > fs-> max_char_or_byte2)
+      cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
+   else
+      cs = fs-> per_char + idx - fs-> min_char_or_byte2;
+   return (Point){-cs->lbearing, cs->descent};
 }
 
 Point
@@ -612,10 +660,8 @@ apc_pointer_get_size( Handle self)
 Bool
 apc_pointer_get_bitmap( Handle self, Handle icon)
 {
-   DEFXX;
    XImage *im;
    int id;
-   Handle o;
    Pixmap p1 = None, p2 = None;
    Bool free_pixmap = true;
    GC gc;
@@ -623,21 +669,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    char c;
    int w = guts.cursor_width, h = guts.cursor_height;
 
-   id = XX-> pointer_id;
-   if ( id == crDefault) {
-      o = PWidget( self)-> owner;
-      while ( o && ( id = X(o)-> pointer_id) == crDefault)
-         o = PWidget(o)-> owner;
-      if ( id == crDefault)
-         id = crArrow;
-      else if ( id == crUser) {
-         p1 = X(o)-> user_p_source;
-         p2 = X(o)-> user_p_mask;
-      }
-   } else if ( id == crUser) {
-      p1 = XX-> user_p_source;
-      p2 = XX-> user_p_mask;
-   }
+   id = get_cursor( self, &p1, &p2, nil, nil);
    if ( id < crDefault || id > crUser)  return false;
    if ( id == crUser) {
       if ( !p1 || !p2) {
@@ -646,13 +678,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       }
       free_pixmap = false;
    } else {
-      if ( !guts.pointer_font) {
-         guts.pointer_font = XLoadQueryFont( DISP, "cursor");
-      }
-      if ( !guts.pointer_font) {
-         warn( "cannot load cursor font");
-         return false;
-      }
+      if ( !load_pointer_font()) return false;
       p1 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), w, h, 1);
       p2 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), w, h, 1);
       gcv. background = 1;
@@ -710,20 +736,11 @@ Bool
 apc_pointer_set_shape( Handle self, int id)
 {
    DEFXX;
-   Handle o;
    Cursor uc = None;
 
    if ( id < crDefault || id > crUser)  return false;
    XX-> pointer_id = id;
-   if ( id == crDefault) {
-      o = PWidget(self)-> owner;
-      while ( o && ( id = X(o)-> pointer_id) == crDefault)
-         o = PWidget(o)-> owner;
-      if ( id == crDefault)
-         id = crArrow;
-      else if ( id == crUser)
-         uc = X(o)-> user_pointer;
-   }
+   id = get_cursor( self, nil, nil, nil, &uc);
    if ( id == crUser) {
       if ( uc != None || ( uc = XX-> user_pointer) != None) {
          if ( self != application) {
@@ -795,11 +812,12 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
          return false;
       }
       Object_destroy( cursor);
+      XX-> pointer_hot_spot = hot_spot;
       XX-> user_pointer = XCreatePixmapCursor( DISP, XX-> user_p_source,
                                                XX-> user_p_mask,
                                                prima_allocate_color( self, clWhite),
                                                prima_allocate_color( self, clBlack),
-                                               hot_spot. x, hot_spot. y);
+                                               hot_spot. x, guts.cursor_height - hot_spot. y);
       if ( XX-> user_pointer == None) {
          warn( "error creating cursor from pixmaps");
          return false;
