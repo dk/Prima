@@ -470,7 +470,7 @@ sub on_mousemove
       my $delta = 1;
       my $fw = $self-> font-> width;
       $delta = ($width - $border * 2)/($fw*6) if $width - $border * 2 > $fw * 6;
-      $delta = sprintf("%d", $delta);
+      $delta = int( $delta);
       my $nSel = $self-> charOffset + $delta * ( $x <= $border ? -1 : 1);
       $nSel = 0 if $nSel < 0;
       $self-> lock;
@@ -603,17 +603,17 @@ sub set_first_char
 sub set_write_only
 {
    my ( $self, $wo) = @_;
-   my $owo = $self->{writeOnly};
+   return if $wo == $self->{writeOnly};
    $self->{writeOnly} = $wo;
-   $self-> reset, $self-> repaint if $owo != $wo;
+   $self-> text( $self-> text);
 }
 
 sub set_password_char
 {
    my ( $self, $pc) = @_;
-   my $opc = $self->{passwordChar};
+   return if $pc eq $self->{passwordChar};
    $self->{passwordChar} = $pc;
-   $self-> repaint if $opc ne $pc && $self->{writeOnly};
+   $self-> text( $self-> text) if $self->{writeOnly};
 }
 
 sub set_insert_mode
