@@ -106,14 +106,15 @@ apc_timer_create( Handle self, Handle owner, int timeout)
    return true;
 }
 
-void
+Bool
 apc_timer_destroy( Handle self)
 {
-   objCheck;
+   objCheck false;
    if ( is_opt( optActive) && var handle && IsWindow(( HWND)(( PWidget) var owner)-> handle)) {
       if ( !KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle)) apiErr;
    }
    remove_timer( self, var owner);
+   return true;
 }
 
 int
@@ -123,18 +124,20 @@ apc_timer_get_timeout( Handle self)
    return sys s. timer. timeout;
 }
 
-void
+Bool
 apc_timer_set_timeout( Handle self, int timeout)
 {
-   objCheck;
+   objCheck false;
    if ( is_opt( optActive)) {
       KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle);
       if ( !SetTimer(( HWND)(( PWidget) var owner)-> handle, var handle, timeout, nil)) {
          opt_clear( optActive);
          apiErr;
+         return false;
       }
    }
    sys s. timer. timeout = timeout;
+   return true;
 }
 
 Bool
@@ -146,11 +149,12 @@ apc_timer_start( Handle self)
    return true;
 }
 
-void
+Bool
 apc_timer_stop( Handle self)
 {
-   objCheck;
-   KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle);
+   objCheck false;
+   if ( !KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle)) apiErrRet;
+   return true;
 }
 
 ApiHandle

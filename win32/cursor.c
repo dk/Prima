@@ -52,30 +52,35 @@ cursor_update( Handle self)
    }
 }
 
-void
+Bool
 apc_cursor_set_pos( Handle self, int x, int y)
 {
-   objCheck;
+   objCheck false;
+   if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
    sys cursorPos. x = x;
    sys cursorPos. y = y;
    cursor_update( self);
+   return true;
 }
 
-void
+Bool
 apc_cursor_set_size( Handle self, int x, int y)
 {
-   objCheck;
+   objCheck false;
+   if ( !hwnd_check_limits( x, y, false)) apcErrRet( errInvParams);
    sys cursorSize. x = x;
    sys cursorSize. y = y;
    cursor_update( self);
+   return true;
 }
 
-void
+Bool
 apc_cursor_set_visible( Handle self, Bool visible)
 {
-   objCheck;
+   objCheck false;
    apt_assign( aptCursorVis, visible);
    cursor_update( self);
+   return true;
 }
 
 Point
@@ -188,12 +193,14 @@ apc_pointer_get_visible( Handle self)
    return is_apt( aptPointerVis);
 }
 
-void
+Bool
 apc_pointer_set_pos( Handle self, int x, int y)
 {
    RECT r;
+   if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
    GetWindowRect( HWND_DESKTOP, &r);
-   if ( !SetCursorPos( x, r. bottom - y - 1)) apiErr;
+   if ( !SetCursorPos( x, r. bottom - y - 1)) apiErrRet;
+   return true;
 }
 
 int ctx_cr2IDC[] =
@@ -212,14 +219,14 @@ int ctx_cr2IDC[] =
 };
 
 
-void
+Bool
 apc_pointer_set_shape( Handle self, int sysPtrId)
 {
    HCURSOR user;
 
-   objCheck;
+   objCheck false;
    user = sys pointer2;
-   if ( sysPtrId < crDefault || sysPtrId > crUser) return;
+   if ( sysPtrId < crDefault || sysPtrId > crUser) return false;
    sys pointerId = sysPtrId;
    if ( sysPtrId == crDefault)
    {
@@ -237,8 +244,8 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
       LoadCursor( NULL, MAKEINTRESOURCE(
       ctx_remap_def( sysPtrId, ctx_cr2IDC, true, ( int)IDC_ARROW)));
 
-   if ( var stage == csNormal)
-      SetCursor( sys pointer);
+   if ( var stage == csNormal) SetCursor( sys pointer);
+   return true;
 }
 
 Bool
@@ -262,7 +269,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
    return true;
 }
 
-void
+Bool
 apc_pointer_set_visible( Handle self, Bool visible)
 {
    if ( var stage == csNormal) {
@@ -270,6 +277,7 @@ apc_pointer_set_visible( Handle self, Bool visible)
       ShowCursor( visible);
       guts. pointerLock += visible ? 1 : -1;
    }
+   return true;
 }
 
 int

@@ -40,18 +40,19 @@
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
-void
+Bool
 apc_gp_init( Handle self)
 {
-   objCheck;
+   objCheck false;
    sys lineWidth = 1;
    sys res = guts. displayResolution;
+   return true;
 }
 
-void
+Bool
 apc_gp_done( Handle self)
 {
-   objCheck;
+   objCheck false;
    if ( sys bm)
       if ( !DeleteObject( sys bm)) apiErr;
    if ( sys pal)
@@ -74,6 +75,7 @@ apc_gp_done( Handle self)
    sys fontResource = nil;
    free( sys charTable);
    free( sys charTable2);
+   return true;
 }
 
 static __INLINE__ void
@@ -130,9 +132,9 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
 
-void
+Bool
 apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
-{ objCheck; {
+{ objCheck false; {
    HDC     ps = sys ps;
    STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y;
@@ -143,24 +145,28 @@ apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, do
        ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
        x + cos( angleStart / GRAD) * radX, y - sin( angleStart / GRAD) * radY,
        x + cos( angleEnd / GRAD) * radX,   y - sin( angleEnd / GRAD) * radY
-   )) apiErr;
+   )) apiErrRet;
+   return true;
 }}
 
-void
+Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
-{objCheck;{
+{objCheck false;{
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hPenHollow);
+   Bool ok = true;
    STYLUS_USE_BRUSH( ps);
    check_swap( x1, x2);
    check_swap( y1, y2);
-   if ( !Rectangle( sys ps, x1, sys lastSize. y - y2 - 1, x2 + 2, sys lastSize. y - y1 + 1)) apiErr;
+   if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y2 - 1, x2 + 2, sys lastSize. y - y1 + 1))) apiErr;
    SelectObject( ps, old);
+   return ok;
 }}
 
-void
+Bool
 apc_gp_clear( Handle self)
-{objCheck;{
+{objCheck false;{
+   Bool     ok = true;
    HDC      ps   = sys ps;
    HGDIOBJ  oldp = SelectObject( ps, hPenHollow);
    LOGBRUSH ers  = { PS_SOLID, apc_gp_get_back_color( self), 0};
@@ -168,15 +174,17 @@ apc_gp_clear( Handle self)
    int      oldrop = GetROP2( ps);
    if ( oldrop != R2_COPYPEN) SetROP2( ps, R2_COPYPEN);
    oldh = SelectObject( ps, oldh);
-   if ( !Rectangle( sys ps, 0, 0, sys lastSize. x + 1, sys lastSize. y + 1)) apiErr;
+   if ( !( ok = Rectangle( sys ps, 0, 0, sys lastSize. x + 1, sys lastSize. y + 1))) apiErr;
    if ( oldrop != R2_COPYPEN) SetROP2( ps, oldrop);
    SelectObject( ps, oldp);
    DeleteObject( SelectObject( ps, oldh));
+   return ok;
 }}
 
-void
+Bool
 apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
    STYLUS_USE_PEN( ps);
@@ -185,28 +193,31 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
       // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
       Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
    }
-   if ( !Chord(
+   if ( !( ok = Chord(
        ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
        x + cos( angleStart / GRAD) * radX, y - sin( angleStart / GRAD) * radY,
        x + cos( angleEnd / GRAD) * radX,   y - sin( angleEnd / GRAD) * radY
-   )) apiErr;
+   ))) apiErr;
    SelectObject( ps, old);
+   return ok;
 }}
 
-void
+Bool
 apc_gp_draw_poly( Handle self, int numPts, Point * points)
-{objCheck;{
+{objCheck false;{
    int i, dy = sys lastSize. y;
    for ( i = 0; i < numPts; i++)  points[ i]. y = dy - points[ i]. y - 1;
    if ( points[ 0]. x != points[ numPts - 1].x || points[ 0]. y != points[ numPts - 1].y)
       adjust_line_end( points[ numPts - 2].x, points[ numPts - 2].y, &points[ numPts - 1].x, &points[ numPts - 1].y, true);
    STYLUS_USE_PEN( sys ps);
-   Polyline( sys ps, ( POINT*) points, numPts);
+   if ( !Polyline( sys ps, ( POINT*) points, numPts)) apiErrRet;
+   return true;
 }}
 
-void
+Bool
 apc_gp_draw_poly2( Handle self, int numPts, Point * points)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    int i, dy = sys lastSize. y;
    DWORD * pts = malloc( sizeof( DWORD) * numPts);
    for ( i = 0; i < numPts; i++)  {
@@ -216,24 +227,28 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
          adjust_line_end( points[ i - 1].x, points[ i - 1].y, &points[ i].x, &points[ i].y, true);
    }
    STYLUS_USE_PEN( sys ps);
-   PolyPolyline( sys ps, ( POINT*) points, pts, numPts/2);
+   if ( !( ok = PolyPolyline( sys ps, ( POINT*) points, pts, numPts/2))) apiErr;
    free( pts);
+   return ok;
 }}
 
-void
+Bool
 apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
    STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y;
-   if ( !Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY)) apiErr;
+   if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY))) apiErr;
    SelectObject( ps, old);
+   return ok;
 }}
 
-void
+Bool
 apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old;
    Bool    comp = stylus_complex( &sys stylus, ps);
@@ -241,27 +256,28 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
    STYLUS_USE_BRUSH( ps);
    if ( comp) {
       old  = SelectObject( ps, hPenHollow);
-      if ( !Chord(
+      if ( !( ok = Chord(
           ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1,
           x + cos( angleStart / GRAD) * radX,   y - sin( angleStart / GRAD) * radY,
           x + cos( angleEnd / GRAD) * radX + 1, y - sin( angleEnd / GRAD) * radY + 1
-      )) apiErr;
+      ))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
-      if ( !Chord(
+      if ( !( ok = Chord(
           ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
           x + cos( angleStart / GRAD) * radX,   y - sin( angleStart / GRAD) * radY,
           x + cos( angleEnd / GRAD) * radX + 1, y - sin( angleEnd / GRAD) * radY + 1
-      )) apiErr;
+      ))) apiErr;
    }
    SelectObject( ps, old);
    if ( !comp) DeleteObject( old);
+   return ok;
 }}
 
-
-void
+Bool
 apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    HDC     ps  = sys ps;
    HGDIOBJ old;
    Bool    comp = stylus_complex( &sys stylus, ps);
@@ -269,13 +285,14 @@ apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY)
    y = sys lastSize. y - y;
    if ( comp) {
       old  = SelectObject( ps, hPenHollow);
-      if ( !Ellipse( ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1)) apiErr;
+      if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
-      if ( !Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY)) apiErr;
+      if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY))) apiErr;
    }
    old = SelectObject( ps, old);
    if ( !comp) DeleteObject( old);
+   return ok;
 }}
 
 static int ctx_R22R4[] = {
@@ -298,9 +315,10 @@ static int ctx_R22R4[] = {
   endCtx
 };
 
-void
+Bool
 apc_gp_fill_poly( Handle self, int numPts, Point * points)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    HDC     ps = sys ps;
    int i,  dy = sys lastSize. y;
 
@@ -309,7 +327,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
    if ( !stylus_complex( &sys stylus, ps)) {
       HPEN old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
       STYLUS_USE_BRUSH( ps);
-      Polygon( ps, ( POINT *) points, numPts);
+      if ( !( ok = Polygon( ps, ( POINT *) points, numPts))) apiErr;
       DeleteObject( SelectObject( ps, old));
    } else {
       int j, dx    = sys lastSize. x;
@@ -326,7 +344,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
          if ( points[ i] .x < trans. x) trans. x = points[ i]. x;
          if ( points[ i] .y < trans. y) trans. y = points[ i]. y;
       }
-      if (( trans. x == dx) || ( trans. y == dy)) return;
+      if (( trans. x == dx) || ( trans. y == dy)) return false;
       if ( bound. x > dx) bound. x = dx;
       if ( bound. y > dy) bound. y = dy;
       for ( i = 0; i < numPts; i++)  {
@@ -336,16 +354,13 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       bound. x -= trans. x - 1;
       bound. y -= trans. y - 1;
 
-      if ( !( dc  = dc_compat_alloc( ps))) {
-         apiErr;
-         return;
-      }
+      if ( !( dc  = dc_compat_alloc( ps))) apiErrRet;
       if ( db) ps = dc_alloc(); // fact that if dest ps is memory dc, CCB will result mono-bitmap
       if ( !( bmSrc  = CreateCompatibleBitmap( ps, bound. x, bound. y))) {
          apiErr;
          if ( db) dc_free();
          dc_compat_free();
-         return;
+         return false;
       }
       if ( db) {
          dc_free();
@@ -354,7 +369,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       if ( !( bmMask = CreateBitmap( bound. x, bound. y, 1, 1, nil))) {
          apiErr;
          dc_compat_free();
-         return;
+         return false;
       }
       bmJ = SelectObject( dc, bmSrc);
       old1 = SelectObject( dc, sys stylusResource-> hbrush);
@@ -366,20 +381,22 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       SetROP2( dc, R2_WHITE);
       Rectangle( dc, 0, 0, bound. x, bound. y);
       SetROP2( dc, R2_BLACK);
-      if ( !Polygon( dc, ( POINT *) points, numPts)) apiErr;
+      if ( !( ok = Polygon( dc, ( POINT *) points, numPts))) apiErr;
       SelectObject( dc, bmSrc);
-      if ( !MaskBlt( ps, trans. x, trans. y, bound. x, bound. y, dc, 0, 0, bmMask, 0, 0,
-               MAKEROP4( 0x00AA0029, rop))) apiErr;
+      if ( !( ok &= MaskBlt( ps, trans. x, trans. y, bound. x, bound. y, dc, 0, 0, bmMask, 0, 0,
+               MAKEROP4( 0x00AA0029, rop)))) apiErr;
       SelectObject( dc, bmJ);
       dc_compat_free();
       DeleteObject( bmMask);
       DeleteObject( bmSrc);
+      return ok;
    }
 }}
 
-void
+Bool
 apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old;
    int newY    = sys lastSize. y - y;
@@ -393,35 +410,37 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
    if ( comp) {
       old = SelectObject( ps, hPenHollow);
-      if ( !Pie(
+      if ( !( ok = Pie(
           ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1,
           pts[ 1]. x, pts[ 1]. y,
           pts[ 0]. x, pts[ 0]. y
-      )) apiErr;
+      ))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
-      if ( !Pie(
+      if ( !( ok = Pie(
           ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
           pts[ 1]. x, pts[ 1]. y,
           pts[ 0]. x, pts[ 0]. y
-      )) apiErr;
+      ))) apiErr;
    }
    SelectObject( ps, old);
    if ( !comp) DeleteObject( old);
+   return ok;
 }}
 
-void
+Bool
 apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBorder)
-{objCheck;{
+{objCheck false;{
    HDC ps = sys ps;
    STYLUS_USE_BRUSH( ps);
-   ExtFloodFill( ps, x, sys lastSize. y - y - 1, remap_color( borderColor, true),
-      singleBorder ? FLOODFILLSURFACE : FLOODFILLBORDER);
+   if ( !ExtFloodFill( ps, x, sys lastSize. y - y - 1, remap_color( borderColor, true),
+      singleBorder ? FLOODFILLSURFACE : FLOODFILLBORDER)) apiErrRet;
+   return true;
 }}
 
 Color
 apc_gp_get_pixel( Handle self, int x, int y)
-{objCheck 0;{
+{objCheck clInvalid;{
    COLORREF c = GetPixel( sys ps, x, sys lastSize. y - y - 1);
    if ( c == CLR_INVALID) return clInvalid;
    return remap_color(( Color) c, false);
@@ -434,37 +453,41 @@ apc_gp_get_handle( Handle self)
    return ( ApiHandle) sys ps;
 }
 
-void
+Bool
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
-{objCheck;{
+{objCheck false;{
    HDC ps = sys ps;
    adjust_line_end( x1, y1, &x2, &y2, true);
    STYLUS_USE_PEN( ps);
    MoveToEx( ps, x1, sys lastSize. y - y1 - 1, nil);
-   LineTo(   ps, x2, sys lastSize. y - y2 - 1);
+   if ( !LineTo(   ps, x2, sys lastSize. y - y2 - 1)) apiErrRet;
+   return true;
 }}
 
-void
+Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
-   apc_gp_stretch_image ( self, image, x, y, xFrom, yFrom, xLen, yLen, xLen, yLen, rop);
+   return apc_gp_stretch_image ( self, image, x, y, xFrom, yFrom, xLen, yLen, xLen, yLen, rop);
 }
 
-void
+Bool
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
    STYLUS_USE_PEN( ps);
    check_swap( x1, x2);
    check_swap( y1, y2);
-   if ( !Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1)) apiErr;
+   if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1))) apiErr;
    SelectObject( ps, old);
+   return ok;
 }}
 
-void
+Bool
 apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    HDC     ps = sys ps;
    int     newY = sys lastSize. y - y;
    POINT   pts[ 2] = {
@@ -477,19 +500,21 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
    // SetArcDirection( ps, AD_COUNTERCLOCKWISE);
    if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
        Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
-   if ( !Pie(
+   if ( !( ok = Pie(
        ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
        pts[ 1]. x, pts[ 1]. y,
        pts[ 0]. x, pts[ 0]. y
-   )) apiErr;
+   ))) apiErr;
    SelectObject( ps, old);
+   return ok;
 }}
 
-void
+Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
-   objCheck;
-   SetPixelV( sys ps, x, sys lastSize. y - y - 1, remap_color( color, true));
+   objCheck false;
+   if ( !SetPixelV( sys ps, x, sys lastSize. y - y - 1, remap_color( color, true))) apiErrRet;
+   return true;
 }
 
 
@@ -521,9 +546,9 @@ static void dc2screen( HDC dc, Handle self)
    dc_free();
 }
 
-void
+Bool
 apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
-{objCheck;{
+{objCheck false;{
    PIcon  i    = ( PIcon) image;
    Handle deja = image;
    int    ly   = sys lastSize. y;
@@ -532,11 +557,11 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    HBITMAP  b1;
    HDC dc;
    DWORD theRop;
-   Bool db, dcmono;
+   Bool ok = true, db, dcmono;
 
    COLORREF oFore, oBack;
 
-   dobjCheck(image);
+   dobjCheck(image) false;
    db = dsys( image) options. aptDeviceBitmap || i-> options. optInDraw;
 
    // Determinig whether we have bitmap adapted for output or it's just bare bits
@@ -552,6 +577,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          // could be guaranteed either when you Blt source DC = CreateCompatibleDC( dest DC),
          // not when source = CCDC( thirdDC), dest = CCDC( thirdDC) - that's right, I mean it!
          // or just SetDIBits; - latter is slow, stupid, memory-greedy - but surely can be trusted.
+         Bool ok;
          Handle img      = ( Handle) create_object("Prima::Image", "");
          HDC adc         = dsys( image) ps;
          HBITMAP abitmap = dsys( image) bm;
@@ -560,9 +586,9 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          image_query_bits( img, true);
          dsys( img) ps   = adc;
          dsys( img) bm   = abitmap;
-         apc_gp_stretch_image( self, img, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+         ok = apc_gp_stretch_image( self, img, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
          Object_destroy( img);
-         return;
+         return ok;
       }
 
       dc = dsys( image) ps;
@@ -648,16 +674,16 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    //
    if ( dc) {
-      if ( !StretchBlt( xdc, x, ly - y - yDestLen, xDestLen, yDestLen, dc,
-            xFrom, i-> h - yFrom - yLen, xLen, yLen, theRop))
+      if ( !( ok = StretchBlt( xdc, x, ly - y - yDestLen, xDestLen, yDestLen, dc,
+            xFrom, i-> h - yFrom - yLen, xLen, yLen, theRop)))
          apiErr;
    } else {
       XBITMAPINFO xbi;
       BITMAPINFO * bi = image_get_binfo( deja, &xbi);
-      if ( !StretchDIBits( xdc, x, ly - y - yDestLen, xDestLen, yDestLen,
+      if ( !( ok = StretchDIBits( xdc, x, ly - y - yDestLen, xDestLen, yDestLen,
             xFrom, yFrom,
             xLen, yLen, ((PImage) deja)-> data, bi,
-            DIB_RGB_COLORS, theRop)) apiErr;
+            DIB_RGB_COLORS, theRop))) apiErr;
    }
 
    // restoring gdiobjects back
@@ -676,19 +702,22 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       if ( dc) DeleteDC( dc);
       if ( deja != image) Object_destroy( deja);
    }
+   return ok;
 }}
 
-void
+Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
-{objCheck;{
+{objCheck false;{
+   Bool ok = true;
    HDC ps = sys ps;
    int bk  = GetBkMode( ps);
    int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
    STYLUS_USE_TEXT( ps);
    if ( opa != bk) SetBkMode( ps, opa);
 
-   if ( !TextOut( ps, x, sys lastSize. y - y, text, len)) apiErr;
+   if ( !( ok = TextOut( ps, x, sys lastSize. y - y, text, len))) apiErr;
    if ( opa != bk) SetBkMode( ps, bk);
+   return ok;
 }}
 
 
@@ -1365,17 +1394,17 @@ apc_gp_get_transform( Handle self)
 Bool
 apc_gp_get_text_opaque( Handle self)
 {
-   objCheck 0;
+   objCheck false;
    return is_apt( aptTextOpaque);
 }
 
 #define pal_ok ((sys bpp <= 8) && ( sys pal))
 
-void
+Bool
 apc_gp_set_back_color( Handle self, Color color)
 {
    long clr = remap_color( color, true);
-   objCheck;
+   objCheck false;
    if ( sys ps) {
       PStylus s = & sys stylus;
       if ( pal_ok) clr = palette_match( self, clr);
@@ -1385,14 +1414,15 @@ apc_gp_set_back_color( Handle self, Color color)
          stylus_change( self);
    }
    sys lbs[1] = clr;
+   return true;
 }
 
-void
+Bool
 apc_gp_set_clip_rect( Handle self, Rect c)
 {
    HRGN rgn;
-   objCheck;
-   if ( !is_opt( optInDraw) || !sys ps) return;
+   objCheck false;
+   if ( !is_opt( optInDraw) || !sys ps) return true;
    // inclusive-exclusive
    c. left   -= sys transform2. x;
    c. right  -= sys transform2. x;
@@ -1401,19 +1431,17 @@ apc_gp_set_clip_rect( Handle self, Rect c)
    check_swap( c. top, c. bottom);
    check_swap( c. left, c. right);
    if ( !( rgn = CreateRectRgn( c. left,  sys lastSize. y - c. top,
-                                c. right + 1, sys lastSize. y - c. bottom - 1))) {
-      apiErr;
-      return;
-   }
+                                c. right + 1, sys lastSize. y - c. bottom - 1))) apiErrRet;
    if ( !SelectClipRgn( sys ps, rgn)) apiErr;
    if ( !DeleteObject( rgn)) apiErr;
+   return true;
 }
 
-
-void    apc_gp_set_color( Handle self, Color color)
+Bool
+apc_gp_set_color( Handle self, Color color)
 {
    long clr = remap_color( color, true);
-   objCheck;
+   objCheck false;
    if ( !sys ps)
       sys lbs[0] = clr;
    else {
@@ -1423,12 +1451,13 @@ void    apc_gp_set_color( Handle self, Color color)
       if ( s-> brush. lb. lbStyle != BS_DIBPATTERNPT) s-> brush. lb. lbColor = ( COLORREF) clr;
       stylus_change( self);
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
-   objCheck;
+   objCheck false;
 {
    HDC ps    = sys ps;
    PStylus s = & sys stylus;
@@ -1436,7 +1465,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
    long *p2 = p1 + 1;
    if ( !ps) {
       memcpy( &sys fillPattern2, pattern, sizeof( FillPattern));
-      return;
+      return true;
    }
    memcpy( &sys fillPattern, pattern, sizeof( FillPattern));
    if (( *p1 == 0) && ( *p2 == 0)) {
@@ -1459,15 +1488,15 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
       memcpy( s-> brush. pattern, pattern, sizeof( FillPattern));
    }
    stylus_change( self);
+   return true;
 }}
 
-void
+Bool
 apc_gp_set_font( Handle self, PFont font)
 {
    TEXTMETRIC tm;
-   objCheck;
-   if ( !sys ps)
-      return;
+   objCheck false;
+   if ( !sys ps) return true;
    font_change( self, font);
    GetTextMetrics( sys ps, &tm);
    sys tmOverhang       = tm. tmOverhang;
@@ -1476,9 +1505,11 @@ apc_gp_set_font( Handle self, PFont font)
    free( sys charTable);
    free( sys charTable2);
    (void*)sys charTable = (void*)sys charTable2 = nil;
+   return true;
 }
 
-FillPattern * apc_gp_get_fill_pattern( Handle self)
+FillPattern *
+apc_gp_get_fill_pattern( Handle self)
 {
    objCheck nil;
    return &sys fillPattern;
@@ -1491,10 +1522,10 @@ static int ctx_le2PS_ENDCAP[] = {
     endCtx
 };
 
-void
+Bool
 apc_gp_set_line_end( Handle self, int lineEnd)
 {
-   objCheck;
+   objCheck false;
    if ( !sys ps) sys lineEnd = lineEnd; else {
       PStylus s         = &sys stylus;
       PEXTPEN ep        = &s-> extPen;
@@ -1503,24 +1534,26 @@ apc_gp_set_line_end( Handle self, int lineEnd)
          ep-> style = stylus_get_extpen_style( s);
       stylus_change( self);
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_set_line_width( Handle self, int lineWidth)
 {
-   objCheck;
+   objCheck false;
    if ( !sys ps) sys lineWidth = lineWidth; else {
       PStylus s = &sys stylus;
       if ( lineWidth < 0 || lineWidth > 8192) lineWidth = 0;
       s-> pen. lopnWidth. x = lineWidth;
       stylus_change( self);
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_set_line_pattern( Handle self, int pattern)
 {
-   objCheck;
+   objCheck false;
    if ( !sys ps) sys linePattern = pattern; else {
       PStylus s           = &sys stylus;
       PEXTPEN ep          = &s-> extPen;
@@ -1532,20 +1565,21 @@ apc_gp_set_line_pattern( Handle self, int pattern)
          ep-> patResource = &hPatHollow;
       stylus_change( self);
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_set_palette( Handle self)
 {
    HPALETTE pal;
 
-   objCheck;
+   objCheck false;
    if ( sys p256) {
       free( sys p256);
       sys p256 = nil;
    }
 
-   if ( !sys ps) return;
+   if ( !sys ps) return true;
    pal = palette_create( self);
    if ( pal)
       SelectPalette( sys ps, pal, 0);
@@ -1554,69 +1588,76 @@ apc_gp_set_palette( Handle self)
    RealizePalette( sys ps);
    if ( sys pal) DeleteObject( sys pal);
    sys pal = pal;
+   return true;
 }
 
-void
+Bool
 apc_gp_set_region( Handle self, Handle mask)
 {
    HRGN rgn = nilHandle;
-   objCheck;
+   objCheck false;
 
-   if ( !is_opt( optInDraw) || !sys ps) return;
+   if ( !is_opt( optInDraw) || !sys ps) return true;
 
    rgn = region_create( mask);
    if ( !rgn) {
       SelectClipRgn( sys ps, nil);
-      return;
+      return true;
    }
    OffsetRgn( rgn, -sys transform2. x, -sys transform2. y);
    OffsetRgn( rgn, 0, sys lastSize.y - PImage(mask)-> h);
    SelectClipRgn( sys ps, rgn);
    DeleteObject( rgn);
+   return true;
 }
 
-void
+Bool
 apc_gp_set_rop( Handle self, int rop)
 {
-   objCheck;
-   if ( !sys ps) { sys rop = rop; return; }
+   objCheck false;
+   if ( !sys ps) { sys rop = rop; return true; }
    if ( !SetROP2( sys ps, ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN))) apiErr;
+   return true;
 }
 
-void
+Bool
 apc_gp_set_rop2( Handle self, int rop)
 {
-   objCheck;
+   objCheck false;
    if ( rop != ropCopyPut) rop = ropNoOper;
-   if ( !sys ps) { sys rop2 = rop; return; }
+   if ( !sys ps) { sys rop2 = rop; return true; }
    if ( !SetBkMode( sys ps, ( rop == ropCopyPut) ? OPAQUE : TRANSPARENT)) apiErr;
+   return true;
 }
 
-void
+Bool
 apc_gp_set_transform( Handle self, int x, int y)
 {
-   objCheck;
+   objCheck false;
    if ( !sys ps) {
       sys transform. x = x;
       sys transform. y = y;
-      return;
+      return true;
    }
    if ( !SetViewportOrgEx( sys ps, x - sys transform2. x, - ( y + sys transform2. y), nil)) apiErr;
+   return true;
 }
 
-void
+Bool
 apc_gp_set_text_opaque( Handle self, Bool opaque)
 {
-   objCheck;
+   objCheck false;
    apt_assign( aptTextOpaque, opaque);
+   return true;
 }
 
 
-void
+Bool
 apc_gp_set_text_out_baseline( Handle self, Bool baseline)
 {
-   objCheck;
+   objCheck false;
    apt_assign( aptTextOutBaseline, baseline);
    if ( sys ps) SetTextAlign( sys ps, baseline ? TA_BASELINE : TA_BOTTOM);
+   return true;
 }
 

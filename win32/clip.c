@@ -43,9 +43,10 @@ apc_clipboard_create()
    return true;
 }
 
-void
+Bool
 apc_clipboard_destroy()
 {
+   return true;
 }
 
 
@@ -56,16 +57,18 @@ apc_clipboard_open()
    return true;
 }
 
-void
+Bool
 apc_clipboard_close()
 {
-   if ( !CloseClipboard()) apiErr;
+   if ( !CloseClipboard()) apiErrRet;
+   return true;
 }
 
-void
+Bool
 apc_clipboard_clear()
 {
-   if ( !EmptyClipboard()) apiErr;
+   if ( !EmptyClipboard()) apiErrRet;
+   return true;
 }
 
 static long cf2CF( long id)
@@ -250,10 +253,11 @@ apc_clipboard_register_format( const char * format)
    return r + cfCustom;
 }
 
-void
+Bool
 apc_clipboard_deregister_format( long id)
 {
    // Windows doesn't have such functionality. Such a strange malfunction
+   return true;
 }
 
 ApiHandle

@@ -383,11 +383,12 @@ apc_image_create( Handle self)
    return true;
 }
 
-void
+Bool
 apc_image_destroy( Handle self)
 {
-   objCheck;
+   objCheck false;
    image_destroy_cache( self);
+   return true;
 }
 
 Bool
@@ -427,12 +428,12 @@ apc_image_begin_paint_info( Handle self)
 }
 
 
-void
+Bool
 apc_image_end_paint( Handle self)
 {
    BITMAPINFO * bi;
    apcErrClear;
-   objCheck;
+   objCheck false;
 
    image_query_bits( self, false);
    hwnd_leave_paint( self);
@@ -440,26 +441,29 @@ apc_image_end_paint( Handle self)
       SelectObject( sys ps, sys stockBM);
    DeleteDC( sys ps);
    sys stockBM = sys ps = nil;
+   return apcError == errOk;
 }
 
-void
+Bool
 apc_image_end_paint_info( Handle self)
 {
-   objCheck;
+   objCheck false;
    apcErrClear;
    hwnd_leave_paint( self);
    DeleteDC( sys ps);
    sys ps = nil;
+   return apcError == errOk;
 }
 
 
-void
+Bool
 apc_image_update_change( Handle self)
 {
-   objCheck;
+   objCheck false;
    image_destroy_cache( self);
    sys lastSize. x = var w;
    sys lastSize. y = var h;
+   return true;
 }
 
 Bool
@@ -559,12 +563,12 @@ dbm_recreate( Handle self)
    dc_free();
 }
 
-void
+Bool
 apc_dbm_destroy( Handle self)
 {
    apcErrClear;
    hash_delete( imageMan, &self, sizeof( self), false);
-   objCheck;
+   objCheck false;
 
    hwnd_leave_paint( self);
 
@@ -575,6 +579,7 @@ apc_dbm_destroy( Handle self)
    DeleteObject( sys bm);
    DeleteDC( sys ps);
    sys pal = sys stockBM = sys ps = sys bm = nil;
+   return true;
 }
 
 HICON
@@ -737,10 +742,11 @@ static void ppi_destroy( LPPRINTER_INFO_2 ppi)
 }
 
 
-void
+Bool
 apc_prn_destroy( Handle self)
 {
    ppi_destroy( &sys s. prn. ppi);
+   return true;
 }
 
 
@@ -1007,49 +1013,53 @@ apc_prn_begin_paint_info( Handle self)
 }
 
 
-void
+Bool
 apc_prn_end_doc( Handle self)
 {
    apcErrClear;
 
-   objCheck;
+   objCheck false;
    if ( EndPage( sys ps) < 0) apiPrnErr;
-   if ( EndDoc( sys ps) < 0) apiPrnErr;
+   if ( EndDoc ( sys ps) < 0) apiPrnErr;
 
    hwnd_leave_paint( self);
    if ( sys pal) DeleteObject( sys pal);
    DeleteDC( sys ps);
    sys pal = sys ps = nil;
+   return apcError == errOk;
 }
 
-void
+Bool
 apc_prn_end_paint_info( Handle self)
 {
    apcErrClear;
-   objCheck;
+   objCheck false;
    hwnd_leave_paint( self);
    DeleteDC( sys ps);
    sys ps = nil;
+   return apcError == errOk;
 }
 
-void
+Bool
 apc_prn_new_page( Handle self)
 {
-   objCheck;
+   apcErrClear;
+   objCheck false;
    if ( EndPage( sys ps) < 0) apiPrnErr;
    if ( StartPage( sys ps) < 0) apiPrnErr;
+   return apcError == errOk;
 }
 
-void
+Bool
 apc_prn_abort_doc( Handle self)
 {
-   objCheck;
+   objCheck false;
    if ( AbortDoc( sys ps) < 0) apiPrnErr;
-
    hwnd_leave_paint( self);
    if ( sys pal) DeleteObject( sys pal);
    DeleteDC( sys ps);
    sys pal = sys ps = nil;
+   return apcError == errOk;
 }
 
 Bool

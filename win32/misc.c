@@ -30,7 +30,7 @@
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
-
+#include "Component.h"
 
 static int ctx_mb2MB[] =
 {
@@ -42,19 +42,21 @@ static int ctx_mb2MB[] =
 };
 
 
-void
+Bool
 apc_beep( int style)
 {
-   MessageBeep( ctx_remap_def( style, ctx_mb2MB, true, MB_OK));
+   if ( !MessageBeep( ctx_remap_def( style, ctx_mb2MB, true, MB_OK))) apiErrRet;
+   return true;
 }
 
-void
+Bool
 apc_beep_tone( int freq, int duration)
 {
-   Beep( freq, duration);
+   if ( !Beep( freq, duration)) apiErrRet;
+   return true;
 }
 
-void
+Bool
 apc_query_drives_map( const char *firstDrive, char *map, int len)
 {
    char *m = map;
@@ -62,11 +64,11 @@ apc_query_drives_map( const char *firstDrive, char *map, int len)
    DWORD driveMap;
    int i;
 
-   if ( !map) return;
+   if ( !map) return false;
 
    beg = toupper( *firstDrive);
    if (( beg < 'A') || ( beg > 'Z') || ( firstDrive[1] != ':'))
-      return;
+      return false;
 
    beg -= 'A';
 
@@ -83,7 +85,7 @@ apc_query_drives_map( const char *firstDrive, char *map, int len)
    }
 
    *m = '\0';
-   return;
+   return true;
 }
 
 static int ctx_dt2DRIVE[] =
@@ -215,9 +217,10 @@ char *dlerror(void)
 }
 
 
-void  apc_show_message( const char * message)
+Bool
+apc_show_message( const char * message)
 {
-   MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+   return MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
 }
 
 Bool
@@ -226,10 +229,11 @@ apc_sys_get_insert_mode()
    return guts. insertMode;
 }
 
-void
+Bool
 apc_sys_set_insert_mode( Bool insMode)
 {
    guts. insertMode = insMode;
+   return true;
 }
 
 Point
@@ -328,6 +332,14 @@ apc_sys_get_caption_font( PFont copyTo)
    return copyTo;
 }
 
+Bool
+hwnd_check_limits( int x, int y, Bool uint)
+{
+   if ( x > 16383 || y > 16383) return false;
+   if ( uint && ( x < -16383 || y < -16383)) return false;
+   return true;
+}
+
 #define rgxExists      1
 #define rgxNotExists   2
 #define rgxHasSubkeys  4
@@ -411,15 +423,23 @@ static char * regColors[] = {
 };
 
 extern PHash
-apc_widget_user_profile( PList names)
+apc_widget_user_profile( char * name, Handle owner)
 {
    char buf[ MAXREGLEN];
    HKEY hKey;
    Bool res;
    DWORD type, size, dw, i;
    PHash ret;
+   List names;
 
-   res = prf_find( REG_STORAGE, names, 0, buf);
+   list_create( &names, 8, 8);
+   list_add( &names, ( Handle) name);
+   while ( owner) {
+      list_insert_at( &names, ( Handle)( PComponent( owner)-> name), 0);
+      owner = PComponent( owner)-> owner;
+   }
+   res = prf_find( REG_STORAGE, &names, 0, buf);
+   list_destroy( &names);
    if ( !res) return nil;
 
 
@@ -482,4 +502,5 @@ log_write( const char *format, ...)
 
    return ( rc != EOF);
 }
+
 

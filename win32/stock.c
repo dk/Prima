@@ -920,12 +920,13 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
    return vectored;
 }
 
-void
+Bool
 apc_font_pick( Handle self, PFont source, PFont dest)
 {
-   if ( self) objCheck;
+   if ( self) objCheck false;
    font_font2gp( dest, self ? sys res : guts. displayResolution,
       Drawable_font_add( self, source, dest), self ? sys ps : 0);
+   return true;
 }
 
 int CALLBACK

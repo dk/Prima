@@ -99,16 +99,17 @@ apc_application_create( Handle self)
    return true;
 }
 
-void
+Bool
 apc_application_close( Handle self)
 {
    PostQuitMessage(0);
+   return true;
 }
 
-void
+Bool
 apc_application_destroy( Handle self)
 {
-   objCheck;
+   objCheck false;
    if ( IsWindow( sys handle))  {
       if ( !KillTimer( sys handle, TID_USERMAX)) apiErr;
       if ( !DestroyWindow( sys handle)) apiErr;
@@ -116,25 +117,27 @@ apc_application_destroy( Handle self)
    free( sys timeDefs);
    PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
    PostQuitMessage(0);
+   return true;
 }
 
-void
+Bool
 apc_application_end_paint( Handle self)
 {
    apcErrClear;
-   objCheck;
+   objCheck false;
    hwnd_leave_paint( self);
    if ( sys pal) DeleteObject( sys pal);
    dc_free();
    apt_clear( aptWinPS);
    apt_clear( aptCompatiblePS);
    sys pal = sys ps = nil;
+   return true;
 }
 
-void
+Bool
 apc_application_end_paint_info( Handle self)
 {
-   apc_application_end_paint( self);
+   return apc_application_end_paint( self);
 }
 
 
@@ -166,11 +169,23 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 
    hp  = CreatePalette(( LOGPALETTE*)&lpg);
    dc2 = CreateCompatibleDC( dc);
+   if ( !dc2) {
+      DeleteObject( hp);
+      dc_free();
+      return false;
+   }
    hp2 = SelectPalette( dc2, hp, 0);
    RealizePalette( dc2);
    hp3 = SelectPalette( dc, hp, 1);
 
    bm  = CreateCompatibleBitmap( dc, xLen, yLen);
+   if ( !bm) {
+      SelectPalette( dc, hp3, 1);
+      SelectPalette( dc2, hp2, 1);
+      DeleteObject( hp);
+      dc_free();
+      return false;
+   }
    bm2 = SelectObject( dc2, bm);
    BitBlt( dc2, 0, 0, xLen, yLen, dc, x, sys lastSize.y - y - yLen, SRCCOPY);
    SelectObject( dc2, bm2);
@@ -342,48 +357,51 @@ process_msg( MSG * msg)
 }
 
 
-void
+Bool
 apc_application_go( Handle self)
 {
    MSG msg;
-   objCheck;
+   objCheck false;
    while ( GetMessage( &msg, NULL, 0, 0) && process_msg( &msg));
    if ( application) Object_destroy( application);
+   return true;
 }
 
 
-static void
+static Bool
 lock( Bool lock)
 {
    if ( lock)
    {
-      if ( guts. appLock++ == 0) LockWindowUpdate( HWND_DESKTOP);
+      if ( guts. appLock++ == 0) return LockWindowUpdate( HWND_DESKTOP);
    }
    else
    {
-      if ( --guts. appLock == 0) LockWindowUpdate( nilHandle);
+      if ( --guts. appLock == 0) return LockWindowUpdate( nilHandle);
    }
+   return true;
 }
 
-void
+Bool
 apc_application_lock( Handle self)
 {
-  lock( true);
+   return lock( true);
 }
 
-void
+Bool
 apc_application_unlock( Handle self)
 {
-  lock( false);
+   return lock( false);
 }
 
-void
+Bool
 apc_application_yield()
 {
    MSG msg;
    while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE))
       if ( !process_msg( &msg))
          PostThreadMessage( guts. mainThreadId, appDead ? WM_QUIT : WM_TERMINATE, 0, 0);
+   return true;
 }
 
 Handle
@@ -412,35 +430,38 @@ apc_application_get_view_from_point( Handle self, Point point)
 }
 
 // Component
-void
+Bool
 apc_component_create( Handle self)
 {
    PComponent c = ( PComponent) self;
    PDrawableData d = c-> sysData;
 
-   objCheck;
+   objCheck false;
 
-   if ( d) return;
+   if ( d) return false;
    d = malloc( sizeof( DrawableData));
    memset( d, 0, sizeof( DrawableData));
    c-> sysData = d;
+   return true;
 }
 
-void
+Bool
 apc_component_destroy( Handle self)
 {
    PComponent    c = ( PComponent) self;
    PDrawableData d = c-> sysData;
-   objCheck;
+   objCheck false;
    var handle = nilHandle;
-   if ( d == nil) return;
+   if ( d == nil) return false;
    free( d);
    c-> sysData = nil;
+   return true;
 }
 
-void
+Bool
 apc_component_fullname_changed_notify( Handle self)
 {
+   return true;
 }
 
 
@@ -735,16 +756,18 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
   return apcError == 0;
 }
 
-void
+Bool
 apc_window_activate( Handle self)
 {
    if ( self) {
       HWND w;
-      objCheck;
+      objCheck false;
       w = HANDLE;
       SetForegroundWindow( w); // no reasonable error description here,
       SetActiveWindow( w);     // long live M$DN :E
+      return true;
    }
+   return false;
 }
 
 Bool
@@ -955,14 +978,15 @@ apc_window_get_task_listed( Handle self)
    return is_apt( aptTaskList);
 }
 
-void
+Bool
 apc_window_set_caption( Handle self, const char * caption)
 {
-   objCheck;
-   if ( !SetWindowText( HANDLE, caption)) apiErr;
+   objCheck false;
+   if ( !( rc = SetWindowText( HANDLE, caption))) apiErr;
+   return rc == 0;
 }
 
-void
+Bool
 apc_window_set_client_pos( Handle self, int x, int y)
 {
    Point delta = get_window_borders( sys s. window. borderStyle);
@@ -970,8 +994,9 @@ apc_window_set_client_pos( Handle self, int x, int y)
    Handle parent = var self-> get_parent( self);
    Point sz = CWidget( parent)-> get_size( parent);
 
+   objCheck false;
+   if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
 
-   objCheck;
    if ( var stage == csConstructing && apc_window_get_window_state( self) != wsNormal) {
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
       if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
@@ -988,17 +1013,19 @@ apc_window_set_client_pos( Handle self, int x, int y)
       y  = sz. y - ( r. bottom - r. top) - y + delta. y;
       SetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
    }
+   return true;
 }
 
-void
+Bool
 apc_window_set_client_size( Handle self, int x, int y)
 {
    RECT r, c, c2;
    HWND h;
    int  ws = apc_window_get_window_state( self);
 
+   objCheck false;
+   if ( !hwnd_check_limits( x, y, false)) apcErrRet( errInvParams);
 
-   objCheck;
    h = HANDLE;
    if (( var stage == csConstructing && ws != wsNormal) || ws == wsMinimized) {
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
@@ -1043,6 +1070,7 @@ apc_window_set_client_size( Handle self, int x, int y)
          SWP_NOZORDER | SWP_NOACTIVATE);
       sys sizeLockLevel--;
    }
+   return true;
 }
 
 Bool
@@ -1059,21 +1087,22 @@ apc_window_set_menu( Handle self, Handle menu)
 }
 
 
-void
+Bool
 apc_window_set_icon( Handle self, Handle icon)
 {
    HICON i;
-   objCheck;
+   objCheck false;
    i = icon ? image_make_icon_handle( icon, guts. iconSizeLarge, nil, false) : nil;
    i = ( HICON) SendMessage( HANDLE, WM_SETICON, ICON_BIG, ( LPARAM) i);
    if ( i) DestroyIcon( i);
+   return true;
 }
 
-void
+Bool
 apc_window_set_window_state( Handle self, int state)
 {
    int  fl = -1;
-   objCheck;
+   objCheck false;
    switch ( state)
    {
       case wsMaximized: fl = SW_SHOWMAXIMIZED; break;
@@ -1085,6 +1114,7 @@ apc_window_set_window_state( Handle self, int state)
       ShowWindow( HANDLE, fl);
       sys s. window. state = state;
    }
+   return true;
 }
 
 static Bool
@@ -1157,11 +1187,11 @@ apc_window_execute_shared( Handle self, Handle insertBefore)
    return window_start_modal( self, true, insertBefore);
 }
 
-void
+Bool
 apc_window_end_modal( Handle self)
 {
    HWND wnd;
-   objCheck;
+   objCheck false;
    wnd = HANDLE;
    if ( PWindow( self)-> modal == mtExclusive) {
       if ( self == (( PApplication) application)-> topExclModal)
@@ -1170,9 +1200,9 @@ apc_window_end_modal( Handle self)
    guts. focSysDisabled = 1;
    CWindow( self)-> exec_leave_proc( self);
    WinHideWindow( wnd);
-   objCheck;
+   objCheck false;
    apc_widget_set_enabled( self, 0);
-   objCheck;
+   objCheck false;
    if ( application) {
       Handle who = Application_popup_modal( application);
       if ( !who && var owner)
@@ -1180,6 +1210,7 @@ apc_window_end_modal( Handle self)
          // SetFocus( DHANDLE( var owner));
    }
    guts. focSysDisabled = 0;
+   return true;
 }
 
 // View management
@@ -1363,10 +1394,10 @@ apc_widget_begin_paint_info( Handle self)
 }
 
 
-void
+Bool
 apc_widget_destroy( Handle self)
 {
-   objCheck;
+   objCheck false;
    if ( sys pointer2) {
       if ( sys pointer2 == sys pointer) SetCursor( NULL); // un-use resource first
       if ( !DestroyCursor( sys pointer2)) apiErr;
@@ -1374,12 +1405,13 @@ apc_widget_destroy( Handle self)
    if ( sys recreateData) free( sys recreateData);
    if ( self == lastMouseOver) lastMouseOver = nilHandle;
    free( sys timeDefs);
-   if ( var handle == nilHandle) return;
+   if ( var handle == nilHandle) return true;
 
    if ( sys className == WC_FRAME)
       guts. topWindows--;
 
-   if ( !DestroyWindow( HANDLE)) apiErr;
+   if ( !DestroyWindow( HANDLE)) apiErrRet;
+   return true;
 }
 
 PFont
@@ -1390,10 +1422,10 @@ apc_widget_default_font( PFont copyTo)
    return copyTo;
 }
 
-void
+Bool
 apc_widget_end_paint( Handle self)
 {
-   objCheck;
+   objCheck false;
    if ( is_opt( optBuffered)) {
       if ( sys bm != nilHandle) {
          if ( !SetViewportOrgEx( sys ps, 0, 0, nil)) apiErr;
@@ -1419,8 +1451,7 @@ apc_widget_end_paint( Handle self)
    if ( sys pal)
       DeleteObject( sys pal);
 
-   if ( sys ps != nilHandle)
-   {
+   if ( sys ps != nilHandle) {
       if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
          if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
       } else if ( is_apt( aptWinPS))
@@ -1430,18 +1461,21 @@ apc_widget_end_paint( Handle self)
    apt_clear( aptWinPS);
    apt_clear( aptWM_PAINT);
    apt_clear( aptCompatiblePS);
+   return true;
 }
 
-void
+Bool
 apc_widget_end_paint_info( Handle self)
 {
-   objCheck;
+   Bool ok = true;
+   objCheck false;
    hwnd_leave_paint( self);
    sys pal = nil;
-   if ( !ReleaseDC(( HWND) var handle, sys ps)) apiErr;
+   if ( !( ok = ReleaseDC(( HWND) var handle, sys ps))) apiErr;
    sys ps = nilHandle;
    apt_clear( aptWinPS);
    apt_clear( aptCompatiblePS);
+   return ok;
 }
 
 Bool
@@ -1611,6 +1645,7 @@ apc_widget_get_z_order( Handle self, int zOrderId)
       cmd1 = cmd2 = GW_HWNDPREV;
       break;
    default:
+      apcErr( errInvParams);
       return nilHandle;
    }
 
@@ -1773,15 +1808,16 @@ apc_widget_is_exposed( Handle self)
 }
 
 
-void
+Bool
 apc_widget_invalidate_rect( Handle self, Rect * rect)
 {
    PRECT pRect = rect ? map_Rect( self, rect) : nil;
-   objCheck;
+   objCheck false;
    if ( !InvalidateRect (( HWND) var handle, pRect, false)) apiErr;
    if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
-   objCheck;
+   objCheck false;
    process_transparents( self);
+   return true;
 }
 
 Point
@@ -1799,47 +1835,48 @@ apc_widget_screen_to_client( Handle self, Point p)
    return p;
 }
 
-void
+Bool
 apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Bool scrollChildren)
 {
    PRECT pRect = r ? map_Rect( self, r) : nil;
-   objCheck;
+   objCheck false;
    HideCaret(( HWND) var handle);
    if ( !ScrollWindowEx(( HWND) var handle,
       horiz, -vert, pRect, sys pClipRect, NULL, NULL,
       SW_INVALIDATE | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
    )) apiErr;
-   objCheck;
+   objCheck false;
    if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
-   ShowCaret(( HWND) var handle);
+   return ShowCaret(( HWND) var handle);
 }
 
-void
+Bool
 apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 {
-   objCheck;
+   objCheck false;
    if ( capture) {
       SetCapture(( HWND) var handle);
       if ( confineTo) {
          RECT r;
          GetWindowRect(( HWND) PComponent( confineTo)-> handle, &r);
-         if ( !ClipCursor( &r)) apiErr;
+         if ( !ClipCursor( &r)) apiErrRet;
       }
    } else {
-      if ( !ReleaseCapture()) apiErr;
-      if ( !ClipCursor( NULL)) apiErr;
+      if ( !ReleaseCapture()) apiErrRet;
+      if ( !ClipCursor( NULL)) apiErrRet;
    }
+   return true;
 }
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
 
-void
+Bool
 apc_widget_set_clip_rect( Handle self, Rect c)
 {
    int ly;
    RECT * cr;
 
-   objCheck;
+   objCheck false;
 
    // inclusive-inclusive
    ly = sys lastSize. y;
@@ -1854,77 +1891,85 @@ apc_widget_set_clip_rect( Handle self, Rect c)
 
    sys pClipRect = ( c. top == 0 && c. bottom == 0 && c. left == 0 && c. right == 0) ?
       nil : cr;
+   return true;
 }
 
-void
+Bool
 apc_widget_set_color( Handle self, Color color, int index)
 {
    Event ev = {cmColorChanged};
-   objCheck;
+   objCheck false;
    sys viewColors[ index] = color;
 
    ev. gen. source = self;
    ev. gen. i      = index;
    var self-> message( self, &ev);
+   return true;
 }
 
-void
+Bool
 apc_widget_set_enabled( Handle self, Bool enable)
 {
-   objCheck;
+   objCheck false;
    apt_assign( aptEnabled, enable);
    if (( sys className == WC_FRAME) || ( var owner == application))
       EnableWindow( HANDLE, enable);
    else
       SendMessage( HANDLE, WM_ENABLE, ( WPARAM) enable, 0);
+   return true;
 }
 
-void
+Bool
 apc_widget_set_first_click( Handle self, Bool firstClick)
 {
-   objCheck;
+   objCheck false;
    apt_assign( aptFirstClick, firstClick);
+   return true;
 }
 
-void
+Bool
 apc_widget_set_focused( Handle self)
 {
    if ( self && ( self != Application_map_focus( application, self)))
-      return;
+      return false;
    guts. focSysGranted++;
    SetFocus( self ? (( HWND) var handle) : nil);
    guts. focSysGranted--;
+   return true;
 }
 
-void
+Bool
 apc_widget_set_font( Handle self, PFont font)
 {
    Event ev = {cmFontChanged};
-   objCheck;
+   objCheck false;
    ev. gen. source = self;
    var self-> message( self, &ev);
+   return true;
 }
 
-void
+Bool
 apc_widget_set_palette( Handle self)
 {
-   objCheck;
+   objCheck false;
    if ( sys p256) {
       free( sys p256);
       sys p256 = nil;
    }
    if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
       palette_change( self);
+   return true;
 }
 
-void
+Bool
 apc_widget_set_pos( Handle self, int x, int y)
 {
    Handle parent;
    Point sz;
    RECT r;
 
-   objCheck;
+   objCheck false;
+   if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
 
    parent = is_apt( aptClipOwner) ? var owner : application;
    sz = ((( PWidget) parent)-> self)-> get_size( parent);
@@ -1934,45 +1979,48 @@ apc_widget_set_pos( Handle self, int x, int y)
       int  ws = apc_window_get_window_state( self);
       if (( var stage == csConstructing && ws != wsNormal) || ( ws == wsMinimized)) {
          WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
-         if ( !GetWindowPlacement( h, &w)) apiErr;
+         if ( !GetWindowPlacement( h, &w)) apiErrRet;
          w. rcNormalPosition. top    += sz. y - y - w. rcNormalPosition. bottom;
          w. rcNormalPosition. bottom  = sz. y - y;
          w. rcNormalPosition. right  += x - w. rcNormalPosition. left;
          w. rcNormalPosition. left    = x;
          w. flags = w. showCmd = 0;
-         if ( !SetWindowPlacement( h, &w)) apiErr;
-         return;
+         if ( !SetWindowPlacement( h, &w)) apiErrRet;
+         return true;
       }
    }
-   if ( !GetWindowRect( HANDLE, &r)) apiErr;
+   if ( !GetWindowRect( HANDLE, &r)) apiErrRet;
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
    y = sz. y - y - r. bottom + r. top;
-   if ( !SetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErr;
+   if ( !SetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
+   return true;
 }
 
-void
+Bool
 apc_widget_set_size( Handle self, int width, int height)
 {
    RECT r;
    HWND h;
-   objCheck;
+   objCheck false;
+
+   if ( !hwnd_check_limits( width, height, false)) apcErrRet( errInvParams);
    h = HANDLE;
    if ( sys className == WC_FRAME) {
       int  ws = apc_window_get_window_state( self);
       if (( var stage == csConstructing && ws != wsNormal) || ( ws == wsMinimized)) {
          WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
-         if ( !GetWindowPlacement( h, &w)) apiErr;
+         if ( !GetWindowPlacement( h, &w)) apiErrRet;
          if ( width  < 0) width = 0;
          if ( height < 0) height = 0;
          w. rcNormalPosition. top    = w. rcNormalPosition. bottom - height;
          w. rcNormalPosition. right  = width + w. rcNormalPosition. left;
          w. flags = w. showCmd = 0;
-         if ( !SetWindowPlacement( h, &w)) apiErr;
-         return;
+         if ( !SetWindowPlacement( h, &w)) apiErrRet;
+         return true;
       }
    }
-   if ( !GetWindowRect( h, &r)) apiErr;
+   if ( !GetWindowRect( h, &r)) apiErrRet;
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
    if ( sys className != WC_FRAME) {
@@ -1985,22 +2033,21 @@ apc_widget_set_size( Handle self, int width, int height)
    if ( !SetWindowPos( h, 0,
       r. left, r. bottom - height,
       width, height,
-      SWP_NOZORDER | SWP_NOACTIVATE)) apiErr;
+      SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
+   return true;
 }
 
-
-
-void
+Bool
 apc_widget_set_shape( Handle self, Handle mask)
 {
    HRGN rgn = nilHandle;
-   objCheck;
+   objCheck false;
 
    rgn = region_create( mask);
    if ( !rgn) {
       SetWindowRgn( HANDLE, nil, true);
-      return;
+      return true;
    }
 
    sys extraBounds. x = PImage( mask)-> w;
@@ -2024,57 +2071,53 @@ apc_widget_set_shape( Handle self, Handle mask)
       sys extraPos. x = sys extraPos. y = 0;
 
    if ( !SetWindowRgn( HANDLE, rgn, true))
-      apiErr;
+      apiErrRet;
+   return true;
 }
 
-
-void
-apc_widget_set_tab_order( Handle self, int tabOrder)
-{
-}
-
-void
+Bool
 apc_widget_set_visible( Handle self, Bool show)
 {
-   objCheck;
+   objCheck false;
    if ( !SetWindowPos( HANDLE, nilHandle, 0, 0, 0, 0,
-        ( show ? SWP_SHOWWINDOW : SWP_HIDEWINDOW) | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErr;
-   objCheck;
+        ( show ? SWP_SHOWWINDOW : SWP_HIDEWINDOW)
+        | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
+   objCheck false;
    if ( !is_apt( aptClipOwner)) {
       InvalidateRect(( HWND) var handle, nil, false);
-      objCheck;
+      objCheck false;
       process_transparents( self);
    }
+   return true;
 }
 
-void
+Bool
 apc_widget_set_z_order( Handle self, Handle behind, Bool top)
 {
    HWND opt = ( top) ? HWND_TOP : HWND_BOTTOM;
-   objCheck;
+   objCheck false;
    if ( behind != nilHandle) {
-      dobjCheck( behind);
+      dobjCheck( behind) false;
       opt = DHANDLE( behind);
    }
-   if ( !SetWindowPos( HANDLE, opt, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE)) apiErr;
-   // unexpected stupig Windows bug'o'feature - when only window is available to a thread,
-   // bring_to_front does not do anything! - so fixing
-  // if (( sys className == WC_FRAME) && ( opt == HWND_TOP) && ( guts. topWindows < 2))
-  //    apc_window_activate( self);
+   if ( !SetWindowPos( HANDLE, opt, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE)) apiErrRet;
+   return true;
 }
 
-void
+Bool
 apc_widget_update( Handle self)
 {
-   objCheck;
-   if ( !UpdateWindow(( HWND) var handle)) apiErr;
+   objCheck false;
+   if ( !UpdateWindow(( HWND) var handle)) apiErrRet;
+   return true;
 }
 
-void
+Bool
 apc_widget_validate_rect( Handle self, Rect rect)
 {
-   objCheck;
-   if ( !ValidateRect (( HWND) var handle, map_Rect( self, &rect))) apiErr;
+   objCheck false;
+   if ( !ValidateRect (( HWND) var handle, map_Rect( self, &rect))) apiErrRet;
+   return true;
 }
 
 // View attributes
@@ -2107,14 +2150,16 @@ static Bool clear_menus( PMenuWndData item, int keyLen, void * key, void * param
    return false;
 }
 
-void
+Bool
 apc_menu_destroy( Handle self)
 {
    if ( var handle) {
-      objCheck;
-      if ( IsMenu(( HMENU) var handle) && !DestroyMenu(( HMENU) var handle)) apiErr;
+      objCheck false;
       hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
+      if ( IsMenu(( HMENU) var handle) && !DestroyMenu(( HMENU) var handle)) apiErrRet;
+      return true;
    }
+   return false;
 }
 
 PFont
@@ -2137,24 +2182,26 @@ apc_menu_get_font( Handle self, PFont font)
    return apc_menu_default_font( font);
 }
 
-void
+Bool
 apc_menu_set_color( Handle self, Color color, int index)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_set_font( Handle self, PFont font)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m)
 {
    PWindow owner;
    Point size;
    Bool resize;
-   objCheck;
-   dobjCheck( var owner);
+   objCheck false;
+   dobjCheck( var owner) false;
    if ( resize = kind_of( var owner, CWindow) &&
         var stage <= csNormal &&
         ((( PAbstractMenu) self)-> self)-> get_selected( self)) {
@@ -2169,22 +2216,20 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
    DrawMenuBar( DHANDLE( var owner));
    if ( resize)
       owner-> self-> set_size( var owner, size.x, size. y);
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
 {
    MENUITEMINFO mii = {sizeof( MENUITEMINFO)};
    char buf [ 1024];
    UINT flags;
 
-   if ( !var handle) return;
-   objCheck;
+   if ( !var handle) return false;
+   objCheck false;
    flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
-   if ( flags == 0xFFFFFFFF) {
-      apiErr;
-      return;
-   }
+   if ( flags == 0xFFFFFFFF) return false;
 
    if ( flags & MF_BITMAP)
       flags = ( flags & ~MF_BITMAP) | MF_STRING;
@@ -2194,46 +2239,50 @@ apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
 
    if ( !ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
                     m-> id + MENU_ID_AUTOSTART, buf))
-      apiErr;
+      apiErrRet;
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check)
 {
-   if ( !var handle) return;
-   objCheck;
-   CheckMenuItem(( HMENU) var handle,
+   DWORD res;
+   if ( !var handle) return false;
+   objCheck false;
+   res = CheckMenuItem(( HMENU) var handle,
       m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( check ? MF_CHECKED : MF_UNCHECKED));
+   return res != 0xFFFFFFFF;
 }
 
-void
+Bool
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled)
 {
-   if ( !var handle) return;
-   objCheck;
-   EnableMenuItem(( HMENU) var handle,
+   DWORD res;
+   if ( !var handle) return false;
+   objCheck false;
+   res = EnableMenuItem(( HMENU) var handle,
       m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( enabled ? MF_ENABLED : MF_GRAYED));
+   return res != 0xFFFFFFFF;
 }
 
-void
+Bool
 apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
 {
    MENUITEMINFO mii = {sizeof( MENUITEMINFO)};
    char buf [ 1024];
    UINT flags;
 
-   if ( !var handle) return;
-   objCheck;
+   if ( !var handle) return false;
+   objCheck false;
    flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
-   if ( flags == 0xFFFFFFFF) {
-      apiErr;
-      return;
-   }
+   if ( flags == 0xFFFFFFFF) return false;
+
    if ( flags & MF_BITMAP)
       flags = ( flags & ~MF_BITMAP) | MF_STRING;
 
@@ -2243,27 +2292,27 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
       strncpy( buf, text, 1024);
    map_tildas( buf, strlen( text));
 
-   ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, buf);
+   if ( !ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                    m-> id + MENU_ID_AUTOSTART, buf)) apiErrRet;
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
 {
    MENUITEMINFO mii = {sizeof( MENUITEMINFO)};
    UINT flags;
 
-   if ( !var handle) return;
-   objCheck;
+   if ( !var handle) return false;
+   objCheck false;
    flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
-   if ( flags == 0xFFFFFFFF) {
-      apiErr;
-      return;
-   }
+   if ( flags == 0xFFFFFFFF) return false;
+
    flags |= MF_BITMAP;
 
-   ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, image_make_bitmap_handle( image, nil));
+   if ( !ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                    m-> id + MENU_ID_AUTOSTART, image_make_bitmap_handle( image, nil))) apiErrRet;
+   return true;
 }
 
 
@@ -2274,11 +2323,11 @@ apc_menu_get_handle( Handle self)
    return ( ApiHandle) var handle;
 }
 
-void
+Bool
 apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 {
-   objCheck;
-   dobjCheck( var owner);
+   objCheck false;
+   dobjCheck( var owner) false;
 
    if ( kind_of( var owner, CWindow) &&
         var stage <= csNormal &&
@@ -2298,6 +2347,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
       hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
       var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
    }
+   return true;
 }
 
 Bool
@@ -2440,27 +2490,29 @@ apc_help_open_topic( Handle self, long command)
    return WinHelp( DHANDLE( application), PApplication(application)-> helpFile, hm, data);
 }
 
-void
+Bool
 apc_help_close( Handle self)
 {
-   dobjCheck( application);
-   WinHelp( DHANDLE( application), PApplication(application)-> helpFile, HELP_QUIT, 0);
+   dobjCheck( application) false;
+   if ( !WinHelp( DHANDLE( application), PApplication(application)-> helpFile, HELP_QUIT, 0)) apiErrRet;
+   return true;
 }
 
-void
+Bool
 apc_help_set_file( Handle self, const char * helpFile)
 {
+   return true;
 }
 
 
 typedef LRESULT (*ApiMessageSender)(HWND hwnd, UINT msg, WPARAM mp1, LPARAM mp2);
-void
+Bool
 apc_message( Handle self, PEvent ev, Bool post)
 {
    ULONG msg;
    USHORT mp1s = 0;
    ApiMessageSender sender = post ? (ApiMessageSender) PostMessage : (ApiMessageSender) SendMessage;
-   objCheck;
+   objCheck false;
    switch ( ev-> cmd)
    {
        case cmPost:
@@ -2537,13 +2589,13 @@ apc_message( Handle self, PEvent ev, Bool post)
                    if ( ev-> key. mod & kmAlt   ) mp1 = VK_MENU;    else
                    if ( ev-> key. mod & kmShift ) mp1 = VK_SHIFT;   else
                    if ( ev-> key. mod & kmCtrl  ) mp1 = VK_CONTROL; else
-                      return;
+                      return false;
                 } else {
                    SHORT c = VkKeyScan( ev-> key. code);
                    if ( c == -1) {
                       HKL kl = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
                       c = VkKeyScanEx( ev-> key. code, kl);
-                      if ( c == -1) return;
+                      if ( c == -1) return false;
                       scan = MapVirtualKeyEx( LOBYTE( c), 0, kl);
                    } else {
                       scan = MapVirtualKey( LOBYTE( c), 0);
@@ -2561,7 +2613,7 @@ apc_message( Handle self, PEvent ev, Bool post)
                     ev-> key. mod |= kmShift;
                  } else {
                     mp1 = ctx_remap( ev-> key. key, ctx_kb2VK, true);
-                    if ( mp1 == 0) return;
+                    if ( mp1 == 0) return false;
                  }
                  scan = MapVirtualKey( mp1, 0);
              }
@@ -2609,7 +2661,10 @@ apc_message( Handle self, PEvent ev, Bool post)
              }
           }
           break;
+   default:
+          return false;
    }
+   return true;
 }
 
 
