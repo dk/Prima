@@ -48,7 +48,7 @@
    #define snprintf              _snprintf
    #define stricmp               _stricmp
    extern double                 NAN;
-   #define PRIMA_STRICMP_PRESENT 1
+   #define HAVE_STRICMP 1
 #else
    #define __INLINE__            __inline__
 #endif
@@ -105,12 +105,12 @@ extern SV* readonly_clean_sv_2mortal( SV* sv);
 #define PERL_CALL_PV       perl_call_pv
 #endif
 
-#ifdef PRIMA_STRICMP_PRESENT
-#ifndef PRIMA_STRCASECMP_PRESENT
+#ifdef HAVE_STRICMP
+#ifndef HAVE_STRCASECMP
 #define strcasecmp(a,b) stricmp((a),(b))
 #endif
 #else
-#ifdef PRIMA_STRCASECMP_PRESENT
+#ifdef HAVE_STRCASECMP
 #define stricmp(a,b) strcasecmp((a),(b))
 #else
 #define strcasecmp(a,b) stricmp((a),(b))
