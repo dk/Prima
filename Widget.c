@@ -665,7 +665,7 @@ void Widget_handle_event( Handle self, PEvent event)
                     if ( next == ( PWidget) foc) goto out;
                     if ( next-> self-> get_enabled( list[ no]) &&
                          next-> self-> get_tab_stop( list[ no]) &&
-                         next-> self-> get_selectable( list[ no])) break;
+                         next-> self-> get_selectee( list[ no])) break;
                  }
                  next-> self-> set_selected(( Handle) next, true);
                  objCheck;
@@ -1491,14 +1491,15 @@ Handle
 Widget_get_selectee( Handle self)
 {
    if ( var-> stage > csNormal) return nilHandle;
-   if ( var-> currentWidget) {
+   if ( is_opt( optSelectable))
+      return self;
+   else if ( var-> currentWidget) {
       PWidget w = ( PWidget) var-> currentWidget;
       if ( w-> options. optSystemSelectable && !w-> self-> get_clip_owner(( Handle) w))
          return ( Handle) w;
       else
          return w-> self-> get_selectee(( Handle) w);
-   } else
-   if ( is_opt( optSelectable) || is_opt( optSystemSelectable))
+   } else if ( is_opt( optSystemSelectable))
       return self;
    else
       return find_tabfoc( self);
@@ -1765,8 +1766,7 @@ Widget_set_current_widget( Handle self, Handle widget)
    if ( var-> stage > csNormal) return;
    if ( widget) {
       if ( !widget || (( PWidget) widget)-> stage > csNormal ||
-            ((( PWidget) widget)-> owner != self) ||
-            !(( PWidget) widget)-> options. optSelectable
+            ((( PWidget) widget)-> owner != self)
            ) return;
       var-> currentWidget = widget;
    } else {
@@ -2114,15 +2114,15 @@ Widget_set_selected( Handle self, Bool selected)
    enter_method;
    if ( var-> stage > csNormal) return;
    if ( selected) {
+      if ( is_opt( optSelectable)) {
+         my-> set_focused( self, true);
+      } else
       if ( var-> currentWidget) {
          PWidget w = ( PWidget) var-> currentWidget;
          if ( w-> options. optSystemSelectable && !w-> self-> get_clip_owner(( Handle) w))
             w-> self-> bring_to_front(( Handle) w); /* <- very uncertain !!!! */
          else
             w-> self-> set_selected(( Handle) w, true);
-      } else
-      if ( is_opt( optSelectable)) {
-         my-> set_focused( self, true);
       } else
       if ( is_opt( optSystemSelectable)) {
          /* nothing to do with Widget, reserved for Window */
