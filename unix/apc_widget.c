@@ -283,6 +283,8 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
    Bool useRPDraw = false;
 
    if ( guts. appLock > 0) return false;
+
+   if ( XX-> size.x <= 0 || XX-> size.y <= 0) return false;
    
    if ( XX-> flags. transparent && inside_on_paint) {
       if ( XX-> flags. want_visible && !XX-> flags. falsely_hidden) {
