@@ -155,14 +155,24 @@ free_unix_items( PMenuWindow w)
    w-> num = 0;
 }
 
+static XCharStruct * 
+char_struct( XFontStruct * xs, int c) 
+{
+    XCharStruct * xc;
+    if ( !xs-> per_char) {
+       xc = &xs-> min_bounds;
+    } else if (c < xs-> min_char_or_byte2 || c > xs-> max_char_or_byte2) {
+       xc = xs-> per_char + xs-> default_char - xs-> min_char_or_byte2; 
+    } else
+       xc = xs-> per_char + c - xs-> min_char_or_byte2;
+    return xc;
+}   
+
 static void
 update_menu_window( PMenuSysData XX, PMenuWindow w)
 {
    int x = 9, y = 6, xx;
    PMenuItemReg m = w->m;
-   int sz = 1024, l, i, k;
-   char *s = malloc( sz);
-   char *t;
    
    free_unix_items( w);
    w-> num = item_count( w);
@@ -173,37 +183,29 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
       if ( m-> divider) {
          y += 8;
       } else if ( m-> text) {
+         int i, l = 0, ntildas = 0;
+         char * t = m-> text;
          y += 9 + XX-> font-> font. height;
-         t = m-> text;
-         for (;;) {
-            l = 0; i = 0;
-            while ( l < sz && t[i]) {
-               if (t[i] == '\t') {
-                  if ( l + 8 >= sz)
-                     break;
-                  for (k=0; k < 8; k++) {
-                     s[l++] = ' ';
-                  }
+         for ( i = 0; t[i]; i++) {
+            if ( t[i] == '~' && t[i+1]) {
+               ntildas++;
+               if ( t[i+1] == '~') 
                   i++;
-               } else if (t[i] == '~') {
-                  if ( t[i+1] == '~') {
-                     s[l++] = '~'; i += 2;
-                  } else
-                     i++;
-               } else {
-                  s[l++] = t[i++];
-               }
-            }
-            if ( t[i]) {
-               free(s); s = malloc( sz *= 2);
-            } else
-               break;
-         }
-         xx = 9+12+12 + XTextWidth( XX-> font-> fs, s, l);
+            }   
+         }   
+         xx = 9+12+12 + XTextWidth( XX-> font-> fs, m-> text, i);
+         if ( ntildas)
+            xx -= char_struct( XX-> font-> fs, '~')-> width * ntildas; 
+         if ( m-> accel && ( l = strlen( m-> accel))) 
+               xx += XTextWidth( XX-> font-> fs, m-> accel, l) + 
+                  char_struct( XX-> font-> fs, ' ')-> width * 4;
+         if ( m-> down) {
+            xx += XX-> font-> font. height * 0.6 +
+                char_struct( XX-> font-> fs, ' ')-> width * 4;
+         }  
          if ( xx > x) x = xx;
       } else if ( m-> bitmap) {
       } else {
-         free(s);
          croak( "update menu window: fatal internal inconsistency");
       }
       m = m-> next;
@@ -212,8 +214,8 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
    w-> sz.x = x;
    w-> sz.y = y;
    XResizeWindow( DISP, w->w, x, y);
-   free(s);
 }
+
 
 void
 prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
@@ -221,9 +223,9 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
    DEFXX;
    PMenuWindow w;
    GC gc;
-   int mx, my, y;
+   int mx, my, y, deltaY;
    PMenuItemReg m;
-   int sz = 1024, l, i, k;
+   int sz = 1024, l, i;
    char *s;
    char *t;
 
@@ -266,24 +268,32 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                y += 4;
                XSetForeground( DISP, gc, XX->c[ciFore].pixel);
             } else if ( m-> text) {
-               y += 4 + XX-> font-> font. height;
+               XFontStruct * xs = XX-> font-> fs;
+               int lineStart = -1, lineEnd, haveDash = 0, textWidth;
+               deltaY = 4 + XX-> font-> font. height;
+               y += deltaY;
                t = m-> text;
+               
                for (;;) {
                   l = 0; i = 0;
                   while ( l < sz && t[i]) {
-                     if (t[i] == '\t') {
-                        if ( l + 8 >= sz)
-                           break;
-                        for (k=0; k < 8; k++) {
-                           s[l++] = ' ';
-                        }
-                        i++;
-                     } else if (t[i] == '~') {
+                     if (t[i] == '~' && t[i+1]) {
                         if ( t[i+1] == '~') {
                            s[l++] = '~'; i += 2;
-                        } else
+                        } else {
+                           if ( !haveDash) {
+                              haveDash = 1;
+                              lineEnd = lineStart + char_struct( xs, t[i+1])-> width;
+                           }
                            i++;
+                        }   
                      } else {
+                        if ( !haveDash) {
+                           XCharStruct * cs = char_struct( xs, t[i]);
+                           if ( lineStart < 0)
+                              lineStart = ( cs-> lbearing < 0) ? - cs-> lbearing : 0;
+                           lineStart += cs-> width;
+                        }   
                         s[l++] = t[i++];
                      }
                   }
@@ -292,14 +302,83 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                   } else
                      break;
                }
-               XDrawString( DISP, win, gc, 5+12, y, s, l);
+               if ( m-> disabled) {
+                  XSetForeground( DISP, gc, XX->c[ciLight3DColor].pixel); 
+                  XDrawString( DISP, win, gc, 5+15+1, y+1, s, l);   
+                  XSetForeground( DISP, gc, XX->c[ciDisabledText].pixel); 
+               }   
+               XDrawString( DISP, win, gc, 5+15, y, s, l);
+               if ( haveDash) {
+                  if ( m-> disabled) {
+                      XSetForeground( DISP, gc, XX->c[ciLight3DColor].pixel); 
+                      XDrawLine( DISP, win, gc, 5+15+lineStart+1, y+xs->max_bounds.descent-1+1, 
+                         5+15+lineEnd+1, y+xs->max_bounds.descent-1+1);
+                      XSetForeground( DISP, gc, XX->c[ciDisabledText].pixel); 
+                  }   
+                  XDrawLine( DISP, win, gc, 5+15+lineStart, y+xs->max_bounds.descent-1, 
+                     5+15+lineEnd, y+xs->max_bounds.descent-1);
+               }   
+               if ( m-> accel) {
+                  l = strlen( m-> accel);
+                  textWidth = XTextWidth( xs, m-> accel, l);
+                  if ( m-> disabled) {
+                     XSetForeground( DISP, gc, XX->c[ciLight3DColor].pixel); 
+                     XDrawString( DISP, win, gc, mx - 5 - 6 - textWidth + 1, y + 1, m-> accel, l);
+                     XSetForeground( DISP, gc, XX->c[ciDisabledText].pixel); 
+                  }   
+                  XDrawString( DISP, win, gc, mx - 5 - 6 - textWidth, y, m-> accel, l);
+               }   
                y += 5;
+               deltaY += 5;
             } else if ( m-> bitmap) {
             } else {
                croak( "update menu window: fatal internal inconsistency");
             }
+            if ( m-> down) {
+               int ave    = XX-> font-> font. height * 0.4;
+               int center = y - deltaY / 2;
+               XPoint p[3] = {
+                  { mx - 5 - 6, center},
+                  { mx - ave - 5 - 6, center - ave * 0.6},
+                  { mx - ave - 5 - 6, center + ave * 0.6 + 1}
+               };
+               if ( m-> disabled) {
+                  int i;
+                  XSetForeground( DISP, gc, XX->c[ciLight3DColor].pixel); 
+                  for ( i = 0; i < 3; i++) { 
+                     p[i].x++;
+                     p[i].y++;
+                  }   
+                  XFillPolygon( DISP, win, gc, p, 3, Nonconvex, CoordModeOrigin);   
+                  for ( i = 0; i < 3; i++) { 
+                     p[i].x--;
+                     p[i].y--;
+                  }   
+                  XSetForeground( DISP, gc, XX->c[ciDisabledText].pixel); 
+               }   
+               XFillPolygon( DISP, win, gc, p, 3, Nonconvex, CoordModeOrigin);
+            }  
+            if ( m-> checked) {
+               int bottom = y - deltaY * 0.2;
+               XGCValues gcv;
+               gcv. line_width = 3;
+               XChangeGC( DISP, gc, GCLineWidth, &gcv); 
+               if ( m-> disabled) {
+                  XSetForeground( DISP, gc, XX->c[ciLight3DColor].pixel); 
+                  XDrawLine( DISP, win, gc, 5 + 1 + 1 , y - deltaY / 2 + 1, 5 + 12/2 - 3 + 1, bottom -+1);
+                  XDrawLine( DISP, win, gc, 5 + 12/2 - 3 + 1, bottom + 1, 5 + 12 - 2 + 1, y - deltaY * 0.65 + 1);
+                  XSetForeground( DISP, gc, XX->c[ciDisabledText].pixel); 
+               }    
+               XDrawLine( DISP, win, gc, 5 + 1, y - deltaY / 2, 5 + 12/2 - 3, bottom);
+               XDrawLine( DISP, win, gc, 5 + 12/2 - 3, bottom, 5 + 12 - 2, y - deltaY * 0.65);
+               gcv. line_width = 1;
+               XChangeGC( DISP, gc, GCLineWidth, &gcv); 
+            } 
+            if ( m-> disabled) 
+               XSetForeground( DISP, gc, XX->c[ciFore].pixel);  
             m = m-> next;
          }
+         free(s);
       }
       break;
    }
