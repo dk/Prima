@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 1997-2001 The Protein Laboratory, University of Copenhagen
+#  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without

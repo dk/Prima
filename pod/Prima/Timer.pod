@@ -1,3 +1,5 @@
+=for rcs $Id$
+
 =head1 NAME
 
 Timer - programmable periodical events

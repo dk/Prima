@@ -1,3 +1,5 @@
+=for rcs $Id$
+
 =head1 NAME
 
 File - asynchronous stream I/O.

@@ -1,3 +1,5 @@
+=for rcs $Id$
+
 =head1 NAME
 
 Object and Component - Prima toolkit base classes

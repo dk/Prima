@@ -1,3 +1,5 @@
+=for rcs $Id$
+
 =head1 NAME
 
 How to write a codec for Prima image subsystem

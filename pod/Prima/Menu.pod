@@ -1,3 +1,5 @@
+=for rcs $Id$
+
 =head1 NAME
 
 Menu - pull-down and pop-up menu objects

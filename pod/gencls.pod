@@ -1,3 +1,5 @@
+=for rcs $Id$
+
 =head1 NAME
 
 gencls - class interface compiler for Prima core modules
