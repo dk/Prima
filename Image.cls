@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-local @ImageStats double[6];
+local @ImageStats double[7];
 
 object Image( Drawable)
 {

@@ -546,12 +546,13 @@ sub set_type       {$_[0]->set( type    =>$_[1])}
 sub data         {($#_)?$_[0]->set_data         ($_[1]):return $_[0]->get_data;         }
 sub conversion   {($#_)?$_[0]->set_conversion   ($_[1]):return $_[0]->get_conversion;   }
 sub height       {($#_)?$_[0]->set_height       ($_[1]):return $_[0]->get_height;       }
-sub rangeLo      {($#_)?$_[0]->set_stats  ($_[1], is::RangeLo):return $_[0]->get_stats(is::RangeLo);     }
-sub rangeHi      {($#_)?$_[0]->set_stats  ($_[1], is::RangeHi):return $_[0]->get_stats(is::RangeHi);     }
-sub sum          {($#_)?$_[0]->set_stats  ($_[1], is::Sum    ):return $_[0]->get_stats(is::Sum);      }
-sub mean         {($#_)?$_[0]->set_stats  ($_[1], is::Mean   ):return $_[0]->get_stats(is::Mean);     }
-sub variance     {($#_)?$_[0]->set_stats  ($_[1], is::Variance):return $_[0]->get_stats(is::Variance);     }
-sub stdDev       {($#_)?$_[0]->set_stats  ($_[1], is::StdDev ):return $_[0]->get_stats(is::StdDev);     }
+sub rangeLo      {($#_)?$_[0]->set_stats  ($_[1], is::RangeLo):return $_[0]->get_stats(is::RangeLo); }
+sub rangeHi      {($#_)?$_[0]->set_stats  ($_[1], is::RangeHi):return $_[0]->get_stats(is::RangeHi); }
+sub sum          {($#_)?$_[0]->set_stats  ($_[1], is::Sum    ):return $_[0]->get_stats(is::Sum); }
+sub sum2         {($#_)?$_[0]->set_stats  ($_[1], is::Sum2   ):return $_[0]->get_stats(is::Sum2); }
+sub mean         {($#_)?$_[0]->set_stats  ($_[1], is::Mean   ):return $_[0]->get_stats(is::Mean); }
+sub variance     {($#_)?$_[0]->set_stats  ($_[1], is::Variance):return $_[0]->get_stats(is::Variance); }
+sub stdDev       {($#_)?$_[0]->set_stats  ($_[1], is::StdDev ):return $_[0]->get_stats(is::StdDev); }
 sub type         {($#_)?$_[0]->set_type         ($_[1]):return $_[0]->get_type;         }
 sub width        {($#_)?$_[0]->set_width        ($_[1]):return $_[0]->get_width;        }
 sub size         {($#_)?$_[0]->set_size   ($_[1],$_[2]):return $_[0]->get_size;         }
