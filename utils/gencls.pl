@@ -1943,7 +1943,7 @@ CONTAINED_STRUCTURE
          my @locp = split (" ", $newMethods[ $j]);
          my $id = $locp[0];
          if ( $j) { print HEADER ','} ;
-         print HEADER "\n  { &(${ownCType}Vmt. $id), (void*)&${ownCType}_${id}_REDEFINED, \"$id\"}";
+         print HEADER "\n  { &(${ownCType}Vmt. $id), (void*)${ownCType}_${id}_REDEFINED, \"$id\"}";
       }
       print HEADER "\n  {nil,nil,nil} // M\$C empty struct error" unless scalar @newMethods;
       print HEADER "\n};\n\n";
