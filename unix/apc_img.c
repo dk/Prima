@@ -894,8 +894,6 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    XGCValues gcv;
    Bool bit_cache = XX->flags.is_image && (PImage(self)->type & imBPP) == 1;
 
-   /* 1) XXX - rop - correct support! */
-   /* 2) XXX - Shared Mem Image Extension! */
    prima_create_image_cache( img, self, icon);
    SHIFT( x, y);
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
@@ -967,11 +965,11 @@ apc_image_begin_paint( Handle self)
 }
 
 static void
-calc_masks_and_lut_16_to_24( unsigned long mask,
-			     unsigned long *mask1,
-			     unsigned long *mask2,
-			     int *bit_count,
-			     unsigned char *lut)
+calc_masks_and_lut_16or32_to_24( unsigned long mask,
+                                 unsigned long *mask1,
+                                 unsigned long *mask2,
+                                 int *bit_count,
+                                 ColorComponent *lut)
 {
    unsigned i;
    unsigned long m;
@@ -993,33 +991,69 @@ calc_masks_and_lut_16_to_24( unsigned long mask,
 static void
 convert_16_to_24( XImage *i, PImage img)
 {
-   static unsigned char lur[256], lub[256], lug[256];  /* is ``static'' reliable here?? */
+   /* XXX is ``static'' reliable here?? */
+   static ColorComponent lur[NPalEntries8], lub[NPalEntries8], lug[NPalEntries8];
    static Bool initialize = true;
    static unsigned long rm1, bm1, gm1, rm2, bm2, gm2;
    static int rbc, bbc, gbc;
    int y, x, h, w;
-   U16 *d;
-   unsigned char *line;
+   Pixel16 *d;
+   Pixel24 *line;
 
    if ( initialize) {
       Visual *v = DefaultVisual( DISP, SCREEN);
 
-      calc_masks_and_lut_16_to_24( v-> red_mask, &rm1, &rm2, &rbc, lur);
-      calc_masks_and_lut_16_to_24( v-> green_mask, &gm1, &gm2, &gbc, lug);
-      calc_masks_and_lut_16_to_24( v-> blue_mask, &bm1, &bm2, &bbc, lub);
+      calc_masks_and_lut_16or32_to_24( v-> red_mask, &rm1, &rm2, &rbc, lur);
+      calc_masks_and_lut_16or32_to_24( v-> green_mask, &gm1, &gm2, &gbc, lug);
+      calc_masks_and_lut_16or32_to_24( v-> blue_mask, &bm1, &bm2, &bbc, lub);
 
       initialize = false;
    }
 
    h = img-> h; w = img-> w;
    for ( y = 0; y < h; y++) {
-      d = (U16 *)(i-> data + (h-y-1)*i-> bytes_per_line);
-      line = img-> data + y*img-> lineSize;
+      d = (Pixel16 *)(i-> data + (h-y-1)*i-> bytes_per_line);
+      line = (Pixel24*)(img-> data + y*img-> lineSize);
       for ( x = 0; x < w; x++) {
-	 *line++ = lub[(*d & bm1) >> bbc];
-	 *line++ = lug[(*d & gm1) >> gbc];
-	 *line++ = lur[(*d & rm1) >> rbc];
-	 d++;
+         line-> a0 = lub[(*d & bm1) >> bbc];
+	 line-> a1 = lug[(*d & gm1) >> gbc];
+	 line-> a2 = lur[(*d & rm1) >> rbc];
+	 d++; line++;
+      }
+   }
+}
+
+static void
+convert_32_to_24( XImage *i, PImage img)
+{
+   /* XXX is ``static'' reliable here?? */
+   static ColorComponent lur[NPalEntries8], lub[NPalEntries8], lug[NPalEntries8];
+   static Bool initialize = true;
+   static unsigned long rm1, bm1, gm1, rm2, bm2, gm2;
+   static int rbc, bbc, gbc;
+   int y, x, h, w;
+   Pixel32 *d;
+   Pixel24 *line;
+
+   if ( initialize) {
+      Visual *v = DefaultVisual( DISP, SCREEN);
+
+      calc_masks_and_lut_16or32_to_24( v-> red_mask, &rm1, &rm2, &rbc, lur);
+      calc_masks_and_lut_16or32_to_24( v-> green_mask, &gm1, &gm2, &gbc, lug);
+      calc_masks_and_lut_16or32_to_24( v-> blue_mask, &bm1, &bm2, &bbc, lub);
+
+      initialize = false;
+   }
+
+   h = img-> h; w = img-> w;
+   for ( y = 0; y < h; y++) {
+      d = (Pixel32 *)(i-> data + (h-y-1)*i-> bytes_per_line);
+      line = (Pixel24*)(img-> data + y*img-> lineSize);
+      for ( x = 0; x < w; x++) {
+         line-> a0 = lub[(*d & bm1) >> bbc];
+	 line-> a1 = lug[(*d & gm1) >> gbc];
+	 line-> a2 = lur[(*d & rm1) >> rbc];
+	 d++; line++;
       }
    }
 }
@@ -1042,8 +1076,8 @@ slurp_image( Handle self, Pixmap px)
          i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, AllPlanes, ZPixmap);
          XCHECKPOINT;
 
-         target_depth = guts. depth;
-         if ( target_depth == 16)
+         target_depth = guts. idepth;
+         if ( target_depth == 16 || target_depth == 32)
             target_depth = 24;
          if (( img-> type & imBPP) != target_depth) {
             CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
@@ -1054,6 +1088,14 @@ slurp_image( Handle self, Pixmap px)
                switch ( target_depth) {
                case 24:
                   convert_16_to_24( i, img);
+                  break;
+               default: goto slurp_image_unsupported_depth;
+               }
+               break;
+            case 32:
+               switch ( target_depth) {
+               case 24:
+                  convert_32_to_24( i, img);
                   break;
                default: goto slurp_image_unsupported_depth;
                }
@@ -1413,7 +1455,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    }
 
    /* 1) XXX - rop - correct support! */
-   /* 2) XXX - Shared Mem Image Extension! */
+   /* 2) XXX - icons support */
    SHIFT( x, y);
    y = XX->size.y - y - yDestLen;
    yFrom = img-> h - yFrom - yLen;
