@@ -320,13 +320,15 @@ EOF
 sub find_header
 {
     my $header = shift;
+    my $options = ref($_[0]) eq 'HASH' ? shift : {};
     my ( $incpath, $present);
     foreach $incpath ( @_) {
         local @INCPATH = @INCPATH;
         push @INCPATH, $incpath if $incpath;
-        $present = compile( <<EOF, 1);
+	my $code = $options->{Code} || <<EOF;
 #include <$header>
 EOF
+        $present = compile( $code, 1);
         return $incpath if $present;
     }
     return undef;
@@ -1351,18 +1353,35 @@ sub setup_xft
 	my $NEED_XFT = 4;
 	my @pre_xft_libs = @LIBS;
 
+	my @ft_incpaths = ( "",
+			    qd("/usr/include/freetype2"),
+			    qd("/usr/X11R6/include/freetype2"),
+			    qd("/usr/X11/include/freetype2"),
+			    qd("/usr/X/include/freetype2"),
+			    qd("/usr/openwin/include/freetype2"),
+			    qd("/usr/local/include/freetype2"),
+			    qd("/usr/gnu/include/freetype2"),
+			    qd("/usr/freeware/include/freetype2"),
+			    qd("/usr/opt/include/freetype2")
+	);
+	my $have_ft2build_h = find_header( qd("ft2build.h"), @ft_incpaths );
+
 	print "Checking for presence of freetype/freetype.h... ";
-	my $incpath = find_header( qd("freetype/freetype.h"), "",
-				   qd("/usr/include/freetype2"),
-				   qd("/usr/X11R6/include/freetype2"),
-				   qd("/usr/X11/include/freetype2"),
-				   qd("/usr/X/include/freetype2"),
-				   qd("/usr/openwin/include/freetype2"),
-				   qd("/usr/local/include/freetype2"),
-				   qd("/usr/gnu/include/freetype2"),
-				   qd("/usr/freeware/include/freetype2"),
-				   qd("/usr/opt/include/freetype2")
-				   );
+	my $incpath;
+	if ($have_ft2build_h) {
+	    $DEFINES{HAVE_FT2BUILD_H} = undef;
+	    $incpath = find_header( qd("freetype/freetype.h"),
+					{
+					    Code => <<EOF,
+#include "ft2build.h"
+#include FT_FREETYPE_H
+EOF
+					},
+					@ft_incpaths,
+					);
+	} else {
+	    $incpath = find_header( qd("freetype/freetype.h"), @ft_incpaths);
+	}
 	if (defined $incpath) {
 	    print "yes";
 	    print ", in $incpath" if $incpath;
