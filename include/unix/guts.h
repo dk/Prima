@@ -491,6 +491,8 @@ typedef struct _UnixGuts
    TimerSysData                 sys_timers[ LAST_SYS_TIMER - FIRST_SYS_TIMER + 1];
    Bool                         applicationClose;
    char                         locale[32];
+   Atom                         net_wm_state, net_wm_state_skip_taskbar; 
+   Atom                         net_wm_state_maximized_vert, net_wm_state_maximized_horiz;
 } UnixGuts;
 
 extern UnixGuts guts;
@@ -618,6 +620,7 @@ typedef struct _drawable_sys_data
       unsigned sizeable                 : 1;
       unsigned size_determined          : 1;
       unsigned sync_paint               : 1;
+      unsigned task_listed              : 1;
       unsigned transparent              : 1;
       unsigned transparent_busy         : 1;
       unsigned want_visible             : 1;

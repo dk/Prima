@@ -38,6 +38,49 @@
 #include "Window.h"
 #include "Application.h"
 
+static void
+apc_window_task_listed( Handle self, Bool task_list)
+{
+   DEFXX;
+   Atom data[32], type, * prop;
+   int count = 0, format;
+   XClientMessageEvent ev;
+   unsigned long i, n, left;
+
+   if ( XGetWindowProperty( DISP, X_WINDOW, guts. net_wm_state, 0, 32, false, XA_ATOM,
+          &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
+     if ( prop) {
+         if ( n > 32) n = 32;
+         for ( i = 0; i < n; i++) 
+            if ( prop[i] != guts. net_wm_state_skip_taskbar)
+               data[ count++] = prop[i];
+         XFree(( unsigned char *) prop);
+      }
+   }
+
+   XX-> flags. task_listed = ( task_list ? 1 : 0);
+   bzero( &ev, sizeof(ev));
+   ev. type = ClientMessage;
+   ev. display = DISP;
+   ev. window = X_WINDOW;
+   ev. message_type = guts. net_wm_state;
+   ev. format = 32;
+   /*
+      _NET_WM_STATE_REMOVE        0    // remove/unset property 
+      _NET_WM_STATE_ADD           1    // add/set property 
+      _NET_WM_STATE_TOGGLE        2    // toggle property  
+    */
+   ev. data. l[0] = task_list ? 0 : 1;
+   ev. data. l[1] = ( long) guts. net_wm_state_skip_taskbar;
+   ev. data. l[2] = 0;
+   XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
+   XCHECKPOINT;
+
+   if ( !task_list) data[ count++] = guts. net_wm_state_skip_taskbar;
+
+   XChangeProperty( DISP, X_WINDOW, guts. net_wm_state, XA_ATOM, 32,
+       PropModeReplace, ( unsigned char *) data, count);
+} 
 
 Bool
 apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
@@ -52,9 +95,12 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 
    if ( border_style != bsSizeable) border_style = bsDialog;
 
+
    if ( X_WINDOW) { /* recreate request */
       XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
       apc_widget_set_size_bounds( self, PWidget(self)-> sizeMin, PWidget(self)-> sizeMax);
+      if (( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0))
+         apc_window_task_listed( self, task_list);
       return true; 
    }   
 
@@ -126,11 +172,13 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XX-> flags. clip_owner = false;
    XX-> flags. sync_paint = sync_paint;
    XX-> flags. process_configure_notify = true;
+   XX-> flags. task_listed = 1;
 
    XX-> above = nilHandle;
    XX-> owner = real_owner;
    apc_component_fullname_changed_notify( self);
    prima_send_create_event( X_WINDOW);
+   apc_window_task_listed( self, task_list);
    if ( border_style == bsSizeable) XX-> flags. sizeable = 1;
 
    /* setting initial size */
@@ -305,8 +353,7 @@ apc_window_get_window_state( Handle self)
 Bool
 apc_window_get_task_listed( Handle self)
 {
-   /* TransientForHint might be the closest definition to this */
-   return true;
+   return X(self)-> flags. task_listed;
 }
 
 Bool

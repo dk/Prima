@@ -950,6 +950,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case PropertyNotify: {
+      if ( guts. wm_translate_event) 
+	 guts. wm_translate_event( self, ev, &e);
       break;
    }
    case SelectionClear: 
