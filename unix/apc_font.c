@@ -777,6 +777,7 @@ detail_font_info( PFontInfo f, PFont font)
       if ( !hash_fetch( guts. font_hash, &key, sizeof( FontKey))) {
 	add_font_to_cache( &key, f, name, s);
       }
+      (void)micro_dump; /* XXX to prevent warnings */
       if ( askedDefaultPitch && font-> pitch != fpDefault) {
 	int pitch = font-> pitch;
 	font-> pitch = fpDefault;
