@@ -342,6 +342,8 @@ $make .= <<MAKE;
 clean:
 \trm -f $allclean auto/Prima/Prima.so
 
+.PHONY: tags
+
 tags:
 \t/usr/local/bin/ctags -ip *.c \`find include -name "*.h" -print\` \\
 \t\t	/usr/X11R6/include/X11/X*.h unix/*.c \\
