@@ -1038,9 +1038,9 @@ apc_gp_get_clip_rect( Handle self)
 
    prima_gp_get_clip_rect( self, &cr);
    r. left = cr. x;
-   r. top = XX-> size. y - cr. y;
-   r. bottom = r. top - cr. height;
-   r. right = cr. x + cr. width;
+   r. top = XX-> size. y - cr. y - 1;
+   r. bottom = r. top - cr. height + 1;
+   r. right = cr. x + cr. width - 1;
    return r;
 }
 
