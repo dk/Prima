@@ -603,6 +603,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
                if (( kf = malloc( sizeof( CachedFont)))) {
                   bzero( kf, sizeof( CachedFont));
                   memcpy( &kf-> font, &f1, sizeof( Font));
+         	  kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut);
                   kf-> xft = kf-> xft_base = xf;
                   hash_store( guts. font_hash, &key, sizeof( FontKey), kf);
                   Fdebug("xft:store %x:%d.%d.%d.%d.%s\n", kf->xft, key.height, key. width, key.style, key.pitch, key.name);
@@ -646,6 +647,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
       if (( kf = malloc( sizeof( CachedFont)))) {
          bzero( kf, sizeof( CachedFont));
          memcpy( &kf-> font, &f1, sizeof( Font));
+         kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut);
          kf-> xft = xf;
          kf-> xft_base = kf_base ? kf_base-> xft : xf;
          hash_store( guts. font_hash, &key, sizeof( FontKey), kf);
@@ -660,6 +662,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          if (( kf = malloc( sizeof( CachedFont)))) {
             bzero( kf, sizeof( CachedFont));
             memcpy( &kf-> font, &f1, sizeof( Font));
+            kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut);
             kf-> xft = xf;
             kf-> xft_base = kf_base ? kf_base-> xft : xf;
             hash_store( guts. font_hash, &key, sizeof( FontKey), kf);

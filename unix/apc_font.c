@@ -962,6 +962,7 @@ add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s, 
    kf-> id = s-> fid;
    kf-> fs = s;
    memcpy( &kf-> font, &f-> font, sizeof( Font));
+   kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut);
    kf-> flags = f-> flags;
    kf-> underlinePos = uPos;
    kf-> underlineThickness = uThinkness;
