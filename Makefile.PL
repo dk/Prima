@@ -141,7 +141,10 @@ sub cc_command_line
     push @cc, split ' ', $CDLFLAGS if $dl;
     push @cc, $COMPONLYFLAG if $compile_only;
     push @cc, map( { "$CINCPATHFLAG$_"} @INCPATH);
-    push @cc, map( { "$CDEFFLAG$_" . ( $DEFINES{ $_} ? "=$DEFINES{ $_}" : '')} keys %DEFINES);
+    for ( keys %DEFINES) {
+       next unless $DEFINES{$_};
+       push @cc, "$CDEFFLAG$_=$DEFINES{$_}";
+    }
     push @cc, "${CDEFFLAG}PRIGRAPH" if $usePrigraph;
     push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
     push @cc, "$COUTOFLAG$objf" if $Win32 && ! $compile_only;
@@ -225,17 +228,16 @@ sub compile
 sub have_header
 {
     my $header = shift;
+    (my $defname = "HAVE_" . uc $header) =~ s/\W/_/g;
+    return $DEFINES{$defname} if defined $DEFINES{$defname};
     my @pre_headers = map { "#include <$_>\n" } @_;
     print "Checking for presence of $header... ";
     my $present = compile( <<ENDP, 1);
 @pre_headers
 #include <$header>
 ENDP
-    if ( $present) {
-        my $defname = "HAVE_" . uc $header;
-        $defname =~ s/\W/_/g;
-        $DEFINES{ $defname} = 1;
-    }
+    $DEFINES{ $defname} = 0;
+    $DEFINES{ $defname} = 1 if $present;
     print( $present ? "yes" : "no", "\n");
     return $present;
 }
@@ -279,6 +281,8 @@ ENDP
 sub have_func
 {
     my ( $funcname) = @_;
+    my $defname = "HAVE_" . uc $funcname;
+    $defname =~ s/\W/_/g;
     print "Checking for function $funcname... ";
     my $rc = compile( <<ENDP);
 int
@@ -289,12 +293,10 @@ main()
 }
 ENDP
     if ( $rc) {
-        my $defname = "HAVE_" . uc $funcname;
-        $defname =~ s/\W/_/g;
         $DEFINES{ $defname} = 1;
         print "yes\n";
-    }
-    else {
+    } else {
+        $DEFINES{ $defname} = 0;
         print "no\n";
     }
     return $rc;
@@ -337,6 +339,8 @@ ENDP
 sub have_type
 {
     my ( $type, @headers) = @_;
+    (my $defname = "HAVE_" . uc $type) =~ s/\W/_/g;
+    return 1 if $DEFINES{$defname};
     print "Checking for presence of type ${ type}... ";
     my @srchead = map { "#include <$_>\n"} @headers;
     my $rc = compile( <<ENDP);
@@ -350,8 +354,6 @@ main()
 }
 ENDP
     if ( $rc) {
-        my $defname = "HAVE_" . uc $type;
-        $defname =~ s/\W/_/g;
         $DEFINES{ $defname} = 1;
         print "yes\n";
     }
@@ -359,6 +361,15 @@ ENDP
         print "no\n";
     }
     return $rc;
+}
+
+sub have_types_in
+{
+    my ($hdr, @types) = @_;
+    return unless have_header( $hdr);
+    for my $type (@types) {
+       have_type( $type, $hdr);
+    }
 }
 
 sub setvar
@@ -747,6 +758,21 @@ sub setup_defines
     have_header( "io.h");
     have_header( "unistd.h");
     have_header( "strings.h");
+
+    have_types_in( "sys/types.h",
+                   qw(int8_t int16_t int32_t));
+    have_types_in( "sys/types.h",
+                   qw(uint8_t uint16_t uint32_t));
+    have_types_in( "sys/types.h",
+                   qw(u_int8_t u_int16_t u_int32_t));
+
+    have_types_in( "stdint.h",
+                   qw(int8_t int16_t int32_t));
+    have_types_in( "stdint.h",
+                   qw(uint8_t uint16_t uint32_t));
+    have_types_in( "stdint.h",
+                   qw(u_int8_t u_int16_t u_int32_t));
+
     if ( $NeedX11) {
        have_header( "sys/ipc.h", "sys/types.h");
        have_header( "sys/shm.h", "sys/types.h");
