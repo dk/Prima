@@ -4,6 +4,17 @@
 
 Prima::Timer - programmable periodical events
 
+=head1 SYNOPSIS
+
+    my $timer = Prima::Timer-> create(
+        timeout => 1000, # milliseconds
+        onTick  => sub {
+           print "tick!\n";
+        },
+    );
+
+    $timer-> start;
+
 =head1 DESCRIPTION
 
 Prima::Timer arranges periodical notifications

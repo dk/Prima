@@ -4,6 +4,22 @@
 
 Prima::Printer - system printing services
 
+=head1 SYNOPSIS
+
+   my $printer = $::application-> get_printer;
+   print "printing to ", $printer->printer, "...\n";
+   if ( $p-> begin_doc) {
+      $p-> bar( 0, 0, 100, 100);
+      print "another page...\n";
+      $p-> new_page;
+      $p-> ellipse( 100, 100, 200, 200);
+      (time % 1) ? # depending on the moon phase, print it or cancel out
+            $p-> end_doc :
+            $p-> abort_doc;
+   } else {
+      print "failed\n";
+   }
+
 =head1 DESCRIPTION
 
 I<Prima::Printer> is a descendant of I<Prima::Drawable> class.

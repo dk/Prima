@@ -4,6 +4,16 @@
 
 Prima::Drawable - 2-D graphic interface
 
+=head1 SYNOPSIS
+
+   if ( $object-> isa('Prima::Drawable')) {
+        $object-> begin_paint;
+	$object-> color( cl::Black);
+	$object-> line( 100, 100, 200, 200);
+	$object-> ellipse( 100, 100, 200, 200);
+        $object-> end_paint;
+   }
+
 =head1 DESCRIPTION
 
 Prima::Drawable is a descendant of Prima::Component.

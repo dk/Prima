@@ -4,6 +4,21 @@
 
 Prima::Window - top-level window management
 
+=head1 SYNOPSIS
+
+   use Prima;
+   use Prima::Application;
+
+   # this window, when closed, terminated the application
+   my $main = Prima::MainWindow-> new( text => 'Hello world' );
+
+   # this is a modal window
+   my $dialog = Prima::Dialog->create( size => [ 100, 100 ]);
+   my $result = $dialog-> execute;
+   $dialog-> destroy;
+
+   run Prima;
+
 =head1 DESCRIPTION 
 
 Prima::Window is a descendant of Prima::Widget class.

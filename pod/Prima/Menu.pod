@@ -4,6 +4,37 @@
 
 Prima::Menu - pull-down and pop-up menu objects
 
+=head1 SYNOPSIS
+
+   use Prima;
+   use Prima::Application;
+
+   my $window = Prima::Window-> new(
+        menuItems => [
+           [ '~File' => [
+              [ '~Open', 'Ctrl+O', '^O', \&open_file ],
+              [ '-save_file', '~Save', km::Ctrl | ord('S'), sub { save_file() } ],
+              [],
+              [ '~Exit', 'Alt+X', '@X', sub { exit } ],
+           ]],
+           [ '~Options' => [
+              [ '*option1' => 'Checkable option' => sub { $_[0]-> menu-> toggle( $_[1]) }],
+           ]],
+           [],
+           [ '~Help' => [
+              [ 'Show help' => sub { $::application-> open_help($0); }],
+           ]],
+        ],
+    );
+
+    sub open_file 
+    {
+        # enable 'save' menu item
+        $window-> menu-> save_file-> enable;
+    }
+
+    $window-> popupItems( $window-> menuItems);
+
 =head1 DESCRIPTION 
 
 The document describes interfaces of Prima::AbstractMenu

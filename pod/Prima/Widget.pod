@@ -4,6 +4,24 @@
 
 Prima::Widget - window management
 
+=head1 SYNOPSIS
+
+   # create a widget
+   my $widget = Prima::Widget-> new(
+       size    => [ 200, 200],
+       color   => cl::Green,
+       visible => 0,
+       onPaint => sub {
+          my ($self,$canvas) = @_;
+          $canvas-> clear;
+          $canvas-> text_out( "Hello world!", 10, 10);
+       },
+   );
+
+   # manipulate the widget
+   $widget-> origin( 10, 10);
+   $widget-> show;
+
 =head1 DESCRIPTION 
 
 Prima::Widget is a descendant of Prima::Component,

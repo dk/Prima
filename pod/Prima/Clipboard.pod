@@ -12,6 +12,29 @@ storage, called clipboard, visible to all clients of one
 GUI space. The system clipboard is intended for the exchange of
 information of an arbitrary type between graphic applications.
 
+=head1 SYNOPSIS
+
+   my $c = $::application-> Clipboard;
+
+   # paste data
+   my $string = $c-> text;
+   my $image  = $c-> image;
+   my $other  = $c-> fetch('Other type');
+
+   # copy datum
+   $c-> text( $string);
+
+   # copy data
+   $c-> open;
+   $c-> text( $string);
+   $c-> image( $image);
+   $c-> store( $image);
+   $c-> close;
+
+   # clear
+   $c-> clear;
+
+
 =head1 USAGE
 
 Prima::Clipboard provides access to the system clipboard
