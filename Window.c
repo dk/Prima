@@ -223,7 +223,7 @@ void Window_handle_event( Handle self, PEvent event)
          if ( count > 1)
          {
             int order, min = INT_MAX, max = 0, j = 0;
-            Handle minH, maxH, match;
+            Handle minH = nilHandle, maxH = nilHandle, match;
             /* searching for 1-st level view that responds for focus */
             while ( foc && PWidget( foc)-> owner != self)
                foc = PWidget( foc)-> owner;
