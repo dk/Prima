@@ -45,7 +45,6 @@ Printer_init( Handle self, HV * profile)
 {
    char * prn;
    inherited init( self, profile);
-   CComponent( var-> owner)-> attach( var-> owner, self);
    if ( !apc_prn_create( self))
       croak("RTC0070: Cannot create printer");
    prn = pget_c( printer);
@@ -56,9 +55,16 @@ Printer_init( Handle self, HV * profile)
 void
 Printer_done( Handle self)
 {
-   CComponent( var-> owner)-> detach( var-> owner, self, false);
    apc_prn_destroy( self);
    inherited done( self);
+}
+
+Bool
+Printer_validate_owner( Handle self, Handle * owner, HV * profile)
+{
+   if ( pget_H( owner) != application || application == nilHandle) return false;
+   *owner = application;
+   return true;
 }
 
 Bool

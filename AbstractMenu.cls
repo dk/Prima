@@ -55,6 +55,7 @@ object Prima::AbstractMenu ( Prima::Component)
    static int    translate_accel( Handle self, char * accel);
    static int    translate_key( Handle self, int code, int key, int mod);
    static int    translate_shortcut( Handle self, char * key);
+   c_only Bool   validate_owner( Handle * newOwner, HV * profile);
 #  private
    Bool   anchored;
    Bool   system;

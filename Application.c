@@ -953,6 +953,7 @@ Bool   Application_clipOwner( Handle self, Bool set, Bool clipOwner)   { return 
 int    Application_tabOrder( Handle self, Bool set, int tabOrder)      { return 0; }
 SV   * Application_text    ( Handle self, Bool set, SV * text)       { return nilSV; }
 Bool   Application_transparent( Handle self, Bool set, Bool transparent) { return false; }
+Bool   Application_validate_owner( Handle self, Handle * owner, HV * profile) { *owner = nilHandle; return true; }
 
 #ifdef __cplusplus
 }

@@ -73,9 +73,7 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc);
 void
 Clipboard_init( Handle self, HV * profile)
 {
-   if ( !application) croak("RTC0020: Cannot create clipboard without application instance");
    inherited init( self, profile);
-   CComponent( application)-> attach( application, self);
    if ( !apc_clipboard_create(self))
       croak( "RTC0022: Cannot create clipboard");
    if (clipboards == 0) {
@@ -88,7 +86,6 @@ Clipboard_init( Handle self, HV * profile)
 void
 Clipboard_done( Handle self)
 {
-   CComponent( application)-> detach( application, self, false);
    clipboards--;
    if ( clipboards == 0) {
       while( formatCount)
@@ -96,6 +93,14 @@ Clipboard_done( Handle self)
    }
    apc_clipboard_destroy(self);
    inherited done( self);
+}
+
+Bool
+Clipboard_validate_owner( Handle self, Handle * owner, HV * profile)
+{
+   if ( pget_H( owner) != application || application == nilHandle) return false;
+   *owner = application;
+   return true;
 }
 
 typedef Bool ActionProc ( Handle self, PClipboardFormatReg item, void * params);

@@ -39,4 +39,5 @@ object Prima::Timer( Prima::Component)
    method Bool   start();
    method void   stop();
    c_only void   update_sys_handle( HV * profile);
+   c_only Bool   validate_owner( Handle * newOwner, HV * profile);
 }

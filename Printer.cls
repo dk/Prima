@@ -45,6 +45,7 @@ object Prima::Printer( Prima::Drawable)
    method void   new_page();
    method SV *   printers();
    method Bool   setup_dialog()                     => apc_prn_setup;
+   c_only Bool   validate_owner( Handle * newOwner, HV * profile);
 
    method char * get_default_printer()              => apc_prn_get_default;
    method SV   * get_handle();

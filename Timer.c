@@ -29,6 +29,7 @@
 #include "apricot.h"
 #include "Timer.h"
 #include <Timer.inc>
+#include "Widget.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +45,6 @@ void
 Timer_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
-   CComponent( var-> owner)-> attach( var-> owner, self);
    my-> update_sys_handle( self, profile);
 }
 
@@ -52,15 +52,12 @@ void
 Timer_update_sys_handle( Handle self, HV * profile)
 {
    Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
-   if ( var-> owner) my-> migrate( self, xOwner);
    if (!( pexist( owner))) return;
    if ( !apc_timer_create( self, xOwner, pexist( timeout)
                            ? pget_i( timeout)
                            : my-> get_timeout( self)))
       croak("RTC0063: cannot create timer");
-   pdelete( owner);
    if ( pexist( timeout)) pdelete( timeout);
-   var-> owner = xOwner;
 }
 
 void
@@ -89,9 +86,17 @@ Timer_stop( Handle self)
 void
 Timer_done( Handle self)
 {
-   CComponent( var-> owner)-> detach( var-> owner, self, false);
    apc_timer_destroy( self);
    inherited done( self);
+}
+
+Bool
+Timer_validate_owner( Handle self, Handle * owner, HV * profile)
+{
+   *owner = pget_H( owner);
+   if ( *owner == nilHandle) *owner = application;
+   if ( !kind_of( *owner, CWidget)) return false;
+   return inherited validate_owner( self, owner, profile);
 }
 
 void

@@ -73,6 +73,7 @@ object Prima::Window( Prima::Widget)
    method   void     set( HV * profile);
    method   void     set_menu_font( Font font);
    c_only   void     update_sys_handle( HV * profile);
+   c_only   Bool     validate_owner( Handle * newOwner, HV * profile);
 # private
    Handle   nextExclModal;
    Handle   prevExclModal;

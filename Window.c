@@ -50,11 +50,6 @@ Window_init( Handle self, HV * profile)
    SV * sv;
    inherited init( self, profile);
 
-   if ( var-> owner != application && !kind_of( var-> owner, CWindow)) {
-      croak("Illegal object reference passed to Window::init");
-      return;
-   }
-
    opt_set( optSystemSelectable);
    opt_assign( optOwnerIcon, pget_B( ownerIcon));
    my-> set_icon( self, pget_H( icon));
@@ -125,7 +120,6 @@ void Window_update_sys_handle( Handle self, HV * profile)
    pdelete( syncPaint);
    pdelete( taskListed);
    pdelete( windowState);
-   pdelete( owner);
 }
 
 void Window_handle_event( Handle self, PEvent event)
@@ -453,13 +447,18 @@ Window_focused( Handle self, Bool set, Bool focused)
 
 void Window_set( Handle self, HV * profile)
 {
-   Handle postOwner = nilHandle;
+   Bool owner_icon = false;
+   
    if ( pexist( menuFont)) {
       SvHV_Font( pget_sv( menuFont), &Font_buffer, "Window::set");
       my-> set_menu_font( self, Font_buffer);
       pdelete( menuFont);
    }
-   if ( pexist( owner)) postOwner = pget_H( owner);
+
+   if ( pexist( owner)) {
+      owner_icon = pexist( ownerIcon) ? pget_B( ownerIcon) : my-> get_ownerIcon( self);
+      pdelete( ownerIcon);
+   }
 
    if ( pexist( frameOrigin) || pexist( frameSize)) {
       Bool io = 0, is = 0;
@@ -489,9 +488,9 @@ void Window_set( Handle self, HV * profile)
   }
 
    inherited set( self, profile);
-   if ( postOwner && is_opt( optOwnerIcon)) {
+   if ( owner_icon) {
       my-> set_ownerIcon( self, 1);
-      opt_set( optOwnerColor);
+      opt_set( optOwnerIcon);
    }
 }
 
@@ -750,6 +749,15 @@ Window_text( Handle self, Bool set, SV * text)
    if (set)
       apc_window_set_caption( self, var-> text, is_opt( optUTF8_text));
    return ret;
+}
+
+Bool
+Window_validate_owner( Handle self, Handle * owner, HV * profile)
+{
+   *owner = pget_H( owner);
+   if ( *owner == nilHandle) *owner = application;
+   if ( *owner != application && !kind_of( *owner, CWidget)) return false;
+   return inherited validate_owner( self, owner, profile);
 }
 
 int

@@ -167,6 +167,7 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     unlock();
    method   void     update_view();
    c_only   void     update_sys_handle( HV * profile);
+   c_only   Bool     validate_owner( Handle * newOwner, HV * profile);
    method   Bool     validate_rect( Rect rect)       => apc_widget_validate_rect;
 
 # properties read methods

@@ -106,6 +106,7 @@ object Prima::Application( Prima::Widget)
    static SV*    sys_action( char * dymmy = "", char * params = "");
    method Bool   unlock()                      => apc_application_unlock;
    c_only void   update_sys_handle( HV * profile);
+   c_only Bool   validate_owner( Handle * newOwner, HV * profile);
    static void   yield( char *dummy = "");
 
    method Bool   get_capture();

@@ -43,4 +43,5 @@ object Prima::Clipboard( Prima::Component)
    method Bool   open();
    method Bool   register_format( char * format);
    method void   store( char * format, SV * data);
+   c_only Bool   validate_owner( Handle * newOwner, HV * profile);
 }

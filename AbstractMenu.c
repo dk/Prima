@@ -377,9 +377,6 @@ void
 AbstractMenu_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
-   if ( !kind_of( var-> owner, CWidget)) 
-      croak("Illegal owner object reference passed to AbstractMenu::init");
-   ((( PComponent) var-> owner)-> self)-> attach( var-> owner, self);
    var-> anchored = kind_of( self, CMenu);
    my-> update_sys_handle( self, profile);
    my-> set_items( self, pget_sv( items));
@@ -390,11 +387,19 @@ AbstractMenu_init( Handle self, HV * profile)
 void
 AbstractMenu_done( Handle self)
 {
-   ((( PComponent) var-> owner)-> self)-> detach( var-> owner, self, false);
    if ( var-> system) apc_menu_destroy( self);
    my-> dispose_menu( self, var-> tree);
    var-> tree = nil;
    inherited done( self);
+}
+
+Bool
+AbstractMenu_validate_owner( Handle self, Handle * owner, HV * profile)
+{
+   *owner = pget_H( owner);
+   if ( *owner == nilHandle) *owner = application;
+   if ( !kind_of( *owner, CWidget)) return false;
+   return inherited validate_owner( self, owner, profile);
 }
 
 void
@@ -404,28 +409,16 @@ AbstractMenu_cleanup( Handle self)
    inherited cleanup( self);
 }
 
-
 void
 AbstractMenu_set( Handle self, HV * profile)
 {
    Handle postOwner = var-> owner;
    Bool select = false;
-   if ( pexist( owner))
-   {
-      postOwner = pget_H( owner);
-      if ( !kind_of( postOwner, CWidget))
-         croak("RTC003F: Illegal object reference passed to AbstractMenu::set_owner");
-      my-> migrate( self, postOwner);
+   if ( pexist( owner)) {
+      select = pexist( selected) ? pget_B( selected) : my-> get_selected( self);
+      pdelete( selected);
    }
-   if ( pexist( selected))
-   {
-       if ( pget_B( selected)) select = true;
-       pdelete( selected);
-   } else
-      if ( my-> get_selected( self)) select = true;
    inherited set( self, profile);
-
-   var-> owner = postOwner;
    if ( select) my-> set_selected( self, true);
 }
 

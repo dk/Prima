@@ -66,6 +66,7 @@ object Prima::Component( Prima::Object)
     public   void      set_notification( char * name, SV * subroutine);
     method   void      unlink_notifier( Handle referer);
     c_only   void      update_sys_handle( HV * profile);
+    c_only   Bool      validate_owner( Handle * newOwner, HV * profile);
 # internal variables
     char * evStack;
     int    evPtr;

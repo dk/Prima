@@ -71,22 +71,12 @@ void
 Widget_init( Handle self, HV * profile)
 {
    enter_method;
-   PComponent attachTo;
    SV * sv;
 
    inherited-> init( self, profile);
 
-   /* var init */
    list_create( &var-> widgets, 0, 8);
    var-> tabOrder = -1;
-
-   if ( !kind_of( var-> owner, CWidget)) {
-      croak("Illegal owner object reference passed to Widget::init");
-      return;
-   }
-
-   attachTo = ( PComponent) var-> owner;
-   attachTo-> self-> attach ( var-> owner, self);
 
    my-> update_sys_handle( self, profile);
    /* props init */
@@ -233,7 +223,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
    if ( parentHandle) {
       if (( owner != application) && clipOwner)
          croak("RTC008D: Cannot accept 'parentHandle' for non-application child and clip-owner widget");
-   }   
+   }
    
    if ( !apc_widget_create( self,
       owner,
@@ -246,16 +236,12 @@ Widget_update_sys_handle( Handle self, HV * profile)
    pdelete( transparent);
    pdelete( syncPaint);
    pdelete( clipOwner);
-   pdelete( owner);
    pdelete( parentHandle);
 }
-
 
 void
 Widget_done( Handle self)
 {
-   if ( var-> owner) 
-       CComponent( var->owner)-> detach( var-> owner, self, false);
    free( var-> text);
    apc_widget_destroy( self);
    free( var-> helpContext);
@@ -1277,42 +1263,31 @@ Widget_set( Handle self, HV * profile)
 
    if ( pexist(__ORDER__)) order = (AV*)SvRV(pget_sv( __ORDER__));
 
-   if ( pexist( owner))
-   {
-      postOwner = pget_H( owner);
-      if ( !kind_of( postOwner, CWidget))
-         croak("RTC0081: Illegal object reference passed to Widget::set_owner");
-      if ( my-> migrate( self, postOwner))
-      {
-         if ( postOwner)
-         {
-            if ( is_opt( optOwnerColor))
-            {
-               my-> set_color( self, CWidget( postOwner)-> get_color( postOwner));
-               opt_set( optOwnerColor);
-            }
-            if ( is_opt( optOwnerBackColor))
-            {
-               my-> set_backColor( self, CWidget( postOwner)-> get_backColor( postOwner));
-               opt_set( optOwnerBackColor);
-            }
-            if ( is_opt( optOwnerShowHint))
-            {
-               Bool newSH = ( postOwner == application) ? 1 :
-                  CWidget( postOwner)-> get_showHint( postOwner);
-               my-> set_showHint( self, newSH);
-               opt_set( optOwnerShowHint);
-            }
-            if ( is_opt( optOwnerHint))
-            {
-               my-> set_hint( self, CWidget( postOwner)-> get_hint( postOwner));
-               opt_set( optOwnerHint);
-            }
-            if ( is_opt( optOwnerFont))
-            {
-               my-> set_font ( self, CWidget( postOwner)-> get_font( postOwner));
-               opt_set( optOwnerFont);
-            }
+   if ( pexist( owner)) {
+      if ( !my-> validate_owner( self, &postOwner, profile))
+         croak( "Illegal 'owner' reference passed to %s::%s", my-> className, "set");
+      if ( postOwner != var-> owner) {
+         if ( is_opt( optOwnerColor)) {
+            my-> set_color( self, CWidget( postOwner)-> get_color( postOwner));
+            opt_set( optOwnerColor);
+         }
+         if ( is_opt( optOwnerBackColor)) {
+            my-> set_backColor( self, CWidget( postOwner)-> get_backColor( postOwner));
+            opt_set( optOwnerBackColor);
+         }
+         if ( is_opt( optOwnerShowHint)) {
+            Bool newSH = ( postOwner == application) ? 1 :
+               CWidget( postOwner)-> get_showHint( postOwner);
+            my-> set_showHint( self, newSH);
+            opt_set( optOwnerShowHint);
+         }
+         if ( is_opt( optOwnerHint)) {
+            my-> set_hint( self, CWidget( postOwner)-> get_hint( postOwner));
+            opt_set( optOwnerHint);
+         }
+         if ( is_opt( optOwnerFont)) {
+            my-> set_font ( self, CWidget( postOwner)-> get_font( postOwner));
+            opt_set( optOwnerFont);
          }
       }
    }
@@ -1572,7 +1547,18 @@ Widget_update_view( Handle self)
 {
    if ( !opt_InPaint) apc_widget_update( self);
 }
+
 /*::v */
+
+Bool
+Widget_validate_owner( Handle self, Handle * owner, HV * profile)
+{
+   *owner = pget_H( owner);
+   if ( *owner == nilHandle) *owner = application;
+   if ( !kind_of( *owner, CWidget)) return false;
+   return inherited-> validate_owner( self, owner, profile);
+}
+
 /*::w */
 /*::x */
 /*::y */

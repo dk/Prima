@@ -47,14 +47,14 @@ typedef ActionProc *PActionProc;
 void
 Component_init( Handle self, HV * profile)
 {
-   Handle owner = pget_H( owner);
    SV * res;
    HV * hv;
    HE * he;
-   if (( owner != nilHandle) && (((( PObject) owner)-> stage > csNormal) || !kind_of( owner, CComponent)))
-      croak( "Illegal object reference passed to Component.init");
    inherited init( self, profile);
-   var-> owner = owner;
+   if ( !my-> validate_owner( self, &var-> owner, profile))
+      croak( "Illegal 'owner' reference passed to %s::%s", my-> className, "init");
+   if ( var-> owner)
+      ((( PComponent) var-> owner)-> self)-> attach( var-> owner, self);
    my-> set_name( self, pget_sv( name));
    my-> set_delegations( self, pget_sv( delegations));
    var-> evQueue = plist_create( 8, 8);
@@ -136,13 +136,11 @@ free_eventref( Handle self, Handle * org)
    return false;
 }
 
-/* #ifdef PARANOID_MALLOC */
-/* #include "Image.h" */
-/* #endif */
-
 void
 Component_done( Handle self)
 {
+   if ( var-> owner) 
+      CComponent( var-> owner)-> detach( var-> owner, self, false);
    if ( var-> eventIDs) {
       int i;
       PList list = var-> events;
@@ -218,7 +216,7 @@ Component_detach( Handle self, Handle object, Bool kill)
       int index = list_index_of( var-> components, object);
       if ( index >= 0) {
          list_delete_at( var-> components, index);
-         SvREFCNT_dec( SvRV(( PObject( object))-> mate));
+         --SvREFCNT( SvRV(( PObject( object))-> mate));
          if ( kill) Object_destroy( object);
       }
    }
@@ -262,21 +260,12 @@ Component_set( Handle self, HV * profile)
    /* from HV before indirect Object::set */
    my-> update_sys_handle( self, profile);
 
-   if ( pexist( owner))
-   {
-      Handle theOwner;
-      var-> owner = pget_H( owner);
-      if (( var-> owner != nilHandle) && !kind_of( var-> owner, CComponent))
-         croak( "RTC0047: Illegal object reference passed to Component::set_owner");
-      if ( var-> owner == nilHandle) var-> owner = application;
-      theOwner = var-> owner;
-
-      while ( theOwner) {
-         if ( theOwner == self)
-            croak( "RTC0048: Invalid owner reference passed to Component::set_owner");
-         theOwner = PComponent( theOwner)-> owner;
-      }
-
+   if ( pexist( owner)) {
+      Handle owner;
+      if ( !my-> validate_owner( self, &owner, profile))
+         croak( "Illegal 'owner' reference passed to %s::%s", my-> className, "set");
+      my-> migrate( self, owner);
+      var-> owner = owner;
       pdelete( owner);                    /* like this. */
    }
 
@@ -446,19 +435,13 @@ Component_migrate( Handle self, Handle attachTo)
     PComponent attachTo_  = PComponent( attachTo  ? attachTo  : application);
     Handle     theOwner   = ( Handle) attachTo_;
 
-    if ( !theOwner || attachTo_-> stage > csNormal || !kind_of( theOwner, CComponent))
-       croak( "RTC0049: Invalid owner reference passed to Component::set_owner");
-
-    while ( theOwner) {
-       if ( theOwner == self)
-          croak( "RTC0049: Invalid owner reference passed to Component::set_owner");
-       theOwner = PComponent( theOwner)-> owner;
-    }
-
     if ( detachFrom != attachTo_) {
-       attachTo_ -> self-> attach(( Handle) attachTo_, self);
-       detachFrom-> self-> detach(( Handle) detachFrom, self, false);
+       if ( attachTo_)
+          attachTo_ -> self-> attach(( Handle) attachTo_, self);
+       if ( detachFrom)
+          detachFrom-> self-> detach(( Handle) detachFrom, self, false);
     }
+
     return detachFrom != attachTo_;
 }
 
@@ -519,6 +502,27 @@ Component_post_message( Handle self, SV * info1, SV * info2)
 void
 Component_update_sys_handle( Handle self, HV * profile)
 {
+}
+
+Bool
+Component_validate_owner( Handle self, Handle * owner, HV * profile)
+{
+   *owner = pget_H( owner);
+
+   if ( *owner != nilHandle) {
+      Handle x = *owner;
+      
+      if (((( PObject) x)-> stage > csNormal) || !kind_of( x, CComponent))
+         return false;
+
+      while ( x) {
+         if ( x == self)
+            return false;
+         x = PComponent( x)-> owner;
+      }
+   }
+
+   return true;
 }
 
 void
