@@ -88,9 +88,9 @@ apc_timer_create( Handle self, Handle owner, int timeout)
    Bool reset = false;
    objCheck false;
    dobjCheck( owner) false;
-   if (( DHANDLE( owner) != sys owner) && ( var handle != nilHandle))
-   {
-      if ( !KillTimer(( HWND)(( PWidget) owner)-> handle, var handle)) apiErr;
+
+   if (( DHANDLE( owner) != sys owner) && ( var handle != nilHandle) && is_opt( optActive)) {
+      if ( !KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle)) apiErr;
       remove_timer( self, var owner);
       reset = true;
    }
@@ -98,8 +98,10 @@ apc_timer_create( Handle self, Handle owner, int timeout)
    if ( !( var handle = add_timer( self, owner))) return false;
    sys s. timer. timeout = timeout;
    if ( reset) {
-      if ( !apc_timer_start( self))
+      if ( !SetTimer(( HWND)(( PWidget) owner)-> handle, var handle, sys s. timer. timeout, nil)) {
          opt_clear( optActive);
+         apiErrRet;
+      }
    }
    return true;
 }
