@@ -468,7 +468,6 @@ sub set_style
 {
    my ( $self, $style) = @_;
    return if $self->{style} == $style;
-   $::application-> lock;
    my $decr = (( $self->{style} == cs::Simple) || ( $style == cs::Simple)) ? 1 : 0;
    $self-> {style} = $style;
    if ( $style == cs::Simple)
@@ -512,7 +511,6 @@ sub set_style
       $self->{edit}->insertMode(1);
       $self->{edit}->text( $self->{edit}->text);
    }
-   $::application->unlock;
 }
 
 sub set_list_visible
