@@ -68,7 +68,7 @@ static void
 fill_default_font( Font * font )
 {
    bzero( font, sizeof( Font));
-   strcpy( font-> name, "Helvetica");
+   strcpy( font-> name, "Default");
    font-> height = C_NUMERIC_UNDEF;
    font-> size = 12;
    font-> width = C_NUMERIC_UNDEF;
@@ -626,7 +626,7 @@ prima_init_font_subsystem( void)
       /*
           Although apc_font_pick() does respect $LANG, it does not always picks
           up a font with the correct encoding here, because we use a hard-coded
-          string "Helvetica". Whereas users can set an alias for "Helvetica",
+          string "Default". Whereas users can set an alias for "Default",
           or set the default font via XRDB:Prima.font option, it is not done by
           default, so here we pick such a font that contains the user-specified
           encoding, and has more or less reasonable metrics.
@@ -1466,6 +1466,9 @@ prima_core_font_pick( Handle self, PFont source, PFont dest)
    HeightGuessStack hgs;
 
    if ( n == 0) return false;
+
+   if ( strcmp( dest-> name, "Default") == 0)
+      strcpy( dest-> name, "helvetica");
  
    if ( prima_find_known_font( dest, true, by_size)) {
       if ( underlined) dest-> style |= fsUnderlined;

@@ -445,7 +445,8 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
    
    /* create FcPattern request */
    if ( !( request = FcPatternCreate())) return false;
-   FcPatternAddString( request, FC_FAMILY, ( FcChar8*) f. name);
+   if ( strcmp( f. name, "Default") != 0) 
+      FcPatternAddString( request, FC_FAMILY, ( FcChar8*) f. name);
    if ( by_size) {
       if ( size)
          FcPatternAddDouble( request, FC_SIZE, *size);
@@ -530,9 +531,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
    }
 
 
-   /* XXX local hack - give up if name mismatches, otherwise all native X fonts are disabled,
-          and names mix, which leads to horrible mismatches. Need to find a more sure way
-          to tell that the font is visualised best by xft, not the core */
+   /* check name match */
    {
       FcChar8 * s = nil;
       FcPatternGetString( match, FC_FAMILY, 0, &s);
