@@ -202,7 +202,7 @@ Image_stretch( Handle self, int width, int height)
    lineSize = (( abs( width) * ( var->type & imBPP) + 31) / 32) * 4;
    newData = allocb( lineSize * abs( height));
    if ( newData == nil) 
-         croak("Image::reset: cannot allocate %d bytes", var-> dataSize);
+         croak("Image::stretch: cannot allocate %d bytes", var-> dataSize);
    if ( var-> data)
       ic_stretch( self, newData, width, height, is_opt( optHScaling), is_opt( optVScaling));
    free( var->data);
