@@ -1,5 +1,5 @@
 # $Id$
-print "1..9 onMove message - pass 1,correct movement,parameters consistency - pass 1,child move,child move consistency,onMove message - pass 2,parameters consistency - pass 2,gmDontCare,recreate consistency\n";
+print "1..10 onMove message - pass 1,correct movement,parameters consistency - pass 1,child move,child move consistency,onMove message - pass 2,parameters consistency - pass 2,gmDontCare,recreate consistency,scroll children\n";
 
 my $dong2 = 0;
 
@@ -58,6 +58,12 @@ $wl-> owner( $w);
 @nor = $wl-> origin;
 $wl-> owner( $wx);
 ok( $or[0] == $nor[0] && $or[1] == $nor[1]);
+
+$wl-> clipOwner(1);
+@or = map { $_ + 10 } $wl-> origin;
+$wx->scroll( 10, 10, withChildren => 1); 
+@or2 = $wl-> origin;
+ok( $or[0] == $or2[0] && $or[1] == $or2[1]);
 
 $wx-> destroy;
 
