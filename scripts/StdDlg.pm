@@ -50,12 +50,6 @@ sub profile_default
    }
 }
 
-sub profile_check_in
-{
-    my ( $self, $p, $default) = @_;
-    $self-> SUPER::profile_check_in( $p, $default);
-}
-
 sub canonize_mask
 {
    my $self = shift;
@@ -200,10 +194,9 @@ sub init
    return %profile;
 }
 
-sub setup
+sub on_create
 {
    my $self = $_[0];
-   $self-> SUPER::setup;
    $self-> Dir_Change( $self-> Dir);
 }
 

@@ -120,6 +120,7 @@ window_subsystem_init()
       GetTextFace( dc, 256, guts. defaultSystemFont);
 
       // getting common fixed font name
+      lf. lfHeight = 320;
       lf. lfPitchAndFamily = FIXED_PITCH;
       DeleteObject( SelectObject( dc, CreateFontIndirect( &lf)));
       GetTextFace( dc, 256, guts. defaultFixedFont);
