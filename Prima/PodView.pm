@@ -783,7 +783,7 @@ sub read
           }
           elsif ($Cmd eq 'back') {
               $self-> _close_topic( STYLE_ITEM);
-              $r-> {indent} = pop(@{$r-> {indentStack}});
+              $r-> {indent} = pop(@{$r-> {indentStack}}) || 0;
               $self-> add("\n", STYLE_TEXT, 0);
           }
           elsif ($Cmd eq 'item') {
