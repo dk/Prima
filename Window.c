@@ -42,6 +42,12 @@ Window_init( Handle self, HV * profile)
 {
    SV * sv;
    inherited init( self, profile);
+
+   if ( var-> owner != application && !kind_of( var-> owner, CWindow)) {
+      croak("Illegal object reference passed to Window::init");
+      return;
+   }
+
    opt_set( optSystemSelectable);
    opt_assign( optOwnerIcon, pget_B( ownerIcon));
    my-> set_icon( self, pget_H( icon));
