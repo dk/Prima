@@ -149,6 +149,38 @@ sub vector
    $self-> repaint;
 }
 
+sub clear_all_buttons
+{
+   my $self = $_[0];
+   my $c = int($self-> {count} / 32) + (($self-> {count} % 32) ? 1 : 0);
+   vec( $self-> {vector}, $c, 32) = 0 while $c--;
+   $self-> notify(q(Change), -1, 1);
+   $self-> repaint;
+};
+
+sub set_all_buttons
+{
+   my $self = $_[0];
+   my $c = int($self-> {count} / 32) + (($self-> {count} % 32) ? 1 : 0);
+   vec( $self-> {vector}, $c, 32) = 0xffffffff while $c--;
+   $self-> notify(q(Change), -1, 0);
+   $self-> repaint;
+};
+
+sub button
+{
+   my ( $self, $index, $state) = @_;
+   return 0 if $index < 0 || $index >= $self-> {count};
+   my $current = vec( $self-> {vector}, $index, 1);
+   return $current unless defined $state;
+   $state = ( $state < 0) ? !$current : ( $state ? 1 : 0);
+   return $current if $current == $state; 
+   vec( $self-> {vector}, $index, 1) = $state;
+   $self-> notify(q(Change), $index, $state);
+   $self-> redraw_items( $index);
+   return $state;
+}
+
 #sub on_change
 #{
 #  my ( $self, $index, $state) = @_;
@@ -180,12 +212,33 @@ also the list box reacts differently by click and double click.
 
 =over
 
+=item button INDEX, STATE
+
+Runtime only. Sets INDEXth button STATE to 0 or 1.
+If STATE is -1, the button state is toggled.
+
+Returns the new state of the button.
+
 =item vector VEC
 
 VEC is a vector scalar, where each bit corresponds to the check state
 of each list box item. 
 
 See also: L<perlfunc/vec>.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item clear_all_buttons
+
+Sets all buttons to state 0
+
+=item set_all_buttons
+
+Sets all buttons to state 1
 
 =back
 
