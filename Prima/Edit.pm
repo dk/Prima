@@ -2476,11 +2476,13 @@ sub undo
    my $group = pop @{$self->{undo}};
    return unless $group && @$group;
    $self-> {undo_in_action} = 1;
+   $self-> begin_undo_group;
    for ( reverse @$group) {
       my ( $method, @params) = @$_;
       next unless $self->can($method);
       $self-> $method( @params);
    }
+   $self-> end_undo_group;
    $self-> {undo_in_action} = 0;
 }
 
@@ -2492,11 +2494,13 @@ sub redo
    my $group = pop @{$self->{redo}};
    return unless $group && @$group;
    $self-> {redo_in_action} = 1;
+   $self-> begin_undo_group;
    for ( reverse @$group) {
       my ( $method, @params) = @$_;
       next unless $self->can($method);
       $self-> $method( @params);
    }
+   $self-> end_undo_group;
    $self-> {redo_in_action} = 0;
 }
 
@@ -2505,6 +2509,7 @@ sub undoLimit
    return $_[0]->{undoLimit} unless $#_;
    my ( $self, $ul) = @_;
    $self-> {undoLimit} = $ul if $ul >= 0;
+   splice @{$self->{undo}}, 0, $ul - @{$self->{undo}} if @{$self->{undo}} > $ul;
 }
 
 sub find
