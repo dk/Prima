@@ -8,25 +8,15 @@ INSTALLATION
 ============
 
 Create a makefile by running Makefile.PL using the perl
-program into whose library you want to install and then run
-make ( or nmake for Win32 and OS/2) three times:
+program and then run make ( or nmake for Win32 and OS/2):
 
     perl Makefile.PL
     make
     make test
     make install
 
-If perl Makefile.PL fails, compilation commands along with errors 
+If perl Makefile.PL fails, compilation history along with the errors 
 can be found in makefile.log. 
-
-If some of the required libraries or include files can not
-be found, INCPATH+=/some/include and LIBPATH+=/some/lib semantics
-should be used to tell Makefile.PL about these.
-
-To install into a private library, for example your home
-directory:
-
-    perl Makefile.PL PREFIX=$HOME/lib/perl
 
 If make fails with message
 
@@ -40,6 +30,15 @@ http://www.prima.eu.org/download/prima_dlls.zip. prigraph.lib should be
 put into LIBPATH, and prima_dll.zip is to be unpacked and primguts.dll
 and zlib.dll to be put in the same directory to Prima.dll ( which appears 
 after successful compilation in auto/Prima subdirectory ).
+
+If some of the required libraries or include files can not
+be found, INCPATH+=/some/include and LIBPATH+=/some/lib semantics
+should be used to tell Makefile.PL about these.
+
+To install into a private library, for example your home
+directory:
+
+    perl Makefile.PL PREFIX=$HOME/lib/perl
 
 BINARY DISTRIBUTION INSTALLATION
 ================================
