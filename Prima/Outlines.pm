@@ -121,7 +121,7 @@ sub init
       offset count autoHeight borderWidth
       rows maxWidth hintActive showItemHint dragable))
       { $self->{$_} = 0; }
-   for ( qw( itemHeight integralHeight indent))
+   for ( qw( itemHeight indent))
       { $self->{$_} = 1; }
    $self->{items}      = [];
    my %profile = $self-> SUPER::init(@_);

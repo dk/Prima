@@ -1234,8 +1234,7 @@ sub set_offset
    }
    my $dt = $offset - $self-> {offset};
    $self->{offset} = $offset;
-   if ( $self->{hScroll} && $self->{scrollTransaction} != 2)
-   {
+   if ( $self->{hScroll} && $self->{scrollTransaction} != 2) {
       $self->{scrollTransaction} = 2;
       $self-> {hScrollBar}-> value( $offset);
       $self->{scrollTransaction} = 0;
@@ -1847,6 +1846,7 @@ sub set_line
          ( $_from, $_to) = ( $ry, $ry + $oldDim);
       } else {
          $self-> vScroll( $self-> {maxChunk} >= $self->{rows}) if $self-> {autoVScroll};
+         $self-> topLine(0) if $self-> {maxChunk} < $self-> {rows};
          $self->{vScrollBar}-> set(
             max   => $self-> {maxChunk} - $self->{rows} + 1,
             whole => $self-> {maxChunk} + 1,
@@ -2060,6 +2060,7 @@ sub delete_line
       $self-> cancel_block unless $self-> has_selection;
    }
    $self-> vScroll( $self-> {maxChunk} >= $self->{rows}) if $self-> {autoVScroll};
+   $self-> topLine(0) if $self-> {maxChunk} < $self-> {rows};
    $self->{vScrollBar}-> set(
       max   => $self-> {maxChunk} - $self->{rows} + 1,
       whole => $self-> {maxChunk} + 1,
