@@ -67,6 +67,7 @@ use vars @ovvars = qw(
     $MAKETYPE
     $DEFFILE
     $DISTNAME
+    $WANTNOCODECS
 );
 
 use vars @path_expand_ovvars = qw(
@@ -735,6 +736,7 @@ sub setup_variables
     $extralibs = qd("auto/Prima/Prima.lib") if $OS2;
     setvar( 'DEFFILE', $Win32 ? qd( "win32/Prima.def") : ( $OS2 ? qd( "os2/Prima.def") : ''));
     setvar( 'DISTNAME', 'Prima-1.00');
+    setvar( 'WANTNOCODECS', 0);
     check_dTHR() if $platform eq 'unix';
 
     @Prima_exports = qw(
@@ -1199,7 +1201,16 @@ sub setup_misc
           $PASSIVE_CODECS{$fn} = 1;
        }
     }
-    warn "** warning - no image codecs found\n" unless @ACTIVE_CODECS;
+
+    die <<NOCODECS unless @ACTIVE_CODECS || $WANTNOCODECS;
+
+** No image codecs found. Use
+
+perl Makefile.PL WANTNOCODECS=1
+
+to ignore this error.
+
+NOCODECS
 
     push @Prima_exports, 'bzero' unless $DEFINES{HAVE_BZERO};
     # Setting up translation tables for quoting string for different make utilities.
