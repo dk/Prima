@@ -982,7 +982,7 @@ Widget_next_positional( Handle self, int dx, int dy)
    int i, maxDiff = INT_MAX;
    Handle max = nilHandle;
    List candidates;
-   Point p[2], psz;
+   Point p[2];
    
    int minor[2], major[2], axis, extraDiff, ir[4];
 
@@ -1146,7 +1146,6 @@ Handle
 Widget_next_tab( Handle self, Bool forward)
 {
    Handle horizon = self, result = nilHandle;
-   List candidates;
    int stage = 0;
 
    while ( PWidget( horizon)-> owner) {
