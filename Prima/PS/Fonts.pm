@@ -197,7 +197,7 @@ sub font_pick
    
    # find pitch
    if ( $dest-> {pitch} != fp::Default && $dest-> {pitch} != $m1-> {pitch}) {
-      if ( $dest-> {pitch} = fp::Variable) {
+      if ( $dest-> {pitch} == fp::Variable) {
          $m1 = query_metrics( $variablePitchName);
       } else {
          $m1 = query_metrics( $fixedPitchName);
