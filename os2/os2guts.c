@@ -120,6 +120,7 @@ window_subsystem_init( void)
       guts. bmf = malloc( guts. bmfCount * sizeof( int) * 2);
       for ( i = 0; i < guts. bmfCount * 2; i++) guts. bmf[ i] = lFmts[ i];
       gp_get_font( guts. ps, &guts. sysDefFont, guts. displayResolution);
+      apc_font_pick( nilHandle, &guts. sysDefFont, &guts. sysDefFont);
       guts. monoBitsOk = ( WinQuerySysValue( HWND_DESKTOP, SV_CYSCREEN) == 350 && guts. bmf[ 1] == 4);
    }
    list_create( &guts. transp, 8, 8);
@@ -374,7 +375,11 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
            ev. key. mod    = 0;
            if  ( SHORT1FROMMP( mp1) & KC_SHIFT) { ev. key. mod |= kmShift; }
            if  ( SHORT1FROMMP( mp1) & KC_ALT  ) { ev. key. mod |= kmAlt;   }
-           if  ( SHORT1FROMMP( mp1) & KC_CTRL ) { ev. key. mod |= kmCtrl;  }
+           if  ( SHORT1FROMMP( mp1) & KC_CTRL ) {
+              ev. key. mod |= kmCtrl;
+              if ( isalpha( ev. key. code))
+                  ev. key. code = toupper( ev. key. code) - '@';
+           }
         }
         break;
       case WM_CLOSE:
