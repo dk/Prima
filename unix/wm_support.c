@@ -91,7 +91,8 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
             return false;
          }
          guts. lastWMFocus = X_WINDOW;
-         CWidget( selectee)-> set_selected( selectee, true);
+         if ( selectee != self) XMapRaised( DISP, PWidget(selectee)-> handle);
+         Widget_selected( selectee, true, true);
 	 return false;
       }
    }
