@@ -61,9 +61,15 @@ apc_widget_map_points( Handle self, Bool toScreen, int n, Point *p)
    return true;
 }
 
+ApiHandle
+apc_widget_get_parent_handle( Handle self)
+{
+   return nilHandle;
+}
+
 Bool
 apc_widget_create( Handle self, Handle owner, Bool sync_paint,
-		   Bool clip_owner, Bool transparent)
+		   Bool clip_owner, Bool transparent, ApiHandle parentHandle)
 {
    XSetWindowAttributes attrs;
    XWindow parent;
