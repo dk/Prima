@@ -40,6 +40,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <stdlib.h>
 #include <signal.h>
 #include <limits.h>
 
@@ -49,6 +50,12 @@
  * mode constants. Perhaps, it is not the only case...
  */
 #define F_OK 0x00
+#endif
+
+#ifndef PATH_MAX
+#ifdef _MSC_VER
+#define PATH_MAX _MAX_PATH
+#endif
 #endif
 
 #define GIFPROP_WIDTH 0
@@ -414,6 +421,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    if ( idxQueried && readData) {
 			int pixelCount = gifChunk->Width * gifChunk->Height;
 			data = ( GifPixelType **) list_at( &imageData, imgDescCount);
+                        DOLBUG( "Reading data for index %d\n", imgDescCount);
 			*data = malloc( sizeof( GifPixelType) * pixelCount);
 			if ( *data == nil) {
 			    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
@@ -1586,13 +1594,13 @@ __gif_init()
 
     gifFormat.capabilities = gif_caps;
 
-    propExtProps[ 0].name = "code"; 
+    propExtProps[ 0].name = "code";
     propExtProps[ 0].id = GIFPROP_EXTENSION_CODE;
     propExtProps[ 0].type = "i";
     propExtProps[ 0].descr = "GIF extension code";
     propExtProps[ 0].subProps = nil;
 
-    propExtProps[ 1].name = "blocks"; 
+    propExtProps[ 1].name = "blocks";
     propExtProps[ 1].id = GIFPROP_EXTENSION_BLOCKS;
     propExtProps[ 1].type = "B*";
     propExtProps[ 1].descr = "GIF extension blocks";
@@ -1604,152 +1612,152 @@ __gif_init()
     propExtProps[ 2].descr = nil;
     propExtProps[ 2].subProps = nil;
 
-    i = -1;
+    i = 0;
     /* For index == -1 means screen width */
-    gif_props[ i++].name = "width";
+    gif_props[ i].name = "width";
     gif_props[ i].id = GIFPROP_WIDTH;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Image width";
-    gif_props[ i]. subProps = nil;
+    gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "height";
+    gif_props[ ++i].name = "height";
     gif_props[ i].id = GIFPROP_HEIGHT;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Image height";
     gif_props[ i]. subProps = nil;
 
-    gif_props[ i++].name = "type";
-    gif_props[ i++].id = GIFPROP_TYPE;
-    gif_props[ i++].type = "i";
-    gif_props[ i++].descr = "Image type (bpp)";
-    gif_props[ i++].subProps = nil;
+    gif_props[ ++i].name = "type";
+    gif_props[ i].id = GIFPROP_TYPE;
+    gif_props[ i].type = "i";
+    gif_props[ i].descr = "Image type (bpp)";
+    gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "name";
+    gif_props[ ++i].name = "name";
     gif_props[ i].id = GIFPROP_NAME;
     gif_props[ i].type = "s";
     gif_props[ i].descr = "Image-specific description";
     gif_props[ i].subProps = nil; /* Only returned by read */
 
-    gif_props[ i++].name = "lineSize";
+    gif_props[ ++i].name = "lineSize";
     gif_props[ i].id = GIFPROP_LINESIZE;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Length of a scan line in bytes";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "data";
+    gif_props[ ++i].name = "data";
     gif_props[ i].id = GIFPROP_DATA;
     gif_props[ i].type = "b*";
     gif_props[ i].descr = "Image data";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "palette";
+    gif_props[ ++i].name = "palette";
     gif_props[ i].id = GIFPROP_PALETTE;
     gif_props[ i].type = "b*";
     gif_props[ i].descr = "Image palette";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "index";
+    gif_props[ ++i].name = "index";
     gif_props[ i].id = GIFPROP_INDEX;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Position in image list";
     gif_props[ i].subProps = nil; /* -1 refers to the whole image file */
 
-    gif_props[ i++].name = "format";
+    gif_props[ ++i].name = "format";
     gif_props[ i].id = GIFPROP_FORMAT;
     gif_props[ i].type = "s";
     gif_props[ i].descr = "File format";
     gif_props[ i].subProps = nil; /* May appear only for an image with index == -1 */
 
-    gif_props[ i++].name = "overwrite";
+    gif_props[ ++i].name = "overwrite";
     gif_props[ i].id = GIFPROP_OVERWRITE;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Non-zero means we must overwrite destination file";
     gif_props[ i].subProps = nil;  /* Save only. Ignored for any image with index != -1 */
 
-    gif_props[ i++].name = "interlaced";
+    gif_props[ ++i].name = "interlaced";
     gif_props[ i].id = GIFPROP_INTERLACED;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Image is interlaced";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "XOffset";
+    gif_props[ ++i].name = "XOffset";
     gif_props[ i].id = GIFPROP_X;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Left offset";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "YOffset";
+    gif_props[ ++i].name = "YOffset";
     gif_props[ i].id = GIFPROP_Y;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Top offset";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "colorResolution";
+    gif_props[ ++i].name = "colorResolution";
     gif_props[ i].id = GIFPROP_COLORRESOLUTION;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "How many colors can be generated";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "bgColor";
+    gif_props[ ++i].name = "bgColor";
     gif_props[ i].id = GIFPROP_BGCOLOR;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Background color";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "paletteSize";
+    gif_props[ ++i].name = "paletteSize";
     gif_props[ i].id = GIFPROP_PALETTESIZE;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Number of entries in image palette";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "paletteBPP";
+    gif_props[ ++i].name = "paletteBPP";
     gif_props[ i].id = GIFPROP_PALETTEBPP;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Image palette BPP";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "disposalMethod";
+    gif_props[ ++i].name = "disposalMethod";
     gif_props[ i].id = GIFPROP_DISPOSALMETHOD;
     gif_props[ i].type = "b";
     gif_props[ i].descr = "Image disposal method in animation GIF";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "userInput";
+    gif_props[ ++i].name = "userInput";
     gif_props[ i].id = GIFPROP_USERINPUT;
     gif_props[ i].type = "b";
     gif_props[ i].descr = "User input expected";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "transparentColorIndex";
+    gif_props[ ++i].name = "transparentColorIndex";
     gif_props[ i].id = GIFPROP_TRANSPARENTCOLORINDEX;
     gif_props[ i].type = "b";
     gif_props[ i].descr = "Transparent color index";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "comments";
+    gif_props[ ++i].name = "comments";
     gif_props[ i].id = GIFPROP_COMMENTS;
     gif_props[ i].type = "s*";
     gif_props[ i].descr = "GIF file comments";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name = "extensions";
+    gif_props[ ++i].name = "extensions";
     gif_props[ i].id = GIFPROP_EXTENSIONS;
     gif_props[ i].type = "p*";
     gif_props[ i].descr = "GIF extensions";
     gif_props[ i].subProps = propExtProps;
 
-    gif_props[ i++].name = "delayTime";
+    gif_props[ ++i].name = "delayTime";
     gif_props[ i].id = GIFPROP_DELAYTIME;
     gif_props[ i].type = "i";
     gif_props[ i].descr = "Delay in ms after showing the image in animation GIF";
     gif_props[ i].subProps = nil;
 
-    gif_props[ i++].name =  nil;
+    gif_props[ ++i].name =  nil;
     gif_props[ i].id = 0;
     gif_props[ i].type = nil;
     gif_props[ i].descr = nil;
     gif_props[ i].subProps = nil;
-    
+
     gifFormat.propertyList = gif_props;
 
     return &gifFormat;
