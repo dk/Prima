@@ -629,18 +629,21 @@ arc_completion( double * angleStart, double * angleEnd, int * needFigure)
    return ( max % 2) ? 1 : 2;
 }
 
+#define ELLIPSE_RECT x - ( dX + 1) / 2 + 1, y - dY / 2, dX - 1, dY - 1
+
+
 Bool
-apc_gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
    int compl, needf;
    DEFXX;
    SHIFT( x, y);
+   y = REVERT( y);
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
-      XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
-          0, 360 * 64);
+      XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 360 * 64);
    if ( needf)
-      XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+      XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
           angleStart * 64, ( angleEnd - angleStart) * 64);
    return true;
 }
@@ -679,23 +682,21 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 #define GRAD 57.29577951
 
 Bool
-apc_gp_chord( Handle self, int x, int y,  double radX,  double radY, double angleStart, double angleEnd)
+apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
-   int sy, compl, needf;
+   int compl, needf;
    DEFXX;
    SHIFT( x, y);
-   sy = REVERT( y);
+   y = REVERT( y);
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
-      XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
-          0, 360 * 64);
+      XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 360 * 64);
    if ( !needf) return true;
-   XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+   XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
        angleStart * 64, ( angleEnd - angleStart) * 64);
-   XDrawLine( DISP, XX-> gdrawable, XX-> gc,
-       x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
-       x + cos( angleEnd / GRAD) * radX,   sy - sin( angleEnd / GRAD) * radY
-   );
+   XDrawLine( DISP, XX-> gdrawable,
+      XX-> gc, x + cos( angleStart / GRAD) * dX / 2, y - sin( angleStart / GRAD) * dY / 2,
+               x + cos( angleEnd / GRAD) * dX / 2,   y - sin( angleEnd / GRAD) * dY / 2);
    return true;
 }
 
@@ -772,38 +773,41 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 }
 
 Bool
-apc_gp_ellipse( Handle self, int x, int y,  double radX,  double radY)
+apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 {
    DEFXX;
    SHIFT( x, y);
-   XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
+   y = REVERT( y);
+   XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
    return true;
 }
 
 Bool
-apc_gp_fill_chord( Handle self, int x, int y,  double radX,  double radY, double angleStart, double angleEnd)
+apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
    DEFXX;
    int compl, needf;
    SHIFT( x, y);
+   y = REVERT( y);
 
    XSetArcMode( DISP, XX-> gc, ArcChord);
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
 
    if ( needf)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
           angleStart * 64, ( angleEnd - angleStart) * 64);
    return true;
 }
 
 Bool
-apc_gp_fill_ellipse( Handle self, int x, int y,  double radX,  double radY)
+apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 {
    DEFXX;
    SHIFT( x, y);
-   XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
+   y = REVERT( y);
+   XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
    return true;
 }
 
@@ -847,20 +851,21 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 }
 
 Bool
-apc_gp_fill_sector( Handle self, int x, int y,  double radX,  double radY, double angleStart, double angleEnd)
+apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
    DEFXX;
    int compl, needf;
 
    SHIFT( x, y);
+   y = REVERT( y);
    XSetArcMode( DISP, XX-> gc, ArcPieSlice);
 
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
 
    if ( needf)
-      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
          angleStart * 64, ( angleEnd - angleStart) * 64);
    return true;
 }
@@ -917,27 +922,27 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 }
 
 Bool
-apc_gp_sector( Handle self, int x, int y,  double radX,  double radY, double angleStart, double angleEnd)
+apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, double angleEnd)
 {
-   int sy, compl, needf;
+   int compl, needf;
    DEFXX;
    SHIFT( x, y);
-   sy = REVERT( y);
+   y = REVERT( y);
 
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
-      XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+      XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
           0, 360 * 64);
    if ( !needf) return true;
-   XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+   XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
        angleStart * 64, ( angleEnd - angleStart) * 64);
    XDrawLine( DISP, XX-> gdrawable, XX-> gc,
-       x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
+       x + cos( angleStart / GRAD) * dX / 2, y - sin( angleStart / GRAD) * dY / 2,
        x, y
    );
    XDrawLine( DISP, XX-> gdrawable, XX-> gc,
        x, y,
-       x + cos( angleEnd / GRAD) * radX,   sy - sin( angleEnd / GRAD) * radY
+       x + cos( angleEnd / GRAD) * dX / 2, y - sin( angleEnd / GRAD) * dY / 2
    );
    return true;
 }
