@@ -52,6 +52,9 @@ object Prima::Widget( Prima::Drawable)
    int       widgetClass;              # predefined system class
    List      widgets;		       # list of child widgets
 
+# properties
+   property  char* hint;
+
 # direct call methods
    method   void     attach( Handle objectHandle);
    method   Bool     begin_paint();
@@ -132,7 +135,6 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     get_focused()                   => apc_widget_is_focused;
    method   Rect     get_invalid_rect()              => apc_widget_get_invalid_rect;
    method   SV   *   get_handle();
-   method   char *   get_hint();
    method   Bool     get_hint_visible();
    method   int      get_height();
    method   long     get_help_context();
@@ -208,7 +210,6 @@ object Prima::Widget( Prima::Drawable)
    method   void     set_grow_mode( int flags);
    method   void     set_height( int height);
    method   void     set_help_context(long helpContext);
-   method   void     set_hint( char * hint);
    method   void     set_hint_visible( Bool visible);
    method   void     set_left( int left);
    method   void     set_owner_back_color( Bool ownerColor);

@@ -24,6 +24,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+# max error is APC056
 
 package Prima::Gencls;
 use strict;
@@ -62,6 +63,7 @@ my ( $warnings,
      $clsStatic,
      $clsWeird,
      $clsC_only,
+     $clsProperty,
      $clsLocalType,
      $clsGlobalType,
      $hSelf,
@@ -105,6 +107,7 @@ my ( $warnings,
      @portableMethods,
      @newMethods,
      @portableImports,
+     %properties,
      %publicMethods,
      %staticMethods,
      %pipeMethods,
@@ -150,6 +153,7 @@ sub init_variables
     $clsStatic  = 'static';
     $clsWeird   = 'weird';
     $clsC_only  = 'c_only';
+    $clsProperty = 'property';
     $clsLocalType  = 'local';
     $clsGlobalType = 'global';
     $hSelf      = "self";
@@ -186,23 +190,24 @@ sub init_variables
     %definedClasses = ();	# hash for class search
     @allVars = ();		# all variables, in order of definition
     %allVars = ();		# hash for var search
-    @allMethods = ();	# methods names
+    @allMethods = ();	        # methods names
     @allMethodsBodies = ();	# methods bodies, as is
-    @allMethodsDefaults = (); # methods default parameters
-    %allMethods = ();	# hash, containing indeces of methods
+    @allMethodsDefaults = ();   # methods default parameters
+    %allMethods = ();	        # hash, containing indeces of methods
     %allMethodsHosts = ();	# hash, bonded methods => hosts
     @portableMethods = ();	# c & perl portable methods
-    @newMethods = ();	# portable methods that declared first time
+    @newMethods = ();        	# portable methods that declared first time
     @portableImports = ();	# perl imported calls
     %publicMethods = ();	# public methods hash
     %staticMethods = ();	# static methods hash
-    %pipeMethods = ();	# pipe methods hash
-    $level = 0;		# file entrance level
+    %pipeMethods = ();	        # pipe methods hash
+    $level = 0;	          	# file entrance level
     @context = ();		# local context for storing words etc.
     %templates_xs  = ();	# storage for computed template xs names
     %templates_imp = ();	# storage for computed template import names
     %templates_rdf = ();	# storage for computed template redefined names
     @ancestors = ();            # list of object ancestors
+    %properties = ();           # hash of properties
 
 
     %mapTypes = ("int" => "int", "Bool" => "Bool", "Handle" => "Handle", "long" => "int", "short" => "int",
@@ -628,7 +633,6 @@ sub parse_define
    $defines{ $id} = ({%added});
 }
 
-
 sub preload_method
 # loads & parses common methods descriptions tables
 {
@@ -1012,11 +1016,38 @@ sub load_single_part
          } elsif ($tok eq $clsC_only) {
             preload_method( 1);
             store_method;
+         } elsif ( $tok eq $clsProperty) {
+            error "APC008: Expecting identifier but found ``$tok''" unless $tok =~ /^\w+$/;
+            $acc = '';
+            my $type = '';
+            until (($tok = getidsym("*;[]()+")) eq ";")
+            {
+               $id = $tok;
+               $type = $acc;
+               $acc .= "$tok ";
+            }
+            #$type =~ s/\s//g;
+            chop $type;
+            error "APC056: Property cannot be 'void'" if $type eq 'void';
+            error "APC013: Method $id already defined"
+               if exists($allMethodsHosts{ $id}) && $allMethodsHosts{ $id} eq $className;
+            $acc = "$type $id( Handle self, Bool set, $type value);";
+            @defParms = ();
+            store_method;
+            $type =~ s/\s//g;
+            unless ( $level) {
+               if ( parse_parms) {
+                  push (@portableMethods, "$id$acc");
+                  push (@newMethods, "$id$acc") unless $inherit;
+               } else {
+                  print "Warning: property $id has not been published\n" if $warnings;
+               }
+            }
+            $properties{$id} = $type;
          } else {
            # variable workaround
            error "APC008: Expecting identifier but found ``$tok''" unless $tok =~ /^\w+$/;
            $acc = $tok;
-           # !!!!! possible bug at int [345] !!!!
            until (($tok = getidsym("*;[]()+")) eq ";")
            {
               $id = $tok;
@@ -1157,7 +1188,7 @@ sub cwrite
    my ( $type, $from, $to) = @_;
    $type = $mapTypes{ $type} || $type;
    if ( $type eq 'string') {
-      return "strcpy( $to, $from);";
+      return "strncpy( $to, $from, 255); $to\[255\]=0;";
    } else {
       return "$to = $from;";
    }
@@ -1183,6 +1214,7 @@ sub out_method_profile
       my $castedResult = $parms[0];
       $castedResult = exists $typedefs{$castedResult} && $typedefs{$castedResult}{cast} ? " ( $castedResult)" : '';
       my $subId = $full ? ( $imports ? "\"$ownOClass\:\:$id\"" : "\"$id\"") : 'subName';
+      my $property  = defined $properties{ $id};
 
       my $result = shift @parms;
       my $eptr  = $result =~ /^\*/ ? "*" : "";
@@ -1238,7 +1270,7 @@ sub out_method_profile
       print HEADER "   dSP;\n";
       print HEADER "   int $incCount;\n";
       unless ( $resSub eq "void") {
-        if ( $resSub eq "char*" ) {
+        if ( $resSub eq "char*") {
            print HEADER "   SV *$incRes;\n\n";
         } else {
            print HEADER "   $result $eptr $incRes;\n\n";
@@ -1248,10 +1280,13 @@ sub out_method_profile
       print HEADER "   SAVETMPS;\n";
       print HEADER "   PUSHMARK( sp);\n\n";
       print HEADER "   XPUSHs((( P${ownCType})$hSelf)-> $hMate);\n" if $useHandle;
+      print HEADER " \n   if ( !set) goto CALL_POINT;\n" if $property;
 
       # writing other parameters
       for ( my $j = 0; $j < scalar @parm_ids; $j++)
       {
+         $j = 1 if $j == 0 && $property;
+
          my $lVar = $parm_ids[ $j];
          my $type = $parms[ $j];
          my $ptr  = $type =~ /^\*/ ? "*" : "";
@@ -1306,14 +1341,20 @@ sub out_method_profile
            };
          }
       }
+      print HEADER "CALL_POINT:\n" if $property;
       print HEADER "\n   PUTBACK;\n\n";
-      if ( exists( $structs{ $resSub}) || exists( $arrays{ $resSub}) || $hvName) {
+      if ( exists( $structs{ $resSub}) && ${$structs{ $resSub}[2]}{hash}) {
+        $retType = "G_SCALAR";
+      } elsif ( exists( $structs{ $resSub}) || exists( $arrays{ $resSub}) || $hvName) {
         $retType = "G_ARRAY";
       } elsif ( $resSub eq "void") {
         $retType = "G_DISCARD";
       } else {
         $retType = "G_SCALAR";
       };
+
+      $retType = "set ? G_DISCARD : $retType" if $property;
+
 
       if ( $full) {
          print HEADER ( $imports)
@@ -1335,10 +1376,13 @@ sub out_method_profile
         } else {
            $popParams = $arrays{ $resSub}[0];
         }
-        my $lParams = exists $structs{ $resSub} ? scalar @{ $structs{ $resSub}[0]} : $arrays{ $resSub}[0];
+        my $lParams = exists $structs{ $resSub} ? (
+           ${$structs{ $resSub}[2]}{hash} ? 1 : scalar @{ $structs{ $resSub}[0]}
+        ) : $arrays{ $resSub}[0];
         my $resVar = $lpr.$eptr.$incRes.$rpr;
         print HEADER "   SPAGAIN;\n";
         print HEADER "   $incCount = pop_hv_for_REDEFINED( sp, $incCount, $hvName, $popParams);\n" if $hvName;
+        print HEADER "   if ( set) {\n      FREETMPS;\n      LEAVE;\n      return $incRes;\n   }\n\n" if $property;
         print HEADER "   if ( $incCount != $lParams) croak( \"Sub result corrupted\");\n\n";
         if ( exists $structs{ $resSub})
         {
@@ -1385,6 +1429,7 @@ sub out_method_profile
         # 1 parms to return
         print HEADER "   SPAGAIN;\n";
         print HEADER "   $incCount = pop_hv_for_REDEFINED( sp, $incCount, $hvName, 1);\n" if $hvName;
+        print HEADER "   if ( set) {\n      FREETMPS;\n      LEAVE;\n      return ( $resSub$eptr) 0;\n   }\n\n" if $property;
         print HEADER "   if ( $incCount != 1) croak( \"Something really bad happened!\");\n\n";
         if ( $resSub eq 'Handle') {
            print HEADER "   $incRes =$castedResult $incGetMate( POPs);";
@@ -1455,6 +1500,9 @@ LABEL
       @defParms     = @{$allMethodsDefaults[$allMethods{$id}]};
       my $firstDP   = undef;
       my $lastDP    = 0;
+      my $property  = defined $properties{$id};
+      my $ifpropset;
+      $ifpropset = ( "items > " . ( $nParam - 2)) if $property;
 
       for ( my $k = 0; $k < scalar @defParms; $k++)
       {
@@ -1466,6 +1514,7 @@ LABEL
       }
       my $useHV     = $nParam ? $parms[ $#parms] eq 'HV*' : 0;
       shift @parms if $useHandle;
+      shift @parms if $property;
       foreach (@parms)
       {                                            # adjust parms count referring
          my $lVar = $_; $lVar =~ s[^\*][];
@@ -1494,8 +1543,11 @@ LABEL
       {
          print HEADER "(( items - $nParam + 1) % 2 != 0)";
       } else {
-         if ( $lastDP)
-         {
+         if ( $property) {
+            my $min = $useHandle ? 1 : 0;
+            my $max = $nParam - 1;
+            print HEADER "(( items != $min) && ( items != $max))";
+         } elsif ( $lastDP) {
             print HEADER "(( items > $nParam) || ( items < ${\($nParam-$lastDP)}))";
          } else {
             print HEADER "( items != $nParam)";
@@ -1534,6 +1586,7 @@ LABEL
       my $stn = $useHandle ? 1 : 0;
       unless ($resSub eq "void") { print HEADER "$result $eptr $incRes;\n      "};
       # generating struct local vars
+      my $reuseStructVar;
       foreach (@parms)
       {
          my $ptr  = $_ =~ /^\*/ ? "&" : "";
@@ -1541,11 +1594,12 @@ LABEL
          my ( $lp, $rp) = $ptr ? ('(',')') : ('','');
          if ( exists $structs{$lVar} && defined ${$structs{$lVar}[2]}{hash})
          {
-             # print HEADER "$lVar $incRes$structCount = SvHV_$lVar( ST( $stn), \"${ownOClass}\:\:$id\");\n      ";
+             $reuseStructVar = 1, last if $property && ( $ptr eq "");
              print HEADER "$lVar $incRes$structCount;\n      ";
              $structCount++;
          } elsif ( exists $arrays{$lVar} || exists $structs{$lVar})
          {
+             $reuseStructVar = 1, last if $property && ( $ptr eq "");
              print HEADER "$lVar $incRes$structCount;\n      ";
              $structCount++;
          } else { $stn++ };
@@ -1554,7 +1608,8 @@ LABEL
       print HEADER "HV *hv = parse_hv( ax, sp, items, mark, $nParam - 1, $subId);\n      " if $useHV;
       # initializing strings and additional parameters, if any
       $stn = $useHandle ? 1 : 0;
-      $structCount = 0;
+      $structCount = $reuseStructVar ? '' : 0;
+      my $paramAuxSet = '';
       foreach (@parms)
       {
          my $ptr  = $_ =~ /^\*/ ? "&" : "";
@@ -1563,7 +1618,7 @@ LABEL
          # hash structure
          if ( exists $structs{$lVar} && defined ${$structs{$lVar}[2]}{hash})
          {
-            print HEADER "SvHV_$lVar( ST( $stn), \&$incRes$structCount, $subId);\n      ";
+            $paramAuxSet .= "SvHV_$lVar( ST( $stn), \&$incRes$structCount, $subId);\n      ";
             $structCount++;
             $stn++;
          } elsif ( exists $structs{$lVar})
@@ -1575,14 +1630,14 @@ LABEL
                 my $lName  = ${ $structs{ $lVar}[ 1]}[ $j];
                 if ( $lType eq "string")
                 {
-                    print HEADER "strcpy( $incRes$structCount. $lName, ( char*) SvPV( ST( $stn), na));\n      ";
+                    $paramAuxSet .= "strncpy( $incRes$structCount. $lName, ( char*) SvPV( ST( $stn), na), 255); $incRes$structCount. $lName\[255\]=0;\n      ";
                 } else {
-                    print HEADER "$incRes$structCount. $lName = ";
+                    $paramAuxSet .= "$incRes$structCount. $lName = ";
                     if ( $lType eq "SV*") {
-                       print HEADER "ST( $stn);\n      ";
+                       $paramAuxSet .= "ST( $stn);\n      ";
                     } else {
                        my $mtType = $mapTypes{$lType} || $lType;
-                       print HEADER "( $lType) $xsConv{$mtType}[1]( ST( $stn)$xsConv{$mtType}[8]);\n      ";
+                       $paramAuxSet .= "( $lType) $xsConv{$mtType}[1]( ST( $stn)$xsConv{$mtType}[8]);\n      ";
                     }
                 }
                 $stn++;
@@ -1595,36 +1650,50 @@ LABEL
             my $lType = $lName;
             $lName = $mapTypes{$lName} || $lName;
             my $str;
-            print HEADER "{\n         int $incCount;\n         ";
-            print HEADER "for ( $incCount = 0; $incCount < $arrays{$lVar}[0]; $incCount++)\n         ";
+            $paramAuxSet .= "{\n         int $incCount;\n         ";
+            $paramAuxSet .= "for ( $incCount = 0; $incCount < $arrays{$lVar}[0]; $incCount++)\n         ";
             if ( $lName eq 'SV*') { $str = "$incRes$structCount\[$incCount\] = ST( $stn + $incCount)" }
             elsif ( $lName eq 'string')
             {
-               $str = "strcpy( $incRes$structCount\[$incCount\], ( char*) SvPV( ST( $stn + $incCount), na))"
+               $str = "strncpy( $incRes$structCount\[$incCount\], ( char*) SvPV( ST( $stn + $incCount), na), 255);$incRes$structCount\[$incCount\]\[255\]=0"
             } else {
                $str = "$incRes$structCount\[$incCount\] = ( $lType) $xsConv{$lName}[1]( ST( $stn + $incCount)$xsConv{$lName}[8])";
             }
-            print HEADER "   $str;\n      }\n      ";
+            $paramAuxSet .= "   $str;\n      }\n      ";
             $stn += $arrays{$lVar}[0];
             $structCount++;
          } else { $stn++ };
       }
       # generating call
+      my $lpaus = length( $paramAuxSet);
+      if ( $lpaus || $property) {
+         print HEADER "if ( $ifpropset) goto CALL_POINT;\n      " if $property && $lpaus;
+         print HEADER $paramAuxSet;
+         print HEADER "CALL_POINT : " if $property && $lpaus;
+      }
       print HEADER "$incRes = " unless $resSub eq "void";
       if ( $full) {
          print HEADER ( exists $pipeMethods{ $id}) ? $pipeMethods{$id} : "${ownCType}_$id";
       } else {
          my @parmList = @parms;
          unshift( @parmList, 'Handle') if $useHandle;
+         unshift( @parmList, 'Bool') if $property;
          for ( @parmList) { s/^\*(.*)/$1\*/;}  # since "*Struc" if way to know it's user ptr, map it back
          my $parmz = join( ', ', @parmList);
          print HEADER "(( $resSub$eptr (*)( $parmz)) func)";
       }
       print HEADER "(\n";
-      print HEADER "         $incSelf" if $useHandle;   # это мы закладываемся
-                                                        # на Handle
-      $stn = $useHandle ? 1 : 0;
-      $structCount = 0;
+      print HEADER "         $incSelf" if $useHandle;
+
+      $stn = 0;
+      $stn++ if $useHandle;
+
+      if ( $property) {
+         print HEADER ",\n" if $stn > 0;
+         print HEADER "         $ifpropset";
+      }
+
+      $structCount = $reuseStructVar ? '' : 0;
       foreach (@parms)
       {
          my $ptr  = $_ =~ /^\*/ ? "&" : "";
@@ -1634,6 +1703,7 @@ LABEL
          my ( $lp, $rp) = $ptr ? ('(',')') : ('','');
          print HEADER ",\n" if $stn > 0;
          print HEADER "         ";
+         print HEADER "( $ifpropset) ? ( " if $property && !$reuseStructVar;
          if ( exists $structs{$lVar} || exists $arrays{$lVar})
          {
             if ( exists $structs{$lVar}) {
@@ -1653,10 +1723,13 @@ LABEL
            }
            $stn++;
          }
+         print HEADER ") : $incRes" if $property && !$reuseStructVar; # feature that $incRes is same type as 1-st param for properties
       }
       print HEADER "\n";
       print HEADER "      );\n";
-      print HEADER "      SPAGAIN;\n      SP -= items;\n" if (!( $resSub eq "void") || $useHV);
+      print HEADER "      SPAGAIN;\n"     if (!( $resSub eq "void") || $useHV);
+      print HEADER "      if ( $ifpropset) {\n         XSRETURN_EMPTY;\n         return;\n      }\n" if $property;
+      print HEADER "      SP -= items;\n" if (!( $resSub eq "void") || $useHV);
 
       my $pphv = 0;
       # result generation
@@ -1754,8 +1827,10 @@ sub out_struc
             $_ = $defines{$_}{type} if $defines{$_}{type};
             $parms[ $j] = $_.($ptrAddMap[$j] ? 'Ptr' : '');
          }
-         my $callName = $tempPrefix . join('_', @parms);
-         $$hashStorageRef{$id} = $callName;
+
+         my $callName = $tempPrefix;
+         $callName .= 'p_' if defined $properties{$id};
+         $$hashStorageRef{$id} = $callName . join('_', @parms);;
      } # eo cycle
      } # eo sub
 
@@ -1924,6 +1999,21 @@ print HEADER "// instance variables \n";
         print HEADER "extern $body\n" if ( $allMethodsHosts{$id} eq $ownOClass) && !exists( $pipeMethods{$id});
      }
   }
+
+  # property set/get defines
+  print HEADER "\n";
+
+  for ( keys %properties) {
+     my $type = $properties{$_};
+     my $def  = ( exists $structs{ $type} || exists( $arrays{ $type})) ? "${type}_buffer" : "($type)0";
+     print HEADER <<SD;
+#undef  get_$_
+#undef  set_$_
+#define get_$_(__hs)         $_((__hs),false,$def)
+#define set_$_(__hs,__val)   $_((__hs),true,(__val))
+SD
+  }
+
 
 print HEADER "\n#endif\n";
 

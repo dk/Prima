@@ -1349,9 +1349,37 @@ Widget_get_help_context( Handle self)
 }
 
 char *
-Widget_get_hint( Handle self)
+Widget_hint( Handle self, Bool set, char *hint)
 {
-   return var-> hint ? var-> hint : "";
+   enter_method;
+   if (!set)
+      return var-> hint ? var-> hint : "";
+   if ( var-> stage > csNormal) return "";
+   my-> first_that( self, hint_notify, (void*)hint);
+
+   free( var-> hint);
+   if ( hint)
+   {
+      var-> hint = malloc( strlen( hint) + 1);
+      strcpy( var-> hint, hint);
+   } else {
+      var-> hint = malloc(1);
+      var-> hint[0] = 0;
+   };
+   if ( application && (( PApplication) application)-> hintVisible &&
+        (( PApplication) application)-> hintUnder == self)
+   {
+      if ( strlen( var-> hint) == 0) my-> set_hint_visible( self, 0);
+      {
+         char * hintText = var-> hint;
+         Handle self = (( PApplication) application)-> hintWidget;
+         enter_method;
+         if ( self)
+            my-> set_text( self, hintText);
+      }
+   }
+   opt_clear( optOwnerHint);
+   return "";
 }
 
 Bool
@@ -1847,37 +1875,6 @@ void
 Widget_set_help_context( Handle self, long int helpContext )
 {
    var-> helpContext = helpContext;
-}
-
-void
-Widget_set_hint( Handle self, char * hint)
-{
-   enter_method;
-   if ( var-> stage > csNormal) return;
-   my-> first_that( self, hint_notify, (void*)hint);
-
-   free( var-> hint);
-   if ( hint)
-   {
-      var-> hint = malloc( strlen( hint) + 1);
-      strcpy( var-> hint, hint);
-   } else {
-      var-> hint = malloc(1);
-      var-> hint[0] = 0;
-   };
-   if ( application && (( PApplication) application)-> hintVisible &&
-        (( PApplication) application)-> hintUnder == self)
-   {
-      if ( strlen( var-> hint) == 0) my-> set_hint_visible( self, 0);
-      {
-         char * hintText = var-> hint;
-         Handle self = (( PApplication) application)-> hintWidget;
-         enter_method;
-         if ( self)
-            my-> set_text( self, hintText);
-      }
-   }
-   opt_clear( optOwnerHint);
 }
 
 void

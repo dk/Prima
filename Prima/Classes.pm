@@ -948,7 +948,6 @@ sub height           {($#_)?$_[0]->set_height      ($_[1]):return $_[0]->get_hei
 sub helpContext      {($#_)?$_[0]->set_help_context($_[1]):return $_[0]->get_help_context;}
 sub hiliteBackColor  {($#_)?$_[0]->set_color_index ($_[1], ci::Hilite  ):return $_[0]->get_color_index(ci::Hilite  )}
 sub hiliteColor      {($#_)?$_[0]->set_color_index ($_[1], ci::HiliteText  ):return $_[0]->get_color_index(ci::HiliteText  )}
-sub hint             {($#_)?$_[0]->set_hint        ($_[1]):return $_[0]->get_hint;        }
 sub hintVisible      {($#_)?$_[0]->set_hint_visible($_[1]):return $_[0]->get_hint_visible;}
 sub left             {($#_)?$_[0]->set_left        ($_[1]):return $_[0]->get_left;        }
 sub light3DColor     {($#_)?$_[0]->set_color_index ($_[1], ci::Light3DColor):return $_[0]->get_color_index(ci::Light3DColor)}

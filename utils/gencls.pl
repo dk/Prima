@@ -25,8 +25,6 @@
 #  SUCH DAMAGE.
 #
 
-# max error is APC055
-
 use lib qw( ..);
 use Prima::Gencls;
 
@@ -52,6 +50,7 @@ my $args;
 ARGUMENT: while( 1)
 {
    $_ = $ARGV[0];
+   last unless defined $_;
    /^--depend$/    && do { $args->{ depend} = 1; next ARGUMENT; };
    /^--sayparent$/ && do { $args->{ sayparent} = 1; next ARGUMENT; };
    /^--h$/         && do { $args->{ genH} = 1; next ARGUMENT; };
