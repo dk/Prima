@@ -896,7 +896,9 @@ apc_getdir( const char *dirname)
 	 case DT_REG:	type = "reg";	break;
 	 case DT_LNK:	type = "lnk";	break;
 	 case DT_SOCK:	type = "sock";	break;
+#ifdef DT_WHT
 	 case DT_WHT:	type = "wht";	break;
+#endif
 	 default:	type = "unknown";
 	 }
 	 list_add( dirlist, (Handle)duplicate_string( type));
