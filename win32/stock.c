@@ -455,6 +455,7 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
      (( lf-> lfWeight >= 700) ? fsBold   : 0);
    f-> pitch               = ((( lf-> lfPitchAndFamily & 3) == DEFAULT_PITCH) ? fpDefault :
       ((( lf-> lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
+   f-> type                = ftDontCare;
    strncpy( f-> name, lf-> lfFaceName, LF_FACESIZE);
    f-> codepage            = lf-> lfCharSet;
    f-> name[ LF_FACESIZE] = 0;
@@ -483,40 +484,51 @@ font_font2logfont( Font * f, LOGFONT * lf)
 }
 
 void
-font_textmetric2fontmetric( TEXTMETRIC * tm, FontMetric * fm)
+font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readonly)
 {
-   fm-> nominalSize            = ( tm-> tmHeight - tm-> tmInternalLeading) * 72.0 / guts. displayResolution.y + 0.5;
-   fm-> width                  = tm-> tmAveCharWidth;
-   fm-> height                 = tm-> tmHeight;
-   fm-> style                  = 0 |
+   fm-> metrics.size                   = ( tm-> tmHeight - tm-> tmInternalLeading) * 72.0 / guts. displayResolution.y + 0.5;
+   fm-> metrics.width                  = tm-> tmAveCharWidth;
+   fm-> metrics.height                 = tm-> tmHeight;
+   fm-> metrics.style                  = 0 |
                                  ( tm-> tmItalic     ? fsItalic     : 0) |
                                  ( tm-> tmUnderlined ? fsUnderlined : 0) |
                                  ( tm-> tmStruckOut  ? fsStruckOut  : 0) |
                                  (( tm-> tmWeight >= 700) ? fsBold   : 0);
-   fm-> pitch                  =
-      (( tm-> tmPitchAndFamily & TMPF_FIXED_PITCH)               ? fpVariable : fpFixed) |
-      (( tm-> tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? fpVector   : fpRaster);
-   fm-> weight                 = tm-> tmWeight / 100;
-   fm-> maxAscent              = tm-> tmAscent;
-   fm-> maxDescent             = tm-> tmDescent;
-   fm-> lcAscent               = tm-> tmAscent;     // these two values not supported in TEXTMETRICS so -
-   fm-> lcDescent              = tm-> tmDescent;    // at least they're not zero and not greater than ucXscents
-   fm-> averageWidth           = tm-> tmAveCharWidth;
-   fm-> internalLeading        = tm-> tmInternalLeading;
-   fm-> externalLeading        = tm-> tmExternalLeading;
-   fm-> xDeviceRes             = tm-> tmDigitizedAspectX;
-   fm-> yDeviceRes             = tm-> tmDigitizedAspectY;
-   fm-> firstChar              = tm-> tmFirstChar;
-   fm-> lastChar               = tm-> tmLastChar;
-   fm-> breakChar              = tm-> tmBreakChar;
-   fm-> defaultChar            = tm-> tmDefaultChar;
+   fm-> metrics.pitch                  =
+      (( tm-> tmPitchAndFamily & TMPF_FIXED_PITCH)               ? fpVariable : fpFixed);
+   fm-> metrics.type                   =
+      (( tm-> tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? ftVector   : ftRaster);
+   fm-> metrics.weight                 = tm-> tmWeight / 100;
+   fm-> metrics.ascent                 = tm-> tmAscent;
+   fm-> metrics.descent                = tm-> tmDescent;
+   fm-> metrics.maximalWidth           = tm-> tmMaxCharWidth;
+   fm-> metrics.internalLeading        = tm-> tmInternalLeading;
+   fm-> metrics.externalLeading        = tm-> tmExternalLeading;
+   fm-> metrics.xDeviceRes             = tm-> tmDigitizedAspectX;
+   fm-> metrics.yDeviceRes             = tm-> tmDigitizedAspectY;
+   fm-> metrics.firstChar              = tm-> tmFirstChar;
+   fm-> metrics.lastChar               = tm-> tmLastChar;
+   fm-> metrics.breakChar              = tm-> tmBreakChar;
+   fm-> metrics.defaultChar            = tm-> tmDefaultChar;
+   fm-> metrics.codepage               = tm-> tmCharSet;
+
+   if ( !readonly) {
+      fm-> size    = fm-> metrics. size;
+      fm-> height  = fm-> metrics. height;
+      fm-> width   = fm-> metrics. width;
+      fm-> style   = fm-> metrics. style;
+      fm-> pitch   = fm-> metrics. pitch;
+      fm-> type    = fm-> metrics. type;
+   }
 }
+
 
 PFont
 apc_font_default( PFont font)
 {
    *font = guts. windowFont;
    font-> pitch = fpDefault;
+   font-> type  = ftDontCare;
    return font;
 }
 
@@ -544,6 +556,7 @@ typedef struct _FEnumStruc
    Bool          usePrecis;
    Bool          forceSize;
    Bool          vecId;
+   Bool          matchILead;
    PFont         font;
    FAMTEXTMETRIC tm;
    LOGFONT       lf;
@@ -551,21 +564,24 @@ typedef struct _FEnumStruc
    char          name[ LF_FACESIZE];
 } FEnumStruc, *PFEnumStruc;
 
+
 int CALLBACK
 fep( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PFEnumStruc es)
 {
    Font * font = es-> font;
+   long hei, res;
+
 #define do_copy                                                         \
    es-> count++;                                                        \
    memcpy( &es-> tm, t, sizeof( TEXTMETRIC));                           \
-   memcpy( es-> tm. family, e-> elfFullName, sizeof( LF_FULLFACESIZE)); \
+   memcpy( es-> tm. family, e-> elfFullName, LF_FULLFACESIZE);          \
    memcpy( &es-> lf,    &e-> elfLogFont, sizeof( LOGFONT));             \
-   memcpy( es-> name,   e-> elfLogFont. lfFaceName, sizeof( LF_FACESIZE))
+   memcpy( es-> name,   e-> elfLogFont. lfFaceName, LF_FACESIZE)
 
    if ( es-> usePitch)
    {
       int fpitch = ( t-> tmPitchAndFamily & TMPF_FIXED_PITCH) ? fpVariable : fpFixed;
-      if ( fpitch != ( font-> pitch & fpPitchMask))
+      if ( fpitch != font-> pitch)
          return 1; // so this font cannot be selected due pitch pickup failure
    }
 
@@ -580,39 +596,44 @@ fep( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PFEnumStruc es)
       es-> vecId = 1;
       return 1; // it's vector font; but keep enumeration in case we'll get better match
    }
+
+   // bitmapped fonts:
+   // determining best match for primary measure - size or height
    if ( es-> forceSize) {
-      long res = ( t-> tmDigitizedAspectY - es-> res. y) * ( t-> tmDigitizedAspectY - es-> res. y);
-      long xs  = abs( e-> elfLogFont. lfHeight * 72.0 / es-> res. y + 0.5);
-      long hei = ( xs - font-> size) * ( xs - font-> size);
-      if ( hei < es-> heiValue) {
-         es-> heiValue = hei;
-         es-> resValue = res;
-         do_copy;
-      } else if ( es-> useWidth && ( hei == es-> heiValue)) {
-         long wid = ( e-> elfLogFont. lfWidth - font-> width) * ( e-> elfLogFont. lfWidth - font-> width);
-         if ( wid < es-> widValue) {
-            es-> widValue = wid;
-            es-> resValue = res;
-            do_copy;
-         }
-      } else if (( res < es-> resValue) && ( hei == es-> heiValue)) {
-         es-> resValue = res;
-         do_copy;
-      }
+      long xs  = ( t-> tmHeight - ( es-> matchILead ? t-> tmInternalLeading : 0))
+                 * 72.0 / es-> res. y + 0.5;
+      hei = ( xs - font-> size) * ( xs - font-> size);
    } else {
-      long hei = ( e-> elfLogFont. lfHeight - font-> height) * ( e-> elfLogFont. lfHeight - font-> height);
-      if ( hei < es-> heiValue) {
-         es-> heiValue = hei;
-         if ( es-> useWidth)
-            es-> widValue = ( e-> elfLogFont. lfWidth - font-> width) * ( e-> elfLogFont. lfWidth - font-> width);
+      long dv = t-> tmHeight - font-> height - ( es-> matchILead ? 0 : t-> tmInternalLeading);
+      hei = dv * dv;
+   }
+
+   // resolution difference
+   res = ( t-> tmDigitizedAspectY - es-> res. y) * ( t-> tmDigitizedAspectY - es-> res. y);
+
+   if ( hei < es-> heiValue) {
+      // current height is closer than before...
+      es-> heiValue = hei;
+      es-> resValue = res;
+      if ( es-> useWidth)
+         es-> widValue = ( e-> elfLogFont. lfWidth - font-> width) * ( e-> elfLogFont. lfWidth - font-> width);
+      do_copy;
+   } else if ( es-> useWidth && ( hei == es-> heiValue)) {
+      // height is same close, but width is requested and close that before
+      long wid = ( e-> elfLogFont. lfWidth - font-> width) * ( e-> elfLogFont. lfWidth - font-> width);
+      if ( wid < es-> widValue) {
+         es-> widValue = wid;
+         es-> resValue = res;
          do_copy;
-      } else if ( es-> useWidth && ( hei == es-> heiValue)) {
-         long wid = ( e-> elfLogFont. lfWidth - font-> width) * ( e-> elfLogFont. lfWidth - font-> width);
-         if ( wid < es-> widValue) {
-            es-> widValue = wid;
-            do_copy;
-         }
+      } else if (( wid == es-> widValue) && ( res < es-> resValue)) {
+         // height and width are same close, but resolution is closer
+         es-> resValue = res;
+         do_copy;
       }
+   } else if (( res < es-> resValue) && ( hei == es-> heiValue)) {
+      // height is same close, but resolution is closer
+      es-> resValue = res;
+      do_copy;
    }
    return 1;
 #undef do_copy
@@ -625,95 +646,109 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 {
 #define out( retVal)  if ( !theDC) dc_free(); return retVal
    FEnumStruc es;
-   HDC dc             = theDC ? theDC : dc_alloc();
+   HDC  dc            = theDC ? theDC : dc_alloc();
+   Bool useNameSubplacing;
+
    es. count          = es. vecId = 0;
    es. resValue       = es. heiValue = es. widValue = INT_MAX;
    es. useWidth       = font-> width != 0;
    es. useVector      = font-> direction != 0;
-   es. usePitch       = ( font-> pitch & fpPitchMask)      != fpDefault;
-   es. usePrecis      = ( font-> pitch & fpPrecisionMask)  != fpDontCare;
+   es. usePitch       = useNameSubplacing = font-> pitch != fpDefault;
+   es. usePrecis      = font-> type != ftDontCare;
    es. res            = res;
    es. forceSize      = forceSize;
-	es. font           = font;
-   if ( forceSize)
-      font-> height = font-> size * res. y / 72.0 + 0.5;
-   // querying font for given name
+   es. font           = font;
+   es. matchILead     = forceSize ? ( font-> size >= 0) : ( font-> height >= 0);
+
+   if ( font-> height < 0) font-> height *= -1;
+   if ( font-> size   < 0) font-> size   *= -1;
+
    EnumFontFamilies( dc, font-> name, ( FONTENUMPROC) fep, ( LPARAM) &es);
 
    // checking matched font, if available
    if ( es. count > 0) {
       if ( es. useVector) {
-         if ( !es. vecId && !es. usePitch) {
-            // preserve pitch in case bitmap font cannot be selected
-            font-> pitch = ( es. tm. t. tmPitchAndFamily & TMPF_FIXED_PITCH) ? fpVariable : fpFixed;
-            es. usePitch = 1;
-         }
-         es. resValue = es. heiValue = INT_MAX; // cancel bitmap font selection
+         if ( !es. vecId) useNameSubplacing = 1; // try other font if bitmap wouldn't fit
+         es. resValue = es. heiValue = INT_MAX;  // cancel bitmap font selection
       }
-      // have resolution ok?
-      // if ( es. resValue < 20 && ( es. forceSize || ( es. heiValue < 16)))
+      // have resolution ok? so using raster font mtx
       if (
-           ( es. heiValue < 16) &&
-           ( !es. usePrecis || (( font-> pitch & fpPrecisionMask) == fpVector)) &&
-           ( !es. useWidth  || ( es. widValue == 0 && es. heiValue == 0))
+           ( es. heiValue < 2) &&
+           ( !es. usePrecis || ( font-> type == ftRaster)) &&
+           ( !es. useWidth  || (( es. widValue == 0) && ( es. heiValue == 0)))
          )
       {
-         font-> height   = abs( es. lf. lfHeight);
-         font-> ascent   = es. tm. t.tmAscent;
-         font-> descent  = es. tm. t.tmDescent;
+         font-> height   = es. tm. t.tmHeight;
+         font_textmetric2font( &es. tm. t, font, true);
+
          memcpy( &fmtx, &es. tm, sizeof( fmtx));
-         font-> size     = abs( es. lf. lfHeight * 72.0 / res.y + 0.5);
+         strncpy( font-> metrics. family, fmtx. family, LF_FULLFACESIZE);
+         font-> size     = ( es. tm. t.tmHeight - es. tm. t.tmInternalLeading) * 72.0 / res.y + 0.5;
          font-> width    = es. lf. lfWidth;
-         font-> codepage = es. lf. lfCharSet;
+         font-> codepage = es. tm. t.tmCharSet;
          out( fgBitmap);
       }
+
       // or vector font - for any purpose?
+      // if so, it could guranteed that font-> height == t.tmHeight
       if ( es. vecId) {
+         LOGFONT lpf = es. lf;
+         HFONT   hf;
+         TEXTMETRIC tm;
+
+         // since proportional computation of small items as InternalLeading
+         // gives incorrect result, querying the only valid source - GetTextMetrics
+         if ( forceSize) {
+            lpf. lfHeight = font-> size * res. y / 72.0 + 0.5;
+            if ( es. matchILead) lpf. lfHeight *= -1;
+         } else
+            lpf. lfHeight = es. matchILead ? font-> height : -font-> height;
+
+         lpf. lfWidth = es. useWidth ? font-> width : 0;
+
+         hf = SelectObject( dc, CreateFontIndirect( &lpf));
+         GetTextMetrics( dc, &tm);
+         DeleteObject( SelectObject( dc, hf));
+
          if ( forceSize)
-            font-> height = font-> size * res. y / 72.0 + 0.5;
+            font-> height = tm. tmHeight;
          else
-            font-> size   = font-> height * 72.0 / res. y + 0.5;
+            font-> size = ( tm. tmHeight - tm. tmInternalLeading) * 72.0 / res. y + 0.5;
+
          if ( !es. useWidth)
-            font-> width = es. lf. lfWidth *
-               (( float) font-> height / abs( es. lf. lfHeight)) + 0.5;
-         font-> ascent   = es. tm. t.tmAscent  * (( float) font-> height / es. tm. t.tmHeight) + 0.5;
-         font-> descent  = es. tm. t.tmDescent * (( float) font-> height / es. tm. t.tmHeight) + 0.5;
-         font-> codepage = es. lf. lfCharSet;
+            font-> width = tm. tmAveCharWidth;
+
+         font_textmetric2font( &tm, font, true);
+         strncpy( font-> metrics. family, fmtx. family, LF_FULLFACESIZE);
+         font-> codepage = tm .tmCharSet;
          memcpy( &fmtx, &es. tm, sizeof( fmtx));
-         #define fmtx_adj( field) fmtx. t. field = fmtx. t. field * (( float) font-> height / es. tm. t.tmHeight) + 0.5;
-         fmtx_adj( tmAveCharWidth    );
-         fmtx_adj( tmHeight          );
-         fmtx_adj( tmAscent          );
-         fmtx_adj( tmDescent         );
-         fmtx_adj( tmInternalLeading );
-         fmtx_adj( tmExternalLeading );
-         fmtx_adj( tmMaxCharWidth    );
-         fmtx_adj( tmOverhang        );
          out( fgVector);
       }
    }
 
    // if strict match not found, use subplacing
-   if ( es. usePitch)
+   if ( useNameSubplacing)
    {
-       int ogp  = font-> pitch & fpPitchMask;
        int ret;
-       int ogpp = font-> pitch & fpPrecisionMask;
-       strcpy( font-> name, (( font-> pitch & fpPitchMask) == fpFixed) ?
-          DEFAULT_FIXED_FONT : DEFAULT_VARIABLE_FONT);
-       font-> pitch = fpDefault | ogpp;
+       int ogp  = font-> pitch;
+       int ogpp = font-> type;
+       // setting some other( maybe other) font name
+       strcpy( font-> name, font-> pitch == fpFixed ?
+          guts. defaultFixedFont : guts. defaultVariableFont);
+       font-> pitch = fpDefault;
        ret = font_font2gp( font, res, forceSize, dc);
-       if ( ogp == fpFixed && ( strcmp( font-> name, DEFAULT_FIXED_FONT) != 0))
-       {
+       // if that alternative match succeeded with name subplaced again, skip
+       // that result and use DEFAULT_SYSTEM_FONT match
+       if (( ogp == fpFixed) && ( strcmp( font-> name, guts. defaultFixedFont) != 0)) {
           strcpy( font-> name, DEFAULT_SYSTEM_FONT);
-          font-> pitch = fpDefault | ogpp;
+          font-> pitch = fpDefault;
           ret = font_font2gp( font, res, forceSize, dc);
        }
        out( ret);
    }
 
-   // Font not found. So use general representation for height and width
-   strcpy( font-> name, DEFAULT_FONT_NAME);
+   // font not found, so use general representation for height and width
+   strcpy( font-> name, guts. defaultSystemFont);
    if ( recursiveFF == 0)
    {
       // trying to catch default font with correct values
@@ -771,11 +806,13 @@ int CALLBACK
 fep2( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PList lst)
 {
    PFontMetric fm = malloc( sizeof( FontMetric));
-   font_textmetric2fontmetric(( TEXTMETRIC *) t, fm);
+   Font font;
+   font_textmetric2font(( TEXTMETRIC *) t, &font, false);
+   *fm = font. metrics;
+   strncpy( fm-> name,     e-> elfLogFont. lfFaceName, LF_FACESIZE);
    strncpy( fm-> family,   e-> elfFullName,            LF_FULLFACESIZE);
-   strncpy( fm-> facename, e-> elfLogFont. lfFaceName, LF_FACESIZE);
    list_add( lst, ( Handle) fm);
-	return 1;
+   return 1;
 }
 
 
@@ -800,17 +837,6 @@ apc_fonts( char * facename, int * retCount)
 Nothing:
    list_destroy( &lst);
    return fmtx;
-}
-
-PFontMetric
-apc_font_metrics( Handle self, PFont font, PFontMetric metrics)
-{
-   apcErrClear;
-   font_font2gp( font, sys res, false, 0);
-   font_textmetric2fontmetric( &fmtx. t, metrics);
-   strncpy( metrics-> facename, font-> name, 256);
-   strncpy( metrics-> family,   fmtx. family, LF_FULLFACESIZE);
-   return metrics;
 }
 
 // Font end

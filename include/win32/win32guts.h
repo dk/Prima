@@ -25,10 +25,6 @@
 #define MENU_ID_AUTOSTART    100
 #define TID_USERMAX          32767
 
-#define DEFAULT_FONT_NAME                "Arial"
-#define DEFAULT_FONT_SIZE                10
-#define DEFAULT_FIXED_FONT               "Courier New"
-#define DEFAULT_VARIABLE_FONT            "Arial"
 #define DEFAULT_SYSTEM_FONT              "System"
 #define DEFAULT_WIDGET_FONT              "MS Shell Dlg"
 #define DEFAULT_WIDGET_FONT_SIZE         8
@@ -118,6 +114,9 @@ typedef struct _WinGuts
     HANDLE         ioThread;           // handle of input-output thread
     DWORD          mainThreadId;       // Id of main thread
     Point          displayResolution;  // screen resolution in ppi
+    char           defaultFixedFont    [ 256];
+    char           defaultVariableFont [ 256];
+    char           defaultSystemFont   [ 256];
     Font           windowFont;         // window default font
     Font           menuFont;           // menu default font
     Font           msgFont;            // message default font
@@ -436,7 +435,7 @@ extern void         font_free( PDCFont res);
 extern void         font_change( Handle self, Font * font);
 extern void         font_logfont2font( LOGFONT * lf, Font * font, Point * resolution);
 extern void         font_font2logfont( Font * font, LOGFONT * lf);
-extern void         font_textmetric2fontmetric( TEXTMETRIC * tm, FontMetric * fm);
+extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
 extern PPatResource patres_fetch( DWORD pattern);
 extern void         cursor_update( Handle self);
 extern HDC          dc_alloc();

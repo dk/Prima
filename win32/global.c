@@ -107,10 +107,30 @@ window_subsystem_init()
    guts. displayResolution. y = GetDeviceCaps( dc, LOGPIXELSY);
    {
       LOGFONT lf;
+      HFONT   sfont;
 
-      // GetObject( GetCurrentObject( dc, OBJ_FONT), sizeof( LOGFONT), &lf);
-      // font_logfont2font( &lf, &guts. windowFont, &guts. displayResolution);
+      // getting most common font name
+      memset( &lf, 0, sizeof( lf));
+      lf. lfCharSet        = OEM_CHARSET;
+      lf. lfOutPrecision   = OUT_DEFAULT_PRECIS;
+      lf. lfClipPrecision  = CLIP_DEFAULT_PRECIS;
+      lf. lfQuality        = PROOF_QUALITY;
+      lf. lfPitchAndFamily = DEFAULT_PITCH;
+      sfont = SelectObject( dc, CreateFontIndirect( &lf));
+      GetTextFace( dc, 256, guts. defaultSystemFont);
 
+      // getting common fixed font name
+      lf. lfPitchAndFamily = FIXED_PITCH;
+      DeleteObject( SelectObject( dc, CreateFontIndirect( &lf)));
+      GetTextFace( dc, 256, guts. defaultFixedFont);
+
+      // getting common variable font name
+      lf. lfPitchAndFamily = VARIABLE_PITCH;
+      DeleteObject( SelectObject( dc, CreateFontIndirect( &lf)));
+      GetTextFace( dc, 256, guts. defaultVariableFont);
+      DeleteObject( SelectObject( dc, sfont));
+
+      // getting system font presets
       memset( &guts. windowFont, 0, sizeof( Font));
       strcpy( guts. windowFont. name, DEFAULT_WIDGET_FONT);
       guts. windowFont. size  = DEFAULT_WIDGET_FONT_SIZE;
