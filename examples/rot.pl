@@ -142,7 +142,7 @@ my $a = 1;
 my $w = Prima::Window-> create
 (
   text => 'Rotating line',
-  font => { name => 'Terminal', size => 12, },
+  font => { name => 'Terminal', size => 12, pitch => fp::Fixed},
   menuItems =>
     [[ '~Options' => [
     [ '~Antialias' => sub {
