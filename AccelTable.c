@@ -44,6 +44,7 @@ void
 AccelTable_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
+   var-> system = false;
    my-> set_items( self, pget_sv( items));
 }
 

@@ -46,6 +46,7 @@ void
 Menu_update_sys_handle( Handle self, HV * profile)
 {
    Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
+   var-> system = true;
    if ( var-> owner && ( xOwner != var-> owner))
       ((( PWindow) var-> owner)-> self)-> set_menu( var-> owner, nilHandle);
    if ( !pexist( owner)) return;

@@ -58,6 +58,7 @@ Popup_update_sys_handle( Handle self, HV * profile)
    if ( !apc_popup_create( self, xOwner))
       croak("RTC0061: Cannot create popup");
    pdelete( owner);
+   var-> system = true;
 }
 
 

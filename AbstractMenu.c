@@ -138,6 +138,12 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
    }
    av = (AV *) SvRV( sv);
    n = av_len( av);
+
+   if ( n == -1) {
+      warn("RTC003E: menu build error: empty array passed");
+      return nil;
+   }
+   
    // log_write("%s(%d){", buf, n+1);
 
    // cycling the list of items
@@ -342,17 +348,18 @@ void
 AbstractMenu_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
-   ((( PComponent) var-> owner)-> self)-> attach ( var-> owner, self);
+   ((( PComponent) var-> owner)-> self)-> attach( var-> owner, self);
    var-> anchored = kind_of( self, CMenu);
-   my-> set_items( self, pget_sv( items));
    my-> update_sys_handle( self, profile);
+   my-> set_items( self, pget_sv( items));
+   if ( var-> system) apc_menu_update( self, nil, var-> tree);
    if ( pget_B( selected)) my-> set_selected( self, true);
 }
 
 void
 AbstractMenu_done( Handle self)
 {
-   apc_menu_destroy( self);
+   if ( var-> system) apc_menu_destroy( self);
    my-> dispose_menu( self, var-> tree);
    var-> tree = nil;
    inherited done( self);
@@ -466,13 +473,13 @@ AbstractMenu_get_items ( Handle self, char * varName)
 }
 
 void
-AbstractMenu_set_items ( Handle self, SV * items)
+AbstractMenu_set_items( Handle self, SV * items)
 {
    int subCount = 0, autoEnum = 0;
    PMenuItemReg oldBranch = var-> tree;
    if ( var-> stage > csFrozen) return;
    var-> tree = ( PMenuItemReg) my-> new_menu( self, items, 0, &subCount, &autoEnum);
-   if ( var-> stage <= csNormal)
+   if ( var-> stage <= csNormal && var-> system)
       apc_menu_update( self, oldBranch, var-> tree);
    my-> dispose_menu( self, oldBranch);
 }
@@ -524,7 +531,7 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, char * accel)
    free( m-> accel);
    m-> accel = duplicate_string( accel);
    if ( m-> id > 0)
-      if ( var-> stage <= csNormal)
+      if ( var-> stage <= csNormal && var-> system)
           apc_menu_item_set_accel( self, m, accel);
    return accel;
 }
@@ -576,7 +583,7 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
    if ( m-> divider || m-> down) return false;
    m-> checked = checked;
    if ( m-> id > 0)
-      if ( var-> stage <= csNormal)
+      if ( var-> stage <= csNormal && var-> system)
          apc_menu_item_set_check( self, m, checked);
    return checked;
 }
@@ -593,7 +600,7 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
    if ( m-> divider || m-> down) return false;
    m-> disabled = !enabled;
    if ( m-> id > 0)
-      if ( var-> stage <= csNormal)
+      if ( var-> stage <= csNormal && var-> system)
          apc_menu_item_set_enabled( self, m, enabled);
    return enabled;
 }
@@ -630,7 +637,7 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
    unprotect_object( m-> bitmap);
    m-> bitmap = image;
    if ( m-> id > 0)
-      if ( var-> stage <= csNormal)
+      if ( var-> stage <= csNormal && var-> system)
          apc_menu_item_set_image( self, m, image);
    return nilHandle;
 }
@@ -648,7 +655,7 @@ AbstractMenu_text ( Handle self, Bool set, char * varName, char * text)
    free( m-> text);
    m-> text = duplicate_string( text);
    if ( m-> id > 0)
-      if ( var-> stage <= csNormal)
+      if ( var-> stage <= csNormal && var-> system)
          apc_menu_item_set_text( self, m, text);
    return text;
 }
@@ -667,7 +674,7 @@ AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
 
    m-> key = key_normalize( SvPV( key, na));
    if ( m-> id > 0)
-      if ( var-> stage <= csNormal)
+      if ( var-> stage <= csNormal && var-> system)
          apc_menu_item_set_key( self, m, m-> key);
    return nilSV;
 }
@@ -683,8 +690,8 @@ AbstractMenu_set_variable( Handle self, char * varName, char * newName)
    m-> variable = duplicate_string( newName);
 }
 
-static Bool
-sub_call( Handle self, PMenuItemReg m)
+Bool
+AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 {
    if ( m == nil) return false;
    if ( m-> code) cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "s", m-> variable);
@@ -695,7 +702,7 @@ sub_call( Handle self, PMenuItemReg m)
 Bool
 AbstractMenu_sub_call_id ( Handle self, int sysId)
 {
-   return sub_call( self, ( PMenuItemReg) my-> first_that( self, id_match, (void *) sysId, false));
+   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, id_match, (void *) sysId, false));
 }
 
 #define keyRealize( key)     if ((( key & 0xFF) >= 'A') && (( key & 0xFF) <= 'z'))  \
@@ -708,7 +715,7 @@ Bool
 AbstractMenu_sub_call_key ( Handle self, int key)
 {
    keyRealize( key);
-   return sub_call( self, ( PMenuItemReg) my-> first_that( self, key_match, (void *) key, false));
+   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, key_match, (void *) key, false));
 }
 
 typedef struct _Kmcc
@@ -724,7 +731,7 @@ kmcc ( Handle self, PMenuItemReg m, void * params)
    {
       m-> disabled = !(( PKmcc) params)-> enabled;
       if ( m-> id > 0)
-         if ( var-> stage <= csNormal)
+         if ( var-> stage <= csNormal && var-> system)
             apc_menu_item_set_enabled( self, m, !m-> disabled);
    }
    return false;
@@ -749,7 +756,7 @@ SV *
 AbstractMenu_get_handle( Handle self)
 {
    char buf[ 256];
-   snprintf( buf, 256, "0x%08lx", apc_menu_get_handle( self));
+   snprintf( buf, 256, "0x%08lx", var-> system ? apc_menu_get_handle( self) : self);
    return newSVpv( buf, 0);
 }
 
@@ -786,7 +793,7 @@ AbstractMenu_remove( Handle self, char * varName)
    if ( var-> stage > csFrozen) return;
    m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( m == nil) return;
-   if ( var-> stage <= csNormal)
+   if ( var-> stage <= csNormal && var-> system)
       apc_menu_item_delete( self, m);
    up   = ( PMenuItemReg) my-> first_that( self, up_match, m, true);
    prev = ( PMenuItemReg) my-> first_that( self, prev_match, m, true);
@@ -824,7 +831,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       if ( var-> tree == nil)
       {
          var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0, &subCount, &autoEnum);
-         if ( var-> stage <= csNormal)
+         if ( var-> stage <= csNormal && var-> system)
             apc_menu_update( self, nil, var-> tree);
          return;
       }
@@ -877,7 +884,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       addFirst = addFirst-> next;
    }
 
-   if ( var-> stage <= csNormal)
+   if ( var-> stage <= csNormal && var-> system)
       apc_menu_update( self, branch, branch);
 }
 
