@@ -265,6 +265,8 @@ window_subsystem_init( void)
    else
       croak( "UAA_001: weird machine byte order: %08x", BYTEORDER);
 
+   guts. null_pointer = nilHandle;
+   guts. pointer_invisible_count = 0;
    guts. files = plist_create( 16, 16);
    prima_rebuild_watchers();
    prima_wm_init();

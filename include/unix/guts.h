@@ -254,6 +254,8 @@ struct _UnixGuts
       long request_length;
    }                            limits;
    Bool                         local_connection;
+   Cursor                       null_pointer;
+   int                          pointer_invisible_count; /* 0 is visible, > 0 is not, can't be <0 */
    int                          mouse_buttons;
    int                          mouse_wheel_down;
    int                          mouse_wheel_up;
@@ -374,6 +376,7 @@ typedef struct _drawable_sys_data
    Point cursor_size;
    Point pointer_hot_spot;
    int pointer_id;
+   int pointer_actual_id;
    Cursor user_pointer;
    Pixmap user_p_source;
    Pixmap user_p_mask;

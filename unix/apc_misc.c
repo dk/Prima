@@ -34,6 +34,7 @@
 
 #include <sys/stat.h>
 #include "unix/guts.h"
+#include "Application.h"
 #include "File.h"
 #include "Clipboard.h"
 #include "Icon.h"
@@ -725,8 +726,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 Bool
 apc_pointer_get_visible( Handle self)
 {
-   DOLBUG( "apc_pointer_get_visible()\n");
-   return false;
+   return guts. pointer_invisible_count == 0;
 }
 
 Bool
@@ -749,10 +749,10 @@ apc_pointer_set_shape( Handle self, int id)
 
    if ( id < crDefault || id > crUser)  return false;
    XX-> pointer_id = id;
-   id = get_cursor( self, nil, nil, nil, &uc);
+   XX-> pointer_actual_id = id = get_cursor( self, nil, nil, nil, &uc);
    if ( id == crUser) {
       if ( uc != None || ( uc = XX-> user_pointer) != None) {
-         if ( self != application) {
+         if ( self != application && guts. pointer_invisible_count == 0) {
             XDefineCursor( DISP, XX-> udrawable, uc);
             XCHECKPOINT;
          }
@@ -765,7 +765,7 @@ apc_pointer_set_shape( Handle self, int id)
             XCreateFontCursor( DISP, cursor_map[id]);
          XCHECKPOINT;
       }
-      if ( self != application) {
+      if ( self != application && guts. pointer_invisible_count == 0) {
          XDefineCursor( DISP, XX-> udrawable, predefined_cursors[id]);
          XCHECKPOINT;
       }
@@ -838,7 +838,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
          warn( "error creating cursor from pixmaps");
          return false;
       }
-      if ( XX-> pointer_id == crUser && self != application) {
+      if ( XX-> pointer_id == crUser && self != application && guts. pointer_invisible_count == 0) {
          XDefineCursor( DISP, XX-> udrawable, XX-> user_pointer);
          XCHECKPOINT;
       }      
@@ -846,10 +846,69 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
    return true;
 }
 
+static Bool
+do_pointer( Handle window, Handle self, void * info)
+{
+   if ( info == nil) {
+      XDefineCursor( DISP, X(self)-> udrawable, guts. null_pointer); 
+   } else {   
+      if ( X(self)-> pointer_id == crUser) 
+         XDefineCursor( DISP, X(self)-> udrawable, X(self)-> user_pointer); 
+      else
+         XDefineCursor( DISP, X(self)-> udrawable, predefined_cursors[ X(self)-> pointer_actual_id]);
+   }
+   if ( PWidget(self)-> widgets. count > 0)
+      CWidget( self)-> first_that( self, do_pointer, info);
+   return false;
+}
+
+
 Bool
 apc_pointer_set_visible( Handle self, Bool visible)
 {
-   DOLBUG( "apc_pointer_set_visible()\n");
+   /* creating empty cursor, if any */
+   if ( !visible && ( guts. null_pointer == nilHandle)) {
+      Handle nullc = ( Handle) create_object( "Prima::Icon", "", nil);
+      PIcon  n = ( PIcon) nullc;
+      Pixmap xor, and;
+      if ( nullc == nilHandle) {
+         warn("Error creating icon object");
+         return false;
+      }   
+      n-> self-> create_empty( nullc, 16, 16, 1);
+      memset( n-> mask, 0xFF, n-> maskSize);
+      if ( !prima_create_icon_pixmaps( nullc, &xor, &and)) {
+         warn( "error creating null cursor pixmaps"); 
+         Object_destroy( nullc);
+         return false;
+      }  
+      Object_destroy( nullc);
+      guts. null_pointer = XCreatePixmapCursor( DISP, xor, and, 
+          prima_allocate_color( self, clBlack),
+          prima_allocate_color( self, clBlack), 0, 0);
+      XCHECKPOINT;
+      XFreePixmap( DISP, xor);
+      XFreePixmap( DISP, and);
+      if ( !guts. null_pointer) {
+         warn( "error creating null cursor from pixmaps");
+         return false;
+      }   
+   }   
+
+   /* maintaining hide/show count */
+   if ( visible) {
+      if ( guts. pointer_invisible_count == 0) 
+         return true;
+      if ( ++guts. pointer_invisible_count < 0)
+         return true;
+   } else {
+      if ( guts. pointer_invisible_count-- < 0)
+         return true;
+   }
+ 
+   /* scanning all widgets */
+   if ((( PApplication) application)-> widgets. count > 0)
+      CApplication( application)-> first_that( application, do_pointer, visible ? (void*)1 : nil);
    return true;
 }
 
