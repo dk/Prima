@@ -123,7 +123,9 @@ handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case EnterNotify: {
-      if (disabled) return;
+      if (disabled) {
+	 return;
+      }
       e. cmd = cmMouseEnter;
      CrossingEvent:
       e. pos. where. x = ev-> xcrossing. x;
@@ -131,19 +133,47 @@ handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case LeaveNotify: {
-      if (disabled) return;
+      if (disabled) {
+	 return;
+      }
       e. cmd = cmMouseLeave;
       goto CrossingEvent;
    }
    case FocusIn: {
+      switch ( ev-> xfocus. detail) {
+      case NotifyVirtual:
+      case NotifyNonlinearVirtual: /* XXX ? */
+      case NotifyPointer:
+      case NotifyPointerRoot: /* XXX ? */
+      case NotifyDetailNone: /* XXX ? */
+	 return;
+      }
       XX-> flags. focused = 1;
       guts. focused = self;
       e. cmd = cmReceiveFocus;
+      DOLBUG( "~~~~~~~~~ receive focus to %s, mode: %d, sent: %d, detail: %d\n",
+	      PWidget(self)-> name,
+	      ev-> xfocus. mode,
+	      ev-> xfocus. send_event,
+	      ev-> xfocus. detail);
       break;
    }
    case FocusOut: {
+      switch ( ev-> xfocus. detail) {
+      case NotifyVirtual:
+      case NotifyNonlinearVirtual: /* XXX ? */
+      case NotifyPointer:
+      case NotifyPointerRoot: /* XXX ? */
+      case NotifyDetailNone: /* XXX ? */
+	 return;
+      }
       XX-> flags. focused = 0;
       guts. focused = nilHandle;
+      DOLBUG( "~~~~~~~~~ release focus of %s, mode: %d, sent: %d, detail: %d\n",
+	      PWidget(self)-> name,
+	      ev-> xfocus. mode,
+	      ev-> xfocus. send_event,
+	      ev-> xfocus. detail);
       e. cmd = cmReleaseFocus;
       break;
    }
@@ -173,7 +203,8 @@ handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case GraphicsExpose: {
-fprintf( stdout, "********* Graphics Exposing ********* %s (%d,%d) *********\n", PWidget(self)-> text, X(self)-> size. x, X(self)-> size. y);
+      DOLBUG( "********* Graphics Exposing ********* %s (%d,%d) *********\n",
+	      PWidget(self)-> text, X(self)-> size. x, X(self)-> size. y);
       break;
    }
    case NoExpose: {
@@ -205,7 +236,7 @@ fprintf( stdout, "********* Graphics Exposing ********* %s (%d,%d) *********\n",
       XWindow p = ev-> xreparent. parent;
       if ( !xw2h( p))
 	 XX-> realParent = p;
-fprintf( stdout, "ReparentNotify\n");
+      DOLBUG( "ReparentNotify\n");
       return;
    }
 
@@ -215,20 +246,25 @@ fprintf( stdout, "ReparentNotify\n");
       Point oldOrigin = XX-> knownOrigin;
       Bool sizeChanged;
 
-      if ( oldSize.x == oldSize.y && oldSize.x == APC_BAD_SIZE)
-	 oldSize = XX-> size;
+      if ( XX-> flags. noSize && oldSize.x == oldSize.y && oldSize. x == APC_BAD_SIZE) {
+	 XX-> knownSize. x = XX-> size. x;
+	 XX-> knownSize. y = XX-> size. y;
+	 XX-> knownOrigin. x = XX-> origin. x;
+	 XX-> knownOrigin. y = XX-> origin. y;
+	 return;
+      }
 
-      if ( oldOrigin.x == oldOrigin.y && oldOrigin.x == APC_BAD_ORIGIN)
-	 oldOrigin = XX-> origin;
+/*       if ( oldSize.x == oldSize.y && oldSize.x == APC_BAD_SIZE) */
+/* 	 oldSize = XX-> size; */
 
-fprintf( stdout, "################ ConfigureNotify (%d,%d) - (%d,%d) - brd:%d, sent:%ld ##############\n",
-	 cev-> x, cev-> y, cev-> width, cev-> height,
-	 cev-> border_width, wasSent
-	 );
+/*       if ( oldOrigin.x == oldOrigin.y && oldOrigin.x == APC_BAD_ORIGIN) */
+/* 	 oldOrigin = XX-> origin; */
 
       XX-> size. x = cev-> width;
       XX-> size. y = cev-> height;
-      sizeChanged = XX-> size. x != XX-> knownSize. x || XX-> size. y != XX-> knownSize. y;
+      sizeChanged = XX-> flags. noSize
+	 || XX-> size. x != XX-> knownSize. x
+	 || XX-> size. y != XX-> knownSize. y;
 
       if ( XX-> realParent && !wasSent) {
 	 XWindow cld;
@@ -243,14 +279,19 @@ fprintf( stdout, "################ ConfigureNotify (%d,%d) - (%d,%d) - brd:%d, s
       XX-> origin. x = cev-> x;
       XX-> origin. y = X(XX-> owner)-> size. y - XX-> size. y - cev-> y;
 
-      if ( XX-> origin. x != XX-> knownOrigin. x || XX-> origin. y != XX-> knownOrigin. y) {
+      if ( XX-> flags. noSize
+	   || XX-> origin. x != XX-> knownOrigin. x
+	   || XX-> origin. y != XX-> knownOrigin. y) {
+	 /* move notification */
 	 e. cmd = cmMove;
 	 e. gen. P = oldOrigin;
-fprintf( stdout, "Move of %s to (%d,%d)\n", PWidget( self)-> name, XX-> origin. x, XX-> origin. y);
 	 CComponent( self)-> message( self, &e);
       }
 
+      XX-> flags. noSize = false;
+
       if ( sizeChanged) {
+	 /* size notification */
 	 e. gen. source = self;
 	 e. cmd = cmSize;
 	 e. gen. R. left = oldSize. x;
@@ -258,7 +299,28 @@ fprintf( stdout, "Move of %s to (%d,%d)\n", PWidget( self)-> name, XX-> origin. 
 	 e. gen. P = XX-> size;
 	 e. gen. R. right = XX-> size. x;
 	 e. gen. R. top = XX-> size. y;
-fprintf( stdout, "Size of %s to (%d,%d)\n", PWidget( self)-> name, XX-> size. x, XX-> size. y);
+	 {
+	    int count = PWidget( self)-> widgets. count;
+	    Handle *selves = malloc( count * sizeof( Handle));
+	    int i, stage;
+
+	    memcpy( selves, PWidget( self)-> widgets. items, count * sizeof( Handle));
+	    for ( i = 0; i < count; i++) {
+	       PWidget child = PWidget( selves[i]);
+
+	       if ( X(selves[i])-> flags. clipOwner && (child-> growMode & gmDontCare) == 0) {
+		  stage = child-> stage;
+		  child-> stage = csFrozen;
+		  apc_widget_set_pos( selves[i], X(selves[i])-> origin. x, X(selves[i])-> origin. y);
+		  child-> stage = stage;
+	       }
+	    }
+	    free( selves);
+	 }
+	 DOLBUG( "old size of %s: %dx%d, new size: %dx%d\n", 
+		  PComponent( self)-> name, 
+		  oldSize. x, oldSize. y, 
+		  XX-> size. x, XX-> size. y);
 	 CComponent( self)-> message( self, &e);
       }
 
@@ -271,11 +333,11 @@ fprintf( stdout, "Size of %s to (%d,%d)\n", PWidget( self)-> name, XX-> size. x,
       break;
    }
    case GravityNotify: {
-fprintf( stdout, "!!!!!!!! GravityNotify: %08lx  %08lx -- %d %d !!!!!!!!\n",
-	 ev-> xgravity. window,
-	 ev-> xgravity. event,
-	 ev-> xgravity. x,
-	 ev-> xgravity. y);
+      DOLBUG( "!!!!!!!! GravityNotify: %08lx  %08lx -- %d %d !!!!!!!!\n",
+	      ev-> xgravity. window,
+	      ev-> xgravity. event,
+	      ev-> xgravity. x,
+	      ev-> xgravity. y);
       break;
    }
    case ResizeRequest: {
@@ -288,6 +350,10 @@ fprintf( stdout, "!!!!!!!! GravityNotify: %08lx  %08lx -- %d %d !!!!!!!!\n",
       break;
    }
    case PropertyNotify: {
+      char *c;
+      DOLBUG( "!!!!!!!! PropertyNotify: %s !!!!!!!!\n",
+	      c = XGetAtomName( DISP, ev-> xproperty. atom));
+      if (c) XFree(c);
       break;
    }
    case SelectionClear: {
@@ -317,7 +383,7 @@ fprintf( stdout, "!!!!!!!! GravityNotify: %08lx  %08lx -- %d %d !!!!!!!!\n",
       CComponent( self)-> message( self, &e);
    } else {
       /* Unhandled event, just do nothing */
-      fprintf( stdout, "*** event %u to %s ***\n", ev-> type, PWidget( self)-> name);
+      DOLBUG( "*** event %u to %s ***\n", ev-> type, PWidget( self)-> name);
       guts. unhandled_events++;
    }
 }
