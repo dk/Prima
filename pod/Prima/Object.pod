@@ -1007,11 +1007,31 @@ not visible in perl, the results are system-dependent, and
 the code that changes owner property should be tested
 especially thorough.
 
+Changes to C<owner> result in up to three notifications:
+C<ChangeOwner>, which is called to the object itself, 
+C<ChildLeave>, which notifies the previous owner that the object
+is about to leave, and C<ChildEnter>, telling the new owner
+about the newcomer.
+
 =back
 
 B<Events>
 
 =over 4
+
+=item ChangeOwner OLD_OWNER
+
+Called at runtime when the object changes its owner. 
+
+=item ChildEnter CHILD
+
+Triggered when a child object is attached, either as
+a new instance or as a result of runtime owner change.
+
+=item ChildLeave CHILD
+
+Triggered when a child object is detached, either because
+it is getting destroyed or as a result of runtime owner change.
 
 =item Create
 

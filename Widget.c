@@ -1264,8 +1264,9 @@ void
 Widget_set( Handle self, HV * profile)
 {
    enter_method;
-   Handle postOwner = var-> owner;
+   Handle postOwner = nilHandle;
    AV *order = nil;
+   Bool geometry_changed = 0;
 
    if ( pexist(__ORDER__)) order = (AV*)SvRV(pget_sv( __ORDER__));
 
@@ -1295,6 +1296,7 @@ Widget_set( Handle self, HV * profile)
             my-> set_font ( self, CWidget( postOwner)-> get_font( postOwner));
             opt_set( optOwnerFont);
          }
+         geometry_changed = 1;
       }
    }
 
@@ -1319,6 +1321,7 @@ Widget_set( Handle self, HV * profile)
          pset_i( left,   set[0]);
          pset_i( bottom, set[1]);
          pdelete( origin);
+         geometry_changed = 1;
       }
       if ( pexist( rect))
       {
@@ -1333,6 +1336,7 @@ Widget_set( Handle self, HV * profile)
          pset_i( width,  rect[2] - rect[0]);
          pset_i( height, rect[3] - rect[1]);
          pdelete( rect);
+         geometry_changed = 1;
       }
       if ( pexist( size))
       {
@@ -1343,6 +1347,7 @@ Widget_set( Handle self, HV * profile)
          pset_i( width,  set[0]);
          pset_i( height, set[1]);
          pdelete( size);
+         geometry_changed = 1;
       }
 
       if (( exists[ iLEFT]   = pexist( left)))    values[ iLEFT]   = pget_i( left);
@@ -1429,6 +1434,7 @@ Widget_set( Handle self, HV * profile)
          pdelete( bottom);
          pdelete( width);
          pdelete( height);
+         geometry_changed = 1;
       } /* count > 1 */
    }
    if ( pexist( popupFont))
@@ -1469,12 +1475,14 @@ Widget_set( Handle self, HV * profile)
       prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
       my-> set_sizeMin( self, set);
       pdelete( sizeMin);
+      geometry_changed = 1;
    }
    if ( pexist( sizeMax)) {
       Point set;
       prima_read_point( pget_sv( sizeMax), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
       my-> set_sizeMax( self, set);
       pdelete( sizeMax);
+      geometry_changed = 1;
    }
    if ( pexist( cursorSize)) {
       Point set;
@@ -1490,12 +1498,9 @@ Widget_set( Handle self, HV * profile)
    }
 
    inherited-> set( self, profile);
-   if ( var-> owner != postOwner)
-   {
-       var-> owner = postOwner;
-       my-> set_tabOrder( self, var-> tabOrder);
-   }
-   if ( var-> growMode & gmCenter) my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
+   if ( postOwner) my-> set_tabOrder( self, var-> tabOrder);
+   if ( var-> growMode & gmCenter && geometry_changed) 
+      my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
 }
 
 void

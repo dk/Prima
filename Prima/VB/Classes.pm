@@ -225,6 +225,9 @@ sub prf_events
 {
    return (
       onPostMessage  => 'my ( $self, $info1, $info2) = @_;',
+      onChangeOwner  => 'my ( $self, $old_owner) = @_;',
+      onChildEnter   => 'my ( $self, $child) = @_;',
+      onChildLeave   => 'my ( $self, $child) = @_;',
    );
 }
 

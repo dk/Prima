@@ -82,6 +82,13 @@ Component_setup( Handle self)
    Event ev = {cmCreate};
    ev. gen. source = self;
    my-> message( self, &ev);
+
+   if ( var-> owner) {   
+      ev. cmd = cmChildEnter;
+      ev. gen. source = var-> owner;
+      ev. gen. H      = self;
+      CComponent( var-> owner)-> message( var-> owner, &ev);
+   }
 }
 
 static Bool bring_by_name( Handle self, PComponent item, char * name)
@@ -106,6 +113,13 @@ void
 Component_cleanup( Handle self)
 {
    Event ev = {cmDestroy};
+   
+   if ( var-> owner) {   
+      Event ev = {cmChildLeave};
+      ev. gen. source = var-> owner;
+      ev. gen. H      = self;
+      CComponent( var-> owner)-> message( var-> owner, &ev);
+   }
 
    if ( var-> components != nil)
       list_first_that( var-> components, (void*)detach_all, ( void*) self);
@@ -263,12 +277,37 @@ Component_set( Handle self, HV * profile)
    my-> update_sys_handle( self, profile);
 
    if ( pexist( owner)) {
-      Handle owner;
+      Handle owner, oldOwner = var-> owner;
       if ( !my-> validate_owner( self, &owner, profile))
          croak( "Illegal 'owner' reference passed to %s::%s", my-> className, "set");
+
+      if ( oldOwner && oldOwner != owner) {
+         Event ev;
+         ev. cmd = cmChildLeave;
+         ev. gen. source = oldOwner;
+         ev. gen. H      = self;
+         if ( oldOwner)
+            CComponent( oldOwner)-> message( oldOwner, &ev);
+      }
+
       my-> migrate( self, owner);
       var-> owner = owner;
-      pdelete( owner);                    /* like this. */
+      pdelete( owner); 
+
+      if ( oldOwner != owner) {
+         Event ev;
+
+         ev. cmd = cmChildEnter;
+         ev. gen. source = owner;
+         ev. gen. H      = self;
+         if ( owner)
+            CComponent( owner)-> message( owner, &ev);
+         
+         ev. cmd = cmChangeOwner;
+         ev. gen. source = self;
+         ev. gen. H      = oldOwner;
+         my-> message( self, &ev);
+      }
    }
 
    inherited set ( self, profile);
@@ -426,7 +465,16 @@ Component_handle_event( Handle self, PEvent event)
          if ( p-> info2) sv_free( p-> info2);
          free( p);
       }
-   break;
+      break;
+   case cmChangeOwner:
+      my-> notify( self, "<sH", "ChangeOwner", event-> gen. H);
+      break;
+   case cmChildEnter:
+      my-> notify( self, "<sH", "ChildEnter", event-> gen. H);
+      break;
+   case cmChildLeave:
+      my-> notify( self, "<sH", "ChildLeave", event-> gen. H);
+      break;
    }
 }
 

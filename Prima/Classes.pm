@@ -145,6 +145,9 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
+   ChangeOwner => nt::Default,
+   ChildEnter  => nt::Default,
+   ChildLeave  => nt::Default,
    Create      => nt::Default,
    Destroy     => nt::Default,
    PostMessage => nt::Default,
