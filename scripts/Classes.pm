@@ -157,7 +157,7 @@ sub AUTOLOAD
    unless ( scalar grep {$_ eq $itemName} @metricNames)
    {
       die "Unknown font field \"$itemName\"" unless scalar grep {$_ eq $itemName} @overlappedNames;
-      $itemName =~ s/^_(.*)/$1/;
+      $itemName =~ s/^_//;
    }
    return $self-> metrics-> {$itemName};
 }
