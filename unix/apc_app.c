@@ -114,11 +114,13 @@ window_subsystem_init( void)
    guts. visible_timeout = 500;
    guts. invisible_timeout = 500;
    guts. insert = true;
+   guts. last_time = CurrentTime;
 
    guts. ri_head = guts. ri_tail = 0;
    DISP = XOpenDisplay( nil);
    if (!DISP) return false;
    XSetErrorHandler( x_error_handler);
+   (void)x_error_handler;
    (void)x_io_error_handler;
    XCHECKPOINT;
    guts.connection = ConnectionNumber( DISP);
@@ -194,6 +196,7 @@ window_subsystem_init( void)
 		     &guts. cursor_height);
    XCHECKPOINT;
 
+   guts. clipboards = hash_create();
    guts. windows = hash_create();
    guts. menu_windows = hash_create();
    guts. ximages = hash_create();
@@ -232,6 +235,12 @@ window_subsystem_done( void)
    for ( n = 0, gcl = guts. free_gcl; gcl; n++, gcl = gcl-> next) {
    }
    DOLBUG( "Free GC's: %d\n", n);
+   for ( n = 0, gcl = guts. bitmap_used_gcl; gcl; n++, gcl = gcl-> next) {
+   }
+   DOLBUG( "Used bitmap GC's: %d\n", n);
+   for ( n = 0, gcl = guts. bitmap_free_gcl; gcl; n++, gcl = gcl-> next) {
+   }
+   DOLBUG( "Free bitmap GC's: %d\n", n);
 
    XFreeGC( DISP, guts. menugc);
    prima_gc_ximages();          /* verrry dangerous, very quiet please */
@@ -250,6 +259,7 @@ window_subsystem_done( void)
    if (guts.ximages)            hash_destroy( guts.ximages, false);
    if (guts.menu_windows)       hash_destroy( guts.menu_windows, false);
    if (guts.windows)            hash_destroy( guts.windows, false);
+   if (guts.clipboards)         hash_destroy( guts.clipboards, false);
    prima_cleanup_font_subsystem();
 }
 

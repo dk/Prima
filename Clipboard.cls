@@ -23,13 +23,13 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+
 object Prima::Clipboard( Prima::Component)
 {
-   int    openCount;
-   int    formatCount;
-   void * formats;
+   int openCount;
+
    method void   clear();
-   c_only void   close();
+   method void   close();
    method void   deregister_format( char * format);
    method void   done();
    method SV *   fetch( char * format);
@@ -40,7 +40,7 @@ object Prima::Clipboard( Prima::Component)
    method int    get_registered_format_count();
    public void   get_registered_formats();
    method void   init( HV * profile);
-   c_only Bool   open();
+   method Bool   open();
    method Bool   register_format( char * format);
    method void   store( char * format, SV * data);
 }

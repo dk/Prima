@@ -1883,37 +1883,37 @@ apc_kbd_get_state( Handle self);
 #define cfCustom   2
 
 extern Bool
-apc_clipboard_create( void);
+apc_clipboard_create( Handle self);
 
 extern Bool
-apc_clipboard_destroy( void);
+apc_clipboard_destroy( Handle self);
 
 extern Bool
-apc_clipboard_open( void);
+apc_clipboard_open( Handle self);
 
 extern Bool
-apc_clipboard_close( void);
+apc_clipboard_close( Handle self);
 
 extern Bool
-apc_clipboard_clear( void);
+apc_clipboard_clear( Handle self);
 
 extern Bool
-apc_clipboard_has_format( long id);
+apc_clipboard_has_format( Handle self, long id);
 
 extern void*
-apc_clipboard_get_data( long id, int *length);
+apc_clipboard_get_data( Handle self, long id, int *length);
 
 extern ApiHandle
 apc_clipboard_get_handle( Handle self);
 
 extern Bool
-apc_clipboard_set_data( long id, void *data, int length);
+apc_clipboard_set_data( Handle self, long id, void *data, int length);
 
 extern long
-apc_clipboard_register_format( const char *format);
+apc_clipboard_register_format( Handle self, const char *format);
 
 extern Bool
-apc_clipboard_deregister_format( long id);
+apc_clipboard_deregister_format( Handle self, long id);
 
 /* Menus & popups */
 

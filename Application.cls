@@ -25,7 +25,6 @@
 #
 object Prima::Application( Prima::Widget)
 {
-   Handle    clipboard;
    Handle    printer;
    ColorSet  colors;
    Handle    hintTimer;
@@ -52,7 +51,6 @@ object Prima::Application( Prima::Widget)
    static Font   get_default_font( char * dummy = "");
    static Point  get_default_scrollbar_metrics( char * dummy = "");
    static Point  get_default_window_borders( char * dummy = "", int borderStyle = bsSizeable);
-   method Handle get_clipboard();
    method Handle get_icon();
    method Bool   get_insert_mode();
    method char*  get_help_file();
@@ -77,6 +75,7 @@ object Prima::Application( Prima::Widget)
    method Handle prev();
    method Point  screen_to_client( Point p);
    method void   send_to_back();
+   import void   setup();
    method void   set_auto_close( Bool autoClose);
    method void   set_icon( Handle icon);
    method void   set_insert_mode( Bool insMode);

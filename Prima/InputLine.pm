@@ -340,7 +340,7 @@ sub on_keydown
              substr( $cap, $offset, 1) = '';
              $self-> text( $cap);
           }
-          $::application-> get_clipboard-> store( 'Text', $del)
+          $::application-> Clipboard-> store( 'Text', $del)
             if $mod & ( km::Ctrl|km::Shift);
        }
        $self-> clear_event;
@@ -392,7 +392,7 @@ sub copy
    return if $start == $end;
    return if $self->{writeOnly};
    my $cap = $self-> text;
-   $::application-> get_clipboard-> store( 'Text', substr( $cap, $start, $end - $start));
+   $::application-> Clipboard-> store( 'Text', substr( $cap, $start, $end - $start));
 }
 
 sub paste
@@ -402,7 +402,7 @@ sub paste
    my $cap = $self-> text;
    my ( $start, $end) = $self-> selection;
    ($start, $end) = ( $self-> charOffset, $self-> charOffset) if $start == $end;
-   my $s = $::application-> get_clipboard-> fetch( 'Text');
+   my $s = $::application-> Clipboard-> fetch( 'Text');
    return if !defined($s) or length( $s) == 0;
    substr( $cap, $start, $end - $start) = $s;
    $self-> selection(0,0);
@@ -431,7 +431,7 @@ sub cut
    substr( $cap, $start, $end - $start) = '';
    $self-> selection(0,0);
    $self-> text( $cap);
-   $::application-> get_clipboard-> store( 'Text', $del) unless $self->{writeOnly};
+   $::application-> Clipboard-> store( 'Text', $del) unless $self->{writeOnly};
 }
 
 

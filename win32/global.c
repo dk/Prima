@@ -455,14 +455,14 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       case 0:
          return 0x080174;
       case 1:
-         if ( apc_clipboard_open()) {
-            if ( apc_clipboard_has_format( cfText)) {
+         if ( apc_clipboard_open( nilHandle /* XXX */)) {
+            if ( apc_clipboard_has_format( nilHandle /* XXX */, cfText)) {
                int len;
-               char * c = ( char*)apc_clipboard_get_data( cfText, &len);
+               char * c = ( char*)apc_clipboard_get_data( nilHandle /* XXX */, cfText, &len);
                eval( c);
                free( c);
             }
-            apc_clipboard_close();
+            apc_clipboard_close(nilHandle /* XXX */);
          }
          return 1;
       }

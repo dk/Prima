@@ -120,6 +120,7 @@ struct  _drawable_sys_data;
                         |       GCForeground    \
                         |       GCFunction      \
                         |       GCLineStyle     \
+                        |       GCCapStyle      \
                         |       GCLineWidth     )
 
 typedef struct _gc_list
@@ -139,6 +140,7 @@ typedef struct _paint_list
 struct _UnixGuts
 {
    /* Event management */
+   PHash                        clipboards;
    Atom                         create_event;
    fd_set                       excpt_set;
    PList                        files;
@@ -151,6 +153,8 @@ struct _UnixGuts
    long                         unhandled_events;
    fd_set                       write_set;
    /* Graphics */
+   GCList                      *bitmap_free_gcl;
+   GCList                      *bitmap_used_gcl;
    GCList                      *free_gcl;
    GC                           menugc;
    PPaintList                   paint_list;
@@ -269,6 +273,7 @@ struct _UnixGuts
 #define APC_BAD_ORIGIN INT_MAX
 
 #define COMPONENT_SYS_DATA \
+   Handle self; \
    XrmQuarkList q_class_name; \
    XrmQuarkList q_instance_name; \
    int n_class_name; \
@@ -299,7 +304,7 @@ typedef struct _drawable_sys_data
    XRectangle clip_rect;
    FillPattern fill_pattern;
    int rop, paint_rop;
-   char *dashes, *paint_dashes;
+   unsigned char *dashes, *paint_dashes;
    int ndashes, paint_ndashes;
    PCachedFont font;
    Font saved_font;
@@ -321,10 +326,14 @@ typedef struct _drawable_sys_data
       int no_size			: 1;
       int cursor_visible		: 1;
       int process_configure_notify	: 1;
+      int is_image                      : 1;
    } flags;
    struct _PrimaXImage *image_cache;
    struct _PrimaXImage *icon_cache;
+   struct _PrimaXImage *image_bit_cache;
+   struct _PrimaXImage *icon_bit_cache;
    XColor bitmap_fore, bitmap_back;
+   XColor bitmap_bit_fore, bitmap_bit_back;
 } DrawableSysData, *PDrawableSysData;
 
 #define CURSOR_TIMER	((Handle)11)
@@ -372,7 +381,9 @@ typedef struct _menu_sys_data
 typedef struct _clipboard_sys_data
 {
    COMPONENT_SYS_DATA;
-   Time                 have_primary_since;
+   char                *name;
+   Atom                 atom;
+   Time                 have_since;
 } ClipboardSysData, *PClipboardSysData;
 
 typedef union _unix_sys_data

@@ -32,6 +32,7 @@
 
 #include "unix/guts.h"
 #include "File.h"
+#include "Clipboard.h"
 
 /* Miscellaneous system-dependent functions */
 
@@ -77,6 +78,7 @@ apc_component_create( Handle self)
    if ( !PComponent( self)-> sysData) {
       PComponent( self)-> sysData = malloc( sizeof( UnixSysData));
       bzero( PComponent( self)-> sysData, sizeof( UnixSysData));
+      ((PUnixSysData)(PComponent(self)->sysData))->component. self = self;
    }
    return true;
 }
@@ -233,13 +235,14 @@ static XGCValues cursor_gcv = {
    background: 0,
    foreground: 0,
    clip_mask: None,
-   function: GXcopy
+   function: GXcopy,
+   cap_style: CapButt,
 };
 
 void
 prima_no_cursor( Handle self)
 {
-   if ( guts.focused == self
+   if ( self && guts.focused == self && X(self)
 	&& X(self)-> flags. cursor_visible
 	&& guts. cursor_save)
    {
@@ -588,75 +591,111 @@ apc_kbd_get_state( Handle self)
 
 /* Clipboard */
 
+#define C(obj)		((PClipboardSysData)(PComponent((obj))-> sysData))
+#define DEFCC		PClipboardSysData selfcc = C(self)
+#define CC		selfcc
+
 Bool
-apc_clipboard_create( void)
+apc_clipboard_create( Handle self)
 {
-   DOLBUG( "apc_clipboard_create()\n");
+   PClipboard c = (PClipboard)self;
+   char *name;
+   DEFCC;
+
+   name = CC-> name = duplicate_string( c-> name);
+   while (*name) {
+      *name = toupper(*name);
+      name++;
+   }
+   CC-> atom = XInternAtom( DISP, name, false);
+
+   if ( hash_fetch( guts.clipboards, &CC->atom, sizeof(CC->atom))) {
+      CC-> atom = None;
+      CC-> name = nil;
+      free( name);
+      return false;
+   }
+
+   hash_store( guts.clipboards, &CC->atom, sizeof(CC->atom), (void*)self);
    return true;
 }
 
 Bool
-apc_clipboard_destroy( void)
+apc_clipboard_destroy( Handle self)
 {
-   DOLBUG( "apc_clipboard_destroy()\n");
+   DEFCC;
+   if (CC-> atom != None) {
+      /* XXX - other cleanup here */
+      hash_delete( guts.clipboards, &CC->atom, sizeof(CC->atom), false);
+   }
+   free( CC-> name);
+   CC-> atom = None;
+   CC-> name = nil;
    return true;
 }
 
 Bool
-apc_clipboard_open( void)
+apc_clipboard_open( Handle self)
 {
    DOLBUG( "apc_clipboard_open()\n");
    return false;
 }
 
 Bool
-apc_clipboard_close( void)
+apc_clipboard_close( Handle self)
 {
    DOLBUG( "apc_clipboard_close()\n");
    return true;
 }
 
 Bool
-apc_clipboard_clear( void)
+apc_clipboard_clear( Handle self)
 {
    DOLBUG( "apc_clipboard_clear()\n");
    return true;
 }
 
 Bool
-apc_clipboard_has_format( long id)
+apc_clipboard_has_format( Handle self, long id)
 {
    DOLBUG( "apc_clipboard_has_format()\n");
    return false;
 }
 
 void *
-apc_clipboard_get_data( long id, int *length)
+apc_clipboard_get_data( Handle self, long id, int *length)
 {
    DOLBUG( "apc_clipboard_get_data()\n");
    return nil;
 }
 
 Bool
-apc_clipboard_set_data( long id, void * data, int length)
+apc_clipboard_set_data( Handle self, long id, void * data, int length)
 {
    DOLBUG( "apc_clipboard_set_data()\n");
    return false;
 }
 
 long
-apc_clipboard_register_format( const char* format)
+apc_clipboard_register_format( Handle self, const char* format)
 {
    DOLBUG( "apc_clipboard_register_format()\n");
    return 0;
 }
 
 Bool
-apc_clipboard_deregister_format( long id)
+apc_clipboard_deregister_format( Handle self, long id)
 {
    DOLBUG( "apc_clipboard_deregister_format()\n");
    return true;
 }
+
+ApiHandle
+apc_clipboard_get_handle( Handle self)
+{
+      return nilHandle;
+}
+
 
 /* Timer */
 

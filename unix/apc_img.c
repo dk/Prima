@@ -206,7 +206,9 @@ put_ximage( XDrawable win, GC gc, PrimaXImage *i, int src_x, int src_y, int dst_
 Bool
 apc_image_create( Handle self)
 {
-    return true;
+   DEFXX;
+   XX-> flags. is_image = true;
+   return true;
 }
 
 Bool
@@ -272,32 +274,13 @@ apc_dbm_destroy( Handle self)
 }
 
 static void
-create_image_cache_1_to_1( PImage img, Bool icon)
+copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils)
 {
-   PDrawableSysData IMG = X((Handle)img);
-   unsigned char *data;
+   static Bool initialized = false;
+   static unsigned char bits[256];
    int y;
    register int x;
-   int ls;
-   int h = img-> h, w = img-> w;
-   static unsigned char bits[256];
-   static Bool initialized = false;
-   int ils;
-   unsigned char *idata;
-   PrimaXImage *ximage;
 
-   if ( icon) {
-      ils = PIcon(img)->maskLine;
-      idata = PIcon(img)->mask;
-   } else {
-      ils = img-> lineSize;
-      idata = img-> data;
-   }
-
-   ximage = prepare_ximage( w, h, true);
-   if (!ximage) croak( "create_image_cache_1_to_1(): error creating ximage");
-   ls = get_ximage_bytes_per_line(ximage);
-   data = get_ximage_data(ximage);
    if ( guts.bit_order == MSBFirst) {
       for ( y = h-1; y >= 0; y--) {
 	 memcpy( ls*(h-y-1)+data, idata+y*ils, ls);
@@ -319,23 +302,59 @@ create_image_cache_1_to_1( PImage img, Bool icon)
 	 initialized = true;
       }
       for ( y = h-1; y >= 0; y--) {
-	 register unsigned char *s = idata+y*ils;
+	 register const unsigned char *s = idata+y*ils;
 	 register unsigned char *t = ls*(h-y-1)+data;
 	 for ( x = 0; x < (w+7)/8; x++) {
 	    *t++ = bits[*s++];
 	 }
       }
    }
+}
+
+static void
+create_image_cache_1_to_1( PImage img, Handle drawable, Bool icon)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   unsigned char *data;
+   int ls;
+   int h = img-> h, w = img-> w;
+   int ils;
+   unsigned char *idata;
+   PrimaXImage *ximage;
+   PrimaXImage **cache, **icon_cache;
+   Bool bit_cache = X(drawable)->flags.is_image && (PImage(drawable)->type & imBPP) == 1;
+
+   if ( bit_cache) {
+      cache = &IMG-> image_bit_cache;
+      icon_cache = &IMG-> icon_bit_cache;
+   } else {
+      cache = &IMG-> image_cache;
+      icon_cache = &IMG-> icon_cache;
+   }
+
+   if ( icon) {
+      ils = PIcon(img)->maskLine;
+      idata = PIcon(img)->mask;
+   } else {
+      ils = img-> lineSize;
+      idata = img-> data;
+   }
+
+   ximage = prepare_ximage( w, h, true);
+   if (!ximage) croak( "create_image_cache_1_to_1(): error creating ximage");
+   ls = get_ximage_bytes_per_line(ximage);
+   data = get_ximage_data(ximage);
+   copy_xybitmap( data, idata, w, h, ls, ils);
 
    if (icon) {
-      IMG-> icon_cache = ximage;
+      *icon_cache = ximage;
    } else {
-      IMG-> image_cache = ximage;
-      IMG-> bitmap_back =
-	 *prima_allocate_color((Handle)img,
+      *cache = ximage;
+      (bit_cache ? IMG-> bitmap_bit_back : IMG-> bitmap_back) =
+	 *prima_allocate_color(drawable,
                                ARGB(img->palette[0].r,img->palette[0].g,img->palette[0].b));
-      IMG-> bitmap_fore =
-         *prima_allocate_color((Handle)img,
+      (bit_cache ? IMG-> bitmap_bit_fore : IMG-> bitmap_fore) =
+         *prima_allocate_color(drawable,
                                ARGB(img->palette[1].r,img->palette[1].g,img->palette[1].b));
    }
 }
@@ -568,60 +587,79 @@ create_image_cache_24_to_16( PImage img)
 
 
 static void
-create_image_cache( PImage img, Bool icon)
+create_image_cache( PImage img, Handle drawable, Bool icon)
 {
    PDrawableSysData IMG = X((Handle)img);
+   Bool bit_cache = X(drawable)->flags.is_image && (PImage(drawable)->type & imBPP) == 1;
 
-   if ( !IMG-> image_cache) {
-      if ( !img-> palette) {
-	 croak( "create_image_cache(): no palette, ouch!");
+   if ( bit_cache) {
+      if ( !IMG-> image_bit_cache) {
+         if ( !img-> palette) {
+            croak( "create_image_cache(): no palette, ouch!");
+         }
+         switch (img-> type & imBPP) {
+         case 1:
+            create_image_cache_1_to_1( img, drawable, false);
+            break;
+         default:
+            croak( "create_image_cache(): unsupported BPP for drawing on bitmaps");
+         }
       }
-      switch (img-> type & imBPP) {
-      case 1:
-	 create_image_cache_1_to_1( img, false);
-	 break;
-      case 4:
-	 switch (guts.depth) {
-	 case 16:
-	    create_image_cache_4_to_16( img);
-	    break;
-	 default:
-	    croak( "create_image_cache(): unsupported screen depth for 4-bit images");
-	 }
-	 break;
-      case 8:
-	 switch (guts.depth) {
-	 case 16:
-	    create_image_cache_8_to_16( img);
-	    break;
-         case 24:
-            create_image_cache_8_to_24( img);
-            break;
-         case 32:
-            create_image_cache_8_to_32( img);
-            break;
-	 default:
-	    croak( "create_image_cache(): unsupported screen depth for 8-bit images");
-	 }
-	 break;
-      case 24:
-	 switch (guts.depth) {
-	 case 16:
-	    create_image_cache_24_to_16( img);
-	    break;
-         case 24:
-            /* create_image_cache_24_to_24( img); */
-            break;
-	 default:
-	    croak( "create_image_cache(): unsupported screen depth for 24-bit images");
-	 }
-	 break;
-      default:
-	 croak( "create_image_cache(): unsupported BPP");
+      if ( icon && !IMG-> icon_bit_cache) {
+         create_image_cache_1_to_1( img, drawable, true);
       }
-   }
-   if ( icon && !IMG-> icon_cache) {
-      create_image_cache_1_to_1( img, true);
+   } else {
+      if ( !IMG-> image_cache) {
+         if ( !img-> palette) {
+            croak( "create_image_cache(): no palette, ouch!");
+         }
+         switch (img-> type & imBPP) {
+         case 1:
+            create_image_cache_1_to_1( img, drawable, false);
+            break;
+         case 4:
+            switch (guts.depth) {
+            case 16:
+               create_image_cache_4_to_16( img);
+               break;
+            default:
+               croak( "create_image_cache(): unsupported screen depth for 4-bit images");
+            }
+            break;
+         case 8:
+            switch (guts.depth) {
+            case 16:
+               create_image_cache_8_to_16( img);
+               break;
+            case 24:
+               create_image_cache_8_to_24( img);
+               break;
+            case 32:
+               create_image_cache_8_to_32( img);
+               break;
+            default:
+               croak( "create_image_cache(): unsupported screen depth for 8-bit images");
+            }
+            break;
+         case 24:
+            switch (guts.depth) {
+            case 16:
+               create_image_cache_24_to_16( img);
+               break;
+            case 24:
+               /* create_image_cache_24_to_24( img); */
+               break;
+            default:
+               croak( "create_image_cache(): unsupported screen depth for 24-bit images");
+            }
+            break;
+         default:
+            croak( "create_image_cache(): unsupported BPP");
+         }
+      }
+      if ( icon && !IMG-> icon_cache) {
+         create_image_cache_1_to_1( img, drawable, true);
+      }
    }
 }
 
@@ -635,10 +673,11 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    Bool icon = kind_of((Handle)img, CIcon);
    int func, ofunc;
    XGCValues gcv;
+   Bool bit_cache = XX->flags.is_image && (PImage(self)->type & imBPP) == 1;
 
    /* 1) XXX - rop - correct support! */
    /* 2) XXX - Shared Mem Image Extension! */
-   create_image_cache( img, icon);
+   create_image_cache( img, self, icon);
    SHIFT( x, y);
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
       warn( "apc_gp_put_image(): XGetGCValues() error");
@@ -648,12 +687,17 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       func = GXand;
       f = XX-> fore. pixel;
       b = XX-> back. pixel;
-      XSetForeground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
-      XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+      if ( bit_cache) {
+         XSetForeground( DISP, XX-> gc, 1);
+         XSetBackground( DISP, XX-> gc, 0);
+      } else {
+         XSetForeground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
+         XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+      }
       if ( func != ofunc)
 	 XSetFunction( DISP, XX-> gc, func);
       XCHECKPOINT;
-      put_ximage( XX-> gdrawable, XX-> gc, IMG-> icon_cache,
+      put_ximage( XX-> gdrawable, XX-> gc, bit_cache ? IMG-> icon_bit_cache : IMG-> icon_cache,
                   xFrom, img-> h - yFrom - yLen,
                   x, REVERT(y) - yLen + 1, xLen, yLen);
       XSetForeground( DISP, XX-> gc, f);
@@ -674,7 +718,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       XSetBackground( DISP, XX-> gc, IMG-> bitmap_back. pixel);
       XCHECKPOINT;
    }
-   put_ximage( XX-> gdrawable, XX-> gc, IMG-> image_cache,
+   put_ximage( XX-> gdrawable, XX-> gc, bit_cache ? IMG-> image_bit_cache : IMG-> image_cache,
                xFrom, img-> h - yFrom - yLen,
                x, REVERT(y) - yLen + 1, xLen, yLen);
    if (( img-> type & imBPP) == 1) {
@@ -692,8 +736,10 @@ apc_image_begin_paint( Handle self)
 {
    DEFXX;
    PImage img = PImage( self);
+   Bool bitmap = (img-> type & imBPP) == 1;
 
-   XX-> gdrawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), img-> w, img-> h, guts. depth);
+   XX-> gdrawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), img-> w, img-> h,
+                                   bitmap ? 1 : guts. depth);
    XCHECKPOINT;
    prima_prepare_drawable_for_painting( self);
    apc_gp_put_image( self, self, 0, 0, 0, 0, img-> w, img-> h, ropCopyPut);
@@ -766,33 +812,40 @@ slurp_image( Handle self, Pixmap px)
    XImage *i;
    PImage img = PImage( self);
 
-   if ( px) {
-      i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, AllPlanes, ZPixmap);
-      XCHECKPOINT;
-
-      target_depth = guts. depth;
-      if ( target_depth == 16)
-	 target_depth = 24;
-      if (( img-> type & imBPP) != target_depth) {
-	 CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
+   if (( img-> type & imBPP) == 1) {
+      if ( px) {
+         i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, 1, XYPixmap);
+         copy_xybitmap( img-> data, i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
       }
-      if ( guts. depth != target_depth) {
-	 switch ( guts. depth) {
-	 case 16:
-	    switch ( target_depth) {
-	    case 24:
-	       convert_16_to_24( i, img);
-	       break;
-	    default: goto slurp_image_unsupported_depth;
-	    }
-	    break;
+   } else {
+      if ( px) {
+         i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, AllPlanes, ZPixmap);
+         XCHECKPOINT;
+
+         target_depth = guts. depth;
+         if ( target_depth == 16)
+            target_depth = 24;
+         if (( img-> type & imBPP) != target_depth) {
+            CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
+         }
+         if ( guts. depth != target_depth) {
+            switch ( guts. depth) {
+            case 16:
+               switch ( target_depth) {
+               case 24:
+                  convert_16_to_24( i, img);
+                  break;
+               default: goto slurp_image_unsupported_depth;
+               }
+               break;
 slurp_image_unsupported_depth:
-	 default:
-	    XDestroyImage( i);
-	    croak( "slurp_image(): unsupported depth-target depth combination");
-	 }
-      } else {
-	 /* just copy with care */
+            default:
+               XDestroyImage( i);
+               croak( "slurp_image(): unsupported depth-target depth combination");
+            }
+         } else {
+            /* just copy with care */
+         }
       }
    }
 }
@@ -820,6 +873,17 @@ typedef struct {
    int source;
    int last;
 } StretchSeed;
+
+static void
+stretch_1( const StretchSeed *xseed, const StretchSeed *yseed,
+           Bool xreverse, Bool yreverse,
+           Bool xshrink, Bool yshrink,
+           uint16_t *source, int source_line_size,
+           uint16_t *target, int targetwidth, int targetheight,
+           int target_line_size)
+{
+   croak( "stretch_1: not implemented yet");
+}
 
 static void
 stretch_16( const StretchSeed *xseed, const StretchSeed *yseed,
@@ -994,7 +1058,8 @@ apc_gp_stretch_image( Handle self, Handle image,
    Byte *data;
    int tls;
    int sls;
-   PrimaXImage *stretch;
+   PrimaXImage *stretch, *image_cache;
+   Bool bit_cache;
 
    if ( xDestLen == xLen && yDestLen == yLen) {
       apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
@@ -1012,69 +1077,50 @@ apc_gp_stretch_image( Handle self, Handle image,
    xclipsize = cr. width;
    yclipstart = cr. y - y;
    yclipsize = cr. height;
+
    if ( xclipstart + xclipsize <= 0 || yclipstart + yclipsize <= 0) return true;
    stretch_calculate_seed( xLen, xDestLen, &xclipstart, &xclipsize, guts. depth, &xseed);
    stretch_calculate_seed( yLen, yDestLen, &yclipstart, &yclipsize, 8, &yseed);
    if ( xclipsize <= 0 || yclipsize <= 0) return true;
+
    stretch = prepare_ximage( xclipsize, yclipsize, false);
    if ( !stretch) croak( "apc_gp_stretch_image(): error creating ximage");
-   create_image_cache( img, false);
+
+   create_image_cache( img, self, false);
+   bit_cache = XX->flags.is_image && (PImage(self)->type & imBPP) == 1;
+   image_cache = bit_cache ? IMG-> image_bit_cache : IMG-> image_cache;
+
    tls = get_ximage_bytes_per_line(stretch);
-   sls = get_ximage_bytes_per_line(IMG-> image_cache);
+   sls = get_ximage_bytes_per_line( image_cache);
    data = get_ximage_data(stretch);
-   switch ( guts.depth) {
-   case 16:
-      stretch_16( &xseed, &yseed,
-                  xDestLen < 0, yDestLen < 0,
-                  xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
-                  yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,
-                  (void*)(get_ximage_data(IMG-> image_cache) + yFrom*sls + xFrom*2), sls,
-                  (void*)data, xclipsize, yclipsize, tls);
+
+   switch ( img-> type & imBPP) {
+   case 1:
+      stretch_1( &xseed, &yseed,
+                 xDestLen < 0, yDestLen < 0,
+                 xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
+                 yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,
+                 (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*2), sls,
+                 (void*)data, xclipsize, yclipsize, tls);
       break;
    default:
-      croak( "apc_gp_stretch_image(): unsupported screen depth");
+      switch ( bit_cache ? 1 : guts.depth) {
+      case 16:
+         stretch_16( &xseed, &yseed,
+                     xDestLen < 0, yDestLen < 0,
+                     xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
+                     yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,
+                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*2), sls,
+                     (void*)data, xclipsize, yclipsize, tls);
+         break;
+      default:
+         croak( "apc_gp_stretch_image(): internal error 16N16");
+      }
    }
    put_ximage( XX-> gdrawable, XX-> gc, stretch,
 	      0, 0, x+xclipstart, y + yclipstart, xclipsize, yclipsize);
    destroy_ximage( stretch);
    XCHECKPOINT;
    return true;
-
-/* no go
-   if (0) {
-      fprintf( stderr, "clip rect: x %d, y %d, width %d, height %d\n",
-               cr.x, cr.y, cr.width, cr.height);
-      fprintf( stderr, "x1' = %g, w1' = %g\n",
-               (double)xFrom + (cr.x-x+0.0)*xLen/(0.0+xDestLen),
-               (double)cr.width*(xLen+0.0)/(0.0+xDestLen));
-   }
-
-   // fprintf( stderr, "x%d y%d xf%d yf%d xdl%d ydl%d xl%d yl%d\n", x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen);
-   if ( x < 0 || y < 0 || xDestLen > XX-> size.x || yDestLen > XX-> size.y) {
-      // optimization might be necessary
-      stretch = create_stretched_image( img, xFrom, yFrom, xLen, yLen, xDestLen, yDestLen);
-   } else {
-      stretch = create_stretched_image( img, xFrom, yFrom, xLen, yLen, xDestLen, yDestLen);
-   }
-
-   if (( img-> type & imBPP) == 1) {
-      f = XX-> fore. pixel;
-      b = XX-> back. pixel;
-      XSetForeground( DISP, XX-> gc, IMG-> bitmap_fore. pixel);
-      XSetBackground( DISP, XX-> gc, IMG-> bitmap_back. pixel);
-      XCHECKPOINT;
-   }
-   XPutImage( DISP, XX-> gdrawable, XX-> gc, stretch,
-	      0, 0, x, REVERT(y) - yDestLen + 1, xDestLen, yDestLen);
-   XCHECKPOINT;
-   XDestroyImage( stretch);
-   XCHECKPOINT;
-   if (( img-> type & imBPP) == 1) {
-      XSetForeground( DISP, XX-> gc, f);
-      XSetBackground( DISP, XX-> gc, b);
-      XCHECKPOINT;
-   }
-   return true;
-*/
 }
 

@@ -314,16 +314,19 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
    switch ( ev-> type) {
    case KeyPress: {
+      guts. last_time = ev-> xkey. time;
       if (disabled) return;
       handle_key_event( self, &ev-> xkey, &e, false);
       break;
    }
    case KeyRelease: {
+      guts. last_time = ev-> xkey. time;
       if (disabled) return;
       handle_key_event( self, &ev-> xkey, &e, true);
       break;
    }
    case ButtonPress: {
+      guts. last_time = ev-> xbutton. time;
       if (disabled) return;
       bev = &ev-> xbutton;
       e. cmd = cmMouseDown;
@@ -379,12 +382,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case ButtonRelease: {
+      guts. last_time = ev-> xbutton. time;
       if (disabled) return;
       bev = &ev-> xbutton;
       e. cmd = cmMouseUp;
       goto ButtonEvent;
    }
    case MotionNotify: {
+      guts. last_time = ev-> xmotion. time;
       if (disabled) return;
       e. cmd = cmMouseMove;
       e. pos. where. x = ev-> xmotion. x;
@@ -395,6 +400,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case EnterNotify: {
+      guts. last_time = ev-> xcrossing. time;
       if (disabled) {
 	 return;
       }
@@ -406,6 +412,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case LeaveNotify: {
+      guts. last_time = ev-> xcrossing. time;
       if (disabled) {
 	 return;
       }
@@ -643,18 +650,22 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case PropertyNotify: {
       char *c;
+      guts. last_time = ev-> xproperty. time;
       DOLBUG( "!!!!!!!! PropertyNotify: %s !!!!!!!!\n",
 	      c = XGetAtomName( DISP, ev-> xproperty. atom));
       if (c) XFree(c);
       break;
    }
    case SelectionClear: {
+      guts. last_time = ev-> xselectionclear. time;
       break;
    }
    case SelectionRequest: {
+      guts. last_time = ev-> xselectionrequest. time;
       break;
    }
    case SelectionNotify: {
+      guts. last_time = ev-> xselection. time;
       break;
    }
    case ColormapNotify: {

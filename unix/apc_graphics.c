@@ -31,6 +31,7 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#include "Image.h"
 
 #define SORT(a,b)	({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
 #define REVERT(a)	({ XX-> size. y - (a) - 1; })
@@ -301,6 +302,10 @@ prima_allocate_color( Handle self, Color color)
 {
    RGBColor c;
    XColor *x_color;
+   static XColor bitmap_white = { pixel: 1, red: 0xffff, green: 0xffff, blue: 0xffff};
+   static XColor bitmap_black = { pixel: 0, red: 0x0000, green: 0x0000, blue: 0x0000};
+   DEFXX;
+
    /* super duper debug
    static XColor *black = nil;
    static XColor *white = nil;
@@ -340,6 +345,13 @@ prima_allocate_color( Handle self, Color color)
       c = *(( PRGBColor) &color);
    }
 
+   if ( XX-> flags. is_image && (PImage(self)-> type & imBPP) == 1) {
+      if ((unsigned short)c.r + (unsigned short)c.g + (unsigned short)c.b > 381)
+         return &bitmap_white;
+      else
+         return &bitmap_black;
+   }
+
    x_color = hash_fetch( globalColors, &c, sizeof(c));
    if ( !x_color) {
       Status r;
@@ -364,6 +376,8 @@ void
 prima_get_gc( PDrawableSysData selfxx)
 {
    XGCValues gcv;
+   GCList **free_gcl, **used_gcl;
+   Bool bitmap;
 
    if ( XX-> gc && XX-> gcl)
       return;
@@ -372,18 +386,27 @@ prima_get_gc( PDrawableSysData selfxx)
       croak( "prima_get_gc: internal error");
    }
 
-   if ( guts. free_gcl) {
-      XX-> gcl = guts. free_gcl;
-      guts. free_gcl = XX-> gcl-> next;
+   bitmap = XX-> flags. is_image && (PImage(XX->self)-> type & imBPP) == 1;
+   if ( bitmap) {
+      free_gcl = &guts. bitmap_free_gcl;
+      used_gcl = &guts. bitmap_used_gcl;
+   } else {
+      free_gcl = &guts. free_gcl;
+      used_gcl = &guts. used_gcl;
+   }
+
+   if ( *free_gcl) {
+      XX-> gcl = *free_gcl;
+      *free_gcl = XX-> gcl-> next;
    } else {
       XX-> gcl = malloc( sizeof( GCList));
-      XX-> gcl-> gc = XCreateGC( DISP, RootWindow( DISP, SCREEN), 0, &gcv);
+      XX-> gcl-> gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : RootWindow( DISP, SCREEN), 0, &gcv);
       XCHECKPOINT;
    }
 
    XX-> gcl-> prev = nil;
-   XX-> gcl-> next = guts. used_gcl;
-   guts. used_gcl = XX-> gcl;
+   XX-> gcl-> next = *used_gcl;
+   *used_gcl = XX-> gcl;
    XX-> gc = XX-> gcl-> gc;
    XX-> gcl-> holder = XX;
 }
@@ -391,18 +414,29 @@ prima_get_gc( PDrawableSysData selfxx)
 void
 prima_release_gc( PDrawableSysData selfxx)
 {
+   Bool bitmap;
+   GCList **free_gcl, **used_gcl;
+
    if ( XX-> gc) {
       if ( !XX-> gcl) {
 	 croak( "prima_release_gc: internal error #2");
       }
+      bitmap = XX-> flags. is_image && (PImage(XX->self)-> type & imBPP) == 1;
+      if ( bitmap) {
+         free_gcl = &guts. bitmap_free_gcl;
+         used_gcl = &guts. bitmap_used_gcl;
+      } else {
+         free_gcl = &guts. free_gcl;
+         used_gcl = &guts. used_gcl;
+      }
       if ( XX-> gcl-> prev) {
 	 XX-> gcl-> prev-> next = XX-> gcl-> next;
       } else {
-	 guts. used_gcl = XX-> gcl-> next;
+	 *used_gcl = XX-> gcl-> next;
       }
       XX-> gcl-> prev = nil;
-      XX-> gcl-> next = guts. free_gcl;
-      guts. free_gcl = XX-> gcl;
+      XX-> gcl-> next = *free_gcl;
+      *free_gcl = XX-> gcl;
       XX-> gcl-> holder = nil;
       XX-> gc = nil;
       XX-> gcl = nil;
@@ -1032,8 +1066,25 @@ apc_gp_get_fill_pattern( Handle self)
 int
 apc_gp_get_line_end( Handle self)
 {
-   DOLBUG( "apc_gp_get_line_end()\n");
-   return 0;
+   DEFXX;
+   int cap;
+   XGCValues gcv;
+
+   if ( XX-> flags. paint) {
+      if ( XGetGCValues( DISP, XX-> gc, GCCapStyle, &gcv) == 0) {
+         warn( "apc_gp_get_line_end(): XGetGCValues() error");
+         cap = CapButt;
+      } else {
+         cap = gcv. cap_style;
+      }
+   } else {
+      cap = XX-> gcv. cap_style;
+   }
+   if ( cap == CapRound)
+      return leRound;
+   else if ( cap == CapProjecting)
+      return leSquare;
+   return leFlat;
 }
 
 int
@@ -1062,7 +1113,7 @@ apc_gp_get_line_width( Handle self)
 }
 
 int
-apc_gp_get_line_pattern( Handle self, char *dashes)
+apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 {
    DEFXX;
    int n;
@@ -1239,7 +1290,24 @@ apc_gp_set_font( Handle self, PFont font)
 Bool
 apc_gp_set_line_end( Handle self, int lineEnd)
 {
-   DOLBUG( "apc_gp_set_line_end()\n");
+   DEFXX;
+   int cap = CapButt;
+   XGCValues gcv;
+
+   if ( lineEnd == leFlat)
+      cap = CapButt;
+   else if ( lineEnd == leSquare)
+      cap = CapProjecting;
+   else if ( lineEnd == leRound)
+      cap = CapRound;
+
+   if ( XX-> flags. paint) {
+      gcv. cap_style = cap;
+      XChangeGC( DISP, XX-> gc, GCCapStyle, &gcv);
+      XCHECKPOINT;
+   } else {
+      XX-> gcv. cap_style = cap;
+   }
    return true;
 }
 
@@ -1266,7 +1334,7 @@ apc_gp_set_line_width( Handle self, int line_width)
 }
 
 Bool
-apc_gp_set_line_pattern( Handle self, char *pattern, int len)
+apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 {
    DEFXX;
    XGCValues gcv;

@@ -273,6 +273,12 @@ package Prima::Clipboard;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   $def->{name} = 'Clipboard';
+   return $def;
+}
 sub text  { $#_ ? $_[0]-> store( 'Text',  $_[1]) : return $_[0]-> fetch('Text')  }
 sub image { $#_ ? $_[0]-> store( 'Image', $_[1]) : return $_[0]-> fetch('Image') }
 
@@ -1379,7 +1385,6 @@ sub profile_default
       ownerShowHint  => 0,
       ownerPalette   => 0,
       showHint       => 1,
-      clipboardClass => 'Prima::Clipboard',
       helpFile       => '',
       helpContext    => hmp::None,
       hintClass      => 'Prima::HintWidget',
@@ -1406,12 +1411,28 @@ sub profile_check_in
    delete $p-> { ownerPalette};
 }
 
+sub setup
+{
+   my $self = shift;
+   $self-> SUPER::setup;
+   unless (exists $self->{clipboard}) {
+      $self->{clipboard} = $self-> insert( qw(Prima::Clipboard),
+                                           name => 'Clipboard');
+   }
+   unless (exists $self->{clipboard_primary}) {
+      $self->{clipboard_primary} = $self-> insert( qw(Prima::Clipboard),
+                                                   name => 'Primary');
+   }
+   unless (exists $self->{clipboard_secondary}) {
+      $self->{clipboard_secondary} = $self-> insert( qw(Prima::Clipboard),
+                                                     name => 'Secondary');
+   }
+}
 
 sub autoClose     {($#_)?$_[0]->set_auto_close   ($_[1]):return $_[0]->get_auto_close;     }
 sub size          { return $_[0]-> get_size; }
 sub width         { return ($_[0]-> get_size)[0];}
 sub height        { return ($_[0]-> get_size)[1];}
-sub clipboard     { return $_[0]-> get_clipboard }
 sub hintColor     {($#_)?$_[0]->set_hint_color  ($_[1]):return $_[0]->get_hint_color;   }
 sub hintBackColor {($#_)?$_[0]->set_hint_back_color  ($_[1]):return $_[0]->get_hint_back_color;   }
 sub hintFont      {($#_)?$_[0]->set_hint_font        ($_[1])  :return Prima::Font->new($_[0], "get_hint_font", "set_hint_font")}

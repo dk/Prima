@@ -46,7 +46,6 @@ Application_init( Handle self, HV * profile)
    SV * hintFont = pget_sv( hintFont);
    SV * sv;
    char * hintClass      = pget_c( hintClass);
-   char * clipboardClass = pget_c( clipboardClass);
    char * printerClass   = pget_c( printerClass);
    if ( application != nilHandle)
       croak( "RTC0010: Attempt to create more than one application instance");
@@ -83,12 +82,6 @@ Application_init( Handle self, HV * profile)
    {
       HV * profile = newHV();
       static Timer_vmt HintTimerVmt;
-
-      pset_c( name, "Clipboard");
-      pset_H( owner, self);
-      var->  clipboard = create_instance( clipboardClass);
-      protect_object( var->  clipboard);
-      hv_clear( profile);
 
       pset_c( name, "Printer");
       pset_H( owner, self);
@@ -140,7 +133,6 @@ Application_done( Handle self)
    var-> icon = nilHandle;
 
    my-> first_that_component( self, kill_all, nil);
-   unprotect_object( var-> clipboard);
    unprotect_object( var-> printer);
    unprotect_object( var-> hintTimer);
    unprotect_object( var-> hintWidget);
@@ -149,7 +141,7 @@ Application_done( Handle self)
    free( var-> helpFile);
    free( var-> text);
    free( var-> hint);
-   var->  accelTable = var->  printer = var->  clipboard =
+   var->  accelTable = var->  printer = 
       var-> hintWidget = var-> hintTimer = nilHandle;
    var->  helpFile   = var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
@@ -164,7 +156,6 @@ Application_set( Handle self, HV * profile)
    pdelete( buffered);
    pdelete( capture);
    pdelete( centered);
-   pdelete( clipboardClass);
    pdelete( clipOwner);
    pdelete( enabled);
    pdelete( focused);
@@ -399,13 +390,6 @@ Application_get_system_info( char * dummy)
    pset_c( guiDescription, gui_desc);
 
    return newRV_noinc(( SV *) profile);
-}
-
-
-Handle
-Application_get_clipboard( Handle self)
-{
-   return var->  clipboard;
 }
 
 Handle
