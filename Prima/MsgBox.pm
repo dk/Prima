@@ -239,6 +239,7 @@ sub import
    no strict 'refs';
    my $callpkg = $Prima::__import || caller;
    for my $sym (qw(message_box message input_box)) {
+      next if $callpkg eq 'Prima' && $sym eq 'message'; # leave Prima::message intact
       *{"${callpkg}::$sym"} = \&{"Prima::MsgBox::$sym"}
    }
    use strict 'refs';
