@@ -197,6 +197,7 @@ window_subsystem_init()
    guts. pointerSize. x   = GetSystemMetrics( SM_CXCURSOR);
    guts. pointerSize. y   = GetSystemMetrics( SM_CYCURSOR);
    list_create( &guts. transp, 8, 8);
+   list_create( &guts. files, 8, 8);
 
    // selecting locale layout, more or less latin-like
    {
@@ -232,6 +233,7 @@ window_subsystem_init()
 void
 window_subsystem_done()
 {
+   list_destroy( &guts. files);
    list_destroy( &guts. transp);
    destroy_font_hash();
 

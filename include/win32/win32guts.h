@@ -155,6 +155,8 @@ typedef struct _WinGuts
     UINT           errorMode;          // SetErrorMode() result
     DWORD          version;            // GetVersion() cached result
     Point          smDblClk;           // cached SM_CxDOUBLECLK values
+    HANDLE         objects[ MAXIMUM_WAIT_OBJECTS]; // handle objects dynamic list
+    List           files;              // List of active File objects
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
@@ -179,6 +181,12 @@ typedef struct _PrinterData
    char          *driver;
    char          *port;
 } PrinterData;
+
+typedef struct _FileData
+{
+    Handle  self;
+    HANDLE  object;
+} FileData, *PFileData;
 
 
 typedef struct _PaintSaveData
@@ -348,6 +356,7 @@ typedef struct _DrawableData
       TimerData     timer;
       WindowData    window;
       PrinterData   prn;
+      HANDLE        fileObject;
       HRGN          imgCachedRegion;      // Image specific field
    } s;
 } DrawableData, *PDrawableData;

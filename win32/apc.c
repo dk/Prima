@@ -366,7 +366,22 @@ apc_application_go( Handle self)
 {
    MSG msg;
    objCheck false;
+
    while ( GetMessage( &msg, NULL, 0, 0) && process_msg( &msg));
+
+// while ( 1 )
+// {
+//    DWORD result = ( guts. files. count > 0) ?
+//       MsgWaitForMultipleObjects( guts. files. count, guts. files. objects,
+//           false, INFINITE, QS_ALLINPUT) - WAIT_OBJECT_0 : 1;
+//
+//    if ( result >= 0 && result < guts. files. count) {
+//
+//    } else {
+//       while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE) && process_msg( &msg));
+//    }
+// }
+
    if ( application) Object_destroy( application);
    return true;
 }
