@@ -149,17 +149,14 @@ sub create_wheel
 {
    my ($id, $color)   = @_;
    my $imul = 256 / $id;
-   my $i = Prima::Image-> create(
-      width  => $id,
-      height => $id,
-      type => im::RGB,
+   my $i = Prima::DeviceBitmap-> create(
+      width  => 256,
+      height => 256,
       name => '',
    );
 
-   my ( $y1, $x1) = $i-> size;
-   my  $d0 = $i-> width / 2;
-
-   $i-> size( 256, 256);
+   my ( $y1, $x1) = ($id,$id);
+   my  $d0 = $id / 2;
 
    $i-> begin_paint;
    $i-> color( cl::Black);
@@ -179,10 +176,9 @@ sub create_wheel
    $i-> end_paint;
 
 
-   my $a = Prima::Image-> create(
+   my $a = Prima::DeviceBitmap-> create(
       width  => 256,
       height => 256,
-      type   => im::RGB,
       name   => 'ColorWheel',
    );
 
