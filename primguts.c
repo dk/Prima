@@ -453,8 +453,7 @@ XS( destroy_mate)
       }
       else
       {
-         (( PAnyObject) self)-> killPtr = killChain;
-         killChain = ( PAnyObject) self;
+         free(( void*) self);
       }
    }
    XSRETURN_EMPTY;
