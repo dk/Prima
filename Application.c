@@ -760,8 +760,13 @@ Application_get_image( Handle self, int x, int y, int xLen, int yLen)
    HV * profile;
    Handle i;
    Bool ret;
+   Point sz;
    if ( var->  stage > csFrozen) return nilHandle;
-   if ( xLen <= 0 || yLen <= 0) return nilHandle;
+   if ( x < 0 || y < 0 || xLen <= 0 || yLen <= 0) return nilHandle;
+   sz = apc_application_get_size( self);
+   if ( x + xLen > sz. x) xLen = sz. x - x;
+   if ( y + yLen > sz. y) yLen = sz. y - y;
+   if ( x >= sz. x || y >= sz. y || xLen <= 0 || yLen <= 0) return nilHandle;
 
    profile = newHV();
    i = Object_create( "Prima::Image", profile);
