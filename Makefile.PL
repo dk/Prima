@@ -371,8 +371,8 @@ sub setup_variables
 			  name => "Microsoft Visual C++",
 			 },
 		 bcc32 => {
-			   warnflags => "-w", # There is no "treat warnings as errors" parameter.
-			   cflags => "-K",
+			   warnflags => "-w0", # Borland is the only compiler which doesn't allow of geting rid of warnings.
+			   cflags => "-tWM",
 			   coutoflag => '-o',
 			   coutexeflag => '-e',
 			   clibpathflag => '-L',
@@ -668,7 +668,7 @@ DATA LOADONCALL NONSHARED MULTIPLE
 EXPORTS
 EOF
     if ( $COMPILER eq 'bcc32') {
-	print PRIMADEF map { "\t_$_\n\t$_ = $_\n"} @Prima_exports;
+	print PRIMADEF map { "\t_$_\n\t$_=_$_\n"} @Prima_exports;
     }
     else {
 	print PRIMADEF map { "\t$_\n\t_$_ = $_\n"} @Prima_exports;
