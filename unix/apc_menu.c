@@ -148,6 +148,19 @@ static void
 menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
 {
    PMenuWindow w = wx-> next;
+   {
+      XRectangle r;
+      Region rgn;
+      r. x = 0;
+      r. y = 0;
+      r. width  = guts. displaySize. x; 
+      r. height = guts. displaySize. y; 
+      rgn = XCreateRegion();
+      XUnionRectWithRegion( &r, rgn, rgn);
+      XSetRegion( DISP, guts. menugc, rgn);
+      XDestroyRegion( rgn);
+      XSetForeground( DISP, guts. menugc, XX->c[ciBack]);
+   }
    while ( w) {
       PMenuWindow xw = w-> next;
       hash_delete( guts. menu_windows, &w-> w, sizeof( w-> w), false);
