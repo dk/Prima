@@ -312,7 +312,6 @@ Widget_close( Handle self)
    enter_method;
    if ( var-> stage > csNormal) return true;
    if (( canClose = my-> can_close( self))) {
-      debug_write("%s Widget_close\n", var-> name);
       Object_destroy( self);
    }
    return canClose;
@@ -2333,13 +2332,8 @@ Widget_set_width( Handle self, int _width )
 void
 Widget_on_paint( Handle self, Handle canvas)
 {
-   enter_method;
    PDrawable c = ( PDrawable) canvas;
-   Point size;
-   size. x = c-> self-> get_width( canvas);
-   size. y = c-> self-> get_height( canvas);
-   c-> self-> set_color( canvas, my-> get_back_color( self));
-   c-> self-> bar( canvas, 0, 0, size. x - 1, size. y - 1);
+   c-> self-> clear( canvas, -1, -1, -1, -1);
 }
 
 void Widget_on_click( Handle self) {}
@@ -2379,7 +2373,6 @@ void Widget_on_leave( Handle self) {}
 /* static iterators */
 Bool kill_all( Handle self, Handle child, void * dummy)
 {
-   debug_write("%s UKILL\n", PWidget( child)->name);
    Object_destroy( child); return 0;
 }
 

@@ -754,7 +754,7 @@ sub List_Paint
    my ( $combo, $self, $canvas) = @_;
    my ( $w, $h) = $self-> size;
    my @c3d = ( $self-> light3DColor, $self-> dark3DColor);
-   $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, @c3d, $self-> backColor)
+   $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, @c3d, cl::Back)
       unless exists $self->{inScroll};
    my $i;
    my $pc = 18;

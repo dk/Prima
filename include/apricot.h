@@ -2621,7 +2621,7 @@ extern Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
-apc_gp_clear( Handle self);
+apc_gp_clear( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
 apc_gp_chord( Handle self, int x, int y, int radX, int radY,

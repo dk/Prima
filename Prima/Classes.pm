@@ -349,8 +349,12 @@ sub rect3d
    my $c = $self-> color;
    if ( defined $backColor)
    {
-      $self-> color( $backColor);
-      $self-> bar( $x + $width, $y + $width, $x1 - $width, $y1 - $width);
+      if ( $backColor == cl::Back) {
+         $self-> clear( $x + $width, $y + $width, $x1 - $width, $y1 - $width);
+      } else {
+         $self-> color( $backColor);
+         $self-> bar( $x + $width, $y + $width, $x1 - $width, $y1 - $width);
+      }
    }
    $lColor = $rColor = cl::Black if $self-> get_bpp == 1;
    $self-> color( $c), return if $width <= 0;
@@ -1336,11 +1340,8 @@ sub on_change
 sub on_paint
 {
    my ($self,$canvas) = @_;
-   my $cl = $self-> color;
    my @size = $canvas-> size;
-   $canvas-> color( $self-> backColor);
-   $canvas-> bar( 1, 1, $size[0]-2, $size[1]-2);
-   $canvas-> color( $cl);
+   $canvas-> clear( 1, 1, $size[0]-2, $size[1]-2);
    $canvas-> rectangle( 0, 0, $size[0]-1, $size[1]-1);
    my @ln = split( '\n', $self-> text);
    my $fh = $canvas-> font-> height;

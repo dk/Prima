@@ -96,6 +96,7 @@ object Prima::Drawable ( Prima::Component)
    method Bool  arc( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_arc;
    method Bool  bar(int x1, int y1, int x2, int y2)        => apc_gp_bar;
    method Bool  chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_chord;
+   method Bool  clear(int x1=-1, int y1=-1, int x2=-1, int y2=-1)        => apc_gp_clear;
    method Color get_pixel(int x, int y)                    => apc_gp_get_pixel;
    method Bool  ellipse(int x, int y, int Rx, int Ry)      => apc_gp_ellipse;
    method Bool  fill_chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_fill_chord;

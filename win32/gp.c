@@ -164,22 +164,26 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 }}
 
 Bool
-apc_gp_clear( Handle self)
+apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
    Bool     ok = true;
    HDC      ps   = sys ps;
    HGDIOBJ  oldp = SelectObject( ps, hPenHollow);
    LOGBRUSH ers;
    HGDIOBJ  oldh;
-   int      oldrop = GetROP2( ps);
    ers. lbStyle = PS_SOLID;
-   ers. lbColor = apc_gp_get_back_color( self);
+   ers. lbColor = sys lbs[ 1];
    ers. lbHatch = 0;
    oldh = CreateBrushIndirect( &ers);
-   if ( oldrop != R2_COPYPEN) SetROP2( ps, R2_COPYPEN);
    oldh = SelectObject( ps, oldh);
-   if ( !( ok = Rectangle( sys ps, 0, 0, sys lastSize. x + 1, sys lastSize. y + 1))) apiErr;
-   if ( oldrop != R2_COPYPEN) SetROP2( ps, oldrop);
+   if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
+      x1 = y1 = 0;
+      x2 = sys lastSize. x - 1;
+      y2 = sys lastSize. y - 1;
+   }
+   check_swap( x1, x2);
+   check_swap( y1, y2);
+   if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y2 - 1, x2 + 2, sys lastSize. y - y1 + 1))) apiErr;
    SelectObject( ps, oldp);
    DeleteObject( SelectObject( ps, oldh));
    return ok;

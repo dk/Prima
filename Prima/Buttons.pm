@@ -685,7 +685,7 @@ sub on_paint
    if ( $self-> enabled)
    {
      if ( $self-> focused) {
-        @clr = ($self-> hiliteColor, $self-> backColor);
+        @clr = ($self-> hiliteColor, $self-> hiliteBackColor);
      } else { @clr = ($self-> color, $self-> backColor); }
    } else { @clr = ($self-> disabledColor, $self-> disabledBackColor); }
 
@@ -749,7 +749,7 @@ sub on_paint
    if ( $self-> enabled)
    {
      if ( $self-> focused) {
-        @clr = ($self-> hiliteColor, $self-> backColor);
+        @clr = ($self-> hiliteColor, $self-> hiliteBackColor);
      } else { @clr = ($self-> color, $self-> backColor); }
    } else { @clr = ($self-> disabledColor, $self-> disabledBackColor); }
 

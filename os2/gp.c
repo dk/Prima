@@ -129,7 +129,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 }
 
 Bool
-apc_gp_clear( Handle self)                                 /* no fix */
+apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)      /* no fix */
 {
    if ( !GpiErase( sys ps)) apiErrRet;
    return true;
