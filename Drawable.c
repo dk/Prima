@@ -673,7 +673,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
         t-> t_start = w - 1;
         t-> t_end   = w + width[(unsigned)l[tildeLPos]];
     } else {
-        t-> t_start = t-> t_end = t-> t_line = -1;
+        t-> t_start = t-> t_end = t-> t_line = C_NUMERIC_UNDEF;
     }
 /* expanding tabs */
     if (( t-> options & twExpandTabs) && !(t-> options & twReturnChunks) && wasTab)
@@ -769,7 +769,11 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
       HV * profile = newHV();
       char b[2] = { 0, 0};
       b[ 0] = t. t_char;
-      pset_i( tildeStart, t. t_start);
+      if ( t. t_start != C_NUMERIC_UNDEF) {
+         pset_i( tildeStart, t. t_start);
+      } else {
+         pset_sv( tildeStart, nilSV);
+      }
       pset_i( tildeEnd,   t. t_end);
       pset_i( tildeLine,  t. t_line);
       pset_c( tildeChar,  b);

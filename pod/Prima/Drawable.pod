@@ -1169,7 +1169,7 @@ an underlined character. The hash contains the follwoing keys:
 =item tildeLine
 
 Chunk index that contains the escaped character.
-Set to -1 if no ~ - escapement was found. 
+Set to undef if no ~ - escapement was found. 
 The other hash information is not relevant in this case.
 
 =item tildeStart

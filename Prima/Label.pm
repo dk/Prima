@@ -179,7 +179,7 @@ sub on_translateaccel
 sub on_click
 {
    my ( $self, $f) = ( $_[0], $_[0]->{focusLink});
-   $f-> focus if defined $f && $f-> alive && $f-> enabled && $f-> selectable;
+   $f-> select if defined $f && $f-> alive && $f-> enabled;
 }
 
 sub on_keydown
@@ -238,7 +238,7 @@ sub reset_lines
    my $lastRef = pop @{$lines};
    $self->{textLines} = scalar @$lines;
    for( qw( tildeStart tildeEnd tildeLine)) {$self->{$_} = $lastRef->{$_}}
-   $self-> {accel} = $self->{tildeStart} < 0 ? undef : lc( $lastRef->{tildeChar});
+   $self-> {accel} = defined($self->{tildeStart}) ? lc( $lastRef->{tildeChar}) : undef;
    splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines;
    $self-> {words} = $lines;
    my @len;
