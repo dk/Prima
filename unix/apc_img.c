@@ -1032,9 +1032,6 @@ apc_image_end_paint( Handle self)
    return true;
 }
 
-extern void
-ic_stretch( Handle, Byte *, int, int, Bool, Bool);
-
 typedef struct {
    Fixed count;
    Fixed step;
@@ -1112,6 +1109,70 @@ stretch_16( const StretchSeed *xseed, const StretchSeed *yseed,
             }
          }
          target = (uint16_t*)((Byte*)target + target_line_size);
+         targetheight--;
+      }
+   }
+}
+
+static void
+stretch_32( const StretchSeed *xseed, const StretchSeed *yseed,
+            Bool xreverse, Bool yreverse,
+            Bool xshrink, Bool yshrink,
+            uint32_t *source, int source_line_size,
+            uint32_t *target, int targetwidth, int targetheight,
+            int target_line_size)
+{
+   Fixed xcount, ycount;
+   Fixed xstep, ystep;
+   int xlast, ylast;
+   int xfirst, yfirst;
+   int x;
+   uint32_t *last_source = nil;
+
+   ycount = yseed-> count;
+   ystep  = yseed-> step;
+   ylast  = yseed-> last;
+   yfirst = yseed-> source;
+
+   source = (uint32_t*)((Byte*)source + yfirst * source_line_size);
+   if (yreverse) {
+      target = (uint32_t*)((Byte*)target + (targetheight-1)*target_line_size);
+      target_line_size = - target_line_size;
+   }
+
+   if ( yshrink) {
+      while ( targetheight) {
+      }
+   } else {
+      while ( targetheight) {
+         if ( ycount.i.i > ylast) {
+            source = (uint32_t*)((Byte*)source + source_line_size);
+            ylast = ycount.i.i;
+         }
+         ycount.l += ystep.l;
+         if ( last_source == source) {
+            memcpy( target, (Byte*)target - target_line_size, target_line_size < 0 ? - target_line_size : target_line_size);
+         } else {
+            last_source = source;
+            xcount = xseed-> count;
+            xstep  = xseed-> step;
+            xlast  = xseed-> last;
+            xfirst = xseed-> source;
+
+            if ( xshrink) {
+            } else {
+               x = 0;
+               while ( x < targetwidth) {
+                  if ( xcount.i.i > xlast) {
+                     xfirst++;
+                     xlast = xcount.i.i;
+                  }
+                  xcount.l += xstep.l;
+                  target[x++] = source[xfirst];
+               }
+            }
+         }
+         target = (uint32_t*)((Byte*)target + target_line_size);
          targetheight--;
       }
    }
@@ -1275,6 +1336,14 @@ apc_gp_stretch_image( Handle self, Handle image,
       switch ( bit_cache ? 1 : guts.idepth) {
       case 16:
          stretch_16( &xseed, &yseed,
+                     xDestLen < 0, yDestLen < 0,
+                     xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
+                     yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,
+                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*2), sls,
+                     (void*)data, xclipsize, yclipsize, tls);
+         break;
+      case 32:
+         stretch_32( &xseed, &yseed,
                      xDestLen < 0, yDestLen < 0,
                      xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
                      yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,

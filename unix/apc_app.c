@@ -94,6 +94,24 @@ get_database( void)
    return db;
 }
 
+static int
+get_idepth( void)
+{
+   int i, n;
+   XPixmapFormatValues *format = XListPixmapFormats( DISP, &n);
+   int idepth = guts.depth;
+
+   if ( !format) return guts.depth;
+
+   for ( i = 0; i < n; i++)
+      if ( format[i]. depth == guts. depth) {
+         idepth = format[i]. bits_per_pixel;
+         break;
+      }
+   XFree( format);
+   return idepth;
+}
+
 Bool
 window_subsystem_init( void)
 {
@@ -205,7 +223,7 @@ window_subsystem_init( void)
    guts. resolution. x = 25.4 * DisplayWidth( DISP, SCREEN) / DisplayWidthMM( DISP, SCREEN);
    guts. resolution. y = 25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN);
    guts. depth = DefaultDepth( DISP, SCREEN);
-   guts. idepth = BitmapUnit( DISP);
+   guts. idepth = get_idepth();
    guts. byte_order = ImageByteOrder( DISP);
    guts. bit_order = BitmapBitOrder( DISP);
    
