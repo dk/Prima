@@ -1608,6 +1608,8 @@ described below.
 
 =head2 Inherited properties
 
+=over
+
 =item ::resolution
 
 Can be set while object is in normal stage - cannot be changed if document
