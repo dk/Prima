@@ -294,15 +294,20 @@ sub new_directory
 }
 
 
+
 sub path
 {
    return $_[0]-> {path} unless $#_;
    my $p = $_[1];
    $p =~ s{^([^\\\/]*[\\\/][^\\\/]*)[\\\/]$}{$1};
-   $p = eval { Cwd::abs_path($p) };
-   $p = "." if $@ || !defined $p;
-   $p = "" unless -d $p;
-   $p .= '/' unless $p =~ m![/\\]$!;
+   unless( scalar( stat $p)) {
+      $p = "";
+   } else {
+      $p = eval { Cwd::abs_path($p) };
+      $p = "." if $@ || !defined $p;
+      $p = "" unless -d $p;
+      $p .= '/' unless $p =~ m![/\\]$!;
+   }
    $_[0]-> {path} = $p;
    return if defined $_[0]-> {recursivePathCall} && $_[0]-> {recursivePathCall} > 2;
    $_[0]-> {recursivePathCall}++;
@@ -648,10 +653,14 @@ sub canon_path
       $fn = $p;
       $dir = '.';
    }
-   $dir = eval { Cwd::abs_path($dir) };
-   $dir = "." if $@;
-   $dir = "" unless -d $dir;
-   $dir =~ s/(\\|\/)$//;
+   unless ( scalar(stat($dir))) {
+      $dir = "";
+   } else {
+      $dir = eval { Cwd::abs_path($dir) };
+      $dir = "." if $@;
+      $dir = "" unless -d $dir;
+      $dir =~ s/(\\|\/)$//;
+   }
    return "$dir/$fn";
 }
 

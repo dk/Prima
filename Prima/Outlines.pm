@@ -1621,11 +1621,15 @@ sub path
    }
    my $p = $_[1];
    $p =~ s{^([^\\\/]*[\\\/][^\\\/]*)[\\\/]$}{$1};
-   $p = eval { Cwd::abs_path($p) };
-   $p = "." if $@;
-   $p = "" unless -d $p;
-   $p = '' if !$self->{showDotDirs} && $p =~ /\./;
-   $p .= '/' unless $p =~ m![/\\]$!;
+   unless ( scalar( stat $p)) {
+      $p = "";
+   } else {
+      $p = eval { Cwd::abs_path($p) };
+      $p = "." if $@;
+      $p = "" unless -d $p;
+      $p = '' if !$self->{showDotDirs} && $p =~ /\./;
+      $p .= '/' unless $p =~ m![/\\]$!;
+   }
    $self-> {path} = $p;
    if ( $p eq '/') {
       $self-> focusedItem(0);
