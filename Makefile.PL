@@ -347,6 +347,7 @@ clean:
 tags:
 \t/usr/local/bin/ctags -ip *.c \`find include -name "*.h" -print\` \\
 \t\t	/usr/X11R6/include/X11/X*.h unix/*.c \\
+\t\t	$Config{archlib}/CORE/*.h \\
 \t\t	/usr/X11R6/include/X11/keysymdef.h
 \t/usr/local/bin/ctags -ip -e *.c \`find include -name "*.h" -print\` \\
 \t\t	/usr/X11R6/include/X11/X*.h unix/*.c \\
