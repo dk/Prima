@@ -891,7 +891,7 @@ sub Files_SelectItem
 {
    my ( $self, $lst) = @_;
    my @items = $lst-> get_items($lst-> selectedItems);
-   $self-> Name-> text( scalar @items ? ( join ' ', @items) : '');
+   $self-> Name_text( scalar(@items) ? @items : '');
 }
 
 sub Files_Click
@@ -901,16 +901,45 @@ sub Files_Click
    $self-> Open_Click( $self-> Open);
 }
 
+sub quoted_split
+{
+   my @ret;
+   $_ = $_[0];
+   study;
+   {
+      /\G\s+/gc && redo;
+      /\G((?:[^\\\s]|\\.)+)\s*/gc && do { 
+         my $z = $1; 
+         $z =~ s/\\(.)/$1/g; 
+         push(@ret, $z); 
+         redo; 
+      };
+      /\G(\\)$/gc && do { push(@ret, $1); redo; };
+   }
+   return @ret;
+}
+
+sub Name_text
+{
+   my $text = '';
+   my $self;
+   for ( @_) {
+      $self = $_, next unless defined $self;
+      s/(\s|\\)/\\$1/g;
+      $text .= $_;
+      $text .= ' ';
+   }
+   chop $text;
+   $self-> Name-> text( $text);
+}
+
 sub Open_Click
 {
    my $self = shift;
    $_ = $self-> Name-> text;
-   my @files = split /[; ]/; # XXX
-   s/^\s+// for @files;
-   s/\s+$// for @files;
+   my @files = quoted_split( $_);
    return unless scalar @files;
    @files = ($files[ 0]) if ( !$self->multiSelect and scalar @files > 1);
-   my $compoundMask = join( ';', grep {/[*?]/} map {m!([^/\\]*)$! ? $1 : $_} grep {/[*?]/} @files);
    (@files = grep {/[*?]/} @files), @files = ($files[ 0]) if /[*?]/;
 # validating names
    for ( @files)
@@ -939,13 +968,14 @@ sub Open_Click
       my ( $dirTo, $fileTo) = ( $files[ 0] =~ m{^(.*[:/\\])([^:\\/]*)$});
       $dirTo  or $dirTo = '';
       $fileTo = $files[ 0] unless $fileTo || $dirTo;
-      $fileTo =~ s/^\s*(.*)\s*$/$1/;
-      $dirTo =~ s/^\s*(.*)\s*$/$1/;
+#     $fileTo =~ s/^\s*(.*)\s*$/$1/;
+#     $dirTo =~ s/^\s*(.*)\s*$/$1/;
       # have directory with mask
       if ( $fileTo =~ /[*?]/)
       {
-         $self-> Name-> text( $compoundMask);
-         $self-> {mask} = $compoundMask;
+         my @masked = grep {/[*?]/} map { m!([^/\\]*)$! ? $1 : $_} grep {/[*?]/} @files;
+         $self-> Name_text( @masked);
+         $self-> {mask} = join( ';', @masked);
          $self-> canonize_mask;
          $self-> directory( $dirTo);
          $self-> Name->focus;
@@ -1019,7 +1049,7 @@ sub Open_Click
       }
    };
 # flags & files processed, ending process
-   $self-> Name-> text( join ( ' ', @files));
+   $self-> Name_text( @files);
    $self-> ok;
 }
 
@@ -1067,10 +1097,10 @@ sub directory
 
 sub fileName
 {
-   $_[0]->Name->text($_[1]), return if ($#_);
-   return $_[0]->Name->text unless wantarray;
-   $_ = $_[0]->Name->text; s/;/ /g;
-   return split;
+   $_[0]->Name_text($_[1]), return if ($#_);
+   my @s = quoted_split( $_[0]-> Name-> text);
+   return $s[0] unless wantarray;
+   return @s;
 }
 
 sub sorted
