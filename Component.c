@@ -48,6 +48,17 @@ Component_setup( Handle self)
    my message( self, &ev);
 }
 
+static Bool bring_by_name( Handle self, PComponent item, char * name)
+{
+   return strcmp( name, item-> name) == 0;
+}
+
+Handle
+Component_bring( Handle self, char * componentName)
+{
+   return my first_that_component( self, bring_by_name, componentName);
+}
+
 void
 Component_cleanup( Handle self)
 {
@@ -79,6 +90,13 @@ free_reference( Handle self, void * dummy)
    return false;
 }
 
+static Bool
+detach_all( Handle child, Handle self)
+{
+   my detach( self, child, true);
+   return false;
+}
+
 /* #ifdef PARANOID_MALLOC */
 /* #include "Image.h" */
 /* #endif */
@@ -105,19 +123,12 @@ Component_done( Handle self)
       free( var evQueue);
       var evQueue = nil;
    }
-
-   if ( var refs) {
-      char *k;
-      I32 l;
-      SV *obj;
-
-      hv_iterinit( var refs);
-      while (( obj = hv_iternextsv( var refs, &k, &l)) && k)
-	      my detach( self, atol( k), true);
-      /* sv_free(( SV*) var refs); */  /* Will be freed by perl */
-      var refs = nil;
+   if ( var components != nil) {
+      list_first_that( var components, ( PListProc) detach_all, ( void*) self);
+      list_destroy( var components);
+      free( var components);
+      var components = nil;
    }
-
    apc_component_destroy( self);
 /* #ifdef PARANOID_MALLOC */
 /* if ( kind_of( self, CImage)) */
@@ -133,22 +144,13 @@ Component_done( Handle self)
 void
 Component_attach( Handle self, Handle object)
 {
-   char key[ 20];
-   if ( object && kind_of( object, CObject)) {
-      if ( !var refs) {
-         HV *me = ( HV*) SvRV( var mate);
-         if ( SvTYPE( me) == SVt_PVHV && ( var refs = newHV()))
-            hv_store( me, "__CREFS__", 9, newRV(( SV*) var refs), 0);
-         else {
-            if ( var refs)
-               sv_free(( SV*) var refs);
-            var refs = nil;
-            croak( "RTC0040: Object attach failed");
-         }
+   if ( object && kind_of( object, CComponent)) {
+      if ( var components == nil) {
+         var components = malloc( sizeof( List));
+         list_create( var components, 8, 8);
       }
-      snprintf( key, 20, "%lu", object);
-      hv_store( var refs, key, strlen( key),
-         newRV( SvRV( PObject( object)-> mate)), 0);
+      list_add( var components, object);
+      SvREFCNT_inc( SvRV(( PObject( object))-> mate));
    } else
        warn( "RTC0040: Object attach failed");
 }
@@ -156,12 +158,14 @@ Component_attach( Handle self, Handle object)
 void
 Component_detach( Handle self, Handle object, Bool kill)
 {
-   char key[ 20];
-
-   if ( object && var refs) {
-      snprintf( key, 20, "%lu", object);
-      hv_delete( var refs, key, strlen( key), G_DISCARD);
-      if ( kill) Object_destroy( object);
+   if ( object && ( var components != nil)) {
+      int index = list_index_of( var components, object);
+      if ( index >= 0) {
+         list_delete_at( var components, index);
+         SvREFCNT_dec( SvRV(( PObject( object))-> mate));
+         if ( kill) Object_destroy( object);
+      } else
+        warn( "RTC0040: Object detach failed");
    }
 }
 
@@ -465,29 +469,12 @@ Component_first_that_component( Handle self, void * actionProc, void * params)
    int i, size = 16, count = 0;
    Handle * list = nil;
 
-   if ( actionProc == nil)
+   if ( actionProc == nil || var components == nil)
       return nilHandle;
-   if ( var refs)
-   {
-      hv_iterinit( var refs);
-      list = malloc( sizeof( Handle) * size);
-      for (;;)
-      {
-         char *k;
-         I32 l;
-         SV * obj = hv_iternextsv( var refs, &k, &l);
-         if (( k == nil) || ( obj == nil)) break;
-         if ( count >= size)
-         {
-            Handle *l2 = malloc( sizeof( Handle) * size * 2);
-            size *= 2;
-            memcpy( l2, list, sizeof( Handle) * count);
-            free( list);
-            list = l2;
-         }
-         list[ count++] = atol( k);
-      }
-   }
+   count = var components-> count;
+   if ( count == 0) return nilHandle;
+   list = malloc( sizeof( Handle) * count);
+   memcpy( list, var components-> items, sizeof( Handle) * count);
 
    for ( i = 0; i < count; i++)
    {
@@ -782,3 +769,31 @@ Component_notify_REDEFINED( Handle self, char * methodName)
 {
    warn("Invalid call of of Component::notify");
 }
+
+XS( Component_get_components_FROMPERL)
+{
+   dXSARGS;
+   Handle self;
+   Handle * list;
+   int i, count;
+
+   if ( items != 1)
+      croak ("Invalid usage of Component.get_components");
+   SP -= items;
+   self = gimme_the_mate( ST( 0));
+   if ( self == nilHandle)
+      croak( "Illegal object reference passed to Component.get_components");
+   if ( var components) {
+      count = var components-> count;
+      list  = var components-> items;
+      EXTEND( sp, count);
+      for ( i = 0; i < count; i++)
+         PUSHs( sv_2mortal( newSVsv((( PAnyObject) list[ i])-> mate)));
+      PUTBACK;
+   }
+   return;
+}
+
+void Component_get_components          ( Handle self) { warn("Invalid call of Component::get_components"); }
+void Component_get_components_REDEFINED( Handle self) { warn("Invalid call of Component::get_components"); }
+
