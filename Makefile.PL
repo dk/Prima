@@ -2371,6 +2371,8 @@ test: all
 \t\@$^X -w test/startup.pl
 \t\@$^X -w test/Tester.pl
 
+ppd:
+\t\@$^X -e "print qq{<SOFTPKG NAME=\\"Prima\\" VERSION=\\"$DEFINES{PRIMA_VERSION},$DEFINES{PRIMA_SUBVERSION},0,0\\">\\n}. qq{\\t<TITLE>Prima</TITLE>\\n}. qq{\\t<ABSTRACT>Perl GUI toolkit</ABSTRACT>\\n}. qq{\\t<AUTHOR>Dmitry Karasik</AUTHOR>\\n}. qq{\\t<IMPLEMENTATION>\\n}. qq{\\t\\t<OS NAME=\\"$^O\\" />\\n}. qq{\\t\\t<ARCHITECTURE NAME=\\"$Config{myarchname}\\" />\\n}. qq{\\t\\t<CODEBASE HREF=\\"http://www.prima.eu.org/download/Prima-$DEFINES{PRIMA_VERSION}.$DEFINES{PRIMA_SUBVERSION}.tar.gz\\" />\\n}. qq{\\t</IMPLEMENTATION>\\n}. qq{</SOFTPKG>\\n}" > Prima.ppd
 
 Makefile: Makefile.PL @Makefile_deps
 \t\@echo Rebuilding Makefile...
