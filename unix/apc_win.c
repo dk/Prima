@@ -263,11 +263,18 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
            ( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
            ( border_icons != XX-> borderIcons)
          ) {
+	 Bool visible = XX-> flags. mapped;
+	 if ( visible) {
+	    XUnmapWindow( DISP, X_WINDOW);
+            prima_wm_sync( self, UnmapNotify);
+	 }
          set_motif_hints( X_WINDOW, border_style, border_icons);
+	 if ( visible) { 
+	    XMapWindow( DISP, X_WINDOW);
+            prima_wm_sync( self, MapNotify);
+	 }
          XX-> borderIcons = border_icons;
       }
-      XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
-      apc_widget_set_size_bounds( self, PWidget(self)-> sizeMin, PWidget(self)-> sizeMax);
       if (( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0))
          apc_window_task_listed( self, task_list);
       return true; 
