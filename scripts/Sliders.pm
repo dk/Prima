@@ -382,6 +382,7 @@ sub init
       right          => $w - 1,
       height         => $h - 1 * 2,
       growMode       => gm::Right,
+      (map { $_ => $profile{$_}} keys %spinDynas),
       %{$profile{spinProfile}},
    );
    $self-> {edit} = $self-> insert( $profile{editClass} =>
