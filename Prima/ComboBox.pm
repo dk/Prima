@@ -178,7 +178,7 @@ sub init
       origin         => [ $w - DefButtonX, $h - $eh],
       size           => [ DefButtonX, $eh],
       visible        => $self-> {style} != cs::Simple,
-      growMode       => gm::Right,
+      growMode       => gm::GrowLoX | gm::GrowLoY,
       tabStop        => 0,
       ownerFont      => 0,
       selectable     => 0,
