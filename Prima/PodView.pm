@@ -550,12 +550,14 @@ Error loading '$manpage' : $!
 
 ERROR
       $m =~ s/^\\=/=/gm;
+      undef $self-> {source_file};
       $self-> message( $m, 1);
       return 0;
    }
 
    $self-> pointer( cr::Wait);
    $self-> {manpath} = $path;
+   $self-> {source_file} = $manpage;
    $self-> open_read;
    $self-> read($_) while <F>;
    close F;
