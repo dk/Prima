@@ -35,7 +35,7 @@ object Image( Drawable)
    method double get_stats( int index);
    method int    get_type();
    method void   init( HV * profile);
-   method Bool   load( char *filename, int index = -1);
+   weird  Handle load( SV *who, char *filename, PList imgInfo);
    c_only void   make_empty();
    import SV *   profile_default ();
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
