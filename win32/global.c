@@ -59,7 +59,7 @@ DIBMONOBRUSH bmiHatch = {
    { sizeof( BITMAPINFOHEADER), 8, 8, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
    {{0,0,0,0}, {0,0,0,0}}
 };
-int     FONTSTRUCSIZE, FONTSTRUCSIZE2;
+int     FONTSTRUCSIZE;
 Handle lastMouseOver = nilHandle;
 MusClkRec musClk = {0};
 char * keyLayouts[]   = {  "0409", "0403", "0405", "0406", "0407",
@@ -151,7 +151,6 @@ window_subsystem_init()
       hPatHollow. dotsCount = 0;
       hPatHollow. dotsPtr   = nil;
       FONTSTRUCSIZE    = (char *)(&(f. name)) - (char *)(&f);
-      FONTSTRUCSIZE2   = (char *)(&(f. name)) - (char *)(&f. style);
    }
 
    if (!( dc = dc_alloc())) return false; 

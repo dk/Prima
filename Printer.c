@@ -143,6 +143,23 @@ Printer_end_paint_info( Handle self)
    inherited end_paint_info( self);
 }
 
+extern SV *
+Application_fonts( Handle self, char * name, char * encoding);
+
+SV *
+Printer_fonts( Handle self, char * name, char * encoding)
+{
+   return Application_fonts( self, name, encoding);
+}
+
+extern SV*
+Application_font_encodings( Handle self, char * encoding);
+
+SV*
+Printer_font_encodings( Handle self, char * encoding)
+{
+   return Application_font_encodings( self, encoding);
+}
 
 SV *
 Printer_printers( Handle self)
@@ -169,23 +186,6 @@ Printer_get_handle( Handle self)
    char buf[ 256];
    snprintf( buf, 256, "0x%08lx", apc_prn_get_handle( self));
    return newSVpv( buf, 0);
-}
-
-SV*
-Printer_fonts( Handle self, char * name)
-{
-   int count, i;
-   AV * glo = newAV();
-   PFont fmtx = apc_fonts( self, strlen( name) ? name : nil, &count);
-   for ( i = 0; i < count; i++) {
-      SV * sv      = sv_Font2HV( &fmtx[ i]);
-      HV * profile = ( HV*) SvRV( sv);
-      pdelete( resolution);
-      pdelete( codepage);
-      av_push( glo, sv);
-   }
-   free( fmtx);
-   return newRV_noinc(( SV *) glo);
 }
 
 Point

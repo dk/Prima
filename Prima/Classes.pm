@@ -135,7 +135,7 @@ sub set
    $o->$w( \%pr);
 }
 
-for ( qw( size name width height direction style pitch)) {
+for ( qw( size name width height direction style pitch encoding)) {
    eval <<GENPROC;
    sub $_
    {
@@ -301,7 +301,8 @@ sub profile_default
          style       => fs::Normal,
          aspect      => 1,
          direction   => 0,
-         name        => "Helv"
+         name        => "Helv",
+         encoding    => "",
       },
       lineEnd         => le::Round,
       linePattern     => lp::Solid,

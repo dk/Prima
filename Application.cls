@@ -79,7 +79,8 @@ object Prima::Application( Prima::Widget)
    method void   detach( Handle objectHandle, Bool kill);
    method void   end_paint();
    method void   end_paint_info();
-   method SV*    fonts( char * name = "");
+   method SV*    fonts( char * name = "", char * encoding = "");
+   method SV*    font_encodings( char * encoding = "");
    method Handle get_active_window();
    static Font   get_caption_font( char * dummy = "");
    static int    get_default_cursor_width( char * dummy = "");

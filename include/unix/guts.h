@@ -138,6 +138,7 @@ typedef struct _FontFlags {
    unsigned direction        : 1;
    unsigned resolution       : 1;
    unsigned name             : 1;
+   unsigned encoding         : 1;
    unsigned size             : 1;
    unsigned codepage         : 1;
    unsigned family           : 1;

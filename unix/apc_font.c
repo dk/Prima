@@ -37,6 +37,7 @@
 static PHash xfontCache = nil;
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 static Bool have_vector_fonts = false;
+static PHash encodings = nil;
 
 static void
 strlwr( char *d, const char *s)
@@ -165,6 +166,8 @@ prima_init_font_subsystem( void)
          s++;
       }
    }
+
+   encodings = hash_create();
 
    for ( i = 0, j = 0; i < count; i++) {
       char *b, *t, *c = names[ i];
@@ -356,6 +359,9 @@ prima_init_font_subsystem( void)
 	    /* advance through CHARSET_REGISTRY; just skip it;  XXX */
 	    ++c;
             info[j]. info_offset = c - names[i];
+            info[j]. flags. encoding = 1;
+            strcpy( info[j]. font. encoding, c);
+            hash_store( encodings, c, strlen( c), (void*)1);
             if (
                  ( strncasecmp( c, "sunolglyph",  strlen("sunolglyph")) == 0) ||
                  ( strncasecmp( c, "sunolcursor", strlen("sunolcursor")) == 0) ||
@@ -574,6 +580,8 @@ prima_cleanup_font_subsystem( void)
 
    hash_destroy( xfontCache, false);
    xfontCache = nil;
+   hash_destroy( encodings, false);
+   encodings = nil;
 }
 
 PFont
@@ -622,6 +630,8 @@ build_font_key( PFontKey key, PFont f, Bool bySize)
    key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut);
    key-> pitch = f-> pitch;
    strcpy( key-> name, f-> name);
+   strcat( key-> name, "\1");
+   strcat( key-> name, f-> encoding);
 }
 
 PCachedFont
@@ -968,6 +978,12 @@ static double
 query_diff( PFontInfo fi, PFont f, char * lcname, Bool by_size)
 {
    double diff = 0.0;
+
+   if ( fi-> flags. encoding && f-> encoding[0]) {
+      if ( strcmp( f-> encoding, fi-> font. encoding) != 0)
+         diff += 16000.0;
+   }
+   
    if ( fi->  flags. pitch) {
       if ( f-> pitch == fpDefault && fi-> font. pitch == fpFixed) {
          diff += 1.0;
@@ -1097,6 +1113,9 @@ apc_font_pick( Handle self, PFont source, PFont dest)
       return true;
    }
 
+   if ( !hash_fetch( encodings, dest-> encoding, strlen( dest-> encoding)))
+      dest-> encoding[0] = 0;
+
    strlwr( lcname, dest-> name);
 AGAIN:   
    for ( i = 0; i < n; i++) {
@@ -1141,8 +1160,109 @@ AGAIN:
    return true;
 }
 
+static PFont
+spec_fonts( int *retCount)
+{
+   int i, count = guts. n_fonts;
+   PFontInfo info = guts. font_info;
+   int needRecount = 0, maxRecount = 3;
+   PFont fmtx = nil;
+   Font defaultFont;
+   List list;
+   PHash hash = nil;
+
+   list_create( &list, 256, 256);
+
+AGAIN:   
+   *retCount = 0;
+   defaultFont. width  = 0;
+   defaultFont. height = 10;
+   defaultFont. size   = 0;
+   
+  
+   if ( !( hash = hash_create())) {
+      list_destroy( &list);
+      return nil;
+   }
+
+   /* collect font info */
+   for ( i = 0; i < count; i++) {
+      int len;
+      PFont fm;
+      if ( info[ i]. flags. disabled) continue;
+      
+      len = strlen( info[ i].font.name);
+
+      fm = hash_fetch( hash, info[ i].font.name, len);
+      if ( fm) {
+         char ** enc = (char**) fm-> encoding;
+         unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;
+         if ( *shift + 2 < 256 / sizeof(char*)) {
+            int j, exists = 0;
+            for ( j = 1; j <= *shift; j++) {
+               if ( strcmp( enc[j], info[i].xname + info[i].info_offset) == 0) {
+                  exists = 1;
+                  break;
+               }
+            }
+            if ( exists) continue;
+            *(enc + ++(*shift)) = info[i].xname + info[i].info_offset;
+         }
+         continue;
+      }
+
+      if ( !( fm = ( PFont) malloc( sizeof( Font)))) {
+         if ( hash) hash_destroy( hash, false);
+         list_delete_all( &list, true);
+         list_destroy( &list);
+         return nil;
+      }
+
+      if ( info[i]. flags. sloppy) {
+         if ( !info[i]. flags. intNames) needRecount++;
+         detail_font_info( info + i, &defaultFont, false, false);
+      }   
+      *fm = info[i]. font;
+     
+      { /* multi-encoding format */
+         char ** enc = (char**) fm-> encoding;
+         unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;      
+         memset( fm-> encoding, 0, 256);
+         *(enc + ++(*shift)) = info[i].xname + info[i].info_offset;
+         hash_store( hash, info[ i].font.name, strlen( info[ i].font.name), fm); 
+      }
+
+      list_add( &list, ( Handle) fm);
+   }
+
+   if ( hash) hash_destroy( hash, false);      
+
+   if ( list. count == 0) goto Nothing;
+   fmtx = ( PFont) malloc( list. count * sizeof( Font));
+   if ( !fmtx) {
+      list_delete_all( &list, true);   
+      list_destroy( &list);
+      return nil;
+   }
+   
+   *retCount = list. count;
+      for ( i = 0; i < list. count; i++)
+         memcpy( fmtx + i, ( void *) list. items[ i], sizeof( Font));
+   list_delete_all( &list, true);
+
+   if ( needRecount && --maxRecount) {
+      free( fmtx);
+      goto AGAIN;
+   }   
+
+Nothing:
+   list_destroy( &list);
+   return fmtx;
+}   
+
+
 PFont
-apc_fonts( Handle self, const char *facename, int *retCount)
+apc_fonts( Handle self, const char *facename, const char * encoding, int *retCount)
 {
    int i, count = guts. n_fonts;
    PFontInfo info = guts. font_info;
@@ -1150,6 +1270,8 @@ apc_fonts( Handle self, const char *facename, int *retCount)
    int n_table, needRecount = 0, maxRecount = 3;
    PFont fmtx;
    Font defaultFont;
+
+   if ( !facename && !encoding) return spec_fonts( retCount);
    
 AGAIN:   
    *retCount = 0;
@@ -1165,8 +1287,9 @@ AGAIN:
          int len;
          if ( info[ i]. flags. disabled) continue;
          len = strlen( info[ i].font.name);
-         if ( hash_fetch( hash, info[ i].font.name, len))
-            continue;
+         if ( hash_fetch( hash, info[ i].font.name, len) || 
+            strcmp( info[ i].xname + info[ i].info_offset, encoding) != 0)
+              continue;
          hash_store( hash, info[ i].font.name, len, (void*)1);
          table[ n_table++] = info + i;
       }
@@ -1175,7 +1298,14 @@ AGAIN:
    } else {
       for ( i = 0; i < count; i++) {
          if ( info[ i]. flags. disabled) continue;
-         if ( stricmp( info[ i].font.name, facename) == 0) {
+         if (
+               ( stricmp( info[ i].font.name, facename) == 0) &&
+               ( 
+                   !encoding || 
+                   ( strcmp( info[ i].xname + info[ i].info_offset, encoding) == 0)
+               )
+            )
+         {
             table[ n_table++] = info + i;
          }
       }   
@@ -1183,6 +1313,7 @@ AGAIN:
    }   
 
    fmtx = malloc( n_table * sizeof( Font)); 
+   bzero( fmtx, n_table * sizeof( Font)); 
    if ( !fmtx && n_table > 0) {
       *retCount = 0;
       free( table);
@@ -1208,6 +1339,22 @@ AGAIN:
    }   
    
    return fmtx;
+}
+
+PHash
+apc_font_encodings( Handle self )
+{
+   HE *he;
+   PHash hash = hash_create();
+   if ( !hash) return nil;
+
+   hv_iterinit(( HV*) encodings);
+   for (;;) {
+      if (( he = hv_iternext( encodings)) == nil)
+         break;
+      hash_store( hash, HeKEY( he), HeKLEN( he), (void*)1);
+   }
+   return hash;
 }
 
 Bool

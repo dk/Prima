@@ -177,6 +177,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
    Bool useStyle  = source-> style     != C_NUMERIC_UNDEF;
    Bool useDir    = source-> direction != C_NUMERIC_UNDEF;
    Bool useName   = strcmp( source-> name, C_STRING_UNDEF) != 0;
+   Bool useEnc    = strcmp( source-> encoding, C_STRING_UNDEF) != 0;
 
    /* assignning values */
    if ( useHeight) dest-> height    = source-> height;
@@ -185,8 +186,8 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
    if ( useStyle ) dest-> style     = source-> style;
    if ( usePitch ) dest-> pitch     = source-> pitch;
    if ( useSize  ) dest-> size      = source-> size;
-   if ( useName  ) 
-      strcpy( dest-> name, source-> name);
+   if ( useName  ) strcpy( dest-> name, source-> name);
+   if ( useEnc   ) strcpy( dest-> encoding, source-> encoding);
 
    /* nulling dependencies */
    if ( !useHeight && useSize)

@@ -46,7 +46,7 @@ global %Font {
    long        resolution        ;
    string      name              ;
    int         size              ;
-   int         codepage          ;
+   string      encoding          ;
    string      family            ;
    int         vector            ;
    int         ascent            ;

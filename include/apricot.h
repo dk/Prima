@@ -3172,7 +3172,10 @@ extern Bool
 apc_font_pick( Handle self, PFont source, PFont dest);
 
 extern PFont
-apc_fonts( Handle self, const char *facename, int *retCount);
+apc_fonts( Handle self, const char *facename, const char *encoding, int *retCount);
+
+extern PHash
+apc_font_encodings( Handle self);
 
 /* system metrics */
 extern Bool

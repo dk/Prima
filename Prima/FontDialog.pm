@@ -144,18 +144,33 @@ sub init
    );
 
    $gr = $self-> insert( GroupBox =>
-      origin     => [ 175, 10],
-      size       => [ 250, 150],
+      origin     => [ 175, 40],
+      size       => [ 355, 120],
       name       => 'Sample',
    );
-
+   
    $j = $gr-> insert( Widget =>
       origin     => [ 5, 5],
-      size       => [ 240, 120],
+      size       => [ 345, 90],
       name       => 'Example',
       delegations=> [ $self, 'Paint', 'FontChanged'],
    );
 
+   my $enc = $self-> insert( ComboBox =>
+      origin     => [ 290, 10],
+      size       => [ 240, 20],
+      name       => 'Encoding',
+      style      => cs::DropDownList,
+      delegations=> [ 'Change' ],
+   );
+
+   $self-> insert( Label => 
+      origin     => [ 175, 10],
+      size       => [ 96, 18],
+      text       => '~Encoding',
+      focusLink  => $enc,
+   );
+   
    $self-> insert( Button =>
       origin      => [ 435, 280],
       size        => [ 96, 36],
@@ -203,20 +218,43 @@ sub refresh_fontlist
 
    $self-> Name-> items( \@fontItems);
    $self-> Name-> text( $self->{logFont}->{name});
-   $self-> reset_sizelist;
+   $self-> reset_sizelist( 1);
 }
 
 sub reset_sizelist
 {
-   my $self = $_[0];
+   my ( $self, $name_changed) = @_;
    my $Name = $self-> Name;
    my $fn   = $Name-> List-> get_items( $Name-> focusedItem);
    my @sizes;
 
    if ( defined $fn) {
-      my @list = @{$::application-> fonts( $fn)};
+      my $current_encoding = $self-> Encoding-> List-> get_items( $self-> Encoding-> List-> focusedItem) || '';
+      
+      my @list = @{$::application-> fonts( $fn, $name_changed ? '' : $current_encoding)};
+
+      if ( $name_changed) {
+         my %enc;
+         my @enc_items;
+         for ( map { $_-> {encoding}} @list) {
+            next if $enc{$_};
+            push ( @enc_items, $_ );
+            $enc{$_} = 1;
+         }
+         my $found = 0;
+         my $i = 0;
+         
+         for ( @enc_items) {
+            $found = $i, last if $_ eq $current_encoding;
+            $i++;
+         }
+         $self-> Encoding-> List-> items( \@enc_items);
+         $self-> Encoding-> text( $current_encoding = $enc_items[ $found]);
+      }
+      
       for ( @list)
       {
+         next if $current_encoding ne $_->{encoding};
          if ( $_->{ vector})
          {
             @sizes = qw( 8 9 10 11 12 14 16 18 20 22 24 26 28 32 48 72);
@@ -226,6 +264,7 @@ sub reset_sizelist
          }
       }
       @sizes = sort { $a <=> $b } keys %{{(map { $_ => 1 } @sizes)}};
+      @sizes = (10) unless scalar @sizes;
    }
    $self-> Size-> items( \@sizes);
    $self-> Size-> focusedItem(0);
@@ -285,10 +324,10 @@ sub Example_FontChanged
 sub Name_SelectItem
 {
    my ( $owner, $self, $index, $state) = @_;
-   my $sz = $owner-> {logFont}->{size};
-   my $fn = $owner-> reset_sizelist;
+   my $sz  = $owner-> {logFont}->{size};
+   my $fn = $owner-> reset_sizelist(1);
    $owner-> Size-> InputLine-> text( $sz);
-   $owner-> apply( name => $fn, size => $sz);
+   $owner-> apply( name => $fn, size => $sz, encoding => $owner-> Encoding-> text);
 }
 
 sub Size_Change
@@ -298,6 +337,15 @@ sub Size_Change
    return unless $sz =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/;
    return if $sz < 2 or $sz > 2048;
    $owner-> apply( size => $sz);
+}
+
+sub Encoding_Change
+{
+   my ( $owner, $self) = @_;
+   my $sz = $owner-> {logFont}->{size};
+   my $fn = $owner-> reset_sizelist(0);
+   $owner-> Size-> InputLine-> text( $sz);
+   $owner-> apply( size => $sz, encoding => $owner-> Encoding-> text);
 }
 
 sub FontStyleButton_Click

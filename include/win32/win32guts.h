@@ -507,7 +507,6 @@ extern Bool         appDead;
 extern DIBMONOBRUSH bmiHatch;
 extern PHash        fontMan;
 extern int          FONTSTRUCSIZE;
-extern int          FONTSTRUCSIZE2;
 extern WinGuts      guts;
 extern PHash        imageMan;
 extern PHash        menuMan;

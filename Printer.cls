@@ -40,7 +40,8 @@ object Prima::Printer( Prima::Drawable)
    method void   end_doc();
    method void   end_paint();
    method void   end_paint_info();
-   method SV*    fonts( char * name = "");
+   method SV*    fonts( char * name = "", char * encoding = "");
+   method SV*    font_encodings( char * encoding = "");
    method void   init( HV * profile);
    method void   new_page();
    method SV *   printers();

@@ -838,6 +838,7 @@ apc_font_default
 apc_font_load
 apc_font_pick
 apc_fonts
+apc_font_encodings
 apc_get_application
 apc_get_standard_clipboards
 apc_get_user_name
