@@ -223,7 +223,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
    DEFXX;
    PMenuWindow w;
    GC gc;
-   int mx, my, y, deltaY;
+   int mx, my, y, deltaY = 0;
    PMenuItemReg m;
    int sz = 1024, l, i;
    char *s;
@@ -269,7 +269,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                XSetForeground( DISP, gc, XX->c[ciFore].pixel);
             } else if ( m-> text) {
                XFontStruct * xs = XX-> font-> fs;
-               int lineStart = -1, lineEnd, haveDash = 0, textWidth;
+               int lineStart = -1, lineEnd = 0, haveDash = 0, textWidth;
                deltaY = 4 + XX-> font-> font. height;
                y += deltaY;
                t = m-> text;
