@@ -224,8 +224,14 @@ Application_fonts( Handle self, char * name)
 {
    int count, i;
    AV * glo = newAV();
-   PFontMetric fmtx = apc_fonts( strlen( name) ? name : nil, &count);
-   for ( i = 0; i < count; i++) av_push( glo, sv_FontMetric2HV( &fmtx[ i]));
+   PFont fmtx = apc_fonts( strlen( name) ? name : nil, &count);
+   for ( i = 0; i < count; i++) {
+      SV * sv      = sv_Font2HV( &fmtx[ i]);
+      HV * profile = ( HV*) SvRV( sv);
+      pdelete( resolution);
+      pdelete( codepage);
+      av_push( glo, sv);
+   }
    free( fmtx);
    return newRV_noinc(( SV *) glo);
 }
