@@ -489,7 +489,7 @@ or the function declaration does not fit into C syntax,
 a C<public> prefix is used. The methods declared with C<public>
 is expected to communicate with perl by means of XS ( see L<perlxs> 
 menpage) interface. It is also expected that a C<public> method creates both
-REDEFINED and FROMPERL functions ( see L<prima-guts> manpage for
+REDEFINED and FROMPERL functions ( see L<Prima::internals> manpage for
 details). Examples are many throughout Prima source, and
 will not be shown here. C<public> methods usually have
 void result and no parameters, but that does not matter much,
@@ -542,7 +542,7 @@ and C<public>. In other words, gencls generates no conversion
 code and expects no C<Handle self> as a first parameter for
 such a method. As an example Prima::Image::load can be depicted,
 which can be called using a wide spectrum of calling semantics
-( see L<prima-image> for details).
+( see L<Prima::image-load> for details).
 
 =item c_only
 
@@ -631,7 +631,7 @@ Anton Berezin, E<lt>tobez@tobez.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<prima-guts>, L<tmlink>
+L<Prima::internals>, L<tmlink>
 
 =head1 COPYRIGHT
 

@@ -92,7 +92,7 @@ in Prima implementation.
 It was decided not to code every function with XS calls, but instead
 use special wrapper functions ( also called "thunks") for every function 
 that is called from within perl. Thunks are generated automatically
-by gencls tool ( L<prima-gencls> manpage ), and typical Prima method
+by gencls tool ( L<gencls> manpage ), and typical Prima method
 consists of three functions, two of which are thunks.
 
 First function, say Class_init(char*), would initialize a class ( for example).

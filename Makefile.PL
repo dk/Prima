@@ -1871,7 +1871,8 @@ EOF
 
     push @allrealclean, $config_h;
     push @allinstall, $config_h => $INSTALL_LIB . qd( "/CORE/generic");
-    push @allinstall, map { qd($_), $INSTALL_LIB} <pod/*.pod>;
+    push @allinstall, map { qd($_), $INSTALLSITEARCH} <pod/*.pod>;
+    push @allinstall, map { qd($_), $INSTALL_LIB} <pod/Prima/*.pod>;
     push @alldirs, qd( "include/generic"), qd( "auto/Prima");
 
     print "Creating Prima::Config.pm\n";
