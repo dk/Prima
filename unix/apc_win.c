@@ -186,8 +186,8 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    if ( window_state != wsMaximized) {
       XX-> zoomRect. right = XX-> size. x;
       XX-> zoomRect. top   = XX-> size. y;
-      XX-> size. x /= 3;
-      XX-> size. y /= 3;
+      XX-> size. x *= 0.75;
+      XX-> size. y *= 0.75;
    } else
       XX-> flags. zoomed = 1;
    XX-> origin. x = XX-> origin. y = 
