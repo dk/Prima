@@ -258,15 +258,15 @@ apc_application_create( Handle self)
    return true;
 }
 
-void
+Bool
 apc_application_close( Handle self)
-
 {
 fprintf( stderr, "apc_application_close()\n");
    Object_destroy( self);
+   return true;
 }
 
-void
+Bool
 apc_application_destroy( Handle self)
 {
 fprintf( stderr, "apc_application_destroy()\n");
@@ -275,18 +275,21 @@ fprintf( stderr, "apc_application_destroy()\n");
       XCHECKPOINT;
       hash_delete( guts.windows, (void*)&X_WINDOW, sizeof(X_WINDOW), false);
    }
+   return true;
 }
 
-void
+Bool
 apc_application_end_paint( Handle self)
 {
    prima_cleanup_drawable_after_painting( self);
+   return true;
 }
 
-void
+Bool
 apc_application_end_paint_info( Handle self)
 {
 fprintf( stderr, "apc_application_end_paint_info()\n");
+   return true;
 }
 
 int
@@ -365,7 +368,7 @@ apc_application_get_size( Handle self)
    };
 }
 
-void
+Bool
 apc_application_go( Handle self)
 {
 /*NCI*/
@@ -380,7 +383,7 @@ apc_application_go( Handle self)
 //   XCHECKPOINT;
 
    for (;;) {
-      if (!application) return;
+      if (!application) return false;
       if (( n = XEventsQueued( DISP, QueuedAlready))) {
 	 goto FetchAndProcess;
       }
@@ -450,7 +453,7 @@ FetchAndProcess:
 	    XCHECKPOINT;
 	    n--;
 	    while ( n > 0) {
-	       if (!application) return;
+	       if (!application) return true;
 	       XNextEvent( DISP, &next_event);
 	       XCHECKPOINT;
 	       guts. total_events++;
@@ -458,7 +461,7 @@ FetchAndProcess:
 	       n--;
 	       memcpy( &ev, &next_event, sizeof( XEvent));
 	    }
-	    if (!application) return;
+	    if (!application) return true;
 	    guts. total_events++;
 	    prima_handle_event( &ev, nil);
 	 }
@@ -488,20 +491,23 @@ FetchAndProcess:
    }
    if ( application) Object_destroy( application);
    application = nilHandle;
+   return true;
 }
 
-void
+Bool
 apc_application_lock( Handle self)
 {
 fprintf( stderr, "apc_application_lock()\n");
 /*NYI*/
+   return true;
 }
 
-void
+Bool
 apc_application_unlock( Handle self)
 {
 fprintf( stderr, "apc_application_unlock()\n");
 /*NYI*/
+   return true;
 }
 
 static XBool
@@ -511,7 +517,7 @@ any_event( Display *d, XEvent *ev, XPointer arg)
    return true;
 }
 
-void
+Bool
 apc_application_yield( void)
 {
 /*NCI*/
@@ -533,7 +539,7 @@ apc_application_yield( void)
       XCHECKPOINT;
       n--;
       while ( n > 0) {
-	 if (!application) return;
+	 if (!application) return true;
 	 XNextEvent( DISP, &next_event);
 	 XCHECKPOINT;
 	 guts. total_events++;
@@ -541,10 +547,11 @@ apc_application_yield( void)
 	 n--;
 	 memcpy( &ev, &next_event, sizeof( XEvent));
       }
-      if (!application) return;
+      if (!application) return true;
       guts. total_events++;
       prima_handle_event( &ev, nil);
    }
    XNoOp( DISP);
    XFlush( DISP);
+   return true;
 }

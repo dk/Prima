@@ -84,24 +84,26 @@ unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int d
 
 /* Component-related functions */
 
-void
+Bool
 apc_component_create( Handle self)
 {
    if ( !PComponent( self)-> sysData) {
       PComponent( self)-> sysData = malloc( sizeof( UnixSysData));
       bzero( PComponent( self)-> sysData, sizeof( UnixSysData));
    }
+   return true;
 }
 
-void
+Bool
 apc_component_destroy( Handle self)
 {
    free( PComponent( self)-> sysData);
    PComponent( self)-> sysData = nil;
    X_WINDOW = nilHandle;
+   return true;
 }
 
-void
+Bool
 apc_component_fullname_changed_notify( Handle self)
 {
    PComponent me = PComponent( self);
@@ -115,7 +117,7 @@ apc_component_fullname_changed_notify( Handle self)
    Handle *list;
 
    if (!XX)
-      return;
+      return true;
 
    if ( !converted) {
       for ( l = 0; l < 256; l++) {
@@ -234,6 +236,7 @@ apc_component_fullname_changed_notify( Handle self)
 /*    fprintf( stderr, "=============== Instance: %s\n", instance); */
 /*    free( class); */
 /*    free( instance); */
+   return true;
 }
 
 /* Cursor support */
@@ -384,7 +387,7 @@ prima_cursor_tick( void)
    }
 }
 
-void
+Bool
 apc_cursor_set_pos( Handle self, int x, int y)
 {
    DEFXX;
@@ -392,9 +395,10 @@ apc_cursor_set_pos( Handle self, int x, int y)
    XX-> cursor_pos. x = x;
    XX-> cursor_pos. y = y;
    prima_update_cursor( self);
+   return true;
 }
 
-void
+Bool
 apc_cursor_set_size( Handle self, int x, int y)
 {
    DEFXX;
@@ -402,9 +406,10 @@ apc_cursor_set_size( Handle self, int x, int y)
    XX-> cursor_size. x = x;
    XX-> cursor_size. y = y;
    prima_update_cursor( self);
+   return true;
 }
 
-void
+Bool
 apc_cursor_set_visible( Handle self, Bool visible)
 {
    DEFXX;
@@ -413,6 +418,7 @@ apc_cursor_set_visible( Handle self, Bool visible)
       XX-> flags. cursor_visible = visible;
       prima_update_cursor( self);
    }
+   return true;
 }
 
 Point
@@ -486,16 +492,18 @@ apc_pointer_get_visible( Handle self)
    return false;
 }
 
-void
+Bool
 apc_pointer_set_pos( Handle self, int x, int y)
 {
    DOLBUG( "apc_pointer_set_pos()\n");
+   return true;
 }
 
-void
+Bool
 apc_pointer_set_shape( Handle self, int sysPtrId)
 {
    DOLBUG( "apc_pointer_set_shape()\n");
+   return true;
 }
 
 Bool
@@ -505,10 +513,11 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
    return false;
 }
 
-void
+Bool
 apc_pointer_set_visible( Handle self, Bool visible)
 {
    DOLBUG( "apc_pointer_set_visible()\n");
+   return true;
 }
 
 int
@@ -535,10 +544,11 @@ apc_clipboard_create( void)
    return true;
 }
 
-void
+Bool
 apc_clipboard_destroy( void)
 {
    DOLBUG( "apc_clipboard_destroy()\n");
+   return true;
 }
 
 Bool
@@ -548,16 +558,18 @@ apc_clipboard_open( void)
    return false;
 }
 
-void
+Bool
 apc_clipboard_close( void)
 {
    DOLBUG( "apc_clipboard_close()\n");
+   return true;
 }
 
-void
+Bool
 apc_clipboard_clear( void)
 {
    DOLBUG( "apc_clipboard_clear()\n");
+   return true;
 }
 
 Bool
@@ -588,10 +600,11 @@ apc_clipboard_register_format( const char* format)
    return 0;
 }
 
-void
+Bool
 apc_clipboard_deregister_format( long id)
 {
    DOLBUG( "apc_clipboard_deregister_format()\n");
+   return true;
 }
 
 /* Timer */
@@ -648,7 +661,7 @@ apc_timer_create( Handle self, Handle owner, int timeout)
    return true;
 }
 
-void
+Bool
 apc_timer_destroy( Handle self)
 {
    ENTERTIMER;
@@ -656,6 +669,7 @@ apc_timer_destroy( Handle self)
    inactivate_timer( sys);
    sys-> timeout = 0;
    if (real) opt_clear( optActive);
+   return true;
 }
 
 int
@@ -665,7 +679,7 @@ apc_timer_get_timeout( Handle self)
    return sys-> timeout;
 }
 
-void
+Bool
 apc_timer_set_timeout( Handle self, int timeout)
 {
    ENTERTIMER;
@@ -673,6 +687,7 @@ apc_timer_set_timeout( Handle self, int timeout)
    sys-> timeout = timeout;
    if ( !real || is_opt( optActive))
       apc_timer_start( self);
+   return true;
 }
 
 Bool
@@ -717,13 +732,14 @@ apc_timer_start( Handle self)
    return true;
 }
 
-void
+Bool
 apc_timer_stop( Handle self)
 {
    ENTERTIMER;
 
    inactivate_timer( sys);
    if ( real) opt_clear( optActive);
+   return true;
 }
 
 
@@ -736,31 +752,35 @@ apc_help_open_topic( Handle self, long command)
    return false;
 }
 
-void
+Bool
 apc_help_close( Handle self)
 {
    DOLBUG( "apc_help_close()\n");
+   return true;
 }
 
-void
+Bool
 apc_help_set_file( Handle self, const char* helpFile)
 {
    DOLBUG( "apc_help_set_file()\n");
+   return true;
 }
 
 
 /* Messages */
 
-void
+Bool
 apc_message( Handle self, PEvent ev, Bool post)
 {
    DOLBUG( "apc_message()\n");
+   return true;
 }
 
-void
+Bool
 apc_show_message( const char * message)
 {
    DOLBUG( "apc_show_message()\n");
+   return true;
 }
 
 /* system metrics */
@@ -821,26 +841,29 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    return 0;
 }
 
-void
+Bool
 apc_sys_set_insert_mode( Bool insMode)
 {
    guts. insert = !!insMode;
+   return true;
 }
 
 /* etc */
 
-void
+Bool
 apc_beep( int style)
 {
    /* XXX - mbError, mbQuestion, mbInformation, mbWarning */
    if ( DISP)
       XBell( DISP, 0);
+   return true;
 }
 
-void
+Bool
 apc_beep_tone( int freq, int duration)
 {
    DOLBUG( "apc_beep_tone()\n");
+   return true;
 }
 
 char *
@@ -850,11 +873,12 @@ apc_system_action( const char* params)
    return nil;
 }
 
-void
+Bool
 apc_query_drives_map( const char* firstDrive, char *result, int len)
 {
-   if ( !result || len <= 0) return;
+   if ( !result || len <= 0) return true;
    *result = 0;
+   return true;
 }
 
 int

@@ -432,26 +432,29 @@ prima_cleanup_drawable_after_painting( Handle self)
    }
 }
 
-void
+Bool
 apc_gp_init( Handle self)
 {
    DOLBUG( "apc_gp_init()\n");
    X(self)-> resolution = guts. resolution;
+   return true;
 }
 
-void
+Bool
 apc_gp_done( Handle self)
 {
    prima_release_gc(X(self));
+   return true;
 }
 
-void
+Bool
 apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
    DOLBUG( "apc_gp_arc()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
@@ -460,21 +463,24 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
    SORT( x1, x2); SORT( y1, y2);
    XFillRectangle( DISP, XX-> drawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
    XCHECKPOINT;
+   return true;
 }
 
-void
+Bool
 apc_gp_clear( Handle self)
 {
    DOLBUG( "apc_gp_clear()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
    DOLBUG( "apc_gp_chord()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_draw_poly( Handle self, int n, Point *pp)
 {
    DEFXX;
@@ -536,33 +542,38 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 /*    i = 165; n = 172; */
 /*    XDrawLines( DISP, XX-> drawable, XX-> gc, p+i, n-i+1, CoordModeOrigin); */
    free( p);
+   return true;
 }
 
-void
+Bool
 apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 {
    DOLBUG( "apc_gp_draw_poly2()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
 {
    DOLBUG( "apc_gp_ellipse()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
    DOLBUG( "apc_gp_fill_chord()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY)
 {
    DOLBUG( "apc_gp_fill_ellipse()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_fill_poly( Handle self, int numPts, Point *points)
 {
    /* XXX - beware, current implementation will not deal correctly with different rops and tiles */
@@ -598,18 +609,21 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    } else {
       warn( "apc_gp_fill_poly() XDrawLines() request size limit reached");
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
    DOLBUG( "apc_gp_fill_sector()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBorder)
 {
    DOLBUG( "apc_gp_flood_fill()\n");
+   return true;
 }
 
 Color
@@ -626,7 +640,7 @@ apc_gp_get_region( Handle self, Handle mask)
    return false;
 }
 
-void
+Bool
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 {
    /* !!! - this function will not work correctly for cosmetic (width 0) lines */
@@ -641,6 +655,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
       SORT( y1, y2); y1--;
    }
    XDrawLine( DISP, XX-> drawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
+   return true;
 }
 
 static void
@@ -889,7 +904,7 @@ create_image_cache( PImage img)
    }
 }
 
-void
+Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
    DEFXX;
@@ -917,6 +932,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       XSetBackground( DISP, XX-> gc, b);
       XCHECKPOINT;
    }
+   return true;
 }
 
 Bool
@@ -1029,7 +1045,7 @@ slurp_image_unsupported_depth:
    }
 }
 
-void
+Bool
 apc_image_end_paint( Handle self)
 {
    DEFXX;
@@ -1040,9 +1056,10 @@ apc_image_end_paint( Handle self)
       XCHECKPOINT;
       XX-> drawable = 0;
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
@@ -1051,27 +1068,31 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
    SORT( x1, x2); SORT( y1, y2);
    XDrawRectangle( DISP, XX-> drawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
    XCHECKPOINT;
+   return true;
 }
 
-void
+Bool
 apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
    DOLBUG( "apc_gp_sector()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_set_palette( Handle self)
 {
    DOLBUG( "apc_gp_set_palette()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_set_region( Handle self, Handle mask)
 {
    DOLBUG( "apc_gp_set_region()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
    DEFXX;
@@ -1085,6 +1106,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    XCHECKPOINT;
    XSetForeground( DISP, XX-> gc, old);
    XCHECKPOINT;
+   return true;
 }
 
 extern void
@@ -1135,7 +1157,7 @@ create_stretched_image( PImage img, int x, int y, int w, int h, int tw, int th)
    return r;
 }
 
-void
+Bool
 apc_gp_stretch_image( Handle self, Handle image,
 		      int x, int y, int xFrom, int yFrom,
 		      int xDestLen, int yDestLen, int xLen, int yLen, int rop)
@@ -1148,7 +1170,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    
    if ( xDestLen == xLen && yDestLen == yLen) {
       apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
-      return;
+      return true;
    }
 
    /* 1) XXX - rop - correct support! */
@@ -1181,15 +1203,17 @@ apc_gp_stretch_image( Handle self, Handle image,
       XSetBackground( DISP, XX-> gc, b);
       XCHECKPOINT;
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 {
    DEFXX;
    SHIFT( x, y);
    XDrawString( DISP, XX-> drawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
+   return true;
 }
 
 char **
@@ -1365,7 +1389,7 @@ apc_gp_get_text_out_baseline( Handle self)
    return false;
 }
 
-void
+Bool
 apc_gp_set_back_color( Handle self, Color color)
 {
    DEFXX;
@@ -1379,9 +1403,10 @@ apc_gp_set_back_color( Handle self, Color color)
       XX-> saved_back = *c;
       XX-> gcv. background = c-> pixel;
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_set_clip_rect( Handle self, Rect clipRect)
 {
    DEFXX;
@@ -1389,7 +1414,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    XRectangle r;
 
    if ( !XX-> flags. paint)
-      return;
+      return true;
    
    SORT( clipRect. left, clipRect. right);
    SORT( clipRect. bottom, clipRect. top);
@@ -1405,9 +1430,10 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    }
    XSetRegion( DISP, XX-> gc, region);
    XDestroyRegion( region);
+   return true;
 }
 
-void
+Bool
 apc_gp_set_color( Handle self, Color color)
 {
    DEFXX;
@@ -1421,15 +1447,17 @@ apc_gp_set_color( Handle self, Color color)
       XX-> saved_fore = *c;
       XX-> gcv. foreground = c-> pixel;
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
    DEFXX;
 
    memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
    DOLBUG( "apc_gp_set_fill_pattern()\n");
+   return true;
 }
 
 /*- see apc_font.c
@@ -1437,13 +1465,14 @@ void
 apc_gp_set_font( Handle self, PFont font)
 */
 
-void
+Bool
 apc_gp_set_line_end( Handle self, int lineEnd)
 {
    DOLBUG( "apc_gp_set_line_end()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_set_line_width( Handle self, int line_width)
 {
    DEFXX;
@@ -1462,9 +1491,10 @@ apc_gp_set_line_width( Handle self, int line_width)
       XX-> flags. saved_zero_line = zero_line;
       XX-> gcv. line_width = line_width;
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_set_line_pattern( Handle self, int pattern)
 {
 //#define    lpNull           0x0000     /* */
@@ -1477,9 +1507,10 @@ apc_gp_set_line_pattern( Handle self, int pattern)
 //#define    lpDashDot        0xFAFA     /* _._._._._._ */
 //#define    lpDashDotDot     0xEAEA     /* _.._.._.._.. */
    DOLBUG( "apc_gp_set_line_pattern()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_set_rop( Handle self, int rop)
 {
    DEFXX;
@@ -1498,15 +1529,17 @@ apc_gp_set_rop( Handle self, int rop)
       XX-> gcv. function = function;
       XX-> rop = rop;
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_set_rop2( Handle self, int rop)
 {
    DOLBUG( "apc_gp_set_rop2()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_set_transform( Handle self, int x, int y)
 {
    DEFXX;
@@ -1517,16 +1550,19 @@ apc_gp_set_transform( Handle self, int x, int y)
       XX-> transform. x = x;
       XX-> transform. y = y;
    }
+   return true;
 }
 
-void
+Bool
 apc_gp_set_text_opaque( Handle self, Bool opaque)
 {
    DOLBUG( "apc_gp_set_text_opaque()\n");
+   return true;
 }
 
-void
+Bool
 apc_gp_set_text_out_baseline( Handle self, Bool baseline)
 {
    DOLBUG( "apc_gp_set_text_out_baseline()\n");
+   return true;
 }

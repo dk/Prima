@@ -807,7 +807,7 @@ compare_difference( const void *aa, const void *bb)
       return 0;
 }
 
-void
+Bool
 apc_font_pick( Handle self, PFont source, PFont dest)
 {
    PFontInfo info = guts. font_info;
@@ -833,7 +833,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    }
 
    if ( find_known_font( f, true)) {
-      return;
+      return true;
    }
 
    ordered = malloc( sizeof( *ordered) * n);
@@ -934,6 +934,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 croak( "Ala-ulu");
 */
    free( ordered);
+   return true;
 }
 
 PFont
@@ -943,7 +944,7 @@ apc_fonts( Handle self, const char *facename, int *retCount)
    return nil;
 }
 
-void
+Bool
 apc_gp_set_font( Handle self, PFont font)
 {
    DEFXX;
@@ -993,4 +994,6 @@ apc_gp_set_font( Handle self, PFont font)
       XSetFont( DISP, XX-> gc, XX-> font-> id);
       XCHECKPOINT;
    }
+   
+   return true;
 }

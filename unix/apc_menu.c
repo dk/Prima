@@ -39,9 +39,10 @@ apc_menu_create( Handle self, Handle owner)
    return false;
 }
 
-void
+Bool
 apc_menu_destroy( Handle self)
 {
+   return true;
 }
 
 PFont
@@ -62,54 +63,64 @@ apc_menu_get_font( Handle self, PFont font)
    return nil;
 }
 
-void
+Bool
 apc_menu_set_color( Handle self, Color color, int index)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_set_font( Handle self, PFont font)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
 {
+   return true;
 }
 
-void
+Bool
 apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
 {
+   return true;
 }
 
 ApiHandle

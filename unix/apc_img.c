@@ -74,7 +74,7 @@ apc_image_create( Handle self)
     return false;
 }
 
-void
+Bool
 apc_image_destroy( Handle self)
 {
    DEFXX;
@@ -82,6 +82,11 @@ apc_image_destroy( Handle self)
       XDestroyImage( XX-> image_cache);
       XX-> image_cache = nil;
    }
+   if ( XX-> icon_cache) {
+      XDestroyImage( XX-> icon_cache);
+      XX-> icon_cache = nil;
+   }
+   return true;
 }
 
 /* See unix/apc_graphics.c
@@ -101,13 +106,14 @@ void
 apc_image_end_paint( Handle self)
 */
 
-void
+Bool
 apc_image_end_paint_info( Handle self)
 {
-    DOLBUG( "apc_image_end_paint_info()\n");
+   DOLBUG( "apc_image_end_paint_info()\n");
+   return true;
 }
 
-void
+Bool
 apc_image_update_change( Handle self)
 {
    DEFXX;
@@ -117,8 +123,13 @@ apc_image_update_change( Handle self)
       XDestroyImage( XX-> image_cache);
       XX-> image_cache = nil;
    }
+   if ( XX-> icon_cache) {
+      XDestroyImage( XX-> icon_cache);
+      XX-> icon_cache = nil;
+   }
    XX-> size. x = img-> w;
    XX-> size. y = img-> h;
+   return true;
 }
 
 Bool
@@ -128,10 +139,11 @@ apc_dbm_create( Handle self, Bool monochrome)
     return false;
 }
 
-void
+Bool
 apc_dbm_destroy( Handle self)
 {
-    DOLBUG( "apc_dbm_destroy()\n");
+   DOLBUG( "apc_dbm_destroy()\n");
+   return true;
 }
 
 static Bool

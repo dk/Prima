@@ -41,10 +41,11 @@ fprintf( stderr, "apc_prn_create()\n");
    return true;
 }
 
-void
+Bool
 apc_prn_destroy( Handle self)
 {
 fprintf( stderr, "apc_prn_destroy()\n");
+   return true;
 }
 
 PrinterInfo *
@@ -110,27 +111,31 @@ fprintf( stderr, "apc_prn_begin_paint_info()\n");
    return false;
 }
 
-void
+Bool
 apc_prn_end_doc( Handle self)
 {
 fprintf( stderr, "apc_prn_end_doc()\n");
+   return true;
 }
 
-void
+Bool
 apc_prn_end_paint_info( Handle self)
 {
 fprintf( stderr, "apc_prn_end_paint_info()\n");
+   return true;
 }
 
-void
+Bool
 apc_prn_new_page( Handle self)
 {
 fprintf( stderr, "apc_prn_new_page()\n");
+   return true;
 }
 
-void
+Bool
 apc_prn_abort_doc( Handle self)
 {
 fprintf( stderr, "apc_prn_abort_doc()\n");
+   return true;
 }
 

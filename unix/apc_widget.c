@@ -167,7 +167,7 @@ apc_widget_begin_paint_info( Handle self)
    return false;
 }
 
-void
+Bool
 apc_widget_destroy( Handle self)
 {
    if ( X_WINDOW) {
@@ -177,6 +177,7 @@ apc_widget_destroy( Handle self)
       hash_delete( guts.windows, (void*)&X_WINDOW, sizeof(X_WINDOW), false);
       X_WINDOW = nilHandle;
    }
+   return true;
 }
 
 PFont
@@ -185,17 +186,19 @@ apc_widget_default_font( PFont f)
    return apc_font_default( f);
 }
 
-void
+Bool
 apc_widget_end_paint( Handle self)
 {
    prima_cleanup_drawable_after_painting( self);
    prima_update_cursor( self);
+   return true;
 }
 
-void
+Bool
 apc_widget_end_paint_info( Handle self)
 {
    DOLBUG( "apc_widget_end_paint_info()\n");
+   return true;
 }
 
 Bool
@@ -326,7 +329,7 @@ apc_widget_is_visible( Handle self)
    return X(self)-> flags. mapped;
 }
 
-void
+Bool
 apc_widget_invalidate_rect( Handle self, Rect *rect)
 {
    XRectangle r;
@@ -368,6 +371,7 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
    if ( XX-> flags. sync_paint) {
       apc_widget_update( self);
    }
+   return true;
 }
 
 Point
@@ -386,7 +390,7 @@ apc_widget_screen_to_client( Handle self, Point p)
    return p;
 }
 
-void
+Bool
 apc_widget_scroll( Handle self, int horiz, int vert,
 		   Rect *r, Bool withChildren)
 {
@@ -494,7 +498,7 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    pl = guts. paint_list;
    while ( pl) {
       if ( pl-> obj == self)
-	 return;
+	 return true;
       pl = pl-> next;
    }
    pl = malloc( sizeof( PaintList));
@@ -502,9 +506,10 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    pl-> obj = self;
    pl-> next = guts. paint_list;
    guts. paint_list = pl;
+   return true;
 }
 
-void
+Bool
 apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 {
    int r;
@@ -534,17 +539,19 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
       XCHECKPOINT;
       XX-> flags. grab = false;
    }
+   return true;
 }
 
-void
+Bool
 apc_widget_set_clip_rect( Handle self, Rect rect)
 {
    SORT( rect. left, rect. right);
    SORT( rect. bottom, rect. top);
    X(self)-> scroll_rect = rect;
+   return true;
 }
 
-void
+Bool
 apc_widget_set_color( Handle self, Color color, int index)
 {
    X(self)-> colors[ index] = color;
@@ -552,34 +559,37 @@ apc_widget_set_color( Handle self, Color color, int index)
       apc_gp_set_color( self, color);
    else if ( index == ciBack)
       apc_gp_set_back_color( self, color);
+   return true;
 }
 
-void
+Bool
 apc_widget_set_enabled( Handle self, Bool enable)
 {
    X(self)-> flags. enabled = enable;
    DOLBUG( "apc_widget_set_enabled( %d) of %s\n", enable, PWidget(self)->name);
+   return true;
 }
 
-void
+Bool
 apc_widget_set_first_click( Handle self, Bool firstClick)
 {
    DOLBUG( "apc_widget_set_first_click()\n");
+   return true;
 }
 
-void
+Bool
 apc_widget_set_focused( Handle self)
 {
    if ( apc_widget_is_showing( self)) {
-      DOLBUG( "~~~~~~~~~ Setting focus to %s\n", PWidget( self)-> name);
       XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
       XCHECKPOINT;
+      return true;
    } else {
-      DOLBUG( "~~~~~~~~~~~~~~~~~~ cannot set focus ~~~~~~~~~~~~~~~~~\n");
+      return false;
    }
 }
 
-void
+Bool
 apc_widget_set_font( Handle self, PFont font)
 {
    Event ev = {cmFontChanged};
@@ -588,15 +598,17 @@ apc_widget_set_font( Handle self, PFont font)
 
    ev. gen. source = self;
    CWidget(self)-> message( self, &ev);
+   return true;
 }
 
-void
+Bool
 apc_widget_set_palette( Handle self)
 {
    DOLBUG( "apc_widget_set_palette()\n");
+   return true;
 }
 
-void
+Bool
 apc_widget_set_pos( Handle self, int x, int y)
 {
    DEFXX;
@@ -606,15 +618,16 @@ apc_widget_set_pos( Handle self, int x, int y)
    XMoveWindow( DISP, X_WINDOW, x, y);
    DOLBUG( "XMoveWindow: widget (%s) move to (%d,%d)\n", PWidget(self)-> name, x, y);
    XCHECKPOINT;
+   return true;
 }
 
-void
+Bool
 apc_widget_set_shape( Handle self, Handle mask)
 {
-   return;
+   return true;
 }
 
-void
+Bool
 apc_widget_set_size( Handle self, int width, int height)
 {
    DEFXX;
@@ -643,15 +656,10 @@ apc_widget_set_size( Handle self, int width, int height)
    XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
    DOLBUG( "widget (%s) size to (%d,%d) - (%d,%d)\n", PWidget(self)-> name, XX-> origin. x, y, width, height);
    XCHECKPOINT;
+   return true;
 }
 
-void
-apc_widget_set_tab_order( Handle self, int tabOrder)
-{
-   DOLBUG( "apc_widget_set_tab_order()\n");
-}
-
-void
+Bool
 apc_widget_set_visible( Handle self, Bool show)
 {
    DEFXX;
@@ -701,15 +709,17 @@ apc_widget_set_visible( Handle self, Bool show)
       XUnmapWindow( DISP, X_WINDOW);
    }
    XCHECKPOINT;
+   return true;
 }
 
-void
+Bool
 apc_widget_set_z_order( Handle self, Handle behind, Bool top)
 {
    DOLBUG( "apc_widget_set_z_order()\n");
+   return true;
 }
 
-void
+Bool
 apc_widget_update( Handle self)
 {
    Event e;
@@ -717,11 +727,13 @@ apc_widget_update( Handle self)
       e. cmd = cmPaint;
       CComponent( self)-> message( self, &e);
    }
+   return true;
 }
 
-void
+Bool
 apc_widget_validate_rect( Handle self, Rect rect)
 {
    DOLBUG( "apc_widget_validate_rect()\n");
+   return true;
 }
 

@@ -139,10 +139,11 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint,
    return true;
 }
 
-void
+Bool
 apc_window_activate( Handle self)
 {
    DOLBUG( "apc_window_activate()\n");
+   return true;
 }
 
 Bool
@@ -213,13 +214,14 @@ apc_window_get_task_listed( Handle self)
    return false;
 }
 
-void
+Bool
 apc_window_set_caption( Handle self, const char *caption)
 {
    XStoreName( DISP, X_WINDOW, caption);
+   return true;
 }
 
-void
+Bool
 apc_window_set_client_pos( Handle self, int x, int y)
 {
    DEFXX;
@@ -244,9 +246,10 @@ apc_window_set_client_pos( Handle self, int x, int y)
    XCHECKPOINT;
 
    DOLBUG( "window move to (%d,%d(%d))\n", x, XX-> origin. y, y);
+   return true;
 }
 
-void
+Bool
 apc_window_set_client_size( Handle self, int width, int height)
 {
    DEFXX;
@@ -292,6 +295,7 @@ apc_window_set_client_size( Handle self, int width, int height)
    XCHECKPOINT;
 
    DOLBUG( "window size to (%d,%d(%d)) - (%d,%d)\n", XX-> origin. x, XX-> origin. y, y, width, height);
+   return true;
 }
 
 Bool
@@ -301,16 +305,18 @@ apc_window_set_menu( Handle self, Handle menu)
    return false;
 }
 
-void
+Bool
 apc_window_set_icon( Handle self, Handle icon)
 {
    DOLBUG( "apc_window_set_icon()\n");
+   return true;
 }
 
-void
+Bool
 apc_window_set_window_state( Handle self, int state)
 {
    DOLBUG( "apc_window_set_window_state()\n");
+   return true;
 }
 
 Bool
@@ -327,8 +333,9 @@ apc_window_execute_shared( Handle self, Handle insertBefore)
    return false;
 }
 
-void
+Bool
 apc_window_end_modal( Handle self)
 {
    DOLBUG( "apc_window_end_modal()\n");
+   return true;
 }
