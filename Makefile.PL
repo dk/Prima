@@ -573,7 +573,7 @@ sub setup_variables
                          cdebugflags => '-g -O',
                          clinkprefix => '',
                          clibpathflag => '-L',
-                         ldflags => '-lgcc',
+                         ldflags => '',
                          ldoutflag => '-o ',
                          ldlibpathflag => '-L',
                          ldlibflag => '-l',
@@ -794,6 +794,9 @@ sub setup_variables
     #    push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
     if ( $useGC) {
         push @libs, 'leak';
+    }
+    if ( $COMPILER eq 'gcc') {
+        push @libs, 'gcc';
     }
     setvar( 'LIBS', ());
     my @flibs;
