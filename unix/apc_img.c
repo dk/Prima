@@ -30,6 +30,7 @@
 #include "unix/guts.h"
 #include "Image.h"
 #include "Icon.h"
+#include "DeviceBitmap.h"
 #include "img_conv.h"
 
 #define REVERT(a)	({ XX-> size. y - (a) - 1; })
@@ -267,6 +268,8 @@ apc_image_create( Handle self)
    XF_IS_ICON(XX)               = !!kind_of(self, CIcon);
    XX->bitmap_cache. bitmap     = true;
    XX->screen_cache. bitmap     = false;
+   XX->size. x                  = PImage(self)-> w;
+   XX->size. y                  = PImage(self)-> h;
    return true;
 }
 
@@ -322,14 +325,27 @@ apc_image_update_change( Handle self)
 Bool
 apc_dbm_create( Handle self, Bool monochrome)
 {
-    DOLBUG( "apc_dbm_create()\n");
-    return false;
+   DEFXX;
+   XF_IS_BITMAP(XX)     = !!monochrome;
+   XF_IS_PIXMAP(XX)     = !monochrome;
+   XX->size. x          = ((PDeviceBitmap)(self))-> w;
+   XX->size. y          = ((PDeviceBitmap)(self))-> h;
+   XX->gdrawable        = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), XX->size. x, XX->size. y,
+                                         monochrome ? 1 : guts.depth);
+   if (XX-> gdrawable == None)
+      croak( "UAI_001: create pixmap error");
+   XCHECKPOINT;
+   prima_prepare_drawable_for_painting( self);
+   return true;
 }
 
 Bool
 apc_dbm_destroy( Handle self)
 {
-   DOLBUG( "apc_dbm_destroy()\n");
+   DEFXX;
+   prima_cleanup_drawable_after_painting( self);
+   if ( XX->gdrawable)
+      XFreePixmap( DISP, XX->gdrawable);
    return true;
 }
 
@@ -401,7 +417,7 @@ create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
    }
 
    ximage = prepare_ximage( w, h, true);
-   if (!ximage) croak( "UAI_001: error creating ximage");
+   if (!ximage) croak( "UAI_002: error creating ximage");
    ls = get_ximage_bytes_per_line(ximage);
    data = get_ximage_data(ximage);
    prima_copy_xybitmap( data, idata, w, h, ls, ils);
@@ -541,7 +557,7 @@ create_cache4_16( Image *img, ImageCache *cache)
       lut[i]. b = lut1[(i & LSNibble) >> LSNibbleShift];
    }
    cache->image = prepare_ximage( w, h, false);
-   if ( !cache->image) croak( "UAI_002: error creating ximage");
+   if ( !cache->image) croak( "UAI_003: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
    for ( y = h-1; y >= 0; y--) {
@@ -576,7 +592,7 @@ create_cache4_24( Image *img, ImageCache *cache)
    }
 
    cache->image = prepare_ximage( w, h, false);
-   if ( !cache->image) croak( "UAI_003: error creating ximage");
+   if ( !cache->image) croak( "UAI_004: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
 
@@ -607,7 +623,7 @@ create_cache4_32( Image *img, ImageCache *cache)
    }
 
    cache->image = prepare_ximage( w, h, false);
-   if ( !cache->image) croak( "UAI_004: error creating ximage");
+   if ( !cache->image) croak( "UAI_005: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
 
@@ -632,7 +648,7 @@ create_cache8_16( Image *img, ImageCache *cache)
    create_rgb_to_16_lut( img-> palSize, img-> palette, lut);
 
    cache->image = prepare_ximage( w, h, false);
-   if ( !cache->image) croak( "UAI_005: error creating ximage");
+   if ( !cache->image) croak( "UAI_006: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
 
@@ -665,7 +681,7 @@ create_cache8_24( Image *img, ImageCache *cache)
    }
 
    cache->image = prepare_ximage( w, h, false);
-   if ( !cache->image) croak( "UAI_006: error creating ximage");
+   if ( !cache->image) croak( "UAI_007: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
 
@@ -690,7 +706,7 @@ create_cache8_32( Image *img, ImageCache *cache)
    create_rgb_to_xpixel_lut( img-> palSize, img-> palette, lut);
 
    cache->image = prepare_ximage( w, h, false);
-   if ( !cache->image) croak( "UAI_007: error creating ximage");
+   if ( !cache->image) croak( "UAI_008: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
 
@@ -732,7 +748,7 @@ create_cache24_16( Image *img, ImageCache *cache)
    }
 
    cache->image = prepare_ximage( w, h, false);
-   if ( !cache->image) croak( "UAI_008: error creating ximage");
+   if ( !cache->image) croak( "UAI_009: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
 
@@ -774,7 +790,7 @@ create_cache24_32( Image *img, ImageCache *cache)
    }
 
    cache->image = prepare_ximage( w, h, false);
-   if ( !cache->image) croak( "UAI_009: error creating ximage");
+   if ( !cache->image) croak( "UAI_010: error creating ximage");
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
 
@@ -824,7 +840,7 @@ create_cache4( Image* img, ImageCache *cache, int bpp)
    case 16:     create_cache4_16( img, cache);  break;
    case 24:     create_cache4_24( img, cache);  break;
    case 32:     create_cache4_32( img, cache);  break;
-   default:     croak( "UAI_010: unsupported image conversion: %d => %d", 4, bpp);
+   default:     croak( "UAI_011: unsupported image conversion: %d => %d", 4, bpp);
    }
 }
 
@@ -835,7 +851,7 @@ create_cache8( Image* img, ImageCache *cache, int bpp)
    case 16:     create_cache8_16( img, cache);  break;
    case 24:     create_cache8_24( img, cache);  break;
    case 32:     create_cache8_32( img, cache);  break;
-   default:     croak( "UAI_011: unsupported image conversion: %d => %d", 8, bpp);
+   default:     croak( "UAI_012: unsupported image conversion: %d => %d", 8, bpp);
    }
 }
 
@@ -845,7 +861,7 @@ create_cache24( Image* img, ImageCache *cache, int bpp)
    switch (bpp) {
    case 16:     create_cache24_16( img, cache); break;
    case 32:     create_cache24_32( img, cache); break;
-   default:     croak( "UAI_012: unsupported image conversion: %d => %d", 24, bpp);
+   default:     croak( "UAI_013: unsupported image conversion: %d => %d", 24, bpp);
    }
 }
 
@@ -857,7 +873,7 @@ prima_create_image_cache( PImage img, Handle drawable)
    ImageCache *cache    = get_cache((Handle)img, drawable);
 
    if ( img-> palette == nil)
-      croak( "UAI_013: image has no palette");
+      croak( "UAI_014: image has no palette");
    if ( XF_IS_ICON(IMG) && cache-> icon == nil)
       create_cache1_1( img, cache, true);
    if ( cache-> image == nil) {
@@ -866,7 +882,7 @@ prima_create_image_cache( PImage img, Handle drawable)
       case 4:   create_cache4( img, cache, target_bpp); break;
       case 8:   create_cache8( img, cache, target_bpp); break;
       case 24:  create_cache24(img, cache, target_bpp); break;
-      default:  croak( "UAI_014: unsupported image type");
+      default:  croak( "UAI_015: unsupported image type");
       }
    }
    return cache;
@@ -904,6 +920,25 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
    return true;
 }
 
+static Bool
+put_pixmap( Handle self, Handle pixmap, int dst_x, int dst_y, int src_x, int src_y, int w, int h, int rop)
+{
+   DEFXX;
+   PDrawableSysData YY = X(pixmap);
+
+   /* XXX currently can X-fail in several cases */
+   /* XXX rop support */
+   SHIFT( dst_x, dst_y);
+
+   XCHECKPOINT;
+   XCopyArea( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
+              src_x, YY->size.y - src_y - h,
+              w, h,
+              dst_x, REVERT(dst_y) - h + 1);
+   XCHECKPOINT;
+   return true;
+}
+
 Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
@@ -914,10 +949,12 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    XGCValues gcv;
    ImageCache *cache;
 
+   if ( XF_IS_BITMAP(X(image)) || XF_IS_PIXMAP(X(image)))
+      return put_pixmap( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
    cache = prima_create_image_cache( img, self);
    SHIFT( x, y);
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
-      warn( "UAI_015: error querying GC values");
+      warn( "UAI_016: error querying GC values");
    }
    ofunc = gcv. function;
    if ( cache-> icon) {
@@ -1137,7 +1174,7 @@ slurp_image( Handle self, Pixmap px)
 slurp_image_unsupported_depth:
             default:
                XDestroyImage( i);
-               croak( "UAI_016: unsupported depths combination");
+               croak( "UAI_017: unsupported depths combination");
             }
          } else {
             /* just copy with care */
@@ -1167,7 +1204,7 @@ apc_image_end_paint( Handle self)
    {
       U32 *buf = buffer;
 
-      if ( bufsize % 4) croak( "UAI_017: expect bufsize % 4 == 0");
+      if ( bufsize % 4) croak( "UAI_018: expect bufsize % 4 == 0");
       bufsize /= 4;
 
       while ( bufsize) {
@@ -1600,7 +1637,7 @@ do_stretch( Handle self, PImage img, PrimaXImage *cache,
    if ( xclipsize <= 0 || yclipsize <= 0) return nil;
 
    stretch = prepare_ximage( xclipsize, yclipsize, bpp == 1);
-   if ( !stretch) croak( "UAI_018: error creating ximage");
+   if ( !stretch) croak( "UAI_019: error creating ximage");
 
    tls = get_ximage_bytes_per_line( stretch);
    sls = get_ximage_bytes_per_line( cache);
@@ -1640,7 +1677,7 @@ do_stretch( Handle self, PImage img, PrimaXImage *cache,
                   (void*)data, xclipsize, yclipsize, tls);
       break;
    default:
-      croak( "UAI_019: %d-bit stretch is not yet implemented", bpp);
+      croak( "UAI_020: %d-bit stretch is not yet implemented", bpp);
    }
    *x = dst_x + xclipstart;
    *y = dst_y + yclipstart;
@@ -1663,8 +1700,8 @@ apc_gp_stretch_image( Handle self, Handle image,
    XGCValues gcv;
    int x, y, w, h;
 
-   /* 1) XXX - rop - correct support! */
-   /* 2) XXX - icons support */
+   if ( XF_IS_BITMAP(X(image)) || XF_IS_PIXMAP(X(image)))
+      croak( "UAI_021: not implemented");
 
    cache = prima_create_image_cache( img, self);
    if ( src_w != dst_w || src_h != dst_h) {
@@ -1674,7 +1711,7 @@ apc_gp_stretch_image( Handle self, Handle image,
       src_y = img-> h - src_y - src_h;
 
       if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
-         warn( "UAI_020: error querying GC values");
+         warn( "UAI_022: error querying GC values");
       }
       ofunc = gcv. function;
 

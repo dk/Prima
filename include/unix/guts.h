@@ -340,8 +340,10 @@ typedef struct _drawable_sys_data
       int exposed			: 1;
       int focused       	        : 1;
       int grab                  	: 1;
+      int is_bitmap                     : 1;
       int is_icon                       : 1;
       int is_image                      : 1;
+      int is_pixmap                     : 1;
       int mapped			: 1;
       int no_size			: 1;
       int paint                 	: 1;
@@ -360,8 +362,10 @@ typedef struct _drawable_sys_data
 
 #define XF_ENABLED(x)   ((x)->flags.enabled)
 #define XF_IN_PAINT(x)  ((x)->flags.paint)
+#define XF_IS_BITMAP(x) ((x)->flags.is_bitmap)
 #define XF_IS_IMAGE(x)  ((x)->flags.is_image)
 #define XF_IS_ICON(x)   ((x)->flags.is_icon)
+#define XF_IS_PIXMAP(x) ((x)->flags.is_pixmap)
 
 #define CURSOR_TIMER	((Handle)11)
 

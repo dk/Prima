@@ -344,7 +344,10 @@ prima_allocate_color( Handle self, Color color)
       c = *(( PRGBColor) &color);
    }
 
-   if ( self == nilHandle || ( X(self)-> flags. is_image && (PImage(self)-> type & imBPP) == 1)) {
+   if ( self == nilHandle ||
+        ( XF_IS_IMAGE(X(self)) && (PImage(self)-> type & imBPP) == 1) ||
+        XF_IS_BITMAP(X(self))
+      ) {
       if ((unsigned short)c.r + (unsigned short)c.g + (unsigned short)c.b > 381)
          return &bitmap_white;
       else
@@ -382,7 +385,7 @@ prima_get_gc( PDrawableSysData selfxx)
 
    if ( XX-> gc || XX-> gcl) croak( "UAG_004: internal error");
 
-   bitmap = XX-> flags. is_image && (PImage(XX->self)-> type & imBPP) == 1;
+   bitmap = ( XF_IS_IMAGE(XX) && (PImage(XX->self)-> type & imBPP) == 1) || XF_IS_BITMAP(XX);
    if ( bitmap) {
       free_gcl = &guts. bitmap_free_gcl;
       used_gcl = &guts. bitmap_used_gcl;
@@ -415,7 +418,7 @@ prima_release_gc( PDrawableSysData selfxx)
 
    if ( XX-> gc) {
       if ( XX-> gcl == nil) croak( "UAG_005: internal error");
-      bitmap = XX-> flags. is_image && (PImage(XX->self)-> type & imBPP) == 1;
+      bitmap = (XF_IS_IMAGE(XX) && (PImage(XX->self)-> type & imBPP) == 1) || XF_IS_BITMAP(XX);
       if ( bitmap) {
          free_gcl = &guts. bitmap_free_gcl;
          used_gcl = &guts. bitmap_used_gcl;
@@ -930,8 +933,32 @@ apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBord
 Color
 apc_gp_get_pixel( Handle self, int x, int y)
 {
-   DOLBUG( "apc_gp_get_pixel()\n");
-   return 0;
+   DEFXX;
+   Color c = 0;
+   XImage *im;
+
+   /* XXX implement in full */
+
+   if ( XF_IS_BITMAP(XX) || XF_IS_PIXMAP(XX)) {
+      im = XGetImage( DISP, XX->gdrawable, x, REVERT(y), 1, 1,
+                      XF_IS_PIXMAP(XX) ? AllPlanes : 1,
+                      XF_IS_PIXMAP(XX) ? ZPixmap : XYPixmap);
+      XCHECKPOINT;
+      if ( im) {
+         if ( XF_IS_PIXMAP(XX)) {
+            croak( "UAG_021: not implemented");
+         } else {
+            if ( im-> data[0] & 0x01)
+               c = 0xffffff;
+            else
+               c = 0;
+         }
+         XDestroyImage(im);
+      }
+   } else {
+      croak( "UAG_022: not implemented");
+   }
+   return c;
 }
 
 Bool
@@ -950,7 +977,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
    DEFXX;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_021: put begin_paint somewhere");
+      warn( "UAG_023: put begin_paint somewhere");
       return false;
    }
 
@@ -970,7 +997,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
    DEFXX;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_022: put begin_paint somewhere");
+      warn( "UAG_024: put begin_paint somewhere");
       return false;
    }
 
@@ -988,7 +1015,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
    DEFXX;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_023: put begin_paint somewhere");
+      warn( "UAG_025: put begin_paint somewhere");
       return false;
    }
 
@@ -1035,7 +1062,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    unsigned long old = XX-> fore. pixel;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_024: put begin_paint somewhere");
+      warn( "UAG_026: put begin_paint somewhere");
       return false;
    }
 
@@ -1056,7 +1083,7 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    SHIFT( x, y);
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_025: put begin_paint somewhere");
+      warn( "UAG_027: put begin_paint somewhere");
       return false;
    }
 
@@ -1182,7 +1209,7 @@ apc_gp_get_line_end( Handle self)
 
    if ( XF_IN_PAINT(XX)) {
       if ( XGetGCValues( DISP, XX-> gc, GCCapStyle, &gcv) == 0) {
-         warn( "UAG_026: error querying GC values");
+         warn( "UAG_028: error querying GC values");
          cap = CapButt;
       } else {
          cap = gcv. cap_style;
@@ -1209,7 +1236,7 @@ apc_gp_get_line_width( Handle self)
 	 w = 0;
       else {
 	 if ( XGetGCValues( DISP, XX-> gc, GCLineWidth, &gcv) == 0) {
-            warn( "UAG_027: error querying GC values");
+            warn( "UAG_029: error querying GC values");
 	 }
 	 w = gcv. line_width;
       }
@@ -1403,7 +1430,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
       XX-> fp_pixmap =
          XCreateBitmapFromData( DISP, XX-> gdrawable, pattern, 8, 8);
       if ( XX-> fp_pixmap == None)
-         croak( "UAG_028: error creating stipple");
+         croak( "UAG_030: error creating stipple");
    }
    if ( XF_IN_PAINT(XX)) {
       XSetFillStyle( DISP, XX-> gc, dflt ? FillSolid : FillOpaqueStippled);
