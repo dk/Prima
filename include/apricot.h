@@ -3153,7 +3153,6 @@ apc_query_drive_type( const char *drive);
 
 extern char*
 apc_get_user_name( void);
-
 extern PList
 apc_getdir( const char *dirname);
 
@@ -3164,6 +3163,9 @@ apc_dlopen(char *path, int mode);
 #ifdef PARANOID_MALLOC
 extern void *
 _test_malloc( size_t size, int ln, char *fil, Handle self);
+
+extern void *
+_test_realloc( void * ptr, size_t size, int ln, char *fil, Handle self);
 
 extern void
 _test_free( void *ptr, int ln, char *fil, Handle self);
@@ -3179,7 +3181,9 @@ paranoid_list_create( PList, int, int, char *, int);
 extern Handle self;
 
 #undef malloc
+#undef realloc
 #undef free
+#define realloc(ptr,sz) _test_realloc((ptr),(sz),__LINE__,__FILE__,self)
 #define malloc(sz) _test_malloc((sz),__LINE__,__FILE__,self)
 #define free(ptr) _test_free((ptr),__LINE__,__FILE__,self)
 #endif /* PARANOID_MALLOC */

@@ -1815,16 +1815,27 @@ _test_malloc( size_t size, int ln, char *fil, Handle self)
          sprintf( obj, "%s(?)", ((( PObject) self)-> self)-> className);
    } else
       strcpy( obj, "NOSELF");
-   sprintf( s, "%lu %p %s(%d) %s %lu", timestamp(), mlc, fil, ln, obj, ( unsigned long) size);
-   hash_store( hash, &mlc, sizeof(mlc), duplicate_string( s));
+   hash_store( hash, &mlc, sizeof(mlc), 
+      strcpy( malloc( 1 + sprintf( s, "%lu %p %s(%d) %s %lu", timestamp(), mlc, fil, ln, obj, ( unsigned long) size)), s)
+   );
    return mlc;
 }
+
+void *
+_test_realloc( void * ptr, size_t size, int ln, char *fil, Handle self)
+{
+   void * nptr = _test_malloc( size, ln, fil, self);
+   if ( nptr == NULL) return NULL;
+   memcpy( nptr, ptr, size);
+   _test_free( ptr, ln, fil, self);
+   return nptr;
+}   
 
 void
 _test_free( void *ptr, int ln, char *fil, Handle self)
 {
    free( ptr);
-   hash_delete( hash, &ptr, sizeof(ptr), true);
+   hash_delete( hash, &ptr, sizeof(ptr), false);
 }
 
 /* to make freaking Windows happy */
