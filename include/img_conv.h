@@ -88,31 +88,31 @@ typedef StretchProc *PStretchProc;
 
 #pragma pack(1)
 typedef union _Fixed {
-   I32 l;
+   int32_t l;
    struct {
-     U16 f;
-     I16 i;
+     uint32_t f;
+     int32_t  i;
    } i;
 } Fixed;
 #pragma pack()
 
 // bitstroke stretching routines
-extern void bs_mono_in( U8 * srcData, U8 * dstData, int w, int x, int absx, long step);
-extern void bs_nibble_in( U8 * srcData, U8 * dstData, int w, int x, int absx, long step);
-extern void bs_U8_in( U8 * srcData, U8 * dstData, int w, int x, int absx, long step);
-extern void bs_I16_in( I16 * srcData, I16 * dstData, int w, int x, int absx, long step);
+extern void bs_mono_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);
+extern void bs_nibble_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);
+extern void bs_uint8_t_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);
+extern void bs_int16_t_in( int16_t * srcData, int16_t * dstData, int w, int x, int absx, long step);
 extern void bs_RGBColor_in( RGBColor * srcData, RGBColor * dstData, int w, int x, int absx, long step);
-extern void bs_I32_in( I32 * srcData, I32 * dstData, int w, int x, int absx, long step);
+extern void bs_int32_t_in( int32_t * srcData, int32_t * dstData, int w, int x, int absx, long step);
 extern void bs_float_in( float * srcData, float * dstData, int w, int x, int absx, long step);
 extern void bs_double_in( double * srcData, double * dstData, int w, int x, int absx, long step);
 extern void bs_Complex_in( Complex * srcData, Complex * dstData, int w, int x, int absx, long step);
 extern void bs_DComplex_in( DComplex * srcData, DComplex * dstData, int w, int x, int absx, long step);
-extern void bs_mono_out( U8 * srcData, U8 * dstData, int w, int x, int absx, long step);
-extern void bs_nibble_out( U8 * srcData, U8 * dstData, int w, int x, int absx, long step);
-extern void bs_U8_out( U8 * srcData, U8 * dstData, int w, int x, int absx, long step);
-extern void bs_I16_out( I16 * srcData, I16 * dstData, int w, int x, int absx, long step);
+extern void bs_mono_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);
+extern void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);
+extern void bs_uint8_t_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);
+extern void bs_int16_t_out( int16_t * srcData, int16_t * dstData, int w, int x, int absx, long step);
 extern void bs_RGBColor_out( RGBColor * srcData, RGBColor * dstData, int w, int x, int absx, long step);
-extern void bs_I32_out( I32 * srcData, I32 * dstData, int w, int x, int absx, long step);
+extern void bs_int32_t_out( int32_t * srcData, int32_t * dstData, int w, int x, int absx, long step);
 extern void bs_float_out( float * srcData, float * dstData, int w, int x, int absx, long step);
 extern void bs_double_out( double * srcData, double * dstData, int w, int x, int absx, long step);
 extern void bs_Complex_out( Complex * srcData, Complex * dstData, int w, int x, int absx, long step);

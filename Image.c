@@ -1214,9 +1214,9 @@ Image_get_stats( Handle self, int index)
    if ( var->statsCache & ( 1 << index)) return var->stats[ index];
    /* calculate image stats */
    switch (var->type) {
-      case imByte:    gather_stats(U8);     break;
-      case imShort:   gather_stats(I16);    break;
-      case imLong:    gather_stats(I32);    break;
+      case imByte:    gather_stats(uint8_t);break;
+      case imShort:   gather_stats(int16_t);  break;
+      case imLong:    gather_stats(int32_t);   break;
       case imFloat:   gather_stats(float);  break;
       case imDouble:  gather_stats(double); break;
       default:        return NAN;

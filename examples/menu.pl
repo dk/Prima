@@ -53,13 +53,13 @@ use vars qw(@ISA);
 sub create_menu
 {
    my $img = Prima::Image-> create;
-   $img-> load( 'h:/var/backup/os2/os2/bitmap/bossback.bmp');
+   $img-> load( 'h:/var/backup/os2/os2/bitmap/xfree86.gif');
    return [
       [ "~File" => [
           [ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!";}],   # anonymous sub
           [ $img => sub {
              my $img = Prima::Image-> create;
-             $img-> load( 'h:/var/backup/os2/os2/bitmap/gold.bmp');
+             $img-> load( 'h:/var/backup/os2/os2/bitmap/testimg.gif');
              $_[0]->menu->image( $_[1], $img);
           }],                        # image
           [],                                       # division line

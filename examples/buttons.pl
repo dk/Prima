@@ -36,7 +36,8 @@ use vars qw(@ISA);
 
 sub on_click
 {
-   print "User button has been pressed\n";
+   #print "User button has been pressed\n";
+   print ".";
 }
 
 sub on_paint
@@ -87,7 +88,7 @@ my $w = Prima::Window-> create(
    width     => 400,
 );
 $w-> insert( "Button"     , origin => [  50,180], pressed => 1);
-$w-> insert( "UserButton" , origin => [ 250,180]);
+$w-> insert( "UserButton" , origin => [ 250,180], autoRepeat => 1);
 $w-> insert( "Radio"      , origin => [  50,140]);
 
 run Prima;

@@ -44,19 +44,19 @@ void bs_##type##_out( type * srcData, type * dstData, int w, int x, int absx, lo
    }                                                                                \
 }
 
-BS_BYTEEXPAND( U8);
-BS_BYTEEXPAND( I16);
+BS_BYTEEXPAND( uint8_t);
+BS_BYTEEXPAND( int16_t);
 BS_BYTEEXPAND( RGBColor);
-BS_BYTEEXPAND( I32);
+BS_BYTEEXPAND( int32_t);
 BS_BYTEEXPAND( float);
 BS_BYTEEXPAND( double);
 BS_BYTEEXPAND( Complex);
 BS_BYTEEXPAND( DComplex);
 
-BS_BYTEIMPACT( U8);
-BS_BYTEIMPACT( I16);
+BS_BYTEIMPACT( uint8_t);
+BS_BYTEIMPACT( int16_t);
 BS_BYTEIMPACT( RGBColor);
-BS_BYTEIMPACT( I32);
+BS_BYTEIMPACT( int32_t);
 BS_BYTEIMPACT( float);
 BS_BYTEIMPACT( double);
 BS_BYTEIMPACT( Complex);
@@ -64,7 +64,7 @@ BS_BYTEIMPACT( DComplex);
 
 
 void
-bs_mono_in( U8 * srcData, U8 * dstData, int w, int x, int absx, long step)
+bs_mono_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
    Fixed count = {0};
    int   last   = 0;
@@ -113,7 +113,7 @@ bs_mono_in( U8 * srcData, U8 * dstData, int w, int x, int absx, long step)
 }
 
 void
-bs_mono_out( U8 * srcData, U8 * dstData, int w, int x, int absx, long step)
+bs_mono_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
    Fixed    count = {0};
    register int i, j = 0;
@@ -163,7 +163,7 @@ bs_mono_out( U8 * srcData, U8 * dstData, int w, int x, int absx, long step)
 
 // nibble stretching functions are requiring *dstData filled with zeros
 
-void bs_nibble_in( U8 * srcData, U8 * dstData, int w, int x, int absx, long step)
+void bs_nibble_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
    Fixed count = {0};
    int   last = 0;
@@ -187,7 +187,7 @@ void bs_nibble_in( U8 * srcData, U8 * dstData, int w, int x, int absx, long step
    }
 }
 
-void bs_nibble_out( U8 * srcData, U8 * dstData, int w, int x, int absx, long step)
+void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
    Fixed count = {0};
    int   i, k = 0;
@@ -302,13 +302,13 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
       case imNibble:   case imNibble|imGrayScale:
          (void*)proc = ( var->w > absw) ? bs_nibble_in : bs_nibble_out;     break;
       case imByte:     case im256:
-         (void*)proc = ( var->w > absw) ? bs_U8_in : bs_U8_out;             break;
+         (void*)proc = ( var->w > absw) ? bs_uint8_t_in : bs_uint8_t_out;   break;
       case imRGB:      case imRGB|imGrayScale:
          (void*)proc = ( var->w > absw) ? bs_RGBColor_in : bs_RGBColor_out; break;
       case imShort:
-         (void*)proc = ( var->w > absw) ? bs_I16_in : bs_I16_out;           break;
+         (void*)proc = ( var->w > absw) ? bs_int16_t_in : bs_int16_t_out;   break;
       case imLong:
-         (void*)proc = ( var->w > absw) ? bs_I32_in : bs_I32_out;           break;
+         (void*)proc = ( var->w > absw) ? bs_int32_t_in : bs_int32_t_out;   break;
       case imFloat:
          (void*)proc = ( var->w > absw) ? bs_float_in : bs_float_out;       break;
       case imDouble:

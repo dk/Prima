@@ -41,7 +41,7 @@ void
 prima_send_create_event( XWindow win)
 {
    XClientMessageEvent ev;
-   
+
    bzero( &ev, sizeof(ev));
    ev. type = ClientMessage;
    ev. display = DISP;
@@ -202,7 +202,7 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, Bool release)
       keycode = kbSpace;
    if ( keycode == kbNoKey) {
       if ( str_len == 1)
-	 keycode = (U8)*str_buf;
+	 keycode = (uint8_t)*str_buf;
       else if ( keysym < 0xFD00)
 	 keycode = keysym & 0x000000ff;
       else
@@ -259,8 +259,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
 
    /* possibly skip this event */
-   if ( next_event 
-	&& next_event-> type == ev-> type 
+   if ( next_event
+	&& next_event-> type == ev-> type
 	&& ev-> type == MotionNotify
 	&& win == next_event-> xany. window)
    {
@@ -497,7 +497,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       Point old_size = XX-> known_size;
       Point old_origin = XX-> known_origin;
       Bool size_changed;
-      
+
       if ( !XX-> flags. process_configure_notify)
 	 return;
 
@@ -523,8 +523,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
       if ( XX-> real_parent && !was_sent) {
 	 XWindow cld;
-	 if ( !XTranslateCoordinates( DISP, XX-> real_parent, XX-> parent, 
-				      cev-> x, cev-> y, 
+	 if ( !XTranslateCoordinates( DISP, XX-> real_parent, XX-> parent,
+				      cev-> x, cev-> y,
 				      &cev-> x, &cev-> y, &cld)) {
 	     /* I don't expect this error to occur, ever */
 	    croak( "APC_EVENT internal error at line %d", __LINE__);
@@ -570,9 +570,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	    }
 	    free( selves);
 	 }
-	 DOLBUG( "old size of %s: %dx%d, new size: %dx%d\n", 
-		  PComponent( self)-> name, 
-		  old_size. x, old_size. y, 
+	 DOLBUG( "old size of %s: %dx%d, new size: %dx%d\n",
+		  PComponent( self)-> name,
+		  old_size. x, old_size. y,
 		  XX-> size. x, XX-> size. y);
 	 CComponent( self)-> message( self, &e);
       }

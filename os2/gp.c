@@ -813,8 +813,8 @@ apc_gp_set_color( Handle self, Color color)
 Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
-   long *p1 = ( long*) pattern;
-   long *p2 = p1 + 1;
+   int i, coop;
+   ULONG pat = PATSYM_ERROR;
    if ( !sys ps)
    {
       memcpy( &sys fillPattern2, pattern, sizeof( FillPattern));
@@ -822,8 +822,20 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
    }
    memcpy( &sys fillPattern, pattern, sizeof( FillPattern));
    if ( !GpiSetPatternSet( sys ps, 0)) apiErr;
-   if (( *p1 == 0) && ( *p2 == 0)) GpiSetPattern( sys ps, PATSYM_BLANK); else
-   if (( *p1 == 0xFFFFFFFF) && ( *p2 == 0xFFFFFFFF)) GpiSetPattern( sys ps, PATSYM_SOLID); else
+
+   if ( pattern[0] == 0) {
+      coop = 0;
+      for ( i = 1; i < 8; i++) coop |= pattern[i];
+      if ( coop == 0) pat = PATSYM_BLANK;
+   } else if ( pattern[0] == 0xFF) {
+      coop = 0xFF;
+      for ( i = 1; i < 8; i++) coop &= pattern[i];
+      if ( coop == 0xFF) pat = PATSYM_SOLID;
+   }
+
+   if ( pat != PATSYM_ERROR)
+      GpiSetPattern( sys ps, pat);
+   else
    {
       BInfo2 bm = { sizeof( BInfo), 8, 8, 1, 1, {{ 0, 0, 0, 0}, { 0xFF, 0xFF, 0xFF, 0}}};
       HBITMAP b;
