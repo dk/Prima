@@ -379,6 +379,56 @@ prima_release_gc( PDrawableSysData selfxx)
 }
 
 void
+prima_prepare_drawable_for_painting( Handle self)
+{
+   DEFXX;
+   unsigned long mask = VIRGIN_GC_MASK;
+
+   XX-> paint_rop = XX-> rop;
+   XX-> saved_font = PDrawable( self)-> font;
+   XX-> fore = XX-> saved_fore;
+   XX-> back = XX-> saved_back;
+   XX-> flags. zero_line = XX-> flags. saved_zero_line;
+   XX-> gcv. clip_mask = None;
+   XX-> gtransform = XX-> transform;
+
+   prima_get_gc( XX);
+   XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
+   XCHECKPOINT;
+
+   if ( XX-> region) {
+      XSetRegion( DISP, XX-> gc, XX-> region);
+      XX-> stale_region = XX-> region;
+      XX-> region = nil;
+   }
+
+   XX-> flags. paint = true;
+
+   if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
+      XSetFont( DISP, XX-> gc, XX-> font-> id);
+      XCHECKPOINT;
+   } else {
+      apc_gp_set_font( self, &PDrawable( self)-> font);
+      XX-> flags. reload_font = false;
+   }
+}
+
+void
+prima_cleanup_drawable_after_painting( Handle self)
+{
+   DEFXX;
+   prima_release_gc(XX);
+   XX-> flags. paint = false;
+   if ( XX-> flags. reload_font) {
+      PDrawable( self)-> font = XX-> saved_font;
+   }
+   if ( XX-> stale_region) {
+      XDestroyRegion( XX-> stale_region);
+      XX-> stale_region = nil;
+   }
+}
+
+void
 apc_gp_init( Handle self)
 {
    DOLBUG( "apc_gp_init()\n");
@@ -589,7 +639,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
    XDrawLine( DISP, XX-> drawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
 }
 
-static Bool
+static void
 create_image_cache_8_to_16( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
@@ -603,7 +653,7 @@ create_image_cache_8_to_16( PImage img)
    red_mask = v-> red_mask;
    green_mask = v-> green_mask;
    blue_mask = v-> blue_mask;
-   for ( i = 0; i < img-> palSize; i++) { /* XXX ? Is palSize inconsistent? 256 or 768? */
+   for ( i = 0; i < img-> palSize; i++) {
       lut[i] = 0;
       lut[i] |=
 	 (((img-> palette[i]. r >> 3) << 11) & red_mask) & 0xffff;
@@ -615,8 +665,7 @@ create_image_cache_8_to_16( PImage img)
 
    d = data = malloc( img-> w * img-> h * sizeof( U16));
    if ( !data) {
-      warn( "no memory");
-      return false;
+      croak( "create_image_cache_8_to_16(): no memory");
    }
    for ( y = img-> h-1; y >= 0; y--) {
       unsigned char *line = img-> data + y*img-> lineSize;
@@ -629,35 +678,32 @@ create_image_cache_8_to_16( PImage img)
 				     guts. depth, ZPixmap, 0, (unsigned char*)data,
 				     img-> w, img-> h, 8, 0);
    if (!IMG-> image_cache) {
-      free( d);
-      warn( "error during XCreateImage()");
-      return false;
+      free( data);
+      croak( "create_image_cache_8_to_16(): error during XCreateImage()");
    }
-   return true;
 }
 
-static Bool
+static void
 create_image_cache( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
 
-   if ( IMG-> image_cache)
-      return true;
+   if ( !IMG-> image_cache) {
+      if (( img-> type & imBPP) != 8) {
+	 croak( "create_image_cache(): unsupported img-> bpp");
+      }
+      if ( !img-> palette) {
+	 croak( "create_image_cache(): no palette, ouch!");
+      }
 
-   if (( img-> type & imBPP) != 8) {
-      croak( "Unsupported img-> bpp");
+      switch ( guts. depth) {
+      case 16:
+	 create_image_cache_8_to_16( img);
+	 break;
+      default:
+	 croak( "create_image_cache(): unsupported guts. depth");
+      }
    }
-   if ( !img-> palette) {
-      croak( "No palette, ouch!");
-   }
-
-   switch ( guts. depth) {
-   case 16:
-      return create_image_cache_8_to_16( img);
-   default:
-      croak( "Unsupported guts. depth");
-   }
-   return true;
 }
 
 void
@@ -669,12 +715,135 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 
    /* 1) XXX - rop - correct support! */
    /* 2) XXX - Shared Mem Image Extension! */
-   if ( !create_image_cache( img))
-      croak( "Error creating image cache");
+   create_image_cache( img);
    SHIFT( x, y);
    XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> image_cache,
 	      xFrom, img-> h - yFrom - yLen,
 	      x, REVERT(y) - yLen + 1, xLen, yLen);
+   XCHECKPOINT;
+}
+
+Bool
+apc_image_begin_paint( Handle self)
+{
+   DEFXX;
+   PImage img = PImage( self);
+   
+   XX-> drawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), img-> w, img-> h, guts. depth);
+   XCHECKPOINT;
+   prima_prepare_drawable_for_painting( self);
+   apc_gp_put_image( self, self, 0, 0, 0, 0, img-> w, img-> h, ropCopyPut);
+   /*                ^^^^^ ^^^^    :-)))  */
+   return true;
+}
+
+static void
+calc_masks_and_lut_16_to_24( unsigned long mask,
+			     unsigned long *mask1,
+			     unsigned long *mask2,
+			     int *bit_count,
+			     unsigned char *lut)
+{
+   unsigned i;
+   unsigned long m;
+   int bc;
+
+   *mask2 = mask;
+   *bit_count = 0;
+   while (( *mask2 & 1) == 0) { (*bit_count)++; *mask2 >>= 1; }
+   m = *mask2;
+   bc = 0;
+   while ( m) { bc++; m >>= 1; }
+   bc = 8 - bc;
+   *mask1 = mask;
+   for ( i = 0; i <= *mask2; i++) {
+      lut[i] = i << bc;
+   }
+}
+
+static void
+convert_16_to_24( XImage *i, PImage img)
+{
+   static unsigned char lur[256], lub[256], lug[256];  /* is ``static'' reliable here?? */
+   static Bool initialize = true;
+   static unsigned long rm1, bm1, gm1, rm2, bm2, gm2;
+   static int rbc, bbc, gbc;
+   int y, x, h, w;
+   U16 *d;
+   unsigned char *line;
+
+   if ( initialize) {
+      Visual *v = DefaultVisual( DISP, SCREEN);
+     
+      calc_masks_and_lut_16_to_24( v-> red_mask, &rm1, &rm2, &rbc, lur);
+      calc_masks_and_lut_16_to_24( v-> green_mask, &gm1, &gm2, &gbc, lug);
+      calc_masks_and_lut_16_to_24( v-> blue_mask, &bm1, &bm2, &bbc, lub);
+      
+      initialize = false;
+   }
+
+   h = img-> h; w = img-> w;
+   for ( y = 0; y < h; y++) {
+      d = (U16 *)(i-> data + (h-y-1)*i-> bytes_per_line);
+      line = img-> data + y*img-> lineSize;
+      for ( x = 0; x < w; x++) {
+	 *line++ = lub[(*d & bm1) >> bbc];
+	 *line++ = lug[(*d & gm1) >> gbc];
+	 *line++ = lur[(*d & rm1) >> rbc];
+	 d++;
+      }
+   }
+}
+
+static void
+slurp_image( Handle self, Pixmap px)
+{
+   int target_depth;
+   XImage *i;
+   PImage img = PImage( self);
+
+   if ( px) {
+      i = XGetImage( DISP, px, 0, 0, img-> w, img-> h, AllPlanes, ZPixmap);
+      XCHECKPOINT;
+      
+      target_depth = guts. depth;
+      if ( target_depth == 16)
+	 target_depth = 24;
+      if (( img-> type & imBPP) != target_depth) {
+	 CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
+      }
+      if ( guts. depth != target_depth) {
+	 switch ( guts. depth) {
+	 case 16:
+	    switch ( target_depth) {
+	    case 24:
+	       convert_16_to_24( i, img);
+	       break;
+	    default: goto slurp_image_unsupported_depth;
+	    }
+	    break;
+slurp_image_unsupported_depth:
+	 default:
+	    XDestroyImage( i);
+	    croak( "slurp_image(): unsupported depth-target depth combination");
+	 }
+      } else {
+	 /* just copy with care */
+      }
+   }
+}
+
+void
+apc_image_end_paint( Handle self)
+{
+   DEFXX;
+   slurp_image( self, XX-> drawable);
+   prima_cleanup_drawable_after_painting( self);
+   if ( XX-> drawable) {
+      XFreePixmap( DISP, XX-> drawable);
+      XCHECKPOINT;
+      XX-> drawable = 0;
+   }
 }
 
 void

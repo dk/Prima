@@ -310,7 +310,7 @@ typedef union _unix_sys_data
 #define WHEEL_DELTA	120
 
 extern void
-handle_event( XEvent *ev, XEvent *next_event);
+prima_handle_event( XEvent *ev, XEvent *next_event);
 
 extern void
 prima_get_gc( PDrawableSysData);
@@ -325,6 +325,9 @@ extern void
 prima_init_image_subsystem( void);
 
 extern void
+prima_cleanup_drawable_after_painting( Handle self);
+
+extern void
 prima_cleanup_font_subsystem( void);
 
 extern void
@@ -335,6 +338,9 @@ prima_cursor_tick( void);
 
 extern void
 prima_no_cursor( Handle self);
+
+extern void
+prima_prepare_drawable_for_painting( Handle self);
 
 extern void
 prima_update_cursor( Handle self);

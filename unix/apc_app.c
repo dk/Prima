@@ -211,8 +211,8 @@ window_subsystem_done( void)
 Bool
 apc_application_begin_paint( Handle self)
 {
-   /* XXX - why it does not have insideOnPaint? */
-   return apc_widget_begin_paint( self, false);
+   prima_prepare_drawable_for_painting( self);
+   return true;
 }
 
 Bool
@@ -278,7 +278,7 @@ fprintf( stderr, "apc_application_destroy()\n");
 void
 apc_application_end_paint( Handle self)
 {
-   apc_widget_end_paint( self);
+   prima_cleanup_drawable_after_painting( self);
 }
 
 void
@@ -452,13 +452,13 @@ FetchAndProcess:
 	       XNextEvent( DISP, &next_event);
 	       XCHECKPOINT;
 	       guts. total_events++;
-	       handle_event( &ev, &next_event);
+	       prima_handle_event( &ev, &next_event);
 	       n--;
 	       memcpy( &ev, &next_event, sizeof( XEvent));
 	    }
 	    if (!application) return;
 	    guts. total_events++;
-	    handle_event( &ev, nil);
+	    prima_handle_event( &ev, nil);
 	 }
  	 XNoOp( DISP);
  	 XFlush( DISP);
@@ -535,13 +535,13 @@ apc_application_yield( void)
 	 XNextEvent( DISP, &next_event);
 	 XCHECKPOINT;
 	 guts. total_events++;
-	 handle_event( &ev, &next_event);
+	 prima_handle_event( &ev, &next_event);
 	 n--;
 	 memcpy( &ev, &next_event, sizeof( XEvent));
       }
       if (!application) return;
       guts. total_events++;
-      handle_event( &ev, nil);
+      prima_handle_event( &ev, nil);
    }
    XNoOp( DISP);
    XFlush( DISP);

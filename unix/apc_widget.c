@@ -152,38 +152,8 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 Bool
 apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 {
-   DEFXX;
-   unsigned long mask = VIRGIN_GC_MASK;
-
-   XX-> paint_rop = XX-> rop;
-   XX-> saved_font = PDrawable( self)-> font;
-   XX-> fore = XX-> saved_fore;
-   XX-> back = XX-> saved_back;
-   XX-> flags. zero_line = XX-> flags. saved_zero_line;
-   XX-> gcv. clip_mask = None;
-   XX-> gtransform = XX-> transform;
-   
    prima_no_cursor( self);
-
-   prima_get_gc( XX);
-   XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
-   XCHECKPOINT;
-
-   if ( XX-> region) {
-      XSetRegion( DISP, XX-> gc, XX-> region);
-      XX-> stale_region = XX-> region;
-      XX-> region = nil;
-   }
-
-   XX-> flags. paint = true;
-
-   if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
-      XSetFont( DISP, XX-> gc, XX-> font-> id);
-      XCHECKPOINT;
-   } else {
-      apc_gp_set_font( self, &PDrawable( self)-> font);
-      XX-> flags. reload_font = false;
-   }
+   prima_prepare_drawable_for_painting( self);
    return true;
 }
 
@@ -215,16 +185,7 @@ apc_widget_default_font( PFont f)
 void
 apc_widget_end_paint( Handle self)
 {
-   DEFXX;
-   prima_release_gc(XX);
-   XX-> flags. paint = false;
-   if ( XX-> flags. reload_font) {
-      PDrawable( self)-> font = XX-> saved_font;
-   }
-   if ( XX-> stale_region) {
-      XDestroyRegion( XX-> stale_region);
-      XX-> stale_region = nil;
-   }
+   prima_cleanup_drawable_after_painting( self);
    prima_update_cursor( self);
 }
 

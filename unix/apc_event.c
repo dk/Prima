@@ -202,7 +202,7 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, Bool release)
 }
 
 void
-handle_event( XEvent *ev, XEvent *next_event)
+prima_handle_event( XEvent *ev, XEvent *next_event)
 {
    XWindow win, w2;
    Handle self, h2;
@@ -211,6 +211,7 @@ handle_event( XEvent *ev, XEvent *next_event)
    Event e, secondary;
    PDrawableSysData selfxx;
    XButtonEvent *bev;
+   int cmd;
 
    if ( appDead)
       return;
@@ -600,7 +601,11 @@ handle_event( XEvent *ev, XEvent *next_event)
 
    if ( e. cmd) {
       guts. handled_events++;
+      cmd = e. cmd;
       CComponent( self)-> message( self, &e);
+      if ( e. cmd && cmd == cmClose) {
+	 Object_destroy( self);
+      }
       if ( secondary. cmd) {
 	 CComponent( self)-> message( self, &secondary);
       }
