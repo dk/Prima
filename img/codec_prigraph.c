@@ -515,7 +515,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
       g-> params += 4;
    }   
 
-   if (( g-> fd = gbm_io_open( fi-> fileName, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY)) < 0) {
+   if (( g-> fd = gbm_io_create( fi-> fileName, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY)) < 0) {
       free( g);
       return nil;      
    }  
