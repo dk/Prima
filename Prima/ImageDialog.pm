@@ -367,6 +367,7 @@ sub save
    $self-> image( $image);
 
    goto EXIT unless defined $self-> execute;
+   unlink $self-> fileName unless $self-> noTestFileCreate;
 
    $image-> {extras} = { map { $_ => $extras->{$_} } keys %$extras } ;
 
