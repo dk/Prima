@@ -18,6 +18,9 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_IO_H
 #include <io.h>
 #endif
