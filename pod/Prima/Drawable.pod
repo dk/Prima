@@ -61,9 +61,9 @@ They can not be used in the disabled state; their values are neither
 recorded nor used as a template).
 
 That is, in disabled state any Drawable maintains only the graphic context.
-To draw on a canvas, the object must enter the enabled state by begin_paint().
+To draw on a canvas, the object must enter the enabled state by calling begin_paint().
 This function can be unsuccessful, because the object binds with system resources
-during this stage, and that can fail. After the enabled state is entered, 
+during this stage, and might fail. Only after the enabled state is entered, 
 the canvas is accessible:
 
    $d = Prima::Image-> create( width => 100, height => 100);
@@ -83,11 +83,11 @@ more transitory nature, etc.
 The information state is as same as the enabled state, but the changes to
 a canvas are not visible. Its sole purpose is to read, not to write information.
 Because begin_paint() requires some amount of system resources, there is
-a chance that resource request can fail, for any reason. The begin_paint_info()
+a chance that a resource request can fail, for any reason. The begin_paint_info()
 requires some resources as well, but usually much less, and therefore
 if only information is desired, it is usually faster and cheaper to
-obtain it inside the information state. A notable and wide-spread example is
-get_text_width() method, that returns length of a text string in pixels.
+obtain it inside the information state. A notable example is
+get_text_width() method, that returns the length of a text string in pixels.
 It works in both enabled and information states, but code
 
    $d = Prima::Image-> create( width => 10000, height => 10000);
@@ -106,11 +106,11 @@ for the obvious reasons.
 
 It must be noted that some information methods like get_text_width()
 work even under the disabled state; the object is switched to
-the information state implicitly if needed.
+the information state implicitly if it is necessary.
 
 =head2 Color space
 
-Graphic context and canvas operations are wholly relied
+Graphic context and canvas operations rely completely
 on a system implementation. The internal canvas color representation
 is therefore system-specific, and usually could not be described
 in standard definitions. Often the only information available 
@@ -121,8 +121,8 @@ antialiasing are subject to system implementation, and can not
 be controlled from perl code. When a property is set in the object 
 disabled state, it is recorded verbatim; color properties 
 are no exception. After the object switched to the enabled
-state, a color value is transformed to a system color representation, and
-these values may differ. For example, if a display color depth is 15 bits,
+state, a color value is transformed to a system color representation, 
+which might be different from Prima's. For example, if a display color depth is 15 bits,
 5 bits for every component, then white color value 0xffffff
 is mapped to
 
@@ -132,8 +132,8 @@ is mapped to
 that equals to 0xf8f8f8, not 0xffffff ( See L<Prima::gp-problems> for
 inevident graphic issues discussion ).
 
-As it might be guessed, Drawable color format is RRGGBB, with component
-resolution 8 bit, thus allowing 2^24 color combinations. If the color space
+The Prima::Drawable color format is RRGGBB, with each component
+resolution of 8 bit, thus allowing 2^24 color combinations. If the device color space
 depth is different, the color is truncated or expanded automatically. In
 case the device color depth is small, dithering algorithms might apply.
 
@@ -187,10 +187,10 @@ The first way is to get as much information as possible about the device.
 The methods get_nearest_color() and get_physical_palette()
 provide possibility to avoid mixed colors drawing by obtaining 
 indirect information about solid colors, supported by a device.
-Another method is to use C<::palette> property. It tries to insert
-the passed colors into the system palette, so if an application
+Another method is to use C<::palette> property. It works by inserting
+the colors into the system palette, so if an application
 knows the colors it needs beforehand, it can employ this method - however
-this might result in system palette flash if a window focus toggles.
+this might result in system palette flash when a window focus toggles.
 
 Both of these methods are applicable both with drawing routines and image output.
 An image desired to output with least distortion is advised to
@@ -257,7 +257,7 @@ A combination of C<fs::> ( font style ) constants. The constants hight
 and can be OR-ed together to express the font style. 
 fs::Normal equals to 0 and usually never used.
 If some styles are not supported by a system-dependent font subsystem,
-they get ignored.
+they are ignored.
 
 =item pitch
 
@@ -268,8 +268,8 @@ A one of three constants:
    fp::Variable
 
 fp::Default specifies no interest about font pitch selection.
-fp::Fixed is set when a monospaced font is desired - e.g., when
-all glyphs are of same width. fp::Variable pitch
+fp::Fixed is set when a monospaced (all glyphs are of same width) font 
+is desired. fp::Variable pitch
 specifies a font with different glyph widths. This key
 is of the highest priority; all other keys may be altered for
 the consistency of the pitch key.
@@ -278,14 +278,15 @@ the consistency of the pitch key.
 
 A counter-clockwise rotation angle multiplied by 10.
 0 is default, 900 is pi/2, 1800 is pi, etc. If a font
-could not be rotated, its name is usually being substituted
-to the one's that can.
+could not be rotated, it is usually substituted
+to the one that can.
 
 =item encoding
 
 A string value, one of the strings returned by 
 C<Prima::Application::font_encodings>. Selects desired font
-encoding; if empty, picks the first matched encoding.
+encoding; if empty, picks the first matched encoding, preferably
+the locale set up by the user.
 
 The encodings provided by different systems are different;
 in addition, the only encodings are recognizable by the system,
@@ -442,28 +443,28 @@ monospaced fonts.
 
 =item xDeviceRes
 
-A designed horizontal font resolution in dpi.
+Designed horizontal font resolution in dpi.
 
 =item yDeviceRes
 
-A designed vertical font resolution in dpi.
+Designed vertical font resolution in dpi.
 
 =item firstChar
 
-An index of the first glyph present in a font.
+Index of the first glyph present in a font.
 
 =item lastChar
 
-An index of the last glyph present in a font.
+Index of the last glyph present in a font.
 
 =item breakChar
 
-An index of the default character that is used to divide words.
+Index of the default character used to divide words.
 In a typical western language font it is 32, ASCII space character.
 
 =item defaultChar
 
-An index of a glyph that is drawn instead of nonexistent
+Index of a glyph that is drawn instead of nonexistent
 glyph if its index is passed to the text drawing routines.
 
 =back
@@ -548,7 +549,7 @@ The toolkit defines the following operations:
 Usually, however, graphic devices support only a small part
 of the above set, limiting C<::rop> to the most important operations:
 Copy, And, Or, Xor, NoOp. C<::rop2> is usually even more restricted -
-it is only OS/2 system currently that supports other rop2 modes than
+it is only OS/2 system that supports currently rop2 modes others than
 Copy and NoOp.
 
 The raster operations apply to all graphic primitives except SetPixel.
@@ -600,8 +601,9 @@ or the clipping rectangle otherwise. The code
    $d-> clipRect( 1, 1, 2, 2);
    $d-> bar( 0, 0, 1, 1);
 
-thus affects only one pixel (1,1).
-Discards the previous C<::region> value.
+thus affects only one pixel at (1,1).
+
+Set-call discards the previous C<::region> value.
 
 Note: C<::clipRect> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template 
@@ -704,7 +706,7 @@ The predefined constants are:
     lp::DashDotDot     #    "\x9\3\1\3\1\3" /* _.._.._.._.. */
 
 Not all systems are capable of accepting user-defined line patterns,
-and in such situations the C<lp::> constants are mapped to the system-defined
+and in such situation the C<lp::> constants are mapped to the system-defined
 patterns. In Win9x, for example, lp::DashDotDot is much different from
 its string definition therefore.
 
@@ -716,8 +718,8 @@ Selects a line width for plotting primitives.
 If a VALUE is 0, then a 'cosmetic' pen is used - the thinnest
 possible line that a device can plot. If a VALUE is greater than 0,
 then a 'geometric' pen is used - the line width is set in device units.
-There is a subtle difference between VALUE 0 and 1, which is not always
-can be seen.
+There is a subtle difference between VALUE 0 and 1 in a way
+the lines are joined.
 
 Default value is 0.
 
@@ -769,7 +771,7 @@ See also: C<::rop>, L<"Raster operations">.
 
 Selects number of steps to use for each spline segment in C<spline>
 and C<fill_spline> calls. In other words, determines smoothness of 
-a curve. Minimum accepted value, 1, produces staight lines; maximum
+a curve. Minimum accepted value, 1, produces straight lines; maximum
 value is not present, though it is hardly practical to set it higher
 than the output device resolution.
 
@@ -941,6 +943,20 @@ from START_ANGLE to END_ANGLE (see sector()).
 
 Context used: color, backColor, fillPattern, rop, rop2
 
+=item fill_spline \@POLYGON
+
+Fills a polygonal area defined by a curve, projected by applying 
+cubic spline interpolation to POLYGON set of points.
+Number of vertices between each polygon equals to current value of C<splinePrecision> property.
+POLYGON must present an array of integer pair in (X,Y) format.
+Example:
+
+   $d-> fill_spline([ 0, 0, 15, 20, 30, 0]);
+
+Context used: color, backColor, fillPattern, rop, rop2, splinePrecision
+
+See also: spline, splinePrecision
+
 =item flood_fill X, Y, COLOR, SINGLEBORDER = 1
 
 Fills an area of the canvas in current fill context. 
@@ -978,6 +994,16 @@ to COLOR, on get-call ( without COLOR ) it does return a pixel value at (X,Y).
 
 No context is used.
 
+=item polyline \@POLYGON
+
+Draws a polygonal area defined by POLYGON set of points.
+POLYGON must present an array of integer pair in (X,Y) format.
+
+Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
+
+See also: fillpoly().
+
+
 =item put_image X, Y, OBJECT
 
 Draws an OBJECT at coordinates (X,Y). OBJECT must be Prima::Image,
@@ -995,7 +1021,7 @@ and SRC_HEIGHT pixels tall.
 The destination rectangle starts at (X,Y), and is abs(DEST_WIDTH) pixels wide
 and abs(DEST_HEIGHT) pixels tall.
 If DEST_WIDTH or DEST_HEIGHT are
-negative, a mirroring is performed.
+negative, a mirroring by respective axis is performed.
 
 OBJECT must be Prima::Image, Prima::Icon or Prima::DeviceBitmap.
 
@@ -1028,6 +1054,16 @@ from START_ANGLE to END_ANGLE and connects its ends and (X,Y) with
 two straight lines.
 
 Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
+
+=item spline \@POLYGON
+
+Draws a cubic spline defined by set of POLYGON points.
+Number of vertices between each polygon equals to current value of C<splinePrecision> property.
+POLYGON must present an array of integer pair in (X,Y) format.
+
+Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
+
+See also: fill_spline, splinePrecision.
 
 =item stretch_image X, Y, DEST_WIDTH, DEST_HEIGHT, OBJECT
 
@@ -1073,19 +1109,19 @@ See also: C<end_paint_info>, C<begin_paint>, L<"Graphic context and canvas">
 
 =item end_paint
 
-Quits the enabled state and returns object to a disabled state. 
+Exits the enabled state and returns the object to a disabled state. 
 
 See also: C<begin_paint>, L<"Graphic context and canvas">
 
 =item end_paint_info
 
-Quits the information state and returns object to a disabled state. 
+Exits the information state and returns the object to a disabled state. 
 
 See also: C<begin_paint_info>, L<"Graphic context and canvas">
 
 =item font_match \%SOURCE, \%DEST, PICK = 1
 
-Perform merging of two font hashes, SOURCE and DEST.
+Performs merging of two font hashes, SOURCE and DEST.
 Returns the merge result. If PICK is true, matches the result
 with a system font repository.
 
@@ -1099,17 +1135,25 @@ In the example, the hash 'style => fs::Bold' does not overwrite
 the previous font context ( 'size => 10' ) but gets added to it ( by font_match()),
 providing the resulting font with both font properties set.
 
-=item fonts <FAMILY>
+=item fonts <FAMILY = "", ENCODING = "">
 
 Member of C<Prima::Application> and C<Prima::Printer>, does not
 present in C<Prima::Drawable>.
 
-Returns an array of font metric hashes for a given font FAMILY.
-Every hash has full set of elements described in L<"Fonts">.
+Returns an array of font metric hashes for a given font FAMILY
+and ENCODING.  Every hash has full set of elements described in L<"Fonts">.
 
 If called without parameters, returns an array of same hashes
 where each hash represents a member of font family from every
-system font set.
+system font set. It this special case, each font hash contains
+additional C<encodings> entry, which points to an array of encodings
+available for the font.
+
+If called with FAMILY parameter set but no ENCODING is set, enumerates
+all combinations of fonts with all available encodings.
+
+If called with FAMILY set to an empty string, but ENCODING specified,
+returns only fonts that can be displayed with the encoding.
 
 Example:
 
@@ -1127,10 +1171,10 @@ FIRST_CHAR and ending with LAST_CHAR. If parameters are -1,
 the default range ( 0 and 255 ) is assumed. UNICODE boolean flag
 is responsible of representation of characters in 127-255 range.
 If 0, the default, encoding-dependent characters are assumed.
-If 1, the Latin-1 encoded characters are assumed. 
+If 1, the U007F-U00FF glyphs from Latin-1 set are used.
 
 The result is an integer array reference, where every character
-glyph is referred by three integers, each triad containing
+glyph is referred by three integers, each triplet containing
 A, B and C values.
 
 For detailed explanation of ABC meaning, see L<"Font ABC metrics">;
@@ -1151,7 +1195,7 @@ Returns paint state value - 0 if the object is in the disabled state,
 =item get_physical_palette
 
 Returns an anonymous array of integers, in (R,G,B) format,
-every color entry described by three values, ranging from 0 to 255.
+every color entry described by three values, in range 0 - 255.
 
 The physical palette array is non-empty only on paletted graphic devices,
 the true color devices return an empty array.
@@ -1202,12 +1246,12 @@ Context used: font
 
 =item text_wrap TEXT, WIDTH, OPTIONS, TAB_INDENT = 8, LEN = -1
 
-Breaks TEXT string in chunks that would guaranteedly fit
+Breaks TEXT string in chunks that would fit
 into WIDTH pixels wide box. LEN is the TEXT length; if it is -1, the method
 calculates the string length itself.
  
 The break algorithm and its result are governed by OPTIONS integer value
-that is a combination of C<tw::> constants:
+which is a combination of C<tw::> constants:
 
 =over 4
 
@@ -1237,14 +1281,14 @@ Defines procedure behavior when the text cannot be fit in WIDTH,
 does not affect anything otherwise.
 
 If set, returns an empty array.
-If unset, returns a text broken by minimum number of characters perl chunk.
-In the latter case, the text blocks will exceed WIDTH.
+If unset, returns a text broken by minimum number of characters per chunk.
+In the latter case, the width of the resulting text blocks B<will> exceed WIDTH.
 
 =item tw::NewLineBreak
 
 Forces new chunk after a newline character ('\n') is met.
-If UTF8 text is passed, unicode line break characters C<0x2028> and C<0x2029> are also
-in effect.
+If UTF8 text is passed, unicode line break characters C<0x2028> and C<0x2029> 
+produce same effect as the newline character.
 
 =item tw::SpaceBreak
 
@@ -1273,13 +1317,13 @@ chunks, e.g. keeps breaking TEXT by words, not by characters.
 
 If set, C<text_wrap> proceeds until the first line is wrapped, either by
 width or ( if specified ) by break characters. Returns length of the
-resulting line. Used for efficiency when a reverse function to C<get_text_width>
+resulting line. Used for efficiency when the reverse function to C<get_text_width>
 is needed.
 
 =back
 
 If OPTIONS has tw::CalcMnemonic or tw::CollapseTilde bits set,
-then the last scalar in the array result is a hash reference.
+then the last scalar in the array result is a special hash reference.
 The hash contains extra information regarding the 'hot key' 
 underline position - it is assumed that '~' - escapement denotes
 an underlined character. The hash contains the following keys:
