@@ -814,6 +814,16 @@ sub defaultInsertPage
 sub pageIndex     {($#_)?($_[0]->set_page_index   ( $_[1]))    :return $_[0]->{pageIndex}}
 sub pageCount     {($#_)?($_[0]->set_page_count   ( $_[1]))    :return $_[0]->{pageCount}}
 
+# TabbedNotebook styles
+package tns;
+use constant Simple   => 0;
+use constant Standard => 1;
+
+# TabbedNotebook orientations
+package tno;
+use constant Top    => 0;
+use constant Bottom => 1;
+
 package Prima::TabbedNotebook;
 use vars qw(@ISA %notebookProps);
 @ISA = qw(Prima::Widget);
@@ -842,6 +852,8 @@ sub profile_default
       ownerBackColor      => 1,
       tabs                => [],
       tabIndex            => 0,
+      style               => tns::Standard,
+      orientation         => tno::Top,
       tabsetClass         => 'Prima::TabSet',
       tabsetProfile       => {},
       tabsetDelegations   => ['Change'],
@@ -858,6 +870,8 @@ sub init
    my $visible       = $profile{visible};
    my $scaleChildren = $profile{scaleChildren};
    $profile{visible} = 0;
+   $self->{style}    = tns::Standard;
+   $self->{orientation} = tno::Top;
    $self->{tabs}     = [];
    %profile = $self-> SUPER::init(%profile);
    my @size = $self-> size;
@@ -892,6 +906,8 @@ sub init
    $self-> {notebook}-> designScale( $self-> designScale); # propagate designScale
    $self-> tabs( $profile{tabs});
    $self-> pageIndex( $profile{pageIndex});
+   $self-> style($profile{style});
+   $self-> orientation($profile{orientation});
    $self-> visible( $visible);
    return %profile;
 }
@@ -910,65 +926,78 @@ sub on_paint
    @clr = ( $self-> disabledColor, $self-> disabledBackColor) if ( !$self-> enabled);
    my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
    my @size = $canvas-> size;
+   my $on_top = ($self->{orientation} == tno::Top);
    $canvas-> color( $clr[1]);
    $canvas-> bar( 0, 0, @size);
-   $size[1] -= $self->{tabSet}-> height;
-   $canvas-> rect3d( 0, 0, $size[0] - 1, $size[1] - 1 + Prima::TabSet::DefGapY, 1, reverse @c3d);
-   $canvas-> rect3d( DefBorderX, DefBorderX, $size[0] - 1 - DefBorderX,
-      $size[1] - DefBorderX + Prima::TabSet::DefGapY, 1, @c3d);
-   my $y = $size[1] - DefBorderX + Prima::TabSet::DefGapY;
-   my $x  = $size[0] - DefBorderX - DefBookmarkX;
 
-   return if $y < DefBorderX * 2 + DefBookmarkX;
-   $canvas-> color( $c3d[0]);
-   $canvas-> line( DefBorderX + 2,  $y - 2, $x - 2, $y - 2);
-   $canvas-> line( $x + DefBookmarkX - 4, $y - DefBookmarkX + 1, $x + DefBookmarkX - 4, DefBorderX + 2);
-
-   my $fh = 24;
-   my $a  = 0;
-   my ($pi, $mpi) = ( $self->{notebook}->pageIndex, $self->{notebook}->pageCount - 1);
-   $a |= 1 if $pi > 0;
-   $a |= 2 if $pi < $mpi;
-   $canvas-> line( DefBorderX + 4, $y - $fh * 1.6, $x - 6, $y - $fh * 1.6);
-   $canvas-> polyline([ $x - 2, $y - 2, $x - 2, $y - DefBookmarkX, $x + DefBookmarkX - 4, $y - DefBookmarkX]);
-   $canvas-> line( $x - 1, $y - 3, $x + DefBookmarkX - 5, $y - DefBookmarkX + 1);
-   $canvas-> line( $x - 1, $y - 4, $x + DefBookmarkX - 6, $y - DefBookmarkX + 1);
-   $canvas-> line( $x - 0, $y - 2, $x + DefBookmarkX - 4, $y - DefBookmarkX + 2);
-   $canvas-> line( $x + 5, $y - DefBookmarkX - 2, $x + DefBookmarkX - 5, $y - DefBookmarkX - 2);
-   $canvas-> polyline([
-       $x + 4, $y - DefBookmarkX + 6,
-       $x + 10, $y - DefBookmarkX + 6,
-       $x + 10, $y - DefBookmarkX + 8]) if $a & 1;
-   my $dx = DefBookmarkX / 2;
-   my ( $x1, $y1) = ( $x + $dx, $y - $dx);
-   $canvas-> line( $x1 + 1, $y1 + 4, $x1 + 3, $y1 + 4) if $a & 2;
-   $canvas-> line( $x1 + 5, $y1 + 6, $x1 + 5, $y1 + 8) if $a & 2;
-   $canvas-> polyline([ $x1 + 3, $y1 + 2, $x1 + 5, $y1 + 2,
-      $x1 + 5, $y1 + 4, $x1 + 7, $y1 + 4, $x1 + 7, $y1 + 6]) if $a & 2;
-   $canvas-> color( $c3d[1]);
-   $canvas-> line( $x - 1, $y - 7, $x + DefBookmarkX - 9, $y - DefBookmarkX + 1);
-   $canvas-> line( DefBorderX + 4, $y - $fh * 1.6 - 1, $x - 6, $y - $fh * 1.6 - 1);
-   $canvas-> polyline([ $x + 4, $y1 - 9, $x + 4, $y1 - 8, $x + 10, $y1 - 8]) if $a & 1;
-   $canvas-> line( $x1 + 3, $y1 + 2, $x1 + 3, $y1 + 3) if $a & 2;
-   $canvas-> line( $x1 + 6, $y1 + 6, $x1 + 7, $y1 + 6) if $a & 2;
-   $canvas-> polyline([ $x1 + 1, $y1 + 4, $x1 + 1, $y1 + 6,
-       $x1 + 3, $y1 + 6, $x1 + 3, $y1 + 8, $x1 + 5, $y1 + 8]) if $a & 2;
-   $canvas-> color( cl::Black);
-   $canvas-> line( $x - 1, $y - 2, $x + DefBookmarkX - 4, $y - DefBookmarkX + 1);
-   $canvas-> line( $x + 5, $y - DefBookmarkX - 1, $x + DefBookmarkX - 5, $y - DefBookmarkX - 1);
-   $canvas-> color( $clr[0]);
-   my $t = $self->{tabs};
-   if ( scalar @{$t}) {
-      my $tx = $self->{tabSet}-> tabIndex;
-      my $t1 = $$t[ $tx * 2];
-      my $yh = $y - $fh * 0.8 - $self-> font-> height / 2;
-      $canvas-> clipRect( DefBorderX + 1, $y - $fh * 1.6 + 1, $x - 4, $y - 3);
-      $canvas-> text_out( $t1, DefBorderX + 4, $yh);
-      if ( $$t[ $tx * 2 + 1] > 1) {
-         $t1 = sprintf("Page %d of %d ", $self->pageIndex - $self->tab2page( $tx) + 1, $$t[ $tx * 2 + 1]);
-         my $tl1 = $size[0] - DefBorderX - 3 - DefBookmarkX - $self-> get_text_width( $t1);
-         $canvas-> text_out( $t1, $tl1, $yh) if $tl1 > 4 + DefBorderX + $fh * 3;
+   if ($self->{style} == tns::Standard) {
+      if ($on_top) {
+         $size[1] -= $self->{tabSet}-> height;
+      } else {
+         $size[1] -= 5;
       }
+
+      $canvas-> rect3d( 0, 0, $size[0] - 1, $size[1] - 1 + Prima::TabSet::DefGapY, 1, reverse @c3d);
+      $canvas-> rect3d( DefBorderX, 
+         $on_top ? DefBorderX : $self->{notebook}->bottom - 1, $size[0] - 1 - DefBorderX,
+         $size[1] - DefBorderX + Prima::TabSet::DefGapY, 1, @c3d);
+      my $y = $size[1] - DefBorderX + Prima::TabSet::DefGapY;
+      my $x  = $size[0] - DefBorderX - DefBookmarkX;
+
+      return if $y < DefBorderX * 2 + DefBookmarkX;
+      $canvas-> color( $c3d[0]);
+      $canvas-> line( DefBorderX + 2,  $y - 2, $x - 2, $y - 2);
+      $canvas-> line( $x + DefBookmarkX - 4, $y - DefBookmarkX + 1, $x + DefBookmarkX - 4, 
+         $on_top ? (DefBorderX + 2) : ($self->{notebook}->bottom + 1));
+
+      my $fh = 24;
+      my $a  = 0;
+      my ($pi, $mpi) = ( $self->{notebook}->pageIndex, $self->{notebook}->pageCount - 1);
+      $a |= 1 if $pi > 0;
+      $a |= 2 if $pi < $mpi;
+      $canvas-> line( DefBorderX + 4, $y - $fh * 1.6, $x - 6, $y - $fh * 1.6);
+      $canvas-> polyline([ $x - 2, $y - 2, $x - 2, $y - DefBookmarkX, $x + DefBookmarkX - 4, $y - DefBookmarkX]);
+      $canvas-> line( $x - 1, $y - 3, $x + DefBookmarkX - 5, $y - DefBookmarkX + 1);
+      $canvas-> line( $x - 1, $y - 4, $x + DefBookmarkX - 6, $y - DefBookmarkX + 1);
+      $canvas-> line( $x - 0, $y - 2, $x + DefBookmarkX - 4, $y - DefBookmarkX + 2);
+      $canvas-> line( $x + 5, $y - DefBookmarkX - 2, $x + DefBookmarkX - 5, $y - DefBookmarkX - 2);
+      $canvas-> polyline([
+          $x + 4, $y - DefBookmarkX + 6,
+          $x + 10, $y - DefBookmarkX + 6,
+          $x + 10, $y - DefBookmarkX + 8]) if $a & 1;
+      my $dx = DefBookmarkX / 2;
+      my ( $x1, $y1) = ( $x + $dx, $y - $dx);
+      $canvas-> line( $x1 + 1, $y1 + 4, $x1 + 3, $y1 + 4) if $a & 2;
+      $canvas-> line( $x1 + 5, $y1 + 6, $x1 + 5, $y1 + 8) if $a & 2;
+      $canvas-> polyline([ $x1 + 3, $y1 + 2, $x1 + 5, $y1 + 2,
+         $x1 + 5, $y1 + 4, $x1 + 7, $y1 + 4, $x1 + 7, $y1 + 6]) if $a & 2;
+      $canvas-> color( $c3d[1]);
+      $canvas-> line( $x - 1, $y - 7, $x + DefBookmarkX - 9, $y - DefBookmarkX + 1);
+      $canvas-> line( DefBorderX + 4, $y - $fh * 1.6 - 1, $x - 6, $y - $fh * 1.6 - 1);
+      $canvas-> polyline([ $x + 4, $y1 - 9, $x + 4, $y1 - 8, $x + 10, $y1 - 8]) if $a & 1;
+      $canvas-> line( $x1 + 3, $y1 + 2, $x1 + 3, $y1 + 3) if $a & 2;
+      $canvas-> line( $x1 + 6, $y1 + 6, $x1 + 7, $y1 + 6) if $a & 2;
+      $canvas-> polyline([ $x1 + 1, $y1 + 4, $x1 + 1, $y1 + 6,
+          $x1 + 3, $y1 + 6, $x1 + 3, $y1 + 8, $x1 + 5, $y1 + 8]) if $a & 2;
+      $canvas-> color( cl::Black);
+      $canvas-> line( $x - 1, $y - 2, $x + DefBookmarkX - 4, $y - DefBookmarkX + 1);
+      $canvas-> line( $x + 5, $y - DefBookmarkX - 1, $x + DefBookmarkX - 5, $y - DefBookmarkX - 1);
+      $canvas-> color( $clr[0]);
+      my $t = $self->{tabs};
+      if ( scalar @{$t}) {
+         my $tx = $self->{tabSet}-> tabIndex;
+         my $t1 = $$t[ $tx * 2];
+         my $yh = $y - $fh * 0.8 - $self-> font-> height / 2;
+         $canvas-> clipRect( DefBorderX + 1, $y - $fh * 1.6 + 1, $x - 4, $y - 3);
+         $canvas-> text_out( $t1, DefBorderX + 4, $yh);
+         if ( $$t[ $tx * 2 + 1] > 1) {
+            $t1 = sprintf("Page %d of %d ", $self->pageIndex - $self->tab2page( $tx) + 1, $$t[ $tx * 2 + 1]);
+            my $tl1 = $size[0] - DefBorderX - 3 - DefBookmarkX - $self-> get_text_width( $t1);
+            $canvas-> text_out( $t1, $tl1, $yh) if $tl1 > 4 + DefBorderX + $fh * 3;
+         }
+      }
+   } else {	# tns::Simple
+      $canvas->rect3d(0, 0, $size[0]-1, $size[1]-1, 1, reverse @c3d);
    }
 }
 
@@ -976,8 +1005,9 @@ sub on_mousedown
 {
    my ( $self, $btn, $mod, $x, $y) = @_;
    $self-> clear_event;
+   return if $self-> {style} != tns::Standard;
    my @size = $self-> size;
-   my $th = $self->{tabSet}-> height;
+   my $th = ($self-> {orientation} == tno::Top) ? $self->{tabSet}-> height : 5;
    $x -= $size[0] - DefBorderX - DefBookmarkX - 1;
    $y -= $size[1] - DefBorderX - $th - DefBookmarkX + 4;
    return if $x < 0 || $x > DefBookmarkX || $y < 0 || $y > DefBookmarkX;
@@ -1079,7 +1109,7 @@ sub set_page_index
    $self->{tabSet}-> tabIndex( $self-> page2tab( $self->{notebook}-> pageIndex));
    delete $self->{changeLock};
    my @size = $self-> size;
-   my $th = $self->{tabSet}-> height;
+   my $th = ($self-> {orientation} == tno::Top) ? $self->{tabSet}-> height : 5;
    my $a  = 0;
    $a |= 1 if $pix > 0;
    $a |= 2 if $pix < $mpi;
@@ -1093,6 +1123,64 @@ sub set_page_index
       $size[1] - DefBorderX - $th + 3
    );
    $self-> notify(q(Change), $pix, $pi);
+}
+
+sub orientation {
+	my ($self, $tno) = @_;
+	return $self->{orientation} unless (defined $tno);
+
+	$self->{orientation} = $tno;
+	$self->{tabSet}->topMost($tno == tno::Top);
+	$self->{tabSet}->growMode(($tno == tno::Top) ? gm::Ceiling : gm::Floor);
+	$self->adjust_widgets;
+
+	return $tno;
+}
+
+sub style {
+	my ($self, $style) = @_;
+	return $self->{style} unless (defined $style);
+
+	$self->{style} = $style;
+	$self->adjust_widgets;
+
+	return $style;
+}
+
+sub adjust_widgets {
+	my ($self) = @_;
+	my $nb = $self->{notebook};
+	my $ts = $self->{tabSet};
+
+	my @size = $self->size;
+	my @pos = (0,0);
+
+	$size[1] -= $ts->height;
+	if ($self->{style} == tns::Standard) {
+		$size[0] -= 2 * DefBorderX + 6;
+		$size[1] -= 2 * DefBorderX + DefBookmarkX + 4;
+		$pos[0] += DefBorderX + 1;
+		$pos[1] += DefBorderX + 1;
+	}
+	else {
+		$size[0] -= 2;
+		$size[1] -= 2;
+		$pos[0]++;
+		$pos[1]++;
+	}
+
+	if ($self->{orientation} == tno::Top) {
+		$ts->top($self->height);
+	}
+	else {
+		$ts->bottom(0);
+		$pos[1] += $ts->height - 5;
+	}
+
+	$nb->size(@size);
+	$nb->origin(@pos);
+
+	$self->repaint;
 }
 
 sub tabIndex     {($#_)?($_[0]->{tabSet}->tabIndex( $_[1]))   :return $_[0]->{tabSet}->tabIndex}
@@ -1439,11 +1527,49 @@ Assigns list of delegated notifications to the notebook widget.
 
 Create-only property.
 
+=item orientation INTEGER
+
+Selects one of the following tno::XXX constants
+
+=over
+
+=item tno::Top
+
+The TabSet will be drawn at the top of the widget.
+
+=item tno::Bottom
+
+The TabSet will be drawn at the bottom of the widget.
+
+=back
+
+Default value: tno::Top
+
 =item pageIndex INTEGER
 
 Selects the INDEXth page or a tabset widget ( the second-level tab ).
 When this property is triggered, C<tabIndex> can change its value,
 and C<Change> notification is triggered.
+
+=item style INTEGER
+
+Selects one of the following tns::XXX constants
+
+=over
+
+=item tns::Standard
+
+The widget will have a raised border surrounding it and a +/- control
+at the top for moving between pages.
+
+=item tns::Simple
+
+The widget will have no decorations (other than a standard border).  It
+is recommended to have only one second-level page per tab with this style.
+
+=back
+
+Default value: tns::Standard
 
 =item tabIndex INTEGER
 
@@ -1518,9 +1644,10 @@ OLD_PAGE_INDEX to NEW_PAGE_INDEX.
 
 =back
 
-=head1 AUTHOR
+=head1 AUTHORS
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+Teo Sankaro, E<lt>teo_sankaro@hotmail.comE<gt>.
 
 =head1 SEE ALSO
 
