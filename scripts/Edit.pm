@@ -851,6 +851,7 @@ sub set_text_ref
    $#{$self->{lines}} = $self-> {capLen} / 40;
    @{$self->{lines}} = ();
    @{$self->{lines}} = split( "\n", $$ref);
+   $self-> {maxLine} = scalar @{$self->{lines}} - 1;
    $self-> reset_syntax;
    if ( !$self->{resetDisabled})
    {
