@@ -1013,8 +1013,8 @@ sub mouse_up    { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseUp
 sub mouse_move  { splice( @_,5,0,0) if $#_ > 4; splice( @_,1,0,0); shift-> mouse_event( cm::MouseMove, @_) }
 sub mouse_wheel { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseWheel, @_) }
 sub mouse_down  { splice( @_,5,0,0) if $#_ > 4;
-                  ($#_>3)?splice( @_,1,0,splice( @_,4,1)):splice(@_,1,0,0);
-                  shift-> mouse_event( cm::MouseDown, @_); }
+                  splice( @_,2,0,0) if $#_ < 4;
+                  shift-> mouse_event( cm::MouseDown, @_);}
 sub mouse_click { shift-> mouse_event( cm::MouseClick, @_) }
 sub select      { $_[0]-> set_selected(1); }
 sub deselect    { $_[0]-> set_selected(0); }
