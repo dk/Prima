@@ -822,7 +822,6 @@ sub init
    $profile{visible}       = 0;
    $self->{tabs}     = [];
    %profile = $self-> SUPER::init(%profile);
-   $self-> scaleChildren( 0);
    my @size = $self-> size;
    my $maxh = $self-> font-> height * 2;
    $self->{tabSet} = TabSet-> create(
@@ -834,6 +833,7 @@ sub init
       growMode  => gm::Ceiling,
       height    => $maxh > 28 ? $maxh : 28,
       buffered  => 1,
+      designScale => undef,
    );
    $self->{notebook} = Notebook-> create(
       owner      => $self,
@@ -846,11 +846,11 @@ sub init
       scaleChildren => $scaleChildren,
       (map { $_  => $profile{$_}} keys %notebookProps),
       delegateTo => $self-> delegateTo,
+      designScale => undef,
       pageCount  => scalar @{$profile{tabs}},
    );
    $self-> {notebook}-> designScale( $self-> designScale); # propagate designScale
    $self-> tabs( $profile{tabs});
-   $self-> scaleChildren( $scaleChildren);
    $self-> visible( $visible);
    return %profile;
 }
