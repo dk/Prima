@@ -287,8 +287,16 @@ create_logger_window2( void * dummy)
 		rc = GetLastError();
 
    GetWindowRect( GetDesktopWindow(), &r);
+   if ( r. bottom > 500) {
+      r. left   = 400;
+      r. top    = r. bottom - 600;
+      r. bottom = r. right = 500;
+   } else {
+      r. top    = r. bottom - 400;
+      r. bottom = r. right = r. left = 300;
+   }
    guts.logger = CreateWindow("Logger", "Prima Log", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
-      400, r. bottom - 600, 500, 500 ,NULL, NULL, guts. instance, NULL);
+      r.left, r.top, r.right, r.bottom ,NULL, NULL, guts. instance, NULL);
    if ( !guts. logger)
 		rc = GetLastError();
    GetClientRect( guts.logger, &r);
