@@ -30,6 +30,7 @@ package Prima::MDI;
 #   MDI
 #   MDIOwner
 #   MDIWindow
+#   MDIExternalDockerShuttle
 
 use strict;
 use Prima::Classes;
@@ -1030,6 +1031,14 @@ sub text
    $_[0]-> repaint_title(q(title));
 }
 
+sub update_size_min
+{
+   my $self = $_[0];
+   my @a = Prima::Application-> get_default_window_borders( $self->{borderStyle});
+   my $ic = $self-> { iconsAtRight} + 1 + (($self->{borderIcons} & mbi::SystemMenu) ? 1 : 0);
+   $self-> sizeMin( $self-> {titleY} * $ic + $a[0] * 2, $self-> {titleY} + $a[1] * 2); 
+}   
+
 sub set_border_icons
 {
    my ( $self, $bi) = @_;
@@ -1044,6 +1053,7 @@ sub set_border_icons
 
    $self-> { iconsAtRight} = $icos;
 
+   $self-> update_size_min;
    $self-> sync_client;
    $self-> repaint;
 }
@@ -1058,8 +1068,7 @@ sub set_border_style
    $bby = $bby > 1 ? $bby : (( $bby > 0) ? 1 : 0);
    $self-> {border} = $bbx > $bby ? $bby : $bbx;
 
-   my @a = Prima::Application-> get_default_window_borders( $bs);
-   $self-> sizeMin( $self-> {titleY} * 5 + $a[0] * 2, $self-> {titleY} + $a[1] * 2);
+   $self-> update_size_min;
    $self-> sync_client;
    $self-> repaint;
 }
@@ -1216,5 +1225,101 @@ sub frameHeight          {return shift-> height( @_);}
 sub tileable             {($#_)?$_[0]->{tileable}=$_[1]                               :return $_[0]->{tileable}; }
 sub windowState          {($#_)?$_[0]->set_window_state($_[1])                        :return $_[0]->{windowState}    }
 sub icon                 {($#_)?$_[0]->set_icon        ($_[1])  :                      return $_[0]->{icon}           }
+
+package Prima::MDIExternalDockerShuttle;
+use vars qw(@ISA);
+@ISA = qw(Prima::MDI);
+
+my ($imgc1, $imgc2);
+
+sub __create_icons {
+$imgc1 = Prima::Image->create( width=>16, height=>16, type => im::bpp4, 
+palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
+ data => 
+"\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88".
+"\x88\x88\x88\x88\x88\x88\x88\x00\x88\x88\x88\x88\x88\x88\x88\x00\x08\x88\x80\x08".
+"\x88\x88\x88\x07\x00\x00\x00\x08\x88\x88\x88\x07\x00\x00\x07\x08\x80\x00\x00\x08".
+"pw\x08\x08www\x08\x87\x88x\x08\x88\x88\x88\x08\xf7\xff\x7f\x08".
+"\x88\x88\x88\x08\xf0\x00\x0f\x08\x88\x88\x88\x0f\x08\x88\x80\x08\x88\x88\x88\x00".
+"\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88".
+"\x88\x88\x88\x88\x88\x88\x88\x88".
+'');
+$imgc2 = Prima::Image->create( width=>16, height=>16, type => im::bpp4, 
+palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
+ data => 
+"\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88".
+"\x88\x88\x88\x88\x88\x88\x88\x00\x88\x88\x88\x88\x88\x88\x88\x0f\x08\x88\x80\x08".
+"\x88\x88\x88\x08\xf0\x00\x0f\x08\x88\x88\x88\x08\xff\xff\xf8\x08www\x07".
+"\x8f\x88\xf7\x08\x00\x00\x00\x07xw\x87\x08\x88\x88\x88\x07\x08\x00\x80\x08".
+"\x88\x88\x88\x07\x00\x00\x00\x08\x88\x88\x88\x00\x08\x88\x80\x08\x88\x88\x88\x00".
+"\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88".
+"\x88\x88\x88\x88\x88\x88\x88\x88".
+'');
+}
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my $fh = int($def->{font}->{height} / 1.5);
+   __create_icons unless $imgc1;
+   my %prf = (
+      font           => { height => $fh, width => 0, },
+      titleHeight    => $fh + 4,
+      borderIcons    => mbi::TitleBar | mbi::Maximize | mbi::Close,
+      clipOwner      => 0,
+      shuttle        => undef,
+      iconMax        => $imgc1,
+      iconMaxPressed => $imgc2,
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;   
+}   
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+   $self->$_($profile{$_}) for qw(shuttle);
+   return %profile;
+}   
+
+sub shuttle
+{
+   return $_[0]-> {shuttle} unless $#_;
+   $_[0]-> {shuttle} = $_[1];
+}   
+
+sub on_mousedown
+{
+   my ( $self, $btn, $mod, $x, $y) = @_;
+   if (q(caption) ne $self-> xy2part( $x, $y)) {
+      $self-> SUPER::on_mousedown( $btn, $mod, $x, $y);
+      return;
+   }   
+   $self-> clear_event;
+   return if $self-> {mouseTransaction};
+   $self-> bring_to_front;
+   $self-> select;
+   return if $btn != mb::Left;
+   my $s = $self-> shuttle;
+   if ( $s-> client) {
+      $s-> rect( $s-> client2frame( $s-> client-> rect));
+   } else {
+      $s-> rect( $self-> frame2client( $self-> rect));
+   }   
+   $s-> drag( 1, [ $self-> rect]);
+   $self-> clear_event;
+}   
+
+sub windowState
+{
+   return $_[0]->{windowState} unless $#_;
+   my ( $self, $ws) = @_;
+   if ( $ws == ws::Maximized) {
+      $self-> shuttle-> dock_back;
+   } else {
+      $self-> SUPER::windowState( $ws);
+   }   
+}   
 
 1;
