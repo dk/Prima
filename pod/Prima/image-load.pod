@@ -286,7 +286,7 @@ codec vendor, string
 
 usually underlying library versions, integers
 
-=item fileExtension
+=item fileExtensions
 
 array of strings, with file extensions that are typical to a codec.
 example: ['tif', 'tiff']
