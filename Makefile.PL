@@ -66,6 +66,7 @@ use vars @ovvars = qw(
     $SHQUOTE
     $MAKETYPE
     $DEFFILE
+    $DISTNAME
 );
 
 use vars @path_expand_ovvars = qw(
@@ -733,6 +734,7 @@ sub setup_variables
     $extralibs = '';
     $extralibs = qd("auto/Prima/Prima.lib") if $OS2;
     setvar( 'DEFFILE', $Win32 ? qd( "win32/Prima.def") : ( $OS2 ? qd( "os2/Prima.def") : ''));
+    setvar( 'DISTNAME', 'Prima-1.00');
     check_dTHR() if $platform eq 'unix';
 
     @Prima_exports = qw(
@@ -1654,6 +1656,82 @@ FOOTER
    close F;
    unlink $fn;
    rename "$fn.tmp", $fn;
+} elsif ( $#ARGV >= 2 && $ARGV[ 0] eq '--dist') {
+   my $type = lc $ARGV[1];
+   my $cwd = cwd();
+   my $distname = $ARGV[2];
+
+   sub clean_dist
+   {
+      my @dirs;
+      return unless -d $distname;
+      print "Cleaning...\n";
+      finddepth( sub { 
+         my $f = "$File::Find::dir/$_";
+         -d($f) ? push(@dirs, $f) : unlink($f);
+      }, "$cwd/$distname");
+      rmdir $_ for sort {length($b) <=> length($a)} @dirs;
+      rmdir $distname;
+   }
+
+   sub cleanup
+   {
+      clean_dist;
+      warn("$_[0]:$!\n") if defined $_[0];
+      exit(0);
+   }
+
+   clean_dist;
+   my @dirs;
+   my @files;
+   finddepth( sub { 
+      return if $_ eq '.';
+      return if /\.pdb$/i; # M$VC
+      my $f = "$File::Find::dir/$_";
+      return if $f =~ /include.generic/;
+      return if ($type ne 'bin') && $f =~ /auto/;
+      if ( -d $f) {
+         $f =~ s/^$cwd/$distname/;
+         push @dirs, $f;
+      } else {
+         return if $f =~ m/$Config{_o}$/;
+         push @files, $f;
+      }
+   }, $cwd);
+
+   print "Creating directories...\n";
+   for ( @dirs) {
+      next if -d $_;
+      cleanup( "Can't mkdir $_") unless mkpath $_;
+   }
+
+   print "Copying files...\n";
+   for ( @files) {
+      my $f = $_;
+      $f =~ s/^$cwd/$distname/;
+      cleanup("") unless copy $_, $f;
+   }
+
+   if ( $type eq 'bin') {
+      my $os_suffix = $^O;
+      $os_suffix =~ s/\s/_/g;
+      my $zipname = "$distname-$os_suffix.zip";
+      unlink $zipname;
+      unlink "$distname/$zipname";
+      system "zip -r $zipname $distname";
+   } elsif ( $type eq 'zip') {
+      my $zipname = "$distname.zip";
+      unlink $zipname;
+      unlink "$distname/$zipname";
+      system "zip -r $zipname $distname";
+   } else { # tar dist
+      my $tarname = "$distname.tar";
+      unlink $tarname;
+      unlink "$distname/$tarname";
+      system "tar -cv -f $tarname $distname"
+   }
+
+   clean_dist;
 } else {
     $CWD = cwd;
 
@@ -1766,12 +1844,6 @@ EOF
     print MAKE $make;
 
 # dist-related veriables
-    my $os_suffix = $^O;
-    $os_suffix =~ s/\s/_/g;
-    my $bindist_files = 'Prima.pm auto examples pod test Prima';
-    my $srcdist_files = 'Makefile.PL *.c *.cls Prima.pm examples pod img include os2 Prima test unix utils win32';
-    my $distname = 'Prima-1.00';
-
     if ( $OS2) {
        print MAKE <<OS2D;
 $extralibs:
@@ -1790,29 +1862,23 @@ RM=$^X Makefile.PL --rm
 RMDIR=$^X Makefile.PL --rmdir
 
 clean:
-\t\$(RM) @allclean $PrimaTarget $distname-$os_suffix.zip
+\t\$(RM) @allclean $PrimaTarget
 
 realclean: clean
 \t\$(RM) @allrealclean
 
 bindist: all
-\t\$(RM) $distname-$os_suffix.zip
-\t\@zip -r $distname-$os_suffix.zip $bindist_files
-\t\@perl -e ${SHQUOTE}if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname-$os_suffix.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }$SHQUOTE;
+\t$^X Makefile.PL --dist bin $DISTNAME
 
 zipdist:
-\t\$(RM) $distname.zip
-\t\@zip -r $distname.zip $srcdist_files
-\t\@perl -e ${SHQUOTE}if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }$SHQUOTE;
+\t$^X Makefile.PL --dist zip $DISTNAME
 
 tardist:
-\t\@perl -e ${SHQUOTE}if(!-f q(.dist-exclude)) { open F, q(>.dist-exclude) or die qq(Cannot open .dist-exclude:\$\$!); print F qq(*$OBJ_EXT\\n*/*$OBJ_EXT\\n*/*$OBJ_EXT\\ninclude/generic/*.*); close F;}$SHQUOTE
-\t\$(RM) $distname.tar
-\t\@tar -cv -X .dist-exclude -f $distname.tar $srcdist_files
+\t$^X Makefile.PL --dist tar $DISTNAME
 
 dist: tardist
-\t\$(RM) $distname.tar.gz
-\t\@gzip -9 $distname.tar
+\t\$(RM) $DISTNAME.tar.gz
+\t\@gzip -9 $DISTNAME.tar
 
 prima: dirs $PrimaTarget
 
@@ -1821,6 +1887,7 @@ $PrimaTarget: @allojects $extralibs
 
 test: all
 \t\@perl -w test/Tester.pl
+
 
 Makefile: Makefile.PL @Makefile_deps
 \t\@echo Rebuilding Makefile...
