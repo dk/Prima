@@ -788,6 +788,7 @@ sub set_value
    my ( $self, $value) = @_;
    return if $value == $self->{value};
    $self-> {value} = $value;
+   $self-> notify(q(Change));
    $self-> repaint;
 }
 
