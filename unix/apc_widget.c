@@ -42,7 +42,7 @@ apc_widget_client_to_screen( Handle self, Point p)
    DEFXX;
 
    p. y = X( self)-> size. y - p. y - 1;
-   if ( !XTranslateCoordinates( DISP, XX->drawable, RootWindow( DISP, SCREEN),
+   if ( !XTranslateCoordinates( DISP, XX->udrawable, RootWindow( DISP, SCREEN),
 				p. x, p. y, &p. x, &p. y, &cld)) {
       croak( "apc_widget_client_to_screen(): XTranslateCoordinates() failed");
    }
@@ -134,7 +134,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    }
    /* otherwise do nothing? */
    XX-> parent = parent;
-   XX-> drawable = X_WINDOW;
+   XX-> gdrawable = XX-> udrawable = X_WINDOW;
 
    XX-> flags. clip_owner = clip_owner;
    XX-> flags. sync_paint = sync_paint;
@@ -325,7 +325,7 @@ apc_widget_is_showing( Handle self)
    DEFXX;
 
    if ( XX-> flags. mapped
-	&& XGetWindowAttributes( DISP, XX->drawable, &attrs)
+	&& XGetWindowAttributes( DISP, XX->udrawable, &attrs)
 	&& attrs. map_state == IsViewable)
       return true;
    else
@@ -361,7 +361,7 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
    if ( !XX-> region) {
       XX-> region = XCreateRegion();
       ev. type = Expose;
-      ev. window = XX->drawable;
+      ev. window = XX->udrawable;
       ev. count = 0;
       ev. x = r. x;
       ev. y = r. y;
@@ -370,7 +370,7 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
       XX-> exposed_rect = r;
 
       if ( !XX-> flags. sync_paint) {
-	 XSendEvent( DISP, XX->drawable, false, 0, (XEvent*)&ev);
+	 XSendEvent( DISP, XX->udrawable, false, 0, (XEvent*)&ev);
 	 XCHECKPOINT;
       }
    } else {
@@ -392,7 +392,7 @@ apc_widget_screen_to_client( Handle self, Point p)
 
    p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
    if ( !XTranslateCoordinates( DISP, RootWindow( DISP, SCREEN),
-				XX->drawable, p. x, p. y,
+				XX->udrawable, p. x, p. y,
 				&p. x, &p. y, &cld)) {
       croak( "apc_widget_screen_to_client(): XTranslateCoordinates() failed");
    }
@@ -488,7 +488,7 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    XSubtractRegion( invalid, reg, invalid);
    XDestroyRegion( reg);
 
-   XCopyArea( DISP, XX-> drawable, XX-> drawable, XX-> gc,
+   XCopyArea( DISP, XX-> udrawable, XX-> udrawable, XX-> gc,
 	      src_x, src_y, w, h, dst_x, dst_y);
    XCHECKPOINT;
 

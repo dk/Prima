@@ -122,7 +122,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint,
    }
 
    XX-> parent = parent;
-   XX-> drawable = X_WINDOW;
+   XX-> udrawable = XX-> gdrawable = X_WINDOW;
 
    XX-> flags. clip_owner = clip_owner;
    XX-> flags. sync_paint = sync_paint;

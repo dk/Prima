@@ -432,7 +432,7 @@ apc_popup( Handle self, int x, int y, Rect *anchor)
    fprintf( stderr, "calculated size is %d, %d\n", w->sz.x, w->sz.y);
    owner = X(PComponent(self)->owner);
    y = owner->size.y - w->sz.y - y;
-   if ( !XTranslateCoordinates( DISP, owner->drawable, RootWindow( DISP, SCREEN),
+   if ( !XTranslateCoordinates( DISP, owner->udrawable, RootWindow( DISP, SCREEN),
                                 x, y, &x, &y, &dummy)) {
       croak( "apc_popup(): XTranslateCoordinates() failed");
    }

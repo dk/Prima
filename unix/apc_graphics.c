@@ -385,6 +385,14 @@ prima_prepare_drawable_for_painting( Handle self)
    DEFXX;
    unsigned long mask = VIRGIN_GC_MASK;
 
+   if ( XX-> udrawable && is_opt( optBuffered)) {
+      XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, XX-> size.x, XX->size.y, guts.depth);
+      if (!XX-> gdrawable)
+         XX-> gdrawable = XX-> udrawable;
+   } else if ( XX-> udrawable && !XX-> gdrawable) {
+      XX-> gdrawable = XX-> udrawable;
+   }
+
    XX-> paint_rop = XX-> rop;
    XX-> saved_font = PDrawable( self)-> font;
    XX-> fore = XX-> saved_fore;
@@ -437,6 +445,12 @@ void
 prima_cleanup_drawable_after_painting( Handle self)
 {
    DEFXX;
+   if ( XX-> udrawable && XX-> udrawable != XX-> gdrawable && XX-> gdrawable) {
+      XCopyArea( DISP, XX-> gdrawable, XX-> udrawable, XX-> gc, 0, 0, XX-> size.x, XX-> size.y, 0, 0);
+      XCHECKPOINT;
+      XFreePixmap( DISP, XX-> gdrawable);
+      XX-> gdrawable = XX-> udrawable;
+   }
    prima_release_gc(XX);
    free(XX->paint_dashes);
    XX-> paint_dashes = nil;
@@ -472,9 +486,9 @@ apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, do
    DEFXX;
    SHIFT( x, y);
    if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
-      XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+      XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
           0, 360 * 64);
-   XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+   XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
        angleStart * 64, ( angleStart + angleEnd) * 64);
    return true;
 }
@@ -486,7 +500,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
-   XFillRectangle( DISP, XX-> drawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
+   XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
    XCHECKPOINT;
    return true;
 }
@@ -494,7 +508,19 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {
-   DOLBUG( "apc_gp_clear()\n");
+   DEFXX;
+
+   if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
+      x1 = 0; y1 = 0;
+      x2 = XX-> size. x - 1;
+      y2 = XX-> size. y - 1;
+   }
+   SHIFT( x1, y1); SHIFT( x2, y2);
+   SORT( x1, x2); SORT( y1, y2);
+   XSetForeground( DISP, XX-> gc, XX-> back. pixel);
+   XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
+   XSetForeground( DISP, XX-> gc, XX-> fore. pixel);
+   XCHECKPOINT;
    return true;
 }
 
@@ -508,11 +534,11 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
    SHIFT( x, y);
    sy = REVERT( y);
    if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
-      XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+      XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
           0, 360 * 64);
-   XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+   XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
        angleStart * 64, ( angleStart + angleEnd) * 64);
-   XDrawLine( DISP, XX-> drawable, XX-> gc,
+   XDrawLine( DISP, XX-> gdrawable, XX-> gc,
        x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
        x + cos( angleEnd / GRAD) * radX,   sy - sin( angleEnd / GRAD) * radY
    );
@@ -549,7 +575,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
    }
 
-   XDrawLines( DISP, XX-> drawable, XX-> gc, p, n, CoordModeOrigin);
+   XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, n, CoordModeOrigin);
 
    if ( XX-> flags. zero_line) {
       XGCValues gcv;
@@ -579,7 +605,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 /* p[225]=(XPoint){236,94}; p[226]=(XPoint){236,93};  */
 
 /*    i = 165; n = 172; */
-/*    XDrawLines( DISP, XX-> drawable, XX-> gc, p+i, n-i+1, CoordModeOrigin); */
+/*    XDrawLines( DISP, XX-> gdrawable, XX-> gc, p+i, n-i+1, CoordModeOrigin); */
    free( p);
    return true;
 }
@@ -596,7 +622,7 @@ apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
 {
    DEFXX;
    SHIFT( x, y);
-   XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
+   XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
    return true;
 }
 
@@ -606,7 +632,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
    DEFXX;
    SHIFT( x, y);
    XSetArcMode( DISP, XX-> gc, ArcChord);
-   XFillArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+   XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
        angleStart * 64, ( angleStart + angleEnd) * 64);
    return true;
 }
@@ -616,7 +642,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY)
 {
    DEFXX;
    SHIFT( x, y);
-   XFillArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
+   XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
    return true;
 }
 
@@ -645,13 +671,13 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    p[numPts]. y = (short)REVERT(points[0]. y + XX-> gtransform. y);
 
    if ( guts. limits. XFillPolygon >= numPts) {
-      XFillPolygon( DISP, XX-> drawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
+      XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
       XCHECKPOINT;
    } else {
       warn( "apc_gp_fill_poly() XFillPolygon() request size limit reached");
    }
    if ( guts. limits. XDrawLines > numPts) {
-      XDrawLines( DISP, XX-> drawable, XX-> gc, p, numPts+1, CoordModeOrigin);
+      XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
       XCHECKPOINT;
    } else {
       warn( "apc_gp_fill_poly() XDrawLines() request size limit reached");
@@ -665,7 +691,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    DEFXX;
    SHIFT( x, y);
    XSetArcMode( DISP, XX-> gc, ArcPieSlice);
-   XFillArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+   XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
        angleStart * 64, ( angleStart + angleEnd) * 64);
    return true;
 }
@@ -705,7 +731,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
    } else if ( x1 == x2) {
       SORT( y1, y2); y1--;
    }
-   XDrawLine( DISP, XX-> drawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
+   XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
    return true;
 }
 
@@ -1121,7 +1147,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       if ( func != ofunc)
 	 XSetFunction( DISP, XX-> gc, func);
       XCHECKPOINT;
-      XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> icon_cache,
+      XPutImage( DISP, XX-> gdrawable, XX-> gc, IMG-> icon_cache,
 		 xFrom, img-> h - yFrom - yLen,
 		 x, REVERT(y) - yLen + 1, xLen, yLen);
       XCHECKPOINT;
@@ -1146,7 +1172,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       XSetBackground( DISP, XX-> gc, IMG-> bitmap_back. pixel);
       XCHECKPOINT;
    }
-   XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> image_cache,
+   XPutImage( DISP, XX-> gdrawable, XX-> gc, IMG-> image_cache,
 	      xFrom, img-> h - yFrom - yLen,
 	      x, REVERT(y) - yLen + 1, xLen, yLen);
    XCHECKPOINT;
@@ -1166,7 +1192,7 @@ apc_image_begin_paint( Handle self)
    DEFXX;
    PImage img = PImage( self);
 
-   XX-> drawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), img-> w, img-> h, guts. depth);
+   XX-> gdrawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), img-> w, img-> h, guts. depth);
    XCHECKPOINT;
    prima_prepare_drawable_for_painting( self);
    apc_gp_put_image( self, self, 0, 0, 0, 0, img-> w, img-> h, ropCopyPut);
@@ -1274,12 +1300,12 @@ Bool
 apc_image_end_paint( Handle self)
 {
    DEFXX;
-   slurp_image( self, XX-> drawable);
+   slurp_image( self, XX-> gdrawable);
    prima_cleanup_drawable_after_painting( self);
-   if ( XX-> drawable) {
-      XFreePixmap( DISP, XX-> drawable);
+   if ( XX-> gdrawable) {
+      XFreePixmap( DISP, XX-> gdrawable);
       XCHECKPOINT;
-      XX-> drawable = 0;
+      XX-> gdrawable = 0;
    }
    return true;
 }
@@ -1291,7 +1317,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
-   XDrawRectangle( DISP, XX-> drawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
+   XDrawRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
    XCHECKPOINT;
    return true;
 }
@@ -1304,15 +1330,15 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
    SHIFT( x, y);
    sy = REVERT( y);
    if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
-      XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+      XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
           0, 360 * 64);
-   XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
+   XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
        angleStart * 64, ( angleStart + angleEnd) * 64);
-   XDrawLine( DISP, XX-> drawable, XX-> gc,
+   XDrawLine( DISP, XX-> gdrawable, XX-> gc,
        x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
        x, y
    );
-   XDrawLine( DISP, XX-> drawable, XX-> gc,
+   XDrawLine( DISP, XX-> gdrawable, XX-> gc,
        x, y,
        x + cos( angleEnd / GRAD) * radX,   sy - sin( angleEnd / GRAD) * radY
    );
@@ -1343,7 +1369,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    SHIFT( x, y);
    XSetForeground( DISP, XX-> gc, c-> pixel);
    XCHECKPOINT;
-   XDrawPoint( DISP, XX-> drawable, XX-> gc, x, REVERT( y));
+   XDrawPoint( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y));
    XCHECKPOINT;
    XSetForeground( DISP, XX-> gc, old);
    XCHECKPOINT;
@@ -1434,7 +1460,7 @@ apc_gp_stretch_image( Handle self, Handle image,
       XSetBackground( DISP, XX-> gc, IMG-> bitmap_back. pixel);
       XCHECKPOINT;
    }
-   XPutImage( DISP, XX-> drawable, XX-> gc, stretch,
+   XPutImage( DISP, XX-> gdrawable, XX-> gc, stretch,
 	      0, 0, x, REVERT(y) - yDestLen + 1, xDestLen, yDestLen);
    XCHECKPOINT;
    XDestroyImage( stretch);
@@ -1452,7 +1478,7 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 {
    DEFXX;
    SHIFT( x, y);
-   XDrawString( DISP, XX-> drawable, XX-> gc, x, REVERT( y), text, len);
+   XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
    return true;
 }

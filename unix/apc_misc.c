@@ -254,7 +254,7 @@ prima_no_cursor( Handle self)
       prima_get_gc( XX);
       XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &cursor_gcv);
       XCHECKPOINT;
-      XCopyArea( DISP, guts. cursor_save, XX-> drawable, XX-> gc,
+      XCopyArea( DISP, guts. cursor_save, XX-> udrawable, XX-> gc,
 		 0, 0, w, h, x, y);
       XCHECKPOINT;
       prima_release_gc( XX);
@@ -298,11 +298,11 @@ prima_update_cursor( Handle self)
 	    guts. cursor_pixmap_size. x = 16;
 	 if ( guts. cursor_pixmap_size. y < 64)
 	    guts. cursor_pixmap_size. y = 64;
-	 guts. cursor_save = XCreatePixmap( DISP, XX-> drawable,
+	 guts. cursor_save = XCreatePixmap( DISP, XX-> udrawable,
 					    guts. cursor_pixmap_size. x,
 					    guts. cursor_pixmap_size. y,
 					    guts. depth);
-	 guts. cursor_xor  = XCreatePixmap( DISP, XX-> drawable,
+	 guts. cursor_xor  = XCreatePixmap( DISP, XX-> udrawable,
 					    guts. cursor_pixmap_size. x,
 					    guts. cursor_pixmap_size. y,
 					    guts. depth);
@@ -311,7 +311,7 @@ prima_update_cursor( Handle self)
       prima_get_gc( XX);
       XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &cursor_gcv);
       XCHECKPOINT;
-      XCopyArea( DISP, XX-> drawable, guts. cursor_save, XX-> gc,
+      XCopyArea( DISP, XX-> udrawable, guts. cursor_save, XX-> gc,
 		 x, y, w, h, 0, 0);
       XCHECKPOINT;
       XCopyArea( DISP, guts. cursor_save, guts. cursor_xor, XX-> gc,
@@ -363,7 +363,7 @@ prima_cursor_tick( void)
       prima_get_gc( XX);
       XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &cursor_gcv);
       XCHECKPOINT;
-      XCopyArea( DISP, pixmap, XX-> drawable, XX-> gc, 0, 0, w, h, x, y);
+      XCopyArea( DISP, pixmap, XX-> udrawable, XX-> gc, 0, 0, w, h, x, y);
       XCHECKPOINT;
       prima_release_gc( XX);
       XFlush( DISP);
