@@ -325,7 +325,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
           ps, ELLIPSE_RECT_SUPERINCLUSIVE, ARC_ANGLED_SUPERINCLUSIVE
       ))) apiErr;
    } else {
-      old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
+      old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
       while ( compl--)
          if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
       if ( !( ok = !needf || Chord(
@@ -350,7 +350,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY)
       old  = SelectObject( ps, hPenHollow);
       if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
    } else {
-      old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
+      old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
       if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
    }
    old = SelectObject( ps, old);
@@ -387,7 +387,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
    for ( i = 0; i < numPts; i++) points[ i]. y = dy - points[ i]. y - 1;
 
    if ( !stylus_complex( &sys stylus, ps)) {
-      HPEN old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
+      HPEN old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
       STYLUS_USE_BRUSH( ps);
       if ( !( ok = Polygon( ps, ( POINT *) points, numPts))) apiErr;
       DeleteObject( SelectObject( ps, old));
@@ -492,7 +492,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
           pts[ 0]. x, pts[ 0]. y
       ))) apiErr;
    } else {
-      old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
+      old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
       while ( compl--)
          if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
       if ( !( ok = !needf || Pie(
