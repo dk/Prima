@@ -96,7 +96,7 @@ my $x = Prima::Window-> create(
    size     => [ 200, 300],
    name     => 'Eyes',
    onSize   => sub { 
-      #reshape( $_[0]) if $canshape;
+      reshape( $_[0]) if $canshape;
    },
    onPaint  => sub {
       my ( $self, $canvas) = @_;
