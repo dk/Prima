@@ -5,7 +5,10 @@ sub classes
 {
    return (
       'Prima::Widget' => {
-         icon   => 'VB::classes.gif:26',
+         RTModule => 'Prima::Classes',
+         class  => 'Prima::VB::Widget',
+         page   => 'Abstract',
+         icon   => 'VB::VB.gif:0',
       },
    );
 }
@@ -24,6 +27,7 @@ sub init_profiler
    $self-> {creationOrder} = $prf->{creationOrder};
    $self-> {creationOrder} = 0 unless defined $self-> {creationOrder};
    $self-> {profile} = $prf->{profile};
+   $self-> {extras}  = $prf->{extras} if $prf->{extras};
    my %events = %{$self-> prf_events};
    for ( keys %{$prf->{class}->notification_types}) {
       $events{"on$_"} = '' unless exists $events{"on$_"};
@@ -92,13 +96,41 @@ sub prf_adjust_default
 {
 }
 
-sub events
+sub prf_events
 {
+   return {};
+}
+
+sub ext_profile
+{
+   return;
+}
+
+sub act_profile
+{
+   return;
 }
 
 package Prima::VB::Component;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::VB::Object);
+
+{
+my %RNT = (
+   %{Prima::Widget->notification_types()},
+   Load => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
+sub set
+{
+   my ( $self, %parms) = @_;
+   $self-> SUPER::set( %parms);
+   $self-> {__DYNAS__}->{onLoad} = $parms{onLoad},
+     delete $parms{onLoad} if exists $parms{onLoad};
+}
 
 
 sub profile_default
@@ -125,6 +157,7 @@ sub prf_types
       name       => ['name'],
       Handle     => ['owner'],
       sibling    => ['delegateTo'],
+      FMAction   => [qw( onBegin onFormCreate onCreate onChild onChildCreate onEnd )],
    };
 }
 
@@ -1110,10 +1143,7 @@ sub open
       image  => $VB::main-> {openbutton}-> image,
       glyphs => $VB::main-> {openbutton}-> glyphs,
       onClick => sub {
-         my $d = Prima::OpenDialog-> create(
-            text => 'Load text',
-            icon => $VB::ico,
-         );
+         my $d = VB::open_dialog;
          if ( $d-> execute) {
             my $f = $d-> fileName;
             if ( open F, $f) {
@@ -1137,9 +1167,7 @@ sub open
       image  => $VB::main-> {savebutton}-> image,
       glyphs => $VB::main-> {savebutton}-> glyphs,
       onClick => sub {
-         my $dlg  = Prima::SaveDialog-> create(
-            icon => $VB::ico,
-         );
+         my $dlg  = $VB::save_dialog;
          if ( $dlg-> execute) {
             my $f = $dlg-> fileName;
             if ( open F, ">$f") {
@@ -2101,9 +2129,7 @@ sub open
       glyphs => $VB::main-> {openbutton}-> glyphs,
       growMode => gm::GrowLoY,
       onClick => sub {
-         my $d = Prima::OpenDialog-> create(
-            icon => $VB::ico,
-            text => 'Load image',
+         my $d = VB::open_dialog(
             filter    => [
                ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
                ['All files' => '*.*']
@@ -2180,8 +2206,7 @@ sub open
       glyphs => $VB::main-> {savebutton}-> glyphs,
       growMode => gm::GrowLoY,
       onClick => sub {
-         my $dlg  = Prima::SaveDialog-> create(
-            icon => $VB::ico,
+         my $dlg  = VB::save_dialog(
             filter    => [
                ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
                ['All files' => '*.*']
@@ -2309,10 +2334,15 @@ sub open
 
 sub write
 {
-   my ( $class, $id, $data, $flag) = @_;
-   return $flag ? "sub { $data}" :
+   my ( $class, $id, $data, $asPL) = @_;
+   return $asPL ? "sub { $data}" :
       'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data).'\')';
 }
+
+package Prima::VB::Types::FMAction;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::event);
+
 
 package MyOutline;
 
@@ -2805,7 +2835,7 @@ sub get
 
 sub write
 {
-   my ( $class, $id, $data, $flag) = @_;
+   my ( $class, $id, $data, $asPL) = @_;
    return 'undef' unless defined $data;
    my $c = '';
    my $traverse;
@@ -2830,7 +2860,7 @@ sub write
             $_ = 'image';
          }
          my $type = $VB::main-> get_typerec( $menuProps{$_}, $$data[$i]);
-         $c .= $type-> write( $_, $$data[$i], $flag) . ', ';
+         $c .= $type-> write( $_, $$data[$i], $asPL) . ', ';
          $i++;
       }
 
@@ -2842,7 +2872,7 @@ sub write
          $level--;
       } elsif ( $sc > 1) {
          $c .= $VB::main-> get_typerec( $menuProps{'action'}, $$data[$i])->
-            write( 'action', $$data[$i], $flag);
+            write( 'action', $$data[$i], $asPL);
       }
       $c .= "], \n";
    };

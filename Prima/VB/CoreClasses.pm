@@ -1,24 +1,197 @@
 package Prima::VB::CoreClasses;
 
+use Prima::Classes;
 use Prima::StdBitmap;
+
 
 sub classes
 {
    return (
       'Prima::Button' => {
-         icon => 'icons/button.bmp',
+         RTModule => 'Prima::Buttons',
+         class  => 'Prima::VB::Button',
+         page   => 'General',
+         icon   => 'VB::classes.gif:0',
+      },
+      'Prima::SpeedButton' => {
+         RTModule => 'Prima::Buttons',
+         class  => 'Prima::VB::Button',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:19',
       },
       'Prima::Label' => {
-         icon => 'icons/label.bmp',
+         RTModule => 'Prima::Label',
+         class  => 'Prima::VB::Label',
+         page   => 'General',
+         icon   => 'VB::classes.gif:15',
       },
       'Prima::InputLine' => {
-         icon => 'icons/input.bmp',
+         RTModule => 'Prima::InputLine',
+         class  => 'Prima::VB::InputLine',
+         page   => 'General',
+         icon   => 'VB::classes.gif:13',
       },
-      'Prima::Radio' => {
-         icon => 'icons/radio.gif',
+      'Prima::ListBox' => {
+         RTModule => 'Prima::Lists',
+         class  => 'Prima::VB::ListBox',
+         page   => 'General',
+         icon   => 'VB::classes.gif:16',
+      },
+      'Prima::DirectoryListBox' => {
+         RTModule => 'Prima::Lists',
+         class  => 'Prima::VB::DirectoryListBox',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:6',
+      },
+      'Prima::ListViewer' => {
+         RTModule => 'Prima::Lists',
+         class  => 'Prima::VB::ListBox',
+         page   => 'Abstract',
+         icon   => 'VB::classes.gif:16',
       },
       'Prima::CheckBox' => {
-         icon => 'icons/checkbox.gif',
+         RTModule => 'Prima::Buttons',
+         class  => 'Prima::VB::CheckBox',
+         page   => 'General',
+         icon   => 'VB::classes.gif:2',
+      },
+      'Prima::Radio' => {
+         RTModule => 'Prima::Buttons',
+         class  => 'Prima::VB::Radio',
+         page   => 'General',
+         icon   => 'VB::classes.gif:18',
+      },
+      'Prima::GroupBox' => {
+         RTModule => 'Prima::Buttons',
+         class  => 'Prima::VB::GroupBox',
+         page   => 'General',
+         icon   => 'VB::classes.gif:10',
+      },
+      'Prima::CheckBoxGroup' => {
+         RTModule => 'Prima::Buttons',
+         class  => 'Prima::VB::GroupCheckBox',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:11',
+      },
+      'Prima::RadioGroup' => {
+         RTModule => 'Prima::Buttons',
+         class  => 'Prima::VB::GroupRadioBox',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:12',
+      },
+      'Prima::ScrollBar' => {
+         RTModule => 'Prima::ScrollBar',
+         class  => 'Prima::VB::ScrollBar',
+         page   => 'General',
+         icon   => 'VB::classes.gif:20',
+      },
+      'Prima::ComboBox' => {
+         RTModule => 'Prima::ComboBox',
+         class  => 'Prima::VB::ComboBox',
+         page   => 'General',
+         icon   => 'VB::classes.gif:3',
+      },
+      'Prima::DriveComboBox' => {
+         RTModule => 'Prima::ComboBox',
+         class  => 'Prima::VB::DriveComboBox',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:5',
+      },
+      'Prima::ColorComboBox' => {
+         RTModule => 'Prima::ColorDialog',
+         class  => 'Prima::VB::ColorComboBox',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:1',
+      },
+      'Prima::Edit' => {
+         RTModule => 'Prima::Edit',
+         class  => 'Prima::VB::Edit',
+         page   => 'General',
+         icon   => 'VB::classes.gif:8',
+      },
+      'Prima::ImageViewer' => {
+         RTModule => 'Prima::ImageViewer',
+         class  => 'Prima::VB::ImageViewer',
+         page   => 'General',
+         icon   => 'VB::classes.gif:14',
+      },
+      'Prima::ScrollWidget' => {
+         RTModule => 'Prima::ScrollWidget',
+         class  => 'Prima::VB::ScrollWidget',
+         page   => 'Abstract',
+         icon   => 'VB::classes.gif:21',
+      },
+      'Prima::SpinButton' => {
+         RTModule => 'Prima::Sliders',
+         class  => 'Prima::VB::SpinButton',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:23',
+      },
+      'Prima::AltSpinButton' => {
+         RTModule => 'Prima::Sliders',
+         class  => 'Prima::VB::AltSpinButton',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:24',
+      },
+      'Prima::SpinEdit' => {
+         RTModule => 'Prima::Sliders',
+         class  => 'Prima::VB::SpinEdit',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:25',
+      },
+      'Prima::Gauge' => {
+         RTModule => 'Prima::Sliders',
+         class  => 'Prima::VB::Gauge',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:9',
+      },
+      'Prima::Slider' => {
+         RTModule => 'Prima::Sliders',
+         class  => 'Prima::VB::Slider',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:22',
+      },
+      'Prima::CircularSlider' => {
+         RTModule => 'Prima::Sliders',
+         class  => 'Prima::VB::CircularSlider',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:4',
+      },
+      'Prima::StringOutline' => {
+         RTModule => 'Prima::Outlines',
+         class  => 'Prima::VB::StringOutline',
+         page   => 'General',
+         icon   => 'VB::classes.gif:17',
+      },
+      'Prima::OutlineViewer' => {
+         RTModule => 'Prima::Outlines',
+         class  => 'Prima::VB::OutlineViewer',
+         page   => 'Abstract',
+         icon   => 'VB::classes.gif:17',
+      },
+      'Prima::DirectoryOutline' => {
+         RTModule => 'Prima::Outlines',
+         class  => 'Prima::VB::DirectoryOutline',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:7',
+      },
+      'Prima::Notebook' => {
+         RTModule => 'Prima::Notebooks',
+         class  => 'Prima::VB::Notebook',
+         page   => 'Abstract',
+         icon   => 'VB::classes.gif:29',
+      },
+      'Prima::TabSet' => {
+         RTModule => 'Prima::Notebooks',
+         class  => 'Prima::VB::TabSet',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:27',
+      },
+      'Prima::TabbedNotebook' => {
+         RTModule => 'Prima::Notebooks',
+         class  => 'Prima::VB::TabbedNotebook',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:28',
       },
    );
 }
@@ -1187,7 +1360,6 @@ package Prima::VB::Notebook;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::CommonControl);
 
-
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -1233,6 +1405,43 @@ sub prf_detach
    my ( $self, $child) = @_;
    delete $self->{list}->{$child-> name};
 }
+
+sub ext_profile
+{
+   my $self = $_[0];
+   my $name = $_[0]-> prf('name');
+   return map {
+      my $name = $_->prf('name');
+      $name => $self->{list}->{$name};
+   } grep {
+      $_-> prf('owner') eq $name
+   } $VB::form-> widgets;
+}
+
+sub act_profile
+{
+   my ($self, $asPL) = @_;
+   return (
+      onChild  => '$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})',
+   );
+}
+
+sub on_load
+{
+   my $self = $_[0];
+   return unless $self->{extras};
+   $self->{list} = $self-> {extras};
+   delete $self-> {extras};
+
+   my $l  = $self->{list};
+   my $pi = $self-> {pageIndex};
+   for ( keys %{$l}) {
+      my $item = $VB::form-> bring($_);
+      next unless defined $item;
+      $item-> visible( $l->{$_} == $pi);
+   }
+}
+
 
 package Prima::VB::TabSet;
 use vars qw(@ISA);
@@ -1284,5 +1493,18 @@ sub on_paint
    $self-> common_paint($canvas);
 }
 
+package Prima::VB::TabbedNotebook;
+use vars qw(@ISA);
+@ISA = qw( Prima::VB::CommonControl);
+
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      items => ['tabs'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
 
 1;

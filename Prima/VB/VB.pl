@@ -7,23 +7,21 @@ use Prima::MsgBox;
 use Prima::StdDlg;
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
-
+use Prima::VB::CfgMaint;
 
 $Prima::VB::VBLoader::builderActive = 1;
-my $config  = 'Prima::VB::Config';
 my $classes = 'Prima::VB::Classes';
+my $lite = 0;
 
-#$config  = 'Prima::VB::Lite::Config';
-#$classes = 'Prima::VB::Lite::Classes';
+if ( $lite) {
+   $classes = 'Prima::VB::Lite::Classes';
+   $Prima::VB::CfgMaint::rootCfg = 'Prima/VB/Lite/Config.pm';
+}
 
-eval "use $config; use $classes;";
+eval "use $classes;";
 die "$@" if $@;
 use Prima::Application name => 'VB';
 
-$SIG{__WARN__} = sub {
-    my $text = shift;
-    warn( $text) unless $text =~ /^Subroutine\sAUTOFORM_DEPLOY\sredefined/;
-};
 
 package VB;
 use vars qw($inspector
@@ -33,7 +31,27 @@ use vars qw($inspector
             $fastLoad);
 
 $fastLoad = 1;
+my $openFileDlg;
+my $saveFileDlg;
 
+
+sub open_dialog
+{
+   my %profile = @_;
+   $openFileDlg = Prima::OpenDialog-> create( icon => $VB::ico)
+      unless $openFileDlg;
+   $openFileDlg-> set( %profile);
+   return $openFileDlg;
+}
+
+sub save_dialog
+{
+   my %profile = @_;
+   $saveFileDlg = Prima::SaveDialog-> create( icon => $VB::ico)
+      unless $saveFileDlg;
+   $saveFileDlg-> set( %profile);
+   return $saveFileDlg;
+}
 
 
 package OPropListViewer;
@@ -882,6 +900,7 @@ palette => [ 0,0,0,0,0,0],
     $d-> destroy;
 }
 
+
 package MainPanel;
 use vars qw(@ISA *do_layer);
 @ISA = qw(Prima::Window);
@@ -940,6 +959,7 @@ sub profile_default
                  ObjectInspector::renew_widgets;
               }
            }],
+           ['~Add widgets...' => q(add_widgets)],
            [],
            ['Reset ~guidelines' => sub { Form::fm_resetguidelines(); } ],
            ['*gsnap' => 'Snap to guidelines' => sub { $VB::main-> {gsnap} = $VB::main-> menu-> toggle( 'gsnap'); } ],
@@ -958,8 +978,16 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
 
-   my %classes = eval "$config".'::classes';
-   my @pages   = eval "$config".'::pages';
+   $Prima::VB::CfgMaint::systemWide = 0;
+
+   my @r = $lite ?
+      Prima::VB::CfgMaint::open_cfg :
+      Prima::VB::CfgMaint::read_cfg;
+   die "Error:$r[1]\n" unless $r[0];
+
+   my %classes = %Prima::VB::CfgMaint::classes;
+   my @pages   = @Prima::VB::CfgMaint::pages;
+   $self-> {orgClasses} = {%classes};
 
    $self-> set(
      sizeMin => [ 350, $self->height],
@@ -970,7 +998,7 @@ sub init
       origin    => [ 4, $self-> height - 30],
       size      => [ 26, 26],
       hint      => 'New',
-      imageFile => Prima::find_image( 'VB::new.bmp'),
+      imageFile => Prima::find_image( 'VB::VB.gif').':1',
       glyphs    => 2,
       onClick   => sub { $VB::main-> new; } ,
    );
@@ -979,7 +1007,7 @@ sub init
       origin    => [ 32, $self-> height - 30],
       size      => [ 26, 26],
       hint      => 'Open',
-      imageFile => Prima::find_image( 'VB::open.bmp'),
+      imageFile => Prima::find_image( 'VB::VB.gif').':2',
       glyphs    => 2,
       onClick   => sub { $VB::main-> open; } ,
    );
@@ -988,7 +1016,7 @@ sub init
        origin    => [ 60, $self-> height - 30],
        size      => [ 26, 26],
        hint      => 'Save',
-       imageFile => Prima::find_image( 'VB::save.bmp'),
+       imageFile => Prima::find_image( 'VB::VB.gif').':3',
        glyphs    => 2,
        onClick   => sub { $VB::main-> save; } ,
     );
@@ -997,7 +1025,7 @@ sub init
       origin    => [ 88, $self-> height - 30],
       size      => [ 26, 26],
       hint      => 'Run',
-      imageFile => Prima::find_image( 'VB::run.bmp'),
+      imageFile => Prima::find_image( 'VB::VB.gif').':4',
       glyphs    => 2,
       onClick   => sub { $VB::main-> form_run} ,
    );
@@ -1148,6 +1176,34 @@ sub reset_tabs
    }
 }
 
+sub add_widgets
+{
+   my $self = $_[0];
+   my $d = VB::open_dialog(
+      filter => [['Packages' => '*.pm'], [ 'All files' => '*']],
+   );
+   return unless $d-> execute;
+   my %clsx = %{$self-> {orgClasses}};
+   my @r = Prima::VB::CfgMaint::add_package( $d-> fileName);
+   Prima::MsgBox::message_box( $myText, "Error:$r[1]", mb::OK|mb::Error), return
+      unless $r[0];
+   my %classes = %Prima::VB::CfgMaint::classes;
+   my @pages   = @Prima::VB::CfgMaint::pages;
+   $self->{classes} = \%classes;
+   $self->{pages}   = \@pages;
+   $self-> reset_tabs;
+
+   my %userClasses = ();
+   for ( keys %classes) {
+      next if $clsx{$_};
+      $userClasses{$_} = $classes{$_};
+   }
+   %Prima::VB::CfgMaint::classes = %userClasses;
+   @r = Prima::VB::CfgMaint::write_cfg;
+   %Prima::VB::CfgMaint::classes = %classes;
+   Prima::MsgBox::message_box( $myText, "Error: $r[1]", mb::Ok|mb::Cancel), return unless $r[0];
+}
+
 sub get_nbpanel_count
 {
    return $_[0]->{nbpanel}->widgets_from_page($_[0]->{nbpanel}->pageIndex);
@@ -1197,9 +1253,9 @@ sub get_typerec
    unless ( defined $type) {
       my $rwx = 'generic';
       if ( defined $valPtr && defined $$valPtr) {
-         # checking as object
          if ( ref($$valPtr)) {
-            if ( $$valPtr->isa('Prima::Icon')) {
+            if (( ref($$valPtr) eq 'ARRAY') || ( ref($$valPtr) eq 'HASH')) {
+            } elsif ( $$valPtr->isa('Prima::Icon')) {
                $rwx = 'icon';
             } elsif ( $$valPtr->isa('Prima::Image')) {
                $rwx = 'image';
@@ -1235,11 +1291,9 @@ sub open
 
    return if $VB::form and !$VB::form-> can_close;
 
-   my $d = $self->{openFileDlg} ? $self->{openFileDlg} : Prima::OpenDialog-> create(
-      icon => $VB::ico,
+   my $d = VB::open_dialog(
       filter => [['Form files' => '*.fm'], [ 'All files' => '*']],
    );
-   $self->{openFileDlg} = $d;
    return unless $d-> execute;
    $VB::form-> destroy if $VB::form;
    $VB::form = undef;
@@ -1256,29 +1310,20 @@ sub open
       return;
    }
 
-   my $pack;
-   if ( $contents =~ /package\s+([^\s;].*)/m) {
-      $pack = $1;
-      $pack =~ s[[\s;]*$][];
-   } else {
+   unless ( $contents =~ /^\s*sub\s*{/ ) {
       Prima::MsgBox::message_box( $myText,  "Invalid format of ".$self->{fmName}, mb::OK|mb::Error);
       return;
    }
 
-   eval( $contents);
+   my $sub = eval( $contents);
    if ( $@) {
       Prima::MsgBox::message_box( $myText,  "Error loading ".$self->{fmName}.' :'.@_, mb::OK|mb::Error);
       return;
    }
 
-   unless ( $pack->can( "AUTOFORM_DEPLOY")) {
-      Prima::MsgBox::message_box( $myText,  "Error loading ".$self->{fmName}." : No sub AUTOFORM_DEPLOY", mb::OK|mb::Error);
-      return;
-   }
-
    my $i;
    my %dep;
-   my @seq = $pack-> AUTOFORM_DEPLOY;
+   my @seq = $sub->();
    for ( $i = 0; $i < scalar @seq; $i+= 2) {
       $dep{$seq[$i]} = $seq[$i + 1];
    }
@@ -1299,6 +1344,7 @@ sub open
       realClass   => $dep{$main}->{realClass},
       class   => $dep{$main}->{class},
       module  => $dep{$main}->{module},
+      extras  => $dep{$main}->{extras},
       creationOrder => 0,
    );
    for ( keys %{$dep{$main}->{profile}}) {
@@ -1328,6 +1374,7 @@ sub open
             realClass     => $dep{$_}->{realClass},
             class         => $dep{$_}->{class},
             module        => $dep{$_}->{module},
+            extras        => $dep{$_}->{extras},
             creationOrder => $i / 2,
          );
          if ( exists $dep{$_}->{profile}->{origin}) {
@@ -1353,6 +1400,8 @@ sub open
 
    ObjectInspector::renew_widgets;
    update_menu();
+   $VB::form-> notify(q(Load));
+   $_-> notify(q(Load)) for $VB::form-> widgets;
 }
 
 
@@ -1363,9 +1412,7 @@ sub write_form
    my @cmp = $VB::form-> widgets;
 
    my $c = <<PREHEAD;
-package AUTOFORM;
-
-sub AUTOFORM_DEPLOY
+sub
 {
    return (
 PREHEAD
@@ -1385,6 +1432,28 @@ PREHEAD
         module  => '$module',
 MEDI
       $c .= "        parent => 1,\n" if $_ == $VB::form;
+      my %extras    = $_-> ext_profile;
+      if ( scalar keys %extras) {
+          $c .= "        extras => {\n";
+          for ( keys %extras) {
+              my $val  = $extras{$_};
+              my $type = $self-> get_typerec( $types->{$_}, \$val);
+              $val = defined($val) ? $type-> write( $_, $val) : 'undef';
+              $c .= "          $_ => $val,\n";
+          }
+          $c .= "        },\n";
+      }
+      %extras    = $_-> act_profile(0);
+      if ( scalar keys %extras) {
+          $c .= "        actions => {\n";
+          for ( keys %extras) {
+              my $val  = $extras{$_};
+              my $type = $self-> get_typerec( $types->{$_}, \$val);
+              $val = defined($val) ? $type-> write( $_, $val) : 'undef';
+              $c .= "          $_ => $val,\n";
+          }
+          $c .= "        },\n";
+      }
       $c .= "        profile => {\n";
       my ( $x,$prf) = ($_, $_->{profile});
       my @o = $_-> get_o_delta;
@@ -1407,7 +1476,6 @@ MEDI
 $c .= <<POSTHEAD;
    );
 }
-1;
 POSTHEAD
    return $c;
 }
@@ -1451,18 +1519,62 @@ PREHEAD
    return \$def;
 }
 
+HEAD2
+
+   my @actNames  = qw( onBegin onFormCreate onCreate onChild onChildCreate onEnd);
+   my %actions   = map { $_ => {}} @actNames;
+   my @initInstances;
+   for ( @cmp, $VB::form) {
+      my $key = $_-> prf('name');
+      my %act = $_-> act_profile;
+      next unless scalar keys %act;
+      push ( @initInstances, $key);
+      for ( @actNames) {
+         next unless exists $act{$_};
+         my $aname = "${_}_$key";
+         $actions{$_}->{$key} = $aname;
+         my $asub = join( "\n   ", split( "\n", $act{$_}));
+         $c .= "sub $aname {\n   $asub\n}\n\n";
+      }
+   }
+
+   $c .= <<HEAD3;
 sub init
 {
    my \$self = shift;
+   my \%instances = map {\$_ => {}} qw(@initInstances);
+HEAD3
+   for ( @initInstances) {
+      my $obj = ( $_ eq $main) ? $VB::form : $VB::form-> bring($_);
+      my %extras = $obj-> ext_profile;
+      next unless scalar keys %extras;
+      $c .= "   \$instances{$_}->{extras} = {\n";
+      for ( keys %extras) {
+          my $val  = $extras{$_};
+          my $type = $self-> get_typerec( $types->{$_}, \$val);
+          $val = defined($val) ? $type-> write( $_, $val) : 'undef';
+          $c .= "      $_ => $val,\n";
+      }
+      $c .= "   };\n";
+   }
+
+   $c .= '   '.$actions{onBegin}->{$_}."(q($_), \$instances{$_});\n"
+      for keys %{$actions{onBegin}};
+
+   $c .= <<HEAD4;
    my \%profile = \$self-> SUPER::init(\@_);
    my \%names   = ( q($main) => \$self);
-
-HEAD2
+HEAD4
    @cmp = sort { $a->{creationOrder} <=> $b->{creationOrder}} @cmp;
    my %names = (
       $main => 1
    );
    my @re_cmp;
+
+   $c .= '   '.$actions{onFormCreate}->{$_}."(q($_), \$instances{$_}, \$self);\n"
+      for keys %{$actions{onFormCreate}};
+   $c .= '   '.$actions{onCreate}->{$main}."(q($main), \$instances{$main}, \$self);\n"
+      if $actions{onCreate}->{$main};
 
 AGAIN:
    for ( @cmp) {
@@ -1476,7 +1588,11 @@ AGAIN:
       my $types = $_->{types};
       my $name = $_-> prf( 'name');
       $names{$name} = 1;
-      $c .= "   \$names{q($name)} = \$names{q($owner)}-> insert( $class => \n";
+
+      $c .= '   '.$actions{onChild}->{$owner}."(q($owner), \$instances{$owner}, \$names{$owner}, q($name));\n"
+         if $actions{onChild}->{$owner};
+
+      $c .= "   \$names{$name} = \$names{$owner}-> insert( $class => \n";
       my ( $x,$prf) = ($_, $_->{profile});
       my @o = $_-> get_o_delta;
       for ( keys %{$prf}) {
@@ -1494,11 +1610,19 @@ AGAIN:
          $c .= "       $_ => $val,\n";
       }
       $c .= "   );\n";
+
+      $c .= '   '.$actions{onCreate}->{$name}."(q($name), \$instances{$name}, \$names{$name});\n"
+         if $actions{onCreate}->{$name};
+      $c .= '   '.$actions{onChildCreate}->{$owner}."(q($owner), \$instances{$owner}, \$names{$owner}, \$names{$name});\n"
+         if $actions{onChildCreate}->{$owner};
    }
    if ( scalar @re_cmp) {
       @cmp = @re_cmp;
       goto AGAIN;
    }
+
+   $c .= '   '.$actions{onEnd}->{$_}."(q($_), \$instances{$_}, \$names{$_});\n"
+      for keys %{$actions{onEnd}};
 
 $c .= <<POSTHEAD;
    return \%profile;
@@ -1547,8 +1671,7 @@ sub saveas
 {
    my $self = $_[0];
    return 0 unless $VB::form;
-   my $d = $self->{saveFileDlg} ? $self->{saveFileDlg} : Prima::SaveDialog-> create(
-      icon => $VB::ico,
+   my $d = VB::save_dialog(
       filter => [
         ['Form files' => '*.fm'],
         ['Program scratch' => '*.pl'],
@@ -1610,14 +1733,14 @@ sub form_run
    my $c = $self-> write_form;
    my $okCreate = 0;
    eval{
-      eval("$c");
+      my $sub = eval("$c");
       if ( $@) {
          print "Error loading module $@";
          Prima::MsgBox::message_box( $myText, "$@", mb::OK|mb::Error);
          return;
       }
       $Prima::VB::VBLoader::builderActive = 0;
-      my @d = &AUTOFORM::AUTOFORM_DEPLOY();
+      my @d = $sub->();
       $Prima::VB::VBLoader::builderActive = 1;
       my %r = Prima::VB::VBLoader::AUTOFORM_REALIZE( \@d, {});
       my $f = $r{$VB::form->prf('name')};
@@ -1639,7 +1762,7 @@ sub form_run
 package VisualBuilder;
 
 $VB::ico = Prima::Image-> create;
-$VB::ico = undef unless $VB::ico-> load( Prima::find_image( 'VB::vb1.bmp'));
+$VB::ico = undef unless $VB::ico-> load( Prima::find_image( 'VB::VB.gif').':6');
 $VB::main = MainPanel-> create;
 $VB::inspector = ObjectInspector-> create(
    top => $VB::main-> bottom - 12 - $::application-> get_system_value(sv::YTitleBar)
