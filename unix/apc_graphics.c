@@ -603,7 +603,11 @@ apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
 Bool
 apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-
+   DEFXX;
+   SHIFT( x, y);
+   XSetArcMode( DISP, XX-> gc, ArcChord);
+   XFillArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+       angleStart * 64, angleEnd * 64);
    return true;
 }
 
@@ -658,7 +662,11 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 Bool
 apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-   DOLBUG( "apc_gp_fill_sector()\n");
+   DEFXX;
+   SHIFT( x, y);
+   XSetArcMode( DISP, XX-> gc, ArcPieSlice);
+   XFillArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+       angleStart * 64, angleEnd * 64);
    return true;
 }
 
@@ -1622,7 +1630,7 @@ apc_gp_set_back_color( Handle self, Color color)
 {
    DEFXX;
    XColor *c = prima_allocate_color( self, color);
-   
+
    if ( XX-> flags. paint) {
       XX-> back = *c;
       XSetBackground( DISP, XX-> gc, c-> pixel);
