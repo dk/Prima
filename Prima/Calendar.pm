@@ -223,13 +223,13 @@ sub Day_Paint
    $y = $sz[1] - $zs[1] * 2 + $zs[3] - 3;
    for ( $i = 0; $i < $v; $i++) {
       if ( $d == $i) {
-         $self-> color( cl::Hilite);
-         $self-> bar( $dow * $zs[0] + 2, $y - $zs[3], ( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1);
-         $self-> color( cl::HiliteText);
+         $canvas-> color( cl::Hilite);
+         $canvas-> bar( $dow * $zs[0] + 2, $y - $zs[3], ( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1);
+         $canvas-> color( cl::HiliteText);
          $canvas-> text_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
-         $self-> rect_focus( $dow * $zs[0] + 2, $y - $zs[3], 
+         $canvas-> rect_focus( $dow * $zs[0] + 2, $y - $zs[3], 
             ( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1) if $self-> focused;
-         $self-> color( $c);
+         $canvas-> color( $c);
       } else {
          $canvas-> text_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
       }
