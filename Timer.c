@@ -28,16 +28,13 @@ Timer_update_sys_handle( Handle self, HV * profile)
 {
    Handle xOwner = pexist( owner) ? pget_H( owner) : var owner;
    if ( var owner) my migrate( self, xOwner);
-   if (!(
-       pexist( owner) ||
-       pexist( timeout)
-    )) return;
+   if (!( pexist( owner))) return;
    if ( !apc_timer_create( self, xOwner, pexist( timeout)
                            ? pget_i( timeout)
                            : my get_timeout( self)))
       croak("RTC0063: cannot create timer");
    pdelete( owner);
-   pdelete( timeout);
+   if ( pexist( timeout)) pdelete( timeout);
    var owner = xOwner;
 }
 
@@ -78,9 +75,26 @@ Timer_set( Handle self, HV * profile)
    inherited set( self, profile);
 }
 
+Bool
+Timer_start( Handle self)
+{
+   if ( is_opt( optActive)) return true;
+   opt_assign( optActive, apc_timer_start( self));
+   return is_opt( optActive);
+}
+
+void
+Timer_stop( Handle self)
+{
+   if ( !is_opt( optActive)) return;
+   apc_timer_stop( self);
+   opt_clear( optActive);
+}
+
 void
 Timer_done( Handle self)
 {
+   my stop( self);
    CComponent( var owner)-> detach( var owner, self, false);
    apc_timer_destroy( self);
    inherited done( self);
@@ -95,6 +109,13 @@ Timer_update_delegator( Handle self)
    profile = my get_delegators( self);
    if ( pexist( Tick)) dmopt_set( dmTick);
 }
+
+Bool
+Timer_get_active( Handle self)
+{
+   return is_opt( optActive);
+}
+
 
 SV *
 Timer_get_handle( Handle self)
