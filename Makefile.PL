@@ -623,19 +623,6 @@ sub setup_paths
 	print "X11 libraries found in $libpath\n";
 	push @LIBPATH, $libpath;
 	push @LIBS, 'X11';
-
-	if ( defined( $incpath = find_header( "gif_lib.h", "", map { "$_/giflib"} @INCPATH))) {
-	    print "Found gif_lib.h\n";
-	    push @INCPATH, $incpath if $incpath;
-	    $DEFINES{ HAVE_GIFLIB} = 1;
-	    $libpath = find_lib( 'gif', '', '/usr/local/lib');
-	    die "GifLib libraries not found!" unless defined $libpath;
-	    push @LIBS, 'gif';
-	    if ( $libpath) {
-		print "Adding $libpath to LIBPATH.\n";
-		push @LIBPATH, $libpath;
-	    }
-	}
     }
     else {
         my $libpath = find_lib( $Config{ libperl}, "", qd( "$Config{ archlib}/CORE"));
