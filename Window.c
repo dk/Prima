@@ -609,8 +609,8 @@ Window_set_menu( Handle self, Handle menu)
       my set_menu_items( self, ((( PMenu) menu)-> self)-> get_items( menu, ""));
    else
    {
-      var menu = menu;
       apc_window_set_menu( self, menu);
+      var menu = menu;
       if ( menu)
       {
          int i;
