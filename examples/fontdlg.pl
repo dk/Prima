@@ -276,17 +276,14 @@ $w-> insert( Button =>
   font   => { height => 28, style => fs::Bold, name => "Tms Rmn"},
   onClick   => sub {
      my $f = $w-> Example-> font;
-     Prima::Window-> create(
-        size => [ 500, 500],
+     my $ww = Prima::Window-> create(
+        size => [ 500, $f-> height * 3 + $f-> externalLeading + $f-> descent + 450 ],
         font => $f,
         text => $f-> size.'.['.$f->height.'x'.$f->width.']'.$f-> name,
         onPaint => sub {
            my ( $self, $p) = @_;
            my @size = $p-> size;
-           $p-> color( cl::White);
-           $p-> bar( 0, 0, @size);
-           $p-> color( cl::Black);
-
+           $p-> clear;
            $p-> font-> direction(0);
 
            my $m = $p-> get_font;
@@ -369,7 +366,66 @@ $w-> insert( Button =>
            $p-> text_out( 'family              : '.$m->{family   }, 2, $sd); $sd -= $fh;
            $p-> text_out( 'face name           : '.$cachedFacename, 2, $sd); $sd -= $fh;
         },
-     )-> select;
+     );
+     my @ranges = ([]);
+     for ( @{$w-> Example-> get_font_ranges}) {
+        ( 2 > scalar @{$ranges[-1]}) ?
+            push @{$ranges[-1]}, $_ :
+            push @ranges, [$_];
+     }
+     my $count = 0;
+     $count += $$_[1] - $$_[0] for @ranges;
+     my $ih = int($f-> height * 1.5);
+     my $l = $ww-> insert( AbstractListViewer => 
+        origin => [0,0],
+        size   => [$ww-> width, $ww-> height - $f-> height - $f-> externalLeading - $f-> descent - 360],
+        growMode => gm::Client,
+        font     => $f,
+        multiColumn => 1,
+        itemWidth   => $ih,
+        itemHeight  => $ih,
+        gridColor   => cl::Back,
+        hScroll     => 1,
+        onSelectItem => sub {
+           my ( $self, $item, $sel) = @_;
+           $item = $item->[0];
+           for ( @ranges) {
+              my $d = $$_[1] - $$_[0];
+              if ( $item < $d) {
+                 my $c = $$_[0] + $item;
+                 $self-> hint( sprintf( "0x%x", $c));
+                 $self-> hintVisible(1);
+                 last;
+              } else {
+                 $item -= $d;
+              }
+           }
+        },
+        onDrawItem => sub {
+           my ($self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused) = @_;
+           $canvas-> line( $x, $y, $x2, $y);
+           $canvas-> line( $x2+1, $y, $x2+1, $y2);
+           my @cs;
+           if ( $focused) {
+              @cs = ( $canvas-> color, $canvas-> backColor);
+              $canvas-> set( color => $canvas-> hiliteColor, backColor => $canvas-> hiliteBackColor);
+           }
+           $canvas-> clear( $x, $y + 1, $x2, $y2);
+           for ( @ranges) {
+              my $d = $$_[1] - $$_[0];
+              if ( $itemIndex < $d) {
+                 my $c = chr($$_[0] + $itemIndex);
+                 $canvas-> text_out( $c, $x + $ih / 4, $y + $ih / 4);
+                 last;
+              } else {
+                 $itemIndex -= $d;
+              }
+           }
+           $canvas-> set( color => $cs[0], backColor => $cs[1]) if $focused;
+        },
+     );
+     $l-> count( $count);
+     $ww-> select;
   },
 );
 
@@ -526,6 +582,7 @@ $w-> insert( Widget =>
 &$re_size(1);
 &$re_sample;
 }
+                 my $c = chr(0xfdee);
 
 run;
 run Prima;
