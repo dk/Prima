@@ -35,7 +35,7 @@
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
-//#define NO_LOGGER
+// #define NO_LOGGER
 
 WinGuts guts;
 Bool    loggerDead   = false;
@@ -45,6 +45,7 @@ PHash   fontMan      = nilHandle; // font manager
 PHash   patMan       = nilHandle; // pattern resource manager
 PHash   menuMan      = nilHandle; // HMENU manager
 PHash   imageMan     = nilHandle; // HBITMAP manager
+PHash   regnodeMan   = nilHandle; // cache for apc_widget_user_profile
 HPEN    hPenHollow;
 HBRUSH  hBrushHollow;
 PatResource hPatHollow;
@@ -121,6 +122,7 @@ window_subsystem_init()
    patMan    = hash_create();
    menuMan   = hash_create();
    imageMan  = hash_create();
+   regnodeMan= hash_create();
    create_font_hash();
    {
       LOGBRUSH b = { BS_HOLLOW, 0, 0};
@@ -229,6 +231,26 @@ window_subsystem_init()
    guts. smDblClk. x = GetSystemMetrics( SM_CXDOUBLECLK);
    guts. smDblClk. y = GetSystemMetrics( SM_CYDOUBLECLK);
 
+// set up logger font
+   if ( guts. logger)  {
+      HKEY hKey;
+      DWORD valSize = 256, valType = REG_SZ;
+      char buf[ 256] = "";
+
+      if ( RegOpenKeyEx( HKEY_CURRENT_USER, "SOFTWARE\\Perl\\Prima\\Logger", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+         if ( RegQueryValueEx( hKey, "Font", nil, &valType, buf, &valSize) == ERROR_SUCCESS) {
+            Font f;
+            LOGFONT lf;
+            font_pp2font( buf, &f);
+            apc_font_pick( nilHandle, &f, &f);
+            font_font2logfont( &f, &lf);
+            SendMessage( guts. loggerListBox, WM_SETFONT,
+               ( WPARAM) CreateFontIndirect( &lf), ( LPARAM) 0);
+         }
+         RegCloseKey( hKey);
+      }
+   }
+
    return true;
 }
 
@@ -240,11 +262,12 @@ window_subsystem_done()
 
    font_clean();
    stylus_clean();
-   hash_destroy( imageMan, false);
-   hash_destroy( menuMan,  false);
-   hash_destroy( patMan,   true);
-   hash_destroy( fontMan,  true);
-   hash_destroy( stylusMan, true);
+   hash_destroy( imageMan,   false);
+   hash_destroy( menuMan,    false);
+   hash_destroy( patMan,     true);
+   hash_destroy( fontMan,    true);
+   hash_destroy( stylusMan,  true);
+   hash_destroy( regnodeMan, false);
    DeleteObject( hPenHollow);
    DeleteObject( hBrushHollow);
 
@@ -318,6 +341,7 @@ local_wnd( HWND who, HWND client)
 
 extern int ctx_kb2VK[];
 extern int ctx_kb2VK2[];
+extern int ctx_kb2VK3[];
 
 static Bool
 find_oid( PAbstractMenu menu, PMenuItemReg m, int id)
@@ -469,7 +493,6 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_HASMATE:
       *(( Handle*) mp2) = self;
       return HASMATE_MAGIC;
-   // case WM_SYSCHAR:return 1;
    case WM_SYSKEYUP:
    case WM_SYSKEYDOWN:
       if ( mp2 & ( 1 << 29)) ev. key. mod = kmAlt;
@@ -477,11 +500,20 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_KEYUP:
       if ( apc_widget_is_responsive( self)) {
           Bool up = ( msg == WM_KEYUP) || ( msg == WM_SYSKEYUP);
+          Bool extended = mp2 & ( 1 << 24);
           ev. cmd = up ? cmKeyUp : cmKeyDown;
           ev. key. key    = ctx_remap_def( mp1, ctx_kb2VK, false, kbNoKey);
+          if ( extended) {
+             int ks = ev. key. key;
+             ev. key. key = ctx_remap_def( ks, ctx_kb2VK3, true, ks);
+             if ( ev. key. key != ks)
+                extended = false; // avoid (Ctrl|Alt)R+KeyPad combinations
+          } else if ( mp1 >= VK_NUMPAD0 && mp1 <= VK_DIVIDE)
+             extended = true; // include numpads
           ev. key. code   = mp1;
           ev. key. repeat = mp2 & 0x000000FF;
           ev. key. mod   |=
+             ( extended ? kmKeyPad : 0) |
              (( GetKeyState( VK_SHIFT)   < 0) ? kmShift : 0) |
              (( GetKeyState( VK_CONTROL) < 0) ? kmCtrl  : 0) |
              (( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
@@ -1022,7 +1054,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
           }
        }
        break;
-   case WM_SYSCHAR:return 1;
+// case WM_SYSCHAR:return 1;
    case WM_TIMER:
       if ( mp1 == TID_USERMAX)
       // application local timer
@@ -1130,7 +1162,7 @@ static Bool kill_img_cache( Handle self, int keyLen, void * key, void * killDBM)
    return false;
 }
 
-extern int xfntc;
+
 
 LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {
@@ -1160,8 +1192,12 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
          destroy_font_hash();
          break;
       case WM_COMPACTING:
+         stylus_clean();
+         font_clean();
          destroy_font_hash();
          hash_first_that( imageMan, kill_img_cache, nil, nil, nil);
+         hash_destroy( regnodeMan, false);
+         regnodeMan = hash_create();
          break;
       case WM_QUERYNEWPALETTE:
       case WM_PALETTECHANGED:
