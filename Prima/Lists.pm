@@ -257,12 +257,12 @@ sub on_paint
        }
        $canvas-> color( $c);
    }
+   my $focusedState = $self-> focused ? ( exists $self->{unfocState} ? 0 : 1) : 0;
    if ( $self->{count} > 0 && $locWidth > 0)
    {
       #my @clipRect = ( $bw, $bw + $dy, $size[0] - $bw - $dx, $size[1] - $bw);
       #$canvas-> clipRect( @clipRect);
       $canvas-> clipRect( @a);
-      my $focusedState = $self-> focused ? ( exists $self->{unfocState} ? 0 : 1) : 0;
       my $singlePaint = exists $self->{singlePaint};
       my @paintArray;
       my $rows = $self->{rows} ? $self->{rows} : 1;
@@ -355,6 +355,12 @@ sub on_paint
       }
       # $canvas-> set_color( $clr[0]);
       $self-> draw_items( $canvas, @paintArray);
+   }
+   $self-> {unfocVeil} = 0;
+   if ( $focusedState && $self-> {focusedItem} < 0 && $locWidth > 0){
+      my @r = $self-> item2rect( 0, @size);
+      $self-> rect_focus( @r[0,1], $r[2]-1, $r[3]-1, 1);
+      $self-> {unfocVeil} = 1;
    }
    delete $self->{singlePaint};
 }
@@ -835,6 +841,7 @@ sub set_focused_item
    }
    $self-> {singlePaint}->{$foc} = 1;
    delete $self-> {singlePaint} unless $self->{rows};
+   delete $self-> {singlePaint} if $self-> {unfocVeil};
    $self-> refresh;
 }
 
