@@ -201,7 +201,7 @@ sub on_fontchanged
 
 sub on_size
 {
-   $_[0]-> check_auto_size;
+   $_[0]-> reset_lines;
 }
 
 sub on_enable { $_[0]-> repaint } sub on_disable { $_[0]-> repaint }
