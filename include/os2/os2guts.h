@@ -8,21 +8,29 @@
 #define INCL_SPLDOSPRINT
 #include <os2.h>
 
-#define WM_WRITE_TO_LOG                   ( WM_USER + 0)
+#define SEVERE_DEBUG
+
+#ifdef SEVERE_DEBUG
+#define __PMPRINTF__
+#include "PMPRINTF.H"
+#define printf PmPrintf
+#endif
+
 #define WM_PRIMA_CREATE                   ( WM_USER + 1)
 #define WM_MENUCOMMAND                    ( WM_USER + 2)
 #define WM_PRESPARAMMENU                  ( WM_USER + 3)
 #define WM_POSTAL                         ( WM_USER + 4)
 #define WM_MENUCOLORCHANGED               ( WM_USER + 5)
 #define WM_DLGENTERMODAL                  ( WM_USER + 6)
-#define WM_DLGPASSIVATE                   ( WM_USER + 7)
-#define WM_DLGPOPUP                       ( WM_USER + 8)
+// #define WM_DLGPASSIVATE                   ( WM_USER + 7)
+// #define WM_DLGPOPUP                       ( WM_USER + 8)
 #define WM_BREAKMSGLOOP                   ( WM_USER + 9)
 #define WM_MOUSEENTER                     ( WM_USER + 10)
 #define WM_MOUSELEAVE                     ( WM_USER + 11)
 #define WM_FONTCHANGED                    ( WM_USER + 12)
 #define WM_ACTIVATEMENU                   ( WM_USER + 13)
 #define WM_VIEWHELP                       ( WM_USER + 14)
+#define WM_FORCEFOCUS                     ( WM_USER + 15)
 #define WM_TERMINATE                      ( WM_USER + 99)
 
 // OS/2 defaults for apc
@@ -37,9 +45,7 @@
 #define csAxEvents csFrozen
 
 #define WC_CUSTOM ((PSZ)0)
-#define WC_DIALOG ((PSZ)1)
-#define WC_APPLICATION ((PSZ)2)
-
+#define WC_APPLICATION ((PSZ)1)
 
 #define USE_GPIDRAWBITS
 
@@ -48,13 +54,18 @@ typedef struct _ItemRegRec {
   void *item;
 } ItemRegRec, *PItemRegRec;
 
+typedef struct _SingleColor
+{
+   Color color;
+   int   index;
+} SingleColor, *PSingleColor;
+
+
 typedef struct _OS2Guts
 {
    HAB   anchor;             // program main ab
    HMQ   queue;              // message queue
    PID   pid;                // process ID
-   HWND  logger;             // logger window
-   HWND  loggerListBox;      //    listbox that contains log data
    HPS   ps;                 // presentation space for runtime needs
    SIZEF defFontBox;         // default font box
    int*  bmf;                // bitmap memory formats list
@@ -71,18 +82,18 @@ typedef struct _OS2Guts
    int   pointerLock;        // pointer lock count
    ULONG codePage;           // current system codepage
    HWND  helpWnd;            // help window id
+   Bool  focSysDisabled;     // focus system disabled
+   Bool  focSysGranted;      // WinSetFocus() was called inside apc_widget_set_focused
+   Bool  appTypePM;          // startup check, whether our application is PM
 } OS2Guts;
 
 extern OS2Guts guts;
 extern int ctx_kb2VK[];
-extern APIRET rc;
-extern void cursor_update( Handle self);
+extern ERRORID rc;
 extern int ctx_cr2SPTR[];
 extern Bool   appDead;
-extern Handle firstModal;
-extern Handle dlgModal;
+extern Handle lastMouseOver;
 
-#define  SEVERE_DEBUG
 #ifndef  SEVERE_DEBUG
 #define apiErr       { rc = WinGetLastError( guts. anchor);    apcError = errApcError; }
 #define apcErr( err)    apcError = err;
@@ -91,27 +102,29 @@ extern Handle dlgModal;
 #define apiErr {                                            \
    rc = WinGetLastError( guts. anchor);                     \
    apcError = errApcError;                                  \
-   log_write("OS2_%03x at line %d", rc, __LINE__);          \
+   printf("OS2_%03lx at line %d, file %s\n", rc, __LINE__, __FILE__); \
 }
 #define apcErr( err) {                                      \
    apcError = err;                                          \
-   log_write("APC_%03x at line %d", err, __LINE__);          \
+   printf("APC_%03x at line %d, file %s\n", err, __LINE__, __FILE__);\
 }
 #define apiAltErr( err) {                                   \
    apcError = errApcError;                                  \
    rc = err;                                                \
-   log_write("OS2_%03x at line %d", rc, __LINE__);          \
+   printf("OS2_%03x at line %d, file %s\n", (int)rc, __LINE__, __FILE__); \
 }
 #endif
-#define apiErrRet         { apiErr;               return false; }
-#define apiErrCheckRet    { apiErrCheck; if ( rc) return false; }
-#define apcErrRet(err)    { apcErr(err);          return false; }
+#define apiErrRet         { apiErr;               return (Bool)false; }
+#define apiErrCheckRet    { apiErrCheck; if ( rc) return (Bool)false; }
+#define apcErrRet(err)    { apcErr(err);          return (Bool)false; }
 #define apcErrClear       { apcError = errOk;                   }
+
+#define objCheck          if ( var stage == csDead) return
+#define dobjCheck(handle) if ((( PObject)handle)-> stage == csDead) return
 
 #define aptWM_PAINT             0x00000001       // true if inside WM_PAINT
 #define aptWinPS                0x00000002       // window PS was passed to paint
 #define aptCompatiblePS         0x00000004       // PS is screen-compatible
-#define aptFontExists           0x00000008       // font is selected on HPS
 #define aptCursorVis            0x00000010       // cursor visible flag
 #define aptPointerVis           0x00000020       // pointer visibility flag
 #define aptFocused              0x00000040       // set if control if focused
@@ -125,11 +138,26 @@ extern Handle dlgModal;
 #define aptDeviceBitmap         0x00004000       // == kind_of( CDeviceBitmap)
 #define aptExtraFont            0x00008000       // extra font styles ( angle, shear) has been applied
 #define aptEnabled              0x00010000       // set if view is enabled
+#define aptTextOpaque           0x00020000       // set if text_out is opaque
+#define aptTextOutBaseline      0x00040000       // set if text_out y ref.point is baseline
 
 #define apt_set( option)           (sys options |= option)
 #define apt_clear( option)         (sys options &= ~option)
 #define is_apt( option)            ((sys options & option)?1:0)
 #define apt_assign( option, value) ((value)?apt_set(option):apt_clear(option))
+
+#define cbNoBitmap     0
+#define cbScreen       1
+#define cbMonoScreen   2
+#define cbImage        3
+
+#define psDot         "\3\3"
+#define psDash        "\x16\6"
+#define psDashDot     "\x9\6\3\6"
+#define psDashDotDot  "\x9\3\3\3\3\3"
+
+
+#define GRAD 572.9577951
 
 typedef struct _WindowData
 {
@@ -148,7 +176,6 @@ typedef struct _WindowData
 typedef struct _TimerData
 {
    int  timeout;
-   Bool active;
 } TimerData;
 
 typedef struct _PrinterData
@@ -163,60 +190,63 @@ typedef struct _PaintSaveData
    Color       lbs[2];
    int         lineWidth;
    int         lineEnd;
-   int         linePattern;
+   char *      linePattern;
+   int         linePatternLen;
    FillPattern fillPattern;
    int         rop;
    int         rop2;
    Point       transform;
    Font        font;
    Bool        textOpaque;
+   Bool        textOutB;
 } PaintSaveData, *PPaintSaveData;
 
 typedef struct _DrawableData
 {
-   HPS      ps;
-   HPS      ps2;
-   unsigned long options;            // aptXXX options
-   HBITMAP  bm;                      // cached bitmap
-   char    *bmRaw;                   // cached raw bitmap
-   PBITMAPINFO2 bmInfo;              // raw bitmap info
-   Font     font;                    // cached font metric
-   void    *fontHash;
-   int      fontId;
-   HDC      dc;                      // cached HDC
-   HDC      dc2;                     // cached HDC
+   HPS             ps;
+   HPS             ps2;
+   unsigned long   options;            // aptXXX options
+   HBITMAP         bm;                      // cached bitmap
+   char         *  bmRaw;                   // cached raw bitmap
+   PBITMAPINFO2    bmInfo;              // raw bitmap info
+   Font            font;                    // cached font metric
+   void         *  fontHash;
+   int             fontId;
+   HDC             dc;                      // cached HDC
+   HDC             dc2;                     // cached HDC
+   int             bpp;
 // HPS data
-   Color       lbs[2];
-   int         lineWidth;
-   int         lineEnd;
-   int         linePattern;
-   FillPattern fillPattern;
-   FillPattern fillPattern2;
-   int         rop;
-   int         rop2;
-   Point       transform;
-   Point       transform2;
-   Point       res;
-   float *     charTable;
-   PFont       saveFont;
-   Bool        textOpaque;
-   HBITMAP     fillBitmap;
+   Color           lbs[2];
+   int             lineWidth;
+   int             lineEnd;
+   char *          linePattern;
+   int             linePatternLen;
+   FillPattern     fillPattern;
+   FillPattern     fillPattern2;
+   int             rop;
+   int             rop2;
+   Point           transform;
+   Point           transform2;
+   Point           res;
+   HBITMAP         fillBitmap;
 // HWND data
-   ApiHandle handle2;               // auxillary handler
-   HWND    parent;                  // window parent
-   HWND    owner;                   // window owner
-   int     lockState;               // locking count
-   Point   cursorPos;               // cursor position
-   Point   cursorSize;              // cursor size
-   HPOINTER pointer;                // pointer data
-   HPOINTER pointer2;               // user pointer data
-   int     pointerId;               // pointer id
-   PSZ     className;               // WC_XXXXXXXXXX
-   int     timeDefsCount;           // count of timers attached.
-   PItemRegRec timeDefs;            // timer list
-   Color   l3dc;                    // light 3d color
-   Color   d3dc;                    // dark  3d color
+   ApiHandle       handle2;                 // auxillary handler
+   HWND            parent;                  // window parent
+   HWND            owner;                   // window owner
+   Point           cursorPos;               // cursor position
+   Point           cursorSize;              // cursor size
+   HPOINTER        pointer;                 // pointer data
+   HPOINTER        pointer2;                // user pointer data
+   int             pointerId;               // pointer id
+   PSZ             className;               // WC_XXXXXXXXXX
+   int             timeDefsCount;           // count of timers attached.
+   PItemRegRec     timeDefs;                // timer list
+   Color           l3dc;                    // light 3d color
+   Color           d3dc;                    // dark  3d color
    PPaintSaveData  psd;
+   void  *         recreateData;            // ViewProfile custom area
+   RECTL *         pClipRect;               // storage for WinScrollWindow clipping rectangle
+   RECTL           clipRect;                // pointer either to sys clipRect or nil, for fast use
    union {
      TimerData     timer;
      WindowData    window;
@@ -231,19 +261,64 @@ typedef struct _MenuWndData
    int        id;
 } MenuWndData, *PMenuWndData;
 
+
+typedef struct _BInfo
+{
+   unsigned long structLength;
+   unsigned long w;
+   unsigned long h;
+   unsigned short planes;  // always 1
+   unsigned short bpp;
+   RGB2 palette[ 0];
+} BInfo, *PBInfo;
+
+typedef struct _BInfo2
+{
+   unsigned long structLength;
+   unsigned long w;
+   unsigned long h;
+   unsigned short planes;  // always 1
+   unsigned short bpp;
+   RGB2 palette[ 0x100];
+} BInfo2, *PBInfo2;
+
+
 MRESULT EXPENTRY generic_view_handler     ( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2);
 MRESULT EXPENTRY generic_frame_handler    ( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2);
 MRESULT EXPENTRY generic_menu_handler     ( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2);
 
-extern void
-create_logger_window( void);
-
-extern void
-dump_logger(void);
-
 extern PFont gp_get_font   (  HPS ps, PFont font, Point resolution);
 extern PFont view_get_font ( Handle view, PFont font);
 extern Point frame2client( Handle self, Point p, Bool f2c);
+
+extern Handle       cmono_enscreen( Handle image);
+extern Bool         cursor_update( Handle self);
+extern void         bitmap_make_cache( Handle from, Handle self);
+extern HBITMAP      bitmap_make_ps( Handle img, HPS * hps, HDC * hdc, PBITMAPINFO2 * bm, int createBitmap);
+extern Handle       bitmap_make_handle( Handle img);
+extern Handle       enscreen( Handle image);
+extern PBITMAPINFO2 get_binfo( Handle self);
+extern PBITMAPINFO2 get_screen_binfo( void);
+extern Bool         hwnd_check_limits( int x, int y, Bool uint);
+extern void         hwnd_enter_paint( Handle self);
+extern Handle       hwnd_frame_top_level( Handle self);
+extern void         hwnd_leave_paint( Handle self);
+extern Handle       hwnd_to_view( HWND win);
+extern Handle       hwnd_top_level( Handle self);
+extern Bool         image_begin_query( int primType, int * typeToConvert);
+extern void         image_query( Handle self, HPS ps);
+extern void         image_set_cache( Handle from, Handle self);
+extern HPOINTER     pointer_make_handle( Handle self, Handle icon, Point hotSpot);
+extern FIXED        float2fixed( double f);
+extern double       fixed2float( FIXED f);
+extern int          font_font2gp( PFont font, Point res, Bool forceSize);
+extern void         font_pp2gp( char * ppFontNameSize, PFont font);
+extern void         font_gp2pp( PFont font, char * buf);
+extern int          font_style( PFONTMETRICS fm);
+extern void         font_fontmetrics2font( PFONTMETRICS m, PFont f, Bool readonly);
+extern long         remap_color( HPS ps, long clr, Bool toSystem);
+extern Bool         screenable( Handle image);
+
 
 extern Bool create_font_hash          ( void);
 extern Bool destroy_font_hash         ( void);
