@@ -1907,6 +1907,7 @@ sub on_mousedown
    $self-> SUPER::on_mousedown( $btn, $mod, $x, $y);
 }
 
+sub prf_tabs    { $_[0]-> repaint; }
 sub prf_orientation { $_[0]-> repaint }
 sub prf_style { $_[0]-> repaint }
 sub prf_pageIndex { 
