@@ -259,7 +259,7 @@ apc_pointer_set_pos( Handle self, int x, int y)
       return false;
    XCHECKPOINT;
    XSync( DISP, false);
-   while ( XCheckMaskEvent( DISP, PointerMotionMask, &ev))
+   while ( XCheckMaskEvent( DISP, PointerMotionMask|EnterWindowMask|LeaveWindowMask, &ev))
       prima_handle_event( &ev, nil);
    return true;   
 }

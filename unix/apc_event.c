@@ -526,16 +526,18 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    was_sent = ev-> xany. send_event;
 
    switch ( ev-> type) {
-   case KeyPress: {
-      guts. last_time = ev-> xkey. time;
-      if (prima_no_input(XX, false, true)) return;
-      handle_key_event( self, &ev-> xkey, &e, &keysym, false);
-      break;
-   }
+   case KeyPress: 
    case KeyRelease: {
       guts. last_time = ev-> xkey. time;
-      if (prima_no_input(XX, false, false)) return;
-      handle_key_event( self, &ev-> xkey, &e, &keysym, true);
+      if ( !ev-> xkey. send_event && self != guts. focused && guts. focused) {
+         /* bypass pointer-driven input */
+         Handle newself = self;
+         while ( PComponent(newself)-> owner && newself != guts. focused)
+            newself = PComponent(newself)-> owner;
+         if ( newself == guts. focused) XX = X(self = newself);
+      } 
+      if (prima_no_input(XX, false, ev-> type == KeyPress)) return;
+      handle_key_event( self, &ev-> xkey, &e, &keysym, ev-> type == KeyRelease);
       break;
    }
    case ButtonPress: {
