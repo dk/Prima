@@ -88,6 +88,7 @@ Clipboard_init( Handle self, HV * profile)
 void
 Clipboard_done( Handle self)
 {
+   CComponent( application)-> detach( application, self, false);
    clipboards--;
    if ( clipboards == 0) {
       while( formatCount)
@@ -96,14 +97,6 @@ Clipboard_done( Handle self)
    apc_clipboard_destroy(self);
    inherited done( self);
 }
-
-void
-Clipboard_cleanup( Handle self)
-{
-   CComponent( application)-> detach( application, self, false);
-   inherited cleanup( self);
-}
-
 
 typedef Bool ActionProc ( Handle self, PClipboardFormatReg item, void * params);
 typedef ActionProc *PActionProc;

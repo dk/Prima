@@ -56,17 +56,10 @@ Printer_init( Handle self, HV * profile)
 void
 Printer_done( Handle self)
 {
+   CComponent( var-> owner)-> detach( var-> owner, self, false);
    apc_prn_destroy( self);
    inherited done( self);
 }
-
-void
-Printer_cleanup( Handle self)
-{
-   CComponent( var-> owner)-> detach( var-> owner, self, false);
-   inherited cleanup( self);
-}
-
 
 Bool
 Printer_begin_doc( Handle self, char * docName)

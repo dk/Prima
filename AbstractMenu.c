@@ -384,6 +384,7 @@ AbstractMenu_init( Handle self, HV * profile)
 void
 AbstractMenu_done( Handle self)
 {
+   ((( PComponent) var-> owner)-> self)-> detach( var-> owner, self, false);
    if ( var-> system) apc_menu_destroy( self);
    my-> dispose_menu( self, var-> tree);
    var-> tree = nil;
@@ -394,7 +395,6 @@ void
 AbstractMenu_cleanup( Handle self)
 {
    if ( my-> get_selected( self)) my-> set_selected( self, false);
-   ((( PComponent) var-> owner)-> self)-> detach( var-> owner, self, false);
    inherited cleanup( self);
 }
 

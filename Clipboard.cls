@@ -29,7 +29,6 @@ object Prima::Clipboard( Prima::Component)
 {
    int openCount;
 
-   method void   cleanup();
    method void   clear();
    method void   close();
    method void   deregister_format( char * format);

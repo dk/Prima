@@ -252,6 +252,8 @@ Widget_update_sys_handle( Handle self, HV * profile)
 void
 Widget_done( Handle self)
 {
+   if ( var-> owner) 
+       CComponent( var->owner)-> detach( var-> owner, self, false);
    free( var-> text);
    apc_widget_destroy( self);
    free( var-> helpContext);
@@ -319,19 +321,14 @@ void
 Widget_cleanup( Handle self)
 {
    enter_method;
-   PComponent detachFrom = ( PComponent) var-> owner;
    if ( application && (( PApplication) application)-> hintUnder == self)
       my-> set_hintVisible( self, 0);
 
    my-> first_that( self, kill_all, nil);
 
-   if ( var-> accelTable)
-      my-> detach( self, var-> accelTable, true);
+   my-> detach( self, var-> accelTable, true);
    var-> accelTable = nilHandle;
 
-   if ( var-> owner) {
-      detachFrom-> self-> detach( var-> owner, self, false);
-   }
    my-> detach( self, var-> popupMenu, true);
    var-> popupMenu = nilHandle;
 
