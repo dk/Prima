@@ -1166,17 +1166,17 @@ apc_sys_get_insert_mode( void)
 }
 
 PFont
-apc_sys_get_msg_font( PFont copyTo)
+apc_sys_get_msg_font( PFont f)
 {
-   DOLBUG( "apc_sys_get_msg_font()\n");
-   return nil;
+   /* XXX - resources */
+   return apc_font_default( f);
 }
 
 PFont
-apc_sys_get_caption_font( PFont copyTo)
+apc_sys_get_caption_font( PFont f)
 {
-   DOLBUG( "apc_sys_get_caption_font()\n");
-   return nil;
+   /* XXX - resources */
+   return apc_font_default( f);
 }
 
 int
