@@ -116,6 +116,7 @@ use constant Yellow => 0|(255<<8)|(255<<16);
 use constant White => 255|(255<<8)|(255<<16);
 use constant Gray => 128|(128<<8)|(128<<16);
 use constant Pink => 128|(128<<8)|(255<<16);
+use constant Invalid      =>   0x80000000;
 use constant NormalText   =>   0x80000001;
 use constant Fore         =>   0x80000001;
 use constant Normal       =>   0x80000002;
