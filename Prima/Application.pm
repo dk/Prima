@@ -60,8 +60,20 @@ by their top-level parental relationship to Prima::Application
 object. There can be only one instance of Prima::Application
 class at a time.
 
-=head1 USAGE
+=head1 SYNOPSIS
 
+   use Prima;
+   use Prima::Application;
+
+      or 
+
+   use Prima qw(Application);
+
+   Prima::MainWindow-> create();
+
+   run Prima;
+
+=head1 USAGE
 
 Prima::Application class, and its only instance are 
 treated specially throughout the toolkit. The object

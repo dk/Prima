@@ -1513,6 +1513,21 @@ __END__
 
 Prima::PodView - POD browser widget
 
+=head1 SYNOPSIS
+
+   use Prima qw(Application);
+   use Prima::PodView;
+
+   my $window = Prima::MainWindow-> create;
+   my $podview = $window-> insert( 'Prima::PodView',
+      pack => { fill => 'both', expand => 1 }
+   );
+   $podview-> open_read;
+   $podview-> read("=head1 NAME\n\nI'm also a pod!\n\n");
+   $podview-> close_read;
+
+   run Prima;
+
 =head1 DESCRIPTION
 
 Prima::PodView contains a formatter ( in terms of L<perlpod> ) and viewer of

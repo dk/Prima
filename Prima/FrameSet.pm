@@ -911,18 +911,6 @@ __DATA__
 
 Prima::FrameSet - standard frameset widget
 
-=head1 DESCRIPTION
-
-Provides standard means of framesets manipulations. It includes sharing of
-common workspace among several widget groups; redistribution of space, occupied
-by frames; isolation of different frames from each other.
-
-This module defines C<fra::> and C<frr::> packages for constants, used by L<arrangement>
-and L<resizeMethod> properties, respectively.
-
-Two additional auxiliary packages are defined within this module: L<Prima::FrameSet::Frame>
-and L<Prima::FrameSet::Slider>.
-
 =head1 SYNOPSIS
 
     use Prima::FrameSet;
@@ -937,6 +925,18 @@ and L<Prima::FrameSet::Slider>.
 	Button =>
 	text => '~Ok',
     );
+
+=head1 DESCRIPTION
+
+Provides standard means of framesets manipulations. It includes sharing of
+common workspace among several widget groups; redistribution of space, occupied
+by frames; isolation of different frames from each other.
+
+This module defines C<fra::> and C<frr::> packages for constants, used by L<arrangement>
+and L<resizeMethod> properties, respectively.
+
+Two additional auxiliary packages are defined within this module: L<Prima::FrameSet::Frame>
+and L<Prima::FrameSet::Slider>.
 
 =head1 API
 

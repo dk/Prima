@@ -196,6 +196,17 @@ __DATA__
 
 Prima::ExtLists - extended functionality for list boxes
 
+=head1 SYNOPSIS
+
+   use Prima::ExtLists;
+
+   my $vec = '';
+   vec( $vec, 0, 8) = 0x55;
+   Prima::CheckList-> new(
+      items  => [1..10],
+      vector => $vec,
+   );
+
 =head1 DESCRIPTION 
 
 The module is intended to be a collection of list boxes with

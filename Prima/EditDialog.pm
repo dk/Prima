@@ -283,20 +283,6 @@ __DATA__
 Prima::FindDialog, Prima::ReplaceDialog - standard interface dialogs
 to find and replace options selection.
 
-=head1 DESCRIPTION
-
-The module provides two classes - Prima::FindDialog and Prima::ReplaceDialog;
-Prima::ReplaceDialog is exactly same as Prima::FindDialog except that 
-its default L<findStyle> property value is set to 0. One can use a dialog-caching
-technique, arbitrating between L<findStyle> value 0 and 1, and use only one
-instance of Prima::FindDialog.
-
-The module does not provide the actual search algorithm; this must be implemented
-by the programmer. The toolkit currently include some facilitation to the problem - 
-the part of algorithm for C<Prima::Edit> class is found in L<Prima::Edit/find>,
-and the another part - in F<examples/editor.pl> example program. L<Prima::HelpWindow>
-also uses the module, and realizes its own searching algorithm.
-
 =head1 SYNOPSIS
 
    use Prima::StdDlg;
@@ -313,6 +299,20 @@ also uses the module, and realizes its own searching algorithm.
 The C<mb::ChangeAll> constant, one of possible results of C<execute> method, is
 defined in L<Prima::StdDlg> module. Therefore it is recommended to include this
 module instead.
+
+=head1 DESCRIPTION
+
+The module provides two classes - Prima::FindDialog and Prima::ReplaceDialog;
+Prima::ReplaceDialog is exactly same as Prima::FindDialog except that 
+its default L<findStyle> property value is set to 0. One can use a dialog-caching
+technique, arbitrating between L<findStyle> value 0 and 1, and use only one
+instance of Prima::FindDialog.
+
+The module does not provide the actual search algorithm; this must be implemented
+by the programmer. The toolkit currently include some facilitation to the problem - 
+the part of algorithm for C<Prima::Edit> class is found in L<Prima::Edit/find>,
+and the another part - in F<examples/editor.pl> example program. L<Prima::HelpWindow>
+also uses the module, and realizes its own searching algorithm.
 
 =head1 API
 

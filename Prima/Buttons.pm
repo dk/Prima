@@ -1140,6 +1140,23 @@ __DATA__
 
 Prima::Buttons - button widgets and grouping widgets.
 
+=head1 SYNOPSIS
+
+   use Prima qw(Application Buttons StdBitmap);
+
+   my $window = Prima::MainWindow-> create;
+   Prima::Button-> new(
+   	owner => $window,
+	text  => 'Simple button',
+	pack  => {},
+   );
+   $window-> insert( 'Prima::SpeedButton' , 
+   	pack => {},
+	image => Prima::StdBitmap::icon(0),
+   );
+
+   run Prima;
+
 =head1 DESCRIPTION
 
 Prima::Buttons provides two separate sets of classes:

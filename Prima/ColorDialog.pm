@@ -884,6 +884,15 @@ __DATA__
 
 Prima::ColorDialog - standard color selection facilities
 
+=head1 SYNOPSIS
+
+   use Prima qw(StdDlg Application);
+   
+   my $p = Prima::ColorDialog-> create(
+       quality => 1,
+   );
+   printf "color: %06x", $p-> value if $p-> execute == mb::OK;
+
 =head1 DESCRIPTION
 
 The module contains two packages, C<Prima::ColorDialog> and C<Prima::ColorComboBox>,

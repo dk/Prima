@@ -1573,6 +1573,30 @@ __DATA__
 
 Prima::FileDialog - File system related widgets and dialogs.
 
+=head1 SYNOPSIS
+
+# open a file
+   use Prima qw(Application);
+   use Prima::StdDlg;
+
+   my $open = Prima::OpenDialog-> new(
+   	filter => [
+		['Perl modules' => '*.pm'],
+		['All' => '*']
+	]
+   );
+   print $open-> fileName, " is to be opened\n" if $open-> execute;
+  
+   # save a file
+   my $save = Prima::SaveDialog-> new(
+   	fileName => $open-> fileName,
+   );
+   print $save-> fileName, " is to be saved\n" if $save-> execute;
+
+   # open several files
+   $open-> multiSelect(1);
+   print $open-> fileName, " are to be opened\n" if $open-> execute;
+
 =head1 DESCRIPTION 
 
 The module contains widgets for file and drive selection,

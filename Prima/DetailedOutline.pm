@@ -336,11 +336,6 @@ __DATA__
 Prima::DetailedOutline - a multi-column outline viewer with controlling 
 header widget.
 
-=head1 DESCRIPTION
-
-Prima::DetailedOutline combines the functionality of Prima::OutlineViewer
-and Prima::DetailedList.
-
 =head1 SYNOPSIS
 
   use Prima::DetailedOutline;
@@ -361,6 +356,11 @@ and Prima::DetailedList.
         ],
   );
   $l-> sort(1);
+
+=head1 DESCRIPTION
+
+Prima::DetailedOutline combines the functionality of Prima::OutlineViewer
+and Prima::DetailedList.
 
 =head1 API
 

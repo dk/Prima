@@ -405,13 +405,6 @@ __DATA__
 
 Prima::Calendar - standard calendar widget
 
-=head1 DESCRIPTION
-
-Provides interactive selection of date between 1900 and 2099 years.
-The main property, L<date>, is a three-integer array, day, month, and year,
-in the format of perl localtime ( see L<perlfunc/localtime> ) - 
-day can be in range from 1 to 31,month from 0 to 11, year from 0 to 199.
-
 =head1 SYNOPSIS
 
    use Prima::Calendar;
@@ -421,9 +414,15 @@ day can be in range from 1 to 31,month from 0 to 11, year from 0 to 199.
          print $_[0]-> date_as_string, "\n";
       },
    );
-   $cal-> date_from_time( localtime( time));
+   $cal-> date_from_time( localtime );
    $cal-> month( 5);
 
+=head1 DESCRIPTION
+
+Provides interactive selection of date between 1900 and 2099 years.
+The main property, L<date>, is a three-integer array, day, month, and year,
+in the format of perl localtime ( see L<perlfunc/localtime> ) - 
+day can be in range from 1 to 31,month from 0 to 11, year from 0 to 199.
 
 =head1 API
 

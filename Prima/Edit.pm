@@ -2665,6 +2665,15 @@ __DATA__
 =head1 NAME
 
 Prima::Edit - standard text editing widget
+   
+=head1 SYNOPSIS
+   
+   use Prima::Edit;
+   my $e = Prima::Edit-> create(
+      text         => 'Hello $world',
+      syntaxHilite => 1,
+   );
+   $e-> selection( 1, 1, 1, 2);
 
 =head1 DESCRIPTION
 
@@ -2675,13 +2684,6 @@ The module declares C<bt::> package, that contains integer constants for selecti
 used by L<blockType> property.
 
 =head1 USAGE
-
-   use Prima::Edit;
-   my $e = Prima::Edit-> create(
-      text         => 'Hello $world',
-      syntaxHilite => 1,
-   );
-   $e-> selection( 1, 1, 1, 2);
 
 The class addresses the text space by (X,Y)-coordinates,
 where X is character offset and Y is line number. The addressing can be
