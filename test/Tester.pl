@@ -41,80 +41,73 @@ my ( $skipped, $passed, $failed) = (0,0,0);
 my ( $eskipped, $epassed, $efailed) = (0,0,0);
 my @filters;
 
-BEGIN
+unless ($^O !~ /MSWin32/) {
+   untie *STDOUT;
+}
+
+package ExTiedStdOut;
+
+sub TIEHANDLE
 {
-   if ($^O !~ /MSWin32/) {
-      use lib qw(. scripts);
-      use Prima;
+   my $class = shift;
+   my $isError = shift;
+   bless \$isError, $class;
+}
+
+sub analyze
+{
+   unless ( $testing) {
+      print STDERR $_[0];
+      return;
    }
-
-   unless ($^O !~ /MSWin32/) {
-      untie *STDOUT if $tie;
-   }
-
-   package ExTiedStdOut;
-
-   sub TIEHANDLE
-   {
-      my $class = shift;
-      my $isError = shift;
-      bless \$isError, $class;
-   }
-
-   sub analyze
-   {
-      unless ( $testing) {
-         print STDERR $_[0];
-         return;
+   if ( scalar @results == 0 && $_[0] =~ /\d+\s*\.\.\s*(\d+)\s*(.*)/) {
+      if ( $1 > 0) {
+         @results = ((0) x ( $1));
+         @extraTestNames = ();
+         my @a = split( ',', $2);
+         my $i;
+         for ( $i = 0; $i < @a; $i++) { $extraTestNames[$i] = $a[$i]; }
+      } else {
+         push( @extras, $_[0]);
       }
-      if ( scalar @results == 0 && $_[0] =~ /\d+\s*\.\.\s*(\d+)\s*(.*)/) {
-         if ( $1 > 0) {
-            @results = ((0) x ( $1));
-            @extraTestNames = ();
-            my @a = split( ',', $2);
-            my $i;
-            for ( $i = 0; $i < @a; $i++) { $extraTestNames[$i] = $a[$i]; }
+   } else {
+      if ( $_[0] =~ /(not\s+)?ok(.*)\b/) {
+         my $notOK = defined $1;
+         my $id;
+         my $ex = $2;
+         if ( $_[0] =~ /ok\s+(\d+)/) {
+            $id = $1;
          } else {
-            push( @extras, $_[0]);
+            $id = $ok_count;
+         }
+         if ( defined $ex) {
+            $ex = ( $ex =~ /\s+\#\s+skip/i) ? 1 : undef;
+         }
+         if (( $id > 0 && $id <= scalar @results) || ( scalar @results == ( $id - 1))) {
+            $results[ $id - 1] = $ex ? -1 : ( $notOK ? 0 : 1);
+         } else {
+            push( @extras, "! test $id of ".@results." run");
          }
       } else {
-         if ( $_[0] =~ /(not\s+)?ok(.*)\b/) {
-            my $notOK = defined $1;
-            my $id;
-            my $ex = $2;
-            if ( $_[0] =~ /ok\s+(\d+)/) {
-               $id = $1;
-            } else {
-               $id = $ok_count;
-            }
-            if ( defined $ex) {
-               $ex = ( $ex =~ /\s+\#\s+skip/i) ? 1 : undef;
-            }
-            if (( $id > 0 && $id <= scalar @results) || ( scalar @results == ( $id - 1))) {
-               $results[ $id - 1] = $ex ? -1 : ( $notOK ? 0 : 1);
-            } else {
-               push( @extras, "! test $id of ".@results." run");
-            }
-         } else {
-            push( @extras, $_[0]);
-         }
+         push( @extras, $_[0]);
       }
    }
-
-   sub PRINT {
-      my $r = shift;
-      $$r++;
-      analyze( join( '', @_));
-   }
-
-   sub PRINTF {
-       shift;
-       my $fmt = shift;
-       analyze( sprintf($fmt, @_));
-   }
-
-   tie *STDOUT, 'ExTiedStdOut', 0 if $tie;
 }
+
+sub PRINT {
+   my $r = shift;
+   $$r++;
+   analyze( join( '', @_));
+}
+
+sub PRINTF {
+    shift;
+    my $fmt = shift;
+    analyze( sprintf($fmt, @_));
+}
+
+package main;
+
 use Prima;
 use Prima::Const;
 use Prima::Classes;
@@ -122,15 +115,19 @@ use Prima::Application name => 'failtester';
 
 for ( @ARGV) {
    if ( /^-(.*)/) {
-      if ( lc($1) eq 'v') {
-         $verbose = 1;
-      } elsif ( lc($1) eq 'd') {
-         $tie = 0;
+      for ( split(' *', lc $1)) {
+         if ( $_ eq 'v') {
+            $verbose = 1;
+         } elsif ( $_ eq 'd') {
+            $tie = 0;
+         }
       }
    } else {
       push( @filters, $_);
    }
 }
+   
+tie *STDOUT, 'ExTiedStdOut', 0 if $tie;
 
 my $tick;
 
