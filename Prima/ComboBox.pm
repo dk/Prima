@@ -97,6 +97,9 @@ sub profile_default
       editProfile    => {},
       listProfile    => {},
       buttonProfile  => {},
+      listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown)],
+      editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change)],
+      buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick MouseUp MouseMove Paint)],
    }
 }
 
@@ -127,6 +130,7 @@ sub init
    $self-> {literal}      = $profile{literal};
    my $eh = $self-> {entryHeight} = $profile{entryHeight};
    $self-> {listHeight}   = $profile{listHeight};
+
    $self-> {edit} = $self-> insert( $profile{editClass} =>
       name   => 'InputLine',
       origin => [ 0, $h - $eh],
@@ -135,12 +139,7 @@ sub init
       selectable  => 1,
       tabStop     => 1,
       current     => 1,
-      onFontChanged => sub { $_[0]-> owner-> InputLine_FontChanged( @_)},
-      onCreate      => sub { $_[0]-> owner-> InputLine_Create( @_)},
-      onSetup       => sub { $_[0]-> owner-> InputLine_Setup( @_)},
-      onKeyDown     => sub { $_[0]-> owner-> InputLine_KeyDown( @_)},
-      onKeyUp       => sub { $_[0]-> owner-> InputLine_KeyUp( @_)},
-      onChange      => sub { $_[0]-> owner-> InputLine_Change( @_)},
+      delegations => $profile{editDelegations},
       (map { $_ => $profile{$_}} keys %editProps),
       %{$profile{editProfile}},
    );
@@ -155,11 +154,7 @@ sub init
       multiSelect  => 0,
       clipOwner    => $self-> {style} == cs::Simple,
       visible      => $self-> {style} == cs::Simple,
-      onLeave      => sub { $_[0]-> owner-> List_Leave( @_)},
-      onSelectItem => sub { $_[0]-> owner-> List_SelectItem( @_)},
-      onMouseUp    => sub { $_[0]-> owner-> List_MouseUp( @_)},
-      onClick      => sub { $_[0]-> owner-> List_Click( @_)},
-      onKeyDown    => sub { $_[0]-> owner-> List_KeyDown( @_)},
+      delegations  => $profile{listDelegations},
       (map { $_ => $profile{$_}} grep { exists $profile{$_} ? 1 : 0} keys %listDynas),
       (map { $_ => $profile{$_}} keys %listProps),
       %{$profile{listProfile}},
@@ -175,15 +170,10 @@ sub init
       tabStop        => 0,
       ownerFont      => 0,
       selectable     => 0,
-      onColorChanged => sub { $_[0]-> owner-> Button_ColorChanged( @_)},
-      onFontChange   => sub { $_[0]-> owner-> Button_FontChanged( @_)},
-      onMouseDown    => sub { $_[0]-> owner-> Button_MouseDown( @_)},
-      onMouseClick   => sub { $_[0]-> owner-> Button_MouseClick( @_)},
-      onMouseUp      => sub { $_[0]-> owner-> Button_MouseUp( @_)},
-      onMouseMove    => sub { $_[0]-> owner-> Button_MouseMove( @_)},
-      onPaint        => sub { $_[0]-> owner-> Button_Paint( @_)},
+      delegations    => $profile{buttonDelegations},
       %{$profile{buttonProfile}},
    );
+
    $self-> visible( $visible);
    return %profile;
 }
@@ -715,13 +705,9 @@ sub init
    }
    $profile{text} = $profile{drive};
    $profile{items} = [@{$self-> {drives}}];
+   push (@{$profile{editDelegations}}, 'KeyDown');
+   push (@{$profile{listDelegations}}, qw(DrawItem FontChanged MeasureItem Stringify));
    %profile = $self-> SUPER::init(%profile);
-   $self-> {list}-> set(
-      onDrawItem     => sub { $_[0]-> owner-> List_DrawItem( @_)},
-      onFontChanged  => sub { $_[0]-> owner-> List_FontChanged( @_)},
-      onMeasureItem  => sub { $_[0]-> owner-> List_MeasureItem( @_)},
-      onStringify    => sub { $_[0]-> owner-> List_Stringify( @_)},
-   );
    $self-> {drive} = $self-> text;
    $self-> {list}->itemHeight( $maxhei);
    $self-> drive( $self-> {drive});
@@ -764,7 +750,6 @@ sub InputLine_KeyDown
       if (scalar grep { $code eq $_ } @{$combo-> {drives}}) && ($code ne $_[0]-> text);
    $self-> clear_event;
 }
-
 
 sub List_DrawItem
 {
