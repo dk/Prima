@@ -209,6 +209,7 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
       int enabled               : 1;
       int focused               : 1;
       int reloadFont		: 1;
+      int doSizeHints		: 1;
    } flags;
 } DrawableSysData, *PDrawableSysData;
 
