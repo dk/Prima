@@ -129,7 +129,12 @@ use Prima::ScrollBar;
 
 sub setup_indents
 {
-   $_[0]-> {indents} = [ 0,0,0,0];
+	my ($self) = @_;
+	$self->{indents} = [ 0,0,0,0];
+	my $bw = $self->{borderWidth};
+	$self->{indents}->[$_] += $bw for 0..3;
+	$self->{indents}->[1] += $self->{hScrollBar}->height - 1 if $self->{hScroll};
+	$self->{indents}->[2] += $self->{vScrollBar}->width - 1 if $self->{vScroll};
 }
 
 sub set_border_width
@@ -154,7 +159,7 @@ sub set_border_width
    ) if $self-> {vScroll};
    $self-> insert_bone if defined $self-> {bone};
    my $d = $bw - $obw;
-   $self-> {indents}-> [$_] += $d for 0..3;
+   $self->setup_indents;
 }
 
 
@@ -196,7 +201,7 @@ sub set_h_scroll
          width       => $self-> width - 2 * $bw + 2 - ( $self->{vScroll} ? $self->{vScrollBar}-> width - 2 : 0),
          delegations => ['Change'],
       );
-      $self-> {indents}->[1] += $self->{hScrollBar}-> height - 1;
+	  $self->setup_indents;
       if ( $self->{vScroll})
       {
          my $h = $self-> {hScrollBar}-> height;
@@ -207,7 +212,7 @@ sub set_h_scroll
          $self-> insert_bone;
       }
    } else {
-      $self->{indents}->[1] -= $self->{hScrollBar}-> height - 1;
+	  $self->setup_indents;
       $self->{hScrollBar}-> destroy;
       if ( $self->{vScroll})
       {
@@ -238,7 +243,7 @@ sub set_v_scroll
          pointerType  => cr::Arrow,
          delegations  => ['Change'],
       );
-      $self->{indents}->[2] += $self->{vScrollBar}-> width - 1;
+	  $self->setup_indents;
       if ( $self->{hScroll})
       {
          $self-> {hScrollBar}->width(
@@ -248,7 +253,7 @@ sub set_v_scroll
          $self-> insert_bone;
       }
    } else {
-      $self->{indents}->[2] -= $self->{vScrollBar}-> width - 1;
+	  $self->setup_indents;
       $self-> {vScrollBar}-> destroy;
       if ( $self->{hScroll})
       {
