@@ -324,7 +324,6 @@ files_rehash( Handle self, void * dummy)
 static Bool
 process_msg( MSG * msg)
 {
-   Bool callTranslateMessage = IS_WIN95;
    switch ( msg-> message)
    {
    case WM_TERMINATE:
@@ -338,7 +337,6 @@ process_msg( MSG * msg)
       return true;
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
-      callTranslateMessage = false;
    case WM_KEYDOWN:
    case WM_KEYUP:
       GetKeyboardState( guts. keyState);
@@ -431,9 +429,7 @@ process_msg( MSG * msg)
       }
       return true;
    }
-   // absolutely unneeded syscall, we don't use CHAR messages, but -
-   // Mustdie 95 and Mustdie 98 switches kbd lamps inside TranslateMessage()
-   if ( callTranslateMessage) TranslateMessage( msg);
+   TranslateMessage( msg);
    DispatchMessage( msg);
    kill_zombies();
    return true;
