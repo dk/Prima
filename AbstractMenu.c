@@ -72,8 +72,9 @@ key_normalize( const char * key)
          r = strtol( key, &e, 10);
          if (*e) return kbNoKey;
          if (( r & kmCtrl) == 0) return r;
-         return (( r & kmCtrl) && isalpha( r & ~kmCtrl)) ?
-            kmCtrl | ( toupper( r & ~kmCtrl)-'@') :
+         if ( !( r & kmCtrl)) return r;
+         return ( isalpha( r & kbCharMask)) ?
+            kmCtrl | ( r & kbModMask) | ( toupper( r & kbCharMask)-'@') :
             r;
       } else if (tolower(*key) != 'f')
 	 return kbNoKey;
