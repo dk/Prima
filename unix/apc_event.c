@@ -486,7 +486,6 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
    return false;
 }
 
-
 /*
 static char * xevdefs[] = { "0", "1"
 ,"KeyPress" ,"KeyRelease" ,"ButtonPress" ,"ButtonRelease" ,"MotionNotify" ,"EnterNotify"
@@ -515,8 +514,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       prima_ximage_event( ev);
       return;
    }
-
-
+   
    if ( guts. message_boxes) {
       struct MsgDlg * md = guts. message_boxes;
       XWindow win = ev-> xany. window;
@@ -550,6 +548,27 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    case UnmapNotify:
       win = ev-> xunmap. window;
       break;
+   case DestroyNotify:
+      if ( guts. clipboard_xfers && 
+           hash_fetch( guts. clipboard_xfers, &ev-> xdestroywindow. window, sizeof( XWindow))) {
+          prima_handle_selection_event( ev, ev-> xproperty. window, nilHandle);
+          return;
+      }
+      goto DEFAULT;
+   case PropertyNotify:
+      guts. last_time = ev-> xproperty. time;
+      if ( guts. clipboard_xfers) {
+         Handle value;
+         ClipboardXferKey key;
+         CLIPBOARD_XFER_KEY( key, ev-> xproperty. window, ev-> xproperty. atom);
+         value = ( Handle) hash_fetch( guts. clipboard_xfers, key, sizeof( key));
+         if ( value) {
+            prima_handle_selection_event( ev, ev-> xproperty. window, value);
+            return;
+         }
+      }
+      goto DEFAULT;
+   DEFAULT:
    default:
       win = ev-> xany. window;
    }
@@ -1188,8 +1207,8 @@ prima_wm_sync( Handle self, int eventType)
    /* measuring round-trip time */
    XSync( DISP, false);
    gettimeofday( &timeout, nil);
-   delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000000 + 
-      ( timeout. tv_usec - start_time. tv_usec)) + guts. wm_event_timeout;
+   delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000 + 
+                ( timeout. tv_usec - start_time. tv_usec) / 1000) + guts. wm_event_timeout;
    /* printf("Sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000); */
 
    /* got response already? happens if no wm present or  */
@@ -1198,19 +1217,19 @@ prima_wm_sync( Handle self, int eventType)
    r = copy_events( self, events, &wmsd, eventType);
    if ( r < 0) return;
    /* printf("pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); */
-   if ( delay < 50000) delay = 50000; /* wait 50 ms just in case */
+   if ( delay < 50) delay = 50; /* wait 50 ms just in case */
    /* waiting for ConfigureNotify or timeout */
    /* printf("enter cycle, size: %d %d\n", wmsd.size.x, wmsd.size.y); */
    start_time = timeout;
    while ( 1) {
       gettimeofday( &timeout, nil);
-      diff = ( timeout. tv_sec - start_time. tv_sec) * 1000000 + 
-             ( timeout. tv_usec - start_time. tv_usec);
+      diff = ( timeout. tv_sec - start_time. tv_sec) * 1000 + 
+             ( timeout. tv_usec - start_time. tv_usec) / 1000;
       if ( delay <= diff) 
          break;
-      timeout. tv_sec  = ( delay - diff) / 1000000;
-      timeout. tv_usec = ( delay - diff) % 1000000;
-      /* printf("want timeout:%g\n", (double)( delay - diff) / 1000000); */
+      timeout. tv_sec  = ( delay - diff) / 1000;
+      timeout. tv_usec = (( delay - diff) % 1000) * 1000;
+      /* printf("want timeout:%g\n", (double)( delay - diff) / 1000); */
       FD_ZERO( &zero);   
       FD_ZERO( &read);
       FD_SET( guts.connection, &read);

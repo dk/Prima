@@ -1134,8 +1134,8 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svShapeExtension:	return guts. shape_extension;
    case svDblClickDelay:        return guts. double_click_time_frame;
    case svColorPointer:         return 0;
-   case svCanUTF8_Input:        return 0;
-   case svCanUTF8_Output:       return 0;
+   case svCanUTF8_Input:        return 1;
+   case svCanUTF8_Output:       return 1;
    default:
       warn( "apc_sys_get_value(): illegal query: %d", v);
    }

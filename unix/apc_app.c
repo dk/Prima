@@ -180,7 +180,11 @@ window_subsystem_init( void)
       "NET_WM_NAME",
       "NET_WM_ICON_NAME",
       "UTF8_STRING",
-      "TARGETS"
+      "TARGETS",
+      "INCR",
+      "PIXEL",
+      "FOREGROUND",
+      "BACKGROUND"
    };
    
    bzero( &guts, sizeof( guts));
@@ -328,7 +332,7 @@ window_subsystem_init( void)
    guts. pointer_invisible_count = 0;
    guts. files = plist_create( 16, 16);
    prima_rebuild_watchers();
-   guts. wm_event_timeout = 100000;
+   guts. wm_event_timeout = 100;
    guts. menu_timeout = 200;
    guts. scroll_first = 200;
    guts. scroll_next = 50;
@@ -397,6 +401,7 @@ window_subsystem_done( void)
    if (guts.menu_windows)       hash_destroy( guts.menu_windows, false);
    if (guts.windows)            hash_destroy( guts.windows, false);
    if (guts.clipboards)         hash_destroy( guts.clipboards, false);
+   if (guts.clipboard_xfers)    hash_destroy( guts.clipboard_xfers, false);
    prima_cleanup_font_subsystem();
 }
 
@@ -427,7 +432,7 @@ apc_application_create( Handle self)
    XX-> type.widget = true;
    XX-> type.drawable = true;
 
-   attrs. event_mask = StructureNotifyMask;
+   attrs. event_mask = StructureNotifyMask | PropertyChangeMask;
    X_WINDOW = XCreateWindow( DISP, guts. root,
 			     0, 0, 1, 1, 0, CopyFromParent,
 			     InputOutput, CopyFromParent,
