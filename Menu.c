@@ -41,7 +41,6 @@ Menu_update_sys_handle( Handle self, HV * profile)
    Handle xOwner = pexist( owner) ? pget_H( owner) : var owner;
    if ( var owner && ( xOwner != var owner))
       ((( PWindow) var owner)-> self)-> set_menu( var owner, nilHandle);
-   var anchored = true;
    if ( !pexist( owner)) return;
    if ( !apc_menu_create( self, xOwner))
       croak("RTC0060: Cannot create menu");
