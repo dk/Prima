@@ -275,7 +275,7 @@ sub prf_types
    my %de = (
       bool    => ['flat','vertical','default','checkable','checked', 'autoRepeat'],
       uiv     => ['glyphs','borderWidth','defaultGlyph','hiliteGlyph','disabledGlyph','pressedGlyph','holdGlyph'],
-      upv     => ['imageScale',],
+      uiv     => ['imageScale',],
       modalResult  => ['modalResult',],
       icon    => ['image',],
    );
