@@ -199,7 +199,7 @@ Bool
 apc_pointer_get_visible( Handle self)
 {
    objCheck false;
-   return is_apt( aptPointerVis);
+   return !guts. pointerInvisible;
 }
 
 Bool
@@ -287,7 +287,7 @@ Bool
 apc_pointer_set_visible( Handle self, Bool visible)
 {
    if ( var stage == csNormal) {
-      apt_assign( aptPointerVis, visible);
+      guts. pointerInvisible = !visible;
       ShowCursor( visible);
       guts. pointerLock += visible ? 1 : -1;
    }

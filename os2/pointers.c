@@ -233,7 +233,7 @@ apc_pointer_get_shape( Handle self)
 Bool
 apc_pointer_get_visible( Handle self)
 {
-   return is_apt( aptPointerVis);
+   return !guts. pointerInvisible;
 }
 
 int ctx_cr2SPTR[] =
@@ -290,7 +290,7 @@ apc_pointer_set_visible( Handle self, Bool visible)
 {
    if ( var stage == csNormal)
    {
-      apt_assign( aptPointerVis, visible);
+      guts. pointerInvisible = !visible;
       if ( !WinShowPointer( HWND_DESKTOP, visible)) apiErrRet;
       guts. pointerLock += visible ? 1 : -1;
    }

@@ -129,7 +129,6 @@ typedef struct _HandleOptions_ {
    unsigned aptCompatiblePS         : 1;       // PS is screen-compatible
    unsigned aptFontExists           : 1;       // font is selected on HPS
    unsigned aptCursorVis            : 1;       // cursor visible flag
-   unsigned aptPointerVis           : 1;       // pointer visibility flag
    unsigned aptFocused              : 1;       // set if control if focused
    unsigned aptFirstClick           : 1;       // set if control can process WM_BUTTONXDOWN without pre-activation
    unsigned aptClipOwner            : 1;       // if set, parent of this window is HWND_DESKTOP
@@ -184,6 +183,7 @@ typedef struct _WinGuts
     List           files;              // List of active File objects
     int            mouseTimer;         // is mouse timer started
     Bool           popupActive;        // flag to avoid double popup activation
+    Bool           pointerInvisible;      
 // socket variables
     List           sockets;            // List of watchable sockets
     HANDLE         socketMutex;        // thread semaphore

@@ -81,6 +81,7 @@ typedef struct _OS2Guts
    int   fontId;
    int   appLock;            // application lock count
    int   pointerLock;        // pointer lock count
+   Bool  pointerInvisible;   // pointer visibility state;
    ULONG codePage;           // current system codepage
    HWND  helpWnd;            // help window id
    Bool  focSysDisabled;     // focus system disabled
@@ -127,7 +128,6 @@ extern Handle lastMouseOver;
 #define aptWinPS                0x00000002       // window PS was passed to paint
 #define aptCompatiblePS         0x00000004       // PS is screen-compatible
 #define aptCursorVis            0x00000010       // cursor visible flag
-#define aptPointerVis           0x00000020       // pointer visibility flag
 #define aptFocused              0x00000040       // set if control if focused
 #define aptFirstClick           0x00000080       // set if control can process WM_BUTTONXDOWN without pre-activation
 #define aptClipOwner            0x00000100       // if set, parent of this window is HWND_DESKTOP
