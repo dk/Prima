@@ -93,6 +93,13 @@ sub import
    }
 }
 
+# returns a preferred path for the toolkit configuration files
+sub path
+{
+   return "$ENV{HOME}/.prima" if exists $ENV{HOME};
+   return "$ENV{WINDIR}/.prima" if $^O =~ /win32/;
+   return "/.prima";
+}
 
 1;
 

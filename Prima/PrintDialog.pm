@@ -106,6 +106,11 @@ sub on_execute
    my $self = $_[0];
    my $oldp = $self-> Printers-> text;
    my @prs = @{$::application-> get_printer-> printers};
+   unless ( scalar @prs) {
+      $self-> cancel;
+      Prima::message("No printers found");
+      return;
+   }
    $self-> {list} = [ @prs];
    my $p = $self-> Printers;
    my @newprs = @prs;

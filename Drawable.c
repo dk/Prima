@@ -758,7 +758,7 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    av = newAV();
    if ( t. tabIndent < 0) t. tabIndent = 0;
    if ( t. textLen   < 0) t. textLen   = strlen( t. text);
-   if ( t. width     < 0) t. width < 0;
+   if ( t. width     < 0) t. width = 0;
 
    if ( my-> get_font_abc == Drawable_get_font_abc) {
       gpENTER;
