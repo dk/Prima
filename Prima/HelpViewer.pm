@@ -203,7 +203,7 @@ sub profile_default
           [],
           ['Set~up' => 'setup_dialog'],
           ['Set font ~encoding' => [
-             map { [ "ENC$_", $_, 'set_encoding' ] } @{$::application-> font_encodings()},
+             map { [ "ENC$_", $_, 'set_encoding' ] } sort @{$::application-> font_encodings()},
           ]],
         ]], [ '~Go' => [
             [ '-goback' => '~Back' => 'Alt + LeftArrow' => km::Alt | kb::Left => 'back' ],
