@@ -268,6 +268,7 @@ sub init
       name   => 'Wheel',
       shape  => $colorWheelShape,
       ownerBackColor => 1,
+      syncPaint      => 1,
       delegations    => [qw(Paint MouseDown MouseUp MouseMove)],
    );
 
