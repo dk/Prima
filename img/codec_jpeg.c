@@ -107,6 +107,8 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
          ( memcmp( "\xe0\xff\xd8\xff", buf, 4) != 0)
       ) return false;   
    if ( fseek( fi-> f, 0, SEEK_SET) < 0) return false;
+   fi-> stop = true;
+   fi-> frameCount = 1;
    
    l = malloc( sizeof( LoadRec));
    if ( !l) return nil;

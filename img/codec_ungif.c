@@ -198,6 +198,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
       free( l);
       return nil;
    }   
+   fi-> stop = true;
 
    l-> content = newHV();
    l-> passed  = -1;

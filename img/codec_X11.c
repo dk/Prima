@@ -81,6 +81,9 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 
    if( XReadBitmapFileData( fi-> fileName, &w, &h, &data, &yw, &yh) != BitmapSuccess)
       return nil;
+
+   fi-> stop = true;
+   fi-> frameCount = 1;
    
    l = malloc( sizeof( LoadRec));
    if ( !l) return nil;

@@ -287,6 +287,8 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
          return nil;
    }   
 
+   fi-> stop = true;
+
    g = ( GBMRec*) malloc( sizeof( GBMRec) + 0x100);
    if ( !g) return nil;
 
