@@ -1,9 +1,15 @@
+# contains:
+#    ColorDialog
+#    ColorComboBox
+
 use strict;
 use Const;
 use Classes;
 use Sliders;
 use Label;
 use Buttons;
+use ComboBox;
+use ScrollBar;
 
 package ColorDialog;
 use vars qw( @ISA $colorWheel);
@@ -335,11 +341,11 @@ sub set_color_index
 {
    my ( $self, $color, $index) = @_;
    $self-> SUPER::set_color_index( $color, $index);
-   if ( $index == ci::Back and $colorWheel) {
-      $colorWheel-> destroy;
-      $colorWheel = create_wheel(32, $self->backColor);
-      $self->{wheel}->repaint;
-   }
+#   if ( $index == ci::Back and $colorWheel and $self->{wheel}) {
+#      $colorWheel-> destroy;
+#      $colorWheel = create_wheel(32, $self->backColor);
+#      $self->{wheel}->repaint;
+#   }
 }
 
 use constant Hue    => 1;
@@ -453,6 +459,7 @@ sub Roller_Paint
    }
 
    $canvas-> color( cl::Black);
+   $canvas-> rectangle( 8, 8, $size[0] - 8, $size[1] - 8);
    $d = int( $v * ($size[1]-16));
    $canvas-> rectangle( 0, $d, $size[0]-1, $d + 15);
    $canvas-> color( $owner->{value});
@@ -558,6 +565,293 @@ sub set_value
 
 sub value        {($#_)?$_[0]->set_value        ($_[1]):return $_[0]->{value};}
 sub quality      {($#_)?$_[0]->set_quality      ($_[1]):return $_[0]->{quality};}
+
+package ColorComboBox::InputLine;
+use vars qw(@ISA);
+@ISA = qw(Widget);
+
+sub profile_default
+{
+   return {
+      %{$_[ 0]-> SUPER::profile_default},
+      ownerBackColor   => 0,
+      selectable       => 1,
+      selectingButtons => 0,
+   }
+}
+
+sub on_paint
+{
+   my ( $self, $canvas, $combo, $w, $h, $focused) =
+      ($_[0],$_[1],$_[0]-> owner,$_[1]-> size, $_[0]->focused);
+   my $back = $self->enabled ? $self-> backColor : $self-> disabledBackColor;
+   my $clr  = $combo-> value;
+   $clr = $back if $clr == cl::Invalid;
+   $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, $self-> light3DColor, $self-> dark3DColor);
+   $canvas-> color( $back);
+   $canvas-> rectangle( 1, 1, $w - 2, $h - 2);
+   $canvas-> rectangle( 2, 2, $w - 3, $h - 3);
+   $canvas-> color( $clr);
+   $canvas-> bar( 3, 3, $w - 4, $h - 4);
+   if ( $focused) {
+      $canvas-> set(
+         rop         => rop::XorPut,
+         linePattern => lp::Dot,
+         color       => cl::White
+      );
+      $canvas-> rectangle( 2, 2, $w - 3, $h - 3);
+   }
+}
+
+sub on_mousedown
+{
+   # this code ( instead of listVisible(!listVisible)) is formed so because
+   # ::InputLine is selectable, and unwilling focus() could easily hide
+   # listBox automatically. Manual focus is also supported by
+   # selectingButtons == 0.
+   my $self = $_[0];
+   my $lv = $self-> owner-> listVisible;
+   $self-> owner-> listVisible(!$lv);
+   $self-> focus if $lv;
+   $self-> clear_event;
+}
+
+
+sub on_enter { $_[0]-> repaint; }
+sub on_leave { $_[0]-> repaint; }
+
+package ColorComboBox::Selector;
+use vars qw(@ISA);
+@ISA = qw(Widget);
+
+
+sub on_create
+{
+   my $self = $_[0];
+   $self-> {btn} = $self-> insert( Button =>
+      origin     => [ 3, 3],
+      width      => $self-> width - 6,
+      height     => 28,
+      text       => 'More...',
+      selectable => 0,
+      name       => 'MoreBtn',
+   );
+   my $c = $self-> owner-> colors;
+   $self-> {scr} = $self-> insert( ScrollBar =>
+      origin     => [ 75, $self->{btn}-> height + 8],
+      top        => $self-> height - 3,
+      vertical   => 1,
+      name       => 'Scroller',
+      max        => $c > 20 ? $c - 20 : 0,
+      partial    => 20,
+      step       => 4,
+      pageStep   => 20,
+      whole      => $c,
+   );
+
+}
+
+
+sub on_paint
+{
+   my ( $self, $canvas) = @_;
+   my ( $w, $h) = $self-> size;
+   my @c3d = ( $self-> light3DColor, $self-> dark3DColor);
+   $canvas-> rect3d( 0, 0, $w-1, $h-1, 1, @c3d, $self-> backColor)
+      unless exists $self->{inScroll};
+   my $i;
+   my $pc = 18;
+   my $dy = $self-> {btn}-> height;
+
+   my $maxc = $self-> owner-> colors;
+   my $shft = $self->{scr}-> value;
+   for ( $i = 0; $i < 20; $i++) {
+      next if $i >= $maxc;
+      my ( $x, $y) = (($i % 4) * $pc + 3, ( 4 - int( $i / 4)) * $pc + 9 + $dy);
+      my $clr = 0;
+      $self-> owner-> notify('Colorify', $i + $shft, \$clr);
+      $canvas-> rect3d( $x, $y, $x + $pc - 2, $y + $pc - 2, 1, @c3d, $clr);
+   }
+}
+
+sub on_mousedown
+{
+   my ( $self, $btn, $mod, $x, $y) = @_;
+   $x -= 3;
+   $y -= $self->{btn}-> height + 9;
+   return if $x < 0 || $y < 0;
+   $x = int($x / 18);
+   $y = int($y / 18);
+   return if $x > 3 || $y > 4;
+   $y = 4 - $y;
+   my $owner = $self-> owner;
+   $owner-> listVisible(0);
+   my $shft = $self->{scr}-> value;
+   my $maxc = $owner-> colors;
+   my $xcol = $shft + $x + $y * 4;
+   return if $xcol >= $maxc;
+   my $xval = 0;
+   $owner-> notify('Colorify', $xcol, \$xval);
+   $owner-> value( $xval);
+}
+
+sub MoreBtn_Click
+{
+   my $self = $_[0];
+   my $d;
+   $self-> owner-> listVisible(0);
+   $d = ColorDialog-> create(
+      value => $self-> owner-> value,
+   );
+   $self-> owner-> value( $d-> value) if $d-> execute;
+   $d-> destroy;
+}
+
+sub Scroller_Change
+{
+   $_[0]->{inScroll} = 1;
+   $_[0]-> invalidate_rect(
+      4, $_[0]->{btn}->top+6,
+      $_[0]->width - $_[0]-> {scr}-> width,
+      $_[0]->height - 3,
+   );
+   delete $_[0]->{inScroll};
+}
+
+package ColorComboBox;
+use vars qw(@ISA);
+@ISA = qw(ComboBox);
+
+{
+my %RNT = (
+   %{Widget->notification_types()},
+   Colorify => nt::Action,
+);
+
+sub notification_types { return \%RNT; }
+}
+
+
+sub profile_default
+{
+   my %sup = %{$_[ 0]-> SUPER::profile_default};
+   my @std = Application-> get_default_scrollbar_metrics;
+   return {
+      %sup,
+      style            => cs::DropDownList,
+      height           => $sup{ entryHeight},
+      value            => cl::White,
+      width            => 56,
+      literal          => 0,
+      colors           => 596,
+      editClass        => 'ColorComboBox::InputLine',
+      listClass        => 'ColorComboBox::Selector',
+      editProfile      => {},
+      listProfile      => {
+         width    => 78 + $std[0],
+         height   => 130,
+         growMode => 0,
+      },
+      onColorify    => undef,
+   };
+}
+
+sub profile_check_in
+{
+   my ( $self, $p, $default) = @_;
+   $p->{ style} = cs::DropDownList;
+   $self-> SUPER::profile_check_in( $p, $default);
+}
+
+sub init
+{
+   my $self    = shift;
+   my %profile = @_;
+   $self->{value} = $profile{value};
+   $self->{colors} = $profile{colors};
+   %profile = $self-> SUPER::init(%profile);
+   $self-> {__DYNAS__}->{onColorify} = $profile{onColorify};
+   $self-> colors( $profile{colors});
+   $self-> value( $profile{value});
+   return %profile;
+}
+
+sub set
+{
+   my ( $self, %profile) = @_;
+   $self->{__DYNAS__}->{onColorify} = $profile{onColorify},
+      delete $profile{onColorify} if exists $profile{onColorify};
+   $self-> SUPER::set( %profile);
+}
+
+
+sub InputLine_KeyDown
+{
+   my ( $combo, $self, $code, $key) = @_;
+   return unless $code;
+   $combo-> listVisible(1), $self-> clear_event if $key == kb::Down;
+   return if $key != kb::NoKey;
+   $self-> clear_event;
+}
+
+
+sub set_style { $_[0]-> raise_ro('set_style')}
+
+sub set_value
+{
+   my ( $self, $value) = @_;
+   return if $value == $self->{value};
+   $self-> {value} = $value;
+   $self-> repaint;
+}
+
+sub set_colors
+{
+   my ( $self, $value) = @_;
+   return if $value == $self->{colors};
+   $self-> {colors} = $value;
+   my $scr = $self->{list}->{scr};
+   $scr-> set(
+      max        => $value > 20 ? $value - 20 : 0,
+      whole      => $value,
+   ) if $scr;
+   $self-> {list}-> repaint;
+}
+
+
+my @palColors = (
+  0xffffff,0x000000,0xc6c3c6,0x848284,
+  0xff0000,0x840000,0xffff00,0x848200,
+  0x00ff00,0x008200,0x00ffff,0x008284,
+  0x0000ff,0x000084,0xff00ff,0x840084,
+  0xc6dfc6,0xa5cbf7,0xfffbf7,0xa5a2a5,
+);
+
+
+sub on_colorify
+{
+   my ( $self, $index, $sref) = @_;
+   if ( $index < 20) {
+      $$sref = $palColors[ $index];
+   } else {
+       my $i = $index - 20;
+       my ( $r, $g, $b, $m);
+       if ( $i < 64) {
+          ( $r, $g, $b) = ( $i & 0x3, ($i >> 2) & 0x3, ( $i >> 4) & 0x3);
+          $m = 64;
+       } else {
+          $i -= 64;
+          ( $r, $g, $b) = ( $i & 0x7, ($i >> 3) & 0x7, ( $i >> 6) & 0x7);
+          $m = 32;
+       }
+       $$sref = ($b * $m) | ( $g * $m) << 8 | ( $r * $m) << 16;
+   }
+   $self-> clear_event;
+}
+
+
+sub value        {($#_)?$_[0]->set_value       ($_[1]):return $_[0]->{value};  }
+sub colors       {($#_)?$_[0]->set_colors      ($_[1]):return $_[0]->{colors};  }
 
 
 1;
