@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <float.h>
+#ifdef __unix
+#include <floatingpoint.h>
+#endif /* __unix */
 #include "apricot.h"
 #include "guts.h"
 #include "Object.h"
@@ -1131,7 +1134,7 @@ xs_init()
 Bool waitBeforeQuit;
 extern void dump_logger(void);
 
-#ifdef BROKEN_COMPILER
+#if defined(BROKEN_COMPILER) || defined(__unix)
 double NAN;
 #endif
 
@@ -1169,7 +1172,18 @@ prima( const char *primaPath, int argc, char **argv)
       union {U8 c[8];double d;} nan = {{00, 00, 00, 00, 00, 00, 0xf8, 0xff}};
       NAN = nan. d;
    }
-#endif
+#endif /* BROKEN_COMPILER */
+#ifdef __unix
+   {
+      /* What we actually need here is not unix */
+      /* We need the control over mathematical exceptions, that's it */
+      volatile double zero = 0.0; /* ``volatile'' to cheat clever optimizers */
+      fpsetmask(~FP_X_INV);
+      NAN = 0.0 / zero;
+      fpresetsticky(FP_X_INV);
+      fpsetmask(FP_X_INV);
+   }
+#endif /* __unix */
 
    if ( !window_subsystem_init()) {
       apc_show_message( "Error initializing PRIMA");

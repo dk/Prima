@@ -23,6 +23,10 @@
    #define __INLINE__            __inline__
 #endif
 
+#ifdef __unix   // This is wrong, not every unix
+   extern double NAN;
+#endif
+
 #ifdef WORD
 #error "Reconsider the order in which you #include files"
 #endif
@@ -150,8 +154,8 @@ typedef struct _DComplex     { float re, im; } DComplex;
 typedef struct _TrigComplex  { float r, ph;  } TrigComplex;
 typedef struct _TrigDComplex { float r, ph;  } TrigDComplex;
 
-#define nil NULL
-#define nilHandle ((Handle)nil)
+#define nil Null(void*)
+#define nilHandle Null(Handle)
 #define nilSV     &sv_undef
 #define true TRUE
 #define false FALSE
