@@ -553,10 +553,8 @@ window_set_client_size( Handle self, int width, int height)
    Bool implicit_move = false;
    Point post;
    
-   if ( !XX-> flags. zoomed) {
-      widg-> virtualSize. x = width;
-      widg-> virtualSize. y = height;
-  } 
+   widg-> virtualSize. x = width;
+   widg-> virtualSize. y = height;
 
    width = ( width > 0)
       ? (( width >= widg-> sizeMin. x)
@@ -609,10 +607,8 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
    DEFXX;
    PWidget widg = PWidget( self);
    
-   if ( !XX-> flags. zoomed) {
-      widg-> virtualSize. x = width;
-      widg-> virtualSize. y = height;
-  } 
+   widg-> virtualSize. x = width;
+   widg-> virtualSize. y = height;
 
    width = ( width > 0)
       ? (( width >= widg-> sizeMin. x)
