@@ -43,7 +43,7 @@ extern Bool waitBeforeQuit;
 #define PUB_CHECK    rc = recursiveCall
 #define DOLBUG       if(dolbug)debug_write
 
-#define dG_EVAL_ARGS SV * errSave
+#define dG_EVAL_ARGS SV * errSave = nil
 #define OPEN_G_EVAL \
   errSave = SvTRUE( GvSV( errgv)) ? newSVsv( GvSV( errgv)) : nil;\
   sv_setsv( GvSV( errgv), nilSV)
