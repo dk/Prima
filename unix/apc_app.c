@@ -98,6 +98,7 @@ window_subsystem_init( void)
    /*XXX*/ /* Namely, support for -display host:0.0 etc. */
    XrmQuark common_quarks_list[16];
    XrmQuarkList ql = common_quarks_list;
+   XGCValues gcv;
    char *common_quarks =
       "String."
       "Background.background."
@@ -129,6 +130,8 @@ window_subsystem_init( void)
 #else
    guts. shape_extension = false;
 #endif
+   
+   guts.create_event = XInternAtom( DISP, "PRIMA_CREATE", false);
 
    XrmInitialize();
    guts.db = get_database();
@@ -173,6 +176,8 @@ window_subsystem_init( void)
    XCHECKPOINT;
 
    guts. windows = hash_create();
+   guts. menu_windows = hash_create();
+   guts. menugc = XCreateGC( DISP, RootWindow( DISP, SCREEN), 0, &gcv);
    guts. resolution. x = 25.4 * DisplayWidth( DISP, SCREEN) / DisplayWidthMM( DISP, SCREEN);
    guts. resolution. y = 25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN);
    guts. depth = DefaultDepth( DISP, SCREEN);
@@ -208,6 +213,7 @@ window_subsystem_done( void)
    }
    DOLBUG( "Free GC's: %d\n", n);
 
+   XFreeGC( DISP, guts. menugc);
    if (DISP) XCloseDisplay( DISP);
    DISP = nil;
    
@@ -220,6 +226,7 @@ window_subsystem_done( void)
    DOLBUG( "Skipped X events: %ld\n", guts. skipped_events);
 
    XrmDestroyDatabase( guts.db);
+   if (guts.menu_windows) hash_destroy( guts.menu_windows, false);
    if (guts.windows) hash_destroy( guts.windows, false);
    prima_cleanup_font_subsystem();
 }
@@ -269,6 +276,7 @@ apc_application_create( Handle self)
    guts. visible_timeout = unix_rm_get_int( self, guts.qBlinkvisibletime, guts.qblinkvisibletime, 200);
    guts. invisible_timeout = unix_rm_get_int( self, guts.qBlinkinvisibletime, guts.qblinkinvisibletime, 200);
 
+   prima_send_create_event( X_WINDOW);
    return true;
 }
 

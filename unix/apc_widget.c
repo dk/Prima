@@ -151,6 +151,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    DOLBUG( "&&&&&&&&&&& window created: %s &&&&&&&&&&&\n", PWidget( self)-> name);
 
+   prima_send_create_event( X_WINDOW);
    return true;
 }
 

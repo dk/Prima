@@ -136,6 +136,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint,
    XX-> origin = (Point){0,0};
    XX-> known_origin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
    apc_component_fullname_changed_notify( self);
+   prima_send_create_event( X_WINDOW);
 
    return true;
 }
