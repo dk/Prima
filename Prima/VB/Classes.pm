@@ -280,7 +280,6 @@ sub get_profile_default
 sub common_paint
 {
    my ( $self, $canvas) = @_;
-   #if ( $self-> {marked} or $self-> focused) {
    if ( $self-> {marked}) {
       my @sz = $canvas-> size;
       $canvas-> color( cl::Black);
@@ -408,7 +407,8 @@ sub on_mousedown
       }
 
       if ( $mod & km::Shift) {
-         $self-> marked( !$self-> marked);
+         $self-> marked( $self-> marked ? 0 : 1);
+         $self-> focus;
          return;
       }
 
@@ -420,6 +420,8 @@ sub on_mousedown
          } else {
             @mw = $VB::form-> marked_widgets if $self-> marked;
             $self-> focus;
+            $self-> marked(1,1);
+            ObjectInspector::enter_widget( $self);
          }
       }
       $self-> clear_event;
@@ -447,6 +449,8 @@ sub on_mousedown
       }
 
       $self-> focus;
+      $self-> marked(1,1);
+      ObjectInspector::enter_widget( $self);
 
       if ( $part =~ /Size/) {
          $self-> {sav} = [$self-> rect];
@@ -501,7 +505,6 @@ sub on_mouseclick
    if ( $mod == 0 && defined $self-> mainEvent) {
       my $a = $self-> mainEvent;
       $self-> marked(1,1);
-      ObjectInspector::enter_widget( $self);
       $VB::inspector-> set_monger_index( 1);
       my $list = $VB::inspector-> {currentList};
       my $ix = $list-> {index}-> {$a};
@@ -675,27 +678,20 @@ sub on_keydown
    }
 }
 
-sub on_enter
-{
-   $_[0]->marked(1,1);
-   ObjectInspector::enter_widget( $_[0]);
-};
-
-
 sub marked
 {
    if ( $#_) {
-     my ( $self, $mark, $exlusive) = @_;
-     return if $self == $VB::form && $mark != 0;
-     return if $mark == $self->{marked} && !$exlusive;
-     if ( $exlusive) {
-        $_-> marked(0) for $VB::form-> marked_widgets;
-     }
-     $self-> {marked} = $mark;
-     $self-> repaint;
+       my ( $self, $mark, $exlusive) = @_;
+       $mark = $mark ? 1 : 0;
+       return if $self == $VB::form && $mark != 0;
+       return if ( $mark == $self->{marked}) && !$exlusive;
+       if ( $exlusive) {
+          $_-> marked(0) for $VB::form-> marked_widgets;
+       }
+       $self-> {marked} = $mark;
+       $self-> repaint;
    } else {
       return 0 if $_[0] == $VB::form;
-      return 1 if $_[0]-> focused;
       return $_[0]->{marked};
    }
 }
