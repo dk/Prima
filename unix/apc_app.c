@@ -207,7 +207,8 @@ init_x11( void)
       "_MOTIF_WM_HINTS",
       "_NET_WM_STATE_MODAL",
       "_NET_SUPPORTED",
-      "_NET_WM_STATE_MAXIMIZED_HORIZ"
+      "_NET_WM_STATE_MAXIMIZED_HORIZ",
+      "text/plain;charset=UTF-8"
    };
    char hostname_buf[256], *hostname = hostname_buf;
 

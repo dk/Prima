@@ -130,8 +130,7 @@ clipboard_free_data( void * data, int size, long id)
 /*
    each clipboard type can be represented by a set of 
    X properties pairs, where each is X name and X type.
-   prima has max 2 such pairs, and get_typename() 
-   returns these by index.
+   get_typename() returns such pairs by the index.
  */
 static Atom
 get_typename( long id, int index, Atom * type)
@@ -140,13 +139,18 @@ get_typename( long id, int index, Atom * type)
    switch ( id) {
    case cfText:
       if ( !PApplication(application)-> wantUnicodeInput) break;
-      if ( index > 1) return None;
-      if ( index == 0) {
+      switch (index) {
+      case 0:
          if ( type) *type = UTF8_STRING;
          return UTF8_STRING;
-      } else {
+      case 1:
+         if ( type) *type = UTF8_MIME;
+         return UTF8_MIME;
+      case 2:
          if ( type) *type = CF_TYPE(id);
          return CF_NAME(id);
+      default:
+         return None;
       }
    case cfBitmap:
       if ( index > 1) return None;
@@ -156,6 +160,15 @@ get_typename( long id, int index, Atom * type)
       } else {
          if ( type) *type = XA_ATOM;
 	 return XA_BITMAP;
+      }
+   case cfTargets:
+      if ( index > 1) return None;
+      if ( index == 0) {
+         if ( type) *type = CF_TYPE(id);
+         return CF_NAME(id);
+      } else {
+         if ( type) *type = CF_TARGETS;
+         return CF_NAME(id);
       }
    }
    if ( index > 0) return None;
@@ -524,17 +537,16 @@ query_data( Handle self, long id)
 }
 
 static Atom
-find_atoms( Atom * data, int length, Atom primary, Atom secondary)
+find_atoms( Atom * data, int length, int id)
 {
-   int i;
-   for ( i = 0; i < length / sizeof(Atom); i++) {
-      if ( data[i] == primary) 
-         return primary;
-   }
-   if ( secondary == None) return None;
-   for ( i = 0; i < length / sizeof(Atom); i++,data++) {
-      if ( data[i] == secondary) 
-         return secondary;
+   int i, index = 0;
+   Atom name;
+   
+   while (( name = get_typename( id, index++, nil)) != None) {
+      for ( i = 0; i < length / sizeof(Atom); i++) {
+         if ( data[i] == name) 
+            return name;
+      }
    }
    return None;
 }
@@ -568,7 +580,7 @@ apc_clipboard_has_format( Handle self, long id)
             /* find our index for TARGETS[i], assign CFDATA_NOT_ACQUIRED to it */
             for ( i = 0; i < guts. clipboard_formats_count; i++) {
                if ( i == cfTargets) continue;
-               ret = find_atoms( data, size, get_typename(i, 0, nil), get_typename(i, 1, nil));
+               ret = find_atoms( data, size, i);
                if ( ret != None && (
                       XX-> external[i]. size == 0 ||
                       XX-> external[i]. size == CFDATA_ERROR
@@ -651,7 +663,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
       if ( id == cfText) {
          c-> text. text   = ( char * ) ret;
          c-> text. length = size;
-         c-> text. utf8   = ( name == UTF8_STRING);
+         c-> text. utf8   = ( name == UTF8_STRING || name == UTF8_MIME);
       } else {
          c-> binary. data = ( Byte * ) ret;
          c-> binary. length = size;
@@ -811,7 +823,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
       if ( self) { 
          PClipboardSysData CC = C(self);
          Bool event = CC-> inside_event;
-         int format, downgrade_utf8 = 0;
+         int format, downgrade_utf8 = 0, utf8_mime = 0;
 
          for ( i = 0; i < guts. clipboard_formats_count; i++) {
             if ( xe. xselection. target == CC-> internal[i]. name) {
@@ -821,6 +833,10 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
                /* when internal name == UTF8_STRING */
                id = i;
                downgrade_utf8 = 1;
+               break;
+            } else if ( i == cfText && xe. xselection. target == UTF8_MIME) {
+               id = i;
+               utf8_mime = 1;
                break;
             }
          }
@@ -837,6 +853,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
 
          format = CF_FORMAT(id);
          target = CF_TYPE( id);
+         if ( utf8_mime) target = UTF8_MIME;
 
          if ( id == cfTargets) { 
             int count = 0;
@@ -844,14 +861,16 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
             for ( i = 0; i < guts. clipboard_formats_count; i++) 
                if ( i != cfTargets && CC-> internal[i]. size > 0)
                   count++;
-            if ( CC-> internal[cfText]. name == UTF8_STRING) count++;
+            if ( CC-> internal[cfText]. name == UTF8_STRING) count += 2;
             detach_xfers( CC, cfTargets, true);
             clipboard_kill_item( CC-> internal, cfTargets);
             if (( CC-> internal[cfTargets]. data = malloc( count * sizeof( Atom)))) {
                CC-> internal[cfTargets]. size = count * sizeof( Atom);
                ci = (Atom*)CC-> internal[cfTargets]. data;
-               if ( CC-> internal[cfText]. name == UTF8_STRING) 
+               if ( CC-> internal[cfText]. name == UTF8_STRING) {
                   *(ci++) = UTF8_STRING;
+                  *(ci++) = UTF8_MIME;
+               }
                for ( i = 0; i < guts. clipboard_formats_count; i++) 
                   if ( i != cfTargets && CC-> internal[i]. size > 0) 
                      *(ci++) = CF_NAME(i);
