@@ -52,12 +52,13 @@ sub profile_default
    my @date = (localtime(time))[3,4,5];
    return {
       %{$_[ 0]-> SUPER::profile_default},
-      scaleChildren => 0,
-      date          => \@date,
-      useLocale     => 1,
-      day           => $date[0],
-      month         => $date[1],
-      year          => $date[2],
+      scaleChildren  => 0,
+      date           => \@date,
+      useLocale      => 1,
+      day            => $date[0],
+      month          => $date[1],
+      year           => $date[2],
+      firstDayOfWeek => 0,
    }
 }
 
@@ -74,7 +75,7 @@ sub profile_check_in
 sub init
 {
    my $self = shift;
-   $self-> {$_} = 0 for qw( day month year useLocale);
+   $self-> {$_} = 0 for qw( day month year useLocale firstDayOfWeek);
    $self-> {date} = [0,0,0];
    my %profile = $self-> SUPER::init(@_);
    $self-> {useLocale} = can_use_locale() if $profile{useLocale};
@@ -134,7 +135,7 @@ sub init
       focusLink => $self-> Day,
       growMode => gm::GrowHiX | gm::GrowLoY,
    );
-   $self-> $_($profile{$_}) for qw( date useLocale);
+   $self-> $_($profile{$_}) for qw( date useLocale firstDayOfWeek);
 }
 
 
@@ -163,20 +164,34 @@ sub make_months
 
 sub day_of_week
 {
-   my ( $self, $day, $month, $year) = @_;
+   my ( $self, $day, $month, $year, $useFirstDayOfWeek) = @_;
    $day++; $month++; $year += 1900;
+
+   $useFirstDayOfWeek = 1 unless defined $useFirstDayOfWeek;
 
    if ( $month < 3) {
       $month += 10; 
       $year--;
    } else {
-      $month += 2;
+      $month -= 2;
    }
    my $century = int($year / 100);
    $year %= 100;
    my $dow = ( int(( 26 * $month - 2) / 10) + $day + $year + int($year / 4) +
-      int($century / 4) - ( 2 * $century)) % 7;
+      int($century / 4) - ( 2 * $century) - 
+      (( $useFirstDayOfWeek ? 1 : 0) * $self-> {firstDayOfWeek}) + 7) 
+      % 7;
    return ($dow < 0) ? $dow + 7 : $dow;
+}
+
+sub reset_days
+{
+   my $self = $_[0];
+   my $dow = $self-> {firstDayOfWeek};
+   $self-> {days} = $self-> {useLocale} ?
+     [ map { strftime("%a", 0, 0, 0, 0, 0, 0, $_) } 0 .. 6 ] :
+     [ qw( Sun Mon Tue Wed Thu Fri Sat ) ];
+   push @{$self->{days}}, splice( @{$self->{days}}, 0, $dow) if $dow;
 }
 
 sub useLocale
@@ -187,9 +202,8 @@ sub useLocale
    $self-> {useLocale} = $useLocale;
    $self-> Month-> items( $self-> make_months);
    $self-> Month-> text( $self-> Month-> List-> get_item_text( $self-> Month-> focusedItem));
-   $self-> {days} = $useLocale ?
-     [ map { uc(substr( strftime("%A", 0, 0, 0, 0, 0, 0, $_), 0, 1)) } 0 .. 6 ] :
-     [ qw( S M T W T F S ) ];
+   $self-> reset_days;
+   $self-> Day-> repaint; 
 }
 
 sub Day_Paint 
@@ -362,6 +376,17 @@ sub date_from_time
    $_[0]-> date( @_[4,5,6]);
 }
 
+sub firstDayOfWeek
+{
+   return $_[0]-> {firstDayOfWeek} unless $#_;
+   my ( $self, $dow) = @_;
+   $dow %= 7;
+   return if $dow == $self-> {firstDayOfWeek};
+   $self-> {firstDayOfWeek} = $dow;
+   $self-> reset_days;
+   $self-> Day-> repaint; 
+}
+
 1;
 
 __DATA__
@@ -419,6 +444,13 @@ Default value: today's date.
 
 Selects the day in month.
 
+=item firstDayOfWeek INTEGER
+
+Selects the first day of week, an integer between 0 and 6,
+where 0 is Sunday is the first day, 1 is Monday etc.
+
+Default value: 0
+
 =item month
 
 Selects the month.
@@ -458,11 +490,14 @@ Returns MONTH name according to L<useLocale> value.
 
 Returns array of 12 month names according to L<useLocale> value.
 
-=item day_of_week DAY, MONTH, YEAR
+=item day_of_week DAY, MONTH, YEAR, [ USE_FIRST_DAY_OF_WEEK = 1 ]
 
 Returns integer value, from 0 to 6, of the day of week on
-DAY, MONTH, YEAR date. The switch from Julian to Gregorian calendar
-is ignored.
+DAY, MONTH, YEAR date. If boolean USE_FIRST_DAY_OF_WEEK is set,
+the value of C<firstDayOfWeek> property is taken into the account,
+so 0 is a Sunday shifted forward by C<firstDayOfWeek> days.
+
+The switch from Julian to Gregorian calendar is ignored.
 
 =item date_as_string [ DAY, MONTH, YEAR ]
 

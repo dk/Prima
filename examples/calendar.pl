@@ -60,6 +60,10 @@ my $w = Prima::MainWindow-> create(
        [ 'Re~set to current date', 'Ctrl+R', '^R', sub {
           $cal-> date_from_time( localtime( time));
        }],
+       [ 'monday', '~Monday is the first day of week', sub {
+          my ( $self, $mid) = @_;
+          $cal-> firstDayOfWeek( $self-> menu-> toggle( $mid) ? 1 : 0);
+       }],
     ]]],
 );
 
