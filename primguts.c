@@ -265,7 +265,8 @@ void
 unprotect_object( Handle obj)
 {
    PObject o = (PObject)obj;
-   if (o-> protectCount<=0) return;
+   if (!o || o-> protectCount<=0)
+      return;
    o-> protectCount--;
    if (o-> protectCount>0) return;
    if (o-> stage == csDead || o-> mate == nil || o-> mate == nilSV)
