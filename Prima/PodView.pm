@@ -941,12 +941,24 @@ sub add
       my $maxnest = 10;
       my $linkStart = scalar @{$self->{links}};
       my $m = $p;
-      my @ids = ( [-2, 'Z'], [ length($m), 'z']);
+      my @ids = ( [-2, 'Z', 2], [ length($m), 'z', 1]);
       while ( $maxnest--) {
          while ( $m =~ m/([A-Z])<([^<>]*)>/gcs) {
-            push @ids, [ pos($m) - length($2) - 3, $1], [ pos($m) - 1, lc $1];
-         }
-         last unless $m =~ s/([A-Z])<([^<>]*)>/WW$2W/g;
+	    push @ids, 
+	       [ pos($m) - length($2) - 3, $1, 2],
+	       [ pos($m) - 1, lc $2, 1];
+	    substr $m, $ids[$_][0], $ids[$_][2], '_' x $ids[$_][2] for -2,-1;
+	 }
+         while ( $m =~ m/([A-Z])(<<+\s?)/gcs) {
+	    my ( $pos, $cmd, $left, $right) = ( pos($m), $1, $2, ' ' . ('>' x ( length($2) - 1)));
+	    if ( $m =~ m/(.*?)($right)(?!>)/gcs) {
+	       push @ids, 
+	          [ $pos - length($left) - 1, $cmd, length($cmd)+length($left)],
+		  [ pos($m) - length($right), lc $cmd, length($right)];
+	       substr $m, $ids[$_][0], $ids[$_][2], '_' x $ids[$_][2] for -2,-1;
+	    }
+	 }
+	 last unless $m =~ m/[A-Z]</;
       }
 
       my %stack = map {[]} qw( fontStyle fontId fontSize wrap color backColor);
@@ -963,7 +975,7 @@ sub add
       my $pofs = 0;
       $p = '';
       for ( sort { $$a[0] <=> $$b[0] } @ids) {
-         my $ofs = $$_[0] + (( $$_[1] eq lc $$_[1]) ? 1 : 2);
+         my $ofs = $$_[0] + $$_[2];
          if ( $pofs < $$_[0]) {
             my $s = substr( $m, $pofs, $$_[0] - $pofs);
             $s =~ tr/\200-\377/\000-\177/;
