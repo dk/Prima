@@ -208,8 +208,9 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
             r-> bitmap =  gimme_the_mate( subItem);              // storing PImage as SV*
             my attach( self, r-> bitmap);
          } else {
-            char * stk = SvPV( subItem, na);
+            char * stk;
          TEXT:
+            stk = SvPV( subItem, na);
             r-> text = malloc( strlen( stk) + 1);
             strcpy( r-> text, stk);
             // log_write( "%stext:%s", buf, r->text);
