@@ -72,7 +72,6 @@ ic_Byte_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 static void
 ic_raize_palette( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int * dstPalSize, Bool palSize_only)
 {
-   RGBColor pal[256];
    Byte * odata = var-> data;
    int otype = var-> type, dummy_pal_size = 0;
    ic_type_convert( self, dstData, var-> palette, dstType, &dummy_pal_size, false);

@@ -643,7 +643,7 @@ bc_byte_nibble_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int
       EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
       c = *source++;
       EDIFF_BEGIN_PIXEL(palette[c].r, palette[c].g, palette[c].b);
-      *dest++ = dst | ( r > 127) * 4 + (g > 127) * 2 + (b > 127);
+      *dest++ = dst | (( r > 127) * 4 + (g > 127) * 2 + (b > 127));
       EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
    }
    if ( tail)

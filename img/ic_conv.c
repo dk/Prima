@@ -51,6 +51,7 @@ BC( mono, mono, None)
 {
    dBCARGS;
    BCWARN;
+   (void)height;
 
    if ( palSize_only || *dstPalSize == 0) 
       memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof( RGBColor));

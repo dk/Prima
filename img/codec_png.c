@@ -641,7 +641,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
           int i, sz = PIcon( fi-> object)-> maskSize;
           Byte * mask = PIcon( fi-> object)-> mask;
           RGBColor dummy[2];
-          ic_graybyte_mono_ictNone( alpha_image, PIcon( fi-> object)-> mask, dummy, imbpp1);
+          int palSize = 0;
+          ic_byte_mono_ictNone( alpha_image, PIcon( fi-> object)-> mask, dummy, imbpp1, &palSize, false);
           for ( i = 0; i < sz; i++, mask++) *mask = ~*mask;
           PIcon( fi-> object)-> autoMasking = amNone;
       } else if ( trns_n) {
