@@ -1155,6 +1155,17 @@ apc_gp_get_font_ranges( Handle self, int * count)
    int i;
    unsigned long * ret;
    FONTSIGNATURE f;
+
+   if ( !HAS_WCHAR) {
+      TEXTMETRIC tm;
+      GetTextMetrics( sys ps, &tm);
+      if ( !( ret = malloc( sizeof( unsigned long) * 2)))
+        return nil;
+      ret[0] = tm. tmFirstChar;
+      ret[1] = tm. tmLastChar;
+      *count = 2;
+      return ret;
+   }
    
    memset( &f, 0, sizeof(f));
    i = GetTextCharsetInfo( sys ps, &f, 0);

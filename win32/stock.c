@@ -816,8 +816,13 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
       atx. ntmTm. ntmAvgWidth   = (( NEWTEXTMETRICEXA*) t)-> ntmTm. ntmAvgWidth;
       memcpy( &elx. elfLogFont, &(( ENUMLOGFONTEXA*)e)-> elfLogFont, sizeof(LOGFONTA) - LF_FACESIZE);
       char2wchar( elx. elfLogFont. lfFaceName, (( ENUMLOGFONTEXA*)e)-> elfLogFont. lfFaceName, LF_FACESIZE);
-      char2wchar( elx. elfFullName, (( ENUMLOGFONTEXA*)e)-> elfFullName, LF_FULLFACESIZE);
-      char2wchar( elx. elfStyle,    (( ENUMLOGFONTEXA*)e)-> elfStyle, LF_FACESIZE);
+      if ( type & TRUETYPE_FONTTYPE) {
+         char2wchar( elx. elfFullName, (( ENUMLOGFONTEXA*)e)-> elfFullName, LF_FULLFACESIZE);
+         char2wchar( elx. elfStyle,    (( ENUMLOGFONTEXA*)e)-> elfStyle, LF_FACESIZE);
+      } else { /* these fields are undefined for raster fonts */
+         char2wchar( elx. elfFullName, (( ENUMLOGFONTEXA*)e)-> elfLogFont. lfFaceName, LF_FACESIZE);
+         char2wchar( elx. elfStyle,    "", 1);
+      }
       t = &atx;
       e = &elx;
    }
@@ -1181,8 +1186,10 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
    strcpy( fm-> name, name);
    if ( f-> wide)
       wchar2char( fm-> family, e-> elfFullName, LF_FULLFACESIZE);
-   else
+   else if ( type & TRUETYPE_FONTTYPE)
       strncpy( fm-> family, (( ENUMLOGFONTEXA*)e)-> elfFullName, LF_FULLFACESIZE);
+   else
+      strncpy( fm-> family, (( ENUMLOGFONTEXA*)e)-> elfLogFont. lfFaceName, LF_FACESIZE);
    list_add( &f-> lst, ( Handle) fm);
    return 1;
 }
