@@ -110,6 +110,28 @@ sub link_click
 sub load_link
 {
    my ( $self, $link) = @_;
+   
+   if ( $link =~ /^(http|ftp):\//) {
+      $self-> owner-> status("Starting browser for $link...");
+      if ( Prima::Application-> get_system_info->{apc} == apc::Win32) {
+         open UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED, "|start $link";
+         close UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED if 0;
+      } else {
+         my $pg = $::application-> sys_action('browser');
+         $self-> owner-> status("Cannot start browser"), return unless $pg;
+         my $f = fork;
+         if ( $f < 0) {
+            Prima::MsgBox::message("Cannot fork:$!"); 
+         } elsif ( $f == 0) {
+            exec("$pg $link");
+            eval "use Prima;";
+            Prima::MsgBox::message("Cannot execute $pg:$!");
+            die "Cannot execute $pg:$!";
+         }   
+      }   
+      return;
+   }
+
    my $ret = $self-> SUPER::load_link( $link);
    $self-> owner-> update;
    return $ret;
