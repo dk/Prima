@@ -123,8 +123,8 @@ if ( $install) {
          $destdir = $iarc . $destdir;
       }
 
-      return if -d $_ && m/(utils|pod|test|win32|os2|unix|img|CVS|include|scripts)$/i;
-      return if $File::Find::dir =~ /test|CVS|include|win32|os2|unix|bsd|scripts/i;
+      return if -d $_ && m/(utils|pod|test|os2|unix|img|CVS|include|scripts)$/i;
+      return if $File::Find::dir =~ /test|CVS|include|os2|unix|bsd|scripts/i;
       return if m/ms_install|Makefile|\.(pdb|opt|pal|obj|log|dsp|dsw|ncb|c|cls|h|inc|def|tml|o)/;
 
       if ( -d $_) {
