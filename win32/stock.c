@@ -1288,13 +1288,6 @@ pal_collect( Handle self, PSzList l)
    return false;
 }
 
-static Bool
-pal_redraw( Handle self, void * dummy)
-{
-   InvalidateRect( HANDLE, nil, false);
-   return false;
-}
-
 Bool
 palette_change( Handle self)
 {
@@ -1359,8 +1352,7 @@ palette_change( Handle self)
    DeleteObject( SelectPalette( dc, pal, 0));
    ReleaseDC( HANDLE, dc);
 
-   if ( rCol > 0)
-      list_first_that( &l.l, pal_redraw, nil);
+   if ( rCol > 0) apc_widget_invalidate_rect( self, nil);
 
    list_destroy( &l.l);
    return true;
