@@ -511,7 +511,7 @@ apc_application_get_widget_from_point( Handle self, Point p)
       } else {
          Handle h;
          if ( to == from) to = X_WINDOW;
-         h = prima_xw2h( to);
+         h = (Handle)hash_fetch( guts.windows, (void*)&to, sizeof(to));
          return ( h == application) ? nilHandle : h;
       }
    }
