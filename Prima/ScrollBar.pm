@@ -541,28 +541,18 @@ sub on_paint
             my $sty = $rect[1] + int($lenx / 2) - 4 - ( $self-> { tab} ->{ pressed} ? 1 : 0) ;
             my $stx = int($maxx / 3) + ( $self-> { tab} ->{ pressed} ? 1 : 0);
             my $lnx = int($maxx / 3);
-            my $i;
             $canvas-> color( $c3d[ 0]);
-            for ( $i = 0; $i < 6; $i++) {
-               $canvas-> line( $stx, $sty + $i * 2 - 1, $stx + $lnx, $sty + $i * 2 - 1);
-            }
+            $canvas-> bar( $stx, $sty - 1, $stx + $lnx, $sty + 9);
             $canvas-> color( $clr[ 0]);
-            for ( $i = 0; $i < 6; $i++) {
-               $canvas-> line( $stx, $sty + $i * 2, $stx + $lnx, $sty + $i * 2);
-            }
+            $canvas-> line( $stx, $sty + $_ * 2, $stx + $lnx, $sty + $_ * 2) for 0..5;
          } else {
             my $stx = $rect[0] + int($lenx / 2) - 6 + ( $self-> { tab} ->{ pressed} ? 1 : 0) ;
             my $sty = int($maxy / 3) - ( $self-> { tab} ->{ pressed} ? 1 : 0);
             my $lny = int($maxy / 3);
-            my $i;
             $canvas-> color( $c3d[ 0]);
-            for ( $i = 0; $i < 6; $i++) {
-               $canvas-> line( $stx + $i * 2 + 1, $sty, $stx + $i * 2 + 1, $sty + $lny);
-            }
+            $canvas-> bar( $stx + 1, $sty, $stx + 11, $sty + $lny);
             $canvas-> color( $clr[ 0]);
-            for ( $i = 0; $i < 6; $i++) {
-               $canvas-> line( $stx + $i * 2, $sty, $stx + $i * 2, $sty + $lny);
-            }
+            $canvas-> line( $stx + $_ * 2, $sty, $stx + $_ * 2, $sty + $lny) for 0..5;
          }
       }
    } else {
