@@ -738,7 +738,7 @@ sub prf_name
    my $sn = $s-> text;
    my $si = $s-> focusedItem;
    for ( @it) {
-      $_ = $_[1] if $_ eq $old;
+      $sn = $_ = $_[1] if $_ eq $old;
    }
    $s-> List-> items( \@it);
    $s-> text( $sn);
