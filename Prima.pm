@@ -335,6 +335,8 @@ L<Prima::ExtLists> - listbox with checkboxes
 
 L<Prima::FrameSet> - frameset widget class
 
+L<Prima::Grids> - grid widgets
+
 L<Prima::Header> - a multi-tabbed header widget
 
 L<Prima::HelpViewer> - the built-in POD file browser

@@ -2429,7 +2429,11 @@ value, so it is assigned according to the order of widget creation.
 
 =back
 
+=over
+
 =item View
+
+=over
 
 =item Object inspector
 
@@ -2470,6 +2474,10 @@ This command is an alias to a 'run' icon on the panel.
 
 Explicitly terminates the execution session, initiated by L<Run>
 command.
+
+=back
+
+=back
 
 =over
 
