@@ -163,7 +163,8 @@ apc_clipboard_set_data( long id, void * data, int length)
                apiErrRet;
             }
             if ( !SetClipboardData( CF_BITMAP,  b)) apiErr;
-            if ( !SetClipboardData( CF_PALETTE, p)) apiErr;
+            if ( p)
+               if ( !SetClipboardData( CF_PALETTE, p)) apiErr;
          }
          break;
       case CF_TEXT:
