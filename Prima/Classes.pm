@@ -239,8 +239,9 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      file => undef,
-      mask => fe::Read|fe::Write|fe::Exception,
+      file  => undef,
+      mask  => fe::Read|fe::Write|fe::Exception,
+      owner => undef,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -286,6 +287,7 @@ sub profile_default
       lineEnd         => le::Round,
       linePattern     => lp::Solid,
       lineWidth       => 0,
+      owner           => undef,
       palette         => [],
       region          => undef,
       rop             => rop::CopyPut,
@@ -576,6 +578,7 @@ sub profile_default
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
       printer => '',
+      owner   => $::application,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -712,6 +715,7 @@ sub profile_default
       cursorSize        => [ 12, 3],
       designScale       => [ 0, 0],
       origin            => [ 0, 0],
+      owner             => $::application,
       pointerHotSpot    => [ 0, 0],
       rect              => [ 0, 0, 100, 100],
       size              => [ 100, 100],
