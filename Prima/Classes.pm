@@ -880,8 +880,6 @@ sub disabledColor         {return shift-> colorIndex( ci::DisabledText, @_)};
 sub hiliteBackColor       {return shift-> colorIndex( ci::Hilite      , @_)};
 sub hiliteColor           {return shift-> colorIndex( ci::HiliteText  , @_)};
 sub light3DColor          {return shift-> colorIndex( ci::Light3DColor, @_)};
-sub menu                  {($#_)?$_[0]->set_menu        ($_[1]):return $_[0]->get_menu;        }
-sub menuItems             {($#_)?$_[0]->set_menu_items  ($_[1]):return $_[0]->get_menu_items;  }
 sub popupFont             {($#_)?$_[0]->set_popup_font ($_[1])  :return Prima::Font->new($_[0], "get_popup_font", "set_popup_font")}
 sub popupColor            { return shift-> popupColorIndex( ci::NormalText  , @_)};
 sub popupBackColor        { return shift-> popupColorIndex( ci::Normal      , @_)};
