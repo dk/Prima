@@ -114,7 +114,7 @@ prima_normalize_resource_string( char *name, Bool isClass)
 
    if ( initialize) {
       for ( i = 0; i < 256; i++) {
-	 table[i] = isalnum(i) ? i : '_';
+         table[i] = isalnum(i) ? i : '_';
       }
       table[0] = 0;
       initialize = false;
@@ -591,9 +591,20 @@ XS( Prima_message_FROMPERL)
    (void)items;
    if ( items != 1)
       croak("Invalid usage of Prima::%s", "message");
-   apc_show_message((char*) SvPV( ST(0), na));   
+   apc_show_message((char*) SvPV( ST(0), na));
    XSRETURN_EMPTY;
 }
+
+XS( Prima_dl_export)
+{
+   dXSARGS;
+   (void)items;
+   if ( items != 1)
+      croak("Invalid usage of Prima::%s", "dl_export");
+   apc_dl_export((char*) SvPV( ST(0), na));
+   XSRETURN_EMPTY;
+}
+
 
 Bool
 build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
@@ -1278,6 +1289,7 @@ NAN = 0.0;
    newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");
    newXS( "Prima::Object::alive", Object_alive_FROMPERL, "Prima::Object");
    newXS( "Prima::message", Prima_message_FROMPERL, "Prima");
+   newXS( "Prima::dl_export", Prima_dl_export, "Prima");
    register_constants();
    register_Object_Class();
    register_Utils_Package();
@@ -1439,11 +1451,11 @@ create_object( const char *objClass, const char *types, ...)
    return (void*)res;
 }
 
-Handle 
+Handle
 apc_get_application(void)
 {
    return application;
-}   
+}
 
 FillPattern fillPatterns[] = {
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
@@ -1826,7 +1838,7 @@ _test_malloc( size_t size, int ln, char *fil, Handle self)
          sprintf( obj, "%s(?)", ((( PObject) self)-> self)-> className);
    } else
       strcpy( obj, "NOSELF");
-   hash_store( hash, &mlc, sizeof(mlc), 
+   hash_store( hash, &mlc, sizeof(mlc),
       strcpy( malloc( 1 + sprintf( s, "%lu %p %s(%d) %s %lu", timestamp(), mlc, fil, ln, obj, ( unsigned long) size)), s)
    );
    return mlc;
@@ -1840,7 +1852,7 @@ _test_realloc( void * ptr, size_t size, int ln, char *fil, Handle self)
    memcpy( nptr, ptr, size);
    _test_free( ptr, ln, fil, self);
    return nptr;
-}   
+}
 
 void
 _test_free( void *ptr, int ln, char *fil, Handle self)
