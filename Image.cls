@@ -38,6 +38,7 @@ object Prima::Image( Prima::Drawable)
    Point          resolution;
 
    property SV *  palette;
+   property Point size;
 
    # methods
    method Handle bitmap();
@@ -71,16 +72,13 @@ object Prima::Image( Prima::Drawable)
    method void   set( HV * profile);
    method void   set_conversion( int conversion);
    method void   set_data( SV * data);
-   method void   set_height( int height);
    method Bool   set_pixel(int x, int y, Color color);
    method void   set_preserve_type( Bool preserveType);
    method void   set_h_scaling( Bool scaling);
    method void   set_v_scaling( Bool scaling);
    method void   set_resolution( int x, int y);
-   method void   set_size( int width, int height);
    method void   set_stats( double value, int index);
    import void   set_type( int type);
-   method void   set_width( int width);
    c_only void   reset( int type, SV * palette);
    c_only void   stretch( int width, int height);
    c_only void   update_change();

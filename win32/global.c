@@ -755,7 +755,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
           Handle parent = v-> self-> get_parent(( Handle) v);
           if ( parent) {
              Point sz   = CWidget(parent)-> get_size( parent);
-             Point pos  = var self-> get_pos( self);
+             Point pos  = var self-> get_origin( self);
              ev. cmd    = cmMove;
              ev. gen. P = pos;
              if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd = 0;
@@ -1091,7 +1091,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
           Handle parent = v-> self-> get_parent(( Handle) v);
           if ( parent) {
              Point sz   = CWidget(parent)-> get_size( parent);
-             Point pos  = var self-> get_pos( self);
+             Point pos  = var self-> get_origin( self);
              ev. cmd    = cmMove;
              ev. gen. P = pos;
              if ( pos. x == var pos. x && pos. y == var pos. y) ev. cmd = 0;

@@ -31,7 +31,9 @@ object Prima::Window( Prima::Widget)
    int      modal;
    int      modalResult;
 
+   property Point    origin;
    property Bool     selected;
+   property Point    size;
    property char*    text;
 
    method   void     cancel();
@@ -54,8 +56,6 @@ object Prima::Window( Prima::Widget)
    method   Bool     get_modal_horizon();
    method   int      get_modal_result();
    method   Bool     get_owner_icon();
-   method   Point    get_pos()                       => apc_window_get_client_pos;
-   method   Point    get_size()                      => apc_window_get_client_size;
    method   Bool     get_task_listed()               => apc_window_get_task_listed;
    method   int      get_window_state()              => apc_window_get_window_state;
    c_only   void     handle_event ( PEvent event);
@@ -78,8 +78,6 @@ object Prima::Window( Prima::Widget)
    method   void     set_modal_horizon( Bool modalHorizon);
    method   void     set_modal_result( int modalResult);
    method   void     set_owner_icon( Bool ownerIcon);
-   method   Bool     set_pos( int x, int y)          => apc_window_set_client_pos;
-   method   Bool     set_size( int x, int y)         => apc_window_set_client_size;
    import   void     set_task_listed( Bool taskListed);
    method   void     set_transparent( Bool transparent);
    method   Bool     set_window_state( int state)    => apc_window_set_window_state;

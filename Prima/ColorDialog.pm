@@ -159,7 +159,7 @@ sub create_wheel
    my ( $y1, $x1) = $i-> size;
    my  $d0 = $i-> width / 2;
 
-   $i-> set_size( 256, 256);
+   $i-> size( 256, 256);
 
    $i-> begin_paint;
    $i-> color( cl::Black);

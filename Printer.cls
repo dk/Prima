@@ -26,6 +26,8 @@
 object Prima::Printer( Prima::Drawable)
 {
    property char * printer;
+   property Point  size;
+
    method void   abort_doc();
    method Bool   begin_doc( char * docName = "");
    method Bool   begin_paint();
@@ -43,7 +45,4 @@ object Prima::Printer( Prima::Drawable)
    method char * get_default_printer()              => apc_prn_get_default;
    method SV   * get_handle();
    method Point  get_resolution()                   => apc_prn_get_resolution;
-   method Point  get_size()                         => apc_prn_get_size;
-   method int    get_width();
-   method int    get_height();
 }

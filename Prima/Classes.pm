@@ -323,9 +323,6 @@ sub profile_check_in
 
 sub font       {($#_)?$_[0]->set_font($#_>1?{@_[1..$#_]}:$_[1]):return Prima::Font->new($_[0], "get_font", "set_font")}
 sub resolution {($#_)?$_[0]->raise_ro("resolution") :return $_[0]->get_resolution;  }
-sub width      {($#_)?$_[0]->raise_ro("width")      :return $_[0]->get_width;       }
-sub height     {($#_)?$_[0]->raise_ro("height")     :return $_[0]->get_height;      }
-sub size       {($#_)?$_[0]->raise_ro("size")       :return $_[0]->get_size;        }
 sub pixel      {($#_>2)? shift->set_pixel(@_) : return shift->get_pixel(@_);        }
 
 sub rect3d
@@ -542,7 +539,6 @@ sub set_type       {$_[0]->set( type    =>$_[1])}
 
 sub data         {($#_)?$_[0]->set_data         ($_[1]):return $_[0]->get_data;         }
 sub conversion   {($#_)?$_[0]->set_conversion   ($_[1]):return $_[0]->get_conversion;   }
-sub height       {($#_)?$_[0]->set_height       ($_[1]):return $_[0]->get_height;       }
 sub rangeLo      {($#_)?$_[0]->set_stats  ($_[1], is::RangeLo):return $_[0]->get_stats(is::RangeLo); }
 sub rangeHi      {($#_)?$_[0]->set_stats  ($_[1], is::RangeHi):return $_[0]->get_stats(is::RangeHi); }
 sub sum          {($#_)?$_[0]->set_stats  ($_[1], is::Sum    ):return $_[0]->get_stats(is::Sum); }
@@ -551,8 +547,6 @@ sub mean         {($#_)?$_[0]->set_stats  ($_[1], is::Mean   ):return $_[0]->get
 sub variance     {($#_)?$_[0]->set_stats  ($_[1], is::Variance):return $_[0]->get_stats(is::Variance); }
 sub stdDev       {($#_)?$_[0]->set_stats  ($_[1], is::StdDev ):return $_[0]->get_stats(is::StdDev); }
 sub type         {($#_)?$_[0]->set_type         ($_[1]):return $_[0]->get_type;         }
-sub width        {($#_)?$_[0]->set_width        ($_[1]):return $_[0]->get_width;        }
-sub size         {($#_)?$_[0]->set_size   ($_[1],$_[2]):return $_[0]->get_size;         }
 sub preserveType {($#_)?$_[0]->set_preserve_type($_[1]):return $_[0]->get_preserve_type;}
 sub hScaling     {($#_)?$_[0]->set_h_scaling    ($_[1]):return $_[0]->get_h_scaling    ;}
 sub vScaling     {($#_)?$_[0]->set_v_scaling    ($_[1]):return $_[0]->get_v_scaling    ;}
@@ -895,7 +889,6 @@ sub set_transparent{$_[0]->set(transparent=>$_[1])};
 sub accelTable       {($#_)?$_[0]->set_accel_table     ($_[1]):return $_[0]->get_accel_table;     }
 sub accelItems       {($#_)?$_[0]->set_accel_items     ($_[1]):return $_[0]->get_accel_items;     }
 sub briefKeys        {($#_)?$_[0]->set_brief_keys  ($_[1]):return $_[0]->get_brief_keys;  }
-sub bottom           {($#_)?$_[0]->set_bottom      ($_[1]):return $_[0]->get_bottom;      }
 sub buffered         {($#_)?$_[0]->set_buffered    ($_[1]):return $_[0]->get_buffered;    }
 sub capture          {($#_)?shift->set_capture     (@_)   :return $_[0]->get_capture;     }
 sub centered         {($#_)?$_[0]->set_centered(1,1)      :$_[0]->raise_wo("centered");   }
@@ -912,12 +905,10 @@ sub disabledBackColor{($#_)?$_[0]->set_color_index ($_[1], ci::Disabled):return 
 sub disabledColor    {($#_)?$_[0]->set_color_index ($_[1], ci::DisabledText):return $_[0]->get_color_index(ci::DisabledText)}
 sub firstClick       {($#_)?$_[0]->set_first_click ($_[1]):return $_[0]->get_first_click; }
 sub focused          {($#_)?$_[0]->set_focused     ($_[1]):return $_[0]->get_focused;     }
-sub height           {($#_)?$_[0]->set_height      ($_[1]):return $_[0]->get_height;      }
 sub helpContext      {($#_)?$_[0]->set_help_context($_[1]):return $_[0]->get_help_context;}
 sub hiliteBackColor  {($#_)?$_[0]->set_color_index ($_[1], ci::Hilite  ):return $_[0]->get_color_index(ci::Hilite  )}
 sub hiliteColor      {($#_)?$_[0]->set_color_index ($_[1], ci::HiliteText  ):return $_[0]->get_color_index(ci::HiliteText  )}
 sub hintVisible      {($#_)?$_[0]->set_hint_visible($_[1]):return $_[0]->get_hint_visible;}
-sub left             {($#_)?$_[0]->set_left        ($_[1]):return $_[0]->get_left;        }
 sub light3DColor     {($#_)?$_[0]->set_color_index ($_[1], ci::Light3DColor):return $_[0]->get_color_index(ci::Light3DColor)}
 sub menu             {($#_)?$_[0]->set_menu        ($_[1]):return $_[0]->get_menu;        }
 sub menuItems        {($#_)?$_[0]->set_menu_items  ($_[1]):return $_[0]->get_menu_items;  }
@@ -943,26 +934,20 @@ sub popupHiliteColor      {($#_)?$_[0]->set_popup_color  ($_[1], ci::HiliteText)
 sub popupDark3DColor      {($#_)?$_[0]->set_popup_color  ($_[1], ci::Dark3DColor)       :return $_[0]->get_popup_color(ci::Dark3DColor);}
 sub popupLight3DColor     {($#_)?$_[0]->set_popup_color  ($_[1], ci::Light3DColor)      :return $_[0]->get_popup_color(ci::Light3DColor);}
 sub popupItems       {($#_)?$_[0]->set_popup_items ($_[1]):return $_[0]->get_popup_items; }
-sub origin           {($#_)?$_[0]->set_pos  ($_[1], $_[2]):return $_[0]->get_pos;         }
-sub right            {($#_)?$_[0]->set_right       ($_[1]):return $_[0]->get_right;       }
-sub rect             {($#_)? ($_[0]->set_rect($#_>1?@_[1..$#_]:@{$_[1]})):return $_[0]->get_rect}
 sub scaleChildren    {($#_)?$_[0]->set_scale_children  ($_[1]):return $_[0]->get_scale_children;  }
 sub selectable       {($#_)?$_[0]->set_selectable  ($_[1]):return $_[0]->get_selectable}
 sub selectedWidget  {($#_)?$_[0]->set_selected_widget($_[1]):return $_[0]->get_selected_widget;}
 sub selectingButtons {($#_)?$_[0]->set_selecting_buttons($_[1]):return $_[0]->get_selecting_buttons}
 sub shape            {($#_)?$_[0]->set_shape       ($_[1]):return $_[0]->get_shape;       }
 sub showHint         {($#_)?$_[0]->set_show_hint   ($_[1]):return $_[0]->get_show_hint;   }
-sub size             {($#_)?$_[0]->set_size ($_[1], $_[2]):return $_[0]->get_size;        }
 sub sizeMax          {($#_)? ($_[0]->set_size_max($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_size_max;    }
 sub sizeMin          {($#_)? ($_[0]->set_size_min($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_size_min;    }
 sub syncPaint        {($#_)?$_[0]->set_sync_paint  ($_[1]):return $_[0]->get_sync_paint;  }
 sub tabOrder         {($#_)?$_[0]->set_tab_order   ($_[1]):return $_[0]->get_tab_order;   }
 sub tabStop          {($#_)?$_[0]->set_tab_stop    ($_[1]):return $_[0]->get_tab_stop;    }
-sub top              {($#_)?$_[0]->set_top         ($_[1]):return $_[0]->get_top;         }
 sub transparent      {($#_)?$_[0]->set_transparent ($_[1]):return $_[0]->get_transparent; }
 sub visible          {($#_)?$_[0]->set_visible     ($_[1]):return $_[0]->get_visible;     }
 sub widgetClass      {($#_)?$_[0]->set_widget_class  ($_[1]):return $_[0]->get_widget_class;  }
-sub width            {($#_)?$_[0]->set_width       ($_[1]):return $_[0]->get_width;       }
 sub x_centered       {($#_)?$_[0]->set_centered(1,0)      :$_[0]->raise_wo("x_centered"); }
 sub y_centered       {($#_)?$_[0]->set_centered(0,1)      :$_[0]->raise_wo("y_centered"); }
 
@@ -1376,9 +1361,6 @@ sub setup
 }
 
 sub autoClose     {($#_)?$_[0]->set_auto_close   ($_[1]):return $_[0]->get_auto_close;     }
-sub size          { return $_[0]-> get_size; }
-sub width         { return ($_[0]-> get_size)[0];}
-sub height        { return ($_[0]-> get_size)[1];}
 sub hintColor     {($#_)?$_[0]->set_hint_color  ($_[1]):return $_[0]->get_hint_color;   }
 sub hintBackColor {($#_)?$_[0]->set_hint_back_color  ($_[1]):return $_[0]->get_hint_back_color;   }
 sub hintFont      {($#_)?$_[0]->set_hint_font        ($_[1])  :return Prima::Font->new($_[0], "get_hint_font", "set_hint_font")}

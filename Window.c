@@ -700,6 +700,15 @@ void  Window_on_deactivate( Handle self) {}
 void  Window_on_windowstate( Handle self, int windowState) {}
 void  Window_set_transparent( Handle self, Bool transparent) {}
 
+Point
+Window_origin( Handle self, Bool set, Point origin)
+{
+   if ( !set)
+      return apc_window_get_client_pos( self);
+   apc_window_set_client_pos( self, origin.x, origin.y);
+   return origin;
+}
+
 Bool
 Window_selected( Handle self, Bool set, Bool selected)
 {
@@ -708,6 +717,15 @@ Window_selected( Handle self, Bool set, Bool selected)
    activate( self, selected);
    inherited set_selected( self, selected);
    return selected;
+}
+
+Point
+Window_size( Handle self, Bool set, Point size)
+{
+   if ( !set)
+      return apc_window_get_client_size( self);
+   apc_window_set_client_size( self, size.x, size.y);
+   return size;
 }
 
 char *

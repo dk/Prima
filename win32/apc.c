@@ -1164,7 +1164,7 @@ apc_window_set_menu( Handle self, Handle menu)
    SetMenu( HANDLE, menu ? ( HMENU) (( PComponent) menu)-> handle : nilHandle);
    DrawMenuBar( HANDLE);
    if ( apc_window_get_window_state( self) == wsNormal)
-       var self-> set_size( self, size.x, size. y);
+       var self-> set_size( self, size);
    return apcError == 0;
 }
 
@@ -2268,7 +2268,7 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
    DeleteMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
    DrawMenuBar( DHANDLE( var owner));
    if ( resize && apc_window_get_window_state( var owner) == wsNormal)
-      owner-> self-> set_size( var owner, size.x, size. y);
+      owner-> self-> set_size( var owner, size);
    return true;
 }
 
@@ -2396,7 +2396,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
       SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : nilHandle);
       DrawMenuBar( DHANDLE( var owner));
       if ( apc_window_get_window_state( var owner) == wsNormal)
-         owner-> self-> set_size( var owner, size.x, size. y);
+         owner-> self-> set_size( var owner, size);
    } else {
       if ( var handle)
          DestroyMenu(( HMENU) var handle);

@@ -224,13 +224,6 @@ Image_set( Handle self, HV * profile)
       pdelete( palette);
       pdelete( type);
    }
-   if ( pexist( width) && pexist( height))
-   {
-      if ( !opt_InPaint)
-         my->set_size( self, pget_i( width), pget_i( height));
-      pdelete( width);
-      pdelete( height);
-   }
    if ( pexist( resolution))
    {
       Point set;
@@ -315,22 +308,13 @@ Image_get_resolution( Handle self)
    return var-> resolution;
 }
 
-void
-Image_set_size( Handle self, int width, int height)
+Point
+Image_size( Handle self, Bool set, Point size)
 {
-   Image_stretch( self, width, height);
-}
-
-void
-Image_set_width( Handle self, int width)
-{
-   my->set_size( self, width, var->h);
-}
-
-void
-Image_set_height( Handle self, int height)
-{
-   my->set_size( self, var->w, height);
+   if ( !set)
+      return inherited size( self, set, size);
+   Image_stretch( self, size.x, size.y);
+   return size;
 }
 
 SV *

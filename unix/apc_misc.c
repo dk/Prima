@@ -164,7 +164,7 @@ apc_component_fullname_changed_notify( Handle self)
    if ( PComponent(self)-> components && (n = PComponent(self)-> components-> count) > 0) {
       list = malloc( sizeof( Handle) * n);
       memcpy( list, PComponent(self)-> components-> items, sizeof( Handle) * n);
-      
+
       for ( i = 0; i < n; i++) {
 	 apc_component_fullname_changed_notify( list[i]);
       }
@@ -249,7 +249,7 @@ prima_no_cursor( Handle self)
    {
       DEFXX;
       int x, y, w, h;
-      
+
       h = XX-> cursor_size. y;
       y = XX-> size. y - (h + XX-> cursor_pos. y);
       x = XX-> cursor_pos. x;
@@ -272,12 +272,12 @@ prima_update_cursor( Handle self)
    if ( guts.focused == self) {
       DEFXX;
       int x, y, w, h;
-      
+
       h = XX-> cursor_size. y;
       y = XX-> size. y - (h + XX-> cursor_pos. y);
       x = XX-> cursor_pos. x;
       w = XX-> cursor_size. x;
-      
+
       if ( !guts. cursor_save || !guts. cursor_xor
 	   || w > guts. cursor_pixmap_size. x
 	   || h > guts. cursor_pixmap_size. y)
@@ -326,7 +326,7 @@ prima_update_cursor( Handle self)
       XFillRectangle( DISP, guts. cursor_xor, XX-> gc, 0, 0, w, h);
       XCHECKPOINT;
       prima_release_gc( XX);
-      
+
       if (!guts. cursor_timer) {
 	 guts. cursor_timer = malloc( sizeof( TimerSysData));
 	 bzero( guts. cursor_timer, sizeof( TimerSysData));
@@ -633,7 +633,10 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       //             &c, 1);
       XFreeGC( DISP, gc);
    }
-   CIcon(icon)-> set_size( icon, guts.cursor_width, guts.cursor_height);
+   {
+      Point size = {guts.cursor_width, guts.cursor_height};
+      CIcon(icon)-> set_size( icon, size);
+   }
    CIcon(icon)-> set_type( icon, imMono);
    im = XGetImage( DISP, p1, 0, 0, guts.cursor_width, guts.cursor_height, 1, XYPixmap);
    prima_copy_xybitmap( PIcon(icon)-> data, im-> data,
@@ -1249,7 +1252,7 @@ void
 prima_rect_union( XRectangle *t, const XRectangle *s)
 {
    XRectangle r;
-   
+
    if ( t-> x < s-> x) r. x = t-> x; else r. x = s-> x;
    if ( t-> y < s-> y) r. y = t-> y; else r. y = s-> y;
    if ( t-> x + t-> width > s-> x + s-> width)
@@ -1268,7 +1271,7 @@ prima_rect_intersect( XRectangle *t, const XRectangle *s)
 {
    XRectangle r;
    int w, h;
-   
+
    if ( t-> x > s-> x) r. x = t-> x; else r. x = s-> x;
    if ( t-> y > s-> y) r. y = t-> y; else r. y = s-> y;
    if ( t-> x + t-> width < s-> x + s-> width)

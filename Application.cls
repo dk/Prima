@@ -36,6 +36,8 @@ object Prima::Application( Prima::Widget)
    property  Bool  enabled;
    property  char* text;
    property  SV  * palette;
+   property  Point origin;
+   property  Point size;
 
    method Bool   begin_paint();
    method Bool   begin_paint_info();
@@ -63,9 +65,7 @@ object Prima::Application( Prima::Widget)
    method Handle get_hint_widget();
    static Font   get_message_font( char * dummy = "");
    method Handle get_printer();
-   method Point  get_pos();
    method Point  get_scroll_rate();
-   method Point  get_size()  => apc_application_get_size;
    static SV *   get_system_info( char * dummy = "");
    static int    get_system_value( char * dummy = "", int sysValue = 0);
    method Bool   go( void)   => apc_application_go;
@@ -129,11 +129,9 @@ object Prima::Application( Prima::Widget)
    method void   set_owner_font( Bool ownerFont);
    method void   set_owner_show_hint( Bool ownerShowHint);
    method void   set_owner_palette( Bool ownerShowHint);
-   method Bool   set_pos( int x, int y);
    method void   set_selectable( Bool selectable);
    method void   set_shape( Handle mask);
    method void   set_sync_paint( Bool syncPaint);
-   method Bool   set_size( int x, int y);
    method void   set_show_hint( Bool showHint);
    method Bool   set_visible( Bool visible);
    method void   set_tab_order( int tabOrder);

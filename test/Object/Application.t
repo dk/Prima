@@ -17,7 +17,6 @@ ok( $bl == 0 && $wh == 0xFFFFFF);
 $a-> end_paint;
 
 $a-> visible(0);
-$a-> size(1,1);
 ok( $a-> visible && $a-> width == $sz[0] && $a-> height == $sz[1]);
 
 1;

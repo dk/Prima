@@ -40,7 +40,7 @@ sub on_click
 sub on_paint
 {
   my ($self,$canvas) = @_;
-  my ($x, $y) = $canvas-> get_size;
+  my ($x, $y) = $canvas-> size;
   my @fcap = ( $canvas-> get_text_width( $self-> text), $canvas-> font->height);
   $canvas-> color( $self-> pressed ? cl::LightGreen : cl::Green);
   $canvas-> bar(0, 0, $x - 1 , $y - 1);

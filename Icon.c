@@ -384,7 +384,7 @@ Icon_combine( Handle self, Handle xorMask, Handle andMask)
          killAM = 1;
          andMask = CImage( andMask)-> dup( andMask);
       }
-      CImage( andMask)-> set_size( andMask, var-> w, var-> h);
+      CImage( andMask)-> set_size( andMask, my-> get_size( self));
    }
 
    memcpy( var-> data, PImage( xorMask)-> data, var-> dataSize);

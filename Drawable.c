@@ -136,6 +136,12 @@ void Drawable_set( Handle self, HV * profile)
       my-> set_transform( self, tr);
       pdelete( transform);
    }
+   if ( pexist( width) && pexist( height)) {
+      Point size = { pget_i( width), pget_i( height)};
+      my-> set_size( self, size);
+      pdelete( width);
+      pdelete( height);
+   }
    inherited set( self, profile);
 }
 
@@ -319,26 +325,36 @@ Drawable_get_handle( Handle self)
    return newSVpv( buf, 0);
 }
 
-
 int
-Drawable_get_height( Handle self)
+Drawable_height( Handle self, Bool set, int height)
 {
-  return var-> h;
+   Point p = my-> get_size( self);
+   if ( !set)
+      return p. y;
+   p. y = height;
+   my-> set_size( self, p);
+   return height;
 }
 
 Point
-Drawable_get_size ( Handle self)
+Drawable_size ( Handle self, Bool set, Point size)
 {
-   Point ret;
-   ret. x = my-> get_width ( self);
-   ret. y = my-> get_height ( self);
-   return ret;
+   if ( set)
+      croak("Attempt to write read-only property %s", "Drawable::size");
+   size. x = var-> w;
+   size. y = var-> h;
+   return size;
 }
 
 int
-Drawable_get_width( Handle self)
+Drawable_width( Handle self, Bool set, int width)
 {
-   return var-> w;
+   Point p = my-> get_size( self);
+   if ( !set)
+      return p. x;
+   p. x = width;
+   my-> set_size( self, p);
+   return width;
 }
 
 void

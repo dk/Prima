@@ -1133,10 +1133,10 @@ sub borderIcons          {($#_)?$_[0]->set_border_icons($_[1])                  
 sub borderStyle          {($#_)?$_[0]->set_border_style($_[1])                        :return $_[0]->{borderStyle}}
 sub dragMode             {($#_)?($_[0]->{dragMode} = $_[1])                           :return $_[0]->{dragMode}; }
 sub client               {return $_[0]-> {client};}
-sub frameOrigin          {($#_)?$_[0]->set_pos($_[1], $_[2])                          :return $_[0]->get_pos;   }
-sub frameSize            {($#_)?$_[0]->set_size($_[1], $_[2])                         :return $_[0]->get_size;  }
-sub frameWidth           {($#_)?$_[0]->set_width($_[1])                               :return $_[0]->get_width;  }
-sub frameHeight          {($#_)?$_[0]->set_height($_[1])                              :return $_[0]->get_height; }
+sub frameOrigin          {return shift-> origin( @_);}
+sub frameSize            {return shift-> size( @_);}
+sub frameWidth           {return shift-> width( @_);}
+sub frameHeight          {return shift-> height( @_);}
 sub tileable             {($#_)?$_[0]->{tileable}=$_[1]                               :return $_[0]->{tileable}; }
 sub windowState          {($#_)?$_[0]->set_window_state($_[1])                        :return $_[0]->{windowState}    }
 sub icon                 {($#_)?$_[0]->set_icon        ($_[1])  :                      return $_[0]->{icon}           }

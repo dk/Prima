@@ -674,7 +674,7 @@ sub value
    my $old = $_[0]-> {value};
    if (abs($old - $v) >= $_[0]-> {threshold})
    {
-      my ($x, $y) = $_[0]-> get_size;
+      my ($x, $y) = $_[0]-> size;
       my $i = $_[0]-> {indent};
       my $range = ( $_[0]-> {max} - $_[0]-> {min}) || 1;
       my $x1 = $i + ($x - $i*2) * $old / $range;

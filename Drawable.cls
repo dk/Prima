@@ -27,55 +27,55 @@ use Types;
 
 object Prima::Drawable ( Prima::Component)
 {
-   Font        font;
-   int         w;
-   int         h;
-   PRGBColor   palette;		       # logical palette
-   int         palSize;                # logical palette size
+   Font         font;
+   int          w;
+   int          h;
+   PRGBColor    palette;       	       # logical palette
+   int          palSize;               # logical palette size
 
-   property    Color         backColor;
-   property    Color         color;
-   property    Rect          clipRect;
-   property    SV * 	     fillPattern;
-   property    int           lineEnd;
-   property    SV *          linePattern;
-   property    int           lineWidth;
-   property    SV *          palette;
-   property    Handle        region;
-   property    int           rop;
-   property    int           rop2;
-   property    Bool          textOpaque;
-   property    Bool          textOutBaseline;
-   property    Point         transform;
+   property     Color         backColor;
+   property     Color         color;
+   property     Rect          clipRect;
+   property     SV * 	      fillPattern;
+   property     int           height;
+   property     int           lineEnd;
+   property     SV *          linePattern;
+   property     int           lineWidth;
+   property     SV *          palette;
+   property     Handle        region;
+   property     int           rop;
+   property     int           rop2;
+   property     Point         size;
+   property     Bool          textOpaque;
+   property     Bool          textOutBaseline;
+   property     Point         transform;
+   property     int           width;
 
    # globals
-   method void   init( HV * profile);
-   method void   done();
-   method void   cleanup();
-   method Bool   begin_paint();
-   method Bool   begin_paint_info();
-   method void   end_paint();
-   method void   end_paint_info();
-   static Font * font_match( char * dummy, Font * source, Font * dest, Bool pick = true);
-   c_only Bool	 font_add( Font * source, Font * dest);
-   import SV *   profile_default();
+   method void  init( HV * profile);
+   method void  done();
+   method void  cleanup();
+   method Bool  begin_paint();
+   method Bool  begin_paint_info();
+   method void  end_paint();
+   method void  end_paint_info();
+   static Font* font_match( char * dummy, Font * source, Font * dest, Bool pick = true);
+   c_only Bool	font_add( Font * source, Font * dest);
+   import SV *  profile_default();
 
-   method void   set( HV * profile);
-   method void   set_font( Font font);
+   method void  set( HV * profile);
+   method void  set_font( Font font);
 
-   method int           get_bpp();
-   method Font          get_font();
-   method SV *          get_font_abc( int first = -1, int last = -1);
-   method SV *          get_handle();
-   method int           get_height();
-   method Color         get_nearest_color( Color color);
-   method int           get_paint_state();
-   method SV *          get_physical_palette();
-   method Point         get_resolution();
-   method Point         get_size();
-   method int           get_text_width( char * text, int len = -1, Bool addOverhang = 0);
-   method SV *          get_text_box( char * text, int len = -1);
-   method int           get_width();
+   method int   get_bpp();
+   method Font  get_font();
+   method SV *  get_font_abc( int first = -1, int last = -1);
+   method SV *  get_handle();
+   method Color get_nearest_color( Color color);
+   method int   get_paint_state();
+   method SV *  get_physical_palette();
+   method Point get_resolution();
+   method int   get_text_width( char * text, int len = -1, Bool addOverhang = 0);
+   method SV *  get_text_box( char * text, int len = -1);
 
    # operators
    method Bool  arc( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_arc;

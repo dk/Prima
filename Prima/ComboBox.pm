@@ -280,7 +280,7 @@ sub Button_MouseMove
    $_[1]-> clear_event;
    if ($_[1]-> get_capture)
    {
-      my ($x,$y,$W,$H) = ($_[3],$_[4],$_[1]-> get_size);
+      my ($x,$y,$W,$H) = ($_[3],$_[4],$_[1]-> size);
       return unless ($x < 0) || ($y < 0) || ($x >= $W) || ($y >= $H);
       $_[1]-> set_capture(0);
       $_[0]-> {list}-> mouse_down( mb::Left, 0, 5, $_[0]-> {list}-> height - 5, 1)

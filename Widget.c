@@ -174,10 +174,14 @@ Widget_init( Handle self, HV * profile)
       my-> set_design_scale( self, ds.x, ds.y);
    }
    my-> set_enabled     ( self, pget_B( enabled));
-   if ( !pexist( originDontCare) || !pget_B( originDontCare))
-      my-> set_pos( self, pget_i( left), pget_i( bottom));
-   if ( !pexist( sizeDontCare  ) || !pget_B( sizeDontCare  ))
-      my-> set_size( self, pget_i( width), pget_i( height));
+   if ( !pexist( originDontCare) || !pget_B( originDontCare)) {
+      Point pos = { pget_i( left), pget_i( bottom)};
+      my-> set_origin( self, pos);
+   }
+   if ( !pexist( sizeDontCare  ) || !pget_B( sizeDontCare  )) {
+      Point size = { pget_i( width), pget_i( height)};
+      my-> set_size( self, size);
+   }
    {
       Bool x = 0, y = 0;
       if ( pget_B( centered)) { x = 1; y = 1; };
@@ -853,14 +857,6 @@ Widget_last( Handle self)
    return apc_widget_get_z_order( self, zoLast);
 }
 
-void
-Widget_locate( Handle self, Rect r )
-{
-   enter_method;
-   my-> set_size( self, r. right - r. left, r. top - r. bottom);
-   my-> set_pos( self, r. left, r. bottom);
-}
-
 Bool
 Widget_lock( Handle self)
 {
@@ -1104,14 +1100,10 @@ Widget_set( Handle self, HV * profile)
       pdelete( top);
    }
    if ( pexist( left) && pexist( bottom)) {
-      my-> set_pos( self, pget_i( left), pget_i( bottom));
+      Point pos = {pget_i( left), pget_i( bottom)};
+      my-> set_origin( self, pos);
       pdelete( left);
       pdelete( bottom);
-   }
-   if ( pexist( width) && pexist( height)) {
-      my-> set_size( self, pget_i( width), pget_i( height));
-      pdelete( width);
-      pdelete( height);
    }
    if ( pexist( popupFont))
    {
@@ -1238,13 +1230,6 @@ Widget_get_accel_table( Handle self)
    return var-> accelTable;
 }
 
-int
-Widget_get_bottom( Handle self)
-{
-   enter_method;
-   return my-> get_pos ( self). y;
-}
-
 Bool
 Widget_get_brief_keys( Handle self)
 {
@@ -1321,13 +1306,6 @@ Widget_get_handle( Handle self)
    return newSVpv( buf, 0);
 }
 
-int
-Widget_get_height( Handle self)
-{
-   enter_method;
-   return my-> get_size( self). y;
-}
-
 long int
 Widget_get_help_context( Handle self)
 {
@@ -1339,13 +1317,6 @@ Widget_get_hint_visible( Handle self)
 {
    PApplication app = ( PApplication) application;
    return app-> hintVisible;
-}
-
-int
-Widget_get_left( Handle self)
-{
-   enter_method;
-   return my-> get_pos( self). x;
 }
 
 Bool
@@ -1430,28 +1401,6 @@ SV *
 Widget_get_popup_items( Handle self)
 {
    return var-> popupMenu ? ((( PAbstractMenu) var-> popupMenu)-> self)-> get_items( var-> popupMenu, "") : nilSV;
-}
-
-Rect
-Widget_get_rect( Handle self)
-{
-   enter_method;
-   Point p   = my-> get_pos( self);
-   Point s   = my-> get_size( self);
-   Rect r;
-   r. left = p. x;
-   r. bottom = p. y;
-   r. right = p. x + s. x;
-   r. top = p. y + s. y;
-   return r;
-}
-
-int
-Widget_get_right( Handle self)
-{
-   enter_method;
-   Rect r = my-> get_rect( self);
-   return r. right;
 }
 
 Bool
@@ -1558,14 +1507,6 @@ Widget_get_tab_stop( Handle self)
    return is_opt( optTabStop);
 }
 
-int
-Widget_get_top( Handle self)
-{
-   enter_method;
-   Rect r = my-> get_rect( self);
-   return r. top;
-}
-
 Point
 Widget_get_virtual_size( Handle self)
 {
@@ -1576,13 +1517,6 @@ int
 Widget_get_widget_class( Handle self)
 {
    return var-> widgetClass;
-}
-
-int
-Widget_get_width( Handle self)
-{
-   enter_method;
-   return my-> get_size ( self). x;
 }
 
 /* set_props() */
@@ -1616,14 +1550,6 @@ Widget_set_accel_table( Handle self, Handle accelTable)
 }
 
 void
-Widget_set_bottom( Handle self, int _bottom )
-{
-   enter_method;
-   int _l = my-> get_left ( self);
-   my-> set_pos ( self, _l, _bottom);
-}
-
-void
 Widget_set_brief_keys( Handle self, Bool briefKeys)
 {
    opt_assign( optBriefKeys, briefKeys);
@@ -1650,10 +1576,10 @@ Widget_set_centered( Handle self, Bool x, Bool y)
    Handle parent = my-> get_parent( self);
    Point size    = CWidget( parent)-> get_size( parent);
    Point mysize  = my-> get_size ( self);
-   Point mypos   = my-> get_pos( self);
+   Point mypos   = my-> get_origin( self);
    if ( x) mypos. x = ( size. x - mysize. x) / 2;
    if ( y) mypos. y = ( size. y - mysize. y) / 2;
-   my-> set_pos( self, mypos. x, mypos. y);
+   my-> set_origin( self, mypos);
 }
 
 void
@@ -1787,14 +1713,6 @@ Widget_set_grow_mode( Handle self, int flags )
 }
 
 void
-Widget_set_height( Handle self, int _height )
-{
-   enter_method;
-   int _w = my-> get_width ( self);
-   my-> set_size ( self, _w, _height);
-}
-
-void
 Widget_set_help_context( Handle self, long int helpContext )
 {
    var-> helpContext = helpContext;
@@ -1808,14 +1726,6 @@ Widget_set_hint_visible( Handle self, Bool visible)
    if ( visible == app-> hintVisible) return;
    if ( visible && strlen( var-> hint) == 0) return;
    app-> self-> set_hint_action( application, self, visible, false);
-}
-
-void
-Widget_set_left( Handle self, int _left )
-{
-   enter_method;
-   int _t = my-> get_bottom ( self);
-   my-> set_pos( self, _left, _t);
 }
 
 void
@@ -2007,22 +1917,6 @@ Widget_set_popup_items( Handle self, SV * popupItems)
 }
 
 void
-Widget_set_rect( Handle self, Rect r)
-{
-   enter_method;
-   my-> set_size( self, r. right - r. left, r. top - r. bottom);
-   my-> set_pos ( self, r. left, r. bottom);
-}
-
-void
-Widget_set_right( Handle self, int _right )
-{
-   enter_method;
-   Rect r = my-> get_rect ( self);
-   my-> set_pos ( self, r. left - r. right + _right, r. bottom);
-}
-
-void
 Widget_set_scale_children( Handle self, Bool scaleChildren)
 {
    opt_assign( optScaleChildren, scaleChildren);
@@ -2104,7 +1998,7 @@ Widget_set_size_min( Handle self, Point min)
       if ( sizeActual. x < min. x) newSize. x = min. x;
       if ( sizeActual. y < min. y) newSize. y = min. y;
       if (( newSize. x != sizeActual. x) || ( newSize. y != sizeActual. y))
-         my-> set_size( self, newSize. x, newSize. y);
+         my-> set_size( self, newSize);
    }
 }
 
@@ -2120,7 +2014,7 @@ Widget_set_size_max( Handle self, Point max)
       if ( sizeActual. x > max. x) newSize. x = max. x;
       if ( sizeActual. y > max. y) newSize. y = max. y;
       if (( newSize. x != sizeActual. x) || ( newSize. y !=  sizeActual. y))
-          my-> set_size( self, newSize. x, newSize. y);
+          my-> set_size( self, newSize);
    }
 }
 
@@ -2190,27 +2084,11 @@ Widget_set_tab_stop( Handle self, Bool stop)
 }
 
 void
-Widget_set_top( Handle self, int _top )
-{
-   enter_method;
-   Rect r = my-> get_rect ( self);
-   my-> set_pos( self, r. left, r. bottom - r. top + _top);
-}
-
-void
 Widget_set_widget_class( Handle self, int widgetClass)
 {
    enter_method;
    var-> widgetClass = widgetClass;
    my-> repaint( self);
-}
-
-void
-Widget_set_width( Handle self, int _width )
-{
-   enter_method;
-   int _h = my-> get_height( self);
-   my-> set_size (  self, _width, _h);
 }
 
 /* event handlers */
@@ -2343,7 +2221,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
 #if 0
       Point size  =  his-> virtualSize;
       Point reportedSize  =  his-> self-> get_size( child);
-      Point pos   =  his-> self-> get_pos( child);
+      Point pos   =  his-> self-> get_origin( child);
       int   dx    = metrix-> right - metrix-> left;
       int   dy    = metrix-> top   - metrix-> bottom;
 
@@ -2365,12 +2243,12 @@ size_notify( Handle self, Handle child, const Rect* metrix)
       printf( "size_notify>: %s, pos: %dx%d, size: %dx%d\n",
               his-> name, pos. x, pos.y, size. x, size. y);
 
-      his-> self-> set_pos ( child, pos.x, pos. y);
-      his-> self-> set_size( child, size.x, size. y);
+      his-> self-> set_origin( child, pos);
+      his-> self-> set_size( child, size);
       his-> virtualSize = size;
 #else
       Point size  =  his-> self-> get_virtual_size( child);
-      Point pos   =  his-> self-> get_pos( child);
+      Point pos   =  his-> self-> get_origin( child);
       int   dx    = ((Rect *) metrix)-> right - ((Rect *) metrix)-> left;
       int   dy    = ((Rect *) metrix)-> top   - ((Rect *) metrix)-> bottom;
 
@@ -2382,9 +2260,9 @@ size_notify( Handle self, Handle child, const Rect* metrix)
       if ( his-> growMode & gmYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
 
       if ( dx != 0 || dy != 0 || ( his-> growMode & gmCenter) != 0)
-         his-> self-> set_pos  ( child, pos.x, pos. y);
+         his-> self-> set_origin( child, pos);
       if ( dx != 0 || dy != 0)
-         his-> self-> set_size ( child, size.x, size. y);
+         his-> self-> set_size( child, size);
 #endif
    }
    return false;
@@ -2400,12 +2278,16 @@ move_notify( Handle self, Handle child, Point * moveTo)
 
    if ( his-> growMode & gmDontCare) {
       if ( !clp) return false;
-      p = his-> self-> get_pos( child);
-      his-> self-> set_pos( child, p. x - dx, p. y - dy);
+      p = his-> self-> get_origin( child);
+      p. x -= dx;
+      p. y -= dy;
+      his-> self-> set_origin( child, p);
    } else {
       if ( clp) return false;
-      p = his-> self-> get_pos( child);
-      his-> self-> set_pos( child, p. x + dx, p. y + dy);
+      p = his-> self-> get_origin( child);
+      p. x += dx;
+      p. x += dy;
+      his-> self-> set_origin( child, p);
    }
 
    return false;
@@ -2497,6 +2379,18 @@ Widget_backColor( Handle self, Bool set, Color color)
    return color;
 }
 
+int
+Widget_bottom( Handle self, Bool set, int bottom)
+{
+   enter_method;
+   Point p = my-> get_origin( self);
+   if ( !set)
+      return p. y;
+   p. y = bottom;
+   my-> set_origin( self, p);
+   return 0;
+}
+
 Color
 Widget_color( Handle self, Bool set, Color color)
 {
@@ -2546,6 +2440,61 @@ Widget_hint( Handle self, Bool set, char *hint)
    }
    opt_clear( optOwnerHint);
    return "";
+}
+
+int
+Widget_left( Handle self, Bool set, int left)
+{
+   enter_method;
+   Point p = my-> get_origin( self);
+   if ( !set)
+      return p. x;
+   p. x = left;
+   my-> set_origin( self, p);
+   return 0;
+}
+
+Point
+Widget_origin( Handle self, Bool set, Point origin)
+{
+   if ( !set)
+      return apc_widget_get_pos( self);
+   apc_widget_set_pos( self, origin.x, origin.y);
+   return origin;
+}
+
+Rect
+Widget_rect( Handle self, Bool set, Rect r)
+{
+   enter_method;
+   if ( !set) {
+      Point p   = my-> get_origin( self);
+      Point s   = my-> get_size( self);
+      r. left   = p. x;
+      r. bottom = p. y;
+      r. right  = p. x + s. x;
+      r. top    = p. y + s. y;
+   } else {
+      Point pos  = { r. left, r. bottom};
+      Point size = { r. right - r. left, r. top - r. bottom};
+      my-> set_origin( self, pos);
+      my-> set_size( self, size);
+   }
+   return r;
+}
+
+int
+Widget_right( Handle self, Bool set, int right)
+{
+   enter_method;
+   Point p;
+   Rect r = my-> get_rect( self);
+   if ( !set)
+      return r. right;
+   p. x = r. left - r. right + right;
+   p. y = r. bottom;
+   my-> set_origin( self, p);
+   return 0;
 }
 
 Bool
@@ -2605,6 +2554,15 @@ Widget_selected( Handle self, Bool set, Bool selected)
    return selected;
 }
 
+Point
+Widget_size( Handle self, Bool set, Point size)
+{
+   if ( !set)
+      return apc_widget_get_size( self);
+   apc_widget_set_size( self, size.x, size.y);
+   return size;
+}
+
 char *
 Widget_text( Handle self, Bool set, char *text)
 {
@@ -2613,6 +2571,20 @@ Widget_text( Handle self, Bool set, char *text)
    free( var-> text);
    var-> text = duplicate_string( text ? text : "");
    return var-> text;
+}
+
+int
+Widget_top( Handle self, Bool set, int top)
+{
+   enter_method;
+   Point p;
+   Rect  r   = my-> get_rect( self);
+   if ( !set)
+      return r. top;
+   p. x = r. left;
+   p. y = r. bottom - r. top + top;
+   my-> set_origin( self, p);
+   return 0;
 }
 
 /* XS section */

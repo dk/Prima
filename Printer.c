@@ -139,18 +139,12 @@ Printer_printers( Handle self)
    return newRV_noinc(( SV *) glo);
 }
 
-int
-Printer_get_width( Handle self)
+Point
+Printer_size( Handle self, Bool set, Point size)
 {
-   Point p = my-> get_size( self);
-   return p. x;
-}
-
-int
-Printer_get_height( Handle self)
-{
-   Point p = my-> get_size( self);
-   return p. y;
+   if ( !set)
+      return apc_prn_get_size( self);
+   return inherited size( self, set, size);
 }
 
 SV *

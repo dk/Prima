@@ -398,13 +398,6 @@ Application_get_printer( Handle self)
    return var-> printer;
 }
 
-Point
-Application_get_pos( Handle self)
-{
-   Point ret = { 0, 0};
-   return ret;
-}
-
 Handle
 Application_get_widget_from_handle( Handle self, SV * handle)
 {
@@ -621,7 +614,7 @@ static void hshow( Handle self)
    if ( fin. y < 0) fin. y = pos. y + size. y + 1;
    if ( fin. y < 0) fin. y = 0;
 
-   hintWidget-> set_pos( var->  hintWidget, fin. x, fin. y);
+   hintWidget-> set_origin( var->  hintWidget, fin);
    hintWidget-> show( var->  hintWidget);
    hintWidget-> bring_to_front( var->  hintWidget);
 }
@@ -905,8 +898,6 @@ void Application_set_owner_back_color( Handle self, Bool ownerBackColor) {}
 void Application_set_owner_font( Handle self, Bool ownerFont) {}
 void Application_set_owner_show_hint( Handle self, Bool ownerShowHint) {}
 void Application_set_owner_palette( Handle self, Bool ownerPalette) {}
-Bool Application_set_pos( Handle self, int x, int y) { return false; }
-Bool Application_set_size( Handle self, int x, int y) { return false; }
 void Application_set_selectable( Handle self, Bool selectable) {}
 void Application_set_shape( Handle self, Handle mask) {}
 void Application_set_sync_paint( Handle self, Bool syncPaint) {}
@@ -914,6 +905,20 @@ void Application_set_clip_owner( Handle self, Bool clipOwner) {}
 void Application_set_tab_order( Handle self, int tabOrder) {}
 void Application_set_tab_stop( Handle self, Bool tabStop) {}
 void Application_set_transparent( Handle self, Bool transparent) {}
+
+Point
+Application_size( Handle self, Bool set, Point size)
+{
+   if ( set) return size;
+   return apc_application_get_size( self);
+}
+
+Point
+Application_origin( Handle self, Bool set, Point origin)
+{
+   Point p = { 0, 0};
+   return p;
+}
 
 char *
 Application_text( Handle self, Bool set, char *text)

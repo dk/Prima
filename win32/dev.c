@@ -610,7 +610,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
 
    if ( noSZ || noBPP) {
       if ( noSZ)
-         i-> self-> set_size(( Handle) i, size. x, size. y);
+         i-> self-> set_size(( Handle) i, size);
       if ( noBPP)
          i-> self-> set_type(( Handle) i,
              ( bpp < 4) ? 1 :

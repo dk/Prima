@@ -8,7 +8,7 @@ $w-> size( 200, 200);
 my @wsave = @w;
 ok($w[0] == 200 && $w[1] == 200);
 $w-> size( 300, 300);
-@w = $w-> get_size;
+@w = $w-> size;
 my $id = $w-> add_notification( Size => sub {
    my ( $self, $oldx, $oldy, $newx, $newy) = @_;
    $dong = 1 if ( $newx == $wsave[0] && $newy == $wsave[1] && $oldx == $w[0] && $oldy == $w[1]);

@@ -40,7 +40,7 @@ sub recalc_coordinates
    delete $me-> {line1};
    delete $me-> {line2};
    delete $me-> {line3};
-   my ($w, $h) = $me-> get_size;
+   my ($w, $h) = $me-> size;
    my $sz = ($w > $h ? $h : $w) * 0.8 * 0.5;
    my ($x, $y) = (25*$sz/34,$sz);
    my ($fx, $fy) = ($x,$y);
@@ -151,7 +151,7 @@ my $w = Prima::Window-> create(
    {
       my ($me,$canvas) = @_;
       $canvas-> color( $me-> backColor);
-      $canvas-> bar( 0, 0, $canvas-> get_size);
+      $canvas-> bar( 0, 0, $canvas-> size);
    },
 );
 
