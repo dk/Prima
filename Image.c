@@ -644,9 +644,8 @@ modify_Image( Handle self, PImgInfo imageInfo)
 #define REQPROP_ALL ( REQPROP_WIDTH | REQPROP_HEIGHT | REQPROP_TYPE | \
 		      REQPROP_DATA | REQPROP_PALETTE | REQPROP_LINESIZE)
 
+    ++SvREFCNT( SvRV(PImage(self)->mate));
     my->make_empty( self);
-
-    fprintf( stderr, "Prop. list contains %d entries\n", imageInfo->propList->count);
 
     for ( i = ( imageInfo->propList->count - 1); i >= 0; i--) {
 	PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, i);
@@ -680,9 +679,13 @@ modify_Image( Handle self, PImgInfo imageInfo)
 	    imgProp->val.pByte = NULL;
 	    imgProp->size = 0;
 	}
+	else if ( strcmp( imgProp->name, "name") == 0) {
+	    my->set_name( self, imgProp->val.String);
+	    free( imgProp->val.String);
+	    imgProp->val.String = nil;
+	}
 	else if ( imageInfo->extraInfo) {
 	    HV *profile = extraInfo;
-
 	    if ( ! profile) {
 		if ( hv_exists( ( HV *) SvRV( var->mate), "extraInfo", 9)) {
 		    SV **prf;
@@ -709,17 +712,17 @@ modify_Image( Handle self, PImgInfo imageInfo)
 	    if ( imgProp->size == -1) {
 		switch ( imgProp->flags & PROPTYPE_MASK) {
 		    case PROPTYPE_STRING:
-			pset_c( imgProp->name, imgProp->val.String);
+			hv_store( profile, imgProp->name, strlen( imgProp->name), newSVpv( imgProp->val.String, 0), 0);
 			break;
 		    case PROPTYPE_DOUBLE:
-			pset_f( imgProp->name, imgProp->val.Double);
+			hv_store( profile, imgProp->name, strlen( imgProp->name), newSVnv( imgProp->val.Double), 0);
 			break;
 		    case PROPTYPE_BYTE:
-			pset_i( imgProp->name, imgProp->val.Byte);
+			hv_store( profile, imgProp->name, strlen( imgProp->name), newSViv( imgProp->val.Byte), 0);
 			break;
 		    case PROPTYPE_INT:
 		    default:
-			pset_i( imgProp->name, imgProp->val.Int);
+			hv_store( profile, imgProp->name, strlen( imgProp->name), newSViv( imgProp->val.Int), 0);
 			break;
 		}
 	    }
@@ -751,7 +754,7 @@ modify_Image( Handle self, PImgInfo imageInfo)
 		    }
 		    av_push( av, sv);
 		}
-		pset_sv( imgProp->name, newRV_inc( ( SV *) av));
+		hv_store( profile, imgProp->name, strlen( imgProp->name), newRV_inc( ( SV *) av), 0);
 	    }
 	}
 
@@ -765,6 +768,7 @@ modify_Image( Handle self, PImgInfo imageInfo)
     if ( ( var->lineSize * var->h) != var->dataSize) {
 	croak( "Image data/line size inconsistency detected");
     }
+    --SvREFCNT( SvRV(PImage(self)->mate));
 }
 
 XS( Image_load_FROMPERL) {
@@ -831,6 +835,34 @@ XS( Image_load_FROMPERL) {
       SP -= items;
       if ( result) {
 	  if ( as_class) {
+	      Handle *selves;
+	      selves = malloc( info->count * sizeof( Handle));
+	      setbuf( stdout, nil);
+	      for ( i = 0; i < info->count; i++) {
+		  self = ( Handle) create_object( class_name, "", nil);
+		  SPAGAIN;
+		  SP -= items;
+		  modify_Image( self, ( PImgInfo) list_at( info, i));
+		  SPAGAIN;
+		  SP -= items;
+		  selves[ i] = self;
+	      }
+	      if ( wantarray) {
+		  for ( i = 0; i < info-> count; i++) {
+		      XPUSHs( sv_mortalcopy( PImage( selves[ i])-> mate));
+		  }
+	      }
+	      else {
+		  AV *av = newAV();
+		  for ( i = 0; i < info-> count; i++) {
+		      av_push( av, newSVsv( PImage( selves[ i])-> mate));
+		  }
+		  XPUSHs( sv_2mortal( newRV_noinc( (SV*) av)));
+	      }
+	      free( selves);
+	      while ( info->count) {
+		  list_delete_at( info, 0);
+	      }
 	  }
 	  else {
 	      if ( info->count > 1) {
@@ -838,6 +870,8 @@ XS( Image_load_FROMPERL) {
 	      }
 	      else {
 		  modify_Image( self, ( PImgInfo) list_at( info, 0));
+		  SPAGAIN;
+		  SP -= items;
 	      }
 	  }
       }
