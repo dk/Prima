@@ -168,10 +168,14 @@ sub profile_default
             [],
             [ '*hsc' => '~Horizontal scrollbar' => sub{ $_[0]->{editor}-> hScroll( $_[0]->menu-> hsc-> toggle)}],
             [ '*vsc' => '~Vertical scrollbar'   => sub{ $_[0]->{editor}-> vScroll( $_[0]->menu-> vsc-> toggle)}],
+            [],
+            [ 'Set ~font' => q(setfont)],
         ]]
       ],
    }
 }
+
+my $windows = 0;
 
 sub init
 {
@@ -210,6 +214,7 @@ sub init
    );
    $self-> {editor}-> focus;
    $self-> {findData} = undef;
+   $windows++;
    return %profile;
 }
 
@@ -228,6 +233,10 @@ sub on_close
    }
 }
 
+sub on_destroy
+{
+   $::application-> close unless --$windows;
+}
 
 sub new_window
 {
@@ -242,10 +251,12 @@ sub new_window
    return $ww;
 }
 
+my $opd;
+
 sub open_file
 {
    my $self = $_[0];
-   my $opd = Prima::OpenDialog-> create;
+   $opd = Prima::OpenDialog-> create unless $opd;
    if ( $opd-> execute) {
       my $ww = EditorWindow-> create(
          size     => [$self-> size],
@@ -256,7 +267,6 @@ sub open_file
       );
       $ww-> {editor}->focus;
    }
-   $opd-> destroy;
 }
 
 sub save_file
@@ -284,10 +294,13 @@ sub save_file
    return 0;
 }
 
+
+my $svd;
+
 sub save_as
 {
    my $self = $_[0];
-   my $svd = Prima::SaveDialog-> create;
+   $svd = Prima::SaveDialog-> create unless $svd;
    my $ret = 0;
    if ( $svd-> execute) {
    my $fn = $svd-> fileName;
@@ -312,14 +325,15 @@ SAVE: while(1){
                        mb::Error|mb::Retry|mb::Cancel);
       }
    }
-   $svd-> destroy;
    return $ret;
 }
+
+my $findDialog;
 
 sub find_dialog
 {
    my ( $self, $findStyle) = @_;
-   my %prf = ( findStyle => $findStyle);
+   my %prf;
    %{$self->{findData}} = (
       replaceText  => '',
       findText     => '',
@@ -332,20 +346,20 @@ sub find_dialog
    my @props = qw(findText options scope);
    push( @props, q(replaceText)) unless $findStyle;
    if ( $fd) { for( @props) { $prf{$_} = $fd->{$_}}}
-   my $d = Prima::FindDialog-> create( %prf);
-   $d-> Find-> items($fd->{findItems});
-   $d-> Replace-> items($fd->{replaceItems}) unless $findStyle;
+   $findDialog = Prima::FindDialog-> create unless $findDialog;
+   $findDialog-> set( %prf);
+   $findDialog-> Find-> items($fd->{findItems});
+   $findDialog-> Replace-> items($fd->{replaceItems}) unless $findStyle;
    my $ret = 0;
-   my $rf  = $d-> execute;
+   my $rf  = $findDialog-> execute;
    if ( $rf != mb::Cancel) {
-      { for( @props) { $self->{findData}->{$_} = $d->$_()}}
+      { for( @props) { $self->{findData}->{$_} = $findDialog->$_()}}
       $self->{findData}->{result} = $rf;
       $self->{findData}->{asFind} = $findStyle;
-      @{$self->{findData}->{findItems}} = @{$d-> Find-> items};
-      @{$self->{findData}->{replaceItems}} = @{$d-> Replace-> items} unless $findStyle;
+      @{$self->{findData}->{findItems}} = @{$findDialog-> Find-> items};
+      @{$self->{findData}->{replaceItems}} = @{$findDialog-> Replace-> items} unless $findStyle;
       $ret = 1;
    }
-   $d-> destroy;
    return $ret;
 }
 
@@ -409,6 +423,16 @@ sub find_next
    $self-> do_find;
 }
 
+my $fontDialog;
+
+sub setfont
+{
+   my $self = $_[0];
+   $fontDialog = Prima::FontDialog-> create() unless $fontDialog;
+   $fontDialog-> logFont( $self-> font);
+   return unless $fontDialog-> execute;
+   $self-> font( $fontDialog-> logFont);
+}
 
 package Generic;
 
@@ -419,7 +443,6 @@ for ( @fn) {
 my $w = EditorWindow-> create(
    origin => [ 10, 100],
    size   => [ $::application-> width - 820, $::application-> height - 150],
-   font => {size => 18, name => 'Terminal'},
    fileName => $_,
 );
 }
