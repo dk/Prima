@@ -26,11 +26,14 @@ If make fails with message
 that means you don't have image libraries that Prima supports in your path.
 Prima supports libungif, libjpeg, libpng and gbm - latter is compiled customly
 and named libprigraph. For win32 users it is recommended to
-download http://www.prima.eu.org/download/prigraph.lib and
-http://www.prima.eu.org/download/prima_dlls.zip. prigraph.lib should be
-put into LIBPATH, and prima_dll.zip is to be unpacked and primguts.dll
-and zlib.dll to be put in the same directory to Prima.dll ( which appears 
-after successful compilation in auto/Prima subdirectory ).
+download http://www.prima.eu.org/download/gbm-bin-win32.zip. 
+The zip file is to be unpacked and prigraph.dll and zlib.dll to be put 
+in the same directory as Prima.dll ( which appears 
+after successful compilation in auto/Prima subdirectory ), and 
+prigraph.lib should be put into LIBPATH. For OS/2 system 
+download http://www.prima.eu.org/download/gbm-bin-os2.zip.
+The zip file is to be unpacked and prigraph.dll and priz.dll to be put 
+into PATH, and prigraph.lib should be put into LIBPATH. 
 
 If some of the required libraries or include files can not
 be found, INCPATH+=/some/include and LIBPATH+=/some/lib semantics
