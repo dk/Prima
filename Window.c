@@ -192,10 +192,10 @@ void Window_handle_event( Handle self, PEvent event)
          Handle   org;
          if ( count > 0)
          {
-            // searching for 1-st level view that responds for focus
+            /* searching for 1-st level view that responds for focus */
             while ( foc && PWidget(foc)-> owner != self)
                foc = PWidget(foc)-> owner;
-            // copying list and sorting to tabOrder
+            /* copying list and sorting to tabOrder */
             list = malloc( count * sizeof( Handle));
             for ( i = 0; i < count; i++)
             {
@@ -206,7 +206,7 @@ void Window_handle_event( Handle self, PEvent event)
                   croak("DBG001: Unmatched tabOrder in %s %d", __FILE__, __LINE__);
                }
             }
-            // determining foc presence and/or position in list
+            /* determining foc presence and/or position in list */
             if ( foc) {
                i = 0;
                while( i < count && list[ i] != foc) i++;
@@ -215,7 +215,7 @@ void Window_handle_event( Handle self, PEvent event)
                i = count - 1;
             }
             org = list[ i];
-            // cycling for best match
+            /* cycling for best match */
             do {
                Handle self, add;
                i += dir;
@@ -223,14 +223,14 @@ void Window_handle_event( Handle self, PEvent event)
                self = list[ i];
                if ( my get_enabled( self))
                {
-                  // direct hit
+                  /* direct hit */
                   if ( my get_selectable( self) && my get_tab_stop( self))
                   {
                       org = self;
                       break;
                   }
                   if (!( kind_of( self, CWidget))) continue;
-                  // grouped hit
+                  /* grouped hit */
                   add  = nilHandle;
                   my first_that( self, find_0tab, &add);
                   if ( add) {
@@ -240,7 +240,7 @@ void Window_handle_event( Handle self, PEvent event)
                }
             } while ( org != list[ i]);
             free( list);
-            // focusing found view
+            /* focusing found view */
             {
                PWidget_vmt widget = CWidget( org);
                if ( widget-> get_enabled( org)
@@ -295,19 +295,19 @@ Window_exec_enter_proc( Handle self, Bool sharedExec, Handle insertBefore)
       Handle mh = my get_horizon( self);
       var modal = mtShared;
 
-      // adding new modal horizon in global mh-list
+      /* adding new modal horizon in global mh-list */
       if ( mh != application && !PWindow(mh)-> nextSharedModal)
          list_add( &PApplication( application)-> modalHorizons, mh);
 
       if ( var nextSharedModal = insertBefore) {
-         // inserting window in between of modal list
+         /* inserting window in between of modal list */
          Handle *iBottom = ( mh == application) ?
             &PApplication(mh)-> sharedModal : &PWindow(mh)-> nextSharedModal;
          var prevSharedModal = PWindow( insertBefore)-> prevSharedModal;
          if ( *iBottom == insertBefore)
             *iBottom = self;
       } else {
-         // inserting window on top of modal list
+         /* inserting window on top of modal list */
          Handle *iTop = ( mh == application) ?
             &PApplication(mh)-> topSharedModal : &PWindow(mh)-> topSharedModal;
          if ( *iTop)
@@ -322,9 +322,9 @@ Window_exec_enter_proc( Handle self, Bool sharedExec, Handle insertBefore)
          *iTop = self;
       }
    }
-   // end of shared exec
+   /* end of shared exec */
    else
-   // start of exclusive exec
+   /* start of exclusive exec */
    {
       PApplication app = ( PApplication) application;
       var modal = mtExclusive;
@@ -376,15 +376,15 @@ Window_exec_leave_proc( Handle self)
             win-> nextSharedModal = var nextSharedModal;
          if ( win-> topSharedModal == self)
             win-> topSharedModal = var prevSharedModal;
-         // removing horizon from global mh-list
+         /* removing horizon from global mh-list */
          if ( !win-> nextSharedModal)
              list_delete( &PApplication(application)-> modalHorizons, mh);
       }
 
       var prevSharedModal = var nextSharedModal = nilHandle;
-   } // end of shared exec
+   } /* end of shared exec */
    else
-   // start of exclusive exec
+   /* start of exclusive exec */
    {
       PApplication app = ( PApplication) application;
       if ( var prevExclModal) {

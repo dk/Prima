@@ -10,7 +10,7 @@
 #error "Prima require at least perl 5.004, better 5.005"
 #endif
 
-// #define PARANOID_MALLOC
+/* #define PARANOID_MALLOC */
 
 #ifdef _MSC_VER
    #define BROKEN_COMPILER       1
@@ -71,10 +71,10 @@ typedef U8                     Byte;
 typedef U16                    Short;
 typedef U32                    Long;
 typedef struct _ObjectOptions_ {
-   unsigned optInDraw              : 1;   // Drawable
+   unsigned optInDraw              : 1;   /* Drawable */
    unsigned optInDrawInfo          : 1;
    unsigned optTextOutBaseLine     : 1;
-   unsigned optBriefKeys           : 1;   // Widget
+   unsigned optBriefKeys           : 1;   /* Widget */
    unsigned optBuffered            : 1;
    unsigned optModalHorizon        : 1;
    unsigned optOwnerBackColor      : 1;
@@ -88,10 +88,10 @@ typedef struct _ObjectOptions_ {
    unsigned optSystemSelectable    : 1;
    unsigned optTabStop             : 1;
    unsigned optScaleChildren       : 1;
-   unsigned optPreserveType        : 1;   // Image
+   unsigned optPreserveType        : 1;   /* Image */
    unsigned optVScaling            : 1;
    unsigned optHScaling            : 1;
-   unsigned optAutoPopup           : 1;   // Popup
+   unsigned optAutoPopup           : 1;   /* Popup */
 } ObjectOptions;
 
 typedef struct _DelegatedMessages_ {
@@ -156,7 +156,7 @@ typedef struct _TrigDComplex { float r, ph;  } TrigDComplex;
 #define true TRUE
 #define false FALSE
 
-// general structures
+/* general structures */
 
 typedef struct _Point
 {
@@ -172,7 +172,7 @@ typedef struct _Rect
    int top;
 } Rect;
 
-// Event structures
+/* Event structures */
 
 typedef struct _KeyEvent {
    int    cmd;
@@ -221,83 +221,83 @@ typedef struct _PostMsg {
    SV   *  info2;
 } PostMsg, *PPostMsg;
 
-// Object life stages
-#define csConstructing  -1         // before create() finished
-#define csNormal         0         // normal during life stage
-#define csDestroying     1         // destroy() started
-#define csFrozen         2         // cleanup() started - no messages available at this point
-#define csFinalizing     3         // done() started
-#define csDead           4         // destroy() finished - no methods available at this point
+/* Object life stages */
+#define csConstructing  -1         /* before create() finished */
+#define csNormal         0         /* normal during life stage */
+#define csDestroying     1         /* destroy() started */
+#define csFrozen         2         /* cleanup() started - no messages available at this point */
+#define csFinalizing     3         /* done() started */
+#define csDead           4         /* destroy() finished - no methods available at this point */
 
-// Notification types
+/* Notification types */
 #define ntPrivateFirst   0x0
 #define ntCustomFirst    0x1
 #define ntSingle         0x0
 #define ntMultiple       0x2
 #define ntEvent          0x4
 
-// Modality types
+/* Modality types */
 #define mtNone           0
 #define mtShared         1
 #define mtExclusive      2
 
 /* Command event types */
-#define ctQueueMask      0x00070000              // masks bits that defines behavior in !csNormal stages:
-#define ctCacheable      0x00000000              //   Command caches in the queue
-#define ctDiscardable    0x00010000              //   Command should be discarded
-#define ctPassThrough    0x00020000              //   Command acts same way in all csXXX stages
-#define ctSingle         0x00030000              //   Command caches in the queue only once, then changes ct bits to
-#define ctSingleResponse 0x00040000              //   ctSingleResponse
+#define ctQueueMask      0x00070000              /* masks bits that defines behavior in !csNormal stages: */
+#define ctCacheable      0x00000000              /*   Command caches in the queue */
+#define ctDiscardable    0x00010000              /*   Command should be discarded */
+#define ctPassThrough    0x00020000              /*   Command acts same way in all csXXX stages */
+#define ctSingle         0x00030000              /*   Command caches in the queue only once, then changes ct bits to */
+#define ctSingleResponse 0x00040000              /*   ctSingleResponse */
 
 /* Apricot events */
-#define cmHelp           0x00000002                // WM_HELP analog
-#define cmOK             0x00000003                // std OK cmd
-#define cmCancel         0x00000004                // std Cancel cmd
-#define cmClose         (0x00000005|ctDiscardable) // on dialog close, WM_CLOSE analog
-#define cmCreate         0x0000000A                // * WM_CREATE analog
-#define cmDestroy       (0x0000000B|ctPassThrough) // * WM_DESTROY analog
-#define cmHide          (0x0000000C|ctDiscardable) //  visible flag aware
-#define cmShow          (0x0000000D|ctDiscardable) //            commands
-#define cmReceiveFocus  (0x0000000E|ctDiscardable) // * focused flag aware
-#define cmReleaseFocus  (0x0000000F|ctDiscardable) // *          commands
-#define cmPaint         (0x00000010|ctSingle)      //  WM_PAINT analog
-#define cmRepaint       (0x00000010|ctSingleResponse) // and it's response action
-#define cmSize          (0x00000011|ctPassThrough) // * WM_SIZE analog
-#define cmMove          (0x00000012|ctPassThrough) // * WM_MOVE analog
-#define cmColorChanged  (0x00000013|ctDiscardable) // * generates when color changed
-#define cmZOrderChanged (0x00000014|ctDiscardable) //  z-order change command
-#define cmEnable        (0x00000015|ctDiscardable) //  enabled flag aware
-#define cmDisable       (0x00000016|ctDiscardable) //  commands
-#define cmActivate      (0x00000017|ctDiscardable) //  commands for window active stage change
-#define cmDeactivate    (0x00000018|ctDiscardable) //
-#define cmFontChanged   (0x00000019|ctDiscardable) // * generates when font changed
-#define cmWindowState   (0x0000001A|ctDiscardable) // generates when window state changed
-#define cmTimer          0x0000001C                // WM_TIMER analog
-#define cmClick          0x0000001D                // common click
-#define cmCalcBounds     0x0000001E                // query on change size
-#define cmPost           0x0000001F                // posted message
-#define cmPopup          0x00000020                // interactive popup request
-#define cmExecute        0x00000021                // dialog execution start
-#define cmSetup          0x00000022                // first message for alive and active widget
-#define cmHint           0x00000023                // hint show/hide message
-#define cmDragDrop       0x00000024                // *
-#define cmDragOver       0x00000025                // * Drag'n'drop aware constants
-#define cmEndDrag        0x00000026                // *
-#define cmMenu          (0x00000027|ctDiscardable) // send when menu going to be activated
-#define cmEndModal       0x00000028                // dialog execution end
+#define cmHelp           0x00000002                /* WM_HELP analog */
+#define cmOK             0x00000003                /* std OK cmd */
+#define cmCancel         0x00000004                /* std Cancel cmd */
+#define cmClose         (0x00000005|ctDiscardable) /* on dialog close, WM_CLOSE analog */
+#define cmCreate         0x0000000A                /* * WM_CREATE analog */
+#define cmDestroy       (0x0000000B|ctPassThrough) /* * WM_DESTROY analog */
+#define cmHide          (0x0000000C|ctDiscardable) /*  visible flag aware */
+#define cmShow          (0x0000000D|ctDiscardable) /*            commands */
+#define cmReceiveFocus  (0x0000000E|ctDiscardable) /* * focused flag aware */
+#define cmReleaseFocus  (0x0000000F|ctDiscardable) /* *          commands */
+#define cmPaint         (0x00000010|ctSingle)      /*  WM_PAINT analog */
+#define cmRepaint       (0x00000010|ctSingleResponse) /* and it's response action */
+#define cmSize          (0x00000011|ctPassThrough) /* * WM_SIZE analog */
+#define cmMove          (0x00000012|ctPassThrough) /* * WM_MOVE analog */
+#define cmColorChanged  (0x00000013|ctDiscardable) /* * generates when color changed */
+#define cmZOrderChanged (0x00000014|ctDiscardable) /*  z-order change command */
+#define cmEnable        (0x00000015|ctDiscardable) /*  enabled flag aware */
+#define cmDisable       (0x00000016|ctDiscardable) /*  commands */
+#define cmActivate      (0x00000017|ctDiscardable) /*  commands for window active stage change */
+#define cmDeactivate    (0x00000018|ctDiscardable) /* */
+#define cmFontChanged   (0x00000019|ctDiscardable) /* * generates when font changed */
+#define cmWindowState   (0x0000001A|ctDiscardable) /* generates when window state changed */
+#define cmTimer          0x0000001C                /* WM_TIMER analog */
+#define cmClick          0x0000001D                /* common click */
+#define cmCalcBounds     0x0000001E                /* query on change size */
+#define cmPost           0x0000001F                /* posted message */
+#define cmPopup          0x00000020                /* interactive popup request */
+#define cmExecute        0x00000021                /* dialog execution start */
+#define cmSetup          0x00000022                /* first message for alive and active widget */
+#define cmHint           0x00000023                /* hint show/hide message */
+#define cmDragDrop       0x00000024                /* * */
+#define cmDragOver       0x00000025                /* * Drag'n'drop aware constants */
+#define cmEndDrag        0x00000026                /* * */
+#define cmMenu          (0x00000027|ctDiscardable) /* send when menu going to be activated */
+#define cmEndModal       0x00000028                /* dialog execution end */
 
-#define cmMenuCmd        0x00000050                // interactive menu command
-#define cmKeyDown        0x00000051                // generic key down handler cmd
-#define cmKeyUp          0x00000052                // generic key up handler cmd (rare used)
-#define cmMouseDown      0x00000053                // WM_BUTTONxDOWN & WM_BUTTONxDBLCLK analog
-#define cmMouseUp        0x00000054                // WM_BUTTONxUP analog
-#define cmMouseMove      0x00000055                // WM_MOUSEMOVE analog
-#define cmMouseClick     0x00000056                // click response command
-#define cmMouseEnter     0x00000057                // mouse entered window area
-#define cmMouseLeave     0x00000058                // mouse left window area
-#define cmTranslateAccel 0x00000059                // key event spred to non-focused windows
-#define cmDelegateKey    0x0000005A                // reserved for key mapping
-#define cmUser           0x00000100                // first user-defined message
+#define cmMenuCmd        0x00000050                /* interactive menu command */
+#define cmKeyDown        0x00000051                /* generic key down handler cmd */
+#define cmKeyUp          0x00000052                /* generic key up handler cmd (rare used) */
+#define cmMouseDown      0x00000053                /* WM_BUTTONxDOWN & WM_BUTTONxDBLCLK analog */
+#define cmMouseUp        0x00000054                /* WM_BUTTONxUP analog */
+#define cmMouseMove      0x00000055                /* WM_MOUSEMOVE analog */
+#define cmMouseClick     0x00000056                /* click response command */
+#define cmMouseEnter     0x00000057                /* mouse entered window area */
+#define cmMouseLeave     0x00000058                /* mouse left window area */
+#define cmTranslateAccel 0x00000059                /* key event spred to non-focused windows */
+#define cmDelegateKey    0x0000005A                /* reserved for key mapping */
+#define cmUser           0x00000100                /* first user-defined message */
 
 /* mouse buttons */
 #define mbLeft          1
@@ -346,7 +346,7 @@ typedef struct _PostMsg {
 #define kbF15           0x2e00
 #define kbF16           0x2f00
 
-// Please, please, PLEASE!  Do not use directly!
+/* Please, please, PLEASE!  Do not use directly! */
 
 typedef struct _VmtPatch
 {
@@ -355,7 +355,7 @@ typedef struct _VmtPatch
    char *name;
 } VmtPatch;
 
-typedef struct _VMT {         // Whatever VMT
+typedef struct _VMT {         /* Whatever VMT */
    char *className;
    struct _VMT *super;
    struct _VMT *base;
@@ -365,7 +365,7 @@ typedef struct _VMT {         // Whatever VMT
    int vmtSize;
 } VMT, *PVMT;
 
-typedef struct _AnyObject {   // Whatever Object
+typedef struct _AnyObject {   /* Whatever Object */
    PVMT self;
    PVMT *super;
    SV   *mate;
@@ -374,7 +374,7 @@ typedef struct _AnyObject {   // Whatever Object
 
 extern FillPattern fillPatterns[];
 
-// gencls rtl support
+/* gencls rtl support */
 
 #define C_NUMERIC_UNDEF   -90909090
 #define C_STRING_UNDEF    "__C_CHAR_UNDEF__"
@@ -383,18 +383,18 @@ extern FillPattern fillPatterns[];
 extern Rect        Rect_buffer          ;
 extern Point       Point_buffer         ;
 
-//    developer functions
+/*    developer functions */
 
 extern Bool   kind_of( Handle object, void *cls);
 extern Bool   type_of( Handle object, void *cls);
 
-// profiling functions
+/* profiling functions */
 extern Bool   log_write( const char *format, ...);
 extern Bool   debug_write( const char *format, ...);
 
-// perl links
+/* perl links */
 #if (PERL_PATCHLEVEL < 5)
-// ...(perl stinks)...
+/* ...(perl stinks)... */
 #undef  SvREFCNT_inc
 #define SvREFCNT_inc(sv) ((Sv = (SV*)(sv)), (void)(Sv && ++SvREFCNT(Sv)), (SV*)Sv)
 #endif
@@ -478,7 +478,7 @@ extern SV **temporary_prf_Sv;
 #endif POLLUTE_NAME_SPACE
 
 
-// mapping functions
+/* mapping functions */
 #define endCtx          0x19740108
 extern int    ctx_remap_def ( int value, int * table, Bool direct, int default_value);
 
@@ -486,7 +486,7 @@ extern int    ctx_remap_def ( int value, int * table, Bool direct, int default_v
 #define ctx_remap(a,b,c)	ctx_remap_def((a),(b),(c), 0)
 
 
-// listing local functions
+/* listing local functions */
 typedef struct _List
 {
    Handle * items;
@@ -521,12 +521,12 @@ extern void *hash_first_that( PHash self, void * action, void * params, int * pK
 
 
 /* platform shortcuts */
-// operational system type
+/* operational system type */
 #define apcOS2                  1
 #define apcWin32                2
 #define apcUnix                 3
 
-// gui types
+/* gui types */
 #define guiDefault              0
 #define guiPM                   1
 #define guiWindows              2
@@ -593,24 +593,24 @@ extern void *hash_first_that( PHash self, void * action, void * params, int * pK
 #define gfCenter              (gfXCenter+gfYCenter)
 #define gfDontCare            0x040
 
-// border icons
+/* border icons */
 #define    biSystemMenu    1
 #define    biMinimize      2
 #define    biMaximize      4
 #define    biTitleBar      8
 
-// border styles
+/* border styles */
 #define   bsNone           0
 #define   bsSizeable       1
 #define   bsSingle         2
 #define   bsDialog         3
 
-// window states
+/* window states */
 #define   wsNormal         0
 #define   wsMinimized      1
 #define   wsMaximized      2
 
-// system values
+/* system values */
 #define   svYMenu          0
 #define   svYTitleBar      1
 #define   svMousePresent   2
@@ -625,7 +625,7 @@ extern long   apcError;
 *  apc functions   *
 ***************** */
 
-// Application management
+/* Application management */
 extern Bool    apc_application_begin_paint        ( Handle self);
 extern Bool    apc_application_begin_paint_info   ( Handle self);
 extern Bool    apc_application_create             ( Handle self);
@@ -643,11 +643,11 @@ extern void    apc_application_lock               ( Handle self);
 extern void    apc_application_unlock             ( Handle self);
 extern void    apc_application_yield              ( void);
 
-// Component
+/* Component */
 extern void    apc_component_create        ( Handle self);
 extern void    apc_component_destroy       ( Handle self);
 
-// Window
+/* Window */
 extern Bool    apc_window_create           ( Handle self, Handle owner, Bool syncPaint,
                                              Bool clipOwner, int borderIcons, int borderStyle,
                                              Bool taskList, int windowState);
@@ -673,7 +673,7 @@ extern Bool    apc_window_execute_shared   ( Handle self, Handle insertBefore);
 extern void    apc_window_end_modal        ( Handle self);
 
 
-// View management
+/* View management */
 extern Point   apc_view_client_to_screen   ( Handle self, Point p);
 extern Bool    apc_view_create             ( Handle self, Handle owner, Bool syncPaint,
   Bool clipOwner, Bool transparent);
@@ -723,7 +723,7 @@ extern void    apc_view_unlock             ( Handle self);
 extern void    apc_view_update             ( Handle self);
 extern void    apc_view_validate_rect      ( Handle self, Rect rect);
 
-// standard system pointers
+/* standard system pointers */
 #define crDefault      -1
 #define crArrow        0
 #define crText         1
@@ -737,7 +737,7 @@ extern void    apc_view_validate_rect      ( Handle self, Rect rect);
 #define crInvalid      9
 #define crUser         10
 
-// View attributes
+/* View attributes */
 extern void    apc_cursor_set_pos            ( Handle self, int x, int y);
 extern void    apc_cursor_set_size           ( Handle self, int x, int y);
 extern void    apc_cursor_set_visible        ( Handle self, Bool visible);
@@ -757,7 +757,7 @@ extern void    apc_pointer_set_visible       ( Handle self, Bool visible);
 extern int     apc_pointer_get_state         ( Handle self);
 extern int     apc_kbd_get_state             ( Handle self);
 
-// Clipboard
+/* Clipboard */
 #define cfText     0
 #define cfBitmap   1
 #define cfCustom   2
@@ -778,24 +778,24 @@ typedef struct _ItemRegRec {
   void *item;
 } ItemRegRec, *PItemRegRec;
 
-typedef struct _MenuItemReg {   // Menu item registration record
-   char * variable;             // perl variable name
-   char * text;                 // menu text
-   char * accel;                // accelerator text
-   int    key;                  // accelerator key, kbXXX
-   int    id;                   // unique id
-   char * perlSub;              // sub name
-   Bool   checked;              // true if item is checked
-   Bool   disabled;             // true if item is disabled
-   Bool   rightAdjust;          // true if right adjust ordered
-   Bool   divider;              // true if it's line divider
-   Handle bitmap;               // bitmap if not nil
-   SV *   code;                 // code if not nil
-   struct _MenuItemReg* down;   // pointer to submenu
-   struct _MenuItemReg* next;   // pointer to next item
+typedef struct _MenuItemReg {   /* Menu item registration record */
+   char * variable;             /* perl variable name */
+   char * text;                 /* menu text */
+   char * accel;                /* accelerator text */
+   int    key;                  /* accelerator key, kbXXX */
+   int    id;                   /* unique id */
+   char * perlSub;              /* sub name */
+   Bool   checked;              /* true if item is checked */
+   Bool   disabled;             /* true if item is disabled */
+   Bool   rightAdjust;          /* true if right adjust ordered */
+   Bool   divider;              /* true if it's line divider */
+   Handle bitmap;               /* bitmap if not nil */
+   SV *   code;                 /* code if not nil */
+   struct _MenuItemReg* down;   /* pointer to submenu */
+   struct _MenuItemReg* next;   /* pointer to next item */
 } MenuItemReg, *PMenuItemReg;
 
-// Menus & popups
+/* Menus & popups */
 extern Bool    apc_menu_create               ( Handle self, Handle owner);
 extern void    apc_menu_destroy              ( Handle self);
 extern PFont   apc_menu_default_font         ( PFont font);
@@ -813,7 +813,7 @@ extern Bool    apc_popup_create              ( Handle self, Handle owner);
 extern PFont   apc_popup_default_font        ( PFont font);
 extern Bool    apc_popup                     ( Handle self, int x, int y);
 
-// Timer
+/* Timer */
 extern Bool    apc_timer_create              ( Handle self, Handle owner, int timeout);
 extern void    apc_timer_destroy             ( Handle self);
 extern int     apc_timer_get_timeout         ( Handle self);
@@ -821,7 +821,7 @@ extern void    apc_timer_set_timeout         ( Handle self, int timeout);
 extern Bool    apc_timer_start               ( Handle self);
 extern void    apc_timer_stop                ( Handle self);
 
-// Help
+/* Help */
 #define  hmpNone                     0
 #define  hmpOwner                   -1
 #define  hmpMain                    -2
@@ -832,7 +832,7 @@ extern Bool    apc_help_open_topic           ( Handle self, long command);
 extern void    apc_help_close                ( Handle self);
 extern void    apc_help_set_file             ( Handle self, char * helpFile);
 
-// Messages
+/* Messages */
 #define mbError        0x0100
 #define mbWarning      0x0200
 #define mbInformation  0x0400
@@ -842,10 +842,10 @@ extern void    apc_message                   ( Handle self, PEvent ev, Bool post
 extern void    apc_show_message              ( char * message);
 
 
-// graphic constants
+/* graphic constants */
 #define ARGB(r,g,b) ((long)(((unsigned char)(b)|((unsigned short)((unsigned char)(g))<<8))|(((unsigned long)(unsigned char)(r))<<16)))
 
-// colors
+/* colors */
 #define    clBlack            ARGB(0,0,0)
 #define    clBlue             ARGB(0,0,128)
 #define    clGreen            ARGB(0,128,0)
@@ -875,7 +875,7 @@ extern void    apc_show_message              ( char * message);
 #define    clDark3DColor      (long)(0x80000008)
 #define    clMaxSysColor      (long)(0x80000008)
 
-// color indeces
+/* color indeces */
 #define    ciNormalText    0
 #define    ciFore          0
 #define    ciNormal        1
@@ -890,39 +890,39 @@ extern void    apc_show_message              ( char * message);
 
 typedef Color ColorSet[ ciMaxId + 1];
 
-// raster operations
-#define    ropCopyPut       0  //     dest  = src
-#define    ropXorPut        1  //     dest ^= src
-#define    ropAndPut        2  //     dest &= src
-#define    ropOrPut         3  //     dest |= src
-#define    ropNotPut        4  //     dest = !src
-#define    ropNotBlack      5  //     dest = (src <> 0) ? src
-#define    ropNotDestXor    6  //     dest = (!dest) ^ src
-#define    ropNotDestAnd    7  //     dest = (!dest) & src
-#define    ropNotDestOr     8  //     dest = (!dest) | src
-#define    ropNotSrcXor     9  //     dest ^= !src
-#define    ropNotSrcAnd     10 //    dest &= !src
-#define    ropNotSrcOr      11 //    dest |= !src
-#define    ropNotXor        12 //    dest = !(src ^ dest)
-#define    ropNotAnd        13 //    dest = !(src & dest)
-#define    ropNotOr         14 //    dest = !(src | dest)
-#define    ropNotBlackXor   15 //    dest ^= (src <> 0) ? src
-#define    ropNotBlackAnd   16 //    dest &= (src <> 0) ? src
-#define    ropNotBlackOr    17 //    dest |= (src <> 0) ? src
-#define    ropNoOper        18 //
-#define    ropBlackness     19 //    dest = 0
-#define    ropWhiteness     20 //    dest = white
-#define    ropErase         21 //    dest = !dest & !src
-#define    ropInvert        22 //    dest = !dest
-#define    ropPattern       23 //    dest = pattern
-#define    ropXorPattern    24 //    dest ^= pattern
-#define    ropAndPattern    25 //    dest &= pattern
-#define    ropOrPattern     26 //    dest |= pattern
-#define    ropNotSrcOrPat   27 //    dest |= pattern | (!src)
-#define    ropSrcLeave      28 //    dest = (src != fore color) ? src : figa
-#define    ropDestLeave     29 //    dest = (src != back color) ? src : figa
+/* raster operations */
+#define    ropCopyPut       0  /*     dest  = src */
+#define    ropXorPut        1  /*     dest ^= src */
+#define    ropAndPut        2  /*     dest &= src */
+#define    ropOrPut         3  /*     dest |= src */
+#define    ropNotPut        4  /*     dest = !src */
+#define    ropNotBlack      5  /*     dest = (src <> 0) ? src */
+#define    ropNotDestXor    6  /*     dest = (!dest) ^ src */
+#define    ropNotDestAnd    7  /*     dest = (!dest) & src */
+#define    ropNotDestOr     8  /*     dest = (!dest) | src */
+#define    ropNotSrcXor     9  /*     dest ^= !src */
+#define    ropNotSrcAnd     10 /*    dest &= !src */
+#define    ropNotSrcOr      11 /*    dest |= !src */
+#define    ropNotXor        12 /*    dest = !(src ^ dest) */
+#define    ropNotAnd        13 /*    dest = !(src & dest) */
+#define    ropNotOr         14 /*    dest = !(src | dest) */
+#define    ropNotBlackXor   15 /*    dest ^= (src <> 0) ? src */
+#define    ropNotBlackAnd   16 /*    dest &= (src <> 0) ? src */
+#define    ropNotBlackOr    17 /*    dest |= (src <> 0) ? src */
+#define    ropNoOper        18 /* */
+#define    ropBlackness     19 /*    dest = 0 */
+#define    ropWhiteness     20 /*    dest = white */
+#define    ropErase         21 /*    dest = !dest & !src */
+#define    ropInvert        22 /*    dest = !dest */
+#define    ropPattern       23 /*    dest = pattern */
+#define    ropXorPattern    24 /*    dest ^= pattern */
+#define    ropAndPattern    25 /*    dest &= pattern */
+#define    ropOrPattern     26 /*    dest |= pattern */
+#define    ropNotSrcOrPat   27 /*    dest |= pattern | (!src) */
+#define    ropSrcLeave      28 /*    dest = (src != fore color) ? src : figa */
+#define    ropDestLeave     29 /*    dest = (src != back color) ? src : figa */
 
-// line width
+/* line width */
 #define    lwHollow        0
 #define    lwThin          1
 #define    lwExtraLight    2
@@ -935,24 +935,24 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    lwHeavy         9
 #define    lwUltraHeavy   10
 
-// line ends
+/* line ends */
 #define    leFlat           0
 #define    leSquare         1
 #define    leRound          2
 
-// line patterns
-#define    lpNull           0x0000     //
-#define    lpSolid          0xFFFF     // ___________
-#define    lpDash           0xF0F0     // __ __ __ __
-#define    lpLongDash       0xFF00     // _____ _____
-#define    lpShortDash      0xCCCC     // _ _ _ _ _ _
-#define    lpDot            0x5555     // . . . . . .
-#define    lpDotDot         0x4444     // ............
-#define    lpDashDot        0xFAFA     // _._._._._._
-#define    lpDashDotDot     0xEAEA     // _.._.._.._..
+/* line patterns */
+#define    lpNull           0x0000     /* */
+#define    lpSolid          0xFFFF     /* ___________ */
+#define    lpDash           0xF0F0     /* __ __ __ __ */
+#define    lpLongDash       0xFF00     /* _____ _____ */
+#define    lpShortDash      0xCCCC     /* _ _ _ _ _ _ */
+#define    lpDot            0x5555     /* . . . . . . */
+#define    lpDotDot         0x4444     /* ............ */
+#define    lpDashDot        0xFAFA     /* _._._._._._ */
+#define    lpDashDotDot     0xEAEA     /* _.._.._.._.. */
 
 
-// font subtypes
+/* font subtypes */
 #define    ftNormal         0x0000
 #define    ftBold           0x0001
 #define    ftThin           0x0002
@@ -961,7 +961,7 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    ftStruckOut      0x0010
 #define    ftOutline        0x0020
 
-// font pitches & precisions
+/* font pitches & precisions */
 #define    fpDefault        0x0000
 #define    fpVariable       0x0001
 #define    fpFixed          0x0002
@@ -971,7 +971,7 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    fpVector         0x0020
 #define    fpPrecisionMask  0x00F0
 
-// font weigths
+/* font weigths */
 #define    fwUltraLight     1
 #define    fwExtraLight     2
 #define    fwLight          3
@@ -982,23 +982,23 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    fwExtraBold      8
 #define    fwUltraBold      9
 
-// fill constants
-#define    fsEmpty          0 //   Uses background color
-#define    fsSolid          1 //   Uses draw color fill
-#define    fsLine           2 //   ---
-#define    fsLtSlash        3 //   ///
-#define    fsSlash          4 //   /// thick
-#define    fsBkSlash        5 //   \\\ thick
-#define    fsLtBkSlash      6 //   \\\ light
-#define    fsHatch          7 //   Light hatch
-#define    fsXHatch         8 //   Heavy cross hatch
-#define    fsInterleave     9 //   Interleaving line
-#define    fsWideDot       10 //   Widely spaced dot
-#define    fsCloseDot      11 //   Closely spaced dot
-#define    fsSimpleDots    12 //   . . . . . . . . . .
-#define    fsBorland       13 //   ####################
-#define    fsParquet       14 //   \/\/\/\/\/\/\/\/\/\/
-#define    fsCritters      15 //   
+/* fill constants */
+#define    fsEmpty          0 /*   Uses background color */
+#define    fsSolid          1 /*   Uses draw color fill */
+#define    fsLine           2 /*   --- */
+#define    fsLtSlash        3 /*   /// */
+#define    fsSlash          4 /*   /// thick */
+#define    fsBkSlash        5 /*   \\\ thick */
+#define    fsLtBkSlash      6 /*   \\\ light */
+#define    fsHatch          7 /*   Light hatch */
+#define    fsXHatch         8 /*   Heavy cross hatch */
+#define    fsInterleave     9 /*   Interleaving line */
+#define    fsWideDot       10 /*   Widely spaced dot */
+#define    fsCloseDot      11 /*   Closely spaced dot */
+#define    fsSimpleDots    12 /*   . . . . . . . . . . */
+#define    fsBorland       13 /*   #################### */
+#define    fsParquet       14 /*   \/\/\/\/\/\/\/\/\/\/ */
+#define    fsCritters      15 /*    */
 #define    fsMaxId         15
 
 #define    imNone                0
@@ -1017,12 +1017,12 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    imComplexNumber       0x4000
 #define    imTrigComplexNumber   0x8000
 
-// Image conversion types
+/* Image conversion types */
 #define    ictNone               0
 #define    ictHalftone           1
 #define    ictErrorDiffusion     2
 
-// Shortcuts and composites
+/* Shortcuts and composites */
 #define    imMono           imbpp1
 #define    imBW             (imMono|imGrayScale)
 #define    im16             imbpp4
@@ -1040,7 +1040,7 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    imTrigComplex    ((sizeof(float)*8*2)|imGrayScale|imTrigComplexNumber)
 #define    imTrigDComplex   ((sizeof(double)*8*2)|imGrayScale|imTrigComplexNumber)
 
-// image & bitmaps
+/* image & bitmaps */
 extern Bool    apc_image_create              ( Handle self);
 extern void    apc_image_destroy             ( Handle self);
 extern Bool    apc_image_begin_paint         ( Handle self);
@@ -1051,31 +1051,31 @@ extern void    apc_image_update_change       ( Handle self);
 extern Bool    apc_dbm_create                ( Handle self, Bool monochrome);
 extern void    apc_dbm_destroy               ( Handle self);
 
-// text wrap options
-#define twCalcMnemonic    0x001    // calculate first ~ entry
-#define twCalcTabs        0x002    // calculate tabs
-#define twBreakSingle     0x004    // return single empty line if text cannot be fitted in
-#define twNewLineBreak    0x008    // break line at \n
-#define twSpaceBreak      0x010    // break line at spaces
-#define twReturnLines     0x000    // return wrapped lines
-#define twReturnChunks    0x020    // return array of offsets & lengths
-#define twWordBreak       0x040    // break line at word boundary, if necessary
-#define twExpandTabs      0x080    // expand tabs
-#define twCollapseTilde   0x100    // remove ~ from line
+/* text wrap options */
+#define twCalcMnemonic    0x001    /* calculate first ~ entry */
+#define twCalcTabs        0x002    /* calculate tabs */
+#define twBreakSingle     0x004    /* return single empty line if text cannot be fitted in */
+#define twNewLineBreak    0x008    /* break line at \n */
+#define twSpaceBreak      0x010    /* break line at spaces */
+#define twReturnLines     0x000    /* return wrapped lines */
+#define twReturnChunks    0x020    /* return array of offsets & lengths */
+#define twWordBreak       0x040    /* break line at word boundary, if necessary */
+#define twExpandTabs      0x080    /* expand tabs */
+#define twCollapseTilde   0x100    /* remove ~ from line */
 #define twDefault         (twNewLineBreak|twCalcTabs|twExpandTabs|twReturnLines|twWordBreak)
 
 typedef struct _TextWrapRec {
-   char * text;                        // text to be wrapped
-   int    width;                       // width to wrap with
-   int    tabIndent;                   // \t replace to tabIndent spaces
-   Font * font;                        // optional font
-   int    options;                     // twXXX constants
-   int    textLen;                     // text lenght
-   int    count;                       // count of lines returned
-   int    t_start;                     // ~ starting point
-   int    t_end;                       // ~ ending point
-   int    t_line;                      // ~ line
-   char   t_char;                      // letter next to ~
+   char * text;                        /* text to be wrapped */
+   int    width;                       /* width to wrap with */
+   int    tabIndent;                   /* \t replace to tabIndent spaces */
+   Font * font;                        /* optional font */
+   int    options;                     /* twXXX constants */
+   int    textLen;                     /* text lenght */
+   int    count;                       /* count of lines returned */
+   int    t_start;                     /* ~ starting point */
+   int    t_end;                       /* ~ ending point */
+   int    t_line;                      /* ~ line */
+   char   t_char;                      /* letter next to ~ */
 } TextWrapRec, *PTextWrapRec;
 
 typedef struct _FontABC
@@ -1085,7 +1085,7 @@ typedef struct _FontABC
    float c;
 } FontABC, *PFontABC;
 
-// gpi functions underplace
+/* gpi functions underplace */
 extern void    apc_gp_init             ( Handle self);
 extern void    apc_gp_done             ( Handle self);
 extern void    apc_gp_arc              ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd);
@@ -1110,7 +1110,7 @@ extern void    apc_gp_stretch_image    ( Handle self, Handle image, int x, int y
 extern void    apc_gp_text_out         ( Handle self, char * text, int x, int y, int len);
 extern char ** apc_gp_text_wrap        ( Handle self, TextWrapRec * t);
 
-// gpi settings
+/* gpi settings */
 extern Color    apc_gp_get_back_color   ( Handle self);
 extern Color    apc_gp_get_color        ( Handle self);
 extern Rect     apc_gp_get_clip_rect    ( Handle self);
@@ -1139,7 +1139,7 @@ extern void     apc_gp_set_rop2         ( Handle self, int rop);
 extern void     apc_gp_set_transform    ( Handle self, int x, int y);
 extern void     apc_gp_set_text_opaque  ( Handle self, Bool opaque);
 
-// printer
+/* printer */
 extern Bool         apc_prn_create           ( Handle self);
 extern void         apc_prn_destroy          ( Handle self);
 extern PrinterInfo* apc_prn_enumerate        ( Handle self, int * count);
@@ -1156,14 +1156,14 @@ extern void         apc_prn_end_paint_info   ( Handle self);
 extern void         apc_prn_new_page         ( Handle self);
 extern void         apc_prn_abort_doc        ( Handle self);
 
-// fonts
+/* fonts */
 extern PFont       apc_font_default          ( PFont font);
 extern int         apc_font_load             ( char * filename);
 extern void        apc_font_pick             ( Handle self, PFont source, PFont dest);
 extern PFontMetric apc_fonts                 ( char * facename, int * retCount);
 extern PFontMetric apc_font_metrics          ( Handle self, PFont font, PFontMetric metrics);
 
-// system metrics
+/* system metrics */
 extern Point   apc_sys_get_autoscroll_rate   ( void);
 extern int     apc_sys_get_cursor_width      ( void);
 extern Bool    apc_sys_get_insert_mode       ( void);
@@ -1174,7 +1174,7 @@ extern int     apc_sys_get_value             ( int sysValue);
 extern Point   apc_sys_get_window_borders    ( int borderStyle);
 extern void    apc_sys_set_insert_mode       ( Bool insMode);
 
-// etc
+/* etc */
 extern void         apc_beep                 ( int style);
 extern void         apc_beep_tone            ( int freq, int duration);
 extern char *       apc_system_action        ( char * params);
