@@ -248,8 +248,8 @@ A combination of C<fs::> ( font style ) constants. The constants hight
    fs::Bold
    fs::Thin
    fs::Italic
-   fs::Underline
-   fs::StrikeOut
+   fs::Underlined
+   fs::StruckOut
    fs::Outline
 
 and can be OR-ed together to express the font style. 
