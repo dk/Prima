@@ -906,7 +906,7 @@ sub Name_KeyDown
             next if !$dlg-> {showDotFiles} && $fs[$i] =~ /^\./;
             next if substr( $fs[$i], 0, length $residue) ne $residue;
             $fs[ $i + 1] = 'dir' if $fs[ $i + 1] eq 'lnk' && -d $path.$fs[$i];
-            next if $fs[ $i + 1] ne 'dir' && $fs[$i] !~ /$mask/;
+            next if $fs[ $i + 1] ne 'dir' && $fs[$i] !~ /$mask/i;
             push @completions, $fs[$i] . (( $fs[ $i + 1] eq 'dir') ? '/' : '');
          }
          s/\s/\\ /g for @completions;
