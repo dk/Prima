@@ -569,7 +569,7 @@ arc_completion( double * angleStart, double * angleEnd, int * needFigure)
       *angleEnd   -= 360;
    }
 
-   while ( *angleEnd > *angleStart + 360)
+   while ( *angleEnd >= *angleStart + 360)
       *angleEnd -= 360;
 
    if ( diff < 360) {
