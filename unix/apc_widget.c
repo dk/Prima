@@ -113,6 +113,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint,
 
    XX-> flags. clipOwner = clipOwner;
    XX-> flags. syncPaint = syncPaint;
+   XX-> flags. doSizeHints = false;
 
    XX-> owner = realOwner;
    XX-> size = (Point){0,0};
@@ -529,6 +530,27 @@ apc_widget_set_visible( Handle self, Bool show)
 
    XX-> flags. visible = show;
    if ( show) {
+
+      if ( XX-> flags. doSizeHints) {
+	 XSizeHints hints;
+	 int width, height;
+
+	 bzero( &hints, sizeof( XSizeHints));
+	 hints. flags = PMinSize | PBaseSize;
+	 hints. min_width = PWidget(self)-> sizeMin. x;
+	 hints. min_height = PWidget(self)-> sizeMin. y;
+	 hints. base_width = DisplayWidth( DISP, SCREEN) / 3;
+	 hints. base_height = DisplayHeight( DISP, SCREEN) / 3;
+	 width = hints. base_width < hints. min_width ? hints. min_width : hints. base_width;
+	 height = hints. base_height < hints. min_height ? hints. min_height : hints. base_height;
+	 hints. width = width;
+	 hints. height = height;
+	 XResizeWindow( DISP, X_WINDOW, width, height);
+	 XSetWMNormalHints( DISP, X_WINDOW, &hints);
+	 XCHECKPOINT;
+	 XX-> flags. doSizeHints = false;
+      }
+
       XMapWindow( DISP, X_WINDOW);
       // XMapRaised( DISP, X_WINDOW);
       XRaiseWindow( DISP, X_WINDOW);

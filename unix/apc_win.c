@@ -104,10 +104,9 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint,
    XX-> parent = parent;
    XX-> drawable = X_WINDOW;
 
-fprintf( stderr, "*** Window created: %08lx\n", X_WINDOW);
-
    XX-> flags. clipOwner = clipOwner;
    XX-> flags. syncPaint = syncPaint;
+   XX-> flags. doSizeHints = true;
 
    XX-> owner = realOwner;
    XX-> size = (Point){0,0};
@@ -204,15 +203,20 @@ apc_window_set_client_pos( Handle self, int x, int y)
    DEFXX;
    XSizeHints hints;
 
+   bzero( &hints, sizeof( XSizeHints));
+
    XX-> origin = (Point){x,y}; /* XXX ? */
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
 
-   hints. flags = USPosition;
+   hints. flags = USPosition | PMinSize;
    hints. x = x;
    hints. y = y;
+   hints. min_width = PWidget(self)-> sizeMin. x;
+   hints. min_height = PWidget(self)-> sizeMin. y;
+   XX-> flags. doSizeHints = false;
        
-/*    XMoveWindow( disp, x_window, x, y); */
-   XSetNormalHints( DISP, X_WINDOW, &hints);
+   XMoveWindow( DISP, X_WINDOW, x, y);
+   XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
 
 fprintf( stderr, "window move to (%d,%d(%d))\n", x, XX-> origin. y, y);
@@ -225,17 +229,22 @@ apc_window_set_client_size( Handle self, int width, int height)
    int y;
    XSizeHints hints;
 
+   bzero( &hints, sizeof( XSizeHints));
+
    XX-> size = (Point){width, height}; /* XXX ? */
    y = X(XX-> owner)-> size. y - height - XX-> origin. y;
 
-   hints. flags = USPosition | USSize;
+   hints. flags = USPosition | USSize | PMinSize;
    hints. x = XX-> origin. x;
    hints. y = y;
    hints. width = width;
    hints. height = height;
+   hints. min_width = PWidget(self)-> sizeMin. x;
+   hints. min_height = PWidget(self)-> sizeMin. y;
+   XX-> flags. doSizeHints = false;
 
-/*    XMoveResizeWindow( disp, x_window, XX-> origin. x, y, width, height); */
-   XSetNormalHints( DISP, X_WINDOW, &hints);
+   XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
+   XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
 
 fprintf( stderr, "window size to (%d,%d(%d)) - (%d,%d)\n", XX-> origin. x, XX-> origin. y, y, width, height);
