@@ -455,6 +455,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
       case WM_MOVE:
          ev. cmd = cmMove;
          ev. gen. P = v-> self-> get_origin( self);
+         if ( ev. gen. P. x == v-> pos. x && ev. gen. P. y == v-> pos. y) ev. cmd = 0;
          break;
       case WM_REPAINT:
          ev. cmd = cmRepaint;
@@ -629,6 +630,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
                   WinSendMsg( w, WM_WINDOWPOSCHANGED, mp1, mp2);
                   New->fl |= SWP_MOVE;
                }
+               if ( ev. gen. P. x == v-> pos. x && ev. gen. P. y == v-> pos. y) ev. cmd = 0;
             } else if ( fl & (SWP_SIZE|SWP_RESTORE|SWP_MAXIMIZE)) {
                ev. cmd = cmSize;
                ev. gen. R. right  = ev. gen . P. x = New-> cx;
