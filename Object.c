@@ -128,6 +128,7 @@ void
 Object_destroy( Handle self)
 {
    SV *mate, *object = nil;
+   int enter_stage = var-> stage;
 
    if ( var-> stage > csNormal && var-> stage != csHalfDead)
       return;
@@ -175,7 +176,7 @@ Object_destroy( Handle self)
     /*  ENTER;
         SAVEINT recursiveCall; */
       protect_chain( owner = var-> owner, 1);
-      my-> cleanup( self);
+      if ( enter_stage > csConstructing) my-> cleanup( self);
       if ( var-> stage == csHalfDead) {
          var-> stage = csFinalizing;
          my-> done( self);
