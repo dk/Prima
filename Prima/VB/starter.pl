@@ -25,6 +25,8 @@
 #
 use Prima qw(Application VB::VBLoader);
 
+die "format: perl starter.pl file.fm\n" unless @ARGV;
+
 my %ret = Prima::VB::VBLoader::AUTOFORM_CREATE( $ARGV[0],
   'Form1' => {
   }
