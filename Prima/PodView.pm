@@ -680,9 +680,10 @@ sub read
 
       if ($r-> {begun}) {
           my $begun = $r-> {begun};
-          if (/^=end\s+$begun/) {
+          if (/^=end\s+$begun/ || /^=cut/) {
                $r-> {begun} = '';
                $self-> add("\n",STYLE_TEXT,0); # end paragraph
+               $r-> {cutting} = 1 if /^=cut/;
           } else {
                $self-> add_formatted( $r-> {begun}, $_);
           }
