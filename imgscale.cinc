@@ -225,23 +225,23 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
 {
    int  absh = abs( h);
    int  absw = abs( w);
-   int  srcLine = (( var w * ( var type & imBPP) + 31) / 32) * 4;
-   int  dstLine = (( absw  * ( var type & imBPP) + 31) / 32) * 4;
-   Byte * srcData = var data;
+   int  srcLine = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
+   int  dstLine = (( absw  * ( var->type & imBPP) + 31) / 32) * 4;
+   Byte * srcData = var->data;
    Fixed xstep, ystep, count;
    int last = 0;
    int i;
-   int yMin = ( var h > absh) ? absh : var h;
+   int yMin = ( var->h > absh) ? absh : var->h;
    PStretchProc proc = nil;
 
-   if ( w == var w) xStretch = false;
-   if ( h == var h) yStretch = false;
+   if ( w == var->w) xStretch = false;
+   if ( h == var->h) yStretch = false;
 // transfer case
    if ( !xStretch && !yStretch && ( w > 0))
    {
       int y;
       int xMin = ( srcLine > dstLine) ? dstLine : srcLine;
-      if ( var w < w || var h < absh) memset( dstData, 0, dstLine * absh);
+      if ( var->w < w || var->h < absh) memset( dstData, 0, dstLine * absh);
       if ( h < 0)
       {
          dstData += dstLine * ( yMin - 1);
@@ -256,18 +256,18 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
    {
       int xMin = ( srcLine > dstLine) ? dstLine : srcLine;
       count. l = 0;
-      if ( var w < w) memset( dstData, 0, dstLine * absh);
+      if ( var->w < w) memset( dstData, 0, dstLine * absh);
       if ( h < 0)
       {
          dstData += dstLine * ( absh - 1);
          dstLine =- dstLine;
       }
-      if ( absh < var h)
+      if ( absh < var->h)
       {
-         ystep. l = (double) absh / var h * 0x10000;
+         ystep. l = (double) absh / var->h * 0x10000;
          memcpy( dstData, srcData, xMin);
          dstData += dstLine;
-         for ( i = 0; i < var h; i++)
+         for ( i = 0; i < var->h; i++)
          {
             if ( count. i.i > last)
             {
@@ -279,7 +279,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
             srcData += srcLine;
          }
       } else {
-         ystep. l = (double) var h / absh * 0x10000;
+         ystep. l = (double) var->h / absh * 0x10000;
          for ( i = 0; i < absh; i++)
          {
             if ( count.i.i > last)
@@ -298,48 +298,48 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
 // general actions for x-scaling
    count. l = 0;
    count. l = 0;
-   if ( var w < absw || var h < absh || ( var type & imBPP) == imNibble)
+   if ( var->w < absw || var->h < absh || ( var->type & imBPP) == imNibble)
       memset( dstData, 0, dstLine * absh);
-   if ( absw < var w)
-      xstep. l = (double) absw / var w * 0x10000;
+   if ( absw < var->w)
+      xstep. l = (double) absw / var->w * 0x10000;
    else
-      xstep. l = (double) var w / absw * 0x10000;
-   switch( var type)
+      xstep. l = (double) var->w / absw * 0x10000;
+   switch( var->type)
    {
       case imMono:     case imBW:
-         (void*)proc = ( var w > absw) ? bs_mono_in : bs_mono_out;         break;
+         (void*)proc = ( var->w > absw) ? bs_mono_in : bs_mono_out;         break;
       case imNibble:   case imNibble|imGrayScale:
-         (void*)proc = ( var w > absw) ? bs_nibble_in : bs_nibble_out;     break;
+         (void*)proc = ( var->w > absw) ? bs_nibble_in : bs_nibble_out;     break;
       case imByte:     case im256:
-         (void*)proc = ( var w > absw) ? bs_U8_in : bs_U8_out;             break;
+         (void*)proc = ( var->w > absw) ? bs_U8_in : bs_U8_out;             break;
       case imRGB:      case imRGB|imGrayScale:
-         (void*)proc = ( var w > absw) ? bs_RGBColor_in : bs_RGBColor_out; break;
+         (void*)proc = ( var->w > absw) ? bs_RGBColor_in : bs_RGBColor_out; break;
       case imShort:
-         (void*)proc = ( var w > absw) ? bs_I16_in : bs_I16_out;           break;
+         (void*)proc = ( var->w > absw) ? bs_I16_in : bs_I16_out;           break;
       case imLong:
-         (void*)proc = ( var w > absw) ? bs_I32_in : bs_I32_out;           break;
+         (void*)proc = ( var->w > absw) ? bs_I32_in : bs_I32_out;           break;
       case imFloat:
-         (void*)proc = ( var w > absw) ? bs_float_in : bs_float_out;       break;
+         (void*)proc = ( var->w > absw) ? bs_float_in : bs_float_out;       break;
       case imDouble:
-         (void*)proc = ( var w > absw) ? bs_double_in : bs_double_out;     break;
+         (void*)proc = ( var->w > absw) ? bs_double_in : bs_double_out;     break;
       case imComplex:  case imTrigComplex:
-         (void*)proc = ( var w > absw) ? bs_Complex_in : bs_Complex_out;   break;
+         (void*)proc = ( var->w > absw) ? bs_Complex_in : bs_Complex_out;   break;
       case imDComplex: case imTrigDComplex:
-         (void*)proc = ( var w > absw) ? bs_DComplex_in : bs_DComplex_out; break;
+         (void*)proc = ( var->w > absw) ? bs_DComplex_in : bs_DComplex_out; break;
       default:
          return;
    }
 
 // no vertical stretch case
-   if ( !yStretch || ( var h == -h))
+   if ( !yStretch || ( var->h == -h))
    {
       if ( h < 0)
       {
          dstData += dstLine * ( yMin - 1);
          dstLine =- dstLine;
       }
-      for ( i = 0; i < var h; i++, srcData += srcLine, dstData += dstLine)
-         proc( srcData, dstData, var w, w, absw, xstep.l);
+      for ( i = 0; i < var->h; i++, srcData += srcLine, dstData += dstLine)
+         proc( srcData, dstData, var->w, w, absw, xstep.l);
       return;
    }
 
@@ -349,16 +349,16 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
       dstData += dstLine * ( absh - 1);
       dstLine =- dstLine;
    }
-   if ( absh < var h)
+   if ( absh < var->h)
    {
-      ystep. l = (double) absh / var h * 0x10000;
-      proc( srcData, dstData, var w, w, absw, xstep.l);
+      ystep. l = (double) absh / var->h * 0x10000;
+      proc( srcData, dstData, var->w, w, absw, xstep.l);
       dstData += dstLine;
-      for ( i = 0; i < var h; i++)
+      for ( i = 0; i < var->h; i++)
       {
          if ( count. i.i > last)
          {
-            proc( srcData, dstData, var w, w, absw, xstep.l);
+            proc( srcData, dstData, var->w, w, absw, xstep.l);
             dstData += dstLine;
             last = count.i.i;
          }
@@ -366,7 +366,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
          srcData += srcLine;
       }
    } else {
-      ystep. l = (double) var h / absh * 0x10000;
+      ystep. l = (double) var->h / absh * 0x10000;
       for ( i = 0; i < absh; i++)
       {
          if ( count.i.i > last)
@@ -375,7 +375,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
             last = count.i.i;
          }
          count. l += ystep. l;
-         proc( srcData, dstData, var w, w, absw, xstep.l);
+         proc( srcData, dstData, var->w, w, absw, xstep.l);
          dstData += dstLine;
       }
    }

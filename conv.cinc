@@ -11,13 +11,13 @@
 void ic_##SourceType##_##DestType( Handle self,                           \
       Byte *dstData, PRGBColor dstPal, int dstType)                            \
 {                                                                              \
-   SourceType *src = (SourceType*) var data;                                   \
+   SourceType *src = (SourceType*) var->data;                                   \
    DestType *dst = (DestType*) dstData;                                        \
    int y;                                                                      \
-   int  width = var w;                                                         \
-   int srcLine = (( width * ( var type & imBPP) + 31) / 32) * 4;               \
+   int  width = var->w;                                                         \
+   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
    int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
-   for ( y = 0; y < var h; y++)                                                \
+   for ( y = 0; y < var->h; y++)                                                \
    {                                                                           \
       SourceType *s = src;                                                     \
       DestType *d = dst;                                                       \
@@ -34,20 +34,20 @@ void rs_##SourceType##_##DestType( Handle self,                                \
      Byte * dstData, int dstType,                                              \
      double srcLo, double srcHi, double dstLo, double dstHi)                   \
 {                                                                              \
-   SourceType *src = (SourceType*) var data;                                   \
+   SourceType *src = (SourceType*) var->data;                                   \
    DestType *dst = (DestType*) dstData;                                        \
    int y;                                                                      \
    long aNumerator      = dstHi - dstLo;                                       \
    long bNumerator      = dstLo * srcHi - dstHi * srcLo;                       \
    long denominator     = srcHi - srcLo;                                       \
-   int  width = var w;                                                         \
-   int srcLine = (( width * ( var type & imBPP) + 31) / 32) * 4;               \
+   int  width = var->w;                                                         \
+   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
    int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
    if ( denominator == 0 || dstHi == dstLo)                                    \
    {                                                                           \
       DestType v = (dstLo<minimum_##DestType##Value) ? minimum_##DestType##Value : \
           ((dstLo>maximum_##DestType##Value) ? maximum_##DestType##Value : dstLo); \
-      for ( y = 0; y < var h; y++)                                             \
+      for ( y = 0; y < var->h; y++)                                             \
       {                                                                        \
          DestType *d = dst;                                                    \
          DestType *stop = d + width;                                           \
@@ -56,7 +56,7 @@ void rs_##SourceType##_##DestType( Handle self,                                \
       }                                                                        \
       return;                                                                  \
    }                                                                           \
-   for ( y = 0; y < var h; y++)                                                \
+   for ( y = 0; y < var->h; y++)                                                \
    {                                                                           \
       SourceType *s = src;                                                     \
       DestType *d = dst;                                                       \
@@ -79,16 +79,16 @@ void rs_##SourceType##_##DestType( Handle self,                                \
      Byte * dstData,  int dstType,                                             \
      double srcLo, double srcHi, double dstLo, double dstHi)                   \
 {                                                                              \
-   SourceType* src = (SourceType*) var data;                                   \
+   SourceType* src = (SourceType*) var->data;                                   \
    DestType* dst = (DestType*) dstData;                                        \
    int y;                                                                      \
    double a, b;                                                                \
-   int  width = var w;                                                         \
-   int srcLine = (( width * ( var type & imBPP) + 31) / 32) * 4;               \
+   int  width = var->w;                                                         \
+   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
    int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
    if ( srcHi == srcLo || dstHi == dstLo)                                      \
    {                                                                           \
-      for ( y = 0; y < var h; y++)                                             \
+      for ( y = 0; y < var->h; y++)                                             \
       {                                                                        \
          DestType *d = dst;                                                    \
          DestType *stop = d + width;                                           \
@@ -100,7 +100,7 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    a = ((double)dstHi - (double)dstLo) / ((double)srcHi - (double)srcLo);      \
    b = ((double)dstLo*(double)srcHi -                                          \
       (double)dstHi*(double)srcLo)/((double)srcHi-(double)srcLo);              \
-   for ( y = 0; y < var h; y++)                                                \
+   for ( y = 0; y < var->h; y++)                                                \
    {                                                                           \
       SourceType* s = src;                                                     \
       DestType* d = dst;                                                       \
@@ -116,18 +116,18 @@ void rs_##SourceType##_##DestType( Handle self,                                \
      Byte * dstData, int dstType,                                              \
      double srcLo, double srcHi, double dstLo, double dstHi)                   \
 {                                                                              \
-   SourceType* src = (SourceType*) var data;                                   \
+   SourceType* src = (SourceType*) var->data;                                   \
    DestType* dst = (DestType*) dstData;                                        \
    int y;                                                                      \
    double a, b;                                                                \
-   int  width = var w;                                                         \
-   int srcLine = (( width * ( var type & imBPP) + 31) / 32) * 4;               \
+   int  width = var->w;                                                         \
+   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
    int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
    if ( srcHi == srcLo || dstHi == dstLo)                                      \
    {                                                                           \
       DestType v = (dstLo<minimum_##DestType##Value) ? minimum_##DestType##Value : \
           ((dstLo>maximum_##DestType##Value) ? maximum_##DestType##Value : dstLo); \
-      for ( y = 0; y < var h; y++)                                             \
+      for ( y = 0; y < var->h; y++)                                             \
       {                                                                        \
          DestType *d = dst;                                                    \
          DestType *stop = d + width;                                           \
@@ -139,7 +139,7 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    a = ((double)dstHi - (double)dstLo) / ((double)srcHi - (double)srcLo);      \
    b = ((double)dstLo*(double)srcHi -                                          \
       (double)dstHi*(double)srcLo)/((double)srcHi-(double)srcLo);              \
-   for ( y = 0; y < var h; y++)                                                \
+   for ( y = 0; y < var->h; y++)                                                \
    {                                                                           \
       SourceType* s = src;                                                     \
       DestType* d = dst;                                                       \
