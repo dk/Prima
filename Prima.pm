@@ -66,6 +66,7 @@ sub import
    while (@module) {
       my $module = shift @module;
       my %parameters = ();
+      return if $module eq 'Prima';
       %parameters = %{shift @module} if @module && ref($module[0]) eq 'HASH';
       $module = "Prima::$module" unless $module =~ /^Prima::/;
       eval "use $module \%parameters;" if $module;
