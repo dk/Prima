@@ -1111,7 +1111,7 @@ sub on_mousemove
 {
    my ( $self, $mod, $x, $y) = @_;
    return unless $self->{mouseTransaction};
-   $self->{vertical} ? ( $y -= $self->{aperture}) : ( $x -= $self->{aperture});
+   $self->{vertical} ? $y : $x   -= $self->{aperture};
    my ( $info, $pos) = $self-> pos2info( $x, $y);
    return unless defined $info;
    $self-> value( $pos);

@@ -1545,7 +1545,7 @@ sub make_logical
    while (1) {
       my $acd = $$cm[$i * 3 + 2];
       last if $acd == $y;
-      ( $acd > $y) ? ( $r = $i) : ( $l = $i);
+      $acd > $y ? $r : $l   = $i;
       $i = int(( $l + $r) / 2);
       if ( $kk++ > 200) {
          print "bcs dump to $y\n";
@@ -1554,7 +1554,7 @@ sub make_logical
          for ( $kk = 0; $kk < 7; $kk++) {
             my $acd = $$cm[$i * 3 + 2];
             print "i:$i [$l $r] f() = $acd\n";
-            ( $acd > $y) ? ( $r = $i) : ( $l = $i);
+            $acd > $y ? $r : $l   = $i;
             $i = int(( $l + $r) / 2);
          }
          die;
