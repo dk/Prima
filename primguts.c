@@ -1641,6 +1641,38 @@ FillPattern fillPatterns[] = {
 
 // list section
 
+#ifdef PARANOID_MALLOC
+void
+paranoid_list_create( PList slf, int size, int delta, char *fil, int ln)
+{
+   char *buf;
+   int blen;
+   if ( !slf) return;
+   buf = malloc( blen = strlen( fil) + strlen( __FILE__) + 9);
+   snprintf( buf, blen, "%s(%d),%s", fil, ln, __FILE__);
+   memset( slf, 0, sizeof( List));
+   slf-> delta = ( delta > 0) ? delta : 1;
+   slf-> size  = size;
+   slf-> items = ( size > 0) ? _test_malloc( size * sizeof( Handle), __LINE__, buf, nilHandle) : nil;
+   free( buf);
+}
+
+PList
+paranoid_plist_create( int size, int delta, char *fil, int ln)
+{
+   char *buf;
+   int blen;
+   PList new_list;
+   buf = malloc( blen = strlen( fil) + strlen( __FILE__) + 9);
+   snprintf( buf, blen, "%s(%d),%s", fil, ln, __FILE__);
+   new_list = ( PList) _test_malloc( sizeof( List), __LINE__, buf, nilHandle);
+   if ( new_list != nil) {
+      paranoid_list_create( new_list, size, delta, buf, __LINE__);
+   }
+   free( buf);
+   return new_list;
+}
+#else
 void
 list_create( PList slf, int size, int delta)
 {
@@ -1660,6 +1692,7 @@ plist_create( int size, int delta)
    }
    return new_list;
 }
+#endif
 
 void
 list_destroy( PList slf)
@@ -1893,7 +1926,7 @@ output_mallocs( void)
    hv_iterinit( hash);
    DOLBUG( "Iteration done...\n");
    while (( he = hv_iternext( hash)) != nil) {
-      debug_write( "%s\n", (char *)HeVAL( he));
+      DOLBUG( "%s\n", (char *)HeVAL( he));
       free( HeVAL( he));
       HeVAL( he) = &sv_undef;
    }
@@ -1928,7 +1961,7 @@ _test_malloc( size_t size, int ln, char *fil, Handle self)
          sprintf( obj, "%s(?)", ((( PObject) self)-> self)-> className);
    } else
       strcpy( obj, "NOSELF");
-   sprintf( s, "%lu %s(%d) %s %lu", timestamp(), fil, ln, obj, ( unsigned long) size);
+   sprintf( s, "%lu %p %s(%d) %s %lu", timestamp(), mlc, fil, ln, obj, ( unsigned long) size);
    c = malloc( strlen(s)+1);
    strcpy( c, s);
    hash_store( hash, &mlc, sizeof(mlc), c);
