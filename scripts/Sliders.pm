@@ -395,7 +395,7 @@ sub init
    my %profile = @_;
    my $visible = $profile{visible};
    $profile{visible} = 0;
-   for (qw( min max step value)) {$self->{$_} = 1;};
+   for (qw( min max step)) {$self->{$_} = 1;};
    %profile = $self-> SUPER::init(%profile);
    my ( $w, $h) = ( $self-> size);
    $self-> {spin} = $self-> insert( $profile{spinClass} =>
@@ -416,10 +416,10 @@ sub init
       selectable  => 1,
       tabStop     => 1,
       borderWidth => 0,
-      text        => '',
       current     => 1,
       (map { $_ => $profile{$_}} keys %editProps),
       %{$profile{editProfile}},
+      text        => $profile{value},
    );
    $self-> {lastEditText} = 0;
    for (qw( min max step value)) {$self->$_($profile{$_});};
@@ -483,9 +483,9 @@ sub set_bounds
    my ( $self, $min, $max) = @_;
    $max = $min if $max < $min;
    ( $self-> { min}, $self-> { max}) = ( $min, $max);
-   my $oldValue = $self->{value};
-   $self-> value( $max) if $self->{value} > $max;
-   $self-> value( $min) if $self->{value} < $min;
+   my $oldValue = $self-> value;
+   $self-> value( $max) if $max < $self-> value;
+   $self-> value( $min) if $min > $self-> value;
 }
 
 sub set_step
