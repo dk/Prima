@@ -327,9 +327,6 @@ sub InputLine_KeyDown
 {
    my ( $self, $edit, $code, $key, $mod) = @_;
    return if $mod & km::DeadKey;
-   return unless $code;
-   return unless $_[0]-> {literal};
-
    if (( $key & 0xFF00) && ( $key != kb::NoKey) && ( $key != kb::Space) && ( $key != kb::Backspace))
    {
       return if $key == kb::Tab || $key == kb::BackTab || $key == kb::NoKey;
@@ -342,6 +339,8 @@ sub InputLine_KeyDown
    }
    else
    {
+      return unless $code;
+      return unless $_[0]-> {literal};
       return if $_[0]->{style} != cs::DropDownList;
       return if $mod & ( km::Alt|km::Ctrl);
       $edit->{keyDown} = 1;

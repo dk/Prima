@@ -681,7 +681,6 @@ sub init
 sub InputLine_KeyDown
 {
    my ( $combo, $self, $code, $key) = @_;
-   return unless $code;
    $combo-> listVisible(1), $self-> clear_event if $key == kb::Down;
    return if $key != kb::NoKey;
    $self-> clear_event;
