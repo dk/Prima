@@ -511,7 +511,7 @@ sub load_file
    }
 FOUND:   
 
-   unless ( open F, $manpage) {
+   unless ( open F, "< $manpage") {
       my $m = <<ERROR;
 \=head1 Error
 

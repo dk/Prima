@@ -752,25 +752,20 @@ sub setup_dialog
    my ( $of1, $of2) = map { $t-> {fontPalette}-> [$_]-> {name}} (0,1);
 
    my $ntext = $self-> text;
-   $self-> text('Enumerating fonts...0%');
+   $self-> text('Enumerating fonts...');
 
    my $fe = $t-> {fontPalette}-> [0]-> {encoding};
    my $fonts = $::application-> fonts;
-   $self-> text('Enumerating fonts... 30%');
    $setupdlg-> FixFont-> items( ['Default', sort map { 
       $_-> {name}} grep { 
          my $x;
-         if ( $_->{pitch} == fp::Fixed) {
-            $x = $::application-> fonts( $_->{name}, $fe);
-            $x = scalar(@$x) ? 1 : 0; 
-         } 
+         $x = grep { $fe eq $_ } @{$_->{encodings}} if $_->{pitch} == fp::Fixed;
          $x;
       }@$fonts ]);
-   $self-> text('Enumerating fonts... 60%');
    $setupdlg-> VarFont-> items( [ 'Default', sort map { 
       $_-> {name}} grep { 
-         my $x = $::application-> fonts( $_->{name}, $fe);
-         $x = scalar(@$x) ? 1 : 0; $x;
+         my $x = grep { $fe eq $_ } @{$_->{encodings}};
+         $x;
       } @$fonts ]);
    $self-> text( $ntext);
 
