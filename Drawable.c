@@ -168,7 +168,7 @@ Drawable_set_fill_pattern( Handle self, FillPattern pattern)
 void
 Drawable_set_fill_pattern_id( Handle self, int patternId )
 {
-   if (( patternId < 0) && ( patternId > fpMaxId)) patternId = fpSolid;
+   if (( patternId < 0) || ( patternId > fpMaxId)) patternId = fpSolid;
    my set_fill_pattern( self, fillPatterns[ patternId]);
 }
 
