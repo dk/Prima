@@ -183,6 +183,7 @@ typedef struct _WinGuts
     int            socket_version;     // socket behavior type
     List           files;              // List of active File objects
     int            mouseTimer;         // is mouse timer started
+    Bool           popupActive;        // flag to avoid double popup activation
 // socket variables
     List           sockets;            // List of watchable sockets
     HANDLE         socketMutex;        // thread semaphore

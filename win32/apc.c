@@ -2440,7 +2440,10 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 {
    TPMPARAMS tpm;
    HWND owner;
+   Bool ret = true;
    objCheck false;
+
+   if ( guts. popupActive) return false;
 
    y = dsys( var owner) lastSize. y - y;
    owner = ( HWND)(( PComponent) var owner)-> handle;
@@ -2470,11 +2473,12 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
    } else
       anchor = nil;
 
-   if ( !TrackPopupMenuEx(
+   guts. popupActive = 1;
+   ret = TrackPopupMenuEx(
       ( HMENU) var handle, TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_RIGHTBUTTON,
-       x, y, owner, anchor ? &tpm : NULL)
-      ) apiErrRet;
-   return true;
+       x, y, owner, anchor ? &tpm : NULL);
+   guts. popupActive = 0; 
+   return ret;
 }
 
 
