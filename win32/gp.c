@@ -787,16 +787,10 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    // saving bitmap and palette ( if available) to both dc and xdc.
    p3 = dsys( image) pal;
 
-   if ( p3) {
-      if ( db)
-         p1 = nil;
-      else {
-         if ( dc)
-            p1 = SelectPalette( dc, p3, 0);
-         else
-            p1 = nil;
-      }
-   }
+   if ( p3 && !db && dc) 
+      p1 = SelectPalette( dc, p3, 0);
+   else
+      p1 = nil;
 
    if ( db)
       b1 = nil;
@@ -1585,13 +1579,14 @@ apc_gp_set_palette( Handle self)
       sys p256 = nil;
    }
 
-   if ( !sys ps) return true;
    pal = palette_create( self);
-   if ( pal)
-      SelectPalette( sys ps, pal, 0);
-   else
-      SelectPalette( sys ps, sys stockPalette, 1);
-   RealizePalette( sys ps);
+   if ( sys ps) {
+      if ( pal)
+         SelectPalette( sys ps, pal, 0);
+      else
+         SelectPalette( sys ps, sys stockPalette, 1);
+      RealizePalette( sys ps);
+   }
    if ( sys pal) DeleteObject( sys pal);
    sys pal = pal;
    return true;

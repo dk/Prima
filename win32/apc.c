@@ -1,4 +1,4 @@
-/*-
+/*
  * Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
  * All rights reserved.
  *
@@ -1528,11 +1528,11 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 
       if ( !( dc = CreateCompatibleDC( sys ps))) apiErr;
 
-      if ( sys pal = palette_create( self)) {
+      if ( sys pal) {
          sys stockPalette = SelectPalette( dc, sys pal, 1);
-         // RealizePalette( dc);
+         RealizePalette( dc);
          sys pal2 = SelectPalette( sys ps, sys pal, 1);
-         // RealizePalette( sys ps);
+         RealizePalette( sys ps);
       }
 
       if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
@@ -1548,12 +1548,13 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
          apc_gp_set_transform( self, -r. left, -r. top);
          sys transform2. x = r. left;
          sys transform2. y = r. top;
+         apt_set( aptBitmap);
       } else
          apiErr;
    } else {
-      if ( sys pal = palette_create( self)) {
+      if ( sys pal) {
          sys stockPalette = SelectPalette( sys ps, sys pal, 1);
-         // RealizePalette( sys ps);
+         RealizePalette( sys ps);
       }
    }
    hwnd_enter_paint( self);
@@ -1595,7 +1596,6 @@ apc_widget_begin_paint_info( Handle self)
    sys transform2. y = 0;
    if ( !( sys ps = GetDC(( HWND) var handle))) apiErrRet;
    hwnd_enter_paint( self);
-   sys pal = palette_create( self);
    rgn = CreateRectRgn( 0, 0, 0, 0);
    SelectClipRgn( sys ps, rgn);
    DeleteObject( rgn);
@@ -1637,6 +1637,7 @@ apc_widget_end_paint( Handle self)
 {
    objCheck false;
    if ( is_opt( optBuffered)) {
+      apt_clear( aptBitmap);
       if ( sys bm != nil) {
          if ( !SetViewportOrgEx( sys ps, 0, 0, nil)) apiErr;
          if ( !BitBlt( sys ps2, sys transform2. x, sys transform2. y, var w, var h, sys ps, 0, 0, SRCCOPY)) apiErr;
@@ -1644,11 +1645,12 @@ apc_widget_end_paint( Handle self)
             SelectObject( sys ps, sys stockBM);
          DeleteObject( sys bm);
       }
+
       if ( sys pal) {
          SelectPalette( sys ps2, sys pal2, 1);
          SelectPalette( sys ps, sys stockPalette, 1);
-         DeleteObject( sys pal);
-         sys pal = sys pal2 = nil;
+         RealizePalette( sys ps2);
+         sys pal2 = nil;
       }
 
       DeleteDC( sys ps);
@@ -1658,16 +1660,13 @@ apc_widget_end_paint( Handle self)
 
    hwnd_leave_paint( self);
 
-   if ( sys pal)
-      DeleteObject( sys pal);
-
    if ( sys ps != nil) {
       if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
          if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
       } else if ( is_apt( aptWinPS))
          if ( !ReleaseDC(( HWND) var handle, sys ps)) apiErr;
    }
-   sys ps = sys pal = sys pal2 = nil;
+   sys ps = sys pal2 = nil;
    apt_clear( aptWinPS);
    apt_clear( aptWM_PAINT);
    apt_clear( aptCompatiblePS);
@@ -1680,7 +1679,6 @@ apc_widget_end_paint_info( Handle self)
    Bool ok = true;
    objCheck false;
    hwnd_leave_paint( self);
-   sys pal = nil;
    if ( !( ok = ReleaseDC(( HWND) var handle, sys ps))) apiErr;
    sys ps = nil;
    apt_clear( aptWinPS);
@@ -2143,10 +2141,7 @@ Bool
 apc_widget_set_palette( Handle self)
 {
    objCheck false;
-   if ( sys p256) {
-      free( sys p256);
-      sys p256 = nil;
-   }
+   apc_gp_set_palette( self);
    if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
       palette_change( self);
    return true;
