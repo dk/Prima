@@ -54,6 +54,7 @@ sub run
 {
    die "Prima was not properly initialized\n" unless defined $::application;
    $::application-> go if $::application-> alive;
+   $::application = undef if $::application and not $::application->alive;
 }
 
 sub find_image
