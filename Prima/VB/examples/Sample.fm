@@ -339,7 +339,7 @@ palette => [ 32,33,33,172,142,93,128,88,54,56,45,106,85,59,48,204,202,176,69,60,
           alignment => ta::Center,
       }},
       'SampleGroup' => {
-	class   => 'Prima::RadioGroup',
+	class   => 'Prima::GroupBox',
         module  => 'Prima::Buttons',
         profile => {
           origin => [ 8, 53],

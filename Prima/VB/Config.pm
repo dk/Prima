@@ -146,13 +146,6 @@ sub classes
       RTModule => 'Prima::Lists',
       module   => 'Prima::VB::CoreClasses',
    },
-   'Prima::CheckBoxGroup' => {
-      icon     => 'VB::classes.gif:11',
-      page     => 'Additional',
-      class    => 'Prima::VB::GroupCheckBox',
-      RTModule => 'Prima::Buttons',
-      module   => 'Prima::VB::CoreClasses',
-   },
    'Prima::CheckBox' => {
       icon     => 'VB::classes.gif:2',
       page     => 'General',
@@ -165,13 +158,6 @@ sub classes
       page     => 'Sliders',
       class    => 'Prima::VB::CircularSlider',
       RTModule => 'Prima::Sliders',
-      module   => 'Prima::VB::CoreClasses',
-   },
-   'Prima::RadioGroup' => {
-      icon     => 'VB::classes.gif:12',
-      page     => 'Additional',
-      class    => 'Prima::VB::GroupRadioBox',
-      RTModule => 'Prima::Buttons',
       module   => 'Prima::VB::CoreClasses',
    },
    'Prima::DetailedList' => {

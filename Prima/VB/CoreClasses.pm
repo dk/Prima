@@ -90,18 +90,6 @@ sub classes
          page   => 'General',
          icon   => 'VB::classes.gif:10',
       },
-      'Prima::CheckBoxGroup' => {
-         RTModule => 'Prima::Buttons',
-         class  => 'Prima::VB::GroupCheckBox',
-         page   => 'Additional',
-         icon   => 'VB::classes.gif:11',
-      },
-      'Prima::RadioGroup' => {
-         RTModule => 'Prima::Buttons',
-         class  => 'Prima::VB::GroupRadioBox',
-         page   => 'Additional',
-         icon   => 'VB::classes.gif:12',
-      },
       'Prima::ScrollBar' => {
          RTModule => 'Prima::ScrollBar',
          class  => 'Prima::VB::ScrollBar',
@@ -578,21 +566,6 @@ sub prf_types
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
 }
-
-package Prima::VB::GroupCheckBox;
-use vars qw(@ISA);
-@ISA = qw(Prima::VB::GroupBox);
-
-sub prf_types
-{
-   my $pt = $_[ 0]-> SUPER::prf_types;
-   my %de = (
-      uiv    => ['value'],
-   );
-   $_[0]-> prf_types_add( $pt, \%de);
-   return $pt;
-}
-
 
 package Prima::VB::BiScroller;
 
