@@ -549,11 +549,13 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       Handle frame = self;
       switch ( ev-> xfocus. detail) {
       case NotifyVirtual:
-      case NotifyNonlinearVirtual: /* XXX ? */
       case NotifyPointer:
-      case NotifyPointerRoot: /* XXX ? */
-      case NotifyDetailNone: /* XXX ? */
+      case NotifyPointerRoot: 
+      case NotifyDetailNone: 
 	 return;
+      case NotifyNonlinearVirtual: 
+         if (!XT_IS_WINDOW(XX)) return;
+         break;
       }
 
       if ( guts. message_boxes) {
@@ -565,14 +567,20 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          return;
       }   
 
-      /* fprintf( stderr, "pokus in %s\n", PComponent(self)->name); */
       if (!XT_IS_WINDOW(XX))
          frame = CApplication(application)-> top_frame( application, self);
       if ( CApplication(application)-> map_focus( application, frame) != frame) {
          CApplication(application)-> popup_modal( application);
          break;
       }
-      XX-> flags. focused = 1;
+
+      if ( XT_IS_WINDOW(XX)) {
+	 e. cmd = cmActivate;
+	 CComponent( self)-> message( self, &e);
+         if (( PObject( self)-> stage == csDead) ||
+             ( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
+      }
+      
       if ( guts. focused) prima_no_cursor( guts. focused);
       guts. focused = self;
       prima_update_cursor( guts. focused);
@@ -582,13 +590,22 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    case FocusOut: {
       switch ( ev-> xfocus. detail) {
       case NotifyVirtual:
-      case NotifyNonlinearVirtual: /* XXX ? */
       case NotifyPointer:
-      case NotifyPointerRoot: /* XXX ? */
-      case NotifyDetailNone: /* XXX ? */
+      case NotifyPointerRoot: 
+      case NotifyDetailNone: 
 	 return;
+      case NotifyNonlinearVirtual: 
+         if (!XT_IS_WINDOW(XX)) return;
+         break;
       }
-      XX-> flags. focused = 0;
+      
+      if ( XT_IS_WINDOW(XX)) {
+	 e. cmd = cmDeactivate;
+	 CComponent( self)-> message( self, &e);
+         if (( PObject( self)-> stage == csDead) ||
+             ( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
+      }
+      
       if ( guts. focused) prima_no_cursor( guts. focused);
       guts. focused = nilHandle;
       e. cmd = cmReleaseFocus;
@@ -599,7 +616,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case Expose: {
       XRectangle r;
-
       if ( !was_sent) {
 	 r. x = ev-> xexpose. x;
 	 r. y = ev-> xexpose. y;

@@ -253,6 +253,7 @@ struct _UnixGuts
    long                         total_events;
    long                         skipped_events;
    long                         unhandled_events;
+   long                         queued_events;
    fd_set                       write_set;
    /* Graphics */
    struct gc_head               bitmap_gc_pool;
@@ -468,7 +469,6 @@ typedef struct _drawable_sys_data
       int exposed			: 1;
       int falsely_hidden                : 1;
       int first_click                   : 1;
-      int focused       	        : 1;
       int grab                  	: 1;
       int mapped			: 1;
       int modal                         : 1;

@@ -545,18 +545,16 @@ perform_pending_paints( void)
          warn( "UAA_002: assertion !paint_pending failed");
          return;
       }   
-      if (( stage = PWidget( XX->self)-> stage) != csConstructing) {
+      if ( PWidget( XX->self)-> stage == csNormal) {
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
-      }
-      if ( stage == csNormal) {
          prima_simple_message( XX-> self, cmPaint, false);
          /* handle the case where this widget is locked */
          if (XX->region) {
             XDestroyRegion(XX->region);
             XX->region = nil;
          }
-      }
+      } 
       XX = next;
    }
 }
@@ -587,10 +585,10 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
    XEvent ev, next_event;
    fd_set read_set, write_set, excpt_set;
    struct timeval timeout;
-   int r, n, i;
+   int r, i;
    PTimerSysData timer;
 
-   if (( n = XEventsQueued( DISP, QueuedAlready))) {
+   if (( guts. queued_events = XEventsQueued( DISP, QueuedAlready))) {
       goto FetchAndProcess;
    }
    read_set = guts.read_set;
@@ -652,10 +650,9 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
       else
          timeout. tv_usec = 0;
    }
-
    if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, &timeout)) > 0 &&
        FD_ISSET( guts.connection, &read_set)) {
-      if (( n = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
+      if (( guts. queued_events = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
          /* just like tcl/perl tk do, to avoid an infinite loop */
          sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
          XNoOp( DISP);
@@ -663,17 +660,17 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
          (void) signal( SIGPIPE, oldHandler);
       }
 FetchAndProcess:
-      if (n && ( application || !careOfApplication)) {
+      if ( guts. queued_events && ( application || !careOfApplication)) {
          XNextEvent( DISP, &ev);
          XCHECKPOINT;
-         n--;
-         while ( n > 0) {
+         guts. queued_events--;
+         while ( guts. queued_events > 0) {
             if (!application && careOfApplication) return false;
             XNextEvent( DISP, &next_event);
             XCHECKPOINT;
             guts. total_events++;
+            guts. queued_events--;
             prima_handle_event( &ev, &next_event);
-            n--;
             memcpy( &ev, &next_event, sizeof( XEvent));
          }
          if (!application && careOfApplication) return false;

@@ -68,31 +68,19 @@ wm_generic_cleanup_hook( void)
 static Bool
 wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent ev)
 {
-   Handle selectee;
    DEFWMDATA;
+   Handle selectee;
 
-   /* fprintf( stderr, "some hook %s\n", PComponent(self)->name); */
    if ( guts. message_boxes) return false;
+   selectee = CApplication(application)->map_focus( application, self);
 
    if ( xev-> type == ClientMessage && xev-> message_type == wm-> protocols) {
       if ((Atom) xev-> data. l[0] == wm-> deleteWindow) {
+         if ( selectee != self) return false;
 	 ev-> cmd = cmClose;
 	 return true;
       } else if ((Atom) xev-> data. l[0] == wm-> takeFocus) {
-         /* fprintf( stderr, "take pokus %s\n", PComponent(self)->name); */
-	 selectee = CApplication(application)->map_focus( application, self);
-         if ( selectee != self)
-            CApplication(application)->lock(application);
-         // apc_window_activate( selectee);
          CWidget( selectee)-> set_selected( selectee, true);
-         if ( selectee != self)
-            CApplication(application)->unlock(application);
-         /* XXX old code for reference 
-         toSelect = CWidget( toSelect)-> get_selectee( toSelect);
-	 XWindow s = toSelect ? PWidget(toSelect)-> handle : PWidget(self)-> handle;
-	 XSetInputFocus( DISP, s, RevertToParent, guts. last_time);
-	 XCHECKPOINT;
-         */
 	 return false;
       }
    }

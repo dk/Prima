@@ -143,10 +143,12 @@ Bool
 apc_window_activate( Handle self)
 {
    XWindow frame;
-
    frame = prima_find_frame_window( PWidget( self)-> handle);
    if ( frame) XRaiseWindow( DISP, frame);
+   apc_application_yield();
    XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
+   XCHECKPOINT;
+   apc_application_yield();
    return true;
 }
 
@@ -364,6 +366,7 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
    CWindow( self)-> exec_enter_proc( self, shared, insert_before);
    apc_widget_set_enabled( self, true);
    apc_widget_set_visible( self, true);
+   apc_window_activate( self);
    prima_simple_message( self, cmExecute, true);
    guts. modal_count++;
    return true;

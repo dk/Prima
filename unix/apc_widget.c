@@ -167,8 +167,11 @@ set_view_ex( Handle self, PRecreateData p)
   apc_widget_set_size( self, p-> size. x, p-> size. y);
   PWidget(self)-> virtualSize = p-> virtSize;
   apc_widget_set_enabled( self, p-> enabled);
-  if ( p-> focused) apc_widget_set_focused( self);
   apc_widget_set_visible( self, p-> visible);
+  if ( p-> focused) {
+     if ( guts. focused == self) guts. focused = nilHandle;
+     apc_widget_set_focused( self);
+  }   
   if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
   XClearWindow( DISP, X_WINDOW);
 }
@@ -299,6 +302,10 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       int i, stage = PWidget(self)-> stage;
       Handle oldOwner = PWidget(self)-> owner;  PWidget(self)-> owner = owner;
       PWidget(self)-> stage = csFrozen;
+      if ( XX-> flags. paint_pending) {
+         TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+         XX-> flags. paint_pending = false;
+      }
       XX-> flags. falsely_hidden = 0;
       set_view_ex( self, &vprf);
       XCHECKPOINT;
@@ -510,7 +517,7 @@ apc_widget_is_exposed( Handle self)
 Bool
 apc_widget_is_focused( Handle self)
 {
-   return X(self)-> flags. focused ? true : false;
+   return guts. focused == self;
 }
 
 Bool
@@ -760,9 +767,11 @@ apc_widget_set_focused( Handle self)
    if ( self) {
       if (XT_IS_WINDOW(X(self))) return true; /* already done in activate() */
       focus = X_WINDOW;
-   }
+   } 
+   apc_application_yield();
    XSetInputFocus( DISP, focus, RevertToParent, CurrentTime);
    XCHECKPOINT;
+   apc_application_yield();
    return true;
 }
 
