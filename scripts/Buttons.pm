@@ -293,6 +293,7 @@ sub profile_default
 {
    return {
       %{$_[ 0]-> SUPER::profile_default},
+      borderWidth   => 2,
       checkable     => 0,
       checked       => 0,
       default       => 0,
@@ -330,23 +331,19 @@ sub profile_check_in
 sub init
 {
    my $self = shift;
+   $self->{$_} = 0 for ( qw(
+     borderWidth checkable checked default image glyphs
+     vertical defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
+     flat modalResult
+   ));
+   $self->{imageScale} = 1;
    my %profile = $self-> SUPER::init(@_);
-   $self-> { checkable}     = $profile{ checkable};
-   $self-> { checked}       = $profile{ checked};
-   $self-> { default}       = 0;
-   $self-> default            ($profile{ default});
-   $self-> { image}         = $profile{ image};
-   $self-> { imageFile}     = $profile{ imageFile};
-   $self-> { imageScale}    = $profile{ imageScale};
-   $self-> { glyphs}        = $profile{ glyphs};
-   $self-> { vertical}      = $profile{ vertical};
-   $self-> { defaultGlyph}  = $profile{ defaultGlyph};
-   $self-> { hiliteGlyph}   = $profile{ hiliteGlyph};
-   $self-> { disabledGlyph} = $profile{ disabledGlyph};
-   $self-> { pressedGlyph}  = $profile{ pressedGlyph};
-   $self-> { holdGlyph}     = $profile{ holdGlyph};
-   $self-> { flat}          = $profile{ flat};
-   $self-> { modalResult}   = $profile{ modalResult};
+   $self-> {imageFile} = $profile{imageFile};
+   $self->$_( $profile{$_}) for ( qw(
+     borderWidth checkable checked default image imageScale glyphs
+     vertical defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
+     flat modalResult
+   ));
    return %profile;
 }
 
@@ -365,8 +362,8 @@ sub on_paint
    if ( !$self->{flat} || $self->{hilite})
    {
       $self-> transparent ?
-         $canvas-> rect3d( @fbar, 2, @c3d) :
-         $canvas-> rect3d( @fbar, 2, @c3d, $clr[ 1])
+         $canvas-> rect3d( @fbar, $self->{borderWidth}, @c3d) :
+         $canvas-> rect3d( @fbar, $self->{borderWidth}, @c3d, $clr[ 1])
    } else {
      $canvas-> color( $clr[ 1]);
      $canvas-> bar( @fbar) unless $self-> transparent;
@@ -506,6 +503,16 @@ sub set_default
    $self-> repaint;
 }
 
+sub set_border_width
+{
+   my ( $self, $bw) = @_;
+   $bw = 0 if $bw < 0;
+   $bw = int( $bw);
+   return if $bw == $self->{borderWidth};
+   $self->{borderWidth} = $bw;
+   $self-> repaint;
+}
+
 sub set_modal_result
 {
    my $self = $_[0];
@@ -531,6 +538,7 @@ sub set_glyphs
 sub set_checkable
 {
    $_[0]-> checked( 0) unless $_[0]-> {checkable} == $_[1];
+   $_[0]-> {checkable} = $_[1];
 }
 
 sub set_checked
@@ -551,6 +559,7 @@ sub set_image_file
    $self->image($img);
 }
 
+sub borderWidth  {($#_)?$_[0]->set_border_width($_[1]):return $_[0]->{borderWidth} }
 sub checkable    {($#_)?$_[0]->set_checkable   ($_[1]):return $_[0]->{checkable}   }
 sub checked      {($#_)?$_[0]->set_checked     ($_[1]):return $_[0]->{checked}     }
 sub default      {($#_)?$_[0]->set_default     ($_[1]):return $_[0]->{default}     }
