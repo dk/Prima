@@ -164,6 +164,7 @@ struct _UnixGuts
    XButtonEvent                 last_button_event;
    XButtonEvent                 last_click;
    Time                         last_time;
+   int (*                       main_error_handler   )(Display*,XErrorEvent*);
    int                          max_fd;
    int                          modal_count;
    TAILQ_HEAD(,pending_event)   peventq;
@@ -266,6 +267,7 @@ struct _UnixGuts
    int                          shape_error;
    Bool                         shared_image_extension;
    int                          shared_image_completion_event;
+   Bool                         xshmattach_failed;
 } guts;
 
 #define FXA_RESOLUTION_X guts. fxa_resolution_x

@@ -163,7 +163,7 @@ window_subsystem_init( void)
    DISP = XOpenDisplay( nil);
    if (!DISP) return false;
    XSetErrorHandler( x_error_handler);
-   (void)x_error_handler;
+   guts.main_error_handler = x_error_handler;
    (void)x_io_error_handler;
    XCHECKPOINT;
    guts.connection = ConnectionNumber( DISP);

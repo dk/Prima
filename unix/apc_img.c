@@ -100,6 +100,15 @@ struct PrimaXImage
 #define get_ximage_data(xim)            ((xim)->data_alias)
 #define get_ximage_bytes_per_line(xim)  ((xim)->bytes_per_line_alias)
 
+#ifdef USE_MITSHM
+static int
+shm_ignore_errors(Display *d, XErrorEvent *ev)
+{
+   guts.xshmattach_failed = true;
+   return 0;
+}
+#endif
+
 static struct PrimaXImage*
 prepare_ximage( int width, int height, Bool bitmap)
 {
@@ -140,8 +149,12 @@ prepare_ximage( int width, int height, Bool bitmap)
          goto normal_way;
       }
       i-> xmem. readOnly = false;
-      if ( XShmAttach( DISP, &i->xmem) == 0) {
+      guts.xshmattach_failed = false;
+      XSetErrorHandler(shm_ignore_errors);
+      if ( XShmAttach(DISP, &i->xmem) == 0) {
          XCHECKPOINT;
+bad_xshm_attach:
+         XSetErrorHandler(guts.main_error_handler);
          XDestroyImage( i-> image);
          shmdt( i-> xmem. shmaddr);
          shmctl( i-> xmem. shmid, IPC_RMID, 0);
@@ -150,6 +163,7 @@ prepare_ximage( int width, int height, Bool bitmap)
       XCHECKPOINT;
       XSync(DISP,false);
       XCHECKPOINT;
+      if (guts.xshmattach_failed)       goto bad_xshm_attach;
       shmctl( i-> xmem. shmid, IPC_RMID, 0);
       i-> data_alias = i-> image-> data;
       i-> shm = true;
