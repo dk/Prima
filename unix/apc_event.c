@@ -976,7 +976,29 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          case cmKeyDown:
             if ( prima_handle_menu_shortcuts( self, ev, keysym) < 0) return;
             break;
-          }
+         case cmMouseDown: case cmMouseWheel: case cmMouseUp:
+         case cmMouseClick: case cmMouseMove: 
+            {
+               Handle xself = self;
+               Event ev = e;
+               Point p = e. pos. where, pos;
+               while ( PWidget(xself)-> owner &&
+                       PWidget(xself)-> owner != application &&
+                       X(xself)-> flags. clip_owner) {
+                  pos = apc_widget_get_pos( xself);
+                  xself = PWidget(xself)-> owner;
+                  p. x += pos. x; 
+                  p. y += pos. y; 
+                  ev. pos. where = p;
+                  ev. cmd = e. cmd;
+	          CComponent( xself)-> message( xself, &ev);
+                  if ( !ev. cmd) return;
+                  if ( PObject( self)-> stage == csDead) return; 
+                  if ( PObject( xself)-> stage == csDead) return; 
+               }
+            }
+            break;
+         }
       }
       if ( secondary. cmd) {
 	 CComponent( self)-> message( self, &secondary);
