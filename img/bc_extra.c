@@ -71,17 +71,15 @@ memcpy_bitconvproc( Byte * src, Byte * dest, int count)
 void
 ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int srcDataSize, int dstDataSize, int srcBpp, int dstBpp, void * convProc)
 {
+   int dummy = ( convProc == nil) ? ( convProc = memcpy_bitconvproc, srcBpp = dstBpp = 1) : 0;
    int sb  = srcLineSize / srcBpp;
    int db  = dstLineSize / dstBpp;
    int bsc = sb > db ? db : sb;
    int sh  = srcDataSize / srcLineSize;
    int dh  = dstDataSize / dstLineSize;
    int  h  = sh > dh ? dh : sh;
-   if ( convProc == nil) {
-      convProc = memcpy_bitconvproc;
-      srcBpp = dstBpp = 1;
-   }   
-
+   (void)dummy;
+   
    for ( ; h > 0; h--, source += srcLineSize, dest += dstLineSize)
       (( PSimpleConvProc) convProc)( source, dest, bsc);
 
