@@ -975,24 +975,14 @@ extern Bool
 apc_widget_is_visible( Handle self);
 
 extern void
-apc_widget_invalidate_rect( Handle self, Rect rect);
-
-extern void
-apc_widget_lock( Handle self);
-
-extern void
-apc_widget_repaint( Handle self);
+apc_widget_invalidate_rect( Handle self, Rect * rect);
 
 extern Point
 apc_widget_screen_to_client( Handle self, Point p);
 
 extern void
-apc_widget_scroll( Handle self, int horiz, int vert,
+apc_widget_scroll( Handle self, int horiz, int vert, Rect * rect,
 		   Bool scrollChildren);
-
-extern void
-apc_widget_scroll_rect( Handle self, int horiz, int vert,
-			Rect r, Bool scrollChildren);
 
 extern void
 apc_widget_set_capture( Handle self, Bool capture);
@@ -1032,9 +1022,6 @@ apc_widget_set_visible( Handle self, Bool show);
 
 extern void
 apc_widget_set_z_order( Handle self, Handle behind, Bool top);
-
-extern void
-apc_widget_unlock( Handle self);
 
 extern void
 apc_widget_update( Handle self);
@@ -1386,11 +1373,6 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    fpDefault        0x0000
 #define    fpVariable       0x0001
 #define    fpFixed          0x0002
-
-/* font precision types */
-#define    ftDontCare       0x0000
-#define    ftRaster         0x0010
-#define    ftVector         0x0020
 
 /* font weigths */
 #define    fwUltraLight     1
@@ -1765,7 +1747,7 @@ apc_font_load( char * filename);
 extern void
 apc_font_pick( Handle self, PFont source, PFont dest);
 
-extern PFontMetric
+extern PFont
 apc_fonts( char *facename, int *retCount);
 
 /* system metrics */
