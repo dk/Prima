@@ -30,14 +30,16 @@ my $scrollTimer;
 sub scroll_timer_active
 {
    return 0 unless defined $scrollTimer;
-   return 0 if $_[0] != $scrollTimer-> delegateTo;
+   my $dt = $scrollTimer-> delegateTo;
+   return 0 if !$dt or $_[0] != $dt;
    return $scrollTimer-> {active};
 }
 
 sub scroll_timer_semaphore
 {
    return 0 unless defined $scrollTimer;
-   return 0 if $_[0] != $scrollTimer-> delegateTo;
+   my $dt = $scrollTimer-> delegateTo;
+   return 0 if !$dt or $_[0] != $dt;
    $#_ ?
       $scrollTimer-> {semaphore} = $_[1] :
       return $scrollTimer-> {semaphore};

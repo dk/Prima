@@ -163,7 +163,6 @@ sub init
       %{$profile{buttonProfile}},
    );
    $self-> visible( $visible);
-   $self-> {edit}->focus;
    return %profile;
 }
 

@@ -870,6 +870,15 @@ sub set_offset
    $self-> refresh;
 }
 
+sub redraw_items
+{
+   my $self = shift;
+   for ( @_) {
+      $self->{singlePaint}->{$_} = 1;
+   }
+   $self-> refresh;
+}
+
 sub set_selected_items
 {
    my ( $self, $items) = @_;

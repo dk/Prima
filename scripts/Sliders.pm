@@ -400,7 +400,6 @@ sub init
    $self-> {lastEditText} = 0;
    for (qw( min max step value)) {$self->$_($profile{$_});};
    $self-> visible( $visible);
-   $self-> {edit}->focus;
    return %profile;
 }
 

@@ -288,7 +288,6 @@ sub profile_check_in
    $p->{ font} = Drawable-> font_match( $p->{ font}, $default->{ font});
 }
 
-
 sub color      {($#_)?$_[0]->set_color       ($_[1]):return $_[0]->get_color;       }
 sub clipRect   {($#_)?shift->set_clip_rect   (@_   ):return $_[0]->get_clip_rect;   }
 sub backColor  {($#_)?$_[0]->set_back_color  ($_[1]):return $_[0]->get_back_color;  }
