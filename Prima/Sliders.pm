@@ -84,11 +84,10 @@ sub on_mouseclick
 
 sub state         {($#_)?$_[0]->set_state ($_[1]):return $_[0]->{pressState}}
 
-sub on_trackstart {}
-sub on_trackend   {}
-sub on_increment  {
+#sub on_trackend   {}
+#sub on_increment  {
 #  my ( $self, $increment) = @_;
-}
+#}
 
 package Prima::SpinButton;
 use vars qw(@ISA);
@@ -719,22 +718,23 @@ use constant Axis         => 1;
 use constant Thermometer  => 2;
 use constant StdMinMax    => 3;
 
-=pod
-The sliders are expected to notify the owner in usual way of chaning controls,
-by sending notify('Change'). but, if chaning while mouse tracking is not
-appropriate, the following scheme will help: in on_change() second parameter
-will be true if mouse tracking is performed, and the end of mouse tracking 
-signaled by notify('TrackEnd').
-=cut
-
 package Prima::AbstractSlider;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
+
+{
+my %RNT = (
+   %{Prima::Widget->notification_types()},
+   Track   => nt::Default,
+);
+sub notification_types { return \%RNT; }
+}
 
 sub profile_default
 {
    return {
       %{$_[ 0]-> SUPER::profile_default},
+      autoTrack      => 1,
       increment      => 10,
       min            => 0,
       max            => 100,
@@ -754,14 +754,20 @@ sub profile_default
 sub init
 {
    my $self = shift;
-   for ( qw( min max readOnly snap value))
+   for ( qw( min max readOnly snap value autoTrack))
       {$self->{$_}=0}
    for ( qw( tickVal tickLen tickTxt )) { $self->{$_} = [] };
    my %profile = $self-> SUPER::init( @_);
-   for ( qw( step min max increment readOnly ticks snap value))
+   for ( qw( step min max increment readOnly ticks snap value autoTrack))
      {$self->$_($profile{$_});}
    $self-> scheme( $profile{scheme}, 1) if defined $profile{scheme};
    return %profile;
+}
+
+sub autoTrack
+{
+   return $_[0]-> {autoTrack} unless $#_;
+   $_[0]-> {autoTrack} = $_[1];
 }
 
 sub on_mouseclick
@@ -896,14 +902,6 @@ use constant Dual        => 2;
 package Prima::Slider;
 use vars qw(@ISA);
 @ISA = qw(Prima::AbstractSlider);
-
-{
-my %RNT = (
-   %{Prima::Widget->notification_types()},
-   TrackEnd   => nt::Default,
-);
-sub notification_types { return \%RNT; }
-}
 
 use constant DefButtonX => 12;
 
@@ -1105,7 +1103,7 @@ sub on_mouseup
    return unless $self->{mouseTransaction};
    $self-> {mouseTransaction} = undef;
    $self-> capture(0);
-   $self-> notify( 'TrackEnd');
+   $self-> notify( 'Change') unless $self-> {autoTrack};
 }
 
 sub on_mousemove
@@ -1115,7 +1113,11 @@ sub on_mousemove
    $self->{vertical} ? $y : $x   -= $self->{aperture};
    my ( $info, $pos) = $self-> pos2info( $x, $y);
    return unless defined $info;
+   my $ov = $self->{value};
+   $self-> {suppressNotify} = 1 unless $self-> {autoTrack};
    $self-> value( $pos);
+   $self-> {suppressNotify} = 0;
+   $self-> notify(q(Track)) if !$self-> {autoTrack} && $ov != $self->{value};
 }
 
 
@@ -1188,6 +1190,7 @@ sub set_bound
    $self->repaint;
 }
 
+
 sub value
 {
    if ($#_) {
@@ -1242,7 +1245,7 @@ sub value
            ( $bh - $sb - DefButtonX) if $self-> {tickAlign} != tka::Dual;
          $self-> invalidate_rect( $v1, $bh - 9 + $yd, $v2, $bh + $sb + 4 + $yd);
       }
-      $self-> notify(q(Change), $self-> {mouseTransaction});
+      $self-> notify(q(Change)) unless $self->{suppressNotify};
    } else {
       return $_[0]->{value};
    }
@@ -1258,8 +1261,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Prima::Widget->notification_types()},
-   TrackEnd   => nt::Default,
+   %{Prima::AbstractSlider->notification_types()},
    Stringify  => nt::Action,
 );
 sub notification_types { return \%RNT; }
@@ -1548,9 +1550,10 @@ sub on_mouseup
       $self-> invalidate_rect( $butt[2], $butt[1], $butt[5] + 1, $butt[4] + 1);
       $self-> update_view;
    }
+   my $mt = $self->{mouseTransaction};
    $self-> {mouseTransaction} = undef;
    $self-> capture(0);
-   $self-> notify( 'TrackEnd');
+   $self-> notify( 'Change') if $mt == 3 && !$self->{autoTrack};
 }
 
 sub on_mousemove
@@ -1558,7 +1561,11 @@ sub on_mousemove
    my ( $self, $mod, $x, $y) = @_;
    return unless $self->{mouseTransaction};
    if ( $self->{mouseTransaction} == 3) {
+      my $ov = $self->{value};
+      $self-> {suppressNotify} = 1 unless $self->{autoTrack};
       $self-> value( $self-> xy2val( $x, $y));
+      $self-> {suppressNotify} = 0;
+      $self-> notify(q(Track)) if !$self->{autoTrack} && $ov != $self->{value};
    } elsif ( $self->{pressState} > 0) {
       $self-> scroll_timer_start unless $self-> scroll_timer_active;
       return unless $self-> scroll_timer_semaphore;
@@ -1635,7 +1642,7 @@ sub value
    $self-> invalidate_rect( @clip[0..1], $clip[2]+1, $clip[3]+1);
    $self-> update_view;
    $self-> {singlePaint} = undef;
-   $self-> notify(q(Change), $self-> {mouseTransaction});
+   $self-> notify(q(Change)) unless $self->{suppressNotify};
 }
 
 1;

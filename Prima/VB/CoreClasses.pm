@@ -1341,7 +1341,7 @@ sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
-      bool         => [qw(readOnly snap)],
+      bool         => [qw(readOnly snap autoTrack)],
       uiv          => [qw(min max value increment step)],
       sliderScheme => ['scheme'],
    );
