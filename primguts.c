@@ -118,7 +118,8 @@ vsnprintf( char *buf, size_t len, const char *format, va_list args)
     rc = vsprintf( buf, format, args);
     if ( rc >= len) {
 	/* We'd better die here rather than wait for memory corruption consequences! */
-	croak( "snprintf/vsnprintf buffer overflow, memory corruption possible. Blame Borland for this error!");
+	fprintf( stderr, "snprintf/vsnprintf buffer overflow, memory corruption possible. Blame Borland for this error!");
+	exit( 1);
     }
     return rc;
 }
