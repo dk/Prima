@@ -641,7 +641,7 @@ sub profile_default
 {
    return {
       %{$_[ 0]-> SUPER::profile_default},
-      auto         => 0,
+      auto        => 0,
       widgetClass => wc::CheckBox,
    }
 }
@@ -672,13 +672,14 @@ sub on_paint
    };
    my $xStart;
    $image = $images[ $imNo];
+   my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
+
    if ( $image)
    {
       $canvas-> put_image( 0, ( $size[1] - $image-> height) / 2, $image);
       $xStart = $image-> width;
    } else {
       $xStart = 16;
-      my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
       push ( @c3d, shift @c3d) if $self-> { pressed};
       $canvas-> rect3d( 1, ( $size[1] - 14) / 2, 15, ( $size[1] + 14) / 2, 1, @c3d, $clr[ 1]);
       if ( $self-> { checked})

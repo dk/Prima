@@ -327,7 +327,6 @@ create_logger_window2( void * dummy)
 void
 start_logger( void)
 {
-   guts. mainThreadId = GetCurrentThreadId();
    signal( SIGSEGV, sigh);
    signal( SIGTERM, sigh);
     // To handle all standart output...

@@ -81,7 +81,7 @@ Timer_set( Handle self, HV * profile)
 void
 Timer_done( Handle self)
 {
-   ((( PComponent) var owner)-> self)-> detach( var owner, self, false);
+   CComponent( var owner)-> detach( var owner, self, false);
    apc_timer_destroy( self);
    inherited done( self);
 }

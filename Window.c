@@ -632,7 +632,7 @@ Window_set_menu_items( Handle self, SV * menuItems)
          pset_sv( items, menuItems);
          pset_H ( owner, self);
          pset_i ( selected, false);
-         my set_menu( self, create_instance( Menu));
+         my set_menu( self, create_instance( "Menu"));
          sv_free(( SV *) profile);
       }
    }
