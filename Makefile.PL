@@ -478,29 +478,6 @@ sub env_true
     return( $ENV{ $var} && $ENV{ $var} =~ /^1|yes|on|true$/i);
 }
 
-sub check_dTHR
-{
-    print "Checking dTHR definition...";
-    my $rc = compile( <<EOF, 1, "-Wunused", "-Werror");
-#include <EXTERN.h>
-#include <perl.h>
-
-void
-dummy(void)
-{
-   dTHR;
-}
-EOF
-    if ( $rc) {
-        print " okay\n";
-    } else {
-        $DEFINES{REMOVE_dTHR_FROM_dSP} = 1;
-        print " hack needed\n";
-    }
-    return $rc;
-}
-
-
 sub setup_variables
 {
     my $platform;
@@ -737,7 +714,6 @@ sub setup_variables
     setvar( 'DEFFILE', $Win32 ? qd( "win32/Prima.def") : ( $OS2 ? qd( "os2/Prima.def") : ''));
     setvar( 'DISTNAME', 'Prima-1.00');
     setvar( 'WANTNOCODECS', 0);
-    check_dTHR() if $platform eq 'unix';
 
     @Prima_exports = qw(
 apc_application_begin_paint
