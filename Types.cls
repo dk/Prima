@@ -1,3 +1,15 @@
+global @Point {
+   int x;
+   int y;
+}
+
+global @Rect {
+   int left;
+   int bottom;
+   int right;
+   int top;
+}
+
 global %Font {
    int         height            ;
    int         width             ;
