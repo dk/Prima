@@ -49,7 +49,7 @@ __END__
 
 =head1 NAME
 
-Application - root of widget objects hierarchy
+Prima::Application - root of widget objects hierarchy
 
 =head1 DESCRIPTION
 
