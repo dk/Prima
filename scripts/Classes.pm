@@ -981,7 +981,10 @@ sub accel   { ( $#_) ? $_[ 0]->{ menu}-> set_accel  ( $_[0]->{ id}, $_[1]) : ret
 sub key     { ( $#_) ? $_[ 0]->{ menu}-> set_key    ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_key    ( $_[0]->{ id}); }
 sub text    { ( $#_) ? $_[ 0]->{ menu}-> set_text   ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_text   ( $_[0]->{ id}); }
 sub enabled { ( $#_) ? $_[ 0]->{ menu}-> set_enabled( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_enabled( $_[0]->{ id}); }
-sub check   { ( $#_) ? $_[ 0]->{ menu}-> set_check  ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_check  ( $_[0]->{ id}); }
+sub checked { ( $#_) ? $_[ 0]->{ menu}-> set_check  ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_check  ( $_[0]->{ id}); }
+sub enable  { $_[0]->{menu}-> set_enabled( $_[0]->{ id}, 1) };
+sub disable { $_[0]->{menu}-> set_enabled( $_[0]->{ id}, 0) };
+sub check   { $_[0]->{menu}-> set_check( $_[0]->{ id}, 1) };
 sub uncheck { $_[0]->{menu}-> set_check( $_[0]->{ id}, 0) };
 sub delete  { $_[ 0]->{ menu}-> delete( $_[0]->{ id}) }
 sub toggle  {
@@ -1012,12 +1015,22 @@ sub select     {$_[0]->set_selected(1)}
 sub accel      {($#_>1)?shift->set_accel     (@_)   :return $_[0]->get_accel   ($_[1]);}
 sub action     {($#_>1)?shift->set_action    (@_)   :return $_[0]->get_action  ($_[1]);}
 sub checked    {($#_>1)?shift->set_check     (@_)   :return $_[0]->get_check   ($_[1]);}
+sub enable     {$_[0]->set_enabled($_[1],1);}
+sub disable    {$_[0]->set_enabled($_[1],0);}
+sub check      {$_[0]->set_check($_[1],1);}
+sub uncheck    {$_[0]->set_check($_[1],0);}
 sub enabled    {($#_>1)?shift->set_enabled   (@_)   :return $_[0]->get_enabled ($_[1]);}
 sub key        {($#_>1)?shift->set_key       (@_)   :return $_[0]->get_key     ($_[1]);}
 sub items      {($#_)?$_[0]->set_items       ($_[1]):return $_[0]->get_items("");      }
 sub selected   {($#_)?$_[0]->set_selected    ($_[1]):return $_[0]->get_selected;       }
 sub text       {($#_>1)?shift->set_text      (@_)   :return $_[0]->get_text    ($_[1]);}
 sub variable   {($#_>1)?shift->set_variable  (@_)   :return $_[0]->get_variable($_[1]);}
+sub toggle     {
+   my $i = !$_[0]-> get_check($_[1]);
+   $_[0]-> set_check($_[1], $i);
+   return $i;
+}
+
 
 
 sub AUTOLOAD
