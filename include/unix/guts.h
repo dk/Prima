@@ -373,6 +373,7 @@ typedef struct _UnixGuts
    Atom                         fxa_charset_registry;
    int                          n_fonts;
    XFontStruct                 *pointer_font;
+   Bool                         default_font_ok;
    Font                         default_font;
    Font                         default_menu_font;
    Font                         default_widget_font;

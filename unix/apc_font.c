@@ -157,7 +157,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
          if (( strlen( f-> font. family) == 0) || (strcmp( f-> font. family, "*") == 0))
             strcpy( f-> font. family, guts. default_font. family);
          if (( strlen( f-> font. name) == 0) || (strcmp( f-> font. name, "*") == 0)) {
-            if ( strlen(guts. default_font. name)) {
+            if ( guts. default_font_ok) {
                strcpy( f-> font. name, guts. default_font. name);
             } else {
                Font fx = f-> font;
@@ -597,13 +597,13 @@ prima_init_font_subsystem( void)
       }
    }
    
-
    if ( !apc_fetch_resource( "Prima", "", "Font", "font", 
                              nilHandle, frFont, &guts. default_font)) {
       fill_default_font( &guts. default_font);
       apc_font_pick( application, &guts. default_font, &guts. default_font);
       guts. default_font. pitch = fpDefault;
    }
+   guts. default_font_ok = 1;
    if ( !apc_fetch_resource( "Prima", "", "Font", "menu_font", 
                              nilHandle, frFont, &guts. default_menu_font)) 
       memcpy( &guts. default_menu_font, &guts. default_font, sizeof( Font));
@@ -624,7 +624,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
    int i, newEntry = 0, detail;
    FontInfo fi;
    XFontStruct * xf;
-   Font dummy;
+   Font dummy, def_dummy, *def;
 
    if ( !font) font = &dummy;
    
@@ -662,8 +662,16 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
    font_query_name( xf, &fi);
    if ( !detail) detail_font_info( &fi, font, false, false);
    *font = fi. font;
-   if ( font-> height == 0) font-> height = C_NUMERIC_UNDEF;
-   if ( font-> size   == 0) font-> size   = C_NUMERIC_UNDEF;
+   if ( guts. default_font_ok) {
+      def = &guts. default_font;
+   } else {
+      fill_default_font( def = &def_dummy);
+      apc_font_pick( application, def, def);
+   }
+   if ( font-> height == 0) font-> height = def-> height;
+   if ( font-> size   == 0) font-> size   = def-> size;
+   if ( strlen( font-> name) == 0) strcpy( font-> name, def-> name);
+   if ( strlen( font-> family) == 0) strcpy( font-> family, def-> family);
    apc_font_pick( application, font, font);
    if (
        ( stricmp( font-> family, fi. lc_family) == 0) &&
@@ -674,8 +682,8 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
       PFontInfo n = realloc( guts. font_info, sizeof( FontInfo) * (guts. n_fonts + 1));
       if ( n) {
          guts. font_info = n;
+         fi. font = *font;
          guts. font_info[ guts. n_fonts++] = fi;
-         *font = fi. font;
       }
    }
 }
@@ -1161,8 +1169,8 @@ apc_font_pick( Handle self, PFont source, PFont dest)
       dest-> direction = direction;
       return true;
    }
-  
-   /*
+ 
+   /* 
    if ( by_size) {
       printf("reqS:%d.[%d]{%d}(%d).%s/%s\n", dest-> size, dest-> height, dest-> style, dest-> pitch, dest-> name, dest-> encoding);
    } else {
@@ -1193,7 +1201,7 @@ AGAIN:
    /*
     printf( "#0: %d (%g): %s\n", i, minDiff, info[i].xname); 
     printf("pick:%d.[%d]{%d}.%s\n", info[i].font. height, info[i].font. size, info[i].font. style, info[i].font. name);
-    */
+   */
    
    if ( info[ i]. flags. sloppy && pickCount++ < 20) { 
       detail_font_info( info + i, dest, false, by_size); 
@@ -1208,7 +1216,7 @@ AGAIN:
      printf( "took diff %f after %d steps out of %d\n", minDiff, pickCount, n); 
       if ( lastIndex >= 0)
          printf( "#1: %d (%g): %s %d\n", lastIndex, lastDiff, info[lastIndex]. xname, info[lastIndex]. font. vector);
-     */
+   */
    detail_font_info( info + index, dest, true, by_size);
 
    if ( underlined) dest-> style |= fsUnderlined;
