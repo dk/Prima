@@ -15,7 +15,7 @@
 
 #define WinShowWindow(WND) SetWindowPos( WND, nil, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_SHOWWINDOW|SWP_NOACTIVATE);
 #define WinHideWindow(WND) SetWindowPos( WND, nil, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_HIDEWINDOW);
-#define apc_widget_repaint(self)  apc_widget_invalidate_rect(self,nil)
+#define apc_widget_redraw(self)  apc_widget_invalidate_rect(self,nil)
 
 Bool
 apc_application_begin_paint ( Handle self)
@@ -1085,7 +1085,7 @@ apc_window_end_modal( Handle self)
    if ( application) {
       Handle who = Application_popup_modal( application);
       if ( !who && var owner)
-         CWindow( var owner)-> set_selected( var owner, 1);
+         SetFocus( DHANDLE( var owner));
    }
    guts. focSysDisabled = 0;
 }
@@ -1141,9 +1141,9 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
       set_view_ex( self, &vprf);
       var stage = oStage;
    }
-   if ( is_apt( aptTransparent) != transparent && !reset) apc_widget_repaint( self);
+   if ( is_apt( aptTransparent) != transparent && !reset) apc_widget_redraw( self);
    apt_assign( aptTransparent, transparent);
-   if ( reset) apc_widget_repaint( self);
+   if ( reset) apc_widget_redraw( self);
    return apcError == 0;
 }
 
@@ -1541,8 +1541,17 @@ apc_widget_invalidate_rect( Handle self, Rect * rect)
    if ( !InvalidateRect (( HWND) var handle, pRect, false)) apiErr;
    if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
    objCheck;
-   if ( !rect)
-      var self-> first_that( self, repaint_all, nil);
+   process_transparents( self);
+}
+
+void
+apc_widget_repaint( Handle self)
+{
+   objCheck;
+   if ( !InvalidateRect (( HWND) var handle, NULL, false)) apiErr;
+   if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
+   objCheck;
+   var self-> first_that( self, repaint_all, nil);
    process_transparents( self);
 }
 
@@ -2453,12 +2462,20 @@ apc_system_action( char * params)
          r. bottom = sys lastSize. y - r. bottom;
          r. top    = sys lastSize. y - r. top;
          DrawFocusRect( sys ps, &r);
+      } else if (strcmp( params, "win.printfocusedwindow") == 0) {
+         HWND h = GetFocus();
+         if ( h) {
+            char b[ 256];
+            log_write( "%08x: %s", h, GetWindowText( h, b, 255) ? b : "NULL");
+         } else {
+            log_write( "? No foc");
+         }
       } else
          goto DEFAULT;
       break;
    DEFAULT:
    default:
-      warn( "Unknown sysaction");
+      warn( "Unknown sysaction \"%s\"", params);
    }
    return 0;
 }

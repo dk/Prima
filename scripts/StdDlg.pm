@@ -291,6 +291,7 @@ sub Files_SelectItem
 sub Files_Click
 {
    my $self = shift;
+   $self-> Files_SelectItem( @_);
    $self-> Open_Click( $self-> Open);
 }
 
