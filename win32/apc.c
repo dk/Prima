@@ -2058,10 +2058,10 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Rect *cr, Bool sc
    }
 
    if ( pRect) {
-      if ( pRect-> left < 0) pRect-> left = 0;
-      if ( pRect-> top  < 0) pRect-> top = 0;
-      if ( pRect-> right  > sz. x) pRect-> right = sz. x;
-      if ( pRect-> bottom > sz. y) pRect-> bottom = sz. y;
+      if ( pRect-> left < -sz. x * 2) pRect-> left = -sz. x * 2;
+      if ( pRect-> top  < -sz. y * 2) pRect-> top = -sz. y * 2;
+      if ( pRect-> right  > sz. x * 2) pRect-> right = sz. x * 2;
+      if ( pRect-> bottom > sz. y * 2) pRect-> bottom = sz. y * 2;
    }
 
    if ( horiz > sz. x || horiz < -sz. x || vert > sz. y || vert < -sz. y) {
