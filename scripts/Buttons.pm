@@ -7,7 +7,7 @@ package Buttons;
 #   SpeedButton
 #   RadioGroup
 #   GroupBox
-#   CheckGroupBox
+#   CheckBoxGroup
 #
 #   AbstractButton
 #   Cluster
