@@ -28,7 +28,7 @@
 /*
  * Created by Vadim Belman <voland@plab.ku.dk>, April 1999.
  */
-#include "unix/img_api.h"
+#include "img_api.h"
 #include "unix/gif_support.h"
 #include <unistd.h>
 #include <signal.h>
@@ -905,7 +905,9 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	}
     }
     list_destroy( &gifChunks);
-    list_destroy( &imageData);
+    if ( readData) {
+	list_destroy( &imageData);
+    }
     for ( i = 0; i < imageExtensions.count; i++) {
 	int j;
 	PGIFExtensions gifExtensions = ( PGIFExtensions) list_at( &imageExtensions, i);
