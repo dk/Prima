@@ -275,6 +275,7 @@ prima_cleanup_drawable_after_painting( Handle self)
          XDestroyRegion( region);
       }
       XCHECKPOINT;
+      XSetFunction( DISP, XX-> gc, GXcopy);
       XCopyArea( DISP, XX-> gdrawable, XX-> udrawable, XX-> gc,
                  0, 0,
                  XX-> bsize.x, XX-> bsize.y,
