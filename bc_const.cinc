@@ -166,16 +166,18 @@ cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette
       colorref[ fromColorCount] =
          cm_nearest_color( fromPalette[ fromColorCount], toColorCount, toPalette);
 }
-
+/* XXX 
+   int srcLine = (( width * ( srcType & imBPP) + 31) / 32) * 4;
+*/
 #define dBCARGS                                                  \
    int i;                                                        \
-   int width = var->w, height = var->h;                            \
-   int srcType = var->type;                                       \
-   int srcLine = (( width * ( srcType & imBPP) + 31) / 32) * 4;  \
+   int width = var->w, height = var->h;                          \
+   int srcType = var->type;                                      \
+   int srcLine = var->lineSize;                                  \
    int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;  \
    int dstColors  = ( 1 << ( dstType & imBPP)) & 0x1ff;          \
    int srcColors  = ( 1 << ( srcType & imBPP)) & 0x1ff;          \
-   Byte * srcData = var->data;                                    \
+   Byte * srcData = var->data;                                   \
    Byte colorref[ 256]
 
 #define BCWARN                                                   \
