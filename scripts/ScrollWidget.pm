@@ -107,7 +107,7 @@ sub set_deltas
    $self-> {deltaX} = $w;
    my @r = $self->get_active_area($www,$hhh);
    $self-> clipRect( @r);
-   $self-> scroll_rect( $odx - $w, $h - $ody, @r);
+   $self-> scroll( $odx - $w, $h - $ody);
    $self-> {scrollTransaction} = 1;
    $self-> {hScrollBar}-> value( $w) if $self->{hScroll};
    $self-> {vScrollBar}-> value( $h) if $self->{vScroll};
