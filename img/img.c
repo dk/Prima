@@ -214,7 +214,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    snprintf( error, 256, "Error loading %s", fileName);
 
    // open file
-   if (( fi. f = ( FILE *) fopen( fileName, "r")) == NULL)
+   if (( fi. f = ( FILE *) fopen( fileName, "rb")) == NULL)
       out( strerror( errno));
    fi. fileName = fileName;
 
@@ -511,7 +511,7 @@ apc_img_frame_count( char * fileName)
    CHK;
    memset( &fi, 0, sizeof( fi));
    // open file
-   if (( fi. f = ( FILE *) fopen( fileName, "r")) == NULL) goto EXIT_NOW;
+   if (( fi. f = ( FILE *) fopen( fileName, "rb")) == NULL) goto EXIT_NOW;
    
    // assigning request
    fi. fileName = fileName;
@@ -687,12 +687,12 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
 
    // open file
    if ( fi. append) {
-      FILE * f = ( FILE *) fopen( fileName, "r");
+      FILE * f = ( FILE *) fopen( fileName, "rb");
       fclose( f);
       if ( !f) fi. append = false;
    }   
    
-   if (( fi. f = ( FILE *) fopen( fileName, fi. append ? "r+" : "w+" )) == NULL)
+   if (( fi. f = ( FILE *) fopen( fileName, fi. append ? "rb+" : "wb+" )) == NULL)
       out( strerror( errno));
 
    fi. fileName     = fileName;
@@ -884,7 +884,7 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
    
    // saving
    for ( i = 0; i < fi. frameMapSize; i++) {
-      HV * profile = def;
+      HV * profile = commonHV;
       PImage im;
 
       im = ( PImage) fi. frameMap[ i];
@@ -925,11 +925,11 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
       // saving image
       if ( !c-> vmt-> save( c, &fi)) {
          c-> vmt-> close_save( c, &fi);
-         if ( fi. objectExtras != def) sv_free(( SV *) fi. objectExtras);
+         if ( fi. objectExtras != commonHV) sv_free(( SV *) fi. objectExtras);
          out( fi. errbuf);
       }  
 
-      if ( fi. objectExtras != def) sv_free(( SV *) fi. objectExtras);
+      if ( fi. objectExtras != commonHV) sv_free(( SV *) fi. objectExtras);
       ret++;
    }
 
