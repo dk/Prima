@@ -346,6 +346,9 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       if ( mp2)
          ((( PWidget) mp2)-> self)-> set_selected(( Handle) mp2, 1);
       return 0;
+   case WM_HASMATE:
+      *(( Handle*) mp2) = self;
+      return HASMATE_MAGIC;
    // case WM_SYSCHAR:return 1;
    case WM_SYSKEYUP:
    case WM_SYSKEYDOWN:
@@ -371,7 +374,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
                 WORD keys[ 2];
                 UINT scan = ( HIWORD( mp2) & 0xFF) | ( up ? 0x80000000 : 0);
                 if ( ev. key. mod & kbCtrl) {
-                   // non-alphanumeric keys - such as /\|?., etc - with kbCtrl gives weird results
+                   // non-alphanumeric keys - such as /\|?., etc - with kbCtrl are giving weird results
                    BYTE octl  = guts. currentKeyState[ VK_CONTROL];
                    HKL  kl    = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
                    guts. currentKeyState[ VK_CONTROL] = 0;
@@ -548,7 +551,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          return HTERROR;
       break;
    case WM_PAINT:
-		ev. cmd = cmPaint;
+   	ev. cmd = cmPaint;
       if (
            ( sys className == WC_CUSTOM) &&
            ( var stage == csNormal) &&
