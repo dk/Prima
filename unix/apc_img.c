@@ -57,6 +57,7 @@ static PrimaXImage*
 prepare_ximage( int width, int height, Bool bitmap)
 {
    PrimaXImage *i;
+   int extra_bytes = ((guts. depth == 24) ? 5 : 0);
 
    i = malloc( sizeof( PrimaXImage));
    if (!i) return nil;
@@ -72,7 +73,7 @@ prepare_ximage( int width, int height, Bool bitmap)
       if ( !i-> image) goto normal_way;
       i-> bytes_per_line_alias = i-> image-> bytes_per_line;
       i-> xmem. shmid = shmget( IPC_PRIVATE,
-                                i-> image-> bytes_per_line * height,
+                                i-> image-> bytes_per_line * height + extra_bytes,
                                 IPC_CREAT | 0777);
       if ( i-> xmem. shmid < 0) {
          XDestroyImage( i-> image);
@@ -100,7 +101,7 @@ prepare_ximage( int width, int height, Bool bitmap)
 normal_way:
 #endif
    i-> bytes_per_line_alias = (( width * (bitmap ? 1 : guts.depth) + 31) / 32) * 4;
-   i-> data_alias = malloc( height * i-> bytes_per_line_alias);
+   i-> data_alias = malloc( height * i-> bytes_per_line_alias + extra_bytes);
    if (!i-> data_alias) {
       free(i);
       return nil;
@@ -140,6 +141,7 @@ free_ximage( PrimaXImage *i) /* internal */
 static Bool
 destroy_ximage( PrimaXImage *i)
 {
+   if ( !i) return true;
    if ( i-> ref_cnt > 0) {
       i-> can_free = true;
       return true;
@@ -215,14 +217,14 @@ Bool
 apc_image_destroy( Handle self)
 {
    DEFXX;
-   if ( XX-> image_cache) {
-      destroy_ximage( XX-> image_cache);
-      XX-> image_cache = nil;
-   }
-   if ( XX-> icon_cache) {
-      destroy_ximage( XX-> icon_cache);
-      XX-> icon_cache = nil;
-   }
+   destroy_ximage( XX-> image_cache);
+   destroy_ximage( XX-> image_bit_cache);
+   destroy_ximage( XX-> icon_cache);
+   destroy_ximage( XX-> icon_bit_cache);
+   XX-> image_cache     = nil;
+   XX-> image_bit_cache = nil;
+   XX-> icon_cache      = nil;
+   XX-> icon_bit_cache  = nil;
    return true;
 }
 
@@ -450,6 +452,84 @@ create_image_cache_4_to_16( PImage img)
    IMG-> image_cache = ximage;
 }
 
+typedef struct
+{
+   U8 a0, a1, a2;
+   U8 b0, b1, b2;
+} Duplet24;
+
+static void
+create_image_cache_4_to_24( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   Duplet24 lut[ 256];
+   U32 lut1[ 16];
+   unsigned char *data;
+   int x, y;
+   int ls;
+   int h = img-> h, w = img-> w;
+   unsigned i;
+   PrimaXImage *ximage;
+   static int shift[3];
+   static Bool shift_unknown = true;
+
+   if ( shift_unknown) {
+      Visual *v = DefaultVisual( DISP, SCREEN);
+      unsigned long m;
+      int xchg;
+
+      m = v-> red_mask;
+      shift[0] = 0;
+      while ((m & 1) == 0) { shift[0]++; m >>= 1; }
+      m = v-> green_mask;
+      shift[1] = 0;
+      while ((m & 1) == 0) { shift[1]++; m >>= 1; }
+      if ( shift[1] < shift[0]) {
+         xchg = shift[0];
+         shift[0] = shift[1];
+         shift[1] = xchg;
+      }
+      m = v-> blue_mask;
+      shift[2] = 0;
+      while ((m & 1) == 0) { shift[2]++; m >>= 1; }
+      if ( shift[2] < shift[0]) {
+         xchg = shift[2];
+         shift[2] = shift[1];
+         shift[1] = shift[0];
+         shift[0] = xchg;
+      } else if ( shift[2] < shift[1]) {
+         xchg = shift[1];
+         shift[1] = shift[2];
+         shift[2] = xchg;
+      }
+
+      shift_unknown = false;
+   }
+
+   create_rgb_to_24_lut( 16, img-> palette, lut1);
+   for ( i = 0; i < 256; i++) {
+      lut[i]. a0 = (U8)((lut1[(i & 0xf0) >> 4] >> shift[0]) & 0xff);
+      lut[i]. a1 = (U8)((lut1[(i & 0xf0) >> 4] >> shift[1]) & 0xff);
+      lut[i]. a2 = (U8)((lut1[(i & 0xf0) >> 4] >> shift[2]) & 0xff);
+      lut[i]. b0 = (U8)((lut1[(i & 0x0f) >> 0] >> shift[0]) & 0xff);
+      lut[i]. b1 = (U8)((lut1[(i & 0x0f) >> 0] >> shift[1]) & 0xff);
+      lut[i]. b2 = (U8)((lut1[(i & 0x0f) >> 0] >> shift[2]) & 0xff);
+   }
+   ximage = prepare_ximage( w, h, false);
+   if ( !ximage) croak( "create_image_cache_4_to_24(): error creating ximage");
+   ls = get_ximage_bytes_per_line( ximage);
+   data = get_ximage_data( ximage);
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register Duplet24 *d = (Duplet24 *)(ls*(h-y-1)+data);
+      for ( x = 0; x < (w+1)/2; x++) {
+	 *d++ = lut[line[x]];
+      }
+   }
+
+   IMG-> image_cache = ximage;
+}
+
 static void
 create_image_cache_8_to_16( PImage img)
 {
@@ -621,6 +701,9 @@ prima_create_image_cache( PImage img, Handle drawable, Bool icon)
             switch (guts.depth) {
             case 16:
                create_image_cache_4_to_16( img);
+               break;
+            case 24:
+               create_image_cache_4_to_24( img);
                break;
             default:
                croak( "create_image_cache(): unsupported screen depth for 4-bit images");
