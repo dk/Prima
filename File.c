@@ -40,16 +40,19 @@ typedef FILE *FileStream;
 #define my  ((( PFile) self)-> self)
 #define var (( PFile) self)
 
+static void File_reset_notifications( Handle self);
+
 void
 File_init( Handle self, HV * profile)
 {
    var-> fd = -1;
    inherited-> init( self, profile);
-   my-> set_file( self, pget_sv( file));
    var-> eventMask2 =
      ( query_method( self, "on_read",    0) ? feRead      : 0) |
      ( query_method( self, "on_write",   0) ? feWrite     : 0) |
      ( query_method( self, "on_execute", 0) ? feException : 0);
+   File_reset_notifications( self);
+   my-> set_file( self, pget_sv( file));
 }
 
 void
@@ -100,7 +103,7 @@ SV *
 File_get_handle( Handle self)
 {
    char buf[ 256];
-   snprintf( buf, 256, "0x%08x", var-> fd);
+   snprintf( buf, 256, "0x%08lx", ( unsigned) var-> fd);
    return newSVpv( buf, 0);
 }
 
@@ -126,6 +129,22 @@ File_set_file( Handle self, SV * file)
    }
 }
 
+long
+File_add_notification( Handle self, char * name, SV * subroutine, Handle referer, int index)
+{
+   long id = inherited-> add_notification( self, name, subroutine, referer, index);
+   if ( id != 0) File_reset_notifications( self);
+   return id;
+}
+
+void
+File_remove_notification( Handle self, long id)
+{
+   inherited-> remove_notification( self, id);
+   File_reset_notifications( self);
+}
+
+
 static void
 File_reset_notifications( Handle self)
 {
@@ -149,26 +168,9 @@ File_reset_notifications( Handle self)
       if ( list-> count > 0) mask |= cmd[ i];
    }
 
-   if ( var-> eventMask != mask) {
+   if ( var-> file && ( var-> eventMask != mask)) {
       apc_file_change_mask( self, mask);
       var-> eventMask = mask;
    }
 }
-
-long
-File_add_notification( Handle self, char * name, SV * subroutine, Handle referer, int index)
-{
-   long id = inherited-> add_notification( self, name, subroutine, referer, index);
-   if ( id != 0) File_reset_notifications( self);
-   return id;
-}
-
-void
-File_remove_notification( Handle self, long id)
-{
-   inherited-> remove_notification( self, id);
-   File_reset_notifications( self);
-}
-
-
 
