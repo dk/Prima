@@ -1,5 +1,6 @@
 #include "unix/guts.h"
 #include "Image.h"
+#include "unix/img_api.h"
 #include "unix/gif_support.h"
 
 /***********************************************************/
@@ -333,132 +334,166 @@ __boolean_value( const char *val)
 Bool
 __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool readData, Bool *readAll)
 {
-   PImgProps fmtProps = imgFormat->propertyList;
-   PList propList = imageInfo->propList;
-   int i, j, n;
-   Bool rc = true;
+    PImgProps fmtProps = imgFormat->propertyList;
+    PImgProperty imgProp, outImgProp;
+    PImgInfo outImageInfo;
+    PList propList = imageInfo->propList;
+    int i, j, n;
+    Bool rc = true;
 
-   DOLBUG( "Have %d properties on entering __apc_image_correct_properties\n", propList->count);
-   for ( i = ( propList->count - 1); ( i >= 0) && rc; i--) {
-       PImgProperty imgProp = ( PImgProperty) list_at( propList, i);
-       Bool isExtraInfo = ( strcmp( imgProp->name, "extraInfo") == 0);
-       Bool isReadAll = ( strcmp( imgProp->name, "readAll") == 0);
-       DOLBUG( "Correcting ``%s''\n", imgProp->name);
-       if ( isExtraInfo || isReadAll) {
-	   if ( imgProp->size != -1) {
-	       // We don't expect an array here.
-	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
-	       DOLBUG( "Property `%s' is of a wrong type\n", imgProp->name);
-	       rc = false;
-	   }
-	   else if ( ! __is_boolean_value( imgProp->val.String)) {
-	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_VAL);
-	       DOLBUG( "Property %s: wrong value \'%s\'\n", imgProp->name, imgProp->val.String);
-	       rc = false;
-	   }
-	   else {
-	       if ( isExtraInfo) {
-		   imageInfo->extraInfo = __boolean_value( imgProp->val.String);
-	       }
-	       else if ( isReadAll) {
-		   *readAll = __boolean_value( imgProp->val.String);
-	       }
-	   }
-	   apc_image_clear_property( ( PImgProperty)list_at( propList, i));
-	   list_delete_at( propList, i);
-	   continue;
-       }
-       for ( j = 0; fmtProps[ j].name; j++) {
-	   if ( strcmp( imgProp->name, fmtProps[ j].name) == 0) {
-	       break;
-	   }
-       }
-       if ( fmtProps[ j].name) {
-	   if ( ( ( fmtProps[ j].type[ 1] == '*') && imgProp->size == -1)
-		|| ( ( fmtProps[ j].type[ 1] == '\0') && ( imgProp->size >= 0))) {
-	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
-	       DOLBUG( "Property %s: wrong type\n", imgProp->name);
-	       apc_image_clear_property( imgProp);
-	       rc = false;
-	   }
-	   else {
-	       switch ( fmtProps[ j].type[ 0]) {
-		   case 'i':
-		       if ( fmtProps[ j].type[ 0] == '*') {
-			   int *props = imgProp->size ? malloc( sizeof( int) * imgProp->size) : nil;
-			   for ( n = 0; n < imgProp->size; n++) {
-			       props[ n] = atoi( imgProp->val.pString[ n]);
-			       free( imgProp->val.pString[ n]);
-			   }
-			   free( imgProp->val.pString);
-			   imgProp->val.pInt = props;
-		       }
-		       else {
-			   int prop = atoi( imgProp->val.String);
-			   free( imgProp->val.String);
-			   imgProp->val.Int = prop;
-		       }
-		       imgProp->flags = ( imgProp->flags & ~PROPTYPE_MASK) || PROPTYPE_INT;
-		       break;
-		   case 'n':
-		       if ( fmtProps[ j].type[ 0] == '*') {
-			   double *props = imgProp->size ? malloc( sizeof( double) * imgProp->size) : nil;
-			   for ( n = 0; n < imgProp->size; n++) {
-			       props[ n] = atof( imgProp->val.pString[ n]);
-			       free( imgProp->val.pString[ n]);
-			   }
-			   free( imgProp->val.pString);
-			   imgProp->val.pDouble = props;
-		       }
-		       else {
-			   double prop = atof( imgProp->val.String);
-			   free( imgProp->val.String);
-			   imgProp->val.Double = prop;
-		       }
-		       imgProp->flags = ( imgProp->flags & ~PROPTYPE_MASK) || PROPTYPE_DOUBLE;
-		       break;
-		   case 'b':
-		       if ( fmtProps[ j].type[ 0] == '*') {
-			   Byte *props = imgProp->size ? malloc( sizeof( Byte) * imgProp->size) : nil;
-			   for ( n = 0; n < imgProp->size; n++) {
-			       props[ n] = atoi( imgProp->val.pString[ n]);
-			       free( imgProp->val.pString[ n]);
-			   }
-			   free( imgProp->val.pString);
-			   imgProp->val.pByte = props;
-		       }
-		       else {
-			   Byte prop = atoi( imgProp->val.String);
-			   free( imgProp->val.String);
-			   imgProp->val.Byte = prop;
-		       }
-		       imgProp->flags = ( imgProp->flags & ~PROPTYPE_MASK) || PROPTYPE_BYTE;
-		       break;
-	       }
-	       imgProp->id = fmtProps[ j].id;
-	   }
-       }
-       else {
-	   apc_image_clear_property( ( PImgProperty) list_at( propList, i));
-	   list_delete_at( propList, i);
-       }
-   }
+    rc = ( outImageInfo = img_info_create( propList->count)) != nil;
 
-   /* In case of errors we have to clean up the rest of the properties */
-   for ( ; i >= 0; i--) {
-       apc_image_clear_property( ( PImgProperty) list_at( propList, i));
-       list_delete_at( propList, i);
-   }
+    DOLBUG( "Have %d properties on entering __apc_image_correct_properties\n", propList->count);
+    for ( i = ( propList->count - 1); ( i >= 0) && rc; i--) {
+	Bool isExtraInfo, isReadAll;
+	imgProp = ( PImgProperty) list_at( propList, i);
+	isExtraInfo = ( strcmp( imgProp->name, "extraInfo") == 0);
+	isReadAll = ( strcmp( imgProp->name, "readAll") == 0);
+	DOLBUG( "Correcting ``%s''\n", imgProp->name);
+	if ( isExtraInfo || isReadAll) {
+	    if ( ( imgProp->flags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY) {
+		// We don't expect an array here.
+		__apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
+		DOLBUG( "Property `%s' is of a wrong type\n", imgProp->name);
+		rc = false;
+	    }
+	    else if ( ! __is_boolean_value( imgProp->val.String)) {
+		__apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_VAL);
+		DOLBUG( "Property %s: wrong value \'%s\'\n", imgProp->name, imgProp->val.String);
+		rc = false;
+	    }
+	    else {
+		if ( isExtraInfo) {
+		    outImageInfo->extraInfo = __boolean_value( imgProp->val.String);
+		}
+		else if ( isReadAll) {
+		    *readAll = __boolean_value( imgProp->val.String);
+		}
+	    }
+	    continue;
+	}
+	for ( j = 0; fmtProps[ j].name; j++) {
+	    if ( strcmp( imgProp->name, fmtProps[ j].name) == 0) {
+		break;
+	    }
+	}
+	if ( fmtProps[ j].name) {
+	    if ( ( ( fmtProps[ j].type[ 1] == '*') 
+		   && ( ( imgProp->flags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY))
+		 || ( ( fmtProps[ j].type[ 1] == '\0') 
+		      && ( ( imgProp->flags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY))) {
+		__apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
+		DOLBUG( "Property %s: wrong type\n", imgProp->name);
+		rc = false;
+	    }
+	    else {
+		switch ( fmtProps[ j].type[ 0]) {
+		    case 'i':
+			if ( fmtProps[ j].type[ 0] == '*') {
+			    rc = ( outImgProp = img_info_add_property( outImageInfo,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_INT,
+								       imgProp->used)) != nil;
+			    for ( n = 0; n < imgProp->used && rc; n++) {
+				rc = img_push_property_value( outImgProp, atoi( imgProp->val.pString[ n]));
+			    }
+			}
+			else {
+			    rc = ( outImgProp = img_info_add_property( outImageInfo,
+								       imgProp->name,
+								       PROPTYPE_INT,
+								       0,
+								       atoi( imgProp->val.String))) != nil;
+			}
+			break;
+		    case 'n':
+			if ( fmtProps[ j].type[ 0] == '*') {
+			    rc = ( outImgProp = img_info_add_property( outImageInfo,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_DOUBLE,
+								       imgProp->used)) != nil;
+			    for ( n = 0; n < imgProp->used && rc; n++) {
+				rc = img_push_property_value( outImgProp, atof( imgProp->val.pString[ n]));
+			    }
+			}
+			else {
+			    rc = ( outImgProp = img_info_add_property( outImageInfo,
+								       imgProp->name,
+								       PROPTYPE_DOUBLE,
+								       0,
+								       atof( imgProp->val.String))) != nil;
+			}
+			break;
+		    case 's':
+			if ( fmtProps[ j].type[ 0] == '*') {
+			    rc = ( outImgProp = img_info_add_property( outImageInfo,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_STRING,
+								       imgProp->used)) != nil;
+			    for ( n = 0; n < imgProp->used && rc; n++) {
+				rc = img_push_property_value( outImgProp, imgProp->val.pString[ n]);
+			    }
+			}
+			else {
+			    rc = ( outImgProp = img_info_add_property( outImageInfo,
+								       imgProp->name,
+								       PROPTYPE_STRING,
+								       0,
+								       imgProp->val.String)) != nil;
+			}
+			break;
+		    case 'b':
+			if ( fmtProps[ j].type[ 0] == '*') {
+			    rc = ( outImgProp = img_info_add_property( outImageInfo,
+								       imgProp->name,
+								       PROPTYPE_ARRAY | PROPTYPE_BYTE,
+								       imgProp->used)) != nil;
+			    for ( n = 0; n < imgProp->used && rc; n++) {
+				rc = img_push_property_value( outImgProp, atoi( imgProp->val.pString[ n]));
+			    }
+			}
+			else {
+			    rc = ( outImgProp = img_info_add_property( outImageInfo,
+								       imgProp->name,
+								       PROPTYPE_BYTE,
+								       0,
+								       atoi( imgProp->val.String))) != nil;
+			}
+			break;
+		    default:
+			DOLBUG( "Unsupported property type `%s' for property `%s'\n", 
+				fmtProps[ j].type[ 0],
+				imgProp->name
+			    );
+			rc = false;
+		}
+		if ( rc) {
+		    outImgProp->id = fmtProps[ j].id;
+		}
+	    }
+	}
+    }
 
-   DOLBUG( "__apc_image_set_error: returning %d\n", ( int) rc);
-   DOLBUG( "Have %d properties on exiting __apc_image_correct_properties\n", propList->count);
+    if ( rc) {
+	/* Clearing the old properties list. */
+	img_destroy_properties( imageInfo->propList);
+	/* And duplicating the new ImgInfo structure. */
+	memcpy( imageInfo, outImageInfo, sizeof( ImgInfo));
+	/* propList is now being contained in imageInfo... */
+	outImageInfo->propList = nil;
+    }
 
-   return rc;
+    img_info_destroy( outImageInfo);
+
+    DOLBUG( "__apc_image_correct_properties: returning %d\n", ( int) rc);
+    DOLBUG( "Have %d properties on exiting __apc_image_correct_properties\n", imageInfo->propList->count);
+
+    return rc;
 }
 
 /*
- * noLoad - false value means that only information about the image should be obtained.
- *          I.e. getInfo call must be issued.
+ * readData - false value means that only information about the image should be obtained.
+ *            I.e. getInfo call must be issued.
  */
 Bool
 apc_image_read( const char *filename, PList imgInfo, Bool readData)
@@ -486,13 +521,17 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 			Bool correction_succeed = true, readAll = false;
 			PImgFormat imgFormat = ( PImgFormat) list_at( imgFormats, format_idx);
 			DOLBUG( "%s for %s as %s\n", 
-				 ( readData ? "Loading image" : "Getting info"), 
-				 load_data->filename, 
-				 imgFormat->id
+				( readData ? "Loading image" : "Getting info"), 
+				load_data->filename, 
+				imgFormat->id
 			    );
 			for ( i = 0; ( i < imgInfo->count) && correction_succeed; i++) {
 			    PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
-			    correction_succeed = __apc_image_correct_properties( imageInfo, imgFormat, readData, &readAll);
+			    correction_succeed = __apc_image_correct_properties( imageInfo, 
+										 imgFormat, 
+										 readData, 
+										 &readAll
+				);
 			}
 			if ( readAll && correction_succeed && ( imgInfo->count > 1)) {
 			    __apc_image_set_error( APCERRT_INTERNAL, APCIMG_FORBIDDEN_READALL);
@@ -617,80 +656,87 @@ apc_image_fetch_more( __PImgLoadData load_data, int preread_size)
     return rc;
 }
 
-PImgProperty
-apc_image_add_property( PImgInfo imageInfo, const char *propName, U16 propType, int propArraySize)
-{
-    PImgProperty imgProp;
+/*  PImgProperty */
+/*  apc_image_add_property( PImgInfo imageInfo, const char *propName, U16 propType, int propArraySize) */
+/*  { */
+/*      PImgProperty imgProp; */
 
-    if ( ( imageInfo == nil) || ( imageInfo->propList == nil) || ( propName == nil)) {
-	return nil;
-    }
+/*      if ( ( imageInfo == nil) || ( imageInfo->propList == nil) || ( propName == nil)) { */
+/*  	return nil; */
+/*      } */
 
-    imgProp = ( PImgProperty) malloc( sizeof( ImgProperty));
-    if ( imgProp != nil) {
-	imgProp->name = duplicate_string( propName);
-	imgProp->flags = propType;
-	imgProp->size = propArraySize;
-	list_add( imageInfo->propList, ( Handle) imgProp);
-    }
+/*      imgProp = malloc( sizeof( ImgProperty)); */
+/*      if ( imgProp != nil) { */
+/*  	imgProp->name = duplicate_string( propName); */
+/*  	imgProp->flags = propType; */
+/*  	imgProp->size = propArraySize; */
+/*  	list_add( imageInfo->propList, ( Handle) imgProp); */
+/*      } */
 
-    return imgProp;
-}
+/*      return imgProp; */
+/*  } */
 
-void
-apc_image_clear_property( PImgProperty imgProp)
-{
-    if ( imgProp != nil) {
-	free( imgProp->name);
-	if ( imgProp->size == -1) {
-	    switch ( imgProp->flags & PROPTYPE_MASK) {
-		case PROPTYPE_STRING:
-		    free( imgProp->val.String);
-		    break;
-		case PROPTYPE_BIN:
-		    free( imgProp->val.Binary.data);
-		    break;
-	    }
-	}
-	else {
-	    if ( imgProp->size > 0) {
-		int i;
-		switch ( imgProp->flags & PROPTYPE_MASK) {
-		    case PROPTYPE_STRING:
-			for ( i = 0; i < imgProp->size; i++) {
-			    free( imgProp->val.pString[ i]);
-			}
-			break;
-		    case PROPTYPE_BIN:
-			for ( i = 0; i < imgProp->size; i++) {
-			    if ( imgProp->val.pBinary[ i].data != nil) {
-				free( imgProp->val.pBinary[ i].data);
-			    }
-			}
-			break;
-		}
-		switch ( imgProp->flags & PROPTYPE_MASK) {
-		    case PROPTYPE_INT:
-			free( imgProp->val.pInt);
-			break;
-		    case PROPTYPE_DOUBLE:
-			free( imgProp->val.pDouble);
-			break;
-		    case PROPTYPE_STRING:
-			free( imgProp->val.pString);
-			break;
-		    case PROPTYPE_BIN:
-			free( imgProp->val.pBinary);
-			break;
-		    case PROPTYPE_BYTE:
-		    default:
-			free( imgProp->val.pByte);
-			break;
-		}
-	    }
-	}
-    }
-}
+/*  void */
+/*  apc_image_clear_property( PImgProperty imgProp) */
+/*  { */
+/*      if ( imgProp != nil) { */
+/*  	free( imgProp->name); */
+/*  	if ( imgProp->size == -1) { */
+/*  	    switch ( imgProp->flags & PROPTYPE_MASK) { */
+/*  		case PROPTYPE_STRING: */
+/*  		    free( imgProp->val.String); */
+/*  		    break; */
+/*  		case PROPTYPE_BIN: */
+/*  		    free( imgProp->val.Binary.data); */
+/*  		    break; */
+/*  	    } */
+/*  	} */
+/*  	else { */
+/*  	    if ( imgProp->size > 0) { */
+/*  		int i; */
+/*  		switch ( imgProp->flags & PROPTYPE_MASK) { */
+/*  		    case PROPTYPE_STRING: */
+/*  			for ( i = 0; i < imgProp->size; i++) { */
+/*  			    free( imgProp->val.pString[ i]); */
+/*  			} */
+/*  			break; */
+/*  		    case PROPTYPE_BIN: */
+/*  			for ( i = 0; i < imgProp->size; i++) { */
+/*  			    if ( imgProp->val.pBinary[ i].data != nil) { */
+/*  				free( imgProp->val.pBinary[ i].data); */
+/*  			    } */
+/*  			} */
+/*  			break; */
+/*  		} */
+/*  		switch ( imgProp->flags & PROPTYPE_MASK) { */
+/*  		    case PROPTYPE_INT: */
+/*  			free( imgProp->val.pInt); */
+/*  			break; */
+/*  		    case PROPTYPE_DOUBLE: */
+/*  			free( imgProp->val.pDouble); */
+/*  			break; */
+/*  		    case PROPTYPE_STRING: */
+/*  			free( imgProp->val.pString); */
+/*  			break; */
+/*  		    case PROPTYPE_BIN: */
+/*  			free( imgProp->val.pBinary); */
+/*  			break; */
+/*  		    case PROPTYPE_BYTE: */
+/*  		    default: */
+/*  			free( imgProp->val.pByte); */
+/*  			break; */
+/*  		} */
+/*  	    } */
+/*  	} */
+/*      } */
+/*  } */
+
+/*  void */
+/*  apc_image_free_property( PImgProperty imgProp) */
+/*  { */
+/*      apc_image_clear_property( imgProp); */
+/*      free( imgProp); */
+/*  } */
 
 void
 prima_init_image_subsystem( void)
