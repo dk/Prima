@@ -1075,7 +1075,7 @@ Image_map( Handle self, Color color)
    int   type = var-> type, height = var-> h, i, ls;
    int   rop[2]; 
    RGBColor r[2];
-   int b[2], bc;
+   int b[2], bc = 0;
 
    if ( var-> data == nil) return;
 
@@ -1149,7 +1149,7 @@ Image_map( Handle self, Color color)
    ls = var-> lineSize;
    
    while ( height--) {
-      if (( type & imBPP) < 8) {
+      if (( type & imBPP) == 24) {
          PRGBColor data = ( PRGBColor) d;
          for ( i = 0; i < var-> w; i++) {
             int z = ( data-> r == c.r && data-> g == c.g && data-> b == c.b) ? 0 : 1;
