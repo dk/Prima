@@ -141,7 +141,8 @@ prima_xft_init(void)
    CharSetInfo *csi;
    unsigned char in[128], *iptr;
    uint32_t *optr;
-   int ibl, obl, i, j;
+   int i, j;
+   size_t ibl, obl;
    FcCharSet * fcs_ascii;
 #ifdef HAVE_ICONV_H
    iconv_t ii;
@@ -244,9 +245,9 @@ fcpattern2font( FcPattern * pattern, PFont font)
 
    /* FcPatternPrint( pattern); */
    if ( FcPatternGetString( pattern, FC_FAMILY, 0, &s) == FcResultMatch)
-      strncpy( font-> name, s, 255);
+      strncpy( font-> name, (char*)s, 255);
    if ( FcPatternGetString( pattern, FC_FOUNDRY, 0, &s) == FcResultMatch)
-      strncpy( font-> family, s, 255);
+      strncpy( font-> family, (char*)s, 255);
    font-> style = 0;
    if ( FcPatternGetInteger( pattern, FC_SLANT, 0, &i) == FcResultMatch) 
       if ( i == FC_SLANT_ITALIC || i == FC_SLANT_OBLIQUE)
@@ -437,7 +438,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
    
    /* create FcPattern request */
    if ( !( request = FcPatternCreate())) return false;
-   FcPatternAddString( request, FC_FAMILY,  f. name);
+   FcPatternAddString( request, FC_FAMILY, ( FcChar8*) f. name);
    if ( by_size) {
       if ( size)
          FcPatternAddDouble( request, FC_SIZE, *size);
@@ -724,7 +725,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
    }
 
    pat = FcPatternCreate();
-   if ( facename) FcPatternAddString( pat, FC_FAMILY, facename);
+   if ( facename) FcPatternAddString( pat, FC_FAMILY, ( FcChar8*) facename);
    FcPatternAddBool( pat, FC_SCALABLE, 1);
    os = FcObjectSetBuild( FC_FAMILY, FC_CHARSET, FC_ASPECT, 
         FC_SLANT, FC_WEIGHT, FC_SIZE, FC_PIXEL_SIZE, FC_SPACING,
@@ -820,7 +821,7 @@ prima_xft_font_encodings( PHash hash)
    int i;
    for ( i = 0; i < MAX_CHARSET; i++) {
       if ( !std_charsets[i]. enabled) continue;
-      hash_store( hash, std_charsets[i]. name, strlen(std_charsets[i]. name), (void*) std_charsets + i);
+      hash_store( hash, std_charsets[i]. name, strlen(std_charsets[i]. name), (void*) (std_charsets + i));
    }
 }
    
@@ -830,7 +831,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
    FcChar32 *ret, *r;
    if ( utf8) {
       STRLEN charlen;
-      if ( len < 0) len = prima_utf8_length( text);
+      if ( len < 0) len = prima_utf8_length(( char*) text);
       if ( !( r = ret = malloc( len * sizeof( FcChar32)))) return nil;
       while ( len--) {
          *(r++) = utf8_to_uvchr(( U8*) text, &charlen);
@@ -838,7 +839,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
       }
    } else {
       int i;
-      if ( len < 0) len = strlen( text);
+      if ( len < 0) len = strlen(( char*) text);
       if ( !( ret = malloc( len * sizeof( FcChar32)))) return nil;
       for ( i = 0; i < len; i++) 
          ret[i] = ( text[i] < 128) ? text[i] : map8[ text[i] - 128];
@@ -1248,7 +1249,7 @@ prima_xft_map8( const char * encoding)
 Bool
 prima_xft_parse( char * ppFontNameSize, Font * font)
 {
-   FcPattern * p = FcNameParse( ppFontNameSize);
+   FcPattern * p = FcNameParse(( FcChar8*) ppFontNameSize);
    FcCharSet * c = nil;
    Font f, def = guts. default_font;
 

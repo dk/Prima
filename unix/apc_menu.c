@@ -630,7 +630,7 @@ menu_enter_item( PMenuSysData XX, PMenuWindow w, int index, int type)
 
 
 static void
-store_char( U8 * src, int * srcptr, U8 * dst, int * dstptr, Bool utf8, MenuDrawRec * data)
+store_char( char * src, int * srcptr, char * dst, int * dstptr, Bool utf8, MenuDrawRec * data)
 {
    if ( utf8) {
       STRLEN char_len;
@@ -646,7 +646,7 @@ store_char( U8 * src, int * srcptr, U8 * dst, int * dstptr, Bool utf8, MenuDrawR
       }
    } else {
       if ( data-> xft_map8) {
-         uint32_t c = src[ *srcptr];
+         uint32_t c = (( U8*) src)[ *srcptr];
          if ( c > 127)
             c = data-> xft_map8[ c - 128];
          *(( uint32_t*)(dst + *dstptr)) = c;

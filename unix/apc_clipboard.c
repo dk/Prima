@@ -896,14 +896,14 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
                   if ( target == XA_INCR) {
                      void * save_data = CC-> internal[cfText]. data;
                      int    save_size = CC-> internal[cfText]. size;
-                     CC-> internal[cfText]. data = dest;
+                     CC-> internal[cfText]. data = ( unsigned char*) dest;
                      CC-> internal[cfText]. size = length;
                      detach_xfers( CC, cfText, false);
                      CC-> internal[cfText]. data = save_data;
                      CC-> internal[cfText]. size = save_size;
                      downgrade_utf8 = false;
                   } else {
-                     data = dest;
+                     data = ( unsigned char*) dest;
                      size = length;
                   }
                } else

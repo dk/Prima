@@ -469,7 +469,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int len)
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
-   if ( utf8) dlen = utf8_length(( U8*) c_text, c_text + dlen);
+   if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
    if ( len < 0 || len > dlen) len = dlen;
    return apc_gp_text_out( self, c_text, x, y, len, utf8);
 }
@@ -807,7 +807,7 @@ Drawable_get_text_width( Handle self, SV * text, int len, Bool addOverhang)
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
-   if ( utf8) dlen = utf8_length(( U8*) c_text, c_text + dlen);
+   if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
    if ( len < 0 || len > dlen) len = dlen;
    gpENTER;
    res = apc_gp_get_text_width( self, c_text, len, addOverhang, utf8);
@@ -825,7 +825,7 @@ Drawable_get_text_box( Handle self, SV * text, int len)
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
-   if ( utf8) dlen = utf8_length(( U8*) c_text, c_text + dlen);
+   if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
    if ( len < 0 || len > dlen) len = dlen;
    gpENTER;
    p = apc_gp_get_text_box( self, c_text, len, utf8);
