@@ -496,7 +496,7 @@ SV*
 Drawable_text_wrap( Handle self, char * text, int width, int options, int tabIndent, int textLen)
 {
    gpARGS;
-   TextWrapRec t   = {text, width, tabIndent, nil, options, textLen};
+   TextWrapRec t   = {text, textLen, width, tabIndent, options};
    Bool retChunks  = t. options & twReturnChunks;
    char** c;
    int i;
