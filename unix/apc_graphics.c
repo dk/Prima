@@ -399,11 +399,6 @@ prima_prepare_drawable_for_painting( Handle self)
          XX-> btransform. x = 0;
          XX-> btransform. y = 0;
       } 
-      /* BUGBUGBUG
-      fprintf( stderr, "Buffer: (%d,%d - %d,%d)\n",
-               - XX-> btransform. x, XX-> btransform. y,
-               XX->bsize.x, XX->bsize.y);
-               */
       XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, w, h, guts.depth);
       if (!XX-> gdrawable)
          XX-> gdrawable = XX-> udrawable;
@@ -1757,21 +1752,13 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    SORT( clipRect. left, clipRect. right);
    SORT( clipRect. bottom, clipRect. top);
    r. x = clipRect. left;
-   r. y = REVERT( clipRect. top) + 1;
-   r. width = clipRect. right - clipRect. left;
-   r. height = clipRect. top - clipRect. bottom;
+   r. y = REVERT( clipRect. top);
+   r. width = clipRect. right - clipRect. left+1;
+   r. height = clipRect. top - clipRect. bottom+1;
    XX-> clip_rect = r;
    {
       XRectangle rr = XX-> exposed_rect;
-      /* BUGBUGBUG
-      fprintf( stderr, "Clip: (%d,%d - %d,%d)\n",
-               r.x,r.y,r.width,r.height);
-               */
       prima_rect_intersect( &rr, &r);
-      /* BUGBUGBUG
-      fprintf( stderr, "Intersection: (%d,%d - %d,%d)\n",
-               rr.x,rr.y,rr.width,rr.height);
-               */
    }
    region = XCreateRegion();
    XUnionRectWithRegion( &r, region, region);

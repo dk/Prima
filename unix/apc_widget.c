@@ -86,7 +86,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 	 | ButtonReleaseMask
 	 | EnterWindowMask
 	 | LeaveWindowMask
-	 /* | PointerMotionMask */
+	 | PointerMotionMask
 	 /* | PointerMotionHintMask */
 	 /* | Button1MotionMask */
 	 /* | Button2MotionMask */
@@ -423,12 +423,6 @@ apc_widget_scroll( Handle self, int horiz, int vert,
       h = XX-> size. y;
    }
 
-   /* BUGBUGBUG
-   fprintf( stderr, "scroll: %d,%d - (%d,%d,%d,%d)\n",
-            horiz, vert,
-            src_x, src_y, w, h);
-            */
-
    dst_x = src_x + horiz;
    dst_y = src_y - vert;
 
@@ -448,10 +442,6 @@ apc_widget_scroll( Handle self, int horiz, int vert,
       xr. y = REVERT( rect. top) + 1;
       xr. width = rect. right - rect. left;
       xr. height = rect. top - rect. bottom;
-      /* BUGBUGBUG
-      fprintf( stderr, "ScrollClip: (%d,%d - %d,%d)\n",
-               xr.x,xr.y,xr.width,xr.height);
-               */
       region = XCreateRegion();
       XUnionRectWithRegion( &xr, region, region);
       XSetRegion( DISP, XX-> gc, region);
@@ -518,13 +508,6 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    XUnionRegion( XX-> region, invalid, XX-> region);
    XDestroyRegion( invalid);
 
-   /* BUGBUGBUG
-   fprintf( stderr, "exposed: (%d,%d,%d,%d)\n",
-            XX-> exposed_rect. x,
-            XX-> exposed_rect. y,
-            XX-> exposed_rect. width,
-            XX-> exposed_rect. height);
-            */
    pl = guts. paint_list;
    while ( pl) {
       if ( pl-> obj == self)

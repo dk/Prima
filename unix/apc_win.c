@@ -69,7 +69,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint,
 	 | ButtonReleaseMask
 	 | EnterWindowMask
 	 | LeaveWindowMask
-	 /* | PointerMotionMask */
+	 | PointerMotionMask
 	 /* | PointerMotionHintMask */
 	 /* | Button1MotionMask */
 	 /* | Button2MotionMask */

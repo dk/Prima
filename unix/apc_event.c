@@ -327,7 +327,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       }
       e. pos. where. x = bev-> x;
       e. pos. where. y = XX-> size. y - bev-> y - 1;
-      e. pos. mod = 0;
+      if ( bev-> state & ShiftMask)     e.pos.mod |= kmShift;
+      if ( bev-> state & ControlMask)   e.pos.mod |= kmCtrl;
+      if ( bev-> state & Mod1Mask)      e.pos.mod |= kmAlt;
       if ( e. cmd == cmMouseDown
 	   && (( guts. mouse_wheel_up != 0 && bev-> button == guts. mouse_wheel_up)
 	       || ( guts. mouse_wheel_down != 0 && bev-> button == guts. mouse_wheel_down)))
@@ -356,6 +358,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       e. cmd = cmMouseMove;
       e. pos. where. x = ev-> xmotion. x;
       e. pos. where. y = XX-> size. y - ev-> xmotion. y - 1;
+      if ( ev-> xmotion. state & ShiftMask)     e.pos.mod |= kmShift;
+      if ( ev-> xmotion. state & ControlMask)   e.pos.mod |= kmCtrl;
+      if ( ev-> xmotion. state & Mod1Mask)      e.pos.mod |= kmAlt;
       break;
    }
    case EnterNotify: {
