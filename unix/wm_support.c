@@ -77,6 +77,8 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
    if ( xev-> type == ClientMessage && xev-> message_type == wm-> protocols) {
       if ((Atom) xev-> data. l[0] == wm-> deleteWindow) {
          if ( guts. message_boxes) return false;
+         if ( self != CApplication(application)-> map_focus( application, self))
+            return false;
 	 ev-> cmd = cmClose;
 	 return true;
       } else if ((Atom) xev-> data. l[0] == wm-> takeFocus) {
@@ -88,6 +90,7 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
             }
             return false;
          }
+         guts. lastWMFocus = X_WINDOW;
          CWidget( selectee)-> set_selected( selectee, true);
 	 return false;
       }
