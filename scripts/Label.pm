@@ -84,7 +84,7 @@ sub on_paint
    my $y   = $starty;
    my $tl  = $self->{tildeLine};
    my $i;
-   my $paintLine = !$self->{showAccelChar} && $tl < scalar @{$ws};
+   my $paintLine = !$self->{showAccelChar} && $tl < scalar @{$ws} && $tl >= 0;
 
    unless ( $self-> enabled)
    {
