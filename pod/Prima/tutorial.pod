@@ -8,15 +8,13 @@ Prima::tutorial - introductory tutorial
 
 Programming graphic interfaces is often considered somewhat boring, and not
 without a cause. It is a small pride in knowing that your buttons and
-scrollbars are working exactly as millions of others buttons and scrollbars do,
-so whichever GUI toolkit is chosen, it is usually regarded as a tool of small
-importance, and the more unobtrusive, the better.
-
-There are not many toolkits that satisfy visual requirements of the majority of
-both programmers and users, and the abundance of the strange-looking GUI
-libraries. Probably, these are compensated by the advantages of their usage by
-the programmer. Whether this is correct or not, the way one has to program in
-order to use a particular GUI toolkit, is one of the important estimation factors.
+scrollbars work exactly as millions of others buttons and scrollbars do, so
+whichever GUI toolkit is chosen, it is usually regarded as a tool of small
+importance, and the less obtrusive, the better. Given that, and trying to live
+up to the famous Perl 'making easy things easy and hard things possible' mantra,
+this manual page is an introductory tutorial meant to show how to write easy
+things easy. The hard things are explained in the other Prima manual pages
+( see L<Prima> ).
 
 =head1 Introduction - a "Hello world" program
 
@@ -80,7 +78,7 @@ can do lot more. For example
 
 =for podview <img src="tutorial/hello4.gif">
 
-displays two buttons and an icon. A little excitement, but the following is a bit more interesting:
+displays two buttons and an icon. A small achievement, but the following is a bit more interesting:
 
 	use Prima qw(Application MsgBox);
 	message('Hello world', mb::OkCancel|mb::Information, {
@@ -100,7 +98,7 @@ displays two buttons and an icon. A little excitement, but the following is a bi
 
 =for podview <img src="tutorial/hello5.gif">
 
-The definition of set of properties at once is a major feature of Prima, and is seen
+The definition of many object properties at once is a major feature of Prima, and is seen
 throughout the toolkit. Returning back to the very first example, we can demonstrate
 the manipulation of the window properties in the same fashion:
 
@@ -115,7 +113,7 @@ the manipulation of the window properties in the same fashion:
 Note that the C<size> property is a two-integer array, and color constant is registered
 in C<cl::> namespace. In Prima there is a number of such two- and three-letter namespaces,
 containing usually integer constants for various purposes. The design reason for choosing
-such syntax over string constants ( as in Perl-Tk, such as C<color => 'yellow'> ) is that
+such syntax over string constants ( as in Perl-Tk, such as C<< color => 'yellow' >> ) is that
 the syntax is checked on the compilation stage, thus narrowing the possibility of a bug.
 
 There are over a hundred properties, such as color, text, or size, defined on descendants
@@ -132,7 +130,7 @@ or in a group
 	);
 
 In addition to these, there are also more than 30 events, called whenever a certain
-action is performed, sharing the syntax with properties. Changing the code again,
+action is performed; the events have syntax identical to the properties. Changing the code again,
 we can catch a mouse click on the window:
 
 	use Prima qw(Application MsgBox);
@@ -257,7 +255,7 @@ Each of five arrays here in the example is written using different semantics, to
 either a text menu item, a sub-menu entry, or a menu separator. Strictly speaking, menus
 can also display images, but that syntax is practically identical to the text item syntax.
 
-The idea behind the complexity is to tell what exactly the menu item it should be by
+The idea behind all this complexity is to be able to tell what exactly the menu item is, just by
 looking at the number of items in each array. So, zero or one items are treated as a menu
 separator:
 
@@ -273,7 +271,7 @@ separator, after the menu is created:
 	$window-> menu-> remove('my_separator');
 
 It is also possible to assign the identifier to any menu item, not just to a separator.
-The other types (text,image,sub-menu) are told by looking at the type of scalars they
+The other types (text,image,sub-menu) are discerned by looking at the type of scalars they
 contain. Thus, a two-item array with the last item an array reference (or, as before,
 three-item for the explicit ID set), is clearly a sub-menu. The reference, as in the
 example, may contain more menu items, in the recursive fashion:
@@ -328,11 +326,12 @@ string, an image object is supplied:
 
 =for podview <img src="tutorial/menu3.gif">
 
-The actions taken when the menu item is selected, is always a pointer to the code. It is possible
-to either set an anonymous subroutine, as it is shown in all the examples above, or to set
-a string. The latter case will cause the method of the menu owner ( in this example, the
-window ) to be called. This can be useful when constructing a generic class with menu
-actions that can be overridden:
+The action item of them menu description array points to the code executed when
+the menu item is selected.  It is either an anonymous subroutine, as it is
+shown in all the examples above, or a string.  The latter case will cause the
+method of the menu owner ( in this example, the window ) to be called. This can
+be useful when constructing a generic class with menu actions that can be
+overridden:
 
 	package MyWindow;
 	use vars qw(@ISA);
@@ -352,14 +351,15 @@ actions that can be overridden:
 		],
 	);
 
-All actions are called with the menu item identifier as a parameter.
+All actions are called with the menu item identifier passed in as a string parameter.
 
-Another trick is to define a hot key. While its description can be arbitrary, the
-hot key can be constructed in two ways. It is either a literal such as C<^A> for 
-Control+A, or C<@B> for Alt+B, or C<^@#F10> for Control+Alt+Shift+F10. Or, alternatively,
-it is a combination of C<km::> constants either with ordinal of the character letter or
-the key code, the latter is one of C<kb::> constants. The latter is less readable, but more
-explicit and powerful:
+Another trick is to define a hot key. While its description can be arbitrary,
+and will be displayed as is, the hot key definition can be constructed in two
+ways. It is either a literal such as C<^A> for Control+A, or C<@B> for Alt+B,
+or C<^@#F10> for Control+Alt+Shift+F10. Or, alternatively, it is a combination
+of C<km::> constants either with ordinal of the character letter or the key
+code, where the key code is one of C<kb::> constants. The latter method
+produces a less readable code, but is more explicit and powerful:
 
 	[ '~Reboot', 'Ctrl+Alt+Delete', km::Alt | km::Ctrl | kb::Delete, sub {
 		print "wow!\n";
