@@ -303,7 +303,7 @@ sub Ext_Change
 {
    my ( $self, $ext) = @_;
    my %cont = ();
-   for ( @{$self->{filter}}) { $cont{$$_[0]} = $$_[1]};
+   for ( @{$self->{filter}}) { $cont{$$_[0]} = $$_[1]; };
    $self-> {mask} = $cont{ $ext-> text};
    $self-> canonize_mask;
    $self-> Dir_Change( $self-> Dir);
