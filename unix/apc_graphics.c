@@ -492,7 +492,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 }
 
 Bool
-apc_gp_clear( Handle self)
+apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {
    DOLBUG( "apc_gp_clear()\n");
    return true;
