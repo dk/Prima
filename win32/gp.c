@@ -975,7 +975,7 @@ apc_gp_get_line_width( Handle self)
 }
 
 int
-apc_gp_get_line_pattern( Handle self, char * buffer)
+apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 {
    objCheck 0;
    if ( !sys ps) {
@@ -1469,7 +1469,7 @@ apc_gp_set_line_width( Handle self, int lineWidth)
 }
 
 Bool
-apc_gp_set_line_pattern( Handle self, char * pattern, int len)
+apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 {
    objCheck false;
    if ( !sys ps) {

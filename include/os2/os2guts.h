@@ -191,7 +191,7 @@ typedef struct _PaintSaveData
    Color       lbs[2];
    int         lineWidth;
    int         lineEnd;
-   char *      linePattern;
+   unsigned char *linePattern;
    int         linePatternLen;
    FillPattern fillPattern;
    int         rop;
@@ -220,7 +220,7 @@ typedef struct _DrawableData
    Color           lbs[2];
    int             lineWidth;
    int             lineEnd;
-   char *          linePattern;
+   unsigned char * linePattern;
    int             linePatternLen;
    FillPattern     fillPattern;
    FillPattern     fillPattern2;

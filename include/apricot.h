@@ -2205,7 +2205,7 @@ END_TABLE(le,UV)
 
 /* line patterns */
 #define LP(const_name) CONSTANT(lp,const_name)
-START_TABLE(lp,char*)
+START_TABLE(lp,unsigned char*)
 #define    lpNull           ""              /* */
 LP(Null)
 #define    lpSolid          "\1"            /* ___________  */
@@ -2224,7 +2224,7 @@ LP(DotDot)
 LP(DashDot)
 #define    lpDashDotDot     "\x9\3\1\3\1\3" /* _.._.._.._.. */
 LP(DashDotDot)
-END_TABLE_CHAR(lp,char*)
+END_TABLE_CHAR(lp,unsigned char*)
 #undef LP
 
 /* font styles */
@@ -2726,7 +2726,7 @@ extern int
 apc_gp_get_line_width( Handle self);
 
 extern int
-apc_gp_get_line_pattern( Handle self, char * buffer);
+apc_gp_get_line_pattern( Handle self, unsigned char * buffer);
 
 extern Color
 apc_gp_get_nearest_color( Handle self, Color color);
@@ -2783,7 +2783,7 @@ extern Bool
 apc_gp_set_line_width( Handle self, int lineWidth);
 
 extern Bool
-apc_gp_set_line_pattern( Handle self, char * pattern, int len);
+apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len);
 
 extern Bool
 apc_gp_set_palette( Handle self);

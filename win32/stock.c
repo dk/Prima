@@ -204,7 +204,7 @@ stylus_get_extpen_style( PStylus s)
 }
 
 PPatResource
-patres_fetch( char * pattern, int len)
+patres_fetch( unsigned char * pattern, int len)
 {
    int i;
    PPatResource r = hash_fetch( patMan, pattern, len);
@@ -227,7 +227,7 @@ patres_fetch( char * pattern, int len)
 }
 
 UINT
-patres_user( char * pattern, int len)
+patres_user( unsigned char * pattern, int len)
 {
    if ( IS_WIN95) {
       // no user line patterns

@@ -79,7 +79,7 @@
 #define apiErr {                                            \
    rc = GetLastError();                                     \
    apcError = errApcError;                                  \
-   debug_write("WIN_%d (%s) at line %d in %s", rc,          \
+   fprintf( stderr, "WIN_%d (%s) at line %d in %s", rc,     \
       err_msg( rc), __LINE__, __FILE__);                    \
 }
 #define apcErr( err) {                                      \
@@ -88,7 +88,7 @@
 #define apiAltErr( err) {                                   \
    apcError = errApcError;                                  \
    rc = err;                                                \
-   debug_write("WIN_%d (%s) at line %d at %s", rc,          \
+   fprintf( stderr, "WIN_%d (%s) at line %d at %s", rc,     \
         err_msg( rc), __LINE__, __FILE__);                  \
 }
 /*  #endif */
@@ -189,7 +189,7 @@ typedef struct _PaintSaveData
    Color       lbs[2];
    int         lineWidth;
    int         lineEnd;
-   char *      linePattern;
+   unsigned char * linePattern;
    int         linePatternLen;
    FillPattern fillPattern;
    int         rop;
@@ -301,9 +301,9 @@ typedef struct _DrawableData
    Color          lbs[2];
    int            lineWidth;
    int            lineEnd;
-   char *         linePattern;
+   unsigned char *linePattern;
    int            linePatternLen;
-   char *         linePattern2;
+   unsigned char *linePattern2;
    int            linePatternLen2;
    FillPattern    fillPattern;
    FillPattern    fillPattern2;
@@ -497,8 +497,8 @@ extern BYTE *       mod_select( int mod);
 extern Bool         palette_change( Handle self);
 extern long         palette_match( Handle self, long color);
 extern int          palette_match_color( XLOGPALETTE * lp, long clr, int * diffFactor);
-extern PPatResource patres_fetch( char * pattern, int len);
-extern UINT         patres_user( char * pattern, int len);
+extern PPatResource patres_fetch( unsigned char * pattern, int len);
+extern UINT         patres_user( unsigned char * pattern, int len);
 extern void         process_transparents( Handle self);
 extern long         remap_color( long clr, Bool toSystem);
 extern PDCStylus    stylus_alloc( PStylus data);
