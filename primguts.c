@@ -334,7 +334,7 @@ create_mate( SV *perlObject)
    else
    {
       /* another scheme, uses hash slot */
-      hv_store( (HV*)SvRV( perlObject), "__CMATE__", 9, newSViv((IV)object), 0);
+      hv_store( (HV*)SvRV( perlObject), "__CMATE__", 9, newSViv( PTR2IV(object)), 0);
    }
 
    /* extra check */

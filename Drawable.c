@@ -986,11 +986,8 @@ add_wrapped_text( TextWrapRec * t, int start, int utfstart, int end, int utfend,
       *lArray = n;
    }
    if ( t-> options & twReturnChunks) {
-      IV iv;
-      iv = utfstart;
-      (*lArray)[ t-> count++] = (char*) iv;
-      iv = utfend - utfstart;
-      (*lArray)[ t-> count++] = (char*) iv;
+      (*lArray)[ t-> count++] = INT2PTR(char*,utfstart);
+      (*lArray)[ t-> count++] = INT2PTR(char*,utfend - utfstart);
    } else
       (*lArray)[ t-> count++] = c;
    return true;
@@ -1241,7 +1238,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
    if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) {
       IV rlen = 0;
       if ( c) {
-         if ( t. count > 0) rlen = (IV) c[ 1];
+         if ( t. count > 0) rlen = PTR2IV(c[1]);
          free( c);
       }
       return newSViv( rlen);
@@ -1251,7 +1248,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 
    av = newAV();
    for ( i = 0; i < t. count; i++) {
-      SV * sv = retChunks ? newSViv(( IV) c[ i]) : newSVpv( c[ i], 0);
+      SV * sv = retChunks ? newSViv( PTR2IV(c[i])) : newSVpv( c[ i], 0);
       if ( !retChunks) { 
           if ( t. utf8_text) SvUTF8_on( sv);
           free( c[i]);

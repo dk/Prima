@@ -384,7 +384,7 @@ Widget_custom_paint( Handle self)
    if ( var-> eventIDs == nil) return false;
    ret = hash_fetch( var-> eventIDs, "Paint", 5);
    if ( ret == nil) return false;
-   list = var-> events + ( IV) ret - 1;
+   list = var-> events + PTR2UV( ret) - 1;
    return list-> count > 0;
 }
 
@@ -2008,7 +2008,7 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 static Bool
 auto_enable_children( Handle self, Handle child, void * enable)
 {
-   apc_widget_set_enabled( child, ( IV) enable);
+   apc_widget_set_enabled( child, PTR2UV( enable));
    return false;
 }
 /* properties section */
@@ -2240,10 +2240,8 @@ Widget_enabled( Handle self, Bool set, Bool enabled)
    if ( !set) return apc_widget_is_enabled( self);
    if ( !apc_widget_set_enabled( self, enabled)) 
       return false;
-   if ( is_opt( optAutoEnableChildren)) {
-      IV iv_enabled = enabled;
-      CWidget(self)-> first_that( self, (void*)auto_enable_children, (void*) iv_enabled);
-   }
+   if ( is_opt( optAutoEnableChildren)) 
+      CWidget(self)-> first_that( self, (void*)auto_enable_children, INT2PTR(void*,enabled));
    return true;
 }
 

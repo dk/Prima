@@ -383,7 +383,7 @@ static Bool
 prepare_xpm_color( void * value, int keyLen, Color * color_ptr, CalcData * cd)
 {
    Color color = *color_ptr;
-   IV v = (IV)value - 1, cpp = cd-> image-> cpp, lpp = 6;
+   IV v = PTR2IV(value) - 1, cpp = cd-> image-> cpp, lpp = 6;
    char * c;
 
    c = cd-> image-> colorTable[ v]. c_color = 
@@ -463,10 +463,8 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
              } else {
                 if ( transcolor < 0) {
                    Color key = clInvalid;
-                   IV xx; 
                    transcolor = hash_count( hash);
-                   xx = transcolor + 1;
-                   hash_store( hash, &key, sizeof(key), (void*)(xx));
+                   hash_store( hash, &key, sizeof(key), INT2PTR(void*, transcolor + 1));
                 }
                 *(dest++) = transcolor;
              }
@@ -532,14 +530,12 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
        cd. delta = image. ncolors * sizeof( XpmColor);
        cd. image = &image;
        for ( x = 0; x < ncolors; x++) {
-          IV xx = x + 1;
           Color c = ARGB(i-> palette[x].r,i-> palette[x].g,i-> palette[x].b);
-          prepare_xpm_color((void*)(xx), 0, &c, &cd);
+          prepare_xpm_color(INT2PTR(void*,x+1), 0, &c, &cd);
        }
        if ( icon) {
           Color c = clInvalid;
-          IV xx = transcolor + 1;
-          prepare_xpm_color((void*)(xx), 0, &c, &cd);
+          prepare_xpm_color( INT2PTR(void*,transcolor+1), 0, &c, &cd);
        }
    }
 

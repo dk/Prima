@@ -183,7 +183,7 @@ File_reset_notifications( Handle self)
 
    for ( i = 0; i < 3; i++) {
       if ( ret[i] == nil) continue;
-      list = var-> events + ( IV) ret[i] - 1;
+      list = var-> events + PTR2IV( ret[i]) - 1;
       if ( list-> count > 0) mask |= cmd[ i];
    }
 

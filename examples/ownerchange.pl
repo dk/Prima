@@ -52,6 +52,10 @@ my $w = Prima::Window-> create(
    popupItems => [["Change owner"=> sub { $_[0]-> popup-> owner (( $_[0]-> name eq "D1") ? $::application-> D2 : $::application-> D1); }]],
    menuItems  => [["Change owner"=> sub { $_[0]-> menu-> owner (( $_[0]-> name eq "D1") ? $::application-> D2 : $::application-> D1); }]],
    onTimer    => sub { $_[0]->backColor(($_[0]->backColor == cl::Green) ? cl::LightGreen : cl::Green)},
+   onMouseDown => sub {
+    my ( $self, $btn, @k) = @_;
+	$_[0]-> borderStyle( ($btn  == mb::Left) ? bs::Dialog : bs::Sizeable);
+   },
 );
 
 my $w2 = Prima::Window-> create(
