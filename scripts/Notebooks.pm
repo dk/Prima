@@ -896,6 +896,7 @@ sub tab2page
 sub TabSet_Change
 {
    my ( $self, $tabset) = @_;
+   return if $self->{changeLock};
    $self-> pageIndex( $self-> tab2page( $tabset-> tabIndex));
 }
 
@@ -950,7 +951,9 @@ sub set_page_index
    my ( $self, $pi) = @_;
    my ($pix, $mpi) = ( $self->{notebook}->pageIndex, $self->{notebook}->pageCount - 1);
    $self->{notebook}-> pageIndex( $pi);
+   $self->{changeLock} = 1;
    $self->{tabSet}-> tabIndex( $self-> page2tab( $self->{notebook}-> pageIndex));
+   delete $self->{changeLock};
    my @size = $self-> size;
    my $th = $self->{tabSet}-> height;
    my $a  = 0;
