@@ -1,0 +1,652 @@
+=for rcs $Id$
+
+=head1 NAME
+
+Prima::X11 - usage guide for X11 environment
+
+=head1 DESCRIPTION
+
+This document describes subtle topics one must be aware when programming or
+using Prima programs under X11.
+
+The document covers various aspects of the toolkit and their implementation
+details with guidelines of the expected use. Also, standard X11 user-level and
+programming techniques are visited.
+
+=head1 Basic command-line switches
+
+=over
+
+=item C<--help>
+
+Prints the command-line arguments available and exits.
+
+=item C<--display>
+
+Sets X display address in Xlib notation. If not set, standard Xlib (
+C<XOpenDisplay(null)> ) behavior applies.
+
+Example: 
+
+   --display=:0.1
+
+=item C<--visual>
+
+Sets X visual, to be used by default. Example:
+
+   --visual=0x23
+
+=item C<--sync>
+
+Turn of X synchronization
+
+=item C<--bg>, C<--fg>
+
+Set default background and foreground colors. Example:
+
+  --bg=BlanchedAlmond
+
+=item C<--font>
+
+Sets default font. Example:
+
+   --font='adobe-helvetica-medium-r-*-*--*-120-*-*-*-*-*-*'
+
+=item C<--no-x11>
+
+Runs Prima without X11 display intialized. This switch can be used for programs
+that use only OS-independent parts of Prima, such as image subsystem or PostScript
+generator, in environments where X is not present, for example, a CGI script.
+Obviously, any attempt to create instance of C<Prima::Application> or otherwise
+access X-depended code under such conditions causes the program to abort.
+
+=back
+
+=head1 X resources database
+
+X11 provides XRDB, the X resource database, a keyed list of arbitrary string
+values stored on the X server. Each key is a combination of names and classes
+of widgets, each in string form. The key is constructed so the leftmost
+substring ( name or class ) corresponds to the top-level item in the hierarchy,
+usually the application name or class. Although the XRDB can be changed via
+native X API, it is rarely doen by applications. Instead, the user creates a
+file, usually named .Xdefaults, which contains the database in the string form.
+
+The format of .Xdefaults directly reflects XRDB capabilities, one of the most
+important of which is globbing, manifested via * ( star ) character. Using
+globbing, the use can set up a property value that corresponds to multiple
+targets:
+
+   *.ListBox.backColor: yellow
+
+The string above means that all widgets of ListBox class must have yellow
+background.
+
+The application itself is responsible for parsing the strings and querying the
+XRDB.  Also, both class names and widget names, as well as database values are
+fully defined in terms of the application. There are some guidelines though,
+for example, colors and fonts best described in terms, native to the X server.
+Also, classes and names are distingushed by the case: classes must begin with
+the upper register letter. Also, not every character can be stored in the
+XRDB database ( space, for example, cannot) , and therefore XRDB API
+automatically converts these to _ ( underscore ) characters.
+
+Prima defines its all set of resources, divided in two parts: general toolkit
+settings and per-widget settings. The general settings functionality is
+partially overloaded by command-line arguments. Per-widget settings are fonts
+and colors, definable for each Prima widget. 
+
+All of the general settings are applicable to the top-level item of widget
+hierarchy, named after the application, and C<Prima> class. Some of these,
+though, are needed to be initialized before the application instance itself is
+created, so these can be accessed via C<Prima> class only, for example,
+C<Prima.Visual>.  Some, on the contrary, may occasionally overlap with
+per-widget syntax.  In particular, one must vary not to mix
+
+   Prima.font: some-font
+
+with
+
+   Prima*font: some-font
+
+The former syntax is a general setting, and sets the default Prima font.  The
+latter is a per-widget assignmemt, and explicitly sets font to B<all> Prima
+widgets, effectively ruining the toolkit font inheritance scheme. The same is
+valid for an even more oppressive 
+
+   *font: some-font
+
+record.
+
+The allowed per-widget settings are colors and font settings only ( see
+corresponding sections ). It is an arguably useful feature to map all widget
+properties onto XRDB, but Prima does not implement this, primarily because no
+one asked for it, and also because this creates unnecessary latency when
+enumeration of all properties for each widget takes place.
+
+All global settings have identical class and name, varied in the case of the
+first letter. For example, to set C<Submenudelay> value, one can do it either
+by 
+
+   Prima.Submenudelay: 10
+
+or
+   
+   Prima.submenudelay: 10
+
+syntax. Despite that these calls are different, in a way that one reaches for
+the whole class and another for the name, for the majority of these properies it
+does not matter. To avoid confusion, for all properties their names and class
+are given as C<PropetyClass.propertyname> index.
+
+=head1 Fonts
+
+=head2 Default fonts
+
+Prima::Application defines set of C<get_default_XXX_font> functions, where each
+returns some user-selected font, to be displayed correspondingly in menu,
+message, window captions, all other widgets, and finally a default font. While
+in other OS'es these are indeed standard configurable user options, raw X11
+doesn't define any. Nevertheless, as the high-level code relies on these,
+corresponding resources are defined. These are:
+
+=over
+
+=item *
+
+font - Application::get_default_font
+
+=item *
+
+caption_font - Application::get_caption_font. Used in C<Prima::MDI>.
+
+=item *
+
+menu_font - Widget::get_default_menu_font. Default font for pull-down and
+pop-up menus.
+
+=item *
+
+msg_font - Application::get_message_font. Used in C<Prima::MsgBox>.
+
+=item *
+
+widget_font - Widget::get_default_font.
+
+=back
+
+All of the global font properties can only be set via C<Prima> class, no
+application name is recognized. Also, these properties are identical to
+C<--font>, C<--menu-font>, C<--caption-font>, C<--msg-font>, and
+C<--widget-font> command-line arguments.  The per-widget properties are C<font>
+and C<popupFont>, of class C<Font>, settable via XRDB only:
+
+   Prima*Dialog.font: my-fancy-dialog-font
+   Prima.FontDialog.font: some-conservative-font
+
+By default, Prima font is 12.Helvetica .
+
+=head2 X core fonts
+
+The values of the font entries are standard XLFD strings, the default
+C<*-*-*-*-*-*-*-*-*-*-*-*-*-*-*> pattern, where each star character can be
+replaced by a particular font property, as name, size, charset, and so on. To
+interactively select an appropriate font, use standard C<xfontsel> program from
+X11 distribution.
+
+Note, that encoding part of the font is recommended to left unspecified,
+otherwise it may clash with LANG environment variable, which is used by Prima
+font subsystem to determine which font to select when no encoding is given.
+This advice, though, is correct only when both LANG and encoding part of a
+desired font match. In order to force a particular font encoding, the property
+C<Prima.font> must contain one. 
+
+Alternatively, and/or to reduce X font traffic, one may set
+C<IgnoreEncodings.ignoreEncodings> property, which is a semicolon- separated
+list of encodings Prima must not account. This feature has limited usability
+when for example fonts in asian encodings result in large font requests.
+Another drastic measure to decrease font traffic is a boolean property
+C<Noscaledfonts.noscaledfonts>, which, if set to 1, restricts the choice of
+fonts to the nonscalable fonts only.
+
+=head2 Xft fonts
+
+Recently, Prima was made to compile with Xft library, which contrary to core X
+font API, can make use of client-side fonts. Plus, Xft offers appealing
+features as font antialiasing, unicode, and arguably a better font syntax. The
+Xft font syntax is inherited from C<fontconfig> library and to be consulted
+from C<man fonts-conf>, but currently ( November 2003 ) basic font descriptions
+can be composed as follows:
+
+   Palatino-12
+
+A font with name C<Palatino> and size 12.
+
+   Arial-10:BI
+
+A font with name C<Arial>, size 10, bold, italic. The C<fontconfig> syntax
+allows more than that, for example, arbitrary matrix transformations, but
+Prima can make use only of font name, size, and style flags.
+
+C<--no-xft> command-line argument, and boolean C<UseXFT.usexft> XRDB property 
+can be used to disable use of the Xft library.
+
+=head1 Colors
+
+=head2 XRDB conventions
+
+X traditionally contains a color names database, usually a text file named
+F<rgb.txt>.  Check your X manual where exactly this file resides and what is
+its format.  The idea behind it is that users can benefit from protable literal
+color names, with color values transparently adjustable to displays
+capabilities.  Thus, it is customary to write 
+
+   color: green
+
+for many applications, and these in turn call C<XParseColor> to convert strings
+into RGB values.
+
+Prima is no exception to the scheme. Each widget can be assigned eight color
+properties that belongs to two classes by means of standard XRDB techniques:
+
+=over
+
+=item class C<Foreground>
+
+Widget properties: C<color>, C<hiliteBackColor>, C<disabledColor>, C<dark3DColor>
+
+=item class C<Background>
+
+Widget properties: C<backColor>, C<hiliteColor>, C<disabledBackColor>, C<light3DColor>
+
+=back
+
+Additionally, set of command-line arguments allows overriding default values for these:
+
+=over
+
+=item *
+
+C<--fg> - color
+
+=item *
+
+C<--bg> - backColor
+
+=item *
+
+C<--hilite-fg> - hiliteColor
+
+=item *
+
+C<--hilite-bg> - hiliteBackColor
+
+=item *
+
+C<--disabled-fg> - disabledColor
+
+=item *
+
+C<--disabled-bg> - disabledBackColor
+
+=item *
+
+C<--light> - light3DColor
+
+=item *
+
+C<--dark> - dark3DColor
+
+=back
+
+=head2 Visuals
+
+X protocol works with explicitly defined pixel values only.  A pixel value,
+maximum 32-bit value, represents a color in a display. There are two different
+color coding schemes - direct color and indexed color. The direct color-coded
+pixel value can unambiguously be converted into a RGB-value, without any
+extrenal informartion.  The indexed-color scheme represents pixel value as an
+index in a palette, which resided on X server. Depending on the color cell
+value of the palette, RGB color representation can be computed. A X display can
+contain more than one palette, and allow ( or disallow ) modification of
+palette color cells depending on a visual, the palette is attributed to.
+
+A visual is a X server resource, containing representation of color coding
+scheme, color bit depth, and modifiability of the palette. X server can ( and
+usually does ) provide more than one visual, as well as different bit depths.
+There are six classes of visuals in X paradigm. In each, Prima behaves
+differently, also depending on display bit depth available.  In particular,
+color dithering can be used on displays with less than 12-bit color depth. On
+displays with modifiable color palette, Prima can install its own values in
+palettes, which may result in an effect known as display flashing. To switch to
+a non-default visual, use C<Prima.Visual> XRDB property or C<--visual>
+command-line argument.  List of visuals can be produced interactively by
+standard C<xdpyinfo> command from X distribution, where each class of visual
+corresponds to one of six visual classes:
+
+=over
+
+=item StaticGray
+
+All color cells are read-only, and contain monochrome values only.  A typical
+example is a two-color, black-and-white monochrome display.  This visual is
+extremely rarely met.
+
+=item GrayScale
+
+Contains modifiable color palette, and capable of displaying monochrome values
+only. Theoretically, and paletted display on a monochrome monitor can be
+treated as a GrayScale visual. For both I<GrayScale> and I<StaticGray> visuals
+Prima resorts to dithering if it cannot get at least 32 evenly spaced gray
+values from black to white.
+
+=item StaticColor
+
+All color cells are read-only.  A typical example is a PC display in a 16-color
+640x480 (EGA) mode.  This visual is rarely met.
+
+=item PseudoColor
+
+All color cells are modifiable. Typically, 8-bit displays define this class for
+a default visual. For both I<StaticColor> and I<PseudoColor> visuals dithering
+is always used, although for C<PseudoColor> Prima resorts to that only if X
+server cannot allocate another color.
+
+On C<PseudoColor> and C<GrayScale> Prima allocates a small set of colors, not
+used in palette modifications. When a bitmap is to be exported via clipboard,
+or displayed in menu, or sent to a window manager as an icon to be displayed,
+it is downgraded to using these colors only, which are though guaranteedly to
+stay permanent through life of the application.
+
+=item TrueColor
+
+Each pixel value is explicitly coded as RGB. Typical example are 16, 24, or 32-bit
+display modes. This visual class is the best in terms of visual quality.
+
+=item DirectColor
+
+Same as I<TrueColor>, but additionally each pixel value can be reprogrammed.
+Not all hardware support this visual, and usually by default it is not set.
+Prima supports this mode in exactly same way as I<TrueColor> without additional
+features. During testing, it appeared that non-default I<DirectColor> visuals
+require explicit assignment of each pixel used, which is inappropriate for
+color-rich images, and therefore Prima refuses to work on a non-default
+I<DirectColor> visual.
+
+=back
+
+=head1 Images
+
+As described in the previous section, X does not standardize pixel memory
+format for I<TrueColor> and C<DirectColor> visuals, so there is a chance that
+Prima woudln't work on some bizarre hardware. Currently, Prima knows how to
+compose pixels of 15, 16, 24, and 32 bit depth, of contiguous ( not
+interspersed ) red-green-blue memory layout. Any other pixel memory layout
+causes Prima to fail.
+
+Prima supports shared memory image X extension, which speeds up image display
+for X servers and clients running on same machine. The price for this is that
+if Prima program aborts, the shared memory will never be returned to the OS.
+To remove the leftover segments, use your OS facilities, for example, C<ipcrm>
+on *BSD.
+
+The clipboard exchange of images is incompletely implemented, since Prima does
+not accompany ( and neither reads ) COLORMAP, FOREGROUND, and BACKGROUND
+clipboard data, which contains pixel RGB values for a paletted image. As a
+palliative, the clipboard-bound images are downgraded to a safe set of colors,
+locked immutable either by X server or Prima core. 
+
+On images in the clipboard: contrary to the text in the clipboard, which can be
+used several times, images seemingly cannot. The Bitmap or Pixmap descriptor,
+stored in the clipboard, is rendered invalid after it has been read once.
+
+=head1 Window managers
+
+The original design of X protocol did not include the notion of a window
+manager, and latter is was implemented as an ad-hoc patch, which results in
+race conditions when configuring widgets. The extreme situation may well happen
+when even a non-top level widget may be influenced by a window manager, when
+for example a top-level widget was reparenteted into another widget, but the
+window manager is not aware or this yet.
+
+The consequences of this, as well as programming gudances are described in
+C<Prima::Window>. Here, we describe other aspects of interactions with WMs, as
+WM protocols, hints, and properties. 
+
+Prima was tested with alternating success under the following window managers:
+mwm, kwin, wmaker, fvwm, fvwm2, enlightment, sawfish, blackbox, 9wm, olvm, twm,
+and in no-WM environment.
+
+=head2 Protocols
+
+Prima makes use of C<WM_DELETE_WINDOW> and C<WM_TAKE_FOCUS> protocols.  While
+C<WM_DELETE_WINDOW> use is straighforward and needs no further attention,
+C<WM_TAKE_FOCUS> can be tricky, since X defines several of input modes for a
+widget, which behave differently for each WM.  In particular, 'focus follows
+pointer' gives pains under twm and mwm, where navigation of drop-down combo
+boxes is greatly hindered by window manager. The drop-down list is programmed
+so it is dismissed as soon its focus is gone; these window managers withdraw
+focus even if the pointer is over the focused widget's border.
+
+=head2 Hints
+
+Size, position, icons, and other standard X hints are passed to WM in a
+standard way, and, as inter-client communication manual ( ICCCM ) allows,
+repeatedly misinterpreted by window managers. Many ( wmaker, for example )
+apply the coordinates given from the program not to the top-level widget
+itself, but to its decoration.  mwm defines list of accepted icon sizes so
+these can be absurdly high, which adds confusion to a client who can create
+icon of any size, but unable to determine the best one.
+
+=head2 Non-standard properties
+
+Prima tries to use WM-specific hints, known for two window managers: mwm and
+kwin.  For mwm ( Motif window manager ) Prima sets hints of decoration border
+width and icons only. For kwin ( and probably to others, who wish to conform to
+specifications of http://www.freedesktop.org/ ) Prima uses C<NET_WM_STATE>
+property, in particular its maximization and task-bar visibility hints. 
+
+Use of these explicitly contradicts ICCCM, and definitely may lead to bugs in
+future ( at least with C<NET_WM_STATE>, since Motif interface can hardly
+expected to be changed ).  To disable the use of non-standard WM properties,
+C<--icccm> command-line argument can be set.
+
+=head1 Unicode
+
+X does not support unicode, and number of patches were applied to X servers and
+clients to make the situation change. Currently ( 2003 ) standard unicode
+practices are not emerged yet, so Prima copes up with what ( in author's
+opinion ) is most promising: Xft and iconv libraries.
+
+=head2 Fonts
+
+X11 supports 8-bit and 16-bit text string display, and neither can be used
+effectively to display unicode strings. A C<XCreateFontSet> technique, which
+combines several fonts under one descriptor, or a similarly implemented
+technique is the only way to provide correct unicode display.
+
+Also, core font transfer protocol suffers from ineffective memory
+representation, which results in sufficient latency when fonts with large span
+of glyphs is loaded. Such fonts, in still uncommon though standard iso10646
+encoding, are the only media to display multi-encoding text without falling
+back to hacks similar to C<XCreateFontSet>.
+
+These, and some other problems are efficiently solved by Xft library, a
+superset of X core font functionality. Xft features Level 1 ( november 2003 )
+unicode display and supports 32-bit text strings as well as UTF8-coded strings.
+Xft does not operate with charset encodings, and these are implemented in Prima
+using iconv charset convertor library.
+
+=head2 Input
+
+Prima does not support extended input methods ( XIM etc ), primarily because
+the authors are not acquainted with CIJK problem domain. Volunteers are
+welcome.
+
+=head2 Clipboard
+
+Prima supports UTF8 text in clipboard via C<UTF8_STRING> transparently,
+although not by default.
+
+   Prima::Application-> wantUnicodeInput(1)
+
+is the documented ( see L<Prima::Application> ) way to initiate UTF8 clipboard
+text echange.
+
+=head1 Other XRDB resources
+
+=head2 Timeouts
+
+Raw X11 provides no such GUI helpers and double-click event, cursor, or menu.
+Neither does it provide the related time how often, for example, a cursor would
+blink. Therefore Prima emulates these, but allows the user to reprogram the
+corresponding timeouts. Prima recognizes the following properties, accessible
+either via application name or Prima class key. All timeouts are integer
+values, representing number of milliseconds for the corresponding timeout
+property.
+
+=over
+
+=item Blinkinvisibletime.blinkinvisibletime: MSEC
+
+Cursor stays invisible MSEC milliseconds.
+
+Default value: 500
+
+=item Blinkvisibletime.blinkvisibletime: MSEC
+
+Cursor stays visible MSEC milliseconds.
+
+Default value: 500
+
+=item Clicktimeframe.clicktimeframe MSEC
+
+If 'mouse down' and 'mouse up' events are follow in MSEC, 'mouse click'
+event is synthesized.
+
+Default value: 200
+      
+=item Doubleclicktimeframe.doubleclicktimeframe MSEC
+
+If 'mouse click' and 'mouse down' events are follow in MSEC, 'mouse double click'
+event is synthesized.
+
+Default value: 200
+
+=item Submenudelay.submenudelay MSEC
+
+When the used clicks on a menu item, which points to a lower-level menu window,
+the latter is displayed after MSEC milliseconds.
+
+Default value: 200
+      
+=item Scrollfirst.scrollfirst MSEC
+
+When an auto-repetitive action, similar to keystroke events resulting from a
+long key press on the keyboard, is to be simulated, two timeout values are used
+- 'first' and 'next' delay. These actions are not simulated within Prima core,
+and the corresponding timeouts are merely advisable to the programmer. Prima
+widgets use it for automatic scrolling, either by a scrollbar or by any other
+means.  Also, C<Prima::Button> in C<autoRepeat> mode uses these timeouts for
+emulation of a key press.
+
+C<Scrollfirst> is a 'first' timeout.
+
+Default value: 200
+
+=item Scrollnext.scrollnext MSEC
+
+A timeout used for same reasons as C<Scrollfirst>, but after it is expired.
+
+Default value: 50
+
+=back
+
+=head2 Miscellaneous
+
+=over
+   
+=item Visual.visual: VISUAL_ID
+
+Selects display visual by VISUAL_ID, which is usually has a form of C<0x??>.
+Various visuals provide different color depth and access scheme. Some X
+stations have badly chosen default visuals (for example, default IRIX
+workstation setup has 8-bit default visual selected), so this property can be
+used to fix things. List of visuals, supported by a X display can be produced
+interactively by standard C<xdpyinfo> command from X distribution. 
+
+Indentical to C<--visual> command-line argument.
+
+See L<Color> for more information.
+
+=item Wheeldown.wheeldown BUTTON
+
+BUTTON is a number of X mouse button event, treated as 'mouse wheel down'
+event.
+
+Default value: 0 ( disabled )
+
+=item Wheelup.wheelup BUTTON
+
+BUTTON is a number of X mouse button event, treated as 'mouse wheel up' event.
+
+Default value: 0 ( disabled )
+
+=back
+
+=head1 Debugging
+
+The famous 'use the source' call is highly actual with Prima. However, some
+debug information comes compiled in, and can be activated by C<--debug>
+command-line key. Combination of letters to the key activates debug printouts
+of different subsystems:
+
+=over
+
+=item *
+
+C - clipboard
+
+=item *
+
+E - events subsystem
+
+=item *
+
+F - fonts
+
+=item *
+
+M - miscellaneous debug info
+
+=item *
+
+P - palettes and colors
+
+=item *
+
+X - XRDB
+
+=item *
+
+A - all together
+
+=back
+
+Example:
+
+   --debug=xf
+
+Also, the built-in X API C<XSynchronize> call, which enables X protocol
+synchronization ( at expense of operation slowdown ) is activated with
+C<--sync> command-line argument, and can be used to ease eventual debugging.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::gp-problems>, L<Prima::Widget>, 
+Nye A, Xlib programming manual. O'Reilly E<amp> Associates, 1995.
+
