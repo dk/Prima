@@ -171,8 +171,8 @@ sub insert_bone
       pointerType => cr::Arrow,
       origin => [ $bw + $self->{hScrollBar}-> width-1, $bw - 1],
       size   => [ $self->{vScrollBar}-> width-2, $self->{hScrollBar}-> height-1],
-      ownerBackColor => 1,
       growMode  => gm::GrowLoX,
+      widgetClass => wc::ScrollBar,
       onPaint   => sub {
          my ( $self, $canvas, $owner, $w, $h) = ($_[0], $_[1], $_[0]-> owner, $_[0]-> size);
          $canvas-> color( $self-> backColor);
