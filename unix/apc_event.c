@@ -41,6 +41,7 @@
 #define XK_XKB_KEYS
 #include <X11/keysymdef.h>
 
+
 void
 prima_send_create_event( XWindow win)
 {
@@ -306,6 +307,7 @@ typedef struct _WMSyncData
    Point   size;
    XWindow above;
    Bool    mapped;
+   Bool    allow_cmSize;
 } WMSyncData;
 
 static void
@@ -321,7 +323,7 @@ wm_sync_data_from_event( Handle self, WMSyncData * wmsd, XConfigureEvent * cev, 
            0, 0, &cev-> x, &cev-> y, &dummy);
     }
     wmsd-> origin. x  = cev-> x;
-    wmsd-> origin. y  = X(X(self)-> owner)-> size. y + X(X(self)-> owner)-> menuHeight - wmsd-> size. y - cev-> y;
+    wmsd-> origin. y  = X(X(self)-> owner)-> size. y - wmsd-> size. y - cev-> y;
     wmsd-> mapped  = mapped;
 }
 
@@ -334,6 +336,7 @@ open_wm_sync_data( Handle self, WMSyncData * wmsd)
    wmsd-> origin  = PWidget( self)-> pos;
    wmsd-> above   = XX-> above;
    wmsd-> mapped  = XX-> flags. mapped ? true : false;
+   wmsd-> allow_cmSize = false;
 }
 
 static Bool
@@ -354,11 +357,12 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
       if ( PObject( self)-> stage == csDead) return false; 
    }
 
-   if ( wmsd-> size. x != XX-> size. x || wmsd-> size. y != XX-> size. y + XX-> menuHeight) {
+   if ( wmsd-> allow_cmSize && 
+      ( wmsd-> size. x != XX-> size. x || wmsd-> size. y != XX-> size. y + XX-> menuHeight)) {
       XX-> size. x = wmsd-> size. x;
       XX-> size. y = wmsd-> size. y - XX-> menuHeight;
       PWidget( self)-> virtualSize = XX-> size; 
-      /* printf("got size to %d %d by %d\n", XX-> size.x, XX-> size.y, wmsd-> eventType); */
+      /* printf("got size to %d %d\n", XX-> size.x, XX-> size.y); */
       prima_send_cmSize( self, old_size);
       if ( PObject( self)-> stage == csDead) return false; 
       size_changed = true;
@@ -516,6 +520,77 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
    return false;
 }
 
+static int
+compress_configure_events( XEvent *ev)
+/*
+   This reads as many ConfigureNotify events so these do not
+   trash us down. This can happen when the WM allows dynamic
+   top-level windows resizing, and large amount of ConfigureNotify
+   events are sent as the user resizes the window.
+
+   Xlib has many functions to peek into event queue, but all
+   either block or XFlush() implicitly, which isn't a good
+   idea - so the code uses XNextEvent/XPutBackEvent calls.
+ */
+{
+   Handle self;
+   XEvent * set, *x;
+   XWindow win = ev-> xconfigure. window;
+   int i, skipped = 0, read_events = 0,
+       queued_events = XEventsQueued( DISP, QueuedAlready);
+
+   if (
+         ( queued_events <= 0) ||
+         !( set = malloc( sizeof( XEvent) * queued_events))
+       ) return 0;
+
+   for ( i = 0, x = set; i < queued_events; i++, x++) {
+      XNextEvent( DISP, x);
+      read_events++;
+      
+      switch ( x-> type) {
+      case KeyPress:       case KeyRelease:
+      case ButtonPress:    case ButtonRelease:
+      case MotionNotify:   case DestroyNotify:
+      case ReparentNotify: case PropertyNotify:
+      case FocusIn:        case FocusOut:
+      case EnterNotify:    case LeaveNotify:
+         goto STOP;
+      case MapNotify:      
+      case UnmapNotify:
+         self = prima_xw2h( x-> xconfigure. window);
+         /* stop only after top-level events */
+         if ( self && XT_IS_WINDOW(X(self)) && x-> xconfigure. window == X_WINDOW) 
+            goto STOP;
+         break;
+      case ClientMessage:
+         if ( x-> xclient. message_type == WM_PROTOCOLS &&
+              (Atom) x-> xclient. data. l[0] == WM_DELETE_WINDOW) 
+            goto STOP;
+         break;
+      case ConfigureNotify:
+         /* check if it's Widget event, which is anyway not passed to perl */
+         self = prima_xw2h( x-> xconfigure. window);
+         if ( self && XT_IS_WINDOW(X(self)) && x-> xconfigure. window == X_WINDOW) {
+            /* other top-level's configure? */
+            if ( x-> xconfigure. window != win) goto STOP;
+            /* or, discard the previous ConfigureNotify */
+            ev-> type = 0;
+            ev = x;
+            skipped++;
+         }
+         break;
+      }
+   }
+STOP:;
+
+   for ( i = read_events - 1, x = set + read_events - 1; i >= 0; i--, x--) 
+      if ( x-> type != 0)
+         XPutBackEvent( DISP, x);
+   free( set);
+   return skipped; 
+}
+
 /*
 static char * xevdefs[] = { "0", "1"
 ,"KeyPress" ,"KeyRelease" ,"ButtonPress" ,"ButtonRelease" ,"MotionNotify" ,"EnterNotify"
@@ -526,6 +601,7 @@ static char * xevdefs[] = { "0", "1"
 ,"SelectionClear" ,"SelectionRequest" ,"SelectionNotify" ,"ColormapNotify" ,"ClientMessage"
 ,"MappingNotify"};
 */
+
 
 void
 prima_handle_event( XEvent *ev, XEvent *next_event)
@@ -630,12 +706,12 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       win = guts. grab_redirect;
 
    self = prima_xw2h( win);
-/*
+   /*
    if ( ev-> type > 0) {
       printf("%d:%s of ", ev-> type, ((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]));
       printf( self ? "%s\n" : "%08x\n", self ? PWidget(self)-> name : self);
    }
-*/
+   */
 
    if (!self)
       return;
@@ -670,7 +746,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if (prima_no_input(XX, false, true)) return;
       if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
          XWindow rx;
-         XTranslateCoordinates( DISP, X_WINDOW, PWidget(guts. grab_widget)-> handle, 
+         XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle, 
              ev-> xbutton.x, ev-> xbutton.y, 
              &ev-> xbutton.x, &ev-> xbutton.y, &rx);
          self = guts. grab_widget;
@@ -714,7 +790,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 return;
       }
       e. pos. where. x = bev-> x;
-      e. pos. where. y = XX-> size. y + XX-> menuHeight - bev-> y - 1;
+      e. pos. where. y = XX-> size. y - bev-> y - 1;
       if ( bev-> state & ShiftMask)     e.pos.mod |= kmShift;
       if ( bev-> state & ControlMask)   e.pos.mod |= kmCtrl;
       if ( bev-> state & Mod1Mask)      e.pos.mod |= kmAlt;
@@ -765,6 +841,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
             ev. gen. P. x = e. pos. where. x;
             ev. gen. P. y = e. pos. where. y;
             apc_message( self, &ev, true);   
+            if ( PObject( self)-> stage == csDead) return; 
          }
       }
       memcpy( &guts.last_button_event, bev, sizeof(*bev));
@@ -803,7 +880,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if (prima_no_input(XX, false, false)) return;
       if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
          XWindow rx;
-         XTranslateCoordinates( DISP, X_WINDOW, PWidget(guts. grab_widget)-> handle, 
+         XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle, 
              ev-> xbutton.x, ev-> xbutton.y, 
              &ev-> xbutton.x, &ev-> xbutton.y, &rx);
          self = guts. grab_widget;
@@ -817,7 +894,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       guts. last_time = ev-> xmotion. time;
       if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
          XWindow rx;
-         XTranslateCoordinates( DISP, X_WINDOW, PWidget(guts. grab_widget)-> handle, 
+         XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle, 
              ev-> xmotion.x, ev-> xmotion.y, 
              &ev-> xmotion.x, &ev-> xmotion.y, &rx);
          self = guts. grab_widget;
@@ -831,7 +908,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          ev-> xmotion. y -= guts. grab_translate_mouse. y;
       }      
       e. pos. where. x = ev-> xmotion. x;
-      e. pos. where. y = XX-> size. y + XX-> menuHeight - ev-> xmotion. y - 1;
+      e. pos. where. y = XX-> size. y - ev-> xmotion. y - 1;
       if ( ev-> xmotion. state & ShiftMask)     e.pos.mod |= kmShift;
       if ( ev-> xmotion. state & ControlMask)   e.pos.mod |= kmCtrl;
       if ( ev-> xmotion. state & Mod1Mask)      e.pos.mod |= kmAlt;
@@ -859,7 +936,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
      CrossingEvent:
       if ( ev-> xcrossing. subwindow != None) return;
       e. pos. where. x = ev-> xcrossing. x;
-      e. pos. where. y = XX-> size. y + XX-> menuHeight - ev-> xcrossing. y - 1;
+      e. pos. where. y = XX-> size. y - ev-> xcrossing. y - 1;
       break;
    }
    case LeaveNotify: {
@@ -974,7 +1051,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case UnmapNotify: {
-      if ( XX-> flags. process_configure_notify) {
+      if ( XT_IS_WINDOW(XX)) {
          WMSyncData wmsd;
          open_wm_sync_data( self, &wmsd);
          wmsd. mapped = false;
@@ -984,7 +1061,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case MapNotify: {
-      if ( XX-> flags. process_configure_notify) {
+      if ( XT_IS_WINDOW(XX)) {
          WMSyncData wmsd;
          open_wm_sync_data( self, &wmsd);
          wmsd. mapped = true;
@@ -998,8 +1075,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
 
    case ReparentNotify: {
-      XWindow p = ev-> xreparent. parent;
-      if ( !XX-> type. window) return;
+         XWindow p = ev-> xreparent. parent;
+         if ( !XX-> type. window) return;
 	 XX-> real_parent = ( p == guts. root) ? nilHandle : p;
          if ( XX-> real_parent) {
             XWindow dummy;
@@ -1010,66 +1087,121 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       }
       return;
 
-   case -ConfigureNotify: {
-      Bool size_changed =
-         XX-> ackSize. x != ev-> xconfigure. width || 
-         XX-> ackSize. y != ev-> xconfigure. height;
-      XX-> ackSize. x   = ev-> xconfigure. width;
-      XX-> ackSize. y   = ev-> xconfigure. height;
-      XX-> ackOrigin. x = ev-> xconfigure. x;
-      XX-> ackOrigin. y = X(X(self)-> owner)-> size. y + X(X(self)-> owner)-> menuHeight -
-         XX-> ackSize. y - ev-> xconfigure. y;
-      if ( XT_IS_WINDOW(XX) && PWindow( self)-> menu) {
-         if ( size_changed) {
-            M(PWindow( self)-> menu)-> paint_pending = true;
-            XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
-               ev-> xconfigure. width, XX-> menuHeight);
-         }
-         M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
-         M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
-      }
-      return;
-   }                        
-   case ConfigureNotify: {
-      Bool size_changed =
-         XX-> ackSize. x != ev-> xconfigure. width || 
-         XX-> ackSize. y != ev-> xconfigure. height;
-      XX-> ackOrigin. x = ev-> xconfigure. x;
-      XX-> ackSize. x   = ev-> xconfigure. width;
-      XX-> ackSize. y   = ev-> xconfigure. height;
-      XX-> flags. configured = 1;
-      if ( XX-> flags. process_configure_notify) {
-         WMSyncData wmsd;
-         wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure, XX-> flags. mapped);
-         XX-> ackOrigin. y = wmsd. origin. y;
-         XX-> ackOrigin. x = wmsd. origin. x;
-         /* printf("%d --> %d %d\n", ev-> xany.serial, ev-> xconfigure. width, ev-> xconfigure. height); */
-         XX-> flags. configured = 1;
-         process_wm_sync_data( self, &wmsd);
-      } else 
-         XX-> ackOrigin. y = X(X(self)-> owner)-> ackSize. y - XX-> ackSize. y - ev-> xconfigure. y;
-      if ( XT_IS_WINDOW(XX) && PWindow( self)-> menu) {
-         if ( size_changed) {
-            M(PWindow( self)-> menu)-> paint_pending = true;
-            XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
-               ev-> xconfigure. width, XX-> menuHeight);
-            {   
-                XEvent e;
-                Handle menu = PWindow( self)-> menu;
-                e. type = ConfigureNotify;
-                e. xconfigure. width  = ev-> xconfigure. width;
-                e. xconfigure. height = XX-> menuHeight;
-                prima_handle_menu_event( &e, PAbstractMenu(menu)-> handle, menu);
+   case -ConfigureNotify: 
+      if ( XT_IS_WINDOW(XX)) {
+         if ( win != XX-> client) {
+            Bool size_changed =
+               XX-> ackFrameSize. x != ev-> xconfigure. width || 
+               XX-> ackFrameSize. y != ev-> xconfigure. height;
+            XX-> ackOrigin. x = ev-> xconfigure. x;
+            XX-> ackOrigin. y = X(X(self)-> owner)-> size. y - ev-> xconfigure. height - ev-> xconfigure. y;
+            XX-> ackFrameSize. x   = ev-> xconfigure. width;
+            XX-> ackFrameSize. y   = ev-> xconfigure. height;
+            if ( PWindow( self)-> menu) {
+               if ( size_changed) {
+                  M(PWindow( self)-> menu)-> paint_pending = true;
+                  XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
+                     ev-> xconfigure. width, XX-> menuHeight);
+               }
+               M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
+               M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
+               prima_end_menu();
             }
+         } else {
+            XX-> ackSize. x  = ev-> xconfigure. width;
+            XX-> ackSize. y  = ev-> xconfigure. height;
          }
-         M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
-         M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
-         prima_end_menu();
+      } else {
+         XX-> ackSize. x   = ev-> xconfigure. width;
+         XX-> ackSize. y   = ev-> xconfigure. height;
+         XX-> ackOrigin. x = ev-> xconfigure. x;
+         XX-> ackOrigin. y = X(X(self)-> owner)-> size. y - ev-> xconfigure. height - ev-> xconfigure. y;
       }
-      if ( size_changed) 
-         prima_end_menu();
       return;
-   }
+   case ConfigureNotify: 
+      if ( XT_IS_WINDOW(XX)) {
+         if ( win != XX-> client) {
+            int nh;
+            WMSyncData wmsd;
+            ConfigureEventPair *n1, *n2;
+            Bool match = false, size_changed;
+
+            if ( compress_configure_events( ev)) return;
+            
+            size_changed =
+               XX-> ackFrameSize. x != ev-> xconfigure. width || 
+               XX-> ackFrameSize. y != ev-> xconfigure. height;
+            nh = ev-> xconfigure. height - XX-> menuHeight;
+            if ( nh < 1 ) nh = 1;
+            XMoveResizeWindow( DISP, XX-> client, 0, XX-> menuHeight, ev-> xconfigure. width, nh);
+
+            wmsd. allow_cmSize = true;
+            wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure, XX-> flags. mapped);
+            XX-> ackOrigin. x = wmsd. origin. x;
+            XX-> ackOrigin. y = wmsd. origin. y;
+            XX-> ackFrameSize. x = ev-> xconfigure. width;
+            XX-> ackFrameSize. y = ev-> xconfigure. height;
+
+            if (( n1 = TAILQ_FIRST( &XX-> configure_pairs))) {
+               if ( n1-> w == ev-> xconfigure. width &&
+                    n1-> h == ev-> xconfigure. height) {
+                  n1-> match = true;
+                  wmsd. size. x  = XX-> size.x;
+                  wmsd. size. y = XX-> size.y + XX-> menuHeight;
+                  match = true;
+               } else if ( n1-> match && (n2 = TAILQ_NEXT( n1, link)) &&
+                   n2-> w == ev-> xconfigure. width &&
+                   n2-> h == ev-> xconfigure. height) {
+                  n2-> match = true;
+                  wmsd. size. x  = XX-> size.x;
+                  wmsd. size. y = XX-> size.y + XX-> menuHeight;
+                  TAILQ_REMOVE( &XX-> configure_pairs, n1, link);
+                  free( n1);
+                  match = true;
+               }
+
+               if ( !match) {
+                  while ( n1 != nil) {
+                     n2 = TAILQ_NEXT(n1, link);
+                     free( n1);
+                     n1 = n2;
+                  }
+                  TAILQ_INIT( &XX-> configure_pairs);
+               }
+            }
+      
+            /* printf("%d --> %d %d\n", ev-> xany.serial, ev-> xconfigure. width, ev-> xconfigure. height); */
+            XX-> flags. configured = 1;
+            process_wm_sync_data( self, &wmsd);
+            
+            if ( PWindow( self)-> menu) {
+               if ( size_changed) {
+                  XEvent e;
+                  Handle menu = PWindow( self)-> menu;
+                  M(PWindow( self)-> menu)-> paint_pending = true;
+                  XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
+                     ev-> xconfigure. width, XX-> menuHeight);
+                  e. type = ConfigureNotify;
+                  e. xconfigure. width  = ev-> xconfigure. width;
+                  e. xconfigure. height = XX-> menuHeight;
+                  prima_handle_menu_event( &e, PAbstractMenu(menu)-> handle, menu);
+               }
+               M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
+               M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
+            }
+            if ( size_changed) prima_end_menu();
+         } else {
+            XX-> ackSize. x = ev-> xconfigure. width;
+            XX-> ackSize. y = ev-> xconfigure. height;
+         }
+      } else {
+         XX-> ackOrigin. x = ev-> xconfigure. x;
+         XX-> ackOrigin. y = X(X(self)-> owner)-> ackSize. y - ev-> xconfigure. height - ev-> xconfigure. y;
+         XX-> ackSize. x   = ev-> xconfigure. width;
+         XX-> ackSize. y   = ev-> xconfigure. height;
+         XX-> flags. configured = 1;
+      }
+      return;
    case ConfigureRequest: {
       break;
    }

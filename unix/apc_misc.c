@@ -716,6 +716,7 @@ apc_message( Handle self, PEvent e, Bool is_post)
          TAILQ_INSERT_TAIL( &guts.peventq, pe, peventq_link);
       } else {
          CComponent(self)->message( self, e);
+         if ( PObject( self)-> stage == csDead) return false; 
       }
       break;
    }

@@ -186,6 +186,7 @@ window_subsystem_init( void)
       "FOREGROUND",
       "BACKGROUND"
    };
+   char hostname_buf[256], *hostname = hostname_buf;
    
    bzero( &guts, sizeof( guts));
    {
@@ -345,6 +346,11 @@ window_subsystem_init( void)
    bzero( &guts. cursor_gcv, sizeof( guts. cursor_gcv));
    guts. cursor_gcv. cap_style = CapButt;
    guts. cursor_gcv. function = GXcopy;
+
+   gethostname( hostname, 256);
+   hostname[255] = '\0';
+   XStringListToTextProperty((char **)&hostname, 1, &guts. hostname);
+
 /*    XSynchronize( DISP, true); */
    return true;
 }
@@ -376,22 +382,25 @@ window_subsystem_done( void)
 {
    if ( !DISP) return;
 
+   if ( guts. hostname. value) {
+      XFree( guts. hostname. value);
+      guts. hostname. value = nil;
+   }
+
    prima_end_menu();
    free_gc_pool(&guts.bitmap_gc_pool);
    free_gc_pool(&guts.screen_gc_pool);
    prima_done_color_subsystem();
    free( guts. clipboard_formats);
 
-   if ( DISP) {
-      XFreeGC( DISP, guts. menugc);
-      prima_gc_ximages();          /* verrry dangerous, very quiet please */
-      if ( guts.pointer_font) {
-         XFreeFont( DISP, guts.pointer_font);
-         guts.pointer_font = nil;
-      }
-      XCloseDisplay( DISP);
-      DISP = nil;
+   XFreeGC( DISP, guts. menugc);
+   prima_gc_ximages();          /* verrry dangerous, very quiet please */
+   if ( guts.pointer_font) {
+      XFreeFont( DISP, guts.pointer_font);
+      guts.pointer_font = nil;
    }
+   XCloseDisplay( DISP);
+   DISP = nil;
    
    plist_destroy( guts. files);
    guts. files = nil;
@@ -433,7 +442,7 @@ apc_application_create( Handle self)
    XX-> type.drawable = true;
 
    attrs. event_mask = StructureNotifyMask | PropertyChangeMask;
-   X_WINDOW = XCreateWindow( DISP, guts. root,
+   XX-> client = X_WINDOW = XCreateWindow( DISP, guts. root,
 			     0, 0, 1, 1, 0, CopyFromParent,
 			     InputOutput, CopyFromParent,
 			     CWEventMask, &attrs);

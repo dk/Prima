@@ -34,7 +34,7 @@
 #include "Icon.h"
 #include "DeviceBitmap.h"
 
-#define REVERT(a)	( XX-> size. y + XX-> menuHeight - (a) - 1 )
+#define REVERT(a)	( XX-> size. y - (a) - 1 )
 #define SHIFT(a,b)	{ (a) += XX-> gtransform. x + XX-> btransform. x; \
                            (b) += XX-> gtransform. y + XX-> btransform. y; }
 /* Multiple evaluation macro! */
@@ -1196,9 +1196,9 @@ put_pixmap( Handle self, Handle pixmap, int dst_x, int dst_y, int src_x, int src
 
    XCHECKPOINT;
    XCopyArea( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
-              src_x, YY->size.y + YY-> menuHeight - src_y - h,
+              src_x, YY->size.y - src_y - h,
               w, h,
-              dst_x, XX->size.y + XX-> menuHeight - dst_y - h);
+              dst_x, XX->size.y - dst_y - h);
    XCHECKPOINT;
    return true;
 }
@@ -1867,7 +1867,6 @@ do_stretch( Handle self, PrimaXImage *cache,
    int yclipstart, yclipsize;
 
    prima_gp_get_clip_rect( self, &cr);
-   cr. y += X(self)-> menuHeight;
    xclipstart = cr. x - dst_x;
    xclipsize = cr. width;
    yclipstart = cr. y - dst_y;
@@ -2067,7 +2066,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    }
    
    SHIFT( dst_x, dst_y);
-   dst_y = XX->size.y + XX-> menuHeight - dst_y - ABS(dst_h);
+   dst_y = XX->size.y - dst_y - ABS(dst_h);
    src_y = img-> h - src_y - ABS(src_h);
 
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
@@ -2178,9 +2177,9 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 
    CImage( image)-> create_empty( image, xLen, yLen, guts. qdepth);
    if ( guts. idepth == 1)
-      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y + XX-> menuHeight - y - yLen, xLen, yLen, 1, XYPixmap);
+      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - yLen, xLen, yLen, 1, XYPixmap);
    else
-      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y + XX-> menuHeight - y - yLen, xLen, yLen, AllPlanes, ZPixmap);
+      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - yLen, xLen, yLen, AllPlanes, ZPixmap);
    XCHECKPOINT;
 
    if ( i) {

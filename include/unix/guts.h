@@ -281,6 +281,12 @@ typedef struct pending_event
    TAILQ_ENTRY(pending_event) peventq_link;
 } PendingEvent;
 
+typedef struct configure_event_pair
+{
+   TAILQ_ENTRY(configure_event_pair) link;
+   int w, h, match;
+} ConfigureEventPair;
+
 #define COLOR_R(x) (((x)>>16)&0xFF)
 #define COLOR_G(x) (((x)>>8)&0xFF)
 #define COLOR_B(x) ((x)&0xFF)
@@ -547,6 +553,7 @@ typedef struct _UnixGuts
    char                         locale[32];
    XFontStruct *                font_abc_nil_hack;
    Atom                         atoms[AI_count];
+   XTextProperty                hostname;
 } UnixGuts;
 
 extern UnixGuts guts;
@@ -592,7 +599,7 @@ typedef struct _drawable_sys_data
    NPoint resolution;
    Point origin, size, bsize;
    Point transform, gtransform, btransform;
-   Point ackOrigin, ackSize;   
+   Point ackOrigin, ackSize, ackFrameSize;   
    int menuHeight; 
    int menuColorImmunity;
    Point decorationSize;
@@ -632,6 +639,7 @@ typedef struct _drawable_sys_data
    Pixmap user_p_source;
    Pixmap user_p_mask;
    void * recreateData;
+   XWindow client;
    struct {
       unsigned base_line                : 1;
       unsigned brush_fore               : 1;
@@ -656,11 +664,9 @@ typedef struct _drawable_sys_data
       unsigned paint_pending            : 1;
       unsigned pointer_obscured         : 1;
       unsigned position_determined      : 1;
-      unsigned process_configure_notify	: 1;
       unsigned reload_font		: 1;
       unsigned sizeable                 : 1;
       unsigned sizemax_set              : 1;
-      unsigned size_determined          : 1;
       unsigned sync_paint               : 1;
       unsigned task_listed              : 1;
       unsigned transparent              : 1;
@@ -672,6 +678,7 @@ typedef struct _drawable_sys_data
    ImageCache image_cache;
    Handle preexec_focus;
    TAILQ_ENTRY(_drawable_sys_data) paintq_link;
+   TAILQ_HEAD(,configure_event_pair)    configure_pairs;
    Byte * palette;
 } DrawableSysData, *PDrawableSysData;
 
