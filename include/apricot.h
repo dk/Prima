@@ -45,7 +45,6 @@
 #define sv_2mortal readonly_clean_sv_2mortal
 extern SV* readonly_clean_sv_2mortal( SV* sv);
 #endif
-#include "Types.h"
 
 #ifdef BROKEN_PERL_PLATFORM
    #ifdef close
@@ -70,6 +69,8 @@ typedef I32 Bool;
 typedef U32 Handle;
 typedef Handle ApiHandle;
 typedef long Color;
+
+#include "Types.h"
 
 typedef U8                     Byte;
 typedef U16                    Short;
