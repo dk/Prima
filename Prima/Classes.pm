@@ -740,11 +740,18 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    delete $p->{ font} unless defined $orgFont;
 
-   $p-> {text} = ( defined $p-> {name} ? $p-> {name} : $default->{name})
+   my $name = defined $p-> {name} ? $p-> {name} : $default->{name};
+   $p-> {text} = $name
       if !defined $p-> { text} and !defined $default->{text};
 
    $p->{showHint} = 1 if ( defined $owner) && ( defined $::application) && ( $owner == $::application) &&
       ( exists $p->{ ownerShowHint} ? $p->{ ownerShowHint} : $default->{ ownerShowHint});
+
+   (my $cls = ref $self) =~ s/^Prima:://;
+   unless (exists $p->{backColor}) {
+      my $clr = Prima::Widget::fetch_resource_color( $cls, $name, 'Background', 'backColor', $owner);
+      $p->{backColor} = $clr if $clr != cl::Invalid;
+   }
 
    for ( $owner ? qw( color backColor showHint hint font): ())
    {

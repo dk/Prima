@@ -101,6 +101,31 @@ prima_mallocz( size_t sz)
    return p;
 }
 
+char *
+prima_normalize_resource_string( char *name, Bool isClass)
+{
+   static Bool initialize = true;
+   static char table[256];
+   int i;
+   unsigned char *s;
+
+   if ( initialize) {
+      for ( i = 0; i < 256; i++) {
+	 table[i] = isalnum(i) ? i : '_';
+      }
+      table[0] = 0;
+      initialize = false;
+   }
+
+   s = (unsigned char*)name;
+   while (*s) {
+      *s = table[*s];
+      s++;
+   }
+   name[0] = isClass ? toupper(name[0]) : tolower(name[0]);
+   return name;
+}
+
 #ifndef HAVE_BZERO
 void
 bzero( void * data, size_t size)

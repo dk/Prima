@@ -38,10 +38,75 @@
 
 /* Miscellaneous system-dependent functions */
 
+#define X_COLOR_TO_RGB(xc)     (ARGB(((xc).red>>8),((xc).green>>8),((xc).blue>>8)))
+
 Bool
 log_write( const char *format, ...)
 {
    return false;
+}
+
+static XrmQuark
+get_class_quark( const char *name)
+{
+   XrmQuark quark;
+   char *s;
+
+   s = duplicate_string( name);
+   quark = XrmStringToQuark( prima_normalize_resource_string( s, true));
+   free( s);
+   return quark;
+}
+
+static XrmQuark
+get_instance_quark( const char *name)
+{
+   XrmQuark quark;
+   char *s;
+
+   s = duplicate_string( name);
+   quark = XrmStringToQuark( prima_normalize_resource_string( s, false));
+   free( s);
+   return quark;
+}
+
+static Bool
+update_quarks_cache( Handle self)
+{
+   PComponent me = PComponent( self);
+   XrmQuark qClass, qInstance;
+   int n;
+   DEFXX;
+   PDrawableSysData UU;
+
+   if (!XX)
+      return false;
+
+   qClass = get_class_quark( self == application ? "Prima" : me-> self-> className);
+   qInstance = get_instance_quark( me-> name ? me-> name : "noname");
+
+   free( XX-> q_class_name); XX-> q_class_name = nil;
+   free( XX-> q_instance_name); XX-> q_instance_name = nil;
+
+   if ( me-> owner && me-> owner != self && PComponent(me-> owner)-> sysData && X(PComponent( me-> owner))-> q_class_name) {
+      UU = X(PComponent( me-> owner));
+      XX-> n_class_name = n = UU-> n_class_name + 1;
+      XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 3));
+      memcpy( XX-> q_class_name, UU-> q_class_name, sizeof( XrmQuark) * n);
+      XX-> q_class_name[n-1] = qClass;
+      XX-> n_instance_name = n = UU-> n_instance_name + 1;
+      XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 3));
+      memcpy( XX-> q_instance_name, UU-> q_instance_name, sizeof( XrmQuark) * n);
+      XX-> q_instance_name[n-1] = qInstance;
+   } else {
+      XX-> n_class_name = n = 1;
+      XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 3));
+      XX-> q_class_name[n-1] = qClass;
+      XX-> n_instance_name = n = 1;
+      XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 3));
+      XX-> q_instance_name[n-1] = qInstance;
+   }
+   return true;
 }
 
 int
@@ -72,6 +137,82 @@ unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int d
    return default_value;
 }
 
+Bool
+apc_fetch_resource( const char *className, const char *name,
+                    const char *resClass, const char *res,
+                    Handle owner, int resType,
+                    void *result)
+{
+   PDrawableSysData XX;
+   XrmQuark *classes, *instances, backup_classes[3], backup_instances[3];
+   XrmRepresentation type;
+   XrmValue value;
+   int nc, ni;
+   char *s;
+   XColor clr;
+
+   if ( owner == nilHandle) {
+      classes           = backup_classes;
+      instances         = backup_instances;
+      nc = ni = 0;
+   } else {
+      if (!update_quarks_cache( owner)) return false;
+      XX                   = X(owner);
+      if (!XX) return false;
+      classes              = XX-> q_class_name;
+      instances            = XX-> q_instance_name;
+      if ( classes == nil || instances == nil) return false;
+      nc                   = XX-> n_class_name;
+      ni                   = XX-> n_instance_name;
+   }
+   classes[nc++]        = get_class_quark( className);
+   instances[ni++]      = get_instance_quark( name);
+   classes[nc++]        = get_class_quark( resClass);
+   instances[ni++]      = get_instance_quark( res);
+   classes[nc]          = 0;
+   instances[ni]        = 0;
+
+   if (0) {
+      int i;
+      fprintf( stderr, "inst: ");
+      for ( i = 0; i < ni; i++) {
+         fprintf( stderr, "%s ", XrmQuarkToString( instances[i]));
+      }
+      fprintf( stderr, "\nclas: ");
+      for ( i = 0; i < nc; i++) {
+         fprintf( stderr, "%s ", XrmQuarkToString( classes[i]));
+      }
+      fprintf( stderr, "\n");
+   }
+   
+   if ( XrmQGetResource( guts.db,
+                         instances,
+                         classes,
+                         &type, &value)) {
+      if ( type == guts.qString) {
+         s = (char *)value.addr;
+         switch ( resType) {
+         case frString:
+            *((char**)result) = duplicate_string( s);
+            break;
+         case frColor:
+            if (!XParseColor( DISP, DefaultColormap( DISP, SCREEN), s, &clr))
+               return false;
+            *((Color*)result) = X_COLOR_TO_RGB(clr);
+            break;
+         case frFont:
+            return false;
+            break;
+         default:
+            return false;
+         }
+         return true;
+      }
+   }
+
+   return false;
+}
+
 /* Component-related functions */
 
 Bool
@@ -97,74 +238,16 @@ apc_component_destroy( Handle self)
 Bool
 apc_component_fullname_changed_notify( Handle self)
 {
-   PComponent me = PComponent( self);
-   static char convert[256];
-   static Bool converted = false;
-   XrmQuark qClass, qInstance;
-   int i, l, n;
-   char *c, *s;
-   DEFXX;
-   PDrawableSysData UU;
    Handle *list;
+   PComponent me = PComponent( self);
+   int i, n;
 
-   if (!XX)
-      return true;
+   if ( self == nilHandle) return false;
+   if (!update_quarks_cache( self)) return false;
 
-   if ( !converted) {
-      for ( l = 0; l < 256; l++) {
-	 convert[l] = isalnum(l) ? l : '_';
-      }
-      convert[0] = 0;
-      converted = true;
-   }
-
-   l = strlen( s = ( self == application ? "Prima" : me-> self-> className));
-   c = malloc( l+1);
-   if (!c) croak( "apc_component_fullname_changed_notify: not enough memory");
-   while ( l >= 0) {
-      c[l] = convert[(unsigned)(unsigned char)s[l]];
-      l--;
-   }
-   c[0] = toupper(c[0]);
-   qClass = XrmStringToQuark(c);
-   free( c);
-
-   l = strlen( s = (me-> name ? me-> name : "noname"));
-   c = malloc( l+1);
-   if (!c) croak( "apc_component_fullname_changed_notify: not enough memory");
-   while ( l >= 0) {
-      c[l] = convert[(unsigned)(unsigned char)s[l]];
-      l--;
-   }
-   c[0] = tolower(c[0]);
-   qInstance = XrmStringToQuark(c);
-   free(c);
-
-   free( XX-> q_class_name); XX-> q_class_name = nil;
-   free( XX-> q_instance_name); XX-> q_instance_name = nil;
-
-   if ( me-> owner && me-> owner != self && PComponent(me-> owner)-> sysData && X(PComponent( me-> owner))-> q_class_name) {
-      UU = X(PComponent( me-> owner));
-      XX-> n_class_name = n = UU-> n_class_name + 1;
-      XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 2));
-      memcpy( XX-> q_class_name, UU-> q_class_name, sizeof( XrmQuark) * n);
-      XX-> q_class_name[n-1] = qClass;
-      XX-> n_instance_name = n = UU-> n_instance_name + 1;
-      XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 2));
-      memcpy( XX-> q_instance_name, UU-> q_instance_name, sizeof( XrmQuark) * n);
-      XX-> q_instance_name[n-1] = qInstance;
-   } else {
-      XX-> n_class_name = n = 1;
-      XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 2));
-      XX-> q_class_name[n-1] = qClass;
-      XX-> n_instance_name = n = 1;
-      XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 2));
-      XX-> q_instance_name[n-1] = qInstance;
-   }
-
-   if ( PComponent(self)-> components && (n = PComponent(self)-> components-> count) > 0) {
-      list = malloc( sizeof( Handle) * n);
-      memcpy( list, PComponent(self)-> components-> items, sizeof( Handle) * n);
+   if ( me-> components && (n = me-> components-> count) > 0) {
+      list = allocn( Handle, n);
+      memcpy( list, me-> components-> items, sizeof( Handle) * n);
 
       for ( i = 0; i < n; i++) {
 	 apc_component_fullname_changed_notify( list[i]);
@@ -172,61 +255,6 @@ apc_component_fullname_changed_notify( Handle self)
       free( list);
    }
 
-/*    PComponent her = me; */
-/*    char *class, *instance, *c, *s, ch; */
-/*    int classLen, instanceLen, classSize, instanceSize, l; */
-
-/*    if ( !me-> sysData) */
-/*       return; */
-
-/*    class = malloc( classSize = 2048); classLen = 0; */
-/*    instance = malloc( instanceSize = 2048); instanceLen = 0; */
-
-/*    for (;;) { */
-/*       if ( her == PComponent( application)) { */
-/* 	 c = "Prima"; */
-/*       } else { */
-/* 	 c = her-> self-> className; */
-/*       } */
-/*       l = strlen( c); */
-/*       if ( l + classLen + 1 >= classSize) { */
-/* 	 class = reallocf( class, classSize+=(l>=2047?l+2:2048)); */
-/* 	 if (!class) croak( "apc_component_fullname_changed_notify: not enough memory"); */
-/*       } */
-/*       while ( l) { */
-/* 	 class[classLen++] = convert[(unsigned)(unsigned char)c[--l]]; */
-/*       } */
-/*       class[classLen-1] = toupper(class[classLen-1]); */
-/*       class[classLen++] = '.'; */
-
-/*       if ( her-> name) { */
-/* 	 c = her-> name; */
-/*       } else { */
-/* 	 c = "noname"; */
-/*       } */
-/*       l = strlen( c); */
-/*       if ( l + instanceLen + 1 >= instanceSize) { */
-/* 	 instance = reallocf( instance, instanceSize+=(l>=2047?l+2:2048)); */
-/* 	 if (!instance) croak( "apc_component_fullname_changed_notify: not enough memory"); */
-/*       } */
-/*       while ( l) { */
-/* 	 instance[instanceLen++] = convert[(unsigned)(unsigned char)c[--l]]; */
-/*       } */
-/*       instance[instanceLen-1] = tolower(instance[instanceLen-1]); */
-/*       instance[instanceLen++] = '.'; */
-
-/*       if ( !her-> owner || PComponent( her-> owner) == her) */
-/* 	 break; */
-/*       her = PComponent( her-> owner); */
-/*    } */
-/*    class[--classLen] = 0; */
-/*    c = class; s = class+classLen-1; while ( c < s) { ch = *c; *c++ = *s; *s-- = ch; } */
-/*    instance[--instanceLen] = 0; */
-/*    c = instance; s = instance+instanceLen-1; while ( c < s) { ch = *c; *c++ = *s; *s-- = ch; } */
-/*    fprintf( stderr, "=============== Class: %s\n", class); */
-/*    fprintf( stderr, "=============== Instance: %s\n", instance); */
-/*    free( class); */
-/*    free( instance); */
    return true;
 }
 

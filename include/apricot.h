@@ -432,6 +432,9 @@ extern void*
 prima_hash_first_that( PHash self, void *action, void *params,
                        int *pKeyLen, void **pKey);
 
+extern char *
+prima_normalize_resource_string( char *name, Bool isClass);
+
 /* tables of constants support */
 
 #ifdef GENERATE_TABLE_GENERATOR
@@ -3082,11 +3085,23 @@ extern Bool
 apc_file_change_mask( Handle self);
 
 /* etc */
+
+/* fetch resource constants - not exported to Const.pm */
+#define frString        0
+#define frColor         1
+#define frFont          2
+
 extern Bool
 apc_beep( int style);
 
 extern Bool
 apc_beep_tone( int freq, int duration);
+
+extern Bool
+apc_fetch_resource( const char *className, const char *name,
+                    const char *resClass, const char *res,
+                    Handle owner, int resType,
+                    void *val);
 
 extern Color
 apc_lookup_color( const char *colorName);

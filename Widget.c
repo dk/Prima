@@ -375,6 +375,50 @@ Widget_end_paint_info( Handle self)
 
 
 /*::f */
+
+SV*
+Widget_fetch_resource( char *className, char *name, char *classRes, char *res, Handle owner)
+{
+   char *str = nil;
+   SV   *ret;
+
+   apc_fetch_resource( prima_normalize_resource_string( className, true),
+                       prima_normalize_resource_string( name, false),
+                       prima_normalize_resource_string( classRes, true),
+                       prima_normalize_resource_string( res, false),
+                       owner, frString, &str);
+   ret = str ? newSVpv( str, 0) : nilSV;
+   free( str);
+   return ret;
+}
+
+Color
+Widget_fetch_resource_color( char *className, char *name, char *classRes, char *res, Handle owner)
+{
+   Color clr = clInvalid;
+
+   apc_fetch_resource( prima_normalize_resource_string( className, true),
+                       prima_normalize_resource_string( name, false),
+                       prima_normalize_resource_string( classRes, true),
+                       prima_normalize_resource_string( res, false),
+                       owner, frColor, &clr);
+   return clr;
+}
+
+Font
+Widget_fetch_resource_font( char *className, char *name, char *classRes, char *res, Handle owner)
+{
+   Font font;
+
+   bzero( &font, sizeof( font));
+   apc_fetch_resource( prima_normalize_resource_string( className, true),
+                       prima_normalize_resource_string( name, false),
+                       prima_normalize_resource_string( classRes, true),
+                       prima_normalize_resource_string( res, false),
+                       owner, frFont, &font);
+   return font;
+}
+
 Handle
 Widget_first( Handle self)
 {
