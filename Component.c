@@ -250,6 +250,7 @@ Component_owner( Handle self, Bool set, Handle owner)
    return nilHandle;
 }
 
+
 void
 Component_set( Handle self, HV * profile)
 {
@@ -274,6 +275,7 @@ Component_set( Handle self, HV * profile)
 
       pdelete( owner);                    /* like this. */
    }
+
    inherited set ( self, profile);
 }
 
@@ -696,10 +698,14 @@ Component_notify( Handle self, char * format, ...)
    SV * ret;
    va_list args;
    va_start( args, format);
+   ENTER;
+   SAVETMPS;
    ret = call_perl_indirect( self, "notify", format, true, false, args);
    va_end( args);
    r = ( ret && SvIOK( ret)) ? SvIV( ret) : 0;
    if ( ret) my-> set_eventFlag( self, r);
+   FREETMPS;
+   LEAVE;
    return r;
 }
 
@@ -710,10 +716,14 @@ Component_notify_REDEFINED( Handle self, char * format, ...)
    SV * ret;
    va_list args;
    va_start( args, format);
+   ENTER;
+   SAVETMPS;
    ret = call_perl_indirect( self, "notify", format, true, false, args);
    va_end( args);
    r = ( ret && SvIOK( ret)) ? SvIV( ret) : 0;
    if ( ret) my-> set_eventFlag( self, r);
+   FREETMPS;
+   LEAVE;
    return r;
 }
 
