@@ -582,28 +582,37 @@ list_index_of( PList self, Handle item);
 /* It's a mere coincidence that hashes in Prima guts implemented */
 /* by means of Perl hashes */
 
+#ifdef POLLUTE_NAME_SPACE
+#define hash_create	prima_hash_create
+#define hash_destroy	prima_hash_destroy
+#define hash_fetch	prima_hash_fetch
+#define hash_delete	prima_hash_delete
+#define hash_store	prima_hash_store
+#define hash_first_that	prima_hash_first_that
+#endif
+
 typedef HV *PHash;
 typedef Bool HashProc( void * item, int keyLen, void * key, void * params);
 typedef HashProc *PHashProc;
 
 extern PHash
-hash_create( void);
+prima_hash_create( void);
 
 extern void
-hash_destroy( PHash self, Bool killAll);
+prima_hash_destroy( PHash self, Bool killAll);
 
 extern void*
-hash_fetch( PHash self, const void *key, int keyLen);
+prima_hash_fetch( PHash self, const void *key, int keyLen);
 
 extern void*
-hash_delete( PHash self, const void *key, int keyLen, Bool kill);
+prima_hash_delete( PHash self, const void *key, int keyLen, Bool kill);
 
 extern Bool
-hash_store( PHash self, const void *key, int keyLen, void *val);
+prima_hash_store( PHash self, const void *key, int keyLen, void *val);
 
 extern void*
-hash_first_that( PHash self, void *action, void *params,
-		 int *pKeyLen, void **pKey);
+prima_hash_first_that( PHash self, void *action, void *params,
+		       int *pKeyLen, void **pKey);
 
 
 /* OS types */
