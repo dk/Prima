@@ -313,14 +313,13 @@ Drawable_get_font_abc( Handle self, int first, int last)
    }
 
    if ( abc != nil) {
-      for ( i = 0; i <= first - last; i++) {
+      for ( i = 0; i <= last - first; i++) {
          av_push( av, newSVnv( abc[ i]. a));
          av_push( av, newSVnv( abc[ i]. b));
          av_push( av, newSVnv( abc[ i]. c));
       }
       free( abc);
    }
-
    return newRV_noinc(( SV *) av);
 }
 
