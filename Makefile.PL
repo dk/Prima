@@ -1262,6 +1262,7 @@ zipdist:
 \t\@perl -e "if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
 
 tardist:
+\t\@perl -e 'if(!-f q(.dist-exclude)) { open F, q(>.dist-exclude) or die qq(Cannot open .dist-exclude:\$\$!); print F qq(*.obj\\n*/*.obj\\n*/*.obj\\ninclude/generic/*.*); close F;}}'
 \t\$(RM) $distname.tar
 \t\@tar -cv -X .dist-exclude -f $distname.tar $srcdist_files
 

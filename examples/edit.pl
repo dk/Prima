@@ -48,7 +48,7 @@ $l = $w-> insert( InputLine =>
    left   => 200,
    width => 300,
    #selection => [1,12],
-   height => 40,
+#  height => 40,
 #  maxLen => 15,
    firstChar => 2,
 #  offset => 3,
