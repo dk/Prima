@@ -1,5 +1,9 @@
 #include "img_conv.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define map_RGB_gray ((Byte*)std256gray_palette)
 
 Byte     map_stdcolorref    [ 256];
@@ -106,7 +110,7 @@ cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destCol
       int tolerance = 0;
       int colors    = srcColors;
 
-      PRGBColor buf = ( PRGBColor) malloc( srcColors * sizeof( RGBColor));
+      PRGBColor buf = allocn( RGBColor, srcColors);
       memcpy( buf, source, srcColors * sizeof( RGBColor));
       while (1)
       {
@@ -171,3 +175,6 @@ cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette
 }
 
 
+#ifdef __cplusplus
+}
+#endif

@@ -5,6 +5,11 @@
 #include <winspool.h>
 #include "apricot.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define SEVERE_DEBUG
 typedef HANDLE WINHANDLE;
 
@@ -12,6 +17,10 @@ typedef HANDLE WINHANDLE;
 #define IS_WIN32S  (BOOL)(!(IS_NT) && (LOBYTE(LOWORD(guts. version))<4))
 #define IS_WIN95   (BOOL)(!(IS_NT) && !(IS_WIN32S))
 #define IS_WIN98   (BOOL)( guts. is98)
+
+#undef  HWND_DESKTOP
+#define HWND_DESKTOP         guts. desktopWindow
+
 
 #ifdef UNICODE
 #error This version of apc_Win32 does not support Unicode
@@ -23,10 +32,8 @@ typedef HANDLE WINHANDLE;
 #define O_SYNC                      _FSYNC
 #endif
 
-#undef  HWND_DESKTOP
-#define HWND_DESKTOP         GetDesktopWindow()
 
-
+#define IPC_TAINT
 #define DEFAULT_SYSTEM_FONT              "System"
 #define DEFAULT_WIDGET_FONT              "MS Shell Dlg"
 #define DEFAULT_WIDGET_FONT_SIZE         8
@@ -53,10 +60,10 @@ typedef HANDLE WINHANDLE;
 #define WM_RMOUSECLICK                    ( WM_USER + 12)
 #define WM_FORCEFOCUS                     ( WM_USER + 13)
 #define WM_SYNCMOVE                       ( WM_USER + 14)
-#define WM_EXTERNAL                       ( WM_USER + 15)
-#define WM_HASMATE                        ( WM_USER + 16)
-#define WM_SOCKET                         ( WM_USER + 17)
-#define WM_SOCKET_REHASH                  ( WM_USER + 18)
+#define WM_SOCKET                         ( WM_USER + 15)
+#define WM_SOCKET_REHASH                  ( WM_USER + 16)
+#define WM_EXTERNAL                       ( WM_USER + 17)
+#define WM_HASMATE                        ( WM_USER + 18)
 #define WM_FILE                           ( WM_USER + 19)
 #define WM_CROAK                          ( WM_USER + 20)
 #define WM_TERMINATE                      ( WM_USER + 99)
@@ -155,6 +162,7 @@ typedef struct _WinGuts
     Font           msgFont;            // message default font
     Font           capFont;            // caption default font
     BITMAPINFO     displayBMInfo;      // display bpp & size
+    HWND           desktopWindow;      // GetDesktopWindow() result
     Bool           insertMode;         // fake insert mode
     Point          iconSizeLarge;
     Point          iconSizeSmall;
@@ -538,6 +546,11 @@ extern Bool         stylus_extpenned( PStylus stylus, int excludeFlags);
 extern void         stylus_free( PDCStylus res, Bool permanent);
 extern DWORD        stylus_get_extpen_style( PStylus s);
 extern HRGN         region_create( Handle mask);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif
 

@@ -32,6 +32,11 @@
 #include "Icon.h"
 #include "Application.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
@@ -265,7 +270,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
    }
    apcErrClear;
    hotSpot. y = guts. pointerSize. y - hotSpot. y - 1;
-   sys pointer2 = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot, true) : nilHandle;
+   sys pointer2 = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot, true) : nil;
    if ( apcError) return false;
    if ( sys pointerId == crUser)
    {
@@ -296,3 +301,6 @@ apc_pointer_get_state( Handle self)
       (( GetKeyState( VK_MBUTTON) < 0) ? mbMiddle   : 0);
 }
 
+#ifdef __cplusplus
+}
+#endif

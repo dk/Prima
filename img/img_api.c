@@ -28,7 +28,15 @@
 /*
  * Created by Vadim Belman <voland@plab.ku.dk>, April 1999.
  */
+
+
 #include "img_api.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 
 /* This function must always be used for creating a new image info structure. */
 PImgInfo
@@ -36,7 +44,7 @@ img_info_create( int propCount)
 {
     PImgInfo imgInfo;
 
-    imgInfo = malloc( sizeof( ImgInfo));
+    imgInfo = alloc1( ImgInfo);
     if ( imgInfo) {
 	imgInfo->propList = plist_create( propCount > 0 ? propCount : 1, 5);
 	if ( imgInfo->propList == nil) {
@@ -241,7 +249,7 @@ img_property_create_v( const char *name, U16 propFlags, int propArraySize, va_li
 {
     PImgProperty imgProp;
 
-    imgProp = malloc( sizeof( ImgProperty));
+    imgProp = alloc1( ImgProperty);
     if ( imgProp) {
 	imgProp->name = duplicate_string( name);
 	if ( imgProp->name == nil) {
@@ -256,28 +264,22 @@ img_property_create_v( const char *name, U16 propFlags, int propArraySize, va_li
 	    imgProp->size = propArraySize > 0 ? propArraySize : 1;
 	    switch ( propFlags & PROPTYPE_MASK) {
 		case PROPTYPE_INT:
-		    imgProp->val.pInt = malloc( arraySize = sizeof( int) * propArraySize);
-		    bzero( imgProp->val.pInt, arraySize);
+		    imgProp->val.pInt = allocnz( int, propArraySize);
 		    break;
 		case PROPTYPE_DOUBLE:
-		    imgProp->val.pDouble = malloc( arraySize = sizeof( double) * propArraySize);
-		    bzero( imgProp->val.pDouble, arraySize);
+		    imgProp->val.pDouble = allocnz( double, propArraySize);
 		    break;
 		case PROPTYPE_BYTE:
-		    imgProp->val.pByte = malloc( arraySize = sizeof( Byte) * propArraySize);
-		    bzero( imgProp->val.pByte, arraySize);
+		    imgProp->val.pByte = allocnz( Byte, propArraySize);
 		    break;
 		case PROPTYPE_STRING:
-		    imgProp->val.pString = malloc( arraySize = sizeof( char *) * propArraySize);
-		    bzero( imgProp->val.pString, arraySize);
+		    imgProp->val.pString = allocnz( char*, propArraySize);
 		    break;
 		case PROPTYPE_BIN:
-		    imgProp->val.pBinary = malloc( arraySize = sizeof( IMGBinaryData) * propArraySize);
-		    bzero( imgProp->val.pBinary, arraySize);
+		    imgProp->val.pBinary = allocnz( IMGBinaryData, propArraySize);
 		    break;
 		case PROPTYPE_PROP:
-		    imgProp->val.pProperties = malloc( arraySize = sizeof( List) * propArraySize);
-		    bzero( imgProp->val.pProperties, arraySize);
+		    imgProp->val.pProperties = allocnz( List, propArraySize);
 		    break;
 		default:
 		    croak( "Unsupported or unknown property type: 0x%02x\n", propFlags & PROPTYPE_MASK);
@@ -301,7 +303,7 @@ img_property_create_v( const char *name, U16 propFlags, int propArraySize, va_li
 		case PROPTYPE_BYTE:
 		    {
 			Byte byteVal = va_arg( arg, Byte);
-			imgProp->val.Byte = byteVal;
+			imgProp->val.EightBits = byteVal;
 		    }
 		    break;
 		case PROPTYPE_STRING:
@@ -315,7 +317,7 @@ img_property_create_v( const char *name, U16 propFlags, int propArraySize, va_li
 			int binSize = va_arg( arg, int);
 			Byte *binData = va_arg( arg, Byte *);
 			imgProp->val.Binary.size = binSize;
-			imgProp->val.Binary.data = malloc( binSize);
+			imgProp->val.Binary.data = allocb( binSize);
 			memcpy( imgProp->val.Binary.data, binData, binSize);
 		    }
 		    break;
@@ -416,7 +418,7 @@ img_push_property_value_v( PImgProperty imgProp, va_list arg)
 		int intVal = va_arg( arg, int);
 		if ( imgProp->used == imgProp->size) {
 		    imgProp->size += 1;
-		    rc = ( imgProp->val.pInt = reallocf( imgProp->val.pInt, sizeof( int) * imgProp->size)) != nil;
+		    rc = ( imgProp->val.pInt = (int*)reallocf( imgProp->val.pInt, sizeof( int) * imgProp->size)) != nil;
 		}
 		if ( rc) {
 		    imgProp->val.pInt[ imgProp->used++] = intVal;
@@ -428,7 +430,7 @@ img_push_property_value_v( PImgProperty imgProp, va_list arg)
 		double doubleVal = va_arg( arg, double);
 		if ( imgProp->used == imgProp->size) {
 		    imgProp->size += 1;
-		    rc = ( imgProp->val.pDouble = reallocf( imgProp->val.pDouble, sizeof( double) * imgProp->size)) != nil;
+		    rc = ( imgProp->val.pDouble = (double*)reallocf( imgProp->val.pDouble, sizeof( double) * imgProp->size)) != nil;
 		}
 		if ( rc) {
 		    imgProp->val.pDouble[ imgProp->used++] = doubleVal;
@@ -440,7 +442,7 @@ img_push_property_value_v( PImgProperty imgProp, va_list arg)
 		Byte byteVal = va_arg( arg, Byte);
 		if ( imgProp->used == imgProp->size) {
 		    imgProp->size += 1;
-		    rc = ( imgProp->val.pByte = reallocf( imgProp->val.pByte, sizeof( Byte) * imgProp->size)) != nil;
+		    rc = ( imgProp->val.pByte = (Byte*)reallocf( imgProp->val.pByte, sizeof( Byte) * imgProp->size)) != nil;
 		}
 		if ( rc) {
 		    imgProp->val.pByte[ imgProp->used++] = byteVal;
@@ -452,7 +454,7 @@ img_push_property_value_v( PImgProperty imgProp, va_list arg)
 		char *stringVal = va_arg( arg, char *);
 		if ( imgProp->used == imgProp->size) {
 		    imgProp->size += 1;
-		    rc = ( imgProp->val.pString = reallocf( imgProp->val.pString, sizeof( char *) * imgProp->size)) != nil;
+		    rc = ( imgProp->val.pString = (char**)reallocf( imgProp->val.pString, sizeof( char *) * imgProp->size)) != nil;
 		}
 		if ( rc) {
 		    imgProp->val.pString[ imgProp->used++] = duplicate_string( stringVal);
@@ -465,10 +467,10 @@ img_push_property_value_v( PImgProperty imgProp, va_list arg)
 		Byte *binData = va_arg( arg, Byte *);
 		if ( imgProp->used == imgProp->size) {
 		    imgProp->size += 1;
-		    rc = ( imgProp->val.pBinary = reallocf( imgProp->val.pBinary, sizeof( IMGBinaryData) * imgProp->size)) != nil;
+		    rc = ( imgProp->val.pBinary = (IMGBinaryData*)reallocf( imgProp->val.pBinary, sizeof( IMGBinaryData) * imgProp->size)) != nil;
 		}
 		if ( rc) {
-		    rc = ( imgProp->val.pBinary[ imgProp->used].data = malloc( binSize)) != nil;
+		    rc = ( imgProp->val.pBinary[ imgProp->used].data = allocb( binSize)) != nil;
 		}
 		if ( rc) {
 		    imgProp->val.pBinary[ imgProp->used].size = binSize;
@@ -482,7 +484,7 @@ img_push_property_value_v( PImgProperty imgProp, va_list arg)
 		int listSize = va_arg( arg, int);
 		if ( imgProp->used == imgProp->size) {
 		    imgProp->size++;
-		    rc = ( imgProp->val.pProperties = reallocf( imgProp->val.pProperties, sizeof( List) * imgProp->size)) != nil;
+		    rc = ( imgProp->val.pProperties = (PList)reallocf( imgProp->val.pProperties, sizeof( List) * imgProp->size)) != nil;
 		}
 		if ( rc) {
 		    list_create( imgProp->val.pProperties + imgProp->used++, listSize, 5);
@@ -565,7 +567,7 @@ img_duplicate_property( PImgProperty imgProp)
 		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.String);
 		break;
 	    case PROPTYPE_BYTE:
-		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.Byte);
+		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.EightBits);
 		break;
 	    case PROPTYPE_BIN:
 		outImgProp = img_property_create( imgProp->name, imgProp->flags, 0, imgProp->val.Binary.size, imgProp->val.Binary.data);
@@ -585,3 +587,7 @@ img_duplicate_property( PImgProperty imgProp)
 
     return outImgProp;
 }
+
+#ifdef __cplusplus
+}
+#endif

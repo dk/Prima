@@ -45,7 +45,8 @@ use DynaLoader;
 use Prima::Gencls;
 use vars qw( %make_trans @ovvars $dir_sep $path_sep );
 use vars @ovvars = qw(
-    $CC $CFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG
+    $CC $CFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
+    $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG $CLINKPREFIX
     $LD $LDFLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
     $OBJ_EXT $LIB_EXT $EXE_EXT $DL_EXT $SCRIPT_EXT
     @INCPATH
@@ -110,6 +111,20 @@ sub qd
     return $path_str;
 }
 
+sub quoted_split
+{
+   my @neww = ();
+   my $text = shift;
+   while ($text =~ m<
+       ("[^\"\\]*(?:\\.[^\"\\]*)*")\s*
+     | (\S+)\s*
+     | \s+
+   >gx) {
+          push @neww, $+ if defined $+;
+   }
+   return @neww;
+}
+
 sub fatal
 {
     open ERRLOG, ">". qd "$CWD/Makefile.err";
@@ -150,8 +165,10 @@ sub cc_command_line
     push @cc, "$COUTOFLAG$objf" if $Win32 && ! $compile_only;
     push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH unless $compile_only || ( $COMPILER eq 'msvc');
     push @cc, $srcf;
-    push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH if ( ! $compile_only) && ( $COMPILER eq 'msvc');
-    push @cc, map { "$LDLIBFLAG$_"} @LIBS unless $compile_only;
+    return @cc if $compile_only;
+    push @cc, $CLINKPREFIX;
+    push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH if $COMPILER eq 'msvc';
+    push @cc, map { "$LDLIBFLAG$_"} @LIBS;
     return @cc;
 }
 
@@ -280,15 +297,18 @@ ENDP
 
 sub have_func
 {
-    my ( $funcname) = @_;
+    my ( $funcname, @headers) = @_;
     my $defname = "HAVE_" . uc $funcname;
+    my @srchead = map { "#include <$_>\n"} @headers;
     $defname =~ s/\W/_/g;
     print "Checking for function $funcname... ";
     my $rc = compile( <<ENDP);
+@srchead
+
 int
 main()
 {
-    ${ funcname}();
+    void * ixi = $funcname;
     return 0;
 }
 ENDP
@@ -372,6 +392,15 @@ sub have_types_in
     }
 }
 
+sub have_funcs_in
+{
+    my ($hdr, @funcs) = @_;
+    return unless have_header( $hdr);
+    for my $func (@funcs) {
+       have_func( $func, $hdr);
+    }
+}
+
 sub setvar
 {
     my ( $varname) = shift;
@@ -431,6 +460,7 @@ sub setup_variables
                          coutoflag => '-o',
                          coutexeflag => '-o',
                          cdebugflags => '-g -O',
+                         clinkprefix => '',
                          clibpathflag => '-L',
                          ldflags => '',
                          ldoutflag => '-o',
@@ -445,6 +475,7 @@ sub setup_variables
                          coutoflag => '-o',
                          coutexeflag => '-o',
                          cdebugflags => '-g -O',
+                         clinkprefix => '',
                          clibpathflag => '-L',
                          ldflags => '',
                          ldoutflag => '-o',
@@ -458,7 +489,8 @@ sub setup_variables
                           cflags => "",
                           coutoflag => '-Fo',
                           coutexeflag => '-Fe',
-                          clibpathflag => '/link /LIBPATH:',
+                          clinkprefix => '/link',
+                          clibpathflag => '/LIBPATH:',
                           cdebugflags => '-Zi',
                           ldflags => '',
                           ldoutflag => '/OUT:',
@@ -472,6 +504,7 @@ sub setup_variables
                            cflags => "-tWM",
                            coutoflag => '-o',
                            coutexeflag => '-e',
+                           clinkprefix => '',
                            clibpathflag => '-L',
                            cdebugflags => '-v -y',
                            ldflags => '',
@@ -510,16 +543,26 @@ sub setup_variables
     }
     print "$cc_specs{ $COMPILER}->{ name}\n";
 
-    setvar( 'CFLAGS', $Config{ ccflags} . " $cc_specs{ $COMPILER}->{ warnflags} $cc_specs{ $COMPILER}->{ cflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
+    my $ccflags   = $Config{ ccflags};
+    my $warnflags = $cc_specs{ $COMPILER}->{ warnflags};
+    my $ldflags = $COMPILER eq 'emx' ? "" : "$Config{ ldflags} ";
+    my $lddlflags = $Config{ lddlflags};
+    if ( $COMPILER eq 'msvc' && $ccflags =~ /TP/) { # M$VC++ protection
+        $warnflags =~ s/W3/W1/;
+        $ldflags =~ s/(-|\/)nodefaultlib//g;
+        $lddlflags =~ s/(-|\/)nodefaultlib//g;
+    }
+    setvar( 'CFLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
     setvar( 'CDLFLAGS', "$Config{ cccdlflags} $Config{ ccdlflags}");
     setvar( 'COUTOFLAG', $cc_specs{ $COMPILER}->{ coutoflag});
     setvar( 'COUTEXEFLAG', $cc_specs{ $COMPILER}->{ coutexeflag});
     setvar( 'CINCPATHFLAG', '-I');
     setvar( 'CDEFFLAG', '-D');
     setvar( 'COMPONLYFLAG', '-c');
+    setvar( 'CLINKPREFIX', $cc_specs{ $COMPILER}->{ clinkprefix});
     setvar( 'CLIBPATHFLAG', $cc_specs{ $COMPILER}->{ clibpathflag});
     setvar( 'LD', $Config{ ld});
-    setvar( 'LDFLAGS', ( $COMPILER eq 'emx' ? "" : "$Config{ ldflags} ") . "$Config{ lddlflags} $cc_specs{ $COMPILER}->{ ldflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ lddebugflags}" : "") . " ");
+    setvar( 'LDFLAGS', "$ldflags $lddlflags $cc_specs{ $COMPILER}->{ ldflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ lddebugflags}" : "") . " ");
     setvar( 'LDOUTFLAG', $cc_specs{ $COMPILER}->{ ldoutflag});
     setvar( 'LDLIBPATHFLAG', $cc_specs{ $COMPILER}->{ ldlibpathflag});
     setvar( 'LDLIBFLAG', $cc_specs{ $COMPILER}->{ ldlibflag});
@@ -535,12 +578,27 @@ sub setup_variables
                         $Config{installarchlib} . qd( "/CORE"),
                        )
           );
-    setvar( 'LIBPATH', split ' ', $Config{ libpth});
-    my @libs = map { s/^$LDLIBFLAG//; $_} split ' ', $Config{ libs};
+    my @libpaths = quoted_split( $Config{ libpth});
+    if ( $COMPILER eq 'msvc') {
+       # explanation: link /LIBPATH:"Program Files" dirty fails, hail to M$ :E,
+       # trying to link Files.obj with /LIBPATH:Program
+       my %envlibs = map { lc($_) => 1} split(';', $ENV{LIB});
+       @libpaths = grep {
+          my $d = lc $_;
+          $d =~ s/^"//;
+          $d =~ s/"$//;
+          exists($envlibs{$d}) ? 0 : 1
+       } @libpaths;
+    }
+    setvar( 'LIBPATH', @libpaths);
+    my @libs = map { s/^$LDLIBFLAG//; $_} quoted_split($Config{ libs});
     #    push ( @libs, 'pmprintf') if $OS2 && defined $ENV{PRIMA_PMPRINTF};
     push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
     setvar( 'LIBS', ());
     my @flibs;
+
+# here starts lot of execs...
+
     for my $lib (@libs) {
        if ( defined find_lib($lib,'')) {
           push @flibs, $lib;
@@ -721,7 +779,6 @@ sub setup_variables
   sv_call_perl
   sv_query_method
   temporary_prf_Sv
-  readonly_clean_sv_2mortal
 );
 }
 
@@ -788,9 +845,8 @@ sub setup_defines
             warn "PRIMA_PMPRINTF defined, but there is no pmprintf.h in include path";
         }
     }
-    have_func( 'strcasecmp') || have_func( 'stricmp');
-    have_func( 'snprintf');
-    have_func( '_snprintf');
+    have_func( 'strcasecmp') || have_funcs_in( 'strings.h', 'stricmp');
+    have_funcs_in( 'stdio.h', 'snprintf') || have_funcs_in( 'stdio.h', '_snprintf');
     have_func( 'reallocf');
     have_func( 'bzero');
     if ( $Win32) {

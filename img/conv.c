@@ -1,4 +1,10 @@
 #include "img_conv.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define var (( PImage) self)
 
 #define minimum_ByteValue 0
@@ -210,3 +216,7 @@ macro_asis(double,Byte)
 macro_asis(double,short)
 macro_asis(double,long)
 macro_asis(double,float)
+
+#ifdef __cplusplus
+}
+#endif

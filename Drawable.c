@@ -29,6 +29,11 @@
 #include "Image.h"
 #include <Drawable.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef my
 #define inherited CComponent->
 #define my  ((( PDrawable) self)-> self)
@@ -229,13 +234,13 @@ Drawable_linePattern( Handle self, Bool set, SV * pattern)
 
    if ( set) {
       STRLEN len;
-      char *pat = ( char *) SvPV( pattern, len);
+      unsigned char *pat = ( unsigned char *) SvPV( pattern, len);
       if ( len > 255) len = 255;
       apc_gp_set_line_pattern( self, pat, len);
    } else {
-      char ret[ 256];
+      unsigned char ret[ 256];
       int len = apc_gp_get_line_pattern( self, ret);
-      return newSVpvn( ret, len);
+      return newSVpvn((char*) ret, len);
    }
    return nilSV;
 }
@@ -411,7 +416,7 @@ polypoints( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(
    }
    count /= 2;
    if ( count < 2) return;
-   p = malloc( count * sizeof( Point));
+   p = allocn( Point, count);
    for ( i = 0; i < count; i++)
    {
        SV** psvx = av_fetch( av, i * 2, 0);
@@ -496,7 +501,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
    abc = apc_gp_get_font_abc( self, 0, 255);
    if ( abc == nil) return nil;
 
-   ret = malloc( sizeof( char*) * lSize);
+   ret = allocn( char*, lSize);
    for ( i = 0; i < 256; i++) {
       width[i] = abc[i]. a + abc[i]. b + abc[i]. c;
       abc[i]. c = ( abc[i]. c < 0) ? - abc[i]. c : 0;
@@ -508,7 +513,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
    int l = end - start;                                   \
    char *c = nil;                                         \
    if (!( t-> options & twReturnChunks)) {                \
-      c = malloc( l + 1);                                 \
+      c = allocs( l + 1);                                 \
       memcpy( c, &text[start], l);                        \
       c[ l] = 0;                                          \
    }                                                      \
@@ -523,7 +528,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
       }                                                   \
    }                                                      \
    if ( t-> count == lSize) {                             \
-      char ** n = malloc( sizeof( char*) * ( lSize + 16));\
+      char ** n = allocn( char*, lSize + 16);             \
       memcpy( n, ret, sizeof( char*) * lSize);            \
       lSize += 16;                                        \
       free( ret);                                         \
@@ -600,8 +605,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
                 int j;
                 if (!( t-> options & twReturnChunks)) {
                    for ( j = 0; j < t-> count; j++) free( ret[ j]);
-                   ret[ 0] = malloc(1);
-                   ret[ 0][ 0] = 0;
+                   ret[ 0] = duplicate_string("");
                 }
                 t-> count = 0;
                 free( abc);
@@ -623,8 +627,8 @@ do_text_wrap( Handle self, TextWrapRec *t)
                    len = (int) ret[ t-> count - 1];
                 }
                 else  {
-                  c = ret[ t-> count - 1];
-                  len = strlen( c);
+                  c = ( unsigned char *) ret[ t-> count - 1];
+                  len = strlen(( const char *) c);
                 }
                 if ( rc != ' ' && rc != '\t' && rc != '\n') {
                    // determining whether this line could be split
@@ -639,7 +643,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
                    {
                       start -= len - j - 1;
                       if ( t-> options & twReturnChunks)
-                         (int) ret[ t-> count - 1] = j;
+                         ret[ t-> count - 1] = ( char *) j;
                       else
                          c[ j] = 0;
                       i -= len - j - 1;
@@ -657,11 +661,11 @@ do_text_wrap( Handle self, TextWrapRec *t)
     if ( t-> textLen - start > 0 || t-> count == 0) lAdd( t-> textLen);
 // removing ~ and determining it's location
     if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
-        unsigned char *l = ret[ tildeLine];
+        unsigned char *l = ( unsigned char *) ret[ tildeLine];
         t-> t_char = l[ tildePos+1];
         if ( t-> options & twCollapseTilde)
-           memmove( l + tildePos, l + tildePos + 1, strlen( l) - tildePos);
-        l = ret[ t-> t_line];
+           memmove(( void *)( l + tildePos), l + tildePos + 1, strlen(( const char *) l) - tildePos);
+        l = ( unsigned char *) ret[ t-> t_line];
         w = tildeOffset;
         t-> t_start = w - 1;
         t-> t_end   = w + width[(unsigned)l[tildeLPos]];
@@ -677,7 +681,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
           char *substr = ret[ i], *n;
           while (*substr) { if ( *substr == '\t') tabs++; substr++; len++; }
           if ( tabs == 0) continue;
-          n = malloc( len + tabs * t-> tabIndent + 1);
+          n = allocs( len + tabs * t-> tabIndent + 1);
           substr = ret[ i];
           len = 0;
           while ( *substr)
@@ -760,7 +764,7 @@ read_palette( int * palSize, SV * palette)
    count = *palSize * 3;
    if ( count == 0) return nil;
 
-   buf = malloc( count);
+   buf = allocb( count);
 
    for ( i = 0; i < count; i++)
    {
@@ -973,3 +977,6 @@ Drawable_set_font( Handle self, Font font)
 }
 
 
+#ifdef __cplusplus
+}
+#endif

@@ -32,6 +32,11 @@
 #include "Icon.h"
 #include "DeviceBitmap.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
@@ -58,7 +63,7 @@ apc_gp_done( Handle self)
    if ( sys ps)
    {
       if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
-         if ( !EndPaint(( HWND) var handle, sys ps)) apiErr;
+         if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
       } else if ( is_apt( aptWinPS)) {
          if ( self == application)
              dc_free();
@@ -72,7 +77,7 @@ apc_gp_done( Handle self)
    if ( sys linePatternLen2 > 3) free( sys linePattern2);
    font_free( sys fontResource, false);
    if ( sys p256) free( sys p256);
-   sys bm = sys pal = sys ps = sys bm = sys p256 = nilHandle;
+   sys bm = sys pal = sys ps = sys bm = sys p256 = nil;
    sys fontResource = nil;
    sys linePattern = nil;
    return true;
@@ -256,7 +261,7 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 {objCheck false;{
    Bool ok = true;
    int i, dy = sys lastSize. y;
-   DWORD * pts = malloc( sizeof( DWORD) * numPts);
+   DWORD * pts = ( DWORD *) malloc( sizeof( DWORD) * numPts);
    for ( i = 0; i < numPts; i++)  {
       points[ i]. y = dy - points[ i]. y - 1;
       pts[ i] = 2;
@@ -904,7 +909,7 @@ apc_gp_get_font_abc( Handle self, int first, int last)
    ABCFLOAT f2[ 256];
    PFontABC f1;
 
-   f1 = malloc(( last - first + 1) * sizeof( FontABC));
+   f1 = ( PFontABC) malloc(( last - first + 1) * sizeof( FontABC));
    if ( !gp_GetCharABCWidthsFloat( sys ps, first, last, f2)) apiErr;
    for ( i = 0; i <= last - first; i++) {
       f1[i].a = f2[i].abcfA;
@@ -975,25 +980,25 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 {
    objCheck 0;
    if ( !sys ps) {
-      strcpy( buffer, ( sys linePatternLen > 3) ? sys linePattern : ( char*)&sys linePattern);
+      strcpy(( char *) buffer, (char*)(( sys linePatternLen > 3) ? sys linePattern : (Byte*)(&sys linePattern)));
       return sys linePatternLen;
    }
 
    switch ( sys stylus. pen. lopnStyle) {
    case PS_NULL:
-       strcpy( buffer, "");
+       strcpy(( char *) buffer, "");
        return 0;
    case PS_DASH:
-       strcpy( buffer, psDash);
+       strcpy(( char *) buffer, psDash);
        return 2;
    case PS_DOT:
-       strcpy( buffer, psDot);
+       strcpy(( char *) buffer, psDot);
        return 2;
    case PS_DASHDOT:
-       strcpy( buffer, psDashDot);
+       strcpy(( char *) buffer, psDashDot);
        return 4;
    case PS_DASHDOTDOT:
-       strcpy( buffer, psDashDotDot);
+       strcpy(( char *) buffer, psDashDotDot);
        return 6;
    case PS_USERSTYLE:
        {
@@ -1005,7 +1010,7 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
           return len;
        }
    default:
-       strcpy( buffer, "\1");
+       strcpy(( char *) buffer, "\1");
        return 1;
    }
 }
@@ -1110,7 +1115,7 @@ apc_gp_get_physical_palette( Handle self, int * color)
          lpGlob. palPalEntry[ i + 10] = lpGlob. palPalEntry[ 255 - i];
    }
 
-   r = malloc( sizeof( RGBColor) * *color);
+   r = ( PRGBColor) malloc( sizeof( RGBColor) * *color);
    for ( i = 0; i < *color; i++) {
       r[i].r = lpGlob. palPalEntry[i]. peRed;
       r[i].g = lpGlob. palPalEntry[i]. peGreen;
@@ -1257,7 +1262,7 @@ Point *
 apc_gp_get_text_box( Handle self, const char* text, int len)
 {objCheck nil;{
    SIZE  sz;
-   Point * pt = malloc( sizeof( Point) * 5);
+   Point * pt = ( Point *) malloc( sizeof( Point) * 5);
 
    if ( !GetTextExtentPoint32( sys ps, text, len, &sz)) apiErr;
    memset( pt, 0, sizeof( Point) * 5);
@@ -1472,7 +1477,7 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
       if ( sys linePatternLen > 3)
          free( sys linePattern);
       if ( len > 3)
-         memcpy( sys linePattern = malloc( len), pattern, len);
+         memcpy( sys linePattern = ( unsigned char *) malloc( len), pattern, len);
       else
          memcpy( &sys linePattern, pattern, len);
       sys linePatternLen = len;
@@ -1484,7 +1489,7 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
          if ( sys linePatternLen2 > 3)
             free( sys linePattern2);
          if ( len > 3)
-            memcpy( sys linePattern2 = malloc( len), pattern, len);
+            memcpy( sys linePattern2 = ( unsigned char *) malloc( len), pattern, len);
          else
             memcpy( &sys linePattern2, pattern, len);
          sys linePatternLen2 = len;
@@ -1528,7 +1533,7 @@ apc_gp_set_palette( Handle self)
 Bool
 apc_gp_set_region( Handle self, Handle mask)
 {
-   HRGN rgn = nilHandle;
+   HRGN rgn = nil;
    objCheck false;
 
    if ( !is_opt( optInDraw) || !sys ps) return true;
@@ -1595,3 +1600,6 @@ apc_gp_set_text_out_baseline( Handle self, Bool baseline)
    return true;
 }
 
+#ifdef __cplusplus
+}
+#endif

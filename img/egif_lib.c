@@ -11,6 +11,8 @@
 * 26 Jun 96 - Version 3.0 by Eric S. Raymond (Full GIF89 support)
 ******************************************************************************/
 
+
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef R6000
@@ -29,6 +31,12 @@
 #include <string.h>
 #include "gif_lib.h"
 #include "gif_lib_private.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 
 #define GIF87_STAMP	"GIF87a"         /* First chars in file - GIF stamp. */
 #define GIF89_STAMP	"GIF89a"         /* First chars in file - GIF stamp. */
@@ -134,10 +142,10 @@ GifFileType *EGifOpenFileHandle(int FileHandle)
     Private->FileHandle = FileHandle;
     Private->File = f;
     Private->FileState = FILE_STATE_WRITE;
-    
+
     Private->Write = (OutputFunc)0; /* No user write routine (MRB) */
     GifFile->UserData = (VoidPtr)0; /* No user write handle (MRB) */
-    
+
     _GifError = 0;
 
     return GifFile;
@@ -170,10 +178,10 @@ GifFileType* EGifOpen(void* userData, OutputFunc writeFunc)
     Private->FileHandle = 0;
     Private->File = (FILE *)0;
     Private->FileState = FILE_STATE_WRITE;
-    
+
     Private->Write = writeFunc; /* User write routine (MRB) */
     GifFile->UserData = userData; /* User write handle (MRB) */
-    
+
     _GifError = 0;
 
     return GifFile;
@@ -214,7 +222,7 @@ int EGifPutScreenDesc(GifFileType *GifFile,
 
 /* First write the version prefix into the file. */
 #ifndef DEBUG_NO_PREFIX
-    if (WRITE(GifFile, GifVersionPrefix, strlen(GifVersionPrefix)) !=
+    if (WRITE(GifFile, (unsigned char*)GifVersionPrefix, strlen(GifVersionPrefix)) !=
 						strlen(GifVersionPrefix)) {
 	_GifError = E_GIF_ERR_WRITE_FAILED;
 	return GIF_ERROR;
@@ -435,7 +443,7 @@ int EGifPutExtension(GifFileType *GifFile, int ExtCode, int ExtLen,
 	    Buf[2] = ExtLen;
         WRITE(GifFile, Buf, 3);
     }
-    WRITE(GifFile, Extension, ExtLen);
+    WRITE(GifFile, (unsigned char*)Extension, ExtLen);
     Buf[0] = 0;
     WRITE(GifFile, Buf, 1);
 
@@ -548,7 +556,7 @@ static int EGifPutWord(int Word, GifFileType *GifFile)
     c[0] = Word & 0xff;
     c[1] = (Word >> 8) & 0xff;
 #ifndef DEBUG_NO_PREFIX
-    if (WRITE(GifFile, c, 2) == 2)
+    if (WRITE(GifFile, (unsigned char*)c, 2) == 2)
 	return GIF_OK;
     else
 	return GIF_ERROR;
@@ -739,3 +747,7 @@ static int EGifBufferedOutput(GifFileType *GifFile, GifByteType *Buf, int c)
 
     return GIF_OK;
 }
+
+#ifdef __cplusplus
+}
+#endif

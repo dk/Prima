@@ -33,6 +33,11 @@
 #include "Icon.h"
 #include "DeviceBitmap.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
@@ -226,7 +231,7 @@ image_make_bitmap_handle( Handle img, HPALETTE pal)
       if ( xpal != pal)
          DeleteObject( xpal);
       ReleaseDC( foc, dc);
-      return nilHandle;
+      return nil;
    }
 
    if ( old) {
@@ -259,7 +264,7 @@ image_make_bitmap_palette( Handle img)
 
    if ( !dsys(img)p256) {
       if ( nColors > 256) {
-         dsys(img)p256 = malloc( sizeof( XLOGPALETTE));
+         dsys(img)p256 = ( PXLOGPALETTE) malloc( sizeof( XLOGPALETTE));
          cm_squeeze_palette( i-> palette, nColors, dest, 256);
          nColors = lp. palNumEntries = 256;
          logp = dest;
@@ -298,15 +303,15 @@ image_destroy_cache( Handle self)
    if ( sys bm) {
       if ( !DeleteObject( sys bm)) apiErr;
       hash_delete( imageMan, &self, sizeof( self), false);
-      sys bm = nilHandle;
+      sys bm = nil;
    }
    if ( sys pal) {
       if ( !DeleteObject( sys pal)) apiErr;
-      sys pal = nilHandle;
+      sys pal = nil;
    }
    if ( sys s. imgCachedRegion) {
       if ( !DeleteObject( sys s. imgCachedRegion)) apiErr;
-      sys s. imgCachedRegion = nilHandle;
+      sys s. imgCachedRegion = nil;
    }
 }
 
@@ -399,7 +404,7 @@ apc_image_begin_paint( Handle self)
    apcErrClear;
    objCheck false;
    if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
-   if ( sys bm == nilHandle) {
+   if ( sys bm == nil) {
       Handle deja  = image_enscreen( self, self);
       image_set_cache( deja, self);
       if ( deja != self) Object_destroy( deja);
@@ -601,7 +606,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
    ii. yHotspot = hotSpot ? hotSpot-> y : 0;
 
    if ( noSZ || noBPP)
-      ( Handle) i = i-> self-> dup( img);
+      i = ( PIcon)( i-> self-> dup( img));
 
    if ( IS_WIN95 && forPointer && ( guts. displayBMInfo. bmiHeader. biBitCount <= 4)) {
       i-> self-> set_conversion(( Handle) i, ictNone);
@@ -636,7 +641,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
 // since CreateIconIndirect gives results so weird,
 // we use following sequence.
       int mSize = i-> maskSize / i-> h;
-      Byte *data = malloc( mSize), *b1 = i-> mask, *b2 = i-> mask + mSize*(i-> h - 1);
+      Byte *data = ( Byte*)malloc( mSize), *b1 = i-> mask, *b2 = i-> mask + mSize*(i-> h - 1);
 
 // reverting bits vertically - it's not HBITMAP, just bare bits
       while ( b1 < b2) {
@@ -708,7 +713,7 @@ apc_prn_create( Handle self) {
 
 static void ppi_create( LPPRINTER_INFO_2 dest, LPPRINTER_INFO_2 source)
 {
-#define SZCPY(field) if ( source-> field) strcpy( dest-> field = malloc( strlen( source-> field) + 1), source-> field)
+#define SZCPY(field) if ( source-> field) strcpy( dest-> field = ( char*)malloc( strlen( source-> field) + 1), source-> field)
    memcpy( dest, source, sizeof( PRINTER_INFO_2));
    SZCPY( pPrinterName);
    SZCPY( pServerName);
@@ -724,7 +729,7 @@ static void ppi_create( LPPRINTER_INFO_2 dest, LPPRINTER_INFO_2 source)
    if ( source-> pDevMode)
    {
       int sz = source-> pDevMode-> dmSize + source-> pDevMode-> dmDriverExtra;
-      memcpy( dest-> pDevMode = malloc( sz), source-> pDevMode, sz);
+      memcpy( dest-> pDevMode = ( LPDEVMODE) malloc( sz), source-> pDevMode, sz);
    }
 }
 
@@ -768,7 +773,7 @@ prn_query( Handle self, const char * printer, LPPRINTER_INFO_2 info)
    EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil,
          2, nil, 0, &needed, &returned);
 
-   ppi = malloc( needed + 4);
+   ppi = ( LPPRINTER_INFO_2) malloc( needed + 4);
    if ( !EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil,
          2, ( LPBYTE) ppi, needed, &needed, &returned)) {
       apiErr;
@@ -820,7 +825,7 @@ apc_prn_enumerate( Handle self, int * count)
    EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil, 2,
          nil, 0, &needed, &returned);
 
-   ppi = malloc( needed + 4);
+   ppi = ( LPPRINTER_INFO_2) malloc( needed + 4);
    if ( !EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil, 2,
          ( LPBYTE) ppi, needed, &needed, &returned)) {
       apiErr;
@@ -836,7 +841,7 @@ apc_prn_enumerate( Handle self, int * count)
 
    printer = apc_prn_get_default( self);
 
-   list = malloc( returned * sizeof( PrinterInfo));
+   list = ( PPrinterInfo) malloc( returned * sizeof( PrinterInfo));
    for ( i = 0; i < returned; i++)
    {
       strncpy( list[ i]. name,   ppi[ i]. pPrinterName, 255);   list[ i]. name[ 255]   = 0;
@@ -941,7 +946,7 @@ apc_prn_setup( Handle self)
       ClosePrinter( lph);
       return false;
    }
-   dm  = malloc( sz);
+   dm  = ( DEVMODE * ) malloc( sz);
 
    sys s. prn. ppi. pDevMode-> dmFields = -1;
    ret = DocumentProperties( hwnd_to_view( who) ? who : nil, lph, sys s. prn. ppi. pPrinterName,
@@ -1072,3 +1077,7 @@ apc_prn_abort_doc( Handle self)
    sys pal = sys ps = nil;
    return apcError == errOk;
 }
+
+#ifdef __cplusplus
+}
+#endif

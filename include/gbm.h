@@ -58,6 +58,10 @@ palette), gbm_read_data is additionally allowed to follow a gbm_read_header.
 #ifndef GBM_H
 #define	GBM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef BOOLEAN_DEFINED
 #define	BOOLEAN_DEFINED
 #ifndef TRUE
@@ -187,5 +191,10 @@ int     _System Gbm_version(void);
 #endif
 
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

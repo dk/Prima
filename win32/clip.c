@@ -30,6 +30,11 @@
 #include "Clipboard.h"
 #include "Icon.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
@@ -152,7 +157,7 @@ apc_clipboard_get_data( Handle self, long id, int * length)
              if ( !( ptr = ( char*) GlobalLock( ph)))
                 apiErrRet;
              len = *length = strlen( ptr) + 1;
-             ret = malloc( *length);
+             ret = ( char *) malloc( *length);
              strcpy( ret, ptr);
              for ( i = 0; i < len - 1; i++)
                 if ( ret[ i] == '\r') {
@@ -204,7 +209,7 @@ apc_clipboard_set_data( Handle self, long id, void * data, int length)
             HPALETTE p = palette_create(( Handle) data);
             HBITMAP b = ( HBITMAP) image_make_bitmap_handle(( Handle) data, p);
 
-            if ( b == nilHandle) {
+            if ( b == nil) {
                if ( p) DeleteObject( p);
                apiErrRet;
             }
@@ -226,7 +231,7 @@ apc_clipboard_set_data( Handle self, long id, void * data, int length)
              glob = GlobalAlloc( GMEM_DDESHARE, length);
              if ( !glob) apiErrRet;
              if ( !( ptr = GlobalLock( glob))) apiErrRet;
-             CharToOemBuff( data, ptr, length);
+             CharToOemBuff(( LPCTSTR) data, ( LPTSTR) ptr, length);
              GlobalUnlock( glob);
              if ( !SetClipboardData( CF_OEMTEXT, glob)) apiErr;
 
@@ -234,7 +239,7 @@ apc_clipboard_set_data( Handle self, long id, void * data, int length)
                 glob = GlobalAlloc( GMEM_DDESHARE, length * sizeof( WCHAR));
                 if ( !glob) apiErrRet;
                 if ( !( ptr = GlobalLock( glob))) apiErrRet;
-                MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, data, length, ptr, length * sizeof( WCHAR));
+                MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, ( LPCSTR) data, length, ( LPWSTR) ptr, length * sizeof( WCHAR));
                 GlobalUnlock( glob);
                 if ( !SetClipboardData( CF_UNICODETEXT, glob)) apiErr;
              }
@@ -245,7 +250,7 @@ apc_clipboard_set_data( Handle self, long id, void * data, int length)
              char* ptr;
              HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, length + sizeof( int));
              if ( !glob) apiErrRet;
-             if ( !( ptr = GlobalLock( glob))) {
+             if ( !( ptr = ( char *) GlobalLock( glob))) {
                 apiErr;
                 GlobalFree( glob);
                 return false;
@@ -282,3 +287,6 @@ apc_clipboard_get_handle( Handle self)
 }
 
 
+#ifdef __cplusplus
+}
+#endif

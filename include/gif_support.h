@@ -3,6 +3,16 @@
 
 #include <gif_lib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 PImgFormat __gif_init( void);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

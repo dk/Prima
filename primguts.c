@@ -57,7 +57,18 @@
 #define MODULE "Prima Guts"
 
 #include <Types.inc>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "thunks.tinc"
+
+
+#if defined(_MSC_VER) && defined(PERL_OBJECT)
+XSLockManager g_XSLock;
+CPerlObj* pPerl;
+#endif
 
 static PHash vmtHash = nil;
 static List  staticObjects;
@@ -71,10 +82,23 @@ PHash  primaObjects = nil;
 char *
 duplicate_string( const char *s)
 {
-   int l = strlen( s) + 1;
-   char *d = malloc( l);
+   int l;
+   char *d;
+
+   if (!s) s = "";
+   l = strlen( s) + 1;
+   d = ( char*)malloc( l);
    memcpy( d, s, l);
    return d;
+}
+
+void *
+prima_mallocz( size_t sz)
+{
+   void *p = malloc( sz);
+   if (p)
+      bzero( p, sz);
+   return p;
 }
 
 #ifndef HAVE_BZERO
@@ -225,19 +249,6 @@ clean_perl_call_pv( char* subname, I32 flags)
 }
 #endif
 
-#if ( PERL_PATCHLEVEL == 4)
-SV* readonly_clean_sv_2mortal( SV* sv) {
-   if ( SvREADONLY( sv))
-      return sv;
-   return Perl_sv_2mortal( sv);
-}
-#else
-// We should never call this;  but we define it in order to make .def files happy
-SV* readonly_clean_sv_2mortal( SV* sv) {
-   return Perl_sv_2mortal( sv);
-}
-#endif
-
 SV *
 eval( char *string)
 {
@@ -257,8 +268,10 @@ create_mate( SV *perlObject)
    vmt = gimme_the_vmt( className); if ( !vmt) return 0;
 
    // allocating an instance
-   object = malloc( vmt-> instanceSize); memset( object, 0, vmt-> instanceSize);
-   object-> self = (void*)vmt; object-> super = (void*)vmt-> super;
+   object = ( PAnyObject) malloc( vmt-> instanceSize);
+   memset( object, 0, vmt-> instanceSize);
+   object-> self = ( PVMT) vmt;
+   object-> super = ( PVMT *) vmt-> super;
 
    if (USE_MAGICAL_STORAGE)
    {
@@ -547,7 +560,7 @@ XS(Prima_init)
 Bool
 build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
 {
-   PVMT vmt = vvmmtt;
+   PVMT vmt = ( PVMT) vvmmtt;
    PVMT ancestorVmt = gimme_the_vmt( ancestorName);
    int i, n;
    void **to, **from;
@@ -576,7 +589,7 @@ build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
 void
 build_static_vmt( void *vvmmtt)
 {
-   PVMT vmt = vvmmtt;
+   PVMT vmt = ( PVMT) vvmmtt;
    hash_store( vmtHash, vmt-> className, strlen( vmt-> className), vmt);
 }
 
@@ -603,7 +616,7 @@ gimme_the_vmt( const char *className)
    PVMT patchWhom;
 
    // Check whether this class has been already built...
-   vmtAddr = hash_fetch( vmtHash, (char *)className, strlen( className));
+   vmtAddr = ( SV **) hash_fetch( vmtHash, (char *)className, strlen( className));
    if ( vmtAddr != nil) return ( PVMT) vmtAddr;
 
    // No;  try to find inherited VMT...
@@ -640,10 +653,9 @@ gimme_the_vmt( const char *className)
    debug_write( "%lu Dynamic vmt creation (%d) for %s\n", timestamp(), originalVmt-> vmtSize, className);
 #endif
    vmtSize = originalVmt-> vmtSize;
-   vmt = malloc( vmtSize);
+   vmt = ( PVMT) malloc( vmtSize);
    memcpy( vmt, originalVmt, vmtSize);
-   newClassName = malloc( strlen( className) + 1);
-   strcpy( newClassName, className);
+   newClassName = duplicate_string( className);
    vmt-> className = newClassName;
    vmt-> base = originalVmt;
 
@@ -660,7 +672,7 @@ gimme_the_vmt( const char *className)
             proc = hv_fetch( stash, patch[ i]. name, strlen( patch[ i]. name), 0);
             if (! (( proc == nil) || ( *proc == nil) || ( !GvCV(( GV *) *proc))))
             {
-               addr = ( void *)((( char *)vmt) + ((( char *)( patch[ i]. vmtAddr)) - (( char *)patchWhom)));
+               addr = ( void **)((( char *)vmt) + ((( char *)( patch[ i]. vmtAddr)) - (( char *)patchWhom)));
                *addr = patch[ i]. procAddr;
             }
          }
@@ -1285,10 +1297,10 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
       }
 
       /* First way build hash */
-      hash = malloc( sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1) + sizeof( RemapHashNode) * sz);
-      memset( hash, 0, sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
+      hash = ( PRemapHash)  malloc( sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1) + sizeof( RemapHashNode) * sz);
+      bzero( hash, sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
       tbl = table;
-      next = (void *)(((char *)hash) + sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
+      next = ( PRemapHashNode )(((char *)hash) + sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
       while ((*tbl) != endCtx) {
               int key = (*tbl)&0x1F;
               if (hash->table[key]) {
@@ -1312,10 +1324,10 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
       hash1 = hash;
 
       /* Second way build hash */
-      hash = malloc( sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1) + sizeof( RemapHashNode) * sz);
-      memset( hash, 0, sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
+      hash = ( PRemapHash) malloc( sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1) + sizeof( RemapHashNode) * sz);
+      bzero( hash, sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
       tbl = table;
-      next = (void *)(((char *)hash) + sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
+      next = ( PRemapHashNode)(((char *)hash) + sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
       while ((*tbl) != endCtx) {
               int key = tbl[1]&0x1F;
               if (hash->table[key]) {
@@ -1344,7 +1356,7 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
       list_add( &staticObjects, ( Handle) hash2);
    }
 
-   hash = (void*)(direct ? table[1] : table[2]);
+   hash = ( PRemapHash)(direct ? table[1] : table[2]);
    node = hash->table[value&0x1F];
    while ( node) {
       if (node->key == value) return node->val;
@@ -1457,7 +1469,7 @@ paranoid_list_create( PList slf, int size, int delta, char *fil, int ln)
    char *buf;
    int blen;
    if ( !slf) return;
-   buf = malloc( blen = strlen( fil) + strlen( __FILE__) + 9);
+   buf = allocs( blen = strlen( fil) + strlen( __FILE__) + 9);
    snprintf( buf, blen, "%s(%d),%s", fil, ln, __FILE__);
    memset( slf, 0, sizeof( List));
    slf-> delta = ( delta > 0) ? delta : 1;
@@ -1472,7 +1484,7 @@ paranoid_plist_create( int size, int delta, char *fil, int ln)
    char *buf;
    int blen;
    PList new_list;
-   buf = malloc( blen = strlen( fil) + strlen( __FILE__) + 9);
+   buf = allocs( blen = strlen( fil) + strlen( __FILE__) + 9);
    snprintf( buf, blen, "%s(%d),%s", fil, ln, __FILE__);
    new_list = ( PList) _test_malloc( sizeof( List), __LINE__, buf, nilHandle);
    if ( new_list != nil) {
@@ -1489,13 +1501,13 @@ list_create( PList slf, int size, int delta)
    memset( slf, 0, sizeof( List));
    slf-> delta = ( delta > 0) ? delta : 1;
    slf-> size  = size;
-   slf-> items = ( size > 0) ? malloc( size * sizeof( Handle)) : nil;
+   slf-> items = ( size > 0) ? allocn( Handle, size) : nil;
 }
 
 PList
 plist_create( int size, int delta)
 {
-   PList new_list = ( PList) malloc( sizeof( List));
+   PList new_list = alloc1( List);
    if ( new_list != nil) {
       list_create( new_list, size, delta);
    }
@@ -1529,7 +1541,7 @@ list_add( PList slf, Handle item)
    if ( slf-> count == slf-> size)
    {
       Handle * old = slf-> items;
-      slf-> items = malloc(( slf-> size + slf-> delta) * sizeof( Handle));
+      slf-> items = allocn(Handle, ( slf-> size + slf-> delta));
       if ( old) {
          memcpy( slf-> items, old, slf-> size * sizeof( Handle));
          free( old);
@@ -1592,7 +1604,7 @@ list_first_that( PList slf, void * action, void * params)
    int toRet = -1, i, cnt = slf-> count;
    Handle * list;
    if ( !action || !slf || !cnt) return -1;
-   list = malloc( slf-> count * sizeof( Handle));
+   list = allocn( Handle, slf-> count);
    memcpy( list, slf-> items, slf-> count * sizeof( Handle));
    for ( i = 0; i < cnt; i++)
       if ((( PListProc) action)( list[ i], params)) {
@@ -1676,7 +1688,7 @@ hash_store( PHash h, const void *key, int keyLen, void *val)
    ksv_check;
    if ( he) return false;
    he = hv_store_ent( h, ksv, &sv_undef, 0);
-   HeVAL( he) = val;
+   HeVAL( he) = ( SV *) val;
    return true;
 }
 
@@ -1754,7 +1766,6 @@ _test_malloc( size_t size, int ln, char *fil, Handle self)
    void *mlc;
    char s[512];
    char obj[ 256];
-   char *c;
    char *c1, *c2;
 
    if (!hash) {
@@ -1773,9 +1784,7 @@ _test_malloc( size_t size, int ln, char *fil, Handle self)
    } else
       strcpy( obj, "NOSELF");
    sprintf( s, "%lu %p %s(%d) %s %lu", timestamp(), mlc, fil, ln, obj, ( unsigned long) size);
-   c = malloc( strlen(s)+1);
-   strcpy( c, s);
-   hash_store( hash, &mlc, sizeof(mlc), c);
+   hash_store( hash, &mlc, sizeof(mlc), duplicate_string( s));
    return mlc;
 }
 
@@ -1806,7 +1815,7 @@ debug_write( const char *format, ...)
    int rc;
    va_list arg_ptr;
 
-   if( ( f = fopen( "C:\\PRIMAERR.LOG", "at")) == NULL) {
+   if( ( f = ( FILE*) fopen( "C:\\PRIMAERR.LOG", "at")) == NULL) {
        return false;
    }
    va_start( arg_ptr, format);
@@ -1828,5 +1837,9 @@ debug_write( const char *format, ...)
         va_end( args);
     }
     return rc;
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif

@@ -29,6 +29,11 @@
 #include "Component.h"
 #include <Component.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CObject->
 #define my  ((( PComponent) self)-> self)
@@ -50,8 +55,7 @@ Component_init( Handle self, HV * profile)
    var-> owner = owner;
    my-> set_name( self, pget_c( name));
    my-> set_delegations( self, pget_sv( delegations));
-   var-> evQueue = malloc( sizeof( List));
-   list_create( var-> evQueue,  8, 8);
+   var-> evQueue = plist_create( 8, 8);
    apc_component_create( self);
 
    res = my-> notification_types( self);
@@ -189,10 +193,9 @@ Component_attach( Handle self, Handle object)
    if ( var-> stage > csNormal) return;
 
    if ( object && kind_of( object, CComponent)) {
-      if ( var-> components == nil) {
-         var-> components = malloc( sizeof( List));
-         list_create( var-> components, 8, 8);
-      } else
+      if ( var-> components == nil)
+         var-> components = plist_create( 8, 8);
+      else
          if ( list_index_of( var-> components, object) > 0) {
             warn( "RTC0040: Object attach failed");
             return;
@@ -222,8 +225,7 @@ Component_name( Handle self, Bool set, char * name)
    if ( var-> stage > csNormal) return "";
    if ( set) {
       free( var-> name);
-      var-> name = malloc( strlen ( name) + 1);
-      strcpy( var-> name, name);
+      var-> name = duplicate_string( name);
       apc_component_fullname_changed_notify( self);
    } else
       return var-> name ? var-> name : "";
@@ -328,7 +330,7 @@ Component_push_event( Handle self)
    if ( var-> stage == csDead)
       return;
    if ( var-> evPtr == var-> evLimit) {
-      char * newStack = malloc( 16 + var-> evLimit);
+      char * newStack = allocs( 16 + var-> evLimit);
       if ( var-> evStack) {
          memcpy( newStack, var-> evStack, var-> evLimit);
          free( var-> evStack);
@@ -463,7 +465,7 @@ Component_first_that_component( Handle self, void * actionProc, void * params)
       return nilHandle;
    count = var-> components-> count;
    if ( count == 0) return nilHandle;
-   list = malloc( sizeof( Handle) * count);
+   list = allocn( Handle, count);
    memcpy( list, var-> components-> items, sizeof( Handle) * count);
 
    for ( i = 0; i < count; i++)
@@ -484,12 +486,12 @@ Component_post_message( Handle self, SV * info1, SV * info2)
    PPostMsg p;
    Event ev = { cmPost};
    if ( var-> stage > csNormal) return;
-   p = malloc( sizeof( PostMsg));
+   p = alloc1( PostMsg);
    p-> info1  = newSVsv( info1);
    p-> info2  = newSVsv( info2);
    p-> h      = self;
    if ( var-> postList == nil)
-      list_create( var-> postList = malloc( sizeof( List)), 8, 8);
+      list_create( var-> postList = ( List*) malloc( sizeof( List)), 8, 8);
    list_add( var-> postList, ( Handle) p);
    ev. gen. p = p;
    ev. gen. source = ev. gen. H = self;
@@ -610,7 +612,7 @@ XS( Component_notify_FROMPERL)
    }
 
    /* copying arguments passed from perl */
-   argsv = malloc( argsc * sizeof( SV *));
+   argsv = ( SV **) malloc( argsc * sizeof( SV *));
    for ( i = 0; i < argsc; i++) argsv[ i] = ST( i + 1);
    argsv[ 0] = ST( 0);
 
@@ -757,11 +759,11 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
    if ( ret == nil) {
       hash_store( var-> eventIDs, name, nameLen, ( void*)( var-> eventIDCount + 1));
       if ( var-> events == nil)
-         var-> events = malloc( sizeof( List));
+         var-> events = ( List*) malloc( sizeof( List));
       else {
          void * cf = realloc( var-> events, ( var-> eventIDCount + 1) * sizeof( List));
          if ( cf == nil) free( var-> events);
-         var-> events = cf;
+         var-> events = ( List*) cf;
       }
       if ( var-> events == nil) croak("No enough memory");
       list = var-> events + var-> eventIDCount++;
@@ -977,3 +979,7 @@ Component_delegations( Handle self, Bool set, SV * delegations)
    }
    return nilSV;
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -32,6 +32,11 @@
 #include "Window.h"
 #include <Widget.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CDrawable
 #define enter_method PWidget_vmt selfvmt = ((( PWidget) self)-> self)
@@ -383,7 +388,7 @@ Widget_first_that( Handle self, void * actionProc, void * params)
    int i, count  = var-> widgets. count;
    Handle * list;
    if ( actionProc == nil || count == 0) return nilHandle;
-   list = malloc( sizeof( Handle) * count);
+   list = allocn( Handle, count);
    memcpy( list, var-> widgets. items, sizeof( Handle) * count);
 
    for ( i = 0; i < count; i++)
@@ -703,7 +708,7 @@ void Widget_handle_event( Handle self, PEvent event)
               int    i = list_first_that( var-> evQueue, find_dup_msg, (void*) event-> cmd);
               PEvent n;
               if ( i < 0) {
-                 n = malloc( sizeof( Event));
+                 n = alloc1( Event);
                  memcpy( n, event, sizeof( Event));
                  n-> gen. B = 1;
                  n-> gen. R. left = n-> gen. R. bottom = 0;
@@ -756,7 +761,7 @@ void Widget_handle_event( Handle self, PEvent event)
               int    i = list_first_that( var-> evQueue, find_dup_msg, (void*) event-> cmd);
               PEvent n;
               if ( i < 0) {
-                 n = malloc( sizeof( Event));
+                 n = alloc1( Event);
                  memcpy( n, event, sizeof( Event));
                  n-> gen. B = 1;
                  n-> gen. R. left = n-> gen. R. bottom = 0;
@@ -908,11 +913,12 @@ Widget_post_message( Handle self, SV * info1, SV * info2)
    PPostMsg p;
    Event ev = { cmPost};
    if ( var-> stage > csNormal) return;
-   p = malloc( sizeof( PostMsg));
+   p = alloc1( PostMsg);
    p-> info1  = newSVsv( info1);
    p-> info2  = newSVsv( info2);
    p-> h = self;
-   if ( var-> postList == nil) list_create( var-> postList = malloc( sizeof( List)), 8, 8);
+   if ( var-> postList == nil)
+      var-> postList = plist_create( 8, 8);
    list_add( var-> postList, ( Handle) p);
    ev. gen. p = p;
    ev. gen. source = ev. gen. H = self;
@@ -1931,14 +1937,7 @@ Widget_hint( Handle self, Bool set, char *hint)
    my-> first_that( self, hint_notify, (void*)hint);
 
    free( var-> hint);
-   if ( hint)
-   {
-      var-> hint = malloc( strlen( hint) + 1);
-      strcpy( var-> hint, hint);
-   } else {
-      var-> hint = malloc(1);
-      var-> hint[0] = 0;
-   };
+   var-> hint = duplicate_string( hint);
    if ( application && (( PApplication) application)-> hintVisible &&
         (( PApplication) application)-> hintUnder == self)
    {
@@ -2628,7 +2627,7 @@ XS( Widget_client_to_screen_FROMPERL)
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Widget::client_to_screen");
    count  = ( items - 1) / 2;
-   points = malloc( sizeof( Point) * count);
+   points = allocn( Point, count);
    for ( i = 0; i < count; i++) {
       points[i]. x = SvIV( ST( i * 2 + 1));
       points[i]. y = SvIV( ST( i * 2 + 2));
@@ -2658,7 +2657,7 @@ XS( Widget_screen_to_client_FROMPERL)
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Widget::screen_to_client");
    count  = ( items - 1) / 2;
-   points = malloc( sizeof( Point) * count);
+   points = allocn( Point, count);
    for ( i = 0; i < count; i++) {
       points[i]. x = SvIV( ST( i * 2 + 1));
       points[i]. y = SvIV( ST( i * 2 + 2));
@@ -2704,3 +2703,6 @@ void Widget_screen_to_client_REDEFINED ( Handle self) { warn("Invalid call of Wi
 void Widget_client_to_screen ( Handle self) { warn("Invalid call of Widget::screen_to_client"); }
 void Widget_client_to_screen_REDEFINED ( Handle self) { warn("Invalid call of Widget::screen_to_client"); }
 
+#ifdef __cplusplus
+}
+#endif

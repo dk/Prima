@@ -31,6 +31,11 @@
 #include "Application.h"
 #include <Application.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CWidget->
 #define my  ((( PApplication) self)-> self)
@@ -75,8 +80,7 @@ Application_init( Handle self, HV * profile)
          warn("RTC0012: Array panic on 'designScale'");
       pdelete( designScale);
    }
-   var->  text = malloc( 1);
-   var->  text[ 0] = 0;
+   var->  text = duplicate_string("");
    opt_set( optModalHorizon);
 
    {
@@ -86,6 +90,7 @@ Application_init( Handle self, HV * profile)
       pset_c( name, "Printer");
       pset_H( owner, self);
       var->  printer = create_instance( printerClass);
+
       protect_object( var->  printer);
       hv_clear( profile);
 
@@ -462,7 +467,7 @@ Application_helpFile( Handle self, Bool set, char * helpFile)
 
    if ( var-> helpFile && ( strcmp( var->  helpFile, helpFile) == 0)) return "";
    free( var-> helpFile);
-   strcpy( var-> helpFile = malloc( strlen ( helpFile) + 1), helpFile);
+   var-> helpFile = duplicate_string( helpFile);
    apc_help_set_file( self, helpFile);
    return "";
 }
@@ -899,3 +904,6 @@ int    Application_tabOrder( Handle self, Bool set, int tabOrder)      { return 
 char * Application_text    ( Handle self, Bool set, char * text)       { return ""; }
 Bool   Application_transparent( Handle self, Bool set, Bool transparent) { return false; }
 
+#ifdef __cplusplus
+}
+#endif

@@ -28,6 +28,11 @@
 #include "Utils.h"
 #include <Utils.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 SV *Utils_query_drives_map( char *firstDrive)
 {
    char map[ 256];
@@ -56,3 +61,7 @@ long Utils_floor( double x)
 {
     return floor( x);
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -27,6 +27,12 @@
 #include "gif_lib.h"
 #include "gif_lib_private.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define COMMENT_EXT_FUNC_CODE	0xfe /* Extension function code for comment. */
 #define GIF_STAMP	"GIFVER"	 /* First chars in file - GIF stamp. */
 #define GIF_STAMP_LEN	sizeof(GIF_STAMP) - 1
@@ -113,7 +119,7 @@ GifFileType *DGifOpenFileHandle(int FileHandle)
     GifFile->UserData = 0;  /* TVT */
 
     /* Lets see if this is a GIF file: */
-    if (READ(GifFile,Buf, GIF_STAMP_LEN) != GIF_STAMP_LEN) {
+    if (READ(GifFile,(unsigned char*)Buf, GIF_STAMP_LEN) != GIF_STAMP_LEN) {
         _GifError = D_GIF_ERR_READ_FAILED;
         fclose(f);
         free((char *) Private);
@@ -177,7 +183,7 @@ GifFileType *DGifOpen( void* userData, InputFunc readFunc )
 	GifFile->UserData = userData;    /* TVT */
 
     /* Lets see if this is a GIF file: */
-    if ( READ( GifFile, Buf, GIF_STAMP_LEN) != GIF_STAMP_LEN) {
+    if ( READ( GifFile, (unsigned char*)Buf, GIF_STAMP_LEN) != GIF_STAMP_LEN) {
 	  _GifError = D_GIF_ERR_READ_FAILED;
 	  free((char *) Private);
 	  free((char *) GifFile);
@@ -324,7 +330,7 @@ int DGifGetImageDesc(GifFileType *GifFile)
 	    FreeMapObject(GifFile->Image.ColorMap);
 
 	GifFile->Image.ColorMap = MakeMapObject(1 << BitsPerPixel, NULL);
-    
+
 	/* Get the image local color map: */
 	for (i = 0; i < GifFile->Image.ColorMap->ColorCount; i++) {
 	    if (READ(GifFile,Buf, 3) != 3) {
@@ -866,3 +872,7 @@ static int DGifBufferedInput(GifFileType *GifFile, GifByteType *Buf,
 
     return GIF_OK;
 }
+
+#ifdef __cplusplus
+}
+#endif

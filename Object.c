@@ -28,6 +28,11 @@
 #include "Object.h"
 #include <Object.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define my  ((( PObject) self)-> self)
 #define var (( PObject) self)
@@ -237,3 +242,6 @@ void Object_init    ( Handle self, HV * profile)
 void Object_cleanup ( Handle self) {}
 void Object_setup   ( Handle self) {}
 
+#ifdef __cplusplus
+}
+#endif

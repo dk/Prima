@@ -30,6 +30,11 @@
 #include "Menu.h"
 #include <AbstractMenu.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CComponent->
 #define my  ((( PAbstractMenu) self)-> self)
@@ -88,7 +93,7 @@ key_normalize( const char * key)
 void
 AbstractMenu_dispose_menu( Handle self, void * menu)
 {
-   PMenuItemReg m = menu;
+   PMenuItemReg m = ( PMenuItemReg) menu;
    if  ( m == nil) return;
    free( m-> text);
    free( m-> accel);
@@ -100,7 +105,6 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
    my-> dispose_menu( self, m-> down);
    free( m);
 }
-
 
 // #define log_write debug_write
 
@@ -168,8 +172,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
          warn("RTC0032: menu build error: extra declaration");
          count = 5;
       }
-      r = malloc( sizeof( MenuItemReg));
-      memset( r, 0, sizeof( MenuItemReg));
+      r = alloc1z( MenuItemReg);
       r-> key = kbNoKey;
       // log_write("%sNo: %d, count: %d", buf, i, count);
 
@@ -205,9 +208,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 #define a_get( l_, num) if ( num >= 0 ) {                                    \
                            holder = av_fetch( item, num, 0);                 \
                            if ( holder) {                                    \
-                              char * stk = SvPV( *holder, na);               \
-                              l_ = malloc( strlen( stk) + 1);                \
-                              strcpy( l_, stk);                              \
+                              l_ = duplicate_string( SvPV( *holder, na));    \
                            } else {                                          \
                               warn("RTC003A: menu build error: array panic");\
                               my-> dispose_menu( self, m);                     \
@@ -246,8 +247,8 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       if ( r-> variable == nil)
       {
          char b[256];    // auto enumeration
-         r-> variable = malloc( snprintf( b, 256, "MenuItem%d", ++autoEnum) + 1);
-         strcpy( r-> variable, b);
+         snprintf( b, 256, "MenuItem%d", ++autoEnum);
+         r-> variable = duplicate_string( b);
       }
       // log_write( r-> variable);
 
@@ -279,12 +280,8 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
             r-> bitmap =  gimme_the_mate( subItem);              // storing PImage as SV*
             my-> attach( self, r-> bitmap);
          } else {
-            char * stk;
          TEXT:
-            stk = SvPV( subItem, na);
-            r-> text = malloc( strlen( stk) + 1);
-            strcpy( r-> text, stk);
-            // log_write( "%stext:%s", buf, r->text);
+            r-> text = duplicate_string( SvPV( subItem, na));
          }
       }
 
@@ -305,7 +302,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
             {
                r-> code = newSVsv( subItem);
             } else {
-               r-> down = my-> new_menu( self, subItem, level + 1);
+               r-> down = ( PMenuItemReg) my-> new_menu( self, subItem, level + 1);
                addToSubs = false;
                if ( r-> down == nil)
                {
@@ -315,12 +312,9 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
                }
             }
          } else {
-            if ( SvPOK( subItem)) {
-               char * line = ( char *) SvPV( subItem, na);
-               // log_write( "%s sub:%s", buf, line);
-               r-> perlSub = malloc( strlen( line) + 1);
-               strcpy( r-> perlSub, line);
-            } else {
+            if ( SvPOK( subItem))
+               r-> perlSub = duplicate_string( SvPV( subItem, na));
+            else {
                warn("RTC0038: menu build error: invalid sub name passed");
                addToSubs = false;
             }
@@ -401,7 +395,7 @@ new_av(  PMenuItemReg m, int level)
          if ( m-> variable)
          {
             int shift = ( m-> checked ? 1 : 0) + ( m-> disabled ? 1 : 0);
-            char * varName = malloc( strlen( m-> variable) + 1 + shift);
+            char * varName = allocs( strlen( m-> variable) + 1 + shift);
             strcpy( &varName[ shift], m-> variable);
             if ( m-> checked)  varName[ --shift] = '*';
             if ( m-> disabled) varName[ --shift] = '-';
@@ -454,7 +448,7 @@ AbstractMenu_get_items ( Handle self, char * varName)
    if ( var-> stage > csNormal) return nilSV;
    if ( strlen( varName))
    {
-      PMenuItemReg m = my-> first_that( self, var_match, varName, true);
+      PMenuItemReg m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
       return ( m && m-> down) ? new_av( m-> down, 1) : nilSV;
    } else return var-> tree ? new_av( var-> tree, 0) : nilSV;
 }
@@ -464,7 +458,7 @@ AbstractMenu_set_items ( Handle self, SV * items)
 {
    PMenuItemReg oldBranch = var-> tree;
    if ( var-> stage > csNormal) return;
-   var-> tree = my-> new_menu( self, items, 0);
+   var-> tree = ( PMenuItemReg) my-> new_menu( self, items, 0);
    apc_menu_update( self, oldBranch, var-> tree);
    my-> dispose_menu( self, oldBranch);
 }
@@ -508,14 +502,13 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, char * accel)
 {
    PMenuItemReg m;
    if ( var-> stage > csNormal) return "";
-   m = my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( !m) return "";
    if ( !set)
       return m-> accel ? m-> accel : "";
    if ( m-> text == nil) return "";
    free( m-> accel);
-   m-> accel = malloc( strlen( accel) + 1);
-   strcpy( m-> accel, accel);
+   m-> accel = duplicate_string( accel);
    if ( m-> id > 0) apc_menu_item_set_accel( self, m, accel);
    return accel;
 }
@@ -526,7 +519,7 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
 {
    PMenuItemReg m;
    if ( var-> stage > csNormal) return nilSV;
-   m = my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( !m) return nilSV;
    if ( !set) {
       if ( m-> code)    return newSVsv( m-> code);
@@ -550,8 +543,7 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
       free( m-> perlSub);
       if ( m-> code) sv_free( m-> code);
       m-> code = nil;
-      m-> perlSub = malloc( strlen( line) + 1);
-      strcpy( m-> perlSub, line);
+      m-> perlSub = duplicate_string( line);
    }
    return nilSV;
 }
@@ -561,7 +553,7 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 {
    PMenuItemReg m;
    if ( var-> stage > csNormal) return false;
-   m = my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( m == nil) return false;
    if ( !set)
       return m ? m-> checked : false;
@@ -576,7 +568,7 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
 {
    PMenuItemReg m;
    if ( var-> stage > csNormal) return false;
-   m = my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( m == nil) return false;
    if ( !set)
       return m ? !m-> disabled : false;
@@ -592,7 +584,7 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
    PMenuItemReg m;
    PImage i = ( PImage) image;
 
-   m = my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( var-> stage > csNormal) return nilHandle;
    if ( m == nil) return nilHandle;
    if ( !m-> bitmap) return nilHandle;
@@ -620,14 +612,13 @@ AbstractMenu_text ( Handle self, Bool set, char * varName, char * text)
 {
    PMenuItemReg m;
    if ( var-> stage > csNormal) return "";
-   m = my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( m == nil) return "";
    if ( m-> text == nil) return "";
    if ( !set)
       return m-> text;
    free( m-> text);
-   m-> text = malloc( strlen( text) + 1);
-   strcpy( m-> text, text);
+   m-> text = duplicate_string( text);
    if ( m-> id > 0) apc_menu_item_set_text( self, m, text);
    return text;
 }
@@ -638,7 +629,7 @@ AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
 {
    PMenuItemReg m;
    if ( var-> stage > csNormal) return nilSV;
-   m = my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( m == nil) return nilSV;
    if ( m-> divider || m-> down) return nilSV;
    if ( !set)
@@ -654,12 +645,10 @@ AbstractMenu_set_variable( Handle self, char * varName, char * newName)
 {
    PMenuItemReg m;
    if ( var-> stage > csNormal) return;
-   m = my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( m == nil) return;
    free( m-> variable);
-   m-> variable = malloc( strlen( newName) + 1);
-   strcpy( m-> variable, newName);
-
+   m-> variable = duplicate_string( newName);
 }
 
 static Bool
@@ -674,7 +663,7 @@ sub_call( Handle self, PMenuItemReg m)
 Bool
 AbstractMenu_sub_call_id ( Handle self, int sysId)
 {
-   return sub_call( self, my-> first_that( self, id_match, (void *) sysId, false));
+   return sub_call( self, ( PMenuItemReg) my-> first_that( self, id_match, (void *) sysId, false));
 }
 
 #define keyRealize( key)     if ((( key & 0xFF) >= 'A') && (( key & 0xFF) <= 'z')) \
@@ -687,7 +676,7 @@ Bool
 AbstractMenu_sub_call_key ( Handle self, int key)
 {
    keyRealize( key);
-   return sub_call( self, my-> first_that( self, key_match, (void *) key, false));
+   return sub_call( self, ( PMenuItemReg) my-> first_that( self, key_match, (void *) key, false));
 }
 
 typedef struct _Kmcc
@@ -751,15 +740,15 @@ static Bool up_match   ( Handle self, PMenuItemReg m, void * params) { return m-
 static Bool prev_match ( Handle self, PMenuItemReg m, void * params) { return m-> next == params; }
 
 void
-AbstractMenu_delete( Handle self, char * varName)
+AbstractMenu_remove( Handle self, char * varName)
 {
    PMenuItemReg up, prev, m;
    if ( var-> stage > csNormal) return;
-   m = my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
    if ( m == nil) return;
    apc_menu_item_delete( self, m);
-   up   = my-> first_that( self, up_match, m, true);
-   prev = my-> first_that( self, prev_match, m, true);
+   up   = ( PMenuItemReg) my-> first_that( self, up_match, m, true);
+   prev = ( PMenuItemReg) my-> first_that( self, prev_match, m, true);
    if ( up)   up  -> down = m-> next;
    if ( prev) prev-> next = m-> next;
    if ( m == var-> tree) var-> tree = m-> next;
@@ -792,14 +781,14 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
    {
       if ( var-> tree == nil)
       {
-         var-> tree = my-> new_menu( self, menuItems, 0);
+         var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
          apc_menu_update( self, nil, var-> tree);
          return;
       }
       branch = m = var-> tree;
       up = &var-> tree;
    } else {
-      branch = m = my-> first_that( self, var_match, rootName, true);
+      branch = m = ( PMenuItemReg) my-> first_that( self, var_match, rootName, true);
       if ( m == nil || m-> down == nil) return;
       up = &m-> down;
       m = m-> down;
@@ -808,7 +797,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       int maxId = 0;
       PMenuItemReg save = var-> tree;
       my-> first_that( self, collect_id, &maxId, true);
-      addFirst = my-> new_menu( self, menuItems, 0);
+      addFirst = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
       if ( !addFirst) return; // error in menuItems
       var-> tree = addFirst;
       my-> first_that( self, increase_id, &maxId, true);
@@ -844,4 +833,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 }
 
 
+#ifdef __cplusplus
+}
+#endif
 

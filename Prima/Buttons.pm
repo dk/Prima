@@ -894,6 +894,15 @@ sub on_paint
    }
 }
 
+
+sub text
+{
+   return $_[0]->SUPER::text unless $#_;
+   $_[0]-> SUPER::text($_[1]);
+   $_[0]-> repaint;
+}
+
+
 package Prima::RadioGroup;
 no strict; @ISA=qw(Prima::GroupBox); use strict;
 

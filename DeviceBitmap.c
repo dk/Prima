@@ -28,6 +28,11 @@
 #include "DeviceBitmap.h"
 #include <DeviceBitmap.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CDrawable->
 #define my  ((( PDeviceBitmap) self)-> self)
@@ -97,3 +102,6 @@ DeviceBitmap_get_handle( Handle self)
    return newSVpv( buf, 0);
 }
 
+#ifdef __cplusplus
+}
+#endif

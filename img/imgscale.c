@@ -1,4 +1,12 @@
+
+
 #include "img_conv.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define var (( PImage) self)
 
 #define BS_BYTEIMPACT( type)                                                        \
@@ -299,25 +307,25 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
    switch( var->type)
    {
       case imMono:     case imBW:
-         (void*)proc = ( var->w > absw) ? bs_mono_in : bs_mono_out;         break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_mono_in : bs_mono_out);  break;
       case imNibble:   case imNibble|imGrayScale:
-         (void*)proc = ( var->w > absw) ? bs_nibble_in : bs_nibble_out;     break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_nibble_in : bs_nibble_out);     break;
       case imByte:     case im256:
-         (void*)proc = ( var->w > absw) ? bs_uint8_t_in : bs_uint8_t_out;   break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_uint8_t_in : bs_uint8_t_out);   break;
       case imRGB:      case imRGB|imGrayScale:
-         (void*)proc = ( var->w > absw) ? bs_RGBColor_in : bs_RGBColor_out; break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_RGBColor_in : bs_RGBColor_out); break;
       case imShort:
-         (void*)proc = ( var->w > absw) ? bs_int16_t_in : bs_int16_t_out;   break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_int16_t_in : bs_int16_t_out);   break;
       case imLong:
-         (void*)proc = ( var->w > absw) ? bs_int32_t_in : bs_int32_t_out;   break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_int32_t_in : bs_int32_t_out);   break;
       case imFloat:
-         (void*)proc = ( var->w > absw) ? bs_float_in : bs_float_out;       break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_float_in : bs_float_out);       break;
       case imDouble:
-         (void*)proc = ( var->w > absw) ? bs_double_in : bs_double_out;     break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_double_in : bs_double_out);     break;
       case imComplex:  case imTrigComplex:
-         (void*)proc = ( var->w > absw) ? bs_Complex_in : bs_Complex_out;   break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_Complex_in : bs_Complex_out);   break;
       case imDComplex: case imTrigDComplex:
-         (void*)proc = ( var->w > absw) ? bs_DComplex_in : bs_DComplex_out; break;
+         proc = ( PStretchProc)(( var->w > absw) ? bs_DComplex_in : bs_DComplex_out); break;
       default:
          return;
    }
@@ -377,3 +385,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
       }
    }
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -5,6 +5,10 @@
 #include "apricot.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern Bool dolbug;
 extern Bool waitBeforeQuit;
 
@@ -37,6 +41,10 @@ extern Bool font_notify ( Handle self, Handle child, void * font);
 extern Bool find_accel( Handle self, Handle item, int * key);
 extern Bool single_color_notify ( Handle self, Handle child, void * color);
 extern Bool kill_all( Handle self, Handle child, void * dummy);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

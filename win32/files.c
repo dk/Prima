@@ -39,6 +39,11 @@ void __inline my_fd_set( HANDLE fd, fd_set* f) { FD_SET((unsigned int) fd, f); }
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  select
 #undef  fd_set
 #undef  FD_ZERO
@@ -168,7 +173,11 @@ apc_file_attach( Handle self)
 
    if ( guts. socket_version == 0) {
       int  _data, _sz = sizeof( int);
-      win32_htons(80); // init perl socket library, if any
+#ifdef PERL_OBJECT     // init perl socket library, if any
+      PL_piSock-> Htons( 80);
+#else
+      win32_htons(80);
+#endif
       if ( getsockopt(( SOCKET) INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (char*)&_data, &_sz) != 0)
          guts. socket_version = -1; // no sockets available
       else
@@ -236,3 +245,6 @@ apc_file_change_mask( Handle self)
    return true;
 }
 
+#ifdef __cplusplus
+}
+#endif

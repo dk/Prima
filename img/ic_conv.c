@@ -1,4 +1,12 @@
+
+
 #include "img_conv.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define var (( PImage) self)
 // Mono
 
@@ -203,7 +211,7 @@ BC( graybyte, rgb, None)
 BC( rgb, mono, None)
 {
    dBCARGS;
-   Byte * convBuf = malloc( width);
+   Byte * convBuf = allocb( width);
    BCWARN;
    cm_fill_colorref(( PRGBColor) map_RGB_gray, 256, stdmono_palette, 2, colorref);
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
@@ -269,3 +277,6 @@ BC( rgb, graybyte, None)
    memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));
 }
 
+#ifdef __cplusplus
+}
+#endif

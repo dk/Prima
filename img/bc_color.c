@@ -1,4 +1,9 @@
 #include "img_conv.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Bitstroke convertors
 // Mono
 // 1-> 16
@@ -240,8 +245,8 @@ bc_nibble_mono_cr( register Byte * source, register Byte * dest, register int co
 void
 bc_nibble_mono_ht( register Byte * source, register Byte * dest, register int count, register PRGBColor palette, int lineSeqNo)
 {
-#define n64cmp1 ( r = palette[ c >> 4], (( map_RGB_gray[r.r+r.g+r.b] >> 2) > map_halftone8x8_64[ index++]))
-#define n64cmp2 ( r = palette[ c & 15], (( map_RGB_gray[r.r+r.g+r.b] >> 2) > map_halftone8x8_64[ index++]))
+#define n64cmp1 (( r = palette[ c >> 4], (( map_RGB_gray[r.r+r.g+r.b] >> 2) > map_halftone8x8_64[ index++]))?1:0)
+#define n64cmp2 (( r = palette[ c & 15], (( map_RGB_gray[r.r+r.g+r.b] >> 2) > map_halftone8x8_64[ index++]))?1:0)
    register int count8 = count >> 3;
    lineSeqNo = ( lineSeqNo & 7) << 3;
    while ( count8--)
@@ -403,7 +408,7 @@ bc_byte_mono_cr( register Byte * source, Byte * dest, register int count, regist
 void
 bc_byte_mono_ht( register Byte * source, register Byte * dest, register int count, PRGBColor palette, int lineSeqNo)
 {
-#define b64cmp  ( r = palette[ *source++], (( map_RGB_gray[r.r+r.g+r.b] >> 2) > map_halftone8x8_64[ index++]))
+#define b64cmp  (( r = palette[ *source++], (( map_RGB_gray[r.r+r.g+r.b] >> 2) > map_halftone8x8_64[ index++]))?1:0)
    int count8 = count & 7;
    lineSeqNo = ( lineSeqNo & 7) << 3;
    count >>= 3;
@@ -609,7 +614,7 @@ bc_rgb_graybyte( Byte * source, register Byte * dest, register int count)
 void
 bc_rgb_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo)
 {
-#define tc64cmp  ( source+=3, ( map_RGB_gray[ source[-1] + source[-2] + source[-3]] >> 2) > map_halftone8x8_64[ index++])
+#define tc64cmp  (( source+=3, ( map_RGB_gray[ source[-1] + source[-2] + source[-3]] >> 2) > map_halftone8x8_64[ index++])?1:0)
    int count8 = count & 7;
    lineSeqNo = ( lineSeqNo & 7) << 3;
    count >>= 3;
@@ -788,3 +793,7 @@ bc_mono_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width)
    } else
       memcpy( dest, source + ( from >> 3), ( width >> 3) + (( width & 7) > 0 ? 1 : 0));
 }
+
+#ifdef __cplusplus
+}
+#endif

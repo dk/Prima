@@ -28,6 +28,11 @@
 #include "Timer.h"
 #include <Timer.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CComponent->
 #define my  ((( PTimer) self)-> self)
@@ -115,3 +120,7 @@ Timer_timeout( Handle self, Bool set, int timeout)
       return apc_timer_get_timeout( self);
    return ( int) apc_timer_set_timeout( self, timeout);
 }
+
+#ifdef __cplusplus
+}
+#endif

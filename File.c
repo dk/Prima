@@ -35,6 +35,11 @@ typedef FILE *FileStream;
 #include "File.h"
 #include <File.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CComponent
 #define my  ((( PFile) self)-> self)
@@ -189,3 +194,6 @@ File_reset_notifications( Handle self)
    }
 }
 
+#ifdef __cplusplus
+}
+#endif

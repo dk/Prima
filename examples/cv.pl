@@ -36,4 +36,3 @@ my $p = Prima::ColorDialog-> create(
 #    $p-> execute;
 # Right now, to run in on Unix successfully, we'll make it this:
 run Prima;
-

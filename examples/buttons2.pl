@@ -23,7 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-use Prima qw(Widgets Buttons StdBitmap StdDlg), Application => { name => 'Buttons sample' };
+use Prima qw(Buttons StdBitmap), Application => { name => 'Buttons sample' };
 
 my $w = Prima::Window-> create(
   text=> "Handmade buttons",

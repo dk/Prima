@@ -32,6 +32,7 @@
  * System independent image routines
  */
 
+#include "img_api.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -39,8 +40,12 @@
 #include <io.h>
 #endif
 #include <fcntl.h>
-#include "img_api.h"
 #include "gif_support.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define APCIMG_VERSION		1
 
@@ -128,7 +133,7 @@ apc_register_image_format( int version, PImgFormat imgf)
 typedef struct {
     const char *filename; /* Image file name */
     int fd;               /* Image file descriptor */
-    char *preread_buf;    /* Preread data */
+    Byte *preread_buf;    /* Preread data */
     int preread_size;     /* This field's value could differ from
 			     maxPrereadSize depending on result
 			     of read() or further calls to
@@ -140,10 +145,10 @@ typedef struct {
 static __PImgLoadData
 load_prepare_data( void)
 {
-    __PImgLoadData load_data = ( __PImgLoadData) malloc( sizeof( __ImgLoadData));
+    __PImgLoadData load_data = alloc1( __ImgLoadData);
     if ( load_data != nil) {
 	load_data->preread_buf = (load_data->preread_size = maxPrereadSize) > 0 ?
-	    ( char*) malloc( load_data->preread_size) :
+	    allocb( load_data->preread_size) :
 	    nil;
 	load_data->error = 0;
 	load_data->desiredFormat =
@@ -186,22 +191,22 @@ load_img_loadable( Handle item, void *params)
 }
 
 static Bool
-__is_boolean_value( const char *val)
+__is_boolean_value( void *val)
 {
-    return ( ( strcasecmp( val, "yes") == 0)
-	     || ( strcasecmp( val, "on") == 0)
-	     || ( strcasecmp( val, "1") == 0)
-	     || ( strcasecmp( val, "no") == 0)
-	     || ( strcasecmp( val, "off") == 0)
-	     || ( strcasecmp( val, "0") == 0));
+    return ( ( strcasecmp((char*) val, "yes") == 0)
+	     || ( strcasecmp((char*) val, "on") == 0)
+	     || ( strcasecmp((char*) val, "1") == 0)
+	     || ( strcasecmp((char*) val, "no") == 0)
+	     || ( strcasecmp((char*) val, "off") == 0)
+	     || ( strcasecmp((char*) val, "0") == 0));
 }
 
 static Bool
-__boolean_value( const char *val)
+__boolean_value( void *val)
 {
-    return ( ( strcasecmp( val, "yes") == 0)
-	     || ( strcasecmp( val, "on") == 0)
-	     || ( strcasecmp( val, "1") == 0));
+    return ( ( strcasecmp((char*) val, "yes") == 0)
+	     || ( strcasecmp((char*) val, "on") == 0)
+	     || ( strcasecmp((char*) val, "1") == 0));
 }
 
 static Bool
@@ -236,7 +241,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 		    __apc_image_set_error( "__apc_image_correct_property: property ``%s'' must be of scalar type", imgProp->name);
 		    rc = false;
 		}
-		else if ( ! isConvertionAllowed 
+		else if ( ! isConvertionAllowed
 			  && ! __is_boolean_value( imgProp->val.Binary.data)) {
 		    __apc_image_set_error( "__apc_image_correct_property: property ``%s'' does not contain a boolean value as it supposed to be", imgProp->name);
 		    rc = false;
@@ -249,7 +254,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 			*readAll = __boolean_value( imgProp->val.Binary.data);
 		    }
 		    if ( isConvertionAllowed && convertionAllowed) {
-			*convertionAllowed = atoi( imgProp->val.Binary.data);
+			*convertionAllowed = atoi(( const char *) imgProp->val.Binary.data);
 		    }
 		}
 		/* That was readAll, extraInfo or convertionAllowed properties... */
@@ -297,7 +302,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 								       PROPTYPE_ARRAY | PROPTYPE_INT,
 								       imgProp->used)) != nil;
 				for ( n = 0; n < imgProp->used && rc; n++) {
-				    rc = img_push_property_value( outImgProp, atoi( imgProp->val.pBinary[ n].data));
+				    rc = img_push_property_value( outImgProp, atoi(( const char *) imgProp->val.pBinary[ n].data));
 				}
 			    }
 			    else {
@@ -305,7 +310,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 								       imgProp->name,
 								       PROPTYPE_INT,
 								       0,
-								       atoi( imgProp->val.Binary.data))) != nil;
+								       atoi(( const char *) imgProp->val.Binary.data))) != nil;
 			    }
 			}
 			break;
@@ -326,7 +331,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 								       PROPTYPE_ARRAY | PROPTYPE_DOUBLE,
 								       imgProp->used)) != nil;
 				for ( n = 0; n < imgProp->used && rc; n++) {
-				    rc = img_push_property_value( outImgProp, atof( imgProp->val.pBinary[ n].data));
+				    rc = img_push_property_value( outImgProp, atof(( const char *) imgProp->val.pBinary[ n].data));
 				}
 			    }
 			    else {
@@ -334,7 +339,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 								       imgProp->name,
 								       PROPTYPE_DOUBLE,
 								       0,
-								       atof( imgProp->val.Binary.data))) != nil;
+								       atof(( const char *) imgProp->val.Binary.data))) != nil;
 			    }
 			}
 			break;
@@ -384,7 +389,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 								       PROPTYPE_ARRAY | PROPTYPE_BYTE,
 								       imgProp->used)) != nil;
 				for ( n = 0; n < imgProp->used && rc; n++) {
-				    rc = img_push_property_value( outImgProp, atoi( imgProp->val.pBinary[ n].data));
+				    rc = img_push_property_value( outImgProp, atoi(( const char *) imgProp->val.pBinary[ n].data));
 				}
 			    }
 			    else {
@@ -392,7 +397,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 								       imgProp->name,
 								       PROPTYPE_BYTE,
 								       0,
-								       atoi( imgProp->val.Binary.data))) != nil;
+								       atoi(( const char *) imgProp->val.Binary.data))) != nil;
 			    }
 			}
 			break;
@@ -555,7 +560,7 @@ adjust_line_size( PList imgInfo)
 	     && ( ( lineSizeProp->flags & PROPTYPE_MASK) == PROPTYPE_INT)
 	     && ( ( lineSizeProp->val.Int % 4) != 0)) {
 	    int newSize = ( lineSizeProp->val.Int / 4 + 1) * 4;
-	    Byte *newData = ( Byte *) malloc( newSize * h);
+	    Byte *newData = allocb( newSize * h);
 	    Byte *po = newData, *pi = dataProp->val.pByte;
 
 	    if ( ! newData) {
@@ -668,7 +673,7 @@ typedef struct {
 static __PImgSaveData
 save_prepare_data( void)
 {
-    __PImgSaveData save_data = ( __PImgSaveData) malloc( sizeof( __ImgSaveData));
+    __PImgSaveData save_data = alloc1( __ImgSaveData);
     if ( save_data != nil) {
 	save_data->filename = nil;
 	list_create( &save_data->formats, 5, 5);
@@ -782,7 +787,7 @@ apc_image_save( const char *filename, const char *format, PList imgInfo)
 Bool
 apc_image_fetch_more( __PImgLoadData load_data, int preread_size)
 {
-    char *newbuf;
+    Byte *newbuf;
     int rd;
     Bool rc = false;
 
@@ -790,7 +795,7 @@ apc_image_fetch_more( __PImgLoadData load_data, int preread_size)
 	return true;
     }
     if ( lseek( load_data->fd, 0, SEEK_SET) != -1) {
-	if ( ( newbuf = ( char *) malloc( preread_size)) != nil) {
+	if ( ( newbuf = allocb( preread_size)) != nil) {
 	    rd = read( load_data->fd, newbuf, preread_size);
 	    if ( rd < preread_size) {
 		free( newbuf);
@@ -817,3 +822,7 @@ prima_cleanup_image_subsystem( void)
 {
     plist_destroy( imgFormats);
 }
+
+#ifdef __cplusplus
+}
+#endif

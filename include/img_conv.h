@@ -34,6 +34,12 @@
 #include <fcntl.h>
 #endif
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 // initializer routine
 extern void init_image_support();
 
@@ -232,3 +238,6 @@ extern Byte     map_halftone8x8_64 [  64];
 
 
 
+#ifdef __cplusplus
+}
+#endif

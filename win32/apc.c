@@ -35,6 +35,11 @@
 #include "Window.h"
 #include "Application.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
@@ -83,7 +88,7 @@ apc_application_create( Handle self)
    RECT r;
    objCheck false;
    if ( !( h = CreateWindowEx( 0, "GenericApp", "", 0, 0, 0, 0, 0,
-          nilHandle, nilHandle, guts. instance, nilHandle))) apiErrRet;
+          nil, nil, guts. instance, nil))) apiErrRet;
    sys handle = h;
    sys parent = sys owner = HWND_DESKTOP;
    SetWindowLong( sys handle, GWL_USERDATA, self);
@@ -92,7 +97,7 @@ apc_application_create( Handle self)
    // if ( !SetTimer( h, TID_USERMAX, 100, nil)) apiErr;
    GetClientRect( h, &r);
    if ( !( var handle = ( Handle) CreateWindowEx( 0,  "Generic", "", WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
-        0, 0, r. right - r. left, r. bottom - r. top, h, nilHandle,
+        0, 0, r. right - r. left, r. bottom - r. top, h, nil,
         guts. instance, nil))) apiErrRet;
    SetWindowLong(( HWND) var handle, GWL_USERDATA, self);
    apt_set( aptEnabled);
@@ -453,7 +458,7 @@ HWND_lock( Bool lock)
    }
    else
    {
-      if ( --guts. appLock == 0) return LockWindowUpdate( nilHandle);
+      if ( --guts. appLock == 0) return LockWindowUpdate( nil);
    }
    return true;
 }
@@ -510,12 +515,12 @@ Bool
 apc_component_create( Handle self)
 {
    PComponent c = ( PComponent) self;
-   PDrawableData d = c-> sysData;
+   PDrawableData d = ( PDrawableData) c-> sysData;
 
    objCheck false;
 
    if ( d) return false;
-   d = malloc( sizeof( DrawableData));
+   d = ( PDrawableData) malloc( sizeof( DrawableData));
    memset( d, 0, sizeof( DrawableData));
    c-> sysData = d;
    return true;
@@ -525,7 +530,7 @@ Bool
 apc_component_destroy( Handle self)
 {
    PComponent    c = ( PComponent) self;
-   PDrawableData d = c-> sysData;
+   PDrawableData d = ( PDrawableData) c-> sysData;
    objCheck false;
    var handle = nilHandle;
    if ( d == nil) return false;
@@ -646,7 +651,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
       if (( DHANDLE( owner) == sys owner) && ( clipOwner == is_apt( aptClipOwner)))
       {
          behind = GetWindow( HANDLE, GW_HWNDPREV);
-         if ( behind == nilHandle) behind = HWND_TOP;
+         if ( behind == nil) behind = HWND_TOP;
       }
       var stage = csAxEvents;
       if ( kind_of( self, CWidget))
@@ -659,7 +664,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
       var self-> end_paint( self);
       reset = true;
       for( i = 0; i < count; i++)
-         get_view_ex( list[ i], ( ViewProfile*) dsys( list[ i]) recreateData = malloc( sizeof( ViewProfile)));
+         get_view_ex( list[ i], ( ViewProfile*)( dsys( list[ i]) recreateData = malloc( sizeof( ViewProfile))));
    }
 
    switch (( int) className)
@@ -670,14 +675,14 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
           RECT r;
           int  rcp[4] = {0,0,0,0};
           if ( !clipOwner) parentView = HWND_DESKTOP;
-          if ( !taskListed && ( parentView == HWND_DESKTOP || parentView == nilHandle))
+          if ( !taskListed && ( parentView == HWND_DESKTOP || parentView == nil))
               parentView = DHANDLE( application);
           if ( !usePos)  rcp[0] = rcp[1] = CW_USEDEFAULT;
           if ( !useSize) rcp[2] = rcp[3] = CW_USEDEFAULT;
           if ( !( frame = CreateWindowEx( exstyle, "GenericFrame", "",
                 style | WS_CLIPCHILDREN,
                 rcp[0], rcp[1], rcp[2], rcp[3],
-                parentView, nilHandle, guts. instance, nil)))
+                parentView, nil, guts. instance, nil)))
              apiErrRet;
           if ( !SetWindowPos( frame, behind, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE))
              apiErr;
@@ -690,7 +695,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
           GetClientRect( frame, &r);
           if ( !( ret = CreateWindowEx( 0,  "Generic", "",
                 WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-                0, 0, r. right - r. left, r. bottom - r. top, frame, nilHandle,
+                0, 0, r. right - r. left, r. bottom - r. top, frame, nil,
                 guts. instance, nil)))
              apiErr;
           sys lastSize. x = r. right  - r. left;
@@ -707,7 +712,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
        }
        if ( !( ret = CreateWindowEx( exstyle,  "Generic", "",
              style | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0,
-             parentView, nilHandle, guts. instance, nil)))
+             parentView, nil, guts. instance, nil)))
           apiErrRet;
        if ( !SetWindowPos( ret, behind, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE))
           apiErr;
@@ -944,7 +949,7 @@ apc_window_get_icon( Handle self, Handle icon)
 
    objCheck false;
    p = ( HICON) SendMessage( HANDLE, WM_GETICON, ICON_BIG, 0);
-   if ( icon == nilHandle) return p != nilHandle;
+   if ( icon == nil) return p != nil;
 
    save = sys pointer;
    sys pointer = p;
@@ -986,7 +991,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
     PMenuWndData mwd;
     PMenuItemReg first;
 
-    if ( i == nil) return nilHandle;
+    if ( i == nil) return nil;
 
     if ( menuType)
        m = CreateMenu();
@@ -995,9 +1000,9 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 
     if ( !m) {
        apiErr;
-       return nilHandle;
+       return nil;
     }
-    mwd = malloc( sizeof( MenuWndData));
+    mwd = ( PMenuWndData) malloc( sizeof( MenuWndData));
     mwd-> menu = menu;
     first      = i;
     hash_store( menuMan, &m, sizeof( void*), mwd);
@@ -1030,7 +1035,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
              map_tildas( buf, strlen( i-> text));
              menuItem. dwTypeData = ( LPTSTR) buf;
           } else if ( i-> bitmap)
-             menuItem. dwTypeData = image_make_bitmap_handle( i-> bitmap, nil);
+             menuItem. dwTypeData = ( LPTSTR) image_make_bitmap_handle( i-> bitmap, nil);
           InsertMenuItem( m, -1, true, &menuItem);
        }
        menuItem. dwItemData = menu;
@@ -1161,7 +1166,7 @@ apc_window_set_menu( Handle self, Handle menu)
    objCheck false;
    apcErrClear;
    size = var self-> get_size( self);
-   SetMenu( HANDLE, menu ? ( HMENU) (( PComponent) menu)-> handle : nilHandle);
+   SetMenu( HANDLE, menu ? ( HMENU) (( PComponent) menu)-> handle : nil);
    DrawMenuBar( HANDLE);
    if ( apc_window_get_window_state( self) == wsNormal)
        var self-> set_size( self, size);
@@ -1320,13 +1325,13 @@ apc_widget_map_points( Handle self, Bool toScreen, int count, Point * p)
    if ( toScreen) {
       for ( i = 0; i < count; i++)
          p[i]. y = sz. y - p[i]. y;
-      MapWindowPoints(( HWND) var handle, nilHandle, ( POINT * ) p, count);
+      MapWindowPoints(( HWND) var handle, nil, ( POINT * ) p, count);
       for ( i = 0; i < count; i++)
          p[i]. y = appSz. y - p[i].y;
    } else {
       for ( i = 0; i < count; i++)
          p[i]. y = appSz. y - p[i]. y;
-      MapWindowPoints( nilHandle, ( HWND) var handle, ( POINT * ) p, count);
+      MapWindowPoints( nil, ( HWND) var handle, ( POINT * ) p, count);
       for ( i = 0; i < count; i++)
          p[i]. y = sz. y - p[i]. y;
    }
@@ -1428,7 +1433,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
          apt_clear( aptWinPS);
          apt_clear( aptWM_PAINT);
          apt_clear( aptCompatiblePS);
-         sys ps = nilHandle;
+         sys ps = nil;
          return false;
       }
 
@@ -1539,7 +1544,7 @@ apc_widget_end_paint( Handle self)
 {
    objCheck false;
    if ( is_opt( optBuffered)) {
-      if ( sys bm != nilHandle) {
+      if ( sys bm != nil) {
          if ( !SetViewportOrgEx( sys ps, 0, 0, nil)) apiErr;
          if ( !BitBlt( sys ps2, sys transform2. x, sys transform2. y, var w, var h, sys ps, 0, 0, SRCCOPY)) apiErr;
          if ( sys stockBM)
@@ -1563,13 +1568,13 @@ apc_widget_end_paint( Handle self)
    if ( sys pal)
       DeleteObject( sys pal);
 
-   if ( sys ps != nilHandle) {
+   if ( sys ps != nil) {
       if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
          if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
       } else if ( is_apt( aptWinPS))
          if ( !ReleaseDC(( HWND) var handle, sys ps)) apiErr;
    }
-   sys ps = sys pal = sys pal2 = nilHandle;
+   sys ps = sys pal = sys pal2 = nil;
    apt_clear( aptWinPS);
    apt_clear( aptWM_PAINT);
    apt_clear( aptCompatiblePS);
@@ -1584,7 +1589,7 @@ apc_widget_end_paint_info( Handle self)
    hwnd_leave_paint( self);
    sys pal = nil;
    if ( !( ok = ReleaseDC(( HWND) var handle, sys ps))) apiErr;
-   sys ps = nilHandle;
+   sys ps = nil;
    apt_clear( aptWinPS);
    apt_clear( aptCompatiblePS);
    return ok;
@@ -2098,7 +2103,7 @@ apc_widget_set_size( Handle self, int width, int height)
 Bool
 apc_widget_set_shape( Handle self, Handle mask)
 {
-   HRGN rgn = nilHandle;
+   HRGN rgn = nil;
    objCheck false;
 
    rgn = region_create( mask);
@@ -2136,7 +2141,7 @@ Bool
 apc_widget_set_visible( Handle self, Bool show)
 {
    objCheck false;
-   if ( !SetWindowPos( HANDLE, nilHandle, 0, 0, 0, 0,
+   if ( !SetWindowPos( HANDLE, nil, 0, 0, 0, 0,
         ( show ? SWP_SHOWWINDOW : SWP_HIDEWINDOW)
         | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
    objCheck false;
@@ -2370,7 +2375,7 @@ apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
    flags |= MF_BITMAP;
 
    if ( !ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, image_make_bitmap_handle( image, nil))) apiErrRet;
+                    m-> id + MENU_ID_AUTOSTART, ( LPCTSTR) image_make_bitmap_handle( image, nil))) apiErrRet;
    return true;
 }
 
@@ -2397,7 +2402,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
       if ( h) DestroyMenu( h);
       hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
       var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
-      SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : nilHandle);
+      SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : nil);
       DrawMenuBar( DHANDLE( var owner));
       if ( apc_window_get_window_state( var owner) == wsNormal)
          owner-> self-> set_size( var owner, size);
@@ -2624,7 +2629,7 @@ apc_message( Handle self, PEvent ev, Bool post)
                (( ev-> pos. mod & kmCtrl ) ? MK_CONTROL : 0);
              if ( post) {
                 KeyPacket * kp;
-                kp = malloc( sizeof( KeyPacket));
+                kp = ( KeyPacket *) malloc( sizeof( KeyPacket));
                 kp-> mp1 = mp1;
                 kp-> mp2 = mp2;
                 kp-> msg = msg;
@@ -2712,7 +2717,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 
              if ( post) {
                 KeyPacket * kp;
-                kp = malloc( sizeof( KeyPacket));
+                kp = ( KeyPacket *) malloc( sizeof( KeyPacket));
                 kp-> mp1 = mp1;
                 kp-> mp2 = mp2;
                 kp-> msg = msg;
@@ -2773,7 +2778,7 @@ apc_system_action( const char * params)
          }
          if ( WNetGetUser( connection, user, &len) != NO_ERROR)
             return 0;
-         return strcpy( malloc( strlen( user) + 1), user);
+         return strcpy(( char *) malloc( strlen( user) + 1), user);
       } else if ( strncmp( params, "win32.SetVersion", 16) == 0) {
          const char * ver = params + 17;
          while ( *ver && ( *ver == ' '  || *ver == '\t')) ver++;
@@ -2800,3 +2805,6 @@ apc_system_action( const char * params)
    return 0;
 }
 
+#ifdef __cplusplus
+}
+#endif

@@ -29,6 +29,11 @@
 #include "Application.h"
 #include "Menu.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
@@ -37,12 +42,12 @@
 
 WinGuts guts;
 DWORD   rc;
-PHash   stylusMan    = nilHandle; // pen & brush manager
-PHash   fontMan      = nilHandle; // font manager
-PHash   patMan       = nilHandle; // pattern resource manager
-PHash   menuMan      = nilHandle; // HMENU manager
-PHash   imageMan     = nilHandle; // HBITMAP manager
-PHash   regnodeMan   = nilHandle; // cache for apc_widget_user_profile
+PHash   stylusMan    = nil; // pen & brush manager
+PHash   fontMan      = nil; // font manager
+PHash   patMan       = nil; // pattern resource manager
+PHash   menuMan      = nil; // HMENU manager
+PHash   imageMan     = nil; // HBITMAP manager
+PHash   regnodeMan   = nil; // cache for apc_widget_user_profile
 HPEN    hPenHollow;
 HBRUSH  hBrushHollow;
 PatResource hPatHollow;
@@ -89,6 +94,7 @@ window_subsystem_init()
    }
    guts. mainThreadId = GetCurrentThreadId();
    guts. errorMode = SetErrorMode( SEM_FAILCRITICALERRORS);
+   guts. desktopWindow = GetDesktopWindow();
 
    memset( &wc, 0, sizeof( wc));
    wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -219,7 +225,7 @@ window_subsystem_init()
       char buf[ KL_NAMELENGTH * 2] = "";
       HKL current      = GetKeyboardLayout( 0);
       int i, j, size   = GetKeyboardLayoutList( 0, nil);
-      HKL * kl         = malloc( sizeof( HKL) * size);
+      HKL * kl         = ( HKL *) malloc( sizeof( HKL) * size);
 
       guts. keyLayout = nil;
       if ( !GetKeyboardLayoutName( buf)) apiErr;
@@ -302,7 +308,7 @@ char * err_msg( DWORD errId, char * buffer)
       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       ( LPTSTR) &lpMsgBuf, 0, NULL);
    if ( lpMsgBuf)
-      strncpy( buffer, lpMsgBuf, 256);
+      strncpy( buffer, ( const char *) lpMsgBuf, 256);
    else
       buffer[0] = 0;
    buffer[ 255] = 0;
@@ -342,8 +348,8 @@ local_wnd( HWND who, HWND client)
    v = (PComponent) hwnd_to_view( who);
    while (v && ( Handle) v != application)
    {
-      if ((Handle)v == self) return true;
-      ( Handle) v = v-> owner;
+      if ( (Handle)v == self) return true;
+      v = ( PComponent) ( v-> owner);
    }
    return false;
 }
@@ -481,7 +487,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       break;
    case WM_ERASEBKGND:
       return 1;
-#ifdef DEBUG
+#ifdef IPC_TAINT
    case WM_EXTERNAL:
       switch (( int) mp1) {
       case 0:
@@ -548,14 +554,14 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              // non-alphanumeric keys - such as /\|?., etc - with kmCtrl are giving weird results
              octl = guts. currentKeyState[ VK_CONTROL];
              guts. currentKeyState[ VK_CONTROL] = 0;
-             kl   = nilHandle;
+             kl   = nil;
              for ( j = 0; j < ( sizeof( keyLayouts) / sizeof( char*)); j++) {
                 if ( strncmp( buf + 4, keyLayouts[ j], 4) == 0) {
                    kl = GetKeyboardLayout( 0);
                    break;
                 }
              }
-             if ( kl == nilHandle)
+             if ( kl == nil)
                 kl = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
           } else
              kl = GetKeyboardLayout( 0);
@@ -600,13 +606,13 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          PMenuItemReg m;
          sys lastMenu = mwd ? mwd-> menu : nilHandle;
          if ( mwd && mwd-> menu && ( PAbstractMenu(mwd-> menu)->stage <= csNormal)) {
-            m = AbstractMenu_first_that( mwd-> menu, find_oid, (void*)mwd->id, true);
+            m = ( PMenuItemReg) AbstractMenu_first_that( mwd-> menu, find_oid, (void*)mwd->id, true);
             hiStage    = true;
             ev. cmd    = cmMenu;
             ev. gen. H = mwd-> menu;
             ev. gen. p = m ? m-> variable : "";
          }
-         if (( msg == WM_INITMENUPOPUP) && ( m == nilHandle))
+         if (( msg == WM_INITMENUPOPUP) && ( m == nil))
             ev. cmd = 0;
       }
       break;
@@ -1265,3 +1271,7 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
    }
    return generic_frame_handler( win, msg, mp1, mp2);
 }
+
+#ifdef __cplusplus
+}
+#endif

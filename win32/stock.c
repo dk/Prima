@@ -39,6 +39,11 @@
 #include "Image.h"
 #include "Printer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
@@ -50,7 +55,7 @@ PDCStylus
 stylus_alloc( PStylus data)
 {
    Bool extPen = data-> extPen. actual;
-   PDCStylus ret = hash_fetch( stylusMan, data, sizeof( Stylus) - ( extPen ? 0 : sizeof( EXTPEN)));
+   PDCStylus ret = ( PDCStylus) hash_fetch( stylusMan, data, sizeof( Stylus) - ( extPen ? 0 : sizeof( EXTPEN)));
    if ( ret == nil) {
       LOGPEN p;
       LOGBRUSH * b;
@@ -59,7 +64,7 @@ stylus_alloc( PStylus data)
       if ( hash_count( stylusMan) > 128)
          stylus_clean();
 
-      ret = malloc( sizeof( DCStylus));
+      ret = ( PDCStylus) malloc( sizeof( DCStylus));
       memcpy( &ret-> s, data, sizeof( Stylus));
       ret-> refcnt = 0;
       p = ret-> s. pen;
@@ -207,11 +212,11 @@ PPatResource
 patres_fetch( unsigned char * pattern, int len)
 {
    int i;
-   PPatResource r = hash_fetch( patMan, pattern, len);
+   PPatResource r = ( PPatResource) hash_fetch( patMan, pattern, len);
    if ( r)
       return r;
 
-   r = malloc( sizeof( PatResource) + sizeof( DWORD) * len);
+   r = ( PPatResource) malloc( sizeof( PatResource) + sizeof( DWORD) * len);
    r-> dotsCount = len;
    r-> dotsPtr   = r-> dots;
    for ( i = 0; i < len; i++) {
@@ -402,7 +407,7 @@ add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeE
 
 //   if ( find_node( key) != nil)
 //      return false ;
-   node = malloc( sizeof( FontHashNode));
+   node = ( PFontHashNode) malloc( sizeof( FontHashNode));
    if ( node == nil) return false;
    memcpy( &(node-> key), key, sizeof( Font));
    memcpy( &(node-> value. font), font, sizeof( Font));
@@ -466,7 +471,7 @@ static Bool _ft_cleaner( PDCFont f, int keyLen, void * key, void * dummy) {
 PDCFont
 font_alloc( Font * data, Point * resolution)
 {
-   PDCFont ret = hash_fetch( fontMan, data, FONTSTRUCSIZE + strlen( data-> name));
+   PDCFont ret = ( PDCFont) hash_fetch( fontMan, data, FONTSTRUCSIZE + strlen( data-> name));
    if ( ret == nil) {
       LOGFONT logfont;
       PFont   f;
@@ -474,7 +479,7 @@ font_alloc( Font * data, Point * resolution)
       if ( IS_WIN95 && ( hash_count( fontMan) > 128))
          font_clean();
 
-      ret = malloc( sizeof( DCFont));
+      ret = ( PDCFont) malloc( sizeof( DCFont));
       memcpy( f = &ret-> font, data, sizeof( Font));
       ret-> refcnt = 0;
       font_font2logfont( f, &logfont);
@@ -968,11 +973,11 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 int CALLBACK
 fep2( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PList lst)
 {
-   PFont fm = malloc( sizeof( Font));
+   PFont fm = ( PFont) malloc( sizeof( Font));
    font_textmetric2font(( TEXTMETRIC *) t, fm, false);
    fm-> direction = fm-> resolution = 0;
    strncpy( fm-> name,     e-> elfLogFont. lfFaceName, LF_FACESIZE);
-   strncpy( fm-> family,   e-> elfFullName,            LF_FULLFACESIZE);
+   strncpy( fm-> family,   ( const char *) e-> elfFullName,            LF_FULLFACESIZE);
    list_add( lst, ( Handle) fm);
    return 1;
 }
@@ -1009,7 +1014,7 @@ apc_fonts( Handle self, const char* facename, int * retCount)
 
    if ( lst. count == 0) goto Nothing;
    *retCount = lst. count;
-   fmtx = malloc( *retCount * sizeof( Font));
+   fmtx = ( PFont) malloc( *retCount * sizeof( Font));
    for ( i = 0; i < lst. count; i++)
       memcpy( &fmtx[ i], ( void *) lst. items[ i], sizeof( Font));
    list_delete_all( &lst, true);
@@ -1312,13 +1317,13 @@ hwnd_enter_paint( Handle self)
       apc_gp_set_back_color( self, sys lbs[1]);
    }
 
-   if ( sys psd == nil) sys psd = malloc( sizeof( PaintSaveData));
+   if ( sys psd == nil) sys psd = ( PPaintSaveData) malloc( sizeof( PaintSaveData));
    apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
    apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
    apc_gp_set_line_width( self, sys lineWidth);
    apc_gp_set_line_end( self, sys lineEnd);
    apc_gp_set_line_pattern( self,
-       ( sys linePatternLen > 3) ? sys linePattern : ( char*)&sys linePattern,
+       ( Byte*)(( sys linePatternLen > 3) ? sys linePattern : ( Byte*)&sys linePattern),
        sys linePatternLen);
    apc_gp_set_rop( self, sys rop);
    apc_gp_set_rop2( self, sys rop2);
@@ -1349,7 +1354,7 @@ hwnd_leave_paint( Handle self)
    SelectObject( sys ps,  sys stockBrush);
    SelectObject( sys ps,  sys stockFont);
    SelectPalette( sys ps, sys stockPalette, 0);
-   sys stockPen = sys stockBrush = sys stockFont = sys stockPalette = nilHandle;
+   sys stockPen = sys stockBrush = sys stockFont = sys stockPalette = nil;
    stylus_free( sys stylusResource, false);
    if ( IS_WIN95) {
       if ( sys linePatternLen2 > 3) free( sys linePattern2);
@@ -1408,7 +1413,7 @@ mod_select( int mod)
 {
    ModData * ks;
 
-   ks = malloc( sizeof( ModData));
+   ks = ( ModData*) malloc( sizeof( ModData));
    GetKeyboardState( ks-> ks);
    ks-> kss[ 0]   = ks-> ks[ VK_MENU];
    ks-> kss[ 1]   = ks-> ks[ VK_CONTROL];
@@ -1528,8 +1533,8 @@ palette_change( Handle self)
 
 
    xlp. palNumEntries = l. sz;
-   p = malloc( sizeof( RGBColor) * l. sz);
-   d = malloc( sizeof( RGBColor) * nColors);
+   p = ( PRGBColor) malloc( sizeof( RGBColor) * l. sz);
+   d = ( PRGBColor) malloc( sizeof( RGBColor) * nColors);
 
    l. p = p;
    list_first_that( &l.l, pal_collect, &l);
@@ -1669,7 +1674,7 @@ region_create( Handle mask)
             else {
                set = 1;
                if ( rdata-> rdh. nCount >= size) {
-                  rdata = realloc( rdata, sizeof( RGNDATAHEADER) + ( size *= 3) * sizeof( RECT));
+                  rdata = ( RGNDATA *) realloc( rdata, sizeof( RGNDATAHEADER) + ( size *= 3) * sizeof( RECT));
                   current = ( RECT * ) &( rdata-> Buffer);
                   current += rdata-> rdh. nCount - 1;
                }
@@ -1723,7 +1728,7 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
    int dx = x2 - x1, dy = y2 - y1;
    int llen = sqrt( dx * dx + dy * dy);
    int lw = sys stylus. pen. lopnWidth. x + 1;
-   unsigned char * lp = ( len > 3) ? sys linePattern2 : (char*) &sys linePattern2;
+   unsigned char * lp = ( unsigned char *)(( len > 3) ? sys linePattern2 : (Byte*) &sys linePattern2);
    HDC ps = sys ps;
    Bool draw = 1;
 
@@ -1905,7 +1910,7 @@ gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double ang
    int len = sys linePatternLen2, ptr = 0, offset = 0, cumul = drawState, delta = 0;
    int lw = sys stylus. pen. lopnWidth. x + 1;
    int llen = 0;
-   unsigned char * lp = ( len > 3) ? sys linePattern2 : (char*) &sys linePattern2;
+   unsigned char * lp = ( Byte*)(( len > 3) ? sys linePattern2 : (Byte*) &sys linePattern2);
    HDC ps = sys ps;
    Bool draw = 1;
    double cosa = cos( angleStart / GRAD), cosb = cos( angleEnd / GRAD);
@@ -2049,3 +2054,6 @@ arc_completion( double * angleStart, double * angleEnd, int * needFigure)
 }
 
 
+#ifdef __cplusplus
+}
+#endif

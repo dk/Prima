@@ -29,6 +29,11 @@
 #include "img_conv.h"
 #include <Icon.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CImage->
 #define my  ((( PIcon) self)-> self)
@@ -91,7 +96,7 @@ produce_mask( Handle self)
       break;
    default:
       bpp2  = im256;
-      area8 = malloc ( var-> h * line8Size);
+      area8 = allocb( var-> h * line8Size);
       ic_type_convert( self, area8, var-> palette, im256 | ( var-> type & imGrayScale));
       break;
    }
@@ -212,8 +217,8 @@ produce_mask( Handle self)
                rgbcolor = rgbcorners[ j];
                goto colorFound;
             }
-colorFound:;
       }
+colorFound:;
    } else {
       color = transpIx;
       rgbcolor = var-> palette[ color];
@@ -285,7 +290,7 @@ Icon_mask( Handle self, Bool set, SV * svmask)
    void * mask;
    if ( var-> stage > csNormal) return nilSV;
    if ( !set)
-      return newSVpvn( var-> mask, var-> maskSize);
+      return newSVpvn(( char *) var-> mask, var-> maskSize);
    mask = SvPV( svmask, maskSize);
    if ( is_opt( optInDraw) || maskSize <= 0) return nilSV;
    memcpy( var-> mask, mask, maskSize > var-> maskSize ? var-> maskSize : maskSize);
@@ -301,7 +306,7 @@ Icon_update_change( Handle self)
    {
       var-> maskLine = (( var-> w + 31) / 32) * 4;
       var-> maskSize = var-> maskLine * var-> h;
-      var-> mask = malloc ( var-> maskSize);
+      var-> mask     = allocb( var-> maskSize);
       produce_mask( self);
    }
    else
@@ -326,7 +331,7 @@ Icon_create_empty( Handle self, int width, int height, int type)
    {
       var-> maskLine = (( var-> w + 31) / 32) * 4;
       var-> maskSize = var-> maskLine * var-> h;
-      var-> mask = malloc ( var-> maskSize);
+      var-> mask     = allocb( var-> maskSize);
       memset( var-> mask, 0, var-> maskSize);
    }
    else
@@ -392,3 +397,7 @@ Icon_combine( Handle self, Handle xorMask, Handle andMask)
 
    if ( killAM) Object_destroy( andMask);
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -9,10 +9,19 @@
 * History:								     *
 * 15 Sep 92 - Version 1.0 by Eric Raymond.				     *
 *****************************************************************************/
+
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "gif_lib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 
 #define MAX(x, y)	(((x) > (y)) ? (x) : (y))
 
@@ -100,7 +109,7 @@ ColorMapObject *UnionColorMap(
 			 ColorMapObject *ColorIn2,
 			 GifPixelType ColorTransIn2[])
 /*
- * Compute the union of two given color maps and return it.  If result can't 
+ * Compute the union of two given color maps and return it.  If result can't
  * fit into 256 colors, NULL is returned, the allocated union otherwise.
  * ColorIn1 is copied as is to ColorUnion, while colors from ColorIn2 are
  * copied iff they didn't exist before.  ColorTransIn2 maps the old
@@ -177,7 +186,7 @@ ColorMapObject *UnionColorMap(
 
 	/* perhaps we can shrink the map? */
 	if (RoundUpTo < ColorUnion->ColorCount)
-	    ColorUnion->Colors 
+	    ColorUnion->Colors
 		= (GifColorType *)realloc(Map, sizeof(GifColorType)*RoundUpTo);
     }
 
@@ -255,7 +264,7 @@ void FreeExtension(SavedImage *Image)
 ******************************************************************************/
 SavedImage *MakeSavedImage(GifFileType *GifFile, SavedImage *CopyFrom)
 /*
- * Append an image block to the SavedImages array  
+ * Append an image block to the SavedImages array
  */
 {
     SavedImage	*sp;
@@ -312,7 +321,7 @@ SavedImage *MakeSavedImage(GifFileType *GifFile, SavedImage *CopyFrom)
 
 		/*
 		 * For the moment, the actual blocks can take their
-		 * chances with free().  We'll fix this later. 
+		 * chances with free().  We'll fix this later.
 		 */
 	    }
 	}
@@ -341,5 +350,6 @@ void FreeSavedImages(GifFileType *GifFile)
     free((char *) GifFile->SavedImages);
 }
 
-
-
+#ifdef __cplusplus
+}
+#endif

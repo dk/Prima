@@ -1,4 +1,12 @@
+
 #include "img_conv.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
 #define var (( PImage) self)
 
 /* Color mappers */
@@ -8,7 +16,7 @@
 {                                                                 \
    Byte * sData = var->data;                                       \
    int  sDataSize = var->dataSize, sLineSize = var->lineSize;       \
-   Byte * n = malloc((( var->w * 8 + 31) / 32) * 4 * var->h);       \
+   Byte * n = allocb((( var->w * 8 + 31) / 32) * 4 * var->h);    \
    ic_##from##_graybyte_ictNone(self, n, dstPal, imByte);         \
    var->data = n;                                                  \
    var->type = imByte;                                             \
@@ -423,3 +431,7 @@ init_image_support()
 {
    cm_init_colormap();
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -28,9 +28,12 @@
  * Created by Vadim Belman <voland@plab.ku.dk>, April 1999.
  */
 
+
 #ifdef __BORLANDC__
 #define _POSIX_
 #endif
+
+
 
 #ifdef HAVE_IO_H
 #include <io.h>
@@ -45,6 +48,13 @@
 #include "img_api.h"
 #include "img_conv.h"
 #include "gif_support.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 
 #ifndef F_OK
 /*
@@ -411,14 +421,14 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
 	/* We must add an entry for every image in the file... */
 	while ( gifChunks.count <= imgDescCount) {
-	    gifChunk = malloc( sizeof( GifImageDesc));
+	    gifChunk = ( GifImageDesc *) malloc( sizeof( GifImageDesc));
 	    gifChunk->ColorMap = NULL;
 	    list_add( &gifChunks, ( Handle) gifChunk);
 	}
 	if ( readData) {
 	    /* And the same for the image content. */
 	    while ( imageData.count <= imgDescCount) {
-		data = malloc( sizeof( GifPixelType *));
+		data = ( GifPixelType** ) malloc( sizeof( GifPixelType *));
 		*data = nil;
 		list_add( &imageData, ( Handle) data);
 	    }
@@ -464,7 +474,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			int pixelCount = gifChunk->Width * gifChunk->Height;
 			data = ( GifPixelType **) list_at( &imageData, imgDescCount);
 /*                          DOLBUG( "Reading data for index %d\n", imgDescCount); */
-			*data = malloc( sizeof( GifPixelType) * pixelCount);
+			*data = ( Byte*) malloc( sizeof( GifPixelType) * pixelCount);
 			if ( *data == nil) {
 			    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
 			    succeed = false;
@@ -514,12 +524,12 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			    }
 			}
 			if ( i >= imageExtensions.count) {
-			    gifExtensions = malloc( sizeof( GIFExtensions));
+			    gifExtensions = ( GIFExtensions * ) malloc( sizeof( GIFExtensions));
 			    gifExtensions->index = curIndex;
 			    list_create( &gifExtensions->extensions, 1, 1);
 			    list_add( &imageExtensions, ( Handle) gifExtensions);
 			}
-			gifExtension = malloc( sizeof( GIFExtInfo));
+			gifExtension = ( GIFExtInfo *) malloc( sizeof( GIFExtInfo));
 			gifExtension->code = extCode;
 			gifExtension->processed = false;
 			list_create( &gifExtension->data, 1, 1);
@@ -528,7 +538,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
 		    do {
 			if ( idxQueried) {
-			    Byte *extDataCopy = malloc( extData[ 0] + 1);
+			    Byte *extDataCopy = ( Byte*)malloc( extData[ 0] + 1);
 			    memcpy( extDataCopy, extData, extData[ 0] + 1);
 			    list_add( &gifExtension->data, ( Handle) extDataCopy);
 			}
@@ -812,11 +822,11 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 				&& img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Red);
 			}
 			paletteType->val.Int = __gif_get_palette_type( gif->SColorMap,
-								       paletteType, 
+								       paletteType,
 								       imgProp);
-			imgProp = img_info_add_property( imageInfo, 
-							 "type", 
-							 PROPTYPE_INT, 
+			imgProp = img_info_add_property( imageInfo,
+							 "type",
+							 PROPTYPE_INT,
 							 -1,
 							 paletteType->val.Int
 			    );
@@ -920,7 +930,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    if ( *data != nil) {
 			int pixelCount = gifChunk->Width * gifChunk->Height;
 			int pass = 0, Y; /* Pass number for interlaced images. */
-			int imageBPP = __gif_correct_bpp( gifChunk->ColorMap ? 
+			int imageBPP = __gif_correct_bpp( gifChunk->ColorMap ?
 							  gifChunk->ColorMap->BitsPerPixel :
 							  gif->SColorMap->BitsPerPixel);
 			int dstLineSize, dstBytes;
@@ -1046,7 +1056,7 @@ __gif_load( int fd, const char *filename, PList imgInfo, Bool readAll)
 static Bool
 __gif_loadable( int fd, const char *filename, Byte *preread_buf, U32 buf_size)
 {
-    return ( strncmp( "GIF", preread_buf, 3) == 0);
+    return ( strncmp( "GIF", ( const char *) preread_buf, 3) == 0);
 }
 
 static Bool
@@ -1327,17 +1337,17 @@ __gif_save( const char *filename, PList imgInfo)
 /*  		    DOLBUG( "Writing graphics control\n"); */
 		    if ( imgList[ i].imgProp[ GIFPROP_TRANSPARENTCOLORINDEX] != nil) {
 			graphControlExt.transparent = 1;
-			graphControlExt.transparentColorIndex = imgList[ i].imgProp[ GIFPROP_TRANSPARENTCOLORINDEX]->val.Byte;
+			graphControlExt.transparentColorIndex = imgList[ i].imgProp[ GIFPROP_TRANSPARENTCOLORINDEX]->val.EightBits;
 		    }
 		    else {
 			graphControlExt.transparent = 0;
 			graphControlExt.transparentColorIndex = 0;
 		    }
 		    graphControlExt.userInput = ( imgList[ i].imgProp[ GIFPROP_USERINPUT] != nil ?
-						  imgList[ i].imgProp[ GIFPROP_USERINPUT]->val.Byte :
+						  imgList[ i].imgProp[ GIFPROP_USERINPUT]->val.EightBits :
 						  0);
 		    graphControlExt.disposalMethod = ( imgList[ i].imgProp[ GIFPROP_DISPOSALMETHOD] != nil ?
-						       imgList[ i].imgProp[ GIFPROP_DISPOSALMETHOD]->val.Byte :
+						       imgList[ i].imgProp[ GIFPROP_DISPOSALMETHOD]->val.EightBits :
 						       0);
 		    graphControlExt.delayTime = ( imgList[ i].imgProp[ GIFPROP_DELAYTIME] != nil ?
 						  imgList[ i].imgProp[ GIFPROP_DELAYTIME]->val.Int / 10 :
@@ -1345,7 +1355,7 @@ __gif_save( const char *filename, PList imgInfo)
 		    gifrc = EGifPutExtension( ogif,
 					       GRAPHICS_EXT_FUNC_CODE,
 					       sizeof( GIFGraphControlExt),
-					       ( ( Byte *) &graphControlExt) + 1
+					       (( Byte *) &graphControlExt) + 1
 			);
 		    if ( gifrc != GIF_OK) {
 			__gif_seterror( GIFERRT_GIFLIB, GifLastError());
@@ -1871,3 +1881,7 @@ __gif_init()
 
     return &gifFormat;
 }
+
+#ifdef __cplusplus
+}
+#endif

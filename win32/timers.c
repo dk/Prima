@@ -31,6 +31,11 @@
 #include "Window.h"
 #include "Application.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
@@ -55,7 +60,7 @@ add_timer( Handle timerObject, Handle self)
         return i + 1;
      }
 
-   pTime = malloc (( sys timeDefsCount + 1) * sizeof( ItemRegRec));
+   pTime = ( PItemRegRec) malloc (( sys timeDefsCount + 1) * sizeof( ItemRegRec));
    if ( sys timeDefs) {
       memcpy( pTime, sys timeDefs, sys timeDefsCount* sizeof( ItemRegRec));
       free( sys timeDefs);
@@ -75,7 +80,7 @@ remove_timer( Handle timerObject, Handle self)
    {
       if (( Handle)( list-> item) == timerObject)
       {
-          list-> item = nilHandle;
+          list-> item = nil;
           break;
       }
       list++;
@@ -164,3 +169,6 @@ apc_timer_get_handle( Handle self)
    return ( ApiHandle) var handle;
 }
 
+#ifdef __cplusplus
+}
+#endif

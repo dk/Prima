@@ -9,8 +9,15 @@
 * 17 Jun 89 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+
 #include <stdio.h>
 #include "gif_lib.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define PROGRAM_NAME	"GIF_LIBRARY"
 
@@ -41,3 +48,7 @@ int GifLastError(void)
 
     return i;
 }
+
+#ifdef __cplusplus
+}
+#endif

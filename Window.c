@@ -31,6 +31,11 @@
 #include "Application.h"
 #include <Window.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CWidget->
 #define my  ((( PWindow) self)-> self)
@@ -782,3 +787,7 @@ Window_windowState( Handle self, Bool set, int windowState)
       return apc_window_get_window_state( self);
    return ( int) apc_window_set_window_state( self, windowState);
 }
+
+#ifdef __cplusplus
+}
+#endif

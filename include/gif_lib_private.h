@@ -3,6 +3,10 @@
 
 #include "gif_lib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PROGRAM_NAME	"GIFLIB"
 
 #define LZ_MAX_CODE	4095		/* Biggest code possible in 12 bits. */
@@ -47,5 +51,11 @@ typedef struct GifFilePrivateType {
 
 extern int _GifError;
 extern char *VersionStr;
+
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GIF_LIB_PRIVATE_H */

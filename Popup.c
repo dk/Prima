@@ -29,6 +29,11 @@
 #include "Widget.h"
 #include <Popup.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CAbstractMenu->
 #define my  ((( PPopup) self)-> self)
@@ -96,3 +101,7 @@ Popup_popup( Handle self, int x, int y, int ancLeft, int ancBottom, int ancRight
    owner-> stage = stage;
    apc_popup( self, x, y, &anchor);
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -29,6 +29,11 @@
 #include "Menu.h"
 #include <Menu.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CAbstractMenu->
 #define my  ((( PMenu) self)-> self)
@@ -60,3 +65,6 @@ Menu_selected( Handle self, Bool set, Bool selected)
 }
 
 
+#ifdef __cplusplus
+}
+#endif

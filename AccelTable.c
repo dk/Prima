@@ -28,6 +28,10 @@
 #include "AccelTable.h"
 #include "Widget.h"
 #include <AccelTable.inc>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #undef  my
 #define inherited CAbstractMenu->
@@ -46,7 +50,7 @@ AccelTable_set_items( Handle self, SV * menuItems)
 {
    if ( var->  stage > csNormal) return;
    my-> dispose_menu( self, var->  tree);
-   var-> tree = my-> new_menu( self, menuItems, 0);
+   var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
 }
 
 Bool
@@ -61,3 +65,7 @@ AccelTable_selected( Handle self, Bool set, Bool selected)
    return false;
 }
 
+
+#ifdef __cplusplus
+}
+#endif

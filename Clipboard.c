@@ -30,6 +30,11 @@
 #include "Clipboard.h"
 #include <Clipboard.inc>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CComponent->
 #define my  ((( PClipboard) self)-> self)
@@ -99,7 +104,7 @@ first_that( Handle self, void * actionProc, void * params)
 {
    int i;
    PClipboardFormatReg list = formats;
-   if ( actionProc == nil) return nilHandle;
+   if ( actionProc == nil) return nil;
    for ( i = 0; i < formatCount; i++) {
       if ((( PActionProc) actionProc)( self, list+i, params))
          return list+i;
@@ -120,7 +125,7 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
    if ( list) {
       my-> deregister_format( self, format);
    }
-   list = malloc( sizeof( ClipboardFormatReg) * ( formatCount + 1));
+   list = allocn( ClipboardFormatReg, formatCount + 1);
    if ( formats != nil) {
       memcpy( list, formats, sizeof( ClipboardFormatReg) * formatCount);
       free( formats);
@@ -144,7 +149,7 @@ Clipboard_deregister_format( Handle self, char * format)
    formatCount--;
    memcpy( fr, fr + 1, sizeof( ClipboardFormatReg) * ( formatCount - ( fr - list)));
    if ( formatCount > 0) {
-      fr = malloc( sizeof( ClipboardFormatReg) * formatCount);
+      fr = allocn( ClipboardFormatReg, formatCount);
       memcpy( fr, list, sizeof( ClipboardFormatReg) * formatCount);
    } else
       fr = nil;
@@ -344,7 +349,7 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
          char *str;
          SV * ret;
 
-         str = apc_clipboard_get_data( self, cfText, &len);
+         str = ( char*) apc_clipboard_get_data( self, cfText, &len);
          if ( str) {
             ret = newSVpv( str, 0);
             free( str);
@@ -374,7 +379,7 @@ image_server( Handle self, PClipboardFormatReg instance, int function, SV * data
           Handle image;
           image = Object_create( "Prima::Image", profile);
           sv_free(( SV *) profile);
-          if ( apc_clipboard_get_data( self, cfBitmap, (void*)(&image)) != nil) {
+          if ( apc_clipboard_get_data( self, cfBitmap, (int*)(&image)) != nil) {
              --SvREFCNT( SvRV( PImage(image)->  mate));
              return newSVsv( PImage(image)->  mate);
           }
@@ -410,7 +415,7 @@ binary_server( Handle self, PClipboardFormatReg instance, int function, SV * dat
          int len;
          void *xdata = apc_clipboard_get_data( self, instance-> sysId, &len);
          if ( xdata) {
-            SV * ret = newSVpv( xdata, len);
+            SV * ret = newSVpv((char*) xdata, len);
             free( xdata);
             return ret;
          }
@@ -426,3 +431,7 @@ binary_server( Handle self, PClipboardFormatReg instance, int function, SV * dat
    }
    return nilSV;
 }
+
+#ifdef __cplusplus
+}
+#endif

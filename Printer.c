@@ -27,6 +27,12 @@
 #include "apricot.h"
 #include "Printer.h"
 #include <Printer.inc>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #undef  my
 #define inherited CDrawable->
 #define my  ((( PPrinter) self)-> self)
@@ -181,3 +187,6 @@ Printer_resolution( Handle self, Bool set, Point resolution)
 }
 
 
+#ifdef __cplusplus
+}
+#endif

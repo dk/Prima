@@ -46,6 +46,10 @@
 #include <Image.inc>
 #include "Clipboard.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #undef  my
 #define inherited CDrawable->
@@ -66,9 +70,9 @@ Image_init( Handle self, HV * profile)
    var->type = pget_i( type);
    var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
-   var->data = ( var->dataSize > 0) ? malloc( var->dataSize) : nil;
+   var->data = ( var->dataSize > 0) ? allocb( var->dataSize) : nil;
    free( var->palette);
-   var->palette = malloc( 0x100 * sizeof( RGBColor));
+   var->palette = allocn( RGBColor, 256);
    opt_assign( optPreserveType, pget_B( preserveType));
    var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
    if (!( var->type & imGrayScale))
@@ -150,7 +154,7 @@ Image_reset( Handle self, int type, SV * palette)
    var->dataSize = ( var->lineSize) * var->h;
    var->palSize = (1 << ( type & imBPP)) & 0x1ff;
    if ( var->dataSize > 0) {
-      newData = malloc( var-> dataSize);
+      newData = allocb( var-> dataSize);
       ic_type_convert( self, newData, var->palette, type);
    }
    free( var->data);
@@ -176,7 +180,7 @@ Image_stretch( Handle self, int width, int height)
       return;
    }
    lineSize = (( abs( width) * ( var->type & imBPP) + 31) / 32) * 4;
-   newData = malloc( lineSize * abs( height));
+   newData = allocb( lineSize * abs( height));
    if ( var-> data)
       ic_stretch( self, newData, width, height, is_opt( optHScaling), is_opt( optVScaling));
    free( var->data);
@@ -322,7 +326,7 @@ Image_data( Handle self, Bool set, SV * svdata)
    if ( var->stage > csNormal) return nilSV;
 
    if ( !set)
-      return newSVpvn( var-> data, var-> dataSize);
+      return newSVpvn(( char *) var-> data, var-> dataSize);
 
    data = SvPV( svdata, dataSize);
    if ( is_opt( optInDraw) || dataSize <= 0) return nilSV;
@@ -475,7 +479,7 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
                 hv_store( profile,
                           imgProp->name,
                           strlen( imgProp->name),
-                          newSVpv( imgProp->val.Binary.data, imgProp->val.Binary.size),
+                          newSVpv(( char*) imgProp->val.Binary.data, imgProp->val.Binary.size),
                           0
                     );
                 break;
@@ -491,7 +495,7 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
                 hv_store( profile,
                           imgProp->name,
                           strlen( imgProp->name),
-                          newSViv( imgProp->val.Byte),
+                          newSViv( imgProp->val.EightBits),
                           0
                     );
                 break;
@@ -541,7 +545,7 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
                     sv = newSVpv( imgProp->val.pString[ j], 0);
                     break;
                 case PROPTYPE_BIN:
-                    sv = newSVpv( imgProp->val.pBinary[ j].data, imgProp->val.pBinary[ j].size);
+                    sv = newSVpv(( char*) imgProp->val.pBinary[ j].data, imgProp->val.pBinary[ j].size);
                     break;
                 case PROPTYPE_DOUBLE:
                     sv= newSVnv( imgProp->val.pDouble[ j]);
@@ -1145,7 +1149,7 @@ XS( Image_load_FROMPERL) {
       if ( result) {
           if ( as_class) {
               Handle *selves;
-              selves = malloc( info->count * sizeof( Handle));
+              selves = allocn( Handle, info->count);
               for ( i = 0; i < info->count; i++) {
                   self = ( Handle) create_object( class_name, "", nil);
                   SPAGAIN;
@@ -1237,7 +1241,9 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
    file = open( filename, O_RDONLY | O_BINARY);
    if ( file < 0)
       return false;
+
    ft = image_guess_type( file);
+
    if ( ft < 0)
    {
       rc = gbm_guess_filetype( filename, &ft);
@@ -1248,13 +1254,13 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
    rc = gbm_read_header( filename, file, ft, &gbm, subIndex);
    checkrc;
 
-   palette = malloc( 0x100 * sizeof( GBMRGB));
+   palette = allocn( GBMRGB, 0x100);
    rc = gbm_read_palette( file, ft, &gbm, ( GBMRGB*) palette);
    checkrc;
 
    lineSize = (( gbm. w * gbm. bpp + 31) / 32) * 4;
    dataSize = gbm. h * lineSize;
-   data = ( dataSize > 0) ? malloc( dataSize) : nil;
+   data = ( dataSize > 0) ? allocb( dataSize) : nil;
    rc = gbm_read_data( file, ft, &gbm, data);
    checkrc;
 
@@ -1437,7 +1443,7 @@ XS( Image_get_info_FROMPERL)
       SP -= items;
       if ( result) {
           HV **hvInfo;
-          hvInfo = malloc( info->count * sizeof( HV *));
+          hvInfo = allocn( HV*, info->count);
           for ( i = 0; i < info->count; i++) {
               int j;
               PImgInfo imageInfo = ( PImgInfo) list_at( info, i);
@@ -1627,7 +1633,7 @@ Image_create_empty( Handle self, int width, int height, int type)
    var->palSize  = (1 << (var->type & imBPP)) & 0x1ff;
    if ( var->dataSize > 0)
    {
-      var->data = malloc( var->dataSize);
+      var->data = allocb( var->dataSize);
       memset( var->data, 0, var->dataSize);
    } else
       var->data = nil;
@@ -1901,3 +1907,7 @@ Image_extract( Handle self, int x, int y, int width, int height)
    --SvREFCNT( SvRV( i-> mate));
    return h;
 }
+
+#ifdef __cplusplus
+}
+#endif

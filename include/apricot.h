@@ -32,8 +32,8 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
-#if (PERL_PATCHLEVEL < 4)
-#error "Prima require at least perl 5.004, better 5.005"
+#if (PERL_PATCHLEVEL < 4 || (( PERL_PATCHLEVEL == 4) && ( PERL_SUBVERSION <= 4)))
+#error "Prima require at least perl 5.005"
 #endif
 
 /* #define PARANOID_MALLOC */
@@ -47,6 +47,8 @@
    #define snprintf              _snprintf
    #define vsnprintf             _vsnprintf
    #define stricmp               _stricmp
+   #define HAVE_SNPRINTF         1
+   #define HAVE_STRICMP          1
    extern double                 NAN;
 #elif defined( __BORLANDC__)
    #define BROKEN_PERL_PLATFORM  1
@@ -71,9 +73,58 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+#define __XSlock_h__ 28
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
+
+#ifdef PERL_OBJECT
+   #define XS_STARTPARAMS   CV* cv, CPerlObj* pPerl
+   #define XS_CALLPARAMS    cv, pPerl
+#else
+   #define XS_STARTPARAMS   CV* cv
+   #define XS_CALLPARAMS    cv
+#endif
+
+#if defined(_MSC_VER) && defined(PERL_OBJECT)
+class XSLockManager
+{
+public:
+	XSLockManager() { InitializeCriticalSection(&cs); };
+	~XSLockManager() { DeleteCriticalSection(&cs); };
+	void Enter(void) { EnterCriticalSection(&cs); };
+	void Leave(void) { LeaveCriticalSection(&cs); };
+protected:
+	CRITICAL_SECTION cs;
+};
+
+extern XSLockManager g_XSLock;
+extern CPerlObj* pPerl;
+
+class XSLock
+{
+public:
+	XSLock(CPerlObj *p) {
+	    g_XSLock.Enter();
+	    ::pPerl = p;
+	};
+	~XSLock() { g_XSLock.Leave(); };
+};
+
+/* PERL_CAPI does its own locking in xs_handler() */
+#if defined(PERL_OBJECT) && !defined(PERL_CAPI)
+#undef dXSARGS
+#define dXSARGS	\
+	XSLock localLock(pPerl);			\
+	dSP; dMARK;					\
+	I32 ax = mark - PL_stack_base + 1;		\
+	I32 items = sp - mark
+#endif	/* PERL_OBJECT && !PERL_CAPI */
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
 #undef realloc
@@ -82,6 +133,13 @@
 */
 
 
+#if defined (package)
+   #undef mod
+   #undef list
+   #undef package
+   #undef ref
+#endif
+
 #if defined(WORD) && (WORD==257)
 #undef WORD
 #endif
@@ -89,16 +147,72 @@
 #ifdef USE_DBMALLOC
 #include "dbmalloc.h"
 #endif
-#if ( PERL_PATCHLEVEL == 4) && (PERL_SUBVERSION <= 4)
-#undef sv_2mortal
-#define sv_2mortal readonly_clean_sv_2mortal
-extern SV* readonly_clean_sv_2mortal( SV* sv);
-#endif
 
 #ifdef BROKEN_PERL_PLATFORM
-   #ifdef close
-      #undef close
-      #undef dup
+   #undef open
+   #undef fopen
+   #undef vfprintf
+   #undef fclose
+   #undef feof
+   #undef ferror
+   #undef environ
+   #undef strerror
+   #undef fread
+   #undef fwrite
+   #undef fopen		
+   #undef fdopen		
+   #undef freopen		
+   #undef fclose
+   #undef fputc
+   #undef ungetc
+   #undef getc
+   #undef fileno
+   #undef clearerr
+   #undef fflush
+   #undef ftell
+   #undef fseek
+   #undef fgetpos
+   #undef fsetpos
+   #undef rewind
+   #undef tmpfile
+   #undef abort
+   #undef fstat
+   #undef stat
+   #undef rename
+   #undef setmode
+   #undef lseek
+   #undef tell
+   #undef dup
+   #undef dup2
+   #undef open			
+   #undef close
+   #undef eof
+   #undef read
+   #undef write
+   #undef _open_osfhandle	
+   #undef _get_osfhandle	
+   #undef spawnvp	
+   #undef mkdir	
+   #undef rmdir	
+   #undef chdir	
+   #undef flock
+   #undef execv	
+   #undef execvp	
+   #undef perror	
+   #undef setbuf	
+   #undef setvbuf	
+   #undef flushall
+   #undef fcloseall	
+   #undef fgets	
+   #undef gets		
+   #undef fgetc	
+   #undef putc		
+   #undef puts		
+   #undef getchar
+   #undef putchar	
+   #undef close
+   #undef dup
+   #ifdef win32_close
       #define close win32_close
       #define dup   win32_dup
    #endif
@@ -152,6 +266,16 @@ snprintf( char *, size_t, const char *, ...);
 extern int
 vsnprintf( char *, size_t, const char *, va_list);
 #endif
+
+#define alloc1(typ)     ((typ*)malloc(sizeof(typ)))
+#define allocn(typ,n)   ((typ*)malloc((n)*sizeof(typ)))
+#define allocs(n)       ((char*)malloc(n))
+#define allocb(n)       ((Byte*)malloc(n))
+#define alloc1z(typ)    ((typ*)prima_mallocz(sizeof(typ)))
+#define allocnz(typ,n)  ((typ*)prima_mallocz((n)*sizeof(typ)))
+
+extern void *
+prima_mallocz( size_t sz);
 
 typedef I32 Bool;
 typedef UV Handle;
@@ -208,7 +332,7 @@ typedef struct _DComplex     { double re, im; } DComplex;
 typedef struct _TrigComplex  { float  r,  ph; } TrigComplex;
 typedef struct _TrigDComplex { double r,  ph; } TrigDComplex;
 
-#define nil Null(void*)
+#define nil       NULL
 #define nilHandle Null(Handle)
 #define nilSV     &sv_undef
 #define true TRUE
@@ -1102,7 +1226,7 @@ SvBOOL( SV *sv)
 #define pset_H( key, value)  pset_sv_noinc( key, (value) ? newSVsv((( PAnyObject) value)-> mate) : nilSV)
 
 #define create_instance( obj)  (                                   \
-   ( Handle) temporary_prf_Sv = Object_create( obj, profile),      \
+   temporary_prf_Sv = ( SV **) Object_create( obj, profile),       \
    ( temporary_prf_Sv ?                                            \
        --SvREFCNT( SvRV((( PAnyObject) temporary_prf_Sv)-> mate))  \
        : 0),                                                       \
@@ -2254,23 +2378,23 @@ END_TABLE(le,UV)
 /* line patterns */
 #define LP(const_name) CONSTANT(lp,const_name)
 START_TABLE(lp,unsigned char*)
-#define    lpNull           ""              /* */
+#define    lpNull           (unsigned char*) ""              /* */
 LP(Null)
-#define    lpSolid          "\1"            /* ___________  */
+#define    lpSolid          (unsigned char*) "\1"            /* ___________  */
 LP(Solid)
-#define    lpDash           "\x9\3"         /* __ __ __ __  */
+#define    lpDash           (unsigned char*) "\x9\3"         /* __ __ __ __  */
 LP(Dash)
-#define    lpLongDash       "\x16\6"        /* _____ _____  */
+#define    lpLongDash       (unsigned char*) "\x16\6"        /* _____ _____  */
 LP(LongDash)
-#define    lpShortDash      "\3\3"          /* _ _ _ _ _ _  */
+#define    lpShortDash      (unsigned char*) "\3\3"          /* _ _ _ _ _ _  */
 LP(ShortDash)
-#define    lpDot            "\1\3"          /* . . . . . .  */
+#define    lpDot            (unsigned char*) "\1\3"          /* . . . . . .  */
 LP(Dot)
-#define    lpDotDot         "\1\1"          /* ............ */
+#define    lpDotDot         (unsigned char*) "\1\1"          /* ............ */
 LP(DotDot)
-#define    lpDashDot        "\x9\6\1\3"     /* _._._._._._  */
+#define    lpDashDot        (unsigned char*) "\x9\6\1\3"     /* _._._._._._  */
 LP(DashDot)
-#define    lpDashDotDot     "\x9\3\1\3\1\3" /* _.._.._.._.. */
+#define    lpDashDotDot     (unsigned char*) "\x9\3\1\3\1\3" /* _.._.._.._.. */
 LP(DashDotDot)
 END_TABLE_CHAR(lp,unsigned char*)
 #undef LP
@@ -3004,6 +3128,10 @@ extern Handle self;
 #define malloc(sz) _test_malloc((sz),__LINE__,__FILE__,self)
 #define free(ptr) _test_free((ptr),__LINE__,__FILE__,self)
 #endif /* PARANOID_MALLOC */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

@@ -32,6 +32,11 @@
 #endif
 #include "Component.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 static int ctx_mb2MB[] =
 {
    mbError       , MB_ICONHAND,
@@ -136,8 +141,8 @@ apc_getdir( const char *dirname)
     Bool                wasDot = false, wasDotDot = false;
 
 #define add_entry(file,info)  {                                            \
-    list_add( ret, ( Handle) strcpy( malloc( strlen( file) + 1), file));   \
-    list_add( ret, ( Handle) strcpy( malloc( strlen( info) + 1), info));   \
+    list_add( ret, ( Handle) strcpy(( char*) malloc( strlen( file) + 1), file));   \
+    list_add( ret, ( Handle) strcpy(( char*) malloc( strlen( info) + 1), info));   \
 }
 
 #define add_fentry  {                                                         \
@@ -276,17 +281,17 @@ apc_sys_get_value( int sysValue)
        return GetSystemMetrics( SM_CMOUSEBUTTONS);
    case svSubmenuDelay   :
        RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Desktop", 0, KEY_READ, &hKey);
-       RegQueryValueEx( hKey, "MenuShowDelay", nil, &valType, buf, &valSize);
+       RegQueryValueEx( hKey, "MenuShowDelay", nil, &valType, ( LPBYTE) buf, &valSize);
        RegCloseKey( hKey);
        return atol( buf);
    case svFullDrag       :
        RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Desktop", 0, KEY_READ, &hKey);
-       RegQueryValueEx( hKey, "DragFullWindows", nil, &valType, buf, &valSize);
+       RegQueryValueEx( hKey, "DragFullWindows", nil, &valType, ( LPBYTE)buf, &valSize);
        RegCloseKey( hKey);
        return atol( buf);
    case svDblClickDelay   :
        RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Mouse", 0, KEY_READ, &hKey);
-       RegQueryValueEx( hKey, "DoubleClickSpeed", nil, &valType, buf, &valSize);
+       RegQueryValueEx( hKey, "DoubleClickSpeed", nil, &valType, ( LPBYTE)buf, &valSize);
        RegCloseKey( hKey);
        return atol( buf);
    case svWheelPresent    : return GetSystemMetrics( SM_MOUSEWHEELPRESENT);
@@ -455,7 +460,7 @@ apc_widget_user_profile( char * name, Handle owner)
       size = sizeof( DWORD);
       if ( RegQueryValueEx( hKey, regColors[i], NULL,
            &type, ( LPBYTE) &dw, &size) != ERROR_SUCCESS) continue;
-      c = malloc( sizeof( c));
+      c = ( Color*)malloc( sizeof( c));
       *c = dw;
       hash_store( ret, regColors[i], strlen(regColors[i]), c);
    }
@@ -463,7 +468,7 @@ apc_widget_user_profile( char * name, Handle owner)
    size = MAXREGLEN;
    if ( RegQueryValueEx( hKey, "Font", NULL,
         &type, ( LPBYTE) buf, &size) == ERROR_SUCCESS) {
-      Font * f = malloc( sizeof( Font));
+      Font * f = ( Font *) malloc( sizeof( Font));
       font_pp2font( buf, f);
       hash_store( ret, "Font", strlen("Font"), f);
    }
@@ -475,3 +480,6 @@ apc_widget_user_profile( char * name, Handle owner)
 
 
 
+#ifdef __cplusplus
+}
+#endif

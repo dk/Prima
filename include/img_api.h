@@ -32,6 +32,11 @@
 
 #include "apricot.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef struct _IMGCapInfo {
     char *id;
     /*
@@ -93,7 +98,7 @@ typedef struct _IMGProperty { /* To be passed for Load/Save related operations. 
 	int Int;
 	double Double;
 	char *String;
-	Byte Byte;
+	Byte EightBits;
 	IMGBinaryData Binary;
 	List Properties; /* List of PImgProperty. */
 
@@ -189,10 +194,10 @@ img_property_create_v( const char *name, U16 propFlags, int propArraySize, va_li
 /* The functions pushes a new property into existing property list. */
 extern PImgProperty
 img_push_property_v( PList propList,
-		     const char *propName, 
+		     const char *propName,
 		     U16 propFlags, /* Combination of PROPTYPE_* constants. */
 		     int propArraySize, /* Ignored for non-array property. */
-		     va_list arg /* Optional parameter might be used for immediate 
+		     va_list arg /* Optional parameter might be used for immediate
 				    initialization of non-array property.
 				    For PROPTYPE_PROP this just an initial size of
 				    properties list. This function might be used to
@@ -200,14 +205,14 @@ img_push_property_v( PList propList,
 				    Binary data must be passed in two parameters:
 				    the first is size (int) and the second is pointer
 				    to the data.
-				    *NOTE*: the data will be copied as well as it being 
+				    *NOTE*: the data will be copied as well as it being
 				    done for a String value. */
     );
 
 /* Adds a property into a existing property list. */
 extern PImgProperty
 img_push_property( PList propList,
-		   const char *propName, 
+		   const char *propName,
 		   U16 propFlags,
 		   int propArraySize,
 		   ...
@@ -215,9 +220,9 @@ img_push_property( PList propList,
 
 /* Adds a new property to image info property list. */
 extern PImgProperty
-img_info_add_property( PImgInfo imgInfo, 
-		       const char *propName, 
-		       U16 propFlags, 
+img_info_add_property( PImgInfo imgInfo,
+		       const char *propName,
+		       U16 propFlags,
 		       int propArraySize,
 		       ...
     );
@@ -232,4 +237,10 @@ img_push_property_value( PImgProperty imgProp, ...);
 extern PImgProperty
 img_duplicate_property( PImgProperty imgProp);
 
+#ifdef __cplusplus
+}
 #endif
+
+
+#endif
+

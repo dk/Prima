@@ -26,8 +26,6 @@
 use strict;
 use Prima;
 use Prima::Classes;
-use Prima::Label;
-use Prima::MsgBox;
 
 $::application = Prima::Application->  create;
 

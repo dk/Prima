@@ -1502,12 +1502,12 @@ sub out_FROMPERL_methods
       if ( $full && $optimize && $templates_xs{$id}) {
          unless ( exists $thunks{$templates_xs{$id}}) {
             $thunks{$templates_xs{$id}} = 1;
-            print HEADER "extern void $templates_xs{$id}( CV* cv, char* subName, void* func);\n\n";
+            print HEADER "extern void $templates_xs{$id}( XS_STARTPARAMS, char* subName, void* func);\n\n";
          }
          my $func = ( exists $pipeMethods{ $id}) ? $pipeMethods{$id} : "${ownCType}_$id";
          print HEADER <<LABEL;
 XS( ${ownCType}_${id}_FROMPERL) {
-   $templates_xs{$id}( cv, \"${ownOClass}\:\:$id\", (void*)$func);
+   $templates_xs{$id}( XS_CALLPARAMS, \"${ownOClass}\:\:$id\", (void*)$func);
 }
 
 LABEL
@@ -1562,7 +1562,7 @@ LABEL
       } else {
          # using pre-generated thunk name. Suggesting call is responsive to set
          # $methods to filtered array, that for sure contains that names.
-         print HEADER "void $templates_xs{$id}( CV* cv, char* subName, void* func)";
+         print HEADER "void $templates_xs{$id}( XS_STARTPARAMS, char* subName, void* func)";
       }
 
       print HEADER "\n{\n";
@@ -1933,6 +1933,11 @@ LABEL
      }
   }
   print HEADER "\n";
+  print HEADER <<SD;
+#ifdef __cplusplus
+extern "C" {
+#endif
+SD
 
   # generating inplaced structures
   for ( sort { $structs{$a}->[PROPS]->{order} <=> $structs{$b}->[PROPS]->{order}} keys %structs)
@@ -2073,7 +2078,13 @@ SD
   }
 
 
-print HEADER "\n#endif\n";
+print HEADER <<SD;
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+SD
 
 close HEADER;
   } # end gen H
@@ -2090,7 +2101,12 @@ close HEADER;
 #include "$ownFile.h"
 LABEL
 print HEADER "#include \"guts.h\"\n" if ( !$genDyna && $genObject);
-print HEADER "\n";
+  print HEADER <<SD;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+SD
 
    out_FROMPERL_methods( \@portableMethods, 1);                # portable methods, bodies
 
@@ -2166,7 +2182,7 @@ CONTAINED_STRUCTURE
       print HEADER "\n";
       print HEADER "// patches\n";
       print HEADER "extern ${baseCType}_vmt ${baseCType}Vmt;\n" if ( $baseClass && !$genDyna);
-      print HEADER "${ownCType}_vmt ${ownCType}Vmt;\n\n";
+      print HEADER "extern ${ownCType}_vmt ${ownCType}Vmt;\n\n";
       print HEADER "static VmtPatch ${ownCType}VmtPatch[] =\n";    # patches
       print HEADER "{";
       for (my $j = 0; $j <= $#newMethods; $j++)
@@ -2248,6 +2264,14 @@ LABEL
          if $genObject && 0;
       print HEADER "}\n\n";
    }
+
+print HEADER <<SD;
+
+#ifdef __cplusplus
+}
+#endif
+SD
+
    close HEADER;
    } # end gen Inc
 

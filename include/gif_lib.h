@@ -16,6 +16,12 @@
 #ifndef GIF_LIB_H
 #define GIF_LIB_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
 #define GIF_LIB_VERSION	" Version 4.0, "
 
 #define	GIF_ERROR	0
@@ -226,5 +232,10 @@ extern void FreeExtension(SavedImage *Image);
 
 extern SavedImage *MakeSavedImage(GifFileType *GifFile, SavedImage *CopyFrom);
 extern void FreeSavedImages(GifFileType *GifFile);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* GIF_LIB_H */

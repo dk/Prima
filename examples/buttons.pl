@@ -75,7 +75,7 @@ sub on_paint
 
 
 my $w = Prima::Window-> create(
-   onDestroy => sub { $::application-> close} ,
+  onDestroy => sub { $::application-> close} ,
    text   => "Button example",
    centered  => 1,
    height    => 300,
