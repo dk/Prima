@@ -751,27 +751,27 @@ sub profile_check_in
 
    for my $fore (qw(color hiliteColor disabledColor)) {
       unless (exists $p->{$fore}) {
-         my $clr = Prima::Widget::fetch_resource_color( $cls, $name, 'Foreground', $fore, $owner);
-         $p->{$fore} = $clr if $clr != cl::Invalid;
+         my $clr = Prima::Widget::fetch_resource( $cls, $name, 'Foreground', $fore, $owner, fr::Color);
+         $p->{$fore} = $clr if defined $clr;
       }
    }
    for my $back (qw(backColor hiliteBackColor disabledBackColor)) {
       unless (exists $p->{$back}) {
-         my $clr = Prima::Widget::fetch_resource_color( $cls, $name, 'Background', $back, $owner);
-         $p->{$back} = $clr if $clr != cl::Invalid;
+         my $clr = Prima::Widget::fetch_resource( $cls, $name, 'Background', $back, $owner, fr::Color);
+         $p->{$back} = $clr if defined $clr;
       }
    }
    for my $fon (qw(font popupFont)) {
+      my $f = Prima::Widget::fetch_resource( $cls, $name, 'Font', $fon, $owner, fr::Font);
+      next unless defined $f;
       unless (exists $p->{$fon}) {
-         $p->{$fon} = Prima::Widget::fetch_resource_font( $cls, $name, 'Font', $fon, $owner);
+         $p->{$fon} = $f;
       } else {
-         my $f = Prima::Widget::fetch_resource_font( $cls, $name, 'Font', $fon, $owner);
          for ( keys %$f) {
             $p->{$fon}->{$_} = $$f{$_} unless exists $p->{$fon}->{$_};
          }
       }
    }
-
 
    for ( $owner ? qw( color backColor showHint hint font): ())
    {

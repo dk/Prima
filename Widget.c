@@ -377,48 +377,46 @@ Widget_end_paint_info( Handle self)
 /*::f */
 
 SV*
-Widget_fetch_resource( char *className, char *name, char *classRes, char *res, Handle owner)
+Widget_fetch_resource( char *className, char *name, char *classRes, char *res, Handle owner, int resType)
 {
    char *str = nil;
-   SV   *ret;
-
-   apc_fetch_resource( prima_normalize_resource_string( className, true),
-                       prima_normalize_resource_string( name, false),
-                       prima_normalize_resource_string( classRes, true),
-                       prima_normalize_resource_string( res, false),
-                       owner, frString, &str);
-   ret = str ? newSVpv( str, 0) : nilSV;
-   free( str);
-   return ret;
-}
-
-Color
-Widget_fetch_resource_color( char *className, char *name, char *classRes, char *res, Handle owner)
-{
-   Color clr = clInvalid;
-
-   apc_fetch_resource( prima_normalize_resource_string( className, true),
-                       prima_normalize_resource_string( name, false),
-                       prima_normalize_resource_string( classRes, true),
-                       prima_normalize_resource_string( res, false),
-                       owner, frColor, &clr);
-   return clr;
-}
-
-Font
-Widget_fetch_resource_font( char *className, char *name, char *classRes, char *res, Handle owner)
-{
+   Color clr;
+   void *parm;
    Font font;
+   SV * ret;
 
-   bzero( &font, sizeof( font));
-   font. height = font. width = font. style = font. pitch = font. direction = font. resolution = font. size = C_NUMERIC_UNDEF;
-   strcpy( font. name, C_STRING_UNDEF);
-   apc_fetch_resource( prima_normalize_resource_string( className, true),
-                       prima_normalize_resource_string( name, false),
-                       prima_normalize_resource_string( classRes, true),
-                       prima_normalize_resource_string( res, false),
-                       owner, frFont, &font);
-   return font;
+   switch ( resType) {
+   case frColor:
+      parm = &clr; break;
+   case frFont:
+      parm = &font;
+      bzero( &font, sizeof( font));
+      break;
+   default:
+      parm = &str;
+      resType = frString;
+   }
+
+   if ( !apc_fetch_resource(
+      prima_normalize_resource_string( className, true),
+      prima_normalize_resource_string( name, false),
+      prima_normalize_resource_string( classRes, true),
+      prima_normalize_resource_string( res, false),
+      owner, resType, parm))
+      return nilSV;
+
+   switch ( resType) {
+   case frColor:
+      ret = newSViv( clr);
+      break;
+   case frFont:
+      ret = sv_Font2HV( &font);
+      break;
+   default:
+      ret = str ? newSVpv( str, 0) : nilSV;
+      free( str);
+   }
+   return ret;
 }
 
 Handle

@@ -3085,17 +3085,23 @@ extern Bool
 apc_file_change_mask( Handle self);
 
 /* etc */
-
-/* fetch resource constants - not exported to Const.pm */
-#define frString        0
-#define frColor         1
-#define frFont          2
-
 extern Bool
 apc_beep( int style);
 
 extern Bool
 apc_beep_tone( int freq, int duration);
+
+/* fetch resource constants */
+#define FR(const_name) CONSTANT(fr,const_name)
+START_TABLE(fr,UV)
+#define frString    0
+FR(String)
+#define frColor     1
+FR(Color)
+#define frFont      2
+FR(Font)
+END_TABLE(fr,UV)
+#undef FR
 
 extern Bool
 apc_fetch_resource( const char *className, const char *name,

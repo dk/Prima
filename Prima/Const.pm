@@ -68,5 +68,6 @@ package tw; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text wrapping constants
 package fds; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog scope type
 package fdo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog options
 package fe; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# file events constants
+package fr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# fetch resource constants
 
 1;

@@ -131,9 +131,7 @@ object Prima::Widget( Prima::Drawable)
    method   void     end_paint();
    method   void     end_paint_info();
    method   Bool     exposed()                       => apc_widget_is_exposed;
-   static   SV      *fetch_resource( char *className, char *name, char *classRes, char *res, Handle owner);
-   static   Color    fetch_resource_color( char *className, char *name, char *classRes, char *res, Handle owner);
-   static   Font     fetch_resource_font( char *className, char *name, char *classRes, char *res, Handle owner);
+   static   SV      *fetch_resource( char *className, char *name, char *classRes, char *res, Handle owner, int resType = frString);
    method   Handle   first();
    c_only   Handle   first_that( void * actionProc, void * params);
    c_only   void     handle_event ( PEvent event);
