@@ -1101,7 +1101,6 @@ apc_image_begin_paint( Handle self)
    DEFXX;
    PImage img = PImage( self);
    Bool bitmap = (img-> type & imBPP) == 1;
-
    XX-> gdrawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), img-> w, img-> h,
                                    bitmap ? 1 : guts. depth);
    XCHECKPOINT;
@@ -1238,7 +1237,7 @@ Bool
 prima_query_image( Handle self, XImage * i)
 {
    PImage img = PImage( self);
-   int target_depth = get_bpp_depth( guts. idepth);
+   int target_depth = (( img-> type & imBPP) == 1) ? 1 : get_bpp_depth( guts. idepth);
 
    if (( img-> type & imBPP) != target_depth) 
       CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
@@ -1294,7 +1293,8 @@ slurp_image( Handle self, Pixmap px)
       XDestroyImage( i);
       if ( !res) 
          croak( "UAI_017: unsupported depths combination");
-   }   
+   } else 
+      warn("Error querying image");  
 }
 
 Bool
