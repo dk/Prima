@@ -585,6 +585,16 @@ XS(Prima_init)
    XSRETURN_EMPTY;
 }
 
+XS( Prima_message_FROMPERL)
+{
+   dXSARGS;
+   (void)items;
+   if ( items != 1)
+      croak("Invalid usage of Prima::%s", "message");
+   apc_show_message((char*) SvPV( ST(0), na));   
+   XSRETURN_EMPTY;
+}
+
 Bool
 build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
 {
@@ -1273,6 +1283,7 @@ NAN = 0.0;
    newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
    newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");
    newXS( "Prima::Object::alive", Object_alive_FROMPERL, "Prima::Object");
+   newXS( "Prima::message", Prima_message_FROMPERL, "Prima");
    register_constants();
    register_Object_Class();
    register_Utils_Package();
