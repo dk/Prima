@@ -332,7 +332,7 @@ apc_widget_is_showing( Handle self)
    XWindowAttributes attrs;
    DEFXX;
 
-   if ( XX-> flags. mapped
+   if ( XX && XX-> flags. mapped
 	&& XGetWindowAttributes( DISP, XX->udrawable, &attrs)
 	&& attrs. map_state == IsViewable)
       return true;
