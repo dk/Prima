@@ -28,12 +28,13 @@ package Prima::VB::VBLoader;
 use strict;
 use vars qw($builderActive $fileVersion @eventContext $form);
 
-$fileVersion   = '1.1';
+$fileVersion   = '1.2';
 @eventContext  = ('', '');
 
 my %fileVerCompat = (
    '1'   => '1.0',
    '1.0' => '1.1',
+   '1.1' => '1.2',
 );
 
 sub check_version
@@ -126,6 +127,9 @@ sub AUTOFORM_REALIZE
    }
    
    delete $dep{$main}->{profile}->{owner};
+   
+   $dep{$main}-> {code}->() if defined $dep{$main}-> {code} ;
+
    $ret{$main} = $dep{$main}->{class}-> create(
       %{$dep{$main}->{profile}},
       %{$parms->{$main}},
@@ -194,6 +198,7 @@ sub AUTOFORM_REALIZE
    $actions{onEnd}->{$_}->($_, $instances{$_}, $ret{$_})
       for keys %{$actions{onEnd}};
    $ret{$main}-> unlock;
+
    return %ret;
 }
 
@@ -453,6 +458,7 @@ and other associated data:
 		class   => 'Prima::Window',
 		module  => 'Prima::Classes',
 		parent => 1,
+                code   => GO_SUB('init()'),
 		profile => {
 			width => 144,
 			name => 'Form1',
@@ -471,6 +477,10 @@ The hash has several predefined keys:
 Contains hash of events. The events are evaluated via C<GO_SUB> mechanism
 and executed during creation of the widget tree. See L<Events> for details.
 
+=item code STRING
+
+Contains a code, executed before the form is created.
+This key is present only on the root widget record.
 
 =item class STRING
 

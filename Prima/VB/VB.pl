@@ -34,7 +34,7 @@ use Prima::VB::CfgMaint;
 my $lite = 0;                          # set to 1 to use ::Lite packages. For debug only
 $Prima::VB::CfgMaint::systemWide = 0;  # 0 - user config, 1 - root config to write
 my $singleConfig                 = 0;  # set 1 to use only either user or root config
-my $VBVersion                    = 0.1;
+my $VBVersion                    = 0.2;
 
 ###################################################
 
@@ -52,6 +52,8 @@ use Prima::Application name => 'Form template builder';
 package VB;
 use vars qw($inspector
             $main
+            $editor
+            $code
             $form
             $fastLoad
             $writeMode
@@ -116,6 +118,7 @@ sub accelItems
       ['-saveitem1' => '~Save' => 'F2' => 'F2' => sub {$VB::main-> save;}],
       ['Exit' => 'Alt+X' => '@X' => sub{ $VB::main-> close;}],
       ['Object Inspector' => 'F11' => 'F11' => sub { $VB::main-> bring_inspector; }],
+      ['Code Editor' => 'F12' => 'F12' => sub { $VB::main-> bring_code_editor; }],
       ['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => sub { $VB::main-> form_run}, ],
       ['~Help' => 'F1' => 'F1' => sub { $::application-> open_help('VB/Help')}],
       ['~Widget property' => 'Shift+F1' => '#F1' => sub { ObjectInspector::help_lookup() }],
@@ -150,6 +153,182 @@ sub on_selectitem
    $VB::inspector-> open_item;
 }
 
+package Editor;
+use vars qw(@ISA);
+@ISA = qw(Prima::Edit);
+
+sub profile_default
+{
+   my %def = %{$_[ 0]-> SUPER::profile_default};
+   my @accelItems = @{$def{accelItems}};
+   my @acc = (
+      [ PushMark  => 0, 0, km::Alt|kb::Down, q(push_mark)],
+      [ PopMark   => 0, 0, km::Alt|kb::Up,   q(pop_mark)],
+   );
+   splice( @accelItems, -1, 0, @acc);
+   return {
+      %def,
+      accelItems   => \@accelItems,
+      syntaxHilite => 1,
+      wordWrap     => 0,
+      text         => '',
+   }
+}
+
+sub set_cursor
+{
+   my $self = shift;
+   my @c = $self-> cursor;
+   $self-> SUPER::set_cursor(@_);
+   return if $c[0] == $_[0] && $c[1] == $_[1];
+   $self-> owner-> Indicator-> repaint;
+}
+
+sub push_mark
+{
+   my $self = $_[0];
+   $self-> add_marker( $self-> cursor);
+}
+
+sub pop_mark
+{
+   my $self = $_[0];
+   my $m = $self-> markers;
+   return if scalar @{$m} == 0;
+   $self-> cursor( @{$$m[-1]});
+   $self-> delete_marker( -1);
+}
+
+sub on_change
+{
+   my $o = $_[0]-> owner;
+   $o-> {modified} = 1;
+   $o-> Indicator-> repaint;
+}
+
+package CodeEditor;
+use vars qw(@ISA);
+@ISA = qw(Prima::Window);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      text           => 'Code editor',
+      icon           => $VB::ico,
+      menuItems      => [
+         ['~File' => [
+            ['~Load' => 'F3' => 'F3' => q(load_code)],
+            ['~Save' => 'F2' => 'F2' => q(save_code)],
+         ]],
+         ['~Edit' => [
+            ['~Cut' => 'Shift+Del' => km::Shift|kb::Delete, sub { $_[0]-> Editor-> cut} ],
+            ['Cop~y' => 'Ctrl+Ins' => km::Ctrl|kb::Insert, sub { $_[0]-> Editor-> copy} ],
+            ['~Paste' => 'Shift+Ins' => km::Shift|kb::Insert, sub { $_[0]-> Editor-> paste} ],
+            ['~Delete' => 'Alt+D' => '@D', sub { $_[0]-> Editor-> delete_block} ],
+            [],
+            [ '~Selection' => [
+               ['~Normal' => sub { $_[0]-> Editor-> blockType(0)}],
+               ['~Vertical' => sub { $_[0]-> Editor-> blockType(1)}],
+               ['~Horizontal' => sub { $_[0]-> Editor-> blockType(2)}],
+            ]]
+         ]],
+      ],
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+sub sync_code
+{
+   $VB::code = $VB::editor-> Editor-> text if $VB::editor;
+}
+
+sub load_code
+{
+   my $d = VB::open_dialog( filter => [[ 'All files' => '*']]);
+   return unless $d-> execute;
+   unless ( open F, "< " . $d-> fileName) {
+      Prima::MsgBox::message("Cannot open " . $d-> fileName . ":$!");
+      return;
+   }
+   local $/;
+   $_[0]-> Editor-> text(<F>);
+   close F;
+}
+
+sub save_code
+{
+   my $d = VB::save_dialog( filter => [[ 'All files' => '*']]);
+   return unless $d-> execute;
+   unless ( open F, "> " . $d-> fileName) {
+      Prima::MsgBox::message("Cannot open " . $d-> fileName . ":$!");
+      return;
+   }
+   local $/;
+   print F $_[0]-> Editor-> text;
+   close F;
+
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+
+   my @rx = split( ' ', $VB::main-> {ini}-> {CodeEditorRect});
+   $self-> rect( @rx) if scalar grep { $_ != -1 } @rx;
+
+   my @sz = $self-> size;
+   my $fh = $self-> font-> height + 6;
+
+   my $indicator;
+   my $editor = $self-> insert( Editor => 
+      origin   => [ 0, $fh],
+      size     => [ $sz[0], $sz[1] - $fh],
+      growMode => gm::Client,
+      name     => 'Editor',
+   );
+
+   $indicator = $self-> insert( Widget =>
+      origin  => [ 0, 0],
+      size    => [ $sz[0], $fh],
+      growMode => gm::Floor,
+      name     => 'Indicator',
+      onPaint  => sub {
+         my ( $me, $canvas) = @_; 
+         $canvas-> rect3d( 0, 0, $me-> width - 1, $me-> height - 1, 1, $me-> dark3DColor, $me-> light3DColor, $me-> backColor);
+         my @c = $editor-> cursorLog;
+         $canvas-> text_out( sprintf("%s %d:%d", ($self-> {modified} ? '*' : ' '), $c[0]+1,$c[1]+1), 4, ( $me-> height - $canvas-> font-> height) / 2);
+      }
+   );
+
+   $editor-> textRef( \$VB::code );
+   $self-> {modified} = 0;
+
+   return %profile;
+}
+
+sub flush
+{
+   $VB::code = '';
+   if ( $VB::editor) {
+      $VB::editor-> Editor-> text('');
+      $VB::editor-> {modified} = 0;
+      $VB::editor-> Indicator-> repaint;
+   }
+}
+
+sub on_close
+{
+   sync_code;
+}
+
+sub on_destroy
+{
+   $VB::form-> {modified} = 1 if $VB::form && $_[0]-> {modified};
+   $VB::editor = undef;
+}
 
 package ObjectInspector;
 use vars qw(@ISA);
@@ -674,7 +853,7 @@ sub on_size
 sub on_close
 {
    my $self = $_[0];
-   if ( $self->{modified}) {
+   if ( $self->{modified} || ( $VB::editor && $VB::editor-> {modified})) {
       my $name = defined ( $VB::main->{fmName}) ? $VB::main->{fmName} : 'Untitled';
       my $r = Prima::MsgBox::message( "Save changes to $name?", mb::YesNoCancel|mb::Warning);
       if ( $r == mb::Yes) {
@@ -698,6 +877,7 @@ sub on_destroy
          $VB::main->update_markings();
       }
    }
+   CodeEditor::flush;
    ObjectInspector::renew_widgets;
 }
 
@@ -1154,7 +1334,7 @@ sub profile_default
             ['openitem' => '~Open' => 'F3' => 'F3' => sub {$_[0]->open;}],
             ['-saveitem1' => '~Save' => 'F2' => 'F2' => sub {$_[0]->save;}],
             ['-saveitem2' =>'Save ~as...' =>           sub {$_[0]->saveas;}],
-            ['closeitem' =>'~Close' =>           sub {$VB::form-> close if $VB::form}],
+            ['closeitem' =>'~Close' =>           sub { $VB::form-> close if $VB::form}],
             [],
             ['E~xit' => 'Alt+X' => '@X' => sub{$_[0]->close;}],
          ]],
@@ -1176,6 +1356,7 @@ sub profile_default
          ]],
          ['~View' => [
            ['~Object Inspector' => 'F11' => 'F11' => sub { $_[0]-> bring_inspector; }],
+           ['~Code editor'      => 'F12' => 'F12' => sub { $_[0]-> bring_code_editor; }],
            ['~Add widgets...' => q(add_widgets)],
            [],
            ['Reset ~guidelines' => sub { Form::fm_resetguidelines(); } ],
@@ -1330,6 +1511,8 @@ sub init
             'SnapToGuidelines' => 1,
             'ObjectInspectorVisible' => 1,
             'ObjectInspectorRect' => '-1 -1 -1 -1',
+            'CodeEditorVisible' => 0,
+            'CodeEditorRect' => '-1 -1 -1 -1',
             'MainPanelRect' => '-1 -1 -1 -1',
             'OpenPath' => '.',
             'SavePath' => '.',
@@ -1362,6 +1545,9 @@ sub on_destroy
    my @rx = ( $_[0]-> {ini}-> {ObjectInspectorVisible} = ( $VB::inspector ? 1 : 0)) 
       ? $VB::inspector-> rect : ((-1)x4);
    $_[0]-> {ini}-> {ObjectInspectorRect} = join( ' ', @rx);
+   @rx = ( $_[0]-> {ini}-> {CodeEditorVisible} = ( $VB::editor ? 1 : 0)) 
+      ? $VB::editor-> rect : ((-1)x4);
+   $_[0]-> {ini}-> {CodeEditorRect} = join( ' ', @rx);
    $_[0]-> {ini}-> {OpenPath} = $openFileDlg-> directory if $openFileDlg;
    $_[0]-> {ini}-> {SavePath} = $saveFileDlg-> directory if $saveFileDlg;
    $VB::main = undef;
@@ -1709,6 +1895,17 @@ sub load_file
       creationOrder => 0,
       visible     => 0,
    );
+   if ( exists $mf-> {code}) {
+      if ( $@) {
+         Prima::MsgBox::message("Error loading $fileName: $@");
+      } else {
+         $VB::code = $mf-> {code};
+         if ( $VB::editor) {
+            $VB::editor-> Editor-> textRef( \$VB::code );
+            $VB::editor-> {modified} = 0;
+         }
+      }
+   }
    $VB::form-> prf_set( %{$mf->{profile}});
    $VB::inspector->{selectorChanging} = 1 if $VB::inspector;
    my $loaded = 1;
@@ -1772,7 +1969,12 @@ STARTSUB
 \t\tclass   => '$class',
 \t\tmodule  => '$module',
 MEDI
-      $c .= "\t\tparent => 1,\n" if $_ == $VB::form;
+      if ( $_ == $VB::form) {
+         CodeEditor::sync_code;
+         $c .= "\t\tparent => 1,\n";
+         $c .= "\t\tcode => Prima::VB::VBLoader::GO_SUB(\'".
+               Prima::VB::Types::generic::quotable($VB::code). "'),\n";
+      }
       my %extras    = $_-> ext_profile;
       if ( scalar keys %extras) {
           $c .= "\t\textras => {\n";
@@ -1841,8 +2043,11 @@ use Prima::Classes;
 PREPREHEAD
 
    my %modules = map { $_->{module} => 1 } @cmp;
+
+   CodeEditor::sync_code;
    
    my $c = <<PREHEAD;
+$VB::code
 
 package ${main}Window;
 use vars qw(\@ISA);
@@ -2017,6 +2222,7 @@ sub save
    close F;
 
    $VB::form->{modified} = undef unless $asPL;
+   $VB::editor->{modified} = 0 if $VB::editor && !$asPL;
 
    return 1;
 }
@@ -2087,6 +2293,7 @@ sub form_cancel
    }
    $VB::form-> show if $VB::form;
    $VB::inspector-> show if $VB::inspector;
+   $VB::editor-> show if $VB::editor;
 }
 
 
@@ -2118,12 +2325,14 @@ sub form_run
          $f-> select;
          $VB::form-> hide;
          $VB::inspector-> hide if $VB::inspector;
+         $VB::editor-> hide if $VB::editor;
       };
    };
    if ( $@) {
       my $msg = "$@";
       $msg =~ s/ \(eval \d+\)//g;
-      if ( length $Prima::VB::VBLoader::eventContext[0]) {
+      if ( defined( $Prima::VB::VBLoader::eventContext[0]) && 
+           length ($Prima::VB::VBLoader::eventContext[0])) {
           $VB::main-> bring_inspector;
           $VB::main-> {topLevel}-> { "$VB::inspector" } = 1;
           $VB::inspector-> Selector-> text( $Prima::VB::VBLoader::eventContext[0]);
@@ -2170,6 +2379,17 @@ sub bring_inspector
    }
 }
 
+sub bring_code_editor
+{
+   if ( $VB::editor) {
+      $VB::editor-> restore if $VB::editor-> windowState == ws::Minimized;
+      $VB::editor-> bring_to_front;
+      $VB::editor-> select;
+   } else {
+      $VB::editor = CodeEditor-> create;
+   }
+}
+
 package VisualBuilder;
 
 $::application-> icon( Prima::Image-> load( Prima::find_image( 'VB::VB.gif'), index => 6));
@@ -2178,6 +2398,8 @@ $VB::main = MainPanel-> create;
 $VB::inspector = ObjectInspector-> create(
    top => $VB::main-> bottom - 12 - $::application-> get_system_value(sv::YTitleBar)
 ) if $VB::main-> {ini}-> {ObjectInspectorVisible};
+$VB::code = '';
+$VB::editor = CodeEditor-> create() if $VB::main-> {ini}-> {CodeEditorVisible};
 $VB::form = Form-> create; 
 ObjectInspector::renew_widgets;
 ObjectInspector::preload() unless $VB::fastLoad;
