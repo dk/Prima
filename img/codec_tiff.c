@@ -29,13 +29,13 @@
  * $Id$
  */
 
+#include "img.h"
+#include "unix/guts.h"
+#include "Icon.h"
 #include <tiff.h>
 #include <tiffio.h>
 #include <tiffconf.h>
 #include <stdarg.h>
-#include "img.h"
-#include "unix/guts.h"
-#include "Icon.h"
 
 #ifdef __cplusplus
 extern "C" {
