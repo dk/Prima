@@ -28,11 +28,13 @@ use Prima;
 use Prima::Buttons;
 use strict;
 use Prima::Label;
+use Prima::FontDialog;
 
 $::application = Prima::Application-> create(name => 'keys');
 
 my $propagate = 1;
 my $repeat    = 0;
+my $fontDialog;
 
 my $w = Prima::Window-> create(
     onDestroy => sub {$::application-> destroy},
@@ -46,6 +48,16 @@ my $w = Prima::Window-> create(
        [ 'rr' => '~Repeat key event' => sub {
          $repeat = $repeat ? 0 : 1;
          $_[0]-> menu-> checked( 'rr', $repeat);
+       }],
+       [],
+       ["Set ~font..." => sub {
+          my $d =  $fontDialog ? $fontDialog : Prima::FontDialog-> create(
+             logFont => $_[0]-> Label1-> font,
+          );
+          $fontDialog = $d;
+          return unless $d-> execute == cm::OK;
+          print $::application-> get_focused_widget;
+          $_[0]-> Label1-> font( $d-> logFont);
        }],
     ]]],
 );
@@ -95,9 +107,12 @@ my $l = $w-> insert( Label =>
    origin    => [10,10],
    text      => 'Press a key',
    size      => [$w-> width - 20, $w-> height - 220],
-   growMode  => gm::Client,
+   growMode  => gm::Floor,
    font      => {name => 'Arial'},
    selectable=> 1,
+   name      => 'Label1',
+   autoHeight => 1,
+   autoWidth  => 1,
    onKeyDown => sub {
       my ( $self, $code, $key, $mod) = @_;
       keydump( '', $self, $code, $key, $mod);
@@ -114,7 +129,8 @@ my $l = $w-> insert( Label =>
    },
 );
 
-$l-> focus;
+$l-> select;
+#$l-> focus;
 
 $w-> insert( Button =>
    origin => [10,160],

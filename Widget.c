@@ -2114,7 +2114,7 @@ Widget_set_selected( Handle self, Bool selected)
    enter_method;
    if ( var-> stage > csNormal) return;
    if ( selected) {
-      if ( is_opt( optSelectable)) {
+      if ( is_opt( optSelectable) && !is_opt( optSystemSelectable)) {
          my-> set_focused( self, true);
       } else
       if ( var-> currentWidget) {

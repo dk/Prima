@@ -183,11 +183,13 @@ typedef struct _WinGuts
 
 typedef struct _WindowData
 {
-   int   borderIcons;
-   int   borderStyle;
-   Point hiddenPos;
-   Point hiddenSize;
-   int   state;
+   int    borderIcons;
+   int    borderStyle;
+   Point  hiddenPos;
+   Point  hiddenSize;
+   int    state;
+   Handle oldFoc;
+   HWND   oldActive;
 } WindowData;
 
 typedef struct _TimerData

@@ -53,6 +53,11 @@ DIBMONOBRUSH bmiHatch = {
 int     FONTSTRUCSIZE, FONTSTRUCSIZE2;
 Handle lastMouseOver = nilHandle;
 MusClkRec musClk = {0};
+char * keyLayouts[]   = {  "0409", "0403", "0405", "0406", "0407",
+      "0807","0809","080A","080C","0C0C","100C","0810","0814","0816",
+      "040A","040B","040C","040E","040F","0410","0413","0414","0415","0416",
+      "0417","0418","041A","041D"
+};
 
 
 BOOL APIENTRY
@@ -209,27 +214,36 @@ window_subsystem_init()
    list_create( &guts. sockets, 8, 8);
 
    // selecting locale layout, more or less latin-like
+
    {
       char buf[ KL_NAMELENGTH * 2] = "";
-      char * langs[]   = {"0409","0405","040A","040B","040E","040F","0413","0414","041D"};
       HKL current      = GetKeyboardLayout( 0);
       int i, j, size   = GetKeyboardLayoutList( 0, nil);
       HKL * kl         = malloc( sizeof( HKL) * size);
 
       guts. keyLayout = nil;
+      if ( !GetKeyboardLayoutName( buf)) apiErr;
+      for ( j = 0; j < ( sizeof( keyLayouts) / sizeof( char*)); j++) {
+         if ( strncmp( buf + 4, keyLayouts[ j], 4) == 0) {
+            guts. keyLayout = current;
+            goto found_1;
+         }
+      }
+
       GetKeyboardLayoutList( size, kl);
       for ( i = 0; i < size; i++) {
          ActivateKeyboardLayout( kl[ i], 0);
          if ( !GetKeyboardLayoutName( buf)) apiErr;
-         for ( j = 0; j < ( sizeof( langs) / sizeof( char*)); j++) {
-            if ( strncmp( buf + 4, langs[ j], 4) == 0) {
+         for ( j = 0; j < ( sizeof( keyLayouts) / sizeof( char*)); j++) {
+            if ( strncmp( buf + 4, keyLayouts[ j], 4) == 0) {
                guts. keyLayout = kl[ i];
-               goto found;
+               goto found_2;
             }
          }
       }
-   found:;
+   found_2:;
       ActivateKeyboardLayout( current, 0);
+   found_1:;
       free( kl);
    }
    guts. currentKeyState = guts. keyState;
@@ -528,10 +542,21 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              (( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
 
           if ( ev. key. mod & kmCtrl) {
+             int j;
+             char buf[ KL_NAMELENGTH * 2] = "";
+             if ( !GetKeyboardLayoutName( buf)) apiErr;
              // non-alphanumeric keys - such as /\|?., etc - with kmCtrl are giving weird results
              octl = guts. currentKeyState[ VK_CONTROL];
              guts. currentKeyState[ VK_CONTROL] = 0;
-             kl   = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
+             kl   = nilHandle;
+             for ( j = 0; j < ( sizeof( keyLayouts) / sizeof( char*)); j++) {
+                if ( strncmp( buf + 4, keyLayouts[ j], 4) == 0) {
+                   kl = GetKeyboardLayout( 0);
+                   break;
+                }
+             }
+             if ( kl == nilHandle)
+                kl = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
           } else
              kl = GetKeyboardLayout( 0);
 

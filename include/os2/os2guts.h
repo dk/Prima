@@ -168,10 +168,12 @@ typedef struct _WindowData
    Point hiddenSize;
    int   state;
 
-   Handle nextModal;
    int    modalResult;
    Point  lastClientSize;
    Point  lastFrameSize;
+   Handle oldFoc;
+   HWND   oldActive;
+
 } WindowData;
 
 typedef struct _TimerData

@@ -893,6 +893,10 @@ window_start_modal( Handle self, Bool shared, Handle insertBefore)
    wnd = HANDLE;
    if ( sys className != WC_FRAME) { apcErr( errInvParams); return false; }
 
+   sys s. window. oldFoc = apc_widget_get_focused();
+   if ( sys s. window. oldFoc) protect_object( sys s. window. oldFoc);
+   sys s. window. oldActive = active;
+
    // setting window up
    guts. focSysDisabled = 1;
    CWindow( self)-> exec_enter_proc( self, shared, insertBefore);
@@ -970,16 +974,21 @@ apc_window_end_modal( Handle self)
    objCheck false;
    if ( application) {
       Handle who = Application_popup_modal( application);
+      if ( sys s. window. oldActive)
+         WinSetActiveWindow( HWND_DESKTOP, sys s. window. oldActive);
       if ( !who && var owner)
          CWidget( var owner)-> set_selected( var owner, 1);
-         // WinSetFocus( HWND_DESKTOP, DHANDLE( var owner));
+      if ( who = sys s. window. oldFoc) {
+         if ( PWidget( who)-> stage == csNormal)
+            CWidget( who)-> set_focused( who, 1);
+         unprotect_object( who);
+      }
    }
    guts. focSysDisabled = 0;
    return true;
 }
 
 // Widget
-
 Point
 apc_widget_client_to_screen   ( Handle self, Point p)
 {
