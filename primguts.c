@@ -1131,7 +1131,7 @@ XS( prima_cleanup)
 
    if ( application) Object_destroy( application);
    appDead = true;
-   hash_first_that( primaObjects, kill_objects, nil, nil, nil);
+   hash_first_that( primaObjects, (void*)kill_objects, nil, nil, nil);
    hash_destroy( primaObjects, false);
    primaObjects = nil;
    prima_cleanup_image_subsystem();

@@ -190,7 +190,7 @@ window_subsystem_init( void)
 
    {
       struct sockaddr name;
-      int l = sizeof( name);
+      unsigned int l = sizeof( name);
       guts. local_connection = getsockname( guts.connection, &name, &l) >= 0 && l == 0;
    }
    
@@ -746,7 +746,7 @@ FetchAndProcess:
       XNoOp( DISP);
       XFlush( DISP);
    } else if ( r < 0) {
-      list_first_that( guts.files, purge_invalid_watchers, nil);
+      list_first_that( guts.files, (void*)purge_invalid_watchers, nil);
    } else {
       if ( r > 0) {
          for ( i = 0; i < guts.files->count; i++) {

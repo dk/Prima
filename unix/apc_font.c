@@ -736,7 +736,7 @@ prima_cleanup_font_subsystem( void)
 
    if ( guts. font_hash) {
       /* XXX destroy load_name first - enumerating */
-      hash_first_that( guts. font_hash, free_rotated_entries, nil, nil, nil); 
+      hash_first_that( guts. font_hash, (void*)free_rotated_entries, nil, nil, nil); 
       hash_destroy( guts. font_hash, false);
       guts. font_hash = nil;
    }
@@ -1594,7 +1594,7 @@ FAILED:
       XDrawString( DISP, r-> arena, r-> arena_gc, 
           ( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
           r-> orgBox. y - f-> fs-> descent - 1,
-          &index, 1);
+          (const char *)&index, 1);
       /* XDrawLine( DISP, r-> arena, r-> arena_gc, 0, r-> orgBox .y-1, 8, r-> orgBox .y-1); */
       XCHECKPOINT;
 
@@ -1605,7 +1605,7 @@ FAILED:
          return false;
       }   
       XCHECKPOINT;
-      prima_copy_xybitmap( r-> arena_bits, ximage-> data, r-> orgBox. x, r-> orgBox. y, 
+      prima_copy_xybitmap( r-> arena_bits, (Byte*)ximage-> data, r-> orgBox. x, r-> orgBox. y, 
          r-> lineSize,  ximage-> bytes_per_line);
       XDestroyImage( ximage);
       

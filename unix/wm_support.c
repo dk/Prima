@@ -156,8 +156,7 @@ prima_wm_generic( void)
 
    guts. wm_create_window = wm_generic_create_window_hook;
    guts. wm_cleanup = wm_generic_cleanup_hook;
-   guts. wm_translate_event = (void*)wm_generic_translate_event_hook;
-
+   guts. wm_translate_event = wm_generic_translate_event_hook;
    return true;
 }
 

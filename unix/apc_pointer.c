@@ -223,12 +223,12 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    }
    CIcon(icon)-> create_empty( icon, w, h, imBW);
    im = XGetImage( DISP, p1, 0, 0, w, h, 1, XYPixmap);
-   prima_copy_xybitmap( PIcon(icon)-> data, im-> data,
+   prima_copy_xybitmap( PIcon(icon)-> data, (Byte*)im-> data,
                         PIcon(icon)-> w, PIcon(icon)-> h,
                         PIcon(icon)-> lineSize, im-> bytes_per_line);
    XDestroyImage( im);
    im = XGetImage( DISP, p2, 0, 0, w, h, 1, XYPixmap);
-   prima_copy_xybitmap( PIcon(icon)-> mask, im-> data,
+   prima_copy_xybitmap( PIcon(icon)-> mask, (Byte*)im-> data,
                         PIcon(icon)-> w, PIcon(icon)-> h,
                         PIcon(icon)-> maskLine, im-> bytes_per_line);
   if ( id == crUser) {

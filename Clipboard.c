@@ -79,8 +79,8 @@ Clipboard_init( Handle self, HV * profile)
    if ( !apc_clipboard_create(self))
       croak( "RTC0022: Cannot create clipboard");
    if (clipboards == 0) {
-      Clipboard_register_format_proc( self, "Text",  text_server);
-      Clipboard_register_format_proc( self, "Image", image_server);
+      Clipboard_register_format_proc( self, "Text",  (void*)text_server);
+      Clipboard_register_format_proc( self, "Image", (void*)image_server);
    }
    clipboards++;
 }
@@ -123,7 +123,7 @@ find_format( Handle self, PClipboardFormatReg item, char *format)
 void *
 Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
 {
-   PClipboardFormatReg list = first_that( self, find_format, format);
+   PClipboardFormatReg list = first_that( self, (void*)find_format, format);
    if ( list) {
       my-> deregister_format( self, format);
    }
@@ -144,7 +144,7 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
 void
 Clipboard_deregister_format( Handle self, char * format)
 {
-   PClipboardFormatReg fr = first_that( self, find_format, format);
+   PClipboardFormatReg fr = first_that( self, (void*)find_format, format);
    PClipboardFormatReg list = formats;
    if ( fr == nil) return;
    fr-> server( self, fr, cefDone, nilSV);
@@ -183,7 +183,7 @@ Bool
 Clipboard_format_exists( Handle self, char * format)
 {
    Bool ret;
-   PClipboardFormatReg fr = first_that( self, find_format, format);
+   PClipboardFormatReg fr = first_that( self, (void*)find_format, format);
    if ( !fr) return false;
    my-> open( self);
    ret = apc_clipboard_has_format( self, fr-> sysId);
@@ -195,7 +195,7 @@ SV *
 Clipboard_fetch( Handle self, char * format)
 {
    SV * ret;
-   PClipboardFormatReg fr = first_that( self, find_format, format);
+   PClipboardFormatReg fr = first_that( self, (void*)find_format, format);
    my-> open( self);
    if ( !fr || !my-> format_exists( self, format))
       ret = newSVsv( nilSV);
@@ -208,7 +208,7 @@ Clipboard_fetch( Handle self, char * format)
 void
 Clipboard_store( Handle self, char * format, SV * data)
 {
-   PClipboardFormatReg fr = first_that( self, find_format, format);
+   PClipboardFormatReg fr = first_that( self, (void*)find_format, format);
 
    if ( !fr) return;
    my-> open( self);
@@ -242,7 +242,7 @@ Clipboard_register_format( Handle self, char * format)
        ( strcmp( format, "Text") == 0)  ||
        ( strcmp( format, "Image") == 0))
       return false;
-   proc = Clipboard_register_format_proc( self, format, binary_server);
+   proc = Clipboard_register_format_proc( self, format, (void*)binary_server);
    return proc != nil;
 }
 

@@ -90,7 +90,7 @@ static Bool bring_by_name( Handle self, PComponent item, char * name)
 Handle
 Component_bring( Handle self, char * componentName)
 {
-   return my-> first_that_component( self, bring_by_name, componentName);
+   return my-> first_that_component( self, (void*)bring_by_name, componentName);
 }
 
 static Bool
@@ -106,7 +106,7 @@ Component_cleanup( Handle self)
    Event ev = {cmDestroy};
 
    if ( var-> components != nil)
-      list_first_that( var-> components, detach_all, ( void*) self);
+      list_first_that( var-> components, (void*)detach_all, ( void*) self);
 
    ev. gen. source = self;
    my-> message( self, &ev);
@@ -161,20 +161,20 @@ Component_done( Handle self)
 
    if ( var-> refs) {
       Handle * pself = &self;
-      list_first_that( var-> refs, free_eventref, pself);
+      list_first_that( var-> refs, (void*)free_eventref, pself);
       plist_destroy( var-> refs);
       var-> refs = nil;
    }
 
    if ( var-> postList != nil) {
-      list_first_that( var-> postList, free_private_posts, nil);
+      list_first_that( var-> postList, (void*)free_private_posts, nil);
       list_destroy( var-> postList);
       free( var-> postList);
       var-> postList = nil;
    }
    if ( var-> evQueue != nil)
    {
-      list_first_that( var-> evQueue, free_queue, nil);
+      list_first_that( var-> evQueue, (void*)free_queue, nil);
       list_destroy( var-> evQueue);
       free( var-> evQueue);
       var-> evQueue = nil;
@@ -309,7 +309,7 @@ Constructing:
          goto ForceProcess;
       case ctSingle:
          event-> cmd = ( event-> cmd & ~ctQueueMask) | ctSingleResponse;
-         if ( list_first_that( var-> evQueue, find_dup_msg, &event-> cmd) >= 0)
+         if ( list_first_that( var-> evQueue, (void*)find_dup_msg, &event-> cmd) >= 0)
 	      break;
       default:
          {
@@ -412,7 +412,7 @@ Component_handle_event( Handle self, PEvent event)
          PList q = var-> evQueue;
          var-> evQueue = nil;
          if ( q-> count > 0)
-            list_first_that( q, oversend, ( void*) self);
+            list_first_that( q, (void*)oversend, ( void*) self);
          list_destroy( q);
          free( q);
       }

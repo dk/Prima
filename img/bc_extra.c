@@ -39,11 +39,11 @@ static struct valid_image_type {
    void *to_proc;
 } valid_image_types[] =
 {
-   { imbpp24 | imColor | imfmtBGR,      imRGB, cm_reverse_palette, cm_reverse_palette},
-   { imbpp32 | imColor | imfmtRGBI,     imRGB, bc_rgbi_rgb, bc_rgb_rgbi },
-   { imbpp32 | imColor | imfmtIRGB,     imRGB, bc_irgb_rgb, bc_rgb_irgb },
-   { imbpp32 | imColor | imfmtBGRI,     imRGB, bc_bgri_rgb, bc_rgb_bgri },
-   { imbpp32 | imColor | imfmtIBGR,     imRGB, bc_ibgr_rgb, bc_rgb_ibgr },
+   { imbpp24 | imColor | imfmtBGR,      imRGB, (void*)cm_reverse_palette, (void*)cm_reverse_palette},
+   { imbpp32 | imColor | imfmtRGBI,     imRGB, (void*)bc_rgbi_rgb, (void*)bc_rgb_rgbi },
+   { imbpp32 | imColor | imfmtIRGB,     imRGB, (void*)bc_irgb_rgb, (void*)bc_rgb_irgb },
+   { imbpp32 | imColor | imfmtBGRI,     imRGB, (void*)bc_bgri_rgb, (void*)bc_rgb_bgri },
+   { imbpp32 | imColor | imfmtIBGR,     imRGB, (void*)bc_ibgr_rgb, (void*)bc_rgb_ibgr },
 };
 
 Bool
@@ -80,7 +80,7 @@ ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int src
    int  h  = sh > dh ? dh : sh;
 
    if ( convProc == nil) {
-      convProc = memcpy_bitconvproc;
+      convProc = (void*)memcpy_bitconvproc;
       srcBpp = dstBpp = 1;
    }
    

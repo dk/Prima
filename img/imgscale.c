@@ -256,7 +256,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
    int last = 0;
    int i;
    int yMin = ( srcH > absh) ? absh : srcH;
-   PStretchProc proc = nil;
+   PStretchProc proc = ( PStretchProc) nil;
    Byte *srcLast = nil;
 
    if ( w == srcW) xStretch = false;

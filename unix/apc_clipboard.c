@@ -190,8 +190,7 @@ apc_clipboard_clear( Handle self)
    return true;
 }
 
-
-static Bool
+static int
 selection_filter( Display * disp, XEvent * ev, PClipboardSysData XX)
 {
    switch ( ev-> type) {
@@ -224,7 +223,7 @@ query_data( Handle self, long id, Atom * ret_type)
    XConvertSelection( DISP, XX-> selection, guts. clipboard_formats[id], 
       XX-> selection, WIN, CurrentTime);
    while ( 1) {
-      XIfEvent( DISP, &ev, (void*)selection_filter, (char*)XX);
+      XIfEvent( DISP, &ev, (XIfEventProcType)selection_filter, (char*)XX);
 
       if ( ev. type == SelectionNotify) {
          Atom type;
@@ -476,7 +475,7 @@ apc_clipboard_register_format( Handle self, const char* format)
    guts. clipboard_formats = f;
    guts. clipboard_formats_count++;
 
-   if ( hash_first_that( guts. clipboards, expand_clipboards, nil, nil, nil))
+   if ( hash_first_that( guts. clipboards, (void*)expand_clipboards, nil, nil, nil))
       return -1;
 
    return guts. clipboard_formats_count - 1;

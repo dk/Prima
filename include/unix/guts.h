@@ -973,6 +973,8 @@ typedef void (*RETSIGTYPE)(int);
 extern void 
 prima_XDestroyImage( XImage * x);
 
+typedef int (*XIfEventProcType)(Display*,XEvent*,XPointer);
+
 #endif
 
 /* this does not belong here */

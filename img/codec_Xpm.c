@@ -436,7 +436,8 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    if ( image. ncolors > 256) { /* reduce colors altogether */
        CalcData cd;
        PHash hash = hash_create();
-       int x, y, *dest = image. data, transcolor = -1;
+       int x, y, transcolor = -1;
+       unsigned int *dest = image. data;
        Byte * p = i-> data + ( i-> h - 1) * i-> lineSize;
        Byte * mask = icon ? i-> mask + ( i-> h - 1) * i-> maskLine : nil;
        
@@ -474,12 +475,12 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
        memset( image. colorTable, 0, image. ncolors * ( sizeof( XpmColor) + 13));
        cd. delta = image. ncolors * sizeof( XpmColor);
        cd. image = &image;
-       hash_first_that( hash, prepare_xpm_color, &cd, nil, nil);
+       hash_first_that( hash, (void*)prepare_xpm_color, &cd, nil, nil);
        hash_destroy( hash, false);
    } else {
        CalcData cd;
-       int x, y, *dest = image. data, type = i-> type & imBPP, val = 0, 
-          transcolor = -1, ncolors = image. ncolors;
+       int x, y, type = i-> type & imBPP, val = 0, transcolor = -1, ncolors = image. ncolors;
+       unsigned int *dest = image. data;
        Byte * p = i-> data + ( i-> h - 1) * i-> lineSize;
        Byte * mask = icon ? i-> mask + ( i-> h - 1) * i-> maskLine : nil;
 

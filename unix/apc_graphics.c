@@ -185,7 +185,7 @@ Unbuffered:
    XCHECKPOINT;
    
    if ( XX-> dashes) {
-      XSetDashes( DISP, XX-> gc, 0, XX-> dashes, XX-> ndashes);
+      XSetDashes( DISP, XX-> gc, 0, (char *) XX-> dashes, XX-> ndashes);
       XX-> paint_ndashes = XX-> ndashes;
       if (( XX-> paint_dashes = malloc( XX-> ndashes)))
          memcpy( XX-> paint_dashes, XX-> dashes, XX-> ndashes);
@@ -480,7 +480,7 @@ calculate_ellipse_divergence(void)
          int i;
          Byte *data[4];
          if ( xi-> bitmap_bit_order == LSBFirst) 
-            prima_mirror_bytes( xi-> data, xi-> bytes_per_line * 4);
+            prima_mirror_bytes(( Byte*) xi-> data, xi-> bytes_per_line * 4);
          for ( i = 0; i < 4; i++) data[i] = (Byte*)xi-> data + i * xi-> bytes_per_line;
 #define PIX(x,y) ((data[y][0] & (0x80>>(x)))!=0)
          if (  PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = -1; else
@@ -1779,10 +1779,10 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
       n = XX-> ndashes;
       if ( n < 0) {
 	 n = 0;
-	 strcpy( dashes, "");
+	 strcpy(( char*) dashes, "");
       } else if ( n == 0) {
 	 n = 1;
-	 strcpy( dashes, "\1");
+	 strcpy(( char*) dashes, "\1");
       } else {
 	 memcpy( dashes, XX-> dashes, n);
       }
@@ -2040,7 +2040,7 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 	 XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
       } else {
 	 gcv. line_style = ( XX-> paint_rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;
-	 XSetDashes( DISP, XX-> gc, 0, pattern, len);
+	 XSetDashes( DISP, XX-> gc, 0, (char*)pattern, len);
 	 XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
       }
       XX-> line_style = gcv. line_style;

@@ -171,10 +171,10 @@ void Window_handle_event( Handle self, PEvent event)
           Event ev = *event;
           ev. key. cmd   = cmTranslateAccel;
           if ( !my-> message( self, &ev)) leave;
-          if ( my-> first_that( self, accel_notify, &ev)) leave;
+          if ( my-> first_that( self, (void*)accel_notify, &ev)) leave;
           ev. key. cmd    = cmDelegateKey;
           ev. key. subcmd = 1;
-          if ( my-> first_that( self, accel_notify, &ev)) leave;
+          if ( my-> first_that( self, (void*)accel_notify, &ev)) leave;
       }
       objCheck;
       break;
@@ -526,7 +526,7 @@ Window_icon( Handle self, Bool set, Handle icon)
        warn("RTC0091: Illegal object reference passed to Window::icon");
        return nilHandle;
    }
-   my-> first_that( self, icon_notify, (void*)icon);
+   my-> first_that( self, (void*)icon_notify, (void*)icon);
    apc_window_set_icon( self, icon);
    opt_clear( optOwnerIcon);
    return nilHandle;
@@ -632,7 +632,7 @@ Window_ownerIcon( Handle self, Bool set, Bool ownerIcon)
 Bool
 Window_process_accel( Handle self, int key)
 {
-   return var-> modal ? my-> first_that_component( self, find_accel, &key)
+   return var-> modal ? my-> first_that_component( self, (void*)find_accel, &key)
      : inherited process_accel( self, key);
 }
 

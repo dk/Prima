@@ -502,7 +502,7 @@ AbstractMenu_get_items ( Handle self, char * varName)
    if ( var-> stage > csFrozen) return nilSV;
    if ( strlen( varName))
    {
-      PMenuItemReg m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+      PMenuItemReg m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
       return ( m && m-> down) ? new_av( m-> down, 1) : nilSV;
    } else return var-> tree ? new_av( var-> tree, 0) : nilSV;
 }
@@ -549,7 +549,7 @@ AbstractMenu_first_that( Handle self, void * actionProc, void * params, Bool use
 Bool
 AbstractMenu_has_item( Handle self, char * varName)
 {
-   return my-> first_that( self, var_match, varName, true) != nil;
+   return my-> first_that( self, (void*)var_match, varName, true) != nil;
 }
 
 
@@ -558,7 +558,7 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, char * accel)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return "";
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( !m) return "";
    if ( !set)
       return m-> accel ? m-> accel : "";
@@ -577,7 +577,7 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return nilSV;
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( !m) return nilSV;
    if ( !set) {
       if ( m-> code)    return newSVsv( m-> code);
@@ -611,7 +611,7 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return false;
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return false;
    if ( !set)
       return m ? m-> checked : false;
@@ -628,7 +628,7 @@ AbstractMenu_data ( Handle self, Bool set, char * varName, SV * data)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return nilSV;
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return nilSV;
    if ( !set)
       return m-> data ? newSVsv( m-> data) : nilSV;
@@ -642,7 +642,7 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return false;
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return false;
    if ( !set)
       return m ? !m-> disabled : false;
@@ -662,7 +662,7 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 
    if ( var-> stage > csFrozen) return nilHandle;
 
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return nilHandle;
    if ( !m-> bitmap) return nilHandle;
    if ( !set) { 
@@ -696,7 +696,7 @@ AbstractMenu_text ( Handle self, Bool set, char * varName, char * text)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return "";
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return "";
    if ( m-> text == nil) return "";
    if ( !set)
@@ -715,7 +715,7 @@ AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return nilSV;
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return nilSV;
    if ( m-> divider || m-> down) return nilSV;
    if ( !set)
@@ -733,7 +733,7 @@ AbstractMenu_set_variable( Handle self, char * varName, char * newName)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return;
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return;
    free( m-> variable);
    m-> variable = duplicate_string( newName);
@@ -751,7 +751,7 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 Bool
 AbstractMenu_sub_call_id ( Handle self, int sysId)
 {
-   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, id_match, &sysId, false));
+   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, (void*)id_match, &sysId, false));
 }
 
 #define keyRealize( key)     if ((( key & 0xFF) >= 'A') && (( key & 0xFF) <= 'z'))  \
@@ -764,7 +764,7 @@ Bool
 AbstractMenu_sub_call_key ( Handle self, int key)
 {
    keyRealize( key);
-   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, key_match, &key, false));
+   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, (void*)key_match, &key, false));
 }
 
 typedef struct _Kmcc
@@ -793,7 +793,7 @@ AbstractMenu_set_command( Handle self, char * key, Bool enabled)
    mcc. key = key_normalize( key);
    mcc. enabled = enabled;
    if ( var-> stage > csFrozen) return;
-   my-> first_that( self, kmcc, &mcc, true);
+   my-> first_that( self, (void*)kmcc, &mcc, true);
 }
 
 Bool AbstractMenu_selected( Handle self, Bool set, Bool selected)
@@ -852,12 +852,12 @@ AbstractMenu_remove( Handle self, char * varName)
 {
    PMenuItemReg up, prev, m;
    if ( var-> stage > csFrozen) return;
-   m = ( PMenuItemReg) my-> first_that( self, var_match, varName, true);
+   m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return;
    if ( var-> stage <= csNormal && var-> system)
       apc_menu_item_delete( self, m);
-   up   = ( PMenuItemReg) my-> first_that( self, up_match, m, true);
-   prev = ( PMenuItemReg) my-> first_that( self, prev_match, m, true);
+   up   = ( PMenuItemReg) my-> first_that( self, (void*)up_match, m, true);
+   prev = ( PMenuItemReg) my-> first_that( self, (void*)prev_match, m, true);
    if ( up)   up  -> down = m-> next;
    if ( prev) prev-> next = m-> next;
    if ( m == var-> tree) var-> tree = m-> next;
@@ -900,7 +900,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       up = &var-> tree;
       level = 0;
    } else {
-      branch = m = ( PMenuItemReg) my-> first_that( self, var_match, rootName, true);
+      branch = m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, rootName, true);
       if ( m == nil || m-> down == nil) return;
       up = &m-> down;
       m = m-> down;
@@ -910,13 +910,13 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
    {
       int maxId = 0;
       PMenuItemReg save = var-> tree;
-      my-> first_that( self, collect_id, &maxId, true);
+      my-> first_that( self, (void*)collect_id, &maxId, true);
       autoEnum = maxId;
       /* the level is 0 or 1 for the sake of rightAdjust */
       addFirst = ( PMenuItemReg) my-> new_menu( self, menuItems, level, &subCount, &autoEnum);
       if ( !addFirst) return; /* error in menuItems */
       var-> tree = addFirst;
-      my-> first_that( self, increase_id, &maxId, true);
+      my-> first_that( self, (void*)increase_id, &maxId, true);
       var-> tree = save;
    }
 

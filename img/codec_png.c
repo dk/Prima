@@ -639,7 +639,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( icon) {
       if ( alpha_image) {
           int i, sz = PIcon( fi-> object)-> maskSize;
-          char * mask = PIcon( fi-> object)-> mask;
+          Byte * mask = PIcon( fi-> object)-> mask;
           RGBColor dummy[2];
           ic_graybyte_mono_ictNone( alpha_image, PIcon( fi-> object)-> mask, dummy, imbpp1);
           for ( i = 0; i < sz; i++, mask++) *mask = ~*mask;
@@ -673,10 +673,11 @@ READ_END:
       char * name, * pf;
       int ct, i;
       png_uint_32 pl, py;
+      png_int_32 pli, pyi;
       png_textp tx;
       double scx, scy;
 
-      (void)tx; (void)py; (void)pl; (void)i; (void)ct;
+      (void)tx; (void)py; (void)pl; (void)pyi; (void)pli; (void)i; (void)ct;
       (void)pf; (void)name; (void)scx; (void)scy;
 
       png_read_end(l-> png_ptr, l-> info_ptr);
@@ -716,9 +717,9 @@ READ_END:
 #endif      
 
 #ifdef PNG_oFFs_SUPPORTED      
-      if ( png_get_oFFs( l-> png_ptr, l-> info_ptr, &pl, &py, &i)) {
-         pset_i( offset_x, pl);
-         pset_i( offset_y, py);
+      if ( png_get_oFFs( l-> png_ptr, l-> info_ptr, &pli, &pyi, &i)) {
+         pset_i( offset_x, pli);
+         pset_i( offset_y, pyi);
          pset_c( offset_dimension, ( i == PNG_OFFSET_PIXEL) ? "pixel" : "micrometer");
       }
 #endif      

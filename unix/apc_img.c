@@ -240,7 +240,7 @@ void
 prima_gc_ximages( void )
 {
    if ( !guts.ximages) return;
-   hash_first_that( guts.ximages, destroy_one_ximage, nil, nil, nil);
+   hash_first_that( guts.ximages, (void*)destroy_one_ximage, nil, nil, nil);
 }
 
 void
@@ -1436,7 +1436,7 @@ prima_query_image( Handle self, XImage * i)
       CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
 
    if ( target_depth == 1) {
-      prima_copy_xybitmap( img-> data, i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
+      prima_copy_xybitmap( img-> data, (Byte*)i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
    } else {
       if ( guts. idepth != target_depth) {
          switch ( guts. idepth) {

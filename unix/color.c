@@ -871,7 +871,7 @@ prima_done_color_subsystem( void)
    FreeColorsStruct fc;
 
    if ( DISP) {
-      hash_first_that( hatches, kill_hatches, nil, nil, nil);
+      hash_first_that( hatches, (void*)kill_hatches, nil, nil, nil);
       fc. count = 0;
       
       for ( i = 0; i < guts. palSize; i++) {
@@ -1414,7 +1414,7 @@ prima_get_hatch( FillPattern * fp)
    for ( i = 0; i < sizeof( FillPattern); i++)
       fprev[i] = (*fp)[ sizeof(FillPattern) - i - 1];
    if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fprev, 8, 8)) == None) {
-      hash_first_that( hatches, kill_hatches, nil, nil, nil);
+      hash_first_that( hatches, (void*)kill_hatches, nil, nil, nil);
       hash_destroy( hatches, false);
       hatches = hash_create();
       if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fprev, 8, 8)) == None) 

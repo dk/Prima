@@ -1223,7 +1223,7 @@ apc_system_action( const char *s)
              return 0;
           }
           if ( !opt_InPaint) return 0;
-          len = strlen( text);
+          len = strlen((char*) text);
           for ( i = 0; i < len; i++) if ( text[i]==255) text[i] = 0;
           XDrawString16( DISP, win, X(self)-> gc, x, y, ( XChar2b *) text, len / 2);
           return nil;

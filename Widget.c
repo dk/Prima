@@ -327,7 +327,7 @@ Widget_cleanup( Handle self)
    if ( application && (( PApplication) application)-> hintUnder == self)
       my-> set_hintVisible( self, 0);
 
-   my-> first_that( self, kill_all, nil);
+   my-> first_that( self, (void*)kill_all, nil);
 
    my-> detach( self, var-> accelTable, true);
    var-> accelTable = nilHandle;
@@ -536,7 +536,7 @@ void Widget_handle_event( Handle self, PEvent event)
         my-> notify( self, "<si", "Hint", event-> gen. B);
         break;
       case cmClose        :
-        if ( my-> first_that( self, pquery, nil)) {
+        if ( my-> first_that( self, (void*)pquery, nil)) {
            my-> clear_event( self);
            return;
         }
@@ -685,14 +685,14 @@ void Widget_handle_event( Handle self, PEvent event)
               }
               objCheck;
 
-              if ( my-> first_that( self, accel_notify, &ev)) {
+              if ( my-> first_that( self, (void*)accel_notify, &ev)) {
                  my-> clear_event( self);
                  return;
               }
               objCheck;
               ev. cmd         = cmDelegateKey;
               ev. key. subcmd = 1;
-              if ( my-> first_that( self, accel_notify, &ev)) {
+              if ( my-> first_that( self, (void*)accel_notify, &ev)) {
                  my-> clear_event( self);
                  return;
               }
@@ -714,13 +714,13 @@ void Widget_handle_event( Handle self, PEvent event)
            case 1: {
               Event ev = *event;
               ev. cmd  = cmTranslateAccel;
-              if ( my-> first_that( self, accel_notify, &ev)) {
+              if ( my-> first_that( self, (void*)accel_notify, &ev)) {
                  my-> clear_event( self);
                  return;
               }
               objCheck;
               ev = *event;
-              if ( my-> first_that( self, accel_notify, &ev)) {
+              if ( my-> first_that( self, (void*)accel_notify, &ev)) {
                  my-> clear_event( self);
                  return;
               }
@@ -731,7 +731,7 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmTranslateAccel:
         {
            int key = CAbstractMenu-> translate_key( nilHandle, event-> key. code, event-> key. key, event-> key. mod);
-           if ( my-> first_that_component( self, find_accel, &key)) {
+           if ( my-> first_that_component( self, (void*)find_accel, &key)) {
               my-> clear_event( self);
               return;
            }
@@ -757,7 +757,7 @@ void Widget_handle_event( Handle self, PEvent event)
             } else if ( var-> stage > csNormal) {
                break;
             } else if ( var-> evQueue != nil) {
-              int i = list_first_that( var-> evQueue, find_dup_msg, &event-> cmd);
+              int i = list_first_that( var-> evQueue, (void*)find_dup_msg, &event-> cmd);
               PEvent n;
               if ( i < 0) {
                  if ( !( n = alloc1( Event))) goto MOVE_EVENT;
@@ -771,7 +771,7 @@ void Widget_handle_event( Handle self, PEvent event)
             }
           MOVE_EVENT:;
             if ( !event-> gen. B)
-               my-> first_that( self, move_notify, &event-> gen. P);
+               my-> first_that( self, (void*)move_notify, &event-> gen. P);
             if ( doNotify) oldP = var-> pos;
             var-> pos = event-> gen. P;
             if ( doNotify && 
@@ -813,7 +813,7 @@ void Widget_handle_event( Handle self, PEvent event)
            } else if ( var-> stage > csNormal) {
               break;
            } else if ( var-> evQueue != nil) {
-              int i = list_first_that( var-> evQueue, find_dup_msg, &event-> cmd);
+              int i = list_first_that( var-> evQueue, (void*)find_dup_msg, &event-> cmd);
               PEvent n;
               if ( i < 0) {
                  if ( !( n = alloc1( Event))) goto SIZE_EVENT;
@@ -829,7 +829,7 @@ void Widget_handle_event( Handle self, PEvent event)
         SIZE_EVENT:;  
            if ( var-> growMode & gmCenter) my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
 
-           if ( !event-> gen. B) my-> first_that( self, size_notify, &event-> gen. R);
+           if ( !event-> gen. B) my-> first_that( self, (void*)size_notify, &event-> gen. R);
            if ( doNotify) {
               Point oldSize;
               oldSize. x = event-> gen. R. left;
@@ -1233,7 +1233,7 @@ Bool
 Widget_process_accel( Handle self, int key)
 {
    enter_method;
-   if ( my-> first_that_component( self, find_accel, &key)) return true;
+   if ( my-> first_that_component( self, (void*)find_accel, &key)) return true;
    return kind_of( var-> owner, CWidget) ?
           ((( PWidget) var-> owner)-> self)->process_accel( var-> owner, key) : false;
 }
@@ -1511,7 +1511,7 @@ Widget_set( Handle self, HV * profile)
          icon = nilHandle;
       }
       apc_pointer_set_user( self, icon, hotSpot);
-      if ( var-> pointerType == crUser) my-> first_that( self, sptr, nil);
+      if ( var-> pointerType == crUser) my-> first_that( self, (void*)sptr, nil);
       pdelete( pointerIcon);
       pdelete( pointerHotSpot);
    }
@@ -1598,7 +1598,7 @@ repaint_all( Handle owner, Handle self, void * dummy)
 {
    enter_method;
    my-> repaint( self);
-   my-> first_that( self, repaint_all, nil);
+   my-> first_that( self, (void*)repaint_all, nil);
    return false;
 }
 
@@ -1781,7 +1781,7 @@ Widget_set_font( Handle self, Font font)
 {
    enter_method;
    if ( var-> stage > csFrozen) return;
-   if ( !opt_InPaint) my-> first_that( self, font_notify, &font);
+   if ( !opt_InPaint) my-> first_that( self, (void*)font_notify, &font);
    if ( var-> handle == nilHandle) return; /* aware of call from Drawable::init */
    apc_font_pick( self, &font, & var-> font);
    if ( opt_InPaint) apc_gp_set_font ( self, & var-> font);
@@ -2183,7 +2183,7 @@ Widget_colorIndex( Handle self, Bool set, int index, Color color)
       s. color = color;
       s. index = index;
       if (( index < 0) || ( index > ciMaxId)) return clInvalid;
-      if ( !opt_InPaint) my-> first_that( self, single_color_notify, &s);
+      if ( !opt_InPaint) my-> first_that( self, (void*)single_color_notify, &s);
 
       if ( var-> handle == nilHandle) return clInvalid; /* aware of call from Drawable::init */
       if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0))
@@ -2286,7 +2286,7 @@ Widget_enabled( Handle self, Bool set, Bool enabled)
    if ( !apc_widget_set_enabled( self, enabled)) 
       return false;
    if ( is_opt( optAutoEnableChildren)) 
-      CWidget(self)-> first_that( self, auto_enable_children, (void*) enabled);
+      CWidget(self)-> first_that( self, (void*)auto_enable_children, (void*) enabled);
    return true;
 }
 
@@ -2342,7 +2342,7 @@ Widget_hint( Handle self, Bool set, char *hint)
    if (!set)
       return var-> hint ? var-> hint : "";
    if ( var-> stage > csFrozen) return "";
-   my-> first_that( self, hint_notify, (void*)hint);
+   my-> first_that( self, (void*)hint_notify, (void*)hint);
 
    free( var-> hint);
    var-> hint = duplicate_string( hint);
@@ -2518,7 +2518,7 @@ Widget_pointerIcon( Handle self, Bool set, Handle icon)
    }
    hotSpot = my-> get_pointerHotSpot( self);
    apc_pointer_set_user( self, icon, hotSpot);
-   if ( var-> pointerType == crUser) my-> first_that( self, sptr, nil);
+   if ( var-> pointerType == crUser) my-> first_that( self, (void*)sptr, nil);
    return nilHandle;
 }
 
@@ -2532,7 +2532,7 @@ Widget_pointerHotSpot( Handle self, Bool set, Point hotSpot)
    if ( var-> stage > csFrozen) return hotSpot;
    icon = my-> get_pointerIcon( self);
    apc_pointer_set_user( self, icon, hotSpot);
-   if ( var-> pointerType == crUser) my-> first_that( self, sptr, nil);
+   if ( var-> pointerType == crUser) my-> first_that( self, (void*)sptr, nil);
    return hotSpot;
 }
 
@@ -2545,7 +2545,7 @@ Widget_pointerType( Handle self, Bool set, int type)
       return var-> pointerType;
    var-> pointerType = type;
    apc_pointer_set_shape( self, type);
-   my-> first_that( self, sptr, nil);
+   my-> first_that( self, (void*)sptr, nil);
    return type;
 }
 
@@ -2811,7 +2811,7 @@ Widget_showHint( Handle self, Bool set, Bool showHint )
    Bool oldShowHint = is_opt( optShowHint);
    if ( !set)
       return oldShowHint;
-   my-> first_that( self, showhint_notify, &showHint);
+   my-> first_that( self, (void*)showhint_notify, &showHint);
    opt_clear( optOwnerShowHint);
    opt_assign( optShowHint, showHint);
    if ( application && !is_opt( optShowHint) && oldShowHint) my-> set_hintVisible( self, 0);

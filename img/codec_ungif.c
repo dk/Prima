@@ -259,7 +259,7 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data, Bool privateExte
       break;
    }   
    case COMMENT_EXT_FUNC_CODE: if ( fi-> loadExtras) {
-      SV * sv = newSVpv( data + 1, *data);
+      SV * sv = newSVpv((char*) data + 1, *data);
       if ( privateExtensions && pexist( comment)) {
          /* enable long comments */
          sv_catsv( pget_sv( comment), sv);

@@ -167,7 +167,7 @@ process_transparents( Handle self)
    }
 }
 
-static Bool
+static int
 flush_events( Display * disp, XEvent * ev, Handle self)
 {
    XWindow win;
@@ -262,7 +262,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       }
       /* flush configure events */
       XSync( DISP, false);
-      while ( XCheckIfEvent( DISP, &dummy_ev, (void*)flush_events, (XPointer)self));
+      while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)flush_events, (XPointer)self));
       
       XChangeWindowAttributes( DISP, X_WINDOW, CWWinGravity, &attrs);
       XReparentWindow( DISP, X_WINDOW, parent, pos. x, 
@@ -907,7 +907,7 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
    return true;
 }
 
-static Bool
+static int
 flush_refocus( Display * disp, XEvent * ev, void * dummy)
 {
    return ev-> type == ClientMessage && ev-> xclient. message_type == guts. wm_data-> protocols 
@@ -944,7 +944,7 @@ apc_widget_set_focused( Handle self)
    XSync( DISP, false);
    while ( XCheckMaskEvent( DISP, FocusChangeMask|ExposureMask, &ev))
       prima_handle_event( &ev, nil);
-   while ( XCheckIfEvent( DISP, &ev, (void*)flush_refocus, (XPointer)0));
+   while ( XCheckIfEvent( DISP, &ev, (XIfEventProcType)flush_refocus, (XPointer)0));
    return true;
 }
 
