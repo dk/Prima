@@ -125,6 +125,7 @@ struct _UnixGuts
    Display *display;
    int screen_number;
    PHash windows;
+   PHash menu_windows;
    fd_set read_set, write_set, excpt_set;
    int connection;
    int max_fd;
@@ -138,6 +139,7 @@ struct _UnixGuts
    int shape_error;
    GCList *free_gcl;
    GCList *used_gcl;
+   GC menugc;
    PPaintList paint_list;
    struct _timer_sys_data *oldest;
    struct _timer_sys_data *cursor_timer;
@@ -163,6 +165,7 @@ struct _UnixGuts
    int cursor_width;
    int cursor_height;
    Handle focused;
+   Atom create_event;
 
    char **font_names;  /* to be XFreed */
    int n_fonts;
@@ -312,6 +315,33 @@ typedef struct _timer_sys_data
    struct timeval when;
 } TimerSysData, *PTimerSysData;
 
+typedef struct _menu_item
+{
+   int x, y;
+   int ux, uy, ul;
+   char *text;
+} UnixMenuItem, *PUnixMenuItem;
+
+typedef struct _menu_window
+{
+   Handle self;
+   XWindow w;
+   Point sz;
+   PMenuItemReg m;
+   int num;
+   PUnixMenuItem um;
+   struct _menu_window *next;
+   struct _menu_window *prev;
+} MenuWindow, *PMenuWindow;
+
+typedef struct _menu_sys_data
+{
+   COMPONENT_SYS_DATA; /* must be the first */
+   PMenuWindow w;
+   PCachedFont font;
+   XColor c[ciMaxId+1];
+} MenuSysData, *PMenuSysData;
+
 typedef union _unix_sys_data
 {
    struct {
@@ -319,6 +349,7 @@ typedef union _unix_sys_data
    } component;
    DrawableSysData drawable;
    TimerSysData timer;
+   MenuSysData menu;
 } UnixSysData, *PUnixSysData;
 
 #define DISP		(guts. display)
@@ -337,6 +368,9 @@ extern void
 prima_handle_event( XEvent *ev, XEvent *next_event);
 
 extern void
+prima_handle_menu_event( XEvent *ev, XWindow win, Handle self);
+
+extern void
 prima_get_gc( PDrawableSysData);
 
 extern void
@@ -347,6 +381,9 @@ prima_release_gc( PDrawableSysData);
 
 extern void
 prima_init_font_subsystem( void);
+
+extern XColor*
+prima_allocate_color( Handle self, Color color);
 
 extern void
 prima_cleanup_drawable_after_painting( Handle self);
@@ -375,6 +412,9 @@ prima_rect_union( XRectangle *t, const XRectangle *s);
 
 extern void
 prima_rect_intersect( XRectangle *t, const XRectangle *s);
+
+extern void
+prima_send_create_event( XWindow win);
 
 /* Interaction with Window Managers */
 
