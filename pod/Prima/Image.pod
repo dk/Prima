@@ -80,6 +80,10 @@ imply that the image is internally switched to the paint-enabled state and
 back; the painting is performed without switching and without interference with
 the system's graphical layer.
 
+Another special case is a 1-bit ( monochrome ) DeviceBitmap. When it is drawn upon
+a drawable with bit depth greater than 1, the drawable's color and backColor properties
+are used to reflect 1 and 0 bits, respectively. On a 1-bit drawable this does not
+happen, and the color properties are not used. 
 
 =head2 File input and output
 

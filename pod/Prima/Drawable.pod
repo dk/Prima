@@ -1009,7 +1009,7 @@ See also: fillpoly().
 Draws an OBJECT at coordinates (X,Y). OBJECT must be Prima::Image,
 Prima::Icon or Prima::DeviceBitmap.
 
-Context used: rop
+Context used: rop; color and backColor for a monochrome DeviceBitmap 
 
 =item put_image_indirect OBJECT, X, Y, X_FROM, Y_FROM, DEST_WIDTH, DEST_HEIGHT, SRC_WIDTH, SRC_HEIGHT, ROP
 
@@ -1025,7 +1025,7 @@ negative, a mirroring by respective axis is performed.
 
 OBJECT must be Prima::Image, Prima::Icon or Prima::DeviceBitmap.
 
-No context is used.
+No context is used, except color and backColor for a monochrome DeviceBitmap 
 
 =item rect3d X1, Y1, X2, Y2, WIDTH, LIGHT_COLOR, DARK_COLOR, [ BACK_COLOR ] 
 
@@ -1033,7 +1033,7 @@ Draws 3d-shaded rectangle in boundaries X1,Y1 - X2,Y2 with WIDTH line width
 and LIGHT_COLOR and DARK_COLOR colors. If BACK_COLOR is specified, paints
 an inferior rectangle with it, otherwise the inferior rectangle is not touched.
 
-Context used: rop
+Context used: rop; color and backColor for a monochrome DeviceBitmap
 
 =item rect_focus X1, Y1, X2, Y2, [ WIDTH = 1 ]
 
