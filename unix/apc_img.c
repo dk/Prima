@@ -1315,8 +1315,8 @@ convert_16_to_24( XImage *i, PImage img)
       line = (Pixel24*)(img-> data + y*img-> lineSize);
       for ( x = 0; x < w; x++) {
          line-> a0 = (((*d & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range; 
-         line-> a1 = (((*d & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. blue_range;
-         line-> a2 = (((*d & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. blue_range;
+         line-> a1 = (((*d & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range;
+         line-> a2 = (((*d & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range;
 	 d++; line++;
       }
    }
@@ -1337,8 +1337,8 @@ convert_32_to_24( XImage *i, PImage img)
          for ( x = 0; x < w; x++) {
             dd = REVERSE_BYTES_32(*d);
             line-> a0 = (((dd & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range; 
-            line-> a1 = (((dd & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. blue_range;
-            line-> a2 = (((dd & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. blue_range;
+            line-> a1 = (((dd & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range;
+            line-> a2 = (((dd & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range;
             d++; line++;
          }
       }
@@ -1348,8 +1348,8 @@ convert_32_to_24( XImage *i, PImage img)
          line = (Pixel24*)(img-> data + y*img-> lineSize);
          for ( x = 0; x < w; x++) {
             line-> a0 = (((*d & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range; 
-            line-> a1 = (((*d & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. blue_range;
-            line-> a2 = (((*d & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. blue_range;
+            line-> a1 = (((*d & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range;
+            line-> a2 = (((*d & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range;
             d++; line++;
          }
       }
