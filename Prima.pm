@@ -257,6 +257,8 @@ B<Perl programming>:
 
 - L<Prima::Printer> - system printing services 
 
+- L<Prima::File> - asynchronous stream I/O
+
 B<C programming>
 
 - L<Prima::internals> - Internal architecture

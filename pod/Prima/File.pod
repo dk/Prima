@@ -1,0 +1,121 @@
+=head1 NAME
+
+File - asynchronous stream I/O.
+
+=head1 DESCRIPTION
+
+Prima::File provides access to the I/O stream events,
+that are called when a file handle becomes readable, writable
+or if an exception occured. Registering file handles to Prima::File
+objects makes possible the stream operations coexist with the event loop. 
+
+=head1 USAGE
+
+Prima::File is a descendant of Prima::Component.
+Objects of Prima::File class must be binded to a valid file handle object,
+before the associated events can occur:
+
+  my $f = Prima::File-> create();
+  $f-> file( *STDIN);
+
+When a file handle, binded via the C<::file> property becomes readable,
+writable or when an exception signalled, one of three correspondent
+events called - C<Read>, C<Write> or C<Exception>. When a handle is
+always readable, or always writable, or, some of these events are
+desired to be blocked, the file event mask can be set via the C<::mask>
+property:
+
+  $f-> mask( fe::Read | fe::Exception);
+
+NB. Due to different system implementations, the only handles,
+currently supported on all systems, are socket handle and disk file 
+handles. Pipes only work on unix platforms. The example file I<socket.pl>
+elucidates the use of sockets together with Prima::File.
+
+When a file handle is not needed anymore, it is expected to
+be detached from an object explicitly:
+
+  $f-> file( undef);
+
+However, if the system detects that a file handle is no longer valid,
+it is automatically detached. It is possible to check, if a file handle
+is still valid by calling the C<is_active()> method.
+
+Prima::File events are basically the same I/O callbacks, provided by
+a system C<select()> call. See documentation of your system's select()
+for the implementation details.
+
+=head1 API
+
+=head2 Properties
+
+=over
+
+=item file HANDLE
+
+Selects a file handle, that is to be monitored for stream I/O events.
+If HANDLE is C<undef>, object is returned to a passive state, and
+the previously binded file handle is deselected.
+
+=item mask EVENT_MASK
+
+Selects a event mask, that is a combination of C<fe::XXX> integer constants,
+each representing an event:
+
+   fe::Read
+   fe::Write
+   fe::Exception
+
+The omitted events are effectively excluded from the system file event
+multiplexing mechanism.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item get_handle
+
+Returns C<sprintf("0x%08x", fileno( file ))> string.
+If C<::file> is C<undef>, -1 is used instead fileno() result.
+
+=item is_active AUTODETACH = 0
+
+Returns a boolean flag, indicating if a file handle is valid.
+If AUTODETACH is 1, and the file handle is not valid, 
+C<file(undef)> is called.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Read
+
+Called when a file handle becomes readable. The callback procedure
+is expected to call a non-blocking read() on the file handle.
+
+=item Write
+
+Called when a file handle becomes writable. The callback procedure
+is expected to call a non-blocking write() on the file handle.
+
+=item Exception
+
+Called when an exception is signalled on a file handle.
+The exceptions are specific to handle type and the operating system.
+For example, a unix socket signals C<Exception> when a control status 
+data for a pseudo terminal or an out-of-band data arrives.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Object>
+
