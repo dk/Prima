@@ -473,6 +473,18 @@ class.
 Returns a font the system uses to draw the message text.
 The method can be called with a class string instead of an object instance.
 
+=item get_modal_window MODALITY_TYPE = mt::Exclusive, TOPMOST = 1
+
+Returns a modal window, that resides on an end of a
+modality chain. MODALITY_TYPE selects the chain, and can be either
+C<mt::Exclusive> or C<mt::Shared>. TOPMOST is a boolean flag, selecting
+the lookup direction; if it is 1, the 'topmost' window is returned,
+if 0, the 'lowest' one ( in a simple case when window A is made modal
+(executed) after modal window B, the A window is the 'topmost' one ).
+
+If a chain is empty C<undef> is returned. In case when a chain consists
+of just one window, TOPMOST value is apparently irrelevant.
+
 =item get_scroll_rate
 
 Returns two integer values of two system-specific

@@ -471,6 +471,17 @@ Value of C<mt::None> is 0, so result of get_modal() can be
 also treated as a boolean value, if only the fact of modality
 is needed to check.
 
+=item get_modal_window MODALITY_TYPE = mt::Exclusive, NEXT = 1
+
+Returns a modal window, that is next to the given window in the
+modality chain. MODALITY_TYPE selects the chain, and can be either
+C<mt::Exclusive> or C<mt::Shared>. NEXT is a boolean flag, selecting
+the lookup direction; if it is 1, the 'upper' window is returned,
+if 0, the 'lower' one ( in a simple case when window A is made modal
+(executed) after modal window B, the A window is the 'upper' one ).
+
+If a window has no immediate modal relations,  C<undef> is returned.
+
 =item maximize
 
 Maximizes window. A shortcut for C<windowState(ws::Maximized)>.

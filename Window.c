@@ -208,6 +208,17 @@ Window_get_modal( Handle self)
 }
 
 Handle
+Window_get_modal_window( Handle self, int modalFlag, Bool next)
+{
+   if ( modalFlag == mtExclusive) {
+      return next ? var-> nextExclModal   : var-> prevExclModal;
+   } else if ( modalFlag == mtShared) {
+      return next ? var-> nextSharedModal : var-> prevSharedModal;
+   } 
+   return nilHandle;
+}
+
+Handle
 Window_get_horizon( Handle self)
 {
    /* self trick is appropriate here;

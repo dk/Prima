@@ -597,6 +597,18 @@ Application_insertMode( Handle self, Bool set, Bool insMode)
    return apc_sys_set_insert_mode( insMode);
 }
 
+
+Handle 
+Application_get_modal_window( Handle self, int modalFlag, Bool topMost)
+{
+   if ( modalFlag == mtExclusive) {
+      return topMost ? var-> topExclModal   : var-> exclModal;
+   } else if ( modalFlag == mtShared) {
+      return topMost ? var-> topSharedModal : var-> sharedModal;
+   } 
+   return nilHandle;
+}
+
 Handle
 Application_get_parent( Handle self)
 {

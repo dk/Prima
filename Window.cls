@@ -63,6 +63,7 @@ object Prima::Window( Prima::Widget)
    method   Handle   get_horizon();
    method   Font     get_menu_font();
    method   int      get_modal();
+   method   Handle   get_modal_window( int modalFlag = mtExclusive, Bool next = true);
    c_only   void     handle_event ( PEvent event);
    method   void     init( HV * profile);
    import   SV *     notification_types();
