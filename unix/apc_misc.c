@@ -233,12 +233,13 @@ apc_component_fullname_changed_notify( Handle self)
 /* Cursor support */
 
 static XGCValues cursor_gcv = {
-   line_width: 0,
    background: 0,
-   foreground: 0,
-   clip_mask: None,
-   function: GXcopy,
    cap_style: CapButt,
+   clip_mask: None,
+   foreground: 0,
+   function: GXcopy,
+   line_width: 0,
+   subwindow_mode: ClipByChildren,
 };
 
 void

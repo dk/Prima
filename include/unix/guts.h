@@ -124,7 +124,8 @@ struct  _drawable_sys_data;
                         |       GCForeground    \
                         |       GCFunction      \
                         |       GCLineStyle     \
-                        |       GCLineWidth     )
+                        |       GCLineWidth     \
+                        |       GCSubwindowMode )
 
 typedef struct _gc_list
 {

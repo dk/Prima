@@ -492,6 +492,7 @@ Unbuffered:
       mask &= ~GCStipple;
 
    prima_get_gc( XX);
+   XX-> gcv. subwindow_mode = (self == application ? IncludeInferiors : ClipByChildren);
    XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
    XCHECKPOINT;
    if ( XX-> dashes) {
