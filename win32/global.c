@@ -395,7 +395,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       {
          PMenuWndData mwd = ( PMenuWndData) hash_fetch( menuMan, &mp1, sizeof( void*));
          PMenuItemReg m;
-         sys lastMenu = mwd ? mwd-> menu : nil;
+         sys lastMenu = mwd ? mwd-> menu : nilHandle;
          if ( mwd) {
             m = AbstractMenu_first_that( mwd-> menu, find_oid, (void*)mwd->id, true);
             hiStage    = true;

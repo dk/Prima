@@ -506,13 +506,13 @@ prn_query( Handle self, char * printer, LPPRINTER_INFO_2 info)
          2, ( LPBYTE) ppi, needed, &needed, &returned)) {
       apiErr;
       free( ppi);
-      return nil;
+      return 0;
    }
 
    if ( returned == 0) {
       apcErr( errNoPrinters);
       free( ppi);
-      return nil;
+      return 0;
    }
 
    device = apc_prn_get_default( self);
