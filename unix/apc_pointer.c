@@ -220,7 +220,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       XDrawString( DISP, p1, gc, -cs-> lbearing, cs-> ascent, (c = (char)idx, &c), 1);
       XFreeGC( DISP, gc);
    }
-   CIcon(icon)-> create_empty( icon, w, h, imMono);
+   CIcon(icon)-> create_empty( icon, w, h, imBW);
    im = XGetImage( DISP, p1, 0, 0, w, h, 1, XYPixmap);
    prima_copy_xybitmap( PIcon(icon)-> data, im-> data,
                         PIcon(icon)-> w, PIcon(icon)-> h,
@@ -417,7 +417,7 @@ apc_pointer_set_visible( Handle self, Bool visible)
          warn("Error creating icon object");
          return false;
       }   
-      n-> self-> create_empty( nullc, 16, 16, 1);
+      n-> self-> create_empty( nullc, 16, 16, imBW);
       memset( n-> mask, 0xFF, n-> maskSize);
       if ( !prima_create_icon_pixmaps( nullc, &xor, &and)) {
          warn( "Error creating null cursor pixmaps"); 

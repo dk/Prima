@@ -381,7 +381,7 @@ apc_clipboard_get_data( Handle self, long id, STRLEN *length)
       
       if ( !XGetGeometry( DISP, px, &foo, &bar, &bar, &x, &y, &bar, &d))
          return nil;
-      CImage( img)-> create_empty( img, x, y, ( d == 1) ? 1 : guts. qdepth);
+      CImage( img)-> create_empty( img, x, y, ( d == 1) ? imBW : guts. qdepth);
       if ( !prima_std_query_image( img, px)) return nil;
       ret = (void*)1;
    } else {

@@ -271,7 +271,7 @@ apc_window_get_icon( Handle self, Handle icon)
       HV * profile = newHV();
       Handle mask = Object_create( "Prima::Image", profile);
       sv_free(( SV *) profile);
-      CImage( mask)-> create_empty( mask, ax, ay, ( ad == 1) ? 1 : guts. qdepth);
+      CImage( mask)-> create_empty( mask, ax, ay, ( ad == 1) ? imBW : guts. qdepth);
       ret = prima_std_query_image( mask, and);
       if (( PImage( mask)-> type & imBPP) != 1)
          CImage( mask)-> type( mask, true, imBW);
