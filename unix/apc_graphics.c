@@ -380,65 +380,39 @@ void
 prima_get_gc( PDrawableSysData selfxx)
 {
    XGCValues gcv;
-   GCList **free_gcl, **used_gcl;
    Bool bitmap;
+   struct gc_head *gc_pool;
 
    if ( XX-> gc && XX-> gcl) return;
 
    if ( XX-> gc || XX-> gcl) croak( "UAG_004: internal error");
 
    bitmap = XT_IS_BITMAP(XX);
-   if ( bitmap) {
-      free_gcl = &guts. bitmap_free_gcl;
-      used_gcl = &guts. bitmap_used_gcl;
-   } else {
-      free_gcl = &guts. free_gcl;
-      used_gcl = &guts. used_gcl;
-   }
-
-   if ( *free_gcl) {
-      XX-> gcl = *free_gcl;
-      *free_gcl = XX-> gcl-> next;
-   } else {
-      XX-> gcl = malloc( sizeof( GCList));
-      XX-> gcl-> gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : RootWindow( DISP, SCREEN), 0, &gcv);
+   gc_pool = bitmap ? &guts.bitmap_gc_pool : &guts.screen_gc_pool;
+   XX->gcl = TAILQ_FIRST(gc_pool);
+   if (XX->gcl)
+      TAILQ_REMOVE(gc_pool, XX->gcl, gc_link);
+   if (!XX->gcl) {
+      XX->gcl = alloc1z( GCList);
+      XX->gcl->gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : RootWindow( DISP, SCREEN), 0, &gcv);
       XCHECKPOINT;
    }
-
-   XX-> gcl-> prev = nil;
-   XX-> gcl-> next = *used_gcl;
-   *used_gcl = XX-> gcl;
-   XX-> gc = XX-> gcl-> gc;
-   XX-> gcl-> holder = XX;
+   XX->gc = XX->gcl->gc;
 }
 
 void
 prima_release_gc( PDrawableSysData selfxx)
 {
    Bool bitmap;
-   GCList **free_gcl, **used_gcl;
+   struct gc_head *gc_pool;
 
    if ( XX-> gc) {
       if ( XX-> gcl == nil) croak( "UAG_005: internal error");
       bitmap = XT_IS_BITMAP(XX);
-      if ( bitmap) {
-         free_gcl = &guts. bitmap_free_gcl;
-         used_gcl = &guts. bitmap_used_gcl;
-      } else {
-         free_gcl = &guts. free_gcl;
-         used_gcl = &guts. used_gcl;
-      }
-      if ( XX-> gcl-> prev) {
-	 XX-> gcl-> prev-> next = XX-> gcl-> next;
-      } else {
-	 *used_gcl = XX-> gcl-> next;
-      }
-      XX-> gcl-> prev = nil;
-      XX-> gcl-> next = *free_gcl;
-      *free_gcl = XX-> gcl;
-      XX-> gcl-> holder = nil;
-      XX-> gc = nil;
-      XX-> gcl = nil;
+      gc_pool = bitmap ? &guts.bitmap_gc_pool : &guts.screen_gc_pool;
+      TAILQ_INSERT_HEAD(gc_pool, XX->gcl, gc_link);
+      XX->gcl = nil;
+      XX->gc = nil;
    } else {
       if ( XX-> gcl) croak( "UAG_006: internal error");
    }

@@ -228,6 +228,8 @@ window_subsystem_init( void)
 
    TAILQ_INIT( &guts.paintq);
    TAILQ_INIT( &guts.peventq);
+   TAILQ_INIT( &guts.bitmap_gc_pool);
+   TAILQ_INIT( &guts.screen_gc_pool);
    guts. clipboards = hash_create();
    guts. windows = hash_create();
    guts. menu_windows = hash_create();
@@ -262,24 +264,25 @@ window_subsystem_cleanup( void)
       guts. wm_cleanup();
 }
 
+static void
+free_gc_pool( struct gc_head *head)
+{
+   GCList *n1, *n2;
+
+   n1 = TAILQ_FIRST(head);
+   while (n1 != nil) {
+      n2 = TAILQ_NEXT(n1, gc_link);
+      /* XXX */ free(n1);
+      n1 = n2;
+   }
+   TAILQ_INIT(head);
+}
+
 void
 window_subsystem_done( void)
 {
-   int n;
-   GCList *gcl;
-
-   for ( n = 0, gcl = guts. used_gcl; gcl; n++, gcl = gcl-> next) {
-   }
-   DOLBUG( "Used GC's: %d\n", n);
-   for ( n = 0, gcl = guts. free_gcl; gcl; n++, gcl = gcl-> next) {
-   }
-   DOLBUG( "Free GC's: %d\n", n);
-   for ( n = 0, gcl = guts. bitmap_used_gcl; gcl; n++, gcl = gcl-> next) {
-   }
-   DOLBUG( "Used bitmap GC's: %d\n", n);
-   for ( n = 0, gcl = guts. bitmap_free_gcl; gcl; n++, gcl = gcl-> next) {
-   }
-   DOLBUG( "Free bitmap GC's: %d\n", n);
+   free_gc_pool(&guts.bitmap_gc_pool);
+   free_gc_pool(&guts.screen_gc_pool);
 
    if ( DISP) {
       XFreeGC( DISP, guts. menugc);

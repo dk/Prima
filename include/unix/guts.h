@@ -136,13 +136,13 @@ struct  _drawable_sys_data;
                         |       GCLineWidth     \
                         |       GCSubwindowMode )
 
-typedef struct _gc_list
+typedef struct gc_list
 {
-   struct _gc_list *next;
-   struct _gc_list *prev;
    GC gc;
-   struct _drawable_sys_data *holder;
+   TAILQ_ENTRY(gc_list) gc_link;
 } GCList;
+
+TAILQ_HEAD(gc_head,gc_list);
 
 typedef struct pending_event
 {
@@ -171,12 +171,10 @@ struct _UnixGuts
    long                         unhandled_events;
    fd_set                       write_set;
    /* Graphics */
-   GCList                              *bitmap_free_gcl;
-   GCList                              *bitmap_used_gcl;
-   GCList                              *free_gcl;
+   struct gc_head               bitmap_gc_pool;
+   struct gc_head               screen_gc_pool;
    GC                                   menugc;
    TAILQ_HEAD(,_drawable_sys_data)      paintq;
-   GCList                              *used_gcl;
    PHash                                ximages;
    /* Font management */
    PHash                        font_hash;
