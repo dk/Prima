@@ -214,7 +214,6 @@ sub profile_default
       centered      => 1,
       visible       => 0,
       scaleChildren => 0,
-      designScale   => [ 7, 16],
 
       quality       => 0,
       value         => cl::White,
