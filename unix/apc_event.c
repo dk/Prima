@@ -568,6 +568,8 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
    if ( !e-> key. key)		e-> key. key = kbNoKey;
    if ( PApplication(application)-> wantUnicodeInput) {
       e-> key. code = KeySymToUcs4( keysym);
+      if (( ev-> state & ControlMask) && isalpha( e-> key. code)) 
+         e-> key. code = toupper( e-> key. code);
    } else {
       e-> key. code = keycode & kbCharMask;
    }
