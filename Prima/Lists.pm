@@ -1505,7 +1505,7 @@ sub draw_items
       }
    }
    # draw veil
-   if ( $drawVeilFoc >= 0 && $self->{multiSelect})
+   if ( $drawVeilFoc >= 0)
    {
       my ( $itemIndex, $x, $y, $x2, $y2) = @{$_[$drawVeilFoc]};
       $canvas-> rect_focus( $x + $self->{offset}, $y, $x2, $y2);

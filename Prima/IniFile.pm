@@ -34,6 +34,7 @@ $VERSION = 0.01;
 
 use strict;
 use Carp;
+use Cwd;
 
 =head1 NAME
 
@@ -123,12 +124,30 @@ sub DESTROY
    $self-> write;
 }
 
+sub canonicalize_fname
+{
+   my $p = shift;
+   return Cwd::abs_path($p) if -d $p;
+   my $dir = $p;
+   my $fn;
+   if ($dir =~ s{[/\\]([^\\/]+)$}{}) {
+      $fn = $1;
+   } else {
+      $fn = $p;
+      $dir = '.';
+   }
+   $dir = eval { Cwd::abs_path($dir) };
+   $dir = "." if $@;
+   $dir = "" unless -d $dir;
+   return "$dir/$fn";
+}
+
 sub read
 {
    my ($self, $fname, %profile) = @_;
    $self-> write;             # save the old contents
    $self-> clean;
-   $self->{fileName} = $fname;
+   $self->{fileName} = canonicalize_fname($fname);
    eval
    {
       open FILE, "$fname" or do
