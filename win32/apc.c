@@ -2501,6 +2501,10 @@ int ctx_kb2VK[] = {
    kbNumLock     ,   VK_NUMLOCK        ,
    kbScrollLock  ,   VK_SCROLL         ,
    kbCapsLock    ,   VK_CAPITAL        ,
+   kbClear       ,   VK_CLEAR          ,
+   kbSelect      ,   VK_SELECT         ,
+   kbExecute     ,   VK_EXECUTE        ,
+   kbSysRq       ,   VK_SNAPSHOT       ,
    endCtx
 };
 
@@ -2519,7 +2523,6 @@ int ctx_kb2VK3[] = {
    kbCtrlL       ,   kbCtrlR           ,
    endCtx
 };
-
 
 static int ctx_hmp2HELP[] =
 {

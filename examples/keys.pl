@@ -58,9 +58,10 @@ sub keydump
        (( $mod & km::Alt)   ? 'Alt+' : '') .
        (( $mod & km::Ctrl)  ? 'Ctrl+' : '') .
        (( $mod & km::Shift) ? 'Shift+' : '') .
-       (( $mod & km::KeyPad) ? 'KeyPad+' : '');
+       (( $mod & km::KeyPad) ? 'KeyPad+' : '').
+       (( $mod & km::DeadKey) ? 'DeadKey+' : '');
    chop($mod) if $mod;
-   my $lcode = $code ? chr( $code) : 'n/a';
+   my $lcode = $code ? (( $code < 27) ? chr( $code + ord('@')) : chr( $code)) : 'n/a';
    $lcode = 'n/a' if $lcode =~ /\0/;
    for ( keys %kb::) {
       next if $_ eq 'AUTOLOAD';
@@ -95,7 +96,7 @@ my $l = $w-> insert( Label =>
    text      => 'Press a key',
    size      => [$w-> width - 20, $w-> height - 220],
    growMode  => gm::Client,
-   font      => {name => 'Arial CYR'},
+   font      => {name => 'Arial'},
    selectable=> 1,
    onKeyDown => sub {
       my ( $self, $code, $key, $mod) = @_;

@@ -319,6 +319,7 @@ sub InputLine_Create
 sub InputLine_KeyDown
 {
    my ( $self, $edit, $code, $key, $mod) = @_;
+   return if $mod & km::DeadKey;
    return unless $code;
    return unless $_[0]-> {literal};
 

@@ -685,6 +685,7 @@ sub on_leave
 sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
+   return if $mod & km::DeadKey;
    $mod &= ( km::Shift|km::Ctrl|km::Alt);
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
 

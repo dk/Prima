@@ -493,16 +493,26 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_HASMATE:
       *(( Handle*) mp2) = self;
       return HASMATE_MAGIC;
-   case WM_SYSKEYUP:
    case WM_SYSKEYDOWN:
+   case WM_SYSKEYUP:
       if ( mp2 & ( 1 << 29)) ev. key. mod = kmAlt;
    case WM_KEYDOWN:
    case WM_KEYUP:
       if ( apc_widget_is_responsive( self)) {
+          HKL  kl;
+          BYTE octl;
+          WORD keys[ 2];
           Bool up = ( msg == WM_KEYUP) || ( msg == WM_SYSKEYUP);
           Bool extended = mp2 & ( 1 << 24);
+          UINT scan = ( HIWORD( mp2) & 0xFF) | ( up ? 0x80000000 : 0);
+
+          // basic assignments
           ev. cmd = up ? cmKeyUp : cmKeyDown;
           ev. key. key    = ctx_remap_def( mp1, ctx_kb2VK, false, kbNoKey);
+          ev. key. code   = mp1;
+          ev. key. repeat = mp2 & 0x000000FF;
+
+          // VK validations
           if ( extended) {
              int ks = ev. key. key;
              ev. key. key = ctx_remap_def( ks, ctx_kb2VK3, true, ks);
@@ -510,43 +520,51 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
                 extended = false; // avoid (Ctrl|Alt)R+KeyPad combinations
           } else if ( mp1 >= VK_NUMPAD0 && mp1 <= VK_DIVIDE)
              extended = true; // include numpads
-          ev. key. code   = mp1;
-          ev. key. repeat = mp2 & 0x000000FF;
-          ev. key. mod   |=
+
+          ev. key. mod   = 0 |
              ( extended ? kmKeyPad : 0) |
              (( GetKeyState( VK_SHIFT)   < 0) ? kmShift : 0) |
              (( GetKeyState( VK_CONTROL) < 0) ? kmCtrl  : 0) |
              (( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
-          if ( ev. key. key == kbNoKey) {
-             if ( mp1 < ' ') {
-                ev. key. code = 0;   // bare mod key
-                if ( mp1 != VK_MENU && mp1 != VK_SHIFT && mp1 != VK_CONTROL)
-                   return 1;         // other mod key, not handled
-             } else { // trying to map key to ascii...
-                WORD keys[ 2];
-                UINT scan = ( HIWORD( mp2) & 0xFF) | ( up ? 0x80000000 : 0);
-                if ( ev. key. mod & kmCtrl) {
-                   // non-alphanumeric keys - such as /\|?., etc - with kmCtrl are giving weird results
-                   BYTE octl  = guts. currentKeyState[ VK_CONTROL];
-                   HKL  kl    = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
-                   guts. currentKeyState[ VK_CONTROL] = 0;
-                   if ( ToAsciiEx( mp1, scan, guts. keyState, keys, 0, kl) != 1)
-                      keys[ 0] = mp1; // fails to translate key, so mp1 is best match
-                   guts. currentKeyState[ VK_CONTROL] = octl;
-                } else { // character translation candidate
-                   if ( ToAsciiEx( mp1, scan, guts. currentKeyState, keys, 0, GetKeyboardLayout( 0)) != 1)
-                     return 1;
-                }
-                ev. key. code = keys[ 0] & 0xFF;
-                if ( ev. key. mod & kmCtrl && isalpha( ev. key. code))
-                   ev. key. code = toupper( ev. key. code) - '@';
+
+          if ( ev. key. mod & kmCtrl) {
+             // non-alphanumeric keys - such as /\|?., etc - with kmCtrl are giving weird results
+             octl = guts. currentKeyState[ VK_CONTROL];
+             guts. currentKeyState[ VK_CONTROL] = 0;
+             kl   = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
+          } else
+             kl = GetKeyboardLayout( 0);
+
+          // ascii mapping
+          switch ( ToAsciiEx( mp1, scan, guts. keyState, keys, 0, kl)) {
+          case 1: // char
+             break;
+          case 2: { // double char
+                Event evx;
+                memcpy( &evx, &ev, sizeof( ev));
+                evx. key. code = keys[ 0] & 0xFF;
+                keys[ 0] = keys[ 1];
+                v-> self-> message( self, &evx);
+                if ( v-> stage != csNormal) return 1;
              }
-          } else {
-             if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))
-                ev. key. key = kbBackTab;
-             if ( !ctx_remap( ev. key. key, ctx_kb2VK2, true))
-                 ev. key. code = 0;
+             break;
+          case 0: // virtual key
+             keys[ 0] = ( mp1 < VK_NUMPAD0 || mp1 > VK_DIVIDE) ? 0 : mp1 - '0';
+             break;
+          default:
+             ev. key. mod |= kmDeadKey;
           }
+          ev. key. code = keys[ 0] & 0xFF;
+
+          if ( ev. key. mod & kmCtrl) {
+             guts. currentKeyState[ VK_CONTROL] = octl;
+             if ( isalpha( ev. key. code))
+                ev. key. code = toupper( ev. key. code) - '@';
+          }
+
+          // simulated key codes
+          if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))
+             ev. key. key = kbBackTab;
       }
       break;
    case WM_INITMENUPOPUP:
