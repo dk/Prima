@@ -42,7 +42,7 @@
 #undef FUNC
 #include "Image.h"
 
-#ifdef __CYGWIN__
+#ifndef __CYGWIN__
 extern void
 prima_mirror_bytes( unsigned char *data, int dataSize);
 #endif
