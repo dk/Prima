@@ -24,7 +24,7 @@ Prima is written and is expected to be used in some traditions of Perl coding,
 such as DWIM ( do what I mean ) or TMTOWTDI ( there are more than one way to do it).
 Perl itself is language (arguably) most effective in small programs, as the programmer
 doesn't need to include lines and lines of prerequisite code before even getting
-to the problem itself. Prima can't compete with that, but the intdocution fee
+to the problem itself. Prima can't compete with that, but the introductory fee
 is low; a minimal working 'Hello world' can be written in three lines of code:
 
 	use Prima qw(Application);
@@ -42,7 +42,7 @@ for such a compression.
 Line 2 creates a window of I<Prima::MainWindow> class, which is visualized as a
 screen window, titled as 'Hello world'. The class terminates the application
 when the window is closed; this is the only difference from 'Window' windows,
-that donothing after their closing. From here, C<Prima::> prefix in class names
+that do nothing after their closing. From here, C<Prima::> prefix in class names
 will be omitted, and will be used only when necessary, such as in code
 examples.
 
@@ -62,7 +62,7 @@ lines:
 but it is not illustrative and not useful. C<Prima::message> is rarely used, 
 and is one of few methods contained in C<Prima::> namespace. To display a 
 message, the I<MsgBox> module is often preferred, with its control over message
-buttons and pre-defined icons. With its use, the coode above can be rewritten
+buttons and pre-defined icons. With its use, the code above can be rewritten
 as
 
 	use Prima qw(Application MsgBox);
@@ -114,11 +114,11 @@ the manipulation of the window properties in the same fashion:
 
 Note that the C<size> property is a two-integer array, and color constant is registered
 in C<cl::> namespace. In Prima there is a number of such two- and three-letter namespaces,
-containing usually integer constants for various purposes. The design reason for chosing
+containing usually integer constants for various purposes. The design reason for choosing
 such syntax over string constants ( as in Perl-Tk, such as C<color => 'yellow'> ) is that
 the syntax is checked on the compilation stage, thus narrowing the possibility of a bug.
 
-There are over a hunder properties, such as color, text, or size, defined on descendants
+There are over a hundred properties, such as color, text, or size, defined on descendants
 of I<Widget> class. These can be set in C<new> ( alias C<create> ) call, or referred later,
 either individually
 
