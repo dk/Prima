@@ -588,9 +588,6 @@ sub profile_default
    return $def;
 }
 
-
-sub mask         {($#_)?$_[0]->set_mask         ($_[1]):return $_[0]->get_mask;         }
-
 # class DeviceBitmap
 package Prima::DeviceBitmap;
 use vars qw( @ISA);
@@ -633,8 +630,6 @@ sub profile_default
    @$def{keys %prf} = values %prf;
    return $def;
 }
-
-sub timeout    {($#_)?$_[0]->set_timeout     ($_[1]):return $_[0]->get_timeout;     }
 
 # class Printer
 package Prima::Printer;
