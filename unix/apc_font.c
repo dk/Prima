@@ -336,8 +336,13 @@ prima_init_font_subsystem( void)
 	 }
 	 if ( *c == '-') {
             c++;
-            if (( strncasecmp( c, "0",  strlen("0")) == 0))
-                 info[j]. flags. funky = 1;
+            if ( 
+                (strncmp( c, "0",  strlen("0")) == 0) || 
+                (strncmp( c, "fontspecific", strlen("fontspecific")) == 0) ||
+                (strncmp( c, "special", strlen("special")) == 0)
+               ) 
+               info[j]. flags. funky = 1; 
+            
             /* advance through CHARSET_ENCODING; just skip it;  XXX */
 	    while ( *c && *c != '-') c++;
 	    if ( !*c  && info[j]. flags. pitch && 
