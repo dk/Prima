@@ -835,7 +835,9 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    }
 
    if ( withChildren) {
-      Point delta = { horiz, vert };
+      Point delta;
+      delta. x = horiz;
+      delta. y = vert;
       CWidget(self)-> first_that( self, (void*)scroll, &delta);
    }
    
