@@ -325,12 +325,33 @@ use constant Maximized  => 2        ;
 
 # system values
 package sv;
-use constant YMenu         => 0     ;
-use constant YTitleBar     => 1     ;
-use constant MousePresent  => 2     ;
-use constant MouseButtons  => 3     ;
-use constant SubmenuDelay  => 4     ;
-use constant FullDrag      => 5     ;
+use constant YMenu           => 0    ;
+use constant YTitleBar       => 1    ;
+use constant XIcon           => 2    ;
+use constant YIcon           => 3    ;
+use constant XSmallIcon      => 4    ;
+use constant YSmallIcon      => 5    ;
+use constant XPointer        => 6    ;
+use constant YPointer        => 7    ;
+use constant XScrollbar      => 8    ;
+use constant YScrollbar      => 9    ;
+use constant XCursor         => 10   ;
+use constant AutoScrollFirst => 11   ;
+use constant AutoScrollNext  => 12   ;
+use constant InsertMode      => 13   ;
+use constant XbsNone         => 14   ;
+use constant YbsNone         => 15   ;
+use constant XbsSizeable     => 16   ;
+use constant YbsSizeable     => 17   ;
+use constant XbsSingle       => 18   ;
+use constant YbsSingle       => 19   ;
+use constant XbsDialog       => 20   ;
+use constant YbsDialog       => 21   ;
+use constant MousePresent    => 22   ;
+use constant MouseButtons    => 23   ;
+use constant WheelPresent    => 24   ;
+use constant SubmenuDelay    => 25   ;
+use constant FullDrag        => 26   ;
 
 # image types
 package im;
@@ -497,5 +518,27 @@ use constant WordsOnly                => 0x02;
 use constant RegularExpression        => 0x04;
 use constant BackwardSearch           => 0x08;
 use constant ReplacePrompt            => 0x10;
+
+# text justification constants for draw_text
+package dt;
+use constant Left                     => 0x0000;
+use constant Right                    => 0x0001;
+use constant Center                   => 0x0002;
+use constant Top                      => 0x0000;
+use constant Bottom                   => 0x0004;
+use constant VCenter                  => 0x0008;
+use constant DrawMnemonic             => 0x0010;
+use constant DrawSingleChar           => 0x0020;
+use constant DrawPartial              => 0x0040;
+use constant NewLineBreak             => 0x0080;
+use constant SpaceBreak               => 0x0100;
+use constant WordBreak                => 0x0200;
+use constant ExpandTabs               => 0x0400;
+use constant UseExternalLeading       => 0x0800;
+use constant UseClip                  => 0x1000;
+use constant QueryHeight              => 0x2000;
+use constant QueryLinesDrawn          => 0x0000;
+use constant Default                  => NewLineBreak|WordBreak|ExpandTabs|UseExternalLeading;
+
 
 1;
