@@ -1424,9 +1424,11 @@ prima( const char *primaPath, int argc, char **argv)
          if (!argv[i] || strlen(argv[i]) <= 0) continue;
          if (!wasModule && argv[i][0] == '-') {
             // our option
-            if (strcmp(argv[i], "-p") == 0)
+            if (strcmp(argv[i], "-p") == 0) {
                pargv[pargc++] = "-d:DProf";
-            else {
+            } else if ( strncmp( argv[i], "-I", 2) == 0) {
+               pargv[pargc++] = argv[i];
+            } else {
                log_write( "Unrecognized option \"%s\" passed on startup", argv[i]);
                log_write( "Currently the only option allowed is \"-p\"");
                apc_show_message( "Unrecognized option passed on startup.\nSee Prima Log for details");
