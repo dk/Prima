@@ -73,7 +73,6 @@ sub profile_default
       headerDelegations => [qw(MoveItem SizeItem SizeItems Click)],
       multiColumn       => 0,
       autoWidth         => 0,
-      autoSort		=> 0,
       columns           => 0,
       widths            => [],
       headers           => [],
@@ -432,3 +431,139 @@ sub itemWidth {$_[0]-> {itemWidth};}
 sub autoWidth { 0;}
 
 1;
+
+__DATA__
+
+
+=head1 NAME
+
+Prima::DetailedList - a multi-column list viewer with controlling 
+header widget.
+
+=head1 DESCRIPTION
+
+Prima::DetailedList is a descendant of Prima::ListViewer, and as such provides
+a certain level of abstraction. It overloads format of L<items> in order to
+support multi-column ( 2D ) cell span. It also inserts L<Prima::Header> widget
+on top of the list, so the user can interactively move, resize and sort the content
+of the list. The sorting mechanism is realized inside the package; it is
+activated by the mouse click on a header tab.
+
+Since the class inherits Prima::ListViewer, some functionality, like 'item search by
+key', or C<get_item_text> method can not operate on 2D lists. Therefore, L<mainColumn>
+property is introduced, that selects the column representing all the data.
+
+=head1 SYNOPSIS
+
+  use Prima::DetailedList;
+
+  my $l = $w-> insert( 'Prima::DetailedList', 
+        columns => 2,
+        headers => [ 'Column 1', 'Column 2' ],
+        items => [
+             ['Row 1, Col 1', 'Row 1, Col 2'],
+             ['Row 2, Col 1', 'Row 2, Col 2']
+        ],
+  );
+  $l-> sort(1);
+
+=head1 API
+
+=head2 Events
+
+=over
+
+=item Sort COLUMN, DIRECTION
+
+Called inside L<sort> method, to facilitate custom algorithms of sorting.
+If the callback procedure is willing to sort by COLUMN index, then it must
+call C<clear_event>, to signal the event flow stop. The DIRECTION is a boolean
+flag, specifying whether the sorting must be performed is ascending ( 1 ) or
+descending ( 0 ) order.
+
+The callback procedure must operate on the internal storage of C<{items}>,
+which is an array of arrays of scalars.
+
+The default action is the literal sorting algorithm, where precedence is
+arbitrated by C<cmp> operator ( see L<perlop/"Equality Operators"> ) .
+
+=back
+
+=head2 Properties
+
+=over
+
+=item columns INTEGER
+
+Governs the number of columns in L<items>. If set-called, and the new number 
+is different from the old number, both L<items> and L<headers> are restructured.
+
+Default value: 0
+
+=item headerClass
+
+Assigns a header class.
+
+Create-only property.
+
+Default value: C<Prima::Header>
+
+=item headerProfile HASH
+
+Assigns hash of properties, passed to the header widget during the creation.
+
+Create-only property.
+
+=item headerDelegations ARRAY
+
+Assigns a header widget list of delegated notifications.
+
+Create-only property.
+
+=item headers ARRAY
+
+Array of strings, passed to the header widget as column titles.
+
+=item items ARRAY
+
+Array of arrays of scalars, of arbitrary kind. The default
+behavior, however, assumes that the scalars are strings.
+The data direction is from left to right and from top to bottom.
+
+=item mainColumn INTEGER
+
+Selects the column, responsible for representation of all the data.
+As the user clicks the header tab, C<mainColumn> is automatically
+changed to the corresponding column.
+
+Default value: 0
+
+=back
+
+=head2 Methods
+
+=over
+
+=item sort [ COLUMN ]
+
+Sorts items by the COLUMN index in ascending order. If COLUMN is not specified,
+sorts by the last specified column, or by #0 if it is the first C<sort> invocation.
+
+If COLUMN was specified, and the last specified column equals to COLUMN,
+the sort direction is reversed.
+
+The method does not perform sorting itself, but invokes L<Sort> notification,
+so the sorting algorithms can be overloaded, or be applied differently to
+the columns.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Lists>, L<Prima::Header>, F<examples/sheet.pl>
+
+=cut
