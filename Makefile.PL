@@ -2166,7 +2166,7 @@ FOOTER
    for ( @files) {
       my $f = $_;
       $f =~ s/^$cwd/$distname/;
-      cleanup("") unless copy $_, $f;
+      cleanup("Error copying $_ to $_") unless copy $_, $f;
    }
 
    if ( $type eq 'bin') {
