@@ -670,25 +670,28 @@ create_image_cache_8_to_16( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
    U16 lut[ 256];
-   U16 *data, *d;
+   U16 *data;
    int x, y;
+   int ls = ((img-> w * 16 + 31)/32)*4;
+   int h = img-> h, w = img-> w;
    
    create_rgb_to_16_lut( img-> palSize, img-> palette, lut);
 
-   d = data = malloc( img-> w * img-> h * sizeof( U16));
+   data = malloc( ls * h);
    if ( !data) {
       croak( "create_image_cache_8_to_16(): no memory");
    }
-   for ( y = img-> h-1; y >= 0; y--) {
-      unsigned char *line = img-> data + y*img-> lineSize;
-      for ( x = 0; x < img-> w; x++) {
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register U16 *d = (U16*)(ls*(h-y-1)+(unsigned char *)data);
+      for ( x = 0; x < w; x++) {
 	 *d++ = lut[line[x]];
       }
    }
 
    IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
 				     guts. depth, ZPixmap, 0, (unsigned char*)data,
-				     img-> w, img-> h, 8, 0);
+				     w, h, 32, ls);
    if (!IMG-> image_cache) {
       free( data);
       croak( "create_image_cache_8_to_16(): error during XCreateImage()");
@@ -701,10 +704,12 @@ create_image_cache_24_to_16( PImage img)
    PDrawableSysData IMG = X((Handle)img);
    static U16 lur[256], lub[256], lug[256];
    static Bool initialize = true;
-   U16 *data, *d;
+   U16 *data;
    int x, y;
    int i;
    RGBColor pal[256];
+   int ls = ((img-> w * 16 + 31)/32)*4;
+   int h = img-> h, w = img-> w;
    
    if ( initialize) {
       for ( i = 0; i < 256; i++) {
@@ -722,13 +727,14 @@ create_image_cache_24_to_16( PImage img)
       initialize = false;
    }
 
-   d = data = malloc( img-> w * img-> h * sizeof( U16));
+   data = malloc( h * ls);
    if ( !data) {
       croak( "create_image_cache_24_to_16(): no memory");
    }
-   for ( y = img-> h-1; y >= 0; y--) {
-      unsigned char *line = img-> data + y*img-> lineSize;
-      for ( x = 0; x < img-> w; x++) {
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register U16 *d = (U16*)(ls*(h-y-1)+(unsigned char *)data);
+      for ( x = 0; x < w; x++) {
 	 *d++ = lub[line[0]] | lug[line[1]] | lur[line[2]];
 	 line += 3;
       }
@@ -736,7 +742,7 @@ create_image_cache_24_to_16( PImage img)
 
    IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
 				     guts. depth, ZPixmap, 0, (unsigned char*)data,
-				     img-> w, img-> h, 8, 0);
+				     img-> w, img-> h, 32, ls);
    if (!IMG-> image_cache) {
       free( data);
       croak( "create_image_cache_24_to_16(): error during XCreateImage()");
@@ -962,12 +968,80 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    XCHECKPOINT;
 }
 
+extern void
+ic_stretch( Handle, Byte *, int, int, Bool, Bool);
+
+static XImage*
+create_stretched_image( PImage img, int x, int y, int w, int h, int tw, int th)
+{
+   unsigned char *src_data = nil, *dst_data;
+   PDrawableSysData IMG = X(img);
+   PImage hack;
+   int i;
+   int ls = (( img->w * guts.depth + 31) / 32) * 4;
+   int tls = (( tw * guts.depth + 31) / 32) * 4;
+   XImage *r;
+   
+   /* XXX this sub is extremely hacky; see Image_stretch and ic_stretch to understand */
+   hack = malloc( sizeof( Image));
+   if ( !hack) croak( "create_stretched_image(): no memory");
+   bzero( hack, sizeof( Image));
+   hack-> w = w;
+   hack-> h = h;
+   hack-> type = guts.depth | imGrayScale;
+   hack-> lineSize = (( w * guts.depth + 31) / 32) * 4;
+   hack-> dataSize = hack-> lineSize * h;
+   if ( x == 0 && y == 0 && w == img->w && h == img->h)
+      hack-> data = IMG-> image_cache-> data;
+   else {
+      src_data = malloc( hack-> dataSize);
+      if ( !src_data) croak( "create_stretched_image(): no memory");
+      for ( i = 0; i < h; i++) {
+	 memcpy( src_data + i*hack-> lineSize, IMG-> image_cache-> data + i*ls + x*guts.depth/8, hack-> lineSize);
+      }
+      hack-> data = src_data;
+   }
+   dst_data = malloc( th * tls);
+   if ( !dst_data) croak( "create_stretched_image(): no memory");
+   ic_stretch((Handle)hack, dst_data, tw, th, tw != w, th != h);
+   r = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+		     guts. depth, ZPixmap, 0, (unsigned char*)dst_data,
+		     tw, th, 32, tls);
+   free( src_data);
+   free( hack);
+   if (!r) {
+      free( dst_data);
+      croak( "create_stretched_image(): error creating XImage");
+   }
+   return r;
+}
+
 void
 apc_gp_stretch_image( Handle self, Handle image,
 		      int x, int y, int xFrom, int yFrom,
 		      int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
-   DOLBUG( "apc_gp_stretch_image()\n");
+   DEFXX;
+   PImage img = PImage( image);
+   XImage *stretch;
+
+   /* 1) XXX - rop - correct support! */
+   /* 2) XXX - Shared Mem Image Extension! */
+   create_image_cache( img);
+   SHIFT( x, y);
+   
+   if ( x < 0 || y < 0 || xDestLen > XX-> size.x || yDestLen > XX-> size.y) {
+      /* optimization might be necessary */
+      stretch = create_stretched_image( img, xFrom, yFrom, xLen, yLen, xDestLen, yDestLen);
+   } else {
+      stretch = create_stretched_image( img, xFrom, yFrom, xLen, yLen, xDestLen, yDestLen);
+   }
+   
+   XPutImage( DISP, XX-> drawable, XX-> gc, stretch,
+	      0, 0, x, REVERT(y) - yDestLen + 1, xDestLen, yDestLen);
+   XCHECKPOINT;
+   XDestroyImage( stretch);
+   XCHECKPOINT;
 }
 
 void
