@@ -10,8 +10,8 @@ Prima::Window is a descendant of Prima::Widget class.
 It deals with top-level windows, the windows that
 are specially treated by the system. Its major
 difference from Prima::Widget is that instances of
-Prima::Widget can never be clipped by anything but the
-screen, and that the system or window manager add
+Prima::Window can only be inferior by the
+screen, not the other windows, and that the system or window manager add
 decorations to these - usually menus, buttons and title 
 bars. Prima::Window provides methods that communicate
 with the system and hint these decorations.
@@ -40,13 +40,13 @@ As noted before, top-level windows are special for the system,
 not only in their 'look', but also in 'feel': the system adds
 specific functions to the windows, aiding the user to navigate through
 the desktop. The system ofter dictates the size and position for
-windows, and some time these rules are hard or even impossible to 
-circumvent. It will be a long document, describing the features
+windows, and some times these rules are hard or even impossible to 
+circumvent. This document will be long if it would venture to describe the features
 of different window management systems, and the task would be 
 never accomplished - brand new window managers emerge every month,
 and the old change their behavior in an unpredictable way. The only
 golden rule is to never rely on the behavior of one window manager,
-and test programs with as many as possible. 
+and test programs with at least two.
 
 The Prima toolkit provides simple access to buttons, title bar
 and borders of a window. Buttons and title bar are managed by
@@ -55,9 +55,9 @@ property. These operate with set of predefined constants, C<bi::XXX>
 and C<bs::XXX>, correspondingly. The button constants can be combined with
 each other, but not all combinations may be granted by the system.
 The same is valid also for the border constant, except that they can
-not be combined - the value of C<::borderStyle> is one of the constants.
+not be combined - the value of C<::borderStyle> is one of the integer constants.
 
-There are other hints, that the toolkit can specify for a window.
+There are other hints that the toolkit can set for a window manager.
 The system can be supplied with an icon that a window is bound to; the icon
 dimensions are much different, and although can be requested via
 C<sv::XIcon> and C<sv::YIcon> system values, the C<::icon> property
@@ -65,14 +65,14 @@ scales the image automatically to the closest system-recognizable
 dimension. The window icon is not shown by the toolkit, it is usually
 resides in the window decorations and sometimes on a task bar, along
 with the window's name. The system can be hinted to not reflect the window
-on the task bar, by operating the C<::taskListed> property.
+on the task bar, by setting the C<::taskListed> property to 0.
 
 Another issue is the window positioning. Usually, if no explicit
 position was given, the window is positioned automatically
 by the system. The same is valid for the size.  But some window
 managers bend it to the extreme - for example, default CDE
 setup force the user to set newly created windows' positions explicitly.
-But there is at least one point of certainty.
+However, there is at least one point of certainty.
 Typically, when the initial size and/or position of a top-level window 
 are expected to be set by the system, the C<::originDontCare> and
 C<::sizeDontCare> properties can be set to 1 during window creation.
@@ -110,19 +110,19 @@ widgets that do not belong to the currently executed, the
 'modal' window group can not be activated. There can be many
 modal windows on top of each other, but only one is accessible.
 As an example a message box can be depicted, a window that prevents
-the user to work with the application windows until it is closed.
+the user to work with the application windows until dismissed.
 There can be other message boxes on top of each other, preventing
-the lower window from operation as well.
-This is an exclusive modality.
+the windows below from operation as well.
+This scheme is called the 'exclusive' modality.
 
-The toolkit also provides the shared modality model, where
+The toolkit also provides the shared modality scheme, where
 there can be several stacks of modal windows, not interfering
-in operation. Each stack is exclusive for its own windows.
-An example can be several independent applications with their
-message boxes activated. This model, however, can not be achieved
+with each other. Each window stack is distinct and contains its own windows.
+An example analogy is when several independent applications run with 
+modal message boxes being activated. This scheme, however, can not be achieved
 with single execute()-like call without creating interlocking
 conditions. The shared model call, C<execute_shared()>,
-activates the window and returns immediately.
+inserts the window into the shared modal stack, activates the window and returns immediately.
 
 The both kinds of modal windows can coexist, but the exclusive
 windows prevents the shared from operation; while there are
@@ -149,7 +149,8 @@ when the user closes the modal window by the means of the system.
 The values set to C<::modalResult> are C<mb::OK> and C<mb::Cancel>,
 correspondingly. There are more C<mb::XXX> constants, but these represent
 no special meaning; any integer value can be passed. Prima::MsgBox::message
-method uses these so the message window can be dismissed in several ways.
+method uses these so the message window can return up to four different
+return codes.
 
 =head2 Menu
 
@@ -158,17 +159,18 @@ is system-dependent, but can be controlled by the toolkit up to
 a certain level. The C<::menuItems> property, that manages the menu items
 of a C<::menu> object of L<Prima::Menu> class, arrange the layout
 of the menu. The syntax of the items-derived properties is described in
-L<Prima::Menu>, but it must be reiterated that menu item records only
-hint, not request their exact representation. The same is valid for
+L<Prima::Menu>, but it must be reiterated that menu items contain only
+hints, not requests for their exact representation. The same is valid for
 the color and font properties, C<::menuColorIndex> and C<::menuFont>.
 
-Only one menu at a time can be set on a top-level window, although
-a window can be owner for many menu objects. The key property is
+Only one menu at a time can be displayed in a top-level window, although
+a window can be an owner for many menu objects. The key property is
 C<Prima::Menu::selected> - if a menu object is selected on a widget
-or a window object, it refers to default menu actions.
+or a window object, it refers to the default menu actions, which, in
+case of Prima::Window is being displayed as menu bar.
 
-NB: A window can be owner for several menu objects and still do not
-have a menu bar, if no menu objects are marked as selected.
+NB: A window can be an owner for several menu objects and still do not
+have a menu bar displayed, if no menu objects are marked as selected.
 
 =head2 Prima::Dialog
 
@@ -176,9 +178,25 @@ Prima::Dialog, a descendant from Prima::Window, introduces no
 new functionality. It has its default values adjusted so
 the colors use more appropriate system colors, and hints
 the system that the outlook of a window is to be different,
-and resemble the system dialogs - on systems where they are
+to resemble the system dialogs on systems where such are
 provided.
 
+=head2 Prima::MainWindow
+
+The class is a simple descendant of Prima::Window, which overloads
+C<on_destroy> notification and calls C<$application-E<gt>close> inside it.
+The purpose of declaration of a separate class for such a trifle difference
+is that many programs are designed under a paradigm where these is a main
+window, which is most 'important' to the user. As such consruct is used more
+often than any other, it is considered an optimization to write
+
+   Prima::MainWindow-> create( ... )
+
+rather than
+
+   Prima::Window-> create( ..., onDestroy => sub { $::application-> close })
+
+, although these lines are equivalent.
 
 =head1 API
 
