@@ -731,6 +731,7 @@ sub prf_name
    my $old = $_[0]->name;
    $_[0]-> name($_[1]);
    $_[0]-> name_changed( $old, $_[1]);
+   $_[0]-> hint($_[1]) if $_[0] != $VB::form;
 
    return unless $VB::inspector;
    my $s = $VB::inspector-> Selector;
@@ -920,8 +921,7 @@ sub prf_types
       pointer       => ['pointer',],
       growMode      => ['growMode'],
       uiv           => ['helpContext'],
-      string        => ['hint'],
-      text          => ['text'],
+      text          => ['text', 'hint'],
       selectingButtons=> ['selectingButtons'],
       widgetClass   => ['widgetClass'],
       image         => ['shape'],
