@@ -178,7 +178,12 @@ XS( Object_alive_FROMPERL)
 
 
 void Object_done    ( Handle self) {}
-void Object_init    ( Handle self, HV * profile) {}
+
+void Object_init    ( Handle self, HV * profile)
+{
+   if ( var-> stage != csConstructing) croak( "Unexpected call of Object::init");
+}
+
 void Object_cleanup ( Handle self) {}
 void Object_setup   ( Handle self) {}
 
