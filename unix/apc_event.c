@@ -271,6 +271,35 @@ prima_no_input( PDrawableSysData XX, Bool ignore_horizon, Bool beep)
    return false;
 }
 
+static void
+syntetic_mouse_move( void)
+{
+   XMotionEvent e, last;
+   e. root = guts. root;
+   e. window = None;
+   while ( 1) {
+      last = e;
+      XQueryPointer( DISP, e.root, &e. root, &e. window, &e.x_root, 
+                     &e.y_root, &e.x, &e.y, &e. state);
+      if ( e. window == None) {
+         e. window = last. window;
+         break;
+      }
+      e. root = e. window;
+   }
+   if ( prima_xw2h( e. window)) {
+      e. type        = MotionNotify;
+      e. send_event  = true;
+      e. display     = DISP;
+      e. subwindow   = e. window;
+      e. root        = guts. root;
+      e. time        = guts. last_time;
+      e. same_screen = true;
+      e. is_hint     = false;
+      XSendEvent( DISP, e. window, false, 0, ( XEvent*) &e);
+   }
+} 
+
 typedef struct _WMSyncData
 {
    Point   origin;
@@ -859,6 +888,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          return;
       }   
 
+      syntetic_mouse_move(); /* XXX - simulated MouseMove event for compatibility reasons */
+
       if (!XT_IS_WINDOW(XX))
          frame = CApplication(application)-> top_frame( application, self);
       if ( CApplication(application)-> map_focus( application, frame) != frame) {
@@ -877,6 +908,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       guts. focused = self;
       prima_update_cursor( guts. focused);
       e. cmd = cmReceiveFocus;
+
       break;
    }
    case FocusOut: {

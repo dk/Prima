@@ -661,7 +661,9 @@ apc_pointer_get_state( Handle self)
       (( mask & Button2Mask) ? mb2 : 0) |
       (( mask & Button3Mask) ? mb3 : 0) |
       (( mask & Button4Mask) ? mb4 : 0) |
-      (( mask & Button5Mask) ? mb5 : 0);
+      (( mask & Button5Mask) ? mb5 : 0) |
+      (( mask & Button6Mask) ? mb6 : 0) |
+      (( mask & Button7Mask) ? mb7 : 0);
 }
 
 int
