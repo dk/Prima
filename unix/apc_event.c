@@ -376,7 +376,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
       if ( PObject( self)-> stage == csDead) return false; 
    }
    
-   if ( size_changed && XX-> flags. want_visible) {
+   if ( size_changed && XX-> flags. want_visible && !guts. net_wm_maximization) {
       int qx = guts. displaySize.x * 4 / 5, qy = guts. displaySize.y * 4 / 5;
       bzero( &e, sizeof( Event));
       if ( !XX-> flags. zoomed) {
@@ -429,7 +429,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
       Event f;
       bzero( &e, sizeof( Event));
       bzero( &f, sizeof( Event));
-      if ( !XX-> flags. iconic && XX-> type. window) {
+      if ( !XX-> flags. iconic && XX-> type. window && !XX-> flags. suppress_cmMinimize) {
          f. cmd = cmWindowState;
          f. gen. i = wsMinimized;
          f. gen. source = self;
@@ -480,38 +480,20 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
    case PropertyNotify:
       if ( xev-> xproperty. atom == NET_WM_STATE && xev-> xproperty. state == PropertyNewValue) {
          DEFXX;
-         Atom type;
-         int format;
-         unsigned long i, n, left;
-         Atom * prop;
-         if ( XGetWindowProperty( DISP, xev-> xproperty. window, xev-> xproperty. atom, 0, 128, false, XA_ATOM,
-                             &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
-            if ( prop) {
-               Bool vert = 0, horiz = 0;
-               for ( i = 0; i < n; i++) {
-                  if ( prop[i] == NET_WM_STATE_MAXIMIZED_VERT) 
-                     vert = 1;
-                  else if ( prop[i] == NET_WM_STATE_MAXIMIZED_HORZ) 
-                     horiz = 1;
-               }
-               XFree(( unsigned char *) prop);
-                  
-               ev-> cmd = cmWindowState;
-               ev-> gen. source = self; 
-               if ( vert & horiz) {
-                  if ( !XX-> flags. zoomed) {
-                     ev-> gen. i = wsMaximized;
-                     XX-> flags. zoomed = 1;
-                  } else 
-                     ev-> cmd = 0;
-               } else {
-                  if ( XX-> flags. zoomed) {
-                     ev-> gen. i = wsNormal;
-                     XX-> flags. zoomed = 0;
-                  } else 
-                     ev-> cmd = 0; 
-               }
-            }
+         ev-> cmd = cmWindowState;
+         ev-> gen. source = self; 
+         if ( prima_wm_net_state_read_maximization( xev-> xproperty. window, NET_WM_STATE)) {
+            if ( !XX-> flags. zoomed) {
+               ev-> gen. i = wsMaximized;
+               XX-> flags. zoomed = 1;
+            } else 
+               ev-> cmd = 0;
+         } else {
+            if ( XX-> flags. zoomed) {
+               ev-> gen. i = wsNormal;
+               XX-> flags. zoomed = 0;
+            } else 
+               ev-> cmd = 0; 
          }
       }
       break;

@@ -154,6 +154,7 @@ static Bool  do_x11     = true;
 static Bool  do_sync    = false;
 static char* do_display = NULL;
 static int   do_debug   = 0;
+static Bool  do_icccm_only = false;
 
 static Bool
 init_x11( void)
@@ -205,7 +206,8 @@ init_x11( void)
       "BACKGROUND",
       "_MOTIF_WM_HINTS",
       "_NET_WM_STATE_MODAL",
-      "_NET_SUPPORTED"
+      "_NET_SUPPORTED",
+      "_NET_WM_STATE_MAXIMIZED_HORIZ"
    };
    char hostname_buf[256], *hostname = hostname_buf;
 
@@ -377,6 +379,7 @@ window_subsystem_init( void)
 {
    bzero( &guts, sizeof( guts));
    guts. debug = do_debug;
+   guts. icccm_only = do_icccm_only;
    Mdebug("init x11:%d, debug:%x, sync:%d, display:%s\n", do_x11, guts.debug, 
 	  do_sync, do_display ? do_display : "(default)");
    if ( do_x11) return init_x11();
@@ -402,6 +405,7 @@ window_subsystem_get_options( int * argc, char *** argv)
    "display", "selects X11 DISPLAY (--display=:0.0)",
    "visual", "X visual id (--visual=0x21, run `xdpyinfo` for list of supported visuals)",
    "sync", "synchronize X connection",
+   "icccm", "do not use NET_WM (kde/gnome) and MOTIF extensions, ICCCM only",
    "debug", "turns on debugging on subsystems, selected by characters (--debug=FC). "\
             "Recognized characters are: "\
 	    " C(clipboard),"\
@@ -441,6 +445,7 @@ window_subsystem_get_options( int * argc, char *** argv)
 Bool
 window_subsystem_set_option( char * option, char * value)
 {
+   Mdebug("%s=%s\n", option, value);
    if ( strcmp( option, "no-x11") == 0) {
       if ( value) warn("`--no-x11' option has no parameters");
       do_x11 = false;
@@ -448,6 +453,10 @@ window_subsystem_set_option( char * option, char * value)
    } else if ( strcmp( option, "display") == 0) {
       free( do_display);
       do_display = duplicate_string( value);
+      return true;
+   } else if ( strcmp( option, "icccm") == 0) {
+      if ( value) warn("`--icccm' option has no parameters");
+      do_icccm_only = true;
       return true;
    } else if ( strcmp( option, "debug") == 0) {
       if ( !value) {
