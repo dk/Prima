@@ -125,6 +125,9 @@ struct _UnixGuts
    Display *display;
    int screen_number;
    PHash windows;
+   fd_set read_set, write_set, excpt_set;
+   int connection;
+   int max_fd;
    PList files;
    NPoint resolution;
    int depth;
@@ -332,6 +335,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event);
 
 extern void
 prima_get_gc( PDrawableSysData);
+
+extern void
+prima_rebuild_watchers( void);
 
 extern void
 prima_release_gc( PDrawableSysData);

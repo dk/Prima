@@ -2869,7 +2869,7 @@ extern Bool
 apc_file_detach( Handle self);
 
 extern Bool
-apc_file_change_mask( Handle self, int mask);
+apc_file_change_mask( Handle self);
 
 /* etc */
 extern Bool

@@ -32,6 +32,7 @@
 
 #include "unix/guts.h"
 #include "Application.h"
+#include "File.h"
 #include <sys/utsname.h>
 
 static int
@@ -117,6 +118,7 @@ window_subsystem_init( void)
    XSetErrorHandler( x_error_handler);
    (void)x_io_error_handler;
    XCHECKPOINT;
+   guts.connection = ConnectionNumber( DISP);
    
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
    if ( XShapeQueryExtension( DISP, &guts.shape_event, &guts.shape_error)) {
@@ -178,6 +180,7 @@ window_subsystem_init( void)
    guts. bit_order = BitmapBitOrder( DISP);
    
    guts. files = plist_create( 16, 16);
+   prima_rebuild_watchers();
    prima_wm_init();
    prima_init_font_subsystem();
 /*    XSynchronize( DISP, true); */
@@ -425,15 +428,9 @@ typedef FILE *FileStream;
 #endif
 
 static Bool
-sweep_files( Handle item, void *dummy)
+purge_invalid_watchers( Handle self, void *dummy)
 {
-   PFileList f = (PFileList)item;
-   FileStream s;
-
-   s = IoIFP(sv_2io(f->glob));
-   if (!s) {
-      list_delete( guts.files, item);
-   }
+   ((PFile)self)->self->is_active(self,true);
    return false;
 }
 
@@ -443,8 +440,6 @@ apc_application_go( Handle self)
 /*NCI*/
    XEvent ev, next_event;
    fd_set read_set, write_set, excpt_set;
-   int connection = ConnectionNumber( DISP);
-   int max_fd;
    struct timeval timeout;
    int r, n, i;
 
@@ -457,20 +452,9 @@ apc_application_go( Handle self)
       if (( n = XEventsQueued( DISP, QueuedAlready))) {
 	 goto FetchAndProcess;
       }
-      FD_ZERO( &read_set);
-      FD_ZERO( &write_set);
-      FD_ZERO( &excpt_set);
-      FD_SET( connection, &read_set);
-      max_fd = connection;
-      list_first_that( guts.files, sweep_files, nil);
-      for ( i = 0; i < guts.files->count; i++) {
-	 PFileList f = (PFileList)list_at( guts.files,i);
-	 FD_SET( f->no, &read_set);
-	 FD_SET( f->no, &write_set);
-	 FD_SET( f->no, &excpt_set);
-	 if ( f->no > max_fd)
-	    max_fd = f->no;
-      }
+      read_set = guts.read_set;
+      write_set = guts.write_set;
+      excpt_set = guts.excpt_set;
       if ( guts. oldest) {
 	 if ( gettimeofday( &timeout, nil) != 0) {
 	    croak( "apc_application_go() gettimeofday() returned: %s", strerror( errno));
@@ -520,8 +504,8 @@ apc_application_go( Handle self)
 	 timeout. tv_usec = 200000;
       }
 
-      if (( r = select( connection+1, &read_set, &write_set, &excpt_set, &timeout)) > 0 &&
-	  FD_ISSET( connection, &read_set)) {
+      if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, &timeout)) > 0 &&
+	  FD_ISSET( guts.connection, &read_set)) {
 	 if (( n = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
 	    /* just like tcl/perl tk do, to avoid an infinite loop */
 	    sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
@@ -550,21 +534,30 @@ FetchAndProcess:
  	 XNoOp( DISP);
  	 XFlush( DISP);
       } else if ( r < 0) {
-	 fprintf( stderr, "select() error: %d\n", errno);
+	 list_first_that( guts.files, purge_invalid_watchers, nil);
       } else {
 	 if ( r > 0) {
 	    for ( i = 0; i < guts.files->count; i++) {
-	       PFileList f = (PFileList)list_at( guts.files,i);
-	       if ( FD_ISSET( f->no, &read_set)) {
-		  apc_watch_notify( f, 1);
+	       PFile f = (PFile)list_at( guts.files,i);
+	       if ( FD_ISSET( f->fd, &read_set)) {
+		  Event e;
+		  bzero( &e, sizeof e);
+		  e. cmd = cmFileRead;
+		  f-> self-> message((Handle)f,&e);
 		  break;
 	       }
-	       if ( FD_ISSET( f->no, &write_set)) {
-		  apc_watch_notify( f, 2);
+	       if ( FD_ISSET( f->fd, &write_set)) {
+		  Event e;
+		  bzero( &e, sizeof e);
+		  e. cmd = cmFileWrite;
+		  f-> self-> message((Handle)f,&e);
 		  break;
 	       }
-	       if ( FD_ISSET( f->no, &excpt_set)) {
-		  apc_watch_notify( f, 3);
+	       if ( FD_ISSET( f->fd, &excpt_set)) {
+		  Event e;
+		  bzero( &e, sizeof e);
+		  e. cmd = cmFileException;
+		  f-> self-> message((Handle)f,&e);
 		  break;
 	       }
 	    }

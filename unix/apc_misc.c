@@ -31,6 +31,7 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#include "File.h"
 
 /* Miscellaneous system-dependent functions */
 
@@ -423,6 +424,70 @@ Bool
 apc_cursor_get_visible( Handle self)
 {
    return X(self)-> flags. cursor_visible;
+}
+
+/* File */
+
+void
+prima_rebuild_watchers( void)
+{
+   int i;
+   PFile f;
+
+   FD_ZERO( &guts.read_set);
+   FD_ZERO( &guts.write_set);
+   FD_ZERO( &guts.excpt_set);
+   FD_SET( guts.connection, &guts.read_set);
+   guts.max_fd = guts.connection;
+   for ( i = 0; i < guts.files->count; i++) {
+      f = (PFile)list_at( guts.files,i);
+      if ( f-> eventMask & feRead) {
+	 FD_SET( f->fd, &guts.read_set);
+	 if ( f->fd > guts.max_fd)
+	    guts.max_fd = f->fd;
+      }
+      if ( f-> eventMask & feWrite) {
+	 FD_SET( f->fd, &guts.write_set);
+	 if ( f->fd > guts.max_fd)
+	    guts.max_fd = f->fd;
+      }
+      if ( f-> eventMask & feException) {
+	 FD_SET( f->fd, &guts.excpt_set);
+	 if ( f->fd > guts.max_fd)
+	    guts.max_fd = f->fd;
+      }
+   }
+}
+
+Bool
+apc_file_attach( Handle self)
+{
+   if ( list_index_of( guts.files, self) >= 0) {
+      prima_rebuild_watchers();
+      return true;
+   }
+   protect_object( self);
+   list_add( guts.files, self);
+   prima_rebuild_watchers();
+   return true;
+}
+
+Bool
+apc_file_detach( Handle self)
+{
+   int i;
+   if (( i = list_index_of( guts.files, self)) >= 0) {
+      list_delete_at( guts.files, i);
+      unprotect_object( self);
+      prima_rebuild_watchers();
+   }
+   return true;
+}
+
+Bool
+apc_file_change_mask( Handle self)
+{
+   return apc_file_attach( self);
 }
 
 /* View attributes */
