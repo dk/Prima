@@ -71,9 +71,9 @@ Widget_init( Handle self, HV * profile)
    /* props init */
    /* font and colors */
    SvHV_Font( pget_sv( font), &Font_buffer, "Widget::init");
-   my set_widget_class       ( self, pget_i( widgetClass     ));
-   my set_color              ( self, pget_i( color           ));
-   my set_back_color         ( self, pget_i( backColor       ));
+   my set_widget_class       ( self, pget_i( widgetClass  ));
+   my set_color              ( self, pget_i( color        ));
+   my set_back_color         ( self, pget_i( backColor    ));
    my set_font               ( self, Font_buffer);
    opt_assign( optOwnerBackColor, pget_B( ownerBackColor));
    opt_assign( optOwnerColor    , pget_B( ownerColor));
