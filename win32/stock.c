@@ -1777,7 +1777,6 @@ get_line_length( int x1, int y1, int x2, int y2)
          return ( x1 < x2) ? x2 - x1 : x1 - x2;
       else
          return ( y1 < y2) ? y2 - y1 : y1 - y2;
-
    }
 }
 
@@ -1788,14 +1787,17 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
    int len = sys linePatternLen2, ptr = 0, offset = 0, cumul = drawState, delta = 0;
    int llen = get_line_length( x1, y1, x2, y2);
    int lw = sys stylus. pen. lopnWidth. x + 1;
-   char * lp = ( len > 3) ? sys linePattern2 : (char*) &sys linePattern2;
+   unsigned char * lp = ( len > 3) ? sys linePattern2 : (char*) &sys linePattern2;
    HDC ps = sys ps;
    Bool draw = 1;
 
    MoveToEx( ps, x1, y1, nil);
 
-   if ( GetBkMode( ps) != TRANSPARENT)
+   if ( GetBkMode( ps) != TRANSPARENT) {
+      HPEN pen = SelectObject( ps, CreatePen( PS_SOLID, lw, sys lbs[1]));
       if ( !LineTo( ps, x2, y2)) apiErr;
+      DeleteObject( SelectObject( ps, pen));
+   }
 
    while ( drawState > 0) {
       int d = lp[ ptr];
@@ -1836,6 +1838,232 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
 
    cumul -= offset - llen;
    return cumul;
+}
+
+
+static int
+is_y( double angle)
+{
+   while ( angle > 360) angle -= 360;
+   return angle < 45 || angle >= 315 || ( angle >= 135 && angle < 225);
+}
+
+static int
+d_octet( double angle)
+{
+   while ( angle > 360) angle -= 360;
+   if ( angle >= 45 && angle < 315) return -1;
+   return ( angle >= 315) ? 1 : 0;
+}
+
+static void
+arc_offset( int delta, int radX, int radY, int * quarter, int * x1, int * y1)
+{
+AGAIN:
+   switch ( *quarter) {
+   case 0:
+      if ( *y1 + delta > radY) {
+         delta = *y1 + delta - radY;
+         *y1 = radY;
+         *x1 = radX;
+         (*quarter)++;
+         goto AGAIN;
+      } else
+         *y1 += delta;
+      break;
+   case 1:
+     if ( *x1 - delta < - radX) {
+        delta = - (*x1) + delta - radX;
+        *y1 = radY;
+        *x1 = -radX;
+        (*quarter)++;
+        goto AGAIN;
+     } else
+        *x1 -= delta;
+     break;
+   case 2:
+      if ( *y1 - delta < - radY) {
+         delta = - (*y1) + delta - radY;
+         *y1 = -radY;
+         *x1 = -radX;
+         (*quarter)++;
+         goto AGAIN;
+      } else
+         *y1 -= delta;
+      break;
+   case 3:
+      if ( *x1 + delta > radX) {
+         delta = *x1 + delta - radX;
+         *y1 = -radY;
+         *x1 = radX;
+         *quarter = 0;
+         goto AGAIN;
+      } else
+         *x1 += delta;
+      break;
+   }
+}
+
+static int
+quarter( double angle)
+{
+   while ( angle > 360) angle -= 360;
+   if ( angle < 45 || angle >= 315) return 0; else
+   if ( angle >= 135 && angle < 225) return 2; else
+   if ( angle >= 45 && angle < 135) return 1; else
+   return 3;
+}
+
+#define GRAD 57.29577951
+
+int
+gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd, int drawState)
+{
+   int x1, y1, x2, y2;
+   int len = sys linePatternLen2, ptr = 0, offset = 0, cumul = drawState, delta = 0;
+   int lw = sys stylus. pen. lopnWidth. x + 1;
+   int llen = 0;
+   unsigned char * lp = ( len > 3) ? sys linePattern2 : (char*) &sys linePattern2;
+   HDC ps = sys ps;
+   Bool draw = 1;
+   double cosa = cos( angleStart / GRAD), cosb = cos( angleEnd / GRAD);
+   double sina = sin( angleStart / GRAD), sinb = sin( angleEnd / GRAD);
+   int xstart = cosa * radX + 0.5, ystart = sina * radY + 0.5;
+   int xend = cosb * radX + 0.5, yend = sinb * radY + 0.5;
+   int qplane, qstart = quarter( angleStart), qend = quarter( angleEnd), lim = 3;
+
+   // printf("%g %g\n", angleStart, angleEnd);
+
+   // calculating arc length
+   if ( qstart == qend &&
+        angleStart <= angleEnd &&
+        d_octet( angleStart) == d_octet( angleEnd)) {
+       // angles are in same quarter
+       llen += is_y( angleStart) ?
+          abs( yend - ystart) :
+          abs( xend - xstart);
+    } else {
+       int i, qe2 = qend;
+       llen += is_y( angleStart) ?
+          abs( radY * (( qstart == 2) ? -1 : 1) - ystart) :
+          abs( radX * (( qstart == 1) ? -1 : 1) - xstart);
+       llen += is_y( angleEnd) ?
+          abs( radY * (( qend == 0) ? -1 : 1) - yend) :
+          abs( radX * (( qend == 3) ? -1 : 1) - xend);
+       if ( qe2 <= qstart) qe2 += 4;
+       for ( i = qstart + 1; i < qe2; i++)
+          llen += abs( 2 * (( i % 2) ? radX : radY));
+    }
+
+    // drawing arc
+    if ( GetBkMode( ps) != TRANSPARENT) {
+       HPEN pen = SelectObject( ps, CreatePen( PS_SOLID, lw, sys lbs[1]));
+       if ( !Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
+          x + xstart, y - ystart, x + xend, y - yend
+       )) apiErr;
+       DeleteObject( SelectObject( ps, pen));
+    }
+
+    x1 = xstart;
+    y1 = ystart;
+    switch ( qstart) {
+    case 0: x1 = radX;  break;
+    case 1: y1 = radY;  break;
+    case 2: x1 = -radX; break;
+    case 3: y1 = -radY; break;
+    }
+    qplane = qstart;
+
+    while ( drawState > 0) {
+       int d = lp[ ptr];
+       if ( !draw) d += lw;
+       drawState -= d;
+       if ( drawState < 0) {
+          offset -= drawState;
+          x2 = x1;
+          y2 = y1;
+          arc_offset( d, radX, radY, &qplane, &x1, &y1);
+          if ( draw) {
+             Arc( ps,
+                x - radX, y - radY - 1, x + radX + 1, y + radY,
+                x + x2, y - y2,
+                x + x1, y - y1
+             );
+          }
+       }
+       draw = !draw;
+       if ( ++ptr >= len) {
+          ptr = cumul = 0;
+          draw = 1;
+       }
+    }
+
+    while ( offset < llen)
+    {
+       int d2;
+       delta = lp[ ptr];
+       if ( !draw) delta += lw;
+       d2 = delta;
+       x2 = x1;
+       y2 = y1;
+       if ( offset + d2 >= llen) d2 = llen - offset;
+       arc_offset( d2, radX, radY, &qplane, &x1, &y1);
+       if ( draw) {
+          // if ( lim-- == 0) break;
+          Arc( ps,
+             x - radX, y - radY - 1, x + radX + 1, y + radY,
+             x + x2, y - y2,
+             x + x1, y - y1
+          );
+       }
+       offset += delta;
+       cumul += delta;
+       draw = !draw;
+       if ( ++ptr >= len) {
+          ptr = 0;
+          if ( offset < llen) cumul = 0;
+          draw = 1;
+       }
+    }
+    cumul -= offset - llen;
+    return cumul;
+}
+
+int
+arc_completion( double * angleStart, double * angleEnd, int * needFigure)
+{
+   int max;
+   double diff = ((long)( fabs( *angleEnd - *angleStart) * 1000 + 0.5)) / 1000;
+
+   if ( diff == 0) {
+      *needFigure = false;
+      return 0;
+   }
+
+   while ( *angleStart > *angleEnd)
+      *angleEnd += 360;
+
+   while ( *angleStart < 0) {
+      *angleStart += 360;
+      *angleEnd   += 360;
+   }
+
+   while ( *angleStart >= 360) {
+      *angleStart -= 360;
+      *angleEnd   -= 360;
+   }
+
+   while ( *angleEnd >= *angleStart + 360)
+      *angleEnd -= 360;
+
+   if ( diff < 360) {
+      *needFigure = true;
+      return 0;
+   }
+
+   max = (int)(diff / 360);
+   *needFigure = ( max * 360) != diff;
+   return ( max % 2) ? 1 : 2;
 }
 
 

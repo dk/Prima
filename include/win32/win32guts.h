@@ -451,6 +451,7 @@ LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, 
 LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_view_handler     ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 
+extern int          arc_completion( double * angleStart, double * angleEnd, int * needFigure);
 extern Bool         add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeEntry);
 extern void         adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth);
 extern void         cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
@@ -474,6 +475,7 @@ extern void         font_pp2font( char * presParam, Font * font);
 extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
 extern Bool         get_font_from_hash( PFont font, int *vectored, Bool bySize);
 extern Point        get_window_borders( int borderStyle);
+extern int          gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd, int drawState);
 extern int          gp_line( Handle self, int x1, int y1, int x2, int y2, int draw);
 extern Bool         hwnd_check_limits( int x, int y, Bool uint);
 extern void         hwnd_enter_paint( Handle self);

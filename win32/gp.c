@@ -133,41 +133,30 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
 
-int
-arc_completion( double angleStart, double angleEnd, int * needFigure)
-{
-   int max;
-   double diff = fabs( angleEnd - angleStart);
-   if ( diff == 0) {
-      *needFigure = false;
-      return 0;
-   }
-   if ( diff < 360) {
-      *needFigure = true;
-      return 0;
-   }
-
-   max = (int)(diff / 360);
-   *needFigure = ( max * 360) != diff;
-   return ( max % 2) ? 1 : 2;
-}
-
 Bool
 apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 { objCheck false; {
-   int compl, needf;
+   int compl, needf, drawState = 0;
+   Bool erratic = erratic_line( self);
    HDC     ps = sys ps;
    STYLUS_USE_PEN( ps);
-   compl = arc_completion( angleStart, angleEnd, &needf);
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
    y = sys lastSize. y - y;
-   while( compl--)
-      Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
+   while( compl--) {
+      if ( erratic)
+         drawState = gp_arc( self, x, y, radX, radY, 0, 360, drawState);
+      else
+         Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
+   }
    if ( !needf) return true;
-   if ( !Arc(
-       ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-       x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
-       x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5
-   )) apiErrRet;
+   if ( erratic)
+      gp_arc( self, x, y, radX, radY, angleStart, angleEnd, drawState);
+   else
+      if ( !Arc(
+          ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
+          x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
+          x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5
+      )) apiErrRet;
    return true;
 }}
 
@@ -217,17 +206,32 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
    Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
-   int compl, needf;
-   compl = arc_completion( angleStart, angleEnd, &needf);
+   int compl, needf, drawState = 0;
+   Bool erratic = erratic_line( self);
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
    STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y;
-   while ( compl--)
-      Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
-   if ( !( ok = !needf || Chord(
-       ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-       x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
-       x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5
-   ))) apiErr;
+   while( compl--) {
+      if ( erratic)
+         drawState = gp_arc( self, x, y, radX, radY, 0, 360, drawState);
+      else
+         Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
+   }
+   if ( needf) {
+      if ( erratic) {
+         drawState = gp_arc( self, x, y, radX, radY, angleStart, angleEnd, drawState);
+         gp_line( self,
+             x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
+             x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5,
+             drawState
+         );
+      } else
+         if ( !( ok = Chord(
+             ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
+             x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
+             x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5
+         ))) apiErr;
+   }
    SelectObject( ps, old);
    return ok;
 }}
@@ -274,6 +278,7 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
    return ok;
 }}
 
+
 Bool
 apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
 {objCheck false;{
@@ -282,7 +287,10 @@ apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
    STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y;
-   if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY))) apiErr;
+   if ( erratic_line( self))
+      gp_arc( self, x, y, radX, radY, 0, 360, 0);
+   else
+      if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY))) apiErr;
    SelectObject( ps, old);
    return ok;
 }}
@@ -296,7 +304,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
    Bool   comp;
    int compl, needf;
 
-   compl = arc_completion( angleStart, angleEnd, &needf);
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
    comp = stylus_complex( &sys stylus, ps);
    y = sys lastSize. y - y;
    STYLUS_USE_BRUSH( ps);
@@ -385,7 +393,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       Point trans;
       HBITMAP bmMask, bmSrc, bmJ;
       HDC dc;
-      HGDIOBJ old1, old2;
+      HGDIOBJ old1, oldelta;
       Bool db = is_apt( aptDeviceBitmap) || is_apt( aptBitmap);
       trans. x = dx;
       trans. y = dy;
@@ -424,9 +432,9 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       }
       bmJ = SelectObject( dc, bmSrc);
       old1 = SelectObject( dc, sys stylusResource-> hbrush);
-      old2 = SelectObject( dc, hPenHollow);
+      oldelta = SelectObject( dc, hPenHollow);
       Rectangle( dc, 0, 0, bound. x + 1, bound. y + 1);
-      SelectObject( dc, old2);
+      SelectObject( dc, oldelta);
       SelectObject( dc, old1);
       SelectObject( dc, bmMask);
       SetROP2( dc, R2_WHITE);
@@ -454,7 +462,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    Bool comp;
    int compl, needf;
 
-   compl = arc_completion( angleStart, angleEnd, &needf);
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
    comp = stylus_complex( &sys stylus, ps);
 
    pts[ 0]. x = x + cos( angleEnd / GRAD) * radX + 0.5;
@@ -569,11 +577,12 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
 {objCheck false;{
    Bool ok = true;
    HDC     ps = sys ps;
-   int compl, needf, newY = sys lastSize. y - y;
+   int compl, needf, newY = sys lastSize. y - y, drawState = 0;
+   Bool erratic = erratic_line( self);
    POINT   pts[ 2];
    HGDIOBJ old;
 
-   compl = arc_completion( angleStart, angleEnd, &needf);
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
    old = SelectObject( ps, hBrushHollow);
    pts[ 0]. x = x + cos( angleEnd / GRAD) * radX + 0.5;
    pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY + 0.5;
@@ -581,13 +590,25 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
    pts[ 1]. y = newY - sin( angleStart / GRAD) * radY + 0.5;
    STYLUS_USE_PEN( ps);
    y = newY;
-   while ( compl--)
-       Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
-   if ( !( ok = !needf || Pie(
-       ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-       pts[ 1]. x, pts[ 1]. y,
-       pts[ 0]. x, pts[ 0]. y
-   ))) apiErr;
+
+   while( compl--) {
+      if ( erratic)
+         drawState = gp_arc( self, x, y, radX, radY, 0, 360, drawState);
+      else
+         Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
+   }
+   if ( needf) {
+      if ( erratic) {
+         drawState = gp_arc( self, x, y, radX, radY, angleStart, angleEnd, drawState);
+         drawState = gp_line( self, pts[ 1]. x, pts[ 1]. y, x, y, drawState);
+         gp_line( self, x, y, pts[ 0]. x, pts[ 0]. y, drawState);
+      } else
+         if ( !( ok = Pie(
+             ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
+             pts[ 1]. x, pts[ 1]. y,
+             pts[ 0]. x, pts[ 0]. y
+         ))) apiErr;
+   }
 
    SelectObject( ps, old);
    return ok;
