@@ -1168,7 +1168,12 @@ sub format
    $self-> paneSize(0,0);
    $self-> {formatTimer}-> start;
    $self-> select_text_offset( $autoOffset) if $autoOffset;
-   $self-> format_chunks;
+
+   while ( 1) {
+      $self-> format_chunks;
+      last unless $self->{formatData} && $self-> {blocks}->[-1] &&
+                  $self-> {blocks}->[-1]->[tb::BLK_Y] < $ph;
+   }
 }
 
 sub FormatTimer_Tick
