@@ -920,9 +920,17 @@ apc_beep_tone( int freq, int duration)
 }
 
 char *
-apc_system_action( const char* params)
+apc_system_action( const char *s)
 {
-   DOLBUG( "apc_system_action()\n");
+   int l = strlen( s);
+   switch (*s) {
+   case 'c':
+      if ( l == 19 && strcmp( s, "can.shape.extension") == 0 && guts.shape_extension)
+         return duplicate_string( "yes");
+      else if ( l == 26 && strcmp( s, "can.shared.image.extension") == 0 && guts.shared_image_extension)
+         return duplicate_string( "yes");
+      break;
+   }
    return nil;
 }
 

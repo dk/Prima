@@ -126,7 +126,7 @@ window_subsystem_init( void)
    {
       struct sockaddr name;
       int l = sizeof( name);
-      guts. local_connection = getsockname( fd, &name, &l) >= 0 && l == 0;
+      guts. local_connection = getsockname( guts.connection, &name, &l) >= 0 && l == 0;
    }
    
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
@@ -138,14 +138,17 @@ window_subsystem_init( void)
 #else
    guts. shape_extension = false;
 #endif
-#ifdef HAVE_X11_EXTENSIONS_XSHM_H
+#ifdef USE_MITSHM
    if ( XShmQueryExtension( DISP)) {
       guts. shared_image_extension = true;
+      guts. shared_image_completion_event = XShmGetEventBase( DISP) + ShmCompletion;
    } else {
       guts. shared_image_extension = false;
+      guts. shared_image_completion_event = -1;
    }
 #else
    guts. shared_image_extension = false;
+   guts. shared_image_completion_event = -1;
 #endif
    
    guts.create_event = XInternAtom( DISP, "PRIMA_CREATE", false);
@@ -160,7 +163,6 @@ window_subsystem_init( void)
    guts.qblinkinvisibletime = *ql++;
    guts.qBlinkvisibletime = *ql++;
    guts.qblinkvisibletime = *ql++;
-   guts.qbackground = *ql++;
    guts.qFont = *ql++;
    guts.qfont = *ql++;
    guts.qForeground = *ql++;
@@ -194,6 +196,7 @@ window_subsystem_init( void)
 
    guts. windows = hash_create();
    guts. menu_windows = hash_create();
+   guts. ximages = hash_create();
    guts. menugc = XCreateGC( DISP, RootWindow( DISP, SCREEN), 0, &gcv);
    guts. resolution. x = 25.4 * DisplayWidth( DISP, SCREEN) / DisplayWidthMM( DISP, SCREEN);
    guts. resolution. y = 25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN);
@@ -231,6 +234,7 @@ window_subsystem_done( void)
    DOLBUG( "Free GC's: %d\n", n);
 
    XFreeGC( DISP, guts. menugc);
+   prima_gc_ximages();          /* verrry dangerous, very quiet please */
    if (DISP) XCloseDisplay( DISP);
    DISP = nil;
    
@@ -243,8 +247,9 @@ window_subsystem_done( void)
    DOLBUG( "Skipped X events: %ld\n", guts. skipped_events);
 
    XrmDestroyDatabase( guts.db);
-   if (guts.menu_windows) hash_destroy( guts.menu_windows, false);
-   if (guts.windows) hash_destroy( guts.windows, false);
+   if (guts.ximages)            hash_destroy( guts.ximages, false);
+   if (guts.menu_windows)       hash_destroy( guts.menu_windows, false);
+   if (guts.windows)            hash_destroy( guts.windows, false);
    prima_cleanup_font_subsystem();
 }
 

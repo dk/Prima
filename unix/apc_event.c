@@ -234,6 +234,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    XButtonEvent *bev;
    int cmd;
 
+   if ( ev-> type == guts. shared_image_completion_event) {
+      prima_ximage_event( ev);
+      return;
+   }
+
    if ( appDead)
       return;
 

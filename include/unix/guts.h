@@ -13,6 +13,12 @@
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
 #include <X11/extensions/shape.h>
 #endif
+#if defined( HAVE_X11_EXTENSIONS_XSHM_H) && defined( HAVE_SYS_IPC_H) && defined( HAVE_SYS_SHM_H)
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <X11/extensions/XShm.h>
+#define USE_MITSHM      1
+#endif
 #undef Font
 #undef Drawable
 #undef Bool
@@ -38,6 +44,11 @@
 
 #include "../guts.h"
 #include "Widget.h"
+
+#ifdef USE_MITSHM
+/* at least some versions of XShm.h do not prototype XShmGetEventBase() */
+extern int XShmGetEventBase( Display*);
+#endif
 
 typedef struct _RequestInformation
 {
@@ -144,6 +155,7 @@ struct _UnixGuts
    GC                           menugc;
    PPaintList                   paint_list;
    GCList                      *used_gcl;
+   PHash                        ximages;
    /* Font management */
    PHash                        font_hash;
    PFontInfo                    font_info;
@@ -211,6 +223,7 @@ struct _UnixGuts
       long XFillRectangles;
       long request_length;
    }                            limits;
+   Bool                         local_connection;
    int                          mouse_buttons;
    int                          mouse_wheel_down;
    int                          mouse_wheel_up;
@@ -222,6 +235,8 @@ struct _UnixGuts
    Bool                         shape_extension;
    int                          shape_event;
    int                          shape_error;
+   Bool                         shared_image_extension;
+   int                          shared_image_completion_event;
 } guts;
 
 #define FXA_RESOLUTION_X guts. fxa_resolution_x
@@ -258,6 +273,8 @@ struct _UnixGuts
    XrmQuarkList q_instance_name; \
    int n_class_name; \
    int n_instance_name
+
+struct _PrimaXImage;
 
 typedef struct _drawable_sys_data
 {
@@ -305,8 +322,8 @@ typedef struct _drawable_sys_data
       int cursor_visible		: 1;
       int process_configure_notify	: 1;
    } flags;
-   XImage *image_cache;
-   XImage *icon_cache;
+   struct _PrimaXImage *image_cache;
+   struct _PrimaXImage *icon_cache;
    XColor bitmap_fore, bitmap_back;
 } DrawableSysData, *PDrawableSysData;
 
@@ -434,6 +451,18 @@ prima_send_create_event( XWindow win);
 
 extern void
 prima_wm_init( void);
+
+extern void
+prima_gc_ximages( void);
+
+extern void
+prima_ximage_event( XEvent*);
+
+extern int
+prima_rop_map( int rop);
+
+extern void
+prima_gp_get_clip_rect( Handle self, XRectangle *cr);
 
 typedef Bool (*prima_wm_hook)( void);
 
