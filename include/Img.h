@@ -16,13 +16,6 @@
 #define ieInvalidOptions      GBM_ERR_BAD_OPTION
 #endif // __unix
 
-#define isRangeLo        0
-#define isRangeHi        1
-#define isMean           2
-#define isVariance       3
-#define isStdDev         4
-#define isMaxIndex       4
-
 #define itUnknown (-1)
 #define itBMP  0
 #define itGIF  1

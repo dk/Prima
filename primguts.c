@@ -1259,6 +1259,35 @@ register_constants( void)
    register_kb_constants();
    register_km_constants();
    register_mb_constants();
+   register_ta_constants();
+   register_cl_constants();
+   register_ci_constants();
+   register_wc_constants();
+   register_cm_constants();
+   register_rop_constants();
+   register_gm_constants();
+   register_lp_constants();
+   register_fp_constants();
+   register_le_constants();
+   register_fs_constants();
+   register_fw_constants();
+   register_bi_constants();
+   register_bs_constants();
+   register_ws_constants();
+   register_sv_constants();
+   register_im_constants();
+   register_ict_constants();
+   register_is_constants();
+   register_apc_constants();
+   register_gui_constants();
+   register_dt_constants();
+   register_cr_constants();
+   register_sbmp_constants();
+   register_cf_constants();
+   register_hmp_constants();
+   register_tw_constants();
+   register_fds_constants();
+   register_fdo_constants();
 }
 
 XS( boot_Prima)

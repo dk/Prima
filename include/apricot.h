@@ -385,62 +385,121 @@ END_TABLE(nt,UV)
 #define ctNoInhibit      0x00080000	/* Valid for csDestroying and csFrozen */
 
 /* Apricot events */
+/* commands */
+#define CM(const_name) CONSTANT(cm,const_name)
+START_TABLE(cm,UV)
+#define cmValid          0x00000000
+CM(Valid)
+#define cmQuit           0x00000001
+CM(Quit)
 #define cmHelp           0x00000002	/* WM_HELP analog */
+CM(Help)
 #define cmOK             0x00000003	/* std OK cmd */
+CM(OK)
+#define cmOk		 cmOK
+CM(Ok)
 #define cmCancel         0x00000004	/* std Cancel cmd */
+CM(Cancel)
 #define cmClose         (0x00000005|ctDiscardable)
+CM(Close)
 					/* on dialog close, WM_CLOSE analog */
 #define cmCreate         0x0000000A	/* WM_CREATE analog */
+CM(Create)
 #define cmDestroy       (0x0000000B|ctPassThrough|ctNoInhibit) /* WM_DESTROY analog */
+CM(Destroy)
 #define cmHide          (0x0000000C|ctDiscardable) /* visible flag aware */
+CM(Hide)
 #define cmShow          (0x0000000D|ctDiscardable) /*           commands */
+CM(Show)
 #define cmReceiveFocus  (0x0000000E|ctDiscardable) /* focused flag aware */
+CM(ReceiveFocus)
 #define cmReleaseFocus  (0x0000000F|ctDiscardable) /*           commands */
+CM(ReleaseFocus)
 #define cmPaint         (0x00000010|ctSingle)      /* WM_PAINT analog */
+CM(Paint)
 #define cmRepaint       (0x00000010|ctSingleResponse) /* and it's response
 							 action */
+CM(Repaint)
 #define cmSize          (0x00000011|ctPassThrough) /* WM_SIZE analog */
+CM(Size)
 #define cmMove          (0x00000012|ctPassThrough) /* WM_MOVE analog */
+CM(Move)
 #define cmColorChanged  (0x00000013|ctDiscardable) /* generates when color
 						      changed */
+CM(ColorChanged)
 #define cmZOrderChanged (0x00000014|ctDiscardable) /* z-order change command */
+CM(ZOrderChanged)
 #define cmEnable        (0x00000015|ctDiscardable) /* enabled flag aware */
+CM(Enable)
 #define cmDisable       (0x00000016|ctDiscardable) /*           commands */
+CM(Disable)
 #define cmActivate      (0x00000017|ctDiscardable) /* commands for window */
+CM(Activate)
 #define cmDeactivate    (0x00000018|ctDiscardable) /* active stage change */
+CM(Deactivate)
 #define cmFontChanged   (0x00000019|ctDiscardable) /* generates when font
 						      changed */
+CM(FontChanged)
 #define cmWindowState   (0x0000001A|ctDiscardable) /* generates when window
 						      state changed */
+CM(WindowState)
 #define cmTimer          0x0000001C                /* WM_TIMER analog */
+CM(Timer)
 #define cmClick          0x0000001D                /* common click */
+CM(Click)
 #define cmCalcBounds     0x0000001E                /* query on change size */
+CM(CalcBounds)
 #define cmPost           0x0000001F                /* posted message */
+CM(Post)
 #define cmPopup          0x00000020                /* interactive popup
 						      request */
+CM(Popup)
 #define cmExecute        0x00000021                /* dialog execution start */
+CM(Execute)
 #define cmSetup          0x00000022                /* first message for alive
 						      and active widget */
+CM(Setup)
 #define cmHint           0x00000023                /* hint show/hide message */
+CM(Hint)
 #define cmDragDrop       0x00000024                /* Drag'n'drop aware */
+CM(DragDrop)
 #define cmDragOver       0x00000025                /*         constants */
+CM(DragOver)
 #define cmEndDrag        0x00000026                /* * */
+CM(EndDrag)
 #define cmMenu          (0x00000027|ctDiscardable) /* send when menu going to be activated */
+CM(Menu)
 #define cmEndModal       0x00000028                /* dialog execution end */
+CM(EndModal)
 
 #define cmMenuCmd        0x00000050                /* interactive menu command */
+CM(MenuCmd)
 #define cmKeyDown        0x00000051                /* generic key down handler cmd */
+CM(KeyDown)
 #define cmKeyUp          0x00000052                /* generic key up handler cmd (rare used) */
+CM(KeyUp)
 #define cmMouseDown      0x00000053                /* WM_BUTTONxDOWN & WM_BUTTONxDBLCLK analog */
+CM(MouseDown)
 #define cmMouseUp        0x00000054                /* WM_BUTTONxUP analog */
+CM(MouseUp)
 #define cmMouseMove      0x00000055                /* WM_MOUSEMOVE analog */
+CM(MouseMove)
 #define cmMouseWheel     0x00000056                /* WM_MOUSEWHEEL analog */
+CM(MouseWheel)
 #define cmMouseClick     0x00000057                /* click response command */
+CM(MouseClick)
 #define cmMouseEnter     0x00000058                /* mouse entered window area */
+CM(MouseEnter)
 #define cmMouseLeave     0x00000059                /* mouse left window area */
+CM(MouseLeave)
 #define cmTranslateAccel 0x0000005A                /* key event spred to non-focused windows */
+CM(TranslateAccel)
 #define cmDelegateKey    0x0000005B                /* reserved for key mapping */
+CM(DelegateKey)
 #define cmUser           0x00000100                /* first user-defined message */
+CM(User)
+END_TABLE(cm,UV)
+#undef CM
 
 /* mouse buttons & message box constants */
 #define MB(const_name) CONSTANT(mb,const_name)
@@ -803,6 +862,23 @@ KB(R10)
 END_TABLE(kb,UV)
 #undef KB
 
+#define TA(const_name) CONSTANT(ta,const_name)
+START_TABLE(ta,UV)
+#define taLeft      1
+TA(Left)
+#define taRight     2
+TA(Right)
+#define taCenter    3
+TA(Center)
+#define taTop       4
+TA(Top)
+#define taBottom    8
+TA(Bottom)
+#define taMiddle    12
+TA(Middle)
+END_TABLE(ta,UV)
+#undef TA
+
 /* Please, please, PLEASE!  Do not use directly! */
 
 typedef struct _VmtPatch
@@ -1056,26 +1132,97 @@ extern int
 list_index_of( PList self, Handle item);
 
 /* OS types */
+#define APC(const_name) CONSTANT(apc,const_name)
+START_TABLE(apc,UV)
 #define apcOS2                  1
+APC(OS2)
 #define apcWin32                2
+APC(Win32)
 #define apcUnix                 3
+APC(Unix)
+END_TABLE(apc,UV)
+#undef APC
 
 /* GUI types */
+#define GUI(const_name) CONSTANT(gui,const_name)
+START_TABLE(gui,UV)
 #define guiDefault              0
+GUI(Default)
 #define guiPM                   1
+GUI(PM)
 #define guiWindows              2
+GUI(Windows)
 #define guiXLib                 3
+GUI(XLib)
 #define guiOpenLook             4
+GUI(OpenLook)
 #define guiMotif                5
+GUI(Motif)
+END_TABLE(gui,UV)
+#undef GUI
 
 /* drives types (for platforms which have 'em) */
+/* also, text justification constants for draw_text */
+#define DT(const_name) CONSTANT(dt,const_name)
+START_TABLE(dt,UV)
 #define dtUnknown               0
+DT(Unknown)
 #define dtNone                  1
+DT(None)
 #define dtFloppy                2
+DT(Floppy)
 #define dtHDD                   3
+DT(HDD)
 #define dtNetwork               4
+DT(Network)
 #define dtCDROM                 5
+DT(CDROM)
 #define dtMemory                6
+DT(Memory)
+
+#define dtLeft                     0x0000
+DT(Left)
+#define dtRight                    0x0001
+DT(Right)
+#define dtCenter                   0x0002
+DT(Center)
+#define dtTop                      0x0000
+DT(Top)
+#define dtBottom                   0x0004
+DT(Bottom)
+#define dtVCenter                  0x0008
+DT(VCenter)
+#define dtDrawMnemonic             0x0010
+DT(DrawMnemonic)
+#define dtDrawSingleChar           0x0020
+DT(DrawSingleChar)
+#define dtDrawPartial              0x0040
+DT(DrawPartial)
+#define dtNewLineBreak             0x0080
+DT(NewLineBreak)
+#define dtSpaceBreak               0x0100
+DT(SpaceBreak)
+#define dtWordBreak                0x0200
+DT(WordBreak)
+#define dtExpandTabs               0x0400
+DT(ExpandTabs)
+#define dtUseExternalLeading       0x0800
+DT(UseExternalLeading)
+#define dtUseClip                  0x1000
+DT(UseClip)
+#define dtQueryHeight              0x2000
+DT(QueryHeight)
+#define dtQueryLinesDrawn          0x0000
+DT(QueryLinesDrawn)
+#define dtNoWordWrap               0x4000
+DT(NoWordWrap)
+#define dtWordWrap                 0x0000
+DT(WordWrap)
+#define dtDefault                  (dtNewLineBreak|dtWordBreak|dtExpandTabs|dtUseExternalLeading)
+DT(Default)
+
+END_TABLE(dt,UV)
+#undef DT
 
 /* apc error constants */
 #define errOk                    0x0000
@@ -1126,52 +1273,125 @@ typedef struct _ObjectOptions_ {
 				     || is_opt( optInDrawInfo))
 
 /* apc class constants */
+#define WC(const_name) CONSTANT(wc,const_name)
+START_TABLE(wc,UV)
 #define wcUndef               0x0000000
+WC(Undef)
 #define wcButton              0x0010000
+WC(Button)
 #define wcCheckBox            0x0020000
+WC(CheckBox)
 #define wcCombo               0x0030000
+WC(Combo)
 #define wcDialog              0x0040000
+WC(Dialog)
 #define wcEdit                0x0050000
+WC(Edit)
 #define wcInputLine           0x0060000
+WC(InputLine)
 #define wcLabel               0x0070000
+WC(Label)
 #define wcListBox             0x0080000
+WC(ListBox)
 #define wcMenu                0x0090000
+WC(Menu)
 #define wcPopup               0x00A0000
+WC(Popup)
 #define wcRadio               0x00B0000
+WC(Radio)
 #define wcScrollBar           0x00C0000
+WC(ScrollBar)
 #define wcSlider              0x00D0000
+WC(Slider)
 #define wcWidget              0x00E0000
+WC(Widget)
+#define wcCustom              wcWidget
+WC(Custom)
 #define wcWindow              0x00F0000
+WC(Window)
 #define wcApplication         0x0100000
+WC(Application)
 #define wcMask                0xFFF0000
+WC(Mask)
+END_TABLE(wc,UV)
+#undef WC
 
 /* widget grow constats */
+#define GM(const_name) CONSTANT(gm,const_name)
+START_TABLE(gm,UV)
 #define gmGrowLoX             0x001
+GM(GrowLoX)
 #define gmGrowLoY             0x002
+GM(GrowLoY)
 #define gmGrowHiX             0x004
+GM(GrowHiX)
 #define gmGrowHiY             0x008
+GM(GrowHiY)
 #define gmGrowAll             0x00F
+GM(GrowAll)
 #define gmXCenter             0x010
+GM(XCenter)
 #define gmYCenter             0x020
-#define gmCenter              (gmXCenter+gmYCenter)
+GM(YCenter)
+#define gmCenter              (gmXCenter|gmYCenter)
+GM(Center)
 #define gmDontCare            0x040
+GM(DontCare)
+/* shortcuts */
+#define gmClient	      (gmGrowHiX|gmGrowHiY)
+GM(Client)
+#define gmRight               (gmGrowLoX|gmGrowHiY)
+GM(Right)
+#define gmLeft                gmGrowHiY
+GM(Left)
+#define gmFloor               gmGrowHiX
+GM(Floor)
+#define gmCeiling             (gmGrowHiX|gmGrowLoY)
+GM(Ceiling)
+END_TABLE(gm,UV)
+#undef GM
 
 /* border icons */
+#define BI(const_name) CONSTANT(bi,const_name)
+START_TABLE(bi,UV)
 #define    biSystemMenu    1
+BI(SystemMenu)
 #define    biMinimize      2
+BI(Minimize)
 #define    biMaximize      4
+BI(Maximize)
 #define    biTitleBar      8
+BI(TitleBar)
+#define    biAll	   (biSystemMenu|biMinimize|biMaximize|biTitleBar)
+BI(All)
+END_TABLE(bi,UV)
+#undef BI
 
 /* border styles */
+#define BS(const_name) CONSTANT(bs,const_name)
+START_TABLE(bs,UV)
 #define   bsNone           0
+BS(None)
 #define   bsSizeable       1
+BS(Sizeable)
 #define   bsSingle         2
+BS(Single)
 #define   bsDialog         3
+BS(Dialog)
+END_TABLE(bs,UV)
+#undef BS
 
 /* window states */
+#define WS(const_name) CONSTANT(ws,const_name)
+START_TABLE(ws,UV)
 #define   wsNormal         0
+WS(Normal)
 #define   wsMinimized      1
+WS(Minimized)
 #define   wsMaximized      2
+WS(Maximized)
+END_TABLE(ws,UV)
+#undef WS
 
 /* z-order query constants */
 #define   zoFirst          0
@@ -1180,35 +1400,66 @@ typedef struct _ObjectOptions_ {
 #define   zoPrev           3
 
 /* system values */
+#define SV(const_name) CONSTANT(sv,const_name)
+START_TABLE(sv,UV)
 #define   svYMenu           0
+SV(YMenu)
 #define   svYTitleBar       1
+SV(YTitleBar)
 #define   svXIcon           2
+SV(XIcon)
 #define   svYIcon           3
+SV(YIcon)
 #define   svXSmallIcon      4
+SV(XSmallIcon)
 #define   svYSmallIcon      5
+SV(YSmallIcon)
 #define   svXPointer        6
+SV(XPointer)
 #define   svYPointer        7
+SV(YPointer)
 #define   svXScrollbar      8
+SV(XScrollbar)
 #define   svYScrollbar      9
+SV(YScrollbar)
 #define   svXCursor         10
+SV(XCursor)
 #define   svAutoScrollFirst 11
+SV(AutoScrollFirst)
 #define   svAutoScrollNext  12
+SV(AutoScrollNext)
 #define   svInsertMode      13
+SV(InsertMode)
 #define   svXbsNone         14
+SV(XbsNone)
 #define   svYbsNone         15
+SV(YbsNone)
 #define   svXbsSizeable     16
+SV(XbsSizeable)
 #define   svYbsSizeable     17
+SV(YbsSizeable)
 #define   svXbsSingle       18
+SV(XbsSingle)
 #define   svYbsSingle       19
+SV(YbsSingle)
 #define   svXbsDialog       20
+SV(XbsDialog)
 #define   svYbsDialog       21
+SV(YbsDialog)
 #define   svMousePresent    22
+SV(MousePresent)
 #define   svMouseButtons    23
+SV(MouseButtons)
 #define   svWheelPresent    24
+SV(WheelPresent)
 #define   svSubmenuDelay    25
+SV(SubmenuDelay)
 #define   svFullDrag        26
+SV(FullDrag)
 #define   svDblClickDelay   27
-
+SV(DblClickDelay)
+END_TABLE(sv,UV)
+#undef SV
 
 extern Handle application;
 extern long   apcError;
@@ -1485,18 +1736,34 @@ extern void
 apc_widget_validate_rect( Handle self, Rect rect);
 
 /* standard system pointers */
+#define CR(const_name) CONSTANT(cr,const_name)
+START_TABLE(cr,UV)
 #define crDefault      -1
+CR(Default)
 #define crArrow        0
+CR(Arrow)
 #define crText         1
+CR(Text)
 #define crWait         2
+CR(Wait)
 #define crSize         3
+CR(Size)
 #define crMove         4
+CR(Move)
 #define crSizeWE       5
+CR(SizeWE)
 #define crSizeNS       6
+CR(SizeNS)
 #define crSizeNWSE     7
+CR(SizeNWSE)
 #define crSizeNESW     8
+CR(SizeNESW)
 #define crInvalid      9
+CR(Invalid)
 #define crUser         10
+CR(User)
+END_TABLE(cr,UV)
+#undef CR
 
 /* Widget attributes */
 extern void
@@ -1554,9 +1821,18 @@ extern int
 apc_kbd_get_state( Handle self);
 
 /* Clipboard */
+#define CF(const_name) CONSTANT(cf,const_name)
+START_TABLE(cf,UV)
 #define cfText     0
+CF(Text)
 #define cfBitmap   1
+CF(Bitmap)
+#define cfImage    cfBitmap
+CF(Image)
 #define cfCustom   2
+CF(Custom)
+END_TABLE(cf,UV)
+#undef CF
 
 extern Bool
 apc_clipboard_create( void);
@@ -1690,11 +1966,20 @@ extern ApiHandle
 apc_timer_get_handle( Handle self);
 
 /* Help */
+#define HMP(const_name) CONSTANT(hmp,const_name)
+START_TABLE(hmp,IV)
 #define  hmpNone                     0
+HMP(None)
 #define  hmpOwner                   -1
+HMP(Owner)
 #define  hmpMain                    -2
+HMP(Main)
 #define  hmpContents                -3
+HMP(Contents)
 #define  hmpExtra                   -4
+HMP(Extra)
+END_TABLE(hmp,IV)
+#undef HMP
 
 extern Bool
 apc_help_open_topic( Handle self, long command);
@@ -1722,48 +2007,96 @@ apc_show_message( const char* message);
 #define ARGB(r,g,b) ((long)(((unsigned char)(b)|((unsigned short)((unsigned char)(g))<<8))|(((unsigned long)(unsigned char)(r))<<16)))
 
 /* colors */
+#define CL(const_name) CONSTANT(cl,const_name)
+START_TABLE(cl,UV)
 #define    clBlack            ARGB(0,0,0)
+CL(Black)
 #define    clBlue             ARGB(0,0,128)
+CL(Blue)
 #define    clGreen            ARGB(0,128,0)
+CL(Green)
 #define    clCyan             ARGB(0,128,128)
+CL(Cyan)
 #define    clRed              ARGB(128,0,0)
+CL(Red)
 #define    clMagenta          ARGB(128,0,128)
+CL(Magenta)
 #define    clBrown            ARGB(128,128,0)
+CL(Brown)
 #define    clLightGray        ARGB(192,192,192)
+CL(LightGray)
 #define    clDarkGray         ARGB(63,63,63)
+CL(DarkGray)
 #define    clLightBlue        ARGB(0,0,255)
+CL(LightBlue)
 #define    clLightGreen       ARGB(0,255,0)
+CL(LightGreen)
 #define    clLightCyan        ARGB(0,255,255)
+CL(LightCyan)
 #define    clLightRed         ARGB(255,0,0)
+CL(LightRed)
 #define    clLightMagenta     ARGB(255,0,255)
+CL(LightMagenta)
 #define    clYellow           ARGB(255,255,0)
+CL(Yellow)
 #define    clWhite            ARGB(255,255,255)
+CL(White)
 #define    clGray             ARGB(128,128,128)
+CL(Gray)
 #define    clInvalid          (long)(0x80000000)
+CL(Invalid)
 #define    clNormalText       (long)(0x80000001)
+CL(NormalText)
 #define    clFore             (long)(0x80000001)
+CL(Fore)
 #define    clNormal           (long)(0x80000002)
+CL(Normal)
 #define    clBack             (long)(0x80000002)
+CL(Back)
 #define    clHiliteText       (long)(0x80000003)
+CL(HiliteText)
 #define    clHilite           (long)(0x80000004)
+CL(Hilite)
 #define    clDisabledText     (long)(0x80000005)
+CL(DisabledText)
 #define    clDisabled         (long)(0x80000006)
+CL(Disabled)
 #define    clLight3DColor     (long)(0x80000007)
+CL(Light3DColor)
 #define    clDark3DColor      (long)(0x80000008)
+CL(Dark3DColor)
 #define    clMaxSysColor      (long)(0x80000008)
+CL(MaxSysColor)
+END_TABLE(cl,UV)
+#undef CL
 
 /* color indices */
+#define CI(const_name) CONSTANT(ci,const_name)
+START_TABLE(ci,UV)
 #define    ciNormalText    0
+CI(NormalText)
 #define    ciFore          0
+CI(Fore)
 #define    ciNormal        1
+CI(Normal)
 #define    ciBack          1
+CI(Back)
 #define    ciHiliteText    2
+CI(HiliteText)
 #define    ciHilite        3
+CI(Hilite)
 #define    ciDisabledText  4
+CI(DisabledText)
 #define    ciDisabled      5
+CI(Disabled)
 #define    ciLight3DColor  6
+CI(Light3DColor)
 #define    ciDark3DColor   7
+CI(Dark3DColor)
 #define    ciMaxId         7
+CI(MaxId)
+END_TABLE(ci,UV)
+#undef CI
 
 typedef Color ColorSet[ ciMaxId + 1];
 
@@ -1799,106 +2132,242 @@ typedef enum {
    ropSrcLeave,		/* dest = (src != fore color) ? src : figa */
    ropDestLeave,	/* dest = (src != back color) ? src : figa */
 } ROP;
+#define ROP(const_name) CONSTANT(rop,const_name)
+START_TABLE(rop,UV)
+ROP(CopyPut)ROP(XorPut)ROP(AndPut)ROP(OrPut)ROP(NotPut)ROP(NotBlack)
+ROP(NotDestXor)ROP(NotDestAnd)ROP(NotDestOr)ROP(NotSrcXor)ROP(NotSrcAnd)
+ROP(NotSrcOr)ROP(NotXor)ROP(NotAnd)ROP(NotOr)ROP(NotBlackXor)ROP(NotBlackAnd)
+ROP(NotBlackOr)ROP(NoOper)ROP(Blackness)ROP(Whiteness)ROP(Invert)ROP(Pattern)
+ROP(XorPattern)ROP(AndPattern)ROP(OrPattern)ROP(NotSrcOrPat)ROP(SrcLeave)
+ROP(DestLeave)
+END_TABLE(rop,UV)
+#undef ROP
 
 /* line ends */
+#define LE(const_name) CONSTANT(le,const_name)
+START_TABLE(le,UV)
 #define    leFlat           0
+LE(Flat)
 #define    leSquare         1
+LE(Square)
 #define    leRound          2
+LE(Round)
+END_TABLE(le,UV)
+#undef LE
 
 /* line patterns */
+#define LP(const_name) CONSTANT(lp,const_name)
+START_TABLE(lp,UV)
 #define    lpNull           0x0000     /* */
+LP(Null)
 #define    lpSolid          0xFFFF     /* ___________ */
+LP(Solid)
 #define    lpDash           0xF0F0     /* __ __ __ __ */
+LP(Dash)
 #define    lpLongDash       0xFF00     /* _____ _____ */
+LP(LongDash)
 #define    lpShortDash      0xCCCC     /* _ _ _ _ _ _ */
+LP(ShortDash)
 #define    lpDot            0x5555     /* . . . . . . */
+LP(Dot)
 #define    lpDotDot         0x4444     /* ............ */
+LP(DotDot)
 #define    lpDashDot        0xFAFA     /* _._._._._._ */
+LP(DashDot)
 #define    lpDashDotDot     0xEAEA     /* _.._.._.._.. */
-
+LP(DashDotDot)
+END_TABLE(lp,UV)
+#undef LP
 
 /* font styles */
+#define FS(const_name) CONSTANT(fs,const_name)
+START_TABLE(fs,UV)
 #define    fsNormal         0x0000
+FS(Normal)
 #define    fsBold           0x0001
+FS(Bold)
 #define    fsThin           0x0002
+FS(Thin)
 #define    fsItalic         0x0004
+FS(Italic)
 #define    fsUnderlined     0x0008
+FS(Underlined)
 #define    fsStruckOut      0x0010
+FS(StruckOut)
 #define    fsOutline        0x0020
+FS(Outline)
+END_TABLE(fs,UV)
+#undef FS
 
 /* font pitches */
+#define FP(const_name) CONSTANT(fp,const_name)
+START_TABLE(fp,UV)
 #define    fpDefault        0x0000
+FP(Default)
 #define    fpVariable       0x0001
+FP(Variable)
 #define    fpFixed          0x0002
-
-/* font weigths */
-#define    fwUltraLight     1
-#define    fwExtraLight     2
-#define    fwLight          3
-#define    fwSemiLight      4
-#define    fwMedium         5
-#define    fwSemiBold       6
-#define    fwBold           7
-#define    fwExtraBold      8
-#define    fwUltraBold      9
+FP(Fixed)
 
 /* fill constants */
 #define    fpEmpty          0 /*   Uses background color */
+FP(Empty)
 #define    fpSolid          1 /*   Uses draw color fill */
+FP(Solid)
 #define    fpLine           2 /*   --- */
+FP(Line)
 #define    fpLtSlash        3 /*   /// */
+FP(LtSlash)
 #define    fpSlash          4 /*   /// thick */
+FP(Slash)
 #define    fpBkSlash        5 /*   \\\ thick */
+FP(BkSlash)
 #define    fpLtBkSlash      6 /*   \\\ light */
+FP(LtBkSlash)
 #define    fpHatch          7 /*   Light hatch */
+FP(Hatch)
 #define    fpXHatch         8 /*   Heavy cross hatch */
+FP(XHatch)
 #define    fpInterleave     9 /*   Interleaving line */
+FP(Interleave)
 #define    fpWideDot       10 /*   Widely spaced dot */
+FP(WideDot)
 #define    fpCloseDot      11 /*   Closely spaced dot */
+FP(CloseDot)
 #define    fpSimpleDots    12 /*   . . . . . . . . . . */
+FP(SimpleDots)
 #define    fpBorland       13 /*   #################### */
+FP(Borland)
 #define    fpParquet       14 /*   \/\/\/\/\/\/\/\/\/\/ */
+FP(Parquet)
 #define    fpCritters      15 /*   critters */
+FP(Critters)
 #define    fpMaxId         15
+FP(MaxId)
+END_TABLE(fp,UV)
+#undef FP
 
+/* font weigths */
+#define FW(const_name) CONSTANT(fw,const_name)
+START_TABLE(fw,UV)
+#define    fwUltraLight     1
+FW(UltraLight)
+#define    fwExtraLight     2
+FW(ExtraLight)
+#define    fwLight          3
+FW(Light)
+#define    fwSemiLight      4
+FW(SemiLight)
+#define    fwMedium         5
+FW(Medium)
+#define    fwSemiBold       6
+FW(SemiBold)
+#define    fwBold           7
+FW(Bold)
+#define    fwExtraBold      8
+FW(ExtraBold)
+#define    fwUltraBold      9
+FW(UltraBold)
+END_TABLE(fw,UV)
+#undef FW
+
+#define IM(const_name) CONSTANT(im,const_name)
+START_TABLE(im,UV)
 #define    imNone                0
+IM(None)
 #define    imbpp1                0x001
+IM(bpp1)
 #define    imbpp4                0x004
+IM(bpp4)
 #define    imbpp8                0x008
+IM(bpp8)
 #define    imbpp16               0x010
+IM(bpp16)
 #define    imbpp24               0x018
+IM(bpp24)
 #define    imbpp32               0x020
+IM(bpp32)
 #define    imbpp64               0x040
+IM(bpp64)
 #define    imbpp128              0x080
+IM(bpp128)
 #define    imBPP                 0x0FF
+IM(BPP)
 
 #define    imGrayScale           0x1000
+IM(GrayScale)
 #define    imRealNumber          0x2000
+IM(RealNumber)
 #define    imComplexNumber       0x4000
+IM(ComplexNumber)
 #define    imTrigComplexNumber   0x8000
-
-/* Image conversion types */
-#define    ictNone               0
-#define    ictHalftone           1
-#define    ictErrorDiffusion     2
+IM(TrigComplexNumber)
 
 /* Shortcuts and composites */
 #define    imMono           imbpp1
+IM(Mono)
 #define    imBW             (imMono|imGrayScale)
+IM(BW)
 #define    im16             imbpp4
+IM(16)
 #define    imNibble         im16
+IM(Nibble)
 #define    im256            imbpp8
+IM(256)
 #define    imRGB            imbpp24
+IM(RGB)
 #define    imTriple         imRGB
+IM(Triple)
 #define    imByte           (imbpp8|imGrayScale)
+IM(Byte)
 #define    imShort          (imbpp16|imGrayScale)
+IM(Short)
 #define    imLong           (imbpp32|imGrayScale)
+IM(Long)
 #define    imFloat          ((sizeof(float)*8)|imGrayScale|imRealNumber)
+IM(Float)
 #define    imDouble         ((sizeof(double)*8)|imGrayScale|imRealNumber)
+IM(Double)
 #define    imComplex        ((sizeof(float)*8*2)|imGrayScale|imComplexNumber)
+IM(Complex)
 #define    imDComplex       ((sizeof(double)*8*2)|imGrayScale|imComplexNumber)
+IM(DComplex)
 #define    imTrigComplex    ((sizeof(float)*8*2)|imGrayScale|imTrigComplexNumber)
+IM(TrigComplex)
 #define    imTrigDComplex   ((sizeof(double)*8*2)|imGrayScale|imTrigComplexNumber)
+IM(TrigDComplex)
+END_TABLE(im,UV)
+#undef IM
+
+/* Image statistics constants */
+#define IS(const_name) CONSTANT(is,const_name)
+START_TABLE(is,UV)
+#define isRangeLo        0
+IS(RangeLo)
+#define isRangeHi        1
+IS(RangeHi)
+#define isMean           2
+IS(Mean)
+#define isVariance       3
+IS(Variance)
+#define isStdDev         4
+IS(StdDev)
+#define isMaxIndex       4
+IS(MaxIndex)
+END_TABLE(is,UV)
+#undef IS
+
+/* Image conversion types */
+#define ICT(const_name) CONSTANT(ict,const_name)
+START_TABLE(ict,UV)
+#define    ictNone               0
+ICT(None)
+#define    ictHalftone           1
+ICT(Halftone)
+#define    ictErrorDiffusion     2
+ICT(ErrorDiffusion)
+END_TABLE(ict,UV)
+#undef ICT
 
 /* image & bitmaps */
 extern Bool
@@ -1945,17 +2414,140 @@ extern ApiHandle
 apc_dbm_get_handle( Handle self);
 
 /* text wrap options */
+#define TW(const_name) CONSTANT(tw,const_name)
+START_TABLE(tw,UV)
 #define twCalcMnemonic    0x001    /* calculate first ~ entry */
+TW(CalcMnemonic)
 #define twCalcTabs        0x002    /* calculate tabs */
+TW(CalcTabs)
 #define twBreakSingle     0x004    /* return single empty line if text cannot be fitted in */
+TW(BreakSingle)
 #define twNewLineBreak    0x008    /* break line at \n */
+TW(NewLineBreak)
 #define twSpaceBreak      0x010    /* break line at spaces */
+TW(SpaceBreak)
 #define twReturnLines     0x000    /* return wrapped lines */
+TW(ReturnLines)
 #define twReturnChunks    0x020    /* return array of offsets & lengths */
+TW(ReturnChunks)
 #define twWordBreak       0x040    /* break line at word boundary, if necessary */
+TW(WordBreak)
 #define twExpandTabs      0x080    /* expand tabs */
+TW(ExpandTabs)
 #define twCollapseTilde   0x100    /* remove ~ from line */
+TW(CollapseTilde)
 #define twDefault         (twNewLineBreak|twCalcTabs|twExpandTabs|twReturnLines|twWordBreak)
+TW(Default)
+END_TABLE(tw,UV)
+#undef TW
+
+/* find/replace dialog scope type */
+#define FDS(const_name) CONSTANT(fds,const_name)
+START_TABLE(fds,UV)
+#define fdsCursor             0
+FDS(Cursor)
+#define fdsTop                1
+FDS(Top)
+#define fdsBottom             2
+FDS(Bottom)
+END_TABLE(fds,UV)
+#undef FDS
+
+/* find/replace dialog options */
+#define FDO(const_name) CONSTANT(fdo,const_name)
+START_TABLE(fdo,UV)
+#define fdoMatchCase                0x01
+FDO(MatchCase)
+#define fdoWordsOnly                0x02
+FDO(WordsOnly)
+#define fdoRegularExpression        0x04
+FDO(RegularExpression)
+#define fdoBackwardSearch           0x08
+FDO(BackwardSearch)
+#define fdoReplacePrompt            0x10
+FDO(ReplacePrompt)
+END_TABLE(fdo,UV)
+#undef FDO
+
+/* System bitmaps index */
+#define SBMP(const_name) CONSTANT(sbmp,const_name)
+START_TABLE(sbmp,UV)
+#define sbmpCheckBoxChecked              0
+SBMP(CheckBoxChecked)
+#define sbmpCheckBoxCheckedPressed       1
+SBMP(CheckBoxCheckedPressed)
+#define sbmpCheckBoxUnchecked            2
+SBMP(CheckBoxUnchecked)
+#define sbmpCheckBoxUncheckedPressed     3
+SBMP(CheckBoxUncheckedPressed)
+#define sbmpRadioChecked                 4
+SBMP(RadioChecked)
+#define sbmpRadioCheckedPressed          5
+SBMP(RadioCheckedPressed)
+#define sbmpRadioUnchecked               6
+SBMP(RadioUnchecked)
+#define sbmpRadioUncheckedPressed        7
+SBMP(RadioUncheckedPressed)
+#define sbmpWarning                      8
+SBMP(Warning)
+#define sbmpInformation                  9
+SBMP(Information)
+#define sbmpQuestion                    10
+SBMP(Question)
+#define sbmpOutlineCollaps              11
+SBMP(OutlineCollaps)
+#define sbmpOutlineExpand               12
+SBMP(OutlineExpand)
+#define sbmpError                       13
+SBMP(Error)
+#define sbmpSysMenu                     14
+SBMP(SysMenu)
+#define sbmpSysMenuPressed              15
+SBMP(SysMenuPressed)
+#define sbmpMax                         16
+SBMP(Max)
+#define sbmpMaxPressed                  17
+SBMP(MaxPressed)
+#define sbmpMin                         18
+SBMP(Min)
+#define sbmpMinPressed                  19
+SBMP(MinPressed)
+#define sbmpRestore                     20
+SBMP(Restore)
+#define sbmpRestorePressed              21
+SBMP(RestorePressed)
+#define sbmpClose                       22
+SBMP(Close)
+#define sbmpClosePressed                23
+SBMP(ClosePressed)
+#define sbmpHide                        24
+SBMP(Hide)
+#define sbmpHidePressed                 25
+SBMP(HidePressed)
+#define sbmpDriveUnknown                26
+SBMP(DriveUnknown)
+#define sbmpDriveFloppy                 27
+SBMP(DriveFloppy)
+#define sbmpDriveHDD                    28
+SBMP(DriveHDD)
+#define sbmpDriveNetwork                29
+SBMP(DriveNetwork)
+#define sbmpDriveCDROM                  30
+SBMP(DriveCDROM)
+#define sbmpDriveMemory                 31
+SBMP(DriveMemory)
+#define sbmpGlyphOK                     32
+SBMP(GlyphOK)
+#define sbmpGlyphCancel                 33
+SBMP(GlyphCancel)
+#define sbmpSFolderOpened               34
+SBMP(SFolderOpened)
+#define sbmpSFolderClosed               35
+SBMP(SFolderClosed)
+#define sbmpLast                        35
+SBMP(Last)
+END_TABLE(sbmp,UV)
+#undef SBMP
 
 typedef struct _TextWrapRec {
    char * text;                        /* text to be wrapped */
