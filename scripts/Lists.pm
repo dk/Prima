@@ -1177,6 +1177,7 @@ sub recalc_widths
    my $i;
    my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
    $self-> push_event;
+   $self-> begin_paint_info;
    for ( $i = 0; $i < scalar @{$self->{items}}; $i++)
    {
       my $iw = 0;
@@ -1184,6 +1185,7 @@ sub recalc_widths
       $maxWidth = $iw if $maxWidth < $iw;
       push ( @w, $iw);
    }
+   $self-> end_paint_info;
    $self-> pop_event;
    $self->{widths}    = [@w];
    $self-> {maxWidth} = $maxWidth;
@@ -1691,6 +1693,7 @@ sub recalc_icons
 sub recalc_items
 {
    my ($self, $items) = ($_[0], $_[0]->{items});
+   $self-> begin_paint_info;
    $self-> {oneSpaceWidth} = $self-> get_text_width(' ');
    my $maxWidth = 0;
    my @widths = (
@@ -1705,6 +1708,7 @@ sub recalc_items
                   4 + $self-> {indent} * $_-> {indent};
       $maxWidth = $width if $maxWidth < $width;
    }
+   $self-> end_paint_info;
    $self->{maxWidth} = $maxWidth;
 }
 
