@@ -166,8 +166,8 @@ sub on_translateaccel
    my ( $self, $code, $key, $mod) = @_;
    if ( defined $self->{accel} && ( $key == kb::NoKey) && lc chr $code eq $self-> { accel})
    {
-      $self-> notify( 'Click');
       $self-> clear_event;
+      $self-> notify( 'Click');
    }
 }
 

@@ -389,8 +389,8 @@ sub on_keydown
    {
       $self-> toggle_item( $self->{focusedItem}) if $key == kb::Space &&
           $self->{multiSelect} && !$self->{extendedSelect};
-      $self-> notify(q(Click)) if $key == kb::Enter && ($self->focusedItem >= 0);
       $self-> clear_event;
+      $self-> notify(q(Click)) if $key == kb::Enter && ($self->focusedItem >= 0);
       return;
    }
 }
@@ -478,7 +478,7 @@ sub on_mouseclick
    my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
    $self-> clear_event;
    return if $btn != mb::Left || !$dbl;
-   $self-> notify( q(Click)) if $self-> focusedItem >= 0;
+   $self-> notify(q(Click)) if $self-> focusedItem >= 0;
 }
 
 sub on_mousemove
