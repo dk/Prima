@@ -745,7 +745,8 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    int n;
 
 		    imgProp = img_info_add_property( imageInfo, "paletteSize", PROPTYPE_INT, -1, gif->SColorMap->ColorCount);
-		    if ( imgProp != nil) { 
+		    DOLBUG( "Number of entries in GIF palette is %d\n", gif->SColorMap->ColorCount);
+		    if ( imgProp != nil) {
 			imgProp = img_info_add_property( imageInfo, "paletteBPP", PROPTYPE_INT, -1, gif->SColorMap->BitsPerPixel);
 		    }
 		    if ( imgProp != nil) {
@@ -807,13 +808,29 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			palette = ( gifChunk->ColorMap != NULL ?
 				    gifChunk->ColorMap :
 				    gif->SColorMap);
+			DOLBUG( "GIF palette size: %d\n", palette->ColorCount);
 			succeed =
-			    ( imgProp = img_info_add_property( 
-				    imageInfo, 
-				    "palette",
-				    PROPTYPE_BYTE | PROPTYPE_ARRAY,
-				    3 * palette->ColorCount
-				)) != nil;
+			    (
+				    ( imgProp = img_info_add_property(
+					    imageInfo,
+					    "paletteSize",
+					    PROPTYPE_INT,
+					    palette->ColorCount
+					)) != nil)
+			    && (
+				    ( imgProp = img_info_add_property(
+					    imageInfo,
+					    "paletteBPP",
+					    PROPTYPE_INT,
+					    palette->BitsPerPixel
+					)) != nil)
+			    && (
+				    ( imgProp = img_info_add_property( 
+					    imageInfo,
+					    "palette",
+					    PROPTYPE_BYTE | PROPTYPE_ARRAY,
+					    3 * palette->ColorCount
+					)) != nil);
 			for ( n = 0; ( n < palette->ColorCount) && succeed; n++) {
 			    succeed =
 				img_push_property_value( imgProp, palette->Colors[ n].Blue)
