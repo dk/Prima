@@ -85,10 +85,11 @@ sub scroll_timer_start
          owner      => $::application,
          timeout    => $rates[0],
          name       => q(ScrollTimer),
-         onTick     => sub { $self-> ScrollTimer_Tick( @_)},
+         onTick     => sub { $_[0]-> {delegator}-> ScrollTimer_Tick( @_)},
       );
       @{$scrollTimer}{qw(firstRate nextRate newRate)} = (@rates,$rates[1]);
    }
+   $scrollTimer-> {delegator} = $self;
    $scrollTimer-> {semaphore} = 1;
    $scrollTimer-> {active} = 1;
    $scrollTimer-> start;
@@ -196,9 +197,8 @@ sub set_h_scroll
          growMode    => gm::GrowHiX,
          pointerType => cr::Arrow,
          width       => $self-> width - 2 * $bw + 2 - ( $self->{vScroll} ? $self->{vScrollBar}-> width - 2 : 0),
+         delegations => ['Change'],
       );
-      my $callback = $self-> can('HScroll_Change', 0);
-      $self->{hScrollBar}-> add_notification( 'onChange', $callback, $self) if $callback;
       if ( $self->{vScroll})
       {
          my $h = $self-> {hScrollBar}-> height;
@@ -237,9 +237,8 @@ sub set_v_scroll
          bottom   => $bw + ( $self->{hScroll} ? $self->{hScrollBar}-> height - 2 : 0),
          growMode => gm::GrowLoX | gm::GrowHiY,
          pointerType  => cr::Arrow,
+         delegations  => ['Change'],
       );
-      my $callback = $self-> can('VScroll_Change', 0);
-      $self->{vScrollBar}-> add_notification( 'onChange', $callback, $self) if $callback;
       if ( $self->{hScroll})
       {
          $self-> {hScrollBar}->width(

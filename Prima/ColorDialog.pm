@@ -38,8 +38,10 @@ use Prima::ComboBox;
 use Prima::ScrollBar;
 
 package Prima::ColorDialog;
-use vars qw( @ISA $colorWheel);
+use vars qw( @ISA $colorWheel $colorWheelShape);
 @ISA = qw( Prima::Dialog);
+
+my $shapext = Prima::Application-> get_system_value( sv::ShapeExtension);
 
 sub hsv2rgb
 {
@@ -201,6 +203,26 @@ sub create_wheel
    $a-> end_paint;
 
    $i-> destroy;
+
+   return $a;
+}
+
+sub create_wheel_shape
+{
+   return unless $shapext;
+   my ($id, $color)   = @_;
+   my $imul = 256 / $id;
+   my $a = Prima::Image-> create(
+      width => 256,
+      height => 256,
+      type => im::BW,
+   );
+   $a-> begin_paint;
+   $a-> color( cl::Black);
+   $a-> bar( 0, 0, 255, 255);
+   $a-> color( cl::White);
+   $a-> fill_ellipse( 128, 128, 128 - $imul - 1, 128 - $imul - 1);
+   $a-> end_paint;
    return $a;
 }
 
@@ -237,17 +259,16 @@ sub init
    $v = int($v);
 
    $colorWheel = create_wheel(32, $self->backColor) unless $colorWheel;
+   $colorWheelShape = create_wheel_shape(32) unless $colorWheelShape;
 
    $self->{wheel} = $self->insert( Widget =>
       origin => [ 20, 172],
       width  => 256,
       height => 256,
       name   => 'Wheel',
+      shape  => $colorWheelShape,
       ownerBackColor => 1,
-      onPaint     => sub { $_[0]-> owner-> Wheel_Paint( @_);},
-      onMouseDown => sub { $_[0]-> owner-> Wheel_MouseDown( @_);},
-      onMouseUp   => sub { $_[0]-> owner-> Wheel_MouseUp( @_);},
-      onMouseMove => sub { $_[0]-> owner-> Wheel_MouseMove( @_);},
+      delegations    => [qw(Paint MouseDown MouseUp MouseMove)],
    );
 
    $self->{roller} = $self->insert( Widget =>
@@ -257,10 +278,7 @@ sub init
       buffered  => 1,
       name      => 'Roller',
       ownerBackColor => 1,
-      onPaint     => sub { $_[0]-> owner-> Roller_Paint( @_);},
-      onMouseDown => sub { $_[0]-> owner-> Roller_MouseDown( @_);},
-      onMouseUp   => sub { $_[0]-> owner-> Roller_MouseUp( @_);},
-      onMouseMove => sub { $_[0]-> owner-> Roller_MouseMove( @_);},
+      delegations    => [qw(Paint MouseDown MouseUp MouseMove)],
    );
 
    # RGB
@@ -371,15 +389,9 @@ sub init
    return %profile;
 }
 
-sub set_color_index
+sub on_destroy
 {
-   my ( $self, $color, $index) = @_;
-   $self-> SUPER::set_color_index( $color, $index);
-#   if ( $index == ci::Back and $colorWheel and $self->{wheel}) {
-#      $colorWheel-> destroy;
-#      $colorWheel = create_wheel(32, $self->backColor);
-#      $self->{wheel}->repaint;
-#   }
+   $colorWheelShape = undef;
 }
 
 use constant Hue    => 1;
@@ -426,8 +438,15 @@ sub Wheel_Paint
    my ( $x, $y) = hs2xy( $owner->{H}-> value, $owner->{S}-> value/273);
    $canvas-> color( cl::White);
    $canvas-> rop( rop::XorPut);
-   $canvas-> lineWidth( 3);
-   $canvas-> ellipse( $x, $y, 6, 6);
+   if ( $shapext) {
+      my @sz = $canvas-> size;
+      $canvas-> linePattern( lp::Dot);
+      $canvas-> line( $x, 0, $x, $sz[1]);
+      $canvas-> line( 0, $y, $sz[0], $y);
+   } else {
+      $canvas-> lineWidth( 3);
+      $canvas-> ellipse( $x, $y, 6, 6);
+   }
 }
 
 sub Wheel_MouseDown
@@ -652,14 +671,9 @@ sub init
    my %profile = @_;
    $self->{value} = $profile{value};
    $self->{colors} = $profile{colors};
-   $profile{listProfile}->{onCreate}    = sub { $_[0]-> owner-> List_Create( @_)};
-   $profile{listProfile}->{onPaint}     = sub { $_[0]-> owner-> List_Paint( @_)};
-   $profile{listProfile}->{onMouseDown} = sub { $_[0]-> owner-> List_MouseDown( @_)};
-   $profile{editProfile}->{onKeyDown}   = sub { $_[0]-> owner-> InputLine_KeyDown( @_)};
-   $profile{editProfile}->{onPaint}     = sub { $_[0]-> owner-> InputLine_Paint( @_)};
-   $profile{editProfile}->{onMouseDown} = sub { $_[0]-> owner-> InputLine_MouseDown( @_)};
-   $profile{editProfile}->{onEnter}     = sub { $_[0]-> owner-> InputLine_Enter( @_)};
-   $profile{editProfile}->{onLeave}     = sub { $_[0]-> owner-> InputLine_Leave( @_)};
+   @{$profile{listDelegations}} = grep { $_ ne 'SelectItem' } @{$profile{listDelegations}};
+   push ( @{$profile{listDelegations}}, qw(Create Paint MouseDown));
+   push ( @{$profile{editDelegations}}, qw(Paint MouseDown Enter Leave KeyDown));
    %profile = $self-> SUPER::init(%profile);
    $self-> colors( $profile{colors});
    $self-> value( $profile{value});
@@ -715,7 +729,7 @@ sub List_Create
       origin     => [ 3, 3],
       width      => $self-> width - 6,
       height     => 28,
-      text       => 'More...',
+      text       => '~More...',
       selectable => 0,
       name       => 'MoreBtn',
       onClick    => sub { $combo-> MoreBtn_Click( @_)},
@@ -731,7 +745,7 @@ sub List_Create
       step       => 4,
       pageStep   => 20,
       whole      => $c,
-      onChange   => sub { $combo-> Scroller_Change( @_)},
+      delegations=> [ $combo, 'Change'],
    );
 }
 

@@ -146,7 +146,7 @@ sub init
       growMode     => gm::Client,
       pointerType  => cr::Arrow,
       name         => 'MDIClient',
-      onDestroy    => sub { $_[0]-> owner-> MDIClient_Destroy(@_);},
+      delegations  => ['Destroy'],
       %{$profile{clientProfile}},
    );
    return %profile;

@@ -646,10 +646,10 @@ sub attach_to_page
    $page = $self-> {pageCount} - 1 if $page > $self-> {pageCount} - 1 || $page < 0;
    my $cp = $self->{widgets}->[$page];
    for ( @_) {
-      # $_->add_notification( onEnable  => \&_enable  => $self);
-      # $_->add_notification( onDisable => \&_disable => $self);
-      # $_->add_notification( onShow    => \&_show    => $self);
-      # $_->add_notification( onHide    => \&_hide    => $self);
+      # $_->add_notification( Enable  => \&_enable  => $self);
+      # $_->add_notification( Disable => \&_disable => $self);
+      # $_->add_notification( Show    => \&_show    => $self);
+      # $_->add_notification( Hide    => \&_hide    => $self);
       my @rec = ( $_, $_->enabled, $_->visible, $_->current);
       push( @{$cp}, [@rec]);
       next if $page == $self->{pageIndex};
@@ -820,8 +820,8 @@ sub init
       height    => $maxh > 28 ? $maxh : 28,
       buffered  => 1,
       designScale => undef,
+      delegations => ['Change'],
    );
-   $self->{tabSet}-> make_event('Change');
    $self->{notebook} = Prima::Notebook-> create(
       owner      => $self,
       name       => 'Notebook',

@@ -375,6 +375,8 @@ sub profile_default
       spinClass      => 'Prima::AltSpinButton',
       editProfile    => {},
       spinProfile    => {},
+      editDelegations=> [qw(KeyDown Change)],
+      spinDelegations=> [qw(Increment)],
    }
 }
 
@@ -394,7 +396,7 @@ sub init
       right          => $w - 1,
       height         => $h - 1 * 2,
       growMode       => gm::Right,
-      onIncrement    => sub { $_[0]-> owner-> Spin_Increment( @_)},
+      delegations    => $profile{spinDelegations},
       (map { $_ => $profile{$_}} grep { exists $profile{$_} ? 1 : 0} keys %spinDynas),
       %{$profile{spinProfile}},
    );
@@ -407,8 +409,7 @@ sub init
       tabStop     => 1,
       borderWidth => 0,
       current     => 1,
-      onKeyDown   => sub { $_[0]-> owner-> InputLine_KeyDown(@_)},
-      onChange    => sub { $_[0]-> owner-> InputLine_Change(@_)},
+      delegations => $profile{editDelegations},
       (map { $_ => $profile{$_}} keys %editProps),
       %{$profile{editProfile}},
       text        => $profile{value},

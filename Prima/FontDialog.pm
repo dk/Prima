@@ -83,32 +83,32 @@ sub init
       size   => [ 96, 36],
       name   => 'FontStyleButton',
       text   => '~Bold',
+      delegations => [$self, 'Click'],
    );
-   $j-> make_event( 'Click', $self);
 
    $j = $gr-> insert( CheckBox =>
       origin => [ 15, 65],
       size   => [ 96, 36],
       name   => 'FontStyleButton',
       text   => '~Italic',
+      delegations => [$self, 'Click'],
    );
-   $j-> make_event( 'Click', $self);
 
    $j = $gr-> insert( CheckBox =>
       origin => [ 15, 35],
       size   => [ 96, 36],
       name   => 'FontStyleButton',
       text   => '~Underline',
+      delegations => [$self, 'Click'],
    );
-   $j-> make_event( 'Click', $self);
 
    $j = $gr-> insert( CheckBox =>
       origin => [ 15, 5],
       size   => [ 96, 36],
       name   => 'FontStyleButton',
       text   => 'Strike ~out',
+      delegations => [$self, 'Click'],
    );
-   $j-> make_event( 'Click', $self);
 
    my $name = $self-> insert( ComboBox =>
       origin => [ 10, 165],
@@ -130,8 +130,8 @@ sub init
       size   => [ 150, 150],
       name   => 'Size',
       style  => cs::Simple,
+      delegations => ['Change'],
    );
-   $size-> make_event( 'Change');
 
    $self-> insert( Label =>
       origin    => [ 275, 320],
@@ -150,8 +150,8 @@ sub init
       origin     => [ 5, 5],
       size       => [ 240, 120],
       name       => 'Example',
+      delegations=> [ $self, 'Paint', 'FontChanged'],
    );
-   $j-> make_event([qw(Paint FontChanged)], $self);
 
    $self-> insert( Button =>
       origin      => [ 435, 280],

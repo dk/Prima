@@ -508,8 +508,8 @@ sub makehint
            visible        => 0,
            height         => $self->{itemHeight},
            name           => 'Hinter',
+           delegations    => [qw(Paint MouseDown MouseLeave)],
        );
-       $self->{hinter}-> make_event([qw( Paint MouseDown MouseLeave)]);
    }
    $self->{hintActive} = 1;
    $self->{hinter}-> {id} = $itemid;

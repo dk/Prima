@@ -144,23 +144,23 @@ sub init
       text   => '~Filename',
    );
 
-   my $j = $self-> insert( ListBox  =>
+   $self-> insert( ListBox  =>
       name        => 'Files',
       origin      => [ 14,  85 ],
       size        => [ 245, 243],
       multiSelect => $profile{ multiSelect},
+      delegations => [qw(KeyDown SelectItem Click)],
    );
-   $j-> make_event([qw(KeyDown SelectItem Click)]);
 
-   $j = $self->insert( ComboBox =>
+   $self->insert( ComboBox =>
       name    => 'Ext',
       origin  => [ 14 , 25],
       size    => [ 245, 25],
       style   => cs::DropDownList,
       items   => [ @exts],
-      text => $exts[ $self->{ filterIndex}],
+      text    => $exts[ $self->{ filterIndex}],
+      delegations => [qw(Change)],
    );
-   $j-> make_event('Change');
 
    $self->insert( Label=>
       origin    => [ 14, 55],
@@ -169,30 +169,30 @@ sub init
       text   => '~Extensions',
    );
 
-   $j = $self->insert( Label =>
+   $self->insert( Label =>
       name      => 'Directory',
       origin    => [ 275, 343],
       size      => [ 235, 25],
       autoWidth => 0,
-      text    => $profile{ directory},
+      text      => $profile{ directory},
+      delegations => [qw(FontChanged)],
    );
-   $j-> make_event('FontChanged');
 
-   $j = $self->insert( DirectoryListBox =>
+   $self->insert( DirectoryListBox =>
       name       => 'Dir',
       origin     => [ 275, 85],
       size       => [ 235, 243],
       path       => $self-> { directory},
+      delegations=> [qw(Change)],
    );
-   $j-> make_event('Change');
 
-   $j = $self->insert( DriveComboBox =>
+   $self->insert( DriveComboBox =>
       origin     => [ 275, 25],
       size       => [ 235, 25],
       name       => 'Drive',
       drive      => $self-> Dir-> path,
+      delegations=> [qw(Change)],
    );
-   $j-> make_event('Change');
 
    $self->insert( Label=>
       origin    => [ 275, 375],
@@ -208,14 +208,14 @@ sub init
       focusLink => $self-> Drive,
    );
 
-   $j = $self->insert( Button=>
+   $self->insert( Button=>
       origin  => [ 524, 350],
       size    => [ 96, 36],
       text => $self-> {openMode} ? '~Open' : '~Save',
       name    => 'Open',
       default => 1,
+      delegations => [qw(Click)],
    );
-   $j-> make_event('Click');
 
    $self->insert( Button=>
       origin      => [ 524, 294],
@@ -598,15 +598,15 @@ sub init
    for ( qw( showHelp directory
    )) { $self->{$_} = $profile{$_} }
 
-   $j = $self-> insert( DirectoryListBox =>
+   $self-> insert( DirectoryListBox =>
       origin   => [ 10, 40],
       width    => 200,
       height   => 160,
       name     => 'Dir',
       current  => 1,
       path     => $self-> { directory},
+      delegations => [qw(KeyDown)],
    );
-   $j-> make_event('KeyDown');
 
    $self->insert( Label =>
       name      => 'Directory',
@@ -617,21 +617,21 @@ sub init
       focusLink => $self-> Dir,
    );
 
-   $j = $self-> insert( DriveComboBox =>
+   $self-> insert( DriveComboBox =>
       origin => [ 10, 10],
       width  => 200,
       name   => 'Drive',
+      delegations => [qw(Change)],
    );
-   $j-> make_event('Change');
 
-   $j = $self-> insert( Button =>
+   $self-> insert( Button =>
       origin  => [ 226, 164],
       size    => [ 96, 36],
       text    => '~OK',
       name    => 'OK',
       default => 1,
+      delegations => [qw(Click)],
    );
-   $j-> make_event('Click');
 
    $self->insert( Button=>
       origin      => [ 226, 108],
@@ -842,23 +842,23 @@ sub init
    );
    $o-> index( $profile{scope});
 
-   $j = $self-> insert( Button =>
+   $self-> insert( Button =>
       name    => 'OK',
       origin  => [ 8,  5],
       size    => [ 40, 14],
       default => 1,
       text => '~OK',
+      delegations => [qw(Click)],
    );
-   $j-> make_event('Click');
 
-   $j = $self-> insert( Button =>
+   $self-> insert( Button =>
       name    => 'ChangeAll',
       origin  => [ 56,  5],
       size    => [ 76, 14],
       text => 'Change ~all',
       enabled => !$profile{findStyle},
+      delegations => [qw(Click)],
    );
-   $j-> make_event('Click');
 
    $self-> insert( Button =>
       origin  => [ 139, 5],

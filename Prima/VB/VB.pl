@@ -112,15 +112,15 @@ sub init
 
    my $fh = $self-> font-> height + 6;
 
-   my $j = $self-> insert( ComboBox =>
+   $self-> insert( ComboBox =>
       origin   => [ 0, $sz[1] - $fh],
       size     => [ $sz[0], $fh],
       growMode => gm::Ceiling,
       style    => cs::DropDownList,
       name     => 'Selector',
       items    => [''],
+      delegations => [qw(Change)],
    );
-   $j-> make_event( 'Change');
 
    $self-> {monger} = $self-> insert( Notebook =>
       origin  => [ 0, $fh],
@@ -135,9 +135,9 @@ sub init
       text     => '~Events',
       growMode => gm::Floor,
       name     => 'MTabs',
+      delegations => [qw(Click)],
    );
    $self-> {mtabs}-> {mode} = 0;
-   $self-> {mtabs}-> make_event('Click');
 
    $self-> {plist} = $self-> {monger}-> insert_to_page( 0, OPropListViewer =>
       origin   => [ 0, 0],
@@ -156,15 +156,15 @@ sub init
    );
    $self-> {currentList} = $self-> {'plist'};
 
-   $j = $self-> insert( Divider =>
+   $self-> insert( Divider =>
       vertical => 1,
       origin => [ 100, 0],
       size   => [ 6, $sz[1] - $fh],
       min    => 50,
       max    => 50,
       name   => 'Div',
+      delegations => [qw(Change)],
    );
-   $j-> make_event( 'Change');
 
    $self-> {panel} = $self-> insert( Notebook =>
       origin    => [ 106, 0],
@@ -1065,8 +1065,8 @@ sub init
       topMost  => 1,
       tabs     => [ @pages],
       buffered => 1,
+      delegations => [qw(Change)],
    );
-   $self-> {tabset}-> make_event( 'Change');
 
    $self-> {nb} = $self-> insert( Widget =>
       origin => [ 150, 0],
@@ -1104,8 +1104,8 @@ sub init
          $_[1]-> color( $_[0]-> enabled ? cl::Black : cl::Gray);
          $_[1]-> fillpoly([7,4,7,32,3,17]);
       },
+      delegations => [qw(Click)],
    );
-   $self-> {leftScroll}-> make_event( 'Click');
 
    $self-> {rightScroll} = $self-> {nb}-> insert( SpeedButton =>
       origin  => [$self-> {nb}-> width-11,5],
@@ -1117,8 +1117,8 @@ sub init
          $_[1]-> color( $_[0]-> enabled ? cl::Black : cl::Gray);
          $_[1]-> fillpoly([3,4,3,32,7,17]);
       },
+      delegations => [qw(Click)],
    );
-   $self-> {rightScroll}-> make_event( 'Click');
 
    $self->{classes} = \%classes;
    $self->{pages}   = \@pages;
@@ -1186,8 +1186,8 @@ sub reset_tabs
          image  => $i,
          origin => [ $offsets{$info{page}}, 4],
          size   => [ 36, 36],
+         delegations => [$self, qw(Click)],
       );
-      $j-> make_event( 'Click', $self);
       $j->{orgLeft}   = $offsets{$info{page}};
       $j->{className} = $class;
       $offsets{$info{page}} += 40;
