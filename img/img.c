@@ -126,7 +126,7 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
    free( fi-> instance);  
 }
 
-void * 
+static void * 
 open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
    return nil;
@@ -138,7 +138,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    return false;
 }   
 
-void 
+static void 
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
    free( fi-> instance);
@@ -445,6 +445,10 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          if ( fi. profile != def) sv_free(( SV *) fi. profile);
          out( fi. errbuf);
       }  
+
+      // updating image
+      if ( !fi. noImageData)
+         CImage( fi. object)-> update_change( fi. object);
 
       // applying extras
       if ( fi. loadExtras) {
