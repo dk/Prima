@@ -969,10 +969,10 @@ apc_widget_set_focused( Handle self)
       while ( who && XT_IS_WINDOW(X(who))) who = PComponent( who)-> owner;
       while ( x && !XT_IS_WINDOW(X(x)) && X(x)->flags.clip_owner) x = PComponent( x)-> owner;
       if ( x && x != application && x != who && XT_IS_WINDOW(X(x)))
-         XSetInputFocus( DISP, PComponent(x)-> handle, RevertToNone, CurrentTime);
+         XSetInputFocus( DISP, PComponent(x)-> handle, RevertToNone, guts. currentFocusTime);
    }
 
-   XSetInputFocus( DISP, focus, RevertToParent, CurrentTime);
+   XSetInputFocus( DISP, focus, RevertToParent, guts. currentFocusTime);
    XCHECKPOINT;
    
    XSync( DISP, false);
@@ -1105,7 +1105,7 @@ apc_XUnmapWindow( Handle self)
             z = PComponent(self)-> owner;
             while ( z && !X(z)-> type. window) z = PComponent(z)-> owner;
             if ( z && z != application)
-               XSetInputFocus( DISP, PComponent(z)-> handle, RevertToNone, CurrentTime);
+               XSetInputFocus( DISP, PComponent(z)-> handle, RevertToNone, guts. currentFocusTime);
          }
          break;
       }

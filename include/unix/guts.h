@@ -588,6 +588,7 @@ typedef struct _UnixGuts
    int                          scroll_first;
    int                          scroll_next;
    Handle                       currentMenu;
+   Time                         currentFocusTime;
    Handle                       unfocusedMenu;
    int                          menu_timeout;
    XWindow                      root;

@@ -324,6 +324,7 @@ init_x11( char * error_buf )
    TAILQ_INIT( &guts.bitmap_gc_pool);
    TAILQ_INIT( &guts.screen_gc_pool);
 
+   guts. currentFocusTime = CurrentTime;
    guts. windows = hash_create();
    guts. menu_windows = hash_create();
    guts. ximages = hash_create();

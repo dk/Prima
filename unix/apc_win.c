@@ -459,7 +459,7 @@ apc_window_activate( Handle self)
       prima_wm_sync( self, MapNotify);
    XGetInputFocus( DISP, &xfoc, &rev);
    if ( xfoc == X_WINDOW || xfoc == XX-> client) return true;
-   XSetInputFocus( DISP, XX-> client, RevertToParent, CurrentTime);
+   XSetInputFocus( DISP, XX-> client, RevertToParent, guts. currentFocusTime);
    XCHECKPOINT;
 
    XSync( DISP, false);
