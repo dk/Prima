@@ -62,7 +62,7 @@ object Drawable ( Component)
    method void   set_rop2 ( int rop)               => apc_gp_set_rop2;
    method void   set_transform ( int x, int y)     => apc_gp_set_transform;
    method void   set_text_opaque( Bool opaque)     => apc_gp_set_text_opaque;
-   method void   set_text_out_baseline ( Bool baseline);
+   method void   set_text_out_baseline( Bool bas)  => apc_gp_set_text_out_baseline;
 
    method int           get_bpp();
    method Color         get_back_color()                  => apc_gp_get_back_color;
@@ -89,7 +89,7 @@ object Drawable ( Component)
    method SV *          get_text_box( char * text, int len = -1);
    method Point         get_transform()                   => apc_gp_get_transform;
    method Bool          get_text_opaque()                 => apc_gp_get_text_opaque;
-   method Bool          get_text_out_baseline();
+   method Bool          get_text_out_baseline()           => apc_gp_get_text_out_baseline;
    method int           get_width();
 
    # operators

@@ -293,12 +293,6 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 }
 
 
-void
-Drawable_set_text_out_baseline( Handle self, Bool baseline)
-{
-   opt_assign( optTextOutBaseLine, baseline);
-}
-
 int
 Drawable_get_paint_state( Handle self)
 {
@@ -442,13 +436,6 @@ Drawable_get_palette( Handle self)
 }
 
 
-Bool
-Drawable_get_text_out_baseline( Handle self)
-{
-   return is_opt( optTextOutBaseLine);
-}
-
-
 Point
 Drawable_get_size ( Handle self)
 {
@@ -484,7 +471,6 @@ Drawable_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle i
 void
 Drawable_text_out( Handle self, char * text, int x, int y, int len)
 {
-   if ( !is_opt( optTextOutBaseLine) && var font. direction == 0) y += var font. descent;
    if ( len < 0) len = strlen( text);
    apc_gp_text_out( self, text, x, y, len);
 }
@@ -566,8 +552,6 @@ Drawable_get_text_box( Handle self, char * text, int len)
    int i;
    int yAdd = 0;
 
-   if ( !is_opt( optTextOutBaseLine) && ( var font. direction == 0))
-      yAdd = var font. descent;
    if ( len < 0) len = strlen( text);
    gpENTER;
    p = apc_gp_get_text_box( self, text, len);

@@ -1268,6 +1268,13 @@ apc_gp_get_rop2( Handle self)
    return ( GetBkMode( sys ps) == OPAQUE) ? ropCopyPut : ropNoOper;
 }
 
+Bool
+apc_gp_get_text_out_baseline( Handle self)
+{
+   objCheck 0;
+   return is_apt( aptTextOutBaseline);
+}
+
 int
 apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
 {
@@ -1558,6 +1565,14 @@ apc_gp_set_text_opaque( Handle self, Bool opaque)
 {
    objCheck;
    apt_assign( aptTextOpaque, opaque);
+}
+
+void
+apc_gp_set_text_out_baseline( Handle self, Bool baseline)
+{
+   objCheck;
+   apt_assign( aptTextOutBaseline, baseline);
+   if ( sys ps) SetTextAlign( sys ps, baseline ? TA_BASELINE : TA_BOTTOM);
 }
 
 

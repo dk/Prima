@@ -1258,7 +1258,6 @@ END_TABLE(dt,UV)
 typedef struct _ObjectOptions_ {
    unsigned optInDraw              : 1;   /* Drawable */
    unsigned optInDrawInfo          : 1;
-   unsigned optTextOutBaseLine     : 1;
    unsigned optBriefKeys           : 1;   /* Widget */
    unsigned optBuffered            : 1;
    unsigned optModalHorizon        : 1;
@@ -2726,6 +2725,9 @@ apc_gp_get_text_box( Handle self, const char* text, int len);
 extern Bool
 apc_gp_get_text_opaque( Handle self);
 
+extern Bool
+apc_gp_get_text_out_baseline( Handle self);
+
 extern int
 apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang);
 
@@ -2773,6 +2775,9 @@ apc_gp_set_transform( Handle self, int x, int y);
 
 extern void
 apc_gp_set_text_opaque( Handle self, Bool opaque);
+
+extern void
+apc_gp_set_text_out_baseline( Handle self, Bool baseline);
 
 /* printer */
 extern Bool

@@ -855,7 +855,6 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
    font-> resolution = res. y * 0x10000 + res. x;
    if ( forceSize) {
       key. height = font-> height;
-      key. width  = font-> width;
       addSizeEntry = true;
    } else {
       key. size  = font-> size;
@@ -1194,6 +1193,7 @@ hwnd_enter_paint( Handle self)
 
    if ( sys psd == nil) sys psd = malloc( sizeof( PaintSaveData));
    apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
+   apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
    apc_gp_set_line_width( self, sys lineWidth);
    apc_gp_set_line_end( self, sys lineEnd);
    apc_gp_set_line_pattern( self, sys linePattern);
@@ -1209,12 +1209,13 @@ hwnd_enter_paint( Handle self)
    sys psd-> rop2        = sys rop2;
    sys psd-> transform   = sys transform;
    sys psd-> textOpaque  = is_apt( aptTextOpaque);
+   sys psd-> textOutB    = is_apt( aptTextOutBaseline);
 
    apt_clear( aptDCChangeLock);
    stylus_change( self);
    apc_gp_set_font( self, &var font);
    var font. resolution = sys res. y * 0x10000 + sys res. x;
-   SetTextAlign( sys ps, TA_BASELINE);
+   // SetTextAlign( sys ps, TA_BASELINE);
    SetStretchBltMode( sys ps, COLORONCOLOR);
 }
 
@@ -1236,6 +1237,7 @@ hwnd_leave_paint( Handle self)
       sys rop2        = sys psd-> rop2;
       sys transform   = sys psd-> transform;
       apt_assign( aptTextOpaque, sys psd-> textOpaque);
+      apt_assign( aptTextOutBaseline, sys psd-> textOutB);
       free( sys psd);
       sys psd = nil;
    }

@@ -35,7 +35,7 @@
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
-// #define NO_LOGGER
+//#define NO_LOGGER
 
 WinGuts guts;
 Bool    loggerDead   = false;
@@ -1130,6 +1130,7 @@ static Bool kill_img_cache( Handle self, int keyLen, void * key, void * killDBM)
    return false;
 }
 
+extern int xfntc;
 
 LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {

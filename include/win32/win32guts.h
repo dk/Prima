@@ -117,6 +117,7 @@ typedef struct _HandleOptions_ {
    unsigned aptDCChangeLock         : 1;       // locks SelectObject() calls
    unsigned aptEnabled              : 1;       // enabled flag
    unsigned aptTextOpaque           : 1;       // gp text drawing flag
+   unsigned aptTextOutBaseline      : 1;       // gp text drawing flag
 } HandleOptions;
 
 typedef struct _WinGuts
@@ -193,6 +194,7 @@ typedef struct _PaintSaveData
    Point       transform;
    Font        font;
    Bool        textOpaque;
+   Bool        textOutB;
 } PaintSaveData, *PPaintSaveData;
 
 typedef struct _PatResource
