@@ -35,10 +35,6 @@ use constant DropDownList =>  2;
 
 package Prima::ComboBox;
 
-# contains:
-#    ComboBox
-#    DriveComboBox
-
 use vars qw(@ISA %listProps %editProps %listDynas);
 use Prima qw( InputLine Lists Utils StdBitmaps);
 @ISA = qw(Prima::Widget);
@@ -90,7 +86,7 @@ sub profile_default
       style          => cs::Simple,
       listVisible    => 0,
       caseSensitive  => 0,
-      entryHeight    => $f-> {height} + 2,
+      editHeight     => $f-> {height} + 2,
       listHeight     => 100,
       ownerBackColor => 1,
       selectable     => 0,
@@ -115,10 +111,10 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    my $style = exists $p->{style} ? $p->{style} : $default->{style};
    if ( $style != cs::Simple) {
-      $p->{ entryHeight} = exists $p->{height} ? $p->{height} : $default->{height} unless exists $p->{ entryHeight};
+      $p->{ editHeight } = exists $p->{height} ? $p->{height} : $default->{height} unless exists $p->{ editHeight };
    } else {
       my $fh = exists $p->{font}->{height} ? $p->{font}->{height} : $default->{font}->{height};
-      $p->{ entryHeight} = $fh + 2 unless exists $p->{entryHeight};
+      $p->{ editHeight } = $fh + 2 unless exists $p->{editHeight };
    }
 }
 
@@ -136,7 +132,7 @@ sub init
    $self-> {listVisible}  = $profile{style} != cs::Simple;
    $self-> {caseSensitive}= $profile{caseSensitive};
    $self-> {literal}      = $profile{literal};
-   my $eh = $self-> {entryHeight} = $profile{entryHeight};
+   my $eh = $self-> {editHeight } = $profile{editHeight };
    $self-> {listHeight}   = $profile{listHeight};
 
    $self-> {edit} = $self-> insert( $profile{editClass} =>
@@ -319,7 +315,7 @@ sub Button_Paint
 
 sub InputLine_FontChanged
 {
-   $_[0]-> entryHeight( $_[1]-> font-> height + $_[1]-> borderWidth * 2);
+   $_[0]-> editHeight ( $_[1]-> font-> height + $_[1]-> borderWidth * 2);
 }
 
 sub InputLine_Create
@@ -487,7 +483,7 @@ sub set_style
         visible   => 1,
         origin    => [ 0, 0],
         width     => $self-> width,
-        height    => $self-> height - $self-> entryHeight,
+        height    => $self-> height - $self-> editHeight ,
         clipOwner => 1,
       );
    } elsif ( $decr) {
@@ -503,14 +499,14 @@ sub set_style
       $self-> listVisible( 0);
    }
    $self-> {edit}-> set(
-      bottom => $self-> height - $self-> entryHeight,
+      bottom => $self-> height - $self-> editHeight ,
       width  => $self-> { edit}-> width + DefButtonX * $decr *
          (( $style == cs::Simple) ? 1 : -1),
-      height => $self-> entryHeight,
+      height => $self-> editHeight ,
    );
    $self-> {button}-> set(
-      bottom => $self-> height - $self-> entryHeight,
-      height => $self-> entryHeight,
+      bottom => $self-> height - $self-> editHeight ,
+      height => $self-> editHeight ,
       visible=> $style != cs::Simple,
    );
    if ( $style == cs::DropDownList)
@@ -539,7 +535,7 @@ sub set_list_visible
    $nlv ? $list-> focus : $edit-> focus;
 }
 
-sub set_entry_height
+sub set_edit_height
 {
    my ( $self, $edit, $list, $btn, $h, $new) =
       ($_[0], $_[0]->{edit}, $_[0]->{list}, $_[0]->{button}, $_[0]->height, $_[1]);
@@ -566,7 +562,7 @@ sub set_entry_height
       );
       $list-> height( $h - $new);
    }
-   $self-> {entryHeight} = $new;
+   $self-> {editHeight} = $new;
 }
 
 sub set_list_height
@@ -583,15 +579,218 @@ sub set_list_height
 
 sub get_style       { return $_[0]->{style}}
 sub get_list_visible{ return $_[0]->{list} ? $_[0]->{list}-> visible : 0}
-sub get_entry_height{ return $_[0]->{edit} ? $_[0]->{edit}-> height : 0}
+sub get_edit_height{ return $_[0]->{edit} ? $_[0]->{edit}-> height : 0}
 sub get_list_height{ return  $_[0]->{list} ? $_[0]->{list}-> height : 0}
 
 sub caseSensitive{($#_)?$_[0]->{caseSensitive}=$_[1]:return $_[0]->{caseSensitive};}
 sub listVisible  {($#_)?$_[0]->set_list_visible($_[1]):return $_[0]->get_list_visible;}
 sub style        {($#_)?$_[0]->set_style       ($_[1]):return $_[0]->get_style;       }
-sub entryHeight  {($#_)?$_[0]->set_entry_height($_[1]):return $_[0]->get_entry_height;}
+sub editHeight  {($#_)?$_[0]->set_edit_height($_[1]):return $_[0]->get_edit_height;}
 sub listHeight   {($#_)?$_[0]->set_list_height ($_[1]):return $_[0]->get_list_height;}
 sub literal      {($#_)?$_[0]->{literal} =      $_[1] :return $_[0]->{literal}       }
 
-
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Standard combo box widget
+
+=head1 DESCRIPTION
+
+Provides a combo box widget which consists of an input line, list box of possible
+selections and eventual drop-down button. The combo box can be either in form 
+with a drop-down selection list, that is shown by the command of the user,
+or in form when the selection list is always visible.
+
+The combo box is a grouping widget, and contains neither painting nor user-input
+code. All such functionality is delegated into the children widgets: input line, list
+box and button. C<Prima::ComboBox> exports a fixed list of methods and properties from
+namespaces of L<Prima::InputLine> and L<Prima::ListBox>. Since, however, it is
+possible to tweak the C<Prima::ComboBox> ( using its L<editClass> and L<listClass>
+create-only properties ) so the input line and list box would be other classes,
+it is not necessarily that all default functionality would work.
+The list of exported names is stored in package variables %listProps, %editProps
+and %listDynas. These also described in L<Exported names> section.
+
+The module defines C<cs::> package for the constants used by L<style> property.
+
+=head1 SYNOPSIS
+
+   use Prima::ComboBox;
+
+   my $combo = Prima::ComboBox-> create( style => cs::DropDown, items => [ 1 .. 10 ]);
+   $combo-> style( cs::DropDownList );
+   print $combo-> text;
+
+=head1 API
+
+=head2 Properties
+
+=over
+
+=item buttonClass STRING
+
+Assigns a drop-down button class.
+
+Create-only property.
+
+Default value: C<Prima::Widget>
+
+=item buttonDelegations ARRAY
+
+Assigns a drop-down button list of delegated notifications.
+
+Create-only property.
+
+=item buttonProfile HASH
+
+Assigns hash of properties, passed to the drop-down button during the creation.
+
+Create-only property.
+
+=item caseSensitive BOOLEAN
+
+Selects whether the user input is case-sensitive or not, when a value
+is picked from the selection list.
+
+Default value: 0
+
+=item editClass STRING
+
+Assigns an input line class.
+
+Create-only property.
+
+Default value: C<Prima::InputLine>
+
+=item editProfile HASH
+
+Assigns hash of properties, passed to the input line during the creation.
+
+Create-only property.
+
+=item editDelegations ARRAY
+
+Assigns an input line list of delegated notifications.
+
+Create-only property.
+
+=item editHeight INTEGER
+
+Selects height of an input line.
+
+=item items ARRAY
+
+Mapped onto the list widget's C<items> property. See L<Prima::Lists> for details.
+
+=item listClass STRING
+
+Assigns a listbox class.
+
+Create-only property.
+
+Default value: C<Prima::ListBox>
+
+=item listHeight INTEGER
+
+Selects height of the listbox widget.
+
+Default value: 100
+
+=item listVisible BOOLEAN
+
+Sets whether the listbox is visible or not. Not writable
+when L<style> is C<cs::Simple>.
+
+=item listProfile HASH
+
+Assigns hash of properties, passed to the listbox during the creation.
+
+Create-only property.
+
+=item listDelegations ARRAY
+
+Assigns a selection listbox list of delegated notifications.
+
+Create-only property.
+
+=item literal BOOLEAN
+
+Selects whether the combo box user input routine assume that 
+the listbox contains literal strings, that can be fetched via
+C<get_item_text> ( see L<Prima::Lists> ). As an example when
+this property is set to 0 is C<Prima::ColorComboBox> from L<Prima::ComboBox> package.
+
+Default value: 1
+
+=item style INTEGER
+
+Selected one of three styles:
+
+=over
+
+=item cs::Simple
+
+The listbox is always visible, and the drop-down button is not. 
+
+=item cs::DropDown
+
+The listbox is not visible, but the drop-down button is. When the
+use presses the drop-down button, the listbox is shown; when the list-box
+is defocused, it gets hidden.
+
+=item cs::DropDownList
+
+Same as C<cs::DropDown>, but the user is restricted in the selection: 
+the input line can only accept user input that is contained in listbox.
+If L<literal> set to 1, the auto completion feature is provided.
+
+=back
+
+=item text STRING
+
+Mapped onto the edit widget's C<text> property. 
+
+=back
+
+=head2 Exported names
+
+=over
+
+=item %editProps
+
+   alignment      autoScroll  text         text        
+   charOffset     maxLen      insertMode   firstChar   
+   selection      selStart    selEnd       writeOnly   
+   copy           cut         delete       paste       
+   wordDelimiters readOnly    passwordChar focus       
+   select_all     
+
+=item %listProps
+
+   autoHeight     focusedItem    hScroll        
+   integralHeight items          itemHeight     
+   topItem        vScroll        gridColor      
+   multiColumn    offset         
+
+=item %listDynas 
+
+   onDrawItem 
+   onSelectItem
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::InputLine>, L<Prima::Lists>, L<Prima::ColorDialog>, L<Prima::FileDialog>,
+F<examples/listbox.pl>.
+
+=cut
