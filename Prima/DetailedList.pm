@@ -153,8 +153,8 @@ sub columns
       splice( @iec, $c);
       splice( @umap, $c);
    } elsif ( scalar(@iec) < $c) {
-      push( @iec, (( '' ) x ( $c - scalar @iec)));
       push( @umap, (( undef ) x ( $c - scalar @iec)));
+      push( @iec, (( '' ) x ( $c - scalar @iec)));
       my $i = 0; for ( @umap) { $_ = $i unless defined $_; $i++; }
    }
    $self-> {umap} = \@umap;
