@@ -528,7 +528,16 @@ sub setup_variables
     my @libs = map { s/^$LDLIBFLAG//; $_} split ' ', $Config{ libs};
     #    push ( @libs, 'pmprintf') if $OS2 && defined $ENV{PRIMA_PMPRINTF};
     push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
-    setvar( 'LIBS', @libs);
+    setvar( 'LIBS', ());
+    my @flibs;
+    for my $lib (@libs) {
+       if ( defined find_lib($lib,'')) {
+          push @flibs, $lib;
+       } else {
+          print "*** Warning (probably harmless): `$lib' library not found\n";
+       }
+    }
+    setvar( 'LIBS', @flibs);
     %DEFINES = (
                 PERL_PATCHLEVEL => $Config{ patchlevel},
                 PERL_SUBVERSION => $Config{ subversion},
