@@ -1031,6 +1031,15 @@ sub profile_default
 sub profile_check_in
 {
    my ( $self, $p, $default) = @_;
+   my $shp = exists $p->{originDontCare} ? $p->{originDontCare} : $default-> {originDontCare};
+   my $shs = exists $p->{sizeDontCare  } ? $p->{sizeDontCare  } : $default-> {sizeDontCare  };
+   $p->{originDontCare} = 0 if $shp and
+      exists $p->{left}   or exists $p->{bottom} or
+      exists $p->{origin} or exists $p->{rect};
+   $p->{sizeDontCare} = 0 if $shs and
+      exists $p->{width}  or exists $p->{height} or
+      exists $p->{size}   or exists $p->{rect} or
+      exists $p->{right}  or exists $p->{top};
    $self-> SUPER::profile_check_in( $p, $default);
    if ( $p-> { menu})
    {
@@ -1042,15 +1051,6 @@ sub profile_check_in
    $p->{ modalHorizon} = 0 if $p->{clipOwner} || $default->{clipOwner};
    $p->{ growMode} = 0 if !exists $p->{growMode} and $default->{growMode} == gm::DontCare and
      (( exists $p->{clipOwner} && ($p->{clipOwner}==1)) or ( $default->{clipOwner} == 1));
-   my $shp = exists $p->{originDontCare} ? $p->{originDontCare} : $default-> {originDontCare};
-   my $shs = exists $p->{sizeDontCare  } ? $p->{sizeDontCare  } : $default-> {sizeDontCare  };
-   $p->{originDontCare} = 0 if $shp and
-      exists $p->{left}   or exists $p->{bottom} or
-      exists $p->{origin} or exists $p->{rect};
-   $p->{sizeDontCare} = 0 if $shs and
-      exists $p->{width}  or exists $p->{height} or
-      exists $p->{size}   or exists $p->{rect} or
-      exists $p->{right}  or exists $p->{top};
    my $owner = exists $p-> { owner} ? $p-> { owner} : $default-> { owner};
    if ( $owner) {
       $p->{icon} = $owner-> icon if
