@@ -139,6 +139,7 @@ sub canonicalize_fname
    $dir = eval { Cwd::abs_path($dir) };
    $dir = "." if $@;
    $dir = "" unless -d $dir;
+   $dir =~ s/(\\|\/)$//;
    return "$dir/$fn";
 }
 
