@@ -118,10 +118,10 @@ sub prf_set
    }
    $self->{profile} = {%{$self->{profile}}, %profile};
    my $check = $VB::inspector && ( $VB::inspector->{opened}) && ( $VB::inspector->{current} eq $self);
-   $check    = $VB::inspector->{opened}->{id} if $check;
    for ( keys %profile) {
       my $cname = 'prf_'.$_;
-      ObjectInspector::widget_changed(0) if $check && ( $check eq $_);
+      # ObjectInspector::widget_changed(0) if $check && ( $check eq $_);
+      ObjectInspector::widget_changed(0, $_) if $check;
       $self-> $cname( $profile{$_}) if $self-> can( $cname);
    }
 }
@@ -132,12 +132,11 @@ sub prf_delete
    my $df = $self->{default};
    my $pr = $self->{profile};
    my $check = $VB::inspector && ( $VB::inspector->{opened}) && ( $VB::inspector->{current} eq $self);
-   $check    = $VB::inspector->{opened}->{id} if $check;
    for ( @dellist) {
       delete $pr->{$_};
       my $cname = 'prf_'.$_;
       if ( $check) {
-         ObjectInspector::widget_changed(1) if $check eq $_;
+         ObjectInspector::widget_changed(1, $_); # if $check eq $_;
       }
       $self-> $cname( $df->{$_}) if $self-> can( $cname);
    }
@@ -850,6 +849,7 @@ sub prf_adjust_default
       clipOwner
       current
       currentWidget
+      delegations
       focused
       popup
       selected
@@ -1619,7 +1619,7 @@ sub set
    my ( $self, $data) = @_;
    if ( $data & 0x80000000) {
       $self-> {A}-> value( cl::Gray);
-      my ( $acl, $awc) = ( $data & 0x80000FFF, $data & 0x0FFF0000);
+      my ( $acl, $awc) = ( sprintf("%d",$data & 0x80000FFF), $data & 0x0FFF0000);
       my $tx = 'undef';
       for ( @uClasses) {
          $tx = $_, last if $awc == &{$wc::{$_}}();
@@ -1655,7 +1655,7 @@ sub write
    my ( $class, $id, $data) = @_;
    my $ret = 0;
    if ( $data & 0x80000000) {
-      my ( $acl, $awc) = ( $data & 0x80000FFF, $data & 0x0FFF0000);
+      my ( $acl, $awc) = ( sprintf("%d",$data & 0x80000FFF), $data & 0x0FFF0000);
       my $tcl = '0';
       for ( @uClasses) {
          $tcl = "wc::$_", last if $awc == &{$wc::{$_}}();
@@ -1664,6 +1664,7 @@ sub write
       for ( @uColors) {
          $twc = "cl::$_", last if $acl == &{$cl::{$_}}();
       }
+      
       $ret = "$tcl | $twc";
    } else {
       $ret = '0x'.sprintf("%06x",$data);
@@ -2379,7 +2380,6 @@ sub open
                    $l-> set_count( scalar @images);
                    $dd-> destroy, goto FAIL unless $dd-> execute == cm::OK;
                }
-
                $self-> set( $i);
                $self-> change;
             } else {
@@ -2504,6 +2504,44 @@ sub write
    my $r = '[';
    for ( @$data) {
       $r .= "'".Prima::VB::Types::generic::quotable($_)."', ";
+   }
+   $r .= ']';
+   return $r;
+}
+
+package Prima::VB::Types::multiItems;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::items);
+
+sub set
+{
+   my ( $self, $data) = @_;
+   $self-> {A}-> text( join( "\n", map { join( ' ', map { 
+      my $x = $_; $x =~ s/(^|[^\\])(\\|\s)/$1\\$2/g; $x; } @$_)} @$data));
+}
+
+sub get
+{
+   my @ret;
+   for ( split( "\n", $_[0]-> {A}-> text)) {
+      my @x;
+      while (m<((?:[^\s\\]|(?:\\\s))+)\s*|(\S+)\s*|\s+>gx) {
+         push @x, $+ if defined $+;
+      }
+      @x = map { s/\\(\\|\s)/$1/g; $_ } @x;
+      push( @ret, \@x);
+   }
+   return \@ret;
+}
+
+sub write
+{
+   my ( $class, $id, $data) = @_;
+   my $r = '[';
+   for ( @$data) {
+      $r .= '[';
+      $r .= "'".Prima::VB::Types::generic::quotable($_)."', " for @$_;
+      $r .= '],';
    }
    $r .= ']';
    return $r;
