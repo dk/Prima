@@ -635,6 +635,10 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          if ( old && ( PWidget( old)-> stage == csNormal))
             SendMessage(( HWND)(( PWidget) old)-> handle, WM_MOUSEEXIT, mp1, mp2);
          SendMessage( win, WM_MOUSEENTER, mp1, mp2);
+         if ( !guts. mouseTimer) {
+            guts. mouseTimer = 1;
+            if ( !SetTimer( dsys(application)handle, TID_USERMAX, 100, nil)) apiErr;
+         }
       }
       goto MB_MAIN;
    case WM_MOUSEENTER:
@@ -1089,6 +1093,9 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
                  MapWindowPoints( desktop, wp, &p, 1);
                  SendMessage( wp, WM_MOUSEENTER, 0, MAKELPARAM( p. x, p. y));
                  lastMouseOver = s;
+              } else if ( guts. mouseTimer) {
+                 guts. mouseTimer = 0;
+                 if ( !KillTimer( dsys(application)handle, TID_USERMAX)) apiErr;
               }
            }
         }

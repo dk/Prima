@@ -89,7 +89,7 @@ apc_application_create( Handle self)
    SetWindowLong( sys handle, GWL_USERDATA, self);
    PostMessage( sys handle, WM_PRIMA_CREATE, 0, 0);
    sys className = WC_APPLICATION;
-   if ( !SetTimer( h, TID_USERMAX, 100, nil)) apiErr;
+   // if ( !SetTimer( h, TID_USERMAX, 100, nil)) apiErr;
    GetClientRect( h, &r);
    if ( !( var handle = ( Handle) CreateWindowEx( 0,  "Generic", "", WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
         0, 0, r. right - r. left, r. bottom - r. top, h, nilHandle,
@@ -112,7 +112,10 @@ apc_application_destroy( Handle self)
 {
    objCheck false;
    if ( IsWindow( sys handle))  {
-      if ( !KillTimer( sys handle, TID_USERMAX)) apiErr;
+      if ( guts. mouseTimer) {
+          guts. mouseTimer = 0;
+          if ( !KillTimer( sys handle, TID_USERMAX)) apiErr;
+      }
       if ( !DestroyWindow( sys handle)) apiErr;
    }
    free( sys timeDefs);

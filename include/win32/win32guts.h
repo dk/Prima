@@ -173,6 +173,7 @@ typedef struct _WinGuts
     Bool           is98;               // is win98
     int            socket_version;     // socket behavior type
     List           files;              // List of active File objects
+    int            mouseTimer;         // is mouse timer started
 // socket variables
     List           sockets;            // List of watchable sockets
     HANDLE         socketMutex;        // thread semaphore
