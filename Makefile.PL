@@ -1580,7 +1580,7 @@ sub manname
    $prefix = quotemeta( $prefix );
    my $ds = quotemeta($dir_sep);
    $name =~ s/^$prefix(?:[\\\/$ds])//;
-   $name =~ s/$dir_sep/::/g;
+   $name =~ s/[\\\/$ds]/::/g;
    $name =~ s/\.[^\.]*$/\.$section/;
    return (( $section == 3 ) ? $INSTALL_MAN3 : $INSTALL_MAN1) . $dir_sep . $name;
 }
