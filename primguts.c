@@ -28,7 +28,6 @@
 #include <stdarg.h>
 #include <float.h>
 #ifdef __unix
-#include <floatingpoint.h>
 #include <sys/types.h>
 #endif /* __unix */
 #include <dirent.h>
