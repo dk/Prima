@@ -16,7 +16,9 @@ Timer_init( Handle self, HV * profile)
    if ( pexist( onTick))
    {
       SV ** psv  = hv_fetch( profile, "onTick", 6, 0);
-      var onTick = ( SvROK( *psv) && ( SvTYPE( SvRV( *psv)) == SVt_PVCV)) ? SvRV( newSVsv( *psv)) : nil;
+      var onTick = ( SvROK( *psv) && ( SvTYPE( SvRV( *psv)) == SVt_PVCV))
+         ? SvRV( newSVsv( *psv))
+         : nil;
       pdelete( onTick);
    }
 }
@@ -30,7 +32,9 @@ Timer_update_sys_handle( Handle self, HV * profile)
        pexist( owner) ||
        pexist( timeout)
     )) return;
-   if ( !apc_timer_create( self, xOwner, pexist( timeout) ? pget_i( timeout) : my get_timeout( self)))
+   if ( !apc_timer_create( self, xOwner, pexist( timeout)
+                           ? pget_i( timeout)
+                           : my get_timeout( self)))
       croak("RTC0063: cannot create timer");
    pdelete( owner);
    pdelete( timeout);
@@ -63,7 +67,9 @@ Timer_set( Handle self, HV * profile)
    if ( pexist( onTick))
    {
       SV ** psv  = hv_fetch( profile, "onTick", 6, 0);
-      var onTick = ( SvROK( *psv) && ( SvTYPE( SvRV( *psv)) == SVt_PVCV)) ? SvRV( newSVsv( *psv)) : nil;
+      var onTick = ( SvROK( *psv) && ( SvTYPE( SvRV( *psv)) == SVt_PVCV))
+                     ? SvRV( newSVsv( *psv))
+                     : nil;
       pdelete( onTick);
    }
    inherited set( self, profile);
