@@ -143,6 +143,32 @@ prima_release_gc( PDrawableSysData selfxx)
    }
 }
 
+/* 
+   macros to multiply line pattern entries to line width in 
+   a more-less aestethic fashion :-)
+*/
+#define MAX_DASH_LEN 2048
+#define dDASH_FIX(line_width,source,length) \
+   int df_i, df_lw = line_width, df_len = length; \
+   char df_list[MAX_DASH_LEN], *df_src = (char*)source, *df_dst = df_list
+#define DASH_FIX \
+   if ( df_lw > 1) {\
+      int on = 0;\
+      if ( df_len > MAX_DASH_LEN) df_len = MAX_DASH_LEN;\
+      for ( df_i = 0; df_i < df_len; df_i++) {\
+	 unsigned int w = *((unsigned char*)df_src++);\
+	 if (( on = !on)) {\
+	    if ( w > 1) w *= df_lw;\
+	 } else {\
+	    w = ( w + 1) * df_lw;\
+	 }\
+	 if ( w > 255) w = 255;\
+	 *((unsigned char*)df_dst++) = w;\
+      }\
+      df_src = df_list;\
+   }
+#define DASHES df_src, df_len
+
 void
 prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint)
 {
@@ -189,7 +215,9 @@ Unbuffered:
    XCHECKPOINT;
    
    if ( XX-> dashes) {
-      XSetDashes( DISP, XX-> gc, 0, (char *) XX-> dashes, XX-> ndashes);
+      dDASH_FIX( XX-> line_width, XX-> dashes, XX-> ndashes);
+      DASH_FIX;
+      XSetDashes( DISP, XX-> gc, 0, DASHES);
       XX-> paint_ndashes = XX-> ndashes;
       if (( XX-> paint_dashes = malloc( XX-> ndashes)))
          memcpy( XX-> paint_dashes, XX-> dashes, XX-> ndashes);
@@ -2283,13 +2311,18 @@ apc_gp_set_line_width( Handle self, int line_width)
 
    if ( XF_IN_PAINT(XX)) {
       XX-> line_width = gcv. line_width = line_width;
+      if ( !( XX-> paint_ndashes == 0 || (XX-> paint_ndashes == 1 && XX-> paint_dashes[0] == 1))) {
+	 dDASH_FIX( line_width, XX-> paint_dashes, XX-> paint_ndashes);
+	 DASH_FIX;
+	 XSetDashes( DISP, XX-> gc, 0, DASHES);
+      }
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
       XCHECKPOINT;
    } else
       XX-> gcv. line_width = line_width;
-
    return true;
 }
+
 
 Bool
 apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
@@ -2302,8 +2335,10 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 	 gcv. line_style = LineSolid;
 	 XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
       } else {
+	 dDASH_FIX(XX-> line_width, pattern, len);
+	 DASH_FIX;
 	 gcv. line_style = ( XX-> paint_rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;
-	 XSetDashes( DISP, XX-> gc, 0, (char*)pattern, len);
+	 XSetDashes( DISP, XX-> gc, 0, DASHES);
 	 XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
       }
       XX-> line_style = gcv. line_style;
