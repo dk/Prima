@@ -36,7 +36,7 @@ use constant DropDownList =>  2;
 package Prima::ComboBox;
 
 use vars qw(@ISA %listProps %editProps %listDynas);
-use Prima qw( InputLine Lists Utils StdBitmaps);
+use Prima qw( InputLine Lists Utils StdBitmap);
 @ISA = qw(Prima::Widget);
 
 use constant DefButtonX => 17;

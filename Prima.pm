@@ -79,7 +79,10 @@ sub import
       next if $module eq 'Prima' || $module eq '';
       $module = "Prima::$module" unless $module =~ /^Prima::/;
       $__import = caller;
-      eval "use $module \%parameters;" if $module;
+      if ( $module) {
+         eval "use $module \%parameters;";
+         die $@ if $@;
+      }
       $__import = 0;
    }
 }
