@@ -47,7 +47,7 @@ sub load_std_bmp
 {
    my ( $index, $asIcon, $copy) = @_;
    my $class = ( $asIcon ? q(Icon) : q(Image));
-   return undef if $index < 0 || $index > sbmp::Last;
+   return undef if !defined $index || $index < 0 || $index > sbmp::Last;
    $asIcon = ( $asIcon ? 1 : 0);
    if ( $copy)
    {
