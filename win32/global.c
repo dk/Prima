@@ -421,7 +421,8 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              if ( active != nil) SendMessage( active, LOWORD( mp1), 0, 0);
           } else if ( sys lastMenu) {
              PAbstractMenu a = ( PAbstractMenu) sys lastMenu;
-             a-> self-> sub_call_id(( Handle) a, LOWORD( mp1) - MENU_ID_AUTOSTART);
+             if ( a-> stage <= csNormal)
+                a-> self-> sub_call_id(( Handle) a, LOWORD( mp1) - MENU_ID_AUTOSTART);
           }
       }
       break;
@@ -518,7 +519,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          PMenuWndData mwd = ( PMenuWndData) hash_fetch( menuMan, &mp1, sizeof( void*));
          PMenuItemReg m;
          sys lastMenu = mwd ? mwd-> menu : nilHandle;
-         if ( mwd) {
+         if ( mwd && mwd-> menu && ( PAbstractMenu(mwd-> menu)->stage <= csNormal)) {
             m = AbstractMenu_first_that( mwd-> menu, find_oid, (void*)mwd->id, true);
             hiStage    = true;
             ev. cmd    = cmMenu;
