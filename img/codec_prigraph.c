@@ -61,7 +61,7 @@ extern "C" {
 
 static int    t_all[] = { 
    imbpp1,  imbpp1  | imGrayScale,
-   imbpp4,  imbpp4  | imGrayScale,
+   imbpp4,  
    imbpp8,  imbpp8  | imGrayScale,
    imbpp24,
    0
@@ -69,7 +69,7 @@ static int    t_all[] = {
 
 static int t_no24[] = { 
    imbpp1,  imbpp1  | imGrayScale,
-   imbpp4,  imbpp4  | imGrayScale,
+   imbpp4,  
    imbpp8,  imbpp8  | imGrayScale,
    0
 };   
@@ -90,6 +90,12 @@ static int t_8[] = {
 };   
 
 static int t_24[] = { 
+   imbpp24, 
+   0
+};   
+
+static int t_targa[] = { 
+   imbpp8,  imbpp8  | imGrayScale,
    imbpp24, 
    0
 };   
@@ -178,10 +184,10 @@ init( ImgCodecInfo ** info, void * param)
          break;
       case itPGM:
       case itKPS:
-      case itIAX:
          (*info)-> saveTypes = t_8;
          break;
       case itPPM:
+      case itVID:
          (*info)-> saveTypes = t_24;
          break;
       case itJPG:
@@ -196,7 +202,11 @@ init( ImgCodecInfo ** info, void * param)
          (*info)-> saveTypes = t_1g;
          break;
       case itCVP:   
+      case itIAX:
          (*info)-> canSave = false;
+         break;
+      case itTGA:
+         (*info)-> saveTypes = t_targa;
          break;
       default:
          (*info)-> saveTypes = t_all;

@@ -40,7 +40,7 @@ static char * gifext[] = { "gif", nil };
 static char * gifver[] = { "gif87a", "gif89a", nil };
 static int    gifbpp[] = { 
    imbpp1, imbpp1 | imGrayScale,
-   imbpp4, imbpp4 | imGrayScale,
+   imbpp4, 
    imbpp8, imbpp8 | imGrayScale,
    0   
 };   

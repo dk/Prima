@@ -501,7 +501,7 @@ ic_type_convert( Handle self,
 
 static int imTypes[] = {
    imbpp1, imbpp1|imGrayScale, 
-   imbpp4, imbpp4|imGrayScale,
+   imbpp4, 
    imbpp8, imbpp8|imGrayScale,
    imRGB, 
    imShort, imLong, imFloat, imDouble,
