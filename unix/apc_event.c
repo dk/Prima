@@ -795,7 +795,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
                return false;
             }
             if ( selectee && selectee != self) XMapRaised( DISP, PWidget(selectee)-> handle);
-            XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
+            XSetInputFocus( DISP, X_WINDOW, RevertToParent, xev-> xclient. data. l[1]);
             if ( selectee) Widget_selected( selectee, true, true);
             return false;
          }
