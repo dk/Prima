@@ -146,7 +146,6 @@ bitblt_invert( Byte * src, Byte * dst, int count)
    while ( count--) *(dst++) = ~(*dst);
 }
 
-
 void 
 img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
@@ -184,8 +183,10 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       rop = ropXorPut;
    }  
    
-   srcSz = CImage(src)-> get_size( src);
-   dstSz = CImage(dest)-> get_size( dest);
+   srcSz. x = PImage(src)-> w;
+   srcSz. y = PImage(src)-> h;
+   dstSz. x = PImage(dest)-> w;
+   dstSz. y = PImage(dest)-> h;
 
    if ( dstW < 0) {
       dstW = abs( dstW);
@@ -205,6 +206,13 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
         dstY >= dstSz. y || dstY + dstH <= 0)
       return;
 
+   /* check if we can do it without expensive scalings and extractions */
+   if ( 
+         ( srcW == dstW) && ( srcH == dstH) &&
+         ( srcX >= 0) && ( srcY >= 0) && ( srcX + srcW <= srcSz. x) && ( srcY + srcH <= srcSz. y) 
+      ) 
+      goto NOSCALE;
+
    if ( srcX != 0 || srcY != 0 || asrcW != srcSz. x || asrcH != srcSz. y) {
      /* extract source rectangle */
       Handle x;
@@ -223,7 +231,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       if ( srcX < 0 || srcY < 0 || srcX + asrcW >= srcSz. x || srcY + asrcH > srcSz. y) {
          HV * profile;
          Handle dx;
-         int dsx = 0, dsy = 0, dsw = PImage(x)-> w, dsh = PImage(x)-> h;
+         int dsx = 0, dsy = 0, dsw = PImage(x)-> w, dsh = PImage(x)-> h, type = PImage( dest)-> type;
 
          if ( asrcW != srcW || asrcH != srcH) { /* reverse before application */
             CImage( x)-> stretch( x, srcW, srcH);
@@ -235,8 +243,10 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
             }
          }
 
+         if (( type & imBPP) < 8) type = imbpp8;
+
          profile = newHV();
-         pset_i( type,        PImage( src)-> type);
+         pset_i( type,        type);
          pset_i( width,       asrcW);
          pset_i( height,      asrcH);
          pset_i( conversion,  PImage( src)-> conversion);
@@ -246,7 +256,10 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
             Object_destroy( x);
             return;
          }
-         memcpy( PImage( dx)-> palette, PImage( x)-> palette, 768);
+         if ( PImage( dx)-> palSize > 0) {
+            PImage( dx)-> palSize = PImage( x)-> palSize;
+            memcpy( PImage( dx)-> palette, PImage( x)-> palette, 768);
+         }
          memset( PImage( dx)-> data, 0, PImage( dx)-> dataSize);
 
          if ( srcX < 0) dsx = asrcW - dsw;
@@ -258,6 +271,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 
       src = x;
       newObject = true;
+      srcX = srcY = 0;
    } 
 
    if ( srcW != dstW || srcH != dstH) {
@@ -281,6 +295,8 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       dstH = abs( dstH);
    }
 
+NOSCALE:   
+
    if (( PImage( dest)-> type & imBPP) < 8) {
       int type = PImage( dest)-> type;
       int ps   = PImage( dest)-> palSize;
@@ -292,8 +308,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       goto EXIT;
    } 
 
-   if ( PImage( dest)-> type != PImage( src)-> type &&
-        !(( PImage( dest)-> type & imBPP) == 8 && (PImage( src)-> type & imBPP) == 8)) {
+   if ( PImage( dest)-> type != PImage( src)-> type) {
       int type = PImage( src)-> type & imBPP;
       /* equalize type */
       if ( !newObject) {
@@ -312,7 +327,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       }
    }
 
-   if (( PImage( dest)-> type & imBPP) == 8) {
+   if ( PImage( dest)-> type == imbpp8) {
       /* equalize palette */
       Byte colorref[256], *s;
       int i = PImage( src)-> dataSize;
@@ -330,43 +345,29 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
    }
 
    if ( dstX < 0 || dstY < 0 || dstX + dstW >= dstSz. x || dstY + dstH >= dstSz. y) {
-      /* extract destination rectangle */
-      Handle x;
-      int dsx = 0, dsy = 0, dsw = PImage( src)-> w, dsh = PImage( src)-> h;
+      /* adjust destination rectangle */
       if ( dstX < 0) {
          dstW += dstX;
-         dsw  += dstX;
-         dsx  -= dstX;
+         srcX -= dstX;
          dstX = 0;
       }
       if ( dstY < 0) {
          dstH += dstY;
-         dsh  += dstY;
-         dsy  -= dstY;
+         srcY -= dstY;
          dstY = 0;
       }
-      if ( dstX + dstW > dstSz. x) {
-         dsw -= dstW + dstX - dstSz. x;
+      if ( dstX + dstW > dstSz. x)
          dstW = dstSz. x - dstX;
-      }
-      if ( dstY + dstH > dstSz. y) {
-         dsh -= dstH + dstY - dstSz. y;
+      if ( dstY + dstH > dstSz. y) 
          dstH = dstSz. y - dstY;
-      }
-      x = CImage( src)-> extract( src, dsx, dsy, dsw, dsh);
-      if ( !x) goto EXIT;
-      if ( newObject) Object_destroy( src);
-      src = x;
-      newObject = true;
    }
 
    /* checks done, do put_image */
    {
       int  y, dyd, dys, count, pix;
       Byte *dptr, *sptr;
+      PBitBltProc proc;
 
-      PBitBltProc proc = nil;
-      
       switch ( rop) {
       case ropCopyPut:
          proc = bitblt_copy;
@@ -423,10 +424,11 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
          proc = bitblt_copy;
       }
 
+
       pix = ( PImage( dest)-> type & imBPP ) / 8;
       dyd = PImage( dest)-> lineSize;
       dys = PImage( src)-> lineSize;
-      sptr = PImage( src)-> data;
+      sptr = PImage( src )-> data + dys * srcY + pix * srcX;
       dptr = PImage( dest)-> data + dyd * dstY + pix * dstX;
       count = dstW * pix;
 
