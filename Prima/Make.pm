@@ -40,9 +40,9 @@ use vars qw(@ISA @EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw( init qd dl_name quoted_split setvar env_true addlib dump_command
           canon_name find_file find_cdeps cc_command_line ld_command_line generate_def
-          find_version);
+          find_version manname);
 
-use vars qw( %make_trans @ovvars $dir_sep $path_sep );
+use vars qw( %make_trans @ovvars $dir_sep $path_sep);
 
 use vars @ovvars = qw(
     @INCPATH
@@ -53,6 +53,8 @@ use vars @ovvars = qw(
     $INSTALL_LIB
     $INSTALL_DL
     $INSTALL_EXAMPLES
+    $INSTALL_MAN3
+    $INSTALL_MAN1
     $DEBUG
 );
 
@@ -79,6 +81,8 @@ use vars qw(
     @allsubtargets
     @alllibtargets
     @subtargetsdirs
+    @allman
+    $install_manuals
 );
 
 
@@ -325,11 +329,29 @@ EOF
    setvar( 'DEBUG', 0);
    setvar( 'PREFIX', $Config{ installsitearch});
    setvar( 'INSTALL_BIN', $Config{ installbin});
+   $install_manuals = (!$Win32 && !$OS2);
+   if ( exists $USER_VARS{PREFIX}) {
+      setvar( 'INSTALL_MAN1', $PREFIX . qd( "/man/man1"));
+      setvar( 'INSTALL_MAN3', $PREFIX . qd( "/man/man3"));
+   } else {
+      setvar( 'INSTALL_MAN1', $Config{installman1dir});
+      setvar( 'INSTALL_MAN3', $Config{installman3dir});
+   }
 
    return 1;
 }
 
 
+sub manname
+{
+   my ( $name, $section, $prefix) = @_;
+   $prefix = quotemeta( $prefix );
+   my $ds = quotemeta($dir_sep);
+   $name =~ s/^$prefix(?:[\\\/$ds])//;
+   $name =~ s/[\\\/$ds]/::/g;
+   $name =~ s/\.[^\.]*$/\.$section/;
+   my $x = (( $section == 3 ) ? $INSTALL_MAN3 : $INSTALL_MAN1) . $dir_sep . $name;
+}
 
 sub qd
 {

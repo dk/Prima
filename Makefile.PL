@@ -1777,6 +1777,7 @@ use vars qw(%Config %Config_inst);
   ldlibext              =>'$cc_specs{$COMPILER}->{ldlibext}',
   inline                => '$DEFINES{__INLINE__}',
   perl                  => '$perl',
+  dl_load_flags         => $DL_LOAD_FLAGS,
 );
 
 1;
