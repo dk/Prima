@@ -2197,10 +2197,12 @@ apc_sys_get_value( int sysValue)
    case svSubmenuDelay   :
        RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Desktop", 0, KEY_READ, &hKey);
        RegQueryValueEx( hKey, "MenuShowDelay", nil, &valType, buf, &valSize);
+       RegCloseKey( hKey);
        return atol( buf);
    case svFullDrag       :
        RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Desktop", 0, KEY_READ, &hKey);
        RegQueryValueEx( hKey, "DragFullWindows", nil, &valType, buf, &valSize);
+       RegCloseKey( hKey);
        return atol( buf);
    default:
       apcErr( errInvParams);
