@@ -31,7 +31,6 @@
 #include "apricot.h"
 #endif
 #include "Window.h"
-#include "img_api.h"
 #include "Icon.h"
 #include "DeviceBitmap.h"
 
@@ -663,7 +662,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
          } else {
             int sz = (( i-> w + 31) / 32) * 4 * i-> h; 
             mask = ( Byte*)malloc( sz);
-            memset( mask, 0xff, sz);
+            memset( mask, 0x0, sz);
          }   
 // creating icon by old 3.1 method - we need that for correct AND-mask,
 // don't care other pointer properties
