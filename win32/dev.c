@@ -645,27 +645,26 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
 // Moronious and "macaronious" code for Win95 -
 // since CreateIconIndirect gives results so weird,
 // we use following sequence.
-      int mSize = i-> maskSize / i-> h;
-      Byte *data = ( Byte*)malloc( mSize), *b1 = i-> mask, *b2 = i-> mask + mSize*(i-> h - 1);
-      Byte * mask;
+	  Byte * mask;
+	  if ( !notAnIcon) {
+             int mSize = i-> maskSize / i-> h;
+             Byte *data = ( Byte*)malloc( mSize), *b1 = i-> mask, *b2 = i-> mask + mSize*(i-> h - 1);
 
-// reverting bits vertically - it's not HBITMAP, just bare bits
-      while ( b1 < b2) {
-         memcpy( data, b1,   mSize);
-         memcpy( b1,   b2,   mSize);
-         memcpy( b2,   data, mSize);
-         b1 += mSize;
-         b2 -= mSize;
-      }
-      free( data);
-
-      if ( notAnIcon)      
-         mask = i-> mask;
-      else {
-         int sz = (( i-> w + 31) / 32) * 4; 
-         mask = ( Byte*)malloc( sz);
-         memset( mask, 0xff, sz);
-      }   
+       // reverting bits vertically - it's not HBITMAP, just bare bits
+             while ( b1 < b2) {
+                memcpy( data, b1,   mSize);
+                memcpy( b1,   b2,   mSize);
+                memcpy( b2,   data, mSize);
+                b1 += mSize;
+                b2 -= mSize;
+             }
+            free( data);
+            mask = i-> mask;
+         } else {
+            int sz = (( i-> w + 31) / 32) * 4 * i-> h; 
+            mask = ( Byte*)malloc( sz);
+            memset( mask, 0xff, sz);
+         }   
 // creating icon by old 3.1 method - we need that for correct AND-mask,
 // don't care other pointer properties
       r = forPointer ?
