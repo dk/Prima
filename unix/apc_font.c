@@ -107,6 +107,9 @@ prima_init_font_subsystem( void)
    char **names;
    int count, j , i, bad_fonts = 0, vector_fonts = 0;
    PFontInfo info;
+   char *s_ignore_encodings;
+   char **ignore_encodings;
+   int n_ignore_encodings;
 
    FXA_RESOLUTION_X = XInternAtom( DISP, "RESOLUTION_X", false);
    FXA_RESOLUTION_Y = XInternAtom( DISP, "RESOLUTION_Y", false);
@@ -128,6 +131,40 @@ prima_init_font_subsystem( void)
       return false;
    }   
    bzero( info,  sizeof( FontInfo) * ( count + 1));
+
+   n_ignore_encodings = 0;
+   ignore_encodings = nil;
+   s_ignore_encodings = nil;
+   if ( apc_fetch_resource( "Prima", "", "IgnoreEncodings", "ignoreEncodings", 
+                             nilHandle, frString, &s_ignore_encodings)) 
+   {
+      char *e = s_ignore_encodings;
+      char *s = e;
+      while (*e) {
+         while (*e && *e != ';') {
+            e++;
+         }
+         if (*e == ';') {
+            n_ignore_encodings++;
+            *e = '\0';
+            s = ++e;
+         } else if (e > s) {
+            n_ignore_encodings++;
+         }
+      }
+      ignore_encodings = malloc( sizeof( char*) * n_ignore_encodings);
+      if ( !ignore_encodings) {
+         warn( "UAF_003: no memory");
+         return false;
+      }   
+      bzero( ignore_encodings,  sizeof( char*) * n_ignore_encodings);
+      s = s_ignore_encodings;
+      for (i = 0; i < n_ignore_encodings; i++) {
+         ignore_encodings[i] = s;
+         while (*s) s++;
+         s++;
+      }
+   }
 
    for ( i = 0, j = 0; i < count; i++) {
       char *b, *t, *c = names[ i];
@@ -329,7 +366,12 @@ prima_init_font_subsystem( void)
 	    while ( *c && *c != '-') c++;
 	 }
 	 if ( *c == '-') {
+            int m;
             c++;
+            for (m = 0; m < n_ignore_encodings; m++) {
+               if (strcmp(c, ignore_encodings[m]) == 0)
+                  goto skip_font;
+            }
             if ( 
                 (strncmp( c, "0",  strlen("0")) == 0) || 
                 (strncmp( c, "fontspecific", strlen("fontspecific")) == 0) ||
@@ -337,6 +379,7 @@ prima_init_font_subsystem( void)
                ) 
                info[j]. flags. funky = 1; 
             
+
             /* advance through CHARSET_ENCODING; just skip it;  XXX */
 	    while ( *c && *c != '-') c++;
 	    if ( !*c  && info[j]. flags. pitch && 
@@ -389,6 +432,7 @@ prima_init_font_subsystem( void)
 	    }
 	 }
       }
+skip_font:
       if ( !conformant) {
 	 bad_fonts++;
          continue;
@@ -400,6 +444,9 @@ prima_init_font_subsystem( void)
          info[j]. flags. disabled = true; */
       j++;
    }
+
+   free(ignore_encodings);
+   free(s_ignore_encodings);
    
    guts. font_info = info;
    guts. n_fonts = j + 1;
