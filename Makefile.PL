@@ -724,6 +724,7 @@ sub setup_defines
     have_header( "io.h");
     have_header( "unistd.h");
     have_header( "X11/extensions/shape.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
+    have_header( "X11/extensions/XShm.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
     if ( $OS2 && defined $ENV{ PRIMA_PMPRINTF}) {
 	if ( have_header( "pmprintf.h", "os2.h")) {
 	    my $libpath = find_lib( 'pmprintf', "");
