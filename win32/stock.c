@@ -918,7 +918,15 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
    strncpy( elf. lfFaceName, font-> name, LF_FACESIZE);
    elf. lfPitchAndFamily = 0;
    elf. lfCharSet = font_encoding2charset( font-> encoding);
-   EnumFontFamiliesEx( dc, &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
+   if ( IS_WIN95 && elf. lfCharSet == DEFAULT_CHARSET) {
+      int i;
+      for ( i = 0; i < sizeof( ctx_CHARSET2index) / 2; i+=2) {
+         elf. lfCharSet = ctx_CHARSET2index[ i];
+         EnumFontFamiliesEx( dc, &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
+      }
+   } else {
+      EnumFontFamiliesEx( dc, &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
+   }
 
    // check encoding match
    if (( es. passedCount == 0) && ( elf. lfCharSet != DEFAULT_CHARSET)) {
@@ -1171,8 +1179,16 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
    list_create( &f. lst, 256, 256);
    memset( &elf, 0, sizeof( elf));
    strncpy( elf. lfFaceName, facename ? facename : "", LF_FACESIZE);
-   elf. lfCharSet = font_encoding2charset( encoding); 
-   EnumFontFamiliesEx( dc, &elf, ( FONTENUMPROC) fep2, ( LPARAM) &f, 0);
+   if ( IS_WIN95 && facename && !encoding) {
+      int i;
+      for ( i = 0; i < sizeof( ctx_CHARSET2index) / 2; i+=2) {
+         elf. lfCharSet = ctx_CHARSET2index[ i];
+         EnumFontFamiliesEx( dc, &elf, ( FONTENUMPROC) fep2, ( LPARAM) &f, 0);
+      }
+   } else {
+      elf. lfCharSet = font_encoding2charset( encoding); 
+      EnumFontFamiliesEx( dc, &elf, ( FONTENUMPROC) fep2, ( LPARAM) &f, 0);
+   }
    if ( f. hash) {
       hash_destroy( f. hash, false);
       f. hash = nil;
