@@ -1732,6 +1732,8 @@ SV(FullDrag)
 SV(DblClickDelay)
 #define   svShapeExtension  28
 SV(ShapeExtension)
+#define   svColorPointer    29
+SV(ColorPointer)
 END_TABLE(sv,UV)
 #undef SV
 

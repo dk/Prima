@@ -399,6 +399,16 @@ apc_sys_get_value( int sysValue)
       return WinQuerySysValue( HWND_DESKTOP, SV_CYDLGFRAME);
    case svShapeExtension  :
       return 0;
+   case svColorPointer    :
+      {
+         int i, max = 1;
+         for ( i = 0; i < guts. bmfCount * 2; i+=2) {
+            if ( max < guts. bmf[i] * guts. bmf[i+1])
+               max = guts. bmf[i] * guts. bmf[i+1];
+         }
+         return max > 1;
+      }
+      break;
    default:
       apcErr( errInvParams);
    }

@@ -186,7 +186,7 @@ my $w = Prima::Window-> create(
       $xor-> begin_paint;
       $xor-> font-> style(fs::Bold);
       $xor-> font-> size(11);
-      $xor-> color( cl::Green);
+      $xor-> color( $::application-> get_system_value( sv::ColorPointer) ? cl::Green : cl::White);
       $xor-> text_out( $i, 0, 0);
       $xor-> end_paint;
 

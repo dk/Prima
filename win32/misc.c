@@ -351,6 +351,7 @@ apc_sys_get_value( int sysValue)
    case svXbsDialog       : return GetSystemMetrics( SM_CXDLGFRAME);
    case svYbsDialog       : return GetSystemMetrics( SM_CYDLGFRAME);
    case svShapeExtension  : return 1;
+   case svColorPointer    : return guts. displayBMInfo. bmiHeader. biBitCount > 4;
    default:
       apcErr( errInvParams);
    }
