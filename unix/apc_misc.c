@@ -698,8 +698,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       XDrawString( DISP, p1, gc, w/2, h/2, (char*)&(cursor_map[id]), 1);
       XFreeGC( DISP, gc);
    }
-   CIcon(icon)-> set_size( icon, ((Point){w,h}));
-   CIcon(icon)-> set_type( icon, imMono);
+   CIcon(icon)-> create_empty( icon, w, h, imMono);
    im = XGetImage( DISP, p1, 0, 0, w, h, 1, XYPixmap);
    prima_copy_xybitmap( PIcon(icon)-> data, im-> data,
                         PIcon(icon)-> w, PIcon(icon)-> h,
@@ -709,8 +708,13 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    prima_copy_xybitmap( PIcon(icon)-> mask, im-> data,
                         PIcon(icon)-> w, PIcon(icon)-> h,
                         PIcon(icon)-> maskLine, im-> bytes_per_line);
+  if ( id == crUser) {
+     int i;
+     Byte * mask = PIcon(icon)-> mask;
+     for ( i = 0; i < PIcon(icon)-> maskSize; i++) 
+        mask[i] = ~mask[i];
+   }   
    XDestroyImage( im);
-   Image_update_change( icon);
    if ( free_pixmap) {
       XFreePixmap( DISP, p1);
       XFreePixmap( DISP, p2);
@@ -784,34 +788,41 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
       XX-> user_p_mask = None;
    }
    if ( icon != nilHandle) {
-      cursor = CIcon(icon)->dup(icon);
-      if ( cursor == nilHandle) {
-         warn( "error duping user cursor");
-         return false;
-      }
-      c = PIcon(cursor);
-      if ( c-> w != guts.cursor_width || c-> h != guts.cursor_height) {
-         CIcon(cursor)-> stretch( cursor, guts.cursor_width, guts.cursor_height);
-         if ( c-> w != guts.cursor_width || c-> h != guts.cursor_height) {
-            warn( "error stretching user cursor");
-            Object_destroy( cursor);
+      Bool noSZ  = PIcon(icon)-> w != guts.cursor_width || PIcon(icon)-> h != guts.cursor_height;
+      Bool noBPP = (PIcon(icon)-> type & imBPP) != 1;
+      if ( noSZ || noBPP) {
+         cursor = CIcon(icon)->dup(icon);
+         c = PIcon(cursor);
+         if ( cursor == nilHandle) {
+            warn( "error duping user cursor");
             return false;
          }
-      }
-      if ((c-> type & imBPP) != 1) {
-         CIcon(cursor)-> set_type( cursor, imMono);
-         if ((c-> type & imBPP) != 1) {
-            warn( "error black-n-whiting user cursor");
-            Object_destroy( cursor);
-            return false;
+         if ( noSZ) {
+            CIcon(cursor)-> stretch( cursor, guts.cursor_width, guts.cursor_height);
+            if ( c-> w != guts.cursor_width || c-> h != guts.cursor_height) {
+               warn( "error stretching user cursor");
+               Object_destroy( cursor);
+               return false;
+            }
+         }   
+         if ( noBPP) {
+            CIcon(cursor)-> set_type( cursor, imMono);
+            if ((c-> type & imBPP) != 1) {
+               warn( "error black-n-whiting user cursor");
+               Object_destroy( cursor);
+               return false;
+            }
          }
-      }
+      } else
+         cursor = icon;
       if ( !prima_create_icon_pixmaps( cursor, &XX-> user_p_source, &XX-> user_p_mask)) {
          warn( "error creating user cursor pixmaps");
-         Object_destroy( cursor);
+         if ( noSZ || noBPP)
+            Object_destroy( cursor);
          return false;
       }
-      Object_destroy( cursor);
+      if ( noSZ || noBPP)
+         Object_destroy( cursor);
       XX-> pointer_hot_spot = hot_spot;
       XX-> user_pointer = XCreatePixmapCursor( DISP, XX-> user_p_source,
                                                XX-> user_p_mask,

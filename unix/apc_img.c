@@ -916,7 +916,6 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
    Pixmap p1, p2;
    PIcon icon = PIcon(self);
    ImageCache *cache;
-
    cache = prima_create_image_cache((PImage)icon, nilHandle);
    p1 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), icon-> w, icon-> h, 1);
    p2 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), icon-> w, icon-> h, 1);
@@ -932,6 +931,8 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
    XSetBackground( DISP, XX-> gc, 1);
    prima_put_ximage( p2, XX-> gc, cache->icon,
                      0, 0, 0, 0, icon-> w, icon-> h);
+   XSetForeground( DISP, XX-> gc, 1);
+   XSetBackground( DISP, XX-> gc, 0);
    prima_put_ximage( p1, XX-> gc, cache->image,
                      0, 0, 0, 0, icon-> w, icon-> h);
    prima_cleanup_drawable_after_painting( self);
