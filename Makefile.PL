@@ -416,7 +416,8 @@ sub setvar
         if ( defined $USER_VARS{ $varname}) {
             eval "\$$varname = \$USER_VARS{ \$varname}";
         }
-	elsif ( defined $USER_VARS_LINKS{ $varname}) {
+	elsif ( defined $USER_VARS_LINKS{ $varname}
+	        && exists $USER_VARS{ $USER_VARS_LINKS{ $varname}->{ src}}) {
 	    eval "\$$varname = sprintf \"$USER_VARS_LINKS{ $varname}->{ format}\", \$$USER_VARS_LINKS{ $varname}->{ src}";
 	}
         else {
