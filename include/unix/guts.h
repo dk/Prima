@@ -43,6 +43,7 @@
 #include <sys/time.h>
 
 #include "../guts.h"
+#include "bsd/queue.h"
 #include "Widget.h"
 
 #ifdef USE_MITSHM

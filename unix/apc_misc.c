@@ -618,12 +618,12 @@ apc_clipboard_create( Handle self)
       *name = toupper(*name);
       name++;
    }
-   CC-> atom = XInternAtom( DISP, name, false);
+   CC-> atom = XInternAtom( DISP, CC-> name, false);
 
    if ( hash_fetch( guts.clipboards, &CC->atom, sizeof(CC->atom))) {
       CC-> atom = None;
       CC-> name = nil;
-      free( name);
+      free( CC-> name);
       return false;
    }
 
