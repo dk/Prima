@@ -233,6 +233,15 @@ int ctx_cr2IDC[] =
    endCtx
 };
 
+static Bool
+direct_pointer_change( Handle self)
+{
+   Point p;
+   if ( var stage != csNormal || !IsWindowVisible( HANDLE)) return false;
+   p = apc_pointer_get_pos( application);
+   return self == apc_application_get_widget_from_point( application, p);
+}
+
 Bool
 apc_pointer_set_shape( Handle self, int sysPtrId)
 {
@@ -258,27 +267,34 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
       LoadCursor( NULL, MAKEINTRESOURCE(
       ctx_remap_def( sysPtrId, ctx_cr2IDC, true, ( int)IDC_ARROW)));
 
-   if ( var stage == csNormal) SetCursor( sys pointer);
+   if ( direct_pointer_change( self)) 
+      SetCursor( sys pointer);
    return true;
 }
 
 Bool
 apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 {
+   Bool direct;
+   HCURSOR cursor;
    objCheck false;
+   
+   apcErrClear;
+   direct = direct_pointer_change( self);
+   hotSpot. y = guts. pointerSize. y - hotSpot. y - 1;
+   cursor = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot, true) : nil;
+   if ( apcError) return false;
+   
    if ( sys pointer2) {
-      SetCursor( NULL);
+      if ( direct) SetCursor( NULL);
       if ( !DestroyCursor( sys pointer2)) apiErr;
    }
-   apcErrClear;
-   hotSpot. y = guts. pointerSize. y - hotSpot. y - 1;
-   sys pointer2 = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot, true) : nil;
-   if ( apcError) return false;
+   sys pointer2 = cursor;
+   
    if ( sys pointerId == crUser)
    {
       sys pointer = sys pointer2;
-      if ( var stage == csNormal)
-         SetCursor( sys pointer);
+      if ( direct) SetCursor( sys pointer);
    }
    return true;
 }
