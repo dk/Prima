@@ -2101,8 +2101,7 @@ FOOTER
     setup_variables;
     setup_paths;
     setup_defines;
-    setup_misc;
-
+    
     my $config_dir = "include/generic";
     my $config_h = "$config_dir/config.h";
     print "Creating $config_h\n";
@@ -2122,6 +2121,8 @@ EOF
 #endif
 EOF
     close CONFIG;
+    
+    setup_misc; # contains code dependant on config.h
 
     push @allrealclean, $config_h;
     push @allinstall, $config_h => $INSTALL_LIB . qd( "/CORE/generic");
