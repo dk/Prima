@@ -96,7 +96,7 @@ get_window( Handle self, PMenuSysData XX, PMenuItemReg m)
          | OwnerGrabButtonMask;
       attrs. override_redirect = true;
       attrs. do_not_propagate_mask = attrs. event_mask;
-      w->w = XCreateWindow( DISP, RootWindow(DISP,SCREEN),
+      w->w = XCreateWindow( DISP, guts. root,
                             0, 0, 1, 1, 0, CopyFromParent,
                             InputOutput, CopyFromParent,
                             0
@@ -515,7 +515,7 @@ apc_popup( Handle self, int x, int y, Rect *anchor)
    fprintf( stderr, "calculated size is %d, %d\n", w->sz.x, w->sz.y);
    owner = X(PComponent(self)->owner);
    y = owner->size.y - w->sz.y - y;
-   if ( !XTranslateCoordinates( DISP, owner->udrawable, RootWindow( DISP, SCREEN),
+   if ( !XTranslateCoordinates( DISP, owner->udrawable, guts. root,
                                 x, y, &x, &y, &dummy)) {
       croak( "apc_popup(): XTranslateCoordinates() failed");
    }

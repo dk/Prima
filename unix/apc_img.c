@@ -303,7 +303,7 @@ apc_image_begin_paint_info( Handle self)
 {
     DEFXX;
     PImage img = PImage( self);
-    XX-> gdrawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), 1, 1, 
+    XX-> gdrawable = XCreatePixmap( DISP, guts. root, 1, 1, 
        ((img-> type & imBPP) == 1) ? 1 : guts. depth);
     XCHECKPOINT;
     prima_prepare_drawable_for_painting( self);
@@ -352,7 +352,7 @@ apc_dbm_create( Handle self, Bool monochrome)
    XX-> type.drawable = true;
    XX->size. x          = ((PDeviceBitmap)(self))-> w;
    XX->size. y          = ((PDeviceBitmap)(self))-> h;
-   XX->gdrawable        = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), XX->size. x, XX->size. y,
+   XX->gdrawable        = XCreatePixmap( DISP, guts. root, XX->size. x, XX->size. y,
                                          monochrome ? 1 : guts.depth);
    if (XX-> gdrawable == None)
       croak( "UAI_001: create pixmap error");
@@ -987,8 +987,8 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
    PIcon icon = PIcon(self);
    ImageCache *cache;
    cache = prima_create_image_cache((PImage)icon, nilHandle);
-   p1 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), icon-> w, icon-> h, 1);
-   p2 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), icon-> w, icon-> h, 1);
+   p1 = XCreatePixmap( DISP, guts. root, icon-> w, icon-> h, 1);
+   p2 = XCreatePixmap( DISP, guts. root, icon-> w, icon-> h, 1);
    XCHECKPOINT;
    if ( p1 == None || p2 == None) {
       if (p1 != None) XFreePixmap( DISP, p1);
@@ -1104,7 +1104,7 @@ apc_image_begin_paint( Handle self)
    DEFXX;
    PImage img = PImage( self);
    Bool bitmap = (img-> type & imBPP) == 1;
-   XX-> gdrawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), img-> w, img-> h,
+   XX-> gdrawable = XCreatePixmap( DISP, guts. root, img-> w, img-> h,
                                    bitmap ? 1 : guts. depth);
    XCHECKPOINT;
    prima_prepare_drawable_for_painting( self);

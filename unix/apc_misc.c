@@ -639,7 +639,7 @@ apc_pointer_get_pos( Handle self)
    int x, y;
    unsigned int mask;
 
-   if ( !XQueryPointer( DISP, RootWindow( DISP, SCREEN),
+   if ( !XQueryPointer( DISP, guts. root,
 			&root, &child, &p. x, &p. y,
 			&x, &y, &mask)) {
       croak( "apc_pointer_get_pos(): XQueryPointer() failed");
@@ -694,8 +694,8 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       else
          cs = fs-> per_char + idx - fs-> min_char_or_byte2;
       
-      p1 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), w, h, 1);
-      p2 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), w, h, 1);
+      p1 = XCreatePixmap( DISP, guts. root, w, h, 1);
+      p2 = XCreatePixmap( DISP, guts. root, w, h, 1);
       gcv. background = 1;
       gcv. foreground = 0;
       gcv. font = guts.pointer_font-> fid;
@@ -748,7 +748,7 @@ apc_pointer_set_pos( Handle self, int x, int y)
 {
    int ax = DisplayWidth( DISP, SCREEN);
    int ay = DisplayHeight( DISP, SCREEN);
-   if ( !XWarpPointer( DISP, None, RootWindow( DISP, SCREEN), 
+   if ( !XWarpPointer( DISP, None, guts. root, 
       0, 0, ax, ay, x, ay - y - 1))
       return false;
    XCHECKPOINT;
@@ -1513,7 +1513,7 @@ apc_show_message( const char * message)
       attrs. override_redirect = false;
       attrs. do_not_propagate_mask = attrs. event_mask;
          
-      md. w = XCreateWindow( DISP, RootWindow( DISP, SCREEN),
+      md. w = XCreateWindow( DISP, guts. root,
          ( appSz.x - winSz.x) / 2, ( appSz.y - winSz.y) / 2,
          winSz.x, winSz.y, 0, CopyFromParent, InputOutput, 
          CopyFromParent, CWEventMask | CWOverrideRedirect, &attrs);  

@@ -1281,7 +1281,7 @@ prima_update_rotated_fonts( PCachedFont f, char * text, int len, int direction, 
       if ( !( r-> arena_bits = malloc( r-> lineSize * r-> orgBox. y)))
          goto FAILED;
 
-      r-> arena = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), r-> orgBox.x, r-> orgBox. y, 1);  
+      r-> arena = XCreatePixmap( DISP, guts. root, r-> orgBox.x, r-> orgBox. y, 1);  
       if ( !r-> arena) {
          free( r-> arena_bits);
 FAILED:         

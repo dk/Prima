@@ -352,6 +352,9 @@ struct _UnixGuts
    int                          shared_image_completion_event;
    Bool                         xshmattach_failed;
    struct MsgDlg               *message_boxes;
+   XWindow                      grab_redirect;
+   Point                        grab_translate_mouse;
+   XWindow                      root;
 } guts;
 
 #define FXA_RESOLUTION_X guts. fxa_resolution_x
@@ -425,11 +428,11 @@ typedef struct _drawable_sys_data
    XDrawable gdrawable;
    XWindow parent;
    NPoint resolution;
-   Point origin, known_origin;
-   Point size, known_size, bsize;
+   Point origin, size, bsize;
    Point transform, gtransform, btransform;
    Handle owner;  /* The real one */
    XWindow real_parent; /* top levels */
+   XWindow parentHandle; /* top levels */
    XWindow above;
    XGCValues gcv;
    GC gc;
@@ -456,18 +459,19 @@ typedef struct _drawable_sys_data
    Cursor user_pointer;
    Pixmap user_p_source;
    Pixmap user_p_mask;
+   void * recreateData;
    struct {
       int base_line                     : 1;
       int clip_owner			: 1;
       int cursor_visible		: 1;
-      int do_size_hints			: 1;
       int enabled               	: 1;
       int exposed			: 1;
+      int falsely_hidden                : 1;
+      int first_click                   : 1;
       int focused       	        : 1;
       int grab                  	: 1;
       int mapped			: 1;
       int modal                         : 1;
-      int no_size			: 1;
       int opaque                	: 1;
       int paint                 	: 1;
       int paint_base_line               : 1;
@@ -478,6 +482,7 @@ typedef struct _drawable_sys_data
       int reload_font			: 1;
       int saved_zero_line       	: 1;
       int sync_paint			: 1;
+      int want_visible                  : 1;
       int zero_line             	: 1;
    } flags;
    ImageCache bitmap_cache;

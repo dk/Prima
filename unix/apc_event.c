@@ -342,6 +342,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       }
    }
 
+   if ( win == guts. root && guts. grab_redirect) 
+      win = guts. grab_redirect;
+
    self = prima_xw2h( win);
    if (!self)
       return;
@@ -374,6 +377,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       bev = &ev-> xbutton;
       e. cmd = cmMouseDown;
      ButtonEvent:
+      if ( ev-> xany. window == guts. root && guts. grab_redirect) {
+         bev-> x -= guts. grab_translate_mouse. x;
+         bev-> y -= guts. grab_translate_mouse. y;
+      }      
       switch (bev-> button) {
       case Button1:
 	 e. pos. button = mb1;
@@ -449,6 +456,19 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          }
       }
       memcpy( &guts.last_button_event, bev, sizeof(*bev));
+      
+      if ( e. cmd == cmMouseDown && !XX-> flags. first_click) {
+         Handle x = self, f = guts. focused ? guts. focused : application;
+         while ( !X(x)-> type. window && ( x != application)) x = (( PWidget) x)-> owner;
+         while ( !X(f)-> type. window && ( f != application)) f = (( PWidget) f)-> owner;
+         if ( x != f) {
+            e. cmd = 0;
+            if ((( PApplication) application)-> hintUnder == self) 
+               CWidget(self)-> set_hintVisible( self, 0);
+            if (( PWidget(self)-> options. optSelectable) && ( PWidget(self)-> selectingButtons & e. pos. button))
+               apc_widget_set_focused( self);
+         }
+      }
       break;
    }
    case ButtonRelease: {
@@ -462,6 +482,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       guts. last_time = ev-> xmotion. time;
       if (no_input(XX, true, false)) return;
       e. cmd = cmMouseMove;
+      if ( ev-> xany. window == guts. root && guts. grab_redirect) {
+         ev-> xmotion. x -= guts. grab_translate_mouse. x;
+         ev-> xmotion. y -= guts. grab_translate_mouse. y;
+      }      
       e. pos. where. x = ev-> xmotion. x;
       e. pos. where. y = XX-> size. y - ev-> xmotion. y - 1;
       if ( ev-> xmotion. state & ShiftMask)     e.pos.mod |= kmShift;
@@ -515,6 +539,16 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       case NotifyDetailNone: /* XXX ? */
 	 return;
       }
+
+      if ( guts. message_boxes) {
+         struct MsgDlg * md = guts. message_boxes;
+         while ( md) {
+            XSetInputFocus( DISP, md-> w, RevertToNone, CurrentTime); 
+            md = md-> next;
+         }   
+         return;
+      }   
+
       /* fprintf( stderr, "pokus in %s\n", PComponent(self)->name); */
       if (!XT_IS_WINDOW(XX))
          frame = CApplication(application)-> top_frame( application, self);
@@ -592,12 +626,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case UnmapNotify: {
       XX-> flags. mapped = false;
-      e. cmd = cmHide;
+      if ( XX-> type. window) 
+         e. cmd = cmHide;
       break;
    }
    case MapNotify: {
       XX-> flags. mapped = true;
-      e. cmd = cmShow;
+      if ( XX-> type. window)
+         e. cmd = cmShow;
       break;
    }
    case MapRequest: {
@@ -608,14 +644,13 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       XWindow p = ev-> xreparent. parent;
       if ( !prima_xw2h( p)) 
 	 XX-> real_parent = p;
-      DOLBUG( "ReparentNotify\n");
       return;
    }
 
    case ConfigureNotify: {
       XConfigureEvent *cev = &ev-> xconfigure;
       Bool size_changed, pos_changed;
-      Point old_size, old_pos;
+      Point old_size;
 
       if ( cev-> above != XX-> above) {
 	 /* z-order notification */
@@ -627,7 +662,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if ( !XX-> flags. process_configure_notify)
 	 return;
 
-      if ( XX-> real_parent && !was_sent) {
+      if ( XX-> real_parent != XX-> parent && !was_sent) {
 	 XWindow cld;
 	 if ( !XTranslateCoordinates( DISP, XX-> real_parent, XX-> parent,
 				      cev-> x, cev-> y,
@@ -637,17 +672,16 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 }
 	 XCHECKPOINT;
       }
-      
-      size_changed = ( cev-> width != XX-> size. x) && ( cev-> height != XX-> size. y);
-      pos_changed  = ( cev-> x != XX-> origin. x) && ( cev-> y != X(XX-> owner)-> size. y - XX-> size. y - cev-> y);
-      old_size = XX-> size;
-      old_pos  = XX-> origin;
+      size_changed = ( cev-> width != XX-> size. x) || ( cev-> height != XX-> size. y);
+      pos_changed  = ( cev-> x != XX-> origin. x) || 
+                     ( XX-> origin. y != X(XX-> owner)-> size. y - XX-> size. y - cev-> y);
+      old_size  = XX-> size;
       XX-> size   = ( Point) { cev-> width, cev-> height};
       XX-> origin = ( Point) { cev-> x, X(XX-> owner)-> size. y - XX-> size. y - cev-> y };
       
       if ( pos_changed) {
 	 e. cmd = cmMove;
-	 e. gen. P = XX-> origin; 
+	 e. gen. P = XX-> origin;
 	 CComponent( self)-> message( self, &e);
          if ( PObject( self)-> stage == csDead) return; 
       }

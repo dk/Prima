@@ -416,7 +416,7 @@ prima_get_gc( PDrawableSysData selfxx)
       TAILQ_REMOVE(gc_pool, XX->gcl, gc_link);
    if (!XX->gcl) {
       XX->gcl = alloc1z( GCList);
-      XX->gcl->gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : RootWindow( DISP, SCREEN), 0, &gcv);
+      XX->gcl->gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : guts. root, 0, &gcv);
       XCHECKPOINT;
    }
    XX->gc = XX->gcl->gc;
@@ -1403,7 +1403,7 @@ apc_gp_set_region( Handle self, Handle mask)
    } else {
       img = PImage(mask);
       cache = prima_create_image_cache(img, nilHandle);
-      px = XCreatePixmap(DISP, RootWindow( DISP, SCREEN), img->w, img->h, 1);
+      px = XCreatePixmap(DISP, guts. root, img->w, img->h, 1);
       gc = XCreateGC(DISP, px, 0, &gcv);
       prima_put_ximage(px, gc, cache->image, 0, 0, 0, 0, img->w, img->h);
       XFreeGC( DISP, gc);

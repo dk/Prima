@@ -67,27 +67,25 @@ x_error_handler( Display *d, XErrorEvent *ev)
 	 tail = 0;
    }
 
+   if ( ev-> request_code == 42 /*X_SetInputFocus*/) return 0;
+
    XGetErrorText( d, ev-> error_code, buf, BUFSIZ);
    XGetErrorDatabaseText( d, name, "XError", "X Error", mesg, BUFSIZ);
-   fprintf( stderr, "%s:  %s\nRequest code %d",
-            mesg, buf, ev->request_code);
+   fprintf( stderr, "%s: %s, request: %d", mesg, buf, ev->request_code);
    if ( ev->request_code < 128) {
       sprintf( number, "%d", ev->request_code);
       XGetErrorDatabaseText( d, "XRequest", number, "", buf, BUFSIZ);
-      fprintf( stderr, " (%s)", buf);
+      fprintf( stderr, "(%s)", buf);
    }
-   if ( tail == guts. ri_head && prev == guts. ri_head)
-      fprintf( stderr, "\nThis occured in unknown place\n");
+   if ( tail == guts. ri_head && prev == guts. ri_head);
    else if ( tail == guts. ri_head)
-      fprintf( stderr, "\nThis occured somewhere after the checkpoint at line %d in %s\n",
-	       guts. ri[ prev]. line, guts. ri[ prev]. file);
+      fprintf( stderr, ", after %s:%d\n",
+	       guts. ri[ prev]. file, guts. ri[ prev]. line);
    else
-      fprintf( stderr, "\nThis occured somewhere between the checkpoint at\n"
-	       " line %d in %s, and another checkpoint at\n"
-	       " line %d in %s\n",
-	       guts. ri[ prev]. line, guts. ri[ prev]. file,
-	       guts. ri[ tail]. line, guts. ri[ tail]. file);
-   _exit( 1);
+      fprintf( stderr, ", between %s:%d and %s:%d\n",
+	       guts. ri[ prev]. file, guts. ri[ prev]. line,
+	       guts. ri[ tail]. file, guts. ri[ tail]. line);
+   return 0;
 }
 
 static int
@@ -236,7 +234,8 @@ window_subsystem_init( void)
    SCREEN = DefaultScreen( DISP);
 
    /* XXX - return code? */
-   XQueryBestCursor( DISP, RootWindow( DISP, SCREEN),
+   guts. root = RootWindow( DISP, SCREEN);
+   XQueryBestCursor( DISP, guts. root,
 		     DisplayWidth( DISP, SCREEN),     /* :-) */
 		     DisplayHeight( DISP, SCREEN),
 		     &guts. cursor_width,
@@ -251,7 +250,7 @@ window_subsystem_init( void)
    guts. windows = hash_create();
    guts. menu_windows = hash_create();
    guts. ximages = hash_create();
-   guts. menugc = XCreateGC( DISP, RootWindow( DISP, SCREEN), 0, &gcv);
+   guts. menugc = XCreateGC( DISP, guts. root, 0, &gcv);
    guts. resolution. x = 25.4 * DisplayWidth( DISP, SCREEN) / DisplayWidthMM( DISP, SCREEN);
    guts. resolution. y = 25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN);
    guts. depth = DefaultDepth( DISP, SCREEN);
@@ -357,7 +356,7 @@ apc_application_create( Handle self)
    XX-> type.drawable = true;
 
    attrs. event_mask = StructureNotifyMask;
-   X_WINDOW = XCreateWindow( DISP, RootWindow( DISP, SCREEN),
+   X_WINDOW = XCreateWindow( DISP, guts. root,
 			     0, 0, 1, 1, 0, CopyFromParent,
 			     InputOutput, CopyFromParent,
 			     CWEventMask, &attrs);
@@ -366,9 +365,9 @@ apc_application_create( Handle self)
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
 
    XX-> pointer_id = crArrow;
-   XX-> gdrawable = XX-> udrawable = RootWindow( DISP, SCREEN);
+   XX-> gdrawable = XX-> udrawable = guts. root;
    XX-> parent = None;
-   XX-> origin = (Point){0,0};
+   XX-> origin = ( Point){0,0};
    XX-> size = apc_application_get_size( self);
    XX-> owner = nilHandle;
 
@@ -434,7 +433,7 @@ apc_application_get_widget_from_point( Handle self, Point p)
 {
    XWindow from, to, child;
 
-   from = to = RootWindow(DISP,SCREEN);
+   from = to = guts. root;
    p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
    while (XTranslateCoordinates(DISP, from, to, p.x, p.y, &p.x, &p.y, &child)) {
       if (child) {
@@ -452,7 +451,7 @@ Handle
 apc_application_get_handle( Handle self, ApiHandle apiHandle)
 {
    /* NIY */
-   return RootWindow(DISP,SCREEN);
+   return guts. root;
 }
 
 int

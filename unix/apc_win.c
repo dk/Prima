@@ -45,7 +45,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    Handle real_owner;
    XSizeHints hints;
    XSetWindowAttributes attrs;
-   XWindow parent = RootWindow( DISP, SCREEN);
+   XWindow parent = guts. root;
 
    if ( X_WINDOW)  // recreate request - can't change a thing ... 
       return true; 
@@ -111,7 +111,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XX-> type.window = true;
 
    real_owner = application;
-   XX-> parent = parent;
+   XX-> real_parent = XX-> parent = parent;
    XX-> udrawable = XX-> gdrawable = X_WINDOW;
 
    XX-> flags. clip_owner = false;
@@ -126,9 +126,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    // setting initial size
    XX-> size. x = DisplayWidth( DISP, SCREEN) / 3;
    XX-> size. y = DisplayHeight( DISP, SCREEN) / 3;
-   XX-> known_size = (Point){APC_BAD_SIZE,APC_BAD_SIZE};
-   XX-> origin = (Point){0,0};
-   XX-> known_origin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
+   XX-> origin = ( Point) {0,0};
    
    bzero( &hints, sizeof( XSizeHints));
    hints. flags  = PBaseSize;
@@ -146,40 +144,31 @@ apc_window_activate( Handle self)
 {
    XWindow frame;
 
-   /* fprintf( stderr, "activate %s\n", PComponent(self)->name); */
    frame = prima_find_frame_window( PWidget( self)-> handle);
    if ( frame) XRaiseWindow( DISP, frame);
-   {
-      XWindow windoze = apc_widget_is_showing( self) ? X_WINDOW : None;
-      /* if (windoze == None) */
-         /* fprintf( stderr, "FUCHIK %s\n", PComponent(self)->name); */
-      /* else */
-         /* fprintf( stderr, "PUCHIK %s: %08lx => %08lx\n", */
-                  /* PComponent(self)->name, PWidget(self)->handle, windoze); */
-      XSetInputFocus( DISP, windoze, RevertToParent, CurrentTime);
-   }
+   XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
    return true;
 }
 
 Bool
 apc_window_is_active( Handle self)
 {
-   DOLBUG( "apc_window_is_active()\n");
+   return apc_window_get_active() == self;
    return false;
 }
 
 Bool
 apc_window_close( Handle self)
 {
-   DOLBUG( "apc_window_close()\n");
-   return false;
+   return prima_simple_message( self, cmClose, true);
 }
 
 Handle
 apc_window_get_active( void)
 {
-   DOLBUG( "apc_window_get_active()\n");
-   return nilHandle;
+   Handle x = guts. focused;
+   while ( x && !X(x)-> type. window) x = PWidget(x)-> owner;
+   return x;
 }
 
 int
@@ -262,19 +251,16 @@ prima_get_frame_info( Handle self, PRect r)
    int px, py;
    unsigned int pw, ph, pb, pd;
 
+   bzero( r, sizeof( Rect));
    if (( p = prima_find_frame_window( X_WINDOW)) == None) {
       return false;
-   } else if ( p == X_WINDOW) {
-      r-> left = r-> bottom = r-> right = r-> top = 0;
-   } else {
-      if ( !XTranslateCoordinates( DISP, X_WINDOW, p, 0, 0, &r->left, &r->top, &dummy))
-         croak( "error in XTranslateCoordinates()");
-      if ( !XGetGeometry( DISP, p, &dummy, &px, &py, &pw, &ph, &pb, &pd))
-         croak( "error in XGetGeometry()");
-      r->right = pw - XX->size.x - r-> left + pb;
-      r->left += pb;
-      r->bottom = ph - XX->size.y - r-> top + pb;
-      r->top += pb;
+   } else if ( p != X_WINDOW) 
+      if ( !XTranslateCoordinates( DISP, X_WINDOW, p, 0, 0, &r-> left, &r-> bottom, &dummy))
+         warn( "error in XTranslateCoordinates()");
+      if ( !XGetGeometry( DISP, p, &dummy, &px, &py, &pw, &ph, &pb, &pd)) {
+         warn( "error in XGetGeometry()");
+      r-> right = pw - r-> left  - XX-> size. x;
+      r-> top   = ph - r-> right - XX-> size. y;
    }
    return true;
 }
@@ -284,9 +270,11 @@ apc_window_set_client_pos( Handle self, int x, int y)
 {
    DEFXX;
    XSizeHints hints;
+   Point p = XX-> origin;
 
    bzero( &hints, sizeof( XSizeHints));
-   XX-> origin = (Point){x,y}; 
+   
+   XX-> origin = (Point){x,y};
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
    hints. flags = USPosition;
    hints. x = x;
@@ -294,6 +282,14 @@ apc_window_set_client_pos( Handle self, int x, int y)
    XMoveWindow( DISP, X_WINDOW, x, y);
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
+   if ( XX-> origin.x != p. x || XX-> origin. y != p. y) {
+      Event e;
+      bzero( &e, sizeof( e));
+      e. cmd = cmMove;
+      e. gen. source = self;
+      e. gen. P = XX-> origin;
+      apc_message( self, &e, false);
+   }
    return true;
 }
 
@@ -409,7 +405,6 @@ apc_window_end_modal( Handle self)
       XX-> flags.modal = false;
    CWindow( self)-> exec_leave_proc( self);
    apc_widget_set_visible( self, false);
-   apc_widget_set_enabled( self, 0);
    if ( application) {
       modal = CApplication(application)->popup_modal( application);
       if ( !modal && win->owner)
