@@ -376,10 +376,10 @@ typedef struct _RGBColor
    unsigned char r;
 } RGBColor, *PRGBColor;
 
-typedef struct _Complex      { float  re, im; } Complex;
-typedef struct _DComplex     { double re, im; } DComplex;
-typedef struct _TrigComplex  { float  r,  ph; } TrigComplex;
-typedef struct _TrigDComplex { double r,  ph; } TrigDComplex;
+typedef struct { float  re, im; } Complex;
+typedef struct { double re, im; } DComplex;
+typedef struct { float  r,  ph; } TrigComplex;
+typedef struct { double r,  ph; } TrigDComplex;
 
 #ifdef __cplusplus
 #define nil       NULL
