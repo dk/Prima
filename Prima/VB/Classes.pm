@@ -2712,7 +2712,7 @@ sub new_item
 {
 }
 
-sub new
+sub newnode
 {
    my $f = $_[0]-> focusedItem;
    my ( $x, $l) = $_[0]-> get_item( $f);
@@ -2882,7 +2882,7 @@ sub open
       size   => [ 100, $h - $divx - 6],
       growMode => gm::Ceiling,
       popupItems => [
-         ['~New' => q(new),],
+         ['~New' => q(newnode),],
          ['~Make node' => q(makenode),],
          ['Convert to ~separator' => q(makeseparator),],
          ['~Delete' => q(del),],
@@ -3343,7 +3343,7 @@ sub open
       size   => [ $w - 1, $h - $fh - 4],
       growMode => gm::Client,
       popupItems => [
-         ['~New' => q(new),],
+         ['~New' => q(newnode),],
          ['~Make node' => q(makenode),],
          ['~Delete' => q(del),],
       ],
