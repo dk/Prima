@@ -593,7 +593,7 @@ void Widget_handle_event( Handle self, PEvent event)
         break;
       case cmMouseMove:
         if ((( PApplication) application)-> hintUnder == self)
-           my-> set_hintVisible( self, 1);
+           my-> set_hintVisible( self, -1);
         objCheck;
         my-> notify( self, "<siP", "MouseMove", event-> pos. mod, event -> pos. where);
         break;
@@ -1476,16 +1476,6 @@ Widget_show_cursor( Handle self)
    }
 }
 
-void
-Widget_show_hint( Handle self)
-{
-   if ( var-> stage >= csDead) return;
-   if ( PApplication( application)-> hintVisible) return;
-   if ( strlen( var-> hint) == 0) return;
-   PApplication(application)-> hintActive = -1;
-   CApplication( application)-> set_hint_action( application, self, true, false);
-}
-
 /*::t */
 /*::u */
 
@@ -1588,15 +1578,20 @@ Widget_helpContext( Handle self, Bool set, long int helpContext)
    return var-> helpContext = helpContext;
 }
 
-Bool
-Widget_hintVisible( Handle self, Bool set, Bool hintVisible)
+int
+Widget_hintVisible( Handle self, Bool set, int hintVisible)
 {
+   Bool wantVisible;
    if ( !set)
       return PApplication( application)-> hintVisible;
    if ( var-> stage >= csDead) return false;
-   if ( hintVisible == PApplication( application)-> hintVisible) return false;
-   if ( hintVisible && strlen( var-> hint) == 0) return false;
-   CApplication( application)-> set_hint_action( application, self, hintVisible, false);
+   wantVisible = ( hintVisible != 0);
+   if ( wantVisible == PApplication( application)-> hintVisible) return false;
+   if ( wantVisible) {
+      if ( strlen( var-> hint) == 0) return false;
+      if ( hintVisible > 0) PApplication(application)-> hintActive = -1; // immediate
+   }
+   CApplication( application)-> set_hint_action( application, self, wantVisible, false);
    return false;
 }
 
