@@ -602,6 +602,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
    Bool  noBPP  = bpp != 1 && bpp != 4 && bpp != 8 && bpp != 24;
    HDC dc;
    XBITMAPINFO bi;
+   Bool notAnIcon = !kind_of( img, CIcon);
 
    ii. fIcon = hotSpot ? false : true;
    ii. xHotspot = hotSpot ? hotSpot-> x : 0;
@@ -629,7 +630,9 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
    dc = dc_alloc();
    image_get_binfo(( Handle)i, &bi);
 
+  // if ( 0) {
    if ( IS_NT) {
+      
       if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
           i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
       bi. bmiHeader. biBitCount = bi. bmiHeader. biPlanes = 1;
@@ -637,13 +640,14 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
       bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
 
       if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-         i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+         notAnIcon ? NULL : i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
    } else {
 // Moronious and "macaronious" code for Win95 -
 // since CreateIconIndirect gives results so weird,
 // we use following sequence.
       int mSize = i-> maskSize / i-> h;
       Byte *data = ( Byte*)malloc( mSize), *b1 = i-> mask, *b2 = i-> mask + mSize*(i-> h - 1);
+      Byte * mask;
 
 // reverting bits vertically - it's not HBITMAP, just bare bits
       while ( b1 < b2) {
@@ -655,15 +659,23 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
       }
       free( data);
 
+      if ( notAnIcon)      
+         mask = i-> mask;
+      else {
+         int sz = (( i-> w + 31) / 32) * 4; 
+         mask = malloc( sz);
+         memset( mask, 0xff, sz);
+      }   
 // creating icon by old 3.1 method - we need that for correct AND-mask,
 // don't care other pointer properties
       r = forPointer ?
          CreateCursor( guts. instance, ii. xHotspot, ii. yHotspot,
-            size.x, size.y, i-> mask, i-> data) :
+            size.x, size.y, mask, i-> data) :
          CreateIcon( guts. instance, size.x, size.y, 1, i-> type & imBPP,
-            i-> mask, i-> data);
+            mask, i-> data);
+      if ( notAnIcon) free( mask);
       if ( !r) {
-         Object_destroy(( Handle) i);
+         if (( Handle) i != img) Object_destroy(( Handle) i);
          apiErrRet;
       }
       GetIconInfo( r, &ii);
