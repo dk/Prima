@@ -182,13 +182,6 @@ typedef struct _PrinterData
    char          *port;
 } PrinterData;
 
-typedef struct _FileData
-{
-    Handle  self;
-    HANDLE  object;
-} FileData, *PFileData;
-
-
 typedef struct _PaintSaveData
 {
    Color       lbs[2];
