@@ -28,6 +28,12 @@ object Prima::Component( Prima::Object)
     void        *sysData;            # system-dependent data, defined by apc
     char        *name;
     ApiHandle   handle;              # apc handle
+
+    property Bool      eventFlag;
+    property SV *      delegations;
+    property char *    name;
+    property Handle    owner;
+
     method   long      add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
     method   void      attach( Handle objectHandle);
     method   Handle    bring( char * componentName);
@@ -39,12 +45,8 @@ object Prima::Component( Prima::Object)
     method   void      event_error();
     c_only   Handle    first_that_component( void * actionProc, void * params);
     public   void      get_components();
-    method   SV *      get_delegations();
-    method   Bool      get_event_flag();
     method   SV      * get_handle();
-    method   char    * get_name();
     public   void      get_notification( char * name, int index);
-    method   Handle    get_owner();
     c_only   void      handle_event ( PEvent event);
     method   void      init( HV * profile);
     c_only   Bool      message( PEvent event);
@@ -59,11 +61,7 @@ object Prima::Component( Prima::Object)
     method   void      remove_notification( long id);
     method   void      set( HV * profile);
     method   void      setup();
-    method   void      set_delegations( SV * delegations);
-    method   void      set_event_flag( Bool eventFlag);
-    method   void      set_name( char * name);
     public   void      set_notification( char * name, SV * subroutine);
-    import   void      set_owner( Handle owner);
     method   void      unlink_notifier( Handle referer);
     c_only   void      update_sys_handle( HV * profile);
 # internal variables

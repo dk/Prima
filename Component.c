@@ -217,15 +217,30 @@ Component_detach( Handle self, Handle object, Bool kill)
 }
 
 char *
-Component_get_name( Handle self)
+Component_name( Handle self, Bool set, char * name)
 {
-   return var-> name ? var-> name : "";
+   if ( var-> stage > csNormal) return "";
+   if ( set) {
+      free( var-> name);
+      var-> name = malloc( strlen ( name) + 1);
+      strcpy( var-> name, name);
+      apc_component_fullname_changed_notify( self);
+   } else
+      return var-> name ? var-> name : "";
+   return "";
 }
 
 Handle
-Component_get_owner( Handle self)
+Component_owner( Handle self, Bool set, Handle owner)
 {
-  return var-> owner;
+   HV * profile;
+   if ( !set)
+       return var-> owner;
+   profile = newHV();
+   pset_H( owner, owner);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return nilHandle;
 }
 
 void
@@ -253,16 +268,6 @@ Component_set( Handle self, HV * profile)
       pdelete( owner);                    /* like this. */
    }
    inherited set ( self, profile);
-}
-
-void
-Component_set_name( Handle self, char * name)
-{
-   if ( var-> stage > csNormal) return;
-   free( var-> name);
-   var-> name = malloc( strlen ( name) + 1);
-   strcpy( var-> name, name);
-   apc_component_fullname_changed_notify( self);
 }
 
 static Bool
@@ -314,7 +319,7 @@ Component_can_event( Handle self)
 void
 Component_clear_event( Handle self)
 {
-   my-> set_event_flag( self, 0);
+   my-> set_eventFlag( self, 0);
 }
 
 void
@@ -346,28 +351,19 @@ Component_pop_event( Handle self)
    return var-> evStack[ --var-> evPtr];
 }
 
-void
-Component_set_event_flag( Handle self, Bool eventFlag)
-{
-   if ( var-> stage == csDead)
-      return;
-   if ( !var-> evStack || var-> evPtr <= 0) {
-      warn("RTC0043: Component::eventFlag call not within message()");
-      return;
-   }
-   var-> evStack[ var-> evPtr - 1] = eventFlag;
-}
 
 Bool
-Component_get_event_flag( Handle self)
+Component_eventFlag( Handle self, Bool set, Bool eventFlag)
 {
    if ( var-> stage == csDead)
       return false;
    if ( !var-> evStack || var-> evPtr <= 0) {
-      warn("RTC0044: Component::eventFlag call not within message()");
+      warn("RTC0043: Component::eventFlag call not within message()");
       return false;
    }
-   return var-> evStack[ var-> evPtr - 1];
+   if ( set)
+      var-> evStack[ var-> evPtr - 1] = eventFlag;
+   return set ? eventFlag : var-> evStack[ var-> evPtr - 1];
 }
 
 void
@@ -688,7 +684,7 @@ Component_notify( Handle self, char * format, ...)
    ret = call_perl_indirect( self, "notify", format, true, false, args);
    va_end( args);
    r = ( ret && SvIOK( ret)) ? SvIV( ret) : 0;
-   if ( ret) my-> set_event_flag( self, r);
+   if ( ret) my-> set_eventFlag( self, r);
    return r;
 }
 
@@ -702,7 +698,7 @@ Component_notify_REDEFINED( Handle self, char * format, ...)
    ret = call_perl_indirect( self, "notify", format, true, false, args);
    va_end( args);
    r = ( ret && SvIOK( ret)) ? SvIV( ret) : 0;
-   if ( ret) my-> set_event_flag( self, r);
+   if ( ret) my-> set_eventFlag( self, r);
    return r;
 }
 
@@ -923,62 +919,61 @@ void Component_set_notification          ( Handle self, char * name, SV * subrou
 void Component_set_notification_REDEFINED( Handle self, char * name, SV * subroutine) { warn("Invalid call of Component::set_notification"); }
 
 SV *
-Component_get_delegations( Handle self)
+Component_delegations( Handle self, Bool set, SV * delegations)
 {
-   HE * he;
-   AV * av = newAV();
-   Handle last = nilHandle;
-   if ( var-> stage > csNormal || var-> eventIDs == nil) newRV_noinc(( SV*) av);
+   if ( set) {
+      int i, len;
+      AV * av;
+      Handle referer;
+      char *name;
 
-   hv_iterinit( var-> eventIDs);
-   while (( he = hv_iternext( var-> eventIDs)) != nil) {
-      int i;
-      char * event = ( char *) HeKEY( he);
-      PList list = var-> events + ( int) HeVAL( he) - 1;
-      for ( i = 0; i < list-> count; i += 2) {
-         if ( list-> items[i] != last) {
-            last = list-> items[i];
-            av_push( av, newSVsv((( PAnyObject) last)-> mate));
+      if ( var-> stage > csNormal) return nilSV;
+      if ( !var-> owner) return nilSV;
+      if ( !SvROK( delegations) || SvTYPE( SvRV( delegations)) != SVt_PVAV) return nilSV;
+
+      referer = var-> owner;
+      name    = var-> name;
+      av = ( AV *) SvRV( delegations);
+      len = av_len( av);
+      for ( i = 0; i <= len; i++) {
+         SV **holder = av_fetch( av, i, 0);
+         if ( !holder) continue;
+         if ( SvROK( *holder)) {
+            Handle mate = gimme_the_mate( *holder);
+            if (( mate == nilHandle) || !kind_of( mate, CComponent)) continue;
+            referer = mate;
+         } else if ( SvPOK( *holder)) {
+            CV * sub;
+            SV * subref;
+            char buf[ 1024];
+            char * event = SvPV( *holder, na);
+            snprintf( buf, 1023, "%s_%s", name, event);
+            sub = query_method( referer, buf, 0);
+            if ( sub == nil) continue;
+            my-> add_notification( self, event, subref = newRV(( SV*) sub), referer, -1);
+            sv_free( subref);
          }
-         av_push( av, newSVpv( event, 0));
       }
-   }
-   return newRV_noinc(( SV*) av);
-}
+   } else {
+      HE * he;
+      AV * av = newAV();
+      Handle last = nilHandle;
+      if ( var-> stage > csNormal || var-> eventIDs == nil) newRV_noinc(( SV*) av);
 
-void
-Component_set_delegations( Handle self, SV * delegations)
-{
-   int i, len;
-   AV * av;
-   Handle referer;
-   char *name;
-
-   if ( var-> stage > csNormal) return;
-   if ( !var-> owner) return;
-   if ( !SvROK( delegations) || SvTYPE( SvRV( delegations)) != SVt_PVAV) return;
-
-   referer = var-> owner;
-   name    = var-> name;
-   av = ( AV *) SvRV( delegations);
-   len = av_len( av);
-   for ( i = 0; i <= len; i++) {
-      SV **holder = av_fetch( av, i, 0);
-      if ( !holder) continue;
-      if ( SvROK( *holder)) {
-         Handle mate = gimme_the_mate( *holder);
-         if (( mate == nilHandle) || !kind_of( mate, CComponent)) continue;
-         referer = mate;
-      } else if ( SvPOK( *holder)) {
-         CV * sub;
-         SV * subref;
-         char buf[ 1024];
-         char * event = SvPV( *holder, na);
-         snprintf( buf, 1023, "%s_%s", name, event);
-         sub = query_method( referer, buf, 0);
-         if ( sub == nil) continue;
-         my-> add_notification( self, event, subref = newRV(( SV*) sub), referer, -1);
-         sv_free( subref);
+      hv_iterinit( var-> eventIDs);
+      while (( he = hv_iternext( var-> eventIDs)) != nil) {
+         int i;
+         char * event = ( char *) HeKEY( he);
+         PList list = var-> events + ( int) HeVAL( he) - 1;
+         for ( i = 0; i < list-> count; i += 2) {
+            if ( list-> items[i] != last) {
+               last = list-> items[i];
+               av_push( av, newSVsv((( PAnyObject) last)-> mate));
+            }
+            av_push( av, newSVpv( event, 0));
+         }
       }
+      return newRV_noinc(( SV*) av);
    }
+   return nilSV;
 }
