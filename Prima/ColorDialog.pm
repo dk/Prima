@@ -642,7 +642,7 @@ sub profile_default
       value            => cl::White,
       width            => 56,
       literal          => 0,
-      colors           => 596,
+      colors           => 20 + 128,
       editClass        => 'Prima::Widget',
       listClass        => 'Prima::Widget',
       editProfile      => {
@@ -857,16 +857,13 @@ sub on_colorify
       $$sref = $palColors[ $index];
    } else {
        my $i = $index - 20;
-       my ( $r, $g, $b, $m);
+       my ( $r, $g, $b);
        if ( $i < 64) {
-          ( $r, $g, $b) = ( $i & 0x3, ($i >> 2) & 0x3, ( $i >> 4) & 0x3);
-          $m = 64;
+          ( $r, $g, $b) = Prima::ColorDialog::hsv2rgb( $i * 4, 0.25 + ($i % 4) * 0.25, 1);
        } else {
-          $i -= 64;
-          ( $r, $g, $b) = ( $i & 0x7, ($i >> 3) & 0x7, ( $i >> 6) & 0x7);
-          $m = 32;
+          ( $r, $g, $b) = Prima::ColorDialog::hsv2rgb( $i * 4, 1, 0.25 + ($i % 4) * 0.25);
        }
-       $$sref = ($b * $m) | ( $g * $m) << 8 | ( $r * $m) << 16;
+       $$sref = $b | $g << 8 | $r << 16;
    }
    $self-> clear_event;
 }
