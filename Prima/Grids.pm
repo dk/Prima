@@ -2170,6 +2170,21 @@ sub on_stringify
 
 Prima::Grids - grid widgets
 
+=head2 SYNOPSIS
+
+   use Prima::Grids;
+
+   $grid = Prima::Grid-> create(
+      cells       => [
+          [qw(1.First 1.Second 1.Third)],
+          [qw(2.First 2.Second 2.Third)],
+          [qw(3.First 3.Second 3.Third)],
+      ],
+      onClick     => sub { 
+         print $_[0]-> get_cell_text( $_[0]-> focusedCell), " is selected\n";
+      }
+   );
+
 =head1 DESCRIPTION
 
 The module provides classes for several abstraction layers
@@ -2770,19 +2785,6 @@ Negative values are accepted.
 Descendant of C<Prima::GridViewer>, declares format of cells 
 as a single text string. Incorporating all functionality of
 its ascendants, provides a standard text grid widget.
-
-=head2 Synopsis
-
-   $grid = Prima::Grid-> create(
-      cells       => [
-          [qw(1.First 1.Second 1.Third)],
-          [qw(2.First 2.Second 2.Third)],
-          [qw(3.First 3.Second 3.Third)],
-      ],
-      onClick     => sub { 
-         print $_[0]-> get_cell_text( $_[0]-> focusedCell), " is selected\n";
-      }
-   );
 
 =head2 Methods
 
