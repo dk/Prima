@@ -33,6 +33,8 @@ use constant Simple       =>  0;
 use constant DropDown     =>  1;
 use constant DropDownList =>  2;
 
+use strict;
+
 package Prima::ComboBox;
 
 use vars qw(@ISA %listProps %editProps %listDynas);
@@ -528,7 +530,7 @@ sub set_list_visible
    my ( $self, $nlv) = @_;
    return if ( $self->{list}-> visible == $nlv) ||
              ( $self->{style} == cs::Simple) ||
-             ( !$self-> visible && $lnv);
+             ( !$self-> visible && $nlv);
    my ( $list, $edit) = ( $self->{list}, $self->{edit});
    if ( $nlv)
    {
