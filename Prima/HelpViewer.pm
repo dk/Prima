@@ -674,9 +674,13 @@ sub select_findout
   
    if ( 4 == scalar @sel) {
       $t-> selection( @sel);
-      @sel = $t-> info2xy( @sel[0,1]);
-      $t-> offset( $sel[0]);
-      $t-> topLine( $sel[1]);
+      my @s = ( $t-> info2xy( @sel[0,1]), $t-> info2xy( @sel[2,3]));
+      $sel[0] += $t-> text2xoffset( @sel[0,1]);
+      $sel[2] += $t-> text2xoffset( @sel[2,3]);
+      my $x = $t-> offset;
+      my @sz = $t-> get_active_area( 2, $t-> size);
+      $t-> offset( $sel[0]) if $x > $sel[0] || $x + $sz[0] < $sel[2];
+      $t-> topLine( $s[1]);
    }
 }
 
