@@ -605,6 +605,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
            guts.last_button_event.type == ButtonRelease &&
            bev-> window == guts.last_button_event.window &&
            bev-> button == guts.last_button_event.button &&
+           bev-> button != guts. mouse_wheel_up &&
+           bev-> button != guts. mouse_wheel_down &&
            bev-> time - guts.last_button_event.time <= guts.click_time_frame) {
  	  e. cmd = cmMouseClick;
           e. pos. dblclk = true;
@@ -644,7 +646,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if ( e. cmd == cmMouseClick && e. pos. dblclk) {
          bzero( &guts.last_click, sizeof(guts.last_click));
          guts. last_button_event. type = 0;
-      }
+      } 
       
       if ( e. cmd == cmMouseDown) {
          if ( XX-> flags. first_click) {
