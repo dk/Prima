@@ -1876,7 +1876,7 @@ FOOTER
       return if $f =~ /include.generic|CVS/;
       if ($type eq 'bin') {
          return if $f =~ /\.(c|cls|h)$/i;
-         return if $f =~ /$cwd.(img|include|os2|win32|unix|utils)/i;
+         return if $f =~ /$cwd.(img|include|os2|win32|unix|Makefile.PL)/i;
       } else {
          return if $f =~ /auto/;
       }
