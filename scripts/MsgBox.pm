@@ -53,6 +53,7 @@ sub message_box
    my @mbs   = qw( Error Warning Information Question);
    my $icon;
    my $nosound = $options & mb::NoSound;
+
    for ( @mbs)
    {
       my $const = $mb::{$_}->();
@@ -83,6 +84,7 @@ sub message_box
    my @bConsts =  ( mb::Help, mb::Cancel, mb::Ignore, mb::Retry, mb::Abort, mb::No, mb::Yes, mb::Ok);
    my @bTexts  = qw( ~Help    ~Cancel     ~Ignore     ~Retry     ~Abort     ~No     ~Yes     ~OK);
 
+
    my $dir = Utils::get_gui;
    $dir = ( $dir == gui::Motif) ? 1 : 0;
    @bConsts = reverse @bConsts unless $dir;
@@ -92,10 +94,14 @@ sub message_box
    for ( $i = 0; $i < scalar @bConsts; $i++)
    {
       next unless $buttons & $bConsts[$i];
+      my %epr = ();
+
+      %epr = %{$extras->{buttons}->{$bConsts[$i]}} if $extras->{buttons} && $extras->{buttons}->{$bConsts[$i]};
+
       my %hpr = (
-         bottom    => 10,
          text      => $bTexts[$i],
          ownerFont => 0,
+         bottom    => 10,
          default   => ( $bConsts[$i] & $defButton) ? 1 : 0,
          current   => ( $bConsts[$i] & $defButton) ? 1 : 0,
       );
@@ -115,7 +121,7 @@ sub message_box
       } else {
          $hpr{modalResult} = $bConsts[$i];
       }
-      $fresh = $dlg-> insert( Button => %hpr);
+      $fresh = $dlg-> insert( Button => %hpr, %epr);
       $freshFirst = $fresh unless $freshFirst;
       my $w = $fresh-> width + 10;
       $right -= $w;
@@ -126,7 +132,7 @@ sub message_box
 
    my $iconRight = 0;
    my $iconView;
-   if ( $options)
+   if ( $icon)
    {
       $icon = StdBitmap::icon( $icon);
       $iconView = $dlg-> insert( Widget =>
