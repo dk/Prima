@@ -150,6 +150,11 @@ get_idepth( void)
    return idepth;
 }
 
+static Bool  do_x11     = true;
+static Bool  do_sync    = false;
+static char* do_display = NULL;
+static int   do_debug   = 0;
+
 static Bool
 init_x11( void)
 {
@@ -212,10 +217,10 @@ init_x11( void)
    guts. last_time = CurrentTime;
 
    guts. ri_head = guts. ri_tail = 0;
-   DISP = XOpenDisplay( nil);
+   DISP = XOpenDisplay( do_display);
    if (!DISP) {
       char * disp = getenv("DISPLAY");
-      fprintf( stderr, "Error: Can't open display: %s\n", disp ? disp : "");
+      fprintf( stderr, "Error: Can't open display '%s'\n", do_display ? do_display : (disp ? disp : ""));
       return false;
    }
    XSetErrorHandler( x_error_handler);
@@ -359,7 +364,7 @@ init_x11( void)
    hostname[255] = '\0';
    XStringListToTextProperty((char **)&hostname, 1, &guts. hostname);
 
-/*    XSynchronize( DISP, true); */
+   if ( do_sync) XSynchronize( DISP, true);
    return true;
 }
 
@@ -367,14 +372,120 @@ Bool
 window_subsystem_init( void)
 {
    bzero( &guts, sizeof( guts));
+   guts. debug = do_debug;
+   Mdebug("init x11:%d, debug:%x, sync:%d, display:%s\n", do_x11, guts.debug, 
+	  do_sync, do_display ? do_display : "(default)");
+   if ( do_x11) return init_x11();
+   return true;
+}
+
+int
+prima_debug( const char *format, ...)
+{
+   int rc = 0;
+   va_list args;
+   va_start( args, format);
+   rc = vfprintf( stderr, format, args);
+   va_end( args);
+   return rc;
+}
+
+Bool
+window_subsystem_get_options( int * argc, char *** argv)
+{
+   static char * x11_argv[] = {
+   "no-x11", "runs Prima without X11 display initialized",
+   "display", "selects X11 DISPLAY (--display=:0.0)",
+   "visual", "X visual id (--visual=0x21, run `xdpyinfo` for list of supported visuals)",
+   "sync", "synchronize X connection",
+   "debug", "turns on debugging on subsystems, selected by characters (--debug=FC). "\
+            "Recognized characters are: "\
+	    " C(clipboard),"\
+	    " E(events),"\
+	    " F(fonts),"\
+	    " M(miscellaneous),"\
+	    " P(palettes and colors),"\
+	    " X(XRDB),"\
+	    " A(all together)",
+#ifdef USE_XFT
+   "no-xft", "do not use XFT",
+#endif   
+   "font", 
+#ifdef USE_XFT
+            "default prima font in XLFD (-helv-misc-*-*-) or XFT(Helv-12) format",
+#else      
+            "default prima font in XLFD (-helv-misc-*-*-) format",
+#endif
+   "menu-font", "default menu font",
+   "msg-font", "default message box font",
+   "widget-font", "default widget font",
+   "caption-font", "MDI caption font",
+   "fg", "default foreground color",
+   "bg", "default background color",
+   "hilite-fg", "default highlight foreground color",
+   "hilite-bg", "default highlight background color",
+   "hilite-fg", "default disabled foreground color",
+   "hilite-bg", "default disabled background color",
+   "light", "default light-3d color",
+   "dark", "default dark-3d color"
+   };
+   *argv = x11_argv;
+   *argc = sizeof( x11_argv) / sizeof( char*);
    return true;
 }
 
 Bool
-window_subsystem_set_runlevel( int runlevel)
+window_subsystem_set_option( char * option, char * value)
 {
-   if ( runlevel == 1) return init_x11();
-   return true;
+   if ( strcmp( option, "no-x11") == 0) {
+      if ( value) warn("`--no-x11' option has no parameters");
+      do_x11 = false;
+      return true;
+   } else if ( strcmp( option, "display") == 0) {
+      static char display[256];
+      if ( value) {
+         strncpy( do_display = display, value, 255);
+	 display[255] = 0;
+      } else
+	 do_display = NULL;
+      return true;
+   } else if ( strcmp( option, "debug") == 0) {
+      if ( !value) {
+	 warn("`--debug' must be given parameters. `--debug=A` assumed\n");
+	 guts. debug |= DEBUG_ALL;
+         do_debug = guts. debug;
+	 return true;
+      }
+      while ( *value) switch ( tolower(*(value++))) {
+      case 'c':
+	 guts. debug |= DEBUG_CLIP;
+	 break;
+      case 'e':
+	 guts. debug |= DEBUG_EVENT;
+	 break;
+      case 'f':
+	 guts. debug |= DEBUG_FONTS;
+	 break;
+      case 'm':
+	 guts. debug |= DEBUG_MISC;
+	 break;
+      case 'p':
+	 guts. debug |= DEBUG_COLOR;
+	 break;
+      case 'x':
+	 guts. debug |= DEBUG_XRDB;
+	 break;
+      case 'a':
+	 guts. debug |= DEBUG_ALL;
+	 break;
+      }
+      do_debug = guts. debug;
+   } else if ( prima_font_subsystem_set_option( option, value)) {
+      return true;
+   } else if ( prima_color_subsystem_set_option( option, value)) {
+      return true;
+   }
+   return false;
 }
 
 void
@@ -456,8 +567,10 @@ apc_application_create( Handle self)
 {
    XSetWindowAttributes attrs;
    DEFXX;
-
-   if ( !DISP) return false;
+   if ( !DISP) {
+      Mdebug("apc_application_create: failed, x11 layer is not up\n");
+      return false;
+   }
 
    XX-> type.application = true;
    XX-> type.widget = true;

@@ -428,6 +428,24 @@ typedef struct {
 #define NET_WM_STATE_MODAL guts. atoms[ AI_NET_WM_STATE_MODAL]
 #define NET_SUPPORTED guts. atoms[ AI_NET_SUPPORTED]
 
+
+#define DEBUG_FONTS 0x01
+#define DEBUG_CLIP  0x02
+#define DEBUG_EVENT 0x04
+#define DEBUG_MISC  0x08
+#define DEBUG_COLOR 0x10
+#define DEBUG_XRDB  0x20
+#define DEBUG_ALL   0x3f
+#define _debug prima_debug
+extern int
+prima_debug( const char *format, ...);
+#define Fdebug if (guts.debug & DEBUG_FONTS) _debug
+#define Cdebug if (guts.debug & DEBUG_CLIP) _debug
+#define Edebug if (guts.debug & DEBUG_EVENT) _debug
+#define Mdebug if (guts.debug & DEBUG_MISC) _debug
+#define Pdebug if (guts.debug & DEBUG_COLOR) _debug
+#define Xdebug if (guts.debug & DEBUG_XRDB) _debug
+
 typedef struct _UnixGuts
 {
    /* Event management */
@@ -594,6 +612,7 @@ typedef struct _UnixGuts
    XFontStruct *                font_abc_nil_hack;
    Atom                         atoms[AI_count];
    XTextProperty                hostname;
+   unsigned int			debug;
 } UnixGuts;
 
 extern UnixGuts guts;
@@ -885,9 +904,15 @@ prima_init_clipboard_subsystem( void);
 
 extern Bool
 prima_init_font_subsystem( void);
+   
+extern Bool
+prima_font_subsystem_set_option( char *, char *);
 
 extern Bool
 prima_init_color_subsystem( void);
+
+extern Bool
+prima_color_subsystem_set_option( char *, char *);
 
 extern void
 prima_done_color_subsystem( void);

@@ -183,20 +183,18 @@ apc_fetch_resource( const char *className, const char *name,
    classes[nc]          = 0;
    instances[ni]        = 0;
 
-   /*
-   if (0) {
+   if (guts. debug & DEBUG_XRDB) {
       int i;
-      fprintf( stderr, "inst: ");
+      _debug( "misc: inst: ");
       for ( i = 0; i < ni; i++) {
-         fprintf( stderr, "%s ", XrmQuarkToString( instances[i]));
+         _debug( "%s ", XrmQuarkToString( instances[i]));
       }
-      fprintf( stderr, "\nclas: ");
+      _debug( "\nmisc: class: ");
       for ( i = 0; i < nc; i++) {
-         fprintf( stderr, "%s ", XrmQuarkToString( classes[i]));
+         _debug( "%s ", XrmQuarkToString( classes[i]));
       }
-      fprintf( stderr, "\n");
+      _debug( "\n");
    }
-   */
    
    if ( XrmQGetResource( guts.db,
                          instances,

@@ -236,7 +236,6 @@ Unbuffered:
    apc_gp_set_fill_pattern( self, XX-> saved_fill_pattern);
 
    if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
-      /* fprintf( stderr, "set font g: %s\n", XX-> font-> load_name); */
       XSetFont( DISP, XX-> gc, XX-> font-> id);
       XCHECKPOINT;
    } else {
@@ -1565,13 +1564,13 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
       dsx = x + rx. i. i - psx;
       dsy = REVERT( y + ry. i. i) + psy - r-> dimension. y + 1;
 
-      /*       
-      printf("shift %d %d\n", r-> shift.x, r-> shift.y);            
-      printf("point ref: %d %d => %d %d. dims: %d %d, [%d %d %d]\n", px, py, psx, psy, r-> dimension.x, r-> dimension.y, 
-           cs-> lbearing, cs-> rbearing - cs-> lbearing, cs-> width - cs-> rbearing);
-      printf("plot ref: %d %d => %d %d\n", ax, ay, rx.i.i, ry.i.i);
-      printf("at: %d %d ( sz = %d), dest: %d %d\n", x, y, XX-> size.y, dsx, dsy);
-      */
+      if ( guts. debug & DEBUG_FONTS) {
+	 _debug("shift %d %d\n", r-> shift.x, r-> shift.y);            
+	 _debug("point ref: %d %d => %d %d. dims: %d %d, [%d %d %d]\n", px, py, psx, psy, r-> dimension.x, r-> dimension.y, 
+	      cs-> lbearing, cs-> rbearing - cs-> lbearing, cs-> width - cs-> rbearing);
+	 _debug("plot ref: %d %d => %d %d\n", ax, ay, rx.i.i, ry.i.i);
+	 _debug("at: %d %d ( sz = %d), dest: %d %d\n", x, y, XX-> size.y, dsx, dsy);
+      }
       
 /*   GXandReverse   ropNotDestAnd */		/* dest = (!dest) & src */
 /*   GXorReverse    ropNotDestOr */		/* dest = (!dest) | src */

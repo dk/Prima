@@ -29,6 +29,4 @@
 #
 # Initializes Prima in no-X11 environment
 
-no strict;
-$Prima::runlevel=0;
-require Prima;
+push @ARGV, '--no-x11' unless $^O =~ /(win32|cygwin|os2)/;

@@ -207,8 +207,9 @@ The image functionality can be used standalone, with all other parts of the
 toolkit being uninitialized. This is useful in non-interactive programs,
 running in evnironments with no GUI access, a cgi-script with no access to
 X11 display, for example. Normally, Prima fails to start in such situations,
-but can be told not to initialize its GUI part by explicitly setting its
-runlevel to 0 ( see L<Prima::Application/runLevel> ).
+but can be told not to initialize its GUI part by explicitly operating
+system-dependent options. Currently, X11 implementation provides
+'--no-x11' option which effectively turns off X11 support.
 
 =head2 Prima::Icon
 

@@ -176,9 +176,16 @@ window_subsystem_init( void)
 }
 
 Bool
-window_subsystem_set_runlevel( int runlevel)
+window_subsystem_get_options( int * argc, char *** argv)
 {
+   *argc = 0;
    return true;
+}
+
+Bool
+window_subsystem_set_option( char * option, char * value)
+{
+   return false;
 }
 
 Bool freePS( HPS ps, void * dummy)    { WinEndPaint ( ps); return false; }

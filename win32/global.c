@@ -270,9 +270,16 @@ window_subsystem_init()
 }
 
 Bool
-window_subsystem_set_runlevel( int runlevel)
+window_subsystem_get_options( int * argc, char *** argv)
 {
+   *argc = 0;
    return true;
+}
+
+Bool
+window_subsystem_set_option( char * option, char * value)
+{
+   return false;
 }
 
 void

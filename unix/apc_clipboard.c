@@ -351,7 +351,7 @@ read_property( Atom property, Atom * type, int * format,
 
       if ( *type == 0 ) return RPS_NODATA;
       
-      /* printf("%s %s %d %d\n", XGetAtomName(DISP, property), XGetAtomName(DISP,*type), *format, n); */
+      Cdebug("clipboard:%s %s %d %d\n", XGetAtomName(DISP, property), XGetAtomName(DISP,*type), *format, n);
 
       new_size = n * *format / 8;
 
@@ -397,7 +397,7 @@ query_datum( Handle self, long id, Atom query_target)
    XX-> external[id]. size = CFDATA_ERROR;
    gettimeofday( &start_time, nil);
    XCHECKPOINT;
-   /* printf("Convert %s from %08x\n", XGetAtomName( DISP, query_target), WIN); */
+   Cdebug("clipboard:convert %s from %08x\n", XGetAtomName( DISP, query_target), WIN);
    XDeleteProperty( DISP, WIN, XX-> selection);
    XConvertSelection( DISP, XX-> selection, query_target, XX-> selection, WIN, guts. last_time);
    XFlush( DISP);
@@ -413,9 +413,9 @@ query_datum( Handle self, long id, Atom query_target)
          continue;
       }
       if ( ev. xselection. property == None) goto FAIL;
-      /* printf("read SelectionNotify  %s %s\n",
+      Cdebug("clipboard:read SelectionNotify  %s %s\n",
              XGetAtomName(DISP, ev. xselection. property),
-             XGetAtomName(DISP, ev. xselection. target)); */
+             XGetAtomName(DISP, ev. xselection. target));
       gettimeofday( &timeout, nil);
       delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000 + 
                    ( timeout. tv_usec - start_time. tv_usec) / 1000) + guts. clipboard_event_timeout;
@@ -531,10 +531,10 @@ apc_clipboard_has_format( Handle self, long id)
             Atom * data = ( Atom*)(XX-> external[cfTargets]. data);
             Atom ret;
 
-            /*
-            printf("targets:");
+            
+            Cdebug("clipboard targets:");
             for ( i = 0; i < size/4; i++) 
-               printf("%s\n", XGetAtomName( DISP, data[i])); */
+               Cdebug("%s\n", XGetAtomName( DISP, data[i]));
 
             /* find our index for TARGETS[i], assign CFDATA_NOT_ACQUIRED to it */
             for ( i = 0; i < guts. clipboard_formats_count; i++) {
@@ -774,11 +774,10 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
       xe. xselection. property  = None;
       xe. xselection. time      = ev-> xselectionrequest. time;
       
-      /*
-       printf("from %08x %s at %s\n", ev-> xselectionrequest. requestor, 
+      Cdebug("from %08x %s at %s\n", ev-> xselectionrequest. requestor, 
              XGetAtomName( DISP, ev-> xselectionrequest. target),
              XGetAtomName( DISP, ev-> xselectionrequest. property)
-             ); */
+             );
 
       if ( self) { 
          PClipboardSysData CC = C(self);
@@ -875,7 +874,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
                      data = ( unsigned char*) &incr; 
                      ok = 1;
                      target = XA_INCR;
-                     /* printf("init incr for %08x %d\n", x-> requestor, x-> property); */
+                     Cdebug("clpboard: init INCR for %08x %d\n", x-> requestor, x-> property);
                   }
                }
                if ( !ok) size = reqlen;
@@ -914,7 +913,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
                xe. xselection. display,
                xe. xselection. requestor,
                prop, target, format, mode, data, size);
-            /* printf("to prop %s\n", XGetAtomName( DISP, prop)); */
+            Cdebug("clipboard: store prop %s\n", XGetAtomName( DISP, prop));
             xe. xselection. property = prop;
             if ( downgrade_utf8) free( data);
          }
@@ -931,11 +930,9 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
 SEND_EMPTY:
       XSendEvent( xe.xselection.display, xe.xselection.requestor, false, 0, &xe);
       XFlush( DISP);
-      /*
-       printf("id %d, SelectionNotify to %08x , %s %s\n", id, xe.xselection.requestor, 
+      Cdebug("clipboard:id %d, SelectionNotify to %08x , %s %s\n", id, xe.xselection.requestor, 
          XGetAtomName( DISP, xe. xselection. property),
          XGetAtomName( DISP, xe. xselection. target)); 
-        */
    } break;
    case SelectionClear: 
       guts. last_time = ev-> xselectionclear. time;
@@ -967,7 +964,7 @@ SEND_EMPTY:
             size = x-> size - offs;
             if ( size > reqlen) size = reqlen;
          }
-         /* printf("put %d %d in %08x %d\n", x-> offset, size, x-> requestor, x-> property); */
+         Cdebug("clipboard: put %d %d in %08x %d\n", x-> offset, size, x-> requestor, x-> property); 
          if ( x-> format > 8)  size /= 2;
          if ( x-> format > 16) size /= 2;
          XChangeProperty( DISP, x-> requestor, x-> property, x-> target,
@@ -979,7 +976,7 @@ SEND_EMPTY:
       }
       break;
    case DestroyNotify:
-      /* printf("destroy xfers at %08x\n", ev-> xdestroywindow. window); */
+      Cdebug("clipboard: destroy xfers at %08x\n", ev-> xdestroywindow. window);
       hash_first_that( guts. clipboards, (void*)delete_xfers, (void*) &ev-> xdestroywindow. window, nil, nil);
       XFlush( DISP);
       break;

@@ -84,13 +84,11 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 
    str_len = XLookupString( ev, str_buf, 256, &keysym, nil);
    *sym = keysym;
-   /*
-   fprintf( stderr, "keysym: %08lu 0: %08lu, 1: %08lu, 2: %08lu, 3: %08lu\n", keysym,
+   Edebug( "event: keysym: %08lu 0: %08lu, 1: %08lu, 2: %08lu, 3: %08lu\n", keysym,
             XLookupKeysym(ev,0),
             XLookupKeysym(ev,1),
             XLookupKeysym(ev,2),
             XLookupKeysym(ev,3));
-    */
 
    switch (keysym) {
    /* virtual keys-modifiers */
@@ -350,7 +348,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
    Point old_size = XX-> size, old_pos = XX-> origin;
 
    if ( wmsd-> origin. x != PWidget(self)-> pos. x || wmsd-> origin. y != PWidget(self)-> pos. y) {
-      /* printf("GOT move to %d %d / %d %d\n", wmsd-> origin.x, wmsd-> origin.y, PWidget(self)->pos. x, PWidget(self)->pos. y); */
+      Edebug("event: GOT move to %d %d / %d %d\n", wmsd-> origin.x, wmsd-> origin.y, PWidget(self)->pos. x, PWidget(self)->pos. y);
       bzero( &e, sizeof( Event));
       e. cmd      = cmMove;
       e. gen. P   = XX-> origin = wmsd-> origin;
@@ -364,7 +362,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
       XX-> size. x = wmsd-> size. x;
       XX-> size. y = wmsd-> size. y - XX-> menuHeight;
       PWidget( self)-> virtualSize = XX-> size; 
-      /* printf("got size to %d %d\n", XX-> size.x, XX-> size.y); */
+      Edebug("event: got size to %d %d\n", XX-> size.x, XX-> size.y);
       prima_send_cmSize( self, old_size);
       if ( PObject( self)-> stage == csDead) return false; 
       size_changed = true;
@@ -593,7 +591,6 @@ STOP:;
    return skipped; 
 }
 
-/*
 static char * xevdefs[] = { "0", "1"
 ,"KeyPress" ,"KeyRelease" ,"ButtonPress" ,"ButtonRelease" ,"MotionNotify" ,"EnterNotify"
 ,"LeaveNotify" ,"FocusIn" ,"FocusOut" ,"KeymapNotify" ,"Expose" ,"GraphicsExpose"
@@ -602,8 +599,6 @@ static char * xevdefs[] = { "0", "1"
 ,"GravityNotify" ,"ResizeRequest" ,"CirculateNotify" ,"CirculateRequest" ,"PropertyNotify"
 ,"SelectionClear" ,"SelectionRequest" ,"SelectionNotify" ,"ColormapNotify" ,"ClientMessage"
 ,"MappingNotify"};
-*/
-
 
 void
 prima_handle_event( XEvent *ev, XEvent *next_event)
@@ -708,12 +703,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       win = guts. grab_redirect;
 
    self = prima_xw2h( win);
-   /*
-   if ( ev-> type > 0) {
-      printf("%d:%s of ", ev-> type, ((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]));
-      printf( self ? "%s\n" : "%08x\n", self ? PWidget(self)-> name : self);
+   if ( ev-> type > 0 && guts. debug & DEBUG_EVENT ) {
+      char buf[256];
+      if ( self)
+         strncpy( buf, PWidget(self)-> name, 256);
+      else
+         snprintf( buf, 256, "%08lx", self);
+      Edebug("event: %d:%s of %s\n", ev-> type, ((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]), buf);
    }
-   */
 
    if (!self)
       return;
@@ -1176,7 +1173,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
                }
             }
       
-            /* printf("%d --> %d %d\n", ev-> xany.serial, ev-> xconfigure. width, ev-> xconfigure. height); */
+            Edebug("event: configure: %d --> %d %d\n", ev-> xany.serial, ev-> xconfigure. width, ev-> xconfigure. height);
             XX-> flags. configured = 1;
             process_wm_sync_data( self, &wmsd);
             
@@ -1320,7 +1317,7 @@ copy_events( Handle self, PList events, WMSyncData * w, int eventType)
          case ConfigureNotify: 
             if ( x-> xconfigure. window == PWidget(self)-> handle) {
                wm_sync_data_from_event( self, w, &x-> xconfigure, w-> mapped);
-               /* printf("copy %d %d\n", x-> xconfigure. width, x-> xconfigure. height); */
+               Edebug("event: configure copy %d %d\n", x-> xconfigure. width, x-> xconfigure. height); 
                ok = true;
             }
             break;
@@ -1359,10 +1356,9 @@ prima_wm_sync( Handle self, int eventType)
    WMSyncData wmsd;
    Bool quit_by_timeout = false;
 
-   /* printf("enter conf for %d\n", eventType); */
    open_wm_sync_data( self, &wmsd);
 
-   /* printf("enter syncer. current size: %d %d\n", XX-> size.x, XX-> size.y); */
+   Edebug("event: enter syncer for %d. current size: %d %d\n", eventType, X(self)-> size.x, X(self)-> size.y); 
    gettimeofday( &start_time, nil);
    
    /* browse & copy queued events */
@@ -1371,24 +1367,24 @@ prima_wm_sync( Handle self, int eventType)
       return;
    r = copy_events( self, events, &wmsd, eventType);
    if ( r < 0) return;
-   /* printf("copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); */
+   Edebug("event: copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
 
    /* measuring round-trip time */
    XSync( DISP, false);
    gettimeofday( &timeout, nil);
    delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000 + 
                 ( timeout. tv_usec - start_time. tv_usec) / 1000) + guts. wm_event_timeout;
-   /* printf("Sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000); */
+   Edebug("event: sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000); 
 
    /* got response already? happens if no wm present or  */
    /* sometimes if wm is local to server */
    evx = XEventsQueued( DISP, QueuedAlready);
    r = copy_events( self, events, &wmsd, eventType);
    if ( r < 0) return;
-   /* printf("pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); */
+   Edebug("event: pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); 
    if ( delay < 50) delay = 50; /* wait 50 ms just in case */
    /* waiting for ConfigureNotify or timeout */
-   /* printf("enter cycle, size: %d %d\n", wmsd.size.x, wmsd.size.y); */
+   Edebug("event: enter cycle, size: %d %d\n", wmsd.size.x, wmsd.size.y);
    start_time = timeout;
    while ( 1) {
       gettimeofday( &timeout, nil);
@@ -1398,7 +1394,7 @@ prima_wm_sync( Handle self, int eventType)
          break;
       timeout. tv_sec  = ( delay - diff) / 1000;
       timeout. tv_usec = (( delay - diff) % 1000) * 1000;
-      /* printf("want timeout:%g\n", (double)( delay - diff) / 1000); */
+      Edebug("event: want timeout:%g\n", (double)( delay - diff) / 1000); 
       FD_ZERO( &zero);   
       FD_ZERO( &read);
       FD_SET( guts.connection, &read);
@@ -1408,7 +1404,7 @@ prima_wm_sync( Handle self, int eventType)
          return;
       }
       if ( r == 0) {
-          /* printf("timeout\n"); */
+          Edebug("event: timeout\n");
          quit_by_timeout = true;
          break; 
       }
@@ -1423,13 +1419,13 @@ prima_wm_sync( Handle self, int eventType)
       /* copying new events */
       r = copy_events( self, events, &wmsd, eventType);
       if ( r < 0) return;
-      /* printf("copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); */
+      Edebug("event: copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
       if ( r > 0) break; /* has come ConfigureNotify */
    }  
-   /* printf("exit cycle\n"); */
+   Edebug("event:exit cycle\n");
 
    /* put events back */
-   /* printf("put back %d events\n", events-> count); */
+   Edebug("event: put back %d events\n", events-> count);
    for ( r = events-> count - 1; r >= 0; r--) {
       XPutBackEvent( DISP, ( XEvent*) events-> items[ r]);
       free(( void*) events-> items[ r]);
@@ -1437,7 +1433,7 @@ prima_wm_sync( Handle self, int eventType)
    plist_destroy( events);
    evx = XEventsQueued( DISP, QueuedAlready);
 
-   /* printf("exit syncer, size: %d %d\n", wmsd.size.x, wmsd.size.y); */
+   Edebug("event: exit syncer, size: %d %d\n", wmsd.size.x, wmsd.size.y);
    process_wm_sync_data( self, &wmsd);
    X(self)-> flags. configured = 1;
 }
