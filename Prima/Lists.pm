@@ -103,7 +103,8 @@ sub profile_check_in
 {
    my ( $self, $p, $default) = @_;
    $self-> SUPER::profile_check_in( $p, $default);
-   $p-> { multiSelect}    = 1 if exists $p-> { extendedSelect} && $p-> {extendedSelect};
+   $p-> { multiSelect}    = 1 
+   	if exists $p-> { extendedSelect} && $p-> {extendedSelect};
    $p-> { autoHeight}     = 0 if exists $p-> { itemHeight} && !exists $p->{autoHeight};
    $p-> {autoHScroll} = 0 if exists $p-> {hScroll};
    $p-> {autoVScroll} = 0 if exists $p-> {vScroll};
@@ -115,7 +116,8 @@ sub init
    for ( qw( lastItem topItem focusedItem))
       { $self->{$_} = -1; }
    for ( qw( autoHScroll autoVScroll scrollTransaction gridColor dx dy hScroll vScroll 
-             itemWidth offset multiColumn count autoHeight multiSelect extendedSelect borderWidth))
+             itemWidth offset multiColumn count autoHeight multiSelect 
+	     extendedSelect borderWidth))
       { $self->{$_} = 0; }
    for ( qw( itemHeight integralHeight))
       { $self->{$_} = 1; }
@@ -321,7 +323,7 @@ sub on_keydown
    {
       my $newItem = $self->{focusedItem};
       my $doSelect = 0;
-      if ( $mod == 0 || ( $mod & km::Shift && $self->{ extendedSelect}))
+      if ( $mod == 0 || ( $mod & km::Shift && $self-> {multiSelect} && $self->{ extendedSelect}))
       {
          my $pgStep  = $self->{rows} - 1;
          $pgStep = 1 if $pgStep <= 0;
@@ -340,7 +342,7 @@ sub on_keydown
          $doSelect = $mod & km::Shift;
       }
       if (( $mod & km::Ctrl) ||
-         ((( $mod & ( km::Shift|km::Ctrl))==(km::Shift|km::Ctrl)) && $self->{ extendedSelect}))
+         ((( $mod & ( km::Shift|km::Ctrl))==(km::Shift|km::Ctrl)) && $self->{multiSelect} && $self->{ extendedSelect}))
       {
          if ( $key == kb::PgUp || $key == kb::Home) { $newItem = 0};
          if ( $key == kb::PgDn || $key == kb::End)  { $newItem = $self->{count} - 1};
@@ -439,17 +441,23 @@ sub on_mousedown
       $x < $a[0] || $x >= $a[2];
 
    my $item = $self-> point2item( $x, $y);
-   if (( $self->{multiSelect} && !$self->{extendedSelect}) ||
-       ( $self->{extendedSelect} && ( $mod & (km::Ctrl|km::Shift))))
-   {
-      $self-> toggle_item( $item);
-      return if $self->{extendedSelect};
-   } else {
-      $self-> {anchor} = $item if $self->{extendedSelect};
+   my $foc = $item >= 0 ? $item : 0;
+
+   if ( $self->{multiSelect}) {
+      if ( $self->{extendedSelect}) {
+         if ($mod & km::Shift) {
+            my $foc = $self-> focusedItem;
+            return $self->selectedItems(( $foc < $item) ? [$foc..$item] : [ $item..$foc]);
+	 } elsif ( $mod & km::Ctrl) {
+            return $self->toggle_item( $item);
+	 }
+         $self-> {anchor} = $item;
+         $self-> selectedItems([$foc]);
+      } elsif ( $mod & (km::Ctrl||km::Shift)) {
+         return $self->toggle_item( $item);
+      }
    }
    $self-> {mouseTransaction} = 1;
-   my $foc = $item >= 0 ? $item : 0;
-   $self-> selectedItems([$foc]) if $self->{extendedSelect};
    $self-> focusedItem( $foc);
    $self-> capture(1);
 }
@@ -484,12 +492,12 @@ sub on_mousemove
       $self-> topItem( $self-> {topItem} + $aux);
       $item += (( $top != $self-> {topItem}) ? $aux : 0);
    }
-
-   if ( $self-> {extendedSelect} && exists $self->{anchor})
+   if ( $self->{multiSelect} && $self-> {extendedSelect} && exists $self->{anchor})
    {
        my ( $a, $b, $c) = ( $self->{anchor}, $item, $self->{focusedItem});
        my $globSelect = 0;
-       if (( $b <= $a && $c > $a) || ( $b >= $a && $c < $a)) { $globSelect = 1
+       if (( $b <= $a && $c > $a) || ( $b >= $a && $c < $a)) { 
+          $globSelect = 1
        } elsif ( $b > $a) {
           if ( $c < $b) { $self-> add_selection([$c + 1..$b], 1) }
           elsif ( $c > $b) { $self-> add_selection([$b + 1..$c], 0) }
@@ -707,7 +715,7 @@ sub set_count
 sub set_extended_select
 {
    my ( $self, $esel) = @_;
-   if ( $self-> {extendedSelect} = $esel)
+   if (( $self-> {extendedSelect} = $esel) && !$self->multiSelect)
    {
       $self-> multiSelect( 1);
       $self-> selectedItems([$self-> {focusedItem}]);
@@ -723,7 +731,8 @@ sub set_focused_item
    return if $self->{focusedItem} == $foc;
    return if $foc < -1;
    $self->{focusedItem} = $foc;
-   $self-> selectedItems([$foc]) if $self->{extendedSelect} && ! exists $self->{anchor};
+   $self-> selectedItems([$foc]) 
+      if $self->{multiSelect} && $self->{extendedSelect} && ! exists $self->{anchor};
    $self-> notify(q(SelectItem), [ $foc], 1) if $foc >= 0 && !exists $self-> {selectedItems}-> {$foc};
    my $topSet = undef;
    if ( $foc >= 0)
@@ -812,7 +821,6 @@ sub set_multi_select
    return if $ms == $self->{multiSelect};
    unless ( $self-> {multiSelect} = $ms)
    {
-      $self-> extendedSelect( 0);
       $self-> selectedItems([]);
       $self-> repaint;
    } else {
@@ -1608,7 +1616,8 @@ is often declared as read-only in descendants of C<Prima::AbstractListViewer>.
 Regards the way the user selects multiple items and is only actual
 when C<multiSelect> is 1. If 0, the user must click each item
 in order to mark as selected. If 1, the user can drag mouse
-or use C<Shift> key plus arrow keys to perform range selection.
+or use C<Shift> key plus arrow keys to perform range selection;
+the C<Control> key can be used to select individual items.
 
 Default value: 0
 
