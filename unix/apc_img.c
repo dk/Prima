@@ -84,12 +84,10 @@ apc_image_destroy( Handle self)
    }
 }
 
+/* See unix/apc_graphics.c
 Bool
-apc_image_begin_paint( Handle self)
-{
-    DOLBUG( "apc_image_begin_paint()\n");
-    return false;
-}
+apc_image_begin_paint( Handle self);
+*/
 
 Bool
 apc_image_begin_paint_info( Handle self)
@@ -98,11 +96,10 @@ apc_image_begin_paint_info( Handle self)
     return false;
 }
 
+/* See unix/apc_graphics.c
 void
 apc_image_end_paint( Handle self)
-{
-    DOLBUG( "apc_image_end_paint()\n");
-}
+*/
 
 void
 apc_image_end_paint_info( Handle self)
@@ -114,10 +111,14 @@ void
 apc_image_update_change( Handle self)
 {
    DEFXX;
+   PImage img = PImage( self);
+
    if ( XX-> image_cache) {
       XDestroyImage( XX-> image_cache);
       XX-> image_cache = nil;
    }
+   XX-> size. x = img-> w;
+   XX-> size. y = img-> h;
 }
 
 Bool
@@ -269,7 +270,7 @@ __apc_image_correct_property( PImgProps fmtProps,
 			      Bool *extraInfo
     )
 {
-    PImgProperty imgProp, outImgProp;
+    PImgProperty imgProp, outImgProp = nil;
     int i, j, n;
     Bool rc = true;
 
@@ -459,7 +460,11 @@ __apc_image_correct_property( PImgProps fmtProps,
 			rc = false;
 		}
 		if ( rc) {
-		    outImgProp->id = fmtProps[ j].id;
+		    if ( !outImgProp) {
+			__apc_image_set_error( "__apc_image_correct_property: internal error #674\n");
+		    } else {
+		       outImgProp->id = fmtProps[ j].id;
+		    }
 		}
 	    }
 	}
