@@ -135,6 +135,10 @@ sub profile_default
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
       copies           => 1,
+      font             => {
+         %{$def->{font}},
+         name => $Prima::PS::Fonts::defaultFontName,
+      },
       grayscale        => 0,
       pageDevice       => undef,
       pageSize         => [ 598, 845],
