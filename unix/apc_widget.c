@@ -742,8 +742,10 @@ apc_widget_scroll( Handle self, int horiz, int vert,
       h = cpa. height;
    }
 
-   XCopyArea( DISP, XX-> udrawable, XX-> udrawable, XX-> gc,
-	      src_x, src_y, w, h, dst_x, dst_y);
+   if ( src_x < XX-> size. x && src_x + w >= 0 && dst_x < XX-> size. x && dst_x + w >= 0 && 
+        src_y < XX-> size. y && src_x + h >= 0 && dst_y < XX-> size. y && dst_y + h >= 0) 
+      XCopyArea( DISP, XX-> udrawable, XX-> udrawable, XX-> gc,
+   	      src_x, src_y, w, h, dst_x, dst_y);
    prima_release_gc( XX);
    XCHECKPOINT;
 
@@ -752,8 +754,12 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    r. width = w;
    r. height = h;
    invalid = XCreateRegion();
-   XUnionRectWithRegion( &r, invalid, invalid);
-   if ( clip) {
+   if ( src_x < XX-> size. x && src_x + w >= 0 &&
+        src_y < XX-> size. y && src_y + h >= 0) 
+      XUnionRectWithRegion( &r, invalid, invalid);
+   if ( clip &&
+        dst_x < XX-> size. x && dst_x + iw >= 0 &&
+        dst_y < XX-> size. y && dst_y + ih >= 0) {
       XRectangle cpa;
       cpa. x = dst_x;
       cpa. y = dst_y;
@@ -773,12 +779,15 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    } else 
       XX-> invalid_region = XCreateRegion();
 
-   r. x = dst_x;
-   r. y = dst_y;
-   reg = XCreateRegion();
-   XUnionRectWithRegion( &r, reg, reg);
-   XSubtractRegion( invalid, reg, invalid);
-   XDestroyRegion( reg);
+   if ( dst_x < XX-> size. x && dst_x + w >= 0 &&
+        dst_y < XX-> size. y && dst_y + h >= 0) {
+      r. x = dst_x;
+      r. y = dst_y;
+      reg = XCreateRegion();
+      XUnionRectWithRegion( &r, reg, reg);
+      XSubtractRegion( invalid, reg, invalid);
+      XDestroyRegion( reg);
+   }
    XUnionRegion( XX-> invalid_region, invalid, XX-> invalid_region);
    XDestroyRegion( invalid);
    if ( !XX-> flags. paint_pending) {
