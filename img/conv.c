@@ -37,10 +37,10 @@ extern "C" {
 
 #define minimum_ByteValue 0
 #define maximum_ByteValue 255
-#define minimum_ShortValue (-32768)
-#define maximum_ShortValue 32767
-#define minimum_LongValue (-2147483647L-1)
-#define maximum_LongValue 2147483647L
+#define minimum_ShortValue INT16_MIN
+#define maximum_ShortValue INT16_MAX
+#define minimum_LongValue INT32_MIN
+#define maximum_LongValue INT32_MAX
 
 #define macro_asis(SourceType,DestType)                                        \
 void ic_##SourceType##_##DestType( Handle self,                           \

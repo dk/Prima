@@ -788,12 +788,12 @@ Image_pixel( Handle self, Bool set, int x, int y, long color)
          case imFloat: {
             float pf=*(float*)(var->data + (var->lineSize*y+x*sizeof(float)));
             double rangeLo = my-> stats( self, false, isRangeLo, 0);
-            return ((pf - rangeLo)*LONG_MAX)/(var->stats[isRangeHi] - rangeLo);
+            return ((pf - rangeLo)*INT32_MAX)/(var->stats[isRangeHi] - rangeLo);
          }
          case imDouble: {
             double pd=*(double*)(var->data + (var->lineSize*y+x*sizeof(double)));
             double rangeLo = my-> stats( self, false, isRangeLo, 0);
-            return ((pd - rangeLo)/(var->stats[isRangeHi] - rangeLo))*LONG_MAX;
+            return ((pd - rangeLo)/(var->stats[isRangeHi] - rangeLo))*INT32_MAX;
          }
          default:
             return 0;                        
@@ -847,12 +847,12 @@ Image_pixel( Handle self, Bool set, int x, int y, long color)
          switch ( var-> type) {
          case imFloat:  {
             double rangeLo = my-> stats( self, false, isRangeLo, 0);
-            *(float*)(var->data+(var->lineSize*y+x*sizeof(float)))=(((float)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
+            *(float*)(var->data+(var->lineSize*y+x*sizeof(float)))=(((float)color)/(INT32_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
             break;
          }   
          case imDouble: {
             double rangeLo = my-> stats( self, false, isRangeLo, 0);
-            *(double*)(var->data+(var->lineSize*y+x*sizeof(double)))=(((double)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
+            *(double*)(var->data+(var->lineSize*y+x*sizeof(double)))=(((double)color)/(INT32_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
             break;
          }   
          default:
