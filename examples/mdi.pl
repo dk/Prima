@@ -40,7 +40,7 @@ sub icons
    $w-> borderIcons( $bi);
 }
 
-my $wwx = Prima::Window-> create(
+my $wwx = Prima::MDIWindowOwner-> create(
     size => [ 300, 300],
     text => 1,
     name => 1,
@@ -59,10 +59,11 @@ my $wwx = Prima::Window-> create(
           [ 'Restore'   => sub { $w-> restore;}],
        ]],
        [ '~Icons' => [
-          [ '*titlebar' => '~Title bar'  => sub { icons( @_, bi::TitleBar)}, ],
-          [ '*sys' => '~System menu'     => sub { icons( @_, bi::SystemMenu)}, ],
-          [ '*min' => '~Minimize button' => sub { icons( @_, bi::Minimize)}, ],
-          [ '*max' => 'Ma~ximize button' => sub { icons( @_, bi::Maximize)}, ],
+          [ '*titlebar' => '~Title bar'  => sub { icons( @_, mbi::TitleBar)}, ],
+          [ '*sys' => '~System menu'     => sub { icons( @_, mbi::SystemMenu)}, ],
+          [ '*min' => '~Minimize button' => sub { icons( @_, mbi::Minimize)}, ],
+          [ '*max' => 'Ma~ximize button' => sub { icons( @_, mbi::Maximize)}, ],
+          [ '*cls' => '~Close button'    => sub { icons( @_, mbi::Close)}, ],
        ]],
        [ '~Drag mode' => [
           [ '~System defined' => sub { $w-> dragMode( undef);}],
@@ -70,7 +71,8 @@ my $wwx = Prima::Window-> create(
           [ '~Old fashioned' => sub { $w-> dragMode( 0);}],
        ]],
        [ '~Windows' => [
-         [ '~New' => 'Ctrl+N' => '^N' => sub{ $_[0]-> MDIO-> insert( 'MDI')}],
+#        [ '~New' => 'Ctrl+N' => '^N' => sub{ $_[0]-> MDIO-> insert( 'MDI')}],
+         [ '~New' => 'Ctrl+N' => '^N' => sub{ $_[0]-> insert( 'MDI')}],
          [ '~Arrange icons' => sub{ $_[0]->  MDIO-> arrange_icons;} ],
          [ '~Cascade' => sub{ $_[0]->  MDIO-> cascade;} ],
          [ '~Tile' => sub{ $_[0]->  MDIO-> tile;} ],
@@ -84,16 +86,21 @@ my $ww = $wwx-> insert( MDIOwner =>
    name   => 'MDIO',
 );
 
-$ww-> insert( "InputLine",
-   text => '1002',
-   onChange => sub { $w-> text( $_[0]-> text);},
-) if 1;
+#my $ww = $wwx;
+#$ww-> insert( "InputLine",
+#   text => '1002',
+#   onChange => sub { $w-> text( $_[0]-> text);},
+#) if 1;
 
 $w = Prima::MDI-> create(
    owner => $ww,
+   clipOwner => 0,
    size => [200, 200],
-  icon => Prima::StdBitmap::icon(sbmp::DriveCDROM),
+   icon => Prima::StdBitmap::icon(sbmp::DriveCDROM),
+   font => { size => 6 },
+   titleHeight => 12,
 );
+# $w-> dragMode(0);
 
 $w = $w-> client;
 
