@@ -36,6 +36,7 @@ object Prima::File( Prima::Component)
    method   SV      * get_handle();
    c_only   void      handle_event( PEvent event);
    method   Bool      is_active( Bool autoDetach = false);
+   import   SV *      notification_types();
    method   void      remove_notification( long id);
    method   void      set_file( SV * file);
 }
