@@ -9,6 +9,8 @@
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
+// #define PROFILING
+
 WinGuts guts;
 Bool    loggerDead   = false;
 DWORD   rc;
@@ -45,7 +47,10 @@ window_subsystem_init()
    HDC dc;
    HBITMAP hbm;
 
+   guts. mainThreadId = GetCurrentThreadId();
+#ifndef PROFILING
    start_logger();
+#endif
 
    guts. errorMode = SetErrorMode( SEM_FAILCRITICALERRORS);
 
@@ -90,6 +95,7 @@ window_subsystem_init()
    patMan    = hash_create();
    menuMan   = hash_create();
    imageMan  = hash_create();
+   create_font_hash();
    {
       LOGBRUSH b = { BS_HOLLOW, 0, 0};
       Font f;
@@ -145,7 +151,6 @@ window_subsystem_init()
       font_logfont2font( &guts. ncmData. lfMessageFont, &guts. msgFont, &guts. displayResolution);
       font_logfont2font( &guts. ncmData. lfCaptionFont, &guts. capFont, &guts. displayResolution);
    }
-   create_font_hash();
 
    memset( &guts. displayBMInfo, 0, sizeof( guts. displayBMInfo));
    guts. displayBMInfo. bmiHeader. biSize = sizeof( BITMAPINFO);
@@ -205,6 +210,9 @@ window_subsystem_done()
 {
    list_destroy( &guts. transp);
    destroy_font_hash();
+
+   font_clean();
+   stylus_clean();
    hash_destroy( imageMan, false);
    hash_destroy( menuMan,  false);
    hash_destroy( patMan,   true);
@@ -212,6 +220,9 @@ window_subsystem_done()
    hash_destroy( stylusMan, true);
    DeleteObject( hPenHollow);
    DeleteObject( hBrushHollow);
+
+// PROFILING
+// dump_logger(); Beep( 400, 400);
 
    DestroyWindow( guts. logger);
    loggerDead          = TRUE;
@@ -322,6 +333,24 @@ propagate( Handle self, UINT msg, PEvent ev, WPARAM mp1, LPARAM mp2)
    }
 
    PostMessage( prop, msg + 0x400, mp1, mp2);
+}
+
+
+static void
+zorder_sync( Handle self, HWND me, LPWINDOWPOS lp)
+{
+   Handle org = nilHandle;
+   if ( lp-> hwndInsertAfter == HWND_TOP ||
+        lp-> hwndInsertAfter == HWND_NOTOPMOST ||
+        lp-> hwndInsertAfter == HWND_TOPMOST) {
+       me = GetNextWindow( me, GW_HWNDPREV);
+       if ( me)
+          PostMessage( me, WM_ZORDERSYNC, 0, 0);
+   } else if ( lp-> hwndInsertAfter == HWND_BOTTOM) {
+      me = GetNextWindow( me, GW_HWNDNEXT);
+      if ( me)
+         PostMessage( me, WM_ZORDERSYNC, 0, 0);
+   }
 }
 
 
@@ -538,7 +567,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       if ( self != lastMouseOver) {
          Handle old = lastMouseOver;
          lastMouseOver = self;
-         if ( old)
+         if ( old && ( PWidget( old)-> stage == csNormal))
             SendMessage(( HWND)(( PWidget) old)-> handle, WM_MOUSEEXIT, mp1, mp2);
          SendMessage( win, WM_MOUSEENTER, mp1, mp2);
       }
@@ -705,20 +734,24 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       }
       break;
    case WM_WINDOWPOSCHANGING:
-      if ( sys className == WC_CUSTOM) {
+      {
          LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
-         if (( l-> flags & SWP_NOSIZE) == 0) {
-            ev. cmd = cmCalcBounds;
-            ev. gen. R. right = l-> cx;
-            ev. gen. R. top   = l-> cy;
+         if ( sys className == WC_CUSTOM) {
+            if (( l-> flags & SWP_NOSIZE) == 0) {
+               ev. cmd = cmCalcBounds;
+               ev. gen. R. right = l-> cx;
+               ev. gen. R. top   = l-> cy;
+            }
          }
+         if (( l-> flags & SWP_NOZORDER) == 0)
+            zorder_sync( self, win, l);
       }
       break;
    case WM_WINDOWPOSCHANGED:
       {
           LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
           if (( l-> flags & SWP_NOZORDER) == 0)
-             ev. cmd = cmZOrderChanged;
+             PostMessage( win, WM_ZORDERSYNC, 0, 0);
           if (( l-> flags & SWP_NOSIZE) == 0) {
              sys yOverride = l-> cy;
              SendMessage( win, WM_SYNCMOVE, 0, 0);
@@ -726,6 +759,9 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
           if ( l-> flags & SWP_HIDEWINDOW) SendMessage( win, WM_SETVISIBLE, 0, 0);
           if ( l-> flags & SWP_SHOWWINDOW) SendMessage( win, WM_SETVISIBLE, 1, 0);
       }
+      break;
+   case WM_ZORDERSYNC:
+      ev. cmd = cmZOrderChanged;
       break;
    }
 
@@ -755,7 +791,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       break;
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
-       ev. cmd = 1; // force call DefWindowProc
+       // ev. cmd = 1; // forced call DefWindowProc superseded for test reasons
        break;
    case WM_MOUSEMOVE:
       if ( is_apt( aptEnabled)) SetCursor( sys pointer);
@@ -765,15 +801,19 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          propagate( self, orgMsg, &ev, mp1, mp2);
       return ( LRESULT)1;
    case WM_WINDOWPOSCHANGING:
-       if ( sys className == WC_CUSTOM) {
+       {
           LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
-          if (( l-> flags & SWP_NOSIZE) == 0) {
-             int dy = l-> cy - ev. gen. R. top;
-             l-> cx = ev. gen. R. right;
-             l-> cy = ev. gen. R. top;
-             l-> y += dy;
+          if ( sys className == WC_CUSTOM) {
+             if (( l-> flags & SWP_NOSIZE) == 0) {
+                int dy = l-> cy - ev. gen. R. top;
+                l-> cx = ev. gen. R. right;
+                l-> cy = ev. gen. R. top;
+                l-> y += dy;
+             }
+             return false;
           }
-          return false;
+          if (( l-> flags & SWP_NOZORDER) == 0)
+             zorder_sync( self, win, l);
        }
        break;
    }
@@ -831,6 +871,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    case WM_FORCEFOCUS:
    case WM_MOUSEWHEEL:
    case WM_MOUSEWHEEL + 0x400:
+   case WM_ZORDERSYNC:
       return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
    case WM_QUERYNEWPALETTE:
       return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
@@ -869,8 +910,11 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
       break;
    case WM_NCHITTEST:
       // dlg protect code - protecting from user actions
-      if ( !guts. focSysDisabled && ( Application_map_focus( application, self) != self))
-         return HTERROR;
+      if ( !guts. focSysDisabled) {
+         Handle foc = Application_map_focus( application, self);
+         if ( foc != self)
+            return ( foc == apc_window_get_active()) ? HTERROR : HTCLIENT;
+      }
       break;
    case WM_SETFOCUS:
        // dlg protect code - general case
@@ -993,7 +1037,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
        {
            LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
            if (( l-> flags & SWP_NOZORDER) == 0)
-              ev. cmd = cmZOrderChanged;
+              PostMessage( win, WM_ZORDERSYNC, 0, 0);
            if (( l-> flags & SWP_NOSIZE) == 0) {
               RECT r;
               GetClientRect( win, &r);
