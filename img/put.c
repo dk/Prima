@@ -323,6 +323,15 @@ NOSCALE:
       int ps   = PImage( dest)-> palSize;
       CImage( dest)-> reset( dest, imbpp8, nilSV);
       PImage( dest)-> palSize = ps;
+      if (( type & imBPP) == 1 && rop != ropCopyPut) { 
+         /* change 0/1 to 0x000/0xfff for correct masking */
+         int sz   = PImage( dest)-> dataSize;
+         Byte * d = PImage( dest)-> data;
+         while ( sz--) *(d++) = (*d) ? 0xff : 0x00;
+         PImage( dest)-> palette[255].r = PImage( dest)-> palette[255].g = 
+            PImage( dest)-> palette[255].b = 0xff;
+      }
+
       img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop);
       if ( PImage( dest)-> options. optPreserveType) 
          CImage( dest)-> reset( dest, type, nilSV);
