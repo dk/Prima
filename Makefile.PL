@@ -647,7 +647,7 @@ sub setup_variables
         $lddlflags =~ s/(-|\/)nodefaultlib//g;
     }
     setvar( 'DEBUG', defined($ENV{ PRIMA_DEVEL}) ? $ENV{ PRIMA_DEVEL} : 0);
-    setvar( 'C_FLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( $Config{ optimize} || '') . " ");
+    setvar( 'C_FLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags} " . ( $Config{ optimize} || '') . " ");
     setvar( 'CFLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( $DEBUG ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
     setvar( 'CCFLAGS',  '');
     setvar( 'CCCDLFLAGS', $Config{ cccdlflags});
@@ -1949,6 +1949,11 @@ MD=$^X Makefile.PL --md
 RM=$^X Makefile.PL --rm
 RMDIR=$^X Makefile.PL --rmdir
 
+dirs: 
+\t\@echo Creating directories...
+\t\@\$(MD) @alldirs
+
+
 clean:
 \t\$(RM) @allclean $PrimaTarget
 
@@ -2053,15 +2058,6 @@ EOF
        print MAKE "\t$_ \\\n";
     }
     print MAKE "\n";
-
-    print MAKE <<EOF;
-
-dirs: 
-\t\@echo Creating directories...
-\t\@\$(MD) @alldirs
-
-EOF
-
     print MAKE join( "\n", @footers), "\n";
 
     close MAKE;
