@@ -133,7 +133,8 @@ my $w = Prima::Window-> create(
 $w-> insert( Button =>
    text => "Install PRIMA now!",
    width => $w-> get_text_width( "Install PRIMA now!") * 1.2,
-   centered => 1,
+   # centered => 1,
+   growMode => gm::Center,
    onClick => sub { $::application-> close},
 );
 
