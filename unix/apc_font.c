@@ -977,8 +977,8 @@ PICK_AGAIN:
          underlineThickness = 1;
 
       underlinePos -= underlineThickness;
-      if ( -underlinePos + underlineThickness / 2 >= s-> descent) 
-         underlinePos = -s-> descent + underlineThickness / 2 - 1;
+      if ( -underlinePos + underlineThickness / 2 > s-> descent) 
+         underlinePos = -s-> descent + underlineThickness / 2;
 
       build_font_key( &key, font, bySize); 
  /* printf("add to :%d.%d.{%d}.%s\n", f-> font.height, f-> font.size, f-> font. style, f-> font.name); */
