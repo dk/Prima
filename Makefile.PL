@@ -928,16 +928,20 @@ if ( $#ARGV >= 0 && $ARGV[ 0] =~ /^\-\-cp(bin)?$/) {
 	next unless -f $src;
 	die qq(Destination must be a directory) if -e $dst && ! -d $dst;
 	mkpath $dst unless -d $dst;
+	$dst = qd( "$dst/" . basename( $src));
+	$dst =~ s/\.pl$// if $isbin;
 	copy( $src, $dst) or die qq(Copy failed: $!);
 	if ( $isbin) {
-	    $dst = qd( "$dst/" . basename( $src));
 	    if ( $Win32) {
 		system "pl2bat $dst";
 		unlink $dst;
 	    }
 	    else {
-		chmod 0755, $dst;
+		chmod 0555, $dst;
 	    }
+	}
+	elsif ( ! $Win32) {
+	    chmod 0444, $dst;
 	}
     }
 }
