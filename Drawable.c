@@ -53,7 +53,7 @@ extern "C" {
 #define var (( PDrawable) self)
 
 #define gpARGS            Bool inPaint = opt_InPaint
-#define gpENTER           if ( !inPaint) my-> begin_paint_info( self)
+#define gpENTER(fail)     if ( !inPaint) if ( !my-> begin_paint_info( self)) return (fail)
 #define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
 
 void
@@ -278,7 +278,7 @@ Drawable_get_bpp( Handle self)
 {
    gpARGS;
    int ret;
-   gpENTER;
+   gpENTER(0);
    ret = apc_gp_get_bpp( self);
    gpLEAVE;
    return ret;
@@ -304,7 +304,7 @@ Color
 Drawable_get_nearest_color( Handle self, Color color)
 {
    gpARGS;
-   gpENTER;
+   gpENTER(clInvalid);
    color = apc_gp_get_nearest_color( self, color);
    gpLEAVE;
    return color;
@@ -327,7 +327,7 @@ Drawable_get_physical_palette( Handle self)
    AV * av = newAV();
    PRGBColor r;
 
-   gpENTER;
+   gpENTER(newRV_noinc(( SV *) av));
    r = apc_gp_get_physical_palette( self, &nCol);
    gpLEAVE;
 
@@ -344,7 +344,7 @@ SV *
 Drawable_get_font_abc( Handle self, int first, int last, Bool unicode)
 {
    int i;
-   AV * av = newAV();
+   AV * av;
    PFontABC abc;
 
    if ( first < 0) first = 0;
@@ -358,11 +358,12 @@ Drawable_get_font_abc( Handle self, int first, int last, Bool unicode)
      abc = nil;
    else {
      gpARGS;
-     gpENTER;
+     gpENTER( newRV_noinc(( SV *) newAV()));
      abc = apc_gp_get_font_abc( self, first, last, unicode );
      gpLEAVE;
    }
 
+   av = newAV();
    if ( abc != nil) {
       for ( i = 0; i <= last - first; i++) {
          av_push( av, newSVnv( abc[ i]. a));
@@ -381,7 +382,8 @@ Drawable_get_font_ranges( Handle self)
    unsigned long * ret;
    AV * av = newAV();
    gpARGS;
-   gpENTER;
+   
+   gpENTER(newRV_noinc(( SV *) av));
    ret = apc_gp_get_font_ranges( self, &count);
    gpLEAVE;
    if ( ret) {
@@ -838,7 +840,7 @@ Drawable_get_text_width( Handle self, SV * text, int len, Bool addOverhang)
    Bool   utf8 = SvUTF8( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
    if ( len < 0 || len > dlen) len = dlen;
-   gpENTER;
+   gpENTER(0);
    res = apc_gp_get_text_width( self, c_text, len, addOverhang, utf8);
    gpLEAVE;
    return res;
@@ -856,7 +858,7 @@ Drawable_get_text_box( Handle self, SV * text, int len)
    Bool   utf8 = SvUTF8( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
    if ( len < 0 || len > dlen) len = dlen;
-   gpENTER;
+   gpENTER( newRV_noinc(( SV *) newAV()));
    p = apc_gp_get_text_box( self, c_text, len, utf8);
    gpLEAVE;
 
@@ -895,7 +897,7 @@ query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
       if ( !abc) return nil;
    } else if ( my-> get_font_abc == Drawable_get_font_abc) {
       gpARGS;
-      gpENTER;
+      gpENTER(nil);
       abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text);
       gpLEAVE;
       if ( !abc) return nil;
