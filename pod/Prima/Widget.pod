@@ -1,0 +1,2589 @@
+=head1 NAME
+
+Widget - window management
+
+=head1 DESCRIPTION 
+
+Prima::Widget is a descendant of Prima::Component,
+a class, especially crafted to reflect and govern
+properties of a system-dependent window, such as its
+position, hierarchy, outlook etc. Prima::Widget 
+maps onto screen as a rectangular area,
+with disctinct boundaries, pointer and sometimes
+cursor and a user-selectable input focus.
+
+=head1 USAGE
+
+Prima::Widget class and its descendants are
+used widely throughout the toolkit, and, indeed
+provide almost all its user interaction and input-output. 
+The notification system, explained
+in L<Prima::Object>, is employed in Prima::Widget
+heavily, providing the programmer easy and unified
+access to the system-generated events, that occur
+when the user moves windows, clicks a mouse,
+types the keyboard, etc. Descendants of Prima::Widget
+use the internal, the direct method of overriding the notifications,
+whereas end programs tend to use the toolkit widgets
+equipped with anonymous subroutines ( see L<Prima::Object>
+for the details). 
+
+The functionality of the class is much more extensive
+comparing to the other built-in classes, and therefore
+the explanations are grouped in several topics. 
+
+=head1 Creation and destruction
+
+The syntax for creation is the same as for all Prima objects:
+
+   Prima::Widget-> create(
+      name => 'Widget',
+      size => [ 20, 10],
+      onMouseClick => sub { print "click\n"; },
+      owner => $widget,
+   );
+
+In the real life, a widget must be almost always
+explicitly told about its owner. The owner object 
+is either a Prima::Widget descendant, in which case
+the widget is drawn inside its inferior, or an
+application object, and in the latter case a widget
+becomes a top-level widget. Because of that, the C<insert>
+syntax is much more often used, as it is more illustrative
+and provides somewhat more convenience when creating several widgets
+in one call ( see L<Prima::Object> ).
+
+
+   $widget-> insert( 'Prima::Widget',
+      name => 'Widget',
+      size => [ 20, 10],
+      onMouseClick => sub { print "click\n"; },
+   );
+
+These two examples produce identical results.
+
+As being descendant of Prima::Component, Prima::Widget
+sends C<Create> notification when created ( more precisely,
+after its init stage is finished. See L<Prima::Object> for
+details). This notification is called and processed within
+C<create()> call. In addition, another notification, a C<Setup>
+message is sent after the widget is created. This message is
+I<posted>, so it is called within C<create()> but processed
+in the application event loop. It means that C<Setup> execution
+time is uncertain, as it is with all posted messages; its delivery time
+is system-dependent, so its use must be considered with care.
+
+After a widget is created, it is usually asked to render its content,
+provided that the widget is visible. This request is delivered by 
+means of C<Paint> notification.
+
+When the life time of a widget is over, C<destroy()> is called,
+often implicitly. If a widget is being destroyed because its owner
+is, it is guaranteed that the children widgets will be destroyed first,
+and the owner afterwards. In such situaltion, widget can operate with 
+a limited functionality both with itself and its owners ( see 
+L<Prima::Object>, B<Creation> section ). 
+
+=head1 Graphic content
+
+A widget can use two different ways for representing its
+graphic content to the user. The first method is 
+event-driven, when the C<Paint> notification arrives, 
+notifying the widget that it must re-paint itself.
+The second is a 'direct' method.
+
+=head2 Event-driven rendering
+
+A notification responsible for repainting a widget is C<Paint>.
+It provides a single ( besides the widget itself )
+parameter, an object, where the drawing is performed. In an
+event-driven call, it is always equals to the widget. However, if
+a custom mechanism should be used that directly calls, for example,
+
+   $widget-> notify('Paint', $some_other_widget);
+
+for whatever purpose, it is recommended ( not required, though ),
+to use this parameter, not the widget itself for painting and drawing
+calls.
+
+The example of C<Paint> callback is quite simple:
+
+   Prima::Widget-> create(
+       ...
+       onPaint => sub {
+          my ( $self, $canvas) = @_;
+          $canvas-> clear;
+          $canvas-> text_out("Clicked $self->{clicked} times", 10, 10);
+       },
+       onMouseClick => sub {
+          $_[0]-> {clicked}++;
+          $_[0]-> repaint;
+       }, 
+   );
+
+As one can see, this example touches some important features 
+of the event-driven mechanism. First, no C<begin_paint()>/C<end_paint()>
+brackets are used within the callback. These are called implicitly.
+Second, when the custom refresh of the widget's graphic content is needed, 
+no code like C<notify(q(Paint))> is used - C<repaint()> method is used instead. 
+It must be noted, that the actual execution of C<Paint> callbacks 
+can be or can be not within the C<repaint()> call. This behavior is governed by
+the C<::syncPaint> property.
+C<repaint()> marks the whole widget's area as to be refreshed, as the I<invalidated>
+area. For the finer gradation of the area that should be repainted,
+C<invalidate_rect()> and C<validate_rect()> pair of functions is used. 
+
+  $x-> C<repaint()>
+
+code is a mere alias to 
+
+  $x-> invalidate_rect( 0, 0, $x-> size);
+
+call. It must be realized, that the area, passed to C<invalidate_rect()>
+only in its ideal ( but a quite often ) execution case will be pertained as a 
+clipping rectangle when a widget executes its C<Paint> notification.
+The user and system interactions can result in exposition of other
+parts of a widget ( like, moving windows over a widget ), and a
+resulting clipping rectangle can be much different from the one that was
+passed to C<invalidate_rect()>. Moreover, the clipping rectangle can become
+empty as a result of these influences, and the notification will not
+be called at all. 
+
+Invalid rectangle is presented differently inside and outside
+the drawing mode. The first, returned by C<::clipRect>, employs
+inclusive-inclusive coordinates, whereas C<invalidate_rect()>, C<validate_rect()>
+and C<get_invalid_rect()> - inclusive-exclusive coordinates. The ideal case
+exemplifies the above said:
+
+   $x-> onPaint( sub { 
+      my @c = $_[0]-> clipRect; 
+      print "clip rect:@c\n"; 
+   });
+   $x-> invalidate_rect( 10, 10, 20, 20);
+   ...
+   clip rect: 10 10 19 19
+
+As noted above, C<::clipRect> property is set to
+the clipping rectangle of the widget area that is needed to be refreshed,
+and a smart event handler can take advantage of this information,
+increasing the efficiency of the painting procedure. 
+
+NB: Further assignments of C<::clipRect> property do not
+make possible over-painting on the screen area that lies outside
+the original clipping region. This note is valid for all paint
+operations, however since the original clipping rectangle is
+the full area of a canvas, this rule is implicit and unnecessary, because
+whatever large the clipping rectangle be, drawing and painting
+cannot be performed outside the physical boundaries of the canvas.
+
+
+=head2 Direct rendering
+
+The direct rendering, contratry to the event-driven,
+is started by a program, not by a system. If a programmer
+wishes to paint over a widget immediately, then 
+C<begin_paint()> is called, and, if successfull, the part 
+of the screen occupied by a widget is accessible to the drawing
+and painting routines.
+
+This method is useful, for example, for graphic demonstration 
+programs, that draw continuously without any input.
+Another field is the screen drawing, which is performed
+with Prima::Application class, that does not have C<Paint>
+notification. Application's graphic canvas represents the whole screen,
+allowing over-drawing the graphic content of other programs.
+
+In major, the event-driven rendering method just adds 
+implicit C<begin_paint()>/C<end_paint()> brackets ( plus some 
+system-dependent touches, of course ) and is a convenience
+version of the direct rendering. Sometimes, however, the 
+changes needed to be made to a widget's graphic context are
+so insignificant, so the direct rendering method is preferable, 
+because of the cleaner and terser code. As an example might serve
+a simple progress bar, that is expected to draw a simple colored bar.
+The event-driven code would be 
+( in short, omitting many details ) as such:
+
+   $bar = Widget-> create(
+     width => 100,
+     onPaint => sub {
+        my ( $self, $canvas) = @_;
+        $canvas-> color( cl::Blue);
+        $canvas-> bar( 0, 0, $self-> {progress}, $self-> height);
+        $canvas-> color( cl::Back);
+        $canvas-> bar( $self-> {progress}, 0, $self-> size);
+     },
+   );
+   ...
+   $bar-> {progress} += 10;
+   $bar-> repaint;
+   # or, more efficiently, ( but clumsier )
+   # $bar-> invalidate_rect( $bar->{progress}-10, 0, 
+   #                 $bar->{progress}, $bar-> height);
+
+And the direct driven:
+
+   $bar = Widget-> create( width => 100 );
+   ...
+   $bar-> begin_paint;
+   $bar-> color( cl::Blue);
+   $bar-> bar( $progress, 0, $progress + 10, $bar-> height);
+   $bar-> end_paint;
+   $progress += 10;
+
+The pros and contras are obvious: the event-driven rendered widget
+correctly represents the status after an eventual repaint,
+that is like if the user sweeps a window over the progress bar
+widget. The direct method does cannot be that smart, but if the
+status bar is the insignificant part of the program, the trade-off
+functionality vs code simplicity might be considered acceptable.
+
+Both methods can be effectively disabled using the paint locking
+mechanism. The C<lock()> and C<unlock()> methods can be called several times,
+stacking the requests. This feature is useful because many
+properties implicitly call C<repaint()>, and if several of these properties
+activate in a row, the unnecessary redrawing of the widget can be avoided.
+The drawback is that the last C<unlock()> call triggers C<repaint()> unconditionally.
+
+=head1 Geometry
+
+=head2 Basic properties
+
+A widget always has its position and size determined, even if
+it is not visible on the screen. Prima::Widget provides several
+properties that govern the geometry of a widget, with overlapping
+functionalities. The base properties are C<::origin> and C<::size>,
+and the derived are C<::left>, C<::bottom>, C<::right>, C<::top>,
+C<::width>, C<::height> and C<::rect>. C<::origin> and C<::size>
+operate with two integers, C<::rect> with four, others with one
+integer value.
+
+As the Prima toolkit coordinate space begins in the lower bottom
+corner, the combination of C<::left> and C<::bottom> is same
+as C<::origin>, and combination of C<::left>, C<::bottom>, C<::right> and
+C<::top> - same as C<::rect>.
+
+When a widget is moved or resized, correspondingly two notifications
+occur: C<Move> and C<Size>. The parameters to both are old and new
+postion and size. The notifications occur irrespectible to whether the
+geometry change was issued by the program itself or by the user.
+
+=head2 Implicit size regulations
+
+Concerning the size of a widget, two additional two-integer 
+properties exist, C<::sizeMin> and C<::sizeMax>, that constrain the
+extension of a widget in their boundaries. The direct call that
+assigns values to the size properties that lie outside 
+C<::sizeMin> and C<::sizeMax> boundaries, will fail - the widget 
+extenstion will be adjusted to the boundary values, not to the
+specified ones.
+
+Change to widget's position and size can occur not only by an explicit
+call to one of the geometry properties. The toolkit contains 
+implicit rules, that can move and resize a widget corresponding to
+the flags, given to the C<::growMode> property. The exact meaning 
+of the C<gm::XXX> flags is not given here ( see description to 
+C<::growMode> in API section ), but in short, it is possible with 
+simple means to maintain widget's size and position regarding its
+owner, when it is resized. By default, and the default behavior
+corresponds to C<::growMode> 0, widget does not change its size
+or position when its owner is resized. It stays always in 'the left
+bottom corner'. When, for example, a widget is expected to stay
+in 'the right bottom corner', or 'the left top corner', the
+gm::GrowLoX and gm::growLoY values must be used, correspondingly. 
+When a widget is expected to cover, for example, its owner's 
+lower part and change its width in accord with its owner's, 
+( as an example a horizontal scroll bar in an editor window 
+can serve ) the gm::GrowHiX value must be used.
+
+When this implicit size change does occur, the C<::sizeMin> 
+and C<::sizeMax> do take their part as well - they still do not allow
+the widget's size excess their boundaries. However, this 
+algorithm derives a problem, that is illustrated by the following 
+conditions. A widget with size-dependant C<::growMode> ( with
+gm::GrowHiX or gm::GrowHiY bits set ) must maintain certain relation between
+the owner's size and its own. If the implicit size change would
+be dependent on the actual widget size, derived as a result from the previous
+implicit size action, then its size (and probably position) will be incorrect
+after an attempt is made to change the widget's size to values outside
+the size boudaries. 
+
+Example: child widget has width 100, gm::GrowHiX
+growMode and sizeMin set to (95, 95). Its owner has width 200. 
+If the owner widget changes gradually its width from 200 to 190
+and then back, the following width table emerges:
+
+                    Owner        Child  
+  Initial state      200           100
+  Shrink             195   -5       95
+  Shrink             190   -5       95 - as it can not be less than 95.
+  Grow               195   +5      100
+  Grow               200   +5      105
+
+That picture would be if the gradual size algorithm would
+be implemented - the owner changes width by 5, and the child does the same.
+The situation is fixed by introducing the I<virtual size> term.
+The C<::size> property is derived from virtual size, and as
+C<::size> cannot exceed the size boundaries, virtual size can.
+It can even accept the negative values. With this intermediate stage
+added, the correct picture occurs:
+
+                    Owner        Child's       Child's
+                                 virtual width  width
+  Initial state      200           100           100     
+  Shrink             195   -5       95            95
+  Shrink             190   -5       90            95
+  Grow               195   +5       95            95
+  Grow               200   +5      100           100
+ 
+
+NB: Strictly speaking, the I<virtual size> must be declared a read-only property,
+but currently it is implemented as a C<get_virtual_size()> function,
+and it is planned to fix this discrepancy between the document
+and the implementation in favor of the property syntax.
+
+=head2 Relative coordinates
+
+Another geometry issue, or rather a programming technique
+must be mentioned - the I<relative coordinates>. It is
+the well-known problem, when a dialog window, developed
+with one font looks garbled on another system with another 
+font. The relative coordinates solve the problem; the solution
+provides the C<::designScale> two-integer property, the
+width and height of a font, that was used when the dialog
+window was designed. With this property supplied, the position
+and size supplied when a widget is actually created, are transformed in
+proportion between the designed and the actual font metrics.
+
+The relative coordinates can be used only when passing the
+geometry properties values, and only before the creation stage,
+before a widget is created, because the scaling calculations 
+perform in Prima::Widget::C<profile_check_in()> method.
+
+In order to employ the relative coordinates scheme, the owner
+( or the I<dialog> ) widget must set its C<::designScale>
+to the font metrics and C<::scaleChildren> property to 1.
+Widgets, created with owner that meets these requirements,
+participate in the relative coordinates scheme. If
+a widget must be excluded from the relative geometry applications,
+either the owner's property C<::scaleChildren> must be set to 0,
+or the widget's C<::designScale> must be set to C<undef>.
+As the default C<::designScale> value is C<undef>, no default implicit
+relative geometry schemes are applied.
+
+The C<::designScale> property is auto-inherited;
+its value is copied to the children widgets, unless
+the explicit C<::designScale> was given during the widget's
+creation. This is used when such a child widget serves as an owner
+for some other grand-children widgets; the inheritance scheme 
+allows the grand- ( grand- etc ) children to participate in
+the relative geometry scheme.
+
+Note: it is advised to test such applications with the Prima::Stress
+module, which assigns a random font as the default one, so the testing
+phase does not involve tweaking of the system settings.
+
+=head1 Z-order 
+
+In case two widgets overlap, one of these is drawn
+in full, whereas the another only partly. Prima::Widget
+provides management of the I<Z-axis> ordering, but since
+Z-ordering paradigm can hardly be fit into the 
+properties scheme, the tookit uses methods instead.
+
+A widget can use four query methods: C<first()>, C<last()>, C<next()>, 
+and C<prev()>. These return, correspondingly, the first and the last
+widgets in Z-order stack, and the direct neighbors of a widget
+( $widget-> next-> prev always equals to the $widget itself, given
+that $widget-> next exists ).
+
+The last widget is the topmost one, the one that is drawn fully.
+The first is the most obscured one, given that all the widgets
+overlap.
+
+Z-order can also be changed at runtime ( but not during widget's 
+creation). There are three methods: C<bring_to_front()>, that sets the
+widget last in the order, making it topmost, C<send_to_back()>, that
+does the reverse, and C<insert_behind()>, that sets a widget behind
+the another widget, passed as an argument.
+
+Changes to Z-order trigger C<ZOrderChanged> notification.
+
+=head1 Parent-child relationship
+
+By default, if a widget is a child to a widget
+or window, it maintains two features: it is clipped by its
+owner's boundaries and is moved together as the owner widget moves.
+This set of features grants an owner the I<parent> term. However,
+in the tookit a widget without a parent still does have a valid owner.
+Instead of implementing I<parent> property, the C<::clipOwner>
+property was devised. It is 1 by default, and if it is 1, then
+owner of a widget is its parent, at the same time. However, when it is 0, many 
+things change. The widget is neither clipped not moved together
+with its parent. The widget become parentless, or, more strictly
+speaking, the screen becomes its parent. Moreover, 
+the widget's origin offset is calculated then not from the owner's 
+coordinates but from the screen, and mouse events in the 
+widget do not transgress implictly to the owner's top-level window
+eventual decorations.
+
+The same results are produced if a widget is inserted in 
+an application object, which does not have screen visualization.
+A widget belonging to an application object, can not reset its C<::clipOwner>
+values to 1.
+
+The C<::clipOwner> property opens a possiblity for the toolkit widgets
+to live inside other programs' windows. If the C<::parentHandle> is
+changed from its default C<undef> value to a valid system window handle, 
+the widget becames child to this window, which can be any application
+residing on the same display. This option is dangerous, however:
+normally widgets never get destroyed with no reason. A top-level window
+is never destroyed before its C<Close> notfication grants the destruction.
+This case is special, because a widget, inserted into an alien application,
+must be prepared to be destroyed at any moment. It is recommended to
+use prior knowledge about such the application, and, even better, use
+one or another inter-process communication scheme to interact with it.
+
+A widget does not need to undertake anything special to become an 'owner'.
+Any widget, that was set in C<::owner> property on any other widget,
+becomes owner automatically. Its C<get_widgets()> method returns non-empty
+widget list. C<get_widgets()> serves same purpose as Prima::Component::C<get_components()>,
+but returns only Prima::Widget descendants.
+
+A widget can change its owner at any moment. The C<::owner> property is both
+readable and writable, and if a widget is visible during the owner change, it
+is immediately appeared under different coordinates and different 
+clipping condition after the property change ( given that 
+its C<::clipOwner> is 1, of course ).
+
+=head1 Visibility
+
+A widget is visible by default. Visible means that
+it is shown on the screen if it is not shadowed by
+other widgets ( or system windows ). The visiblity
+is governed by the C<::visible> property, and its
+two convenience aliases, C<show()> and C<hide()>.
+
+When a widget is invisible, its geometry is not discarded;
+the widget pertains its position and size, and is subject to
+all previously dicussed implicit sizing issues. When change
+to C<::visible> property is made, the screen is not updated 
+immediately, but in the next event loop invocation, because uncovering of
+the underlying area of a hidden widget, and repainting of a new-shown widget
+both depend onto the event-driven rendering functionality. If the graphic
+content must be updated, C<update_view()> must be called, but
+there's a problem. It is obvious that if a widget is shown,
+the only content to be updated it is its own. When a widget
+becomes hidden, it may uncover many more than one widget, depending on 
+the geometry, so it is unclear what widgets must be updated.
+For the practical reasons, it is enough to get one event loop
+passed, by calling C<yield()> method of the C<$::application> object. 
+The other notifications may pass here as well, however.
+
+There are other kinds of visibility. A widget can be visible,
+but one of its owners can be not. Or, a widget and its owners
+can be visible, but they can be over-shadowed by the other
+windows. These conditions are returned by C<showing()> and C<exposed()>
+functions. These return boolean values corresponding to the 
+condition described. So, if a widget is 'exposed', it is
+'showing' and 'visible'; C<exposed()> returns always 0 if a widget
+is either not 'showing' or not 'visible'. If a widget is 'showing',
+then it is always 'visible'. C<showing()> returns always 0 if a widget is
+invisible.
+
+Visibility changes trigger C<Hide> and C<Show> notifications.
+
+=head1 Focus
+
+One of the key points of any GUI is that only one window at a time
+can possess a I<focus>. The widget is I<focused>, if the user's keyboard
+input is directed to it. The toolkit adds another layer in the focusing
+scheme, as often window managers do, highlighting the decorations of
+a top-level window over a window with the input focus.
+
+Prima::Widget property C<::focused> governs the focused state of a
+widget. It is sometimes too powerful to be used. Its more often
+substitutes, C<::selected> and C<::current> properties provide
+more respect to widget hierarchy. 
+
+C<::selected> property sets focus to a widget if it
+is allowed to be focused, by the usage
+of the C<::selectable> property. With this granted, the focus
+is passed to the widget or to the one of its ( grand-) children.
+So to say, when 'selecting' a window with a text field by clicking
+on a window, one does not expect the window to be focused, but the text
+field. To achieve this goal and reduce unnecessary coding, the 
+C<::current> property is introduced. With all equal conditions,
+a widget that is 'current' gets precedence in getting selected
+over widgets that are not 'current'.
+
+De-selecting, in its turn, leaves the system in such a state when no window
+has input focus. There are two convenience shortcuts
+C<select()> and C<deselect()> defined, aliased to selected(1) and selected(0),
+correspondingly.
+
+As within the GUI space, there can be only one 'focused' widget,
+so within the widget space, there can be only one 'current' widget.
+A widget can be marked as a current by calling C<::current> 
+( or, identically, C<::currentWidget> on the owner widget ).
+Such markings are performed automatically when a widget is focused.
+
+NB. It must be noted, that the reverse is true: if a widget
+is explicitly marked as 'current', and belongs to the widget tree with the
+focus in one of its widgets, then the focus passed to the 'current' widget,
+or down to hierarchy if it is not selectable.
+
+These relations between current-mark and focus allow the toolkit
+easily implement the focusing hierarchy. The focused widget is
+always on the top of the chain of its owner widgets, each of
+whose is a 'current' widget. If, for example, a window that 
+contains a widget that contains a focused button,
+become un-focused, and then user selects the window again,
+then the button will become focused automatically.
+
+Changes to focus produce C<Enter> and C<Leave> notifications.
+
+Below discussed mouse- and keyboard- driven focusing schemes.
+Note that all of these work via C<::selected>, and do not 
+focus the widgets with C<::selectable> set to 0.
+
+=head2 Mouse-aided focusing
+
+The typical behavior of the mouse is when the user left-clicks
+on a widget, it becomes focused.
+One can note that not all widgets become focused after
+the mouse click - scroll bars are the examples. Another kind
+of behavior is the described above window with the text field -
+clicking mouse on a window focuses a text field.
+
+Prima::Widget has the C<::selectingButtons> property, a combination
+of mb::XXX ( mouse buttons ) flags. If the bits corresponding to the 
+buttons are set, then click of this button will automatically 
+call C<::selected(1)> ( not C<::focused(1)> ! ). 
+
+Another boolean property, C<::firstClick> determines the behavior 
+when the mouse button action is up to focus a widget, but the widget's 
+top-level window is not active. The default value of C<::firstClick> is 1, 
+but if set otherwise, the user
+must click twice to a widget to get it focused. The property 
+does not influence if the top-level window was already active
+during the click event.
+
+Due to some vendor-specific GUI designs, it is hardly possibly to force selection
+of one top-level window when the click was on the another.
+The window manager or the OS can interfere, although this does not always
+happen, and produce different results on different platforms. Since
+the primary goal of the toolkit is portability, such functionality
+must be considered with care.
+Moreover, when the user selects a window by clicking not on the 
+toolkit-created widgets, but on the top-level window decorations,
+it is not possible to discern the case from any other kind of focusing.
+
+=head2 Keyboard focusing
+
+The native way to navigate between the toolkit widgets are 
+tab- and arrow- navigation. The tab ( and its reverse, shift-tab )
+key combinations circulate the focus between the widgets in same 
+top-level group ( not inside the same owner widget group ). The arrow keys,
+if the focused widget is not interested in these keystrokes, move
+the focus in the specified direction, if it is possible. The methods that
+provide the navigations are available and called C<next_tab()> and 
+C<next_positional()>, correspondingly ( see API for the details).
+
+When C<next_positional()> operates with the geometry of the widgets,
+C<next_tab()> uses the C<::tabStop> and C<::tabOrder> properties.
+C<::tabStop>, the boolean property, set to 1 by default, tells
+if a widget is willing to participate in tab-aided focus
+circulation. If it doesn't, C<next_tab()> never uses it in its algorithm.
+C<::tabOrder> value is an integer, unique within the sibling widgets 
+( sharing same owner ) list, and is used as simple tag when the next
+tab-focus candidate is picked. The default C<::tabOrder> value is -1,
+which changes automatically after widget creation to the unique value.
+
+=head1 User input
+
+The toolkit provides two basic means of the input - 
+the keyboard and the mouse. Below described three aspects of
+the input handling - the event-driven, the polling and
+the simulated input issues. The event-driven
+input is the more or less natural way of communicating with the user,
+so when the user presses the key or moves the mouse, a system
+event occurs and triggers the notification in one or more
+widgets. Polling methods provide the immediate state of
+the input devices; the polling is rarely employed, primarily 
+because of its limited usability, and because the information
+it provides is passed to the notification callbacks anyway. 
+The simulated input is little more than C<notify()> call with 
+specifically crafted parameters. It interacts with the system,
+so the emulation can gain the higher level of similarity 
+to the user actions. The simulated input functions allow
+the notifications to be called right away, or I<post> it,
+delaying the notification until the next event loop invocation.
+
+=head2 Keyboard
+
+=over
+
+=item Event-driven
+
+Keyboard input generates two major notifications - C<KeyDown>
+and C<KeyUp>. Both have almost the same list of parameters ( see API ),
+that show key, its modifiers ( if any ) that were pressed and
+an eventual character code. The algorithms that extract the meaning
+of the key, like, discretion between character and
+functional keys etc are not described here. The reader is advised
+to look at Prima::KeySelector module, which provides convenience 
+functions for keyboard input values transformations, and to the
+Prima::Edit and Prima::InputLine modules, the classes that
+use extensively keyboard input. But in short,
+the key code is one of the C<kb::XXX> ( like, kb::F10, kb::Esc ) constants, 
+and the modifier value is a combination of the C<km::XXX> ( km::Ctrl, km::Shift) 
+constants. The notable exception is kb::None value, which
+hints that the characted code is of value. Some other C<kb::XXX>-marked keys
+have the character code as well, and it is up to a programmer how to
+treat these combinations. It is advised, however, to look at the key
+code first, and then to the character code.
+
+C<KeyDown> event has also the I<repeat> integer parameter, that
+shows the repetitive count how many times the key was pressed.
+Usually it is 1, but if a widget was not able to get its portion
+of events between the key presses, its value can be higher.
+If a code doesn't check for this parameter, some keyboard input
+may be lost. If the code will be too much complicated by
+introducing the repeat-value, one may consider setting the C<::briefKeys>
+property to 0. C<::briefKeys>, the boolean property, is 1 by default.
+If set to 0, it guarantees that the repeat value will always be 1,
+but with the price of under-optimization. If the core C<KeyDown> processing
+code sees repeat value greater than 1, it just calls the notification again.
+
+Along with these two notifications, the C<TranslateAccel> event 
+is generated after C<KeyDown>, if the focused widget is not interested
+in the key event. Its usage covers the needs of the other widgets
+that are willing to read the user input, even being out of focus.
+A notable example can be a button with a hot key, that reacts on
+the key press when the focus is elsewhere within its top-level window. 
+C<TranslateAccel> has same parameters as C<KeyDown>, except the REPEAT parameter.
+
+Such out-of-focus input is also used with built-in menu keys translations.
+If a descendant of Prima::AbstractMenu is in the reach of the widget tree
+hierarchy, then it is checked whether it contains some hot keys that match
+the user input. See L<Prima::Menu> for the details. In particular,
+Prima::Widget has C<::accelTable> property, a mere slot for an object
+that contains a table of hot keys mappings to the anonymous subs.
+
+=item Polling
+
+The polling function for the keyboard is limited to the modifier
+keys only. C<get_shift_state()> method returns the press state
+of the modifier keys, a combination of C<km::XXX> constants.
+
+=item Simulated input
+
+There are two methods, corresponding to the major notifications -
+C<key_up()> and C<key_down()>, that accept the same parameters as 
+the C<KeyUp> and C<KeyDown> notifications do, plus the POST
+boolean flag. See L<"API"> for details.
+
+These methods are convenience wrappers for C<key_event()> 
+method, which is never used directly.
+
+=back
+
+=head2 Mouse
+
+=over
+
+=item Event-driven
+
+Mouse notifications are send in response to the user 
+that moves the mouse or presses or releases its buttons.
+The notifications are logically grouped in two sets, the first contains
+C<MouseDown>, C<MouseUp>, C<MouseClick>, and C<MouseWheel>, and the second - 
+C<MouseMove>, C<MouseEnter>, end C<MouseLeave>.
+
+The first set deals with button actions. Pressing, de-pressing, clicking
+( and double-clicking ), the turn of mouse wheel correspond to the four
+notifications. The notifications are sent together with the mouse pointer coordinates,
+the button that was touched, and the eventual modifier keys that were pressed.
+In addition, C<MouseClick> provides the boolean flag if the click was single or double,
+and C<MouseWheel> - the Z-range of the wheel turn. These notifications occur
+when the mouse event occurs within the geometrical bounds of a widget,
+with one notable exception, when a widget is in I<capture> mode.
+If the C<::capture> is set to 1, then these events are sent to the widget even
+if the mouse pointer is outside, and not sent to the widgets and windows
+that reside under the pointer. 
+
+The second set deals with the pointer movements. When the pointer passes over
+a widget, it receives first C<MouseEnter>, then series of C<MouseMove>,
+and finally C<MouseLeave>. C<MouseMove> and C<MouseEnter> notifications provide
+X,Y-coordinates and modificator keys; C<MouseLeave> passes no parameters.
+
+=item Polling
+
+The mouse input polling is full-weight, and along with C<get_mouse_state()>
+that returns C<mb::XXX> constant combination, the C<::pointerPos> 
+two-integer property reports the current position of the mouse pointer.
+
+=item Simulated input
+
+There are five methods, corresponding to the mouse events - 
+C<mouse_up()>, C<mouse_down()>, C<mouse_click()>, C<mouse_wheel()> and C<mouse_move()>,
+that accept the same parameters as their event counterparts do,
+plus the POST boolean flag. See L<"API"> for details.
+
+These methods are convenience wrappers for C<mouse_event()> 
+method, which is never used directly.
+
+=back
+
+=head1 Color schemes
+
+Prima::Drawable deals only with such color values, that
+can be unambiguously decomposed to their red, green and blue components.
+Prima::Widget extends the range of the values acceptable by
+its color properties, introducing the color schemes. 
+The color can be set indirectly, without prior knowledge
+of what is it its RGB value. There are several
+constants defined in C<cl::> name space, that correspond to the 
+default values of different color properties of a widget.
+
+Prima::Widget revises the usage of C<::color> and C<::backColor>,
+the properties inherited from Prima::Drawable. Their values
+are now full-weight 'foreground' and 'background' colors,
+in addition to their function as template values. Moreover, their dynamic change
+induces the repainting of a widget, and they can be inherited
+from the owner. The inheritance is governed by properties
+C<::ownerColor> and C<::ownerBackColor>. While these are true,
+changes to owner C<::color> or C<::backColor> copied automatically
+to a widget. Once the widget's C<::color> or C<::backColor> are
+explicitly set, the owner link breaks and C<::ownerColor> or 
+C<::ownerBackColor> automatically set to 0.
+
+In addition to these two color properties, Prima::Widget 
+introduces six others.
+These are C<::disabledColor>, C<::disabledBackColor>,
+C<::hiliteColor>, C<::hiliteBackColor>, C<::light3DColor>, and
+C<::dark3DColor>.  The 'disabled' color pair contains the values
+that are expected to be used as foreground and background when 
+a widget is in the disabled state 
+( see API, C<::enabled> property ). The 'hilite' values
+serve as the colors for representation of selection inside
+a widget. Selection may be of any kind, and some widgets do
+not provide any. But for those that do, the 'hilite' color values
+provide distinct alternative colors. A good examples are selections
+in the text widgets, or in the list boxes. The last pair, 
+C<::light3DColor> and C<::dark3DColor> is used for drawing 
+3D-looking outlines of a widget. The purpose of all these properties
+is the adequate usage of the color settings, selected by the user using 
+system-specific tools, so the program written with the toolkit
+would look not such different, and more or less conformant to the
+user's color preferences.
+
+The additional C<cl::> constants, mentioned above, represent these 
+eight color properties. These named correspondingly, cl::NormalText,
+cl::Normal, cl::HiliteText, cl::Hilite, cl::DisabledText, cl::Disabled,
+cl::Light3DColor and cl::Dark3DColor. cl::NormalText is alias to cl::Fore,
+and cl::Normal - to cl::Back. Another constant set, C<ci::>
+can be used with the C<::colorIndex>
+property, a multiplexer for all eight color preoperties. C<ci::> constants
+mimic their non-RGB C<cl::> counterparts, so the call
+C<hiliteBackColor(cl::Red)> is equal to C<colorIndex(ci::HiliteText, cl::Red)>.
+
+Mapping from these constants to the RGB color representation
+is used with C<map_color()> method. These C<cl::> constants alone 
+are sufficient for acquiring the default values, but the toolkit provides wider
+functionality than this. The C<cl::> constants can be combined with
+the C<wc::> constants, that represent standard widget class.
+The widget class is implicitly used when single C<cl::> constant is used;
+its value is read from the C<::widgetClass> property, unless 
+one of C<wc::> constants is combined with the non-RGB C<cl::> value. C<wc::>
+constants are descriped in L<"API">; their usage can make
+call of, for example, C<backColor( cl::Back)> on a button and on
+an input line result in different colors, because the C<cl::Back>
+is translated in the first case into C<cl::Back|wc::Button>, and
+in another - C<cl::Back|wc::InputLine>.
+
+Dynamic change of the color properties result in the
+C<ColorChanged> notification. 
+
+=head1 Fonts
+
+Prima::Widget does not change the handling of fonts - the 
+font selection inside and outside C<begin_paint()>/C<end_paint()>
+is not different at all. A matter of difference is how
+does Prima::Widget select the default font.
+
+First, if the C<::ownerFont> property is set to 1, 
+then font of the owner is copied to the widget, and
+is maintained all the time while the property is true.
+If it is not, the default font values read from the system.
+
+The default font metrics for a widget returned by C<get_default_font()>
+method, that often deals with system-dependend and user-selected
+preferences ( see L<"Additional resources"> ). Because a widget hold
+an eventual reference to a Prima::Popup object, it contains
+C<get_default_popup_font()> method, that returns the default font
+for the popup objects. The dynamic popup font settings governed,
+naturally, by the C<::popupFont> property. Prima::Window extends the
+functionality to C<get_default_menu_font()> and the C<::menuFont> property.
+
+Dynamic change of the font property results in the
+C<FontChanged> notification.
+
+=head1 Additional resources
+
+The resources, operated via Prima::Widget class but not that
+strictly bound to the widget concept, are gathered in this
+section. The section includes overview of pointer, cursor, 
+hint, menu objects and user-specified resources.
+
+=head2 Pointer
+
+The mouse pointer is the shared resource, that can change its 
+visual representation when it hovers over different kinds of widgets.
+It is usually a good practice for a text field, for example, set the
+pointer icon to a jagged vertical line, or indicate a moving window
+with a cross-arrowed pointer.
+
+A widget can select either one of the predefined system pointers,
+mapped by the C<cr::XXX> constant set, or supply its own pointer icon
+of an arbitrary size and color depth.
+
+NB: Not all systems allow the colored pointer icons. System value
+under sv::ColorPointer index containing a boolean value, whether the colored
+icons are allowed or not.
+
+In gross, the C<::pointer> property is enough for these actions.
+It discerns whether it was an icon or a constant passed, and 
+sets the appropriate properties. These properties are also
+accessible separately, although their usage is not encouraged, primarily
+because of the tangled relationship between them. These properties are:
+C<::pointerType>, C<::pointerIcon>, and C<::pointerHotSpot>. See their
+details in the L<"API"> sections.
+
+Another property, which is present only in Prima::Application name space
+is called C<::pointerVisible>, and governs the visibility of the pointer -
+but in all widget instances at once.
+
+=head2 Cursor
+
+The cursor is a blinking rectangular area, indicating the 
+availability of the input focus in a widget. There can
+be ( theoretically ) only one active cursor at a GUI
+space, or none at all. Prima::Widget provides several
+cursor properties: C<::cursorVisible>, C<::cursorPos>, and
+C<::cursorSize>. There are also two methods, C<show_cursor()>
+and C<hide_cursor()>, but these are not the convenience shortcuts
+but the functions accounting the cursor hide count. If C<hide_cursor()>
+was called three times, then C<show_cursor()> must be called three times 
+as well until the cursor is re-activated.
+
+=head2 Hint
+
+C<::hint> is a text string, that usually describes the widget's purpose
+to the user in a brief manner. If the mouse pointer is hovered over the
+widget longer than some timeout ( see Prima::Application::hintPause ),
+then a label appears with this text, until the pointer is away from the widget.
+The hint behavior is governed by Prima::Application, but a widget
+can do two additional things about hint: it can enable and disable 
+it by calling C<::showHint> property, and it can inherit the owner's
+C<::hint> and C<::showHint> properties using C<::ownerHint>
+and C<::ownerShowHint> properties. If, for example, C<::ownerHint> 
+is set to 1, then C<::hint> value is automatically copied from the 
+widget's owner, when it changes. If, however, the widget's C<::hint>
+or C<::showHint> are explicitly set, the owner link breaks and 
+C<::ownerHint> or C<::ownerShowHint> are automatically set to 0.
+
+The widget can also operate the C<::hintVisible> property,
+that shows or hides the hint label immediately, if the mouse pointer
+is inside the widget's boundaries.
+
+=head2 Menu objects
+
+The default functionality of Prima::Widget coexists with two kinds of the Prima::AbstractMenu
+descentants - Prima::AccelTable and Prima::Popup ( Prima::Window
+is also with Prima::Menu). The C<::items> properties of these objects
+are accessible through C<::accelItems> and C<::popupItems>, whereas
+the objects themselves - through C<::accelTable> and C<::popup>, 
+correspondingly. As mentioned in L<"User input">, 
+these objects hook the user keyboard input and call the programmer-defined 
+callback sub if the key stroke
+equals to one of their table values. As for C<::accelTable>, its 
+fucntion ends here. C<::popup> provides access to a context pop-up menu,
+which invocation can be either right-clicking or pressing some
+system-dependent key combination. As a little customization,
+the C<::popupColorIndex> and C<::popupFont> properties are introduced.
+( C<::popupColorIndex> is multiplexed to C<::popupColor>, 
+C<::popupHiliteColor>, C<::popupHiliteBackColor>, etc etc
+properties exactly like the C<::colorIndex> property ).
+
+The change to font and color properties for a menu object is not always granted.
+The underlying system capabilities in this area range
+from total inability for a program to manage the menu fonts and colors 
+in Win32, to a sport for the user changing menu fonts and colors
+dynamically, with the immediate results in OS/2.
+
+The Prima::Window class provides same methods for the menu bar, introducing
+C<::menu>, C<::menuItems>, C<::menuColorIndex> ( with multiplexing ) and
+C<::menuFont> properties.
+
+=head2 User-specified resources
+
+It is considered a good idea to incorporate the user 
+preferences into the toolkit look-and-feel. Prima::Widget
+relies to the system-specific code that tries to map these
+preferences as close as possible to the toolkit paradigm.
+
+Unix version employs XRDB ( X resource database ), which is the
+natural way for the user to tell the preferences with fine
+granularity. Win32 and OS/2 read the setting that the user has to
+set interactively, using system tools. Nevertheless, the toolkit
+can not emulate all user settings that are available on the supported
+platforms; it rather takes a 'least common denominator', which is
+colors and fonts. C<fetch_resource()> method is capable of returning
+any of such settings, provided it's format is font, color or a string. 
+The method is rarely called directly.
+
+The appealing idea of making every widget property adjustable via
+the user-specified resources is not implemented in full.
+It can be accomplished up to a certain degree using C<fetch_resource()>
+existing functionality, but it is believed that calling up the method
+for the every property for the every widget created is prohibitively 
+expensive.
+
+=head1 API
+
+=head2 Properties
+
+=over
+
+=item accelItems [ ITEM_LIST ]
+
+Manages items of a Prima::AccelTable object associated with a widget.
+The ITEM_LIST format is same as C<Prima::AbstractMenu::items>
+and is described in L<Prima::Menu>.
+
+See also: C<accelTable>
+
+=item accelTable OBJECT
+
+Manages a Prima::AccelTable object associated with a widget. 
+The sole purpose of the accelTable object is to provide
+convenience mapping of key combinations to anonymous subroutines.
+Instead of writing an interface specifically for Prima::Widget,
+the existing interface of Prima::AbstractMenu was taken.
+
+The accelTable object can be destroyed safely; its cancellation
+can be done either via C<accelTable(undef)> or C<destroy()> call.
+
+See also: C<accelItems>
+
+=item backColor COLOR
+
+In widget paint state, reflects background color in the graphic context.
+In widget normal state, manages the basic background color.
+If changed, initiates C<ColorChanged> notification and repaints the widget.
+
+See also: C<color>, C<colorIndex>, C<ColorChanged>
+
+=item bottom INTEGER
+
+Maintains the lower Y boundary of a widget. If changed,
+does not affect the widget height; but does so, if called
+in C<set()> together with C<::top>.
+
+See also: C<left>, C<right>, C<top>, C<origin>, C<rect>,
+C<growMode>, C<Move>
+
+=item briefKeys BOOLEAN
+
+If 1, contracts the repetitive key press events into one
+notification, increasing REPEAT parameter of C<KeyDown> 
+callbacks. If 0, REPEAT parameter is always 1.
+
+Default value: 1
+
+See also: C<KeyDown>
+
+=item buffered BOOLEAN
+
+If 1, a widget C<Paint> callback draws not on the screen, but
+on the off-screen memory instead. The memory content is copied
+to the screen then. Used when complex drawing methods are used, 
+or if output smoothness is desired.
+
+This behavior can not be always granted, however. If there is not
+enough system resources ( memory is the one ), then widget
+draws in the usual manner.
+
+Default value: 0
+
+See also: C<Paint>
+
+=item capture BOOLEAN, CLIP_OBJECT = undef
+
+Manipulates capturing of the mouse events. If 1,
+the mouse events would not pass the widget the mouse pointer
+is over, but are redirected to the widget. The call for capture
+may not be always granted due the race conditions 
+between programs.
+
+If CLIP_OBJECT widget is defined in set-mode call, 
+the pointer movements are confined to CLIP_OBJECT inferior.
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseMove>, C<MouseWheel>, C<MouseClick>.
+
+=item centered BOOLEAN
+
+A write-only property. Once set, widget is centered by X and Y
+axis relative to its owner.
+
+See also: C<x_centered>, C<y_centered>, C<growMode>, C<origin>, C<Move>.
+
+=item clipOwner BOOLEAN
+
+If 1, a widget is clipped by its owner boundaries. 
+It is the default and expected behavior. If clipOwner is 0,
+a widget behaves differently: it does not clipped
+by the owner, it is not moved together with the parent, 
+the origin offset is calculated not from the owner's coordinates but
+from the screen, and mouse events in a widget do not transgress
+to the top-level window decorations. In short, it itself becomes 
+a top-level window, that, contrary
+to the one created from Prima::Window class, does not have
+any interference with system-dependent window stacking and positioning 
+( and any other ) policy, and is not ornamented by the system-specific 
+decorations.
+
+Default value: 1
+
+See L<"Parent-children relationship">
+
+See also: C<Prima::Object> owner section, C<parentHandle>
+
+=item color COLOR
+
+In widget paint state, reflects foreground color in the graphic context.
+In widget normal state, manages the basic foreground color.
+If changed, initiates C<ColorChanged> notification and repaints the widget.
+
+See also: C<backColor>, C<colorIndex>, C<ColorChanged>
+
+=item colorIndex INDEX, COLOR
+
+Manages the basic color properties indirectly, 
+by accessing via C<ci::XXX> constant. Is a complete alias
+for C<::color>, C<::backColor>, C<::hiliteColor>, C<::hiliteBackColor>,
+C<::disabledColor>, C<::disabledBackColor>, C<::light3DColor>, and
+C<::dark3DColor> properties. The C<ci::XXX> constants are:
+
+   ci::NormalText or ci::Fore 
+   ci::Normal or ci::Back
+   ci::HiliteText
+   ci::Hilite
+   ci::DisabledText
+   ci::Disabled
+   ci::Light3DColor
+   ci::Dark3DColor
+
+The non-RGB C<cl::> constants, specific to the Prima::Widget color usage are
+identical to their C<ci::> counterparts:
+
+   cl::NormalText or cl::Fore 
+   cl::Normal or cl::Back
+   cl::HiliteText
+   cl::Hilite
+   cl::DisabledText
+   cl::Disabled
+   cl::Light3DColor
+   cl::Dark3DColor
+
+See also: C<color>, C<backColor>, C<ColorChanged>   
+
+=item current BOOLEAN
+
+If 1, a widget (or one of its children) is marked as the one to 
+be focused ( or selected) when the owner widget receives C<select()> call.
+Within children widgets, only one or none at all can be marked as a current.
+
+See also: C<currentWidget>, C<selectable>, C<selected>, C<selectedWidget>, C<focused>
+
+=item currentWidget OBJECT
+
+Points to a children widget, that is to 
+be focused ( or selected) when the owner widget receives C<select()> call.
+
+See also: C<current>, C<selectable>, C<selected>, C<selectedWidget>, C<focused>
+
+=item cursorPos X_OFFSET Y_OFFSET
+
+Specifies the lower left corner of a cursor
+
+See also: C<cursorSize>, C<cursorVisible>
+
+=item cursorSize WIDTH HEIGHT
+
+Specifies width and height of the cursor
+
+See also: C<cursorPos>, C<cursorVisible>
+
+=item cursorVisible BOOLEAN
+
+Specifies cursor visibility flag. Default value is 0.
+
+See also: C<cursorSize>, C<cursorPos>
+
+=item dark3DColor COLOR
+
+A color used to draw dark shadings of 3D-looking widgets.
+
+See also: C<light3DColor>, C<colorIndex>, C<ColorChanged>
+
+=item designScale X_SCALE Y_SCALE
+
+The width and height of a font, that was used when
+a widget ( usually serving as a dialog or a grouping 
+widget ) was designed.
+
+See also: C<scaleChildren>, C<width>, C<height>, C<size>, C<font>
+
+=item disabledBackColor COLOR
+
+A color used to substitute C<::backColor> when a widget 
+is in its disabled state.
+
+See also: C<disabledColor>, C<colorIndex>, C<ColorChanged>
+
+=item disabledColor COLOR
+
+A color used to substitute C<::color> when a widget 
+is in its disabled state.
+
+See also: C<disabledBackColor>, C<colorIndex>, C<ColorChanged>
+
+=item enabled BOOLEAN
+
+Specifies if a widget can accept focus, keyboard and mouse events.
+Default value is 1, however, being 'enabled' does not automatically
+allow the widget become focused. Only the reverse is true - 
+if enabled is 0, focusing can never happen.
+
+See also: C<responsive>, C<visible>, C<Enable>, C<Disable>
+
+=item font %FONT
+
+Manages font context. Same syntax as in Prima::Drawable.
+If changed, initiates C<FontChanged> notification and repaints the widget.
+
+See also: C<designScale>, C<FontChanged>, C<ColorChanged>
+
+
+=item growMode MODE
+
+Specifies widget behavior, when its owner is resized or moved.
+MODE can be 0 ( default ) or a combination of the following constants:
+
+=over
+
+=item Basic constants
+
+ gm::GrowLoX      widget's left side is kept in constant distance from owner's right side
+ gm::GrowLoY      widget's bottom side is kept in constant distance from owner's top side 
+ gm::GrowHiX      widget's right side is kept in constant distance from owner's right side  
+ gm::GrowHiY      widget's top side is kept in constant distance from owner's top side  
+ gm::XCenter      widget is kept in center on its owner horizontal axis
+ gm::YCenter      widget is kept in center on its owner vertical axis 
+ gm::DontCare     widgets origin is maintained constant relative to the screen
+
+=item Derived or aliased constants
+
+ gm::GrowAll      gm::GrowLoX|gm::GrowLoY|gm::GrowHiX|gm::GrowHiY 
+ gm::Center       gm::XCenter|gm::YCenter
+ gm::Client       gm::GrowHiX|gm::GrowHiY
+ gm::Right        gm::GrowLoX|gm::GrowHiY 
+ gm::Left         gm::GrowHiY 
+ gm::Floor        gm::GrowHiX 
+
+=back
+
+See also: C<Move>, C<origin>
+
+=item firstClick BOOLEAN
+
+If 0, a widget bypasses first mouse click on it,
+if the top-level window it belongs to was not activated, so to
+select such a widget it takes two mouse clicks.
+
+Default value is 1
+
+See also: C<MouseDown>, C<selectable>, C<selected>, C<focused>, C<selectingButtons>
+
+=item focused BOOLEAN
+
+Specifies whether a widget possesses the input focus or not.
+Disregards C<::selectable> property.
+
+See also: C<selectable>, C<selected>, C<selectedWidget>, C<KeyDown>
+
+=item height
+
+Maintains the height of a widget.
+
+See also: C<width>, 
+C<growMode>, C<Move>, C<Size>, C<get_virtual_size>, 
+C<sizeMax>, C<sizeMin>
+
+
+=item helpContext INTEGER
+
+I<Design in progress>. A positive integer value, that binds a
+widget, a logical part it plays with the application
+and an interactive help topic. As well as positive integers,
+the following constants can be used: 
+
+   hmp::None       no topic
+   hmp::Owner      same topic as owner's
+   hmp::Main       the main or startup entry 
+   hmp::Contents   the contents or index entry
+   hmp::Extra      user-defined, supplementary entry
+
+See also: C<Help>
+
+=item hiliteBackColor COLOR
+
+A color used to draw alternate background areas
+with high contrast.
+
+See also: C<hiliteColor>, C<colorIndex>, C<ColorChanged>
+
+=item hiliteColor COLOR
+
+A color used to draw alternate foreground areas
+with high contrast.
+
+See also: C<hiliteBackColor>, C<colorIndex>, C<ColorChanged>
+
+=item hint TEXT
+
+A text, shown under mouse pointer if it is hovered over
+a widget longer than C<Prima::Application::hintPause> timeout. The text shows
+only if the C<::showHint> is 1.
+
+See also: C<hintVisible>, C<showHint>, C<ownerHint>, C<ownerShowHint>
+
+=item hintVisible BOOLEAN
+
+If called in get-form, returns whether the hint label is shown
+or not. If in set-form, immediately turns on or off the hint label,
+disregarding the timeouts. It does regard the mouse pointer location,
+however, and does not turn on the hint label if the pointer is away.
+
+See also: C<hint>, C<showHint>, C<ownerHint>, C<ownerShowHint>
+
+=item left INTEGER
+
+Maintains the left X boundary of a widget. If changed,
+does not affect the widget width; but does so, if called
+in C<set()> together with C<::right>.
+
+See also: C<bottom>, C<right>, C<top>, C<origin>, C<rect>,
+C<growMode>, C<Move>
+
+=item light3DColor COLOR
+
+A color used to draw light shadings of 3D-looking widgets.
+
+See also: C<dark3DColor>, C<colorIndex>, C<ColorChanged>
+
+=item ownerBackColor BOOLEAN
+
+If 1, the background color is synchronized with the owner's.
+Automatically set to 0 if C<::backColor> property is explicitly set.
+
+See also: C<ownerColor>, C<backColor>, C<colorIndex>
+
+=item ownerColor BOOLEAN
+
+If 1, the foreground color is synchronized with the owner's.
+Automatically set to 0 if C<::color> property is explicitly set.
+
+See also: C<ownerBackColor>, C<color>, C<colorIndex>
+
+=item ownerFont BOOLEAN
+
+If 1, the font is synchronized with the owner's.
+Automatically set to 0 if C<::font> property is explicitly set.
+
+See also: C<font>, C<FontChanged>
+
+=item ownerHint BOOLEAN
+
+If 1, the hint is synchronized with the owner's.
+Automatically set to 0 if C<::hint> property is explicitly set.
+
+See also: C<hint>, C<showHint>, C<hintVisible>, C<ownerShowHint>
+
+=item ownerShowHint BOOLEAN
+
+If 1, the show hint flag is synchronized with the owner's.
+Automatically set to 0 if C<::showHint> property is explicitly set.
+
+See also: C<hint>, C<showHint>, C<hintVisible>, C<ownerHint>
+
+=item ownerPalette BOOLEAN
+
+If 1, the palette array is synchronized with the owner's.
+Automatically set to 0 if C<::palette> property is explicitly set.
+
+See also: C<palette>
+
+=item origin X Y
+
+Maintains the left X and bottom Y boundaries of a widget relative
+to its owner ( or to the screen if C<::clipOwner> is set to 0 ).
+
+See also: C<bottom>, C<right>, C<top>, C<left>, C<rect>,
+C<growMode>, C<Move>
+
+=item palette [ @PALETTE ]
+
+Specifies array of colors, that are desired to be present
+into the system palette, as close to the PALETTE as possible.
+This property works only if the graphic device allows palette
+operations. See L<Prima::Drawable/"palette"> section.
+
+See also: C<ownerPalette>
+
+=item parentHandle SYSTEM_WINDOW
+
+If SYSTEM_WINDOW is a valid system-dependent window handle,
+then a widget becomes the child of a window specified,
+given the wigdet's C<::clipOwner> is 0.
+The window can belong to an other application or a process.
+
+Default value is undef.
+
+See also: C<clipOwner>
+
+=item pointer cr::XXX or ICON
+
+Specifies the pointer icon; discerns between
+C<cr::XXX> constants and an icon. If an icon
+contains a hash variable C<__pointerHotSpot> 
+with an array of two integers, these integers
+will be treated as the pointer hot spot. In 
+get-mode call, this variable is automatically assigned
+to an icon, if the result is an icon object.
+
+See also: C<pointerHotSpot>, C<pointerIcon>, C<pointerType>
+
+=item pointerHotSpot X_OFFSET Y_OFFSET
+
+Specifies the hot spot coordinates of a pointer icon, associated 
+with a widget.
+
+See also: C<pointer>, C<pointerIcon>, C<pointerType>
+
+=item pointerIcon ICON
+
+Specifies the pointer icon, associated with a widget.
+
+See also: C<pointerHotSpot>, C<pointer>, C<pointerType>
+
+=item pointerPos X_OFFSET Y_OFFSET
+
+Specifies the mouse pointer coordinates relative to widget's
+coordinates.
+
+See also: C<get_mouse_state>, C<screen_to_client>, C<client_to_screen>
+
+=item pointerType TYPE
+
+Specifies the kind of the pointer, associated with a widget.
+TYPE can accept one constant of C<cr::XXX> set:
+
+   cr::Default                 same pointer type as owner's
+   cr::Arrow                   arrow pointer
+   cr::Text                    text entry sursor-like pointer
+   cr::Wait                    hourglass
+   cr::Size                    general size action pointer
+   cr::Move                    general move action pointer 
+   cr::SizeWest, cr::SizeW     right-move action pointer
+   cr::SizeEast, cr::SizeE     left-move action pointer 
+   cr::SizeWE                  general horizontal-move action pointer 
+   cr::SizeNorth, cr::SizeN    up-move action pointer 
+   cr::SizeSouth, cr::SizeS    down-move action pointer 
+   cr::SizeNS                  general vertical-move action pointer 
+   cr::SizeNW                  up-right move action pointer
+   cr::SizeSE                  down-left move action pointer
+   cr::SizeNE                  up-left move action pointer
+   cr::SizeSW                  down-right move action pointer
+   cr::Invalid                 invalid action pointer
+   cr::User                    user-defined icon
+
+All constants except C<cr::User> and C<cr::Default> present a system-defined 
+pointers, their icons and hot spot offsets. C<cr::User> is a general sign that
+an icon object was specified explicitly via C<::pointerIcon> property. 
+C<cr::Default> is a way to tell that a widget inherits its owner pointer type,
+no matter is it a system-defined pointer or a custom icon.
+
+See also: C<pointerHotSpot>, C<pointerIcon>, C<pointer>
+
+=item popup OBJECT
+
+Manages a Prima::Popup object associated with a widget. 
+The purpose of the popup object is to show a context menu
+when the user right-clicks or selects an appropriate keyboard
+combination. Prima::Widget can host many children objects,
+and Prima::Popups as well. But only the one that is set in
+C<::popup> property will be activated automatically.
+
+The popup object can be destroyed safely; its cancellation
+can be done either via C<popup(undef)> or C<destroy()> call.
+
+See also: C<Prima::Menu>, C<Popup>, C<Menu>, 
+C<popupItems>, C<popupColorIndex>, C<popupFont>
+
+=item popupColorIndex INDEX, COLOR
+
+Maintains the eight color properties of a pop-up context menu,
+associated with a widget. INDEX must be one of C<ci::XXX> constants
+( see C<::colorIndex> property ). 
+
+See also: C<popupItems>, C<popupFont>, C<popup>
+
+=item popupColor COLOR
+
+Basic foreground popup context menu color.
+
+See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
+
+=item popupBackColor COLOR
+
+Basic background popup context menu color.
+
+See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
+
+=item popupDark3DColor COLOR
+
+Color for drawing dark shadings in popup context menu color.
+
+See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
+
+=item popupDisabledColor COLOR
+
+Foreground color for disabled items in popup context menu color. 
+
+See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
+
+=item popupDisabledBackColor COLOR
+
+Background color for disabled items in popup context menu color. 
+
+See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
+
+=item popupFont %FONT
+
+Maintains the font of a pop-up context menu, associated with a widget.
+
+See also: C<popupItems>, C<popupColorIndex>, C<popup>
+
+=item popupHiliteColor COLOR
+
+Foreground color for selected items in popup context menu color. 
+
+See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
+
+=item popupHiliteBackColor COLOR
+
+Background color for selected items in popup context menu color. 
+
+See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
+
+=item popupItems [ ITEM_LIST ]
+
+Manages items of a Prima::Popup object associated with a widget.
+The ITEM_LIST format is same as C<Prima::AbstractMenu::items>
+and is described in L<Prima::Menu>.
+
+See also: C<popup>, C<popupColorIndex>, C<popupFont>
+
+=item popupLight3DColor COLOR
+
+Color for drawing light shadings in popup context menu color.
+
+See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
+
+=item rect X_LEFT_OFFSET Y_BOTTOM_OFFSET X_RIGHT_OFFSET Y_TOP_OFFSET
+
+Maintains the rectangular boundaries of a widget relative
+to its owner ( or to the screen if C<::clipOwner> is set to 0 ).
+
+See also: C<bottom>, C<right>, C<top>, C<left>, C<origin>, 
+C<width>, C<height>, C<size>
+C<growMode>, C<Move>, C<Size>, C<get_virtual_size>, 
+C<sizeMax>, C<sizeMin>
+
+=item right INTEGER
+
+Maintains the right X boundary of a widget. If changed,
+does not affect the widget width; but does so, if called
+in C<set()> together with C<::left>.
+
+See also: C<left>, C<bottom>, C<top>, C<origin>, C<rect>,
+C<growMode>, C<Move>
+
+=item scaleChildren BOOLEAN
+
+If a widget has C<::scaleChildren> set to 1, then the newly-created 
+children widgets inserted in it will be scaled corresponding to the
+owner's C<::designScale>, given that widget's C<::designScale> is not C<undef>
+and the owner's is not [0,0].
+
+Default is 1.
+
+See also: C<designScale>
+
+=item selectable BOOLEAN
+
+If 1, a widget can be granted focus implicitly, or by means of
+the user actions. C<select()> regards this property, and does not
+focus a widget that has C<::selectable> set to 0.
+
+Default value is 0
+
+See also: C<current>, C<currentWidget>, C<selected>, C<selectedWidget>, C<focused>
+
+=item selected BOOLEAN
+
+If called in get-mode, returns whether a widget or
+one of its (grand-) children is focused. If in set-mode,
+either simply turns the system with no-focus state ( if 0 ),
+or sends input focus to itself or one of the widgets tracked down by
+C<::currentWidget> chain.
+
+See also: C<current>, C<currentWidget>, C<selectable>, C<selectedWidget>, C<focused>
+
+=item selectedWidget OBJECT
+
+Points to a child widget, that has property C<::selected> set to 1.
+
+See also: C<current>, C<currentWidget>, C<selectable>, C<selected>, C<focused>
+
+=item selectingButtons FLAGS
+
+FLAGS is a combination of C<mb::XXX> ( mouse button ) flags.
+If a widget receives a click with a mouse button, that has
+the corresponding bit set in C<::selectingButtons>, then
+C<select()> is called.
+
+See also: C<MouseDown>, C<firstClick>, C<selectable>, C<selected>, C<focused>
+
+=item shape IMAGE
+
+Maintains the non-rectangular shape of a widget.
+IMAGE is monochrome Prima::Image, with 0 bits treated 
+as transparent pixels, and 1 bits as opaque pixels.
+
+Successive only if C<sv::ShapeExtension> value is true.
+
+=item showHint BOOLEAN
+
+If 1, the toolkit is allowed to show a hint label over 
+a widget. If 0, it is forbidden. The C<::hint>
+property must contain non-empty string as well, if
+the hint label must be shown.
+
+Default value is 1.
+
+See also: C<hint>, C<ownerShowHint>, C<hintVisible>, C<ownerHint>
+
+=item size WIDTH HEIGHT
+
+Maintains the width and height of a widget.
+
+See also: C<width>, C<height>
+C<growMode>, C<Move>, C<Size>, C<get_virtual_size>, 
+C<sizeMax>, C<sizeMin>
+
+=item sizeMax WIDTH HEIGHT
+
+Specifies the maximal size for a widget that it is allowed to accept.
+
+See also: C<width>, C<height>, C<size>
+C<growMode>, C<Move>, C<Size>, C<get_virtual_size>, 
+C<sizeMin>
+
+=item sizeMin WIDTH HEIGHT
+
+Specifies the minimal size for a widget that it is allowed to accept.
+
+See also: C<width>, C<height>, C<size>
+C<growMode>, C<Move>, C<Size>, C<get_virtual_size>, 
+C<sizeMax>
+
+=item syncPaint BOOLEAN
+
+If 0, the C<Paint> request notifications are stacked
+until the event loop is called. If 1, every time the widget
+surface gets invalidated, the C<Paint> notification is called.
+
+Default value is 0.
+
+See also: C<invalidate_rect>, C<repaint>, C<validate_rect>, C<Paint>
+
+=item tabOrder INTEGER
+
+Maintains the order in which tab- and shift-tab- key navigation
+algorithms select the sibling widgets. INTEGER is unique among
+the sibling widgets. In set mode, if INTEGER value is already taken,
+the occupier is assigned another unique value, but without desctruction
+of a queue - widgets with ::tabOrder greater than of the widget,
+receive their new values too. Special value -1 is accepted as 'the end of list'
+indicator. Negative value is never returned.
+
+See also: C<tabStop>, C<next_tab>, C<selectable>, C<selected>, C<focused>
+
+=item tabStop BOOLEAN
+
+Specifies whether a widget is interested in tab- and shift-tab- key
+navigation or not.
+
+Default value is 1. 
+
+See also: C<tabOrder>, C<next_tab>, C<selectable>, C<selected>, C<focused>
+
+=item text TEXT
+
+A text string for generic purpose. Many Prima::Widget
+descendants use this property heavily - buttons, labels,
+input lines etc, but Prima::Widget itself does not.
+
+=item top INTEGER
+
+Maintains the upper Y boundary of a widget. If changed,
+does not affect the widget height; but does so, if called
+in C<set()> together with C<::bottom>.
+
+See also: C<left>, C<right>, C<bottom>, C<origin>, C<rect>,
+C<growMode>, C<Move>
+
+=item transparent BOOLEAN
+
+Specifies whether the background of a widget before
+it starts painting is of any importance. If 1, a widget
+can gain certain transparency look if it
+does not clears the background during C<Paint> event.
+
+Default value is 0
+
+See also: C<Paint>, C<buffered>.
+
+=item visible BOOLEAN
+
+Specifies whether a widget is visible or not.
+See L<"Visibility">.
+
+See also: C<Show>, C<Hide>, C<showing>, C<exposed>
+
+=item widgetClass CLASS
+
+Maintains the integer value, designating the color
+class that is defined by system and is associated with Prima::Widget
+eight basic color properties. CLASS can be one of 
+C<wc::XXX> constants:
+
+   wc::Undef
+   wc::Button
+   wc::CheckBox
+   wc::Combo
+   wc::Dialog
+   wc::Edit
+   wc::InputLine
+   wc::Label
+   wc::ListBox
+   wc::Menu
+   wc::Popup
+   wc::Radio
+   wc::ScrollBar
+   wc::Slider
+   wc::Widget or wc::Custom
+   wc::Window
+   wc::Application
+
+These constants are not associated with the toolkit classes;
+any class can use any of these constants in C<::widgetClass>.
+
+See also: C<map_color>, C<colorIndex>
+
+=item width WIDTH
+
+Maintains the width of a widget.
+
+See also: C<height>
+C<growMode>, C<Move>, C<Size>, C<get_virtual_size>, 
+C<sizeMax>, C<sizeMin>
+
+
+=item x_centered BOOLEAN
+
+A write-only property. Once set, widget is centered by the horizontal
+axis relative to its owner.
+
+See also: C<centered>, C<y_centered>, C<growMode>, C<origin>, C<Move>.
+
+=item y_centered BOOLEAN
+
+A write-only property. Once set, widget is centered by the verical
+axis relative to its owner.
+
+See also: C<x_centered>, C<centered>, C<growMode>, C<origin>, C<Move>.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item bring_to_front
+
+Sends a widget on top of all other siblings widgets
+
+See also: C<insert_behind>, C<send_to_back>, C<ZOrderChanged>
+,C<first>, C<next>, C<prev>, C<last>
+
+=item can_close
+
+Sends C<Close> message, and returns its boolean exit state.
+
+See also: C<Close>, C<close>
+
+=item client_to_screen @OFFSETS
+
+Maps array of X and Y integer offsets from widget to screen coordinates.
+Returns the mapped OFFSETS.
+
+See also: C<screen_to_client>, C<clipOwner>
+
+=item close
+
+Calls C<can_close()>, and if successfull, destroys a widget.
+Returns the C<can_close()> result.
+
+See also: C<can_close>, C<Close>
+
+=item defocus
+
+Alias for C<focused(0)> call
+
+See also: C<focus>, C<focused>, C<Enter>, C<Leave>
+
+=item deselect
+
+Alias for C<selected(0)> call
+
+See also: C<select>, C<selected>, C<Enter>, C<Leave>
+
+=item exposed
+
+Returns a boolean value, indicating whether a widget 
+is at least partly visible on the screen.
+Never returns 1 if a widget has C<::visible> set to 0.
+
+See also: C<visible>, C<showing>, C<Show>, C<Hide>
+
+=item fetch_resource CLASS_NAME, NAME, CLASS_RESOURCE, RESOURCE, OWNER, RESOURCE_TYPE = fr::String
+
+Returns a system-defined scalar of resource, defined by the widget hierarchy,
+its class, name and owner. RESOURCE_TYPE can be one of type qualificators:
+
+   fr::Color  - color resource
+   fr::Font   - font resource
+   fs::String - text string resource
+
+Such a number of the parameters is used because the method 
+can be called before a widget is created.
+CLASS_NAME is widget class string, NAME is widget name.
+CLASS_RESOURCE is class of resource, and RESOURCE is the resource name.
+
+For example, resources 'color' and 'disabledColor' belong to the
+resource class 'Foreground'.
+
+=item first
+
+Returns the first ( from bottom ) sibling widget in Z-order.
+
+See also: C<last>, C<next>, C<prev>
+
+=item focus
+
+Alias for C<focused(1)> call
+
+See also: C<defocus>, C<focused>, C<Enter>, C<Leave>
+
+=item hide
+
+Sets widget C<::visible> to 0.
+
+See also: C<hide>, C<visible>, C<Show>, C<Hide>, C<showing>, C<exposed>
+
+=item hide_cursor
+
+Hides the cursor. As many times C<hide_cursor()> was called,
+as many time its counterpart C<show_cursor()> must be called
+to reach the cursor's initial state.
+
+See also: C<show_cursor>, C<cursorVisible>
+
+=item help
+
+I<Design in progress>. Supposed to start an interactive
+help program, opened on C<::helpContext> property value.
+
+See also: C<helpContext>
+
+=item insert_behind OBJECT
+
+Sends a widget behind the OBJECT on Z-axis, given that
+the OBJECT is a sibling to the widget.
+
+See also: C<bring_to_front>, C<send_to_back>, C<ZOrderChanged> 
+,C<first>, C<next>, C<prev>, C<last>
+
+=item invalidate_rect X_LEFT_OFFSET Y_BOTTOM_OFFSET X_RIGHT_OFFSET Y_TOP_OFFSET 
+
+Marks the rectangular area of a widget as 'invalid', 
+so re-painting of the area happens. See L<"Graphic content">.
+
+See also: C<validate_rect>, C<get_invalid_rect>, C<repaint>, C<Paint>, C<syncPaint>, C<update_view>
+
+=item key_down CODE, KEY = kb::NoKey, MOD = 0, REPEAT = 1, POST = 0 
+
+The method sends or posts ( POST flag ) simulated C<KeyDown> event 
+to the system. CODE, KEY, MOD and REPEAT are the parameters
+to be passed to the notification callbacks.
+
+See also: C<key_up>, C<key_event>, C<KeyDown>
+
+=item key_event COMMAND, CODE, KEY = kb::NoKey, MOD = 0, REPEAT = 1, POST = 0
+
+The method sends or posts ( POST flag ) simulated keyboard event 
+to the system. CODE, KEY, MOD and REPEAT are the parameters
+to be passed to an eventual C<KeyDown> or C<KeyUp> notifications.
+COMMAND is allowed to be either C<cm::KeyDown> or C<cm::KeyUp>.
+
+See also: C<key_down>, C<key_up>, C<KeyDown>, C<KeyUp>
+
+=item key_up CODE, KEY = kb::NoKey, MOD = 0, POST = 0 
+
+The method sends or posts ( POST flag ) simulated C<KeyUp> event 
+to the system. CODE, KEY and MOD are the parameters
+to be passed to the notification callbacks.
+
+See also: C<key_down>, C<key_event>, C<KeyUp>
+
+=item last
+
+Returns the last ( the topmost ) sibling widget in Z-order.
+
+See also: C<first>, C<next>, C<prev>
+
+=item lock
+
+Turns off the ability of a widget to re-paint itself.
+As many times C<lock()> was called, as may times its counterpart,
+C<unlock()> must be called to enable re-painting again.
+Returns a boolean success flag.
+
+See also: C<unlock>, C<repaint>, C<Paint>, C<get_locked>
+
+=item map_color COLOR
+
+Transforms C<cl::XXX> and C<ci::XXX> combinations into RGB
+color representation and returns the result. If COLOR is already 
+in RGB format, no changes are made.
+
+See also: C<colorIndex>
+
+=item mouse_click BUTTON = mb::Left, MOD = 0, X = 0, Y = 0, DBL_CLICK = 0, POST = 0 
+
+The method sends or posts ( POST flag ) simulated C<MouseClick> event 
+to the system. BUTTON, MOD, X, Y, and DBL_CLICK are the parameters
+to be passed to the notification callbacks.
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseWheel>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
+
+=item mouse_down BUTTON = mb::Left, MOD = 0, X = 0, Y = 0, POST = 0 
+
+The method sends or posts ( POST flag ) simulated C<MouseDown> event 
+to the system. BUTTON, MOD, X, and Y are the parameters
+to be passed to the notification callbacks.
+
+See also: C<MouseUp>, C<MouseWheel>, C<MouseClick>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
+
+=item mouse_enter MOD = 0, X = 0, Y = 0, POST = 0 
+
+The method sends or posts ( POST flag ) simulated C<MouseEnter> event 
+to the system. MOD, X, and Y are the parameters
+to be passed to the notification callbacks.
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseWheel>, C<MouseClick>,
+C<MouseMove>, C<MouseLeave> 
+
+=item mouse_event COMMAND = cm::MouseDown, BUTTON = mb::Left, MOD = 0, X = 0, Y = 0, DBL_CLICK = 0, POST = 0
+
+The method sends or posts ( POST flag ) simulated mouse event 
+to the system. BUTTON, MOD, X, Y and DBL_CLICK are the parameters
+to be passed to an eventual mouse notifications.
+COMMAND is allowed to be one of C<cm::MouseDown>, C<cm::MouseUp>,
+C<cm::MouseWheel>, C<cm::MouseClick>, C<cm::MouseMove>, C<cm::MouseEnter>,
+C<cm::MouseLeave> constants.
+
+See also: C<mouse_down>, C<mouse_up>, C<mouse_wheel>, C<mouse_click>,
+C<mouse_move>, C<mouse_enter>, C<mouse_leave>, 
+C<MouseDown>, C<MouseUp>, C<MouseWheel>, C<MouseClick>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave>
+
+=item mouse_leave
+
+The method sends or posts ( POST flag ) simulated C<MouseLeave> event 
+to the system. 
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseWheel>, C<MouseClick>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
+
+
+=item mouse_move MOD = 0, X = 0, Y = 0, POST = 0 
+
+The method sends or posts ( POST flag ) simulated C<MouseMove> event 
+to the system. MOD, X, and Y are the parameters
+to be passed to the notification callbacks.
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseWheel>, C<MouseClick>,
+C<MouseEnter>, C<MouseLeave> 
+
+=item mouse_up BUTTON = mb::Left, MOD = 0, X = 0, Y = 0, POST = 0 
+
+The method sends or posts ( POST flag ) simulated C<MouseUp> event 
+to the system. BUTTON, MOD, X, and Y are the parameters
+to be passed to the notification callbacks.
+
+See also: C<MouseDown>, C<MouseWheel>, C<MouseClick>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
+
+=item mouse_wheel MOD = 0, X = 0, Y = 0, Z = 0, POST = 0 
+
+The method sends or posts ( POST flag ) simulated C<MouseUp> event 
+to the system. MOD, X, Y and Z are the parameters
+to be passed to the notification callbacks.
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseClick>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
+
+=item next
+
+Returns the neighbor sibling widget, next ( above ) in Z-order.
+If none found, undef is returned.
+
+See also: C<first>, C<last>, C<prev>
+
+=item next_tab FORWARD = 1
+
+Returns the next widget in the sorted by C<::tabOrder> list
+of sibling widgets. FORWARD is a boolean lookup direction flag. 
+If none found, the first ( or the last, depending on FORWARD )
+widget is returned. Only widgets with C<::tabStop> set to 1 participate.
+
+Used in the toolkit keyboard navigation.
+
+See also: C<next_positional>, C<tabOrder>, C<tabStop>, C<selectable>
+
+=item next_positional DELTA_X DELTA_Y
+
+Returns a sibling, (grand-)child of a sibling or (grand-)child widget,
+that matched best the direction specified by DELTA_X and DELTA_Y.
+At one time, only one of these parameters can be zero; another
+parameter must be either 1 or -1.
+
+Used in the toolkit keyboard navigation.
+
+See also: C<next_tab>, C<origin>
+
+=item prev
+
+Returns the neighbor sibling widget, previous ( below ) in Z-order.
+If none found, undef is returned.
+
+See also: C<first>, C<last>, C<next>
+
+=item repaint
+
+Marks the whole widget area as 'invalid', 
+so re-painting of the area happens. See L<"Graphic content">.
+
+See also: C<validate_rect>, C<get_invalid_rect>, C<invalidate_rect>, C<Paint>, 
+C<update_view>, C<syncPaint>
+
+=item responsive
+
+Returns a boolean flag, indicating whether a widget and its owners
+have all C<::enabled> 1 or not. Useful for fast check if
+a widget should respond to the user actions.
+
+See also: C<enabled>
+
+=item screen_to_client @OFFSETS
+
+Maps array of X and Y integer offsets from screen to widget coordinates.
+Returns the mapped OFFSETS.
+
+See also: C<client_to_screen>
+
+=item scroll DELTA_X DELTA_Y %OPTIONS
+
+Scrolls the graphic context area by DELTA_X and DELTA_Y pixels.
+OPTIONS is hash, that contains optional parameters to the scrolling
+procedure:
+
+=over
+
+=item clipRect [X1, Y1, X2, Y2]
+
+The clipping area is confined by X1, Y1, X2, Y2 rectangular area.
+If not specified, the clipping area covers the whole widget.
+Only the bits, covered by clipRect are affected.
+Bits scrolled from the outside of the rectangle to the inside 
+are painted; bits scrolled from the inside of the rectangle to 
+the outside are not painted. 
+
+=item confineRect [X1, Y1, X2, Y2]
+
+The scrolling area is confined by X1, Y1, X2, Y2 rectangular area.
+If not specified, the scrolling area covers the whole widget.
+
+=item withChildren BOOLEAN
+
+If 1, the scrolling performs with the eventual children widgets
+change their positions to DELTA_X and DELTA_Y as well. 
+
+=back
+
+Cannot be used inside paint state.
+
+See also: C<Paint>, C<get_invalid_rect>
+
+=item select
+
+Alias for C<selected(1)> call
+
+See also: C<deselect>, C<selected>, C<Enter>, C<Leave>
+
+=item send_to_back
+
+Sends a widget at bottom of all other siblings widgets
+
+See also: C<insert_behind>, C<bring_to_front>, C<ZOrderChanged> 
+,C<first>, C<next>, C<prev>, C<last>
+
+=item show
+
+Sets widget C<::visible> to 1.
+
+See also: C<hide>, C<visible>, C<Show>, C<Hide>, C<showing>, C<exposed>
+
+=item show_cursor
+
+Shows the cursor. As many times C<hide_cursor()> was called,
+as many time its counterpart C<show_cursor()> must be called
+to reach the cursor's initial state.
+
+See also: C<hide_cursor>, C<cursorVisible>
+
+=item showing
+
+Returns a boolean value, indicating whether the widget and its owners
+have all C<::visible> 1 or not.
+
+=item unlock
+
+Turns on the ability of a widget to re-paint itself.
+As many times C<lock()> was called, as may times its counterpart,
+C<unlock()> must be called to enable re-painting again.
+When last C<unlock()> is called, an implicit C<repaint()> call is 
+made.  Returns a boolean success flag.
+
+See also: C<lock>, C<repaint>, C<Paint>, C<get_locked>
+
+=item update_view
+
+If any parts of a widget were marked as 'invalid' by
+either C<invalidate_rect()> or C<repaint()> calls or the 
+exposure caused by window movements ( or any other),
+then C<Paint> notification is immediately called.
+If no parts are invalid, no action is performed.
+If a widget has C<::syncPaint> set to 1, 
+C<update_view()> is always a no-operation call.
+
+See also: C<invalidate_rect>, C<get_invalid_rect>, C<repaint>, C<Paint>, C<syncPaint>, C<update_view>
+
+=item validate_rect X_LEFT_OFFSET Y_BOTTOM_OFFSET X_RIGHT_OFFSET Y_TOP_OFFSET  
+
+Reverses the effect of C<invalidate_rect()>, restoring the original, 'valid'
+state of widget area covered by the rectangula area passed. If a widget
+with previously invalid areas was wholly validated by this method, no C<Paint>
+notifications occur.
+
+See also: C<invalidate_rect>, C<get_invalid_rect>, C<repaint>, C<Paint>, C<syncPaint>, C<update_view>
+
+
+=back
+
+=head2 Get-methods
+
+=over
+
+=item get_default_font
+
+Returns the default font for a Prima::Widget class.
+
+See also: C<font>
+
+=item get_default_popup_font
+
+Returns the default font for a Prima::Popup class.
+
+See also: C<font>
+
+=item get_invalid_rect
+
+Returns the result of successive calls C<invalidate_rect()>,
+C<validate_rect()> and C<repaint()>, as a rectangular area   
+( four integers ) that cover all invalid regions in a widget.
+If none found, (0,0,0,0) is returned.
+
+See also: C<validate_rect>, C<invalidate_rect>, C<repaint>, C<Paint>, C<syncPaint>, C<update_view>
+
+=item get_handle
+
+Returns a system handle for a widget
+
+See also: C<get_parent_handle>
+
+=item get_locked
+
+Returns 1 if a widget is in C<lock()> - initiated repaint-blocked state.
+
+See also: C<lock>, C<unlock>
+
+=item get_mouse_state
+
+Returns a combination of C<mb::XXX> constants, reflecting the currently
+pressed mouse buttons.
+
+See also: C<pointerPos>, C<get_shift_state>
+
+=item get_parent
+
+Returns the owner widget that clips the widget boundaries, or application
+object if a widget is top-level.
+
+See also: C<clipOwner>
+
+=item get_parent_handle
+
+Returns a system handle for a parent of a widget, a window that
+belongs to another program. Returns 0 if the widget's owner and parent
+are in the same application and process space.
+
+See also: C<get_handle>, C<clipOwner>
+
+=item get_pointer_size
+
+Returns two integers, width and height of a icon,
+that the system accepts as valid for a pointer.
+If the icon is supplied that is more or less than these values,
+it is truncated or padded with transparency bits, but is not stretched.
+Can be called with class syntax.
+
+=item get_shift_state
+
+Returns a combination of C<km::XXX> constants, reflecting the currently
+pressed keyboard modificator buttons.
+
+See also: C<get_shift_state>
+
+=item get_virtual_size
+
+Returns virtual width and height of a widget. 
+See L<"Geometry">, Implicit size regulations.
+
+See also: C<width>, C<height>, C<size>
+C<growMode>, C<Move>, C<Size>, C<sizeMax>, C<sizeMin>
+
+=item get_widgets or widgets
+
+Returns list of children widgets.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Change
+
+Generic notification, used for Prima::Widget descendants;
+Prima::Widget itself neither calls not uses the event.
+Designed to be called when an arbitrary major state of 
+a widget is changed.
+
+=item Click
+
+Generic notification, used for Prima::Widget descendants;
+Prima::Widget itself neither calls not uses the event.
+Designed to be called when an arbitrary major action
+for a widget is called.
+
+=item Close
+
+Triggered by C<can_close()> and C<close()> functions. 
+If the event flag is cleared during execution,
+these functions fail. 
+
+See also: C<close>, C<can_close>
+
+=item ColorChanged INDEX
+
+Called when one of widget's color properties
+is changed, either by direct property change
+or by the system. INDEX is one of C<ci::XXX>
+constants.
+
+See also: C<colorIndex>
+
+=item Disable
+
+Triggered by a successive C<enabled(0)> call
+
+See also: C<Enable>, C<enabled>, C<responsive>
+
+=item DragDrop X Y
+
+I<Design in progress>. Supposed to be triggered
+when a drag-and-drop session started by the widget.
+X and Y are mouse pointer coordinates when
+the session started.
+
+See also: C<DragOver>, C<EndDrag>
+
+=item DragOver X Y STATE
+
+I<Design in progress>. Supposed to be called
+when a mouse pointer is passed over a widget
+during a drag-and-drop session.
+X and Y are mouse pointer coordinates, identical
+to C<MouseMove> X Y parameters. STATE value
+is undefined.
+
+See also: C<DragDrop>, C<EndDrag>
+
+=item Enable
+
+Triggered by a successive C<enabled(1)> call
+
+See also: C<Disable>, C<enabled>, C<responsive>
+
+=item EndDrag X Y
+
+I<Design in progress>. Supposed to be called
+when a drag-and-drop session is finished successfully
+over a widget. X and Y are mouse pointer coordinates, 
+when the session was finished. 
+
+See also: C<DragDrop>, C<DragOver>
+
+=item Enter
+
+Called when a widget receives the input focus.
+
+See also: C<Leave>, C<focused>, C<selected>
+
+=item FontChanged
+
+Called when a widget font is changed either 
+by direct property change or by the system.
+
+See also: C<font>, C<ColorChanged>
+
+=item Help
+
+I<Design in progress>. Called when the user presses 
+a system-defined key combination, used for interactive
+help invocation. Usually the key is kb::F1.
+
+See also: C<helpContext>
+
+=item Hide
+
+Triggered by a successive C<visible(0)> call
+
+See also: C<Show>, C<visible>, C<showing>, C<exposed>
+
+=item Hint SHOW_FLAG
+
+Called when a hint label is about to show or hide,
+depending on SHOW_FLAG. The hint show or hide action
+fails, if the event flag is cleared during execution.
+
+See also: C<showHint>, C<ownerShowHint>, C<hintVisible>, C<ownerHint>
+
+=item KeyDown CODE, KEY, MOD, REPEAT
+
+Sent to the focused widget when the user presses a key.
+CODE contains an eventual character code, KEY is one of C<kb::XXX>
+constants, MOD is a combination of the modificator keys
+pressed when the event occured ( C<km::XXX> ). REPEAT
+is how many times the key was pressed; usually it is 1.
+( see C<::briefKeys> ).
+
+The valid C<km::> constants are:
+
+   km::Shift
+   km::Ctrl
+   km::Alt
+   km::KeyPad
+   km::DeadKey
+
+The valid C<kb::> constants are grouped in several sets.
+Some codes are aliased, like, C<kb::PgDn> and C<kb::PageDown>.
+
+=over
+
+=item Modificator keys
+
+   kb::ShiftL   kb::ShiftR   kb::CtrlL      kb::CtrlR
+   kb::AltL     kb::AltR     kb::MetaL      kb::MetaR
+   kb::SuperL   kb::SuperR   kb::HyperL     kb::HyperR
+   kb::CapsLock kb::NumLock  kb::ScrollLock kb::ShiftLock
+
+=item Keys with character code defined  
+
+   kb::Backspace  kb::Tab    kb::Linefeed   kb::Enter
+   kb::Return     kb::Escape kb::Esc        kb::Space
+
+
+=item Function keys
+
+   kb::F1 .. kb::F30
+   kb::L1 .. kb::L10
+   kb::R1 .. kb::R10
+
+=item Other
+
+   kb::Clear    kb::Pause   kb::SysRq  kb::SysReq
+   kb::Delete   kb::Home    kb::Left   kb::Up
+   kb::Right    kb::Down    kb::PgUp   kb::Prior
+   kb::PageUp   kb::PgDn    kb::Next   kb::PageDown
+   kb::End      kb::Begin   kb::Select kb::Print
+   kb::PrintScr kb::Execute kb::Insert kb::Undo
+   kb::Redo     kb::Menu    kb::Find   kb::Cancel
+   kb::Help     kb::Break   kb::BackTab
+
+=back
+
+See also: C<KeyUp>, C<briefKeys>, C<key_down>, C<help>, C<popup>,
+C<tabOrder>, C<tabStop>, C<accelTable>
+
+=item KeyUp CODE, KEY, MOD
+
+Sent to the focused widget when the user depresses a key.
+CODE contains an eventual character code, KEY is one of C<kb::XXX>
+constants, MOD is a combination of the modificator keys
+pressed when the event occured ( C<km::XXX> ).
+
+See also: C<KeyDown>, C<key_up>
+
+=item Leave
+
+Called when the input focus leaves a widget
+
+See also: C<Enter>, C<focused>, C<selected>
+
+=item Menu MENU VAR_NAME
+
+Called before the user-navigated menu ( pop-up
+or pull-down ) is about to show another level of 
+submenu on the screen. MENU is Prima::AbstractMenu
+descendant, that children to a widget, and VAR_NAME
+is the name of the menu item that is about to be shown.
+
+Used for the last-minute changes in the menu structure.
+
+See also: C<popupItems>
+
+=item MouseClick BUTTON, MOD, X, Y, DOUBLE_CLICK
+
+Called when a mouse click ( button is pressed, and then 
+depressed within system-defined interval of time ) is
+happened in the widget area. BUTTON is one of C<mb::XXX>
+constants, MOD is a combination of C<km::XXX> constants,
+reflecting pressed modificator keys during the event,
+X and Y are the mouse pointer coordinates. DOUBLE_CLICK
+is a boolean flag, set to 1 if it was a double click,
+0 if a single.
+
+C<mb::XXX> constants are:
+
+   mb::b1 or mb::Left
+   mb::b2 or mb::Middle
+   mb::b3 or mb::Right
+   mb::b4
+   mb::b5
+   mb::b6
+   mb::b7
+   mb::b8
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseWheel>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
+
+=item MouseDown BUTTON, MOD, X, Y
+
+Occurs when the user presses mouse button on a widget.
+BUTTON is one of C<mb::XXX> constants, MOD is a combination of 
+C<km::XXX> constants, reflecting the pressed modificator keys during the event,
+X and Y are the mouse pointer coordinates.
+
+See also: C<MouseUp>, C<MouseClick>, C<MouseWheel>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
+
+=item MouseEnter MOD, X, Y
+
+Occurs when the mouse pointer is entered the area occupied by a widget
+( without mouse button pressed ).
+MOD is a combination of  C<km::XXX> constants, reflecting 
+the pressed modificator keys during the event,
+X and Y are the mouse pointer coordinates.
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseClick>, C<MouseWheel>,
+C<MouseMove>, C<MouseLeave> 
+
+=item MouseLeave
+
+Occurs when the mouse pointer is driven off the area 
+occupied by a widget ( without mouse button pressed ). 
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseClick>, C<MouseWheel>,
+C<MouseMove>, C<MouseEnter>
+
+=item MouseMove MOD, X, Y
+
+Occurs when the mouse pointer is transported over a widget.
+MOD is a combination of  C<km::XXX> constants, reflecting 
+the pressed modificator keys during the event,
+X and Y are the mouse pointer coordinates.
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseClick>, C<MouseWheel>,
+C<MouseEnter>, C<MouseLeave> 
+
+=item MouseUp BUTTON, MOD, X, Y
+
+Occurs when the user depresses mouse button on a widget.
+BUTTON is one of C<mb::XXX> constants, MOD is a combination of 
+C<km::XXX> constants, reflecting the pressed modificator keys during the event,
+X and Y are the mouse pointer coordinates.
+
+See also: C<MouseDown>, C<MouseClick>, C<MouseWheel>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
+
+=item MouseWheel MOD, X, Y, Z
+
+Occurs when the user rotates mouse wheel on a widget.
+MOD is a combination of  C<km::XXX> constants, 
+reflecting the pressed modificator keys during the event,
+X and Y are the mouse pointer coordinates. Z is the virtual
+coordinate of a wheel. Typical ( 2001 A.D. ) mouse produces
+Z 120-fold values.
+
+See also: C<MouseDown>, C<MouseUp>, C<MouseClick>,
+C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
+
+=item Move OLD_X, OLD_Y, NEW_X, NEW_Y
+
+Triggered when widget changes its position relative to 
+its parent, either by Prima::Widget methods or by the user.
+OLD_X and OLD_Y are the old coordinates of
+a widget, NEW_X and NEW_Y are the new ones. 
+
+See also: C<Size>, C<origin>, C<growMode>, C<centered>, C<clipOwner>
+
+=item Paint CANVAS
+
+Caused when the system calls for the refresh of a graphic
+context, associated with a widget. CANVAS is the widget itself,
+however its usage instead of widget is recommended ( see
+L<"Graphic content"> ).
+
+See also: C<repaint>, C<syncPaint>, C<get_invalid_rect>, C<scroll>,
+C<colorIndex>, C<font>
+
+=item Popup BY_MOUSE, X, Y
+
+Called by the system when the user presses a key or mouse
+combination defined for a context pop-up menu execution.
+By default executes the associated Prima::Popup object,
+if it is present. If the event flag is cleared during the 
+execution of callbacks, the pop-up menu is not shown.
+
+See also: C<popup>
+
+=item Setup
+
+This message is posted right after C<Create> notification.
+It comes first from the event loop. Prima::Widget does not
+use it.
+
+=item Show 
+
+Triggered by a successive C<visible(1)> call
+
+See also: C<Show>, C<visible>, C<showing>, C<exposed>
+
+=item Size OLD_WIDTH, OLD_HEIGHT, NEW_WIDTH, NEW_HEIGHT
+
+Triggered when widget changes its size, 
+either by Prima::Widget methods or by the user.
+OLD_WIDTH and OLD_HEIGHT are the old extensions of
+a widget, NEW_WIDTH and NEW_HEIGHT are the new ones. 
+
+See also: C<Move>, C<origin>, C<size>, C<growMode>, 
+C<sizeMax>, C<sizeMin>, C<rect>, C<clipOwner>
+
+=item TranslateAccel CODE, KEY, MOD
+
+A distributed C<KeyDown> event. Traverses all the object
+tree that the widget which received original C<KeyDown> event 
+belongs to. Once the event flag is cleared, the distribution stops.
+
+Used for tracking keyboard events by widgets that are not in focus.
+
+See also: C<KeyDown>
+
+=item ZOrderChanged
+
+Triggered when a widget changes its stacking order, or Z-order
+among its siblings, either by Prima::Widget methods or by the user. 
+
+See also: C<bring_to_front>, C<insert_behind>, C<send_to_back>
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Object>, L<Prima::Drawable>.
