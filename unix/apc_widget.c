@@ -797,6 +797,7 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 
    if ( capture) {
       XWindow z = X_WINDOW;
+      Time t = guts. last_time;
       if ( confineTo && PWidget(confineTo)-> handle)
 	 confine_to = PWidget(confineTo)-> handle;
 AGAIN:      
@@ -805,7 +806,7 @@ AGAIN:
 			| ButtonReleaseMask
 			| PointerMotionMask
 			| ButtonMotionMask, GrabModeAsync, GrabModeAsync,
-			confine_to, None, guts. last_time);
+			confine_to, None, t);
       XCHECKPOINT;
       if ( r != GrabSuccess) {
          XWindow root = guts. root, rx;
@@ -815,6 +816,10 @@ AGAIN:
             guts. grab_redirect = z;
             guts. grab_widget = self;
             z = root;
+            goto AGAIN;
+         } 
+         if ( r == GrabInvalidTime) {
+            t = CurrentTime;
             goto AGAIN;
          }  
          guts. grab_redirect = nilHandle;
