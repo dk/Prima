@@ -36,8 +36,6 @@ BEGIN {
     unshift @INC, '.';
 };
 
-my $usePrigraph = defined $ENV{PRIMA_PRIGRAPH};
-
 require 5.00502;
 use strict;
 use Config;
@@ -80,6 +78,8 @@ use vars qw(
     $NeedX11
     $OS2
     $OS2DLLF
+    $usePrigraph
+    $useGC
     %cc_specs
     %DEFINES
     %USER_VARS
@@ -450,6 +450,12 @@ sub setvar
     }
 }
 
+sub env_true
+{
+    my ( $var) = @_;
+    return( $ENV{ $var} && $ENV{ $var} =~ /^1|yes|on|true$/i);
+}
+
 sub setup_variables
 {
     #   die "Oops! OS/2 isn't supported!\n" if $^O =~ /os2/i;
@@ -608,6 +614,9 @@ sub setup_variables
     my @libs = map { s/^$LDLIBFLAG//; $_} quoted_split($Config{ libs});
     #    push ( @libs, 'pmprintf') if $OS2 && defined $ENV{PRIMA_PMPRINTF};
     push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
+    if ( $useGC) {
+	push @libs, 'leak';
+    }
     setvar( 'LIBS', ());
     my @flibs;
 
@@ -627,9 +636,12 @@ sub setup_variables
                 PRIMA_CORE => 1,
                 PERL_POLLUTE => 1,
                );
-    $DEFINES{ PARANOID_MALLOC} = 1
-        if ( $ENV{ PRIMA_PARANOID_MALLOC}
-             && $ENV{ PRIMA_PARANOID_MALLOC} =~ /^1|yes|on|true$/i);
+    if ( env_true( 'PRIMA_PARANOID_MALLOC')) {
+	$DEFINES{ PARANOID_MALLOC} = 1;
+    }
+    if ( $useGC) {
+	$DEFINES{ USE_GC} = 1;
+    }
     while ( $CFLAGS =~ s/-D(\w+)(?:=(\S+))?\s*//) {
         my ( $defname, $defvalue) = ( $1, $2 || 1);
         $DEFINES{ $defname} = $defvalue;
@@ -859,6 +871,10 @@ sub setup_defines
             warn "PRIMA_PMPRINTF defined, but there is no pmprintf.h in include path";
         }
     }
+    if ( $useGC) {
+	have_header( 'gc.h');
+    }
+
     have_funcs_in( 'string.h', 'strcasecmp') || have_funcs_in( 'strings.h', 'stricmp');
     have_funcs_in( 'stdio.h', 'snprintf') || have_funcs_in( 'stdio.h', '_snprintf');
     have_funcs_in( 'stdlib.h', 'reallocf');
@@ -1098,6 +1114,9 @@ sub clsmake
 #
 # Here we go...
 #
+
+$usePrigraph = env_true( 'PRIMA_PRIGRAPH');
+$useGC = env_true( 'PRIMA_USE_GC');
 
 $Win32 = ( $^O =~ /mswin32/i);
 $OS2 = ( $^O =~ /os2/i);
