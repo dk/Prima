@@ -568,6 +568,7 @@ sub Roller_MouseMove
       ($y - 8) / ( $self-> height - 16))));
    $owner-> {HSVPin} = undef;
    $owner-> {setTransaction} = undef;
+   $self-> update_view;
 }
 
 sub Roller_MouseUp
