@@ -285,9 +285,12 @@ text_server ( void * instance, int function, int subCommand, SV * data)
          {
             int len;
             char *str = apc_clipboard_get_data( cfText, &len);
-            SV * ret  = newSVpv( str, 0);
-            free( str);
-            return ret;
+            SV * ret;
+            if ( str) {
+               ret = newSVpv( str, 0);
+               free( str);
+               return ret;
+            }
          }
          break;
       case cefStore:
@@ -312,9 +315,11 @@ image_server( void * instance, int function, int subCommand, SV * data)
             HV * profile = newHV();
             Handle self = Object_create( "Image", profile);
             sv_free(( SV *) profile);
-            apc_clipboard_get_data( cfBitmap, (void*)(&self));
-            --SvREFCNT( SvRV( var mate));
-            return newSVsv( var mate);
+            if ( apc_clipboard_get_data( cfBitmap, (void*)(&self)) != nil) {
+               --SvREFCNT( SvRV( var mate));
+               return newSVsv( var mate);
+            }
+            Object_destroy( self);
          }
          break;
       case cefStore:
