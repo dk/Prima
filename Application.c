@@ -507,7 +507,7 @@ Bool
 Application_close( Handle self)
 {
    if ( var stage > csNormal) return true;
-   return inherited close( self) ? ( apc_application_close( self), true) : false;
+   return my can_close( self) ? ( apc_application_close( self), true) : false;
 }
 
 Bool

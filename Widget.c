@@ -300,8 +300,8 @@ Bool
 Widget_can_close( Handle self)
 {
    enter_method;
-   if ( var stage > csNormal) return true;
-   return my first_that( self, pquery, nil) ? false : !pquery( 0, self, nil);
+   Event ev = { cmClose};
+   return ( var stage <= csNormal) ? my message( self, &ev) : true;
 }
 
 void
@@ -315,9 +315,12 @@ Widget_click( Handle self)
 Bool
 Widget_close( Handle self)
 {
+   Bool canClose;
    enter_method;
    if ( var stage > csNormal) return true;
-   return my can_close( self);
+   if (( canClose = my can_close( self)))
+      Object_destroy( self);
+   return canClose;
 }
 
 Bool

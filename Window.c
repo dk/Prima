@@ -547,12 +547,6 @@ Window_set_modal_result ( Handle self, int _modalResult)
 }
 
 
-Bool
-Window_close( Handle self)
-{
-   return inherited close( self) ? apc_window_close( self) : 0;
-}
-
 static void
 activate( Handle self, Bool ok)
 {

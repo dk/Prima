@@ -31,7 +31,6 @@ object Window( Widget)
    int      modal;
    int      modalResult;
    method   void     cancel();
-   method   Bool     close();
    method   void     done();
    method   void     end_modal();
    method   int      execute( Handle insertBefore = nilHandle);
