@@ -895,11 +895,20 @@ sub notification_types { return \%RNT; }
 }
 
 
+sub profile_default
+{
+   return {
+      %{$_[ 0]-> SUPER::profile_default},
+      index => 0,
+   }
+}
+
 sub init
 {
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
    $self-> {__DYNAS__}->{onRadioClick} = $profile{ onRadioClick};
+   $self-> index( $profile{index});
    return %profile;
 }
 
@@ -922,6 +931,7 @@ sub on_radioclick
    }
 }
 
+
 sub index
 {
    my $self = $_[0];
@@ -930,7 +940,7 @@ sub index
       my $i = $_[1];
       $i = 0 if $i < 0;
       $i = scalar @c if $i > scalar @c;
-      $c[$i]-> check;
+      $c[$i]-> check if $c[$i];
    } else {
       my $i;
       for ( $i = 0; $i < scalar @c; $i++) {
@@ -942,6 +952,24 @@ sub index
 
 package Prima::CheckBoxGroup;
 no strict; @ISA=qw(Prima::GroupBox); use strict;
+
+sub profile_default
+{
+   return {
+      %{$_[ 0]-> SUPER::profile_default},
+      value => 0,
+   }
+}
+
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+   $self-> value( $profile{value});
+   return %profile;
+}
+
 
 sub value
 {
