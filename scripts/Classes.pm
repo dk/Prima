@@ -509,7 +509,7 @@ sub profile_default
       width         => 0,
       hScaling      => 1,
       vScaling      => 1,
-      data          => [],
+      data          => '',
    );
    @$def{keys %prf} = values %prf;
    return $def;
