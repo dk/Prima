@@ -50,6 +50,15 @@ sub open
    $helpWindows[0]-> {text}-> update_view;
    $helpWindows[0]-> {text}-> load_link( $topic); 
    $helpWindows[0]-> {text}-> select;
+
+   if (
+         ( $::application-> get_modal_window( mt::Exclusive) ||
+          $::application-> get_modal_window( mt::Shared)
+         )  && !$helpWindows[0]-> get_modal
+      ) {
+      $helpWindows[0]-> execute;
+      $helpWindows[0]-> close if $helpWindows[0];
+   }
 }
 
 sub close
@@ -126,6 +135,13 @@ sub on_keydown
       $self-> clear_event;
       return;
    }
+
+   if ( $key == kb::Esc && $self-> owner-> {printing}) {
+      $self-> owner-> {printing} = -1;
+      $self-> clear_event;
+      return;
+   }
+   
    $self-> SUPER::on_keydown( $code, $key, $mod, $r);
 }
 
@@ -154,7 +170,6 @@ sub profile_default
            ['~New window' => 'Ctrl+N' => '^N' => 'new_window'],
            [],
            ['~Print ...' => 'print'],
-           ['Printer ~setup ...' => 'print_setup'],
            [],
            ['~Close window' => 'Alt+F4' => '@F4' => sub { $_[0]-> close }],
            ['Close ~all windows' => 'Alt+X' => '@X' => sub { Prima::HelpViewer-> close }],
@@ -662,21 +677,35 @@ sub FastFinder_KeyDown
 sub print
 {
    my $self = $_[0];
-   my $p = $::application-> get_printer;
-   my @prs = @{$::application-> get_printer-> printers};
-   unless ( @{$p-> printers}) {
-      Prima::message("No printers found");
-      return;
-   }
-   return unless $p-> begin_doc( $self-> {text}-> pageName);
-   $p-> abort_doc; 
-}
 
-sub print_setup
-{
-   my $self = $_[0];
+   $self-> fastfind_close;
+
    $prndlg = Prima::PrintSetupDialog-> create unless $prndlg;
    return unless $prndlg-> execute;
+   
+   my $p = $::application-> get_printer;
+   return unless $p-> begin_doc( $self-> {text}-> pageName);
+
+   my $pc = 1;
+   $self-> {printing} = 1;
+
+   $self-> {text}-> print( $p, sub {
+      $self-> status("Printing page $pc. Press ESC to cancel");
+      $pc++;
+      $::application-> yield;
+      return 0 if $self-> {printing} < 0;
+      1;
+   });
+   
+   if ( $self-> {printing} > 0) {
+      $p-> end_doc;
+      $self-> status("Printing done");
+   } else {
+      $self-> status("Printing aborted");
+      $p-> abort_doc;
+   }
+   
+   $self-> {printing} = undef;
 }
 
 sub setup_dialog
@@ -742,13 +771,158 @@ version 1.00
 
 =head1 USAGE
 
-The module presents two packages, Prima::HelpViewer
-and Prima::PodViewWindow. 
+The module presents two packages, C<Prima::HelpViewer>
+and C<Prima::PodViewWindow>. Their sole purpose is to serve as a mediator
+between C<Prima::PodView> package, the toolkit help interface and the user.
+C<Prima::PodViewWindow> includes all the user functionality, including ( but
+not limited to :) text search, color and font setup, printing etc.
+C<Prima::HelpViewer> provides two methods - C<open> and C<close>, used by
+C<Prima::Application> for help viewer invocation.
 
 =head1 Help
 
 The browser can be used to view and print POD
-( plain old documentation ) files. 
+( plain old documentation ) files. See the command overview below for more
+detailed description:
+
+=over
+
+=item File
+=over
+
+=item Open
+
+Presents a file selection dialog, when the user can select
+a file to browse in the viewer. The file must contain POD content,
+otherwise a warning is displayed.
+
+=item Goto
+
+Asks for a manpage, that is searched in PATH and the installation
+directories. 
+
+=item New window
+
+Opens the new viewer window with the same context.
+
+=item Print
+
+Provides a dialog, when the user can select the appropriate 
+printer device and its options.
+
+Prints the current topic to the selected printer. 
+
+If L<Full text view> menu item is checked, prints the whole manpage.
+
+=item Close window
+
+Closes the window. 
+
+=item Close all windows
+
+Closes all help viewer windows.
+
+=back 
+
+=item View
+=over
+
+=item Increase font
+
+Increases the currently selected font by 2 points.
+
+=item Decrease font
+
+Decreases the currently selected font by 2 points.
+
+=item Full text view
+
+If checked, the whole manpage is displayed. Otherwise,
+its content is presented as a set of topic, and only one
+topic is displayed.
+
+=item Find
+
+Presents a find dialog, where the user can
+select the text to search and the search options -
+the search direction, scope, and others.
+
+=item Find again
+
+Starts search for the text, entered in the last find dialog,
+with the same search options.
+
+=item Fast find
+
+The following commands provide a simple vi-style text search functionality -
+character keys ?,/,n,N bound to the commands below:
+
+=over
+=item Forward
+
+Presents an input line where a text can be entered; the text search is 
+performed parallel to the input.
+
+=item Backward
+
+Same as L<Forward> option, except that the serach direction is backwards.
+
+=item Repeat forward
+
+Repeat the search in the same direction as the initial search was being invoked.
+
+=item Repeat backward
+
+Repeat the search in the reverse direction as the initial search was being invoked.
+
+=back
+
+=item Setup
+
+Presents a setup dialog, where the user can select appropriate fonts and colors.
+
+=back
+
+=item Go
+=over
+
+=item Back
+
+Displays the previously visited manpage ( or topic )
+
+=item Forward
+
+Displays the previously visited manpage ( or topic ),
+that was left via L<Back> command.
+
+=item Up
+
+Displays the upper level topic within a manpage.
+
+=item Previous
+
+Moves to the previous topic within a manpage.
+
+=item Next
+
+Moves to the next topic within a manpage.
+
+=back
+
+=item Help
+=over
+
+=item About
+
+Displays the information about the help viewer.
+
+=item Help
+
+Displays the information about the usage of the help viewer
+
+=back
+
+=back
 
 =head1 AUTHOR
 

@@ -1072,7 +1072,7 @@ sub format
    my $state = $self-> create_state;
    for ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
       $$state[ tb::BLK_FONT_ID] = $_;
-      $self-> realize_state( $state, tb::REALIZE_FONTS);
+      $self-> realize_state( $self, $state, tb::REALIZE_FONTS);
       $indents[$_] = $self-> font-> width;
    }
    $$state[ tb::BLK_FONT_ID] = 0;
@@ -1142,7 +1142,7 @@ sub format_chunks
       # format the paragraph
       my $indent = $$m[M_INDENT] * $$indents[ $$m[M_FONT_ID]];
      
-      @blocks = $self-> block_wrap( $g, $state, $formatWidth - $indent);
+      @blocks = $self-> block_wrap( $self, $g, $state, $formatWidth - $indent);
 
       # adjust size
       for ( @blocks) {
@@ -1236,6 +1236,58 @@ sub format_chunks
 
    $self-> stop_format if $mid >= $f->{max};
    $f-> {step} *= 2 unless time - $time;
+}
+
+sub print
+{
+   my ( $self, $canvas, $callback) = @_;
+   
+   my ( $min, $max, $linkIdStart) = @{$self-> {modelRange}};
+   return if $min >= $max;
+
+   goto ABORT if $callback && ! $callback->();
+
+   # cache indents
+   my @indents;
+   my $state = $self-> create_state;
+   for ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
+      $$state[ tb::BLK_FONT_ID] = $_;
+      $self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
+      $indents[$_] = $canvas-> font-> width;
+   }
+   $$state[ tb::BLK_FONT_ID] = 0;
+
+   my ( $formatWidth, $formatHeight) = $canvas-> size;
+   my $mid = $min;
+   my $y = $formatHeight;
+
+   for ( ; $mid <= $max; $mid++) {
+      my $g = tb::block_create();
+      my $m = $self-> {model}->[$mid];
+      my @blocks;
+      $$g[ tb::BLK_TEXT_OFFSET] = $$m[M_TEXT_OFFSET];
+      $$g[ tb::BLK_Y] = undef;
+      push @$g, @$m[ M_START .. $#$m ];
+
+      # format the paragraph
+      my $indent = $$m[M_INDENT] * $indents[ $$m[M_FONT_ID]];
+      @blocks = $self-> block_wrap( $canvas, $g, $state, $formatWidth - $indent);
+
+      # paint
+      for ( @blocks) {
+         my $b = $_; 
+         $self-> block_draw( $canvas, $b, $indent, $y);
+         while ( $y - $$b[ tb::BLK_HEIGHT] < 0) {
+            goto ABORT if $callback && ! $callback->();
+            $canvas-> new_page;
+            $y += $formatHeight;
+            $self-> block_draw( $canvas, $b, $indent, $y);
+         }
+         $y -= $$b[ tb::BLK_HEIGHT];
+      }
+   }
+
+ABORT:
 }
 
 sub select_text_offset

@@ -431,17 +431,17 @@ sub create_state
 
 sub realize_state
 {
-   my ( $self, $state, $mode) = @_;
+   my ( $self, $canvas, $state, $mode) = @_;
    my %f = %{$self-> {fontPalette}->[ $$state[ tb::BLK_FONT_ID]]};
    $f{size} = $$state[ tb::BLK_FONT_SIZE];
    $f{style} = $$state[ tb::BLK_FONT_STYLE];
-   $self-> set_font( \%f) if $mode & tb::REALIZE_FONTS;
+   $canvas-> set_font( \%f) if $mode & tb::REALIZE_FONTS;
 
    return unless $mode & tb::REALIZE_COLORS;
    if ( $self-> {selectionPaintMode}) {
-      $self-> selection_state;
+      $self-> selection_state( $canvas);
    } else {
-      $self-> set(
+      $canvas-> set(
          color     =>  (( $$state[ tb::BLK_COLOR] & tb::COLOR_INDEX) ? 
                           ( $self-> {colorMap}-> [$$state[ tb::BLK_COLOR] & tb::COLOR_MASK]) :
                           ( $$state[ tb::BLK_COLOR] & tb::COLOR_MASK)),
@@ -473,7 +473,7 @@ sub recalc_ymap
 
 sub block_wrap
 {
-   my ( $self, $b, $state, $width) = @_;
+   my ( $self, $canvas, $b, $state, $width) = @_;
    $width = 0 if $width < 0;
    my ( $i, $lim) = ( tb::BLK_START, scalar @$b);
 
@@ -522,8 +522,8 @@ sub block_wrap
       if ( $cmd == tb::OP_TEXT) {
 # print "OP_TEXT @$b[$i+1..$i+3], x = $x\n";
          unless ( $f_taint) {
-            $self-> realize_state( $state, tb::REALIZE_FONTS);
-            $f_taint = $self-> get_font;
+            $self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
+            $f_taint = $canvas-> get_font;
             my $state_key = join('.', @$state[tb::BLK_FONT_ID .. tb::BLK_FONT_STYLE]);
             $state_hash{$state_key} = $f_taint unless $state_hash{$state_key};
          }
@@ -531,7 +531,7 @@ sub block_wrap
          my $tlen = $$b[ $i + 2];
          $lastTextOffset = $ofs + $tlen unless $wrapmode;
       REWRAP: 
-         my $tw = $self-> get_text_width( substr( $$t, $o + $ofs, $tlen), $tlen);
+         my $tw = $canvas-> get_text_width( substr( $$t, $o + $ofs, $tlen), $tlen);
          my $apx = $f_taint-> {width};
 # print "$x+$apx: new text $tw :|",substr( $$t, $o + $ofs, $tlen),"|\n";
          if ( $x + $tw + $apx <= $width) {
@@ -546,14 +546,14 @@ sub block_wrap
                $leadingSpaces = $1;
                $str =~ s/^\s+//;
             }
-            my $l = $self-> text_wrap( $str, $width - $apx - $x,
+            my $l = $canvas-> text_wrap( $str, $width - $apx - $x,
                tw::ReturnFirstLineLength | tw::WordBreak | tw::BreakSingle);
 # print "repo $l bytes wrapped in $width - $apx - $x\n";
             if ( $l > 0) {
                push @$z, tb::OP_TEXT, $o + $ofs - $$z[ tb::BLK_TEXT_OFFSET], 
                   $l + length $leadingSpaces, 
-                  $tw = $self-> get_text_width( $leadingSpaces . substr( $str, 0, $l));
-# print "$x + advance $$z[-1] |", $self-> get_text_width( $leadingSpaces . substr( $str, 0, $l)), "|\n";
+                  $tw = $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l));
+# print "$x + advance $$z[-1] |", $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l)), "|\n";
                $str = substr( $str, $l);
                $l += length $leadingSpaces;
                $newblock-> ();
@@ -565,7 +565,7 @@ sub block_wrap
                   $$z[ tb::BLK_TEXT_OFFSET] += length( $1 );
                   $ofs  += length $1;
                   $tlen -= length $1;
-                  $x    += $self-> get_text_width( $1);
+                  $x    += $canvas-> get_text_width( $1);
                   $str =~ s/^\s+//;
                }
                goto REWRAP if length $str;
@@ -580,7 +580,7 @@ sub block_wrap
                                    # but may be some words can be stripped?
                   goto REWRAP if $ox > 0;
                   if ( $str =~ m/^(\S+)(\s*)/) {
-                     $tw = $self-> get_text_width( $1);
+                     $tw = $canvas-> get_text_width( $1);
                      push @$z, tb::OP_TEXT, 0, length $1, $tw;
                      $x += $tw;
                      $ofs  += length($1) + length($2);
@@ -588,7 +588,7 @@ sub block_wrap
                      goto REWRAP;
                   }
                }
-               push @$z, tb::OP_TEXT, 0, length($str), $x += $self-> get_text_width( $str);
+               push @$z, tb::OP_TEXT, 0, length($str), $x += $canvas-> get_text_width( $str);
             }
          } elsif ( $haswrapinfo) { # unwrappable, and cannot be fit - retrace
             $retrace->();
@@ -622,8 +622,8 @@ sub block_wrap
          my @r = @$b[ $i .. $i + 3];
          if ( $$b[ $i + tb::X_FLAGS] & tb::X_DIMENSION_FONT_HEIGHT) {
             unless ( $f_taint) {
-               $self-> realize_state( $state, tb::REALIZE_FONTS); 
-               $f_taint = $self-> get_font;
+               $self-> realize_state( $canvas, $state, tb::REALIZE_FONTS); 
+               $f_taint = $canvas-> get_font;
                my $state_key = join('.', @$state[tb::BLK_FONT_ID .. tb::BLK_FONT_STYLE]);
                $state_hash{$state_key} = $f_taint unless $state_hash{$state_key};
             }
@@ -715,10 +715,10 @@ sub block_wrap
 
 sub selection_state
 {
-   my $self = $_[0];
-   $self-> color( $self-> hiliteColor);
-   $self-> backColor( $self-> hiliteBackColor);
-   $self-> textOpaque(0);
+   my ( $self, $canvas) = @_;
+   $canvas-> color( $self-> hiliteColor);
+   $canvas-> backColor( $self-> hiliteBackColor);
+   $canvas-> textOpaque(0);
 }
 
 sub on_paint
@@ -778,9 +778,9 @@ sub on_paint
               $cr[2] = $aa[2] if $cr[2] > $aa[2];
               $cr[2] = $aa[0] if $cr[2] < $aa[0];
               if ( $cr[0] <= $cr[2]) {
-                  $self-> selection_state if $self-> {selectionPaintMode}; 
+                  $self-> selection_state( $canvas) if $self-> {selectionPaintMode}; 
                   $self-> clipRect( @cr);
-                  $self-> block_draw( $canvas, $b, $j, $x, $y);
+                  $self-> block_draw( $canvas, $b, $x, $y);
               }
                @cr = @clipRect;
             }
@@ -797,9 +797,9 @@ sub on_paint
                      $cr[2] = $aa[0] if $cr[2] < $aa[0];
                      $cr[2] = $aa[2] if $cr[2] > $aa[2];
                     if ( $cr[0] <= $cr[2]) {
-                        $self-> selection_state if $self-> {selectionPaintMode}; 
+                        $self-> selection_state( $canvas) if $self-> {selectionPaintMode}; 
                         $self-> clipRect( @cr);
-                        $self-> block_draw( $canvas, $b, $i, $x, $y);
+                        $self-> block_draw( $canvas, $b, $x, $y);
                     }
                      @cr = @clipRect;
                   }
@@ -809,20 +809,20 @@ sub on_paint
                }
                $self-> {selectionPaintMode} = ( $eq || $j == $sy2 ) ? 0 : 1;
                if ( $cr[0] <= $cr[2]) {
-                   $self-> selection_state if $self-> {selectionPaintMode}; 
+                   $self-> selection_state( $canvas) if $self-> {selectionPaintMode}; 
                    $self-> clipRect( @cr);
-                   $self-> block_draw( $canvas, $b, $j, $x, $y);
+                   $self-> block_draw( $canvas, $b, $x, $y);
               }
             } 
             $self-> {selectionPaintMode} = 0;
             $self-> clipRect( @clipRect);
          } elsif ( $j > $sy1 && $j < $sy2) { # simple selection case
             $self-> {selectionPaintMode} = 1;
-            $self-> selection_state;
-            $self-> block_draw( $canvas, $b, $j, $x, $y);
+            $self-> selection_state( $canvas);
+            $self-> block_draw( $canvas, $b, $x, $y);
             $self-> {selectionPaintMode} = 0;
          } else {
-            $self-> block_draw( $canvas, $b, $j, $x, $y);
+            $self-> block_draw( $canvas, $b, $x, $y);
          }
       }
    }
@@ -833,7 +833,7 @@ sub on_paint
 
 sub block_draw
 {
-   my ( $self, $canvas, $b, $id, $x, $y) = @_;
+   my ( $self, $canvas, $b, $x, $y) = @_;
    my ( $i, $lim) = ( tb::BLK_START, scalar @$b);
 
    my $cmd;
@@ -841,7 +841,7 @@ sub block_draw
    my @state = @$b[ 0 .. tb::BLK_DATA_END ];
    my ( $f_taint, $c_taint); 
 
-   $self-> clear( $x, $y, $x + $$b[ tb::BLK_WIDTH] - 1, $y + $$b[ tb::BLK_HEIGHT] - 1)
+   $canvas-> clear( $x, $y, $x + $$b[ tb::BLK_WIDTH] - 1, $y + $$b[ tb::BLK_HEIGHT] - 1)
      if $self-> {selectionPaintMode};
 
    $x += $$b[ tb::BLK_APERTURE_X];
@@ -852,14 +852,14 @@ sub block_draw
       if ( $cmd == tb::OP_TEXT) {
          if ( $$b[$i + 2] > 0) {
             unless ( $f_taint) {
-               $self-> realize_state( \@state, tb::REALIZE_FONTS); 
-               $f_taint = $self-> get_font;
+               $self-> realize_state( $canvas, \@state, tb::REALIZE_FONTS); 
+               $f_taint = $canvas-> get_font;
             }
             unless ( $c_taint) {
-               $self-> realize_state( \@state, tb::REALIZE_COLORS); 
+               $self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
                $c_taint = 1;
             }
-            $self-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), 
+            $canvas-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), 
                               $x, $y, $$b[ $i + 2]);
          }
          $x += $$b[ $i + 3];
@@ -874,11 +874,11 @@ sub block_draw
          ( $x, $y) = ( $x + $$b[ $i + tb::X_X], $y + $$b[ $i + tb::X_Y]);
       } elsif ( $cmd == tb::OP_CODE) {
          unless ( $f_taint) {
-            $self-> realize_state( \@state, tb::REALIZE_FONTS); 
-            $f_taint = $self-> get_font;
+            $self-> realize_state( $canvas, \@state, tb::REALIZE_FONTS); 
+            $f_taint = $canvas-> get_font;
          }
          unless ( $c_taint) {
-            $self-> realize_state( \@state, tb::REALIZE_FONTS); 
+            $self-> realize_state( $canvas, \@state, tb::REALIZE_FONTS); 
             $c_taint = 1;
          }
          $$b[ $i + 1]-> ( $self, $canvas, $b, \@state, $x, $y, $$b[ $i + 2]);
@@ -993,7 +993,7 @@ sub xy2info
                last;
             } elsif ( $px <= $x && $npx > $x) {
                unless ( $f_taint) {
-                  $self-> realize_state( \@state, tb::REALIZE_FONTS); 
+                  $self-> realize_state( $self, \@state, tb::REALIZE_FONTS); 
                   $f_taint = $self-> get_font;
                }
                $ofs = $$b[ $i + 1] + $self-> text_wrap( 
@@ -1060,7 +1060,7 @@ sub text2xoffset
           if ( $x >= $$b[$i+1]) {
              if ( $x < $$b[$i+1] + $$b[$i+2]) {
                 unless ( $f_taint) {
-                   $self-> realize_state( \@state, tb::REALIZE_FONTS); 
+                   $self-> realize_state( $self, \@state, tb::REALIZE_FONTS); 
                    $f_taint = $self-> get_font;
                 }
                 $px += $self-> get_text_width( 

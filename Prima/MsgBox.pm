@@ -49,7 +49,7 @@ sub insert_buttons
    my $i;
    my @bConsts =  ( mb::Help, mb::Cancel, mb::Ignore, mb::Retry, mb::Abort, mb::No, mb::Yes, mb::Ok);
    my @bTexts  = qw( ~Help    ~Cancel     ~Ignore     ~Retry     ~Abort     ~No     ~Yes     ~OK);
-   my $helpTopic = defined $$extras{helpTopic} ? $$extras{helpTopic} : 0;
+   my $helpTopic = defined $$extras{helpTopic} ? $$extras{helpTopic} : 'Prima';
    my $defButton = defined $$extras{defButton} ? $$extras{defButton} : 0xFF;
    my $fresh;
    my $freshFirst;
@@ -80,8 +80,7 @@ sub insert_buttons
       if ( $bConsts[$i] == mb::Help)
       {
          $hpr{onClick} = sub {
-            message('No help available for this time');
-            # $helpTopic ...
+            $::application-> open_help( $helpTopic);
          };
          unless ( $dir)
          {
