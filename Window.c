@@ -420,7 +420,9 @@ Window_cancel_children( Handle self)
       }
    } else {
       Handle mh   = my get_horizon( self);
-      Handle next = PWindow(mh)-> nextSharedModal;
+      Handle next = ( mh == application) ?
+                  PApplication(mh)-> sharedModal :
+                  PWindow(mh)-> nextSharedModal;
       while ( next) {
          if ( Widget_is_child( next, self)) {
             CWindow( next)-> cancel( next);
