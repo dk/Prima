@@ -935,7 +935,7 @@ croak( "Ala-ulu");
 }
 
 PFont
-apc_fonts( const char *facename, int *retCount)
+apc_fonts( Handle self, const char *facename, int *retCount)
 {
    DOLBUG( "apc_fonts()\n");
    return nil;
