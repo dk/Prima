@@ -74,6 +74,7 @@ use vars @ovvars = qw(
     $WANTNOCODECS
     $DL_LOAD_FLAGS
     $DEBUG
+    $CODEC_PRIGRAPH
 );
 
 use vars @path_expand_ovvars = qw(
@@ -904,6 +905,7 @@ sub setup_variables
     $DEFINES{PRIMA_SUBVERSION} = $ver2;
     setvar( 'DISTNAME', "Prima-$ver1.$ver2");
     setvar( 'WANTNOCODECS', 0);
+    setvar( 'CODEC_PRIGRAPH', 1);
     @executables = qw(
        Prima/VB/VB.pl
        Prima/VB/cfgmaint.pl
@@ -1367,7 +1369,17 @@ sub setup_misc
 {
     # finding image codecs
     my %libs = map { $_ => 1 } @LIBS;
-    while (<img/codec_*.c>) {
+    my @codecs;
+    my $stop_codecs;
+    while ( <img/codec_*.c>) {
+       if ( m/prigraph/) {
+          unshift @codecs, $_; # put it first
+       } else {
+          push @codecs, $_;
+       }
+    }
+    
+    for ( @codecs) {
        my @inc;
        m/codec_(.*)\.c$/i;
        my ( $fn, $lib) = ( $_, $1);
@@ -1377,7 +1389,23 @@ sub setup_misc
        }
        close F;
        $lib.='.lib' if ( $Win32 && !$cygwin) || $OS2;
-       if ( $libs{$lib} || defined find_lib( $lib, join('', @inc), '')) {
+       if ( !$stop_codecs && ( $libs{$lib} || defined find_lib( $lib, join('', @inc), ''))) {
+          if ( $lib eq 'prigraph') {
+             if ( $CODEC_PRIGRAPH) {
+          print <<PRIGRAPH_WARNING unless defined $USER_VARS{CODEC_PRIGRAPH};
+          
+** Warning: image library 'prigraph' cannot coexist with the other image
+libraries, so these are disabled. To disable 'prigraph' instead, run
+
+perl Makefile.PL CODEC_PRIGRAPH=0
+
+PRIGRAPH_WARNING
+                $stop_codecs = 1;
+             } else {
+                $PASSIVE_CODECS{$fn} = 1;
+                next;
+             }
+          }
           push( @ACTIVE_CODECS, $1);
           push( @LIBS, $lib) unless $libs{$lib};
           print "Using image library '$lib'\n";

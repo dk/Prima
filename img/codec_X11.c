@@ -27,8 +27,25 @@
  */
 
 #include "img.h"
-#include "unix/guts.h"
+#define Drawable        XDrawable
+#define Font            XFont
+#define Window          XWindow
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#undef Font
+#undef Drawable
+#undef Bool
+#undef Window
+#define ComplexShape 0
+#define XBool int
+#undef Complex
+#undef FUNC
 #include "Image.h"
+
+#ifdef __CYGWIN__
+extern void
+prima_mirror_bytes( unsigned char *data, int dataSize);
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,7 +152,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       src += ls;
       dst -= i-> lineSize;
    }   
+#ifndef __CYGWIN__   
    prima_mirror_bytes( i-> data, i-> dataSize);
+#endif
    return true;
 }   
 
@@ -210,7 +229,9 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       int w = ls;
       
       memcpy( s1, s, ls);
+#ifndef __CYGWIN__   
       prima_mirror_bytes( s1, ls);
+#endif      
       
       while ( w--) {
          if ( first) {

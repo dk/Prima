@@ -84,6 +84,12 @@ static void *
 init( ImgCodecInfo ** info, void * param)
 {
    char vd[1024];
+#ifdef __CYGWIN__
+   /* This is the last remedy. Because otherwise it compiles, it runs,
+      it crashes. The trouble is probably deep inside libungif, which
+      is also probably because of its long buggy history */
+   return nil;
+#endif
    *info = &codec_info;
    sscanf( GIF_LIB_VERSION, "%s %d.%d", vd, &((*info)-> versionMaj), &((*info)-> versionMin));
    if ((*info)-> versionMaj > 4) EGifSetGifVersion( "89a");
