@@ -44,13 +44,19 @@
 #endif
 #define LSB32   0x1234
 #define MSB32   0x4321
+#ifndef BUFSIZ
+#define BUFSIZ  2048
+#endif
 
 static int
 x_error_handler( Display *d, XErrorEvent *ev)
 {
    int tail = guts. ri_tail;
    int prev = tail;
-   char buf[ 1024];
+   char *name = "Prima";
+   char buf[BUFSIZ];
+   char mesg[BUFSIZ];
+   char number[32];
 
    while ( tail != guts. ri_head) {
       if ( guts. ri[ tail]. request > ev-> serial)
@@ -61,17 +67,24 @@ x_error_handler( Display *d, XErrorEvent *ev)
 	 tail = 0;
    }
 
-   XGetErrorText( d, ev-> error_code, buf, 1024);
-   fprintf( stderr, "%s\n", buf);
+   XGetErrorText( d, ev-> error_code, buf, BUFSIZ);
+   XGetErrorDatabaseText( d, name, "XError", "X Error", mesg, BUFSIZ);
+   fprintf( stderr, "%s:  %s\nRequest code %d",
+            mesg, buf, ev->request_code);
+   if ( ev->request_code < 128) {
+      sprintf( number, "%d", ev->request_code);
+      XGetErrorDatabaseText( d, "XRequest", number, "", buf, BUFSIZ);
+      fprintf( stderr, " (%s)", buf);
+   }
    if ( tail == guts. ri_head && prev == guts. ri_head)
-      fprintf( stderr, "This occured in unknown place\n");
+      fprintf( stderr, "\nThis occured in unknown place\n");
    else if ( tail == guts. ri_head)
-      fprintf( stderr, "This occured somewhere after the checkpoint at line %d and file %s\n",
+      fprintf( stderr, "\nThis occured somewhere after the checkpoint at line %d in %s\n",
 	       guts. ri[ prev]. line, guts. ri[ prev]. file);
    else
-      fprintf( stderr, "This occured somewhere between the checkpoint at\n"
-	       " line %d and file %s, and another checkpoint at\n"
-	       " line %d and file %s\n",
+      fprintf( stderr, "\nThis occured somewhere between the checkpoint at\n"
+	       " line %d in %s, and another checkpoint at\n"
+	       " line %d in %s\n",
 	       guts. ri[ prev]. line, guts. ri[ prev]. file,
 	       guts. ri[ tail]. line, guts. ri[ tail]. file);
    _exit( 1);
