@@ -158,3 +158,21 @@ Printer_get_handle( Handle self)
    snprintf( buf, 256, "0x%08lx", apc_prn_get_handle( self));
    return newSVpv( buf, 0);
 }
+
+SV*
+Printer_fonts( Handle self, char * name)
+{
+   int count, i;
+   AV * glo = newAV();
+   PFont fmtx = apc_fonts( self, strlen( name) ? name : nil, &count);
+   for ( i = 0; i < count; i++) {
+      SV * sv      = sv_Font2HV( &fmtx[ i]);
+      HV * profile = ( HV*) SvRV( sv);
+      pdelete( resolution);
+      pdelete( codepage);
+      av_push( glo, sv);
+   }
+   free( fmtx);
+   return newRV_noinc(( SV *) glo);
+}
+

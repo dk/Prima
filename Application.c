@@ -232,6 +232,17 @@ Application_begin_paint_info( Handle self)
 }
 
 void
+Application_detach( Handle self, Handle objectHandle, Bool kill)
+{
+   inherited detach( self, objectHandle, kill);
+   if ( var autoClose &&
+        ( var widgets. count == 1) &&
+        kind_of( objectHandle, CWidget) &&
+        ( objectHandle != var hintWidget)
+       ) my close( self);
+}
+
+void
 Application_end_paint( Handle self)
 {
    if ( !is_opt( optInDraw)) return;
@@ -261,7 +272,7 @@ Application_fonts( Handle self, char * name)
 {
    int count, i;
    AV * glo = newAV();
-   PFont fmtx = apc_fonts( strlen( name) ? name : nil, &count);
+   PFont fmtx = apc_fonts( self, strlen( name) ? name : nil, &count);
    for ( i = 0; i < count; i++) {
       SV * sv      = sv_Font2HV( &fmtx[ i]);
       HV * profile = ( HV*) SvRV( sv);
@@ -442,6 +453,20 @@ Application_get_active_window( Handle self)
 {
    return apc_window_get_active();
 }
+
+Bool
+Application_get_auto_close( Handle self)
+{
+   return var autoClose;
+}
+
+
+void
+Application_set_auto_close( Handle self, Bool autoClose)
+{
+   var autoClose = autoClose;
+}
+
 
 SV *
 Application_sys_action( Handle self, char * params)

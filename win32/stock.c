@@ -38,6 +38,7 @@
 #include <gbm.h>
 #include "Window.h"
 #include "Image.h"
+#include "Printer.h"
 
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
@@ -937,17 +938,35 @@ fep2( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PList lst)
 }
 
 PFont
-apc_fonts( const char* facename, int * retCount)
+apc_fonts( Handle self, const char* facename, int * retCount)
 {
    PFont fmtx = nil;
    int  i;
-   HDC  dc = dc_alloc();
+   HDC  dc;
    List lst;
+   Bool hasdc = 0;
    apcErrClear;
+
+   *retCount = 0;
+   if ( self == nilHandle || self == application)
+      dc = dc_alloc();
+   else if ( kind_of( self, CPrinter)) {
+      if ( !is_opt( optInDraw) && !is_opt( optInDrawInfo)) {
+         hasdc = 1;
+         CPrinter( self)-> begin_paint_info( self);
+      }
+      dc = sys ps;
+   } else
+      return nil;
 
    list_create( &lst, 256, 256);
    EnumFontFamilies( dc, facename, ( FONTENUMPROC) fep2, ( LPARAM) &lst);
-   dc_free();
+
+   if ( self == nilHandle || self == application)
+      dc_free();
+   else if ( hasdc)
+      CPrinter( self)-> end_paint_info( self);
+
    if ( lst. count == 0) goto Nothing;
    *retCount = lst. count;
    fmtx = malloc( *retCount * sizeof( Font));

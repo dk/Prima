@@ -1086,6 +1086,8 @@ extern SV **temporary_prf_Sv;
 #define CImage(h)                       (PImage(h)-> self)
 #define PObject(h)                      TransmogrifyHandle(Object,(h))
 #define CObject(h)                      (PObject(h)-> self)
+#define PPrinter(h)                     TransmogrifyHandle(Printer,(h))
+#define CPrinter(h)                     (PPrinter(h)-> self)
 #define PTimer(h)                       TransmogrifyHandle(Timer,(h))
 #define CTimer(h)                       (PTimer(h)-> self)
 #define PWidget(h)                      TransmogrifyHandle(Widget,(h))
@@ -2854,7 +2856,7 @@ extern void
 apc_font_pick( Handle self, PFont source, PFont dest);
 
 extern PFont
-apc_fonts( const char *facename, int *retCount);
+apc_fonts( Handle self, const char *facename, int *retCount);
 
 /* system metrics */
 extern Bool

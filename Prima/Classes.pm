@@ -1351,6 +1351,7 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
+      autoClose      => 1,
       pointerType    => cr::Arrow,
       owner          => undef,
       scaleChildren  => 0,
@@ -1388,6 +1389,7 @@ sub profile_check_in
 }
 
 
+sub autoClose     {($#_)?$_[0]->set_auto_close   ($_[1]):return $_[0]->get_auto_close;     }
 sub size          { return $_[0]-> get_size; }
 sub width         { return ($_[0]-> get_size)[0];}
 sub height        { return ($_[0]-> get_size)[1];}

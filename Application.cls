@@ -31,6 +31,7 @@ object Prima::Application( Prima::Widget)
    Handle    hintTimer;
    Handle    hintWidget;
    char *    helpFile;
+   Bool      autoClose;
 
    method Bool   begin_paint();
    method Bool   begin_paint_info();
@@ -39,10 +40,12 @@ object Prima::Application( Prima::Widget)
    method Bool   close();
    method void   close_help()                                 => apc_help_close;
    method void   done();
+   method void   detach( Handle objectHandle, Bool kill);
    method void   end_paint();
    method void   end_paint_info();
    method SV*    fonts( char * name = "");
    method Handle get_active_window();
+   method Bool   get_auto_close();
    static Font   get_caption_font( char * dummy = "");
    static int    get_default_cursor_width( char * dummy = "");
    static Font   get_default_font( char * dummy = "");
@@ -72,6 +75,7 @@ object Prima::Application( Prima::Widget)
    method Handle prev();
    method Point  screen_to_client( Point p);
    method void   send_to_back();
+   method void   set_auto_close( Bool autoClose);
    method void   set_insert_mode( Bool insMode);
    method void   set_help_file( char * helpFile);
    c_only void   set_hint_action( Handle view, Bool show, Bool mouseEvent);

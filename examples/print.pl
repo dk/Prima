@@ -108,6 +108,13 @@ $w = Prima::Window-> create(
       ['~Print' => [
          [A1 => '~Print sample' => \&print_sample],
          [A2 => 'Printer ~setup...' => sub {$p-> setup_dialog}],
+         [A3 => 'Print available fonts...' => sub {
+            my $item  = $w-> ListBox1-> get_items($w-> ListBox1-> focusedItem);
+            print "\n$item\n---\n";
+            my $pp = ( $item eq $display) ? $::application : $p;
+            for ( @{$pp-> fonts}) { print $_->{name}."\n"};
+            print "---\n";
+         }],
          [],
          ['~Refresh list' => \&refresh],
       ]],
