@@ -754,12 +754,14 @@ sub InputLine_KeyDown
 sub List_DrawItem
 {
    my ($combo, $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused) = @_;
-   my $clrSave = $me-> color;
-   my $backColor = $hilite ? $me-> hiliteBackColor : $me-> backColor;
-   my $color = $hilite ? $me-> hiliteColor : $clrSave;
-   $canvas-> color($backColor);
-   $canvas-> bar( $left, $bottom, $right, $top);
-   $canvas-> color($color);
+   my ( $c, $bc);
+   if ( $hilite) {
+      $c = $me-> color;
+      $bc = $me-> backColor;
+      $me-> color( $me-> hiliteColor);
+      $me-> backColor( $me-> hiliteBackColor);
+   }
+   $canvas-> clear( $left, $bottom, $right, $top);
    my $text = ${$combo-> {drives}}[$index];
    my $icon = ${$combo-> {icons}}[$index];
    my $font = $canvas-> font;
@@ -773,7 +775,10 @@ sub List_DrawItem
    }
    ($h,$w) = ($font-> height, $canvas-> get_text_width( $text));
    $canvas-> text_out( $text, $x, ($top + $bottom - $h) / 2);
-   $canvas-> color( $clrSave);
+   if ( $hilite) {
+      $canvas-> color( $c);
+      $canvas-> backColor( $bc);
+   }
 }
 
 sub List_FontChanged

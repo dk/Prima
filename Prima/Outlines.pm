@@ -116,6 +116,7 @@ sub init
       { $self->{$_} = 1; }
    $self->{items}      = [];
    my %profile = $self-> SUPER::init(@_);
+   $self-> {indents} = [0,0,0,0];
    for ( qw( hScroll vScroll offset itemHeight autoHeight borderWidth indent
       items focusedItem topItem showItemHint dragable))
       { $self->$_( $profile{ $_}); }
@@ -165,14 +166,18 @@ sub adjust
    my $f = $self->{focusedItem};
    $self-> reset_tree;
 
-   my ( $bw, $dx, $dy, $w, $h, $ih) = ( $self->{borderWidth}, $self->{dx},
-      $self->{dy}, $self-> size, $self->{itemHeight});
+#  my ( $bw, $dx, $dy, $w, $h, $ih) = ( $self->{borderWidth}, $self->{dx},
+#     $self->{dy}, $self-> size, $self->{itemHeight});
+   my ( $ih, @a) = ( $self->{itemHeight}, $self-> get_active_area);
    $self-> scroll( 0, ( $c - $self->{count}) * $ih,
-                   clipRect => [ $bw, $bw + $dy, $w - $bw - $dx,
-                                 $h - $bw - $ih * ( $index - $self->{topItem} + 1) ]);
+              #    clipRect => [ $bw, $bw + $dy, $w - $bw - $dx,
+              #                  $h - $bw - $ih * ( $index - $self->{topItem} + 1) ]);
+                   clipRect => [ @a[0..2], $a[3] - $ih * ( $index - $self->{topItem} + 1)]);
    $self-> invalidate_rect(
-      $bw, $h - ( $index - $self->{topItem} + 1) * $ih - 2,
-      $w - $dx - $bw, $h - ( $index - $self->{topItem}) * $ih
+#     $bw, $h - ( $index - $self->{topItem} + 1) * $ih - 2,
+#     $w - $dx - $bw, $h - ( $index - $self->{topItem}) * $ih
+      $a[0], $a[3] - ( $index - $self->{topItem} + 1) * $ih,
+      $a[2], $a[3] - ( $index - $self->{topItem}) * $ih
    );
    if ( $c > $self->{count} && $f > $index) {
       if ( $f <= $index + $c - $self->{count}) {
@@ -217,35 +222,47 @@ sub on_paint
    my ( $self, $canvas) = @_;
    my @size   = $canvas-> size;
    my @clr    = $self-> enabled ?
-   ( $self-> color, $self-> backColor) :
-   ( $self-> disabledColor, $self-> disabledBackColor);
-   my ( $bw, $ih, $iw, $dx, $dy, $indent, $foc) = (
+    ( $self-> color, $self-> backColor) :
+    ( $self-> disabledColor, $self-> disabledBackColor);
+#  my ( $bw, $ih, $iw, $dx, $dy, $indent, $foc) = (
+#     $self->{ borderWidth}, $self->{ itemHeight}, $self->{ maxWidth},
+#     $self->{dx}, $self->{dy}, $self->{indent}, $self-> {focusedItem});
+   my ( $bw, $ih, $iw, $indent, $foc, @a) = (
       $self->{ borderWidth}, $self->{ itemHeight}, $self->{ maxWidth},
-      $self->{dx}, $self->{dy}, $self->{indent}, $self-> {focusedItem});
+      $self->{indent}, $self-> {focusedItem}, $self-> get_active_area( 1, @size));
    my $i;
    my $j;
-   my $locWidth = $size[0] - $dx - $bw * 2;
+#  my $locWidth = $size[0] - $dx - $bw * 2;
+   my $locWidth = $a[2] - $a[0] + 1;
    my @clipRect = $canvas-> clipRect;
-   if ( $clipRect[0] > $bw && $clipRect[1] > $bw + $dy && $clipRect[2] < $size[0] - $bw - $dx && $clipRect[3] < $size[1] - $bw)
+#  if ( $clipRect[0] > $bw && $clipRect[1] > $bw + $dy && $clipRect[2] < $size[0] - $bw - $dx && $clipRect[3] < $size[1] - $bw)
+   if ( $clipRect[0] > $a[0] && $clipRect[1] > $a[1] && $clipRect[2] < $a[2] && $clipRect[3] < $a[3])
    {
-      $canvas-> color( $clr[ 1]);
-      $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
+      #$canvas-> color( $clr[ 1]);
+      #$canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
+      $canvas-> clipRect( @a);
       $canvas-> bar( 0, 0, @size);
    } else {
       $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor, $clr[1]);
-      $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
+      $canvas-> clipRect( @a);
+      #$canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
    }
    my ( $topItem, $rows) = ( $self->{topItem}, $self->{rows});
    my $lastItem  = $topItem + $rows + 1;
    my $timin = $topItem;
-   $timin    += int(( $size[1] - $bw - 1 - $clipRect[3]) / $ih) if $clipRect[3] < $size[1] - $bw - 1;
-   if ( $clipRect[1] >= $bw + $dy) {
-      my $y = $size[1] - $clipRect[1] - $bw;
+#  $timin    += int(( $size[1] - $bw - 1 - $clipRect[3]) / $ih) if $clipRect[3] < $size[1] - $bw - 1;
+   $timin    += int(( $a[3] - $clipRect[3]) / $ih) if $clipRect[3] < $a[3];
+#  if ( $clipRect[1] >= $bw + $dy) {
+   if ( $clipRect[1] >= $a[1]) {
+#     my $y = $size[1] - $clipRect[1] - $bw;
+      my $y = $a[3] - $clipRect[1] + 1;
       $lastItem = $topItem + int($y / $ih) + 1;
    }
    $lastItem     = $self->{count} - 1 if $lastItem > $self->{count} - 1;
-   my $firstY    = $size[1] - $bw + $ih * $topItem;
-   my $lineY     = $size[1] - $bw - $ih * ( 1 + $timin - $topItem);
+#  my $firstY    = $size[1] - $bw + $ih * $topItem;
+#  my $lineY     = $size[1] - $bw - $ih * ( 1 + $timin - $topItem);
+   my $firstY    = $a[3] + 1 + $ih * $topItem;
+   my $lineY     = $a[3] + 1 - $ih * ( 1 + $timin - $topItem);
    my $dyim      = int(( $ih - $imageSize[1]) / 2) + 1;
    my $dxim      = int( $imageSize[0] / 2);
 
@@ -262,6 +279,7 @@ sub on_paint
       backColor   => cl::Black,
       rop         => rop::XorPut,
    );
+
 
    my ($array, $idx, $lim, $level) = ([['root'],$self->{items}], 0, scalar @{$self->{items}}, 0);
    my @stack;
@@ -416,11 +434,15 @@ sub on_fontchanged
 sub point2item
 {
    my ( $self, $y, $h) = @_;
-   my ( $bw, $dy) = ( $self->{borderWidth}, $self->{dy});
+   my $i = $self->{indents};
+   # my ( $bw, $dy) = ( $self->{borderWidth}, $self->{dy});
    $h = $self-> height unless defined $h;
-   return $self->{topItem} - 1 if $y >= $h - $bw;
-   return $self->{topItem} + $self->{rows} if $y <= $bw + $dy;
-   $y = $h - $y - $bw;
+   # return $self->{topItem} - 1 if $y >= $h - $bw;
+   return $self->{topItem} - 1 if $y >= $h - $$i[3];
+   # return $self->{topItem} + $self->{rows} if $y <= $bw + $dy;
+   return $self->{topItem} + $self->{rows} if $y <= $$i[1];
+   # $y = $h - $y - $bw;
+   $y = $h - $y - $$i[3];
    return $self->{topItem} + int( $y / $self->{itemHeight});
 }
 
@@ -431,11 +453,14 @@ sub on_mousedown
    my $bw = $self-> { borderWidth};
    my @size = $self-> size;
    $self-> clear_event;
-   my ($dx,$dy,$o,$i) = ( $self->{dx}, $self->{dy}, $self->{offset}, $self->{indent});
+   # my ($dx,$dy,$o,$i) = ( $self->{dx}, $self->{dy}, $self->{offset}, $self->{indent});
+   my ($o,$i,@a) = ( $self->{offset}, $self->{indent}, $self-> get_active_area(0, @size));
    return if $btn != mb::Left;
    return if defined $self->{mouseTransaction} ||
-      $y < $bw + $dy || $y >= $size[1] - $bw ||
-      $x < $bw || $x >= $size[0] - $bw - $dx;
+   #  $y < $bw + $dy || $y >= $size[1] - $bw ||
+   #  $x < $bw || $x >= $size[0] - $bw - $dx;
+      $y < $a[1] || $y >= $a[3] || $x < $a[0] || $x >= $a[2];
+
    my $item   = $self-> point2item( $y, $size[1]);
    my ( $rec, $lev) = $self-> get_item( $item);
    if ( $rec && ( $x > -$o + $lev * $i + $i/2) &&
@@ -463,7 +488,8 @@ sub on_mouseclick
    my $bw = $self-> { borderWidth};
    my @size = $self-> size;
    my $item   = $self-> point2item( $y, $size[1]);
-   my ($dx,$dy,$o,$i) = ( $self->{dx}, $self->{dy}, $self->{offset}, $self->{indent});
+   #my ($dx,$dy,$o,$i) = ( $self->{dx}, $self->{dy}, $self->{offset}, $self->{indent});
+   my ($o,$i) = ( $self->{offset}, $self->{indent});
    my ( $rec, $lev) = $self-> get_item( $item);
    if ( $rec && ( $x > -$o + $lev * $i + $i/2) &&
       ( $x < -$o + $lev * $i + ($i*3)/2)) {
@@ -496,7 +522,8 @@ sub makehint
    return if $show && $self->{hinter} && $self->{hinter}-> {id} == $itemid;
 
    my $w = $self-> get_item_width( $item);
-   my $x = $self-> width - $self-> {borderWidth} * 2 - $self->{dx};
+#  my $x = $self-> width - $self-> {borderWidth} * 2 - $self->{dx};
+   my ($x,$y) = $self-> get_active_area( 2);
    my $ofs = ( $lev + 2.5) * $self->{indent} - $self->{offset};
    if ( $w + $ofs <= $x) {
       $self-> makehint(0);
@@ -521,7 +548,8 @@ sub makehint
    my @org = $self-> client_to_screen(0,0);
    $self->{hinter}-> set(
       origin  => [ $org[0] + $ofs - 2,
-                 $org[1] + $self-> height - $self->{borderWidth} -
+#                $org[1] + $self-> height - $self->{borderWidth} -
+                 $org[1] + $self-> height - $self->{indents}->[3] -
                  $self->{itemHeight} * ( $itemid - $self->{topItem} + 1),
                  ],
       width   => $w + 4,
@@ -564,9 +592,10 @@ sub Hinter_MouseLeave
 sub on_mousemove
 {
    my ( $self, $mod, $x, $y) = @_;
-   my $bw = $self-> { borderWidth};
-   my ($dx,$dy)     = ( $self->{dx}, $self->{dy});
+   # my $bw = $self-> { borderWidth};
+   # my ($dx,$dy)     = ( $self->{dx}, $self->{dy});
    my @size = $self-> size;
+   my @a    = $self-> get_active_area( 0, @size);
    if ( !defined $self->{mouseTransaction} && $self->{showItemHint}) {
       my $item   = $self-> point2item( $y, $size[1]);
       my ( $rec, $lev) = $self-> get_item( $item);
@@ -574,16 +603,19 @@ sub on_mousemove
          $self-> makehint( 0);
          return;
       }
-      if (( $y >= $size[1] - $bw) || ( $y <= $bw + $dy + $self->{itemHeight} / 2)) {
+#     if (( $y >= $size[1] - $bw) || ( $y <= $bw + $dy + $self->{itemHeight} / 2)) {
+      if (( $y >= $a[3]) || ( $y <= $a[1] + $self->{itemHeight} / 2)) {
          $self-> makehint( 0);
          return;
       }
-      $y = $size[1] - $y - $bw;
+#     $y = $size[1] - $y - $bw;
+      $y = $a[3] - $y;
       $self-> makehint( 1, $self->{topItem} + int( $y / $self->{itemHeight}));
       return;
    }
    my $item = $self-> point2item( $y, $size[1]);
-   if ( $y >= $size[1] - $bw || $y < $bw + $dx || $x >= $size[0] - $bw - $dx || $x < $bw)
+#  if ( $y >= $size[1] - $bw || $y < $bw + $dx || $x >= $size[0] - $bw - $dx || $x < $bw)
+   if ( $y >= $a[3] || $y < $a[1] || $x >= $a[2] || $x < $a[0])
    {
       $self-> scroll_timer_start unless $self-> scroll_timer_active;
       return unless $self->scroll_timer_semaphore;
@@ -592,7 +624,8 @@ sub on_mousemove
       $self-> scroll_timer_stop;
    }
    $self-> focusedItem( $item >= 0 ? $item : 0);
-   $self-> offset( $self->{offset} + 5 * (( $x < $bw) ? -1 : 1)) if $x >= $size[0] - $bw - $dx || $x < $bw;
+#  $self-> offset( $self->{offset} + 5 * (( $x < $bw) ? -1 : 1)) if $x >= $size[0] - $bw - $dx || $x < $bw;
+   $self-> offset( $self->{offset} + 5 * (( $x < $a[0]) ? -1 : 1)) if $x >= $a[2] || $x < $a[0];
 }
 
 sub on_mouseup
@@ -719,14 +752,15 @@ sub on_keydown
 sub reset
 {
    my $self = $_[0];
-   my @size = $self-> size;
+#  my @size = $self-> size;
+   my @size = $self-> get_active_area( 2);
    $self-> makehint(0);
    my $ih   = $self-> {itemHeight};
-   my $bw   = $self-> {borderWidth};
-   $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height-1 : 0);
-   $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width-1  : 0);
-   $size[1] -= $bw * 2 + $self->{dy};
-   $size[0] -= $bw * 2 + $self->{dx};
+#  my $bw   = $self-> {borderWidth};
+#  $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height-1 : 0);
+#  $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width-1  : 0);
+#  $size[1] -= $bw * 2 + $self->{dy};
+#  $size[0] -= $bw * 2 + $self->{dx};
    $self->{rows}  = int( $size[1] / $ih);
    $self->{rows}  = 0 if $self->{rows} < 0;
    $self->{yedge} = ( $size[1] - $self->{rows} * $ih) ? 1 : 0;
@@ -747,13 +781,16 @@ sub reset_scrolls
       );
    }
    if ( $self->{scrollTransaction} != 2 && $self->{hScroll})  {
-      my $w  = $self-> width - $self->{borderWidth} * 2 - $self->{dx};
+   #  my $w  = $self-> width - $self->{borderWidth} * 2 - $self->{dx};
+      my @sz = $self-> get_active_area( 2);
       my $iw = $self->{maxWidth};
       $self-> {hScrollBar}-> set(
-         max      => $iw - $w,
+   #     max      => $iw - $w,
+         max      => $iw - $sz[0],
          whole    => $iw,
          value    => $self-> {offset},
-         partial  => $w,
+   #     partial  => $w,
+         partial  => $sz[0],
          pageStep => $iw / 5,
       );
    }
@@ -887,16 +924,19 @@ sub set_focused_item
    }
    $self-> topItem( $topSet) if defined $topSet;
    ( $oldFoc, $foc) = ( $foc, $oldFoc) if $foc > $oldFoc;
-   my @sz = $self-> size;
-   my $bw = $self->{borderWidth};
-   $sz[1] -= $bw;
+#  my @sz = $self-> size;
+   my @a  = $self-> get_active_area;
+#  my $bw = $self->{borderWidth};
+#  $sz[1] -= $bw;
    my $ih = $self->{itemHeight};
    my $lastItem = $self->{topItem} + $self->{rows};
    $foc = $oldFoc if $foc < 0 || $foc < $self->{topItem} || $foc > $self->{topItem} + $self->{rows};
    $oldFoc = $foc if $oldFoc < 0 || $oldFoc < $self->{topItem} || $oldFoc > $self->{topItem} + $self->{rows};
    $self-> invalidate_rect(
-      $bw, $sz[1] - ( $oldFoc - $self->{topItem} + 1) * $ih,
-      $sz[0] - $self->{dx} - $bw, $sz[1] - ( $foc - $self->{topItem}) * $ih
+      $a[0], $a[3] - ( $oldFoc - $self->{topItem} + 1) * $ih,
+      $a[2], $a[3] - ( $foc - $self->{topItem}) * $ih
+#     $bw, $sz[1] - ( $oldFoc - $self->{topItem} + 1) * $ih,
+#     $sz[0] - $self->{dx} - $bw, $sz[1] - ( $foc - $self->{topItem}) * $ih
    ) if $foc >= 0;
 }
 
@@ -1066,10 +1106,13 @@ sub get_item_parent
 sub set_offset
 {
    my ( $self, $offset) = @_;
-   my ( $iw, $bw, $w, $dx, $dy) = (
-      $self->{maxWidth}, $self->{borderWidth}, $self-> width,
-      $self->{dx}, $self->{dy});
-   my $lc = $w - 2 * $bw - $dx;
+#  my ( $iw, $bw, $w, $dx, $dy) = (
+#     $self->{maxWidth}, $self->{borderWidth}, $self-> width,
+#     $self->{dx}, $self->{dy});
+   my ( $iw, @a) = ($self->{maxWidth}, $self-> get_active_area);
+
+#  my $lc = $w - 2 * $bw - $dx;
+   my $lc = $a[2] - $a[0];
    if ( $iw > $lc) {
       $offset = $iw - $lc if $offset > $iw - $lc;
       $offset = 0 if $offset < 0;
@@ -1079,16 +1122,18 @@ sub set_offset
    return if $self->{offset} == $offset;
    my $oldOfs = $self->{offset};
    $self-> {offset} = $offset;
-   $w -= 2 * $bw + $dx;
-   my $dt = $offset - $oldOfs;
+#  $w -= 2 * $bw + $dx;
+#  my $dt = $offset - $oldOfs;
    if ( $self->{hScroll} && $self->{scrollTransaction} != 2) {
       $self->{scrollTransaction} = 2;
       $self-> {hScrollBar}-> value( $offset);
       $self->{scrollTransaction} = 0;
    }
    $self-> makehint(0);
-   $self-> scroll( -$dt, 0,
-                   clipRect => [ $bw, $bw + $dy, $bw + $w, $self-> height - $bw ]);
+   # $self-> scroll( -$dt, 0,
+   $self-> scroll( $oldOfs - $offset, 0,
+   #               clipRect => [ $bw, $bw + $dy, $bw + $w, $self-> height - $bw ]);
+                   clipRect => \@a);
 }
 
 sub set_top_item
@@ -1100,10 +1145,12 @@ sub set_top_item
    return if $topItem == $self->{topItem};
    my $oldTop = $self->{topItem};
    $self->{topItem} = $topItem;
-   my ($bw, $ih, $iw, $w, $h, $dx, $dy) = (
-      $self->{borderWidth}, $self->{itemHeight}, $self->{itemWidth},
-      $self->size, $self->{dx}, $self->{dy});
-   my $dt = $topItem - $oldTop;
+#  my ($bw, $ih, $iw, $w, $h, $dx, $dy) = (
+#     $self->{borderWidth}, $self->{itemHeight}, $self->{itemWidth},
+#     $self->size, $self->{dx}, $self->{dy});
+   my ($ih, @a) = (
+      $self->{itemHeight}, $self-> get_active_area);
+#  my $dt = $topItem - $oldTop;
    $self-> makehint(0);
    if ( $self->{scrollTransaction} != 1 && $self->{vScroll}) {
       $self->{scrollTransaction} = 1;
@@ -1111,8 +1158,10 @@ sub set_top_item
       $self->{scrollTransaction} = 0;
    }
 
-   $self-> scroll( 0, $dt * $ih,
-                   clipRect => [ $bw, $bw + $dy, $w - $bw - $dx, $h - $bw ]);
+#  $self-> scroll( 0, $dt * $ih,
+   $self-> scroll( 0, ($topItem - $oldTop) * $ih,
+#                  clipRect => [ $bw, $bw + $dy, $w - $bw - $dx, $h - $bw ]);
+                   clipRect => \@a);
 }
 
 

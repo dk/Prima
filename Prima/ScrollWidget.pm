@@ -52,9 +52,10 @@ sub profile_default
 sub init
 {
    my $self = shift;
-   for ( qw( scrollTransaction hScroll vScroll limitX limitY deltaX deltaY borderWidth marginX marginY))
+   for ( qw( scrollTransaction hScroll vScroll limitX limitY deltaX deltaY borderWidth))
       { $self->{$_} = 0; }
    my %profile = $self-> SUPER::init(@_);
+   $self-> {indents} = [0,0,0,0];
    for ( qw( hScroll vScroll borderWidth))
       { $self->$_( $profile{ $_}); }
    $self-> limits( $profile{limitX}, $profile{limitY});
@@ -66,13 +67,8 @@ sub init
 sub reset_scrolls
 {
    my $self = $_[0];
-   my $bw = $self->{borderWidth};
-   my ($x, $y) = $self-> size;
+   my ($x, $y) = $self-> get_active_area(2);
    my ($w, $h) = $self-> limits;
-   $x -= $bw * 2;
-   $y -= $bw * 2;
-   $x -= $self-> {vScrollBar}-> width - 1 if $self-> {vScroll};
-   $y -= $self-> {hScrollBar}-> height - 1 if $self-> {hScroll};
 
    if ( $self-> {hScroll}) {
       $self-> {hScrollBar}-> set(
@@ -113,13 +109,8 @@ sub set_deltas
    $w = int( $w);
    $h = int( $h);
    my ($x, $y) = $self-> limits;
-   my ( $ww, $hh) = $self-> size;
-   my ( $www, $hhh) = ( $ww, $hh);
-   my $bw = $self->{borderWidth};
-   $ww -= $bw * 2;
-   $hh -= $bw * 2;
-   $ww -= $self-> {vScrollBar}-> width - 1 if $self-> {vScroll};
-   $hh -= $self-> {hScrollBar}-> height - 1 if $self-> {hScroll};
+   my @sz = $self-> size;
+   my ( $ww, $hh)   = $self-> get_active_area( 2, @sz);
    $x -= $ww;
    $y -= $hh;
    $x = 0 if $x < 0;
@@ -130,34 +121,11 @@ sub set_deltas
    return if $w == $odx and $h == $ody;
    $self-> {deltaY} = $h;
    $self-> {deltaX} = $w;
-   $self-> scroll( $odx - $w, $h - $ody, clipRect => [$self->get_active_area($www,$hhh)]);
+   $self-> scroll( $odx - $w, $h - $ody, clipRect => [$self->get_active_area(0, @sz)]);
    $self-> {scrollTransaction} = 1;
    $self-> {hScrollBar}-> value( $w) if $self->{hScroll};
    $self-> {vScrollBar}-> value( $h) if $self->{vScroll};
    $self-> {scrollTransaction} = undef;
-}
-
-sub set_v_scroll
-{
-   my ( $self, $val) = @_;
-   $self-> SUPER::set_v_scroll( $val);
-   $self->{marginX} = ( $self->{vScroll} ? $self->{vScrollBar}-> width-1  : 0);
-}
-
-sub set_h_scroll
-{
-   my ( $self, $val) = @_;
-   $self-> SUPER::set_h_scroll( $val);
-   $self->{marginY} = ( $self->{hScroll} ? $self->{hScrollBar}-> height-1 : 0);
-}
-
-sub get_active_area
-{
-   my $self = $_[0];
-   my @sz = ($_[1],$_[2]);
-   my ( $dx, $dy, $bw) = ($self->{marginX}, $self->{marginY}, $self->{borderWidth});
-   @sz = $self-> size unless defined $sz[0] and defined $sz[1];
-   return $bw, $dy + $bw, $sz[0] - $bw - $dx, $sz[1] - $bw;
 }
 
 sub on_size

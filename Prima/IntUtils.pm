@@ -158,6 +158,8 @@ sub set_border_width
       bottom => $bw + ( $self->{hScroll} ? $self->{hScrollBar}-> height - 2 : 0),
    ) if $self-> {vScroll};
    $self-> insert_bone if defined $self-> {bone};
+   my $d = $bw - $obw;
+   $self-> {indents}-> [$_] += $d for 0..3;
 }
 
 
@@ -199,6 +201,7 @@ sub set_h_scroll
          width       => $self-> width - 2 * $bw + 2 - ( $self->{vScroll} ? $self->{vScrollBar}-> width - 2 : 0),
          delegations => ['Change'],
       );
+      $self-> {indents}->[1] += $self->{hScrollBar}-> height - 1;
       if ( $self->{vScroll})
       {
          my $h = $self-> {hScrollBar}-> height;
@@ -209,6 +212,7 @@ sub set_h_scroll
          $self-> insert_bone;
       }
    } else {
+      $self->{indents}->[1] -= $self->{hScrollBar}-> height - 1;
       $self->{hScrollBar}-> destroy;
       if ( $self->{vScroll})
       {
@@ -239,6 +243,7 @@ sub set_v_scroll
          pointerType  => cr::Arrow,
          delegations  => ['Change'],
       );
+      $self->{indents}->[2] += $self->{vScrollBar}-> width - 1;
       if ( $self->{hScroll})
       {
          $self-> {hScrollBar}->width(
@@ -248,6 +253,7 @@ sub set_v_scroll
          $self-> insert_bone;
       }
    } else {
+      $self->{indents}->[2] -= $self->{vScrollBar}-> width - 1;
       $self-> {vScrollBar}-> destroy;
       if ( $self->{hScroll})
       {
@@ -255,6 +261,28 @@ sub set_v_scroll
          $self-> {bone}-> destroy;
          delete $self-> {bone};
       }
+   }
+}
+
+sub indents
+{
+   return @{shift-> {indents}} unless $#_;
+   shift-> {indents} = [@_];
+}
+
+sub get_active_area
+{
+   my @r = ( scalar @_ > 2) ? @_[2,3] : $_[0]-> size;
+   my $i = $_[0]-> {indents};
+   if ( !defined $_[1] || $_[1] == 0) {
+      # returns inclusive - exclusive
+      return $$i[0], $$i[1], $r[0] - $$i[2], $r[1] - $$i[3];
+   } elsif ( $_[1] == 1) {
+      # returns inclusive - inclusive
+      return $$i[0], $$i[1], $r[0] - $$i[2] - 1, $r[1] - $$i[3] - 1;
+   } else {
+      # returns size
+      return $r[0] - $$i[0] - $$i[2], $r[1] - $$i[1] - $$i[3];
    }
 }
 

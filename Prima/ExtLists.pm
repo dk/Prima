@@ -152,12 +152,21 @@ sub draw_items
       for ( @selected) { push ( @normals, $_); }
       # draw items
       my $yimg = int(( $ih - $imgSize[1]) / 2);
+      my ( $lc, $lbc) = @clrs[0,1];
       for ( @normals)
       {
          my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
-         $canvas-> set_color( $clrs[ $selected ? 3 : 1]);
-         $canvas-> bar( $x, $y, $x2, $y2);
-         $canvas-> set_color( $clrs[ $selected ? 2 : 0]);
+         my $c = $clrs[ $selected ? 3 : 1];
+         if ( $c != $lbc) {
+            $canvas-> set_back_color( $c);
+            $lbc = $c;
+         }
+         $canvas-> clear( $x, $y, $x2, $y2);
+         $c = $clrs[ $selected ? 2 : 0];
+         if ( $c != $lc) {
+            $canvas-> set_color( $c);
+            $lc = $c;
+         }
          for ( $i = $first; $i <= $last; $i++)
          {
              next if $self-> {widths}->[$i] + $offset + $x + 1 < $clipRect[0];

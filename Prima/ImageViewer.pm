@@ -78,26 +78,24 @@ sub on_paint
 {
    my ( $self, $canvas) = @_;
    my @size   = $canvas-> size;
-   my $clr    = $self-> backColor;
    my $bw     = $self-> {borderWidth};
 
    unless ( $self-> {image}) {
-      $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor, $clr);
+      $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor, $self-> backColor);
       return;
    }
 
    $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor) if $bw;
-   my @r = $self-> get_active_area( @size);
+   my @r = $self-> get_active_area( 0, @size);
    $canvas-> clipRect( @r);
-   $canvas-> transform( $r[0],$r[1]);
-   $canvas-> color( $clr);
+   $canvas-> transform( @r[0,1]);
    my $imY  = $self->{image}->height;
    my $imX  = $self->{image}->width;
    my $z = $self->{zoom};
    my $imYz = int($imY * $z);
    my $imXz = int($imX * $z);
-   my $winY = $size[1] - $bw * 2 - $self->{marginY};
-   my $winX = $size[0] - $bw * 2 - $self->{marginX};
+   my $winY = $r[3] - $r[1];
+   my $winX = $r[2] - $r[0];
    my $deltaY = ($imYz - $winY - $self->{deltaY} > 0) ? $imYz - $winY - $self->{deltaY}:0;
    my ($xa,$ya) = ($self->{alignment}, $self->{valignment});
    my ($iS, $iI) = ($self->{integralScreen}, $self->{integralImage});
@@ -111,8 +109,8 @@ sub on_paint
       } else {
          $aty = 0;
       }
-      $canvas-> bar( 0, 0, $winX-1, $aty-1) if $aty > 0;
-      $canvas-> bar( 0, $aty + $imYz, $winX-1, $winY-1) if $aty + $imYz < $winY;
+      $canvas-> clear( 0, 0, $winX-1, $aty-1) if $aty > 0;
+      $canvas-> clear( 0, $aty + $imYz, $winX-1, $winY-1) if $aty + $imYz < $winY;
       $yDest = 0;
    } else {
       $aty   = -($deltaY % $iS);
@@ -129,8 +127,8 @@ sub on_paint
       } else {
          $atx = 0;
       }
-      $canvas-> bar( 0, $aty, $atx - 1, $aty + $imYz - 1) if $atx > 0;
-      $canvas-> bar( $atx + $imXz, $aty, $winX - 1, $aty + $imYz - 1) if $atx + $imXz < $winX;
+      $canvas-> clear( 0, $aty, $atx - 1, $aty + $imYz - 1) if $atx > 0;
+      $canvas-> clear( $atx + $imXz, $aty, $winX - 1, $aty + $imYz - 1) if $atx + $imXz < $winX;
       $xDest = 0;
    } else {
       $atx   = -($self->{deltaX} % $iS);
@@ -229,6 +227,37 @@ sub set_zoom
    $self-> repaint;
    $self->{hScrollBar}->set_steps( $zoom, $zoom * 10) if $self->{hScroll};
    $self->{vScrollBar}->set_steps( $zoom, $zoom * 10) if $self->{vScroll};
+}
+
+sub screen2point
+{
+   my $self = shift;
+   my @ret = ();
+   my $i   = $self-> {indents};
+   my $mx  = $self-> {vScroll} ? $self-> {vScrollBar}-> max : 0;
+   while ( scalar @_) {
+      my ( $x, $y) = ( shift, shift);
+      $x += $self-> {deltaX} - $$i[0];
+      $y += $mx - $self-> {deltaY} - $$i[1];
+      push @ret, $x / $self->{zoom}, $y / $self->{zoom};
+   }
+   return @ret;
+}
+
+sub point2screen
+{
+   my $self = shift;
+   my @ret = ();
+   my $i   = $self-> {indents};
+   my $mx  = $self-> {vScroll} ? $self-> {vScrollBar}-> max : 0;
+   my $z   = $self->{zoom};
+   while ( scalar @_) {
+      my ( $x, $y) = ( $z * shift, $z * shift);
+      $x -= $self-> {deltaX} - $$i[0];
+      $y -= $mx - $self-> {deltaY} - $$i[1];
+      push @ret, $x, $y;
+   }
+   return @ret;
 }
 
 
