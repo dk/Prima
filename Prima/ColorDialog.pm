@@ -148,7 +148,7 @@ sub create_wheel
 {
    my ($id, $color)   = @_;
    my $imul = 256 / $id;
-   my $i = Image-> create(
+   my $i = Prima::Image-> create(
       width  => $id,
       height => $id,
       type => im::RGB,
@@ -178,7 +178,7 @@ sub create_wheel
    $i-> end_paint;
 
 
-   my $a = Image-> create(
+   my $a = Prima::Image-> create(
       width  => 256,
       height => 256,
       type   => im::RGB,
@@ -777,7 +777,7 @@ sub MoreBtn_Click
    my ($combo,$self) = @_;
    my $d;
    $combo-> listVisible(0);
-   $d = ColorDialog-> create(
+   $d = Prima::ColorDialog-> create(
       text  => 'Mixed color palette',
       value => $combo-> value,
    );

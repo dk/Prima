@@ -41,7 +41,7 @@ ScrollBar - Prima scroll bars class
 
     use ScrollBar;
 
-    my $sb = ScrollBar-> create( owner => $group, %rest_of_profile);
+    my $sb = Prima::ScrollBar-> create( owner => $group, %rest_of_profile);
     my $sb = $group-> insert( 'ScrollBar', %rest_of_profile);
 
     my $isAutoTrack = $sb-> autoTrack;
@@ -340,7 +340,7 @@ Don't call them directly!
   use ScrollBar;
   use Label;
 
-  my $w = Window-> create(
+  my $w = Prima::Window-> create(
 			  text => 'ScrollBar test',
 			  size => [300,200]);
   my $lbl = $w-> insert( Label =>

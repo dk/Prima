@@ -50,7 +50,7 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    if ( defined $p->{imageFile} && !defined $p->{image})
    {
-      $p->{image} = Image-> create;
+      $p->{image} = Prima::Image-> create;
       delete $p->{image} unless $p->{image}-> load($p->{imageFile});
    }
 }
@@ -180,7 +180,7 @@ sub set_image
 sub set_image_file
 {
    my ($self,$file,$img) = @_;
-   $img = Image-> create;
+   $img = Prima::Image-> create;
    return unless $img-> load($file);
    $self->{imageFile} = $file;
    $self->image($img);

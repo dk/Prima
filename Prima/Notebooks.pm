@@ -822,7 +822,7 @@ sub init
    %profile = $self-> SUPER::init(%profile);
    my @size = $self-> size;
    my $maxh = $self-> font-> height * 2;
-   $self->{tabSet} = TabSet-> create(
+   $self->{tabSet} = Prima::TabSet-> create(
       owner     => $self,
       name      => 'TabSet',
       left      => 0,
@@ -833,7 +833,7 @@ sub init
       buffered  => 1,
       designScale => undef,
    );
-   $self->{notebook} = Notebook-> create(
+   $self->{notebook} = Prima::Notebook-> create(
       owner      => $self,
       name       => 'Notebook',
       origin     => [ DefBorderX + 1, DefBorderX + 1],

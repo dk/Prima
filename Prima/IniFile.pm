@@ -37,17 +37,17 @@ use Carp;
 
 =head1 NAME
 
-IniFile - support of Windows-like initialization files
+Prima::IniFile - support of Windows-like initialization files
 
 =head1 SYNOPSIS
 
-   use IniFile;
+   use Prima::IniFile;
 
-   my $ini = create IniFile;
-   my $ini = create IniFile FILENAME;
-   my $ini = create IniFile FILENAME,
+   my $ini = create Prima::IniFile;
+   my $ini = create Prima::IniFile FILENAME;
+   my $ini = create Prima::IniFile FILENAME,
                default => HASHREF_OR_ARRAYREF;
-   my $ini = create IniFile file => FILENAME,
+   my $ini = create Prima::IniFile file => FILENAME,
                default => HASHREF_OR_ARRAYREF;
 
    my @sections = $ini->sections;

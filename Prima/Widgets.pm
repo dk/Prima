@@ -59,7 +59,7 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    if ( defined $p->{imageFile} && !defined $p->{image})
    {
-      $p->{image} = Image-> create;
+      $p->{image} = Prima::Image-> create;
       delete $p->{image} unless $p->{image}-> load($p->{imageFile});
    }
 }
@@ -146,7 +146,7 @@ sub set_raise
 sub set_image_file
 {
    my ($self,$file,$img) = @_;
-   $img = Image-> create;
+   $img = Prima::Image-> create;
    return unless $img-> load($file);
    $self->{imageFile} = $file;
    $self->image($img);
@@ -213,7 +213,7 @@ sub init
    {
       my $name = $profile{ name};
       my @std = @ScrollBar::stdMetrics;
-      my $hsb = ScrollBar-> create(
+      my $hsb = Prima::ScrollBar-> create(
          name     => "HScroll",
          owner    => $self-> owner,
          left     => $self-> left,
@@ -222,7 +222,7 @@ sub init
          vertical => 0,
          onChange => sub { $_[0]->owner->bring( $name)->on_scroll},
       );
-      my $vsb = ScrollBar-> create(
+      my $vsb = Prima::ScrollBar-> create(
          name   => "VScroll",
          vertical => 1,
          owner  => $self-> owner,

@@ -85,7 +85,7 @@ sub scroll_timer_start
    $self-> scroll_timer_stop;
    unless ( defined $scrollTimer) {
       my @rates = $::application-> get_scroll_rate;
-      $scrollTimer = Timer-> create(
+      $scrollTimer = Prima::Timer-> create(
          owner      => $::application,
          delegateTo => $self,
          timeout    => $rates[0],

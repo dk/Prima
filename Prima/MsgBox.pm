@@ -65,7 +65,7 @@ sub message_box
 
    my $fresh;
    my $freshFirst;
-   my $dlg = Dialog-> create(
+   my $dlg = Prima::Dialog-> create(
        centered      => 1,
        width         => 435,
        height        => 150,

@@ -345,7 +345,7 @@ sub profile_check_in
    $p->{ checked} = 0 unless $checkable;
    if ( defined $p->{imageFile} && !defined $p->{image})
    {
-      $p->{image} = Icon-> create;
+      $p->{image} = Prima::Icon-> create;
       delete $p->{image} unless $p->{image}-> load($p->{imageFile});
    }
 }
@@ -575,7 +575,7 @@ sub set_checked
 sub set_image_file
 {
    my ($self,$file,$img) = @_;
-   $img = Icon-> create;
+   $img = Prima::Icon-> create;
    return unless $img-> load($file);
    $self->{imageFile} = $file;
    $self->image($img);

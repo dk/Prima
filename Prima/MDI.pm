@@ -206,7 +206,7 @@ sub on_paint
          $tx = $canvas-> text_wrap( $tx, $w, 0)->[0].'...';
       }
 
-      my $dbm = DeviceBitmap-> create(
+      my $dbm = Prima::DeviceBitmap-> create(
          width  => $size[0] - $bb * 2 - $icos * $dy,
          height => $dy,
          font   => $canvas-> font,
@@ -600,7 +600,7 @@ sub on_mousedown
       # this popup-cancelling on_mousedown won't come to us also.
       my $delay = Application-> get_system_value( sv::DblClickDelay);
       $delay = 250 if $delay > 250;
-      $self-> {exTimer} = Timer-> create(
+      $self-> {exTimer} = Prima::Timer-> create(
          owner   => $self,
          timeout => $delay,
          onTick  => sub {

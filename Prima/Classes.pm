@@ -276,7 +276,7 @@ package Prima::Drawable;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
 
-my $sysData = Application-> get_system_info;
+my $sysData = Prima::Application-> get_system_info;
 
 sub profile_default
 {
@@ -998,12 +998,13 @@ sub insert
 {
    my $self = shift;
    my @e = ();
-   while (ref $_[0])
-   {
-      push @e, ${$_[0]}[0]-> create(@{$_[0]}[1..scalar @{$_[0]} - 1], owner=> $self);
+   while (ref $_[0]) {
+      my $cl = shift @{$_[0]}; $cl = "Prima::$cl" unless $cl =~ /^Prima::/;
+      push @e, $cl-> create(@{$_[0]}, owner=> $self);
       shift;
    }
-   push @e, $_[ 0]-> create(@_[1..$#_], owner=> $self)
+   my $cl = shift @_; $cl = "Prima::$cl" unless $cl =~ /^Prima::/;
+   push @e, $cl-> create(@_, owner=> $self)
       if scalar @_;
    return wantarray ? @e : $e[0];
 }
@@ -1356,16 +1357,16 @@ sub profile_default
       ownerShowHint  => 0,
       ownerPalette   => 0,
       showHint       => 1,
-      clipboardClass => 'Clipboard',
+      clipboardClass => 'Prima::Clipboard',
       helpFile       => '',
       helpContext    => hmp::None,
-      hintClass      => 'HintWidget',
+      hintClass      => 'Prima::HintWidget',
       hintColor      => cl::Black,
       hintBackColor  => 0xffff80,
       hintPause      => 800,
-      hintFont       => Widget::get_default_font,
+      hintFont       => Prima::Widget::get_default_font,
       modalHorizon   => 1,
-      printerClass   => 'Printer',
+      printerClass   => 'Prima::Printer',
    );
    @$def{keys %prf} = values %prf;
    return $def;

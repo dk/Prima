@@ -46,7 +46,7 @@ my $bmImageFile = undef;
 sub load_std_bmp
 {
    my ( $index, $asIcon, $copy) = @_;
-   my $class = ( $asIcon ? q(Icon) : q(Image));
+   my $class = ( $asIcon ? q(Prima::Icon) : q(Prima::Image));
    return undef if !defined $index || $index < 0 || $index > sbmp::Last;
    $asIcon = ( $asIcon ? 1 : 0);
    if ( $copy)

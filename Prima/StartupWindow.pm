@@ -51,7 +51,7 @@ sub import {
    my %profile = (%profileDefault,@_);
    push @pointersStack, $::application-> pointer;
    $::application-> pointer( cr::Wait);
-   my $w = Window-> create(%profile);
+   my $w = Prima::Window-> create(%profile);
    push @windowStack, $w;
    $::application-> yield;
    $w-> repaint;

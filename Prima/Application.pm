@@ -34,7 +34,7 @@ use vars qw($uses);
 sub import {
    shift;
    my %profile = ( name => q(Prima), @_);
-   $::application ||= Application-> create( %profile);
+   $::application ||= Prima::Application-> create( %profile);
    $::application and $::clipboard = $::application-> get_clipboard;
    $uses++;
 }
