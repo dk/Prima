@@ -503,7 +503,7 @@ Application_autoClose( Handle self, Bool set, Bool autoClose)
 }
 
 SV *
-Application_sys_action( Handle self, char * params)
+Application_sys_action( char * dummy, char * params)
 {
    char * i = apc_system_action( params);
    SV * ret = i ? newSVpv( i, 0) : nilSV;
