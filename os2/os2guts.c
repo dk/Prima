@@ -773,7 +773,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
         if ( ev. cmd)
         {
            if ( sys className == WC_FRAME && PWindow(self)->modal) {
-              Window_cancel( self);
+              CWindow(self)-> cancel( self);
               return 0;
            }
            else

@@ -1283,7 +1283,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    case WM_CLOSE:
       if ( ev. cmd) {
          if ( sys className == WC_FRAME && PWindow(self)->modal) {
-           Window_cancel( self);
+           CWindow( self)-> cancel( self);
            return 0;
          } else {
            SetWindowLong( win, GWL_USERDATA, 0);
