@@ -1341,52 +1341,76 @@ sub setup_defines
 
 sub setup_xft
 {
-   if ( $WITH_XFT) {
-      my @pre_xft_libs = @LIBS;
-      if ( have_header( "fontconfig/fontconfig.h")) {
-         if ( find_lib( 'fontconfig', '', '')) {
-            $DEFINES{HAVE_FONTCONFIG_FONTCONFIG_H} = undef;
-            $WITH_XFT = 0;
-         } else {
-            push @LIBS, 'fontconfig';
-         }
-      }
-      
-      if ( have_header( "X11/extensions/Xrender.h", "X11/X.h", 
-                         "X11/Xlib.h", "X11/extensions/Xext.h")) {
-         if ( find_lib( 'Xrender', '', '')) {
-            $DEFINES{HAVE_X11_EXTENSIONS_XRENDER_H} = undef;
-            $WITH_XFT = 0;
-         } else {
-            push @LIBS, 'Xrender';
-         }
-      }
+    if ( $WITH_XFT) {
+	my $HAVE_XFT = 0;
+	my $NEED_XFT = 4;
+	my @pre_xft_libs = @LIBS;
 
-      if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h", 
-                        "X11/extensions/Xext.h", "X11/extensions/Xrender.h")) {
-         if ( find_lib( 'Xft', '', '')) {
-            $DEFINES{HAVE_X11_XFT_XFT_H} = undef;
-            $WITH_XFT = 0;
-         } else {
-            push @LIBS, 'Xft';
-         }
-      }
+	print "Checking for presence of freetype/freetype.h... ";
+	my $incpath = find_header( qd("freetype/freetype.h"), "",
+				   qd("/usr/X11R6/include/freetype2"),
+				   qd("/usr/X11/include/freetype2"),
+				   qd("/usr/X/include/freetype2"),
+				   qd("/usr/openwin/include/freetype2"),
+				   qd("/usr/local/include/freetype2"));
+	if (defined $incpath) {
+	    print "yes";
+	    print ", in $incpath" if $incpath;
+	    print "\n";
+	    push @INCPATH, $incpath;
+	    if ( defined find_lib( 'freetype', '', '')) {
+		push @LIBS, 'freetype';
+		$HAVE_XFT++;
+	    } else {
+		$DEFINES{HAVE_FREETYPE_FREETYPE_H} = undef;
+	    }
+	}
 
-      @LIBS = @pre_xft_libs unless $WITH_XFT;
-   }
-   
-   $WITH_ICONV = 0 unless $WITH_XFT; # iconv is used for xft only
-   if ( $WITH_ICONV && have_header( "iconv.h")) {
-      if ( find_lib( 'iconv', '', '')) {
-         $DEFINES{HAVE_ICONV_H} = undef;
-         $WITH_ICONV = 0;
-      } else {
-         push @LIBS, 'iconv';
-      }
-   }
+	if ( have_header( "fontconfig/fontconfig.h")) {
+	    if ( defined find_lib( 'fontconfig', '', '')) {
+		push @LIBS, 'fontconfig';
+		$HAVE_XFT++;
+	    } else {
+		$DEFINES{HAVE_FONTCONFIG_FONTCONFIG_H} = undef;
+	    }
+	}
 
+	if ( have_header( "X11/extensions/Xrender.h", "X11/X.h", 
+			  "X11/Xlib.h", "X11/extensions/Xext.h")) {
+	    if ( defined find_lib( 'Xrender', '', '')) {
+		push @LIBS, 'Xrender';
+		$HAVE_XFT++;
+	    } else {
+		$DEFINES{HAVE_X11_EXTENSIONS_XRENDER_H} = undef;
+	    }
+	}
+
+	if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h", 
+			  "X11/extensions/Xext.h", "X11/extensions/Xrender.h")) {
+	    if ( defined find_lib( 'Xft', '', '')) {
+		push @LIBS, 'Xft';
+		$HAVE_XFT++;
+	    } else {
+		$DEFINES{HAVE_X11_XFT_XFT_H} = undef;
+	    }
+	}
+
+	$WITH_XFT = 0 unless $HAVE_XFT == $NEED_XFT;
+	@LIBS = @pre_xft_libs unless $WITH_XFT;
+    }
+
+    $WITH_ICONV = 0 unless $WITH_XFT; # iconv is used for xft only
+    if ( $WITH_ICONV && have_header( "iconv.h")) {
+	if ( defined find_lib( 'iconv', '', '')) {
+	    push @LIBS, 'iconv';
+	} else {
+	    $DEFINES{HAVE_ICONV_H} = undef;
+	    $WITH_ICONV = 0;
+	}
+    } else {
+	$WITH_ICONV = 0;
+    }
 }       
-
 
 sub generate_win32_def
 {
