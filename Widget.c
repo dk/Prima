@@ -1485,13 +1485,6 @@ Widget_get_selectee( Handle self)
       return find_tabfoc( self);
 }
 
-Bool
-Widget_get_selected( Handle self)
-{
-   enter_method;
-   return my-> get_selected_widget( self) != nilHandle;
-}
-
 Handle
 Widget_get_selected_widget( Handle self)
 {
@@ -1507,7 +1500,7 @@ Widget_get_selected_widget( Handle self)
 
    /* classic solution should be recursive and inheritant call */
    /* of get_selected() here, when Widget would return state of */
-   /* child-group selected state until Widget::get_selected() called; */
+   /* child-group selected state until Widget::selected() called; */
    /* thus, each of them would call apc_widget_get_focused - that's expensive, */
    /* so that's the reason not to use classic object model here. */
 }
@@ -2036,61 +2029,6 @@ Widget_set_selectable( Handle self, Bool selectable)
 }
 
 void
-Widget_set_selected( Handle self, Bool selected)
-{
-   enter_method;
-   if ( var-> stage > csNormal) return;
-   if ( selected) {
-      if ( is_opt( optSelectable) && !is_opt( optSystemSelectable)) {
-         my-> set_focused( self, true);
-      } else
-      if ( var-> currentWidget) {
-         PWidget w = ( PWidget) var-> currentWidget;
-         if ( w-> options. optSystemSelectable && !w-> self-> get_clip_owner(( Handle) w))
-            w-> self-> bring_to_front(( Handle) w); /* <- very uncertain !!!! */
-         else
-            w-> self-> set_selected(( Handle) w, true);
-      } else
-      if ( is_opt( optSystemSelectable)) {
-         /* nothing to do with Widget, reserved for Window */
-      }
-      else {
-         PWidget toFocus = ( PWidget) find_tabfoc( self);
-         if ( toFocus)
-            toFocus-> self-> set_selected(( Handle) toFocus, 1);
-         else {
-         /* if group has no selectable widgets and cannot be selected by itself, */
-         /* process chain of bring_to_front(), followed by set_focused(1) call, if available */
-            PWidget x = ( PWidget) var-> owner;
-            List  lst;
-            int i;
-
-            list_create( &lst, 8, 8);
-            while ( x) {
-               if ( !toFocus && x-> options. optSelectable) {
-                  toFocus = x;  /* choose closest owner to focus */
-                  break;
-               }
-               if (( Handle) x != application && !kind_of(( Handle) x, CWindow))
-                  list_insert_at( &lst, ( Handle) x, 0);
-               x = ( PWidget) x-> owner;
-            }
-
-            if ( toFocus)
-               toFocus-> self-> set_focused(( Handle) toFocus, 1);
-
-            for ( i = 0; i < lst. count; i++) {
-               PWidget v = ( PWidget) list_at( &lst, i);
-               v-> self-> bring_to_front(( Handle) v);
-            }
-            list_destroy( &lst);
-         }
-      } /* end set_selected( true); */
-   } else
-      my-> set_focused( self, false);
-}
-
-void
 Widget_set_selected_widget( Handle self, Handle widget)
 {
    if ( var-> stage > csNormal) return;
@@ -2594,6 +2532,63 @@ Widget_hint( Handle self, Bool set, char *hint)
    }
    opt_clear( optOwnerHint);
    return "";
+}
+
+Bool
+Widget_selected( Handle self, Bool set, Bool selected)
+{
+   enter_method;
+   if (!set) return my-> get_selected_widget( self) != nilHandle;
+   if ( var-> stage > csNormal) return selected;
+   if ( selected) {
+      if ( is_opt( optSelectable) && !is_opt( optSystemSelectable)) {
+         my-> set_focused( self, true);
+      } else
+      if ( var-> currentWidget) {
+         PWidget w = ( PWidget) var-> currentWidget;
+         if ( w-> options. optSystemSelectable && !w-> self-> get_clip_owner(( Handle) w))
+            w-> self-> bring_to_front(( Handle) w); /* <- very uncertain !!!! */
+         else
+            w-> self-> set_selected(( Handle) w, true);
+      } else
+      if ( is_opt( optSystemSelectable)) {
+         /* nothing to do with Widget, reserved for Window */
+      }
+      else {
+         PWidget toFocus = ( PWidget) find_tabfoc( self);
+         if ( toFocus)
+            toFocus-> self-> set_selected(( Handle) toFocus, 1);
+         else {
+         /* if group has no selectable widgets and cannot be selected by itself, */
+         /* process chain of bring_to_front(), followed by set_focused(1) call, if available */
+            PWidget x = ( PWidget) var-> owner;
+            List  lst;
+            int i;
+
+            list_create( &lst, 8, 8);
+            while ( x) {
+               if ( !toFocus && x-> options. optSelectable) {
+                  toFocus = x;  /* choose closest owner to focus */
+                  break;
+               }
+               if (( Handle) x != application && !kind_of(( Handle) x, CWindow))
+                  list_insert_at( &lst, ( Handle) x, 0);
+               x = ( PWidget) x-> owner;
+            }
+
+            if ( toFocus)
+               toFocus-> self-> set_focused(( Handle) toFocus, 1);
+
+            for ( i = 0; i < lst. count; i++) {
+               PWidget v = ( PWidget) list_at( &lst, i);
+               v-> self-> bring_to_front(( Handle) v);
+            }
+            list_destroy( &lst);
+         }
+      } /* end set_selected( true); */
+   } else
+      my-> set_focused( self, false);
+   return selected;
 }
 
 char *
