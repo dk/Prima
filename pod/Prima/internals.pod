@@ -541,10 +541,12 @@ type conversion code is exemplified:
       {
          int newType = pget_i( type);
          if ( !itype_supported( newType))
-            warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", newType);
+            warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", 
+               newType);
          else 
             if ( !opt_InPaint)
-               my-> reset( self, newType, pexist( palette) ? pget_sv( palette) : my->get_palette( self));
+               my-> reset( self, newType, pexist( palette) ? 
+                  pget_sv( palette) : my->get_palette( self));
          pdelete( palette);
          pdelete( type);
       }
@@ -754,7 +756,8 @@ If cacheIt true, caches the hierarchy traverse result for a speedup.
 
 =item call_perl_indirect
 
- SV * ( Handle self, char *subName, const char *format, Bool cdecl, Bool coderef, va_list params);
+ SV * ( Handle self, char *subName, const char *format, Bool cdecl, 
+        Bool coderef, va_list params);
 
 Core function for calling Prima methods. Is used by the following three 
 functions, but is never called directly. Format is described in C<Calling perl code>

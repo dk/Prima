@@ -306,7 +306,8 @@ also uses the module, and realizes its own searching algorithm.
    if ( $res == mb::Ok) {
       print $dlg-> findText, " is to be found\n";
    } elsif ( $res == mb::ChangeAll) {
-      print "all occurences of ", $dlg-> findText, " is to be replaced by ", $dlg-> replaceText;
+      print "all occurences of ", $dlg-> findText, 
+         " is to be replaced by ", $dlg-> replaceText;
    } 
 
 The C<mb::ChangeAll> constant, one of possible results of C<execute> method, is

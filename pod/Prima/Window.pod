@@ -192,7 +192,8 @@ Hints the system about window's decorations, by
 selecting the combination of C<bi::XXX> constants.
 The constants are:
 
-   bi::SystemMenu  - system menu button and/or close button ( usually with icon ) is shown
+   bi::SystemMenu  - system menu button and/or close button 
+                     ( usually with icon ) is shown
    bi::Minimize    - minimize button 
    bi::Maximize    - maximize ( and eventual restore )
    bi::TitleBar    - window title 

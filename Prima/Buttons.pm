@@ -1249,8 +1249,10 @@ modal window, and is pressed, its C<modalResult> value is copied to the C<modalR
 property of the owner window, and the latter is closed. 
 This scheme is helpful for the dialog design:
 
-   $dialog-> insert( 'Prima::Button', modalResult => mb::OK, text => '~Ok', default => 1);
-   $dialog-> insert( 'Prima::Button', modalResult => mb::Cancel, text => 'Cancel);
+   $dialog-> insert( 'Prima::Button', modalResult => mb::OK, 
+      text => '~Ok', default => 1);
+   $dialog-> insert( 'Prima::Button', modalResult => mb::Cancel, 
+      text => 'Cancel);
    return if $dialog-> execute != mb::OK.
 
 The toolkit defines the following constants for C<modalResult> use:

@@ -589,10 +589,13 @@ of C<sv::XXX> constants. The constants are:
    sv::MousePresent     - 1 if the mouse is present, 0 otherwise
    sv::MouseButtons     - number of the mouse buttons
    sv::WheelPresent     - 1 if the mouse wheel is present, 0 otherwise
-   sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on an implicit selection
-   sv::FullDrag         - 1 if the top-level windows are dragged dynamically, 0 - with marquee mode
+   sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on 
+                          an implicit selection
+   sv::FullDrag         - 1 if the top-level windows are dragged dynamically, 
+                          0 - with marquee mode
    sv::DblClickDelay    - mouse double-click timeout in milliseconds
-   sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 0 otherwise
+   sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 
+                          0 otherwise
    sv::ColorPointer     - 1 if system accepts color pointer icons.
    sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
    sv::CanUTF8_Output   - 1 if system can output utf8 text

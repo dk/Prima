@@ -1198,13 +1198,20 @@ MODE can be 0 ( default ) or a combination of the following constants:
 
 =item Basic constants
 
- gm::GrowLoX      widget's left side is kept in constant distance from owner's right side
- gm::GrowLoY      widget's bottom side is kept in constant distance from owner's top side 
- gm::GrowHiX      widget's right side is kept in constant distance from owner's right side  
- gm::GrowHiY      widget's top side is kept in constant distance from owner's top side  
- gm::XCenter      widget is kept in center on its owner horizontal axis
- gm::YCenter      widget is kept in center on its owner vertical axis 
- gm::DontCare     widgets origin is maintained constant relative to the screen
+ gm::GrowLoX      widget's left side is kept in constant 
+                  distance from owner's right side
+ gm::GrowLoY      widget's bottom side is kept in constant 
+                  distance from owner's top side 
+ gm::GrowHiX      widget's right side is kept in constant 
+                  distance from owner's right side  
+ gm::GrowHiY      widget's top side is kept in constant 
+                  distance from owner's top side  
+ gm::XCenter      widget is kept in center on its owner's
+                  horizontal axis
+ gm::YCenter      widget is kept in center on its owner's
+                  vertical axis 
+ gm::DontCare     widgets origin is maintained constant relative 
+                  to the screen
 
 =item Derived or aliased constants
 

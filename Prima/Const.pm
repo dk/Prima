@@ -123,7 +123,8 @@ See L<Prima::Application/get_system_info>
 
 See L<Prima::Window/borderIcons>
 
-  bi::SystemMenu  - system menu button and/or close button ( usually with icon ) is shown
+  bi::SystemMenu  - system menu button and/or close button 
+                    ( usually with icon ) is shown
   bi::Minimize    - minimize button 
   bi::Maximize    - maximize ( and eventual restore )
   bi::TitleBar    - window title 
@@ -304,19 +305,27 @@ See L<Prima::Utils/query_drive_type>
   dt::Bottom                - text is aligned to the lower boundary 
   dt::VCenter               - text is aligned vertically in center
   dt::DrawMnemonic          - tilde-escapement and underlining is used 
-  dt::DrawSingleChar        - sets tw::BreakSingle option to Prima::Drawable::text_wrap call
-  dt::NewLineBreak          - sets tw::NewLineBreak option to Prima::Drawable::text_wrap call 
-  dt::SpaceBreak            - sets tw::SpaceBreak option to Prima::Drawable::text_wrap call  
-  dt::WordBreak             - sets tw::WordBreak option to Prima::Drawable::text_wrap call 
+  dt::DrawSingleChar        - sets tw::BreakSingle option to 
+                              Prima::Drawable::text_wrap call
+  dt::NewLineBreak          - sets tw::NewLineBreak option to 
+                              Prima::Drawable::text_wrap call 
+  dt::SpaceBreak            - sets tw::SpaceBreak option to 
+                              Prima::Drawable::text_wrap call  
+  dt::WordBreak             - sets tw::WordBreak option to 
+                              Prima::Drawable::text_wrap call 
   dt::ExpandTabs            - performs tab character ( \t ) expansion
   dt::DrawPartial           - draws the last line, if it is visible partially 
-  dt::UseExternalLeading    - text lines positioned vertically with respect to the font external leading
+  dt::UseExternalLeading    - text lines positioned vertically with respect to 
+                              the font external leading
   dt::UseClip               - assign ::clipRect property to the boundary rectangle
-  dt::QueryLinesDrawn       - calculates and returns number of lines drawn ( contrary to dt::QueryHeight )
-  dt::QueryHeight           - if set, calculates and returns vertical extension of lines drawn
+  dt::QueryLinesDrawn       - calculates and returns number of lines drawn 
+                              ( contrary to dt::QueryHeight )
+  dt::QueryHeight           - if set, calculates and returns vertical extension 
+                              of the lines drawn
   dt::NoWordWrap            - performs no word wrapping by the width of the boundaries
   dt::WordWrap              - performs word wrapping by the width of the boundaries 
-  dt::Default               - dt::NewLineBreak|dt::WordBreak|dt::ExpandTabs|dt::UseExternalLeading
+  dt::Default               - dt::NewLineBreak|dt::WordBreak|dt::ExpandTabs|
+                              dt::UseExternalLeading
 
 =head2 fdo:: - find / replace dialog options
 
@@ -414,13 +423,20 @@ See L<Prima::Widget/growMode>
 
 =item Basic constants
 
-  gm::GrowLoX      widget's left side is kept in constant distance from owner's right side
-  gm::GrowLoY      widget's bottom side is kept in constant distance from owner's top side 
-  gm::GrowHiX      widget's right side is kept in constant distance from owner's right side  
-  gm::GrowHiY      widget's top side is kept in constant distance from owner's top side  
-  gm::XCenter      widget is kept in center on its owner horizontal axis
-  gm::YCenter      widget is kept in center on its owner vertical axis 
-  gm::DontCare     widgets origin is maintained constant relative to the screen
+  gm::GrowLoX      widget's left side is kept in constant 
+                   distance from owner's right side
+  gm::GrowLoY      widget's bottom side is kept in constant 
+                   distance from owner's top side 
+  gm::GrowHiX      widget's right side is kept in constant 
+                   distance from owner's right side  
+  gm::GrowHiY      widget's top side is kept in constant 
+                   distance from owner's top side  
+  gm::XCenter      widget is kept in center on its owner's
+                   horizontal axis
+  gm::YCenter      widget is kept in center on its owner's
+                   vertical axis 
+  gm::DontCare     widgets origin is maintained constant relative 
+                   to the screen
 
 =item Derived or aliased constants
 
@@ -797,10 +813,13 @@ See also L<Prima::Application/get_system_value>
   sv::MousePresent     - 1 if the mouse is present, 0 otherwise
   sv::MouseButtons     - number of the mouse buttons
   sv::WheelPresent     - 1 if the mouse wheel is present, 0 otherwise
-  sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on an implicit selection
-  sv::FullDrag         - 1 if the top-level windows are dragged dynamically, 0 - with marquee mode
+  sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on 
+                         an implicit selection
+  sv::FullDrag         - 1 if the top-level windows are dragged dynamically, 
+                         0 - with marquee mode
   sv::DblClickDelay    - mouse double-click timeout in milliseconds
-  sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 0 otherwise
+  sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 
+                         0 otherwise
   sv::ColorPointer     - 1 if system accepts color pointer icons.
   sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
   sv::CanUTF8_Output   - 1 if system can output utf8 text
@@ -821,18 +840,22 @@ Used in: L<Prima::InputLine>, L<Prima::ImageViewer>, L<Prima::Label>, L<Prima::T
 
 See L<Prima::Drawable/text_wrap>
 
-  tw::CalcMnemonic    - calculates tilde underline position
-  tw::CollapseTilde   - removes escaping tilde from text
-  tw::CalcTabs        - wraps text with respect to tab expansion
-  tw::ExpandTabs      - expands tab characters
-  tw::BreakSingle     - determines if text is broken to single characters when text cannot be fit
-  tw::NewLineBreak    - breaks line on newline characters 
-  tw::SpaceBreak      - breaks line on space or tab characters
-  tw::ReturnChunks    - returns wrapped text chunks
-  tw::ReturnLines     - returns positions and lengths of wrapped text chunks
-  tw::WordBreak       - defines if text break by width goes by the characters or by the words
+  tw::CalcMnemonic          - calculates tilde underline position
+  tw::CollapseTilde         - removes escaping tilde from text
+  tw::CalcTabs              - wraps text with respect to tab expansion
+  tw::ExpandTabs            - expands tab characters
+  tw::BreakSingle           - determines if text is broken to single 
+                              characters when text cannot be fit
+  tw::NewLineBreak          - breaks line on newline characters 
+  tw::SpaceBreak            - breaks line on space or tab characters
+  tw::ReturnChunks          - returns wrapped text chunks
+  tw::ReturnLines           - returns positions and lengths of wrapped 
+                              text chunks
+  tw::WordBreak             - defines if text break by width goes by the 
+                              characters or by the words
   tw::ReturnFirstLineLength - returns length of the first wrapped line 
-  tw::Default         - tw::NewLineBreak|tw::CalcTabs|tw::ExpandTabs|tw::ReturnLines|tw::WordBreak) 
+  tw::Default               - tw::NewLineBreak|tw::CalcTabs|tw::ExpandTabs|
+                              tw::ReturnLines|tw::WordBreak 
 
 =head2 wc::  - widget classes
 
