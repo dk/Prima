@@ -549,13 +549,9 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
 Bool
 apc_widget_set_focused( Handle self)
 {
-   if ( apc_widget_is_showing( self)) {
-      XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
-      XCHECKPOINT;
-      return true;
-   } else {
-      return false;
-   }
+   XSetInputFocus( DISP, apc_widget_is_showing( self) ? X_WINDOW : None, RevertToParent, CurrentTime);
+   XCHECKPOINT;
+   return true;
 }
 
 Bool
