@@ -55,11 +55,12 @@ Popup_get_selected( Handle self)
 }
 
 void
-Popup_popup( Handle self, int x, int y)
+Popup_popup( Handle self, int x, int y, int ancLeft, int ancBottom, int ancRight, int ancTop)
 {
    int i;
    PWidget owner = ( PWidget) var owner;
    ColorSet color;
+   Rect anchor = {ancLeft, ancBottom, ancRight, ancTop};
    int stage = owner-> stage;
    owner-> stage = csFrozen;
    memcpy( color, owner-> popupColor, sizeof( ColorSet));
@@ -68,5 +69,5 @@ Popup_popup( Handle self, int x, int y)
    memcpy( owner-> popupColor, color, sizeof( ColorSet));
    apc_menu_set_font( self, &owner-> popupFont);
    owner-> stage = stage;
-   apc_popup( self, x, y);
+   apc_popup( self, x, y, &anchor);
 }
