@@ -390,6 +390,7 @@ Image_set_extended_data( Handle self, HV * profile)
       }   
       if ( !pexistType) { // plain repadding
          ibc_repad( data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 0, 0, nil);
+         my-> update_change( self);
          goto GOOD_RETURN;
       }   
    }
@@ -429,7 +430,7 @@ Image_set_extended_data( Handle self, HV * profile)
                  ( newType & imBPP) / 8, ( var-> type & imBPP) / 8, proc
                );
    }   
-
+   my-> update_change( self);
    // if wanted to keep original type, restoring
    if ( is_opt( optPreserveType))
       my-> set_type( self, oldType);
