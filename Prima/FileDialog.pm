@@ -1009,6 +1009,16 @@ sub Open_Click
          return;
       }
    }
+
+   if (( 1 == scalar(@files)) && !($files[0] =~ m/\./)) {
+# check if can authomatically add an extension
+       for ( split(';', $self-> {filter}-> [$self-> {filterIndex}]-> [1])) {
+          next unless m/^[\*\.]*([^;\.\*]+)/;
+          my $f = $files[0] . '.' . $1;
+          $files[0] = $f, last if !$self-> {openMode} || -f $f;
+       }
+   }
+
 # possible commands recognized, treating names as files
    for ( @files)
    {
