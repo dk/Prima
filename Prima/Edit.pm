@@ -789,10 +789,12 @@ sub on_mousemove
       return unless $self->scroll_timer_semaphore;
       $self->scroll_timer_semaphore(0);
    }
+   $self-> {delayPanning} = 1;
    $self-> {blockShiftMark}  = 1;
    $self-> cursor( @xy);
    $self-> {blockShiftMark}  = 0;
-   $self-> update_block unless $self->{mouseTransaction} == 2;
+   $self-> update_block unless $self-> {mouseTransaction} == 2;
+   $self-> realize_panning;
 }
 
 sub on_mousewheel
@@ -1062,6 +1064,17 @@ sub has_selection
    return !(($s[0] == $s[2]) && ( $s[1] == $s[3]));
 }
 
+sub realize_panning
+{
+   delete $_[0]-> {delayPanning};
+   for ( qw( firstCol offset)) {
+       my $c = 'delay_' . $_;
+       next unless defined $_[0]-> {$c};
+       $_[0]-> $_( $_[0]-> {$c});
+       delete $_[0]-> {$c};
+   }
+}
+
 sub set_cursor
 {
    my ( $self, $x, $y) = @_;
@@ -1113,6 +1126,10 @@ sub set_first_col
    $fc = $self->{maxChunk} if $fc >= $self->{maxChunk};
    $fc = 0 if $fc < 0;
    return if $self->{firstCol} == $fc;
+   if ( $self-> {delayPanning}) {
+      $self-> {delay_firstCol} = $fc;
+      return;
+   }
    my $dt = $fc - $self->{firstCol};
    $self->{firstCol} = $fc;
    if ( $self->{vScroll} && $self->{scrollTransaction} != 1) {
@@ -1227,6 +1244,10 @@ sub set_offset
    $offset = 0 if $offset < 0;
    $offset = 0 if $self-> {wordWrap};
    return if $self->{offset} == $offset;
+   if ( $self-> {delayPanning}) {
+      $self-> {delay_offset} = $offset;
+      return;
+   }
    my $dt = $offset - $self-> {offset};
    $self->{offset} = $offset;
    if ( $self->{hScroll} && $self->{scrollTransaction} != 2)
@@ -1780,10 +1801,12 @@ sub cursor_shift_key
    $menuItem =~ s/Shift//;
    my $action = $self-> accelTable-> action( $menuItem);
    $action = $self-> can( $action, 0) unless ref $action;
+   $self-> {delayPanning} = 1;
    $self->{blockShiftMark} = 1;
    $action-> ( @_);
    $self->{blockShiftMark} = 0;
    $self-> selection( @{$self->{anchor}}, $self->{cursorX}, $self->{cursorY});
+   $self-> realize_panning;
 }
 
 sub mark_vertical
