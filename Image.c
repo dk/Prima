@@ -930,6 +930,7 @@ Image_bitmap( Handle self)
    pset_i( width,        var->w);
    pset_i( height,       var->h);
    pset_sv( palette,     my->get_palette( self));
+   pset_i( monochrome,   (var-> type & imBPP) == 1);
    h = Object_create( "Prima::DeviceBitmap", profile);
    sv_free(( SV *) profile);
    CDrawable( h)-> put_image( h, 0, 0, self);
