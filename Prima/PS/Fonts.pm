@@ -236,6 +236,7 @@ sub font_pick
    my %muls = %$m2;
    my $charheight = $muls{height};
    my $du   = $dest-> {style} & fs::Underlined;
+   my $ds   = $dest-> {style} & fs::StruckOut;
    my $dw   = $dest-> {width};
    $muls{$_} = int ( $muls{$_} * $a + 0.5) for
      qw( height ascent descent width maximalWidth internalLeading externalLeading);
@@ -243,7 +244,8 @@ sub font_pick
    my $enc = $dest-> {encoding};
    $dest-> {$_}     = $muls{$_} for keys %muls;
    $dest-> {encoding} = $enc;
-   $dest-> {style} |= fs::Underlined if $du;  
+   $dest-> {style} |= fs::Underlined if $du;
+   $dest-> {style} |= fs::StruckOut if $ds;
    $dest-> {width} = $dw if $dw != 0;
    $dest-> {charheight} = $charheight; 
    return $dest;

@@ -961,7 +961,7 @@ sub text_out
       $self-> emit("$r R");
    }
    my @rb;
-   if ( $self-> textOpaque || $self-> {font}-> {style} & fs::Underlined) {
+   if ( $self-> textOpaque || $self-> {font}-> {style} & (fs::Underlined|fs::StruckOut)) {
       my ( $ds, $bs) = ( $self-> {font}-> {direction}, $self-> textOutBaseline);
       $self-> {font}-> {direction} = 0;
       $self-> textOutBaseline(1) unless $bs;
@@ -1009,9 +1009,16 @@ sub text_out
    #$text =~ s/([\\()])/\\$1/g;
    #$self-> emit("($text) S");
    
-   if ( $self-> {font}-> {style} & fs::Underlined) {
-      $self-> emit("[] 0 SD 0 SL 0 SW");
-      $self-> emit("N @rb[0,3] M $rb[4] 0 L O");
+   if ( $self-> {font}-> {style} & (fs::Underlined|fs::StruckOut)) {
+      my $lw = $self->{font}->{size}/30; # XXX empiric
+      $self-> emit("[] 0 SD 0 SL $lw SW");
+      if ( $self-> {font}-> {style} & fs::Underlined) {
+         $self-> emit("N @rb[0,3] M $rb[4] 0 L O");
+      }
+      if ( $self-> {font}-> {style} & fs::StruckOut) {
+         $rb[3] += $rb[1]/2;
+         $self-> emit("N @rb[0,3] M $rb[4] 0 L O");
+      }
    }
    $self-> emit(";");
    return 1;
@@ -1333,9 +1340,10 @@ sub plate
 {
    my $self = $_[0];
    return $self-> {plate} if $self-> {plate};
+   return {ABC => []} if $self->{useDeviceFontsOnly};
    my ( $dimx, $dimy) = ( $self-> {font}-> {maximalWidth}, $self-> {font}-> {height});
    my %f = %{$self-> {font}};
-   $f{style} &= ~fs::Underlined;
+   $f{style} &= ~(fs::Underlined|fs::StruckOut);
    if ( $self-> {useDeviceFonts} && exists $Prima::PS::Fonts::files{$f{name}}) {
       $f{name} =~ s/^([^-]+)\-.*$/$1/;
       $f{pitch} = fp::Default unless $f{pitch} == fp::Fixed;
@@ -1363,8 +1371,8 @@ sub plate
 
 sub plate_glyph
 {
-   my $z = $_[0]-> plate;
    return '' if $_[0]-> {useDeviceFontsOnly};
+   my $z = $_[0]-> plate;
    my $x = $_[1];
    my $d  = $z-> font-> descent;
    my ( $dimx, $dimy) = $z-> size;
