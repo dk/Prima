@@ -133,6 +133,7 @@ sub on_keyup
       $self-> capture(0) if $self->{mouseTransaction};
       $self->{mouseTransaction} = undef;
       $self-> pressed( 0);
+      $self-> update_view;
       $self-> clear_event;
       $self-> notify( 'Click')
    }
@@ -187,6 +188,7 @@ sub on_mouseup
    $self-> pressed( 0);
    if ( $x > 0 && $y > 0 && $x < $size[0] && $y < $size[1] ) {
       $self-> clear_event;
+      $self-> update_view;
       $self-> notify( 'Click');
    }
 }
