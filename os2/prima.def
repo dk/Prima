@@ -1,0 +1,6 @@
+; $ Id $
+
+name Prima WindowApi
+description "Prima for OS/2 version 2.00, (C) Copyright the Protein Laboratory 1997"
+; stacksize 0x2000000
+stacksize 0x200000

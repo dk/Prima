@@ -1,0 +1,24 @@
+; $ Id $
+
+LIBRARY PRIGRAPH
+CODE LOADONCALL
+DATA LOADONCALL NONSHARED MULTIPLE
+EXPORTS
+  gbm_init
+  gbm_deinit
+  gbm_io_setup
+  gbm_io_open
+  gbm_io_create
+  gbm_io_close
+  gbm_io_lseek
+  gbm_io_read
+  gbm_io_write
+  gbm_query_n_filetypes
+  gbm_query_filetype
+  gbm_guess_filetype
+  gbm_read_header
+  gbm_read_palette
+  gbm_read_data
+  gbm_write
+  gbm_err
+  gbm_version
