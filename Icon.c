@@ -12,7 +12,7 @@ extern void ic_rgb_byte_ictNone( Handle, void *, PRGBColor, int);
 
 
 void
-produce_mask ( Handle self, Bool useMask)
+produce_mask( Handle self, Bool useMask)
 {
    Byte * area8 = var data;
    Byte * dest = var mask;
@@ -161,6 +161,7 @@ colorFound:;
 
    var palette[ color]. r = var palette[ color]. b = var palette[ color]. g = 0;
 }
+
 
 void
 Icon_update_change( Handle self)
