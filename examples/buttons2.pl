@@ -106,9 +106,9 @@ $w-> insert( Button =>
          $i-> begin_paint;
          $self-> notify(q(Paint), $i);
          $i-> end_paint;
-         $::application-> clipboard-> image($i);
+         $::application-> Clipboard-> image($i);
       } else {
-         my $i = $::application-> clipboard-> image;
+         my $i = $::application-> Clipboard-> image;
          $self-> set(
             glyphs     => 1,
             imageScale => 1,

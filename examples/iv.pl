@@ -85,10 +85,10 @@ sub menuadd
          [
            ['~Edit' => [
               ['~Copy' => 'Ctrl+Ins' => km::Ctrl|kb::Insert => sub {
-                 $::application-> clipboard->image($_[0]->IV->image)
+                 $::application-> Clipboard->image($_[0]->IV->image)
               }],
               ['~Paste' => 'Shift+Ins' => km::Shift|kb::Insert => sub {
-                 my $i = $::application-> clipboard->image;
+                 my $i = $::application-> Clipboard->image;
                  $_[0]->IV->image( $i) if $i;
                  status($_[0]);
               }],
