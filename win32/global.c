@@ -174,6 +174,8 @@ window_subsystem_init()
       free( kl);
    }
    guts. currentKeyState = guts. keyState;
+   guts. smDblClk. x = GetSystemMetrics( SM_CXDOUBLECLK);
+   guts. smDblClk. y = GetSystemMetrics( SM_CYDOUBLECLK);
    return true;
 }
 
@@ -226,7 +228,7 @@ static Bool move_back( PWidget self, PWidget child, int * delta)
    RECT r;
    int oStage = child-> stage;
 
-   if (( child-> growMode & gfDontCare) || !dsys( child) options. aptClipOwner)
+   if (( child-> growMode & gmDontCare) || !dsys( child) options. aptClipOwner)
       return false;
 
    child-> stage = csFrozen;
@@ -267,6 +269,39 @@ find_oid( PAbstractMenu menu, PMenuItemReg m, int id)
    return m-> down && ( m-> down-> id == id);
 }
 
+static void
+propagate( Handle self, UINT msg, PEvent ev, WPARAM mp1, LPARAM mp2)
+{
+   HWND prop, org = HANDLE;
+
+   if ( !is_apt( aptClipOwner) || ( var owner == application))
+      return;
+
+   if ( !( self = var owner))
+      return;
+
+   prop = HANDLE;
+
+   if (( ev-> cmd != cmKeyDown) && ( ev-> cmd != cmKeyUp)) {
+      RECT r;
+      POINT pt = {(short)LOWORD( mp2), (short)HIWORD( mp2)};
+      GetWindowRect( prop, &r);
+      MapWindowPoints( NULL, prop, ( POINT*) &r, 2);
+      r. right--;
+      r. bottom--;
+      MapWindowPoints( org, prop, &pt, 1);
+
+      if (( pt. x < 0) || ( pt. y < 0) || ( pt. x > r. right) || ( pt. y > r. bottom)) {
+         if ( GetCapture() != prop)
+            return;
+      }
+
+      mp2 = MAKELPARAM( pt. x, pt. y);
+   }
+
+   PostMessage( prop, msg, mp1, mp2);
+}
+
 
 LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {
@@ -303,10 +338,6 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_CLOSE:
       if ( sys className != WC_FRAME)
          return 0;
-      break;
-   case WM_COLORCHANGED:
-      ev. cmd = cmColorChanged;
-      ev. gen. i = ( int) mp1;
       break;
    case WM_COMMAND:
       if (( HIWORD( mp1) == 0 /* menu source */) && ( mp2 == 0)) {
@@ -351,9 +382,6 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       }
       return 0;
 #endif
-   case WM_FONTCHANGED:
-      ev. cmd = cmFontChanged;
-      break;
    case WM_FORCEFOCUS:
       if ( mp2)
          ((( PWidget) mp2)-> self)-> set_selected(( Handle) mp2, 1);
@@ -466,6 +494,10 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_MMOUSECLICK:
       ev. pos. button = mbMiddle;
       goto MB_CLICK;
+   case WM_MOUSEWHEEL:
+      ev. cmd         = cmMouseWheel;
+      ev. pos. button = ( short) HIWORD( mp1);
+      goto MB_MAIN;
    case WM_MOUSEMOVE:
       ev. cmd = cmMouseMove;
       if ( self != lastMouseOver) {
@@ -676,18 +708,22 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       break;
    case WM_PAINT:
       return 0;
-   case WM_LBUTTONDBLCLK: case WM_LBUTTONUP: case WM_LBUTTONDOWN:
-   case WM_MBUTTONDBLCLK: case WM_MBUTTONUP: case WM_MBUTTONDOWN:
-   case WM_RBUTTONDBLCLK: case WM_RBUTTONUP: case WM_RBUTTONDOWN:
+   case WM_LBUTTONDBLCLK: case WM_LBUTTONUP:   case WM_LBUTTONDOWN:
+   case WM_MBUTTONDBLCLK: case WM_MBUTTONUP:   case WM_MBUTTONDOWN:
+   case WM_RBUTTONDBLCLK: case WM_RBUTTONUP:   case WM_RBUTTONDOWN:
+   case WM_RMOUSECLICK:   case WM_MMOUSECLICK: case WM_LMOUSECLICK:
+   case WM_MOUSEWHEEL:
    case WM_KEYDOWN:       case WM_KEYUP:
-       if ( ev. cmd == 0)
-       {
-          return ( LRESULT)1;
-       }
-       break;
+      if ( ev. cmd == 0)
+         return ( LRESULT)1;
+// propagate message
+      propagate( self, orgMsg, &ev, mp1, mp2);
+      break;
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
        ev. cmd = 1; // force call DefWindowProc
+       if ( ev. cmd)
+          propagate( self, orgMsg, &ev, mp1, mp2);
        break;
    case WM_MOUSEMOVE:
       if ( is_apt( aptEnabled)) SetCursor( sys pointer);
