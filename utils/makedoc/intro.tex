@@ -1,0 +1,82 @@
+% $Id$
+\documentclass{report}
+
+\usepackage[a4paper]{geometry}
+\usepackage{makeidx}
+\makeindex
+\usepackage{graphicx}
+
+\begin{document}
+\author{Dmitry Karasik}
+\title{Prima - the perl graphic toolkit}
+\maketitle
+\thispagestyle{empty}
+\clearpage
+
+\tableofcontents
+\sloppy
+
+\chapter{Introduction}
+
+\subsubsection{Preface}
+
+Prima is an extensible Perl toolkit for multi-platform GUI development.
+Platforms supported include Linux, Windows NT/9x/2K, OS/2 and UNIX/X11 
+workstations (FreeBSD, IRIX, SunOS, Solaris and others).
+The toolkit contains a rich set of standard widgets and has emphasis on 2D 
+image processing tasks. A Perl program using PRIMA looks and behaves identically 
+on X, Win32 and OS/2 PM.
+
+The Prima project was started in 1997 in Protein Laboratory, Copenhagen,
+by Anton Berezin, Dmitry Karasik, and Vadim Belman.
+
+This document describes programming with Prima graphic toolkit, and is a
+collection of manual pages of Prima application program interface ( API ),
+written by D.Karasik, except Prima::IniFile and Prima::ScrollBar, written
+by A.Berezin.
+
+\subsubsection{Requirements}
+
+Prima supports perl versions 5.004 and above. The recommended perl 
+versions are 5.005 and above. In UNIX(tm) environments, Prima can use 
+the following graphic libraries: libjpeg, libungif, libtiff, libpng, libXpm.
+
+\subsubsection{Installation}
+
+The toolkit can be downloaded from \texttt{http://www.prima.eu.org} in
+source and binary forms. Before installing, check the content of README file
+in the distribution. The installation from the source is performed by
+executing commands
+\begin{verbatim}
+  perl Makefile.PL
+  make
+  make test
+  make install
+\end{verbatim}
+
+There is a mailing list dedicated for various Prima-related discussions, 
+prima@prima.eu.org. This list is also a proper place to send bug reports to. 
+To subscribe to the list, send mail to \texttt{<majordomo@prima.eu.org>} and 
+include \texttt{subscribe prima <optional address>} in the body of your message.
+
+\subsubsection{Authors}
+
+Dmitry Karasik \texttt{dmitry@karasik.eu.org},
+Anton Berezin \texttt{tobez@tobez.org},
+Vadim Belman \texttt{voland@lflat.org}.
+
+\subsubsection{Credits}
+
+David Scott
+Kai Fiebach
+Johannes Blankenstein
+Teo Sankaro
+Mike Castle
+H.Merijn Brand
+Richard Morgan
+
+\subsubsection{Copyright}
+
+(c) 1997-2003 The Protein Laboratory, University of Copenhagen
+(c) 1997-2004 Dmitry Karasik
+
