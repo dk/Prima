@@ -73,7 +73,13 @@ x_error_handler( Display *d, XErrorEvent *ev)
 	 tail = 0;
    }
 
-   if ( ev-> request_code == 42 /*X_SetInputFocus*/) return 0;
+   switch ( ev-> request_code) {
+   case 38: /* X_QueryPointer - apc_event uses sequence of XQueryPointer calls,
+               to find where the pointer belongs. The error is raised when one
+               of the windows disappears . */
+   case 42: /* X_SetInputFocus */
+      return 0;
+   }
 
    if ( ev-> request_code == guts. xft_xrender_major_opcode &&
         ev-> request_code > 127 && 

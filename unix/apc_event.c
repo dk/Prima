@@ -277,12 +277,14 @@ syntetic_mouse_move( void)
 {
    XMotionEvent e, last;
    e. root = guts. root;
-   e. window = None;
+   last. window = e. window = None;
    while ( 1) {
+      Bool ret;
       last = e;
-      XQueryPointer( DISP, e.root, &e. root, &e. window, &e.x_root, 
+      ret = XQueryPointer( DISP, e.root, &e. root, &e. window, &e.x_root, 
                      &e.y_root, &e.x, &e.y, &e. state);
-      if ( e. window == None) {
+      XCHECKPOINT;
+      if ( !ret || e. window == None) {
          e. window = last. window;
          break;
       }
