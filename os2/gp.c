@@ -596,7 +596,7 @@ apc_gp_get_font_ranges( Handle self, int * count)
    FONTMETRICS fm;
    unsigned long * ret = malloc( sizeof( unsigned long) * 2);
    if ( !ret) return nil;
-   if ( !GpiQueryFontMetrics( ps, sizeof( fm), &fm)) {
+   if ( !GpiQueryFontMetrics( sys ps, sizeof( fm), &fm)) {
        free( ret);
        apiErr;
        return nil;
