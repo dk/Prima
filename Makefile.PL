@@ -124,6 +124,8 @@ use vars qw(
     $extralibs
 );
 
+my $extramsg = "(see makefile.log for details)";
+
 sub print_config
 {
     foreach my $var ( sort keys %Config) {
@@ -154,7 +156,7 @@ sub quoted_split
 
 sub fatal
 {
-    open ERRLOG, ">". qd "$CWD/Makefile.err";
+    open ERRLOG, ">". qd "$CWD/makefile.log";
     print ERRLOG @_;
     close ERRLOG;
     die @_;
@@ -225,11 +227,12 @@ sub null_output
     open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
     open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
 #    $NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
+#    $NULLDEV = ( $Win32 || $OS2) ? "NUL" : "/dev/null";
     if ( $^O !~ /linux/) {
         close STDOUT;
         close STDERR;
     }
-    open STDOUT, ">$NULLDEV" or fatal "STDOUT redirect failed: $!";
+    open STDOUT, ">>$NULLDEV" or fatal "STDOUT redirect failed: $!";
     open STDERR, ">&STDOUT" or fatal "STDERR redirect failed: $!";
 }
 
@@ -256,7 +259,7 @@ sub compile
        qd( tempfile( "$TMPDIR/pmts%04d.pdb")),
     );
 
-    open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
+    open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $extramsg";
     print TMPSRC $text;
     close TMPSRC;
 
@@ -328,7 +331,7 @@ EOF
 sub have_func
 {
     my ( $funcname, @headers) = @_;
-    die "have_func() without any header is deprecated" unless @headers;
+    die "have_func() without any header is deprecated $extramsg" unless @headers;
     my $defname = "HAVE_" . uc $funcname;
     my @srchead = map { "#include <$_>\n"} @headers;
     $defname =~ s/\W/_/g;
@@ -366,7 +369,7 @@ sub have_define
     else {
         $tmpo =~ s/\.c$/\.o/;
     }
-    open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
+    open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $extramsg";
     print TMPSRC <<EOF;
 int
 main()
@@ -570,7 +573,7 @@ sub setup_variables
                 );
 
     setvar( 'TMPDIR', $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp"));
-    setvar( 'NULLDEV', $Win32 ? "NUL" : "/dev/null");
+    setvar( 'NULLDEV', 'makefile.log');
 
     setvar( 'CC', $Config{ cc});
     print "Determining compiler type... ";
@@ -713,7 +716,16 @@ sub setup_variables
     $extralibs = '';
     $extralibs = qd("auto/Prima/Prima.lib") if $OS2;
     setvar( 'DEFFILE', $Win32 ? qd( "win32/Prima.def") : ( $OS2 ? qd( "os2/Prima.def") : ''));
-    setvar( 'DISTNAME', 'Prima-1.00');
+    open F, 'Prima.pm' or die "Cannot open Prima.pm:$!\n";
+    my $ver;
+    while (<F>) {
+       next unless m/\$VERSION[^\.\d]*([\.\d]+)/;
+       $ver = $1, last;
+    }
+    close F;
+    die "Cannot find VERSION string in Prima.pm\n" unless defined $ver;
+    print "Version: $ver\n";
+    setvar( 'DISTNAME', "Prima-$ver");
     setvar( 'WANTNOCODECS', 0);
 
     @Prima_exports = qw(
@@ -1045,11 +1057,11 @@ sub setup_paths
     if ( $NeedX11) {
         push @INCPATH, ( qd( "/usr/include"), qd( "/usr/local/include"));
         my $incpath = find_header( qd( "X11/Xlib.h"), qd( "/usr/X11R6/include"), qd( "/usr/X11/include"));
-        die "Prima needs X11 headers for compilation! Perhaps, you have non-standard path to X11?\n" unless defined $incpath;
+        die "Prima needs X11 headers for compilation! Perhaps, you have non-standard path to X11? $extramsg\n" unless defined $incpath;
         print "X11 includes found in $incpath\n";
         push @INCPATH, $incpath;
         my $libpath = find_lib( "X11", "/usr/X11R6/lib", "/usr/X11/lib");
-        die "Prima needs X11 libraries for compilation! Perhaps, you have non-standard path to X11?\n" unless defined $libpath;
+        die "Prima needs X11 libraries for compilation! Perhaps, you have non-standard path to X11?  $extramsg\n" unless defined $libpath;
         print "X11 libraries found in $libpath\n";
         push @LIBPATH, $libpath;
         push @LIBS, 'X11';
@@ -1060,7 +1072,7 @@ sub setup_paths
     }
     else {
         my $libpath = find_lib( $Config{ libperl}, "", qd( "$Config{ archlib}/CORE"));
-        die "Cannot find perl library" unless defined $libpath;
+        die "Cannot find perl library $extramsg\n" unless defined $libpath;
         print "Perl library found in ", ( $libpath || "default LIBPATH"), "\n";
         push @LIBPATH, $libpath if $libpath;
         push @LIBS, $Config{ libperl};
@@ -1096,7 +1108,7 @@ sub setup_defines
     if ( $OS2 && defined $ENV{ PRIMA_PMPRINTF}) {
         if ( have_header( "pmprintf.h", "os2.h")) {
             my $libpath = find_lib( 'pmprintf', "");
-            die "There is no library for pmprintf" unless defined $libpath;
+            die "There is no library for pmprintf  $extramsg\n" unless defined $libpath;
             push @LIBS, 'pmprintf';
         }
         else {
