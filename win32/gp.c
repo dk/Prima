@@ -137,7 +137,7 @@ int
 arc_completion( double angleStart, double angleEnd, int * needFigure)
 {
    int max;
-   double diff = abs( angleEnd - angleStart);
+   double diff = fabs( angleEnd - angleStart);
    if ( diff == 0) {
       *needFigure = false;
       return 0;
