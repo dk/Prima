@@ -40,13 +40,14 @@
 use Carp;
 use Prima::Const;
 use Prima::Classes;
+use Prima::IntUtils;
 use Prima::StdBitmap;
 use strict;
 
 
 package Prima::AbstractButton;
 use vars qw(@ISA);
-@ISA = qw(Prima::Widget);
+@ISA = qw(Prima::Widget Prima::MouseScroller);
 
 {
 my %RNT = (
@@ -164,6 +165,7 @@ sub on_mousedown
    $self-> pressed( 1);
    $self-> capture(1);
    $self-> clear_event;
+   $self-> scroll_timer_start if $self->{autoRepeat};
 }
 
 sub on_mouseclick
@@ -199,10 +201,16 @@ sub on_mousemove
 {
    my ( $self, $mod, $x, $y) = @_;
    return unless $self->{mouseTransaction};
+   return if $self-> {autoRepeat} && !$self-> scroll_timer_semaphore;
    my @size = $self-> size;
    my $mouseOver = $x > 0 && $y > 0 && $x < $size[0] && $y < $size[1];
    $self-> pressed( $mouseOver) if $self-> { lastMouseOver} != $mouseOver;
    $self-> { lastMouseOver} = $mouseOver;
+   return unless $self->{autoRepeat};
+   $self-> scroll_timer_stop, return unless $mouseOver;
+   $self-> scroll_timer_start, return unless $self-> scroll_timer_active;
+   $self-> scroll_timer_semaphore(0);
+   $self-> notify(q(Click));
 }
 
 sub set_pressed
@@ -325,6 +333,7 @@ sub profile_default
       pressedGlyph  => 2,
       holdGlyph     => 3,
       flat          => 0,
+      autoRepeat    => 0,
       widgetClass   => wc::Button,
    }
 }
@@ -343,7 +352,7 @@ sub init
    $self->{$_} = 0 for ( qw(
      borderWidth checkable checked default glyphs
      vertical defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
-     flat modalResult
+     flat modalResult autoRepeat
    ));
    $self->{imageScale} = 1;
    $self->{image} = undef;
@@ -354,7 +363,7 @@ sub init
    $self->$_( $profile{$_}) for ( qw(
      borderWidth checkable checked default imageScale glyphs
      vertical defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
-     flat modalResult
+     flat modalResult autoRepeat
    ));
    return %profile;
 }
@@ -573,6 +582,12 @@ sub set_image_file
    return unless $img-> load(@fp);
    $self->{imageFile} = $file;
    $self->image($img);
+}
+
+sub autoRepeat
+{
+   return $_[0]-> {autoRepeat} unless $#_;
+   $_[0]-> {autoRepeat} = $_[1];
 }
 
 sub borderWidth  {($#_)?$_[0]->set_border_width($_[1]):return $_[0]->{borderWidth} }
