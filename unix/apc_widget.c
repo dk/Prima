@@ -149,15 +149,13 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint,
    return true;
 }
 
+#define VIRGIN_GC_MASK (GCLineWidth|GCBackground|GCForeground|GCFunction|GCClipMask)
+
 Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 {
    DEFXX;
-   unsigned long mask = GCLineWidth
-      | GCBackground
-      | GCForeground
-      | GCFunction
-      | GCClipMask;
+   unsigned long mask = VIRGIN_GC_MASK;
 
    XX-> paintRop = XX-> rop;
    XX-> savedFont = PDrawable( self)-> font;
@@ -421,10 +419,36 @@ apc_widget_screen_to_client( Handle self, Point p)
 }
 
 void
-apc_widget_scroll_rect( Handle self, int horiz, int vert,
-			Rect r, Bool withChildren)
+apc_widget_scroll( Handle self, int horiz, int vert,
+		   Rect *r, Bool withChildren)
 {
-   DOLBUG( "apc_widget_scroll_rect()\n");
+   DEFXX;
+   int src_x, src_y, w, h, dst_x, dst_y;
+
+   if ( r) {
+      src_x = r-> left;
+      src_y = XX-> size. y - r-> top;
+      w = r-> right - src_x;
+      h = r-> top - r-> bottom;
+   } else {
+      src_x = 0;
+      src_y = 0;
+      w = XX-> size. x;
+      h = XX-> size. y;
+   }
+   dst_x = src_x + horiz;
+   dst_y = src_y - vert;
+
+   prima_get_gc( XX);
+   XX-> gcv. clip_mask = None;
+   XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &XX-> gcv);
+   XCHECKPOINT;
+
+   XCopyArea( DISP, XX-> drawable, XX-> drawable, XX-> gc,
+	      src_x, src_y, w, h, dst_x, dst_y);
+   XCHECKPOINT;
+
+   prima_release_gc( XX);
 }
 
 void
