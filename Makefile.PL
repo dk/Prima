@@ -163,10 +163,11 @@ sub cc_command_line
     push @cc, split ' ', $CDLFLAGS if $dl;
     push @cc, $COMPONLYFLAG if $compile_only;
     push @cc, map( { "$CINCPATHFLAG$_"} @INCPATH);
-    for ( keys %DEFINES) {
-       next unless $DEFINES{$_};
-       push @cc, "$CDEFFLAG$_=$DEFINES{$_}";
-    }
+#    for ( keys %DEFINES) {
+#       next unless $DEFINES{$_};
+#       push @cc, "$CDEFFLAG$_=$DEFINES{$_}";
+#    }
+    push @cc, "${ CDEFFLAG}HAVE_CONFIG_H=1";
     push @cc, "${CDEFFLAG}PRIGRAPH" if $usePrigraph;
     push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
     push @cc, "$COUTOFLAG$objf" if $Win32 && ! $compile_only;
@@ -253,14 +254,14 @@ sub have_header
 {
     my $header = shift;
     (my $defname = "HAVE_" . uc $header) =~ s/\W/_/g;
-    return $DEFINES{$defname} if defined $DEFINES{$defname};
+    return $DEFINES{$defname} if exists $DEFINES{$defname};
     my @pre_headers = map { "#include <$_>\n" } @_;
     print "Checking for presence of $header... ";
     my $present = compile( <<EOF, 1);
 @pre_headers
 #include <$header>
 EOF
-    $DEFINES{ $defname} = 0;
+    $DEFINES{ $defname} = undef;
     $DEFINES{ $defname} = 1 if $present;
     print( $present ? "yes" : "no", "\n");
     return $present;
@@ -323,7 +324,7 @@ EOF
         $DEFINES{ $defname} = 1;
         print "yes\n";
     } else {
-        $DEFINES{ $defname} = 0;
+        $DEFINES{ $defname} = undef;
         print "no\n";
     }
     return $rc;
@@ -385,6 +386,7 @@ EOF
         print "yes\n";
     }
     else {
+	$DEFINES{ $defname} = undef;
         print "no\n";
     }
     return $rc;
@@ -1246,6 +1248,16 @@ EOF
 
     my $thunks_tinc = qd( "include/generic/thunks.tinc");
     push @allclean, $thunks_tinc;
+
+    print "Creating include/generic/config.h\n";
+    unless ( -d "include/generic") {
+        mkdir "include/generic", 0777;
+    }
+    open CONFIG, ">include/generic/config.h" or die "Creation of config.h failed: $!";
+    foreach my $define ( sort keys %DEFINES) {
+        print CONFIG "#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
+    }
+    close CONFIG;
 
     print "Writing Makefile...";
     $make =~ tr[/][]s;
