@@ -1344,7 +1344,10 @@ sub open
       image  => $VB::main-> {savebutton}-> image,
       glyphs => $VB::main-> {savebutton}-> glyphs,
       onClick => sub {
-         my $dlg  = $VB::save_dialog;
+         my $dlg  = VB::save_dialog( filter => [
+            [ 'Text files' => '*.txt'],
+            [ 'All files' => '*'],
+         ]);
          if ( $dlg-> execute) {
             my $f = $dlg-> fileName;
             if ( open F, ">$f") {
