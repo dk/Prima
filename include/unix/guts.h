@@ -135,6 +135,13 @@ typedef struct _gc_list
    struct _drawable_sys_data *holder;
 } GCList;
 
+typedef struct pending_event
+{
+   Handle recipient;
+   Event event;
+   TAILQ_ENTRY(pending_event) peventq_link;
+} PendingEvent;
+
 struct _UnixGuts
 {
    /* Event management */
@@ -145,6 +152,7 @@ struct _UnixGuts
    long                         handled_events;
    Time                         last_time;
    int                          max_fd;
+   TAILQ_HEAD(,pending_event)   peventq;
    fd_set                       read_set;
    long                         total_events;
    long                         skipped_events;

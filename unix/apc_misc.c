@@ -1114,9 +1114,24 @@ apc_help_set_file( Handle self, const char* helpFile)
 /* Messages */
 
 Bool
-apc_message( Handle self, PEvent ev, Bool post)
+apc_message( Handle self, PEvent e, Bool is_post)
 {
-   DOLBUG( "apc_message()\n");
+   PendingEvent *pe;
+
+   switch ( e-> cmd) {
+   case cmPost:
+      if ( is_post) {
+         pe = alloc1(PendingEvent);
+         memcpy( &pe->event, e, sizeof(pe->event));
+         pe-> recipient = self;
+         TAILQ_INSERT_TAIL( &guts.peventq, pe, peventq_link);
+      } else {
+         CComponent(self)->message( self, e);
+      }
+      break;
+   default:
+      croak( "UAM_000: not implemented");
+   }
    return true;
 }
 

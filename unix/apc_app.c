@@ -220,6 +220,7 @@ window_subsystem_init( void)
    XCHECKPOINT;
 
    TAILQ_INIT( &guts.paintq);
+   TAILQ_INIT( &guts.peventq);
    guts. clipboards = hash_create();
    guts. windows = hash_create();
    guts. menu_windows = hash_create();
@@ -545,6 +546,27 @@ perform_pending_paints( void)
    }
 }
 
+static void
+send_pending_events( void)
+{
+   PendingEvent *pe, *next;
+   int stage;
+
+   for ( pe = TAILQ_FIRST( &guts.peventq); pe != nil; ) {
+      next = TAILQ_NEXT( pe, peventq_link);
+      if (( stage = PComponent( pe->recipient)-> stage) != csConstructing) {
+         TAILQ_REMOVE( &guts.peventq, pe, peventq_link);
+      }
+      if ( stage == csNormal) {
+         CWidget( pe->recipient)-> message( pe-> recipient, &pe-> event);
+      }
+      if ( stage != csConstructing) {
+         free( pe);
+      }
+      pe = next;
+   }
+}
+
 Bool
 one_loop_round( Bool wait)
 {
@@ -679,6 +701,7 @@ FetchAndProcess:
          XFlush( DISP);
       }
    }
+   send_pending_events();
    perform_pending_paints();
    kill_zombies();
    return application != nilHandle;
