@@ -595,9 +595,12 @@ void Widget_handle_event( Handle self, PEvent event)
                  my-> clear_event( self);
                  return;
               }
-              if ( var-> owner && var-> owner != application)
+              if ( var-> owner)
               {
-                 ev. key. subcmd = 0;
+                 if ( var-> owner == application)
+                    ev. cmd = cmTranslateAccel;
+                 else
+                    ev. key. subcmd = 0;
                  ev. key. source = self;
                  if (!(((( PWidget) var-> owner)-> self)-> message( var-> owner, &ev))) {
                     objCheck;
@@ -608,7 +611,7 @@ void Widget_handle_event( Handle self, PEvent event)
            break;
            case 1: {
               Event ev = *event;
-              ev. cmd         = cmTranslateAccel;
+              ev. cmd  = cmTranslateAccel;
               if ( my-> first_that( self, accel_notify, &ev)) {
                  my-> clear_event( self);
                  return;
