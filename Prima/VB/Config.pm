@@ -28,7 +28,7 @@ package Prima::VB::Config;
 
 sub pages
 {
-   return qw(General Additional Abstract);
+   return qw(General Additional Sliders Abstract);
 }
 
 sub classes
@@ -65,14 +65,14 @@ sub classes
    Prima::SpinButton => {
       icon     => 'VB::classes.gif:23',
       RTModule => 'Prima::Sliders',
-      page     => 'Additional',
+      page     => 'Sliders',
       module   => 'Prima::VB::CoreClasses',
       class    => 'Prima::VB::SpinButton',
    },
    Prima::AltSpinButton => {
       icon     => 'VB::classes.gif:24',
       RTModule => 'Prima::Sliders',
-      page     => 'Additional',
+      page     => 'Sliders',
       module   => 'Prima::VB::CoreClasses',
       class    => 'Prima::VB::AltSpinButton',
    },
@@ -107,7 +107,7 @@ sub classes
    Prima::Slider => {
       icon     => 'VB::classes.gif:22',
       RTModule => 'Prima::Sliders',
-      page     => 'Additional',
+      page     => 'Sliders',
       module   => 'Prima::VB::CoreClasses',
       class    => 'Prima::VB::Slider',
    },
@@ -135,7 +135,7 @@ sub classes
    Prima::Gauge => {
       icon     => 'VB::classes.gif:9',
       RTModule => 'Prima::Sliders',
-      page     => 'Additional',
+      page     => 'Sliders',
       module   => 'Prima::VB::CoreClasses',
       class    => 'Prima::VB::Gauge',
    },
@@ -191,7 +191,7 @@ sub classes
    Prima::CircularSlider => {
       icon     => 'VB::classes.gif:4',
       RTModule => 'Prima::Sliders',
-      page     => 'Additional',
+      page     => 'Sliders',
       module   => 'Prima::VB::CoreClasses',
       class    => 'Prima::VB::CircularSlider',
    },
@@ -219,7 +219,7 @@ sub classes
    Prima::SpinEdit => {
       icon     => 'VB::classes.gif:25',
       RTModule => 'Prima::Sliders',
-      page     => 'Additional',
+      page     => 'Sliders',
       module   => 'Prima::VB::CoreClasses',
       class    => 'Prima::VB::SpinEdit',
    },
@@ -257,6 +257,20 @@ sub classes
       page     => 'Abstract',
       module   => 'Prima::VB::CoreClasses',
       class    => 'Prima::VB::ListViewer',
+   },
+   Prima::Header => {
+      icon     => 'VB::classes.gif:30',
+      RTModule => 'Prima::Header',
+      page     => 'Sliders',
+      module   => 'Prima::VB::CoreClasses',
+      class    => 'Prima::VB::Header',
+   },
+   Prima::DetailedList => {
+      icon     => 'VB::classes.gif:31',
+      RTModule => 'Prima::DetailedList',
+      page     => 'General',
+      module   => 'Prima::VB::CoreClasses',
+      class    => 'Prima::VB::DetailedList',
    },
    );
 }

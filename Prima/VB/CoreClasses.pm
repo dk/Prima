@@ -25,6 +25,7 @@
 #
 # $Id$
 package Prima::VB::CoreClasses;
+use strict;
 
 sub classes
 {
@@ -146,37 +147,37 @@ sub classes
       'Prima::SpinButton' => {
          RTModule => 'Prima::Sliders',
          class  => 'Prima::VB::SpinButton',
-         page   => 'Additional',
+         page   => 'Sliders',
          icon   => 'VB::classes.gif:23',
       },
       'Prima::AltSpinButton' => {
          RTModule => 'Prima::Sliders',
          class  => 'Prima::VB::AltSpinButton',
-         page   => 'Additional',
+         page   => 'Sliders',
          icon   => 'VB::classes.gif:24',
       },
       'Prima::SpinEdit' => {
          RTModule => 'Prima::Sliders',
          class  => 'Prima::VB::SpinEdit',
-         page   => 'Additional',
+         page   => 'Sliders',
          icon   => 'VB::classes.gif:25',
       },
       'Prima::Gauge' => {
          RTModule => 'Prima::Sliders',
          class  => 'Prima::VB::Gauge',
-         page   => 'Additional',
+         page   => 'Sliders',
          icon   => 'VB::classes.gif:9',
       },
       'Prima::Slider' => {
          RTModule => 'Prima::Sliders',
          class  => 'Prima::VB::Slider',
-         page   => 'Additional',
+         page   => 'Sliders',
          icon   => 'VB::classes.gif:22',
       },
       'Prima::CircularSlider' => {
          RTModule => 'Prima::Sliders',
          class  => 'Prima::VB::CircularSlider',
-         page   => 'Additional',
+         page   => 'Sliders',
          icon   => 'VB::classes.gif:4',
       },
       'Prima::StringOutline' => {
@@ -215,6 +216,20 @@ sub classes
          page   => 'Additional',
          icon   => 'VB::classes.gif:28',
       },
+      'Prima::Header' => {
+         icon     => 'VB::classes.gif:30',
+         RTModule => 'Prima::Header',
+         page     => 'Sliders',
+         module   => 'Prima::VB::CoreClasses',
+         class    => 'Prima::VB::Header',
+     },
+     'Prima::DetailedList' => {
+        icon     => 'VB::classes.gif:31',
+        RTModule => 'Prima::DetailedList',
+        page     => 'General',
+        module   => 'Prima::VB::CoreClasses',
+        class    => 'Prima::VB::DetailedList',
+     },
    );
 }
 
@@ -242,8 +257,6 @@ sub prf_adjust_default
       ownerPalette
    );
 }
-
-
 
 package Prima::VB::Button;
 use vars qw(@ISA);
@@ -632,6 +645,15 @@ sub profile_default
    return $def;
 }
 
+sub prf_events
+{
+   return (
+      $_[0]-> SUPER::prf_events,
+      onSelectItem  => 'my ( $self, $index, $selectState) = @_;',
+   );
+}
+
+
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -678,7 +700,6 @@ sub prf_events
       $_[0]-> SUPER::prf_events,
       onDrawItem    => 'my ( $self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused) = @_;',
       onStringify   => 'my ( $self, $index, $result) = @_;',
-      onSelectItem  => 'my ( $self, $index, $selectState) = @_;',
       onMeasureItem => 'my ( $self, $index, $result) = @_;',
    );
 }
@@ -961,8 +982,6 @@ package Prima::VB::ImageViewer;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
 
-use Prima::ImageViewer;
-
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -1047,8 +1066,6 @@ sub on_paint
    $self->paint_exterior( $canvas);
    $self-> common_paint( $canvas);
 }
-
-use Prima::Sliders;
 
 package Prima::VB::SpinButton;
 use vars qw(@ISA);
@@ -1155,8 +1172,6 @@ sub on_paint
                       $size[0] * 0.8, $size[1] * 0.35]);
    $self-> common_paint( $canvas);
 }
-
-
 
 package Prima::VB::SpinEdit;
 use vars qw(@ISA);
@@ -1628,11 +1643,16 @@ sub ext_profile
 
 sub act_profile
 {
-   my ($self, $asPL) = @_;
+   my $self = $_[0];
    return (
       onChild        => '$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})',
-      onChildCreate  => '$_[3]-> origin( $_[3]->left-$_[3]->owner->left, $_[3]-> bottom-$_[3]->owner->bottom);',
    );
+}
+
+sub repage 
+{
+   $_[0]-> {pageIndex} = -1; # force repage
+   $_[0]-> prf_pageIndex($_[0]-> prf('pageIndex'));
 }
 
 sub on_load
@@ -1641,8 +1661,16 @@ sub on_load
    return unless $self->{extras};
    $self->{list} = $self-> {extras};
    delete $self-> {extras};
-   $self-> {pageIndex} = -1; # force repage
-   $self-> prf_pageIndex($self-> prf('pageIndex'));
+   $self-> repage;
+}
+
+sub on_show
+{
+   my $self = $_[0];
+   $self-> insert( Timer => timeout => 1, onTick => sub {
+      $self-> repage;
+      $_[0]-> destroy;
+   })-> start;
 }
 
 sub on_hook
@@ -1684,18 +1712,18 @@ sub widget_repage
        visible => 0,
        designScale => [7, 16],
    );
-   $d-> insert( [Prima::SpinEdit =>
+   $d-> insert( ['Prima::SpinEdit' =>
        origin => [ 3, 8],
        name  => 'Spin',
        size  => [ 100, 20],
        value => $self-> {pageIndex},
        max   => 16383,
-   ], [ Prima::Button =>
+   ], [ 'Prima::Button' =>
        origin => [ 109, 8],
        size => [ 96, 36],
        text => '~OK',
        onClick => sub { $d-> ok; },
-   ], [ Prima::Label =>
+   ], [ 'Prima::Label' =>
        origin => [ 3, 36],
        size => [ 100, 20],
        text => 'Move to page',
@@ -1817,6 +1845,15 @@ sub prf_adjust_default
    );
 }
 
+sub act_profile
+{
+   my $self = $_[0];
+   return (
+      $self-> SUPER::act_profile,
+      onChildCreate  => '$_[3]-> origin( $_[3]->left-$_[3]->owner->left, $_[3]-> bottom-$_[3]->owner->bottom);',
+   );
+}
+
 
 sub on_paint
 {
@@ -1834,7 +1871,138 @@ sub on_paint
    $canvas-> linePattern( lp::Dash);
    $canvas-> rectangle( 12, 12, $sz[0] - 17, $sz[1] - 48 - $mh);
    $canvas-> linePattern( lp::Solid);
-   $canvas-> common_paint( $canvas);
+   $self-> common_paint( $canvas);
 }
+
+package Prima::VB::Header;
+use vars qw(@ISA);
+@ISA = qw( Prima::VB::CommonControl);
+
+# use Prima::Header;
+
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      items => ['items', 'widths'],
+      uiv   => ['offset', 'minTabWidth'],
+      iv    => ['pressed'],
+      bool  => ['clickable', 'dragable', 'vertical', 'scalable'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
+
+sub prf_adjust_default
+{
+   my ( $self, $p, $pf) = @_;
+   $self-> SUPER::prf_adjust_default( $p, $pf);
+   delete $pf->{$_} for qw ( pressed);
+}
+
+sub on_paint
+{
+   my ( $self, $canvas) = @_;
+   my @sz = $canvas-> size;
+   $canvas-> clear;
+   my @w = @{$self-> prf('widths')};
+   my @i = @{$self-> prf('items')};
+   my $v = $self-> prf('vertical');
+   my $fh = $canvas-> font-> height;
+   my @c3d = ( $canvas-> light3DColor, $canvas-> dark3DColor);
+   my $x;
+   my $z = 0;
+   for ( $x = 0; $x < @i; $x++) {
+      my $ww = $w[$x];
+      $ww = $canvas-> get_text_width( $i[$x]) if !(defined($ww)) || !($ww =~ m/^\s*\d+\s*$/);
+      my @rc = $v ? ( 0, $z, $sz[0]-1, $z + $ww) :  ( $z, 0, $z + $ww, $sz[1]-1);
+      $canvas-> rect3d( @rc, 1, @c3d);
+      $canvas-> clipRect( $rc[0]+1, $rc[1]+1, $rc[2]-1, $rc[3]-1);
+      $canvas-> text_out( $i[$x], $rc[0] + 1, $rc[1] + ($rc[3] - $rc[1] - $fh) / 2 + 1);
+      $canvas-> clipRect( 0, 0, @sz);
+      $z += $ww + 2;
+   }
+   $self-> common_paint( $canvas);
+}
+
+
+sub prf_items { $_[0]-> repaint; }
+sub prf_widths{ $_[0]-> repaint; }
+
+
+package Prima::VB::DetailedList;
+use vars qw(@ISA);
+@ISA = qw( Prima::VB::ListBox);
+
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      items  => ['headers', 'widths'],
+      multiItems  => ['items'],
+      uiv    => ['mainColumn', 'columns', 'minTabWidth', 'offset'],
+      string => ['headerClass'],
+      bool   => ['clickable', 'dragable', 'vertical', 'scalable'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
+
+sub prf_adjust_default
+{
+   my ( $self, $p, $pf) = @_;
+   $self-> SUPER::prf_adjust_default( $p, $pf);
+   delete $pf->{$_} for qw ( pressed headerProfile headerDelegations multiColumn autoWidth 
+     vertical offset pressed gridColor);
+}
+
+sub on_paint
+{
+   my ( $self, $canvas) = @_;
+   my @r = $self->paint_exterior($canvas);
+   my @w = @{$self-> prf('widths')};
+   my @h = @{$self-> prf('headers')};
+   my @i = @{$self-> prf('items')};
+   my $c = $self-> prf('columns');
+   my $f = $canvas-> font-> height;
+   if ( scalar(@r)) {
+      $canvas-> color( cl::Gray);
+      $canvas-> bar( 1, $r[3] - $f, $r[2], $r[3] - 1);
+      $canvas-> color( cl::Fore);
+      if ( $c) {
+         my $z = $r[0];
+         my $j;
+         for ( $j = 0; $j < $c; $j++) {
+            my $ww = $w[$j];
+            $ww = $canvas-> get_text_width( $h[$j]) if !(defined($ww)) || !($ww =~ m/^\s*\d+\s*$/);
+            my @z = ( $z, $r[1], ( $z + $ww > $r[2]) ? $r[2] : $z + $ww, $r[3]);
+            $z[2]++; $canvas-> rectangle( @z); $z[2]--;
+            $canvas-> draw_text( join("\n", $h[$j], map { defined($i[$_]->[$j]) ? $i[$_]->[$j] : '' } 0..$#i), 
+               @z, dt::NoWordWrap | dt::NewLineBreak | dt::Left | dt::Top | dt::UseClip
+            );
+            $z += $ww + 1;
+            last if $z > $r[2];
+         }
+      }
+   }
+   $self->common_paint($canvas);
+}
+
+sub prf_items   
+{ 
+   my ( $self, $data) = @_;
+   my $c = $self-> prf('columns');
+   for ( @$data) {
+      next if scalar @$_ >= $c;
+      push( @$_, ('') x ( $c - scalar @$_));
+   }
+   $self-> repaint; 
+}
+
+sub prf_columns { $_[0]-> prf_items( $_[0]-> prf('items')); }
+
+sub prf_widths  { $_[0]-> repaint; }
+sub prf_headers { $_[0]-> prf_set( columns => scalar @{$_[0]-> prf('headers')}); }
+
 
 1;
