@@ -929,12 +929,11 @@ apc_widget_set_focused( Handle self)
    { /* code for no-wm environment */
       Handle who = ( Handle) hash_fetch( guts.windows, (void*)&xfoc, sizeof(xfoc)), x = self;
       while ( who && XT_IS_WINDOW(X(who))) who = PComponent( who)-> owner;
-      while ( x && !XT_IS_WINDOW(X(x))) x = PComponent( x)-> owner;
+      while ( x && !XT_IS_WINDOW(X(x)) && X(x)->flags.clip_owner) x = PComponent( x)-> owner;
       if ( x && x != application && x != who && XT_IS_WINDOW(X(x)))
          XSetInputFocus( DISP, PComponent(x)-> handle, RevertToNone, CurrentTime);
    }
 
-   
    XSetInputFocus( DISP, focus, RevertToParent, CurrentTime);
    XCHECKPOINT;
    
@@ -1043,6 +1042,25 @@ apc_widget_set_shape( Handle self, Handle mask)
    return true;
 }
 
+/* Used instead of XUnmapWindow sometimes because when a focused
+   widget gets hidden, the X server's revert_to is sometimes
+   weirdly set to RevertToPointerRoot ( mwm is the guilty one ) */
+static void
+apc_XUnmapWindow( Handle self)
+{
+   Handle z = guts. focused;
+   while ( z) {
+      if ( z == self) {
+         if (PComponent(self)-> owner)
+            XSetInputFocus( DISP, PComponent(PComponent(self)-> owner)-> handle, 
+               RevertToNone, CurrentTime);
+         break;
+      }
+      z = PComponent(z)-> owner;
+   }
+   XUnmapWindow( DISP, X_WINDOW);
+}
+
 void
 prima_send_cmSize( Handle self, Point oldSize)
 {
@@ -1121,7 +1139,7 @@ apc_widget_set_size( Handle self, int width, int height)
          XX-> flags. falsely_hidden = 0;
       }   
    } else {
-      if ( XX-> flags. want_visible) XUnmapWindow( DISP, X_WINDOW);  
+      if ( XX-> flags. want_visible) apc_XUnmapWindow( self);  
       XMoveResizeWindow( DISP, X_WINDOW, x, y, ( width == 0) ? 1 : width, ( height == 0) ? 1 : height);
       XX-> flags. falsely_hidden = 1;
    }   
@@ -1196,7 +1214,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
          XX-> flags. falsely_hidden = 0;
       }   
    } else {
-      if ( XX-> flags. want_visible) XUnmapWindow( DISP, X_WINDOW);  
+      if ( XX-> flags. want_visible) apc_XUnmapWindow( self);
       XMoveResizeWindow( DISP, X_WINDOW, x, y, ( width == 0) ? 1 : width, ( height == 0) ? 1 : height);
       XX-> flags. falsely_hidden = 1;
    }   
@@ -1246,7 +1264,7 @@ apc_widget_set_visible( Handle self, Bool show)
       if ( show)
          XMapWindow( DISP, X_WINDOW);
       else
-         XUnmapWindow( DISP, X_WINDOW);
+         apc_XUnmapWindow( self);
       XCHECKPOINT;
    }
    if ( oldShow != ( show ? 1 : 0))
