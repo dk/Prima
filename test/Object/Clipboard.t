@@ -17,7 +17,7 @@ $c-> store( "Image", $i);
 $i = $c-> fetch( 'Image');
 %fm = map { $_ => 1 } $c-> get_formats;
 ok( exists $fm{Image} && defined $i && $i-> alive && $i-> width == 32 && $i-> height == 32);
-$i-> destroy;
+$i-> destroy if $i;
 
 $c-> register_format("Mumbo-Jumbo");
 %rc = map { $_ => 1 } $c-> get_registered_formats;
