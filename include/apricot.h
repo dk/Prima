@@ -410,6 +410,7 @@ clean_perl_call_method( char* methname, I32 flags);
 extern I32
 clean_perl_call_pv( char* subname, I32 flags);
 #endif
+
 extern Bool
 build_dynamic_vmt( void *vmt, const char *ancestorName, int ancestorVmtSize);
 
@@ -600,6 +601,8 @@ list_index_of( PList self, Handle item);
 typedef HV *PHash;
 typedef Bool HashProc( void * item, int keyLen, void * key, void * params);
 typedef HashProc *PHashProc;
+
+extern PHash primaObjects;
 
 extern PHash
 prima_hash_create( void);
