@@ -50,8 +50,10 @@
    #define snprintf              _snprintf
    #define vsnprintf             _vsnprintf
    #define stricmp               _stricmp
+   #define strnicmp              _strnicmp
    #define HAVE_SNPRINTF         1
    #define HAVE_STRICMP          1
+   #define HAVE_STRNICMP         1
 #elif defined( __BORLANDC__)
    #define BROKEN_PERL_PLATFORM  1
    #define BROKEN_COMPILER       1
@@ -262,6 +264,20 @@ extern void bzero(void*,size_t);
 #define PRIMA_NEED_OWN_STRICMP 1
 extern int
 stricmp(const char *s1, const char *s2);
+#endif
+#ifdef HAVE_STRNICMP
+#ifndef HAVE_STRNCASECMP
+#define strncasecmp(a,b,c) strnicmp((a),(b),(c))
+#endif
+#else
+#ifdef HAVE_STRNCASECMP
+#define strnicmp(a,b,c) strncasecmp((a),(b),(c))
+#else
+#define strncasecmp(a,b) strnicmp((a),(b))
+#define PRIMA_NEED_OWN_STRNICMP 1
+extern int
+strnicmp(const char *s1, const char *s2, size_t count);
+#endif
 #endif
 #endif
 #ifndef HAVE_STRCASESTR

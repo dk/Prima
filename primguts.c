@@ -154,6 +154,20 @@ stricmp(const char *s1, const char *s2)
    return (tolower(*u1) - tolower(*--u2));
 }
 #endif
+
+#ifdef PRIMA_NEED_OWN_STRNICMP
+int
+strnicmp(const char *s1, const char *s2, size_t count)
+{
+   const unsigned char *u1 = (const unsigned char *)s1;
+   const unsigned char *u2 = (const unsigned char *)s2;
+   if ( count == 0) return 0;
+   while (tolower(*u1) == tolower(*u2++)) 
+      if (--count == 0 || *u1++ == '\0')
+         return 0;
+   return (tolower(*u1) - tolower(*--u2));
+}
+#endif
     
 #ifndef HAVE_STRCASESTR
 /* Code was taken from FreeBSD 4.8 /usr/src/lib/libc/string/strcasestr.c */
@@ -171,7 +185,7 @@ strcasestr( register const char * s,  register const char * find)
                                 if ((sc = *s++) == 0)
                                         return (NULL);
                         } while ((char)tolower((unsigned char)sc) != c);
-                } while (strncasecmp(s, find, len) != 0);
+                } while (strnicmp(s, find, len) != 0);
                 s--;
         }
         return ((char *)s);
