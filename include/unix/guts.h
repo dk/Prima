@@ -122,6 +122,8 @@ struct _UnixGuts
    PHash windows;
    NPoint resolution;
    int depth;
+   int byte_order;
+   int bit_order;
    GCList *free_gcl;
    GCList *used_gcl;
    PPaintList paint_list;
@@ -280,6 +282,8 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
       int cursor_visible	: 1;
    } flags;
    XImage *image_cache;
+   XImage *icon_cache;
+   XColor bitmap_fore, bitmap_back;
 } DrawableSysData, *PDrawableSysData;
 
 #define CURSOR_TIMER	((Handle)11)
