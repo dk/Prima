@@ -169,7 +169,7 @@ A basic construct for a program written with Prima obviously requires
   use Prima;
 
 code. However, the effective programming requires usage of the other
-modules, for example, I<Prima>, which contains different kinds of button widgets. Prima.pm module can be
+modules, for example, I<Prima::Buttons>, which contains different kinds of button widgets. Prima.pm module can be
 invoked with a list of such modules, what makes the construction
 
   use Prima;
@@ -190,9 +190,9 @@ object. The program usually terminates after quitting the event loop.
 
 The window is created by invoking 
 
-Prima::Window-> create()
+  Prima::Window-> create()
 
-method with parameters. Actually, all Prima objects are created by such a
+code with the additional parameters. Actually, all Prima objects are created by such a
 scheme. The class name is passed as the first parameter, and a custom set
 of parameters is passed aftrewards. These parameters are usually are
 represented in a syntax of a hash, although actually they are an array.
@@ -219,7 +219,7 @@ In the example, the following properties are set forth :
  Button::onClick
 
 The properties can be of any type, given that they are scalar. As depicted
-here, C<::text> property accepts string, C<::size> an anonymous array 
+here, C<::text> property accepts a string, C<::size> - an anonymous array 
 of two integers and C<onClick> - a sub.
 
 In short, onXxxx properties form a class of I<events>, 
