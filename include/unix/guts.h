@@ -210,6 +210,7 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
       int focused               : 1;
       int reloadFont		: 1;
       int doSizeHints		: 1;
+      int noSize		: 1;
    } flags;
    XImage *imageCache;
 } DrawableSysData, *PDrawableSysData;
