@@ -246,7 +246,6 @@ typedef struct _DrawableData
    Color           d3dc;                    // dark  3d color
    PPaintSaveData  psd;
    void  *         recreateData;            // ViewProfile custom area
-   RECTL           clipRect;                // pointer either to sys clipRect or nil, for fast use
    int             sizeLockLevel;           // redirector flag for var-> virtualSize
    union {
      TimerData     timer;

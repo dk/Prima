@@ -322,7 +322,6 @@ typedef struct _DrawableData
    HandleOptions  options;                 // apt_XXX settings
    ColorSet       viewColors;              // widget color palette
    PXLOGPALETTE   p256;                    // cached squeezed palette
-   RECT           clipRect;                // storage for ScrollWindow clipping rectangle
    void *         recreateData;            // ViewProfile custom area
 
    /* Custom data for widget paint in optBuffered state */
