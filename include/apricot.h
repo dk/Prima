@@ -618,6 +618,8 @@ KM(Ctrl)
 KM(Alt)
 #define kmKeyPad        0x40000000
 KM(KeyPad)
+#define kmDeadKey       0x80000000
+KM(DeadKey)
 END_TABLE(km,UV)
 #undef KM
 
