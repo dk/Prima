@@ -187,6 +187,7 @@ create_mate( SV *perlObject)
    return self;
 }
 
+
 Handle
 gimme_the_real_mate( SV *perlObject)
 {
@@ -1594,9 +1595,6 @@ _test_malloc( size_t size, int ln, char *fil, Handle self)
    char *c;
    char *c1, *c2;
 
-#ifndef __unix
-   if (!myPerl) return malloc( size);
-#endif
    if (!hash) {
        hash = hash_create();
    }

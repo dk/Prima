@@ -143,6 +143,10 @@ Object_destroy( Handle self)
    if ( mate && object) sv_free( mate);
 }
 
+extern Handle
+gimme_the_real_mate( SV *perlObject);
+
+
 XS( Object_alive_FROMPERL)
 {
    dXSARGS;
