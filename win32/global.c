@@ -222,7 +222,7 @@ window_subsystem_init()
    guts. pointerSize. x   = GetSystemMetrics( SM_CXCURSOR);
    guts. pointerSize. y   = GetSystemMetrics( SM_CYCURSOR);
    list_create( &guts. transp, 8, 8);
-   // list_create( &guts. files, 8, 8);
+   list_create( &guts. files, 8, 8);
    list_create( &guts. sockets, 8, 8);
    list_create( &guts. eventHooks, 1, 1);
 
@@ -272,7 +272,7 @@ window_subsystem_init()
 void
 window_subsystem_done()
 {
-   // list_destroy( &guts. files);
+   list_destroy( &guts. files);
 
    if ( guts. socketMutex) {
       // appDead must be TRUE for this moment!
