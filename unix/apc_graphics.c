@@ -644,6 +644,63 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 }
 
 static void
+create_image_cache_1_to_1( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   unsigned char *data;
+   int y;
+   register int x;
+   int ls = ((img-> w + 31)/32)*4;
+   int h = img-> h, w = img-> w;
+   static unsigned char bits[256];
+   static Bool initialized = false;
+   
+   data = malloc( ls * h);
+   if ( !data) croak( "create_image_cache_1_to_1(): no memory");
+   if ( guts.bit_order == MSBFirst) {
+      for ( y = h-1; y >= 0; y--) {
+	 memcpy( ls*(h-y-1)+data, img->data+y*img->lineSize, ls);
+      }
+   } else {
+      if (!initialized) {
+	 unsigned int i, j;
+	 int k;
+	 for ( i = 0; i < 256; i++) {
+	    bits[i] = 0;
+	    j = i;
+	    for ( k = 0; k < 8; k++) {
+	       bits[i] <<= 1;
+	       if ( j & 0x1)
+		  bits[i] |= 1;
+	       j >>= 1;
+	    }
+	 }
+	 initialized = true;
+      }
+      for ( y = h-1; y >= 0; y--) {
+	 register unsigned char *s = img->data+y*img->lineSize;
+	 register unsigned char *t = ls*(h-y-1)+data;
+	 for ( x = 0; x < (w+7)/8; x++) {
+	    *t++ = bits[*s++];
+	 }
+      }
+   }
+   IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+				     1, XYBitmap, 0, data,
+				     w, h, 32, ls);
+   if (!IMG-> image_cache) {
+      free( data);
+      croak( "create_image_cache_1_to_1(): error during XCreateImage()");
+   }
+   IMG-> bitmap_back =
+      *allocate_color((Handle)img,
+		      ARGB(img->palette[0].r,img->palette[0].g,img->palette[0].b));
+   IMG-> bitmap_fore =
+      *allocate_color((Handle)img,
+		      ARGB(img->palette[1].r,img->palette[1].g,img->palette[1].b));
+}
+
+static void
 create_rgb_to_16_lut( int ncolors, const PRGBColor pal, U16 *lut)
 {
    /* XXX make this 3,2,5,11-independent */
@@ -796,6 +853,9 @@ create_image_cache( PImage img)
 	 croak( "create_image_cache(): no palette, ouch!");
       }
       switch (img-> type & imBPP) {
+      case 1:
+	 create_image_cache_1_to_1( img);
+	 break;
       case 4:
 	 switch (guts.depth) {
 	 case 16:
@@ -835,15 +895,28 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    DEFXX;
    PDrawableSysData IMG = X(image);
    PImage img = PImage( image);
+   unsigned long f = 0, b = 0;
 
    /* 1) XXX - rop - correct support! */
    /* 2) XXX - Shared Mem Image Extension! */
    create_image_cache( img);
    SHIFT( x, y);
+   if (( img-> type & imBPP) == 1) {
+      f = XX-> fore. pixel;
+      b = XX-> back. pixel;
+      XSetForeground( DISP, XX-> gc, IMG-> bitmap_fore. pixel);
+      XSetBackground( DISP, XX-> gc, IMG-> bitmap_back. pixel);
+      XCHECKPOINT;
+   }
    XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> image_cache,
 	      xFrom, img-> h - yFrom - yLen,
 	      x, REVERT(y) - yLen + 1, xLen, yLen);
    XCHECKPOINT;
+   if (( img-> type & imBPP) == 1) {
+      XSetForeground( DISP, XX-> gc, f);
+      XSetBackground( DISP, XX-> gc, b);
+      XCHECKPOINT;
+   }
 }
 
 Bool
@@ -1069,7 +1142,9 @@ apc_gp_stretch_image( Handle self, Handle image,
 {
    DEFXX;
    PImage img = PImage( image);
+   PDrawableSysData IMG = X(image);
    XImage *stretch;
+   unsigned long f = 0, b = 0;
    
    if ( xDestLen == xLen && yDestLen == yLen) {
       apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
@@ -1089,11 +1164,23 @@ apc_gp_stretch_image( Handle self, Handle image,
       stretch = create_stretched_image( img, xFrom, yFrom, xLen, yLen, xDestLen, yDestLen);
    }
    
+   if (( img-> type & imBPP) == 1) {
+      f = XX-> fore. pixel;
+      b = XX-> back. pixel;
+      XSetForeground( DISP, XX-> gc, IMG-> bitmap_fore. pixel);
+      XSetBackground( DISP, XX-> gc, IMG-> bitmap_back. pixel);
+      XCHECKPOINT;
+   }
    XPutImage( DISP, XX-> drawable, XX-> gc, stretch,
 	      0, 0, x, REVERT(y) - yDestLen + 1, xDestLen, yDestLen);
    XCHECKPOINT;
    XDestroyImage( stretch);
    XCHECKPOINT;
+   if (( img-> type & imBPP) == 1) {
+      XSetForeground( DISP, XX-> gc, f);
+      XSetBackground( DISP, XX-> gc, b);
+      XCHECKPOINT;
+   }
 }
 
 void
