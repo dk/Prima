@@ -440,8 +440,6 @@ sub generate_def
       $libid = [split(/::/, $libid)]->[-1];
       print PRIMADEF <<EOF;
 LIBRARY $libid
-CODE LOADONCALL
-DATA LOADONCALL NONSHARED MULTIPLE
 EXPORTS
 EOF
       if ( $Prima::Config::Config{compiler} eq 'bcc32') {
