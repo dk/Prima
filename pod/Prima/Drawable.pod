@@ -279,6 +279,32 @@ A counter-clockwise rotation angle multiplied by 10.
 could not be rotated, its name is usually being substituted
 to the one's that can.
 
+=item encoding
+
+A string value, one of the strings returned by 
+C<Prima::Application::font_encodings>. Selects desired font
+encoding; if empty, picks the first matched encoding.
+
+The encodings provided by different systems are different;
+in addition, the only encodings are recognizable by the system,
+that are represented by at least one font in the system.
+
+Unix systems and the toolkit PostScript interface usually 
+provide the following encodings:
+  
+   iso8859-1
+   iso8859-2
+   ... other iso8859 ...
+   fontspecific
+   
+Win32 returns the literal strings like
+
+   Western
+   Baltic
+   Cyrillic
+   Hebrew
+   Symbol
+
 =back
 
 A hash that C<::font> returns, is a tied hash, whose

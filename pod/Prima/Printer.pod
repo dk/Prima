@@ -128,11 +128,24 @@ Identical to C<abort_doc()>.
 Quits the information painting mode, initiated by C<begin_paint_info()>
 and returns the object into the disabled painting state.
 
-=item fonts NAME = ''
+=item font_encodings
+
+Returns array of encodings, represented by strings, that are recognized by the system
+and available in at least one font. Each system provides different
+sets of encoding strings; the font encodings are not portable.
+
+=item fonts NAME = '', ENCODING = ''
 
 Returns hash of font hashes ( see L<Prima::Drawable>, Fonts section )
-describing fonts of NAME font family. If NAME is '' or C<undef>,
-returns one fonts hash for each of the font families.
+describing fonts of NAME font family and of ENCODING. If NAME is '' or C<undef>,
+returns one fonts hash for each of the font families that match the ENCODING
+string. If ENCODING is '' or C<undef>, no encoding match is performed.
+If ENCODING is not valid ( not present in C<font_encodings> result), it is
+treated as if it was '' or C<undef>.
+
+In the special case, when both NAME and ENCODING are '' or C<undef>,
+each font metric hash contains element C<encodings>, that points to
+array of the font encodings, available for the fonts of NAME font family.
 
 =item new_page
 
