@@ -35,14 +35,20 @@
 
 /*
 
+   USAGE
+   -----
+   To use specific Xft fonts, set Prima font names in your X resource 
+   database in fontconfig formats - for example, Palatino-12. Consult
+   'man fontconfig' for the syntax, but be aware that Prima uses only
+   size, weight, and name fields.
+
+   IMPLEMENTATION NOTES
+   --------------------
+
    This implementations doesn't work with non-scalable Xft fonts,
    since their rasterization capabilities are currently ( June 2003) very limited - 
    no scaling and no rotation. Plus, the selection of the non-scalable fonts is
    a one big something, and I believe that one in apc_font.c is enough.
-   
-   Not implemented features: 
-    - the full set of raster operations - not supported by xft ( stupid )
-    - apc_show_message - probably never will
 
    The following Xft/fontconfig problems, if fixed in th next versions, need to be 
    taken into the consideration:
@@ -56,6 +62,15 @@
      - no text strikeout / underline drawing routines
      - produces xlib failures for large polygons - answered to be a Xrender bug;
        the X error handler catches this now.
+
+   TO DO
+   -----
+    - The full set of raster operations - not supported by xft ( stupid )
+    - apc_show_message - probably never will be implemented though
+    - Investigate if ICONV can be replaced by native perl's ENCODE interface
+    - Under some circumstances Xft decides to put antialiasing aside, for
+      example, on the paletted displays. Check, if some heuristics that would
+      govern whether Xft is to be used there, are needed.
        
  */
 
@@ -346,7 +361,6 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
    f = *dest;
    by_size = Drawable_font_add( self, source, &f);
    pixel_size = f. height;
-   /* printf("want %d.%d.%d.%d.%s\n", key.height, key. width, key.style, key.pitch, key.name); */
 
    if ( guts. xft_disable_large_fonts > 0) {
       /* xft is unable to deal with large polygon requests. 
@@ -361,6 +375,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
    /* see if the font is not present in xft - the hashed negative matches
          are stored with width=0, as the width alterations are derived */
    xft_build_font_key( &key, &f, by_size);
+   /* printf("want %d.%d.%d.%d.%s\n", key.height, key. width, key.style, key.pitch, key.name); */
    
    key. width = 0;
    if ( hash_fetch( mismatch, &key, sizeof( FontKey))) {
@@ -1013,11 +1028,11 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
                                          guts. visual. visual, guts. defaultColormap);
       XftDrawSetSubwindowMode( XX-> xft_drawable, 
          ( self == application) ? IncludeInferiors : ClipByChildren);
-      if ( !XX-> flags. xft_clip) {
-         XftDrawSetClip( XX-> xft_drawable, XX-> current_region);
-         XX-> flags. xft_clip = 1;
-      }
       XCHECKPOINT;
+   }
+   if ( !XX-> flags. xft_clip) {
+      XftDrawSetClip( XX-> xft_drawable, XX-> current_region);
+      XX-> flags. xft_clip = 1;
    }
   
    /* convert text string to unicode */
@@ -1232,30 +1247,37 @@ prima_xft_parse( char * ppFontNameSize, Font * font)
 {
    FcPattern * p = FcNameParse( ppFontNameSize);
    FcCharSet * c = nil;
-   bzero( font, sizeof( Font));
-   font-> height = font-> width = font-> size = C_NUMERIC_UNDEF;
-   fcpattern2font( p, font);
-   font-> width = C_NUMERIC_UNDEF;
+   Font f, def = guts. default_font;
+
+   bzero( &f, sizeof( Font));
+   f. height = f. width = f. size = C_NUMERIC_UNDEF;
+   fcpattern2font( p, &f);
+   f. width = C_NUMERIC_UNDEF;
    FcPatternGetCharSet( p, FC_CHARSET, 0, &c);
    if ( c && (FcCharSetCount(c) > 0)) {
       int i;
       for ( i = 0; i < MAX_CHARSET; i++) {
           if ( !std_charsets[i]. enabled) continue;
           if ( FcCharSetIntersectCount( std_charsets[i]. fcs, c) >= std_charsets[i]. glyphs - 1) {
-             strcpy( font-> encoding, std_charsets[i]. name);
+             strcpy( f. encoding, std_charsets[i]. name);
              break;
           }
       }
    }
    FcPatternDestroy( p);
-   prima_xft_font_pick( nilHandle, &guts. default_font, font, nil);
+   if ( ! prima_xft_font_pick( nilHandle, &f, &def, nil)) return false;
+   def. width = 0;
+   *font = def;
    return true;
 }
 
 void
 prima_xft_set_region( Handle self, Region region)
 {
-   if ( X(self)-> xft_drawable)
-      XftDrawSetClip( X(self)-> xft_drawable, region);
+   DEFXX;
+   if ( XX-> xft_drawable) {
+      XftDrawSetClip( XX-> xft_drawable, region);
+      XX-> flags. xft_clip = 1;
+   }
 }
 
