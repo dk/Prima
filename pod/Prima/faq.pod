@@ -1,0 +1,325 @@
+=for rcs $Id$
+
+=head1 NAME
+
+Prima::faq - Frequently asked questions about Prima
+
+=head1 DESCRIPTION
+
+The FAQ covers various topics around Prima, such as distribution, compilation,
+installation, and programming.
+
+=head1 COMMON
+
+=head2 What is Prima?
+
+Prima is a general purpose extensible graphical user interface toolkit with a
+rich set of standard widgets and an emphasis on 2D image processing tasks. A
+Perl program using PRIMA looks and behaves identically on X, Win32 and OS/2 PM.
+
+=head2 Yeah, right. So what is Prima again?
+
+Ok. A Yet Another Perl GUI.
+
+=head2 Why bother with the Yet Another thing, while there is Perl-Tk and plenty of others?
+
+Prima was started on OS/2, where Tk didn't really run. We have had two options
+- either port Tk, or write something on our own, probably better than the
+existing tools.  We believe that we've succeeded.
+
+=head2 Why Perl?
+
+Why not? Perl is great. The high-level GUI logic fits badly into C, C++, or the
+like, so a scripting language is probably the way to go here.
+
+=head2 But I want to use Prima in another language.
+
+Unless your language has runtime binding with perl, you cannot.
+
+=head2 Who wrote Prima?
+
+Dmitry Karasik implemented the majority of the toolkit, after the original idea
+by Anton Berezin. The latter and set of contributors helped the development of
+the toolkit since then.
+
+=head2 What is the copyright?
+
+The copyright is a modified BSD license, where only two first paragraphs remain
+out of the original four. The text of copyright is present is almost all files
+of the toolkit.
+
+=head2 I'd like to contribute.
+
+You can do this is several ways. The project would probably best benefit from
+the advocacy, because not many people use it. Of course, you can send it new
+widgets, patches, suggestions, or even donations. Also, documentation is the
+thing that needs a particular attention, since my native language is not
+English, so if there are volunteers for polishing the of Prima does, you are
+very welcome.
+
+=head1 INSTALLATION
+
+=head2 Where can I download Prima? 
+
+L<http://www.prima.eu.org> contains links to source and binary download
+resources, instructions on how to subscribe to the Prima mailing list,
+documentation, and some other useful info.
+
+=head2 What is better, source or binary?
+
+Depends where your are and what are your goal. On unix, the best is to use the
+source. On win32 and os2 the binaries probably are preferred. If you happen to
+use cygwin you probably still better off using the source.
+
+=head2 How to install binary distribution?
+
+First, check if you've downloaded Prima binary for the correct version of Perl.
+For win32 ActiveState builds, difference in the minor digits of the Perl
+version shouldn't be a problem, for example, binary distribution for Perl build
+#805 should work with Perl build #808, etc etc.
+
+To install, unpack the archive and type 'perl ms_install.pl'.  The files will
+be copied into the perl tree.
+
+=head2 How to compile from source?
+
+Type the following:
+
+   perl Makefile.PL
+   make 
+   make install
+
+If the 'perl Makefile.PL' fails complaining to strange errors, you can check
+makefile.log to see whether anything is wrong. A typical situation here is that
+Makefile.PL may report that is cannot find Perl library, for example, where
+there actually it invokes the compiler in a wrong way.
+
+Note, that in order to get Prima working from sources, your system must contain
+graphic libraries, such as libungif or ligjpeg, for Prima to load graphic
+files.
+
+=head2 What's about the graphic libraries?
+
+To load and save images, Prima employs graphic libraries. Such as, to load GIF
+files, libungif library is used, etc. Makefile.PL finds available libraries and
+links Prima against these. It is possible to compile Prima without any, but this
+is not really useful. If Makefile.PL wouldn't find any of the supported graphic
+libraries, it would abort unless WANTNOCODECS=1 parameter was supplied to it.
+
+On every supported platform Prima can make use of the following graphic
+libraries:
+
+   libX11   - XBM bitmaps
+   libXpm   - Xpm pixmaps
+   libjpeg  - JPEG images
+   libungif - GIF images
+   libpng   - PNG images
+   libtiff  - tiff images
+
+Alternatively, on win32 and os2 there is a binary PRIGPARH library distributed
+together with the Prima binary distributions, which supports its own set of
+graphic files. The PRIGPARH is a modified GBM graphic library, which ( GBM ) is
+no longer supported, but nevertheless it is useful for Prima. The use of
+PRIGPARH is preferred on win32 and os2, and Makefile.PL would favor it before
+the other graphic libraries.  To compile and run Prima with PRIGPARH, library (
+.lib or .a) and runtime ( .dll ) files must be present in the LIBPATH and PATH,
+correspondingly.
+
+=head2 img/codec_XXX.c compile error
+
+C<img/codec_XXX.c> files are C sources for support of the graphic libraries. In
+case a particular codec does not compile, the ultimate fix is to remove the
+file and re-run Makefile.PL . This way, the problem can be avoided easily,
+although at cost of a lacking support for a graphic format.
+
+=head2 Compile error
+
+There are various reasons why a compilation reason may fail. The best would be
+to copy the output together with outputs of env and perl -V and send these into
+the Prima mailing list.
+
+=head2 Prima doesn't run
+
+Again, there are reasons for Prima to fail during the start.
+
+First, check whether all main files are installed correctly. F<Prima.pm> must
+be in your perl folder, and Prima library file ( F<Prima.a> or F<Prima.so> for
+unix, F<Prima.dll> for win32, and F<PrimaDI.dll> for os2 ) is copied in the
+correct location in the perl tree. 
+
+Second, try to run 'perl -MPrima -e 1' . If Prima.pm is not found, the error
+message would something like 
+
+  Can't locate Prima.pm in @INC
+
+If Prima library or one of the libraries it depends on cannot be found, perl
+Dynaloader would complain. On win32 and os2 this usually happen when
+prigraph.dll ( and/or priz.dll on os2 ) are not found. If this is the case, try
+to copy these files into your PATH, for example in C:/WINNT .
+
+=head2 Prima error: Can't open display
+
+This error happens when you've compiled Prima for X11, and no connection to X11
+display can be established. Check your DISPLAY environment variable, or use
+--display parameter when running Prima. If you do not want Prima to connect to
+the display, for example, to use it inside a CGI script, either use --no-x11
+parameter or include C<use Prima::noX11> statement in your program.
+
+=head2 X11: my fonts are bad!
+
+Check whether you've Xft and fontconfig installed. Prima benefits greatly from
+having been compiled with Xft/fontconfig. Read more in L<Prima::X11> .
+
+=head2 Where are the docs installed?
+
+Prima documentation comes in .pm and .pod files. These, when installed,
+are copied under perl tree, and under man tree in unix. So, 
+'perldoc Prima' should be a sufficient command to invoke the main page
+of the Prima documentation. Other pages can be invoked as 'perldoc Prima::Buttons',
+say, or, for the graphical pod reader, 'podview Prima::Buttons'. podview
+is the Prima doc viewer, which is also capable of displaying any POD page.
+
+There are also a pdf file on the Prima web site www.prima.eu.org, which contains
+the same set of documentation but composed as a single book. Its sources are
+in utils/makedoc directory, somewhat rudimentary and require an installation
+of latex and dvips to produce one of tex, dvi, ps, or pdf targets.
+
+=head2 I've found a bug!
+
+Send the bug report into the mailing list.
+
+=head1 PROGRAMMING
+
+=head2 How can I use .fm files of the Visual Builder inside my program?
+
+podview L<Prima::VB::VBLoader>
+
+=head2 I want to use Prima inside CGI for loading and converting images only, without X11 display.
+
+   use Prima::noX11; # this prevents Prima from connecting to X11 display
+   use Prima;
+   my $i = Prima::Image-> load( ... )
+
+=head2 How would I change several properties with a single call?
+
+   $widget-> set(
+      property1 => $value1,
+      property2 => $value2,
+      ...
+   );
+
+=head2 I want Prima::Edit to have feature XXX
+
+If the feature is not governed by none of the C<Prima::Edit> properties,
+you've to overload C<::on_paint>. It is not that hard as you might think.
+
+If the feature is generic enough, you can send a patch in the list.
+
+=head2 Tk ( Wx, Qt, whatever ) has a feature Prima doesn't.
+
+Well, I'd probably love to see the feature in Prima as well, but I don't
+have a time to write it myself. Send in a patch, and I promise I'll check it out.
+
+=head2 I wrote a program and it looks ugly with another font size
+
+This would most certainly happen when you rely on your own screen properties.
+There are several ways to avoid this problem. 
+
+First, if you program a window where there are many widgets independent of each
+other size, you actually can supply coordinates for these widget as they are 
+positioned on your screen. The only thing not to forget is to set C<designScale>
+property of the parent window, which is dimension of font used to design the
+window. You can get these for example by executing
+
+    perl -MPrima -MPrima::Application -le '$_=$::application->font; print $_->width, q( ), $_->height';
+
+This way, the window and widget would get resized automatically under another font.
+
+Second, in case your widget layout is not that independent, you can position the
+widgets relatively to each other by explicitly calculating widget extension. For
+example, an C<InputLine> would have height relative to the font, and to have a
+widget placed exactly say 2 pixels above the input line, code something like
+
+    my $input = $owner-> insert( InputLine, ... );
+    my $widget = $owner-> insert( Widget, bottom => $input-> top + 2 );
+
+Of course you can change the font yourself, but it is a bad idea since users
+would get annoyed by this. 
+
+Finally, check your layouts with L<Prima::Stress> written specifically for this
+purpose:
+
+    perl -MPrima::Stress myprogram
+
+=head2 How would I write a widget class myself?
+
+There are lots and lots of examples of this. Find a widget class similar to
+what you are about to write, and follow the idea. There are, though, some inevident
+moments worth to enumerate.
+
+=over
+
+=item *
+
+Test your widget class with different default settings, such as colors, fonts,
+parent sizes, widget properties such as buffered and visible.
+
+=item *
+
+Try to avoid special properties for C<create>, where for example a particular property
+must always be supplied, or not supplied, or a particular combination of properties is
+expected. See if the DWIM principle can be applied instead.
+
+=item *
+
+Do not be afraid to define and re-define notification types. These have large number
+of options, to be programmed once and then used as a DWIM helper. Consider for which
+notifications user callback routines ( onXxxx ) would be best to be called first, or
+last, whether a notification should be of multiple or single callback type.
+
+If there is a functionality better off performed by the user-level code, consider
+creating an individual notification for this purpose.
+
+=item *
+
+Repaint only the changed areas, not the whole widget.
+
+If your widget has scrollable areas, use C<scroll> method. 
+
+Inside C<on_paint> check whether the whole or only a part of the widget is
+about to be repainted. Simple optimizations here increase the speed.
+
+Avoid using pre-cooked data in C<on_paint>, such as when for example only a
+particular part of a widget was invalidated, and this fact is stored in an
+internal variable. This is because when the actual C<on_paint> call is
+executed, the invalid area may be larger than was invalidated by the class
+actions. 
+
+If you must though, compare values of C<clipRect> property to see
+whether the invalid area is indeed the same as it is expected. 
+
+Remember, that inside on_paint all coordinates are inclusive-inclusive, 
+and outside inclusive-exclusive.
+
+Note, that C<buffered> property does not guarantee that the widget
+output would be actually buffered.
+
+=item *
+
+Write some documentation and example of use.
+
+=back
+
+=head2 How would I add my widget class to the VB palette?
+
+Check Prima/VB/examples/Widgety.pm . This file, if loaded through
+'Add widget' command in VB, adds example widget class and example 
+VB property into the VB palette and Object Inspector.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>
