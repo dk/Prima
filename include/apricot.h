@@ -500,10 +500,12 @@ extern SV **temporary_prf_Sv;
 #define pset_H( key, value)  pset_sv_noinc( key, (value) ? newSVsv((( PAnyObject) value)-> mate) : nilSV)
 
 #define create_instance( obj)  (                                   \
-   ( Handle) temporary_prf_Sv = Object_create( # obj, profile),    \
-   --SvREFCNT( SvRV((( PAnyObject) temporary_prf_Sv)-> mate)),     \
+   ( Handle) temporary_prf_Sv = Object_create( obj, profile),      \
+   ( temporary_prf_Sv ?                                            \
+       --SvREFCNT( SvRV((( PAnyObject) temporary_prf_Sv)-> mate))  \
+       : 0),                                                       \
    ( Handle) temporary_prf_Sv                                      \
-)
+   )
 
 #ifdef POLLUTE_NAME_SPACE
 #define TransmogrifyHandle(c,h)		((P##c)(h))
