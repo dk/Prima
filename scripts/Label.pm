@@ -164,7 +164,7 @@ sub set_text
 sub on_translateaccel
 {
    my ( $self, $code, $key, $mod) = @_;
-   if ( defined $self->{accel} && lc chr $code eq $self-> { accel})
+   if ( defined $self->{accel} && ( $key == kb::NoKey) && lc chr $code eq $self-> { accel})
    {
       $self-> notify( 'Click');
       $self-> clear_event;
@@ -180,7 +180,7 @@ sub on_click
 sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
-   if ( defined $self->{accel} && lc chr $code eq $self-> { accel})
+   if ( defined $self->{accel} && ( $key == kb::NoKey) && lc chr $code eq $self-> { accel})
    {
       $self-> notify( 'Click');
       $self-> clear_event;

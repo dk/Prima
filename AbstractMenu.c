@@ -70,7 +70,7 @@ key_normalize( const char * key)
 	 if (r) return kbNoKey;
 	 r = strtol( key, &e, 10);
 	 if (*e) return kbNoKey;
-	 return r;
+	 return r | '0';
       } else if (tolower(*key) != 'f')
 	 return kbNoKey;
       key++;
@@ -556,7 +556,7 @@ int
 AbstractMenu_get_key ( Handle self, char * varName)
 {
    PMenuItemReg m = my first_that( self, var_match, varName, true);
-   return ( m && !(m-> divider) && !(m-> down)) ? ! m-> key : kbNoKey;
+   return ( m && !(m-> divider) && !(m-> down)) ? m-> key : kbNoKey;
 }
 
 void

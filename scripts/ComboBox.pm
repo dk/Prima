@@ -327,10 +327,10 @@ sub InputLine_KeyDown
    return unless $code;
    return unless $_[0]-> {literal};
 
-   if (( $code & 0xFF00) || (( $key != kb::NoKey) && ( $key != kb::Space) && ( $key != kb::Backspace)))
+   if (( $key & 0xFF00) && ( $key != kb::NoKey) && ( $key != kb::Space) && ( $key != kb::Backspace))
    {
-      return if $key == kb::Tab || $key == kb::BackTab;
-      $edit->{incline} = '' if $key;
+      return if $key == kb::Tab || $key == kb::BackTab || $key == kb::NoKey;
+      $edit->{incline} = '';
       $self-> listVisible(1), $edit-> clear_event
          if $key == kb::Down && $_[0]->{style} != cs::Simple;
       $_[0]-> notify( q(Change)), $edit-> clear_event
@@ -745,16 +745,12 @@ sub drive
 sub InputLine_KeyDown
 {
    my ( $combo, $self, $code, $key) = @_;
-   return unless $code;
    $combo-> listVisible(1), $self-> clear_event if $key == kb::Down;
    return if $key != kb::NoKey;
-   if ( $code & 0xFF)
-   {
-      $code = uc chr($code) .':';
-      ($_[0]-> text( $code),
-      $_[0]-> notify( q(Change)))
-         if (scalar grep { $code eq $_ } @{$combo-> {drives}}) && ($code ne $_[0]-> text);
-   };
+   $code = uc chr($code) .':';
+   ($_[0]-> text( $code),
+   $_[0]-> notify( q(Change)))
+      if (scalar grep { $code eq $_ } @{$combo-> {drives}}) && ($code ne $_[0]-> text);
    $self-> clear_event;
 }
 
