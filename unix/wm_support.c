@@ -49,6 +49,7 @@ wm_generic_create_window_hook( Handle self, ApiHandle w)
 
    wmhints. flags = InputHint;
    wmhints. input = false;
+   wmhints. initial_state = X(self)-> flags. iconic ? IconicState : NormalState;
    XSetWMHints( DISP, X_WINDOW, &wmhints);
    XCHECKPOINT;
 

@@ -767,7 +767,7 @@ apc_widget_set_focused( Handle self)
    if ( self) {
       if (XT_IS_WINDOW(X(self))) return true; /* already done in activate() */
       focus = X_WINDOW;
-   } 
+   }
    apc_application_yield();
    XSetInputFocus( DISP, focus, RevertToParent, CurrentTime);
    XCHECKPOINT;
@@ -935,10 +935,31 @@ apc_widget_set_visible( Handle self, Bool show)
    if (!XX) return false;
    XX-> flags. want_visible = show;
    if ( !XX-> flags. falsely_hidden) {
-      if ( show) 
+      if ( show) {
+         if ( XX-> type. window && XX-> flags. withdrawn) {
+            XWMHints * wh = XGetWMHints( DISP, X_WINDOW);
+            if ( wh) {
+               wh-> initial_state = XX-> flags. iconic ? IconicState : NormalState;
+               XSetWMHints( DISP, X_WINDOW, wh);
+               XFree( wh); 
+            } else 
+               warn("Error querying XGetWMHints");
+            XX-> flags. withdrawn = 0;
+            XSync( DISP, false);
+         }   
          XMapWindow( DISP, X_WINDOW);
-      else 
-         XUnmapWindow( DISP, X_WINDOW);
+         if ( XX-> type. window && XX-> flags. iconic) { 
+            XIconifyWindow( DISP, X_WINDOW, SCREEN);
+            XSync( DISP, false);
+         }   
+      } else {
+         if ( XX-> type. window && XX-> flags. iconic) {
+            XWithdrawWindow( DISP, X_WINDOW, SCREEN);
+            XSync( DISP, false);
+            XX-> flags. withdrawn = 1;
+         } else
+            XUnmapWindow( DISP, X_WINDOW);
+      }   
       XCHECKPOINT;
    }
    if ( !XX-> type. window && ( oldShow != ( show ? 1 : 0)))

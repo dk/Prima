@@ -421,7 +421,6 @@ struct _UnixGuts
 #define XT_IS_WIDGET(x)         ((x)->type.widget)
 #define XT_IS_WINDOW(x)         ((x)->type.window)
 
-
 typedef struct _drawable_sys_data
 {
    COMPONENT_SYS_DATA;
@@ -470,6 +469,7 @@ typedef struct _drawable_sys_data
       int falsely_hidden                : 1;
       int first_click                   : 1;
       int grab                  	: 1;
+      int iconic                        : 1;
       int mapped			: 1;
       int modal                         : 1;
       int opaque                	: 1;
@@ -483,6 +483,7 @@ typedef struct _drawable_sys_data
       int saved_zero_line       	: 1;
       int sync_paint			: 1;
       int want_visible                  : 1;
+      int withdrawn                     : 1;
       int zero_line             	: 1;
    } flags;
    ImageCache bitmap_cache;

@@ -103,6 +103,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XCHECKPOINT;
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
    XCHECKPOINT;
+   XX-> flags. iconic = ( window_state == wsMinimized) ? 1 : 0;
    guts. wm_create_window( self, X_WINDOW);
    XCHECKPOINT;
 
@@ -136,6 +137,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XResizeWindow( DISP, X_WINDOW, XX-> size. x, XX-> size. y); 
 
    prima_send_cmSize( self, (Point){0,0});
+   
    return true;
 }
 
@@ -143,6 +145,7 @@ Bool
 apc_window_activate( Handle self)
 {
    XWindow frame;
+   if ( X(self)-> flags. iconic || X(self)-> flags. withdrawn) return true;
    frame = prima_find_frame_window( PWidget( self)-> handle);
    if ( frame) XRaiseWindow( DISP, frame);
    apc_application_yield();
@@ -209,8 +212,7 @@ apc_window_get_icon( Handle self, Handle icon)
 int
 apc_window_get_window_state( Handle self)
 {
-   DOLBUG( "apc_window_get_window_state()\n");
-   return 0;
+   return X(self)-> flags. iconic ? wsMinimized : wsNormal;
 }
 
 Bool
@@ -352,7 +354,24 @@ apc_window_set_icon( Handle self, Handle icon)
 Bool
 apc_window_set_window_state( Handle self, int state)
 {
-   DOLBUG( "apc_window_set_window_state()\n");
+   DEFXX;
+   XWMHints * wh;
+   if ( state == wsMaximized) return false; /* XXX */
+   if ( state != wsMinimized && state != wsNormal) return false; 
+   wh = XGetWMHints( DISP, X_WINDOW);
+   if ( !wh) {
+      warn("Error querying XGetWMHints");
+      return false;
+   }
+   if ( !XX-> flags. withdrawn) {
+      if ( state == wsNormal)
+         XMapWindow( DISP, X_WINDOW);
+      else
+         XIconifyWindow( DISP, X_WINDOW, SCREEN);
+      XSync( DISP, false);
+   }
+   XX-> flags. iconic = ( state == wsNormal) ? 0 : 1;
+   XFree( wh); 
    return true;
 }
 
@@ -375,18 +394,16 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
 Bool
 apc_window_execute( Handle self, Handle insert_before)
 {
+   X(self)-> flags.modal = true;
    if ( !window_start_modal( self, false, insert_before))
       return false;
    if (!application) return false;
 
-   X(self)-> flags.modal = true;
    protect_object( self);
 
    XSync( DISP, false);
-
    while ( prima_one_loop_round( true, true) && X(self) && X(self)-> flags.modal)
       ;
-
    unprotect_object( self);
    return true;
 }
@@ -403,8 +420,7 @@ apc_window_end_modal( Handle self)
    PWindow win = PWindow(self);
    Handle modal, oldfoc;
    DEFXX;
-   if ( win-> modal == mtExclusive)
-      XX-> flags.modal = false;
+   XX-> flags.modal = false;
    CWindow( self)-> exec_leave_proc( self);
    apc_widget_set_visible( self, false);
    if ( application) {
