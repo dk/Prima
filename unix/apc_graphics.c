@@ -33,8 +33,9 @@
 #include "unix/guts.h"
 #include "Image.h"
 
-#define SORT(a,b) ({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
-#define REVERT(a) ({ XX-> size. y - (a) - 1; })
+#define SORT(a,b)	({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
+#define REVERT(a)	({ XX-> size. y - (a) - 1; })
+#define SHIFT(a,b)	({ (a) += XX-> gtransform. x; (b) += XX-> gtransform. y; })
 
 static int rop_map[] = {
    GXcopy	/* ropCopyPut */,		/* dest  = src */
@@ -400,6 +401,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
 
+   SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
    XFillRectangle( DISP, XX-> drawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
    XCHECKPOINT;
@@ -465,11 +467,11 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    }
 
    for ( i = 0; i < numPts; i++) {
-      p[i]. x = (short)points[i]. x;
-      p[i]. y = (short)REVERT(points[i]. y);
+      p[i]. x = (short)points[i]. x + XX-> gtransform. x;
+      p[i]. y = (short)REVERT(points[i]. y + XX-> gtransform. y);
    }
-   p[numPts]. x = (short)points[0]. x;
-   p[numPts]. y = (short)REVERT(points[0]. y);
+   p[numPts]. x = (short)points[0]. x + XX-> gtransform. x;
+   p[numPts]. y = (short)REVERT(points[0]. y + XX-> gtransform. y);
 
    if ( guts. limits. XFillPolygon >= numPts) {
       XFillPolygon( DISP, XX-> drawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
@@ -512,6 +514,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
    /* XXX - implement a general case of line end correction */
    DEFXX;
 
+   SHIFT( x1, y1); SHIFT( x2, y2);
    if ( y1 == y2) {
       SORT( x1, x2); x2++;
    } else if ( x1 == x2) {
@@ -600,9 +603,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 
    if ( !create_image_cache( img))
       croak( "Error creating image cache");
-   DOLBUG( "====================\nx,y:%d,%d   x,y:%d,%d,  w,h: %d,%d\n====================\n",
-	   xFrom, img-> h - yFrom - 1,
-	   x, REVERT(y), xLen, yLen);
+   SHIFT( x, y);
    XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> imageCache,
 	      xFrom, img-> h - yFrom - yLen,
 	      x, REVERT(y) - yLen, xLen, yLen);
@@ -613,6 +614,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
 
+   SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
    XDrawRectangle( DISP, XX-> drawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
    XCHECKPOINT;
@@ -637,6 +639,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    XColor *c = allocate_color( self, color);
    unsigned long old = XX-> fore. pixel;
 
+   SHIFT( x, y);
    XSetForeground( DISP, XX-> gc, c-> pixel);
    XCHECKPOINT;
    XDrawPoint( DISP, XX-> drawable, XX-> gc, x, REVERT( y));
@@ -657,6 +660,7 @@ void
 apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 {
    DEFXX;
+   SHIFT( x, y);
    XDrawString( DISP, XX-> drawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
 }
