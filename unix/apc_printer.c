@@ -55,7 +55,7 @@ fprintf( stderr, "apc_prn_enumerate()\n");
 }
 
 Bool
-apc_prn_select( Handle self, char * printer)
+apc_prn_select( Handle self, const char* printer)
 {
 fprintf( stderr, "apc_prn_select()\n");
    return false;
@@ -97,7 +97,7 @@ fprintf( stderr, "apc_prn_setup()\n");
 }
 
 Bool
-apc_prn_begin_doc( Handle self, char *docName)
+apc_prn_begin_doc( Handle self, const char* docName)
 {
 fprintf( stderr, "apc_prn_begin_doc()\n");
    return false;

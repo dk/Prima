@@ -876,7 +876,7 @@ apc_window_get_task_listed( Handle self)
 }
 
 void
-apc_window_set_caption( Handle self, char * caption)
+apc_window_set_caption( Handle self, const char * caption)
 {
    objCheck;
    if ( !SetWindowText( HANDLE, caption)) apiErr;
@@ -1951,7 +1951,7 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
 }
 
 void
-apc_menu_item_set_accel( Handle self, PMenuItemReg m, char * accel)
+apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
 {
    MENUITEMINFO mii = {sizeof( MENUITEMINFO)};
    char buf [ 1024];
@@ -2000,7 +2000,7 @@ apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
 }
 
 void
-apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
+apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
 {
    MENUITEMINFO mii = {sizeof( MENUITEMINFO)};
    char buf [ 1024];
@@ -2214,7 +2214,7 @@ apc_help_close( Handle self)
 }
 
 void
-apc_help_set_file( Handle self, char * helpFile)
+apc_help_set_file( Handle self, const char * helpFile)
 {
 }
 
@@ -2379,7 +2379,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 }
 
 
-void  apc_show_message( char * message)
+void  apc_show_message( const char * message)
 {
    MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 }
@@ -2518,7 +2518,7 @@ apc_beep_tone( int freq, int duration)
 
 
 char *
-apc_system_action( char * params)
+apc_system_action( const char * params)
 {
    switch ( *params) {
    case 'w':
@@ -2558,7 +2558,7 @@ apc_system_action( char * params)
 }
 
 void
-apc_query_drives_map( char *firstDrive, char *map)
+apc_query_drives_map( const char *firstDrive, char *map)
 {
    char *m = map;
    int beg;
@@ -2602,7 +2602,7 @@ static int ctx_dt2DRIVE[] =
 };
 
 int
-apc_query_drive_type( char *drive)
+apc_query_drive_type( const char *drive)
 {
    char buf[ 256];                        //  Win95 fix
    strncpy( buf, drive, 256);             //     sometimes D: isn't enough for 95,

@@ -801,7 +801,7 @@ static HDC prn_info_dc( Handle self)
 }
 
 Bool
-apc_prn_select( Handle self, char * printer)
+apc_prn_select( Handle self, const char* printer)
 {
    int rc;
    PRINTER_INFO_2 ppi;
@@ -917,7 +917,7 @@ apc_prn_setup( Handle self)
 }
 
 Bool
-apc_prn_begin_doc( Handle self, char * docName)
+apc_prn_begin_doc( Handle self, const char* docName)
 {
    LPPRINTER_INFO_2 ppi = &sys s. prn. ppi;
    DOCINFO doc = { sizeof( DOCINFO), docName, nil, nil, 0};

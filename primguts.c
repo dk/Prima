@@ -562,7 +562,7 @@ gimme_the_vmt( const char *className)
 
 
 SV *
-notify_perl( Handle self, char *methodName, char *format, ...)
+notify_perl( Handle self, char *methodName, const char *format, ...)
 {
    SV *toReturn;
    char subName[ 256];
@@ -577,7 +577,7 @@ notify_perl( Handle self, char *methodName, char *format, ...)
 }
 
 SV *
-delegate_sub( Handle self, char *methodName, char *format, ...)
+delegate_sub( Handle self, char *methodName, const char *format, ...)
 {
    SV *toReturn;
    PComponent obj = ( PComponent) self;
@@ -596,7 +596,7 @@ delegate_sub( Handle self, char *methodName, char *format, ...)
 
 
 SV *
-call_perl( Handle self, char *subName, char *format, ...)
+call_perl( Handle self, char *subName, const char *format, ...)
 {
    SV *toReturn;
    va_list params;
@@ -608,7 +608,7 @@ call_perl( Handle self, char *subName, char *format, ...)
 }
 
 SV *
-sv_call_perl( SV * mate, char *subName, char *format, ...)
+sv_call_perl( SV * mate, char *subName, const char *format, ...)
 {
    SV *toReturn;
    va_list params;
@@ -620,7 +620,7 @@ sv_call_perl( SV * mate, char *subName, char *format, ...)
 }
 
 SV *
-cv_call_perl( SV * mate, SV * coderef, char *format, ...)
+cv_call_perl( SV * mate, SV * coderef, const char *format, ...)
 {
    SV *toReturn;
    va_list params;
@@ -631,7 +631,7 @@ cv_call_perl( SV * mate, SV * coderef, char *format, ...)
 }
 
 SV *
-call_perl_indirect( Handle self, char *subName, char *format, Bool c_decl, Bool coderef, va_list params)
+call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl, Bool coderef, va_list params)
 {
    int i;
    Handle _Handle;

@@ -607,7 +607,7 @@ apc_window_get_border_style ( Handle self)
 }
 
 void
-apc_window_set_caption( Handle self, char * caption)
+apc_window_set_caption( Handle self, const char * caption)
 {
    if ( caption == nil || strlen( caption) == 0) caption = " ";
    if ( !WinSetWindowText( HANDLE, caption)) apiErr;
@@ -1335,7 +1335,7 @@ convert_fontmetrics( PFONTMETRICS m, PFontMetric f)
 }
 
 PFontMetric
-apc_fonts( char * facename, int * retCount)
+apc_fonts( const char* facename, int * retCount)
 {
    PFontMetric fmtx;
    PFONTMETRICS fm;
@@ -2740,7 +2740,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBord
 
 
 void                                                        /* no fix */
-apc_gp_text_out( Handle self, char * text, int x, int y, int len)
+apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 {
    POINTL p = {x, y};
    POINTL pt[ TXTBOX_COUNT];
@@ -3358,7 +3358,7 @@ gp_leave_font( Handle self, Font * requiredFont, Font * cache)
 }
 
 int
-apc_gp_get_text_width ( Handle self, char * text, int len, Bool addOverhang, Font *font)
+apc_gp_get_text_width ( Handle self, const char* text, int len, Bool addOverhang, Font *font)
 {
    POINTL pt[ TXTBOX_COUNT];
    Font x;
@@ -3370,7 +3370,7 @@ apc_gp_get_text_width ( Handle self, char * text, int len, Bool addOverhang, Fon
 }
 
 Point *
-apc_gp_get_text_box( Handle self, char * text, int len, Font *font)
+apc_gp_get_text_box( Handle self, const char* text, int len, Font *font)
 {
    POINTL * pt = malloc( sizeof( POINTL) * TXTBOX_COUNT);
    Font x;
@@ -3899,7 +3899,7 @@ apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled)
 }
 
 void
-apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
+apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
 {
    char buf [ 1024];
    char * t = m-> accel ? buf : text;
@@ -3909,7 +3909,7 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
 }
 
 void
-apc_menu_item_set_accel( Handle self, PMenuItemReg m, char * accel)
+apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
 {
    char buf [ 1024];
    char * t = accel ? buf : m->text;
@@ -4122,7 +4122,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 }
 
 void
-apc_show_message( char * message)
+apc_show_message( const char * message)
 {
    char title [256] = {0};
    if ( guts. anchor && guts. queue) {
@@ -4550,7 +4550,7 @@ apc_beep_tone( int freq, int duration)
 }
 
 char *
-apc_system_action( char * params)
+apc_system_action( const char* params)
 {
    char *ret = nil;
 
@@ -4622,7 +4622,7 @@ apc_system_action( char * params)
 }
 
 void
-apc_query_drives_map( char *firstDrive, char *map)
+apc_query_drives_map( const char *firstDrive, char *map)
 {
    char *m = map;
    int beg;
@@ -4673,7 +4673,7 @@ Bool is_cd( int num) {
    return ( data. i <= num && num <= data. i + data. n - 1);
 }
 
-int apc_query_drive_type( char *drive)
+int apc_query_drive_type( const char *drive)
 {
 #define BADRC(func) if ((func)!=NO_ERROR) return dtNone;
    char root[ 16];
@@ -4969,7 +4969,7 @@ apc_clipboard_set_data( long id, void * data, int length)
 }
 
 long
-apc_clipboard_register_format( char * format)
+apc_clipboard_register_format( const char * format)
 {
    ATOM atom;
    char buf[ 1024];
@@ -5134,7 +5134,7 @@ apc_prn_create( Handle self)
 }
 
 Bool
-apc_prn_select( Handle self, char * printer)
+apc_prn_select( Handle self, const char* printer)
 {
    int rc;
    PRQINFO3 ppi;
@@ -5220,7 +5220,7 @@ apc_prn_destroy( Handle self)
 }
 
 Bool
-apc_prn_begin_doc( Handle self, char * docName)
+apc_prn_begin_doc( Handle self, const char* docName)
 {
    LONG out = 0;
    char * c;
@@ -5439,7 +5439,7 @@ apc_help_close( Handle self)
 }
 
 void
-apc_help_set_file( Handle self, char * helpFile)
+apc_help_set_file( Handle self, const char *helpFile)
 {
    recreateHelp = true;
 }

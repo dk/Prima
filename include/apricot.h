@@ -450,23 +450,23 @@ extern CV*
 query_method( Handle object, char *methodName, Bool cacheIt);
 
 extern SV*
-call_perl_indirect( Handle self, char *subName, char *format,
+call_perl_indirect( Handle self, char *subName, const char *format,
 		    Bool cdecl, Bool coderef, va_list params);
 
 extern SV*
-call_perl( Handle self, char *subName, char *format, ...);
+call_perl( Handle self, char *subName, const char *format, ...);
 
 extern SV*
-sv_call_perl( SV * mate, char *subName, char *format, ...);
+sv_call_perl( SV * mate, char *subName, const char *format, ...);
 
 extern SV*
-notify_perl( Handle self, char *methodName, char *format, ...);
+notify_perl( Handle self, char *methodName, const char *format, ...);
 
 extern SV*
-cv_call_perl( SV * mate, SV * coderef, char *format, ...);
+cv_call_perl( SV * mate, SV * coderef, const char *format, ...);
 
 extern SV*
-delegate_sub( Handle self, char * methodName, char *format, ...);
+delegate_sub( Handle self, char * methodName, const char *format, ...);
 
 extern Handle
 Object_create( char * className, HV * profile);
@@ -919,7 +919,7 @@ extern Bool
 apc_window_get_task_listed( Handle self);
 
 extern void
-apc_window_set_caption( Handle self, char * caption);
+apc_window_set_caption( Handle self, const char* caption);
 
 extern void
 apc_window_set_client_pos( Handle self, int x, int y);
@@ -1186,7 +1186,7 @@ extern Bool
 apc_clipboard_set_data( long id, void *data, int length);
 
 extern long
-apc_clipboard_register_format( char *format);
+apc_clipboard_register_format( const char *format);
 
 extern void
 apc_clipboard_deregister_format( long id);
@@ -1238,7 +1238,7 @@ extern void
 apc_menu_item_delete( Handle self, PMenuItemReg m);
 
 extern void
-apc_menu_item_set_accel( Handle self, PMenuItemReg m, char * accel);
+apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel);
 
 extern void
 apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check);
@@ -1253,7 +1253,7 @@ extern void
 apc_menu_item_set_key( Handle self, PMenuItemReg m, int key);
 
 extern void
-apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text);
+apc_menu_item_set_text( Handle self, PMenuItemReg m, const char* text);
 
 extern ApiHandle
 apc_menu_get_handle( Handle self);
@@ -1303,7 +1303,7 @@ extern void
 apc_help_close( Handle self);
 
 extern void
-apc_help_set_file( Handle self, char * helpFile);
+apc_help_set_file( Handle self, const char* helpFile);
 
 /* Messages */
 #define mbError        0x0100
@@ -1315,7 +1315,7 @@ extern void
 apc_message( Handle self, PEvent ev, Bool post);
 
 extern void
-apc_show_message( char * message);
+apc_show_message( const char* message);
 
 
 /* graphics constants */
@@ -1651,7 +1651,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 		      int rop);
 
 extern void
-apc_gp_text_out( Handle self, char * text, int x, int y, int len);
+apc_gp_text_out( Handle self, const char* text, int x, int y, int len);
 
 extern char**
 apc_gp_text_wrap( Handle self, TextWrapRec * t);
@@ -1703,13 +1703,13 @@ extern int
 apc_gp_get_rop2( Handle self);
 
 extern Point*
-apc_gp_get_text_box( Handle self, char * text, int len);
+apc_gp_get_text_box( Handle self, const char* text, int len);
 
 extern Bool
 apc_gp_get_text_opaque( Handle self);
 
 extern int
-apc_gp_get_text_width( Handle self, char * text, int len, Bool addOverhang);
+apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang);
 
 extern Point
 apc_gp_get_transform( Handle self);
@@ -1764,7 +1764,7 @@ extern PrinterInfo*
 apc_prn_enumerate( Handle self, int * count);
 
 extern Bool
-apc_prn_select( Handle self, char * printer);
+apc_prn_select( Handle self, const char* printer);
 
 extern ApiHandle
 apc_prn_get_handle( Handle self);
@@ -1785,7 +1785,7 @@ extern Bool
 apc_prn_setup( Handle self);
 
 extern Bool
-apc_prn_begin_doc( Handle self, char * docName);
+apc_prn_begin_doc( Handle self, const char* docName);
 
 extern Bool
 apc_prn_begin_paint_info( Handle self);
@@ -1807,13 +1807,13 @@ extern PFont
 apc_font_default( PFont font);
 
 extern int
-apc_font_load( char * filename);
+apc_font_load( const char* filename);
 
 extern void
 apc_font_pick( Handle self, PFont source, PFont dest);
 
 extern PFont
-apc_fonts( char *facename, int *retCount);
+apc_fonts( const char *facename, int *retCount);
 
 /* system metrics */
 extern Bool
@@ -1842,13 +1842,13 @@ extern Color
 apc_lookup_color( const char *colorName);
 
 extern char *
-apc_system_action( char *params);
+apc_system_action( const char *params);
 
 extern void
-apc_query_drives_map( char *firstDrive, char *result);
+apc_query_drives_map( const char *firstDrive, char *result);
 
 extern int
-apc_query_drive_type( char *drive);
+apc_query_drive_type( const char *drive);
 
 extern char*
 apc_get_user_name( void);

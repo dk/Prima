@@ -424,7 +424,7 @@ apc_clipboard_set_data( long id, void * data, int length)
 }
 
 long
-apc_clipboard_register_format( char * format)
+apc_clipboard_register_format( const char* format)
 {
    DOLBUG( "apc_clipboard_register_format()\n");
    return 0;
@@ -562,7 +562,7 @@ apc_help_close( Handle self)
 }
 
 void
-apc_help_set_file( Handle self, char * helpFile)
+apc_help_set_file( Handle self, const char* helpFile)
 {
    DOLBUG( "apc_help_set_file()\n");
 }
@@ -577,7 +577,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 }
 
 void
-apc_show_message( char * message)
+apc_show_message( const char * message)
 {
    DOLBUG( "apc_show_message()\n");
 }
@@ -663,20 +663,20 @@ apc_beep_tone( int freq, int duration)
 }
 
 char *
-apc_system_action( char * params)
+apc_system_action( const char* params)
 {
    DOLBUG( "apc_system_action()\n");
    return nil;
 }
 
 void
-apc_query_drives_map( char *firstDrive, char *result)
+apc_query_drives_map( const char* firstDrive, char *result)
 {
    DOLBUG( "apc_query_drives_map()\n");
 }
 
 int
-apc_query_drive_type( char *drive)
+apc_query_drive_type( const char *drive)
 {
    DOLBUG( "apc_query_drive_type()\n");
    return 0;

@@ -484,7 +484,7 @@ apc_font_default( PFont f)
 }
 
 int
-apc_font_load( char * filename)
+apc_font_load( const char* filename)
 {
    DOLBUG( "apc_font_load()\n");
    return 0;
@@ -908,7 +908,7 @@ croak( "Ala-ulu");
 }
 
 PFont
-apc_fonts( char *facename, int *retCount)
+apc_fonts( const char *facename, int *retCount)
 {
    DOLBUG( "apc_fonts()\n");
    return nil;

@@ -647,7 +647,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 }}
 
 void
-apc_gp_text_out( Handle self, char * text, int x, int y, int len)
+apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
 {objCheck;{
    HDC ps = sys ps;
    int bk  = GetBkMode( ps);
@@ -1179,7 +1179,7 @@ apc_gp_get_rop2( Handle self)
 }
 
 int
-apc_gp_get_text_width( Handle self, char * text, int len, Bool addOverhang)
+apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
 {
    SIZE  sz;
    objCheck 0;
@@ -1188,7 +1188,7 @@ apc_gp_get_text_width( Handle self, char * text, int len, Bool addOverhang)
 }
 
 Point *
-apc_gp_get_text_box( Handle self, char * text, int len)
+apc_gp_get_text_box( Handle self, const char* text, int len)
 {objCheck nil;{
    SIZE  sz;
    Point * pt = malloc( sizeof( Point) * 5);

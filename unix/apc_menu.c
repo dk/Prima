@@ -83,7 +83,7 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
 }
 
 void
-apc_menu_item_set_accel( Handle self, PMenuItemReg m, char * accel)
+apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
 {
 }
 
@@ -108,7 +108,7 @@ apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
 }
 
 void
-apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
+apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
 {
 }
 

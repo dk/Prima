@@ -630,7 +630,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 }
 
 void
-apc_gp_text_out( Handle self, char * text, int x, int y, int len)
+apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 {
    DEFXX;
    XDrawString( DISP, XX-> drawable, XX-> gc, x, REVERT( y), text, len);
@@ -753,7 +753,7 @@ apc_gp_get_rop2( Handle self)
 }
 
 int
-apc_gp_get_text_width( Handle self, char *text, int len, Bool addOverhang)
+apc_gp_get_text_width( Handle self, const char *text, int len, Bool addOverhang)
 {
    DEFXX;
    if ( !XX-> font) {
@@ -764,7 +764,7 @@ apc_gp_get_text_width( Handle self, char *text, int len, Bool addOverhang)
 }
 
 Point *
-apc_gp_get_text_box( Handle self, char * text, int len)
+apc_gp_get_text_box( Handle self, const char* text, int len)
 {
    DOLBUG( "apc_gp_get_text_box()\n");
    return nil;

@@ -214,7 +214,7 @@ apc_window_get_task_listed( Handle self)
 }
 
 void
-apc_window_set_caption( Handle self, char *caption)
+apc_window_set_caption( Handle self, const char *caption)
 {
    XStoreName( DISP, X_WINDOW, caption);
 }

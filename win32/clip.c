@@ -214,7 +214,7 @@ apc_clipboard_set_data( long id, void * data, int length)
 }
 
 long
-apc_clipboard_register_format( char * format)
+apc_clipboard_register_format( const char * format)
 {
    UINT r;
    if ( !( r = RegisterClipboardFormat( format))) apiErrRet;

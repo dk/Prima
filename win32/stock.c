@@ -536,7 +536,7 @@ apc_font_default( PFont font)
 }
 
 int
-apc_font_load( char * filename)
+apc_font_load( const char* filename)
 {
    return 0;
 }
@@ -843,7 +843,7 @@ fep2( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PList lst)
 
 
 PFont
-apc_fonts( char * facename, int * retCount)
+apc_fonts( const char* facename, int * retCount)
 {
    PFont fmtx = nil;
    int  i;
