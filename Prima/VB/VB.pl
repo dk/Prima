@@ -624,9 +624,8 @@ sub veil
    my @r = ( @{$self->{anchor}}, @{$self->{dim}});
    ( $r[0], $r[2]) = ( $r[2], $r[0]) if $r[2] < $r[0];
    ( $r[1], $r[3]) = ( $r[3], $r[1]) if $r[3] < $r[1];
-   ( $r[0], $r[1]) = $self-> client_to_screen( $r[0], $r[1]);
-   ( $r[2], $r[3]) = $self-> client_to_screen( $r[2], $r[3]);
-   $::application-> clipRect( $self-> client_to_screen( 0,0), $self-> client_to_screen( $self-> size));
+   @r = $self-> client_to_screen( @r);
+   $::application-> clipRect( $self-> client_to_screen( 0,0,$self-> size));
    $::application-> rect_focus( @r, 1);
    $::application-> end_paint;
 }

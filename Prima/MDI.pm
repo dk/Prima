@@ -521,7 +521,7 @@ sub keyMove
    $self-> capture(1, $self-> owner);
    $self-> check_drag;
    unless ($self-> {fullDrag}) {
-      $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+      $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
       $self-> xorrect( @{$self-> {prevRect}});
    };
 }
@@ -536,7 +536,7 @@ sub keySize
    $self-> capture(1, $self-> owner);
    $self-> check_drag;
    unless ($self-> {fullDrag}) {
-      $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+      $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
       $self-> xorrect( @{$self-> {prevRect}});
    };
 }
@@ -567,7 +567,7 @@ sub xorrect
    $o-> begin_paint;
    my $oo = $self-> owner;
    my @cr = $oo-> rect;
-   $o-> clipRect( $oo-> client_to_screen( @cr[0,1]), $oo-> client_to_screen( @cr[2,3]));
+   $o-> clipRect( $oo-> client_to_screen( @cr));
    $cr[2]--;
    $cr[3]--;
    $o-> rect_focus( @r, $self-> {border});
@@ -624,7 +624,7 @@ sub on_mousedown
       $self-> capture(1, $self-> owner);
       $self-> check_drag;
       unless ($self-> {fullDrag}) {
-         $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+         $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
          $self-> xorrect( @{$self-> {prevRect}});
       };
       return;
@@ -650,7 +650,7 @@ sub on_mousedown
       $self-> capture(1, $self-> owner);
       $self-> check_drag;
       unless ($self-> {fullDrag}) {
-         $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+         $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
          $self-> xorrect( @{$self-> {prevRect}});
       };
       return;
@@ -785,8 +785,7 @@ sub on_keydown
             unless ( $self-> {fullDrag}) {
                $self-> xorrect( @{$self-> {prevRect}});
                $self-> rect(
-                 $self-> owner-> screen_to_client(@{$self-> {prevRect}}[0,1]),
-                 $self-> owner-> screen_to_client(@{$self-> {prevRect}}[2,3])
+                 $self-> owner-> screen_to_client(@{$self-> {prevRect}})
                );
             }
             return;
@@ -858,8 +857,7 @@ sub on_mouseup
       unless ($self-> {fullDrag}) {
          my @r = @{$self-> {prevRect}};
          $self-> xorrect( @r);
-         @r = ( $self-> owner-> screen_to_client(@r[0,1]), $self-> owner-> screen_to_client(@r[2,3]));
-         $self-> rect( @r);
+         $self-> rect( $self-> owner-> screen_to_client(@r));
       };
       $self-> {mouseTransactionArea} = $self->{dirData} = undef;
       return;
@@ -956,7 +954,7 @@ sub on_mousemove
                 $self-> rect( @new)
              } else {
                 $self-> xorrect( @{$self-> {prevRect}});
-                $self-> {prevRect} = [$self-> owner-> client_to_screen( @new[0,1]), $self-> owner-> client_to_screen( @new[2,3])];
+                $self-> {prevRect} = [$self-> owner-> client_to_screen( @new)];
                 $self-> xorrect( @{$self-> {prevRect}});
              }
           }

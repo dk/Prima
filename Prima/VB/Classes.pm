@@ -434,14 +434,14 @@ sub on_mousedown
          for ( @mw) {
             next if $_ == $self;
             $_-> marked(1);
-            push( @rects, [$_->client_to_screen(0,0), $_->client_to_screen($_->size)]);
+            push( @rects, [$_->client_to_screen(0,0,$_->size)]);
          }
          $self-> {sav} = [$self-> origin];
          $self-> {drag} = 1;
          $VB::form-> dm_init( $self);
          $self-> {extraWidgets} = \@mw;
          $self-> {extraRects}   = \@rects;
-         $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+         $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
          $self-> update_view;
          $VB::form->{saveHdr} = $VB::form-> text;
          $self-> xorrect( @{$self-> {prevRect}}, 1);
@@ -466,7 +466,7 @@ sub on_mousedown
          elsif ( $part eq q(NW)) { ( $xa, $ya) = (-1, 1); }
          elsif ( $part eq q(SE)) { ( $xa, $ya) = ( 1,-1); }
          $self-> {dirData} = [$xa, $ya];
-         $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
+         $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
          $self-> update_view;
          $VB::form->{saveHdr} = $VB::form-> text;
          $self-> xorrect( @{$self-> {prevRect}}, 1);
@@ -587,7 +587,7 @@ sub on_mousemove
 
             if ( $org[1] != $new[1] || $org[0] != $new[0] || $org[2] != $new[2] || $org[3] != $new[3]) {
                $self-> xorrect( @{$self-> {prevRect}});
-               $self-> {prevRect} = [$self-> owner-> client_to_screen( @new[0,1]), $self-> owner-> client_to_screen( @new[2,3])];
+               $self-> {prevRect} = [$self-> owner-> client_to_screen( @new)];
                $self-> xorrect( @{$self-> {prevRect}}, 1);
             }
             return;
@@ -629,7 +629,7 @@ sub on_mouseup
       if ( $self->{sizeAction}) {
          my @r = @{$self-> {prevRect}};
          $self-> xorrect( @r);
-         @r = ( $self-> owner-> screen_to_client(@r[0,1]), $self-> owner-> screen_to_client(@r[2,3]));
+         @r = $self-> owner-> screen_to_client(@r);
          my @o = $self-> origin;
          $self-> rect( @r);
          $self-> maintain_children_origin( @o);
