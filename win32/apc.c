@@ -2759,37 +2759,6 @@ int ctx_kb2VK3[] = {
    endCtx
 };
 
-static int ctx_hmp2HELP[] =
-{
-   hmpMain,          HELP_CONTENTS,
-   hmpContents,      HELP_CONTENTS,
-   hmpExtra,         HELP_INDEX,
-   endCtx
-};
-
-Bool
-apc_help_open_topic( Handle self, long command)
-{
-   UINT hm = ctx_remap_def( command, ctx_hmp2HELP, true, HELP_CONTEXT);
-   DWORD data = ( hm == HELP_CONTEXT) ? ( DWORD) command : 0;
-   dobjCheck( application) false;
-   return WinHelp( DHANDLE( application), PApplication(application)-> helpFile, hm, data);
-}
-
-Bool
-apc_help_close( Handle self)
-{
-   dobjCheck( application) false;
-   if ( !WinHelp( DHANDLE( application), PApplication(application)-> helpFile, HELP_QUIT, 0)) apiErrRet;
-   return true;
-}
-
-Bool
-apc_help_set_file( Handle self, const char * helpFile)
-{
-   return true;
-}
-
 
 typedef LRESULT (*ApiMessageSender)(HWND hwnd, UINT msg, WPARAM mp1, LPARAM mp2);
 Bool

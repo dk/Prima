@@ -620,7 +620,6 @@ my %RNT = (
    EndDrag        => nt::Default,
    Enter          => nt::Default,
    FontChanged    => nt::Default,
-   Help           => nt::Default,
    Hide           => nt::Default,
    Hint           => nt::Default,
    KeyDown        => nt::Command,
@@ -669,7 +668,7 @@ sub notification_types { return \%RNT; }
    focused           => 0,
    growMode          => 0,
    height            => 100,
-   helpContext       => hmp::Owner,
+   helpContext       => '',
    hiliteBackColor   => cl::Hilite,
    hiliteColor       => cl::HiliteText,
    hint              => '',
@@ -1257,8 +1256,6 @@ sub profile_default
       ownerShowHint  => 0,
       ownerPalette   => 0,
       showHint       => 1,
-      helpFile       => '',
-      helpContext    => hmp::None,
       hintClass      => 'Prima::HintWidget',
       hintColor      => cl::Black,
       hintBackColor  => 0xffff80,
@@ -1267,6 +1264,8 @@ sub profile_default
       modalHorizon   => 1,
       printerClass   => $unix ? 'Prima::PS::Printer' : 'Prima::Printer',
       printerModule  => $unix ? 'Prima::PS::Printer' : '',
+      helpClass      => 'Prima::HelpViewer',
+      helpModule     => 'Prima::HelpViewer',
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -1320,5 +1319,29 @@ sub get_printer
 }
 
 sub hintFont      {($#_)?$_[0]->set_hint_font        ($_[1])  :return Prima::Font->new($_[0], "get_hint_font", "set_hint_font")}
+sub helpModule    {($#_)?$_[0]->{HelpModule} = $_[1] : return $_[0]->{HelpModule}}
+sub helpClass     {($#_)?$_[0]->{HelpClass}  = $_[1] : return $_[0]->{HelpClass}}
+
+sub help_init
+{
+   return 0 unless length $_[0]-> {HelpModule};
+   eval 'use ' . $_[0]-> {HelpModule} . ';';
+   die "$@" if $@;
+   return 1;
+}
+
+sub close_help
+{
+   return '' unless $_[0]-> help_init;
+   shift-> {HelpClass}-> close;
+}
+
+sub open_help
+{
+   my ( $self, $link) = @_;
+   return unless length $link;
+   return unless $self-> help_init;
+   return $self-> {HelpClass}-> open($link);
+}
 
 1;

@@ -117,7 +117,6 @@ typedef struct _OS2Guts
    int   pointerLock;        // pointer lock count
    Bool  pointerInvisible;   // pointer visibility state;
    ULONG codePage;           // current system codepage
-   HWND  helpWnd;            // help window id
    Bool  focSysDisabled;     // focus system disabled
    Bool  focSysGranted;      // WinSetFocus() was called inside apc_widget_set_focused
    Bool  appTypePM;          // startup check, whether our application is PM

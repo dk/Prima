@@ -643,8 +643,6 @@ START_TABLE(cm,UV)
 CM(Valid)
 #define cmQuit           0x00000001
 CM(Quit)
-#define cmHelp           0x00000002     /* WM_HELP analog */
-CM(Help)
 #define cmClose         (0x00000005|ctDiscardable)
 CM(Close)
 #define cmCreate        (0x0000000A|ctPassThrough)
@@ -2268,31 +2266,6 @@ apc_timer_stop( Handle self);
 
 extern ApiHandle
 apc_timer_get_handle( Handle self);
-
-/* Help */
-#define HMP(const_name) CONSTANT(hmp,const_name)
-START_TABLE(hmp,IV)
-#define  hmpNone                     0
-HMP(None)
-#define  hmpOwner                   -1
-HMP(Owner)
-#define  hmpMain                    -2
-HMP(Main)
-#define  hmpContents                -3
-HMP(Contents)
-#define  hmpExtra                   -4
-HMP(Extra)
-END_TABLE(hmp,IV)
-#undef HMP
-
-extern Bool
-apc_help_open_topic( Handle self, long command);
-
-extern Bool
-apc_help_close( Handle self);
-
-extern Bool
-apc_help_set_file( Handle self, const char* helpFile);
 
 /* Messages */
 #define mbError        0x0100

@@ -183,20 +183,17 @@ See L<Prima::Clipboard> for details.
 
 =item Help subsystem 
 
-The original design of the help subsystem, when
-the program uses the system-provided help viewer
-with system-dependent help files, seems not scaling
-well. Still, it is fully functional on some platforms ( Win32, OS/2 ),
-and will be around until a new, more protable design will be impelemnted.
+The toolkit has a built-in help viewer, that understands
+perl's native POD ( plain old documentation ) format.
+Whereas the viewer functionality itself is part of the toolkit,
+and resides in C<Prima::HelpViewer> module, any custom
+help viewing module can be assigned. Create-only C<Prima::Application>
+properties C<::helpClass> and C<::helpModule> can be used to
+set these options.
 
-Currently, there is a 'help file', a file with hypertext information in 
-a system-dependent format, loaded via the C<::helpFile> property.
-It contains topics and articles, accessible by supplying corresponding
-integer value to C<help_context()>. If such value is positive, it is
-a direct topic index, otherwise it is one of C<hmp::XXX> constants
-( see L<Prima::Widget> ).C<help_context()> opens a selected topic
-in a system-provided help window, and C<close_help()> closes that window.
-The system help window is also closed when the program terminates.
+C<Prima::Application> provides two methods for copmmunicating
+with the help viewer window: C<open_help()> opens a selected topic
+in the window, and C<close_help()> closes that window.
 
 =item System-dependent information
 
@@ -246,11 +243,23 @@ through the system should insert ( 1 ) or overwrite ( 0 )
 text on user input. Not all systems provide such unifying
 functionality.
 
-=item helpFile STRING
+=item helpClass STRING
 
-I<Design in progress>. Points to the help file,
-in system-dependent format, which is accessible 
-via C<help_context()> method.
+Specifies a class of object, used as a help viewing package.
+The default value is Prima::HelpViewer.
+
+Run-time changes to the property do not affect the help
+subsystem until C<close_help> call is made.
+
+=item helpModule STRING
+
+Specifies a perl module, loaded indirectly when a help viewing
+call is made via C<open_help>.
+Used when C<::helpClass> property is overridden and
+the new class is contained in a third-party module.
+
+Run-time changes to the property do not affect the help
+subsystem until C<close_help> call is made.
 
 =item hintClass STRING
 
@@ -305,7 +314,7 @@ Create-only property.
 Specifies a perl module, loaded indirectly before
 a printer object of C<::printerClass> class is created. 
 Used when C<::printerClass> property is overridden and
-the new class is contained in a third module.
+the new class is contained in a third-party module.
 
 =item pointerVisible BOOLEAN
 
@@ -364,7 +373,7 @@ and thus cancelled. If not cancelled, stops the application event loop.
 
 =item close_help
 
-I<Design in progress>. Closes the system-provided help viewer window.
+Closes the help viewer window.
 
 =item end_paint
 
@@ -598,16 +607,17 @@ standard code. Returns when the program is about to
 terminate, or if the exception was signalled. In the
 latter case, can be safely re-started.
 
-=item help_context INDEX
-
-I<Design in progress>. Opens the system-provided help viewer window
-with the topic, associated to INDEX value, which is either a 
-positive integer or one of C<hmp::XXX> constants.
-
 =item lock
 
 Effectively blocks the graphic output for all widgets.
 The output can be restored with C<unlock()>.
+
+=item open_help TOPIC
+
+Opens the help viewer window with TOPIC string in 
+link POD format ( see L<perlpod> ) - the string is treated
+as "manpage/section", where 'manpage' is a file with POD 
+content and 'section' is a topic inside the manpage.
 
 =item sys_action CALL
 

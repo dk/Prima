@@ -1234,20 +1234,16 @@ C<growMode>, C<Move>, C<Size>, C<get_virtual_size>,
 C<sizeMax>, C<sizeMin>
 
 
-=item helpContext INTEGER
+=item helpContext STRING
 
-I<Design in progress>. A positive integer value, that binds a
-widget, a logical part it plays with the application
-and an interactive help topic. As well as positive integers,
-the following constants can be used: 
+A string that binds a widget, a logical part 
+it plays with the application and an interactive 
+help topic. STRING format is defined as POD link
+( see L<perlpod> ) - "manpage/section", 
+where 'manpage' is a file with POD content and 'section'
+is a topic inside the manpage.
 
-   hmp::None       no topic
-   hmp::Owner      same topic as owner's
-   hmp::Main       the main or startup entry 
-   hmp::Contents   the contents or index entry
-   hmp::Extra      user-defined, supplementary entry
-
-See also: C<Help>
+See also: C<help>
 
 =item hiliteBackColor COLOR
 
@@ -1837,8 +1833,26 @@ See also: C<show_cursor>, C<cursorVisible>
 
 =item help
 
-I<Design in progress>. Supposed to start an interactive
-help program, opened on C<::helpContext> property value.
+Starts an interactive help viewer
+opened on C<::helpContext> string value.
+
+The string value is combined
+with the widget's owner C<::helpContext> strings,
+if it is empty or begins with a slash.
+A special meaning is assigned to an empty string " " -
+the call fails when such value is found to be
+a component of a such combined value.
+
+This feature can be useful when a window or a dialog
+presents a standalone functionality ( and a module),
+and the documentation is related more to the module than
+to an embedding program. In such case, the grouping widget
+holds C<::helpContext> as a pod manpage name with a trailing
+slash, and its children widgets are assigned C<::helpContext>
+to the topics without the manpage but the leading slash instead.
+If the grouping widget has an empty string " " as C<::helpContext>
+then the help is forced to be unavailable for all the children
+widgets.
 
 See also: C<helpContext>
 
@@ -2316,14 +2330,6 @@ Called when a widget font is changed either
 by direct property change or by the system.
 
 See also: C<font>, C<ColorChanged>
-
-=item Help
-
-I<Design in progress>. Called when the user presses 
-a system-defined key combination, used for interactive
-help invocation. Usually the key is kb::F1.
-
-See also: C<helpContext>
 
 =item Hide
 

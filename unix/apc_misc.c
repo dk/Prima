@@ -582,30 +582,6 @@ apc_kbd_get_state( Handle self)
       (( mask & Mod1Mask)    ? kmAlt   : 0);
 }
 
-/* Help */
-
-Bool
-apc_help_open_topic( Handle self, long command)
-{
-   DOLBUG( "apc_help_open_topic()\n");
-   return false;
-}
-
-Bool
-apc_help_close( Handle self)
-{
-   DOLBUG( "apc_help_close()\n");
-   return true;
-}
-
-Bool
-apc_help_set_file( Handle self, const char* helpFile)
-{
-   DOLBUG( "apc_help_set_file()\n");
-   return true;
-}
-
-
 /* Messages */
 
 Bool

@@ -36,7 +36,7 @@ object Prima::Widget( Prima::Drawable)
    int       cursorLock;               # cursor lock count
    NPoint    designScale;              # font width and height for view design
    int       growMode;                 # growing flags, see gmGrowXXX
-   long      helpContext;              # help context
+   char   *  helpContext;              # help context string
    char   *  hint;                     # hint tag text
    int       lockCount;                # lock count
    Font      popupFont;                # font for popup menu
@@ -73,9 +73,9 @@ object Prima::Widget( Prima::Drawable)
    property  int    growMode;
    property  Bool   firstClick;
    property  Bool   focused;
+   property  char*  helpContext;
    property  char*  hint;
    property  int    hintVisible;
-   property  long   helpContext;
    property  int    left;
    property  Handle popup;
    property  SV *   popupItems;

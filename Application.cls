@@ -30,7 +30,6 @@ object Prima::Application( Prima::Widget)
    ColorSet  colors;
    Handle    hintTimer;
    Handle    hintWidget;
-   char *    helpFile;
    Handle    icon;
    Bool      autoClose;
 
@@ -42,8 +41,6 @@ object Prima::Application( Prima::Widget)
    property  Bool   focused;
    property  Handle icon;
    property  Bool   insertMode;
-   property  char * helpFile;
-   property  long   helpContext;
    property  int    growMode;
    property  Color  hintColor;
    property  Color  hintBackColor;
@@ -74,7 +71,6 @@ object Prima::Application( Prima::Widget)
    method void   bring_to_front();
    method void   cleanup();
    method Bool   close();
-   method Bool   close_help()                                 => apc_help_close;
    method void   done();
    method void   detach( Handle objectHandle, Bool kill);
    method void   end_paint();
@@ -96,7 +92,6 @@ object Prima::Application( Prima::Widget)
    static int    get_system_value( char * dummy = "", int sysValue = 0);
    method Bool   go( void)   => apc_application_go;
    c_only void   handle_event ( PEvent event);
-   method Bool   help_context( long context)   => apc_help_open_topic;
    method void   hide();
    method void   init( HV * profile);
    method Bool   lock()                        => apc_application_lock;

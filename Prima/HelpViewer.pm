@@ -1,0 +1,761 @@
+#
+#  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+#  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+#  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+#  SUCH DAMAGE.
+#
+#  Created by:
+#     Dmitry Karasik <dk@plab.ku.dk> 
+#
+#  $Id$
+
+use strict;
+use Prima;
+use Prima::PodView;
+use Prima::Buttons;
+use Prima::InputLine;
+use Prima::StdDlg;
+use Prima::IniFile;
+
+package Prima::HelpViewer;
+use vars qw(@helpWindows $windowClass);
+
+$windowClass = 'Prima::PodViewWindow';
+
+sub open
+{
+   shift;
+   my $topic = $_[0];
+   
+   $windowClass-> create unless scalar @helpWindows;
+   $helpWindows[0]-> {text}-> update_view;
+   $helpWindows[0]-> {text}-> load_link( $topic); 
+   $helpWindows[0]-> {text}-> select;
+}
+
+sub close
+{
+   shift;
+   for my $k ( @helpWindows) {
+      $k-> close;
+   }
+}
+
+package CustomPodView;
+use vars qw(@ISA);
+@ISA = qw(Prima::PodView);
+
+sub load_file
+{
+   my ( $self, $manpage) = @_;
+   my $ret;
+   my $o = $self-> owner;
+   $o-> text( $o-> {stext});
+   $o-> status( "Loading $manpage ... ");
+   if (( $ret = $self-> SUPER::load_file( $manpage)) > 0) {
+      $o-> text( $o-> {stext} . ' - ' . $manpage);
+   }
+   $o-> status('');
+   $o-> update;
+   return $ret;
+}
+
+sub load_link
+{
+   my ( $self, $link) = @_;
+   my $ret = $self-> SUPER::load_link( $link);
+   $self-> owner-> update;
+   return $ret;
+}
+
+sub on_bookmark
+{
+   my ( $self, $mark) = @_;
+   my $o = $self-> owner;
+   push @{$o-> {history}}, $mark;
+   $o-> {forwardLinks} = [];
+   $o-> menu-> goforw-> disable;
+   $o-> Forward-> enabled(0);
+   $o-> menu-> goback-> enable;
+   $o-> Back-> enabled(1);
+   $o-> update;
+}
+
+sub on_newpage
+{
+   my ( $self, $mark) = @_;
+   my $o = $self-> owner;
+   undef $o-> {find_offset};
+   $o-> fastfind_close;
+}
+
+sub on_keydown
+{
+   my ( $self, $code, $key, $mod, $r) = @_;
+   my $c = chr $code;
+   if ( $c =~ /[\/\?Nn]/) {
+      if ( $c eq '/') {
+         $self-> owner-> fastfind(1);
+      } elsif ( $c eq '?') {
+         $self-> owner-> fastfind(0);
+      } elsif ( $c eq 'N') {
+         $self-> owner-> fastfind_repeat(0);
+      } elsif ( $c eq 'n') {
+         $self-> owner-> fastfind_repeat(1);
+      }
+      $self-> clear_event;
+      return;
+   }
+   $self-> SUPER::on_keydown( $code, $key, $mod, $r);
+}
+
+package Prima::PodViewWindow;
+use vars qw(@ISA $loaddlg $finddlg $prndlg $setupdlg $inifile
+$defaultVariableFont $defaultFixedFont);
+@ISA = qw(Prima::Window);
+
+{ 
+  my $path = Prima::path;
+  unless ( -d $path) {
+     require File::Path;
+     File::Path::mkpath $path;
+  }
+  $inifile = Prima::IniFile-> create( "$path/HelpWindow");
+}
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+     menuItems => 
+        [[ '~File' => [
+           ['~Open' => 'F3' => 'F3' => 'load_dialog' ],
+           ['~Go to...' => 'goto' ],
+           ['~New window' => 'Ctrl+N' => '^N' => 'new_window'],
+           [],
+           ['~Print ...' => 'print'],
+           ['Printer ~setup ...' => 'print_setup'],
+           [],
+           ['~Close window' => 'Alt+F4' => '@F4' => sub { $_[0]-> close }],
+           ['Close ~all windows' => 'Alt+X' => '@X' => sub { Prima::HelpViewer-> close }],
+        ]], [ '~View' => [
+           [ '~Increase font' => 'Ctrl +' => '^+' => sub {
+               return if $_[0]-> {text}-> font-> size > 100;
+               $_[0]-> {text}-> font-> size( $_[0]-> {text}-> font-> size + 2);
+           }],
+           [ '~Decrease font' => 'Ctrl -' => '^-' => sub {
+               return if $_[0]-> {text}-> font-> size < 4;
+               $_[0]-> {text}-> font-> size( $_[0]-> {text}-> font-> size - 2);
+          }],
+          [],
+          [ 'fullView' => 'Full text ~view' => sub {
+             $_[0]-> {text}-> topicView( ! $_[0]-> menu-> toggle( $_[1]));
+             $_[0]-> update;
+          }],
+          [],
+          ['~Find...' => 'Ctrl+F' => '^F' => 'find'],
+          ['Find ~again' => 'Ctrl+L' => '^L' => 'find2'],
+          ['Fa~st find' => [
+             ['fff' => '~Forward' => '/' => kb::NoKey => sub { $_[0]-> fastfind(1) }],
+             ['ffb' => '~Backward' => '?' => kb::NoKey => sub { $_[0]-> fastfind(0) }],
+             ['-frf' => '~Repeat forward' => 'n' => kb::NoKey => sub { $_[0]-> fastfind_repeat(1) }],
+             ['-frb' => 'Repeat backward' => 'N' => kb::NoKey => sub { $_[0]-> fastfind_repeat(0) }],
+          ]],
+          [],
+          ['Set~up' => 'setup_dialog'],
+        ]], [ '~Go' => [
+            [ '-goback' => '~Back' => 'Alt + LeftArrow' => km::Alt | kb::Left => 'back' ],
+            [ '-goforw' => '~Forward' => 'Alt + RightArrow' => km::Alt | kb::Right => 'forward' ],
+            [],
+            [ '-goup'   => '~Up' => 'Alt + UpArrow' => km::Alt | kb::Right => 'up' ],
+            [ '-goprev'   => '~Previous' => 'prev' ],
+            [ '-gonext'   => '~Next' => 'next' ],
+          ]
+        ], 
+        [],
+        [ '~Help' => [
+           [ '~About' => sub {
+              $::application-> open_help('Prima::HelpViewer/NAME');
+           }],
+           [ '~Help' => 'F1' => 'F1' => sub {
+              $::application-> open_help('Prima::HelpViewer/Help');
+           }],
+        ]
+        ]],
+        text => 'POD viewer',
+        history => [],
+        icon    => Prima::StdBitmap::icon(0),
+        ownerIcon => 0,
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+   my $t = $self-> font-> height + 2;
+   $self-> {text} = $self-> insert( CustomPodView => 
+      origin => [ 0, $t],
+      size   => [ $self-> width, $self-> height - $t * 2 - 4],
+      growMode => gm::Client,
+      current  => 1,
+   );
+   unless ( defined $defaultVariableFont) {
+      $defaultVariableFont = $self-> {text}-> {fontPalette}-> [0]-> {name};
+      $defaultFixedFont    = $self-> {text}-> {fontPalette}-> [1]-> {name};
+   }
+   my ( $x, $y) = ( 0, $self-> height - $t - 4);
+   for ( qw(Back Forward Up Prev Next)) {
+      my $lc = lc;
+      my $text = $_;
+      $text = '<<' if $text eq 'Prev';
+      $text = '>>' if $text eq 'Next';
+      my $b = $self-> insert( Button =>
+         text => $text,
+         name => $_,
+         origin => [ $x, $y],
+         height => $t + 4,
+         selectable => 0,
+         enabled => 0,
+         growMode => gm::GrowLoY,
+         onClick => sub { $self-> $lc(); }
+         
+      );
+      $x += $b-> width;
+   }
+   $self-> {status} = $self-> insert( Widget =>
+      origin      => [0,0],
+      size        => [ $self-> width, $t],
+      selectable  => 0,
+      growMode    => gm::Floor,
+      text        => '',
+      onPaint     => sub {
+         my ( $self, $canvas) = @_;
+         $canvas-> clear;
+         $canvas-> text_out( $self-> text, 1, 1);
+      }
+   );
+   $self-> {fastfinder} = $self-> insert( InputLine =>
+      origin      => [0,0],
+      size        => [ $self-> width, $t],
+      growMode    => gm::Floor,
+      text        => '',
+      name        => 'FastFinder',
+      delegations => ['Change', 'KeyDown'],
+      visible     => 0,
+   );
+   $self-> {stext} = $self-> text;
+   $self-> {statusTimer} = $self-> insert( Timer =>
+     timeout => 4000,
+     onTick => sub {
+        $self-> status('');
+        $_[0]-> stop;
+     },
+   );
+   
+   $self-> {forwardLinks} = [];
+   $self-> $_($profile{$_}) for qw(history);
+
+
+   my $sec = $inifile-> section('View');
+   if ( exists $sec-> {FontSize} ) {
+      my $fs = $sec-> {FontSize};
+      if ( $fs =~ /^\d+$/ && $fs > 4 && $fs < 100) {
+         $self-> {text}-> font-> size( $fs);
+      }
+   }
+
+   if ( $sec-> {FullText}) {
+      $self-> menu-> fullView-> check; 
+      $self-> {text}-> topicView(0);
+   }
+
+   $self-> {text}-> {fontPalette}->[0]-> {name} = $sec-> {VariableFont}
+      if $sec-> {VariableFont};
+   $self-> {text}-> {fontPalette}->[1]-> {name} = $sec-> {FixedFont}
+      if $sec-> {FixedFont};
+   $self-> {text}-> {colorMap}-> [ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX] = $sec-> {ColorCode}
+      if $sec-> {ColorCode};
+   $self-> {text}-> {colorMap}-> [ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX] = $sec-> {ColorLink}
+      if $sec-> {ColorLink};
+
+   push @Prima::HelpViewer::helpWindows, $self;
+   
+   return %profile;
+}
+
+sub on_close
+{
+   my $self = $_[0];
+   my $sec = $inifile-> section('View');
+
+   $sec-> {FontSize}  = $self-> {text}-> font-> size;
+   $sec-> {FullText}  = $self-> {text}-> topicView ? 0 : 1;
+}
+
+sub on_destroy
+{
+   my $self = $_[0];
+   @Prima::HelpViewer::helpWindows = grep { $_ != $self } @Prima::HelpViewer::helpWindows;
+   $inifile-> write;
+}
+
+sub load_dialog
+{
+   my $self = $_[0];
+   $loaddlg = Prima::OpenDialog-> create(
+     filter    => [
+        ['Documentation' => '*.pod;*.pm;*.pl'],
+        ['All files' => '*']],
+      text     => 'Open manpage',
+    ) unless $loaddlg;
+    return unless $loaddlg-> execute;
+    my $mark = $self-> {text}-> make_bookmark;
+    $self-> {text}-> load_file( $loaddlg-> fileName);
+    $self-> {text}-> notify(q(Bookmark), $mark) if $mark;
+}
+
+sub goto
+{
+   require Prima::MsgBox;
+   my $self = $_[0];
+   my $ret = Prima::MsgBox::input_box('Go to location', 'Enter manpage:', ''); 
+   $self-> {text}-> load_link( $ret) if defined $ret;
+}
+
+sub new_window
+{
+   my $self = $_[0];
+   my $new = ref($self)-> create;
+   $new-> {text}-> update_view;
+   $new-> {text}-> load_bookmark( $self-> {text}-> make_bookmark);
+   $new-> select;
+}
+
+sub history
+{
+   return $_[0]-> {history} unless $#_;
+   $_[0]-> {history} = $_[1];
+}
+
+sub back
+{
+   my $self = $_[0];
+   my $t = $self-> {text};
+   my $h = $self-> {history};
+   return unless scalar @$h;
+
+   my $mark = $t-> make_bookmark;
+   if ( $t-> load_bookmark( pop @$h) == 1) {
+      push @{$self-> {forwardLinks}}, $mark;
+      $self-> menu-> goforw-> enable;
+      $self-> Forward-> enabled(1);
+   }
+   $self-> menu-> goback-> enabled( scalar @$h );
+   $self-> Back-> enabled( scalar @$h );
+   $self-> update;
+}
+
+sub forward
+{
+   my $self = $_[0];
+   return unless scalar @{$self-> {forwardLinks}};
+   my $t = $self-> {text};
+   my $h = $self-> {history};
+
+   my $mark = $t-> make_bookmark;
+   if ( $t-> load_bookmark( pop @{$self-> {forwardLinks}} ) == 1) {
+      push @$h, $mark;
+      $self-> menu-> goback-> enable;
+      $self-> Back-> enabled(1);
+   }
+   $self-> menu-> goforw-> enabled( scalar @{$self-> {forwardLinks}} );
+   $self-> Forward-> enabled( scalar @{$self-> {forwardLinks}} );
+   $self-> update;
+}
+
+sub navigate
+{
+   my ( $self, $mark) = @_;
+   return unless $mark;
+   my $t = $self-> {text};
+   my $h = $self-> {history};
+
+   my $old = $t-> make_bookmark;
+   if ( $t-> load_bookmark( $mark ) > 0) {
+      push @$h, $old;
+      $self-> menu-> goback-> enable;
+      $self-> Back-> enabled(1);
+   }
+   $self-> menu-> goforw-> enabled( 0);
+   $self-> {forwardLinks} = [];
+   $self-> Forward-> enabled( 0);
+   $self-> update;
+}
+
+sub up   { $_[0]-> navigate( $_[0]-> {text}-> make_bookmark( 'up')); }
+sub prev { $_[0]-> navigate( $_[0]-> {text}-> make_bookmark( 'prev')); }
+sub next { $_[0]-> navigate( $_[0]-> {text}-> make_bookmark( 'next')); }
+
+sub update
+{
+   my $self = $_[0];
+   my $t = $self-> {text};
+   for my $m ( qw(Up Prev Next)) {
+      my $l = lc $m;
+      my $mark = $t-> make_bookmark( lc $m);
+      $self-> menu-> enabled( "go$l", defined $mark);
+      $self-> bring($m)-> enabled( defined $mark);
+   }
+}
+
+sub status
+{ 
+   my ( $self, $text) = @_;
+   $self-> {status}-> text( $text);
+   $self-> {status}-> repaint;
+   $self-> {status}-> update_view;
+   $self-> {statusTimer}-> stop;
+   $self-> {statusTimer}-> start;
+}
+
+sub find_dialog
+{
+   my $self = $_[0];
+   my %prf;
+   %{$self->{findData}} = (
+      replaceText  => '',
+      findText     => '',
+      replaceItems => [],
+      findItems    => [],
+      options      => 0,
+      scope        => fds::Cursor,
+   ) unless defined $self-> {findData};
+   my $fd = $self-> {findData};
+   my @props = qw(findText options scope);
+   if ( $fd) { for( @props) { $prf{$_} = $fd->{$_}}}
+   $finddlg = Prima::FindDialog-> create( text => 'Find text') unless $finddlg;
+   $finddlg-> set( %prf);
+   $finddlg-> Find-> items($fd->{findItems});
+   my $ret = 0;
+   my $rf  = $finddlg-> execute;
+   if ( $rf != mb::Cancel) {
+      { for( @props) { $self->{findData}->{$_} = $finddlg->$_()}}
+      $self->{findData}->{result} = $rf;
+      @{$self->{findData}->{findItems}} = @{$finddlg-> Find-> items};
+      $ret = 1;
+   }
+   return $ret;
+}
+
+sub find_text
+{
+   my ( $self, $line, $offset, $options) = @_;
+   $self = $self->{text};
+   return unless scalar @{$self-> {blocks}};
+   $line = '('.quotemeta( $line).')' unless $options & fdo::RegularExpression;
+
+   my @range = $self-> text_range;
+   return if $range[0] >= $range[1];
+   $offset = $range[0] if $offset < $range[0];
+   $offset = $range[1] if $offset > $range[1];
+   return if $offset < $range[0];
+   
+   my ( $re, $re2, $esub);
+   $re  = '/';
+   $re .= '\\b' if $options & fdo::WordsOnly;
+   $re .= "$line";
+   $re .= '\\b' if $options & fdo::WordsOnly;
+   $re .= '/';
+   $re2 = '';
+   $re2.= 'i' unless $options & fdo::MatchCase;
+
+   my $dir = ( $options & fdo::BackwardSearch) ? 0 : 1;
+   my @opt = $dir ? ( $offset, $range[1] - $offset + 1) : 
+               ( $range[0], $offset - $range[0]);
+   my @text = split('(\n)', substr( ${$self->{text}}, $opt[0], $opt[1]));
+   @text = reverse @text unless $dir;
+
+   
+   local $SIG{__WARN__}=sub{};
+   $esub = eval(<<FINDER);
+sub {
+   for ( \@text) {
+      \$offset -= length unless $dir;
+      if ( $re$re2) {
+         \$offset += length(\$`);
+         return \$offset, \$offset + length(\$&);
+      }
+      \$offset += length if $dir;
+   }
+   return;
+}
+FINDER
+   return unless $esub;
+   return $esub->();
+}
+
+sub do_find
+{
+   my ( $self, $search_flags) = @_;
+   my $t = $self-> {text};
+   my $p = $self-> {findData};
+   my $flags = ( defined $search_flags) ? $search_flags : $$p{options};
+   
+   my ( $offset, $offset2);
+   if ( defined $self-> {find_offset}) {
+     $offset = $self-> {find_offset};
+   } else {
+      if ( $$p{scope} != fds::Cursor) {
+        my @scope = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);
+        $offset = $t-> info2text_offset( @scope);
+      } else {
+        $offset = $t-> info2text_offset( $t-> xy2info( $t-> offset, $t-> topLine));
+      }
+   }
+
+   ( $offset, $offset2) = $self-> find_text( $$p{findText}, $offset, $flags);
+   if ( !defined $offset) {
+      $self-> {find_offset} = $t-> info2text_offset(
+         ( $flags & fdo::BackwardSearch) ?
+            (-1,-1):(0,0));
+      $self-> status("No text found - new search will continue from " . 
+       (( $flags & fdo::BackwardSearch) ? 'bottom' : 'top'));
+      return;
+   }
+   $self-> {find_offset} = ( $flags & fdo::BackwardSearch) ?
+      $offset : $offset2;
+   $self-> select_findout( $offset, $offset2);
+}
+
+sub find
+{
+   my $self = $_[0];
+   return unless $self-> find_dialog;
+   undef $self-> {find_offset};
+   $self-> do_find;
+}
+
+sub find2
+{
+   my $self = $_[0];
+   return unless $self->{findData};
+   $self-> do_find;
+}
+
+sub fastfind_close
+{
+   my $self = $_[0];
+   return unless $self->{fastfinder}-> visible;
+   $self->{fastfinder}-> hide;
+   $self->{text}->select;
+   $self-> menu-> enable($_) for qw( fff ffb frf frb);
+   $self->{text}-> selection(-1,-1,-1,-1);
+}
+
+sub fastfind 
+{
+   my ( $self, $dir) = @_;
+   return if $self->{fastfinder}-> visible;
+   my $t = $self-> {text};
+   $self->{fasttrack} = [
+      $t-> offset, $t-> topLine,
+      $dir ? 0 : fdo::BackwardSearch
+   ];
+   $self->{find_offset} = $t-> info2text_offset( $t-> xy2info( $t-> offset, $t-> topLine));
+   $self->{fastfinder}-> text('');
+   $self->{fastfinder}-> show;
+   $self->{fastfinder}-> select;
+   $self-> menu-> disable($_) for qw( fff ffb frf frb);
+}
+
+sub fastfind_repeat
+{
+   my ( $self, $dir) = @_;
+   return unless length $self-> {fastfinder}-> text;
+   %{$self->{findData}} = (
+      replaceText  => '',
+      findText     => '',
+      replaceItems => [],
+      findItems    => [],
+      options      => 0,
+      scope        => fds::Cursor,
+   ) unless defined $self-> {findData};
+   $self->{findData}->{findText} = $self-> {fastfinder}-> text;
+   $dir = $self->{fasttrack}->[2] ? 
+      ( $dir ? fdo::BackwardSearch : 0) :
+      ( $dir ? 0 : fdo::BackwardSearch);
+   $self-> do_find( $dir | fdo::RegularExpression);
+}
+
+sub select_findout
+{
+   my ( $self, $offset, $offset2) = @_;
+   my $t = $self-> {text};
+   my ( @sel) = (
+     $t-> text_offset2info( $offset),
+     $t-> text_offset2info( $offset2),
+   );
+  
+   if ( 4 == scalar @sel) {
+      $t-> selection( @sel);
+      @sel = $t-> info2xy( @sel[0,1]);
+      $t-> offset( $sel[0]);
+      $t-> topLine( $sel[1]);
+   }
+}
+
+sub FastFinder_Change
+{
+   my ( $self, $ff) = @_;
+   my $tx = $ff-> text;
+   my $t = $self-> {text};
+   $t-> selection(-1,-1,-1,-1);
+   if ( length $tx) {
+      my ( $o1, $o2) = $self-> find_text( $tx, $self->{find_offset}, 
+         $self->{fasttrack}->[2] | fdo::RegularExpression);
+      return unless defined $o1;
+      $self-> select_findout( $o1, $o2);
+   } else {
+      $t-> offset( $self-> {fasttrack}->[0]); 
+      $t-> topLine( $self-> {fasttrack}->[1]);      
+   }
+}
+
+sub FastFinder_KeyDown
+{
+   my ( $self, $ff, $code, $key, $mod, $r) = @_;
+   if ( $key == kb::Enter) {
+      $ff-> clear_event;
+      $self-> fastfind_close;
+      $self-> fastfind_repeat( 1);
+   } elsif ( $key == kb::Esc) {
+      $ff-> clear_event;
+      $self-> fastfind_close;
+      $self->{text}-> offset( $self-> {fasttrack}->[0]); 
+      $self->{text}-> topLine( $self-> {fasttrack}->[1]);      
+   }
+}
+
+sub print
+{
+   my $self = $_[0];
+   my $p = $::application-> get_printer;
+   my @prs = @{$::application-> get_printer-> printers};
+   unless ( @{$p-> printers}) {
+      Prima::message("No printers found");
+      return;
+   }
+   return unless $p-> begin_doc( $self-> {text}-> pageName);
+   $p-> abort_doc; 
+}
+
+sub print_setup
+{
+   my $self = $_[0];
+   $prndlg = Prima::PrintSetupDialog-> create unless $prndlg;
+   return unless $prndlg-> execute;
+}
+
+sub setup_dialog
+{
+   require Prima::VB::VBLoader;
+   my $self = $_[0];
+   my $t = $self-> {text};
+   unless ( defined $setupdlg) {
+      my $fi = Prima::find_image( 'Prima', 'HelpViewer.fm');
+      unless ( defined $fi) { Prima::message( "Cannot find resource: Prima::HelpViewer.fm"); return }
+      eval { $setupdlg = { Prima::VB::VBLoader::AUTOFORM_CREATE( $fi,
+        'Form1'     => { visible => 0, centered => 1},
+      )}-> {Form1}};
+      if ( $@) { Prima::message("Error in setup resource: $@"); return }
+   }
+
+   my $sec = $inifile-> section('View');
+   my ( $of1, $of2) = map { $t-> {fontPalette}-> [$_]-> {name}} (0,1);
+
+   $setupdlg-> VarFont-> text( $sec-> {VariableFont} ? $sec-> {VariableFont} : 'Default');
+   $setupdlg-> FixFont-> text( $sec-> {FixedFont} ? $sec-> {FixedFont} : 'Default');
+   $setupdlg-> LinkColor-> value( defined($sec-> {ColorLink}) ? $sec-> {ColorLink} :
+      $t-> {colorMap}-> [ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ]);
+   $setupdlg-> CodeColor-> value( defined($sec-> {ColorCode}) ? $sec-> {ColorCode} :
+      $t-> {colorMap}-> [ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX ]);
+   
+   return if $setupdlg-> execute != mb::OK;
+
+   $t-> {colorMap}-> [ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> LinkColor-> value;
+   $t-> {colorMap}-> [ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> CodeColor-> value;
+
+
+   my $f1 = $setupdlg-> VarFont-> text;
+   my $f2 = $setupdlg-> FixFont-> text;
+
+   $sec-> {VariableFont} = ( $f1 eq 'Default' ) ? '' : $f1;
+   $sec-> {FixedFont}    = ( $f2 eq 'Default' ) ? '' : $f2;
+   $sec-> {ColorLink}    = $setupdlg-> LinkColor-> value;
+   $sec-> {ColorCode}    = $setupdlg-> CodeColor-> value;
+
+   $f1 = $defaultVariableFont if $f1 eq 'Default';
+   $f2 = $defaultFixedFont if $f2 eq 'Default';
+   
+   if ( $f1 ne $of1 || $f2 ne $of2) {
+      $t-> {fontPalette}-> [0]-> {name} = $f1;
+      $t-> {fontPalette}-> [1]-> {name} = $f2;
+      $t-> format(1);
+   } else {
+      $t-> repaint;
+   }
+}
+
+1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Prima::HelpViewer, the built-in pod file browser,
+version 1.00
+
+=head1 USAGE
+
+The module presents two packages, Prima::HelpViewer
+and Prima::PodViewWindow. 
+
+=head1 Help
+
+The browser can be used to view and print POD
+( plain old documentation ) files. 
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 COPYRIGHT
+
+This program is distributed under the BSD License.
+
+
+=cut

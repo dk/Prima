@@ -920,7 +920,7 @@ sub prf_types
       widget        => ['currentWidget', 'selectedWidget'],
       pointer       => ['pointer',],
       growMode      => ['growMode'],
-      uiv           => ['helpContext'],
+      string        => ['helpContext'],
       text          => ['text', 'hint'],
       selectingButtons=> ['selectingButtons'],
       widgetClass   => ['widgetClass'],

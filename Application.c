@@ -84,11 +84,13 @@ Application_init( Handle self, HV * profile)
    var->  text = duplicate_string("");
    opt_set( optModalHorizon);
 
-   /* store printer info */
+   /* store extra info */
    {
       HV * hv = ( HV *) SvRV( var-> mate);
       hv_store( hv, "PrinterClass",  12, newSVpv( pget_c( printerClass),  0), 0);
       hv_store( hv, "PrinterModule", 13, newSVpv( pget_c( printerModule), 0), 0);
+      hv_store( hv, "HelpClass",     9,  newSVpv( pget_c( helpClass),     0), 0);
+      hv_store( hv, "HelpModule",    10, newSVpv( pget_c( helpModule),    0), 0);
    }
 
    {
@@ -136,12 +138,11 @@ Application_done( Handle self)
    unprotect_object( var-> hintWidget);
    list_destroy( &var->  modalHorizons);
    list_destroy( &var->  widgets);
-   free( var-> helpFile);
    free( var-> text);
    free( var-> hint);
    var->  accelTable =
       var-> hintWidget = var-> hintTimer = nilHandle;
-   var->  helpFile   = var->  text    = var->  hint      = nil;
+   var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
    application = nilHandle;
@@ -150,7 +151,6 @@ Application_done( Handle self)
 void
 Application_cleanup( Handle self)
 {
-   my-> close_help( self);
    my-> first_that( self, kill_all, nil);
    if ( var-> icon)
       my-> detach( self, var-> icon, true);
@@ -188,6 +188,8 @@ Application_set( Handle self, HV * profile)
    pdelete( palette);
    pdelete( printerClass);
    pdelete( printerModule);
+   pdelete( helpClass);
+   pdelete( helpModule);
    pdelete( rect);
    pdelete( rigth);
    pdelete( selectable);
@@ -499,20 +501,6 @@ Application_icon( Handle self, Bool set, Handle icon)
    if ( icon)
       my-> attach( self, icon);
    return nilHandle;
-}
-
-char *
-Application_helpFile( Handle self, Bool set, char * helpFile)
-{
-   if ( var-> stage > csFrozen) return "";
-   if ( !set)
-      return var-> helpFile ? var-> helpFile : "";
-
-   if ( var-> helpFile && ( strcmp( var->  helpFile, helpFile) == 0)) return "";
-   free( var-> helpFile);
-   var-> helpFile = duplicate_string( helpFile);
-   apc_help_set_file( self, helpFile);
-   return "";
 }
 
 Handle
@@ -897,13 +885,6 @@ Application_popup_modal( Handle self)
    }
 
    return nilHandle;
-}
-
-long int
-Application_helpContext( Handle self, Bool set, long int context)
-{
-   if ( set && ( context == hmpOwner)) context = hmpNone;
-   return inherited helpContext( self, set, context);
 }
 
 Bool

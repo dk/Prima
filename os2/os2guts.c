@@ -532,9 +532,6 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
       case WM_FONTCHANGED:
          ev. cmd = cmFontChanged;
          break;
-      case WM_VIEWHELP:
-         ev. cmd         = cmHelp;
-         break;
       case WM_HELP:
          if ( apc_widget_is_responsive( self)) {
             ev. cmd      = cmKeyDown;

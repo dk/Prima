@@ -988,9 +988,6 @@ apc_gp_set_text_out_baseline
 apc_gp_set_transform
 apc_gp_stretch_image
 apc_gp_text_out
-apc_help_close
-apc_help_open_topic
-apc_help_set_file
 apc_image_begin_paint
 apc_image_begin_paint_info
 apc_image_create
@@ -1873,13 +1870,13 @@ FOOTER
    my @dirs;
    my @files;
    finddepth( sub {
-      return if $_ eq '.';
-      return if /\.pdb$/i; # M$VC
+      return if $_ eq '.' || $_ eq 'Makefile' || $_ eq 'makefile.log';
+      return if /\.(pdb|ncb|opt|dsp|dsw)$/i; # M$VC
       my $f = "$File::Find::dir/$_";
       return if $f =~ /include.generic|CVS/;
       if ($type eq 'bin') {
-         return if $f =~ /\.c$|\.cls$|\.h$/;
-         return if $f =~ /$cwd.(img|include|os2|win32|unix|utils|Makefile)/i;
+         return if $f =~ /\.(c|cls|h)$/i;
+         return if $f =~ /$cwd.(img|include|os2|win32|unix|utils)/i;
       } else {
          return if $f =~ /auto/;
       }

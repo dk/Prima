@@ -115,8 +115,8 @@ Widget_init( Handle self, HV * profile)
    my-> set_buffered           ( self, pget_B( buffered));
    my-> set_cursorVisible      ( self, pget_B( cursorVisible));
    my-> set_growMode           ( self, pget_i( growMode));
+   my-> set_helpContext        ( self, pget_c( helpContext));
    my-> set_hint               ( self, pget_c( hint));
-   my-> set_helpContext        ( self, pget_i( helpContext));
    my-> set_firstClick         ( self, pget_B( firstClick));
    {
       Point hotSpot;
@@ -254,8 +254,10 @@ Widget_done( Handle self)
 {
    free( var-> text);
    apc_widget_destroy( self);
+   free( var-> helpContext);
    free( var-> hint);
    var-> text = nil;
+   var-> helpContext = nil;
    var-> hint = nil;
 
    list_destroy( &var-> widgets);
@@ -510,10 +512,6 @@ void Widget_handle_event( Handle self, PEvent event)
                 inherited-> end_paint( self);
           }
         break;
-      case cmHelp:
-        my-> notify( self, "<s", "Help");
-        if ( evOK) my-> help( self);
-        break;
       case cmEnable       :
         my-> notify( self, "<s", "Enable");
         break;
@@ -645,6 +643,11 @@ void Widget_handle_event( Handle self, PEvent event)
               {
                   Handle next = nilHandle;
                   switch( event-> key. key) {
+                  case kbF1:
+                  case kbHelp:
+                     my-> help( self);
+                     my-> clear_event( self);
+                     return;
                   case kbLeft: 
                      next = my-> next_positional( self, -1, 0);
                      break;
@@ -838,14 +841,46 @@ void Widget_handle_event( Handle self, PEvent event)
 Bool
 Widget_help( Handle self)
 {
-   long ctx = var-> helpContext;
-   if ( ctx == hmpOwner) {
-      PWidget next = ( PWidget) self;
-      while ( next && next-> helpContext == hmpOwner) next = ( PWidget) next-> owner;
-      ctx = next-> helpContext;
+   int len;
+   char * htx = var-> helpContext, *file = nil, *buf;
+
+/*
+   The help context string is a pod-styled link ( see perlpod ) :
+   "file/section". If the widget's helpContext begins with /,
+   it's clearly a sub-topic, and the leading content is to be
+   extracted up from the hierarchy. When a grouping widget 
+   does not have any help file related to, and does not wish that
+   its childrens' helpContext would be combined with the upper
+   helpContext, an empty string " " can be set
+ */
+
+   if ( strcmp( htx, " ") == 0) return false;
+
+   if ( *htx != 0 && *htx != '/') {
+      call_perl( application, "open_help", "s" , htx);
+      return true;
    }
-   if ( ctx == hmpNone) return true;
-   return apc_help_open_topic( application, ctx);
+
+   while ( PWidget( self)-> owner) {
+      self = PWidget( self)-> owner;
+      if ( strcmp( var-> helpContext, " ") == 0) return false;
+      if ( var-> helpContext[0] != 0 && var-> helpContext[0] != '/') {
+         file = var-> helpContext;
+         break;
+      }
+   }
+
+   if ( !file) return false;
+
+   len = strlen( file);
+   if ( file[ len - 1] == '/' && *htx) htx++;
+   buf = malloc( strlen( htx) + len + 1);
+   strcpy( buf, file);
+   strcat( buf, htx);
+   call_perl( application, "open_help", "s" , buf);
+   free( buf);
+
+   return true;
 }
 
 void
@@ -1645,15 +1680,6 @@ Widget_get_parent_handle( Handle self)
    return newSVpv( buf, 0);
 }
 
-
-long int
-Widget_helpContext( Handle self, Bool set, long int helpContext)
-{
-   if ( !set)
-      return var-> helpContext;
-   return var-> helpContext = helpContext;
-}
-
 int
 Widget_hintVisible( Handle self, Bool set, int hintVisible)
 {
@@ -1790,7 +1816,6 @@ void Widget_on_enable( Handle self) {}
 void Widget_on_enddrag( Handle self, Handle target , int x , int y ) {}
 void Widget_on_fontchanged( Handle self) {}
 void Widget_on_enter( Handle self) {}
-void Widget_on_help( Handle self) {}
 void Widget_on_keydown( Handle self, int code , int key , int shiftState, int repeat ) {}
 void Widget_on_keyup( Handle self, int code , int key , int shiftState ) {}
 void Widget_on_menu( Handle self, Handle menu, char * variable) {}
@@ -2275,6 +2300,19 @@ Widget_focused( Handle self, Bool set, Bool focused)
       if ( var-> stage == csNormal && my-> get_selected( self))
          apc_widget_set_focused( nilHandle);
    return focused;
+}
+
+char *
+Widget_helpContext( Handle self, Bool set, char *helpContext)
+{
+   enter_method;
+   if (!set)
+      return var-> helpContext ? var-> helpContext : "";
+   if ( var-> stage > csFrozen) return "";
+
+   free( var-> helpContext);
+   var-> helpContext = duplicate_string( helpContext);
+   return "";
 }
 
 char *
