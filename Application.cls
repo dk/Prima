@@ -34,6 +34,7 @@ object Prima::Application( Prima::Widget)
    char *    helpFile;
    Handle    icon;
    Bool      autoClose;
+   char *    printerClass;
 
    property  Bool   autoClose;
    property  Bool   buffered;

@@ -53,9 +53,9 @@ Application_init( Handle self, HV * profile)
    SV * hintFont = pget_sv( hintFont);
    SV * sv;
    char * hintClass      = pget_c( hintClass);
-   char * printerClass   = pget_c( printerClass);
    if ( application != nilHandle)
       croak( "RTC0010: Attempt to create more than one application instance");
+   var-> printerClass  = duplicate_string( pget_c( printerClass));
 
    CDrawable-> init( self, profile);
    list_create( &var->  widgets, 16, 16);
@@ -88,13 +88,6 @@ Application_init( Handle self, HV * profile)
    {
       HV * profile = newHV();
       static Timer_vmt HintTimerVmt;
-
-      pset_c( name, "Printer");
-      pset_H( owner, self);
-      var->  printer = create_instance( printerClass);
-
-      protect_object( var->  printer);
-      hv_clear( profile);
 
       pset_H( owner, self);
       pset_i( timeout, hintPause);
@@ -133,11 +126,13 @@ Application_init( Handle self, HV * profile)
 void
 Application_done( Handle self)
 {
-   unprotect_object( var-> printer);
+   if ( var-> printer != nilHandle)
+      unprotect_object( var-> printer);
    unprotect_object( var-> hintTimer);
    unprotect_object( var-> hintWidget);
    list_destroy( &var->  modalHorizons);
    list_destroy( &var->  widgets);
+   free( var-> printerClass);
    free( var-> helpFile);
    free( var-> text);
    free( var-> hint);
@@ -189,6 +184,7 @@ Application_set( Handle self, HV * profile)
    pdelete( ownerShowHint);
    pdelete( palette);
    pdelete( printerClass);
+   pdelete( printerModule);
    pdelete( rect);
    pdelete( rigth);
    pdelete( selectable);
@@ -410,9 +406,21 @@ Application_get_system_info( char * dummy)
    return newRV_noinc(( SV *) profile);
 }
 
+
 Handle
 Application_get_printer( Handle self)
 {
+   if ( var-> printer == nilHandle) {
+      HV * profile = newHV();
+      pset_c( name, "Printer");
+      pset_H( owner, self);
+      var-> printer = create_instance( var-> printerClass);
+      if ( var-> printer == nilHandle)
+         croak("RTC0014: Unable to create printer '%s'", var-> printerClass);
+      protect_object( var-> printer);
+      hv_clear( profile);
+      free( var-> printerClass);
+   }
    return var-> printer;
 }
 

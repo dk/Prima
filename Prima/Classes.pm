@@ -1249,7 +1249,8 @@ use vars qw(@ISA @startupNotifications);
 
 sub profile_default
 {
-   my $def = $_[ 0]-> SUPER::profile_default;
+   my $def  = $_[ 0]-> SUPER::profile_default;
+   my $unix = Prima::Application-> get_system_info->{apc} == apc::Unix;
    my %prf = (
       autoClose      => 1,
       pointerType    => cr::Arrow,
@@ -1271,7 +1272,8 @@ sub profile_default
       hintPause      => 800,
       hintFont       => Prima::Widget::get_default_font,
       modalHorizon   => 1,
-      printerClass   => 'Prima::Printer',
+      printerClass   => $unix ? 'Prima::PS::Printer' : 'Prima::Printer',
+      printerModule  => $unix ? 'Prima::PS::Printer' : '',
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -1281,6 +1283,12 @@ sub profile_check_in
 {
    my ( $self, $p, $default) = @_;
    $self-> SUPER::profile_check_in( $p, $default);
+   my $pm = exists ( $p-> {printerModule}) ? $p-> {printerModule} : $default-> {printerModule};
+   if ( defined( $pm) && length( $pm)) {
+      eval "use $pm;";
+      die "$@" if $@;
+   }
+   delete $p-> { printerModule};
    delete $p-> { owner};
    delete $p-> { ownerColor};
    delete $p-> { ownerBackColor};
