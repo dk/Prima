@@ -1035,7 +1035,8 @@ sub profile_check_in
    my $shs = exists $p->{sizeDontCare  } ? $p->{sizeDontCare  } : $default-> {sizeDontCare  };
    $p->{originDontCare} = 0 if $shp and
       exists $p->{left}   or exists $p->{bottom} or
-      exists $p->{origin} or exists $p->{rect};
+      exists $p->{origin} or exists $p->{rect} or
+      exists $p->{top}    or exists $p->{right};
    $p->{sizeDontCare} = 0 if $shs and
       exists $p->{width}  or exists $p->{height} or
       exists $p->{size}   or exists $p->{rect} or
