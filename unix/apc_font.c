@@ -759,7 +759,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
    len = strlen( ppFontNameSize);
    for ( i = 0, p = ppFontNameSize; i < len; i++, p++)
       if ( *p == '-') dash++;
-   if (( dash == 14) && (strcmp( ppFontNameSize + len - 4, "-*-*") == 0)) {
+   if (( dash == 14) && guts. locale[0] && (strcmp( ppFontNameSize + len - 4, "-*-*") == 0)) {
       memcpy( buf, ppFontNameSize, len - 3);
       buf[ len - 3] = 0;
       strncat( buf, guts. locale, 512);
