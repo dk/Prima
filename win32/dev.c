@@ -550,22 +550,73 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 
    dc = dc_alloc();
    image_get_binfo(( Handle)i, &bi);
-   if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-       i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
-   bi. bmiHeader. biBitCount = bi. bmiHeader. biPlanes = 1;
-   bi. bmiColors[ 0]. rgbRed = bi. bmiColors[ 0]. rgbGreen = bi. bmiColors[ 0]. rgbBlue = 0;
-   bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
 
-   if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-      i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+   if ( IS_NT) {
+      if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+          i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+      bi. bmiHeader. biBitCount = bi. bmiHeader. biPlanes = 1;
+      bi. bmiColors[ 0]. rgbRed = bi. bmiColors[ 0]. rgbGreen = bi. bmiColors[ 0]. rgbBlue = 0;
+      bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
 
+      if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+         i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+   } else {
+// Moronious and "macaronious" code for Win95 -
+// since CreateIconIndirect gives results so weird,
+// we use following sequence.
+      int mSize = i-> maskSize / i-> h;
+      Byte *data = malloc( mSize), *b1 = i-> mask, *b2 = i-> mask + mSize*(i-> h - 1);
+
+// reverting bits vertically - it's not HBITMAP, just bare bits
+      while ( b1 < b2) {
+         memcpy( data, b1,   mSize);
+         memcpy( b1,   b2,   mSize);
+         memcpy( b2,   data, mSize);
+         b1 += mSize;
+         b2 -= mSize;
+      }
+      free( data);
+
+// creating icon by old 3.1 method - we need that for correct AND-mask,
+// don't care other pointer properties
+      if ( !( r = CreateIcon( guts. instance, size.x, size.y, 1, i-> type & imBPP,
+                              i-> mask, i-> data))) {
+         Object_destroy(( Handle) i);
+         apiErrRet;
+      }
+      GetIconInfo( r, &ii);
+      DeleteObject( ii. hbmColor);
+
+      if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+          i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+      DestroyIcon( r);
+   }
    dc_free();
+
    if ( !( r = CreateIconIndirect( &ii))) apiErr;
 
    DeleteObject( ii. hbmColor);
    DeleteObject( ii. hbmMask);
    Object_destroy(( Handle) i);
    return r;
+}
+
+ApiHandle
+apc_image_get_handle( Handle self)
+{
+   return ( ApiHandle) sys ps;
+}
+
+ApiHandle
+apc_dbm_get_handle( Handle self)
+{
+   return ( ApiHandle) sys ps;
+}
+
+ApiHandle
+apc_prn_get_handle( Handle self)
+{
+   return ( ApiHandle) sys ps;
 }
 
 
@@ -777,6 +828,7 @@ apc_prn_get_default( Handle self)
 
    } else
       sys s. prn. device = sys s. prn. driver = sys s. prn. port = nil;
+
    return sys s. prn. device;
 }
 
@@ -789,9 +841,9 @@ apc_prn_setup( Handle self)
    HWND who = GetActiveWindow();
    HDC dc;
 
-   if ( !OpenPrinter( sys s. prn. device, &lph, nil))
+   if ( !OpenPrinter( sys s. prn. ppi. pPrinterName, &lph, nil))
       apiErrRet;
-   sz = DocumentProperties( nil, lph, sys s. prn. device, nil, nil, 0);
+   sz = DocumentProperties( nil, lph, sys s. prn. ppi. pPrinterName, nil, nil, 0);
    if ( sz <= 0) {
       apiErr;
       ClosePrinter( lph);
@@ -800,7 +852,7 @@ apc_prn_setup( Handle self)
    dm  = malloc( sz);
 
    sys s. prn. ppi. pDevMode-> dmFields = -1;
-   ret = DocumentProperties( hwnd_to_view( who) ? who : nil, lph, sys s. prn. device,
+   ret = DocumentProperties( hwnd_to_view( who) ? who : nil, lph, sys s. prn. ppi. pPrinterName,
        dm, sys s. prn. ppi. pDevMode, DM_IN_BUFFER|DM_IN_PROMPT|DM_OUT_BUFFER);
    ClosePrinter( lph);
    if ( ret != IDOK) {
