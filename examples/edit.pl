@@ -56,9 +56,6 @@ $l = $w-> insert( InputLine =>
    font   => { size => 18, name => 'Tms Rmn'},
    growMode => gm::GrowHiX,
    buffered => 1,
-   onFontChanged => sub {
-      $_[0]-> height( $_[0]-> font-> height + 4);
-   },
    xonPaint => sub {},
    borderWidth => 3,
    autoSelect => 0,
