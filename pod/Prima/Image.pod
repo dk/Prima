@@ -152,7 +152,7 @@ for different aims. The C<::data> property is used to set or retrieve
 a scalar representation of bitmap data. The data are expected to be lined 
 up to a 'line size' margin ( 4-byte boundary ), which is calculated as
 
-  $lineSize = (( $image->width * ( $image-> type & im::BPP) + 31) / 32) * 4; 
+  $lineSize = int(( $image->width * ( $image-> type & im::BPP) + 31) / 32) * 4; 
 
 This is a default line size, but C<::data> can be accompanied with a
 write-only flag 'lineSize':
