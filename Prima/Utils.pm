@@ -121,6 +121,26 @@ Obsolete function.
 
 Returns stdlib's floor() of DOUBLE
 
+=item getdir PATH 
+
+Reads content of PATH directory and 
+returns array of string pairs, where the first item is a file
+name, and the second is a file type.
+
+The file type is a string, one of the following:
+
+  "fifo" - named pipe
+  "chr"  - character special file
+  "dir"  - directory
+  "blk"  - block special file
+  "reg"  - regular file
+  "lnk"  - symbolic link
+  "sock" - socket
+  "wht"  - whiteout
+
+This function was implemented for faster directory reading, 
+to avoid successive call of C<stat> for every file.
+
 =item query_drives_map [ FIRST_DRIVE = "A:" ]
 
 Returns anonymous array to drive letters, used by the system.
