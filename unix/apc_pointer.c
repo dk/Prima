@@ -143,12 +143,9 @@ apc_pointer_get_pos( Handle self)
 
    if ( !XQueryPointer( DISP, guts. root,
 			&root, &child, &p. x, &p. y,
-			&x, &y, &mask)) {
-      Point p = {0,0};
-      warn( "XQueryPointer error");
-      return p;
-   }
-   p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
+			&x, &y, &mask)) 
+      return guts. displaySize;
+   p. y = guts. displaySize. y - p. y - 1;
    return p;
 }
 
