@@ -247,6 +247,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
+   %{Prima::Component->notification_types()},
    Read        => nt::Default,
    Write       => nt::Default,
    Execute     => nt::Default,
@@ -254,6 +255,7 @@ my %RNT = (
 
 sub notification_types { return \%RNT; }
 }
+
 
 sub profile_default
 {
