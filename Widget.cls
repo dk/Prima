@@ -53,6 +53,7 @@ object Prima::Widget( Prima::Drawable)
    List      widgets;		       # list of child widgets
 
 # properties
+   property  Color color;
    property  char* hint;
    property  char* text;
 
@@ -120,7 +121,6 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     get_buffered();
    method   Bool     get_capture()                   => apc_widget_is_captured;
    method   Bool     get_clip_owner()                => apc_widget_get_clip_owner;
-   method   Color    get_color();
    method   Color    get_color_index( int index);
    method   Bool     get_current();
    method   Handle   get_current_widget();
@@ -196,7 +196,6 @@ object Prima::Widget( Prima::Drawable)
    method   void     set_centered( Bool x, Bool y);
    import   void     set_clip_owner( Bool clipOwner);
    method   void     set_current_widget( Handle widget);
-   method   Bool     set_color( Color color);
    method   void     set_color_index( Color color, int index);
    method   void     set_current( Bool current);
    method   Bool     set_cursor_pos( int x, int y)     => apc_cursor_set_pos;

@@ -353,7 +353,7 @@ sub on_paint
             }
          }
       }
-      # $canvas-> set_color( $clr[0]);
+      # $canvas-> color( $clr[0]);
       $self-> draw_items( $canvas, @paintArray);
    }
    $self-> {unfocVeil} = 0;
@@ -1513,7 +1513,7 @@ sub draw_items
 {
    my ($self,$canvas) = (shift,shift);
    my @clrs = (
-      $self-> get_color,
+      $self-> color,
       $self-> get_back_color,
       $self-> get_color_index( ci::HiliteText),
       $self-> get_color_index( ci::Hilite)
@@ -1573,9 +1573,9 @@ sub draw_items
       for ( @normals)
       {
          my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
-      #  $canvas-> set_color( $clrs[ $selected ? 3 : 1]);
+      #  $canvas-> color( $clrs[ $selected ? 3 : 1]);
       #  $canvas-> bar( $x, $y, $x2, $y2);
-      #  $canvas-> set_color( $clrs[ $selected ? 2 : 0]);
+      #  $canvas-> color( $clrs[ $selected ? 2 : 0]);
          my $c = $clrs[ $selected ? 3 : 1];
          if ( $c != $lbc) {
             $canvas-> set_back_color( $c);
@@ -1585,7 +1585,7 @@ sub draw_items
 
          $c = $clrs[ $selected ? 2 : 0];
          if ( $c != $lc) {
-            $canvas-> set_color( $c);
+            $canvas-> color( $c);
             $lc = $c;
          }
 

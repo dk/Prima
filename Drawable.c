@@ -893,3 +893,11 @@ read_palette( int * palSize, SV * palette)
 
    return ( PRGBColor) buf;
 }
+
+Color
+Drawable_color( Handle self, Bool set, Color color)
+{
+   if (!set) return apc_gp_get_color( self);
+   apc_gp_set_color( self, color);
+   return color;
+}

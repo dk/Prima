@@ -94,7 +94,7 @@ sub draw_items
 {
    my ($self,$canvas) = (shift,shift);
    my @clrs = (
-      $self-> get_color,
+      $self-> color,
       $self-> get_back_color,
       $self-> get_color_index( ci::HiliteText),
       $self-> get_color_index( ci::Hilite)
@@ -164,7 +164,7 @@ sub draw_items
          $canvas-> clear( $x, $y, $x2, $y2);
          $c = $clrs[ $selected ? 2 : 0];
          if ( $c != $lc) {
-            $canvas-> set_color( $c);
+            $canvas-> color( $c);
             $lc = $c;
          }
          for ( $i = $first; $i <= $last; $i++)

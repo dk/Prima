@@ -1265,13 +1265,6 @@ Widget_get_buffered( Handle self)
 }
 
 Color
-Widget_get_color( Handle self)
-{
-   enter_method;
-   return my-> get_color_index( self, ciFore);
-}
-
-Color
 Widget_get_color_index( Handle self, int index)
 {
    if ( index < 0 || index > ciMaxId) return clInvalid;
@@ -1683,14 +1676,6 @@ Widget_set_centered( Handle self, Bool x, Bool y)
    if ( x) mypos. x = ( size. x - mysize. x) / 2;
    if ( y) mypos. y = ( size. y - mysize. y) / 2;
    my-> set_pos( self, mypos. x, mypos. y);
-}
-
-Bool
-Widget_set_color( Handle self, Color color)
-{
-   enter_method;
-   my-> set_color_index( self, color, ciFore);
-   return true;
 }
 
 void
@@ -2573,6 +2558,15 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 }
 
 /* properties section */
+
+Color
+Widget_color( Handle self, Bool set, Color color)
+{
+   enter_method;
+   if (!set) return my-> get_color_index( self, ciFore);
+   my-> set_color_index( self, color, ciFore);
+   return color;
+}
 
 char *
 Widget_hint( Handle self, Bool set, char *hint)
