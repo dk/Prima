@@ -21,6 +21,8 @@ Bool   dlgActive     = 0;         // modal window is visible and activated
 Bool   focusAction   = 0;         // internal focus action flag
 Handle lastMouseOver = nilHandle;
 extern Handle hwnd_to_view( HWND win);
+extern Bool single_color_notify ( Handle self, Handle child, void * color);
+extern Bool font_notify ( Handle self, Handle child, void * font);
 
 Bool
 window_subsystem_init( void)
@@ -753,6 +755,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
              case PP_FOREGROUNDCOLOR:
              case PP_FOREGROUNDCOLORINDEX:
                 ev. gen. i = ciFore;
+                opt_clear( optOwnerColor);
                 goto SETCMD;
              case PP_BACKGROUNDCOLOR:
              case PP_BACKGROUNDCOLORINDEX:
@@ -774,12 +777,20 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
              case PP_DISABLEDBACKGROUNDCOLORINDEX:
                 ev. gen. i = ciDisabled;
              SETCMD:
+                {
+                   SingleColor s = { apc_view_get_color( self, event-> gen. i), event-> gen. i};
+                   v-> self-> first_that( self, single_color_notify, &s);
+                }
+                if ( event-> gen. i == ciFore) opt_clear( optOwnerColor); else
+                if ( event-> gen. i == ciBack) opt_clear( optOwnerBackColor);
                 ev. cmd = cmColorChanged;
                 hiStage = true;
                 break;
              case PP_FONTNAMESIZE:
              case PP_FONTHANDLE:
                 view_get_font( view, &v-> font);
+                v-> self-> first_that( self, font_notify, &v-> font);
+                opt_clear( optOwnerFont);
                 ev. cmd = cmFontChanged;
                 hiStage = true;
                 break;
