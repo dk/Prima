@@ -301,19 +301,19 @@ sub profile_default
    my %prf = (
       color           => cl::Black,
       backColor       => cl::White,
-      fillPattern     => fs::Solid,
+      fillPattern     => fp::Solid,
       font            => {
          height      => 16,
          width       => 0,
          pitch       => fp::Default,
-         style       => ft::Normal,
+         style       => fs::Normal,
          aspect      => 1,
          direction   => 0,
          name        => "Helv"
       },
       lineEnd         => le::Round,
       linePattern     => lp::Solid,
-      lineWidth       => lw::Thin,
+      lineWidth       => 0,
       palette         => [],
       rop             => rop::CopyPut,
       rop2            => rop::NoOper,
@@ -365,7 +365,7 @@ sub rect3d
    }
    $self-> color( $c), return if $width <= 0;
    $self-> color( $lColor);
-   $self-> lineWidth( 1);
+   $self-> lineWidth( 0);
    my $i;
    for ( $i = 0; $i < $width; $i++)
    {
@@ -380,6 +380,63 @@ sub rect3d
    }
    $self-> color( $c);
 }
+
+sub rect_focus
+{
+   my ( $canvas, $x, $y, $x1, $y1, $width) = @_;
+
+   $width = 1 if !defined $width || $width < 1;
+   my $sys = Application-> get_system_info;
+
+   if (( $width == 1) and ( $sys->{apc} == apc::Win32) and ( $sys->{system} ne 'Windows NT')) {
+      my ( $lp, $cl, $cl2, $rop) = (
+         $canvas-> linePattern, $canvas-> color,
+         $canvas-> backColor, $canvas-> rop
+      );
+      $canvas-> set(
+         linePattern => lp::Dot,
+         color       => cl::White,
+         backColor   => cl::Black,
+         rop         => rop::XorPut,
+      );
+      $canvas-> rectangle( $x, $y, $x1, $y1);
+      $canvas-> set(
+         linePattern => $lp,
+         backColor   => $cl2,
+         color       => $cl,
+         rop         => $rop
+      );
+   } else {
+      my ( $fp, $cl, $cl2, $rop) = (
+         $canvas-> fillPattern, $canvas-> color,
+         $canvas-> backColor, $canvas-> rop
+      );
+      $canvas-> set(
+         fillPattern => fp::SimpleDots,
+         color       => cl::White,
+         backColor   => cl::Black,
+         rop         => rop::XorPut,
+      );
+
+      if ( $width * 2 >= $x1 - $x or $width * 2 >= $y1 - $y) {
+         $canvas-> bar( $x, $y, $x1, $y1);
+      } else {
+         $width -= 1;
+         $canvas-> bar( $x, $y, $x1, $y + $width);
+         $canvas-> bar( $x, $y1 - $width, $x1, $y1);
+         $canvas-> bar( $x, $y + $width + 1, $x + $width, $y1 - $width - 1);
+         $canvas-> bar( $x1 - $width, $y + $width + 1, $x1, $y1 - $width - 1);
+      }
+
+      $canvas-> set(
+         fillPattern => $fp,
+         backColor   => $cl2,
+         color       => $cl,
+         rop         => $rop,
+      );
+   }
+}
+
 
 # class Image
 package Image;
@@ -516,6 +573,7 @@ my %RNT = (
    MouseDown      => nt::Command,
    MouseUp        => nt::Command,
    MouseMove      => nt::Command,
+   MouseWheel     => nt::Command,
    MouseEnter     => nt::Command,
    MouseLeave     => nt::Command,
    Move           => nt::Default,
@@ -844,8 +902,11 @@ sub disable_commands { shift->set_commands(0,@_)}
 sub key_up      { shift-> key_event( cm::KeyUp,   @_)}
 sub key_down    { shift-> key_event( cm::KeyDown, @_)}
 sub mouse_up    { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseUp, @_); }
-sub mouse_move  { splice( @_,1,0,0); splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseMove, @_) }
-sub mouse_down  { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseDown, @_); }
+sub mouse_move  { splice( @_,5,0,0) if $#_ > 4; splice( @_,1,0,0); shift-> mouse_event( cm::MouseMove, @_) }
+sub mouse_wheel { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseWheel, @_) }
+sub mouse_down  { splice( @_,5,0,0) if $#_ > 4;
+                  ($#_>3)?(@_[1..4]=@_[4,1..3]):splice(@_,1,0,0);
+                  shift-> mouse_event( cm::MouseDown, @_); }
 sub mouse_click { shift-> mouse_event( cm::MouseClick, @_) }
 sub select      { $_[0]-> set_selected(1); }
 sub deselect    { $_[0]-> set_selected(0); }
@@ -878,7 +939,7 @@ sub profile_default
       borderIcons           => bi::All,
       borderStyle           => bs::Sizeable,
       clipOwner             => 0,
-      growMode              => gf::DontCare,
+      growMode              => gm::DontCare,
       icon                  => 0,
       menu                  => undef,
       menuItems             => undef,
@@ -917,7 +978,7 @@ sub profile_check_in
    $p->{ menuFont} = {} unless exists $p->{ menuFont};
    $p->{ menuFont} = Drawable-> font_match( $p->{ menuFont}, $default->{ menuFont});
    $p->{ modalHorizon} = 0 if $p->{clipOwner} || $default->{clipOwner};
-   $p->{ growMode} = 0 if !exists $p->{growMode} and $default->{growMode} == gf::DontCare and
+   $p->{ growMode} = 0 if !exists $p->{growMode} and $default->{growMode} == gm::DontCare and
      (( exists $p->{clipOwner} && ($p->{clipOwner}==1)) or ( $default->{clipOwner} == 1));
    my $shp = exists $p->{originDontCare} ? $p->{originDontCare} : $default-> {originDontCare};
    my $shs = exists $p->{sizeDontCare  } ? $p->{sizeDontCare  } : $default-> {sizeDontCare  };
