@@ -43,6 +43,7 @@ Window_init( Handle self, HV * profile)
    if ( SvTYPE( sv = pget_sv( menuItems)) != SVt_NULL)
       my set_menu_items( self, sv);
    dyna_set( self, profile);
+   my set_modal_result( self, pget_i( modalResult));
    my set_modal_horizon( self, pget_B( modalHorizon));
 }
 

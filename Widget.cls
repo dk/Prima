@@ -44,6 +44,7 @@ object Widget( Drawable)
    import   void     enable_commands();
    method   void     end_paint();
    method   void     end_paint_info();
+   method   Bool     exposed()                       => apc_widget_is_exposed;
    method   Handle   first();
    c_only   Handle   first_that( void * actionProc, void * params);
    c_only   void     handle_event ( PEvent event);
@@ -76,6 +77,7 @@ object Widget( Drawable)
    method   void     show();
    method   void     show_cursor();
    method   void     show_hint();
+   method   Bool     showing()                       => apc_widget_is_showing;
    method   void     unlock();
    method   void     update_view();
    c_only   void     update_sys_handle( HV * profile);

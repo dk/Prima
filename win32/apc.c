@@ -1553,8 +1553,46 @@ Bool
 apc_widget_is_visible( Handle self)
 {
    objCheck false;
+   return GetWindowLong(HANDLE, GWL_STYLE) & WS_VISIBLE;
+}
+
+Bool
+apc_widget_is_showing( Handle self)
+{
+   objCheck false;
    return IsWindowVisible( HANDLE);
 }
+
+Bool
+apc_widget_is_exposed( Handle self)
+{
+   HWND h;
+   HRGN rgnSave = NULL;
+   HRGN rgn     = NULL;
+   int  rgnSaveType, rgnType;
+
+   objCheck false;
+
+   h = ( HWND) var handle;
+   if ( !IsWindowVisible( h)) return false;
+
+   rgnSave = CreateRectRgn(0,0,0,0);
+   rgn     = CreateRectRgn(0,0,0,0);
+   rgnSaveType = GetUpdateRgn( h, rgnSave, FALSE);
+   rgnSaveType = ( rgnSaveType == COMPLEXREGION || rgnSaveType == SIMPLEREGION);
+
+   if ( rgnSaveType) ValidateRect( h, NULL);
+
+   InvalidateRect( h, NULL, false);
+   rgnType = GetUpdateRgn( h, rgn, FALSE);
+   ValidateRect( h, NULL);
+
+   if ( rgnSaveType) InvalidateRgn( h, rgnSave, FALSE);
+   DeleteObject( rgnSave);
+   DeleteObject( rgn);
+   return ( rgnType == COMPLEXREGION || rgnType == SIMPLEREGION);
+}
+
 
 void
 apc_widget_invalidate_rect( Handle self, Rect * rect)
