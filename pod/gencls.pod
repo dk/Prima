@@ -33,7 +33,7 @@ Generates .inc file ( with declarations to be included in only file )
 Turns optimizing algorithm for .inc files on. Algorithm is
 based on an assumption, that some functions are declared identically,
 therefore the code piece that handles the parameter and result conversion
-can be shared. With -O
+can be shared. With C<-O>
 flag on, a thunk body is replaced to a call to
 a function, which name is made up from all method parameters plus result.
 Actual function is not written in .inc file, but in .tml file.
@@ -42,7 +42,7 @@ and the reminder written to one file by L<tmlink> utility.
 
 =item --tml
 
-Generates .tml file. Turns -O automatically on.
+Generates .tml file. Turns C<-O> automatically on.
 
 =item -Idirname
 
@@ -72,8 +72,8 @@ with a name of the object or the package otherwise.
 
 =head2 Basic scalar data types
 
-Gencls has several built-in scalar data types, that it knows how to work
-with. To 'work' means that it can generate a code that transfers
+Gencls has several built-in scalar data types, that it knows how to deal
+with. To 'deal' means that it can generate a code that transfers
 data of these types between C and perl, using XS ( see L<perlguts> )
 library interface.
 
@@ -112,7 +112,7 @@ will be used only for one or more objects. Usage of
 C<local> is somewhat resembles C pragma static.
 Currently the only difference is that a function 
 using a complex local type in the parameter list or
-as the result is not a subject for -O optimization.
+as the result is not a subject for C<-O> optimization.
 
 =head2 Scalar types
 
