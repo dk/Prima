@@ -1108,6 +1108,9 @@ prima_build_font_key( PFontKey key, PFont f, Bool bySize);
 extern Bool
 prima_core_font_pick( Handle self, Font * source, Font * dest);
 
+extern Bool
+prima_core_font_encoding( char * encoding);
+
 extern void
 prima_init_try_height( HeightGuessStack * p, int target, int firstMove );
 

@@ -965,7 +965,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
    // check encoding match
    if (( es. passedCount == 0) && ( elf. lfCharSet != DEFAULT_CHARSET)) {
       int r;
-      font-> encoding[0] = 0; // DEFAULT_CHARSET
+      font-> name[0] = 0; // any name
       r = font_font2gp_internal( font, res, forceSize, dc);
       out( r);
    }

@@ -1530,6 +1530,12 @@ AGAIN:
 }
 
 Bool
+prima_core_font_encoding( char * encoding)
+{
+   return hash_fetch( encodings, encoding, strlen( encoding)) != NULL;
+}
+
+Bool
 apc_font_pick( Handle self, PFont source, PFont dest)
 {
 #ifdef USE_XFT
