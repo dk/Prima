@@ -1627,10 +1627,13 @@ sub get_directory_tree
 
    $self-> {files}     = \@fs1;
    $self-> {filesStat} = \@fs2;
-   my @d   = sort grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
+   my @d   = grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
+   push @d, grep { -d "$path/$_" } $self-> files( 'lnk');
+   @d = sort @d;
    my $ind = 0;
    my @lb;
    for (@d)  {
+      my $pathp = "$path/$_";
       @fs = Prima::Utils::getdir( "$path/$_");
       @fs1 = ();
       @fs2 = ();
@@ -1640,7 +1643,9 @@ sub get_directory_tree
       }
       $self-> {files}     = \@fs1;
       $self-> {filesStat} = \@fs2;
-      my @dd   = sort grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
+      my @dd   = grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
+      push @dd, grep { -d "$pathp/$_" } $self-> files( 'lnk');
+      @dd = sort @dd;
       push @lb, [[ $_, "$path/"], scalar @dd ? [] : undef, 0];
    }
    $::application-> pointer( $oldPointer);
