@@ -562,6 +562,38 @@ create_rgb_to_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
 }
 
 static void
+create_cache4_8( Image *img, ImageCache *cache)
+{
+   unsigned char lut1[ NPalEntries8];
+   unsigned char lut2[ NPalEntries8];
+   unsigned char *data;
+   int x, y;
+   int ls;
+   int h = img-> h, w = img-> w;
+   unsigned i;
+
+   for ( i = 0; i < NPalEntries8; i++) {
+      lut1[i] = ((i & MSNibble) >> MSNibbleShift);
+      lut2[i] = ((i & LSNibble) >> LSNibbleShift);
+   }   
+   
+
+   cache->image = prepare_ximage( w, h, false);
+   if ( !cache->image) croak( "UAI_023: error creating ximage");
+   ls = get_ximage_bytes_per_line( cache->image);
+   data = get_ximage_data( cache->image);
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register unsigned char *d = (unsigned char*)(ls*(h-y-1)+data);
+      for ( x = 0; x < (w+1)/2; x++) {
+	 *d++ = lut1[line[x]];
+	 *d++ = lut2[line[x]];
+      }
+   }
+}
+
+
+static void
 create_cache4_16( Image *img, ImageCache *cache)
 {
    Duplet16 lut[ NPalEntries8];
@@ -656,6 +688,22 @@ create_cache4_32( Image *img, ImageCache *cache)
       }
    }
 }
+
+static void
+create_cache_equal( Image *img, ImageCache *cache)
+{
+   unsigned char *data;
+   int y, ls, lls, h = img-> h;
+   cache->image = prepare_ximage( img-> w, h, false);
+   if ( !cache->image) croak( "UAI_024: error creating ximage");
+   ls = get_ximage_bytes_per_line( cache->image);
+   data = get_ximage_data( cache->image);
+   lls = ls > img-> lineSize ? img-> lineSize : ls;
+
+   for ( y = h-1; y >= 0; y--) 
+      memcpy( data + ls * (h - y - 1), img-> data + y*img-> lineSize,  lls);
+}
+
 
 static void
 create_cache8_16( Image *img, ImageCache *cache)
@@ -858,6 +906,7 @@ static void
 create_cache4( Image* img, ImageCache *cache, int bpp)
 {
    switch (bpp) {
+   case  8:     create_cache4_8( img, cache);   break;
    case 16:     create_cache4_16( img, cache);  break;
    case 24:     create_cache4_24( img, cache);  break;
    case 32:     create_cache4_32( img, cache);  break;
@@ -869,6 +918,7 @@ static void
 create_cache8( Image* img, ImageCache *cache, int bpp)
 {
    switch (bpp) {
+   case 8:      create_cache_equal( img, cache);  break; 
    case 16:     create_cache8_16( img, cache);  break;
    case 24:     create_cache8_24( img, cache);  break;
    case 32:     create_cache8_32( img, cache);  break;
@@ -990,6 +1040,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
          XSetForeground( DISP, XX-> gc, 0xffffffff);
          XSetBackground( DISP, XX-> gc, 0x00000000);
       }
+      
       if ( func != ofunc)
 	 XSetFunction( DISP, XX-> gc, func);
       XCHECKPOINT;
@@ -1359,10 +1410,12 @@ static void mbs_##type##_in( type * srcData, type * dstData, Bool xreverse,    \
     }                                                                   \
 }   
 
+BS_BYTEEXPAND( Pixel8);
 BS_BYTEEXPAND( Pixel16);
 BS_BYTEEXPAND( Pixel24);
 BS_BYTEEXPAND( Pixel32);
 
+BS_BYTEIMPACT( Pixel8);
 BS_BYTEIMPACT( Pixel16);
 BS_BYTEIMPACT( Pixel24);
 BS_BYTEIMPACT( Pixel32);
@@ -1508,6 +1561,11 @@ do_stretch( Handle self, PImage img, struct PrimaXImage *cache,
           mbs_init_bits();
           proc = ( mStretchProc * )( xshrink ? mbs_mono_in : mbs_mono_out);
           break;
+      case 8: 
+          srcData += src_x * sizeof( Pixel8);
+          proc = ( mStretchProc * )( xshrink ? mbs_Pixel8_in : mbs_Pixel8_out);
+          if ( dst_w == src_w) proc = ( mStretchProc *) mbs_copy;
+          break;          
       case 16: 
           srcData += src_x * sizeof( Pixel16);
           proc = ( mStretchProc * )( xshrink ? mbs_Pixel16_in : mbs_Pixel16_out);
