@@ -114,8 +114,8 @@ int
 stricmp(const char *s1, const char *s2)
 {
    /* Code was taken from FreeBSD 4.0 /usr/src/lib/libc/string/strcasecmp.c */
-   const unsigned char *u1 = (const unsigned *)s1;
-   const unsigned char *u2 = (const unsigned *)s2;
+   const unsigned char *u1 = (const unsigned char *)s1;
+   const unsigned char *u2 = (const unsigned char *)s2;
    while (tolower(*u1) == tolower(*u2++))
       if (*u1++ == '\0')
          return 0;
