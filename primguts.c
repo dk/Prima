@@ -1619,8 +1619,6 @@ FillPattern fillPatterns[] = {
   {0x02, 0x27, 0x05, 0x00, 0x20, 0x72, 0x50, 0x00}
 };
 
-Rect        Rect_buffer;
-Point       Point_buffer;
 
 // list section
 
