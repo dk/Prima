@@ -576,7 +576,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    if ( kind_of( deja, CIcon)) {
       XBITMAPINFO xbi = {
          { sizeof( BITMAPINFOHEADER), i-> w, i-> h, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
-         { {255,255,255,0}, {0,0,0,0} }
+         { {0,0,0,0}, {255,255,255,0}}
       };
       StretchDIBits(
          xdc, x, ly - y - yDestLen, xDestLen, yDestLen, xFrom, yFrom, xLen, yLen,

@@ -564,8 +564,6 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
       );
    }
 
-   for ( j = 0; j < i-> maskSize; j++) i-> mask[ j] = ~i-> mask[ j];
-
    dc = dc_alloc();
    image_get_binfo(( Handle)i, &bi);
 

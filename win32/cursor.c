@@ -151,7 +151,6 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       if ( !GetDIBits( dc, ii. hbmMask, i-> h, i-> h, i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS)) apiErr;
    }
    dc_free();
-   for ( j = 0; j < i-> maskSize; j++)  i-> mask[ j] = ~i-> mask[ j];
    DeleteObject( ii. hbmMask);
    DeleteObject( ii. hbmColor);
 }
