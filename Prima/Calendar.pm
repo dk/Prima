@@ -165,7 +165,6 @@ sub make_months
          POSIX::strftime ( "%OB", 0, 0, 0, 1, 1, 0 )
       ) ? '%B' : '%OB';
    }
-   print POSIX::strftime(q(%B),0,0,0,1,12,0), "\n";
    return [ map {
       POSIX::strftime ( $OB_format, 0, 0, 0, 1, $_, 0 )
    } 0 .. 11 ];
