@@ -7,15 +7,16 @@ and behaves identically on X, Win32 and OS/2 PM.
 INSTALLATION
 ============
 
-Create a makefile by running Makefile.PL using the perl
-program and then run make ( or nmake for Win32 and OS/2):
+Create a makefile by running Makefile.PL using perl
+and then run make ( nmake for Win32 and OS/2, or gmake 
+for sgi):
 
     perl Makefile.PL
     make
     make test
     make install
 
-If perl Makefile.PL fails, compilation history along with the errors 
+If 'perl Makefile.PL' fails, compilation history along with errors 
 can be found in makefile.log. 
 
 If make fails with message
@@ -23,7 +24,7 @@ If make fails with message
 ** No image codecs found
 
 that means you don't have image libraries that Prima supports in your path.
-Prima supports libungif, libjpeg and gbm compiled customly
+Prima supports libungif, libjpeg, libpng and gbm - latter is compiled customly
 and named libprigraph. For win32 users it is recommended to
 download http://www.prima.eu.org/download/prigraph.lib and
 http://www.prima.eu.org/download/prima_dlls.zip. prigraph.lib should be
@@ -39,6 +40,19 @@ To install into a private library, for example your home
 directory:
 
     perl Makefile.PL PREFIX=$HOME/lib/perl
+
+If compilation process fails because Makefile contains
+invalid switches for your compile or linker, try change
+these with arguments to Makefile.PL. Most useful of these
+are:
+   COMPILER - type of compiler ( gcc, emx, mscv32, bcc32, irixcc)
+   CC - compiler command
+   CFLAGS - compiler arguments
+   LD - linked command
+   LDFLAGS - linker arguments
+
+Look in Makefile.PL for details.
+  
 
 BINARY DISTRIBUTION INSTALLATION
 ================================
@@ -75,6 +89,13 @@ which is an event loop call. Try to begin from the followind code:
 
    run Prima;
 
+Or, alternatively, start the VB program, which is
+a semi-demonstration visual builder. All examples and
+programs included into the distribution can be run
+either by their name or with perl as argument - for 
+example, ..../generic or perl ..../generic . 
+( perl ..../generic.bat for win32 )
+
 
 COPYRIGHT
 =========
@@ -88,4 +109,8 @@ Dmitry Karasik <dmitry@karasik.eu.org>
 Anton Berezin  <tobez@tobez.org>
 Vadim Belman   <voland@lflat.org>
 
+CREDITS
+=======
+
+David Scott <DScott@dgt.com>
 
