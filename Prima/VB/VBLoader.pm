@@ -141,7 +141,7 @@ sub AUTOFORM_CREATE
       close F;
    }
 
-   die "Corrupted file $filename" unless $contents =~ /^\s*sub\s*{/;
+   die "Corrupted file $filename" unless $contents =~ /^# VBForm/;
    my $sub = eval( $contents);
    die "$@" if $@;
    my @dep = $sub-> ();
