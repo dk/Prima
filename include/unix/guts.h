@@ -282,6 +282,14 @@ struct _UnixGuts
 
 struct _PrimaXImage;
 
+typedef struct {
+   struct _PrimaXImage *image;
+   struct _PrimaXImage *icon;
+   XColor fore;
+   XColor back;
+   Bool bitmap;
+} ImageCache;
+
 typedef struct _drawable_sys_data
 {
    COMPONENT_SYS_DATA;
@@ -324,6 +332,7 @@ typedef struct _drawable_sys_data
       int exposed			: 1;
       int focused       	        : 1;
       int grab                  	: 1;
+      int is_icon                       : 1;
       int is_image                      : 1;
       int mapped			: 1;
       int no_size			: 1;
@@ -336,14 +345,13 @@ typedef struct _drawable_sys_data
       int sync_paint			: 1;
       int zero_line             	: 1;
    } flags;
-   struct _PrimaXImage *image_cache;
-   struct _PrimaXImage *icon_cache;
-   struct _PrimaXImage *image_bit_cache;
-   struct _PrimaXImage *icon_bit_cache;
-   XColor bitmap_fore, bitmap_back;
-   XColor bitmap_bit_fore, bitmap_bit_back;
+   ImageCache bitmap_cache;
+   ImageCache screen_cache;
    TAILQ_ENTRY(_drawable_sys_data) paintq_link;
 } DrawableSysData, *PDrawableSysData;
+
+#define XF_IS_IMAGE(x)  ((x)->flags.is_image)
+#define XF_IS_ICON(x)   ((x)->flags.is_icon)
 
 #define CURSOR_TIMER	((Handle)11)
 
@@ -445,8 +453,8 @@ prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int
 extern Bool
 prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);
 
-extern void
-prima_create_image_cache( PImage, Handle, Bool);
+extern ImageCache*
+prima_create_image_cache( PImage img, Handle drawable);
 
 extern void
 prima_cleanup_drawable_after_painting( Handle self);

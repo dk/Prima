@@ -304,7 +304,6 @@ prima_allocate_color( Handle self, Color color)
    XColor *x_color;
    static XColor bitmap_white = { pixel: 1, red: 0xffff, green: 0xffff, blue: 0xffff};
    static XColor bitmap_black = { pixel: 0, red: 0x0000, green: 0x0000, blue: 0x0000};
-   DEFXX;
 
    /* super duper debug
    static XColor *black = nil;
@@ -345,7 +344,7 @@ prima_allocate_color( Handle self, Color color)
       c = *(( PRGBColor) &color);
    }
 
-   if ( XX-> flags. is_image && (PImage(self)-> type & imBPP) == 1) {
+   if ( self == nilHandle || ( X(self)-> flags. is_image && (PImage(self)-> type & imBPP) == 1)) {
       if ((unsigned short)c.r + (unsigned short)c.g + (unsigned short)c.b > 381)
          return &bitmap_white;
       else
@@ -533,6 +532,7 @@ Unbuffered:
    XX-> flags. paint = true;
 
    if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
+      // fprintf( stderr, "set font g: %s\n", XX-> font-> load_name);
       XSetFont( DISP, XX-> gc, XX-> font-> id);
       XCHECKPOINT;
    } else {
@@ -987,15 +987,18 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    DEFXX;
    SHIFT( x, y);
 
-   if (0) {
-      fprintf( stderr, "H: %d, D: %d, A: %d\n",
+   if (1) {
+      fprintf( stderr, "H: %d, D: %d, A: %d, BD: %d, BA: %d\n",
                XX-> font-> font. height,
                XX-> font-> fs-> descent,
-               XX-> font-> fs-> ascent);
+               XX-> font-> fs-> ascent,
+               XX-> font-> fs-> max_bounds. descent,
+               XX-> font-> fs-> max_bounds. ascent
+               );
    }
 
    if ( !XX-> flags. paint_base_line)
-      y += XX-> font-> fs-> ascent + XX-> font-> fs-> descent - XX-> font-> font. height;
+      y += -XX-> font-> fs-> ascent + XX-> font-> font. height;
    XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
    return true;
@@ -1173,8 +1176,10 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 Point
 apc_gp_get_resolution( Handle self)
 {
-   DOLBUG( "apc_gp_get_resolution()\n");
-   return (Point){0,0};
+   if ( self)
+      return (Point){X(self)-> resolution. x, X(self)-> resolution. y};
+   else
+      return (Point){guts.resolution.x, guts.resolution.y};
 }
 
 int
