@@ -8,7 +8,7 @@ for ( qw( height width size direction)) {
    $x-> font( $_ => $x-> font-> $_() * 3 + 12);
    my $fx2 = $x-> font-> $_();
    if ( $fx2 == $fx) {
-      print "ok # skip";
+      skip;
    } else {
       $x-> font( $_ => $fx);
       ok( $fx == $x-> font-> $_());

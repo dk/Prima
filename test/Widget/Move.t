@@ -8,7 +8,7 @@ my @mrep2;
 my $wx = Prima::Window-> create(
    originDontCare => 1,
    sizeDontCare => 1,
-   onMove => sub { $dong = 1; shift; @mrep = @_;  },
+   onMove => sub { $dong = 1; shift; @mrep = scalar(@mrep) ? ( @mrep[0,1], @_[2,3]) : @_;  },
    name => 'TEST',
 );
 
@@ -16,7 +16,7 @@ my $wx = Prima::Window-> create(
 my $wl = $wx-> insert( Prima::Widget =>
    clipOwner => 0,
    growMode  => 0,
-   onMove => sub { $dong2 = 1; shift; @mrep2 = @_; },
+   onMove => sub { $dong2 = 1; shift; @mrep2 = scalar(@mrep2) ? ( @mrep2[0,1], @_[2,3]) : @_;  },
 );
 
 my @or = $wx-> origin;
@@ -41,22 +41,23 @@ if ( $nor[0] == $or[0] + 1 && $nor[1] == $or[1] + 1) {
 } elsif ( Prima::Application-> get_system_info->{apc} != apc::Unix) {
    ok(0);
 } else {
-   print "ok # skip";
+   skip;
 }
-ok( $mrep[0] == $or[0] && $mrep[1] == $or[1] && $mrep[2] == $nor[0] && $mrep[3] == $nor[1]);
+ok( $mrep[2] == $nor[0] && $mrep[3] == $nor[1]);
+my @d = ( $nor[0] - $or[0], $nor[1] - $or[1]);
 ok( scalar(@mrep2));
-ok( $mrep2[0] == $or2[0] && $mrep2[1] == $or2[1] && $mrep2[2] == $mrep2[0] + 1 && $mrep2[3] == $mrep2[1] + 1);
+ok( $mrep2[0] == $or2[0] && $mrep2[1] == $or2[1] && $mrep2[2] == $mrep2[0] + $d[0] && $mrep2[3] == $mrep2[1] + $d[1]);
 
 $wx-> origin( $wx-> left + 1, $wx-> bottom + 1);
 $wx-> size( $wx-> width + 1, $wx-> height + 1);
-
 
 @or = $wx-> origin;
 @or2 = $wl-> origin;
 @mrep = @mrep2 = ();
 
+$dong = 0;
 $wl-> growMode( gm::DontCare);
-$wx-> origin( $wx-> left + 1, $wx-> bottom + 1);
+$wx-> origin( $wx-> left + 2, $wx-> bottom + 2);
 ok( $dong || &__wait);
 @nor = $wx-> origin;
 ok( $mrep[0] == $or[0] && $mrep[1] == $or[1] && $mrep[2] == $nor[0] && $mrep[3] == $nor[1]);

@@ -158,6 +158,12 @@ sub ok
    $ok_count++;
 }
 
+sub skip
+{
+   print "ok # skip\n";
+   $ok_count++;
+}
+
 sub runfile
 {
    my $d = $_[0];
