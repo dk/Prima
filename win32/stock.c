@@ -1762,7 +1762,7 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
       delta = lp[ ptr];
       if ( !draw) delta += lw;
       d2 = offset + delta - 1;
-      if ( d2 > llen) d2 == llen;
+      if ( d2 > llen) d2 = llen;
       DELTA( x3, y3, offset);
       DELTA( x4, y4, d2);
       offset += delta;
@@ -1858,6 +1858,41 @@ quarter( double angle)
 }
 
 #define GRAD 57.29577951
+
+/*
+   int a = radX * radX;
+   int b = radY * radY;
+   int d = b - a * radY + a / 4;
+   int dx = 0;
+   int dy = a * radY * 2;
+   int sx = 0, sy = radY;
+
+   while ( dx < dy ) {
+      // [sx, sy] x 4
+      if ( d > 0) {
+         sy--;
+         dy -= a + a;
+         d  -=dy;
+      }
+      sx++;
+      dx += b + b;
+      d += b + dx;
+   }
+
+   d = ( a - b + (a - b) / 2 - dx - dy) / 2;
+
+   while ( sy >= 0) {
+      // [sx, sy] x 4
+      if ( d < 0) {
+         sx++;
+         dx += b + b;
+         d += dx;
+      }
+      sy--;
+      dy -= a + a;
+      d += a - dy;
+   }
+*/
 
 int
 gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd, int drawState)
