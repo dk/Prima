@@ -157,6 +157,7 @@ extern "C" {
 #ifdef BROKEN_PERL_PLATFORM
    #undef open
    #undef fopen
+   #undef fprintf
    #undef vfprintf
    #undef fclose
    #undef feof
@@ -219,9 +220,11 @@ extern "C" {
    #undef close
    #undef dup
    #ifdef win32_close
-      #define close win32_close
-      #define dup   win32_dup
+      #define close  win32_close
+      #define dup    win32_dup
    #endif
+   #undef stderr
+   #define stderr win32_stderr()
 #endif
 
 #define PERL_CALL_SV_DIE_BUG_AWARE 1

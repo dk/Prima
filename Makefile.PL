@@ -567,8 +567,9 @@ sub setup_variables
     my $warnflags = $cc_specs{ $COMPILER}->{ warnflags};
     my $ldflags = $COMPILER eq 'emx' ? "" : "$Config{ ldflags} ";
     my $lddlflags = $Config{ lddlflags};
-    if ( $COMPILER eq 'msvc' && $ccflags =~ /TP/) { # M$VC++ protection
-        $warnflags =~ s/W3/W1/;
+    if ( $COMPILER eq 'msvc' && (( $ccflags =~ /TP/) || ($ccflags =~ /O\d/))) { # M$VC++ protection
+        $warnflags =~ s/W3/W1/;        # lower warning level
+        $warnflags =~ s/(-|\/)WX//;    # and dismiss 'warnings as errors'; ( for its stupidity in the c++ case)
         $ldflags =~ s/(-|\/)nodefaultlib//g;
         $lddlflags =~ s/(-|\/)nodefaultlib//g;
     }
