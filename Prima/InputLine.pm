@@ -39,6 +39,7 @@ sub profile_default
    return {
       %def,
       alignment      => ta::Left,
+      autoHeight     => 1,
       autoSelect     => 1,
       autoTab        => 0,
       borderWidth    => 1,
@@ -75,7 +76,7 @@ sub init
    my $self = shift;
    for ( qw( borderWidth passwordChar maxLen alignment autoTab autoSelect firstChar charOffset readOnly))
       { $self->{$_} = 1; }
-   for ( qw(  selStart selEnd atDrawX))
+   for ( qw(  selStart selEnd atDrawX autoHeight))
       { $self->{$_} = 0;}
    $self-> { insertMode}   = $::application-> insertMode;
    $self-> { maxLen}   = -1;
@@ -84,7 +85,7 @@ sub init
    $self-> {defcw} = $::application-> get_default_cursor_width;
    $self-> {resetDisabled} = 1;
    my %profile = $self-> SUPER::init(@_);
-   for ( qw( writeOnly borderWidth passwordChar maxLen alignment autoTab autoSelect firstChar readOnly selEnd selStart charOffset wordDelimiters))
+   for ( qw( autoHeight writeOnly borderWidth passwordChar maxLen alignment autoTab autoSelect firstChar readOnly selEnd selStart charOffset wordDelimiters))
       { $self->$_( $profile{ $_}); }
    $self-> {resetDisabled} = 0;
    $self-> {resetLevel}    = 0;
@@ -390,6 +391,12 @@ sub on_keydown
    }
 }
 
+sub check_auto_size
+{
+   my $self = $_[0];
+   $self-> height( $self-> font-> height + 4) if $self-> {autoHeight};
+}
+
 sub copy
 {
    my $self = $_[0];
@@ -540,6 +547,7 @@ sub on_fontchanged
    my $font = $self-> font;
    $self->{font_height} = $font->height;
    $self->{font_width} = $font->width;
+   $self-> check_auto_size;
    $self-> reset;
 }
 
@@ -716,6 +724,14 @@ sub on_enter
    }
 }
 sub select_all { $_[0]-> selection(0,-1); }
+
+sub autoHeight
+{
+   return $_[0]-> {autoHeight} unless $#_;
+   $_[0]->{autoHeight} = $_[1];
+   $_[0]-> check_auto_size;
+}
+
 
 sub autoSelect    {($#_)?($_[0]->{autoSelect}    = $_[1])                :return $_[0]->{autoSelect}   }
 sub autoTab       {($#_)?($_[0]->{autoTab}       = $_[1])                :return $_[0]->{autoTab}      }
