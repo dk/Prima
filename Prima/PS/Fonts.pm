@@ -62,10 +62,11 @@ $symbolFontName    = 'Symbol';
 
 Returns font metric hash with requested font data, uses $defaultFontName
 if give name is not found. Metric hash is the same as Prima::Types::Font
-record, plus 2 extra fields: 'docname' containing font name ( equals 
-always to 'name') and 'chardata' - hash of named glyphs. Every hash
+record, plus 3 extra fields: 'docname' containing font name ( equals 
+always to 'name'), 'chardata' - hash of named glyphs, 'charheight' - 
+the height that 'chardata' is rendered to. Every hash
 entry in 'chardata' record contains four numbers - suggested character 
-index and a, b and c glyph dimensions. 
+index and a, b and c glyph dimensions with height equals 'charheight'. 
 
 =cut
 
@@ -127,6 +128,7 @@ sub query_metrics
       $ra[1]-> {docname}  = $name;
       $ra[1]-> {name}     = $name;
       $ra[1]-> {family}   = $family;
+      $ra[1]-> {charheight} = $ra[1]-> {height};
       $cache{$file} = $ra[1];
    }
    return $cache{$file};
@@ -202,18 +204,23 @@ sub enum_family
    return @names;
 }
 
-=item font_pick( $src, $dest)
+=item font_pick( $src, $dest, %options)
 
 Merges two font records using Prima::Drawable::font_match, picks
 the result and returns new record.  $variablePitchName and
 $fixedPitchName used on this stage.
+
+Options can include the following fields:
+
+- resolution - vertical resolution. The default value is taken from 
+  font resolution.
 
 =cut
 
 
 sub font_pick
 {
-   my ( $src, $dest) = @_;
+   my ( $src, $dest, %options) = @_;
    my $bySize = exists( $src->{size}) && !exists( $src-> {height});
    $dest = Prima::Drawable-> font_match( $src, $dest, 0);
 
@@ -276,17 +283,26 @@ sub font_pick
    $m2 = $m1 unless defined $m2;
 
    # scale dimensions
-   my $a = $bySize ? ( $dest-> {size} / $m2-> {size}) : ( $dest-> {height} / $m2-> {height});
+   my $res = $options{resolution} ? $options{resolution} : $m2-> {yDeviceRes};
+   if ( $bySize) {
+      $dest-> {height} = int( $dest-> {size} * $res / 72.27 + 0.5); 
+   } else {
+      $dest-> {size} = int( $dest-> {height} * 72.27 / $res + 0.5);
+   }
+   my $a = $dest-> {height} / $m2-> {height};
    my %muls = %$m2;
+   my $charheight = $muls{height};
    my $du   = $dest-> {style} & fs::Underlined;
    my $dw   = $dest-> {width};
-   $muls{$_} *= $a for
-     qw( height ascent descent width maximalWidth internalLeading externalLeading size);
+   $muls{$_} = int ( $muls{$_} * $a + 0.5) for
+     qw( height ascent descent width maximalWidth internalLeading externalLeading);
+   delete $muls{size};
    my $enc = $dest-> {encoding};
    $dest-> {$_}     = $muls{$_} for keys %muls;
    $dest-> {encoding} = $enc;
    $dest-> {style} |= fs::Underlined if $du;  
    $dest-> {width} = $dw if $dw != 0;
+   $dest-> {charheight} = $charheight; 
    return $dest;
 }
 

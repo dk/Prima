@@ -1009,8 +1009,7 @@ sub text_out
        }      
 
        if ( $self-> {changed}-> {font}) {
-          my $szf = int( 7227 * $self->{font}->{size} / $self-> {resolution}-> [0] + 0.5) / 100;
-          $self-> emit( "/$fn findfont $szf scalefont setfont");
+          $self-> emit( "/$fn findfont $self->{font}->{size} scalefont setfont");
           $self-> {changed}-> {font} = 0;
        }
    }
@@ -1313,10 +1312,13 @@ sub get_font
 sub set_font 
 {
    my ( $self, $font) = @_;
+   $font = { %$font }; 
    my $n = exists($font-> {name}) ? $font-> {name} : $self-> {font}-> {name};
    $n = $self-> {useDeviceFonts} ? $Prima::PS::Fonts::defaultFontName : 'Default'
       unless defined $n;
 
+   $font-> {height} = int(( $font-> {size} * $self-> {resolution}-> [1]) / 72.27 + 0.5)
+      if exists $font->{size};
 
    if ( $self-> {useDeviceFontsOnly} || !$::application ||
          ( $self-> {useDeviceFonts} && 
@@ -1347,7 +1349,9 @@ sub set_font
         )
      )
    {
-      $self-> {font} = Prima::PS::Fonts::font_pick( $font, $self-> {font}); 
+      $self-> {font} = Prima::PS::Fonts::font_pick( $font, $self-> {font}, 
+         resolution => $self-> {resolution}-> [1]); 
+      $self-> {fontCharHeight} = $self-> {font}-> {charheight};
       $self-> {docFontMap}-> {$self-> {font}-> {docname}} = 1; 
       $self-> {typeFontMap}-> {$self-> {font}-> {name}} = 1; 
       $self-> {fontWidthDivisor} = $self-> {font}-> {maximalWidth};
@@ -1355,10 +1359,14 @@ sub set_font
    } else {
       my $wscale = $font-> {width};
       delete $font-> {width};
+      delete $font-> {size};
+      delete $self-> {font}-> {size};
       $self-> {font} = Prima::Drawable-> font_match( $font, $self-> {font});
+      $self-> {font}-> {size} = int( $self-> {font}-> {height} * 72.27 / $self-> {resolution}-> [1] + 0.5);
       $self-> {typeFontMap}-> {$self-> {font}-> {name}} = 2; 
       $self-> {fontWidthDivisor} = $self-> {font}-> {width};
       $self-> {font}-> {width} = $wscale if $wscale;
+      $self-> {fontCharHeight} = $self-> {font}-> {height};
    }
    $self-> {changed}-> {font} = 1;
    $self-> {plate}-> destroy, $self-> {plate} = undef if $self-> {plate};
@@ -1383,7 +1391,6 @@ sub plate
       $f{pitch} = fp::Default unless $f{pitch} == fp::Fixed;
       $f{name} = $fontmap{$f{name}} if exists $fontmap{$f{name}};
    }
-   # $f{height} = 72.27 * $self->{font}->{height} / $self-> {resolution}-> [0];
    delete $f{size};
    delete $f{width};
    delete $f{direction};
@@ -1491,18 +1498,14 @@ sub get_rmap
    my $c = $_[0]-> {font}-> {chardata};
    my $le = $_[0]-> {localeEncoding};
    my $nd = $c-> {'.notdef'};
-   my $fs = $_[0]-> {font}-> {size} / 1000;
+   my $fs = $_[0]-> {font}-> {height} / $_[0]-> {fontCharHeight};
    if ( defined $nd) {
+      $nd = [ @$nd ];
       $$nd[$_] *= $fs for 1..3;
    } else {
       $nd = [0,0,0,0];
    }
 
-#  for ( keys %$c) {
-#     next if $c-> {$_}->[0] < 0;
-#     $rmap[$c-> {$_}->[0]] = $c->{$_};
-#  }
- 
    my ( $f, $l) = ( $_[0]-> {font}-> {firstChar}, $_[0]-> {font}-> {lastChar});
    my $i;
    my $abc;
