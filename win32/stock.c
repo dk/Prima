@@ -334,7 +334,7 @@ elf( Font * font, Bool bySize)
 {
    unsigned long seed = 0;
    if ( bySize) {
-      seed = elf_hash( (const char*)&font-> style, (char *)(&(font-> name)) - (char *)&(font-> style), seed);
+      seed = elf_hash( (const char*)&font-> width, (char *)(&(font-> name)) - (char *)&(font-> width), seed);
       seed = elf_hash( font-> name, -1, seed);
       seed = elf_hash( font-> encoding, -1, seed);
       seed = elf_hash( (const char*)&font-> size, sizeof( font-> size), seed);
