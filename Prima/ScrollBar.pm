@@ -802,6 +802,11 @@ it is sent when appropriate, regardless to whether this was a
 result of user interaction, or a side effect of some method
 programmer has called.
 
+=item Track
+
+If C<autoTrack> is 0, called when the user changes the thumb position by the mouse
+instead of C<Change>.
+
 =back
 
 =head1 EXAMPLE
