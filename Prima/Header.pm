@@ -310,7 +310,7 @@ sub on_mousemove
    if ( $self-> {transaction} == 1) {
       my @a = $self-> tab2rect( $self-> {tabId});
       $self-> pressed(
-         ( $x >= $a[0] && $x < $a[2] & $y >= $a[1] && $y < $a[3]) ?
+         ( $x >= $a[0] && $x < $a[2] && $y >= $a[1] && $y < $a[3]) ?
          $self->{tabId} : -1
       );
       return unless $self-> {dragable};
