@@ -2311,7 +2311,10 @@ sub form_run
    $VB::main-> {topLevel} = { map { ("$_" => 1) } $::application-> get_components };
    @Prima::VB::VBLoader::eventContext = ('', '');
    eval{
-      local $SIG{__WARN__} = sub { die $_[0] };
+      local $SIG{__WARN__} = sub { 
+         return if $_[0] =~ /^Subroutine.*redefined/;
+         die $_[0] 
+      };
       my $sub = eval("$c");
       die "Error loading module $@" if $@;
       my @d = $sub->();
