@@ -494,7 +494,7 @@ extern SV **temporary_prf_Sv;
 #define pset_i( key, value)  pset_sv_noinc( key, newSViv( value))
 #define pset_f( key, value)  pset_sv_noinc( key, newSVnv( value))
 #define pset_c( key, value)  pset_sv_noinc( key, newSVpv( value, 0))
-#define pset_H( key, value)  pset_sv_noinc( key, newSVsv((( PAnyObject) value)-> mate))
+#define pset_H( key, value)  pset_sv_noinc( key, (value) ? newSVsv((( PAnyObject) value)-> mate) : nilSV)
 
 #define create_instance( obj)  (                                   \
    ( Handle) temporary_prf_Sv = Object_create( # obj, profile),    \
