@@ -29,6 +29,7 @@
 #include "img.h"
 #include "img_conv.h"
 #include "Image.h"
+#include "Icon.h"
 #include <gif_lib.h>
 
 #ifdef __cplusplus
@@ -90,6 +91,7 @@ typedef struct _LoadRec {
   GifFileType * gft;
   GifRecordType grt;
   int           passed;
+  int           transparent;
   HV          * content;
 } LoadRec;
 
@@ -197,6 +199,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 
    l-> content = newHV();
    l-> passed  = -1;
+   l-> transparent = -1;
 
    // safe to kill
    fclose( fi-> f);
@@ -222,22 +225,30 @@ typedef struct _GIFGraphControlExt {
 #pragma pack()
 
 static void
-load_extension( int code, Byte * data, HV * profile, Bool privateExtensions)
+load_extension( PImgLoadFileInstance fi, int code, Byte * data, Bool privateExtensions)
 {
+   LoadRec * l = ( LoadRec *) fi-> instance;
+   HV * profile = l-> content;
+   
    switch( code) {
    case GRAPHICS_EXT_FUNC_CODE: 
       data++;
       {
       PGIFGraphControlExt ext = ( PGIFGraphControlExt) data;
       Byte p = ext-> packedFields;
-      pset_i( delayTime,      ext-> delayTime);
-      pset_i( disposalMethod, ( p & 0x1c) >> 2);
-      pset_i( userInput,      ( p & 2) ? 1 : 0);
-      if ( p & 1) 
-          pset_i( transparentColorIndex, ext-> transparentColorIndex);
+      if ( fi-> loadExtras) {
+         pset_i( delayTime,      ext-> delayTime);
+         pset_i( disposalMethod, ( p & 0x1c) >> 2);
+         pset_i( userInput,      ( p & 2) ? 1 : 0);
+      }
+      if ( p & 1) {
+         if ( fi-> loadExtras)
+            pset_i( transparentColorIndex, ext-> transparentColorIndex);
+         l-> transparent = ext-> transparentColorIndex;
+      }    
       break;
    }   
-   case COMMENT_EXT_FUNC_CODE: {
+   case COMMENT_EXT_FUNC_CODE: if ( fi-> loadExtras) {
       SV * sv = newSVpv( data + 1, *data);
       if ( privateExtensions && pexist( comment)) {
          // enable long comments
@@ -273,6 +284,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       sv_free(( SV*) l-> content);   
       l-> content = newHV();
       l-> passed  = -1;
+      l-> transparent = -1;
    }   
 
    while ( loop) {
@@ -364,6 +376,17 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
             }   
 
             free( data);
+
+            // applying transparent index to Icon
+            if ( kind_of( fi-> object, CIcon) && 
+                 ( l-> transparent >= 0) &&
+                 ( l-> transparent < PIcon( fi-> object)-> palSize)) {
+               PRGBColor p = PIcon( fi-> object)-> palette;
+               p += l-> transparent;
+               CIcon( fi-> object)-> set_maskColor( fi-> object, 
+                  ARGB( p->r, p-> g, p-> b));
+               CIcon( fi-> object)-> set_autoMasking( fi-> object, amMaskColor);
+            }   
          }   
          
          loop = false;
@@ -374,12 +397,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
             int code = -1;
             Byte * data = nil;
             if ( DGifGetExtension( l-> gft, &code, &data) != GIF_OK) out;
-            if ( data && fi-> loadExtras) 
-               load_extension( code, data, l-> content, privateExtensions);
+            if ( data)
+               load_extension( fi, code, data, privateExtensions);
             while ( data) {
                if ( DGifGetExtensionNext( l-> gft, &data) != GIF_OK) out;
-               if ( data && fi-> loadExtras) 
-                  load_extension( code, data, l-> content, privateExtensions);
+               if ( data)
+                  load_extension( fi, code, data, privateExtensions);
             } 
             privateExtensions = true;
          }   
