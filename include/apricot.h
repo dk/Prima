@@ -215,11 +215,11 @@ typedef struct _PostMsg {
 					   in !csNormal stages: */
 #define ctCacheable      0x00000000	/* Command caches in the queue */
 #define ctDiscardable    0x00010000	/* Command should be discarded */
-#define ctPassThrough    0x00020000	/* Command acts same way in all
-					   csXXX stages */
-#define ctSingle         0x00030000	/* Command caches in the queue only
+#define ctPassThrough    0x00020000	/* Command passes as normal */
+#define ctSingle         0x00040000	/* Command caches in the queue only
 					   once, then changes ct bits to */
-#define ctSingleResponse 0x00040000	/* ctSingleResponse */
+#define ctSingleResponse 0x00050000	/* ctSingleResponse */
+#define ctNoInhibit      0x00080000	/* Valid for csDestroying and csFrozen */
 
 /* Apricot events */
 #define cmHelp           0x00000002	/* WM_HELP analog */
@@ -228,7 +228,7 @@ typedef struct _PostMsg {
 #define cmClose         (0x00000005|ctDiscardable)
 					/* on dialog close, WM_CLOSE analog */
 #define cmCreate         0x0000000A	/* WM_CREATE analog */
-#define cmDestroy       (0x0000000B|ctPassThrough) /* WM_DESTROY analog */
+#define cmDestroy       (0x0000000B|ctPassThrough|ctNoInhibit) /* WM_DESTROY analog */
 #define cmHide          (0x0000000C|ctDiscardable) /* visible flag aware */
 #define cmShow          (0x0000000D|ctDiscardable) /*           commands */
 #define cmReceiveFocus  (0x0000000E|ctDiscardable) /* focused flag aware */
@@ -729,6 +729,12 @@ typedef struct _ObjectOptions_ {
 #define   wsMinimized      1
 #define   wsMaximized      2
 
+/* z-order query constants */
+#define   zoFirst          0
+#define   zoLast           1
+#define   zoNext           2
+#define   zoPrev           3
+
 /* system values */
 #define   svYMenu           0
 #define   svYTitleBar       1
@@ -937,6 +943,9 @@ apc_widget_get_handle( Handle self);
 
 extern Rect
 apc_widget_get_invalid_rect( Handle self);
+
+extern Handle
+apc_widget_get_z_order( Handle self, int zOrderId);
 
 extern Point
 apc_widget_get_pos( Handle self);
