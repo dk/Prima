@@ -39,16 +39,14 @@ Note the custom pointer creation and its dynamic change ( the "User" button ).
 =cut
 
 use strict;
-use Prima qw( StdBitmap Buttons);
+use Prima qw( StdBitmap Buttons Application);
 
 package UserInit;
-$::application = Prima::Application-> create( name => "Generic.pm");
 
 my $ph = Prima::Application->get_system_value(sv::YPointer);
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
    size    => [ 350, 20 + ($ph+8)*11],
    left    => 200,
-   onDestroy => sub {$::application-> close},
    text    => 'Pointers',
 );
 

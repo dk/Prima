@@ -40,10 +40,9 @@ decorations and do not conform to the system user interaction scheme.
 =cut
 
 use strict;
-use Prima qw( InputLine ImageViewer MDI);
+use Prima qw( InputLine ImageViewer MDI Application);
 
 package Generic;
-$::application = Prima::Application-> create(name => 'mdi');
 
 my $w;
 

@@ -47,13 +47,12 @@ use Prima::FileDialog;
 package UserInit;
 $::application = Prima::Application-> create( name => "DriveCombo.pm");
 
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
    text   => "Combo box",
    left   => 100,
    bottom => 300,
    width  => 250,
    height => 250,
-   onDestroy=> sub { $::application-> destroy},
 );
 
 $w-> insert( DriveComboBox =>

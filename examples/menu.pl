@@ -43,7 +43,7 @@ Note the "Edit/Kill menu" realisation.
 =cut
 
 use strict;
-use Prima qw( InputLine Label);
+use Prima qw( InputLine Label Application);
 
 package TestWindow;
 use vars qw(@ISA);
@@ -195,7 +195,6 @@ sub BorderMode
 
 
 package UserInit;
-$::application = Prima::Application-> create( name => "Menu.pm");
 
 my $w = TestWindow-> create(
   text   => "Menu and input line example",

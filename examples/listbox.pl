@@ -41,12 +41,12 @@ and Prima::ListBox widgets.
 =cut
 
 use strict;
-use Prima qw( ComboBox Edit);
+use Prima qw( ComboBox Edit Application );
 
 
 package TestWindow;
 use vars qw(@ISA);
-@ISA = qw(Prima::Window);
+@ISA = qw(Prima::MainWindow);
 
 sub create_menu
 {
@@ -124,15 +124,12 @@ sub PrintAll
 }
 
 
-package UserInit;
-$::application = Prima::Application->create( name => "listbox.pm");
 my $w = TestWindow->create(
    name    =>  "Window1",
    origin  => [ 100, 100],
    size    => [ 600, 230],
    text => "List & edit boxes example",
    menuItems => TestWindow::create_menu,
-   onDestroy => sub { $::application-> close},
 );
 
 $w-> insert("InputLine",

@@ -51,15 +51,13 @@ use Prima::Buttons;
 use strict;
 use Prima::Label;
 use Prima::FontDialog;
-
-$::application = Prima::Application-> create(name => 'keys');
+use Prima::Application;
 
 my $propagate = 1;
 my $repeat    = 0;
 my $fontDialog;
 
-my $w = Prima::Window-> create(
-    onDestroy => sub {$::application-> destroy},
+my $w = Prima::MainWindow-> create(
     size => [500,250],
     text => 'Keyboard events checker',
     menuItems => [['~Options' => [

@@ -44,9 +44,8 @@ use Prima::Application name => 'Calendar';
 use Prima::Calendar;
 
 my $cal;
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
     text => "Calendar example",
-    onDestroy => sub { $::application-> close},
     size => [ 200, 200],
     menuItems => [[ "~Options" => [
        [ 'locale', 'Use ~locale', 'Ctrl+L', '^L', sub {

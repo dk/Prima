@@ -168,10 +168,9 @@ my $re_size = sub {
    $w-> SizeList-> set_focused_item($i);
 };
 
-$w = Prima::Window-> create( text => "Font Window",
+$w = Prima::MainWindow-> create( text => "Font Window",
    origin => [ 200, 200],
    size   => [ 500, 530],
-   onDestroy => sub{ $::application-> close},
    borderStyle => bs::Dialog,
 );
 

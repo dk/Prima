@@ -142,11 +142,10 @@ sub refresh
    $w-> menu-> A1-> enabled( scalar @printers);
 }
 
-$w = Prima::Window-> create(
+$w = Prima::MainWindow-> create(
    text   => 'Print example',
    size      => [400, 200],
    centered  => 1,
-   onDestroy => sub {$::application-> close},
    menuItems => [
       ['~Print' => [
          [A1 => '~Print sample' => \&print_sample],

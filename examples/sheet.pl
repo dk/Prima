@@ -48,7 +48,7 @@ use Prima;
 use Prima::Header;
 use Prima::Application;
 
-my $w = Prima::Window-> create( onDestroy => sub { $::application-> close});
+my $w = Prima::MainWindow-> create;
 
 my @items;
 

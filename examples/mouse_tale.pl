@@ -106,9 +106,8 @@ my @indents = (
 my ( $w, $t);
 my $initfs = 20;
 
-$w = Prima::Window-> create(
+$w = Prima::MainWindow-> create(
    name => 'Mouse tale',
-   onDestroy => sub { $::application-> close },
    menuItems => [
       ['~Font' => [
           [ '~Increase' , 'Ctrl+Plus' , km::Ctrl|ord('+') , sub {

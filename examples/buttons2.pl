@@ -41,10 +41,9 @@ pastes its image into the clipboard.
 
 use Prima qw(Buttons StdBitmap), Application => { name => 'Buttons sample' };
 
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
   text=> "Handmade buttons",
   size => [ 300, 200],
-  onDestroy => sub { $::application-> close},
   centered => 1,
   popupItems => [['Hallo!' => '']],
 );

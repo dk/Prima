@@ -43,9 +43,8 @@ use Prima;
 use Prima::ExtLists;
 use Prima::Application;
 
-my $w = Prima::Window->create(
+my $w = Prima::MainWindow->create(
    size => [ 200, 200],
-   onDestroy => sub { $_[0]-> owner-> close; },
 );
 my $v = '';
 vec($v, 0, 8) = 0x77;

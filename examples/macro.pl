@@ -106,10 +106,9 @@ sub msave
 }
 
 
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
    text => $wtx,
    size => [ 436, 54],
-   onDestroy => sub { $::application-> close; },
    menuItems => [[ '~File' => [
          ['~Open...' => 'F3' => 'F3' => \&mopen],
          ['~Save...' => 'F2' => 'F2' => \&msave],

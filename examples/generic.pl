@@ -41,9 +41,8 @@ use strict;
 use Prima;
 use Prima::Application name => 'Generic';
 
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
     text => "Hello, world!",
-    onDestroy => sub { $::application-> close},
     onPaint   => sub {
        my ( $self, $canvas) = @_;
        my $color = $self-> color;

@@ -61,12 +61,11 @@ my @colors = (
    0x000000,
 );
 
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
    name => 'Chess puzzle',
    size => [ 300, 300],
    font => { style => fs::Bold, size => 11,},
    buffered => 1,
-   onDestroy => sub { $::application-> close},
    menuItems => [
       ["~Help" => sub{
           my $txt = 'Chess puzzle. Objective is to put figures so they could reach every cell upon the board';

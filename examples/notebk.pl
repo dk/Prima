@@ -41,10 +41,11 @@ Prima::TabbedNotebook standard class.
 use Prima;
 use Prima::Buttons;
 use Prima::Notebooks;
+use Prima::Application;
 
 package Bla;
 use vars qw(@ISA);
-@ISA = qw(Prima::Window);
+@ISA = qw(Prima::MainWindow);
 
 sub init
 {
@@ -77,14 +78,11 @@ sub init
 
 package Generic;
 
-$::application = Prima::Application-> create( name => "Generic.pm");
-
 my $l;
 my $w = Bla-> create(
   size => [ 600, 300],
   y_centered  => 1,
  # current  => 1,
-  onDestroy => sub { $::application-> close},
 );
 
 

@@ -40,9 +40,8 @@ implementation of Prima owner change functionality.
 =cut
 
 use strict;
-use Prima qw(Buttons);
+use Prima qw(Buttons Application);
 
-$::application = Prima::Application-> create( name => "Generic.pm");
 my $w = Prima::Window-> create(
    name       => "D1",
    text    => "Window Number One",

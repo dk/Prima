@@ -43,13 +43,11 @@ use Prima;
 use Prima::Const;
 use Prima::Buttons;
 use Prima::Label;
+use Prima::Application;
 
-$::application = Prima::Application-> create( name => "Generic.pm");
-
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
   size => [ 430, 200],
   text => "Static texts",
-  onDestroy => sub { $::application-> destroy},
 );
 
 my $b1 = $w-> insert( Button => left => 20 => bottom => 0);

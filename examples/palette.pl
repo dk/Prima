@@ -44,14 +44,9 @@ multiple images representation on a single widget.
 
 =cut
 
-use Prima;
-use Prima::Const;
-use Prima::Classes;
+use Prima qw(Application);
 
 my $useImages = 0;
-
-$::application = Prima::Application-> create( name => "Tester");
-
 
 my $j = $::application;
 
@@ -74,8 +69,7 @@ if ( $useImages) {
 
 @spal = (@{$aimg->palette}, @{$bimg->palette}, @{$cimg->palette}) if $useImages;
 
-my $w = Prima::Window->create(
-   onDestroy => sub {$::application-> close},
+my $w = Prima::MainWindow->create(
    size    => [ 100, 33 * 8],
    palette => [ @spal],
    buffered => 1,

@@ -31,8 +31,7 @@ use Prima Application => {name => 'Frames sample'};
 use Prima::FrameSet;
 use Prima qw(Buttons);
 
-my $w = Prima::Window-> create(
-    onDestroy => sub {$::application->close},
+my $w = Prima::MainWindow-> create(
     text   => "Frames example",
     size => [ map { $_ - 128} $::application->size],
 );

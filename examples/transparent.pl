@@ -45,7 +45,7 @@ use Prima;
 use Prima::Const;
 use Prima::Application name => 'Generic.pm';
 
-$w = Prima::Window-> create(
+$w = Prima::MainWindow-> create(
    size => [ 300, 300],
    borderStyle => bs::Dialog,
    backColor => cl::Green,
@@ -65,7 +65,6 @@ $w = Prima::Window-> create(
          $canvas-> text_out("Hello!", $d + $i * 40, $d + $i * 40);
       }
    },
-   onDestroy => sub { $::application-> close},
 );
 
 $w-> insert( Timer =>

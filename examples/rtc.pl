@@ -39,15 +39,14 @@ change of its parameters.
 =cut
 
 use Prima qw( Buttons ScrollBar);
+use Prima::Application name => 'rtc';
 
 package UserInit;
 
-$::application = Prima::Application->create(name=> "rtc");
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
   text=> "Test of RTC",
   origin => [ 200, 200],
   size   => [ 250, 300],
-  onDestroy => sub {$::application-> close},
 );
 
 $w-> insert( "Button",

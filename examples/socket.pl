@@ -45,10 +45,9 @@ use Prima 'InputLine', 'Edit', Application => { name => 'WebSource' };
 use Socket;
 
 
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
    size => [ $::application-> width * 0.8, $::application-> height * 0.8],
    text => 'Socket demo',
-   onDestroy => sub { $::application-> close}
 );
 
 my $e = $w-> insert( Edit =>

@@ -70,13 +70,10 @@ my @rgb_vectors = (
 my $capture;
 my $aperture = 6;
 
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
    text => 'Spline demo',
    backColor => cl::Black,
    buffered => 1,
-   onDestroy => sub {
-      $::application-> close,
-   },
    onPaint => sub {
       my ( $self, $canvas) = @_;
       $canvas-> clear;

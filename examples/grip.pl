@@ -48,9 +48,8 @@ especially on paletted displays.
 
 use strict;
 use Prima;
-use Prima::Const;
-use Prima::Classes;
 use Prima::ImageViewer;
+use Prima::Application;
 
 package MonoDeviceBitmap;
 use vars qw(@ISA);
@@ -71,8 +70,6 @@ sub backColor
 }
 
 package Generic;
-
-$::application = Prima::Application-> create( name => "Generic.pm");
 
 my $imgType = im::bpp1;
 
@@ -128,7 +125,7 @@ sub xordraw
    $o-> end_paint;
 }
 
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
    size => [ 200, 200],
    menuItems => [
       [ "~Grip" => sub {
@@ -143,7 +140,6 @@ my $w = Prima::Window-> create(
          $self-> { cap} = 2;
       }],
    ],
-   onDestroy => sub { $::application-> close; },
    onMouseDown => sub {
       my ( $self, $btn, $mod, $x, $y) = @_;
       return unless defined $self->{cap};

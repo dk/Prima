@@ -84,7 +84,7 @@ sub reshape
 
 my $m;
 
-my $x = Prima::Window-> create(
+my $x = Prima::MainWindow-> create(
    visible  => 0,
    buffered  => 1,
    color     => cl::Black,
@@ -139,7 +139,6 @@ my $x = Prima::Window-> create(
          $cc[0] += $sz[0] / 2;
       }
    },
-   onDestroy => sub { $::application-> close },
 );
 
 $x-> icon( reshape( $x));

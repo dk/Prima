@@ -40,8 +40,7 @@ and large font output performance.
 
 use strict;
 use Prima;
-
-$::application = Prima::Application->  create;
+use Prima::Application;
 
 my $smp = "The Matrix has you";
 my $maxstep = 40;
@@ -163,7 +162,7 @@ sub resetfs
 }
 
 
-my $w = Prima::Window-> create(
+my $w = Prima::MainWindow-> create(
    palette => [@spal],
    font => { name => 'Courier New', size => $basicfsize, },
    backColor => 0x002000,
@@ -182,7 +181,6 @@ my $w = Prima::Window-> create(
          }, ],
       ]],
    ],
-   onDestroy => sub { $::application-> close; },
    onKeyDown => sub {
       return unless $fullScreen;
       $fullScreen = 0;

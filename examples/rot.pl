@@ -152,7 +152,7 @@ sub rotate {
 };
 
 my $a = 1;
-my $w = Prima::Window-> create
+my $w = Prima::MainWindow-> create
 (
   text => 'Rotating line',
   font => { name => 'Terminal', size => 12, pitch => fp::Fixed},
@@ -165,7 +165,6 @@ my $w = Prima::Window-> create
   ]],
 
   buffered => 1,
-  onDestroy => sub { $::application-> close},
   onPaint => sub {
      my ( $self, $canvas) = @_;
      $canvas-> color( cl::Back);

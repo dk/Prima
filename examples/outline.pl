@@ -39,8 +39,7 @@ and Prima::Outlines class.
 
 use Prima qw(Application Outlines);
 
-my $w = Prima::Window->create( size => [ 200, 200],
-onDestroy=>sub{$::application-> close});
+my $w = Prima::MainWindow->create( size => [ 200, 200]);
 my $o = $w-> insert(
 DirectoryOutline =>
 #StringOutline =>

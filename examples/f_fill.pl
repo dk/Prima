@@ -40,10 +40,7 @@ to hold a cached region copy.
 =cut
 
 use strict;
-use Prima;
-use Prima::Classes;
-
-$::application = Prima::Application->  create;
+use Prima qw(Application);
 
 my $i = Prima::Image-> create(
   preserveType => 1,
@@ -71,8 +68,7 @@ for ( 1..32) {
    push(@xpal, $x,$x,$x);
 };
 
-my $w = Prima::Window-> create(
-   onDestroy=> sub {$::application-> close;},
+my $w = Prima::MainWindow-> create(
    size   => [ @is],
    centered => 1,
    buffered => 1,
