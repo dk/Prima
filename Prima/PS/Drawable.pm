@@ -186,13 +186,6 @@ sub cmd_rgb
    }
 }
 
-sub color_check
-{
-   return $_[1] unless $_[0]-> {grayscale};
-   my ( $r, $g, $b) = ((($_[1] & 0xff0000) >> 16) / 255, (($_[1] & 0xff00) >> 8) / 255, ($_[1] & 0xff)/255);
-   return 65793 * ( 0.31 * $r + 0.5 * $g + 0.18 * $b); 
-}
-
 =head2 Internal routines
 
 =item emit
@@ -620,7 +613,7 @@ sub spool
 sub color
 {
    return $_[0]-> SUPER::color unless $#_;
-   $_[0]-> SUPER::color($_[0]-> color_check( $_[1]));
+   $_[0]-> SUPER::color( $_[1]);
    return unless $_[0]-> {canDraw};
    $_[0]-> {changed}-> {fill} = 1;
 }
