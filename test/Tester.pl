@@ -30,6 +30,7 @@ use vars qw( @ISA $w $dong);
 use strict;
 
 my $verbose = 0;
+my $tie     = 1;
 my $testing = 0;
 my @results = ();
 my @extras  = ();
@@ -48,7 +49,7 @@ BEGIN
    }
 
    unless ($^O !~ /MSWin32/) {
-      untie *STDOUT;
+      untie *STDOUT if $tie;
    }
 
    package ExTiedStdOut;
@@ -112,7 +113,7 @@ BEGIN
        analyze( sprintf($fmt, @_));
    }
 
-   tie *STDOUT, 'ExTiedStdOut', 0;
+   tie *STDOUT, 'ExTiedStdOut', 0 if $tie;
 }
 use Prima;
 use Prima::Const;
@@ -123,6 +124,8 @@ for ( @ARGV) {
    if ( /^-(.*)/) {
       if ( lc($1) eq 'v') {
          $verbose = 1;
+      } elsif ( lc($1) eq 'd') {
+         $tie = 0;
       }
    } else {
       push( @filters, $_);
