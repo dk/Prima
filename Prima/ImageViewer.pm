@@ -144,6 +144,8 @@ sub on_paint
       $imX = $imXz / $iS * $iI;
    }
 
+   $canvas-> clear( $atx, $aty, $imXz, $imYz) if $self-> {icon};
+
    $canvas-> put_image_indirect(
       $self->{image},
       $atx, $aty,
@@ -180,6 +182,7 @@ sub set_image
    $self-> {imageY} = $y;
    $x *= $self->{zoom};
    $y *= $self->{zoom};
+   $self-> {icon} = $img-> isa('Prima::Icon');
    $self-> limits($x,$y);
    $self-> palette( $img->palette) if $self->{quality};
    $self-> repaint;
