@@ -851,6 +851,7 @@ sub add
    my $g = [ $indent, $r-> {bigofs}, 0];
    my $styles = $self-> {styles};
    my $no_push_block;
+   my $itemid = scalar @{$self-> {model}};
 
    if ( $r-> {bulletMode}) {
       if ( $style == STYLE_TEXT || $style == STYLE_CODE) {
@@ -858,6 +859,7 @@ sub add
          $g = $self-> {model}-> [-1];
          $$g[1] = $r-> {bigofs};
          $no_push_block = 1;
+         $itemid--;
       }
       $r-> {bulletMode} = 0;
    }
@@ -1014,7 +1016,7 @@ sub add
                if ( $link) { 
                   push @$g, $OP_LINK, $link = 0;
                   push @{$self-> {links}}, $linkHREF;
-                  $self-> {postBlocks}-> { scalar @{$self-> {model}}} = 1;
+                  $self-> {postBlocks}-> { $itemid} = 1;
                }
             } elsif ( $$_[1] eq 's') {
                push @$g, tb::wrap( $val{wrap} = pop @{$stack{wrap}});
@@ -1024,7 +1026,7 @@ sub add
       if ( $link) {
          push @$g, $OP_LINK, $link = 0;
          push @{$self-> {links}}, $linkHREF;
-         $self-> {postBlocks}-> { scalar @{$self-> {model}}} = 1;
+         $self-> {postBlocks}-> { $itemid} = 1;
       }
 
       # add topic
@@ -1038,8 +1040,7 @@ sub add
          if ( $style == STYLE_ITEM && $pp =~ /^\s*[a-z]/) {
             $pp =~ s/([\s\)\(\[\]\{\}].*)$/C<$1>/; # seems like function entry?
          }
-         my $newTopic = [ scalar @{$self-> {model}},
-            0, $pp, $style, $itemDepth, $linkStart];
+         my $newTopic = [ $itemid, 0, $pp, $style, $itemDepth, $linkStart];
          $self-> _close_topic( $style, $newTopic); 
          push @{$self-> {topics}}, $newTopic;
       }
@@ -1175,7 +1176,6 @@ sub format_chunks
 
       # format the paragraph
       my $indent = $$m[M_INDENT] * $$indents[ $$m[M_FONT_ID]];
-     
       @blocks = $self-> block_wrap( $self, $g, $state, $formatWidth - $indent);
 
       # adjust size
