@@ -947,7 +947,7 @@ elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--md') {
 }
 elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--rm') {
     shift @ARGV;
-    unlink @ARGV or die "Unlink failed: $!";
+    unlink @ARGV;
 }
 else {
     $CWD = cwd;
