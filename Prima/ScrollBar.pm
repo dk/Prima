@@ -42,356 +42,6 @@ use strict;
 use Prima::Const;
 use Prima::IntUtils;
 
-=head1 NAME
-
-ScrollBar - Prima scroll bars class
-
-=head1 SYNOPSIS
-
-    use ScrollBar;
-
-    my $sb = Prima::ScrollBar-> create( owner => $group, %rest_of_profile);
-    my $sb = $group-> insert( 'ScrollBar', %rest_of_profile);
-
-    my $isAutoTrack = $sb-> autoTrack;
-    $sb-> autoTrack( $yesNo);
-
-    my $val = $sb-> value;
-    $sb-> value( $value);
-    $sb-> set_value( $value);
-
-    my $min = $sb-> min;
-    my $max = $sb-> max;
-    $sb-> min( $min);
-    $sb-> max( $max);
-    $sb-> set_bounds( $min, $max);
-
-    my $step = $sb-> step;
-    my $pageStep = $sb-> pageStep;
-    $sb-> step( $step);
-    $sb-> pageStep( $pageStep);
-    $sb-> set_steps( $step, $pageStep);
-
-    my $partial = $sb-> partial;
-    my $whole = $sb-> whole;
-    $sb-> partial( $partial);
-    $sb-> whole( $whole);
-    $sb-> set_proportion( $partial, $whole);
-
-    my $size = $sb-> minThumbSize;
-    $sb-> minThumbSize( $size);
-    $sb-> set_min_thumb_size( $size);
-
-    my $isVertical = $sb-> vertical;
-    $sb-> vertical( $yesNo);
-    $sb-> set_vertical( $yesNo);
-
-    my ($width,$height) = $sb-> get_default_size;
-
-=head1 DESCRIPTION
-
-The class C<ScrollBar> implements both vertical and horizontal
-scrollbars in I<Prima>.  This is a purely Perl class without any
-C-implemented parts except those inherited from C<Widget>.
-
-For the basic organization of I<Prima> classes see L<Prima>.
-
-=head2 Options
-
-Methods init() and set() understand the following options
-(I describe here only those new to C<ScrollBar> or with default
-values different of those set in C<Widget>).
-
-First, there are options which found new defaults in C<ScrollBar>
-class:
-
-=over 4
-
-=item selectable
-
-Default value is 0 (logical false).  Set this to 1 if you ever
-want C<ScrollBar> to receive keyboard focus.
-
-=item height
-
-Default value is $Prima::ScrollBar::stdMetrics[1], which is an operating
-system dependent value determined with a call to
-C<Application-E<gt> get_default_scrollbar_metrics>.  The height is
-affected because by default the horizontal C<ScrollBar> will be
-created.
-
-=item widgetClass
-
-This is to provide default color scheme.
-Default value is C<wc::ScrollBar>, where C<cc> is a package
-located in C<Const> library.
-
-=item tabStop
-
-Default value is 0 (logical false).  Indeed, there is no
-need for a non-selectable widget to be tab-stoppable. :-)
-
-=item growMode
-
-Default value is gm::GrowHiX, i.e. the scrollbar will try
-to maintain the constant distance from its right edge to its
-owner's right edge as the owner changes its size.
-This is useful for horizontal scrollbars.
-
-=back
-
-Next, C<ScrollBar> introduces the following new options:
-
-=over 4
-
-=item autoTrack
-
-This boolean option says the C<ScrollBar> whether it should send
-C<Change> notification during mouse tracking events.
-Generally it should only be set to 0 on slow computers.
-
-Default value is 1 (logical true).
-
-=item vertical
-
-This logical option determines the main scrollbar style.
-Set this to 1 if you wish to create a vertical scrollbar,
-0 - to create a horizontal one. This option is a run-time
-property, so you can in fact morph scrollbars from
-horizontal to vertical and vice versa.  Looks
-funny.
-
-Default value is 0 (logical false).
-
-=item value
-
-The most important characteristic of the scrollbar.
-Corresponds directly to the position of a thumb.
-
-Default value is 0.
-
-=item min
-
-This options sets the lower limit for C<value>.
-
-Default value is 0.
-
-=item max
-
-This options sets the upper limit for C<value>.
-
-Default value is 100.
-
-=item minThumbSize
-
-The thumb cannot have main dimension lesser than this.
-
-Default value is 21 pixels.
-
-=item step
-
-This determines the minimal increment/decrement
-to C<value> during mouse/keyboard interaction.
-
-Default value is 1.
-
-=item pageStep
-
-This determines the increment/decrement to
-C<value> during "page"-related operations, like clicking the mouse
-somewhere on the strip outside the thumb, or pressing C<PgDn> or C<PgUp>.
-
-Default value is 10.
-
-=item partial
-
-This tells the scrollbar how many of imaginary
-units the thumb should occupy. See C<whole> below.
-
-Default value is 10.
-
-=item whole
-
-This tells the scrollbar how many of imaginary
-units correspond to the whole length of the scrollbar.  This value
-has nothing in common with C<min> and C<max>.  You may think of the
-combination of C<partial> and C<whole> as of the proportion between
-the visible size of something (document, for example) and the whole
-size of that "something".  Useful to struggle against infamous "bird"
-size of Windows scrollbar thumbs.
-
-Default value is 100.
-
-=back
-
-=head2 Properties.  Set/get methods.
-
-=over 4
-
-=item autoTrack
-
-Retrieves the current value/sets the new value of
-auto tracking.  See option autoTrack above.
-There are no corresponding set/get methods.
-
-=item value
-
-Retrieves the current thumb position/sets the
-thumb position.  This property has no corresponding
-get() method.
-
-=item min
-
-Retrieves and sets the lower limit for C<value>.
-There is a method set_bounds() which sets both
-C<min> and C<max> in a single swoop.  There is no
-corresponding get() method.
-
-=item max
-
-Retrieves and sets the upper limit for C<value>.
-There is a method set_bounds() which sets both
-C<min> and C<max> in a single swoop.  There is no
-corresponding get() method.
-
-=item step
-
-Retrieves and sets the "single" stepping value
-of the thumb.  There is also a method set_steps()
-which sets both C<step> and C<pageStep>.  There is
-no corresponding get() method.
-
-=item pageStep
-
-Retrieves and sets the "page" stepping value
-of the thumb.  There is also a method set_steps()
-which sets both C<step> and C<pageStep>.  There is
-no corresponding get() method.
-
-=item partial
-
-Retrieves and sets the length of a thumb in logical
-units.  There is also a method set_proportion()
-which sets both C<partial> and C<whole>.  There is
-no corresponding get() method.
-
-=item whole
-
-Retrieves and sets the length of a whole scrollbar in logical
-units.  There is also a method set_proportion()
-which sets both C<partial> and C<whole>.  There is
-no corresponding get() method.
-
-=item minThumbSize
-
-Retrieves and sets the minimal size of main dimension
-of a thumb.  There is no corresponding get() method,
-though set_min_thumb_size() is here.
-
-=item vertical
-
-Retrieves and sets the horizontal/vertical style of a
-scrollbar.  There is no corresponding get() method,
-though set_vertical() is defined.
-
-=back
-
-=head2 Public methods
-
-=over 4
-
-=item get_default_size()
-
-Returns as ($x,$y) the default (platform dependant)
-width for a vertical scrollbar and height for a horizontal
-scrollbar.  There are no corresponding set() method and
-corresponding property.
-
-=back
-
-=head2 Important callbacks
-
-There is only one callback designed to be generally useful: C<Change>.
-The C<Change> notification is sent whenever the thumb position of
-scrollbar is changed, subject to a certain limitations when C<autoTrack>
-is false.  The notification conforms the general I<Prima> rule:
-it is sent when appropriate, regardless to whether this was a
-result of user interaction, or a side effect of some method
-programmer has called.
-
-=head2 Other methods (Methods the user should not call)
-
-Those methods and event handlers (callbacks) are purely for internal use.
-Don't call them directly!
-
-  profile_default();
-  profile_check_in();
-  init();
-  on_size();
-  on_paint();
-  translate_point();
-  draw_part();
-  ScrollTimer_Tick();
-  on_keydown();
-  on_mousedown();
-  on_mouseclick();
-  on_mouseup();
-  on_mousemove();
-  reset();
-
-=head1 EXAMPLE
-
-  #! /usr/local/bin/prima
-
-  use Prima;
-  use Prima::Classes;
-  use Prima::Const;
-  use Prima::Application name => 'ScrollBar test';
-  use Prima::ScrollBar;
-  use Prima::Label;
-
-  my $w = Prima::Window-> create(
-			  text => 'ScrollBar test',
-			  size => [300,200]);
-  my $lbl = $w-> insert( Label =>
-			 text => 'Nothing interesting',
-			 autoWidth => 0,
-			 width => 280,
-			 left => 10,
-			 bottom => 100,
-			 alignment => ta::Center);
-  my $sb = $w-> insert( ScrollBar =>
-			width => 280,
-			left => 10,
-			bottom => 50,
-			onChange => sub {
-			  $lbl-> text( $_[0]-> value);
-			});
-  run Prima;
-
-=head1 BUGS
-
-Numerous, to say the least.
-
-=head1 SEE ALSO
-
-L<Prima>, L<Widget>, L<MouseScroller>, L<Classes>, L<Const>, L<IntUtils>
-
-=head1 COPYRIGHT
-
-Copyright 1997, 1998 The Protein Laboratory, University of Copenhagen.
-All rights reserved.
-
-This library is free software;  you can redistribute it and/or
-modify it under the same terms as Perl itself.
-
-=head1 AUTHORS
-
-Dmitry Karasik E<lt>dk@plab.ku.dkE<gt>,
-Anton Berezin E<lt>tobez@plab.ku.dkE<gt> - documentation
-
-=cut
-
 sub profile_default
 {
    return {
@@ -965,3 +615,217 @@ sub whole        {($#_)?$_[0]->set_proportion($_[0]->{'partial'},$_[1]): return 
 sub vertical     {($#_)?$_[0]->set_vertical  ($_[1])                   : return $_[0]->{vertical}    }
 
 1;
+
+__DATA__
+
+=head1 NAME
+
+Prima::ScrollBar - standard scroll bars class
+
+=head1 DESCRIPTION
+
+The class C<Prima::ScrollBar> implements both vertical and horizontal
+scrollbars in I<Prima>. This is a purely Perl class without any
+C-implemented parts except those inherited from C<Prima::Widget>.
+
+=head1 SYNOPSIS
+
+    use Prima::ScrollBar;
+
+    my $sb = Prima::ScrollBar-> create( owner => $group, %rest_of_profile);
+    my $sb = $group-> insert( 'ScrollBar', %rest_of_profile);
+
+    my $isAutoTrack = $sb-> autoTrack;
+    $sb-> autoTrack( $yesNo);
+
+    my $val = $sb-> value;
+    $sb-> value( $value);
+
+    my $min = $sb-> min;
+    my $max = $sb-> max;
+    $sb-> min( $min);
+    $sb-> max( $max);
+    $sb-> set_bounds( $min, $max);
+
+    my $step = $sb-> step;
+    my $pageStep = $sb-> pageStep;
+    $sb-> step( $step);
+    $sb-> pageStep( $pageStep);
+
+    my $partial = $sb-> partial;
+    my $whole = $sb-> whole;
+    $sb-> partial( $partial);
+    $sb-> whole( $whole);
+    $sb-> set_proportion( $partial, $whole);
+
+    my $size = $sb-> minThumbSize;
+    $sb-> minThumbSize( $size);
+
+    my $isVertical = $sb-> vertical;
+    $sb-> vertical( $yesNo);
+
+    my ($width,$height) = $sb-> get_default_size;
+
+
+=head1 API
+
+=head2 Properties
+
+=over 
+
+=item autoTrack BOOLEAN
+
+Tells the widget if it should send
+C<Change> notification during mouse tracking events.
+Generally it should only be set to 0 on very slow computers.
+
+Default value is 1 (logical true).
+
+=item growMode INTEGER
+
+Default value is gm::GrowHiX, i.e. the scrollbar will try
+to maintain the constant distance from its right edge to its
+owner's right edge as the owner changes its size.
+This is useful for horizontal scrollbars.
+
+=item height INTEGER
+
+Default value is $Prima::ScrollBar::stdMetrics[1], which is an operating
+system dependent value determined with a call to
+C<Prima::Application-E<gt> get_default_scrollbar_metrics>.  The height is
+affected because by default the horizontal C<ScrollBar> will be
+created.
+
+=item max INTEGER
+
+Sets the upper limit for C<value>.
+
+Default value: 100.
+
+=item min INTEGER
+
+Sets the lower limit for C<value>.
+
+Default value: 0
+
+=item minThumbSize INTEGER
+
+A minimal thumb breadth in pixels. The thumb cannot have 
+main dimension lesser than this.
+
+Default value: 21
+
+=item pageStep INTEGER
+
+This determines the increment/decrement to
+C<value> during "page"-related operations, like clicking the mouse
+somewhere on the strip outside the thumb, or pressing C<PgDn> or C<PgUp>.
+
+Default value: 10
+
+=item partial INTEGER
+
+This tells the scrollbar how many of imaginary
+units the thumb should occupy. See C<whole> below.
+
+Default value: 10
+
+=item selectable BOOLEAN
+
+Default value is 0 (logical false).  If set to 1 the widget
+receives keyboard focus; when in focus, the thumb is blinking.
+
+=item step INTEGER
+
+This determines the minimal increment/decrement
+to C<value> during mouse/keyboard interaction.
+
+Default value is 1.
+
+=item value INTEGER
+
+A basic scrollbar property; reflects the imaginary position
+between C<min> and C<max>, which corresponds directly to the 
+position of the thumb.
+
+Default value is 0.
+
+=item vertical BOOLEAN
+
+Determines the main scrollbar style.
+Set this to 1 when the scrollbar style is vertical,
+0 - horizontal. The property can be changed at run-time,
+so the scrollbars can morph from
+horizontal to vertical and vice versa.
+
+Default value is 0 (logical false).
+
+=item whole INTEGER
+
+This tells the scrollbar how many of imaginary
+units correspond to the whole length of the scrollbar.  This value
+has nothing in common with C<min> and C<max>.  You may think of the
+combination of C<partial> and C<whole> as of the proportion between
+the visible size of something (document, for example) and the whole
+size of that "something".  Useful to struggle against infamous "bird"
+size of Windows scrollbar thumbs.
+
+Default value is 100.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item get_default_size
+
+Returns two integers, the default platform dependant width 
+of a vertical scrollbar and height of a horizontal scrollbar.  
+
+=back
+
+=head2 Events
+
+=over
+
+=item Change
+
+The C<Change> notification is sent whenever the thumb position of
+scrollbar is changed, subject to a certain limitations when C<autoTrack>
+is 0. The notification conforms the general I<Prima> rule:
+it is sent when appropriate, regardless to whether this was a
+result of user interaction, or a side effect of some method
+programmer has called.
+
+=back
+
+=head1 EXAMPLE
+
+  use Prima;
+  use Prima::Application name => 'ScrollBar test';
+  use Prima::ScrollBar;
+
+  my $w = Prima::Window-> create(
+			  text => 'ScrollBar test',
+			  size => [300,200]);
+  my $sb = $w-> insert( ScrollBar =>
+			width => 280,
+			left => 10,
+			bottom => 50,
+			onChange => sub {
+			  $w-> text( $_[0]-> value);
+			});
+  run Prima;
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<Prima::IntUtils>, F<examples/rtc.pl>, F<examples/scrolbar.pl>
+
+=head1 AUTHORS
+
+Dmitry Karasik E<lt>dk@plab.ku.dkE<gt>,
+Anton Berezin E<lt>tobez@plab.ku.dkE<gt> - documentation
+
+=cut
+
