@@ -165,10 +165,12 @@ sub autowidths
    my $self = $_[0];
    my $i;
    my @w = @{$self-> widths};
+   my @header_w = $self->{header}->calc_autowidths;
    for ( $i = 0; $i < $self-> {numColumns}; $i++) {
       $self-> mainColumn( $i);
       $self-> recalc_widths;
       $w[ $i] = $self-> {maxWidth} + 5 if $w[ $i] < $self-> {maxWidth} + 5;
+      $w[$i] = $header_w[$i] if $w[$i] < $header_w[$i];
    }
    undef $self-> {widths};
    $self-> widths( \@w);

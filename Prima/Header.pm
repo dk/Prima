@@ -388,24 +388,31 @@ sub protect
 
 sub autowidths
 {
+   my ($self) = @_;
+   my @r = $self->calc_autowidths;
+   $self->{widths} = \@r;
+   $self->recalc_maxwidth;
+   $self->notify(q(SizeItems));
+}
+
+sub calc_autowidths
+{
    my $self = $_[0];
    $self-> protect;
    my $cx = $self-> {count};
    my $i;
    $self-> begin_paint_info;
    my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
-   my $mxw = 2;
+   my @r;
    for ( $i = 0; $i < $cx; $i++) {
       my $result = 0;
       $notifier->( @notifyParms, $i, \$result);
       $result = $self-> {minTabWidth} if $result < $self-> {minTabWidth};
-      $self-> {widths}->[$i] = $result;
+      push @r, $result;
       next unless $result;
-      $mxw += $result + 2;
    }
-   $self-> {maxWidth} = $mxw;
    $self-> end_paint_info;
-   $self-> notify(q(SizeItems));
+   return @r;
 }
 
 sub recalc_maxwidth
@@ -413,8 +420,7 @@ sub recalc_maxwidth
    my $self = $_[0];
    my $mxw = 2;
    for ( @{$self->{widths}}) {
-      next unless $_;
-      $mxw += $_ + 2;
+      $mxw += $_ + 2 if $_;
    }
    $self->{maxWidth} = $mxw;
 }
