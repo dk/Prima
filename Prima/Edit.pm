@@ -742,8 +742,8 @@ sub point2xy
    {
       my $ofsx = $ofs + $x;
       $ofsx = $self->{maxLineWidth} if $ofsx > $self->{maxLineWidth};
-      my $blocks = $self-> text_wrap( $chunk, $ofsx, tw::CalcTabs|tw::BreakSingle, $self->{tabIndent});
-      $rx = length( $$blocks[ 0]) if scalar @{$blocks};
+      $rx = $self-> text_wrap( $chunk, $ofsx, 
+          tw::CalcTabs|tw::BreakSingle|tw::ReturnFirstLineLength, $self->{tabIndent});
    }
    return $self-> make_physical( $rx, $ry), $inBounds;
 }

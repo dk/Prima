@@ -464,9 +464,7 @@ sub x2offset
    $x -= $self->{atDrawX} + $self-> {borderWidth} + 1;
    return $self->{firstChar} if $x <= 0;
    return $self->{firstChar} + length( $self->{line}) if $x >= $self->{lineWidth};
-
-   my $wrapRec = $self-> text_wrap( $self->{line}, $x, tw::ReturnChunks);
-   return $self->{firstChar} + $$wrapRec[1];
+   return $self->{firstChar} + $self-> text_wrap( $self->{line}, $x, tw::ReturnFirstLineLength);
 }
 
 sub on_mousedown
