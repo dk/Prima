@@ -28,25 +28,6 @@
 #
 package Prima::PS::Fonts;
 
-=head1 NAME
-
-Prima::PS::Fonts - PostScript device fonts metrics
-
-=head1 SYNOPSIS
-
-use Prima;
-use Prima::PS::Fonts;
-
-=head1 DESCRIPTION
-
-This module primary use is to be invoked from Prima::PS::Drawable module.
-Assumed that some common fonts like Times and Courier are supported by PS
-interpreter, and it is assumed that typeface is preserved more-less the
-same, so typesetting based on font's a-b-c metrics can be valid. 
-35 font files are supplied with 11 font families. Font files with metrics
-located into 'fonts' subdirectory. 
-
-=cut
 
 use strict;
 use Prima;
@@ -58,18 +39,6 @@ $defaultFontName   = 'Helvetica';
 $variablePitchName = 'Helvetica';
 $fixedPitchName    = 'Courier';
 $symbolFontName    = 'Symbol';
-
-=item query_metrics( $fontName)
-
-Returns font metric hash with requested font data, uses $defaultFontName
-if give name is not found. Metric hash is the same as Prima::Types::Font
-record, plus 3 extra fields: 'docname' containing font name ( equals 
-always to 'name'), 'chardata' - hash of named glyphs, 'charheight' - 
-the height that 'chardata' is rendered to. Every hash
-entry in 'chardata' record contains four numbers - suggested character 
-index and a, b and c glyph dimensions with height equals 'charheight'. 
-
-=cut
 
 sub query_metrics
 {
@@ -135,15 +104,6 @@ sub query_metrics
    return $cache{$file};
 }
 
-=item enum_fonts( $fontFamily)
-
-Returns font records for given family, or all families
-perpesented by one member, if no family name given.
-If encoding specified, returns only the fonts with the encoding given.
-Compliant to Prima::Application::fonts interface.
-
-=cut
-
 sub enum_fonts
 {
    my ( $family, $encoding) = @_;
@@ -188,12 +148,6 @@ sub enum_fonts
    return \@ret;
 }
 
-=item enum_family( $fontFamily)
-
-Returns font names that are presented in given family
-
-=cut
-
 sub enum_family
 {
    my $family = $_[0];
@@ -204,19 +158,6 @@ sub enum_family
    }
    return @names;
 }
-
-=item font_pick( $src, $dest, %options)
-
-Merges two font records using Prima::Drawable::font_match, picks
-the result and returns new record.  $variablePitchName and
-$fixedPitchName used on this stage.
-
-Options can include the following fields:
-
-- resolution - vertical resolution. The default value is taken from 
-  font resolution.
-
-=cut
 
 
 sub font_pick
@@ -307,24 +248,6 @@ sub font_pick
    return $dest;
 }
 
-=item files & enum_families
-
-Hash with paths to font metric files. File names not necessarily
-should be as font names, and it is possible to override font name
-contained in the file just by specifying different font key - this
-case will be recognized on loading stage and loaded font structure
-patched correspondingly. 
-
-Example:
-
-  $Prima::PS::Fonts::files{Standard Symbols} = $Prima::PS::Fonts::files{Symbol};
-  
-  $Prima::PS::Fonts::files{'Device-specific symbols, set 1'} = 'my/devspec/data.1';
-  $Prima::PS::Fonts::files{'Device-specific symbols, set 2'} = 'my/devspec/data.2';
-  $Prima::PS::Fonts::enum_families{DevSpec} = 'Device-specific symbols, set 1';
-
-=cut
-
 %files = map { $_ => "PS/fonts/$_" } (
     'Bookman-Demi'                ,
     'Bookman-DemiItalic'          ,
@@ -383,3 +306,79 @@ Example:
 );
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Prima::PS::Fonts - PostScript device fonts metrics
+
+=head1 SYNOPSIS
+
+use Prima;
+use Prima::PS::Fonts;
+
+=head1 DESCRIPTION
+
+This module primary use is to be invoked from Prima::PS::Drawable module.
+Assumed that some common fonts like Times and Courier are supported by PS
+interpreter, and it is assumed that typeface is preserved more-less the
+same, so typesetting based on font's a-b-c metrics can be valid. 
+35 font files are supplied with 11 font families. Font files with metrics
+located into 'fonts' subdirectory. 
+
+=over
+
+=item query_metrics( $fontName)
+
+Returns font metric hash with requested font data, uses $defaultFontName
+if give name is not found. Metric hash is the same as Prima::Types::Font
+record, plus 3 extra fields: 'docname' containing font name ( equals 
+always to 'name'), 'chardata' - hash of named glyphs, 'charheight' - 
+the height that 'chardata' is rendered to. Every hash
+entry in 'chardata' record contains four numbers - suggested character 
+index and a, b and c glyph dimensions with height equals 'charheight'. 
+
+=item enum_fonts( $fontFamily)
+
+Returns font records for given family, or all families
+perpesented by one member, if no family name given.
+If encoding specified, returns only the fonts with the encoding given.
+Compliant to Prima::Application::fonts interface.
+
+=item files & enum_families
+
+Hash with paths to font metric files. File names not necessarily
+should be as font names, and it is possible to override font name
+contained in the file just by specifying different font key - this
+case will be recognized on loading stage and loaded font structure
+patched correspondingly. 
+
+Example:
+
+  $Prima::PS::Fonts::files{Standard Symbols} = $Prima::PS::Fonts::files{Symbol};
+  
+  $Prima::PS::Fonts::files{'Device-specific symbols, set 1'} = 'my/devspec/data.1';
+  $Prima::PS::Fonts::files{'Device-specific symbols, set 2'} = 'my/devspec/data.2';
+  $Prima::PS::Fonts::enum_families{DevSpec} = 'Device-specific symbols, set 1';
+
+=item font_pick( $src, $dest, %options)
+
+Merges two font records using Prima::Drawable::font_match, picks
+the result and returns new record.  $variablePitchName and
+$fixedPitchName used on this stage.
+
+Options can include the following fields:
+
+- resolution - vertical resolution. The default value is taken from 
+  font resolution.
+
+=item enum_family( $fontFamily)
+
+Returns font names that are presented in given family
+
+=back
+
+=cut

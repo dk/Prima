@@ -209,6 +209,8 @@ and C<whole> properties are maintained if the document or widget extensions chan
 
 =head2 Properties
 
+=over
+
 =item deltas X, Y
 
 Selects horizontal and vertical document offsets.
@@ -232,6 +234,8 @@ Selects horizontal document extension.
 =item limitY INTEGER
 
 Selects vertical document extension.
+
+=back
  
 =head1 AUTHOR
 

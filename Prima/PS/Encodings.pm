@@ -141,6 +141,8 @@ thus relying on PS interpreter capabilities. Latter is obviously preferable,
 but as it's not possible to know beforehand what glyphs are supported by
 PS interpreter, the Latin glyph set was selected as a ground level.
 
+=over
+
 =item files
 
 It's unlikely that users will need to supply their own encodings, however
@@ -166,6 +168,8 @@ If fails, loads default encoding, which defines only glyphs from
 =item unique
 
 Returns list of Latin-based encoding string unique keys.
+
+=back
 
 =cut
 

@@ -35,92 +35,6 @@ package Prima::PS::Drawable;
 use vars qw(@ISA);
 @ISA = qw(Prima::Drawable);
 
-=head1 NAME
-
-Prima::PS::Drawable -  PostScript interface to Prima::Drawable
-
-=head1 SYNOPSIS
-
-   use Prima;
-   use Prima::PS::Drawable;
-
-   my $x = Prima::PS::Drawable-> create( onSpool => sub {
-      open F, ">> ./test.ps";
-      print F $_[1];
-      close F;
-   });
-   $x-> begin_doc;
-   $x-> font-> size( 30);
-   $x-> text_out( "hello!", 100, 100);
-   $x-> end_doc;
-
-
-=head1 DESCRIPTION
-
-Realizes the Prima library interface to PostScript level 2 document language.
-The module is designed to be compliant with Prima::Drawable interface.
-All properties' behavior is as same as Prima::Drawable's, except those 
-described below. 
-
-=item ::resolution
-
-Can be set while object is in normal stage - cannot be changed if document
-is opened. Applies to fillPattern realization and general pixel-to-point
-and vice versa calculations
-
-=item ::region
-
-- ::region is not realized ( yet?)
-
-=head2 Specific properties
-
-=item ::copies
-
-amount of copies that PS interpreter should print
-
-=item ::grayscale
-
-could be 0 or 1
-
-=item ::pageSize 
-
-physical page dimension, in points
-
-=item ::pageMargins
-
-non-printable page area, an array of 4 integers:
-left, bottom, right and top margins in points.
-
-=item ::reversed
-
-if 1, a 90 degrees rotated document layout is assumed 
-
-=item ::rotate and ::scale
-
-along with Prima::Drawable::translate provide PS-specific
-transformation matrix manipulations. ::rotate is number,
-measured in degrees, counter-clockwise. ::scale is array of
-two numbers, respectively x- and y-scale. 1 is 100%, 2 is 200% 
-etc.
-
-=item ::useDeviceFonts
-
-1 by default; optimizes greatly text operations, but takes the risk
-that a character could be drawn incorrectly or not drawn at all -
-this behavior depends on a particular PS interpreter.
-
-=item ::useDeviceFontsOnly
-
-If 1, the system fonts, available from Prima::Application
-interfaces can not be used. It is designed for
-developers and the outside-of-Prima applications that wish to
-use PS generation module without graphics. If 1, C<::useDeviceFonts>
-is set to 1 automatically.
-
-Default value is 0
-
-=cut
-
 {
 my %RNT = (
    %{Prima::Drawable->notification_types()},
@@ -200,17 +114,6 @@ sub cmd_rgb
    }
 }
 
-=head2 Internal routines
-
-=item emit
-
-Can be called for direct PostScript code injection. Example:
-
-  $x-> emit('0.314159 setgray');
-  $x-> bar( 10, 10, 20, 20);
-
-=cut
-
 sub emit
 {
    my $self = $_[0];
@@ -251,12 +154,6 @@ sub restore_state
    }      
    $self-> {localeEncoding} = $self-> {saveState}-> {localeEncoding};
 }
-
-=item pixel2point and point2pixel
-
-Helpers for transformation from pixel to points and vice versa.
-
-=cut
 
 sub pixel2point
 {
@@ -318,13 +215,6 @@ CLIP
    $_[0]-> emit("$ro rotate") if $ro != 0;
    $_[0]-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineEnd font);
 }
-
-=item fill and stroke
-
-Wrappers for PS outline that is expected to be filled or stroked.
-Apply colors, line and fill styles if necessary.
-
-=cut
 
 sub fill
 {
@@ -607,15 +497,6 @@ sub new_page
 }
 
 sub pages { $_[0]-> {pages} }
-
-=item spool
-
-Prima::PS::Drawable is not responsible for output of
-generated document, it just calls ::spool when document
-is closed through ::end_doc. By default just skips data.
-Prima::PS::Printer handles spooling logic.
-
-=cut
 
 sub spool
 {
@@ -1278,11 +1159,6 @@ sub put_image            { $_[0]-> put_image_indirect( $_[3], $_[1], $_[2], 0, 0
 sub stretch_image        { $_[0]-> put_image_indirect( $_[5], $_[1], $_[2], 0, 0, $_[3], $_[4], $_[5]-> size, $_[0]-> rop) }
 
 # fonts
-=item fonts
-
-Returns Prima::Application::font plus those that defined into Prima::PS::Fonts module.
-
-=cut
 sub fonts
 {  
    my ( $self, $family, $encoding) = @_;
@@ -1652,3 +1528,131 @@ sub get_text_box
 
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Prima::PS::Drawable -  PostScript interface to Prima::Drawable
+
+=head1 SYNOPSIS
+
+   use Prima;
+   use Prima::PS::Drawable;
+
+   my $x = Prima::PS::Drawable-> create( onSpool => sub {
+      open F, ">> ./test.ps";
+      print F $_[1];
+      close F;
+   });
+   $x-> begin_doc;
+   $x-> font-> size( 30);
+   $x-> text_out( "hello!", 100, 100);
+   $x-> end_doc;
+
+
+=head1 DESCRIPTION
+
+Realizes the Prima library interface to PostScript level 2 document language.
+The module is designed to be compliant with Prima::Drawable interface.
+All properties' behavior is as same as Prima::Drawable's, except those 
+described below. 
+
+=over
+
+=item ::resolution
+
+Can be set while object is in normal stage - cannot be changed if document
+is opened. Applies to fillPattern realization and general pixel-to-point
+and vice versa calculations
+
+=item ::region
+
+- ::region is not realized ( yet?)
+
+=head2 Specific properties
+
+=item ::copies
+
+amount of copies that PS interpreter should print
+
+=item ::grayscale
+
+could be 0 or 1
+
+=item ::pageSize 
+
+physical page dimension, in points
+
+=item ::pageMargins
+
+non-printable page area, an array of 4 integers:
+left, bottom, right and top margins in points.
+
+=item ::reversed
+
+if 1, a 90 degrees rotated document layout is assumed 
+
+=item ::rotate and ::scale
+
+along with Prima::Drawable::translate provide PS-specific
+transformation matrix manipulations. ::rotate is number,
+measured in degrees, counter-clockwise. ::scale is array of
+two numbers, respectively x- and y-scale. 1 is 100%, 2 is 200% 
+etc.
+
+=item ::useDeviceFonts
+
+1 by default; optimizes greatly text operations, but takes the risk
+that a character could be drawn incorrectly or not drawn at all -
+this behavior depends on a particular PS interpreter.
+
+=item ::useDeviceFontsOnly
+
+If 1, the system fonts, available from Prima::Application
+interfaces can not be used. It is designed for
+developers and the outside-of-Prima applications that wish to
+use PS generation module without graphics. If 1, C<::useDeviceFonts>
+is set to 1 automatically.
+
+Default value is 0
+
+=back
+
+=head2 Internal routines
+
+=over
+
+=item emit
+
+Can be called for direct PostScript code injection. Example:
+
+  $x-> emit('0.314159 setgray');
+  $x-> bar( 10, 10, 20, 20);
+
+=item pixel2point and point2pixel
+
+Helpers for transformation from pixel to points and vice versa.
+
+=item fill & stroke
+
+Wrappers for PS outline that is expected to be filled or stroked.
+Apply colors, line and fill styles if necessary.
+
+=item spool
+
+Prima::PS::Drawable is not responsible for output of
+generated document, it just calls ::spool when document
+is closed through ::end_doc. By default just skips data.
+Prima::PS::Printer handles spooling logic.
+
+=item fonts
+
+Returns Prima::Application::font plus those that defined into Prima::PS::Fonts module.
+
+=back
+
+=cut
+
