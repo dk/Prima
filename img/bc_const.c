@@ -177,7 +177,7 @@ Enough:
 Byte
 cm_nearest_color( RGBColor color, int palSize, PRGBColor palette)
 {
-   int diff = 0x10000, cdiff = 0;
+   int diff = INT_MAX, cdiff = 0;
    Byte ret = 0;
    while( palSize--)
    {
