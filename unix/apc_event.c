@@ -341,7 +341,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
    }
    
    if ( size_changed && XX-> flags. want_visible) {
-      int qx = guts. displaySize.x * 3 / 4, qy = guts. displaySize.y * 3 / 4;
+      int qx = guts. displaySize.x * 4 / 5, qy = guts. displaySize.y * 4 / 5;
       bzero( &e, sizeof( Event));
       if ( !XX-> flags. zoomed) {
          if ( XX-> size. x > qx && XX-> size. y > qy) {

@@ -721,11 +721,14 @@ apc_window_set_window_state( Handle self, int state)
    }
    
    if ( state == wsMaximized && !XX-> flags. zoomed) {
+      int dx = ( XX-> decorationSize. x > 0 ) ? XX-> decorationSize. x : 2;
+      int dy = ( XX-> decorationSize. y > 0 ) ? XX-> decorationSize. y : 20;
       XX-> zoomRect. left   = XX-> origin.x;
       XX-> zoomRect. bottom = XX-> origin.y;
       XX-> zoomRect. right  = XX-> size.x;
       XX-> zoomRect. top    = XX-> size.y;
-      apc_window_set_rect( self, 0, 0, guts. displaySize.x, guts. displaySize.y - XX-> menuHeight);
+      apc_window_set_rect( self, dx * 2, dy * 2, 
+              guts. displaySize.x - dx * 4, guts. displaySize. y - XX-> menuHeight - dy * 4);
    }
 
    if ( !XX-> flags. withdrawn) {
