@@ -631,8 +631,8 @@ sub setup_variables
     }
     setvar( 'LIBS', @flibs);
     %DEFINES = (
-                PERL_PATCHLEVEL => $Config{ patchlevel},
-                PERL_SUBVERSION => $Config{ subversion},
+                PERL_PATCHLEVEL => $Config{ PATCHLEVEL},
+                PERL_SUBVERSION => $Config{ SUBVERSION},
                 PRIMA_CORE => 1,
                 PERL_POLLUTE => 1,
                );
