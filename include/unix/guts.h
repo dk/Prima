@@ -155,6 +155,7 @@ typedef struct _FontFlags {
    int sloppy           : 1;
    int disabled         : 1;
    int funky            : 1;
+   int intNames         : 1;
 } FontFlags;
 
 typedef struct _FontInfo {

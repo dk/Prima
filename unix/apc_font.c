@@ -116,7 +116,6 @@ prima_init_font_subsystem( void)
    char **names;
    int count, j , i, bad_fonts = 0, vector_fonts = 0;
    PFontInfo info;
-   (void) font_query_name;
 
    FXA_RESOLUTION_X = XInternAtom( DISP, "RESOLUTION_X", false);
    FXA_RESOLUTION_Y = XInternAtom( DISP, "RESOLUTION_Y", false);
@@ -436,9 +435,6 @@ prima_init_font_subsystem( void)
    info[j]. flags. sloppy = true;  
    info[j]. flags. vector = true;  
    detail_font_info( info + j, nil, false, false);
-   font_query_name( hash_fetch( xfontCache, "fixed", 5), info + j);
-   strlwr( info[j]. font. name,   info[j]. font. name);
-   strlwr( info[j]. font. family, info[j]. font. family);
 }
 
 void
@@ -837,7 +833,29 @@ PICK_AGAIN:
          f-> flags. width = true;
          f-> font. width = v / 10;
       }
-      /* internalLeading */
+      
+      /* detailing name and family */
+      if ( !f-> flags. intNames) {
+         char name[256], family[256];
+         int i;
+         strcpy( name, f-> font. name);
+         strcpy( family, f-> font. family);
+         font_query_name( s, f);
+         f-> flags. intNames = 1;
+         for ( i = 0; i < guts. n_fonts; i++) {
+            if ( !guts. font_info[i]. flags. intNames &&
+                 ( strcmp( guts. font_info[i]. font. name, name) == 0) &&
+                 ( strcmp( guts. font_info[i]. font. family, family) == 0)
+               ) {
+               strcpy( guts. font_info[i]. font. name,   f-> font. name);
+               strcpy( guts. font_info[i]. font. family, f-> font. family);
+               guts. font_info[i]. flags. name = f-> flags. name;
+               guts. font_info[i]. flags. family   = f-> flags. family;
+               guts. font_info[i]. flags. intNames = 1;
+            }   
+         }   
+      }   
+      
 
 
       /* XXX YYY ZZZ */
@@ -1007,8 +1025,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    Bool underlined = dest-> style & fsUnderlined;
    int  direction  = dest-> direction;
   
-
-   /* 
+   /*
    if ( by_size) {
       printf("reqS:%d.[%d]{%d}.%s\n", dest-> size, dest-> height, dest-> style, dest-> name);
    } else {
@@ -1023,7 +1040,6 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    }
 
    strlwr( lcname, dest-> name);
-
 AGAIN:   
    for ( i = 0; i < n; i++) {
       double diff;
@@ -1054,8 +1070,8 @@ AGAIN:
       if ( lastIndex >= 0)
          printf( "#1: %d (%g): %s %d\n", lastIndex, lastDiff, info[lastIndex]. xname, info[lastIndex]. font. vector);
    */
-
    detail_font_info( info + index, dest, true, by_size);
+
    if ( underlined) dest-> style |= fsUnderlined;
    dest-> direction = direction;
    return true;
@@ -1067,16 +1083,20 @@ apc_fonts( Handle self, const char *facename, int *retCount)
    int i, count = guts. n_fonts;
    PFontInfo info = guts. font_info;
    PFontInfo * table; 
-   int n_table = 0;
+   int n_table, needRecount = 0, maxRecount = 3;
    PFont fmtx;
    Font defaultFont;
    
+AGAIN:   
    *retCount = 0;
+   n_table = 0;
    
 /*   if ( self && kind_of( self, CPrinter)) { 
       return nil;
    }  XXX */
 
+
+   /* stage 1 - browse through names and validate records */
    table = malloc( count * sizeof( PFontInfo));
    if ( facename == nil) {
       PHash hash = hash_create();
@@ -1092,7 +1112,6 @@ apc_fonts( Handle self, const char *facename, int *retCount)
       hash_destroy( hash, false);
       *retCount = n_table;
    } else {
-      /* printf( facename); */
       for ( i = 0; i < count; i++) {
          if ( info[ i]. flags. disabled) continue;
          if ( stricmp( info[ i].font.name, facename) == 0) {
@@ -1109,13 +1128,19 @@ apc_fonts( Handle self, const char *facename, int *retCount)
    defaultFont. size   = 0;
       
    for ( i = 0; i < n_table; i++) {
-      if ( table[i]-> flags. sloppy) 
+      if ( table[i]-> flags. sloppy) {
+         if ( !table[i]-> flags. intNames) needRecount++;
          detail_font_info( table[i], &defaultFont, false, false);
+      }   
       fmtx[i] = table[i]-> font;
-      /* printf(" %d-%d", table[i]-> font.height,table[i]-> font.size); */
    }   
-   /* printf("\n"); */
    free( table);
+
+   if ( needRecount && --maxRecount) {
+      free( fmtx);
+      goto AGAIN;
+   }   
+   
    return fmtx;
 }
 
@@ -1322,44 +1347,47 @@ FAILED:
       
       /* rotating */
       {
-         int x, y;
+         int x, y, fast = r-> orgBox. y * r-> orgBox. x > 600;
          Fixed lx, ly;
          Byte * dst = ndata + px-> bytes_per_line_alias * ( r-> dimension. y - 1);
 
          for ( y = r-> shift. y; y < r-> shift. y + r-> dimension. y; y++) {
             lx. l = r-> shift. x * r-> cos. l - y * r-> sin. l;
-#ifdef ROTATE_FONTS_FAST
-            lx. l += 0x8000;
-#endif            
+            if ( fast)
+               lx. l += 0x8000;
             ly. l = r-> shift. x * r-> sin. l + y * r-> cos. l + 0x8000;
-            for ( x = 0; x < r-> dimension. x; x++) {
-#ifdef ROTATE_FONTS_FAST
+            if ( fast) {
+               for ( x = 0; x < r-> dimension. x; x++) {
                if ( ly. i. i >= 0 && ly. i. i < r-> orgBox. y &&
                     lx. i. i >= 0 && lx. i. i < r-> orgBox. x) {
-                  Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
-                  if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7)))) 
-                     dst[ x >> 3] |= 1 << ( 7 - ( x & 7));
+                     Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
+                     if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7)))) 
+                         dst[ x >> 3] |= 1 << ( 7 - ( x & 7));
+                  }  
+                  lx. l += r-> cos. l;
+                  ly. l += r-> sin. l;
                } 
-#else
-               if ( ly. i. i >= 0 && ly. i. i < r-> orgBox. y && lx. i. i >= 0 && lx. i. i < r-> orgBox. x) {
-                  long pv;
-                  Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
-                  pv = 0;
-                  if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))  
-                     pv += ( 0x10000 - lx. i. f);
-                  if ( lx. i. i < r-> orgBox. x - 1) {
-                     if ( src[( lx. i. i + 1) >> 3] & ( 1 << ( 7 - (( lx. i. i + 1) & 7))))  
-                        pv += lx. i. f; 
-                  } else {
+            } else {
+               for ( x = 0; x < r-> dimension. x; x++) {
+                  if ( ly. i. i >= 0 && ly. i. i < r-> orgBox. y && lx. i. i >= 0 && lx. i. i < r-> orgBox. x) {
+                     long pv;
+                     Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
+                     pv = 0;
                      if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))  
-                        pv += 0x8000;
-                  }   
-                  if ( pv >= 0x8000)
-                     dst[ x >> 3] |= 1 << ( 7 - ( x & 7)); 
-               } 
-#endif               
-               lx. l += r-> cos. l;
-               ly. l += r-> sin. l;
+                        pv += ( 0x10000 - lx. i. f);
+                     if ( lx. i. i < r-> orgBox. x - 1) {
+                        if ( src[( lx. i. i + 1) >> 3] & ( 1 << ( 7 - (( lx. i. i + 1) & 7))))  
+                           pv += lx. i. f; 
+                     } else {
+                        if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))  
+                           pv += 0x8000;
+                     }   
+                     if ( pv >= 0x8000)
+                        dst[ x >> 3] |= 1 << ( 7 - ( x & 7)); 
+                  } 
+                  lx. l += r-> cos. l;
+                  ly. l += r-> sin. l;
+               }
             }   
             dst -= px-> bytes_per_line_alias;
          }   
