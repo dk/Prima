@@ -348,6 +348,11 @@ struct _UnixGuts
    Atom                         fxa_spacing;
    int                          n_fonts;
    XFontStruct                 *pointer_font;
+   Font                         default_font;
+   Font                         default_menu_font;
+   Font                         default_widget_font;
+   Font                         default_msg_font;
+   Font                         default_caption_font;
    /* Resource management */
    XrmDatabase                  db;
    XrmQuark                     qBackground;
@@ -881,6 +886,9 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar);
 
 extern PCachedFont
 prima_find_known_font( PFont font, Bool refill, Bool bySize);
+
+extern void
+prima_font_pp2font( char * ppFontNameSize, PFont font);
 
 struct MsgDlg {
    struct MsgDlg * next;

@@ -34,36 +34,6 @@
 
 #include "unix/guts.h"
 
-/*
-global %Font {
-#   int         height;
-#   int         width;
-#   int         style;
-#   int         pitch;
-#   int         direction;
-   long        resolution;
-#   string      name;
-#   int         size;
-   int         codepage;
-   string      family;
-   int         vector;
-   int         ascent;
-   int         descent;
-   int         weight;
-   int         maximalWidth;
-   int         internalLeading   ;
-   int         externalLeading   ;
-   int         xDeviceRes        ;
-   int         yDeviceRes        ;
-   int         firstChar         ;
-   int         lastChar          ;
-   int         breakChar         ;
-   int         defaultChar       ;
-}
-*/
-
-
-
 static PHash xfontCache = nil;
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 static Bool have_vector_fonts = false;
@@ -106,8 +76,8 @@ font_query_name( XFontStruct * s, PFontInfo f)
          snprintf( f-> font. name, 256, "%s %s", c, f-> font. family);
          strlwr( f-> lc_name, f-> font. name);
          XFree( c);
-      }
-   }
+      } 
+   } 
 }   
 
 Bool
@@ -418,6 +388,29 @@ prima_init_font_subsystem( void)
    info[j]. flags. sloppy = true;  
    info[j]. flags. vector = true;  
    detail_font_info( info + j, nil, false, false);
+
+   if ( !apc_fetch_resource( "Prima", "", "Font", "font", 
+                             nilHandle, frFont, &guts. default_font)) {
+      strcpy( guts. default_font. name, "Helvetica");
+      guts. default_font. height = C_NUMERIC_UNDEF;
+      guts. default_font. size = 12;
+      guts. default_font. width = C_NUMERIC_UNDEF;
+      guts. default_font. style = fsNormal;
+      guts. default_font. pitch = fpDefault;
+      apc_font_pick( application, &guts. default_font, &guts. default_font);
+      guts. default_font. pitch = fpDefault;
+   }
+   if ( !apc_fetch_resource( "Prima", "", "Font", "menu_font", 
+                             nilHandle, frFont, &guts. default_menu_font)) 
+      memcpy( &guts. default_menu_font, &guts. default_font, sizeof( Font));
+   if ( !apc_fetch_resource( "Prima", "", "Font", "widget_font", 
+                             nilHandle, frFont, &guts. default_widget_font)) 
+      memcpy( &guts. default_widget_font, &guts. default_font, sizeof( Font));
+   if ( !apc_fetch_resource( "Prima", "", "Font", "message_font", 
+                             nilHandle, frFont, &guts. default_msg_font))
+      memcpy( &guts. default_msg_font, &guts. default_font, sizeof( Font));
+   if ( !apc_fetch_resource( "Prima", "", "Font", "caption_font", nilHandle, frFont, &guts. default_caption_font))
+      memcpy( &guts. default_caption_font, &guts. default_font, sizeof( Font));
    return true;
 }
 
@@ -481,21 +474,7 @@ prima_cleanup_font_subsystem( void)
 PFont
 apc_font_default( PFont f)
 {
-   static Font font;
-   static Bool initialized = false;
-   if ( !initialized) {
-      strcpy( font. name, "Helvetica");
-      font. height = C_NUMERIC_UNDEF;
-      font. size = 12;
-      font. width = C_NUMERIC_UNDEF;
-      font. style = fsNormal;
-      font. pitch = fpDefault;
-      apc_font_pick( application, &font, &font);
-      font. pitch = fpDefault;
-      font. style = fsNormal;
-      initialized = true;
-   }
-   *f = font;
+   memcpy( f, &guts. default_font, sizeof( Font));
    return f;
 }
 
@@ -581,7 +560,6 @@ add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s, 
    return true;
 }
 
-
 static void
 detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
 {
@@ -614,7 +592,7 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
    if ( f-> vecname) {
       pickable = 1;
 PICK_AGAIN:         
-      if ( f-> flags. xDeviceRes) {
+      if ( f-> flags. bad_vector) {
          /* three fields */
          sprintf( name, f-> vecname, height, size, font-> width * 10);
       } else {
@@ -628,7 +606,7 @@ PICK_AGAIN:
       strcpy( name, f-> xname);
    }
    
-   /* printf( "loading %s\n", name); */
+   /* printf( "loading %s\n", name); */ 
    s = hash_fetch( xfontCache, name, strlen( name));
    
    if ( !s) {
@@ -657,7 +635,6 @@ PICK_AGAIN:
 
    if ( f-> flags. sloppy || f-> font. vector) {
       int preSize = 1;
-      of-> flags. sloppy = false;
 
       /* detailing y-resolution */
       if ( XGetFontProperty( s, FXA_RESOLUTION_Y, &v) && v) {
@@ -727,13 +704,24 @@ PICK_AGAIN:
          int * a = bySize ? &size : &height;
          int   b = bySize ? f-> font. size : f-> font. height;
          int   m = bySize ? 10 : 1;
+
          pickable = 0;
          if ( b != pickValue && b != 0) {
             *a = *a * pickValue / ( b * m) + 0.5;
             if ( *a != pickValue) 
                goto PICK_AGAIN;
          }
-      }   
+      } else if ( f-> vecname) {
+         /* forcing vector font metrics to match the query, even 
+            if they don't really match ( experimental ). */
+         if ( bySize) {
+            f-> font. size = font-> size;
+            f-> font. internalLeading = f-> font. height - font-> size * guts. resolution. y / 72.27; 
+         } else {
+            f-> font. height = font-> height;
+            f-> font. size = (( font-> height - f-> font. internalLeading) * 72.27) / guts. resolution. y + 0.5;
+         }
+      }
       
       f-> flags. resolution      = true;
       f-> font. resolution       = f-> font. yDeviceRes * 0x10000 + f-> font. xDeviceRes;
@@ -749,6 +737,7 @@ PICK_AGAIN:
       f-> font.  lastChar        = s-> max_char_or_byte2;
       f-> flags. direction       = true;
       f-> font.  direction       = 0;
+      of-> flags. sloppy         = false;
 
       /* detailing maximalWidth */
       f-> flags. maximalWidth = true;   
@@ -765,9 +754,6 @@ PICK_AGAIN:
       } else 
          f-> font. maximalWidth = s-> max_bounds. width;
 
-/*      if ( s-> ascent + 0*s-> descent != f-> font. height) 
-         croak( "%s: %d <=> %d", f-> font.name, f-> font. height, s-> ascent + s-> descent*0);*/
-  
       /* detailing spacing;  can trust if already known */
       if ( !f-> flags. pitch && XGetFontProperty( s, FXA_SPACING, &v) && v) {
          XCHECKPOINT;
@@ -803,7 +789,6 @@ PICK_AGAIN:
             f-> font. style |= fsBold;
             of-> font. style |= fsBold;
          }
-         /* of-> font. style = f-> font. style = 2; */ /* Kakogo hrena??????? XXX */
          of-> flags. weight = f-> flags. weight = true;
          weight = (v + 5)/10;
          if (weight >= 10) weight--;
@@ -838,18 +823,6 @@ PICK_AGAIN:
             }   
          }   
       }   
-      
-
-
-      /* XXX YYY ZZZ */
-      /* Things left undetailed for now: */
-      /*  slant part of style, vector(ha-ha) */
-      /* XXX YYY ZZZ */
-      /* Things left undetermined for now: */
-      /*  codepage, ascent, descent, extLead, breakCh */
- /* printf("accept:%d.%d.{%d}.%s; res:%d %d\n", f-> font.height, f-> font.size, f-> font. style, f-> font.name, 
-       f-> font. xDeviceRes, f-> font. yDeviceRes); */
-      
    }   
 
 /*
@@ -1046,20 +1019,25 @@ AGAIN:
 
    i = index;
 
-   /* printf( "#0: %d (%g): %s\n", i, minDiff, info[i].xname); */
-     
+   /*
+    printf( "#0: %d (%g): %s\n", i, minDiff, info[i].xname); 
+    printf("pick:%d.[%d]{%d}.%s\n", info[i].font. height, info[i].font. size, info[i].font. style, info[i].font. name);
+   */
    
    if ( info[ i]. flags. sloppy && pickCount++ < 20) { 
       detail_font_info( info + i, dest, false, by_size); 
-      if ( minDiff < query_diff( info + i, dest, lcname, by_size))
+      if ( minDiff < query_diff( info + i, dest, lcname, by_size)) {
+         minDiff = lastDiff = INT_MAX;
+         index = -1;
          goto AGAIN;
+      }
    } 
 
-   /* 
-      printf( "took diff %f after %d steps out of %d\n", minDiff, pickCount, n); 
+   /*
+     printf( "took diff %f after %d steps out of %d\n", minDiff, pickCount, n); 
       if ( lastIndex >= 0)
          printf( "#1: %d (%g): %s %d\n", lastIndex, lastDiff, info[lastIndex]. xname, info[lastIndex]. font. vector);
-   */
+     */
    detail_font_info( info + index, dest, true, by_size);
 
    if ( underlined) dest-> style |= fsUnderlined;
@@ -1082,11 +1060,6 @@ AGAIN:
    *retCount = 0;
    n_table = 0;
    
-/*   if ( self && kind_of( self, CPrinter)) { 
-      return nil;
-   }  XXX */
-
-
    /* stage 1 - browse through names and validate records */
    table = malloc( count * sizeof( PFontInfo));
    if ( facename == nil) {
@@ -1115,7 +1088,7 @@ AGAIN:
    fmtx = malloc( n_table * sizeof( Font)); 
    
    defaultFont. width  = 0;
-   defaultFont. height = 16;
+   defaultFont. height = 10;
    defaultFont. size   = 0;
       
    for ( i = 0; i < n_table; i++) {

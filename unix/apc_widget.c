@@ -396,7 +396,8 @@ apc_widget_destroy( Handle self)
 PFont
 apc_widget_default_font( PFont f)
 {
-   return apc_font_default( f);
+   memcpy( f, &guts. default_widget_font, sizeof( Font));
+   return f;
 }
 
 Bool

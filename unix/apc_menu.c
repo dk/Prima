@@ -1195,7 +1195,8 @@ apc_menu_destroy( Handle self)
 PFont
 apc_menu_default_font( PFont f)
 {
-   return apc_font_default( f);
+   memcpy( f, &guts. default_menu_font, sizeof( Font));
+   return f;
 }
 
 Color
@@ -1217,7 +1218,7 @@ apc_menu_get_font( Handle self, PFont font)
 {
    DEFMM;
    if ( !XX-> font)
-      return apc_font_default( font);
+      return apc_menu_default_font( font);
    memcpy( font, &XX-> font-> font, sizeof( Font));
    return font;
 }
@@ -1375,7 +1376,8 @@ apc_popup_create( Handle self, Handle owner)
 PFont
 apc_popup_default_font( PFont f)
 {
-   return apc_font_default( f);
+   memcpy( f, &guts. default_menu_font, sizeof( Font));
+   return f;
 }
 
 Bool

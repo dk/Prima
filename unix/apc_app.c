@@ -155,6 +155,8 @@ window_subsystem_init( void)
       "Scrollfirst.scrollfirst."
       "Scrollnext.scrollnext";
    
+   bzero( &guts, sizeof( guts));
+
    guts. click_time_frame = 200;
    guts. double_click_time_frame = 200;
    guts. visible_timeout = 500;
