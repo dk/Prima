@@ -454,7 +454,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
          break;
       case WM_MOVE:
          ev. cmd = cmMove;
-         ev. gen. P = v-> self-> get_pos( self);
+         ev. gen. P = v-> self-> get_origin( self);
          break;
       case WM_REPAINT:
          ev. cmd = cmRepaint;

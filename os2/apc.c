@@ -851,7 +851,7 @@ apc_window_set_menu( Handle self, Handle menu)
    if ( var stage <= csNormal)
    {
       WinSendMsg( HANDLE, WM_UPDATEFRAME, MPFROMLONG( FCF_MENU), 0);
-      var self-> set_size( self, size.x, size. y);
+      var self-> set_size( self, size);
    }
    WinSetFocus( HWND_DESKTOP, focus);
    return apcError == 0;
@@ -1871,7 +1871,7 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
       size = owner-> self-> get_size( var owner);
    }
    WinSendMsg( var handle, MM_DELETEITEM, MPFROM2SHORT( m->id, true), 0);
-   if ( resize) owner-> self-> set_size( var owner, size.x, size. y);
+   if ( resize) owner-> self-> set_size( var owner, size);
    return true;
 }
 
@@ -1991,7 +1991,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
          WinDestroyWindow( var handle);
       var handle = ( Handle) add_item( att, self, (( PMenu) self)-> tree);
       WinSendMsg( DHANDLE( var owner), WM_UPDATEFRAME, MPFROMLONG( FCF_MENU), 0);
-      CWindow( var owner)-> set_size( var owner, size.x, size. y);
+      CWindow( var owner)-> set_size( var owner, size);
    } else {
       if ( var handle)
          WinDestroyWindow( var handle);
