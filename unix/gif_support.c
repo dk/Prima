@@ -1,4 +1,34 @@
-#include "apricot.h"
+/*-
+ * Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+
+/*
+ * Created by Vadim Belman <voland@plab.ku.dk>, April 1999.
+ */
+#include "unix/img_api.h"
 #include "unix/gif_support.h"
 #include <unistd.h>
 #include <signal.h>
@@ -25,6 +55,8 @@
 #define GIFPROP_EXTENSIONS 19
 #define GIFPROP_DELAYTIME 20
 #define GIFPROP_COMMENTS 21
+#define GIFPROP_EXTENSION_CODE 22
+#define GIFPROP_EXTENSION_BLOCKS 23
 
 ImgFormat gifFormat = {
     "GIF", "Graphics Interchange Format",
@@ -36,29 +68,36 @@ ImgFormat gifFormat = {
 	{ nil, nil, nil, 0, { Int:0}}
     },
     ( ImgProps[]) {
-	{ "width", GIFPROP_WIDTH, "i", "Image width"}, /* For index == -1 means screen width */
-	{ "height", GIFPROP_HEIGHT, "i", "Image height"}, /* For index == -1 means screen height */
-	{ "type", GIFPROP_TYPE, "i", "Image type (bpp)"}, 
-	{ "name", GIFPROP_NAME, "s", "Image-specific description"}, /* Only returned by read */
-	{ "lineSize", GIFPROP_LINESIZE, "i", "Length of a scan line in bytes"},
-	{ "data", GIFPROP_DATA, "b*", "Image data"},
-	{ "palette", GIFPROP_PALETTE, "b*", "Image palette"},
-	{ "index", GIFPROP_INDEX, "i", "Position in image list"}, /* -1 refers to the whole image file */
-	{ "format", GIFPROP_FORMAT, "s", "File format"}, /* May appear only for an image with index == -1 */
-	{ "interlaced", GIFPROP_INTERLACED, "i", "Image is interlaced"},
-	{ "X", GIFPROP_X, "i", "Left offset"},
-	{ "Y", GIFPROP_Y, "i", "Top offset"},
-	{ "colorResolution", GIFPROP_COLORRESOLUTION, "i", "How many colors can be generated"},
-	{ "bgColor", GIFPROP_BGCOLOR, "i", "Background color"},
-	{ "paletteSize", GIFPROP_PALETTESIZE, "i", "Number of entries in image palette"},
-	{ "paletteBPP", GIFPROP_PALETTEBPP, "i", "Image palette BPP"},
-	{ "disposalMethod", GIFPROP_DISPOSALMETHOD, "b", "Image disposal method in animation GIF"},
-	{ "userInput", GIFPROP_USERINPUT, "b", "User input expected"},
-	{ "transparentColorIndex", GIFPROP_TRANSPARENTCOLORINDEX, "b", "Transparent color index"},
-	{ "comments", GIFPROP_COMMENTS, "s*", "GIF file comments"},
-	{ "extensions", GIFPROP_EXTENSIONS, "B*", "GIF extensions"},
-	{ "delayTime", GIFPROP_DELAYTIME, "i", "Delay in ms after showing the image in animation GIF"},
-	{ nil, 0, nil, nil}
+	{ "width", GIFPROP_WIDTH, "i", "Image width", nil}, /* For index == -1 means screen width */
+	{ "height", GIFPROP_HEIGHT, "i", "Image height", nil}, /* For index == -1 means screen height */
+	{ "type", GIFPROP_TYPE, "i", "Image type (bpp)", nil}, 
+	{ "name", GIFPROP_NAME, "s", "Image-specific description", nil}, /* Only returned by read */
+	{ "lineSize", GIFPROP_LINESIZE, "i", "Length of a scan line in bytes", nil},
+	{ "data", GIFPROP_DATA, "b*", "Image data", nil},
+	{ "palette", GIFPROP_PALETTE, "b*", "Image palette", nil},
+	{ "index", GIFPROP_INDEX, "i", "Position in image list", nil}, /* -1 refers to the whole image file */
+	{ "format", GIFPROP_FORMAT, "s", "File format", nil}, /* May appear only for an image with index == -1 */
+	{ "interlaced", GIFPROP_INTERLACED, "i", "Image is interlaced", nil},
+	{ "XOffset", GIFPROP_X, "i", "Left offset", nil},
+	{ "YOffset", GIFPROP_Y, "i", "Top offset", nil},
+	{ "colorResolution", GIFPROP_COLORRESOLUTION, "i", "How many colors can be generated", nil},
+	{ "bgColor", GIFPROP_BGCOLOR, "i", "Background color", nil},
+	{ "paletteSize", GIFPROP_PALETTESIZE, "i", "Number of entries in image palette", nil},
+	{ "paletteBPP", GIFPROP_PALETTEBPP, "i", "Image palette BPP", nil},
+	{ "disposalMethod", GIFPROP_DISPOSALMETHOD, "b", "Image disposal method in animation GIF", nil},
+	{ "userInput", GIFPROP_USERINPUT, "b", "User input expected", nil},
+	{ "transparentColorIndex", GIFPROP_TRANSPARENTCOLORINDEX, "b", "Transparent color index", nil},
+	{ "comments", GIFPROP_COMMENTS, "s*", "GIF file comments", nil},
+	{ "extensions", GIFPROP_EXTENSIONS, "B*", "GIF extensions", nil},
+	{ "_extensions_", GIFPROP_EXTENSIONS, "p*", "GIF extensions", 
+	  ( ImgProps[]) {
+	      { "code", GIFPROP_EXTENSION_CODE, "i", "GIF extension code"},
+	      { "blocks", GIFPROP_EXTENSION_BLOCKS, "B*", "GIF extension blocks"},
+	      { nil, 0, nil, nil, nil}
+	  }
+	},
+	{ "delayTime", GIFPROP_DELAYTIME, "i", "Delay in ms after showing the image in animation GIF", nil},
+	{ nil, 0, nil, nil, nil}
     },
     3,
     __gif_load,
@@ -84,6 +123,7 @@ static int errorType = GIFERRT_NONE;
 #define DERR_INVALID_INDEX                      3
 #define DERR_DATA_NOT_PRESENT                   4 /* No image data for queried index. */
 #define DERR_NO_INDEX_PROP                      5 /* Internal: `index' property not found while filling in imgInfo. */
+#define DERR_IMGPROP_FETCH                      6 /* Strange one: list_at( propList, ...) returned nil */
 
 
 static int errorCode = DERR_NO_ERROR;
@@ -255,49 +295,53 @@ static Bool
 __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool readAll)
 {
     GifFileType *gif;
-    GifRecordType gifType;
+    GifRecordType gifRecType;
     GifImageDesc *gifChunk;
     GifPixelType **data;
-    int lastIndex = -1;
+    int lastIndex = -1, lastQueriedIndex = -1;
     Bool succeed = true;
     int imgDescCount = 0;
     int i, gifrc;
     Bool done;
     List gifChunks, queriedIdx, imageData, imageExtensions;
 
-    DOLBUG( "Got %d profile(s)\n", imgInfo->count);
     if ( readAll) {
-	/* If been queried for all images then there must no more than one image profile 
-	   in the imgInfo list. If it contains properties we must remove them. */
-	PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, 0);
-	DOLBUG( "Got %d properties for readAll operation\n", imageInfo->propList->count);
-	for ( i = ( imageInfo->propList->count - 1); i >= 0; i--) {
-	    PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, i);
-	    apc_image_clear_property( imgProp);
-	    free( imgProp);
-	    list_delete_at( imageInfo->propList, i);
-	}
+	/* If have been queried for all images then there must be no
+	   more than one image profile in the imgInfo list. If it
+	   contains properties we must remove them. */
+	img_destroy_properties( ( ( PImgInfo) list_at( imgInfo, 0))->propList);
     }
     else {
+	/* Have been queried for specific images, collecting necessary
+           information. */
 	list_create( &queriedIdx, imgInfo->count, 1);
 	for ( i = 0; ( i < imgInfo->count) && succeed; i++) {
 	    int indexPropIdx;
 	    PImgProperty imgProp;
 	    PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
-/*  	    DOLBUG( "Image #%d: %d properties\n", i, imageInfo->propList->count); */
 	    indexPropIdx = list_first_that( imageInfo->propList, property_name, ( void*) "index");
 	    if ( indexPropIdx >= 0) {
 		imgProp = ( PImgProperty) list_at( imageInfo->propList, indexPropIdx);
+		if ( imgProp == nil) {
+		    __gif_seterror( GIFERRT_DRIVER, DERR_IMGPROP_FETCH);
+		}
 	    }
 	    else {
-		imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
-		if ( imgProp != NULL) imgProp->val.Int = ++lastIndex;
-	    }
-	    if ( imgProp->size == -1) {
-		if ( imgProp->val.Int > lastIndex) {
-		    lastIndex = imgProp->val.Int;
+		imgProp = img_info_add_property( imageInfo, "index", PROPTYPE_INT, -1, ++lastQueriedIndex);
+		if ( imgProp == nil) {
+		    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
 		}
-		list_add( &queriedIdx, imgProp->val.Int);
+	    }
+	    if ( imgProp == nil) {
+		succeed = false;
+		continue;
+	    }
+	    if ( ( imgProp->flags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY) {
+		lastQueriedIndex = imgProp->val.Int;
+		if ( imgProp->val.Int > lastIndex) {
+		    lastIndex = lastQueriedIndex;
+		}
+		list_add( &queriedIdx, lastQueriedIndex);
 	    }
 	    else {
 		/* ERROR: The property contains an array. */
@@ -311,10 +355,6 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
     if ( ! succeed) {
 	return false;
     }
-
-/*      DOLBUG( "The last index is %d, queried for %d indexes\n", lastIndex, queriedIdx.count); */
-
-/*      DOLBUG( "opening %s (%s)\n", filename, readAll ? "all images" : "selected"); */
 
     gif = DGifOpenFileName( filename);
     if ( gif == NULL) {
@@ -333,9 +373,8 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	Byte *extData;
 	int extCode;
 
-	gifrc = DGifGetRecordType( gif, &gifType);
+	gifrc = DGifGetRecordType( gif, &gifRecType);
 	if ( gifrc != GIF_OK) {
-/*  	    DOLBUG( "*** Can't get next record type\n"); */
 	    __gif_seterror( GIFERRT_GIFLIB, GifLastError());
 	    done = true;
 	    succeed = false;
@@ -352,23 +391,19 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	    /* And the same for the image content. */
 	    while ( imageData.count <= imgDescCount) {
 		data = malloc( sizeof( GifPixelType *));
-		*data = NULL;
+		*data = nil;
 		list_add( &imageData, ( Handle) data);
 	    }
 	}
 
-	switch ( gifType) {
+	switch ( gifRecType) {
 	    case SCREEN_DESC_RECORD_TYPE:
-		DOLBUG( "Screen record\n");
 		break;
 	    case TERMINATE_RECORD_TYPE:
-		DOLBUG( "Termination record\n");
 		break;
 	    case IMAGE_DESC_RECORD_TYPE:
-		DOLBUG( "Description record\n");
 		if ( ! readAll) {
 		    if( ( done = ( imgDescCount > lastIndex))) {
-			DOLBUG( "The last one...\n");
 			break;
 		    }
 		}
@@ -394,21 +429,11 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    else {
 			gifChunk->ColorMap = NULL;
 		    }
-		    DOLBUG( "Image count: %d; Scr: %dx%d, Img: %dx%d+%d+%d, ColorRes: %d\n", 
-			     gif->ImageCount,
-			     gif->SWidth,
-			     gif->SHeight,
-			     gifChunk->Width,
-			     gifChunk->Height,
-			     gifChunk->Left,
-			     gifChunk->Top,
-			     gif->SColorResolution
-			);
 		    if ( idxQueried && readData) {
 			int pixelCount = gifChunk->Width * gifChunk->Height;
 			data = ( GifPixelType **) list_at( &imageData, imgDescCount);
 			*data = malloc( sizeof( GifPixelType) * pixelCount);
-			if ( *data == NULL) {
+			if ( *data == nil) {
 			    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
 			    succeed = false;
 			}
@@ -420,10 +445,8 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			gifrc = DGifGetCode( gif, &codeSize, &codeBlock);
 			if ( gifrc == GIF_OK) {
 			    while( ( codeBlock != NULL) && ( gifrc == GIF_OK)) {
-				DOLBUG( ".");
 				gifrc = DGifGetCodeNext( gif, &codeBlock);
 			    }
-			    DOLBUG( " ");
 			}
 		    }
 		    if ( gifrc != GIF_OK) {
@@ -434,10 +457,8 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		}
 		break;
 	    case EXTENSION_RECORD_TYPE:
-		DOLBUG( "Extension record: ");
 		extCode = -1;
 		gifrc = DGifGetExtension( gif, &extCode, &extData);
-		DOLBUG( "code is %02x, ", extCode);
 		if ( gifrc == GIF_OK) {
 		    Bool idxQueried = readAll; /* Presume that we need all indexes... */
 		    /* Graphic Control Extension belongs to the next image. */
@@ -471,12 +492,6 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    }
 
 		    do {
-			int ti;
-			DOLBUG( "{size:%d}[ ", extData[ 0] + 1);
-			for ( ti = 0; ti <= extData[ 0]; ti++) {
-			    DOLBUG( "%02x ", extData[ ti]);
-			}
-			DOLBUG( "]");
 			if ( idxQueried) {
 			    Byte *extDataCopy = malloc( extData[ 0] + 1);
 			    memcpy( extDataCopy, extData, extData[ 0] + 1);
@@ -485,55 +500,45 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			gifrc = DGifGetExtensionNext( gif, &extData);
 		    } while ( ( extData != NULL) && ( gifrc == GIF_OK));
 		}
-		DOLBUG( "\n");
 		if ( gifrc != GIF_OK) {
 		    __gif_seterror( GIFERRT_GIFLIB, GifLastError());
 		    succeed = false;
 		}
 		break;
 	    default:
-		DOLBUG( "Unknown record type\n");
 	}
 	done = done || ( ! succeed);
-    } while( ( gifType != TERMINATE_RECORD_TYPE) && ( ! done));
+    } while( ( gifRecType != TERMINATE_RECORD_TYPE) && ( ! done));
 
     if ( succeed) {
-	DOLBUG( "Got %d images.\n", imgDescCount);
 
 	if ( readAll) {
-	    /* Now we must create slots for all the images have been readed. */
+	    /* Now we have to create slots for all the images have been readed. */
 	    /* The first slot is already here. We can just fill it in. */
 	    /* For all subsequent images the first one will be used as a template. */
 	    PImgInfo imageInfo;
 	    PImgProperty imgProp;
 	    PImgInfo firstImg = ( PImgInfo) list_at( imgInfo, 0);
-	    imgProp = apc_image_add_property( firstImg, "index", PROPTYPE_INT, -1);
-	    if ( imgProp != NULL) imgProp->val.Int = 0;
+	    succeed = ( imgProp = img_info_add_property( firstImg, "index", PROPTYPE_INT, -1, 0)) != nil;
 
-/*  	    if ( firstImg->extraInfo) { */
-		/* XXX If queried for extra image information then we create an entry
-		   for golbal image info. */
-/*  		imageInfo = malloc( sizeof( ImgInfo)); */
-/*  		imageInfo->extraInfo = firstImg->extraInfo; */
-/*  		imageInfo->propList = plist_create( 15, 5); */
-/*  		imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1); */
-/*  		if ( imgProp != NULL) imgProp->val.Int = -1; */
-/*  		list_insert_at( imgInfo, ( Handle) imageInfo, 0); */
-/*  	    } */
-
-	    for ( i = 1; i < imgDescCount; i++) {
-		imageInfo = malloc( sizeof( ImgInfo));
+	    for ( i = 1; ( i < imgDescCount) && succeed; i++) {
+		if ( ( imageInfo = img_info_create( 15)) == nil) {
+		    succeed = false;
+		    continue;
+		}
 		imageInfo->extraInfo = firstImg->extraInfo;
-		imageInfo->propList = plist_create( 15, 5);
-		imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
-		if ( imgProp != NULL) imgProp->val.Int = i;
 		list_add( imgInfo, ( Handle) imageInfo);
+		if ( ( imgProp = img_info_add_property( imageInfo, "index", PROPTYPE_INT, -1, i)) == nil) {
+		    succeed = false;
+		}
+	    }
+	    if ( ! succeed) {
+		/* This is the only possible error at this point. */
+		__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
 	    }
 	}
 
-	DOLBUG( "Have %d profile(s)\n", imgInfo->count);
-
-	/* At this stage we must have fully prepared imgInfo list which all the items 
+	/* At this stage we must have fully prepared imgInfo list in which all the items 
 	   already contains valid `index' properties. */
 	for ( i = 0; ( i < imgInfo->count) && succeed; i++) {
 	    int indexPropIdx = -1, j, index = -1;
@@ -550,31 +555,28 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		succeed = false;
 		continue;
 	    }
-	    DOLBUG( "idx: %d\n", index);
-	    for ( j = 0; j < imageInfo->propList->count; j++) {
-		apc_image_clear_property( ( PImgProperty) list_at( imageInfo->propList, j));
-	    }
-	    plist_destroy( imageInfo->propList);
-	    imageInfo->propList = plist_create( 5, 5);
+	    /* At this point everything is ready to fill in image
+               information with a real data. So, all old properties
+               are obsolete. */
+	    img_destroy_properties( imageInfo->propList);
 
 	    gifChunk = ( GifImageDesc *) list_at( &gifChunks, index);
 	    if ( readData) {
 		data = ( GifPixelType **) list_at( &imageData, index);
 	    }
 
-	    imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
-	    if ( imgProp != NULL) imgProp->val.Int = index;
-
-	    imgProp = apc_image_add_property( imageInfo, "format", PROPTYPE_STRING, -1);
-	    if ( imgProp != NULL) imgProp->val.String = duplicate_string( gifFormat.id);
-
-	    imgProp = apc_image_add_property( imageInfo, "type", PROPTYPE_INT, -1);
-	    if ( imgProp != NULL) imgProp->val.Int = im256;
+	    imgProp = img_info_add_property( imageInfo, "index", PROPTYPE_INT, -1, index);
+	    if ( imgProp != nil) imgProp = img_info_add_property( imageInfo, "format", PROPTYPE_STRING, -1, gifFormat.id);
+	    if ( imgProp != nil) imgProp = img_info_add_property( imageInfo, "type", PROPTYPE_INT, im256);
+	    if ( imgProp == nil) {
+		succeed = false;
+		__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
+		continue;
+	    }
 
 	    for ( j = 0; ( j < imageExtensions.count) && succeed; j++) {
 		PGIFExtensions gifExtensions;
 		gifExtensions = ( PGIFExtensions) list_at( &imageExtensions, j);
-		DOLBUG( "Checking extensions for image %d (%d)\n", index, gifExtensions->index);
 		if ( gifExtensions->index == index) {
 		    PGIFExtInfo gifExtension;
 		    int k, extIdx;
@@ -582,67 +584,63 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
 		    for ( k = 0; ( k < gifExtensions->extensions.count) && succeed; k++) {
 			gifExtension = ( PGIFExtInfo) list_at( &gifExtensions->extensions, k);
-			DOLBUG( "Analyzing extension with code %02x (%d out of %d)\n", 
-				gifExtension->code,
-				k,
-				gifExtensions->extensions.count
-			    );
 			switch ( gifExtension->code) {
 			    case GRAPHICS_EXT_FUNC_CODE:
 				{
 				    /* There cannot be more than one data block for this kind of extension. */
 				    PGIFGraphControlExt controlData = ( PGIFGraphControlExt) list_at( &gifExtension->data, 0);
 
-				    imgProp = apc_image_add_property( imageInfo, "disposalMethod", PROPTYPE_BYTE, -1);
-				    if ( imgProp != NULL) imgProp->val.Byte = controlData->disposalMethod;
-
-				    imgProp = apc_image_add_property( imageInfo, "userInput", PROPTYPE_BYTE, -1);
-				    if ( imgProp != NULL) imgProp->val.Byte = controlData->userInput;
-
-				    imgProp = apc_image_add_property( imageInfo, "delayTime", PROPTYPE_INT, -1);
-				    if ( imgProp != NULL) imgProp->val.Int = controlData->delayTime * 10;
-
-				    if ( controlData->transparent) {
-					imgProp = apc_image_add_property( imageInfo, "transparentColorIndex", PROPTYPE_BYTE, -1);
-					if ( imgProp != NULL) imgProp->val.Byte = controlData->transparentColorIndex;
+				    imgProp = img_info_add_property( imageInfo, "disposalMethod", PROPTYPE_BYTE, -1, controlData->disposalMethod);
+				    if ( imgProp != NULL) {
+					imgProp = img_info_add_property( imageInfo, "userInput", PROPTYPE_BYTE, -1, controlData->userInput);
 				    }
-
-				    gifExtension->processed = true;
+				    if ( imgProp != NULL) {
+					imgProp = img_info_add_property( imageInfo, "delayTime", PROPTYPE_INT, -1, controlData->delayTime * 10);
+				    }
+				    if ( imgProp != NULL) {
+					if ( controlData->transparent) {
+					    imgProp = img_info_add_property( imageInfo, "transparentColorIndex", PROPTYPE_BYTE, controlData->transparentColorIndex);
+					}
+				    }
+				    if ( imgProp != nil) {
+					gifExtension->processed = true;
+				    }
+				    else {
+					succeed = false;
+					__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
+					continue;
+				    }
 				}
 				break;
 			    case COMMENT_EXT_FUNC_CODE:
 				{
 				    PImgProperty imgProp;
 				    int commentsPropIdx = list_first_that( imageInfo->propList, ( void *) property_name, "comments");
-				    char **newPString;
-				    int propIdx, propBaseIdx;
-				    DOLBUG( "Adding comment to the property list of image #%d\n", index);
 				    if ( commentsPropIdx == -1) {
-					imgProp = apc_image_add_property( imageInfo, "comments", PROPTYPE_STRING, 0);
-					if ( imgProp != NULL) imgProp->val.pString = NULL;
+					if ( ( imgProp = img_info_add_property( imageInfo, 
+										"comments", 
+										PROPTYPE_STRING | PROPTYPE_ARRAY, 
+										1)) == nil) {
+					    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
+					}
 				    }
 				    else {
-					imgProp = ( PImgProperty) list_at( imageInfo->propList, commentsPropIdx);
-				    }
-				    if ( imgProp != NULL) {
-					propBaseIdx = propIdx = imgProp->size; /* Index for a new comment. */
-					imgProp->size += gifExtension->data.count;
-					if ( ( newPString = realloc( imgProp->val.pString, imgProp->size * sizeof( char **))) == NULL) {
-					    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
-					    succeed = false;
-					}
-					else {
-					    for ( ; propIdx < imgProp->size; propIdx++) {
-						Byte *commentData = ( Byte *) list_at( &gifExtension->data, propIdx - propBaseIdx);
-						imgProp->val.pString = newPString;
-						imgProp->val.pString[ propIdx] = malloc( commentData[ 0] + 1);
-						memcpy( imgProp->val.pString[ propIdx], commentData + 1, commentData[ 0]);
-						imgProp->val.pString[ propIdx][ commentData[ 0]] = 0;
-					    }
+					if ( ( imgProp = ( PImgProperty) list_at( imageInfo->propList, commentsPropIdx)) == nil) {
+					    __gif_seterror( GIFERRT_DRIVER, DERR_IMGPROP_FETCH);
 					}
 				    }
-				    
-				    gifExtension->processed = true;
+				    if ( ( succeed = ( imgProp != nil))) {
+					Byte *commentData = ( Byte *) list_at( &gifExtension->data, 0);
+					int dataLen = commentData[ 0];
+					/* Dirty hack... Making a C-style string from a
+                                           Pascal-style one. 8) */
+					memmove( commentData, commentData + 1, dataLen);
+					commentData[ dataLen] = 0;
+					img_push_property_value( imgProp, commentData);
+				    }
+				    if ( succeed) {
+					gifExtension->processed = true;
+				    }
 				}
 				break;
 			}
@@ -655,104 +653,133 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			continue;
 		    }
 
-		    imgProp = NULL;
+		    imgProp = nil;
 
-		    for ( k = 0, extIdx = 0; ( k < gifExtensions->extensions.count) && succeed; k++) {
+		    for ( k = 0; ( k < gifExtensions->extensions.count) && succeed; k++) {
 			int n;
-			PIMGBinaryData bin = NULL;
-			Byte *p;
 
 			gifExtension = ( PGIFExtInfo) list_at( &gifExtensions->extensions, k);
 			if ( gifExtension->processed) {
-			    DOLBUG( "Skipping extension with code %02x\n", gifExtension->code);
 			    continue;
 			}
 
-			if ( imgProp == NULL) {
-			    DOLBUG( "Adding `extensions' property for index %d\n", index);
-			    imgProp = apc_image_add_property( imageInfo, "extensions", PROPTYPE_BIN, gifExtensions->extensions.count - processedCount);
-			    if ( imgProp != NULL) imgProp->val.pBinary = malloc( sizeof( IMGBinaryData) * ( gifExtensions->extensions.count - processedCount));
+			if ( imgProp == nil) {
+			    imgProp = img_info_add_property(
+				    imageInfo, 
+				    "extensions", 
+				    PROPTYPE_PROP | PROPTYPE_ARRAY, 
+				    gifExtensions->extensions.count - processedCount
+				);
 			}
-
-			bin = imgProp->val.pBinary + extIdx;
-			extIdx++;
-			bin->size = 1;
-			for ( n = 0; n < gifExtension->data.count; n++) {
-			    Byte *extData = ( Byte *) list_at( &gifExtension->data, n);
-			    bin->size += extData[ 0] + 1;
-			}
-			p = bin->data = malloc( bin->size);
-			if ( bin->data == NULL) {
-			    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
+			if ( imgProp == nil) {
 			    succeed = false;
+			    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
 			    continue;
 			}
-			*p++ = gifExtension->code;
-			DOLBUG( "%02x(%d bytes total size):", gifExtension->code, bin->size);
-			for ( n = 0; n < gifExtension->data.count; n++) {
-			    int ti;
-			    Byte *extData = ( Byte *) list_at( &gifExtension->data, n);
-			    memcpy( p, extData, extData[ 0] + 1);
-			    DOLBUG( "%p[", p);
-			    for ( ti = 0; ti <= extData[ 0]; ti++) {
-				DOLBUG( "%02x ", p[ ti]);
+
+			/* Then prepare a new property list in the property list array. */
+			/* Current imgProp->used value is an index for the new array entry. */
+			extIdx = imgProp->used;
+			if ( ( succeed = img_push_property_value( imgProp, gifExtension->data.count + 1))) {
+			    PImgProperty extProp;
+			    succeed = img_push_property(
+				    imgProp->val.pProperties + extIdx,
+				    "code",
+				    PROPTYPE_BYTE,
+				    -1,
+				    gifExtension->code
+				) != nil;
+			    if ( succeed) {
+				extProp = img_push_property(
+					imgProp->val.pProperties + extIdx,
+					"data",
+					PROPTYPE_BIN | PROPTYPE_ARRAY,
+					gifExtension->data.count
+				    );
 			    }
-			    DOLBUG( "]\n");
-			    p += extData[ 0] + 1;
+			    for ( n = 0; ( n < gifExtension->data.count) && succeed; n++) {
+				Byte *extData = ( Byte *) list_at( &gifExtension->data, n);
+				succeed = img_push_property_value(
+					extProp,
+					( int) extData[ 0],
+					extData + 1
+				    );
+			    }
 			}
-			DOLBUG( "\n");
+			if ( ! succeed) {
+			    /* Again, the only possible error. */
+			    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
+			}
 		    }
 		    break; /* extensions scanning loop */
 		}
 	    }
 
+	    if ( ! succeed) {
+		continue;
+	    }
+
 	    if ( readData) {
-		char *buf;
-		imgProp = apc_image_add_property( imageInfo, "name", PROPTYPE_STRING, -1);
-		if ( imgProp != NULL) {
-		    buf = malloc( PATH_MAX + 16);
-		    snprintf( buf, PATH_MAX + 16, "%s:%d", filename, index);
-		    imgProp->val.String = buf;
+		char buf[ PATH_MAX + 16];
+		snprintf( buf, PATH_MAX + 16, "%s:%d", filename, index);
+		if ( ! ( succeed = img_info_add_property( imageInfo, "name", PROPTYPE_STRING, -1, buf) != nil)) {
+		    continue;
 		}
 	    }
 
 	    if ( index == -1) {
-		imgProp = apc_image_add_property( imageInfo, "width", PROPTYPE_INT, -1);
-		if ( imgProp != NULL) imgProp->val.Int = gif->SWidth;
-
-		imgProp = apc_image_add_property( imageInfo, "height", PROPTYPE_INT, -1);
-		if ( imgProp != NULL) imgProp->val.Int = gif->SHeight;
-
-		imgProp = apc_image_add_property( imageInfo, "colorResolution", PROPTYPE_INT, -1);
-		if ( imgProp != NULL) imgProp->val.Int = gif->SColorResolution;
-
-		imgProp = apc_image_add_property( imageInfo, "bgColor", PROPTYPE_INT, -1);
-		if ( imgProp != NULL) imgProp->val.Int = gif->SBackGroundColor;
+		imgProp = img_info_add_property( imageInfo, "width", PROPTYPE_INT, -1, gif->SWidth);
+		if ( imgProp != nil) {
+		    imgProp = img_info_add_property( imageInfo, "height", PROPTYPE_INT, -1, gif->SHeight);
+		}
+		if ( imgProp != nil) {
+		    imgProp = img_info_add_property( imageInfo, "colorResolution", PROPTYPE_INT, -1, gif->SColorResolution);
+		}
+		if ( imgProp != nil) {
+		    imgProp = img_info_add_property( imageInfo, "bgColor", PROPTYPE_INT, -1, gif->SBackGroundColor);
+		}
+		if ( ! ( succeed = ( imgProp != nil))) {
+		    continue;
+		}
 
 		if ( gif->SColorMap != NULL) {
 		    int n;
-		    imgProp = apc_image_add_property( imageInfo, "paletteSize", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gif->SColorMap->ColorCount;
 
-		    imgProp = apc_image_add_property( imageInfo, "paletteBPP", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gif->SColorMap->ColorCount;
-
-		    imgProp = apc_image_add_property( imageInfo, "palette", PROPTYPE_BYTE, 3 * gif->SColorMap->ColorCount);
-		    if ( imgProp != NULL) imgProp->val.pByte = ( Byte *) malloc( imgProp->size);
-		    for ( n = 0; n < gif->SColorMap->ColorCount; n++) {
-			Byte *palEntry = ( imgProp->val.pByte + n * 3);
-			palEntry[ 0] = gif->SColorMap->Colors[ n].Blue;
-			palEntry[ 1] = gif->SColorMap->Colors[ n].Green;
-			palEntry[ 2] = gif->SColorMap->Colors[ n].Red;
+		    imgProp = img_info_add_property( imageInfo, "paletteSize", PROPTYPE_INT, -1, gif->SColorMap->ColorCount);
+		    if ( imgProp != nil) { 
+			imgProp = img_info_add_property( imageInfo, "paletteBPP", PROPTYPE_INT, -1, gif->SColorMap->BitsPerPixel);
+		    }
+		    if ( imgProp != nil) {
+			succeed = 
+			    ( imgProp = img_info_add_property( imageInfo,
+							       "palette",
+							       PROPTYPE_BYTE | PROPTYPE_ARRAY,
+							       3 * gif->SColorMap->ColorCount
+				)) != nil;
+			for ( n = 0; ( n < gif->SColorMap->ColorCount) && succeed; n++) {
+			    succeed = 
+				img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Blue)
+				&& img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Green)
+				&& img_push_property_value( imgProp, gif->SColorMap->Colors[ n].Red);
+			}
+		    }
+		    if ( ! succeed) {
+			continue;
 		    }
 		}
 
 		if ( readData) {
-		    imgProp = apc_image_add_property( imageInfo, "data", PROPTYPE_BYTE, gif->SWidth * gif->SHeight);
-		    if ( imgProp != NULL) imgProp->val.pByte = calloc( 1, gif->SWidth * gif->SHeight);
-
-		    imgProp = apc_image_add_property( imageInfo, "lineSize", PROPTYPE_BYTE, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gif->SWidth;
+		    /* New array property is always zeroed. */
+		    imgProp = img_info_add_property( 
+			    imageInfo, 
+			    "data", 
+			    PROPTYPE_BYTE | PROPTYPE_ARRAY, 
+			    gif->SWidth * gif->SHeight
+			);
+		    if ( imgProp != nil) {
+			imgProp = img_info_add_property( imageInfo, "lineSize", PROPTYPE_BYTE, gif->SWidth);
+		    }
+		    succeed = imgProp != nil;
 		}
 	    }
 	    else if ( index >= 0) {
@@ -761,45 +788,58 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		if ( index < imgDescCount) {
 		    int n;
 
-		    imgProp = apc_image_add_property( imageInfo, "width", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Width;
+		    imgProp = img_info_add_property( imageInfo, "width", PROPTYPE_INT, -1, gifChunk->Width);
+		    if ( imgProp != nil) {
+			imgProp = img_info_add_property( imageInfo, "height", PROPTYPE_INT, -1, gifChunk->Height);
+		    }
+		    if ( imgProp != nil) { 
+			imgProp = img_info_add_property( imageInfo, "type", PROPTYPE_INT, -1, im256);
+		    }
+		    if ( imgProp != nil) {
+			imgProp = img_info_add_property( imageInfo, "XOffset", PROPTYPE_INT, -1, gifChunk->Left);
+		    }
+		    if ( imgProp != nil) {
+			imgProp = img_info_add_property( imageInfo, "YOffset", PROPTYPE_INT, -1, gifChunk->Top);
+		    }
+		    if ( imgProp != nil) {
+			imgProp = img_info_add_property( imageInfo, "interlaced", PROPTYPE_INT, -1, gifChunk->Interlace ? 1 : 0);
+		    }
+		    if ( imgProp != nil) {
+			palette = ( gifChunk->ColorMap != NULL ?
+				    gifChunk->ColorMap :
+				    gif->SColorMap);
+			succeed =
+			    ( imgProp = img_info_add_property( 
+				    imageInfo, 
+				    "palette",
+				    PROPTYPE_BYTE | PROPTYPE_ARRAY,
+				    3 * palette->ColorCount
+				)) != nil;
+			for ( n = 0; ( n < palette->ColorCount) && succeed; n++) {
+			    succeed =
+				img_push_property_value( imgProp, palette->Colors[ n].Blue)
+				&& img_push_property_value( imgProp, palette->Colors[ n].Green)
+				&& img_push_property_value( imgProp, palette->Colors[ n].Red);
+			}
+		    }
 
-		    imgProp = apc_image_add_property( imageInfo, "height", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Height;
-
-		    imgProp = apc_image_add_property( imageInfo, "type", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = im256;
-
-		    imgProp = apc_image_add_property( imageInfo, "X", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Left;
-
-		    imgProp = apc_image_add_property( imageInfo, "Y", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Top;
-
-		    imgProp = apc_image_add_property( imageInfo, "interlaced", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Interlace ? 1 : 0;
-
-		    palette = ( gifChunk->ColorMap != NULL ?
-				gifChunk->ColorMap :
-				gif->SColorMap);
-
-		    imgProp = apc_image_add_property( imageInfo, "palette", PROPTYPE_BYTE, 3 * palette->ColorCount);
-		    if ( imgProp != NULL) imgProp->val.pByte = malloc( imgProp->size);
-		    for ( n = 0; n < palette->ColorCount; n++) {
-			Byte *palEntry = ( imgProp->val.pByte + n * 3);
-			palEntry[ 0] = palette->Colors[ n].Blue;
-			palEntry[ 1] = palette->Colors[ n].Green;
-			palEntry[ 2] = palette->Colors[ n].Red;
+		    if ( ! succeed) {
+			__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
+			continue;
 		    }
 
 		    if ( readData) {
-			if ( *data != NULL) {
+			if ( *data != nil) {
 			    int pixelCount = gifChunk->Width * gifChunk->Height;
 			    int pass = 0, Y; /* Pass number for interlaced images. */
-			    imgProp = apc_image_add_property( imageInfo, "data", PROPTYPE_BYTE, pixelCount);
-			    if ( imgProp != NULL) {
+			    imgProp = img_info_add_property( 
+				    imageInfo,
+				    "data",
+				    PROPTYPE_BYTE | PROPTYPE_ARRAY,
+				    pixelCount
+				);
+			    if ( imgProp != nil) {
 				int ySrc, yDst;
-				imgProp->val.pByte = malloc( sizeof( Byte) * pixelCount);
 				for ( ySrc = 0, yDst = 0, Y = 0; 
 				      ySrc < pixelCount;
 				      ySrc += gifChunk->Width) {
@@ -821,8 +861,12 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 				    }
 				}
 			    }
-			    imgProp = apc_image_add_property( imageInfo, "lineSize", PROPTYPE_INT, -1);
-			    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Width;
+			    if ( imgProp != nil) {
+				imgProp = img_info_add_property( imageInfo, "lineSize", PROPTYPE_INT, -1, gifChunk->Width);
+			    }
+			    if ( ! ( succeed = imgProp != nil)) {
+				__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
+			    }
 			}
 			else {
 			    __gif_seterror( GIFERRT_DRIVER, DERR_DATA_NOT_PRESENT);
@@ -836,9 +880,6 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		succeed = false;
 	    }
 	}
-    }
-    else { 
-	DOLBUG( "*** FAILED!!! ***\n");
     }
 
     gifrc = DGifCloseFile( gif);
@@ -856,8 +897,10 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
 	if ( readData) {
 	    data = ( GifPixelType **) list_at( &imageData, i);
-	    if ( data && *data) {
-		free( *data);
+	    if ( data) {
+		if ( *data) {
+		    free( *data);
+		}
 		free( data);
 	    }
 	}
@@ -902,7 +945,6 @@ __gif_save( const char *filename, PList imgInfo)
 Bool
 __gif_loadable( int fd, const char *filename, Byte *preread_buf, U32 buf_size)
 {
-    DOLBUG( "__gif_loadable( %s)\n", filename);
     return ( strncmp( "GIF", preread_buf, 3) == 0);
 }
 
