@@ -1580,15 +1580,13 @@ sub cursor_right {
    }
 }
 sub cursor_home  {
-   my $c = $_[0]-> get_line( $_[0]-> cursorY);
-   $c =~ /^([\s\t]+)/;
+   my ($spaces) = ($_[0]-> get_line( $_[0]-> cursorY) =~ /^([s\t]*)/);
    $_[0]-> offset(0);
-   $_[0]-> cursorX( defined $1 ? length( $1) : 0);
+   $_[0]-> cursorX( length $spaces);
 }
 sub cursor_end   {
-   my $c = $_[0]-> get_line( $_[0]-> cursorY);
-   $c =~ s/[\s\t]*$//;
-   $_[0]-> cursorX( length( $c));
+   my ($nonspaces) = ($_[0]-> get_line( $_[0]-> cursorY) =~ /^(.*?)[\s\t]*$/);
+   $_[0]-> cursorX( length $nonspaces);
 }
 sub cursor_cend  { $_[0]-> cursorY(-1); }
 sub cursor_chome { $_[0]-> cursorY( 0); }
@@ -1633,15 +1631,13 @@ sub word_right
       }
       my $cl = $x - $clen + 1;
       $line .= ' 'x$cl if $cl >= 0;
-      if (!($w =~ quotemeta(substr( $line, $x, 1))))
-      {
-          $delta++ while (!($w =~ quotemeta( substr( $line, $x + $delta, 1))) &&
-            ( $x + $delta < $clen))
+      unless ($w =~ quotemeta substr $line, $x, 1) {
+          $delta++ while ( $w !~ quotemeta substr $line, $x + $delta, 1) &&
+            $x + $delta < $clen;
       }
-      if ( $x + $delta < $clen)
-      {
-         $delta++ while (( $w =~ quotemeta( substr( $line, $x + $delta, 1))) &&
-            ( $x + $delta < $clen))
+      if ( $x + $delta < $clen) {
+         $delta++ while ( $w =~ quotemeta substr $line, $x + $delta, 1) &&
+            $x + $delta < $clen;
       }
       $self-> cursor( $x + $delta, $y);
    }
