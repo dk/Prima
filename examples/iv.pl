@@ -1,0 +1,344 @@
+use strict;
+use Prima;
+use Prima::Classes;
+use Prima::ImageViewer;
+use Prima::StdDlg;
+
+$::application = Prima::Application-> create( name => "IV");
+
+
+my $ico = Prima::Icon-> create;
+$ico = 0 unless $ico-> load( 'hand.gif');
+
+
+my $winCount  = 1;
+
+my %iv_prf = (
+   origin => [ 0, 0],
+   growMode => gm::Client,
+   hScroll => 1,
+   vScroll => 1,
+   quality => 1,
+   name    => 'IV',
+   valignment  => ta::Center,
+   alignment   => ta::Center,
+   onMouseDown => \&iv_mousedown,
+   onMouseUp   => \&iv_mouseup,
+   onMouseMove => \&iv_mousemove,
+   onSize      => \&iv_size,
+);
+
+sub status
+{
+   my $iv = $_[0]-> IV;
+   my $img = $iv-> image;
+   my $str;
+   if ( $img) {
+      $str = $iv->{fileName};
+      $str =~ s/([^\\\/]*)$/$1/;
+      $str = sprintf("%s (%dx%dx%d bpp)", $1,
+         $img-> width, $img-> height, $img-> type & im::BPP);
+   } else {
+      $str = '.Untitled';
+   }
+   $_[0]->text( $str);
+   $::application->name( $str);
+}
+
+
+sub menuadd
+{
+   unless ( $_[0]->IV-> image) {
+      $_[0]-> menu-> insert(
+        [
+           [ 'Reopen' => 'Ctrl+R' => '^R'       => \&freopen],
+           [ '~New window...' => 'Ctrl+N' => '^N'       => \&fnewopen],
+           [],
+           [ '~Save'  => 'F2'     => 'F2'       => \&fsave],
+           [ 'Save As...'                       => \&fsaveas],
+        ],
+        'file', 1
+      );
+      $_[0]-> menu-> insert(
+         [
+           ['~Edit' => [
+              ['~Copy' => 'Ctrl+Ins' => km::Ctrl|kb::Insert => sub {
+                 $::application-> clipboard->image($_[0]->IV->image)
+              }],
+              ['~Paste' => 'Shift+Ins' => km::Shift|kb::Insert => sub {
+                 my $i = $::application-> clipboard->image;
+                 $_[0]->IV->image( $i) if $i;
+                 status($_[0]);
+              }],
+           ]],
+           ['~Image' => [
+              [ '~Convert to'=> [
+                 ['~Monochrome' => sub {icvt($_[0],im::Mono)}],
+                 ['~16 colors' => sub {icvt($_[0],im::bpp4)}],
+                 ['~256 colors' => sub {icvt($_[0],im::bpp8)}],
+                 ['~Grayscale' => sub {icvt($_[0],im::bpp8|im::GrayScale)}],
+                 ['~RGB' => sub {icvt($_[0],im::RGB)}],
+                 [],
+                 ['*hft' => '~Halftoning' => sub{$_[0]->menu->toggle($_[1]);}],
+              ]],
+              ['~Zoom' => [
+                 ['~Normal ( 100%)' => 'Ctrl+Z' => '^Z' => sub{$_[0]->IV->zoom(1.0)}],
+                 ['~Best fit' => 'Ctrl+Shift+Z' => km::Shift|km::Ctrl|ord('z') => \&zbestfit],
+                 [],
+                 ['abfit' => '~Auto best fit' => sub{
+                    zbestfit($_[0]) if $_[0]->IV->{autoBestFit} = $_[0]->menu->abfit-> toggle;
+                 }],
+                 [],
+                 ['25%' => sub{$_[0]->IV->zoom(0.25)}],
+                 ['50%' => sub{$_[0]->IV->zoom(0.5)}],
+                 ['75%' => sub{$_[0]->IV->zoom(0.75)}],
+                 ['150%' => sub{$_[0]->IV->zoom(1.5)}],
+                 ['200%' => sub{$_[0]->IV->zoom(2)}],
+                 ['300%' => sub{$_[0]->IV->zoom(3)}],
+                 ['400%' => sub{$_[0]->IV->zoom(4)}],
+                 ['600%' => sub{$_[0]->IV->zoom(6)}],
+                 ['1600%' => sub{$_[0]->IV->zoom(16)}],
+                 [],
+                 ['~Increase' => '+' => '+' => sub{$_[0]->IV->zoom( $_[0]->IV->zoom * 1.1)}],
+                 ['~Decrease' => '-' => '-' => sub{$_[0]->IV->zoom( $_[0]->IV->zoom / 1.1)}],
+              ]],
+              ['~Info' => 'Alt+F1' => '@F1' => \&iinfo],
+           ]],
+         ],
+         '', 1,
+      );
+   }
+}
+
+sub fdopen
+{
+   my $self = $_[0]-> IV;
+   my $dlg  = Prima::OpenDialog-> create(
+      filter    => [
+         ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
+         ['All files' => '*']
+      ],
+   );
+   if ( $dlg-> execute) {
+      my $i = Prima::Image-> create;
+      my $f = $dlg-> fileName;
+      if ( $i-> load( $f)) {
+         menuadd( $_[0]);
+         $self-> image( $i);
+         $self-> {fileName} = $f;
+         status( $_[0]);
+      } else {
+         Prima::MsgBox::message("Cannot load $f");
+      }
+   }
+   $dlg-> destroy;
+}
+
+sub freopen
+{
+   my $self = $_[0]-> IV;
+   my $i = Image-> create;
+   if ( $i-> load( $self-> {fileName})) {
+      $self-> image( $i);
+      status( $_[0]);
+   } else {
+      Prima::MsgBox::message("Cannot reload ". $self-> {fileName});
+   }
+}
+
+sub fnewopen
+{
+   my $self = $_[0]-> IV;
+   my $dlg  = Prima::OpenDialog-> create(
+      filter    => [
+         ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
+         ['All files' => '*']
+      ],
+   );
+   if ( $dlg-> execute) {
+      my $i = Prima::Image-> create;
+      my $f = $dlg-> fileName;
+      if ( $i-> load( $f)) {
+         my $w = Prima::Window-> create(
+            onDestroy => \&iv_destroy,
+            menuItems => $_[0]-> menuItems,
+            onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
+         );
+         $winCount++;
+         $w-> insert( ImageViewer =>
+             size   => [ $w-> size],
+             %iv_prf,
+         );
+         $w-> IV-> image( $i);
+         $w-> IV-> {fileName} = $f;
+         status($w);
+      } else {
+         Prima::MsgBox::message("Cannot load $f");
+      }
+   }
+   $dlg-> destroy;
+}
+
+
+sub fload
+{
+   my $self = $_[0]-> IV;
+   my $f = $_[1];
+   my $i = Prima::Image-> create;
+   if ( $i-> load( $f)) {
+      menuadd( $_[0]);
+      $self-> image( $i);
+      $self-> {fileName} = $f;
+      status( $_[0]);
+   } else {
+      Prima::MsgBox::message("Cannot load $f");
+   }
+}
+
+
+sub fsave
+{
+   my $iv = $_[0]->IV;
+   Prima::MsgBox::message('Cannot save '.$iv->{fileName})
+      unless $iv->image->save( $iv->{fileName});
+}
+
+sub fsaveas
+{
+   my $iv = $_[0]->IV;
+   my $dlg  = Prima::SaveDialog-> create(
+      filter    => [
+         ['Images' => '*.bmp;*.pcx;*.gif;*.jpg;*.png;*.tif'],
+         ['All files' => '*']
+      ],
+   );
+   if ( $dlg-> execute) {
+      if ( $iv->image->save( $iv->{fileName})) {
+         $iv->{fileName} = $dlg-> fileName;
+         status( $_[0]);
+      } else {
+         Prima::MsgBox::message('Cannot save '.$iv->{fileName}. ' as '.$dlg-> fileName);
+      }
+   }
+   $dlg-> destroy;
+}
+
+sub icvt
+{
+   my $im = $_[0]->IV->image;
+   $im-> set(
+      conversion => $_[0]->menu->hft->checked ? ict::Halftone : ict::None,
+      type       => $_[1],
+   );
+   status( $_[0]);
+   $_[0]->IV->palette( $im-> palette);
+   $_[0]->IV->repaint;
+}
+
+
+sub iinfo
+{
+   my $i = $_[0]->IV->image;
+   Prima::MsgBox::message_box(
+      '',
+      "File: ".$_[0]->IV->{fileName}."\n".
+      "Width: ".$i->width."\nHeight: ".$i->height."\nBPP:"     .($i->type&im::BPP)."\n".
+      "Zoom: ".$_[0]->IV->zoom,
+      0
+   );
+}
+
+sub zbestfit
+{
+   my $iv = $_[0]->IV;
+   my @szA = $iv->image->size;
+   my @szB = $iv->get_active_area;
+   $szB[0] = $szB[2] - $szB[0];
+   $szB[1] = $szB[3] - $szB[1];
+   my $x = $szB[0]/$szA[0];
+   my $y = $szB[1]/$szA[1];
+   $iv-> zoom( $x < $y ? $x : $y);
+
+}
+
+sub iv_mousedown
+{
+   my ( $self, $btn, $mod, $x, $y) = @_;
+   return if $self->{drag} || $btn != mb::Right;
+   $self->{drag}=1;
+   $self->{x} = $x;
+   $self->{y} = $y;
+   $self->{wasdx} = $self-> deltaX;
+   $self->{wasdy} = $self-> deltaY;
+   $self-> capture(1);
+   $self->pointer( $ico) if $ico;
+}
+
+sub iv_mouseup
+{
+   my ( $self, $btn, $mod, $x, $y) = @_;
+   return unless $self->{drag} && $btn == mb::Right;
+   $self->{drag}=0;
+   $self-> capture(0);
+   $self->pointer( cr::Default) if $ico;
+}
+
+sub iv_mousemove
+{
+   my ( $self, $mod, $x, $y) = @_;
+   return unless $self->{drag};
+   my ($dx,$dy) = ($x - $self->{x}, $y - $self->{y});
+   $self-> deltas( $self-> {wasdx} - $dx, $self-> {wasdy} + $dy);
+}
+
+sub iv_mousewheel
+{
+   my ( $self, $mod, $x, $y, $z) = @_;
+   $z = int( $z / 120);
+   my $xv = ($mod & km::Shift) ? $self-> VScroll : $self-> HScroll;
+   $z *= ($mod & km::Ctrl) ? $xv-> pageStep : $xv-> step;
+   if ( $mod & km::Shift) {
+      $self-> deltaX( $self-> deltaX - $z);
+   } else {
+      $self-> deltaY( $self-> deltaY - $z);
+   }
+}
+
+
+sub iv_size
+{
+   zbestfit($_[0]-> owner) if $_[0]->{autoBestFit};
+}
+
+sub iv_destroy
+{
+   $winCount--;
+   $::application-> close unless $winCount;
+}
+
+
+
+my $w = Prima::Window-> create(
+   size => [ 300, 300],
+   onDestroy => \&iv_destroy,
+   onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
+   menuItems => [
+     [ file => '~File' => [
+        [ '~Open' =>  'F3'     => kb::F3     => \&fdopen],
+        [],
+        [ 'E~xit' => 'Alt+X' => '@X' => sub {$::application-> close}],
+     ]],
+   ],
+);
+
+$w-> insert( ImageViewer =>
+   size   => [ $w-> size],
+   %iv_prf,
+);
+status($w);
+
+fload( $w, $ARGV[0]) if scalar @ARGV > 0;
+
+run Prima;
+
+
