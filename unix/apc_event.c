@@ -35,6 +35,7 @@
 #include "unix/guts.h"
 #include "AbstractMenu.h"
 #include "Application.h"
+#include "Window.h"
 #define XK_MISCELLANY
 #define XK_LATIN1
 #define XK_XKB_KEYS
@@ -753,7 +754,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       cmd = e. cmd;
       CComponent( self)-> message( self, &e);
       if ( e. cmd && cmd == cmClose) {
-	 Object_destroy( self);
+         if ( XX-> type. window && PWindow(self)-> modal)
+            CWindow(self)-> cancel( self);
+         else
+            Object_destroy( self);
       }
       if ( secondary. cmd) {
 	 CComponent( self)-> message( self, &secondary);
