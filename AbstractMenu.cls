@@ -1,7 +1,6 @@
 object AbstractMenu ( Component)
 {
    PMenuItemReg  tree;
-   method void   check( char * varName);
    method void   done();
    method void   delete( char * varName);
    c_only void * first_that( void * actionProc, void * params, Bool useDisabled);
@@ -30,7 +29,6 @@ object AbstractMenu ( Component)
    method void   set_variable ( char * varName, char * newName);
    static int    translate_accel( Handle self, char * accel);
    static int    translate_key( Handle self, int code, int key, int mod);
-   method void   uncheck( char * varName);
 #  private
    Bool   anchored;
    c_only void   dispose_menu( void * menu);
