@@ -378,7 +378,7 @@ sub profile_default
       spinClass      => 'Prima::AltSpinButton',
       editProfile    => {},
       spinProfile    => {},
-      editDelegations=> [qw(KeyDown Change)],
+      editDelegations=> [qw(KeyDown Change MouseWheel)],
       spinDelegations=> [qw(Increment)],
    }
 }
@@ -430,9 +430,9 @@ sub on_paint
    $canvas-> rect3d( 0, 0, $s[0]-1, $s[1]-1, 1, $self-> dark3DColor, $self-> light3DColor);
 }
 
-sub on_mousewheel
+sub InputLine_MouseWheel
 {
-   my ( $self, $mod, $x, $y, $z) = @_;
+   my ( $self, $edit, $mod, $x, $y, $z) = @_;
    $z = int($z/120);
    $z *= $self-> {pageStep} if $mod & km::Ctrl;
    my $value = $self-> value;
