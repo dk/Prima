@@ -609,6 +609,14 @@ Note: C<::clipRect> can not be used while the object is in the paint-disabled st
 its context is neither recorded nor used as a template 
 ( see L<"Graphic context and canvas">).
 
+=item fillWinding BOOLEAN
+
+Affect filling style of complex polygonal shapes filled by C<fillpoly>.
+If 1, the filled shape contains no holes; otherwise, holes are present
+where the shape edges cross.
+
+Default value: 0
+
 =item fillPattern ( [ @PATTERN ] ) or ( fp::XXX )
 
 Selects 8x8 fill pattern that affects primitives that plot filled shapes:
@@ -684,7 +692,18 @@ can be one of
   le::Square
   le::Round
 
-constants. le::Round is the default value.
+  constants. le::Round is the default value.
+
+=item lineJoin VALUE
+
+Selects a line joining style for polygons. VALUE 
+can be one of
+
+  lj::Round
+  lj::Bevel
+  lj::Miter
+
+constants. lj::Round is the default value.
 
 =item linePattern PATTERN
 
@@ -932,7 +951,7 @@ Example:
 
    $d-> fillpoly([ 0, 0, 15, 20, 30, 0]); # triangle
 
-Context used: color, backColor, fillPattern, rop, rop2
+Context used: color, backColor, fillPattern, rop, rop2, fillWinding
 
 See also: polyline().
 
@@ -999,7 +1018,7 @@ No context is used.
 Draws a polygonal area defined by POLYGON set of points.
 POLYGON must present an array of integer pair in (X,Y) format.
 
-Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
+Context used: color, backColor, linePattern, lineWidth, lineJoin, lineEnd, rop, rop2
 
 See also: fillpoly().
 

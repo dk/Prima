@@ -470,6 +470,14 @@ See L<Prima::Drawable/lineEnd>
   le::Square
   le::Round
 
+=head2 lj::  - line join styles
+
+See L<Prima::Drawable/lineJoin>
+
+  lj::Round
+  lj::Bevel
+  lj::Miter
+
 =head2 lp::  - predefined line pattern styles
 
 See L<Prima::Drawable/linePattern>
