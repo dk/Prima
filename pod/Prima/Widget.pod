@@ -1446,7 +1446,7 @@ C<popupItems>, C<popupColorIndex>, C<popupFont>
 
 =item popupColorIndex INDEX, COLOR
 
-Maintains the eight color properties of a pop-up context menu,
+Maintains eight color properties of a pop-up context menu,
 associated with a widget. INDEX must be one of C<ci::XXX> constants
 ( see C<::colorIndex> property ). 
 
@@ -1454,31 +1454,31 @@ See also: C<popupItems>, C<popupFont>, C<popup>
 
 =item popupColor COLOR
 
-Basic foreground popup context menu color.
+Basic foreground in a popup context menu color.
 
 See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
 
 =item popupBackColor COLOR
 
-Basic background popup context menu color.
+Basic background in a popup context menu color.
 
 See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
 
 =item popupDark3DColor COLOR
 
-Color for drawing dark shadings in popup context menu color.
+Color for drawing dark shadings in a popup context menu.
 
 See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
 
 =item popupDisabledColor COLOR
 
-Foreground color for disabled items in popup context menu color. 
+Foreground color for disabled items in a popup context menu. 
 
 See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
 
 =item popupDisabledBackColor COLOR
 
-Background color for disabled items in popup context menu color. 
+Background color for disabled items in a popup context menu. 
 
 See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
 
@@ -1490,13 +1490,13 @@ See also: C<popupItems>, C<popupColorIndex>, C<popup>
 
 =item popupHiliteColor COLOR
 
-Foreground color for selected items in popup context menu color. 
+Foreground color for selected items in a popup context menu. 
 
 See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
 
 =item popupHiliteBackColor COLOR
 
-Background color for selected items in popup context menu color. 
+Background color for selected items in a popup context menu. 
 
 See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
 
@@ -1510,7 +1510,7 @@ See also: C<popup>, C<popupColorIndex>, C<popupFont>
 
 =item popupLight3DColor COLOR
 
-Color for drawing light shadings in popup context menu color.
+Color for drawing light shadings in a popup context menu.
 
 See also: C<popupItems>, C<popupColorIndex>, C<popupFont>, C<popup>
 
