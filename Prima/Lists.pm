@@ -296,7 +296,7 @@ sub on_keydown
    if ( $mod & km::Ctrl && $self->{multiSelect})
    {
       my $c = chr ( $code & 0xFF);
-      if ( $c eq '/' || $c eq '\\')
+      if ( $c eq '/' || $c eq chr(ord('\\')-ord('@')))
       {
          $self-> selectedItems(( $c eq '/') ? [0..$self->{count}-1] : []);
          $self-> clear_event;
