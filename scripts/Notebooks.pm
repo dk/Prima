@@ -594,20 +594,27 @@ sub set_page_index
    my $cp = $self->{widgets}->[$self->{pageIndex}];
    my $i;
    if ( defined $cp) {
-      for ( $i = 0; $i < scalar @{$cp} / 3; $i++) {
-         $$cp[ $i * 3 + 1] = $$cp[ $i * 3]-> enabled;
-         $$cp[ $i * 3 + 2] = $$cp[ $i * 3]-> visible;
-         $$cp[ $i * 3]-> visible(0);
-         $$cp[ $i * 3]-> enabled(0);
+      for ( $i = 0; $i < scalar @{$cp} / 4; $i++) {
+         my $cx = $$cp[ $i * 4];
+         $$cp[ $i * 4 + 1] = $cx-> enabled;
+         $$cp[ $i * 4 + 2] = $cx-> visible;
+         $$cp[ $i * 4 + 3] = $cx-> current;
+         $cx-> visible(0);
+         $cx-> enabled(0);
       }
    }
    $cp = $self->{widgets}->[$pi];
+   my $hasSel = undef;
    if ( defined $cp) {
-      for ( $i = 0; $i < scalar @{$cp} / 3; $i++) {
-         $$cp[ $i * 3]-> enabled($$cp[ $i * 3 + 1]);
-         $$cp[ $i * 3]-> visible($$cp[ $i * 3 + 2]);
+      for ( $i = 0; $i < scalar @{$cp} / 4; $i++) {
+         my $cx = $$cp[ $i * 4];
+         $cx-> enabled($$cp[ $i * 4 + 1]);
+         $cx-> visible($$cp[ $i * 4 + 2]);
+         $hasSel = $i if !defined $hasSel && $$cp[ $i * 4 + 3];
+         $cx-> current($$cp[ $i * 4 + 3]);
       }
-      $$cp[ 0]-> select if $i and $sel;
+      $hasSel = 0 unless defined $hasSel;
+      $$cp[ $hasSel * 4]-> select if $i and $sel;
    }
    $self-> unlock;
    $self-> update_view;
@@ -635,8 +642,8 @@ sub delete_page
    $self-> pageIndex( $self-> pageIndex);
    if ( $removeChildren) {
       my $i; my $s = $r[0];
-      for ( $i = 0; $i < scalar @{$s} / 3; $i++) {
-         $$s[$i*3]-> destroy;
+      for ( $i = 0; $i < scalar @{$s} / 4; $i++) {
+         $$s[$i*4]-> destroy;
       }
    }
 }
@@ -653,6 +660,7 @@ sub attach_to_page
       push( @{$cp}, $_);
       push( @{$cp}, $_->enabled);
       push( @{$cp}, $_->visible);
+      push( @{$cp}, $_->current);
       if ( $page != $self->{pageIndex}) {
          $_-> visible(0);
          $_-> enabled(0);
@@ -694,8 +702,8 @@ sub contains_widget
    my $cptr = $self->{widgets};
    for ( $i = 0; $i < $self->{pageCount}; $i++) {
       my $cp = $$cptr[$i];
-      for ( $j = 0; $j < scalar @{$cp}/3; $j++) {
-         return ( $i, $j) if $$cp[$j*3] == $ctrl;
+      for ( $j = 0; $j < scalar @{$cp}/4; $j++) {
+         return ( $i, $j) if $$cp[$j*4] == $ctrl;
       }
    }
    return;
@@ -708,7 +716,7 @@ sub widgets_from_page
    my @a = @{$self->{widgets}->[$page]};
    my $i;
    my @r = ();
-   for ( $i = 0; $i < scalar @a; $i+=3) {
+   for ( $i = 0; $i < scalar @a; $i+=4) {
       push( @r, $a[$i])
    };
    return @r;
@@ -718,7 +726,7 @@ sub detach
 {
    my ( $self, $widget, $killFlag) = @_;
    my ( $page, $number) = $self-> contains_widget( $widget);
-   splice( @{$self->{widgets}->[$page]}, $number * 3, 3) if defined $page;
+   splice( @{$self->{widgets}->[$page]}, $number * 4, 4) if defined $page;
    $self->SUPER::detach( $widget, $killFlag);
 }
 
@@ -727,7 +735,7 @@ sub detach_from_page
    my ( $self, $ctrl)   = @_;
    my ( $page, $number) = $self-> contains_widget( $ctrl);
    return unless defined $page;
-   splice( @{$self->{widgets}->[$page]}, $number * 3, 3);
+   splice( @{$self->{widgets}->[$page]}, $number * 4, 4);
 }
 
 sub delete_widget
@@ -743,7 +751,7 @@ sub move_widget
    my ( $self, $widget, $newPage) = @_;
    my ( $page, $number) = $self-> contains_widget( $widget);
    return unless defined $page;
-   @{$self->{widgets}->[$newPage]} = splice( @{$self->{widgets}->[$page]}, $number * 3, 3);
+   @{$self->{widgets}->[$newPage]} = splice( @{$self->{widgets}->[$page]}, $number * 4, 4);
    $self-> repaint if $self->{pageIndex} == $page || $self->{pageIndex} == $newPage;
 }
 
