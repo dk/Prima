@@ -29,6 +29,10 @@ typedef struct _ClipboardFormatReg
 
 SV * text_server  ( void *, int, int, SV *);
 SV * image_server ( void *, int, int, SV *);
+SV * binary_server( void *, int, int, SV *);
+
+void *
+Clipboard_register_format_proc( Handle self, char * format, void * serverProc);
 
 void
 Clipboard_init( Handle self, HV * profile)
@@ -40,10 +44,8 @@ Clipboard_init( Handle self, HV * profile)
    CComponent( application)-> attach( application, self);
    if ( !apc_clipboard_create())
       croak( "RTC0022: Cannot create clipboard");
-   {
-      my register_format( self, "Text",  text_server);
-      my register_format( self, "Image", image_server);
-   }
+   Clipboard_register_format_proc( self, "Text",  text_server);
+   Clipboard_register_format_proc( self, "Image", image_server);
 }
 
 void
@@ -83,13 +85,12 @@ find_format( Handle self, PClipboardFormatReg item, char * format)
 }
 
 void *
-Clipboard_register_format( Handle self, char * format, void * serverProc)
+Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
 {
-   PClipboardFormatReg fr = first_that( self, find_format, format);
-   PClipboardFormatReg list;
-   if ( fr)
+   PClipboardFormatReg list = first_that( self, find_format, format);
+   if ( list)
    {
-      fr = ( PClipboardFormatReg)( fr-> server);
+      list = ( PClipboardFormatReg)( list-> server);
       my deregister_format( self, format);
    }
    list = malloc( sizeof( ClipboardFormatReg) * ( var formatCount + 1));
@@ -102,9 +103,8 @@ Clipboard_register_format( Handle self, char * format, void * serverProc)
    list += var formatCount++;
    strcpy( list-> id  = malloc( strlen( format) + 1), format);
    list-> server      = ( PClipboardExchangeFunc) serverProc;
-   list-> inst        = ( void *) fr;
-   list-> sysId       = (long) list-> server( &list-> inst, cefInit, 0, nilSV);
-   return ( void *) fr;
+   list-> sysId       = (long) list-> server( &list-> inst, cefInit, 0, ( SV *) list);
+   return ( void *) list;
 }
 
 void
@@ -222,6 +222,18 @@ Clipboard_get_registered_format_count( Handle self)
    return var formatCount;
 }
 
+Bool
+Clipboard_register_format( Handle self, char * format)
+{
+   void * proc;
+   if (( strlen( format) == 0)          ||
+       ( strcmp( format, "Text") == 0)  ||
+       ( strcmp( format, "Image") == 0))
+      return false;
+   proc = Clipboard_register_format_proc( self, format, binary_server);
+   return proc != nil;
+}
+
 
 XS( Clipboard_get_formats_FROMPERL)
 {
@@ -333,30 +345,41 @@ image_server( void * instance, int function, int subCommand, SV * data)
          }
          break;
     }
-   return nilSV;
+    return nilSV;
 }
 
-/*
-// This is example of writing custom clipboard format servers -
-// the only difference is that format ID is retrieved dynamically
-// from system in cefInit and then released in cefDone.
-// Although, user server can subplace one of standart formats and
-// ( mainly) can be system-dependent.
-
 SV *
-user_server ( void * instance, int function, int subCommand, SV * data)
+binary_server( void * instance, int function, int subCommand, SV * data)
 {
    switch( function)
    {
       case cefInit:
-         *((int*) instance) = apc_clipboard_register_format("User data");
-         return *((int*) instance);
+         {
+            long id = apc_clipboard_register_format((( PClipboardFormatReg) data)-> id);
+            *((long*) instance) = id;
+            return ( SV*) id;
+         }
       case cefDone:
          apc_clipboard_deregister_format(( int)instance);
          break;
-      case cefFetch:
-         .....
+   case cefFetch:
+      {
+         int len;
+         void *xdata = apc_clipboard_get_data(( int)instance, &len);
+         if ( xdata) {
+            SV * ret = newSVpv( xdata, len);
+            free( xdata);
+            return ret;
+         }
+      }
+      break;
+   case cefStore:
+      {
+         int len;
+         void * xdata = SvPV( data, len);
+         apc_clipboard_set_data(( int)instance, xdata, len);
+      }
+      break;
+      return nilSV;
+   }
 }
-*/
-
-
