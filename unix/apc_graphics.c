@@ -451,7 +451,7 @@ void
 prima_prepare_drawable_for_painting( Handle self)
 {
    DEFXX;
-   unsigned long mask = VIRGIN_GC_MASK;
+   unsigned long mask = VIRGIN_GC_MASK | GCFillStyle | GCStipple;
    int w, h;
    XRectangle r;
 
@@ -484,6 +484,11 @@ Unbuffered:
    XX-> flags. zero_line = XX-> flags. saved_zero_line;
    XX-> gcv. clip_mask = None;
    XX-> gtransform = XX-> transform;
+   XX-> saved_fp_pixmap = XX-> fp_pixmap;
+   memcpy( XX-> saved_fill_pattern, XX-> fill_pattern, sizeof( FillPattern));
+   XX-> gcv. fill_style = XX-> fp_pixmap == None ? FillSolid : FillOpaqueStippled;
+   if ( XX-> fp_pixmap == None)
+      mask &= ~GCStipple;
 
    prima_get_gc( XX);
    XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
@@ -552,6 +557,12 @@ prima_cleanup_drawable_after_painting( Handle self)
       XX-> gdrawable = XX-> udrawable;
    }
    prima_release_gc(XX);
+   memcpy( XX-> fill_pattern, XX-> saved_fill_pattern, sizeof( FillPattern));
+   if ( XX-> fp_pixmap != None && XX-> fp_pixmap != XX-> saved_fp_pixmap) {
+      XFreePixmap( DISP, XX-> fp_pixmap);
+   }
+   XX-> fp_pixmap = XX-> saved_fp_pixmap;
+   XX-> saved_fp_pixmap = None;
    free(XX->paint_dashes);
    XX-> paint_dashes = nil;
    XX-> paint_ndashes = 0;
@@ -1277,10 +1288,32 @@ Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
    DEFXX;
+   Bool dflt;
+#define patcmp(p1,p2) (memcmp((p1),(p2),sizeof(FillPattern)))
+#define patcpy(pt,ps) (memcpy((pt),(ps),sizeof(FillPattern)))
 
-   memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
-   DOLBUG( "apc_gp_set_fill_pattern()\n");
+   if ( patcmp( pattern, XX-> fill_pattern) == 0)
+      return true;
+   if ( XX-> fp_pixmap && XX-> fp_pixmap != XX-> saved_fp_pixmap)
+      XFreePixmap( DISP, XX-> fp_pixmap);
+   patcpy( XX-> fill_pattern, pattern);
+   XX-> fp_pixmap = None;
+   dflt = (patcmp( pattern, fillPatterns[fpSolid]) == 0); 
+   if ( !dflt) {
+      XX-> fp_pixmap =
+         XCreateBitmapFromData( DISP, XX-> gdrawable, pattern, 8, 8);
+      if ( XX-> fp_pixmap == None)
+         croak( "error creting stipple");
+   }
+   if ( XX-> flags. paint) {
+      XSetFillStyle( DISP, XX-> gc, dflt ? FillSolid : FillOpaqueStippled);
+      if ( XX-> fp_pixmap != None) XSetStipple( DISP, XX-> gc, XX-> fp_pixmap);
+      XCHECKPOINT;
+   }
+
    return true;
+#undef patcmp
+#undef patcpy
 }
 
 /*- see apc_font.c

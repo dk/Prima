@@ -119,11 +119,11 @@ struct     _timer_sys_data;
 struct  _drawable_sys_data;
 
 #define VIRGIN_GC_MASK  (       GCBackground    \
+                        |       GCCapStyle      \
                         |       GCClipMask      \
                         |       GCForeground    \
                         |       GCFunction      \
                         |       GCLineStyle     \
-                        |       GCCapStyle      \
                         |       GCLineWidth     )
 
 typedef struct _gc_list
@@ -299,7 +299,8 @@ typedef struct _drawable_sys_data
    Region region;
    Region stale_region;
    XRectangle clip_rect;
-   FillPattern fill_pattern;
+   FillPattern fill_pattern, saved_fill_pattern;
+   Pixmap fp_pixmap, saved_fp_pixmap;
    int rop, paint_rop;
    unsigned char *dashes, *paint_dashes;
    int ndashes, paint_ndashes;
