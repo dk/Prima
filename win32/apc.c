@@ -361,6 +361,11 @@ apc_component_destroy( Handle self)
    c-> sysData = nil;
 }
 
+void
+apc_component_fullname_changed_notify( Handle self)
+{
+}
+
 
 void
 process_transparents( Handle self)
