@@ -18,6 +18,7 @@
 #define GIFPROP_BGCOLOR 12
 #define GIFPROP_PALETTESIZE 13
 #define GIFPROP_PALETTEBPP 14
+#define GIFPROP_NAME 15
 
 ImgFormat gifFormat = {
     "GIF", "Graphics Interchange Format",
@@ -32,6 +33,7 @@ ImgFormat gifFormat = {
 	{ "width", GIFPROP_WIDTH, "i", "Image width"}, /* For index == -1 means screen width */
 	{ "height", GIFPROP_HEIGHT, "i", "Image height"}, /* For index == -1 means screen height */
 	{ "type", GIFPROP_TYPE, "i", "Image type (bpp)"}, 
+	{ "name", GIFPROP_NAME, "s", "Image-specific description"}, /* Only returned by read */
 	{ "lineSize", GIFPROP_LINESIZE, "i", "Length of a scan line in bytes"},
 	{ "data", GIFPROP_DATA, "b*", "Image data"},
 	{ "palette", GIFPROP_PALETTE, "b*", "Image palette"},
@@ -69,8 +71,13 @@ static int errorType = GIFERRT_NONE;
 #define DERR_NOT_ENOUGH_MEMORY                  2
 #define DERR_INVALID_INDEX                      3
 #define DERR_DATA_NOT_PRESENT                   4 /* No image data for queried index. */
+#define DERR_NO_INDEX_PROP                      5 /* Internal: `index' property not found while filling in imgInfo. */
+
 
 static int errorCode = DERR_NO_ERROR;
+
+static int interlaceOffs[] = { 0, 4, 2, 1};
+static int interlaceStep[] = { 8, 8, 4, 2};
 
 static void
 __gif_seterror( int type, int code)
@@ -111,6 +118,9 @@ __gif_geterror( char *errorMsgBuf, int bufLen)
 		    break;
 		case DERR_DATA_NOT_PRESENT:
 		    msg = "*** GIF internal: no image data for the index";
+		    break;
+		case DERR_NO_INDEX_PROP:
+		    msg = "*** GIF internal: no `index' property found while filling in images list";
 		    break;
 		default:
 		    msg = "*** GIF internal: unknown error code";
@@ -210,45 +220,54 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 {
     GifFileType *gif;
     GifRecordType gifType;
-    GifImageDesc *gifChunks;
-    GifPixelType **imageData;
+    GifImageDesc *gifChunk;
+    GifPixelType **data;
     int lastIndex = -1;
     Bool succeed = true;
     int imgDescCount = 0;
-    int *queriedIdx;
-    int i, gifrc, gifSlots;
+    int i, gifrc;
     Bool done;
+    List gifChunks, queriedIdx, imageData;
 
-    fprintf( stderr, "Got %d profile(s)\n", imgInfo->count);
-    queriedIdx = ( int*) malloc( sizeof( int) * imgInfo->count);
-    if ( queriedIdx == NULL) {
-	__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
-	return false;
+/*      fprintf( stderr, "Got %d profile(s)\n", imgInfo->count); */
+    if ( readAll) {
+	/* If been queried for all images then there must no more than one image profile 
+	   in the imgInfo list. If it contains properties we must remove them. */
+	PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, 0);
+	for ( i = ( imageInfo->propList->count - 1); i >= 0; i++) {
+	    PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, i);
+	    apc_image_clear_property( imgProp);
+	    free( imgProp);
+	    list_delete_at( imageInfo->propList, i);
+	}
     }
-    for ( i = 0; ( i < imgInfo->count) && succeed; i++) {
-	int indexPropIdx;
-	PImgProperty imgProp;
-	PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
-	fprintf( stderr, "Image #%d: %d properties\n", i, imageInfo->propList->count);
-	indexPropIdx = list_first_that( imageInfo->propList, property_name, ( void*) "index");
-	if ( indexPropIdx >= 0) {
-	    imgProp = ( PImgProperty) list_at( imageInfo->propList, indexPropIdx);
-	}
-	else {
-	    imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
-	    imgProp->val.Int = ++lastIndex;
-	}
-	if ( imgProp->size == -1) {
-	    if ( imgProp->val.Int > lastIndex) {
-		lastIndex = imgProp->val.Int;
+    else {
+	list_create( &queriedIdx, imgInfo->count, 1);
+	for ( i = 0; ( i < imgInfo->count) && succeed; i++) {
+	    int indexPropIdx;
+	    PImgProperty imgProp;
+	    PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
+/*  	    fprintf( stderr, "Image #%d: %d properties\n", i, imageInfo->propList->count); */
+	    indexPropIdx = list_first_that( imageInfo->propList, property_name, ( void*) "index");
+	    if ( indexPropIdx >= 0) {
+		imgProp = ( PImgProperty) list_at( imageInfo->propList, indexPropIdx);
 	    }
-	    queriedIdx[ i] = imgProp->val.Int;
-	}
-	else {
-	    /* ERROR: The property contains an array. */
-	    __gif_seterror( GIFERRT_DRIVER, DERR_WRONG_PROPERTY_TYPE);
-	    succeed = false;
-	    continue;
+	    else {
+		imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
+		imgProp->val.Int = ++lastIndex;
+	    }
+	    if ( imgProp->size == -1) {
+		if ( imgProp->val.Int > lastIndex) {
+		    lastIndex = imgProp->val.Int;
+		}
+		list_add( &queriedIdx, imgProp->val.Int);
+	    }
+	    else {
+		/* ERROR: The property contains an array. */
+		__gif_seterror( GIFERRT_DRIVER, DERR_WRONG_PROPERTY_TYPE);
+		succeed = false;
+		continue;
+	    }
 	}
     }
 
@@ -256,9 +275,9 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	return false;
     }
 
-    printf( "The last index is %d\n", lastIndex);
+/*      fprintf( stderr, "The last index is %d, queried for %d indexes\n", lastIndex, queriedIdx.count); */
 
-    fprintf( stderr, "opening %s\n", filename);
+/*      fprintf( stderr, "opening %s (%s)\n", filename, readAll ? "all images" : "selected"); */
 
     gif = DGifOpenFileName( filename);
     if ( gif == NULL) {
@@ -266,49 +285,10 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	return false;
     }
 
-    if ( readAll) {
-	gifSlots = 1;
-    }
-    else {
-	gifSlots = lastIndex + 1;
-    }
-    fprintf( stderr, "Using %d slots\n", gifSlots);
-    gifChunks = ( GifImageDesc *) malloc( sizeof( GifImageDesc) * gifSlots);
-    if ( gifChunks == NULL) {
-	DGifCloseFile( gif);
-	__gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
-	return false;
-    }
-    for ( i = 0; i < gifSlots; i++) {
-	gifChunks[ i].ColorMap = NULL;
-    }
+    list_create( &gifChunks, readAll ? 1 : queriedIdx.count, readAll ? 5 : 1);
     if ( readData) {
-	imageData = ( GifPixelType **) malloc( sizeof( GifPixelType *) * gifSlots);
-	if ( imageData == NULL) {
-	    free( gifChunks);
-	    DGifCloseFile( gif);
-	    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
-	    return false;
-	}
-	for ( i = 0; i < gifSlots; i++) {
-	    imageData[ i] = NULL;
-	}
+	list_create( &imageData, readAll ? 1 : queriedIdx.count, readAll ? 5 : 1);
     }
-
-/*      if ( gif->SColorMap != NULL) { */
-/*  	fprintf( stderr, "GLOBAL: ColorCnt: %d, BPP: %d", */
-/*  		 gif->SColorMap->ColorCount, */
-/*  		 gif->SColorMap->BitsPerPixel */
-/*  	    ); */
-/*  	for ( i = 0; i < gif->SColorMap->ColorCount; i++) { */
-/*  	    fprintf( stderr, ", [%d,%d,%d]", */
-/*  		     gif->SColorMap->Colors[ i].Red, */
-/*  		     gif->SColorMap->Colors[ i].Green, */
-/*  		     gif->SColorMap->Colors[ i].Blue */
-/*  		); */
-/*  	} */
-/*  	fprintf( stderr, "\n"); */
-/*      } */
 
     done = false;
     do {
@@ -317,12 +297,28 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
 	gifrc = DGifGetRecordType( gif, &gifType);
 	if ( gifrc != GIF_OK) {
-	    fprintf( stderr, "*** Can't get next record type\n");
+/*  	    fprintf( stderr, "*** Can't get next record type\n"); */
 	    __gif_seterror( GIFERRT_GIFLIB, GifLastError());
 	    done = true;
 	    succeed = false;
 	    break;
 	}
+
+	/* We must add an entry for every image in the file... */
+	while ( gifChunks.count <= imgDescCount) {
+	    gifChunk = malloc( sizeof( GifImageDesc));
+	    gifChunk->ColorMap = NULL;
+	    list_add( &gifChunks, ( Handle) gifChunk);
+	}
+	if ( readData) {
+	    /* And the same for the image content. */
+	    while ( imageData.count <= imgDescCount) {
+		data = malloc( sizeof( GifPixelType *));
+		*data = NULL;
+		list_add( &imageData, ( Handle) data);
+	    }
+	}
+
 	switch ( gifType) {
 	    case SCREEN_DESC_RECORD_TYPE:
 		fprintf( stderr, "Screen record\n");
@@ -340,66 +336,40 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		else {
 		    int codeSize;
 		    Byte *codeBlock;
-		    Bool idxQueried = false;
+		    Bool idxQueried = readAll; /* Presume that we need all indexes... */
 
-		    for ( i = 0; ( i <= lastIndex) && ( ! idxQueried); i++) {
-			idxQueried = ( imgDescCount == queriedIdx[ i]);
+		    for ( i = 0; ( i < queriedIdx.count) && ( ! idxQueried); i++) {
+			idxQueried = ( imgDescCount == list_at( &queriedIdx, i));
 		    }
 
-		    memcpy( ( void*) ( gifChunks + imgDescCount), ( void*) &gif->Image, sizeof( GifImageDesc));
+		    gifChunk = ( GifImageDesc *) list_at( &gifChunks, imgDescCount);
+		    memcpy( ( void *) gifChunk, ( void *) &gif->Image, sizeof( GifImageDesc));
 		    if ( ( gif->Image.ColorMap != NULL) && idxQueried) {
-			gifChunks[ imgDescCount].ColorMap = MakeMapObject( gif->Image.ColorMap->ColorCount, gif->Image.ColorMap->Colors);
+			gifChunk->ColorMap = MakeMapObject( gif->Image.ColorMap->ColorCount, gif->Image.ColorMap->Colors);
 		    }
 		    else {
-			gifChunks[ imgDescCount].ColorMap = NULL;
+			gifChunk->ColorMap = NULL;
 		    }
 		    fprintf( stderr, "Image count: %d; Scr: %dx%d, Img: %dx%d+%d+%d, ColorRes: %d\n", 
 			     gif->ImageCount,
 			     gif->SWidth,
 			     gif->SHeight,
-			     gifChunks[ imgDescCount].Width,
-			     gifChunks[ imgDescCount].Height,
-			     gifChunks[ imgDescCount].Left,
-			     gifChunks[ imgDescCount].Top,
+			     gifChunk->Width,
+			     gifChunk->Height,
+			     gifChunk->Left,
+			     gifChunk->Top,
 			     gif->SColorResolution
 			);
-		    if ( gif->SColorMap != NULL) {
-			fprintf( stderr, "ColorCnt: %d, BPP: %d",
-				 gif->SColorMap->ColorCount,
-				 gif->SColorMap->BitsPerPixel
-			    );
-			for ( i = 0; i < gif->SColorMap->ColorCount; i++) {
-			    fprintf( stderr, ", [%d,%d,%d]",
-				     gif->SColorMap->Colors[ i].Red,
-				     gif->SColorMap->Colors[ i].Green,
-				     gif->SColorMap->Colors[ i].Blue
-				);
-			}
-			fprintf( stderr, "\n");
-		    }
-/*  		    if ( gifChunks[ imgDescCount].ColorMap != NULL) { */
-/*  			fprintf( stderr, "ImgColorMap: cnt: %d, bpp: %d",  */
-/*  				 gifChunks[ imgDescCount].ColorMap->ColorCount, */
-/*  				 gifChunks[ imgDescCount].ColorMap->BitsPerPixel */
-/*  			    ); */
-/*  			for ( i = 0; i < gifChunks[ imgDescCount].ColorMap->ColorCount; i++) { */
-/*  			    fprintf( stderr, ", [%d,%d,%d]", */
-/*  				     gifChunks[ imgDescCount].ColorMap->Colors[ i].Red, */
-/*  				     gifChunks[ imgDescCount].ColorMap->Colors[ i].Green, */
-/*  				     gifChunks[ imgDescCount].ColorMap->Colors[ i].Blue */
-/*  				); */
-/*  			} */
-/*  			fprintf( stderr, "\n"); */
-/*  		    } */
 		    if ( idxQueried && readData) {
-			int pixelCount = gifChunks[ imgDescCount].Width * gifChunks[ imgDescCount].Height;
-			imageData[ imgDescCount] = ( GifPixelType *) malloc( sizeof( GifPixelType) * pixelCount);
-			if ( imageData[ imgDescCount] == NULL) {
+			int pixelCount = gifChunk->Width * gifChunk->Height;
+			data = ( GifPixelType **) list_at( &imageData, imgDescCount);
+			*data = malloc( sizeof( GifPixelType) * pixelCount);
+			if ( *data == NULL) {
 			    __gif_seterror( GIFERRT_DRIVER, DERR_NOT_ENOUGH_MEMORY);
 			    succeed = false;
 			}
 			else {
-			    gifrc = DGifGetLine( gif, imageData[ imgDescCount], pixelCount);
+			    gifrc = DGifGetLine( gif, *data, pixelCount);
 			}
 		    }
 		    else {
@@ -416,25 +386,30 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			__gif_seterror( GIFERRT_GIFLIB, GifLastError());
 			succeed = false;
 		    }
-		    //fprintf( stderr, "Image description record (%s)\n", gifrc == GIF_OK ? "succeed" : "failed");
 		    imgDescCount++;
 		}
 		break;
 	    case EXTENSION_RECORD_TYPE:
-		fprintf( stderr, "Extension record\n");
+		fprintf( stderr, "Extension record: ");
 		extCode = -1;
 		gifrc = DGifGetExtension( gif, &extCode, &extData);
+		fprintf( stderr, "code is %02x, ", extCode);
 		if ( gifrc == GIF_OK) {
 		    do {
-			//fprintf( stderr, "Extension record, code == %d\n", extCode);
+			int k;
+			fprintf( stderr, "supposed to contain %d bytes {", ( int ) extData[ 0]);
+			for ( k = 0; k < ( int ) extData[ 0]; k++) {
+			    fprintf( stderr, "0x%02x(%c) ", extData[ k + 1], isprint( extData[ k + 1]) ? extData[ k + 1] : '?');
+			}
+			fprintf( stderr, "};");
 			gifrc = DGifGetExtensionNext( gif, &extData);
 		    } while ( ( extData != NULL) && ( gifrc == GIF_OK));
 		}
+		fprintf( stderr, "\n");
 		if ( gifrc != GIF_OK) {
 		    __gif_seterror( GIFERRT_GIFLIB, GifLastError());
 		    succeed = false;
 		}
-		//fprintf( stderr, "Extension record, code == %d (%s)\n", extCode, gifrc == GIF_OK ? "succeed" : "failed");
 		break;
 	    default:
 		fprintf( stderr, "Unknown record type\n");
@@ -443,14 +418,43 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
     } while( ( gifType != TERMINATE_RECORD_TYPE) && ( ! done));
 
     if ( succeed) {
-	fprintf( stderr, "Got %d images (???)\n", imgDescCount);
+	fprintf( stderr, "Got %d images.\n", imgDescCount);
 
+	if ( readAll) {
+	    /* Now we must create slots for all the images have been readed. */
+	    /* The first slot is already here. We can just fill it in. */
+	    /* For all subsequent images the first one will be used as a template. */
+	    PImgProperty imgProp;
+	    PImgInfo firstImg = ( PImgInfo) list_at( imgInfo, 0);
+	    imgProp = apc_image_add_property( firstImg, "index", PROPTYPE_INT, -1);
+	    imgProp->val.Int = 0;
+
+	    for ( i = 1; i < imgDescCount; i++) {
+		PImgInfo imageInfo = malloc( sizeof( ImgInfo));
+		imageInfo->extraInfo = firstImg->extraInfo;
+		imageInfo->propList = plist_create( 15, 5);
+		imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
+		imgProp->val.Int = i;
+		list_add( imgInfo, ( Handle) imageInfo);
+	    }
+	}
+
+	fprintf( stderr, "Have %d profile(s)\n", imgInfo->count);
+
+	/* At this stage we must have fully prepared imgInfo list which all the items 
+	   already contains valid `index' properties. */
 	for ( i = 0; ( i < imgInfo->count) && succeed; i++) {
-	    int indexPropIdx, j, index = -1;
-	    PImgInfo imageInfo = ( PImgInfo) list_at( imgInfo, i);
-	    indexPropIdx = list_first_that( imageInfo->propList, property_name, ( void*) "index");
+	    int indexPropIdx = -1, j, index = -1;
+	    PImgInfo imageInfo;
+	    imageInfo = ( PImgInfo) list_at( imgInfo, i);
+	    indexPropIdx = list_first_that( imageInfo->propList, property_name, ( void *) "index");
 	    if ( indexPropIdx >= 0) {
 		index = ( ( PImgProperty) list_at( imageInfo->propList, indexPropIdx))->val.Int;
+	    }
+	    else {
+		__gif_seterror( GIFERRT_DRIVER, DERR_NO_INDEX_PROP);
+		succeed = false;
+		continue;
 	    }
 	    fprintf( stderr, "idx: %d\n", index);
 	    for ( j = 0; j < imageInfo->propList->count; j++) {
@@ -458,6 +462,11 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	    }
 	    plist_destroy( imageInfo->propList);
 	    imageInfo->propList = plist_create( 5, 5);
+
+	    gifChunk = ( GifImageDesc *) list_at( &gifChunks, index);
+	    if ( readData) {
+		data = ( GifPixelType **) list_at( &imageData, index);
+	    }
 
 	    if ( index == -1) {
 		PImgProperty imgProp;
@@ -484,6 +493,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		if ( imgProp != NULL) imgProp->val.Int = gif->SBackGroundColor;
 
 		if ( gif->SColorMap != NULL) {
+		    int n;
 		    imgProp = apc_image_add_property( imageInfo, "paletteSize", PROPTYPE_INT, -1);
 		    if ( imgProp != NULL) imgProp->val.Int = gif->SColorMap->ColorCount;
 
@@ -492,11 +502,11 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 
 		    imgProp = apc_image_add_property( imageInfo, "palette", PROPTYPE_BYTE, 3 * gif->SColorMap->ColorCount);
 		    imgProp->val.pByte = ( Byte *) malloc( imgProp->size);
-		    for ( i = 0; i < gif->SColorMap->ColorCount; i++) {
-			Byte *palEntry = ( imgProp->val.pByte + i * 3);
-			palEntry[ 0] = gif->SColorMap->Colors[ i].Blue;
-			palEntry[ 1] = gif->SColorMap->Colors[ i].Green;
-			palEntry[ 2] = gif->SColorMap->Colors[ i].Red;
+		    for ( n = 0; n < gif->SColorMap->ColorCount; n++) {
+			Byte *palEntry = ( imgProp->val.pByte + n * 3);
+			palEntry[ 0] = gif->SColorMap->Colors[ n].Blue;
+			palEntry[ 1] = gif->SColorMap->Colors[ n].Green;
+			palEntry[ 2] = gif->SColorMap->Colors[ n].Red;
 		    }
 		}
 	    }
@@ -505,58 +515,81 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		ColorMapObject *palette;
 
 		imgProp = apc_image_add_property( imageInfo, "index", PROPTYPE_INT, -1);
-		if ( imgProp != NULL) imgProp->val.Int = -1;
+		if ( imgProp != NULL) imgProp->val.Int = index;
 
 		imgProp = apc_image_add_property( imageInfo, "format", PROPTYPE_STRING, -1);
 		if ( imgProp != NULL) imgProp->val.String = duplicate_string( gifFormat.id);
 
 		if ( index < imgDescCount) {
+		    int n;
+
 		    imgProp = apc_image_add_property( imageInfo, "width", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Width;
+		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Width;
 
 		    imgProp = apc_image_add_property( imageInfo, "height", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Height;
+		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Height;
 
 		    imgProp = apc_image_add_property( imageInfo, "type", PROPTYPE_INT, -1);
 		    if ( imgProp != NULL) imgProp->val.Int = im256;
 
 		    imgProp = apc_image_add_property( imageInfo, "X", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Left;
+		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Left;
 
 		    imgProp = apc_image_add_property( imageInfo, "Y", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Top;
+		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Top;
 
 		    imgProp = apc_image_add_property( imageInfo, "interlaced", PROPTYPE_INT, -1);
-		    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Interlace;
+		    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Interlace;
 
-		    palette = ( gifChunks[ index].ColorMap != NULL ?
-				gifChunks[ index].ColorMap :
+		    palette = ( gifChunk->ColorMap != NULL ?
+				gifChunk->ColorMap :
 				gif->SColorMap);
 
 		    imgProp = apc_image_add_property( imageInfo, "palette", PROPTYPE_BYTE, 3 * palette->ColorCount);
-		    imgProp->val.pByte = ( Byte *) malloc( imgProp->size);
-		    for ( i = 0; i < palette->ColorCount; i++) {
-			Byte *palEntry = ( imgProp->val.pByte + i * 3);
-			palEntry[ 0] = palette->Colors[ i].Blue;
-			palEntry[ 1] = palette->Colors[ i].Green;
-			palEntry[ 2] = palette->Colors[ i].Red;
+		    imgProp->val.pByte = malloc( imgProp->size);
+		    for ( n = 0; n < palette->ColorCount; n++) {
+			Byte *palEntry = ( imgProp->val.pByte + n * 3);
+			palEntry[ 0] = palette->Colors[ n].Blue;
+			palEntry[ 1] = palette->Colors[ n].Green;
+			palEntry[ 2] = palette->Colors[ n].Red;
 		    }
 
 		    if ( readData) {
-			if ( imageData[ index] != NULL) {
-			    int pixelCount = gifChunks[ index].Width * gifChunks[ index].Height;
+			char *buf = malloc( PATH_MAX + 16);
+			imgProp = apc_image_add_property( imageInfo, "name", PROPTYPE_STRING, -1);
+			snprintf( buf, PATH_MAX + 16, "%s:%d", filename, index);
+			imgProp->val.String = buf;
+
+			if ( *data != NULL) {
+			    int pixelCount = gifChunk->Width * gifChunk->Height;
+			    int pass = 0, Y; /* Pass number for interlaced images. */
 			    imgProp = apc_image_add_property( imageInfo, "data", PROPTYPE_BYTE, pixelCount);
 			    if ( imgProp != NULL) {
 				int ySrc, yDst;
 				imgProp->val.pByte = malloc( sizeof( Byte) * pixelCount);
-				for ( ySrc = ( pixelCount - gifChunks[ index].Width), yDst = 0; 
-				      yDst < pixelCount; 
-				      ySrc -= gifChunks[ index].Width, yDst += gifChunks[ index].Width) {
-				    memcpy( imgProp->val.pByte + yDst, imageData[ index] + ySrc, gifChunks[ index].Width);
+				for ( ySrc = 0, yDst = 0, Y = 0; 
+				      ySrc < pixelCount;
+				      ySrc += gifChunk->Width) {
+				    memcpy( imgProp->val.pByte + pixelCount - yDst - gifChunk->Width,
+					    *data + ySrc,
+					    gifChunk->Width
+					);
+				    if ( gifChunk->Interlace) {
+					yDst += gifChunk->Width * interlaceStep[ pass];
+					Y += interlaceStep[ pass];
+					if ( yDst >= pixelCount) {
+					    pass++;
+					    Y = interlaceOffs[ pass];
+					    yDst = gifChunk->Width * interlaceOffs[ pass];
+					}
+				    }
+				    else {
+					yDst += gifChunk->Width;
+				    }
 				}
 			    }
 			    imgProp = apc_image_add_property( imageInfo, "lineSize", PROPTYPE_INT, -1);
-			    if ( imgProp != NULL) imgProp->val.Int = gifChunks[ index].Width;
+			    if ( imgProp != NULL) imgProp->val.Int = gifChunk->Width;
 			}
 			else {
 			    __gif_seterror( GIFERRT_DRIVER, DERR_DATA_NOT_PRESENT);
@@ -581,18 +614,23 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	succeed = false;
     }
 
-    for ( i = 0; i <= lastIndex; i++) {
-	if ( gifChunks[ i].ColorMap != NULL) {
-	    FreeMapObject( gifChunks[ i].ColorMap);
+    for ( i = 0; i < gifChunks.count; i++) {
+	gifChunk = ( GifImageDesc *) list_at( &gifChunks, i);
+	if ( gifChunk->ColorMap != NULL) {
+	    FreeMapObject( gifChunk->ColorMap);
 	}
+	free( gifChunk);
+
+	data = ( GifPixelType **) list_at( &imageData, i);
+	if ( *data) {
+	    free( *data);
+	}
+	free( data);
     }
-    free( gifChunks);
-    free( queriedIdx);
-    if ( readData) {
-	for ( i = 0; i <= lastIndex; i++) {
-	    free( imageData[ i]);
-	}
-	free( imageData);
+    list_destroy( &gifChunks);
+    list_destroy( &imageData);
+    if ( ! readAll) {
+	list_destroy( &queriedIdx);
     }
 
     return succeed;
