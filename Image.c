@@ -207,10 +207,23 @@ Image_get_status_string( Handle self)
 
 Bool Image_get_h_scaling( Handle self) { return is_opt( optHScaling); }
 Bool Image_get_v_scaling( Handle self) { return is_opt( optVScaling); }
-void Image_set_h_scaling( Handle self, Bool scaling) { opt_assign( optHScaling, scaling); }
-void Image_set_v_scaling( Handle self, Bool scaling) { opt_assign( optVScaling, scaling); }
+void
+Image_set_h_scaling( Handle self, Bool scaling)
+{
+   opt_assign( optHScaling, scaling);
+}
 
-void Image_set_size( Handle self, int width, int height)  { Image_stretch( self, width, height);  }
+void
+Image_set_v_scaling( Handle self, Bool scaling)
+{
+   opt_assign( optVScaling, scaling);
+}
+
+void Image_set_size( Handle self, int width, int height)
+{
+   Image_stretch( self, width, height);
+}
+
 void Image_set_width( Handle self, int width)   { my set_size( self, width, var h);  }
 void Image_set_height( Handle self, int height) { my set_size( self, var w, height); }
 
@@ -774,7 +787,6 @@ Handle
 Image_bitmap( Handle self)
 {
    Handle h;
-   PDrawable i;
    HV * profile = newHV();
 
    pset_H( owner,        var owner);
@@ -782,9 +794,8 @@ Image_bitmap( Handle self)
    pset_i( height,       var h);
    h = Object_create( "DeviceBitmap", profile);
    sv_free(( SV *) profile);
-   i = ( PDrawable) h;
-   i-> self-> put_image( h, 0, 0, self);
-   --SvREFCNT( SvRV( i-> mate));
+   CDrawable( h)-> put_image( h, 0, 0, self);
+   --SvREFCNT( SvRV( PDrawable( h)-> mate));
    return h;
 }
 
