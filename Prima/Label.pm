@@ -57,12 +57,12 @@ sub profile_default
 sub profile_check_in
 {
    my ( $self, $p, $default) = @_;
-   $self-> SUPER::profile_check_in( $p, $default);
-   my $vertical = exists $p-> {vertical} ? $p-> {vertical} : $default->{ vertical};
    $p-> { autoWidth} = 0
       if exists $p->{width}  || exists $p->{size} || exists $p-> {rect} || ( exists $p->{left} && exists $p->{right});
    $p-> {autoHeight} = 0
       if exists $p->{height} || exists $p->{size} || exists $p-> {rect} || ( exists $p->{top} && exists $p->{bottom});
+   $self-> SUPER::profile_check_in( $p, $default);
+   my $vertical = exists $p-> {vertical} ? $p-> {vertical} : $default->{ vertical};
 }
 
 
@@ -234,6 +234,7 @@ sub reset_lines
    $width = $self-> width if $self->{wordWrap};
    my $lines = $self-> text_wrap( $self-> text, $width, $opt);
    my $lastRef = pop @{$lines};
+   $self->{textLines} = scalar @$lines;
    for( qw( tildeStart tildeEnd tildeLine)) {$self->{$_} = $lastRef->{$_}}
    $self-> {accel} = $self->{tildeStart} < 0 ? undef : lc( $lastRef->{tildeChar});
    splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines;
@@ -257,6 +258,9 @@ sub check_auto_size
       $self-> set( %sets);
    }
    $self-> reset_lines;
+   if ( $self->{wordWrap} && $self->{autoHeight}) {
+      $self-> height( $self-> font-> height * $self->{textLines} + 2);
+   }
 }
 
 sub set_auto_width
