@@ -473,6 +473,24 @@ sub on_mousedown
 {
    my ( $self, $btn, $mod, $x, $y) = @_;
    return if defined $self->{mouseTransaction};
+
+   if ( $btn == mb::Middle) {
+      my $cp = $::application-> bring('Primary');
+      return unless $cp;
+      return if $self->{readOnly};
+      my $cap = $self-> text;
+      my ( $start, $end) = $self-> selection;
+      ($start, $end) = ( $self-> charOffset, $self-> charOffset) if $start == $end;
+      my $s = $cp-> text;
+      return if !defined($s) or length( $s) == 0;
+      substr( $cap, $start, $end - $start) = $s;
+      $self-> selection(0,0);
+      $self-> text( $cap);
+      $self-> charOffset( $start + length( $s));
+      $self-> clear_event;
+      return;
+   }
+   
    $self->{mouseTransaction} = 1;
    $self-> selection(0,0);
    $self-> charOffset( $self-> x2offset( $x));
@@ -543,6 +561,12 @@ sub on_mouseup
    delete $self->{mouseTransaction};
    $self-> scroll_timer_stop;
    $self-> capture(0);
+   
+   return if $self-> {writeOnly};
+   my $cp = $::application-> bring('Primary');
+   return unless $cp;
+   my ( $start, $end) = $self-> selection;
+   $cp-> text(substr( $self-> text, $start, $end - $start)) if $start != $end;
 }
 
 sub on_size
