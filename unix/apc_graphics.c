@@ -1574,6 +1574,8 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
       memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
       XSetForeground( DISP, XX-> gc, XX-> back. primary);
       XX-> flags. brush_back = 0;
+      XX-> flags. brush_fore = 1; 
+      XX-> fore. balance = 0;
       XSetFunction( DISP, XX-> gc, GXcopy);
       apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
       for ( i = 0; i < 4; i++) {
@@ -1585,10 +1587,9 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
       
       apc_gp_fill_poly( self, 4, p);
       apc_gp_set_rop( self, XX-> paint_rop);
-      XSetForeground( DISP, XX-> gc, XX-> fore. primary);
-      XX-> flags. brush_fore = 1;
+      apc_gp_set_color( self, XX-> fore. color);
       apc_gp_set_fill_pattern( self, fp);
-      free( p);
+      free( p); 
    }  
 
    if ( PDrawable( self)-> font. direction != 0) 
