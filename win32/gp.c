@@ -481,15 +481,40 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    // Determinig whether we have bitmap adapted for output or it's just bare bits
    if ( db) {
+      if (
+          ( guts. displayBMInfo. bmiHeader. biBitCount == 8) &&
+          ( !is_apt( aptCompatiblePS))
+         )
+      {
+         // There is a big uncertainity about 8-bit BitBlt's, based on fact that
+         // memory DCs aren't really compatible with screen DCs, - correct results
+         // could be guaranteed either when you Blt source DC = CreateCompatibleDC( dest DC),
+         // not when source = CCDC( thirdDC), dest = CCDC( thirdDC) - that's right, I mean it!
+         // or just SetDIBits; - latter is slow, stupid, memory-greedy - but surely can be trusted.
+         Handle img      = ( Handle) create_object("Image", "");
+         HDC adc         = dsys( image) ps;
+         HBITMAP abitmap = dsys( image) bm;
+         dsys( img) ps   = dsys( image) ps;
+         dsys( img) bm   = dsys( image) bm;
+         image_query_bits( img, true);
+         dsys( img) ps   = adc;
+         dsys( img) bm   = abitmap;
+         apc_gp_stretch_image( self, img, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+         Object_destroy( img);
+         return;
+      }
+
       dc = dsys( image) ps;
    } else {
       if ( is_apt( aptCompatiblePS))
          dc = CreateCompatibleDC( xdc);
       else
          dc = nil;
-      deja = image_enscreen( image);
+      deja = image_enscreen( image, self);
       if ( dc)
          image_set_cache( deja, image);
+      else if ( dsys( image) pal == nil)
+         dsys( image) pal = palette_create( deja);
    }
 
    // if image is actually icon, drawing and-mask
@@ -509,6 +534,18 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    // saving bitmap and palette ( if available) to both dc and xdc.
    p3 = dsys( image) pal;
+
+   if ( p3) {
+      if ( db)
+         p1 = nil;
+      else {
+         if ( dc)
+            p1 = SelectPalette( dc, p3, 0);
+         else
+            p1 = nil;
+      }
+   }
+
    if ( db)
       b1 = nil;
    else {
@@ -518,16 +555,8 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          b1 = nil;
    }
 
-   if ( p3) {
-      if ( db)
-         p1 = nil;
-      else {
-         if ( dc)
-            p1 = SelectPalette( dc, p3, true);
-         else
-            p1 = nil;
-      }
-      p2 = SelectPalette( xdc, p3, true);
+   if ( !sys pal) {
+      p2 = SelectPalette( xdc, p3, 1);
       RealizePalette( xdc);
    }
 
@@ -546,9 +575,9 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    // restoring gdiobjects back
    if ( p3) {
-      if ( p1) SelectPalette( dc,  p1, true);
-      if ( p2) SelectPalette( xdc, p2, true);
+      if ( p1) SelectPalette( dc,  p1, 1);
    }
+   if ( p2) SelectPalette( xdc, p2, 1);
    if ( b1) SelectObject( dc, b1);
 
    if ( !db) {
@@ -1008,7 +1037,7 @@ void    apc_gp_set_color( Handle self, Color color)
       sys lbs[0] = clr;
    else {
       PStylus s = & sys stylus;
-      s-> pen.   lopnColor = ( COLORREF) clr;
+      s-> pen. lopnColor = ( COLORREF) clr;
       if ( s-> brush. lb. lbStyle != BS_DIBPATTERNPT) s-> brush. lb. lbColor = ( COLORREF) clr;
       stylus_change( self);
    }
@@ -1106,6 +1135,21 @@ apc_gp_set_line_pattern( Handle self, int pattern)
          ep-> patResource = &hPatHollow;
       stylus_change( self);
    }
+}
+
+void
+apc_gp_set_palette( Handle self)
+{
+   HPALETTE pal;
+   if ( !sys ps) return;
+   pal = palette_create( self);
+   if ( pal)
+      SelectPalette( sys ps, pal, 0);
+   else
+      SelectPalette( sys ps, sys stockPalette, 1);
+   RealizePalette( sys ps);
+   if ( sys pal) DeleteObject( sys pal);
+   sys pal = pal;
 }
 
 void

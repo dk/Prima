@@ -936,6 +936,8 @@ hwnd_enter_paint( Handle self)
    GetObject( sys stockBrush = GetCurrentObject( sys ps, OBJ_BRUSH),
       sizeof( LOGBRUSH), &sys stylus. brush);
    sys stockFont      = GetCurrentObject( sys ps, OBJ_FONT);
+   if ( !sys stockPalette)
+      sys stockPalette = GetCurrentObject( sys ps, OBJ_PAL);
    sys stylusResource = nil;
    sys fontResource   = nil;
    sys stylusFlags    = 0;
@@ -973,10 +975,11 @@ hwnd_enter_paint( Handle self)
 void
 hwnd_leave_paint( Handle self)
 {
-   SelectObject( sys ps, sys stockPen);
-   SelectObject( sys ps, sys stockBrush);
-   SelectObject( sys ps, sys stockFont);
-   sys stockPen = sys stockBrush = sys stockFont = nilHandle;
+   SelectObject( sys ps,  sys stockPen);
+   SelectObject( sys ps,  sys stockBrush);
+   SelectObject( sys ps,  sys stockFont);
+   SelectPalette( sys ps, sys stockPalette, 0);
+   sys stockPen = sys stockBrush = sys stockFont = sys stockPalette = nilHandle;
    stylus_free( sys stylusResource, false);
    if ( sys psd != nil) {
       var font        = sys psd-> font;
@@ -1045,3 +1048,93 @@ mod_free( BYTE * modState)
    free( ks);
 }
 
+typedef struct _SzList
+{
+   List l;
+   int  sz;
+   PRGBColor p;
+} SzList, *PSzList;
+
+static Bool
+pal_count( Handle window, Handle self, PSzList l)
+{
+   if ( !is_apt( aptClipOwner) && ( window != application))
+      return false;
+   if ( var palSize > 0) {
+      list_add( &l->l, self);
+      l->sz += var palSize;
+   }
+   if ( var widgets. count > 0)
+      CWidget( self)-> first_that( self, pal_count, l);
+   return false;
+}
+
+static Bool
+pal_collect( Handle window, Handle self, PSzList l)
+{
+   memcpy( l-> p, var palette, var palSize * sizeof( RGBColor));
+   l-> p  += var palSize;
+   return false;
+}
+
+Bool
+palette_change( Handle self)
+{
+   SzList l;
+   PRGBColor p;
+   PRGBColor d;
+   int nColors = ( 1 << guts. displayBMInfo. bmiHeader. biBitCount) & 0x1FF;
+   int i;
+   HPALETTE pal;
+   XLOGPALETTE xlp = {0x300};
+   HDC dc;
+   Bool repaint = false;
+
+   if (( nColors == 0) || ( var widgets. count == 0))
+      return false;
+
+   list_create( &l.l, 32, 32);
+   l. sz = 0;
+   if ( var palSize > 0) {
+      list_add( &l.l, self);
+      l.sz += var palSize;
+   }
+   CWidget( self)-> first_that( self, pal_count, &l);
+
+   if ( l. l. count == 0) {
+      list_destroy( &l.l);
+      return false;
+   }
+
+   xlp. palNumEntries = l. sz;
+   p = malloc( sizeof( RGBColor) * l. sz);
+   d = malloc( sizeof( RGBColor) * nColors);
+
+   l. p = p;
+   CWidget( self)-> first_that( self, pal_collect, &l);
+   cm_squeeze_palette( p, xlp. palNumEntries, d, nColors);
+
+   for ( i = 0; i < nColors; i++) {
+      xlp. palPalEntry[ i]. peRed    = d[ i]. r;
+      xlp. palPalEntry[ i]. peGreen  = d[ i]. g;
+      xlp. palPalEntry[ i]. peBlue   = d[ i]. b;
+      xlp. palPalEntry[ i]. peFlags  = 0;
+   }
+
+   free( d);
+   free( p);
+   list_destroy( &l.l);
+
+   pal = CreatePalette(( LOGPALETTE *) &xlp);
+   dc  = GetDC( HANDLE);
+
+   pal = SelectPalette( dc, pal, 0);
+   repaint = RealizePalette( dc) > 0;
+   DeleteObject( SelectPalette( dc, pal, 1));
+   ReleaseDC( HANDLE, dc);
+
+   if ( repaint)
+      CWidget( self)-> repaint( self);
+
+   return true;
+}
