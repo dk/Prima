@@ -23,7 +23,6 @@
 #define WM_DLGENTERMODAL                  ( WM_USER + 6)
 // #define WM_DLGPASSIVATE                   ( WM_USER + 7)
 // #define WM_DLGPOPUP                       ( WM_USER + 8)
-#define WM_BREAKMSGLOOP                   ( WM_USER + 9)
 #define WM_MOUSEENTER                     ( WM_USER + 10)
 #define WM_MOUSELEAVE                     ( WM_USER + 11)
 #define WM_FONTCHANGED                    ( WM_USER + 12)

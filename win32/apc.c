@@ -333,8 +333,6 @@ process_msg( MSG * msg)
       else
          warn(( char *) msg-> lParam);
       return true;
-   case WM_BREAKMSGLOOP:
-      return true;
    case WM_KEYDOWN:
    case WM_KEYUP:
    case WM_SYSKEYDOWN:
@@ -1258,12 +1256,6 @@ apc_window_execute( Handle self, Handle insertBefore)
    {
       MSG msg;
       while ( GetMessage( &msg, NULL, 0, 0)) {
-         if ( msg. message == WM_BREAKMSGLOOP) {
-            if ( msg. lParam == self)
-               break;
-            else
-               continue;
-         }
          if ( !process_msg( &msg)) {
              if ( !appDead)
                 PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
@@ -1290,10 +1282,6 @@ apc_window_end_modal( Handle self)
    HWND wnd;
    objCheck false;
    wnd = HANDLE;
-   if ( PWindow( self)-> modal == mtExclusive) {
-      if ( self == (( PApplication) application)-> topExclModal)
-         PostThreadMessage( guts. mainThreadId, WM_BREAKMSGLOOP, 0, self);
-   }
    guts. focSysDisabled = 1;
    CWindow( self)-> exec_leave_proc( self);
    WinHideWindow( wnd);

@@ -939,8 +939,6 @@ apc_window_execute( Handle self, Handle insertBefore)
       {
          if ( message. msg == WM_TERMINATE)
             break;
-         if (( message. msg == WM_BREAKMSGLOOP) && (( Handle) message. mp2 == self))
-            break;
          WinDispatchMsg( guts. anchor, &message);
          kill_zombies();
          if ( self && !(( PWindow) self)-> modal)
@@ -966,10 +964,6 @@ apc_window_end_modal( Handle self)
    HWND wnd;
    objCheck false;
    wnd = HANDLE;
-   if ( PWindow( self)-> modal == mtExclusive) {
-      if ( self == (( PApplication) application)-> topExclModal)
-         WinPostMsg( wnd, WM_BREAKMSGLOOP, 0, ( MPARAM) self);
-   }
    guts. focSysDisabled = 1;
    CWindow( self)-> exec_leave_proc( self);
    WinShowWindow( wnd, 0);

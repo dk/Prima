@@ -51,7 +51,6 @@ typedef HANDLE WINHANDLE;
 #define WM_POSTAL                         ( WM_USER + 2)
 #define WM_DLGENTERMODAL                  ( WM_USER + 3)
 #define WM_ZORDERSYNC                     ( WM_USER + 4)
-#define WM_BREAKMSGLOOP                   ( WM_USER + 5)
 #define WM_MOUSEENTER                     ( WM_USER + 6)
 #define WM_MOUSEEXIT                      ( WM_USER + 7)
 #define WM_SETVISIBLE                     ( WM_USER + 8)
