@@ -511,8 +511,7 @@ apc_application_get_widget_from_point( Handle self, Point p)
 Handle
 apc_application_get_handle( Handle self, ApiHandle apiHandle)
 {
-   /* NIY */
-   return guts. root;
+   return prima_xw2h(( XWindow) apiHandle);
 }
 
 int
