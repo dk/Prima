@@ -158,10 +158,9 @@ extern "C" {
 #include "dbmalloc.h"
 #endif
 
-#ifdef BROKEN_PERL_PLATFORM
+#ifdef BROKEN_PERL_PLATFORM 
    #undef open
    #undef fopen
-   #undef fprintf
    #undef vfprintf
    #undef fclose
    #undef feof
@@ -226,9 +225,19 @@ extern "C" {
    #ifdef win32_close
       #define close  win32_close
       #define dup    win32_dup
+   #endif 
+   #ifdef PerlIO_stderr    /* ActiveState quirks */
+      #if (PERL_VERSION >= 6) /* broken fprintf definition */
+         #define fprintf PerlIO_printf
+      #else
+      #endif
+   #else
+      #undef fprintf 
+      #ifdef win32_stderr  
+         #undef stderr
+         #define stderr win32_stderr()
+      #endif
    #endif
-   #undef stderr
-   #define stderr win32_stderr()
 #endif
 
 #define PERL_CALL_SV_DIE_BUG_AWARE 1
