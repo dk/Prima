@@ -961,6 +961,7 @@ sub set_text_ref
       $self-> cursor($self->{cursorX}, $self->{cursorY});
       $self-> unlock;
       $self-> notify(q(Change));
+      $self-> reset_scrolls;
    }
 }
 
