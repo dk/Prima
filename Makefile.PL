@@ -1010,6 +1010,7 @@ if NOT "%COMSPEC%" == "%SystemRoot%\\system32\\cmd.exe" goto endofperl
 if %errorlevel% == 9009 echo You do not have Perl in your PATH.
 goto endofperl
 \@rem ';
+#!perl
 ENDP
 	    }
 	    elsif ( $OS2) {
