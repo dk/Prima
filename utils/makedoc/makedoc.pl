@@ -144,7 +144,8 @@ if ( $build) {
       }
    
       unlink 'out.tex';
-      system "pod2latex -full -modify -sections '!SEE ALSO|AUTHOR|AUTHORS|COPYRIGHT' -out out.tex $ffn";
+      my $q = ($^O =~ /win32/i) ? '"' : "'";
+      system "pod2latex -full -modify -sections $q!SEE ALSO|AUTHOR|AUTHORS|COPYRIGHT$q -out out.tex $ffn";
 
       unlink 'tmp.pm' if $cow;
 
