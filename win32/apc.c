@@ -132,7 +132,7 @@ hwnd_to_view( HWND win)
        ( ll == ( LONG) generic_frame_handler)
       ) return h;
 
-   if ( SendMessage( win, WM_HASMATE, 0, &h) == HASMATE_MAGIC)
+   if ( SendMessage( win, WM_HASMATE, 0, ( LPARAM) &h) == HASMATE_MAGIC)
       return h;
    return nilHandle;
 }
