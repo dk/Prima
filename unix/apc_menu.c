@@ -1596,6 +1596,16 @@ menu_reconfigure( Handle self)
    prima_handle_menu_event( &ev, PMenu(self)-> handle, self);
 }
 
+static void
+menubar_repaint( Handle self)
+{
+   DEFMM;
+   if ( !XT_IS_POPUP(XX) && XX-> w == &XX-> wstatic && PMenu(self)-> handle) {
+      XClearArea( DISP, X_WINDOW, 0, 0, XX-> w-> sz.x, XX-> w-> sz.y, true);
+      XX-> paint_pending = true;
+   }
+}
+
 Bool
 apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 {
@@ -1649,7 +1659,9 @@ apc_menu_item_set_check( Handle self, PMenuItemReg m)
 Bool
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m)
 {
+   DEFMM;
    menu_touch( self, m, false);
+   menubar_repaint( self);
    return true;
 }
 
@@ -1657,6 +1669,7 @@ Bool
 apc_menu_item_set_image( Handle self, PMenuItemReg m)
 {
    menu_touch( self, m, false);
+   menubar_repaint( self);
    return true;
 }
 
@@ -1671,6 +1684,7 @@ Bool
 apc_menu_item_set_text( Handle self, PMenuItemReg m)
 {
    menu_touch( self, m, false);
+   menubar_repaint( self);
    return true;
 }
 
