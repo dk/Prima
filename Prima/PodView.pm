@@ -581,6 +581,18 @@ ERROR
    return 1;
 }
 
+sub load_content 
+{
+   my ( $self, $title, $content) = @_;
+   my $path = '';
+   $self-> {manpath} = '';
+   undef $self-> {source_file};
+   $self-> open_read;
+   $self-> read($content);
+   $self-> pageName( $title);
+   return $self-> close_read( $self-> {topicView});
+}
+
 
 sub open_read
 {
@@ -1603,6 +1615,7 @@ otherwise the poor-man-drawings would be selected.
 =item close_read
 
 Closes the reading mode and starts the text rendering by calling C<format>.
+Returns C<undef> if there is no POD context, 1 otherwise.
 
 =back
 
@@ -1696,10 +1709,15 @@ If unsuccessful, displays an error.
 LINK is a text in format of L<perlpod> C<LE<lt>E<gt>> link: "manpage/section".
 Loads the manpage, if necessary, and selects the section.
 
-=item load_bookmark
+=item load_bookmark BOOKMARK
 
 Loads a bookmark string, prepared by L<make_bookmark> function. 
 Used internally.
+
+=item load_content TITLE, CONTENT
+
+Loads content into the viewer. Returns C<undef> is there is no POD 
+context, 1 otherwise.
 
 =item make_bookmark [ WHERE ]
 
