@@ -1053,23 +1053,27 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case UnmapNotify: {
-      if ( XT_IS_WINDOW(XX)) {
+      if ( XT_IS_WINDOW(XX) && win != XX-> client) {
          WMSyncData wmsd;
          open_wm_sync_data( self, &wmsd);
          wmsd. mapped = false;
          process_wm_sync_data( self, &wmsd);
       }
-      XX-> flags. mapped = false;
+      if ( !XT_IS_WINDOW(XX) || win != XX-> client) {
+         XX-> flags. mapped = false;
+      }
       break;
    }
    case MapNotify: {
-      if ( XT_IS_WINDOW(XX)) {
+      if ( XT_IS_WINDOW(XX) && win != XX-> client) {
          WMSyncData wmsd;
          open_wm_sync_data( self, &wmsd);
          wmsd. mapped = true;
          process_wm_sync_data( self, &wmsd);
       }
-      XX-> flags. mapped = true;
+      if ( !XT_IS_WINDOW(XX) || win != XX-> client) {
+         XX-> flags. mapped = true;
+      }
       break;
    }
    case MapRequest: {
