@@ -289,7 +289,7 @@ Icon_get_mask( Handle self)
 void
 Icon_set_mask( Handle self, SV * svmask)
 {
-   int maskSize;
+   STRLEN maskSize;
    void * mask = SvPV( svmask, maskSize);
 
    if ( var-> stage > csNormal) return;

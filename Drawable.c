@@ -190,7 +190,7 @@ void Drawable_set( Handle self, HV * profile)
 Bool
 Drawable_set_line_pattern( Handle self, SV * pattern)
 {
-   int len;
+   STRLEN len;
    char *pat = ( char *) SvPV( pattern, len);
    if ( var->stage > csNormal) return false;
    if ( len > 255) len = 255;
@@ -415,7 +415,7 @@ Drawable_get_font_abc( Handle self, int first, int last)
    }
 
    if ( abc != nil) {
-      for ( i = first; i <= last; i++) {
+      for ( i = 0; i <= first - last; i++) {
          av_push( av, newSVnv( abc[ i]. a));
          av_push( av, newSVnv( abc[ i]. b));
          av_push( av, newSVnv( abc[ i]. c));
@@ -529,7 +529,7 @@ polypoints( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(
    count = av_len( av) + 1;
    if ( count % mod) {
       warn("RTC0051: Drawable::%s: Number of elements in an array must be a multiple of %d",
-	   procName, mod);
+           procName, mod);
       return;
    }
    count /= 2;

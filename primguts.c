@@ -24,12 +24,10 @@
  * SUCH DAMAGE.
  */
 /* Guts library, main file */
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <float.h>
-#ifdef __unix
-#include <sys/types.h>
-#endif /* __unix */
 #include <dirent.h>
 #define GENERATE_TABLE_GENERATOR yes
 #include "apricot.h"

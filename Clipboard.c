@@ -394,7 +394,7 @@ binary_server( PClipboardFormatReg instance, int function, SV * data)
       break;
    case cefStore:
       {
-         int len;
+         STRLEN len;
          void * xdata = SvPV( data, len);
          apc_clipboard_set_data( instance-> sysId, xdata, len);
       }
