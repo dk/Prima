@@ -1,13 +1,10 @@
 # $Id$
-# todo:
-# - objects:widget
-# - gp:tileoffset
 use strict;
 
 use Prima qw(ScrollWidget);
 # A widget with two scrollbars. Contains set of objects, that know
 # how to draw themselves. The graphic objects hierarchy starts
-# from GraphicObject class
+# from Prima::CanvasObject:: class
 
 package Prima::Canvas;
 use vars qw(@ISA);
@@ -107,13 +104,13 @@ sub on_mouseclick
 sub on_keydown
 {
    my ( $self, $code, $key, $mod, $repeat) = @_;
-   $self-> propagate_event( 'on_keydown', $code, $key, $mod, $repeat);
+   $self-> propagate_event( nt::Command, 'on_keydown', $code, $key, $mod, $repeat);
 }
 
 sub on_keyup
 {
    my ( $self, $code, $key, $mod) = @_;
-   $self-> propagate_event( 'on_keyup', $code, $key, $mod);
+   $self-> propagate_event( nt::Command, 'on_keyup', $code, $key, $mod);
 }
 
 sub delete_object
@@ -250,11 +247,18 @@ sub propagate_mouse_event
 
 sub propagate_event
 {
-   my ( $self, $event, @params) = @_;
+   my ( $self, $flow, $event, @params) = @_;
    $self-> push_event;
-   for ( reverse $self-> objects) {
+   my $stop = $flow & nt::SMASK;
+   for ( 
+      ( $flow & nt::FluxReverse) ?
+        $self-> objects :
+        reverse $self-> objects
+   ) {
       $_-> $event( @params);
-      last unless $self-> eventFlag;
+      last if  
+        ( $stop == nt::Single) ||
+	( $stop == nt::Event && !$self-> eventFlag);
    }
    $self-> pop_event;
 }
@@ -325,7 +329,20 @@ sub zoom
    return if $zoom == $self->{zoom};
    $self->{zoom} = $zoom;
    $self-> reset_zoom;
+   $self-> reset_layout;
    $self-> repaint;
+}
+
+sub set_deltas
+{
+   my $self = shift;
+   $self-> SUPER::set_deltas(@_);
+   $self-> reset_layout;
+}
+
+sub reset_layout
+{
+   $_[0]-> propagate_event( nt::Notification, 'on_layoutchanged');
 }
 
 sub zorder
@@ -402,11 +419,11 @@ sub on_mousedown
       if ( $obj) {
          $self-> {anchor} = [ $nx, $ny ];
          $obj-> bring_to_front;
-         $self-> selected_object( $found = $self-> {transaction} = $obj);
+         $self-> focused_object( $found = $self-> {transaction} = $obj);
 	 $self-> capture(1, $self);
       }
    }
-   $self-> selected_object(undef) if $self-> {selection} && !$found;
+   $self-> focused_object(undef) if $self-> {selection} && !$found;
    $self-> SUPER::on_mousedown( $btn, $mod, $x, $y);
 }
 
@@ -442,7 +459,7 @@ sub on_keydown
 {
    my ( $self, $code, $key, $mod, $repeat) = @_;
    if ( $key == kb::Tab || $key == kb::BackTab) {
-      my $new = $self-> selected_object;
+      my $new = $self-> focused_object;
       if ( $key == kb::Tab) {
          $new = $self-> zorder( $new, $new ? 'prev' : 'last');
 	 $new = $self-> zorder( undef, 'last') unless $new;
@@ -451,7 +468,7 @@ sub on_keydown
 	 $new = $self-> zorder( undef, 'first') unless $new;
       }
       if ( $new) {
-         $self-> selected_object( $new);
+         $self-> focused_object( $new);
 	 $self-> clear_event;
 	 return;
       }
@@ -459,7 +476,7 @@ sub on_keydown
    $self-> SUPER::on_keydown( $code, $key, $mod, $repeat);
 }
 
-sub selected_object
+sub focused_object
 {
    return $_[0]-> {selection} unless $#_;
    return if $_[1] && $_[1]-> owner != $_[0];
@@ -498,10 +515,16 @@ sub new
 
 sub init
 {
-   my ( $self, $defaults, $properties);
+   my ( $self, $defaults, $properties) = @_;
 }
 
-sub DESTROY { shift-> on_destroy }
+sub DESTROY { shift-> on_destroy;  }
+
+sub destroy
+{
+   my $self = $_[0];
+   $self-> owner( undef);
+}
 
 sub profile_default 
 {
@@ -590,9 +613,19 @@ sub on_size
    my ( $self, $oldx, $oldy, $x, $y) = @_;
 }
 
+sub on_layoutchanged
+{
+   my ( $self) = @_;
+}
+
 sub on_zorderchanged
 {
    my ( $self) = @_;
+}
+
+sub on_paint
+{
+   my ( $self, $canvas, $width, $heigth) = @_;
 }
 
 sub repaint
@@ -1082,12 +1115,14 @@ sub zoom_points
    $h = $self->{points};
    my @ret;
    for ( $w = 0; $w < @$h; $w += 2) {
-      my $X = $$h[$w]    - $anchor[0];
-      my $Y = $$h[$w+1]  - $anchor[1];
-      my $A = ($X * $cos - $Y * $sin) * $aspect[0];
-      my $B = ($X * $sin + $Y * $cos) * $aspect[1];
-      push @ret, ($A + $anchor[0] + $shift[0]) / $x;
-      push @ret, ($B + $anchor[1] + $shift[1]) / $y;
+      my $X = $$h[$w]    - $anchor[0] + $shift[0];
+      my $Y = $$h[$w+1]  - $anchor[1] + $shift[1];
+      my $A = ($X * $cos - $Y * $sin);
+      my $B = ($X * $sin + $Y * $cos);
+      $A = ( $A + $anchor[0]) * $aspect[0];
+      $B = ( $B + $anchor[1]) * $aspect[1];
+      push @ret, $A / $x;
+      push @ret, $B / $y;
    }
    \@ret;
 }
@@ -1102,7 +1137,7 @@ sub anchor
 sub aspect 
 {
    return @{$_[0]->{aspect}} unless $#_;
-   $_[0]->{aspect} = [map { $_ <= 0 ? 1 : $_ } (($#_ == 1) ? @{$_[1]} : @_[1,2])];
+   $_[0]->{aspect} = [(($#_ == 1) ? @{$_[1]} : @_[1,2])];
    $_[0]-> repaint;
 }   
 
@@ -1126,6 +1161,7 @@ sub rotate
    my ( $self, $angle) = @_;
    $angle += 360 while $angle < 0;
    $angle %= 360;
+   return if $self->{rotate} == $angle;
    $self->{rotate} = $angle;
    delete $self-> {sina};
    delete $self-> {cosa};
@@ -1181,18 +1217,24 @@ sub arrow
    my $mul;
    if ( defined ($arrow) && (!ref($arrow) || ref($arrow) eq 'ARRAY')) {
       unless (ref($arrow)) {
-         if ( $arrow =~ /^([^\:]+)\:([\d\.]+)$/) {
+         if ( $arrow =~ /^([^\:]*)\:(\-?[\d\.]+)$/) {
 	    ( $arrow,$mul) = ($1,$2);
+	    goto ASPECT if !length $arrow && $self->{arrows}->[$idx];
 	 }
          $arrow = exists ($arrowheads{$arrow}) ? 
 	   $arrowheads{$arrow} :
-           $arrowheads{simple};
+           $arrowheads{default};
       }
       if ( defined $self->{arrows}->[$idx] && $self->{arrows}->[$idx]-> isa('Prima::Canvas::Polygon')) {
          $self->{arrows}->[$idx]-> points( $arrow);
       } else {
-         $self->{arrows}->[$idx] = Prima::Canvas::Polygon-> new(points => $arrow);
+         $self->{arrows}->[$idx] = Prima::Canvas::Polygon-> new(
+	    points => $arrow,
+	    fill   => 1,
+	    outline => 0,
+	 );
       }
+   ASPECT:
       $self->{arrows}->[$idx]-> aspect( $mul, $mul) if defined $mul;
    } else {
       $self->{arrows}->[$idx] = $arrow;
@@ -1204,23 +1246,27 @@ sub on_paint
 {
    my ( $self, $canvas, $width, $height) = @_;
    my $p = $self-> zoom_points( $width, $height);
-   return if 4 > @$p ;
+   return if 4 > @$p;
+   my @size  = $self-> size;
+   $canvas-> lineWidth( $self-> lineWidth * $width / $size[0]);
    $self-> {smooth} ? 
       $canvas-> spline( $p) :
       $canvas-> polyline( $p);
    my $lw = ($self-> {lineWidth} || 1);
    my $flip = 0;
+   my @t = $canvas-> translate;
    for my $arrow ( @{$self->{arrows}}) {
       my ( $x1, $y1, $x2, $y2) = @$p[ $flip++ ? (2,3,0,1) : (-4..-1)];
       next unless $arrow;
       my @asize = $arrow-> size;
-      my @size  = $self-> size;
+      $canvas-> translate( $t[0] + $x2, $t[1] + $y2);
       $arrow-> set(
-         shift  => [ $x2 * $self-> width / $width, $y2 * $self-> height / $height],
-         rotate => atan2($y2 - $y1, $x2 - $x1) * 57.295779,
+         rotate    => atan2($y2 - $y1, $x2 - $x1) * 57.295779,
+         backColor => $canvas-> color,
       );
-      $arrow-> backColor( $canvas-> color);
-      $arrow-> on_paint( $canvas, $width * $asize[0] / $size[0], $height * $asize[1] / $size[1]);
+      $arrow-> on_paint( $canvas, 
+         $lw * $width * $asize[0] / $size[0], 
+	 $lw * $height * $asize[1] / $size[1]);
    }
 }
 
@@ -1262,6 +1308,7 @@ sub on_paint
 	 $canvas-> fillpoly( $p);
    }
    if ( $self-> {outline}) {
+      $canvas-> lineWidth( $self-> lineWidth * $width / $self-> width);
       $canvas-> color( $self-> {color});
       $canvas-> backColor( $self-> {outlineBackColor});
       $self-> {smooth} ? 
@@ -1365,6 +1412,113 @@ sub tab
    $_[0]-> repaint;
 }   
 
+package Prima::Canvas::Widget;
+use vars qw(@ISA);
+@ISA = qw(Prima::CanvasObject);
+
+sub profile_default 
+{
+   $_[0]-> SUPER::profile_default,
+   widget     => undef,
+   scalable   => 1,
+}
+
+sub init
+{
+   my ( $self, $defaults, $properties) = @_;
+   $self-> {base_size} = [0,0];
+   if ( !exists $properties->{size} && !exists $properties->{rect} &&
+         defined $properties->{widget}) {
+      $properties-> {size} = [$properties->{widget}-> size];
+   }
+   if ( !exists $properties->{origin} && !exists $properties->{rect} &&
+         defined $properties->{widget}) {
+      $properties-> {origin} = [$properties->{widget}-> origin];
+   }
+}
+
+sub on_destroy
+{
+   return unless $_[0]->{widget};
+   $_[0]->{widget}-> destroy;
+}
+
+sub destroy
+{
+   my $self = $_[0];
+   if ( $self-> {widget}) {
+      $self-> {widget}-> destroy;
+      $self-> {widget} = undef;
+   }
+   $self-> SUPER::destroy;
+}
+
+sub scalable 
+{
+   return $_[0]->{scalable} unless $#_;
+   $_[0]->{scalable} = $_[1];
+}
+
+sub instance { $_[1]->{__PRIMA__CANVAS__OBJECT__}}
+
+sub widget 
+{
+   return $_[0]->{widget} unless $#_;
+   my ( $self, $widget) = @_;
+   return unless $self->{widget} = $widget;
+   $widget-> {__PRIMA__CANVAS__OBJECT__} = $self;
+   my @sz = $widget->size;
+   if ( $self-> {owner}) {
+      $widget-> owner( $self->{owner});
+      $widget-> send_to_back;
+   } else {
+      $widget-> visible(0);
+      $widget-> owner( $::application);
+   }
+   $self-> {base_size} = \@sz;
+   $self-> on_layoutchanged;
+}
+
+sub visible
+{
+   return $_[0]-> SUPER::visible unless $#_;
+   $_[0]-> SUPER::visible( $_[1]);
+   $_[0]->{widget}->visible( $_[1]) 
+      if $_[0]->{widget} && $_[0]->{owner};
+}
+
+sub owner
+{
+   return $_[0]-> SUPER::owner unless $#_;
+   my ( $self, $owner) = @_;
+   $self-> SUPER::owner( $owner);
+   return unless $self->{widget};
+   if ( $owner) {
+      $self->{widget}->owner( $owner);
+      $self->{widget}->visible( 1) if $self->{visible};
+      $self->{widget}-> send_to_back;
+      $self-> on_layoutchanged;
+   } else {
+      $self->{widget}->owner( $::application);
+      $self->{widget}->visible( 0);
+   }
+}
+
+sub on_size { $_[0]-> on_layoutchanged }
+sub on_move { $_[0]-> on_layoutchanged }
+
+sub on_layoutchanged
+{
+   my $self = $_[0];
+   return unless $self->{widget} && $self->{owner};
+   my @r = $self->{owner}-> object2screen( $self-> rect);
+   if ( $self-> {scalable}) {
+      $self->{widget}-> rect(@r);
+   } else {
+      $self->{widget}-> origin(@r[0,1]);
+   }
+}
+
 package fillrule;
 
 use constant Alternate => 0;
@@ -1372,7 +1526,7 @@ use constant Winding   => 1;
 
 package main;
 
-use Prima qw(Application StdBitmap ColorDialog FontDialog);
+use Prima qw(Application StdBitmap ColorDialog FontDialog Buttons);
 
 my ( $colordialog, $logo, $bitmap, $fontdialog);
 
@@ -1386,7 +1540,7 @@ my $w = Prima::MainWindow-> create(
   menuItems => [
      ['~Object' => [
         (map { [ $_  => "~$_" => \&insert] } 
-	   qw(Rectangle Ellipse Arc Chord Sector Image Bitmap Line Polygon Text)),
+	   qw(Rectangle Ellipse Arc Chord Sector Image Bitmap Line Polygon Text Button InputLine)),
 	[],
 	[ '~Delete' => 'Del' , kb::Delete , \&delete]
      ]],
@@ -1472,34 +1626,68 @@ my $c = $w-> insert( 'Prima::CanvasEdit' =>
    vScroll => 1,
    name    => 'Canvas',
    buffered => 1,
+   alignment => ta::Center,
+   valignment => ta::Middle,
 );
+
+my $widget_popup = 
+[
+   [ '~Move' => sub { 
+      my ( $self, $obj, $owner);
+      return unless $obj = Prima::Canvas::Widget-> instance( $self = $_[0]);
+      return unless $owner = $obj->owner;
+      my @pp = $owner-> object2screen( 
+         $obj-> left + $obj-> width / 2, 
+         $obj-> bottom + $obj-> height / 2);
+      $owner-> pointerPos( @pp);
+      $owner-> mouse_down( mb::Left, 0, @pp, 1);
+   }],
+   [ '~Delete' => sub { 
+      return unless $_ = Prima::Canvas::Widget-> instance( $_[0]);
+      $_-> destroy;
+   }],
+];
 
 sub insert
 {
-   my ( $self, $obj) = @_;
-   my %profile;
+   my ( $self, $obj, %profile) = @_;
    $profile{image} = $logo if $obj eq 'Image';
    $profile{image} = $bitmap, $obj = 'Image' if $obj eq 'Bitmap';
    if ( $obj eq 'Line') {
        $profile{points} = [ 10,10,10,50,50,40,100,0,50,60,90,90];
-       $profile{shift}  = [ 50,50],
-       $profile{arrows} = [ 'default', 'feather:10'];
-       $profile{size}   = [ 200,200],
-       $profile{anchor} = [ 50,50],
+       $profile{shift}  = [ 50,50];
+       $profile{arrows} = [ 'feather:2','feather:-2'];
+       $profile{size}   = [ 200,200];
+       $profile{anchor} = [ 50,50];
+       $profile{lineEnd} = le::Flat;
+       $profile{lineWidth} = 3,
+       $profile{smooth}  = 1;
    }
    if ( $obj eq 'Polygon') {
       $profile{points} = [ 20,0,50,100,80,0,0,65,100,65];
       $profile{anchor} = [50,50];
    }
+   if ( $obj eq 'Button') {
+      $profile{widget} = Prima::Button-> create( owner => $c);
+      $obj = 'Widget';
+   }
+   if ( $obj eq 'InputLine') {
+      $profile{widget} = Prima::InputLine-> create( owner => $c);
+      $profile{scalable} = 0;
+      $obj = 'Widget';
+   }
+   if ( $obj eq 'Widget') {
+      $profile{widget}-> popupItems( $widget_popup);
+   }
    $profile{text} = "use Prima qw(Application);\nMainWindow->create();\nrun Prima;"
       if $obj eq 'Text';
-   $c-> selected_object( $c-> insert_object( "Prima::Canvas::$obj", %profile));
+   $c-> focused_object( $c-> insert_object( "Prima::Canvas::$obj", %profile));
 }
 
 sub delete
 {
    my $obj;
-   return unless $obj = $_[0]-> Canvas-> selected_object;
+   return unless $obj = $_[0]-> Canvas-> focused_object;
    $_[0]-> Canvas-> delete_object( $obj);
 }
 
@@ -1507,7 +1695,7 @@ sub set_color
 {
    my ( $self, $property) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    $colordialog = Prima::ColorDialog-> create unless $colordialog;
    $colordialog-> value( $obj-> $property);
    $obj-> $property( $colordialog-> value) if $colordialog-> execute != mb::Cancel;
@@ -1517,7 +1705,7 @@ sub set_font
 {
    my ( $self, $property) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    $fontdialog = Prima::FontDialog-> create unless $fontdialog;
    $fontdialog-> logFont( $obj-> font);
    $obj-> font( $fontdialog-> logFont) if $fontdialog-> execute != mb::Cancel;
@@ -1527,7 +1715,7 @@ sub set_line_width
 {
    my ( $self, $lw) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    $lw =~ s/^lw//;
    $obj-> lineWidth( $lw);
 }
@@ -1536,7 +1724,7 @@ sub set_constant
 {
    my ( $self, $cc) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    return unless $cc =~ /^(\w+)\:(\w+)\=(.*)$/;
    $obj-> $2( eval "$1::$3");
 }
@@ -1545,7 +1733,7 @@ sub toggle
 {
    my ( $self, $property) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    return unless $obj-> can( $property);
    $obj-> $property( !$obj-> $property());
 }
@@ -1576,7 +1764,7 @@ sub arc_rotate
 {
    my ( $self, $arc) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    return unless $obj-> isa('Prima::Canvas::Arc') || $obj-> isa('Prima::Canvas::FilledArc'); 
    $arc =~ s/^arc//;
    if ( $arc eq '+') {
@@ -1596,7 +1784,7 @@ sub line_rotate
 {
    my ( $self, $line) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    return unless $obj-> isa('Prima::Canvas::line_properties');
    $line =~ s/^rotate//;
    if ( $line eq '+') {
@@ -1610,7 +1798,7 @@ sub set_arrowhead
 {
    my ( $self, $arrow) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    return unless $obj-> isa('Prima::Canvas::Line');
    $arrow =~ s/^arrow\=//;
    if ( $arrow =~ /^\d+$/) {
@@ -1628,7 +1816,7 @@ sub smooth
 {
    my ( $self, $smooth) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    return unless $obj-> can('smooth');
    $smooth =~ s/^smooth//;
    $obj-> smooth( $smooth);
@@ -1638,7 +1826,7 @@ sub set_text_opaque
 {
    my ( $self, $o) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    $o =~ s/^textOpaque//;
    $obj-> textOpaque( $o);
 }
@@ -1647,7 +1835,7 @@ sub set_text_flags
 {
    my ( $self, $flags) = @_;
    my $obj;
-   return unless $obj = $self-> Canvas-> selected_object;
+   return unless $obj = $self-> Canvas-> focused_object;
    return unless $obj-> isa('Prima::Canvas::Text');
    my @f = split(':', $flags);
    $flags = $obj-> flags;
@@ -1664,8 +1852,10 @@ sub set_text_flags
    $obj-> flags( $flags);
 }
 
-$c-> insert_object( 'Prima::Canvas::Rectangle', linePattern => lp::Solid, lineWidth => 10);
-$c-> insert_object( 'Prima::Canvas::Image', image => $logo, origin => [ 50, 50]);
-#insert($w,'Line');
+insert( $c, 'Button', origin => [ 0, 0]);
+insert( $c, 'Rectangle', linePattern => lp::DotDot, lineWidth => 10, origin => [ 50, 50]);
+insert( $c, 'Line', origin => [ 200, 200]);
+insert( $c, 'Polygon', origin => [ 150, 150]);
+insert( $c, 'Bitmap', origin => [ 350, 350], backColor => cl::LightGreen, color => cl::Green);
 
 run Prima;
