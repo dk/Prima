@@ -279,7 +279,7 @@ sub on_mouseup
    $self-> capture(0);
    if ( $self-> {transaction} == 1) {
       my @a = $self-> tab2rect( $self-> {tabId});
-      if ( $x >= $a[0] && $x < $a[2] & $y >= $a[1] && $y < $a[3]) {
+      if ( $x >= $a[0] && $x < $a[2] && $y >= $a[1] && $y < $a[3]) {
          $self-> notify(q(Click), $self-> {tabId}) if $self-> {clickAllowed};
       }
       $self-> pressed(-1);
