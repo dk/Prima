@@ -199,8 +199,7 @@ sub newwindow
        size   => [ $w-> size],
        %iv_prf,
    );
-   my $x = $i-> bitmap;
-   $w-> IV-> image( $x);
+   $w-> IV-> image( $i);
    $w-> IV-> {fileName} = $filename;
    $w-> {omenuID} = $self-> {omenuID};
    $w-> select;
