@@ -236,7 +236,7 @@ sub fsaveas
       ],
    );
    if ( $dlg-> execute) {
-      if ( $iv->image->save( $iv->{fileName})) {
+      if ( $iv->image->save( $dlg-> fileName)) {
          $iv->{fileName} = $dlg-> fileName;
          status( $_[0]);
       } else {
