@@ -305,20 +305,23 @@ propagate( Handle self, UINT msg, PEvent ev, WPARAM mp1, LPARAM mp2)
 
    prop = HANDLE;
 
-   pt. x = ( short) LOWORD( mp2);
-   pt. y = ( short) HIWORD( mp2);
-   GetWindowRect( prop, &r);
-   MapWindowPoints( NULL, prop, ( POINT*) &r, 2);
-   r. right--;
-   r. bottom--;
-   MapWindowPoints( org, prop, &pt, 1);
-
-   if (( pt. x < 0) || ( pt. y < 0) || ( pt. x > r. right) || ( pt. y > r. bottom)) {
-      if ( GetCapture() != prop)
+   if ( msg != WM_MOUSEWHEEL) {
+      pt. x = ( short) LOWORD( mp2);
+      pt. y = ( short) HIWORD( mp2);
+      GetWindowRect( prop, &r);
+      MapWindowPoints( NULL, prop, ( POINT*) &r, 2);
+      r. right--;
+      r. bottom--;
+      MapWindowPoints( org, prop, &pt, 1);
+      if (
+          (( pt. x < 0) || ( pt. y < 0) || ( pt. x > r. right) || ( pt. y > r. bottom)) &&
+          ( GetCapture() != prop)
+         )
          return;
+      mp2 = MAKELPARAM( pt. x, pt. y);
    }
 
-   PostMessage( prop, msg + 0x400, mp1, MAKELPARAM( pt. x, pt. y));
+   PostMessage( prop, msg + 0x400, mp1, mp2);
 }
 
 
@@ -521,9 +524,15 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       ev. pos. button = mbMiddle;
       goto MB_CLICK;
    case WM_MOUSEWHEEL:
-      ev. cmd         = cmMouseWheel;
-      ev. pos. button = ( short) HIWORD( mp1);
-      goto MB_MAIN;
+      {
+         POINT p = {(short)LOWORD( mp2),(short)HIWORD( mp2)};
+         ev. cmd         = cmMouseWheel;
+         ev. pos. button = ( short) HIWORD( mp1);
+         MapWindowPoints( nil, win, &p, 1);
+         ev. pos. where. x = p. x;
+         ev. pos. where. y = sys lastSize. y - p. y - 1;
+      }
+      goto MB_MAIN_NOPOS;
    case WM_MOUSEMOVE:
       ev. cmd = cmMouseMove;
       if ( self != lastMouseOver) {
@@ -573,6 +582,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       }
       ev. pos. where. x = (short)LOWORD( mp2);
       ev. pos. where. y = sys lastSize. y - (short)HIWORD( mp2) - 1;
+   MB_MAIN_NOPOS:
       ev. pos. mod      = 0 |
         (( mp1 & MK_CONTROL) ? kbCtrl  : 0) |
         (( mp1 & MK_SHIFT  ) ? kbShift : 0) |
@@ -738,11 +748,10 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_MBUTTONDBLCLK: case WM_MBUTTONUP:   case WM_MBUTTONDOWN:
    case WM_RBUTTONDBLCLK: case WM_RBUTTONUP:   case WM_RBUTTONDOWN:
    case WM_RMOUSECLICK:   case WM_MMOUSECLICK: case WM_LMOUSECLICK:
-   case WM_MOUSEWHEEL:
       if ( ev. cmd == 0)
          return ( LRESULT)1;
 // propagate message
-       propagate( self, orgMsg, &ev, mp1, mp2);
+      propagate( self, orgMsg, &ev, mp1, mp2);
       break;
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
@@ -751,6 +760,10 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_MOUSEMOVE:
       if ( is_apt( aptEnabled)) SetCursor( sys pointer);
       break;
+   case WM_MOUSEWHEEL:
+      if ( ev. cmd)
+         propagate( self, orgMsg, &ev, mp1, mp2);
+      return ( LRESULT)1;
    case WM_WINDOWPOSCHANGING:
        if ( sys className == WC_CUSTOM) {
           LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
@@ -816,6 +829,8 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    case WM_SETVISIBLE:
    case WM_ENABLE:
    case WM_FORCEFOCUS:
+   case WM_MOUSEWHEEL:
+   case WM_MOUSEWHEEL + 0x400:
       return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
    case WM_QUERYNEWPALETTE:
       return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
