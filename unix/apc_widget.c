@@ -281,6 +281,12 @@ apc_widget_get_pos( Handle self)
    return X(self)-> origin;
 }
 
+Bool
+apc_widget_get_shape( Handle self, Handle mask)
+{
+   return false;
+}
+
 Point
 apc_widget_get_size( Handle self)
 {
@@ -530,6 +536,12 @@ apc_widget_set_pos( Handle self, int x, int y)
    XMoveWindow( DISP, X_WINDOW, x, y);
    DOLBUG( "XMoveWindow: widget (%s) move to (%d,%d)\n", PWidget(self)-> name, x, y);
    XCHECKPOINT;
+}
+
+void
+apc_widget_set_shape( Handle self, Handle mask)
+{
+   return;
 }
 
 void
