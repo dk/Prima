@@ -393,7 +393,7 @@ fprintf( stderr, "apc_application_unlock()\n");
 static XBool
 any_event( Display *d, XEvent *ev, XPointer arg)
 {
-   (void)d; (void)ev; (void)arg;
+   (void)d; (void)ev; (void)arg; (void)any_event;
    return true;
 }
 
@@ -403,14 +403,34 @@ apc_application_yield( void)
 /*NCI*/
 /* Timer support */
 /* It should be more like go() */
-   XEvent ev;
+   XEvent ev, next_event;
+   int n;
 
-fprintf( stderr, "apc_application_yield()\n");
-
-   while ( XCheckIfEvent( DISP, &ev, any_event, nil)) {
+   XFlush( DISP);
+   if (( n = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
+      /* just like tcl/perl tk do, to avoid an infinite loop */
+      sig_t oldHandler = signal( SIGPIPE, SIG_IGN);
+      XNoOp( DISP);
+      XFlush( DISP);
+      (void) signal( SIGPIPE, oldHandler);
+   }
+   if (n && application) {
+      XNextEvent( DISP, &ev);
       XCHECKPOINT;
+      n--;
+      while ( n > 0) {
+	 if (!application) return;
+	 XNextEvent( DISP, &next_event);
+	 XCHECKPOINT;
+	 guts. total_events++;
+	 handle_event( &ev, &next_event);
+	 n--;
+	 memcpy( &ev, &next_event, sizeof( XEvent));
+      }
+      if (!application) return;
       guts. total_events++;
       handle_event( &ev, nil);
-      kill_zombies();
    }
+   XNoOp( DISP);
+   XFlush( DISP);
 }
