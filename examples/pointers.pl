@@ -30,7 +30,7 @@ package UserInit;
 $::application = Prima::Application-> create( name => "Generic.pm");
 
 my $w = Prima::Window-> create(
-   size    => [ 190, 460],
+   size    => [ 350, 460],
    left    => 200,
    onDestroy => sub {$::application-> close},
    text    => 'Pointers',
@@ -46,29 +46,31 @@ my %grep_out = (
 my @a = sort { &{$cr::{$a}}() <=> &{$cr::{$b}}()} grep { !exists $grep_out{$_}} keys %cr::;
 shift @a;
 $w-> pointerVisible(0);
-my $i;
+my $i = 1;
 
-for ( $i = cr::Arrow; $i <= cr::Invalid; $i++)
+for my $c ( @a[0..$#a-1])
 {
-   $w-> pointer( $i);
+   my $p = eval("cr::$c"); 
+   $w-> pointer( $p);
    my $b = $w-> insert( Button =>
       flat => 1,
-      left    => 10,
+      left    => 10 + (($i-1) % 2)*170,
       width   => 160,
-      bottom  => $w-> height - ($i+1) * 40 - 10,
-      pointer => $i,
-      name    => shift @a,
+      bottom  => $w-> height - int(($i+1)/2) * 40 - 10,
+      pointer => $p,
+      name    => $c,
       image   => $w-> pointerIcon,
       onClick => sub { $::application-> pointer( $_[0]-> pointer); },
    );
+   $i++;
 };
 
 my $ptr = Prima::StdBitmap::icon( sbmp::DriveCDROM);
 
 my $b = $w-> insert( SpeedButton =>
-   left    => 10,
+   left    => 10 + (($i-1) % 2)*170,
    width   => 160,
-   bottom  => $w-> height - (cr::User+1) * 40 - 10,
+   bottom  => $w-> height - int(($i+1)/2) * 40 - 10,
    pointer => $ptr,
    image   => $ptr,
    text => $a[-1],

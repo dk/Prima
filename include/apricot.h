@@ -1806,17 +1806,37 @@ CR(Wait)
 CR(Size)
 #define crMove         4
 CR(Move)
-#define crSizeWE       5
+#define crSizeWest     5
+CR(SizeWest)
+#define crSizeW        crSizeWest
+CR(SizeW)
+#define crSizeEast     6
+CR(SizeEast)
+#define crSizeE        crSizeEast
+CR(SizeE)
+#define crSizeWE       7
 CR(SizeWE)
-#define crSizeNS       6
+#define crSizeNorth    8
+CR(SizeNorth)
+#define crSizeN        crSizeNorth
+CR(SizeN)
+#define crSizeSouth    9
+CR(SizeSouth)
+#define crSizeS        crSizeSouth
+CR(SizeS)
+#define crSizeNS       10
 CR(SizeNS)
-#define crSizeNWSE     7
-CR(SizeNWSE)
-#define crSizeNESW     8
-CR(SizeNESW)
-#define crInvalid      9
+#define crSizeNW       11
+CR(SizeNW)
+#define crSizeSE       12
+CR(SizeSE)
+#define crSizeNE       13
+CR(SizeNE)
+#define crSizeSW       14
+CR(SizeSW)
+#define crInvalid      15
 CR(Invalid)
-#define crUser         10
+#define crUser         16
 CR(User)
 END_TABLE(cr,UV)
 #undef CR

@@ -10,6 +10,7 @@
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
+#include <X11/cursorfont.h>
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
 #include <X11/extensions/shape.h>
 #endif
@@ -311,6 +312,7 @@ typedef struct _drawable_sys_data
    Font saved_font;
    Point cursor_pos;
    Point cursor_size;
+   int pointer_id;
    struct {
       int clip_owner			: 1;
       int sync_paint			: 1;

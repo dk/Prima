@@ -381,19 +381,19 @@ sub xy2part
 
    if ( $x < $bw) {
       return q(border) unless $size;
-      return q(SizeNESW0) if $y < $bwx;
-      return q(SizeNWSE0) if $y >= $size[1] - $bwx;
-      return q(SizeWE0);
+      return q(SizeSW) if $y < $bwx;
+      return q(SizeNW) if $y >= $size[1] - $bwx;
+      return q(SizeW);
    } elsif ( $x >= $size[0] - $bw) {
       return q(border) unless $size;
-      return q(SizeNWSE1) if $y < $bwx;
-      return q(SizeNESW1) if $y >= $size[1] - $bwx;
-      return $size ? q(SizeWE1) : q(border);
+      return q(SizeSE) if $y < $bwx;
+      return q(SizeNE) if $y >= $size[1] - $bwx;
+      return $size ? q(SizeE) : q(border);
    } elsif (( $y < $bw) or ( $y >= $size[1] - $bw)) {
       return q(border) unless $size;
-      return ( $y < $bw) ? q(SizeNESW0) : q(SizeNWSE0) if $x < $bwx;
-      return ( $y < $bw) ? q(SizeNWSE1) : q(SizeNESW1) if $x >= $size[0] - $bwx;
-      return q(SizeNS) . ($y < $bw ? '0' : '1');
+      return ( $y < $bw) ? q(SizeSW) : q(SizeNW) if $x < $bwx;
+      return ( $y < $bw) ? q(SizeSE) : q(SizeNE) if $x >= $size[0] - $bwx;
+      return ($y < $bw) ? q(SizeS) : q(SizeN);
    } elsif ( $y < $size[1] - $bw - $dy) {
       return q(client);
    } elsif ( $x < $dy + $bw) {
@@ -638,14 +638,14 @@ sub on_mousedown
       $self-> {trackSaveData} = [$self-> rect];
       $part =~ s/Size//;
       my ( $xa, $ya);
-      if    ( $part eq q(NS0))   { ( $xa, $ya) = ( 0,-1); }
-      elsif ( $part eq q(NS1))   { ( $xa, $ya) = ( 0, 1); }
-      elsif ( $part eq q(WE0))   { ( $xa, $ya) = (-1, 0); }
-      elsif ( $part eq q(WE1))   { ( $xa, $ya) = ( 1, 0); }
-      elsif ( $part eq q(NESW0)) { ( $xa, $ya) = (-1,-1); }
-      elsif ( $part eq q(NESW1)) { ( $xa, $ya) = ( 1, 1); }
-      elsif ( $part eq q(NWSE0)) { ( $xa, $ya) = (-1, 1); }
-      elsif ( $part eq q(NWSE1)) { ( $xa, $ya) = ( 1,-1); }
+      if    ( $part eq q(S))   { ( $xa, $ya) = ( 0,-1); }
+      elsif ( $part eq q(N))   { ( $xa, $ya) = ( 0, 1); }
+      elsif ( $part eq q(W))   { ( $xa, $ya) = (-1, 0); }
+      elsif ( $part eq q(E))   { ( $xa, $ya) = ( 1, 0); }
+      elsif ( $part eq q(SW)) { ( $xa, $ya) = (-1,-1); }
+      elsif ( $part eq q(NE)) { ( $xa, $ya) = ( 1, 1); }
+      elsif ( $part eq q(NW)) { ( $xa, $ya) = (-1, 1); }
+      elsif ( $part eq q(SE)) { ( $xa, $ya) = ( 1,-1); }
       $self-> {dirData} = [$xa, $ya];
       $self-> capture(1, $self-> owner);
       $self-> check_drag;
@@ -967,16 +967,9 @@ sub on_mousemove
            $self-> {borderStyle} == bs::Sizeable and
            $self-> {windowState} == ws::Normal
          ) {
-         my $part = $self-> xy2part( $x, $y);
-         my $crx;
-         if ( $part =~ /Size/) {
-            chop($part);
-            $crx = &{$cr::{$part}};
-         } else {
-            $crx = cr::Arrow;
-         }
          return if !$self-> enabled;
-         $self-> pointer( $crx);
+         my $part = $self-> xy2part( $x, $y);
+         $self-> pointer( $part =~ /^Size/ ? &{$cr::{$part}} : cr::Arrow);
       } else {
          $self-> pointer( cr::Arrow);
       }

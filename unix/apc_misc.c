@@ -493,7 +493,49 @@ apc_file_change_mask( Handle self)
    return apc_file_attach( self);
 }
 
-/* View attributes */
+
+/* Pointers (mouse cursors) */
+
+static int
+cursor_map[] = {
+   /* crArrow           => */   XC_left_ptr,
+   /* crText            => */   XC_xterm,
+   /* crWait            => */   XC_watch,
+   /* crSize            => */   XC_sizing,
+   /* crMove            => */   XC_fleur,
+   /* crSizeWest        => */   XC_left_side,
+   /* crSizeEast        => */   XC_right_side,
+   /* crSizeNE          => */   XC_sb_h_double_arrow,
+   /* crSizeNorth       => */   XC_top_side,
+   /* crSizeSouth       => */   XC_bottom_side,
+   /* crSizeNS          => */   XC_sb_v_double_arrow,
+   /* crSizeNW          => */   XC_top_left_corner,
+   /* crSizeSE          => */   XC_bottom_right_corner,
+   /* crSizeNE          => */   XC_top_right_corner,
+   /* crSizeSW          => */   XC_bottom_left_corner,
+   /* crInvalid         => */   XC_X_cursor,
+};
+
+static Cursor
+predefined_cursors[] = {
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None
+};
+
 Point
 apc_pointer_get_hot_spot( Handle self)
 {
@@ -554,9 +596,33 @@ apc_pointer_set_pos( Handle self, int x, int y)
 }
 
 Bool
-apc_pointer_set_shape( Handle self, int sysPtrId)
+apc_pointer_set_shape( Handle self, int id)
 {
-   DOLBUG( "apc_pointer_set_shape()\n");
+   DEFXX;
+   Handle o;
+
+   if ( id < crDefault || id > crUser)  return false;
+   if ( id == crDefault) {
+      o = PWidget(self)-> owner;
+      while ( o && ( id = X(o)-> pointer_id) == crDefault)
+         o = PWidget(o)-> owner;
+      if ( id == crDefault)
+         id = crArrow;
+   }
+   XX-> pointer_id = id;
+   if ( id != crUser) {
+      if ( predefined_cursors[id] == None) {
+         predefined_cursors[id] =
+            XCreateFontCursor( DISP, cursor_map[id]);
+         XCHECKPOINT;
+      }
+      if ( self != application) {
+         XDefineCursor( DISP, XX-> udrawable, predefined_cursors[id]);
+         XCHECKPOINT;
+      }
+   } else {
+      /* crUser */
+   }
    return true;
 }
 

@@ -212,14 +212,19 @@ int ctx_cr2IDC[] =
    crWait,     ( int) IDC_WAIT,
    crSize,     ( int) IDC_SIZEALL,
    crMove,     ( int) IDC_SIZEALL,
-   crSizeWE,   ( int) IDC_SIZEWE,
-   crSizeNS,   ( int) IDC_SIZENS,
-   crSizeNWSE, ( int) IDC_SIZENWSE,
-   crSizeNESW, ( int) IDC_SIZENESW,
-   crInvalid,  ( int) IDC_NO,
+   crSizeWest,   IDC_SIZEWE,
+   crSizeEast,   IDC_SIZEWE,
+   crSizeWE,     IDC_SIZEWE,
+   crSizeNorth,  IDC_SIZENS,
+   crSizeNE,     IDC_SIZENS,
+   crSizeSouth,  IDC_SIZENS,
+   crSizeNW,     IDC_SIZENWSE,
+   crSizeSE,     IDC_SIZENWSE,
+   crSizeNE,     IDC_SIZENESW,
+   crSizeSW,     IDC_SIZENESW,
+   crInvalid,    IDC_NO,
    endCtx
 };
-
 
 Bool
 apc_pointer_set_shape( Handle self, int sysPtrId)

@@ -333,17 +333,17 @@ sub xy2part
    my $bwx  = ($minDim < 26) ? (($minDim < 14) ? 1 : 7) : $bw + 8;
    return q(client) unless $self->{sizeable};
    if ( $x < $bw) {
-      return q(SizeNESW0) if $y < $bwx;
-      return q(SizeNWSE0) if $y >= $size[1] - $bwx;
-      return q(SizeWE0);
+      return q(SizeSW) if $y < $bwx;
+      return q(SizeNW) if $y >= $size[1] - $bwx;
+      return q(SizeW);
    } elsif ( $x >= $size[0] - $bw) {
-      return q(SizeNWSE1) if $y < $bwx;
-      return q(SizeNESW1) if $y >= $size[1] - $bwx;
-      return q(SizeWE1);
+      return q(SizeSE) if $y < $bwx;
+      return q(SizeNE) if $y >= $size[1] - $bwx;
+      return q(SizeE);
    } elsif (( $y < $bw) or ( $y >= $size[1] - $bw)) {
-      return ( $y < $bw) ? q(SizeNESW0) : q(SizeNWSE0) if $x < $bwx;
-      return ( $y < $bw) ? q(SizeNWSE1) : q(SizeNESW1) if $x >= $size[0] - $bwx;
-      return q(SizeNS) . ($y < $bw ? '0' : '1');
+      return ( $y < $bw) ? q(SizeSW) : q(SizeNW) if $x < $bwx;
+      return ( $y < $bw) ? q(SizeSE) : q(SizeNE) if $x >= $size[0] - $bwx;
+      return $y < $bw ? 'SizeS' : 'SizeN';
    }
    return q(client);
 }
@@ -452,19 +452,19 @@ sub on_mousedown
       $self-> marked(1,1);
       ObjectInspector::enter_widget( $self);
 
-      if ( $part =~ /Size/) {
+      if ( $part =~ /^Size/) {
          $self-> {sav} = [$self-> rect];
-         $part =~ s/Size//;
+         $part =~ s/^Size//;
          $self-> {sizeAction} = $part;
          my ( $xa, $ya) = ( 0,0);
-         if    ( $part eq q(NS0))   { ( $xa, $ya) = ( 0,-1); }
-         elsif ( $part eq q(NS1))   { ( $xa, $ya) = ( 0, 1); }
-         elsif ( $part eq q(WE0))   { ( $xa, $ya) = (-1, 0); }
-         elsif ( $part eq q(WE1))   { ( $xa, $ya) = ( 1, 0); }
-         elsif ( $part eq q(NESW0)) { ( $xa, $ya) = (-1,-1); }
-         elsif ( $part eq q(NESW1)) { ( $xa, $ya) = ( 1, 1); }
-         elsif ( $part eq q(NWSE0)) { ( $xa, $ya) = (-1, 1); }
-         elsif ( $part eq q(NWSE1)) { ( $xa, $ya) = ( 1,-1); }
+         if    ( $part eq q(S))   { ( $xa, $ya) = ( 0,-1); }
+         elsif ( $part eq q(N))   { ( $xa, $ya) = ( 0, 1); }
+         elsif ( $part eq q(W))   { ( $xa, $ya) = (-1, 0); }
+         elsif ( $part eq q(E))   { ( $xa, $ya) = ( 1, 0); }
+         elsif ( $part eq q(SW)) { ( $xa, $ya) = (-1,-1); }
+         elsif ( $part eq q(NE)) { ( $xa, $ya) = ( 1, 1); }
+         elsif ( $part eq q(NW)) { ( $xa, $ya) = (-1, 1); }
+         elsif ( $part eq q(SE)) { ( $xa, $ya) = ( 1,-1); }
          $self-> {dirData} = [$xa, $ya];
          $self-> {prevRect} = [$self-> client_to_screen(0,0), $self-> client_to_screen( $self-> size)];
          $self-> update_view;
@@ -592,16 +592,9 @@ sub on_mousemove
             }
             return;
          } else {
-            my $part = $self-> xy2part( $x, $y);
-            my $crx;
             return if !$self-> enabled;
-            if ( $part =~ /Size/) {
-               chop($part);
-               $crx = &{$cr::{$part}};
-            } else {
-               $crx = cr::Arrow;
-            }
-            $self-> pointer( $crx);
+            my $part = $self-> xy2part( $x, $y);
+            $self-> pointer( $part =~ /^Size/ ? &{$cr::{$part}} : cr::Arrow);
          }
       }
    }

@@ -293,6 +293,7 @@ apc_application_create( Handle self)
    if (!X_WINDOW) return false;
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
 
+   XX-> pointer_id = crArrow;
    XX-> gdrawable = XX-> udrawable = RootWindow( DISP, SCREEN);
    XX-> parent = None;
    XX-> origin = (Point){0,0};
