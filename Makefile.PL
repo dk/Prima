@@ -577,6 +577,24 @@ sub setup_variables
                          lib  => '',
                          liboflag => '',
                         },
+                  hpcc => {
+                          warnflags => "", #"+w1",
+                          cflags => "-Ae",
+                          coutoflag => '-o ',
+                          coutexeflag => '-o ',
+                          cdebugflags => '-g +O2 +Onolimit',
+                          clinkprefix => '',
+                          clibpathflag => '-L',
+                          ldflags => '',
+                          ldoutflag => '-o ',
+                          ldlibpathflag => '-L',
+                          ldlibflag => '-l',
+                          ldlibext  => '',
+                          lddebugflags => '-g',
+                          name => "HP-UX C-ANSI-C",
+                          lib  => '',
+                          liboflag => '',
+                        },
                  irixcc  => {
                          warnflags => "-fullwarn",
                          cflags => "-diag_error 1035 -woff 1011,1042,1048,1140,1164,1174,1209,1506,1515,1552",
@@ -665,6 +683,11 @@ sub setup_variables
         # and have_define() is therefore always true
         $COMPILER = 'irixcc';
     }
+    elsif ( $^O eq "hpux" && $CC =~ /^(\S*\/)?cc\b/) {
+        # this code should be put first, as cc call does not treat #error as error,
+        # and have_define() is therefore always true
+        $COMPILER = 'hpcc'; 
+    } 
     elsif ( have_define( "__EMX__")) {
         $COMPILER = 'emx';
     }

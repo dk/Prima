@@ -199,14 +199,6 @@ snprintf( char *buf, size_t len, const char *format, ...)
 }
 #endif
 
-#if defined(__BORLANDC__) || defined(sgi)
-Bool
-SvBOOL( SV *sv)
-{
-   return SvTRUE(sv);
-}
-#endif
-
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
 
 I32
