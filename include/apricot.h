@@ -158,9 +158,6 @@ extern "C" {
 #undef WORD
 #endif
 #include <stdlib.h>
-#ifdef USE_DBMALLOC
-#include "dbmalloc.h"
-#endif
 
 #ifdef BROKEN_PERL_PLATFORM
    #undef open
