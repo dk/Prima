@@ -61,10 +61,13 @@ sub find_image
 
 sub import
 {
-   my @modules = @_;
-   for my $module (@modules) {
+   my @module = @_;
+   while (@module) {
+      my $module = shift @module;
+      my %parameters = ();
+      %parameters = %{shift @module} if @module && ref($module[0]) eq 'HASH';
       $module = "Prima::$module" unless $module =~ /^Prima::/;
-      eval "use $module;" if $module;
+      eval "use $module \%parameters;" if $module;
    }
 }
 
