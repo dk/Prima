@@ -531,6 +531,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize)
    // no need in this
    free( fm);  fm = nil;
 
+
    // if strict font not found, use subplacing
    if ( usePitch)
    {

@@ -35,6 +35,7 @@
 #include "os2/os2guts.h"
 #include "Image.h"
 #include "Application.h"
+#include "Clipboard.h"
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
