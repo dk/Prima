@@ -865,6 +865,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          WMSyncData wmsd;
          wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure);
          XX-> ackOrigin. y = wmsd. origin. y;
+         XX-> ackOrigin. x = wmsd. origin. x;
          process_wm_sync_data( self, &wmsd);
       } else
          XX-> ackOrigin. y = X(X(self)-> owner)-> size. y -
