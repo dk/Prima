@@ -957,14 +957,14 @@ create_image_cache_8_to_32( PImage img)
    unsigned long lut[ 256];
    U32 *data;
    int x, y;
-   int ls = ((img-> w * 24 + 31)/32)*4;
+   int ls = ((img-> w * 32 + 31)/32)*4;
    int h = img-> h, w = img-> w;
 
    create_rgb_to_24_lut( img-> palSize, img-> palette, lut);
 
    data = malloc( ls * h);
    if ( !data) {
-      croak( "create_image_cache_8_to_24(): no memory");
+      croak( "create_image_cache_8_to_32(): no memory");
    }
    for ( y = h-1; y >= 0; y--) {
       register unsigned char *line = img-> data + y*img-> lineSize;
