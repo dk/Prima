@@ -26,9 +26,20 @@
 #  $Id$
 #
 package main;
-use vars qw( @ISA $w $dong);
+use vars qw( @ISA $noX11 $w $dong);
 use strict;
-
+# startup
+use Prima::Config;
+# testing if is running over a dumb terminal
+eval "use Prima;";
+if ( $@) {
+   die $@ unless $@ =~ /can't open display/i;
+   Prima::options('no-x11');
+   eval "use Prima;";
+   die $@ if $@;
+   $noX11 = 1;
+}
+# should be ok now
 my $verbose = 0;
 my $tie     = 1;
 my $testing = 0;
@@ -40,10 +51,12 @@ my $testsRan = 0;
 my ( $skipped, $passed, $failed) = (0,0,0);
 my ( $eskipped, $epassed, $efailed) = (0,0,0);
 my @filters;
+#
+my $tick;
 
-unless ($^O !~ /MSWin32/) {
-   untie *STDOUT;
-}
+init();
+run();
+exit;
 
 package ExTiedStdOut;
 
@@ -108,29 +121,6 @@ sub PRINTF {
 
 package main;
 
-use Prima;
-use Prima::Const;
-use Prima::Classes;
-use Prima::Application name => 'failtester';
-
-for ( @ARGV) {
-   if ( /^-(.*)/) {
-      for ( split(' *', lc $1)) {
-         if ( $_ eq 'v') {
-            $verbose = 1;
-         } elsif ( $_ eq 'd') {
-            $tie = 0;
-         }
-      }
-   } else {
-      push( @filters, $_);
-   }
-}
-   
-tie *STDOUT, 'ExTiedStdOut', 0 if $tie;
-
-my $tick;
-
 sub __end_wait
 {
    $tick = 1;
@@ -138,6 +128,7 @@ sub __end_wait
 
 sub __wait
 {
+   return 0 if $noX11;
    $tick = 0;
    my $t = Prima::Timer-> create( timeout => 500, 
       onTick => sub { $tick = 1 });
@@ -156,11 +147,6 @@ sub __dong
    $dong = 1;
 }
 
-$w = Prima::Window-> create(
-   onDestroy => sub { $::application-> close},
-   size => [ 200,200],
-);
-
 sub ok
 {
    print $_[0] ? "ok $ok_count\n" : "not ok $ok_count\n";
@@ -177,12 +163,27 @@ sub runfile
 {
    my $d = $_[0];
    $d =~ s/.t$//;
+   my $content;
+   {
+      open F, $_[0] or die "Error: cannot open $_[0]:$!\n";
+      local $/;
+      $content = <F>;
+      close F;
+   }
+   if ( $noX11) {
+      # check if can run
+      if ( $content =~ /Widget|Window|Timer|Drawable|DeviceBitmap|pplication|begin_paint|Menu|Popup|__wait/) {
+         print "Testing $d...skipped\n" if $verbose;
+         $eskipped++;
+	 return;
+      }
+   }
    print "Testing $d...";
    $ok_count = 1;
    $testing = 1;
    @results = ();
    @extras  = ();
-   my $c = eval { require $_[0]; };
+   my $c = eval { eval $content; };
    $testing = 0;
    if ( $@) {
        print "test error: $@\n"
@@ -276,8 +277,46 @@ sub rundir
 
 }
 
-rundir('.');
-print("Atomic tests passed:$passed, skipped:$skipped, failed:$failed\n") if $verbose;
-print("Total tests passed:$epassed, skipped:$eskipped, failed:$efailed\n");
+sub init
+{
+   unless ($^O !~ /MSWin32/) {
+      untie *STDOUT;
+   }
+   for ( @ARGV) {
+      if ( /^-(.*)/) {
+         for ( split(' *', lc $1)) {
+            if ( $_ eq 'v') {
+               $verbose = 1;
+            } elsif ( $_ eq 'x') {
+	       $noX11 = 1; 
+            } elsif ( $_ eq 'd') {
+               $tie = 0;
+            }
+         }
+      } else {
+         push( @filters, $_);
+      }
+   }
+   tie *STDOUT, 'ExTiedStdOut', 0 if $tie;
+
+   unless ( $noX11) {
+      eval "use Prima::Application name => 'failtester';"; die $@ if $@;
+      $w = Prima::Window-> create(
+	 onDestroy => sub { $::application-> close},
+	 size => [ 200,200],
+      );
+   } else {
+     print <<NOX11;
+** Warning: skipping X11 tests
+NOX11
+   }
+}
+
+sub run
+{
+   rundir('.');
+   print("Atomic tests passed:$passed, skipped:$skipped, failed:$failed\n") if $verbose;
+   print("Total tests passed:$epassed, skipped:$eskipped, failed:$efailed\n");
+}
 
 

@@ -18,7 +18,7 @@ $i-> data( 'M');
 substr( $rgb, 0, 1) = 'M';
 ok( $i-> data eq $rgb);
 
-local $tester;
+my $tester;
 $tester = sub {
    my ( $s1, $s2, $format) = @_;
    my $new = $rgb;

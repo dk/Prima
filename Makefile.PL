@@ -2427,7 +2427,6 @@ $PrimaTarget: @allojects $extralibs
 \t${ \eval{ return join ' ', ld_command_line( $PrimaTarget, @allojects)}}
 
 test: all
-\t\@$^X -w test/startup.pl
 \t\@$^X -w test/Tester.pl
 
 ppd:

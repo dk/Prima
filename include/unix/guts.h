@@ -908,16 +908,16 @@ extern void
 prima_release_gc( PDrawableSysData);
 
 extern Bool
-prima_init_clipboard_subsystem( void);
+prima_init_clipboard_subsystem( char * error_buf);
 
 extern Bool
-prima_init_font_subsystem( void);
+prima_init_font_subsystem( char * error_buf);
    
 extern Bool
 prima_font_subsystem_set_option( char *, char *);
 
 extern Bool
-prima_init_color_subsystem( void);
+prima_init_color_subsystem( char * error_buf);
 
 extern Bool
 prima_color_subsystem_set_option( char *, char *);

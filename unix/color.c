@@ -580,15 +580,12 @@ static Bool
 create_std_palettes( XColor * xc, int count)
 {
    int idx;
-   if ( !( guts. palette = malloc( sizeof( MainColorEntry) * guts. palSize))) {
-   NO_MEM:
-      warn("not enough memory");
+   if ( !( guts. palette = malloc( sizeof( MainColorEntry) * guts. palSize)))
       return false;
-   }
    if ( !( guts. systemColorMap = malloc( sizeof( int) * count))) {
       free( guts. palette);
       guts. palette = nil;
-      goto NO_MEM;
+      return false;
    }
    bzero( guts. palette, sizeof( MainColorEntry) * guts. palSize);
    
@@ -645,7 +642,7 @@ set_color_class( int class, char * option, char * value)
 
 
 Bool
-prima_init_color_subsystem(void)
+prima_init_color_subsystem(char * error_buf)
 {
    int id, count, mask = VisualScreenMask|VisualDepthMask|VisualIDMask;
    XVisualInfo template, *list = nil;
@@ -680,7 +677,7 @@ FALLBACK_TO_DEFAULT_VISUAL:
 
       list = XGetVisualInfo( DISP, mask, &template, &count);
       if ( count == 0) {
-         warn("panic: no visuals found\n");
+         sprintf( error_buf, "panic: no visuals found");
          return false;
       }
    }
@@ -700,7 +697,7 @@ class;
          id = -1;
          goto FALLBACK_TO_DEFAULT_VISUAL;
       } else
-         warn("panic: %d bit depth is not true color\n", guts. depth);
+         sprintf( error_buf, "panic: %d bit depth is not true color", guts. depth);
       return false;
    }
 
@@ -748,7 +745,10 @@ class;
          fill_cubic( xc, max);
          if ( !alloc_main_color_range( xc, max * max * max, 27))
             goto BLACK_WHITE;
-         if ( !create_std_palettes( xc, max * max * max)) return false;
+         if ( !create_std_palettes( xc, max * max * max)) {
+	    sprintf( error_buf, "No memory");
+	    return false;
+	 }
          guts. colorCubeRib = max;
       }
       break;
@@ -761,7 +761,10 @@ class;
             if ( d * d * d <= guts. palSize) {
                fill_cubic( xc, d);
                if ( alloc_main_color_range( xc, d * d * d, cd * 3)) {
-                  if ( !create_std_palettes( xc, d * d * d)) return false;
+                  if ( !create_std_palettes( xc, d * d * d)) {
+	             sprintf( error_buf, "No memory");
+		     return false;
+		  }
                   break;
                }
             }
@@ -787,7 +790,10 @@ class;
                if (( c += ndiv) > 65535) c = 65535;
             }
             if ( alloc_main_color_range( xc, shades, 768 / shades)) {
-               if ( !create_std_palettes( xc, shades)) return false;
+               if ( !create_std_palettes( xc, shades)) {
+	          sprintf( error_buf, "No memory");
+		  return false;
+	       }
                break;
             }
             wantSteps--;
@@ -818,7 +824,7 @@ BLACK_WHITE:
          XCHECKPOINT;
          if ( !alloc_main_color_range( xc, 2, 65536) || 
               !create_std_palettes( xc, 2)) {
-            warn("panic: unable to initialize color system");
+            sprintf( error_buf, "panic: unable to initialize color system");
             return false;
          }
       }   
@@ -836,7 +842,7 @@ BLACK_WHITE_ALLOCATED:
       XColor * xc;
       MainColorEntry * p;
       if ( !( xc = malloc( sizeof( XColor) * guts. palSize))) {
-         warn("not enough memory");
+	 sprintf( error_buf, "No memory");
          return false;
       }
       for ( i = 0; i < guts. palSize; i++) xc[i]. pixel = i;
@@ -875,13 +881,13 @@ BLACK_WHITE_ALLOCATED:
                    (*p)[y] |= 1 << x;
       
    } else {
-      warn("not enough memory\n");
+      sprintf( error_buf, "No memory");
       return false;
    }
    if ( guts. palSize) {
       int sz = ( guts. palSize < 256) ? 256 : guts. palSize;
       if (!( guts. mappingPlace = malloc( sizeof( int) * sz))) {
-         warn("not enough memory\n");
+         sprintf( error_buf, "No memory");
          return false;
       }
    } else {
@@ -908,7 +914,7 @@ BLACK_WHITE_ALLOCATED:
                break;
             case 2:
                if (( mask[j] & ( 1 << i)) != 0) {
-                  warn("panic: unsupported pixel representation (0x%08lx,0x%08lx,0x%08lx)\n", 
+                  sprintf( error_buf, "panic: unsupported pixel representation (0x%08lx,0x%08lx,0x%08lx)", 
                      mask[0], mask[1], mask[2]);
                   return false;
                }

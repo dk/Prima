@@ -157,7 +157,7 @@ static int   do_debug   = 0;
 static Bool  do_icccm_only = false;
 
 static Bool
-init_x11( void)
+init_x11( char * error_buf )
 {
    /*XXX*/ /* Namely, support for -display host:0.0 etc. */
    XrmQuark common_quarks_list[26];  /*XXX change number of elements if necessary */
@@ -223,7 +223,8 @@ init_x11( void)
    DISP = XOpenDisplay( do_display);
    if (!DISP) {
       char * disp = getenv("DISPLAY");
-      fprintf( stderr, "Error: Can't open display '%s'\n", do_display ? do_display : (disp ? disp : ""));
+      snprintf( error_buf, 256, "Error: Can't open display '%s'", 
+		do_display ? do_display : (disp ? disp : ""));
       free( do_display);
       do_display = nil;
       return false;
@@ -343,7 +344,7 @@ init_x11( void)
    else if ( BYTEORDER == MSB32 || BYTEORDER == MSB64)
       guts. machine_byte_order = MSBFirst;
    else {
-      warn( "UAA_001: weird machine byte order: %08x", BYTEORDER);
+      sprintf( error_buf, "UAA_001: weird machine byte order: %08x", BYTEORDER);
       return false;
    }  
 
@@ -360,9 +361,9 @@ init_x11( void)
    apc_timer_create( CURSOR_TIMER, nilHandle, 2);
    apc_timer_create( MENU_TIMER,   nilHandle, guts. menu_timeout);
    apc_timer_create( MENU_UNFOCUS_TIMER,   nilHandle, 50);
-   if ( !prima_init_clipboard_subsystem()) return false;
-   if ( !prima_init_color_subsystem()) return false;
-   if ( !prima_init_font_subsystem()) return false;
+   if ( !prima_init_clipboard_subsystem( error_buf)) return false;
+   if ( !prima_init_color_subsystem( error_buf)) return false;
+   if ( !prima_init_font_subsystem( error_buf)) return false;
    bzero( &guts. cursor_gcv, sizeof( guts. cursor_gcv));
    guts. cursor_gcv. cap_style = CapButt;
    guts. cursor_gcv. function = GXcopy;
@@ -376,7 +377,7 @@ init_x11( void)
 }
 
 Bool
-window_subsystem_init( void)
+window_subsystem_init( char * error_buf)
 {
    bzero( &guts, sizeof( guts));
    guts. debug = do_debug;
@@ -384,7 +385,7 @@ window_subsystem_init( void)
    Mdebug("init x11:%d, debug:%x, sync:%d, display:%s\n", do_x11, guts.debug, 
 	  do_sync, do_display ? do_display : "(default)");
    if ( do_x11) {
-      Bool ret = init_x11();
+      Bool ret = init_x11( error_buf );
       if ( !ret && DISP) {
 	 XCloseDisplay(DISP);
 	 DISP = nil;

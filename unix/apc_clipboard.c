@@ -39,11 +39,14 @@
 #define CF_ASSIGN(i,a,b,c) CF_NAME(i)=(a);CF_TYPE(i)=(b);CF_FORMAT(i)=((Atom)c)
 
 Bool
-prima_init_clipboard_subsystem(void)
+prima_init_clipboard_subsystem(char * error_buf)
 {
    guts. clipboards = hash_create();
    
-   if ( !(guts. clipboard_formats = malloc( cfCOUNT * 3 * sizeof(Atom)))) return false;
+   if ( !(guts. clipboard_formats = malloc( cfCOUNT * 3 * sizeof(Atom)))) {
+      sprintf( error_buf, "No memory");
+      return false;
+   }
    guts. clipboard_formats_count = cfCOUNT;
 #if (cfText != 0) || (cfBitmap != 1) || (cfUTF8 != 2)
 #error broken clipboard type formats

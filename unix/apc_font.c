@@ -503,7 +503,7 @@ skip_font:
 }
 
 Bool
-prima_init_font_subsystem( void)
+prima_init_font_subsystem( char * error_buf)
 {
    char **names;
    int count, j , i, bad_fonts = 0, vector_fonts = 0;
@@ -511,13 +511,13 @@ prima_init_font_subsystem( void)
 
    guts. font_names = names = XListFonts( DISP, "*", INT_MAX, &count);
    if ( !names) {
-      warn( "UAF_001: no X memory");
+      sprintf( error_buf, "XListFonts error: no memory");
       return false;
    }
 
    info = malloc( sizeof( FontInfo) * count);
    if ( !info) {
-      warn( "UAF_002: no memory");
+      sprintf( error_buf, "No memory (%d bytes)", sizeof(FontInfo)*count);
       return false;
    }   
    bzero( info,  sizeof( FontInfo) * count);
@@ -544,7 +544,7 @@ prima_init_font_subsystem( void)
       }
       ignore_encodings = malloc( sizeof( char*) * n_ignore_encodings);
       if ( !ignore_encodings) {
-         warn( "UAF_003: no memory");
+         sprintf( error_buf, "No memory");
          return false;
       }   
       bzero( ignore_encodings,  sizeof( char*) * n_ignore_encodings);

@@ -404,9 +404,11 @@ Bool
 apc_dbm_destroy( Handle self)
 {
    DEFXX;
-   prima_cleanup_drawable_after_painting( self);
-   if ( XX->gdrawable)
+   if ( XX->gdrawable) {
+      prima_cleanup_drawable_after_painting( self);
       XFreePixmap( DISP, XX->gdrawable);
+      XX-> gdrawable = None;
+   }
    return true;
 }
 

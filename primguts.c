@@ -77,7 +77,7 @@ CPerlObj* pPerl;
 static PHash vmtHash = nil;
 static List  staticObjects;
 static List  staticHashes;
-static Bool  prima_init_ok = 0;
+static int   prima_init_ok = 0;
 
 Handle application = nilHandle;
 long   apcError = 0;
@@ -605,6 +605,7 @@ XS(Prima_options)
 XS(Prima_init)
 {
    dXSARGS;
+   char error_buf[256] = "Error initializing Prima";
    (void)items;
 
    if ( items < 1) croak("Invalid call to Prima::init"); 
@@ -617,31 +618,37 @@ XS(Prima_init)
       sv_free( package);
       if ( !ref) croak("'use Prima;' call required in main script");
    }
-   register_notifications((PVMT)CComponent);
-   register_notifications((PVMT)CFile);
-   register_notifications((PVMT)CAbstractMenu);
-   register_notifications((PVMT)CAccelTable);
-   register_notifications((PVMT)CMenu);
-   register_notifications((PVMT)CPopup);
-   register_notifications((PVMT)CClipboard);
-   register_notifications((PVMT)CTimer);
-   register_notifications((PVMT)CDrawable);
-   register_notifications((PVMT)CImage);
-   register_notifications((PVMT)CIcon);
-   register_notifications((PVMT)CDeviceBitmap);
-   register_notifications((PVMT)CWidget);
-   register_notifications((PVMT)CWindow);
-   register_notifications((PVMT)CApplication);
-   register_notifications((PVMT)CPrinter);
 
-   if ( !window_subsystem_init()) {
-      apc_show_message( "Error initializing PRIMA", 0);
-      ST(0) = &sv_no;
-      XSRETURN(1);
-   };
+   if ( prima_init_ok == 0) {
+      register_notifications((PVMT)CComponent);
+      register_notifications((PVMT)CFile);
+      register_notifications((PVMT)CAbstractMenu);
+      register_notifications((PVMT)CAccelTable);
+      register_notifications((PVMT)CMenu);
+      register_notifications((PVMT)CPopup);
+      register_notifications((PVMT)CClipboard);
+      register_notifications((PVMT)CTimer);
+      register_notifications((PVMT)CDrawable);
+      register_notifications((PVMT)CImage);
+      register_notifications((PVMT)CIcon);
+      register_notifications((PVMT)CDeviceBitmap);
+      register_notifications((PVMT)CWidget);
+      register_notifications((PVMT)CWindow);
+      register_notifications((PVMT)CApplication);
+      register_notifications((PVMT)CPrinter);
+      prima_init_ok++;
+   }
+   
+   if ( prima_init_ok == 1) {
+      prima_init_image_subsystem();
+      prima_init_ok++;
+   }
 
-   prima_init_image_subsystem();
-   prima_init_ok = 1;
+   if ( prima_init_ok == 2) {
+      if ( !window_subsystem_init( error_buf)) 
+	 croak( "%s", error_buf);
+      prima_init_ok++;
+   }
    SPAGAIN;
    XSRETURN_EMPTY;
 }
@@ -1219,21 +1226,21 @@ XS( prima_cleanup)
    hash_first_that( primaObjects, (void*)kill_objects, nil, nil, nil);
    hash_destroy( primaObjects, false);
    primaObjects = nil;
-   if ( prima_init_ok) {
-      prima_cleanup_image_subsystem();
-      window_subsystem_cleanup();
-   }
+   if ( prima_init_ok > 1) prima_cleanup_image_subsystem();
+   if ( prima_init_ok > 2) window_subsystem_cleanup();
    hash_destroy( vmtHash, false);
+   vmtHash = nil;
    list_delete_all( &staticObjects, true);
    list_destroy( &staticObjects);
    list_destroy( &postDestroys);
    kill_zombies();
-   if ( prima_init_ok) window_subsystem_done();
+   if ( prima_init_ok > 2) window_subsystem_done();
    list_first_that( &staticHashes, (void*)kill_hashes, nil);
    list_destroy( &staticHashes);
 #ifdef PARANOID_MALLOC
    output_mallocs();
 #endif
+   prima_init_ok = 0;
 
    ST(0) = &sv_yes;
    XSRETURN(1);

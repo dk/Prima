@@ -12,7 +12,7 @@ my $wx = Prima::Window-> create(
 );
 
 
-my $wl = $wx-> insert( Prima::Widget =>
+my $wl = $wx-> insert( 'Prima::Widget' =>
    clipOwner => 0,
    growMode  => 0,
    onMove => sub { $dong2 = 1; __end_wait(); shift; @mrep2 = scalar(@mrep2) ? ( @mrep2[0,1], @_[2,3]) : @_;  },

@@ -59,7 +59,7 @@ extern SV *   eventHook;
 
 #define CORE_INIT_TRANSIENT(cls) ((PObject)self)->transient_class = (void*)C##cls
 
-extern Bool window_subsystem_init( void);
+extern Bool window_subsystem_init( char * error_buf);
 extern Bool window_subsystem_set_option( char * option, char * value);
 extern Bool window_subsystem_get_options( int * argc, char *** argv);
 extern void window_subsystem_cleanup( void);

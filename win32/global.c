@@ -81,7 +81,7 @@ DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
 }
 
 Bool
-window_subsystem_init()
+window_subsystem_init( char * error_buf)
 {
    WNDCLASS  wc;
    HDC dc;

@@ -65,7 +65,7 @@ unsigned long _DLL_InitTerm( unsigned long modhandle, unsigned long flag)
 }
 
 Bool
-window_subsystem_init( void)
+window_subsystem_init( char * error_buf)
 {
    ULONG minor;
    PPIB  ppib;
@@ -80,16 +80,20 @@ window_subsystem_init( void)
    guts. appTypePM = 1;
    ppib-> pib_ultype = 3; /* nasty hack - but that way stdout and PM can coexist */
 
-   if ( !( guts. anchor = WinInitialize( 0))) return false;
+   if ( !( guts. anchor = WinInitialize( 0))) {
+      sprintf( error_buf, "WinIntialize(0) error");
+      return false;
+   }
    if ( !( guts. queue = WinCreateMsgQueue( guts. anchor, minor <= 30 ? 256 : 0))) {
       rc = WinGetLastError(guts. anchor);
       WinTerminate( guts. anchor);
       if ( rc == 0x81051) {
-         fprintf( stderr, "Not a PM program!\n");
+         sprintf( error_buf, "WinCreateMsgQueue: not a PM program");
          guts. appTypePM = 0;
-      } else
-        apiAltErr(rc);
-     return false;
+      } else {
+         sprintf( error_buf, "WinCreateMsgQueue: error %03x", (int)rc);
+      }
+      return false;
    }
    _fpreset();
    create_font_hash();
@@ -110,7 +114,7 @@ window_subsystem_init( void)
       guts. codePage = 0;
       rc = DosQueryCp( sizeof( guts. codePage), &guts. codePage, &cps);
       if ( rc != 0 && rc != 473 /*ERROR_CPLIST_TOO_SMALL*/) {
-         apiAltErr( rc);
+         sprintf( error_buf, "DosQueryCp: error %03x", (int)rc);
          return false;
       }
    }
@@ -123,12 +127,14 @@ window_subsystem_init( void)
 
       if ( dc == nilHandle) apiErrRet;
       if ( !( guts. ps = GpiCreatePS( guts. anchor, dc, &s, PU_PELS | GPIT_MICRO | GPIA_ASSOC))) {
-         apiErr;
+         rc = WinGetLastError(guts. anchor);
+         sprintf( error_buf, "GpiCreatePS: error %03x", (int)rc);
          DevCloseDC( dc);
          return false;
       }
       if ( !GpiCreateLogColorTable( guts. ps, 0, LCOLF_RGB, 0, 0, nil)) {
-         apiErr;
+         rc = WinGetLastError(guts. anchor);
+         sprintf( error_buf, "GpiCreateLogColorTable: error %03x", (int)rc);
          GpiDestroyPS( guts. ps);
          DevCloseDC( dc);
          return false;
@@ -136,6 +142,7 @@ window_subsystem_init( void)
       GpiQueryCharBox( guts. ps, &guts. defFontBox);
       guts. fontId = 0;
       if ( !( guts. fontHash = create_fontid_hash())) {
+         sprintf( error_buf, "no memory");
          GpiDestroyPS( guts. ps);
          DevCloseDC( dc);
          return false;
@@ -145,12 +152,14 @@ window_subsystem_init( void)
       DevQueryCaps( dc, CAPS_BITMAP_FORMATS, 1, ( PLONG) &guts. bmfCount);
       WinGetLastError( guts. anchor);
       if ( !GpiQueryDeviceBitmapFormats( guts. ps, 2 * guts. bmfCount, lFmts)) {
-         apiErr;
+         rc = WinGetLastError(guts. anchor);
+         sprintf( error_buf, "GpiQueryDeviceBitmapFormats: error %03x", (int)rc);
          GpiDestroyPS( guts. ps);
          DevCloseDC( dc);
          return false;
       };
       if ( !( guts. bmf = malloc( guts. bmfCount * sizeof( int) * 2))) {
+         sprintf( error_buf, "no memory");
          GpiDestroyPS( guts. ps);
          DevCloseDC( dc);
          return false;
