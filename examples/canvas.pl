@@ -14,17 +14,31 @@ sub profile_default
 {
    return {
       %{$_[ 0]-> SUPER::profile_default},
-      zoom => 1,
+      zoom       => 1,
+      paneSize   => [ 0, 0],
+      paneWidth  => 0,
+      paneHeight => 0,
    }
 }
+
+sub profile_check_in
+{
+   my ( $self, $p, $default) = @_;
+   $self-> SUPER::profile_check_in( $p, $default);
+   if ( exists( $p-> { paneSize})) {
+      $p-> { paneWidth}  = $p-> { paneSize}-> [ 0];
+      $p-> { paneHeight} = $p-> { paneSize}-> [ 1];
+   }
+}   
 
 sub init
 {
    my ( $self, %profile) = @_;
    $self->{zoom} = 1;
+   $self->{$_} = 0 for qw(paneWidth paneHeight);
    $self->{objects} = [];
    %profile = $self-> SUPER::init(%profile);
-   $self-> $_($profile{$_}) for qw(zoom);
+   $self-> $_($profile{$_}) for qw(zoom paneWidth paneHeight);
    return %profile;
 }
 
@@ -59,6 +73,50 @@ sub on_paint
    }
    $canvas-> translate(0,0);
    $canvas-> clipRect(@c);
+}
+
+sub paneWidth
+{
+   return $_[0]-> {paneWidth} unless $#_;
+   my ( $self, $pw) = @_;
+   $pw = 0 if $pw < 0;
+   return if $pw == $self-> {paneWidth};
+   $self-> {paneWidth} = $pw;
+   $self-> reset_zoom;
+   $self-> repaint;
+}
+
+sub paneHeight
+{
+   return $_[0]-> {paneHeight} unless $#_;
+   my ( $self, $ph) = @_;
+   $ph = 0 if $ph < 0;
+   return if $ph == $self-> {paneHeight};
+   $self-> {paneHeight} = $ph;
+   $self-> reset_zoom;
+   $self-> repaint;
+}
+
+sub paneSize
+{
+   return $_[0]-> {paneWidth}, $_[0]-> {paneHeight} if $#_ < 2;
+   my ( $self, $pw, $ph) = @_;
+   $ph = 0 if $ph < 0;
+   $pw = 0 if $pw < 0;
+   return if $ph == $self-> {paneHeight} && $pw == $self->{paneWidth};
+   $self-> {paneWidth}  = $pw;
+   $self-> {paneHeight} = $ph;
+   $self-> reset_zoom;
+   $self-> repaint;
+}
+
+sub reset_zoom
+{
+   my ( $self ) = @_;
+   $self-> limits( 
+      $self-> {paneWidth} * $self-> {zoom},
+      $self-> {paneHeight} * $self-> {zoom}
+   );
 }
 
 sub screen2object
@@ -97,6 +155,7 @@ sub zoom
    my ( $self, $zoom) = @_;
    return if $zoom == $self->{zoom};
    $self->{zoom} = $zoom;
+   $self-> reset_zoom;
    $self-> repaint;
 }
 
@@ -109,9 +168,10 @@ sub position2object
       next unless $obj-> visible;
       my @r = $obj-> rect;
       if ( $r[0] <= $nx && $r[1] <= $ny && $r[2] >= $nx && $r[3] >= $ny) {
-         if ( $skip_hittest || $obj-> on_hittest( $x - $r[0], $y - $r[1])) {
+         my @s = $self-> object2screen(@r[0,1]);
+         if ( $skip_hittest || $obj-> on_hittest( $x - $s[0], $y - $s[1])) {
 	    $self-> pop_event;
-	    return ($obj, $x - $r[0], $y - $r[1]);
+	    return ($obj, $x - $s[0], $y - $s[1]);
 	 }
       }
    }
@@ -590,13 +650,13 @@ package Prima::Canvas::Outlined;
 use vars qw(@ISA);
 @ISA = qw(Prima::CanvasObject);
 
-sub uses { return qw( rop rop2 backColor color lineWidth linePattern ); }
+sub uses { return qw( rop rop2 backColor color lineWidth linePattern lineEnd); }
 
 package Prima::Canvas::Filled; 
 use vars qw(@ISA);
 @ISA = qw(Prima::CanvasObject);
 
-sub uses { return qw( rop rop2 color backColor fillPattern ); }
+sub uses { return qw( rop rop2 color backColor fillPattern lineEnd); }
 
 package Prima::Canvas::FilledOutlined;
 use vars qw(@ISA);
@@ -614,7 +674,7 @@ sub profile_default
 sub uses { 
    my $self = $_[0];
    my @ret = qw(rop rop2 color backColor);
-   push @ret, qw(lineWidth linePattern) if $self->{outline};
+   push @ret, qw(lineWidth linePattern lineEnd) if $self->{outline};
    push @ret, qw(fillPattern) if $self->{fill};
    @ret;
 }
@@ -666,7 +726,8 @@ sub on_paint
    if ( $self-> {outline}) {
       $canvas-> color( $self-> {color});
       $canvas-> backColor( $self-> {outlineBackColor});
-      $canvas-> rectangle( 0, 0, $width, $height);
+      my $lw = int($self-> {lineWidth} / 2);
+      $canvas-> rectangle( $lw, $lw, $width - $lw, $height - $lw);
    }
 }
 
@@ -685,7 +746,8 @@ sub on_paint
    if ( $self-> {outline}) {
       $canvas-> color( $self-> {color});
       $canvas-> backColor( $self-> {outlineBackColor});
-      $canvas-> ellipse( $width / 2, $height / 2, $width, $height);
+      $canvas-> ellipse( $width / 2, $height / 2, 
+         $width - $self-> {lineWidth} + 1, $height - $self-> {lineWidth} + 1);
    }
 }
 
@@ -701,7 +763,7 @@ my $w = Prima::MainWindow-> create(
         ['Rectangle' => '~Rectangle' => \&insert],
         ['Ellipse' => '~Ellipse' => \&insert],
 	[],
-	[ '~Delete' => 'Del' => kb::Delete => \&delete]
+	[ '~Delete' => 'Del' , kb::Delete , \&delete]
      ]],
      ['~Edit' => [
         ['color' => '~Foreground color' => \&set_color],
@@ -709,6 +771,8 @@ my $w = Prima::MainWindow-> create(
 	['~Line width' => [ map { [ "lw$_", $_, \&set_line_width ] } 1..5, 7, 10, 15 ]],
 	['Line ~pattern' => [ map { [ "lp:linePattern=$_", $_, \&set_constant ] } 
 	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %lp:: ]],
+	['Line ~end' => [ map { [ "le:lineEnd=$_", $_, \&set_constant ] } 
+	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %le:: ]],
 	['Fill ~pattern' => [ map { [ "fp:fillPattern=$_", $_, \&set_constant ] } 
 	    sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fp:: ]],
 	['~Rop' => [ map { [ "rop:rop=$_", $_, \&set_constant ] } 
@@ -719,6 +783,11 @@ my $w = Prima::MainWindow-> create(
 	['fill' => 'Toggle ~fill' => \&toggle],
 	['outline' => 'Toggle ~outline' => \&toggle],
      ]],
+     ['~View' => [
+        ['zoom+' =>  'Zoom in' => '+' => '+' => \&zoom],
+        ['zoom-' =>  'Zoom out' => '-' => '-' => \&zoom],
+        ['zoom0' =>  'Zoom in' => 'Ctrl+1' => '^1' => \&zoom],
+     ]],
   ],
 );
 
@@ -726,8 +795,7 @@ my $c = $w-> insert( 'Prima::CanvasEdit' =>
    origin => [0,0],
    size   => [$w-> size],
    growMode => gm::Client,
-   limitX   => 500,
-   limitY   => 500,
+   paneSize => [ 500, 500],
    hScroll => 1,
    vScroll => 1,
    name    => 'Canvas',
@@ -782,6 +850,20 @@ sub toggle
    return unless $obj = $self-> Canvas-> selected_object;
    return unless $obj-> can( $property);
    $obj-> $property( !$obj-> $property());
+}
+
+sub zoom
+{
+   my ( $self, $zoom) = @_;
+   $zoom =~ s/^zoom//;
+   my $c = $self-> Canvas;
+   if ( $zoom eq '+') {
+      $c-> zoom( $c-> zoom * 1.1);
+   } elsif ( $zoom eq '-') {
+      $c-> zoom( $c-> zoom * 0.9);
+   } elsif ( $zoom eq '0') {
+      $c-> zoom( 1);
+   }
 }
 
 $c-> insert_object( 'Prima::Canvas::Rectangle');
