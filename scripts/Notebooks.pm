@@ -351,10 +351,12 @@ sub on_size
        my $ww = $self->{widths};
        $w += DefArrowX + DefGapX if $self->{arrows} & 1;
        my $i;
+       my $set = 0;
        for ( $i = scalar @{$ww} - 1; $i >= 0; $i--) {
           $w += $$ww[$i] + DefGapX;
-          $self-> firstTab( $i + 1), last if $w >= $x;
+          $set = 1, $self-> firstTab( $i + 1), last if $w >= $x;
        }
+       $self-> firstTab(0) unless $set;
    }
    $self-> reset;
 }
