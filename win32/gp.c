@@ -304,14 +304,26 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       bound. x -= trans. x - 1;
       bound. y -= trans. y - 1;
 
-      if ( !( dc     = dc_compat_alloc( ps))) apiErr;
+      if ( !( dc  = dc_compat_alloc( ps))) {
+         apiErr;
+         return;
+      }
       if ( db) ps = dc_alloc(); // fact that if dest ps is memory dc, CCB will result mono-bitmap
-      if ( !( bmSrc  = CreateCompatibleBitmap( ps, bound. x, bound. y))) apiErr;
+      if ( !( bmSrc  = CreateCompatibleBitmap( ps, bound. x, bound. y))) {
+         apiErr;
+         if ( db) dc_free();
+         dc_compat_free();
+         return;
+      }
       if ( db) {
          dc_free();
          ps = sys ps;
       }
-      if ( !( bmMask = CreateBitmap( bound. x, bound. y, 1, 1, nil))) apiErr;
+      if ( !( bmMask = CreateBitmap( bound. x, bound. y, 1, 1, nil))) {
+         apiErr;
+         dc_compat_free();
+         return;
+      }
       bmJ = SelectObject( dc, bmSrc);
       old1 = SelectObject( dc, sys stylusResource-> hbrush);
       old2 = SelectObject( dc, hPenHollow);
@@ -607,6 +619,51 @@ apc_gp_text_out( Handle self, char * text, int x, int y, int len)
 }
 
 
+// This procedure is about to compensate morbid Win95 behavior when
+// calling GetCharABCWidthsFloat() - it returns ERROR_CALL_NOT_IMPLEMENTED. psst.
+static BOOL
+gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lpABCF)
+{
+   UINT i;
+   INT fb[ 256];
+   TEXTMETRIC tm;
+
+
+   if ( IS_NT)
+      return GetCharABCWidthsFloat( dc, iFirstChar, iLastChar, lpABCF);
+
+   if ( iFirstChar > iLastChar)  // checking bound as far as we can
+      return FALSE;
+
+   if ( !GetTextMetrics( dc, &tm)) // determining font
+      return FALSE;
+
+   if ( !GetCharWidth( dc, iFirstChar, iLastChar, fb)) // checking full widths
+      return FALSE;
+
+
+   if ( tm. tmPitchAndFamily & TMPF_TRUETYPE) {
+      ABC abc[ 256];
+
+      if ( !GetCharABCWidths( dc, iFirstChar, iLastChar, abc))
+         apiErrRet;
+
+      for ( i = 0; i <= iLastChar - iFirstChar; i++) {
+         lpABCF[i]. abcfA = abc[ i]. abcA;
+         lpABCF[i]. abcfB = abc[ i]. abcB;
+         lpABCF[i]. abcfC = abc[ i]. abcC;
+      }
+   } else {
+      int j = 0;
+      memset( lpABCF, 0, sizeof( ABCFLOAT) * ( iLastChar - iFirstChar + 1));
+
+      for ( i = 0; i <= iLastChar - iFirstChar; i++)
+         lpABCF[i]. abcfB = fb[ i];
+   }
+   return TRUE;
+}
+
+
 static char **
 gp_text_wrap( Handle self, TextWrapRec * t)
 {
@@ -808,7 +865,7 @@ gp_text_wrap( Handle self, TextWrapRec * t)
            memcpy( &l[ tildePos], &l[ tildePos+1], strlen( l) - tildePos);
         l = ret[ t-> t_line];
         if ( !GetTextExtentPoint32( sys ps, l, tildeLPos, &sz)) apiErr;
-        if ( !GetCharABCWidthsFloat( sys ps, l[ tildeLPos], l[ tildeLPos], &ch)) apiErr;
+        if ( !gp_GetCharABCWidthsFloat( sys ps, l[ tildeLPos], l[ tildeLPos], &ch)) apiErr;
         t-> t_start = sz. cx;
         t-> t_end   = sz. cx + ch. abcfB + ch. abcfA + ch. abcfC;
     } else {
@@ -826,7 +883,7 @@ apc_gp_text_wrap( Handle self, TextWrapRec * t)
       ABCFLOAT * f2;
       f2 = sys charTable2  = malloc( 256 * sizeof( ABCFLOAT));
       f1 = sys charTable   = malloc( 256 * sizeof( float));
-      if ( !GetCharABCWidthsFloat( sys ps, 0, 255, f2)) apiErr;
+      if ( !gp_GetCharABCWidthsFloat( sys ps, 0, 255, f2)) apiErr;
       for ( i = 0; i < 256; i++) {
          f1[i] = f2[i]. abcfA + f2[i]. abcfB + f2[i]. abcfC;
          f2[i]. abcfC = ( f2[i]. abcfC < 0) ? -f2[i]. abcfC : 0;
@@ -842,7 +899,7 @@ apc_gp_get_font_abc( Handle self)
    int i;
    ABCFLOAT f2[ 256];
    PFontABC f1 = malloc( 256 * sizeof( FontABC));
-   if ( !GetCharABCWidthsFloat( sys ps, 0, 255, f2)) apiErr;
+   if ( !gp_GetCharABCWidthsFloat( sys ps, 0, 255, f2)) apiErr;
    for ( i = 0; i < 256; i++) {
       f1[i].a = f2[i].abcfA;
       f1[i].b = f2[i].abcfB;
@@ -901,7 +958,7 @@ apc_gp_get_line_width( Handle self)
 static int ctx_lp2PS[] = {
     lpSolid,          PS_SOLID             ,
     lpNull,           PS_NULL              ,
-//  lpDot,            PS_DOT               ,
+    lpShortDash,      PS_DOT               ,
     lpDash,           PS_DASH              ,
     lpDashDot,        PS_DASHDOT           ,
     lpDashDotDot,     PS_DASHDOTDOT        ,
@@ -1150,7 +1207,10 @@ apc_gp_set_clip_rect( Handle self, Rect c)
    check_swap( c. top, c. bottom);
    check_swap( c. left, c. right);
    if ( !( rgn = CreateRectRgn( c. left,  sys lastSize. y - c. top,
-                                c. right, sys lastSize. y - c. bottom))) apiErr;
+                                c. right, sys lastSize. y - c. bottom))) {
+      apiErr;
+      return;
+   }
    if ( !SelectClipRgn( sys ps, rgn)) apiErr;
    if ( !DeleteObject( rgn)) apiErr;
 }
@@ -1243,6 +1303,7 @@ apc_gp_set_line_width( Handle self, int lineWidth)
 {
    if ( !sys ps) sys lineWidth = lineWidth; else {
       PStylus s = &sys stylus;
+      if ( lineWidth < 0 || lineWidth > 8192) lineWidth = 0;
       s-> pen. lopnWidth. x = lineWidth;
       stylus_change( self);
    }
