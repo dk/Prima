@@ -80,7 +80,6 @@ Object_create( char *className, HV * profile)
       PUTBACK;
       PERL_CALL_METHOD( "init", G_VOID|G_DISCARD);
       SPAGAIN;
-      PUTBACK;
       FREETMPS;
       LEAVE;
    }
