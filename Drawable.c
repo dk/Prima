@@ -494,12 +494,12 @@ char **
 Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
 {
    float width[ 256];
-   int start = 0, i, lSize = 16;
+   IntPtr start = 0;
    float w = 0, inc = 0;
    char **ret;
    Bool wasTab    = 0;
    Bool doWidthBreak = t-> width >= 0;
-   int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset = 0;
+   int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset = 0, i, lSize = 16;
    unsigned char * text    = ( unsigned char*) t-> text;
 
    ret = allocn( char*, lSize);
@@ -511,7 +511,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
 
 // macro for adding string/chunk into result table
 #define lAdd(end) {                                       \
-   int l = end - start;                                   \
+   IntPtr l = end - start;                                \
    char *c = nil;                                         \
    if (!( t-> options & twReturnChunks)) {                \
       c = allocs( l + 1);                                 \
@@ -624,8 +624,8 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                 int len;
                 if ( t-> options & twReturnChunks)
                 {
-                   c   = &text[ (int)ret[ t-> count - 2]];
-                   len = (int) ret[ t-> count - 1];
+                   c   = &text[ (IntPtr)ret[ t-> count - 2]];
+                   len = (IntPtr) ret[ t-> count - 1];
                 }
                 else  {
                   c = ( unsigned char *) ret[ t-> count - 1];
@@ -633,7 +633,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                 }
                 if ( rc != ' ' && rc != '\t' && rc != '\n') {
                    // determining whether this line could be split
-                   int j;
+                   IntPtr j;
                    Bool ok = false;
                    for ( j = len; j >= 0; j--)
                       if ( c[ j] == ' ' || c[ j] == '\n' || c[ j] == '\t') {
@@ -758,7 +758,7 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    free( abc);
 
    for ( i = 0; i < t. count; i++) {
-      av_push( av, retChunks ? ( newSViv(( int) c[ i])) : ( newSVpv( c[ i], 0)));
+      av_push( av, retChunks ? ( newSViv(( IntPtr) c[ i])) : ( newSVpv( c[ i], 0)));
       if ( !retChunks) free( c[i]);
    }
    free( c);

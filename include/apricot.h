@@ -306,6 +306,19 @@ typedef long Color;
 
 #include "Types.h"
 
+#if SHORTSIZE == PTRSIZE
+typedef short IntPtr;
+#elif INTSIZE == PTRSIZE
+typedef int IntPtr;
+#elif LONGSIZE == PTRSIZE
+typedef long IntPtr;
+#elif HAS_LONG_LONG && ( LONGLONGSIZE == PTRSIZE )
+typedef long long IntPtr;
+#else
+#error Cannot find integer with same size as pointer
+#endif
+
+
 #if !defined(HAVE_INT8_T)
 typedef signed char     int8_t;
 #endif

@@ -1378,13 +1378,11 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
       }
       hash2 = hash;
       table[0] = endCtx;
-      table[1] = (int)hash1;
-      table[2] = (int)hash2;
-      list_add( &staticObjects, ( Handle) hash1);
-      list_add( &staticObjects, ( Handle) hash2);
+      table[1] = list_add( &staticObjects, ( Handle) hash1);
+      table[2] = list_add( &staticObjects, ( Handle) hash2);
    }
 
-   hash = ( PRemapHash)(direct ? table[1] : table[2]);
+   hash = ( PRemapHash) list_at( &staticObjects, direct ? table[1] : table[2]);
    node = hash->table[value&0x1F];
    while ( node) {
       if (node->key == value) return node->val;

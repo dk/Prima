@@ -452,13 +452,13 @@ var_match ( Handle self, PMenuItemReg m, void * params)
 static Bool
 id_match ( Handle self, PMenuItemReg m, void * params)
 {
-   return m-> id == ( long) params;
+   return m-> id == *(( int*) params);
 }
 
 static Bool
 key_match ( Handle self, PMenuItemReg m, void * params)
 {
-   return (( m-> key == ( long) params) && ( m-> key != kbNoKey) && !( m->disabled));
+   return (( m-> key == *(( int*) params)) && ( m-> key != kbNoKey) && !( m->disabled));
 }
 
 SV *
@@ -702,7 +702,7 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 Bool
 AbstractMenu_sub_call_id ( Handle self, int sysId)
 {
-   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, id_match, (void *) sysId, false));
+   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, id_match, &sysId, false));
 }
 
 #define keyRealize( key)     if ((( key & 0xFF) >= 'A') && (( key & 0xFF) <= 'z'))  \
@@ -715,7 +715,7 @@ Bool
 AbstractMenu_sub_call_key ( Handle self, int key)
 {
    keyRealize( key);
-   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, key_match, (void *) key, false));
+   return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, key_match, &key, false));
 }
 
 typedef struct _Kmcc

@@ -278,9 +278,9 @@ Component_set( Handle self, HV * profile)
 }
 
 static Bool
-find_dup_msg( PEvent event, int cmd)
+find_dup_msg( PEvent event, int * cmd)
 {
-   return event-> cmd == cmd;
+   return event-> cmd == *cmd;
 }
 
 Bool
@@ -307,7 +307,7 @@ Constructing:
          goto ForceProcess;
       case ctSingle:
          event-> cmd = ( event-> cmd & ~ctQueueMask) | ctSingleResponse;
-         if ( list_first_that( var-> evQueue, find_dup_msg, (void*) event-> cmd) >= 0)
+         if ( list_first_that( var-> evQueue, find_dup_msg, &event-> cmd) >= 0)
 	      break;
       default:
 	      list_add( var-> evQueue, ( Handle) memcpy( malloc( sizeof( Event)),
@@ -591,7 +591,7 @@ XS( Component_notify_FROMPERL)
       void * ret;
       ret = hash_fetch( var-> eventIDs, name, nameLen);
       if ( ret != nil) {
-         list = var-> events + ( int) ret - 1;
+         list = var-> events + ( IntPtr) ret - 1;
          seqCount += list-> count;
       }
    }
@@ -761,7 +761,7 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
       ret = hash_fetch( var-> eventIDs, name, nameLen);
 
    if ( ret == nil) {
-      hash_store( var-> eventIDs, name, nameLen, ( void*)( var-> eventIDCount + 1));
+      hash_store( var-> eventIDs, name, nameLen, ( void*)((IntPtr) var-> eventIDCount + 1));
       if ( var-> events == nil)
          var-> events = ( List*) malloc( sizeof( List));
       else {
@@ -773,7 +773,7 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
       list = var-> events + var-> eventIDCount++;
       list_create( list, 2, 2);
    } else
-      list = var-> events + ( int) ret - 1;
+      list = var-> events + ( IntPtr) ret - 1;
 
    ret = ( void *) newSVsv( subroutine);
    index = list_insert_at( list, referer, index);
@@ -859,7 +859,7 @@ XS( Component_get_notification_FROMPERL)
    event = ( char *) SvPV( ST( 1), na);
    ret = hash_fetch( var-> eventIDs, event, strlen( event));
    if ( ret == nil) XSRETURN_EMPTY;
-   list = var-> events + ( int) ret - 1;
+   list = var-> events + ( IntPtr) ret - 1;
 
    if ( items < 3) {
       int i;
@@ -970,7 +970,7 @@ Component_delegations( Handle self, Bool set, SV * delegations)
       while (( he = hv_iternext( var-> eventIDs)) != nil) {
          int i;
          char * event = ( char *) HeKEY( he);
-         PList list = var-> events + ( int) HeVAL( he) - 1;
+         PList list = var-> events + ( IntPtr) HeVAL( he) - 1;
          for ( i = 0; i < list-> count; i += 2) {
             if ( list-> items[i] != last) {
                last = list-> items[i];

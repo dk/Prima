@@ -56,7 +56,7 @@ typedef struct _SingleColor
    int   index;
 } SingleColor, *PSingleColor;
 
-static Bool find_dup_msg( PEvent event, int cmd);
+static Bool find_dup_msg( PEvent event, int * cmd);
 static Bool pquery ( Handle window, Handle self, void * v);
 static Bool get_top_current( Handle self);
 static Bool sptr( Handle window, Handle self, void * v);
@@ -361,7 +361,7 @@ Widget_custom_paint( Handle self)
    if ( var-> eventIDs == nil) return false;
    ret = hash_fetch( var-> eventIDs, "Paint", 5);
    if ( ret == nil) return false;
-   list = var-> events + ( int) ret - 1;
+   list = var-> events + ( IntPtr) ret - 1;
    return list-> count > 0;
 }
 
@@ -759,7 +759,7 @@ void Widget_handle_event( Handle self, PEvent event)
             } else if ( var-> stage > csNormal) {
                break;
             } else if ( var-> evQueue != nil) {
-              int    i = list_first_that( var-> evQueue, find_dup_msg, (void*) event-> cmd);
+              int i = list_first_that( var-> evQueue, find_dup_msg, &event-> cmd);
               PEvent n;
               if ( i < 0) {
                  n = alloc1( Event);
@@ -814,7 +814,7 @@ void Widget_handle_event( Handle self, PEvent event)
            } else if ( var-> stage > csNormal) {
               break;
            } else if ( var-> evQueue != nil) {
-              int    i = list_first_that( var-> evQueue, find_dup_msg, (void*) event-> cmd);
+              int i = list_first_that( var-> evQueue, find_dup_msg, &event-> cmd);
               PEvent n;
               if ( i < 0) {
                  n = alloc1( Event);
@@ -1747,7 +1747,7 @@ Bool kill_all( Handle self, Handle child, void * dummy)
    Object_destroy( child); return 0;
 }
 
-static Bool find_dup_msg( PEvent event, int cmd) { return event-> cmd == cmd; }
+static Bool find_dup_msg( PEvent event, int * cmd) { return event-> cmd == *cmd; }
 
 Bool
 accel_notify ( Handle group, Handle self, PEvent event)
