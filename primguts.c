@@ -1682,9 +1682,13 @@ int list_index_of( PList slf, Handle item)
 
 void list_delete( PList slf, Handle item)
 {
-   int i = list_index_of( slf, item);
-   if ( i < 0) return;
-   memmove( &slf-> items[ i], &slf-> items[ i + 1], ( --slf-> count - i) * sizeof( Handle));
+   list_delete_at( slf, list_index_of( slf, item));
+}
+
+void list_delete_at( PList slf, int index)
+{
+   if ( !slf || index < 0 || index >= slf-> count) return;
+   memmove( &slf-> items[ index], &slf-> items[ index + 1], ( --slf-> count - index) * sizeof( Handle));
 }
 
 Handle list_at( PList slf, int index)

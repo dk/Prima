@@ -576,6 +576,9 @@ extern void
 list_delete( PList self, Handle item);
 
 extern void
+list_delete_at( PList self, int index);
+
+extern void
 list_delete_all( PList self, Bool kill);
 
 extern int
