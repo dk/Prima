@@ -723,8 +723,7 @@ sub profile_default
       sizeMax           => [ 16384, 16384],
    );
    @$def{keys %WidgetProfile} = values %WidgetProfile;
-   @$def{qw(text font popupFont)} =
-      (ref($_[ 0]), $_[ 0]-> get_default_font, $_[ 0]-> get_default_popup_font);
+   @$def{qw( font popupFont)} = ( $_[ 0]-> get_default_font, $_[ 0]-> get_default_popup_font);
    return $def;
 }
 
@@ -736,7 +735,7 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    delete $p->{ font} unless defined $orgFont;
 
-   $p-> { text} = $p-> { name} if ( $p-> { owner} && !exists( $p-> { text}) && !defined $default->{text});
+   $p-> {text} = $p-> { name} if !defined $p-> { text} and !defined $default->{text};
 
    $p->{showHint} = 1 if ( defined $owner) && ( defined $::application) && ( $owner == $::application) &&
       ( exists $p->{ ownerShowHint} ? $p->{ ownerShowHint} : $default->{ ownerShowHint});
