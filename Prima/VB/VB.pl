@@ -1909,3 +1909,5 @@ if ( $@ && $::application) {
    Prima::MsgBox::message( "$@") if $@;
    goto RERUN;
 }
+
+1;

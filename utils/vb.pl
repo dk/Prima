@@ -25,19 +25,18 @@
 #  SUCH DAMAGE.
 #
 
-use Prima::VB::CfgMaint;
-
 my $rc;
 foreach my $pth ( @INC) {
     my $VBpath = "$pth/Prima/VB/VB.pl";
     if ( -f $VBpath) {
-	$rc = do $VBpath;
+	$rc = require $VBpath;
 	if ( ! defined $rc) {
 	    if ( $!) {
 		die "Cannot read $VBpath: $!";
 	    }
 	    die "$VBpath execution failed: $@";
 	}
+	last;
     }
 }
-exit $rc;
+exit;
