@@ -1,11 +1,8 @@
+#! /usr/bin/perl -w
+
 use strict;
-use Prima;
-use Prima::Classes;
-use Prima::ImageViewer;
-use Prima::StdDlg;
-
-$::application = Prima::Application-> create( name => "IV");
-
+use Prima qw(ImageViewer StdDlg);
+use Prima::Application name => "IV";
 
 my $ico = Prima::Icon-> create;
 $ico = 0 unless $ico-> load( 'hand.gif');
