@@ -55,7 +55,8 @@ sub open
 sub close
 {
    shift;
-   for my $k ( @helpWindows) {
+   my @w = @helpWindows;
+   for my $k ( @w) {
       $k-> close;
    }
 }
