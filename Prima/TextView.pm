@@ -567,14 +567,14 @@ sub block_wrap
                   goto REWRAP if $ox > 0;
                   if ( $str =~ m/^(\S+)(\s*)/) {
                      $tw = $canvas-> get_text_width( $1);
-                     push @$z, tb::OP_TEXT, 0, length $1, $tw;
+                     push @$z, tb::OP_TEXT, $ofs, length $1, $tw;
                      $x += $tw;
                      $ofs  += length($1) + length($2);
                      $tlen -= length($1) + length($2);
                      goto REWRAP;
                   }
                }
-               push @$z, tb::OP_TEXT, 0, length($str), $x += $canvas-> get_text_width( $str);
+               push @$z, tb::OP_TEXT, $ofs, length($str), $x += $canvas-> get_text_width( $str);
             }
          } elsif ( $haswrapinfo) { # unwrappable, and cannot be fit - retrace
             $retrace->();
