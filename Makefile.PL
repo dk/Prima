@@ -92,6 +92,7 @@ use vars qw(
     @alltml
     @alltmldeps
     @allclean
+    @allrealclean
     @allojects
     %alldeps
     @allinstall
@@ -1213,7 +1214,8 @@ EOF
 #endif
 EOF
     close CONFIG;
-    push @allclean, $config_h;
+
+    push @allrealclean, $config_h;
     push @allinstall, $config_h => $INSTALL_LIB . "/$config_dir";
 
     push @alldirs, qd( "include/generic"), qd( "auto/Prima");
@@ -1270,6 +1272,8 @@ EOF
     my $thunks_tinc = qd( "include/generic/thunks.tinc");
     push @allclean, $thunks_tinc;
 
+    push @allrealclean, 'Makefile';
+
     print "Writing Makefile...";
     $make =~ tr[/][]s;
     open MAKE, ">Makefile" or die "Creation of Makefile failed: $!";
@@ -1290,6 +1294,9 @@ RM=$^X Makefile.PL --rm
 
 clean:
 \t\$(RM) @allclean $PrimaTarget $distname-$os_suffix.zip
+
+realclean: clean
+\t\$(RM) @allrealclean
 
 bindist: all
 \t\$(RM) $distname-$os_suffix.zip
