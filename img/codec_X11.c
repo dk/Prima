@@ -78,7 +78,8 @@ static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    LoadRec * l;
-   int w, h, yh, yw;
+   unsigned int w, h;
+   int yh, yw;
    Byte * data;
 
    if( XReadBitmapFileData( fi-> fileName, &w, &h, &data, &yw, &yh) != BitmapSuccess)
