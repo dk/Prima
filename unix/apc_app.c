@@ -200,9 +200,8 @@ window_subsystem_done( void)
 Bool
 apc_application_begin_paint( Handle self)
 {
-fprintf( stderr, "apc_application_begin_paint()\n");
-/*NYI*/
-   return true;
+   /* XXX - why it does not have insideOnPaint? */
+   return apc_widget_begin_paint( self, false);
 }
 
 Bool
@@ -266,8 +265,7 @@ fprintf( stderr, "apc_application_destroy()\n");
 void
 apc_application_end_paint( Handle self)
 {
-fprintf( stderr, "apc_application_end_paint()\n");
-/*NYI*/
+   apc_widget_end_paint( self);
 }
 
 void
