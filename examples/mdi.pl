@@ -73,41 +73,27 @@ my $wwx = Prima::MDIWindowOwner-> create(
           [ '~Old fashioned' => sub { $w-> dragMode( 0);}],
        ]],
        [ '~Windows' => [
-#        [ '~New' => 'Ctrl+N' => '^N' => sub{ $_[0]-> MDIO-> insert( 'MDI')}],
-         [ '~New' => 'Ctrl+N' => '^N' => sub{ $_[0]-> insert( 'MDI')}],
-         [ '~Arrange icons' => sub{ $_[0]->  MDIO-> arrange_icons;} ],
-         [ '~Cascade' => sub{ $_[0]->  MDIO-> cascade;} ],
-         [ '~Tile' => sub{ $_[0]->  MDIO-> tile;} ],
+         [ '~New' => 'Ctrl+N' => '^N' => sub{ $_[0]-> insert( 'MDI'); }],
+         [ '~Arrange icons' => sub{ $_[0]-> arrange_icons;} ],
+         [ '~Cascade' => sub{ $_[0]-> cascade; } ],
+         [ '~Tile' => sub{ $_[0]-> tile;} ],
        ]],
     ],
 );
 
-my $ww = $wwx-> insert( MDIOwner =>
-   origin => [ 0, 0],
-   size   => [ $wwx-> size],
-   name   => 'MDIO',
-);
-
-#my $ww = $wwx;
-#$ww-> insert( "InputLine",
-#   text => '1002',
-#   onChange => sub { $w-> text( $_[0]-> text);},
-#) if 1;
-
 $w = Prima::MDI-> create(
-   owner => $ww,
+   owner => $wwx,
    clipOwner => 0,
    size => [200, 200],
    icon => Prima::StdBitmap::icon(sbmp::DriveCDROM),
    font => { size => 6 },
    titleHeight => 12,
 );
-# $w-> dragMode(0);
 
 $w = $w-> client;
 
 my $i = Prima::Image-> create;
-$i->load('winnt256.bmp');
+$i->load('Hand.gif');
 
 $w-> insert( ImageViewer =>
   origin => [0,0],
@@ -116,10 +102,6 @@ $w-> insert( ImageViewer =>
   vScroll=> 1,
   growMode => gm::Client,
   image => $i,
-) if 1;
-
-$w = $w-> owner;
-
-
+);
 
 run Prima;
