@@ -377,19 +377,22 @@ Drawable_put_image( Handle self, int x , int y , Handle image )
 void
 Drawable_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle image)
 {
-   Point size;
    if ( image == nilHandle) return;
-   size = ((( PDrawable) image)-> self)-> get_size( image);
-   apc_gp_stretch_image ( self, image, x, y, 0, 0, xDest, yDest, size.x, size.y,  my-> get_rop( self));
+   if ( xDest == PImage(self)-> w && yDest == PImage(self)-> h) 
+      apc_gp_put_image( self, image, x, y, 0, 0, xDest, yDest, my-> get_rop( self));
+   else
+      apc_gp_stretch_image( self, image, x, y, 0, 0, xDest, yDest, PImage(self)-> w, PImage(self)-> h, my-> get_rop( self));
 }
 
 void
 Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
    if ( image == nilHandle) return;
-   apc_gp_stretch_image ( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+   if ( xLen == xDestLen && yLen == yDestLen) 
+      apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
+   else    
+      apc_gp_stretch_image( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
 }
-
 
 void
 Drawable_text_out( Handle self, char * text, int x, int y, int len)
