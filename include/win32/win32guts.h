@@ -127,10 +127,6 @@ typedef struct _WinGuts
 {
     HINSTANCE      instance;           // application instance
     int            cmdShow;            // run command state
-    HWND           logger;             // logger window
-    HWND           loggerListBox;      // logger box for stdout/stderr
-    HICON          loggerIcon;         // logger icon
-    Handle         loggerIconSupplier; // logger icon tied window
     int            appLock;            // application lock count
     int            pointerLock;        // pointer lock count
     HANDLE         ioThread;           // handle of input-output thread
@@ -432,7 +428,6 @@ extern int          FONTSTRUCSIZE;
 extern int          FONTSTRUCSIZE2;
 extern WinGuts      guts;
 extern PHash        imageMan;
-extern Bool         loggerDead;
 extern PHash        menuMan;
 extern MusClkRec    musClk;
 extern PHash        patMan;
