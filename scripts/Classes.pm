@@ -363,10 +363,10 @@ sub rect_focus
          rop         => $rop
       );
    } else {
-      my ( $fp, $cl, $cl2, $rop) = (
-         $canvas-> fillPattern, $canvas-> color,
-         $canvas-> backColor, $canvas-> rop
+      my ( $cl, $cl2, $rop) = (
+         $canvas-> color, $canvas-> backColor, $canvas-> rop
       );
+      my @fp = $canvas-> fillPattern;
       $canvas-> set(
          fillPattern => fp::SimpleDots,
          color       => cl::White,
@@ -385,7 +385,7 @@ sub rect_focus
       }
 
       $canvas-> set(
-         fillPattern => $fp,
+         fillPattern => [@fp],
          backColor   => $cl2,
          color       => $cl,
          rop         => $rop,
@@ -736,8 +736,6 @@ sub profile_check_in
    my $owner = exists $p-> { owner} ? $p-> { owner} : $default-> { owner};
    $self-> SUPER::profile_check_in( $p, $default);
    delete $p->{ font} unless defined $orgFont;
-
-
 
    $p-> {text} = $p-> { name} if !defined $p-> { text} and !defined $default->{text};
 

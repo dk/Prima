@@ -1396,13 +1396,8 @@ sub on_paint
          $self-> { butt2X} + DefButtonX / 2 + $at, $self-> { butt1Y} - 2 - $at + DefButtonX);
    }
 
-   if ( $self-> focused && ( length( $self-> text) > 0)) {
-      $canvas-> linePattern( lp::Dot);
-      $canvas-> color( cl::White);
-      $canvas-> rop( rop::XorPut);
-      $canvas-> rectangle(( $size[0] - $ttw) / 2 - 1, 1, ( $size[0] + $ttw) / 2 + 1, $fh + 2);
-      $canvas-> rop( rop::CopyPut);
-   }
+   $canvas-> rect_focus(( $size[0] - $ttw) / 2 - 1, 1, ( $size[0] + $ttw) / 2 + 1, $fh + 2)
+      if $self-> focused && ( length( $self-> text) > 0);
 }
 
 sub on_keydown

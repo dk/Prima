@@ -658,14 +658,7 @@ sub InputLine_Paint
    $canvas-> rectangle( 2, 2, $w - 3, $h - 3);
    $canvas-> color( $clr);
    $canvas-> bar( 3, 3, $w - 4, $h - 4);
-   if ( $focused) {
-      $canvas-> set(
-         rop         => rop::XorPut,
-         linePattern => lp::Dot,
-         color       => cl::White
-      );
-      $canvas-> rectangle( 2, 2, $w - 3, $h - 3);
-   }
+   $canvas-> rect_focus(2, 2, $w - 3, $h - 3) if $focused;
 }
 
 sub InputLine_MouseDown

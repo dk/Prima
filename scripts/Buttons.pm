@@ -251,14 +251,7 @@ sub draw_caption
    }
 
    $canvas-> text_out( $cap, $x, $y);
-   if ( $self-> focused)
-   {
-      $canvas-> linePattern( lp::Dot);
-      $canvas-> color( cl::White);
-      $canvas-> rop( rop::XorPut);
-      $canvas-> rectangle( $x - 2, $y - 2, $x + 2 + $fw, $y + 2 + $fh);
-      $canvas-> rop( rop::CopyPut);
-   }
+   $canvas-> rect_focus( $x - 2, $y - 2, $x + 2 + $fw, $y + 2 + $fh) if $self-> focused;
 }
 
 sub caption_box

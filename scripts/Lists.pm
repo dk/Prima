@@ -1031,22 +1031,6 @@ sub set_v_scroll
    $self-> repaint;
 }
 
-sub draw_std_veil
-{
-    my ( $self, $canvas, $x, $y, $x2, $y2) = @_;
-    my ( $rop, $lp, $cl) = ( $canvas-> rop, $canvas-> linePattern, $canvas-> color);
-    $canvas-> set(
-       rop         => rop::XorPut,
-       linePattern => lp::Dot,
-       color       => cl::White
-    );
-    $canvas-> rectangle( $x + $self->{offset}, $y, $x2, $y2);
-    $canvas-> set(
-       rop         => $rop,
-       linePattern => $lp,
-       color       => $cl,
-    );
-}
 
 #sub on_drawitem
 #{
@@ -1531,10 +1515,7 @@ sub draw_items
    if ( $drawVeilFoc >= 0 && $self->{multiSelect})
    {
       my ( $itemIndex, $x, $y, $x2, $y2) = @{$_[$drawVeilFoc]};
-      $canvas-> rop( rop::XorPut);
-      $canvas-> linePattern( lp::Dot);
-      $canvas-> color( cl::White);
-      $canvas-> rectangle( $x + $self->{offset}, $y, $x2, $y2);
+      $canvas-> rect_focus( $x + $self->{offset}, $y, $x2, $y2);
    }
 }
 
