@@ -1307,19 +1307,30 @@ apc_window_end_modal( Handle self)
 }
 
 // View management
-Point
-apc_widget_client_to_screen( Handle self, Point p)
+Bool
+apc_widget_map_point( Handle self, Bool toScreen, int count, Point * p)
 {
-   POINT pt;
+   int i;
+   POINT pt = {0,0};
    Point sz = ((( PWidget) self)-> self)-> get_size( self);
    Point appSz = apc_application_get_size( application);
-   objCheck sz;
-   pt. x = p. x;
-   pt. y = sz. y - p. y;
-   MapWindowPoints(( HWND) var handle, nilHandle, &pt, 1);
-   p. x = pt. x;
-   p. y = appSz. y - pt. y;
-   return p;
+
+   objCheck false;
+
+   if ( toScreen) {
+      for ( i = 0; i < count; i++)
+         p[i]. y = sz. y - p[i]. y;
+      MapWindowPoints(( HWND) var handle, nilHandle, ( POINT * ) p, count);
+      for ( i = 0; i < count; i++)
+         p[i]. y = appSz. y - p[i].y;
+   } else {
+      for ( i = 0; i < count; i++)
+         p[i]. y = appSz. y - p[i]. y;
+      MapWindowPoints( nilHandle, ( HWND) var handle, ( POINT * ) p, count);
+      for ( i = 0; i < count; i++)
+         p[i]. y = sz. y - p[i]. y;
+   }
+   return true;
 }
 
 Bool
@@ -1893,21 +1904,6 @@ apc_widget_invalidate_rect( Handle self, Rect * rect)
    objCheck false;
    process_transparents( self);
    return true;
-}
-
-Point
-apc_widget_screen_to_client( Handle self, Point p)
-{
-   POINT pt = {0,0};
-   Point sz = ((( PWidget) self)-> self)-> get_size( self);
-   Point appSz = apc_application_get_size( application);
-   objCheck p;
-   pt. x = p. x;
-   pt. y = appSz. y - p. y;
-   MapWindowPoints( nilHandle, ( HWND) var handle, &pt, 1);
-   p. x = pt. x;
-   p. y = sz. y - pt. y;
-   return p;
 }
 
 Bool

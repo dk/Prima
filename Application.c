@@ -274,8 +274,6 @@ void Application_show( Handle self) {}
 void Application_hide( Handle self) {}
 void Application_insert_behind( Handle self, Handle view) {}
 void Application_send_to_back( Handle self) {}
-Point Application_client_to_screen( Handle self, Point p) { return p; }
-Point Application_screen_to_client( Handle self, Point p) { return p; }
 
 SV*
 Application_fonts( Handle self, char * name)
@@ -585,10 +583,12 @@ static void hshow( Handle self)
    Point size  = hintUnder-> get_size( var->  hintUnder);
    Point s = my-> get_size( self);
    Point fin = {0,0};
-   Point pos = hintUnder-> client_to_screen( var->  hintUnder, fin);
+   Point pos = fin;
    Point mouse = my-> get_pointerPos( self);
    Point hintSize;
    PWidget_vmt hintWidget = CWidget( var->  hintWidget);
+
+   apc_widget_map_point( var-> hintUnder, true, 1, &pos);
 
    hintWidget-> set_text( var->  hintWidget, text);
    hintSize = hintWidget-> get_size( var->  hintWidget);

@@ -50,7 +50,7 @@ my $w = Prima::Window-> create(
          $_[0]-> menu-> checked( 'rr', $repeat);
        }],
        [],
-       ["Set ~font..." => sub {
+       ["Set ~font..." => "Ctrl+F" => '^F' => sub {
           my $d =  $fontDialog ? $fontDialog : Prima::FontDialog-> create(
              logFont => $_[0]-> Label1-> font,
           );

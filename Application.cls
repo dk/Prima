@@ -70,7 +70,6 @@ object Prima::Application( Prima::Widget)
    method Bool   begin_paint();
    method Bool   begin_paint_info();
    method void   bring_to_front();
-   method Point  client_to_screen( Point p);
    method Bool   close();
    method Bool   close_help()                                 => apc_help_close;
    method void   done();
@@ -101,7 +100,6 @@ object Prima::Application( Prima::Widget)
    method void   insert_behind( Handle widget);
    method Handle next();
    method Handle prev();
-   method Point  screen_to_client( Point p);
    method void   send_to_back();
    import void   setup();
    c_only void   set_hint_action( Handle widget, Bool show, Bool mouseEvent);

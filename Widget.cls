@@ -121,7 +121,7 @@ object Prima::Widget( Prima::Drawable)
    method   void     bring_to_front();
    method   Bool     can_close();
    method   void     click();
-   method   Point    client_to_screen( Point p)       => apc_widget_client_to_screen;
+   public   void     client_to_screen();
    method   Bool     close();
    c_only   Bool     custom_paint();
    method   void     detach( Handle objectHandle, Bool kill);
@@ -153,7 +153,7 @@ object Prima::Widget( Prima::Drawable)
    method   Handle   prev();
    method   void     repaint();
    method   Bool     responsive()                    => apc_widget_is_responsive;
-   method   Point    screen_to_client(Point p)       => apc_widget_screen_to_client;
+   public   void     screen_to_client();
    public   void     scroll( int dx, int dy, Rect *confine, Rect *clip, Bool withChildren);
    method   void     send_to_back();
    method   void     set( HV * profile);

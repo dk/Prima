@@ -1659,9 +1659,6 @@ apc_window_end_modal( Handle self);
 
 
 /* Widget management */
-extern Point
-apc_widget_client_to_screen( Handle self, Point p);
-
 extern Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint,
                    Bool clipOwner, Bool transparent);
@@ -1744,8 +1741,8 @@ apc_widget_is_visible( Handle self);
 extern Bool
 apc_widget_invalidate_rect( Handle self, Rect * rect);
 
-extern Point
-apc_widget_screen_to_client( Handle self, Point p);
+extern Bool
+apc_widget_map_point( Handle self, Bool toScreen, int count, Point * points);
 
 extern Bool
 apc_widget_scroll( Handle self, int horiz, int vert,
