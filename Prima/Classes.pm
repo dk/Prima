@@ -240,6 +240,33 @@ sub AUTOLOAD
    return $component;
 }
 
+# class File
+package Prima::File;
+use vars qw(@ISA);
+@ISA = qw(Prima::Component);
+
+{
+my %RNT = (
+   Read        => nt::Default,
+   Write       => nt::Default,
+   Execute     => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      file => undef,
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+sub file       {($#_)?$_[0]->set_file        ($_[1]):return $_[0]->get_file; }
+
 package Prima::Clipboard;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);

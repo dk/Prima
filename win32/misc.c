@@ -471,3 +471,23 @@ apc_widget_user_profile( char * name, Handle owner)
    RegCloseKey( hKey);
    return ret;
 }
+
+/* file */
+Bool
+apc_file_attach( Handle self)
+{
+   return false;
+}
+
+Bool
+apc_file_detach( Handle self)
+{
+   return false;
+}
+
+Bool
+apc_file_change_mask( Handle self, int mask)
+{
+   return false;
+}
+

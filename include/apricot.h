@@ -502,6 +502,9 @@ CM(MouseLeave)
 CM(TranslateAccel)
 #define cmDelegateKey    0x0000005B                /* reserved for key mapping */
 CM(DelegateKey)
+#define cmFileRead       0x00000070
+#define cmFileWrite      0x00000071
+#define cmFileException  0x00000072
 #define cmUser           0x00000100                /* first user-defined message */
 CM(User)
 END_TABLE(cm,UV)
@@ -2853,6 +2856,20 @@ apc_sys_get_value( int sysValue);
 
 extern Bool
 apc_sys_set_insert_mode( Bool insMode);
+
+/* file */
+#define feRead        0x01
+#define feWrite       0x02
+#define feException   0x04
+
+extern Bool
+apc_file_attach( Handle self);
+
+extern Bool
+apc_file_detach( Handle self);
+
+extern Bool
+apc_file_change_mask( Handle self, int mask);
 
 /* etc */
 extern Bool

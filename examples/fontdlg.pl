@@ -54,18 +54,21 @@ my $re_sample = sub {
    my $i = $w-> SizeList-> focusedItem;
 
    $w-> Example-> lock;
-
-   $w-> Example-> set( font => {
+   my %font = (
       name        => $fn,
       size        => $w-> SizeList-> get_item_text( $i),
       style       => $fs,
       direction   => $fd,
       pitch       => $fpitch,
-      width       => 0,
-   });
+   );
 
+   $w-> Example-> font( %font,
+      width => 0,
+   );
 
-   $w-> Example-> font-> width( $w-> Example-> font-> width * $fwidth) if $fwidth;
+   $w-> Example-> font( %font,
+      width => $w-> Example-> font-> width * $fwidth,
+   ) if $fwidth;
 
    $w-> Example-> unlock;
 
@@ -431,7 +434,7 @@ $w-> insert( Widget =>
       $_[0]->capture(0);
       $_[0]->{drag} = 0;
       $_[0]->pointer( cr::Default);
-      my $x = $::application-> get_view_from_point( $_[0]-> client_to_screen( $_[3], $_[4]));
+      my $x = $::application-> get_widget_from_point( $_[0]-> client_to_screen( $_[3], $_[4]));
       return unless $x;
       $x-> font( $_[0]-> font);
    },

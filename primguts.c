@@ -33,16 +33,10 @@
 #include <dirent.h>
 #define GENERATE_TABLE_GENERATOR yes
 #include "apricot.h"
-#ifdef PerlIO
-typedef PerlIO *FileStream;
-#else
-#define PERLIO_IS_STDIO 1
-typedef FILE *FileStream;
-#define PerlIO_fileno(f) fileno(f)
-#endif
 #include "guts.h"
 #include "Object.h"
 #include "Component.h"
+#include "File.h"
 #include "Clipboard.h"
 #include "DeviceBitmap.h"
 #include "Drawable.h"
@@ -489,6 +483,7 @@ XS(Prima_init)
       if ( !ref) croak("'use Prima;' call required in main script");
    }
    register_notifications((PVMT)CComponent);
+   register_notifications((PVMT)CFile);
    register_notifications((PVMT)CAbstractMenu);
    register_notifications((PVMT)CAccelTable);
    register_notifications((PVMT)CMenu);
@@ -1102,32 +1097,6 @@ register_constants( void)
    register_fdo_constants();
 }
 
-Bool apc_watch_filehandle( int no, void *sub, void *glob)
-#ifdef __unix
-;
-#else
-{
-   return false;
-}
-#endif
-
-XS( Prima_watch)
-{
-   FileStream f;
-   SV *sv;
-   dXSARGS;
-   if (items != 2)
-      croak( "Invalid usage of Prima::watch");
-   f = IoIFP(sv_2io(ST(1)));
-   sv = ST(0);
-   if ( !SvROK( sv) || ( SvTYPE( SvRV( sv)) != SVt_PVCV)) {
-      croak( "Expecting codereference in Prima::watch");
-   }
-   apc_watch_filehandle( PerlIO_fileno( f), newSVsv(sv), newSVsv(ST(1)));
-   ST(0) = &sv_yes;
-   XSRETURN(1);
-}
-
 XS( Object_alive_FROMPERL);
 
 XS( boot_Prima)
@@ -1174,16 +1143,6 @@ NAN = 0.0;
    newXS( "::destroy_mate", destroy_mate, MODULE);
    newXS( "Prima::cleanup", prima_cleanup, "Prima");
    newXS( "Prima::init", Prima_init, "Prima");
-   newXS( "Prima::watch", Prima_watch, "Prima");
-   {
-      SV *sv = newSVpv("Prima::watch", 0);
-      HV *unused_hv;
-      GV *unused_gv;
-      CV *cv = sv_2cv(sv, &unused_hv, &unused_gv, true);
-      sv_setpv((SV*)cv, "&*");
-      sv_free( sv);
-   }
-
    newXS( "Prima::Utils::getdir", Utils_getdir_FROMPERL, "Prima::Utils");
    /* register built-in classes */
    newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
@@ -1193,6 +1152,7 @@ NAN = 0.0;
    register_Object_Class();
    register_Utils_Package();
    register_Component_Class();
+   register_File_Class();
    register_Clipboard_Class();
    register_DeviceBitmap_Class();
    register_Drawable_Class();
