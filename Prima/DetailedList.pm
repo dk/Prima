@@ -305,12 +305,7 @@ sub Header_SizeItem
       clipRect    => \@a,
    );
    $self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
-   if ( $self-> {hScroll}) {
-      my $ov = $self-> {vScroll};
-      $self-> {vScroll} = 0; # speedup a bit
-      $self-> reset_scrolls;
-      $self-> {vScroll} = $ov;
-   }
+   $self-> reset_scrolls if $self-> {hScroll} || $self-> {autoHScroll};
 }
 
 sub widths {
