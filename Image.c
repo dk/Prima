@@ -78,10 +78,10 @@ Image_init( Handle self, HV * profile)
    var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
    var->data = ( var->dataSize > 0) ? allocb( var->dataSize) : nil;
-   if ( !Image_set_extended_data( self, profile))
-      my-> set_data( self, pget_sv( data));
    free( var->palette);
    var->palette = allocn( RGBColor, 256);
+   if ( !Image_set_extended_data( self, profile))
+      my-> set_data( self, pget_sv( data));
    opt_assign( optPreserveType, pget_B( preserveType));
    var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
    if (!( var->type & imGrayScale))
