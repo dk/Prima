@@ -187,7 +187,6 @@ font_query_name( XFontStruct * s, PFontInfo f)
    }
 }   
 
-static char *s_ignore_encodings;
 static char **ignore_encodings;
 static int n_ignore_encodings;
 
@@ -495,6 +494,7 @@ prima_init_font_subsystem( void)
    char **names;
    int count, j , i, bad_fonts = 0, vector_fonts = 0;
    PFontInfo info;
+   char *s_ignore_encodings;
 
    guts. font_names = names = XListFonts( DISP, "*", INT_MAX, &count);
    if ( !names) {
@@ -678,16 +678,16 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
    if ( !xf ) {
       xf = XLoadQueryFont( DISP, ppFontNameSize);
       if ( !xf) {
-
-         if ( guts. default_font. size <= 0) {
+         if ( !guts. default_font_ok) {
             fill_default_font( font);
             apc_font_pick( application, font, font);
             font-> pitch = fpDefault;
          }
+         if ( font != &guts. default_font)
 #ifdef USE_XFT
-         if ( !guts. use_xft || prima_xft_parse( ppFontNameSize, font))
+            if ( !guts. use_xft || prima_xft_parse( ppFontNameSize, font))
 #endif         
-            *font = guts. default_font;
+               *font = guts. default_font;
          return;
       }
       hash_store( xfontCache, ppFontNameSize, strlen( ppFontNameSize), xf);
