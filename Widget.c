@@ -2147,7 +2147,6 @@ Widget_set_selected( Handle self, Bool selected)
 void
 Widget_set_selected_widget( Handle self, Handle widget)
 {
-   enter_method;
    if ( widget) {
       if ((( PWidget) widget)-> owner == self)
          ((( PWidget) widget)-> self)-> set_selected( widget, true);
