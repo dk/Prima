@@ -893,6 +893,7 @@ modify_Image( Handle self, PImgInfo imageInfo)
 	croak( "Image data/line size inconsistency detected");
     }
     --SvREFCNT( SvRV(PImage(self)->mate));
+    my->update_change( self);
 }
 
 #ifndef __unix
