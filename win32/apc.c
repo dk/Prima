@@ -952,7 +952,8 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 		 snprintf( buf, 1024, "%s\t%s", i-> text, i-> accel);
 	     }
 	     else {
-		 strcpy( buf, i-> text);
+		 strncpy( buf, i-> text, 1023);
+		 buf[ 1023] = 0;
 	     }
              map_tildas( buf, strlen( i-> text));
              menuItem. dwTypeData = ( LPTSTR) buf;
@@ -2297,8 +2298,10 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
 
    if ( m-> accel)
       snprintf( buf, 1024, "%s\t%s", text, m-> accel);
-   else
-      strncpy( buf, text, 1024);
+   else {
+      strncpy( buf, text, 1023);
+      buf[ 1023] = 0;
+   }
    map_tildas( buf, strlen( text));
 
    if ( !ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
