@@ -26,9 +26,27 @@
 # $Id$
 package Prima::VB::VBLoader;
 use strict;
-use vars qw($builderActive);
+use vars qw($builderActive $fileVersion);
 
 $builderActive = 0;
+$fileVersion   = '1.1';
+
+my %fileVerCompat = (
+   '1'   => '1.0',
+   '1.0' => '1.1',
+);
+
+sub check_version
+{
+   my $header = $_[0];
+   return (0, 'unknown') unless $header =~ /file=(\d+\.*\d*)/;
+   my $fv = $1;
+   while( $fv ne $fileVersion) {
+      $fv = $fileVerCompat{$fv}, next if exists $fileVerCompat{$fv};
+      return (0, $1);
+   }
+   return (1, $fv);
+}
 
 sub GO_SUB
 {
@@ -138,16 +156,32 @@ sub AUTOFORM_CREATE
 {
    my ( $filename, %parms) = @_;
    my $contents;
+   my @preload_modules;
    {
-      local $/;
       open F, $filename or die "Cannot open $filename:$!\n";
-      $contents = <F>;
+      my $first = <F>;
+      die "Corrupted file $filename\n" unless $first =~ /^# VBForm/;
+      my @fvc = check_version( $first);
+      die "Incompatible version ($fvc[1]) of file $filename\n" unless $fvc[0];
+      while (<F>) {
+         $contents = $_, last unless /^#/;
+         next unless /^#\s*\[([^\]]+)\](.*)$/;
+         if ( $1 eq 'preload') { 
+            push( @preload_modules, split( ' ', $2)); 
+         }
+      }
+      local $/;
+      $contents .= <F>;
       close F;
    }
 
-   die "Corrupted file $filename" unless $contents =~ /^# VBForm/;
+   for ( @preload_modules) {
+      eval "use $_;";
+      die "$@\n" if $@;
+   }
+
    my $sub = eval( $contents);
-   die "$@" if $@;
+   die "$@\n" if $@;
    my @dep = $sub-> ();
    return AUTOFORM_REALIZE( \@dep, \%parms);
 }

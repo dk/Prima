@@ -109,9 +109,9 @@ sub classes
       },
       'Prima::ComboBox' => {
          RTModule => 'Prima::ComboBox',
-         class  => 'Prima::VB::ComboBox',
-         page   => 'General',
-         icon   => 'VB::classes.gif:3',
+         class    => 'Prima::VB::ComboBox',
+         page     => 'General',
+         icon     => 'VB::classes.gif:3',
       },
       'Prima::DriveComboBox' => {
          RTModule => 'Prima::FileDialog',
@@ -1361,7 +1361,7 @@ sub prf_types
    my %de = (
       bool         => [qw(ribbonStrip vertical)],
       uiv          => [qw(shaftBreadth)],
-      align        => [qw(tickAlign)],
+      tickAlign    => [qw(tickAlign)],
    );
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;

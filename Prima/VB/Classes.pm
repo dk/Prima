@@ -1207,6 +1207,11 @@ sub printable
    return $a;
 }
 
+sub preload_modules
+{
+   return ();
+}
+
 package Prima::VB::Types::textee;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
@@ -1971,19 +1976,28 @@ use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Simple DropDown DropDownList); }
 sub packID { 'cs'; }
+sub preload_modules { return 'Prima::ComboBox' };
 
 package Prima::VB::Types::gaugeRelief;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Sink Border Raise); }
 sub packID { 'gr'; }
+sub preload_modules { return 'Prima::Sliders' };
 
 package Prima::VB::Types::sliderScheme;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Gauge Axis Thermometer StdMinMax); }
 sub packID { 'ss'; }
+sub preload_modules { return 'Prima::Sliders' };
 
+package Prima::VB::Types::tickAlign;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::radio);
+sub IDS    { qw(Normal Alternative Dual); }
+sub packID { 'tka'; }
+sub preload_modules { return 'Prima::Sliders' };
 
 package Prima::VB::Types::growMode;
 use vars qw(@ISA);

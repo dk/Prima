@@ -35,7 +35,6 @@ use Prima::VB::CfgMaint;
 my $lite = 0;                          # set to 1 to use ::Lite packages. For debug only
 $Prima::VB::CfgMaint::systemWide = 0;  # 0 - user config, 1 - root config to write
 my $singleConfig                 = 0;  # set 1 to use only either user or root config
-my $fileVersion                  = 1;
 my $VBVersion                    = 0.1;
 
 ###################################################
@@ -1377,26 +1376,42 @@ sub load_file
    update_menu();
    $self->{fmName} = $fileName;
    my $contents;
+   my @preload_modules;
 
    if ( CORE::open( F, $self->{fmName})) {
+      my $first = <F>;
+      unless ( $first =~ /^# VBForm/ ) {
+         Prima::MsgBox::message("Invalid format of ".$self->{fmName});
+         close F;
+         return;
+      }
+
+      my @fvc = Prima::VB::VBLoader::check_version( $first);
+      Prima::MsgBox::message("Incompatible file format version ($fvc[1]) of ".$self->{fmName}."\nBugs possible!",
+         mb::Warning|mb::OK) unless $fvc[0];
+
+      while (<F>) {
+         $contents = $_, last unless /^#/;
+         next unless /^#\s*\[([^\]]+)\](.*)$/;
+         if ( $1 eq 'preload') { 
+            push( @preload_modules, split( ' ', $2)); 
+         }
+      }
       local $/;
-      $contents = <F>;
+      $contents .= <F>;
       close F;
    } else {
       Prima::MsgBox::message( "Error loading ".$self->{fmName});
       return;
    }
-
-   unless ( $contents =~ /^# VBForm/ ) {
-      Prima::MsgBox::message("Invalid format of ".$self->{fmName});
+   
+   for ( @preload_modules) {
+      eval "use $_;";
+      next unless $@;
+      Prima::MsgBox::message( "Error loading module $_:$@");
       return;
    }
 
-   if ( $contents =~ /file=(\d+\.*\d*)/) {
-      Prima::MsgBox::message("Different file format version ($1) of ".$self->{fmName}."\nBugs possible!",
-         mb::Warning|mb::OK)
-         if $1 != $fileVersion;
-   }
 
    my $sub = eval( $contents);
    if ( $@) {
@@ -1517,13 +1532,17 @@ sub write_form
    my $self = $_[0];
 
    my @cmp = $VB::form-> widgets;
+   my %preload_modules;
 
-   my $c = <<PREHEAD;
-# VBForm version file=$fileVersion builder=$VBVersion
+   my $header = <<PREHEAD;
+# VBForm version file=$Prima::VB::VBLoader::fileVersion builder=$VBVersion
+PREHEAD
+
+   my $c = <<STARTSUB;
 sub
 {
    return (
-PREHEAD
+STARTSUB
 
    my $main = $VB::form-> prf( 'name');
    push( @cmp, $VB::form);
@@ -1576,6 +1595,7 @@ MEDI
          }
          my $type = $self-> get_typerec( $types->{$_}, \$val);
          $val = defined($val) ? $type-> write( $_, $val) : 'undef';
+         $preload_modules{$_} = 1 for $type-> preload_modules();
          $c .= "          $_ => $val,\n";
       }
       $c .= "      }},\n";
@@ -1585,7 +1605,8 @@ $c .= <<POSTHEAD;
    );
 }
 POSTHEAD
-   return $c;
+   $header .= '# [preload] ' . join( ' ', sort keys %preload_modules) . "\n";
+   return $header . $c;
 }
 
 sub write_PL
@@ -1594,14 +1615,14 @@ sub write_PL
    my $main = $VB::form-> prf( 'name');
    my @cmp = $VB::form-> widgets;
 
-   my $c = <<PREPREHEAD;
+   my $header = <<PREPREHEAD;
 use Prima;
 use Prima::Classes;
 PREPREHEAD
 
    my %modules = map { $_->{module} => 1 } @cmp;
-   $c .= "use $_;\n" for sort keys %modules;
-   $c .= <<PREHEAD;
+   
+   my $c = <<PREHEAD;
 
 package ${main}Window;
 use vars qw(\@ISA);
@@ -1714,6 +1735,7 @@ AGAIN:
          next if $_ eq 'owner';
          my $type = $self-> get_typerec( $types->{$_}, \$val);
          $val = defined($val) ? $type-> write( $_, $val, 1) : 'undef';
+         $modules{$_} = 1 for $type-> preload_modules();
          $c .= "       $_ => $val,\n";
       }
       $c .= "   );\n";
@@ -1748,7 +1770,9 @@ ${main}Window-> create;
 run Prima;
 
 POSTHEAD
-   return $c;
+
+   $header .= "use $_;\n" for sort keys %modules;
+   return $header.$c;
 }
 
 
