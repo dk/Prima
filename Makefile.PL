@@ -60,6 +60,8 @@ use vars @ovvars = qw(
     $INSTALL_LIB
     $INSTALL_DL
     $INSTALL_EXAMPLES
+    $INSTALL_MAN3
+    $INSTALL_MAN1
     $TMPDIR
     $NULLDEV
     $MAKE
@@ -83,6 +85,8 @@ use vars @path_expand_ovvars = qw(
     $INSTALL_LIB
     $INSTALL_DL
     $INSTALL_EXAMPLES
+    $INSTALL_MAN3
+    $INSTALL_MAN1
     $TMPDIR
     $MAKE
     $RM
@@ -117,6 +121,8 @@ use vars qw(
     @allinstall
     @allbins
     @alldirs
+    @allman
+    @allman
     @headers
     @footers
     @Makefile_deps
@@ -124,6 +130,8 @@ use vars qw(
     $PrimaTarget
     @Prima_exports
     $extralibs
+    @executables
+    $install_manuals
 );
 
 my $extramsg = "(see makefile.log for details)";
@@ -843,13 +851,19 @@ sub setup_variables
        $i++;
     }
     my $prefix = qd(($i ? join( '/', @a[0..$i-1]) : ''));
-
     setvar( 'PREFIX',           $prefix);
     setvar( 'INSTALLSCRIPT',    $PREFIX . qd( '/' . join( '/', @a[$i .. $#a])));
     setvar( 'INSTALLSITEARCH',  $PREFIX . qd( '/' . join( '/', @b[$i .. $#b])));
     setvar( 'INSTALL_LIB',      $INSTALLSITEARCH . qd( "/Prima"));
     setvar( 'INSTALL_DL',       $INSTALLSITEARCH . qd( "/auto/Prima"));
     setvar( 'INSTALL_EXAMPLES', $INSTALLSITEARCH . qd( "/Prima/examples"));
+    if ( exists $USER_VARS{PREFIX}) {
+       setvar( 'INSTALL_MAN1', $INSTALLSITEARCH . qd( "/man/man1"));
+       setvar( 'INSTALL_MAN3', $INSTALLSITEARCH . qd( "/man/man3"));
+    } else {
+       setvar( 'INSTALL_MAN1', $Config{installman1dir});
+       setvar( 'INSTALL_MAN3', $Config{installman3dir});
+    }
 
     setvar( 'MAKETYPE', lc ( $MAKE = $Config{ make}));
     # Note that Borland's make utility also named 'make'. But its
@@ -882,6 +896,11 @@ sub setup_variables
     $DEFINES{PRIMA_SUBVERSION} = $ver2;
     setvar( 'DISTNAME', "Prima-$ver1.$ver2");
     setvar( 'WANTNOCODECS', 0);
+    @executables = qw(
+       Prima/VB/VB.pl
+       Prima/VB/cfgmaint.pl
+    );
+    $install_manuals = (!$Win32 && !$OS2);
 
     @Prima_exports = qw(
 apc_application_begin_paint
@@ -1555,6 +1574,17 @@ sub qqd
     return $path_str;
 }
 
+sub manname
+{
+   my ( $name, $section, $prefix) = @_;
+   $prefix = quotemeta( $prefix );
+   my $ds = quotemeta($dir_sep);
+   $name =~ s/^$prefix(?:[\\\/$ds])//;
+   $name =~ s/$dir_sep/::/g;
+   $name =~ s/\.[^\.]*$/\.$section/;
+   return (( $section == 3 ) ? $INSTALL_MAN3 : $INSTALL_MAN1) . $dir_sep . $name;
+}
+
 sub create_config_pm
 {
    my $_cwd = cwd;
@@ -1973,6 +2003,8 @@ EOF
     push @allinstall, $config_h => $INSTALL_LIB . qd( "/CORE/generic");
     push @allinstall, map { qd($_), $INSTALLSITEARCH} <pod/*.pod>;
     push @allinstall, map { qd($_), $INSTALL_LIB} <pod/Prima/*.pod>;
+    push @allman,     map { qd($_), manname($_, 1, 'pod')} <pod/*.pod>;
+    push @allman,     map { qd($_), manname($_, 3, 'pod')} <pod/Prima/*.pod>;
     push @alldirs, qd( "include/generic"), qd( "auto/Prima");
 
     print "Creating Prima::Config.pm\n";
@@ -2018,9 +2050,11 @@ EOF
     while ( <utils/*.pl>) {
         push @allbins, $_, $INSTALLSCRIPT;
     }
-    push @allbins, "Prima/VB/VB.pl", $INSTALLSCRIPT;
-    push @allbins, "Prima/VB/cfgmaint.pl", $INSTALLSCRIPT;
-
+    for ( @executables) {
+        push @allbins, $_, $INSTALLSCRIPT;
+        m/\/([^\/]+)$/;
+        push @allman, qd($_), manname( $1, 1, '');
+    }
 
     my $thunks_tinc = qd( "include/generic/thunks.tinc");
     push @allclean, $thunks_tinc;
@@ -2097,15 +2131,26 @@ EOF
     $cp{$PrimaTarget} = $INSTALL_DL;
     $cp{$PrimaLib}    = $INSTALLSITEARCH;
     $cp{"Prima.pm"}   = $INSTALLSITEARCH;
+    push @allman, 'Prima.pm', manname( 'Prima.pm', 3, '');
 
     my $cwd = cwd();
     finddepth( sub {
         return if $File::Find::dir =~ /CVS/ || m/CVS/;
         $cp{qd("$File::Find::dir/$_")} = qd("$INSTALLSITEARCH/$File::Find::dir") unless -d $_;
+        if ( $install_manuals && m/\.pm$/) {
+           if ( open F, $_ ) {
+              my $fn = "$File::Find::dir/$_";
+              while ( <F> ) {
+                 next unless /^\=head1/;
+                 push @allman, qd($fn), manname( $fn, 3, '');
+                 last;
+              }
+              close F;
+           }
+        }
     }, 'Prima');
 
-    delete $cp{qd("Prima/VB/VB.pl")};
-    delete $cp{qd("Prima/VB/cfgmaint.pl")};
+    delete $cp{qd($_)} for @executables;
 
     while (@allinstall) {
        my ( $src, $dst) = ( shift(@allinstall), shift(@allinstall));
@@ -2149,6 +2194,20 @@ EOF
     }
     dump_cmd( sub { "$_[0] $cpbin{$_[0]}"}, 'CPBIN', keys %cpbin);
 
+    my @man_to_remove;
+    if ( $install_manuals) {
+       my $cmd = "\t\@pod2man --lax --section=\%d \%s " . ( length( $Config{gzip} ) ? 
+           "| $Config{gzip} -c > \%s.gz\n" : 
+           "> \%s\n" );
+       print MAKE "\t\@echo Installing man pages...\n";
+       while ( scalar @allman ) {
+          push @man_to_remove, $allman[1];
+          $allman[1] =~ m/\.(\d+)$/;
+          printf MAKE $cmd, $1, splice( @allman, 0, 2);
+       }
+       if ( length $Config{gzip}) { s/$/.gz/ for @man_to_remove }
+    }
+
     print MAKE "\n\t\@echo Updating config...\n";
     print MAKE "\t$^X Makefile.PL --updateconfig $INSTALLSITEARCH/Prima/Config.pm\n";
 
@@ -2159,6 +2218,7 @@ EOF
         $_[0] =~ m/(\\|\/)?([^\\|\/]+)$/; 
         return "$cp{$_[0]}$dir_sep$2";
     }, 'RM', keys %cp);
+    dump_cmd( sub { $_ }, 'RM', @man_to_remove);
     delete $dirs_to_rm{$INSTALLSITEARCH};
     delete $dirs_to_rm{$INSTALLSCRIPT};
     dump_cmd( sub { $_[0] }, 'RMDIR', sort { length($b) <=> length($a) } keys %dirs_to_rm);
