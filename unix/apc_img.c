@@ -34,7 +34,7 @@ static int apcErrorType = APCERRT_NONE;
 #define APCIMG_NO_FORMAT 4
 #define APCIMG_INV_PROPERTY_TYPE 5
 #define APCIMG_INV_PROPERTY_VAL 6
-#define APCIMG_INV_INDEX_VAL 7
+#define APCIMG_INV_INDEX_VAL 7 /* Obsolete for now; the code is free for use */
 #define APCIMG_FORBIDDEN_READALL 8
 static int apcErrorCode = APCIMG_NO_ERROR;
 static int errDriverIdx = -1;
@@ -98,7 +98,7 @@ apc_image_get_error_message( char *errorMsgBuf, int bufLen)
 	    {
 		PImgFormat imgf;
 		if ( ( errDriverIdx >= 0) && ( errDriverIdx < imgFormats->count)) {
-		    fprintf( stderr, "Asking driver %d for error\n", errDriverIdx);
+		    DOLBUG( "Asking driver %d for error\n", errDriverIdx);
 		    imgf = ( PImgFormat) list_at( imgFormats, errDriverIdx);
 		    msg = ( char *) imgf->getError( NULL, 0);
 		}
@@ -139,7 +139,7 @@ __apc_image_clear_error()
 Bool
 apc_image_create( Handle self)
 {
-    fprintf( stderr, "apc_image_create()\n");
+    DOLBUG( "apc_image_create()\n");
     return false;
 }
 
@@ -156,27 +156,27 @@ apc_image_destroy( Handle self)
 Bool
 apc_image_begin_paint( Handle self)
 {
-    fprintf( stderr, "apc_image_begin_paint()\n");
+    DOLBUG( "apc_image_begin_paint()\n");
     return false;
 }
 
 Bool
 apc_image_begin_paint_info( Handle self)
 {
-    fprintf( stderr, "apc_image_begin_paint_info()\n");
+    DOLBUG( "apc_image_begin_paint_info()\n");
     return false;
 }
 
 void
 apc_image_end_paint( Handle self)
 {
-    fprintf( stderr, "apc_image_end_paint()\n");
+    DOLBUG( "apc_image_end_paint()\n");
 }
 
 void
 apc_image_end_paint_info( Handle self)
 {
-    fprintf( stderr, "apc_image_end_paint_info()\n");
+    DOLBUG( "apc_image_end_paint_info()\n");
 }
 
 void
@@ -192,14 +192,14 @@ apc_image_update_change( Handle self)
 Bool
 apc_dbm_create( Handle self, Bool monochrome)
 {
-    fprintf( stderr, "apc_dbm_create()\n");
+    DOLBUG( "apc_dbm_create()\n");
     return false;
 }
 
 void
 apc_dbm_destroy( Handle self)
 {
-    fprintf( stderr, "apc_dbm_destroy()\n");
+    DOLBUG( "apc_dbm_destroy()\n");
 }
 
 static Bool
@@ -299,7 +299,7 @@ load_img_loadable( Handle item, void *params)
 {
     __PImgLoadData load_data = ( __PImgLoadData) params;
     PImgFormat imgFormat = ( PImgFormat) item;
-    fprintf( stderr, "checking %s whether it is loadable as %s\n", load_data->filename, imgFormat->id);
+    DOLBUG( "checking %s whether it is loadable as %s\n", load_data->filename, imgFormat->id);
     if ( ( load_data->preread_size < imgFormat->preread_size)
 	 || ( ( load_data->desiredFormat != nil)
 	      && ( strcasecmp( load_data->desiredFormat, imgFormat->id) != 0))) {
@@ -338,21 +338,22 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool r
    int i, j, n;
    Bool rc = true;
 
+   DOLBUG( "Have %d properties on entering __apc_image_correct_properties\n", propList->count);
    for ( i = ( propList->count - 1); ( i >= 0) && rc; i--) {
        PImgProperty imgProp = ( PImgProperty) list_at( propList, i);
        Bool isExtraInfo = ( strcmp( imgProp->name, "extraInfo") == 0);
        Bool isReadAll = ( strcmp( imgProp->name, "readAll") == 0);
-       fprintf( stderr, "Correcting ``%s''\n", imgProp->name);
+       DOLBUG( "Correcting ``%s''\n", imgProp->name);
        if ( isExtraInfo || isReadAll) {
 	   if ( imgProp->size != -1) {
 	       // We don't expect an array here.
 	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
-	       fprintf( stderr, "Property `%s' is of a wrong type\n", imgProp->name);
+	       DOLBUG( "Property `%s' is of a wrong type\n", imgProp->name);
 	       rc = false;
 	   }
 	   else if ( ! __is_boolean_value( imgProp->val.String)) {
 	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_VAL);
-	       fprintf( stderr, "Property %s: wrong value \'%s\'\n", imgProp->name, imgProp->val.String);
+	       DOLBUG( "Property %s: wrong value \'%s\'\n", imgProp->name, imgProp->val.String);
 	       rc = false;
 	   }
 	   else {
@@ -376,7 +377,7 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool r
 	   if ( ( ( fmtProps[ j].type[ 1] == '*') && imgProp->size == -1)
 		|| ( ( fmtProps[ j].type[ 1] == '\0') && ( imgProp->size >= 0))) {
 	       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_PROPERTY_TYPE);
-	       fprintf( stderr, "Property %s: wrong type\n", imgProp->name);
+	       DOLBUG( "Property %s: wrong type\n", imgProp->name);
 	       apc_image_clear_property( imgProp);
 	       rc = false;
 	   }
@@ -396,12 +397,6 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool r
 			   int prop = atoi( imgProp->val.String);
 			   free( imgProp->val.String);
 			   imgProp->val.Int = prop;
-			   if ( readData
-				&& ( strcmp( imgProp->name, "index") == 0)
-				&& ( prop == -1)) {
-			       __apc_image_set_error( APCERRT_INTERNAL, APCIMG_INV_INDEX_VAL);
-			       rc = false;
-			   }
 		       }
 		       imgProp->flags = ( imgProp->flags & ~PROPTYPE_MASK) || PROPTYPE_INT;
 		       break;
@@ -455,7 +450,9 @@ __apc_image_correct_properties( PImgInfo imageInfo, PImgFormat imgFormat, Bool r
        list_delete_at( propList, i);
    }
 
-   fprintf( stderr, "__apc_image_set_error: returning %d\n", ( int) rc);
+   DOLBUG( "__apc_image_set_error: returning %d\n", ( int) rc);
+   DOLBUG( "Have %d properties on exiting __apc_image_correct_properties\n", propList->count);
+
    return rc;
 }
 
@@ -483,12 +480,12 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 		load_data->preread_size = read( load_data->fd, load_data->preread_buf, load_data->preread_size);
 		if ( load_data->preread_size != -1) {
 		    int format_idx = list_first_that( imgFormats, load_img_loadable, load_data);
-		    fprintf( stderr, "format_idx: %d\n", format_idx);
+		    DOLBUG( "format_idx: %d\n", format_idx);
 		    if ( format_idx != -1) {
 			int i;
 			Bool correction_succeed = true, readAll = false;
 			PImgFormat imgFormat = ( PImgFormat) list_at( imgFormats, format_idx);
-			fprintf( stderr, "%s for %s as %s\n", 
+			DOLBUG( "%s for %s as %s\n", 
 				 ( readData ? "Loading image" : "Getting info"), 
 				 load_data->filename, 
 				 imgFormat->id
@@ -506,7 +503,7 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 				   imgFormat->load( load_data->fd, load_data->filename, imgInfo, readAll) :
 				   imgFormat->getInfo( load_data->fd, load_data->filename, imgInfo, readAll));
 			    if ( ! rc) {
-				fprintf( stderr, "Error in driver %d\n", format_idx);
+				DOLBUG( "Error in driver %d\n", format_idx);
 				__apc_image_set_error( APCERRT_DRIVER, 0, format_idx);
 			    }
 			}
@@ -528,7 +525,7 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
     else {
 	__apc_image_set_error( APCERRT_INTERNAL, APCIMG_EMPTY_FORMAT_LIST);
     }
-    fprintf( stderr, "apc_image_read: returning %d\n", ( int) rc);
+    DOLBUG( "apc_image_read: returning %d\n", ( int) rc);
     return rc;
 }
 
@@ -646,17 +643,31 @@ apc_image_clear_property( PImgProperty imgProp)
     if ( imgProp != nil) {
 	free( imgProp->name);
 	if ( imgProp->size == -1) {
-	    if ( ( imgProp->flags & PROPTYPE_MASK) == PROPTYPE_STRING) {
-		free( imgProp->val.String);
+	    switch ( imgProp->flags & PROPTYPE_MASK) {
+		case PROPTYPE_STRING:
+		    free( imgProp->val.String);
+		    break;
+		case PROPTYPE_BIN:
+		    free( imgProp->val.Binary.data);
+		    break;
 	    }
 	}
 	else {
 	    if ( imgProp->size > 0) {
-		if ( ( imgProp->flags & PROPTYPE_MASK) == PROPTYPE_STRING) {
-		    int i;
-		    for ( i = 0; i < imgProp->size; i++) {
-			free( imgProp->val.pString[ i]);
-		    }
+		int i;
+		switch ( imgProp->flags & PROPTYPE_MASK) {
+		    case PROPTYPE_STRING:
+			for ( i = 0; i < imgProp->size; i++) {
+			    free( imgProp->val.pString[ i]);
+			}
+			break;
+		    case PROPTYPE_BIN:
+			for ( i = 0; i < imgProp->size; i++) {
+			    if ( imgProp->val.pBinary[ i].data != nil) {
+				free( imgProp->val.pBinary[ i].data);
+			    }
+			}
+			break;
 		}
 		switch ( imgProp->flags & PROPTYPE_MASK) {
 		    case PROPTYPE_INT:
@@ -667,6 +678,9 @@ apc_image_clear_property( PImgProperty imgProp)
 			break;
 		    case PROPTYPE_STRING:
 			free( imgProp->val.pString);
+			break;
+		    case PROPTYPE_BIN:
+			free( imgProp->val.pBinary);
 			break;
 		    case PROPTYPE_BYTE:
 		    default:
@@ -691,8 +705,8 @@ prima_init_image_subsystem( void)
 /*      PImgInfo imageInfo; */
 /*      PImgProperty imgProp; */
 
-/*      fprintf( stderr, "___apc_image_test\n"); */
-/*      fprintf( stderr, "registering GIF format: %s\n", apc_register_image_format( APCIMG_VERSION, &gifFormat) ? "ok" : "failed"); */
+/*      DOLBUG( "___apc_image_test\n"); */
+/*      DOLBUG( "registering GIF format: %s\n", apc_register_image_format( APCIMG_VERSION, &gifFormat) ? "ok" : "failed"); */
 
 /*      imgInfo = plist_create( 5, 5); */
 
@@ -704,7 +718,7 @@ prima_init_image_subsystem( void)
 /*      imgProp->val.Int = 5; */
 /*      list_add( imageInfo->propList, ( Handle) imgProp); */
 /*      list_add( imgInfo, ( Handle) imageInfo); */
-/*      fprintf( stderr, "First one\n"); */
+/*      DOLBUG( "First one\n"); */
 
 /*      imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo)); */
 /*      imageInfo->propList = plist_create( 5, 5); */
@@ -743,10 +757,10 @@ prima_init_image_subsystem( void)
 /*      imgProp = ( PImgProperty) malloc( sizeof( ImgProperty)); */
 /*      list_add( imgInfo, ( Handle) imageInfo); */
 
-/*      fprintf( stderr, "Getting info about image...\n"); */
+/*      DOLBUG( "Getting info about image...\n"); */
 
 /*      if ( ! apc_image_read( "/home/voland/tmp/eagle8.gif", imgInfo, true)) { */
-/*  	fprintf( stderr, "getinfo failed: "); */
-/*  	fprintf( stderr, "%s\n", apc_image_get_error_message( NULL, 0)); */
+/*  	DOLBUG( "getinfo failed: "); */
+/*  	DOLBUG( "%s\n", apc_image_get_error_message( NULL, 0)); */
 /*      } */
 /*  } */
