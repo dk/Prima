@@ -29,12 +29,21 @@
 
  */
 
-#include "img.h"
-#include "unix/guts.h"
-#include "Icon.h"
 
-#undef FUNC
+#define Drawable        XDrawable
+#define Font            XFont
+#define Window          XWindow
 #include <X11/xpm.h>
+#undef Font
+#undef Drawable
+#undef Bool
+#undef Window
+#define ComplexShape 0
+#define XBool int
+#undef Complex
+#undef FUNC
+#include "img.h"
+#include "Icon.h"
 
 #ifdef __cplusplus
 extern "C" {
