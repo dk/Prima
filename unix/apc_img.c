@@ -1230,10 +1230,10 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
          back = guts. monochromeMap[0];
       } else {
          if ( guts. palSize > 0) {
-            fore = prima_color_find(( Handle) img, 
+            fore = prima_color_find( self,
                 RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
                 -1, nil, RANK_NORMAL);
-            back = prima_color_find(( Handle) img, 
+            back = prima_color_find( self,
                 RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
                 -1, nil, RANK_NORMAL);
          } else {
@@ -1982,10 +1982,10 @@ apc_gp_stretch_image( Handle self, Handle image,
          back = guts. monochromeMap[0];
       } else {
          if ( guts. palSize > 0) {
-            fore = prima_color_find(( Handle) img, 
+            fore = prima_color_find( self, 
                 RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
                 -1, nil, RANK_NORMAL);
-            back = prima_color_find(( Handle) img, 
+            back = prima_color_find( self,
                 RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
                 -1, nil, RANK_NORMAL);
          } else {
