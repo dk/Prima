@@ -586,6 +586,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    GC gc;
    XGCValues gcv;
    char c;
+   int w = guts.cursor_width, h = guts.cursor_height;
 
    id = XX-> pointer_id;
    if ( id == crDefault) {
@@ -617,39 +618,38 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
          warn( "cannot load cursor font");
          return false;
       }
-      p1 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), guts.cursor_width, guts.cursor_height, 1);
-      p2 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), guts.cursor_width, guts.cursor_height, 1);
+      p1 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), w, h, 1);
+      p2 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), w, h, 1);
       gcv. background = 1;
       gcv. foreground = 0;
       gcv. font = guts.pointer_font-> fid;
       gc = XCreateGC( DISP, p1, GCBackground | GCForeground | GCFont, &gcv);
-      c = (char)cursor_map[id];
-      XDrawString( DISP, p1, gc, guts.cursor_width/2, guts.cursor_height/2,
-                   &c, 1);
+      XFillRectangle( DISP, p1, gc, 0, 0, w, h);
       gcv. background = 0;
       gcv. foreground = 1;
       XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
-      c = (char)(cursor_map[id]+1);
-      // XDrawString( DISP, p2, gc, guts.cursor_width/2, guts.cursor_height/2,
-      //             &c, 1);
+      XFillRectangle( DISP, p2, gc, 0, 0, w, h);
+      XDrawString( DISP, p1, gc, w/2, h/2, (c = (char)(cursor_map[id]+1), &c), 1);
+      gcv. background = 1;
+      gcv. foreground = 0;
+      XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
+      XDrawString( DISP, p2, gc, w/2, h/2, (c = (char)(cursor_map[id]+1), &c), 1);
+      XDrawString( DISP, p1, gc, w/2, h/2, (char*)&(cursor_map[id]), 1);
       XFreeGC( DISP, gc);
    }
-   {
-      Point size = {guts.cursor_width, guts.cursor_height};
-      CIcon(icon)-> set_size( icon, size);
-   }
+   CIcon(icon)-> set_size( icon, ((Point){w,h}));
    CIcon(icon)-> set_type( icon, imMono);
-   im = XGetImage( DISP, p1, 0, 0, guts.cursor_width, guts.cursor_height, 1, XYPixmap);
+   im = XGetImage( DISP, p1, 0, 0, w, h, 1, XYPixmap);
    prima_copy_xybitmap( PIcon(icon)-> data, im-> data,
                         PIcon(icon)-> w, PIcon(icon)-> h,
                         PIcon(icon)-> lineSize, im-> bytes_per_line);
    XDestroyImage( im);
-   im = XGetImage( DISP, p2, 0, 0, guts.cursor_width, guts.cursor_height, 1, XYPixmap);
+   im = XGetImage( DISP, p2, 0, 0, w, h, 1, XYPixmap);
    prima_copy_xybitmap( PIcon(icon)-> mask, im-> data,
                         PIcon(icon)-> w, PIcon(icon)-> h,
                         PIcon(icon)-> maskLine, im-> bytes_per_line);
    XDestroyImage( im);
-   CIcon(icon)-> update_change( icon);
+   Image_update_change( icon);
    if ( free_pixmap) {
       XFreePixmap( DISP, p1);
       XFreePixmap( DISP, p2);
