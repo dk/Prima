@@ -456,7 +456,7 @@ sub InputLine_KeyDown
    my ( $self, $edit, $code, $key, $mod) = @_;
    $edit-> clear_event, return if 
       $key == kb::NoKey && !($mod & (km::Alt | km::Ctrl)) &&
-      chr($code) !~ /^[\d+-]$/;
+      chr($code) !~ /^[.\d+-]$/;
    if ( $key == kb::Up || $key == kb::Down || $key == kb::PgDn || $key == kb::PgUp) {
       my ($s,$pgs) = ( $self-> step, $self-> pageStep);
       my $z = ( $key == kb::Up) ? $s : (( $key == kb::Down) ? -$s :
