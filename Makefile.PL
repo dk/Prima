@@ -2009,8 +2009,9 @@ EOF
            push @allinstall, $_, $INSTALL_EXAMPLES;
         }
     }
-    push @allbins, "utils/gencls.pl", $INSTALLSCRIPT;
-    push @allbins, "utils/tmlink.pl", $INSTALLSCRIPT;
+    while ( <utils/*.pl>) {
+        push @allbins, $_, $INSTALLSCRIPT;
+    }
     push @allbins, "Prima/VB/VB.pl", $INSTALLSCRIPT;
     push @allbins, "Prima/VB/cfgmaint.pl", $INSTALLSCRIPT;
 
