@@ -58,12 +58,9 @@ for ( @$codecs) {
    my $name = "./test.test." . $ci-> {fileExtensions}->[0];
    
    my $xi = $i-> dup;
-   $xi-> save( $name);
    ok(0), unlink( $name), next unless $xi-> save( $name);
    my $xl = Prima::Image-> load( $name, loadExtras => 1);
-   ok(0), next unless $xl;
    unlink $name;
-
    ok(0), next unless $xl;
    skip, next if $xl-> {extras}-> {codecID} != $cid;
    ok( 1);
