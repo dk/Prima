@@ -450,13 +450,13 @@ sub on_mousemove
    if (( $x >= $border + 1) && ( $x <= $width - $border - 1))
    {
       $self-> new_offset( $self-> x2offset( $x));
-      $self-> stop_scroll_timer;
+      $self-> scroll_timer_stop;
       return;
    }
    my $firstAct = ! $self-> scroll_timer_active;
-   $self-> start_scroll_timer if $firstAct;
-   return unless $self->{scrollTimer}->{semaphore};
-   $self->{scrollTimer}->{semaphore} = 0;
+   $self-> scroll_timer_start if $firstAct;
+   return unless $self-> scroll_timer_semaphore;
+   $self->scroll_timer_semaphore(0);
    if ( $firstAct)
    {
       if ( $x <= $border + $self->{atDrawX})
@@ -491,7 +491,7 @@ sub on_mouseup
    my ( $self, $btn, $mod, $x, $y) = @_;
    return unless defined $self->{mouseTransaction};
    delete $self->{mouseTransaction};
-   $self-> stop_scroll_timer;
+   $self-> scroll_timer_stop;
    $self-> capture(0);
 }
 

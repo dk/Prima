@@ -480,11 +480,11 @@ sub on_mousemove
    my ($dx,$dy)     = ( $self->{dx}, $self->{dy});
    if ( $y >= $size[1] - $bw || $y < $bw + $dx || $x >= $size[0] - $bw - $dx || $x < $bw)
    {
-      $self-> start_scroll_timer unless $self-> scroll_timer_active;
-      return unless $self->{scrollTimer}->{semaphore};
-      $self->{scrollTimer}->{semaphore} = 0;
+      $self-> scroll_timer_start unless $self-> scroll_timer_active;
+      return unless $self->scroll_timer_semaphore;
+      $self->scroll_timer_semaphore(0);
    } else {
-      $self-> stop_scroll_timer;
+      $self-> scroll_timer_stop;
    }
 
    if ( $aux)

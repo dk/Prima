@@ -747,10 +747,9 @@ sub profile_check_in
 {
    my ( $self, $p, $default) = @_;
    my $orgFont = exists $p->{ font} ? $p->{ font} : undef;
+   my $owner = exists $p-> { owner} ? $p-> { owner} : $default-> { owner};
    $self-> SUPER::profile_check_in( $p, $default);
    delete $p->{ font} unless defined $orgFont;
-
-   my $owner = exists $p-> { owner} ? $p-> { owner} : $default-> { owner};
 
    $p-> { text} = $p-> { name} if ( $p-> { owner} && !exists( $p-> { text}));
 

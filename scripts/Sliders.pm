@@ -108,8 +108,8 @@ sub on_mousedown
    $self->{increment} = 0;
    if ( $self->{ mouseTransaction} != 3) {
       $self-> notify( 'Increment', $self->{ mouseTransaction} == 1 ? 1 : -1);
-      $self-> start_scroll_timer;
-      $self->{scrollTimer}->{semaphore} = 0;
+      $self-> scroll_timer_start;
+      $self-> scroll_timer_semaphore(0);
    } else {
       $self->{pointerSave} = $self-> pointer;
       $self->pointer( cr::SizeWE);
@@ -127,7 +127,7 @@ sub on_mouseup
    $self-> {spaceTransaction} = undef;
    $self-> {lastMouseOver}    = undef;
    $self-> capture(0);
-   $self-> stop_scroll_timer;
+   $self-> scroll_timer_stop;
    $self-> state( 0);
    $self-> pointer( $self->{pointerSave}), $self->{pointerSave} = undef if $mt == 3;
    $self->{increment} = 0;
@@ -153,12 +153,12 @@ sub on_mousemove
         if int( $self-> {increment}) != int( $d);
       $self-> {increment}  = $d;
    } elsif ( $self->{pressState} > 0) {
-      $self-> start_scroll_timer unless $self-> scroll_timer_active;
-      return unless $self->{scrollTimer}->{semaphore};
-      $self->{scrollTimer}->{semaphore} = 0;
+      $self-> scroll_timer_start unless $self-> scroll_timer_active;
+      return unless $self-> scroll_timer_semaphore;
+      $self-> scroll_timer_semaphore(0);
       $self-> notify( 'Increment', $self->{mouseTransaction} == 1 ? 1 : -1);
    } else {
-      $self-> stop_scroll_timer;
+      $self-> scroll_timer_stop;
    }
 }
 
@@ -233,8 +233,8 @@ sub on_mousedown
    $self-> capture(1);
    $self-> clear_event;
    $self-> notify( 'Increment', $self->{ mouseTransaction} == 1 ? 1 : -1);
-   $self-> start_scroll_timer;
-   $self->{scrollTimer}->{semaphore} = 0;
+   $self-> scroll_timer_start;
+   $self-> scroll_timer_semaphore(0);
 }
 
 sub on_mouseup
@@ -246,7 +246,7 @@ sub on_mouseup
    $self-> {spaceTransaction} = undef;
    $self-> {lastMouseOver}    = undef;
    $self-> capture(0);
-   $self-> stop_scroll_timer;
+   $self-> scroll_timer_stop;
    $self-> state( 0);
    $self-> notify( 'TrackEnd');
 }
@@ -261,12 +261,12 @@ sub on_mousemove
       if $self-> { lastMouseOver} != $mouseOver;
    $self-> { lastMouseOver} = $mouseOver;
    if ( $self->{pressState}) {
-      $self-> start_scroll_timer unless $self-> scroll_timer_active;
-      return unless $self->{scrollTimer}->{semaphore};
-      $self->{scrollTimer}->{semaphore} = 0;
+      $self-> scroll_timer_start unless $self-> scroll_timer_active;
+      return unless $self-> scroll_timer_semaphore;
+      $self-> scroll_timer_semaphore(0);
       $self-> notify( 'Increment', $self->{mouseTransaction} == 1 ? 1 : -1);
    } else {
-      $self-> stop_scroll_timer;
+      $self-> scroll_timer_stop;
    }
 }
 
@@ -1473,8 +1473,8 @@ sub on_mousedown
          $self-> {mouseTransaction} = $self-> {pressState};
          $self-> update_view;
          $self-> capture(1);
-         $self-> start_scroll_timer;
-         $self->{scrollTimer}->{semaphore} = 0;
+         $self-> scroll_timer_start;
+         $self-> scroll_timer_semaphore(0);
          $self-> value( $self-> value + $self-> step * (($self->{pressState} == 1) ? -1 : 1));
          return;
       }
@@ -1495,7 +1495,7 @@ sub on_mouseup
    return unless $self->{mouseTransaction};
    my @butt = ( $self->{butt1X}, $self->{butt1Y}, $self->{butt2X},
                 $self->{butt1X} + DefButtonX, $self->{butt1Y} + DefButtonX, $self->{butt2X} + DefButtonX);
-   $self-> stop_scroll_timer;
+   $self-> scroll_timer_stop;
    $self-> {pressState} = 0;
    if ( $self->{mouseTransaction} == 1) {
       $self-> invalidate_rect( @butt[0..1], $butt[3] + 1, $butt[4] + 1);
@@ -1517,12 +1517,12 @@ sub on_mousemove
    if ( $self->{mouseTransaction} == 3) {
       $self-> value( $self-> xy2val( $x, $y));
    } elsif ( $self->{pressState} > 0) {
-      $self-> start_scroll_timer unless $self-> scroll_timer_active;
-      return unless $self->{scrollTimer}->{semaphore};
-      $self->{scrollTimer}->{semaphore} = 0;
+      $self-> scroll_timer_start unless $self-> scroll_timer_active;
+      return unless $self-> scroll_timer_semaphore;
+      $self-> scroll_timer_semaphore(0);
       $self-> value( $self-> value + $self-> step * (( $self->{mouseTransaction} == 1) ? -1 : 1));
    } else {
-      $self-> stop_scroll_timer;
+      $self-> scroll_timer_stop;
    }
 }
 

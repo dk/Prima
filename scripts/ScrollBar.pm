@@ -576,7 +576,7 @@ sub ScrollTimer_Tick
    my ( $self, $timer) = @_;
    unless ( defined $self->{mouseTransaction})
    {
-      $self->stop_scroll_timer;
+      $self->scroll_timer_stop;
       return;
    }
    my $who = $self->{mouseTransaction};
@@ -593,7 +593,7 @@ sub ScrollTimer_Tick
          $self-> draw_part( $who);
          $self->{mouseTransaction} = undef;
          $self-> capture(0);
-         $self-> stop_scroll_timer;
+         $self-> scroll_timer_stop;
          return;
       }
       $self-> notify(q(Change));
@@ -601,6 +601,14 @@ sub ScrollTimer_Tick
    if ( $who eq q(left) || $who eq q(right))
    {
       return unless $self->{$who}->{pressed};
+      my $upon = $self-> translate_point( $self-> pointerPos);
+      if ( $upon ne $who) {
+          if ( $self->{$who}->{pressed}) {
+             $self->{$who}->{pressed} = 0;
+             $self-> draw_part( $who);
+          }
+          return;
+      }
       my $oldValue = $self->{value};
       $self-> {suppressNotify} = 1;
       $self-> value( $oldValue + (( $who eq q(left))?-1:1)*$self->{pageStep});
@@ -610,7 +618,7 @@ sub ScrollTimer_Tick
          $self->{$who}->{pressed} = 0;
          $self->{mouseTransaction} = undef;
          $self-> capture(0);
-         $self-> stop_scroll_timer;
+         $self-> scroll_timer_stop;
          return;
       }
       $self-> notify(q(Change));
@@ -655,7 +663,7 @@ sub on_mousedown
          $self-> {suppressNotify} = undef;
          $self-> draw_part($who);
          $self-> notify(q(Change));
-         $self-> start_scroll_timer;
+         $self-> scroll_timer_start;
       } else {
          $self-> event_error;
       }
@@ -667,7 +675,7 @@ sub on_mousedown
       $self->{mouseTransaction} = $who;
       $self-> value( $self->{value} + (( $who eq q(left))?-1:1) * $self->{pageStep});
       $self-> capture(1);
-      $self-> start_scroll_timer;
+      $self-> scroll_timer_start;
       return;
    }
    if (( $who eq q(tab)) && ( $self->{tab}->{enabled}))
@@ -717,7 +725,7 @@ sub on_mousemove
    {
       my $upon  = $self-> translate_point( $x, $y);
       my $oldPress = $self->{$who}->{pressed};
-      $self->{$who}->{pressed} = ( defined $upon && $upon eq $who) ? 1 : 0;
+      $self->{$who}->{pressed} = ( defined $upon && ( $upon eq $who)) ? 1 : 0;
       my $useRepaint = $self->{$who}->{pressed} != $oldPress;
       $self-> repaint if $useRepaint;
    }

@@ -1982,6 +1982,9 @@ apc_popup( Handle self, int x, int y)
 
 int ctx_kb2VK[] = {
    kbNoKey       ,   0                 ,
+   kbAlt         ,   VK_MENU           ,
+   kbCtrl        ,   VK_CONTROL        ,
+   kbShift       ,   VK_SHIFT          ,
    kbBackspace   ,   VK_BACK           ,
    kbTab         ,   VK_TAB            ,
    kbPause       ,   VK_PAUSE          ,

@@ -720,11 +720,11 @@ sub on_mousemove
    my @xy = $self-> point2xy( $x, $y);
    if ( $xy[2])
    {
-      $self-> stop_scroll_timer;
+      $self-> scroll_timer_stop;
    } else {
-      $self-> start_scroll_timer unless $self-> scroll_timer_active;
-      return unless $self->{scrollTimer}->{semaphore};
-      $self->{scrollTimer}->{semaphore} = 0;
+      $self-> scroll_timer_start unless $self-> scroll_timer_active;
+      return unless $self->scroll_timer_semaphore;
+      $self->scroll_timer_semaphore(0);
    }
    $self-> {blockShiftMark}  = 1;
    $self-> cursor( @xy);

@@ -5,8 +5,8 @@ use Const;
 
 package MouseScroller;
 
-#    Used for system-defined scrolling delays fro widgets that scrolls itself
-#  by MouseMove action.
+#    Used for system-defined scrolling delays for widgets that scrolls themselves
+#  using MouseMove notification.
 #
 #  widget should inherit MouseScroller as
 #   @ISA = qw(... MouseScroller)
@@ -15,62 +15,75 @@ package MouseScroller;
 #
 #   if ( mouse_pointer_inside_the_scrollable_area)
 #   {
-#      $self-> stop_scroll_timer;
+#      $self-> scroll_timer_stop;
 #   } else {
-#      $self-> start_scroll_timer unless exists $self->{scrollTimer};
-#      return unless $self->{scrollTimer}->{semaphore};
-#      $self->{scrollTimer}->{semaphore} = 0;
+#      $self-> scroll_timer_start unless $self->scroll_timer_active;
+#      return unless $self-> scroll_timer_semaphore;
+#      $self-> scroll_timer_semaphore( 0);
 #   }
 #
 #     MouseScroller also use semaphore named "mouseTransaction", which should
 #   be true when widget is in mouse capture state.
 
+my $scrollTimer;
+
 sub scroll_timer_active
 {
-   my $self = $_[0];
-   return 0 unless exists $self->{scrollTimer};
-   return $self->{scrollTimer}-> {active};
+   return 0 unless defined $scrollTimer;
+   return 0 if $_[0] != $scrollTimer-> delegateTo;
+   return $scrollTimer-> {active};
 }
 
-sub stop_scroll_timer
+sub scroll_timer_semaphore
 {
-   my $self = $_[0];
-   return unless exists $self->{scrollTimer};
-   $self->{scrollTimer}-> stop;
-   $self->{scrollTimer}-> {active} = 0;
-   $self->{scrollTimer}-> timeout( $self->{scrollTimer}-> {firstRate});
-   $self->{scrollTimer}-> {newRate} = $self->{scrollTimer}-> {nextRate};
+   return 0 unless defined $scrollTimer;
+   return 0 if $_[0] != $scrollTimer-> delegateTo;
+   $#_ ?
+      $scrollTimer-> {semaphore} = $_[1] :
+      return $scrollTimer-> {semaphore};
 }
 
-sub start_scroll_timer
+sub scroll_timer_stop
+{
+   return unless defined $scrollTimer;
+   $scrollTimer-> stop;
+   $scrollTimer-> {active} = 0;
+   $scrollTimer-> timeout( $scrollTimer-> {firstRate});
+   $scrollTimer-> {newRate} = $scrollTimer-> {nextRate};
+}
+
+sub scroll_timer_start
 {
    my $self = $_[0];
-   $self-> stop_scroll_timer;
-   unless ( exists $self-> {scrollTimer}) {
+   $self-> scroll_timer_stop;
+   unless ( defined $scrollTimer) {
       my @rates = $::application-> get_scroll_rate;
-      $self-> {scrollTimer} = Timer-> create(
-					     owner   => $self,
-					     timeout => $rates[0],
-					     name    => q(ScrollTimer),
-					    );
-      @{$self-> {scrollTimer}}{qw(firstRate nextRate newRate)} = (@rates,$rates[1]);
+      $scrollTimer = Timer-> create(
+         owner      => $::application,
+         delegateTo => $self,
+         timeout    => $rates[0],
+         name       => q(ScrollTimer),
+      );
+      @{$scrollTimer}{qw(firstRate nextRate newRate)} = (@rates,$rates[1]);
+   } else {
+      $scrollTimer-> delegateTo( $self);
    }
-   $self->{scrollTimer}->{semaphore} = 1;
-   $self->{scrollTimer}-> {active} = 1;
-   $self->{scrollTimer}->start;
+   $scrollTimer-> {semaphore} = 1;
+   $scrollTimer-> {active} = 1;
+   $scrollTimer-> start;
 }
 
 sub ScrollTimer_Tick
 {
    my ( $self, $timer) = @_;
-   if ( exists $self->{scrollTimer}->{newRate})
+   if ( exists $scrollTimer->{newRate})
    {
-      $timer-> timeout( $self->{scrollTimer}->{newRate});
-      delete $self->{scrollTimer}->{newRate};
+      $timer-> timeout( $scrollTimer->{newRate});
+      delete $scrollTimer->{newRate};
    }
-   $timer->{semaphore} = 1;
+   $scrollTimer-> {semaphore} = 1;
    $self-> notify(q(MouseMove), 0, $self-> pointerPos);
-   $self-> stop_scroll_timer unless defined $self->{mouseTransaction};
+   $self-> scroll_timer_stop unless defined $self->{mouseTransaction};
 }
 
 package GroupScroller;

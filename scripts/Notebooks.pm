@@ -140,8 +140,8 @@ sub on_mousedown
       $self-> firstTab( $self-> firstTab - 1);
       $self-> capture(1);
       $self->{mouseTransaction} = -1;
-      $self-> start_scroll_timer;
-      $self->{scrollTimer}->{semaphore} = 0;
+      $self-> scroll_timer_start;
+      $self-> scroll_timer_semaphore(0);
       return;
    }
    my @size = $self-> size;
@@ -149,8 +149,8 @@ sub on_mousedown
       $self-> firstTab( $self-> firstTab + 1);
       $self-> capture(1);
       $self->{mouseTransaction} = 1;
-      $self-> start_scroll_timer;
-      $self->{scrollTimer}->{semaphore} = 0;
+      $self-> scroll_timer_start;
+      $self-> scroll_timer_semaphore(0);
       return;
    }
    my $w = DefLeftX;
@@ -175,7 +175,7 @@ sub on_mouseup
    my ( $self, $btn, $mod, $x, $y) = @_;
    return unless $self->{mouseTransaction};
    $self-> capture(0);
-   $self-> stop_scroll_timer;
+   $self-> scroll_timer_stop;
    $self->{mouseTransaction} = undef;
 }
 
@@ -184,8 +184,8 @@ sub on_mousemove
 {
    my ( $self, $mod, $x, $y) = @_;
    return unless $self->{mouseTransaction};
-   return unless $self->{scrollTimer}->{semaphore};
-   $self->{scrollTimer}->{semaphore} = 0;
+   return unless $self->scroll_timer_semaphore;
+   $self->scroll_timer_semaphore(0);
    my $ft = $self-> firstTab;
    $self-> firstTab( $ft + $self->{mouseTransaction});
    $self-> notify(q(MouseUp),1,0,0,0) if $ft == $self-> firstTab;
