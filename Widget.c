@@ -1872,6 +1872,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
    if ( his-> growMode) {
       Point size  =  his-> self-> get_virtual_size( child);
       Point pos   =  his-> self-> get_origin( child);
+      Point osize = size, opos = pos;
       int   dx    = ((Rect *) metrix)-> right - ((Rect *) metrix)-> left;
       int   dy    = ((Rect *) metrix)-> top   - ((Rect *) metrix)-> bottom;
 
@@ -1882,15 +1883,20 @@ size_notify( Handle self, Handle child, const Rect* metrix)
       if ( his-> growMode & gmXCenter) pos. x = (((Rect *) metrix)-> right - size. x) / 2;
       if ( his-> growMode & gmYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
 
-      if ( dx != 0 || dy != 0) {
-         Rect r;
-         r. left   = pos. x;
-         r. bottom = pos. y;
-         r. right  = pos. x + size. x;
-         r. top    = pos. y + size. y;
-         his-> self-> set_rect( child, r);
-      } else if ( ( his-> growMode & gmCenter) != 0)
-         his-> self-> set_origin( child, pos);
+      if ( pos.x != opos.x || pos.y != opos.y || size.x != osize.x || size.y != osize.y) {
+         if ( pos.x == opos.x && pos.y == opos.y) {
+            his-> self-> set_size( child, size);
+         } else if ( size.x == osize.x && size.y == osize.y) {
+            his-> self-> set_origin( child, pos);
+         } else {
+            Rect r;
+            r. left   = pos. x;
+            r. bottom = pos. y;
+            r. right  = pos. x + size. x;
+            r. top    = pos. y + size. y;
+            his-> self-> set_rect( child, r);
+         }
+      }
    }
    return false;
 }
