@@ -689,7 +689,7 @@ sub marked
    if ( $#_) {
        my ( $self, $mark, $exlusive) = @_;
        $mark = $mark ? 1 : 0;
-       return if $self == $VB::form && $mark != 0;
+       $mark = 0 if $self == $VB::form;
        return if ( $mark == $self->{marked}) && !$exlusive;
        if ( $exlusive) {
           $_-> marked(0) for $VB::form-> marked_widgets;

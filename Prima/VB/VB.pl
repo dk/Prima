@@ -257,13 +257,19 @@ sub Selector_Change
    my $t = $self-> Selector-> text;
    return unless length( $t);
    $self->{selectorRetrieving} = 1;
+   my $enter;
    if ( $t eq $VB::form-> text) {
       $VB::form-> focus;
+      $enter = $VB::form;
    } else {
       my @f = $VB::form-> widgets;
       for ( @f) {
-         $_-> show, $_->focus, last if $t eq $_->name;
+         $enter = $_, $_-> show, $_->focus, last if $t eq $_->name;
       }
+   }
+   if ( $enter) {
+      $enter-> marked(1,1);
+      ObjectInspector::enter_widget( $enter);
    }
    $self->{selectorRetrieving} = 0;
 }
@@ -607,7 +613,7 @@ sub on_close
    }
 }
 
-sub on_enter
+sub on_enterx
 {
    ObjectInspector::enter_widget( $_[0]);
 };
