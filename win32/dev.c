@@ -357,6 +357,7 @@ apc_image_begin_paint_info( Handle self)
 {
    apcErrClear;
    if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
+   if ( !sys pal) sys pal = image_make_bitmap_palette( self);
    if ( sys pal) SelectPalette( sys ps, sys pal, 0);
    hwnd_enter_paint( self);
    return true;
@@ -844,6 +845,7 @@ apc_prn_begin_paint_info( Handle self)
       apiErrRet;
 
    hwnd_enter_paint( self);
+   sys pal = palette_create( self);
    return true;
 }
 
