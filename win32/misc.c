@@ -427,7 +427,7 @@ prf_find( HKEY hk, char * path, List * ids, int firstName, char * result)
 }
 
 
-extern Bool
+Bool
 apc_fetch_resource( const char *className, const char *name,
                     const char *resClass, const char *resName,
                     Handle owner, int resType,
