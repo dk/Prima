@@ -10,10 +10,9 @@
 
 #define SEVERE_DEBUG
 
-#ifdef SEVERE_DEBUG
-#define __PMPRINTF__
-#include "PMPRINTF.H"
-#define printf PmPrintf
+#ifdef HAVE_PMPRINTF_H
+#define __PMPRINTF__  // OS/2 logging facility
+#include <PMPRINTF.H>
 #endif
 
 #define WM_PRIMA_CREATE                   ( WM_USER + 1)
@@ -31,6 +30,8 @@
 #define WM_ACTIVATEMENU                   ( WM_USER + 13)
 #define WM_VIEWHELP                       ( WM_USER + 14)
 #define WM_FORCEFOCUS                     ( WM_USER + 15)
+#define WM_ZORDERSYNC                     ( WM_USER + 16)
+#define WM_REPAINT                        ( WM_USER + 17)
 #define WM_TERMINATE                      ( WM_USER + 99)
 
 // OS/2 defaults for apc
@@ -247,6 +248,7 @@ typedef struct _DrawableData
    void  *         recreateData;            // ViewProfile custom area
    RECTL *         pClipRect;               // storage for WinScrollWindow clipping rectangle
    RECTL           clipRect;                // pointer either to sys clipRect or nil, for fast use
+   int             sizeLockLevel;           // redirector flag for var-> virtualSize
    union {
      TimerData     timer;
      WindowData    window;
