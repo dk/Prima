@@ -218,7 +218,8 @@ void Window_handle_event( Handle self, PEvent event)
                list[ v-> tabOrder] = ( Handle) v;
                if ( v-> tabOrder >= count) {
                   free( list);
-                  croak("DBG001: Unmatched tabOrder in %s %d", __FILE__, __LINE__);
+                  warn("DBG001: Unmatched tabOrder in %s %d", __FILE__, __LINE__);
+                  return;
                }
             }
             /* determining foc presence and/or position in list */
@@ -593,8 +594,10 @@ Window_get_icon( Handle self)
 void
 Window_set_icon( Handle self, Handle icon)
 {
-   if ( icon && !kind_of( icon, CImage))
-       croak("RTC0091: Illegal object reference passed to Window.set_icon");
+   if ( icon && !kind_of( icon, CImage)) {
+       warn("RTC0091: Illegal object reference passed to Window.set_icon");
+       return;
+   }
    apc_window_set_icon( self, icon);
 }
 

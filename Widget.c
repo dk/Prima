@@ -61,7 +61,8 @@ Widget_init( Handle self, HV * profile)
 
    if ( !kind_of( var owner, CWidget)) {
       Object_destroy( self);
-      croak("Illegal object reference passed to Widget.init");
+      warn("Illegal object reference passed to Widget.init");
+      return;
    }
 
    attachTo = ( PComponent) var owner;
@@ -1996,8 +1997,10 @@ void
 Widget_set_pointer_icon( Handle self, Handle icon, Point hotSpot)
 {
    SV *oldp;
-   if ( icon != nilHandle && !kind_of( icon, CIcon))
-      croak("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
+   if ( icon != nilHandle && !kind_of( icon, CIcon)) {
+      warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
+      return;
+   }
    apc_pointer_set_user( self, icon, hotSpot);
    oldp = var pointer;
    if ( icon)
@@ -2600,6 +2603,6 @@ XS( Widget_get_widgets_FROMPERL)
    return;
 }
 
-void Widget_get_widgets          ( Handle self) { croak("Invalid call of Widget::get_widgets"); }
-void Widget_get_widgets_REDEFINED( Handle self) { croak("Invalid call of Widget::get_widgets"); }
+void Widget_get_widgets          ( Handle self) { warn("Invalid call of Widget::get_widgets"); }
+void Widget_get_widgets_REDEFINED( Handle self) { warn("Invalid call of Widget::get_widgets"); }
 

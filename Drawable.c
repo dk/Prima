@@ -23,14 +23,17 @@ Drawable_init( Handle self, HV * profile)
    my set_back_color   ( self, pget_i ( backColor));
    {
       SV * sv = pget_sv( fillPattern);
-      if ( SvROK( sv))
-      {
+      if ( SvROK( sv)) {
          int i;
          FillPattern fp;
          AV * av = ( AV *) SvRV( sv);
-         if ( av_len( av) != 7) croak("RTC0056: Illegal fillPattern passed to Drawable::init");
-         for ( i = 0; i < 8; i++) fp[ i] = SvIV( *av_fetch( av, i, 0));
-         my set_fill_pattern( self, fp);
+         if ( av_len( av) == 7) {
+            for ( i = 0; i < 8; i++) fp[ i] = SvIV( *av_fetch( av, i, 0));
+            my set_fill_pattern( self, fp);
+         } else {
+            warn("RTC0056: Illegal fillPattern passed to Drawable::init");
+            my set_fill_pattern_id( self, fpSolid);
+         }
       } else
          my set_fill_pattern_id( self, SvIV( sv));
    }
@@ -120,9 +123,11 @@ void Drawable_set( Handle self, HV * profile)
          int i;
          FillPattern fp;
          AV * av = ( AV *) SvRV( sv);
-         if ( av_len( av) != 7) croak("RTC0057: Illegal fillPattern passed to Drawable::set");
-         for ( i = 0; i < 8; i++) fp[ i] = SvIV( *av_fetch( av, i, 0));
-         my set_fill_pattern( self, fp);
+         if ( av_len( av) == 7) {
+            for ( i = 0; i < 8; i++) fp[ i] = SvIV( *av_fetch( av, i, 0));
+            my set_fill_pattern( self, fp);
+         } else
+            warn("RTC0057: Illegal fillPattern passed to Drawable::set");
       } else
          my set_fill_pattern_id( self, SvIV( sv));
       pdelete( fillPattern);
@@ -403,12 +408,16 @@ polypoints( Handle self, SV * points, char * procName, int mod, void (*procPtr)(
    int i, count;
    Point * p;
 
-   if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV))
-      croak("RTC0050: Invalid array reference passed to Drawable::%s", procName);
+   if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
+      warn("RTC0050: Invalid array reference passed to Drawable::%s", procName);
+      return;
+   }
    av = ( AV *) SvRV( points);
    count = av_len( av) + 1;
-   if ( count % mod)
-     croak("RTC0051: Array contains even number of elements on Drawable::%s", procName);
+   if ( count % mod) {
+      warn("RTC0051: Array contains even number of elements on Drawable::%s", procName);
+      return;
+   }
    count /= 2;
    if ( count < 2) return;
    p = malloc( count * sizeof( Point));
@@ -416,10 +425,10 @@ polypoints( Handle self, SV * points, char * procName, int mod, void (*procPtr)(
    {
        SV** psvx = av_fetch( av, i * 2, 0);
        SV** psvy = av_fetch( av, i * 2 + 1, 0);
-       if (( psvx == nil) || ( psvy == nil))
-       {
+       if (( psvx == nil) || ( psvy == nil)) {
           free( p);
-          croak("RTC0052: Array panic on item pair %d on Drawable::%s", i, procName);
+          warn("RTC0052: Array panic on item pair %d on Drawable::%s", i, procName);
+          return;
        }
        p[ i]. x = SvIV( *psvx);
        p[ i]. y = SvIV( *psvy);

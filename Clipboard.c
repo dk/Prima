@@ -268,10 +268,10 @@ XS( Clipboard_get_registered_formats_FROMPERL)
 }
 
 
-void Clipboard_get_formats                     ( Handle self) { croak("Invalid call of Clipboard::get_formats"); }
-void Clipboard_get_formats_REDEFINED           ( Handle self) { croak("Invalid call of Clipboard::get_formats"); }
-void Clipboard_get_registered_formats          ( Handle self) { croak("Invalid call of Clipboard::get_registered_formats"); }
-void Clipboard_get_registered_formats_REDEFINED( Handle self) { croak("Invalid call of Clipboard::get_registered_formats"); }
+void Clipboard_get_formats                     ( Handle self) { warn("Invalid call of Clipboard::get_formats"); }
+void Clipboard_get_formats_REDEFINED           ( Handle self) { warn("Invalid call of Clipboard::get_formats"); }
+void Clipboard_get_registered_formats          ( Handle self) { warn("Invalid call of Clipboard::get_registered_formats"); }
+void Clipboard_get_registered_formats_REDEFINED( Handle self) { warn("Invalid call of Clipboard::get_registered_formats"); }
 
 
 SV *
@@ -320,8 +320,10 @@ image_server( void * instance, int function, int subCommand, SV * data)
       case cefStore:
          {
             Handle image = gimme_the_mate( data);
-            if ( !kind_of( image, CImage))
-               croak("RTC0023: Not an image passed to clipboard");
+            if ( !kind_of( image, CImage)) {
+               warn("RTC0023: Not an image passed to clipboard");
+               return nilSV;
+            }
             apc_clipboard_set_data( cfBitmap, (void*)image, 0);
          }
          break;

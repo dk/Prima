@@ -165,10 +165,12 @@ Image_set( Handle self, HV * profile)
       int newType = pget_i( type);
       int i = 0;
       while( imTypes[i] != newType && imTypes[i] != -1) i++;
-      if ( imTypes[i] == -1) croak("RTC0100: Invalid image type requested (%04x) in Image::set_type", newType);
-
-      if ( !opt_InPaint)
-         my reset( self, newType, pexist( palette) ? pget_sv( palette) : my get_palette( self));
+      if ( imTypes[i] == -1) {
+         warn("RTC0100: Invalid image type requested (%04x) in Image::set_type", newType);
+      } else {
+         if ( !opt_InPaint)
+            my reset( self, newType, pexist( palette) ? pget_sv( palette) : my get_palette( self));
+      }
       pdelete( palette);
       pdelete( type);
    }
@@ -632,7 +634,7 @@ Image_set_palette( Handle self, SV * palette)
       return;
 
    if ( !Image_read_palette( self, var palette, palette))
-      croak ("RTC0107: Invalid array reference passed to Image::set_palette");
+      warn("RTC0107: Invalid array reference passed to Image::set_palette");
    my update_change( self);
 }
 

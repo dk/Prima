@@ -136,15 +136,15 @@ Component_attach( Handle self, Handle object)
    char key[ 20];
    if ( object && kind_of( object, CComponent)) {
       if ( !var refs) {
-	 HV *me = ( HV*) SvRV( var mate);
-	 if ( SvTYPE( me) == SVt_PVHV && ( var refs = newHV()))
-	    hv_store( me, "__CREFS__", 9, newRV(( SV*) var refs), 0);
-	 else {
-	    if ( var refs)
-	       sv_free(( SV*) var refs);
-	    var refs = nil;
-	    croak( "RTC0040: Component attach failed");
-	 }
+         HV *me = ( HV*) SvRV( var mate);
+         if ( SvTYPE( me) == SVt_PVHV && ( var refs = newHV()))
+            hv_store( me, "__CREFS__", 9, newRV(( SV*) var refs), 0);
+         else {
+            if ( var refs)
+               sv_free(( SV*) var refs);
+            var refs = nil;
+            croak( "RTC0040: Component attach failed");
+         }
       }
       snprintf( key, 20, "%lu", object);
       hv_store( var refs, key, strlen( key),
@@ -234,7 +234,7 @@ Component_set_delegate_to( Handle self, Handle delegateTo)
    if ( delegateTo) {
       PComponent next = ( PComponent) var owner;
       while ( next && (( Handle) next != delegateTo))
-	 next = ( PComponent) (( PComponent) next)-> owner;
+         next = ( PComponent) (( PComponent) next)-> owner;
       if ( next == nil) {
          next = ( PComponent) delegateTo;
          if ( next-> refList == nil)
@@ -268,23 +268,19 @@ ForceProcess:
           croak("RTC0041: Object set twice to constructing stage");
       switch ( event-> cmd & ctQueueMask) {
       case ctDiscardable:
-	 break;
+         break;
       case ctPassThrough:
-	 goto ForceProcess;
+         goto ForceProcess;
       case ctSingle:
-	 event-> cmd = ( event-> cmd & ~ctQueueMask) | ctSingleResponse;
-	 if ( list_first_that( var evQueue,
-			       ( PListProc) find_dup_msg,
-			       (void*) event-> cmd)
-	      >= 0)
-	    break;
+         event-> cmd = ( event-> cmd & ~ctQueueMask) | ctSingleResponse;
+         if ( list_first_that( var evQueue, ( PListProc) find_dup_msg,
+			   (void*) event-> cmd) >= 0)
+	      break;
       default:
-	 list_add( var evQueue,
-		   ( Handle) memcpy( malloc( sizeof( Event)),
-				     event, sizeof( Event)));
+	      list_add( var evQueue, ( Handle) memcpy( malloc( sizeof( Event)),
+				event, sizeof( Event)));
       }
-   } else if ( var stage > csNormal
-	       && var stage < csDead
+   } else if ( var stage > csNormal && var stage < csDead
 	       && ( event-> cmd & ctQueueMask) == ctPassThrough)
       goto ForceProcess;
    return ret;
@@ -325,8 +321,10 @@ Component_pop_event( Handle self)
 {
    if ( var stage == csDead)
       return false;
-   if ( !var evStack || var evPtr <= 0)
-      croak("RTC0042: Component::pop_event call not within message()");
+   if ( !var evStack || var evPtr <= 0) {
+      warn("RTC0042: Component::pop_event call not within message()");
+      return false;
+   }
    return var evStack[ var evPtr--];
 }
 
@@ -335,8 +333,10 @@ Component_set_event_flag( Handle self, Bool eventFlag)
 {
    if ( var stage == csDead)
       return;
-   if ( !var evStack || var evPtr <= 0)
-      croak("RTC0043: Component::eventFlag call not within message()");
+   if ( !var evStack || var evPtr <= 0) {
+      warn("RTC0043: Component::eventFlag call not within message()");
+      return;
+   }
    var evStack[ var evPtr - 1] = eventFlag;
 }
 
@@ -345,8 +345,10 @@ Component_get_event_flag( Handle self)
 {
    if ( var stage == csDead)
       return false;
-   if ( !var evStack || var evPtr <= 0)
-      croak("RTC0044: Component::eventFlag call not within message()");
+   if ( !var evStack || var evPtr <= 0) {
+      warn("RTC0044: Component::eventFlag call not within message()");
+      return false;
+   }
    return var evStack[ var evPtr - 1];
 }
 
@@ -772,11 +774,11 @@ XS( Component_notify_FROMPERL)
 void
 Component_notify( Handle self, char * methodName)
 {
-   croak("Invalid call of of Component::notify");
+   warn("Invalid call of of Component::notify");
 }
 
 void
 Component_notify_REDEFINED( Handle self, char * methodName)
 {
-   croak("Invalid call of of Component::notify");
+   warn("Invalid call of of Component::notify");
 }

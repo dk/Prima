@@ -80,7 +80,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
    }
 
    if ( !SvROK( sv) || ( SvTYPE( SvRV( sv)) != SVt_PVAV)) {
-      log_write("RTC0034: menu build error: menu is not an array");
+      warn("RTC0034: menu build error: menu is not an array");
       return nil;
    }
    av = (AV *) SvRV( sv);
@@ -104,12 +104,12 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 
       if ( itemHolder == nil)
       {
-         log_write("RTC0035: menu build error: array panic");
+         warn("RTC0035: menu build error: array panic");
          my dispose_menu( self, m);
          return nil;
       }
       if ( !SvROK( *itemHolder) || ( SvTYPE( SvRV( *itemHolder)) != SVt_PVAV)) {
-         log_write("RTC0036: menu build error: submenu is not an array");
+         warn("RTC0036: menu build error: submenu is not an array");
          my dispose_menu( self, m);
          return nil;
       }
@@ -117,9 +117,8 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       item = ( AV *) SvRV( *itemHolder);
       count = av_len( item) + 1;
       if ( count > 5) {
-         log_write("RTC0032: menu build error: extra declaration");
-         my dispose_menu( self, m);
-         return nil;
+         warn("RTC0032: menu build error: extra declaration");
+         count = 5;
       }
       r = malloc( sizeof( MenuItemReg));
       memset( r, 0, sizeof( MenuItemReg));
@@ -186,26 +185,31 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       if ( l_text >= 0)
       {
          subItem = ( SV *) *av_fetch( item, l_text, 0);
+         if ( !subItem) {
+            warn("RTC0035: menu build error: array panic");
+            my dispose_menu( self, m);
+            return nil;
+         }
+
          if ( SvROK( subItem)) {
             Handle c_object = gimme_the_mate( subItem);
             if (( c_object == nilHandle) || !( kind_of( c_object, CImage)))
             {
-               log_write("RTC0033: menu build error: not an image passed");
-               my dispose_menu( self, m);
-               return nil;
+               warn("RTC0033: menu build error: not an image passed");
+               goto TEXT;
             }
             // log_write("%sbmp: %s %d", buf, ((PComponent)c_object)->name, kind_of( c_object, CImage));
             if (((( PImage) c_object)-> status != 0) || ((( PImage) c_object)-> w == 0)
                || ((( PImage) c_object)-> h == 0))
             {
-               log_write("RTC0037: menu build error: invalid image passed");
-               my dispose_menu( self, m);
-               return nil;
+               warn("RTC0037: menu build error: invalid image passed");
+               goto TEXT;
             }
             r-> bitmap =  gimme_the_mate( subItem);              // storing PImage as SV*
             my attach( self, r-> bitmap);
          } else {
             char * stk = SvPV( subItem, na);
+         TEXT:
             r-> text = malloc( strlen( stk) + 1);
             strcpy( r-> text, stk);
             // log_write( "%stext:%s", buf, r->text);
@@ -216,6 +220,11 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       if ( l_sub >= 0)
       {
          subItem = ( SV*) *av_fetch( item, l_sub, 0);
+         if ( !subItem) {
+            warn("RTC0035: menu build error: array panic");
+            my dispose_menu( self, m);
+            return nil;
+         }
          if ( SvROK( subItem))
          {
             if ( SvTYPE( SvRV( subItem)) == SVt_PVCV)
@@ -232,12 +241,15 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
                }
             }
          } else {
-            char * line = ( char *) SvPV( subItem, na);
-            // log_write( "%s sub:%s", buf, line);
-            // if (( r-> sysCmd = atol( line)) == 0) {
-            r-> perlSub = malloc( strlen( line) + 1);
-            strcpy( r-> perlSub, line);
-            // } else addToSubs = false;
+            if ( SvPOK( subItem)) {
+               char * line = ( char *) SvPV( subItem, na);
+               // log_write( "%s sub:%s", buf, line);
+               r-> perlSub = malloc( strlen( line) + 1);
+               strcpy( r-> perlSub, line);
+            } else {
+               warn("RTC0038: menu build error: invalid sub name passed");
+               addToSubs = false;
+            }
          }
          if ( addToSubs) r-> id = ++subCount;
       }
