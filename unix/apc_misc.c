@@ -797,30 +797,31 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    switch ( v) {
    case svYMenu: /* XXX sensible menu height - query? */ return 20;
    case svYTitleBar: /* XXX */ return 20;
-   case svMousePresent: return guts. mouse_buttons > 0;
-   case svMouseButtons: return guts. mouse_buttons;
+   case svMousePresent:		return guts. mouse_buttons > 0;
+   case svMouseButtons:		return guts. mouse_buttons;
    case svSubmenuDelay:  /* XXX ? */ return 50;
    case svFullDrag: /* XXX ? */ return false;
-   case svWheelPresent: return guts.mouse_wheel_up || guts.mouse_wheel_down;
+   case svWheelPresent:		return guts.mouse_wheel_up || guts.mouse_wheel_down;
    case svXIcon: /* XXX wm query */ return 64;
    case svYIcon: /* XXX wm query */ return 64;
    case svXSmallIcon: /* XXX wm query */ return 20;
    case svYSmallIcon:  /* XXX wm query */ return 20;
-   case svXPointer: return guts. cursor_width;
-   case svYPointer: return guts. cursor_height;
-   case svXScrollbar: return 16;
-   case svYScrollbar: return 16;
-   case svXCursor: return 1;
-   case svAutoScrollFirst: return 200;
-   case svAutoScrollNext: return 50;
-   case svXbsNone: return 0;
-   case svYbsNone: return 0;
-   case svXbsSizeable: return 3; /* XXX */
-   case svYbsSizeable: return 3; /* XXX */
-   case svXbsSingle: return 1; /* XXX */
-   case svYbsSingle: return 1; /* XXX */
-   case svXbsDialog: return 2; /* XXX */
-   case svYbsDialog: return 2; /* XXX */
+   case svXPointer:		return guts. cursor_width;
+   case svYPointer:		return guts. cursor_height;
+   case svXScrollbar:		return 16;
+   case svYScrollbar:		return 16;
+   case svXCursor:		return 1;
+   case svAutoScrollFirst:	return 200;
+   case svAutoScrollNext:	return 50;
+   case svXbsNone:		return 0;
+   case svYbsNone:		return 0;
+   case svXbsSizeable:		return 3; /* XXX */
+   case svYbsSizeable:		return 3; /* XXX */
+   case svXbsSingle:		return 1; /* XXX */
+   case svYbsSingle:		return 1; /* XXX */
+   case svXbsDialog:		return 2; /* XXX */
+   case svYbsDialog:		return 2; /* XXX */
+   case svShapeExtension:	return guts. shape_extension;
    default:
       warn( "apc_sys_get_value(): illegal query: %d", v);
    }

@@ -10,6 +10,9 @@
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
+#ifdef HAVE_X11_EXTENSIONS_SHAPE_H
+#include <X11/extensions/shape.h>
+#endif
 #undef Font
 #undef Drawable
 #undef Bool
@@ -126,6 +129,9 @@ struct _UnixGuts
    int depth;
    int byte_order;
    int bit_order;
+   Bool shape_extension;
+   int shape_event;
+   int shape_error;
    GCList *free_gcl;
    GCList *used_gcl;
    PPaintList paint_list;

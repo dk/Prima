@@ -117,6 +117,16 @@ window_subsystem_init( void)
    XSetErrorHandler( x_error_handler);
    (void)x_io_error_handler;
    XCHECKPOINT;
+   
+#ifdef HAVE_X11_EXTENSIONS_SHAPE_H
+   if ( XShapeQueryExtension( DISP, &guts.shape_event, &guts.shape_error)) {
+      guts. shape_extension = true;
+   } else {
+      guts. shape_extension = false;
+   }
+#else
+   guts. shape_extension = false;
+#endif
 
    XrmInitialize();
    guts.db = get_database();

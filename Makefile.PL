@@ -155,7 +155,7 @@ sub null_output
 {
     open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
     open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
-#    $NULLDEV = $Win32 ? "CON" : "/dev/tty";
+    # $NULLDEV = $Win32 ? "CON" : "/dev/tty";
     close STDOUT;
     close STDERR;
     open STDOUT, ">$NULLDEV" or fatal "STDOUT redirect failed: $!";
@@ -197,8 +197,10 @@ sub compile
 sub have_header
 {
     my $header = shift;
+    my @pre_headers = map { "#include <$_>\n" } @_;
     print "Checking for presence of $header... ";
     my $present = compile( <<ENDP, 1);
+@pre_headers
 #include <$header>
 ENDP
     if ( $present) {
@@ -623,6 +625,10 @@ sub setup_paths
 	print "X11 libraries found in $libpath\n";
 	push @LIBPATH, $libpath;
 	push @LIBS, 'X11';
+	if (defined find_lib( "Xext", '')) {
+	   print "Xext library found.\n";
+	   push @LIBS, "Xext";
+	}
     }
     else {
         my $libpath = find_lib( $Config{ libperl}, "", qd( "$Config{ archlib}/CORE"));
@@ -641,6 +647,7 @@ sub setup_defines
 {
     have_header( "io.h");
     have_header( "unistd.h");
+    have_header( "X11/extensions/shape.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
     have_func( 'strcasecmp') || have_func( 'stricmp');
     have_func( 'snprintf');
     have_func( '_snprintf');
