@@ -824,8 +824,8 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
             /* repeat again */
             lAdd( p, utf_p );
             i = start = p;
+            utf_start = utf_p;
             utf_p--;
-            utf_start--;
          }
          w = 0;
          continue;
