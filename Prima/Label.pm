@@ -261,7 +261,7 @@ sub check_auto_size
    }
    $self-> reset_lines;
    if ( $self->{wordWrap} && $self->{autoHeight}) {
-      $self-> height( $self-> font-> height * $self->{textLines} + 2);
+      $self-> geomHeight( $self-> font-> height * $self->{textLines} + 2);
    }
 }
 

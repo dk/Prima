@@ -68,7 +68,19 @@ sub profile_default
       %{$_[ 0]-> SUPER::profile_default},
       pressed      => 0,
       selectable   => 1,
+      autoHeight   => 1,
+      autoWidth    => 1,
    }
+}
+
+sub profile_check_in
+{
+   my ( $self, $p, $default) = @_;
+   $p-> { autoWidth} = 0
+      if exists $p->{width} || exists $p->{size} || exists $p-> {rect} || ( exists $p->{left} && exists $p->{right});
+   $p-> {autoHeight} = 0
+      if exists $p->{height} || exists $p->{size} || exists $p-> {rect} || ( exists $p->{top} && exists $p->{bottom});
+   $self-> SUPER::profile_check_in( $p, $default);
 }
 
 sub on_translateaccel
@@ -92,6 +104,8 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
    $self-> { pressed} = $profile{ pressed};
+   $self-> { autoHeight} = $profile{ autoHeight};
+   $self-> { autoWidth}  = $profile{ autoWidth};
    return %profile;
 }
 
@@ -209,6 +223,11 @@ sub on_mousemove
    $self-> notify(q(Click));
 }
 
+sub on_fontchanged
+{
+   $_[0]-> check_auto_size;
+}
+
 sub draw_veil
 {
     my ($self,$canvas) = (shift, shift);
@@ -278,8 +297,11 @@ sub caption_box
    my ($self,$canvas) = @_;
    my $cap = $self-> text;
    $cap =~ s/~//;
+   $canvas = $self unless $canvas;
    return $canvas-> get_text_width( $cap), $canvas-> font-> height;
 }
+
+sub calc_geom_size { $_[0]-> caption_box }
 
 sub pressed
 {
@@ -297,6 +319,7 @@ sub text
    $cap =~ s/^([^~]*)\~(.*)$/$1$2/;
    my $ac = $self-> { accel} = (defined($2) && length($2)) ? lc substr( $2, 0, 1) : undef;
    $self-> SUPER::text( $caption);
+   $self-> check_auto_size;
    $self-> repaint;
 }
 
@@ -305,6 +328,35 @@ sub on_enable  { $_[0]-> repaint; }
 sub on_disable { $_[0]-> cancel_transaction; $_[0]-> repaint; }
 sub on_enter   { $_[0]-> repaint; }
 
+sub autoHeight
+{
+   return $_[0]-> {autoHeight} unless $#_;
+   my ( $self, $a) = @_;
+   return if ( $self-> {autoHeight} ? 1 : 0) == ( $a ? 1 : 0);
+   $self-> {autoHeight} = ( $a ? 1 : 0);
+   $self-> check_auto_size if $a;
+}
+
+sub autoWidth
+{
+   return $_[0]-> {autoWidth} unless $#_;
+   my ( $self, $a) = @_;
+   return if ( $self-> {autoWidth} ? 1 : 0) == ( $a ? 1 : 0);
+   $self-> {autoWidth} = ( $a ? 1 : 0);
+   $self-> check_auto_size if $a;
+}
+
+sub check_auto_size
+{
+   my $self = $_[0];
+   my %sets;
+   if ( $self->{autoWidth} || $self-> {autoHeight}) {
+      my @geomSize = $self-> calc_geom_size;
+      $sets{ geomWidth}  = $geomSize[0];
+      $sets{ geomHeight} = $geomSize[1];
+      $self-> set( %sets);
+   }
+}
 
 package Prima::Button;
 use vars qw(@ISA);
@@ -358,11 +410,11 @@ sub init
 {
    my $self = shift;
    $self->{$_} = 0 for ( qw(
-     borderWidth checkable checked default glyphs
+     borderWidth checkable checked default 
      vertical defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
      flat modalResult autoRepeat
    ));
-   $self->{imageScale} = 1;
+   $self->{imageScale} = $self-> {glyphs} = 1;
    $self->{image} = undef;
    my %profile = $self-> SUPER::init(@_);
    defined $profile{image} ?
@@ -517,6 +569,43 @@ sub on_mouseleave
    }
 }
 
+sub std_calc_geom_size 
+{
+   my $self = $_[0];
+   my $capOk = length($self-> text);
+   my @sz  = $capOk ? $self-> caption_box : (0,0);
+
+   $sz[$_] += 10 for 0,1;
+   
+   if ( defined $self->{image}) {
+      my $imw = $self->{image}->width  / $self-> { glyphs} * $self-> {imageScale};
+      my $imh = $self->{image}->height / $self-> { glyphs} * $self-> {imageScale};
+      if ( $capOk) {
+         if ( $self-> { vertical}) {
+            $sz[0] = $imw if $sz[0] < $imw;
+            $sz[1] += 2 + $imh;
+         } else {
+            $sz[0] += 2 + $imw;
+            $sz[1] = $imh if $sz[1] < $imh;
+         }
+      } else {
+         $sz[0] += $imw;
+         $sz[1] += $imh;
+      }
+   }
+   $sz[$_] += 2 for 0,1;
+   $sz[$_] += $self-> {borderWidth} * 2 for 0,1;
+   return @sz;
+}
+
+sub calc_geom_size
+{  
+   my @sz = $_[0]-> std_calc_geom_size;
+   $sz[1] = 36 if $sz[1] < 36;
+   $sz[0] = 96 if $sz[1] < 96;
+   return @sz;
+}
+
 sub autoRepeat
 {
    return $_[0]-> {autoRepeat} unless $#_;
@@ -531,6 +620,7 @@ sub borderWidth
    $bw = int( $bw);
    return if $bw == $self->{borderWidth};
    $self->{borderWidth} = $bw;
+   $self-> check_auto_size;
    $self-> repaint;
 }
 
@@ -574,7 +664,16 @@ sub disabledGlyph{($#_)?($_[0]->{disabledGlyph} = $_[1],$_[0]->repaint) :return 
 sub pressedGlyph {($#_)?($_[0]->{pressedGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{pressedGlyph}     }
 sub holdGlyph    {($#_)?($_[0]->{holdGlyph} = $_[1],$_[0]->repaint) :return $_[0]->{holdGlyph}     }
 sub flat         {($#_)?($_[0]->{flat}      = $_[1],$_[0]->repaint) :return $_[0]->{flat}          }
-sub image        {($#_)?($_[0]->{image}=$_[1], $_[0]->repaint):return $_[0]->{image} }
+
+sub image
+{
+   return $_[0]-> {image} unless $#_;
+   my ( $self, $image) = @_;
+   $self-> {image} = $image;
+   $self-> check_auto_size;
+   $self-> repaint;
+}   
+
 sub imageFile
 {
    return $_[0]->{imageFile} unless $#_;
@@ -589,8 +688,26 @@ sub imageFile
    $self->image($img);
 }
 
-sub imageScale   {($#_)?($_[0]->{imageScale}=$_[1], $_[0]->repaint):return $_[0]->{imageScale} }
-sub vertical     {($#_)?($_[0]->{vertical}=$_[1], $_[0]->repaint):return $_[0]->{vartical} }
+sub imageScale
+{
+   return $_[0]-> {imageScale} unless $#_;
+   my ( $self, $imageScale) = @_;
+   $self-> {imageScale} = $imageScale;
+   if ( $self-> {image}) {
+      $self-> check_auto_size;
+      $self-> repaint;
+   }
+}   
+
+sub vertical
+{
+   return $_[0]-> {vertical} unless $#_;
+   my ( $self, $vertical) = @_;
+   $self-> {vertical} = $vertical;
+   $self-> check_auto_size;
+   $self-> repaint;
+}   
+
 sub modalResult
 {
    return $_[0]->{modalResult} unless $#_;
@@ -654,6 +771,7 @@ sub init
    my %profile = $self-> SUPER::init(@_);
    $self-> { auto   } = $profile{ auto   };
    $self-> { checked} = $profile{ checked};
+   $self-> check_auto_size;
    return %profile;
 }
 
@@ -704,6 +822,23 @@ sub toggle       { my $i = $_[0]-> checked; $_[0]-> checked( !$i); return !$i;}
 sub check        { $_[0]->checked(1)}
 sub uncheck      { $_[0]->checked(0)}
 
+my @static_image0_size;
+
+sub calc_geom_size 
+{
+   my $self = $_[0];
+   my @sz   = $self-> caption_box;
+   $sz[$_] += 12 for 0,1;
+   if ( $images[0]) {
+      @static_image0_size = $images[0]-> size unless @static_image0_size;
+      $sz[0] += $static_image0_size[0] + 2;
+      $sz[1] = $static_image0_size[1] if $sz[1] < $static_image0_size[1];
+   } else {
+      $sz[0] += 16;
+      $sz[1] = 16 if $sz[1] < 16;
+   }
+   return @sz;
+}
 
 package Prima::CheckBox;
 use vars qw(@ISA);
@@ -878,6 +1013,14 @@ sub profile_default
    my $def = $_[ 0]-> SUPER::profile_default;
    @$def{qw(selectable width height text)} = (0, 36, 36, "");
    return $def;
+}
+
+sub calc_geom_size
+{  
+   my @sz = $_[0]-> std_calc_geom_size;
+   $sz[1] = 36 if $sz[1] < 36;
+   $sz[0] = 36 if $sz[1] < 36;
+   return @sz;
 }
 
 package Prima::GroupBox;
@@ -1111,10 +1254,11 @@ coordinates. Performs underlining of eventual tilde-escaped character, and
 draws the text with dimmed colors if the button is disabled. If the button 
 is focused, draws a dotted line around the text.
 
-=item caption_box CANVAS
+=item caption_box [ CANVAS = self ] 
 
 Calculates geometrical extensions of text string, stored in L<text> property in pixels.
 Returns two integers, the width and the height of the string for the font selected on CANVAS.
+If CANVAS is undefined, the widget itself is used as a graphic device.
 
 =back
 
@@ -1127,6 +1271,13 @@ an image to be drawn together with the text.
 
 =over
 
+=item autoHeight BOOLEAN
+
+If 1, the button height is automatically changed as text extensions
+change.
+
+Default value: 1
+
 =item autoRepeat BOOLEAN
 
 If set, the button behaves like a keyboard button - after the first
@@ -1135,6 +1286,15 @@ still pressed, L<Click> event is repeatedly called until the button is
 released. Useful for emulating the marginal scroll-bar buttons.
 
 Default value: 0
+
+
+=item autoWidth BOOLEAN
+
+If 1, the button width is automatically changed as text extensions
+change.
+
+Default value: 1
+
 
 =item borderWidth INTEGER
 
