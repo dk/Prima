@@ -264,6 +264,9 @@ apc_widget_get_invalid_rect( Handle self)
 Point
 apc_widget_get_pos( Handle self)
 {
+   if (0) /*MMM*/
+   fprintf( stderr, "%s: getpos: %d, %d\n",
+            PComponent(self)->name, X(self)->origin.x, X(self)->origin.y);
    return X(self)-> origin;
 }
 
@@ -505,13 +508,20 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 }
 
 Bool
-apc_widget_set_color( Handle self, Color color, int index)
+apc_widget_set_color( Handle self, Color color, int i)
 {
-   X(self)-> colors[ index] = color;
-   if ( index == ciFore)
+   Event e = {cmColorChanged};
+
+   X(self)-> colors[ i] = color;
+   if ( i == ciFore)
       apc_gp_set_color( self, color);
-   else if ( index == ciBack)
+   else if ( i == ciBack)
       apc_gp_set_back_color( self, color);
+
+   e. gen. source = self;
+   e. gen. i      = i;
+   CComponent(self)-> message( self, &e);
+
    return true;
 }
 
@@ -572,8 +582,11 @@ apc_widget_set_pos( Handle self, int x, int y)
    bzero( &e, sizeof( e));
    e. cmd = cmMove;
    e. gen. source = self;
-   e. gen. P = XX-> origin;
+   if (0) /*MMM*/
+   fprintf( stderr, "%s: move from (%d,%d) to (%d,%d)\n",
+            PWidget(self)-> name, XX->origin.x, XX->origin.y, x, y);
    XX-> origin = (Point){x,y};  /* XXX ? */
+   e. gen. P = XX-> origin;
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
    XMoveWindow( DISP, X_WINDOW, x, y);
    DOLBUG( "XMoveWindow: widget (%s) move to (%d,%d)\n", PWidget(self)-> name, x, y);
