@@ -667,7 +667,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
        break;
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
-       ev. cmd = 1; // forcing DefWindowProc to be called
+       ev. cmd = 1; // force call DefWindowProc
        break;
    case WM_MOUSEMOVE:
       if ( is_apt( aptEnabled)) SetCursor( sys pointer);
@@ -696,11 +696,10 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 {
    LRESULT ret = 0;
    Handle  self   = GetWindowLong( win, GWL_USERDATA);
-   PWidget   v      = ( PWidget) self;
+   PWidget   v    = ( PWidget) self;
    UINT    orgMsg = msg;
    Event   ev;
    Bool    hiStage   = false;
-   RECT    rectum;
    int     orgCmd;
 
    if ( !self)
@@ -738,6 +737,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    case WM_SETVISIBLE:
    case WM_ENABLE:
    case WM_FORCEFOCUS:
+      return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
    case WM_QUERYNEWPALETTE:
       return generic_view_handler(( HWND) v-> handle, msg, mp1, mp2);
    case WM_PALETTECHANGED:
@@ -975,6 +975,9 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
          destroy_font_hash();
          hash_first_that( imageMan, kill_img_cache, nil, nil, nil);
          break;
+      case WM_QUERYNEWPALETTE:
+      case WM_PALETTECHANGED:
+         return 0;
    }
    return generic_frame_handler( win, msg, mp1, mp2);
 }
