@@ -83,8 +83,8 @@ sub profile_default
 {
    my $f = $_[ 0]-> get_default_font;
    return {
-      %{InputLine->profile_default},
-      %{ListBox->profile_default},
+      %{Prima::InputLine->profile_default},
+      %{Prima::ListBox->profile_default},
       %{$_[ 0]-> SUPER::profile_default},
       style          => cs::Simple,
       listVisible    => 0,
@@ -95,9 +95,9 @@ sub profile_default
       selectable     => 1,
       literal        => 1,
       scaleChildren  => 0,
-      editClass      => 'InputLine',
-      listClass      => 'ListBox',
-      buttonClass    => 'Widget',
+      editClass      => 'Prima::InputLine',
+      listClass      => 'Prima::ListBox',
+      buttonClass    => 'Prima::Widget',
       editProfile    => {},
       listProfile    => {},
       buttonProfile  => {},
@@ -670,8 +670,8 @@ sub profile_default
       height           => $sup{ entryHeight},
       firstDrive       => 'A:',
       drive            => 'C:',
-      editClass        => 'DriveComboBox::InputLine',
-      listClass        => 'ListViewer',
+      editClass        => 'Prima::DriveComboBox::InputLine',
+      listClass        => 'Prima::ListViewer',
       editProfile      => {},
    };
 }
@@ -680,7 +680,7 @@ sub profile_default
    my $i = 0;
    for ( sbmp::DriveFloppy, sbmp::DriveHDD,    sbmp::DriveNetwork,
          sbmp::DriveCDROM,  sbmp::DriveMemory, sbmp::DriveUnknown) {
-      $images[ $i++] = StdBitmap::icon($_);
+      $images[ $i++] = Prima::StdBitmap::icon($_);
    }
 }
 
@@ -697,12 +697,12 @@ sub init
    my %profile = @_;
    $self-> {driveTransaction} = 0;
    $self-> {firstDrive} = $profile{firstDrive};
-   $self-> {drives} = [split ' ', Utils::query_drives_map( $profile{firstDrive})];
+   $self-> {drives} = [split ' ', Prima::Utils::query_drives_map( $profile{firstDrive})];
    $self-> {icons} = [];
    my $maxhei = $profile{itemHeight};
    for ( @{$self-> {drives}})
    {
-      my $dt = Utils::query_drive_type($_) - dt::Floppy;
+      my $dt = Prima::Utils::query_drive_type($_) - dt::Floppy;
       $dt = -1 if $dt < 0;
       my $ic = $images[ $dt];
       push( @{$self-> {icons}}, $ic);

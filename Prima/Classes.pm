@@ -206,8 +206,10 @@ sub profile_check_in
    my $owner = $p-> { owner} ? $p-> { owner} : $default->{ owner};
    $self-> SUPER::profile_check_in( $p, $default);
    if ( defined $owner) {
-     $p-> { name} = ( ref $self) . ( 1 + map { (ref $self) eq (ref $_) ? 1 : () } $owner-> get_components)
-       unless exists( $p-> { name}) || $default-> { name} ne ref $self;
+     unless ( exists( $p-> { name}) || $default-> { name} ne ref $self) {
+        $p-> { name} = ( ref $self) . ( 1 + map { (ref $self) eq (ref $_) ? 1 : () } $owner-> get_components);
+        $p-> { name} =~ s/(.*):([^:]+)$/$2/;
+     }
 
      $p-> {delegateTo} = $owner if
            ( defined $p-> {delegateTo} && $p->{delegateTo}==0)
@@ -256,9 +258,7 @@ sub AUTOLOAD
    my $self = shift;
    my $expectedMethod = $AUTOLOAD;
    Carp::confess "There is no such thing as \"$expectedMethod\"\n" if scalar @_;
-   my @components = split( /::/, $expectedMethod);
-   my $componentName = pop @components;
-   my $class = join( '::', @components);
+   my ($componentName) = $expectedMethod =~ /::([^:]+)$/;
    my $component = $self-> bring( $componentName);
    Carp::croak("Unknown widget or method \"$expectedMethod\"") unless $component && ref($component);
    return $component;
@@ -987,7 +987,7 @@ sub set_commands
    my ( $self, $enable, @commands) = @_;
    foreach ( $self-> get_components)
    {
-      if ( $_->isa("AbstractMenu")) {
+      if ( $_->isa("Prima::AbstractMenu")) {
         my $menu = $_;
         foreach ( @commands) { $menu-> set_command( $_, $enable); }
       };
@@ -999,13 +999,16 @@ sub insert
    my $self = shift;
    my @e = ();
    while (ref $_[0]) {
-      my $cl = shift @{$_[0]}; $cl = "Prima::$cl" unless $cl =~ /^Prima::/;
+      my $cl = shift @{$_[0]};
+      $cl = "Prima::$cl" unless $cl =~ /^Prima::/ || $cl-> isa("Prima::Component");
       push @e, $cl-> create(@{$_[0]}, owner=> $self);
       shift;
    }
-   my $cl = shift @_; $cl = "Prima::$cl" unless $cl =~ /^Prima::/;
-   push @e, $cl-> create(@_, owner=> $self)
-      if scalar @_;
+   if (@_) {
+      my $cl = shift @_;
+      $cl = "Prima::$cl" unless $cl =~ /^Prima::/ || $cl-> isa("Prima::Component");
+      push @e, $cl-> create(@_, owner=> $self);
+   }
    return wantarray ? @e : $e[0];
 }
 
@@ -1253,9 +1256,9 @@ sub AUTOLOAD
    my $self = shift;
    my $expectedMethod = $AUTOLOAD;
    die "There is no such method as \"$expectedMethod\"" if scalar @_;
-   my ($class, $itemName) = split( /::/, $expectedMethod);
-   die "Unknown menu item identifier \"$itemName\"" unless $self-> has_item( $itemName);
-   return MenuItem-> create( $self, $itemName);
+   my ($itemName) = $expectedMethod =~ /::([^:]+)$/;
+   die "Unknown menu item identifier \"$itemName\"" unless defined $itemName && $self-> has_item( $itemName);
+   return Prima::MenuItem-> create( $self, $itemName);
 }
 
 # class AccelTable

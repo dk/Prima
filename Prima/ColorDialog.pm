@@ -598,7 +598,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    Colorify => nt::Action,
 );
 
@@ -609,7 +609,7 @@ sub notification_types { return \%RNT; }
 sub profile_default
 {
    my %sup = %{$_[ 0]-> SUPER::profile_default};
-   my @std = Application-> get_default_scrollbar_metrics;
+   my @std = Prima::Application-> get_default_scrollbar_metrics;
    return {
       %sup,
       style            => cs::DropDownList,
@@ -618,8 +618,8 @@ sub profile_default
       width            => 56,
       literal          => 0,
       colors           => 596,
-      editClass        => 'Widget',
-      listClass        => 'Widget',
+      editClass        => 'Prima::Widget',
+      listClass        => 'Prima::Widget',
       editProfile      => {
          selectingButtons => 0,
       },

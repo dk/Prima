@@ -44,7 +44,7 @@ sub profile_default
       borderWidth    => 1,
       charOffset     => 0,
       cursorVisible  => 1,
-      cursorSize     => [ Application-> get_default_cursor_width, $font-> { height}],
+      cursorSize     => [ Prima::Application-> get_default_cursor_width, $font-> { height}],
       firstChar      => 0,
       height         => 2 + $font-> { height} + 2,
       insertMode     => 0,

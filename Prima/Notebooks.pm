@@ -23,17 +23,19 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+use strict;
+use Prima::Const;
+use Prima::Classes;
+use Prima::IntUtils;
+
 package Prima::TabSet;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller);
 
-use strict;
-use Prima::Const;
-use Prima::Classes;
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    DrawTab     => nt::Action,
    MeasureTab  => nt::Action,
 );
@@ -676,7 +678,7 @@ sub attach_to_page
 sub insert
 {
    my $self = shift;
-   $self-> insert_to_page( $self->pageIndex, @_);
+   return $self-> insert_to_page( $self->pageIndex, @_);
 }
 
 sub insert_to_page
@@ -802,7 +804,7 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
       return {
-      %{Notebook->profile_default},
+      %{Prima::Notebook->profile_default},
       %{$_[ 0]-> SUPER::profile_default},
       ownerBackColor => 1,
       tabs           => [],
@@ -863,10 +865,10 @@ sub on_paint
    $canvas-> color( $clr[1]);
    $canvas-> bar( 0, 0, @size);
    $size[1] -= $self->{tabSet}-> height;
-   $canvas-> rect3d( 0, 0, $size[0] - 1, $size[1] - 1 + TabSet::DefGapY, 1, reverse @c3d);
+   $canvas-> rect3d( 0, 0, $size[0] - 1, $size[1] - 1 + Prima::TabSet::DefGapY, 1, reverse @c3d);
    $canvas-> rect3d( DefBorderX, DefBorderX, $size[0] - 1 - DefBorderX,
-      $size[1] - DefBorderX + TabSet::DefGapY, 1, @c3d);
-   my $y = $size[1] - DefBorderX + TabSet::DefGapY;
+      $size[1] - DefBorderX + Prima::TabSet::DefGapY, 1, @c3d);
+   my $y = $size[1] - DefBorderX + Prima::TabSet::DefGapY;
    my $x  = $size[0] - DefBorderX - DefBookmarkX;
 
    return if $y < DefBorderX * 2 + DefBookmarkX;

@@ -27,7 +27,7 @@ package Prima::ScrollBar;
 use vars qw(@ISA @stdMetrics);
 @ISA = qw(Prima::Widget Prima::MouseScroller);
 
-@stdMetrics = Application-> get_default_scrollbar_metrics;
+@stdMetrics = Prima::Application-> get_default_scrollbar_metrics;
 
 use strict;
 use Prima::Const;
@@ -105,7 +105,7 @@ want C<ScrollBar> to receive keyboard focus.
 
 =item height
 
-Default value is $ScrollBar::stdMetrics[1], which is an operating
+Default value is $Prima::ScrollBar::stdMetrics[1], which is an operating
 system dependent value determined with a call to
 C<Application-E<gt> get_default_scrollbar_metrics>.  The height is
 affected because by default the horizontal C<ScrollBar> will be
@@ -334,11 +334,12 @@ Don't call them directly!
 
   #! /usr/local/bin/prima
 
-  use Classes;
-  use Const;
-  use Application name => 'ScrollBar test';
-  use ScrollBar;
-  use Label;
+  use Prima;
+  use Prima::Classes;
+  use Prima::Const;
+  use Prima::Application name => 'ScrollBar test';
+  use Prima::ScrollBar;
+  use Prima::Label;
 
   my $w = Prima::Window-> create(
 			  text => 'ScrollBar test',
@@ -357,7 +358,7 @@ Don't call them directly!
 			onChange => sub {
 			  $lbl-> text( $_[0]-> value);
 			});
-  1;
+  run Prima;
 
 =head1 BUGS
 

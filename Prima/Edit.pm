@@ -42,7 +42,7 @@ use Prima::IntUtils;
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    ParseSyntax   => nt::Action,
 );
 

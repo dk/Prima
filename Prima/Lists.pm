@@ -52,7 +52,7 @@ use Prima::Classes;
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    SelectItem => nt::Default,
    DrawItem   => nt::Action,
 );
@@ -1107,7 +1107,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{AbstractListViewer->notification_types()},
+   %{Prima::AbstractListViewer->notification_types()},
    Stringify   => nt::Action,
    MeasureItem => nt::Action,
 );
@@ -1330,10 +1330,12 @@ sub delete_items
    ( $self->{items}, $self-> {widths}) = ([@newItems], [@newWidths]);
    my $maxWidth = 0;
    for ( @newWidths) { $maxWidth = $_ if $maxWidth < $_; }
+   $self-> lock;
    $self-> itemWidth( $self->{maxWidth} = $maxWidth)
      if $self->{autoWidth} && $self->{maxWidth} > $maxWidth;
    $self-> SUPER::count( scalar @{$self->{items}});
    $self-> focusedItem( $newFoc);
+   $self-> unlock;
    return @removed if $wantarray;
 }
 
@@ -1573,7 +1575,7 @@ sub init
    unless (@images) {
       my $i = 0;
       for ( sbmp::SFolderOpened, sbmp::SFolderClosed) {
-         $images[ $i++] = StdBitmap::icon($_);
+         $images[ $i++] = Prima::StdBitmap::icon($_);
       }
    }
    my $self = shift;
@@ -1609,7 +1611,10 @@ sub on_measureitem
    my $item = $self->{items}->[$index];
    $$sref = $self-> get_text_width( $item-> {text}) +
            $self-> {oneSpaceWidth} +
-           ( $self->{opened} ? $self->{openedIcon}->width : $self->{closedIcon}->width) +
+           ( $self->{opened} ?
+           ( $self->{openedIcon} ? $self->{openedIcon}->width : 0):
+           ( $self->{closedIcon} ? $self->{closedIcon}->width : 0)
+           ) +
            4 + $self-> {indent} * $item-> {indent};
 }
 
@@ -1727,7 +1732,7 @@ sub new_directory
 {
    my $self = shift;
    my $p = $self-> path;
-   my @fs = Utils::getdir( $p);
+   my @fs = Prima::Utils::getdir( $p);
    unless ( scalar @fs) {
       $self-> path('.'), return unless $p =~ tr{/\\}{} > 1;
       $self-> {path} =~ s{[/\\][^/\\]+[/\\]?$}{/};

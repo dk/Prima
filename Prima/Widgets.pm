@@ -212,7 +212,7 @@ sub init
    if ( $profile{ standardScrollBars})
    {
       my $name = $profile{ name};
-      my @std = @ScrollBar::stdMetrics;
+      my @std = @Prima::ScrollBar::stdMetrics;
       my $hsb = Prima::ScrollBar-> create(
          name     => "HScroll",
          owner    => $self-> owner,

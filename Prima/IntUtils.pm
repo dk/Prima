@@ -236,7 +236,7 @@ sub set_v_scroll
       $self->{vScrollBar} = $self-> insert( q(ScrollBar),
          name     => q(VScroll),
          vertical => 1,
-         left     => $size[0] - $bw - $ScrollBar::stdMetrics[0] + 1,
+         left     => $size[0] - $bw - $Prima::ScrollBar::stdMetrics[0] + 1,
          top      => $size[1] - $bw + 1,
          bottom   => $bw + ( $self->{hScroll} ? $self->{hScrollBar}-> height - 2 : 0),
          growMode => gm::GrowLoX | gm::GrowHiY,

@@ -42,7 +42,7 @@ use vars qw( @ISA);
 
 {
     my %RNT = (
-        %{ Widget->notification_types()},
+        %{Prima::Widget->notification_types()},
         ExecCommand => nt::Action,
     );
 
@@ -110,7 +110,7 @@ sub profile_default {
 sub profile_check_in {
     my ( $self, $prf, $default) = @_;
     $self->SUPER::profile_check_in( $prf, $default);
-    #my @scrlWidth = Application->get_default_scrollbar_metrics();
+    #my @scrlWidth = Prima::Application->get_default_scrollbar_metrics();
     $prf->{ topItem} = undef if ! exists( $prf->{ topItem}) &&
                                   exists( $prf->{ bottomItem});
     $prf->{ borderWidth} = 0 unless $prf->{ borderWidth} >= 0;
@@ -144,10 +144,10 @@ sub calculate_text_preferences {
     $self->{ charWidth} = $self->{ termView}->font->{ width};
 
     my $textHeight = $self->{ termView}->height;
-    $self->{ textRows} = Utils::ceil( $textHeight / $self->{ charHeight});
+    $self->{ textRows} = Prima::Utils::ceil( $textHeight / $self->{ charHeight});
     $self->{ nonIntRows} = ( $self->{ textRows} * $self->{ charHeight}) != $textHeight;
     my $textWidth = $self->{ termView}->width;
-    $self->{ textCols} = Utils::ceil( $textWidth / $self->{ charWidth} );
+    $self->{ textCols} = Prima::Utils::ceil( $textWidth / $self->{ charWidth} );
     $self->{ nonIntCols} = ( $self->{ textCols} * $self->{ charWidth}) != $textWidth;
     $self->{ vShift} = ( $self->{ textRows} - 1) * $self->{ charHeight};
 }
@@ -210,10 +210,10 @@ sub prect2trect {
 
     #print "wH: $wH, cH: $cH, yTop: $yTop";
     return (
-            Utils::floor( $xLeft / $cW),
-            Utils::floor( ( $tH - 1 - $yTop) / $cH),
-            Utils::floor( $xRight / $cW),
-            Utils::floor( ( $tH - 1 - $yBottom) / $cH),
+            Prima::Utils::floor( $xLeft / $cW),
+            Prima::Utils::floor( ( $tH - 1 - $yTop) / $cH),
+            Prima::Utils::floor( $xRight / $cW),
+            Prima::Utils::floor( ( $tH - 1 - $yBottom) / $cH),
            );
 }
 
@@ -426,10 +426,10 @@ sub reset {
                 $item = $items->[ $i];
                 $itemXShift = $itemXShifts->[ $i];
                 if ( ref $item) {
-                    $itemWidths->[ $i] = Utils::ceil( ( $item->width + $itemXShift) / $cW);
-                    $itemXRight->[ $i] = Utils::floor( $item->right / $cW);
-                    $itemXLeft->[ $i] = Utils::floor( $itemXShift / $cW);
-                    $itemHeights->[ $i] = Utils::ceil( $item->height / $cH);
+                    $itemWidths->[ $i] = Prima::Utils::ceil( ( $item->width + $itemXShift) / $cW);
+                    $itemXRight->[ $i] = Prima::Utils::floor( $item->right / $cW);
+                    $itemXLeft->[ $i] = Prima::Utils::floor( $itemXShift / $cW);
+                    $itemHeights->[ $i] = Prima::Utils::ceil( $item->height / $cH);
                     $itemHeights->[ $i] ||= 1;
                 }
                 else {
@@ -437,7 +437,7 @@ sub reset {
                     $itemWidths->[ $i] = ( $width > $textCols) ? $textCols : $width;
                     $itemXRight->[ $i] = $itemWidths->[ $i] - 1;
                     $itemXLeft->[ $i] = 0;
-                    $itemHeights->[ $i] = Utils::ceil( $width / $textCols);
+                    $itemHeights->[ $i] = Prima::Utils::ceil( $width / $textCols);
                 }
 
                 $itemHeights->[ $i] ||= 1; # to avoid zero heights
@@ -459,10 +459,10 @@ sub reset {
                 $item = $items->[ $i];
                 $itemXShift = $itemXShifts->[ $i];
                 if ( ref $item) {
-                    $itemWidths->[ $i] = Utils::ceil( ( $item->width + $itemXShift) / $cW);
-                    $itemXRight->[ $i] = Utils::floor( $item->right / $cW);
-                    $itemXLeft->[ $i] = Utils::floor( $itemXShift / $cW);
-                    $itemHeights->[ $i] = Utils::ceil( $item->height / $cH);
+                    $itemWidths->[ $i] = Prima::Utils::ceil( ( $item->width + $itemXShift) / $cW);
+                    $itemXRight->[ $i] = Prima::Utils::floor( $item->right / $cW);
+                    $itemXLeft->[ $i] = Prima::Utils::floor( $itemXShift / $cW);
+                    $itemHeights->[ $i] = Prima::Utils::ceil( $item->height / $cH);
                     $itemHeights->[ $i] ||= 1; # to avoid zero heights
                 }
                 else {
@@ -543,7 +543,7 @@ sub reset_scrolls {
         min      => $hmin,
         max      => $hmax,
         step     => 1,
-        pageStep => Utils::ceil( $self->{ textCols} / 3),
+        pageStep => Prima::Utils::ceil( $self->{ textCols} / 3),
         whole    => $maxWidth,
         partial  => $hpartial,
         value    => $hval,
@@ -589,11 +589,11 @@ sub insert_view {
         ( print "Item creation failed for $item->[ 0]\n", return) if ! $view;
         $item = $view;
     }
-    elsif ( $item-> isa('Widget')) {
+    elsif ( $item-> isa('Prima::Widget')) {
         $item-> owner( $self->TermView);
     }
     $self->buildinItem( $item);
-    if ( ! $item->isa( 'Widget')) {
+    if ( ! $item->isa( 'Prima::Widget')) {
         croak "Item #$i not a Widget descendant" unless $item->isa( 'Widget');
     }
     if ( defined( $i)) {
@@ -1058,7 +1058,7 @@ sub set_v_scroll
       $self->{vScrollBar} = $self-> insert( q(ScrollBar),
          name     => q(VScroll),
          vertical => 1,
-         left     => $size[0] - $bw - $ScrollBar::stdMetrics[0],
+         left     => $size[0] - $bw - $Prima::ScrollBar::stdMetrics[0],
          top      => $size[1] - $bw,
          bottom   => $bw + ( $self->{hScroll} ? $self->{hScrollBar}->height : 0),
          growMode => gm::GrowLoX | gm::GrowHiY,
@@ -1313,17 +1313,17 @@ sub item_changed {
          $self->{ xOffset}, $self->{ yOffset});
 
     if ( ref $item) {
-        $newWidth = Utils::ceil( ( $item->width + $itemXShift) / $cW);
-        $newXRight = Utils::floor( ( $item->right + $xOffset * $cW) / $cW);
-        $newXLeft = Utils::floor( $itemXShift / $cW);
-        $newHeight = Utils::ceil( $item->height / $cH);
+        $newWidth = Prima::Utils::ceil( ( $item->width + $itemXShift) / $cW);
+        $newXRight = Prima::Utils::floor( ( $item->right + $xOffset * $cW) / $cW);
+        $newXLeft = Prima::Utils::floor( $itemXShift / $cW);
+        $newHeight = Prima::Utils::ceil( $item->height / $cH);
         $newHeight ||= 1;
     }
     else {
         my $width = length( $item) + ( $i == $focused ? 1 : 0);
 
         if ( $lineWrap) {
-            $newHeight = Utils::ceil( $width / $textCols);
+            $newHeight = Prima::Utils::ceil( $width / $textCols);
             $newWidth = ( $width > $textCols) ? $textCols : $width;
         }
         else {
@@ -1898,7 +1898,7 @@ sub puts {
         }
         elsif ( $_ eq "\007") {
             $self->adjust_terminal_window( 1);
-            Utils::sound( 500, 100);
+            Prima::Utils::sound( 500, 100);
         }
         else {
             if ( $_ eq "\t") {

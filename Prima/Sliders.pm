@@ -44,7 +44,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    Increment  => nt::Default,
    TrackEnd   => nt::Default,
 );
@@ -371,7 +371,7 @@ sub profile_default
    my $font = $_[ 0]-> get_default_font;
    my $fh   = $font-> {height} + 2;
    return {
-      %{InputLine->profile_default},
+      %{Prima::InputLine->profile_default},
       %{$_[ 0]-> SUPER::profile_default},
       ownerBackColor => 1,
       selectable     => 1,
@@ -381,8 +381,8 @@ sub profile_default
       step           => 1,
       value          => 0,
       height         => $fh < 20 ? 20 : $fh,
-      editClass      => 'InputLine',
-      spinClass      => 'AltSpinButton',
+      editClass      => 'Prima::InputLine',
+      spinClass      => 'Prima::AltSpinButton',
       editProfile    => {},
       spinProfile    => {},
    }
@@ -533,7 +533,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    Stringify => nt::Action,
 );
 
@@ -876,7 +876,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    TrackEnd   => nt::Default,
 );
 sub notification_types { return \%RNT; }
@@ -1234,7 +1234,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    TrackEnd   => nt::Default,
    Stringify  => nt::Action,
 );

@@ -1253,9 +1253,9 @@ sub itemHeight    {($#_)?$_[0]->set_item_height    ($_[1]):return $_[0]->{itemHe
 sub offset        {($#_)?$_[0]->set_offset         ($_[1]):return $_[0]->{offset}         }
 sub topItem       {($#_)?$_[0]->set_top_item       ($_[1]):return $_[0]->{topItem}        }
 
-package Outline;
+package Prima::Outline;
 use vars qw(@ISA);
-@ISA = qw(OutlineViewer);
+@ISA = qw(Prima::OutlineViewer);
 
 sub draw_items
 {
@@ -1287,9 +1287,9 @@ sub on_stringify
    $$result = $node->[0];
 }
 
-package DirectoryOutline;
+package Prima::DirectoryOutline;
 use vars qw(@ISA);
-@ISA = qw(OutlineViewer);
+@ISA = qw(Prima::OutlineViewer);
 
 # node[0]:
 #  0 : node text
@@ -1346,9 +1346,9 @@ sub init
    if ( $unix) {
       push ( @tree, [[ '/', ''], [], 0]);
    } else {
-      my @drv = split( ' ', Utils::query_drives_map('A:'));
+      my @drv = split( ' ', Prima::Utils::query_drives_map('A:'));
       for ( @drv) {
-         my $type = Utils::query_drive_type($_);
+         my $type = Prima::Utils::query_drive_type($_);
          push ( @tree, [[ $_, ''], [], 0]);
       }
    }
@@ -1447,7 +1447,7 @@ sub on_measureitem
       if ( $unix) {
          $node->[0]->[2] = $self->{iconSizes}->[0];
       } else {
-         my $dt = Utils::query_drive_type($node->[0]->[0]) - dt::Floppy;
+         my $dt = Prima::Utils::query_drive_type($node->[0]->[0]) - dt::Floppy;
          $node->[0]->[2] = $drvImages[$dt] ? $drvImages[$dt]-> width : 0;
          $node->[0]->[3] = $drvImages[$dt];
       }
@@ -1467,7 +1467,7 @@ sub on_stringify
 sub get_directory_tree
 {
    my ( $self, $path) = @_;
-   my @fs = Utils::getdir( $path);
+   my @fs = Prima::Utils::getdir( $path);
    return [] unless scalar @fs;
    my $oldPointer = $::application-> pointer;
    $::application-> pointer( cr::Wait);
@@ -1485,7 +1485,7 @@ sub get_directory_tree
    my $ind = 0;
    my @lb  = ();
    for (@d)  {
-      @fs = Utils::getdir( "$path/$_");
+      @fs = Prima::Utils::getdir( "$path/$_");
       @fs1 = ();
       @fs2 = ();
       for ( $i = 0; $i < scalar @fs; $i += 2) {

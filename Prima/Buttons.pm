@@ -480,7 +480,7 @@ sub on_click
    my $self = $_[0];
    $self-> checked( !$self-> checked) if $self->{ checkable};
    my $owner = $self-> owner;
-   if ( $owner-> isa(q(Window)) && $owner-> get_modal && $self-> modalResult)
+   if ( $owner-> isa(q(Prima::Window)) && $owner-> get_modal && $self-> modalResult)
    {
       $owner-> modalResult( $self-> modalResult);
       $owner-> end_modal;
@@ -540,7 +540,7 @@ sub set_modal_result
    my $self = $_[0];
    $self-> { modalResult} = $_[1];
    my $owner = $self-> owner;
-   if ( $owner-> isa(q(Window)) && $owner-> get_modal && $self-> {modalResult})
+   if ( $owner-> isa(q(Prima::Window)) && $owner-> get_modal && $self-> {modalResult})
    {
       $owner-> modalResult( $self-> { modalResult});
       $owner-> end_modal;
@@ -917,7 +917,7 @@ sub on_radioclick
    for ($me->widgets)
    {
       next if "$rd" eq "$_";
-      next unless $_->isa(q(Radio));
+      next unless $_->isa(q(Prima::Radio));
       $_-> checked(0);
    }
 }

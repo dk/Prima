@@ -75,7 +75,7 @@ sub message_box
        text          => $title,
        font          => $::application-> get_message_font,
        onExecute     => sub {
-          Utils::beep( $options) if $options && !$nosound;
+          Prima::Utils::beep( $options) if $options && !$nosound;
        },
    );
 
@@ -85,7 +85,7 @@ sub message_box
    my @bTexts  = qw( ~Help    ~Cancel     ~Ignore     ~Retry     ~Abort     ~No     ~Yes     ~OK);
 
 
-   my $dir = Utils::get_gui;
+   my $dir = Prima::Utils::get_gui;
    $dir = ( $dir == gui::Motif) ? 1 : 0;
    @bConsts = reverse @bConsts unless $dir;
    @bTexts  = reverse @bTexts  unless $dir;
@@ -134,7 +134,7 @@ sub message_box
    my $iconView;
    if ( $icon)
    {
-      $icon = StdBitmap::icon( $icon);
+      $icon = Prima::StdBitmap::icon( $icon);
       $iconView = $dlg-> insert( Widget =>
          origin         => [ 20, ($dlg-> height + $fresh-> height - $icon-> height)/2],
          size           => [ $icon-> width, $icon-> height],

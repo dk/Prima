@@ -81,7 +81,7 @@ use Prima::StdBitmap;
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    Activate      => nt::Default,
    Deactivate    => nt::Default,
    WindowState   => nt::Default,
@@ -99,7 +99,7 @@ sub profile_default
       selectable            => 1,
       borderIcons           => bi::All,
       borderStyle           => bs::Sizeable,
-      font                  => Application-> get_caption_font,
+      font                  => Prima::Application-> get_caption_font,
       selectingButtons      => 0,
       icon                  => 0,
       ownerFont             => 0,
@@ -109,7 +109,7 @@ sub profile_default
       transparent           => 0,
       widgetClass           => wc::Window,
       windowState           => ws::Normal,
-      clientClass           => 'Widget',
+      clientClass           => 'Prima::Widget',
       clientProfile         => {},
       firstClick            => 1,
       popupItems            => [
@@ -189,7 +189,7 @@ sub on_paint
    $csize[1] -= $bb * 2;
    $csize[1] -= $dy if $bi & bi::TitleBar;
 
-   my $ico = $self->{icon} ? $self->{icon} : StdBitmap::image( sbmp::SysMenu);
+   my $ico = $self->{icon} ? $self->{icon} : Prima::StdBitmap::image( sbmp::SysMenu);
 
    my $dicon = 4;
    my $icos = $self-> { iconsAtRight};
@@ -226,22 +226,22 @@ sub on_paint
       my $di;
       if ( $bbi & bi::Minimize) {
          $di  = ( $bp & bi::Minimize) ?
-            StdBitmap::image(( $self->{windowState} == ws::Minimized) ?
+            Prima::StdBitmap::image(( $self->{windowState} == ws::Minimized) ?
                sbmp::RestorePressed : sbmp::MinPressed) :
-            StdBitmap::image(( $self->{windowState} == ws::Minimized) ?
+            Prima::StdBitmap::image(( $self->{windowState} == ws::Minimized) ?
                sbmp::Restore : sbmp::Min);
          $bbi &= ~bi::Minimize;
       } elsif ( $bbi & bi::Maximize) {
          $di = ( $bp & bi::Maximize) ?
-            StdBitmap::image(( $self->{windowState} == ws::Maximized) ?
+            Prima::StdBitmap::image(( $self->{windowState} == ws::Maximized) ?
                sbmp::RestorePressed : sbmp::MaxPressed) :
-            StdBitmap::image(( $self->{windowState} == ws::Maximized) ?
+            Prima::StdBitmap::image(( $self->{windowState} == ws::Maximized) ?
                sbmp::Restore : sbmp::Max);
          $bbi &= ~bi::Maximize;
       } elsif ( $bbi & bi::SystemMenu) {
          $di  = ( $bp & bi::SystemMenu) ?
-            StdBitmap::image( sbmp::ClosePressed) :
-            StdBitmap::image( sbmp::Close);
+            Prima::StdBitmap::image( sbmp::ClosePressed) :
+            Prima::StdBitmap::image( sbmp::Close);
          $bbi &= ~bi::SystemMenu;
       }
       $canvas-> stretch_image( $tx, $tyStart, $dy, $dy, $di);
@@ -598,7 +598,7 @@ sub on_mousedown
       # just click to popup. Moreover, in general it's right. But we could
       # catch second on_mousedown in system-defined timeout interval, but,
       # this popup-cancelling on_mousedown won't come to us also.
-      my $delay = Application-> get_system_value( sv::DblClickDelay);
+      my $delay = Prima::Application-> get_system_value( sv::DblClickDelay);
       $delay = 250 if $delay > 250;
       $self-> {exTimer} = Prima::Timer-> create(
          owner   => $self,
@@ -996,13 +996,13 @@ sub set_border_style
    my ( $self, $bs) = @_;
    return if $bs == $self->{borderStyle} or $bs < bs::None or $bs > bs::Dialog;
    $self->{borderStyle} = $bs;
-   my ( $bbx, $bby) = Application-> get_default_window_borders( $bs);
+   my ( $bbx, $bby) = Prima::Application-> get_default_window_borders( $bs);
    $bbx = $bbx > 1 ? $bbx : (( $bbx > 0) ? 1 : 0);
    $bby = $bby > 1 ? $bby : (( $bby > 0) ? 1 : 0);
    $self-> {border} = $bbx > $bby ? $bby : $bbx;
 
-   my @a = Application-> get_default_window_borders( $bs);
-   $self-> {titleY} = Application-> get_system_value( sv::YTitleBar);
+   my @a = Prima::Application-> get_default_window_borders( $bs);
+   $self-> {titleY} = Prima::Application-> get_system_value( sv::YTitleBar);
    $self-> sizeMin( $self-> {titleY} * 5 + $a[0] * 2, $self-> {titleY} + $a[1] * 2);
    $self-> sync_client;
    $self-> repaint;

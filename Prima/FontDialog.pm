@@ -58,7 +58,7 @@ sub profile_check_in
    my ( $self, $p, $default) = @_;
    $self-> SUPER::profile_check_in( $p, $default);
    $p-> { logFont} = {} unless exists $p->{ logFont};
-   $p-> { logFont} = Drawable-> font_match( $p->{ logFont}, $default->{ logFont}, 0);
+   $p-> { logFont} = Prima::Drawable-> font_match( $p->{ logFont}, $default->{ logFont}, 0);
 }
 
 
