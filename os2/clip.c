@@ -157,9 +157,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
       case CF_TEXT:
          {
              char * ptr = (char*) WinQueryClipbrdData( guts. anchor, id);
-             char * ret;
              STRLEN i, len = c-> text. length = strlen( ptr);
-             len++;
              c-> text. utf8 = false;
              if ( ptr == nil) {
                 apcErr( errInvClipboardData);
@@ -168,23 +166,22 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
              if ( !( c-> text. text = malloc( c-> text. length)))
                 return false;
              c-> text. length = 0;
-             for ( i = 0; i < len; i++) 
-                if ( ret[ i] != '\r') 
-                   c-> text. text[ c-> text. length++] = ret[i];
+             for ( i = 0; i < len; i++)
+                if ( ptr[ i] != '\r')
+                   c-> text. text[ c-> text. length++] = ptr[i];
              return true;
          }
          break;
       default:
          {
             char * ptr = (char*) WinQueryClipbrdData( guts. anchor, id);
-            void * ret;
             if ( ptr == nil) {
                apcErr( errInvClipboardData);
                return false;
             }
             c-> binary. length = *(( int*) ptr);
             ptr += sizeof( int);
-            if ( c-> binary. data = malloc( c-> binary. length))
+            if (( c-> binary. data = malloc( c-> binary. length)))
                memcpy( c-> binary. data, ptr, c-> binary. length);
             return true;
          }
@@ -196,17 +193,12 @@ Bool
 apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
 {
    id = cf2CF( id);
-   if ( data == nil)
-   {
-      if ( !WinEmptyClipbrd( guts. anchor)) apiErr;
-      return true;
-   }
    switch ( id)
    {
       case CF_BITMAP:
          {
             /* XXX palette operations */
-            HBITMAP b = ( HBITMAP) bitmap_make_handle( i-> image );
+            HBITMAP b = ( HBITMAP) bitmap_make_handle( c-> image );
             if ( b == nilHandle) apiErrRet;
             if ( !WinSetClipbrdData( guts. anchor, b, id, CFI_HANDLE)) apiErrRet;
          }

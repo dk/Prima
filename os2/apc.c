@@ -671,7 +671,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
    }
    else
       sys s. window. modalResult = -1;
-   apc_window_set_caption( self, var text);
+   apc_window_set_caption( self, var text, is_opt( optUTF8_text));
    lock( false);
 
    return apcError == 0;
@@ -822,7 +822,7 @@ apc_window_get_window_state( Handle self)
 }
 
 Bool
-apc_window_set_caption( Handle self, const char * caption)
+apc_window_set_caption( Handle self, const char * caption, Bool utf8)
 {
    Bool ok;
    if ( caption == nil || strlen( caption) == 0) caption = " ";

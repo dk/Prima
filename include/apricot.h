@@ -102,12 +102,12 @@
 class XSLockManager
 {
 public:
-	XSLockManager() { InitializeCriticalSection(&cs); };
-	~XSLockManager() { DeleteCriticalSection(&cs); };
-	void Enter(void) { EnterCriticalSection(&cs); };
-	void Leave(void) { LeaveCriticalSection(&cs); };
+        XSLockManager() { InitializeCriticalSection(&cs); };
+        ~XSLockManager() { DeleteCriticalSection(&cs); };
+        void Enter(void) { EnterCriticalSection(&cs); };
+        void Leave(void) { LeaveCriticalSection(&cs); };
 protected:
-	CRITICAL_SECTION cs;
+        CRITICAL_SECTION cs;
 };
 
 extern XSLockManager g_XSLock;
@@ -116,22 +116,22 @@ extern CPerlObj* pPerl;
 class XSLock
 {
 public:
-	XSLock(CPerlObj *p) {
-	    g_XSLock.Enter();
-	    ::pPerl = p;
-	};
-	~XSLock() { g_XSLock.Leave(); };
+        XSLock(CPerlObj *p) {
+            g_XSLock.Enter();
+            ::pPerl = p;
+        };
+        ~XSLock() { g_XSLock.Leave(); };
 };
 
 /* PERL_CAPI does its own locking in xs_handler() */
 #if defined(PERL_OBJECT) && !defined(PERL_CAPI)
 #undef dXSARGS
-#define dXSARGS	\
-	XSLock localLock(pPerl);			\
-	dSP; dMARK;					\
-	I32 ax = mark - PL_stack_base + 1;		\
-	I32 items = sp - mark
-#endif	/* PERL_OBJECT && !PERL_CAPI */
+#define dXSARGS \
+        XSLock localLock(pPerl);                        \
+        dSP; dMARK;                                     \
+        I32 ax = mark - PL_stack_base + 1;              \
+        I32 items = sp - mark
+#endif  /* PERL_OBJECT && !PERL_CAPI */
 #endif
 
 #ifdef __cplusplus
@@ -168,9 +168,9 @@ extern "C" {
    #undef strerror
    #undef fread
    #undef fwrite
-   #undef fopen		
-   #undef fdopen		
-   #undef freopen		
+   #undef fopen
+   #undef fdopen
+   #undef freopen
    #undef fclose
    #undef fputc
    #undef ungetc
@@ -193,32 +193,32 @@ extern "C" {
    #undef tell
    #undef dup
    #undef dup2
-   #undef open			
+   #undef open
    #undef close
    #undef eof
    #undef read
    #undef write
-   #undef _open_osfhandle	
-   #undef _get_osfhandle	
-   #undef spawnvp	
-   #undef mkdir	
-   #undef rmdir	
-   #undef chdir	
+   #undef _open_osfhandle
+   #undef _get_osfhandle
+   #undef spawnvp
+   #undef mkdir
+   #undef rmdir
+   #undef chdir
    #undef flock
-   #undef execv	
-   #undef execvp	
-   #undef perror	
-   #undef setbuf	
-   #undef setvbuf	
+   #undef execv
+   #undef execvp
+   #undef perror
+   #undef setbuf
+   #undef setvbuf
    #undef flushall
-   #undef fcloseall	
-   #undef fgets	
-   #undef gets		
-   #undef fgetc	
-   #undef putc		
-   #undef puts		
+   #undef fcloseall
+   #undef fgets
+   #undef gets
+   #undef fgetc
+   #undef putc
+   #undef puts
    #undef getchar
-   #undef putchar	
+   #undef putchar
    #undef close
    #undef dup
    #ifdef win32_close
@@ -653,7 +653,7 @@ CM(Quit)
 CM(Close)
 #define cmCreate        (0x0000000A|ctPassThrough)
 CM(Create)
-#define cmDestroy       (0x0000000B|ctPassThrough|ctNoInhibit) 
+#define cmDestroy       (0x0000000B|ctPassThrough|ctNoInhibit)
 CM(Destroy)
 #define cmHide          (0x0000000C|ctDiscardable) /* visible flag aware */
 CM(Hide)
@@ -1273,7 +1273,7 @@ SvBOOL( SV *sv)
 {
    return SvTRUE(sv);
 }
-#endif 
+#endif
 
 #define pexist( key) hv_exists( profile, # key, strlen( #key))
 #define pdelete( key) hv_delete( profile, # key, strlen( #key), G_DISCARD)
@@ -1331,7 +1331,7 @@ SvBOOL( SV *sv)
 #define CWidget(h)                      (PWidget(h)-> self)
 #define PWindow(h)                      TransmogrifyHandle(Window,(h))
 #define CWindow(h)                      (PWindow(h)-> self)
-#endif 
+#endif
 
 
 /* mapping functions */
@@ -1399,16 +1399,18 @@ extern int
 list_index_of( PList self, Handle item);
 
 /* utf8 */
-#if ((PERL_PATCHLEVEL == 5 && PERL_SUBVERSION >= 8) || (PERL_PATCHLEVEL > 5))
+#if (!defined(__EMX__) && ((PERL_PATCHLEVEL == 5 && PERL_SUBVERSION >= 8) || (PERL_PATCHLEVEL > 5)))
 #define PERL_SUPPORTS_UTF8  1
 #else
 /* dummy utf8 functionality */
+#undef utf8_hop
+#undef utf8_length
 #undef  PERL_SUPPORTS_UTF8
 #define IN_BYTES            1
 #define DO_UTF8(sv)         0
 #define SvUTF8(sv)          0
-#define utf8_length(s,e)    ((e)-(s))
-#define utf8_hop(s,off)     ((s)+(off))
+#define utf8_length(s,e)    ((U8*)(e)-(U8*)(s))
+#define utf8_hop(s,off)     ((U8*)((s)+(off)))
 #define SvUTF8_on(sv)       0
 #define SvUTF8_off(sv)      0
 
@@ -2179,13 +2181,13 @@ apc_kbd_get_state( Handle self);
 typedef union {
    struct {
       char * text;
-      int    length;
+      STRLEN length;
       Bool   utf8;
    } text;
    Handle image;
    struct {
       Byte * data;
-      int    length;
+      STRLEN length;
    } binary;
 } ClipboardDataRec, *PClipboardDataRec;
 
@@ -2753,7 +2755,7 @@ AM(None)
 #define    amMaskColor           1
 AM(MaskColor)
 #define    amAuto                2
-AM(Auto)           
+AM(Auto)
 END_TABLE(am,UV)
 #undef AM
 
@@ -2824,7 +2826,7 @@ TW(WordBreak)
 TW(ExpandTabs)
 #define twCollapseTilde   0x100    /* remove ~ from line */
 TW(CollapseTilde)
-#define twReturnFirstLineLength 0x220 
+#define twReturnFirstLineLength 0x220
 TW(ReturnFirstLineLength)
 #define twDefault         (twNewLineBreak|twCalcTabs|twExpandTabs|twReturnLines|twWordBreak)
 TW(Default)

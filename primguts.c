@@ -589,18 +589,22 @@ XS( Prima_want_unicode_input)
    switch ( items) {
    case 0:
       XSRETURN_IV( wantUnicodeInput);
-      break;  
+      break;
    case 1:
       {
-         Bool writable = PERL_SUPPORTS_UTF8 && apc_sys_get_value( svCanUTF8_Input);
+#ifdef PERL_SUPPORTS_UTF8
+         Bool writable = apc_sys_get_value( svCanUTF8_Input);
          if ( writable) {
             int i = SvIV( ST(0));
             if ( i >= 0) wantUnicodeInput = ( i ? 1 : 0);
          }
          XSRETURN_IV( writable);
+#else
+         XSRETURN_IV( 0);
+#endif
       }
-      break;  
-   default:  
+      break;
+   default:
       croak("Invalid usage of Prima::%s", "want_unicode_input");
    }
 }
@@ -1263,7 +1267,7 @@ NAN = 0.0;
          fpsetmask(FP_X_INV|FP_X_DZ); */
    }
 #endif
-#endif 
+#endif
 
    list_create( &staticObjects, 16, 16);
    if ( !window_subsystem_init()) {
@@ -1782,33 +1786,33 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
 int
 prima_utf8_length( const char * utf8)
 {
-#ifdef PERL_SUPPORTS_UTF8   
+#ifdef PERL_SUPPORTS_UTF8
    int ret = 0;
    while ( *utf8) {
       utf8 = utf8_hop(( U8*) utf8, 1);
       ret++;
    }
    return ret;
-#else   
+#else
    return 0;
-#endif  
+#endif
 }
 
 
-#ifndef PERL_SUPPORTS_UTF8   
+#ifndef PERL_SUPPORTS_UTF8
 UV
 prima_utf8_to_uv( U8 * utf8, STRLEN * len)
 {
    *len = 1;
    return (UV) *utf8;
-}  
+}
 
 U8 *
-prima_uv_to_utf8( U8 * utf8, UV * uv)
+prima_uv_to_utf8( U8 * utf8, UV uv)
 {
    *(utf8++) = ( U8) uv;
    return utf8;
-}  
+}
 #endif
 
 #ifdef PARANOID_MALLOC

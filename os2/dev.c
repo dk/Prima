@@ -87,7 +87,7 @@ bitmap_make_ps( Handle img, HPS * hps, HDC * hdc, PBITMAPINFO2 * bm, int createB
             (*bm)-> cx = (( PDrawable) img)-> w;
             (*bm)-> cy = (( PDrawable) img)-> h;
             ret = GpiCreateBitmap( *hps, ( PBITMAPINFOHEADER2) *bm, 0, nil, nilHandle);
-         } 
+         }
       }
       if ( ret == nilHandle)
       {
@@ -312,7 +312,7 @@ bitmap_make_cache( Handle from, Handle self)
     if ( !GpiDeleteBitmap( bm)) apiErr;
     if ( !GpiDestroyPS( hps))   apiErr;
     if ( !DevCloseDC( hdc))     apiErr;
-EXIT:;    
+EXIT:;
     free( bi);
 }
 
@@ -369,6 +369,7 @@ apc_image_begin_paint( Handle self)
    HBITMAP cached = sys bm;
    HBITMAP ret;
    Handle deja = self;
+   Bool retmonoback = false;
 
    if ( PImage( self)-> w == 0 || PImage( self)-> h == 0) return false;
 
@@ -383,6 +384,20 @@ apc_image_begin_paint( Handle self)
       image_destroy_cache( self);
       return false;
    }
+
+   // upgrade to color image, if necessary
+   if ( PImage( self)-> type == imbpp1) {
+      int type = guts. bmf[1];
+      image_begin_query( type, &type);
+      if ( type > 8) type = 24;
+      if ( type != imbpp1) {
+          opt_clear( optInDraw);
+          CImage( self)-> set_type( self, type);
+          opt_set( optInDraw);
+          retmonoback = true;
+      }
+   }
+
    // creating bitmap ( or use cached)
    if ( sys bm == nilHandle) {
       Handle deja  = enscreen( self);
@@ -395,6 +410,11 @@ apc_image_begin_paint( Handle self)
          DevCloseDC( sys dc);
          free( bi);
          if ( deja != self) Object_destroy( deja);
+         if ( retmonoback) {
+            opt_clear( optInDraw);
+            CImage( self)-> set_type( self, imbpp1);
+            opt_set( optInDraw);
+         }
          return false;
       }
    }
@@ -406,6 +426,12 @@ apc_image_begin_paint( Handle self)
       if ( GpiSetBitmapBits( sys ps, 0, i-> h, i-> data, bi) < 0) apiErr;
       if ( deja != self) Object_destroy( deja);
       free( bi);
+   }
+
+   if ( retmonoback) {
+      opt_clear( optInDraw);
+      CImage( self)-> set_type( self, imbpp1);
+      opt_set( optInDraw);
    }
 
    hwnd_enter_paint( self);
@@ -441,8 +467,14 @@ apc_image_end_paint( Handle self)
    apcErrClear;
    {
       int type, oldType = image-> type & imBPP;
-      if ( image_begin_query( oldType, &type))
+      if ( image-> type == imbpp1) {
+         type = guts. bmf[1];
+         image_begin_query( type, &type);
+         if ( type > 8) type = 24;
          image-> self-> create_empty( self, image-> w, image-> h, type);
+      } else
+         if ( image_begin_query( oldType, &type))
+            image-> self-> create_empty( self, image-> w, image-> h, type);
       image_query( self, sys ps);
    }
 
