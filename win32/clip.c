@@ -92,7 +92,8 @@ apc_clipboard_get_data( long id, int * length)
              dc_free();
              sys ps = ops;
              sys bm = obm;
-             if ( apcError) return false;
+             if ( apcError) return nil;
+             return ( void*)1;
          }
          break;
       case CF_TEXT:

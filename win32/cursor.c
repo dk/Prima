@@ -85,7 +85,7 @@ apc_pointer_get_hot_spot( Handle self)
       apiErr
    else {
       r. x = ii. xHotspot;
-      r. y = ii. yHotspot;
+      r. y = guts. pointerSize. y - ii. yHotspot - 1;
       DeleteObject( ii. hbmMask);
       DeleteObject( ii. hbmColor);
    }
@@ -223,6 +223,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
    if ( sys pointer2)
       if ( !DestroyCursor( sys pointer2)) apiErr;
    apcErrClear;
+   hotSpot. y = guts. pointerSize. y - hotSpot. y - 1;
    sys pointer2 = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot, true) : nilHandle;
    if ( apcError) return false;
    if ( sys pointerId == crUser)

@@ -424,8 +424,11 @@ set_view_ex( Handle self, PViewProfile p)
      {
         Handle xs   = ( Handle) sys timeDefs[ i]. item;
         Handle self = xs;
-        if ( sys s. timer. active)
-           if ( !SetTimer( wnd, var handle, sys s. timer. timeout, nil)) apiErr;
+        if ( is_opt( optActive))
+           if ( !SetTimer( wnd, var handle, sys s. timer. timeout, nil)) {
+              opt_clear( optActive);
+              apiErr;
+           }
      }
    if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
    process_transparents( self);
@@ -551,8 +554,8 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
       for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
       if ( sys className == WC_FRAME)
       {
-         PAbstractMenu menu = ( PAbstractMenu)((( PWindow) self)-> menu);
-         if ( menu) menu-> self-> set_selected(( Handle) menu, true);
+         SetMenu( HANDLE, GetMenu( old));
+         SetMenu( old, NULL);
       }
       if ( !DestroyWindow( old))
          apiErr;
@@ -954,18 +957,10 @@ apc_window_set_client_size( Handle self, int x, int y)
 Bool
 apc_window_set_menu( Handle self, Handle menu)
 {
-   Point size  = var self-> get_size( self);
-   HMENU wMenu = GetMenu( HANDLE);
+   Point size;
    objCheck false;
-   if ( menu) {
-      DestroyMenu(( HMENU) (( PComponent) menu)-> handle);
-      (( PComponent) menu)-> handle = nilHandle;
-   }
    apcErrClear;
-   if ( wMenu)
-      DestroyMenu( wMenu);
-   if ( menu)
-      (( PComponent) menu)-> handle = ( Handle) add_item( true, menu, (( PMenu) menu)-> tree);
+   size = var self-> get_size( self);
    SetMenu( HANDLE, menu ? ( HMENU) (( PComponent) menu)-> handle : nilHandle);
    DrawMenuBar( HANDLE);
    var self-> set_size( self, size.x, size. y);
@@ -1815,6 +1810,9 @@ apc_menu_create( Handle self, Handle owner)
    dobjCheck( owner) false;
    sys className = WC_MENU;
    sys owner     = DHANDLE( owner);
+   apc_menu_destroy( self);
+   var handle  = ( Handle) add_item( true, self, (( PMenu) self)-> tree);
+   return var handle != nilHandle;
 }
 
 static Bool clear_menus( PMenuWndData item, int keyLen, void * key, void * params)
@@ -1903,6 +1901,9 @@ apc_menu_item_set_accel( Handle self, PMenuItemReg m, char * accel)
       return;
    }
 
+   if ( flags & MF_BITMAP)
+      flags = ( flags & ~MF_BITMAP) | MF_STRING;
+
    snprintf( buf, 1024, "%s\t%s", m-> text, accel);
    map_tildas( buf, strlen( m-> text));
 
@@ -1948,6 +1949,8 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
       apiErr;
       return;
    }
+   if ( flags & MF_BITMAP)
+      flags = ( flags & ~MF_BITMAP) | MF_STRING;
 
    if ( m-> accel)
       snprintf( buf, 1024, "%s\t%s", text, m-> accel);
@@ -1959,11 +1962,57 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
                     m-> id + MENU_ID_AUTOSTART, buf);
 }
 
+void
+apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
+{
+   MENUITEMINFO mii = {sizeof( MENUITEMINFO)};
+   UINT flags;
+
+   if ( !var handle) return;
+   objCheck;
+   flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
+   if ( flags == 0xFFFFFFFF) {
+      apiErr;
+      return;
+   }
+   flags |= MF_BITMAP;
+
+   ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                    m-> id + MENU_ID_AUTOSTART, image_make_bitmap_handle( image, nil));
+}
+
+
 ApiHandle
 apc_menu_get_handle( Handle self)
 {
    objCheck 0;
    return ( ApiHandle) var handle;
+}
+
+void
+apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
+{
+   objCheck;
+   dobjCheck( var owner);
+
+   if ( kind_of( var owner, CWindow) &&
+        var stage <= csNormal &&
+        ((( PAbstractMenu) self)-> self)-> get_selected( self)) {
+      HMENU h = GetMenu( DHANDLE( var owner));
+      PWindow owner = ( PWindow) var owner;
+      Point size = owner-> self-> get_size( var owner);
+      if ( h) DestroyMenu( h);
+      hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
+      var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
+      SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : nilHandle);
+      DrawMenuBar( DHANDLE( var owner));
+      owner-> self-> set_size( var owner, size.x, size. y);
+   } else {
+      if ( var handle)
+         DestroyMenu(( HMENU) var handle);
+      hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
+      var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
+   }
 }
 
 Bool
@@ -1972,6 +2021,7 @@ apc_popup_create( Handle self, Handle owner)
    objCheck false;
    dobjCheck( owner) false;
    sys owner = DHANDLE( owner);
+   apc_menu_destroy( self);
    var handle  = ( Handle) add_item( false, self, (( PMenu) self)-> tree);
    sys className = WC_MENU;
    return var handle != nilHandle;

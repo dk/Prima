@@ -402,11 +402,15 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       }
       break;
    case WM_CONTEXTMENU:
-      ev. cmd       = cmPopup;
-      ev. gen. B    = ( GetKeyState( VK_LBUTTON) < 0) | ( GetKeyState( VK_RBUTTON) < 0);
-      // mouse event
-      ev. gen. P. x = LOWORD( mp2);
-      ev. gen. P. y = sys lastSize. y - HIWORD( mp2);
+      {
+         POINT a = {( short)LOWORD( mp2), (short)HIWORD( mp2)};
+         ev. cmd       = cmPopup;
+         ev. gen. B    = ( GetKeyState( VK_LBUTTON) < 0) | ( GetKeyState( VK_RBUTTON) < 0);
+         // mouse event
+         MapWindowPoints( NULL, win, &a, 1);
+         ev. gen. P. x = a. x;
+         ev. gen. P. y = sys lastSize. y - a. y - 1;
+      }
       break;
    case WM_ENABLE:
       ev. cmd = mp1 ? cmEnable : cmDisable;
