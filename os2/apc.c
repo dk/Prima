@@ -1258,7 +1258,7 @@ font_pp2gp( char * ppFontNameSize, PFont font)
    font-> height      = font-> size * guts. displayResolution. y / 72.0 + 0.5;
    font-> width       = 0;
    font-> pitch       = fpDefault;
-   font-> style       = ftNormal;
+   font-> style       = fsNormal;
    font-> direction   = 0;
    strcpy( font-> name, p);
    p = font-> name;
@@ -1266,11 +1266,11 @@ font_pp2gp( char * ppFontNameSize, PFont font)
    {
       if ( p[ i] == '.')
       {
-         if ( strcmp( "Italic",     &p[ i + 1]) == 0) font-> style |= ftItalic;
-         if ( strcmp( "Underscore", &p[ i + 1]) == 0) font-> style |= ftUnderlined;
-         if ( strcmp( "Strikeout",  &p[ i + 1]) == 0) font-> style |= ftStruckOut;
-         if ( strcmp( "Bold",       &p[ i + 1]) == 0) font-> style |= ftBold;
-         if ( strcmp( "Outline",    &p[ i + 1]) == 0) font-> style |= ftOutline;
+         if ( strcmp( "Italic",     &p[ i + 1]) == 0) font-> style |= fsItalic;
+         if ( strcmp( "Underscore", &p[ i + 1]) == 0) font-> style |= fsUnderlined;
+         if ( strcmp( "Strikeout",  &p[ i + 1]) == 0) font-> style |= fsStruckOut;
+         if ( strcmp( "Bold",       &p[ i + 1]) == 0) font-> style |= fsBold;
+         if ( strcmp( "Outline",    &p[ i + 1]) == 0) font-> style |= fsOutline;
          p[ i] = 0;
       }
    }
@@ -1281,11 +1281,11 @@ font_gp2pp( PFont font, char * buf)
 {
 //    int size = font-> height * 72.0 / guts. displayResolution. y + 0.5;
    sprintf ( buf, "%d.%s%s%s%s%s%s", font-> size, font-> name,
-      ( font-> style & ftItalic)     ? ".Italic"     : "",
-      ( font-> style & ftBold)       ? ".Bold"       : "",
-      ( font-> style & ftStruckOut)  ? ".Strikeout"  : "",
-      ( font-> style & ftUnderlined) ? ".Underlined" : "",
-      ( font-> style & ftOutline)    ? ".Outline"    : ""
+      ( font-> style & fsItalic)     ? ".Italic"     : "",
+      ( font-> style & fsBold)       ? ".Bold"       : "",
+      ( font-> style & fsStruckOut)  ? ".Strikeout"  : "",
+      ( font-> style & fsUnderlined) ? ".Underlined" : "",
+      ( font-> style & fsOutline)    ? ".Outline"    : ""
    );
 }
 
@@ -1293,11 +1293,11 @@ static int
 font_style( PFONTMETRICS fm)
 {
    int style = ftNormal; // 0
-   if ( fm-> fsSelection & FM_SEL_ITALIC)     style |= ftItalic;
-   if ( fm-> fsSelection & FM_SEL_UNDERSCORE) style |= ftUnderlined;
-   if ( fm-> fsSelection & FM_SEL_STRIKEOUT)  style |= ftStruckOut;
-   if ( fm-> fsSelection & FM_SEL_BOLD)       style |= ftBold;
-   if ( fm-> fsSelection & FM_SEL_OUTLINE)    style |= ftOutline;
+   if ( fm-> fsSelection & FM_SEL_ITALIC)     style |= fsItalic;
+   if ( fm-> fsSelection & FM_SEL_UNDERSCORE) style |= fsUnderlined;
+   if ( fm-> fsSelection & FM_SEL_STRIKEOUT)  style |= fsStruckOut;
+   if ( fm-> fsSelection & FM_SEL_BOLD)       style |= fsBold;
+   if ( fm-> fsSelection & FM_SEL_OUTLINE)    style |= fsOutline;
    return style;
 }
 
@@ -1461,12 +1461,22 @@ void
 apc_widget_set_color( Handle self, Color color, int index)
 {
    int idx;
+   int oStage = var stage;
+   Event ev = {cmColorChanged};
+
    color = remap_color( nilHandle, color, true);
    if ( index == ciLight3DColor) { sys l3dc = color; return; }
    if ( index == ciDark3DColor)  { sys d3dc = color; return; }
    idx = ctx_remap_end( index, ctx_ci2PP, true);
    if ( idx == endCtx) return;
+
+   var stage = csAxEvents;
    if ( !WinSetPresParam( var handle, idx, sizeof( color), &color)) apiErr;
+   var stage = oStage;
+
+   ev. gen. source = self;
+   ev. gen. i      = index;
+   var self-> message( self, &ev);
 }
 
 void
@@ -1690,7 +1700,7 @@ apc_widget_set_enabled ( Handle self, Bool enable)
    if (( sys className == WC_FRAME) || ( var owner == application) || !is_apt( aptClipOwner)) {
       if ( !WinEnableWindow( HANDLE, enable)) apiErr;
    } else
-      apc_widget_repaint( self);
+      WinSendMsg( HANDLE, WM_ENABLE, ( MPARAM) enable, 0);
 }
 
 
@@ -2489,7 +2499,6 @@ apc_dbm_destroy( Handle self)
 void
 apc_gp_init( Handle self)
 {
-   sys lineWidth = 1;
    apt_clear( aptFontExists);
    sys res = guts. displayResolution;
 }
@@ -2525,11 +2534,11 @@ apc_gp_done( Handle self)
                                   if ( !GpiMove( ps, &___p)) apiErr;         \
                                }
 
-#define apc_gp_fix             if ( sys lineWidth > 2) {                     \
+#define apc_gp_fix             if ( sys lineWidth > 0) {                     \
                                   if ( !GpiBeginPath( sys ps, 1)) apiErr;    \
                                }
 
-#define apc_gp_fix_end         if ( sys lineWidth > 2) {                     \
+#define apc_gp_fix_end         if ( sys lineWidth > 0) {                     \
                                   if ( !GpiEndPath( sys ps)) apiErr;         \
                                   if ( !GpiModifyPath( sys ps, 1, MPATH_STROKE)) apiErr;    \
                                   if ( GpiFillPath( sys ps, 1, FPATH_WINDING) == GPI_ERROR) \
@@ -3066,7 +3075,7 @@ apc_gp_set_line_width( Handle self, int lineWidth)
 {
    sys lineWidth = lineWidth;
    if ( !sys ps) return;
-   if ( lineWidth < lwLight) {
+   if ( lineWidth == 0) {
       if ( !GpiSetLineWidth( sys ps, MAKEFIXED( lineWidth, 0))) apiErr;
    } else {
       if ( !GpiSetLineWidthGeom( sys ps, lineWidth)) apiErr;
@@ -3216,11 +3225,11 @@ apc_gp_set_font( Handle self, PFont font)
       f. lMaxBaselineExt = font-> height;
       f. fsFontUse = FATTR_FONTUSE_NOMIX;
    }
-   if ( font-> style & ftItalic    ) f. fsSelection |= FATTR_SEL_ITALIC;
-   if ( font-> style & ftUnderlined) f. fsSelection |= FATTR_SEL_UNDERSCORE;
-   if ( font-> style & ftStruckOut ) f. fsSelection |= FATTR_SEL_STRIKEOUT;
-   if ( font-> style & ftBold      ) f. fsSelection |= FATTR_SEL_BOLD;
-   if ( font-> style & ftOutline   ) f. fsSelection |= FATTR_SEL_OUTLINE;
+   if ( font-> style & fsItalic    ) f. fsSelection |= FATTR_SEL_ITALIC;
+   if ( font-> style & fsUnderlined) f. fsSelection |= FATTR_SEL_UNDERSCORE;
+   if ( font-> style & fsStruckOut ) f. fsSelection |= FATTR_SEL_STRIKEOUT;
+   if ( font-> style & fsBold      ) f. fsSelection |= FATTR_SEL_BOLD;
+   if ( font-> style & fsOutline   ) f. fsSelection |= FATTR_SEL_OUTLINE;
 
    memcpy( f. szFacename, font-> name, FACESIZE);
    if ( sys fontHash) {
