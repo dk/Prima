@@ -87,6 +87,128 @@ package Periodic;
 use vars qw(@ISA);
 @ISA = qw(Prima::GridViewer);
 
+my %elem_info = (
+	H	=> { atomic_number => 1, },
+	He	=> { atomic_number => 2, },
+
+	Li	=> { atomic_number => 3, },
+	Be	=> { atomic_number => 4, },
+	B	=> { atomic_number => 5, },
+	C	=> { atomic_number => 6, },
+	N	=> { atomic_number => 7, },
+	O	=> { atomic_number => 8, },
+	F	=> { atomic_number => 9, },
+	Ne	=> { atomic_number => 10, },
+
+	Na	=> { atomic_number => 11, },
+	Mg	=> { atomic_number => 12, },
+	Al	=> { atomic_number => 13, },
+	Si	=> { atomic_number => 14, },
+	P	=> { atomic_number => 15, },
+	S	=> { atomic_number => 16, },
+	Cl	=> { atomic_number => 17, },
+	Ar	=> { atomic_number => 18, },
+	K	=> { atomic_number => 19, },
+	Ca	=> { atomic_number => 20, },
+	Sc	=> { atomic_number => 21, },
+	Ti	=> { atomic_number => 22, },
+	V	=> { atomic_number => 23, },
+	Cr	=> { atomic_number => 24, },
+	Mn	=> { atomic_number => 25, },
+	Fe	=> { atomic_number => 26, },
+	Co	=> { atomic_number => 27, },
+	Ni	=> { atomic_number => 28, },
+	Cu	=> { atomic_number => 29, },
+	Zn	=> { atomic_number => 30, },
+	Ga	=> { atomic_number => 31, },
+	Ge	=> { atomic_number => 32, },
+	As	=> { atomic_number => 33, },
+	Se	=> { atomic_number => 34, },
+	Br	=> { atomic_number => 35, },
+	Kr	=> { atomic_number => 36, },
+
+	Rb	=> { atomic_number => 37, },
+	Sr	=> { atomic_number => 38, },
+	Y	=> { atomic_number => 39, },
+	Zr	=> { atomic_number => 40, },
+	Nb	=> { atomic_number => 41, },
+	Mo	=> { atomic_number => 42, },
+	Tc	=> { atomic_number => 43, },
+	Ru	=> { atomic_number => 44, },
+	Rh	=> { atomic_number => 45, },
+	Pd	=> { atomic_number => 46, },
+	Ag	=> { atomic_number => 47, },
+	Cd	=> { atomic_number => 48, },
+	In	=> { atomic_number => 49, },
+	Sn	=> { atomic_number => 50, },
+	Sb	=> { atomic_number => 51, },
+	Te	=> { atomic_number => 52, },
+	I	=> { atomic_number => 53, },
+	Xe	=> { atomic_number => 54, },
+
+	Cs	=> { atomic_number => 55, },
+	Ba	=> { atomic_number => 56, },
+	La	=> { atomic_number => 57, },
+
+	Hf	=> { atomic_number => 72, },
+	Ta	=> { atomic_number => 73, },
+	W	=> { atomic_number => 74, },
+	Re	=> { atomic_number => 75, },
+	Os	=> { atomic_number => 76, },
+	Ir	=> { atomic_number => 77, },
+	Pt	=> { atomic_number => 78, },
+	Au	=> { atomic_number => 79, },
+	Hg	=> { atomic_number => 80, },
+	Tl	=> { atomic_number => 81, },
+	Pb	=> { atomic_number => 82, },
+	Bi	=> { atomic_number => 83, },
+	Po	=> { atomic_number => 84, },
+	At	=> { atomic_number => 85, },
+	Rn	=> { atomic_number => 86, },
+
+	Fr	=> { atomic_number => 87, },
+	Ra	=> { atomic_number => 88, },
+	Ac	=> { atomic_number => 89, },
+
+	Rf	=> { atomic_number => 104, },
+	Db	=> { atomic_number => 105, },
+	Sg	=> { atomic_number => 106, },
+	Bh	=> { atomic_number => 107, },
+	Hs	=> { atomic_number => 108, },
+	Mt	=> { atomic_number => 109, },
+	Ds	=> { atomic_number => 110, },
+
+	Ce	=> { atomic_number => 58, },
+	Pr	=> { atomic_number => 59, },
+	Nd	=> { atomic_number => 60, },
+	Pm	=> { atomic_number => 61, },
+	Sm	=> { atomic_number => 62, },
+	Eu	=> { atomic_number => 63, },
+	Gd	=> { atomic_number => 64, },
+	Tb	=> { atomic_number => 65, },
+	Dy	=> { atomic_number => 66, },
+	Ho	=> { atomic_number => 67, },
+	Er	=> { atomic_number => 68, },
+	Tm	=> { atomic_number => 69, },
+	Yb	=> { atomic_number => 70, },
+	Lu	=> { atomic_number => 71, },
+
+	Th	=> { atomic_number => 90, },
+	Pa	=> { atomic_number => 91, },
+	U	=> { atomic_number => 92, },
+	Np	=> { atomic_number => 93, },
+	Pu	=> { atomic_number => 94, },
+	Am	=> { atomic_number => 95, },
+	Cm	=> { atomic_number => 96, },
+	Bk	=> { atomic_number => 97, },
+	Cf	=> { atomic_number => 98, },
+	Es	=> { atomic_number => 99, },
+	Fm	=> { atomic_number => 100, },
+	Md	=> { atomic_number => 101, },
+	No	=> { atomic_number => 102, },
+	Lr	=> { atomic_number => 103, },
+);
+
 sub focusedCell
 {
    return $_[0]-> SUPER::focusedCell unless $#_;
@@ -108,7 +230,7 @@ my $g = $w-> insert( Periodic =>
       [qw(K  Ca Sc Ti V  Cr Mn Fe Co Ni),       ('')x4],
       [qw(Cu Zn Ga Ge As Se Br), ('')x3,'Kr',   ('')x3],
       [qw(Rb Sr Y  Zr Nb Mo Tc Ru Rh Pd),       ('')x4],
-      [qw(Ag Cd In Sn Sb Te J),  ('')x3,'Xe',   ('')x3],
+      [qw(Ag Cd In Sn Sb Te I),  ('')x3,'Xe',   ('')x3],
       [qw(Cs Ba La Hf Ta W  Re Os Ir Pt),       ('')x4],
       [qw(Au Hg Tl Pb Bi Po At), ('')x3,'Rn',   ('')x3],
       [qw(Fr Ra Ac Rf Db Sg Bh Hs Mt Ds),       ('')x4],
@@ -144,6 +266,10 @@ my $g = $w-> insert( Periodic =>
             $canvas-> color( $color);
          }
          $canvas-> text_out( $item, $cx1 + 10, $cy1 + 10);
+		 my $f = $canvas->font;
+		 $canvas->font(size => $f->size - 4);
+         $canvas->text_out( $elem_info{$item}->{atomic_number}||"", $cx1 + 35, $cy1 + 35);
+		 $canvas->font($f);
          $canvas-> rect_focus( $sx1, $sy1, $sx2-1, $sy2-1) if $focused;
       } elsif ( exists $sides{"$column:$row"}) {
          my $side = $sides{"$column:$row"};
