@@ -1038,9 +1038,10 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
    
    if (
        ((( guts. palSize > 0) || (target_bpp == 1)) && (( img-> type & imBPP) == 24)) ||
-       ((( img-> type & imBPP) <= 8) && ((img-> type & imBPP) > target_bpp)) 
+       ((( img-> type & imBPP) <= 8) && ((img-> type & imBPP) >= target_bpp)) 
       )  {
-      int bpp;
+      int bpp, colors = 0;
+      RGBColor palbuf[256], *palptr = nil;
       if ( !dup) {
          if (!(dup = img-> self-> dup(( Handle) img)))
             return nil;
@@ -1048,8 +1049,20 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       pass = ( PImage) dup;
       if ( target_bpp <= 1) bpp = imbpp1; else
       if ( target_bpp <= 4) bpp = imbpp4; else bpp = imbpp8;
-      if ( guts. grayScale) bpp |= imGrayScale;
-      pass-> self-> set_type( dup, bpp);
+
+      if ( guts. palSize > 0 && target_bpp > 1) {
+         int i, maxRank = RANK_FREE;
+         if ( type == CACHE_LOW_RES) maxRank = RANK_LOCKED;
+         for ( i = 0; i < guts. palSize; i++) {
+            if ( guts. palette[i]. rank <= maxRank) continue;
+            palbuf[colors]. r = guts. palette[i]. r;
+            palbuf[colors]. g = guts. palette[i]. g;
+            palbuf[colors]. b = guts. palette[i]. b;
+            colors++;
+            if ( colors > 255) break;
+         }
+      }
+      pass-> self-> reset( dup, bpp, palptr, colors);
    } 
      
    switch ( pass-> type & imBPP) {
