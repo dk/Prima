@@ -465,7 +465,7 @@ arc_completion( double * angleStart, double * angleEnd, int * needFigure)
 }
 
 static void
-calculate_ellipse_divergence()
+calculate_ellipse_divergence(void)
 {
    static Bool init = false;
    if ( !init) {
