@@ -673,7 +673,7 @@ CODE LOADONCALL
 DATA LOADONCALL NONSHARED MULTIPLE
 EXPORTS
 EOF
-    print PRIMADEF map { "\t_$_\n\t$_ = _$_\n"} @Prima_exports;
+    print PRIMADEF map { "\t$_\n\t_$_ = $_\n"} @Prima_exports;
     if ( $COMPILER eq 'bcc32') {
 	print PRIMADEF <<EOF;
 
