@@ -61,9 +61,11 @@ fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSiz
          memcpy( dstPal, var-> palette, var-> palSize * sizeof(RGBColor));
          memcpy( dstPal + var-> palSize, fillPalette, fillPalSize * sizeof(RGBColor));
          memset( dstPal + var-> palSize + fillPalSize, 0, (*dstPalSize - fillPalSize - var-> palSize) * sizeof(RGBColor));
+         do_colormap = 0;
       } else {
          memcpy( dstPal, var-> palette, var-> palSize * sizeof(RGBColor));
          cm_squeeze_palette( fillPalette, fillPalSize, dstPal + var-> palSize, *dstPalSize - var-> palSize);
+         do_colormap = 0;
       }
    } else if ( *dstPalSize != 0) {
       if ( *dstPalSize > maxPalSize) 
@@ -72,12 +74,14 @@ fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSiz
       cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize = maxPalSize);
    } else {
       memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
-      if ( colorref)
-         memcpy( colorref, map_stdcolorref, maxPalSize);
       do_colormap = 0;
    }
-   if ( do_colormap && colorref)
-      cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+   if ( colorref) {
+      if ( do_colormap)
+         cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
+      else
+         memcpy( colorref, map_stdcolorref, 256);
+   }
 }
 
 BC( mono, mono, None)
