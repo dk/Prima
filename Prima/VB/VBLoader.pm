@@ -26,7 +26,7 @@
 # $Id$
 package Prima::VB::VBLoader;
 use strict;
-use vars qw($builderActive $fileVersion @eventContext);
+use vars qw($builderActive $fileVersion @eventContext $form);
 
 $fileVersion   = '1.1';
 @eventContext  = ('', '');
@@ -80,6 +80,7 @@ sub AUTOFORM_REALIZE
       $modules{$dep{$_}->{module}} = 1 if $dep{$_}->{module};
       $main = $_ if $dep{$_}->{parent};
    }
+   $form = $main;
    for ( keys %modules) {
       my $c = $_;
       eval("use $c;");
@@ -230,6 +231,35 @@ sub AUTOFORM_CREATE
    return AUTOFORM_REALIZE( \@dep, \%parms);
 }
 
+package Prima; 
+
+sub VBLoad
+{
+   my ( $filename, %parms) = @_;
+
+   if ( $filename =~ /.+\:\:([^\:]+)$/ && $filename !~ /^</ ) { # seemingly a module syntax
+      my @path = split( '::', $filename);
+      my $file = pop @path;
+      my $ret = Prima::find_image( join('::', @path), $file);
+      $@ = "Cannot find resource: $filename", return undef unless $ret;
+      $filename = $ret;
+   } else {
+      $filename =~ s/^<//;
+   }
+
+   my %ret;
+   eval { %ret = Prima::VB::VBLoader::AUTOFORM_CREATE( $filename, %parms); };
+   if ( $@ ) {
+      $@ = "Error in setup resource: $@";
+      return undef;
+   }
+   unless ( $ret{$Prima::VB::VBLoader::form} ) {
+      $@ = "Error in setup resource: form not found";
+      return undef;
+   }
+   return $ret{$Prima::VB::VBLoader::form};
+}
+
 # onBegin       ( name, instance)
 # onFormCreate  ( name, instance, formObject)
 # onCreate      ( name, instance, object)
@@ -255,24 +285,20 @@ window with all children is returned.
 
 =head1 SYNOPSIS
 
-The simple way to use the loader is that:
+The simple way to use the loader is as that:
 
-     Prima::VB::VBLoader::AUTOFORM_CREATE( './your_resource.fm',
+     use Prima::VB::VBLoader;
+     Prima::VBLoad( './your_resource.fm',
         Form1 => { centered => 1 },
-     )-> {Form1}-> execute;
+     )-> execute;
 
 A more complicated but more proof code can be met in the toolkit:
 
      eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
-     my $fi = Prima::find_image( 'Your::Module', 'your_resource.fm');
-     unless ( defined $fi) { 
-        Prima::message( "Cannot find resource: Your::Module::your_resource.fm"); 
-        return;
-     }
-     eval { $form = { Prima::VB::VBLoader::AUTOFORM_CREATE( $fi,
+     $form = Prima::VBLoad( $fi,
        'Form1'     => { visible => 0, centered => 1},
-     )}-> {Form1} };
-     if ( $@) { 
+     );
+     die "$@\n" unless $form;
         Prima::message("Error in setup resource: $@"); 
         return;
      }
@@ -325,6 +351,31 @@ Reads FILENAME in .fm file format, checks its version, loads,
 and creates widget tree. Upon successful load the root widget
 is returned. The parsing and creation is performed by calling
 C<AUTOFORM_REALIZE>. If loading fails, C<die()> is called.
+
+=item Prima::VBLoad FILENAME, %PARAMETERS
+
+A wrapper around C<AUTOFORM_CREATE>, exported in C<Prima>
+namespace. FILENAME can be specified either as a file system
+path name, or as a relative module name. In a way,
+
+   Prima::VBLoad( 'Module::form.fm' )
+
+and
+ 
+   Prima::VBLoad( Prima::find_image( 'Module', 'form.fm')) 
+
+are identical. If the procedure finds that FILENAME is a relative
+module name, it calls C<Prima::find_image> automatically. To
+tell explicitly that FILENAME is a file system path name, FILENAME
+must be prepended with C<E<lt>> symbol ( the syntax is influenced by C<CORE::open> ).
+
+%PARAMETERS is a hash with custom parameters passed to
+widgets during creation. The widgets are distinguished by the names.
+Visual Builder ensures that no widgets have equal names.
+
+If the form file loaded succesfully, returns the form object reference.
+Otherwise, C<undef> is returned and the error string is stored in C<$@>
+valriable.
 
 =back
 
@@ -453,6 +504,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::VB::VB>
+L<Prima>, L<VB>
 
 =pod

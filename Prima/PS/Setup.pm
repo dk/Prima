@@ -103,9 +103,7 @@ sub sdlg_exec
    unless ( defined $self-> {setupDlg}) {
       eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
       eval "use Prima::MsgBox"; die "$@\n" if $@;
-      my $fi = Prima::find_image( 'Prima::PS', 'setup.fm');
-      unless ( defined $fi) { Prima::message( "Cannot find resource: Prima::PS::setup.fm"); return }
-      eval { $self-> {setupDlg} = { Prima::VB::VBLoader::AUTOFORM_CREATE( $fi,
+      $self-> {setupDlg} = Prima::VBLoad( 'Prima::PS::setup.fm', 
         'Form1'     => { visible => 0, centered => 1},
         'PaperSize' => { items => [ sort keys %pageSizes ], },
         'OK'        => {
@@ -284,8 +282,9 @@ sub sdlg_exec
            }
            Prima::message("No importable resources found") unless $cx;
         }},
-      )}-> {Form1} };
-      if ( $@) { Prima::message("Error in setup resource: $@"); return }
+      );
+      Prima::message("$@"), return unless $self-> {setupDlg};
+      unless ( $self-> {setupDlg}) { Prima::message( $@ ); return }
       $self-> {setupDlg}-> TabbedNotebook1-> Notebook-> VList-> focusedItem( 0);
    }
    

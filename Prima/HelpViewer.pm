@@ -740,12 +740,7 @@ sub setup_dialog
    my $self = $_[0];
    my $t = $self-> {text};
    unless ( defined $setupdlg) {
-      my $fi = Prima::find_image( 'Prima', 'HelpViewer.fm');
-      unless ( defined $fi) { Prima::message( "Cannot find resource: Prima::HelpViewer.fm"); return }
-      eval { $setupdlg = { Prima::VB::VBLoader::AUTOFORM_CREATE( $fi,
-        'Form1'     => { visible => 0, centered => 1},
-      )}-> {Form1}};
-      if ( $@) { Prima::message("Error in setup resource: $@"); return }
+      Prima::message("$@"), return unless $setupdlg = Prima::VBLoad( 'Prima::HelpViewer.fm');
    }
 
    my $sec = $inifile-> section('View');

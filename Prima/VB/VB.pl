@@ -2213,12 +2213,10 @@ A form file typically has I<.fm> extension, an can be loaded
 by using L<Prima::VB::VBLoader> module. The following example
 is the only content of the C<starter.pl> wrapper
 
-   Prima::VB::VBLoader::AUTOFORM_CREATE( $ARGV[0],
-     'Form1' => {
-        onDestroy => sub { $::application-> close },
-     }
-   );
-   run Prima;
+   use Prima qw(Application VB::VBLoader);
+   my $ret = Prima::VBLoad( $ARGV[0] );
+   die "$@\n" unless $ret;
+   $ret-> execute;
    
 and is usually sufficient for executing a form file.
 
