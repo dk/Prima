@@ -482,6 +482,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       case NotifyDetailNone: /* XXX ? */
 	 return;
       }
+      /* fprintf( stderr, "pokus in %s\n", PComponent(self)->name); */
       if (!XT_IS_WINDOW(XX))
          frame = CApplication(application)-> top_frame( application, self);
       if ( CApplication(application)-> map_focus( application, frame) != frame) {
@@ -504,6 +505,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       case NotifyDetailNone: /* XXX ? */
 	 return;
       }
+      /* fprintf( stderr, "pokus out %s\n", PComponent(self)->name); */
       XX-> flags. focused = 0;
       if ( guts. focused) prima_no_cursor( guts. focused);
       guts. focused = nilHandle;

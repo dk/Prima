@@ -76,11 +76,14 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
    Handle selectee;
    DEFWMDATA;
 
+   /* fprintf( stderr, "some hook %s\n", PComponent(self)->name); */
+
    if ( xev-> type == ClientMessage && xev-> message_type == wm-> protocols) {
       if ((Atom) xev-> data. l[0] == wm-> deleteWindow) {
 	 ev-> cmd = cmClose;
 	 return true;
       } else if ((Atom) xev-> data. l[0] == wm-> takeFocus) {
+         /* fprintf( stderr, "take pokus %s\n", PComponent(self)->name); */
 	 selectee = CApplication(application)->map_focus( application, self);
          if ( selectee != self)
             CApplication(application)->lock(application);

@@ -145,9 +145,18 @@ apc_window_activate( Handle self)
 {
    XWindow frame;
 
+   /* fprintf( stderr, "activate %s\n", PComponent(self)->name); */
    frame = prima_find_frame_window( PWidget( self)-> handle);
    if ( frame) XRaiseWindow( DISP, frame);
-   XSetInputFocus( DISP, PWidget(self)->handle, RevertToParent, guts.last_time);
+   {
+      XWindow windoze = apc_widget_is_showing( self) ? X_WINDOW : None;
+      /* if (windoze == None) */
+         /* fprintf( stderr, "FUCHIK %s\n", PComponent(self)->name); */
+      /* else */
+         /* fprintf( stderr, "PUCHIK %s: %08lx => %08lx\n", */
+                  /* PComponent(self)->name, PWidget(self)->handle, windoze); */
+      XSetInputFocus( DISP, windoze, RevertToParent, CurrentTime);
+   }
    return true;
 }
 
