@@ -60,7 +60,9 @@
 #endif
 
 #if PRIMA_PLATFORM == 3
+#ifndef NAN
    extern double NAN;
+#endif
 #endif
 
 #ifdef WORD

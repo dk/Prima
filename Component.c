@@ -26,8 +26,8 @@
  * $Id$
  */
 
-#include <ctype.h>
 #include "apricot.h"
+#include <ctype.h>
 #include "Component.h"
 #include <Component.inc>
 

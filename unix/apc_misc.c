@@ -32,6 +32,7 @@
 /*                                                         */
 /***********************************************************/
 
+#include <apricot.h>
 #include <sys/stat.h>
 #include "unix/guts.h"
 #include "Application.h"

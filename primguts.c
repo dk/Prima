@@ -27,13 +27,13 @@
  */
 /* Guts library, main file */
 
+#define GENERATE_TABLE_GENERATOR yes
+#include "apricot.h"
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <float.h>
 #include <dirent.h>
-#define GENERATE_TABLE_GENERATOR yes
-#include "apricot.h"
 #include "guts.h"
 #include "Object.h"
 #include "Component.h"
@@ -1101,7 +1101,9 @@ Bool dolbug;
 Bool waitBeforeQuit;
 
 #if defined(BROKEN_COMPILER) || (PRIMA_PLATFORM == apcUnix)
+#ifndef NAN
 double NAN;
+#endif
 #endif
 
 #ifdef PARANOID_MALLOC
@@ -1224,6 +1226,7 @@ XS( boot_Prima)
    }
 #endif /* BROKEN_COMPILER */
 #if PRIMA_PLATFORM == apcUnix
+#ifndef NAN
    {
       /* What we actually need here is not unix */
       /* We need the control over mathematical exceptions, that's it */
@@ -1236,6 +1239,7 @@ NAN = 0.0;
       /* fpresetsticky(FP_X_INV|FP_X_DZ);
          fpsetmask(FP_X_INV|FP_X_DZ); */
    }
+#endif
 #endif 
 
    list_create( &staticObjects, 16, 16);

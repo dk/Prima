@@ -26,6 +26,9 @@
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
 /* $Id$ */
 
+#ifdef HAVE_CONFIG_H
+#include <generic/config.h>
+#endif
 #define Z_PREFIX 
 #include <png.h>
 #undef Byte
