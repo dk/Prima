@@ -47,7 +47,7 @@ $VERSION = '1.02';
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {
    $::application = 0;
-   return 1;
+   return 0;
 }
 $::application = undef;
 require Prima::Const;
