@@ -1249,7 +1249,12 @@ clean:
 bindist: all
 \t\$(RM) Prima-bin-$os_suffix.zip
 \t\@zip -r Prima-bin-$os_suffix.zip Prima.pm auto examples Prima
-\t\@perl -e "if(open F, q(.bindist-exclude)) { my \$\$x = q(zip Prima-bin-MSWin32.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
+\t\@perl -e "if(open F, q(.dist-exclude)) { my \$\$x = q(zip Prima-bin-MSWin32.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
+
+dist: all
+\t\$(RM) Prima.zip
+\t\@zip -r Prima.zip Makefile.PL *.c *.cls Prima.pm examples img include os2 prigraph Prima test unix utils win32
+\t\@perl -e "if(open F, q(.dist-exclude)) { my \$\$x = q(zip Prima.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
 
 prima: dirs $PrimaTarget
 
