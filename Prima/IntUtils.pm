@@ -89,6 +89,7 @@ sub scroll_timer_start
          timeout    => $rates[0],
          name       => q(ScrollTimer),
          onTick     => sub { $_[0]-> {delegator}-> ScrollTimer_Tick( @_)},
+         onDestroy  => sub { undef $scrollTimer },
       );
       @{$scrollTimer}{qw(firstRate nextRate newRate)} = (@rates,$rates[1]);
    }
