@@ -272,6 +272,13 @@ sub classes
       module   => 'Prima::VB::CoreClasses',
       class    => 'Prima::VB::DetailedList',
    },
+   Prima::Calendar => {
+      icon     => 'VB::classes.gif:32',
+      RTModule => 'Prima::Calendar',
+      page     => 'Additional',
+      module   => 'Prima::VB::CoreClasses',
+      class    => 'Prima::VB::Calendar',
+   },
    );
 }
 

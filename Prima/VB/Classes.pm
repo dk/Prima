@@ -1385,6 +1385,29 @@ sub open
    );
 }
 
+package Prima::VB::Types::fallback;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::text);
+
+sub set
+{
+   my ( $self, $data) = @_;
+   $self-> SUPER::set( $self-> write( $self-> {id}, $data));
+}
+
+sub get
+{
+   my $ret = $_[0]-> SUPER::get( @_);
+   my @ev = eval $ret;
+   my $ev = $#ev ? \@ev : $ev[0];
+   return $ev unless $@;
+   my $err = "$@";
+   $err =~ s/Prima::VB::Types::fallback:*//i;
+   $err =~ s/\(eval \d*\)\s*//i;
+   Prima::MsgBox::message( $_[0]-> {widget}-> name . '::' . $_[0]-> {id} . " : $err ( $ret )");
+   return '';
+}
+
 package Prima::VB::Types::iv;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::string);

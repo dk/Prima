@@ -1,4 +1,4 @@
-#  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
+#  Copyright (c) 1997-2f002 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -1483,7 +1483,7 @@ sub get_typerec
 {
    my ( $self, $type, $valPtr) = @_;
    unless ( defined $type) {
-      my $rwx = 'generic';
+      my $rwx = 'fallback';
       if ( defined $valPtr && defined $$valPtr) {
          if ( ref($$valPtr)) {
             if (( ref($$valPtr) eq 'ARRAY') || ( ref($$valPtr) eq 'HASH')) {
@@ -1500,7 +1500,7 @@ sub get_typerec
    my $t = $self-> {typerecs};
    return $t->{$type} if exists $t->{type};
    my $ns = \%Prima::VB::Types::;
-   my $rwx = exists $ns->{$type.'::'} ? $type : 'generic';
+   my $rwx = exists $ns->{$type.'::'} ? $type : 'fallback';
    $rwx = 'Prima::VB::Types::'.$rwx;
    $t->{$type} = $rwx;
    return $rwx;
