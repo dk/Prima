@@ -174,7 +174,11 @@ Component_attach( Handle self, Handle object)
       if ( var-> components == nil) {
          var-> components = malloc( sizeof( List));
          list_create( var-> components, 8, 8);
-      }
+      } else
+         if ( list_index_of( var-> components, object) > 0) {
+            warn( "RTC0040: Object attach failed");
+            return;
+         }
       list_add( var-> components, object);
       SvREFCNT_inc( SvRV(( PObject( object))-> mate));
    } else
