@@ -43,107 +43,189 @@ use Prima::TextView;
 use Prima::Application;
 
 
-my $tale = <<TALE;
-Fury said to a mouse, 
-That he met in the house,
-"Let us both go to law:
-I will prosecute YOU.
---Come, I'll take no denial;
-We must have a trial:
-For really this morning 
-I've nothing to do."
-Said the mouse to the cur,
-"Such a trial, dear Sir,
-With no jury or judge,
-would be wasting our breath."
-"I'll be judge, I'll be jury,"
-Said cunning old Fury:
-"I'll try the whole cause,
-and condemn you to death".
+my @tale = split( "\n", <<TALE);
+Fury said to
+a mouse, That 
+he met
+in the
+house,
+"Let us
+both go
+to law:
+I will
+prosecute
+you.--
+Come, I'll
+take no
+denial;
+We must
+have a
+trial:
+For
+really
+this
+morning
+I've
+nothing
+to do."
+Said the
+mouse to
+the cur,
+"Such a
+trial,
+dear sir,
+With no
+jury or
+judge
+would be
+wasting
+our breath."
+"I'll be
+judge,
+I'll be
+jury,"
+Said
+cunning
+old Fury:
+"I'll try
+the whole
+cause,
+and
+condemn
+you
+to
+death."
 TALE
 
-$tale =~ s/\n//g;
-
-my $rcenter = 25;
 my @indents = (
-19,20,18,16,13,15,17,19,21,24,25,22,18,15,13,12,13,14,16,18,20,
-22,25,17,15,14,15,20,18,20,21,23,27,23,18,20,11,15,17,26,11,15,
-17,16,25
+0,2,11,14,16,15,11,9,8,4,3,5,9,11,14,21,25,26,22,20,21,27,21,19,
+17,14,11,14,19,16,13,10,7,8,10,12,14,13,10,7,4,9,13,16,21,26,28,
+22,24,23,24
 );
 
-my @offsets = (
-15,15,10,7,8,10,12,9,13,12,10,11,11,12,13,8,8,8,13,
-11,8,10,5,8,9,9,7,4,8,9,11,11,5,7,10,5,8,6,6,4,8,4,3,6,2,
-);
+my ( $w, $t);
+my $initfs = 20;
 
-
-my $w = Prima::Window-> create(
+$w = Prima::Window-> create(
    name => 'Mouse tale',
    onDestroy => sub { $::application-> close },
+   menuItems => [
+      ['~Font' => [
+          [ '~Increase' , 'Ctrl+Plus' , km::Ctrl|ord('+') , sub {
+             return if $initfs >= 100; 
+             $initfs += 2; 
+             typeset();
+          }],
+          [ '~Decrease' , 'Ctrl+Minus' , km::Ctrl|ord('-') , sub {
+             return if $initfs < 12; 
+             $initfs -= 2; 
+             typeset();
+          }],
+      ]],
+   ],
 );
 
-my $t = Prima::TextView-> create(
+$t = Prima::TextView-> create(
    owner => $w,
    growMode => gm::Client,
    origin   => [0,0],
    size     => [$w-> size],
-   text     => $tale,
+   text     => join( "\n", @tale),
 );
 
-my ($i, $tb, $pos, $y, $fh, $fd, $fs, $state, $indent, $maxw);
+sub typeset
+{
+   my ($i, $tb, $pos, $y, $fh, $fd, $fs, $state, $indent, $maxw, $cr, $old_from, $old_x);
 
-$y = 0;
-$maxw = 0;
-$pos = 0;
+   $y = 0;
+   $pos = 0;
+   $maxw = 0;
+   $cr = length ("\n");
+   $t-> {blocks} = [];
 
-$t-> begin_paint_info; # need to calculate text widths, this way it goes faster
-my $fontstate = $t-> create_state;
+   # Since we need to calculate text widths, this way it goes faster
+   $t-> begin_paint_info; 
+   my $fontstate = $t-> create_state;
 
-# select initial font size
-$$fontstate[ tb::BLK_FONT_SIZE] = 40;
-$t-> realize_state( $t, $fontstate, tb::REALIZE_FONTS);
-$fs = $t-> font-> height;
+   # select initial font size and page width
+   $$fontstate[ tb::BLK_FONT_SIZE] = $initfs;
+   $t-> realize_state( $t, $fontstate, tb::REALIZE_FONTS);
+   $fs = $t-> font-> height;
+   $fd = $t-> font-> descent;
+   $indent = $t-> get_text_width('m');
+   $old_from = 0;
+   $old_x = $indent * 4; # initial horizontal offset
+   for ( $i = 0, $pos = 0; $i < scalar @tale; $i++, $y += $fh) {
+      my $len = length($tale[$i]);
 
-for ( $i = 0, $pos = 0; $i < scalar @indents; $i++, $y += $fh) {
-   my $len = $offsets[$i];
-   my $str = substr( $tale, $pos, $len);
-   $len--, $pos++ while $str =~ s/^\s//;
+      $tb = tb::block_create();
+      $fs = 12 + ( $fs - 12) * 0.97;
+      if ( int($fs) != $t-> font-> size) {
+         $$fontstate[ tb::BLK_FONT_SIZE] = int($fs) + tb::F_HEIGHT;
+         $t-> realize_state( $t, $fontstate, tb::REALIZE_FONTS);
+         $fh = $t-> font-> height;
+         $fd = $t-> font-> descent;
+      }
+      
+      my ( $from, $width) = ( $indent * $indents[$i], $indent * $len);
+     
+      # set block position and attributes - each block contains single line and single text op
+      $$tb[ tb::BLK_TEXT_OFFSET] = $pos;
+      $$tb[ tb::BLK_WIDTH]  = $t-> get_text_width( $tale[$i]);
+      $$tb[ tb::BLK_HEIGHT] = $fh;
+      $$tb[ tb::BLK_Y] = $y;
+      $$tb[ tb::BLK_APERTURE_Y] = $fd;
+      $$tb[ tb::BLK_X] = $old_x + ( $from - $old_from) * $$tb[tb::BLK_WIDTH] / $width;
+      $$tb[ tb::BLK_COLOR]     = cl::Fore;
+      $$tb[ tb::BLK_BACKCOLOR] = cl::Back;
+      $$tb[ tb::BLK_FONT_SIZE]  = int($fs) + tb::F_HEIGHT;
 
-   $tb = tb::block_create();
-   $fs = 12 + ( $fs - 12) * 0.9;
-   if ( int($fs) != $t-> font-> size) {
-      $$fontstate[ tb::BLK_FONT_SIZE] = int($fs) + tb::F_HEIGHT;
-      $t-> realize_state( $t, $fontstate, tb::REALIZE_FONTS);
-      $fh = $t-> font-> height;
-      $fd = $t-> font-> descent;
+      if ( $tale[$i] =~ /^you\.\-\-/) {
+         # Italicize 'you' in the string
+         my $w1 = $t-> get_text_width( 'you');
+         my $w2 = $t-> get_text_width( '.');
+         my $w3 = $t-> get_text_width( '--');
+         push @$tb, 
+            tb::fontStyle( fs::Italic),
+            tb::text( 0, 3, $w1 + $fh / 3),
+            tb::fontStyle( fs::Normal),
+            tb::text( 3, 1, $w2),
+         # Example of custom drawings - replace double '-' character by a long hyphen.
+         # Note when copying from the selection, the '--' is still present in the text
+            tb::code( \&hyphen, $w3 - 1),
+         # The ::code by itself occupies no place, so ::moveto explicitly sets
+         # the hyphen dimensions
+            tb::moveto( $fh, $w3);
+         # Since 'you' italic is a bit wider that the non-italic 'you',
+         # fh/3 is here as a rough compensation. A more presice calculation
+         # requires the exact width of the italicized string.
+         $$tb[ tb::BLK_WIDTH] += $fh / 3;
+      } else {
+         # Add text op and its width, the store the full block
+         push @$tb, tb::text( 0, $len, $$tb[tb::BLK_WIDTH]);
+      }
+      push @{$t-> {blocks}}, $tb;
+
+      $maxw = $$tb[ tb::BLK_WIDTH] + $$tb[ tb::BLK_X] 
+         if $maxw < $$tb[ tb::BLK_WIDTH] + $$tb[ tb::BLK_X]; 
+      $pos += $len + $cr;
+      $old_x = $$tb[ tb::BLK_X];
+      $old_from = $from;
    }
-   
-   $indent = $fh / 4 unless $i;
-   my $di = ($indents[$i] - $rcenter) * ( $fs / 36 ) ;
-  
-   # set block position and attributes - each block contains single line and single text op
-   $$tb[ tb::BLK_TEXT_OFFSET] = $pos;
-   $$tb[ tb::BLK_WIDTH]  = $t-> get_text_width( $str);
-   $$tb[ tb::BLK_HEIGHT] = $fh;
-   $$tb[ tb::BLK_Y] = $y;
-   $$tb[ tb::BLK_APERTURE_Y] = $fd;
-   $$tb[ tb::BLK_X] = ( $rcenter + $di) * $indent + ( $len * $indent - $$tb[ tb::BLK_WIDTH]) / 2;
-   $$tb[ tb::BLK_COLOR]     = cl::Fore;
-   $$tb[ tb::BLK_BACKCOLOR] = cl::Back;
-   $$tb[ tb::BLK_FONT_SIZE]  = int($fs) + tb::F_HEIGHT;
 
-   # add text op and its width, store block
-   push @$tb, tb::text( 0, $len, $$tb[tb::BLK_WIDTH]);
-   push @{$t-> {blocks}}, $tb;
+   $t-> end_paint_info;
 
-   $maxw = $$tb[ tb::BLK_WIDTH] + $$tb[ tb::BLK_X] 
-      if $maxw < $$tb[ tb::BLK_WIDTH] + $$tb[ tb::BLK_X]; 
-   $pos += $len;
+   $t-> recalc_ymap; # Need this as a finalization act to validate the position lookup table
+   $t-> paneSize( $maxw + $indent * 4, $y);
 }
 
-$t-> end_paint_info;
+sub hyphen
+# draws a hyphen
+{
+   my ( $self, $canvas, $block, $state, $x, $y, $width) = @_;
+   $y += $$block[ tb::BLK_HEIGHT] / 2 - $$block[ tb::BLK_APERTURE_Y];
+   $canvas-> line( $x, $y, $x + $width, $y);
+}
 
-$t-> recalc_ymap; # need this as a finalization act
-$t-> paneSize( $maxw, $y);
-
+typeset;
 run Prima;
