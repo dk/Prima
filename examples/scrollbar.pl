@@ -96,8 +96,8 @@ my $t = $w-> insert(
    Timer=>
    timeout=> 2000,
    name => 'Timer1',
+   delegations => ['Tick'],
 );
-$t-> add_notification( "onTick", \&MyWindow::Timer1_Tick, $w);
 $t-> start;
 
 run Prima;
