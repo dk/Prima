@@ -35,20 +35,27 @@
 #define SORT(a,b)       ({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
 #define REVERT(a)       ({ XX-> size. y - (a) - 1; })
 
-Point
-apc_widget_client_to_screen( Handle self, Point p)
+Bool
+apc_widget_map_points( Handle self, Bool toScreen, int n, Point *p)
 {
-   XWindow cld;
    DEFXX;
+   int dx = 0, dy = XX-> size. y;
+   XWindow dummy;
 
-   p. y = X( self)-> size. y - p. y - 1;
-   if ( !XTranslateCoordinates( DISP, XX->udrawable, RootWindow( DISP, SCREEN),
-				p. x, p. y, &p. x, &p. y, &cld)) {
-      croak( "apc_widget_client_to_screen(): XTranslateCoordinates() failed");
+   if ( !XTranslateCoordinates( DISP,
+                                XX-> udrawable, RootWindow( DISP, SCREEN),
+                                dx, dy, &dx, &dy, &dummy))
+      croak( "apc_widget_map_points(): XTranslateCoordinates() failed");
+   dy = DisplayHeight( DISP, SCREEN) - dy;
+   if (!toScreen) {
+      dx = -dx;
+      dy = -dy;
    }
-   XCHECKPOINT;
-   p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
-   return p;
+   while (n--) {
+      p[n]. x += dx;
+      p[n]. y += dy;
+   }
+   return true;
 }
 
 Bool
@@ -368,23 +375,6 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
       apc_widget_update( self);
    }
    return true;
-}
-
-Point
-apc_widget_screen_to_client( Handle self, Point p)
-{
-   XWindow cld;
-   DEFXX;
-
-   p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
-   if ( !XTranslateCoordinates( DISP, RootWindow( DISP, SCREEN),
-				XX->udrawable, p. x, p. y,
-				&p. x, &p. y, &cld)) {
-      croak( "apc_widget_screen_to_client(): XTranslateCoordinates() failed");
-   }
-   XCHECKPOINT;
-   p. y = XX-> size. y - p. y - 1;
-   return p;
 }
 
 Bool
