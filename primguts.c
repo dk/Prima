@@ -880,7 +880,7 @@ pop_hv_for_REDEFINED( SV **sp, int returned, HV *hv, int expected)
 Bool appDead = false;
 SV** temporary_prf_Sv;
 
-// Dynamic loading support
+/* Dynamic loading support */
 
 extern void * dlsym(void *handle, char *symbol);
 extern char * dlerror(void);
@@ -897,7 +897,7 @@ extern char * dlerror(void);
 # endif
 #endif
 
-// Stolen from dlutils.c:
+/* Stolen from dlutils.c: */
 
 /* pointer to allocated memory for last error message */
 static char *LastError  = (char*)NULL;
@@ -1155,6 +1155,91 @@ extern PHash objects;
 #define PRIMAPERL_endav endav
 #endif
 
+XS( prima_cleanup)
+{
+   dXSARGS;
+   (void)items;
+
+   appDead = true;
+   window_subsystem_cleanup();
+   sv_free(( SV *) vmtHash);
+   window_subsystem_done();
+
+   ST(0) = &sv_yes;
+   XSRETURN(1);
+}
+
+XS( boot_Prima)
+{
+   dXSARGS;
+   (void)items;
+
+fprintf( stderr, "boot_Prima\n");
+   XS_VERSION_BOOTCHECK;
+
+#ifdef BROKEN_COMPILER
+   {
+      union {U8 c[8];double d;} nan = {{00, 00, 00, 00, 00, 00, 0xf8, 0xff}};
+      NAN = nan. d;
+   }
+#endif /* BROKEN_COMPILER */
+#ifdef __unix
+   {
+      /* What we actually need here is not unix */
+      /* We need the control over mathematical exceptions, that's it */
+      double zero; /* ``volatile'' to cheat clever optimizers */
+      zero = 0.0;
+      // fpresetsticky(FP_X_INV|FP_X_DZ);
+      // fpsetmask(~(FP_X_INV|FP_X_DZ));
+      // NAN = 0.0 / zero;
+NAN = 0.0;
+      // fpresetsticky(FP_X_INV|FP_X_DZ);
+      // fpsetmask(FP_X_INV|FP_X_DZ);
+   }
+#endif /* __unix */
+
+   if ( !window_subsystem_init()) {
+      apc_show_message( "Error initializing PRIMA");
+      ST(0) = &sv_no;
+      XSRETURN(1);
+   };
+
+#ifdef PARANOID_MALLOC
+   objects = hash_create();
+#endif
+   vmtHash = newHV();
+
+   /* register hard coded XSUBs */
+   newXS( "TiedStdOut::PRINT", ext_std_print, MODULE);
+   newXS( "::destroy_mate", destroy_mate, MODULE);
+   newXS( "Prima::cleanup", prima_cleanup, "Prima");
+   /* register built-in classes */
+   newXS( "Object::create",  create_from_Perl, "Object");
+   newXS( "Object::destroy", destroy_from_Perl, "Object");
+   newXS( "Object::alive", Object_alive_FROMPERL, "Object");
+   register_Object_Class();
+   register_Utils_Package();
+   register_Component_Class();
+   register_Clipboard_Class();
+   register_DeviceBitmap_Class();
+   register_Drawable_Class();
+   register_Widget_Class();
+   register_Window_Class();
+   register_Image_Class();
+   init_image_support();
+   register_Icon_Class();
+   register_AbstractMenu_Class();
+   register_AccelTable_Class();
+   register_Menu_Class();
+   register_Popup_Class();
+   register_Application_Class();
+   register_Timer_Class();
+   register_Printer_Class();
+
+   ST(0) = &sv_yes;
+   XSRETURN(1);
+}
+
 int
 prima( const char *primaPath, int argc, char **argv)
 {
@@ -1330,7 +1415,8 @@ prima( const char *primaPath, int argc, char **argv)
 DieHard:
    appDead = true;
    window_subsystem_cleanup();
-   if (waitBeforeQuit) apc_show_message( "I was asked to wait before quitting...");
+   if (waitBeforeQuit)
+      apc_show_message( "I was asked to wait before quitting...");
 NoPerlDying:
    window_subsystem_done();
 #ifdef PARANOID_MALLOC
@@ -1343,29 +1429,6 @@ NoPerlDying:
    return 0;
 }
 
-// mapping
-// int
-// ctx_remap_def ( int value, int * table, Bool direct, int default_value)
-// {
-//    if ( table == nil) return default_value;
-//    if ( direct)
-//    {
-//       while (( *table) != endCtx)
-//       {
-//          if ( *table == value) return *(++table);
-//          table += 2;
-//       }
-//       return default_value;
-//    } else {
-//       if ( *table == endCtx) return default_value;
-//       while ( 1)
-//       {
-//          if ((*(++table)) == value) return *(--table);
-//          if ((*(++table)) == endCtx) return default_value;
-//       }
-//    }
-// }
-
 typedef struct _RemapHashNode_ {
    int key;
    int val;
@@ -1377,7 +1440,7 @@ typedef struct _RemapHash_ {
 } RemapHash, *PRemapHash;
 
 int
-ctx_remap_def ( int value, int * table, Bool direct, int default_value)
+ctx_remap_def( int value, int *table, Bool direct, int default_value)
 {
    register PRemapHash hash;
    register PRemapHashNode node;
