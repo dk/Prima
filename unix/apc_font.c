@@ -88,13 +88,12 @@ prima_init_font_subsystem( void)
 
    gettimeofday( &t1, nil);
    guts. font_names = names = XListFonts( DISP, "*", 1000000, &count);
-   if ( !names)
-      croak( "error 1 initializing font subsystem");
+   if ( !names) croak( "UAF_001: no X memory");
    guts. n_fonts = count;
 
    info = malloc( sizeof( FontInfo) * count);
    if ( !info)
-      croak( "error initializing font subsystem: not enough memory");
+      croak( "UAF_002: no memory");
    bzero( info,  sizeof( FontInfo) * count);
 
    for ( i = 0; i < count; i++) {
@@ -560,7 +559,7 @@ add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s)
    kf = malloc( sizeof( CachedFont));
    if (!kf) {
      no_memory:
-      croak( "add_font_to_cache(): not enough memory");
+      croak( "UAF_003: no memory");
       return;
    }
    bzero( kf, sizeof( CachedFont));
@@ -616,9 +615,10 @@ detail_font_info( PFontInfo f, PFont font)
       }
 
       s = XLoadQueryFont( DISP, name);
+      // fprintf( stderr, "loading 1 %s\n", name);
       XCHECKPOINT;
       if ( !s) {
-	 croak( "Error loading font: %s", name);
+	 croak( "UAF_004: load font %s error", name);
 	 return;
       }
 
@@ -825,8 +825,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    (void)dump_font; /* to prevent warnings */
    if ( !isalpha(dest->name[0])) {
       dump_font( dest);
-      *((char *)0) = 7;
-      croak( "Bad name!");
+      croak( "UAF_005: bad font name");
    }
 
    if ( by_size) {
@@ -933,7 +932,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
       DOLBUG( "%d (%g): %s\n", i, ordered[i]. diff, info[ordered[i]. n]. xname);
    }
 
-croak( "Ala-ulu");
+croak( "UAF_006: debug crash");
 */
    free( ordered);
    return true;
@@ -961,19 +960,20 @@ apc_gp_set_font( Handle self, PFont font)
    }
    if ( !kf) {
       dump_font( font);
-      croak( "apc_gp_set_font(): the font was not cached");
+      croak( "UAF_007: internal error"); /* the font was not cached, can't be */
    }
    if ( XX-> font == kf) {
       /* extra sanity check */
       if ( !kf-> id) {
-	 croak( "apc_gp_set_font(): [internal] already set, no id");
+	 croak( "UAF_008: internal error");  /* font is here without an id */
       }
    } else {
       if ( !kf-> id) {
 	 kf-> fs = XLoadQueryFont( DISP, kf-> load_name);
+         // fprintf( stderr, "loading 2 %s\n", kf-> load_name);
 	 kf-> id = kf-> fs-> fid;
 	 if ( !kf-> fs) {
-	    croak( "apc_gp_set_font(): error loading font %s", kf-> load_name);
+	    croak( "UAF_009: load font %s error", kf-> load_name);
 	 }
       }
       kf-> ref_cnt++;
@@ -993,6 +993,7 @@ apc_gp_set_font( Handle self, PFont font)
 
    if ( XX-> flags. paint) {
       XX-> flags. reload_font = reload;
+      // fprintf( stderr, "set font: %s\n", XX-> font-> load_name);
       XSetFont( DISP, XX-> gc, XX-> font-> id);
       XCHECKPOINT;
    }
@@ -1013,19 +1014,20 @@ apc_menu_set_font( Handle self, PFont font)
    }
    if ( !kf) {
       dump_font( font);
-      croak( "apc_menu_set_font(): the font was not cached");
+      croak( "UAF_010: internal error"); /* the font was not cached */
    }
    if ( XX-> font == kf) {
       /* extra sanity check */
       if ( !kf-> id) {
-	 croak( "apc_menu_set_font(): [internal] already set, no id");
+	 croak( "UAF_011: internal error");  /* font is here but no id */
       }
    } else {
       if ( !kf-> id) {
 	 kf-> fs = XLoadQueryFont( DISP, kf-> load_name);
+         // fprintf( stderr, "loading 3 %s\n", kf-> load_name);
 	 kf-> id = kf-> fs-> fid;
 	 if ( !kf-> fs) {
-	    croak( "apc_menu_set_font(): error loading font %s", kf-> load_name);
+	    croak( "UAF_012: load font %s error", kf-> load_name);
 	 }
       }
       kf-> ref_cnt++;
