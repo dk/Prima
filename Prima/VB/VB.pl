@@ -34,6 +34,8 @@ use Prima::VB::CfgMaint;
 my $lite = 0;                          # set to 1 to use ::Lite packages. For debug only
 $Prima::VB::CfgMaint::systemWide = 0;  # 0 - user config, 1 - root config to write
 my $singleConfig                 = 0;  # set 1 to use only either user or root config
+my $fileVersion                  = 1;
+my $VBVersion                    = 0.1;
 
 ###################################################
 
@@ -1357,9 +1359,15 @@ sub open
       return;
    }
 
-   unless ( $contents =~ /^\s*sub\s*{/ ) {
+   unless ( $contents =~ /^# VBForm/ ) {
       Prima::MsgBox::message("Invalid format of ".$self->{fmName});
       return;
+   }
+
+   if ( $contents =~ /file=(\d+\.*\d*)/) {
+      Prima::MsgBox::message("Different file format version ($1) of ".$self->{fmName}."\nBugs possible!",
+         mb::Warning|mb::OK)
+         if $1 != $fileVersion;
    }
 
    my $sub = eval( $contents);
@@ -1470,6 +1478,7 @@ sub write_form
    my @cmp = $VB::form-> widgets;
 
    my $c = <<PREHEAD;
+# VBForm version file=$fileVersion builder=$VBVersion
 sub
 {
    return (
