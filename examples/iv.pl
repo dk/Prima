@@ -275,7 +275,7 @@ sub zbestfit
 {
    my $iv = $_[0]->IV;
    my @szA = $iv->image->size;
-   my @szB = $iv->get_active_area;
+   my @szB = $iv->get_active_area(2);
    $szB[0] = $szB[2] - $szB[0];
    $szB[1] = $szB[3] - $szB[1];
    my $x = $szB[0]/$szA[0];

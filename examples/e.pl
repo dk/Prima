@@ -28,10 +28,11 @@ use Prima::Classes;
 use Prima::ScrollWidget;
 use Prima::Application;
 use Prima::ColorDialog;
+use Prima::ImageViewer;
 
 package ImageEdit::Painter;
 use vars qw(@ISA);
-@ISA = qw(Prima::ScrollWidget);
+@ISA = qw(Prima::ImageViewer);
 
 sub profile_default
 {
@@ -40,6 +41,7 @@ sub profile_default
       %d,
       hScroll  => 1,
       vScroll  => 1,
+      zoom     => 1,
       growMode => gm::Client,
    }
 }
@@ -57,27 +59,10 @@ sub init
    $i-> color( cl::White);
    $i-> bar( 0,0,$i->size);
    $i-> end_paint;
+   $self-> image( $i);
    return %profile;
 }
 
-sub on_paint
-{
-   my ($self, $canvas)  = @_;
-   my ($im, $x, $y) = ( $self-> {image}, $self-> size);
-   $canvas-> color( $self-> backColor);
-   if ( $im)
-   {
-      my ($w, $h) = $im-> size;
-      $canvas-> bar ( $w, 0, $x, $y) if $x > $w;
-      $canvas-> bar ( 0, $h, $w, $y) if $y > $h;
-      $canvas-> put_image_indirect(
-         $im, 0, 0, $self-> deltaX,
-         $im-> height - $self-> height - $self-> deltaY >= 0 ?
-         $im-> height - $self-> height - $self-> deltaY : 0,
-         $w, $h, $w, $h, rop::CopyPut
-      );
-   } else { $canvas-> bar(0, 0, $x, $y); }
-}
 
 sub on_mousedown
 {
@@ -87,7 +72,6 @@ sub on_mousedown
    $self-> capture(1);
    $self->{lmx} = $x;
    $self->{lmy} = $y;
-   $self->{mxy} = $self-> {vScrollBar}-> max;
    $self-> {estorage} = undef;
 }
 
@@ -95,8 +79,7 @@ sub on_mousemove
 {
    my ( $self, $mod, $x, $y) = @_;
    return unless $self->{mouseTransaction};
-   my ( $dx, $dy, $mxy) = ( $self->{deltaX}, $self->{deltaY}, $self->{mxy});
-   my @ln = ( $self->{lmx} + $dx, $self->{lmy} + $mxy - $dy, $x + $dx, $y + $mxy - $dy);
+   my @ln = $self-> screen2point( $self->{lmx}, $self->{lmy}, $x, $y);
    $self-> begin_paint;
    $self-> set( %{$self-> owner-> {attrs}});
    $self-> line( $self->{lmx}, $self->{lmy}, $x, $y);
@@ -134,6 +117,7 @@ sub done
    $self->{image}-> destroy;
    $self-> SUPER::done;
 }
+
 
 package ImageEdit::ColorSelector;
 use vars qw(@ISA);
