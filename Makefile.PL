@@ -1875,10 +1875,10 @@ if ( $#ARGV >= 0 && $ARGV[ 0] =~ /^\-\-cp(bin)?$/) {
 \@rem = '--*-Perl-*--
 \@echo off
 if "%OS%" == "Windows_NT" goto WinNT
-$^X -w -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+$Config{perlpath} -w -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
 goto endofperl
 :WinNT
-$^X -w -x -S "%0" %*
+$Config{perlpath} -w -x -S "%0" %*
 if NOT "%COMSPEC%" == "%SystemRoot%\\system32\\cmd.exe" goto endofperl
 if %errorlevel% == 9009 echo You do not have Perl in your PATH.
 goto endofperl
@@ -1887,7 +1887,7 @@ goto endofperl
 EOF
             }
             elsif ( $OS2) {
-                my $perlpath = $^X;
+                my $perlpath = $Config{perlpath};
                 $perlpath =~ s/(perl)(\.exe)?$/$1__$2/i if $perlpath =~ /perl(\.exe)?$/i;
                 print DSTPL <<EOF;
 extproc $perlpath -wS
@@ -1895,7 +1895,7 @@ EOF
             }
             else {
                 print DSTPL <<EOF;
-#!$^X -w
+#!$Config{perlpath} -w
 EOF
             }
             my $filestart = 1;
