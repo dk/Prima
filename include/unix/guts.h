@@ -45,6 +45,11 @@ typedef struct _RequestInformation
 
 #define REQUEST_RING_SIZE 512
 
+#define kbModKeyMask	0x00010000
+#define kbCodeCharMask	0x00020000
+#define kbVirtualMask	0x00040000
+#define kbFunctionMask	0x00080000
+
 typedef struct _FontFlags {
    int height          : 1;
    int width           : 1;
@@ -102,6 +107,12 @@ typedef struct _gc_list
    struct _drawable_sys_data *holder;
 } GCList;
 
+typedef struct _paint_list
+{
+   struct _paint_list *next;
+   Handle obj;
+} PaintList, *PPaintList;
+
 struct _UnixGuts
 {
    Display *display;
@@ -111,6 +122,7 @@ struct _UnixGuts
    int depth;
    GCList *free_gcl;
    GCList *used_gcl;
+   PPaintList paint_list;
    struct _timer_sys_data *oldest;
    struct {
       long request_length;

@@ -178,18 +178,18 @@ window_subsystem_done( void)
 
    for ( n = 0, gcl = guts. used_gcl; gcl; n++, gcl = gcl-> next) {
    }
-   printf( "Used GC's: %d\n", n);
+   DOLBUG( "Used GC's: %d\n", n);
    for ( n = 0, gcl = guts. free_gcl; gcl; n++, gcl = gcl-> next) {
    }
-   printf( "Free GC's: %d\n", n);
+   DOLBUG( "Free GC's: %d\n", n);
 
    if (DISP) XCloseDisplay( DISP);
    DISP = nil;
 
-   printf( "Total X events: %ld\n", guts. total_events);
-   printf( "Handled X events: %ld\n", guts. handled_events);
-   printf( "Unhandled X events: %ld\n", guts. unhandled_events);
-   printf( "Skipped X events: %ld\n", guts. skipped_events);
+   DOLBUG( "Total X events: %ld\n", guts. total_events);
+   DOLBUG( "Handled X events: %ld\n", guts. handled_events);
+   DOLBUG( "Unhandled X events: %ld\n", guts. unhandled_events);
+   DOLBUG( "Skipped X events: %ld\n", guts. skipped_events);
 
    XrmDestroyDatabase( guts.db);
    if (guts.windows) hash_destroy( guts.windows, false);
@@ -450,15 +450,27 @@ FetchAndProcess:
       } else if ( r < 0) {
 	 fprintf( stderr, "select() error: %d\n", errno);
       } else {
-/*    	 printf( "timeout loop\n"); */
  	 XNoOp( DISP);
  	 XFlush( DISP);
+      }
+      {
+	 PPaintList pl = guts. paint_list;
+	 Event e;
+	 while ( pl) {
+	    PPaintList cur = pl;
+	    Handle self = cur-> obj;
+	    guts. paint_list = pl = pl-> next;
+
+	    /* if ( alive_check) */
+	    e. cmd = cmPaint;
+	    CComponent( self)-> message( self, &e);
+	    free( cur);
+	 }
       }
       kill_zombies();
    }
    if ( application) Object_destroy( application);
    application = nilHandle;
-fprintf( stderr, "-- apc_application_go()\n");
 }
 
 void

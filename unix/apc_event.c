@@ -230,6 +230,7 @@ handle_event( XEvent *ev, XEvent *next_event)
    }
    case Expose: {
       XRectangle r;
+      PPaintList pl;
 
       if ( !wasSent) {
 	 r. x = ev-> xexpose. x;
@@ -242,12 +243,21 @@ handle_event( XEvent *ev, XEvent *next_event)
 	 XUnionRectWithRegion( &r, XX-> region, XX-> region);
       }
 
-      if ( ev-> xexpose. count && !XX-> flags. syncPaint) {
+      if ( ev-> xexpose. count)
 	 return;
-      }
 
-      e. cmd = cmPaint;
-      break;
+      pl = guts. paint_list;
+      while ( pl) {
+	 if ( pl-> obj == self)
+	    return;
+	 pl = pl-> next;
+      }
+      pl = malloc( sizeof( PaintList));
+      if (!pl) croak( "no memory");
+      pl-> obj = self;
+      pl-> next = guts. paint_list;
+      guts. paint_list = pl;
+      return;
    }
    case GraphicsExpose: {
       DOLBUG( "********* Graphics Exposing ********* %s (%d,%d) *********\n",
