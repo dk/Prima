@@ -221,7 +221,7 @@ creation. The code
 
 is required if the object is to be returned to perl.
 If that code is not called, the object still could be 
-destroyed explicitly, but it's reference would still live, 
+destroyed explicitly, but its reference would still live, 
 resulting in memory leak problem.
 
 For user code it is sufficient to overload done() and/or cleanup()
@@ -308,7 +308,7 @@ a method and can be overridden from user code.
 
 =head2 Calling perl code
 
-call_perl_indirect() function accepts object, it's method name
+call_perl_indirect() function accepts object, its method name
 and parameters list with parameter format string. It has several
 wrappers for easier use, which are:
 
@@ -465,7 +465,7 @@ A piece of real code from DeviceBitmap.c would serve as an example:
 Note that all code that would use this xdup(), have to
 increase and decrease object's reference count if some perl
 functions are to be executed before returning object to perl,
-otherwise it might be destroyed before it's time.
+otherwise it might be destroyed before its time.
 
        Handle x = xdup( self, "Prima::Image");
        ++SvREFCNT( SvRV( PAnyObject(x)-> mate)); // Code without these
@@ -488,7 +488,7 @@ and
     Prima::Object-> create;
 
 have different results. But for some classes, namely Widget
-ant it's descendants, and also for Timer, AbstractMenu, Printer
+ant its descendants, and also for Timer, AbstractMenu, Printer
 and Clipboard the code above would have same result - the 
 objects would not be killed. That is because these objects
 call Component_attach() during init-stage, automatically
@@ -984,3 +984,11 @@ params is a pointer to an arbitrary user data
 Returns index of an item, or -1 if the item is not in the list.
 
 =back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>

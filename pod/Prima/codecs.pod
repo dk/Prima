@@ -60,7 +60,7 @@ libduff trusts handles vs names:
      _LIBDUFF * _l = _libduff_load_file_from_handle( fi-> f);
       ...
    // In both cases, you don't need to close the handle - 
-   // however you might, it's ok:
+   // however you might, it is ok:
 
       _libduff_close_file( _l);
       fclose( fi-> f);
@@ -72,7 +72,7 @@ libduff trusts handles vs names:
 Together with load() you have to implement minimal open_load()
 and close_load().
 
-Simpliest open_load() returns non-null pointer - it's enough to report 'o.k'
+Simpliest open_load() returns non-null pointer - it is enough to report 'o.k'
 
    static void * 
    open_load( PImgCodec instance, PImgLoadFileInstance fi)
@@ -80,7 +80,7 @@ Simpliest open_load() returns non-null pointer - it's enough to report 'o.k'
       return (void*)1;
    }
 
-It's result will be available in PImgLoadFileInstance-> instance,
+Its result will be available in PImgLoadFileInstance-> instance,
 just in case. If it was dynamically allocated, free it in close_load().
 Dummy close_load() is doing simply nothing:
 
@@ -92,7 +92,7 @@ Dummy close_load() is doing simply nothing:
 
 =head2 Writing to PImage-> data
 
-As mentioned above, Prima insists on keeping it's image data
+As mentioned above, Prima insists on keeping its image data
 in 32-bit aligned scanlines. If libduff allows reading from 
 file by scanlines, we can use this possibility as well:
 
@@ -156,13 +156,13 @@ repadding.
 check between machine byte format and file byte format.
 Prima unfortunately doesn't provide easy method for determining
 this situation, but you have to convert your data in appropriate 
-way to keep picture worthy of it's name. Note the BYTEORDER symbol
+way to keep picture worthy of its name. Note the BYTEORDER symbol
 that is defined ( usually ) in sys/types.h 
 
 =head2 Load with no data
 
 If a high-level code just needs image information rather than
-all it's bits, codec can provide it in a smart way. Old code
+all its bits, codec can provide it in a smart way. Old code
 will work, but will eat memory and time. A flag 
 PImgLoadFileInstance-> noImageData is indicating if image data
 is needed. On that condition, codec needs to report only
@@ -451,7 +451,7 @@ flag to true. This only means, that codec should respond to the
 PImgLoadFileInstance-> frame field, which is integer that
 can be in range from 0 to PImgLoadFileInstance-> frameCount - 1.
 It is advised that codec should change the frameCount from
-it's original value -1 to actual one, to help Prima filter range
+its original value -1 to actual one, to help Prima filter range
 requests before they go down to the codec. The only real problem that
 may happen to the codec which it strongly unwilling to initialize
 frameCount, worth an explanation, which is following.
@@ -519,7 +519,7 @@ to be saved into one of these formats, before actual save() call
 takes place.
 Another boolean flag, PImgSaveFileInstance-> append
 is summoned to govern appending to or rewriting a file, but
-this functionality is under design. It's current value
+this functionality is under design. Its current value
 is a hint, if true, for a codec not to rewrite but rather
 append the frames to an existing file. Due to increased
 complexity of the code, that should respond to the append hint, 
@@ -538,7 +538,7 @@ PImgSaveFileInstance-> objectExtras hash.
 
 =head1 Registering with image subsystem
 
-Finally, the code have to be registered. It's not as illustrative 
+Finally, the code have to be registered. It is not as illustrative 
 but this part better not to be oversimplified.
 A codec's callback functions are set into ImgCodecVMT structure.
 Those function slots that are unused should not be defined as
@@ -617,3 +617,10 @@ these rules, Prima will be assembled with libduff.a ( or duff.lib,
 or whatever, the actual library name is system dependent) - if the library is present.
 
 
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>

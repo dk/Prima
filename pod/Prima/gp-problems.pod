@@ -318,7 +318,7 @@ change asynchronously its hardware palette in order to process
 different color requests. All platforms behave differently.
 
 Win9X/WinNT - only one top-level window at a time 
-and it's direct children ( not ::clipOwner(0)) can benefit
+and its direct children ( not ::clipOwner(0)) can benefit
 from using Widget::palette. System palette is switched every time 
 as different windows moved to the front.
 
@@ -418,3 +418,11 @@ It is planned to fix the problem by checking
 the palette difference for every PutImage invocation.
 NB - the effect is seen on dynamic color displays only.
  
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>

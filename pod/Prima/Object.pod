@@ -54,7 +54,7 @@ The Component class defaults are ( see Classes.pm ):
      delegations => undef,
 
 While the exact meaning of these parameters is described later, in 
-L<Properties> section, the idea is that a newly created object will
+L<"Properties">, the idea is that a newly created object will
 have 'owner' parameter set to '$::application' and 'delegations'
 to undef etc etc - unless these parameters are explicitly passed
 to create(). Example:
@@ -103,7 +103,7 @@ is exemplified in almost all Prima modules.
 
 Note: usually init() attaches the object to its owner in order
 to keep the newly-created object instance from being deleted by
-garbage-collection mechanisms. More on that later ( see L<Links between objects>).
+garbage-collection mechanisms. More on that later ( see L<"Links between objects">).
 
 After init() finishes, create() calls setup() method
 
@@ -256,7 +256,7 @@ to call for such a change using
        palette => $b
     );
 
-when it's known beforehand that C<Prima::Image::set> is aware of such 
+when it is known beforehand that C<Prima::Image::set> is aware of such 
 combinations and calls neither C<::type> nor C<::palette> but
 performs another conversion instead.
 
@@ -278,14 +278,14 @@ as objects that are on a higher hierarchy level
 than the others. This scheme is implemented in a child-owner relationship.
 The 'children' objects have the C<::owner> property value assigned to 
 a reference to a 'owner' object, while the 'owner' object conducts
-the list of it's children. It is a one-to-many hierarchy scheme,
+the list of its children. It is a one-to-many hierarchy scheme,
 as a 'child' object can have only one owner, but an 'owner' object
 can have many children. The same object can be an owner and a child at 
 the same time, so the owner-child hierarchy can be viewed as a tree-like 
 structure.
 
 Prima::Component::owner property maintains
-this relation, and is writable - the object can change it's owner
+this relation, and is writable - the object can change its owner
 dynamically. There is no corresponding property that manages children objects,
 but is a method get_components(), that returns an array of the child
 references.
@@ -331,7 +331,7 @@ is managed by attach() and detach() methods.
 
 Prima::Component descendants employ a well-developed event propagation
 mechanism, which allows handling events using several different schemes. 
-An event is a condition, caused by an OS or a user, or an explicit notify()
+An event is a condition, caused by the system or the user, or an explicit notify()
 call. The formerly described events,
 onCreate and onDestroy are triggered after a new object 
 creates or before it gets  destroyed - these two events, along with
@@ -616,7 +616,7 @@ the object is alive and usable, false otherwise.
 This method can be used as a general checkout if
 the scalar passed is a Prima object, and if it is usable.
 The true return value can be 1 for normal and operational
-object state, and 2 if the object is alive but in it's init()
+object state, and 2 if the object is alive but in its init()
 stage. Example:
 
   print $obj-> name if Prima::Object::alive( $obj);
@@ -809,7 +809,7 @@ fails if an invalid object reference is passed.
 Clears the event state, that is set to 1 when the event processing starts.
 Signals the event execution stop for nt::Event-prototyped events.
 
-See also: L<Events>, C<push_event>, C<pop_event>, C<::eventFlag>, C<notify>.
+See also: L<"Events">, C<push_event>, C<pop_event>, C<::eventFlag>, C<notify>.
 
 =item detach OBJECT, KILL 
 
@@ -821,19 +821,19 @@ See also: C<attach>
 
 =item event_error
 
-Issues a OS-dependent warning sound signal.
+Issues a system-dependent warning sound signal.
 
 =item get_components
 
 Returns array of the child objects.
 
-See: C<create>, L<Links between objects>.
+See: C<create>, L<"Links between objects">.
 
 =item get_handle
 
-Returns an OS-dependent handle for the object. 
-For example, Prima::Widget return their OS WINDOW/HWND handles,
-Prima::DeviceBitmap - OS PIXMAP/HBITMAP handles, etc.
+Returns an system-dependent handle for the object. 
+For example, Prima::Widget return their system WINDOW/HWND handles,
+Prima::DeviceBitmap - system PIXMAP/HBITMAP handles, etc.
 
 Uses to pass the handle value outside the program,
 for an eventual interprocess communication scheme.
@@ -853,7 +853,7 @@ A convenience method for nt::Single-prototyped events.
 Returns code reference and context for the first notification
 sub for event NAME.
 
-See L<Success state> for example.
+See L<"Success state"> for example.
 
 =item notification_types
 
@@ -862,7 +862,7 @@ the values are the C<nt::> constants that describe the event flow.
 
 Can be called in a context of class.
 
-See L<Events> and L<Flow> for details.
+See L<"Events"> and L<"Flow"> for details.
 
 =item notify NAME, @PARAMETERS
 
@@ -881,13 +881,13 @@ Example:
 
    $obj-> notify( "PostMessage", 0, 1);
 
-See L<Events> and L<Flow> for details.
+See L<"Events"> and L<"Flow"> for details.
 
 =item pop_event
 
 Closes event processing stage brackets.
 
-See C<push_event>, L<Events>
+See C<push_event>, L<"Events">
 
 =item post_message SCALAR1, SCALAR2
 
@@ -899,7 +899,7 @@ Does not guarantee that C<PostMessage> will be called, however.
 
 Opens event processing stage brackets.
 
-See C<pop_event>, L<Events>
+See C<pop_event>, L<"Events">
 
 =item remove_notification ID
 
@@ -943,7 +943,7 @@ B<Properties>
 Provides access to the last event processing state
 in the object event state stack.
 
-See also: L<Success state>, C<clear_event>, L<Events>.
+See also: L<"Success state">, C<clear_event>, L<"Events">.
 
 =item delegations [ <REFERER>, NAME, <NAME>, < <REFERER>, NAME, ... > ]
 
@@ -962,7 +962,7 @@ in $owner namespace.
 On I<get> returns an array reference that reflects
 the object's delegated events list content.
 
-See also: L<Propagation>, I<Delegated methods> section.
+See also: L<"Delegated methods">.
 
 =item name NAME
 
@@ -976,10 +976,10 @@ coding style:
    ...
    $owner-> Obj-> destroy;
 
-and to prevent OS-dependent issued. If an OS
+and to prevent system-dependent issues. If the system
 provides capabilities that allow to predefine some
 object parameters by its name ( or class), then it is
-impossible to know beforehand the OS naming restrictions.
+impossible to know beforehand the system naming restrictions.
 For example, in X window system the following resource
 string would make all Prima toolkit buttons green:
 
@@ -1001,7 +1001,7 @@ objects are indifferent.
 Changing owner dynamically is allowed, but it is a main
 source of implementation bugs, since the whole hierarchy
 tree is needed to be recreated. Although this effect is
-not visible in perl, the results are OS-dependant, and
+not visible in perl, the results are system-dependant, and
 the code that changes owner property should be tested
 especially thorough.
 

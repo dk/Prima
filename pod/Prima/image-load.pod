@@ -248,7 +248,7 @@ is required.
 =head2 Appending frames to an existing file
 
 This functionality is under design, but the common outlines are already set.
-Profile key 'append' ( 0 by default ) triggers this behavior - if it's set,
+Profile key 'append' ( 0 by default ) triggers this behavior - if it is set,
 then an append attempt is made.
 
 =head1 Managing codecs
@@ -347,3 +347,11 @@ and values are default values for these keys.
 
 
 =back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>

@@ -8,7 +8,7 @@ Prima::Drawable is a descendant of Prima::Component.
 It provides access to the object-bound graphic context and canvas
 through its methods and properties. The Prima::Drawable
 descendants Prima::Widget, Prima::Image, Prima::DeviceBitmap
-and Prima::Printer are backed by OS-dependent routines
+and Prima::Printer are backed by system-dependent routines
 that allow drawing and painting on the system objects.
 
 =head1 USAGE
@@ -60,7 +60,7 @@ recorded nor used as a template).
 
 That is, in disabled state any Drawable maintains only the graphic context.
 To draw on a canvas, the object must enter the enabled state by begin_paint().
-This function can be unsuccessfull, because the object binds with OS resources
+This function can be unsuccessfull, because the object binds with system resources
 during this stage, and that can fail. After the enabled state is entered, 
 the canvas is accessible:
 
@@ -430,7 +430,7 @@ In a typical western language font it is 32, ASCII space character.
 =item defaultChar
 
 An index of a glyph that is drawn instead of nonexistent
-glyph if it's index is passed to the text drawing routines.
+glyph if its index is passed to the text drawing routines.
 
 =back
 
@@ -566,7 +566,7 @@ Discards the previous C<::region> value.
 
 Note: C<::clipRect> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template 
-( see L<Graphic context and canvas>).
+( see L<"Graphic context and canvas">).
 
 =item fillPattern ( [ @PATTERN ] ) or ( fp::XXX )
 
@@ -630,7 +630,7 @@ Synopsis:
      width => 22
    );
 
-See L<Fonts> for the detailed descriptions.
+See L<"Fonts"> for the detailed descriptions.
 
 Applies to text_out(), get_text_width(), get_text_box(), get_font_abc().
 
@@ -707,7 +707,7 @@ to C<::clipRect> return the boundaries of the region.
 
 Note: C<::region> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template 
-( see L<Graphic context and canvas>).
+( see L<"Graphic context and canvas">).
 
 =item resolution X, Y
 
@@ -718,13 +718,13 @@ device resolution in dpi.
 
 Selects raster operation that applies to foreground color plotting routines.
 
-See also: C<::rop2>, L<Raster operations>.
+See also: C<::rop2>, L<"Raster operations">.
 
 =item rop2 OPERATION
 
 Selects raster operation that applies to background color plotting routines.
 
-See also: C<::rop>, L<Raster operations>.
+See also: C<::rop>, L<"Raster operations">.
 
 =item textOpaque FLAG
 
@@ -756,7 +756,7 @@ is equivalent to
 
 Note: C<::transform> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template 
-( see L<Graphic context and canvas>).
+( see L<"Graphic context and canvas">).
 
 =back
 
@@ -953,7 +953,7 @@ Enters the enabled ( active paint ) state, returns success flag.
 Once the object is in enabled state, painting and drawing 
 methods can perform write operations on a canvas.
 
-See also: C<end_paint>, C<begin_paint_info>, L<Graphic context and canvas>
+See also: C<end_paint>, C<begin_paint_info>, L<"Graphic context and canvas">
 
 =item begin_paint_info
 
@@ -961,19 +961,19 @@ Enters the information state, returns success flag.
 The object information state is same as enabled state ( see C<begin_paint>),
 except painting and drawing methods do not change the object canvas.
 
-See also: C<end_paint_info>, C<begin_paint>, L<Graphic context and canvas>
+See also: C<end_paint_info>, C<begin_paint>, L<"Graphic context and canvas">
 
 =item end_paint
 
 Quits the enabled state and returns object to a disabled state. 
 
-See also: C<begin_paint>, L<Graphic context and canvas>
+See also: C<begin_paint>, L<"Graphic context and canvas">
 
 =item end_paint_info
 
 Quits the information state and returns object to a disabled state. 
 
-See also: C<begin_paint_info>, L<Graphic context and canvas>
+See also: C<begin_paint_info>, L<"Graphic context and canvas">
 
 =item font_match \%SOURCE, \%DEST, PICK = 1
 
@@ -997,7 +997,7 @@ Member of C<Prima::Application> and C<Prima::Printer>, does not
 present in C<Prima::Drawable>.
 
 Returns an array of font metric hashes for a given font FAMILY.
-Every hash has full set of elements described in L<Fonts>.
+Every hash has full set of elements described in L<"Fonts">.
 
 If called without parameters, returns an array of same hashes
 where each hash represents a member of font family from every
@@ -1022,7 +1022,7 @@ The result is an integer array reference, where every character
 glyph is referred by three integeres, each triad containing
 A, B and C values.
 
-For detailed explanation of ABC meaning, see L<Fonts ABC metrics>;
+For detailed explanation of ABC meaning, see L<"Fonts ABC metrics">;
 
 Context used: font
 
@@ -1059,7 +1059,7 @@ calculates the string length itself.
 If ADD_OVERHANG is 1, the first character's absolute A value and the last
 character's absolute C value are added to the string if they are negative.
 
-See more on ABC values at L<Font ABC metrics>.
+See more on ABC values at L<"Font ABC metrics">.
 
 Context used: font
 
@@ -1191,3 +1191,11 @@ The escaped character.
 Context used: font
 
 =back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Object>
