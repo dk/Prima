@@ -35,19 +35,7 @@ use strict;
 use Prima::Classes;
 
 
-package Prima::MDIOwner;
-use vars qw(@ISA);
-@ISA = qw( Prima::Widget);
-
-sub profile_default
-{
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my %prf = (
-      growMode    => gm::Client,
-   );
-   @$def{keys %prf} = values %prf;
-   return $def;
-}
+package Prima::MDIMethods;
 
 sub mdi_activate
 {
@@ -82,6 +70,33 @@ sub tile
    $m[0]->tile if $m[0];
 }
 
+package Prima::MDIWindowOwner;
+use vars qw(@ISA);
+@ISA = qw( Prima::Window Prima::MDIMethods);
+
+package Prima::MDIOwner;
+use vars qw(@ISA);
+@ISA = qw( Prima::Widget Prima::MDIMethods);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      growMode    => gm::Client,
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+package mbi;
+
+use constant SystemMenu => bi::SystemMenu;
+use constant Minimize   => bi::Minimize;
+use constant Maximize   => bi::Maximize;
+use constant TitleBar   => bi::TitleBar;
+use constant Close      => bi::TitleBar << 1;
+use constant All        => bi::All | Close;
+
 package Prima::MDI;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
@@ -99,6 +114,16 @@ my %RNT = (
 sub notification_types { return \%RNT; }
 }
 
+use constant cMIN        => 0;
+use constant cMAX        => 1;
+use constant cCLOSE      => 2;
+use constant cRESTORE    => 3;
+use constant pMIN        => 4;
+use constant pMAX        => 5;
+use constant pCLOSE      => 6;
+use constant pRESTORE    => 7;
+
+
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
@@ -106,15 +131,24 @@ sub profile_default
       width                 => 150,
       heigth                => 150,
       selectable            => 1,
-      borderIcons           => bi::All,
+      borderIcons           => mbi::All,
       borderStyle           => bs::Sizeable,
       font                  => Prima::Application-> get_caption_font,
       selectingButtons      => 0,
       icon                  => 0,
+      iconMin               => Prima::StdBitmap::image( sbmp::Min),
+      iconMax               => Prima::StdBitmap::image( sbmp::Max),
+      iconClose             => Prima::StdBitmap::image( sbmp::Close),
+      iconRestore           => Prima::StdBitmap::image( sbmp::Restore),
+      iconMinPressed        => Prima::StdBitmap::image( sbmp::MinPressed),
+      iconMaxPressed        => Prima::StdBitmap::image( sbmp::MaxPressed),
+      iconClosePressed      => Prima::StdBitmap::image( sbmp::ClosePressed),
+      iconRestorePressed    => Prima::StdBitmap::image( sbmp::RestorePressed),
       ownerFont             => 0,
       dragMode              => undef,
       tabStop               => 0,
       tileable              => 1,
+      titleHeight           => 0, # use system-default
       transparent           => 0,
       widgetClass           => wc::Window,
       windowState           => ws::Normal,
@@ -141,11 +175,14 @@ sub init
    my $self = shift;
    for ( qw( borderStyle borderIcons icon windowState))
       { $self->{$_} = -1; }
-   for ( qw( pressState iconsAtRight border tileable titleY))
+   for ( qw( pressState iconsAtRight border tileable titleHeight titleY))
       { $self->{$_} = 0; }
    my %profile = $self-> SUPER::init(@_);
    $self->{zoomGrowMode} = $profile{growMode};
-   for ( qw( borderStyle borderIcons icon tileable windowState dragMode))
+   for ( qw( titleHeight borderStyle borderIcons icon tileable windowState dragMode
+      iconMin iconMax iconClose iconRestore iconMinPressed iconMaxPressed
+      iconClosePressed iconRestorePressed
+      ))
       { $self->$_( $profile{ $_}); }
    $self-> {zoomRect} = [ $self->rect];
    $self-> {miniRect} = [ 0, 0, $self-> sizeMin];
@@ -171,11 +208,9 @@ sub on_paint
    my $dy    = $self-> {titleY};
    my ( $bs, $bi, $bb, $bp) =
       ( $self->{borderStyle}, $self->{borderIcons},$self->{border},$self->{pressState});
-   #my @ct = $self-> selected ? ( $self-> hiliteColor, $self-> hiliteBackColor) :
-   #         ( $self-> disabledColor, $self-> disabledBackColor);
    my @ct = ($self-> hiliteColor, $self-> hiliteBackColor);
 
-   $bi = 0 unless $bi & bi::TitleBar;
+   $bi = 0 unless $bi & mbi::TitleBar;
 
    $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 1, $c3d[1], cl::Black) if $bb > 0;
    $canvas-> rect3d( 1, 1, $size[0]-2, $size[1]-2, 1, $c3d[0], $c3d[1]) if $bb > 1;
@@ -183,7 +218,7 @@ sub on_paint
 
    $csize[0] -= $bb * 2;
    $csize[1] -= $bb * 2;
-   $csize[1] -= $dy if $bi & bi::TitleBar;
+   $csize[1] -= $dy if $bi & mbi::TitleBar;
 
    my $ico = $self->{icon} ? $self->{icon} : Prima::StdBitmap::image( sbmp::SysMenu);
 
@@ -192,9 +227,9 @@ sub on_paint
 
    my $tyStart = $size[1] - $bb - $dy;
 
-   if ( $bi & bi::TitleBar) {
+   if ( $bi & mbi::TitleBar) {
       my $xAt  = $bb + 4;
-      $xAt += $dy if $bi & bi::SystemMenu;
+      $xAt += $dy if $bi & mbi::SystemMenu;
       my $tx = $self-> text;
       my $w  = $size[0] - $bb - $icos * $dy - 1 - $xAt;
       if ( $canvas-> get_text_width( $tx) > $w) {
@@ -202,43 +237,42 @@ sub on_paint
          $tx = $canvas-> text_wrap( $tx, $w, 0)->[0].'...';
       }
 
-      my $dbm = Prima::DeviceBitmap-> create(
-         width  => $size[0] - $bb * 2 - $icos * $dy,
-         height => $dy,
-         font   => $canvas-> font,
-      );
-      $dbm-> color( $ct[1]);
-      $dbm-> bar( 0, 0, $dbm-> size);
-      $dbm-> color( $ct[0]);
-      $dbm-> text_out( $tx, $xAt, ( $dy - $canvas-> font-> height) / 2);
-      $dbm-> stretch_image( 0, 0, $dy, $dy, $ico) if $bi & bi::SystemMenu;
-      $canvas-> put_image( $bb, $tyStart, $dbm);
-      $dbm-> destroy;
+      my $dbmw =  $size[0] - $bb * 2 - $icos * $dy;
+      if ( $dbmw > 0 && $dy > 0) {
+         my $dbm = Prima::DeviceBitmap-> create(
+            width  => $dbmw,
+            height => $dy,
+            font   => $canvas-> font,
+         );
+         $dbm-> color( $ct[1]);
+         $dbm-> bar( 0, 0, $dbm-> size);
+         $dbm-> color( $ct[0]);
+         $dbm-> text_out( $tx, $xAt, ( $dy - $canvas-> font-> height) / 2);
+         $dbm-> stretch_image( 0, 0, $dy, $dy, $ico) if $bi & mbi::SystemMenu;
+         $canvas-> put_image( $bb, $tyStart, $dbm);
+         $dbm-> destroy;
+      }
    }
 
    my $tx = $size[0] - $bb - $icos * $dy;
    my $bbi = $bi;
    while ( $icos) {
       my $di;
-      if ( $bbi & bi::Minimize) {
-         $di  = ( $bp & bi::Minimize) ?
-            Prima::StdBitmap::image(( $self->{windowState} == ws::Minimized) ?
-               sbmp::RestorePressed : sbmp::MinPressed) :
-            Prima::StdBitmap::image(( $self->{windowState} == ws::Minimized) ?
-               sbmp::Restore : sbmp::Min);
-         $bbi &= ~bi::Minimize;
-      } elsif ( $bbi & bi::Maximize) {
-         $di = ( $bp & bi::Maximize) ?
-            Prima::StdBitmap::image(( $self->{windowState} == ws::Maximized) ?
-               sbmp::RestorePressed : sbmp::MaxPressed) :
-            Prima::StdBitmap::image(( $self->{windowState} == ws::Maximized) ?
-               sbmp::Restore : sbmp::Max);
-         $bbi &= ~bi::Maximize;
-      } elsif ( $bbi & bi::SystemMenu) {
-         $di  = ( $bp & bi::SystemMenu) ?
-            Prima::StdBitmap::image( sbmp::ClosePressed) :
-            Prima::StdBitmap::image( sbmp::Close);
-         $bbi &= ~bi::SystemMenu;
+      if ( $bbi & mbi::Minimize) {
+         my $wmin = $self->{windowState} == ws::Minimized;
+         $di  = ( $bp & mbi::Minimize) ?
+            $self-> {icons}-> [ $wmin ? pRESTORE : pMIN] :
+            $self-> {icons}-> [ $wmin ? cRESTORE : cMIN];
+         $bbi &= ~mbi::Minimize;
+      } elsif ( $bbi & mbi::Maximize) {
+         my $wmax = $self->{windowState} == ws::Maximized;
+         $di = ( $bp & mbi::Maximize) ?
+            $self-> {icons}-> [ $wmax ? pRESTORE : pMAX] :
+            $self-> {icons}-> [ $wmax ? cRESTORE : cMAX];
+         $bbi &= ~mbi::Maximize;
+      } elsif ( $bbi & mbi::Close) {
+         $di =  $self-> {icons}-> [( $bp & mbi::Close) ? pCLOSE : cCLOSE];
+         $bbi &= ~mbi::Close;
       }
       $canvas-> stretch_image( $tx, $tyStart, $dy, $dy, $di);
       $tx += $dy;
@@ -255,7 +289,7 @@ sub get_client_rect
    ( $x, $y) = $self-> size unless defined $x;
    my $bw = $self-> { border};
    my @r = ( $bw, $bw, $x - $bw, $y - $bw);
-   $r[3] -= $self->{titleY} + 1 if $self->{borderIcons} & bi::TitleBar;
+   $r[3] -= $self->{titleY} + 1 if $self->{borderIcons} & mbi::TitleBar;
    $r[3] = $r[1] if $r[3] < $r[1];
    return @r;
 }
@@ -265,7 +299,7 @@ sub client2frame
    my ( $self, $x1, $y1, $x2, $y2) = @_;
    my $bw = $self-> { border};
    my @r = ( $x1 - $bw, $y1 - $bw, $x2 + $bw, $y2 + $bw);
-   $r[3] += $self->{titleY} + 1 if $self->{borderIcons} & bi::TitleBar;
+   $r[3] += $self->{titleY} + 1 if $self->{borderIcons} & mbi::TitleBar;
    return @r;
 }
 
@@ -274,7 +308,7 @@ sub frame2client
    my ( $self, $x1, $y1, $x2, $y2) = @_;
    my $bw = $self-> { border};
    my @r = ( $x1 - $bw, $y1 - $bw, $x2 + $bw, $y2 + $bw);
-   $r[3] -= $self->{titleY} + 1 if $self->{borderIcons} & bi::TitleBar;
+   $r[3] -= $self->{titleY} + 1 if $self->{borderIcons} & mbi::TitleBar;
    $r[3] = $r[1] if $r[3] < $r[1];
    return @r;
 }
@@ -284,6 +318,16 @@ sub sync_client
    return unless $_[0]-> {client};
    $_[0]-> {client}-> rect( $_[0]-> get_client_rect);
 }
+
+sub client
+{
+   return $_[0]-> {client} unless $#_;
+   my ( $self, $c) = @_;
+   $c-> owner( $self);
+   $c-> clipOwner(1);
+   $c-> rect( $self-> get_client_rect);
+   $self-> {client} = $c;
+}   
 
 sub mdis
 {
@@ -378,7 +422,7 @@ sub xy2part
    my $icos = $self-> { iconsAtRight};
    my $move = $self-> {windowState} != ws::Maximized;
    my $size = ( $bs == bs::Sizeable) && ( $self->{windowState} == ws::Normal);
-   my $dy   = ( $bi & bi::TitleBar) ? $self-> {titleY} : 0;
+   my $dy   = ( $bi & mbi::TitleBar) ? $self-> {titleY} : 0;
 
    if ( $x < $bw) {
       return q(border) unless $size;
@@ -398,18 +442,18 @@ sub xy2part
    } elsif ( $y < $size[1] - $bw - $dy) {
       return q(client);
    } elsif ( $x < $dy + $bw) {
-      return ( $bi & bi::SystemMenu) ? q(menu) : ( $move ? q(caption) : q(title));
+      return ( $bi & mbi::SystemMenu) ? q(menu) : ( $move ? q(caption) : q(title));
    } elsif ( $x <= $size[0] - $bw - $icos * $dy) {
       return $move ? q(caption) : q(title);
    } elsif ( $x >= $size[0] - $bw - $dy) {
-      return ( $bi & bi::SystemMenu) ? q(close) :
-             (( $bi & bi::Maximize)  ? (
+      return ( $bi & mbi::Close) ? q(close) :
+             (( $bi & mbi::Maximize)  ? (
                 ($self->{windowState} == ws::Maximized) ? q(restore) : q(max)
              ) : (
                 ($self->{windowState} == ws::Minimized) ? q(restore) : q(min)
              ));
    } elsif ( $x >= $size[0] - $bw - $dy * 2) {
-      return (( $bi & ( bi::SystemMenu | bi::Maximize)) == (bi::SystemMenu | bi::Maximize))
+      return (( $bi & ( mbi::Close | mbi::Maximize)) == (mbi::Close | mbi::Maximize))
          ? (
             ($self->{windowState} == ws::Maximized) ? q(restore) : q(max)
          ) : (
@@ -434,7 +478,7 @@ sub repaint_title
    my $bw = $self-> {border};
    my $dy = $self-> {titleY};
    $area ||= '';
-   return unless $self->{ borderIcons} & bi::TitleBar;
+   return unless $self->{ borderIcons} & mbi::TitleBar;
    if ( $area eq 'right') {
       $self-> invalidate_rect(
          $size[0] - $bw - $self->{iconsAtRight} * $dy, $size[1] - $bw,
@@ -446,7 +490,7 @@ sub repaint_title
          $bw + $dy, $size[1] - $bw,
       );
    } else {
-      my $dx = (( $self->{borderIcons} & bi::SystemMenu) and ( !defined $self->{icon})) ? $dy : 0;
+      my $dx = (( $self->{borderIcons} & mbi::SystemMenu) and ( !defined $self->{icon})) ? $dy : 0;
       $self-> invalidate_rect(
          $bw + $dx, $size[1] - $bw - $dy,
          $size[0] - $bw - $self->{iconsAtRight} * $dy, $size[1] - $bw,
@@ -519,7 +563,7 @@ sub keyMove
    $self-> {trackSaveData} = [$self-> origin];
    $self-> pointer( cr::Move);
    $self-> focus;
-   $self-> capture(1, $self-> owner);
+   $self-> capture(1, $self-> clipOwner ? $self-> owner : ());
    $self-> check_drag;
    unless ($self-> {fullDrag}) {
       $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
@@ -534,7 +578,7 @@ sub keySize
    $self-> {trackSaveData} = [$self-> rect];
    $self-> pointer( cr::Size);
    $self-> focus;
-   $self-> capture(1, $self-> owner);
+   $self-> capture(1, $self-> clipOwner ? $self-> owner : ());
    $self-> check_drag;
    unless ($self-> {fullDrag}) {
       $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
@@ -566,11 +610,8 @@ sub xorrect
    $r[3]--;
    my $o = $::application;
    $o-> begin_paint;
-   my $oo = $self-> owner;
-   my @cr = $oo-> rect;
-   $o-> clipRect( $oo-> client_to_screen( @cr));
-   $cr[2]--;
-   $cr[3]--;
+   my $oo = $self-> clipOwner ? $self-> owner : $::application;
+   $o-> clipRect( $oo-> client_to_screen( 0,0,$oo->size));
    $o-> rect_focus( @r, $self-> {border});
    $o-> end_paint;
 }
@@ -622,11 +663,12 @@ sub on_mousedown
       $self-> {spotX} = $x;
       $self-> {spotY} = $y;
       $self-> {trackSaveData} = [$self-> origin];
-      $self-> capture(1, $self-> owner);
+      $self-> capture(1, $self-> clipOwner ? $self-> owner : ());
       $self-> check_drag;
       unless ($self-> {fullDrag}) {
          $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
          $self-> xorrect( @{$self-> {prevRect}});
+         my @r = @{$self->{prevRect}};
       };
       return;
    }
@@ -648,7 +690,7 @@ sub on_mousedown
       elsif ( $part eq q(NW)) { ( $xa, $ya) = (-1, 1); }
       elsif ( $part eq q(SE)) { ( $xa, $ya) = ( 1,-1); }
       $self-> {dirData} = [$xa, $ya];
-      $self-> capture(1, $self-> owner);
+      $self-> capture(1, $self-> clipOwner ? $self-> owner : ());
       $self-> check_drag;
       unless ($self-> {fullDrag}) {
          $self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
@@ -660,16 +702,16 @@ sub on_mousedown
    $self-> {mouseTransaction} = $part;
    $self-> {mouseTransactionArea} = 'right';
    $self-> {pressState} = 0 |
-      ( $part eq q(min)     ? bi::Minimize : 0)  |
-      ( $part eq q(max)     ? bi::Maximize : 0)  |
-      ( $part eq q(close)   ? bi::SystemMenu : 0)|
+      ( $part eq q(min)     ? mbi::Minimize : 0)  |
+      ( $part eq q(max)     ? mbi::Maximize : 0)  |
+      ( $part eq q(close)   ? mbi::Close    : 0)|
       ( $part eq q(restore) ? (
-         ($self-> {windowState} == ws::Minimized) ? bi::Minimize : bi::Maximize
+         ($self-> {windowState} == ws::Minimized) ? mbi::Minimize : mbi::Maximize
       ) : 0)
    ;
    $self-> {lastMouseOver} = 1;
    $self-> repaint_title(q(right));
-   $self-> capture(1, $self-> owner);
+   $self-> capture(1, $self-> clipOwner ? $self-> owner : ());
 }
 
 sub on_mouseclick
@@ -747,7 +789,8 @@ sub on_keydown
             $self-> clear_event;
             unless ( $self-> {fullDrag}) {
                $self-> xorrect( @{$self-> {prevRect}});
-               $self-> origin( $self-> owner-> screen_to_client(@{$self-> {prevRect}}[0,1]));
+               my $oo = $self-> clipOwner ? $self-> owner : $::application;
+               $self-> origin( $oo-> screen_to_client(@{$self-> {prevRect}}[0,1]));
             }
             $self-> {mouseTransaction} = $self-> {mouseTransactionArea} = $self-> {dirData} =
                $self-> {spotX} = $self-> {spotY} = undef;
@@ -785,9 +828,8 @@ sub on_keydown
             $self-> clear_event;
             unless ( $self-> {fullDrag}) {
                $self-> xorrect( @{$self-> {prevRect}});
-               $self-> rect(
-                 $self-> owner-> screen_to_client(@{$self-> {prevRect}})
-               );
+               my $oo = $self-> clipOwner ? $self-> owner : $::application;
+               $self-> rect( $oo-> screen_to_client(@{$self-> {prevRect}}));
             }
             return;
          }
@@ -858,7 +900,8 @@ sub on_mouseup
       unless ($self-> {fullDrag}) {
          my @r = @{$self-> {prevRect}};
          $self-> xorrect( @r);
-         $self-> rect( $self-> owner-> screen_to_client(@r));
+         my $oo = $self-> clipOwner ? $self-> owner : $::application;
+         $self-> rect( $oo-> screen_to_client(@r));
       };
       $self-> {mouseTransactionArea} = $self->{dirData} = undef;
       return;
@@ -907,11 +950,11 @@ sub on_mousemove
           my $mouseOver = $part eq $self-> {mouseTransaction};
           if ( $self-> { lastMouseOver} != $mouseOver) {
              $self-> {pressState} = $mouseOver ? ( 0 |
-                ( $part eq q(min)     ? bi::Minimize : 0)  |
-                ( $part eq q(max)     ? bi::Maximize : 0)  |
-                ( $part eq q(close)   ? bi::SystemMenu : 0)|
+                ( $part eq q(min)     ? mbi::Minimize : 0)  |
+                ( $part eq q(max)     ? mbi::Maximize : 0)  |
+                ( $part eq q(close)   ? mbi::Close    : 0)|
                 ( $part eq q(restore) ? (
-                   ( $self-> {windowState} == ws::Minimized) ? bi::Minimize : bi::Maximize
+                   ( $self-> {windowState} == ws::Minimized) ? mbi::Minimize : mbi::Maximize
                 ) : 0)) : 0;
              $self-> { lastMouseOver} = $mouseOver;
              $self-> repaint_title(q(right));
@@ -955,7 +998,8 @@ sub on_mousemove
                 $self-> rect( @new)
              } else {
                 $self-> xorrect( @{$self-> {prevRect}});
-                $self-> {prevRect} = [$self-> owner-> client_to_screen( @new)];
+                my $oo = $self-> clipOwner ? $self-> owner : $::application;
+                $self-> {prevRect} = [$oo-> client_to_screen( @new)];
                 $self-> xorrect( @{$self-> {prevRect}});
              }
           }
@@ -989,14 +1033,14 @@ sub text
 sub set_border_icons
 {
    my ( $self, $bi) = @_;
-   $bi &= bi::All;
+   $bi &= mbi::All;
    return if $bi == $self->{borderIcons};
    $self->{borderIcons} = $bi;
 
    my $icos = 0;
-   $icos++ if $bi & bi::Minimize;
-   $icos++ if $bi & bi::Maximize;
-   $icos++ if $bi & bi::SystemMenu;
+   $icos++ if $bi & mbi::Minimize;
+   $icos++ if $bi & mbi::Maximize;
+   $icos++ if $bi & mbi::Close;
 
    $self-> { iconsAtRight} = $icos;
 
@@ -1015,7 +1059,6 @@ sub set_border_style
    $self-> {border} = $bbx > $bby ? $bby : $bbx;
 
    my @a = Prima::Application-> get_default_window_borders( $bs);
-   $self-> {titleY} = Prima::Application-> get_system_value( sv::YTitleBar);
    $self-> sizeMin( $self-> {titleY} * 5 + $a[0] * 2, $self-> {titleY} + $a[1] * 2);
    $self-> sync_client;
    $self-> repaint;
@@ -1029,14 +1072,15 @@ sub set_window_state
 
    my $popup = $self-> popup;
    if ( $ws == ws::Minimized) {
-      return unless $self->{borderIcons} & bi::Minimize;
+      return unless $self->{borderIcons} & mbi::Minimize;
       $self-> {zoomRect} = [ $self->rect] if $ows == ws::Normal;
       $self-> growMode( $self-> {zoomGrowMode}) if $ows == ws::Maximized;
       my @szMin = $self-> sizeMin;
       my ($x, $y) = ( $self-> {miniRect}->[0], $self-> {miniRect}->[1]);
-
+      $self-> clipOwner(1) unless ($self-> {saveClipOwner} = $self-> clipOwner);
+      
       # start calculating position for min-widnow
-      my @sz = $self-> owner-> size;
+      my @sz = $self-> clipOwner ? $self-> owner-> size : $::application-> size;
       $x = $sz[0] - $szMin[0] if $x > $sz[0] - $szMin[0];
       $y = $sz[1] - $szMin[1] if $y > $sz[1] - $szMin[1];
       my @mdis = grep {(( $_ ne $self) and ( $_->windowState == ws::Minimized)) ? $_ : 0} $self-> mdis;
@@ -1074,16 +1118,22 @@ sub set_window_state
       $popup-> enable( $_)  for ( qw( max restore move));
       $popup-> disable( $_) for ( qw( min size));
    } elsif ( $ws == ws::Maximized) {
-      return unless $self->{borderIcons} & bi::Maximize;
+      return unless $self->{borderIcons} & mbi::Maximize;
+      $self-> clipOwner(0) 
+         if $ows == ws::Minimized && !$self->{saveClipOwner};
+      delete $self->{saveClipOwner};
       $self-> {miniRect} = [ $self->rect] if $ows == ws::Minimized;
       $self-> {zoomRect} = [ $self->rect] if $ows == ws::Normal;
-      $self-> rect( 0, 0, $self-> owner-> size);
+      $self-> rect( 0, 0, $self-> clipOwner ? $self-> owner-> size : $::application-> size);
       $self-> {zoomGrowMode} = $self-> growMode;
       $self-> growMode( gm::Client);
       $popup-> enable( $_)  for ( qw( min restore));
       $popup-> disable( $_) for ( qw( max move size));
    } else {
-      return unless $self->{borderIcons} & (bi::Maximize|bi::Minimize);
+      return unless $self->{borderIcons} & (mbi::Maximize|mbi::Minimize);
+      $self-> clipOwner(0) 
+         if $ows == ws::Minimized && !$self->{saveClipOwner};
+      delete $self->{saveClipOwner};
       $self-> {miniRect} = [ $self->rect] if $ows == ws::Minimized;
       $self-> growMode( $self-> {zoomGrowMode}) if $ows == ws::Maximized;
       $self-> rect( @{$self->{zoomRect}});
@@ -1122,6 +1172,34 @@ sub MDIClient_Destroy
    $_[0]-> destroy;
 }
 
+sub titleHeight
+{
+   return $_[0]->{titleHeight} unless $#_;
+   my ( $self, $th) = @_;
+   $self-> {titleHeight} = $th;
+   $th = Prima::Application-> get_system_value( sv::YTitleBar) unless $th;
+   return if $self-> {titleY} == $th;
+   $self-> {titleY} = $th;
+   $self-> sync_client;
+   $self-> repaint;
+}   
+
+sub __icon
+{
+   my ( $self, $id) = ( shift, shift);
+   return $self->{icons}->[$id] unless @_;
+   $self-> {icons}->[$id] = shift;
+   $self-> repaint_title;
+}   
+
+sub iconMin            { return shift-> __icon( cMIN,     @_)};
+sub iconMax            { return shift-> __icon( cMAX,     @_)};
+sub iconClose          { return shift-> __icon( cCLOSE,   @_)};
+sub iconRestore        { return shift-> __icon( cRESTORE, @_)};
+sub iconMinPressed     { return shift-> __icon( pMIN,     @_)};
+sub iconMaxPressed     { return shift-> __icon( pMAX,     @_)};
+sub iconClosePressed   { return shift-> __icon( pCLOSE,   @_)};
+sub iconRestorePressed { return shift-> __icon( pRESTORE, @_)};
 
 sub maximize    { $_[0]-> windowState( ws::Maximized)}
 sub minimize    { $_[0]-> windowState( ws::Minimized)}
@@ -1131,7 +1209,6 @@ sub close       { $_[0]-> SUPER::close; }
 sub borderIcons          {($#_)?$_[0]->set_border_icons($_[1])                        :return $_[0]->{borderIcons}}
 sub borderStyle          {($#_)?$_[0]->set_border_style($_[1])                        :return $_[0]->{borderStyle}}
 sub dragMode             {($#_)?($_[0]->{dragMode} = $_[1])                           :return $_[0]->{dragMode}; }
-sub client               {return $_[0]-> {client};}
 sub frameOrigin          {return shift-> origin( @_);}
 sub frameSize            {return shift-> size( @_);}
 sub frameWidth           {return shift-> width( @_);}
