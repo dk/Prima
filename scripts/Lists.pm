@@ -336,6 +336,7 @@ sub on_enter   { $_[0]-> repaint; }
 sub on_keydown
 {
    my ( $self, $code, $key, $mod) = @_;
+   $mod &= ( km::Shift|km::Ctrl|km::Alt);
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
    if ( $mod & km::Ctrl && $self->{multiSelect})
    {
