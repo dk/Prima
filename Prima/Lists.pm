@@ -1178,6 +1178,12 @@ sub draw_items
    shift-> std_draw_text_items(@_);
 }
 
+sub on_measureitem
+{
+   my ( $self, $index, $sref) = @_;
+   $$sref = $self-> get_text_width( $self-> get_item_text( $index));
+}
+
 package Prima::ListViewer;
 use vars qw(@ISA);
 @ISA = qw(Prima::AbstractListViewer);
