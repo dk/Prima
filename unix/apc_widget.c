@@ -704,20 +704,16 @@ apc_widget_set_visible( Handle self, Bool show)
       }
 
       XMapWindow( DISP, X_WINDOW);
-      // XMapRaised( DISP, X_WINDOW);
       XRaiseWindow( DISP, X_WINDOW);
       XFlush( DISP);
       if ( flush_n_wait) {
 	 XWindowAttributes attrs;
-/* 	 XSizeHints hints; */
-/* 	 long suppl; */
-/* 	 while (!XGetWMNormalHints( DISP, X_WINDOW, &hints, &suppl)) { */
+
 	 attrs. map_state = IsUnmapped;
 	 while( attrs. map_state == IsUnmapped) {
 	    XGetWindowAttributes( DISP, X_WINDOW, &attrs);
 	    usleep( 10);
 	 }
-	 apc_application_yield();
       }
    } else {
       XUnmapWindow( DISP, X_WINDOW);
