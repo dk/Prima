@@ -2202,7 +2202,7 @@ gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double ang
           abs( dX / 2  * (( qend == 3) ? -1 : 1) - xend);
        if ( qe2 <= qstart) qe2 += 4;
        for ( i = qstart + 1; i < qe2; i++)
-          llen += abs( 2 * (( i % 2) ? ( dX / 2 + 0.5) : ( dY / 2 + 0.5)));
+          llen += abs((float)( 2 * (( i % 2) ? ( dX / 2 + 0.5) : ( dY / 2 + 0.5))));
     }
 
     // drawing arc

@@ -694,7 +694,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
       r = forPointer ?
          CreateCursor( guts. instance, ii. xHotspot, ii. yHotspot,
             size.x, size.y, mask, i-> data) :
-         CreateIcon( guts. instance, size.x, size.y, 1, i-> type & imBPP,
+         CreateIcon( guts. instance, size.x, size.y, 1, ( Byte)(i-> type & imBPP),
             mask, i-> data);
       if ( notAnIcon) free( mask);
       if ( !r) {

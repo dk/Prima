@@ -2843,10 +2843,10 @@ apc_message( Handle self, PEvent ev, Bool post)
                    if ( ev-> key. mod & kmCtrl  ) mp1 = VK_CONTROL; else
                       return false;
                 } else {
-                   SHORT c = VkKeyScan( ev-> key. code);
+                   SHORT c = VkKeyScan(( CHAR ) ev-> key. code);
                    if ( c == -1) {
                       HKL kl = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
-                      c = VkKeyScanEx( ev-> key. code, kl);
+                      c = VkKeyScanEx(( CHAR) ev-> key. code, kl);
                       if ( c == -1) return false;
                       scan = MapVirtualKeyEx( LOBYTE( c), 0, kl);
                    } else {
