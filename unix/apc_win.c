@@ -140,6 +140,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    } else
       XX-> flags. zoomed = 1;
    XX-> origin = ( Point) {0,0};
+   XX-> ackOrigin = XX-> ackSize = ( Point){0,0};
    
    bzero( &hints, sizeof( XSizeHints));
    hints. flags  = PBaseSize;
@@ -157,16 +158,25 @@ Bool
 apc_window_activate( Handle self)
 {
    DEFXX;
+   int rev;
+   XWindow xfoc;
+   XEvent ev;
+
    if ( guts. message_boxes) return false;
    if ( self && ( self != CApplication( application)-> map_focus( application, self)))
       return false;
 
    XMapRaised( DISP, X_WINDOW);
-   if ( XX-> flags. iconic || XX-> flags. withdrawn) 
+   if ( XX-> flags. iconic || XX-> flags. withdrawn)
       prima_wm_sync( self, MapNotify);
+   XGetInputFocus( DISP, &xfoc, &rev);
+   if ( xfoc == X_WINDOW) return true;
    XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
    XCHECKPOINT;
-   apc_application_yield();
+
+   XSync( DISP, false);
+   while ( XCheckMaskEvent( DISP, FocusChangeMask|ExposureMask, &ev))
+      prima_handle_event( &ev, nil);
    return true;
 }
 
@@ -315,6 +325,12 @@ apc_window_set_client_pos( Handle self, int x, int y)
    bzero( &hints, sizeof( XSizeHints));
 
    if ( x == XX-> origin. x && y == XX-> origin. y) return true;
+
+   if ( X_WINDOW == guts. grab_redirect) {
+      XWindow rx;
+      XTranslateCoordinates( DISP, X_WINDOW, guts. root, 0, 0, 
+         &guts. grab_translate_mouse.x, &guts. grab_translate_mouse.y, &rx);
+   }
    
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
    hints. flags = USPosition;
@@ -355,9 +371,10 @@ apc_window_set_client_size( Handle self, int width, int height)
 
    hints. flags = USPosition | USSize;
    hints. x = XX-> origin. x;
-   hints. y = X(XX-> owner)-> size. y - XX-> size.y - XX-> origin. y;
+   hints. y = X(XX-> owner)-> size. y - height - XX-> origin. y;
    hints. width = width;
    hints. height = height;
+  
    apc_SetWMNormalHints( self, &hints);
    XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, width, height);
    XCHECKPOINT;

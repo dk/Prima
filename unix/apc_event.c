@@ -302,8 +302,8 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
    switch ( wmsd-> eventType) {
    case ConfigureNotify: {
       Point old_size = XX-> size, old_pos = XX-> origin;
-      if ( wmsd-> origin. x != XX-> origin. x || wmsd-> origin. y != XX-> origin. y) {
-         // printf("GOT move to %d %d / %d %d\n", wmsd-> origin.x, wmsd-> origin.y, XX-> origin. x, XX-> origin. y);
+      if ( wmsd-> origin. x != PWidget(self)-> pos. x || wmsd-> origin. y != PWidget(self)-> pos. y) {
+         // printf("GOT move to %d %d / %d %d\n", wmsd-> origin.x, wmsd-> origin.y, PWidget(self)->pos. x, PWidget(self)->pos. y);
          bzero( &e, sizeof( Event));
          e. cmd      = cmMove;
          e. gen. P   = XX-> origin = wmsd-> origin;
@@ -393,6 +393,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
             if ( PObject( self)-> stage == csDead) return false; 
          }
       }   
+      break;
    }
    return true;
 }
@@ -524,10 +525,20 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case ButtonPress: {
       guts. last_time = ev-> xbutton. time;
+      if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
+         XWindow rx;
+         XTranslateCoordinates( DISP, X_WINDOW, PWidget(guts. grab_widget)-> handle, 
+             ev-> xbutton.x, ev-> xbutton.y, 
+             &ev-> xbutton.x, &ev-> xbutton.y, &rx);
+         self = guts. grab_widget;
+         XX = X(self);
+      }
       if (no_input(XX, false, true)) return;
       bev = &ev-> xbutton;
       e. cmd = cmMouseDown;
      ButtonEvent:
+      bev-> x -= XX-> origin. x - XX-> ackOrigin. x;
+      bev-> y += XX-> origin. y - XX-> ackOrigin. y;
       if ( ev-> xany. window == guts. root && guts. grab_redirect) {
          bev-> x -= guts. grab_translate_mouse. x;
          bev-> y -= guts. grab_translate_mouse. y;
@@ -623,6 +634,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case ButtonRelease: {
       guts. last_time = ev-> xbutton. time;
+      if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
+         XWindow rx;
+         XTranslateCoordinates( DISP, X_WINDOW, PWidget(guts. grab_widget)-> handle, 
+             ev-> xbutton.x, ev-> xbutton.y, 
+             &ev-> xbutton.x, &ev-> xbutton.y, &rx);
+         self = guts. grab_widget;
+         XX = X(self);
+      }
       if (no_input(XX, false, false)) return;
       bev = &ev-> xbutton;
       e. cmd = cmMouseUp;
@@ -630,7 +649,17 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case MotionNotify: {
       guts. last_time = ev-> xmotion. time;
+      if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
+         XWindow rx;
+         XTranslateCoordinates( DISP, X_WINDOW, PWidget(guts. grab_widget)-> handle, 
+             ev-> xmotion.x, ev-> xmotion.y, 
+             &ev-> xmotion.x, &ev-> xmotion.y, &rx);
+         self = guts. grab_widget;
+         XX = X(self);
+      }
       if (no_input(XX, true, false)) return;
+      ev-> xmotion. x -= XX-> origin. x - XX-> ackOrigin. x;
+      ev-> xmotion. y += XX-> origin. y - XX-> ackOrigin. y;
       e. cmd = cmMouseMove;
       if ( ev-> xany. window == guts. root && guts. grab_redirect) {
          ev-> xmotion. x -= guts. grab_translate_mouse. x;
@@ -813,12 +842,26 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       return;
    }
 
+   case -ConfigureNotify: {
+      XX-> ackSize. x   = ev-> xconfigure. width;
+      XX-> ackSize. y   = ev-> xconfigure. height;
+      XX-> ackOrigin. x = ev-> xconfigure. x;
+      XX-> ackOrigin. y = X(X(self)-> owner)-> size. y -
+         XX-> ackSize. y - ev-> xconfigure. y;
+      return;
+   }                        
    case ConfigureNotify: {
+      XX-> ackOrigin. x = ev-> xconfigure. x;
+      XX-> ackSize. x   = ev-> xconfigure. width;
+      XX-> ackSize. y   = ev-> xconfigure. height;
       if ( XX-> flags. process_configure_notify) {
          WMSyncData wmsd;
          wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure);
+         XX-> ackOrigin. y = wmsd. origin. y;
          process_wm_sync_data( self, &wmsd);
-      } 
+      } else
+         XX-> ackOrigin. y = X(X(self)-> owner)-> size. y -
+            XX-> ackSize. y - ev-> xconfigure. y;
       return;
    }
    case ConfigureRequest: {
@@ -940,6 +983,9 @@ copy_events( Handle self, PList events, WMSyncData * w)
                ok = true;
             }
             break;
+         default:
+            if ( x-> xany. window == PWidget(self)-> handle) 
+               ok = true;
          }
          if ( ok) {
             x-> type = -x-> type;

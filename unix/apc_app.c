@@ -543,11 +543,8 @@ perform_pending_paints( void)
 
    for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
       next = TAILQ_NEXT( XX, paintq_link);
-      if ( !XX-> flags. paint_pending) {
-         warn( "UAA_002: assertion !paint_pending failed");
-         return;
-      }   
-      if ( PWidget( XX->self)-> stage == csNormal) {
+      if ( XX-> flags. paint_pending &&
+         (PWidget( XX->self)-> stage == csNormal)) {
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
          prima_simple_message( XX-> self, cmPaint, false);

@@ -747,12 +747,14 @@ apc_pointer_get_visible( Handle self)
 Bool
 apc_pointer_set_pos( Handle self, int x, int y)
 {
+   XEvent ev;
    if ( !XWarpPointer( DISP, None, guts. root, 
       0, 0, guts. displaySize.x, guts. displaySize.y, x, guts. displaySize.y - y - 1))
       return false;
    XCHECKPOINT;
    XSync( DISP, false);
-   prima_one_loop_round( false, true);
+   while ( XCheckMaskEvent( DISP, PointerMotionMask, &ev))
+      prima_handle_event( &ev, nil);
    return true;   
 }
 

@@ -147,6 +147,25 @@ EXIT:
    return ret;
 }   
 
+static void
+process_transparents( Handle self)
+{
+   int i;
+   Point sz = X(self)-> size;
+   for ( i = 0; i < PWidget(self)-> widgets. count; i++) {
+      Handle x = PWidget(self)-> widgets. items[ i];
+      if ( X(x)-> flags. transparent && 
+           X(x)-> flags. want_visible &&
+           !X(x)-> flags. falsely_hidden) {
+         Point pos = X(x)-> origin;
+         if ( pos. x >= sz.x || pos.y >= sz.y ||
+              pos. x + X(x)-> size.x <= 0 ||
+              pos. y + X(x)-> size.y <= 0) continue;
+         apc_widget_invalidate_rect( x, nil);
+      }
+   }
+}
+
 typedef struct _RecreateData {
   Point    pos;
   Point    size;
@@ -187,6 +206,7 @@ set_view_ex( Handle self, PRecreateData p)
   }   
   if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
   XClearWindow( DISP, X_WINDOW);
+  process_transparents( self);
 }
 
 Bool
@@ -222,8 +242,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
          get_view_ex( self, &vprf);
    }   
 
-   /* Transparency is ignored for now */
-
+   XX-> flags. transparent = !!transparent;
    XX-> type.drawable = true;
    XX-> type.widget = true;
    if ( !clip_owner || ( owner == application)) {
@@ -296,6 +315,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       hash_delete( guts.windows, &old, sizeof(X_WINDOW), false);
    } else {
       XX-> size = (Point){0,0};
+      XX-> ackOrigin = XX-> ackSize = ( Point){0,0};
    }   
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
 
@@ -337,12 +357,56 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    return true;
 }
 
+
 Bool
 apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 {
+   DEFXX;
+   Bool useRPDraw = false;
+   if ( XX-> flags. transparent && inside_on_paint) {
+      if ( XX-> flags. want_visible && !XX-> flags. falsely_hidden) {
+         if ( XX-> parent == guts. root) {
+            XEvent ev;
+            if ( XX-> flags. transparent_busy) return false;
+            XX-> flags. transparent_busy = 1;
+            XUnmapWindow( DISP, X_WINDOW); 
+            XSync( DISP, false);
+            while ( XCheckMaskEvent( DISP, ExposureMask, &ev))
+               prima_handle_event( &ev, nil);
+            XMapWindow( DISP, X_WINDOW); 
+            XSync( DISP, false);
+            while ( XCheckMaskEvent( DISP, ExposureMask, &ev))
+               prima_handle_event( &ev, nil);
+            XX-> flags. transparent_busy = 0;
+         } else
+            useRPDraw = true;
+      }
+   }
    if ( guts. dynamicColors && inside_on_paint) prima_palette_free( self, false);
    prima_no_cursor( self);
    prima_prepare_drawable_for_painting( self);
+   if ( useRPDraw) {
+      Handle owner = PWidget(self)->owner;
+      Point ed = apc_widget_get_pos( self);
+      XDrawable dc;
+      Bool buffered = PWidget(owner)-> options. optBuffered;
+      
+      PWidget(owner)-> options. optBuffered = false;
+      CWidget(owner)-> begin_paint( owner);
+      dc = X(owner)-> gdrawable;
+      X(owner)-> gdrawable = XX-> gdrawable;
+      if ( XX-> region) 
+         XSetRegion( DISP, X(owner)-> gc, XX-> region);
+      else if ( XX-> stale_region) 
+         XSetRegion( DISP, X(owner)-> gc, XX-> stale_region);
+      X(owner)-> gtransform. x = -ed. x;
+      X(owner)-> gtransform. y = X(owner)-> size. y - XX-> size.y - ed. y;
+      CWidget( owner)-> notify( owner, "sH", "Paint", owner);
+      X(owner)-> gdrawable = dc;
+      CWidget( owner)-> end_paint( owner);
+      if ( buffered)
+         PWidget(owner)-> options. optBuffered = true;
+   }
    return true;
 }
 
@@ -374,10 +438,12 @@ apc_widget_destroy( Handle self)
    XX-> paint_dashes = nil;
    XX-> paint_ndashes = 0;
    if ( X_WINDOW) {
-      if ( guts. grab_redirect == X_WINDOW) {
-         XUngrabPointer( DISP, CurrentTime);
+      if ( guts. grab_redirect == X_WINDOW) 
          guts. grab_redirect = nilHandle;
-      }   
+      if ( guts. grab_widget == self || XX-> flags. grab) {
+         XUngrabPointer( DISP, CurrentTime);
+         guts. grab_widget = nilHandle;
+      }
       XCHECKPOINT;
       XDestroyWindow( DISP, X_WINDOW);
       XCHECKPOINT;
@@ -467,7 +533,7 @@ apc_widget_get_pos( Handle self)
    }   
       
    if ( XX-> parentHandle == nilHandle)
-      return PWidget(self)-> pos;
+      return XX-> origin;
    
    XGetGeometry( DISP, X_WINDOW, &r, &x, &y, &w, &h, &b, &d);
    XTranslateCoordinates( DISP, XX-> parentHandle, guts. root, x, y, &x, &y, &r);
@@ -506,8 +572,7 @@ apc_widget_get_sync_paint( Handle self)
 Bool
 apc_widget_get_transparent( Handle self)
 {
-   DOLBUG( "apc_widget_get_transparent()\n");
-   return false;
+   return X(self)-> flags. transparent;
 }
 
 Bool
@@ -595,6 +660,7 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
    if ( XX-> flags. sync_paint) {
       apc_widget_update( self);
    }
+   process_transparents( self);
    return true;
 }
 
@@ -709,7 +775,7 @@ AGAIN:
 			| ButtonReleaseMask
 			| PointerMotionMask
 			| ButtonMotionMask, GrabModeAsync, GrabModeAsync,
-			confine_to, None, CurrentTime);
+			confine_to, None, guts. last_time);
       XCHECKPOINT;
       if ( r != GrabSuccess) {
          XWindow root = guts. root, rx;
@@ -717,6 +783,7 @@ AGAIN:
             XTranslateCoordinates( DISP, z, guts. root, 0, 0, 
                 &guts. grab_translate_mouse.x, &guts. grab_translate_mouse.y, &rx);
             guts. grab_redirect = z;
+            guts. grab_widget = self;
             z = root;
             goto AGAIN;
          }  
@@ -724,12 +791,14 @@ AGAIN:
          return false;
       } else {
 	 XX-> flags. grab = true;
+         guts. grab_widget = self;
       }
-   } else {
+   } else if ( XX-> flags. grab) {
       guts. grab_redirect = nilHandle;
       XUngrabPointer( DISP, CurrentTime);
       XCHECKPOINT;
       XX-> flags. grab = false;
+      guts. grab_widget = nilHandle;
    }
    return true;
 }
@@ -774,7 +843,9 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
 Bool
 apc_widget_set_focused( Handle self)
 {
-   XWindow focus = None;
+   int rev;
+   XWindow focus = None, xfoc;
+   XEvent ev;
    if ( guts. message_boxes) return false;
    if ( self && ( self != CApplication( application)-> map_focus( application, self)))
       return false;
@@ -782,9 +853,14 @@ apc_widget_set_focused( Handle self)
       if (XT_IS_WINDOW(X(self))) return true; /* already done in activate() */
       focus = X_WINDOW;
    }
+   XGetInputFocus( DISP, &xfoc, &rev);
+   if ( xfoc == focus) return true;
    XSetInputFocus( DISP, focus, RevertToParent, CurrentTime);
    XCHECKPOINT;
-   apc_application_yield();
+   
+   XSync( DISP, false);
+   while ( XCheckMaskEvent( DISP, FocusChangeMask|ExposureMask, &ev))
+      prima_handle_event( &ev, nil);
    return true;
 }
 
@@ -817,6 +893,11 @@ apc_widget_set_pos( Handle self, int x, int y)
    
    if ( XX-> parentHandle == nilHandle && x == XX-> origin.x && y == XX-> origin. y)
       return true;
+   if ( X_WINDOW == guts. grab_redirect) {
+      XWindow rx;
+      XTranslateCoordinates( DISP, X_WINDOW, guts. root, 0, 0, 
+         &guts. grab_translate_mouse.x, &guts. grab_translate_mouse.y, &rx);
+   }
    bzero( &e, sizeof( e));
    e. cmd = cmMove;
    e. gen. source = self;
@@ -829,6 +910,8 @@ apc_widget_set_pos( Handle self, int x, int y)
    XMoveWindow( DISP, X_WINDOW, x, y);
    XCHECKPOINT;
    apc_message( self, &e, false);
+   if ( XX-> flags. transparent)
+      apc_widget_invalidate_rect( self, nil);
    return true;
 }
 

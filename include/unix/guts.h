@@ -389,6 +389,7 @@ struct _UnixGuts
    Bool                         xshmattach_failed;
    struct MsgDlg               *message_boxes;
    XWindow                      grab_redirect;
+   Handle                       grab_widget;
    Point                        grab_translate_mouse;
    XWindow                      root;
    XVisualInfo                  visual;
@@ -484,6 +485,7 @@ typedef struct _drawable_sys_data
    NPoint resolution;
    Point origin, size, bsize;
    Point transform, gtransform, btransform;
+   Point ackOrigin, ackSize;   
    Handle owner;  /* The real one */
    XWindow real_parent; /* top levels */
    XWindow parentHandle; /* top levels */
@@ -542,6 +544,8 @@ typedef struct _drawable_sys_data
       int saved_zero_line       	: 1;
       int sizeable                      : 1;
       int sync_paint			: 1;
+      int transparent                   : 1;
+      int transparent_busy              : 1;
       int want_visible                  : 1;
       int withdrawn                     : 1;
       int zero_line             	: 1;
