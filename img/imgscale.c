@@ -276,6 +276,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
          memcpy( dstData, srcData, xMin);
       return;
    }
+
 // y-only stretch case
    if ( !xStretch && yStretch && ( w > 0))
    {
@@ -328,7 +329,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
    if ( absw < srcW)
       xstep. l = (double) absw / srcW * 0x10000;
    else
-      xstep. l = (double) srcH / absw * 0x10000;
+      xstep. l = (double) srcW / absw * 0x10000;
    switch( type)
    {
       case imMono:     case imBW:
