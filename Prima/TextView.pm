@@ -565,10 +565,9 @@ sub block_wrap
                tw::ReturnFirstLineLength | tw::WordBreak | tw::BreakSingle);
 # print "repo $l bytes wrapped in $width - $apx - $x\n";
             if ( $l > 0) {
-               push @$z, tb::OP_TEXT, $ofs,
-                  $l + length $leadingSpaces, 
-                  $tw = $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l), 1);
-# print "$x + advance $$z[-1] |", $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l), 0), "|\n";
+               push @$z, tb::OP_TEXT, $ofs + length $leadingSpaces, $l, 
+                  $tw = $canvas-> get_text_width( substr( $str, 0, $l), 1);
+# print "$x + advance $$z[-1]/$tw|", $leadingSpaces , "+", substr( $str, 0, $l), "|\n";
                $str = substr( $str, $l);
                $l += length $leadingSpaces;
                $newblock-> ();
