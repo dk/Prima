@@ -147,6 +147,7 @@ The filtering criteria are event names and object hierarchy.
    }
 
    Prima::EventHook::install( \&hook, 
+      param    => $my_param,
       object   => $my_window, 
       name     => [qw(Size Move Destroy)],
       children => 1
