@@ -113,7 +113,7 @@ Component_done( Handle self)
 
       hv_iterinit( var refs);
       while (( obj = hv_iternextsv( var refs, &k, &l)) && k)
-	 my detach( self, atol( k), true);
+	      my detach( self, atol( k), true);
       /* sv_free(( SV*) var refs); */  /* Will be freed by perl */
       var refs = nil;
    }
@@ -124,7 +124,9 @@ Component_done( Handle self)
 /*    debug_write( "Freeing image %s\n", var name); */
 /* #endif */
    free( var name);
+   var name = nil;
    free( var evStack);
+   var evStack = nil;
    inherited done( self);
 }
 
@@ -258,8 +260,8 @@ ForceProcess:
       my push_event( self);
       my handle_event( self, event);
       my pop_event( self);
-      if ( var evStack[ var evPtr] == 0) event-> cmd = 0;
-      ret = var evStack[ var evPtr];
+      if ( var evStack) ret = var evStack[ var evPtr];
+      if ( !ret) event-> cmd = 0;
       unprotect_object( self);
    } else if ( var stage == csConstructing) {
       if ( var evQueue == nil)
@@ -304,6 +306,8 @@ Component_clear_event( Handle self)
 void
 Component_push_event( Handle self)
 {
+   if ( var stage == csDead)
+      return;
    if ( var evPtr == var evLimit) {
       char * newStack = malloc( 16 + var evLimit);
       if ( var evStack) {
@@ -319,6 +323,8 @@ Component_push_event( Handle self)
 Bool
 Component_pop_event( Handle self)
 {
+   if ( var stage == csDead)
+      return false;
    if ( !var evStack || var evPtr <= 0)
       croak("RTC0042: Component::pop_event call not within message()");
    return var evStack[ var evPtr--];
@@ -327,6 +333,8 @@ Component_pop_event( Handle self)
 void
 Component_set_event_flag( Handle self, Bool eventFlag)
 {
+   if ( var stage == csDead)
+      return;
    if ( !var evStack || var evPtr <= 0)
       croak("RTC0043: Component::eventFlag call not within message()");
    var evStack[ var evPtr - 1] = eventFlag;
@@ -335,6 +343,8 @@ Component_set_event_flag( Handle self, Bool eventFlag)
 Bool
 Component_get_event_flag( Handle self)
 {
+   if ( var stage == csDead)
+      return false;
    if ( !var evStack || var evPtr <= 0)
       croak("RTC0044: Component::eventFlag call not within message()");
    return var evStack[ var evPtr - 1];
