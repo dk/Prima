@@ -162,15 +162,15 @@ delete_xfer( PClipboardSysData cc, ClipboardXfer * xfer)
    ClipboardXferKey key;
    CLIPBOARD_XFER_KEY( key, xfer-> requestor, xfer-> property);
    if ( guts. clipboard_xfers) {
-      void * refcnt;
+      int refcnt;
       hash_delete( guts. clipboard_xfers, key, sizeof( key), false);
-      refcnt = hash_fetch( guts. clipboard_xfers, &xfer-> requestor, sizeof(XWindow));
-      if ( --(int)refcnt == 0) {
+      refcnt = ( int) hash_fetch( guts. clipboard_xfers, &xfer-> requestor, sizeof(XWindow));
+      if ( --refcnt == 0) {
          XSelectInput( DISP, xfer-> requestor, 0);
          hash_delete( guts. clipboard_xfers, &xfer-> requestor, sizeof(XWindow), false);
       } else {
-         if ( (int)refcnt < 0) (int)refcnt = 0;
-         hash_store( guts. clipboard_xfers, &xfer-> requestor, sizeof(XWindow), refcnt);
+         if ( refcnt < 0) refcnt = 0;
+         hash_store( guts. clipboard_xfers, &xfer-> requestor, sizeof(XWindow), (void*) refcnt);
       }
    }
    if ( cc-> xfers) 
@@ -846,7 +846,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
                if ( CC-> xfers && guts. clipboard_xfers) {
                   ClipboardXfer * x = malloc( sizeof( ClipboardXfer));
                   if ( x) {
-                     void * refcnt;
+                     int refcnt;
                      ClipboardXferKey key;
                      
                      bzero( x, sizeof( ClipboardXfer));
@@ -864,10 +864,10 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
 
                      CLIPBOARD_XFER_KEY( key, x-> requestor, x-> property);
                      hash_store( guts. clipboard_xfers, key, sizeof(key), (void*) x);
-                     refcnt = hash_fetch( guts. clipboard_xfers, &x-> requestor, sizeof( XWindow));
-                     if ((( int) refcnt)++ == 0)
+                     refcnt = (int) hash_fetch( guts. clipboard_xfers, &x-> requestor, sizeof( XWindow));
+                     if ( refcnt++ == 0)
                         XSelectInput( DISP, x-> requestor, PropertyChangeMask|StructureNotifyMask); 
-                     hash_store( guts. clipboard_xfers, &x-> requestor, sizeof(XWindow), refcnt);
+                     hash_store( guts. clipboard_xfers, &x-> requestor, sizeof(XWindow), (void*) refcnt);
 
                      format = 32;
                      size = 1;
