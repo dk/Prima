@@ -31,6 +31,7 @@ object Prima::Application( Prima::Widget)
    Handle    hintTimer;
    Handle    hintWidget;
    char *    helpFile;
+   Handle    icon;
    Bool      autoClose;
 
    method Bool   begin_paint();
@@ -52,6 +53,7 @@ object Prima::Application( Prima::Widget)
    static Point  get_default_scrollbar_metrics( char * dummy = "");
    static Point  get_default_window_borders( char * dummy = "", int borderStyle = bsSizeable);
    method Handle get_clipboard();
+   method Handle get_icon();
    method Bool   get_insert_mode();
    method char*  get_help_file();
    method Handle get_focused_widget();
@@ -76,6 +78,7 @@ object Prima::Application( Prima::Widget)
    method Point  screen_to_client( Point p);
    method void   send_to_back();
    method void   set_auto_close( Bool autoClose);
+   method void   set_icon( Handle icon);
    method void   set_insert_mode( Bool insMode);
    method void   set_help_file( char * helpFile);
    c_only void   set_hint_action( Handle widget, Bool show, Bool mouseEvent);

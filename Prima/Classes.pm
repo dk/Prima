@@ -1102,6 +1102,7 @@ sub profile_default
       modalResult           => cm::Cancel,
       modalHorizon          => 1,
       ownerFont             => 0,
+      ownerIcon             => 1,
       originDontCare        => 1,
       sizeDontCare          => 1,
       tabStop               => 0,
@@ -1137,6 +1138,12 @@ sub profile_check_in
       exists $p->{width}  or exists $p->{height} or
       exists $p->{size}   or exists $p->{rect} or
       exists $p->{right}  or exists $p->{top};
+   my $owner = exists $p-> { owner} ? $p-> { owner} : $default-> { owner};
+   if ( $owner) {
+      $p->{icon} = $owner-> icon if
+         ( $p->{ownerIcon} = exists $p->{icon} ? 0 :
+             ( exists $p-> {ownerIcon} ? $p->{ownerIcon} : $default-> {ownerIcon}));
+   }
 }
 
 sub maximize    { $_[0]->windowState( ws::Maximized)}
@@ -1168,6 +1175,7 @@ sub menuDark3DColor      {($#_)?$_[0]->set_menu_color  ($_[1], ci::Dark3DColor) 
 sub menuLight3DColor     {($#_)?$_[0]->set_menu_color  ($_[1], ci::Light3DColor)      :return $_[0]->get_menu_color(ci::Light3DColor);}
 sub modalHorizon         {($#_)?$_[0]->set_modal_horizon($_[1]):return $_[0]->get_modal_horizon;  }
 sub modalResult          {($#_)?$_[0]->set_modal_result($_[1]):return $_[0]->get_modal_result;}
+sub ownerIcon            {($#_)?$_[0]->set_owner_icon($_[1]) :return $_[0]->get_owner_icon;  }
 
 
 # class Dialog
@@ -1362,6 +1370,7 @@ sub profile_default
    my %prf = (
       autoClose      => 1,
       pointerType    => cr::Arrow,
+      icon           => undef,
       owner          => undef,
       scaleChildren  => 0,
       ownerColor     => 0,
@@ -1408,6 +1417,7 @@ sub hintBackColor {($#_)?$_[0]->set_hint_back_color  ($_[1]):return $_[0]->get_h
 sub hintFont      {($#_)?$_[0]->set_hint_font        ($_[1])  :return Prima::Font->new($_[0], "get_hint_font", "set_hint_font")}
 sub hintPause     {($#_)?$_[0]->set_hint_pause       ($_[1]):return $_[0]->get_hint_pause;        }
 sub helpFile      {($#_)?$_[0]->set_help_file        ($_[1]):return $_[0]->get_help_file;         }
+sub icon          {($#_)?$_[0]->set_icon        ($_[1])  :return $_[0]->get_icon;        }
 sub modalHorizon  {($#_)?$_[0]->set_modal_horizon($_[1]):return $_[0]->get_modal_horizon;  }
 
 1;

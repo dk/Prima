@@ -2566,7 +2566,6 @@ showhint_notify ( Handle self, Handle child, void * data)
     return false;
 }
 
-
 static Bool
 hint_notify ( Handle self, Handle child, char * hint)
 {

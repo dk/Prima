@@ -49,6 +49,7 @@ object Prima::Window( Prima::Widget)
    method   int      get_modal();
    method   Bool     get_modal_horizon();
    method   int      get_modal_result();
+   method   Bool     get_owner_icon();
    method   Point    get_pos()                       => apc_window_get_client_pos;
    method   Point    get_size()                      => apc_window_get_client_size;
    method   Bool     get_task_listed()               => apc_window_get_task_listed;
@@ -72,6 +73,7 @@ object Prima::Window( Prima::Widget)
    method   void     set_menu_items( SV * menuItems);
    method   void     set_modal_horizon( Bool modalHorizon);
    method   void     set_modal_result( int modalResult);
+   method   void     set_owner_icon( Bool ownerIcon);
    method   Bool     set_pos( int x, int y)          => apc_window_set_client_pos;
    method   void     set_selected( Bool selected);
    method   Bool     set_size( int x, int y)         => apc_window_set_client_size;

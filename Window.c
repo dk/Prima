@@ -43,6 +43,7 @@ Window_init( Handle self, HV * profile)
    SV * sv;
    inherited init( self, profile);
    opt_set( optSystemSelectable);
+   opt_assign( optOwnerIcon, pget_B( ownerIcon));
    my-> set_icon( self, pget_H( icon));
    my-> set_menu_color ( self, pget_i( menuColor),             ciFore);
    my-> set_menu_color ( self, pget_i( menuBackColor),         ciBack);
@@ -539,12 +540,18 @@ Window_get_menu_items( Handle self)
 
 void Window_set( Handle self, HV * profile)
 {
+   Handle postOwner = nilHandle;
    if ( pexist( menuFont)) {
       SvHV_Font( pget_sv( menuFont), &Font_buffer, "Window::set");
       my-> set_menu_font( self, Font_buffer);
       pdelete( menuFont);
    }
+   if ( pexist( owner)) postOwner = pget_H( owner);
    inherited set( self, profile);
+   if ( postOwner && is_opt( optOwnerIcon)) {
+      my-> set_owner_icon( self, 1);
+      opt_set( optOwnerColor);
+   }
 }
 
 Handle
@@ -562,6 +569,16 @@ Window_get_icon( Handle self)
       return nilHandle;
 }
 
+static Bool
+icon_notify ( Handle self, Handle child, Handle icon)
+{
+    if ( kind_of( child, CWindow) && (( PWindow) child)-> options. optOwnerIcon) {
+       (( PWindow) child)-> self-> set_icon( child, icon);
+       (( PWindow) child)-> options. optOwnerIcon = 1;
+    }
+    return false;
+}
+
 void
 Window_set_icon( Handle self, Handle icon)
 {
@@ -570,7 +587,9 @@ Window_set_icon( Handle self, Handle icon)
        warn("RTC0091: Illegal object reference passed to Window.set_icon");
        return;
    }
+   my-> first_that( self, icon_notify, (void*)icon);
    apc_window_set_icon( self, icon);
+   opt_clear( optOwnerIcon);
 }
 
 void
@@ -652,6 +671,25 @@ Window_get_default_menu_font( char * dummy)
    Font f;
    apc_menu_default_font( &f);
    return f;
+}
+
+Bool
+Window_get_owner_icon( Handle self)
+{
+   return is_opt( optOwnerIcon);
+}
+
+void
+Window_set_owner_icon( Handle self, Bool ownerIcon)
+{
+   opt_assign( optOwnerIcon, ownerIcon);
+   if ( is_opt( optOwnerIcon) && var-> owner) {
+      Handle icon = ( var-> owner == application) ?
+         ((( PApplication) application)-> self)-> get_icon( application) :
+         ((( PWindow)      var-> owner)-> self)-> get_icon( var-> owner);
+      my-> set_icon( self, icon);
+      opt_set( optOwnerIcon);
+   }
 }
 
 

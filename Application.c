@@ -27,6 +27,7 @@
 #include "apricot.h"
 #include "Timer.h"
 #include "Window.h"
+#include "Image.h"
 #include "Application.h"
 #include <Application.inc>
 
@@ -134,6 +135,10 @@ Application_done( Handle self)
 {
    my-> close_help( self);
    my-> first_that( self, kill_all, nil);
+   if ( var-> icon)
+      my-> detach( self, var-> icon, true);
+   var-> icon = nilHandle;
+
    my-> first_that_component( self, kill_all, nil);
    unprotect_object( var-> clipboard);
    unprotect_object( var-> printer);
@@ -144,7 +149,8 @@ Application_done( Handle self)
    free( var-> helpFile);
    free( var-> text);
    free( var-> hint);
-   var->  accelTable = var->  printer = var->  clipboard = var-> hintWidget = var-> hintTimer = nilHandle;
+   var->  accelTable = var->  printer = var->  clipboard =
+      var-> hintWidget = var-> hintTimer = nilHandle;
    var->  helpFile   = var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
@@ -432,6 +438,43 @@ Application_get_hint_widget( Handle self)
    return var->  hintWidget;
 }
 
+Handle
+Application_get_icon( Handle self)
+{
+   if ( var-> stage > csNormal) return nilHandle;
+   return var-> icon;
+}
+
+static Bool
+icon_notify ( Handle self, Handle child, Handle icon)
+{
+    if ( kind_of( child, CWindow) && (( PWidget) child)-> options. optOwnerIcon) {
+       (( PWindow) child)-> self-> set_icon( child, icon);
+       (( PWindow) child)-> options. optOwnerIcon = 1;
+    }
+    return false;
+}
+
+void
+Application_set_icon( Handle self, Handle icon)
+{
+   if ( var-> stage > csNormal) return;
+   if ( icon && !kind_of( icon, CImage)) {
+       warn("RTC0013: Illegal object reference passed to Application.set_icon");
+       return;
+   }
+   if ( icon) {
+      icon = ((( PImage) icon)-> self)-> dup( icon);
+      ++SvREFCNT( SvRV((( PAnyObject) icon)-> mate));
+   }
+   my-> first_that( self, icon_notify, (void*)icon);
+   if ( var-> icon)
+      my-> detach( self, var-> icon, true);
+   var-> icon = icon;
+   if ( icon)
+      my-> attach( self, icon);
+}
+
 char *
 Application_get_help_file ( Handle self)
 {
@@ -472,7 +515,6 @@ Application_set_auto_close( Handle self, Bool autoClose)
 {
    var->  autoClose = autoClose;
 }
-
 
 SV *
 Application_sys_action( Handle self, char * params)
