@@ -948,8 +948,12 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
        if (!( i-> divider && i-> rightAdjust)) {
           if ( i-> text) {
              char buf [ 1024];
-             strcpy( buf, i-> text);
-             if ( i-> accel) snprintf( buf, 1024, "%s\t%s", buf, i-> accel);
+             if ( i-> accel) {
+		 snprintf( buf, 1024, "%s\t%s", i-> text, i-> accel);
+	     }
+	     else {
+		 strcpy( buf, i-> text);
+	     }
              map_tildas( buf, strlen( i-> text));
              menuItem. dwTypeData = ( LPTSTR) buf;
           } else if ( i-> bitmap)
