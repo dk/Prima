@@ -213,7 +213,6 @@ clean_perl_call_method( char* methname, I32 flags)
 {
    I32 ret;
    SV * errSave;
-
    dPUB_ARGS;
 
    errSave = SvTRUE( GvSV( errgv)) ? newSVsv( GvSV( errgv)) : nil;
@@ -225,7 +224,6 @@ clean_perl_call_method( char* methname, I32 flags)
       }
       return ret;
    }
-
 
    PUB_CHECK;
    if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR)
@@ -239,7 +237,8 @@ clean_perl_call_method( char* methname, I32 flags)
       sv_catsv( GvSV( errgv), errSave);
       sv_free( errSave);
    }
-   croak( SvPV( GvSV( errgv), na));
+
+   if ( !( flags & G_EVAL)) croak( SvPV( GvSV( errgv), na));
    return ret;
 }
 
@@ -272,7 +271,7 @@ clean_perl_call_pv( char* subname, I32 flags)
       sv_catsv( GvSV( errgv), errSave);
       sv_free( errSave);
    }
-   croak( SvPV( GvSV( errgv), na));
+   if ( !( flags & G_EVAL)) croak( SvPV( GvSV( errgv), na));
    return ret;
 }
 #endif
