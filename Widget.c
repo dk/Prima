@@ -30,7 +30,7 @@ static Bool pquery ( Handle window, Handle self, void * v);
 static Bool get_top_current( Handle self);
 static Bool sptr( Handle window, Handle self, void * v);
 static Bool find_ordering( Handle owner, Handle self, int tabOrder);
-static Bool size_notify( Handle self, Handle child, void * metrix);
+static Bool size_notify( Handle self, Handle child, const Rect* metrix);
 static Bool move_notify( Handle self, Handle child, Point * moveTo);
 static void dyna_set( Handle self, HV * profile);
 static Handle find_tabfoc( Handle self);
@@ -2473,21 +2473,33 @@ find_ordering( Handle owner, Handle self, int tabOrder)
 /* static iterators for ownership notifications */
 
 static Bool
-size_notify( Handle self, Handle child, void * metrix)
+size_notify( Handle self, Handle child, const Rect* metrix)
 {
    if ( his growMode)
    {
       Point size  =  his sizeUnbound;
+      Point reportedSize  =  his self-> get_size( child);
       Point pos   =  his self-> get_pos( child);
-      int   dx    = ((Rect *) metrix)-> right - ((Rect *) metrix)-> left;
-      int   dy    = ((Rect *) metrix)-> top   - ((Rect *) metrix)-> bottom;
+      int   dx    = metrix-> right - metrix-> left;
+      int   dy    = metrix-> top   - metrix-> bottom;
+
+      size = reportedSize;
+
+      if ( !metrix-> left)   dx = 0;
+      if ( !metrix-> bottom) dy = 0;
+
+      printf( ">size_notify: %s, pos: %dx%d, size: %dx%d, delta: %dx%d\n",
+	      his name, pos. x, pos.y, size. x, size. y, dx, dy);
 
       if ( his growMode & gmGrowLoX) pos.  x += dx;
-      if ( his growMode & gmGrowHiX) size. x += dx;
+      if ( his growMode & gmGrowHiX && dx) size. x += dx; else size. x = reportedSize. x;
       if ( his growMode & gmGrowLoY) pos.  y += dy;
-      if ( his growMode & gmGrowHiY) size. y += dy;
+      if ( his growMode & gmGrowHiY && dy) size. y += dy; else size. y = reportedSize. y;
       if ( his growMode & gmXCenter) pos. x = (((Rect *) metrix)-> right - size. x) / 2;
       if ( his growMode & gmYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
+
+      printf( "size_notify>: %s, pos: %dx%d, size: %dx%d\n",
+	      his name, pos. x, pos.y, size. x, size. y);
 
       his self-> set_pos  ( child, pos.x, pos. y);
       his self-> set_size ( child, size.x, size. y);
