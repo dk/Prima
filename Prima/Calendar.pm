@@ -374,12 +374,12 @@ Prima::Calendar - standard calendar widget
 
 =head1 DESCRIPTION
 
-Provides interactive selection of a date between 1900 and 2099 years.
+Provides interactive selection of date between 1900 and 2099 years.
 The main property, L<date>, is a three-integer array, day, month, and year,
-if the format of perl localtime ( see L<perlfunc/localtime> ) - 
+in the format of perl localtime ( see L<perlfunc/localtime> ) - 
 day can be in range from 0 to 30,month from 0 to 11, year from 0 to 199.
 
-=head1 SYNPOSIS
+=head1 SYNOPSIS
 
    use Prima::Calendar;
    my $cal = Prima::Calendar-> create(
@@ -425,9 +425,9 @@ Selects the month.
 
 =item useLocale BOOLEAN
 
-If 1, the locale-specified names of months and days of week are used.
-These are read by calling C<POSIX::strftime>. If invoking POSIX module
-is failed, the property is automatically assigned to 0.
+If 1, the locale-specific names of months and days of week are used.
+These are read by calling C<POSIX::strftime>. If invocation of POSIX module
+fails, the property is automatically assigned to 0.
 
 If 0, the English names of months and days of week are used.
 
