@@ -374,7 +374,7 @@ Image_begin_paint_info( Handle self)
    if ( is_opt( optInDraw))     return true;
    if ( is_opt( optInDrawInfo)) return false;
    inherited begin_paint_info( self);
-   if ( !( ok = apc_widget_begin_paint_info( self)))
+   if ( !( ok = apc_image_begin_paint_info( self)))
       inherited end_paint_info( self);
    return ok;
 }
