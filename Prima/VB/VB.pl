@@ -250,16 +250,30 @@ sub init
    return %profile;
 }
 
+sub on_size
+{
+   my ( $self, $ox, $oy, $x, $y) = @_;
+   return if $x == $ox;
+   my $d = $self-> bring('Div');
+   return unless $d;
+   $self-> {div_ratio} = $d-> left / ( $x || 1 ) unless $self-> {div_ratio};
+   $d-> left( $x * $self-> {div_ratio});
+   $self-> {lock_div_ratio} = 1;
+   $self-> Div_Change( $d);
+   delete $self-> {lock_div_ratio};
+}
+
 sub Div_Change
 {
    my $self = $_[0];
-   my $right = $self-> Div-> right;
-   $self-> {monger}-> width( $self-> Div-> left);
-   $self-> {mtabs}-> width( $self-> Div-> left);
+   my ( $left, $right) = ( $self-> Div-> left, $self-> Div-> right);
+   $self-> {monger}-> width( $left);
+   $self-> {mtabs}-> width( $left);
    $self-> Panel-> set(
       width => $self-> width - $right,
       left  => $right,
    );
+   $self-> {div_ratio} = $left / ( $self-> width || 1 ) unless $self-> {lock_div_ratio};
 }
 
 sub set_monger_index
