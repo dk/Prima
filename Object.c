@@ -77,7 +77,7 @@ Object_create( char *className, HV * profile)
    my-> profile_add( self, profRef);
    var-> stage = csConstructing;
    SPAGAIN;
-   if ( my-> init == Object_init_REDEFINED)
+   sv_setsv( GvSV( errgv), nilSV);
    {
       ENTER;
       SAVETMPS;
@@ -86,17 +86,13 @@ Object_create( char *className, HV * profile)
       sp = push_hv_for_REDEFINED( sp, profile);
       PUTBACK;
       PERL_CALL_METHOD( "init", G_VOID|G_DISCARD|G_EVAL);
-      if ( SvTRUE( GvSV( errgv))) {
-         Object_destroy( self);
-         croak( SvPV( GvSV( errgv), na));
-      }
       SPAGAIN;
       FREETMPS;
       LEAVE;
    }
-   else
-   {
-      my-> init( self, profile);
+   if ( SvTRUE( GvSV( errgv))) {
+      Object_destroy( self);
+      croak( SvPV( GvSV( errgv), na));
    }
    if ( primaObjects)
       hash_store( primaObjects, &self, sizeof( self), (void*)1);
