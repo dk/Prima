@@ -845,7 +845,7 @@ sub set_value
    $value = $max if $value > $max;
    $value -= $min;
    $max   -= $min;
-   my $div    = eval{ sprintf("%d", $value / $self->{step} + 0.5 * (( $value >= 0) ? 1 : -1))} || 0;
+   my $div    = eval{ int($value / $self->{step} + 0.5 * (( $value >= 0) ? 1 : -1))} || 0;
    my $lbound = $value == 0 ? 0 : $div * $self->{step};
    my $rbound = $value == $max ? $max : ( $div + 1) * $self->{step};
    $value = ( $value >= (( $lbound + $rbound) / 2)) ? $rbound : $lbound;
