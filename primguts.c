@@ -1120,6 +1120,18 @@ XS( boot_Prima)
 
    dolbug = getenv( "PRIMA_DOLBUG") ? true : false;
 
+#define TYPECHECK(s1,s2) \
+  if (sizeof(s1) != (s2)) { \
+      printf("Error: type %s is not %d bytes long", #s1, s2); \
+      ST(0) = &sv_no; \
+      XSRETURN(1); \
+  }
+   TYPECHECK( U8,  1);
+   TYPECHECK( I16, 2);
+   TYPECHECK( U32, 4);
+   TYPECHECK( void*, sizeof(Handle));
+
+#undef TYPECHECK
 #ifdef BROKEN_COMPILER
    {
       union {U8 c[8];double d;} nan = {{00, 00, 00, 00, 00, 00, 0xf8, 0xff}};
