@@ -566,10 +566,11 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      pageCount        => 0,
-      pageIndex        => 0,
-      tabStop          => 0,
-      ownerBackColor   => 1,
+      defaultInsertPage => undef,
+      pageCount         => 0,
+      pageIndex         => 0,
+      tabStop           => 0,
+      ownerBackColor    => 1,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -585,7 +586,7 @@ sub init
    $self-> {pageCount} = 0 if $self-> {pageCount} < 0;
    my $j = $profile{pageCount};
    push (@{$self-> {widgets}},[]) while $j--;
-   for ( qw( pageIndex)) { $self->$_( $profile{ $_}); }
+   for ( qw( pageIndex defaultInsertPage)) { $self->$_( $profile{ $_}); }
    return %profile;
 }
 
@@ -678,7 +679,8 @@ sub attach_to_page
 sub insert
 {
    my $self = shift;
-   return $self-> insert_to_page( $self->pageIndex, @_);
+   my $page = defined $self-> {defaultInsertPage} ? $self-> {defaultInsertPage} : $self->pageIndex;
+   return $self-> insert_to_page( $page, @_);
 }
 
 sub insert_to_page
@@ -778,6 +780,11 @@ sub set_page_count
    }
 }
 
+sub defaultInsertPage
+{
+   $_[0]-> {defaultInsertPage} = $_[1];
+}
+
 sub pageIndex     {($#_)?($_[0]->set_page_index   ( $_[1]))    :return $_[0]->{pageIndex}}
 sub pageCount     {($#_)?($_[0]->set_page_count   ( $_[1]))    :return $_[0]->{pageCount}}
 
@@ -789,7 +796,7 @@ use constant DefBorderX   => 11;
 use constant DefBookmarkX => 32;
 
 %notebookProps = (
-   pageCount      => 1,
+   pageCount      => 1, defaultInsertPage=> 1,
    attach_to_page => 1, insert_to_page   => 1, insert         => 1, insert_transparent => 1,
    delete_widget  => 1, detach_from_page => 1, move_widget    => 1, contains_widget    => 1,
 );

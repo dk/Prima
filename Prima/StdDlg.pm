@@ -448,7 +448,8 @@ sub Open_Click
 sub filter
 {
    if ( $#_) {
-      my ( $self, @filter) = @_;
+      my $self   = $_[0];
+      my @filter = @{$_[1]};
       @filter = [[ '' => '*']] unless scalar @filter;
       my @exts;
       my @mdts;

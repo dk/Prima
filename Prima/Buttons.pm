@@ -343,11 +343,6 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    my $checkable = exists $p->{checkable} ? $p->{checkable} : $default->{checkable};
    $p->{ checked} = 0 unless $checkable;
-   if ( defined $p->{imageFile} && !defined $p->{image})
-   {
-      $p->{image} = Prima::Icon-> create;
-      delete $p->{image} unless $p->{image}-> load($p->{imageFile});
-   }
 }
 
 sub init
@@ -360,9 +355,11 @@ sub init
    ));
    $self->{imageScale} = 1;
    my %profile = $self-> SUPER::init(@_);
-   $self-> {imageFile} = $profile{imageFile};
+   defined $profile{image} ?
+      $self-> image( $profile{image}) :
+      $self-> imageFile( $profile{imageFile});
    $self->$_( $profile{$_}) for ( qw(
-     borderWidth checkable checked default image imageScale glyphs
+     borderWidth checkable checked default imageScale glyphs
      vertical defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
      flat modalResult
    ));
@@ -574,9 +571,13 @@ sub set_checked
 
 sub set_image_file
 {
-   my ($self,$file,$img) = @_;
-   $img = Prima::Icon-> create;
-   return unless $img-> load($file);
+   my ($self,$file) = @_;
+   $self-> image(undef), return unless defined $file;
+   my $img = Prima::Icon-> create;
+   my @fp = ($file);
+   $fp[0] =~ s/\:(\d+)$//;
+   push( @fp, 'index', $1) if defined $1;
+   return unless $img-> load(@fp);
    $self->{imageFile} = $file;
    $self->image($img);
 }
