@@ -625,6 +625,7 @@ typedef struct _UnixGuts
    Bool                         icccm_only;
    Bool                         net_wm_maximization;
    int                          net_wm_maximize_HORZ_vs_HORIZ;
+   int                          X_bug_32_bit_property_is_long;
 } UnixGuts;
 
 extern UnixGuts guts;

@@ -205,39 +205,91 @@ apc_window_task_listed( Handle self, Bool task_list)
 static void
 set_motif_hints( XWindow window, int border_style, int border_icons)
 {
+/*
+   32-bit properties on some Xlibs are treated as longs.
+   This gives certain paint on 64-bit machines, and this
+   situation we are trying to detect here. First, we
+   use longs, because these are larger than 32 bytes,
+   and see if these work.  */
+   Bool check_if_long_is_ok = false;
+   struct {
+     unsigned long flags, functions, decorations;
+     long  input_mode;
+     unsigned long status;
+   } mwmhints_long;
    struct {
      uint32_t flags, functions, decorations;
      int32_t  input_mode;
      uint32_t status;
-   } mwmhints;
+   } mwmhints_int32;
+
+   if ( guts.X_bug_32_bit_property_is_long == 0) {
+        if ( sizeof(long) <= sizeof(int32_t)) {
+            guts.X_bug_32_bit_property_is_long = -1; /* use int32 */
+        } else {
+            guts.X_bug_32_bit_property_is_long = 1; /* use long */
+            check_if_long_is_ok = true;
+        }
+   }
+
+#define MWMHINT_OR(field,value) ((guts.X_bug_32_bit_property_is_long > 0 ) ? \
+                                  (mwmhints_long.field |= (value)):\
+                                  (mwmhints_int32.field |= (value))) 
+#define MWMHINTS ((guts.X_bug_32_bit_property_is_long > 0) ? \
+                                  (void*)&mwmhints_long : \
+                                  (void*)&mwmhints_int32)
+#define MWMHINTS_SIZE ((guts.X_bug_32_bit_property_is_long > 0) ? \
+                                  sizeof(mwmhints_long) : \
+                                  sizeof(mwmhints_int32))
 
    if ( guts. icccm_only) return;
 
-   bzero( &mwmhints, sizeof(mwmhints));
-   mwmhints.flags |= MWM_HINTS_DECORATIONS;
-   mwmhints.flags |= MWM_HINTS_FUNCTIONS;
+   bzero( MWMHINTS, MWMHINTS_SIZE);
+   MWMHINT_OR( flags, MWM_HINTS_DECORATIONS);
+   MWMHINT_OR( flags, MWM_HINTS_FUNCTIONS);
    if ( border_style == bsSizeable) {
-      mwmhints.decorations |= MWM_DECOR_BORDER;
-      mwmhints.decorations |= MWM_DECOR_RESIZEH;
-      mwmhints.functions |= MWM_FUNC_RESIZE;
+      MWMHINT_OR( decorations, MWM_DECOR_BORDER);
+      MWMHINT_OR( decorations, MWM_DECOR_RESIZEH);
+      MWMHINT_OR( functions, MWM_FUNC_RESIZE);
    }
-   mwmhints. functions |= MWM_FUNC_MOVE;
-   mwmhints.functions |= MWM_FUNC_CLOSE;
+   MWMHINT_OR( functions, MWM_FUNC_MOVE);
+   MWMHINT_OR( functions, MWM_FUNC_CLOSE);
    if ( border_icons & biTitleBar)
-      mwmhints.decorations |= MWM_DECOR_TITLE;
+      MWMHINT_OR( decorations, MWM_DECOR_TITLE);
    if ( border_icons & biSystemMenu)
-      mwmhints.decorations |= MWM_DECOR_MENU;
+      MWMHINT_OR( decorations, MWM_DECOR_MENU);
    if ( border_icons & biMinimize) {
-      mwmhints.decorations |= MWM_DECOR_MINIMIZE;
-      mwmhints.functions |= MWM_FUNC_MINIMIZE;
+      MWMHINT_OR( decorations, MWM_DECOR_MINIMIZE);
+      MWMHINT_OR( functions, MWM_FUNC_MINIMIZE);
    }
    if (( border_icons & biMaximize) && ( border_style == bsSizeable)) {
-      mwmhints.decorations |= MWM_DECOR_MAXIMIZE;
-      mwmhints.functions |= MWM_FUNC_MAXIMIZE;
+      MWMHINT_OR( decorations, MWM_DECOR_MAXIMIZE);
+      MWMHINT_OR( functions, MWM_FUNC_MAXIMIZE);
    }
 
    XChangeProperty(DISP, window, XA_MOTIF_WM_HINTS, XA_MOTIF_WM_HINTS, 32,
-       PropModeReplace, (unsigned char *) &mwmhints, 5);
+       PropModeReplace, (unsigned char *) MWMHINTS, 5);
+
+   if ( check_if_long_is_ok) {
+      Atom type;
+      uint32_t *prop = (uint32_t*)0;
+      int format;
+      unsigned long n, left;
+      if ( XGetWindowProperty( DISP, window, XA_MOTIF_WM_HINTS, 0, 5, false, XA_MOTIF_WM_HINTS,
+             &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
+         if ( prop && n == 5) {
+            if ( memcmp( prop, MWMHINTS, 5 * sizeof(int32_t)) != 0) {
+               /* long is NOT ok */ 
+               guts. X_bug_32_bit_property_is_long = -1;
+               set_motif_hints( window, border_style, border_icons);
+            }
+         } else {
+            warn("error in XGetWindowProperty(XA_MOTIF_WM_HINTS)");
+         }
+         if ( prop)
+            XFree(( unsigned char *) prop);
+      }
+   }
 }
 
 Bool
