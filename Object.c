@@ -67,6 +67,11 @@ Object_create( char *className, HV * profile)
       my init( self, profile);
    }
    SvREFCNT_dec( profRef);
+   if ( var stage != csConstructing) {
+      if ( var mate && SvRV( var mate))
+         --SvREFCNT( SvRV( var mate));
+      return nilHandle;
+   }
    var stage = csNormal;
    my setup( self);
    return self;
@@ -78,11 +83,14 @@ void
 Object_destroy( Handle self)
 {
    SV *mate, *object = nil;
-   if ( var stage > csNormal && var stage != csHalfDead) return;
-   if (var stage == csHalfDead) {
-      if ( !var mate) return;
+   if ( var stage > csNormal && var stage != csHalfDead)
+      return;
+   if ( var stage == csHalfDead) {
+      if ( !var mate)
+         return;
       object = SvRV( var mate);
-      if ( !object) return;
+      if ( !object)
+         return;
       var stage = csFinalizing;
       my done( self);
 #ifdef PARANOID_MALLOC
