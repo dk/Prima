@@ -66,6 +66,7 @@ my $openFileDlg;
 my $saveFileDlg;
 my $openImageDlg;
 my $saveImageDlg;
+my $fontDlg;
 
 
 sub open_dialog
@@ -111,6 +112,18 @@ sub image_save_dialog
    $saveImageDlg-> set( %profile);
    return $saveImageDlg;
 }
+
+sub font_dialog
+{
+   my %profile = @_;
+   $fontDlg = Prima::FontDialog-> create( 
+      icon => $VB::ico,
+      name => 'Select font', 
+   ) unless $fontDlg;
+   $fontDlg-> set( %profile);
+   return $fontDlg;
+}
+
 sub accelItems
 {
    return [
@@ -153,182 +166,6 @@ sub on_selectitem
    $VB::inspector-> open_item;
 }
 
-package Editor;
-use vars qw(@ISA);
-@ISA = qw(Prima::Edit);
-
-sub profile_default
-{
-   my %def = %{$_[ 0]-> SUPER::profile_default};
-   my @accelItems = @{$def{accelItems}};
-   my @acc = (
-      [ PushMark  => 0, 0, km::Alt|kb::Down, q(push_mark)],
-      [ PopMark   => 0, 0, km::Alt|kb::Up,   q(pop_mark)],
-   );
-   splice( @accelItems, -1, 0, @acc);
-   return {
-      %def,
-      accelItems   => \@accelItems,
-      syntaxHilite => 1,
-      wordWrap     => 0,
-      text         => '',
-   }
-}
-
-sub set_cursor
-{
-   my $self = shift;
-   my @c = $self-> cursor;
-   $self-> SUPER::set_cursor(@_);
-   return if $c[0] == $_[0] && $c[1] == $_[1];
-   $self-> owner-> Indicator-> repaint;
-}
-
-sub push_mark
-{
-   my $self = $_[0];
-   $self-> add_marker( $self-> cursor);
-}
-
-sub pop_mark
-{
-   my $self = $_[0];
-   my $m = $self-> markers;
-   return if scalar @{$m} == 0;
-   $self-> cursor( @{$$m[-1]});
-   $self-> delete_marker( -1);
-}
-
-sub on_change
-{
-   my $o = $_[0]-> owner;
-   $o-> {modified} = 1;
-   $o-> Indicator-> repaint;
-}
-
-package CodeEditor;
-use vars qw(@ISA);
-@ISA = qw(Prima::Window);
-
-sub profile_default
-{
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my %prf = (
-      text           => 'Code editor',
-      icon           => $VB::ico,
-      menuItems      => [
-         ['~File' => [
-            ['~Load' => 'F3' => 'F3' => q(load_code)],
-            ['~Save' => 'F2' => 'F2' => q(save_code)],
-         ]],
-         ['~Edit' => [
-            ['~Cut' => 'Shift+Del' => km::Shift|kb::Delete, sub { $_[0]-> Editor-> cut} ],
-            ['Cop~y' => 'Ctrl+Ins' => km::Ctrl|kb::Insert, sub { $_[0]-> Editor-> copy} ],
-            ['~Paste' => 'Shift+Ins' => km::Shift|kb::Insert, sub { $_[0]-> Editor-> paste} ],
-            ['~Delete' => 'Alt+D' => '@D', sub { $_[0]-> Editor-> delete_block} ],
-            [],
-            [ '~Selection' => [
-               ['~Normal' => sub { $_[0]-> Editor-> blockType(0)}],
-               ['~Vertical' => sub { $_[0]-> Editor-> blockType(1)}],
-               ['~Horizontal' => sub { $_[0]-> Editor-> blockType(2)}],
-            ]]
-         ]],
-      ],
-   );
-   @$def{keys %prf} = values %prf;
-   return $def;
-}
-
-sub sync_code
-{
-   $VB::code = $VB::editor-> Editor-> text if $VB::editor;
-}
-
-sub load_code
-{
-   my $d = VB::open_dialog( filter => [[ 'All files' => '*']]);
-   return unless $d-> execute;
-   unless ( open F, "< " . $d-> fileName) {
-      Prima::MsgBox::message("Cannot open " . $d-> fileName . ":$!");
-      return;
-   }
-   local $/;
-   $_[0]-> Editor-> text(<F>);
-   close F;
-}
-
-sub save_code
-{
-   my $d = VB::save_dialog( filter => [[ 'All files' => '*']]);
-   return unless $d-> execute;
-   unless ( open F, "> " . $d-> fileName) {
-      Prima::MsgBox::message("Cannot open " . $d-> fileName . ":$!");
-      return;
-   }
-   local $/;
-   print F $_[0]-> Editor-> text;
-   close F;
-
-}
-
-sub init
-{
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-
-   my @rx = split( ' ', $VB::main-> {ini}-> {CodeEditorRect});
-   $self-> rect( @rx) if scalar grep { $_ != -1 } @rx;
-
-   my @sz = $self-> size;
-   my $fh = $self-> font-> height + 6;
-
-   my $indicator;
-   my $editor = $self-> insert( Editor => 
-      origin   => [ 0, $fh],
-      size     => [ $sz[0], $sz[1] - $fh],
-      growMode => gm::Client,
-      name     => 'Editor',
-   );
-
-   $indicator = $self-> insert( Widget =>
-      origin  => [ 0, 0],
-      size    => [ $sz[0], $fh],
-      growMode => gm::Floor,
-      name     => 'Indicator',
-      onPaint  => sub {
-         my ( $me, $canvas) = @_; 
-         $canvas-> rect3d( 0, 0, $me-> width - 1, $me-> height - 1, 1, $me-> dark3DColor, $me-> light3DColor, $me-> backColor);
-         my @c = $editor-> cursorLog;
-         $canvas-> text_out( sprintf("%s %d:%d", ($self-> {modified} ? '*' : ' '), $c[0]+1,$c[1]+1), 4, ( $me-> height - $canvas-> font-> height) / 2);
-      }
-   );
-
-   $editor-> textRef( \$VB::code );
-   $self-> {modified} = 0;
-
-   return %profile;
-}
-
-sub flush
-{
-   $VB::code = '';
-   if ( $VB::editor) {
-      $VB::editor-> Editor-> text('');
-      $VB::editor-> {modified} = 0;
-      $VB::editor-> Indicator-> repaint;
-   }
-}
-
-sub on_close
-{
-   sync_code;
-}
-
-sub on_destroy
-{
-   $VB::form-> {modified} = 1 if $VB::form && $_[0]-> {modified};
-   $VB::editor = undef;
-}
 
 package ObjectInspector;
 use vars qw(@ISA);
@@ -544,7 +381,6 @@ sub widget_changed
       $list-> redraw_items( $ix);
    }
 }
-
 
 sub close_item
 {
@@ -1502,6 +1338,7 @@ sub init
    $self->{classes} = \%classes;
    $self->{pages}   = \@pages;
    $self->{gridAlert} = 5;
+   my $font = $self-> font;
    
    $self-> {iniFile} = Prima::IniFile-> create( 
       file    => Prima::path('VisualBuilder'),
@@ -1517,6 +1354,16 @@ sub init
             'OpenPath' => '.',
             'SavePath' => '.',
          ],
+         'Editor' => [
+            'syntaxHilite'    => 1,
+            'autoIndent'      => 1,
+            'persistentBlock' => 0,
+            'blockType'       => 0,
+            'FontName'        => $font-> name,
+            'FontSize'        => $font-> size,
+            'FontStyle'       => $font-> style,
+            'FontEncoding'    => $font-> encoding,
+         ]
       ],
    );
    my $i = $self-> {ini} = $self-> {iniFile}-> section( 'View' );
@@ -1550,6 +1397,7 @@ sub on_destroy
    $_[0]-> {ini}-> {CodeEditorRect} = join( ' ', @rx);
    $_[0]-> {ini}-> {OpenPath} = $openFileDlg-> directory if $openFileDlg;
    $_[0]-> {ini}-> {SavePath} = $saveFileDlg-> directory if $saveFileDlg;
+   $VB::editor-> close if $VB::editor;
    $VB::main = undef;
    $::application-> close;
 }

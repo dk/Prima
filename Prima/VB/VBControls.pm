@@ -26,6 +26,7 @@
 # $Id$
 package Prima::VB::VBControls;
 
+use strict;
 use Prima::Classes;
 use Prima::Lists;
 
@@ -243,5 +244,365 @@ sub on_click
    $self-> redraw_items( $index);
 }
 
+
+package Editor;
+use vars qw(@ISA);
+@ISA = qw(Prima::Edit);
+
+sub profile_default
+{
+   my %def = %{$_[ 0]-> SUPER::profile_default};
+   my @accelItems = @{$def{accelItems}};
+   my @acc = (
+      [ PushMark  => 0, 0, km::Alt|kb::Down, q(push_mark)],
+      [ PopMark   => 0, 0, km::Alt|kb::Up,   q(pop_mark)],
+   );
+   splice( @accelItems, -1, 0, @acc);
+   return {
+      %def,
+      accelItems   => \@accelItems,
+      syntaxHilite => 1,
+      wordWrap     => 0,
+      text         => '',
+      hScroll      => 1,
+      vScroll      => 1,
+      ownerFont    => 0,
+   }
+}
+
+sub set_cursor
+{
+   my $self = shift;
+   my @c = $self-> cursor;
+   $self-> SUPER::set_cursor(@_);
+   return if $c[0] == $_[0] && $c[1] == $_[1];
+   $self-> owner-> Indicator-> repaint;
+}
+
+sub push_mark
+{
+   my $self = $_[0];
+   $self-> add_marker( $self-> cursor);
+}
+
+sub pop_mark
+{
+   my $self = $_[0];
+   my $m = $self-> markers;
+   return if scalar @{$m} == 0;
+   $self-> cursor( @{$$m[-1]});
+   $self-> delete_marker( -1);
+}
+
+sub on_change
+{
+   my $o = $_[0]-> owner;
+   $o-> {modified} = 1;
+   $o-> Indicator-> repaint;
+}
+
+package CodeEditor;
+use vars qw(@ISA @editors);
+@ISA = qw(Prima::Window);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      text           => 'Code editor',
+      icon           => $VB::ico,
+      menuItems      => [
+         ['~File' => [
+            ['~Load' => 'Ctrl+F3' => '^F3' => q(load_code)],
+            ['~Save' => 'Ctrl+F2' => '^F2' => q(save_code)],
+            [],
+            ['~Close' => 'Ctrl+F4' => '^F4' => sub { $_[0]-> close } ],
+         ]],
+         ['~Edit' => [
+            ['~Cut' => 'Shift+Del' => km::Shift|kb::Delete, sub { $_[0]-> Editor-> cut} ],
+            ['Cop~y' => 'Ctrl+Ins' => km::Ctrl|kb::Insert, sub { $_[0]-> Editor-> copy} ],
+            ['~Paste' => 'Shift+Ins' => km::Shift|kb::Insert, sub { $_[0]-> Editor-> paste} ],
+            ['~Delete' => 'Alt+D' => '@D', sub { $_[0]-> Editor-> delete_block} ],
+            ['~Select all' => 'Ctrl+A' => '^A' => sub { $_[0]-> Editor-> select_all }],
+            [],
+            ['~Find...' => 'Esc'      => kb::Esc   , q(find)],
+            ['~Replace...'=> 'Ctrl+S' => '^S'      , q(replace)],
+            ['Find ~next' => 'Ctrl+L' => '^L'      , q(find_next)],
+         ]],
+         ['~Selection' => [
+            [ 'bt-0', '~Normal'     => q(blockType)],
+            [ 'bt-1', '~Vertical'   => q(blockType)], 
+            [ 'bt-2', '~Horizontal' => q(blockType)], 
+            [],
+            [ '~Remove'        => 'Alt+U' => '@U' => sub { $_[0]-> Editor-> cancel_block }], 
+            [ '~Mark vertical' => 'Alt+B' => '@B' => sub { 
+               $_[0]-> Editor-> mark_vertical;
+               $_[0]-> blockType(1);
+            }], 
+            [ 'Mark horizontal' => 'Alt+L' => '@L' => sub { 
+               $_[0]-> Editor-> mark_horizontal;
+               $_[0]-> blockType(2);
+            }],
+            ['Cop~y block' => 'Alt+C' => '@C' => sub { $_[0]-> Editor-> copy_block }],
+            ['Over~write block' => 'Alt+O' => '@O' => sub { $_[0]-> Editor-> overtype_block }],
+         ]],
+         ['~Options' => [
+            [ '*syntaxHilite'   => '~Syntax hilite'     => q(bool_set)],
+            [ '*autoIndent'      => '~Auto indent'      => q(bool_set)], 
+            [ 'persistentBlock' => '~Presistent blocks' => q(bool_set)], 
+            [],
+            [ 'Set ~font' => q(setfont)],
+         ]],
+      ],
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+sub sync_code
+{
+   $VB::code = $VB::editor-> Editor-> text if $VB::editor;
+}
+
+sub load_code
+{
+   if ( $_[0]-> {modified}) {
+      my $r = Prima::MsgBox::message( "Save changes?", mb::YesNoCancel|mb::Warning);
+      if ( $r == mb::Yes) {
+         return unless save_code($_[0]);
+      } elsif ( $r == mb::Cancel) {
+         return;
+      }
+    }
+   my $d = VB::open_dialog( filter => [[ 'All files' => '*']]);
+   return unless $d-> execute;
+   unless ( open F, "< " . $d-> fileName) {
+      Prima::MsgBox::message("Cannot open " . $d-> fileName . ":$!");
+      return;
+   }
+   local $/;
+   $_[0]-> Editor-> text(<F>);
+   close F;
+}
+
+sub save_code
+{
+   my $d = VB::save_dialog( filter => [[ 'All files' => '*']]);
+   return unless $d-> execute;
+   unless ( open F, "> " . $d-> fileName) {
+      Prima::MsgBox::message("Cannot open " . $d-> fileName . ":$!");
+      return;
+   }
+   local $/;
+   print F $_[0]-> Editor-> text;
+   close F;
+}
+
+sub setfont
+{
+   my $self = $_[0];
+   my $d = VB::font_dialog( logFont => $self-> Editor-> font);
+   return unless $d-> execute == mb::OK;
+   $_-> font( $d-> logFont) for @editors;
+   my $f = $d-> logFont;
+   my $i = $VB::main-> {iniFile}-> section('Editor');
+   $i-> {'Font' . ucfirst($_)} = $f-> {$_} for qw(name size style encoding);
+}
+
+sub bool_set
+{
+   my ( $self, $var) = @_;
+   $self-> Editor-> set( $var, $self-> menu-> toggle($var));
+}
+
+sub blockType
+{
+   my ( $self, $var) = @_;
+   return unless $var =~ /^bt-(\d)$/;
+   $self-> menu-> uncheck( 'bt-' . $self-> Editor-> blockType);
+   $self-> menu-> check( $var);
+   $self-> Editor-> blockType($1);
+}
+
+
+my $findDialog;
+
+sub find_dialog
+{
+   my ( $self, $findStyle) = @_;
+   my %prf;
+   %{$self->{findData}} = (
+      replaceText  => '',
+      findText     => '',
+      replaceItems => [],
+      findItems    => [],
+      options      => 0,
+      scope        => fds::Cursor,
+   ) unless defined $self-> {findData};
+   my $fd = $self-> {findData};
+   my @props = qw(findText options scope);
+   push( @props, q(replaceText)) unless $findStyle;
+   if ( $fd) { for( @props) { $prf{$_} = $fd->{$_}}}
+   $findDialog = Prima::FindDialog-> create unless $findDialog;
+   $findDialog-> set( %prf, findStyle => $findStyle, text => ($findStyle ? 'Find' : 'Replace'));
+   $findDialog-> Find-> items($fd->{findItems});
+   $findDialog-> Replace-> items($fd->{replaceItems}) unless $findStyle;
+   my $ret = 0;
+   my $rf  = $findDialog-> execute;
+   if ( $rf != mb::Cancel) {
+      { for( @props) { $self->{findData}->{$_} = $findDialog->$_()}}
+      $self->{findData}->{result} = $rf;
+      $self->{findData}->{asFind} = $findStyle;
+      @{$self->{findData}->{findItems}} = @{$findDialog-> Find-> items};
+      @{$self->{findData}->{replaceItems}} = @{$findDialog-> Replace-> items} unless $findStyle;
+      $ret = 1;
+   }
+   return $ret;
+}
+
+sub do_find
+{
+   my $self = $_[0];
+   my $e = $self-> Editor;
+   my $p = $self-> {findData};
+   my @scope;
+   my $replaced;
+   my $text = $self-> text;
+   FIND:{
+      if ( $$p{scope} != fds::Cursor) {
+         if ( $e-> has_selection) {
+           my @sel = $e-> selection;
+           @scope = ($$p{scope} == fds::Top) ? ($sel[0],$sel[1]) : ($sel[2], $sel[3]);
+         } else {
+           @scope = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);
+         }
+      } else {
+         @scope = $e-> cursor;
+      }
+      my @n = $e-> find( $$p{findText}, @scope, $$p{replaceText}, $$p{options});
+      if ( !defined $n[0]) {
+         Prima::MsgBox::message("No matches found");
+         goto EXIT;
+      }
+      $e-> cursor(($$p{options} & fdo::BackwardSearch) ? $n[0] : $n[0] + $n[2], $n[1]);
+      $e-> selection( $n[0], $n[1], $n[0] + $n[2], $n[1]);
+      unless ( $$p{asFind}) {
+         if ( $$p{options} & fdo::ReplacePrompt) {
+            my $r = Prima::MsgBox::message_box( $self-> text,
+             "Replace this text?",
+             mb::YesNoCancel|mb::Information|mb::NoSound);
+            redo FIND if ($r == mb::No) && ($$p{result} == mb::ChangeAll);
+            last FIND if $r == mb::Cancel;
+         } else {
+            $self-> text( ++$replaced . " occurences replaced");
+         }
+         $e-> set_line( $n[1], $n[3]);
+         redo FIND if $$p{result} == mb::ChangeAll;
+      }
+   }
+EXIT:
+   $self-> text( $text);
+}
+
+sub find
+{
+   my $self = $_[0];
+   return unless $self-> find_dialog(1);
+   $self-> do_find;
+}
+
+sub replace
+{
+   my $self = $_[0];
+   return unless $self-> find_dialog(0);
+   $self-> do_find;
+}
+
+sub find_next
+{
+   my $self = $_[0];
+   return unless $self->{findData};
+   $self-> do_find;
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init(@_);
+
+
+   my @rx = split( ' ', $VB::main->{ini}-> {CodeEditorRect});
+   $self-> rect( @rx) if scalar grep { $_ != -1 } @rx;
+
+   my $i = $VB::main-> {iniFile}-> section('Editor');
+
+   my @sz = $self-> size;
+   my $fh = $self-> font-> height + 6;
+
+   my $indicator;
+   my $editor = $self-> insert( Editor => 
+      origin   => [ 0, $fh],
+      size     => [ $sz[0], $sz[1] - $fh],
+      growMode => gm::Client,
+      name     => 'Editor',
+      font => { map { $_,  $i->{'Font' . ucfirst($_)}} qw(name size style encoding) },
+   );
+
+   $indicator = $self-> insert( Widget =>
+      origin  => [ 0, 0],
+      size    => [ $sz[0], $fh],
+      growMode => gm::Floor,
+      name     => 'Indicator',
+      onPaint  => sub {
+         my ( $me, $canvas) = @_; 
+         $canvas-> rect3d( 0, 0, $me-> width - 1, $me-> height - 1, 1, $me-> dark3DColor, $me-> light3DColor, $me-> backColor);
+         my @c = $editor-> cursorLog;
+         $canvas-> text_out( sprintf("%s %d:%d", ($self-> {modified} ? '*' : ' '), $c[0]+1,$c[1]+1), 4, ( $me-> height - $canvas-> font-> height) / 2);
+      }
+   );
+   
+   for ( qw( syntaxHilite autoIndent persistentBlock)) {
+      next unless exists $i-> {$_};
+      $self-> menu-> checked( $_, $i->{$_});
+      $editor-> $_( $i->{$_} ? 1 : 0);
+   }
+   if ( length $i-> {blockType}) {
+      $self-> menu-> check( "bt-$i->{blockType}");
+      $editor-> blockType( $i-> {blockType});
+   }
+
+   push @editors, $editor;
+
+   $editor-> textRef( \$VB::code );
+   $self-> {modified} = 0;
+
+   return %profile;
+}
+
+sub flush
+{
+   $VB::code = '';
+   if ( $VB::editor) {
+      $VB::editor-> Editor-> text('');
+      $VB::editor-> {modified} = 0;
+      $VB::editor-> Indicator-> repaint;
+   }
+}
+
+sub on_close
+{
+   my $i = $VB::main-> {iniFile}-> section('Editor');
+   my $e = $_[0]-> Editor;
+   $i-> {$_} = ( $e-> $_() ? 1 : 0) for qw( syntaxHilite autoIndent persistentBlock);
+   $i-> {blockType} = $e-> blockType;
+   @editors = grep { $_ != $e } @editors;
+   sync_code;
+}
+
+sub on_destroy
+{
+   $VB::form-> {modified} = 1 if $VB::form && $_[0]-> {modified};
+   $VB::editor = undef;
+}
 
 1;

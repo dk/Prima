@@ -2071,11 +2071,7 @@ sub open
       onClick  => sub {
          my %f = %{$_[0]-> font};
          delete $f{height};
-         my $f = $self->{fontDlg} ? $self->{fontDlg} : Prima::FontDialog-> create(
-            logFont => \%f,
-            name    => 'Choose font',
-            icon    => $VB::ico,
-         );
+         my $f = VB::font_dialog( logFont => \%f );
          $_[0]-> font( $f-> logFont) if $f-> execute == mb::OK;
       },
       onFontChanged => sub {
@@ -2537,7 +2533,14 @@ sub open
 {
    my $self = shift;
    $self-> SUPER::open( @_);
+   my $i = $VB::main-> {iniFile}-> section('Editor');
+   $self-> {A}-> font ( map { $_,  $i->{'Font' . ucfirst($_)}} qw(name size style encoding) );
    $self-> {A}-> syntaxHilite(1);
+   push @CodeEditor::editors, $self-> {A};
+   $self-> {A}-> onDestroy( sub {
+      my $self = $_[0];
+      @CodeEditor::editors = grep { $_ != $self } @CodeEditor::editors;
+   }) ;
 }
 
 
