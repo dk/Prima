@@ -848,6 +848,39 @@ Can be called without parameters, in this case fills all canvas area.
 
 Context used: backColor, rop2
 
+=item draw_text CANVAS, TEXT, X1, Y1, X2, Y2, [ FLAGS = dt::Default, TAB_INDENT = 1 ]
+
+Draws several lines of text one under another with respect to align and break rules,
+specified in FLAGS and TAB_INDENT tab character expansion.
+
+C<draw_text> is a convenience wrapper around C<text_wrap> for drawing the wrapped
+text, and also provides the tilda ( ~ )- character underlining support.
+
+The FLAGS is a combination of the following constants:
+
+  dt::Left                  - text is aligned to the left boundary
+  dt::Right                 - text is aligned to the right boundaryt
+  dt::Center                - text is aligned horizontally in center
+  dt::Top                   - text is aligned to the upper boundary
+  dt::Bottom                - text is aligned to the lower boundary 
+  dt::VCenter               - text is aligned vertically in center
+  dt::DrawMnemonic          - tilde-escapement and underlining is used 
+  dt::DrawSingleChar        - sets tw::BreakSingle option to Prima::Drawable::text_wrap call
+  dt::NewLineBreak          - sets tw::NewLineBreak option to Prima::Drawable::text_wrap call 
+  dt::SpaceBreak            - sets tw::SpaceBreak option to Prima::Drawable::text_wrap call  
+  dt::WordBreak             - sets tw::WordBreak option to Prima::Drawable::text_wrap call 
+  dt::ExpandTabs            - performs tab character ( \t ) expansion
+  dt::DrawPartial           - draws the last line, if it is visible partally 
+  dt::UseExternalLeading    - text lines positioned vertically with respect to the font external leading
+  dt::UseClip               - assign ::clipRect property to the boundary rectangle
+  dt::QueryLinesDrawn       - calculates and returns number of lines drawn ( contrary to dt::QueryHeight )
+  dt::QueryHeight           - if set, calculates and returns vertical extension of lines drawn
+  dt::NoWordWrap            - performs no word wrapping by the width of the boundaries
+  dt::WordWrap              - performs word wrapping by the width of the boundaries 
+  dt::Default               - dt::NewLineBreak|dt::WordBreak|dt::ExpandTabs|dt::UseExternalLeading
+
+Context used: color, backColor, font, rop, textOpaque, textOutBaseline
+
 =item ellipse X, Y, DIAMETER_X, DIAMETER_Y
 
 Plots an ellipse with center in X, Y and DIAMETER_X and DIAMETER_Y axis.
@@ -943,6 +976,20 @@ If DEST_WIDTH or DEST_HEIGHT are
 negative, a mirroring is performed.
 
 OBJECT must be Prima::Image, Prima::Icon or Prima::DeviceBitmap.
+
+No context is used.
+
+=item rect3d X1, Y1, X2, Y2, WIDTH, LIGHT_COLOR, DARK_COLOR, [ BACK_COLOR ] 
+
+Draws 3d-shaded rectangle in boundaries X1,Y1 - X2,Y2 with WIDTH line width
+and LIGHT_COLOR and DARK_COLOR colors. If BACK_COLOR is specifed, paints
+an inferior rectangle with it, otherwise the inferior rectangle is not touched.
+
+Context used: rop
+
+=item rect_focus X1, Y1, X2, Y2, [ WIDTH = 1 ]
+
+Draws a marquee rectangle in boundaries X1,Y1 - X2,Y2 with WIDTH line width.
 
 No context is used.
 
@@ -1194,6 +1241,13 @@ Equals to 0, is a mnemonic to an unset tw::ReturnChunks.
 If unset, the TEXT breaks as soon as the chunk width exceeds WIDTH.
 If set, tries to keep words in TEXT so they do not appear in two
 chunks, e.g. keeps breaking TEXT by words, not by characters.
+
+=item tw::ReturnFirstLineLength
+
+If set, C<text_wrap> proceeds until the first line is wrapped, either by
+width or ( if specified ) by break characters. Returns length of the
+resulting line. Used for efficiency when a reverse function to C<get_text_width>
+is needed.
 
 =back
 
