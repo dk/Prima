@@ -359,6 +359,17 @@ sub get_item_text
    $$sref = $self-> {items}->[$index]-> [ $c];
 }
 
+sub on_fontchanged
+{
+   my $self = $_[0];
+   $self-> setup_indents;
+   $self-> {header}-> set(
+      bottom => $self-> {header}-> top - $self-> {headerInitHeight},
+      height => $self-> {headerInitHeight},
+   );
+   $self-> SUPER::on_fontchanged;
+}
+
 sub on_measureitem
 {
    my ( $self, $index, $sref) = @_;
