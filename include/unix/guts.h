@@ -1,10 +1,10 @@
 #ifndef _UNIX_GUTS_H_
 #define _UNIX_GUTS_H_
 
-#define Font XFont
-#define Drawable XDrawable
-#define Window XWindow
-#undef Bool
+#define Drawable        XDrawable
+#define Font            XFont
+#define Window          XWindow
+#undef  Bool
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -82,29 +82,34 @@ typedef struct _FontFlags {
 } FontFlags;
 
 typedef struct _FontInfo {
-   char *xname;
-   char *vecname;
-   Font font;
-   FontFlags flags;
-   char lc_name[ 256];
-   char lc_family[ 256];
-   Bool sloppy;
+   FontFlags    flags;
+   Font         font;
+   char         lc_family[256];
+   char         lc_name[256];
+   Bool         sloppy;
+   char        *vecname;
+   char        *xname;
 } FontInfo, *PFontInfo;
 
 typedef struct _CachedFont {
-   char *load_name;
-   int ref_cnt;
+   FontFlags    flags;
+   Font         font;
    XFontStruct *fs;
-   XFont id;
-   Font font;
-   FontFlags flags;
+   char        *load_name;
+   XFont        id;
+   int          ref_cnt;
 } CachedFont, *PCachedFont;
 
-union _unix_sys_data;
-struct _timer_sys_data;
-struct _drawable_sys_data;
+union       _unix_sys_data;
+struct     _timer_sys_data;
+struct  _drawable_sys_data;
 
-#define VIRGIN_GC_MASK (GCLineWidth|GCBackground|GCForeground|GCFunction|GCClipMask|GCLineStyle)
+#define VIRGIN_GC_MASK  (       GCBackground    \
+                        |       GCClipMask      \
+                        |       GCForeground    \
+                        |       GCFunction      \
+                        |       GCLineStyle     \
+                        |       GCLineWidth     )
 
 typedef struct _gc_list
 {
@@ -122,99 +127,101 @@ typedef struct _paint_list
 
 struct _UnixGuts
 {
-   Display *display;
-   int screen_number;
-   PHash windows;
-   PHash menu_windows;
-   fd_set read_set, write_set, excpt_set;
-   int connection;
-   int max_fd;
-   PList files;
-   NPoint resolution;
-   int depth;
-   int byte_order;
-   int bit_order;
-   Bool shape_extension;
-   int shape_event;
-   int shape_error;
-   GCList *free_gcl;
-   GCList *used_gcl;
-   GC menugc;
-   PPaintList paint_list;
-   struct _timer_sys_data *oldest;
-   struct _timer_sys_data *cursor_timer;
-   Pixmap cursor_save, cursor_xor;
-   Point cursor_pixmap_size;
-   Bool cursor_shown;
-   int visible_timeout, invisible_timeout;
+   /* Event management */
+   Atom                         create_event;
+   fd_set                       excpt_set;
+   PList                        files;
+   long                         handled_events;
+   Time                         last_time;
+   int                          max_fd;
+   fd_set                       read_set;
+   long                         total_events;
+   long                         skipped_events;
+   long                         unhandled_events;
+   fd_set                       write_set;
+   /* Graphics */
+   GCList                      *free_gcl;
+   GC                           menugc;
+   PPaintList                   paint_list;
+   GCList                      *used_gcl;
+   /* Font management */
+   PHash                        font_hash;
+   PFontInfo                    font_info;
+   char                       **font_names;
+   Atom                         fxa_average_width;
+   Atom                         fxa_foundry;
+   Atom                         fxa_pixel_size;
+   Atom                         fxa_relative_weight;
+   Atom                         fxa_resolution_x;
+   Atom                         fxa_resolution_y;
+   Atom                         fxa_spacing;
+   int                          n_fonts;
+   /* Resource management */
+   XrmDatabase                  db;
+   XrmQuark                     qBackground;
+   XrmQuark                     qbackground;
+   XrmQuark                     qBlinkinvisibletime;
+   XrmQuark                     qblinkinvisibletime;
+   XrmQuark                     qBlinkvisibletime;
+   XrmQuark                     qblinkvisibletime;
+   XrmQuark                     qFont;
+   XrmQuark                     qfont;
+   XrmQuark                     qForeground;
+   XrmQuark                     qforeground;
+   XrmQuark                     qString;
+   XrmQuark                     qWheeldown;
+   XrmQuark                     qwheeldown;
+   XrmQuark                     qWheelup;
+   XrmQuark                     qwheelup;
+   /* Timers & cursors */
+   int                          cursor_height;
+   Point                        cursor_pixmap_size;
+   Pixmap                       cursor_save;
+   Bool                         cursor_shown;
+   struct _timer_sys_data      *cursor_timer;
+   int                          cursor_width;
+   Pixmap                       cursor_xor;
+   Bool                         insert;
+   int                          invisible_timeout;
+   struct _timer_sys_data      *oldest;
+   int                          visible_timeout;
+   /* Window management */
+   Handle                       focused;
+   PHash                        menu_windows;
+   PHash                        windows;
+   /* WM dependancies */
+   void                       (*wm_cleanup)( void);
+   void                       (*wm_create_window)( Handle, ApiHandle);
+   void                        *wm_data;
+   Bool                       (*wm_translate_event)( Handle, XEvent *, PEvent);
+   /* XServer info */
+   int                          bit_order;
+   unsigned char                buttons_map[256];
+   int                          byte_order;
+   int                          connection;
+   int                          depth;
+   Display                     *display;
    struct {
-      long request_length;
-      long XDrawLines;
-      long XFillPolygon;
-      long XDrawSegments;
-      long XDrawRectangles;
-      long XFillRectangles;
       long XDrawArcs;
+      long XDrawLines;
+      long XDrawRectangles;
+      long XDrawSegments;
       long XFillArcs;
-   } limits;
-   Bool insert;
-   int mouse_buttons;
-   int mouse_wheel_up;
-   int mouse_wheel_down;
-   unsigned char buttons_map[ 256];
-   int cursor_width;
-   int cursor_height;
-   Handle focused;
-   Atom create_event;
-
-   char **font_names;  /* to be XFreed */
-   int n_fonts;
-   PFontInfo font_info;
-   PHash font_hash;
-   /* Useful font-related atoms not found as XA_XXX;  see FXA_XXX below */
-   Atom fxa_resolution_x;
-   Atom fxa_resolution_y;
-   Atom fxa_pixel_size;
-   Atom fxa_spacing;
-   Atom fxa_relative_weight;
-   Atom fxa_foundry;
-   Atom fxa_average_width;
-
-   /* resource management */
-   XrmDatabase db;
-
-   /* generally used quarks */
-   XrmQuark qString;
-   XrmQuark qBackground;
-   XrmQuark qbackground;
-   XrmQuark qBlinkinvisibletime;
-   XrmQuark qblinkinvisibletime;
-   XrmQuark qBlinkvisibletime;
-   XrmQuark qblinkvisibletime;
-   XrmQuark qFont;
-   XrmQuark qfont;
-   XrmQuark qForeground;
-   XrmQuark qforeground;
-   XrmQuark qWheeldown;
-   XrmQuark qwheeldown;
-   XrmQuark qWheelup;
-   XrmQuark qwheelup;
-
-   /* statistics */
-   long int total_events;
-   long int handled_events;
-   long int skipped_events;
-   long int unhandled_events;
-
-   /* debugging -  XCHECKPOINT */
-   RequestInformation ri[ REQUEST_RING_SIZE];
-   int ri_head, ri_tail;
-
-   /* window manager specifics */
-   void *wm_data;
-   void (*wm_create_window)( Handle, ApiHandle);
-   void (*wm_cleanup)( void);
-   Bool (*wm_translate_event)( Handle, XEvent *, PEvent);
+      long XFillPolygon;
+      long XFillRectangles;
+      long request_length;
+   }                            limits;
+   int                          mouse_buttons;
+   int                          mouse_wheel_down;
+   int                          mouse_wheel_up;
+   NPoint                       resolution;
+   RequestInformation           ri[REQUEST_RING_SIZE];
+   int                          ri_head;
+   int                          ri_tail;
+   int                          screen_number;
+   Bool                         shape_extension;
+   int                          shape_event;
+   int                          shape_error;
 } guts;
 
 #define FXA_RESOLUTION_X guts. fxa_resolution_x
@@ -252,10 +259,11 @@ struct _UnixGuts
    int n_class_name; \
    int n_instance_name
 
-typedef struct _drawable_sys_data /* more like widget_sys_data */
+typedef struct _drawable_sys_data
 {
-   COMPONENT_SYS_DATA; /* must be the first */
-   XDrawable drawable;
+   COMPONENT_SYS_DATA;
+   XDrawable udrawable;
+   XDrawable gdrawable;
    XWindow parent;
    NPoint resolution;
    Point origin, known_origin;
@@ -307,7 +315,7 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
 
 typedef struct _timer_sys_data
 {
-   COMPONENT_SYS_DATA; /* must be the first */
+   COMPONENT_SYS_DATA;
    int timeout;
    Handle who;
    struct _timer_sys_data *older;
@@ -317,39 +325,49 @@ typedef struct _timer_sys_data
 
 typedef struct _menu_item
 {
-   int x, y;
-   int ux, uy, ul;
-   char *text;
+   int          x;
+   int          y;
+   int          ux;
+   int          uy;
+   int          ul;
+   char        *text;
 } UnixMenuItem, *PUnixMenuItem;
 
 typedef struct _menu_window
 {
-   Handle self;
-   XWindow w;
-   Point sz;
-   PMenuItemReg m;
-   int num;
-   PUnixMenuItem um;
+   Handle               self;
+   XWindow              w;
+   Point                sz;
+   PMenuItemReg         m;
+   int                  num;
+   PUnixMenuItem        um;
    struct _menu_window *next;
    struct _menu_window *prev;
 } MenuWindow, *PMenuWindow;
 
 typedef struct _menu_sys_data
 {
-   COMPONENT_SYS_DATA; /* must be the first */
-   PMenuWindow w;
-   PCachedFont font;
-   XColor c[ciMaxId+1];
+   COMPONENT_SYS_DATA;
+   PMenuWindow          w;
+   PCachedFont          font;
+   XColor               c[ciMaxId+1];
 } MenuSysData, *PMenuSysData;
+
+typedef struct _clipboard_sys_data
+{
+   COMPONENT_SYS_DATA;
+   Time                 have_primary_since;
+} ClipboardSysData, *PClipboardSysData;
 
 typedef union _unix_sys_data
 {
+   ClipboardSysData             clipboard;
    struct {
       COMPONENT_SYS_DATA;
-   } component;
-   DrawableSysData drawable;
-   TimerSysData timer;
-   MenuSysData menu;
+   }                            component;
+   DrawableSysData              drawable;
+   MenuSysData                  menu;
+   TimerSysData                 timer;
 } UnixSysData, *PUnixSysData;
 
 #define DISP		(guts. display)
@@ -406,7 +424,6 @@ prima_update_cursor( Handle self);
 extern int
 unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);
 
-/* rectangle arithmetic */
 extern void
 prima_rect_union( XRectangle *t, const XRectangle *s);
 
@@ -416,8 +433,6 @@ prima_rect_intersect( XRectangle *t, const XRectangle *s);
 extern void
 prima_send_create_event( XWindow win);
 
-/* Interaction with Window Managers */
-
 extern void
 prima_wm_init( void);
 
@@ -425,10 +440,10 @@ typedef Bool (*prima_wm_hook)( void);
 
 #endif
 
-#ifdef PRIMA_WM_SUPPORT		/* Do you know what are you doing? */
+/* this does not belong here */
+#ifdef PRIMA_WM_SUPPORT
 static prima_wm_hook registered_window_managers[] = {
-   /* This should _always_ be the last item */
-   prima_wm_generic
+   prima_wm_generic     /* This must be the last item */
 };
 #endif
 
