@@ -625,7 +625,7 @@ void Widget_handle_event( Handle self, PEvent event)
                  ev. key. source = self;
                  ev. cmd         = cmDelegateKey;
                  ev. key. subcmd = 0;
-                 if ( my message( self, &ev)) my clear_event( self);
+                 if ( !my message( self, &ev)) my clear_event( self);
                  objCheck;
               }
               if ( !evOK) break;
@@ -659,9 +659,10 @@ void Widget_handle_event( Handle self, PEvent event)
               {
                  ev. key. subcmd = 0;
                  ev. key. source = self;
-                 (((( PWidget) var owner)-> self)-> message( var owner, &ev));
-                 objCheck;
-                 my clear_event( self);
+                 if (!(((( PWidget) var owner)-> self)-> message( var owner, &ev))) {
+                    objCheck;
+                    my clear_event( self);
+                 }
               }
            }
            break;
@@ -2150,8 +2151,17 @@ Widget_set_selected_widget( Handle self, Handle widget)
    if ( widget) {
       if ((( PWidget) widget)-> owner == self)
          ((( PWidget) widget)-> self)-> set_selected( widget, true);
-   } else
-      my set_selected( self, false);
+   } else {
+      // give selection up to hierarchy chain
+      Handle s = self;
+      while ( s) {
+         if ( CWidget( s)-> get_selectable( s)) {
+            CWidget( s)-> set_selected( s, true);
+            break;
+         }
+         s = PWidget( s)-> owner;
+      }
+   }
 }
 
 void
