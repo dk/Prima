@@ -778,6 +778,43 @@ create_rgb_to_16_lut( int ncolors, const PRGBColor pal, U16 *lut)
 }
 
 static void
+calc_shifts_rgb_to_24( unsigned long mask,
+                       int *right,
+                       int *left)
+{
+   int bc, l;
+
+   l = 0;
+   while (( mask & 1) == 0) { l++; mask >>= 1; }
+   bc = 0;
+   while ( mask) { bc++; mask >>= 1; }
+   *right = 8-bc;
+   *left = l;
+}
+
+static void
+create_rgb_to_24_lut( int ncolors, const PRGBColor pal, unsigned long *lut)
+{
+   Visual *v = DefaultVisual( DISP, SCREEN);
+   unsigned long rmask, gmask, bmask;
+   int rrsh, grsh, brsh, rlsh, glsh, blsh;
+   int i;
+
+   calc_shifts_rgb_to_24( rmask = v-> red_mask, &rrsh, &rlsh);
+   calc_shifts_rgb_to_24( gmask = v-> green_mask, &grsh, &glsh);
+   calc_shifts_rgb_to_24( bmask = v-> blue_mask, &brsh, &blsh);
+   for ( i = 0; i < ncolors; i++) {
+      lut[i] = 0;
+      lut[i] |=
+	 (((pal[i]. r >> rrsh) << rlsh) & rmask);
+      lut[i] |= 
+	 (((pal[i]. g >> grsh) << glsh) & gmask);
+      lut[i] |= 
+	 (((pal[i]. b >> brsh) << blsh) & bmask);
+   }
+}
+
+static void
 create_image_cache_4_to_16( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
@@ -848,6 +885,40 @@ create_image_cache_8_to_16( PImage img)
 }
 
 static void
+create_image_cache_8_to_24( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   unsigned long lut[ 256];
+   U32 *data;
+   int x, y;
+   int ls = ((img-> w * 24 + 31)/32)*4;
+   int h = img-> h, w = img-> w;
+   
+   create_rgb_to_24_lut( img-> palSize, img-> palette, lut);
+
+   data = malloc( ls * h);
+   if ( !data) {
+      croak( "create_image_cache_8_to_24(): no memory");
+   }
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register U32 *d = (U32*)(ls*(h-y-1)+(unsigned char *)data);
+      for ( x = 0; x < w; x++) {
+	 *d++ = lut[line[x]];
+         ((unsigned char *)d)--;
+      }
+   }
+
+   IMG-> image_cache = XCreateImage( DISP, DefaultVisual( DISP, SCREEN),
+				     guts. depth, ZPixmap, 0, (unsigned char*)data,
+				     w, h, 32, ls);
+   if (!IMG-> image_cache) {
+      free( data);
+      croak( "create_image_cache_8_to_24(): error during XCreateImage()");
+   }
+}
+
+static void
 create_image_cache_24_to_16( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
@@ -898,6 +969,7 @@ create_image_cache_24_to_16( PImage img)
    }
 }
 
+
 static void
 create_image_cache( PImage img, Bool icon)
 {
@@ -925,6 +997,9 @@ create_image_cache( PImage img, Bool icon)
 	 case 16:
 	    create_image_cache_8_to_16( img);
 	    break;
+         case 24:
+            create_image_cache_8_to_24( img);
+            break;
 	 default:
 	    croak( "create_image_cache(): unsupported screen depth for 8-bit images");
 	 }
@@ -934,6 +1009,9 @@ create_image_cache( PImage img, Bool icon)
 	 case 16:
 	    create_image_cache_24_to_16( img);
 	    break;
+         case 24:
+            /* create_image_cache_24_to_24( img); */
+            break;
 	 default:
 	    croak( "create_image_cache(): unsupported screen depth for 24-bit images");
 	 }
