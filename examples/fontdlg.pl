@@ -231,9 +231,12 @@ $w-> insert( Button =>
            $p-> text_out("ÁMg", 20, $s);
 
            my $cachedFacename = $p-> font-> name;
+           my $hsf = $p-> font-> height / 6;
+           $hsf = 10 if $hsf < 10;
            $p-> font-> set(
-              height => 10,
+              height => $hsf,
               style  => fs::Italic,
+              name   => '',
            );
 
            $p-> line( 2, $s, $w, $s);
