@@ -100,7 +100,7 @@ SV *
 File_get_handle( Handle self)
 {
    char buf[ 256];
-   snprintf( buf, 256, "0x%08lx", var-> fd);
+   snprintf( buf, 256, "0x%08x", var-> fd);
    return newSVpv( buf, 0);
 }
 
