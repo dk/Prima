@@ -1019,6 +1019,8 @@ register_constants( void)
    register_fdo_constants();
 }
 
+XS( Object_alive_FROMPERL);
+
 XS( boot_Prima)
 {
    dXSARGS;

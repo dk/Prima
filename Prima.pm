@@ -26,6 +26,7 @@ sub import
 {
    my @modules = @_;
    for my $module (@modules) {
+      $module = "Prima::$module" unless $module =~ /^Prima::/;
       eval "require $module;" if $module;
    }
 }

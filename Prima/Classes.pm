@@ -150,7 +150,7 @@ for ( qw( ascent descent family weight maximalWidth internalLeading externalLead
    {
       my (\$o,\$r) = \@{\$_[0]}{"OWNER","READ"};
       my \$font = \$o->\$r();
-      return \$#_ ? Object-> raise_ro("Font::$_") : \$font->{$_};
+      return \$#_ ? Prima::Object-> raise_ro("Font::$_") : \$font->{$_};
    }
 GENPROC
 }
@@ -314,7 +314,7 @@ sub profile_check_in
    my ( $self, $p, $default) = @_;
    $self-> SUPER::profile_check_in( $p, $default);
    $p-> { font} = {} unless exists $p->{ font};
-   $p->{ font} = Drawable-> font_match( $p->{ font}, $default->{ font});
+   $p->{ font} = Prima::Drawable-> font_match( $p->{ font}, $default->{ font});
 }
 
 sub color      {($#_)?$_[0]->set_color       ($_[1]):return $_[0]->get_color;       }
@@ -326,7 +326,7 @@ sub linePattern{($#_)?$_[0]->set_line_pattern($_[1]):return $_[0]->get_line_patt
 sub lineWidth  {($#_)?$_[0]->set_line_width  ($_[1]):return $_[0]->get_line_width;  }
 sub textOutBaseline{($#_)?$_[0]->set_text_out_baseline($_[1]):return $_[0]->get_text_out_baseline;  }
 sub textOpaque {($#_)?$_[0]->set_text_opaque ($_[1]):return $_[0]->get_text_opaque; }
-sub font       {($#_)?$_[0]->set_font($#_>1?{@_[1..$#_]}:$_[1]):return Font->new($_[0], "get_font", "set_font")}
+sub font       {($#_)?$_[0]->set_font($#_>1?{@_[1..$#_]}:$_[1]):return Prima::Font->new($_[0], "get_font", "set_font")}
 sub palette    {($#_)?$_[0]->set_palette      ($_[1]):return $_[0]->get_palette;    }
 sub region     {($#_)?$_[0]->set_region      ($_[1]):return $_[0]->get_region;      }
 sub rop        {($#_)?$_[0]->set_rop         ($_[1]):return $_[0]->get_rop;         }
@@ -609,7 +609,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Component->notification_types()},
+   %{Prima::Component->notification_types()},
    Tick => nt::Default,
 );
 
@@ -650,7 +650,7 @@ use vars qw(@ISA %WidgetProfile);
 
 {
 my %RNT = (
-   %{Drawable->notification_types()},
+   %{Prima::Drawable->notification_types()},
    Change         => nt::Default,
    Click          => nt::Default,
    Close          => nt::Command,
@@ -804,7 +804,7 @@ sub profile_check_in
    for ( qw( font popupFont))
    {
       $p-> { $_} = {} unless exists $p->{ $_};
-      $p->{ $_} = Widget-> font_match( $p->{ $_}, $default->{ $_});
+      $p->{ $_} = Prima::Widget-> font_match( $p->{ $_}, $default->{ $_});
    }
 
    if ( exists( $p-> { origin}))
@@ -947,7 +947,7 @@ sub pointerPos       {($#_)?shift->set_pointer_pos (@_):return $_[0]->get_pointe
 sub pointerType      {($#_)?shift->set_pointer_type(@_):return $_[0]->get_pointer_type;}
 sub pointerVisible   {($#_)?$_[0]->set_pointer_visible($_[1]):return $_[0]->get_pointer_visible;     }
 sub popup            {($#_)?$_[0]->set_popup       ($_[1]):return $_[0]->get_popup;       }
-sub popupFont             {($#_)?$_[0]->set_popup_font ($_[1])  :return Font->new($_[0], "get_popup_font", "set_popup_font")}
+sub popupFont             {($#_)?$_[0]->set_popup_font ($_[1])  :return Prima::Font->new($_[0], "get_popup_font", "set_popup_font")}
 sub popupColor            {($#_)?$_[0]->set_popup_color  ($_[1], ci::NormalText)        :return $_[0]->get_popup_color(ci::NormalText);}
 sub popupBackColor        {($#_)?$_[0]->set_popup_color  ($_[1], ci::Normal)            :return $_[0]->get_popup_color(ci::Normal);}
 sub popupDisabledBackColor{($#_)?$_[0]->set_popup_color  ($_[1], ci::Disabled)          :return $_[0]->get_popup_color(ci::Disabled);}
@@ -1054,7 +1054,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    Activate      => nt::Default,
    Deactivate    => nt::Default,
    EndModal      => nt::Default,
@@ -1110,7 +1110,7 @@ sub profile_check_in
       delete $p-> {menu};
    }
    $p->{ menuFont} = {} unless exists $p->{ menuFont};
-   $p->{ menuFont} = Drawable-> font_match( $p->{ menuFont}, $default->{ menuFont});
+   $p->{ menuFont} = Prima::Drawable-> font_match( $p->{ menuFont}, $default->{ menuFont});
    $p->{ modalHorizon} = 0 if $p->{clipOwner} || $default->{clipOwner};
    $p->{ growMode} = 0 if !exists $p->{growMode} and $default->{growMode} == gm::DontCare and
      (( exists $p->{clipOwner} && ($p->{clipOwner}==1)) or ( $default->{clipOwner} == 1));
@@ -1143,7 +1143,7 @@ sub taskListed           {($#_)?$_[0]->set_task_listed ($_[1])                  
 sub windowState          {($#_)?$_[0]->set_window_state($_[1])                        :return $_[0]->get_window_state;}
 sub icon                 {($#_)?$_[0]->set_icon        ($_[1])  :                      return $_[0]->get_icon;        }
 sub menu                 {($#_)?$_[0]->set_menu        ($_[1])                        :return $_[0]->get_menu; }
-sub menuFont             {($#_)?$_[0]->set_menu_font   ($_[1])  :return Font->new($_[0], "get_menu_font", "set_menu_font")}
+sub menuFont             {($#_)?$_[0]->set_menu_font   ($_[1])  :return Prima::Font->new($_[0], "get_menu_font", "set_menu_font")}
 sub menuColor            {($#_)?$_[0]->set_menu_color  ($_[1], ci::NormalText)        :return $_[0]->get_menu_color(ci::NormalText);}
 sub menuBackColor        {($#_)?$_[0]->set_menu_color  ($_[1], ci::Normal)            :return $_[0]->get_menu_color(ci::Normal);}
 sub menuDisabledBackColor{($#_)?$_[0]->set_menu_color  ($_[1], ci::Disabled)          :return $_[0]->get_menu_color(ci::Disabled);}
@@ -1391,7 +1391,7 @@ sub height        { return ($_[0]-> get_size)[1];}
 sub clipboard     { return $_[0]-> get_clipboard }
 sub hintColor     {($#_)?$_[0]->set_hint_color  ($_[1]):return $_[0]->get_hint_color;   }
 sub hintBackColor {($#_)?$_[0]->set_hint_back_color  ($_[1]):return $_[0]->get_hint_back_color;   }
-sub hintFont      {($#_)?$_[0]->set_hint_font        ($_[1])  :return Font->new($_[0], "get_hint_font", "set_hint_font")}
+sub hintFont      {($#_)?$_[0]->set_hint_font        ($_[1])  :return Prima::Font->new($_[0], "get_hint_font", "set_hint_font")}
 sub hintPause     {($#_)?$_[0]->set_hint_pause       ($_[1]):return $_[0]->get_hint_pause;        }
 sub helpFile      {($#_)?$_[0]->set_help_file        ($_[1]):return $_[0]->get_help_file;         }
 sub modalHorizon  {($#_)?$_[0]->set_modal_horizon($_[1]):return $_[0]->get_modal_horizon;  }

@@ -50,7 +50,7 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Widget->notification_types()},
+   %{Prima::Widget->notification_types()},
    Check => nt::Default,
 );
 
@@ -613,7 +613,7 @@ my @images;
                sbmp::RadioChecked, sbmp::RadioCheckedPressed );
    for ( @idx)
    {
-      $images[ $i] = ( $i > 3) ? StdBitmap::icon( $_) : StdBitmap::image( $_);
+      $images[ $i] = ( $i > 3) ? Prima::StdBitmap::icon( $_) : Prima::StdBitmap::image( $_);
       $i++;
    }
 }
@@ -887,7 +887,7 @@ no strict; @ISA=qw(Prima::GroupBox); use strict;
 
 {
 my %RNT = (
-   %{Cluster->notification_types()},
+   %{Prima::Cluster->notification_types()},
    RadioClick => nt::Default,
 );
 

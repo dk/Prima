@@ -38,8 +38,16 @@ my %bmCache = ();
 my $bmImageFile = undef;
 
 {
-   my $scriptPath = (grep { m/Script$/ } @INC)[-1];
-   ( my $imagePath = $scriptPath) =~ s/Script$/Images/;
+   my $imagePath = '.';
+   for ( keys %::) {
+      if (/Prima\/StdBitmap\.pm$/) {
+         $imagePath = $_;
+         $imagePath =~ s/^..(.*)\/StdBitmap\.pm$/$1/;
+         last;
+      }
+   }
+   # my $scriptPath = (grep { m/Script$/ } @INC)[-1];
+   # ( my $imagePath = $scriptPath) =~ s/Script$/Images/;
    $bmImageFile = "$imagePath/sysimage.gif";
 }
 
