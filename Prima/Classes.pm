@@ -263,9 +263,7 @@ sub text
       $_[0]-> store( 'Text',  $_[1]);
    } else {
       my $text;
-      print "init\n";
       $::application-> notify( 'PasteText', $_[0], \$text);
-      print "done:$text\n";
       return $text;
    }
 }
@@ -1440,11 +1438,10 @@ sub open_help
 sub on_pastetext
 {
    my ( $self, $clipboard, $ref) = @_;
-   print "pastetext\n";
-   my @targets = qw(Text UTF8);
-   @targets = reverse @targets if $self-> wantUnicodeInput;
-   return if defined ( $$ref = $clipboard-> fetch( $targets[0]));
-   $$ref = $clipboard-> fetch( $targets[1]);
+   if ( $self-> wantUnicodeInput) {
+      return if defined ( $$ref = $clipboard-> fetch( 'UTF8'));
+   }
+   $$ref = $clipboard-> fetch( 'Text');
    undef;
 }
 

@@ -24,13 +24,13 @@ instances, of different data formats. Since the primary usage of a clipboard is
 information in several formats, increasing possibility
 that the receiving application recognizes the data.
 
-Different system provide spectrum of predefined data
-types, but the toolkit uses only two of these - a text
-and an image. It does not limit, however, the data format
-being one of these two types - an application is free to
+Different systems provide spectrum of predefined data
+types, but the toolkit uses only three of these - ascii text, utf8 text,
+and image. It does not limit, however, the data format
+being one of these three types - an application is free to
 register its own formats. Both predefined and newly defined data 
-formats are described by a string, and the two predefined formats
-are represented by C<'Text'> and C<'Image'> string constants. 
+formats are described by a string, and the three predefined formats
+are represented by C<'Text'>, C<'UTF8'>, and C<'Image'> string constants. 
 
 The most frequent usage of Prima::Clipboard is to preform
 two tasks - copying and pasting. Both can be exemplified by
@@ -39,10 +39,10 @@ the following:
    my $c = $::application-> Clipboard;
 
    # paste
-   my $string = $c-> fetch('Text');
+   my $string = $c-> text;
 
    # copy
-   $c-> store( 'Text', $string);
+   $c-> text( $string);
    
 
 This simplistic code hides other aspects of Prima::Clipboard class,
@@ -104,6 +104,7 @@ by a program:
       $c-> close;
    }
 
+=head2 Custom formats
 
 Once registered, all processes in a GUI space can access
 the data by this format. The registration must take place 
@@ -118,6 +119,24 @@ does not mean deletion, thus. If two processes use a custom
 format, and one exits and re-starts, it still can access the
 data in the same format, registered by its previous incarnation.
 
+=head2 Unicode
+
+In real life, application often interchange text in both ascii and utf8,
+leaving the choice to reader programs.  While it is possible to access both at
+the same time, by C<fetch>'ing content of C<Text> and C<UTF8> clipboard slots,
+widgets implement their own pasting scheme. To avoid hacking widget code, usage
+of C<text> property is advised instead of indicating C<'Text'> and C<'UTF8'>
+constants. This method is used in standard widgets, and is implemented so
+the programmer can reprogram its default action by overloading C<PasteText>
+notification of C<Prima::Application> ( see L<Prima::Application/PasteText> ).
+
+The default action of C<PasteText> is to query first if C<'Text'> format is available,
+and if so, return the ascii text scalar. If C<Prima::Application::wantUnicodeInput> is set, 
+C<'UTF8'> format is checked before resorting to C<'Text'>. It is clear that this
+scheme is not the only possibly needed, for example, an application may want
+to ignore ASCII text, or, ignore UTF8 text but have C<Prima::Application::wantUnicodeInput>
+set, etc.
+
 =head1 API
 
 =head2 Properties
@@ -131,7 +150,7 @@ In get-mode call, return C<undef> if no image is stored.
 
 =item text STRING
 
-Provides access to a text stored in the system clipboard.
+Provides access to text stored in the system clipboard.
 In get-mode call, return C<undef> if no text information is
 present.
 
@@ -222,7 +241,8 @@ data format. Depending of FORMAT_STRING, SCALAR is treated as follows:
 
    FORMAT_STRING     SCALAR
    ------------------------------------
-   Text              text string
+   Text              text string in ASCII
+   UTF8              text string in UTF8
    Image             Prima::Image object
    other formats     binary scalar value
 

@@ -81,8 +81,8 @@ Clipboard_init( Handle self, HV * profile)
       croak( "RTC0022: Cannot create clipboard");
    if (clipboards == 0) {
       Clipboard_register_format_proc( self, "Text",  (void*)text_server);
-      Clipboard_register_format_proc( self, "UTF8",  (void*)utf8_server);
       Clipboard_register_format_proc( self, "Image", (void*)image_server);
+      Clipboard_register_format_proc( self, "UTF8",  (void*)utf8_server);
       protect_formats = 1;
    }
    clipboards++;

@@ -38,9 +38,8 @@ Demonstrates use of a standard input line widget
 =cut
 
 
-use Prima 'InputLine', Application => { name => 'InputLine sample' };
+use Prima 'InputLine', Application => { name => 'InputLine sample', wantUnicodeInput => 1 };
 
-$::application-> wantUnicodeInput(1);
 my $w = Prima::MainWindow-> create( size => [ 700, 300]);
 
 my $l = $w-> insert( InputLine =>

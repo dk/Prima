@@ -1459,7 +1459,7 @@ sub copy
 {
    my $self = $_[0];
    my $text = $self->get_selected_text;
-   $::application-> Clipboard-> store( 'Text', $text) if defined $text;
+   $::application-> Clipboard-> text($text) if defined $text;
 }
 
 sub get_selected_text
@@ -1553,7 +1553,7 @@ sub paste
 {
    my $self = $_[0];
    return if $self->{readOnly};
-   $self-> insert_text( $::application-> Clipboard-> fetch( 'Text'), 1);
+   $self-> insert_text( $::application-> Clipboard-> text, 1);
 }
 
 sub make_logical
