@@ -1,4 +1,4 @@
-#
+ #
 #  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
@@ -27,6 +27,8 @@
 #
 #  $Id$
 package Prima::StdBitmap;
+use vars qw($sysimage);
+
 use strict;
 use Prima;
 use Prima::Utils;
@@ -55,9 +57,12 @@ sub load_std_bmp
    return $i;
 }
 
-my $bmImageFile = Prima::Utils::find_image( "sysimage.gif");
-sub icon { return load_std_bmp( $_[0], 1, 0, $bmImageFile); }
-sub image{ return load_std_bmp( $_[0], 0, 0, $bmImageFile); }
+$sysimage = Prima::Utils::find_image(
+   ((Prima::Application-> get_system_info->{apc} == apc::Win32) ? 'sys/win32/' : '') .
+    "sysimage.gif") 
+    unless defined $sysimage;
+sub icon { return load_std_bmp( $_[0], 1, 0, $sysimage); }
+sub image{ return load_std_bmp( $_[0], 0, 0, $sysimage); }
 
 1;
 
@@ -154,6 +159,13 @@ An index value passed to the methods must be one of C<sbmp::> constants:
   sbmp::SFolderOpened
   sbmp::SFolderClosed
   sbmp::Last
+
+=head2 Scalars
+
+C<$sysimage> scalar is initialized to the file name to be used
+as a source of standard image frames by default. It is possible
+to alter this scalar at run-time, which causes all subsequent
+image frame request to be redirected to the new file.
 
 =head1 AUTHOR
 
