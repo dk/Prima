@@ -51,6 +51,7 @@ static char * do_widget_font = nil;
 static Bool   do_xft = true;
 static Bool   do_xft_no_antialias = false;
 static Bool   do_xft_priority = true;
+static Bool   do_no_scaled_fonts = false;
 
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 
@@ -558,7 +559,8 @@ prima_init_font_subsystem( void)
    encodings = hash_create();
 
    apc_fetch_resource( "Prima", "", "Noscaledfonts", "noscaledfonts", 
-      nilHandle, frUnix_int, &guts. no_scaled_fonts); 
+      nilHandle, frUnix_int, &guts. no_scaled_fonts);
+   if ( do_no_scaled_fonts) guts. no_scaled_fonts = 1;
 
    for ( i = 0, j = 0; i < count; i++) {
       if ( xlfd_parse_font( names[i], info + j, true)) {
@@ -725,6 +727,11 @@ prima_font_subsystem_set_option( char * option, char * value)
 	   do_xft_priority = true;
       else
          warn("Invalid value '%s' to `--font-priority' option. Valid are 'core' and 'xft'", value);
+      return true;
+   } else
+   if ( strcmp( option, "noscaled") == 0) {
+      if ( value) warn("`--noscaled' option has no parameters");
+      do_no_scaled_fonts = true;
       return true;
    } else
    if ( strcmp( option, "font") == 0) {

@@ -438,6 +438,7 @@ window_subsystem_get_options( int * argc, char *** argv)
    "msg-font", "default message box font",
    "widget-font", "default widget font",
    "caption-font", "MDI caption font",
+   "noscaled", "do not use scaled instances of fonts",
    "fg", "default foreground color",
    "bg", "default background color",
    "hilite-fg", "default highlight foreground color",
