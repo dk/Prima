@@ -107,8 +107,8 @@ window_subsystem_init( void)
       "Wheeldown.wheeldown."
       "Wheelup.wheelup";
    
-   guts. visible_timeout = 200;
-   guts. invisible_timeout = 200;
+   guts. visible_timeout = 500;
+   guts. invisible_timeout = 500;
    guts. insert = true;
 
    guts. ri_head = guts. ri_tail = 0;
