@@ -789,9 +789,6 @@ AGAIN:
       ev. pos. mod      = 0 |
         (( mp1 & MK_CONTROL ) ? kmCtrl   : 0) |
         (( mp1 & MK_SHIFT   ) ? kmShift  : 0) |
-        (( mp1 & MK_LBUTTON ) ? mbLeft   : 0) |
-        (( mp1 & MK_MBUTTON ) ? mbMiddle : 0) |
-        (( mp1 & MK_RBUTTON ) ? mbRight  : 0) |
         (( GetKeyState( VK_MENU) < 0) ? kmAlt : 0)
       ;
       break;
