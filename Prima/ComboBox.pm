@@ -528,7 +528,7 @@ sub set_list_visible
    my ( $self, $nlv) = @_;
    return if ( $self->{list}-> visible == $nlv) ||
              ( $self->{style} == cs::Simple) ||
-             ( !$self-> visible);
+             ( !$self-> visible && $lnv);
    my ( $list, $edit) = ( $self->{list}, $self->{edit});
    if ( $nlv)
    {
