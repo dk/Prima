@@ -940,7 +940,7 @@ Color
 apc_gp_get_color( Handle self)
 {
    objCheck 0;
-   return remap_color( sys stylus. pen. lopnColor, false);
+   return remap_color( sys ps ? sys stylus. pen. lopnColor : sys lbs[0], false);
 }
 
 Rect
@@ -1570,8 +1570,8 @@ Bool
 apc_gp_set_rop2( Handle self, int rop)
 {
    objCheck false;
-   if ( rop != ropCopyPut) rop = ropNoOper;
    if ( !sys ps) { sys rop2 = rop; return true; }
+   if ( rop != ropCopyPut) rop = ropNoOper;
    if ( !SetBkMode( sys ps, ( rop == ropCopyPut) ? OPAQUE : TRANSPARENT)) apiErr;
    return true;
 }

@@ -934,7 +934,7 @@ Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
       FillPattern * fp = apc_gp_get_fill_pattern( self);
       if ( !fp) return nilSV;
       av = newAV();
-      for ( i = 0; i < 8; i++) av_push( av, newSViv(( int) (*fp)[0]));
+      for ( i = 0; i < 8; i++) av_push( av, newSViv(( int) (*fp)[i]));
       return newRV_noinc(( SV *) av);
    } else {
       if ( SvROK( svpattern) && ( SvTYPE( SvRV( svpattern)) == SVt_PVAV)) {
