@@ -181,6 +181,7 @@ void Window_handle_event( Handle self, PEvent event)
       {
          my-> cancel( self);
          my-> clear_event( self);
+         return;
       }
       objCheck;
       if ( event-> key. key == kbTab || event-> key. key == kbBackTab)
@@ -252,6 +253,7 @@ void Window_handle_event( Handle self, PEvent event)
             } while ( match != foc);
          }
          my-> clear_event( self);
+         return;
       }
       break;
    }

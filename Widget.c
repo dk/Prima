@@ -474,7 +474,7 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmOK:
       case cmCancel:
         my-> clear_event( self);
-        break;
+        return;
       case cmClick:
         my-> notify( self, "<s", "Click");
         break;
@@ -553,7 +553,10 @@ void Widget_handle_event( Handle self, PEvent event)
               objCheck;
               if ( evOK) {
                  int key = CAbstractMenu-> translate_key( nilHandle, event-> key. code, event-> key. key, event-> key. mod);
-                 if ( my-> process_accel( self, key)) my-> clear_event( self);
+                 if ( my-> process_accel( self, key)) {
+                    my-> clear_event( self);
+                    return;
+                 }
               }
               objCheck;
               if ( evOK && var-> owner) {
@@ -561,7 +564,10 @@ void Widget_handle_event( Handle self, PEvent event)
                  ev. key. source = self;
                  ev. cmd         = cmDelegateKey;
                  ev. key. subcmd = 0;
-                 if ( !my-> message( self, &ev)) my-> clear_event( self);
+                 if ( !my-> message( self, &ev)) {
+                    my-> clear_event( self);
+                    return;
+                 }
                  objCheck;
               }
               if ( !evOK) break;
@@ -601,6 +607,7 @@ void Widget_handle_event( Handle self, PEvent event)
                  if (!(((( PWidget) var-> owner)-> self)-> message( var-> owner, &ev))) {
                     objCheck;
                     my-> clear_event( self);
+                    return;
                  }
               }
            }
@@ -663,6 +670,7 @@ void Widget_handle_event( Handle self, PEvent event)
                  next-> self-> set_selected(( Handle) next, true);
                  objCheck;
                  my-> clear_event( self);
+                 return;
               }
            out:;
            }
@@ -719,7 +727,7 @@ void Widget_handle_event( Handle self, PEvent event)
                                apc_widget_client_to_screen( org, event-> gen. P));
                     p-> self-> popup(( Handle) p, px. x, px. y ,0,0,0,0);
                     CWidget( org)-> clear_event( org);
-                    break;
+                    return;
                  }
                  self = var-> owner;
               }
@@ -1757,7 +1765,9 @@ Widget_set_current_widget( Handle self, Handle widget)
    if ( var-> stage > csNormal) return;
    if ( widget) {
       if ( !widget || (( PWidget) widget)-> stage > csNormal ||
-         ((( PWidget) widget)-> owner != self)) return;
+            ((( PWidget) widget)-> owner != self) ||
+            !(( PWidget) widget)-> options. optSelectable
+           ) return;
       var-> currentWidget = widget;
    } else {
       var-> currentWidget = nilHandle;
