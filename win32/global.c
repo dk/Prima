@@ -294,6 +294,8 @@ static void
 propagate( Handle self, UINT msg, PEvent ev, WPARAM mp1, LPARAM mp2)
 {
    HWND prop, org = HANDLE;
+   RECT r;
+   POINT pt;
 
    if ( !is_apt( aptClipOwner) || ( var owner == application))
       return;
@@ -303,24 +305,20 @@ propagate( Handle self, UINT msg, PEvent ev, WPARAM mp1, LPARAM mp2)
 
    prop = HANDLE;
 
-   if (( ev-> cmd != cmKeyDown) && ( ev-> cmd != cmKeyUp)) {
-      RECT r;
-      POINT pt = {(short)LOWORD( mp2), (short)HIWORD( mp2)};
-      GetWindowRect( prop, &r);
-      MapWindowPoints( NULL, prop, ( POINT*) &r, 2);
-      r. right--;
-      r. bottom--;
-      MapWindowPoints( org, prop, &pt, 1);
+   pt. x = ( short) LOWORD( mp2);
+   pt. y = ( short) HIWORD( mp2);
+   GetWindowRect( prop, &r);
+   MapWindowPoints( NULL, prop, ( POINT*) &r, 2);
+   r. right--;
+   r. bottom--;
+   MapWindowPoints( org, prop, &pt, 1);
 
-      if (( pt. x < 0) || ( pt. y < 0) || ( pt. x > r. right) || ( pt. y > r. bottom)) {
-         if ( GetCapture() != prop)
-            return;
-      }
-
-      mp2 = MAKELPARAM( pt. x, pt. y);
+   if (( pt. x < 0) || ( pt. y < 0) || ( pt. x > r. right) || ( pt. y > r. bottom)) {
+      if ( GetCapture() != prop)
+         return;
    }
 
-   PostMessage( prop, msg + 0x400, mp1, mp2);
+   PostMessage( prop, msg + 0x400, mp1, MAKELPARAM( pt. x, pt. y));
 }
 
 
@@ -483,7 +481,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_MBUTTONDBLCLK + 0x400: case WM_MBUTTONUP + 0x400:   case WM_MBUTTONDOWN + 0x400:
    case WM_RBUTTONDBLCLK + 0x400: case WM_RBUTTONUP + 0x400:   case WM_RBUTTONDOWN + 0x400:
    case WM_RMOUSECLICK   + 0x400: case WM_MMOUSECLICK + 0x400: case WM_LMOUSECLICK + 0x400:
-   case WM_MOUSEWHEEL    + 0x400: case WM_KEYDOWN     + 0x400: case WM_KEYUP + 0x400:
+   case WM_MOUSEWHEEL    + 0x400:
        SendMessage( win, msg - 0x400, mp1, mp2);
        return 0;
    case WM_LBUTTONDOWN:
@@ -741,7 +739,6 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_RBUTTONDBLCLK: case WM_RBUTTONUP:   case WM_RBUTTONDOWN:
    case WM_RMOUSECLICK:   case WM_MMOUSECLICK: case WM_LMOUSECLICK:
    case WM_MOUSEWHEEL:
-   case WM_KEYDOWN:       case WM_KEYUP:
       if ( ev. cmd == 0)
          return ( LRESULT)1;
 // propagate message
