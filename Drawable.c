@@ -610,7 +610,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
    char **ret;
    Bool wasTab    = 0;
    Bool doWidthBreak = t-> width >= 0;
-   int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset;
+   int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset = 0;
    unsigned char * text    = ( unsigned char*) t-> text;
 
    abc = abc_cont = apc_gp_get_font_abc( self, &firstChar, &lastChar);
