@@ -48,7 +48,7 @@ cursor_map[] = {
    /* crInvalid         => */   XC_X_cursor,
 };
 
-static Cursor
+Cursor
 predefined_cursors[] = {
    None,
    None,

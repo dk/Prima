@@ -54,6 +54,8 @@ get_menu_window( Handle self, XWindow xw)
    return w;
 }
 
+extern Cursor predefined_cursors[];
+
 static PMenuWindow
 get_window( Handle self, PMenuItemReg m)
 {
@@ -100,6 +102,11 @@ get_window( Handle self, PMenuItemReg m)
    XCHECKPOINT;
    hash_store( guts.menu_windows, &w->w, sizeof(w->w), (void*)self);
    wx = XX-> w;
+   if ( predefined_cursors[crArrow] == None) {
+      XCreateFontCursor( DISP, XC_left_ptr);
+      XCHECKPOINT;
+   }
+   XDefineCursor( DISP, w-> w, predefined_cursors[crArrow]);
    if ( wx) {
       while ( wx-> next ) wx = wx-> next;
       w-> prev = wx;
