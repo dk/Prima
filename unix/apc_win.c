@@ -779,7 +779,7 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
    apc_widget_set_visible( self, true);
    apc_window_activate( self);
    selectee = CWindow(self)->get_selectee( self);
-   if ( selectee != self) Widget_selected( selectee, true, true);
+   if ( selectee && selectee != self) Widget_selected( selectee, true, true);
    prima_simple_message( self, cmExecute, true);
    guts. modal_count++;
    return true;

@@ -90,9 +90,9 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
             }
             return false;
          }
-         if ( selectee != self) XMapRaised( DISP, PWidget(selectee)-> handle);
+         if ( selectee && selectee != self) XMapRaised( DISP, PWidget(selectee)-> handle);
          XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
-         Widget_selected( selectee, true, true);
+         if ( selectee) Widget_selected( selectee, true, true);
 	 return false;
       }
    }
