@@ -104,16 +104,19 @@ package mb;
 # message box
 use constant OK           => 0x0001;
 use constant Ok           => OK;
-use constant Cancel       => 0x0004;
 use constant Yes          => 0x0002;
+use constant Cancel       => 0x0004;
 use constant No           => 0x0008;
 use constant Abort        => 0x0010;
 use constant Retry        => 0x0020;
 use constant Ignore       => 0x0040;
 use constant Help         => 0x0080;
-use constant OKCancel     => 0x0005;
+
+use constant OKCancel     => (OK|Cancel);
 use constant OkCancel     => OKCancel;
-use constant YesNoCancel  => 0x000e;
+use constant YesNo        => (Yes|No);
+use constant YesNoCancel  => (Yes|No|Cancel);
+
 use constant Error        => 0x0100;
 use constant Warning      => 0x0200;
 use constant Information  => 0x0400;
