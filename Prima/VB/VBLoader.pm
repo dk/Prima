@@ -238,3 +238,221 @@ sub AUTOFORM_CREATE
 # onEnd         ( name, instance, object)
 
 1;
+
+__DATA__
+
+=cut
+
+=head1 NAME
+
+Prima::VB::VBLoader - Visual Builder file loader
+
+=head1 DESCRIPTION
+
+The module provides functionality for loading resource files,
+created by Visual Builder. After the successful load, the newly created
+window with all children is returned.
+
+=head1 SYNOPSIS
+
+The simple way to use the loader is that:
+
+     Prima::VB::VBLoader::AUTOFORM_CREATE( './your_resource.fm',
+        Form1 => { centered => 1 },
+     )-> {Form1}-> execute;
+
+A more complicated but more proof code can be met in the toolkit:
+
+     eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
+     my $fi = Prima::find_image( 'Your::Module', 'your_resource.fm');
+     unless ( defined $fi) { 
+        Prima::message( "Cannot find resource: Your::Module::your_resource.fm"); 
+        return;
+     }
+     eval { $form = { Prima::VB::VBLoader::AUTOFORM_CREATE( $fi,
+       'Form1'     => { visible => 0, centered => 1},
+     )}-> {Form1} };
+     if ( $@) { 
+        Prima::message("Error in setup resource: $@"); 
+        return;
+     }
+
+=head1 API
+
+=head2 Methods
+
+=over
+
+=item check_version HEADER
+
+Scans HEADER, - the first line of a .fm file for version info.
+Returns two scalars - the first is a boolean flag, which is set
+to 1 if the file can be used and loaded, 0 otherwise. The second
+scalar is a version string.
+
+=item GO_SUB SUB [ @EXTRA_DATA ]
+
+Depending on value of boolean flag C<Prima::VB::VBLoader::builderActive>
+perrofms the following: if it is 1, the SUB text is returned as is.
+If it is 0, evaluates it in C<sub{}> context and returns the code reference.
+If evaluation fails, EXTRA_DATA is stored in C<Prima::VB::VBLoader::eventContext>
+array and the exception is forwarded.
+C<Prima::VB::VBLoader::builderActive> is an internal flag that helps the
+Visual Builder use the module interface without actual SUB evaluation.
+
+=item AUTOFORM_REALIZE WIDGETS, PARAMETERS
+
+WIDGETS is an array reference that contains evaluated data of
+the read content of .fm file ( its data format is preserved).  
+PARAMETERS is a hash reference with custom parameters passed to
+widgets during creation. The widgets are distinguished by the names.
+Visual Builder ensures that no widgets have equal names.
+
+C<AUTOFORM_REALIZE> creates the tree of widgets and returns the root
+window, which is usually named C<Form1>. It automatically resolves
+parent-child relations, so the order of WIDGETS does not matter.
+Moreover, if a parent widget is passed as a parameter to
+a children widget, the parameter is deferred and passed after
+the creation using C<::set> call. 
+
+During the parsing and creation process some events can be are invoked.
+These events are stored in .fm file and ususally provide class-specific
+loading instructions. See L<Events> for details.
+
+=item AUTOFORM_CREATE FILENAME, %PARAMETERS
+
+Reads FILENAME in .fm file format, checks its version, loads,
+and creates widget tree. Upon successful load the root widget
+is returned. The parsing and creation is performed by calling
+C<AUTOFORM_REALIZE>. If loading fails, C<die()> is called.
+
+=back
+
+=head2 Events
+
+The events, stored in .fm file are called during the loading process.
+The module provides no functionality for supplying the events during
+the load. This interface is useful only for developers of VisualBuilder-ready 
+classes.
+
+The events section is located in C<actions> section of widget entry.
+There can be more than one event of each type, registered to different widgets.
+NAME parameter is a string with name of the widget; INSTANCE is a hash,
+created during load for every widget provided to keep internal event-specific or 
+class-specific data there. C<extras> section of widget entry is present
+there as an only predefined key.
+
+=over
+
+=item Begin NAME, INSTANCE
+
+Called upon beginning of widget tree creation.
+
+=item FormCreate NAME, INSTANCE, ROOT_WIDGET
+
+Called after the creation of a form, which refence is
+contained in ROOT_WIDGET.
+
+=item Create NAME, INSTANCE, WIDGET.
+
+Called after the creation of the widget. The newly created
+widget is passed in WIDGET
+
+=item Child NAME, INSTANCE, WIDGET, CHILD_NAME
+
+Called before child of WIDGET is created with CHILD_NAME as name.
+
+=item ChildCreate NAME, INSTANCE, WIDGET, CHILD_WIDGET.
+
+Called after child of WIDGET is created; the newly created
+widget is passed in CHILD_WIDGET.
+
+=item End NAME, INSTANCE, WIDGET
+
+Called after the creation of all widgets is finished.
+
+=back
+
+=head1 FILE FORMAT
+
+The idea of format of .fm file is that is should be evaluated by 
+perl C<eval()> call without special manipulations, and kept as plain text.
+The file begins with a header, which is a #-prepended string, and
+contains a signature, version of file format, and version of the creator of the file:
+
+ # VBForm version file=1 builder=0.1
+
+The header can also contain additional headers, also prepended with #.
+These can be used to tell the loader that another perl module is needed to 
+be loaded before the parsing; this is useful, for example, if a constant is declared in
+the module.
+
+ # [preload] Prima::ComboBox
+
+The main part of a file is enclosed in C<sub{}> statement.
+After evaluation, this sub returns array of paired scalars, where
+each first item is a widget name and second item is hash of its parameters
+and other associated data:
+
+  sub
+  {
+     return (
+	'Form1' => {
+		class   => 'Prima::Window',
+		module  => 'Prima::Classes',
+		parent => 1,
+		profile => {
+			width => 144,
+			name => 'Form1',
+			origin => [ 490, 412],
+			size => [ 144, 100],
+	}},
+     );
+  }
+
+The hash has several predefined keys:
+
+=over
+
+=item actions HASH
+
+Contains hash of events. The events are evaluated via C<GO_SUB> mechanism
+and executed during creation of the widget tree. See L<Events> for details.
+
+
+=item class STRING
+
+Constains name of class to instantiate.
+
+=item extras HASH
+
+Contains a class-specific parameters, used by events. 
+
+=item module STRING
+
+Contains name of perl module that contains the class. The module 
+will be C<use>'d by the loader.
+
+=item parent BOOLEAN
+
+A boolean flag; set to 1 for the root widget only.
+
+=item profile HASH
+
+Contains profile hash, passed as parameters to the widget
+during its creation. If custom parameters were passed to
+C<AUTOFORM_CREATE>, these are coupled with C<profile>
+( the custom parameters take precedence ) before passing
+to the C<create()> call.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::VB::VB>
+
+=pod

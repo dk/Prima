@@ -2265,7 +2265,8 @@ This command is aliased to an 'open folder' icon on the panel.
 Stores the form into a file. The user here can select a type 
 of the file to be saved. If the form is saved as I<.fm> form
 file, then it can be re-loaded either in the builder or in the
-user program. If the form is saved as I<.pl> program, then it
+user program ( see L<Prima::VB::VBLoader> for details ). 
+If the form is saved as I<.pl> program, then it
 can not be loaded; instead, the program can be run immediately
 without the builder or any supplementary code.
 
@@ -2513,6 +2514,10 @@ event means, use the documentation on the class of interest; L<Prima::Widget> is
 start because it encompasses the ground C<Prima::Widget> functionality. 
 The other widgets are ( hopefully ) documented in their modules, for example,
 C<Prima::ScrollBar> documentation can be found in L<Prima::ScrollBar>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::VB::VBLoader> 
 
 =head1 AUTHOR
 
