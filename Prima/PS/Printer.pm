@@ -75,6 +75,7 @@ sub profile_default
          scaling        => 1,
          portrait       => 1,
          useDeviceFonts => 1,
+         useDeviceFontsOnly => 0,
          spoolerType    => $unix ? lpr : file, 
          spoolerData    => '',
          devParms       => {
