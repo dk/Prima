@@ -196,12 +196,12 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 }
 
 Bool
-apc_gp_ellipse( Handle self, int x, int y, double Rx, double Ry)
+apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 {
    ARCPARAMS arc;
 
-   arc. lP = Rx * 2;
-   arc. lQ = Ry * 2;
+   arc. lP = dX;
+   arc. lQ = dY;
    arc. lR = 0;
    arc. lS = 0;
    if ( !GpiSetArcParams( sys ps, &arc)) apiErr;
@@ -229,12 +229,12 @@ apc_gp_fill_chord ( Handle self, int x, int y,  int dX, int dY, double angleStar
 }
 
 Bool                                                        /* no fix */
-apc_gp_fill_ellipse( Handle self, int x, int y, double Rx, double Ry)
+apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY)
 {
    ARCPARAMS arc;
 
-   arc. lP = Rx * 2;
-   arc. lQ = Ry * 2;
+   arc. lP = dX;
+   arc. lQ = dY;
    arc. lR = 0;
    arc. lS = 0;
    if ( !GpiSetArcParams( sys ps, &arc)) apiErr;
