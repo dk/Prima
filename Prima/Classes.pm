@@ -290,6 +290,7 @@ sub profile_default
       region          => undef,
       rop             => rop::CopyPut,
       rop2            => rop::NoOper,
+      splinePrecision => 24,
       textOutBaseline => 0,
       textOpaque      => 0,
       transform       => [ 0, 0],

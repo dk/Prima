@@ -23,6 +23,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * --------------------------------------------------------------------
+ *  Parabolic spline procedures taken from TclTk's tkTrig.c
+ *  
+ *  Copyright (c) 1992-1994 The Regents of the University of California.
+ *  Copyright (c) 1994 Sun Microsystems, Inc.
+ *
+ * See the file "license.terms" in TclTk distribution 
+ * for information on usage and redistribution
+ * of this code, and for a DISCLAIMER OF ALL WARRANTIES.
+ * ---------------------------------------------------------------------
+ *
  * $Id$
  */
 
@@ -62,6 +73,7 @@ Drawable_init( Handle self, HV * profile)
    my-> set_rop2         ( self, pget_i ( rop2));
    my-> set_textOpaque   ( self, pget_B ( textOpaque));
    my-> set_textOutBaseline( self, pget_B ( textOutBaseline));
+   my-> set_splinePrecision( self, pget_i ( splinePrecision));
    if ( pexist( transform))
    {
       AV * av = ( AV *) SvRV( pget_sv( transform));
@@ -119,6 +131,7 @@ Drawable_begin_paint( Handle self)
    if ( var-> stage > csFrozen) return false;
    if ( is_opt( optInDrawInfo)) my-> end_paint_info( self);
    opt_set( optInDraw);
+   var-> splinePrecision_saved = var-> splinePrecision;
    return true;
 }
 
@@ -127,6 +140,7 @@ Drawable_end_paint( Handle self)
 {
    clear_font_abc_caches( self);
    opt_clear( optInDraw);
+   var-> splinePrecision = var-> splinePrecision_saved;
 }
 
 Bool
@@ -136,6 +150,7 @@ Drawable_begin_paint_info( Handle self)
    if ( is_opt( optInDraw))     return true;
    if ( is_opt( optInDrawInfo)) return false;
    opt_set( optInDrawInfo);
+   var-> splinePrecision_saved = var-> splinePrecision;
    return true;
 }
 
@@ -144,10 +159,11 @@ Drawable_end_paint_info( Handle self)
 {
    clear_font_abc_caches( self);
    opt_clear( optInDrawInfo);
+   var-> splinePrecision = var-> splinePrecision_saved;
 }
 
-
-void Drawable_set( Handle self, HV * profile)
+void 
+Drawable_set( Handle self, HV * profile)
 {
    if ( pexist( font))
    {
@@ -418,36 +434,36 @@ Drawable_width( Handle self, Bool set, int width)
    return width;
 }
 
-void
+Bool
 Drawable_put_image( Handle self, int x , int y , Handle image )
 {
    Point size;
-   if ( image == nilHandle) return;
+   if ( image == nilHandle) return false;
    size = ((( PDrawable) image)-> self)-> get_size( image);
-   apc_gp_put_image ( self, image, x, y, 0, 0, size.x, size.y, my-> get_rop( self));
+   return apc_gp_put_image ( self, image, x, y, 0, 0, size.x, size.y, my-> get_rop( self));
 }
 
-void
+Bool
 Drawable_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle image)
 {
-   if ( image == nilHandle) return;
+   if ( image == nilHandle) return false;
    if ( xDest == PImage(image)-> w && yDest == PImage(image)-> h) 
-      apc_gp_put_image( self, image, x, y, 0, 0, xDest, yDest, my-> get_rop( self));
+      return apc_gp_put_image( self, image, x, y, 0, 0, xDest, yDest, my-> get_rop( self));
    else
-      apc_gp_stretch_image( self, image, x, y, 0, 0, xDest, yDest, PImage(image)-> w, PImage(image)-> h, my-> get_rop( self));
+      return apc_gp_stretch_image( self, image, x, y, 0, 0, xDest, yDest, PImage(image)-> w, PImage(image)-> h, my-> get_rop( self));
 }
 
-void
+Bool
 Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
-   if ( image == nilHandle) return;
+   if ( image == nilHandle) return false;
    if ( xLen == xDestLen && yLen == yDestLen) 
-      apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
+      return apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
    else    
-      apc_gp_stretch_image( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+      return apc_gp_stretch_image( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
 }
 
-void
+Bool
 Drawable_text_out( Handle self, SV * text, int x, int y, int len)
 {
    STRLEN dlen;
@@ -455,30 +471,31 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int len)
    Bool   utf8 = SvUTF8( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, c_text + dlen);
    if ( len < 0 || len > dlen) len = dlen;
-   apc_gp_text_out( self, c_text, x, y, len, utf8);
+   return apc_gp_text_out( self, c_text, x, y, len, utf8);
 }
 
-static void
+static Bool
 polypoints( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(Handle,int,Point*))
 {
    AV * av;
    int i, count;
    Point * p;
+   Bool ret;
 
    if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
       warn("RTC0050: Invalid array reference passed to Drawable::%s", procName);
-      return;
+      return false;
    }
    av = ( AV *) SvRV( points);
    count = av_len( av) + 1;
    if ( count % mod) {
       warn("RTC0051: Drawable::%s: Number of elements in an array must be a multiple of %d",
            procName, mod);
-      return;
+      return false;
    }
    count /= 2;
-   if ( count < 2) return;
-   if (!( p = allocn( Point, count))) return;
+   if ( count < 2) return false;
+   if (!( p = allocn( Point, count))) return false;
    for ( i = 0; i < count; i++)
    {
        SV** psvx = av_fetch( av, i * 2, 0);
@@ -486,32 +503,321 @@ polypoints( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(
        if (( psvx == nil) || ( psvy == nil)) {
           free( p);
           warn("RTC0052: Array panic on item pair %d on Drawable::%s", i, procName);
-          return;
+          return false;
        }
        p[ i]. x = SvIV( *psvx);
        p[ i]. y = SvIV( *psvy);
    }
-   procPtr( self, count, p);
+   ret = procPtr( self, count, p);
    free( p);
+   return ret;
 }
 
 
-void
+Bool
 Drawable_polyline( Handle self, SV * points)
 {
-   polypoints( self, points, "polyline", 2, apc_gp_draw_poly);
+   return polypoints( self, points, "polyline", 2, apc_gp_draw_poly);
 }
 
-void
+Bool
 Drawable_lines( Handle self, SV * points)
 {
-   polypoints( self, points, "lines", 4, apc_gp_draw_poly2);
+   return polypoints( self, points, "lines", 4, apc_gp_draw_poly2);
 }
 
-void
+Bool
 Drawable_fillpoly( Handle self, SV * points)
 {
-   polypoints( self, points, "fillpoly", 2, apc_gp_fill_poly);
+   return polypoints( self, points, "fillpoly", 2, apc_gp_fill_poly);
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TkBezierScreenPoints --
+ *
+ *	Given four control points, create a larger set of XPoints
+ *	for a Bezier spline based on the points.
+ *
+ * Results:
+ *	The array at *xPointPtr gets filled in with numSteps XPoints
+ *	corresponding to the Bezier spline defined by the four 
+ *	control points.  Note:  no output point is generated for the
+ *	first input point, but an output point *is* generated for
+ *	the last input point.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+static void
+TkBezierScreenPoints( control, numSteps, xPointPtr)
+    double control[];			/* Array of coordinates for four
+					 * control points:  x0, y0, x1, y1,
+					 * ... x3 y3. */
+    int numSteps;			/* Number of curve points to
+					 * generate.  */
+    register Point *xPointPtr;		/* Where to put new points. */
+{
+    int i;
+    double u, u2, u3, t, t2, t3;
+
+    for (i = 1; i <= numSteps; i++, xPointPtr++) {
+	t = ((double) i)/((double) numSteps);
+	t2 = t*t;
+	t3 = t2*t;
+	u = 1.0 - t;
+	u2 = u*u;
+	u3 = u2*u;
+	xPointPtr-> x =	control[0]*u3 + 3.0 * (control[2]*t*u2 + control[4]*t2*u) + control[6]*t3;
+	xPointPtr-> y =	control[1]*u3 + 3.0 * (control[3]*t*u2 + control[5]*t2*u) + control[7]*t3;
+    }
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TkMakeBezierCurve --
+ *
+ *	Given a set of points, create a new set of points that fit
+ *	parabolic splines to the line segments connecting the original
+ *	points.  
+ *
+ *	Note: in spite of this procedure's name, it does *not* generate
+ *	Bezier curves.  Since only three control points are used for
+ *	each curve segment, not four, the curves are actually just
+ *	parabolic.
+ *
+ * Results:
+ *	xPoints array is always filled
+ *	in.  The return value is the number of points placed in the
+ *	array.  Note:  if the first and last points are the same, then
+ *	a closed curve is generated.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+int
+TkMakeBezierCurve(pointPtr, numPoints, numSteps, xPoints)
+    int *pointPtr;			/* Array of input coordinates:  x0,
+					 * y0, x1, y1, etc.. */
+    int numPoints;			/* Number of points at pointPtr. */
+    int numSteps;			/* Number of steps to use for each
+					 * spline segments (determines
+					 * smoothness of curve). */
+    Point xPoints[];			/* Array of Points to fill in (e.g.
+					 * for display.  NULL means don't
+					 * fill in any Points. */
+{
+    int closed, outputPoints, i;
+    int numCoords = numPoints*2;
+    double control[8];
+
+    /*
+     * If the curve is a closed one then generate a special spline
+     * that spans the last points and the first ones.  Otherwise
+     * just put the first point into the output.
+     */
+
+    if (!pointPtr) {
+	/* Of pointPtr == NULL, this function returns an upper limit.
+	 * of the array size to store the coordinates. This can be
+	 * used to allocate storage, before the actual coordinates
+	 * are calculated. */
+	return 1 + numPoints * numSteps;
+    }
+
+    outputPoints = 0;
+    if ((pointPtr[0] == pointPtr[numCoords-2])
+	    && (pointPtr[1] == pointPtr[numCoords-1])) {
+	closed = 1;
+	control[0] = 0.5*pointPtr[numCoords-4] + 0.5*pointPtr[0];
+	control[1] = 0.5*pointPtr[numCoords-3] + 0.5*pointPtr[1];
+	control[2] = 0.167*pointPtr[numCoords-4] + 0.833*pointPtr[0];
+	control[3] = 0.167*pointPtr[numCoords-3] + 0.833*pointPtr[1];
+	control[4] = 0.833*pointPtr[0] + 0.167*pointPtr[2];
+	control[5] = 0.833*pointPtr[1] + 0.167*pointPtr[3];
+	control[6] = 0.5*pointPtr[0] + 0.5*pointPtr[2];
+	control[7] = 0.5*pointPtr[1] + 0.5*pointPtr[3];
+	if (xPoints != NULL) {
+	    xPoints-> x = control[0];
+            xPoints-> y = control[1];
+	    TkBezierScreenPoints( control, numSteps, xPoints+1);
+	    xPoints += numSteps+1;
+	}
+	outputPoints += numSteps+1;
+    } else {
+	closed = 0;
+	if (xPoints != NULL) {
+	    xPoints->x = pointPtr[0];
+            xPoints->y = pointPtr[1];
+	    xPoints += 1;
+	}
+	outputPoints += 1;
+    }
+
+    for (i = 2; i < numPoints; i++, pointPtr += 2) {
+	/*
+	 * Set up the first two control points.  This is done
+	 * differently for the first spline of an open curve
+	 * than for other cases.
+	 */
+
+	if ((i == 2) && !closed) {
+	    control[0] = pointPtr[0];
+	    control[1] = pointPtr[1];
+	    control[2] = 0.333*pointPtr[0] + 0.667*pointPtr[2];
+	    control[3] = 0.333*pointPtr[1] + 0.667*pointPtr[3];
+	} else {
+	    control[0] = 0.5*pointPtr[0] + 0.5*pointPtr[2];
+	    control[1] = 0.5*pointPtr[1] + 0.5*pointPtr[3];
+	    control[2] = 0.167*pointPtr[0] + 0.833*pointPtr[2];
+	    control[3] = 0.167*pointPtr[1] + 0.833*pointPtr[3];
+	}
+
+	/*
+	 * Set up the last two control points.  This is done
+	 * differently for the last spline of an open curve
+	 * than for other cases.
+	 */
+
+	if ((i == (numPoints-1)) && !closed) {
+	    control[4] = .667*pointPtr[2] + .333*pointPtr[4];
+	    control[5] = .667*pointPtr[3] + .333*pointPtr[5];
+	    control[6] = pointPtr[4];
+	    control[7] = pointPtr[5];
+	} else {
+	    control[4] = .833*pointPtr[2] + .167*pointPtr[4];
+	    control[5] = .833*pointPtr[3] + .167*pointPtr[5];
+	    control[6] = 0.5*pointPtr[2] + 0.5*pointPtr[4];
+	    control[7] = 0.5*pointPtr[3] + 0.5*pointPtr[5];
+	}
+
+	/*
+	 * If the first two points coincide, or if the last
+	 * two points coincide, then generate a single
+	 * straight-line segment by outputting the last control
+	 * point.
+	 */
+
+	if (((pointPtr[0] == pointPtr[2]) && (pointPtr[1] == pointPtr[3]))
+		|| ((pointPtr[2] == pointPtr[4])
+		&& (pointPtr[3] == pointPtr[5]))) {
+	    if (xPoints != NULL) {
+                xPoints[0].x = control[6];
+                xPoints[0].y = control[7];
+		xPoints++;
+	    }
+	    outputPoints += 1;
+	    continue;
+	}
+
+	/*
+	 * Generate a Bezier spline using the control points.
+	 */
+
+
+	if (xPoints != NULL) {
+	    TkBezierScreenPoints(control, numSteps, xPoints);
+	    xPoints += numSteps;
+	}
+	outputPoints += numSteps;
+    }
+    return outputPoints;
+}
+
+#define STATIC_ARRAY_SIZE 200
+
+static Bool
+spline( Handle self, int count, Point * points)
+{
+   Bool ret;
+   int array_size;
+   Point static_array[STATIC_ARRAY_SIZE], *array;
+   
+   array_size = TkMakeBezierCurve( NULL, count, var-> splinePrecision, NULL);
+   if ( array_size >= STATIC_ARRAY_SIZE) {
+      if ( !( array = malloc( array_size * sizeof( Point)))) {
+         warn("Not enough memory");
+         return false;
+      }
+   } else 
+      array = static_array;
+
+   array_size = TkMakeBezierCurve( points, count, var-> splinePrecision, array);
+
+   if ( my-> polyline == Drawable_polyline) {
+      ret = apc_gp_draw_poly( self, array_size, array);
+   } else {
+      int i;
+      AV * av = newAV();
+      SV * sv = newRV(( SV*) av);
+      for ( i = 0; i < array_size; i++) {
+         av_push( av, newSViv( array[i]. x));
+         av_push( av, newSViv( array[i]. y));
+      }
+      ret = my-> polyline( self, sv);
+      sv_free( sv);
+   }
+
+   if ( array != static_array) free( array);
+   
+   return ret; 
+}  
+
+static Bool
+fill_spline( Handle self, int count, Point * points)
+{
+   Bool ret;
+   int array_size;
+   Point static_array[STATIC_ARRAY_SIZE], *array;
+   
+   array_size = TkMakeBezierCurve( NULL, count, var-> splinePrecision, NULL);
+   if ( array_size >= STATIC_ARRAY_SIZE) {
+      if ( !( array = malloc( array_size * sizeof( Point)))) {
+         warn("Not enough memory");
+         return false;
+      }
+   } else 
+      array = static_array;
+
+   array_size = TkMakeBezierCurve( points, count, var-> splinePrecision, array);
+
+   if ( my-> polyline == Drawable_fillpoly) {
+      ret = apc_gp_fill_poly( self, array_size, array);
+   } else {
+      int i;
+      AV * av = newAV();
+      SV * sv = newRV(( SV*) av);
+      for ( i = 0; i < array_size; i++) {
+         av_push( av, newSViv( array[i]. x));
+         av_push( av, newSViv( array[i]. y));
+      }
+      ret = my-> fillpoly( self, sv);
+      sv_free( sv);
+   }
+
+   if ( array != static_array) free( array);
+   
+   return ret; 
+}  
+
+Bool
+Drawable_spline( Handle self, SV * points)
+{
+   return polypoints( self, points, "spline", 2, spline);
+}
+
+Bool
+Drawable_fill_spline( Handle self, SV * points)
+{
+   return polypoints( self, points, "fill_spline", 2, fill_spline);
 }
 
 int
@@ -1110,6 +1416,15 @@ Drawable_rop2( Handle self, Bool set, int rop2)
    if (!set) return apc_gp_get_rop2( self);
    apc_gp_set_rop2( self, rop2);
    return rop2;
+}
+
+int
+Drawable_splinePrecision( Handle self, Bool set, int splinePrecision)
+{
+   if ( !set) return var-> splinePrecision;
+   if ( splinePrecision < 1) return -1;
+   var-> splinePrecision = splinePrecision;
+   return splinePrecision;
 }
 
 Bool

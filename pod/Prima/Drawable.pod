@@ -765,6 +765,16 @@ Selects raster operation that applies to background color plotting routines.
 
 See also: C<::rop>, L<"Raster operations">.
 
+=item splinePrecision INT
+
+Selects number of steps to use for each spline segment in C<spline>
+and C<fill_spline> calls. In other words, determines smoothness of 
+a curve. Minimum accepted value, 1, produces staight lines; maximum
+value is not present, though it is hardly practical to set it higher
+than the output device resolution.
+
+Default value: 24
+
 =item textOpaque FLAG
 
 If FLAG is 1, then text_out() fills the text background area

@@ -167,15 +167,15 @@ bitblt_invert( Byte * src, Byte * dst, int count)
    }
 }
 
-void 
+Bool 
 img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
    Point srcSz, dstSz;
    int asrcW, asrcH;
    Bool newObject = false;
 
-   if ( dest == nilHandle || src == nilHandle) return;
-   if ( rop == ropNoOper) return;
+   if ( dest == nilHandle || src == nilHandle) return false;
+   if ( rop == ropNoOper) return false;
 
    if ( kind_of( src, CIcon)) {
       /* since src is always treated as read-only, 
@@ -228,7 +228,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
         srcY >= srcSz. y || srcY + srcH <= 0 ||
         dstX >= dstSz. x || dstX + dstW <= 0 ||
         dstY >= dstSz. y || dstY + dstH <= 0)
-      return;
+      return true;
 
    /* check if we can do it without expensive scalings and extractions */
    if ( 
@@ -250,7 +250,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
          ssy = 0;
       }
       x = CImage( src)-> extract( src, ssx, ssy, ssw, ssh);
-      if ( !x) return;
+      if ( !x) return false;
 
       if ( srcX < 0 || srcY < 0 || srcX + asrcW >= srcSz. x || srcY + asrcH > srcSz. y) {
          HV * profile;
@@ -263,7 +263,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
             srcH = asrcH;
             if ( PImage(x)-> w != asrcW || PImage(x)-> h != asrcH) {
                Object_destroy( x);
-               return;
+               return true;
             }
          }
 
@@ -278,7 +278,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
          sv_free((SV*)profile);
          if ( !dx) {
             Object_destroy( x);
-            return;
+            return false;
          }
          if ( PImage( dx)-> palSize > 0) {
             PImage( dx)-> palSize = PImage( x)-> palSize;
@@ -496,6 +496,8 @@ NOSCALE:
 
 EXIT:
    if ( newObject) Object_destroy( src);
+
+   return true;
 }
 
 
