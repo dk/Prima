@@ -756,14 +756,15 @@ sub setup_variables
     # my $ldflags = $COMPILER eq 'emx' ? "" : "$Config{ ldflags} ";
     my $ldflags = "";
     my $lddlflags = $Config{ lddlflags};
+    setvar( 'DEBUG', defined($ENV{ PRIMA_DEVEL}) ? $ENV{ PRIMA_DEVEL} : 0);
     if ( $COMPILER eq 'msvc' && (( $ccflags =~ /TP/) || ($ccflags =~ /O\d/))) { # M$VC++ protection
         $warnflags =~ s/W3/W1/;        # lower warning level
         $ccflags   =~ s/\-W3/\-W1/;        # lower warning level
         $warnflags =~ s/(-|\/)WX//;    # and dismiss 'warnings as errors'; ( for its stupidity in the c++ case)
         $ldflags =~ s/(-|\/)nodefaultlib//g;
         $lddlflags =~ s/(-|\/)nodefaultlib//g;
+        $ccflags =~ s/(-|\/)O\d//g if $DEBUG; # remove optimization
     }
-    setvar( 'DEBUG', defined($ENV{ PRIMA_DEVEL}) ? $ENV{ PRIMA_DEVEL} : 0);
     setvar( 'C_FLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags} " . ( $Config{ optimize} || '') . " ");
     setvar( 'CFLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( $DEBUG ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
     setvar( 'CCFLAGS',  '');
