@@ -156,7 +156,7 @@ apc_application_get_os_info( char * system, char * release, char * vendor, char 
             strcpy( system, "Windows 98");
          else
             strcpy( system, "Windows 95");
-      }
+      } else
          strcpy( system, "Windows");
    }
    if ( vendor )
@@ -234,10 +234,8 @@ process_msg( MSG * msg)
          if ( musClk. pending &&
               ( musClk. emsg         == msg-> message) &&
               ( musClk. msg. hwnd    == msg-> hwnd)    &&
-              ( musClk. msg. pt. x   == msg-> pt. x)   &&
-              ( musClk. msg. pt. y   == msg-> pt. y)   &&
-              ( musClk. msg. wParam  == ( msg-> wParam & ( MK_CONTROL|MK_SHIFT)))  &&
-              ( musClk. msg. lParam  == msg-> lParam)
+              ( musClk. msg. wParam  == ( msg-> wParam & ( MK_CONTROL|MK_SHIFT))) &&
+              ( abs( musClk. msg. time  - msg-> time) < 200)
             )
             PostMessage( msg-> hwnd, musClk. msg. message, msg-> wParam, msg-> lParam);
          musClk. pending = 0;
@@ -551,7 +549,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
   ViewProfile vprf;
   int oStage = var stage;
   WindowData ws;
-  WINDOWPLACEMENT wp;
+  WINDOWPLACEMENT wp = {sizeof(WINDOWPLACEMENT)};
   DWORD style = WS_CLIPCHILDREN | WS_OVERLAPPED
      | (( borderIcons &  biSystemMenu) ? WS_SYSMENU     : 0)
      | (( borderIcons &  biMinimize)   ? WS_MINIMIZEBOX : 0)
@@ -560,6 +558,8 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
      | (( borderStyle == bsSizeable)   ? WS_THICKFRAME  : 0)
      | (( borderStyle == bsSingle  )   ? WS_BORDER      : 0)
      | (( borderStyle == bsDialog  )   ? WS_BORDER      : 0)
+     | (( windowState == wsMinimized)  ? WS_MINIMIZE    : 0)
+     | (( windowState == wsMaximized)  ? WS_MAXIMIZE    : 0)
   ;
   DWORD exstyle = 0
      | (( borderStyle == bsDialog  )   ? WS_EX_DLGMODALFRAME : 0)
@@ -568,7 +568,6 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
 
   if ( !kind_of( self, CWidget)) apcErrRet( errInvObject);
   apcErrClear;
-  lock( true);
   if (( var handle != nilHandle) && (
        ( DHANDLE( owner) != sys owner)
     || ( borderStyle != sys s. window. borderStyle)
@@ -577,6 +576,8 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
     || ( clipOwner   != is_apt( aptClipOwner))
   ))
   {
+     apc_window_set_window_state( self, windowState);
+     // prevent cmSize/cmWindowStage message loss if recreate goes with WS_XXX change.
      if ( sys recreateData) {
         memcpy( &vprf, sys recreateData, sizeof( vprf));
         free( sys recreateData);
@@ -584,11 +585,11 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
      } else
         get_view_ex( self, &vprf);
      ws = sys s. window;
-     wp. length = sizeof( wp);
-     GetWindowPlacement( HANDLE, &wp);
+     if ( !GetWindowPlacement( HANDLE, &wp)) apiErr;
      usePos = useSize = 1; // prevent using shell-position flags for recreate
      reset = true;
   }
+  lock( true);
 
   if ( reset || ( var handle == nilHandle))
      if ( !create_group( self, owner, syncPaint, clipOwner,
@@ -606,17 +607,17 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
      apc_window_set_window_state( self, windowState);
      set_view_ex( self, &vprf);
      sys s. window = ws;
-     SetWindowPlacement( HANDLE, &wp);
+     if ( !SetWindowPlacement( HANDLE, &wp)) apiErr;
      var stage = oStage;
   }
   else {
-     WINDOWPLACEMENT wp;
-     if ( windowState != wsNormal) {
-        GetWindowPlacement( HANDLE, &wp);
-        wp. showCmd = ( windowState == wsMinimized) ? SW_MINIMIZE : SW_SHOWMAXIMIZED;
-        SetWindowPlacement( HANDLE, &wp);
-     }
-     guts. topWindows++;
+//   WINDOWPLACEMENT wp = {sizeof( WINDOWPLACEMENT)};
+//   if ( windowState != wsNormal) {
+//      if ( !GetWindowPlacement( HANDLE, &wp)) apiErr;
+//      wp. showCmd = ( windowState == wsMinimized) ? SW_MINIMIZE : SW_SHOWMAXIMIZED;
+//      if ( !SetWindowPlacement( HANDLE, &wp)) apiErr;
+//  }
+    guts. topWindows++;
   }
   apc_window_set_caption( self, var text);
   lock( false);
@@ -680,9 +681,8 @@ apc_window_get_client_pos( Handle self)
    RECT  r;
 
    if ( apc_window_get_window_state( self) == wsMinimized) {
-      WINDOWPLACEMENT w;
-      w. length = sizeof( w);
-      GetWindowPlacement( HANDLE, &w);
+      WINDOWPLACEMENT w = { sizeof( WINDOWPLACEMENT)};
+      if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
       p. x = w. rcNormalPosition. left + delta. x;
       p. y = sz. y - w. rcNormalPosition. bottom + delta. y;
    } else {
@@ -700,13 +700,12 @@ apc_window_get_client_size( Handle self)
    Point p;
    if ( apc_window_get_window_state( self) == wsMinimized) {
       // cannot acquire client extension at this time. Using euristic calculations.
-      WINDOWPLACEMENT w;
+      WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
       Point delta = apc_sys_get_window_borders( sys s. window. borderStyle);
       int   menuY  = (( PWindow) self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0;
       int   titleY = ( sys s. window. borderIcons & biTitleBar) ?
                      GetSystemMetrics( SM_CYCAPTION) : 0;
-      w. length = sizeof( w);
-      GetWindowPlacement( HANDLE, &w);
+      if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
       p. x = w. rcNormalPosition. right  - w. rcNormalPosition. left - delta. x * 2;
       p. y = w. rcNormalPosition. bottom - w. rcNormalPosition. top  - delta. y * 2
          - menuY - titleY;
@@ -818,8 +817,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 int
 apc_window_get_window_state( Handle self)
 {
-   WINDOWPLACEMENT s;
-   s. length = sizeof( s);
+   WINDOWPLACEMENT s = {sizeof( WINDOWPLACEMENT)};
    if ( !GetWindowPlacement( HANDLE, &s)) apiErr;
    if ( s. showCmd == SW_SHOWMAXIMIZED) return wsMaximized;
    if ( s. showCmd == SW_SHOWMINIMIZED) return wsMinimized;
@@ -848,18 +846,17 @@ apc_window_set_client_pos( Handle self, int x, int y)
 
 
    if ( var stage == csConstructing && apc_window_get_window_state( self) != wsNormal) {
-      WINDOWPLACEMENT w;
-      w. length = sizeof( w);
-      GetWindowPlacement( HANDLE, &w);
+      WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
+      if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
       w. rcNormalPosition. top    += sz. y - y + delta. y - w. rcNormalPosition. bottom;
       w. rcNormalPosition. bottom  = sz. y - y + delta. y;
       w. rcNormalPosition. right  += x - delta. x - w. rcNormalPosition. left;
       w. rcNormalPosition. left    = x - delta. x;
       w. flags   = 0;
       w. showCmd  = 0;
-      SetWindowPlacement( HANDLE, &w);
+      if ( !SetWindowPlacement( HANDLE, &w)) apiErr;
    } else {
-      GetWindowRect( HANDLE, &r);
+      if ( !GetWindowRect( HANDLE, &r)) apiErr;
       x -= delta. x;
       y  = sz. y - ( r. bottom - r. top) - y + delta. y;
       SetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
@@ -876,14 +873,13 @@ apc_window_set_client_size( Handle self, int x, int y)
 
    if (( var stage == csConstructing && ws != wsNormal) || ws == wsMinimized) {
    // if (( var stage == csConstructing) || ws == wsMinimized) {
-      WINDOWPLACEMENT w;
+      WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
       Point delta = apc_sys_get_window_borders( sys s. window. borderStyle);
 
-      w. length = sizeof( w);
-      GetWindowPlacement( HANDLE, &w);
-      GetWindowRect( HANDLE, &c2);
+      if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
+      if ( !GetWindowRect( HANDLE, &c2)) apiErr;
       if ( ws == wsMaximized) {
-         GetClientRect( HANDLE, &c);
+         if ( !GetClientRect( HANDLE, &c)) apiErr;
       }
       else {
          // cannot acquire client extension at this time. Using euristic calculations.
@@ -898,11 +894,11 @@ apc_window_set_client_size( Handle self, int x, int y)
       w. rcNormalPosition. right  = x + ( c2. right - c2. left - c. right + c. left) + w. rcNormalPosition. left;
       w. flags   = 0;
       w. showCmd = 0;
-      SetWindowPlacement( HANDLE, &w);
+      if ( !SetWindowPlacement( HANDLE, &w)) apiErr;
    } else {
-      GetWindowRect( HANDLE, &r);
-      GetClientRect( HANDLE, &c);
-      SetWindowPos ( HANDLE, 0,
+      if ( !GetWindowRect( HANDLE, &r)) apiErr;
+      if ( !GetClientRect( HANDLE, &c)) apiErr;
+      SetWindowPos( HANDLE, 0,
          r. left,
          r. top - y + ( c. bottom - c. top),
          x + r. right  - r. left - c. right + c. left,
@@ -969,7 +965,7 @@ window_start_modal( Handle self, Bool shared, Handle insertBefore)
 
    // setting window up
    guts. focSysDisabled = 1;
-   ((( PWindow) self)-> self)-> exec_enter_proc( self, shared, insertBefore);
+   CWindow( self)-> exec_enter_proc( self, shared, insertBefore);
    SetWindowPos( wnd, 0, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_SHOWWINDOW);
    if ( sys s. window. state == wsMinimized)
       ShowWindow( wnd, SW_RESTORE);
@@ -1025,14 +1021,18 @@ void
 apc_window_end_modal( Handle self)
 {
    HWND wnd = HANDLE;
-   if ((( PWindow) self)-> modal == mtExclusive) {
+   if ( PWindow( self)-> modal == mtExclusive) {
       if ( self == (( PApplication) application)-> topExclModal)
          PostThreadMessage( guts. mainThreadId, WM_BREAKMSGLOOP, 0, self);
    }
    guts. focSysDisabled = 1;
    WinHideWindow( wnd);
-   ((( PWindow) self)-> self)-> exec_leave_proc( self);
-   if ( application) Application_popup_modal( application);
+   CWindow( self)-> exec_leave_proc( self);
+   if ( application) {
+      Handle who = Application_popup_modal( application);
+      if ( !who && var owner)
+         CWindow( var owner)-> set_selected( var owner, 1);
+   }
    guts. focSysDisabled = 0;
 }
 
@@ -1353,9 +1353,8 @@ apc_widget_get_pos( Handle self)
    Handle parent = is_apt( aptClipOwner) ? var owner : application;
    sz = ((( PWidget) parent)-> self)-> get_size( parent);
    if ( sys className == WC_FRAME && apc_window_get_window_state( self) == wsMinimized) {
-      WINDOWPLACEMENT w;
-      w. length = sizeof( w);
-      GetWindowPlacement( HANDLE, &w);
+      WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
+      if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
       p. x = w. rcNormalPosition. left;
       p. y = sz. y - w. rcNormalPosition. bottom;
    } else {
@@ -1374,9 +1373,8 @@ apc_widget_get_size( Handle self)
    RECT r;
    Point p;
    if ( sys className == WC_FRAME && apc_window_get_window_state( self) == wsMinimized) {
-      WINDOWPLACEMENT w;
-      w. length = sizeof( w);
-      GetWindowPlacement( HANDLE, &w);
+      WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
+      if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
       p. x = w. rcNormalPosition. right  - w. rcNormalPosition. left;
       p. y = w. rcNormalPosition. bottom - w. rcNormalPosition. top;
    } else {
@@ -1550,8 +1548,12 @@ apc_widget_set_clip_rect( Handle self, Rect c)
 void
 apc_widget_set_color( Handle self, Color color, int index)
 {
+   Event ev = {cmColorChanged};
    sys viewColors[ index] = color;
-   SendMessage(( HWND) var handle, WM_COLORCHANGED, index, 0);
+
+   ev. gen. source = self;
+   ev. gen. i      = index;
+   var self-> message( self, &ev);
 }
 
 void
@@ -1560,6 +1562,8 @@ apc_widget_set_enabled( Handle self, Bool enable)
    apt_assign( aptEnabled, enable);
    if (( sys className == WC_FRAME) || ( var owner == application))
       EnableWindow( HANDLE, enable);
+   else
+      SendMessage( HANDLE, WM_ENABLE, ( WPARAM) enable, 0);
 }
 
 void
@@ -1581,7 +1585,9 @@ apc_widget_set_focused( Handle self)
 void
 apc_widget_set_font( Handle self, PFont font)
 {
-   SendMessage(( HWND) var handle, WM_FONTCHANGED, 0, 0);
+   Event ev = {cmFontChanged};
+   ev. gen. source = self;
+   var self-> message( self, &ev);
 }
 
 void
@@ -1606,9 +1612,8 @@ apc_widget_set_pos( Handle self, int x, int y)
       HWND h = HANDLE;
       int  ws = apc_window_get_window_state( self);
       if (( var stage == csConstructing && ws != wsNormal) || ( ws == wsMinimized)) {
-         WINDOWPLACEMENT w;
-         w. length = sizeof( w);
-         GetWindowPlacement( h, &w);
+         WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
+         if ( !GetWindowPlacement( h, &w)) apiErr;
          w. rcNormalPosition. top    += sz. y - y - w. rcNormalPosition. bottom;
          w. rcNormalPosition. bottom  = sz. y - y;
          w. rcNormalPosition. right  += x - w. rcNormalPosition. left;
@@ -1618,7 +1623,7 @@ apc_widget_set_pos( Handle self, int x, int y)
          return;
       }
    }
-   GetWindowRect( HANDLE, &r);
+   if ( !GetWindowRect( HANDLE, &r)) apiErr;
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
    y = sz. y - y - r. bottom + r. top;
@@ -1635,9 +1640,8 @@ apc_widget_set_size( Handle self, int width, int height)
       HWND h = HANDLE;
       int  ws = apc_window_get_window_state( self);
       if (( var stage == csConstructing && ws != wsNormal) || ( ws == wsMinimized)) {
-         WINDOWPLACEMENT w;
-         w. length = sizeof( w);
-         GetWindowPlacement( h, &w);
+         WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
+         if ( !GetWindowPlacement( h, &w)) apiErr;
          w. rcNormalPosition. top    = w. rcNormalPosition. bottom - height;
          w. rcNormalPosition. right  = width + w. rcNormalPosition. left;
          w. flags = w. showCmd = 0;
@@ -1645,15 +1649,13 @@ apc_widget_set_size( Handle self, int width, int height)
          return;
       }
    }
-   GetWindowRect( HANDLE, &r);
+   if ( !GetWindowRect( HANDLE, &r)) apiErr;
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
-   GetClientRect( HANDLE, &c);
+   if ( !GetClientRect( HANDLE, &c)) apiErr;
    if ( !SetWindowPos( HANDLE, 0,
-      r. left,
-      r. top - height + ( c. bottom - c. top),
-      width  + r. right  - r. left - c. right + c. left,
-      height + r. bottom - r. top  - c. bottom + c. top,
+      r. left, r. bottom - height,
+      width, height,
       SWP_NOZORDER | SWP_NOACTIVATE)) apiErr;
 }
 
@@ -1867,6 +1869,12 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text)
                     m-> id + MENU_ID_AUTOSTART, buf);
 }
 
+ApiHandle
+apc_menu_get_handle( Handle self)
+{
+   return ( ApiHandle) var handle;
+}
+
 Bool
 apc_popup_create( Handle self, Handle owner)
 {
@@ -1974,6 +1982,7 @@ void
 apc_message( Handle self, PEvent ev, Bool post)
 {
    ULONG msg;
+   USHORT mp1s = 0;
    ApiMessageSender sender = post ? (ApiMessageSender) PostMessage : (ApiMessageSender) SendMessage;
    switch ( ev-> cmd)
    {
@@ -1992,6 +2001,10 @@ apc_message( Handle self, PEvent ev, Bool post)
           if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDOWN; else
           if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONDOWN; else
           msg = WM_LBUTTONDOWN;
+          goto general;
+       case cmMouseWheel:
+          msg  = WM_MOUSEWHEEL;
+          mp1s = ( SHORT) ev-> pos. button;
           goto general;
        case cmMouseClick:
           if ( ev-> pos. dblclk)
@@ -2012,7 +2025,7 @@ apc_message( Handle self, PEvent ev, Bool post)
        general:
           {
              LPARAM mp2 = MAKELPARAM( ev-> pos. where. x, sys lastSize. y - ev-> pos. where. y - 1);
-             WPARAM mp1 = 0 |
+             WPARAM mp1 = mp1s |
                (( ev-> pos. mod & kbShift) ? MK_SHIFT   : 0) |
                (( ev-> pos. mod & kbCtrl ) ? MK_CONTROL : 0);
              if ( post) {
