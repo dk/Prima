@@ -1,0 +1,620 @@
+=head1 NAME
+
+Prima Image Subsystem - How To Write A Codec
+
+=head1 DESCRIPTION
+
+=head1 Start simple
+
+There are many graphical formats in the world, and yet more
+libraries, that depend on them. Writing a codec that supports 
+particular library is a tedious task, especially if one wants many
+formats. Usually you never want to get into internal parts, the
+functionality comes first, and who needs all those funky options that
+format provides? We want to load a file and to show it. Everything
+else comes later - if ever. So, in a way to not scare you off, we
+start it simple.
+
+=head2 Load
+
+Define a callback function like:
+
+   static Bool   
+   load( PImgCodec instance, PImgLoadFileInstance fi)
+   {
+   }
+
+Just that function is not enough for whole mechanism to work,
+but bindings will come later. Let us imagine we work with an imaginary 
+library libduff, that we want to load files of .duf format. 
+I<[ To discern imaginary code from real, imaginary will be prepended
+with _  - like, _libduff_loadfile ]>. So, we call _libduff_loadfile(),
+that loads black-and-white, 1-bits/pixel images, where 1 is white and 0
+is black. 
+
+
+   static Bool   
+   load( PImgCodec instance, PImgLoadFileInstance fi)
+   {
+      _LIBDUFF * _l = _libduff_load_file( fi-> fileName);
+      if ( !_l) return false;
+
+      // - create storage for our file
+      CImage( fi-> object)-> create_empty( fi-> object,
+        _l-> width, _l-> height, imBW);
+
+      // Prima wants images aligned to 4-bytes boundary,
+      // happily libduff has same considerations
+      memcpy( PImage( fi-> object)-> data, _l-> bits, 
+        PImage( fi-> object)-> dataSize);
+
+      _libduff_close_file( _l);
+         
+      return true;
+   }
+
+Prima keeps an open handle of the file; so we can use it if
+libduff trusts handles vs names:
+
+   {
+     _LIBDUFF * _l = _libduff_load_file_from_handle( fi-> f);
+      ...
+   // In both cases, you don't need to close the handle - 
+   // however you might, it's ok:
+
+      _libduff_close_file( _l);
+      fclose( fi-> f);
+   // You just assign it to null to indicate that you've closed it
+      fi-> f = null;
+      ...
+   }
+
+Together with load() you have to implement minimal open_load()
+and close_load().
+
+Simpliest open_load() returns non-null pointer - it's enough to report 'o.k'
+
+   static void * 
+   open_load( PImgCodec instance, PImgLoadFileInstance fi)
+   {
+      return (void*)1;
+   }
+
+It's result will be available in PImgLoadFileInstance-> instance,
+just in case. If it was dynamically allocated, free it in close_load().
+Dummy close_load() is doing simply nothing:
+
+   static void
+   close_load( PImgCodec instance, PImgLoadFileInstance fi)
+   {
+   }
+
+
+=head2 Writing to PImage-> data
+
+As mentioned above, Prima insists on keeping it's image data
+in 32-bit aligned scanlines. If libduff allows reading from 
+file by scanlines, we can use this possibility as well:
+
+
+   PImage i = ( PImage) fi-> object; 
+   // note - since this notation is more convenient than
+   // PImage( fi-> object)-> , instead i-> will be used 
+
+   Byte * dest = i-> data + ( _l-> height - 1) * i-> lineSize;
+   while ( _l-> height--) {
+      _libduff_read_next_scanline( _l, dest);
+      dest -= i-> lineSize;
+   }
+
+Note that image is filled in reverse - Prima images are built
+like classical XY-coordinate grid, where Y ascends upwards.
+
+Here ends the simple part. You can skip down to "Register with 
+image subsystem" part, if you want it fast.
+
+=head1  Single-frame loading
+
+=head2 Palette
+
+Our libduff can be black-and-white in two ways -
+where 0 is black and 1 is white and vice versa. While
+0B/1W is perfectly corresponding to imbpp1 | imGrayScale
+and no palette operations are needed ( Image cares 
+automatically about these), 0W/1B is although black-and-white
+grayscale but should be treated like general imbpp1 type.
+
+     if ( l-> _reversed_BW) {
+        i-> palette[0].r = i-> palette[0].g = i-> palette[0].b = 0xff;
+        i-> palette[1].r = i-> palette[1].g = i-> palette[1].b = 0;
+     }
+
+NB. Image creates palette with size calculated by exponent of 2, since it can't know
+beforehand of the actual palette size. If color palette for, say, 4-bit
+image contains 15 of 16 possible for 4-bit image colors, code like
+
+     i-> palSize = 15;
+
+does the trick.
+
+=head2 Data conversion
+
+As mentioned before, Prima defines image scanline
+size to be aligned to 32 bits, and the formula for 
+lineSize calculation is
+
+    lineSize = (( width * bits_per_pixel + 31) / 32) * 4;
+
+Prima defines number of converting routines between different
+data formats. Some of them can be applied to scanlines, and
+some to whole image ( due sampling algorithms ). These are
+defined in img_conv.h, and probably ones that you'll need
+would be C<bc_format1_format2>, which work on scanlines
+and probably ibc_repad, which combines some C<bc_XX_XX> with byte
+repadding.
+        For those who are especially lucky, some libraries do not
+check between machine byte format and file byte format.
+Prima unfortunately doesn't provide easy method for determining
+this situation, but you have to convert your data in appropriate 
+way to keep picture worthy of it's name. Note the BYTEORDER symbol
+that is defined ( usually ) in sys/types.h 
+
+=head2 Load with no data
+
+If a high-level code just needs image information rather than
+all it's bits, codec can provide it in a smart way. Old code
+will work, but will eat memory and time. A flag 
+PImgLoadFileInstance-> noImageData is indicating if image data
+is needed. On that condition, codec needs to report only
+dimensions of the image - but the type must be set anyway.
+Here comes full code:
+
+   static Bool
+   load( PImgCodec instance, PImgLoadFileInstance fi)
+   {
+      _LIBDUFF * _l = _libduff_load_file( fi-> fileName);
+      HV * profile = fi-> frameProperties;
+      PImage i = ( PImage) fi-> frameProperties;
+      if ( !_l) return false;
+
+      CImage( fi-> object)-> create_empty( fi-> object, 1, 1, 
+         _l-> _reversed_BW ? imbpp1 : imBW);
+
+      // copy palette, if any
+      if ( _l-> _reversed_BW) {
+         i-> palette[0].r = i-> palette[0].g = i-> palette[0].b = 0xff;
+         i-> palette[1].r = i-> palette[1].g = i-> palette[1].b = 0;
+      }
+
+      if ( fi-> noImageData) {
+         // report dimensions
+         pset_i( width,  _l-> width);
+         pset_i( height, _l-> height);
+         return true;
+      } 
+
+      // - create storage for our file
+      CImage( fi-> object)-> create_empty( fi-> object,
+           _l-> width, _l-> height, 
+           _l-> _reversed_BW ? imbpp1 : imBW);
+
+      // Prima wants images aligned to 4-bytes boundary,
+      // happily libduff has same considerations
+      memcpy( PImage( fi-> object)-> data, _l-> bits, 
+        PImage( fi-> object)-> dataSize);
+
+
+      _libduff_close_file( _l);
+         
+      return true;
+   }
+
+Newly introduced macros pset_i is a convenience operator, 
+assigning integer (i) as a value to a hash key, given as a
+first parameter - it becomes string literal upon macro 
+expansion. Hash used for storage is a lexical of type HV*.
+Code 
+
+        HV * profile = fi-> frameProperties;
+        pset_i( width, _l-> width);
+
+is a prettier way for
+
+        hv_store( 
+            fi-> frameProperties, 
+            "width", strlen( "width"),
+            newSViv( _l-> width),
+            0);
+
+hv_store(), HV's and SV's along with other funny symbols are
+described in perlguts.pod in Perl installation.
+
+=head2  Return extra information
+
+Image attributes are dimensions, type, palette and data.
+However, it is only Prima point of view - different formats
+can supply number of extra information, often irrelevant but
+sometimes useful. From perl code, Image has a hash reference 'extras'
+on object, where comes all this stuff. Codec can report also
+such data, storing it in PImgLoadFileInstance-> frameProperties.
+Data should be stored in native perl format, so if you're not 
+familiar with perlguts, you better read it, especially if
+you want return arrays and hashes. But just in simple, you can
+return:
+
+=over
+
+=item 1 
+
+integers:       pset_i( integer, _l-> integer);
+
+=item 2
+
+floats:         pset_f( float, _l-> float);
+
+=item 3
+
+strings:        pset_c( string, _l-> charstar); 
+- note - no malloc codec from you required
+
+=item 4
+
+prima objects:  pset_H( Handle, _l-> primaHandle);
+
+=item 5
+
+SV's:           pset_sv_noinc( scalar, newSVsv(sv));
+
+=item 6
+
+hashes:         pset_sv_noinc( scalar, ( SV *) newHV()); 
+- hashes created through newHV() can be filled just in the same manner
+as described here
+
+=item 7
+
+arrays:         pset_sv_noinc( scalar, ( SV *) newAV()); 
+- arrays (AV) are described in perlguts also, but
+most useful function here is av_push. To push 4 values, 
+for example, follow this code:
+
+
+    AV * av = newAV();
+    for ( i = 0;i < 4;i++) av_push( av, newSViv( i));
+    pset_sv_noinc( myarray, newRV_noinc(( SV *) av);
+
+is a C equivalent to
+
+      ->{extras}-> {myarray} = [0,1,2,3];
+
+=back
+
+High level code can specify if the extra 
+information should be loaded. This behavior is determined by
+flag PImgLoadFileInstance-> loadExtras. Codec may skip this 
+flag, the extra information will not be returned, even if
+PImgLoadFileInstance-> frameProperties was changed. However, 
+it is advisable to check for the flag, just for an efficiency.
+All keys, possibly assigned to frameProperties should
+be enumerated for high-level code. These strings should be 
+represented into char ** PImgCodecInfo-> loadOutput array.
+
+   static char * loadOutput[] = { 
+      "hotSpotX",
+      "hotSpotY",
+      nil
+   };
+
+   static ImgCodecInfo codec_info = {
+      ...
+      loadOutput 
+   };
+
+   static void * 
+   init( PImgCodecInfo * info, void * param)
+   {
+      *info = &codec_info;
+      ...
+   }   
+
+The code above is taken from codec_X11.c, where X11 bitmap can 
+provide location of hot spot, two integers, X and Y. The type
+of the data is not specified.
+
+=head2 Loading to icons
+
+If high-level code wants an Icon instead of an Image,
+Prima takes care for producing and-mask automatically.
+However, if codec knows explicitly about transparency
+mask stored in a file, it might change object in the way
+it fits better. Mask is stored on Icon in a -> mask field.
+
+a) Let us imagine, that 4-bit image always
+carries a transparent color index, in 0-15 range. In this case,
+following code will create desirable mask:
+
+      if ( kind_of( fi-> object, CIcon) && 
+           ( _l-> transparent >= 0) &&
+           ( _l-> transparent < PIcon( fi-> object)-> palSize)) {
+         PRGBColor p = PIcon( fi-> object)-> palette;
+         p += _l-> transparent;
+         CIcon( fi-> object)-> set_maskColor( fi-> object, 
+            ARGB( p->r, p-> g, p-> b));
+         CIcon( fi-> object)-> set_autoMasking( fi-> object, amMaskColor);
+      }   
+
+Of course, 
+
+      pset_i( transparentColorIndex, _l-> transparent);
+
+would be also helpful.
+
+b) if explicit bit mask is given, code will be like:
+
+      if ( kind_of( fi-> object, CIcon) && 
+           ( _l-> maskData >= 0)) {
+         memcpy( PIcon( fi-> object)-> mask, _l-> maskData, _l-> maskSize);
+         CIcon( fi-> object)-> set_autoMasking( fi-> object, amNone);
+      }   
+
+Note that mask is also subject to LSB/MSB and 32-bit alignment 
+issues. Treat it as a regular imbpp1 data format.
+
+=head2 open_load() and close_load()
+
+open_load() and close_load() are used as brackets for load requests,
+and although they come to full power in multiframe load
+requests, it is very probable that correctly written
+codec should use them. Codec that assigns C<false> to 
+PImgCodecInfo-> canLoadMultiple claims that it cannot load
+those images that have index different from zero. It may
+report total amount of frames, but still be incapable of
+loading them. 
+There is also a load sequence, called null-load,
+when no load() calls are made, just open_load() and close_load().
+These requests are made in case codec can provide some file
+information without loading frames at all. It can be any
+information, of whetever kind. It have to be stored into the hash
+PImgLoadFileInstance-> fileProperties, to be filled once on
+open_load(). The only exception is PImgLoadFileInstance-> frameCount,
+which can be filled on open_load(). Actually, frameCount could be 
+filled on any load stage, except close_load(), to make sense in
+frame positioning. Even single frame codec is advised to fill
+this field, at least to tell whether file is empty ( frameCount == 0) or
+not ( frameCount == 1). More about frameCount comes into chapters
+dedicated to multiframe requests.
+For strictly single-frame codecs it is therefore advised
+to care for open_load() and close_load().
+
+=head2 Load input
+
+So far codec is expected to respond for noImageData
+hint only, and it is possible to allow a high-level code to alter
+codec load behavior, passing specific parameters. 
+PImgLoadFileInstance-> profile is a hash, that contains these
+parameters. The data that should be applied to all frames and/or
+image file are set there when open_load() is called. These data, 
+plus frame-specific keys passed to every load() call.
+However, Prima passes only those hash keys, which are
+returned by load_defaults() function. This functions returns newly
+created ( by calling newHV()) hash, with accepted keys and their
+default ( and always valid ) value pairs.
+Example below defines speed_vs_memory integer value, that 
+should be 0, 1 or 2.
+
+        
+   static HV *
+   load_defaults( PImgCodec c)
+   {
+      HV * profile = newHV();
+      pset_i( speed_vs_memory, 1);
+      return profile;
+   }
+   ...
+   static Bool   
+   load( PImgCodec instance, PImgLoadFileInstance fi)
+   {
+        ...
+        HV * profile = fi-> profile;
+        if ( pexist( speed_vs_memory)) {
+           int speed_vs_memory = pget_i( speed_vs_memory);
+           if ( speed_vs_memory < 0 || speed_vs_memory > 2) {
+                strcpy( fi-> errbuf, "speed_vs_memory should be 0, 1 or 2");
+                return false;
+           }
+           _libduff_set_load_optimization( speed_vs_memory);
+        }
+   }
+
+The latter code chunk can be applied to open_load() as well.
+
+=head2 Returning an error
+
+Image subsystem defines no severity gradation for codec errors.
+If error occurs during load, codec returns false value, which
+is C<null> on open_load() and C<false> on load. It is advisable to 
+explain the error, otherwise user gets common "Loading error"
+string. To do so, error message is to be copied to 
+PImgLoadFileInstance-> errbuf, which is char[256].
+On an extreme severe error codec may call croak(),
+which jumps to the closest G_EVAL block. If there is no G_EVAL 
+blocks then program aborts. This condition could also happen if 
+codec calls some Prima code with issues croak(). This condition 
+is untrappable, - at least without calling perl functions. 
+Understanding that that behavior is not acceptable, 
+it is still under design.
+
+=head1 Multiple-frame load
+
+In order to indicate that a codec is ready to read
+multiframe images, it have to set PImgCodecInfo-> canLoadMultiple
+flag to true. This only means, that codec should respond to the
+PImgLoadFileInstance-> frame field, which is integer that
+can be in range from 0 to PImgLoadFileInstance-> frameCount - 1.
+It is advised that codec should change the frameCount from
+it's original value -1 to actual one, to help Prima filter range
+requests before they go down to the codec. The only real problem that
+may happen to the codec which it strongly unwilling to initialize
+frameCount, worth an explanation, which is following.
+If a loadAll request was made ( corresponding boolean
+PImgLoadFileInstance-> loadAll flag is set for codec's information)
+and frameCount is not initialized, then Prima starts loading all frames,
+incrementing frame index until it receives an error. Assuming the
+first error it gets is an EOF, it reports no error, so there's no
+way for a high-level code to tell whether there was an loading error or
+an end-of-file condition. 
+Codec may initialize frameCount at any time during open_load()
+or load(), even together with false return value.
+
+=head1 Saving
+
+Approach for handling saving requests is very similar to a load ones.
+For the same reason and with same restrictions functions save_defaults()
+open_save(), save() and close_save() are defined. Below shown a 
+typical saving code and highlighted differences from load.
+As an example we'll take existing codec_X11.c, which
+defines extra hot spot coordinates, x and y.
+
+
+   static HV *
+   save_defaults( PImgCodec c)
+   {
+      HV * profile = newHV();
+      pset_i( hotSpotX, 0);
+      pset_i( hotSpotY, 0);
+      return profile;
+   }
+
+   static void *
+   open_save( PImgCodec instance, PImgSaveFileInstance fi)
+   {
+      return (void*)1;
+   }
+
+   static Bool   
+   save( PImgCodec instance, PImgSaveFileInstance fi)
+   {
+      PImage i = ( PImage) fi-> object;
+      Byte * l;
+      ...
+      
+      fprintf( fi-> f, "#define %s_width %d\n", name, i-> w);
+      fprintf( fi-> f, "#define %s_height %d\n", name, i-> h);
+      if ( pexist( hotSpotX))
+         fprintf( fi-> f, "#define %s_x_hot %d\n", name, (int)pget_i( hotSpotX));
+      if ( pexist( hotSpotY))
+         fprintf( fi-> f, "#define %s_y_hot %d\n", name, (int)pget_i( hotSpotY));
+      fprintf( fi-> f, "static char %s_bits[] = {\n  ", name);
+      ...
+      // printing of data bytes is omitted
+   }   
+
+   static void 
+   close_save( PImgCodec instance, PImgSaveFileInstance fi)
+   {
+   }
+
+Save request takes into account defined supported types, that
+are defined in PImgCodecInfo-> saveTypes. Prima converts image
+to be saved into one of these formats, before actual save() call
+takes place.
+Another boolean flag, PImgSaveFileInstance-> append
+is summoned to govern appending to or rewriting a file, but
+this functionality is under design. It's current value
+is a hint, if true, for a codec not to rewrite but rather
+append the frames to an existing file. Due to increased
+complexity of the code, that should respond to the append hint, 
+this behavior is not required.
+
+Codec may set two of PImgCodecInfo flags, canSave and
+canSaveMultiple. Save requests will never be called if canSave
+is false, and append requests along with multiframe save requests
+would be never invoked for a codec with canSaveMultiple set to false.
+Scenario for a multiframe save request is the same as for a load one. All the
+issues concerning palette, data converting and saving extra 
+information are actual, however there's no corresponding flag like
+loadExtras - codec is expected to save all information what it can extract from
+PImgSaveFileInstance-> objectExtras hash. 
+
+
+=head1 Registering with image subsystem
+
+Finally, the code have to be registered. It's not as illustrative 
+but this part better not to be oversimplified.
+A codec's callback functions are set into ImgCodecVMT structure.
+Those function slots that are unused should not be defined as
+dummies - those are already defined and gathered under struct
+CNullImgCodecVMT. That's why all functions in the illustration code
+were defined as static.
+A codec have to provide some information that Prima
+uses to decide what codec should load this particular file.
+If no explicit directions given, Prima asks those codecs whose
+file extensions match to file's.
+init() should return pointer to the filled struct, that describes 
+codec's capabilities:
+
+   // extensions to file - might be several, of course, thanks to dos...
+   static char * myext[] = { "duf", "duff", nil };
+
+   // we can work only with 1-bit/pixel
+   static int    mybpp[] = { 
+       imbpp1 | imGrayScale, // 1st item is a default type
+       imbpp1, 
+       0 };   // Zero means end-of-list. No type has zero value.
+
+   // main structure
+   static ImgCodecInfo codec_info = {
+      "DUFF", // codec name 
+      "Numb & Number, Inc.", // vendor
+      _LIBDUFF_VERS_MAJ, _LIBDUFF_VERS_MIN,    // version
+      myext,    // extension
+      "DUmb Format",     // file type
+      "DUFF",     // file short type
+      nil,    // features 
+      "",     // module
+      true,   // canLoad
+      false,  // canLoadMultiple 
+      false,  // canSave
+      false,  // canSaveMultiple
+      mybpp,  // save types
+      nil,    // load output 
+   };
+
+   static void * 
+   init( PImgCodecInfo * info, void * param)
+   {
+      *info = &codec_info;
+      return (void*)1; // just non-null, to indicate success
+   }   
+
+The result of init() is stored into PImgCodec-> instance, and
+info into PImgCodec-> info. If dynamic memory was allocated
+for these structs, it can be freed on done() invocation.
+Finally, the function that is invoked from Prima,
+is the only that required to be exported, is responsible for
+registering a codec:
+
+   void 
+   apc_img_codec_duff( void )
+   {
+      struct ImgCodecVMT vmt;
+      memcpy( &vmt, &CNullImgCodecVMT, sizeof( CNullImgCodecVMT));
+      vmt. init          = init;
+      vmt. open_load     = open_load;
+      vmt. load          = load; 
+      vmt. close_load    = close_load; 
+      apc_img_register( &vmt, nil);
+   }
+
+This procedure can register as many codecs as it wants to, 
+but currently Prima is designed so that one codec_XX.c file 
+should be connected to one library only.
+
+The name of the procedure is apc_img_codec_ plus
+library name, that is required for a compilation with Prima.
+File with the codec should be called codec_duff.c ( is our case)
+and put into img directory in Prima source tree. Following
+these rules, Prima will be assembled with libduff.a ( or duff.lib,
+or whatever, the actual library name is system dependent) - if the library is present.
+
+

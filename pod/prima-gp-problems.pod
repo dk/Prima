@@ -1,0 +1,407 @@
+
+=head1 NAME 
+
+Problems, questionable or intricate topics in 2-D Graphics
+
+=head1 Introduction
+
+One of most important goals of the Prima project
+is the portability between different systems. But independent
+of the efforts to keep Prima internal parts so that
+they behave more or less identically, it is always possible
+to write non-portable, system-dependent code. 
+Here are some guidelines and suggestions for 2-D graphics
+programs.
+
+=head1 Minimal display capabilities
+
+A compliant display should have minimal set
+of capabilities, that programmer can rely upon. So following
+are guaranteedly supported by Prima:
+
+=over
+
+=item Capabilities
+
+Distinct black and white colors
+
+Line widths 0 and 1
+
+One monospaced font
+
+Solid fill
+
+ropCopy and ropNoOper
+
+
+=item Plotting primitives
+
+SetPixel,GetPixel
+
+Line,PolyLine,PolyLines
+
+Ellipse,Arc,Chord,Sector
+
+Rectangle
+
+FillPoly
+
+FillEllipse,FillChord,FillSector
+
+TextOut
+
+PutImage,GetImage
+
+=item Information services
+
+GetTextWidth,GetFontMetrics,GetCharacterABCWidths
+
+GetImageBitsLayout
+
+=item Properties
+
+color
+
+backColor
+
+rop
+
+backRop
+
+lineWidth
+
+lineJoin
+
+lineStyle
+
+fillPattern
+
+fillPolyWinding
+
+textOpaque
+
+clipRect
+
+All these properties must be present, but it is not
+required that they can be changed. If renderer can support
+only one mode for a property, it have to obey then all
+guidelines for the mode. For example, if a renderer supports
+functionality for black color in full but limited for others,
+it should not provide writable color property.
+
+=back
+
+=head1 Inevident issues 
+
+=head2 Colors
+
+=over
+
+=item Black and white colors on paletted displays
+
+Due the fact that paletted displays use indexed color 
+representation, black and white indexes not always are
+0 and 2^n-1, so raster image operation results may look garbled (X).
+Win32 and OS/2 protect themselves from this condition by 
+forcing white to be the last color in system palette.
+
+Example: if white color uses palette id = 15 
+on 8-bit display then desired masking effect wouldn't work 
+when xoring transparent areas with cl::White.
+
+Workaround: None, but it is planned to introduce two new cl:: constants, 
+cl::Clear and cl::Set, to represent all zeros and all ones
+for raster operations.
+
+=item Black might be not 0, and white not 0xffffff
+
+Although weird, but happens sometimes, notably on 15 and 16
+pixel displays. Internal color representation for white on 15-color
+display ( assuming R,G and B are 5-bit values) will be 
+
+ 11111000 11111000 11111000
+ --R----- --G----- --B-----
+
+that equals to 0xf8f8f8. (All)
+
+Advise: don't check for 'blackness' and 'whiteness'
+merely by comparing pixel value.
+
+=item Pixel value coding
+
+Status: internal
+
+It is not checked how does Prima behave when pixel value and platform integer
+use different bit and/or byte priority (X).
+
+=back
+
+=head2 Filled shapes
+
+=over
+
+=item Dithering
+
+If a non-solid pattern is
+selected and background and/or foreground color
+cannot be drawn as solid, valid rendering requires 3 or 4 colors then. 
+Of course it depends on color rendering engine. (95)
+
+=item Overfill effect
+
+In complex shapes ( FillPoly, for example) renderer can
+fill certain areas two or more times. Whereas not
+noticeable with ropCopyPut, other raster operations
+(like XOR) sometimes spoil the picture. (OS/2)
+NB - has nothing in common with winding rule.
+
+Workaround: Don't use raster operations with filled shapes
+
+=item Pattern offset
+
+For a widget that contains pattern-filled shape, 
+its scrolled picture will be
+always garbled, because there's no way to provide an algorithm
+for correct rendering without a prior knowledge of the
+widget nature. (All)
+
+Workaround: Don't use patterned backgrounds. Same
+effect would be visible on dithered backgrounds,
+so one may check for pure color.
+
+=back
+
+=head2 Lines
+
+=over
+
+=item Line caps over patterned styles
+
+It is not clear, whether
+gaps between dashes should be a multiple to line width or
+not. For example, lpDotDot looks as a single line when
+lineWidth is over 10 - if non-multiple tactic is chosen.
+Otherwise, however, it is hard to predict plotting strategy
+from high-level code. The problem is more not to platform but
+to Prima design. (All)
+
+Workaround: use predefined patterns (lp::XXX) 
+
+=item Line joins
+
+Joint areas may be drawn two ( or more) times -
+the problem emerges if logical rop ( XOR) is chosen.(OS/2)
+
+=item Dithering
+
+May be turned off for lines. (95)
+
+=back
+
+=head2 Fonts
+
+=over
+
+=item Lame fonts
+
+A font is loaded by request with one size,
+but claims another afterwards.(OS/2, X).
+
+Impact: system-dependent font description may not match
+with Prima's.
+
+Advise: don't try to deduce Prima font metrics from
+system-dependent ones and vice versa.
+
+=item Transparent plotting
+
+No internal function for drawing transparent bitmaps (like fonts).
+Therefore, if a font emulation is desired, special rops can't be
+reproduced. (OS/2, Win95, WinNT)
+
+Impact: font emulation is laborsome - glyphs should be plotted
+by consequential anding and xoring a bitmap, and raster operations
+are even worse.
+
+
+=item Kerning
+
+Prima do not use text kernings, nor
+encourages underlying platform-specific code to use it - primarily
+because of complexity.
+From the other hand, sometimes typesetting cannot be 
+calculated correctly if no user info for text kerning 
+is provided. (95) 
+
+=item Fractional text position
+
+If glyphs have fractional widths,
+it may happened so that letters may change their position in
+a string. Example: every glyph has width 8.6 pixels. 
+If string "abcd" is drawn at position 0,
+then black part of "d" starts at 25th pixel, but if "cd" is drawn 
+at 17, it starts at 24th pixel. (OS/2)
+
+Solution: none
+
+=item Text background
+
+If drawn for non-CopyPut rop, is not expected
+to be mixed with font itself - however it's hardly reachable,
+so results differs for different platforms.
+
+Text background may be only drawn with pure ( non-dithered ) color
+(95,NT) - but this is more good than bad.
+
+=item Internal platform features
+
+No font change notification. (X, OS/2)
+
+Raster fonts can't be synthesized (OS/2, partly X)
+
+=back
+
+=head2 Raster operations
+
+Background rop is not supported (X,95,NT) and
+foreground rop has limited number of modes (OS/2,X). Not all rops
+can be emulated for certain primitives - fonts,
+complex shapes, or patterned shapes.
+
+It is unclear what primitives should support rops, -
+for example, FloodFill, SetPixel. Current behavior -
+they don't.
+
+
+=head2 Arcs
+
+Systems tend to produce different results for 
+angles outside 0 and 2pi, and although Prima
+tries to emulate the correct behavior for any angle,
+minor incosistencies may be noticed.
+If emulating, note that 2 and 4-pi arcs
+are not the same - for example, xor-rop is displayed
+differently.
+
+
+=head2 Palettes
+
+=over
+
+=item Static palettes
+
+Some displays can't change palette,
+so 8- or 4- bit display doesn't mean automatically that
+palette is accessible.(X)
+
+=item Widget::palette
+
+Widget::palette property is used for explicit stating that given
+widget has extra color needs. These may be satisfacted in different
+ways, or may not at all. It is advisable not to rely onto platform
+behavior for palette operations.
+
+=item Dynamic palette change
+
+It is possible (usually on 8-bit displays) that platform 
+changes its palette, in order to process different 
+color requests on low-resolution display. All systems 
+behave differently.
+
+Win9X/WinNT - only one top-level window at a time 
+and it's direct children ( not ::clipOwner(0)) can benefit
+from using Widget::palette. System palette is switched every time 
+as different windows go to foreground.
+
+OS/2 - not implemented, but in principle as same as win32.
+
+X - Any application can easily ruin system color table.
+Since it is by design, we can't do anything here.
+
+=back
+
+=head2 Bitmaps
+
+=over
+
+=item Lame scaling
+
+Scaling is lame (95) or not supported (X). Common mistake
+is to not take into account fractional pixels that appear under
+scaling factor > 1, what is happened to 95.
+
+Workaround: none
+
+=item Large scale factors
+
+Request for drawing a bitmap may result into a memory hog,
+if large scaling factor is selected. (OS/2,95,NT).
+
+=back
+
+=head1 Platform-specific pecularities
+
+=head2 OS/2
+
+Some rops are bogus - SRCTRANSPARENT, for example. Some
+times they work, some times they don't.
+
+Circles cannot be drawn using an even diameter.
+
+Fast GDI operations on HWND_DESKTOP may be delayed, thus
+GetPixel may return invalid pixel values.
+
+
+=head2 Windows 9X
+
+Amount of GDI objects can not exceed some unknown
+threshold - experiments show that 128 objects
+is safe enough.
+
+No transformations.
+
+Color cursor creation routine is broken.
+
+Filled shapes are broken; emulation procedures
+are somewhat inefficient.
+
+=head2 X
+
+No transformations
+
+No bitmap scaling
+
+No font rotation
+
+No GetPixel, FloodFill ( along with some other primitives)
+
+White is not 2^n-1 on n-bit paletted displays (XFree86?).
+
+Filled shapes are broken; emulation procedures
+are somewhat inefficient.
+
+Color bitmaps cannot be drawn onto mono bitmaps.
+
+=head1 Implementation notes
+
+=head2 OS/2
+
+Palettes are not implemented
+
+=head2 Win32
+
+DeviceBitmaps are somewhat slower for output on 8-bit displays
+than Images and Icons. That is because DeviceBitmaps are stuck
+to their original palette, so putting a DeviceBitmap onto
+different palette drawable requires some hacks.
+
+=head2 X
+
+Image that was first drawn on a non-paletted
+Drawable will output in low color resolution on a paletted
+Drawable. That is because image has a special cache in display
+pixel format, but calculating it every time is inefficient
+altough possible. It is planned to fix the bug by checking
+palette difference for every PutImage invocation.
+( NB - the bug is can be seen on dynamic color displays only)
+ 

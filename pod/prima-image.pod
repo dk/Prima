@@ -1,0 +1,349 @@
+
+=head1 NAME
+
+Using image subsystem
+
+=head1 DESCRIPTION
+
+=head1 Loading
+
+=head2 Simple loading
+
+Simpliest case, loading a single image would look like:
+
+        my $x = Prima::Image-> load( 'filename.duf');
+        die "$@" unless $x;
+
+Image functions can work being either invoked from package,
+or from existing Prima::Image object, in latter case the caller 
+object itself is changing. The code above could be also written as
+
+        my $x = Prima::Image-> create;
+        die "$@" unless $x-> load( 'filename.duf');
+
+In both cases $x contains image data upon success.
+Error is returned into $@ variable ( see perldoc perlvar for more info). 
+
+=head2 Multiframe loading
+
+Multiframe load call can be also issued in two ways:
+
+
+        my @x = Prima::Image-> load( 'filename.duf', loadAll => 1);
+        die "$@" unless $x[-1];
+
+        my $x = Prima::Image-> create;
+        my @x = $x-> load( 'filename.duf', loadAll => 1);
+        die "$@" unless $x[-1];
+
+In second case, the content of the first frame comes to $x and $x[0].
+Sufficient check for error is whether last item of a returned
+array is defined. This check works also if an empty array is returned.
+Only this last item can be an undefined value, others are guaranteed
+to be valid objects.
+
+Multiframe syntax is expressed in a set of extra hash keys.
+These keys are:
+
+=over
+
+=item loadAll
+
+Request for loading all frames that can be read from a file.
+Example:
+
+        loadAll => 1
+
+=item index
+
+If present, returns a single frame with index given.
+Example:
+
+        index => 8
+
+=item map
+
+Contains an anonymous array of frame indeces to load. 
+Valid indeces are above zero, negative ones can't be counted in a way
+perl array indeces are. Example:
+
+         map => [0, 10, 15..20]
+
+=back
+
+=head2 Querying extra information
+
+By default Prima loads image data and palette only. For any other information
+that can be loaded, anonymous hash 'extras' can be defined. To notify a codec
+that this extra information is desired, loadExtras boolean value is used.
+Example:
+
+        my $x = Prima::Image-> load( $f, loadExtras => 1);
+        die "$@" unless $x;
+        for ( keys %{$x-> {extras}}) {
+           print " $_ : $x->{extras}->{$_}\n";
+        }
+
+The code above loads and prints extra information read from a file.
+Typical output, for example, from a gif codec based on libunguf would look
+like:
+
+    codecID : 1
+    transparentColorIndex : 1
+    comment : created by GIMP
+    frames : 18
+
+'codecID' is a Prima-defined extra field, which is an index of the codec
+which have loaded the file. This field's value is useful for explicit 
+indication of codec on the save request.
+
+'frames' is also a Prima-defined extra field, with integer value set to
+a number of frames in the image. It might be set to -1,
+signalling that codec is incapable of quick reading of the frame count.
+If, however, it is necessary to get actual frame count, a 'wantFrames'
+profile boolean value should be set to 1 - then frames is guaranteed to
+be set to a 0 or positive value, but the request may take longer time, especially
+on a large file with sequential access. Real life example is a gif file
+with more than thousand frames. 'wantFrames' is useful in null load requests.
+
+
+=head2 Multiprofile loading requests
+
+The parameters that are accepted by load, are divided into several 
+categories - first, those that apply to all loading process and those
+who apply only to a particular frame. Those who are defined by Prima, are
+enumerated above - loadExtras, loadAll etc. Only loadExtras and noImageData 
+are applicable to
+a frame, other govern the loading process. A codec may as well define its own
+parameters, however it is not possible to tell what parameter belongs to what
+group - this information is to be found in codec documentaion;
+
+The parameters that applicable to any frame, can be specified separately to
+every desirable frame in single call. For that purpose, parameter 'profiles'
+is defined. 'profiles' is expected to be an anonymous array of hashes, each
+hash where corresponds to a request number. Example:
+
+        $x-> load( $f, loadAll => 1, profiles => [
+             {loadExtras => 0},
+             {loadExtras => 1},
+        ]);
+
+First hash there applies to frame index 0, second - to frame index 1.
+Note that in code
+
+        $x-> load( $f, 
+           map => [ 5, 10],
+           profiles => [
+             {loadExtras => 0},
+             {loadExtras => 1},
+        ]);
+
+first hash applies to frame index 5, and second - to frame index 10.
+
+=head2 Null load requests
+
+If it is desired to peek into image, reading type and dimensions only, one
+should set 'noImageData' boolean value to 1. Using 'noImageData', empty
+objects with read type are returned, and with extras 'width' and 'height'
+set to image dimensions. Example:
+
+        $x-> load( $f, noImageData => 1);
+        die "$@" unless $x;
+        print $x-> {extras}-> {width} , 'x' , $x-> {extras}-> {height}, 'x',
+           $x-> type & im::BPP, "\n";
+
+Some information about image can be loaded even without frame loading - if the
+codec provides such a functionality. This is the only request that cannot be issued
+on a package:
+
+        $x-> load( $f, map => [], loadExtras => 1);
+
+Since no frames are required to load, an empty array is returned 
+upon success and an array with one undefined value on failure.
+
+=head2 Using Prima::Image descendants
+
+If Prima needs to create a storage object, it is by default
+Prima::Image, or a class name of an caller object, or a package
+the request was issued on. This behavor can be altered 
+using parameter 'className', which defines the class to be used 
+for the frame.
+
+        my @x = Prima::Image-> load( $f,
+            map => [ 1..3],
+            className => 'Prima::Icon', 
+            profiles => [
+                {},
+                { className => 'Prima::Image' },
+                {}
+            ],
+
+In this example @x will be ( Icon, Image, Icon) upon success.
+
+=head1 Saving
+
+=head2 Simple saving
+
+Typical saving code will be:
+
+   die "$@" unless $x-> save( 'filename.duf');
+
+Upon a single-frame invocation save returns 1 upon success an 0 on failure.
+Save requests also can be performed with package syntax:
+
+   die "$@" unelss Prima::Image-> save( 'filename.duf', 
+       images => [ $x]);
+
+=head2 Multiframe saving
+
+In multiframe invocation save returns number of successfully saved frames.
+File is erased though, if error occured, even after some successfully 
+written frames.
+
+    die "$@" if scalar(@images) > Prima::Image-> save( $f, 
+       images => \@images);
+
+=head2 Saving extras information
+
+All information, that is found in object hash reference 'extras', is
+assumed to be saved as an extra information. It is a codec's own business
+how it reacts on invalid and/or inacceptable information - but typical behavior is
+that keys that were not recognized by the codec just get ignored, and invalid values
+raise an error. 
+
+       $x-> {extras}-> {comments} = 'Created by Prima';
+       $x-> save( $f);
+
+=head2 Selecting a codec
+
+Extras field 'codecID', the same one that is defined after load requests,
+selects explicitly a codec for an image to handle. If the codec
+selected is incapable of saving an error is returned. Selecting a codec
+is only possible with the object-driven syntax, and this information
+is never extracted from objects but passed to 'images' array instead.
+
+       $x-> {extras}-> {codecID} = 1;
+       $x-> save( $f);
+
+Actual correspondence between codecs and their indeces is described latter.
+
+NB - if codecID is not given, codec is selected by the file extension.
+
+=head2 Type conversion
+
+Codecs usually are incapable of saving images in all formats, so Prima
+either converts an image to an appropriate format or signals an error.
+This behavior is governed by profile key 'autoConvert', which is 1 by
+default. 'autoConvert' can be present in image 'extras' structures.
+With autoConvert set it is guaranteed that image will be saved, but original image
+information may be lost. With autoConvert unset, no information will be lost,
+but Prima may signal an error. Therefore general-purpose save routines should
+be planned carefully. As an example the Prima::ImageDialog::SaveImageDialog
+code might be useful.
+
+When the conversion takes place, Image property 'conversion' is used
+for selection of an error distribution algorithm, if downsampling 
+is required.
+
+=head2 Appending frames to an existing file
+
+This functionality is under design, but the common outlines are already set.
+Profile key 'append' ( 0 by default ) triggers this behavior - if it's set,
+then an append attempt is made.
+
+=head1 Managing codecs
+
+Prima provides single function, Prima::Image-> codecs, which returns an
+anonymous array of hashes, where every hash entry corresponds to a 
+registered codec. 'codecID' parameter on load and save requests is actually
+an index in this array. Indeces for a codecs registered once never change,
+so it is safe to manipulate these numbers within single program run.
+
+Codec information that is contained in these hashes is divided into
+following parameters:
+
+=over
+
+=item name
+
+codec full name, string
+
+=item vendor
+
+codec vendor, string
+
+=item versionMajor and versionMinor
+
+usually underlying library versions, integers
+
+=item fileExtension
+
+array of strings, with file extensions that are typical to a codec.
+example: ['tif', 'tiff']
+
+=item fileType
+
+Description of a type of a file, that codec is designed to work with.
+String.
+
+=item fileShortType
+
+Short description of a type of a file, that codec is designed to work with.
+( short means 3-4 characters ). String.
+
+=item featuresSupported
+
+Array of strings, with some features description that a codec supports -
+usually codecs implement only a part of file format specification, so it is
+always interestring to know, what part it is.
+
+=item module and package
+
+Specify a perl module, usually inside Prima/Image directory into Prima distribution,
+and a package inside the module. The package contains some specific functions
+for work with codec-specific parameters. Current implementation defines
+only ::save_dialog() function, that returns a dialog that allows to change
+these parameters. See Prima::ImageDialog::SaveImageDialog for details.
+Strings, undefined if empty.
+
+=item canLoad
+
+1 if a codec can load images, 0 if not
+
+=item canLoadMultiple
+
+1 if a codec can handle multiframe load requests and load frames with
+index more than zero. 0 if not.
+
+=item canSave
+
+1 if a codec can save images, 0 if not.
+
+=item canSaveMultiple
+
+1 if codec can save and/or append more that one frame. 0 if not.
+
+=item types
+
+Array of integers - each is a combination of im:: flags, an image type,
+which a codec is capable of saving. First type in list is a default one;
+if image type that to be saved is not in that list, the image will be 
+converted to this default type.
+
+=item loadInput
+
+Hash, where keys are those that are accepted by Prima::Image-> load,
+and values are default values for these keys.
+
+=item loadOutput
+
+Array of strings, each of those is a name of extra information entry 
+in 'extras' hash.
+
+=item saveInput
+
+Hash, where keys are those that are accepted by Prima::Image-> save,
+and values are default values for these keys.
+
+
+=back
