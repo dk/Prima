@@ -2,12 +2,24 @@
 \documentclass{report}
 
 \usepackage[a4paper]{geometry}
+\usepackage{a4wide}
 \usepackage{makeidx}
 \makeindex
 \usepackage{graphicx}
 \usepackage{times}
+\usepackage{titlesec}
 
 \begin{document}
+
+\titleformat{\chapter}[display]
+{}{}{0pc}
+{
+\Huge\bfseries
+\ifnum \thechapter>0
+  \thechapter\space\space\space
+\fi
+}
+
 \author{Dmitry Karasik}
 \title{Prima - the perl graphic toolkit}
 \maketitle
