@@ -45,6 +45,7 @@ sub profile_default
       pathMustExist      => 1,
       fileMustExist      => 1,
       showHelp           => 0,
+      sorted             => 1,
 
       openMode           => 1,
    }
@@ -87,7 +88,7 @@ sub init
 
    for ( qw( defaultExt filter directory filterIndex
              createPrompt fileMustExist noReadOnly noTestFileCreate
-             overwritePrompt pathMustExist showHelp openMode
+             overwritePrompt pathMustExist showHelp openMode sorted
    )) { $self->{$_} = $profile{$_} }
    @{$self-> {filter}}  = [[ '' => '*']] unless scalar @{$self->{filter}};
    my @exts;
@@ -240,6 +241,7 @@ sub Dir_Change
    my ( $self, $dir) = @_;
    my $mask = $self-> {mask};
    my @a = grep { /$mask/i; } $dir-> files( '-f');
+   @a = sort {uc($a) cmp uc($b)} @a if $self->{sorted};
    $self-> Files-> items([@a]);
    $self-> Directory_FontChanged( $self-> Directory);
 }
@@ -426,6 +428,19 @@ sub fileName
    return $_[0]->Name->text unless wantarray;
    $_ = $_[0]->Name->text; s/;/ /g;
    return split;
+}
+
+sub sorted
+{
+   return $_[0]-> {sorted} unless $#_;
+   return if $_[0]-> {sorted} == $_[1];
+   $_[0]-> {sorted} = $_[1];
+   $_[0]-> Dir_Change( $_[0]-> Dir);
+}
+
+sub reread
+{
+   $_[0]-> Dir_Change( $_[0]-> Dir);
 }
 
 sub multiSelect      { ($#_)? $_[0]->Files->multiSelect($_[1]) : return $_[0]->Files->multiSelect };
