@@ -361,17 +361,10 @@ sub prf_types
       align   => ['alignment',],
       valign  => ['valignment',],
       bool    => ['autoWidth','autoHeight','showAccelChar','showPartial','wordWrap'],
-      sibling => ['focusLink',],
+      Handle  => ['focusLink',],
    );
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
-}
-
-sub prf_adjust_default
-{
-   my ( $self, $p, $pf) = @_;
-   $self-> SUPER::prf_adjust_default( $p, $pf);
-   delete $pf->{focusLink};
 }
 
 sub on_paint

@@ -1062,7 +1062,6 @@ sub prf_adjust_default
    );
 }
 
-
 package Prima::VB::Window;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Control);
@@ -1509,7 +1508,7 @@ sub set
       $data = '';
       $self->{A}-> items( ['']);
    } else {
-      my %items = $VB::inspector ? (map { $_ => 1} @{$VB::inspector-> Selector-> items}) : ();
+      my %items = $VB::inspector ? (map { $_ => 1} sort @{$VB::inspector-> Selector-> items}) : ();
       delete $items{ $self->{widget}->name};
       $self->{A}-> items( [ keys %items]);
       $data = $VB::form-> name unless length $data;
@@ -1522,25 +1521,6 @@ sub get
    my $self = $_[0];
    return $self->{A}-> text;
 }
-
-package Prima::VB::Types::sibling;
-use vars qw(@ISA);
-@ISA = qw(Prima::VB::Types::Handle);
-
-sub set
-{
-   my ( $self, $data) = @_;
-   if ( $self->{widget} == $VB::form) {
-      $data = '';
-      $self->{A}-> items( ['']);
-   } else {
-      my %items = $VB::inspector ? (map { $_ => 1} @{$VB::inspector-> Selector-> items}) : ();
-      $self->{A}-> items( [ '', keys %items]);
-      $data = $self->{widget}-> name if !defined $data || ( length( $data) == 0);
-   }
-   $self->{A}-> text( $data);
-}
-
 
 package Prima::VB::Types::color;
 use vars qw(@ISA);

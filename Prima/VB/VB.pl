@@ -1753,6 +1753,11 @@ MEDI
           }
           $c .= "\t\t},\n";
       }
+      my %Handle_props = map { $_ => 1 } $_->{prf_types}->{Handle} ? @{$_->{prf_types}->{Handle}} : ();
+      delete $Handle_props{owner};
+      if ( scalar keys %Handle_props) {
+         $c .= "\t\tsiblings => [qw(" . join(' ', keys %Handle_props) . ")],\n";
+      }
       $c .= "\t\tprofile => {\n";
       my ( $x,$prf) = ($_, $_->{profile});
       my @o = $_-> get_o_delta;

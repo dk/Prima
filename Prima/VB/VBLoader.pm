@@ -80,6 +80,7 @@ sub AUTOFORM_REALIZE
    }
 
    my %owners = ( $main => 0);
+   my %siblings;
    for ( keys %dep) {
       next if $_ eq $main;
       $owners{$_} = exists $parms->{$_}->{owner} ? $parms->{$_}->{owner} :
@@ -105,6 +106,17 @@ sub AUTOFORM_REALIZE
    $actions{onBegin}->{$_}->($_, $instances{$_})
       for keys %{$actions{onBegin}};
 
+   for ( @{$dep{$main}->{siblings}}) {
+      if ( exists $dep{$main}->{profile}->{$_}) {
+         $siblings{$main}->{$_} = $dep{$main}->{profile}->{$_};
+         delete $dep{$main}->{profile}->{$_};
+      }
+      if ( exists $parms->{$main}->{$_}) {
+         $siblings{$main}->{$_} = $parms->{$main}->{$_};
+         delete $parms->{$main}->{$_};
+      }
+   }
+   
    delete $dep{$main}->{profile}->{owner};
    $ret{$main} = $dep{$main}->{class}-> create(
       %{$dep{$main}->{profile}},
@@ -122,29 +134,54 @@ sub AUTOFORM_REALIZE
       my $id = $_[0];
       my $i;
       for ( $i = 0; $i < scalar @$seq; $i += 2) {
-         $_ = $$seq[$i];
-         next unless $owners{$_} eq $id;
-         $owners{$_} = $main unless exists $ret{$owners{$_}}; # validating owner entry
+         my $name = $$seq[$i];
+         next unless $owners{$name} eq $id;
+         $owners{$name} = $main unless exists $ret{$owners{$name}}; # validating owner entry
 
-         my $o = $owners{$_};
-         $actions{onChild}->{$o}->($o, $instances{$o}, $ret{$o}, $_)
+         my $o = $owners{$name};
+         $actions{onChild}->{$o}->($o, $instances{$o}, $ret{$o}, $name)
             if $actions{onChild}->{$o};
 
-         $ret{$_} = $ret{$o}-> insert(
-            $dep{$_}->{class},
-            %{$dep{$_}->{profile}},
-            %{$parms->{$_}},
+         for ( @{$dep{$name}->{siblings}}) {
+            if ( exists $dep{$name}->{profile}->{$_}) {
+               if ( exists $ret{$dep{$name}->{profile}->{$_}}) {
+                  $dep{$name}->{profile}->{$_} = $ret{$dep{$name}->{profile}->{$_}}
+               } else {
+                  $siblings{$name}->{$_} = $dep{$name}->{profile}->{$_};
+                  delete $dep{$name}->{profile}->{$_};
+               }
+            }
+            if ( exists $parms->{$name}->{$_}) {
+               if ( exists $ret{$parms->{$name}->{$_}}) {
+                  $parms-> {$name}->{$_} = $ret{$parms->{$name}->{$_}}
+               } else {
+                  $siblings{$name}->{$_} = $parms->{$name}->{$_};
+                  delete $parms->{$name}->{$_};
+               }
+            }
+         }
+         $ret{$name} = $ret{$o}-> insert(
+            $dep{$name}->{class},
+            %{$dep{$name}->{profile}},
+            %{$parms->{$name}},
          );
 
-         $actions{onCreate}->{$_}->($_, $instances{$_}, $ret{$_})
-            if $actions{onCreate}->{$_};
-         $actions{onChildCreate}->{$o}->($o, $instances{$o}, $ret{$o}, $ret{$_})
+         $actions{onCreate}->{$name}->($name, $instances{$name}, $ret{$name})
+            if $actions{onCreate}->{$name};
+         $actions{onChildCreate}->{$o}->($o, $instances{$o}, $ret{$o}, $ret{$name})
             if $actions{onChildCreate}->{$o};
 
-         $do_layer->( $_);
+         $do_layer->( $name);
       }
    };
    $do_layer->( $main, \%owners);
+
+   for ( keys %siblings) {
+      my $data = $siblings{$_};
+      $ret{$_}-> set( map {
+         exists($ret{$data->{$_}}) ? ( $_ => $ret{$data->{$_}}) : ()
+      } keys %$data );
+   }
 
    $actions{onEnd}->{$_}->($_, $instances{$_}, $ret{$_})
       for keys %{$actions{onEnd}};
