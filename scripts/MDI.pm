@@ -522,9 +522,11 @@ sub on_mousedown
       # just click to popup. Moreover, in general it's right. But we could
       # catch second on_mousedown in system-defined timeout interval, but,
       # this popup-cancelling on_mousedown won't come to us also.
+      my $delay = Application-> get_system_value( sv::DblClickDelay);
+      $delay = 250 if $delay > 250;
       $self-> {exTimer} = Timer-> create(
          owner   => $self,
-         timeout => Application-> get_system_value( sv::DblClickDelay),
+         timeout => $delay,
          onTick  => sub {
             my $self = $_[0]-> owner;
             $_[0]-> destroy;
