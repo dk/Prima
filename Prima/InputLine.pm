@@ -88,6 +88,9 @@ sub init
       { $self->$_( $profile{ $_}); }
    $self-> {resetDisabled} = 0;
    $self-> {resetLevel}    = 0;
+   my $font = $self-> font;
+   $self->{font_height} = $font->height;
+   $self->{font_width} = $font->width;
    $self-> reset;
    return %profile;
 }
@@ -119,7 +122,7 @@ sub on_paint
 
    my ( $fh, $useSel) =
    (
-      $canvas-> font-> height,
+      $self-> {font_height},
       ( $self->{selStart} < $self->{selEnd}) && $self-> focused && $self-> enabled
    );
 
@@ -168,13 +171,13 @@ sub reset
    return if $self->{resetDisabled};
    my @size  = $self-> size;
    my $cap   = $self-> {wholeLine};
-   my $border= $self-> borderWidth;
+   my $border= $self-> {borderWidth};
    my $width = $size[0] - ( $border + 1) * 2;
    my $fcCut = $self->{firstChar};
    my $reCalc = 0;
 
    if ( $self->{resetLevel} == 0) {
-      $self-> { atDrawY} = ( $size[1] - ( $border + 1) * 2 - $self-> font-> height) / 2;
+      $self-> { atDrawY} = ( $size[1] - ( $border + 1) * 2 - $self-> {font_height}) / 2;
       while (1)
       {
          if (( $self-> {alignment} == ta::Left) || $reCalc)
@@ -208,10 +211,10 @@ sub set_text
    $cap = '' unless defined $cap;
    $cap = substr( $cap, 0, $self->{maxLen}) if $self-> {maxLen} >= 0 and length($cap) > $self->{maxLen};
    $self->SUPER::set_text( $cap);
-   $cap =~ s/./$self->{passwordChar}/g if $self-> {writeOnly};
+   $cap = $self->{passwordChar} x length $cap if $self->{writeOnly};
    $self-> {wholeLine} = $cap;
-   $self-> charOffset( length( $cap)) if $self->{charOffset} > length( $cap);
-   $self-> selection(0,0);
+   $self-> charOffset( length $cap) if $self->{charOffset} > length $cap;
+   $self-> set_selection(0,0);
    $self-> reset;
    $self-> repaint;
    $self-> notify(q(Change));
@@ -224,7 +227,7 @@ sub on_keydown
    $mod &= ( km::Shift|km::Ctrl|km::Alt);
    $self->notify(q(MouseUp),0,0,0) if defined $self->{mouseTransaction};
    my $offset = $self-> charOffset;
-   my $cap    = $self-> text;
+   my $cap    = $self-> get_text;
    my $caplen = length( $cap);
 # navigation part
    if ( scalar grep { $key == $_ } (kb::Left,kb::Right,kb::Home,kb::End))
@@ -312,12 +315,12 @@ sub on_keydown
           if ( $start != $end)
           {
              substr( $cap, $start, $end - $start) = '';
-             $self-> selection(0,0);
-             $self-> text( $cap);
+             $self-> set_selection(0,0);
+             $self-> set_text( $cap);
              $self-> charOffset( $start);
           } else {
              substr( $cap, $offset - 1, 1) = '';
-             $self-> text( $cap);
+             $self-> set_text( $cap);
              $self-> charOffset ( $offset - 1);
           }
        }
@@ -333,13 +336,13 @@ sub on_keydown
           {
              $del = substr( $cap, $start, $end - $start);
              substr( $cap, $start, $end - $start) = '';
-             $self-> selection(0,0);
-             $self-> text( $cap);
+             $self-> set_selection(0,0);
+             $self-> set_text( $cap);
              $self-> charOffset( $start);
           } else {
              $del = substr( $cap, $offset, 1);
              substr( $cap, $offset, 1) = '';
-             $self-> text( $cap);
+             $self-> set_text( $cap);
           }
           $::application-> Clipboard-> store( 'Text', $del)
             if $mod & ( km::Ctrl|km::Shift);
@@ -378,7 +381,7 @@ sub on_keydown
       {
          $self-> event_error;
       } else {
-         $self-> text( $cap);
+         $self-> set_text( $cap);
          $self-> charOffset( $offset + 1)
       }
       $self-> clear_event;
@@ -392,7 +395,7 @@ sub copy
    my ( $start, $end) = $self-> selection;
    return if $start == $end;
    return if $self->{writeOnly};
-   my $cap = $self-> text;
+   my $cap = $self-> get_text;
    $::application-> Clipboard-> store( 'Text', substr( $cap, $start, $end - $start));
 }
 
@@ -400,14 +403,14 @@ sub paste
 {
    my $self = $_[0];
    return if $self->{writeOnly};
-   my $cap = $self-> text;
+   my $cap = $self-> get_text;
    my ( $start, $end) = $self-> selection;
    ($start, $end) = ( $self-> charOffset, $self-> charOffset) if $start == $end;
    my $s = $::application-> Clipboard-> fetch( 'Text');
    return if !defined($s) or length( $s) == 0;
    substr( $cap, $start, $end - $start) = $s;
    $self-> selection(0,0);
-   $self-> text( $cap);
+   $self-> set_text( $cap);
    $self-> charOffset( $start + length( $s));
 }
 
@@ -416,10 +419,10 @@ sub delete
    my $self = $_[0];
    my ( $start, $end) = $self-> selection;
    return if $start == $end;
-   my $cap = $self-> text;
+   my $cap = $self-> get_text;
    substr( $cap, $start, $end - $start) = '';
    $self-> selection(0,0);
-   $self-> text( $cap);
+   $self-> set_text( $cap);
 }
 
 sub cut
@@ -427,11 +430,11 @@ sub cut
    my $self = $_[0];
    my ( $start, $end) = $self-> selection;
    return if $start == $end;
-   my $cap = $self-> text;
+   my $cap = $self-> get_text;
    my $del = substr( $cap, $start, $end - $start);
    substr( $cap, $start, $end - $start) = '';
    $self-> selection(0,0);
-   $self-> text( $cap);
+   $self-> set_text( $cap);
    $::application-> Clipboard-> store( 'Text', $del) unless $self->{writeOnly};
 }
 
@@ -473,7 +476,7 @@ sub on_mousemove
    my ( $self, $mod, $x, $y) = @_;
    $self-> clear_event;
    return unless defined $self->{mouseTransaction};
-   my $border = $self-> borderWidth;
+   my $border = $self-> {borderWidth};
    my $width  = $self-> width;
    if (( $x >= $border + 1) && ( $x <= $width - $border - 1))
    {
@@ -497,7 +500,7 @@ sub on_mousemove
    } else {
       $self->{autoAdjustDisabled} = 1;
       my $delta = 1;
-      my $fw = $self-> font-> width;
+      my $fw = $self-> {font_width};
       $delta = ($width - $border * 2)/($fw*6) if $width - $border * 2 > $fw * 6;
       $delta = int( $delta);
       my $nSel = $self-> charOffset + $delta * ( $x <= $border ? -1 : 1);
@@ -505,7 +508,7 @@ sub on_mousemove
       $self-> lock;
       $self-> selection( $self-> {anchor}, $nSel);
       my $newFc  = $self-> firstChar + $delta * ( $x <= $border ? -1 : 1);
-      my $caplen = length $self-> text;
+      my $caplen = length $self-> {wholeLine};
       $newFc = $caplen - $delta if $newFc + $delta  > $caplen;
       $self-> firstChar ( $newFc);
       $self-> charOffset( $nSel);
@@ -532,7 +535,11 @@ sub on_size
 
 sub on_fontchanged
 {
-  $_[0]-> reset;
+   my $self = shift;
+   my $font = $self-> font;
+   $self->{font_height} = $font->height;
+   $self->{font_width} = $font->width;
+   $self-> reset;
 }
 
 
@@ -557,7 +564,7 @@ sub set_border_width
 sub set_char_offset
 {
    my ( $self, $offset) = @_;
-   my $cap = $self-> text;
+   my $cap = $self-> get_text;
    my $l   = length($cap);
    $offset = $l if $offset > $l;
    $offset = 0 if $offset < 0;
@@ -588,20 +595,20 @@ sub set_char_offset
 sub set_max_len
 {
    my ( $self, $len) = @_;
-   my $cap = $self-> text;
+   my $cap = $self-> get_text;
    $len = -1 if $len < 0;
    $self->{maxLen} = $len;
-   $self-> text( substr( $cap, 0, $len)) if $len >= 0 and length($cap) > $len;
+   $self-> set_text( substr( $cap, 0, $len)) if $len >= 0 and length($cap) > $len;
 }
 
 sub set_first_char
 {
    my ( $self, $pos) = @_;
-   my $l = length( $self-> text);
+   my $l = length $self-> {wholeLine};
    $pos = $l if $pos > $l;
    $pos = 0 if $pos < 0;
    $pos = 0 if ( $self->{alignment} != ta::Left) &&
-               ( $self->get_text_width( $self-> {wholeLine}) <= $self-> width - $self->borderWidth * 2 - 2);
+               ( $self->get_text_width( $self-> {wholeLine}) <= $self-> width - $self->{borderWidth} * 2 - 2);
    my $ofc = $self->{firstChar};
    return if $self->{firstChar} == $pos;
    my $oline = $self-> {line};
@@ -622,7 +629,7 @@ sub set_write_only
    my ( $self, $wo) = @_;
    return if $wo == $self->{writeOnly};
    $self->{writeOnly} = $wo;
-   $self-> text( $self-> text);
+   $self-> set_text( $self-> get_text);
 }
 
 sub set_password_char
@@ -630,7 +637,7 @@ sub set_password_char
    my ( $self, $pc) = @_;
    return if $pc eq $self->{passwordChar};
    $self->{passwordChar} = $pc;
-   $self-> text( $self-> text) if $self->{writeOnly};
+   $self-> set_text( $self-> get_text) if $self->{writeOnly};
 }
 
 sub set_insert_mode
@@ -645,7 +652,7 @@ sub set_insert_mode
 sub set_selection
 {
    my ( $self, $start, $end) = @_;
-   my $l = length( $self-> text);
+   my $l = length $self-> {wholeLine};
    my ( $ostart, $oend) = $self-> selection;
    my $onsel = $ostart == $oend;
    $end   = $l if $end   < 0;
