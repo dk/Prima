@@ -191,7 +191,7 @@ sub draw_items
    my @clipRect = $canvas-> clipRect;
    my $cols   = $self-> {numColumns};
 
-   my $xstart = 1;
+   my $xstart = $self-> {borderWidth} - 1;
    my ( $i, $ci, $xend);
    my @widths = @{ $self-> { header}-> widths };
    my $umap   = $self-> {umap}->[0];
@@ -267,6 +267,7 @@ sub draw_items
 
    # texts
    my $lc = $clrs[0];
+   my $txw = 1;
    for ( $ci = 0; $ci < $cols; $ci++) {
       $umap = $self-> {umap}->[$ci];
       my $wx = $widths[ $ci] + 2;
@@ -280,10 +281,11 @@ sub draw_items
             my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$iref[$i]};
             my $c = $clrs[ $selected ? 2 : 0];
             $canvas-> color( $c), $lc = $c if $c != $lc;
-            $canvas-> text_out( $rref->[$itemIndex]-> [$umap], $x + $xstart, $y);
+            $canvas-> text_out( $rref->[$itemIndex]-> [$umap], $x + $txw, $y);
          }
       }
       $xstart += $wx;
+      $txw    += $wx;
       last if $xstart - $o >= $clipRect[2];
    }
 }
@@ -299,7 +301,7 @@ sub item2rect
 sub Header_SizeItem
 {
    my ( $self, $header, $col, $oldw, $neww) = @_;
-   my $xs = 1 - $self-> {offset};
+   my $xs = $self-> {borderWidth} - 1 - $self-> {offset};
    my $i = 0;
    for ( @{$self-> {header}-> widths}) {
       last if $col == $i++;
