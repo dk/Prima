@@ -101,6 +101,7 @@ typedef struct _DelegatedMessages_ {
    unsigned dmMouseDown          : 1;
    unsigned dmMouseUp            : 1;
    unsigned dmMouseMove          : 1;
+   unsigned dmMouseWheel         : 1;
    unsigned dmMouseEnter         : 1;
    unsigned dmMouseLeave         : 1;
    unsigned dmMove               : 1;
@@ -285,11 +286,12 @@ typedef struct _PostMsg {
 #define cmMouseDown      0x00000053                /* WM_BUTTONxDOWN & WM_BUTTONxDBLCLK analog */
 #define cmMouseUp        0x00000054                /* WM_BUTTONxUP analog */
 #define cmMouseMove      0x00000055                /* WM_MOUSEMOVE analog */
-#define cmMouseClick     0x00000056                /* click response command */
-#define cmMouseEnter     0x00000057                /* mouse entered window area */
-#define cmMouseLeave     0x00000058                /* mouse left window area */
-#define cmTranslateAccel 0x00000059                /* key event spred to non-focused windows */
-#define cmDelegateKey    0x0000005A                /* reserved for key mapping */
+#define cmMouseWheel     0x00000056                /* WM_MOUSEWHEEL analog */
+#define cmMouseClick     0x00000057                /* click response command */
+#define cmMouseEnter     0x00000058                /* mouse entered window area */
+#define cmMouseLeave     0x00000059                /* mouse left window area */
+#define cmTranslateAccel 0x0000005A                /* key event spred to non-focused windows */
+#define cmDelegateKey    0x0000005B                /* reserved for key mapping */
 #define cmUser           0x00000100                /* first user-defined message */
 
 /* mouse buttons */
@@ -583,11 +585,12 @@ list_index_of( PList self, Handle item);
 /* by means of Perl hashes */
 
 #ifdef POLLUTE_NAME_SPACE
-#define hash_create	prima_hash_create
-#define hash_destroy	prima_hash_destroy
-#define hash_fetch	prima_hash_fetch
-#define hash_delete	prima_hash_delete
-#define hash_store	prima_hash_store
+#define hash_create	   prima_hash_create
+#define hash_destroy	   prima_hash_destroy
+#define hash_fetch	   prima_hash_fetch
+#define hash_delete	   prima_hash_delete
+#define hash_store	   prima_hash_store
+#define hash_count	   prima_hash_count
 #define hash_first_that	prima_hash_first_that
 #endif
 
@@ -609,6 +612,9 @@ prima_hash_delete( PHash self, const void *key, int keyLen, Bool kill);
 
 extern Bool
 prima_hash_store( PHash self, const void *key, int keyLen, void *val);
+
+#define prima_hash_count(hash) (HvKEYS(( HV*)hash))
+
 
 extern void*
 prima_hash_first_that( PHash self, void *action, void *params,
@@ -705,15 +711,15 @@ typedef struct _ObjectOptions_ {
 #define wcMask                0xFFF0000
 
 /* widget grow constats */
-#define gfGrowLoX             0x001
-#define gfGrowLoY             0x002
-#define gfGrowHiX             0x004
-#define gfGrowHiY             0x008
-#define gfGrowAll             0x00F
-#define gfXCenter             0x010
-#define gfYCenter             0x020
-#define gfCenter              (gfXCenter+gfYCenter)
-#define gfDontCare            0x040
+#define gmGrowLoX             0x001
+#define gmGrowLoY             0x002
+#define gmGrowHiX             0x004
+#define gmGrowHiY             0x008
+#define gmGrowAll             0x00F
+#define gmXCenter             0x010
+#define gmYCenter             0x020
+#define gmCenter              (gmXCenter+gmYCenter)
+#define gmDontCare            0x040
 
 /* border icons */
 #define    biSystemMenu    1
@@ -1108,6 +1114,9 @@ apc_clipboard_has_format( long id);
 extern void*
 apc_clipboard_get_data( long id, int *length);
 
+extern ApiHandle
+apc_clipboard_get_handle( Handle self);
+
 extern Bool
 apc_clipboard_set_data( long id, void *data, int length);
 
@@ -1180,6 +1189,9 @@ apc_menu_item_set_key( Handle self, PMenuItemReg m, int key);
 extern void
 apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text);
 
+extern ApiHandle
+apc_menu_get_handle( Handle self);
+
 extern Bool
 apc_popup_create( Handle self, Handle owner);
 
@@ -1207,6 +1219,9 @@ apc_timer_start( Handle self);
 
 extern void
 apc_timer_stop( Handle self);
+
+extern ApiHandle
+apc_timer_get_handle( Handle self);
 
 /* Help */
 #define  hmpNone                     0
@@ -1318,19 +1333,6 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    ropSrcLeave      28 /*    dest = (src != fore color) ? src : figa */
 #define    ropDestLeave     29 /*    dest = (src != back color) ? src : figa */
 
-/* line width */
-#define    lwHollow        0
-#define    lwThin          1
-#define    lwExtraLight    2
-#define    lwLight         3
-#define    lwNormal        4
-#define    lwMedium        5
-#define    lwSemiBold      6
-#define    lwBold          7
-#define    lwExtraBold     8
-#define    lwHeavy         9
-#define    lwUltraHeavy   10
-
 /* line ends */
 #define    leFlat           0
 #define    leSquare         1
@@ -1348,14 +1350,14 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    lpDashDotDot     0xEAEA     /* _.._.._.._.. */
 
 
-/* font subtypes */
-#define    ftNormal         0x0000
-#define    ftBold           0x0001
-#define    ftThin           0x0002
-#define    ftItalic         0x0004
-#define    ftUnderlined     0x0008
-#define    ftStruckOut      0x0010
-#define    ftOutline        0x0020
+/* font styles */
+#define    fsNormal         0x0000
+#define    fsBold           0x0001
+#define    fsThin           0x0002
+#define    fsItalic         0x0004
+#define    fsUnderlined     0x0008
+#define    fsStruckOut      0x0010
+#define    fsOutline        0x0020
 
 /* font pitches & precisions */
 #define    fpDefault        0x0000
@@ -1379,23 +1381,23 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    fwUltraBold      9
 
 /* fill constants */
-#define    fsEmpty          0 /*   Uses background color */
-#define    fsSolid          1 /*   Uses draw color fill */
-#define    fsLine           2 /*   --- */
-#define    fsLtSlash        3 /*   /// */
-#define    fsSlash          4 /*   /// thick */
-#define    fsBkSlash        5 /*   \\\ thick */
-#define    fsLtBkSlash      6 /*   \\\ light */
-#define    fsHatch          7 /*   Light hatch */
-#define    fsXHatch         8 /*   Heavy cross hatch */
-#define    fsInterleave     9 /*   Interleaving line */
-#define    fsWideDot       10 /*   Widely spaced dot */
-#define    fsCloseDot      11 /*   Closely spaced dot */
-#define    fsSimpleDots    12 /*   . . . . . . . . . . */
-#define    fsBorland       13 /*   #################### */
-#define    fsParquet       14 /*   \/\/\/\/\/\/\/\/\/\/ */
-#define    fsCritters      15 /*   critters */
-#define    fsMaxId         15
+#define    fpEmpty          0 /*   Uses background color */
+#define    fpSolid          1 /*   Uses draw color fill */
+#define    fpLine           2 /*   --- */
+#define    fpLtSlash        3 /*   /// */
+#define    fpSlash          4 /*   /// thick */
+#define    fpBkSlash        5 /*   \\\ thick */
+#define    fpLtBkSlash      6 /*   \\\ light */
+#define    fpHatch          7 /*   Light hatch */
+#define    fpXHatch         8 /*   Heavy cross hatch */
+#define    fpInterleave     9 /*   Interleaving line */
+#define    fpWideDot       10 /*   Widely spaced dot */
+#define    fpCloseDot      11 /*   Closely spaced dot */
+#define    fpSimpleDots    12 /*   . . . . . . . . . . */
+#define    fpBorland       13 /*   #################### */
+#define    fpParquet       14 /*   \/\/\/\/\/\/\/\/\/\/ */
+#define    fpCritters      15 /*   critters */
+#define    fpMaxId         15
 
 #define    imNone                0
 #define    imbpp1                0x001
@@ -1458,11 +1460,18 @@ apc_image_end_paint_info( Handle self);
 extern void
 apc_image_update_change( Handle self);
 
+extern ApiHandle
+apc_image_get_handle( Handle self);
+
+
 extern Bool
 apc_dbm_create( Handle self, Bool monochrome);
 
 extern void
 apc_dbm_destroy( Handle self);
+
+extern ApiHandle
+apc_dbm_get_handle( Handle self);
 
 /* text wrap options */
 #define twCalcMnemonic    0x001    /* calculate first ~ entry */
@@ -1596,6 +1605,9 @@ apc_gp_get_font_abc( Handle self);
 extern FillPattern *
 apc_gp_get_fill_pattern( Handle self);
 
+extern ApiHandle
+apc_gp_get_handle( Handle self);
+
 extern int
 apc_gp_get_line_end( Handle self);
 
@@ -1683,6 +1695,9 @@ apc_prn_enumerate( Handle self, int * count);
 
 extern Bool
 apc_prn_select( Handle self, char * printer);
+
+extern ApiHandle
+apc_prn_get_handle( Handle self);
 
 extern char*
 apc_prn_get_selected( Handle self);
