@@ -77,6 +77,20 @@ duplicate_string( const char *s)
    return d;
 }
 
+#ifdef PRIMA_NEED_OWN_STRICMP
+int
+stricmp(const char *s1, const char *s2)
+{
+   /* Code was taken from FreeBSD 4.0 /usr/src/lib/libc/string/strcasecmp.c */
+   const unsigned char *u1 = (const unsigned *)s1;
+   const unsigned char *u2 = (const unsigned *)s2;
+   while (tolower(*u1) == tolower(*u2++))
+      if (*u1++ == '\0')
+	 return 0;
+   return (tolower(*u1) - tolower(*--u2));
+}
+#endif
+
 PHash primaObjects = nil;
 
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
