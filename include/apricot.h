@@ -1359,15 +1359,15 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    fsStruckOut      0x0010
 #define    fsOutline        0x0020
 
-/* font pitches & precisions */
+/* font pitches */
 #define    fpDefault        0x0000
 #define    fpVariable       0x0001
 #define    fpFixed          0x0002
-#define    fpPitchMask      0x000F
-#define    fpDontCare       0x0000
-#define    fpRaster         0x0010
-#define    fpVector         0x0020
-#define    fpPrecisionMask  0x00F0
+
+/* font precision types */
+#define    ftDontCare       0x0000
+#define    ftRaster         0x0010
+#define    ftVector         0x0020
 
 /* font weigths */
 #define    fwUltraLight     1
@@ -1744,9 +1744,6 @@ apc_font_pick( Handle self, PFont source, PFont dest);
 
 extern PFontMetric
 apc_fonts( char *facename, int *retCount);
-
-extern PFontMetric
-apc_font_metrics( Handle self, PFont font, PFontMetric metrics);
 
 /* system metrics */
 extern Point
