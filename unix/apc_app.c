@@ -313,33 +313,6 @@ window_subsystem_init( void)
    bzero( &guts. cursor_gcv, sizeof( guts. cursor_gcv));
    guts. cursor_gcv. cap_style = CapButt;
    guts. cursor_gcv. function = GXcopy;
-
-   {
-      XGCValues gcv;
-      Pixmap px = XCreatePixmap( DISP, guts.root, 4, 4, 1);
-      GC gc = XCreateGC( DISP, px, 0, &gcv);
-      XImage *xi;
-      XSetForeground( DISP, gc, 0);
-      XFillRectangle( DISP, px, gc, 0, 0, 5, 5);
-      XSetForeground( DISP, gc, 1);
-      XDrawArc( DISP, px, gc, 0, 0, 4, 4, 0, 360 * 64);
-      if (( xi = XGetImage( DISP, px, 0, 0, 4, 4, 1, XYPixmap))) {
-         int i;
-         Byte *data[4];
-         if ( xi-> bitmap_bit_order == LSBFirst) 
-            prima_mirror_bytes( xi-> data, xi-> bytes_per_line * 4);
-         for ( i = 0; i < 4; i++) data[i] = (Byte*)xi-> data + i * xi-> bytes_per_line;
-#define PIX(x,y) ((data[y][0] & (0x80>>(x)))!=0)
-         if (  PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = -1; else
-         if ( !PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = 1; 
-         if (  PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = -1; else
-         if ( !PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = 1; 
-#undef PIX                          
-         XDestroyImage( xi);
-      }
-      XFreeGC( DISP, gc);
-      XFreePixmap( DISP, px);
-   }
 /*    XSynchronize( DISP, true); */
    return true;
 }

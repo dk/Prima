@@ -464,6 +464,39 @@ arc_completion( double * angleStart, double * angleEnd, int * needFigure)
    return ( max % 2) ? 1 : 2;
 }
 
+static void
+calculate_ellipse_divergence()
+{
+   static Bool init = false;
+   if ( !init) {
+      XGCValues gcv;
+      Pixmap px = XCreatePixmap( DISP, guts.root, 4, 4, 1);
+      GC gc = XCreateGC( DISP, px, 0, &gcv);
+      XImage *xi;
+      XSetForeground( DISP, gc, 0);
+      XFillRectangle( DISP, px, gc, 0, 0, 5, 5);
+      XSetForeground( DISP, gc, 1);
+      XDrawArc( DISP, px, gc, 0, 0, 4, 4, 0, 360 * 64);
+      if (( xi = XGetImage( DISP, px, 0, 0, 4, 4, 1, XYPixmap))) {
+         int i;
+         Byte *data[4];
+         if ( xi-> bitmap_bit_order == LSBFirst) 
+            prima_mirror_bytes( xi-> data, xi-> bytes_per_line * 4);
+         for ( i = 0; i < 4; i++) data[i] = (Byte*)xi-> data + i * xi-> bytes_per_line;
+#define PIX(x,y) ((data[y][0] & (0x80>>(x)))!=0)
+         if (  PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = -1; else
+         if ( !PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = 1; 
+         if (  PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = -1; else
+         if ( !PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = 1; 
+#undef PIX                          
+         XDestroyImage( xi);
+      }
+      XFreeGC( DISP, gc);
+      XFreePixmap( DISP, px);
+      init = true;
+   }
+}
+
 #define ELLIPSE_RECT x - ( dX + 1) / 2 + 1, y - dY / 2, dX-guts.ellipseDivergence.x, dY-guts.ellipseDivergence.y
 #define FILL_ANTIDEFECT_REPAIRABLE \
       ( rop_map[XX-> paint_rop] == GXcopy ||\
@@ -495,6 +528,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
    SHIFT( x, y);
    y = REVERT( y);
    PURE_FOREGROUND;
+   calculate_ellipse_divergence();
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    while ( compl--)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 360 * 64);
@@ -577,6 +611,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
    y = REVERT( y);
    PURE_FOREGROUND;
    compl = arc_completion( &angleStart, &angleEnd, &needf);
+   calculate_ellipse_divergence();
    while ( compl--)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 360 * 64);
    if ( !needf) return true;
@@ -656,6 +691,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
    SHIFT( x, y);
    y = REVERT( y);
    PURE_FOREGROUND;
+   calculate_ellipse_divergence();
    XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
    return true;
 }
@@ -1254,6 +1290,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
 
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    PURE_FOREGROUND;
+   calculate_ellipse_divergence();
    while ( compl--)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
           0, 360 * 64);

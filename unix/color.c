@@ -526,7 +526,7 @@ alloc_main_color_range( XColor * xc, int count, int maxDiff)
           err = true;
           break;
       }
-      if ( xc[idx]. pixel < 0 || xc[idx]. pixel >= guts. palSize) {
+      if ( xc[idx]. pixel >= guts. palSize) {
          warn("color index out of range returned from XAllocColor()\n");
          return false; 
       }
@@ -1152,7 +1152,7 @@ prima_palette_replace( Handle self, Bool fast)
 
 ALLOC_STAGE:   
    /* allocate some colors */
-//   prima_color_sync();
+   prima_color_sync();
    XCHECKPOINT;
    for ( i = 0; i < psz; i++) 
       if (( req[i] & 0x80000000) == 0) {
