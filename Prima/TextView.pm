@@ -111,16 +111,6 @@ use constant REALIZE_ALL     => 0x3;
 
 use constant YMAX => 1000;
 
-=pod
-
-  The text information is presented by a set of text blocks,
-  each for one line.  A text layout block is an array, logically
-  separated in two parts: the first is BLK_START-1 header parameters,
-  and second - tb::OP_XXX constants and their parameters. A tb::OP_XXX
-  command has $tb::oplen[ tb::OP_XXX] parameters.
-
-=cut
-
 sub block_create
 {
    my $ret = [ ( 0 ) x BLK_START ];
@@ -629,6 +619,7 @@ sub block_wrap
             }
             $r[ tb::X_X] *= $f_taint-> {height};
             $r[ tb::X_Y] *= $f_taint-> {height};
+            $r[ tb::X_FLAGS] &= ~ tb::X_DIMENSION_FONT_HEIGHT;
          } 
 # print "advance block $x $r[tb::X_X]\n";
          if ( $x + $r[tb::X_X] >= $width) {
@@ -1508,3 +1499,322 @@ sub references
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME 
+
+Prima::TextView - rich text browser widget
+
+=head1 DESCRIPTION
+
+Prima::TextView accepts blocks of formatted text, and provides
+basic functionality - scrolling and user selection. The text strings
+are stored as one large text chunk, available by the C<::text> and C<::textRef> properties.
+A block of a formatted text is an array with fixed-length header and 
+the following instructions. 
+
+A special package C<tb::> provides the block constants and simple functions
+for text block access. 
+
+=head2 Capabilities
+
+Prima::TextView is mainly the text block functions and helpers. It provides
+function for wrapping text block, calculating block dimensions, drawing
+and converting coordinates from (X,Y) to a block position. Prima::TextView
+is centered around the text functionality, and although any custom graphic of
+arbitrary complexity can be embedded in a text block, the internal coordinate
+system is used ( TEXT_OFFSET, BLOCK ), where TEXT_OFFSET is a text offset from 
+the beginning of a block and BLOCK is an index of a block.
+
+The functionality does not imply any text layout - this is up to the class
+descendants, they must provide they own layout policy. The only policy
+Prima::TextView requires is that blocks' BLK_TEXT_OFFSET field must be
+strictly increasing, and the block text chunks must not overlap. The text gaps
+are allowed though. 
+
+A text block basic drawing function includes change of color, backColor and font,
+and the painting of text strings. Other types of graphics can be achieved by
+supplying custom code.
+
+=head2 Block header
+
+A block's fixed header consists of C<tb::BLK_START - 1> integer scalars,
+each of those is accessible via the corresponding C<tb::BLK_XXX> constant.
+The constants are separated into two logical groups:
+
+    BLK_FLAGS        
+    BLK_WIDTH        
+    BLK_HEIGHT      
+    BLK_X           
+    BLK_Y           
+    BLK_APERTURE_X  
+    BLK_APERTURE_Y  
+    BLK_TEXT_OFFSET 
+
+and
+
+    BLK_FONT_ID          
+    BLK_FONT_SIZE        
+    BLK_FONT_STYLE       
+    BLK_COLOR            
+    BLK_BACKCOLOR        
+
+The second group is enclosed in C<tb::BLK_DATA_START> - C<tb::BLK_DATA_END>
+range, like the whole header is contained in 0 - C<tb::BLK_START - 1> range.
+This is done for the backward compatibility, if the future development changes 
+the length of the header. 
+
+The first group fields define the text block dimension, aperture position
+and text offset ( remember, the text is stored as one big chunk ). The second
+defines the initial color and font settings. Prima::TextView needs all fields
+of every block to be initialized before displaying. L<block_wrap> method
+can be used for automated assigning of these fields.
+
+=head2 Block parameters
+
+The scalars, beginning from C<tb::BLK_START>, represent the commands to the renderer.
+These commands have their own parameters, that follow the command. The length of
+a command is located in C<@oplen> array, and must not be changed. The basic command
+set includes C<OP_TEXT>, C<OP_COLOR>, C<OP_FONT>, C<OP_TRANSPOSE>, and C<OP_CODE>.
+The additional codes are C<OP_WRAP> and C<OP_MARK>, not used in drawing but are
+special commands to L<block_wrap>.
+
+=over
+
+=item OP_TEXT - TEXT_OFFSET, TEXT_LENGTH, TEXT_WIDTH
+
+C<OP_TEXT> commands to draw a string, from offset C<tb::BLK_TEXT_OFFSET + TEXT_OFFSET>,
+with a length TEXT_LENGTH. The third parameter TEXT_WIDTH contains the width of the text
+in pixels. Such the two-part offset scheme is made for simplification or an imaginary code,
+that would alter ( insert to, or delete part of ) the big text chunk; the updating procedure
+would not need to traverse all commands, but just the block headers.
+
+Relative to: C<tb::BLK_TEXT_OFFSET>.
+
+=item OP_COLOR - COLOR
+
+C<OP_COLOR> sets foreground or background color. To set the background,
+COLOR must be or-ed with C<tb::BACKCOLOR_FLAG> value. In addition to the 
+two toolkit supported color values ( RRGGBB and system color index ), 
+COLOR can also be or-ed with C<tb::COLOR_INDEX> flags, in such case it is
+an index in C<::colormap> property array.
+
+Relative to: C<tb::BLK_COLOR>, C<tb::BLK_BACKCOLOR>.
+
+=item OP_FONT - KEY, VALUE
+
+As the font is a complex property, that itself includes font name, size, 
+direction etc etc keys, C<OP_FONT> KEY represents one of the three
+parameters - C<tb::F_ID>, C<tb::F_SIZE>, C<tb::F_STYLE>. All three
+have different VALUE meaning. 
+
+Relative to: C<tb::BLK_FONT_ID>, C<tb::BLK_FONT_SIZE>, C<tb::BLK_FONT_STYLE>.  
+
+=over
+
+=item F_STYLE
+
+Contains a combination of C<fs::XXX> constants, such as C<fs::Bold>, C<fs::Italic> etc. 
+
+Default value: 0 
+
+=item F_SIZE
+
+Contains the relative font size. The size is relative to the current widget's font
+size. As such, 0 is a default value, and -2 is the widget's default font decreased by
+2 points. Prima::TextView provides no range checking ( but the toolkit does ), so
+while it is o.k. to set the negative C<F_SIZE> values larger than the default font size,
+one must be vary when relying on the combined font size value .
+
+=item F_ID
+
+All other font properties are collected under an 'ID'. ID is a index in
+the C<::fontPalette> property array, which contains font hashes with the other
+font keys initialized - name, encoding, and pitch. These three are minimal required
+set, and the other font keys can be also selected.
+
+=back
+
+=item OP_TRANSPOSE X, Y, FLAGS
+
+Contains a mark for an empty space. The space is extended to the relative coordinates (X,Y), 
+so the block extension algorithms take in account this opcode. If FLAGS does not contain
+C<tb::X_EXTEND>, then in addition to the block expansion, current coordinate is also
+moved to (X,Y). In this regard, C<(OP_TRANSPOSE,0,0,0)> and C<(OP_TRANSPOSE,0,0,X_EXTEND)> are
+identical and are empty operators. A special flag C<X_DIMENSION_FONT_HEIGHT> is only in effect with
+L<block_wrap> function. It indicates that (X,Y) values must be multiplied to the current font height.
+
+C<OP_TRANSPOSE> can be used for customized graphics, in conjunction with C<OP_CODE>
+to assign a space, so the rendering
+algorithms do not need to be re-written every time the new graphic is invented. As
+an example, see how L<Prima::PodView> deals with the images.
+
+=item OP_CODE - SUB, PARAMETER
+
+Contains a custom code pointer SUB with a parameter PARAMETER, passed when
+a block is about to be drawn. SUB is called with the following format:
+
+  ( $widget, $canvas, $text_block, $font_and_color_state, $x, $y, $parameter);
+
+$font_and_color_state ( or $state, through the code ) contains the state of 
+font and color commands in effect, and is changed as the rendering algorithm advances through a block.
+The format of the state is the same as of text block, so one may notice that for readability
+F_ID, F_SIZE, F_STYLE constants are paired to BLK_FONT_ID, BLK_FONT_SIZE and BLK_FONT_STYLE.
+
+The SUB code is executed only when the block is about to draw. 
+
+=item OP_WRAP ON_OFF
+
+C<OP_WRAP> is only in effect in L<block_wrap> method. ON_OFF is a boolean flag,
+selecting if the wrapping is turned on or off. L<block_wrap> does not support 
+stacking for the wrap commands, so the C<(OP_WRAP,1,OP_WRAP,1,OP_WRAP,0)> has 
+same effect as C<(OP_WRAP,0)>. If ON_OFF is 1, wrapping is disabled - all following
+commands threated an non-wrappable until C<(OP_WRAP,0)> is met.
+
+=item OP_MARK PARAMETER, X, Y
+
+C<OP_MARK> is only in effect in L<block_wrap> method and is a user command.
+L<block_wrap> only sets (!) X and Y to the current coordinates when the command is met. 
+Thus, C<OP_MARK> can be used for arbitrary reasons, easy marking the geometrical positions
+that undergo the block wrapping.
+
+=back
+
+As can be noticed, these opcodes are far not enough for the full-weight rich text
+viewer. However, the new opcodes can be created using C<tb::opcode>, that accepts
+the opcode length and returns the new opcode value.
+
+=head2 Rendering
+
+=over
+
+=item block_wrap
+
+C<block_wrap> is the function, that is used to wrap a block into a given width.
+It returns one or more text blocks with fully assigned headers. The returned blocks
+are located one below another, providing an illusion that the text itself is wrapped.
+It does not only traverses the opcodes and sees if the command fit or not in the given width;
+it also splits the text strings if these do not fit. 
+
+By default the wrapping can occur either on a command boundary or by the spaces or tab characters
+in the text strings. The unsolicited wrapping can be prevented by using C<OP_WRAP>
+command brackets. The commands inside these brackets are not wrapped; C<OP_WRAP> commands
+are removed from the output blocks.
+
+In general, C<block_wrap> copies all commands and their parameters as is, ( as it is supposed
+to do ), but some commands are treated especially:
+
+- C<OP_TEXT>'s third parameter, C<TEXT_WIDTH>, is disregarded, and is recalculated for every
+C<OP_TEXT> met.
+
+- If C<OP_TRANSPOSE>'s third parameter, C<X_FLAGS> contains C<X_DIMENSION_FONT_HEIGHT> flag,
+the command coordinates X and Y are multiplied to the current font height and the flag is
+cleared in the output block.
+
+- C<OP_MARK>'s second and third parameters assigned to the current (X,Y) coordinates.
+
+- C<OP_WRAP> removed from the output.
+
+=item block_draw CANVAS, BLOCK, X, Y
+
+The C<block_draw> draws BLOCK onto CANVAS in screen coordinates (X,Y).
+It can not only be used for drawing inside begin_paint/end_paint brackets;
+CANVAS can be an arbitrary C<Prima::Drawable> descendant.
+
+=back
+
+=head2 Coordinate system
+
+Prima::TextView employs two its own coordinate systems:
+(X,Y)-document and (TEXT_OFFSET,BLOCK)-block. 
+
+The document coordinate system is isometric and measured in pixels. Its origin is located 
+into the imaginary point of the beginning of the document ( not of the first block! ),
+in the upper-left point. X increases to the right, Y increases downwards.
+The block header values BLK_X and BLK_Y are in document coordinates, and
+the widget's pane extents ( regulated by C<::paneSize>, C<::paneWidth> and
+C<::paneHeight> properties ) are also in document coordinates.
+
+The block coordinate system in anisometric - its second axis, BLOCK, is an index
+of a text block in the widget's blocks storage, C<$self-E<gt>{blocks}>, and
+its first axis, TEXT_OFFSET is a text offset from the beginning of the block.
+
+Below described different coordinate system convertors
+
+=over
+
+=item screen2point X, Y
+
+Accepts (X,Y) in the screen coordinates ( O is a lower left widget corner ),
+returns (X,Y) in document coordinates ( O is upper left corner of a document ).
+
+=item xy2info X, Y
+
+Accepts (X,Y) is document coordinates, returns (TEXT_OFFSET,BLOCK) coordinates,
+where TEXT_OFFSET is text offset from the beginning of a block ( not related
+to the big text chunk ) , and BLOCK is an index of a block.
+
+=item info2xy TEXT_OFFSET, BLOCK
+
+Accepts (TEXT_OFFSET,BLOCK) coordinates, and returns (X,Y) in document coordinates
+of a block.
+
+=item text2xoffset TEXT_OFFSET, BLOCK
+
+Returns X coordinate where TEXT_OFFSET begins in a BLOCK index.
+
+=item info2text_offset
+
+Accepts (TEXT_OFFSET,BLOCK) coordinates and returns the text offset 
+with regard to the big text chunk.
+
+=item text_offset2info TEXT_OFFSET
+
+Accepts big text offset and returns (TEXT_OFFSET,BLOCK) coordinates 
+
+=item text_offset2block TEXT_OFFSET
+
+Accepts big text offset and returns BLOCK coordinate.
+
+=back
+
+=head2 Text selection
+
+The text selection is performed automatically when the user selects the
+region with a mouse. The selection is stored in (TEXT_OFFSET,BLOCK)
+coordinate pair, and is accessible via the C<::selection> property.
+If its value is assigned to (-1,-1,-1,-1) this indicates that there is
+no selection. For convenience the C<has_selection> method is introduced.
+
+Also, C<get_selected_text> returns the text within the selection
+(or undef with no selelection ), and C<copy> copies automatically 
+the selected text into the clipboard. The latter action is bound to 
+C<Ctrl+Insert> key combination.
+
+=head2 Event rectangles
+
+Partly as an option for future development, partly as a hack a
+concept of 'event rectangles' was introduced. Currently, C<{contents}>
+private variable points to an array of objects, equipped with 
+C<on_mousedown>, C<on_mousemove>, and C<on_mouseup> methods. These
+are called within the widget's mouse events, so the overloaded classes
+can define the interactive content without overloading the actual
+mouse events ( which is although easy but is dependent on Prima::TextView 
+own mouse reactions ).
+
+As an example L<Prima::PodView> uses the event rectangles to catch
+the mouse events over the document links. Theoretically, every 'content'
+is to be bound with a separate logical layer; when the concept was designed,
+a html-browser was in mind, so such layers can be thought as 
+( in the html world ) links, image maps, layers, external widgets. 
+
+Currently, C<Prima::TextView::EventRectangles> class is provided
+for such usage. Its property C<::rectangles> contains an array of
+rectangles, and the C<contains> method returns an integer value, whether
+the passed coordinates are inside one of its rectangles or not; in the first
+case it is the rectangle index.
+
+=cut
