@@ -557,6 +557,7 @@ sub open_read
    $self-> {readState} = {
       cutting      => 1,
       begun        => '',
+      bulletMode   => 0,
       
       indent       => DEF_INDENT,
       indentStack  => [],
@@ -648,6 +649,16 @@ sub _imgpaint
       $canvas-> bar( $x, $y, $x + $img->{stretch}->[0] - 1, $y + $img->{stretch}->[1] - 1);
       $canvas-> set( @save);
    }
+}
+
+sub _bulletpaint
+{
+   my ( $self, $canvas, $block, $state, $x, $y, $filled) = @_;
+   $y -= $$block[ tb::BLK_APERTURE_Y];
+   my $fh = $canvas-> font-> height * 0.3;
+   $filled ? 
+      $canvas-> fill_ellipse( $x + $fh / 2, $y + $$block[ tb::BLK_HEIGHT] / 2, $fh, $fh) :
+      $canvas-> ellipse     ( $x + $fh / 2, $y + $$block[ tb::BLK_HEIGHT] / 2, $fh, $fh);
 }
 
 sub read
@@ -838,6 +849,17 @@ sub add
    $p =~ s/\n//g; 
    my $g = [ $indent, $r-> {bigofs}, 0];
    my $styles = $self-> {styles};
+   my $no_push_block;
+
+   if ( $r-> {bulletMode}) {
+      if ( $style == STYLE_TEXT || $style == STYLE_CODE) {
+         return unless length $p;
+         $g = $self-> {model}-> [-1];
+         $$g[1] = $r-> {bigofs};
+         $no_push_block = 1;
+      }
+      $r-> {bulletMode} = 0;
+   }
 
    if ( $style == STYLE_CODE) { 
       $$g[ M_FONT_ID] = $styles-> [ STYLE_CODE]-> {fontId} || 1; # fixed font 
@@ -849,6 +871,15 @@ sub add
 
    if ( $style == STYLE_CODE) { 
       push @$g, tb::text( 0, length $p),
+   } elsif (( $style == STYLE_ITEM) && ( $p eq '*' || $p =~ /^\d+\.?$/)) {
+      push @$g, 
+         tb::wrap(0),
+         tb::color(0),
+         tb::code( \&_bulletpaint, ($p eq '*') ? 1 : 0),
+         tb::moveto( 1, 0, tb::X_DIMENSION_FONT_HEIGHT),
+         tb::wrap(1);
+      $r-> {bulletMode} = 1;
+      $p = '';
    } else { # wrapable text
       $p =~ s/[\s\t]+/ /g;
       $p =~ s/([\200-\377])/"E<".ord($1).">"/ge;
@@ -997,15 +1028,15 @@ sub add
 
       # add topic
       if ( $style == STYLE_HEAD_1 || $style == STYLE_HEAD_2 || 
-         ( $style == STYLE_ITEM && $p !~ /^\s*[\d+\*\-]*\s*$/)) {
+         ( $style == STYLE_ITEM && $p !~ /^\*|\d+\.?$/)) {
          my $itemDepth = ( $style == STYLE_ITEM) ?
             scalar @{$r-> {indentStack}} : 0;
          my $pp = $p;
          $pp =~ s/\|//g;
-         if ( $style == STYLE_ITEM && $pp =~ /^\s*[a-z]/) {
-            $pp =~ s/[\s\)\(\[\]\{\}].*$//; # seems like function entry?
-         }
          $pp =~ s/([<>])/'E<' . (($1 eq '<') ? 'lt' : 'gt') . '>'/ge;
+         if ( $style == STYLE_ITEM && $pp =~ /^\s*[a-z]/) {
+            $pp =~ s/([\s\)\(\[\]\{\}].*)$/C<$1>/; # seems like function entry?
+         }
          my $newTopic = [ scalar @{$self-> {model}},
             0, $pp, $style, $itemDepth, $linkStart];
          $self-> _close_topic( $style, $newTopic); 
@@ -1023,7 +1054,7 @@ sub add
 
    # finish block
    $r-> {bigofs} += length $p;
-   push @{$self-> {model}}, $g;
+   push @{$self-> {model}}, $g unless $no_push_block;
 }
 
 sub stop_format

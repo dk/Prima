@@ -871,7 +871,7 @@ sub block_draw
             $f_taint = $canvas-> get_font;
          }
          unless ( $c_taint) {
-            $self-> realize_state( $canvas, \@state, tb::REALIZE_FONTS); 
+            $self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
             $c_taint = 1;
          }
          $$b[ $i + 1]-> ( $self, $canvas, $b, \@state, $x, $y, $$b[ $i + 2]);
@@ -1419,6 +1419,7 @@ sub selection
    }
 
    for ( 0, 1) {
+      @clipRect[$_,$_+2] = @clipRect[$_+2,$_] if $clipRect[$_] > $clipRect[$_+2];
       $clipRect[$_] = $aa[$_] if $clipRect[$_] < $aa[$_]; 
       $clipRect[$_+2] = $aa[$_+2] if $clipRect[$_+2] > $aa[$_+2];
    }
@@ -1432,7 +1433,6 @@ sub selection
       }
    }
    $self-> invalidate_rect( @clipRect);
-   
 }
 
 sub get_selected_text
