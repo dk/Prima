@@ -1171,7 +1171,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
            if (( l-> flags & SWP_NOSIZE) == 0) {
               RECT r;
               GetClientRect( win, &r);
-              sys yOverride = r. bottom + r. top;
+              sys yOverride = r. bottom - r. top;
               SendMessage( win, WM_SYNCMOVE, 0, 0);
            }
            if ( l-> flags & SWP_HIDEWINDOW) SendMessage( win, WM_SETVISIBLE, 0, 0);

@@ -694,7 +694,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
                 guts. instance, nil)))
              apiErr;
           sys lastSize. x = r. right  - r. left;
-          sys lastSize. y = r. bottom - r. top;
+          sys yOverride = sys lastSize. y = r. bottom - r. top;
           sys handle = frame;
           SetWindowLong( frame, GWL_USERDATA, ( LONG) self);
        }

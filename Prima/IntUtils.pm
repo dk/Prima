@@ -108,7 +108,38 @@ sub ScrollTimer_Tick
    $self-> scroll_timer_stop unless defined $self->{mouseTransaction};
 }
 
+package Prima::IntIndents;
+
+sub indents
+{
+   return wantarray ? @{$_[0]->{indents}} : [@{$_[0]->{indents}}] unless $#_;
+   my ( $self, @indents) = @_;
+   @indents = @{$indents[0]} if ( scalar(@indents) == 1) && ( ref($indents[0]) eq 'ARRAY');
+   for ( @indents) {
+      $_ = 0 if $_ < 0;
+   }
+   $self-> {indents} = \@indents;
+}
+
+sub get_active_area
+{
+   my @r = ( scalar @_ > 2) ? @_[2,3] : $_[0]-> size;
+   my $i = $_[0]-> {indents};
+   if ( !defined($_[1]) || $_[1] == 0) {
+      # returns inclusive - exclusive
+      return $$i[0], $$i[1], $r[0] - $$i[2], $r[1] - $$i[3];
+   } elsif ( $_[1] == 1) {
+      # returns inclusive - inclusive
+      return $$i[0], $$i[1], $r[0] - $$i[2] - 1, $r[1] - $$i[3] - 1;
+   } else {
+      # returns size
+      return $r[0] - $$i[0] - $$i[2], $r[1] - $$i[1] - $$i[3];
+   }
+}
+
 package Prima::GroupScroller;
+use vars qw(@ISA);
+@ISA = qw(Prima::IntIndents);
 
 #  used for Groups that contains optional scroll bars and provides properties for
 #  it's maintenance and notifications ( HScroll_Change and VScroll_Change).
@@ -269,30 +300,10 @@ sub set_v_scroll
    }
 }
 
-sub indents
-{
-   return @{shift-> {indents}} unless $#_;
-   shift-> {indents} = [@_];
-}
-
-sub get_active_area
-{
-   my @r = ( scalar @_ > 2) ? @_[2,3] : $_[0]-> size;
-   my $i = $_[0]-> {indents};
-   if ( !defined($_[1]) || $_[1] == 0) {
-      # returns inclusive - exclusive
-      return $$i[0], $$i[1], $r[0] - $$i[2], $r[1] - $$i[3];
-   } elsif ( $_[1] == 1) {
-      # returns inclusive - inclusive
-      return $$i[0], $$i[1], $r[0] - $$i[2] - 1, $r[1] - $$i[3] - 1;
-   } else {
-      # returns size
-      return $r[0] - $$i[0] - $$i[2], $r[1] - $$i[1] - $$i[3];
-   }
-}
-
 sub borderWidth     {($#_)?($_[0]->set_border_width( $_[1])):return $_[0]->{borderWidth}}
 sub hScroll         {($#_)?$_[0]->set_h_scroll       ($_[1]):return $_[0]->{hScroll}}
 sub vScroll         {($#_)?$_[0]->set_v_scroll       ($_[1]):return $_[0]->{vScroll}}
+
+
 
 1;

@@ -25,6 +25,7 @@
 #
 package main;
 use vars qw( @ISA $w $dong);
+use strict;
 
 my $verbose = 0;
 my $testing = 0;

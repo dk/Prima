@@ -176,11 +176,15 @@ Widget_init( Handle self, HV * profile)
    if ( !pexist( originDontCare) || !pget_B( originDontCare)) {
       Point pos = { pget_i( left), pget_i( bottom)};
       my-> set_origin( self, pos);
-   }
+   } else
+      var-> pos = my-> get_origin( self);
+
    if ( !pexist( sizeDontCare  ) || !pget_B( sizeDontCare  )) {
       Point size = { pget_i( width), pget_i( height)};
       my-> set_size( self, size);
-   }
+   } else
+      var-> virtualSize = my-> get_size( self);
+
    {
       Bool x = 0, y = 0;
       if ( pget_B( centered)) { x = 1; y = 1; };
@@ -690,6 +694,7 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmMove:
          {
             Bool doNotify = false;
+            Point oldP;
             if ( var-> stage == csNormal) {
                doNotify = true;
             } else if ( var-> stage > csNormal) {
@@ -709,9 +714,10 @@ void Widget_handle_event( Handle self, PEvent event)
             }
             if ( !event-> gen. B)
                my-> first_that( self, move_notify, &event-> gen. P);
+            if ( doNotify) oldP = var-> pos;
             var-> pos = event-> gen. P;
             if ( doNotify) {
-               my-> notify( self, "<sPP", "Move", var-> pos, event-> gen. P);
+               my-> notify( self, "<sPP", "Move", oldP, event-> gen. P);
                objCheck;
                if ( var-> growMode & gmCenter) my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
             }
@@ -1574,7 +1580,7 @@ move_notify( Handle self, Handle child, Point * moveTo)
       if ( clp) return false;
       p = his-> self-> get_origin( child);
       p. x += dx;
-      p. x += dy;
+      p. y += dy;
       his-> self-> set_origin( child, p);
    }
 
