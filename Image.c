@@ -239,7 +239,7 @@ Image_save( Handle self, char *filename, HV *profile)
       ieError:          croak("RTC0102: Error saving %s", filename);                            \
       ieInvalidType:    croak("RTC0103: Invalid file type to save %s", filename);               \
       ieFileNotFound:   croak("RTC0104: Cannot open/write %s", filename);                       \
-      ieInvalidOptions: croak("RTC0105: Inavlid options given for %s", filename);               \
+      ieInvalidOptions: croak("RTC0105: Invalid options given for %s", filename);               \
       ieNotSupported:   croak("RTC0106: Requested image format not supported for %s", filename);\
    }                                                                                   \
    return false;                                                                       \
