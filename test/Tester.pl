@@ -245,5 +245,4 @@ sub rundir
 
 rundir('.');
 
-run Prima;
 
