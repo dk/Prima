@@ -89,7 +89,7 @@ sub init
    $self-> {defcw} = $::application-> get_default_cursor_width;
    $self-> {resetDisabled} = 1;
    my %profile = $self-> SUPER::init(@_);
-   for ( qw( writeOnly borderWidth passwordChar maxLen alignment autoTab autoSelect firstChar readOnly selEnd selStart charOffset wordDelimiters))
+   for ( qw( writeOnly borderWidth passwordChar maxLen alignment autoTab autoSelect readOnly selEnd selStart charOffset firstChar wordDelimiters))
       { $self->$_( $profile{ $_}); }
    $self-> {resetDisabled} = 0;
    $self-> {resetLevel}    = 0;
@@ -588,8 +588,7 @@ sub set_char_offset
    $self->{charOffset} = $offset;
    my $w = $self-> width - ( $border + 1) * 2;
    my $fc = $self-> {firstChar};
-   if ( $fc > $offset)
-   {
+   if ( $fc > $offset) {
       $self-> firstChar( $offset);
    } else {
       my $gapWidth = $self->get_text_width( substr( $self->{line}, 0, $offset - $fc));
