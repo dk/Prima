@@ -1333,6 +1333,44 @@ sub insert_items
    $self-> repaint if scalar @shifters;
 }
 
+sub replace_items
+{
+   my ( $self, $where) = ( shift, shift);
+   return if $where < 0;
+   my ( $is, $iw) = ( $self-> {items}, $self-> {widths});
+   my $new;
+   if (@_ == 1 and ref($_[0]) eq q(ARRAY)) {
+      return unless scalar @{$_[0]};
+      $new = [@{$_[0]}];
+   } else {
+      return unless scalar @_;
+      $new = [@_];
+   }
+   my $num = scalar @$new;
+   if ( $num + $where >= $self-> {count}) {
+      $num = $self->{count} - $where;
+      return if $num <= 0;
+      splice @$new, $num;
+   }
+   $self->{items} = $new;
+   $self->{widths} = [];
+   $self-> recalc_widths;
+   splice( @{$is}, $where, $num, @{$self->{items}});
+   splice( @{$iw}, $where, $num, @{$self->{widths}});
+   ( $self->{items}, $self->{widths}) = ( $is, $iw);
+   if ( $self->{autoWidth}) {
+      my $mw = 0;
+      for (@{$iw}) {
+	 $mw = $_ if $mw < $_;
+      }
+      $self-> itemWidth( $self->{maxWidth} = $mw);
+      $self-> offset( $self-> offset);
+   }
+   if ( $where <= $self-> {lastItem} && $where + $num >= $self-> {topItem}) {
+      $self-> redraw_items( $where .. $where + $num);
+   }
+}
+
 sub add_items { shift-> insert_items( -1, @_); }
 
 sub delete_items
@@ -1889,6 +1927,14 @@ call is naturally usable only for single item retrieval.
 Inserts array of items at OFFSET index in the list.
 Offset must be a valid index; to insert items at the end of
 the list use C<add_items> method.
+
+ITEMS can be either an array, or a reference to an array of 
+item indices.
+
+=item replace_items OFFSET, ITEMS
+
+Replaces existing items at OFFSET index in the list.
+Offset must be a valid index.
 
 ITEMS can be either an array, or a reference to an array of 
 item indices.
