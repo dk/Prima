@@ -293,6 +293,7 @@ window with all children is returned.
 
 The simple way to use the loader is as that:
 
+     use Prima qw(Application);
      use Prima::VB::VBLoader;
      Prima::VBLoad( './your_resource.fm',
         Form1 => { centered => 1 },
@@ -300,6 +301,7 @@ The simple way to use the loader is as that:
 
 A more complicated but more proof code can be met in the toolkit:
 
+     use Prima qw(Application);
      eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
      $form = Prima::VBLoad( $fi,
        'Form1'     => { visible => 0, centered => 1},
@@ -308,6 +310,25 @@ A more complicated but more proof code can be met in the toolkit:
         Prima::message("Error in setup resource: $@"); 
         return;
      }
+
+All form widgets can be supplied with custom parameters, all together combined
+in a hash of hashes and passed as the second parameter to C<VBLoad()> function.
+The example above supplies values for C<::visible> and C<::centered> to
+C<Form1> widget, which is default name of a form window created by Visual
+Builder. All other widgets are accessible by their names in a similar fashion;
+after the creation, the widget hierarchy can be accessed in the standard way:
+
+     $form = Prima::VBLoad( $fi,
+        ....
+	'StartButton' => {
+	   onMouseOver => sub { die "No start buttons here\n" },
+	}
+     );
+     ...
+     $form-> StartButton-> hide;
+
+Real-life examples are met across the toolkit; for instance,
+F<Prima/PS/setup.fm> dialog is used by C<Prima::PS::Setup>.
 
 =head1 API
 
@@ -325,10 +346,10 @@ scalar is a version string.
 =item GO_SUB SUB [ @EXTRA_DATA ]
 
 Depending on value of boolean flag C<Prima::VB::VBLoader::builderActive>
-perrofms the following: if it is 1, the SUB text is returned as is.
+performs the following: if it is 1, the SUB text is returned as is.
 If it is 0, evaluates it in C<sub{}> context and returns the code reference.
 If evaluation fails, EXTRA_DATA is stored in C<Prima::VB::VBLoader::eventContext>
-array and the exception is forwarded.
+array and the exception is re-thrown.
 C<Prima::VB::VBLoader::builderActive> is an internal flag that helps the
 Visual Builder use the module interface without actual SUB evaluation.
 
@@ -347,9 +368,9 @@ Moreover, if a parent widget is passed as a parameter to
 a children widget, the parameter is deferred and passed after
 the creation using C<::set> call. 
 
-During the parsing and creation process some events can be are invoked.
-These events are stored in .fm file and usually provide class-specific
-loading instructions. See L<Events> for details.
+During the parsing and creation process internal notifications can be invoked.
+These notifications (events) are stored in .fm file and usually provide
+class-specific loading instructions. See L<Events> for details.
 
 =item AUTOFORM_CREATE FILENAME, %PARAMETERS
 
@@ -369,7 +390,7 @@ path name, or as a relative module name. In a way,
 and
  
    Prima::VBLoad( 
-   Prima::Utils::find_image( 'Module' 'form.fm')
+      Prima::Utils::find_image( 'Module' 'form.fm'))
 
 are identical. If the procedure finds that FILENAME is a relative
 module name, it calls C<Prima::Utils::find_image> automatically. To
@@ -388,17 +409,16 @@ variable.
 
 =head2 Events
 
-The events, stored in .fm file are called during the loading process.
-The module provides no functionality for supplying the events during
-the load. This interface is useful only for developers of Visual Builder - ready 
-classes.
+The events, stored in .fm file are called during the loading process.  The
+module provides no functionality for supplying the events during the load. This
+interface is useful only for developers of Visual Builder - ready classes.
 
-The events section is located in C<actions> section of widget entry.
-There can be more than one event of each type, registered to different widgets.
-NAME parameter is a string with name of the widget; INSTANCE is a hash,
-created during load for every widget provided to keep internal event-specific or 
-class-specific data there. C<extras> section of widget entry is present
-there as an only predefined key.
+The events section is located in C<actions> section of widget entry.  There can
+be more than one event of each type, registered to different widgets.  NAME
+parameter is a string with name of the widget; INSTANCE is a hash, created
+during load for every widget provided to keep internal event-specific or
+class-specific data there. C<extras> section of widget entry is present there
+as an only predefined key.
 
 =over
 
@@ -433,16 +453,16 @@ Called after the creation of all widgets is finished.
 
 =head1 FILE FORMAT
 
-The idea of format of .fm file is that is should be evaluated by 
-perl C<eval()> call without special manipulations, and kept as plain text.
-The file begins with a header, which is a #-prefixed string, and
-contains a signature, version of file format, and version of the creator of the file:
+The idea of format of .fm file is that is should be evaluated by perl C<eval()>
+call without special manipulations, and kept as plain text.  The file begins
+with a header, which is a #-prefixed string, and contains a signature, version
+of file format, and version of the creator of the file:
 
  # VBForm version file=1 builder=0.1
 
-The header can also contain additional headers, also prefixed with #.
-These can be used to tell the loader that another perl module is needed to 
-be loaded before the parsing; this is useful, for example, if a constant is declared in
+The header can also contain additional headers, also prefixed with #.  These
+can be used to tell the loader that another perl module is needed to be loaded
+before the parsing; this is useful, for example, if a constant is declared in
 the module.
 
  # [preload] Prima::ComboBox
