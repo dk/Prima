@@ -88,8 +88,7 @@ ImgFormat gifFormat = {
 	{ "userInput", GIFPROP_USERINPUT, "b", "User input expected", nil},
 	{ "transparentColorIndex", GIFPROP_TRANSPARENTCOLORINDEX, "b", "Transparent color index", nil},
 	{ "comments", GIFPROP_COMMENTS, "s*", "GIF file comments", nil},
-	{ "extensions", GIFPROP_EXTENSIONS, "B*", "GIF extensions", nil},
-	{ "_extensions_", GIFPROP_EXTENSIONS, "p*", "GIF extensions", 
+	{ "extensions", GIFPROP_EXTENSIONS, "p*", "GIF extensions",
 	  ( ImgProps[]) {
 	      { "code", GIFPROP_EXTENSION_CODE, "i", "GIF extension code"},
 	      { "blocks", GIFPROP_EXTENSION_BLOCKS, "B*", "GIF extension blocks"},
@@ -309,7 +308,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	/* If have been queried for all images then there must be no
 	   more than one image profile in the imgInfo list. If it
 	   contains properties we must remove them. */
-	img_destroy_properties( ( ( PImgInfo) list_at( imgInfo, 0))->propList);
+	img_clear_properties( ( ( PImgInfo) list_at( imgInfo, 0))->propList);
     }
     else {
 	/* Have been queried for specific images, collecting necessary
@@ -558,7 +557,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 	    /* At this point everything is ready to fill in image
                information with a real data. So, all old properties
                are obsolete. */
-	    img_destroy_properties( imageInfo->propList);
+	    img_clear_properties( imageInfo->propList);
 
 	    gifChunk = ( GifImageDesc *) list_at( &gifChunks, index);
 	    if ( readData) {
@@ -692,7 +691,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			    if ( succeed) {
 				extProp = img_push_property(
 					imgProp->val.pProperties + extIdx,
-					"data",
+					"blocks",
 					PROPTYPE_BIN | PROPTYPE_ARRAY,
 					gifExtension->data.count
 				    );
