@@ -256,6 +256,7 @@ prima_cleanup_drawable_after_painting( Handle self)
       XFreePixmap( DISP, XX-> gdrawable);
       XCHECKPOINT;
       XX-> gdrawable = XX-> udrawable;
+      XX-> btransform. x = XX-> btransform. y = 0;
    }
    prima_release_gc(XX);
    memcpy( XX-> fill_pattern, XX-> saved_fill_pattern, sizeof( FillPattern));
@@ -279,14 +280,9 @@ prima_cleanup_drawable_after_painting( Handle self)
 
 #define PURE_FOREGROUND if (!XX->flags.brush_fore) {\
    XSetForeground( DISP, XX-> gc, XX-> fore. primary);\
-   XSetFillStyle( DISP, XX-> gc, FillSolid);\
    XX->flags.brush_fore=1;\
-}
-
-#define PURE_BACKGROUND if (!XX->flags.brush_back) {\
-   XSetBackground( DISP, XX-> gc, XX-> back. primary);\
-   XX->flags.brush_back=1;\
-}
+}\
+XSetFillStyle( DISP, XX-> gc, FillSolid);\
 
 Bool
 prima_make_brush( DrawableSysData * XX, int colorIndex)
@@ -1409,7 +1405,7 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
    XX-> flags. brush_fore = 1;
    XX-> flags. brush_back = 1;
 
-   if ( PDrawable( self)-> font. style & fsUnderlined) {
+   if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {      
       int lw = apc_gp_get_line_width( self);
       int tw = apc_gp_get_text_width( self, text, len, true) - 1;
       int d  = XX-> font-> underlinePos;
@@ -1418,18 +1414,34 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
       if ( lw != XX-> font-> underlineThickness)
          apc_gp_set_line_width( self, XX-> font-> underlineThickness);
 
-      ay = d + ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
-      rx. l = -ovx.x * r-> cos2. l - ay * r-> sin2. l + 0.5;
-      ry. l = -ovx.x * r-> sin2. l + ay * r-> cos2. l + 0.5;
-      x1 = x + rx. i. i;
-      y1 = y + ry. i. i;
-      tw += ovx.y;
-      rx. l = tw * r-> cos2. l - ay * r-> sin2. l + 0.5;
-      ry. l = tw * r-> sin2. l + ay * r-> cos2. l + 0.5;
-      x2 = x + rx. i. i;
-      y2 = y + ry. i. i;
-      
-      XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2)); 
+      if ( PDrawable( self)-> font. style & fsUnderlined) {
+         ay = d + ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
+         rx. l = -ovx.x * r-> cos2. l - ay * r-> sin2. l + 0.5;
+         ry. l = -ovx.x * r-> sin2. l + ay * r-> cos2. l + 0.5;
+         x1 = x + rx. i. i;
+         y1 = y + ry. i. i;
+         tw += ovx.y;
+         rx. l = tw * r-> cos2. l - ay * r-> sin2. l + 0.5;
+         ry. l = tw * r-> sin2. l + ay * r-> cos2. l + 0.5;
+         x2 = x + rx. i. i;
+         y2 = y + ry. i. i;
+         XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2)); 
+      }
+
+      if ( PDrawable( self)-> font. style & fsStruckOut) {
+         ay =  PDrawable( self)-> font.height/2 + ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
+         rx. l = -ovx.x * r-> cos2. l - ay * r-> sin2. l + 0.5;
+         ry. l = -ovx.x * r-> sin2. l + ay * r-> cos2. l + 0.5;
+         x1 = x + rx. i. i;
+         y1 = y + ry. i. i;
+         tw += ovx.y;
+         rx. l = tw * r-> cos2. l - ay * r-> sin2. l + 0.5;
+         ry. l = tw * r-> sin2. l + ay * r-> cos2. l + 0.5;
+         x2 = x + rx. i. i;
+         y2 = y + ry. i. i;
+         XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2)); 
+      }
+
       if ( lw != XX-> font-> underlineThickness) 
          apc_gp_set_line_width( self, lw);
    }   
@@ -1441,7 +1453,6 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 {
    DEFXX;
    SHIFT( x, y);
-
    
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
@@ -1484,16 +1495,21 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    }
    XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), text, len);
    XCHECKPOINT;
-
-   if ( PDrawable( self)-> font. style & fsUnderlined) {
+   
+   if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
       int lw = apc_gp_get_line_width( self);
       int tw = apc_gp_get_text_width( self, text, len, true);
       int d  = XX-> font-> underlinePos;
       Point ovx = gp_get_text_overhangs( self, text, len);
       if ( lw != XX-> font-> underlineThickness)
          apc_gp_set_line_width( self, XX-> font-> underlineThickness);
-      XDrawLine( DISP, XX-> gdrawable, XX-> gc, 
-         x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d)); 
+      if ( PDrawable( self)-> font. style & fsUnderlined)
+         XDrawLine( DISP, XX-> gdrawable, XX-> gc, 
+            x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d)); 
+      if ( PDrawable( self)-> font. style & fsStruckOut)
+         XDrawLine( DISP, XX-> gdrawable, XX-> gc, 
+            x - ovx.x, REVERT( y + PDrawable( self)-> font.height/2), 
+            x + tw - 1 + ovx.y, REVERT( y + PDrawable( self)-> font.height/2)); 
       if ( lw != XX-> font-> underlineThickness) 
          apc_gp_set_line_width( self, lw);
    }   

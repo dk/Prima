@@ -529,7 +529,7 @@ build_font_key( PFontKey key, PFont f, Bool bySize)
    bzero( key, sizeof( FontKey));
    key-> height = bySize ? -f-> size : f-> height;
    key-> width = f-> width;
-   key-> style = f-> style & ~(fsUnderlined|fsOutline);
+   key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut);
    key-> pitch = f-> pitch;
    strcpy( key-> name, f-> name);
 }
@@ -985,7 +985,7 @@ query_diff( PFontInfo fi, PFont f, char * lcname, Bool by_size)
       diff += 1.0 * (int)fabs( guts. resolution. x - fi->  font. xDeviceRes + 0.5);
    }
 
-   if ( fi-> flags. style && ( f-> style & ~(fsUnderlined|fsOutline))== fi->  font. style) {
+   if ( fi-> flags. style && ( f-> style & ~(fsUnderlined|fsOutline|fsStruckOut))== fi->  font. style) {
       diff += 0.0;
    } else if ( !fi->  flags. style) {
       diff += 2000.0;
@@ -1004,6 +1004,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    double minDiff = INT_MAX, lastDiff = INT_MAX;
    char lcname[ 256];
    Bool underlined = dest-> style & fsUnderlined;
+   Bool struckout  = dest-> style & fsStruckOut;
    int  direction  = dest-> direction;
   
    /*
@@ -1016,6 +1017,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 
    if ( prima_find_known_font( dest, true, by_size)) {
       if ( underlined) dest-> style |= fsUnderlined;
+      if ( struckout) dest-> style |= fsStruckOut;
       dest-> direction = direction;
       return true;
    }
@@ -1054,6 +1056,7 @@ AGAIN:
    detail_font_info( info + index, dest, true, by_size);
 
    if ( underlined) dest-> style |= fsUnderlined;
+   if ( struckout) dest-> style |= fsStruckOut;
    dest-> direction = direction;
    return true;
 }
@@ -1187,6 +1190,8 @@ prima_update_rotated_fonts( PCachedFont f, char * text, int len, int direction, 
    PRotatedFont r = nil;
    int i;
    
+   while ( direction < 0) direction += 3600;
+   direction %= 3600;
    if ( direction == 0)
       return false;
 
@@ -1228,9 +1233,6 @@ prima_update_rotated_fonts( PCachedFont f, char * text, int len, int direction, 
          }
          bzero( r-> map, r-> length * sizeof( void*));
       }    
-      while ( direction < 0) direction += 3600;
-      direction %= 3600;
-      if ( direction == 0) return false;
       rad = direction * 3.14159 / 1800.0;
       r-> sin. l = ( sin1 = sin( -rad)) * 0x10000;
       r-> cos. l = ( cos1 = cos( -rad)) * 0x10000;
