@@ -101,7 +101,8 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
    free( m-> variable);
    free( m-> perlSub);
    if ( m-> code) sv_free( m-> code);
-   if ( m-> bitmap) my-> detach( self, m-> bitmap, false);
+   if ( m-> bitmap) 
+      SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate)); 
    my-> dispose_menu( self, m-> next);
    my-> dispose_menu( self, m-> down);
    free( m);
@@ -276,7 +277,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
                goto TEXT;
             }
             r-> bitmap =  gimme_the_mate( subItem);              // storing PImage as SV*
-            my-> attach( self, r-> bitmap);
+            SvREFCNT_inc( SvRV(( PObject( r-> bitmap))-> mate));
          } else {
          TEXT:
             r-> text = duplicate_string( SvPV( subItem, na));
@@ -613,8 +614,8 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
       return nilHandle;
    }
 
-   my-> attach( self, image);
-   my-> detach( self, m-> bitmap, false);
+   SvREFCNT_inc( SvRV(( PObject( image))-> mate));
+   SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate));
    m-> bitmap = image;
    if ( m-> id > 0)
       if ( var-> stage <= csNormal)
