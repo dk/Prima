@@ -207,6 +207,7 @@ sub save_state
    my $self = $_[0];
    
    $self-> {saveState} = {};
+   $self-> set_font( $self-> get_font) if $self-> {useDeviceFonts};
    $self-> {saveState}-> {$_} = $self-> $_() for qw( 
       color backColor fillPattern lineEnd linePattern lineWidth
       rop rop2 textOpaque textOutBaseline font
@@ -773,13 +774,18 @@ sub pageDevice
 sub useDeviceFonts
 {
    return $_[0]-> {useDeviceFonts} unless $#_;
+   if ( $_[1]) {
+      delete $_[0]-> {font}-> {width};
+      $_[0]-> set_font( $_[0]-> get_font);
+   }
    $_[0]-> {useDeviceFonts} = $_[1] unless $_[0]-> get_paint_state;
+   $_[0]-> {useDeviceFonts} = 1 if $_[0]-> {useDeviceFontsOnly};
 }
 
 sub useDeviceFontsOnly
 {
    return $_[0]-> {useDeviceFontsOnly} unless $#_;
-   $_[0]-> useDeviceFonts(1) if $_[0]-> {useDeviceFontsOnly} = $_[1];
+   $_[0]-> useDeviceFonts(1) if $_[0]-> {useDeviceFontsOnly} = $_[1] && !$_[0]-> get_paint_state;
 }
 
 sub grayscale 

@@ -295,7 +295,7 @@ sub spool
    if ( $self-> {data}-> {spoolerType} == file) {
       eval "use Prima::MsgBox"; die "$@\n" if $@;
       my $f = Prima::MsgBox::input_box( 'Print to file', 'Output file name:', '', mb::OKCancel, { buttons => {
-         mb::OK => { 
+         mb::OK, { 
          modalResult => undef,
          onClick => sub {
             $_[0]-> clear_event;

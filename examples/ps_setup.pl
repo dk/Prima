@@ -55,10 +55,10 @@ $x-> setup_dialog;
 
 for ( keys %z) {
    next if $_ eq 'devParms';
-   print "$_:$z{$_} => $x->{data}->{$_}\n";
+#   print "$_:$z{$_} => $x->{data}->{$_}\n";
 }
 for ( keys %p) {
-   print "$_:$p{$_} => $x->{data}->{devParms}->{$_}\n";
+#   print "$_:$p{$_} => $x->{data}->{devParms}->{$_}\n";
 }
 
 $x-> begin_doc;

@@ -201,7 +201,7 @@ sub profile_default
       sizeMin    => [11,11],
       selectingButtons => 0,
       accelItems => [
-         ['altpopup',0,0, km::Shift|km::Ctrl|kb::F9 => sub{
+         ['altpopup',0,0, km::Shift|km::Ctrl|kb::F9, sub{
              $_[0]-> altpopup;
              $_[0]-> clear_event;
          }],

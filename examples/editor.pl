@@ -144,21 +144,21 @@ sub profile_default
       menuItems => [
          [ '~File' => [
             [ '~New'        => q(new_window)],
-            [ '~Open...'    => 'F3' => kb::F3 => q(open_file)],
-            [ '~Save'       => 'F2' => kb::F2 => q(save_file)],
+            [ '~Open...'    => 'F3' => kb::F3, q(open_file)],
+            [ '~Save'       => 'F2' => kb::F2, q(save_file)],
             [ 'Save ~as...' => q(save_as)],
             [],
              ['E~xit'        => 'Alt+X' => '@X' => sub {$::application-> close}]
          ]],
         [ '~Edit' => [
-            ['~Cut'   => 'Ctrl+Del'   => kb::NoKey => sub{$_[0]->{editor}->cut}],
-            ['C~opy'  => 'Ctrl+Ins'   => kb::NoKey => sub{$_[0]->{editor}->copy}],
-            ['~Paste' => 'Shift+Ins'  => kb::NoKey => sub{$_[0]->{editor}->paste}],
-            ['~Delete' => 'Shift+Del' => kb::NoKey => sub{$_[0]->{editor}->delete_block}],
+            ['~Cut'   => 'Ctrl+Del'   => kb::NoKey, sub{$_[0]->{editor}->cut}],
+            ['C~opy'  => 'Ctrl+Ins'   => kb::NoKey, sub{$_[0]->{editor}->copy}],
+            ['~Paste' => 'Shift+Ins'  => kb::NoKey, sub{$_[0]->{editor}->paste}],
+            ['~Delete' => 'Shift+Del' => kb::NoKey, sub{$_[0]->{editor}->delete_block}],
             [],
-            ['~Find...' => 'Esc'      => kb::Esc   => q(find)],
-            ['~Replace...'=> 'Ctrl+S' => '^S'      => q(replace)],
-            ['Find ~next' => 'Ctrl+L' => '^L'      => q(find_next)],
+            ['~Find...' => 'Esc'      => kb::Esc   , q(find)],
+            ['~Replace...'=> 'Ctrl+S' => '^S'      , q(replace)],
+            ['Find ~next' => 'Ctrl+L' => '^L'      , q(find_next)],
         ]],
         ['~Options' => [
             [ 'syx' => '~Syntax hilite' => sub{ $_[0]->{editor}-> syntaxHilite( $_[0]->menu-> syx-> toggle)}],

@@ -195,10 +195,10 @@ sub profile_default
           ['~Find...' => 'Ctrl+F' => '^F' => 'find'],
           ['Find ~again' => 'Ctrl+L' => '^L' => 'find2'],
           ['Fa~st find' => [
-             ['fff' => '~Forward' => '/' => kb::NoKey => sub { $_[0]-> fastfind(1) }],
-             ['ffb' => '~Backward' => '?' => kb::NoKey => sub { $_[0]-> fastfind(0) }],
-             ['-frf' => '~Repeat forward' => 'n' => kb::NoKey => sub { $_[0]-> fastfind_repeat(1) }],
-             ['-frb' => 'Repeat backward' => 'N' => kb::NoKey => sub { $_[0]-> fastfind_repeat(0) }],
+             ['fff' => '~Forward' => '/' => kb::NoKey, sub { $_[0]-> fastfind(1) }],
+             ['ffb' => '~Backward' => '?' => kb::NoKey, sub { $_[0]-> fastfind(0) }],
+             ['-frf' => '~Repeat forward' => 'n' => kb::NoKey, sub { $_[0]-> fastfind_repeat(1) }],
+             ['-frb' => 'Repeat backward' => 'N' => kb::NoKey, sub { $_[0]-> fastfind_repeat(0) }],
           ]],
           [],
           ['Set~up' => 'setup_dialog'],
@@ -206,10 +206,10 @@ sub profile_default
              map { [ "ENC$_", $_, 'set_encoding' ] } sort @{$::application-> font_encodings()},
           ]],
         ]], [ '~Go' => [
-            [ '-goback' => '~Back' => 'Alt + LeftArrow' => km::Alt | kb::Left => 'back' ],
-            [ '-goforw' => '~Forward' => 'Alt + RightArrow' => km::Alt | kb::Right => 'forward' ],
+            [ '-goback' => '~Back' => 'Alt + LeftArrow' => km::Alt | kb::Left, 'back' ],
+            [ '-goforw' => '~Forward' => 'Alt + RightArrow' => km::Alt | kb::Right, 'forward' ],
             [],
-            [ '-goup'   => '~Up' => 'Alt + UpArrow' => km::Alt | kb::Right => 'up' ],
+            [ '-goup'   => '~Up' => 'Alt + UpArrow' => km::Alt | kb::Right, 'up' ],
             [ '-goprev'   => '~Previous' => 'prev' ],
             [ '-gonext'   => '~Next' => 'next' ],
           ]

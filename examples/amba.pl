@@ -71,7 +71,7 @@ my $w = Prima::Window-> create(
       ["~Help" => sub{
           my $txt = 'Chess puzzle. Objective is to put figures so they could reach every cell upon the board';
           Prima::MsgBox::message( $txt, mb::OK | mb::Cancel, {
-             buttons => { mb::Cancel => {
+             buttons => { mb::Cancel , {
                 text => '~Solution',
                 onClick => sub {
                    Prima::MsgBox::message('Use Ctrl + mouse doubleclick on the board ', mb::OK);

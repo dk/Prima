@@ -109,10 +109,10 @@ sub menuadd
       $_[0]-> menu-> insert(
          [
            ['~Edit' => [
-              ['~Copy' => 'Ctrl+Ins' => km::Ctrl|kb::Insert => sub {
+              ['~Copy' => 'Ctrl+Ins' => km::Ctrl|kb::Insert , sub {
                  $::application-> Clipboard->image($_[0]->IV->image)
               }],
-              ['~Paste' => 'Shift+Ins' => km::Shift|kb::Insert => sub {
+              ['~Paste' => 'Shift+Ins' => km::Shift|kb::Insert , sub {
                  my $i = $::application-> Clipboard->image;
                  $_[0]->IV->image( $i) if $i;
                  status($_[0]);
@@ -354,7 +354,7 @@ my $w = Prima::Window-> create(
    onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
    menuItems => [
      [ file => '~File' => [
-        [ '~Open' =>  'F3'     => kb::F3     => \&fdopen],
+        [ '~Open' =>  'F3'     => kb::F3     , \&fdopen],
         [],
         [ 'E~xit' => 'Alt+X' => '@X' => sub {$::application-> close}],
      ]],
