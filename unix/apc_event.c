@@ -202,7 +202,7 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, Bool release)
       keycode = kbSpace;
    if ( keycode == kbNoKey) {
       if ( str_len == 1)
-	 keycode = (uint8_t)*str_buf;
+	 keycode = (u_int8_t)*str_buf;
       else if ( keysym < 0xFD00)
 	 keycode = keysym & 0x000000ff;
       else
