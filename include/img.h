@@ -33,6 +33,10 @@
 #include <apricot.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // common data, request for a whole file load
 
 typedef struct _ImgLoadFileInstance {
@@ -156,6 +160,10 @@ extern HV *  apc_img_info2hash( PImgCodec c);
 
 extern void  apc_img_profile_add( HV * to, HV * from, HV * keys);
 extern int   apc_img_read_palette( PRGBColor palBuf, SV * palette);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

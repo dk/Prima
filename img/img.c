@@ -76,7 +76,7 @@ apc_img_register( PImgCodecVMT codec, void * initParam)
 
    CHK;
    if ( !codec) return false;
-   c = malloc( sizeof( struct ImgCodec) + codec-> size);
+   c = ( PImgCodec) malloc( sizeof( struct ImgCodec) + codec-> size);
    if ( !c) return false;
    
    memset( c, 0, sizeof( struct ImgCodec));
@@ -170,12 +170,12 @@ apc_img_profile_add( HV * to, HV * from, HV * keys)
    hv_iterinit(( HV*) keys);
    for (;;)
    {
-      void *key;
+      char *key;
       int  keyLen;
       SV ** holder;
       if (( he = hv_iternext( keys)) == nil)
          return;
-      key    = HeKEY( he);
+      key    = (char*) HeKEY( he);
       keyLen = HeKLEN( he);
       if ( !hv_exists( from, key, keyLen))
          continue;
@@ -224,7 +224,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    // assigning user file profile
    if ( pexist( index)) {
       fi. frameMapSize = 1;
-      fi. frameMap  = malloc( sizeof( int));
+      fi. frameMap  = (int*) malloc( sizeof( int));
       if ((*fi. frameMap = pget_i( index)) < 0)
          out("Invalid index");
    } else if ( pexist( map)) {
@@ -233,7 +233,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          if ( SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
             AV * av = ( AV*) SvRV( sv);
             int len = av_len( av) + 1;
-            fi. frameMap = malloc( sizeof( int) * len);
+            fi. frameMap = ( int *) malloc( sizeof( int) * len);
             for ( i = 0; i < len; i++) {
                SV ** holder = av_fetch( av, i, 0);
                if ( !holder) out("Array panic on 'map' property");
@@ -248,7 +248,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
       fi. loadAll = true;
    } else {
       fi. frameMapSize = 1;
-      fi. frameMap = malloc( sizeof( int));
+      fi. frameMap = ( int*) malloc( sizeof( int));
      *fi. frameMap = 0;
    }   
 
@@ -275,7 +275,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
 
    // finding codec
    {
-      Bool * loadmap = malloc( sizeof( Bool) * imgCodecs. count);
+      Bool * loadmap = ( Bool *) malloc( sizeof( Bool) * imgCodecs. count);
       char * xc = fileName + strlen( fileName);
 
       memset( loadmap, 0, sizeof( Bool) * imgCodecs. count);
@@ -347,7 +347,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    if ( fi. loadAll) {
       if ( fi. frameCount >= 0) {
          fi. frameMapSize = fi. frameCount;
-         fi. frameMap  = malloc( fi. frameCount * sizeof(int));
+         fi. frameMap  = (int*) malloc( fi. frameCount * sizeof(int));
          for ( i = 0; i < fi. frameCount; i++)
             fi. frameMap[i] = i;
       } else {
@@ -559,7 +559,7 @@ apc_img_frame_count( char * fileName)
 
    // finding codec
    {
-      Bool * loadmap = malloc( sizeof( Bool) * imgCodecs. count);
+      Bool * loadmap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
       char * xc = fileName + strlen( fileName);
 
       memset( loadmap, 0, sizeof( Bool) * imgCodecs. count);
@@ -745,7 +745,7 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
       out("Nothing to save");
 
    // fill array of objects
-   fi. frameMap     = malloc( sizeof( Handle) * fi. frameMapSize);
+   fi. frameMap     = ( Handle *) malloc( sizeof( Handle) * fi. frameMapSize);
    memset( fi. frameMap, 0, sizeof( Handle) * fi. frameMapSize);
    
    for ( i = 0; i < fi. frameMapSize; i++) {
@@ -776,7 +776,7 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
    // finding codec
    strcpy( error, "No appropriate codec found");
    {
-      Bool * savemap = malloc( sizeof( Bool) * imgCodecs. count);
+      Bool * savemap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
       char * xc = fileName + strlen( fileName);
 
       memset( savemap, 0, sizeof( Bool) * imgCodecs. count);

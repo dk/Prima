@@ -65,12 +65,12 @@ object Prima::Image( Prima::Drawable)
    method int    get_bpp();
    method SV   * get_handle();
    method void   init( HV * profile);
-   weird  PList  load( SV * class, char *filename, HV * profile);
+   weird  PList  load( SV * className, char *filename, HV * profile);
    c_only void   make_empty();
    method void   map( Color color);
    import SV *   profile_default ();
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
-   weird  int    save( SV *class, char *filename, HV * profile);
+   weird  int    save( SV *className, char *filename, HV * profile);
    method void   set( HV * profile);
    c_only void   reset( int type, SV * palette);
    c_only void   stretch( int width, int height);

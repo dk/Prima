@@ -736,7 +736,7 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
          int n   = av_len( av) + 1;
          if ( n > 256 * 3) n = 256 * 3;
          n = ( n / 3) * 3;
-         if (( abc = malloc( 256 * sizeof( FontABC)))) {
+         if (( abc = ( PFontABC) malloc( 256 * sizeof( FontABC)))) {
             int i, j = 0;
             if ( n < 256) memset( abc, 0, 256 * sizeof( FontABC));
             for ( i = 0; i < n; i += 3) {

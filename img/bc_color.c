@@ -318,7 +318,7 @@ bc_nibble_mono_ht( register Byte * source, register Byte * dest, register int co
 void
 bc_nibble_mono_ed( register Byte * source, register Byte * dest, register int count, register PRGBColor palette)
 {
-#define en1(xd) ( y = palette[(xd)], (sum = y.r + y.b + y.g + e) > 383)
+#define en1(xd) (( y = palette[(xd)], (sum = y.r + y.b + y.g + e) > 383)?1:0)
 #define en2 e = sum - (( sum > 383) ? 765 : 0)
    
    int sum, e = 0;
@@ -516,7 +516,7 @@ bc_byte_mono_ht( register Byte * source, register Byte * dest, register int coun
 void
 bc_byte_mono_ed( register Byte * source, register Byte * dest, register int count, PRGBColor palette)
 {
-#define egb1 ( y = palette[*source++], (sum = y.r + y.b + y.g + e) > 383)
+#define egb1 (( y = palette[*source++], (sum = y.r + y.b + y.g + e) > 383)?1:0)
 #define egb2 e = sum - (( sum > 383) ? 765 : 0)
    int sum, e = 0, count8 = count & 7;
    count >>= 3;

@@ -128,7 +128,7 @@ init( ImgCodecInfo ** info, void * param)
 
    gbm_query_filetype(( int) param, &gft);
    
-   *info = malloc( sizeof( ImgCodecInfo));
+   *info = ( ImgCodecInfo *) malloc( sizeof( ImgCodecInfo));
    if ( !*info) {
       if ( --refCnt == 0) gbm_deinit(); 
       return false;
@@ -146,7 +146,7 @@ init( ImgCodecInfo ** info, void * param)
    c = gft. extensions;
    len = strlen( c);
    array = (*info)-> fileExtensions = 
-      malloc( len + 1 + (count + 1) * sizeof( char*));
+      ( char**) malloc( len + 1 + (count + 1) * sizeof( char*));
    c = ( char *)(( Byte*) array + (count + 1) * sizeof( char*));
    memcpy( c, gft. extensions, len + 1);
    *array = c;
@@ -287,7 +287,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
          return nil;
    }   
 
-   g = malloc( sizeof( GBMRec) + 0x100);
+   g = ( GBMRec*) malloc( sizeof( GBMRec) + 0x100);
    if ( !g) return nil;
 
    memset( g, 0, sizeof( GBMRec) + 0x100);
@@ -428,7 +428,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
       close_save that way. The only bad thing is that we can't
       complain about not supported image format on early stage */
       
-   g = malloc( sizeof( GBMRec) + 0x400);
+   g = ( GBMRec*)malloc( sizeof( GBMRec) + 0x400);
    if ( !g) return nil;
 
    memset( g, 0, sizeof( GBMRec) + 0x400);

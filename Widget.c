@@ -1095,7 +1095,7 @@ do_taborder_candidates( Handle level, Handle who,
 {
    int i, fsel = -1;
    PList w = &(PWidget( level)-> widgets);
-   Handle * ordered = malloc( w-> count * sizeof( Handle));
+   Handle * ordered = ( Handle *) malloc( w-> count * sizeof( Handle));
    
    if ( !ordered) return 0;
    
