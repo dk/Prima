@@ -703,14 +703,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       win = guts. grab_redirect;
 
    self = prima_xw2h( win);
-   if ( ev-> type > 0 && guts. debug & DEBUG_EVENT ) {
-      char buf[256];
-      if ( self)
-         strncpy( buf, PWidget(self)-> name, 256);
-      else
-         snprintf( buf, 256, "%08lx", self);
-      Edebug("event: %d:%s of %s\n", ev-> type, ((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]), buf);
-   }
+   if ( ev-> type > 0) 
+      Edebug("event: %d:%s of %s\n", ev-> type, 
+	     ((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]), 
+	     self ? PWidget(self)-> name : "(nil)");
 
    if (!self)
       return;

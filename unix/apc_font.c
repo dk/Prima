@@ -607,6 +607,8 @@ prima_init_font_subsystem( void)
    Fdebug("font: init\n");
    if ( do_default_font) {
       prima_font_pp2font( do_default_font, &guts. default_font);
+      free( do_default_font);
+      do_default_font = nil;
    } else if ( !apc_fetch_resource( "Prima", "", "Font", "font", 
                              nilHandle, frFont, &guts. default_font)) {
       fill_default_font( &guts. default_font);
@@ -649,26 +651,40 @@ prima_init_font_subsystem( void)
    guts. default_font_ok = 1;
    if ( do_menu_font) {
       prima_font_pp2font( do_menu_font, &guts. default_menu_font);
+      free( do_menu_font);
+      do_menu_font = nil;
    } else if ( !apc_fetch_resource( "Prima", "", "Font", "menu_font", 
-                             nilHandle, frFont, &guts. default_menu_font)) 
+                             nilHandle, frFont, &guts. default_menu_font)) {
       memcpy( &guts. default_menu_font, &guts. default_font, sizeof( Font));
+   }
    
-   if ( do_widget_font)
+   if ( do_widget_font) {
       prima_font_pp2font( do_widget_font, &guts. default_widget_font);
-   if ( !apc_fetch_resource( "Prima", "", "Font", "widget_font", 
-                             nilHandle, frFont, &guts. default_widget_font)) 
+      free( do_widget_font);
+      do_widget_font = nil;
+   } else if ( !apc_fetch_resource( "Prima", "", "Font", "widget_font", 
+                             nilHandle, frFont, &guts. default_widget_font)) {
       memcpy( &guts. default_widget_font, &guts. default_font, sizeof( Font));
+   }
    
-   if ( do_msg_font)
+   if ( do_msg_font) {
       prima_font_pp2font( do_msg_font, &guts. default_msg_font);
-   if ( !apc_fetch_resource( "Prima", "", "Font", "message_font", 
-                             nilHandle, frFont, &guts. default_msg_font))
+      free( do_msg_font);
+      do_msg_font = nil;
+   } else if ( !apc_fetch_resource( "Prima", "", "Font", "message_font", 
+                             nilHandle, frFont, &guts. default_msg_font)) {
       memcpy( &guts. default_msg_font, &guts. default_font, sizeof( Font));
+   }
    
-   if ( do_caption_font)
+   if ( do_caption_font) {
       prima_font_pp2font( do_caption_font, &guts. default_caption_font);
-   if ( !apc_fetch_resource( "Prima", "", "Font", "caption_font", nilHandle, frFont, &guts. default_caption_font))
+      free( do_caption_font);
+      do_caption_font = nil;
+   } else if ( !apc_fetch_resource( "Prima", "", "Font", "caption_font", 
+				    nilHandle, frFont, &guts. default_caption_font)) {
       memcpy( &guts. default_caption_font, &guts. default_font, sizeof( Font));
+   }
+
    return true;
 }
    
@@ -681,53 +697,33 @@ prima_font_subsystem_set_option( char * option, char * value)
       return true;
    } else
    if ( strcmp( option, "font") == 0) {
-      if ( value) {
-	 static char buf[256];
-	 strncpy( do_default_font = buf, value, 256);
-	 buf[256]=0;
-	 Mdebug( "set default font: %s\n", do_default_font);
-      } else 
-	 do_default_font = nil;
+      free( do_default_font);
+      do_default_font = duplicate_string( do_default_font);
+      Mdebug( "set default font: %s\n", do_default_font);
       return true;
    } else 
    if ( strcmp( option, "menu-font") == 0) {
-      if ( value) {
-	 static char buf[256];
-	 strncpy( do_menu_font = buf, value, 256);
-	 buf[256]=0;
-	 Mdebug( "set menu font: %s\n", do_menu_font);
-      } else 
-	 do_menu_font = nil;
+      free( do_menu_font);
+      do_menu_font = duplicate_string( do_menu_font);
+      Mdebug( "set menu font: %s\n", do_menu_font);
       return true;
    } else 
    if ( strcmp( option, "widget-font") == 0) {
-      if ( value) {
-	 static char buf[256];
-	 strncpy( do_widget_font = buf, value, 256);
-	 buf[256]=0;
-	 Mdebug( "set widget font: %s\n", do_widget_font);
-      } else 
-	 do_widget_font = nil;
+      free( do_widget_font);
+      do_widget_font = duplicate_string( do_widget_font);
+      Mdebug( "set menu font: %s\n", do_widget_font);
       return true;
    } else 
    if ( strcmp( option, "msg-font") == 0) {
-      if ( value) {
-	 static char buf[256];
-	 strncpy( do_msg_font = buf, value, 256);
-	 buf[256]=0;
-	 Mdebug( "set msg font: %s\n", do_msg_font);
-      } else 
-	 do_msg_font = nil;
+      free( do_msg_font);
+      do_msg_font = duplicate_string( do_msg_font);
+      Mdebug( "set msg font: %s\n", do_msg_font);
       return true;
    } else 
    if ( strcmp( option, "caption-font") == 0) {
-      if ( value) {
-	 static char buf[256];
-	 strncpy( do_caption_font = buf, value, 256);
-	 buf[256]=0;
-	 Mdebug( "set caption font: %s\n", do_caption_font);
-      } else 
-	 do_caption_font = nil;
+      free( do_caption_font);
+      do_caption_font = duplicate_string( do_caption_font);
+      Mdebug( "set caption font: %s\n", do_caption_font);
       return true;
    }  
    return false;

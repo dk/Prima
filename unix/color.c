@@ -628,7 +628,6 @@ fill_cubic( XColor * xc, int d)
 }
 
 static char * do_visual = nil;
-
 static PList color_options = nil;
 
 static void
@@ -670,6 +669,8 @@ prima_init_color_subsystem(void)
          }
       }
    }
+   free( do_visual);
+   do_visual = nil;
 
 FALLBACK_TO_DEFAULT_VISUAL:
    if ( id < 0) {
@@ -956,9 +957,8 @@ prima_color_subsystem_set_option( char * option, char * value)
 {
    if ( strcmp( option, "visual") == 0) {
       if ( value) {
-	 static char buf[256];
-	 strncpy( do_visual = buf, value, 255);
-	 buf[256]=0;
+	 free( do_visual);
+	 do_visual = duplicate_string( value);
 	 Mdebug( "set visual: %s\n", do_visual);
       } else 
 	 warn("`--visual' must be given value");

@@ -221,8 +221,12 @@ init_x11( void)
    if (!DISP) {
       char * disp = getenv("DISPLAY");
       fprintf( stderr, "Error: Can't open display '%s'\n", do_display ? do_display : (disp ? disp : ""));
+      free( do_display);
+      do_display = nil;
       return false;
    }
+   free( do_display);
+   do_display = nil;
    XSetErrorHandler( x_error_handler);
    guts.main_error_handler = x_error_handler;
    (void)x_io_error_handler;
@@ -442,12 +446,8 @@ window_subsystem_set_option( char * option, char * value)
       do_x11 = false;
       return true;
    } else if ( strcmp( option, "display") == 0) {
-      static char display[256];
-      if ( value) {
-         strncpy( do_display = display, value, 255);
-	 display[255] = 0;
-      } else
-	 do_display = NULL;
+      free( do_display);
+      do_display = duplicate_string( value);
       return true;
    } else if ( strcmp( option, "debug") == 0) {
       if ( !value) {
