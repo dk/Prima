@@ -211,6 +211,20 @@ sub classes
          page   => 'Additional',
          icon   => 'VB::classes.gif:7',
       },
+      'Prima::Notebook' => {
+         RTModule => 'Prima::Notebooks',
+         module => 'Prima::VB::CoreClasses',
+         class  => 'Prima::VB::Notebook',
+         page   => 'Abstract',
+         icon   => 'VB::classes.gif:26',
+      },
+      'Prima::TabSet' => {
+         RTModule => 'Prima::Notebooks',
+         module => 'Prima::VB::CoreClasses',
+         class  => 'Prima::VB::TabSet',
+         page   => 'Additional',
+         icon   => 'VB::classes.gif:27',
+      },
    );
 }
 

@@ -1183,5 +1183,106 @@ sub on_paint
    $self-> common_paint($canvas);
 }
 
+package Prima::VB::Notebook;
+use vars qw(@ISA);
+@ISA = qw( Prima::VB::CommonControl);
+
+
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      uiv => ['pageCount', 'pageIndex'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
+
+sub init
+{
+   my $self = shift;
+   my %profile = $self-> SUPER::init( @_);
+   $self-> {list} = {};
+   $self-> {pageCount} = 0;
+   $self-> {pageIndex} = 0;
+   return %profile;
+}
+
+sub prf_pageIndex
+{
+   my ( $self, $pi) = @_;
+   return if $pi == $self->{pageIndex};
+
+   my $l = $self->{list};
+   for ( keys %{$l}) {
+      my $item = $VB::form-> bring($_);
+      next unless defined $item;
+      $item-> visible( $l->{$_} == $pi);
+   }
+   $self->{pageIndex} = $pi;
+}
+
+sub prf_attach
+{
+   my ( $self, $child) = @_;
+   $self-> {list}->{$child-> name} = $self->{pageIndex};
+}
+
+sub prf_detach
+{
+   my ( $self, $child) = @_;
+   delete $self->{list}->{$child-> name};
+}
+
+package Prima::VB::TabSet;
+use vars qw(@ISA);
+@ISA = qw( Prima::VB::CommonControl);
+
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      uiv   => [qw(firstTab focusedTab tabIndex)],
+      bool  => [qw(colored topMost)],
+      items => ['tabs'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
+
+sub prf_tabs    { $_[0]-> repaint; }
+sub prf_topMost { $_[0]-> repaint; }
+
+
+sub on_paint
+{
+   my ( $self, $canvas) = @_;
+   my @sz = $self-> size;
+   my $c = $self-> color;
+   $canvas-> color( $self-> backColor);
+   $canvas-> bar( 0, 0, @sz);
+   my $y = ( $sz[1] - $canvas-> font-> height) / 2;
+   $canvas-> color( $c);
+   my $x = 0;
+   my @tabs = @{$self-> prf('tabs')};
+   my $topMost = $self-> prf( 'topMost');
+   for ( @tabs) {
+      $canvas-> text_out( $_, $x + 5, $y);
+      my $tx = $canvas-> get_text_width( $_);
+      $topMost ?
+         $canvas-> polyline([$x, 2, $x + 5, $sz[1] - 2, $x + $tx + 5, $sz[1] - 2, $x + $tx + 10, 2]) :
+         $canvas-> polyline([$x, $sz[1] - 2, $x + 5, 2, $x + $tx + 5, 2, $x + $tx + 10, $sz[1] - 2]);
+      $x += $tx + 20;
+      last if $x >= $sz[0];
+   }
+   if ( scalar @tabs) {
+      my $tx = $canvas-> get_text_width( $tabs[0]);
+      $topMost ?
+         $canvas-> line( $tx + 10, 2, $sz[0] - 1, 2) :
+         $canvas-> line( $tx + 10, $sz[1] - 2, $sz[0] - 1, $sz[1] - 2);
+   }
+   $self-> common_paint($canvas);
+}
+
 
 1;

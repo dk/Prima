@@ -5,7 +5,7 @@ sub classes
 {
    return (
       'Prima::Widget' => {
-         icon => undef,
+         icon   => 'VB::classes.gif:26',
       },
    );
 }
@@ -615,10 +615,43 @@ sub name_changed
    }
 }
 
+sub owner_changed
+{
+   my ( $self, $from, $to) = @_;
+   $self-> {lastOwner} = $to;
+   return unless $VB::form;
+   return if $VB::form == $self;
+   if ( defined $to && defined $from) {
+      return if $to eq $from;
+   }
+   return if !defined $to && !defined $from;
+   if ( defined $from) {
+      $from = $VB::form-> bring( $from);
+      $from = $VB::form unless defined $from;
+      $from-> prf_detach( $self);
+   }
+   if ( defined $to) {
+      $to = $VB::form-> bring( $to);
+      $to = $VB::form unless defined $to;
+      $to-> prf_attach( $self);
+   }
+}
+
+sub prf_attach {}
+sub prf_detach {}
+
+sub prf_owner
+{
+   my ( $self, $owner) = @_;
+   $self-> owner_changed( $self-> {lastOwner}, $owner);
+}
+
+
 sub on_destroy
 {
    my $self = $_[0];
-   $_[0]-> name_changed( $_[0]-> name, $VB::form-> name) if $VB::form;
+   $self-> name_changed( $self-> name, $VB::form-> name) if $VB::form;
+   $self-> owner_changed( $self-> prf('owner'), undef);
 }
 
 package Prima::VB::Drawable;
@@ -929,7 +962,24 @@ sub change
 sub write
 {
    my ( $class, $id, $data) = @_;
-   return "'". Prima::VB::Types::generic::quotable($data)."'";
+   return 'undef' unless defined $data;
+   return "'". Prima::VB::Types::generic::quotable($data)."'" unless ref $data;
+   if ( ref( $data) eq 'ARRAY') {
+      my $c = '';
+      for ( @$data) {
+         $c .= $class-> write( $id, $_) . ', ';
+      }
+      return "[$c]";
+   }
+   if ( ref( $data) eq 'HASH') {
+      my $c = '';
+      for ( keys %{$data}) {
+         $c .= "'". Prima::VB::Types::generic::quotable($_)."' => ".
+               $class-> write(  $id, $data->{$_}) . ', ';
+      }
+      return "{$c}";
+   }
+   return '';
 }
 
 sub quotable

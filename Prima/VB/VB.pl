@@ -197,7 +197,7 @@ sub Selector_Change
    } else {
       my @f = $VB::form-> widgets;
       for ( @f) {
-         $_->focus, last if $t eq $_->name;
+         $_-> show, $_->focus, last if $t eq $_->name;
       }
    }
    $self->{selectorRetrieving} = 0;
