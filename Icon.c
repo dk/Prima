@@ -145,7 +145,7 @@ colorFound:;
       {
          int j;
          for ( j = 0; j < var w; j++)
-            if ( src[ j] != color)
+            if ( src[ j] == color)
                dest[ j >> 3] |= 1 << (7 - ( j & 7));
       }
    }
