@@ -296,7 +296,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
     GifFileType *gif;
     GifRecordType gifRecType;
     GifImageDesc *gifChunk;
-    GifPixelType **data;
+    GifPixelType **data = nil;
     int lastIndex = -1, lastQueriedIndex = -1;
     Bool succeed = true;
     int imgDescCount = 0;
@@ -464,7 +464,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 		    /* All others, supposedly, to the current one. */
 		    int curIndex = imgDescCount - ( extCode == GRAPHICS_EXT_FUNC_CODE ? 0 : 1);
 		    PGIFExtensions gifExtensions;
-		    PGIFExtInfo gifExtension;
+		    PGIFExtInfo gifExtension = nil;
 
 		    for ( i = 0; ( i < queriedIdx.count) && ( ! idxQueried); i++) {
 			idxQueried = ( curIndex == list_at( &queriedIdx, i));
@@ -680,7 +680,7 @@ __gif_read( int fd, const char *filename, PList imgInfo, Bool readData, Bool rea
 			/* Current imgProp->used value is an index for the new array entry. */
 			extIdx = imgProp->used;
 			if ( ( succeed = img_push_property_value( imgProp, gifExtension->data.count + 1))) {
-			    PImgProperty extProp;
+			    PImgProperty extProp = nil;
 			    succeed = img_push_property(
 				    imgProp->val.pProperties + extIdx,
 				    "code",
