@@ -1787,8 +1787,8 @@ EOF
         $dst = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
         print MAKE " \\\n\t$src $dst"
     }
-    print MAKE "\\\n";
-    print MAKE "\t\@echo Updating config...\\\n";
+    print MAKE "\n";
+    print MAKE "\t\@echo Updating config...\n";
     print MAKE "\t$^X Makefile.PL --updateconfig $cwd $PREFIX/Prima/Config.pm\n";
 
     print MAKE <<EOF;
