@@ -30,19 +30,23 @@ sub stop_scroll_timer
    my $self = $_[0];
    return unless exists $self->{scrollTimer};
    $self->{scrollTimer}-> stop;
+   $self->{scrollTimer}-> timeout( $self->{scrollTimer}-> {firstRate});
+   $self->{scrollTimer}-> {newRate} = $self->{scrollTimer}-> {nextRate};
 }
 
 sub start_scroll_timer
 {
    my $self = $_[0];
    $self-> stop_scroll_timer;
-   my @rates = $::application-> get_scroll_rate;
-   $self-> {scrollTimer} = Timer-> create(
-      owner   => $self,
-      timeout => $rates[0],
-      name    => q(ScrollTimer),
-   ) unless exists $self-> {scrollTimer};
-   $self->{scrollTimer}->{newRate} = $rates[1];
+   unless ( exists $self-> {scrollTimer}) {
+      my @rates = $::application-> get_scroll_rate;
+      $self-> {scrollTimer} = Timer-> create(
+					     owner   => $self,
+					     timeout => $rates[0],
+					     name    => q(ScrollTimer),
+					    );
+      @{$self-> {scrollTimer}}{qw(firstRate nextRate newRate)} = (@rates,$rates[1]);
+   }
    $self->{scrollTimer}->{semaphore} = 1;
    $self->{scrollTimer}->start;
 }
