@@ -334,7 +334,7 @@ elf( Font * font, Bool bySize)
 {
    unsigned long seed = 0;
    if ( bySize) {
-      seed = elf_hash( (const char*)&font-> width, (char *)(&(font-> name)) - (char *)&(font-> width), seed);
+      seed = elf_hash( (const char*)&font-> style, (char *)(&(font-> name)) - (char *)&(font-> style), seed);
       seed = elf_hash( font-> name, -1, seed);
       seed = elf_hash( font-> encoding, -1, seed);
       seed = elf_hash( (const char*)&font-> size, sizeof( font-> size), seed);
@@ -362,10 +362,10 @@ find_node( const PFont font, Bool bySize)
    else
       node = fontHash. buckets[ i];
    if ( bySize) {
-      sz = (char *)(&(font-> name)) - (char *)&(font-> width);
+      sz = (char *)(&(font-> name)) - (char *)&(font-> style);
       while ( node != nil)
       {
-         if (( memcmp( &(font-> width), &(node-> key. width), sz) == 0) &&
+         if (( memcmp( &(font-> style), &(node-> key. style), sz) == 0) &&
              ( strcmp( font-> name, node-> key. name) == 0 ) &&
              ( strcmp( font-> encoding, node-> key. encoding) == 0 ) &&
              (font-> size == node-> key. size))
