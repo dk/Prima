@@ -729,12 +729,15 @@ static Bool
 window_start_modal( Handle self, Bool shared, Handle insert_before)
 {
    DEFXX;
+   Handle selectee;
    if (( XX-> preexec_focus = apc_widget_get_focused()))
       protect_object( XX-> preexec_focus);
    CWindow( self)-> exec_enter_proc( self, shared, insert_before);
    apc_widget_set_enabled( self, true);
    apc_widget_set_visible( self, true);
    apc_window_activate( self);
+   selectee = CWindow(self)->get_selectee( self);
+   if ( selectee != self) Widget_selected( selectee, true, true);
    prima_simple_message( self, cmExecute, true);
    guts. modal_count++;
    return true;
