@@ -132,6 +132,18 @@ case a particular codec does not compile, the ultimate fix is to remove the
 file and re-run Makefile.PL . This way, the problem can be avoided easily,
 although at cost of a lacking support for a graphic format.
 
+=head2 How'd I check what libraries are compiled in?
+
+   perl -MPrima -e 'print map { $_->{name}.qq(\n) } @{Prima::Image->codecs};'
+
+=head2 I have a graphic library installed, but Makefile.PL doesn't find it
+
+The library is probably located in a weird directory so Makefile.PL must be
+told to use it by adding LIBPATH+=/some/weird/lib, and possibly
+INCPATH+=/some/weird/include in the command line. Check makefile.log created by
+Makefile.PL to check the actual errors reported when it tries to use the
+library.
+
 =head2 Compile error
 
 There are various reasons why a compilation reason may fail. The best would be
