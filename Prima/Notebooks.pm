@@ -609,8 +609,9 @@ sub set_page_index
          $$_[0]-> current($$_[3]);
       }
    }
+   my $i = $self->{pageIndex};
    $self->{pageIndex} = $pi;
-   $self-> notify(q(Change));
+   $self-> notify(q(Change), $i, $pi);
    $self-> unlock;
    $self-> update_view;
 }
@@ -1038,7 +1039,7 @@ sub set_page_index
       $size[0] - DefBorderX - (( $a == $newA) ? DefBookmarkX + 2 : 0),
       $size[1] - DefBorderX - $th + 3
    );
-   $self-> notify(q(Change));
+   $self-> notify(q(Change), $pix, $pi);
 }
 
 sub tabIndex     {($#_)?($_[0]->{tabSet}->tabIndex( $_[1]))   :return $_[0]->{tabSet}->tabIndex}
