@@ -469,6 +469,13 @@ menu_enter_item( PMenuSysData XX, PMenuWindow w, int index, int type)
       update_menu_window( XX, w2);
       p = menu_item_offset( XX, w, index);
       s = menu_item_size( XX, w, index);
+      
+      if ( &XX-> wstatic == w) {
+         XWindow dummy;
+         XTranslateCoordinates( DISP, w->w, guts. root, 0, 0, &n.x, &n.y, &dummy);
+         w-> pos = n;
+      }
+      
       n. x += p. x;
       n. y += p. y;
       p. x += w-> pos. x;
