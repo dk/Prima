@@ -1058,7 +1058,7 @@ apc_window_set_window_state( Handle self, int state)
          XMapWindow( DISP, X_WINDOW);
          /* suppress reaction to UnmapNotify */
          XX-> flags. suppress_cmMinimize = 1;
-         prima_wm_sync( self, ConfigureNotify);
+         prima_wm_sync( self, MapNotify);
          XX-> flags. suppress_cmMinimize = 0;
       }
       XX-> zoomRect = zoomRect; /* often reset in ConfigureNotify to already maximized window */
