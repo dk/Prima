@@ -134,7 +134,7 @@ sub iterate
       return $current if $sub->( $current, $position, $level, $lastChild);
       $position++;
       $level++;
-      if ( $current->[1] && ( !$full || $current->[2])) {
+      if ( $current->[1] && ( $full || $current->[2])) {
          my $c = scalar @{$current->[1]};
          for ( @{$current->[1]}) {
             my $ret = $traverse->( $_, $level, --$c ? 0 : 1);
