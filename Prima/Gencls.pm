@@ -224,8 +224,8 @@ sub init_variables
 
     %typedefs = ();
 
-    %xsConv = (# declare   access          set       unused   unused   extra2sv  POPx      newXXxx  extrasv2
-	       #   0         1              2          3        4         5       6           7       8
+    %xsConv = (             # declare   access      set          unused   unused      extra2sv POPx     newXXxx extrasv2
+	                    # 0         1            2           3        4           5        6        7       8
 	       'int'     => ['int',    'SvIV',      'sv_setiv',  '',      '(IV)',     '',    'POPi',    'SViv', ''     ],
 	       'double'  => ['double', 'SvNV',      'sv_setnv',  '',      '(double)', '',    'POPn',    'SVnv', ''     ],
 	       'char*'   => ['char *', 'SvPV',      'sv_setpv',  '(SV*)', '',         ', 0', 'POPp',    'SVpv', ', na' ],
@@ -1201,6 +1201,21 @@ sub sv2type
    }
 }
 
+sub sv2type_pop
+{
+   my ( $type) = @_;
+   $type = $mapTypes{ $type} || $type;
+   if ( $type eq 'Handle')
+   {
+      return "$incGetMate( POPs);";
+   } elsif ( $type eq 'SV*') {
+      return 'POPs';
+   } else {
+      return "( $xsConv{$type}[0]) $xsConv{$type}[6]";
+   }
+}
+
+
 sub mortal
 {
    my $type = $mapTypes{ $_[0]} || $_[0];
@@ -1428,7 +1443,7 @@ sub out_method_profile
               {
                  my $lType = @{ $structs{ $resSub}[ 0]}[ $lParams - $j - 1];
                  my $lName = @{ $structs{ $resSub}[ 1]}[ $lParams - $j - 1];
-                 my $inter = sv2type( $lType, "POPs");
+                 my $inter = sv2type_pop( $lType);
                  print HEADER "   ", cwrite( $lType, $inter, "$resVar. $lName"), "\n";
               }
            }
@@ -1439,7 +1454,7 @@ sub out_method_profile
            my $adx = ( $lParams > 1) ? "    " : "";
            print HEADER "   {\n      int $incCount;\n" if $adx;
            print HEADER "      for ( $incCount = 0; $incCount < $lParams; ${incCount}++)\n" if $adx;
-           print HEADER "$adx   ", cwrite( $lType, sv2type( $lType, "POPs"), "$resVar\[$incCount\]"), "\n";
+           print HEADER "$adx   ", cwrite( $lType, sv2type_pop( $lType), "$resVar\[$incCount\]"), "\n";
            print HEADER "   }\n" if $adx;
         }
         print HEADER " \n";
