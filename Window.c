@@ -493,13 +493,6 @@ int Window_get_modal_result( Handle self)
 }
 
 void
-Window_set_text( Handle self, char * text)
-{
-   inherited set_text( self, text);
-   apc_window_set_caption( self, var-> text);
-}
-
-void
 Window_set_modal_result ( Handle self, int _modalResult)
 {
    var-> modalResult = _modalResult;
@@ -714,3 +707,13 @@ void  Window_on_activate( Handle self) {}
 void  Window_on_deactivate( Handle self) {}
 void  Window_on_windowstate( Handle self, int windowState) {}
 void  Window_set_transparent( Handle self, Bool transparent) {}
+
+char *
+Window_text( Handle self, Bool set, char * text)
+{
+   char *ret = inherited text( self, set, text);
+   if (set)
+      apc_window_set_caption( self, var-> text);
+   return ret;
+}
+

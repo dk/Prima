@@ -30,6 +30,9 @@ object Prima::Window( Prima::Widget)
    ColorSet menuColor;
    int      modal;
    int      modalResult;
+
+   property char*    text;
+
    method   void     cancel();
    method   void     done();
    method   void     end_modal();
@@ -78,7 +81,6 @@ object Prima::Window( Prima::Widget)
    method   void     set_selected( Bool selected);
    method   Bool     set_size( int x, int y)         => apc_window_set_client_size;
    import   void     set_task_listed( Bool taskListed);
-   method   void     set_text( char * text);
    method   void     set_transparent( Bool transparent);
    method   Bool     set_window_state( int state)    => apc_window_set_window_state;
    c_only   void     update_sys_handle( HV * profile);
