@@ -618,7 +618,7 @@ apc_pointer_get_hot_spot( Handle self)
    if ( id == crUser)                   return hot_spot;
    if ( !load_pointer_font())           return (Point){0,0};
 
-   idx = *((char*)&(cursor_map[id]));
+   idx = cursor_map[id];
    fs = guts.pointer_font;
    if ( !fs-> per_char)
       cs = &fs-> min_bounds;
@@ -696,7 +696,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       gcv. foreground = 0;
       XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
       XDrawString( DISP, p2, gc, w/2, h/2, (c = (char)(cursor_map[id]+1), &c), 1);
-      XDrawString( DISP, p1, gc, w/2, h/2, (char*)&(cursor_map[id]), 1);
+      XDrawString( DISP, p1, gc, w/2, h/2, (c = (char)cursor_map[id], &c), 1);
       XFreeGC( DISP, gc);
    }
    CIcon(icon)-> create_empty( icon, w, h, imMono);
