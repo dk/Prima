@@ -584,7 +584,6 @@ XS( Component_notify_FROMPERL)
       int len = snprintf( buf, 1022, "on%s", name);
       ret = hash_fetch( var-> eventIDs, buf, len);
       if ( ret != nil) {
-         int j;
          list = var-> events + ( int) ret - 1;
          seqCount += list-> count;
       }
@@ -882,9 +881,6 @@ XS( Component_set_notification_FROMPERL)
    SV * sub;
    char * name, * convname;
    Handle self;
-   void * ret;
-   PList list;
-   int i;
 
    if ( items < 1)
       croak ("Invalid usage of Component::notification property");
