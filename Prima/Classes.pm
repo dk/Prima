@@ -1111,7 +1111,7 @@ sub enable  { $_[0]->{menu}-> enabled( $_[0]->{ id}, 1) };
 sub disable { $_[0]->{menu}-> enabled( $_[0]->{ id}, 0) };
 sub check   { $_[0]->{menu}-> checked( $_[0]->{ id}, 1) };
 sub uncheck { $_[0]->{menu}-> checked( $_[0]->{ id}, 0) };
-sub delete  { $_[ 0]->{menu}-> delete( $_[0]->{ id}) }
+sub remove  { $_[ 0]->{menu}-> remove( $_[0]->{ id}) }
 sub toggle  {
    my $i = !$_[0]->{ menu}-> checked($_[0]->{ id});
    $_[0]->{ menu}-> checked($_[0]->{ id}, $i);
