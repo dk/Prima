@@ -30,6 +30,22 @@
  */
 #include "img_api.h"
 
+#ifndef __unix
+void
+bzero( void * data, size_t size)
+{
+   memset( data, 0, size);
+}
+
+void *
+reallocf( void * memblock, size_t size )
+{
+   void * ret = realloc( memblock, size);
+   if ( ret == NULL && size > 0) free( memblock);
+   return ret;
+}
+#endif
+
 /* This function must always be used for creating a new image info structure. */
 PImgInfo
 img_info_create( int propCount)
@@ -150,7 +166,7 @@ img_clear_property( PImgProperty imgProp)
 			free( imgProp->val.pString[ i]);
 		    }
 		    free( imgProp->val.pString);
-		    break;   
+		    break;
 		case PROPTYPE_PROP:
 		    for ( i = 0; i < imgProp->used; i++) {
 			img_clear_properties( &imgProp->val.pProperties[ i]);
@@ -175,7 +191,7 @@ img_clear_property( PImgProperty imgProp)
 		    break;
 		default:
 		    croak( "Corrupted ImgProperty structure: unknown data type 0x%02x of property ``%s''\n",
-			   imgProp->flags & PROPTYPE_MASK, 
+			   imgProp->flags & PROPTYPE_MASK,
 			   imgProp->name);
 		    break;
 	    }
@@ -278,10 +294,10 @@ img_property_create( const char *name, U16 propFlags, int propArraySize)
 /* The functions pushes a new property into existing property list. */
 PImgProperty
 img_push_property_v( PList propList,
-		     const char *propName, 
+		     const char *propName,
 		     U16 propFlags, /* Combination of PROPTYPE_* constants. */
 		     int propArraySize, /* Ignored for non-array property. */
-		     va_list arg /* Optional parameter might be used for immediate 
+		     va_list arg /* Optional parameter might be used for immediate
 				    initialization of non-array property.
 				    For PROPTYPE_PROP this just an initial size of
 				    properties list. This function might be used to
@@ -289,7 +305,7 @@ img_push_property_v( PList propList,
 				    Binary data must be passed in two parameters:
 				    the first is size (int) and the second is pointer
 				    to the data.
-				    *NOTE*: the data will be copied as well as it being 
+				    *NOTE*: the data will be copied as well as it being
 				    done for a String value. */
     )
 {
@@ -352,7 +368,7 @@ img_push_property_v( PList propList,
 /* Adds a property into a existing property list. */
 PImgProperty
 img_push_property( PList propList,
-		   const char *propName, 
+		   const char *propName,
 		   U16 propFlags,
 		   int propArraySize,
 		   ...
@@ -368,9 +384,9 @@ img_push_property( PList propList,
 
 /* Adds a new property to image info property list. */
 PImgProperty
-img_info_add_property( PImgInfo imgInfo, 
-		       const char *propName, 
-		       U16 propFlags, 
+img_info_add_property( PImgInfo imgInfo,
+		       const char *propName,
+		       U16 propFlags,
 		       int propArraySize,
 		       ...
     )

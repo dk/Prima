@@ -1035,45 +1035,10 @@ apc_prn_abort_doc( Handle self)
    sys pal = sys ps = nil;
 }
 
-
 Bool
 apc_image_read( const char *filename, PList imgInfo, Bool readData)
 {
    return true;
 }
 
-void
-apc_image_clear_property( PImgProperty imgProp)
-{
-
-}
-
-PImgProperty
-apc_image_add_property( PImgInfo imageInfo, const char *propName, U16 propType, int propArraySize)
-{
-
-}
-
-
-/* XXX - will go AWAY */
-Bool
-img_push_property_value( PImgProperty imgProp, ...)
-{
-   return false;
-}
-PImgProperty
-img_info_add_property( PImgInfo imgInfo,
-		       const char *propName,
-		       U16 propFlags,
-		       int propArraySize,
-		       ...
-                      )
-{
-   return nil;
-}
-PImgInfo
-img_info_create( int propCount)
-{
-   return nil;
-}
 

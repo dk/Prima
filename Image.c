@@ -39,9 +39,8 @@
 #include "Image.h"
 #ifndef __unix  /* Temporary hack */
 #include "gbm.h"
-#else
-#include "img_api.h"
 #endif /* __unix */
+#include "img_api.h"
 #include "Image.inc"
 #include "Clipboard.h"
 
@@ -662,7 +661,7 @@ add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *ca
 		    int propIdx;
 		    HV *hv = newHV();
 		    for ( propIdx = 0; propIdx < imgProp->val.Properties.count; propIdx++) {
-			add_image_property_to_profile( 
+			add_image_property_to_profile(
 				hv,
 				( PImgProperty) list_at( &imgProp->val.Properties, propIdx),
 				calledFrom
@@ -962,7 +961,7 @@ XS( Image_load_FROMPERL) {
          croak( "Sorry, unsupported");
 	 info = plist_create( items - 2, 1);
 	 for ( i = 2; i < items; i++) {
-	    add_image_profile(( HV *)SvRV( ST(i)), info);
+            add_image_profile(( HV *)SvRV( ST(i)), info, "Image::load");
 	 }
       }
       else {
@@ -1091,7 +1090,7 @@ XS( Image_load_FROMPERL) {
 	 }
 	 info = plist_create( 1, 1);
 	 hv = parse_hv( ax, sp, items, mark, 2, "Image::load");
-	 add_image_profile( hv, info, "Image::load");
+         add_image_profile(( HV *)SvRV( ST(i)), info, "Image::get_info");
 	 sv_free(( SV*)hv);
       }
       result = apc_image_read( filename, info, true);
@@ -1179,9 +1178,9 @@ Image_load( SV *who, char *filename, PList imgInfo)
 XS( Image_get_info_FROMPERL)
 {
    warn( "Image::get_info() is unsupported in this version yet.");
-   return nilHandle;
+   return;
 }
-#else 
+#else
 XS( Image_get_info_FROMPERL)
 {
    dXSARGS;
