@@ -266,6 +266,17 @@ no_input( PDrawableSysData XX, Bool ignore_horizon, Bool beep)
    return false;
 }
 
+/*
+static char * xevdefs[] = { "0", "1"
+,"KeyPress" ,"KeyRelease" ,"ButtonPress" ,"ButtonRelease" ,"MotionNotify" ,"EnterNotify"
+,"LeaveNotify" ,"FocusIn" ,"FocusOut" ,"KeymapNotify" ,"Expose" ,"GraphicsExpose"
+,"NoExpose" ,"VisibilityNotify" ,"CreateNotify" ,"DestroyNotify" ,"UnmapNotify"
+,"MapNotify" ,"MapRequest" ,"ReparentNotify" ,"ConfigureNotify" ,"ConfigureRequest"
+,"GravityNotify" ,"ResizeRequest" ,"CirculateNotify" ,"CirculateRequest" ,"PropertyNotify"
+,"SelectionClear" ,"SelectionRequest" ,"SelectionNotify" ,"ColormapNotify" ,"ClientMessage"
+,"MappingNotify"};
+*/
+
 void
 prima_handle_event( XEvent *ev, XEvent *next_event)
 {
@@ -282,6 +293,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       prima_ximage_event( ev);
       return;
    }
+
 
    if ( guts. message_boxes) {
       struct MsgDlg * md = guts. message_boxes;
@@ -346,6 +358,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       win = guts. grab_redirect;
 
    self = prima_xw2h( win);
+   /*
+   printf("%d:%s of ", ev-> type, ((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]));
+   printf( self ? "%s\n" : "%08x\n", self ? PWidget(self)-> name : self);
+   */
    if (!self)
       return;
    if ( XT_IS_MENU(X(self))) {
@@ -572,15 +588,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       case NotifyDetailNone: /* XXX ? */
 	 return;
       }
-      /* fprintf( stderr, "pokus out %s\n", PComponent(self)->name); */
       XX-> flags. focused = 0;
       if ( guts. focused) prima_no_cursor( guts. focused);
       guts. focused = nilHandle;
-      DOLBUG( "~~~~~~~~~ release focus of %s, mode: %d, sent: %d, detail: %d\n",
-	      PWidget(self)-> name,
-	      ev-> xfocus. mode,
-	      ev-> xfocus. send_event,
-	      ev-> xfocus. detail);
       e. cmd = cmReleaseFocus;
       break;
    }
@@ -607,8 +617,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       return;
    }
    case GraphicsExpose: {
-      DOLBUG( "********* Graphics Exposing ********* %s (%d,%d) *********\n",
-	      PWidget(self)-> text, X(self)-> size. x, X(self)-> size. y);
       break;
    }
    case NoExpose: {
@@ -664,12 +672,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
       if ( XX-> real_parent != XX-> parent && !was_sent) {
 	 XWindow cld;
-	 if ( !XTranslateCoordinates( DISP, XX-> real_parent, XX-> parent,
-				      cev-> x, cev-> y,
-				      &cev-> x, &cev-> y, &cld)) {
-	     /* I don't expect this error to occur, ever */
-	    croak( "APC_EVENT internal error at line %d", __LINE__);
-	 }
+	 XTranslateCoordinates( DISP, XX-> real_parent, XX-> parent,
+            cev-> x, cev-> y, &cev-> x, &cev-> y, &cld);
 	 XCHECKPOINT;
       }
       size_changed = ( cev-> width != XX-> size. x) || ( cev-> height != XX-> size. y);
@@ -696,11 +700,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case GravityNotify: {
-      DOLBUG( "!!!!!!!! GravityNotify: %08lx  %08lx -- %d %d !!!!!!!!\n",
-	      ev-> xgravity. window,
-	      ev-> xgravity. event,
-	      ev-> xgravity. x,
-	      ev-> xgravity. y);
       break;
    }
    case ResizeRequest: {
@@ -713,11 +712,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case PropertyNotify: {
-      char *c;
+      /* char *c;
       guts. last_time = ev-> xproperty. time;
       DOLBUG( "!!!!!!!! PropertyNotify: %s !!!!!!!!\n",
 	      c = XGetAtomName( DISP, ev-> xproperty. atom));
-      if (c) XFree(c);
+      if (c) XFree(c); */
       break;
    }
    case SelectionClear: {
@@ -765,7 +764,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       }
    } else {
       /* Unhandled event, do nothing */
-      DOLBUG( "*** event %u to %s ***\n", ev-> type, PWidget( self)-> name);
       guts. unhandled_events++;
    }
 }

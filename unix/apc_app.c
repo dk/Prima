@@ -261,15 +261,17 @@ window_subsystem_init( void)
       guts. machine_byte_order = LSBFirst;
    else if ( BYTEORDER == MSB32)
       guts. machine_byte_order = MSBFirst;
-   else
-      croak( "UAA_001: weird machine byte order: %08x", BYTEORDER);
+   else {
+      warn( "UAA_001: weird machine byte order: %08x", BYTEORDER);
+      return false;
+   }   
 
    guts. null_pointer = nilHandle;
    guts. pointer_invisible_count = 0;
    guts. files = plist_create( 16, 16);
    prima_rebuild_watchers();
    prima_wm_init();
-   prima_init_font_subsystem();
+   if ( !prima_init_font_subsystem()) return false;
 /*    XSynchronize( DISP, true); */
    return true;
 }
@@ -315,11 +317,6 @@ window_subsystem_done( void)
    
    plist_destroy( guts. files);
    guts. files = nil;
-
-   DOLBUG( "Total X events: %ld\n", guts. total_events);
-   DOLBUG( "Handled X events: %ld\n", guts. handled_events);
-   DOLBUG( "Unhandled X events: %ld\n", guts. unhandled_events);
-   DOLBUG( "Skipped X events: %ld\n", guts. skipped_events);
 
    XrmDestroyDatabase( guts.db);
    if (guts.ximages)            hash_destroy( guts.ximages, false);
@@ -544,8 +541,10 @@ perform_pending_paints( void)
 
    for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
       next = TAILQ_NEXT( XX, paintq_link);
-      if ( !XX-> flags. paint_pending)
-         croak( "UAA_002: assertion !paint_pending failed");
+      if ( !XX-> flags. paint_pending) {
+         warn( "UAA_002: assertion !paint_pending failed");
+         return;
+      }   
       if (( stage = PWidget( XX->self)-> stage) != csConstructing) {
          TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
          XX-> flags. paint_pending = false;
@@ -598,8 +597,10 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
    write_set = guts.write_set;
    excpt_set = guts.excpt_set;
    if ( guts. oldest) {
-      if ( gettimeofday( &timeout, nil) != 0)
-         croak( "UAA_003: %s", strerror( errno));
+      if ( gettimeofday( &timeout, nil) != 0) {
+         warn( "gettimeofday error: %s", strerror( errno));
+         return false;
+      }   
       if ( guts. oldest-> when. tv_sec < timeout. tv_sec ||
            ( guts. oldest-> when. tv_sec == timeout. tv_sec &&
              guts. oldest-> when. tv_usec <= timeout. tv_usec)) {
@@ -610,8 +611,10 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
          } else {
             prima_simple_message( timer-> who, cmTimer, false);
          }
-         if ( gettimeofday( &timeout, nil) != 0)
-            croak( "UAA_004: %s", strerror( errno));
+         if ( gettimeofday( &timeout, nil) != 0) {
+            warn( "gettimeofday error: %s", strerror( errno));
+            return false;
+         }   
       }
       if ( guts. oldest && wait) {
          if ( guts. oldest-> when. tv_sec < timeout. tv_sec) {
@@ -751,9 +754,9 @@ Bool
 apc_application_yield( void)
 {
    if (!application) return false;
-
-   XNoOp( DISP);
-   XFlush( DISP);
+   XSync( DISP, false);
+   prima_one_loop_round( false, true);
+   XSync( DISP, false);
    prima_one_loop_round( false, true);
    return true;
 }

@@ -379,8 +379,7 @@ apc_window_execute( Handle self, Handle insert_before)
    X(self)-> flags.modal = true;
    protect_object( self);
 
-   XNoOp( DISP);
-   XFlush( DISP);
+   XSync( DISP, false);
 
    while ( prima_one_loop_round( true, true) && X(self) && X(self)-> flags.modal)
       ;

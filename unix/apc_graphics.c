@@ -381,11 +381,8 @@ prima_allocate_color( Handle self, Color color)
    x_color = hash_fetch( globalColors, &c, sizeof(c));
    if ( !x_color) {
       Status r;
-      x_color = malloc( sizeof( XColor));
-      if ( !x_color) {
-	 /* XXX better free existing colors... */
-	 croak( "UAG_003: no memory");
-      }
+      if ( !( x_color = malloc( sizeof( XColor))))
+         return &bitmap_black;
       x_color-> red = (short)((unsigned short)c. r << 8);
       x_color-> green = (short)((unsigned short)c. g << 8);
       x_color-> blue = (short)((unsigned short)c. b << 8);
@@ -407,7 +404,10 @@ prima_get_gc( PDrawableSysData selfxx)
 
    if ( XX-> gc && XX-> gcl) return;
 
-   if ( XX-> gc || XX-> gcl) croak( "UAG_004: internal error");
+   if ( XX-> gc || XX-> gcl) {
+      warn( "UAG_010: internal error");
+      return;
+   }   
 
    bitmap = XT_IS_BITMAP(XX) ? true : false;
    gc_pool = bitmap ? &guts.bitmap_gc_pool : &guts.screen_gc_pool;
@@ -429,14 +429,20 @@ prima_release_gc( PDrawableSysData selfxx)
    struct gc_head *gc_pool;
 
    if ( XX-> gc) {
-      if ( XX-> gcl == nil) croak( "UAG_005: internal error");
+      if ( XX-> gcl == nil) {
+         warn( "UAG_011: internal error");
+         return;
+      }   
       bitmap = XT_IS_BITMAP(XX) ? true : false;
       gc_pool = bitmap ? &guts.bitmap_gc_pool : &guts.screen_gc_pool;
       TAILQ_INSERT_HEAD(gc_pool, XX->gcl, gc_link);
       XX->gcl = nil;
       XX->gc = nil;
    } else {
-      if ( XX-> gcl) croak( "UAG_006: internal error");
+      if ( XX-> gcl) {
+         warn( "UAG_012: internal error");
+         return;
+      }
    }
 }
 
@@ -645,10 +651,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
    int compl, needf;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_007: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -667,10 +670,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
    DEFXX;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_008: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
@@ -685,10 +685,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
    DEFXX;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_009: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
       x1 = 0; y1 = 0;
@@ -713,10 +710,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
    DEFXX;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_010: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -742,25 +736,15 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
    XPoint *p;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_011: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
-   if ((p = malloc( sizeof( XPoint)*n)) == nil)
-      croak( "UAG_012: no memory");
+   if ((p = malloc( sizeof( XPoint)*n)) == nil) 
+      return false;
 
    for ( i = 0; i < n; i++) {
       p[i].x = pp[i].x + x;
       p[i].y = y - pp[i].y;
    }
-
-/*    for ( i = 0; i < n; i++) { */
-/*       fprintf(stderr, "p[%d]=(XPoint){%hd,%hd}; ", i, p[i].x, p[i].y); */
-/*       if ( i % 4 == 0) */
-/* 	 fprintf( stderr, "\n"); */
-/*    } */
-/*    fprintf( stderr, "\n"); */
 
    if ( XX-> flags. zero_line) {
       XGCValues gcv;
@@ -776,29 +760,6 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
    }
 
-/* p[165]=(XPoint){207,134}; p[166]=(XPoint){207,133}; p[167]=(XPoint){207,132}; p[168]=(XPoint){207,131};  */
-/* p[169]=(XPoint){208,130}; p[170]=(XPoint){208,129}; p[171]=(XPoint){208,128}; p[172]=(XPoint){208,127};  */
-
-/* p[172]=(XPoint){207,134}; p[171]=(XPoint){207,133}; p[170]=(XPoint){207,132}; p[169]=(XPoint){207,131};  */
-/* p[168]=(XPoint){208,130}; p[167]=(XPoint){208,129}; p[166]=(XPoint){208,128}; p[165]=(XPoint){208,127};  */
-/* XSetLineAttributes( DISP, XX-> gc, 0, LineSolid, CapRound, JoinRound); */
-/* p[173]=(XPoint){208,126}; p[174]=(XPoint){208,125}; p[175]=(XPoint){208,124}; p[176]=(XPoint){208,123};  */
-/* p[177]=(XPoint){208,122}; p[178]=(XPoint){208,121}; p[179]=(XPoint){209,120}; p[180]=(XPoint){209,119};  */
-/* p[181]=(XPoint){210,118}; p[182]=(XPoint){210,117}; p[183]=(XPoint){211,116}; p[184]=(XPoint){211,115};  */
-/* p[185]=(XPoint){211,114}; p[186]=(XPoint){211,113}; p[187]=(XPoint){212,112}; p[188]=(XPoint){212,111};  */
-/* p[189]=(XPoint){213,111}; p[190]=(XPoint){214,110}; p[191]=(XPoint){214,109}; p[192]=(XPoint){215,108};  */
-/* p[193]=(XPoint){215,107}; p[194]=(XPoint){216,107}; p[195]=(XPoint){217,106}; p[196]=(XPoint){217,105};  */
-/* p[197]=(XPoint){218,105}; p[198]=(XPoint){219,104}; p[199]=(XPoint){219,103}; p[200]=(XPoint){220,102};  */
-/* p[201]=(XPoint){220,101}; p[202]=(XPoint){219,100}; p[203]=(XPoint){219,99}; p[204]=(XPoint){219,98};  */
-/* p[205]=(XPoint){219,97}; p[206]=(XPoint){220,97}; p[207]=(XPoint){221,96}; p[208]=(XPoint){221,95};  */
-/* p[209]=(XPoint){222,94}; p[210]=(XPoint){222,93}; p[211]=(XPoint){223,93}; p[212]=(XPoint){224,93};  */
-/* p[213]=(XPoint){225,93}; p[214]=(XPoint){226,93}; p[215]=(XPoint){227,93}; p[216]=(XPoint){228,93};  */
-/* p[217]=(XPoint){229,93}; p[218]=(XPoint){230,93}; p[219]=(XPoint){231,93}; p[220]=(XPoint){232,93};  */
-/* p[221]=(XPoint){232,94}; p[222]=(XPoint){233,95}; p[223]=(XPoint){234,95}; p[224]=(XPoint){235,95};  */
-/* p[225]=(XPoint){236,94}; p[226]=(XPoint){236,93};  */
-
-/*    i = 165; n = 172; */
-/*    XDrawLines( DISP, XX-> gdrawable, XX-> gc, p+i, n-i+1, CoordModeOrigin); */
    free( p);
    return true;
 }
@@ -814,13 +775,9 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
    int n = np / 2;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_013: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
-   if ((s = malloc( sizeof( XSegment)*n)) == nil)
-      croak( "UAG_014: no memory");
+   if ((s = malloc( sizeof( XSegment)*n)) == nil) return false;
 
    for ( i = 0; i < n; i++) {
       s[i].x1 = pp[i*2].x + x;
@@ -853,10 +810,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
    DEFXX;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_015: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -871,10 +825,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
    int compl, needf;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_016: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -896,10 +847,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
    DEFXX;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_017: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
    SHIFT( x, y);
    y = REVERT( y);
    XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
@@ -910,23 +858,14 @@ Bool
 apc_gp_fill_poly( Handle self, int numPts, Point *points)
 {
    /* XXX - beware, current implementation will not deal correctly with different rops and tiles */
-   static XPoint *p = nil;
-   static int size = 0;
+   XPoint *p;
    DEFXX;
    int i;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_018: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
-   if ( numPts >= size) {
-      free( p);
-      size = numPts + 1;
-      p = malloc( size * sizeof( XPoint));
-      if ( !p) croak( "UAG_019: no memory");
-   }
+   if ( !( p = malloc(( numPts + 1) * sizeof( XPoint)))) return false;
 
    for ( i = 0; i < numPts; i++) {
       p[i]. x = (short)points[i]. x + XX-> gtransform. x + XX-> btransform. x;
@@ -939,14 +878,15 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
       XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
       XCHECKPOINT;
    } else {
-      warn( "UAG_020: request too large");
+      warn( "UAG_003: XFillPolygon: request too large");
    }
    if ( guts. limits. XDrawLines > numPts) {
       XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
       XCHECKPOINT;
    } else {
-      warn( "UAG_021: request too large");
+      warn( "UAG_004: XDrawLines: request too large");
    }
+   free( p);
    return true;
 }
 
@@ -957,10 +897,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
    int compl, needf;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_022: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -1001,7 +938,7 @@ color_to_pixel( Color color)
       break;
    case 4:
    case 8:
-      warn("UAG_034: Not supported pixel depth");
+      warn("UAG_005: Not supported pixel depth");
       return 0;
    case 16:   
    case 24:   
@@ -1025,7 +962,7 @@ color_to_pixel( Color color)
          }   
        break;
    default:
-      warn("UAG_034: Not supported pixel depth");
+      warn("UAG_005: Not supported pixel depth");
       return 0;
    }
    return pv;
@@ -1252,7 +1189,8 @@ apc_gp_get_pixel( Handle self, int x, int y)
       switch ( guts. idepth) {
       case 4:
       case 8:
-         croak( "UAG_023: not implemented");
+         warn( "UAG_009: not implemented");
+         return clInvalid;
       case 16:
          p32 = *(( uint16_t*)(im-> data));
          if ( guts.machine_byte_order != guts.byte_order) 
@@ -1305,21 +1243,12 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 {
    /* !!! - this function will not work correctly for cosmetic (width 0) lines */
    /*       (but we are avoiding them anyway, for now) */
-   /* XXX - implement a general case of line end correction */
    DEFXX;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_025: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x1, y1); SHIFT( x2, y2);
-   if ( y1 == y2) {
-      SORT( x1, x2); x2++;
-   } else if ( x1 == x2) {
-      SORT( y1, y2); y1--;
-   }
    XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
    return true;
 }
@@ -1330,10 +1259,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
    DEFXX;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_026: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x1, y1); SHIFT( x2, y2);
    SORT( x1, x2); SORT( y1, y2);
@@ -1349,10 +1275,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
    DEFXX;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_027: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    SHIFT( x, y);
    y = REVERT( y);
@@ -1393,16 +1316,14 @@ apc_gp_set_region( Handle self, Handle mask)
    XGCValues gcv;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      if (mask) warn( "UAG_028: not implemented");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    if (mask == nilHandle) {
       px = None;
    } else {
       img = PImage(mask);
       cache = prima_create_image_cache(img, nilHandle);
+      if ( !cache) return false;
       px = XCreatePixmap(DISP, guts. root, img->w, img->h, 1);
       gc = XCreateGC(DISP, px, 0, &gcv);
       prima_put_ximage(px, gc, cache->image, 0, 0, 0, 0, img->w, img->h);
@@ -1419,15 +1340,14 @@ Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
    DEFXX;
-   XColor *c = prima_allocate_color( self, color);
-   unsigned long old = XX-> fore. pixel;
+   XColor *c;
+   unsigned long old;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_029: put begin_paint somewhere");
-      return false;
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
+   c = prima_allocate_color( self, color);
+   old = XX-> fore. pixel;
    SHIFT( x, y);
    XSetForeground( DISP, XX-> gc, c-> pixel);
    XCHECKPOINT;
@@ -1615,20 +1535,7 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 
    
    if ( PObject( self)-> options. optInDrawInfo) return false;
-   if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_030: put begin_paint somewhere");
-      return false;
-   }
-
-   if (0) {
-      fprintf( stderr, "H: %d, D: %d, A: %d, BD: %d, BA: %d\n",
-               XX-> font-> font. height,
-               XX-> font-> fs-> descent,
-               XX-> font-> fs-> ascent,
-               XX-> font-> fs-> max_bounds. descent,
-               XX-> font-> fs-> max_bounds. ascent
-               );
-   }
+   if ( !XF_IN_PAINT(XX)) return false;
 
    /* paint background if opaque */
    if ( XX-> flags. paint_opaque) {
@@ -1789,7 +1696,7 @@ apc_gp_get_line_end( Handle self)
 
    if ( XF_IN_PAINT(XX)) {
       if ( XGetGCValues( DISP, XX-> gc, GCCapStyle, &gcv) == 0) {
-         warn( "UAG_031: error querying GC values");
+         warn( "UAG_006: error querying GC values");
          cap = CapButt;
       } else {
          cap = gcv. cap_style;
@@ -1816,7 +1723,7 @@ apc_gp_get_line_width( Handle self)
 	 w = 0;
       else {
 	 if ( XGetGCValues( DISP, XX-> gc, GCLineWidth, &gcv) == 0) {
-            warn( "UAG_032: error querying GC values");
+            warn( "UAG_007: error querying GC values");
 	 }
 	 w = gcv. line_width;
       }
@@ -2057,7 +1964,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
       if ( !dflt)
          if (( XX-> fp_pixmap = XCreateBitmapFromData( 
                DISP, XX-> gdrawable, pattern, 8, 8)) == None) {
-             warn( "UAG_033: error creating stipple");
+             warn( "UAG_008: error creating stipple");
              dflt = true;
          }      
       XSetFillStyle( DISP, XX-> gc, dflt ? FillSolid : FillOpaqueStippled);

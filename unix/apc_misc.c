@@ -601,7 +601,7 @@ load_pointer_font( void)
    if ( !guts.pointer_font)
       guts.pointer_font = XLoadQueryFont( DISP, "cursor");
    if ( !guts.pointer_font) {
-      warn( "cannot load cursor font");
+      warn( "Cannot load cursor font");
       return false;
    }
    return true;
@@ -642,7 +642,8 @@ apc_pointer_get_pos( Handle self)
    if ( !XQueryPointer( DISP, guts. root,
 			&root, &child, &p. x, &p. y,
 			&x, &y, &mask)) {
-      croak( "apc_pointer_get_pos(): XQueryPointer() failed");
+      warn( "XQueryPointer error");
+      return (Point){0,0};
    }
    p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
    return p;
@@ -676,7 +677,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    if ( id < crDefault || id > crUser)  return false;
    if ( id == crUser) {
       if ( !p1 || !p2) {
-         warn( "user pointer inconsistency");
+         warn( "User pointer inconsistency");
          return false;
       }
       free_pixmap = false;
@@ -830,13 +831,13 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
          cursor = CIcon(icon)->dup(icon);
          c = PIcon(cursor);
          if ( cursor == nilHandle) {
-            warn( "error duping user cursor");
+            warn( "Error duping user cursor");
             return false;
          }
          if ( noSZ) {
             CIcon(cursor)-> stretch( cursor, guts.cursor_width, guts.cursor_height);
             if ( c-> w != guts.cursor_width || c-> h != guts.cursor_height) {
-               warn( "error stretching user cursor");
+               warn( "Error stretching user cursor");
                Object_destroy( cursor);
                return false;
             }
@@ -844,7 +845,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
          if ( noBPP) {
             CIcon(cursor)-> set_type( cursor, imMono);
             if ((c-> type & imBPP) != 1) {
-               warn( "error black-n-whiting user cursor");
+               warn( "Error black-n-whiting user cursor");
                Object_destroy( cursor);
                return false;
             }
@@ -852,7 +853,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
       } else
          cursor = icon;
       if ( !prima_create_icon_pixmaps( cursor, &XX-> user_p_source, &XX-> user_p_mask)) {
-         warn( "error creating user cursor pixmaps");
+         warn( "Error creating user cursor pixmaps");
          if ( noSZ || noBPP)
             Object_destroy( cursor);
          return false;
@@ -900,7 +901,7 @@ apc_pointer_set_visible( Handle self, Bool visible)
       n-> self-> create_empty( nullc, 16, 16, 1);
       memset( n-> mask, 0xFF, n-> maskSize);
       if ( !prima_create_icon_pixmaps( nullc, &xor, &and)) {
-         warn( "error creating null cursor pixmaps"); 
+         warn( "Error creating null cursor pixmaps"); 
          Object_destroy( nullc);
          return false;
       }  
@@ -912,7 +913,7 @@ apc_pointer_set_visible( Handle self, Bool visible)
       XFreePixmap( DISP, xor);
       XFreePixmap( DISP, and);
       if ( !guts. null_pointer) {
-         warn( "error creating null cursor from pixmaps");
+         warn( "Error creating null cursor from pixmaps");
          return false;
       }   
    }   
@@ -1172,7 +1173,8 @@ apc_timer_start( Handle self)
 
    inactivate_timer( sys);
    if ( gettimeofday( &sys-> when, nil) != 0) {
-      croak( "apc_timer_start() gettimeofday() returned: %s", strerror( errno));
+      warn( "gettimeofday error: %s", strerror( errno));
+      return false;
    }
    sys-> when. tv_sec += sys-> timeout / 1000;
    sys-> when. tv_usec += (sys-> timeout % 1000) * 1000;

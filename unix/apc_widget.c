@@ -45,10 +45,7 @@ apc_widget_map_points( Handle self, Bool toScreen, int n, Point *p)
    int dx = 0, dy = XX-> size. y;
    XWindow dummy;
 
-   if ( !XTranslateCoordinates( DISP,
-                                XX-> udrawable, guts. root,
-                                dx, dy, &dx, &dy, &dummy))
-      croak( "apc_widget_map_points(): XTranslateCoordinates() failed");
+   XTranslateCoordinates( DISP, XX-> udrawable, guts. root, dx, dy, &dx, &dy, &dummy);
    dy = DisplayHeight( DISP, SCREEN) - dy;
    if (!toScreen) {
       dx = -dx;

@@ -594,7 +594,7 @@ prima_rebuild_watchers( void);
 extern void
 prima_release_gc( PDrawableSysData);
 
-extern void
+extern Bool
 prima_init_font_subsystem( void);
 
 extern XColor*
