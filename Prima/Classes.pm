@@ -364,53 +364,33 @@ sub rect_focus
    ( $y, $y1) = ( $y1, $y) if $y > $y1;
 
    $width = 1 if !defined $width || $width < 1;
-   if (( $width == 1) && (( $sysData->{apc} != apc::Win32))) {
-      my ( $lp, $cl, $cl2, $rop) = (
-         $canvas-> linePattern, $canvas-> color,
-         $canvas-> backColor, $canvas-> rop
-      );
-      $canvas-> set(
-         linePattern => lp::DotDot,
-         color       => cl::White,
-         backColor   => cl::Black,
-         rop         => rop::XorPut,
-      );
-      $canvas-> rectangle( $x, $y, $x1, $y1);
-      $canvas-> set(
-         linePattern => $lp,
-         backColor   => $cl2,
-         color       => $cl,
-         rop         => $rop
-      );
+   my ( $cl, $cl2, $rop) = (
+                            $canvas-> color, $canvas-> backColor, $canvas-> rop
+                           );
+   my $fp = $canvas-> fillPattern;
+   $canvas-> set(
+                 fillPattern => fp::SimpleDots,
+                 color       => cl::White,
+                 backColor   => cl::Black,
+                 rop         => rop::XorPut,
+                );
+
+   if ( $width * 2 >= $x1 - $x or $width * 2 >= $y1 - $y) {
+      $canvas-> bar( $x, $y, $x1, $y1);
    } else {
-      my ( $cl, $cl2, $rop) = (
-         $canvas-> color, $canvas-> backColor, $canvas-> rop
-      );
-      my $fp = $canvas-> fillPattern;
-      $canvas-> set(
-         fillPattern => fp::SimpleDots,
-         color       => cl::White,
-         backColor   => cl::Black,
-         rop         => rop::XorPut,
-      );
-
-      if ( $width * 2 >= $x1 - $x or $width * 2 >= $y1 - $y) {
-         $canvas-> bar( $x, $y, $x1, $y1);
-      } else {
-         $width -= 1;
-         $canvas-> bar( $x, $y, $x1, $y + $width);
-         $canvas-> bar( $x, $y1 - $width, $x1, $y1);
-         $canvas-> bar( $x, $y + $width + 1, $x + $width, $y1 - $width - 1);
-         $canvas-> bar( $x1 - $width, $y + $width + 1, $x1, $y1 - $width - 1);
-      }
-
-      $canvas-> set(
-         fillPattern => $fp,
-         backColor   => $cl2,
-         color       => $cl,
-         rop         => $rop,
-      );
+      $width -= 1;
+      $canvas-> bar( $x, $y, $x1, $y + $width);
+      $canvas-> bar( $x, $y1 - $width, $x1, $y1);
+      $canvas-> bar( $x, $y + $width + 1, $x + $width, $y1 - $width - 1);
+      $canvas-> bar( $x1 - $width, $y + $width + 1, $x1, $y1 - $width - 1);
    }
+
+   $canvas-> set(
+                 fillPattern => $fp,
+                 backColor   => $cl2,
+                 color       => $cl,
+                 rop         => $rop,
+                );
 }
 
 sub draw_text
