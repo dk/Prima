@@ -192,7 +192,6 @@ sub change_transform
    my $ro = $_[0]-> rotate;
    $cr[2] -= $cr[0];
    $cr[3] -= $cr[1];
-   my $mcr2 = -$cr[2];
    my $doClip = grep { $_ != 0 } @cr;
    my $doTR   = grep { $_ != 0 } @tp; 
    my $doSC   = grep { $_ != 0 } @sc; 
@@ -204,6 +203,7 @@ sub change_transform
 
    @cr = $_[0]-> pixel2point( @cr);
    @tp = $_[0]-> pixel2point( @tp);
+   my $mcr2 = -$cr[2];
    
    $_[0]-> emit('grestore') unless $_[1];
    $_[0]-> emit('gsave');
@@ -307,7 +307,8 @@ sub stroke
       }
 
       if ( $self-> {changed}-> {lineWidth}) {
-         $self-> emit( $self-> lineWidth . ' setlinewidth');       
+         my ($lw) = $self-> pixel2point($self-> lineWidth);
+         $self-> emit( $lw . ' setlinewidth');
          $self-> {changed}-> {lineWidth} = 0;
       }
 
