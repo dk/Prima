@@ -57,7 +57,14 @@ static PrimaXImage*
 prepare_ximage( int width, int height, Bool bitmap)
 {
    PrimaXImage *i;
-   int extra_bytes = ((guts. depth == 24) ? 5 : 0);
+   int extra_bytes;
+  
+   switch ( guts.idepth) {
+   case 16:     extra_bytes = 1;        break;
+   case 24:     extra_bytes = 5;        break;
+   case 32:     extra_bytes = 7;        break;
+   default:     extra_bytes = 0;
+   }
 
    i = malloc( sizeof( PrimaXImage));
    if (!i) return nil;
@@ -103,7 +110,7 @@ prepare_ximage( int width, int height, Bool bitmap)
    }
 normal_way:
 #endif
-   i-> bytes_per_line_alias = (( width * (bitmap ? 1 : guts.depth) + 31) / 32) * 4;
+   i-> bytes_per_line_alias = (( width * (bitmap ? 1 : guts.idepth) + 31) / 32) * 4;
    i-> data_alias = malloc( height * i-> bytes_per_line_alias + extra_bytes);
    if (!i-> data_alias) {
       free(i);
@@ -533,6 +540,45 @@ create_image_cache_4_to_24( PImage img)
    IMG-> image_cache = ximage;
 }
 
+typedef struct
+{
+   unsigned long a;
+   unsigned long b;
+} Duplet32;
+
+static void
+create_image_cache_4_to_32( PImage img)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   Duplet32 lut[ 256];
+   U32 lut1[ 16];
+   unsigned char *data;
+   int x, y;
+   int ls;
+   int h = img-> h, w = img-> w;
+   unsigned i;
+   PrimaXImage *ximage;
+
+   create_rgb_to_24_lut( 16, img-> palette, lut1);
+   for ( i = 0; i < 256; i++) {
+      lut[i]. a = lut1[(i & 0xf0) >> 4];
+      lut[i]. b = lut1[(i & 0x0f) >> 0];
+   }
+   ximage = prepare_ximage( w, h, false);
+   if ( !ximage) croak( "create_image_cache_4_to_32(): error creating ximage");
+   ls = get_ximage_bytes_per_line( ximage);
+   data = get_ximage_data( ximage);
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register Duplet32 *d = (Duplet32 *)(ls*(h-y-1)+data);
+      for ( x = 0; x < (w+1)/2; x++) {
+	 *d++ = lut[line[x]];
+      }
+   }
+
+   IMG-> image_cache = ximage;
+}
+
 static void
 create_image_cache_8_to_16( PImage img)
 {
@@ -701,19 +747,22 @@ prima_create_image_cache( PImage img, Handle drawable, Bool icon)
             create_image_cache_1_to_1( img, drawable, false);
             break;
          case 4:
-            switch (guts.depth) {
+            switch (guts.idepth) {
             case 16:
                create_image_cache_4_to_16( img);
                break;
             case 24:
                create_image_cache_4_to_24( img);
                break;
+            case 32:
+               create_image_cache_4_to_32( img);
+               break;
             default:
                croak( "create_image_cache(): unsupported screen depth for 4-bit images");
             }
             break;
          case 8:
-            switch (guts.depth) {
+            switch (guts.idepth) {
             case 16:
                create_image_cache_8_to_16( img);
                break;
@@ -728,7 +777,7 @@ prima_create_image_cache( PImage img, Handle drawable, Bool icon)
             }
             break;
          case 24:
-            switch (guts.depth) {
+            switch (guts.idepth) {
             case 16:
                create_image_cache_24_to_16( img);
                break;
@@ -946,8 +995,8 @@ slurp_image( Handle self, Pixmap px)
          if (( img-> type & imBPP) != target_depth) {
             CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
          }
-         if ( guts. depth != target_depth) {
-            switch ( guts. depth) {
+         if ( guts. idepth != target_depth) {
+            switch ( guts. idepth) {
             case 16:
                switch ( target_depth) {
                case 24:
@@ -1198,7 +1247,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    yclipsize = cr. height;
 
    if ( xclipstart + xclipsize <= 0 || yclipstart + yclipsize <= 0) return true;
-   stretch_calculate_seed( xLen, xDestLen, &xclipstart, &xclipsize, guts. depth, &xseed);
+   stretch_calculate_seed( xLen, xDestLen, &xclipstart, &xclipsize, guts. idepth, &xseed);
    stretch_calculate_seed( yLen, yDestLen, &yclipstart, &yclipsize, 8, &yseed);
    if ( xclipsize <= 0 || yclipsize <= 0) return true;
 
@@ -1223,7 +1272,7 @@ apc_gp_stretch_image( Handle self, Handle image,
                  (void*)data, xclipsize, yclipsize, tls);
       break;
    default:
-      switch ( bit_cache ? 1 : guts.depth) {
+      switch ( bit_cache ? 1 : guts.idepth) {
       case 16:
          stretch_16( &xseed, &yseed,
                      xDestLen < 0, yDestLen < 0,

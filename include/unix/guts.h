@@ -214,6 +214,7 @@ struct _UnixGuts
    int                          byte_order;
    int                          connection;
    int                          depth;
+   int                          idepth; /* image depth; can be 32 if depth == 24 */
    Display                     *display;
    struct {
       long XDrawArcs;

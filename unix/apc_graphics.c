@@ -469,6 +469,7 @@ prima_prepare_drawable_for_painting( Handle self)
          XX-> btransform. y = 0;
       }
       XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, w, h, guts.depth);
+      XCHECKPOINT;
       if (!XX-> gdrawable) goto Unbuffered;
    } else if ( XX-> udrawable && !XX-> gdrawable) {
 Unbuffered:
