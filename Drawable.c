@@ -709,7 +709,7 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    char** c;
    int i;
    AV * av;
-   PFontABC abc;
+   PFontABC abc = nil;
 
    t. text = text;
    t. textLen = textLen;
