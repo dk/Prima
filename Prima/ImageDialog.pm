@@ -398,7 +398,7 @@ sub save
    }
 
 # invoking filter dialog
-   if ( $self-> {codecFilters}-> [ $fi]) {
+   if ( $self-> filterDialog && $self-> {codecFilters}-> [ $fi]) {
       my $dlg = $self-> {codecFilters}-> [ $fi];
       $dlg-> notify( q(Change), $codec, $dup);
       unless ( $dlg-> execute == mb::OK) {
