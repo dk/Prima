@@ -238,7 +238,7 @@ sub modules
 	 my $n = $1;
 	 $mk .= <<MAKE;
 $pmdir[0]/$n: $dir[0]/$n
-\tcp $dir[0]/$n $pmdir[0]/$n
+\tinstall -c -m 0644 $dir[0]/$n $pmdir[0]/$n
 
 MAKE
          $allclean .= "$pmdir[0]/$n ";
