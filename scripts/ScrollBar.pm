@@ -647,6 +647,7 @@ sub on_mousedown
 {
    my ( $self, $btn, $mod, $x, $y) = @_;
    $self-> clear_event;
+   return if $btn != mb::Left;
    return if defined $self->{mouseTransaction};
    my $who = $self-> translate_point( $x, $y);
    return if !defined $who or $who eq q(groove);
