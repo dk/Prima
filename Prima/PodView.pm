@@ -1002,7 +1002,7 @@ sub add
          my $pp = $p;
          $pp =~ s/\|//g;
          if ( $style == STYLE_ITEM && $pp =~ /^\s*[a-z]/) {
-            $pp =~ s/\s.*$//; # seems like function entry?
+            $pp =~ s/[\s\)\(\[\]\{\}].*$//; # seems like function entry?
          }
          $pp =~ s/([<>])/'E<' . (($1 eq '<') ? 'lt' : 'gt') . '>'/ge;
          my $newTopic = [ scalar @{$self-> {model}},
