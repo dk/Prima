@@ -500,7 +500,7 @@ sub setup_variables
 
     %cc_specs = (
                  gcc => {
-                         warnflags => "-Wall -Werror",
+                         warnflags => "-Wall",
                          cflags => "",
                          coutoflag => '-o',
                          coutexeflag => '-o',
