@@ -2018,19 +2018,41 @@ apc_popup_default_font( PFont font)
 }
 
 Bool
-apc_popup( Handle self, int x, int y)
+apc_popup( Handle self, int x, int y, Rect * anchor)
 {
+   TPMPARAMS tpm;
+   HWND owner;
    objCheck false;
+
    y = dsys( var owner) lastSize. y - y;
+   owner = ( HWND)(( PComponent) var owner)-> handle;
    if ( var owner != application) {
       POINT pt = {x,y};
-      if ( !MapWindowPoints(( HWND)(( PComponent) var owner)-> handle, nil, &pt, 1)) apiErr;
+      if ( !MapWindowPoints( owner, nil, &pt, 1)) apiErr;
       x = pt.x;
       y = pt.y;
    }
+   if ( anchor &&
+        anchor-> left   &&
+        anchor-> right  &&
+        anchor-> top    &&
+        anchor-> bottom
+      )
+   {
+      RECT r;
+      GetWindowRect( owner, &r);
+      tpm. cbSize = sizeof( tpm);
+      tpm. rcExclude. left   = anchor-> left;
+      tpm. rcExclude. right  = anchor-> right;
+      tpm. rcExclude. top    = r. bottom - r. top - anchor-> top;
+      tpm. rcExclude. bottom = r. bottom - r. top - anchor-> bottom;
+      if ( !MapWindowPoints( owner, nil, ( PPOINT) &tpm. rcExclude, 2)) apiErr;
+   } else
+      anchor = nil;
+
    if ( !TrackPopupMenuEx(
       ( HMENU) var handle, TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_RIGHTBUTTON,
-       x, y, ( HWND)(( PComponent) var owner)-> handle, NULL)
+       x, y, owner, anchor ? &tpm : NULL)
       ) apiErrRet;
    return true;
 }

@@ -1201,7 +1201,7 @@ extern PFont
 apc_popup_default_font( PFont font);
 
 extern Bool
-apc_popup( Handle self, int x, int y);
+apc_popup( Handle self, int x, int y, Rect * anchor);
 
 /* Timer */
 extern Bool
