@@ -167,7 +167,7 @@ Widget_init( Handle self, HV * profile)
       if ( x || y) my set_centered( self, x, y);
    }
    my set_visible     ( self, pget_B( visible));
-   if ( pget_B( capture)) my set_capture( self, 1);
+   if ( pget_B( capture)) my set_capture( self, 1, nilHandle);
    if ( pget_B( current)) my set_current( self, 1);
 }
 
@@ -1671,10 +1671,10 @@ Widget_set_buffered( Handle self, Bool buffered)
 }
 
 void
-Widget_set_capture( Handle self, Bool capture)
+Widget_set_capture( Handle self, Bool capture, Handle confineTo)
 {
    if ( opt_InPaint) return;
-   apc_widget_set_capture( self, capture);
+   apc_widget_set_capture( self, capture, confineTo);
 }
 
 void
@@ -2065,8 +2065,8 @@ void
 Widget_set_rect( Handle self, Rect r)
 {
    enter_method;
-   my set_pos ( self, r. left, r. bottom);
    my set_size( self, r. right - r. left, r. top - r. bottom);
+   my set_pos ( self, r. left, r. bottom);
 }
 
 void
@@ -2269,7 +2269,9 @@ Widget_set_top( Handle self, int _top )
 void
 Widget_set_widget_class( Handle self, int widgetClass)
 {
+   enter_method;
    var widgetClass = widgetClass;
+   my repaint( self);
 }
 
 void
