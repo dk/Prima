@@ -94,11 +94,8 @@ EXPORTS
   apc_widget_is_enabled
   apc_widget_is_focused
   apc_widget_is_visible
-  apc_widget_lock
-  apc_widget_repaint
   apc_widget_screen_to_client
   apc_widget_scroll
-  apc_widget_scroll_rect
   apc_widget_set_capture
   apc_widget_set_color
   apc_widget_set_enabled
@@ -108,7 +105,6 @@ EXPORTS
   apc_widget_set_size
   apc_widget_set_visible
   apc_widget_set_z_order
-  apc_widget_unlock
   apc_widget_update
   apc_widget_validate_rect
   apc_window_close
