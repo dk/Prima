@@ -76,6 +76,7 @@ CPerlObj* pPerl;
 
 static PHash vmtHash = nil;
 static List  staticObjects;
+static List  staticHashes;
 
 Handle application = nilHandle;
 long   apcError = 0;
@@ -1124,6 +1125,13 @@ static void output_mallocs( void);
 
 XS(Utils_getdir_FROMPERL);
 
+static Bool 
+kill_hashes( PHash hash, void * dummy)
+{
+   hash_destroy( hash, false);
+   return false;
+}
+
 XS( prima_cleanup)
 {
    dXSARGS;
@@ -1142,6 +1150,8 @@ XS( prima_cleanup)
    list_destroy( &postDestroys);
    kill_zombies();
    window_subsystem_done();
+   list_first_that( &staticHashes, (void*)kill_hashes, nil);
+   list_destroy( &staticHashes);
 #ifdef PARANOID_MALLOC
    output_mallocs();
 #endif
@@ -1243,6 +1253,7 @@ NAN = 0.0;
 #endif
 
    list_create( &staticObjects, 16, 16);
+   list_create( &staticHashes, 16, 16);
    if ( !window_subsystem_init()) {
       apc_show_message( "Error initializing PRIMA", 0);
       ST(0) = &sv_no;
@@ -1628,15 +1639,18 @@ list_delete_all( PList slf, Bool kill)
 }
 
 PHash
-hash_create( void)
+prima_hash_create()
 {
-   return newHV();
+   PHash ret = newHV();
+   list_add( &staticHashes, ( Handle) ret);
+   return ret;
 }
 
 void
 hash_destroy( PHash h, Bool killAll)
 {
    HE *he;
+   list_delete( &staticHashes, ( Handle) h);
    hv_iterinit( h);
    while (( he = hv_iternext( h)) != nil) {
       if ( killAll) free( HeVAL( he));

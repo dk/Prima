@@ -750,6 +750,10 @@ prima_cleanup_font_subsystem( void)
    xfontCache = nil;
    hash_destroy( encodings, false);
    encodings = nil;
+#ifdef USE_XFT
+   prima_xft_done();
+#endif
+   
 }
 
 PFont
