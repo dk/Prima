@@ -554,13 +554,13 @@ Drawable_fillpoly( Handle self, SV * points)
  */
 
 static void
-TkBezierScreenPoints( control, numSteps, xPointPtr)
-    double control[];			/* Array of coordinates for four
+TkBezierScreenPoints(
+    double control[],			/* Array of coordinates for four
 					 * control points:  x0, y0, x1, y1,
 					 * ... x3 y3. */
-    int numSteps;			/* Number of curve points to
+    int numSteps,			/* Number of curve points to
 					 * generate.  */
-    register Point *xPointPtr;		/* Where to put new points. */
+    register Point *xPointPtr)		/* Where to put new points. */
 {
     int i;
     double u, u2, u3, t, t2, t3;
@@ -603,15 +603,15 @@ TkBezierScreenPoints( control, numSteps, xPointPtr)
  *--------------------------------------------------------------
  */
 
-int
-TkMakeBezierCurve(pointPtr, numPoints, numSteps, xPoints)
-    int *pointPtr;			/* Array of input coordinates:  x0,
+static int
+TkMakeBezierCurve(
+    int *pointPtr,			/* Array of input coordinates:  x0,
 					 * y0, x1, y1, etc.. */
-    int numPoints;			/* Number of points at pointPtr. */
-    int numSteps;			/* Number of steps to use for each
+    int numPoints,			/* Number of points at pointPtr. */
+    int numSteps,			/* Number of steps to use for each
 					 * spline segments (determines
 					 * smoothness of curve). */
-    Point xPoints[];			/* Array of Points to fill in (e.g.
+    Point xPoints[])			/* Array of Points to fill in (e.g.
 					 * for display.  NULL means don't
 					 * fill in any Points. */
 {
