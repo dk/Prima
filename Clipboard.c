@@ -232,21 +232,6 @@ Clipboard_clear( Handle self)
    my-> close( self);
 }
 
-int
-Clipboard_get_format_count( Handle self)
-{
-   PClipboardFormatReg list = formats;
-   int i, ret = 0;
-
-   my-> open( self);
-   for ( i = 0; i < formatCount; i++) {
-      if ( !apc_clipboard_has_format( self, list[ i]. sysId)) continue;
-      ret++;
-   }
-   my-> close( self);
-   return ret;
-}
-
 SV *
 Clipboard_get_handle( Handle self)
 {
@@ -255,12 +240,6 @@ Clipboard_get_handle( Handle self)
    return newSVpv( buf, 0);
 }
 
-
-int
-Clipboard_get_registered_format_count( Handle self)
-{
-   return formatCount;
-}
 
 Bool
 Clipboard_register_format( Handle self, char * format)
