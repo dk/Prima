@@ -1761,6 +1761,8 @@ sub load_file
      $loaded++;
      $self-> text( sprintf( "Loaded %d%%", ($loaded / $maxwij) * 100)); 
    }, @seq);
+   $VB::form-> menuItems($VB::form->{profile}{menuItems})
+       if !$VB::form->{menuItems} && $VB::form->{profile}{menuItems};
    $VB::form-> show;
    $VB::inspector->{selectorChanging}-- if $VB::inspector;
    ObjectInspector::renew_widgets;

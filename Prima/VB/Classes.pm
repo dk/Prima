@@ -2645,6 +2645,19 @@ sub new_item
       action => $Prima::VB::Types::menuItems::menuDefaults{action}}], undef, 0];
 }
 
+sub makeseparator
+{
+   my $f = $_[0]-> focusedItem;
+   my ( $x, $l) = $_[0]-> get_item( $f);
+   return if !$x;
+   $x->[0][0] = '---';
+   $x->[0][1] = {};
+   $_[0]-> adjust( $f, 1);
+   $_[0]-> {master}-> change;
+   ( $x, $l) = $_[0]-> get_item( $f + 1);
+   $_[0]-> focusedItem( $f + 1);
+   $_[0]-> {master}-> enter_menuitem( $x);
+}
 
 package MPropListViewer;
 use vars qw(@ISA);
@@ -2744,6 +2757,7 @@ sub open
       popupItems => [
          ['~New' => q(new),],
          ['~Make node' => q(makenode),],
+         ['Make ~separator' => q(makeseparator),],
          ['~Delete' => q(del),],
       ],
       onSelectItem => sub {
