@@ -349,28 +349,25 @@ void Clipboard_get_standard_clipboards_REDEFINED     ( Handle self) { warn("Inva
 static SV *
 text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 {
+   STRLEN len;
+   char *s;
+
    switch( function) {
    case cefInit:
       return ( SV *) cfText;
-   case cefFetch:
-      {
-         int len;
-         char *str;
-         SV * ret;
 
-         str = ( char*) apc_clipboard_get_data( self, cfText, &len);
-         if ( str) {
-            ret = newSVpv( str, 0);
-            free( str);
-            return ret;
-         }
+   case cefFetch:
+      s = (char*)apc_clipboard_get_data( self, cfText, &len);
+      if (s) {
+         data = newSVpv( s, len);
+         free(s);
+         return data;
       }
       break;
+
    case cefStore:
-      {
-         char *str = SvPV( data, na);
-         apc_clipboard_set_data( self, cfText, ( void*) str, strlen( str)+1);
-      }
+      s = SvPV( data, len);
+      apc_clipboard_set_data( self, cfText, (void*)s, len+1);
       break;
    }
    return nilSV;
