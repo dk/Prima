@@ -149,7 +149,7 @@ void docatch( void *dummy)
     int rh = hp[ 0];
     while ( ! guts.logger) Sleep( 1);
     do {
-        char *buf = malloc( 1024);
+        char buf[ 1024];
         long readed;
 
         readed = read( rh, buf, 1023);
@@ -208,7 +208,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       case WM_WRITE_TO_LOG:
          {
             short index, i;
-            unsigned char * line = ( unsigned char *) wParam, *newline;
+            unsigned char * line = ( unsigned char *) wParam;
+            unsigned char newline[ 258];
             long newlength, itemlength;
             BOOL doCR = FALSE, doNL = FALSE;
             newlength = strlen( line) + cursorPos;
@@ -216,7 +217,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             for ( i = 0; line[ i]; i++)
                if ( line[ i] == '\t')
                   newlength += 7;
-            newline = ( unsigned char*) malloc( newlength + 1);
 
             index = ( short) SendMessage( guts.loggerListBox, LB_GETCOUNT, 0, 0) - 1;
             if ( index < 0) {
@@ -270,9 +270,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 newline[ itemlength] = 0;
                 setLoggerLine( index, newline);
             }
-
-            free( line);
-            free( newline);
          }
          break;
 
@@ -302,7 +299,8 @@ create_logger_window2( void * dummy)
 {
    WNDCLASS  wc;
    RECT r;
-   HWND sm;
+   HWND sm, logger;
+   Bool visible = 1;
 
    memset( &wc, 0, sizeof( wc));
    wc.style         = CS_HREDRAW | CS_VREDRAW;
@@ -318,6 +316,7 @@ create_logger_window2( void * dummy)
    if ( !RegisterClass( &wc))
       	rc = GetLastError();
 
+
    GetWindowRect( GetDesktopWindow(), &r);
    if ( r. bottom > 500) {
       r. left   = 400;
@@ -327,27 +326,59 @@ create_logger_window2( void * dummy)
       r. top    = r. bottom - 400;
       r. bottom = r. right = r. left = 300;
    }
-   guts.logger = CreateWindow("Logger", "Prima Log", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+
+   {
+      HKEY hKey;
+      DWORD i, info[4];
+      char * regNames[] = {"Top","Bottom","Left","Right"};
+
+      if ( RegOpenKeyEx( HKEY_CURRENT_USER, "SOFTWARE\\Perl\\Prima\\Logger", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+         for ( i = 0; i < 4; i++) {
+            DWORD valSize = sizeof( DWORD), valType = REG_DWORD;
+            if ( RegQueryValueEx( hKey, regNames[i], nil,  &valType,
+                    ( LPBYTE) &info[i], &valSize) != ERROR_SUCCESS)
+                info[i] = 0x80000000;
+         }
+         if ( info[0] != 0x80000000) r. top       = info[0];
+         if ( info[1] != 0x80000000) r. bottom    = info[1];
+         if ( info[2] != 0x80000000) r. left      = info[2];
+         if ( info[3] != 0x80000000) r. right     = info[3];
+         {
+            DWORD valSize = sizeof( DWORD), valType = REG_DWORD, vis;
+            if ( RegQueryValueEx( hKey, "Visible", nil,  &valType,
+                 ( LPBYTE) &vis, &valSize) == ERROR_SUCCESS)
+                  visible = vis;
+         }
+         RegCloseKey( hKey);
+      }
+   }
+
+   logger = CreateWindow("Logger", "Prima Log", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
       r.left, r.top, r.right, r.bottom ,NULL, NULL, guts. instance, NULL);
-   if ( !guts. logger)
+
+   if ( !logger)
 		rc = GetLastError();
-   GetClientRect( guts.logger, &r);
+   GetClientRect( logger, &r);
    guts.loggerListBox = CreateWindow( "LISTBOX", "",
       WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT,
       0, 0, r. right - r. top, r. bottom - r. top,
-      guts.logger, NULL, guts. instance, NULL);
+      logger, NULL, guts. instance, NULL);
+
    if ( !guts. loggerListBox)
 		rc = GetLastError();
    SendMessage( guts. loggerListBox, LB_SETHORIZONTALEXTENT, 4000, 0);
 
-   sm = GetSystemMenu( guts. logger, false);
+   sm = GetSystemMenu( logger, false);
    AppendMenu( sm, MF_STRING,    CM_HIDE    , "&Hide");
    AppendMenu( sm, MF_SEPARATOR, 0, nil);
    AppendMenu( sm, MF_STRING,    CM_WRITEHOG, "&Write log to disk");
    AppendMenu( sm, MF_STRING,    CM_CLEANHOG, "Cle&an log");
 
-   ShowWindow( guts.logger, guts. cmdShow);
-   UpdateWindow( guts.logger);
+   if ( visible) {
+      ShowWindow( logger, guts. cmdShow);
+      UpdateWindow( logger);
+   }
+   guts. logger = logger;
    {
       MSG msg;
       while ( GetMessage( &msg, guts.logger, 0, 0)) {
@@ -375,6 +406,7 @@ start_logger( void)
    guts. ioThread = ( HANDLE) _beginthread( docatch, 40960, NULL);
    SetThreadPriority( guts. ioThread, THREAD_PRIORITY_ABOVE_NORMAL);
    _beginthread( ( void ( *)( void*))create_logger_window2, 40960, NULL);
+   while ( !guts.logger) Sleep( 1);
    guts. loggerIcon = NULL;
 }
 
