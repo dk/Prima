@@ -1,3 +1,5 @@
+1.17  Add Window::onTop. Add =SYNOPSIS sections in selected modules. 
+
 1.16  Add Clipboard::UTF8 exchange format. Add Drawable ::lineJoin and ::fillWinding.
 
 1.15  Add message hooks. Add DirectoryOutline widget. Add tying properties.
