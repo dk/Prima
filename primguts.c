@@ -39,6 +39,14 @@ static char evaluation[ 4096];
 static PHash vmtHash = nil;
 static List  staticObjects;
 
+char *
+duplicate_string( const char *s)
+{
+   int l = strlen( s) + 1;
+   char *d = malloc( l);
+   memcpy( d, s, l);
+   return d;
+}
 
 PHash primaObjects = nil;
 
