@@ -503,13 +503,13 @@ sub setup_variables
                  gcc => {
                          warnflags => "-Wall",
                          cflags => "",
-                         coutoflag => '-o',
-                         coutexeflag => '-o',
+                         coutoflag => '-o ',
+                         coutexeflag => '-o ',
                          cdebugflags => '-g -O',
                          clinkprefix => '',
                          clibpathflag => '-L',
                          ldflags => '-lgcc',
-                         ldoutflag => '-o',
+                         ldoutflag => '-o ',
                          ldlibpathflag => '-L',
                          ldlibflag => '-l',
                          ldlibext  => '',
@@ -623,8 +623,6 @@ sub setup_variables
         $CC = 'gcc' unless defined $USER_VARS{CC};
         $USER_VARS{LD} = 'gcc' unless defined $USER_VARS{LD};
         $USER_VARS{CFLAGS} = '' unless defined $USER_VARS{CFLAGS};
-        $USER_VARS{COUTOFLAG} = '-o ' unless defined $USER_VARS{COUTOFLAG};
-        $USER_VARS{COUTEXEFLAG} = '-o ' unless defined $USER_VARS{COUTEXEFLAG};
     }
     print "$cc_specs{ $COMPILER}->{ name}\n";
 
@@ -650,6 +648,10 @@ sub setup_variables
     setvar( 'C_FLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags} " . ( $Config{ optimize} || '') . " ");
     setvar( 'CFLAGS',  "$ccflags $warnflags $cc_specs{ $COMPILER}->{ cflags}" . ( $DEBUG ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
     setvar( 'CCFLAGS',  '');
+    if ( $COMPILER eq 'gcc' && $Config{ cccdlflags} =~ /-K\S/) {
+       # remove known proprietary compiler junk flags
+       $Config{ cccdlflags} =~ s/-K\S*//;
+    }
     setvar( 'CCCDLFLAGS', $Config{ cccdlflags});
     setvar( 'CDLFLAGS', $Config{ ccdlflags});
     setvar( 'COUTOFLAG', $cc_specs{ $COMPILER}->{ coutoflag});
