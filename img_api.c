@@ -36,14 +36,6 @@ bzero( void * data, size_t size)
 {
    memset( data, 0, size);
 }
-
-void *
-reallocf( void * memblock, size_t size )
-{
-   void * ret = realloc( memblock, size);
-   if ( ret == NULL && size > 0) free( memblock);
-   return ret;
-}
 #endif
 
 /* This function must always be used for creating a new image info structure. */
