@@ -408,7 +408,6 @@ struct _UnixGuts
    FillPattern *                ditherPatterns;
    Point                        displaySize;
    long                         wm_event_timeout;
-   unsigned long               *red_lut, *green_lut, *blue_lut;                        
    int                          red_shift, green_shift, blue_shift;
    int                          red_range, green_range, blue_range;
 } guts;
@@ -631,15 +630,6 @@ typedef union _unix_sys_data
 
 typedef U8 ColorComponent;
 
-typedef struct
-{
-   int  shift, revShift;
-   unsigned long  mask;
-   unsigned long  revMask;
-   ColorComponent lut[256];
-} RGBLUTEntry;
-
-
 extern Handle
 prima_xw2h( XWindow win);
 
@@ -712,9 +702,6 @@ prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,
 
 Bool
 prima_query_image( Handle self, XImage * image);
-
-RGBLUTEntry *
-prima_rgblut(void);
 
 extern void
 prima_cleanup_drawable_after_painting( Handle self);

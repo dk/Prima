@@ -320,10 +320,8 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
   //  printf("%s asked for %06x\n", self?PWidget(self)->name:"null", color);
    brush-> balance = 0;
    brush-> color = color;
-   if (self && (
-       ( XX-> type. image && ((PImage(self)-> type & imBPP) == 1)) ||
-         XX-> type. bitmap)) {
-      Byte balance = ( a[0] + a[1] + a[2] + 2) / (3 * 4);
+   if (self && XT_IS_BITMAP(XX)) {
+      Byte balance = ( a[0] + a[1] + a[2] + 6) / (3 * 4);
       if ( balance < 64) {
          brush-> primary   = 0;
          brush-> secondary = 1;
@@ -485,7 +483,10 @@ ENOUGH:;
                prima_color_add_ref( self, brush-> secondary, RANK_NORMAL);
          }
       } else  
-         brush-> primary = guts.red_lut[a[0]] | guts.green_lut[a[1]] | guts.blue_lut[a[2]];
+         brush-> primary = 
+            (((a[0] << 8) >> guts. red_range  ) << guts.   red_shift) |
+            (((a[1] << 8) >> guts. green_range) << guts. green_shift) |
+            (((a[2] << 8) >> guts. blue_range ) << guts.  blue_shift);
    }
    return brush-> primary;
 }
@@ -761,7 +762,7 @@ BLACK_WHITE_ALLOCATED:
       free( xc);
    }
 
-   if (( guts. ditherPatterns = malloc( sizeof( FillPattern) * 64))) {
+   if (( guts. ditherPatterns = malloc( sizeof( FillPattern) * 65))) {
       int i, x, y;
       FillPattern * p = guts. ditherPatterns;
       Byte map [64] = {
@@ -775,7 +776,7 @@ BLACK_WHITE_ALLOCATED:
          42, 26, 38, 22, 41, 25, 37, 21
       };
       bzero( p, sizeof( FillPattern) * 64);
-      for ( i = 0; i < 64; i++, p++) 
+      for ( i = 0; i < 65; i++, p++) 
          for ( y = 0; y < 8; y++) 
              for ( x = 0; x < 8; x++) 
                 if ( i <= map[y * 8 + x])
@@ -821,24 +822,12 @@ BLACK_WHITE_ALLOCATED:
          lim[j] = 1 << (to[j] - from[j]);
       }
 
-      if (!( guts. red_lut   = malloc( 256 * sizeof( unsigned long))) ||
-          (!(guts. green_lut = malloc( 256 * sizeof( unsigned long)))) ||
-          (!(guts. blue_lut  = malloc( 256 * sizeof( unsigned long))))) {
-         warn("not enough memory\n");
-         return false;
-      }
-      for ( i = 0; i < 256; i++) {
-         unsigned long c = ( unsigned long) i * 256;
-         guts. red_lut[i]   = (c / lim[0]) << from[0];
-         guts. green_lut[i] = (c / lim[1]) << from[1];
-         guts. blue_lut[i]  = (c / lim[2]) << from[2];
-      }
       guts. red_shift   = from[0];
       guts. green_shift = from[1];
       guts. blue_shift  = from[2];
-      guts. red_range   = lim[0];
-      guts. green_range = lim[1];
-      guts. blue_range  = lim[2];
+      guts. red_range   = to[0] - from[0];
+      guts. green_range = to[1] - from[1];
+      guts. blue_range  = to[2] - from[2];
    }
    guts. localPalSize = guts. palSize / 4 + ((guts. palSize % 4) ? 1 : 0);
    hatches = hash_create();
@@ -884,14 +873,10 @@ prima_done_color_subsystem( void)
    free( guts. ditherPatterns);
    free( guts. palette);
    free( guts. systemColorMap);
-   free( guts. red_lut);
-   free( guts. green_lut);
-   free( guts. blue_lut);
    guts. palette = nil;
    guts. systemColorMap = nil;
    guts. ditherPatterns = nil;
    guts. mappingPlace = nil;
-   guts. red_lut = guts. green_lut = guts. blue_lut = nil;
 }
 
 int
@@ -1346,16 +1331,20 @@ static Bool kill_hatches( Pixmap pixmap, int keyLen, void * key, void * dummy)
 Pixmap 
 prima_get_hatch( FillPattern * fp)
 {
+   int i;
    Pixmap p;
+   FillPattern fprev;
    if ( memcmp( fp, fillPatterns[fpSolid], sizeof( FillPattern)) == 0)
       return nilHandle;
    if (( p = ( Pixmap) hash_fetch( hatches, fp, sizeof( FillPattern))))
       return p;
-   if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fp, 8, 8)) == None) {
+   for ( i = 0; i < sizeof( FillPattern); i++)
+      fprev[i] = (*fp)[ sizeof(FillPattern) - i - 1];
+   if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fprev, 8, 8)) == None) {
       hash_first_that( hatches, kill_hatches, nil, nil, nil);
       hash_destroy( hatches, false);
       hatches = hash_create();
-      if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fp, 8, 8)) == None) 
+      if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fprev, 8, 8)) == None) 
          return nilHandle;
    }
    hash_store( hatches, fp, sizeof( FillPattern), ( void*) p);

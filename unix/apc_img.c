@@ -310,9 +310,12 @@ apc_image_begin_paint_info( Handle self)
 {
     DEFXX;
     PImage img = PImage( self);
+    Bool bitmap = ((img-> type & imBPP) == 1) || ( guts. idepth == 1);
     XX-> gdrawable = XCreatePixmap( DISP, guts. root, 1, 1, 
-       ((img-> type & imBPP) == 1) ? 1 : guts. depth);
+       bitmap ? 1 : guts. depth);
     XCHECKPOINT;
+    XX-> type.pixmap = !bitmap;
+    XX-> type.bitmap = !!bitmap;
     prima_prepare_drawable_for_painting( self);
     XX-> size. x = 1;
     XX-> size. y = 1;
@@ -344,8 +347,6 @@ apc_image_update_change( Handle self)
 
    XX-> size. x = img-> w;
    XX-> size. y = img-> h;
-   XX-> type.pixmap = (img-> type & imBPP) != 1;
-   XX-> type.bitmap = (img-> type & imBPP) == 1;
    return true;
 }
 
@@ -353,6 +354,7 @@ Bool
 apc_dbm_create( Handle self, Bool monochrome)
 {
    DEFXX;
+   if ( guts. idepth == 1) monochrome = true;
    XX-> type.bitmap = !!monochrome;
    XX-> type.pixmap = !monochrome;
    XX-> type.dbm = true;
@@ -473,9 +475,9 @@ create_rgb_to_16_lut( int ncolors, const PRGBColor pal, Pixel16 *lut)
    int i;
    for ( i = 0; i < ncolors; i++) 
       lut[i] = 
-         guts. red_lut[pal[i].r] | 
-         guts. green_lut[pal[i].g] | 
-         guts. blue_lut[pal[i].b];
+            (((pal[i].r << 8) >> guts. red_range  ) << guts.   red_shift) |
+            (((pal[i].g << 8) >> guts. green_range) << guts. green_shift) |
+            (((pal[i].b << 8) >> guts. blue_range ) << guts.  blue_shift);
    if ( guts.machine_byte_order != guts.byte_order) 
       for ( i = 0; i < ncolors; i++) 
          lut[i] = REVERSE_BYTES_16(lut[i]);
@@ -489,8 +491,6 @@ rank_rgb_shifts( void)
 
    if ( shift_unknown) {
       int xchg;
-      unsigned long m;
-      XVisualInfo *v = &guts.visual;
       shift[0] = guts. red_shift;
       shift[1] = guts. green_shift;
       if ( shift[1] < shift[0]) {
@@ -498,7 +498,6 @@ rank_rgb_shifts( void)
          shift[0] = shift[1];
          shift[1] = xchg;
       }
-      m = v-> blue_mask;
       shift[2] = guts. blue_shift;
       if ( shift[2] < shift[0]) {
          xchg = shift[2];
@@ -523,9 +522,9 @@ create_rgb_to_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
    int i;
    for ( i = 0; i < ncolors; i++) 
       lut[i] = 
-         guts. red_lut[pal[i].r] | 
-         guts. green_lut[pal[i].g] | 
-         guts. blue_lut[pal[i].b];
+            (((pal[i].r << 8) >> guts. red_range  ) << guts.   red_shift) |
+            (((pal[i].g << 8) >> guts. green_range) << guts. green_shift) |
+            (((pal[i].b << 8) >> guts. blue_range ) << guts.  blue_shift);
    if ( guts.machine_byte_order != guts.byte_order) 
       for ( i = 0; i < ncolors; i++) 
          lut[i] = REVERSE_BYTES_32(lut[i]);
@@ -861,8 +860,7 @@ get_bpp( Handle self)
 {
    if ( self == nilHandle || X(self) == nil)
       return 1; /* XXX */
-   else if ( XT_IS_BITMAP(X(self)) || 
-           ( XT_IS_IMAGE(X(self)) && ((PImage(self)-> type & imBPP) == 1)))
+   else if ( XT_IS_BITMAP(X(self)))
       return 1;
    else
       return guts. idepth;
@@ -1175,9 +1173,11 @@ apc_image_begin_paint( Handle self)
 {
    DEFXX;
    PImage img = PImage( self);
-   Bool bitmap = (img-> type & imBPP) == 1;
+   Bool bitmap = ((img-> type & imBPP) == 1) || ( guts. idepth == 1);
    XX-> gdrawable = XCreatePixmap( DISP, guts. root, img-> w, img-> h,
                                    bitmap ? 1 : guts. depth);
+   XX-> type.pixmap = !bitmap;
+   XX-> type.bitmap = !!bitmap;
    XCHECKPOINT;
    prima_prepare_drawable_for_painting( self);
    apc_gp_put_image( self, self, 0, 0, 0, 0, img-> w, img-> h, ropCopyPut);
@@ -1185,78 +1185,22 @@ apc_image_begin_paint( Handle self)
    return true;
 }
 
-
-static void
-calc_masks_and_lut_16or32_to_24( unsigned long mask,
-                                 unsigned long *mask1,
-                                 unsigned long *mask2,
-                                 int *bit_count,
-                                 int *rev_bit_count,
-                                 ColorComponent *lut)
-{
-   unsigned i;
-   unsigned long m;
-   int bc;
-
-   *mask2 = mask;
-   *bit_count = 0;
-   while (( *mask2 & 1) == 0) { (*bit_count)++; *mask2 >>= 1; }
-   m = *mask2;
-   bc = 0;
-   while ( m) { bc++; m >>= 1; }
-   bc = 8 - bc;
-   *mask1 = mask;
-   *rev_bit_count = bc;
-   for ( i = 0; i <= *mask2; i++) {
-      lut[i] = i << bc;
-   }
-}
-
-static RGBLUTEntry lut[3];
-
-RGBLUTEntry * 
-prima_rgblut( void)
-{
-   static Bool initialize = true;
-   if (initialize) {
-      XVisualInfo *v = &guts. visual;
-
-      calc_masks_and_lut_16or32_to_24( v-> red_mask,   &lut[0]. mask, &lut[0]. revMask, &lut[0]. shift, &lut[0]. revShift, lut[0]. lut);
-      calc_masks_and_lut_16or32_to_24( v-> green_mask, &lut[1]. mask, &lut[1]. revMask, &lut[1]. shift, &lut[1]. revShift, lut[1]. lut);
-      calc_masks_and_lut_16or32_to_24( v-> blue_mask,  &lut[2]. mask, &lut[2]. revMask, &lut[2]. shift, &lut[2]. revShift, lut[2]. lut);
-      
-      initialize = false;
-   }   
-   return lut;
-}   
-
 static void
 convert_16_to_24( XImage *i, PImage img)
 {
-   static ColorComponent * lur, * lub, * lug;
-   static Bool initialize = true;
-   static unsigned long rm1, bm1, gm1;
-   static int rbc, bbc, gbc;
    int y, x, h, w;
    Pixel16 *d;
    Pixel24 *line;
-
-   if ( initialize) {
-      RGBLUTEntry * r = prima_rgblut();
-      rm1 = r[0]. mask;  gm1 = r[1]. mask;  bm1 = r[2]. mask;
-      rbc = r[0]. shift; gbc = r[1]. shift; bbc = r[2]. shift;
-      lur = r[0]. lut;   lug = r[1]. lut;   lub = r[2]. lut;
-      initialize = false;
-   }
+   int c[3] = {8-guts. blue_range,8-guts. green_range,8-guts. red_range};
 
    h = img-> h; w = img-> w;
    for ( y = 0; y < h; y++) {
       d = (Pixel16 *)(i-> data + (h-y-1)*i-> bytes_per_line);
       line = (Pixel24*)(img-> data + y*img-> lineSize);
       for ( x = 0; x < w; x++) {
-         line-> a0 = lub[(*d & bm1) >> bbc];
-	 line-> a1 = lug[(*d & gm1) >> gbc];
-	 line-> a2 = lur[(*d & rm1) >> rbc];
+         line-> a0 = ((*d & guts. visual. blue_mask)  >> guts. blue_shift) << c[0]; 
+         line-> a1 = ((*d & guts. visual. green_mask) >> guts. green_shift) << c[1];
+         line-> a2 = ((*d & guts. visual. red_mask)   >> guts. red_shift) << c[2];
 	 d++; line++;
       }
    }
@@ -1265,22 +1209,11 @@ convert_16_to_24( XImage *i, PImage img)
 static void
 convert_32_to_24( XImage *i, PImage img)
 {
-   static ColorComponent * lur, * lub, *lug;
-   static Bool initialize = true;
-   static unsigned long rm1, bm1, gm1;
-   static int rbc, bbc, gbc;
    int y, x, h, w;
    Pixel32 *d, dd;
    Pixel24 *line;
+   int c[3] = {8-guts. blue_range,8-guts. green_range,8-guts. red_range};
 
-   if ( initialize) {
-      RGBLUTEntry * r = prima_rgblut();
-      rm1 = r[0]. mask;  gm1 = r[1]. mask;  bm1 = r[2]. mask;
-      rbc = r[0]. shift; gbc = r[1]. shift; bbc = r[2]. shift;
-      lur = r[0]. lut;   lug = r[1]. lut;   lub = r[2]. lut;
-      initialize = false;
-   }
-   
    h = img-> h; w = img-> w;
    if ( guts.machine_byte_order != guts.byte_order) {
       for ( y = 0; y < h; y++) {
@@ -1288,9 +1221,9 @@ convert_32_to_24( XImage *i, PImage img)
          line = (Pixel24*)(img-> data + y*img-> lineSize);
          for ( x = 0; x < w; x++) {
             dd = REVERSE_BYTES_32(*d);
-            line-> a0 = lub[(dd & bm1) >> bbc];
-            line-> a1 = lug[(dd & gm1) >> gbc];
-            line-> a2 = lur[(dd & rm1) >> rbc];
+            line-> a0 = ((dd & guts. visual. blue_mask)  >> guts. blue_shift) << c[0];
+            line-> a1 = ((dd & guts. visual. green_mask) >> guts. green_shift) << c[1];
+            line-> a2 = ((dd & guts. visual. red_mask)   >> guts. red_shift) << c[2];
             d++; line++;
          }
       }
@@ -1299,9 +1232,9 @@ convert_32_to_24( XImage *i, PImage img)
          d = (Pixel32 *)(i-> data + (h-y-1)*i-> bytes_per_line);
          line = (Pixel24*)(img-> data + y*img-> lineSize);
          for ( x = 0; x < w; x++) {
-            line-> a0 = lub[(*d & bm1) >> bbc];
-            line-> a1 = lug[(*d & gm1) >> gbc];
-            line-> a2 = lur[(*d & rm1) >> rbc];
+            line-> a0 = ((*d & guts. visual. blue_mask)  >> guts. blue_shift) << c[0];
+            line-> a1 = ((*d & guts. visual. green_mask) >> guts. green_shift) << c[1];
+            line-> a2 = ((*d & guts. visual. red_mask)   >> guts. red_shift) << c[2];
             d++; line++;
          }
       }

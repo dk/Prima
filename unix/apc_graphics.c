@@ -292,8 +292,27 @@ Bool
 prima_make_brush( DrawableSysData * XX, int colorIndex)
 {
    Pixmap p;
-
-   if ( !guts. useDithering || XX-> flags. brush_null_hatch) {
+   if ( XT_IS_BITMAP(XX) || ( guts. idepth == 1)) {
+      int i;
+      FillPattern mix, *p1, *p2;
+      if ( colorIndex > 0) return false;
+      p1 = &guts. ditherPatterns[ 64 - (XX-> fore. primary ? 64 : XX-> fore. balance)];
+      p2 = &guts. ditherPatterns[ 64 - (XX-> back. primary ? 64 : XX-> back. balance)];
+      for ( i = 0; i < sizeof( FillPattern); i++) 
+         mix[i] = ((*p1)[i] & XX-> fill_pattern[i]) | ((*p2)[i] & ~XX-> fill_pattern[i]);
+      XSetForeground( DISP, XX-> gc, 1);
+      XSetBackground( DISP, XX-> gc, 0);
+      XX-> flags. brush_fore = 0;
+      XX-> flags. brush_back = 0;
+      if (
+          ( memcmp( mix, fillPatterns[ fpSolid], sizeof( FillPattern)) != 0) &&
+          ( p = prima_get_hatch( &mix))
+         ) {
+         XSetStipple( DISP, XX-> gc, p);
+         XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+      } else
+         XSetFillStyle( DISP, XX-> gc, FillSolid);
+   } else if ( XX-> flags. brush_null_hatch) {
       if ( colorIndex > 0) return false;
       if ( XX-> fore. balance) {
          p = prima_get_hatch( &guts. ditherPatterns[ XX-> fore. balance]);
@@ -763,7 +782,6 @@ static uint32_t
 color_to_pixel( Handle self, Color color, int depth)
 {
    uint32_t pv;
-   RGBLUTEntry * lut;
 
    if ( depth == 1) {
       pv = color ? 1 : 0;
@@ -774,11 +792,10 @@ color_to_pixel( Handle self, Color color, int depth)
       case 16:   
       case 24:   
       case 32:   
-         lut = prima_rgblut(); 
          pv = 
-            ((( color & 0xFF)     >>        lut[2]. revShift)  << lut[2].shift) |
-            ((( color & 0xFF00)   >> ( 8 +  lut[1]. revShift)) << lut[1].shift) |
-            ((( color & 0xFF0000) >> ( 16 + lut[0]. revShift)) << lut[0].shift);
+            (((COLOR_R(color) << 8) >> guts. red_range  ) << guts.   red_shift) |
+            (((COLOR_G(color) << 8) >> guts. green_range) << guts. green_shift) |
+            (((COLOR_B(color) << 8) >> guts. blue_range ) << guts.  blue_shift);
          if ( guts.machine_byte_order != guts.byte_order)  
             switch( depth) {
             case 16:
@@ -965,9 +982,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
    s. clip. bottom = cr. y + cr. height - 1;
    if ( cr. width <= 0 || cr. height <= 0) return false;
    s. i = nil;
-   s. depth = ( XT_IS_BITMAP(X(self)) || 
-              ( XT_IS_IMAGE(X(self)) && ((((PImage)self)->type & imBPP) == 1))) 
-                 ? 1 : guts. idepth;
+   s. depth = XT_IS_BITMAP(X(self)) ? 1 : guts. idepth;
    s. depth = get_pixel_depth( s. depth);
    s. color = color_to_pixel( self, color, s.depth);
    
@@ -1008,7 +1023,6 @@ apc_gp_get_pixel( Handle self, int x, int y)
    XImage *im;
    Bool pixmap;
    uint32_t p32 = 0;
-   static RGBLUTEntry * lut = nil;
 
    if ( !opt_InPaint) return clInvalid;
    SHIFT( x, y);
@@ -1059,11 +1073,10 @@ apc_gp_get_pixel( Handle self, int x, int y)
             if ( guts.machine_byte_order != guts.byte_order) 
                p32 = REVERSE_BYTES_32(p32);
          COMP:   
-            if ( !lut) lut = prima_rgblut();
             c = 
-                 lut[2]. lut[(p32 & lut[2]. mask) >> lut[2]. shift] | 
-               ( lut[1]. lut[(p32 & lut[1]. mask) >> lut[1]. shift] << 8) | 
-               ( lut[0]. lut[(p32 & lut[0]. mask) >> lut[0]. shift] << 16);
+              (((p32 & guts. visual. blue_mask)  >> guts. blue_shift) << (8-guts. blue_range)) |
+              ((((p32 & guts. visual. green_mask) >> guts. green_shift) << (8-guts. green_range)) << 8) |
+              ((((p32 & guts. visual. red_mask)   >> guts. red_shift) << (8-guts. red_range)) << 16);
             break;
          default:
             warn("UAG_009: get_pixel not implemented for %d depth", guts.idepth);
