@@ -562,7 +562,7 @@ sub on_move
    $self-> prf_set(
       origin => [$x, $y],
       originDontCare => 0,
-   ) unless $self-> {syncRecting};
+   );
    $self-> {syncRecting} = undef;
    $self-> {profile}->{left} = $x;
    $self-> {profile}->{bottom} = $y;
