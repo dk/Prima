@@ -104,7 +104,7 @@ sub profile_check_in
    my ( $self, $p, $default) = @_;
    $self-> SUPER::profile_check_in( $p, $default);
    $p-> { multiSelect}    = 1 
-   	if exists $p-> { extendedSelect} && $p-> {extendedSelect};
+   	if exists $p-> { extendedSelect} && $p-> {extendedSelect} && !exists $p->{multiSelect};
    $p-> { autoHeight}     = 0 if exists $p-> { itemHeight} && !exists $p->{autoHeight};
    $p-> {autoHScroll} = 0 if exists $p-> {hScroll};
    $p-> {autoVScroll} = 0 if exists $p-> {vScroll};
@@ -715,11 +715,7 @@ sub set_count
 sub set_extended_select
 {
    my ( $self, $esel) = @_;
-   if (( $self-> {extendedSelect} = $esel) && !$self->multiSelect)
-   {
-      $self-> multiSelect( 1);
-      $self-> selectedItems([$self-> {focusedItem}]);
-   }
+   $self-> {extendedSelect} = $esel;
 }
 
 sub set_focused_item
@@ -1711,7 +1707,7 @@ Only for multi-select mode.
 
 Removes selection from all items.
 
-Only for mult-select mode.
+Only for multi-select mode.
 
 =item draw_items CANVAS, ITEMS
 
@@ -1775,20 +1771,20 @@ Redraws all items in ITEMS array.
 
 Selects all items.
 
-Only for mult-select mode.
+Only for multi-select mode.
 
 =item set_item_selected INDEX, FLAG
 
 Sets selection flag of INDEXth item.
 If FLAG is 1, the item is selected. If 0, it is deselected.
 
-Only for mult-select mode.
+Only for multi-select mode.
 
 =item select_item INDEX
 
 Selects INDEXth item.
 
-Only for mult-select mode.
+Only for multi-select mode.
 
 =item std_draw_text_items CANVAS, ITEMS
 
@@ -1814,13 +1810,13 @@ See L<DrawItem> for parameters description.
 
 Toggles selection of INDEXth item.
 
-Only for mult-select mode.
+Only for multi-select mode.
 
 =item unselect_item INDEX
 
 Deselects INDEXth item.
 
-Only for mult-select mode.
+Only for multi-select mode.
 
 =back
 
