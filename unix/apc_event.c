@@ -503,10 +503,12 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    case UnmapNotify: {
       XX-> flags. mapped = false;
+      e. cmd = cmHide;
       break;
    }
    case MapNotify: {
       XX-> flags. mapped = true;
+      e. cmd = cmShow;
       break;
    }
    case MapRequest: {
