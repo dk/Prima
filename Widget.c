@@ -329,7 +329,7 @@ Widget_custom_paint( Handle self)
    enter_method;
    if ( my-> on_paint != Widget_on_paint) return true;
    if ( var-> eventIDs == nil) return false;
-   ret = hash_fetch( var-> eventIDs, "onPaint", 7);
+   ret = hash_fetch( var-> eventIDs, "Paint", 5);
    if ( ret == nil) return false;
    list = var-> events + ( int) ret - 1;
    return list-> count > 0;
