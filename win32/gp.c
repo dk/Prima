@@ -39,10 +39,7 @@ apc_gp_done( Handle self)
          }
       }
    }
-   if ( sys p256) {
-      free( sys p256);
-      sys p256 = nil;
-   }
+   if ( sys p256) free( sys p256);
    sys bm = sys pal = sys ps = sys bm = sys p256 = nilHandle;
    free( sys charTable);
    free( sys charTable2);
@@ -517,9 +514,14 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          dc = CreateCompatibleDC( xdc);
       else
          dc = nil;
-      deja = image_enscreen( image, self);
-      if ( dc)
-         image_set_cache( deja, image);
+      if ( dc) {
+         if ( dsys( image) bm == nil) {
+            image_destroy_cache( image); // if palette still exists
+            deja = image_enscreen( image, self);
+            image_set_cache( deja, image);
+         }
+      } else
+         deja = image_enscreen( image, self);
    }
 
    // if image is actually icon, drawing and-mask
