@@ -1081,9 +1081,11 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
               pass-> palette[i].g,
               pass-> palette[i].b
             ), -1, nil, maxRank);
-          if ( p && ( prima_lpal_get( p, j) == RANK_FREE))
+
+          if ( p && ( prima_lpal_get( p, j) == RANK_FREE)) 
              prima_color_add_ref(( Handle) img, j, RANK_LOCKED);
       }
+      for ( i = pass-> palSize; i < 256; i++) guts. mappingPlace[i] = 0;
       
       switch(target_bpp){
       case 8: if ((pass-> type & imBPP) != 1) cache_remap_8( img, cache); break;
