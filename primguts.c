@@ -1789,7 +1789,7 @@ prima_utf8_length( const char * utf8)
 #ifdef PERL_SUPPORTS_UTF8
    int ret = 0;
    while ( *utf8) {
-      utf8 = utf8_hop(( U8*) utf8, 1);
+      utf8 = ( char*) utf8_hop(( U8*) utf8, 1);
       ret++;
    }
    return ret;

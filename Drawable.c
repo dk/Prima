@@ -901,7 +901,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
       i = prima_utf8_length( t. text);
       if ( textLen < 0 || textLen > i ) textLen = i;
       t. utf8_textLen = textLen;
-      t. textLen = utf8_hop( t. text, textLen) - (U8*) t. text; 
+      t. textLen = utf8_hop(( U8*) t. text, textLen) - (U8*) t. text; 
    } else {
       if ( textLen < 0 || textLen > tlen) textLen = tlen;
       t. utf8_textLen = t. textLen = textLen;
@@ -940,7 +940,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 
    if  ( t. options & ( twCalcMnemonic | twCollapseTilde)) {
       HV * profile = newHV();
-      STRLEN len = t. utf8_text ? utf8_hop( t. t_char, 1) - ( U8*) t. t_char : 1;
+      STRLEN len = t. utf8_text ? utf8_hop(( U8*) t. t_char, 1) - ( U8*) t. t_char : 1;
       SV * sv_char = newSVpv( t. t_char, len);
       if ( t. utf8_text) SvUTF8_on( sv_char);
       if ( t. t_start != C_NUMERIC_UNDEF) {

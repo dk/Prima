@@ -580,7 +580,10 @@ prima_init_font_subsystem( void)
               )
             ) {
             s = guts. locale + 3;
-            while ( *s) *(s++) = s[1];
+            while ( *s) {
+               *s = s[1];
+               s++;
+            }
             if ( !hash_fetch( encodings, guts. locale, len - 1))
                guts. locale[0] = 0;
          }

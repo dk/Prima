@@ -72,7 +72,10 @@ apc_clipboard_create( Handle self)
    XX-> selection = None;
    
    name = x = duplicate_string( c-> name);
-   while (*x) *(x++) = toupper(*x);
+   while (*x) {
+      *x = toupper(*x);
+      x++;
+   }
    XX-> selection = XInternAtom( DISP, name, false);
    free( name);
 
@@ -393,7 +396,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
          c-> text. length = size;
          c-> text. utf8   = false;
       } else {
-         c-> binary. data = ( char * ) ret;
+         c-> binary. data = ( Byte * ) ret;
          c-> text. length = size;
       }
    }

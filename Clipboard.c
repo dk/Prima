@@ -402,7 +402,7 @@ binary_server( Handle self, PClipboardFormatReg instance, int function, SV * dat
       }
       break;
    case cefStore:
-      c. binary. data = SvPV( data, c. binary. length);
+      c. binary. data = (Byte*) SvPV( data, c. binary. length);
       apc_clipboard_set_data( self, instance-> sysId, &c);
       break;
    }

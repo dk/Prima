@@ -881,7 +881,8 @@ bc_rgb_mono_ed( Byte * source, Byte * dest, int count, int * err_buf)
    while ( count--) {
       Byte i = 8, dst = 0;
       while(i--) {
-         int c = map_RGB_gray[*(source++) + *(source++) + *(source++)];
+         int c = map_RGB_gray[source[0]+source[1]+source[2]];
+         source += 3;
          EDIFF_BEGIN_PIXEL(c,c,c);
          dst |= (( r + g + b) > 383) << i;
          EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
@@ -891,7 +892,8 @@ bc_rgb_mono_ed( Byte * source, Byte * dest, int count, int * err_buf)
    if ( count8) {
       Byte i = 8, dst = 0;
       while ( count8--) {
-         int c = map_RGB_gray[*(source++) + *(source++) + *(source++)];
+         int c = map_RGB_gray[source[0]+source[1]+source[2]];
+         source += 3;
          EDIFF_BEGIN_PIXEL(c,c,c);
          dst |= (((r + g + b) > 383) << --i);
          EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
