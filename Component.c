@@ -538,7 +538,7 @@ XS( Component_notify_FROMPERL)
    char     buf[ 1024];
    SV     * privMethod;
    Handle * sequence;
-   int      seqCount = 0;
+   int      seqCount = 0, stage = csNormal;
    PList    list = nil;
 
    if ( items < 2)
@@ -552,6 +552,7 @@ XS( Component_notify_FROMPERL)
    if ( var-> stage != csNormal) {
       if ( !is_opt( optcmDestroy)) XSRETURN_IV(1);
       opt_clear( optcmDestroy);
+      stage = var-> stage;
    }
 
    res = my-> notification_types( self);
@@ -658,11 +659,10 @@ XS( Component_notify_FROMPERL)
          sv_setsv( GvSV( errgv), errSave);
          sv_free( errSave);
       }
-
       SPAGAIN;
       FREETMPS;
       LEAVE;
-      if (( var-> stage != csNormal) ||
+      if (( var-> stage != stage) ||
           ( var-> evPtr != evPtr) ||
           ( rnt == ntSingle) ||
          (( rnt == ntEvent) && ( var-> evStack[ var-> evPtr - 1] == 0))
