@@ -25,6 +25,18 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+A "hello world" program
+
+=item FEATURES
+
+A very basic Prima toolkit usage is demonstrated
+
+=cut
+
 use strict;
 use Prima;
 use Prima::Application name => 'Generic';

@@ -26,6 +26,26 @@
 #  $Id$
 #
 
+=pod 
+=item NAME
+
+A key dump example
+
+=item FEATURES
+
+Tests the correct implementation of keyboard event subsystem.
+The following features are tested:
+
+ - Direct flow of keyboard event
+ - Correspondence of a syntetic key name to the real name
+ - key_event() functionality
+ - Key event propagation. Not that if it is disabled ( a clear_event() is called )
+   no system-bound event ( like menus etc. ) are expected to be initiated.
+ - Diaglyphs type ( f.ex. dieresis + 'e' )
+ - Alternative keyboard layout ( a Euro sign )
+
+=cut
+
 use Prima;
 use Prima::Buttons;
 use strict;

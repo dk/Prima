@@ -27,6 +27,28 @@
 #
 package fontdlg;
 
+=pod 
+=item NAME
+
+An alternate font selection window
+
+=item FEATURES
+
+Demonstrates Prima font API and its usage.
+
+Note the inability to set a font with a particular size and width factor 
+in one call ( in $re_sample sub ). A font size and width is accepted, however. 
+
+Tests the Prima font interface implementation. A constant pain
+here is the correspondence of a font metrics before and after the font load.
+X is known for the problem, that can not be solved easily and without certain compromises.
+See L<prima-gp-problems> manpage for details.
+
+Note the left-mouse drag effect from a font screen widget.
+
+=cut
+
+
 use strict;
 use Carp;
 use Prima;

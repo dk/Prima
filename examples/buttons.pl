@@ -26,6 +26,20 @@
 #  $Id$
 #
 
+=pod 
+=item NAME
+
+Prima button widgets
+
+=item FEATURES
+
+Demonstrates basic use of Prima toolkit, in particular
+creation of built-in push-buttons and radio-buttons.
+A customized button creation with subclassing is exemplified
+
+=cut
+
+
 use strict;
 use Prima 'Buttons', Application => { name => 'Buttons sample' };
 

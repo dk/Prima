@@ -25,6 +25,19 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+A matrix screen-saver
+
+=item FEATURES
+
+Tests the paletted DeviceBitmap implementation
+and large font output performance.
+
+=cut
+
 use strict;
 use Prima;
 

@@ -25,6 +25,18 @@
 #
 #  $Id$
 #
+=pod 
+=item NAME
+
+Prima outline widget
+
+=item FEATURES
+
+Demonstrates the basic Prima toolkit usage
+and Prima::Outlines class. 
+
+=cut
+
 use Prima qw(Application Outlines);
 
 my $w = Prima::Window->create( size => [ 200, 200],

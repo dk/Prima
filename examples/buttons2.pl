@@ -25,6 +25,20 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+Prima button widgets
+
+=item FEATURES
+
+Demonstrates the variety of built-in buttons functionality.
+Note the "Bits for toolbar" button, which copies and
+pastes its image into the clipboard.
+
+=cut
+
 use Prima qw(Buttons StdBitmap), Application => { name => 'Buttons sample' };
 
 my $w = Prima::Window-> create(

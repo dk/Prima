@@ -25,8 +25,23 @@
 #
 #  $Id$
 #
-#  Example of menu extended usage
-#
+
+=pod 
+=item NAME
+
+A menu usage example
+
+=item FEATURES
+
+Demonstrates the usage of Prima menu API:
+
+- one-call ( large array ) menu set
+- text and image menu item manipulations
+
+Note the "Edit/Kill menu" realisation.
+
+=cut
+
 use strict;
 use Prima qw( InputLine Label);
 

@@ -25,6 +25,20 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+A MDI ( multiple-document interface ) example
+
+=item FEATURES
+
+Outlines usage of Prima::MDI module.
+Note the MDI window are not subject for a window-manager 
+decorations and do not conform to the system user interaction scheme.
+
+=cut
+
 use strict;
 use Prima qw( InputLine ImageViewer MDI);
 

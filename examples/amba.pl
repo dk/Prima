@@ -27,6 +27,17 @@
 #
 use Prima 'MsgBox', Application => { name => 'Chess puzzle' };
 
+=pod 
+=item NAME
+
+A chess puzzle
+
+=item FEATURES
+
+Demonstrates custom pointer creation
+
+=cut
+
 my %figs = (
   'K' => [0,0],
   'B1' => [0,1],

@@ -27,6 +27,19 @@
 #
 #  Example of listbox extended usage
 #
+
+=pod 
+=item NAME
+
+Prima listbox, combobox and widget example
+
+=item FEATURES
+
+Demonstrates the usage of Prima::Edit, Prima::ComboBox
+and Prima::ListBox widgets. 
+
+=cut
+
 use strict;
 use Prima qw( ComboBox Edit);
 

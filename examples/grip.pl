@@ -25,6 +25,27 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+Screen and widget grabbing example
+
+=item FEATURES
+
+Provided two standalone tests.
+
+The "grip test" copies a graphic content of a widget onto a monochrome
+bitmap, thus testing the widget representation on a monochrome display.
+This test is useful together with a L<launch> example, that allows execution
+of several Prima examples in one task space.
+
+The "grab test" copies the selected region of a screen.
+Tests the correct implementation of apc_application_get_bitmap() function,
+especially on paletted displays.
+
+=cut
+
 use strict;
 use Prima;
 use Prima::Const;

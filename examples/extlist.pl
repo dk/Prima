@@ -25,6 +25,20 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+Prima check-list widget
+
+=item FEATURES
+
+Demonstrates basic usage of a Prima toolkit and
+its standard CheckList class.
+
+
+=cut
+
 use Prima;
 use Prima::ExtLists;
 use Prima::Application;

@@ -1,3 +1,14 @@
+=pod 
+=item NAME
+
+A macro recording program
+
+=item FEATURES
+
+Demonstration and test of mouse_event() function usage.
+
+=cut
+
 use strict;
 use Prima;
 use Prima::Classes;

@@ -25,6 +25,22 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+A Prima toolkit example
+
+=item FEATURES
+
+Tests correct representation of a color created by a combination
+of R,G and B components. The Prima::Widget::sizeMin and Prima::Widget::sizeMax
+implementation is tested - the Area widget changes its height on a mouse click,
+up to the left button and down to the right button. 
+Note how Area widget maintains its maximum size when the window gets maximized.
+
+=cut
+
 use strict;
 use Prima qw(ScrollBar);
 

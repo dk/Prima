@@ -25,6 +25,22 @@
 #
 #  $Id$
 #
+=pod 
+=item NAME
+
+Prima toolkit example
+
+=item FEATURES
+
+Demonstrates the usage of Prima::Widget::transparent property.
+Test the certain events: for example, when two transparent
+widgets are located one upon another, when a graphic content changed
+under a transparent widget, etc.
+
+Note that the $tt widget is not transparent but uses shape extension.
+
+=cut
+
 use Prima;
 use Prima::Const;
 use Prima::Application name => 'Generic.pm';

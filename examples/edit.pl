@@ -26,6 +26,18 @@
 #  $Id$
 #
 
+=pod 
+=item NAME
+
+An input line
+
+=item FEATURES
+
+Demonstrates use of a standard input line widget
+
+=cut
+
+
 use Prima 'InputLine', Application => { name => 'InputLine sample' };
 
 my $w = Prima::Window-> create( size => [ 700, 300]);

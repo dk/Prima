@@ -25,6 +25,19 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+Prima mouse pointer example
+
+=item FEATURES
+
+Demonstrates the usage of Prima mouse pointer functionality.
+Note the custom pointer creation and its dynamic change ( the "User" button ).
+
+=cut
+
 use strict;
 use Prima qw( StdBitmap Buttons);
 

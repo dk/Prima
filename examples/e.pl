@@ -25,6 +25,20 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+A minimalistic graphic editor window
+
+=item FEATURES
+
+Outlines features required for a graphic editor window -
+color selection, and, mainly, non-standart Prima::ImageViewer
+usage. 
+
+=cut
+
 use Prima;
 use Prima::Classes;
 use Prima::ScrollWidget;

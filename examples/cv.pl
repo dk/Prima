@@ -25,6 +25,20 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+Standard color dialog
+
+=item FEATURES
+
+Demonstrates usage of a standard color dialog.
+Note the right-button drag effect from the color wheel with Shift
+or Alt button pressed.
+
+=cut
+
 use Prima 'StdDlg', Application => { name => 'CV' };
 
 my $p = Prima::ColorDialog-> create(

@@ -24,6 +24,22 @@
 #  SUCH DAMAGE.
 #
 #
+=pod 
+=item NAME
+
+An eyes program clone
+
+=item FEATURES
+
+A well-known eyes written in Prima toolkit.
+Demostrates the usage of a shape-extension and a 
+determination of its support on a system.
+
+Note the menu hide feature - it's activation (^M)
+tests a correct implementation of a Prima
+shape-extension interface.
+
+=cut
 
 use strict;
 use Prima;

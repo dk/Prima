@@ -25,6 +25,20 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+Prima label widget
+
+=item FEATURES
+
+Demonstrates the basic usage of a Prima toolkit
+and Prima::Label class capabilites, in particular
+text wrapping.
+
+=cut
+
 use Prima;
 use Prima::Const;
 use Prima::Buttons;

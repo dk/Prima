@@ -24,6 +24,22 @@
 #  SUCH DAMAGE.
 #
 #
+=pod 
+=item NAME
+
+A prima PostScript printer output setup program.
+Prints a PS document after setup dialog is finished.
+
+=item FEATURES
+
+Whereas Prima::PS modules can be used on any platform,
+they serve as an only remedy on *nix systems when printing
+via Prima is desired. The Prima::PS interface can load user
+preferences from $HOME/.prima_printer file. This file is
+maintained by the PostScript output setup dialog.
+
+=cut
+
 use strict;
 use Prima;
 use Prima::PS::Printer;

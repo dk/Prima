@@ -25,6 +25,19 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+Prima notebook widget
+
+=item FEATURES
+
+Demonstrates the basic Prima toolkit usage and
+Prima::TabbedNotebook standard class.
+
+=cut
+
 use Prima;
 use Prima::Buttons;
 use Prima::Notebooks;

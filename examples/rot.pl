@@ -25,6 +25,17 @@
 #
 #  $Id$
 #
+=pod 
+=item NAME
+
+Prima toolkit example
+
+=item FEATURES
+
+Needs custom fonts for antialiasing emulation.
+
+=cut
+
 use Prima qw(Application);
 
 #my @data = (

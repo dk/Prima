@@ -25,6 +25,20 @@
 #
 #  $Id$
 #
+=pod 
+=item NAME
+
+A gradient fill example
+
+=item FEATURES
+
+Demonstrates the usage of graphic context regions.
+Note that the $i region is not created, but is assigned
+on every onPaint. Tests whether image object is able
+to hold a cached region copy.
+
+=cut
+
 use strict;
 use Prima;
 use Prima::Classes;

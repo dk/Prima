@@ -25,6 +25,19 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+File tree widgets
+
+=item FEATURES
+
+Use of standard file-listbox and drive-combo box ( the latter
+is idle under *nix )
+
+=cut
+
 use strict;
 use Carp;
 use Prima::ComboBox;

@@ -25,6 +25,19 @@
 #
 #  $Id$
 #
+=pod 
+=item NAME
+
+Prima DetailedList widget example
+
+=item FEATURES
+
+Demonstrates the usage of Prima::DetailedList class.
+Note the header-driven actions: column sort ( vertical, with click ) and 
+rearrangement ( horizontal, with drag ).
+
+=cut
+
 use Prima;
 use Prima::DetailedList;
 
@@ -63,7 +76,6 @@ if ( defined $fname) {
    close F;
 } else {
    push ( @items,
-     ["msmd", '666', 'zzp', 'Microsoft Must Die Service'],
      [qw(domain   53 tcp	   Domain_Name_Server    )],
      [qw(domain   53 udp	   Domain_Name_Server    )],
      [qw(xns-ch   54 tcp	   XNS_Clearinghouse     )],

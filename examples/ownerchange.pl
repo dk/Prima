@@ -25,6 +25,20 @@
 #
 #  $Id$
 #
+=pod 
+=item NAME
+
+A recreate functionality example.
+
+=item FEATURES
+
+Widgets that change owner dynamically often gets 
+recreated internally - one system window gets
+destroyed and another created then. Test the correct
+implementation of Prima owner change functionality.
+
+=cut
+
 use strict;
 use Prima qw(Buttons);
 

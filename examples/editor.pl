@@ -25,6 +25,19 @@
 #
 #  $Id$
 #
+
+=pod 
+=item NAME
+
+A basic text editor
+
+=item FEATURES
+
+Demonstrates usage of Prima::Edit class,
+and, in lesser extent, of standard find/replace dialogs.
+
+=cut
+
 use Prima;
 use Prima::Edit;
 use Prima::Application;

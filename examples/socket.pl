@@ -25,6 +25,20 @@
 #
 #  $Id$
 #
+=pod 
+=item NAME
+
+Downloads a html file from a given URL and donwstrips
+it to a text level.
+
+=item FEATURES
+
+Tests the functionality of Prima::File and its
+events - onRead, onWrite and onException. ( The latter is not exemplified )
+
+Note that the toolkit interface is alive during the download.
+
+=cut
 
 use strict;
 use Prima 'InputLine', 'Edit', Application => { name => 'WebSource' };
