@@ -231,6 +231,143 @@ L<Prima::Sliders> - sliding bars, spin buttons and input lines, dial widget etc.
 
 L<Prima::TextView> - rich text browser widget
 
+=head1 Building a menu
+
+In Prima, a tree-like menu is built by passing a nested set of arrays, where
+each array corresponds to a single menu entry. Such as, to modify the
+hello-world program to contain a simple menu, it is enough to write this:
+	
+	use Prima qw(Application MsgBox);
+	my $window = Prima::MainWindow-> new( 
+		text => 'Hello world!',
+		menuItems => [
+			[ '~File' => [
+				['~Open', 'Ctrl+O', '^O', sub { message('open!') }],
+				['~Save as...', sub { message('save as!') }],
+				[],
+				['~Exit', 'Alt+X', km::Alt | ord('X'), sub { shift-> close } ],
+			]],
+		],
+	);
+	run Prima;
+
+=for podview <img src="tutorial/menu1.gif">
+
+Each of five arrays here in the example is written using different semantics, to represent
+either a text menu item, a sub-menu entry, or a menu separator. Strictly speaking, menus
+can also display images, but that syntax is practically identical to the text item syntax.
+
+The idea behind the complexity is to tell what exactly the menu item it should be by
+looking at the number of items in each array. So, zero or one items are treated as a menu
+separator:
+
+	[],
+	[ 'my_separator' ]
+
+The one-item syntax is needed when the separator menu item need to be later addressed
+explicitly. This means that each menu item after it is created is assigned a 
+(unique) identifier, and that identifier looks like C<'#1'>, C<'#2'>, etc,
+unless it is given by the programmer. Here, for example, it is possible to delete the
+separator, after the menu is created:
+
+	$window-> menu-> remove('my_separator');
+
+It is also possible to assign the identifier to any menu item, not just to a separator.
+The other types (text,image,sub-menu) are told by looking at the type of scalars they
+contain. Thus, a two-item array with the last item an array reference (or, as before,
+three-item for the explicit ID set), is clearly a sub-menu. The reference, as in the
+example, may contain more menu items, in the recursive fashion:
+
+		menuItems => [
+			[ '~File' => [
+				[ '~Level1' => [
+					[ '~Level2' => [
+						[ '~Level3' => [
+							[]
+						]],
+					]],
+				]],
+			]],
+		],
+
+=for podview <img src="tutorial/menu2.gif">
+
+Finally, text items, with the most complex syntax, can be constructed with three to six
+items in the array. There can be set the left-aligned text string for the item, the
+right-aligned text string for the display of the hot key, if any, the definition of the
+hot hey itself, and the action to be taken if the user has pressed either the menu item
+or the hot key combination. Also, as in the previous cases, the explicit ID can be set,
+and also an arbitrary data scalar, for generic needs. This said, the text item combinations are:
+
+Three items - [ ID, text, action ]
+
+Four items - [ text, hot key text, hot key, action ]
+
+Five items - [ ID, text, hot key text, hot key, action ]
+
+Six items - [ ID, text, hot key text, hot key, action, data ]
+
+Image items are fully analogous to the text items, except that instead of the text 
+string, an image object is supplied:
+
+	use Prima qw(Application MsgBox);
+	use Prima::Utils qw(find_image);
+	
+	my $i = Prima::Image-> load( find_image( 'examples/Hand.gif'));
+	$i ||= 'No image found or can be loaded';
+
+	my $window = Prima::MainWindow-> new( 
+		text => 'Hello world!',
+		menuItems => [
+			[ '~File' => [
+				[ $i, sub {} ],
+			]],
+		],
+	);
+	run Prima;
+
+=for podview <img src="tutorial/menu3.gif">
+
+The actions taken when the menu item is selected, is always a pointer to the code. It is possible
+to either set an anonymous subroutine, as it is shown in all the examples above, or to set
+a string. The latter case will cause the method of the menu owner ( in this example, the
+window ) to be called. This can be useful when constructing a generic class with menu
+actions that can be overridden:
+
+	package MyWindow;
+	use vars qw(@ISA);
+	@ISA = qw(Prima::MainWindow);
+
+	sub action 
+	{ 
+		my ( $self, $menu_item) = @_;
+		print "hey! $menu_item called me!\n" 
+	}
+	
+	my $window = MyWindow-> new( 
+		menuItems => [
+			[ '~File' => [
+				['~Action', q(action) ],
+			]],
+		],
+	);
+
+All actions are called with the menu item identifier as a parameter.
+
+Another trick is to define a hot key. While its description can be arbitrary, the
+hot key can be constructed in two ways. It is either a literal such as C<^A> for 
+Control+A, or C<@B> for Alt+B, or C<^@#F10> for Control+Alt+Shift+F10. Or, alternatively,
+it is a combination of C<km::> constants either with ordinal of the character letter or
+the key code, the latter is one of C<kb::> constants. The latter is less readable, but more
+explicit and powerful:
+
+	[ '~Reboot', 'Ctrl+Alt+Delete', km::Alt | km::Ctrl | kb::Delete, sub {
+		print "wow!\n";
+	}],
+	[ '~Or not reboot?', 'Ctrl+Alt+R', km::Alt | km::Ctrl | ord('R'), sub {}],
+
+This concludes the short tutorial on menus. To read more, see L<Prima::Menu> .
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
