@@ -411,6 +411,8 @@ L<Prima::Make> - module for automated Makefile creation
 
 =item Miscellaneous
 
+L<Prima::faq> - frequently asked questions 
+
 L<Prima::Const> - predefined toolkit constants 
 
 L<Prima::EventHook> - event filtering
