@@ -359,6 +359,7 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
    case cefFetch:
       s = (char*)apc_clipboard_get_data( self, cfText, (int*)&len);
       if (s) {
+         if ( s[len] == '\0') len--; 
          data = newSVpv( s, len);
          free(s);
          return data;
