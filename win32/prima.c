@@ -34,7 +34,7 @@ load_prima_guts( void)
    char errMsg[1024];
    HINSTANCE lib;
 
-   sprintf( tmpPath, "%s\\Guts\\primguts.dll", primaPath);
+   sprintf( tmpPath, "%sGuts\\primguts.dll", primaPath);
    lib = LoadLibrary( tmpPath);
    if ( lib == NULL) {
       DWORD err = GetLastError();
