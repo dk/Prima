@@ -1319,6 +1319,9 @@ apc_widget_map_points( Handle self, Bool toScreen, int count, Point * p)
    Point sz = ((( PWidget) self)-> self)-> get_size( self);
    Point appSz = apc_application_get_size( application);
 
+   if ( self == application)
+      return true;
+
    objCheck false;
 
    if ( toScreen) {

@@ -444,8 +444,10 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_NCACTIVATE:
         // if activation or deactivation is concerned with declipped window ( e.g.self),
         // notify its top level frame so that it will have the chance to redraw itself correspondingly
-        if ( is_declipped_child( self) && !Widget_is_child( hwnd_to_view(( HWND) mp2), hwnd_top_level( self)))
-           SendMessage( DHANDLE( hwnd_top_level( self)), WM_NCACTIVATE, mp1, mp2);
+        if ( is_declipped_child( self) && !Widget_is_child( hwnd_to_view(( HWND) mp2), hwnd_top_level( self))) {
+           Handle x = hwnd_top_level( self);
+           if ( x) SendMessage( DHANDLE( x), WM_NCACTIVATE, mp1, mp2);
+        }   
         break;
    case WM_MOUSEACTIVATE:
        // if pointing to non-active frame, but its declipped child is active at the moment,
