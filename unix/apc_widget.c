@@ -884,6 +884,13 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
    return true;
 }
 
+static Bool
+flush_refocus( Display * disp, XEvent * ev, void * dummy)
+{
+   return ev-> type == ClientMessage && ev-> xclient. message_type == guts. wm_data-> protocols 
+      && (Atom) ev-> xclient. data. l[0] == guts. wm_data-> takeFocus;
+}
+
 Bool
 apc_widget_set_focused( Handle self)
 {
@@ -905,6 +912,7 @@ apc_widget_set_focused( Handle self)
    XSync( DISP, false);
    while ( XCheckMaskEvent( DISP, FocusChangeMask|ExposureMask, &ev))
       prima_handle_event( &ev, nil);
+   while ( XCheckIfEvent( DISP, &ev, (void*)flush_refocus, (XPointer)0));
    return true;
 }
 
