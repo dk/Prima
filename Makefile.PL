@@ -334,7 +334,7 @@ sub have_define
     else {
         $tmpo =~ s/\.c$/\.o/;
     }
-    open TMPSRC, ">$tmpsrc";
+    open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
     print TMPSRC <<ENDP;
 int
 main()
