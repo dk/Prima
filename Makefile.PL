@@ -1377,7 +1377,7 @@ sub clsmake
                      qd( "include/generic/$classname.inc"),
                      qd( "include/generic/$classname.tml")
                     );
-    push @allinstall, qd( "include/generic/$classname.h"), $INSTALL_LIB . qd( "/CORE/generic");
+    push @ allinstall, qd( "include/generic/$classname.h"), $INSTALL_LIB . qd( "/CORE/generic");
     my @ancestors = gencls( $clsfile, depend => 1);
     $mk .= qd( "include/generic/$_.h $_.cls ") foreach @ancestors;
     print "\n";
@@ -1688,9 +1688,9 @@ FOOTER
       return if $_ eq '.';
       return if /\.pdb$/i; # M$VC
       my $f = "$File::Find::dir/$_";
-      return if $f =~ /include.generic/;
+      return if $f =~ /include.generic|CVS/;
       if ($type eq 'bin') {
-         return if $f =~ /\.c$|\.cls$|\.h$|CVS/;
+         return if $f =~ /\.c$|\.cls$|\.h$/;
          return if $f =~ /$cwd.(img|include|os2|win32|unix|utils|Makefile)/i;
       } else {
          return if $f =~ /auto/;
@@ -1831,12 +1831,18 @@ EOF
     while ( <$PLATFORM/*.c>) {
         $make .= cmake( $_);
     }
-    while ( <examples/*.pl>) {
-        push @allbins, $_, $INSTALL_EXAMPLES;
+    while ( <examples/*>) {
+        if ( m/\.pl$/i) {
+           push @allbins, $_, $INSTALL_EXAMPLES;
+        } else {
+           push @allinstall, $_, $INSTALL_EXAMPLES;
+        }
     }
-    while ( <utils/*.pl>) {
-        push @allbins, $_, $INSTALL_BIN;
-    }
+    push @allbins, "utils/gencls.pl", $INSTALL_BIN;
+    push @allbins, "utils/tmlink.pl", $INSTALL_BIN;
+    push @allbins, "Prima/VB/VB.pl", $INSTALL_BIN;
+    push @allbins, "Prima/VB/cfgmaint.pl", $INSTALL_BIN;
+    
 
     my $thunks_tinc = qd( "include/generic/thunks.tinc");
     push @allclean, $thunks_tinc;
@@ -1911,12 +1917,16 @@ EOF
     
     my $cwd = cwd();
     finddepth( sub {
+        return if $File::Find::dir =~ /CVS/ || m/CVS/;
         $cp{qd("$File::Find::dir/$_")} = qd("$PREFIX/$File::Find::dir") unless -d $_;
     }, 'Prima');
 
+    delete $cp{qd("Prima/VB/VB.pl")};
+    delete $cp{qd("Prima/VB/cfgmaint.pl")};
    
     while (@allinstall) {
        my ( $src, $dst) = ( shift(@allinstall), shift(@allinstall));
+       next if $src =~ /CVS/;
        $cp{$src} = $dst;
     }
     while ( <include/*.h>) {
