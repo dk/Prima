@@ -673,18 +673,11 @@ CODE LOADONCALL
 DATA LOADONCALL NONSHARED MULTIPLE
 EXPORTS
 EOF
-    print PRIMADEF map { "\t$_\n\t_$_ = $_\n"} @Prima_exports;
     if ( $COMPILER eq 'bcc32') {
-	print PRIMADEF <<EOF;
-
-IMPORTS
-\t_gbm_err = prigraph.gbm_err
-\t_gbm_guess_filetype = prigraph.gbm_guess_filetype
-\t_gbm_write = prigraph.gbm_write
-\t_gbm_read_header = prigraph.gbm_read_header
-\t_gbm_read_palette = prigraph.gbm_read_palette
-\t_gbm_read_data = prigraph.gbm_read_data
-EOF
+	print PRIMADEF map { "\t_$_\n\t$_ = $_\n"} @Prima_exports;
+    }
+    else {
+	print PRIMADEF map { "\t$_\n\t_$_ = $_\n"} @Prima_exports;
     }
     close PRIMADEF;
 }
