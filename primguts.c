@@ -84,7 +84,6 @@ long   apcError = 0;
 List   postDestroys;
 int    recursiveCall = 0;
 PHash  primaObjects = nil;
-Bool   wantUnicodeInput = 0;
 SV *   eventHook = nil;
 
 char *
