@@ -987,8 +987,8 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
          XSetForeground( DISP, XX-> gc, 1);
          XSetBackground( DISP, XX-> gc, 0);
       } else {
-         XSetForeground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
-         XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+         XSetForeground( DISP, XX-> gc, 0xffffffff);
+         XSetBackground( DISP, XX-> gc, 0x00000000);
       }
       if ( func != ofunc)
 	 XSetFunction( DISP, XX-> gc, func);
@@ -1629,8 +1629,8 @@ apc_gp_stretch_image( Handle self, Handle image,
                XSetForeground( DISP, XX-> gc, 1);
                XSetBackground( DISP, XX-> gc, 0);
             } else {
-               XSetForeground( DISP, XX-> gc, WhitePixel( DISP, SCREEN));
-               XSetBackground( DISP, XX-> gc, BlackPixel( DISP, SCREEN));
+               XSetForeground( DISP, XX-> gc, 0xffffffff);
+               XSetBackground( DISP, XX-> gc, 0x00000000);
             }
             if ( func != ofunc)
                XSetFunction( DISP, XX-> gc, func);
