@@ -162,9 +162,12 @@ Drawable_set_palette( Handle self, SV * palette)
 
 
 Font *
-Drawable_font_match( char * dummy, Font * source, Font * dest)
+Drawable_font_match( char * dummy, Font * source, Font * dest, Bool pick)
 {
-   apc_font_pick( nilHandle, source, dest);
+   if ( pick)
+      apc_font_pick( nilHandle, source, dest);
+   else
+      Drawable_font_add( nilHandle, source, dest);
    return dest;
 }
 
