@@ -128,6 +128,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint,
    XX-> flags. sync_paint = sync_paint;
    XX-> flags. do_size_hints = true;
    XX-> flags. no_size = true;
+   XX-> flags. process_configure_notify = true;
 
    XX-> owner = real_owner;
    XX-> size = (Point){0,0};

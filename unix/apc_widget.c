@@ -139,6 +139,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    XX-> flags. sync_paint = sync_paint;
    XX-> flags. do_size_hints = false;
    XX-> flags. no_size = true;
+   XX-> flags. process_configure_notify = false;
 
    XX-> owner = real_owner;
    XX-> size = (Point){0,0};
@@ -612,12 +613,18 @@ Bool
 apc_widget_set_pos( Handle self, int x, int y)
 {
    DEFXX;
+   Event e;
 
+   bzero( &e, sizeof( e));
+   e. cmd = cmMove;
+   e. gen. source = self;
+   e. gen. P = XX-> origin;
    XX-> origin = (Point){x,y};  /* XXX ? */
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
    XMoveWindow( DISP, X_WINDOW, x, y);
    DOLBUG( "XMoveWindow: widget (%s) move to (%d,%d)\n", PWidget(self)-> name, x, y);
    XCHECKPOINT;
+   CComponent( self)-> message( self, &e);
    return true;
 }
 
@@ -633,7 +640,9 @@ apc_widget_set_size( Handle self, int width, int height)
    DEFXX;
    int y;
    PWidget widg = PWidget( self);
+   Event e;
 
+   bzero( &e, sizeof( e));
    widg-> virtualSize = (Point){width,height};
 
    width = width > 0
@@ -651,11 +660,38 @@ apc_widget_set_size( Handle self, int width, int height)
 	  : widg-> sizeMin. y)
       : 1;
 
-   XX-> size = (Point){width, height};  /* XXX ? */
+   e. gen. source = self;
+   e. cmd = cmSize;
+   e. gen. R. left = XX-> size. x;
+   e. gen. R. bottom = XX-> size. y;
+   e. gen. P = XX-> size = (Point){width,height};
+   e. gen. R. right = XX-> size. x;
+   e. gen. R. top = XX-> size. y;
    y = X(XX-> owner)-> size. y - height - XX-> origin. y;
    XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
-   DOLBUG( "widget (%s) size to (%d,%d) - (%d,%d)\n", PWidget(self)-> name, XX-> origin. x, y, width, height);
+   DOLBUG( "widget (%s) size to (%d,%d) - (%d,%d) |old size %d,%d|\n",
+	    PWidget(self)-> name, XX-> origin. x, y, width, height,
+	    e. gen. R. left, e. gen. R. bottom);
    XCHECKPOINT;
+   if (1){
+      int count = PWidget( self)-> widgets. count;
+      Handle *selves = malloc( count * sizeof( Handle));
+      int i, stage;
+
+      memcpy( selves, PWidget( self)-> widgets. items, count * sizeof( Handle));
+      for ( i = 0; i < count; i++) {
+	 PWidget child = PWidget( selves[i]);
+
+	 if ( X(selves[i])-> flags. clip_owner && (child-> growMode & gmDontCare) == 0) {
+	    stage = child-> stage;
+	    child-> stage = csFrozen;
+	    apc_widget_set_pos( selves[i], X(selves[i])-> origin. x, X(selves[i])-> origin. y);
+	    child-> stage = stage;
+	 }
+      }
+      free( selves);
+   }
+   CComponent( self)-> message( self, &e);
    return true;
 }
 

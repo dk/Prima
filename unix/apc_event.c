@@ -469,6 +469,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       Point old_size = XX-> known_size;
       Point old_origin = XX-> known_origin;
       Bool size_changed;
+      
+      if ( !XX-> flags. process_configure_notify)
+	 return;
 
       if ( XX-> flags. no_size && old_size.x == old_size.y && old_size. x == APC_BAD_SIZE) {
 	 XX-> known_size. x = XX-> size. x;
