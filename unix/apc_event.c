@@ -423,6 +423,15 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 secondary. pos. where. y = e. pos. where. y;
 	 secondary. pos. mod = e. pos. mod;
 	 secondary. pos. button = e. pos. button;
+         if (guts.last_click.window == bev->window &&
+             guts.last_click.button == bev->button &&
+             guts.last_button_event.time - guts.last_click.time <=
+                guts.double_click_time_frame) {
+            bzero( &guts.last_click, sizeof(guts.last_click));
+            secondary.pos.dblclk = true;
+         } else {
+            memcpy( &guts.last_click, bev, sizeof(guts.last_click));
+         }
       }
       memcpy( &guts.last_button_event, bev, sizeof(*bev));
       break;

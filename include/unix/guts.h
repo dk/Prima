@@ -155,12 +155,14 @@ struct _UnixGuts
 {
    /* Event management */
    Time                         click_time_frame;
+   Time                         double_click_time_frame;
    PHash                        clipboards;
    Atom                         create_event;
    fd_set                       excpt_set;
    PList                        files;
    long                         handled_events;
    XButtonEvent                 last_button_event;
+   XButtonEvent                 last_click;
    Time                         last_time;
    int                          max_fd;
    int                          modal_count;
@@ -199,6 +201,8 @@ struct _UnixGuts
    XrmQuark                     qblinkvisibletime;
    XrmQuark                     qClicktimeframe;
    XrmQuark                     qclicktimeframe;
+   XrmQuark                     qDoubleclicktimeframe;
+   XrmQuark                     qdoubleclicktimeframe;
    XrmQuark                     qFont;
    XrmQuark                     qfont;
    XrmQuark                     qForeground;
