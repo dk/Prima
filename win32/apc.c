@@ -400,8 +400,6 @@ process_msg( MSG * msg)
                PostMessage( NULL, WM_FILE, feRead, ( LPARAM) self);
             if ( PFile( self)-> eventMask & feWrite)
                PostMessage( NULL, WM_FILE, feWrite, ( LPARAM) self);
-            if ( PFile( self)-> eventMask & feException)
-               PostMessage( NULL, WM_FILE, feException, ( LPARAM) self);
          }
          PostMessage( NULL, WM_FILE, 0, 0);
       } else {
@@ -415,8 +413,7 @@ process_msg( MSG * msg)
             }
          if ( self) {
             Event ev;
-            ev. cmd = ( msg-> wParam == feRead) ? cmFileRead :
-                      (( msg-> wParam == feWrite) ? cmFileWrite : cmFileException);
+            ev. cmd = ( msg-> wParam == feRead) ? cmFileRead : cmFileWrite;
             CComponent( self)-> message( self, &ev);
          }
       }
