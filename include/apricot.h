@@ -3188,6 +3188,25 @@ extern Handle self;
 #define free(ptr) _test_free((ptr),__LINE__,__FILE__,self)
 #endif /* PARANOID_MALLOC */
 
+#if defined( USE_GC)
+#if defined( HAVE_GC_H)
+#define GC_DEBUG 1
+#include <gc.h>
+#undef malloc
+#undef free
+#undef realloc
+#define malloc( sz) GC_MALLOC( sz)
+#define free( p) GC_FREE( p)
+#define realloc( old, sz) GC_REALLOC( old, sz)
+#define CHECK_LEAKS GC_gcollect()
+#else
+#warning USE_GC requires presence of gc.h
+#define CHECK_LEAKS
+#endif /* HAVE_GC_H */
+#else
+#define CHECK_LEAKS
+#endif /* USE_GC */
+
 #ifdef __cplusplus
 }
 #endif

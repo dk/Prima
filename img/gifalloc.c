@@ -22,9 +22,9 @@
 extern "C" {
 #endif
 
-
-
+#ifndef MAX
 #define MAX(x, y)	(((x) > (y)) ? (x) : (y))
+#endif
 
 /******************************************************************************
 * Miscellaneous utility functions					      *
