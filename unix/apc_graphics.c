@@ -396,6 +396,21 @@ prima_prepare_drawable_for_painting( Handle self)
    prima_get_gc( XX);
    XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
    XCHECKPOINT;
+   if ( XX-> dashes) {
+      XSetDashes( DISP, XX-> gc, 0, XX-> dashes, XX-> ndashes);
+      XX-> paint_ndashes = XX-> ndashes;
+      XX-> paint_dashes = malloc( XX-> ndashes);
+      memcpy( XX-> paint_dashes, XX-> dashes, XX-> ndashes);
+   } else {
+      XX-> paint_dashes = malloc(1);
+      if ( XX-> ndashes < 0) {
+	 XX-> paint_dashes[0] = '\0';
+	 XX-> paint_ndashes = 0;
+      } else {
+	 XX-> paint_dashes[0] = '\1';
+	 XX-> paint_ndashes = 1;
+      }
+   }
 
    XX-> clip_rect. x = 0;
    XX-> clip_rect. y = 0;
@@ -423,6 +438,9 @@ prima_cleanup_drawable_after_painting( Handle self)
 {
    DEFXX;
    prima_release_gc(XX);
+   free(XX->paint_dashes);
+   XX-> paint_dashes = nil;
+   XX-> paint_ndashes = 0;
    XX-> flags. paint = false;
    if ( XX-> flags. reload_font) {
       PDrawable( self)-> font = XX-> saved_font;
@@ -1376,10 +1394,27 @@ apc_gp_get_line_width( Handle self)
 }
 
 int
-apc_gp_get_line_pattern( Handle self)
+apc_gp_get_line_pattern( Handle self, char *dashes)
 {
-   DOLBUG( "apc_gp_get_line_pattern()\n");
-   return 0;
+   DEFXX;
+   int n;
+
+   if ( XX-> flags. paint) {
+      n = XX-> paint_ndashes;
+      memcpy( dashes, XX-> paint_dashes, n);
+   } else {
+      n = XX-> ndashes;
+      if ( n < 0) {
+	 n = 0;
+	 strcpy( dashes, "");
+      } else if ( n == 0) {
+	 n = 1;
+	 strcpy( dashes, "\1");
+      } else {
+	 memcpy( dashes, XX-> paint_dashes, n);
+      }
+   }
+   return n;
 }
 
 Point
@@ -1556,18 +1591,41 @@ apc_gp_set_line_width( Handle self, int line_width)
 }
 
 Bool
-apc_gp_set_line_pattern( Handle self, int pattern)
+apc_gp_set_line_pattern( Handle self, char *pattern, int len)
 {
-//#define    lpNull           0x0000     /* */
-//#define    lpSolid          0xFFFF     /* ___________ */
-//#define    lpDash           0xF0F0     /* __ __ __ __ */
-//#define    lpLongDash       0xFF00     /* _____ _____ */
-//#define    lpShortDash      0xCCCC     /* _ _ _ _ _ _ */
-//#define    lpDot            0x5555     /* . . . . . . */
-//#define    lpDotDot         0x4444     /* ............ */
-//#define    lpDashDot        0xFAFA     /* _._._._._._ */
-//#define    lpDashDotDot     0xEAEA     /* _.._.._.._.. */
-   DOLBUG( "apc_gp_set_line_pattern()\n");
+   DEFXX;
+   XGCValues gcv;
+
+   if ( XX-> flags. paint) {
+      if ( len == 0 || (len == 1 && pattern[0] == 1)) {
+	 gcv. line_style = LineSolid;
+	 XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
+      } else {
+	 gcv. line_style = LineOnOffDash;
+	 XSetDashes( DISP, XX-> gc, 0, pattern, len);
+	 XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
+      }
+      free(XX->paint_dashes);
+      XX-> paint_dashes = malloc( len);
+      memcpy( XX-> paint_dashes, pattern, len);
+      XX-> paint_ndashes = len;
+   } else {
+      free( XX-> dashes);
+      if ( len == 0) {					/* lpNull */
+	 XX-> dashes = nil;
+	 XX-> ndashes = -1;
+	 XX-> gcv. line_style = LineSolid;
+      } else if ( len == 1 && pattern[0] == 1) {	/* lpSolid */
+	 XX-> dashes = nil;
+	 XX-> ndashes = 0;
+	 XX-> gcv. line_style = LineSolid;
+      } else {						/* the rest */
+	 XX-> dashes = malloc( len);
+	 memcpy( XX-> dashes, pattern, len);
+	 XX-> ndashes = len;
+	 XX-> gcv. line_style = LineOnOffDash;
+      }
+   }
    return true;
 }
 

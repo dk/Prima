@@ -171,6 +171,13 @@ apc_widget_begin_paint_info( Handle self)
 Bool
 apc_widget_destroy( Handle self)
 {
+   DEFXX;
+   free(XX-> dashes);
+   XX-> dashes = nil;
+   XX-> ndashes = 0;
+   free(XX->paint_dashes);
+   XX-> paint_dashes = nil;
+   XX-> paint_ndashes = 0;
    if ( X_WINDOW) {
       XCHECKPOINT;
       XDestroyWindow( DISP, X_WINDOW);

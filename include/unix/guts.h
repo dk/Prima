@@ -99,7 +99,7 @@ union _unix_sys_data;
 struct _timer_sys_data;
 struct _drawable_sys_data;
 
-#define VIRGIN_GC_MASK (GCLineWidth|GCBackground|GCForeground|GCFunction|GCClipMask)
+#define VIRGIN_GC_MASK (GCLineWidth|GCBackground|GCForeground|GCFunction|GCClipMask|GCLineStyle)
 
 typedef struct _gc_list
 {
@@ -261,6 +261,8 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
    Rect scroll_rect; /* clipping */
    FillPattern fill_pattern;
    int rop, paint_rop;
+   char *dashes, *paint_dashes;
+   int ndashes, paint_ndashes;
    PCachedFont font;
    Font saved_font;
    Point cursor_pos;
