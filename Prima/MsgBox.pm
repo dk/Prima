@@ -33,51 +33,20 @@ use Prima::Classes;
 use Prima::Buttons;
 use Prima::StdBitmap;
 use Prima::Label;
+use Prima::InputLine;
 use Prima::Utils;
 
-sub message_box
+sub insert_buttons
 {
-   my ( $title, $text, $options, $extras) = @_;
-   $options = mb::Ok | mb::Error unless defined $options;
-   $options |= mb::Ok unless $options & 0x0FF;
-   my $buttons = $options & 0xFF;
-   my $helpTopic = defined $$extras{helpTopic} ? $$extras{helpTopic} : 0;
-   my $defButton = defined $$extras{defButton} ? $$extras{defButton} : 0xFF;
-   $options &= 0xFF00;
-   my @mbs   = qw( Error Warning Information Question);
-   my $icon;
-   my $nosound = $options & mb::NoSound;
-
-   for ( @mbs)
-   {
-      my $const = $mb::{$_}->();
-      next unless $options & $const;
-      $options &= $const;
-      $icon = $sbmp::{$_}->();
-      last;
-   }
-
-   my $fresh;
-   my $freshFirst;
-   my $dlg = Prima::Dialog-> create(
-       centered      => 1,
-       width         => 435,
-       height        => 150,
-       designScale   => [7, 18],
-       scaleChildren => 0,
-       visible       => 0,
-       text          => $title,
-       font          => $::application-> get_message_font,
-       onExecute     => sub {
-          Prima::Utils::beep( $options) if $options && !$nosound;
-       },
-   );
-
-   my ( $left, $right) = ( 10, $dlg-> width - 10);
+   my ( $dlg, $buttons, $extras) = @_;
+   my ( $left, $right) = ( 10, 425);
    my $i;
    my @bConsts =  ( mb::Help, mb::Cancel, mb::Ignore, mb::Retry, mb::Abort, mb::No, mb::Yes, mb::Ok);
    my @bTexts  = qw( ~Help    ~Cancel     ~Ignore     ~Retry     ~Abort     ~No     ~Yes     ~OK);
-
+   my $helpTopic = defined $$extras{helpTopic} ? $$extras{helpTopic} : 0;
+   my $defButton = defined $$extras{defButton} ? $$extras{defButton} : 0xFF;
+   my $fresh;
+   my $freshFirst;
 
    my $dir = Prima::Utils::get_gui;
    $dir = ( $dir == gui::Motif) ? 1 : 0;
@@ -98,6 +67,7 @@ sub message_box
          bottom    => 10,
          default   => ( $bConsts[$i] & $defButton) ? 1 : 0,
          current   => ( $bConsts[$i] & $defButton) ? 1 : 0,
+         size      => [ 96, 36],
       );
       $defButton = 0 if $bConsts[$i] & $defButton;
       $dir ? ( $hpr{right} = $right, $hpr{tabOrder} = 0) : ( $hpr{left} = $left);
@@ -109,7 +79,7 @@ sub message_box
          };
          unless ( $dir)
          {
-            $hpr{right} = $dlg-> width - 10;
+            $hpr{right} = 425;
             delete $hpr{left};
          }
       } else {
@@ -118,11 +88,51 @@ sub message_box
       $fresh = $dlg-> insert( Button => %hpr, %epr);
       $freshFirst = $fresh unless $freshFirst;
       my $w = $fresh-> width + 10;
-      $right -= $w;
-      $left  += $w;
+      $right -= 106;
+      $left  += 106;
       last if ++$btns > 3;
    }
    $fresh = $freshFirst unless $dir;
+   return $fresh;   
+}
+
+sub message_box
+{
+   my ( $title, $text, $options, $extras) = @_;
+   $options = mb::Ok | mb::Error unless defined $options;
+   $options |= mb::Ok unless $options & 0x0FF;
+   my $buttons = $options & 0xFF;
+   $options &= 0xFF00;
+   my @mbs   = qw( Error Warning Information Question);
+   my $icon;
+   my $nosound = $options & mb::NoSound;
+
+   for ( @mbs)
+   {
+      my $const = $mb::{$_}->();
+      next unless $options & $const;
+      $options &= $const;
+      $icon = $sbmp::{$_}->();
+      last;
+   }
+
+   my $dlg = Prima::Dialog-> create(
+       centered      => 1,
+       width         => 435,
+       height        => 125,
+       designScale   => [7, 18],
+       scaleChildren => 1,
+       visible       => 0,
+       text          => $title,
+       font          => $::application-> get_message_font,
+       onExecute     => sub {
+          Prima::Utils::beep( $options) if $options && !$nosound;
+       },
+   );
+
+   my $fresh = insert_buttons( $dlg, $buttons, $extras);
+
+   $dlg-> scaleChildren(0);
 
    my $iconRight = 0;
    my $iconView;
@@ -181,11 +191,49 @@ sub message
    return message_box( $::application-> name, @_);
 }
 
+sub input_box
+{
+   my ( $title, $text, $string, $buttons, $extras) = @_;
+   $buttons = mb::Ok|mb::Cancel unless defined $buttons;
+
+   my $dlg = Prima::Dialog-> create(
+       centered      => 1,
+       width         => 435,
+       height        => 110,
+       designScale   => [7, 16],
+       scaleChildren => 1,
+       visible       => 0,
+       text          => $title,
+   );
+
+   my $fresh = insert_buttons( $dlg, $buttons, $extras);
+
+   $dlg-> insert( Label =>
+      origin        => [ 10, 82],
+      size          => [ 415, 16],
+      text          => $text,
+      showAccelChar => 1,
+   );
+
+   my $input = $dlg-> insert( InputLine =>
+      size          => [ 415, 16],   
+      origin        => [ 10, 56],
+      text          => $string,
+      current       => 1,
+      defined($extras->{inputLine}) ? %{$extras->{inputLine}} : (),
+   );
+
+   my @ret = ( $dlg-> execute, $input-> text);
+   $dlg-> destroy;
+   return wantarray ? @ret : (( $ret[0] == mb::OK || $ret[0] == mb::Yes) ? $ret[1] : undef);
+}
+
+
 sub import
 {
    no strict 'refs';
    my $callpkg = $Prima::__import || caller;
-   for my $sym (qw(message_box message)) {
+   for my $sym (qw(message_box message input_box)) {
       *{"${callpkg}::$sym"} = \&{"Prima::MsgBox::$sym"}
    }
    use strict 'refs';
