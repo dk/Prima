@@ -534,6 +534,17 @@ sub on_mouseup
    $self-> clear_event;
 }
 
+sub on_mousewheel
+{
+   my ( $self, $mod, $x, $y, $z) = @_;
+   $z = int( $z/120);
+   $z *= $self-> {rows} if $mod & kb::Ctrl;
+   my $newTop = $self-> topItem - $z;
+   my $cols = $self->{multiColumn} ? $self->{columns} - $self->{xTailVisible} : 1;
+   my $maxTop = $self-> {count} - $self-> {rows} * $cols;
+   $self-> topItem( $newTop > $maxTop ? $maxTop : $newTop);
+}
+
 sub on_size
 {
    my $self = $_[0];

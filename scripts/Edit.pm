@@ -732,6 +732,16 @@ sub on_mousemove
    $self-> update_block unless $self->{mouseTransaction} == 2;
 }
 
+sub on_mousewheel
+{
+   my ( $self, $mod, $x, $y, $z) = @_;
+   $z = int( $z/120);
+   $z *= $self-> {rows} if $mod & kb::Ctrl;
+   my $newTop = $self-> firstCol - $z;
+   my $maxTop = $self-> {maxChunk} - $self->{rows} + 1;
+   $self-> firstCol( $newTop > $maxTop ? $maxTop : $newTop);
+}
+
 sub on_keydown
 {
    my ( $self, $code, $key, $mod, $repeat) = @_;
