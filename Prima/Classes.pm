@@ -322,7 +322,6 @@ sub profile_check_in
 }
 
 sub font       {($#_)?$_[0]->set_font($#_>1?{@_[1..$#_]}:$_[1]):return Prima::Font->new($_[0], "get_font", "set_font")}
-sub resolution {($#_)?$_[0]->raise_ro("resolution") :return $_[0]->get_resolution;  }
 sub pixel      {($#_>2)? shift->set_pixel(@_) : return shift->get_pixel(@_);        }
 
 sub rect3d
@@ -535,22 +534,14 @@ sub profile_default
    return $def;
 }
 
-sub set_type       {$_[0]->set( type    =>$_[1])}
+sub rangeLo      { return shift-> stats( is::RangeLo , @_); }
+sub rangeHi      { return shift-> stats( is::RangeHi , @_); }
+sub sum          { return shift-> stats( is::Sum     , @_); }
+sub sum2         { return shift-> stats( is::Sum2    , @_); }
+sub mean         { return shift-> stats( is::Mean    , @_); }
+sub variance     { return shift-> stats( is::Variance, @_); }
+sub stdDev       { return shift-> stats( is::StdDev  , @_); }
 
-sub data         {($#_)?$_[0]->set_data         ($_[1]):return $_[0]->get_data;         }
-sub conversion   {($#_)?$_[0]->set_conversion   ($_[1]):return $_[0]->get_conversion;   }
-sub rangeLo      {($#_)?$_[0]->set_stats  ($_[1], is::RangeLo):return $_[0]->get_stats(is::RangeLo); }
-sub rangeHi      {($#_)?$_[0]->set_stats  ($_[1], is::RangeHi):return $_[0]->get_stats(is::RangeHi); }
-sub sum          {($#_)?$_[0]->set_stats  ($_[1], is::Sum    ):return $_[0]->get_stats(is::Sum); }
-sub sum2         {($#_)?$_[0]->set_stats  ($_[1], is::Sum2   ):return $_[0]->get_stats(is::Sum2); }
-sub mean         {($#_)?$_[0]->set_stats  ($_[1], is::Mean   ):return $_[0]->get_stats(is::Mean); }
-sub variance     {($#_)?$_[0]->set_stats  ($_[1], is::Variance):return $_[0]->get_stats(is::Variance); }
-sub stdDev       {($#_)?$_[0]->set_stats  ($_[1], is::StdDev ):return $_[0]->get_stats(is::StdDev); }
-sub type         {($#_)?$_[0]->set_type         ($_[1]):return $_[0]->get_type;         }
-sub preserveType {($#_)?$_[0]->set_preserve_type($_[1]):return $_[0]->get_preserve_type;}
-sub hScaling     {($#_)?$_[0]->set_h_scaling    ($_[1]):return $_[0]->get_h_scaling    ;}
-sub vScaling     {($#_)?$_[0]->set_v_scaling    ($_[1]):return $_[0]->get_v_scaling    ;}
-sub resolution   {($#_)?shift->set_resolution   (@_)   :return $_[0]->get_resolution   ;}
 
 # class Icon
 package Prima::Icon;
@@ -817,7 +808,7 @@ sub profile_check_in
             $p->{$_} = $default->{$_} unless exists $p->{$_};
          }
       } else {
-         @defScale = $owner-> get_design_scale if defined $owner && $owner-> scaleChildren;
+         @defScale = $owner-> designScale if defined $owner && $owner-> scaleChildren;
          @{$p-> { designScale}} = @defScale if ( $defScale[0] > 0) && ( $defScale[1] > 0);
       }
       if ( exists $p-> { designScale}) {
@@ -882,72 +873,26 @@ sub profile_check_in
    }
 }
 
-sub set_sync_paint {$_[0]->set(syncPaint  =>$_[1])};
-sub set_clip_owner {$_[0]->set(clipOwner  =>$_[1])};
-sub set_transparent{$_[0]->set(transparent=>$_[1])};
-
-sub accelTable       {($#_)?$_[0]->set_accel_table     ($_[1]):return $_[0]->get_accel_table;     }
-sub accelItems       {($#_)?$_[0]->set_accel_items     ($_[1]):return $_[0]->get_accel_items;     }
-sub briefKeys        {($#_)?$_[0]->set_brief_keys  ($_[1]):return $_[0]->get_brief_keys;  }
-sub buffered         {($#_)?$_[0]->set_buffered    ($_[1]):return $_[0]->get_buffered;    }
-sub capture          {($#_)?shift->set_capture     (@_)   :return $_[0]->get_capture;     }
-sub centered         {($#_)?$_[0]->set_centered(1,1)      :$_[0]->raise_wo("centered");   }
-sub clipOwner        {($#_)?$_[0]->set_clip_owner  ($_[1]):return $_[0]->get_clip_owner;  }
-sub current          {($#_)?$_[0]->set_current($_[1])     :$_[0]->get_current;            }
-sub currentWidget   {($#_)?$_[0]->set_current_widget ($_[1]):return $_[0]->get_current_widget; }
-sub cursorPos        {($#_)? ($_[0]->set_cursor_pos($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_cursor_pos;    }
-sub cursorSize       {($#_)? ($_[0]->set_cursor_size($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_cursor_size;    }
-sub cursorVisible    {($#_)?$_[0]->set_cursor_visible($_[1]):return $_[0]->get_cursor_visible;      }
-sub growMode         {($#_)?$_[0]->set_grow_mode   ($_[1]):return $_[0]->get_grow_mode;   }
-sub dark3DColor      {($#_)?$_[0]->set_color_index ($_[1], ci::Dark3DColor):return $_[0]->get_color_index(ci::Dark3DColor)}
-sub designScale      {($#_)?shift->set_design_scale(@_)                 :return $_[0]->get_design_scale;       }
-sub disabledBackColor{($#_)?$_[0]->set_color_index ($_[1], ci::Disabled):return $_[0]->get_color_index(ci::Disabled)}
-sub disabledColor    {($#_)?$_[0]->set_color_index ($_[1], ci::DisabledText):return $_[0]->get_color_index(ci::DisabledText)}
-sub firstClick       {($#_)?$_[0]->set_first_click ($_[1]):return $_[0]->get_first_click; }
-sub focused          {($#_)?$_[0]->set_focused     ($_[1]):return $_[0]->get_focused;     }
-sub helpContext      {($#_)?$_[0]->set_help_context($_[1]):return $_[0]->get_help_context;}
-sub hiliteBackColor  {($#_)?$_[0]->set_color_index ($_[1], ci::Hilite  ):return $_[0]->get_color_index(ci::Hilite  )}
-sub hiliteColor      {($#_)?$_[0]->set_color_index ($_[1], ci::HiliteText  ):return $_[0]->get_color_index(ci::HiliteText  )}
-sub hintVisible      {($#_)?$_[0]->set_hint_visible($_[1]):return $_[0]->get_hint_visible;}
-sub light3DColor     {($#_)?$_[0]->set_color_index ($_[1], ci::Light3DColor):return $_[0]->get_color_index(ci::Light3DColor)}
-sub menu             {($#_)?$_[0]->set_menu        ($_[1]):return $_[0]->get_menu;        }
-sub menuItems        {($#_)?$_[0]->set_menu_items  ($_[1]):return $_[0]->get_menu_items;  }
-sub ownerBackColor   {($#_)?$_[0]->set_owner_back_color($_[1]) :return $_[0]->get_owner_back_color; }
-sub ownerColor       {($#_)?$_[0]->set_owner_color($_[1]) :return $_[0]->get_owner_color; }
-sub ownerFont        {($#_)?$_[0]->set_owner_font ($_[1]) :return $_[0]->get_owner_font;  }
-sub ownerHint        {($#_)?$_[0]->set_owner_hint ($_[1]) :return $_[0]->get_owner_hint;  }
-sub ownerPalette     {($#_)?$_[0]->set_owner_palette($_[1]) :return $_[0]->get_owner_palette;  }
-sub ownerShowHint    {($#_)?$_[0]->set_owner_show_hint($_[1]):return $_[0]->get_owner_show_hint;}
-sub pointerIcon      {($#_)?shift->set_pointer_icon(@_):return $_[0]->get_pointer_icon;}
-sub pointerHotSpot   {($#_)?shift->set_pointer_hot_spot(@_):return $_[0]->get_pointer_hot_spot;}
-sub pointerPos       {($#_)?shift->set_pointer_pos (@_):return $_[0]->get_pointer_pos; }
-sub pointerType      {($#_)?shift->set_pointer_type(@_):return $_[0]->get_pointer_type;}
-sub pointerVisible   {($#_)?$_[0]->set_pointer_visible($_[1]):return $_[0]->get_pointer_visible;     }
-sub popup            {($#_)?$_[0]->set_popup       ($_[1]):return $_[0]->get_popup;       }
+sub capture               {($#_)?shift->set_capture     (@_)   :return $_[0]->get_capture;     }
+sub centered              {($#_)?$_[0]->set_centered(1,1)      :$_[0]->raise_wo("centered");   }
+sub dark3DColor           {return shift-> colorIndex( ci::Dark3DColor , @_)};
+sub disabledBackColor     {return shift-> colorIndex( ci::Disabled    , @_)};
+sub disabledColor         {return shift-> colorIndex( ci::DisabledText, @_)};
+sub hiliteBackColor       {return shift-> colorIndex( ci::Hilite      , @_)};
+sub hiliteColor           {return shift-> colorIndex( ci::HiliteText  , @_)};
+sub light3DColor          {return shift-> colorIndex( ci::Light3DColor, @_)};
+sub menu                  {($#_)?$_[0]->set_menu        ($_[1]):return $_[0]->get_menu;        }
+sub menuItems             {($#_)?$_[0]->set_menu_items  ($_[1]):return $_[0]->get_menu_items;  }
 sub popupFont             {($#_)?$_[0]->set_popup_font ($_[1])  :return Prima::Font->new($_[0], "get_popup_font", "set_popup_font")}
-sub popupColor            {($#_)?$_[0]->set_popup_color  ($_[1], ci::NormalText)        :return $_[0]->get_popup_color(ci::NormalText);}
-sub popupBackColor        {($#_)?$_[0]->set_popup_color  ($_[1], ci::Normal)            :return $_[0]->get_popup_color(ci::Normal);}
-sub popupDisabledBackColor{($#_)?$_[0]->set_popup_color  ($_[1], ci::Disabled)          :return $_[0]->get_popup_color(ci::Disabled);}
-sub popupHiliteBackColor  {($#_)?$_[0]->set_popup_color  ($_[1], ci::Hilite)            :return $_[0]->get_popup_color(ci::Hilite);}
-sub popupDisabledColor    {($#_)?$_[0]->set_popup_color  ($_[1], ci::DisabledText)      :return $_[0]->get_popup_color(ci::DisabledText);}
-sub popupHiliteColor      {($#_)?$_[0]->set_popup_color  ($_[1], ci::HiliteText)        :return $_[0]->get_popup_color(ci::HiliteText);}
-sub popupDark3DColor      {($#_)?$_[0]->set_popup_color  ($_[1], ci::Dark3DColor)       :return $_[0]->get_popup_color(ci::Dark3DColor);}
-sub popupLight3DColor     {($#_)?$_[0]->set_popup_color  ($_[1], ci::Light3DColor)      :return $_[0]->get_popup_color(ci::Light3DColor);}
-sub popupItems       {($#_)?$_[0]->set_popup_items ($_[1]):return $_[0]->get_popup_items; }
-sub scaleChildren    {($#_)?$_[0]->set_scale_children  ($_[1]):return $_[0]->get_scale_children;  }
-sub selectable       {($#_)?$_[0]->set_selectable  ($_[1]):return $_[0]->get_selectable}
-sub selectedWidget  {($#_)?$_[0]->set_selected_widget($_[1]):return $_[0]->get_selected_widget;}
-sub selectingButtons {($#_)?$_[0]->set_selecting_buttons($_[1]):return $_[0]->get_selecting_buttons}
-sub shape            {($#_)?$_[0]->set_shape       ($_[1]):return $_[0]->get_shape;       }
-sub showHint         {($#_)?$_[0]->set_show_hint   ($_[1]):return $_[0]->get_show_hint;   }
-sub sizeMax          {($#_)? ($_[0]->set_size_max($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_size_max;    }
-sub sizeMin          {($#_)? ($_[0]->set_size_min($#_ > 1 ? @_[1..$#_] : @{$_[1]}))   :return $_[0]->get_size_min;    }
-sub syncPaint        {($#_)?$_[0]->set_sync_paint  ($_[1]):return $_[0]->get_sync_paint;  }
-sub tabOrder         {($#_)?$_[0]->set_tab_order   ($_[1]):return $_[0]->get_tab_order;   }
-sub tabStop          {($#_)?$_[0]->set_tab_stop    ($_[1]):return $_[0]->get_tab_stop;    }
-sub transparent      {($#_)?$_[0]->set_transparent ($_[1]):return $_[0]->get_transparent; }
-sub visible          {($#_)?$_[0]->set_visible     ($_[1]):return $_[0]->get_visible;     }
-sub widgetClass      {($#_)?$_[0]->set_widget_class  ($_[1]):return $_[0]->get_widget_class;  }
+sub popupColor            { return shift-> popupColorIndex( ci::NormalText  , @_)};
+sub popupBackColor        { return shift-> popupColorIndex( ci::Normal      , @_)};
+sub popupDisabledBackColor{ return shift-> popupColorIndex( ci::Disabled    , @_)};
+sub popupHiliteBackColor  { return shift-> popupColorIndex( ci::Hilite      , @_)};
+sub popupDisabledColor    { return shift-> popupColorIndex( ci::DisabledText, @_)};
+sub popupHiliteColor      { return shift-> popupColorIndex( ci::HiliteText  , @_)};
+sub popupDark3DColor      { return shift-> popupColorIndex( ci::Dark3DColor , @_)};
+sub popupLight3DColor     { return shift-> popupColorIndex( ci::Light3DColor, @_)};
+
 sub x_centered       {($#_)?$_[0]->set_centered(1,0)      :$_[0]->raise_wo("x_centered"); }
 sub y_centered       {($#_)?$_[0]->set_centered(0,1)      :$_[0]->raise_wo("y_centered"); }
 
@@ -984,19 +929,19 @@ sub insert
 sub pointer
 {
    if ( $#_) {
-      $_[0]-> set_pointer_type( $_[1]), return unless ref( $_[1]);
+      $_[0]-> pointerType( $_[1]), return unless ref( $_[1]);
       defined $_[1]-> {__pointerHotSpot} ?
          $_[0]-> set(
             pointerIcon    => $_[1],
             pointerHotSpot => $_[1]-> {__pointerHotSpot},
          ) :
-            $_[0]-> set_pointer_icon( $_[1]);
-      $_[0]-> set_pointer_type( cr::User);
+            $_[0]-> pointerIcon( $_[1]);
+      $_[0]-> pointerType( cr::User);
    } else {
-      my $i = $_[0]-> get_pointer_type;
+      my $i = $_[0]-> pointerType;
       return $i if $i != cr::User;
-      $i = $_[0]-> get_pointer_icon;
-      $i-> {__pointerHotSpot} = [ $_[0]-> get_pointer_hot_spot];
+      $i = $_[0]-> pointerIcon;
+      $i-> {__pointerHotSpot} = [ $_[0]-> pointerHotSpot];
       return $i;
    }
 }
@@ -1015,8 +960,8 @@ sub mouse_down  { splice( @_,5,0,0) if $#_ > 4;
 sub mouse_click { shift-> mouse_event( cm::MouseClick, @_) }
 sub select      { $_[0]-> selected(1); }
 sub deselect    { $_[0]-> selected(0); }
-sub focus       { $_[0]-> set_focused(1); }
-sub defocus     { $_[0]-> set_focused(0); }
+sub focus       { $_[0]-> focused(1); }
+sub defocus     { $_[0]-> focused(0); }
 
 
 # class Window
@@ -1108,32 +1053,17 @@ sub maximize    { $_[0]->windowState( ws::Maximized)}
 sub minimize    { $_[0]->windowState( ws::Minimized)}
 sub restore     { $_[0]->windowState( ws::Normal)}
 
-sub set_border_icons     {$_[0]->set(borderIcons  =>$_[1])}
-sub set_border_style     {$_[0]->set(borderStyle  =>$_[1])}
-sub set_task_listed      {$_[0]->set(taskListed   =>$_[1])}
-
-sub borderIcons          {($#_)?$_[0]->set_border_icons($_[1])                        :return $_[0]->get_border_icons;}
-sub borderStyle          {($#_)?$_[0]->set_border_style($_[1])                        :return $_[0]->get_border_style;}
-sub frameOrigin          {($#_)?$_[0]->set_frame_pos($_[1], $_[2])                    :return $_[0]->get_frame_pos;   }
-sub frameSize            {($#_)?$_[0]->set_frame_size($_[1], $_[2])                   :return $_[0]->get_frame_size;  }
 sub frameWidth           {($#_)?$_[0]->set_frame_size($_[1], ($_[0]->get_frame_size)[1]):return ($_[0]->get_frame_size)[0];  }
 sub frameHeight          {($#_)?$_[0]->set_frame_size(($_[0]->get_frame_size)[0], $_[1]):return ($_[0]->get_frame_size)[1];  }
-sub taskListed           {($#_)?$_[0]->set_task_listed ($_[1])                        :return $_[0]->get_task_listed; }
-sub windowState          {($#_)?$_[0]->set_window_state($_[1])                        :return $_[0]->get_window_state;}
-sub icon                 {($#_)?$_[0]->set_icon        ($_[1])  :                      return $_[0]->get_icon;        }
-sub menu                 {($#_)?$_[0]->set_menu        ($_[1])                        :return $_[0]->get_menu; }
 sub menuFont             {($#_)?$_[0]->set_menu_font   ($_[1])  :return Prima::Font->new($_[0], "get_menu_font", "set_menu_font")}
-sub menuColor            {($#_)?$_[0]->set_menu_color  ($_[1], ci::NormalText)        :return $_[0]->get_menu_color(ci::NormalText);}
-sub menuBackColor        {($#_)?$_[0]->set_menu_color  ($_[1], ci::Normal)            :return $_[0]->get_menu_color(ci::Normal);}
-sub menuDisabledBackColor{($#_)?$_[0]->set_menu_color  ($_[1], ci::Disabled)          :return $_[0]->get_menu_color(ci::Disabled);}
-sub menuHiliteBackColor  {($#_)?$_[0]->set_menu_color  ($_[1], ci::Hilite)            :return $_[0]->get_menu_color(ci::Hilite);}
-sub menuDisabledColor    {($#_)?$_[0]->set_menu_color  ($_[1], ci::DisabledText)      :return $_[0]->get_menu_color(ci::DisabledText);}
-sub menuHiliteColor      {($#_)?$_[0]->set_menu_color  ($_[1], ci::HiliteText)        :return $_[0]->get_menu_color(ci::HiliteText);}
-sub menuDark3DColor      {($#_)?$_[0]->set_menu_color  ($_[1], ci::Dark3DColor)       :return $_[0]->get_menu_color(ci::Dark3DColor);}
-sub menuLight3DColor     {($#_)?$_[0]->set_menu_color  ($_[1], ci::Light3DColor)      :return $_[0]->get_menu_color(ci::Light3DColor);}
-sub modalHorizon         {($#_)?$_[0]->set_modal_horizon($_[1]):return $_[0]->get_modal_horizon;  }
-sub modalResult          {($#_)?$_[0]->set_modal_result($_[1]):return $_[0]->get_modal_result;}
-sub ownerIcon            {($#_)?$_[0]->set_owner_icon($_[1]) :return $_[0]->get_owner_icon;  }
+sub menuColor            { return shift-> menuColorIndex( ci::NormalText   , @_);}
+sub menuBackColor        { return shift-> menuColorIndex( ci::Normal       , @_);}
+sub menuDisabledBackColor{ return shift-> menuColorIndex( ci::Disabled     , @_);}
+sub menuHiliteBackColor  { return shift-> menuColorIndex( ci::Hilite       , @_);}
+sub menuDisabledColor    { return shift-> menuColorIndex( ci::DisabledText , @_);}
+sub menuHiliteColor      { return shift-> menuColorIndex( ci::HiliteText   , @_);}
+sub menuDark3DColor      { return shift-> menuColorIndex( ci::Dark3DColor  , @_);}
+sub menuLight3DColor     { return shift-> menuColorIndex( ci::Light3DColor , @_);}
 
 
 # class Dialog
@@ -1360,13 +1290,6 @@ sub setup
    }
 }
 
-sub autoClose     {($#_)?$_[0]->set_auto_close   ($_[1]):return $_[0]->get_auto_close;     }
-sub hintColor     {($#_)?$_[0]->set_hint_color  ($_[1]):return $_[0]->get_hint_color;   }
-sub hintBackColor {($#_)?$_[0]->set_hint_back_color  ($_[1]):return $_[0]->get_hint_back_color;   }
 sub hintFont      {($#_)?$_[0]->set_hint_font        ($_[1])  :return Prima::Font->new($_[0], "get_hint_font", "set_hint_font")}
-sub hintPause     {($#_)?$_[0]->set_hint_pause       ($_[1]):return $_[0]->get_hint_pause;        }
-sub helpFile      {($#_)?$_[0]->set_help_file        ($_[1]):return $_[0]->get_help_file;         }
-sub icon          {($#_)?$_[0]->set_icon        ($_[1])  :return $_[0]->get_icon;        }
-sub modalHorizon  {($#_)?$_[0]->set_modal_horizon($_[1]):return $_[0]->get_modal_horizon;  }
 
 1;

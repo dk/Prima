@@ -113,9 +113,9 @@ Application_init( Handle self, HV * profile)
    }
 
    if ( SvTYPE( sv = pget_sv( accelItems)) != SVt_NULL)
-      my-> set_accel_items( self, sv);
+      my-> set_accelItems( self, sv);
    if ( SvTYPE( sv = pget_sv( popupItems)) != SVt_NULL)
-      my-> set_popup_items( self, sv);
+      my-> set_popupItems( self, sv);
    pdelete( accelTable);
    pdelete( accelItems);
    pdelete( popupItems);
@@ -262,8 +262,14 @@ Application_end_paint_info( Handle self)
    CDrawable-> end_paint_info( self);
 }
 
+Bool
+Application_focused( Handle self, Bool set, Bool focused)
+{
+   if ( set) return false;
+   return inherited focused( self, set, focused);
+}
+
 void Application_bring_to_front( Handle self) {}
-void Application_set_focused( Handle self, Bool focused) {}
 void Application_show( Handle self) {}
 void Application_hide( Handle self) {}
 void Application_insert_behind( Handle self, Handle view) {}
@@ -318,7 +324,6 @@ Application_get_default_cursor_width( char * dummy)
 {
    return apc_sys_get_value( svXCursor);
 }
-
 
 Point
 Application_get_default_scrollbar_metrics( char * dummy)
@@ -415,30 +420,27 @@ Application_get_hint_widget( Handle self)
    return var->  hintWidget;
 }
 
-Handle
-Application_get_icon( Handle self)
-{
-   if ( var-> stage > csNormal) return nilHandle;
-   return var-> icon;
-}
-
 static Bool
 icon_notify ( Handle self, Handle child, Handle icon)
 {
     if ( kind_of( child, CWindow) && (( PWidget) child)-> options. optOwnerIcon) {
-       (( PWindow) child)-> self-> set_icon( child, icon);
-       (( PWindow) child)-> options. optOwnerIcon = 1;
+       CWindow( child)-> set_icon( child, icon);
+       PWindow( child)-> options. optOwnerIcon = 1;
     }
     return false;
 }
 
-void
-Application_set_icon( Handle self, Handle icon)
+Handle
+Application_icon( Handle self, Bool set, Handle icon)
 {
-   if ( var-> stage > csNormal) return;
+   if ( var-> stage > csNormal) return nilHandle;
+
+   if ( !set)
+      return var-> icon;
+
    if ( icon && !kind_of( icon, CImage)) {
-       warn("RTC0013: Illegal object reference passed to Application.set_icon");
-       return;
+       warn("RTC0013: Illegal object reference passed to Application::icon");
+       return nilHandle;
    }
    if ( icon) {
       icon = ((( PImage) icon)-> self)-> dup( icon);
@@ -450,22 +452,21 @@ Application_set_icon( Handle self, Handle icon)
    var-> icon = icon;
    if ( icon)
       my-> attach( self, icon);
+   return nilHandle;
 }
 
 char *
-Application_get_help_file ( Handle self)
+Application_helpFile( Handle self, Bool set, char * helpFile)
 {
-   return var->  helpFile ? var->  helpFile : "";
-}
+   if ( var-> stage > csNormal) return "";
+   if ( !set)
+      return var-> helpFile ? var-> helpFile : "";
 
-void
-Application_set_help_file( Handle self, char * helpFile)
-{
-   if ( var->  stage > csNormal) return;
-   if ( var->  helpFile && ( strcmp( var->  helpFile, helpFile) == 0)) return;
-   free( var->  helpFile);
-   strcpy( var->  helpFile = malloc( strlen ( helpFile) + 1), helpFile);
+   if ( var-> helpFile && ( strcmp( var->  helpFile, helpFile) == 0)) return "";
+   free( var-> helpFile);
+   strcpy( var-> helpFile = malloc( strlen ( helpFile) + 1), helpFile);
    apc_help_set_file( self, helpFile);
+   return "";
 }
 
 Handle
@@ -481,16 +482,11 @@ Application_get_active_window( Handle self)
 }
 
 Bool
-Application_get_auto_close( Handle self)
+Application_autoClose( Handle self, Bool set, Bool autoClose)
 {
-   return var->  autoClose;
-}
-
-
-void
-Application_set_auto_close( Handle self, Bool autoClose)
-{
-   var->  autoClose = autoClose;
+   if ( !set)
+      return var->  autoClose;
+   return var-> autoClose = autoClose;
 }
 
 SV *
@@ -510,20 +506,37 @@ typedef struct _SingleColor
 
 
 Color
-Application_get_color_index( Handle self, int index)
+Application_colorIndex( Handle self, Bool set, int index, Color color)
 {
-   index = (( index < 0) || ( index > ciMaxId)) ? 0 : index;
-   switch ( index)
-   {
-     case ciFore:
-        return opt_InPaint ?
-           CDrawable-> get_color ( self) : var->  colors[ index];
-     case ciBack:
-        return opt_InPaint ?
-           CDrawable-> get_backColor ( self) : var->  colors[ index];
-     default:
-        return  var->  colors[ index];
+   if ( var->  stage > csNormal) return clInvalid;
+   if (( index < 0) || ( index > ciMaxId)) return clInvalid;
+   if ( !set) {
+      switch ( index) {
+        case ciFore:
+           return opt_InPaint ?
+              CDrawable-> get_color ( self) : var-> colors[ index];
+        case ciBack:
+           return opt_InPaint ?
+              CDrawable-> get_backColor ( self) : var-> colors[ index];
+        default:
+           return  var->  colors[ index];
+      }
+   } else {
+      SingleColor s;
+      s. color = color;
+      s. index = index;
+      if ( !opt_InPaint) my-> first_that( self, single_color_notify, &s);
+      if ( opt_InPaint) switch ( index) {
+         case ciFore:
+            CDrawable-> set_color ( self, color);
+            break;
+         case ciBack:
+            CDrawable-> set_backColor ( self, color);
+            break;
+       }
+       var-> colors[ index] = color;
    }
+   return clInvalid;
 }
 
 void
@@ -534,26 +547,6 @@ Application_set_font( Handle self, Font font)
    if ( opt_InPaint) apc_gp_set_font ( self, &var-> font);
 }
 
-void
-Application_set_color_index( Handle self, Color color, int index)
-{
-   SingleColor s;
-   s. color = color;
-   s. index = index;
-   if ( var->  stage > csNormal) return;
-   if (( index < 0) || ( index > ciMaxId)) return;
-   if ( !opt_InPaint) my-> first_that( self, single_color_notify, &s);
-   if ( opt_InPaint) switch ( index)
-   {
-      case ciFore:
-         CDrawable-> set_color ( self, color);
-         break;
-      case ciBack:
-         CDrawable-> set_backColor ( self, color);
-         break;
-    }
-   var->  colors[ index] = color;
-}
 
 Bool
 Application_close( Handle self)
@@ -563,15 +556,11 @@ Application_close( Handle self)
 }
 
 Bool
-Application_get_insert_mode( Handle self)
+Application_insertMode( Handle self, Bool set, Bool insMode)
 {
-   return apc_sys_get_insert_mode();
-}
-
-void
-Application_set_insert_mode( Handle self, Bool insMode)
-{
-   apc_sys_set_insert_mode( insMode);
+   if ( !set)
+      return apc_sys_get_insert_mode();
+   return apc_sys_set_insert_mode( insMode);
 }
 
 Handle
@@ -597,7 +586,7 @@ static void hshow( Handle self)
    Point s = my-> get_size( self);
    Point fin = {0,0};
    Point pos = hintUnder-> client_to_screen( var->  hintUnder, fin);
-   Point mouse = my-> get_pointer_pos( self);
+   Point mouse = my-> get_pointerPos( self);
    Point hintSize;
    PWidget_vmt hintWidget = CWidget( var->  hintWidget);
 
@@ -630,7 +619,7 @@ Application_HintTimer_handle_event( Handle timer, PEvent event)
          Event ev = {cmHint};
          if (   !var->hintUnder
              || apc_application_get_widget_from_point( self,
-                   my-> get_pointer_pos(self)) != var->hintUnder
+                   my-> get_pointerPos(self)) != var->hintUnder
              || PObject( var-> hintUnder)-> stage != csNormal)
             return;
          ev. gen. B = true;
@@ -689,42 +678,36 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
    }
 }
 
-void
-Application_set_hint_color( Handle self, Color hintColor)
+Color
+Application_hintColor( Handle self, Bool set, Color hintColor)
 {
-   CWidget( var->  hintWidget)-> set_color( var->  hintWidget, hintColor);
+   if ( !set)
+      return CWidget( var-> hintWidget)-> get_color( var->  hintWidget);
+   return CWidget( var->  hintWidget)-> set_color( var->  hintWidget, hintColor);
 }
 
-void
-Application_set_hint_back_color( Handle self, Color hintBackColor)
+Color
+Application_hintBackColor( Handle self, Bool set, Color hintBackColor)
 {
-   CWidget( var->  hintWidget)-> set_backColor( var->  hintWidget, hintBackColor);
+   if ( !set)
+      return CWidget( var->  hintWidget)-> get_backColor( var-> hintWidget);
+   return CWidget( var->  hintWidget)-> set_backColor( var->  hintWidget, hintBackColor);
+}
+
+int
+Application_hintPause( Handle self, Bool set, int hintPause)
+{
+   if ( !set)
+      return CTimer( var->  hintTimer)-> get_timeout( var->  hintTimer);
+   return CTimer( var->  hintTimer)-> set_timeout( var->  hintTimer, hintPause);
 }
 
 void
 Application_set_hint_font( Handle self, Font hintFont)
 {
-   CWidget( var->  hintWidget)-> set_font( var->  hintWidget, hintFont);
+   CWidget( var-> hintWidget)-> set_font( var->  hintWidget, hintFont);
 }
 
-
-void
-Application_set_hint_pause( Handle self, int hintPause)
-{
-   CTimer( var->  hintTimer)-> set_timeout( var->  hintTimer, hintPause);
-}
-
-Color
-Application_get_hint_color( Handle self)
-{
-   return CWidget( var->  hintWidget)-> get_color( var->  hintWidget);
-}
-
-Color
-Application_get_hint_back_color( Handle self)
-{
-   return CWidget( var->  hintWidget)-> get_backColor( var->  hintWidget);
-}
 
 Font
 Application_get_hint_font( Handle self)
@@ -732,16 +715,13 @@ Application_get_hint_font( Handle self)
    return CWidget( var->  hintWidget)-> get_font( var->  hintWidget);
 }
 
-int
-Application_get_hint_pause( Handle self)
+Bool
+Application_showHint( Handle self, Bool set, Bool showHint)
 {
-   return CTimer( var->  hintTimer)-> get_timeout( var->  hintTimer);
-}
-
-void
-Application_set_show_hint( Handle self, Bool showHint)
-{
+   if ( !set)
+      return inherited showHint( self, set, showHint);
    opt_assign( optShowHint, showHint);
+   return false;
 }
 
 Handle Application_next( Handle self) { return self;}
@@ -758,7 +738,7 @@ Application_top_frame( Handle self, Handle from)
 {
    while ( from) {
       if ( kind_of( from, CWindow) &&
-           (( PWidget(from)-> owner == application) || !CWidget(from)-> get_clip_owner(from))
+           (( PWidget(from)-> owner == application) || !CWidget(from)-> get_clipOwner(from))
          )
          return from;
       from = PWidget( from)-> owner;
@@ -801,7 +781,7 @@ Application_map_focus( Handle self, Handle from)
       topShared = var->  topSharedModal;
    } else {
       Handle horizon =
-         ( !CWindow( topFrame)-> get_modal_horizon( topFrame)) ?
+         ( !CWindow( topFrame)-> get_modalHorizon( topFrame)) ?
          CWindow( topFrame)-> get_horizon( topFrame) : topFrame;
       if ( horizon == self)
          topShared = var->  topSharedModal;
@@ -820,13 +800,13 @@ Application_popup_modal( Handle self)
 
 
 #define popupWin                                      \
-STMT_START {                                                                         \
-   PWindow_vmt top = CWindow( xTop);                             \
-   if ( !top-> get_visible( xTop))                                      \
-      top-> set_visible( xTop, 1);                              \
-   if ( top-> get_window_state( xTop) == wsMinimized)   \
-      top-> set_window_state( xTop, wsNormal);        \
-   top-> set_selected( xTop, 1);                                        \
+STMT_START {                                          \
+   PWindow_vmt top = CWindow( xTop);                  \
+   if ( !top-> get_visible( xTop))                    \
+      top-> set_visible( xTop, 1);                    \
+   if ( top-> get_windowState( xTop) == wsMinimized)  \
+      top-> set_windowState( xTop, wsNormal);         \
+   top-> set_selected( xTop, 1);                      \
    ret = xTop;                                        \
 } STMT_END
 
@@ -867,44 +847,12 @@ STMT_START {                                                                    
    return ret;
 }
 
-
-void Application_update_sys_handle( Handle self, HV * profile) {}
-
-Bool Application_get_capture( Handle self) { return false; }
-Bool Application_get_tab_stop( Handle self) { return false; }
-Bool Application_get_selectable( Handle self) { return false; }
-Handle Application_get_shape( Handle self) { return nilHandle; }
-Bool Application_get_sync_paint( Handle self) { return false; }
-Bool Application_get_visible( Handle self) { return true; }
-Bool Application_get_modal_stop( Handle self) { return true; }
-
-void Application_set_help_context( Handle self, long context)
+long int
+Application_helpContext( Handle self, Bool set, long int context)
 {
-   if ( context == hmpOwner) context = hmpNone;
-   inherited set_help_context( self, context);
+   if ( set && ( context == hmpOwner)) context = hmpNone;
+   return inherited helpContext( self, set, context);
 }
-
-void Application_set_buffered( Handle self, Bool buffered) {}
-void Application_set_capture( Handle self, Bool capture, Handle confineTo) {}
-void Application_set_centered( Handle self, Bool x, Bool y) {}
-Bool Application_enabled( Handle self, Bool set, Bool enable) { return true;}
-Bool Application_set_visible( Handle self, Bool visible) { return false; }
-void Application_set_grow_mode( Handle self, int flags) {}
-void Application_set_hint_visible( Handle self, Bool visible) {}
-void Application_set_modal_horizon( Handle self, Bool modalHorizon) {}
-void Application_set_owner( Handle self, Handle owner) {}
-void Application_set_owner_color( Handle self, Bool ownerColor) {}
-void Application_set_owner_back_color( Handle self, Bool ownerBackColor) {}
-void Application_set_owner_font( Handle self, Bool ownerFont) {}
-void Application_set_owner_show_hint( Handle self, Bool ownerShowHint) {}
-void Application_set_owner_palette( Handle self, Bool ownerPalette) {}
-void Application_set_selectable( Handle self, Bool selectable) {}
-void Application_set_shape( Handle self, Handle mask) {}
-void Application_set_sync_paint( Handle self, Bool syncPaint) {}
-void Application_set_clip_owner( Handle self, Bool clipOwner) {}
-void Application_set_tab_order( Handle self, int tabOrder) {}
-void Application_set_tab_stop( Handle self, Bool tabStop) {}
-void Application_set_transparent( Handle self, Bool transparent) {}
 
 Point
 Application_size( Handle self, Bool set, Point size)
@@ -920,8 +868,34 @@ Application_origin( Handle self, Bool set, Point origin)
    return p;
 }
 
-char *
-Application_text( Handle self, Bool set, char *text)
+Bool
+Application_modalHorizon( Handle self, Bool set, Bool modalHorizon)
 {
-   return "";
+   return true;
 }
+
+void   Application_update_sys_handle( Handle self, HV * profile) {}
+Bool   Application_get_capture( Handle self) { return false; }
+void   Application_set_capture( Handle self, Bool capture, Handle confineTo) {}
+void   Application_set_centered( Handle self, Bool x, Bool y) {}
+
+Bool   Application_tabStop( Handle self, Bool set, Bool tabStop)       { return false; }
+Bool   Application_selectable( Handle self, Bool set, Bool selectable) { return false; }
+Handle Application_shape( Handle self, Bool set, Handle mask)          { return nilHandle; }
+Bool   Application_syncPaint( Handle self, Bool set, Bool syncPaint)   { return false; }
+Bool   Application_visible( Handle self, Bool set, Bool visible)       { return true; }
+Bool   Application_buffered( Handle self, Bool set, Bool buffered)     { return false; }
+Bool   Application_enabled( Handle self, Bool set, Bool enable)        { return true;}
+int    Application_growMode( Handle self, Bool set, int flags)         { return 0; }
+Bool   Application_hintVisible( Handle self, Bool set, Bool visible)   { return false; }
+Handle Application_owner( Handle self, Bool set, Handle owner)         { return nilHandle; }
+Bool   Application_ownerColor( Handle self, Bool set, Bool ownerColor) { return false; }
+Bool   Application_ownerBackColor( Handle self, Bool set, Bool ownerBackColor) { return false; }
+Bool   Application_ownerFont( Handle self, Bool set, Bool ownerFont)   { return false; }
+Bool   Application_ownerShowHint( Handle self, Bool set, Bool ownerShowHint) { return false; }
+Bool   Application_ownerPalette( Handle self, Bool set, Bool ownerPalette) { return false; }
+Bool   Application_clipOwner( Handle self, Bool set, Bool clipOwner)   { return true; }
+int    Application_tabOrder( Handle self, Bool set, int tabOrder)      { return 0; }
+char * Application_text    ( Handle self, Bool set, char * text)       { return ""; }
+Bool   Application_transparent( Handle self, Bool set, Bool transparent) { return false; }
+

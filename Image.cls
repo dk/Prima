@@ -37,8 +37,16 @@ object Prima::Image( Prima::Drawable)
    int            statsCache;
    Point          resolution;
 
-   property SV *  palette;
-   property Point size;
+   property int    conversion;
+   property SV *   data;
+   property Bool   preserveType;
+   property Bool   hScaling;
+   property double stats( int index);
+   property int    type;
+   property SV *   palette;
+   property Point  resolution;
+   property Point  size;
+   property Bool   vScaling;
 
    # methods
    method Handle bitmap();
@@ -51,18 +59,10 @@ object Prima::Image( Prima::Drawable)
    method void   end_paint_info();
    method Handle extract( int x, int y, int width, int height);
    method int    get_bpp();
-   method int    get_conversion();
-   method SV   * get_data();
    method SV   * get_handle();
    weird  Handle get_info( SV *who, char *filename);
    static char * get_status_string( SV *self);
    method Color  get_pixel(int x, int y);
-   method Bool   get_preserve_type();
-   method Point  get_resolution();
-   method Bool   get_h_scaling();
-   method Bool   get_v_scaling();
-   method double get_stats( int index);
-   method int    get_type();
    method void   init( HV * profile);
    weird  Handle load( SV *who, char *filename, PList imgInfo);
    c_only void   make_empty();
@@ -70,15 +70,7 @@ object Prima::Image( Prima::Drawable)
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
    weird  Bool   save( SV *who, char *filename, PList imgInfo);
    method void   set( HV * profile);
-   method void   set_conversion( int conversion);
-   method void   set_data( SV * data);
    method Bool   set_pixel(int x, int y, Color color);
-   method void   set_preserve_type( Bool preserveType);
-   method void   set_h_scaling( Bool scaling);
-   method void   set_v_scaling( Bool scaling);
-   method void   set_resolution( int x, int y);
-   method void   set_stats( double value, int index);
-   import void   set_type( int type);
    c_only void   reset( int type, SV * palette);
    c_only void   stretch( int width, int height);
    c_only void   update_change();

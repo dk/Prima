@@ -719,7 +719,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          if ( x != application && !local_wnd( GetActiveWindow(), DHANDLE( x)))
          {
              ev. cmd = 0; // yes, we abandon mousedown but we should force selection:
-             if ((( PApplication) application)-> hintUnder == self) v-> self-> set_hint_visible( self, 0);
+             if ((( PApplication) application)-> hintUnder == self) v-> self-> set_hintVisible( self, 0);
              if (( v-> options. optSelectable) && ( v-> selectingButtons & ev. pos. button))
                 apc_widget_set_focused( self);
          }
@@ -1151,8 +1151,8 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    case WM_GETMINMAXINFO:
       {
          LPMINMAXINFO l = ( LPMINMAXINFO) mp2;
-         Point min = var self-> get_size_min( self);
-         Point max = var self-> get_size_max( self);
+         Point min = var self-> get_sizeMin( self);
+         Point max = var self-> get_sizeMax( self);
          Point bor = get_window_borders( sys s. window. borderStyle);
          int   dy  = 0 +
             (( sys s. window. borderIcons & biTitleBar) ? GetSystemMetrics( SM_CYCAPTION) : 0) +

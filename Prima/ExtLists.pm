@@ -96,8 +96,8 @@ sub draw_items
    my @clrs = (
       $self-> color,
       $self-> backColor,
-      $self-> get_color_index( ci::HiliteText),
-      $self-> get_color_index( ci::Hilite)
+      $self-> colorIndex( ci::HiliteText),
+      $self-> colorIndex( ci::Hilite)
    );
    my @clipRect = $canvas-> clipRect;
    my $i;

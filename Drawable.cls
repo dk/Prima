@@ -43,6 +43,7 @@ object Prima::Drawable ( Prima::Component)
    property     int           lineWidth;
    property     SV *          palette;
    property     Handle        region;
+   property     Point         resolution;
    property     int           rop;
    property     int           rop2;
    property     Point         size;
@@ -73,7 +74,6 @@ object Prima::Drawable ( Prima::Component)
    method Color get_nearest_color( Color color);
    method int   get_paint_state();
    method SV *  get_physical_palette();
-   method Point get_resolution();
    method int   get_text_width( char * text, int len = -1, Bool addOverhang = 0);
    method SV *  get_text_box( char * text, int len = -1);
 

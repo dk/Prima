@@ -53,11 +53,11 @@ Bool
 AccelTable_selected( Handle self, Bool set, Bool selected)
 {
    if ( !set)
-       return CWidget( var-> owner)-> get_accel_table( var->  owner) == self;
+       return CWidget( var-> owner)-> get_accelTable( var->  owner) == self;
    if ( selected)
-      CWidget( var-> owner)-> set_accel_table( var->  owner, self);
+      CWidget( var-> owner)-> set_accelTable( var->  owner, self);
    else if ( my-> get_selected( self))
-      CWidget( var-> owner)-> set_accel_table( var->  owner, nilHandle);
+      CWidget( var-> owner)-> set_accelTable( var->  owner, nilHandle);
    return false;
 }
 

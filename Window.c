@@ -51,33 +51,33 @@ Window_init( Handle self, HV * profile)
    opt_set( optSystemSelectable);
    opt_assign( optOwnerIcon, pget_B( ownerIcon));
    my-> set_icon( self, pget_H( icon));
-   my-> set_menu_color ( self, pget_i( menuColor),             ciFore);
-   my-> set_menu_color ( self, pget_i( menuBackColor),         ciBack);
-   my-> set_menu_color ( self, pget_i( menuHiliteColor),       ciHiliteText);
-   my-> set_menu_color ( self, pget_i( menuHiliteBackColor),   ciHilite);
-   my-> set_menu_color ( self, pget_i( menuDisabledColor),     ciDisabledText);
-   my-> set_menu_color ( self, pget_i( menuDisabledBackColor), ciDisabled);
-   my-> set_menu_color ( self, pget_i( menuLight3DColor),      ciLight3DColor);
-   my-> set_menu_color ( self, pget_i( menuDark3DColor),       ciDark3DColor);
+   my-> menuColorIndex( self, true, ciFore,          pget_i( menuColor)            );
+   my-> menuColorIndex( self, true, ciBack,          pget_i( menuBackColor)        );
+   my-> menuColorIndex( self, true, ciHiliteText,    pget_i( menuHiliteColor)      );
+   my-> menuColorIndex( self, true, ciHilite,        pget_i( menuHiliteBackColor)  );
+   my-> menuColorIndex( self, true, ciDisabledText,  pget_i( menuDisabledColor)    );
+   my-> menuColorIndex( self, true, ciDisabled,      pget_i( menuDisabledBackColor));
+   my-> menuColorIndex( self, true, ciLight3DColor,  pget_i( menuLight3DColor)     );
+   my-> menuColorIndex( self, true, ciDark3DColor,   pget_i( menuDark3DColor)      );
    SvHV_Font( pget_sv( menuFont), &Font_buffer, "Window::init");
    my-> set_menu_font  ( self, Font_buffer);
    if ( SvTYPE( sv = pget_sv( menuItems)) != SVt_NULL)
-      my-> set_menu_items( self, sv);
-   my-> set_modal_result( self, pget_i( modalResult));
-   my-> set_modal_horizon( self, pget_B( modalHorizon));
+      my-> set_menuItems( self, sv);
+   my-> set_modalResult( self, pget_i( modalResult));
+   my-> set_modalHorizon( self, pget_B( modalHorizon));
 }
 
 void
 Window_cancel( Handle self)
 {
-   my-> set_modal_result ( self, cmCancel);
+   my-> set_modalResult ( self, cmCancel);
    my-> end_modal( self);
 }
 
 void
 Window_ok( Handle self)
 {
-   my-> set_modal_result ( self, cmOK);
+   my-> set_modalResult ( self, cmOK);
    my-> end_modal( self);
 }
 
@@ -103,15 +103,15 @@ void Window_update_sys_handle( Handle self, HV * profile)
        pexist( borderStyle)
     )) return;
    if ( pexist( owner)) my-> cancel_children( self);
-   if ( pexist( clipOwner) && pget_B( clipOwner)) my-> set_modal_horizon( self, false);
+   if ( pexist( clipOwner) && pget_B( clipOwner)) my-> set_modalHorizon( self, false);
    if ( !apc_window_create( self,
       pexist( owner )      ? pget_H( owner )      : var-> owner ,
-      pexist( syncPaint)   ? pget_B( syncPaint)   : my-> get_sync_paint( self),
-      pexist( clipOwner)   ? pget_B( clipOwner)   : my-> get_clip_owner( self),
-      pexist( borderIcons) ? pget_i( borderIcons) : my-> get_border_icons( self),
-      pexist( borderStyle) ? pget_i( borderStyle) : my-> get_border_style( self),
-      pexist( taskListed)  ? pget_B( taskListed)  : my-> get_task_listed( self),
-      pexist( windowState) ? pget_i( windowState) : my-> get_window_state( self),
+      pexist( syncPaint)   ? pget_B( syncPaint)   : my-> get_syncPaint( self),
+      pexist( clipOwner)   ? pget_B( clipOwner)   : my-> get_clipOwner( self),
+      pexist( borderIcons) ? pget_i( borderIcons) : my-> get_borderIcons( self),
+      pexist( borderStyle) ? pget_i( borderStyle) : my-> get_borderStyle( self),
+      pexist( taskListed)  ? pget_B( taskListed)  : my-> get_taskListed( self),
+      pexist( windowState) ? pget_i( windowState) : my-> get_windowState( self),
       !( pexist( originDontCare) && pget_B( originDontCare)),
       !( pexist( sizeDontCare)   && pget_B( sizeDontCare))
    ))
@@ -243,7 +243,7 @@ void Window_handle_event( Handle self, PEvent event)
 
                // checking, whether selectable ...
                if ( CWidget( match)-> get_enabled( match)  &&
-                    CWidget( match)-> get_tab_stop( match) &&
+                    CWidget( match)-> get_tabStop( match) &&
                     CWidget( match)-> get_selectee( match))
                {
                     CWidget( match)-> set_selected( match, 1);
@@ -283,7 +283,7 @@ Window_get_horizon( Handle self)
    /* self trick is appropriate here;
       don't bump into it accidentally */
    self = var-> owner;
-   while ( self != application && !my-> get_modal_horizon( self))
+   while ( self != application && !my-> get_modalHorizon( self))
       self = var-> owner;
    return self;
 }
@@ -416,7 +416,7 @@ void
 Window_cancel_children( Handle self)
 {
    protect_object( self);
-   if ( my-> get_modal_horizon( self)) {
+   if ( my-> get_modalHorizon( self)) {
       Handle next = var-> nextSharedModal;
       while ( next) {
          CWindow( next)-> cancel( next);
@@ -442,7 +442,7 @@ Window_cancel_children( Handle self)
 int
 Window_execute( Handle self, Handle insertBefore)
 {
-   if ( var-> modal || my-> get_clip_owner( self))
+   if ( var-> modal || my-> get_clipOwner( self))
       return cmCancel;
 
    protect_object( self);
@@ -461,7 +461,7 @@ Window_execute( Handle self, Handle insertBefore)
 Bool
 Window_execute_shared( Handle self, Handle insertBefore)
 {
-   if ( var-> modal || my-> get_clip_owner( self) || var-> nextSharedModal) return false;
+   if ( var-> modal || my-> get_clipOwner( self) || var-> nextSharedModal) return false;
    if ( insertBefore &&
          (( insertBefore == self) ||
          ( !kind_of( insertBefore, CWindow)) ||
@@ -471,33 +471,24 @@ Window_execute_shared( Handle self, Handle insertBefore)
    return apc_window_execute_shared( self, insertBefore);
 }
 
-
-Bool Window_get_modal_horizon( Handle self)
+Bool
+Window_modalHorizon( Handle self, Bool set, Bool modalHorizon)
 {
-   return is_opt( optModalHorizon);
-}
-
-
-void Window_set_modal_horizon( Handle self, Bool modalHorizon)
-{
-   if ( is_opt( optModalHorizon) == modalHorizon) return;
-   if ( modalHorizon && my-> get_clip_owner( self)) return;
+   if ( !set)
+      return is_opt( optModalHorizon);
+   if ( is_opt( optModalHorizon) == modalHorizon) return false;
+   if ( modalHorizon && my-> get_clipOwner( self)) return false;
    my-> cancel_children( self);
    opt_assign( optModalHorizon, modalHorizon);
 }
 
-
-int Window_get_modal_result( Handle self)
+int
+Window_modalResult ( Handle self, Bool set, int modalResult)
 {
-  return var-> modalResult;
+   if ( !set)
+      return var-> modalResult;
+   return var-> modalResult = modalResult;
 }
-
-void
-Window_set_modal_result ( Handle self, int _modalResult)
-{
-   var-> modalResult = _modalResult;
-}
-
 
 static void
 activate( Handle self, Bool ok)
@@ -511,24 +502,12 @@ activate( Handle self, Bool ok)
    }
 }
 
-void
-Window_set_focused( Handle self, Bool focused)
+Bool
+Window_focused( Handle self, Bool set, Bool focused)
 {
-   activate( self, focused);
-   inherited set_focused( self, focused);
-}
-
-
-Handle
-Window_get_menu( Handle self)
-{
-   return var-> menu;
-}
-
-SV *
-Window_get_menu_items( Handle self)
-{
-   return var-> menu ? ((( PMenu) var-> menu)-> self)-> get_items( var-> menu, "") : nilSV;
+   if ( set)
+      activate( self, focused);
+   return inherited focused( self, set, focused);
 }
 
 void Window_set( Handle self, HV * profile)
@@ -542,24 +521,9 @@ void Window_set( Handle self, HV * profile)
    if ( pexist( owner)) postOwner = pget_H( owner);
    inherited set( self, profile);
    if ( postOwner && is_opt( optOwnerIcon)) {
-      my-> set_owner_icon( self, 1);
+      my-> set_ownerIcon( self, 1);
       opt_set( optOwnerColor);
    }
-}
-
-Handle
-Window_get_icon( Handle self)
-{
-   if ( var-> stage > csNormal) return nilHandle;
-   if ( apc_window_get_icon( self, nilHandle)) {
-      HV * profile = newHV();
-      Handle i = Object_create( "Prima::Icon", profile);
-      sv_free(( SV *) profile);
-      apc_window_get_icon( self, i);
-      --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
-      return i;
-   } else
-      return nilHandle;
 }
 
 static Bool
@@ -572,28 +536,43 @@ icon_notify ( Handle self, Handle child, Handle icon)
     return false;
 }
 
-void
-Window_set_icon( Handle self, Handle icon)
+Handle
+Window_icon( Handle self, Bool set, Handle icon)
 {
-   if ( var-> stage > csNormal) return;
+   if ( var-> stage > csNormal) return nilHandle;
+
+   if ( !set) {
+      if ( apc_window_get_icon( self, nilHandle)) {
+         HV * profile = newHV();
+         Handle i = Object_create( "Prima::Icon", profile);
+         sv_free(( SV *) profile);
+         apc_window_get_icon( self, i);
+         --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
+         return i;
+      } else
+         return nilHandle;
+   }
+
    if ( icon && !kind_of( icon, CImage)) {
-       warn("RTC0091: Illegal object reference passed to Window.set_icon");
-       return;
+       warn("RTC0091: Illegal object reference passed to Window::icon");
+       return nilHandle;
    }
    my-> first_that( self, icon_notify, (void*)icon);
    apc_window_set_icon( self, icon);
    opt_clear( optOwnerIcon);
+   return nilHandle;
 }
 
-void
-Window_set_menu( Handle self, Handle menu)
+Handle
+Window_menu( Handle self, Bool set, Handle menu)
 {
-   if ( var-> stage > csNormal) return;
-   if ( menu && !kind_of( menu, CMenu)) return;
+   if ( var-> stage > csNormal) return nilHandle;
+   if ( !set)
+      return var-> menu;
+   if ( menu && !kind_of( menu, CMenu)) return nilHandle;
    if ( menu && (( PMenu) menu)-> owner != self)
-      my-> set_menu_items( self, ((( PMenu) menu)-> self)-> get_items( menu, ""));
-   else
-   {
+      my-> set_menuItems( self, ((( PMenu) menu)-> self)-> get_items( menu, ""));
+   else {
       apc_window_set_menu( self, menu);
       var-> menu = menu;
       if ( menu)
@@ -607,16 +586,19 @@ Window_set_menu( Handle self, Handle menu)
          apc_menu_set_font( menu, &var-> menuFont);
       }
    }
+   return nilHandle;
 }
 
-void
-Window_set_menu_items( Handle self, SV * menuItems)
+SV *
+Window_menuItems( Handle self, Bool set, SV * menuItems)
 {
-   if ( var-> stage > csNormal) return;
-   if ( var-> menu == nilHandle)
-   {
-     if ( SvTYPE( menuItems))
-     {
+   if ( var-> stage > csNormal) return nilSV;
+
+   if ( !set)
+      return var-> menu ? CMenu( var-> menu)-> get_items( var-> menu, "") : nilSV;
+
+   if ( var-> menu == nilHandle) {
+     if ( SvTYPE( menuItems)) {
          HV * profile = newHV();
          pset_sv( items, menuItems);
          pset_H ( owner, self);
@@ -624,18 +606,20 @@ Window_set_menu_items( Handle self, SV * menuItems)
          my-> set_menu( self, create_instance( "Prima::Menu"));
          sv_free(( SV *) profile);
       }
-   }
-   else
-      ((( PMenu) var-> menu)-> self)-> set_items( var-> menu, menuItems);
+   } else
+     CMenu( var-> menu)-> set_items( var-> menu, menuItems);
 }
 
-
-void Window_set_menu_color( Handle self, Color color, int index)
+Color
+Window_menuColorIndex( Handle self, Bool set, int index, Color color)
 {
-   if (( index < 0) || ( index > ciMaxId)) return;
+   if (( index < 0) || ( index > ciMaxId)) return clInvalid;
+   if ( !set)
+      return  var-> menuColor[ index];
    if (( color < 0) && (( color & wcMask) == 0)) color |= wcMenu;
    var-> menuColor[ index] = color;
    if ( var-> menu) apc_menu_set_color( var-> menu, color, index);
+   return clInvalid;
 }
 
 void
@@ -643,13 +627,6 @@ Window_set_menu_font( Handle self, Font font)
 {
    apc_font_pick( self, &font, &var-> menuFont);
    if ( var-> menu) apc_menu_set_font( var-> menu, &var-> menuFont);
-}
-
-
-Color Window_get_menu_color( Handle self, int index)
-{
-   index = (( index < 0) || ( index > ciMaxId)) ? 0 : index;
-   return  var-> menuColor[ index];
 }
 
 Font
@@ -667,24 +644,20 @@ Window_get_default_menu_font( char * dummy)
 }
 
 Bool
-Window_get_owner_icon( Handle self)
+Window_ownerIcon( Handle self, Bool set, Bool ownerIcon)
 {
-   return is_opt( optOwnerIcon);
-}
-
-void
-Window_set_owner_icon( Handle self, Bool ownerIcon)
-{
+   if ( !set)
+      return is_opt( optOwnerIcon);
    opt_assign( optOwnerIcon, ownerIcon);
    if ( is_opt( optOwnerIcon) && var-> owner) {
       Handle icon = ( var-> owner == application) ?
-         ((( PApplication) application)-> self)-> get_icon( application) :
-         ((( PWindow)      var-> owner)-> self)-> get_icon( var-> owner);
+         CApplication( application)-> get_icon( application) :
+         CWindow(      var-> owner)-> get_icon( var-> owner);
       my-> set_icon( self, icon);
       opt_set( optOwnerIcon);
    }
+   return false;
 }
-
 
 Bool
 Window_process_accel( Handle self, int key)
@@ -698,7 +671,56 @@ void  Window_on_endmodal( Handle self) {}
 void  Window_on_activate( Handle self) {}
 void  Window_on_deactivate( Handle self) {}
 void  Window_on_windowstate( Handle self, int windowState) {}
-void  Window_set_transparent( Handle self, Bool transparent) {}
+
+Bool
+Window_transparent( Handle self, Bool set, Bool transparent)
+{
+   return false;
+}
+
+int
+Window_borderIcons( Handle self, Bool set, int borderIcons)
+{
+   HV * profile;
+   if ( !set)
+      return apc_window_get_border_icons( self);
+   profile = newHV();
+   pset_i( borderIcons, borderIcons);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return nilHandle;
+}
+
+int
+Window_borderStyle( Handle self, Bool set, int borderStyle)
+{
+   HV * profile;
+   if ( !set)
+      return apc_window_get_border_style( self);
+   profile = newHV();
+   pset_i( borderStyle, borderStyle);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return nilHandle;
+}
+
+Point
+Window_frameOrigin( Handle self, Bool set, Point frameOrigin)
+{
+   if ( !set)
+      return apc_widget_get_pos( self);
+   apc_widget_set_pos( self, frameOrigin.x, frameOrigin.y);
+   return frameOrigin;
+}
+
+Point
+Window_frameSize( Handle self, Bool set, Point frameSize)
+{
+   if ( !set)
+      return apc_widget_get_size( self);
+   apc_widget_set_size( self, frameSize.x, frameSize.y);
+   return frameSize;
+}
 
 Point
 Window_origin( Handle self, Bool set, Point origin)
@@ -715,7 +737,7 @@ Window_selected( Handle self, Bool set, Bool selected)
    if (!set)
       return inherited get_selected( self);
    activate( self, selected);
-   inherited set_selected( self, selected);
+   inherited selected( self, set, selected);
    return selected;
 }
 
@@ -728,6 +750,20 @@ Window_size( Handle self, Bool set, Point size)
    return size;
 }
 
+Bool
+Window_taskListed( Handle self, Bool set, Bool taskListed)
+{
+   HV * profile;
+   if ( !set)
+      return apc_window_get_task_listed( self);
+   profile = newHV();
+   pset_i( taskListed, taskListed);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return nilHandle;
+}
+
+
 char *
 Window_text( Handle self, Bool set, char * text)
 {
@@ -737,3 +773,10 @@ Window_text( Handle self, Bool set, char * text)
    return ret;
 }
 
+int
+Window_windowState( Handle self, Bool set, int windowState)
+{
+   if ( !set)
+      return apc_window_get_window_state( self);
+   return ( int) apc_window_set_window_state( self, windowState);
+}

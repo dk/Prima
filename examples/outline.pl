@@ -28,8 +28,8 @@ use Prima qw(Application Outlines);
 my $w = Prima::Window->create( size => [ 200, 200],
 onDestroy=>sub{$::application-> close});
 my $o = $w-> insert(
-#DirectoryOutline =>
-StringOutline =>
+DirectoryOutline =>
+#StringOutline =>
 popupItems => [
   ['Delete this' => sub{
      my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
@@ -54,8 +54,8 @@ popupItems => [
      my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
      $_[0]-> expand_all( $x);
   }],
-
 ],
+path => 'c:\home\Prima\src',
 origin => [0,0],
 buffered => 1,
 hScroll => 1,

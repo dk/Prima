@@ -57,8 +57,6 @@ static int Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
 void
 Image_init( Handle self, HV * profile)
 {
-   int xy[2];
-
    inherited init( self, profile);
    var->w = pget_i( width);
    var->h = pget_i( height);
@@ -76,8 +74,11 @@ Image_init( Handle self, HV * profile)
    if (!( var->type & imGrayScale))
       Image_read_palette( self, var->palette, pget_sv( palette));
    my->set_data( self, pget_sv( data));
-   prima_read_point( pget_sv( resolution), xy, 2, "RTC0109: Array panic on 'resolution'");
-   my-> set_resolution( self, xy[0], xy[1]);
+   {
+      Point set;
+      prima_read_point( pget_sv( resolution), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
+      my-> set_resolution( self, set);
+   }
    if ( var->type & imGrayScale) switch ( var->type & imBPP)
    {
    case imbpp1:
@@ -201,12 +202,12 @@ Image_set( Handle self, HV * profile)
    }
    if ( pexist( hScaling))
    {
-      my->set_h_scaling( self, pget_B( hScaling));
+      my->set_hScaling( self, pget_B( hScaling));
       pdelete( hScaling);
    }
    if ( pexist( vScaling))
    {
-      my->set_v_scaling( self, pget_B( vScaling));
+      my->set_vScaling( self, pget_B( vScaling));
       pdelete( vScaling);
    }
 
@@ -228,7 +229,7 @@ Image_set( Handle self, HV * profile)
    {
       Point set;
       prima_read_point( pget_sv( resolution), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
-      my-> set_resolution( self, set.x, set.y);
+      my-> set_resolution( self, set);
       pdelete( resolution);
    }
    inherited set ( self, profile);
@@ -267,45 +268,31 @@ Image_get_status_string( SV *self)
 }
 
 Bool
-Image_get_h_scaling( Handle self)
+Image_hScaling( Handle self, Bool set, Bool scaling)
 {
-   return is_opt( optHScaling);
+   if ( !set)
+      return is_opt( optHScaling);
+   opt_assign( optHScaling, scaling);
+   return false;
 }
 
 Bool
-Image_get_v_scaling( Handle self)
+Image_vScaling( Handle self, Bool set, Bool scaling)
 {
-   return is_opt( optVScaling);
-}
-
-void
-Image_set_h_scaling( Handle self, Bool scaling)
-{
-   opt_assign( optHScaling, scaling);
-}
-
-void
-Image_set_v_scaling( Handle self, Bool scaling)
-{
+   if ( !set)
+      return is_opt( optVScaling);
    opt_assign( optVScaling, scaling);
-}
-
-void
-Image_set_resolution( Handle self, int x, int y)
-{
-   if ( x <= 0 || y <= 0) {
-      Point r = apc_gp_get_resolution( application);
-      x = r. x;
-      x = r. y;
-   }
-   var-> resolution. x = x;
-   var-> resolution. y = y;
+   return false;
 }
 
 Point
-Image_get_resolution( Handle self)
+Image_resolution( Handle self, Bool set, Point resolution)
 {
-   return var-> resolution;
+   if ( !set)
+      return var-> resolution;
+   if ( resolution. x <= 0 || resolution. y <= 0)
+      resolution = apc_gp_get_resolution( application);
+   var-> resolution = resolution;
 }
 
 Point
@@ -326,23 +313,22 @@ Image_get_handle( Handle self)
 }
 
 SV *
-Image_get_data( Handle self)
+Image_data( Handle self, Bool set, SV * svdata)
 {
-   if ( var->stage > csNormal) return nilSV;
-   return newSVpvn( var->data, var->dataSize);
-}
-
-void
-Image_set_data( Handle self, SV * svdata)
-{
+   void *data;
    STRLEN dataSize;
-   void *data = SvPV( svdata, dataSize);
 
-   if ( var->stage > csNormal) return;
-   if ( is_opt( optInDraw) || dataSize <= 0) return;
+   if ( var->stage > csNormal) return nilSV;
+
+   if ( !set)
+      return newSVpvn( var-> data, var-> dataSize);
+
+   data = SvPV( svdata, dataSize);
+   if ( is_opt( optInDraw) || dataSize <= 0) return nilSV;
 
    memcpy( var->data, data, dataSize > var->dataSize ? var->dataSize : dataSize);
-   my->update_change( self);
+   my-> update_change( self);
+   return nilSV;
 }
 
 #ifndef PRIGRAPH
@@ -886,9 +872,16 @@ Image_save( SV *who, char *filename, PList imgInfo)
 #endif
 
 int
-Image_get_type( Handle self)
+Image_type( Handle self, Bool set, int type)
 {
-   return var->type;
+   HV * profile;
+   if ( !set)
+      return var->type;
+   profile = newHV();
+   pset_i( type, type);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return nilHandle;
 }
 
 int
@@ -1517,11 +1510,15 @@ Image_update_change( Handle self)
    var->statsCache = 0;
 }
 
-int Image_get_conversion( Handle self) { return var->conversion;}
-
 double
-Image_get_stats( Handle self, int index)
+Image_stats( Handle self, Bool set, int index, double value)
 {
+   if ( index < 0 || index > isMaxIndex) return NAN;
+   if ( set) {
+      var-> stats[ index] = value;
+      var-> statsCache |= 1 << index;
+      return 0;
+   } else {
 #define gather_stats(TYP) if ( var->data) {                \
          TYP *src = (TYP*)var->data, *stop, *s;            \
          maxv = minv = *src;                              \
@@ -1538,46 +1535,37 @@ Image_get_stats( Handle self, int index)
             src = (TYP*)(((Byte *)src) + var->lineSize);   \
          }                                                \
       }
-   double sum = 0.0, sum2 = 0.0, minv = 0.0, maxv = 0.0, v;
-   int y;
+      int y;
+      double sum = 0.0, sum2 = 0.0, minv = 0.0, maxv = 0.0, v;
 
-   if ( index < 0 || index > isMaxIndex) return NAN;
-   if ( var->statsCache & ( 1 << index)) return var->stats[ index];
-   /* calculate image stats */
-   switch (var->type) {
-      case imByte:    gather_stats(uint8_t);break;
-      case imShort:   gather_stats(int16_t);  break;
-      case imLong:    gather_stats(int32_t);   break;
-      case imFloat:   gather_stats(float);  break;
-      case imDouble:  gather_stats(double); break;
-      default:        return NAN;
+      if ( var->statsCache & ( 1 << index)) return var->stats[ index];
+      /* calculate image stats */
+      switch ( var->type) {
+         case imByte:    gather_stats(uint8_t);break;
+         case imShort:   gather_stats(int16_t);  break;
+         case imLong:    gather_stats(int32_t);   break;
+         case imFloat:   gather_stats(float);  break;
+         case imDouble:  gather_stats(double); break;
+         default:        return NAN;
+      }
+      if ( var->w * var->h > 0)
+      {
+         var->stats[ isSum] = sum;
+         var->stats[ isSum2] = sum2;
+         sum /= var->w * var->h;
+         sum2 /= var->w * var->h;
+         sum2 = sum2 - sum*sum;
+         var->stats[ isMean] = sum;
+         var->stats[ isVariance] = sum2;
+         var->stats[ isStdDev] = sqrt(sum2);
+         var->stats[ isRangeLo] = minv;
+         var->stats[ isRangeHi] = maxv;
+      } else {
+         for ( y = 0; y <= isMaxIndex; y++) var->stats[ y] = 0;
+      }
+      var->statsCache = (1 << (isMaxIndex + 1)) - 1;
    }
-   if ( var->w * var->h > 0)
-   {
-      var->stats[ isSum] = sum;
-      var->stats[ isSum2] = sum2;
-      sum /= var->w * var->h;
-      sum2 /= var->w * var->h;
-      sum2 = sum2 - sum*sum;
-      var->stats[ isMean] = sum;
-      var->stats[ isVariance] = sum2;
-      var->stats[ isStdDev] = sqrt(sum2);
-      var->stats[ isRangeLo] = minv;
-      var->stats[ isRangeHi] = maxv;
-   } else {
-      for ( y = 0; y <= isMaxIndex; y++) var->stats[ y] = 0;
-   }
-   var->statsCache = (1 << (isMaxIndex + 1)) - 1;
-
    return var->stats[ index];
-}
-
-void
-Image_set_stats( Handle self, double value, int index)
-{
-   if ( index < 0 || index > isMaxIndex) return;
-   var->stats[ index] = value;
-   var->statsCache |= 1 << index;
 }
 
 void
@@ -1618,9 +1606,12 @@ Image_palette( Handle self, Bool set, SV * palette)
    return nilSV;
 }
 
-void Image_set_conversion( Handle self, int conversion)
+int
+Image_conversion( Handle self, Bool set, int conversion)
 {
-   var->conversion = conversion;
+   if ( !set)
+      return var-> conversion;
+   return var-> conversion = conversion;
 }
 
 void
@@ -1653,16 +1644,13 @@ Image_create_empty( Handle self, int width, int height, int type)
    }
 }
 
-void
-Image_set_preserve_type( Handle self, Bool preserveType)
-{
-   opt_assign( optPreserveType, preserveType);
-}
-
 Bool
-Image_get_preserve_type( Handle self)
+Image_preserveType( Handle self, Bool set, Bool preserveType)
 {
-   return is_opt( optPreserveType);
+   if ( !set)
+      return is_opt( optPreserveType);
+   opt_assign( optPreserveType, preserveType);
+   return false;
 }
 
 Color
@@ -1706,7 +1694,7 @@ Image_get_pixel( Handle self,int x,int y)
                 long p;
                 if (var->type & imRealNumber) {
                     float pf=*(float*)(var->data + (var->lineSize*y+x*4));
-                    double rangeLo = my-> get_stats( self, isRangeLo);
+                    double rangeLo = my-> stats( self, false, isRangeLo, 0);
                     p=((pf - rangeLo)*LONG_MAX)/(var->stats[isRangeHi] - rangeLo);
                 }
                 else {
@@ -1721,7 +1709,7 @@ Image_get_pixel( Handle self,int x,int y)
                 if ((var->type & imComplexNumber) || (var->type & imTrigComplexNumber)) {
                     return 0;
                 }
-                rangeLo = my-> get_stats( self, isRangeLo);
+                rangeLo = my-> stats( self, false, isRangeLo, 0);
                 return ((pd - rangeLo)/(var->stats[isRangeHi] - rangeLo))*LONG_MAX;
             }
         default:
@@ -1790,7 +1778,7 @@ Image_set_pixel( Handle self,int x,int y,Color color)
         case imbpp32 :
             {
                 if (var->type & imRealNumber) {
-                    double rangeLo = my-> get_stats( self, isRangeLo);
+                    double rangeLo = my-> stats( self, false, isRangeLo, 0);
                     *(float*)(var->data+(var->lineSize*y+(x<<2)))=(((float)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
                 }
                 else {
@@ -1800,7 +1788,7 @@ Image_set_pixel( Handle self,int x,int y,Color color)
             break;
         case imbpp64 :
             if (var->type & imRealNumber) {
-                double rangeLo = my-> get_stats( self, isRangeLo);
+                double rangeLo = my-> stats( self, false, isRangeLo, 0);
                 *(double*)(var->data+(var->lineSize*y+(x<<2)))=(((double)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
             }
             break;

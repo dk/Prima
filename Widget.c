@@ -85,9 +85,9 @@ Widget_init( Handle self, HV * profile)
    /* props init */
    /* font and colors */
    SvHV_Font( pget_sv( font), &Font_buffer, "Widget::init");
-   my-> set_widget_class       ( self, pget_i( widgetClass  ));
+   my-> set_widgetClass        ( self, pget_i( widgetClass  ));
    my-> set_color              ( self, pget_i( color        ));
-   my-> set_backColor         ( self, pget_i( backColor    ));
+   my-> set_backColor          ( self, pget_i( backColor    ));
    my-> set_font               ( self, Font_buffer);
    opt_assign( optOwnerBackColor, pget_B( ownerBackColor));
    opt_assign( optOwnerColor    , pget_B( ownerColor));
@@ -95,74 +95,73 @@ Widget_init( Handle self, HV * profile)
    opt_assign( optOwnerHint     , pget_B( ownerHint));
    opt_assign( optOwnerShowHint , pget_B( ownerShowHint));
    opt_assign( optOwnerPalette  , pget_B( ownerPalette));
-   my-> set_color_index( self, pget_i( hiliteColor),       ciHiliteText);
-   my-> set_color_index( self, pget_i( hiliteBackColor),   ciHilite);
-   my-> set_color_index( self, pget_i( disabledColor),     ciDisabledText);
-   my-> set_color_index( self, pget_i( disabledBackColor), ciDisabled);
-   my-> set_color_index( self, pget_i( light3DColor),      ciLight3DColor);
-   my-> set_color_index( self, pget_i( dark3DColor),       ciDark3DColor);
+   my-> colorIndex( self, true,  ciHiliteText,   pget_i( hiliteColor)      );
+   my-> colorIndex( self, true,  ciHilite,       pget_i( hiliteBackColor)  );
+   my-> colorIndex( self, true,  ciDisabledText, pget_i( disabledColor)    );
+   my-> colorIndex( self, true,  ciDisabled,     pget_i( disabledBackColor));
+   my-> colorIndex( self, true,  ciLight3DColor, pget_i( light3DColor)     );
+   my-> colorIndex( self, true,  ciDark3DColor,  pget_i( dark3DColor)      );
    my-> set_palette( self, pget_sv( palette));
 
    /* light props */
-   my-> set_brief_keys         ( self, pget_B(  briefKeys));
-   my-> set_buffered           ( self, pget_B(  buffered));
-   my-> set_cursor_visible     ( self, pget_B(  cursorVisible));
-   my-> set_grow_mode          ( self, pget_i(  growMode));
-   my-> set_hint               ( self, pget_c(  hint));
-   my-> set_help_context       ( self, pget_i(  helpContext));
-   my-> set_first_click        ( self, pget_B(  firstClick));
+   my-> set_briefKeys          ( self, pget_B( briefKeys));
+   my-> set_buffered           ( self, pget_B( buffered));
+   my-> set_cursorVisible      ( self, pget_B( cursorVisible));
+   my-> set_growMode           ( self, pget_i( growMode));
+   my-> set_hint               ( self, pget_c( hint));
+   my-> set_helpContext        ( self, pget_i( helpContext));
+   my-> set_firstClick         ( self, pget_B( firstClick));
    {
       Point hotSpot;
       Handle icon = pget_H( pointerIcon);
       prima_read_point( pget_sv( pointerHotSpot), (int*)&hotSpot, 2, "RTC0087: Array panic on 'pointerHotSpot'");
       if ( icon != nilHandle && !kind_of( icon, CIcon)) {
-         warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
+         warn("RTC083: Illegal object reference passed to Widget::pointerIcon");
          icon = nilHandle;
       }
       apc_pointer_set_user( self, icon, hotSpot);
    }
-   my-> set_pointer_type       ( self, pget_i(  pointerType));
-   my-> set_selecting_buttons  ( self, pget_i(  selectingButtons));
-   my-> set_selectable         ( self, pget_B(  selectable));
-   my-> set_show_hint          ( self, pget_B(  showHint));
-   my-> set_tab_order          ( self, pget_i(  tabOrder));
-   my-> set_tab_stop           ( self, pget_i(  tabStop));
-   my-> set_text               ( self, pget_c(  text));
+   my-> set_pointerType        ( self, pget_i( pointerType));
+   my-> set_selectingButtons   ( self, pget_i( selectingButtons));
+   my-> set_selectable         ( self, pget_B( selectable));
+   my-> set_showHint           ( self, pget_B( showHint));
+   my-> set_tabOrder           ( self, pget_i( tabOrder));
+   my-> set_tabStop            ( self, pget_i( tabStop));
+   my-> set_text               ( self, pget_c( text));
 
    opt_assign( optScaleChildren, pget_B( scaleChildren));
 
    /* subcomponents props */
-   my-> set_popup_color ( self, pget_i( popupColor),             ciFore);
-   my-> set_popup_color ( self, pget_i( popupBackColor),         ciBack);
-   my-> set_popup_color ( self, pget_i( popupHiliteColor),       ciHiliteText);
-   my-> set_popup_color ( self, pget_i( popupHiliteBackColor),   ciHilite);
-   my-> set_popup_color ( self, pget_i( popupDisabledColor),     ciDisabledText);
-   my-> set_popup_color ( self, pget_i( popupDisabledBackColor), ciDisabled);
-   my-> set_popup_color ( self, pget_i( popupLight3DColor),      ciLight3DColor);
-   my-> set_popup_color ( self, pget_i( popupDark3DColor),       ciDark3DColor);
+   my-> popupColorIndex( self, true, ciFore,         pget_i( popupColor)              );
+   my-> popupColorIndex( self, true, ciBack,         pget_i( popupBackColor)          );
+   my-> popupColorIndex( self, true, ciHiliteText,   pget_i( popupHiliteColor)        );
+   my-> popupColorIndex( self, true, ciHilite,       pget_i( popupHiliteBackColor)    );
+   my-> popupColorIndex( self, true, ciDisabledText, pget_i( popupDisabledColor)      );
+   my-> popupColorIndex( self, true, ciDisabled,     pget_i( popupDisabledBackColor)  );
+   my-> popupColorIndex( self, true, ciLight3DColor, pget_i( popupLight3DColor)       );
+   my-> popupColorIndex( self, true, ciDark3DColor,  pget_i( popupDark3DColor)        );
    SvHV_Font( pget_sv( popupFont), &Font_buffer, "Widget::init");
    my-> set_popup_font  ( self, Font_buffer);
    if ( SvTYPE( sv = pget_sv( popupItems)) != SVt_NULL)
-      my-> set_popup_items( self, sv);
+      my-> set_popupItems( self, sv);
    if ( SvTYPE( sv = pget_sv( accelItems)) != SVt_NULL)
-      my-> set_accel_items( self, sv);
+      my-> set_accelItems( self, sv);
 
    /* size, position, enabling, visibliity etc. runtime */
    {
       Point set;
-      int i[2];
       AV * av;
       SV ** holder;
       NPoint ds = {1,1};
 
       prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
-      my-> set_size_min( self, set);
+      my-> set_sizeMin( self, set);
       prima_read_point( pget_sv( sizeMax), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
-      my-> set_size_max( self, set);
-      prima_read_point( pget_sv( cursorSize), i, 2, "RTC0084: Array panic on 'cursorSize'");
-      my-> set_cursor_size( self, i[0], i[1]);
-      prima_read_point( pget_sv( cursorPos), i, 2, "RTC0085: Array panic on 'cursorPos'");
-      my-> set_cursor_pos( self, i[0], i[1]);
+      my-> set_sizeMax( self, set);
+      prima_read_point( pget_sv( cursorSize), (int*)&set, 2, "RTC0084: Array panic on 'cursorSize'");
+      my-> set_cursorSize( self, set);
+      prima_read_point( pget_sv( cursorPos), (int*)&set, 2, "RTC0085: Array panic on 'cursorPos'");
+      my-> set_cursorPos( self, set);
 
       av = ( AV *) SvRV( pget_sv( designScale));
       holder = av_fetch( av, 0, 0);
@@ -171,7 +170,7 @@ Widget_init( Handle self, HV * profile)
       holder = av_fetch( av, 1, 0);
       ds. y = holder ? SvNV( *holder) : 1;
       if ( !holder) warn("RTC0086: Array panic on 'designScale'");
-      my-> set_design_scale( self, ds.x, ds.y);
+      my-> set_designScale( self, ds);
    }
    my-> set_enabled     ( self, pget_B( enabled));
    if ( !pexist( originDontCare) || !pget_B( originDontCare)) {
@@ -208,8 +207,8 @@ Widget_update_sys_handle( Handle self, HV * profile)
     )) return;
    if ( !apc_widget_create( self,
       pexist( owner)      ? pget_H( owner)      : var-> owner,
-      pexist( syncPaint)  ? pget_B( syncPaint)  : my-> get_sync_paint( self),
-      pexist( clipOwner)  ? pget_B( clipOwner)  : my-> get_clip_owner( self),
+      pexist( syncPaint)  ? pget_B( syncPaint)  : my-> get_syncPaint( self),
+      pexist( clipOwner)  ? pget_B( clipOwner)  : my-> get_clipOwner( self),
       pexist( transparent)? pget_B( transparent): my-> get_transparent( self)
    ))
      croak( "RTC0080: Cannot create widget");
@@ -229,7 +228,7 @@ Widget_done( Handle self)
    strcpy( name, var-> name);
 
    if ((( PApplication) application)-> hintUnder == self)
-      my-> set_hint_visible( self, 0);
+      my-> set_hintVisible( self, 0);
 
    my-> first_that( self, kill_all, nil);
    if ( var-> accelTable)
@@ -343,7 +342,7 @@ Widget_detach( Handle self, Handle objectHandle, Bool kill)
    if ( kind_of( objectHandle, CWidget)) {
       list_delete( &var-> widgets, objectHandle);
       if ( var-> currentWidget == objectHandle && objectHandle != nilHandle)
-          my-> set_current_widget( self, nilHandle);
+          my-> set_currentWidget( self, nilHandle);
    }
    inherited-> detach( self, objectHandle, kill);
 }
@@ -410,8 +409,8 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmCalcBounds:
         {
            Point min, max;
-           min = my-> get_size_min( self);
-           max = my-> get_size_max( self);
+           min = my-> get_sizeMin( self);
+           max = my-> get_sizeMax( self);
            if (( min. x > 0) && ( min. x > event-> gen. R. right  )) event-> gen. R. right  = min. x;
            if (( min. y > 0) && ( min. y > event-> gen. R. top    )) event-> gen. R. top    = min. y;
            if (( max. x > 0) && ( max. x < event-> gen. R. right  )) event-> gen. R. right  = max. x;
@@ -504,7 +503,7 @@ void Widget_handle_event( Handle self, PEvent event)
          break;
       case cmMouseDown:
          if ((( PApplication) application)-> hintUnder == self)
-            my-> set_hint_visible( self, 0);
+            my-> set_hintVisible( self, 0);
          objCheck;
          if (((event-> pos. button & var-> selectingButtons) != 0) && my-> get_selectable( self))
             my-> set_selected( self, true);
@@ -518,7 +517,7 @@ void Widget_handle_event( Handle self, PEvent event)
         break;
       case cmMouseMove:
         if ((( PApplication) application)-> hintUnder == self)
-           my-> set_hint_visible( self, 1);
+           my-> set_hintVisible( self, 1);
         objCheck;
         my-> notify( self, "<siP", "MouseMove", event-> pos. mod, event -> pos. where);
         break;
@@ -668,7 +667,7 @@ void Widget_handle_event( Handle self, PEvent event)
                     next = ( PWidget) list[ no];
                     if ( next == ( PWidget) foc) goto out;
                     if ( next-> self-> get_enabled( list[ no]) &&
-                         next-> self-> get_tab_stop( list[ no]) &&
+                         next-> self-> get_tabStop( list[ no]) &&
                          next-> self-> get_selectee( list[ no])) break;
                  }
                  next-> self-> set_selected(( Handle) next, true);
@@ -798,8 +797,8 @@ void
 Widget_hide_cursor( Handle self)
 {
    enter_method;
-   if ( my-> get_cursor_visible( self))
-      my-> set_cursor_visible( self, false);
+   if ( my-> get_cursorVisible( self))
+      my-> set_cursorVisible( self, false);
    else
       var-> cursorLock++;
 }
@@ -1023,28 +1022,29 @@ Widget_set( Handle self, HV * profile)
          {
             if ( is_opt( optOwnerColor))
             {
-               my-> set_color( self, ((( PWidget) postOwner)-> self)-> get_color( postOwner));
+               my-> set_color( self, CWidget( postOwner)-> get_color( postOwner));
                opt_set( optOwnerColor);
             }
             if ( is_opt( optOwnerBackColor))
             {
-               my-> set_backColor( self, ((( PWidget) postOwner)-> self)-> get_backColor( postOwner));
+               my-> set_backColor( self, CWidget( postOwner)-> get_backColor( postOwner));
                opt_set( optOwnerBackColor);
             }
             if ( is_opt( optOwnerShowHint))
             {
-               Bool newSH = ( postOwner == application) ? 1 : ((( PWidget) postOwner)-> self)-> get_show_hint( postOwner);
-               my-> set_show_hint( self, newSH);
+               Bool newSH = ( postOwner == application) ? 1 :
+                  CWidget( postOwner)-> get_showHint( postOwner);
+               my-> set_showHint( self, newSH);
                opt_set( optOwnerShowHint);
             }
             if ( is_opt( optOwnerHint))
             {
-               my-> set_hint( self, ((( PWidget) postOwner)-> self)-> get_hint( postOwner));
+               my-> set_hint( self, CWidget( postOwner)-> get_hint( postOwner));
                opt_set( optOwnerHint);
             }
             if ( is_opt( optOwnerFont))
             {
-               my-> set_font ( self, ((( PWidget) postOwner)-> self)-> get_font( postOwner));
+               my-> set_font ( self, CWidget( postOwner)-> get_font( postOwner));
                opt_set( optOwnerFont);
             }
          }
@@ -1135,15 +1135,39 @@ Widget_set( Handle self, HV * profile)
       holder = av_fetch( av, 1, 0);
       ds. y = holder ? SvNV( *holder) : 1;
       if ( !holder) warn("RTC0086: Array panic on 'designScale'");
-      my-> set_design_scale( self, ds.x, ds.y);
+      my-> set_designScale( self, ds);
       pdelete( designScale);
+   }
+   if ( pexist( sizeMin)) {
+      Point set;
+      prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
+      my-> set_sizeMin( self, set);
+      pdelete( sizeMin);
+   }
+   if ( pexist( sizeMax)) {
+      Point set;
+      prima_read_point( pget_sv( sizeMax), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
+      my-> set_sizeMax( self, set);
+      pdelete( sizeMax);
+   }
+   if ( pexist( cursorSize)) {
+      Point set;
+      prima_read_point( pget_sv( cursorSize), (int*)&set, 2, "RTC0084: Array panic on 'cursorSize'");
+      my-> set_cursorSize( self, set);
+      pdelete( cursorSize);
+   }
+   if ( pexist( cursorPos)) {
+      Point set;
+      prima_read_point( pget_sv( cursorPos), (int*)&set, 2, "RTC0085: Array panic on 'cursorPos'");
+      my-> set_cursorPos( self, set);
+      pdelete( cursorPos);
    }
 
    inherited-> set( self, profile);
    if ( var-> owner != postOwner)
    {
        var-> owner = postOwner;
-       my-> set_tab_order( self, var-> tabOrder);
+       my-> set_tabOrder( self, var-> tabOrder);
    }
    if ( var-> growMode & gmCenter) my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
 }
@@ -1171,7 +1195,7 @@ Widget_show_cursor( Handle self)
 {
    enter_method;
    if ( var-> cursorLock-- <= 0) {
-      my-> set_cursor_visible( self, true);
+      my-> set_cursorVisible( self, true);
       var-> cursorLock = 0;
    }
 }
@@ -1179,7 +1203,7 @@ Widget_show_cursor( Handle self)
 void
 Widget_show_hint( Handle self)
 {
-   ((( PApplication) application)-> self)-> set_hint_action( application, self, true, true);
+   CApplication( application)-> set_hint_action( application, self, true, true);
 }
 
 /*::t */
@@ -1217,58 +1241,6 @@ Widget_update_view( Handle self)
 
 /* get_props() */
 
-SV *
-Widget_get_accel_items( Handle self)
-{
-   if ( var-> stage > csNormal) return nilSV;
-   return var-> accelTable ? ((( PAbstractMenu) var-> accelTable)-> self)-> get_items( var-> accelTable, "") : nilSV;
-}
-
-Handle
-Widget_get_accel_table( Handle self)
-{
-   return var-> accelTable;
-}
-
-Bool
-Widget_get_brief_keys( Handle self)
-{
-   return is_opt( optBriefKeys);
-}
-
-Bool
-Widget_get_buffered( Handle self)
-{
-   return is_opt( optBuffered);
-}
-
-Color
-Widget_get_color_index( Handle self, int index)
-{
-   if ( index < 0 || index > ciMaxId) return clInvalid;
-   switch ( index)
-   {
-     case ciFore:
-        return opt_InPaint ? inherited-> get_color ( self) : apc_widget_get_color( self, ciFore);
-     case ciBack:
-        return opt_InPaint ? inherited-> get_backColor ( self) : apc_widget_get_color( self, ciBack);
-     default:
-        return apc_widget_get_color( self, index);
-   }
-}
-
-Bool
-Widget_get_current( Handle self)
-{
-   return ( var-> owner && ((( PWidget) var-> owner)-> currentWidget == self));
-}
-
-Handle
-Widget_get_current_widget( Handle self)
-{
-   return var-> currentWidget;
-}
-
 Font
 Widget_get_default_font( char * dummy)
 {
@@ -1287,15 +1259,27 @@ Widget_get_default_popup_font( char * dummy)
 
 
 NPoint
-Widget_get_design_scale( Handle self)
+Widget_designScale( Handle self, Bool set, NPoint designScale)
 {
-   return var-> designScale;
+   if ( !set)
+      return var-> designScale;
+   if ( designScale. x < 0) designScale. x = 0;
+   if ( designScale. y < 0) designScale. y = 0;
+   var-> designScale = designScale;
+   return designScale;
 }
 
 int
-Widget_get_grow_mode( Handle self)
+Widget_growMode( Handle self, Bool set, int growMode)
 {
-   return var-> growMode;
+   enter_method;
+   Bool x = false, y = false;
+   if ( !set)
+      return var-> growMode;
+   var-> growMode = growMode;
+   if ( var-> growMode & gmXCenter) x = true;
+   if ( var-> growMode & gmYCenter) y = true;
+   if ( x || y) my-> set_centered( self, x, y);
 }
 
 SV *
@@ -1307,16 +1291,23 @@ Widget_get_handle( Handle self)
 }
 
 long int
-Widget_get_help_context( Handle self)
+Widget_helpContext( Handle self, Bool set, long int helpContext)
 {
-  return var-> helpContext;
+   if ( !set)
+      return var-> helpContext;
+   return var-> helpContext = helpContext;
 }
 
 Bool
-Widget_get_hint_visible( Handle self)
+Widget_hintVisible( Handle self, Bool set, Bool hintVisible)
 {
-   PApplication app = ( PApplication) application;
-   return app-> hintVisible;
+   if ( !set)
+      return PApplication( application)-> hintVisible;
+   if ( var-> stage >= csDead) return false;
+   if ( hintVisible == PApplication( application)-> hintVisible) return false;
+   if ( hintVisible && strlen( var-> hint) == 0) return false;
+   CApplication( application)-> set_hint_action( application, self, hintVisible, false);
+   return false;
 }
 
 Bool
@@ -1330,40 +1321,11 @@ Widget_get_locked( Handle self)
 }
 
 
-Bool Widget_get_owner_color( Handle self)      { return is_opt( optOwnerColor); }
-Bool Widget_get_owner_back_color( Handle self) { return is_opt( optOwnerBackColor); }
-Bool Widget_get_owner_font( Handle self)       { return is_opt( optOwnerFont); }
-Bool Widget_get_owner_hint( Handle self)       { return is_opt( optOwnerHint); }
-Bool Widget_get_owner_show_hint( Handle self)  { return is_opt( optOwnerShowHint); }
-Bool Widget_get_owner_palette( Handle self)  { return is_opt( optOwnerPalette); }
-
-
 Handle
 Widget_get_parent( Handle self)
 {
    enter_method;
-   return my-> get_clip_owner( self) ? var-> owner : application;
-}
-
-Handle
-Widget_get_pointer_icon( Handle self)
-{
-   if ( var-> stage > csNormal) return nilHandle;
-   {
-      HV * profile = newHV();
-      Handle icon = Object_create( "Prima::Icon", profile);
-      sv_free(( SV *) profile);
-      apc_pointer_get_bitmap( self, icon);
-      --SvREFCNT( SvRV((( PAnyObject) icon)-> mate));
-      return icon;
-   }
-}
-
-Point
-Widget_get_pointer_pos( Handle self)
-{
-   enter_method;
-   return my-> screen_to_client( self, apc_pointer_get_pos( self));
+   return my-> get_clipOwner( self) ? var-> owner : application;
 }
 
 Point
@@ -1372,48 +1334,10 @@ Widget_get_pointer_size( char*dummy)
    return apc_pointer_get_size( nilHandle);
 }
 
-int
-Widget_get_pointer_type( Handle self)
-{
-   return var-> pointerType;
-}
-
-Handle
-Widget_get_popup( Handle self)
-{
-   return var-> popupMenu;
-}
-
-Color
-Widget_get_popup_color( Handle self, int index)
-{
-   index = (( index < 0) || ( index > ciMaxId)) ? 0 : index;
-   return  var-> popupColor[ index];
-}
-
 Font
 Widget_get_popup_font( Handle self)
 {
    return var-> popupFont;
-}
-
-SV *
-Widget_get_popup_items( Handle self)
-{
-   return var-> popupMenu ? ((( PAbstractMenu) var-> popupMenu)-> self)-> get_items( var-> popupMenu, "") : nilSV;
-}
-
-Bool
-Widget_get_scale_children( Handle self)
-{
-   return is_opt( optScaleChildren);
-}
-
-
-Bool
-Widget_get_selectable( Handle self)
-{
-   return is_opt( optSelectable);
 }
 
 Handle
@@ -1424,7 +1348,7 @@ Widget_get_selectee( Handle self)
       return self;
    else if ( var-> currentWidget) {
       PWidget w = ( PWidget) var-> currentWidget;
-      if ( w-> options. optSystemSelectable && !w-> self-> get_clip_owner(( Handle) w))
+      if ( w-> options. optSystemSelectable && !w-> self-> get_clipOwner(( Handle) w))
          return ( Handle) w;
       else
          return w-> self-> get_selectee(( Handle) w);
@@ -1434,133 +1358,13 @@ Widget_get_selectee( Handle self)
       return find_tabfoc( self);
 }
 
-Handle
-Widget_get_selected_widget( Handle self)
-{
-   if ( var-> stage <= csNormal) {
-      Handle foc = apc_widget_get_focused();
-      PWidget  f = ( PWidget) foc;
-      while( f) {
-         if (( Handle) f == self) return foc;
-         f = ( PWidget) f-> owner;
-      }
-   }
-   return nilHandle;
-
-   /* classic solution should be recursive and inheritant call */
-   /* of get_selected() here, when Widget would return state of */
-   /* child-group selected state until Widget::selected() called; */
-   /* thus, each of them would call apc_widget_get_focused - that's expensive, */
-   /* so that's the reason not to use classic object model here. */
-}
-
-int
-Widget_get_selecting_buttons( Handle self)
-{
-   return var-> selectingButtons;
-}
-
-
-Handle
-Widget_get_shape( Handle self)
-{
-   if ( var-> stage > csNormal) return nilHandle;
-   if ( apc_widget_get_shape( self, nilHandle)) {
-      HV * profile = newHV();
-      Handle i = Object_create( "Prima::Image", profile);
-      sv_free(( SV *) profile);
-      apc_widget_get_shape( self, i);
-      --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
-      return i;
-   } else
-      return nilHandle;
-}
-
-
-Bool
-Widget_get_show_hint( Handle self)
-{
-   return is_opt( optShowHint);
-}
-
-Point
-Widget_get_size_max( Handle self)
-{
-   return var-> sizeMax;
-}
-
-Point
-Widget_get_size_min( Handle self)
-{
-   return var-> sizeMin;
-}
-
-int
-Widget_get_tab_order( Handle self)
-{
-   return var-> tabOrder;
-}
-
-Bool
-Widget_get_tab_stop( Handle self)
-{
-   return is_opt( optTabStop);
-}
-
 Point
 Widget_get_virtual_size( Handle self)
 {
    return var-> virtualSize;
 }
 
-int
-Widget_get_widget_class( Handle self)
-{
-   return var-> widgetClass;
-}
-
 /* set_props() */
-
-void
-Widget_set_accel_items( Handle self, SV * accelItems)
-{
-   enter_method;
-   if ( var-> stage > csNormal) return;
-   if ( var-> accelTable == nilHandle)
-   {
-      HV * profile = newHV();
-      if ( SvTYPE( accelItems)) pset_sv( items, accelItems);
-      pset_H ( owner, self);
-      my-> set_accel_table( self, create_instance( "Prima::AccelTable"));
-      sv_free(( SV *) profile);
-   }
-   else
-      ((( PAbstractMenu) var-> accelTable)-> self)-> set_items( var-> accelTable, accelItems);
-}
-
-void
-Widget_set_accel_table( Handle self, Handle accelTable)
-{
-   enter_method;
-   if ( var-> stage > csNormal) return;
-   if ( accelTable && !kind_of( accelTable, CAbstractMenu)) return;
-   if ( accelTable && (( PAbstractMenu) accelTable)-> owner != self)
-     my-> set_accel_items( self, ((( PAbstractMenu) accelTable)-> self)-> get_items( accelTable, ""));
-   else var-> accelTable = accelTable;
-}
-
-void
-Widget_set_brief_keys( Handle self, Bool briefKeys)
-{
-   opt_assign( optBriefKeys, briefKeys);
-}
-
-void
-Widget_set_buffered( Handle self, Bool buffered)
-{
-   if ( opt_InPaint) return;
-   opt_assign( optBuffered, buffered);
-}
 
 void
 Widget_set_capture( Handle self, Bool capture, Handle confineTo)
@@ -1583,109 +1387,6 @@ Widget_set_centered( Handle self, Bool x, Bool y)
 }
 
 void
-Widget_set_color_index( Handle self, Color color, int index)
-{
-   enter_method;
-   SingleColor s;
-   s. color = color;
-   s. index = index;
-   if (( index < 0) || ( index > ciMaxId)) return;
-   if ( !opt_InPaint) my-> first_that( self, single_color_notify, &s);
-
-   if ( var-> handle == nilHandle) return; /* aware of call from Drawable::init */
-   if (( color < 0) && (( color & wcMask) == 0)) color |= var-> widgetClass;
-   if ( opt_InPaint)
-   {
-      switch ( index)
-      {
-         case ciFore:
-            inherited-> set_color ( self, color);
-            break;
-         case ciBack:
-            inherited-> set_backColor ( self, color);
-            break;
-         default:
-            apc_widget_set_color ( self, color, index);
-      }
-   } else {
-      switch ( index)
-      {
-         case ciFore:
-            opt_clear( optOwnerColor);
-            break;
-         case ciBack:
-            opt_clear( optOwnerBackColor);
-            break;
-      }
-      apc_widget_set_color( self, color, index);
-      my-> repaint( self);
-   }
-}
-
-void
-Widget_set_current( Handle self, Bool current)
-{
-   PWidget o;
-   o = ( PWidget) var-> owner;
-   if ( o == nil) return;
-   if ( var-> stage > csNormal) return;
-   if ( current)
-      o-> self-> set_current_widget( var-> owner, self);
-   else
-      if ( o-> currentWidget == self)
-         o-> self-> set_current_widget( var-> owner, nilHandle);
-}
-
-void
-Widget_set_current_widget( Handle self, Handle widget)
-{
-   enter_method;
-   if ( var-> stage > csNormal) return;
-   if ( widget) {
-      if ( !widget || (( PWidget) widget)-> stage > csNormal ||
-            ((( PWidget) widget)-> owner != self)
-           ) return;
-      var-> currentWidget = widget;
-   } else {
-      var-> currentWidget = nilHandle;
-   }
-
-   /* adjust selection if we're in currently selected chain */
-   if ( my-> get_selected( self))
-      my-> set_selected_widget( self, widget);
-}
-
-void
-Widget_set_design_scale( Handle self, double x, double y)
-{
-   if ( x < 0) x = 0;
-   if ( y < 0) y = 0;
-   var-> designScale. x = x;
-   var-> designScale. y = y;
-}
-
-void
-Widget_set_focused( Handle self, Bool focused)
-{
-   enter_method;
-   if ( var-> stage > csNormal) return;
-   if ( focused) {
-      PWidget x = ( PWidget)( var-> owner);
-      Handle current = self;
-      while ( x) {
-         x-> currentWidget = current;
-         current = ( Handle) x;
-         x = ( PWidget) x-> owner;
-      }
-      var-> currentWidget = nilHandle;
-      if ( var-> stage == csNormal)
-         apc_widget_set_focused( self);
-   } else
-      if ( var-> stage == csNormal && my-> get_selected( self))
-         apc_widget_set_focused( nilHandle);
-}
-
-void
 Widget_set_font( Handle self, Font font)
 {
    enter_method;
@@ -1702,393 +1403,9 @@ Widget_set_font( Handle self, Font font)
 }
 
 void
-Widget_set_grow_mode( Handle self, int flags )
-{
-   enter_method;
-   Bool x = 0, y = 0;
-   var-> growMode = flags;
-   if ( var-> growMode & gmXCenter) x = 1;
-   if ( var-> growMode & gmYCenter) y = 1;
-   if ( x || y) my-> set_centered( self, x, y);
-}
-
-void
-Widget_set_help_context( Handle self, long int helpContext )
-{
-   var-> helpContext = helpContext;
-}
-
-void
-Widget_set_hint_visible( Handle self, Bool visible)
-{
-   PApplication app = ( PApplication) application;
-   if ( var-> stage >= csDead) return;
-   if ( visible == app-> hintVisible) return;
-   if ( visible && strlen( var-> hint) == 0) return;
-   app-> self-> set_hint_action( application, self, visible, false);
-}
-
-void
-Widget_set_owner_back_color( Handle self, Bool ownerBackColor )
-{
-   enter_method;
-   opt_assign( optOwnerBackColor, ownerBackColor);
-   if ( is_opt( optOwnerBackColor) && var-> owner)
-   {
-      my-> set_backColor( self, ((( PWidget) var-> owner)-> self)-> get_backColor( var-> owner));
-      opt_set( optOwnerBackColor);
-      my-> repaint ( self);
-   }
-}
-
-void
-Widget_set_owner_color( Handle self, Bool ownerColor )
-{
-   enter_method;
-   opt_assign( optOwnerColor, ownerColor);
-   if ( is_opt( optOwnerColor) && var-> owner)
-   {
-      my-> set_color( self, ((( PWidget) var-> owner)-> self)-> get_color( var-> owner));
-      opt_set( optOwnerColor);
-      my-> repaint( self);
-   }
-}
-
-void
-Widget_set_owner_font( Handle self, Bool ownerFont )
-{
-   enter_method;
-   opt_assign( optOwnerFont, ownerFont);
-   if ( is_opt( optOwnerFont) && var-> owner)
-   {
-      my-> set_font ( self, ((( PWidget) var-> owner)-> self)-> get_font ( var-> owner));
-      opt_set( optOwnerFont);
-      my-> repaint ( self);
-   }
-}
-
-void
-Widget_set_owner_hint( Handle self, Bool ownerHint )
-{
-   enter_method;
-   opt_assign( optOwnerHint, ownerHint);
-   if ( is_opt( optOwnerHint) && var-> owner)
-   {
-      my-> set_hint( self, ((( PWidget) var-> owner)-> self)-> get_hint ( var-> owner));
-      opt_set( optOwnerHint);
-   }
-}
-
-void
-Widget_set_owner_palette( Handle self, Bool ownerPalette)
-{
-   enter_method;
-   if ( ownerPalette) my-> set_palette( self, nilSV);
-   opt_assign( optOwnerPalette, ownerPalette);
-}
-
-void
-Widget_set_owner_show_hint( Handle self, Bool ownerShowHint )
-{
-   enter_method;
-   opt_assign( optOwnerShowHint, ownerShowHint);
-   if ( is_opt( optOwnerShowHint) && var-> owner)
-   {
-      my-> set_show_hint( self, ((( PWidget) var-> owner)-> self)-> get_show_hint ( var-> owner));
-      opt_set( optOwnerShowHint);
-   }
-}
-
-SV *
-Widget_palette( Handle self, Bool set, SV * palette)
-{
-   int colors;
-   if ( !set)
-      return inherited-> palette( self, set, palette);
-
-   if ( var-> stage > csNormal) return nilSV;
-   if ( var-> handle == nilHandle) return nilSV; /* aware of call from Drawable::init */
-
-   colors = var-> palSize;
-   free( var-> palette);
-   var-> palette = read_palette( &var-> palSize, palette);
-   opt_clear( optOwnerPalette);
-   if ( colors == 0 && var-> palSize == 0)
-      return nilSV; /* do not bother apc */
-   if ( opt_InPaint)
-      apc_gp_set_palette( self);
-   else
-      apc_widget_set_palette( self);
-   return nilSV;
-}
-
-void
-Widget_set_pointer_icon( Handle self, Handle icon)
-{
-   enter_method;
-   Point hotSpot;
-   if ( var-> stage > csNormal) return;
-   if ( icon != nilHandle && !kind_of( icon, CIcon)) {
-      warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
-      return;
-   }
-   hotSpot = my-> get_pointer_hot_spot( self);
-   apc_pointer_set_user( self, icon, hotSpot);
-   if ( var-> pointerType == crUser) my-> first_that( self, sptr, nil);
-}
-
-void
-Widget_set_pointer_hot_spot( Handle self, int x, int y)
-{
-   enter_method;
-   Handle icon;
-   Point hotSpot;
-   hotSpot. x = x;
-   hotSpot. y =  y;
-   if ( var-> stage > csNormal) return;
-   icon = my-> get_pointer_icon( self);
-   apc_pointer_set_user( self, icon, hotSpot);
-   if ( var-> pointerType == crUser) my-> first_that( self, sptr, nil);
-}
-
-void
-Widget_set_pointer_type( Handle self, int type)
-{
-   enter_method;
-   if ( var-> stage > csNormal) return;
-   var-> pointerType = type;
-   apc_pointer_set_shape( self, type);
-   my-> first_that( self, sptr, nil);
-}
-
-void
-Widget_set_pointer_pos( Handle self, int x, int y)
-{
-   enter_method;
-   Point p;
-   p. x = x;
-   p. y = y;
-   p = my-> client_to_screen( self, p);
-   apc_pointer_set_pos( self, p. x, p. y);
-}
-
-void
-Widget_set_popup( Handle self, Handle popup)
-{
-   enter_method;
-   if ( var-> stage > csNormal) return;
-   if ( popup && !kind_of( popup, CPopup)) return;
-   if ( popup && (( PAbstractMenu) popup)-> owner != self)
-      my-> set_popup_items( self, ((( PAbstractMenu) popup)-> self)-> get_items( popup, ""));
-   else var-> popupMenu = popup;
-}
-
-void Widget_set_popup_color( Handle self, Color color, int index)
-{
-   if (( index < 0) || ( index > ciMaxId)) return;
-   if (( color < 0) && (( color & wcMask) == 0)) color |= wcPopup;
-   var-> popupColor[ index] = color;
-}
-
-void
 Widget_set_popup_font( Handle self, Font font)
 {
    apc_font_pick( self, &font, &var-> popupFont);
-}
-
-void
-Widget_set_popup_items( Handle self, SV * popupItems)
-{
-   enter_method;
-   if ( var-> stage > csNormal) return;
-   if ( var-> popupMenu == nilHandle)
-   {
-     if ( SvTYPE( popupItems))
-     {
-         HV * profile = newHV();
-         pset_sv( items, popupItems);
-         pset_H ( owner, self);
-         my-> set_popup( self, create_instance( "Prima::Popup"));
-         sv_free(( SV *) profile);
-      }
-   }
-   else
-      ((( PAbstractMenu) var-> popupMenu)-> self)-> set_items( var-> popupMenu, popupItems);
-}
-
-void
-Widget_set_scale_children( Handle self, Bool scaleChildren)
-{
-   opt_assign( optScaleChildren, scaleChildren);
-}
-
-void
-Widget_set_selectable( Handle self, Bool selectable)
-{
-   opt_assign( optSelectable, selectable);
-}
-
-void
-Widget_set_selected_widget( Handle self, Handle widget)
-{
-   if ( var-> stage > csNormal) return;
-   if ( widget) {
-      if ((( PWidget) widget)-> owner == self)
-         ((( PWidget) widget)-> self)-> set_selected( widget, true);
-   } else {
-      /* give selection up to hierarchy chain */
-      Handle s = self;
-      while ( s) {
-         if ( CWidget( s)-> get_selectable( s)) {
-            CWidget( s)-> set_selected( s, true);
-            break;
-         }
-         s = PWidget( s)-> owner;
-      }
-   }
-}
-
-void
-Widget_set_selecting_buttons( Handle self, int sb)
-{
-   var-> selectingButtons = sb;
-}
-
-void
-Widget_set_show_hint( Handle self, Bool showHint )
-{
-   enter_method;
-   Bool oldShowHint = is_opt( optShowHint);
-   my-> first_that( self, showhint_notify, &showHint);
-   opt_clear( optOwnerShowHint);
-   opt_assign( optShowHint, showHint);
-   if ( application && !is_opt( optShowHint) && oldShowHint) my-> set_hint_visible( self, 0);
-}
-
-void
-Widget_set_shape( Handle self, Handle mask)
-{
-   if ( mask && !kind_of( mask, CImage)) {
-      warn("RTC008A: Illegal object reference passed to Widget.set_shape");
-      return;
-   }
-
-   if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
-      Handle i = CImage( mask)-> dup( mask);
-      ++SvREFCNT( SvRV( PImage( i)-> mate));
-      CImage( i)-> set_conversion( i, ictNone);
-      CImage( i)-> set_type( i, imBW);
-      apc_widget_set_shape( self, i);
-      --SvREFCNT( SvRV( PImage( i)-> mate));
-      Object_destroy( i);
-   } else
-      apc_widget_set_shape( self, mask);
-}
-
-
-void
-Widget_set_size_min( Handle self, Point min)
-{
-   enter_method;
-   var-> sizeMin = min;
-   if ( var-> stage == csNormal)
-   {
-      Point sizeActual  = my-> get_size( self);
-      Point newSize     = sizeActual;
-      if ( sizeActual. x < min. x) newSize. x = min. x;
-      if ( sizeActual. y < min. y) newSize. y = min. y;
-      if (( newSize. x != sizeActual. x) || ( newSize. y != sizeActual. y))
-         my-> set_size( self, newSize);
-   }
-}
-
-void
-Widget_set_size_max( Handle self, Point max)
-{
-   enter_method;
-   var-> sizeMax = max;
-   if ( var-> stage == csNormal)
-   {
-      Point sizeActual  = my-> get_size( self);
-      Point newSize     = sizeActual;
-      if ( sizeActual. x > max. x) newSize. x = max. x;
-      if ( sizeActual. y > max. y) newSize. y = max. y;
-      if (( newSize. x != sizeActual. x) || ( newSize. y !=  sizeActual. y))
-          my-> set_size( self, newSize);
-   }
-}
-
-void
-Widget_set_tab_order( Handle self, int tabOrder)
-{
-    int count;
-    PWidget owner = ( PWidget) var-> owner;
-    if ( var-> stage > csNormal) return;
-    count = owner-> widgets. count;
-    if ( tabOrder < 0) {
-       int i, maxOrder = -1;
-       /* finding maximal tabOrder value among the siblings */
-       for ( i = 0; i < count; i++) {
-          PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
-          if ( self == ( Handle) ctrl) continue;
-          if ( maxOrder < ctrl-> tabOrder) maxOrder = ctrl-> tabOrder;
-       }
-       if ( maxOrder < INT_MAX) {
-          var-> tabOrder = maxOrder + 1;
-          return;
-       }
-       /* maximal value found, but has no use; finding gaps */
-       {
-          int j = 0;
-          Bool match = 1;
-          while ( !match) {
-             for ( i = 0; i < count; i++) {
-                PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
-                if ( self == ( Handle) ctrl) continue;
-                if ( ctrl-> tabOrder == j) {
-                   match = 1;
-                   break;
-                }
-             }
-             j++;
-          }
-          var-> tabOrder = j - 1;
-       }
-    } else {
-       int i;
-       Bool match = 0;
-       /* finding exact match among the siblings */
-       for ( i = 0; i < count; i++) {
-          PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
-          if ( self == ( Handle) ctrl) continue;
-          if ( ctrl-> tabOrder == tabOrder) {
-             match = 1;
-             break;
-          }
-       }
-       if ( match)
-          /* incrementing all tabOrders that greater than out */
-          for ( i = 0; i < count; i++) {
-             PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
-             if ( self == ( Handle) ctrl) continue;
-             if ( ctrl-> tabOrder >= tabOrder) ctrl-> tabOrder++;
-          }
-       var-> tabOrder = tabOrder;
-    }
-}
-
-void
-Widget_set_tab_stop( Handle self, Bool stop)
-{
-   opt_assign( optTabStop, stop);
-}
-
-void
-Widget_set_widget_class( Handle self, int widgetClass)
-{
-   enter_method;
-   var-> widgetClass = widgetClass;
-   my-> repaint( self);
 }
 
 /* event handlers */
@@ -2207,7 +1524,7 @@ sptr( Handle window, Handle self, void * v)
    enter_method;
    /* does nothing but refreshes system pointer */
    if ( var-> pointerType == crDefault)
-      my-> set_pointer_type( self, crDefault);
+      my-> set_pointerType( self, crDefault);
    return false;
 }
 
@@ -2216,37 +1533,7 @@ sptr( Handle window, Handle self, void * v)
 static Bool
 size_notify( Handle self, Handle child, const Rect* metrix)
 {
-   if ( his-> growMode)
-   {
-#if 0
-      Point size  =  his-> virtualSize;
-      Point reportedSize  =  his-> self-> get_size( child);
-      Point pos   =  his-> self-> get_origin( child);
-      int   dx    = metrix-> right - metrix-> left;
-      int   dy    = metrix-> top   - metrix-> bottom;
-
-      size = reportedSize;
-
-      if ( !metrix-> left)   dx = 0;
-      if ( !metrix-> bottom) dy = 0;
-
-      printf( ">size_notify: %s, pos: %dx%d, size: %dx%d, delta: %dx%d\n",
-              his-> name, pos. x, pos.y, size. x, size. y, dx, dy);
-
-      if ( his-> growMode & gmGrowLoX) pos.  x += dx;
-      if ( his-> growMode & gmGrowHiX && dx) size. x += dx; else size. x = reportedSize. x;
-      if ( his-> growMode & gmGrowLoY) pos.  y += dy;
-      if ( his-> growMode & gmGrowHiY && dy) size. y += dy; else size. y = reportedSize. y;
-      if ( his-> growMode & gmXCenter) pos. x = (((Rect *) metrix)-> right - size. x) / 2;
-      if ( his-> growMode & gmYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
-
-      printf( "size_notify>: %s, pos: %dx%d, size: %dx%d\n",
-              his-> name, pos. x, pos.y, size. x, size. y);
-
-      his-> self-> set_origin( child, pos);
-      his-> self-> set_size( child, size);
-      his-> virtualSize = size;
-#else
+   if ( his-> growMode) {
       Point size  =  his-> self-> get_virtual_size( child);
       Point pos   =  his-> self-> get_origin( child);
       int   dx    = ((Rect *) metrix)-> right - ((Rect *) metrix)-> left;
@@ -2263,7 +1550,6 @@ size_notify( Handle self, Handle child, const Rect* metrix)
          his-> self-> set_origin( child, pos);
       if ( dx != 0 || dy != 0)
          his-> self-> set_size( child, size);
-#endif
    }
    return false;
 }
@@ -2271,7 +1557,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
 static Bool
 move_notify( Handle self, Handle child, Point * moveTo)
 {
-   Bool clp = his-> self-> get_clip_owner( child);
+   Bool clp = his-> self-> get_clipOwner( child);
    int  dx  = moveTo-> x - var-> pos. x;
    int  dy  = moveTo-> y - var-> pos. y;
    Point p;
@@ -2308,7 +1594,7 @@ static Bool
 showhint_notify ( Handle self, Handle child, void * data)
 {
     if ( his-> options. optOwnerShowHint) {
-       his-> self-> set_show_hint ( child, *(( Bool *) data));
+       his-> self-> set_showHint ( child, *(( Bool *) data));
        his-> options. optOwnerShowHint = 1;
     }
     return false;
@@ -2330,14 +1616,14 @@ single_color_notify ( Handle self, Handle child, void * color)
    PSingleColor s = ( PSingleColor) color;
    if ( his-> options. optOwnerColor && ( s-> index == ciFore))
    {
-      his-> self-> set_color_index ( child, s-> color, s-> index);
+      his-> self-> colorIndex ( child, true, s-> index, s-> color);
       his-> options. optOwnerColor = 1;
    } else if (( his-> options. optOwnerBackColor) && ( s-> index == ciBack))
    {
-      his-> self-> set_color_index ( child, s-> color, s-> index);
+      his-> self-> colorIndex ( child, true, s-> index, s-> color);
       his-> options. optOwnerBackColor = 1;
    } else if ( s-> index > ciBack)
-      his-> self-> set_color_index ( child, s-> color, s-> index);
+      his-> self-> colorIndex ( child, true, s-> index, s-> color);
    return false;
 }
 
@@ -2370,12 +1656,45 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 
 /* properties section */
 
+SV *
+Widget_accelItems( Handle self, Bool set, SV * accelItems)
+{
+   enter_method;
+   if ( var-> stage > csNormal) return nilSV;
+   if ( !set)
+      return var-> accelTable ?
+             CAbstractMenu( var-> accelTable)-> get_items( var-> accelTable, "") : nilSV;
+   if ( var-> accelTable == nilHandle) {
+      HV * profile = newHV();
+      if ( SvTYPE( accelItems)) pset_sv( items, accelItems);
+      pset_H ( owner, self);
+      my-> set_accelTable( self, create_instance( "Prima::AccelTable"));
+      sv_free(( SV *) profile);
+   } else
+      CAbstractMenu( var-> accelTable)-> set_items( var-> accelTable, accelItems);
+   return nilSV;
+}
+
+Handle
+Widget_accelTable( Handle self, Bool set, Handle accelTable)
+{
+   enter_method;
+   if ( var-> stage > csNormal) return nilHandle;
+   if ( !set)
+      return var-> accelTable;
+   if ( accelTable && !kind_of( accelTable, CAbstractMenu)) return nilHandle;
+   if ( accelTable && (( PAbstractMenu) accelTable)-> owner != self)
+      my-> set_accelItems( self, CAbstractMenu( accelTable)-> get_items( accelTable, ""));
+   else
+      var-> accelTable = accelTable;
+}
+
 Color
 Widget_backColor( Handle self, Bool set, Color color)
 {
    enter_method;
-   if (!set) return my-> get_color_index( self, ciBack);
-   my-> set_color_index( self, color, ciBack);
+   if (!set) return my-> colorIndex( self, false, ciBack, 0);
+   my-> colorIndex( self, true, ciBack, color);
    return color;
 }
 
@@ -2391,13 +1710,160 @@ Widget_bottom( Handle self, Bool set, int bottom)
    return 0;
 }
 
+Bool
+Widget_briefKeys( Handle self, Bool set, Bool briefKeys)
+{
+   if ( !set)
+      return is_opt( optBriefKeys);
+   opt_assign( optBriefKeys, briefKeys);
+   return false;
+}
+
+Bool
+Widget_buffered( Handle self, Bool set, Bool buffered)
+{
+   if ( !set)
+      return is_opt( optBuffered);
+   if ( !opt_InPaint)
+      opt_assign( optBuffered, buffered);
+   return false;
+}
+
+Bool
+Widget_clipOwner( Handle self, Bool set, Bool clipOwner)
+{
+   HV * profile;
+   enter_method;
+   if ( !set)
+      return apc_widget_get_clip_owner( self);
+   profile = newHV();
+   pset_i( clipOwner, clipOwner);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return false;
+}
+
 Color
 Widget_color( Handle self, Bool set, Color color)
 {
    enter_method;
-   if (!set) return my-> get_color_index( self, ciFore);
-   my-> set_color_index( self, color, ciFore);
-   return color;
+   if (!set)
+      return my-> colorIndex( self, false, ciFore, 0);
+   return my-> colorIndex( self, true, ciFore, color);
+}
+
+Color
+Widget_colorIndex( Handle self, Bool set, int index, Color color)
+{
+   if ( !set) {
+      if ( index < 0 || index > ciMaxId) return clInvalid;
+      switch ( index) {
+        case ciFore:
+           return opt_InPaint ? inherited-> get_color ( self) : apc_widget_get_color( self, ciFore);
+        case ciBack:
+           return opt_InPaint ? inherited-> get_backColor ( self) : apc_widget_get_color( self, ciBack);
+        default:
+           return apc_widget_get_color( self, index);
+      }
+   } else {
+      enter_method;
+      SingleColor s;
+      s. color = color;
+      s. index = index;
+      if (( index < 0) || ( index > ciMaxId)) return clInvalid;
+      if ( !opt_InPaint) my-> first_that( self, single_color_notify, &s);
+
+      if ( var-> handle == nilHandle) return clInvalid; /* aware of call from Drawable::init */
+      if (( color < 0) && (( color & wcMask) == 0))
+         color |= var-> widgetClass;
+      if ( opt_InPaint) {
+         switch ( index) {
+            case ciFore:
+               inherited-> set_color ( self, color);
+               break;
+            case ciBack:
+               inherited-> set_backColor ( self, color);
+               break;
+            default:
+               apc_widget_set_color ( self, color, index);
+         }
+      } else {
+         switch ( index) {
+            case ciFore:
+               opt_clear( optOwnerColor);
+               break;
+            case ciBack:
+               opt_clear( optOwnerBackColor);
+               break;
+         }
+         apc_widget_set_color( self, color, index);
+         my-> repaint( self);
+      }
+   }
+   return 0;
+}
+
+Bool
+Widget_current( Handle self, Bool set, Bool current)
+{
+   PWidget o;
+   if ( var-> stage > csNormal) return false;
+   if ( !set)
+      return var-> owner && ( PWidget( var-> owner)-> currentWidget == self);
+   o = ( PWidget) var-> owner;
+   if ( o == nil) return false;
+   if ( current)
+      o-> self-> set_currentWidget( var-> owner, self);
+   else
+      if ( o-> currentWidget == self)
+         o-> self-> set_currentWidget( var-> owner, nilHandle);
+}
+
+Handle
+Widget_currentWidget( Handle self, Bool set, Handle widget)
+{
+   enter_method;
+   if ( var-> stage > csNormal) return nilHandle;
+   if ( !set)
+      return var-> currentWidget;
+   if ( widget) {
+      if ( !widget || ( PWidget( widget)-> stage > csNormal) ||
+             ( PWidget( widget)-> owner != self)
+           ) return nilHandle;
+      var-> currentWidget = widget;
+   } else
+      var-> currentWidget = nilHandle;
+
+   /* adjust selection if we're in currently selected chain */
+   if ( my-> get_selected( self))
+      my-> set_selectedWidget( self, widget);
+   return nilHandle;
+}
+
+Point
+Widget_cursorPos( Handle self, Bool set, Point cursorPos)
+{
+   if ( !set)
+      return apc_cursor_get_pos( self);
+   apc_cursor_set_pos( self, cursorPos. x, cursorPos. y);
+   return cursorPos;
+}
+
+Point
+Widget_cursorSize( Handle self, Bool set, Point cursorSize)
+{
+   if ( !set)
+      return apc_cursor_get_size( self);
+   apc_cursor_set_size( self, cursorSize. x, cursorSize. y);
+   return cursorSize;
+}
+
+Bool
+Widget_cursorVisible( Handle self, Bool set, Bool cursorVisible)
+{
+   if ( !set)
+      return apc_cursor_get_visible( self);
+   return apc_cursor_set_visible( self, cursorVisible);
 }
 
 Bool
@@ -2406,6 +1872,38 @@ Widget_enabled( Handle self, Bool set, Bool enabled)
    return set ?
       apc_widget_set_enabled( self, enabled) :
       apc_widget_is_enabled( self);
+}
+
+Bool
+Widget_firstClick( Handle self, Bool set, Bool firstClick)
+{
+   return set ?
+      apc_widget_set_first_click( self, firstClick) :
+      apc_widget_get_first_click( self);
+}
+
+Bool
+Widget_focused( Handle self, Bool set, Bool focused)
+{
+   enter_method;
+   if ( var-> stage > csNormal) return false;
+   if ( !set)
+      return apc_widget_is_focused( self);
+
+   if ( focused) {
+      PWidget x = ( PWidget)( var-> owner);
+      Handle current = self;
+      while ( x) {
+         x-> currentWidget = current;
+         current = ( Handle) x;
+         x = ( PWidget) x-> owner;
+      }
+      var-> currentWidget = nilHandle;
+      if ( var-> stage == csNormal)
+         apc_widget_set_focused( self);
+   } else
+      if ( var-> stage == csNormal && my-> get_selected( self))
+         apc_widget_set_focused( nilHandle);
 }
 
 char *
@@ -2429,7 +1927,7 @@ Widget_hint( Handle self, Bool set, char *hint)
    if ( application && (( PApplication) application)-> hintVisible &&
         (( PApplication) application)-> hintUnder == self)
    {
-      if ( strlen( var-> hint) == 0) my-> set_hint_visible( self, 0);
+      if ( strlen( var-> hint) == 0) my-> set_hintVisible( self, 0);
       {
          char * hintText = var-> hint;
          Handle self = (( PApplication) application)-> hintWidget;
@@ -2462,6 +1960,240 @@ Widget_origin( Handle self, Bool set, Point origin)
    apc_widget_set_pos( self, origin.x, origin.y);
    return origin;
 }
+
+Bool
+Widget_ownerBackColor( Handle self, Bool set, Bool ownerBackColor)
+{
+   enter_method;
+   if ( !set)
+      return is_opt( optOwnerBackColor);
+   opt_assign( optOwnerBackColor, ownerBackColor);
+   if ( is_opt( optOwnerBackColor) && var-> owner)
+   {
+      my-> set_backColor( self, ((( PWidget) var-> owner)-> self)-> get_backColor( var-> owner));
+      opt_set( optOwnerBackColor);
+      my-> repaint ( self);
+   }
+   return false;
+}
+
+Bool
+Widget_ownerColor( Handle self, Bool set, Bool ownerColor)
+{
+   enter_method;
+   if ( !set)
+      return is_opt( optOwnerColor);
+   opt_assign( optOwnerColor, ownerColor);
+   if ( is_opt( optOwnerColor) && var-> owner)
+   {
+      my-> set_color( self, ((( PWidget) var-> owner)-> self)-> get_color( var-> owner));
+      opt_set( optOwnerColor);
+      my-> repaint( self);
+   }
+   return false;
+}
+
+Bool
+Widget_ownerFont( Handle self, Bool set, Bool ownerFont )
+{
+   enter_method;
+   if ( !set)
+      return is_opt( optOwnerFont);
+   opt_assign( optOwnerFont, ownerFont);
+   if ( is_opt( optOwnerFont) && var-> owner)
+   {
+      my-> set_font ( self, ((( PWidget) var-> owner)-> self)-> get_font ( var-> owner));
+      opt_set( optOwnerFont);
+      my-> repaint ( self);
+   }
+   return false;
+}
+
+Bool
+Widget_ownerHint( Handle self, Bool set, Bool ownerHint )
+{
+   enter_method;
+   if ( !set)
+      return is_opt( optOwnerHint);
+   opt_assign( optOwnerHint, ownerHint);
+   if ( is_opt( optOwnerHint) && var-> owner)
+   {
+      my-> set_hint( self, ((( PWidget) var-> owner)-> self)-> get_hint ( var-> owner));
+      opt_set( optOwnerHint);
+   }
+   return false;
+}
+
+Bool
+Widget_ownerPalette( Handle self, Bool set, Bool ownerPalette)
+{
+   enter_method;
+   if ( !set)
+      return is_opt( optOwnerPalette);
+   if ( ownerPalette) my-> set_palette( self, nilSV);
+   opt_assign( optOwnerPalette, ownerPalette);
+   return false;
+}
+
+Bool
+Widget_ownerShowHint( Handle self, Bool set, Bool ownerShowHint )
+{
+   enter_method;
+   if ( !set)
+      return is_opt( optOwnerShowHint);
+   opt_assign( optOwnerShowHint, ownerShowHint);
+   if ( is_opt( optOwnerShowHint) && var-> owner)
+   {
+      my-> set_showHint( self, CWidget( var-> owner)-> get_showHint ( var-> owner));
+      opt_set( optOwnerShowHint);
+   }
+   return false;
+}
+
+SV *
+Widget_palette( Handle self, Bool set, SV * palette)
+{
+   int colors;
+   if ( !set)
+      return inherited-> palette( self, set, palette);
+
+   if ( var-> stage > csNormal) return nilSV;
+   if ( var-> handle == nilHandle) return nilSV; /* aware of call from Drawable::init */
+
+   colors = var-> palSize;
+   free( var-> palette);
+   var-> palette = read_palette( &var-> palSize, palette);
+   opt_clear( optOwnerPalette);
+   if ( colors == 0 && var-> palSize == 0)
+      return nilSV; /* do not bother apc */
+   if ( opt_InPaint)
+      apc_gp_set_palette( self);
+   else
+      apc_widget_set_palette( self);
+   return nilSV;
+}
+
+Handle
+Widget_pointerIcon( Handle self, Bool set, Handle icon)
+{
+   enter_method;
+   Point hotSpot;
+
+   if ( var-> stage > csNormal) return nilHandle;
+
+   if ( !set) {
+      HV * profile = newHV();
+      Handle icon = Object_create( "Prima::Icon", profile);
+      sv_free(( SV *) profile);
+      apc_pointer_get_bitmap( self, icon);
+      --SvREFCNT( SvRV((( PAnyObject) icon)-> mate));
+      return icon;
+   }
+
+   if ( icon != nilHandle && !kind_of( icon, CIcon)) {
+      warn("RTC083: Illegal object reference passed to Widget::pointerIcon");
+      return nilHandle;
+   }
+   hotSpot = my-> get_pointerHotSpot( self);
+   apc_pointer_set_user( self, icon, hotSpot);
+   if ( var-> pointerType == crUser) my-> first_that( self, sptr, nil);
+   return nilHandle;
+}
+
+Point
+Widget_pointerHotSpot( Handle self, Bool set, Point hotSpot)
+{
+   enter_method;
+   Handle icon;
+   if ( !set)
+      return apc_pointer_get_hot_spot( self);
+   if ( var-> stage > csNormal) return hotSpot;
+   icon = my-> get_pointerIcon( self);
+   apc_pointer_set_user( self, icon, hotSpot);
+   if ( var-> pointerType == crUser) my-> first_that( self, sptr, nil);
+   return hotSpot;
+}
+
+int
+Widget_pointerType( Handle self, Bool set, int type)
+{
+   enter_method;
+   if ( var-> stage > csNormal) return 0;
+   if ( !set)
+      return var-> pointerType;
+   var-> pointerType = type;
+   apc_pointer_set_shape( self, type);
+   my-> first_that( self, sptr, nil);
+   return type;
+}
+
+Point
+Widget_pointerPos( Handle self, Bool set, Point p)
+{
+   enter_method;
+   if ( !set)
+      return my-> screen_to_client( self, apc_pointer_get_pos( self));
+   p = my-> client_to_screen( self, p);
+   apc_pointer_set_pos( self, p. x, p. y);
+}
+
+Bool
+Widget_pointerVisible( Handle self, Bool set, Bool pointerVisible)
+{
+   if ( !set)
+      return apc_pointer_get_visible( self);
+   return apc_pointer_set_visible( self, pointerVisible);
+}
+
+Handle
+Widget_popup( Handle self, Bool set, Handle popup)
+{
+   enter_method;
+   if ( var-> stage > csNormal) return nilHandle;
+   if ( !set)
+      return var-> popupMenu;
+
+   if ( popup && !kind_of( popup, CPopup)) return nilHandle;
+   if ( popup && PAbstractMenu( popup)-> owner != self)
+      my-> set_popupItems( self, CAbstractMenu( popup)-> get_items( popup, ""));
+   else
+      var-> popupMenu = popup;
+   return nilHandle;
+}
+
+Color
+Widget_popupColorIndex( Handle self, Bool set, int index, Color color)
+{
+   if (( index < 0) || ( index > ciMaxId)) return clInvalid;
+   if ( !set)
+      return var-> popupColor[ index];
+   if (( color < 0) && (( color & wcMask) == 0)) color |= wcPopup;
+   var-> popupColor[ index] = color;
+   return color;
+}
+
+SV *
+Widget_popupItems( Handle self, Bool set, SV * popupItems)
+{
+   enter_method;
+   if ( var-> stage > csNormal) return nilSV;
+   if ( !set)
+      return var-> popupMenu ?
+         CAbstractMenu( var-> popupMenu)-> get_items( var-> popupMenu, "") : nilSV;
+
+   if ( var-> popupMenu == nilHandle) {
+     if ( SvTYPE( popupItems)) {
+         HV * profile = newHV();
+         pset_sv( items, popupItems);
+         pset_H ( owner, self);
+         my-> set_popup( self, create_instance( "Prima::Popup"));
+         sv_free(( SV *) profile);
+      }
+   }
+   else
+      CAbstractMenu( var-> popupMenu)-> set_items( var-> popupMenu, popupItems);
+}
+
 
 Rect
 Widget_rect( Handle self, Bool set, Rect r)
@@ -2498,10 +2230,30 @@ Widget_right( Handle self, Bool set, int right)
 }
 
 Bool
+Widget_scaleChildren( Handle self, Bool set, Bool scaleChildren)
+{
+   if ( !set)
+      return is_opt( optScaleChildren);
+   opt_assign( optScaleChildren, scaleChildren);
+   return false;
+}
+
+Bool
+Widget_selectable( Handle self, Bool set, Bool selectable)
+{
+   if ( !set)
+      return is_opt( optSelectable);
+   opt_assign( optSelectable, selectable);
+   return false;
+}
+
+Bool
 Widget_selected( Handle self, Bool set, Bool selected)
 {
    enter_method;
-   if (!set) return my-> get_selected_widget( self) != nilHandle;
+   if ( !set)
+      return my-> get_selectedWidget( self) != nilHandle;
+
    if ( var-> stage > csNormal) return selected;
    if ( selected) {
       if ( is_opt( optSelectable) && !is_opt( optSystemSelectable)) {
@@ -2509,7 +2261,7 @@ Widget_selected( Handle self, Bool set, Bool selected)
       } else
       if ( var-> currentWidget) {
          PWidget w = ( PWidget) var-> currentWidget;
-         if ( w-> options. optSystemSelectable && !w-> self-> get_clip_owner(( Handle) w))
+         if ( w-> options. optSystemSelectable && !w-> self-> get_clipOwner(( Handle) w))
             w-> self-> bring_to_front(( Handle) w); /* <- very uncertain !!!! */
          else
             w-> self-> set_selected(( Handle) w, true);
@@ -2554,6 +2306,104 @@ Widget_selected( Handle self, Bool set, Bool selected)
    return selected;
 }
 
+Handle
+Widget_selectedWidget( Handle self, Bool set, Handle widget)
+{
+   if ( var-> stage > csNormal) return nilHandle;
+
+   if ( !set) {
+      if ( var-> stage <= csNormal) {
+         Handle foc = apc_widget_get_focused();
+         PWidget  f = ( PWidget) foc;
+         while( f) {
+            if (( Handle) f == self) return foc;
+            f = ( PWidget) f-> owner;
+         }
+      }
+      return nilHandle;
+
+      /* classic solution should be recursive and inheritant call */
+      /* of get_selected() here, when Widget would return state of */
+      /* child-group selected state until Widget::selected() called; */
+      /* thus, each of them would call apc_widget_get_focused - that's expensive, */
+      /* so that's the reason not to use classic object model here. */
+   }
+
+   if ( widget) {
+      if ( PWidget( widget)-> owner == self)
+         CWidget( widget)-> set_selected( widget, true);
+   } else {
+      /* give selection up to hierarchy chain */
+      Handle s = self;
+      while ( s) {
+         if ( CWidget( s)-> get_selectable( s)) {
+            CWidget( s)-> set_selected( s, true);
+            break;
+         }
+         s = PWidget( s)-> owner;
+      }
+   }
+   return nilHandle;
+}
+
+int
+Widget_selectingButtons( Handle self, Bool set, int sb)
+{
+   if ( !set)
+      return var-> selectingButtons;
+   return var-> selectingButtons = sb;
+}
+
+Handle
+Widget_shape( Handle self, Bool set, Handle mask)
+{
+   if ( var-> stage > csNormal) return nilHandle;
+
+   if ( !set) {
+      if ( apc_widget_get_shape( self, nilHandle)) {
+         HV * profile = newHV();
+         Handle i = Object_create( "Prima::Image", profile);
+         sv_free(( SV *) profile);
+         apc_widget_get_shape( self, i);
+         --SvREFCNT( SvRV((( PAnyObject) i)-> mate));
+         return i;
+      } else
+         return nilHandle;
+   }
+
+   if ( mask && !kind_of( mask, CImage)) {
+      warn("RTC008A: Illegal object reference passed to Widget::shape");
+      return nilHandle;
+   }
+
+   if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
+      Handle i = CImage( mask)-> dup( mask);
+      ++SvREFCNT( SvRV( PImage( i)-> mate));
+      CImage( i)-> set_conversion( i, ictNone);
+      CImage( i)-> set_type( i, imBW);
+      apc_widget_set_shape( self, i);
+      --SvREFCNT( SvRV( PImage( i)-> mate));
+      Object_destroy( i);
+   } else
+      apc_widget_set_shape( self, mask);
+
+   return nilHandle;
+}
+
+Bool
+Widget_showHint( Handle self, Bool set, Bool showHint )
+{
+   enter_method;
+   Bool oldShowHint = is_opt( optShowHint);
+   if ( !set)
+      return oldShowHint;
+   my-> first_that( self, showhint_notify, &showHint);
+   opt_clear( optOwnerShowHint);
+   opt_assign( optShowHint, showHint);
+   if ( application && !is_opt( optShowHint) && oldShowHint) my-> set_hintVisible( self, 0);
+   return false;
+}
+
 Point
 Widget_size( Handle self, Bool set, Point size)
 {
@@ -2561,6 +2411,144 @@ Widget_size( Handle self, Bool set, Point size)
       return apc_widget_get_size( self);
    apc_widget_set_size( self, size.x, size.y);
    return size;
+}
+
+Point
+Widget_sizeMin( Handle self, Bool set, Point min)
+{
+   enter_method;
+   if ( !set)
+      return var-> sizeMin;
+   var-> sizeMin = min;
+   if ( var-> stage == csNormal) {
+      Point sizeActual  = my-> get_size( self);
+      Point newSize     = sizeActual;
+      if ( sizeActual. x < min. x) newSize. x = min. x;
+      if ( sizeActual. y < min. y) newSize. y = min. y;
+      if (( newSize. x != sizeActual. x) || ( newSize. y != sizeActual. y))
+         my-> set_size( self, newSize);
+   }
+   return min;
+}
+
+Point
+Widget_sizeMax( Handle self, Bool set, Point max)
+{
+   enter_method;
+   if ( !set)
+      return var-> sizeMax;
+   var-> sizeMax = max;
+   if ( var-> stage == csNormal) {
+      Point sizeActual  = my-> get_size( self);
+      Point newSize     = sizeActual;
+      if ( sizeActual. x > max. x) newSize. x = max. x;
+      if ( sizeActual. y > max. y) newSize. y = max. y;
+      if (( newSize. x != sizeActual. x) || ( newSize. y !=  sizeActual. y))
+          my-> set_size( self, newSize);
+   }
+   return max;
+}
+
+Bool
+Widget_syncPaint( Handle self, Bool set, Bool syncPaint)
+{
+   HV * profile;
+   enter_method;
+   if ( !set)
+      return apc_widget_get_sync_paint( self);
+   profile = newHV();
+   pset_i( syncPaint, syncPaint);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return false;
+}
+
+int
+Widget_tabOrder( Handle self, Bool set, int tabOrder)
+{
+    int count;
+    PWidget owner;
+
+    if ( var-> stage > csNormal) return 0;
+    if ( !set)
+       return var-> tabOrder;
+
+    owner = ( PWidget) var-> owner;
+    count = owner-> widgets. count;
+    if ( tabOrder < 0) {
+       int i, maxOrder = -1;
+       /* finding maximal tabOrder value among the siblings */
+       for ( i = 0; i < count; i++) {
+          PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
+          if ( self == ( Handle) ctrl) continue;
+          if ( maxOrder < ctrl-> tabOrder) maxOrder = ctrl-> tabOrder;
+       }
+       if ( maxOrder < INT_MAX) {
+          var-> tabOrder = maxOrder + 1;
+          return 0;
+       }
+       /* maximal value found, but has no use; finding gaps */
+       {
+          int j = 0;
+          Bool match = 1;
+          while ( !match) {
+             for ( i = 0; i < count; i++) {
+                PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
+                if ( self == ( Handle) ctrl) continue;
+                if ( ctrl-> tabOrder == j) {
+                   match = 1;
+                   break;
+                }
+             }
+             j++;
+          }
+          var-> tabOrder = j - 1;
+       }
+    } else {
+       int i;
+       Bool match = 0;
+       /* finding exact match among the siblings */
+       for ( i = 0; i < count; i++) {
+          PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
+          if ( self == ( Handle) ctrl) continue;
+          if ( ctrl-> tabOrder == tabOrder) {
+             match = 1;
+             break;
+          }
+       }
+       if ( match)
+          /* incrementing all tabOrders that greater than out */
+          for ( i = 0; i < count; i++) {
+             PWidget ctrl = ( PWidget) owner-> widgets. items[ i];
+             if ( self == ( Handle) ctrl) continue;
+             if ( ctrl-> tabOrder >= tabOrder) ctrl-> tabOrder++;
+          }
+       var-> tabOrder = tabOrder;
+    }
+    return 0;
+}
+
+Bool
+Widget_tabStop( Handle self, Bool set, Bool stop)
+{
+   if ( !set)
+      return is_opt( optTabStop);
+   opt_assign( optTabStop, stop);
+   return false;
+}
+
+Bool
+Widget_transparent( Handle self, Bool set, Bool transparent)
+{
+   HV * profile;
+   enter_method;
+   if ( !set)
+      return apc_widget_get_transparent( self);
+   profile = newHV();
+   pset_i( transparent, transparent);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return false;
 }
 
 char *
@@ -2584,6 +2572,25 @@ Widget_top( Handle self, Bool set, int top)
    p. x = r. left;
    p. y = r. bottom - r. top + top;
    my-> set_origin( self, p);
+   return 0;
+}
+
+Bool
+Widget_visible( Handle self, Bool set, Bool visible)
+{
+   return set ?
+      apc_widget_set_visible( self, visible) :
+      apc_widget_is_visible( self);
+}
+
+int
+Widget_widgetClass( Handle self, Bool set, int widgetClass)
+{
+   enter_method;
+   if ( !set)
+      return var-> widgetClass;
+   var-> widgetClass = widgetClass;
+   my-> repaint( self);
    return 0;
 }
 

@@ -845,20 +845,15 @@ sub set_focused_item
    $self-> refresh;
 }
 
-sub set_color_index
+sub colorIndex
 {
-   my ( $self, $color, $index) = @_;
+   my ( $self, $index, $color) = @_;
+   return ( $index == ci::Grid) ?
+      $self-> {gridColor} : $self-> SUPER::colorIndex( $index)
+        if $#_ < 2;
    ( $index == ci::Grid) ?
       ( $self-> gridColor( $color), $self-> notify(q(ColorChanged), ci::Grid)) :
-      ( $self-> SUPER::set_color_index( $color, $index));
-}
-
-sub get_color_index
-{
-   my ( $self, $index) = @_;
-   return ( $index == ci::Grid) ?
-      $self-> {gridColor} :
-      $self-> SUPER::get_color_index( $index);
+      ( $self-> SUPER::colorIndex( $index, $color));
 }
 
 sub set_grid_color
@@ -1507,8 +1502,8 @@ sub draw_items
    my @clrs = (
       $self-> color,
       $self-> backColor,
-      $self-> get_color_index( ci::HiliteText),
-      $self-> get_color_index( ci::Hilite)
+      $self-> colorIndex( ci::HiliteText),
+      $self-> colorIndex( ci::Hilite)
    );
    my @clipRect = $canvas-> clipRect;
    my $i;

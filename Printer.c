@@ -172,3 +172,12 @@ Printer_fonts( Handle self, char * name)
    return newRV_noinc(( SV *) glo);
 }
 
+Point
+Printer_resolution( Handle self, Bool set, Point resolution)
+{
+   if ( set)
+      croak("Attempt to write read-only property %s", "Printer::resolution");
+   return apc_prn_get_resolution( self);
+}
+
+

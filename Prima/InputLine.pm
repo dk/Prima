@@ -77,7 +77,7 @@ sub init
       { $self->{$_} = 1; }
    for ( qw(  selStart selEnd atDrawX))
       { $self->{$_} = 0;}
-   $self-> { insertMode}   = $::application-> get_insert_mode;
+   $self-> { insertMode}   = $::application-> insertMode;
    $self-> { maxLen}   = -1;
    for( qw( line wholeLine)) { $self-> {$_} = ''; }
    $self->{writeOnly} = 0;
@@ -647,7 +647,7 @@ sub set_insert_mode
    my $oi = $self->{insertMode};
    $self->{insertMode} = $insert;
    $self-> reset if $oi != $insert;
-   $::application-> set_insert_mode( $insert);
+   $::application-> insertMode( $insert);
 }
 
 sub set_selection
@@ -701,7 +701,7 @@ sub on_leave   {
 sub on_enter
 {
    my $self = $_[0];
-   $self-> insertMode( $::application-> get_insert_mode);
+   $self-> insertMode( $::application-> insertMode);
    if ( $self-> {autoSelect})
    {
       my @s = $self-> selection;

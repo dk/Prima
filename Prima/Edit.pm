@@ -170,7 +170,7 @@ sub init
              notifyChangeLock modified borderWidth
         ))
    { $self->{$_} = 0;}
-   $self-> { insertMode}   = $::application-> get_insert_mode;
+   $self-> { insertMode}   = $::application-> insertMode;
    for ( qw( markers lines chunkMap hiliteIDs hiliteChars hiliteREs )) { $self-> {$_} = []}
    for ( qw( selStart selEnd selStartl selEndl)) { $self-> {$_} = [0,0]}
    $self-> {defcw} = $::application-> get_default_cursor_width;
@@ -904,7 +904,7 @@ sub on_disable { $_[0]-> repaint; }
 sub on_enter
 {
    my $self = $_[0];
-   $self-> insertMode( $::application-> get_insert_mode);
+   $self-> insertMode( $::application-> insertMode);
 }
 
 sub on_change { $_[0]->{modified} = 1;}
@@ -1212,7 +1212,7 @@ sub set_insert_mode
    my $oi = $self->{insertMode};
    $self->{insertMode} = $insert;
    $self-> reset_cursor if $oi != $insert;
-   $::application-> set_insert_mode( $insert);
+   $::application-> insertMode( $insert);
 }
 
 
