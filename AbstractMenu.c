@@ -641,7 +641,7 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
    if ( m == nil) return false;
    if ( !set)
       return m ? !m-> disabled : false;
-   if ( m-> divider || m-> down) return false;
+   if (m-> divider) return false;
    m-> disabled = !enabled;
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
