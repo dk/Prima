@@ -1146,12 +1146,6 @@ SV** temporary_prf_Sv;
 Bool dolbug;
 Bool waitBeforeQuit;
 
-#if defined(BROKEN_COMPILER) || (PRIMA_PLATFORM == apcUnix) || defined(__CYGWIN__)
-#ifndef NAN
-double NAN;
-#endif
-#endif
-
 #ifdef PARANOID_MALLOC
 static void output_mallocs( void);
 #endif
@@ -1275,30 +1269,7 @@ XS( boot_Prima)
    TYPECHECK( uint32_t, 4);
    TYPECHECK( int32_t,  4);
    TYPECHECK( void*, (int)sizeof(Handle));
-
 #undef TYPECHECK
-#ifdef BROKEN_COMPILER
-   {
-      union {uint8_t c[8];double d;} nan = {{00, 00, 00, 00, 00, 00, 0xf8, 0xff}};
-      NAN = nan. d;
-   }
-#endif /* BROKEN_COMPILER */
-#if PRIMA_PLATFORM == apcUnix
-#ifndef NAN
-   {
-      /* What we actually need here is not unix */
-      /* We need the control over mathematical exceptions, that's it */
-      double zero; /* ``volatile'' to cheat clever optimizers */
-      zero = 0.0;
-      /* fpresetsticky(FP_X_INV|FP_X_DZ);
-         fpsetmask(~(FP_X_INV|FP_X_DZ));
-         NAN = 0.0 / zero; */
-NAN = 0.0;
-      /* fpresetsticky(FP_X_INV|FP_X_DZ);
-         fpsetmask(FP_X_INV|FP_X_DZ); */
-   }
-#endif
-#endif
 
    list_create( &staticObjects, 16, 16);
    list_create( &staticHashes, 16, 16);

@@ -52,17 +52,9 @@
    #define stricmp               _stricmp
    #define HAVE_SNPRINTF         1
    #define HAVE_STRICMP          1
-   extern double                 NAN;
 #elif defined( __BORLANDC__)
    #define BROKEN_PERL_PLATFORM  1
    #define BROKEN_COMPILER       1
-   extern double                 NAN;
-#endif
-
-#if PRIMA_PLATFORM == 3 || defined(__CYGWIN__)
-#ifndef NAN
-   extern double NAN;
-#endif
 #endif
 
 #ifdef WORD

@@ -666,7 +666,7 @@ Image_update_change( Handle self)
 double
 Image_stats( Handle self, Bool set, int index, double value)
 {
-   if ( index < 0 || index > isMaxIndex) return NAN;
+   if ( index < 0 || index > isMaxIndex) return 0;
    if ( set) {
       var-> stats[ index] = value;
       var-> statsCache |= 1 << index;
@@ -699,7 +699,7 @@ Image_stats( Handle self, Bool set, int index, double value)
          case imLong:    gather_stats(int32_t);   break;
          case imFloat:   gather_stats(float);  break;
          case imDouble:  gather_stats(double); break;
-         default:        return NAN;
+         default:        return 0;
       }
       if ( var->w * var->h > 0)
       {
