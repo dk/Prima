@@ -176,8 +176,9 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      name       => ref $_[ 0],
-      owner      => $::application,
+      name        => ref $_[ 0],
+      owner       => $::application,
+      delegations => undef,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -200,6 +201,7 @@ sub set_owner  { $_[0]->set( owner => $_[1]);}
 
 sub name       {($#_)?$_[0]->set_name        ($_[1]):return $_[0]->get_name;        }
 sub owner      {($#_)?$_[0]->set_owner       ($_[1]):return $_[0]->get_owner;       }
+sub delegations{($#_)?$_[0]->set_delegations ($_[1]):$_[0]->raise_wo("delegations");}
 
 sub get_notify_sub
 {
@@ -207,8 +209,7 @@ sub get_notify_sub
    my $rnt = $self->notification_types->{$note};
    $rnt = nt::Default unless defined $rnt;
    if ( $rnt & nt::CustomFirst) {
-      my $onNote = 'on' . $note;
-      my ( $referer, $sub, $id) = $self-> get_notification( $onNote, ($rnt & nt::FluxReverse) ? -1 : 0);
+      my ( $referer, $sub, $id) = $self-> get_notification( $note, ($rnt & nt::FluxReverse) ? -1 : 0);
       if ( defined $referer) {
          return ( $sub, $referer, $self) if $referer != $self;
          return ( $sub, $self);
@@ -218,27 +219,13 @@ sub get_notify_sub
    } else {
       my ( $sub, $method) = ( undef, "on_" . lc $note);
       return ( $sub, $self) if $sub = $self-> can( $method, 0);
-      my $onNote = 'on' . $note;
-      my ( $referer, $sub2, $id) = $self-> get_notification( $onNote, ($rnt & nt::FluxReverse) ? -1 : 0);
+      my ( $referer, $sub2, $id) = $self-> get_notification( $note, ($rnt & nt::FluxReverse) ? -1 : 0);
       if ( defined $referer) {
          return ( $sub, $referer, $self) if $referer != $self;
          return ( $sub, $self);
       }
    }
    return undef;
-}
-
-sub make_event
-{
-   my ( $self, $name, $referer) = @_;
-   my @names = ref($name) ? @$name : ($name);
-   $referer = $self-> owner unless defined $referer;
-   $name = $self-> name;
-   for ( @names) {
-      my $sub = $referer-> can( "${name}_$_", 0);
-      next unless $sub;
-      my $id = $self-> add_notification( "on$_", $sub, $referer);
-   }
 }
 
 sub AUTOLOAD
