@@ -1221,6 +1221,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
    retChunks    = t. options & twReturnChunks;
    t. ascii     = &var-> font_abc_ascii;
    t. unicode   = &var-> font_abc_unicode;
+   t. t_char    = nil;
 
    c = Drawable_do_text_wrap( self, &t);
 
@@ -1249,16 +1250,20 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 
    if  ( t. options & ( twCalcMnemonic | twCollapseTilde)) {
       HV * profile = newHV();
-      STRLEN len = t. utf8_text ? utf8_hop(( U8*) t. t_char, 1) - ( U8*) t. t_char : 1;
-      SV * sv_char = newSVpv( t. t_char, len);
-      if ( t. utf8_text) SvUTF8_on( sv_char);
-      if ( t. t_start != C_NUMERIC_UNDEF) {
+      SV * sv_char;
+      if ( t. t_char) {
+         STRLEN len = t. utf8_text ? utf8_hop(( U8*) t. t_char, 1) - ( U8*) t. t_char : 1;
+         sv_char = newSVpv( t. t_char, len);
+         if ( t. utf8_text) SvUTF8_on( sv_char);
          pset_i( tildeStart, t. t_start);
+         pset_i( tildeEnd,   t. t_end);
+         pset_i( tildeLine,  t. t_line);
       } else {
+         sv_char = newSVsv( nilSV);
          pset_sv( tildeStart, nilSV);
+         pset_sv( tildeEnd,   nilSV);
+         pset_sv( tildeLine,  nilSV);
       }
-      pset_i( tildeEnd,   t. t_end);
-      pset_i( tildeLine,  t. t_line);
       pset_sv_noinc( tildeChar, sv_char);
       av_push( av, newRV_noinc(( SV *) profile));
    }

@@ -455,7 +455,7 @@ sub draw_text
       $canvas-> text_out( $_, $xx, $y);
    }
 
-   if (( $flags & dt::DrawMnemonic) and ( $tildes->{tildeLine} >= 0)) {
+   if (( $flags & dt::DrawMnemonic) and ( defined $tildes->{tildeLine})) {
       my $tl = $tildes->{tildeLine};
       my $xx = $x;
       if ( $align == dt::Center) {
