@@ -330,6 +330,8 @@ a key combination between representations.
   $ks-> key( km::Alt | ord('X'));
   print Prima::KeySelector::describe( $ks-> key );
 
+=head1 API
+
 =head2 Properties
 
 =over

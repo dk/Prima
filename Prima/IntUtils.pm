@@ -409,7 +409,7 @@ it is mandatory to call the inherited properties.
 
 A class must implement the scroll bar notification callbacks: C<HScroll_Change> and C<VScroll_Change>.
 
-=item * 
+=item *
 
 A class must not use the reserved variable names, which are:
 

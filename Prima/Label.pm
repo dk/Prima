@@ -338,6 +338,8 @@ is useful for dialog design.
       alignment => ta::Center,
    );
 
+=head1 API
+
 =head2 Properties
 
 =over
