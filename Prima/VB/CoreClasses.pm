@@ -520,6 +520,26 @@ package Prima::VB::GroupBox;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onRadioClick',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+sub prf_types
+{
+   my $pt = $_[ 0]-> SUPER::prf_types;
+   my %de = (
+      uiv    => ['index'],
+   );
+   $_[0]-> prf_types_add( $pt, \%de);
+   return $pt;
+}
+
 sub on_paint
 {
    my ( $self, $canvas) = @_;
@@ -540,31 +560,6 @@ sub on_paint
       $canvas-> text_out( $c, 12, $size[1] - $fh - 1);
    }
    $self-> common_paint($canvas);
-}
-
-
-package Prima::VB::GroupRadioBox;
-use vars qw(@ISA);
-@ISA = qw(Prima::VB::GroupBox);
-
-sub profile_default
-{
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my %prf = (
-      mainEvent => 'onRadioClick',
-   );
-   @$def{keys %prf} = values %prf;
-   return $def;
-}
-
-sub prf_types
-{
-   my $pt = $_[ 0]-> SUPER::prf_types;
-   my %de = (
-      uiv    => ['index'],
-   );
-   $_[0]-> prf_types_add( $pt, \%de);
-   return $pt;
 }
 
 package Prima::VB::BiScroller;
