@@ -275,10 +275,12 @@ sub reset_sizelist
 sub logfont_to_view
 {
    my $self = $_[0];
-   $self-> Name-> text( $self->{logFont}-> {name});
-   $self-> Size-> text( $self->{logFont}-> {size});
+   my %f = %{$self-> {logFont}};
+   $self-> Name-> text( $f{name});
+   $self-> Size-> text( $f{size});
+   $self-> Encoding-> text( $f{encoding});
    my $grp = $self-> Style;
-   my $style = $self->{logFont}-> {style};
+   my $style = $f{style};
    $grp-> value( 0 |
      (( $style & fs::Bold)       ? 1 : 0) |
      (( $style & fs::Italic)     ? 2 : 0) |
