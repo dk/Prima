@@ -141,7 +141,7 @@ HEAD
 
    for ( keys %classes) {
       my %dt = %{$classes{$_}};
-      $c .= "   $_ => {\n";
+      $c .= "   \'$_\' => {\n";
       my $maxln = 0;
       for ( keys %dt) {
          $maxln = length($_) if length( $_) > $maxln;
