@@ -135,7 +135,7 @@ sub on_leave
 sub on_mousedown
 {
    my ( $self, $btn, $mod, $x, $y) = @_;
-   return if $self->{mouseTransaction};
+   return if $self->{mouseTransaction} || $self->{spaceTransaction};
    return if $btn != mb::Left;
    $self->{ mouseTransaction} = 1;
    $self->{ lastMouseOver}  = 1;
@@ -149,7 +149,7 @@ sub on_mouseclick
    return unless $_[-1];
    return if $_[1] != mb::Left;
    my $self = $_[0];
-   return if $self->{mouseTransaction};
+   return if $self->{mouseTransaction} || $self->{spaceTransaction};
    $self->{ mouseTransaction} = 1;
    $self->{ lastMouseOver}  = 1;
    $self-> pressed( !$self-> pressed);
@@ -196,7 +196,7 @@ sub draw_veil
     $canvas-> set(
        color       => cl::Black,
        backColor   => cl::White,
-       fillPattern => fs::SimpleDots,
+       fillPattern => fp::SimpleDots,
        rop         => rop::AndPut
     );
     $canvas-> bar( @_);
@@ -688,7 +688,7 @@ sub on_paint
          my $yStart = ( $size[1] - 14) / 2;
          $canvas-> line( $at + 4, $yStart - $at +  8, $at + 5 , $yStart - $at + 3, );
          $canvas-> line( $at + 5 , $yStart - $at + 3, $at + 12, $yStart - $at + 12 );
-         $canvas-> lineWidth( 1);
+         $canvas-> lineWidth( 0);
       }
    }
    $canvas-> color( $clr[ 0]);
