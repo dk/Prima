@@ -1287,11 +1287,9 @@ use vars qw(@ISA);
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
-   $def->{auto} = 1;
+   $def->{autoPopup} = 1;
    return $def;
 }
-
-sub auto       {($#_)?$_[0]->set_auto        ($_[1]):return $_[0]->get_auto;        }
 
 package Prima::HintWidget;
 use vars qw(@ISA);
