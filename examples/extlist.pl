@@ -33,6 +33,8 @@ my $w = Prima::Window->create(
    size => [ 200, 200],
    onDestroy => sub { $_[0]-> owner-> close; },
 );
+my $v = '';
+vec($v, 0, 8) = 0x77;
 $w-> insert( Prima::CheckList =>
    origin => [0,0],
    size   => [ $w-> size],
@@ -40,8 +42,8 @@ $w-> insert( Prima::CheckList =>
    items    => [qw(Tra lala tri rubla hop hey lala ley comin down the judgement day)],
    multiColumn => 1,
    multiSelect => 1,
-   vector   => 0x3,
-   extendedSelect =>0,
+   vector   => $v,
+   extendedSelect => 0,
 );
 
 run Prima;
