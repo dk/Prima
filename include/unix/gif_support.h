@@ -1,7 +1,7 @@
 #ifndef GIF_SUPPORT_H
 #define GIF_SUPPORT_H
 
-#include <giflib/gif_lib.h>
+#include <gif_lib.h>
 
 Bool __gif_load( int fd, const char *filename, PList imgInfo, Bool readAll);
 Bool __gif_save( const char *filename, PList imgInfo);
