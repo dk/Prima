@@ -2,7 +2,6 @@ package Widgets;
 
 # contains:
 #   Panel
-#   ImagePanel
 #   Scroller
 
 use Const;
@@ -11,76 +10,20 @@ use ScrollBar;
 use strict;
 
 
-# Panel is widget that can draw itself. Not too correct, but it's very
-# productive for radio buttons etc.
-
 package Panel;
 use vars qw(@ISA);
 @ISA = qw(Widget);
 
 sub profile_default
 {
-   return {
-      %{$_[ 0]-> SUPER::profile_default},
-      indent         => 0,
-      raise          => 0,
-      ownerBackColor => 1,
-   }
-}
-
-sub init
-{
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   $self-> {raise}  = $profile{ raise};
-   $self-> {indent} = $profile{ indent};
-   return %profile;
-}
-
-sub set_text
-{
-   $_[0]-> SUPER::set_text( $_[1]);
-   $_[0]-> repaint;
-}
-
-sub on_paint
-{
-   my ($self,$canvas) = @_;
-   my ($x, $y) = $canvas-> get_size;
-   my $i = $self-> indent;
-   my ($clFore,$clBack) = ($self-> color, $self-> backColor);
-   $canvas-> color( $clBack);
-   $canvas-> bar (0, 0, $x, $y);
-   $canvas-> color( ( $self-> raise) ? cl::White : cl::DarkGray);
-   $canvas-> line( $i, $i, $i, $y - $i - 1);
-   $canvas-> line( $i, $y - $i - 1, $x - $i - 1, $y - $i - 1);
-   $canvas-> color( ( $self-> raise) ? cl::DarkGray : cl::White);
-   $canvas-> line( $i + 1, $i, $x - $i - 1, $i);
-   $canvas-> line( $x - $i - 1, $i, $x - $i - 1, $y - $i - 1);
-   $canvas-> color ( $clFore);
-   my $cap = $self-> text;
-   $canvas-> text_out ( $cap,
-      ( $x - $canvas-> get_text_width( $cap)) / 2,
-      ( $y - $canvas-> font-> height) / 2,
-   ) if $cap;
-}
-
-sub indent {($#_)?($_[0]->{indent} = $_[1],$_[0]-> repaint):return $_[0]->{indent};}
-sub raise  {($#_)?($_[0]->{raise } = $_[1],$_[0]-> repaint):return $_[0]->{raise };}
-
-package ImagePanel;
-use vars qw(@ISA);
-@ISA = qw( Widget);
-
-sub profile_default
-{
    my $def = $_[0]-> SUPER::profile_default;
    my %prf = (
-      raise        => 1,
-      borderWidth  => 1,
-      image        => undef,
-      imageFile    => undef,
-      zoom         => 1,
+      ownerBackColor => 1,
+      raise          => 1,
+      borderWidth    => 1,
+      image          => undef,
+      imageFile      => undef,
+      zoom           => 1,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -119,11 +62,20 @@ sub on_paint
    my $bw     = $self-> {borderWidth};
    my @c3d    = ( $self-> light3DColor, $self-> dark3DColor);
    @c3d = reverse @c3d unless $self->{raise};
+   my $cap = $self-> text;
    unless ( defined $self->{image}) {
       $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, @c3d, $clr);
+      $canvas-> text_out( $cap,
+         ( $size[0] - $canvas-> get_text_width( $cap)) / 2,
+         ( $size[1] - $canvas-> font-> height) / 2,
+      ) if $cap;
       return;
    }
    $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, @c3d) if $bw > 0;
+   $canvas-> text_out ( $cap,
+      ( $size[0] - $canvas-> get_text_width( $cap)) / 2,
+      ( $size[1] - $canvas-> font-> height) / 2,
+   ) if $cap;
    my ( $x, $y) = ( $bw, $bw);
    my ( $dx, $dy ) = ( $self-> {iw}, $self->{ih});
    if ( $bw > 0) {
@@ -150,6 +102,13 @@ sub set_border_width
    $self->{borderWidth} = $bw;
    $self-> repaint;
 }
+
+sub set_text
+{
+   $_[0]-> SUPER::set_text( $_[1]);
+   $_[0]-> repaint;
+}
+
 
 sub set_raise
 {
