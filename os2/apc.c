@@ -434,7 +434,7 @@ set_view_ex( Handle self, PViewProfile p)
   apc_widget_set_enabled( self, p-> enabled);
   if ( p-> focused) apc_widget_set_focused( self);
   apc_widget_set_visible( self, p-> visible);
-  if ( p-> capture) apc_widget_set_capture( self, 1, p-> capture);
+  if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
   if ( sys timeDefs) for ( i = 0; i < sys timeDefsCount; i++)
      if ( sys timeDefs[ i]. item)
      {
