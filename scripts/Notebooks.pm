@@ -439,13 +439,17 @@ sub tab2firstTab
       my $i;
       my $W = $self-> width;
       my $ww = $self->{widths};
+      my $moreThanOne = ( $ti - $self->{firstTab}) > 0;
       for ( $i = $self->{firstTab}; $i <= $ti; $i++) {
          $w += $$ww[$i] + DefGapX;
       }
-      if ( $w > $W - DefLeftX - DefArrowX - DefGapX * 2) {
+      my $lim = $W - DefLeftX - DefArrowX - DefGapX * 2;
+      $lim -= DefGapX * 2 if $moreThanOne;
+      if ( $w >= $lim) {
          my $leftw = DefLeftX * 2 + DefGapX + DefArrowX;
          $leftw += DefArrowX + DefGapX if $self->{arrows} & 1;
          $leftw = $W - $leftw;
+         $leftw -= $$ww[$ti] if $moreThanOne;
          $w = 0;
          for ( $i = $ti; $i >= 0; $i--) {
             $w += $$ww[$i] + DefGapX;
@@ -466,7 +470,7 @@ sub set_tab_index
    my $mx = scalar @{$self->{tabs}} - 1;
    $ti = $mx if $ti > $mx;
    return if $ti == $self->{tabIndex};
-   $self->{tabIndex} = $ti;
+   $self-> {tabIndex} = $ti;
    $self-> {focusedTab} = $ti;
    my $newFirstTab = $self-> tab2firstTab( $ti);
    defined $newFirstTab ?
