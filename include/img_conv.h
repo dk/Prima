@@ -191,7 +191,18 @@ extern void rs_long_Byte( Handle self, Byte * dstData, int dstType, double srcLo
 extern void rs_float_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 extern void rs_double_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 
+// extra convertors
+extern void bc_irgb_rgb( Byte * source, Byte * dest, int count);
+extern void bc_rgbi_rgb( Byte * source, Byte * dest, int count);
+extern void bc_rgb_irgb( Byte * source, Byte * dest, int count);
+extern void bc_rgb_rgbi( Byte * source, Byte * dest, int count);
 
+
+// misc
+typedef void SimpleConvProc( Byte * srcData, Byte * dstData, int count);
+typedef SimpleConvProc *PSimpleConvProc;
+
+extern void ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int srcDataSize, int dstDataSize, int srcBPP, int dstBPP, void * bit_conv_proc);
 
 // internal maps
 extern Byte     map_stdcolorref    [ 256];

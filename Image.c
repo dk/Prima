@@ -28,9 +28,9 @@
 
 #ifdef PRIGRAPH
 #   include "gbm.h"
-#else
-#   include "img_api.h"
 #endif
+#include "img_api.h"
+
 
 #ifndef __unix
 #   include <io.h>
@@ -63,20 +63,57 @@ static int Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
 static void
 repadding_check( Handle self, HV * profile)
 {
+   if ( pexist( data)) {
+       void *data;
+       STRLEN dataSize;
+       data = SvPV( pget_sv( data), dataSize);
+       if ( dataSize <= 0) {
+          pdelete( data);
+          pdelete( lineSize);
+          return;
+       }   
+
+       if ( pexist( lineSize)) {
+          int lineSize = pget_i( lineSize);
+          pdelete( lineSize);
+          if ( lineSize != var-> lineSize) {      
+             int newDataSize = ( dataSize + lineSize - 1 ) / lineSize * var-> lineSize;
+             Byte * newData;
+             if ( newDataSize > var-> dataSize) newDataSize = var-> dataSize;
+             newData = allocb( newDataSize);
+             if ( !newData) {
+                pdelete( data);
+                warn( "%s %d:Cannot malloc %d bytes", __FILE__, __LINE__, newDataSize);
+                return;
+             }   
+             
+             ibc_repad( data, newData, lineSize, var-> lineSize, dataSize, newDataSize, 1, 1, nil);
+             DOLBUG( "Repadding from %d to %d\n", lineSize, var->lineSize);
+             pset_b( data, newData, newDataSize);
+             free( newData);
+          }
+       }
+       if ( pexist( type) && ( pget_i( type) == imbpp32)) { // assuming RGBI model
+          int i32lineSize = (( var-> w * 32 + 31) / 32) * 4;
+          int newDataSize = ( dataSize + i32lineSize - 1 ) / i32lineSize * var-> lineSize;
+          Byte * newData;
+          pdelete( type);
+          if ( newDataSize > var-> dataSize) newDataSize = var-> dataSize;
+          newData = allocb( newDataSize);
+          if ( !newData) {
+             pdelete( data);
+             warn( "%s %d:Cannot malloc %d bytes", __FILE__, __LINE__, newDataSize);
+             return;
+          }   
+          ibc_repad( data, newData, i32lineSize, var-> lineSize, dataSize, newDataSize, 4, 3, bc_rgbi_rgb);
+          pset_b( data, newData, newDataSize);
+          free( newData);
+       }   
+   }
+   
    if ( pexist( lineSize)) {
-       if ( pexist( data)) {
-	   int lineSize = pget_i( lineSize);
-	   if ( (lineSize % 4) != 0) {
-	       char *padded_data = _img_repad_data( pget_c( data), lineSize, var->h, var->lineSize);
-	       DOLBUG( "Repadding from %d to %d\n", lineSize, var->lineSize);
-	       pset_b( data, padded_data, var->dataSize);
-	       free( padded_data);
-	   }
-       }
-       else {
-	   warn( "Image: lineSize supplied without property data.");
-       }
-       pdelete( lineSize);
+      warn( "Image: lineSize supplied without property data.");
+      pdelete( lineSize);
    }
 }
 
@@ -90,6 +127,7 @@ Image_init( Handle self, HV * profile)
    opt_assign( optHScaling, pget_B( hScaling));
    opt_assign( optVScaling, pget_B( vScaling));
    var->type = pget_i( type);
+   if ( var-> type == imbpp32) var-> type = imbpp24;
    var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
    var->data = ( var->dataSize > 0) ? allocb( var->dataSize) : nil;

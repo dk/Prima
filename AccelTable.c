@@ -1,4 +1,4 @@
-/*-
+/*
  * Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
  * All rights reserved.
  *
