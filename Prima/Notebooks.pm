@@ -946,6 +946,7 @@ sub page2tab
 {
    my ( $self, $index) = @_;
    my $t = $self->{tabs};
+   return 0 unless scalar @$t;
    my $i = $$t[1] - 1;
    my $j = 0;
    while( $i < $index) {
