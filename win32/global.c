@@ -657,8 +657,8 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
           if ( parent) {
              Point sz = CWidget(parent)-> get_size( parent);
              ev. cmd = cmMove;
-             ev. gen . P. x = ( SHORT) LOWORD( mp2);
-             ev. gen . P. y = sz. y - ( int) HIWORD( mp2) - sys yOverride;
+             ev. gen . P. x = ( short) LOWORD( mp2);
+             ev. gen . P. y = sz. y - ( short) HIWORD( mp2) - sys yOverride;
              if ( is_apt( aptTransparent)) InvalidateRect( win, nil, false);
           }
       }
@@ -722,8 +722,8 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       ev. cmd = cmSize;
       ev. gen. R. left   = sys lastSize. x;
       ev. gen. R. bottom = sys lastSize. y;
-      sys lastSize. x    = ev. gen. R. right  = ev. gen . P. x = LOWORD( mp2);
-      sys lastSize. y    = ev. gen. R. top    = ev. gen . P. y = HIWORD( mp2);
+      sys lastSize. x    = ev. gen. R. right  = ev. gen . P. x = ( short) LOWORD( mp2);
+      sys lastSize. y    = ev. gen. R. top    = ev. gen . P. y = ( short) HIWORD( mp2);
       if ( ev. gen. R. top != ev. gen. R. bottom)
       {
          int delta = ev. gen. R. top - ev. gen. R. bottom;
@@ -992,8 +992,8 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
           if ( parent) {
              Point sz = CWidget(parent)-> get_size( parent);
              ev. cmd = cmMove;
-             ev. gen . P. x = ( SHORT) LOWORD( mp2);
-             ev. gen . P. y = sz. y - ( SHORT) HIWORD( mp2) - sys yOverride;
+             ev. gen . P. x = ( short) LOWORD( mp2);
+             ev. gen . P. y = sz. y - ( short) HIWORD( mp2) - sys yOverride;
           }
        }
        break;
@@ -1123,8 +1123,8 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
                guts. displayBMInfo. bmiHeader. biBitCount = ( int) mp1;
                guts. displayBMInfo. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
             };
-            dsys( application) lastSize. x = LOWORD( mp2);
-            dsys( application) lastSize. y = HIWORD( mp2);
+            dsys( application) lastSize. x = ( short) LOWORD( mp2);
+            dsys( application) lastSize. y = ( short) HIWORD( mp2);
             if ( oldBPP != guts. displayBMInfo. bmiHeader. biBitCount)
                hash_first_that( imageMan, kill_img_cache, (void*)1, nil, nil);
             dc_free();
