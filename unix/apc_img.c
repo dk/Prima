@@ -1834,8 +1834,15 @@ apc_gp_stretch_image( Handle self, Handle image,
    }   
    if ( src_x < 0) src_x = 0; if ( src_x >= img-> w) return false;
    if ( src_y < 0) src_y = 0; if ( src_y >= img-> h) return false;
-   if ( src_x + src_w > img-> w) src_w = img-> w - src_x;
-   if ( src_y + src_h > img-> h) src_h = img-> h - src_y;
+   if ( src_w == 0 || src_h == 0) return false;
+   if ( src_x + src_w > img-> w) {
+      dst_w = (img-> w - src_x) * dst_w / src_w;
+      src_w = img-> w - src_x;
+   }
+   if ( src_y + src_h > img-> h) {
+      dst_h = (img-> h - src_y) * dst_h / src_h;
+      src_h = img-> h - src_y;
+   }
    if ( src_w == 0 || src_h == 0) return false;
 
    if ( XT_IS_DBM(X(image))) {
