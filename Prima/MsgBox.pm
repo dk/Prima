@@ -32,15 +32,6 @@ use Prima::StdBitmap;
 use Prima::Label;
 use Prima::Utils;
 
-require Exporter;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-@ISA = qw(Exporter);
-$VERSION = '1.00';
-@EXPORT = qw(message_box message);
-@EXPORT_OK = qw(message_box message);
-%EXPORT_TAGS = ();
-
-
 sub message_box
 {
    my ( $title, $text, $options, $extras) = @_;
@@ -185,6 +176,16 @@ sub message_box
 sub message
 {
    return message_box( $::application-> name, @_);
+}
+
+sub import
+{
+   no strict 'refs';
+   my $callpkg = $Prima::__import || caller;
+   for my $sym (qw(message_box message)) {
+      *{"${callpkg}::$sym"} = \&{"Prima::MsgBox::$sym"}
+   }
+   use strict 'refs';
 }
 
 1;

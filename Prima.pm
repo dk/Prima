@@ -27,7 +27,7 @@ package Prima;
 
 use strict;
 require DynaLoader;
-use vars qw($VERSION @ISA);
+use vars qw($VERSION @ISA $__import);
 @ISA = qw(DynaLoader);
 
 BEGIN { # nasty hack ahead
@@ -78,7 +78,9 @@ sub import
       %parameters = %{shift @module} if @module && ref($module[0]) eq 'HASH';
       next if $module eq 'Prima' || $module eq '';
       $module = "Prima::$module" unless $module =~ /^Prima::/;
+      $__import = caller;
       eval "use $module \%parameters;" if $module;
+      $__import = 0;
    }
 }
 
