@@ -1337,21 +1337,14 @@ sub new
    update_menu();
 }
 
-
-sub open
+sub load_file
 {
-   my $self = $_[0];
+   my ($self,$fileName) = @_;
 
-   return if $VB::form and !$VB::form-> can_close;
-
-   my $d = VB::open_dialog(
-      filter => [['Form files' => '*.fm'], [ 'All files' => '*']],
-   );
-   return unless $d-> execute;
    $VB::form-> destroy if $VB::form;
    $VB::form = undef;
    update_menu();
-   $self->{fmName} = $d-> fileName;
+   $self->{fmName} = $fileName;
    my $contents;
 
    if ( CORE::open( F, $self->{fmName})) {
@@ -1473,6 +1466,19 @@ sub open
    $self-> text( $oldtxt);
    $VB::form-> notify(q(Load));
    $_-> notify(q(Load)) for $VB::form-> widgets;
+}
+
+sub open
+{
+   my $self = $_[0];
+
+   return if $VB::form and !$VB::form-> can_close;
+
+   my $d = VB::open_dialog(
+      filter => [['Form files' => '*.fm'], [ 'All files' => '*']],
+   );
+   return unless $d-> execute;
+   $self-> load_file( $d-> fileName);
 }
 
 sub write_form
@@ -1870,6 +1876,8 @@ $VB::form = Form-> create;
 ObjectInspector::renew_widgets;
 ObjectInspector::preload() unless $VB::fastLoad;
 $VB::main-> update_menu();
+
+$VB::main-> load_file( $ARGV[0]) if @ARGV && -f $ARGV[0] && -r _;
 
 RERUN: eval {
    run Prima;
