@@ -63,7 +63,7 @@ static int    t_all[] = {
    imbpp1,  imbpp1  | imGrayScale,
    imbpp4,  imbpp4  | imGrayScale,
    imbpp8,  imbpp8  | imGrayScale,
-   imbpp24, imbpp24 | imGrayScale,
+   imbpp24,
    0
 };
 
@@ -90,7 +90,7 @@ static int t_8[] = {
 };   
 
 static int t_24[] = { 
-   imbpp24, imbpp24 | imGrayScale,
+   imbpp24, 
    0
 };   
 

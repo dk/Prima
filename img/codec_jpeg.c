@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 static char * jpgext[] = { "jpg", "jpe", "jpeg", nil };
-static int    jpgbpp[] = { imbpp8 | imGrayScale, imbpp24, imbpp24 | imGrayScale, 0 };   
+static int    jpgbpp[] = { imbpp8 | imGrayScale, imbpp24, 0 };   
 
 static ImgCodecInfo codec_info = {
    "JPEG",
