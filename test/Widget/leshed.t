@@ -1,6 +1,6 @@
 # $Id$
 # Leave, Enter, Show, Hide, Enable, Disable
-print "1..6 hide,show,disable,enable,enter,leave";
+print "1..6 hide,show,disable,enable,enter,leave\n";
 
 my $ww = $w-> insert( 'Widget' => origin => [ 10, 10],);
 
