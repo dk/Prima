@@ -12,7 +12,7 @@ extern void ic_rgb_byte_ictNone( Handle, void *, PRGBColor, int);
 
 
 void
-produce_mask( Handle self, Bool useMask)
+produce_mask( Handle self)
 {
    Byte * area8 = var data;
    Byte * dest = var mask;
@@ -26,20 +26,11 @@ produce_mask( Handle self, Bool useMask)
 
    if ( bpp == imMono)
    {
-      int j;
-      Bool trans0;
-      Byte * data = var data;
-      if ( !useMask) return;
       // mono case simplifies our task
-      trans0 = (( data[0] >> 7) == 0);
-      if ( !trans0)
-      {
-         RGBColor c = var palette[0];
-         var palette[0] = var palette[1];
-         var palette[1] = c;
-         for ( j = 0; j < var maskSize; j++) data[ j] = ~data[ j];
-      }
+      int j = var maskSize;
+      Byte * mask = var mask;
       memcpy ( var mask, var data, var dataSize);
+      while ( j--) mask[ j] = ~mask[ j];
       var palette[0]. r = var palette[0]. g = var palette[0]. b = 0;
       return;
    }
@@ -59,7 +50,6 @@ produce_mask( Handle self, Bool useMask)
       }
    }
 
-   if ( useMask)
    {  // calculate transparent color
       Byte corners [4];
       Byte counts  [4] = {1, 1, 1, 1};
@@ -136,19 +126,17 @@ colorFound:;
       }
    }
 
-   if ( useMask)
+   // processing transparency
+   memset( var mask, 0, var maskSize);
+   src  = area8;
+   for ( i = 0; i < var h; i++, dest += var maskLine, src += line8Size)
    {
-      // processing transparency
-      memset( var mask, 0, var maskSize);
-      src  = area8;
-      for ( i = 0; i < var h; i++, dest += var maskLine, src += line8Size)
-      {
-         int j;
-         for ( j = 0; j < var w; j++)
-            if ( src[ j] == color)
-               dest[ j >> 3] |= 1 << (7 - ( j & 7));
-      }
+      int j;
+      for ( j = 0; j < var w; j++)
+         if ( src[ j] == color)
+            dest[ j >> 3] |= 1 << (7 - ( j & 7));
    }
+
    // finalize
    if ( bpp != im256)
    {
@@ -173,7 +161,7 @@ Icon_update_change( Handle self)
       var maskLine = (( var w + 31) / 32) * 4;
       var maskSize = var maskLine * var h;
       var mask = malloc ( var maskSize);
-      produce_mask( self, true);
+      produce_mask( self);
    }
    else
       var mask = nil;
@@ -183,7 +171,7 @@ void
 Icon_update_mask_change( Handle self)
 {
    if ( !var data) return;
-   produce_mask( self, false);
+   produce_mask( self);
 }
 
 void
