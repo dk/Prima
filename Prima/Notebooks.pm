@@ -651,6 +651,7 @@ sub attach_to_page
    $page = $self-> {pageCount} - 1 if $page > $self-> {pageCount} - 1 || $page < 0;
    my $cp = $self->{widgets}->[$page];
    for ( @_) {
+      next unless $_-> isa('Prima::Widget');
       # $_->add_notification( Enable  => \&_enable  => $self);
       # $_->add_notification( Disable => \&_disable => $self);
       # $_->add_notification( Show    => \&_show    => $self);
@@ -679,7 +680,8 @@ sub insert_to_page
    $self-> lock;
    my @ctrls = $self-> SUPER::insert( @_);
    $self-> attach_to_page( $page, @ctrls);
-   $ctrls[0]-> select if $sel && scalar @ctrls && $page == $self->{pageIndex};
+   $ctrls[0]-> select if $sel && scalar @ctrls && $page == $self->{pageIndex} && 
+      $ctrls[0]-> isa('Prima::Widget');
    $self-> unlock;
    return wantarray ? @ctrls : $ctrls[0];
 }
