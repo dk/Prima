@@ -529,7 +529,7 @@ sub Roller_Repaint
       $s /= 255;
       $v /= 255;
       my ( $i, $r, $g, $b);
-      my @pal = ();
+      my @pal;
 
       for ( $i = 0; $i < 32; $i++) {
          ( $r, $g, $b) = hsv2rgb( $h, $s, $i / 31);

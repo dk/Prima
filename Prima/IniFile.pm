@@ -104,7 +104,7 @@ sub new { shift-> create(@_); }     # a shortcut
 sub create
 {
    my $class = shift;
-   my %profile = ();
+   my %profile;
    %profile = @_ if scalar(@_)%2==0;
    %profile = (file => shift) if scalar(@_)%2==1;
    %profile = (%profile, @_) if scalar(@_)%2==0;
@@ -137,7 +137,7 @@ sub read
          close FILE;
          open FILE, "$fname" or die "Cannot open $fname: $!\n";
       };
-      my @chunks = ();
+      my @chunks;
       my %sectionChunks = ('' => [0]);
       my %sectionItems = ('' => []);
       my $currentChunk = [];
@@ -264,8 +264,8 @@ sub items
       unless defined($self->{fileName}) &&
              defined($section) &&
              defined($self->{sectionItems}->{$section});
-   my %items = ();
-   my @items = ();
+   my %items;
+   my @items;
    if ( $all)
    {
       for ( @{$self->{sectionChunks}->{$section}})
@@ -315,7 +315,7 @@ sub get_values
              defined($section) &&
              defined($self->{sectionItems}->{$section}) &&
              defined($item);
-   my @vals = ();
+   my @vals;
    my $chunk = 0;
    for (@{$self->{sectionItems}->{$section}})
    {

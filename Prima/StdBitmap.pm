@@ -27,7 +27,7 @@ package Prima::StdBitmap;
 use strict;
 require Prima;
 
-my %bmCache = ();
+my %bmCache;
 
 sub load_std_bmp
 {

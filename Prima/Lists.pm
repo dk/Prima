@@ -1174,7 +1174,7 @@ sub on_fontchanged
 sub recalc_widths
 {
    my $self = $_[0];
-   my @w = ();
+   my @w;
    my $maxWidth = 0;
    my $i;
    my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
@@ -1701,8 +1701,8 @@ sub new_directory
    my $oldPointer = $::application-> pointer;
    $::application-> pointer( cr::Wait);
    my $i;
-   my @fs1 = ();
-   my @fs2 = ();
+   my @fs1;
+   my @fs2;
    for ( $i = 0; $i < scalar @fs; $i += 2) {
       push( @fs1, $fs[ $i]);
       push( @fs2, $fs[ $i + 1]);
@@ -1713,7 +1713,7 @@ sub new_directory
    my @d   = sort grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
    my $ind = 0;
    my @ups = split /[\/\\]/, $p;
-   my @lb  = ();
+   my @lb;
    my $wasRoot = 0;
    for ( @ups)
    {
@@ -1761,7 +1761,7 @@ sub path
 sub files {
    my ( $fn, $fs) = ( $_[0]->{files}, $_[0]-> {filesStat});
    return wantarray ? @$fn : $fn unless ($#_);
-   my @f = ();
+   my @f;
    for ( my $i = 0; $i < scalar @$fn; $i++)
    {
       push ( @f, $$fn[$i]) if $$fs[$i] eq $_[1];

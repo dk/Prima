@@ -890,7 +890,7 @@ sub set_value
    $value += $min;
    my $oldValue = $self-> {value};
    return if $oldValue == $value;
-   my %v = ();
+   my %v;
    $v{b1ok}     = $self->{b1}->{enabled}?1:0;
    $v{b2ok}     = $self->{b2}->{enabled}?1:0;
    $v{grooveok} = $self->{tab}->{enabled}?1:0;

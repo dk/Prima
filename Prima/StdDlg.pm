@@ -317,7 +317,7 @@ sub Drive_Change
 sub Ext_Change
 {
    my ( $self, $ext) = @_;
-   my %cont = ();
+   my %cont;
    for ( @{$self->{filter}}) { $cont{$$_[0]} = $$_[1]; };
    $self-> {mask} = $cont{ $ext-> text};
    $self-> canonize_mask;
@@ -359,7 +359,7 @@ sub Open_Click
       $_ = canon_path($_);
       chdir $pwd;
    }
-   my %uniq = (); @files = grep { !$uniq{$_}++ } @files;
+   my %uniq; @files = grep { !$uniq{$_}++ } @files;
 
 # testing for indirect directory/mask use
    if ( scalar @files == 1)
@@ -367,7 +367,7 @@ sub Open_Click
       # have single directory
       if ( -d $files[ 0])
       {
-         my %cont = ();
+         my %cont;
          for ( @{$self->{filter}}) { $cont{$$_[0]} = $$_[1]};
          $self-> directory( $files[ 0]);
          $self-> Name-> text( $cont{ $self-> Ext-> text});

@@ -222,7 +222,7 @@ sub set_valignment
 sub reset_lines
 {
    my $self = $_[0];
-   my @res = ();
+   my @res;
    my $maxLines = int($self-> height / $self-> font-> height);
    $maxLines++ if $self->{showPartial} and (($self-> height % $self-> font-> height) > 0);
    my $opt   = tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::CalcMnemonic|tw::ExpandTabs|tw::CalcTabs;
@@ -235,7 +235,7 @@ sub reset_lines
    $self-> {accel} = $self->{tildeStart} < 0 ? undef : lc( $lastRef->{tildeChar});
    splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines;
    $self-> {words} = $lines;
-   my @len = ();
+   my @len;
    for ( @{$lines}) { push @len, $self-> get_text_width( $_); }
    $self-> {widths} = [@len];
    $self-> repaint;
@@ -248,7 +248,7 @@ sub check_auto_size
    unless ( $self->{wordWrap})
    {
       $cap =~ s/~//s unless $self->{showAccelChar};
-      my %sets = ();
+      my %sets;
       $sets{ width}  = $self-> get_text_width( $cap) + 6 if $self->{autoWidth};
       $sets{ height} = $self-> font-> height + 2 if $self->{autoHeight};
       $self-> set( %sets);

@@ -185,8 +185,8 @@ sub init
 sub refresh_fontlist
 {
    my $self = $_[0];
-   my %fontList  = ();
-   my @fontItems = ();
+   my %fontList;
+   my @fontItems;
 
    for ( sort { $a->{name} cmp $b->{name}} @{$::application-> fonts})
    {
@@ -208,7 +208,7 @@ sub reset_sizelist
    my $self = $_[0];
    my $Name = $self-> Name;
    my $fn   = $Name-> List-> get_items( $Name-> focusedItem);
-   my @sizes = ();
+   my @sizes;
 
    if ( defined $fn) {
       my @list = @{$::application-> fonts( $fn)};

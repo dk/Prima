@@ -125,7 +125,7 @@ sub reset
 sub recalc_widths
 {
    my $self = $_[0];
-   my @w = ();
+   my @w;
    my $i;
    my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureTab));
    $self-> push_event;
@@ -705,7 +705,7 @@ sub widgets_from_page
 {
    my ( $self, $page) = @_;
    return if $page < 0 or $page >= $self->{pageCount};
-   my @r = ();
+   my @r;
    push( @r, $$_[0]) for @{$self->{widgets}->[$page]};
    return @r;
 }
@@ -966,8 +966,8 @@ sub set_tabs
 {
    my $self = shift;
    my @tabs = ( scalar @_ == 1 && ref( $_[0]) eq q(ARRAY)) ? @{$_[0]} : @_;
-   my @nTabs = ();
-   my @loc   = ();
+   my @nTabs;
+   my @loc;
    my $prev  = undef;
    for ( @tabs) {
       if ( defined $prev && $_ eq $prev) {
@@ -999,7 +999,7 @@ sub get_tabs
    my $self = $_[0];
    my $i;
    my $t = $self->{tabs};
-   my @ret = ();
+   my @ret;
    for ( $i = 0; $i < scalar @{$t} / 2; $i++) {
       my $j;
       for ( $j = 0; $j < $$t[$i*2+1]; $j++) { push( @ret, $$t[$i*2]); }

@@ -390,8 +390,8 @@ sub InputLine_Change
    my $found = 0;
    my $cap = $edit->text;
    $cap = uc $cap unless $self->caseSensitive;
-   my @matchArray = ();
-   my @texts = ();
+   my @matchArray;
+   my @texts;
    my $maxMatch = 0;
    my $matchId = -1;
    # filling list

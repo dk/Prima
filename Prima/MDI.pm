@@ -1047,7 +1047,7 @@ sub set_window_state
       $x = $sz[0] - $szMin[0] if $x > $sz[0] - $szMin[0];
       $y = $sz[1] - $szMin[1] if $y > $sz[1] - $szMin[1];
       my @mdis = grep {(( $_ ne $self) and ( $_->windowState == ws::Minimized)) ? $_ : 0} $self-> mdis;
-      my @maps = ();
+      my @maps;
       my @szmaxids = ( int($sz[0] / $szMin[0]), int($sz[1] / $szMin[1]));
       $szmaxids[0] = 1 unless $szmaxids[0];
       $szmaxids[1] = 1 unless $szmaxids[1];

@@ -363,7 +363,7 @@ sub reset_syntax
    my $self = $_[0];
    if ( $self-> {syntaxHilite}) {
       my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(ParseSyntax));
-      my @syntax = ();
+      my @syntax;
       $#syntax = $self-> {maxLine};
       @syntax = ();
       my $i = 0;
@@ -390,7 +390,7 @@ sub reset_syntaxer
            $self->{hiliteREs}) {
       $self->{syntaxer} = sub {$_[2]=[];};
    } else {
-      my @doers = ();
+      my @doers;
       my $rest = 'push @a, $l, cl::Fore if $l; $l = 0;';
       if ($self-> {hiliteREs}) {
          my $i;
@@ -432,18 +432,18 @@ sub reset_syntaxer
          }
       }
       $self->{syntaxer} = eval(<<SYNTAXER);
-sub {
-   my ( \$self, \$line) = \@_;
-   my \@a = ();
-   my \$l = 0;
-   \$_ = \$line; study;
-   {
-      @doers
-      /\\G(.)/gc && do { \$l++; redo; };
-   }
-   $rest
-   \$_[2] = \\\@a;
-};
+         sub {
+            my ( \$self, \$line) = \@_;
+            my \@a;
+            my \$l = 0;
+            \$_ = \$line; study;
+            {
+               @doers
+               /\\G(.)/gc && do { \$l++; redo; };
+            }
+            $rest
+            \$_[2] = \\\@a;
+         };
 SYNTAXER
    }
 }
@@ -2141,12 +2141,12 @@ sub copy_block
    $self-> lock_change(0);
    $self-> lock;
    if ( $self-> {blockType} == bt::Horizontal) {
-      my @lines = ();
+      my @lines;
       my $i;
       for ( $i = $sel[1]; $i <= $sel[3]; $i++) { push @lines, $self-> get_line( $i);}
       $self-> insert_line( $self-> cursorY, @lines);
    } else {
-      my @lines = ();
+      my @lines;
       my $i;
       for ( $i = $sel[1]; $i <= $sel[3]; $i++) {
          my $c = $self-> get_line( $i);
@@ -2179,7 +2179,7 @@ sub overtype_block
          $self-> set_line( $i, $self-> get_line( $i));
       }
    } else {
-      my @lines = ();
+      my @lines;
       my $i;
       for ( $i = $sel[1]; $i <= $sel[3]; $i++) {
          my $c = $self-> get_line( $i);

@@ -790,7 +790,7 @@ sub get_ticks
    my $self  =  $_[0];
    my $i;
    my ( $tv, $tl, $tt) = ($self->{tickVal}, $self->{tickLen}, $self->{tickTxt});
-   my @t = ();
+   my @t;
    for ( $i = 0; $i < scalar @{$tv}; $i++) {
       push ( @t, { value => $$tv[$i], height => $$tl[$i], text => $$tt[$i] });
    }
@@ -802,9 +802,9 @@ sub set_ticks
    my $self  = shift;
    return unless defined $_[0];
    my @ticks = (@_ == 1 and ref($_[0]) eq q(ARRAY)) ? @{$_[0]} : @_;
-   my @val = ();
-   my @len = ();
-   my @txt = ();
+   my @val;
+   my @len;
+   my @txt;
    for ( @ticks) {
       next unless exists $$_{value};
       push( @val, $$_{value});

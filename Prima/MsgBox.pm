@@ -94,7 +94,7 @@ sub message_box
    for ( $i = 0; $i < scalar @bConsts; $i++)
    {
       next unless $buttons & $bConsts[$i];
-      my %epr = ();
+      my %epr;
 
       %epr = %{$extras->{buttons}->{$bConsts[$i]}} if $extras->{buttons} && $extras->{buttons}->{$bConsts[$i]};
 

@@ -975,7 +975,7 @@ sub set_commands
 sub insert
 {
    my $self = shift;
-   my @e = ();
+   my @e;
    while (ref $_[0]) {
       my $cl = shift @{$_[0]};
       $cl = "Prima::$cl" unless $cl =~ /^Prima::/ || $cl-> isa("Prima::Component");

@@ -250,9 +250,9 @@ sub on_paint
    my $dxim      = int( $imageSize[0] / 2);
 
 # drawing lines
-   my @lines    = ();
-   my @marks    = ();
-   my @texts    = ();
+   my @lines;
+   my @marks;
+   my @texts;
 
    my $deltax = - $self->{offset} + ($indent/2);
    $canvas-> set(
@@ -263,7 +263,7 @@ sub on_paint
    );
 
    my ($array, $idx, $lim, $level) = ([['root'],$self->{items}], 0, scalar @{$self->{items}}, 0);
-   my @stack = ();
+   my @stack;
    my $position = 0;
 
 # preparing stack
@@ -761,8 +761,8 @@ sub reset_tree
    $self-> makehint(0);
    $self-> {stackFrames} = [];
    $self-> {lineDefs}    = [];
-   my @stack = ();
-   my @lines = ();
+   my @stack;
+   my @lines;
    my $traverse;
    $traverse = sub {
       my ( $node, $level, $lastChild) = @_;
@@ -1551,8 +1551,8 @@ sub get_directory_tree
    my $oldPointer = $::application-> pointer;
    $::application-> pointer( cr::Wait);
    my $i;
-   my @fs1 = ();
-   my @fs2 = ();
+   my @fs1;
+   my @fs2;
    for ( $i = 0; $i < scalar @fs; $i += 2) {
       push( @fs1, $fs[ $i]);
       push( @fs2, $fs[ $i + 1]);
@@ -1562,7 +1562,7 @@ sub get_directory_tree
    $self-> {filesStat} = \@fs2;
    my @d   = sort grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
    my $ind = 0;
-   my @lb  = ();
+   my @lb;
    for (@d)  {
       @fs = Prima::Utils::getdir( "$path/$_");
       @fs1 = ();
@@ -1583,7 +1583,7 @@ sub get_directory_tree
 sub files {
    my ( $fn, $fs) = ( $_[0]->{files}, $_[0]-> {filesStat});
    return wantarray ? @$fn : $fn unless ($#_);
-   my @f = ();
+   my @f;
    for ( my $i = 0; $i < scalar @$fn; $i++)
    {
       push ( @f, $$fn[$i]) if $$fs[$i] eq $_[1];
