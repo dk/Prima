@@ -778,12 +778,12 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
    int n = np / 2;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_011: put begin_paint somewhere");
+      warn( "UAG_013: put begin_paint somewhere");
       return false;
    }
 
    if ((s = malloc( sizeof( XSegment)*n)) == nil)
-      croak( "UAG_012: no memory");
+      croak( "UAG_014: no memory");
 
    for ( i = 0; i < n; i++) {
       s[i].x1 = pp[i*2].x + x;
@@ -816,7 +816,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
    DEFXX;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_013: put begin_paint somewhere");
+      warn( "UAG_015: put begin_paint somewhere");
       return false;
    }
 
@@ -833,7 +833,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
    int compl, needf;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_014: put begin_paint somewhere");
+      warn( "UAG_016: put begin_paint somewhere");
       return false;
    }
 
@@ -857,7 +857,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
    DEFXX;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_015: put begin_paint somewhere");
+      warn( "UAG_017: put begin_paint somewhere");
       return false;
    }
 
@@ -877,7 +877,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    int i;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_016: put begin_paint somewhere");
+      warn( "UAG_018: put begin_paint somewhere");
       return false;
    }
 
@@ -885,7 +885,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
       free( p);
       size = numPts + 1;
       p = malloc( size * sizeof( XPoint));
-      if ( !p) croak( "UAG_017: no memory");
+      if ( !p) croak( "UAG_019: no memory");
    }
 
    for ( i = 0; i < numPts; i++) {
@@ -899,13 +899,13 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
       XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
       XCHECKPOINT;
    } else {
-      warn( "UAG_018: request too large");
+      warn( "UAG_020: request too large");
    }
    if ( guts. limits. XDrawLines > numPts) {
       XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
       XCHECKPOINT;
    } else {
-      warn( "UAG_019: request too large");
+      warn( "UAG_021: request too large");
    }
    return true;
 }
@@ -917,7 +917,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
    int compl, needf;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_020: put begin_paint somewhere");
+      warn( "UAG_022: put begin_paint somewhere");
       return false;
    }
 
@@ -960,7 +960,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
       XCHECKPOINT;
       if ( im) {
          if ( pixmap) {
-            croak( "UAG_021: not implemented");
+            croak( "UAG_023: not implemented");
          } else {
             if ( im-> data[0] & 0x01)
                c = 0xffffff;
@@ -970,7 +970,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
          XDestroyImage(im);
       }
    } else {
-      croak( "UAG_022: not implemented");
+      croak( "UAG_024: not implemented");
    }
    return c;
 }
@@ -991,7 +991,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
    DEFXX;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_023: put begin_paint somewhere");
+      warn( "UAG_025: put begin_paint somewhere");
       return false;
    }
 
@@ -1011,7 +1011,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
    DEFXX;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_024: put begin_paint somewhere");
+      warn( "UAG_026: put begin_paint somewhere");
       return false;
    }
 
@@ -1029,7 +1029,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
    DEFXX;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_025: put begin_paint somewhere");
+      warn( "UAG_027: put begin_paint somewhere");
       return false;
    }
 
@@ -1064,7 +1064,32 @@ apc_gp_set_palette( Handle self)
 Bool
 apc_gp_set_region( Handle self, Handle mask)
 {
-   DOLBUG( "apc_gp_set_region()\n");
+   DEFXX;
+   Pixmap px;
+   ImageCache *cache;
+   PImage img;
+   GC gc;
+   XGCValues gcv;
+
+   if ( !XF_IN_PAINT(XX)) {
+      if (mask) warn( "UAG_028: not implemented");
+      return false;
+   }
+
+   if (mask == nilHandle) {
+      px = None;
+   } else {
+      img = PImage(mask);
+      cache = prima_create_image_cache(img, nilHandle);
+      px = XCreatePixmap(DISP, RootWindow( DISP, SCREEN), img->w, img->h, 1);
+      gc = XCreateGC(DISP, px, 0, &gcv);
+      prima_put_ximage(px, gc, cache->image, 0, 0, 0, 0, img->w, img->h);
+      XFreeGC( DISP, gc);
+   }
+   XSetClipMask(DISP, XX->gc, px);
+   if ( px != None) {
+      XFreePixmap( DISP, px);
+   }
    return true;
 }
 
@@ -1076,7 +1101,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    unsigned long old = XX-> fore. pixel;
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_026: put begin_paint somewhere");
+      warn( "UAG_029: put begin_paint somewhere");
       return false;
    }
 
@@ -1097,7 +1122,7 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    SHIFT( x, y);
 
    if ( !XF_IN_PAINT(XX)) {
-      warn( "UAG_027: put begin_paint somewhere");
+      warn( "UAG_030: put begin_paint somewhere");
       return false;
    }
 
@@ -1223,7 +1248,7 @@ apc_gp_get_line_end( Handle self)
 
    if ( XF_IN_PAINT(XX)) {
       if ( XGetGCValues( DISP, XX-> gc, GCCapStyle, &gcv) == 0) {
-         warn( "UAG_028: error querying GC values");
+         warn( "UAG_031: error querying GC values");
          cap = CapButt;
       } else {
          cap = gcv. cap_style;
@@ -1250,7 +1275,7 @@ apc_gp_get_line_width( Handle self)
 	 w = 0;
       else {
 	 if ( XGetGCValues( DISP, XX-> gc, GCLineWidth, &gcv) == 0) {
-            warn( "UAG_029: error querying GC values");
+            warn( "UAG_032: error querying GC values");
 	 }
 	 w = gcv. line_width;
       }
@@ -1444,7 +1469,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
       XX-> fp_pixmap =
          XCreateBitmapFromData( DISP, XX-> gdrawable, pattern, 8, 8);
       if ( XX-> fp_pixmap == None)
-         croak( "UAG_030: error creating stipple");
+         croak( "UAG_033: error creating stipple");
    }
    if ( XF_IN_PAINT(XX)) {
       XSetFillStyle( DISP, XX-> gc, dflt ? FillSolid : FillOpaqueStippled);

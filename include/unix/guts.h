@@ -327,11 +327,11 @@ struct _UnixGuts
 #define XT_IS_WIDGET(x)         ((x)->type.widget)
 #define XT_IS_WINDOW(x)         ((x)->type.window)
 
-struct _PrimaXImage;
+struct PrimaXImage;
 
 typedef struct {
-   struct _PrimaXImage *image;
-   struct _PrimaXImage *icon;
+   struct PrimaXImage *image;
+   struct PrimaXImage *icon;
    XColor fore;
    XColor back;
    Bool bitmap;
@@ -505,6 +505,11 @@ prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);
 
 extern ImageCache*
 prima_create_image_cache( PImage img, Handle drawable);
+
+void
+prima_put_ximage( XDrawable win, GC gc, struct PrimaXImage *i,
+                  int src_x, int src_y, int dst_x, int dst_y,
+                  int width, int height);
 
 extern void
 prima_cleanup_drawable_after_painting( Handle self);

@@ -84,7 +84,7 @@ typedef struct
    Pixel32 b;
 } Duplet32;
 
-typedef struct _PrimaXImage
+struct PrimaXImage
 {
    Bool shm;
    Bool can_free;
@@ -95,15 +95,15 @@ typedef struct _PrimaXImage
 #ifdef USE_MITSHM
    XShmSegmentInfo xmem;
 #endif
-} PrimaXImage;
+};
 
 #define get_ximage_data(xim)            ((xim)->data_alias)
 #define get_ximage_bytes_per_line(xim)  ((xim)->bytes_per_line_alias)
 
-static PrimaXImage*
+static struct PrimaXImage*
 prepare_ximage( int width, int height, Bool bitmap)
 {
-   PrimaXImage *i;
+   struct PrimaXImage *i;
    int extra_bytes;
   
    switch ( guts.idepth) {
@@ -113,9 +113,9 @@ prepare_ximage( int width, int height, Bool bitmap)
    default:     extra_bytes = 0;
    }
 
-   i = malloc( sizeof( PrimaXImage));
+   i = malloc( sizeof( struct PrimaXImage));
    if (!i) return nil;
-   bzero( i, sizeof( PrimaXImage));
+   bzero( i, sizeof( struct PrimaXImage));
 
 #ifdef USE_MITSHM
    if ( guts. local_connection && guts. shared_image_extension && !bitmap) {
@@ -178,7 +178,7 @@ normal_way:
 }
 
 static Bool
-free_ximage( PrimaXImage *i) /* internal */
+free_ximage( struct PrimaXImage *i) /* internal */
 {
    if (!i) return true;
 #ifdef USE_MITSHM
@@ -196,7 +196,7 @@ free_ximage( PrimaXImage *i) /* internal */
 }
 
 static Bool
-destroy_ximage( PrimaXImage *i)
+destroy_ximage( struct PrimaXImage *i)
 {
    if ( !i) return true;
    if ( i-> ref_cnt > 0) {
@@ -207,7 +207,7 @@ destroy_ximage( PrimaXImage *i)
 }
 
 static Bool
-destroy_one_ximage( PrimaXImage *i, int nothing1, void *nothing2, void *nothing3)
+destroy_one_ximage( struct PrimaXImage *i, int nothing1, void *nothing2, void *nothing3)
 {
    free_ximage( i);
    return false;
@@ -225,7 +225,7 @@ prima_ximage_event( XEvent *eve) /* to be called from apc_event's handle_event *
 {
 #ifdef USE_MITSHM
    XShmCompletionEvent *ev = (XShmCompletionEvent*)eve;
-   PrimaXImage *i;
+   struct PrimaXImage *i;
 
    if ( eve && eve-> type == guts. shared_image_completion_event) {
       i = hash_fetch( guts.ximages, (void*)&ev->shmseg, sizeof(ev->shmseg));
@@ -242,7 +242,7 @@ prima_ximage_event( XEvent *eve) /* to be called from apc_event's handle_event *
 }
 
 void
-put_ximage( XDrawable win, GC gc, PrimaXImage *i, int src_x, int src_y, int dst_x, int dst_y, int width, int height)
+prima_put_ximage( XDrawable win, GC gc, struct PrimaXImage *i, int src_x, int src_y, int dst_x, int dst_y, int width, int height)
 {
 #ifdef USE_MITSHM
    if ( i-> shm) {
@@ -413,7 +413,7 @@ create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
    int h = img-> h, w = img-> w;
    int ils;
    unsigned char *idata;
-   PrimaXImage *ximage;
+   struct PrimaXImage *ximage;
 
    if ( for_icon) {
       ils = PIcon(img)->maskLine;
@@ -916,10 +916,10 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
    prima_prepare_drawable_for_painting( self);
    XSetForeground( DISP, XX-> gc, 0);
    XSetBackground( DISP, XX-> gc, 1);
-   put_ximage( p2, XX-> gc, cache->icon,
-               0, 0, 0, 0, icon-> w, icon-> h);
-   put_ximage( p1, XX-> gc, cache->image,
-               0, 0, 0, 0, icon-> w, icon-> h);
+   prima_put_ximage( p2, XX-> gc, cache->icon,
+                     0, 0, 0, 0, icon-> w, icon-> h);
+   prima_put_ximage( p1, XX-> gc, cache->image,
+                     0, 0, 0, 0, icon-> w, icon-> h);
    prima_cleanup_drawable_after_painting( self);
    XX-> gdrawable = None;
    *xor = p1;
@@ -978,9 +978,9 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       if ( func != ofunc)
 	 XSetFunction( DISP, XX-> gc, func);
       XCHECKPOINT;
-      put_ximage( XX-> gdrawable, XX-> gc, cache->icon,
-                  xFrom, img-> h - yFrom - yLen,
-                  x, REVERT(y) - yLen + 1, xLen, yLen);
+      prima_put_ximage( XX-> gdrawable, XX-> gc, cache->icon,
+                        xFrom, img-> h - yFrom - yLen,
+                        x, REVERT(y) - yLen + 1, xLen, yLen);
       XSetForeground( DISP, XX-> gc, f);
       XSetBackground( DISP, XX-> gc, b);
       func = GXxor;
@@ -999,9 +999,9 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       XSetBackground( DISP, XX-> gc, cache->back. pixel);
       XCHECKPOINT;
    }
-   put_ximage( XX-> gdrawable, XX-> gc, cache->image,
-               xFrom, img-> h - yFrom - yLen,
-               x, REVERT(y) - yLen + 1, xLen, yLen);
+   prima_put_ximage( XX-> gdrawable, XX-> gc, cache->image,
+                     xFrom, img-> h - yFrom - yLen,
+                     x, REVERT(y) - yLen + 1, xLen, yLen);
    if (( img-> type & imBPP) == 1) {
       XSetForeground( DISP, XX-> gc, f);
       XSetBackground( DISP, XX-> gc, b);
@@ -1614,14 +1614,14 @@ stretch_calculate_seed( int ssize, int tsize,
    }
 }
 
-static PrimaXImage *
-do_stretch( Handle self, PImage img, PrimaXImage *cache,
+static struct PrimaXImage *
+do_stretch( Handle self, PImage img, struct PrimaXImage *cache,
             int src_x, int src_y, int src_w, int src_h,
             int dst_x, int dst_y, int dst_w, int dst_h,
             int *x, int *y, int *w, int *h)
 {
    Byte *data;
-   PrimaXImage *stretch;
+   struct PrimaXImage *stretch;
    StretchSeed xseed, yseed;
    XRectangle cr;
    int bpp;
@@ -1701,7 +1701,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    DEFXX;
    PImage img = PImage( image);
    unsigned long f = 0, b = 0;
-   PrimaXImage *stretch;
+   struct PrimaXImage *stretch;
    ImageCache *cache;
    int func, ofunc;
    XGCValues gcv;
@@ -1743,7 +1743,7 @@ apc_gp_stretch_image( Handle self, Handle image,
             if ( func != ofunc)
                XSetFunction( DISP, XX-> gc, func);
             XCHECKPOINT;
-            put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
+            prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
             XSetForeground( DISP, XX-> gc, f);
             XSetBackground( DISP, XX-> gc, b);
             func = GXxor;
@@ -1772,7 +1772,7 @@ apc_gp_stretch_image( Handle self, Handle image,
          XSetBackground( DISP, XX-> gc, cache-> back. pixel);
          XCHECKPOINT;
       }
-      put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
+      prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
       if (( img-> type & imBPP) == 1) {
          XSetForeground( DISP, XX-> gc, f);
          XSetBackground( DISP, XX-> gc, b);
