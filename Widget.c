@@ -81,7 +81,7 @@ Widget_init( Handle self, HV * profile)
    var-> tabOrder = -1;
 
    if ( !kind_of( var-> owner, CWidget)) {
-      croak("Illegal object reference passed to Widget::init");
+      croak("Illegal owner object reference passed to Widget::init");
       return;
    }
 
@@ -320,7 +320,7 @@ Widget_cleanup( Handle self)
 {
    enter_method;
    PComponent detachFrom = ( PComponent) var-> owner;
-   if ((( PApplication) application)-> hintUnder == self)
+   if ( application && (( PApplication) application)-> hintUnder == self)
       my-> set_hintVisible( self, 0);
 
    my-> first_that( self, kill_all, nil);
@@ -329,7 +329,9 @@ Widget_cleanup( Handle self)
       my-> detach( self, var-> accelTable, true);
    var-> accelTable = nilHandle;
 
-   detachFrom-> self-> detach( var-> owner, self, false);
+   if ( var-> owner) {
+      detachFrom-> self-> detach( var-> owner, self, false);
+   }
    my-> detach( self, var-> popupMenu, true);
    var-> popupMenu = nilHandle;
 
