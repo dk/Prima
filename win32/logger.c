@@ -253,6 +253,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
    return 0;
 }
 
+
 void sigh( int sig)
 {
     if ( sig == SIGSEGV) {
@@ -279,10 +280,12 @@ create_logger_window2( void * dummy)
    wc.cbClsExtra    = 0;
    wc.cbWndExtra    = 0;
    wc.hInstance     = guts. instance;
-   wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
+   wc.hIcon         = NULL;
    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
    wc.lpszClassName = "Logger";
+
+
    if ( !RegisterClass( &wc))
 		rc = GetLastError();
 

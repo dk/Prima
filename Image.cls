@@ -24,6 +24,7 @@ object Image( Drawable)
    method Handle extract( int x, int y, int width, int height);
    method int    get_bpp();
    method int    get_conversion();
+   method SV   * get_data();
    method SV   * get_handle();
    method char * get_status_string();
    method SV   * get_palette();
@@ -41,6 +42,7 @@ object Image( Drawable)
    method Bool   save( char *filename, HV *options);
    method void   set( HV * profile);
    method void   set_conversion( int conversion);
+   method void   set_data( SV * data);
    method void   set_height( int height);
    method void   set_palette( SV * palette);
    method void   set_pixel(int x, int y, Color color);

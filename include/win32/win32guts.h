@@ -473,7 +473,8 @@ extern void         dbm_recreate( Handle self);
 extern Bool         palette_change( Handle self);
 extern long         palette_match( Handle self, long color);
 extern int          palette_match_color( XLOGPALETTE * lp, long clr, int * diffFactor);
-extern void         apc_widget_repaint( Handle self);
+extern void         process_transparents( Handle self);
+
 
 extern Bool      create_font_hash  ( void);
 extern Bool      destroy_font_hash ( void);

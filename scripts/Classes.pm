@@ -506,6 +506,7 @@ sub profile_default
       width         => 0,
       hScaling      => 1,
       vScaling      => 1,
+      data          => [],
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -513,6 +514,7 @@ sub profile_default
 
 sub set_type       {$_[0]->set( type    =>$_[1])}
 
+sub data         {($#_)?$_[0]->set_data         ($_[1]):return $_[0]->get_data;         }
 sub conversion   {($#_)?$_[0]->set_conversion   ($_[1]):return $_[0]->get_conversion;   }
 sub height       {($#_)?$_[0]->set_height       ($_[1]):return $_[0]->get_height;       }
 sub rangeLo      {($#_)?$_[0]->set_stats  ($_[1], is::RangeLo):return $_[0]->get_stats(is::RangeLo);     }

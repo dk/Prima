@@ -45,6 +45,7 @@ Image_init( Handle self, HV * profile)
    opt_assign( optPreserveType, pget_B( preserveType));
    var palSize = (1 << (var type & imBPP)) & 0x1ff;
    Image_read_palette( self, var palette, pget_sv( palette));
+   my set_data( self, pget_sv( data));
    if ( var type & imGrayScale) switch ( var type & imBPP)
    {
       case imbpp1:
@@ -250,6 +251,24 @@ Image_get_handle( Handle self)
    char buf[ 256];
    snprintf( buf, 256, "0x%08lx", apc_image_get_handle( self));
    return newSVpv( buf, 0);
+}
+
+SV *
+Image_get_data( Handle self)
+{
+   return newSVpvn( var data, var dataSize);
+}
+
+void
+Image_set_data( Handle self, SV * svdata)
+{
+   int dataSize;
+   void *data = SvPV( svdata, dataSize);
+
+   if ( is_opt( optInDraw) || dataSize <= 0) return;
+
+   memcpy( var data, data, dataSize > var dataSize ? var dataSize : dataSize);
+   my update_change( self);
 }
 
 Bool
@@ -934,4 +953,6 @@ Image_extract( Handle self, int x, int y, int width, int height)
    --SvREFCNT( SvRV( i-> mate));
    return h;
 }
+
+
 

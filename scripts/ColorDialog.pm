@@ -761,6 +761,7 @@ sub MoreBtn_Click
    my $d;
    $combo-> listVisible(0);
    $d = ColorDialog-> create(
+      text  => 'Mixed color palette',
       value => $combo-> value,
    );
    $combo-> value( $d-> value) if $d-> execute != cm::Cancel;

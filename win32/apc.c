@@ -362,7 +362,7 @@ apc_component_destroy( Handle self)
 }
 
 
-static void
+void
 process_transparents( Handle self)
 {
    int i;
@@ -1519,20 +1519,6 @@ apc_widget_is_visible( Handle self)
    return IsWindowVisible( HANDLE);
 }
 
-static Bool
-repaint_all( Handle owner, Handle self, void * dummy)
-{
-   objCheck false;
-   if ( !is_apt( aptTransparent)) {
-      if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
-      if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
-      objCheck false;
-      var self-> first_that( self, repaint_all, nil);
-   }
-   process_transparents( self);
-   return false;
-}
-
 void
 apc_widget_invalidate_rect( Handle self, Rect * rect)
 {
@@ -1541,17 +1527,6 @@ apc_widget_invalidate_rect( Handle self, Rect * rect)
    if ( !InvalidateRect (( HWND) var handle, pRect, false)) apiErr;
    if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
    objCheck;
-   process_transparents( self);
-}
-
-void
-apc_widget_repaint( Handle self)
-{
-   objCheck;
-   if ( !InvalidateRect (( HWND) var handle, NULL, false)) apiErr;
-   if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
-   objCheck;
-   var self-> first_that( self, repaint_all, nil);
    process_transparents( self);
 }
 
