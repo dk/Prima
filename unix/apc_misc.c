@@ -1228,6 +1228,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svXbsDialog:		return 2; /* XXX */
    case svYbsDialog:		return 2; /* XXX */
    case svShapeExtension:	return guts. shape_extension;
+   case svDblClickDelay:        return guts. double_click_time_frame;
    default:
       warn( "apc_sys_get_value(): illegal query: %d", v);
    }
