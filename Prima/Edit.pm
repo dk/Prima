@@ -139,12 +139,12 @@ sub profile_default
 abs accept alarm atan2 bind binmode bless caller chdir chmod chomp chop chown
 chr chroot close closedir connect continue cos crypt defined
 delete die do dump each endgrent endhostent endnetent endprotoent endpwent
-endservent eof eval exec exists exit exp fcntl fileno flock fork format
+endservent eof eval exec exists exit exp fcntl fileno flock for fork format
 formline getc getgrent getgrgid getgrnam gethostbyaddr gethostbyname gethostent
 getlogin getnetbyaddr getnetbyname getnetent getpeername getpgrp getppid
 getpriority getprotobyname getprotobynumber getprotoent getpwent getpwnam
 getpwuid getservbyname getservbyport getservent getsockname getsockopt glob
-gmtime goto grep hex import index int ioctl join keys kill last lc lcfirst
+gmtime goto grep hex if import index int ioctl join keys kill last lc lcfirst
 length link listen local localtime log lstat m map mkdir msgctl msgget msgrcv
 msgsnd my next no oct open opendir ord our pack package pipe pop pos print
 printf prototype push q qq qr quotemeta qw qx rand read readdir readline
@@ -154,8 +154,8 @@ sethostent setnetent setpgrp setpriority setprotoent setpwent setservent
 setsockopt shift shmctl shmget shmread shmwrite shutdown sin sleep socket
 socketpair sort splice split sprintf sqrt srand stat study sub substr symlink
 syscall sysopen sysread sysseek system syswrite tell telldir tie tied time
-times tr truncate uc ucfirst umask undef unlink unpack unshift untie use utime
-values vec wait waitpid wantarray warn write y
+times tr truncate uc ucfirst umask undef unless unlink unpack unshift untie use 
+utime values vec wait waitpid wantarray warn while write y
       )], cl::Blue],
       hiliteChars       => ['~!@#$%^&*()+-=[]{};:\'"\\|?.,<>/', cl::Blue],
       hiliteREs         => [ '(#.*)$', cl::Gray, '(\/\/.*)$', cl::Gray],
