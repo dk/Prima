@@ -1233,8 +1233,13 @@ MAKE
     $make =~ tr!/!!s;
     open MAKE, ">Makefile" or die "Creation of Makefile failed: $!";
     print MAKE $make;
+
+# dist-related veriables
     my $os_suffix = $^O;
     $os_suffix =~ s/\s/_/g;
+    my $bindist_files = 'Prima.pm auto examples Prima';
+    my $srcdist_files = 'Makefile.PL *.c *.cls Prima.pm examples img include os2 prigraph Prima test unix utils win32';
+    my $distname = 'Prima-1.00';
 
     print MAKE <<MAKE;
 $thunks_tinc: Makefile @alltmldeps
@@ -1243,17 +1248,25 @@ $thunks_tinc: Makefile @alltmldeps
 RM=$^X Makefile.PL --rm
 
 clean:
-\t\$(RM) @allclean $PrimaTarget Prima-bin-$os_suffix.zip
+\t\$(RM) @allclean $PrimaTarget $distname-$os_suffix.zip
 
 bindist: all
-\t\$(RM) Prima-bin-$os_suffix.zip
-\t\@zip -r Prima-bin-$os_suffix.zip Prima.pm auto examples Prima
-\t\@perl -e "if(open F, q(.dist-exclude)) { my \$\$x = q(zip Prima-bin-MSWin32.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
+\t\$(RM) $distname-$os_suffix.zip
+\t\@zip -r $distname-$os_suffix.zip $bindist_files
+\t\@perl -e "if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname-$os_suffix.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
 
-dist: all
-\t\$(RM) Prima.zip
-\t\@zip -r Prima.zip Makefile.PL *.c *.cls Prima.pm examples img include os2 prigraph Prima test unix utils win32
-\t\@perl -e "if(open F, q(.dist-exclude)) { my \$\$x = q(zip Prima.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
+zipdist:
+\t\$(RM) $distname.zip
+\t\@zip -r $distname.zip $srcdist_files
+\t\@perl -e "if(open F, q(.dist-exclude)) { my \$\$x = q(zip $distname.zip -d ); while(<F>){chomp; \$\$x .= qq( \$\$_);} close F; system \$\$x; }";
+
+tardist:
+\t\$(RM) $distname.tar
+\t\@tar -cv -X .dist-exclude -f $distname.tar $srcdist_files
+
+dist: tardist
+\t\$(RM) $distname.tar.gz
+\t\@gzip -9 $distname.tar
 
 prima: dirs $PrimaTarget
 
