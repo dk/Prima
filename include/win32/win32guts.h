@@ -251,6 +251,10 @@ typedef struct _XBITMAPINFO {
    RGBQUAD          bmiColors[ 256];
 } XBITMAPINFO, *PXBITMAPINFO;
 
+typedef struct _ItemRegRec {
+  int   cmd;
+  void *item;
+} ItemRegRec, *PItemRegRec;
 
 typedef struct _DrawableData
 {

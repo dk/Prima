@@ -43,6 +43,11 @@
 
 #define USE_GPIDRAWBITS
 
+typedef struct _ItemRegRec {
+  int   cmd;
+  void *item;
+} ItemRegRec, *PItemRegRec;
+
 typedef struct _OS2Guts
 {
    HAB   anchor;             // program main ab
