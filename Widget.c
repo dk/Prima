@@ -61,8 +61,8 @@ static Bool move_notify( Handle self, Handle child, Point * moveTo);
 static void dyna_set( Handle self, HV * profile);
 static Handle find_tabfoc( Handle self);
 static Bool showhint_notify ( Handle self, Handle child, void * data);
-static Bool read_point( AV * av, int * pt, int number, char * error);
 static Bool hint_notify ( Handle self, Handle child, char * hint);
+       Bool read_point( AV * av, int * pt, int number, char * error);
        Bool accel_notify ( Handle group, Handle self, PEvent event);
        Bool font_notify ( Handle self, Handle child, void * font);
        Bool find_accel( Handle self, Handle item, int * key);
@@ -164,6 +164,7 @@ Widget_init( Handle self, HV * profile)
       int i[2];
       AV * av;
       SV ** holder;
+      NPoint ds = {1,1};
 
       read_point(( AV *) SvRV( pget_sv( sizeMin)), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
       my set_size_min( self, set);
@@ -176,11 +177,12 @@ Widget_init( Handle self, HV * profile)
 
       av = ( AV *) SvRV( pget_sv( designScale));
       holder = av_fetch( av, 0, 0);
-      var designScale. x = holder ? SvNV( *holder) : 1;
+      ds. x = holder ? SvNV( *holder) : 1;
       if ( !holder) warn("RTC0086: Array panic on 'designScale'");
       holder = av_fetch( av, 1, 0);
-      var designScale. y = holder ? SvNV( *holder) : 1;
+      ds. y = holder ? SvNV( *holder) : 1;
       if ( !holder) warn("RTC0086: Array panic on 'designScale'");
+      my set_design_scale( self, ds.x, ds.y);
    }
    my set_enabled     ( self, pget_B( enabled));
    if ( !pexist( originDontCare) || !pget_B( originDontCare))
@@ -1203,6 +1205,19 @@ Widget_set( Handle self, HV * profile)
       pdelete( pointerIcon);
       pdelete( pointerHotSpot);
    }
+   if ( pexist( designScale))
+   {
+      AV * av = ( AV *) SvRV( pget_sv( designScale));
+      SV ** holder = av_fetch( av, 0, 0);
+      NPoint ds = {1,1};
+      ds. x = holder ? SvNV( *holder) : 1;
+      if ( !holder) warn("RTC0086: Array panic on 'designScale'");
+      holder = av_fetch( av, 1, 0);
+      ds. y = holder ? SvNV( *holder) : 1;
+      if ( !holder) warn("RTC0086: Array panic on 'designScale'");
+      my set_design_scale( self, ds.x, ds.y);
+      pdelete( designScale);
+   }
 
    dyna_set( self, profile);
    inherited set( self, profile);
@@ -1877,6 +1892,14 @@ Widget_set_current_widget( Handle self, Handle widget)
       my set_selected_widget( self, widget);
 }
 
+void
+Widget_set_design_scale( Handle self, double x, double y)
+{
+   if ( x < 0) x = 0;
+   if ( y < 0) y = 0;
+   var designScale. x = x;
+   var designScale. y = y;
+}
 
 void
 Widget_set_focused( Handle self, Bool focused)
@@ -2683,7 +2706,7 @@ single_color_notify ( Handle self, Handle child, void * color)
    return false;
 }
 
-static Bool
+Bool
 read_point( AV * av, int * pt, int number, char * error)
 {
    SV ** holder;

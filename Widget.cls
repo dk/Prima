@@ -203,6 +203,7 @@ object Widget( Drawable)
    method   void     set_cursor_pos( int x, int y)     => apc_cursor_set_pos;
    method   void     set_cursor_size( int x, int y)    => apc_cursor_set_size;
    method   void     set_cursor_visible( Bool visible) => apc_cursor_set_visible;
+   method   void     set_design_scale( double x, double y);
    method   void     set_enabled( Bool enable)         => apc_widget_set_enabled;
    method   void     set_first_click( Bool firstClick) => apc_widget_set_first_click;
    method   void     set_focused( Bool focused);
