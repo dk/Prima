@@ -133,7 +133,7 @@ sub item2rect
    {
       $item -= $self->{topItem};
       my ($j,$i,$ih,$iw) = (
-         $self->{rows} ? sprintf("%d",$item / $self->{rows} - (( $item < 0) ? 1 : 0)) : -1,
+         $self->{rows} ? int( $item / $self->{rows} - (( $item < 0) ? 1 : 0)) : -1,
          $item % $self->{rows},
          $self->{itemHeight},
          $self->{itemWidth}
@@ -241,7 +241,7 @@ sub on_paint
               $itemRect[0] - $self->{offset}, $itemRect[1],
               $itemRect[2]-1, $itemRect[3]-1,
               $sel, $self->{focusedItem} == $item ? $focusedState : 0,
-              sprintf("%d",( $item - $self->{topItem}) / $self->{rows}),
+              int(( $item - $self->{topItem}) / $self->{rows}),
             ]);
          }
       } else {
@@ -411,8 +411,8 @@ sub point2item
       $x /= $iw + 1;
       $y /= $ih;
       $y = $r - $y;
-      $x = sprintf( "%d", $x - (( $x < 0) ? 1 : 0));
-      $y = sprintf( "%d", $y - (( $y < 0) ? 1 : 0));
+      $x = int( $x - (( $x < 0) ? 1 : 0));
+      $y = int( $y - (( $y < 0) ? 1 : 0));
       return $t - $r                if $y < 0   && $x < 1;
       return $t + $r * $x,  -1      if $y < 0   && $x >= 0 && $x < $c;
       return $t + $r * $c           if $y < 0   && $x >= $c;
@@ -552,7 +552,7 @@ sub reset
    $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width-1  : 0);
    $size[1] -= $bw * 2 + $self->{dy};
    $size[0] -= $bw * 2 + $self->{dx};
-   $self->{rows}  = sprintf( "%d", $size[1]/$ih);
+   $self->{rows}  = int( $size[1]/$ih);
    $self->{rows}  = 0 if $self->{rows} < 0;
    $self->{yedge} = $size[1] - $self->{rows} * $ih;
    if ( $self->{multiColumn})
@@ -1737,16 +1737,16 @@ sub on_drawitem
    if ( $type == ROOT || $type == NODE)
    {
       $x = $left + 2 + $indent + $iconWidth / 2;
-      $x = sprintf( "%d", $x);
+      $x = int( $x);
       $y = ($top + $bottom) / 2;
       $canvas-> line( $x, $bottom, $x, $y);
    }
    if ( $type != ROOT && $type != ROOT_ONLY)
    {
       $x = $left + 2 + $prevIndent + $iconWidth / 2;
-      $x = sprintf( "%d", $x);
+      $x = int( $x);
       $x2 = $left + 2 + $indent + $iconWidth / 2;
-      $x2 = sprintf( "%d", $x2);
+      $x2 = int( $x2);
       $y = ($top + $bottom) / 2;
       $canvas-> line( $x, $y, $x2, $y);
       $canvas-> line( $x, $y, $x, $top);
@@ -1754,13 +1754,13 @@ sub on_drawitem
    }
    $canvas-> put_image_indirect ( $icon,
       $left + 2 + $indent,
-      sprintf("%d", ($top + $bottom - $iconHeight) / 2+0.5),
+      int(($top + $bottom - $iconHeight) / 2+0.5),
       0, 0,
       $iconWidth, $iconHeight,
       $iconWidth, $iconHeight, rop::CopyPut);
    $canvas-> text_out( $text,
       $left + 2 + $indent + $self-> {oneSpaceWidth} + $iconWidth,
-      sprintf("%d", $top + $bottom - $self-> {fontHeight}) / 2+0.5);
+      int($top + $bottom - $self-> {fontHeight}) / 2+0.5);
    $canvas-> color($clrSave);
 }
 
