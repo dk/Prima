@@ -519,6 +519,14 @@ apc_application_get_os_info( char *system, int slen,
    static struct utsname name;
    static Bool fetched = false;
 
+#ifndef SYS_NMLN
+#ifdef _SYS_NAMELEN
+#define SYS_NMLN _SYS_NAMELEN
+#elif
+#define SYS_NMLN 64
+#endif
+#endif   
+
    if (!fetched) {
       if ( uname(&name)!=0) {
 	 strncpy( name. sysname, "Some UNIX", SYS_NMLN);
