@@ -1582,6 +1582,15 @@ dependencies, do so and re-run 'install Prima' afterwards.
 NOCODECS
     }
 
+    unless ( $WANTNOCODECS or grep { m/^(prigraph|ungif)/ } @ACTIVE_CODECS) {
+          print <<UNGIF_WARNING unless defined $USER_VARS{CODEC_PRIGRAPH};
+          
+** Warning: no libungif / libprigraph found, Prima will be unable to 
+load GIF image files.
+
+UNGIF_WARNING
+    }
+
     push @Prima_exports, 'bzero' unless $DEFINES{HAVE_BZERO};
     # Setting up translation tables for quoting string for different make utilities.
     my ( $make_tbl, $nmake_tbl, $dmake_tbl);
