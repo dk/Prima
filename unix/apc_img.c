@@ -146,7 +146,11 @@ apc_image_create( Handle self)
 void
 apc_image_destroy( Handle self)
 {
-    fprintf( stderr, "apc_image_destroy()\n");
+   DEFXX;
+   if ( XX-> imageCache) {
+      XDestroyImage( XX-> imageCache);
+      XX-> imageCache = nil;
+   }
 }
 
 Bool
@@ -178,7 +182,11 @@ apc_image_end_paint_info( Handle self)
 void
 apc_image_update_change( Handle self)
 {
-    fprintf( stderr, "apc_image_update_change()\n");
+   DEFXX;
+   if ( XX-> imageCache) {
+      XDestroyImage( XX-> imageCache);
+      XX-> imageCache = nil;
+   }
 }
 
 Bool
