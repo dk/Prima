@@ -196,7 +196,10 @@ sub profile_default
            ['~Open' => 'Ctrl+O' => '^O' => 'load_dialog' ],
            ['~Go to...' => 'G' => 'G' => 'goto' ],
            ['~New window' => 'Ctrl+N' => '^N' => 'new_window'],
-           [],
+           ['~Run' => [
+	      ['p-class' => 'filter_p_class'],
+	   ]],
+	   [],
            ['~Print ...' => 'Ctrl+P' => '^P' => 'print'],
            [],
            ['~Close window' => 'Ctrl-W' => '^W' => sub { $_[0]-> close }],
@@ -425,6 +428,22 @@ sub new_window
    $new-> {text}-> update_view;
    $new-> {text}-> load_bookmark( $self-> {text}-> make_bookmark);
    $new-> select;
+}
+
+sub filter_p_class
+{
+   eval "use Prima::MsgBox"; die "$@\n" if $@;
+   my $self = $_[0];
+   my $ret = Prima::MsgBox::input_box('Run p-class', 'Enter Prima class, or leave empty to see the options list:', '');
+   return unless defined $ret;
+   my $content = `p-class $ret`;
+   unless ( length $content) {
+      Prima::message("'p-class $ret' returned no data");
+      return;
+   }
+   $content = "=pod\n\n$content\n\n=cut" if $content !~ /=pod/m;
+   $self-> {text}-> load_content( $ret, $content) if defined $ret;
+   $self-> text( $self-> {stext} . ' - ' . $ret);
 }
 
 sub history
@@ -1004,6 +1023,20 @@ directories.
 =item New window
 
 Opens the new viewer window with the same context.
+
+=item Run
+
+Commands in this group call external processes
+
+=over
+
+=item p-class
+
+p-class is Prima utility for displaying the widget class hierachies.
+The command asks for Prima class to display the hierachy information 
+for.
+
+=back
 
 =item Print
 
