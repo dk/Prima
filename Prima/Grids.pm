@@ -2529,7 +2529,7 @@ If -1, the coordinate is on the left/top to the cell body.
 If +1, the coordinate is on the right/bottom to the cell body, but within
 the widget.
 
-If +1, the coordinate is on the right/bottom to the cell body, but outside
+If +2, the coordinate is on the right/bottom to the cell body, but outside
 the widget.
 
 =item C<x_type> and C<y_type>
@@ -2594,7 +2594,7 @@ Marks all cells as selected, if C<multiSelect> is 1.
 
 An optimized bulk routine for text-oriented grid widgets. The optimization
 is achieved under assumption that each cell is drawn with two colors only,
-so the color switching is cached.
+so the color switching can be reduced.
 
 The routine itself paints the cells background, and calls C<draw_text_cells>
 to draw text and/or otherwise draw the cell content.
@@ -2766,8 +2766,8 @@ its ascendants, provides a standard text grid widget.
    $grid = Prima::Grid-> create(
       cells       => [
           [qw(1.First 1.Second 1.Third)],
-          [qw(2.First 2.Second 3.Third)],
-          [qw(3.First 2.Second 3.Third)],
+          [qw(2.First 2.Second 2.Third)],
+          [qw(3.First 3.Second 3.Third)],
       ],
       onClick     => sub { 
          print $_[0]-> get_cell_text( $_[0]-> focusedCell), " is selected\n";
