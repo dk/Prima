@@ -805,6 +805,7 @@ sub setup_variables
   sv_call_perl
   sv_query_method
   temporary_prf_Sv
+  prima_mallocz
 );
 }
 
