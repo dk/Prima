@@ -117,15 +117,15 @@ my %mapTypes = ("int" => "int", "Bool" => "Bool", "Handle" => "Handle", "long" =
 
 my %typedefs = ();
 
-my %xsConv = (# declare   access          set       unused   unused   extra2sv  POPx           newXXxx  extrasv2
-              #   0         1              2          3        4         5       6                7       8
-  'int'     => ['int',    'SvIV',      'sv_setiv',  '',      '(IV)',     '',    'POPi',         'SViv', ''     ],
-  'double'  => ['double', 'SvNV',      'sv_setnv',  '',      '(double)', '',    'POPn',         'SVnv', ''     ],
-  'char*'   => ['char *', 'SvPV',      'sv_setpv',  '(SV*)', '',         ', 0', 'POPp',         'SVpv', ', na' ],
-  'string'  => ['char',   'SvPV',      'sv_setpv',  '(SV*)', '',         ', 0', 'POPp',         'SVpv', ', na' ],
-  'Handle'  => ['Handle', $incGetMate, '',          '',      '',         '',    '0/0',          '',     ''     ],
-  'SV*'     => ['SV *',   '',          '',          '',      '',         '',    '0/0',          '',     ''     ],
-  'Bool'    => ['Bool',   'SvTRUE',    'sv_setiv',  '0/0',   '0/0',      '',    'SvTRUE(POPs)', 'SViv', ''     ],
+my %xsConv = (# declare   access          set       unused   unused   extra2sv  POPx      newXXxx  extrasv2
+              #   0         1              2          3        4         5       6           7       8
+  'int'     => ['int',    'SvIV',      'sv_setiv',  '',      '(IV)',     '',    'POPi',    'SViv', ''     ],
+  'double'  => ['double', 'SvNV',      'sv_setnv',  '',      '(double)', '',    'POPn',    'SVnv', ''     ],
+  'char*'   => ['char *', 'SvPV',      'sv_setpv',  '(SV*)', '',         ', 0', 'POPp',    'SVpv', ', na' ],
+  'string'  => ['char',   'SvPV',      'sv_setpv',  '(SV*)', '',         ', 0', 'POPp',    'SVpv', ', na' ],
+  'Handle'  => ['Handle', $incGetMate, '',          '',      '',         '',    '0/0',     '',     ''     ],
+  'SV*'     => ['SV *',   '',          '',          '',      '',         '',    '0/0',     '',     ''     ],
+  'Bool'    => ['Bool',   'SvBOOL',    'sv_setiv',  '0/0',   '0/0',      '',    'SvBOOL( POPs)', 'SViv', ''     ],
 );
 
 my %mapPointers = ( "char" => "char*", "SV" => "SV*", "HV"=> "HV*");

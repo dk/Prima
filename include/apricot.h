@@ -61,7 +61,6 @@
 #error "Reconsider the order in which you #include files"
 #endif
 
-#define __inline__ __inline
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
@@ -1007,6 +1006,16 @@ extern void*
 create_object( const char *objClass, const char *types, ...);
 
 extern SV **temporary_prf_Sv;
+
+#ifdef __GNUC__
+#define SvBOOL(sv) ({ SV *svsv = sv; SvTRUE(svsv);})
+#else  /* i.e NOT __GNUC__ */
+__INLINE__ Bool
+SvBOOL( SV *sv)
+{
+   return SvTRUE(sv);
+}
+#endif /* __GNUC__ */
 
 #define pexist( key) hv_exists( profile, # key, strlen( #key))
 #define pdelete( key) hv_delete( profile, # key, strlen( #key), G_DISCARD)
