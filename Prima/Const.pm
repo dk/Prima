@@ -222,8 +222,6 @@ See L<Prima::Widget/key_down>, L<Prima::Widget/mouse_down>
 
 =item Internal commands ( used in core only or not used at all )
 
-  cm::Valid
-  cm::Quit
   cm::Close
   cm::Create
   cm::Destroy
@@ -259,7 +257,6 @@ See L<Prima::Widget/key_down>, L<Prima::Widget/mouse_down>
   cm::MenuCmd
   cm::TranslateAccel
   cm::DelegateKey
-  cm::User
 
 =back
 
@@ -805,6 +802,8 @@ See also L<Prima::Application/get_system_value>
   sv::DblClickDelay    - mouse double-click timeout in milliseconds
   sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 0 otherwise
   sv::ColorPointer     - 1 if system accepts color pointer icons.
+  sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
+  sv::CanUTF8_Output   - 1 if system can output utf8 text
 
 =head2 ta::  - alignment constants
 
@@ -827,7 +826,7 @@ See L<Prima::Drawable/text_wrap>
   tw::CalcTabs        - wraps text with respect to tab expansion
   tw::ExpandTabs      - expands tab characters
   tw::BreakSingle     - determines if text is broken to single characters when text cannot be fit
-  tw::NewLineBreak    - breaks line on a newline character 
+  tw::NewLineBreak    - breaks line on newline characters 
   tw::SpaceBreak      - breaks line on space or tab characters
   tw::ReturnChunks    - returns wrapped text chunks
   tw::ReturnLines     - returns positions and lengths of wrapped text chunks

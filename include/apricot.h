@@ -645,10 +645,6 @@ END_TABLE(mt,UV)
 /* commands */
 #define CM(const_name) CONSTANT(cm,const_name)
 START_TABLE(cm,UV)
-#define cmValid          0x00000000
-CM(Valid)
-#define cmQuit           0x00000001
-CM(Quit)
 #define cmClose         (0x00000005|ctDiscardable)
 CM(Close)
 #define cmCreate        (0x0000000A|ctPassThrough)
@@ -747,8 +743,6 @@ CM(DelegateKey)
 #define cmFileRead       0x00000070
 #define cmFileWrite      0x00000071
 #define cmFileException  0x00000072
-#define cmUser           0x00000100                /* first user-defined message */
-CM(User)
 END_TABLE(cm,UV)
 #undef CM
 

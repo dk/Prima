@@ -1098,11 +1098,14 @@ Example:
 Returns device color depth. 1 is for black-and-white monochrome,
 24 for true color, etc.
 
-=item get_font_abc FIRST_CHAR = -1, LAST_CHAR = -1
+=item get_font_abc FIRST_CHAR = -1, LAST_CHAR = -1, UNICODE = 0
 
 Returns ABC font metrics for the given range, starting at
 FIRST_CHAR and ending with LAST_CHAR. If parameters are -1,
-the default range ( 0 and 255 ) is assumed.
+the default range ( 0 and 255 ) is assumed. UNICODE boolean flag
+is responsible of representation of characters in 127-255 range.
+If 0, the default, encoding-dependent characters are assumed.
+If 1, the Latin-1 encoded characters are assumed. 
 
 The result is an integer array reference, where every character
 glyph is referred by three integers, each triad containing
@@ -1218,6 +1221,8 @@ In the latter case, the text blocks will exceed WIDTH.
 =item tw::NewLineBreak
 
 Forces new chunk after a newline character ('\n') is met.
+If UTF8 text is passed, unicode line break characters C<0x2028> and C<0x2029> are also
+in effect.
 
 =item tw::SpaceBreak
 

@@ -273,6 +273,12 @@ already exists.
 Enters the program event loop. The loop is ended when C<Prima::Application>'s C<destroy>
 or C<close> method is called.
 
+=item want_unicode_input [ BOOLEAN ]
+
+Selects if the system is allowed to generate key codes in unicode. 
+Returns the effective state of the unicode input flag, which cannot be
+changed if perl or system do not support UTF8.
+
 =back
 
 =head1 SEE ALSO

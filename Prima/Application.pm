@@ -594,6 +594,8 @@ of C<sv::XXX> constants. The constants are:
    sv::DblClickDelay    - mouse double-click timeout in milliseconds
    sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 0 otherwise
    sv::ColorPointer     - 1 if system accepts color pointer icons.
+   sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
+   sv::CanUTF8_Output   - 1 if system can output utf8 text
 
 The method can be called with a class string instead of an object instance.
 
