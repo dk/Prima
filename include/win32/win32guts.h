@@ -31,6 +31,7 @@
 #define DEFAULT_SYSTEM_FONT              "System"
 #define DEFAULT_WIDGET_FONT              "MS Shell Dlg"
 #define DEFAULT_WIDGET_FONT_SIZE         8
+#define COLOR_TOLERANCE                  4
 
 
 #define WM_WRITE_TO_LOG                   ( WM_USER + 0)
@@ -258,6 +259,8 @@ typedef struct _DrawableData
    HPALETTE       pal2;                    // cached palette for optBuffered
    char          *bmRaw;                   // cached raw bitmap
    ColorSet       viewColors;
+   int            bpp;
+   PXLOGPALETTE   p256;                    // cached squeezed palette
 // HDC data
 
    PDCStylus      stylusResource;
@@ -440,6 +443,7 @@ extern Handle       hwnd_to_view( HWND win);
 extern void         hwnd_enter_paint( Handle self);
 extern void         hwnd_leave_paint( Handle self);
 extern Handle       hwnd_top_level( Handle self);
+extern Handle       hwnd_frame_top_level( Handle self);
 extern Bool         image_screenable( Handle image, Handle screen, int * bitCount);
 extern Handle       image_enscreen( Handle image, Handle screen);
 extern BITMAPINFO * image_get_binfo( Handle img, XBITMAPINFO * bi);
@@ -453,6 +457,8 @@ extern BYTE *       mod_select( int mod);
 extern void         mod_free( BYTE * modState);
 extern void         dbm_recreate( Handle self);
 extern Bool         palette_change( Handle self);
+extern long         palette_match( Handle self, long color);
+extern int          palette_match_color( XLOGPALETTE * lp, long clr, int * diffFactor);
 
 extern Bool      create_font_hash  ( void);
 extern Bool      destroy_font_hash ( void);

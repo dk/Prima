@@ -65,9 +65,11 @@ apc_clipboard_get_data( long id, int * length)
          {
              PImage image      = ( PImage) *length;
              Handle self       = ( Handle) image;
-             HBITMAP b = GetClipboardData( id);
+             HBITMAP b = GetClipboardData( CF_BITMAP);
+             HBITMAP op, p = GetClipboardData( CF_PALETTE);
              HBITMAP obm = sys bm;
              XBITMAPINFO xbi;
+             HDC dc, ops;
 
              if ( b == nil) {
                 apcErr( errInvClipboardData);
@@ -75,7 +77,20 @@ apc_clipboard_get_data( long id, int * length)
              }
              sys bm = b;
              apcErrClear;
+             dc = CreateCompatibleDC( dc_alloc());
+             ops = sys ps;
+             sys ps = dc;
+
+             if ( p) {
+                op = SelectPalette( dc, p, 1);
+                RealizePalette( dc);
+             }
              image_query_bits( self, true);
+             if ( p)
+                 SelectPalette( dc, op, 1);
+             DeleteDC( dc);
+             dc_free();
+             sys ps = ops;
              sys bm = obm;
              if ( apcError) return false;
          }
@@ -140,9 +155,15 @@ apc_clipboard_set_data( long id, void * data, int length)
    {
       case CF_BITMAP:
          {
-            HBITMAP b = ( HBITMAP) image_make_bitmap_handle(( Handle) data, nil );
-            if ( b == nilHandle) apiErrRet;
-            if ( !SetClipboardData( id, b)) apiErrRet;
+            HPALETTE p = palette_create(( Handle) data);
+            HBITMAP b = ( HBITMAP) image_make_bitmap_handle(( Handle) data, p);
+
+            if ( b == nilHandle) {
+               if ( p) DeleteObject( p);
+               apiErrRet;
+            }
+            if ( !SetClipboardData( CF_BITMAP,  b)) apiErr;
+            if ( !SetClipboardData( CF_PALETTE, p)) apiErr;
          }
          break;
       case CF_TEXT:

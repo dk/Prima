@@ -1119,11 +1119,11 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       RECT r;
       HBITMAP bm;
       HDC dc;
-      HPALETTE oldPal;
 
       GetClipBox( sys ps, &r);
       var w = r. right  - r. left;
       var h = r. bottom - r. top;
+
 
       if ( !( dc = CreateCompatibleDC( sys ps))) apiErr;
 
@@ -1149,9 +1149,13 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
          sys transform2. y = r. top;
       } else
          apiErr;
+   } else {
+      if ( sys pal = palette_create( self)) {
+         sys stockPalette = SelectPalette( sys ps, sys pal, 1);
+         RealizePalette( sys ps);
+      }
    }
    hwnd_enter_paint( self);
-
    return true;
 }
 
@@ -1215,6 +1219,9 @@ apc_widget_end_paint( Handle self)
 
    hwnd_leave_paint( self);
 
+   if ( sys pal)
+      DeleteObject( sys pal);
+
    if ( sys ps != nilHandle)
    {
       if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
@@ -1222,7 +1229,7 @@ apc_widget_end_paint( Handle self)
       } else if ( is_apt( aptWinPS))
          if ( !ReleaseDC(( HWND) var handle, sys ps)) apiErr;
    }
-   sys ps = sys pal = nilHandle;
+   sys ps = sys pal = sys pal2 = nilHandle;
    apt_clear( aptWinPS);
    apt_clear( aptWM_PAINT);
    apt_clear( aptCompatiblePS);
@@ -1570,6 +1577,10 @@ apc_widget_set_font( Handle self, PFont font)
 void
 apc_widget_set_palette( Handle self)
 {
+   if ( sys p256) {
+      free( sys p256);
+      sys p256 = nil;
+   }
    if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8)
       palette_change( self);
 }

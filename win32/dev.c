@@ -24,7 +24,11 @@ Bool image_screenable( Handle image, Handle screen, int * bitCount)
    }
 
    if ( i-> type == imRGB) {
-      if ( !screen || dsys( screen) options. aptCompatiblePS || !dsys( screen) ps) {
+
+      if ( !screen)
+         return true;
+
+      if ( dsys( screen) options. aptCompatiblePS || !dsys( screen) ps) {
          if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8) {
             if ( bitCount) {
                *bitCount = guts. displayBMInfo. bmiHeader. biBitCount;
@@ -34,19 +38,25 @@ Bool image_screenable( Handle image, Handle screen, int * bitCount)
             return false;
          }
       } else {
-         int bc = GetDeviceCaps( dsys( screen) ps, BITSPIXEL);
-         if ( bc <= 8) {
-            if ( bitCount) {
-               *bitCount = bc;
-               if ( *bitCount < 4) *bitCount = 1;
-               else if ( *bitCount < 8) *bitCount = 4;
+         if ( dsys( screen) bpp == 0) {
+            if ( !dsys(screen) ps) {
+               log_write("APC_ERR: Cannot access BPP HDC at line %d at %s", __LINE__, __FILE__);
+               *bitCount = 1;
+               return false;
             }
+            dsys( screen) bpp = GetDeviceCaps( dsys(screen) ps, BITSPIXEL);
+         }
+         if ( dsys( screen) bpp <= 8) {
+            *bitCount = dsys( screen) bpp;
+            if ( *bitCount < 4) *bitCount = 1;
+            else if ( *bitCount < 8) *bitCount = 4;
             return false;
          }
       }
    }
    return true;
 }
+
 
 Handle image_enscreen( Handle image, Handle screen)
 {
@@ -155,6 +165,8 @@ image_make_bitmap_handle( Handle img, HPALETTE pal)
    if ( xpal != pal)
       DeleteObject( xpal);
 
+   ReleaseDC( foc, dc);
+
    return bm;
 }
 
@@ -169,19 +181,26 @@ image_make_bitmap_palette( Handle img)
    PRGBColor logp = i-> palette;
    if ( nColors == 0) return nil;
 
-   if ( nColors > 256) {
-      cm_squeeze_palette( i-> palette, nColors, dest, 256);
-      nColors = lp. palNumEntries = 256;
-      logp = dest;
-   }
+   if ( !dsys(img)p256) {
+      if ( nColors > 256) {
+         dsys(img)p256 = malloc( sizeof( XLOGPALETTE));
+         cm_squeeze_palette( i-> palette, nColors, dest, 256);
+         nColors = lp. palNumEntries = 256;
+         logp = dest;
+      }
 
-   for ( j = 0; j < nColors; j++) {
-      lp. palPalEntry[ j]. peRed    = logp[ j]. r;
-      lp. palPalEntry[ j]. peGreen  = logp[ j]. g;
-      lp. palPalEntry[ j]. peBlue   = logp[ j]. b;
-      lp. palPalEntry[ j]. peFlags  = 0;
+      for ( j = 0; j < nColors; j++) {
+         lp. palPalEntry[ j]. peRed    = logp[ j]. r;
+         lp. palPalEntry[ j]. peGreen  = logp[ j]. g;
+         lp. palPalEntry[ j]. peBlue   = logp[ j]. b;
+         lp. palPalEntry[ j]. peFlags  = 0;
+      }
+
+      if ( dsys(img)p256) memcpy( dsys(img)p256, &lp, sizeof( XLOGPALETTE));
+      if ( !( r = CreatePalette(( LOGPALETTE*) &lp))) apiErrRet;
+   } else {
+      if ( !( r = CreatePalette(( LOGPALETTE*) dsys(img)p256))) apiErrRet;
    }
-   if ( !( r = CreatePalette(( LOGPALETTE*) &lp))) apiErrRet;
    return r;
 }
 
@@ -261,8 +280,10 @@ image_query_bits( Handle self, Bool forceNewImage)
    }
 
    if ( forceNewImage) {
+      if ( !ops) {
+         dc_free();
+      }
       sys ps = ops;
-      if ( !ops) dc_free();
    }
 }
 
@@ -288,6 +309,7 @@ apc_image_begin_paint( Handle self)
 {
    apcErrClear;
    if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
+   sys bpp = GetDeviceCaps( sys ps, BITSPIXEL);
    if ( sys bm == nilHandle) {
       Handle deja  = image_enscreen( self, self);
       image_set_cache( deja, self);
