@@ -435,7 +435,7 @@ sub draw_text
 
    if ( $flags & dt::QueryHeight) {
       $linesToDraw = scalar @lines;
-      $retVal = $linesToDraw * $fh;
+      $h = $retVal = $linesToDraw * $fh;
    } else {
       $linesToDraw = int( $retVal = ( $h / $fh));
       $linesToDraw++ if (( $h % $fh) > 0) and ( $flags & dt::DrawPartial);
@@ -451,7 +451,7 @@ sub draw_text
    if ( $valign == dt::Top) {
       $y = $y2;
    } elsif ( $valign == dt::VCenter) {
-      $y += int(( $h + $linesToDraw * $fh) / 2);
+      $y = $y2 - int(( $h - $linesToDraw * $fh) / 2);
    } else {
       $y += $linesToDraw * $fh;
    }
@@ -1242,7 +1242,7 @@ sub text
 }
 
 package Prima::Application;
-use vars qw(@ISA);
+use vars qw(@ISA @startupNotifications);
 @ISA = qw(Prima::Widget);
 
 sub profile_default
@@ -1287,6 +1287,16 @@ sub profile_check_in
    delete $p-> { ownerPalette};
 }
 
+sub add_startup_notification
+{
+   shift if ref($_[0]) ne 'CODE'; # skip class reference, if any
+   if ( $::application) {
+      $_-> ($::application) for @_;
+   } else {
+      push( @startupNotifications, @_);
+   }
+}
+
 sub setup
 {
    my $self = shift;
@@ -1295,6 +1305,8 @@ sub setup
       $self->{$clp} = $self-> insert( qw(Prima::Clipboard), name => $clp)
          unless exists $self->{$clp};
    }
+   $_-> ($self) for @startupNotifications;
+   undef @startupNotifications;
 }
 
 sub hintFont      {($#_)?$_[0]->set_hint_font        ($_[1])  :return Prima::Font->new($_[0], "get_hint_font", "set_hint_font")}

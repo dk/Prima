@@ -915,6 +915,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    switch ( orgMsg) {
    case WM_DESTROY:
       v-> handle = nilHandle;       // tell apc not to kill this HWND
+      SetWindowLong( win, GWL_USERDATA, 0);
       Object_destroy(( Handle) v);
       break;
    case WM_PAINT:
@@ -1221,6 +1222,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
            Window_cancel( self);
            return 0;
          } else {
+           SetWindowLong( win, GWL_USERDATA, 0);
            Object_destroy(( Handle) v);
          }
          break;

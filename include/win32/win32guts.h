@@ -354,6 +354,7 @@ typedef struct _DrawableData
    HWND           handle;                  // Windows handle of a widget
    HWND           owner;                   // Windows owner of a widget
    HWND           parent;                  // Windows parent of a widget
+   HWND           parentHandle;            
    int            className;               // class name ( WC_XXX)
 
    /* Widget properties */

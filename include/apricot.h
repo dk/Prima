@@ -1745,6 +1745,7 @@ apc_application_get_widget_from_point( Handle self, Point point);
 extern Handle
 apc_application_get_handle( Handle self, ApiHandle apiHandle);
 
+
 extern int
 apc_application_get_os_info( char *system, int slen,
                              char *release, int rlen,
@@ -1845,7 +1846,7 @@ apc_window_end_modal( Handle self);
 /* Widget management */
 extern Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint,
-                   Bool clipOwner, Bool transparent);
+                   Bool clipOwner, Bool transparent, ApiHandle parentHandle);
 
 extern Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint);
@@ -1885,6 +1886,9 @@ apc_widget_get_invalid_rect( Handle self);
 
 extern Handle
 apc_widget_get_z_order( Handle self, int zOrderId);
+
+extern ApiHandle
+apc_widget_get_parent_handle( Handle self);
 
 extern Point
 apc_widget_get_pos( Handle self);

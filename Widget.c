@@ -210,23 +210,38 @@ void
 Widget_update_sys_handle( Handle self, HV * profile)
 {
    enter_method;
+   Handle    owner;
+   Bool      clipOwner;
+   ApiHandle parentHandle;
    if (!(
        pexist( owner) ||
        pexist( syncPaint) ||
        pexist( clipOwner) ||
        pexist( transparent)
     )) return;
+   
+   owner        = pexist( owner)        ? pget_H( owner)        : var-> owner;
+   clipOwner    = pexist( clipOwner)    ? pget_B( clipOwner)    : my-> get_clipOwner( self);
+   parentHandle = pexist( parentHandle) ? pget_i( parentHandle) : apc_widget_get_parent_handle( self);
+
+   if ( parentHandle) {
+      if (( owner != application) && clipOwner)
+         croak("RTC008D: Cannot accept 'parentHandle' for non-application child and clip-owner widget");
+   }   
+   
    if ( !apc_widget_create( self,
-      pexist( owner)      ? pget_H( owner)      : var-> owner,
+      owner,
       pexist( syncPaint)  ? pget_B( syncPaint)  : my-> get_syncPaint( self),
-      pexist( clipOwner)  ? pget_B( clipOwner)  : my-> get_clipOwner( self),
-      pexist( transparent)? pget_B( transparent): my-> get_transparent( self)
+      clipOwner,
+      pexist( transparent) ? pget_B( transparent): my-> get_transparent( self),
+      parentHandle
    ))
      croak( "RTC0080: Cannot create widget");
    pdelete( transparent);
    pdelete( syncPaint);
    pdelete( clipOwner);
    pdelete( owner);
+   pdelete( parentHandle);
 }
 
 
@@ -1358,6 +1373,15 @@ Widget_get_handle( Handle self)
    snprintf( buf, 256, "0x%08lx", apc_widget_get_handle( self));
    return newSVpv( buf, 0);
 }
+
+SV *
+Widget_get_parent_handle( Handle self)
+{
+   char buf[ 256];
+   snprintf( buf, 256, "0x%08lx", apc_widget_get_parent_handle( self));
+   return newSVpv( buf, 0);
+}
+
 
 long int
 Widget_helpContext( Handle self, Bool set, long int helpContext)

@@ -118,6 +118,7 @@ Bool
 apc_application_destroy( Handle self)
 {
    objCheck false;
+   SetWindowLong( sys handle, GWL_USERDATA, 0);
    if ( IsWindow( sys handle))  {
       if ( guts. mouseTimer) {
           guts. mouseTimer = 0;
@@ -635,7 +636,7 @@ static Bool
 create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
               Bool taskListed, int className, DWORD style, DWORD exstyle,
               Bool usePos, Bool useSize,
-              ViewProfile * vprf)
+              ViewProfile * vprf, HWND parentHandle)
 {
    HWND ret;
    HWND old        = HANDLE;
@@ -707,11 +708,14 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
        }
        break;
     case WC_CUSTOM:
-       if ( !clipOwner || owner == application) {
+       if ( !parentHandle && ( !clipOwner || owner == application)) {
             style &= ~WS_CHILD;
             style |= WS_POPUP;
             exstyle |= WS_EX_TOOLWINDOW;
        }
+       if ( parentHandle)
+          sys parentHandle = parentView = parentHandle;
+          
        if ( !( ret = CreateWindowEx( exstyle,  "Generic", "",
              style | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0,
              parentView, nil, guts. instance, nil)))
@@ -809,7 +813,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 
   if ( reset || ( var handle == nilHandle))
      if ( !create_group( self, owner, syncPaint, false,
-           taskList, WC_FRAME, style, exstyle, usePos, useSize, &vprf)) {
+           taskList, WC_FRAME, style, exstyle, usePos, useSize, &vprf, NULL)) {
         HWND_lock( false);
         return false;
      }
@@ -1335,7 +1339,7 @@ apc_widget_map_points( Handle self, Bool toScreen, int count, Point * p)
 }
 
 Bool
-apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent)
+apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent, ApiHandle parentHandle)
 {
    Bool reset = false;
    ViewProfile vprf;
@@ -1348,9 +1352,13 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
    if ( !kind_of( self, CWidget)) apcErr( errInvObject);
    apcErrClear;
 
+   if ( parentHandle && !IsWindow(( HWND) parentHandle))
+      return false;
+
    exstyle = 0;
    if (( var handle != nilHandle) &&
          (( DHANDLE( owner) != sys owner)                 ||
+         (( HWND) parentHandle != sys parentHandle)       ||
           ( clipOwner       != is_apt( aptClipOwner))
       ))
    {
@@ -1363,7 +1371,8 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
       reset = true;
    }
    if ( reset || ( var handle == nilHandle))
-      create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM, WS_CHILD, exstyle, 1, 1, &vprf);
+      create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM, 
+         WS_CHILD, exstyle, 1, 1, &vprf, ( HWND) parentHandle);
    if ( reset)
    {
       Handle oldOwner = var owner; var owner = owner; 
@@ -1513,6 +1522,7 @@ Bool
 apc_widget_destroy( Handle self)
 {
    objCheck false;
+   SetWindowLong( HANDLE, GWL_USERDATA, 0);
    if ( sys pointer2) {
       if ( sys pointer2 == sys pointer) SetCursor( NULL); // un-use resource first
       if ( !DestroyCursor( sys pointer2)) apiErr;
@@ -1521,7 +1531,7 @@ apc_widget_destroy( Handle self)
    if ( self == lastMouseOver) lastMouseOver = nilHandle;
    free( sys timeDefs);
    if ( var handle == nilHandle) return true;
-
+   
    if ( sys className == WC_FRAME)
       guts. topWindows--;
 
@@ -1662,6 +1672,14 @@ apc_widget_get_handle( Handle self)
    objCheck 0;
    return ( ApiHandle) HANDLE;
 }
+
+ApiHandle
+apc_widget_get_parent_handle( Handle self)
+{
+   objCheck 0;
+   return ( ApiHandle) sys parentHandle;
+}
+
 
 Rect
 apc_widget_get_invalid_rect( Handle self)
@@ -2052,7 +2070,17 @@ apc_widget_set_pos( Handle self, int x, int y)
    if ( !GetWindowRect( HANDLE, &r)) apiErrRet;
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
-   y = sz. y - y - r. bottom + r. top;
+   if ( sys parentHandle) {
+      POINT ppos;
+      ppos. x = x;
+      ppos. y = dsys( application) lastSize. y - y;
+      MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&ppos, 1); 
+      GetWindowRect( sys parentHandle, &r);
+      x = ppos. x;
+      y = ppos. y;
+   } else 
+      y = sz. y - y - r. bottom + r. top;
+
    if ( !SetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
    return true;
 }
@@ -2083,6 +2111,9 @@ apc_widget_set_size( Handle self, int width, int height)
    if ( !GetWindowRect( h, &r)) apiErrRet;
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
+   if ( sys parentHandle) 
+      MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&r, 2); 
+   
    if ( sys className != WC_FRAME) {
       sys sizeLockLevel++;
       var virtualSize. x = width;

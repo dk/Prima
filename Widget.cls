@@ -178,6 +178,7 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     get_locked();
    method   int      get_mouse_state()               => apc_pointer_get_state;
    method   Handle   get_parent();
+   method   SV   *   get_parent_handle();
    static   Point    get_pointer_size( char * dummy = "");
    method   Font     get_popup_font();
    c_only   Handle   get_selectee();
