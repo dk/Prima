@@ -90,8 +90,8 @@ typedef StretchProc *PStretchProc;
 typedef union _Fixed {
    int32_t l;
    struct {
-     uint32_t f;
-     int32_t  i;
+     uint16_t f;
+     int16_t  i;
    } i;
 } Fixed;
 #pragma pack()
