@@ -141,7 +141,7 @@ Application_done( Handle self)
    free( var-> helpFile);
    free( var-> text);
    free( var-> hint);
-   var->  accelTable = var->  printer = 
+   var->  accelTable = var->  printer =
       var-> hintWidget = var-> hintTimer = nilHandle;
    var->  helpFile   = var->  text    = var->  hint      = nil;
    apc_application_destroy( self);
@@ -537,7 +537,7 @@ void
 Application_set_font( Handle self, Font font)
 {
    if ( !opt_InPaint) my-> first_that( self, font_notify, &font);
-   apc_font_pick( self, &font, & var->  font);
+   apc_font_pick( self, &font, & var-> font);
    if ( opt_InPaint) apc_gp_set_font ( self, & var->  font);
 }
 
