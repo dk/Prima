@@ -1142,7 +1142,7 @@ Image_map( Handle self, Color color)
         (( type & imBPP) < 8) ||
         (
            ( type != imRGB) &&
-           ( type != imRGB | imGrayScale)
+           ( type != (imRGB | imGrayScale))
         )
       ) {
       if ( type & imGrayScale)
