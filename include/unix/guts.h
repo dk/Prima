@@ -242,6 +242,7 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
    XColor fore, back, savedFore, savedBack;
    ColorSet colors;
    Region region;
+   Region stale_region;
    FillPattern fillPattern;
    int rop, paintRop;
    PCachedFont font;

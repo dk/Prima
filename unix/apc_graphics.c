@@ -270,7 +270,8 @@ static const int MAX_COLOR_INDEX = ciMaxId;
 static const RGBColor RGB_BLACK = { 0, 0, 0 };
 
 static RGBColor
-get_standard_color( long class, int index) {
+get_standard_color( long class, int index)
+{
    long cls = (class & wcMask) >> 16;
    if ( cls <= 0 || cls > MAX_COLOR_CLASS) {
       warn( "Illegal color class specified: %08x", class);
@@ -287,7 +288,8 @@ static PHash globalColors = nil;
 static Colormap globalColormap;
 
 static XColor*
-allocate_color( Handle self, Color color) {
+allocate_color( Handle self, Color color)
+{
    RGBColor c;
    XColor *x_color;
 
@@ -307,17 +309,16 @@ allocate_color( Handle self, Color color) {
    if ( !x_color) {
       Status r;
       x_color = malloc( sizeof( XColor));
-      if ( !x_color)
+      if ( !x_color) {
+	 /* XXX better free existing colors... */
 	 croak( "allocate_color: not enough memory");
+      }
       x_color-> red = (short)((unsigned short)c. r << 8);
       x_color-> green = (short)((unsigned short)c. g << 8);
       x_color-> blue = (short)((unsigned short)c. b << 8);
       x_color-> flags = DoRed | DoGreen | DoBlue;
       x_color-> pixel = 0;
       r = XAllocColor( DISP, globalColormap, x_color);
-      printf( "*** Setting color of %02x/%02x/%02x from %02x/%02x/%02x : %d***\n",
-	      x_color-> red, x_color-> green, x_color-> blue,
-	      (int)c.r,(int)c.g,(int)c.b, r);
       hash_store( globalColors, &c, sizeof(c), x_color);
    }
 
@@ -659,6 +660,8 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    PDrawableSysData IMG = X(image);
    PImage img = PImage( image);
 
+   /* 1) XXX - rop - correct support! */
+   /* 2) XXX - Shared Mem Image Extension! */
    if ( !create_image_cache( img))
       croak( "Error creating image cache");
    SHIFT( x, y);
@@ -893,7 +896,26 @@ apc_gp_set_back_color( Handle self, Color color)
 void
 apc_gp_set_clip_rect( Handle self, Rect clipRect)
 {
-   DOLBUG( "apc_gp_set_clip_rect()\n");
+   DEFXX;
+   Region region;
+   XRectangle r;
+
+   if ( !XX-> flags. paint)
+      return;
+   
+   SORT( clipRect. left, clipRect. right);
+   SORT( clipRect. bottom, clipRect. top);
+   r. x = clipRect. left;
+   r. y = REVERT( clipRect. top) + 1;
+   r. width = clipRect. right - clipRect. left;
+   r. height = clipRect. top - clipRect. bottom;
+   region = XCreateRegion();
+   XUnionRectWithRegion( &r, region, region);
+   if ( XX-> stale_region) {
+      XIntersectRegion( region, XX-> stale_region, region);
+   }
+   XSetRegion( DISP, XX-> gc, region);
+   XDestroyRegion( region);
 }
 
 void
