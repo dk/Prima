@@ -828,9 +828,12 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
       int r;
       // if not succeeded, to avoid recursive call use "wild guess".
       // This could be achieved if system does not have "System" font
+      // ps - Also on text-only HDCs.
       *font = guts. windowFont;
       font-> pitch = fpDefault;
-      r = font_font2gp( font, res, forceSize, dc);
+      recursiveFF++;
+      r = ( recursiveFF < 3) ? font_font2gp( font, res, forceSize, dc) : fgBitmap;
+      recursiveFF--;
       out( r);
    }
    return fgBitmap;
