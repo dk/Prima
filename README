@@ -37,6 +37,14 @@ put into LIBPATH, and prima_dll.zip is to be unpacked and primguts.dll
 and zlib.dll to be put in the same directory to Prima.dll ( which appears 
 after successful compilation in auto/Prima subdirectory ).
 
+BINARY DISTRIBUTION INSTALLATION
+================================
+
+Copy all files to the perl distribution with the hierarchy 
+structure preserved. You have to patch Prima::Config.pm 
+manually if you need to compile prima-dependent modules.
+
+
 EXAMPLES
 ========
 
