@@ -44,8 +44,6 @@
 
 /* #define PARANOID_MALLOC */
 
-#define DOLBUG debug_write
-
 #ifdef _MSC_VER
    #define BROKEN_COMPILER       1
    #define BROKEN_PERL_PLATFORM  1

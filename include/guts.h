@@ -41,6 +41,7 @@ extern Bool waitBeforeQuit;
 
 #define dPUB_ARGS    int rc = recursiveCall
 #define PUB_CHECK    rc = recursiveCall
+#define DOLBUG       if(dolbug)debug_write
 
 extern long   apcError;
 extern List   postDestroys;
