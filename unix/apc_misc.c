@@ -1177,6 +1177,7 @@ apc_beep_tone( int freq, int duration)
    XChangeKeyboardControl( DISP, KBBellPitch | KBBellDuration, &xkc);
    
    XBell( DISP, 100);
+   XFlush( DISP);
    
    xkc. bell_pitch    = xks. bell_pitch;
    xkc. bell_duration = xks. bell_duration;
