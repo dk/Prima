@@ -139,7 +139,7 @@ sub init
       name   => 'InputLine',
       origin => [ 0, $h - $eh],
       size   => [ $w - (( $self-> {style} == cs::Simple) ? 0 : DefButtonX), $eh],
-      growMode    => gm::GrowHiX,
+      growMode    => gm::GrowHiX | gm::GrowLoY,
       selectable  => 1,
       tabStop     => 1,
       current     => 1,
