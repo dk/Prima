@@ -1237,7 +1237,7 @@ MAKE
 # dist-related veriables
     my $os_suffix = $^O;
     $os_suffix =~ s/\s/_/g;
-    my $bindist_files = 'Prima.pm auto examples Prima';
+    my $bindist_files = 'Prima.pm auto examples test Prima';
     my $srcdist_files = 'Makefile.PL *.c *.cls Prima.pm examples img include os2 prigraph Prima test unix utils win32';
     my $distname = 'Prima-1.00';
 
