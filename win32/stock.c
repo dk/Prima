@@ -1022,7 +1022,7 @@ Nothing:
 // Colors section
 
 
-#define stdDisabled  COLOR_GRAYTEXT        ,  COLOR_WINDOW
+#define stdDisabled  COLOR_GRAYTEXT        ,  COLOR_BTNFACE
 #define stdHilite    COLOR_HIGHLIGHTTEXT   ,  COLOR_HIGHLIGHT
 #define std3d        COLOR_BTNHIGHLIGHT    ,  COLOR_BTNSHADOW
 
@@ -1046,8 +1046,8 @@ static int dialogScheme[] = {
    std3d
 };
 static int staticScheme[] = {
-   COLOR_WINDOWTEXT, COLOR_WINDOW,
-   COLOR_WINDOWTEXT, COLOR_WINDOW,
+   COLOR_WINDOWTEXT, COLOR_BTNFACE,
+   COLOR_WINDOWTEXT, COLOR_BTNFACE,
    stdDisabled,
    std3d
 };
@@ -1078,7 +1078,7 @@ static int windowScheme[] = {
    std3d
 };
 static int customScheme[] = {
-   COLOR_WINDOWTEXT, COLOR_WINDOW,
+   COLOR_WINDOWTEXT, COLOR_BTNFACE,
    stdHilite,
    stdDisabled,
    std3d
