@@ -896,3 +896,53 @@ sub insert_to_frame
 
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::FrameSet - standard frameset widget
+
+=head1 DESCRIPTION
+
+Provides standard means of framesets manipulations. It includes sharing of
+common workspace among several widget groups; redistribution of space, occupied
+by frames; isolation of different frames from each other.
+
+This module defines C<fra::> and C<frr::> packages for constants, used by L<arrangement>
+and L<resizeMethod> properties, respectively.
+
+Two additional auxliliary packageg are defined within this module: L<Prima::FrameSet::Frame>
+and L<Prima::FrameSet::Slider>.
+
+=head1 SYNOPSIS
+
+    use Prima::FrameSet;
+    
+    my $frame = Prima::FrameSet->create(
+	frameSizes => [qw(211 20% 123 10% * 45% *)],
+	opaqueResize => 0,
+	frameProfiles => [ 0,0, { minFrameWidth => 123, maxFrameWidth => 123 }],
+    );
+    $frame->insert_to_frame(
+	0,
+	Button =>
+	text => '~Ok',
+    );
+
+=head1 API
+
+=head2 Properties
+
+=head1 AUTHOR
+
+Vadim Belman, E<lt>voland@lflat.orgE<gt>
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>,
+F<examples/frames.pl>.
+
+=cut
