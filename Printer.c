@@ -94,12 +94,14 @@ Printer_abort_doc( Handle self)
    apc_prn_abort_doc( self);
 }
 
-Bool
-Printer_set_printer( Handle self, char * printerName)
+char *
+Printer_printer( Handle self, Bool set, char * printerName)
 {
+   if ( !set)
+      return apc_prn_get_selected( self);
    if ( is_opt( optInDraw))     my-> end_paint( self);
    if ( is_opt( optInDrawInfo)) my-> end_paint_info( self);
-   return apc_prn_select( self, printerName);
+   return apc_prn_select( self, printerName) ? "1" : "";
 }
 
 Bool Printer_begin_paint( Handle self) { return my-> begin_doc( self, ""); }

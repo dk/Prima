@@ -25,15 +25,14 @@
 #
 object Prima::Timer( Prima::Component)
 {
+   property int timeout;
    method void   done();
    method Bool   get_active();
-   method int    get_timeout()               => apc_timer_get_timeout;
    method SV *   get_handle();
    c_only void   handle_event ( PEvent event);
    method void   init( HV * profile);
    import SV *   notification_types();
    import SV *   profile_default  ();
-   method Bool   set_timeout( int timeout)   => apc_timer_set_timeout;
    method Bool   start();
    method void   stop();
    c_only void   update_sys_handle( HV * profile);

@@ -279,24 +279,17 @@ Icon_init( Handle self, HV * profile)
 
 
 SV *
-Icon_get_mask( Handle self)
-{
-   if ( var-> stage > csNormal) return nilSV;
-   return newSVpvn( var-> mask, var-> maskSize);
-}
-
-void
-Icon_set_mask( Handle self, SV * svmask)
+Icon_mask( Handle self, Bool set, SV * svmask)
 {
    STRLEN maskSize;
-   void * mask = SvPV( svmask, maskSize);
-
-   if ( var-> stage > csNormal) return;
-   if ( is_opt( optInDraw) || maskSize <= 0) return;
-
+   void * mask;
+   if ( var-> stage > csNormal) return nilSV;
+   if ( !set)
+      return newSVpvn( var-> mask, var-> maskSize);
+   mask = SvPV( svmask, maskSize);
+   if ( is_opt( optInDraw) || maskSize <= 0) return nilSV;
    memcpy( var-> mask, mask, maskSize > var-> maskSize ? var-> maskSize : maskSize);
 }
-
 
 void
 Icon_update_change( Handle self)

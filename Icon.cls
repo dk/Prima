@@ -34,13 +34,11 @@ object Prima::Icon( Prima::Image)
    unsigned char*    mask;
    int               maskLine;
    int               maskSize;
+   property SV *     mask;
    method void       init( HV * profile);
-   method SV       * get_mask();
-   method void       set_mask( SV * mask);
    method Handle     dup();
    method IconHandle split();
    method void       combine( Handle xorMask, Handle andMask);
    c_only void       create_empty( int width, int height, int type);
    c_only void       update_change();
-   #c_only void       update_mask_change();
 }
