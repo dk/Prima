@@ -1984,6 +1984,9 @@ extern Bool
 apc_widget_set_size( Handle self, int width, int height);
 
 extern Bool
+apc_widget_set_size_bounds( Handle self, Point min, Point max);
+
+extern Bool
 apc_widget_set_visible( Handle self, Bool show);
 
 extern Bool

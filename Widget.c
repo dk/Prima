@@ -165,6 +165,7 @@ Widget_init( Handle self, HV * profile)
       my-> set_sizeMin( self, set);
       prima_read_point( pget_sv( sizeMax), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
       my-> set_sizeMax( self, set);
+      apc_widget_set_size_bounds( self, var-> sizeMin, var-> sizeMax);
       prima_read_point( pget_sv( cursorSize), (int*)&set, 2, "RTC0084: Array panic on 'cursorSize'");
       my-> set_cursorSize( self, set);
       prima_read_point( pget_sv( cursorPos), (int*)&set, 2, "RTC0085: Array panic on 'cursorPos'");
@@ -2700,13 +2701,15 @@ Widget_sizeMin( Handle self, Bool set, Point min)
    if ( !set)
       return var-> sizeMin;
    var-> sizeMin = min;
-   if ( var-> stage == csFrozen) {
+   if ( var-> stage <= csFrozen) {
       Point sizeActual  = my-> get_size( self);
       Point newSize     = sizeActual;
       if ( sizeActual. x < min. x) newSize. x = min. x;
       if ( sizeActual. y < min. y) newSize. y = min. y;
       if (( newSize. x != sizeActual. x) || ( newSize. y != sizeActual. y))
          my-> set_size( self, newSize);
+      if ( var-> stage > csConstructing)
+         apc_widget_set_size_bounds( self, var-> sizeMin, var-> sizeMax);
    }
    return min;
 }
@@ -2718,13 +2721,15 @@ Widget_sizeMax( Handle self, Bool set, Point max)
    if ( !set)
       return var-> sizeMax;
    var-> sizeMax = max;
-   if ( var-> stage == csFrozen) {
+   if ( var-> stage <= csFrozen) {
       Point sizeActual  = my-> get_size( self);
       Point newSize     = sizeActual;
       if ( sizeActual. x > max. x) newSize. x = max. x;
       if ( sizeActual. y > max. y) newSize. y = max. y;
       if (( newSize. x != sizeActual. x) || ( newSize. y !=  sizeActual. y))
           my-> set_size( self, newSize);
+      if ( var-> stage > csConstructing)
+         apc_widget_set_size_bounds( self, var-> sizeMin, var-> sizeMax);
    }
    return max;
 }

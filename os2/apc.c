@@ -1652,6 +1652,11 @@ apc_widget_set_size( Handle self, int width, int height)
    return true;
 }
 
+Bool
+apc_widget_set_size_bounds( Handle self, Point min, Point max)
+{
+}   
+
 /* XXX */
 Bool
 apc_widget_set_shape( Handle self, Handle mask)
