@@ -480,6 +480,7 @@ Window_modalHorizon( Handle self, Bool set, Bool modalHorizon)
    if ( modalHorizon && my-> get_clipOwner( self)) return false;
    my-> cancel_children( self);
    opt_assign( optModalHorizon, modalHorizon);
+   return modalHorizon;
 }
 
 int
@@ -608,6 +609,7 @@ Window_menuItems( Handle self, Bool set, SV * menuItems)
       }
    } else
      CMenu( var-> menu)-> set_items( var-> menu, menuItems);
+   return menuItems;
 }
 
 Color

@@ -1280,6 +1280,7 @@ Widget_growMode( Handle self, Bool set, int growMode)
    if ( var-> growMode & gmXCenter) x = true;
    if ( var-> growMode & gmYCenter) y = true;
    if ( x || y) my-> set_centered( self, x, y);
+   return var-> growMode;
 }
 
 SV *
@@ -1687,6 +1688,7 @@ Widget_accelTable( Handle self, Bool set, Handle accelTable)
       my-> set_accelItems( self, CAbstractMenu( accelTable)-> get_items( accelTable, ""));
    else
       var-> accelTable = accelTable;
+   return accelTable;
 }
 
 Color
@@ -1817,6 +1819,7 @@ Widget_current( Handle self, Bool set, Bool current)
    else
       if ( o-> currentWidget == self)
          o-> self-> set_currentWidget( var-> owner, nilHandle);
+   return current;
 }
 
 Handle
@@ -1904,6 +1907,7 @@ Widget_focused( Handle self, Bool set, Bool focused)
    } else
       if ( var-> stage == csNormal && my-> get_selected( self))
          apc_widget_set_focused( nilHandle);
+   return focused;
 }
 
 char *
@@ -2135,6 +2139,7 @@ Widget_pointerPos( Handle self, Bool set, Point p)
       return my-> screen_to_client( self, apc_pointer_get_pos( self));
    p = my-> client_to_screen( self, p);
    apc_pointer_set_pos( self, p. x, p. y);
+   return p;
 }
 
 Bool
@@ -2192,6 +2197,7 @@ Widget_popupItems( Handle self, Bool set, SV * popupItems)
    }
    else
       CAbstractMenu( var-> popupMenu)-> set_items( var-> popupMenu, popupItems);
+   return popupItems;
 }
 
 

@@ -293,6 +293,7 @@ Image_resolution( Handle self, Bool set, Point resolution)
    if ( resolution. x <= 0 || resolution. y <= 0)
       resolution = apc_gp_get_resolution( application);
    var-> resolution = resolution;
+   return resolution;
 }
 
 Point
