@@ -174,7 +174,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
    if ( !GetIconInfo( sys pointer, &ii))
       apiErrRet;
    i-> self-> create_empty( icon, guts. pointerSize. x, guts. pointerSize. y, 1);
-   dc = dc_alloc();
+   if (!( dc = dc_alloc())) return false; 
    if ( ii. hbmColor) {
       HDC ops = dsys( icon) ps;
       HDC obm = dsys( icon) bm;

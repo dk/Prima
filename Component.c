@@ -310,8 +310,11 @@ Constructing:
          if ( list_first_that( var-> evQueue, find_dup_msg, &event-> cmd) >= 0)
 	      break;
       default:
-	      list_add( var-> evQueue, ( Handle) memcpy( malloc( sizeof( Event)),
-				event, sizeof( Event)));
+         {
+            void * ev = malloc( sizeof( Event));
+            if ( ev)
+               list_add( var-> evQueue, ( Handle) memcpy( ev, event, sizeof( Event)));
+         }
       }
    } else if (( var-> stage < csFinalizing) && ( event-> cmd & ctNoInhibit))
       goto ForceProcess;
@@ -338,6 +341,7 @@ Component_push_event( Handle self)
       return;
    if ( var-> evPtr == var-> evLimit) {
       char * newStack = allocs( 16 + var-> evLimit);
+      if ( !newStack) croak("Not enough memory");
       if ( var-> evStack) {
          memcpy( newStack, var-> evStack, var-> evLimit);
          free( var-> evStack);
@@ -473,7 +477,7 @@ Component_first_that_component( Handle self, void * actionProc, void * params)
       return nilHandle;
    count = var-> components-> count;
    if ( count == 0) return nilHandle;
-   list = allocn( Handle, count);
+   if ( !( list = allocn( Handle, count))) return nilHandle;
    memcpy( list, var-> components-> items, sizeof( Handle) * count);
 
    for ( i = 0; i < count; i++)
@@ -494,7 +498,7 @@ Component_post_message( Handle self, SV * info1, SV * info2)
    PPostMsg p;
    Event ev = { cmPost};
    if ( var-> stage > csNormal) return;
-   p = alloc1( PostMsg);
+   if (!( p = alloc1( PostMsg))) return;
    p-> info1  = newSVsv( info1);
    p-> info2  = newSVsv( info2);
    p-> h      = self;
@@ -600,6 +604,8 @@ XS( Component_notify_FROMPERL)
 
    /* filling calling sequence */
    sequence = ( Handle *) malloc( seqCount * 2 * sizeof( void *));
+   if ( !sequence) XSRETURN_IV(1);
+
    i = 0;
    if ( privMethod && (( rnt & ntCustomFirst) == 0)) {
       sequence[ i++] = self;
@@ -622,6 +628,11 @@ XS( Component_notify_FROMPERL)
 
    /* copying arguments passed from perl */
    argsv = ( SV **) malloc( argsc * sizeof( SV *));
+   if ( !argsv) {
+      free( sequence);
+      XSRETURN_IV(1);
+   }
+
    for ( i = 0; i < argsc; i++) argsv[ i] = ST( i + 1);
    argsv[ 0] = ST( 0);
 

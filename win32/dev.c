@@ -168,7 +168,7 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
 }
 
 
-
+/*
 void
 bm_put_zs( HBITMAP hbm, int x, int y, int z)
 {
@@ -189,6 +189,7 @@ bm_put_zs( HBITMAP hbm, int x, int y, int z)
    DeleteDC( xdc);
    dc_free();
 }
+*/
 
 
 
@@ -329,7 +330,9 @@ image_query_bits( Handle self, Bool forceNewImage)
 
    if ( forceNewImage) {
       ops = sys ps;
-      if ( !ops) sys ps = dc_alloc();
+      if ( !ops) {
+         if ( !( sys ps = dc_alloc())) return;
+      }
    }
 
    if ( !GetObject( sys bm, sizeof( BITMAP), ( LPSTR) &bitmap)) {
@@ -493,12 +496,17 @@ apc_dbm_create( Handle self, Bool monochrome)
    if ( monochrome)
       sys bm = CreateBitmap( var w, var h, 1, 1, nil);
    else {
+      HDC dc;
+      if (!( dc = dc_alloc())) {
+         DeleteDC( sys ps);
+         return false;
+      }
       if ( sys pal = palette_create( self)) {
          sys stockPalette = SelectPalette( sys ps, sys pal, 1);
          RealizePalette( sys ps);
          palc = 1;
       }
-      sys bm = CreateCompatibleBitmap( dc_alloc(), var w, var h);
+      sys bm = CreateCompatibleBitmap( dc, var w, var h);
       if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
          apt_clear( aptCompatiblePS);
    }
@@ -537,7 +545,10 @@ dbm_recreate( Handle self)
       apiErr;
       return;
    }
-   dca = dc_alloc();
+   if (!( dca = dc_alloc())) {
+      DeleteDC( dc);
+      return;
+   }
 
    if ( sys pal) {
       p = SelectPalette( dc, sys pal, 1);
@@ -626,7 +637,10 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
       );
    }
 
-   dc = dc_alloc();
+   if (!( dc = dc_alloc())) {
+      if (( Handle) i != img) Object_destroy(( Handle) i);
+      return NULL;
+   }
    image_get_binfo(( Handle)i, &bi);
 
   // if ( 0) {
@@ -644,24 +658,34 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
 // Moronious and "macaronious" code for Win95 -
 // since CreateIconIndirect gives results so weird,
 // we use following sequence.
-	  Byte * mask;
-	  if ( !notAnIcon) {
-             int mSize = i-> maskSize / i-> h;
-             Byte *data = ( Byte*)malloc( mSize), *b1 = i-> mask, *b2 = i-> mask + mSize*(i-> h - 1);
+	 Byte * mask;
+         if ( !notAnIcon) {
+            int mSize = i-> maskSize / i-> h;
+            Byte *data = ( Byte*)malloc( mSize), *b1 = i-> mask, *b2 = i-> mask + mSize*(i-> h - 1);
+            if ( !data) {
+               dc_free();
+               if (( Handle) i != img) Object_destroy(( Handle) i);
+               return nil;
+            }
 
        // reverting bits vertically - it's not HBITMAP, just bare bits
-             while ( b1 < b2) {
-                memcpy( data, b1,   mSize);
-                memcpy( b1,   b2,   mSize);
-                memcpy( b2,   data, mSize);
-                b1 += mSize;
-                b2 -= mSize;
-             }
+            while ( b1 < b2) {
+               memcpy( data, b1,   mSize);
+               memcpy( b1,   b2,   mSize);
+               memcpy( b2,   data, mSize);
+               b1 += mSize;
+               b2 -= mSize;
+            }
             free( data);
             mask = i-> mask;
          } else {
             int sz = (( i-> w + 31) / 32) * 4 * i-> h; 
             mask = ( Byte*)malloc( sz);
+            if ( !mask) {
+                dc_free();
+                if (( Handle) i != img) Object_destroy(( Handle) i);
+                return nil;
+            }
             memset( mask, 0x0, sz);
          }   
 // creating icon by old 3.1 method - we need that for correct AND-mask,
@@ -673,6 +697,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
             mask, i-> data);
       if ( notAnIcon) free( mask);
       if ( !r) {
+         dc_free();
          if (( Handle) i != img) Object_destroy(( Handle) i);
          apiErrRet;
       }
@@ -725,7 +750,7 @@ apc_prn_create( Handle self) {
 
 static void ppi_create( LPPRINTER_INFO_2 dest, LPPRINTER_INFO_2 source)
 {
-#define SZCPY(field) if ( source-> field) strcpy( dest-> field = ( char*)malloc( strlen( source-> field) + 1), source-> field)
+#define SZCPY(field) dest-> field = duplicate_string( source-> field)
    memcpy( dest, source, sizeof( PRINTER_INFO_2));
    SZCPY( pPrinterName);
    SZCPY( pServerName);
@@ -741,7 +766,8 @@ static void ppi_create( LPPRINTER_INFO_2 dest, LPPRINTER_INFO_2 source)
    if ( source-> pDevMode)
    {
       int sz = source-> pDevMode-> dmSize + source-> pDevMode-> dmDriverExtra;
-      memcpy( dest-> pDevMode = ( LPDEVMODE) malloc( sz), source-> pDevMode, sz);
+      dest-> pDevMode = ( LPDEVMODE) malloc( sz);
+      if ( dest-> pDevMode) memcpy( dest-> pDevMode, source-> pDevMode, sz);
    }
 }
 
@@ -786,6 +812,8 @@ prn_query( Handle self, const char * printer, LPPRINTER_INFO_2 info)
          2, nil, 0, &needed, &returned);
 
    ppi = ( LPPRINTER_INFO_2) malloc( needed + 4);
+   if ( !ppi) return 0;
+
    if ( !EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil,
          2, ( LPBYTE) ppi, needed, &needed, &returned)) {
       apiErr;
@@ -838,6 +866,8 @@ apc_prn_enumerate( Handle self, int * count)
          nil, 0, &needed, &returned);
 
    ppi = ( LPPRINTER_INFO_2) malloc( needed + 4);
+   if ( !ppi) return nil;
+
    if ( !EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil, 2,
          ( LPBYTE) ppi, needed, &needed, &returned)) {
       apiErr;
@@ -854,6 +884,11 @@ apc_prn_enumerate( Handle self, int * count)
    printer = apc_prn_get_default( self);
 
    list = ( PPrinterInfo) malloc( returned * sizeof( PrinterInfo));
+   if ( !list) {
+      free( ppi);
+      return nil;
+   }
+
    for ( i = 0; i < returned; i++)
    {
       strncpy( list[ i]. name,   ppi[ i]. pPrinterName, 255);   list[ i]. name[ 255]   = 0;
@@ -959,6 +994,10 @@ apc_prn_setup( Handle self)
       return false;
    }
    dm  = ( DEVMODE * ) malloc( sz);
+   if ( !dm) {
+      ClosePrinter( lph);
+      return false;
+   }
 
    sys s. prn. ppi. pDevMode-> dmFields = -1;
    ret = DocumentProperties( hwnd_to_view( who) ? who : nil, lph, sys s. prn. ppi. pPrinterName,

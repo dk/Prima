@@ -182,7 +182,11 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
          warn("RTC0032: menu build error: extra declaration");
          count = 5;
       }
-      r = alloc1z( MenuItemReg);
+      if ( !( r = alloc1z( MenuItemReg))) {
+         warn( "Not enough memory");
+         my-> dispose_menu( self, m);
+         return nil;
+      }
       r-> key = kbNoKey;
       /* log_write("%sNo: %d, count: %d", buf, i, count); */
 
@@ -432,11 +436,14 @@ new_av(  PMenuItemReg m, int level)
          {
             int shift = ( m-> checked ? 1 : 0) + ( m-> disabled ? 1 : 0);
             char * varName = allocs( strlen( m-> variable) + 1 + shift);
-            strcpy( &varName[ shift], m-> variable);
-            if ( m-> checked)  varName[ --shift] = '*';
-            if ( m-> disabled) varName[ --shift] = '-';
-            av_push( loc, newSVpv( varName, 0));
-            free( varName);
+            if ( varName) {
+               strcpy( &varName[ shift], m-> variable);
+               if ( m-> checked)  varName[ --shift] = '*';
+               if ( m-> disabled) varName[ --shift] = '-';
+               av_push( loc, newSVpv( varName, 0));
+               free( varName);
+            } else
+               av_push( loc, newSVpv( "", 0));
          }
 
          if ( m-> bitmap) {

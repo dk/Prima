@@ -44,6 +44,10 @@ extern "C" {
    Byte * sData = var->data;                                       \
    int  sDataSize = var->dataSize, sLineSize = var->lineSize;       \
    Byte * n = allocb((( var->w * 8 + 31) / 32) * 4 * var->h);    \
+   if ( !n) {                                                      \
+      croak("Not enough memory:%d bytes", (( var->w * 8 + 31) / 32) * 4 * var->h); \
+      return;                                                    \
+   }                                                              \
    ic_##from##_graybyte_ictNone(self, n, dstPal, imByte);         \
    var->data = n;                                                  \
    var->type = imByte;                                             \
@@ -62,6 +66,10 @@ extern "C" {
    Byte * sData = var->data;                                       \
    int  sDataSize = var->dataSize, sLineSize = var->lineSize;       \
    Byte * n = allocb((( var->w * 8 + 31) / 32) * 4 * var->h);    \
+   if ( !n) {                                                      \
+      croak("Not enough memory:%d bytes", (( var->w * 8 + 31) / 32) * 4 * var->h); \
+      return;                                                    \
+   }                                                              \
    ic_##from##_Byte(self, n, dstPal, imByte);         \
    var->data = n;                                                  \
    var->type = imByte;                                             \

@@ -220,7 +220,7 @@ static const char * NETBIOS_username( void)
     }
     free( buf); buf = nil;
     rc = Net32WkstaGetInfo(NULL, 1, NULL, 0, &avail);
-    buf = ( char*) malloc( avail);
+    if ( !( buf = ( char*) malloc( avail))) return NULL;
     rc = Net32WkstaGetInfo( NULL, 1, buf, avail, &avail);
     username = *( char**) ( buf+14);
     return ( rc==0 && username[ 0] ? username : NULL);

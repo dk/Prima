@@ -572,6 +572,7 @@ Bool
 apc_watch_filehandle( int no, void *sub, void *glob)
 {
    PFileList f = malloc( sizeof( FileList));
+   if ( !f) return false;
    f->no = no;
    f->sub = sub;
    f->glob = glob;

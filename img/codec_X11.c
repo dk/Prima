@@ -182,7 +182,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       xc++;
    }   
    xc = malloc( strlen( name + 1));
-   strcpy( xc, name);
+   if ( xc) strcpy( xc, name);
    name = xc;
    
    while (*xc) {

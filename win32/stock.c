@@ -67,6 +67,8 @@ stylus_alloc( PStylus data)
          stylus_clean();
 
       ret = ( PDCStylus) malloc( sizeof( DCStylus));
+      if ( !ret) return nil;
+
       memcpy( &ret-> s, data, sizeof( Stylus));
       ret-> refcnt = 0;
       p = ret-> s. pen;
@@ -219,6 +221,8 @@ patres_fetch( unsigned char * pattern, int len)
       return r;
 
    r = ( PPatResource) malloc( sizeof( PatResource) + sizeof( DWORD) * len);
+   if ( !r) return &hPatHollow;
+
    r-> dotsCount = len;
    r-> dotsPtr   = r-> dots;
    for ( i = 0; i < len; i++) {
@@ -482,6 +486,8 @@ font_alloc( Font * data, Point * resolution)
          font_clean();
 
       ret = ( PDCFont) malloc( sizeof( DCFont));
+      if ( !ret) return nil;
+
       memcpy( f = &ret-> font, data, sizeof( Font));
       ret-> refcnt = 0;
       font_font2logfont( f, &logfont);
@@ -541,7 +547,10 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
 {
    TEXTMETRIC tm;
    HDC dc = dc_alloc();
-   HFONT hf = SelectObject( dc, CreateFontIndirect( lf));
+   HFONT hf;
+
+   if ( !dc) return;
+   hf = SelectObject( dc, CreateFontIndirect( lf));
 
    GetTextMetrics( dc, &tm);
    DeleteObject( SelectObject( dc, hf));
@@ -782,6 +791,8 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
    HDC  dc            = theDC ? theDC : dc_alloc();
    Bool useNameSubplacing = false;
 
+   if ( !dc) return fgBitmap;
+
    es. count          = es. vecId = 0;
    es. resValue       = es. heiValue = es. widValue = INT_MAX;
    es. useWidth       = font-> width != 0;
@@ -976,6 +987,7 @@ int CALLBACK
 fep2( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PList lst)
 {
    PFont fm = ( PFont) malloc( sizeof( Font));
+   if ( !fm) return 1;
    font_textmetric2font(( TEXTMETRIC *) t, fm, false);
    fm-> direction = fm-> resolution = 0;
    strncpy( fm-> name,     e-> elfLogFont. lfFaceName, LF_FACESIZE);
@@ -995,8 +1007,9 @@ apc_fonts( Handle self, const char* facename, int * retCount)
    apcErrClear;
 
    *retCount = 0;
-   if ( self == nilHandle || self == application)
-      dc = dc_alloc();
+   if ( self == nilHandle || self == application) {
+      if ( !( dc = dc_alloc())) return nil;
+   }
    else if ( kind_of( self, CPrinter)) {
       if ( !is_opt( optInDraw) && !is_opt( optInDrawInfo)) {
          hasdc = 1;
@@ -1015,8 +1028,10 @@ apc_fonts( Handle self, const char* facename, int * retCount)
       CPrinter( self)-> end_paint_info( self);
 
    if ( lst. count == 0) goto Nothing;
+   fmtx = ( PFont) malloc( lst. count * sizeof( Font));
+   if ( !fmtx) return nil;
+
    *retCount = lst. count;
-   fmtx = ( PFont) malloc( *retCount * sizeof( Font));
    for ( i = 0; i < lst. count; i++)
       memcpy( &fmtx[ i], ( void *) lst. items[ i], sizeof( Font));
    list_delete_all( &lst, true);
@@ -1322,6 +1337,8 @@ hwnd_enter_paint( Handle self)
    }
 
    if ( sys psd == nil) sys psd = ( PPaintSaveData) malloc( sizeof( PaintSaveData));
+   if ( sys psd == nil) return;
+
    apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
    apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
    apc_gp_set_line_width( self, sys lineWidth);
@@ -1418,6 +1435,8 @@ mod_select( int mod)
    ModData * ks;
 
    ks = ( ModData*) malloc( sizeof( ModData));
+   if ( !ks) return nil;
+
    GetKeyboardState( ks-> ks);
    ks-> kss[ 0]   = ks-> ks[ VK_MENU];
    ks-> kss[ 1]   = ks-> ks[ VK_CONTROL];
@@ -1435,6 +1454,8 @@ void
 mod_free( BYTE * modState)
 {
    ModData * ks = ( ModData*) modState;
+   if ( !ks) return;
+
    ks-> ks[ VK_MENU   ] = ks-> kss[ 0];
    ks-> ks[ VK_CONTROL] = ks-> kss[ 1];
    ks-> ks[ VK_SHIFT  ] = ks-> kss[ 2];
@@ -1538,7 +1559,17 @@ palette_change( Handle self)
 
    xlp. palNumEntries = l. sz;
    p = ( PRGBColor) malloc( sizeof( RGBColor) * l. sz);
+   if ( !p) {
+      list_destroy( &l.l);
+      return false;
+   }
+   
    d = ( PRGBColor) malloc( sizeof( RGBColor) * nColors);
+   if ( !d) {
+      free( p);
+      list_destroy( &l.l);
+      return false;
+   }
 
    l. p = p;
    list_first_that( &l.l, pal_collect, &l);
@@ -1662,6 +1693,8 @@ region_create( Handle mask)
    idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
 
    rdata = ( RGNDATA*) malloc( sizeof( RGNDATAHEADER) + size * sizeof( RECT));
+   if ( !rdata) return NULL;
+
    rdata-> rdh. nCount = 0;
    current = ( RECT * ) &( rdata-> Buffer);
    current--;
@@ -1678,7 +1711,12 @@ region_create( Handle mask)
             else {
                set = 1;
                if ( rdata-> rdh. nCount >= size) {
-                  rdata = ( RGNDATA *) realloc( rdata, sizeof( RGNDATAHEADER) + ( size *= 3) * sizeof( RECT));
+                  void * xrdata = ( RGNDATA *) realloc( rdata, sizeof( RGNDATAHEADER) + ( size *= 3) * sizeof( RECT));
+                  if ( !xrdata) {
+                     free( rdata); 
+                     return NULL;
+                  }
+                  rdata = xrdata;
                   current = ( RECT * ) &( rdata-> Buffer);
                   current += rdata-> rdh. nCount - 1;
                }

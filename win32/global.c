@@ -154,7 +154,7 @@ window_subsystem_init()
       FONTSTRUCSIZE2   = (char *)(&(f. name)) - (char *)(&f. style);
    }
 
-   dc = dc_alloc();
+   if (!( dc = dc_alloc())) return false; 
    guts. displayResolution. x = GetDeviceCaps( dc, LOGPIXELSX);
    guts. displayResolution. y = GetDeviceCaps( dc, LOGPIXELSY);
    {
@@ -244,19 +244,21 @@ window_subsystem_init()
          }
       }
 
-      GetKeyboardLayoutList( size, kl);
-      for ( i = 0; i < size; i++) {
-         ActivateKeyboardLayout( kl[ i], 0);
-         if ( !GetKeyboardLayoutName( buf)) apiErr;
-         for ( j = 0; j < ( sizeof( keyLayouts) / sizeof( char*)); j++) {
-            if ( strncmp( buf + 4, keyLayouts[ j], 4) == 0) {
-               guts. keyLayout = kl[ i];
-               goto found_2;
+      if ( kl) {
+         GetKeyboardLayoutList( size, kl);
+         for ( i = 0; i < size; i++) {
+            ActivateKeyboardLayout( kl[ i], 0);
+            if ( !GetKeyboardLayoutName( buf)) apiErr;
+            for ( j = 0; j < ( sizeof( keyLayouts) / sizeof( char*)); j++) {
+               if ( strncmp( buf + 4, keyLayouts[ j], 4) == 0) {
+                  guts. keyLayout = kl[ i];
+                  goto found_2;
+               }
             }
          }
+      found_2:;
+         ActivateKeyboardLayout( current, 0);
       }
-   found_2:;
-      ActivateKeyboardLayout( current, 0);
    found_1:;
       free( kl);
    }
@@ -1265,19 +1267,23 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
             int oldBPP = guts. displayBMInfo. bmiHeader. biBitCount;
             HBITMAP hbm;
 
-            guts. displayBMInfo. bmiHeader. biBitCount = 0;
-            guts. displayBMInfo. bmiHeader. biSize = sizeof( BITMAPINFO);
-            if ( !( hbm = GetCurrentObject( dc, OBJ_BITMAP))) apiErr;
+            if ( dc) {
+               guts. displayBMInfo. bmiHeader. biBitCount = 0;
+               guts. displayBMInfo. bmiHeader. biSize = sizeof( BITMAPINFO);
+               if ( !( hbm = GetCurrentObject( dc, OBJ_BITMAP))) apiErr;
 
-            if ( !GetDIBits( dc, hbm, 0, 0, NULL, &guts. displayBMInfo, DIB_PAL_COLORS)) {
-               guts. displayBMInfo. bmiHeader. biBitCount = ( int) mp1;
-               guts. displayBMInfo. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
-            };
+               if ( !GetDIBits( dc, hbm, 0, 0, NULL, &guts. displayBMInfo, DIB_PAL_COLORS)) {
+                  guts. displayBMInfo. bmiHeader. biBitCount = ( int) mp1;
+                  guts. displayBMInfo. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
+               };
+            }
             dsys( application) lastSize. x = ( short) LOWORD( mp2);
             dsys( application) lastSize. y = ( short) HIWORD( mp2);
-            if ( oldBPP != guts. displayBMInfo. bmiHeader. biBitCount)
-               hash_first_that( imageMan, kill_img_cache, (void*)1, nil, nil);
-            dc_free();
+            if ( dc) {
+               if ( oldBPP != guts. displayBMInfo. bmiHeader. biBitCount)
+                  hash_first_that( imageMan, kill_img_cache, (void*)1, nil, nil);
+               dc_free();
+            }
          }
          break;
       case WM_FONTCHANGE:

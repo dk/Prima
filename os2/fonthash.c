@@ -237,7 +237,7 @@ void *
 create_fontid_hash( void)
 {
    PFontIdHash hash = malloc( sizeof( FontIdHash));
-   memset( hash, 0, sizeof( FontIdHash));
+   if ( hash) memset( hash, 0, sizeof( FontIdHash));
    return hash;
 }
 

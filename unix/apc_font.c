@@ -380,8 +380,8 @@ prima_init_font_subsystem( void)
 		     }
 		  }
 		  *pat++ = '\0';
-		  info[j]. vecname = malloc( pat - pattern);
-		  strcpy( info[j]. vecname, pattern);
+		  if (( info[j]. vecname = malloc( pat - pattern)))
+  		     strcpy( info[j]. vecname, pattern);
 	       } else
 		  info[j]. font. vector = false;
 	       info[j]. flags. vector = true;
@@ -1110,6 +1110,8 @@ AGAIN:
    
    /* stage 1 - browse through names and validate records */
    table = malloc( count * sizeof( PFontInfo));
+   if ( !table && count > 0) return nil;
+   
    if ( facename == nil) {
       PHash hash = hash_create();
       for ( i = 0; i < count; i++) {
@@ -1134,6 +1136,11 @@ AGAIN:
    }   
 
    fmtx = malloc( n_table * sizeof( Font)); 
+   if ( !fmtx && n_table > 0) {
+      *retCount = 0;
+      free( table);
+      return nil;
+   }
    
    defaultFont. width  = 0;
    defaultFont. height = 10;

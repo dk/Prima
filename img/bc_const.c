@@ -142,6 +142,7 @@ cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destCol
       int colors    = srcColors;
 
       PRGBColor buf = allocn( RGBColor, srcColors);
+      if (!buf) return;
       memcpy( buf, source, srcColors * sizeof( RGBColor));
       while (1)
       {

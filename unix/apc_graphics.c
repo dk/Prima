@@ -108,11 +108,12 @@ prima_get_gc( PDrawableSysData selfxx)
    if (XX->gcl)
       TAILQ_REMOVE(gc_pool, XX->gcl, gc_link);
    if (!XX->gcl) {
-      XX->gcl = alloc1z( GCList);
-      XX->gcl->gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : guts. root, 0, &gcv);
+      XX-> gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : guts. root, 0, &gcv);
       XCHECKPOINT;
+      if (( XX->gcl = alloc1z( GCList))) 
+         XX->gcl->gc = XX-> gc;
    }
-   XX->gc = XX->gcl->gc;
+   if ( XX-> gcl) XX->gc = XX->gcl->gc;
 }
 
 void
@@ -122,13 +123,12 @@ prima_release_gc( PDrawableSysData selfxx)
    struct gc_head *gc_pool;
 
    if ( XX-> gc) {
-      if ( XX-> gcl == nil) {
+      if ( XX-> gcl == nil)
          warn( "UAG_011: internal error");
-         return;
-      }   
       bitmap = XT_IS_BITMAP(XX) ? true : false;
       gc_pool = bitmap ? &guts.bitmap_gc_pool : &guts.screen_gc_pool;
-      TAILQ_INSERT_HEAD(gc_pool, XX->gcl, gc_link);
+      if ( XX-> gcl) 
+         TAILQ_INSERT_HEAD(gc_pool, XX->gcl, gc_link);
       XX->gcl = nil;
       XX->gc = nil;
    } else {
@@ -187,8 +187,8 @@ Unbuffered:
    if ( XX-> dashes) {
       XSetDashes( DISP, XX-> gc, 0, XX-> dashes, XX-> ndashes);
       XX-> paint_ndashes = XX-> ndashes;
-      XX-> paint_dashes = malloc( XX-> ndashes);
-      memcpy( XX-> paint_dashes, XX-> dashes, XX-> ndashes);
+      if (( XX-> paint_dashes = malloc( XX-> ndashes)))
+         memcpy( XX-> paint_dashes, XX-> dashes, XX-> ndashes);
       XX-> line_style = ( XX-> paint_rop2 == ropCopyPut) ? LineDoubleDash : LineOnOffDash;
    } else {
       XX-> paint_dashes = malloc(1);
@@ -1048,7 +1048,8 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
       : color_to_pixel( self, color, s.depth);
    
    s. first = s. clip. top;
-   s. lists = malloc(( s. clip. bottom - s. clip. top + 1) * sizeof( void*));
+   if ( !( s. lists = malloc(( s. clip. bottom - s. clip. top + 1) * sizeof( void*)))) 
+      return false;
    bzero( s. lists, ( s. clip. bottom - s. clip. top + 1) * sizeof( void*));
 
    prima_make_brush( XX, mix++);
@@ -1691,6 +1692,8 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
    XCharStruct *cs;
    int k, l;
    int default_char = fs-> default_char;
+   if ( !abc) return nil;
+   
    if ( default_char < fs-> min_char_or_byte2 || default_char > fs-> max_char_or_byte2)
         default_char = fs-> min_char_or_byte2;
    for ( k = firstChar, l = 0; k <= lastChar; k++, l++) {
@@ -1766,7 +1769,10 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
    int n;
    if ( XF_IN_PAINT(XX)) {
       n = XX-> paint_ndashes;
-      memcpy( dashes, XX-> paint_dashes, n);
+      if ( XX-> paint_dashes) 
+         memcpy( dashes, XX-> paint_dashes, n);
+      else
+         bzero( dashes, n);
    } else {
       n = XX-> ndashes;
       if ( n < 0) {
@@ -1840,6 +1846,8 @@ apc_gp_get_text_box( Handle self, const char* text, int len)
    Point * pt = ( Point *) malloc( sizeof( Point) * 5);
    int x;
    Point ovx;
+
+   if ( !pt) return nil;
 
    if ( !XX-> font) 
       apc_gp_set_font( self, &PDrawable( self)-> font);
@@ -2035,8 +2043,8 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
       }
       XX-> line_style = gcv. line_style;
       free(XX->paint_dashes);
-      XX-> paint_dashes = malloc( len);
-      memcpy( XX-> paint_dashes, pattern, len);
+      if (( XX-> paint_dashes = malloc( len)))
+         memcpy( XX-> paint_dashes, pattern, len);
       XX-> paint_ndashes = len;
    } else {
       free( XX-> dashes);

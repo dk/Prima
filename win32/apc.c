@@ -175,7 +175,7 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 
 
    apcErrClear;
-   dc  = dc_alloc();
+   if (!( dc  = dc_alloc())) return false;
    lpg. palNumEntries = GetSystemPaletteEntries( dc, 0, 256, lpg. palPalEntry);
    lpg. palVersion = 0x300;
 
@@ -524,6 +524,7 @@ apc_component_create( Handle self)
 
    if ( d) return false;
    d = ( PDrawableData) malloc( sizeof( DrawableData));
+   if ( !d) return false;
    memset( d, 0, sizeof( DrawableData));
    c-> sysData = d;
    return true;
@@ -587,6 +588,7 @@ static void
 get_view_ex( Handle self, PViewProfile p)
 {
   int i;
+  if ( !p) return;
   p-> capture   = apc_widget_is_captured( self);
   for ( i = 0; i <= ciMaxId; i++) p-> colors[ i] = apc_widget_get_color( self, i);
   p-> pos       = apc_widget_get_pos( self);
@@ -1015,6 +1017,10 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
        return nil;
     }
     mwd = ( PMenuWndData) malloc( sizeof( MenuWndData));
+    if ( !mwd) {
+       DestroyMenu( m);
+       return nil;  
+    }
     mwd-> menu = menu;
     first      = i;
     hash_store( menuMan, &m, sizeof( void*), mwd);
@@ -1820,7 +1826,7 @@ apc_widget_get_shape( Handle self, Handle mask)
 
    CImage( mask)-> create_empty( mask, sys extraBounds. x, sys extraBounds. y, imBW);
 
-   dc = dc_compat_alloc(0);
+   if (!( dc = dc_compat_alloc(0))) return true;
    if ( !( bm = CreateBitmap( PImage( mask)-> w, PImage( mask)-> h, 1, 1, nil))) {
       dc_compat_free();
       return true;
@@ -2716,12 +2722,14 @@ apc_message( Handle self, PEvent ev, Bool post)
              if ( post) {
                 KeyPacket * kp;
                 kp = ( KeyPacket *) malloc( sizeof( KeyPacket));
-                kp-> mp1 = mp1;
-                kp-> mp2 = mp2;
-                kp-> msg = msg;
-                kp-> wnd = ( HWND) var handle;
-                kp-> mod = ev-> pos. mod;
-                PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
+                if ( kp) {
+                   kp-> mp1 = mp1;
+                   kp-> mp2 = mp2;
+                   kp-> msg = msg;
+                   kp-> wnd = ( HWND) var handle;
+                   kp-> mod = ev-> pos. mod;
+                   PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
+                }
              } else {
                 BYTE * mod = nil;
                 if (( GetKeyState( VK_MENU) < 0) ^ (( ev-> pos. mod & kmAlt) != 0))
@@ -2804,12 +2812,14 @@ apc_message( Handle self, PEvent ev, Bool post)
              if ( post) {
                 KeyPacket * kp;
                 kp = ( KeyPacket *) malloc( sizeof( KeyPacket));
-                kp-> mp1 = mp1;
-                kp-> mp2 = mp2;
-                kp-> msg = msg;
-                kp-> wnd = HANDLE;
-                kp-> mod = ev-> key. mod;
-                PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
+                if ( kp) {
+                   kp-> mp1 = mp1;
+                   kp-> mp2 = mp2;
+                   kp-> msg = msg;
+                   kp-> wnd = HANDLE;
+                   kp-> mod = ev-> key. mod;
+                   PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
+                }
              } else {
                 BYTE * mod = mod_select( ev-> key. mod);
                 SendMessage( HANDLE, msg, mp1, mp2);
@@ -2881,7 +2891,7 @@ apc_system_action( const char * params)
          }
       } else if (strncmp( params, "win32.WNetGetUser", 17) == 0) {
          char connection[ 1024];
-         char user[ 1024];
+         char user[ 1024], *c;
          DWORD len = 1024;
          int i = sscanf( params + 18, "%s", connection);
          if ( i != 1) {
@@ -2890,7 +2900,8 @@ apc_system_action( const char * params)
          }
          if ( WNetGetUser( connection, user, &len) != NO_ERROR)
             return 0;
-         return strcpy(( char *) malloc( strlen( user) + 1), user);
+         c = ( char *) malloc( strlen( user) + 1);
+         return c ? strcpy( c , user) : 0;
       } else if ( strncmp( params, "win32.SetVersion", 16) == 0) {
          const char * ver = params + 17;
          while ( *ver && ( *ver == ' '  || *ver == '\t')) ver++;
@@ -2920,8 +2931,8 @@ apc_system_action( const char * params)
          }
 
          if ( strcmp( params, " exists") == 0) {
-           char * p;
-           sprintf( p = ( char *) malloc(12), "0x%08x", guts. console);
+           char * p = ( char *) malloc(12);
+           if ( p) sprintf( p, "0x%08x", guts. console);
            return p;
          } else
          if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else
@@ -2939,7 +2950,7 @@ apc_system_action( const char * params)
             } else {
                int lc = GetWindowTextLength( guts. console);
                p = (char*)malloc( lc + 2);
-               GetWindowText( guts. console, p, lc+1);
+               if ( p) GetWindowText( guts. console, p, lc+1);
                return p;
             }
          } else {

@@ -153,6 +153,10 @@ init( ImgCodecInfo ** info, void * param)
    len = strlen( c);
    array = (*info)-> fileExtensions = 
       ( char**) malloc( len + 1 + (count + 1) * sizeof( char*));
+   if ( !array) {
+      if ( --refCnt == 0) gbm_deinit(); 
+      return false;
+   }
    c = ( char *)(( Byte*) array + (count + 1) * sizeof( char*));
    memcpy( c, gft. extensions, len + 1);
    *array = c;

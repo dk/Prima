@@ -415,7 +415,7 @@ apc_gp_stretch_image ( Handle self, Handle image, int x, int y, int xFrom, int y
    Bool db = ( dsys( image) options & aptDeviceBitmap) ? 1 : 0;
    LONG lrop;
 
-   b = get_binfo( deja);
+   if (!(b = get_binfo( deja))) return false;
 
    // clipping & positioning rectangles
    pt [0]. x = x;                    // dest from
@@ -546,7 +546,7 @@ apc_gp_get_font_abc( Handle self, int first, int last)
    FONTMETRICS fm;
    HPS ps = sys ps;
 
-   if ( x > 256) return nil;
+   if ( x > 256 || x <= 0) return nil;
 
    if ( !GpiQueryFontMetrics ( ps, sizeof( fm), &fm)) {
       apiErr;
@@ -554,6 +554,7 @@ apc_gp_get_font_abc( Handle self, int first, int last)
    }
 
    f1 = malloc( x * sizeof( FontABC));
+   if ( !f1) return nil;
 
    if (( fm. fsDefn & FM_DEFN_OUTLINE) == 0) {
       if ( !GpiQueryWidthTable( ps, first, x, f2)) apiErr;
@@ -675,8 +676,12 @@ apc_gp_get_physical_palette( Handle self, int * color)
    if ( !pal) return nil;
    count = GpiQueryPaletteInfo( pal, sys ps, 0, 0, 0, nil);
    if ( count == PAL_ERROR) { apiErr; return nil; };
-   buf = ( PULONG) malloc( sizeof( LONG) * count);
-   ret = ( PRGBColor) malloc( sizeof( RGBColor) * count);
+   if ( count == 0) return nil;
+   if ( !( buf = ( PULONG) malloc( sizeof( LONG) * count))) return nil;
+   if ( !( ret = ( PRGBColor) malloc( sizeof( RGBColor) * count))) {
+      free( buf);
+      return nil;
+   }
    if ( GpiQueryPaletteInfo( pal, sys ps, 0, 0, count, buf) == PAL_ERROR) {
       apiErr;
       free( buf);
@@ -787,6 +792,7 @@ Point *
 apc_gp_get_text_box( Handle self, const char* text, int len)
 {
    POINTL * pt = malloc( sizeof( POINTL) * TXTBOX_COUNT);
+   if ( !pt) return nil;
    apc_gp_move( sys ps, 0, 0);
    if ( !GpiQueryTextBox( sys ps, len, (char*) text, TXTBOX_COUNT, pt)) apiErr;
    if ( !is_apt( aptTextOutBaseline)) {
@@ -1015,9 +1021,13 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
    objCheck false;
    if ( sys linePatternLen > 3)
       free( sys linePattern);
-   if ( len > 3)
-      memcpy( sys linePattern = malloc( len), pattern, len);
-   else
+   if ( len > 3) {
+      if ( !( sys linePattern = malloc( len))) {
+         sys linePatternLen = 0;
+         return false;
+      }
+      memcpy( sys linePattern, pattern, len);
+   } else
       memcpy( &(sys linePattern), pattern, len);
    sys linePatternLen = len;
 

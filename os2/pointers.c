@@ -73,11 +73,13 @@ pointer_make_handle( Handle self, Handle icon, Point hotSpot)
     if ( kind_of( icon, CIcon))
     {
        mbuf = malloc( i-> maskSize * 2);
+       if ( !mbuf && i-> maskSize > 0) return nilHandle;
        memset( &mbuf[ 0], 0, i-> maskSize);
        memcpy( &mbuf[ i-> maskSize], i-> mask, i-> maskSize);
     } else {
        int maskSize = (( i-> w + 31) / 32) * 4 * i-> h;
        mbuf = malloc( maskSize * 2);
+       if ( !mbuf && i-> maskSize > 0) return nilHandle;
        memset( mbuf, 0, maskSize * 2);
     }
 

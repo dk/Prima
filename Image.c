@@ -74,8 +74,10 @@ Image_init( Handle self, HV * profile)
    var->dataSize = ( var->lineSize) * var->h;
    if ( var-> dataSize > 0) {
       var->data = allocb( var->dataSize);
-      if ( var-> data == nil) 
+      if ( var-> data == nil) {
+         my-> make_empty( self);
          croak("Image::init: cannot allocate %d bytes", var-> dataSize);
+      }
    } else 
       var-> data = nil;
    free( var->palette);
@@ -145,8 +147,10 @@ Image_reset( Handle self, int type, SV * palette)
    var->palSize = (1 << ( type & imBPP)) & 0x1ff;
    if ( var->dataSize > 0) {
       newData = allocb( var-> dataSize);
-      if ( newData == nil) 
+      if ( newData == nil) {
+         my-> make_empty( self);
          croak("Image::reset: cannot allocate %d bytes", var-> dataSize);
+      }
       ic_type_convert( self, newData, var->palette, type);
    }
    free( var->data);
@@ -745,8 +749,10 @@ Image_create_empty( Handle self, int width, int height, int type)
    if ( var->dataSize > 0)
    {
       var->data = allocb( var->dataSize);
-      if ( var-> data == nil) 
+      if ( var-> data == nil) { 
+         my-> make_empty( self);
          croak("Image::create_empty: cannot allocate %d bytes", var-> dataSize);
+      }
       memset( var->data, 0, var->dataSize);
    } else
       var->data = nil;

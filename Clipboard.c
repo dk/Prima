@@ -134,7 +134,8 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
    if ( list) {
       my-> deregister_format( self, format);
    }
-   list = allocn( ClipboardFormatReg, formatCount + 1);
+   if (!( list = allocn( ClipboardFormatReg, formatCount + 1)))
+      return nil;
    if ( formats != nil) {
       memcpy( list, formats, sizeof( ClipboardFormatReg) * formatCount);
       free( formats);
@@ -158,8 +159,8 @@ Clipboard_deregister_format( Handle self, char * format)
    formatCount--;
    memcpy( fr, fr + 1, sizeof( ClipboardFormatReg) * ( formatCount - ( fr - list)));
    if ( formatCount > 0) {
-      fr = allocn( ClipboardFormatReg, formatCount);
-      memcpy( fr, list, sizeof( ClipboardFormatReg) * formatCount);
+      if (( fr = allocn( ClipboardFormatReg, formatCount)))
+         memcpy( fr, list, sizeof( ClipboardFormatReg) * formatCount);
    } else
       fr = nil;
    free( formats);

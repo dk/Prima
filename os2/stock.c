@@ -71,6 +71,7 @@ hwnd_enter_paint( Handle self)
    sys bpp = lset[0] * lset[1];
 // printf("checkpoint: bpp is %d", sys bpp);
    if ( sys psd == nil) sys psd = malloc( sizeof( PaintSaveData));
+   if ( sys psd == nil) return;
    apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
    apc_gp_set_line_width( self, sys lineWidth);
    apc_gp_set_line_end( self, sys lineEnd);
@@ -107,8 +108,8 @@ hwnd_leave_paint( Handle self)
    sys fontHash = nil;
    sys bpp = 0;
 
+   if ( sys linePatternLen > 3) free( sys linePattern);
    if ( sys psd == nil) return;
-   if ( sys linePatternLen > 3) free( sys  linePattern);
    var font           = sys psd-> font;
    sys lineWidth      = sys psd-> lineWidth;
    sys lineEnd        = sys psd-> lineEnd;
@@ -175,6 +176,8 @@ region_create( Handle self, Handle mask)
    idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
 
    rdata = malloc( size * sizeof( RECTL));
+   if ( !rdata) return nilHandle;
+
    current = rdata;
    current--;
 
@@ -190,7 +193,12 @@ region_create( Handle self, Handle mask)
             else {
                set = 1;
                if ( rcount >= size) {
-                  rdata = realloc( rdata, ( size *= 3) * sizeof( RECTL));
+                  void * xrdata = realloc( rdata, ( size *= 3) * sizeof( RECTL));
+                  if ( !xrdata) {
+                     free( rdata);
+                     return nilHandle;
+                  }
+                  rdata = xrdata;
                   current = rdata;
                   current += rcount - 1;
                }
@@ -486,7 +494,8 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize)
       if ( !GpiSetCharBox( guts. ps, &guts. defFontBox)) apiErr;
       count = GpiQueryFonts( guts. ps, QF_PUBLIC, font->name, ( PLONG)&i, sizeof( FONTMETRICS), nil);
       if ( count < 0) apiErrRet;
-      fm = malloc( count * sizeof( FONTMETRICS));
+      if ( !( fm = malloc( count * sizeof( FONTMETRICS))))
+         return 0;
       if ( GpiQueryFonts( guts. ps, QF_PUBLIC, font->name, ( PLONG)&count, sizeof( FONTMETRICS), fm) < 0)
         apiErrRet;
       if ( !GpiSetCharBox( guts. ps, &sz)) apiErr;
@@ -797,9 +806,13 @@ apc_fonts( Handle self, const char* facename, int * retCount)
    apcErrClear;
    count = GpiQueryFonts( guts. ps, QF_PUBLIC, facename, ( PLONG)&i, sizeof( FONTMETRICS), nil);
    if ( count < 0) { apiErr; return nil; }
-   fm    = malloc( count * sizeof( FONTMETRICS));
+   if ( !( fm = malloc( count * sizeof( FONTMETRICS)))) {
+      if ( hasdc) CPrinter( self)-> end_paint_info( self);
+      return nil;
+   }
    if ( GpiQueryFonts( guts. ps, QF_PUBLIC, facename, ( PLONG)&count, sizeof( FONTMETRICS), fm) < 0) {
        apiErr;
+       free( fm);
        if ( hasdc) CPrinter( self)-> end_paint_info( self);
        return nil;
    }
@@ -807,6 +820,11 @@ apc_fonts( Handle self, const char* facename, int * retCount)
    {
       int     rc = 0;
       char ** table = malloc( count * sizeof( char*));
+      if ( !table) {
+         free( fm);
+         if ( hasdc) CPrinter( self)-> end_paint_info( self);
+         return nil;
+      }
       for ( i = 0; i < count; i++)
       {
          Bool found = false;
@@ -825,7 +843,13 @@ apc_fonts( Handle self, const char* facename, int * retCount)
       free( table);
       *retCount = rc;
    } else *retCount = count;
-   fmtx = malloc( *retCount * sizeof( Font));
+   
+   if ( !( fmtx = malloc( *retCount * sizeof( Font)))) {
+      free( fm);
+      if ( hasdc) CPrinter( self)-> end_paint_info( self);
+      *retCount = 0;
+      return nil;
+   }
 
    for ( i = 0, j = 0; i < count; i++)
    {

@@ -106,7 +106,8 @@ prima_wm_generic( void)
 {
    DEFWMDATA;
 
-   guts. wm_data = wm = malloc( sizeof( WmGenericData));
+   if ( !( guts. wm_data = wm = malloc( sizeof( WmGenericData))))
+      return false;
 
    wm-> deleteWindow = XInternAtom( DISP, "WM_DELETE_WINDOW", 1);
    wm-> takeFocus = XInternAtom( DISP, "WM_TAKE_FOCUS", 1);

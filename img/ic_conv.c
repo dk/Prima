@@ -285,6 +285,7 @@ BC( rgb, mono, None)
    dBCARGS;
    Byte * convBuf = allocb( width);
    BCWARN;
+   if ( !convBuf) return;
    cm_fill_colorref(( PRGBColor) map_RGB_gray, 256, stdmono_palette, 2, colorref);
    for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine)
    {

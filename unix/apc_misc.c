@@ -99,20 +99,20 @@ update_quarks_cache( Handle self)
    if ( me-> owner && me-> owner != self && PComponent(me-> owner)-> sysData && X(PComponent( me-> owner))-> q_class_name) {
       UU = X(PComponent( me-> owner));
       XX-> n_class_name = n = UU-> n_class_name + 1;
-      XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 3));
-      memcpy( XX-> q_class_name, UU-> q_class_name, sizeof( XrmQuark) * n);
+      if (( XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 3))))
+         memcpy( XX-> q_class_name, UU-> q_class_name, sizeof( XrmQuark) * n);
       XX-> q_class_name[n-1] = qClass;
       XX-> n_instance_name = n = UU-> n_instance_name + 1;
-      XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 3));
-      memcpy( XX-> q_instance_name, UU-> q_instance_name, sizeof( XrmQuark) * n);
+      if (( XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 3))))
+         memcpy( XX-> q_instance_name, UU-> q_instance_name, sizeof( XrmQuark) * n);
       XX-> q_instance_name[n-1] = qInstance;
    } else {
       XX-> n_class_name = n = 1;
-      XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 3));
-      XX-> q_class_name[n-1] = qClass;
+      if (( XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 3))))
+         XX-> q_class_name[n-1] = qClass;
       XX-> n_instance_name = n = 1;
-      XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 3));
-      XX-> q_instance_name[n-1] = qInstance;
+      if (( XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 3))))
+         XX-> q_instance_name[n-1] = qInstance;
    }
    return true;
 }
@@ -265,7 +265,8 @@ Bool
 apc_component_create( Handle self)
 {
    if ( !PComponent( self)-> sysData) {
-      PComponent( self)-> sysData = malloc( sizeof( UnixSysData));
+      if ( !( PComponent( self)-> sysData = malloc( sizeof( UnixSysData))))
+         return false;
       bzero( PComponent( self)-> sysData, sizeof( UnixSysData));
       ((PUnixSysData)(PComponent(self)->sysData))->component. self = self;
    }
@@ -292,7 +293,7 @@ apc_component_fullname_changed_notify( Handle self)
    if (!update_quarks_cache( self)) return false;
 
    if ( me-> components && (n = me-> components-> count) > 0) {
-      list = allocn( Handle, n);
+      if ( !( list = allocn( Handle, n))) return false;
       memcpy( list, me-> components-> items, sizeof( Handle) * n);
 
       for ( i = 0; i < n; i++) {
@@ -629,7 +630,7 @@ apc_message( Handle self, PEvent e, Bool is_post)
       /* FALLTHROUGH */
    default:
       if ( is_post) {
-         pe = alloc1(PendingEvent);
+         if (!( pe = alloc1(PendingEvent))) return false;
          memcpy( &pe->event, e, sizeof(pe->event));
          pe-> recipient = self;
          TAILQ_INSERT_TAIL( &guts.peventq, pe, peventq_link);
@@ -827,8 +828,18 @@ apc_show_message( const char * message)
       wrapped = Drawable_do_text_wrap( nilHandle, &twr, abc);
       free( abc);
 
-      md. widths  = malloc( twr. count * sizeof(int));
-      md. lengths = malloc( twr. count * sizeof(int));
+      if ( !( md. widths  = malloc( twr. count * sizeof(int)))) {
+         XFreeFontInfo( nil, fs, 1);
+         warn( message);
+         return false;
+      }
+         
+      if ( !( md. lengths = malloc( twr. count * sizeof(int)))) {
+         free( md. widths);
+         XFreeFontInfo( nil, fs, 1);
+         warn( message);
+         return false;
+      }
 
       /* find text extensions */
       max = 0;
@@ -1093,7 +1104,7 @@ apc_system_action( const char *s)
    case 'D':
       if ( l == 7 && ( strcmp( s, "Display") == 0)) {
          char * c = malloc(19);
-         snprintf( c, 18, "0x%p", DISP);
+         if ( c) snprintf( c, 18, "0x%p", DISP);
          return c;
       }
       break;

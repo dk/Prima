@@ -264,6 +264,8 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
    Bool ok = true;
    int i, dy = sys lastSize. y;
    DWORD * pts = ( DWORD *) malloc( sizeof( DWORD) * numPts);
+   if ( !pts) return false;
+
    for ( i = 0; i < numPts; i++)  {
       points[ i]. y = dy - points[ i]. y - 1;
       pts[ i] = 2;
@@ -417,7 +419,12 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       bound. y -= trans. y - 1;
 
       if ( !( dc  = dc_compat_alloc( ps))) apiErrRet;
-      if ( db) ps = dc_alloc(); // fact that if dest ps is memory dc, CCB will result mono-bitmap
+      if ( db) {
+         if ( !( ps = dc_alloc())) { // fact that if dest ps is memory dc, CCB will result mono-bitmap
+            dc_compat_free();
+            return false;
+         }
+      }
       if ( !( bmSrc  = CreateCompatibleBitmap( ps, bound. x, bound. y))) {
          apiErr;
          if ( db) dc_free();
@@ -933,6 +940,8 @@ apc_gp_get_font_abc( Handle self, int first, int last)
    PFontABC f1;
 
    f1 = ( PFontABC) malloc(( last - first + 1) * sizeof( FontABC));
+   if ( !f1) return nil;
+
    if ( !gp_GetCharABCWidthsFloat( sys ps, first, last, f2)) apiErr;
    for ( i = 0; i <= last - first; i++) {
       f1[i].a = f2[i].abcfA;
@@ -1139,6 +1148,8 @@ apc_gp_get_physical_palette( Handle self, int * color)
    }
 
    r = ( PRGBColor) malloc( sizeof( RGBColor) * *color);
+   if ( !r) return nil;
+
    for ( i = 0; i < *color; i++) {
       r[i].r = lpGlob. palPalEntry[i]. peRed;
       r[i].g = lpGlob. palPalEntry[i]. peGreen;
@@ -1180,7 +1191,7 @@ apc_gp_get_region( Handle self, Handle mask)
 
    CImage( mask)-> create_empty( mask, clipEx. right, sys lastSize.y - clipEx. top, imBW);
 
-   dc = dc_compat_alloc(0);
+   if ( !( dc = dc_compat_alloc(0))) return true;
    if ( !( bm = CreateBitmap( PImage( mask)-> w, PImage( mask)-> h, 1, 1, nil))) {
       dc_compat_free();
       return true;
@@ -1297,6 +1308,7 @@ Point *
 apc_gp_get_text_box( Handle self, const char* text, int len)
 {objCheck nil;{
    Point * pt = ( Point *) malloc( sizeof( Point) * 5);
+   if ( !pt) return nil;
 
    memset( pt, 0, sizeof( Point) * 5);
 
@@ -1517,9 +1529,14 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
    if ( !sys ps) {
       if ( sys linePatternLen > 3)
          free( sys linePattern);
-      if ( len > 3)
-         memcpy( sys linePattern = ( unsigned char *) malloc( len), pattern, len);
-      else
+      if ( len > 3) {
+         sys linePattern = ( unsigned char *) malloc( len);
+         if ( !sys linePattern) {
+            sys linePatternLen = 0;
+            return false;
+         }
+         memcpy( sys linePattern, pattern, len);
+      } else
          memcpy( &sys linePattern, pattern, len);
       sys linePatternLen = len;
    } else {
@@ -1529,9 +1546,14 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
       if ( IS_WIN95) {
          if ( sys linePatternLen2 > 3)
             free( sys linePattern2);
-         if ( len > 3)
-            memcpy( sys linePattern2 = ( unsigned char *) malloc( len), pattern, len);
-         else
+         if ( len > 3) {
+            sys linePattern2 = ( unsigned char *) malloc( len);
+            if ( !sys linePattern2) {
+               sys linePatternLen2 = 0;
+               return false;
+            }
+            memcpy( sys linePattern2, pattern, len);
+         } else
             memcpy( &sys linePattern2, pattern, len);
          sys linePatternLen2 = len;
       }

@@ -195,9 +195,9 @@ apc_getdir( const char *dirname)
     PList               ret;
     Bool                wasDot = false, wasDotDot = false;
 
-#define add_entry(file,info)  {                                            \
-    list_add( ret, ( Handle) strcpy(( char*) malloc( strlen( file) + 1), file));   \
-    list_add( ret, ( Handle) strcpy(( char*) malloc( strlen( info) + 1), info));   \
+#define add_entry(file,info)  {                         \
+    list_add( ret, ( Handle) duplicate_string(file));   \
+    list_add( ret, ( Handle) duplicate_string(info));   \
 }
 
 #define add_fentry  {                                                         \

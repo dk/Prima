@@ -46,7 +46,7 @@
 
 static void ppi_create( PRQINFO3 * dest, PRQINFO3 * source)
 {
-#define SZCPY(field) if ( source-> field) strcpy( dest-> field = malloc( strlen( source-> field) + 1), source-> field)
+#define SZCPY(field) dest-> field = duplicate_string( source-> field)
    memcpy( dest, source, sizeof( PRQINFO3));
    SZCPY( pszName);
    SZCPY( pszSepFile);
@@ -57,8 +57,8 @@ static void ppi_create( PRQINFO3 * dest, PRQINFO3 * source)
    SZCPY( pszDriverName);
    if ( source-> pDriverData)
    {
-      dest-> pDriverData = malloc( source-> pDriverData-> cb);
-      memcpy( dest-> pDriverData, source-> pDriverData, source-> pDriverData-> cb);
+      if (( dest-> pDriverData = malloc( source-> pDriverData-> cb)))
+        memcpy( dest-> pDriverData, source-> pDriverData, source-> pDriverData-> cb);
    }
 }
 
@@ -93,6 +93,7 @@ prn_query( char * printer, PRQINFO3 * info)
    }
    if ( total == 0) return 0;
    ppi  = malloc( needed);
+   if ( !ppi && needed > 0) return -1;
    sprc = SplEnumQueue( nil, 3, ppi, needed, &returned, &total, &needed, nil);
    if ( sprc != 0) {
       apiAltErr( sprc);
@@ -139,6 +140,7 @@ apc_prn_enumerate( Handle self, int * count)
       return nil;
    }
    ppi = malloc( needed);
+   if ( !ppi && needed > 0) return nil;
    sprc = SplEnumQueue( nil, 3, ppi, needed, &returned, &total, &needed, nil);
    if ( sprc != 0) {
       apiAltErr( sprc);
@@ -146,7 +148,10 @@ apc_prn_enumerate( Handle self, int * count)
       return nil;
    }
 
-   list = malloc( returned * sizeof( PrinterInfo));
+   if ( !( list = malloc( returned * sizeof( PrinterInfo)))) {
+      free( ppi);
+      return nil;
+   }
    for ( i = 0; i < returned; i++)
    {
       strncpy( list[ i]. name, ppi[ i]. pszComment, 255);       list[ i]. name[ 255]   = 0;
@@ -223,7 +228,10 @@ apc_prn_get_default( Handle self)
    int rc = prn_query( nil, &p);
    if ( rc <= 0) return "";
    free( sys s. prn. defaultPrn);
-   sys s. prn. defaultPrn = malloc( strlen(( char*) p. pszComment) + 1);
+   if ( !( sys s. prn. defaultPrn = malloc( strlen(( char*) p. pszComment) + 1))) {
+      ppi_destroy( &p);
+      return "";
+   }
    strcpy( sys s. prn. defaultPrn, ( char*) p. pszComment);
    ppi_destroy( &p);
    return sys s. prn. defaultPrn;
@@ -244,7 +252,7 @@ apc_prn_get_size( Handle self)
       apiErr;
       return toRet;
    }
-   hc = malloc( forms * sizeof( HCINFO));
+   if ( !( hc = malloc( forms * sizeof( HCINFO)))) return toRet;
    if ( DevQueryHardcopyCaps( dc, 0, forms, hc) == DQHC_ERROR) {
       apiErr;
       return toRet;

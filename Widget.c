@@ -450,7 +450,7 @@ Widget_first_that( Handle self, void * actionProc, void * params)
    int i, count  = var-> widgets. count;
    Handle * list;
    if ( actionProc == nil || count == 0) return nilHandle;
-   list = allocn( Handle, count);
+   if (!(list = allocn( Handle, count))) return nilHandle;
    memcpy( list, var-> widgets. items, sizeof( Handle) * count);
 
    for ( i = 0; i < count; i++)
@@ -758,7 +758,7 @@ void Widget_handle_event( Handle self, PEvent event)
               int i = list_first_that( var-> evQueue, find_dup_msg, &event-> cmd);
               PEvent n;
               if ( i < 0) {
-                 n = alloc1( Event);
+                 if ( !( n = alloc1( Event))) goto MOVE_EVENT;
                  memcpy( n, event, sizeof( Event));
                  n-> gen. B = 1;
                  n-> gen. R. left = n-> gen. R. bottom = 0;
@@ -767,6 +767,7 @@ void Widget_handle_event( Handle self, PEvent event)
                  n = ( PEvent) list_at( var-> evQueue, i);
               n-> gen. P = event-> gen. P;
             }
+          MOVE_EVENT:;
             if ( !event-> gen. B)
                my-> first_that( self, move_notify, &event-> gen. P);
             if ( doNotify) oldP = var-> pos;
@@ -813,7 +814,7 @@ void Widget_handle_event( Handle self, PEvent event)
               int i = list_first_that( var-> evQueue, find_dup_msg, &event-> cmd);
               PEvent n;
               if ( i < 0) {
-                 n = alloc1( Event);
+                 if ( !( n = alloc1( Event))) goto SIZE_EVENT;
                  memcpy( n, event, sizeof( Event));
                  n-> gen. B = 1;
                  n-> gen. R. left = n-> gen. R. bottom = 0;
@@ -823,6 +824,7 @@ void Widget_handle_event( Handle self, PEvent event)
               n-> gen. P. x = n-> gen. R. right  = event-> gen. P. x;
               n-> gen. P. y = n-> gen. R. top    = event-> gen. P. y;
            }
+        SIZE_EVENT:;  
            if ( var-> growMode & gmCenter) my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
 
            if ( !event-> gen. B) my-> first_that( self, size_notify, &event-> gen. R);
@@ -1091,9 +1093,12 @@ do_taborder_candidates( Handle level, Handle who,
 {
    int i, fsel = -1;
    PList w = &(PWidget( level)-> widgets);
-   Handle * ordered = ( Handle *) malloc( w-> count * sizeof( Handle));
-   
-   if ( !ordered) return 0;
+   Handle * ordered;
+
+   if ( w-> count == 0) return true;
+      
+   ordered = ( Handle *) malloc( w-> count * sizeof( Handle));
+   if ( !ordered) return true;
    
    memcpy( ordered, w-> items, w-> count * sizeof( Handle));
    qsort( ordered, w-> count, sizeof( Handle), compareProc);
@@ -1172,7 +1177,7 @@ Widget_post_message( Handle self, SV * info1, SV * info2)
    PPostMsg p;
    Event ev = { cmPost};
    if ( var-> stage > csNormal) return;
-   p = alloc1( PostMsg);
+   if (!( p = alloc1( PostMsg))) return;
    p-> info1  = newSVsv( info1);
    p-> info2  = newSVsv( info2);
    p-> h = self;
@@ -2891,7 +2896,10 @@ XS( Widget_client_to_screen_FROMPERL)
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Widget::client_to_screen");
    count  = ( items - 1) / 2;
-   points = allocn( Point, count);
+   if ( !( points = allocn( Point, count))) {
+      PUTBACK;
+      return;
+   }
    for ( i = 0; i < count; i++) {
       points[i]. x = SvIV( ST( i * 2 + 1));
       points[i]. y = SvIV( ST( i * 2 + 2));
@@ -2921,7 +2929,10 @@ XS( Widget_screen_to_client_FROMPERL)
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Widget::screen_to_client");
    count  = ( items - 1) / 2;
-   points = allocn( Point, count);
+   if ( !( points = allocn( Point, count))) {
+      PUTBACK;
+      return;
+   }
    for ( i = 0; i < count; i++) {
       points[i]. x = SvIV( ST( i * 2 + 1));
       points[i]. y = SvIV( ST( i * 2 + 2));

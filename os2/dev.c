@@ -48,7 +48,7 @@ HBITMAP
 bitmap_make_ps( Handle img, HPS * hps, HDC * hdc, PBITMAPINFO2 * bm, int createBitmap)
 {
    SIZEL sizl;
-   HBITMAP ret;
+   HBITMAP ret = nilHandle;
    *bm  = nil;
    *hps = nilHandle;
    *hdc = nilHandle;
@@ -79,14 +79,15 @@ bitmap_make_ps( Handle img, HPS * hps, HDC * hdc, PBITMAPINFO2 * bm, int createB
       if ( createBitmap == cbImage) {
          deja  = cmono_enscreen( img);
          image = ( PImage) deja;
-         *bm   = get_binfo( deja);
-         ret = GpiCreateBitmap( *hps, ( PBITMAPINFOHEADER2) *bm, CBM_INIT, image-> data, *bm);
+         if (( *bm  = get_binfo( deja)))
+            ret = GpiCreateBitmap( *hps, ( PBITMAPINFOHEADER2) *bm, CBM_INIT, image-> data, *bm);
       } else {
-         *bm = get_screen_binfo();
-         if ( createBitmap == cbMonoScreen) (*bm)-> cPlanes = (*bm)-> cBitCount = 1;
-         (*bm)-> cx = (( PDrawable) img)-> w;
-         (*bm)-> cy = (( PDrawable) img)-> h;
-         ret = GpiCreateBitmap( *hps, ( PBITMAPINFOHEADER2) *bm, 0, nil, nilHandle);
+         if (( *bm = get_screen_binfo())) {
+            if ( createBitmap == cbMonoScreen) (*bm)-> cPlanes = (*bm)-> cBitCount = 1;
+            (*bm)-> cx = (( PDrawable) img)-> w;
+            (*bm)-> cy = (( PDrawable) img)-> h;
+            ret = GpiCreateBitmap( *hps, ( PBITMAPINFOHEADER2) *bm, 0, nil, nilHandle);
+         } 
       }
       if ( ret == nilHandle)
       {
@@ -156,15 +157,17 @@ get_binfo( Handle self)
    PBITMAPINFO2 bi;
 
    if ( is_apt( aptDeviceBitmap)) {
-       bi = get_screen_binfo();
-       bi-> cx = image-> w;
-       bi-> cy = image-> h;
-       if ((( PDeviceBitmap) self)-> monochrome) bi-> cPlanes = bi-> cBitCount = 1;
+       if (( bi = get_screen_binfo())) {
+          bi-> cx = image-> w;
+          bi-> cy = image-> h;
+          if ((( PDeviceBitmap) self)-> monochrome) bi-> cPlanes = bi-> cBitCount = 1;
+       }
        return bi;
    }
 
    nColors = (( 1 << ( image-> type & imBPP)) & 0x1ff);
    bi      = malloc( sizeof ( BITMAPINFO2) + nColors * sizeof( RGB2));
+   if ( !bi) return nil;
    memset( bi, 0, sizeof( BITMAPINFO2) + nColors * sizeof( RGB2));
    bi-> cbFix           = sizeof( BITMAPINFO2) - sizeof( RGB2);
    bi-> cx              = image-> w;
@@ -196,6 +199,8 @@ PBITMAPINFO2
 get_screen_binfo( void)
 {
     PBITMAPINFO2 br      = malloc( sizeof ( BITMAPINFO2) + 256 * sizeof( RGB2));
+    if ( !br) return nil;
+
     memset( br, 0, sizeof ( BITMAPINFO2) + 256 * sizeof( RGB2));
     br-> cbFix           = sizeof( BITMAPINFO2) - sizeof( RGB2);
     br-> cPlanes         = guts. bmf[ 0];
@@ -267,7 +272,7 @@ image_query( Handle self, HPS ps)
       return;
    }
 
-   bi = get_binfo( self);
+   if ( !( bi = get_binfo( self))) return;
    nColors = (( 1 << ( image-> type & imBPP)) & 0x1ff);
    if ( GpiQueryBitmapBits( ps, 0, image-> h, image-> data, ( PBITMAPINFO2) bi) < 0) apiErr;
    for ( i = 0; i < nColors; i++)
@@ -289,14 +294,16 @@ bitmap_make_cache( Handle from, Handle self)
 
     if ( sys bmInfo) free( sys bmInfo);
     if ( sys bmRaw)  free( sys bmRaw);
-    if ( bm == nilHandle) {
-       sys bmInfo = nil;
-       sys bmRaw  = nil;
-       return;
-    }
+    sys bmInfo = nil;
+    sys bmRaw  = nil;
 
-    br = get_screen_binfo();
-    sys bmRaw = malloc((( br-> cBitCount * bi-> cx + 31) / 32) * br-> cPlanes * 4 * bi-> cy);
+    if ( bm == nilHandle) goto EXIT;
+
+    if ( !( br = get_screen_binfo())) goto EXIT;
+    if ( !( sys bmRaw = malloc((( br-> cBitCount * bi-> cx + 31) / 32) * br-> cPlanes * 4 * bi-> cy))) {
+       free( sys bmRaw);
+       goto EXIT;
+    }
     sys bmInfo = br;
     if ( GpiSetBitmap( hps, bm) == HBM_ERROR) apiErr;
     if ( GpiQueryBitmapBits( hps, 0, bi-> cy, sys bmRaw, ( PBITMAPINFO2) br) < 0)
@@ -305,6 +312,7 @@ bitmap_make_cache( Handle from, Handle self)
     if ( !GpiDeleteBitmap( bm)) apiErr;
     if ( !GpiDestroyPS( hps))   apiErr;
     if ( !DevCloseDC( hdc))     apiErr;
+EXIT:;    
     free( bi);
 }
 
@@ -378,8 +386,8 @@ apc_image_begin_paint( Handle self)
    // creating bitmap ( or use cached)
    if ( sys bm == nilHandle) {
       Handle deja  = enscreen( self);
-      bi           = get_binfo( deja);
-      sys bm       = GpiCreateBitmap( sys ps, ( PBITMAPINFOHEADER2) bi, 0, nil, nil);
+      if (( bi = get_binfo( deja)))
+         sys bm = GpiCreateBitmap( sys ps, ( PBITMAPINFOHEADER2) bi, 0, nil, nil);
       if ( sys bm == nilHandle ) {
          apiErr;
          GpiDestroyPS( sys ps);

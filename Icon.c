@@ -88,7 +88,7 @@ produce_mask( Handle self)
       break;
    default:
       bpp2  = im256;
-      area8 = allocb( var-> h * line8Size);
+      if (!( area8 = allocb( var-> h * line8Size))) return;
       ic_type_convert( self, area8, var-> palette, im256 | ( var-> type & imGrayScale));
       break;
    }
@@ -328,7 +328,10 @@ Icon_update_change( Handle self)
       if ( maskLine != var-> maskLine || maskSize != var-> maskSize) {
          free( var-> mask);
          var-> maskLine = maskLine;
-         var-> mask = allocb( var-> maskSize = maskSize);
+         if (!( var-> mask = allocb( var-> maskSize = maskSize)) && maskSize > 0) {
+            my-> make_empty( self);
+            warn("Not enough memory: %d bytes", maskSize);
+         }
       }
       return;
    }   
@@ -338,7 +341,11 @@ Icon_update_change( Handle self)
    {
       var-> maskLine = (( var-> w + 31) / 32) * 4;
       var-> maskSize = var-> maskLine * var-> h;
-      var-> mask     = allocb( var-> maskSize);
+      if ( !( var-> mask = allocb( var-> maskSize)) && var-> maskSize > 0) {
+          my-> make_empty( self);
+          warn("Not enough memory: %d bytes", var-> maskSize);
+          return;
+      }
       produce_mask( self);
    }
    else
@@ -364,8 +371,10 @@ Icon_stretch( Handle self, int width, int height)
    
    lineSize = (( abs( width) + 31) / 32) * 4;
    newMask  = allocb( lineSize * abs( height));
-   if ( newMask == nil)
+   if ( newMask == nil && lineSize > 0) {
+      my-> make_empty( self);
       croak("Icon::stretch: cannot allocate %d bytes", lineSize * abs( height));
+   }
    var-> autoMasking = amNone;
    if ( var-> mask) 
       ic_stretch( imMono, var-> mask, oldW, oldH, newMask, width, height, is_opt( optHScaling), is_opt( optVScaling));
@@ -387,7 +396,11 @@ Icon_create_empty( Handle self, int width, int height, int type)
    {
       var-> maskLine = (( var-> w + 31) / 32) * 4;
       var-> maskSize = var-> maskLine * var-> h;
-      var-> mask     = allocb( var-> maskSize);
+      if ( !( var-> mask = allocb( var-> maskSize)) && var-> maskSize > 0) {
+         my-> make_empty( self);
+         warn("Not enough memory: %d bytes", var-> maskSize);
+         return;
+      }
       memset( var-> mask, 0, var-> maskSize);
    }
    else

@@ -127,7 +127,7 @@ apc_clipboard_get_data( Handle self, long id, STRLEN * length)
              }
              sys bm = b;
              apcErrClear;
-             dc = CreateCompatibleDC( dc_alloc());
+             if (!( dc = CreateCompatibleDC( dc_alloc()))) return nil;
              ops = sys ps;
              sys ps = dc;
 
@@ -161,12 +161,14 @@ apc_clipboard_get_data( Handle self, long id, STRLEN * length)
              len = *length = strlen( ptr);
              len++;
              ret = ( char *) malloc( *length);
-             memcpy( ret, ptr, *length);
-             for ( i = 0; i < len - 1; i++)
-                if ( ret[ i] == '\r') {
-                   memcpy( ret + i, ret + i + 1, len - i + 1);
-                   (*length)--;
-                }
+             if ( ret) {
+                memcpy( ret, ptr, *length);
+                for ( i = 0; i < len - 1; i++)
+                   if ( ret[ i] == '\r') {
+                      memcpy( ret + i, ret + i + 1, len - i + 1);
+                      (*length)--;
+                   }
+             }
              GlobalUnlock( ph);
              return ret;
          }
@@ -188,7 +190,8 @@ apc_clipboard_get_data( Handle self, long id, STRLEN * length)
                apiErrRet;
             *length = *(( int*) ptr);
             ptr += sizeof( int);
-            memcpy( ret = malloc( *length), ptr, *length);
+            ret = malloc( *length);
+            if ( ret) memcpy( ret, ptr, *length);
             GlobalUnlock( ph);
             return ret;
          }

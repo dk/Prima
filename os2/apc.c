@@ -334,7 +334,8 @@ apc_component_create( Handle self)
    PDrawableData d = c-> sysData;
 
    if ( d) return false;
-   d = malloc( sizeof( DrawableData));
+   if ( !( d = malloc( sizeof( DrawableData))))
+      return false;
    memset( d, 0, sizeof( DrawableData));
    c-> sysData = d;
    return true;
@@ -376,6 +377,7 @@ static void
 get_view_ex( Handle self, PViewProfile p)
 {
   int i;
+  if ( !p) return;
   p-> capture   = apc_widget_is_captured( self);
   for ( i = 0; i <= ciMaxId; i++) p-> colors[ i] = apc_widget_get_color( self, i);
   p-> pos       = apc_widget_get_pos( self);
@@ -1794,6 +1796,10 @@ add_item( HWND w, Handle menu, PMenuItemReg i)
     }
 
     md = malloc( sizeof( MenuWndData));
+    if ( !md) {
+       WinDestroyWindow( m);
+       return nilHandle;
+    }
     md-> menu = menu;
     WinSetWindowULong( m, QWL_USER, ( ULONG) md);
     md-> fnwp = WinSubclassWindow( m, ( PFNWP) generic_menu_handler);
