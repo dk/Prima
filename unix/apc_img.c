@@ -1038,7 +1038,6 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       return nil;
    }
 
-#define PALETTE_VS_IMAGE_QUALITY
    if (( guts. palSize > 0) && (( pass-> type & imBPP) != 24)) {
       int i, maxRank = RANK_FREE;
       Byte * p = X((Handle)img)-> palette;
@@ -1048,13 +1047,12 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       }
                
       for ( i = 0; i < pass-> palSize; i++) {
-         int diff;
-         int j = guts. mappingPlace[i] = prima_color_find( nilHandle, 
+         int j = guts. mappingPlace[i] = prima_color_find( nilHandle,
             RGB_COMPOSITE( 
               pass-> palette[i].r,
               pass-> palette[i].g,
               pass-> palette[i].b
-            ), -1, &diff, maxRank);
+            ), -1, nil, maxRank);
           if ( p && (( p[LPAL_ADDR(j)] & LPAL_MASK(j)) == 0))
              prima_color_add_ref(( Handle) img, j, RANK_LOCKED);
       }

@@ -1007,8 +1007,7 @@ prima_color_add_ref( Handle self, int index, int rank)
    p = X(self)-> palette;
    r = LPAL_GET(index,p[LPAL_ADDR(index)]);
    if ( r != 0 && r <= nr) return false;
-   if ( r == 0 && X(self)-> type. widget) 
-      list_add( &guts. palette[index]. users, self);
+   if ( r == 0) list_add( &guts. palette[index]. users, self);
    if ( rank > guts. palette[index]. rank)
       guts. palette[index]. rank = rank;
    p[LPAL_ADDR(index)] &=~ LPAL_MASK(index);
@@ -1220,7 +1219,7 @@ ALLOC_STAGE:
          int j;
          for ( j = 0; j < p-> users. count; j++) {
             Handle wij = p-> users. items[j];
-            if ( list_index_of( &widgets, wij) < 0)
+            if ( X(wij)-> type. widget && list_index_of( &widgets, wij) < 0)
                list_add( &widgets, wij);
             X(wij)-> palette[LPAL_ADDR(i)] &=~ LPAL_MASK(i);
          }
