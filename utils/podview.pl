@@ -46,7 +46,11 @@ package main;
 $Prima::HelpViewer::windowClass = 'SoleHelpViewer';
 
 my $htx = ( @ARGV ? $ARGV[0] : 'Prima' );
-$htx .= '/' unless $htx =~ /\//;
+if ( -f $htx) {
+   $htx = "file://$htx";
+} else {
+   $htx .= '/' unless $htx =~ /\//;
+}
 $::application-> open_help( $htx);
 
 run Prima;

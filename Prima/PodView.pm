@@ -306,7 +306,10 @@ sub load_link
 
    unless ( defined $t) { # page / section / item
       my ( $page, $section, $item, $lead_slash) = ( '', undef, 1, '');
-      if ( $s =~ /^([^\/]*)(\/)(.*)$/) {
+
+      if ( $s =~ /^file:\/\/(.*)$/) {
+         $page = $1;
+      } elsif ( $s =~ /^([^\/]*)(\/)(.*)$/) {
          ( $page, $lead_slash, $section) = ( $1, $2, $3);
       } else {
          $section = $s;
