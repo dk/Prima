@@ -32,7 +32,6 @@ use Prima::Application name => 'Generic';
 my $w = Prima::Window-> create(
     text => "Hello, world!",
     onDestroy => sub { $::application-> close},
-    font =>  { name => 'B&H LucidaTypewriter', size => 15, xstyle => 0, },
     onPaint   => sub {
        my ( $self, $canvas) = @_;
        my $color = $self-> color;
