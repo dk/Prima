@@ -357,9 +357,9 @@ Image_set_extended_data( Handle self, HV * profile)
 {
    void *data, *proc;
    STRLEN dataSize;
-   int lineSize = 0, newType, fixType, oldType;
+   int lineSize = 0, newType = -1, fixType, oldType = -1;
    Bool pexistType, pexistLine, supp;
-   
+
    if ( !pexist( data)) {
       if ( pexist( lineSize)) {
          warn( "Image: lineSize supplied without data property.");
