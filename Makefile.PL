@@ -2525,7 +2525,7 @@ EOF
           my ( $src, $dest) = splice( @allman, 0, 2);
           push @man_to_remove, $dest;
           $dest =~ m/([^\/]+)\.(\d+)$/;
-	  print  MAKE "\t\@echo $1.$2\n";
+	  print  MAKE "\t\@echo $dest" . (length( $Config{gzip} ) ? '.gz' : ''). "\n";
           printf MAKE $cmd, $2, $src, $dest;
        }
        if ( length $Config{gzip}) { s/$/.gz/ for @man_to_remove }
