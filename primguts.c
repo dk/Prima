@@ -1431,6 +1431,7 @@ prima( const char *primaPath, int argc, char **argv)
    // register hard coded XSUBs
    newXS( "TiedStdOut::PRINT", ext_std_print, MODULE);
    newXS( "::destroy_mate", destroy_mate, MODULE);
+   newXS( "Utils::getdir", Utils_getdir_FROMPERL, "Utils");
    // register built-in classes
    newXS( "Object::create",  create_from_Perl, "Object");
    newXS( "Object::destroy", destroy_from_Perl, "Object");
@@ -1964,6 +1965,11 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
 #ifdef PARANOID_MALLOC
 #undef malloc
 #undef free
+#undef list_create
+#undef plist_create
+#ifndef __unix
+#define HAVE_FTIME
+#endif
 
 #include <sys/timeb.h>
 
@@ -2041,5 +2047,10 @@ _test_free( void *ptr, int ln, char *fil, Handle self)
    free( ptr);
    hash_delete( hash, &ptr, sizeof(ptr), true);
 }
+
+/* to make freaking Windows happy */
+void list_create( PList slf, int size, int delta) {}
+PList plist_create( int size, int delta) {}
+
 #endif /* PARANOID_MALLOC */
 
