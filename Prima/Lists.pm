@@ -957,6 +957,7 @@ sub set_top_item
 
       }
    } else {
+      $a[1] += $self-> {yedge} if $self-> {integralHeight};
       $self-> scroll( 0, $dt * $ih,
                       clipRect => \@a);
    }
