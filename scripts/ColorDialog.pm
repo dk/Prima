@@ -176,6 +176,7 @@ sub profile_default
 {
    return {
       %{$_[ 0]-> SUPER::profile_default},
+
       width         => 348,
       height        => 450,
       centered      => 1,
@@ -184,6 +185,8 @@ sub profile_default
       borderStyle   => bs::Dialog,
       borderIcons   => bi::SystemMenu | bi::TitleBar,
       widgetClass   => wc::Dialog,
+
+      quality       => 0,
       value         => cl::White,
    }
 }
@@ -195,6 +198,7 @@ sub init
    $self->{setTransaction} = undef;
 
    my $c = $self->{value} = $profile{value};
+   $self->{quality} = 0;
    my ( $r, $g, $b) = value2rgb( $c);
    my ( $h, $s, $v) = rgb2hsv( $r, $g, $b);
    $s *= 255;
@@ -320,6 +324,9 @@ sub init
       modalResult => cm::Cancel,
    );
    $self->{R}->select;
+   $self-> quality( $profile{quality});
+
+   $self-> Roller_Repaint if $self->{quality};
 
    return %profile;
 }
@@ -363,7 +370,7 @@ sub HSV_Change
    return if $self-> {setTransaction};
    $self-> {setTransaction} = 1;
    my ( $h, $s, $v);
-   $self->{HSVPin} = Hue | Lum | Sat | ( $pin == $self->{V} ? Wheel : 0);
+   $self->{HSVPin} = Hue | Lum | Sat | ( $pin == $self->{V} ? (Wheel|Roller) : 0);
    $h = $self->{H}->value      ;
    $s = $self->{S}->value / 255;
    $v = $self->{V}->value / 255;
@@ -450,7 +457,36 @@ sub Roller_Paint
    $canvas-> rectangle( 0, $d, $size[0]-1, $d + 15);
    $canvas-> color( $owner->{value});
    $canvas-> bar( 1, $d + 1, $size[0]-2, $d + 14);
+   $self-> {paintPoll} = 2 if exists $self-> {paintPoll};
 }
+
+sub Roller_Repaint
+{
+   my $owner = $_[0];
+   my $roller = $owner->{roller};
+   if ( $owner-> {quality}) {
+      my ( $h, $s, $v) = ( $owner->{H}-> value, $owner->{S}->value, $owner->{V}-> value);
+      $s /= 255;
+      $v /= 255;
+      my ( $i, $r, $g, $b);
+      my @pal = ();
+
+      for ( $i = 0; $i < 32; $i++) {
+         ( $r, $g, $b) = hsv2rgb( $h, $s, $i / 31);
+         push ( @pal, $b, $g, $r);
+      }
+      ( $r, $g, $b) = value2rgb( $owner->{value});
+      push ( @pal, $b, $g, $r);
+
+      $roller-> {paintPoll} = 1;
+      $roller-> palette([@pal]);
+      $roller-> repaint if $roller-> {paintPoll} != 2;
+      delete $roller-> {paintPoll};
+   } else {
+      $roller-> repaint;
+   }
+}
+
 
 sub Roller_MouseDown
 {
@@ -466,7 +502,7 @@ sub Roller_MouseMove
    my ( $owner, $self, $mod, $x, $y) = @_;
    return unless $self->{mouseTransation};
    $owner-> {setTransaction} = 1;
-   $owner-> {HSVPin} = Hue|Sat|Wheel;
+   $owner-> {HSVPin} = Hue|Sat|Wheel|Roller;
    $owner-> value( rgb2value( hsv2rgb(
       $owner->{H}->value, $owner->{S}->value/255,
       ($y - 8) / ( $self-> height - 16))));
@@ -482,6 +518,15 @@ sub Roller_MouseUp
    $self-> capture(0);
 }
 
+
+sub set_quality
+{
+   my ( $self, $quality) = @_;
+   return if $quality == $self->{quality};
+   $self->{quality} = $quality;
+   $self->{roller}-> palette([]) unless $quality;
+   $self-> Roller_Repaint;
+}
 
 sub set_value
 {
@@ -503,11 +548,16 @@ sub set_value
    $self->{S}->value( int($s)) unless $hsv & Sat;
    $self->{V}->value( int($v)) unless $hsv & Lum;
    $self->{wheel}->repaint unless $hsv & Wheel;
-   $self->{roller}->repaint unless $hsv & Roller;
+   if ( $hsv & Roller) {
+      $self->{roller}-> repaint;
+   } else {
+      $self->Roller_Repaint;
+   }
    $self->{setTransaction} = $st;
 }
 
 sub value        {($#_)?$_[0]->set_value        ($_[1]):return $_[0]->{value};}
+sub quality      {($#_)?$_[0]->set_quality      ($_[1]):return $_[0]->{quality};}
 
 
 1;
