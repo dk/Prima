@@ -61,7 +61,7 @@ apc_application_begin_paint ( Handle self)
    apt_set( aptWinPS);
    apt_set( aptCompatiblePS);
    hwnd_enter_paint( self);
-   if ( sys pal = palette_create( self)) {
+   if (( sys pal = palette_create( self))) {
       SelectPalette( sys ps, sys pal, 0);
       RealizePalette( sys ps);
    }
@@ -641,7 +641,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
               Bool usePos, Bool useSize,
               ViewProfile * vprf, HWND parentHandle)
 {
-   HWND ret;
+   HWND ret = nil;
    HWND old        = HANDLE;
    HWND behind     = HWND_TOP;
    HWND ownerView  = ( HWND) (( PWidget) owner)-> handle;
@@ -649,7 +649,6 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    int  count = 0;
    Bool reset = false;
    Handle * list = nil;
-   int oStage = var stage;
 
    if ( HANDLE)
    {
@@ -1417,7 +1416,6 @@ Bool
 apc_widget_map_points( Handle self, Bool toScreen, int count, Point * p)
 {
    int i;
-   POINT pt = {0,0};
    Point sz = ((( PWidget) self)-> self)-> get_size( self);
    Point appSz = apc_application_get_size( application);
 
@@ -2495,15 +2493,15 @@ apc_menu_set_font( Handle self, PFont font)
 Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m)
 {
-   PWindow owner;
+   PWindow owner = nilHandle;
    Point size;
    Bool resize;
    objCheck false;
    dobjCheck( var owner) false;
-   if ( resize = kind_of( var owner, CWindow) &&
+   if (( resize = kind_of( var owner, CWindow) &&
         kind_of( self, CMenu) &&
         var stage <= csNormal &&
-        ((( PAbstractMenu) self)-> self)-> get_selected( self)) {
+        ((( PAbstractMenu) self)-> self)-> get_selected( self))) {
       owner = ( PWindow) var owner;
       size = owner-> self-> get_size( var owner);
    }
@@ -2521,7 +2519,6 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
 Bool
 apc_menu_item_set_accel( Handle self, PMenuItemReg m)
 {
-   MENUITEMINFOW mii = {sizeof( MENUITEMINFOW)};
    UINT flags;
    WCHAR * buf;
 
@@ -2579,7 +2576,6 @@ apc_menu_item_set_key( Handle self, PMenuItemReg m)
 Bool
 apc_menu_item_set_text( Handle self, PMenuItemReg m)
 {
-   MENUITEMINFOW mii = {sizeof( MENUITEMINFOW)};
    WCHAR * buf;
    UINT flags;
 
@@ -2607,7 +2603,6 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m)
 Bool
 apc_menu_item_set_image( Handle self, PMenuItemReg m)
 {
-   MENUITEMINFOW mii = {sizeof( MENUITEMINFOW)};
    UINT flags;
 
    if ( !var handle) return false;
@@ -3000,11 +2995,11 @@ apc_system_action( const char * params)
          waitBeforeQuit = 1;
       } else if ( strncmp( params, "win32.DrawFocusRect ", 20) == 0) {
          RECT r;
-         HWND win;
+         unsigned long win;
          Handle self;
-         int i = sscanf( params + 20, "%lu %d %d %d %d", &win, &r.left, &r.bottom, &r.right, &r.top);
+         int i = sscanf( params + 20, "%lu %ld %ld %ld %ld", &win, &r.left, &r.bottom, &r.right, &r.top);
 
-         if ( i != 5 || !( self = hwnd_to_view( win))) {
+         if ( i != 5 || !( self = hwnd_to_view(( HWND) win))) {
             warn( "Bad parameters to sysaction win32.DrawFocusRect");
             return 0;
          }
@@ -3053,7 +3048,7 @@ apc_system_action( const char * params)
          params += 19;
 
          if ( !guts. console) {
-            EnumWindows((int (__stdcall*)(void)) find_console, (LPARAM) &guts. console);
+            EnumWindows((WNDENUMPROC) find_console, (LPARAM) &guts. console);
             if ( strcmp( params, " exists") == 0) return 0;
             if ( !guts. console) {
                 warn("No associated console window found");
@@ -3063,7 +3058,7 @@ apc_system_action( const char * params)
 
          if ( strcmp( params, " exists") == 0) {
            char * p = ( char *) malloc(12);
-           if ( p) sprintf( p, "0x%08x", guts. console);
+           if ( p) sprintf( p, "0x%08lx", guts. console);
            return p;
          } else
          if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else

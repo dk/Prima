@@ -26,6 +26,21 @@
  * $Id$
  */
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
+
+#ifdef __CYGWIN__
+
+/* XXX not implemented, because of the horrible mix between win32api and cygwin guts */
+
+#include "win32\win32guts.h"
+#include "apricot.h"
+Bool apc_file_attach( Handle self) { return false; }
+Bool apc_file_detach( Handle self) { return false; }
+Bool apc_file_change_mask( Handle self) { return false; }
+void socket_rehash( void) {}
+
+#else
+
+
 #include <winsock.h>
 
 void __inline my_fd_zero( fd_set* f)           { FD_ZERO( f); }
@@ -250,3 +265,5 @@ apc_file_change_mask( Handle self)
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __CYGWIN__ */

@@ -417,7 +417,6 @@ find_oid( PAbstractMenu menu, PMenuItemReg m, int id)
 static void
 zorder_sync( Handle self, HWND me, LPWINDOWPOS lp)
 {
-   Handle org = nilHandle;
    if ( lp-> hwndInsertAfter == HWND_TOP ||
         lp-> hwndInsertAfter == HWND_NOTOPMOST ||
         lp-> hwndInsertAfter == HWND_TOPMOST) {
@@ -446,7 +445,6 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       return DefWindowProc( win, msg, mp1, mp2);
 
    for ( i = 0; i < guts. eventHooks. count; i++) {
-      MSG ms = { win, msg, mp1, mp2, 0};
       if ((( PrimaHookProc *)( guts. eventHooks. items[i]))((void*) &msg))
          return 0;
    }    
@@ -663,7 +661,7 @@ AGAIN:
    case WM_INITMENU:
       {
          PMenuWndData mwd = ( PMenuWndData) hash_fetch( menuMan, &mp1, sizeof( void*));
-         PMenuItemReg m;
+         PMenuItemReg m = nil;
          sys lastMenu = mwd ? mwd-> menu : nilHandle;
          if ( mwd && mwd-> menu && ( PAbstractMenu(mwd-> menu)->stage <= csNormal)) {
             m = ( PMenuItemReg) AbstractMenu_first_that( mwd-> menu, find_oid, (void*)mwd->id, true);
@@ -810,10 +808,8 @@ AGAIN:
        break;
    case WM_SYNCMOVE:
        {
-          RECT r;
           Handle parent = v-> self-> get_parent(( Handle) v);
           if ( parent) {
-             Point sz   = CWidget(parent)-> get_size( parent);
              Point pos  = var self-> get_origin( self);
              ev. cmd    = cmMove;
              ev. gen. P = pos;
@@ -1123,8 +1119,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
        break;
    case WM_SIZE:
        {
-          RECT r;
-          int state;
+          int state = wsNormal;
           Bool doWSChange = false;
           if (( int) mp1 == SIZE_RESTORED) {
              state = wsNormal;
@@ -1144,10 +1139,8 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
        break;
    case WM_SYNCMOVE:
        {
-          RECT r;
           Handle parent = v-> self-> get_parent(( Handle) v);
           if ( parent) {
-             Point sz   = CWidget(parent)-> get_size( parent);
              Point pos  = var self-> get_origin( self);
              ev. cmd    = cmMove;
              ev. gen. P = pos;
@@ -1283,8 +1276,6 @@ static Bool kill_img_cache( Handle self, int keyLen, void * key, void * killDBM)
 
 LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {
-   int command;
-   
    switch ( msg) {
       case WM_DISPLAYCHANGE:
          {

@@ -132,7 +132,7 @@ typedef HANDLE WINHANDLE;
 #define apiErr {                                            \
    rc = GetLastError();                                     \
    apcError = errApcError;                                  \
-   fprintf( stderr, "WIN_%d (%s) at line %d in %s", rc,     \
+   fprintf( stderr, "WIN_%d (%s) at line %d in %s", (int)rc,     \
       err_msg( rc, nil), __LINE__, __FILE__);                    \
 }
 #define apcErr( err) {                                      \
@@ -141,7 +141,7 @@ typedef HANDLE WINHANDLE;
 #define apiAltErr( err) {                                   \
    apcError = errApcError;                                  \
    rc = err;                                                \
-   fprintf( stderr, "WIN_%d (%s) at line %d at %s", rc,     \
+   fprintf( stderr, "WIN_%d (%s) at line %d at %s", (int)rc,     \
         err_msg( rc, nil), __LINE__, __FILE__);                  \
 }
 /*  #endif */

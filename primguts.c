@@ -1127,7 +1127,7 @@ SV** temporary_prf_Sv;
 Bool dolbug;
 Bool waitBeforeQuit;
 
-#if defined(BROKEN_COMPILER) || (PRIMA_PLATFORM == apcUnix)
+#if defined(BROKEN_COMPILER) || (PRIMA_PLATFORM == apcUnix) || defined(__CYGWIN__)
 #ifndef NAN
 double NAN;
 #endif

@@ -817,11 +817,11 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
       memcpy( &elx. elfLogFont, &(( ENUMLOGFONTEXA*)e)-> elfLogFont, sizeof(LOGFONTA) - LF_FACESIZE);
       char2wchar( elx. elfLogFont. lfFaceName, (( ENUMLOGFONTEXA*)e)-> elfLogFont. lfFaceName, LF_FACESIZE);
       if ( type & TRUETYPE_FONTTYPE) {
-         char2wchar( elx. elfFullName, (( ENUMLOGFONTEXA*)e)-> elfFullName, LF_FULLFACESIZE);
-         char2wchar( elx. elfStyle,    (( ENUMLOGFONTEXA*)e)-> elfStyle, LF_FACESIZE);
+         char2wchar((WCHAR*) elx. elfFullName, (( ENUMLOGFONTEXA*)e)-> elfFullName, LF_FULLFACESIZE);
+         char2wchar((WCHAR*) elx. elfStyle,    (( ENUMLOGFONTEXA*)e)-> elfStyle, LF_FACESIZE);
       } else { /* these fields are undefined for raster fonts */
-         char2wchar( elx. elfFullName, (( ENUMLOGFONTEXA*)e)-> elfLogFont. lfFaceName, LF_FACESIZE);
-         char2wchar( elx. elfStyle,    "", 1);
+         char2wchar((WCHAR*) elx. elfFullName, (( ENUMLOGFONTEXA*)e)-> elfLogFont. lfFaceName, LF_FACESIZE);
+         char2wchar((WCHAR*) elx. elfStyle,    "", 1);
       }
       t = &atx;
       e = &elx;
@@ -904,7 +904,8 @@ EXIT:
    return ret;
 }
 
-extern int font_font2gp( PFont font, Point res, Bool forceSize, HDC dc);
+static int
+font_font2gp( PFont font, Point res, Bool forceSize, HDC dc);
 
 static void
 font_logfont2textmetric( HDC dc, LOGFONT * lf, TEXTMETRICW * tm)
@@ -954,7 +955,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
       }
       elf. lfCharSet = DEFAULT_CHARSET;
    } else if (( es. wide = HAS_WCHAR)) {
-      EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
+      EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep, ( LPARAM) &es, 0);
    } else {
       EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
    }
@@ -1148,7 +1149,7 @@ int CALLBACK
 fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
 {
    PFont fm;
-   char wname[256], *name;
+   char wname[256], *name = nil;
 
    if ( f-> hash) { /* gross-family enumeration */
       if ( f-> wide) {
@@ -1238,7 +1239,7 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
    } else {
       elf. lfCharSet = font_encoding2charset( encoding); 
       if (( f. wide = HAS_WCHAR)) 
-         EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROC) fep2, ( LPARAM) &f, 0);
+         EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep2, ( LPARAM) &f, 0);
       else
          EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep2, ( LPARAM) &f, 0);
    }
@@ -1277,7 +1278,6 @@ fep3( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICW FAR *t, int type, PHash lst)
 PHash
 apc_font_encodings( Handle self )
 {
-   int  i;
    HDC  dc;
    PHash lst;
    Bool hasdc = 0;
@@ -1300,7 +1300,7 @@ apc_font_encodings( Handle self )
    memset( &elf, 0, sizeof( elf));
    elf. lfCharSet = DEFAULT_CHARSET;
    if ( HAS_WCHAR)
-      EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROC) fep3, ( LPARAM) lst, 0);
+      EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep3, ( LPARAM) lst, 0);
    else
       EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep3, ( LPARAM) lst, 0);
 
@@ -1946,7 +1946,7 @@ palette_match( Handle self, long clr)
 HRGN
 region_create( Handle mask)
 {
-   LONG i, w, h, x, y, size = 256;
+   LONG w, h, x, y, size = 256;
    HRGN    rgn = NULL;
    Byte    * idata;
    RGNDATA * rdata = nil;
@@ -2235,7 +2235,7 @@ gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double ang
    double sina = sin( angleStart / GRAD), sinb = sin( angleEnd / GRAD);
    int xstart = cosa * dX / 2 + 0.5, ystart = sina * dY / 2 + 0.5;
    int xend = cosb * dX / 2 + 0.5, yend = sinb * dY / 2 + 0.5;
-   int qplane, qstart = quarter( angleStart), qend = quarter( angleEnd), lim = 3;
+   int qplane, qstart = quarter( angleStart), qend = quarter( angleEnd);
 
 
    // calculating arc length

@@ -322,9 +322,8 @@ image_query_bits( Handle self, Bool forceNewImage)
    PImage i = ( PImage) self;
    XBITMAPINFO xbi;
    BITMAPINFO * bi;
-   XBITMAPINFO xbi2;
    int  newBits;
-   HDC  ops;
+   HDC  ops = nil;
    BITMAP bitmap;
 
    if ( forceNewImage) {
@@ -441,7 +440,6 @@ apc_image_begin_paint_info( Handle self)
 Bool
 apc_image_end_paint( Handle self)
 {
-   BITMAPINFO * bi;
    apcErrClear;
    objCheck false;
 
@@ -479,7 +477,6 @@ apc_image_update_change( Handle self)
 Bool
 apc_dbm_create( Handle self, Bool monochrome)
 {
-   HDC dc;
    Bool palc = 0;
 
    objCheck false;
@@ -500,7 +497,7 @@ apc_dbm_create( Handle self, Bool monochrome)
          DeleteDC( sys ps);
          return false;
       }
-      if ( sys pal = palette_create( self)) {
+      if (( sys pal = palette_create( self))) {
          sys stockPalette = SelectPalette( sys ps, sys pal, 1);
          RealizePalette( sys ps);
          palc = 1;
@@ -537,7 +534,7 @@ dbm_recreate( Handle self)
 {
    HBITMAP bm, stock;
    HDC dc, dca;
-   HPALETTE p, std = nil;
+   HPALETTE p = nil;
    if ((( PDeviceBitmap) self)-> monochrome) return;
 
    if ( !( dc = CreateCompatibleDC( 0))) {
@@ -606,7 +603,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
    PIcon i = ( PIcon) img;
    HICON    r;
    ICONINFO ii;
-   int   j, bpp = i-> type & imBPP;
+   int    bpp = i-> type & imBPP;
    Bool  noSZ   = i-> w != size. x || i-> h != size. y;
    Bool  noBPP  = bpp != 1 && bpp != 4 && bpp != 8 && bpp != 24;
    HDC dc;
@@ -1061,7 +1058,7 @@ apc_prn_begin_doc( Handle self, const char* docName)
    }
 
    hwnd_enter_paint( self);
-   if ( sys pal = palette_create( self)) {
+   if (( sys pal = palette_create( self))) {
       SelectPalette( sys ps, sys pal, 0);
       RealizePalette( sys ps);
    }
@@ -1072,7 +1069,6 @@ Bool
 apc_prn_begin_paint_info( Handle self)
 {
    LPPRINTER_INFO_2 ppi = &sys s. prn. ppi;
-   DOCINFO doc = { sizeof( DOCINFO), "", nil, nil, 0};
 
    objCheck false;
    if ( !( sys ps = CreateDC( ppi-> pDriverName, ppi-> pPrinterName, ppi-> pPortName, ppi-> pDevMode)))

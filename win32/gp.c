@@ -392,7 +392,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
       if ( !( ok = Polygon( ps, ( POINT *) points, numPts))) apiErr;
       DeleteObject( SelectObject( ps, old));
    } else {
-      int j, dx    = sys lastSize. x;
+      int dx    = sys lastSize. x;
       int rop      = ctx_remap_def( GetROP2( ps), ctx_R22R4, true, SRCCOPY);
       Point bound  = {0,0};
       Point trans;
@@ -675,7 +675,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    Bool ok = true, db, dcmono = false;
    POINT tr = {0, 0};
 
-   COLORREF oFore, oBack;
+   COLORREF oFore = 0, oBack = 0;
 
    dobjCheck(image) false;
    db = dsys( image) options. aptDeviceBitmap || i-> options. optInDraw;
@@ -1268,6 +1268,7 @@ apc_gp_get_clip_rect( Handle self)
    return rr;
 }
 
+int
 apc_gp_get_line_end( Handle self)
 {
    objCheck 0;
@@ -1818,7 +1819,7 @@ apc_gp_set_line_end( Handle self, int lineEnd)
       PStylus s         = &sys stylus;
       PEXTPEN ep        = &s-> extPen;
       ep-> lineEnd      = ctx_remap_def( lineEnd, ctx_le2PS_ENDCAP, true, PS_ENDCAP_ROUND);
-      if ( ep-> actual  = stylus_extpenned( s, 0 & exsLineEnd))
+      if (( ep-> actual  = stylus_extpenned( s, 0 & exsLineEnd)))
          ep-> style = stylus_get_extpen_style( s);
       stylus_change( self);
    }
@@ -1875,7 +1876,7 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
       }
 
       s-> pen. lopnStyle  = patres_user( pattern, len);
-      if ( ep-> actual    = stylus_extpenned( s, 0 & exsLinePattern)) {
+      if (( ep-> actual    = stylus_extpenned( s, 0 & exsLinePattern))) {
          ep-> style       = stylus_get_extpen_style( s);
          ep-> patResource = ( s-> pen. lopnStyle == PS_USERSTYLE) ?
             patres_fetch( pattern, len) : &hPatHollow;

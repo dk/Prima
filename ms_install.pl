@@ -28,7 +28,7 @@
 #
 
 BEGIN {
-  die <<UX if $^O !~ /os2|win32/i;
+  die <<UX if $^O !~ /os2|win32|cygwin/i;
   This program is only intented to be run under MSWin32 and OS/2,
   for the binary installations. Please install the toolkit from the 
   source distribution, by typing 

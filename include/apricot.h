@@ -59,7 +59,7 @@
    extern double                 NAN;
 #endif
 
-#if PRIMA_PLATFORM == 3
+#if PRIMA_PLATFORM == 3 || defined(__CYGWIN__)
 #ifndef NAN
    extern double NAN;
 #endif

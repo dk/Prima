@@ -274,7 +274,8 @@ sub init
       $defaultVariableFont = $self-> {text}-> {fontPalette}-> [0]-> {name};
       $defaultFixedFont    = $self-> {text}-> {fontPalette}-> [1]-> {name};
    }
-   my $enc = (($^O =~ /win32/i) ? 'Western' : 'iso8859-1'); # set a fall-back latin-1 encoding
+   my $enc = ((Prima::Application-> get_system_info->{apc} == apc::Win32) ?
+               'Western' : 'iso8859-1'); # set a fall-back latin-1 encoding
    $enc = $::application-> font_encodings->[0] unless 
       grep { $_ eq $enc } @{$::application-> font_encodings};
    if ( defined $enc) {

@@ -98,6 +98,7 @@ use vars @path_expand_ovvars = qw(
 use vars qw(
     $CWD
     $Win32
+    $cygwin
     $NeedX11
     $OS2
     $OS2DLLF
@@ -238,7 +239,7 @@ sub ld_command_line
         push @ld, "$LDOUTFLAG$dstf", @_;
         push @ld, map { "$LDLIBFLAG$_"} @LIBS;
         push @ld, "os2\\Prima.def" if $OS2;
-        push @ld, "/def:win32\\Prima.def" if $Win32;
+        push @ld, "/def:win32\\Prima.def" if $Win32 && !$cygwin;
     }
     return @ld;
 }
@@ -345,7 +346,7 @@ sub find_lib
        }
        return undef;
     }
-
+    
     local @LIBS = @LIBS;
     push @LIBS, $lib;
     foreach $libpath ( @_) {
@@ -811,6 +812,11 @@ sub setup_variables
     }
     setvar( 'LIBS', ());
     my @flibs;
+    
+    if ( $cygwin) {
+       $Config{libperl} =~ s/^lib(.*)\.a$/$1/i;
+       push @libs, qw(gdi32 mpr winspool); # add more when appropriate
+    }
 
 # here starts lot of execs...
 
@@ -1301,8 +1307,10 @@ sub setup_defines
         have_header( 'gc.h');
     }
 
-    have_funcs_in( 'string.h', 'strcasecmp') || have_funcs_in( 'strings.h', 'stricmp');
-    have_funcs_in( 'stdio.h', 'snprintf') || have_funcs_in( 'stdio.h', '_snprintf');
+    have_funcs_in( 'string.h', 'strcasecmp');
+    have_funcs_in( 'strings.h', 'stricmp');
+    have_funcs_in( 'stdio.h', 'snprintf');
+    have_funcs_in( 'stdio.h', '_snprintf');
     have_funcs_in( 'stdlib.h', 'reallocf');
     have_funcs_in( 'string.h', 'bzero');
     if ( $Win32) {
@@ -1368,7 +1376,7 @@ sub setup_misc
           push @inc, $_ if m/^\s*#include\s*\</;
        }
        close F;
-       $lib.='.lib' if $Win32 || $OS2;
+       $lib.='.lib' if ( $Win32 && !$cygwin) || $OS2;
        if ( $libs{$lib} || defined find_lib( $lib, join('', @inc), '')) {
           push( @ACTIVE_CODECS, $1);
           push( @LIBS, $lib) unless $libs{$lib};
@@ -1849,7 +1857,8 @@ CONTENT
 # $usePrigraph = env_true( 'PRIMA_PRIGRAPH');
 $useGC = env_true( 'PRIMA_USE_GC');
 
-$Win32 = ( $^O =~ /mswin32/i);
+$Win32 = ( $^O =~ /mswin32|cygwin/i);
+$cygwin = ( $^O =~ /cygwin/i);
 $OS2 = ( $^O =~ /os2/i);
 $dir_sep = (( ( $path_sep = $Config{ path_sep}) eq ':') || ( defined $Config{ emxpath})) ? '/' : '\\';
 

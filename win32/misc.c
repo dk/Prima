@@ -79,6 +79,7 @@ apc_beep_tone( int freq, int duration)
          Sleep( duration);
          return true;
       }   
+#ifndef __CYGWIN__
       // Nastiest hack ever - Beep() doesn't work under W9X.
       __asm {
         in      al,0x61                  ;Stop sound, if any
@@ -92,7 +93,7 @@ apc_beep_tone( int freq, int duration)
         mov     bx,ax                    ;Save Count in BX
         in      al,0x61                  ;Check the value in port 0x61
         test    al,3                     ;Bits 0 and 1 set if speaker is on
-        jnz     SetCount                 ;If they're already on, continue
+        jnz     SetCount                 ;If they are already on, continue
 
                                          ;Turn on speaker
         or      al,3                     ;Set bits 0 and 1
@@ -112,6 +113,7 @@ SetCount:
          and    al, 0xfc
          out    0x61, al
       }    
+#endif
    }   
    return true;
 }
@@ -402,9 +404,7 @@ prf_exists( HKEY hk, char * path, int * info)
 {
    HKEY hKey;
    long cache;
-   Bool user = false;
-
-   if ( cache = ( long) hash_fetch( regnodeMan, path, strlen( path))) {
+   if (( cache = ( long) hash_fetch( regnodeMan, path, strlen( path)))) {
       if ( info) *info = cache;
       return cache & rgxExists;
    }
@@ -438,7 +438,7 @@ prf_find( HKEY hk, char * path, List * ids, int firstName, char * result)
    int j = 2, info;
 
    while ( j--) {
-      snprintf( buf, MAXREGLEN, "%s\\%s", path, ids[j].items[ firstName]);
+      snprintf( buf, MAXREGLEN, "%s\\%s", path, ( char*) ids[j].items[ firstName]);
       if ( prf_exists( hk, buf, nil)) {
          if ( ids[j].count > firstName + 1) {
             if ( prf_find( hk, buf, ids, firstName + 1, result))

@@ -115,12 +115,10 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
    {
       case CF_BITMAP:
          {
-             PImage image = (PImage) c-> image;
              Handle self  = c-> image;
              HBITMAP b = GetClipboardData( CF_BITMAP);
-             HBITMAP op, p = GetClipboardData( CF_PALETTE);
+             HPALETTE op = nil, p = GetClipboardData( CF_PALETTE);
              HBITMAP obm = sys bm;
-             XBITMAPINFO xbi;
              HDC dc, ops;
 
              if ( b == nil) {
@@ -213,7 +211,6 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
       default:
          {
             char *ptr;
-            void *ret;
             void *ph = GetClipboardData( id);
 
             if ( ph == nil) {
@@ -261,7 +258,7 @@ apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
                     utf8_length( c-> text. text, c-> text. text + c-> text. length) : 
                     c-> text. length;
             int i, cr = 0;
-            void *ptr, *oemptr;
+            void *ptr = nil, *oemptr = nil;
             char *dst;
             HGLOBAL glob, oemglob;
 
