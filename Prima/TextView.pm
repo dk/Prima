@@ -468,7 +468,7 @@ sub block_wrap
    my ( $i, $lim) = ( tb::BLK_START, scalar @$b);
 
    my $cmd;
-   my ( $t, $o) = ( $self-> {text}, $$b[ tb::BLK_TEXT_OFFSET]);
+   my ( $o, $t) = ( $$b[ tb::BLK_TEXT_OFFSET], $self-> {text});
    my ( $x, $y) = (0, 0);
    my $f_taint;
    my $wrapmode = 1;
@@ -484,7 +484,7 @@ sub block_wrap
       @$z[ tb::BLK_DATA_START .. tb::BLK_DATA_END ] = @$state[ tb::BLK_DATA_START .. tb::BLK_DATA_END];
       $$z[ tb::BLK_X] = $$b[ tb::BLK_X];
       $$z[ tb::BLK_FLAGS] &= ~ tb::T_SIZE;
-      $$z[ tb::BLK_TEXT_OFFSET] = -1;
+      $$z[ tb::BLK_TEXT_OFFSET] = $$b [ tb::BLK_TEXT_OFFSET];
       $x = 0;
    };
 
@@ -492,10 +492,9 @@ sub block_wrap
    {
       $haswrapinfo = 0;
       splice( @{$ret[-1]}, $wrapret[0]); 
-      @$state = @{$wrapret[2]};
+      @$state = @{$wrapret[1]};
       $newblock->();
-      $$z[ tb::BLK_TEXT_OFFSET] = $wrapret[1];
-      $i = $wrapret[3];
+      $i = $wrapret[2];
    };
 
    $newblock-> ();
@@ -525,9 +524,9 @@ sub block_wrap
          my $apx = $f_taint-> {width};
 # print "$x+$apx: new text $tw :|",substr( $$t, $o + $ofs, $tlen),"|\n";
          if ( $x + $tw + $apx <= $width) {
-            push @$z, tb::OP_TEXT, $o + $ofs - $$z[ tb::BLK_TEXT_OFFSET], $tlen, $tw;
+            push @$z, tb::OP_TEXT, $ofs, $tlen, $tw;
             $x += $tw;
-# print "copied as is, advanced to $x, width $tw\n";
+# print "copied as is, advanced to $x, width $tw, $ofs\n";
          } elsif ( $wrapmode) {
             next if $tlen <= 0;
             my $str = substr( $$t, $o + $ofs, $tlen);
@@ -540,19 +539,17 @@ sub block_wrap
                tw::ReturnFirstLineLength | tw::WordBreak | tw::BreakSingle);
 # print "repo $l bytes wrapped in $width - $apx - $x\n";
             if ( $l > 0) {
-               push @$z, tb::OP_TEXT, $o + $ofs - $$z[ tb::BLK_TEXT_OFFSET], 
+               push @$z, tb::OP_TEXT, $ofs,
                   $l + length $leadingSpaces, 
                   $tw = $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l));
 # print "$x + advance $$z[-1] |", $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l)), "|\n";
                $str = substr( $str, $l);
                $l += length $leadingSpaces;
                $newblock-> ();
-               $$z[ tb::BLK_TEXT_OFFSET] = $o + $ofs + $l;
                $ofs += $l;
                $tlen -= $l;
 # print "tx shift $l, str=|$str|, x=$x\n";
                if ( $str =~ /^(\s+)/) {
-                  $$z[ tb::BLK_TEXT_OFFSET] += length( $1 );
                   $ofs  += length $1;
                   $tlen -= length $1;
                   $x    += $canvas-> get_text_width( $1);
@@ -563,7 +560,6 @@ sub block_wrap
 # print "new block: x = $x |$str|\n";
                my $ox = $x;
                $newblock-> ();
-               $$z[ tb::BLK_TEXT_OFFSET] = $o + $ofs + length $leadingSpaces;
                $ofs  += length $leadingSpaces;
                $tlen -= length $leadingSpaces; 
                if ( length $str) { # well, it cannot be fit into width,
@@ -585,13 +581,13 @@ sub block_wrap
 # print "retrace\n";
             next;
          } else { # unwrappable, cannot be fit, no wrap info! - whole new block
-# print "new empty block - |", substr( $$t, $o + $ofs, $tlen), "|\n";
-            push @$z, tb::OP_TEXT, $o + $ofs - $$z[ tb::BLK_TEXT_OFFSET], $tlen, $tw;
+# print "new empty block - |", substr( $$t,$o + $ofs, $tlen), "|\n";
+            push @$z, tb::OP_TEXT, $ofs, $tlen, $tw;
             $newblock-> ();
          }
       } elsif ( $cmd == tb::OP_WRAP) {
          if ( $wrapmode == 1 && $$b[ $i + 1] == 0) {
-            @wrapret = ( scalar @$z, $lastTextOffset, [ @$state ], $i);
+            @wrapret = ( scalar @$z, [ @$state ], $i);
             $haswrapinfo = 1;
 # print "wrap start record x = $x\n";
          }
@@ -653,11 +649,11 @@ sub block_wrap
    }
 
    $lastTextOffset = $$b[ tb::BLK_TEXT_OFFSET];
+   my $lastBlockOffset = $lastTextOffset;
 
    for ( @ret) {
       $b = $_;
       $$b[ tb::BLK_Y] = $start;
-      $$b[ tb::BLK_TEXT_OFFSET] = $lastTextOffset if $$b[ tb::BLK_TEXT_OFFSET] < 0;
 
       ( $x, $y, $i, $lim) = ( 0, 0, tb::BLK_START, scalar @$b);
       for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]]) {
@@ -670,6 +666,9 @@ sub block_wrap
             $$b[ tb::BLK_APERTURE_X] = $f_taint-> {width}   - $x if $$b[ tb::BLK_APERTURE_X] < $f_taint-> {width}   - $x;
             my $newY = $y + $f_taint-> {ascent} + $f_taint-> {externalLeading};
             $$b[ tb::BLK_HEIGHT] = $newY if $$b[ tb::BLK_HEIGHT] < $newY; 
+#            print "OP_TEXT patch $$b[$i+1] => ";
+            $$b[ $i + 1] -= $lastBlockOffset - $$b[ tb::BLK_TEXT_OFFSET];
+#            print "$$b[$i+1]\n";
             $lastTextOffset = $$b[ tb::BLK_TEXT_OFFSET] + $$b[ $i + 1] + $$b[ $i + 2];
          } elsif ( $cmd == tb::OP_FONT) {
             if ( $$b[$i + 1] == tb::F_SIZE) {
@@ -681,8 +680,8 @@ sub block_wrap
             my ( $newX, $newY) = ( $x + $$b[ $i + tb::X_X], $y + $$b[ $i + tb::X_Y]);
             $$b[ tb::BLK_WIDTH]  = $newX if $$b[ tb::BLK_WIDTH ] < $newX;
             $$b[ tb::BLK_HEIGHT] = $newY if $$b[ tb::BLK_HEIGHT] < $newY;
-            $$b[ tb::BLK_APERTURE_X] = $newX if $$b[ tb::BLK_APERTURE_X] > $newX;
-            $$b[ tb::BLK_APERTURE_Y] = $newY if $$b[ tb::BLK_APERTURE_Y] > $newY;
+            $$b[ tb::BLK_APERTURE_X] = -$newX if $newX < 0 && $$b[ tb::BLK_APERTURE_X] > -$newX;
+            $$b[ tb::BLK_APERTURE_Y] = -$newY if $newY < 0 && $$b[ tb::BLK_APERTURE_Y] > -$newY;
             unless ( $$b[ $i + tb::X_FLAGS] & tb::X_EXTEND) {
                ( $x, $y) = ( $newX, $newY);
             }
@@ -691,9 +690,12 @@ sub block_wrap
             $$b[ $i + 3] = $y;
          }
       }
+      $$b[ tb::BLK_TEXT_OFFSET] = $lastBlockOffset;
+#      print "block offset: $lastBlockOffset\n";
       $$b[ tb::BLK_HEIGHT] += $$b[ tb::BLK_APERTURE_Y];
       $$b[ tb::BLK_WIDTH]  += $$b[ tb::BLK_APERTURE_X];
       $start += $$b[ tb::BLK_HEIGHT];
+      $lastBlockOffset = $lastTextOffset;
    }
 
    if ( $ret[-1]) {
