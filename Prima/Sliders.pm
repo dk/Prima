@@ -362,7 +362,7 @@ sub profile_default
       %{Prima::InputLine->profile_default},
       %{$_[ 0]-> SUPER::profile_default},
       ownerBackColor => 1,
-      selectable     => 1,
+      selectable     => 0,
       scaleChildren  => 0,
       min            => 0,
       max            => 100,

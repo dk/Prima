@@ -88,7 +88,7 @@ sub profile_default
       entryHeight    => $f-> {height} + 2,
       listHeight     => 100,
       ownerBackColor => 1,
-      selectable     => 1,
+      selectable     => 0,
       literal        => 1,
       scaleChildren  => 0,
       editClass      => 'Prima::InputLine',
