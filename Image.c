@@ -82,6 +82,11 @@ Image_init( Handle self, HV * profile)
       croak("Image::init: cannot allocate %d bytes", var-> dataSize);
    free( var->palette);
    var->palette = allocn( RGBColor, 256);
+   if ( var-> palette == nil) {
+      free( var-> data);
+      var-> data = nil;
+      croak("Image::init: cannot allocate %d bytes", 768);
+   }   
    if ( !Image_set_extended_data( self, profile))
       my-> set_data( self, pget_sv( data));
    opt_assign( optPreserveType, pget_B( preserveType));
@@ -1260,6 +1265,8 @@ XS( Image_load_FROMPERL) {
           if ( as_class) {
               Handle *selves;
               selves = allocn( Handle, info->count);
+              if ( selves == nil) 
+                 croak("Image::load: cannot allocate %d bytes", sizeof( Handle) * info-> count);
               for ( i = 0; i < info->count; i++) {
                   self = ( Handle) create_object( class_name, "", nil);
                   SPAGAIN;
@@ -1365,6 +1372,8 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
    checkrc;
 
    palette = allocn( GBMRGB, 0x100);
+   if ( palette == nil)
+      croak("Image::load: cannot allocate %d bytes", 0x300);
    rc = gbm_read_palette( file, ft, &gbm, ( GBMRGB*) palette);
    checkrc;
 
@@ -1556,6 +1565,8 @@ XS( Image_get_info_FROMPERL)
       if ( result) {
           HV **hvInfo;
           hvInfo = allocn( HV*, info->count);
+          if ( hvInfo == nil)
+             croak("Image::get_info: cannot allocate %d bytes", sizeof(HV*)*info->count)
           for ( i = 0; i < info->count; i++) {
               int j;
               PImgInfo imageInfo = ( PImgInfo) list_at( info, i);
