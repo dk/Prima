@@ -923,7 +923,7 @@ sub prf_types
          )],
       uiv     => [qw(borderWidth tabIndent undoLimit)],
       editBlockType => ['blockType',],
-      color   => [qw(hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs)],
+      color   => [qw(hiliteNumbers hiliteQStrings hiliteQQStrings)],
       string  => ['wordDelimiters',],
    );
    $_[0]-> prf_types_add( $pt, \%de);
