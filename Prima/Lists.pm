@@ -1151,7 +1151,6 @@ sub set_v_scroll
 #}
 
 sub autoHeight    {($#_)?$_[0]->set_auto_height    ($_[1]):return $_[0]->{autoHeight}     }
-sub borderWidth   {($#_)?$_[0]->set_border_width   ($_[1]):return $_[0]->{borderWidth}    }
 sub count         {($#_)?$_[0]->set_count          ($_[1]):return $_[0]->{count}          }
 sub extendedSelect{($#_)?$_[0]->set_extended_select($_[1]):return $_[0]->{extendedSelect} }
 sub gridColor     {($#_)?$_[0]->set_grid_color     ($_[1]):return $_[0]->{gridColor}      }

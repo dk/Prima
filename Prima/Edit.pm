@@ -23,7 +23,6 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-
 # edit block types
 package bt;
 use constant CUA          =>  0;
@@ -162,13 +161,13 @@ sub profile_check_in
 sub init
 {
    my $self = shift;
-   for ( qw( autoIndent borderWidth firstCol offset resetDisabled blockType persistentBlock
+   for ( qw( autoIndent firstCol offset resetDisabled blockType persistentBlock
              tabIndent readOnly wantReturns wantTabs))
       { $self->{$_} = 1; }
-   for ( qw( wordWrap hScroll vScroll rows maxLineCount maxLineLength maxLineWidth dx dy
+   for ( qw( wordWrap hScroll vScroll rows maxLineCount maxLineLength maxLineWidth
              scrollTransaction maxLine maxChunk capLen cursorY cursorX cursorWrap
              cursorXl cursorYl syntaxHilite hiliteNumbers hiliteQStrings hiliteQQStrings
-             notifyChangeLock modified
+             notifyChangeLock modified borderWidth
         ))
    { $self->{$_} = 0;}
    $self-> { insertMode}   = $::application-> get_insert_mode;
@@ -176,6 +175,7 @@ sub init
    for ( qw( selStart selEnd selStartl selEndl)) { $self-> {$_} = [0,0]}
    $self-> {defcw} = $::application-> get_default_cursor_width;
    my %profile = $self-> SUPER::init(@_);
+   $self-> {indents} = [0,0,0,0];
    $profile{selection} = [@{$profile{selStart}}, @{$profile{selEnd}}];
    for ( qw( hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs
              textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
@@ -197,22 +197,26 @@ sub reset
 {
    my $self = $_[0];
    return if $self->{resetDisabled};
-   my @size = $self-> size;
-   my $bw   = $self-> {borderWidth};
+#  my @size = $self-> size;
+   my @a    = ( $self-> {indents}->[0], $self-> {indents}->[1]);
+   my @size = $self-> get_active_area(2);
+#  my $bw   = $self-> {borderWidth};
    my $cw   = $self-> {defcw};
    my $ti   = $self-> {tabIndent};
    my $uC   = $self-> {uChange};
    my $mw;
-   $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height - 1 : 0);
-   $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width  - 1 : 0);
-   $size[1] -= $bw * 2 + $self->{dy};
-   $size[0] -= $bw * 2 + $self->{dx} - $cw;
+#  $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height - 1 : 0);
+#  $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width  - 1 : 0);
+#  $size[1] -= $bw * 2 + $self->{dy};
+#  $size[0] -= $bw * 2 + $self->{dx} - $cw;
+   $size[0] -= $cw;
    if ( $uC < 2)
    {
       $self-> {fixed} = $self-> font-> pitch == fp::Fixed;
       $self-> {averageWidth} = $self-> font-> width;
       $mw                    = $self-> {averageWidth};
-      $self-> {maxFixedLength} = int(( $size[0] - $cw) / $mw);
+#     $self-> {maxFixedLength} = int(( $size[0] - $cw) / $mw);
+      $self-> {maxFixedLength} = int( $size[0] / $mw);
       $self-> {tabs} = ' 'x$ti;
    }
 
@@ -237,14 +241,15 @@ sub reset
             my $breaks = $self-> text_wrap( $_, $size[0], $twOpts, $ti);
             for ( $i = 0; $i < scalar @{$breaks} / 2; $i++)
             {
-               push( @chunkMap, $$breaks[$i * 2]);
-               push( @chunkMap, $$breaks[$i * 2 + 1]);
-               push( @chunkMap, $j);
+            #  push( @chunkMap, $$breaks[$i * 2]);
+            #  push( @chunkMap, $$breaks[$i * 2 + 1]);
+            #  push( @chunkMap, $j);
+               push( @chunkMap, $$breaks[$i * 2], $$breaks[$i * 2 + 1], $j);
             }
             $j++;
          }
          $self-> end_paint_info;
-         $self->{chunkMap}      = \@chunkMap;
+         $self-> {chunkMap}      = \@chunkMap;
          $self-> {maxLineWidth} = $size[0];
       }
    } else {
@@ -285,12 +290,16 @@ sub reset
       $self-> {cursorInsWidth} = $self-> get_chunk_width( $chunk, $x, 1);
    }
 # positioning cursor
-   my $cx  = $bw + $self-> {cursorAtX} - $self-> {offset};
-   my $cy  = $self->{dy} + $bw + $yTail + ($self-> {rows} - $self-> {cursorYl} + $self->{firstCol} - 1) * $fh;
+#  my $cx  = $bw + $self-> {cursorAtX} - $self-> {offset};
+   my $cx  = $a[0] + $self-> {cursorAtX} - $self-> {offset};
+#  my $cy  = $self->{dy} + $bw + $yTail + ($self-> {rows} - $self-> {cursorYl} + $self->{firstCol} - 1) * $fh;
+   my $cy  = $a[1] + $yTail + ($self-> {rows} - $self-> {cursorYl} + $self->{firstCol} - 1) * $fh;
    my $xcw = $self-> {insertMode} ? $cw : $self->{cursorInsWidth};
    my $ycw = $fh;
-   $ycw -= $bw - $cy, $cy = $bw if $cy < $bw;
-   $xcw = $size[0] + $bw - $cx - 1 if $cx + $xcw >= $size[0] + $bw;
+#  $ycw -= $bw - $cy, $cy = $bw if $cy < $bw;
+   $ycw -= $a[1] - $cy, $cy = $a[1] if $cy < $a[1];
+#  $xcw = $size[0] + $bw - $cx - 1 if $cx + $xcw >= $size[0] + $bw;
+   $xcw = $size[0] + $a[0] - $cx - 1 if $cx + $xcw >= $size[0] + $a[0];
    $self-> cursorVisible( $xcw > 0);
    if ( $xcw > 0) {
       $self-> cursorPos( $cx, $cy);
@@ -304,6 +313,7 @@ sub reset_cursor
   my $self = $_[0];
   $self-> {uChange} = 2;
   $self-> reset;
+  $self-> {uChange} = 0;
 }
 
 sub reset_render
@@ -311,6 +321,7 @@ sub reset_render
   my $self = $_[0];
   $self-> {uChange} = 1;
   $self-> reset;
+  $self-> {uChange} = 0;
 }
 
 
@@ -329,7 +340,8 @@ sub reset_scrolls
    }
    if ( $self->{scrollTransaction} != 2 && $self->{hScroll})
    {
-       my $w = $self-> width - $self->{borderWidth} * 2 - $self->{dx};
+       # my $w = $self-> width - $self->{borderWidth} * 2 - $self->{dx};
+       my $w = $self-> width - $self->{indents}->[0] - $self->{indents}->[2];
        my $lw = $self->{maxLineWidth};
        $self-> {hScrollBar}-> set(
           max      => $self-> {wordWrap} ? 0 : $lw - $w,
@@ -481,38 +493,53 @@ sub on_paint
    ( $self-> color, $self-> backColor) :
    ( $self-> disabledColor, $self-> disabledBackColor);
    my @sclr   = ( $self-> hiliteColor, $self-> hiliteBackColor);
-   my ( $bw, $fh, $dx, $dy, $fc, $lc, $rc, $ofs, $yt, $tabs, $cw, $bt, $issel,
-        $sh, $sx) = (
-       $self->{ borderWidth}, $self->font-> height, $self->{dx}, $self->{dy},
+#  my ( $bw, $fh, $dx, $dy, $fc, $lc, $rc, $ofs, $yt, $tabs, $cw, $bt, $issel,
+#       $sh, $sx) = (
+#      $self->{ borderWidth}, $self->font-> height, $self->{dx}, $self->{dy},
+#      $self->{firstCol}, $self->{maxChunk}+1, $self->{rows}, $self-> {offset},
+#      $self-> {yTail}, $self->{tabs},  $self->{defcw}, $self-> {blockType},
+#      $self-> has_selection, $self->{syntaxHilite}, $self->{syntax},
+#   );
+   my ( $bw, $fh, $fc, $lc, $rc, $ofs, $yt, $tabs, $cw, $bt, $issel,
+        $sh, $sx) = ( $self->{borderWidth}, $self->font-> height,
        $self->{firstCol}, $self->{maxChunk}+1, $self->{rows}, $self-> {offset},
        $self-> {yTail}, $self->{tabs},  $self->{defcw}, $self-> {blockType},
        $self-> has_selection, $self->{syntaxHilite}, $self->{syntax},
    );
+   my @a = $self-> get_active_area( 0, @size);
+
 # drawing sheet
    my @clipRect = $self-> clipRect;
-   if ( $clipRect[0] > $bw && $clipRect[1] > $bw + $dy && $clipRect[2] < $size[0] - $bw - $dx && $clipRect[3] < $size[1] - $bw)
+#  if ( $clipRect[0] > $bw && $clipRect[1] > $bw + $dy && $clipRect[2] < $size[0] - $bw - $dx && $clipRect[3] < $size[1] - $bw)
+   if ( $clipRect[0] > $a[0] && $clipRect[1] > $a[1] && $clipRect[2] < $a[2] && $clipRect[3] < $a[3])
    {
       $canvas-> color( $clr[ 1]);
-      $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
+      # $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
+      $canvas-> clipRect( $a[0], $a[1], $a[2] - 1, $a[3] - 1);
       $canvas-> bar( 0, 0, @size);
    } else {
       $canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, $self-> dark3DColor, $self-> light3DColor, $clr[1]);
-      $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
+      # $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
+      $canvas-> clipRect( $a[0], $a[1], $a[2] - 1, $a[3] - 1);
    }
    $canvas-> color( $clr[0]);
 # defining repaint area - from and to limits
    my $i;
-   my $lim = ( $fc + $rc + $yt > $lc) ? $lc : $fc + $rc + $yt;
-   my $y = $size[1] - $bw - $fh;
-   $lim = int(( $size[1] - $clipRect[1]) / $fh) + $fc + 1;
+#  my $lim = ( $fc + $rc + $yt > $lc) ? $lc : $fc + $rc + $yt;
+#  my $y = $size[1] - $bw - $fh;
+   my $y = $a[3] - $fh;
+#  my $lim = int(( $size[1] - $clipRect[1]) / $fh) + $fc + 1;
+   my $lim = int(( $a[3] - $clipRect[1]) / $fh) + $fc + 1;
    {
-       my $fx = int(( $size[1] - $clipRect[3]) / $fh) + $fc;
+#      my $fx = int(( $size[1] - $clipRect[3]) / $fh) + $fc;
+       my $fx = int(( $a[3] - $clipRect[3]) / $fh) + $fc;
        $fx = $fc if $fx < $fc;
        $y -= ( $fx - $fc) * $fh;
        $fc = $fx;
    }
    $lim = $lc if $lim > $lc;
-   my $x    = $bw - $ofs;
+#  my $x    = $bw - $ofs;
+   my $x    = $a[0] - $ofs;
 # painting selection
    my @sel;
    my @cuaXs;
@@ -522,8 +549,10 @@ sub on_paint
       if ( $bt == bt::CUA)
       {
          @cuaXs   = (
-            $bw - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[1]), 0, $sel[0]),
-            $bw - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[3]), 0, $sel[2])
+#           $bw - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[1]), 0, $sel[0]),
+#           $bw - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[3]), 0, $sel[2])
+            $a[0] - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[1]), 0, $sel[0]),
+            $a[0] - $ofs + $self-> get_chunk_width( $self-> get_chunk( $sel[3]), 0, $sel[2])
          );
          my $cSet = 0;
          if ( $sel[1] == $sel[3])
@@ -631,8 +660,10 @@ sub on_paint
             }
          } elsif ( $bt == bt::Vertical) {
             my @vXs = (
-               $self-> get_chunk_width( $c, 0, $sel[0]) - $ofs + $bw,
-               $self-> get_chunk_width( $c, 0, $sel[2]) - $ofs + $bw
+#              $self-> get_chunk_width( $c, 0, $sel[0]) - $ofs + $bw,
+#              $self-> get_chunk_width( $c, 0, $sel[2]) - $ofs + $bw,
+               $self-> get_chunk_width( $c, 0, $sel[0]) - $ofs + $a[0],
+               $self-> get_chunk_width( $c, 0, $sel[2]) - $ofs + $a[0]
             );
             $canvas-> color( $sclr[1]);
             $canvas-> bar( $vXs[0], $y, $vXs[1]-1, $y + $fh - 1);
@@ -658,7 +689,7 @@ sub on_paint
          } else {
        # painting normal lines
             $c =~ s/\t/$tabs/g;
-            $canvas-> color( $clr[0]) if $sh;
+            $canvas-> color( $clr[0]);
             $canvas-> text_out( $c, $x, $y);
          }
       }
@@ -669,16 +700,23 @@ sub on_paint
 sub point2xy
 {
    my ( $self, $x, $y) = @_;
-   my ( $w, $h, $bw, $dx, $dy, $fh, $ofs, $avg) = (
-      $self-> size, $self-> {borderWidth}, $self-> {dx}, $self->{dy}, $self-> font-> height,
-      $self-> {offset}, $self->{averageWidth},
+#  my ( $w, $h, $bw, $dx, $dy, $fh, $ofs, $avg) = (
+#     $self-> size, $self-> {borderWidth}, $self-> {dx}, $self->{dy}, $self-> font-> height,
+#     $self-> {offset}, $self->{averageWidth},
+#  );
+   my ( $fh, $ofs, $avg, @a) = (
+      $self-> font-> height, $self-> {offset}, $self->{averageWidth}, $self-> get_active_area
    );
    my ( $rx, $ry, $inBounds);
-   $inBounds = !( $x <= $bw || $x > $w - $dx - $bw || $y < $bw + $dy || $y > $h - $bw);
-   $x -= $bw;
-   $y -= $bw + $dy;
-   $h -= $bw + $bw + $dy;
-   $w -= $bw + $bw + $dx;
+#  $inBounds = !( $x <= $bw || $x > $w - $dx - $bw || $y < $bw + $dy || $y > $h - $bw);
+#  $x -= $bw;
+#  $y -= $bw + $dy;
+#  $h -= $bw + $bw + $dy;
+#  $w -= $bw + $bw + $dx;
+   $inBounds = !( $x <= $a[0] || $x > $a[2] || $y < $a[1] || $y > $a[3]);
+   $x -= $a[0];
+   $y -= $a[1];
+   my ( $w, $h) = ( $a[2] - $a[0], $a[3] - $a[1]);
 
    $y  = $h + $fh if $y > $h;
    $y  = -$fh if $y < 0;
@@ -885,11 +923,9 @@ sub set_block_type
 sub set_border_width
 {
    my ( $self, $bw) = @_;
-   $bw = 0 if $bw < 0;
-   $bw = 1 if $bw > $self-> height / 2;
-   $bw = 1 if $bw > $self-> width  / 2;
-   return if $bw == $self-> {borderWidth};
+   my $obw = $self-> {borderWidth};
    $self-> SUPER::set_border_width( $bw);
+   return if $obw == $self-> {borderWidth};
    $self-> reset_render;
    $self-> reset_scrolls;
    $self-> repaint;
@@ -1045,7 +1081,8 @@ sub set_cursor
    my $chunk  = $self-> get_chunk( $ly);
    my $atX    = $self-> get_chunk_width( $chunk, 0, $lx);
    my $deltaX = $self-> get_chunk_width( $chunk, $lx, 1);
-   my $actualWidth = $self-> width - $self->{dx} - $self->{borderWidth} * 2 - $self-> {defcw};
+   # my $actualWidth = $self-> width - $self->{dx} - $self->{borderWidth} * 2 - $self-> {defcw};
+   my $actualWidth = $self-> width - $self->{indents}->[0] - $self->{indents}->[2] - $self-> {defcw};
    my $ofs = $self-> {offset};
    my $avg = $self-> {averageWidth};
    if ( $atX < $ofs) {
@@ -1079,10 +1116,12 @@ sub set_first_col
       $self->{scrollTransaction} = 0;
    }
    $self-> reset_cursor;
-   my ( $bw, $dx, $dy, $x, $y, $fh) =
-       ($self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> size, $self-> font-> height);
-   $self-> scroll( 0, $dt * $fh,
-                   clipRect => [ $bw, $bw+$dy, $x-$bw-$dx, $y-$bw]);
+#  my ( $bw, $dx, $dy, $x, $y, $fh) =
+#      ($self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> size, $self-> font-> height);
+#  $self-> scroll( 0, $dt * $fh,
+#                  clipRect => [ $bw, $bw+$dy, $x-$bw-$dx, $y-$bw]);
+   $self-> scroll( 0, $dt * $self-> font-> height,
+                   clipRect => [ $self-> get_active_area]);
 }
 
 sub set_h_scroll
@@ -1191,11 +1230,12 @@ sub set_offset
       $self-> {hScrollBar}-> value( $offset);
       $self->{scrollTransaction} = 0;
    }
-   my ( $x, $y) = $self->size;
-   my ( $bw, $dx, $dy) = ($self->{borderWidth}, $self->{dx}, $self->{dy});
+#  my ( $x, $y) = $self->size;
+#  my ( $bw, $dx, $dy) = ($self->{borderWidth}, $self->{dx}, $self->{dy});
    $self-> reset_cursor;
    $self-> scroll( -$dt, 0,
-                   clipRect => [ $bw, $bw + $dy, $x - $dx - $bw, $y - $bw]);
+#                  clipRect => [ $bw, $bw + $dy, $x - $dx - $bw, $y - $bw]);
+                   clipRect => [ $self-> get_active_area]);
 }
 
 
@@ -1280,11 +1320,15 @@ sub set_selection
       $start = ( $sy < $osy) ? $sy : $osy;
       $end   = ( $ey > $oey) ? $ey : $oey;
    }
-   my ( $bw, $dx, $dy, $ofs, $fc, $fh, $x, $y, $r, $yT) =
-      (
-         $self->{borderWidth}, $self->{dx}, $self->{dy}, $self->{offset},
-         $self->{firstCol}, $self->font-> height, $self-> size, $self->{rows}, $self->{yTail}
+#  my ( $bw, $dx, $dy, $ofs, $fc, $fh, $x, $y, $r, $yT) =
+#     (
+#        $self->{borderWidth}, $self->{dx}, $self->{dy}, $self->{offset},
+#        $self->{firstCol}, $self->font-> height, $self-> size, $self->{rows}, $self->{yTail}
+#     );
+   my ( $ofs, $fc, $fh, $r, $yT) = (
+         $self->{offset}, $self->{firstCol}, $self->font-> height, $self->{rows}, $self->{yTail}
       );
+   my @a = $self-> get_active_area( 0);
    return if $end < $fc || $start >= $fc + $r + $yT;
    if ( $start == $end && $bt == bt::CUA)
    {
@@ -1313,16 +1357,22 @@ sub set_selection
          $chunk = $self-> get_chunk( $start);
       }
       $self-> invalidate_rect(
-         $bw - $ofs + $self-> get_chunk_width( $chunk, 0, $xstart) - 1,
-         $y - $bw - $fh * ( $start - $fc + 1),
-         $bw - $ofs + $self-> get_chunk_width( $chunk, 0, $xend),
-         $y - $bw - $fh * ( $start - $fc)
+#        $bw - $ofs + $self-> get_chunk_width( $chunk, 0, $xstart) - 1,
+#        $y - $bw - $fh * ( $start - $fc + 1),
+#        $bw - $ofs + $self-> get_chunk_width( $chunk, 0, $xend),
+#        $y - $bw - $fh * ( $start - $fc)
+         $a[0] - $ofs + $self-> get_chunk_width( $chunk, 0, $xstart) - 1,
+         $a[3] - $fh * ( $start - $fc + 1),
+         $a[0] - $ofs + $self-> get_chunk_width( $chunk, 0, $xend),
+         $a[3] - $fh * ( $start - $fc)
       );
    } else {
       # general connected lines paint
       $self-> invalidate_rect(
-         $bw, $y - $bw - $fh * ( $end - $fc + 1),
-         $x - $bw - $dx, $y - $bw - $fh * ( $start - $fc),
+#        $bw, $y - $bw - $fh * ( $end - $fc + 1),
+#        $x - $bw - $dx, $y - $bw - $fh * ( $start - $fc),
+         $a[0], $a[3] - $fh * ( $end - $fc + 1),
+         $a[2], $a[3] - $fh * ( $start - $fc),
       );
    }
 }
@@ -1762,13 +1812,18 @@ sub set_line
    $self-> insert_empty_line(0), $y = $maxY = $self->{maxLine} if $maxY < 0;
    return if $y > $maxY || $y < 0;
    my ( $newDim, $oldDim, $ry) = (0,0,0);
-   my ( $dx, $dy, $bw, $fh, $fc, $ofs, $w, $h) = (
-      $self->{dx}, $self->{dy}, $self->{borderWidth}, $self-> font-> height,
-      $self->{firstCol}, $self->{offset}, $self-> size,
+#  my ( $dx, $dy, $bw, $fh, $fc, $ofs, $w, $h) = (
+#     $self->{dx}, $self->{dy}, $self->{borderWidth}, $self-> font-> height,
+#     $self->{firstCol}, $self->{offset}, $self-> size,
+#  );
+   my ( $fh, $fc, $ofs, @a) = (
+      $self-> font-> height, $self->{firstCol}, $self->{offset}, $self-> get_active_area,
    );
+   my @sz = ( $a[2] - $a[0], $a[3] - $a[1]);
    my ( $_from, $_to);
    if ( $self->{wordWrap}) {
-      my $breaks = $self-> text_wrap( $line, $w - $bw * 2 - $dx - $self->{defcw}, tw::WordBreak|tw::CalcTabs|tw::NewLineBreak|tw::ReturnChunks, $self->{tabIndent});
+#     my $breaks = $self-> text_wrap( $line, $w - $bw * 2 - $dx - $self->{defcw}, tw::WordBreak|tw::CalcTabs|tw::NewLineBreak|tw::ReturnChunks, $self->{tabIndent});
+      my $breaks = $self-> text_wrap( $line, $sz[0] - $self->{defcw}, tw::WordBreak|tw::CalcTabs|tw::NewLineBreak|tw::ReturnChunks, $self->{tabIndent});
       my @chunkMap;
       ( undef, $ry) = $self-> make_logical( 0, $y);
       my ($ix, $cm) = ( $ry * 3 + 2, $self->{chunkMap});
@@ -1778,9 +1833,10 @@ sub set_line
       my $i;
       for ( $i = 0; $i < $newDim; $i++)
       {
-         push( @chunkMap, $$breaks[$i * 2]);
-         push( @chunkMap, $$breaks[$i * 2 + 1]);
-         push( @chunkMap, $y);
+#        push( @chunkMap, $$breaks[$i * 2]);
+#        push( @chunkMap, $$breaks[$i * 2 + 1]);
+#        push( @chunkMap, $y);
+         push( @chunkMap, $$breaks[$i * 2], $$breaks[$i * 2 + 1], $y);
       }
       splice( @{$cm}, $ry * 3, $oldDim * 3, @chunkMap);
       $self-> {lines}->[$y] = $line;
@@ -1814,9 +1870,11 @@ sub set_line
          }
          my $lw = $self->{maxLineWidth};
          $self-> {hScrollBar}-> set(
-            max      => $lw - $w - $bw * 2 - $dx,
+#           max      => $lw - $w - $bw * 2 - $dx,
+            max      => $lw - $sz[0],
             whole    => $lw,
-            partial  => $w - $bw * 2 - $dx,
+#           partial  => $w - $bw * 2 - $dx,
+            partial  => $sz[0],
          ) if $self-> {hScroll};
       }
       $_from = $_to = $y;
@@ -1863,8 +1921,10 @@ sub set_line
    if ( defined $_to)
    {
       $self-> invalidate_rect(
-         $bw - $ofs, $h - $bw - $fh * ( $_to - $fc + 1),
-         $w - $dx - $bw, $h - $bw - $fh * ( $_from - $fc)
+#        $bw - $ofs, $h - $bw - $fh * ( $_to - $fc + 1),
+#        $w - $dx - $bw, $h - $bw - $fh * ( $_from - $fc)
+         $a[0], $a[3] - $fh * ( $_to - $fc + 1),
+         $a[2], $a[3] - $fh * ( $_from - $fc)
       );
    } else {
       $self-> repaint;
@@ -1918,13 +1978,18 @@ sub insert_empty_line
       $self-> selection( @sel);
       delete $self->{anchor};
    }
-   my ( $fc, $rc, $yt, $bw, $dx, $dy, $fh, $w, $h) = (
+#  my ( $fc, $rc, $yt, $bw, $dx, $dy, $fh, $w, $h) = (
+#     $self->{firstCol}, $self->{rows}, $self->{yTail},
+#     $self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> font-> height, $self-> size,
+#  );
+   my ( $fc, $rc, $yt, $fh, @a) = (
       $self->{firstCol}, $self->{rows}, $self->{yTail},
-      $self->{borderWidth}, $self->{dx}, $self->{dy}, $self-> font-> height, $self-> size,
+      $self-> font-> height, $self-> get_active_area,
    );
    if ( $y < $fc + $rc + $yt - 1 && $y + $len > $fc && $y <= $maxY && !$self-> has_selection) {
       $self-> scroll( 0, -$fh * $len,
-                           confineRect => [ $bw, $bw + $dy, $w - $dx - $bw, $h - $bw - $fh * ( $y - $fc) ]);
+                           confineRect => [ @a[0..2], $a[3] - $fh * ( $y - $fc)]);
+#                          confineRect => [ $bw, $bw + $dy, $w - $dx - $bw, $h - $bw - $fh * ( $y - $fc) ]);
    }
    $self->{vScrollBar}-> set(
       max      => $self-> {maxChunk} - $self->{rows} + 1,
@@ -2002,10 +2067,13 @@ sub delete_line
          if ( $self->{maxLineCount} <= 0) {
             $self-> reset;
             my $lw = $self->{maxLineWidth};
+            my $w  = $self->width - $self->{indents}->[0] - $self->{indents}->[2];
             $self-> {hScrollBar}-> set(
-               max      => $lw - $self->width - $self->{borderWidth} * 2 - $self->{dx},
+#              max      => $lw - $self->width - $self->{borderWidth} * 2 - $self->{dx},
+               max      => $lw - $w,
                whole    => $lw,
-               partial  => $self-> width - $self->{borderWidth} * 2 - $self->{dx},
+#              partial  => $self-> width - $self->{borderWidth} * 2 - $self->{dx},
+               partial  => $w,
             ) if $self-> {hScroll};
             last;
          }
@@ -2359,7 +2427,6 @@ sub select_all { $_[0]-> selection(0,0,-1,-1); }
 
 sub autoIndent      {($#_)?($_[0]->{autoIndent}    = $_[1])                :return $_[0]->{autoIndent }  }
 sub blockType       {($#_)?($_[0]->set_block_type  ( $_[1]))               :return $_[0]->{blockType}    }
-sub borderWidth     {($#_)?($_[0]->set_border_width( $_[1]))               :return $_[0]->{borderWidth}  }
 sub cursor          {($#_)?($_[0]->set_cursor    ($_[1],$_[2]))            :return $_[0]->{cursorX},$_[0]->{cursorY}}
 sub cursorLog       {($#_)?($_[0]->set_cursor    ($_[0]->make_physical($_[1],$_[2])))            :return $_[0]->{cursorXl},$_[0]->{cursorYl}}
 sub cursorX         {($#_)?($_[0]->set_cursor    ($_[1],$_[0]-> {cursorY})):return $_[0]->{cursorX}    }

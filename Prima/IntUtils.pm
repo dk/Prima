@@ -140,12 +140,12 @@ use Prima::ScrollBar;
 sub set_border_width
 {
    my ( $self, $bw) = @_;
+   my @size = $self-> size;
    $bw = 0 if $bw < 0;
-   $bw = 1 if $bw > $self-> height / 2;
-   $bw = 1 if $bw > $self-> width  / 2;
+   $bw = 1 if $bw > $size[1] / 2;
+   $bw = 1 if $bw > $size[0] / 2;
    return if $bw == $self-> {borderWidth};
    my $obw  = $self-> {borderWidth};
-   my @size = $self-> size;
    $self-> {borderWidth} = $bw;
    $self-> {hScrollBar}-> set(
       left   => $bw - 1,
@@ -286,6 +286,7 @@ sub get_active_area
    }
 }
 
+sub borderWidth     {($#_)?($_[0]->set_border_width( $_[1])):return $_[0]->{borderWidth}}
 sub hScroll         {($#_)?$_[0]->set_h_scroll       ($_[1]):return $_[0]->{hScroll}}
 sub vScroll         {($#_)?$_[0]->set_v_scroll       ($_[1]):return $_[0]->{vScroll}}
 

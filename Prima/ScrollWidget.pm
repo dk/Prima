@@ -145,7 +145,6 @@ sub HScroll_Change
    $_[0]-> deltaX( $_[1]-> value) unless $_[0]-> {scrollTransaction};
 }
 
-sub borderWidth   {($#_)?$_[0]->set_border_width   ($_[1]):return $_[0]->{borderWidth}    }
 sub limitX        {($#_)?$_[0]->set_limits($_[1],$_[0]->{limitY}):return $_[0]->{'limitX'};  }
 sub limitY        {($#_)?$_[0]->set_limits($_[0]->{'limitX'},$_[1]):return $_[0]->{'limitY'};  }
 sub limits        {($#_)?$_[0]->set_limits         ($_[1], $_[2]):return ($_[0]->{'limitX'},$_[0]->{'limitY'});}

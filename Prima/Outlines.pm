@@ -1366,7 +1366,6 @@ sub on_dragitem
 
 
 sub autoHeight    {($#_)?$_[0]->set_auto_height    ($_[1]):return $_[0]->{autoHeight}     }
-sub borderWidth   {($#_)?$_[0]->set_border_width   ($_[1]):return $_[0]->{borderWidth}    }
 sub focusedItem   {($#_)?$_[0]->set_focused_item   ($_[1]):return $_[0]->{focusedItem}    }
 sub indent        {($#_)?$_[0]->set_indent( $_[1])        :return $_[0]->{indent}         }
 sub items         {($#_)?$_[0]->set_items( $_[1])         :return $_[0]->{items}          }
