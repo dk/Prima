@@ -512,8 +512,9 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    }   
    
 EXIT_NOW:;
-   if ( fi. frameCount < 0 && pexist( "wantFrames")) 
+   if ( fi. frameCount < 0 && pexist( wantFrames) && pget_i( wantFrames)) {
       fi. frameCount = apc_img_frame_count( fileName);
+   }
    if ( firstObjectExtras)
       hv_store( firstObjectExtras, "frames", 6, newSViv( fi. frameCount), 0);
    if ( err && ret)
@@ -538,6 +539,7 @@ apc_img_frame_count( char * fileName)
    PImgCodec c = nil;
    ImgLoadFileInstance fi;
    int i, frameMap, ret = 0;
+   char error[256];
 
    CHK;
    memset( &fi, 0, sizeof( fi));
@@ -553,6 +555,7 @@ apc_img_frame_count( char * fileName)
    fi. extras         = newHV();
    fi. fileProperties = newHV(); 
    fi. frameCount = -1;
+   fi. errbuf     = error;
 
    // finding codec
    {
