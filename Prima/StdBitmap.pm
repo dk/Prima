@@ -26,38 +26,33 @@
 package Prima::StdBitmap;
 use strict;
 require Prima;
-require Exporter;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-@ISA = qw(Exporter);
-$VERSION = '1.00';
-@EXPORT = qw();
-@EXPORT_OK = qw(icon image);
-%EXPORT_TAGS = ();
 
 my %bmCache = ();
-my $bmImageFile = Prima-> find_image( "sysimage.gif");
 
 sub load_std_bmp
 {
-   my ( $index, $asIcon, $copy) = @_;
+   my ( $index, $asIcon, $copy, $imageFile) = @_;
    my $class = ( $asIcon ? q(Prima::Icon) : q(Prima::Image));
    return undef if !defined $index || $index < 0 || $index > sbmp::Last;
    $asIcon = ( $asIcon ? 1 : 0);
    if ( $copy)
    {
       my $i = $class-> create(name => $index);
-      undef $i unless $i-> load( $bmImageFile, index => $index);
+      undef $i unless $i-> load( $imageFile, index => $index);
       return $i;
    }
-   return $bmCache{$index}->[$asIcon] if exists $bmCache{$index} && defined $bmCache{$index}->[$asIcon];
-   $bmCache{$index} = [ undef, undef] unless exists $bmCache{$index};
+   $bmCache{$imageFile} = {} unless exists $bmCache{$imageFile};
+   my $x = $bmCache{$imageFile};
+   return $x-> {$index}->[$asIcon] if exists $x-> {$index} && defined $x-> {$index}->[$asIcon];
+   $x-> {$index} = [ undef, undef] unless exists $x-> {$index};
    my $i = $class-> create(name => $index);
-   undef $i unless $i-> load( $bmImageFile, index => $index);
-   $bmCache{$index}->[$asIcon] = $i;
+   undef $i unless $i-> load( $imageFile, index => $index);
+   $x-> {$index}->[$asIcon] = $i;
    return $i;
 }
 
-sub icon { return load_std_bmp( $_[0], 1, 0); }
-sub image{ return load_std_bmp( $_[0], 0, 0); }
+my $bmImageFile = Prima-> find_image( "sysimage.gif");
+sub icon { return load_std_bmp( $_[0], 1, 0, $bmImageFile); }
+sub image{ return load_std_bmp( $_[0], 0, 0, $bmImageFile); }
 
 1;
