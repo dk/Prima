@@ -62,7 +62,10 @@ sub unimport {
    return unless defined @windowStack;
    return if @windowStack <= 0;
    my $w = pop @windowStack;
+   my $oautoClose = $::application-> autoClose;
+   $::application-> autoClose(0);
    $w-> destroy;
+   $::application-> autoClose( $oautoClose);
    $::application-> pointer( pop @pointersStack);
 }
 

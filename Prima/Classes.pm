@@ -201,7 +201,7 @@ sub set_owner  { $_[0]->set( owner => $_[1]);}
 
 sub name       {($#_)?$_[0]->set_name        ($_[1]):return $_[0]->get_name;        }
 sub owner      {($#_)?$_[0]->set_owner       ($_[1]):return $_[0]->get_owner;       }
-sub delegations{($#_)?$_[0]->set_delegations ($_[1]):$_[0]->raise_wo("delegations");}
+sub delegations{($#_)?$_[0]->set_delegations ($_[1]):return $_[0]->get_delegations; }
 
 sub get_notify_sub
 {

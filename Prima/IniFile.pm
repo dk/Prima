@@ -557,7 +557,7 @@ package Prima::IniFile;
 sub section
 {
    my %tied;
-   tie %tied, q/IniFile::Section::Helper::to::Tie/, $_[0], $_[1];
+   tie %tied, q/Prima::IniFile::Section::Helper::to::Tie/, $_[0], $_[1];
    return \%tied;
 }
 
