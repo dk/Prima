@@ -1210,7 +1210,11 @@ Widget_show_cursor( Handle self)
 void
 Widget_show_hint( Handle self)
 {
-   CApplication( application)-> set_hint_action( application, self, true, true);
+   if ( var-> stage >= csDead) return;
+   if ( PApplication( application)-> hintVisible) return;
+   if ( strlen( var-> hint) == 0) return;
+   PApplication(application)-> hintActive = -1;
+   CApplication( application)-> set_hint_action( application, self, true, false);
 }
 
 /*::t */
