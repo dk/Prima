@@ -40,7 +40,7 @@ typedef struct _WmGenericData {
    Atom takeFocus;
 } WmGenericData, *PWmGenericData;
 
-#define DEFWMDATA PWmGenericData wm = guts. wmData
+#define DEFWMDATA PWmGenericData wm = guts. wm_data
 
 static void
 wm_generic_create_window_hook( Handle self, ApiHandle w)
@@ -63,8 +63,8 @@ wm_generic_create_window_hook( Handle self, ApiHandle w)
 static void
 wm_generic_cleanup_hook( void)
 {
-   free( guts. wmData);
-   guts. wmData = nil;
+   free( guts. wm_data);
+   guts. wm_data = nil;
 }
 
 static Bool
@@ -96,7 +96,7 @@ prima_wm_generic( void)
 {
    DEFWMDATA;
 
-   guts. wmData = wm = malloc( sizeof( WmGenericData));
+   guts. wm_data = wm = malloc( sizeof( WmGenericData));
 
    wm-> deleteWindow = XInternAtom( DISP, "WM_DELETE_WINDOW", 1);
    wm-> takeFocus = XInternAtom( DISP, "WM_TAKE_FOCUS", 1);

@@ -51,29 +51,29 @@ typedef struct _RequestInformation
 #define kbFunctionMask	0x00080000
 
 typedef struct _FontFlags {
-   int height          : 1;
-   int width           : 1;
-   int style           : 1;
-   int pitch           : 1;
-   int direction       : 1;
-   int resolution      : 1;
-   int name            : 1;
-   int size            : 1;
-   int codepage        : 1;
-   int family          : 1;
-   int vector          : 1;
-   int ascent          : 1;
-   int descent         : 1;
-   int weight          : 1;
-   int maximalWidth    : 1;
-   int internalLeading : 1;
-   int externalLeading : 1;
-   int xDeviceRes      : 1;
-   int yDeviceRes      : 1;
-   int firstChar       : 1;
-   int lastChar        : 1;
-   int breakChar       : 1;
-   int defaultChar     : 1;
+   int height           : 1;
+   int width            : 1;
+   int style            : 1;
+   int pitch            : 1;
+   int direction        : 1;
+   int resolution       : 1;
+   int name             : 1;
+   int size             : 1;
+   int codepage         : 1;
+   int family           : 1;
+   int vector           : 1;
+   int ascent           : 1;
+   int descent          : 1;
+   int weight           : 1;
+   int maximalWidth     : 1;
+   int internalLeading  : 1;
+   int externalLeading  : 1;
+   int xDeviceRes       : 1;
+   int yDeviceRes       : 1;
+   int firstChar        : 1;
+   int lastChar         : 1;
+   int breakChar        : 1;
+   int defaultChar      : 1;
 } FontFlags;
 
 typedef struct _FontInfo {
@@ -180,11 +180,11 @@ struct _UnixGuts
 
    /* debugging -  XCHECKPOINT */
    RequestInformation ri[ REQUEST_RING_SIZE];
-   int riHead, riTail;
+   int ri_head, ri_tail;
    Bool dolbug;
 
    /* window manager specifics */
-   void *wmData;
+   void *wm_data;
    void (*wm_create_window)( Handle, ApiHandle);
    void (*wm_cleanup)( void);
    Bool (*wm_translate_event)( Handle, XEvent *, PEvent);
@@ -203,16 +203,16 @@ struct _UnixGuts
 
 #define XCHECKPOINT						\
    STMT_START {							\
-      guts. ri[ guts. riHead]. line = __LINE__;			\
-      guts. ri[ guts. riHead]. file = __FILE__;			\
-      guts. ri[ guts. riHead]. request = NextRequest(DISP);	\
-      guts. riHead++;						\
-      if ( guts. riHead >= REQUEST_RING_SIZE)			\
-	 guts. riHead = 0;					\
-      if ( guts. riTail == guts. riHead) {			\
-	 guts. riTail++;					\
-	 if ( guts. riTail >= REQUEST_RING_SIZE)		\
-	    guts. riTail = 0;					\
+      guts. ri[ guts. ri_head]. line = __LINE__;			\
+      guts. ri[ guts. ri_head]. file = __FILE__;			\
+      guts. ri[ guts. ri_head]. request = NextRequest(DISP);	\
+      guts. ri_head++;						\
+      if ( guts. ri_head >= REQUEST_RING_SIZE)			\
+	 guts. ri_head = 0;					\
+      if ( guts. ri_tail == guts. ri_head) {			\
+	 guts. ri_tail++;					\
+	 if ( guts. ri_tail >= REQUEST_RING_SIZE)		\
+	    guts. ri_tail = 0;					\
       }								\
    } STMT_END
 
@@ -220,10 +220,10 @@ struct _UnixGuts
 #define APC_BAD_ORIGIN INT_MAX
 
 #define COMPONENT_SYS_DATA \
-   XrmQuarkList qClassName; \
-   XrmQuarkList qInstanceName; \
-   int nClassName; \
-   int nInstanceName
+   XrmQuarkList q_class_name; \
+   XrmQuarkList q_instance_name; \
+   int n_class_name; \
+   int n_instance_name
 
 typedef struct _drawable_sys_data /* more like widget_sys_data */
 {
@@ -231,39 +231,44 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
    XDrawable drawable;
    XWindow parent;
    NPoint resolution;
-   Point origin, knownOrigin;
-   Point size, knownSize;
+   Point origin, known_origin;
+   Point size, known_size;
    Point transform, gtransform;
    Handle owner;  /* The real one */
-   XWindow realParent; /* top levels */
+   XWindow real_parent; /* top levels */
    XGCValues gcv;
    GC gc;
    GCList *gcl;
-   XColor fore, back, savedFore, savedBack;
+   XColor fore, back, saved_fore, saved_back;
    ColorSet colors;
    Region region;
    Region stale_region;
-   FillPattern fillPattern;
-   int rop, paintRop;
+   FillPattern fill_pattern;
+   int rop, paint_rop;
    PCachedFont font;
-   Font savedFont;
+   Font saved_font;
+   Point cursor_pos;
+   Point cursor_size;
    struct {
-      int clipOwner		: 1;
-      int syncPaint		: 1;
+      int clip_owner		: 1;
+      int sync_paint		: 1;
       int mapped		: 1;
       int exposed		: 1;
       int paint                 : 1;
-      int savedZeroLine         : 1;
-      int zeroLine              : 1;
+      int saved_zero_line       : 1;
+      int zero_line             : 1;
       int grab                  : 1;
       int enabled               : 1;
       int focused               : 1;
-      int reloadFont		: 1;
-      int doSizeHints		: 1;
-      int noSize		: 1;
+      int reload_font		: 1;
+      int do_size_hints		: 1;
+      int no_size		: 1;
+      int cursor_visible	: 1;
    } flags;
-   XImage *imageCache;
+   XImage *image_cache;
 } DrawableSysData, *PDrawableSysData;
+
+#define CURSOR_TIMER	((Handle)11)
 
 typedef struct _timer_sys_data
 {

@@ -444,7 +444,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 /*    } */
 /*    fprintf( stderr, "\n"); */
 
-   if ( XX-> flags. zeroLine) {
+   if ( XX-> flags. zero_line) {
       XGCValues gcv;
       gcv. line_width = 0;
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
@@ -452,7 +452,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 
    XDrawLines( DISP, XX-> drawable, XX-> gc, p, n, CoordModeOrigin);
 
-   if ( XX-> flags. zeroLine) {
+   if ( XX-> flags. zero_line) {
       XGCValues gcv;
       gcv. line_width = 1;
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
@@ -625,10 +625,10 @@ create_image_cache_8_to_16( PImage img)
       }
    }
 
-   IMG-> imageCache = XCreateImage( DISP, v,
-				    guts. depth, ZPixmap, 0, (unsigned char*)data,
-				    img-> w, img-> h, 8, 0);
-   if (!IMG-> imageCache) {
+   IMG-> image_cache = XCreateImage( DISP, v,
+				     guts. depth, ZPixmap, 0, (unsigned char*)data,
+				     img-> w, img-> h, 8, 0);
+   if (!IMG-> image_cache) {
       free( d);
       warn( "error during XCreateImage()");
       return false;
@@ -641,7 +641,7 @@ create_image_cache( PImage img)
 {
    PDrawableSysData IMG = X((Handle)img);
 
-   if ( IMG-> imageCache)
+   if ( IMG-> image_cache)
       return true;
 
    if (( img-> type & imBPP) != 8) {
@@ -672,7 +672,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    if ( !create_image_cache( img))
       croak( "Error creating image cache");
    SHIFT( x, y);
-   XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> imageCache,
+   XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> image_cache,
 	      xFrom, img-> h - yFrom - yLen,
 	      x, REVERT(y) - yLen + 1, xLen, yLen);
 }
@@ -752,7 +752,7 @@ Color
 apc_gp_get_back_color( Handle self)
 {
    DEFXX;
-   XColor c = ( XX-> flags. paint) ? XX-> back : XX-> savedBack;
+   XColor c = ( XX-> flags. paint) ? XX-> back : XX-> saved_back;
    return ARGB( c. red >> 8, c. green >> 8, c. blue >> 8);
 }
 
@@ -766,7 +766,7 @@ Color
 apc_gp_get_color( Handle self)
 {
    DEFXX;
-   XColor c = ( XX-> flags. paint) ? XX-> fore : XX-> savedFore;
+   XColor c = ( XX-> flags. paint) ? XX-> fore : XX-> saved_fore;
    return ARGB( c. red >> 8, c. green >> 8, c. blue >> 8);
 }
 
@@ -787,7 +787,7 @@ apc_gp_get_font_abc( Handle self)
 FillPattern *
 apc_gp_get_fill_pattern( Handle self)
 {
-   return &(X(self)-> fillPattern);
+   return &(X(self)-> fill_pattern);
 }
 
 int
@@ -805,7 +805,7 @@ apc_gp_get_line_width( Handle self)
    XGCValues gcv;
 
    if ( XX-> flags. paint) {
-      if ( XX-> flags. zeroLine)
+      if ( XX-> flags. zero_line)
 	 w = 0;
       else {
 	 if ( XGetGCValues( DISP, XX-> gc, GCLineWidth, &gcv) == 0) {
@@ -814,7 +814,7 @@ apc_gp_get_line_width( Handle self)
 	 w = gcv. line_width;
       }
    } else {
-      if ( XX-> flags. savedZeroLine)
+      if ( XX-> flags. saved_zero_line)
 	 w = 0;
       else
 	 w = XX-> gcv. line_width;
@@ -841,7 +841,7 @@ apc_gp_get_rop( Handle self)
 {
    DEFXX;
    if ( XX-> flags. paint) {
-      return XX-> paintRop;
+      return XX-> paint_rop;
    } else {
       return XX-> rop;
    }
@@ -908,7 +908,7 @@ apc_gp_set_back_color( Handle self, Color color)
       XSetBackground( DISP, XX-> gc, c-> pixel);
       XCHECKPOINT;
    } else {
-      XX-> savedBack = *c;
+      XX-> saved_back = *c;
       XX-> gcv. background = c-> pixel;
    }
 }
@@ -949,7 +949,7 @@ apc_gp_set_color( Handle self, Color color)
       XSetForeground( DISP, XX-> gc, c-> pixel);
       XCHECKPOINT;
    } else {
-      XX-> savedFore = *c;
+      XX-> saved_fore = *c;
       XX-> gcv. foreground = c-> pixel;
    }
 }
@@ -959,7 +959,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
    DEFXX;
 
-   memcpy( XX-> fillPattern, pattern, sizeof( FillPattern));
+   memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
    DOLBUG( "apc_gp_set_fill_pattern()\n");
 }
 
@@ -975,23 +975,23 @@ apc_gp_set_line_end( Handle self, int lineEnd)
 }
 
 void
-apc_gp_set_line_width( Handle self, int lineWidth)
+apc_gp_set_line_width( Handle self, int line_width)
 {
    DEFXX;
    XGCValues gcv;
-   int zeroLine = lineWidth == 0;
+   int zero_line = line_width == 0;
 
-   if ( zeroLine)
-      lineWidth = 1;
+   if ( zero_line)
+      line_width = 1;
 
    if ( XX-> flags. paint) {
-      XX-> flags. zeroLine = zeroLine;
-      gcv. line_width = lineWidth;
+      XX-> flags. zero_line = zero_line;
+      gcv. line_width = line_width;
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
       XCHECKPOINT;
    } else {
-      XX-> flags. savedZeroLine = zeroLine;
-      XX-> gcv. line_width = lineWidth;
+      XX-> flags. saved_zero_line = zero_line;
+      XX-> gcv. line_width = line_width;
    }
 }
 
@@ -1022,7 +1022,7 @@ apc_gp_set_rop( Handle self, int rop)
       function = rop_map[ rop];
 
    if ( XX-> flags. paint) {
-      XX-> paintRop = rop;
+      XX-> paint_rop = rop;
       XSetFunction( DISP, XX-> gc, function);
       XCHECKPOINT;
    } else {

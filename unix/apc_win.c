@@ -33,28 +33,28 @@
 #include "unix/guts.h"
 
 Bool
-apc_window_create( Handle self, Handle owner, Bool syncPaint,
-		   Bool clipOwner, int borderIcons,
-		   int borderStyle, Bool taskList,
-		   int windowState, Bool useOrigin, Bool useSize)
+apc_window_create( Handle self, Handle owner, Bool sync_paint,
+		   Bool clip_owner, int border_icons,
+		   int border_style, Bool task_list,
+		   int window_state, Bool use_origin, Bool use_size)
 {
    XSetWindowAttributes attrs;
    XWindow parent;
    XWindow old;
-   Handle realOwner;
+   Handle real_owner;
    DEFXX;
 
    /* Transparency is ignored for now */
 
-   if ( !clipOwner) {
+   if ( !clip_owner) {
       parent = RootWindow( DISP, SCREEN);
-      realOwner = application;
+      real_owner = application;
    } else if ( owner == application) {
       parent = RootWindow( DISP, SCREEN);
-      realOwner = application;
+      real_owner = application;
    } else {
       parent = RootWindow( DISP, SCREEN);    /* XXX for now  :-(  */
-      realOwner = owner;
+      real_owner = owner;
    }
 
    old = X_WINDOW;
@@ -124,16 +124,16 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint,
    XX-> parent = parent;
    XX-> drawable = X_WINDOW;
 
-   XX-> flags. clipOwner = clipOwner;
-   XX-> flags. syncPaint = syncPaint;
-   XX-> flags. doSizeHints = true;
-   XX-> flags. noSize = true;
+   XX-> flags. clip_owner = clip_owner;
+   XX-> flags. sync_paint = sync_paint;
+   XX-> flags. do_size_hints = true;
+   XX-> flags. no_size = true;
 
-   XX-> owner = realOwner;
+   XX-> owner = real_owner;
    XX-> size = (Point){0,0};
-   XX-> knownSize = (Point){APC_BAD_SIZE,APC_BAD_SIZE};
+   XX-> known_size = (Point){APC_BAD_SIZE,APC_BAD_SIZE};
    XX-> origin = (Point){0,0};
-   XX-> knownOrigin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
+   XX-> known_origin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
    apc_component_fullname_changed_notify( self);
 
    return true;
@@ -237,7 +237,7 @@ apc_window_set_client_pos( Handle self, int x, int y)
    hints. min_height = PWidget(self)-> sizeMin. y;
    hints. max_width = PWidget(self)-> sizeMax. x;
    hints. max_height = PWidget(self)-> sizeMax. y;
-   XX-> flags. doSizeHints = false;
+   XX-> flags. do_size_hints = false;
        
    XMoveWindow( DISP, X_WINDOW, x, y);
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
@@ -285,7 +285,7 @@ apc_window_set_client_size( Handle self, int width, int height)
    hints. min_height = widg-> sizeMin. y;
    hints. max_width = widg-> sizeMax. x;
    hints. max_height = widg-> sizeMax. y;
-   XX-> flags. doSizeHints = false;
+   XX-> flags. do_size_hints = false;
 
    XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
    XSetWMNormalHints( DISP, X_WINDOW, &hints);

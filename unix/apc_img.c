@@ -78,9 +78,9 @@ void
 apc_image_destroy( Handle self)
 {
    DEFXX;
-   if ( XX-> imageCache) {
-      XDestroyImage( XX-> imageCache);
-      XX-> imageCache = nil;
+   if ( XX-> image_cache) {
+      XDestroyImage( XX-> image_cache);
+      XX-> image_cache = nil;
    }
 }
 
@@ -114,9 +114,9 @@ void
 apc_image_update_change( Handle self)
 {
    DEFXX;
-   if ( XX-> imageCache) {
-      XDestroyImage( XX-> imageCache);
-      XX-> imageCache = nil;
+   if ( XX-> image_cache) {
+      XDestroyImage( XX-> image_cache);
+      XX-> image_cache = nil;
    }
 }
 

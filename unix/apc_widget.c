@@ -48,26 +48,26 @@ apc_widget_client_to_screen( Handle self, Point p)
 }
 
 Bool
-apc_widget_create( Handle self, Handle owner, Bool syncPaint,
-		   Bool clipOwner, Bool transparent)
+apc_widget_create( Handle self, Handle owner, Bool sync_paint,
+		   Bool clip_owner, Bool transparent)
 {
    XSetWindowAttributes attrs;
    XWindow parent;
    XWindow old;
-   Handle realOwner;
+   Handle real_owner;
    DEFXX;
 
    /* Transparency is ignored for now */
 
-   if ( !clipOwner) {
+   if ( !clip_owner) {
       parent = RootWindow( DISP, SCREEN);
-      realOwner = application;
+      real_owner = application;
    } else if ( owner == application) {
       parent = RootWindow( DISP, SCREEN);
-      realOwner = application;
+      real_owner = application;
    } else {
       parent = PWidget( owner)-> handle;
-      realOwner = owner;
+      real_owner = owner;
    }
 
    old = X_WINDOW;
@@ -132,16 +132,16 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint,
    XX-> parent = parent;
    XX-> drawable = X_WINDOW;
 
-   XX-> flags. clipOwner = clipOwner;
-   XX-> flags. syncPaint = syncPaint;
-   XX-> flags. doSizeHints = false;
-   XX-> flags. noSize = true;
+   XX-> flags. clip_owner = clip_owner;
+   XX-> flags. sync_paint = sync_paint;
+   XX-> flags. do_size_hints = false;
+   XX-> flags. no_size = true;
 
-   XX-> owner = realOwner;
+   XX-> owner = real_owner;
    XX-> size = (Point){0,0};
-   XX-> knownSize = (Point){APC_BAD_SIZE,APC_BAD_SIZE};
+   XX-> known_size = (Point){APC_BAD_SIZE,APC_BAD_SIZE};
    XX-> origin = (Point){0,0};
-   XX-> knownOrigin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
+   XX-> known_origin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
    apc_component_fullname_changed_notify( self);
 
    DOLBUG( "&&&&&&&&&&& window created: %s &&&&&&&&&&&\n", PWidget( self)-> name);
@@ -152,16 +152,16 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint,
 #define VIRGIN_GC_MASK (GCLineWidth|GCBackground|GCForeground|GCFunction|GCClipMask)
 
 Bool
-apc_widget_begin_paint( Handle self, Bool insideOnPaint)
+apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 {
    DEFXX;
    unsigned long mask = VIRGIN_GC_MASK;
 
-   XX-> paintRop = XX-> rop;
-   XX-> savedFont = PDrawable( self)-> font;
-   XX-> fore = XX-> savedFore;
-   XX-> back = XX-> savedBack;
-   XX-> flags. zeroLine = XX-> flags. savedZeroLine;
+   XX-> paint_rop = XX-> rop;
+   XX-> saved_font = PDrawable( self)-> font;
+   XX-> fore = XX-> saved_fore;
+   XX-> back = XX-> saved_back;
+   XX-> flags. zero_line = XX-> flags. saved_zero_line;
    XX-> gcv. clip_mask = None;
    XX-> gtransform = XX-> transform;
 
@@ -177,12 +177,12 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 
    XX-> flags. paint = true;
 
-   if ( !XX-> flags. reloadFont && XX-> font && XX-> font-> id) {
+   if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
       XSetFont( DISP, XX-> gc, XX-> font-> id);
       XCHECKPOINT;
    } else {
       apc_gp_set_font( self, &PDrawable( self)-> font);
-      XX-> flags. reloadFont = false;
+      XX-> flags. reload_font = false;
    }
    return true;
 }
@@ -218,8 +218,8 @@ apc_widget_end_paint( Handle self)
    DEFXX;
    prima_release_gc(XX);
    XX-> flags. paint = false;
-   if ( XX-> flags. reloadFont) {
-      PDrawable( self)-> font = XX-> savedFont;
+   if ( XX-> flags. reload_font) {
+      PDrawable( self)-> font = XX-> saved_font;
    }
    if ( XX-> stale_region) {
       XDestroyRegion( XX-> stale_region);
@@ -236,7 +236,7 @@ apc_widget_end_paint_info( Handle self)
 Bool
 apc_widget_get_clip_owner( Handle self)
 {
-   return X(self)-> flags. clipOwner;
+   return X(self)-> flags. clip_owner;
 }
 
 Rect
@@ -300,7 +300,7 @@ apc_widget_get_size( Handle self)
 Bool
 apc_widget_get_sync_paint( Handle self)
 {
-   return X(self)-> flags. syncPaint;
+   return X(self)-> flags. sync_paint;
 }
 
 Bool
@@ -390,14 +390,14 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
       ev. width = r. width;
       ev. height = r. height;
 
-      if ( !XX-> flags. syncPaint) {
+      if ( !XX-> flags. sync_paint) {
 	 XSendEvent( DISP, X_WINDOW, false, 0, (XEvent*)&ev);
 	 XCHECKPOINT;
       }
    }
 
    XUnionRectWithRegion( &r, XX-> region, XX-> region);
-   if ( XX-> flags. syncPaint) {
+   if ( XX-> flags. sync_paint) {
       apc_widget_update( self);
    }
 }
@@ -605,7 +605,7 @@ apc_widget_set_visible( Handle self, Bool show)
    DOLBUG( "apc_widget_set_visible( %d) of %s\n", show, PWidget(self)->name);
    XX-> flags. mapped = show;
    if ( show) {
-      if ( XX-> flags. doSizeHints) {
+      if ( XX-> flags. do_size_hints) {
 	 XSizeHints hints;
 	 int width, height;
 
@@ -622,7 +622,7 @@ apc_widget_set_visible( Handle self, Bool show)
 	 XResizeWindow( DISP, X_WINDOW, width, height);
 	 XSetWMNormalHints( DISP, X_WINDOW, &hints);
 	 XCHECKPOINT;
-	 XX-> flags. doSizeHints = false;
+	 XX-> flags. do_size_hints = false;
 	 flush_n_wait = true;
       }
 

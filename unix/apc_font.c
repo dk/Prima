@@ -987,7 +987,7 @@ apc_gp_set_font( Handle self, PFont font)
    }
 
    if ( XX-> flags. paint) {
-      XX-> flags. reloadFont = reload;
+      XX-> flags. reload_font = reload;
       XSetFont( DISP, XX-> gc, XX-> font-> id);
       XCHECKPOINT;
    }

@@ -206,7 +206,7 @@ handle_event( XEvent *ev, XEvent *next_event)
 {
    XWindow win, w2;
    Handle self, h2;
-   Bool wasSent;
+   Bool was_sent;
    Bool disabled;
    Event e, secondary;
    PDrawableSysData selfxx;
@@ -255,7 +255,7 @@ handle_event( XEvent *ev, XEvent *next_event)
    XX = X(self);
    disabled = !XX-> flags. enabled;
 
-   wasSent = ev-> xany. send_event;
+   was_sent = ev-> xany. send_event;
 
    switch ( ev-> type) {
    case KeyPress: {
@@ -392,7 +392,7 @@ handle_event( XEvent *ev, XEvent *next_event)
       XRectangle r;
       PPaintList pl;
 
-      if ( !wasSent) {
+      if ( !was_sent) {
 	 r. x = ev-> xexpose. x;
 	 r. y = ev-> xexpose. y;
 	 r. width = ev-> xexpose. width;
@@ -452,22 +452,22 @@ handle_event( XEvent *ev, XEvent *next_event)
    case ReparentNotify: {
       XWindow p = ev-> xreparent. parent;
       if ( !xw2h( p))
-	 XX-> realParent = p;
+	 XX-> real_parent = p;
       DOLBUG( "ReparentNotify\n");
       return;
    }
 
    case ConfigureNotify: {
       XConfigureEvent *cev = &ev-> xconfigure;
-      Point oldSize = XX-> knownSize;
-      Point oldOrigin = XX-> knownOrigin;
-      Bool sizeChanged;
+      Point old_size = XX-> known_size;
+      Point old_origin = XX-> known_origin;
+      Bool size_changed;
 
-      if ( XX-> flags. noSize && oldSize.x == oldSize.y && oldSize. x == APC_BAD_SIZE) {
-	 XX-> knownSize. x = XX-> size. x;
-	 XX-> knownSize. y = XX-> size. y;
-	 XX-> knownOrigin. x = XX-> origin. x;
-	 XX-> knownOrigin. y = XX-> origin. y;
+      if ( XX-> flags. no_size && old_size.x == old_size.y && old_size. x == APC_BAD_SIZE) {
+	 XX-> known_size. x = XX-> size. x;
+	 XX-> known_size. y = XX-> size. y;
+	 XX-> known_origin. x = XX-> origin. x;
+	 XX-> known_origin. y = XX-> origin. y;
 	 return;
       }
 
@@ -479,13 +479,13 @@ handle_event( XEvent *ev, XEvent *next_event)
 
       XX-> size. x = cev-> width;
       XX-> size. y = cev-> height;
-      sizeChanged = XX-> flags. noSize
-	 || XX-> size. x != XX-> knownSize. x
-	 || XX-> size. y != XX-> knownSize. y;
+      size_changed = XX-> flags. no_size
+	 || XX-> size. x != XX-> known_size. x
+	 || XX-> size. y != XX-> known_size. y;
 
-      if ( XX-> realParent && !wasSent) {
+      if ( XX-> real_parent && !was_sent) {
 	 XWindow cld;
-	 if ( !XTranslateCoordinates( DISP, XX-> realParent, XX-> parent, 
+	 if ( !XTranslateCoordinates( DISP, XX-> real_parent, XX-> parent, 
 				      cev-> x, cev-> y, 
 				      &cev-> x, &cev-> y, &cld)) {
 	     /* I don't expect this error to occur, ever */
@@ -496,23 +496,23 @@ handle_event( XEvent *ev, XEvent *next_event)
       XX-> origin. x = cev-> x;
       XX-> origin. y = X(XX-> owner)-> size. y - XX-> size. y - cev-> y;
 
-      if ( XX-> flags. noSize
-	   || XX-> origin. x != XX-> knownOrigin. x
-	   || XX-> origin. y != XX-> knownOrigin. y) {
+      if ( XX-> flags. no_size
+	   || XX-> origin. x != XX-> known_origin. x
+	   || XX-> origin. y != XX-> known_origin. y) {
 	 /* move notification */
 	 e. cmd = cmMove;
-	 e. gen. P = oldOrigin;
+	 e. gen. P = old_origin;
 	 CComponent( self)-> message( self, &e);
       }
 
-      XX-> flags. noSize = false;
+      XX-> flags. no_size = false;
 
-      if ( sizeChanged) {
+      if ( size_changed) {
 	 /* size notification */
 	 e. gen. source = self;
 	 e. cmd = cmSize;
-	 e. gen. R. left = oldSize. x;
-	 e. gen. R. bottom = oldSize. y;
+	 e. gen. R. left = old_size. x;
+	 e. gen. R. bottom = old_size. y;
 	 e. gen. P = XX-> size;
 	 e. gen. R. right = XX-> size. x;
 	 e. gen. R. top = XX-> size. y;
@@ -525,7 +525,7 @@ handle_event( XEvent *ev, XEvent *next_event)
 	    for ( i = 0; i < count; i++) {
 	       PWidget child = PWidget( selves[i]);
 
-	       if ( X(selves[i])-> flags. clipOwner && (child-> growMode & gmDontCare) == 0) {
+	       if ( X(selves[i])-> flags. clip_owner && (child-> growMode & gmDontCare) == 0) {
 		  stage = child-> stage;
 		  child-> stage = csFrozen;
 		  apc_widget_set_pos( selves[i], X(selves[i])-> origin. x, X(selves[i])-> origin. y);
@@ -536,13 +536,13 @@ handle_event( XEvent *ev, XEvent *next_event)
 	 }
 	 DOLBUG( "old size of %s: %dx%d, new size: %dx%d\n", 
 		  PComponent( self)-> name, 
-		  oldSize. x, oldSize. y, 
+		  old_size. x, old_size. y, 
 		  XX-> size. x, XX-> size. y);
 	 CComponent( self)-> message( self, &e);
       }
 
-      XX-> knownOrigin = XX-> origin;
-      XX-> knownSize = XX-> size;
+      XX-> known_origin = XX-> origin;
+      XX-> known_size = XX-> size;
 
       return;
    }

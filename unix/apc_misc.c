@@ -63,14 +63,14 @@ unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int d
    long int r;
    char *end;
 
-   if ( XX && guts.db && XX-> qClassName && XX-> qInstanceName) {
-      XX-> qClassName[XX-> nClassName] = class_detail;
-      XX-> qClassName[XX-> nClassName + 1] = 0;
-      XX-> qInstanceName[XX-> nInstanceName] = name_detail;
-      XX-> qInstanceName[XX-> nInstanceName + 1] = 0;
+   if ( XX && guts.db && XX-> q_class_name && XX-> q_instance_name) {
+      XX-> q_class_name[XX-> n_class_name] = class_detail;
+      XX-> q_class_name[XX-> n_class_name + 1] = 0;
+      XX-> q_instance_name[XX-> n_instance_name] = name_detail;
+      XX-> q_instance_name[XX-> n_instance_name + 1] = 0;
       if ( XrmQGetResource( guts.db,
-			    XX-> qInstanceName,
-			    XX-> qClassName,
+			    XX-> q_instance_name,
+			    XX-> q_class_name,
 			    &type, &value)) {
 	 if ( type == guts.qString) {
 	    r = strtol((char *)value. addr, &end, 0);
@@ -147,26 +147,26 @@ apc_component_fullname_changed_notify( Handle self)
    qInstance = XrmStringToQuark(c);
    free(c);
 
-   free( XX-> qClassName); XX-> qClassName = nil;
-   free( XX-> qInstanceName); XX-> qInstanceName = nil;
+   free( XX-> q_class_name); XX-> q_class_name = nil;
+   free( XX-> q_instance_name); XX-> q_instance_name = nil;
 
-   if ( me-> owner && me-> owner != self && PComponent(me-> owner)-> sysData && X(PComponent( me-> owner))-> qClassName) {
+   if ( me-> owner && me-> owner != self && PComponent(me-> owner)-> sysData && X(PComponent( me-> owner))-> q_class_name) {
       UU = X(PComponent( me-> owner));
-      XX-> nClassName = n = UU-> nClassName + 1;
-      XX-> qClassName = malloc( sizeof( XrmQuark) * (n + 2));
-      memcpy( XX-> qClassName, UU-> qClassName, sizeof( XrmQuark) * n);
-      XX-> qClassName[n-1] = qClass;
-      XX-> nInstanceName = n = UU-> nInstanceName + 1;
-      XX-> qInstanceName = malloc( sizeof( XrmQuark) * (n + 2));
-      memcpy( XX-> qInstanceName, UU-> qInstanceName, sizeof( XrmQuark) * n);
-      XX-> qInstanceName[n-1] = qInstance;
+      XX-> n_class_name = n = UU-> n_class_name + 1;
+      XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 2));
+      memcpy( XX-> q_class_name, UU-> q_class_name, sizeof( XrmQuark) * n);
+      XX-> q_class_name[n-1] = qClass;
+      XX-> n_instance_name = n = UU-> n_instance_name + 1;
+      XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 2));
+      memcpy( XX-> q_instance_name, UU-> q_instance_name, sizeof( XrmQuark) * n);
+      XX-> q_instance_name[n-1] = qInstance;
    } else {
-      XX-> nClassName = n = 1;
-      XX-> qClassName = malloc( sizeof( XrmQuark) * (n + 2));
-      XX-> qClassName[n-1] = qClass;
-      XX-> nInstanceName = n = 1;
-      XX-> qInstanceName = malloc( sizeof( XrmQuark) * (n + 2));
-      XX-> qInstanceName[n-1] = qInstance;
+      XX-> n_class_name = n = 1;
+      XX-> q_class_name = malloc( sizeof( XrmQuark) * (n + 2));
+      XX-> q_class_name[n-1] = qClass;
+      XX-> n_instance_name = n = 1;
+      XX-> q_instance_name = malloc( sizeof( XrmQuark) * (n + 2));
+      XX-> q_instance_name[n-1] = qInstance;
    }
 
    if ( PComponent(self)-> components && (n = PComponent(self)-> components-> count) > 0) {

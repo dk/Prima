@@ -37,11 +37,11 @@
 static int
 x_error_handler( Display *d, XErrorEvent *ev)
 {
-   int tail = guts. riTail;
+   int tail = guts. ri_tail;
    int prev = tail;
    char buf[ 1024];
 
-   while ( tail != guts. riHead) {
+   while ( tail != guts. ri_head) {
       if ( guts. ri[ tail]. request > ev-> serial)
 	 break;
       prev = tail;
@@ -52,9 +52,9 @@ x_error_handler( Display *d, XErrorEvent *ev)
 
    XGetErrorText( d, ev-> error_code, buf, 1024);
    fprintf( stderr, "%s\n", buf);
-   if ( tail == guts. riHead && prev == guts. riHead)
+   if ( tail == guts. ri_head && prev == guts. ri_head)
       fprintf( stderr, "This occured in unknown place\n");
-   else if ( tail == guts. riHead)
+   else if ( tail == guts. ri_head)
       fprintf( stderr, "This occured somewhere after the checkpoint at line %d and file %s\n",
 	       guts. ri[ prev]. line, guts. ri[ prev]. file);
    else
@@ -105,7 +105,7 @@ window_subsystem_init( void)
       "Wheeldown.wheeldown."
       "Wheelup.wheelup";
 
-   guts. riHead = guts. riTail = 0;
+   guts. ri_head = guts. ri_tail = 0;
    guts. dolbug = getenv( "PRIMA_DOLBUG") ? true : false;
    DISP = XOpenDisplay( nil);
    if (!DISP) return false;
@@ -233,8 +233,8 @@ apc_application_create( Handle self)
    XX-> size = apc_application_get_size( self);
    XX-> owner = nilHandle;
 
-   XX-> flags. clipOwner = 1;
-   XX-> flags. syncPaint = 0;
+   XX-> flags. clip_owner = 1;
+   XX-> flags. sync_paint = 0;
 
    apc_component_fullname_changed_notify( self);
    guts. mouse_wheel_down = unix_rm_get_int( self, guts.qWheeldown, guts.qwheeldown, 0);
