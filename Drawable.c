@@ -750,7 +750,7 @@ plot_spline( Handle self, int count, Point * points, Bool fill)
    } else 
       array = static_array;
 
-   array_size = TkMakeBezierCurve( points, count, var-> splinePrecision, array);
+   array_size = TkMakeBezierCurve((int*) points, count, var-> splinePrecision, array);
 
    if ( fill && ( my-> fillpoly == Drawable_fillpoly)) {
       ret = apc_gp_fill_poly( self, array_size, array);
