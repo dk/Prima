@@ -54,6 +54,7 @@ ic_Byte_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
          croak("Not enough memory:%d bytes", new_data_size);
          return;
       }
+      memset( new_data, 0, new_data_size);
    } else
       new_data = var-> data;
    ic_type_convert( self, new_data, dummy_pal, imByte, &dummy_pal_size, false);

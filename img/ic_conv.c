@@ -49,9 +49,9 @@ extern "C" {
 
 BC( mono, mono, None)
 {
+   int j, ws, mask;
    dBCARGS;
    BCWARN;
-   (void)height;
 
    if ( palSize_only || *dstPalSize == 0) 
       memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof( RGBColor));
@@ -66,8 +66,17 @@ BC( mono, mono, None)
       if ( dstData != var-> data)
          memcpy( dstData, var-> data, var-> dataSize);
    } else {
-      for ( i = 0; i < var-> dataSize; i++, srcData++)
-         *srcData = ~(*srcData);
+      /* preserve off-width zeros */
+      ws = width >> 3;
+      if ((width & 7) == 0) {
+         ws--;
+         mask = 0xff;
+      } else
+         mask = (0xff00 >> (width & 7)) & 0xff;
+      for ( i = 0; i < height; i++, srcData += srcLine, dstData += dstLine) {
+         for ( j = 0; j < ws; j++) dstData[j] =~ srcData[j];
+         dstData[ws] = (~srcData[j]) & mask;
+      }
    }
 }
 

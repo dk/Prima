@@ -324,28 +324,35 @@ NOSCALE:
    if (( PImage( dest)-> type & imBPP) < 8) {
       int type = PImage( dest)-> type;
       int ps   = PImage( dest)-> palSize;
+      int mask = (1 << type) - 1;
+      int conv = PImage( dest)-> conversion;
+      PImage( dest)-> conversion = ictNone;
       CImage( dest)-> reset( dest, imbpp8, nilSV);
       PImage( dest)-> palSize = ps;
-      if (( type & imBPP) == 1 && rop != ropCopyPut) { 
+      memset( PImage( dest)-> palette + 255, 0xff, sizeof(RGBColor));
+      if (rop != ropCopyPut) { 
          /* change 0/1 to 0x000/0xfff for correct masking */
          int sz   = PImage( dest)-> dataSize;
          Byte * d = PImage( dest)-> data;
          while ( sz--) {
-            *d = (*d) ? 0xff : 0x00;
+            if ( *d == mask) *d = 0xff;
             d++;
          }
-         PImage( dest)-> palette[255].r = PImage( dest)-> palette[255].g = 
-            PImage( dest)-> palette[255].b = 0xff;
       }
-
       img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop);
-      if ( PImage( dest)-> options. optPreserveType) 
-         CImage( dest)-> reset( dest, type, nilSV);
+      if (rop != ropCopyPut) { 
+         int sz   = PImage( dest)-> dataSize;
+         Byte * d = PImage( dest)-> data;
+         while ( sz--) *(d++) &= mask;
+      }
+      CImage( dest)-> reset( dest, type, nilSV);
+      PImage( dest)-> conversion = conv;
       goto EXIT;
    } 
 
    if ( PImage( dest)-> type != PImage( src)-> type) {
       int type = PImage( src)-> type & imBPP;
+      int mask = (1 << type) - 1;
       /* equalize type */
       if ( !newObject) {
          src = CImage( src)-> dup( src);
@@ -353,16 +360,15 @@ NOSCALE:
          newObject = true;
       }
       CImage( src)-> reset( src, PImage( dest)-> type, nilSV);
-      if ( type == 1 && rop != ropCopyPut) { 
+      if ( type < 8 && rop != ropCopyPut) { 
          /* change 0/1 to 0x000/0xfff for correct masking */
          int sz   = PImage( src)-> dataSize;
          Byte * d = PImage( src)-> data;
          while ( sz--) {
-            *d = (*d) ? 0xff : 0x00;
+            if ( *d == mask) *d = 0xff;
             d++;
          }
-         PImage( src)-> palette[255].r = PImage( src)-> palette[255].g = 
-            PImage( src)-> palette[255].b = 0xff;
+         memset( PImage( src)-> palette + 255, 0xff, sizeof(RGBColor));
       }
    }
 

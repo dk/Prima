@@ -68,6 +68,7 @@ Image_init( Handle self, HV * profile)
    var->dataSize = ( var->lineSize) * var->h;
    if ( var-> dataSize > 0) {
       var->data = allocb( var->dataSize);
+      memset( var-> data, 0, var-> dataSize);
       if ( var-> data == nil) {
          my-> make_empty( self);
          croak("Image::init: cannot allocate %d bytes", var-> dataSize);
@@ -154,11 +155,10 @@ Image_reset( Handle self, int new_type, SV * palette)
          my-> make_empty( self);
          croak("Image::reset: cannot allocate %d bytes", new_data_size);
       }
+      memset( new_data, 0, new_data_size);
       if ( new_pal_size != 1)
          ic_type_convert( self, new_data, new_palette, new_type, 
                &new_pal_size, want_only_palette_colors);
-      else
-         memset( new_data, 0, new_data_size);
    }
    if ( new_pal_size > 0) {
       var-> palSize = new_pal_size;
@@ -190,6 +190,7 @@ Image_stretch( Handle self, int width, int height)
    }
    lineSize = (( abs( width) * ( var->type & imBPP) + 31) / 32) * 4;
    newData = allocb( lineSize * abs( height));
+   memset( newData, 0, lineSize * abs( height));
    if ( newData == nil) 
          croak("Image::stretch: cannot allocate %d bytes", lineSize * abs( height));
    if ( var-> data)
