@@ -589,7 +589,7 @@ extern void
 prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils);
 
 extern void
-prima_copy_xybitmap_inplace( unsigned char *data, int w, int h, int ls);
+prima_mirror_bytes( unsigned char *data, int dataSize);
 
 extern Bool
 prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);

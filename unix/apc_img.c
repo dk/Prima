@@ -407,24 +407,12 @@ prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int
 }
 
 void
-prima_copy_xybitmap_inplace( unsigned char *data, int w, int h, int ls)
+prima_mirror_bytes( unsigned char *data, int dataSize)
 {
-   register int x;
-   Byte *t = data;
-   Byte *mirrored_bits;
-
-   /* XXX: MSB/LSB */
-   if ( guts.bit_order != MSBFirst) {
-      mirrored_bits = mirror_bits();
-      w = (w + 7)/8;
-      while( h--) {
-	 for ( x = 0; x < w; x++) 
-	    *t++ = mirrored_bits[*t];
-         t += ls;
-      }
-   }
+   Byte *mirrored_bits = mirror_bits();
+   while ( dataSize--)
+      *(data++) = mirrored_bits[*data];
 }
-
 
 static void
 create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)

@@ -1393,7 +1393,8 @@ FAILED:
          }   
       }   
 
-      prima_copy_xybitmap_inplace( ndata, r-> dimension.x, r-> dimension.y, px-> bytes_per_line_alias);
+      if ( guts. bit_order != MSBFirst)
+         prima_mirror_bytes( ndata, r-> dimension.y * px-> bytes_per_line_alias);
       r-> map[index] = px;
    }   
 
