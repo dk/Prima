@@ -59,6 +59,7 @@ object Prima::Component( Prima::Object)
     method   void      remove_notification( long id);
     method   void      set( HV * profile);
     method   void      setup();
+    method   void      set_delegations( SV * delegations);
     method   void      set_event_flag( Bool eventFlag);
     method   void      set_name( char * name);
     public   void      set_notification( char * name, SV * subroutine);

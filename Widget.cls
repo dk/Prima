@@ -82,7 +82,7 @@ object Prima::Widget( Prima::Drawable)
    method   void     key_event( int command, int code, int key = kbNoKey, int mod = 0, int repeat = 1, Bool post = 0);
    method   Handle   last();
    method   void     locate       ( Rect r);
-   method   void     lock();
+   method   Bool     lock();
    method   void     mouse_event( int command = cmMouseDown, int button = mbLeft, int mod = 0, int x = 0, int y = 0, Bool dblclk = 0, Bool post = 0);
    method   Handle   next();
    import   SV *     notification_types();
@@ -102,10 +102,10 @@ object Prima::Widget( Prima::Drawable)
    method   void     show_cursor();
    method   void     show_hint();
    method   Bool     showing()                       => apc_widget_is_showing;
-   method   void     unlock();
+   method   Bool     unlock();
    method   void     update_view();
    c_only   void     update_sys_handle( HV * profile);
-   method   void     validate_rect( Rect rect)       => apc_widget_validate_rect;
+   method   Bool     validate_rect( Rect rect)       => apc_widget_validate_rect;
 
 # properties read methods
    method   SV *     get_accel_items();
@@ -187,24 +187,24 @@ object Prima::Widget( Prima::Drawable)
 # properties write methods
    method   void     set_accel_items( SV * accelItems);
    method   void     set_accel_table( Handle accelTable);
-   method   void     set_back_color( Color color);
+   method   Bool     set_back_color( Color color);
    method   void     set_bottom( int bottom);
    method   void     set_brief_keys( Bool briefKeys);
    method   void     set_buffered( Bool buffered);
    method   void     set_capture( Bool capture, Handle confineTo = nilHandle);
    method   void     set_centered( Bool x, Bool y);
    import   void     set_clip_owner( Bool clipOwner);
-   method   void     set_clip_rect( Rect clipRect);
+   method   Bool     set_clip_rect( Rect clipRect);
    method   void     set_current_widget( Handle widget);
-   method   void     set_color( Color color);
+   method   Bool     set_color( Color color);
    method   void     set_color_index( Color color, int index);
    method   void     set_current( Bool current);
-   method   void     set_cursor_pos( int x, int y)     => apc_cursor_set_pos;
-   method   void     set_cursor_size( int x, int y)    => apc_cursor_set_size;
-   method   void     set_cursor_visible( Bool visible) => apc_cursor_set_visible;
+   method   Bool     set_cursor_pos( int x, int y)     => apc_cursor_set_pos;
+   method   Bool     set_cursor_size( int x, int y)    => apc_cursor_set_size;
+   method   Bool     set_cursor_visible( Bool visible) => apc_cursor_set_visible;
    method   void     set_design_scale( double x, double y);
-   method   void     set_enabled( Bool enable)         => apc_widget_set_enabled;
-   method   void     set_first_click( Bool firstClick) => apc_widget_set_first_click;
+   method   Bool     set_enabled( Bool enable)         => apc_widget_set_enabled;
+   method   Bool     set_first_click( Bool firstClick) => apc_widget_set_first_click;
    method   void     set_focused( Bool focused);
    method   void     set_font( Font font);
    method   void     set_grow_mode( int flags);
@@ -224,12 +224,12 @@ object Prima::Widget( Prima::Drawable)
    method   void     set_pointer_icon( Handle icon);
    method   void     set_pointer_pos( int x, int y);
    method   void     set_pointer_type( int type);
-   method   void     set_pointer_visible( Bool visible) => apc_pointer_set_visible;
+   method   Bool     set_pointer_visible( Bool visible) => apc_pointer_set_visible;
    method   void     set_popup( Handle popup);
    method   void     set_popup_color( Color color, int index);
    method   void     set_popup_font( Font font);
    method   void     set_popup_items( SV * popupItems);
-   method   void     set_pos( int x, int y)             => apc_widget_set_pos;
+   method   Bool     set_pos( int x, int y)             => apc_widget_set_pos;
    method   void     set_rect( Rect r);
    method   void     set_right( int right);
    method   void     set_scale_children( Bool scaleChildren);
@@ -239,7 +239,7 @@ object Prima::Widget( Prima::Drawable)
    method   void     set_selecting_buttons( int sb);
    method   void     set_shape( Handle mask);
    method   void     set_show_hint( Bool showHint);
-   method   void     set_size( int x, int y)            => apc_widget_set_size;
+   method   Bool     set_size( int x, int y)            => apc_widget_set_size;
    method   void     set_size_min( Point min);
    method   void     set_size_max( Point max);
    import   void     set_sync_paint( Bool syncPaint);
@@ -248,7 +248,7 @@ object Prima::Widget( Prima::Drawable)
    method   void     set_text( char * text);
    method   void     set_top( int top);
    import   void     set_transparent( Bool transparent);
-   method   void     set_visible( Bool visible)         => apc_widget_set_visible;
+   method   Bool     set_visible( Bool visible)         => apc_widget_set_visible;
    method   void     set_widget_class( int widgetClass);
    method   void     set_width( int width);
 

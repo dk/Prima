@@ -47,22 +47,22 @@ object Prima::Drawable ( Prima::Component)
 
    # properties
    method void   set( HV * profile);
-   method void   set_back_color( Color color)       => apc_gp_set_back_color;
-   method void   set_clip_rect( Rect clipRect)      => apc_gp_set_clip_rect;
-   method void   set_color( Color color)            => apc_gp_set_color;
+   method Bool   set_back_color( Color color)       => apc_gp_set_back_color;
+   method Bool   set_clip_rect( Rect clipRect)      => apc_gp_set_clip_rect;
+   method Bool   set_color( Color color)            => apc_gp_set_color;
    method void   set_fill_pattern ( FillPattern pattern);
    method void   set_fill_pattern_id ( int patternId);
    method void   set_font( Font font);
-   method void   set_line_end( int lend)           => apc_gp_set_line_end;
-   method void   set_line_pattern( int lpattern)   => apc_gp_set_line_pattern;
-   method void   set_line_width( int lwidth)       => apc_gp_set_line_width;
+   method Bool   set_line_end( int lend)           => apc_gp_set_line_end;
+   method Bool   set_line_pattern( int lpattern)   => apc_gp_set_line_pattern;
+   method Bool   set_line_width( int lwidth)       => apc_gp_set_line_width;
    method void   set_palette( SV * palette);
    method void   set_region( Handle mask);
-   method void   set_rop  ( int rop)               => apc_gp_set_rop;
-   method void   set_rop2 ( int rop)               => apc_gp_set_rop2;
-   method void   set_transform ( int x, int y)     => apc_gp_set_transform;
-   method void   set_text_opaque( Bool opaque)     => apc_gp_set_text_opaque;
-   method void   set_text_out_baseline( Bool bas)  => apc_gp_set_text_out_baseline;
+   method Bool   set_rop  ( int rop)               => apc_gp_set_rop;
+   method Bool   set_rop2 ( int rop)               => apc_gp_set_rop2;
+   method Bool   set_transform ( int x, int y)     => apc_gp_set_transform;
+   method Bool   set_text_opaque( Bool opaque)     => apc_gp_set_text_opaque;
+   method Bool   set_text_out_baseline( Bool bas)  => apc_gp_set_text_out_baseline;
 
    method int           get_bpp();
    method Color         get_back_color()                  => apc_gp_get_back_color;
@@ -93,24 +93,24 @@ object Prima::Drawable ( Prima::Component)
    method int           get_width();
 
    # operators
-   method void  arc( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_arc;
-   method void  bar(int x1, int y1, int x2, int y2)        => apc_gp_bar;
-   method void  chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_chord;
+   method Bool  arc( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_arc;
+   method Bool  bar(int x1, int y1, int x2, int y2)        => apc_gp_bar;
+   method Bool  chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_chord;
    method Color get_pixel(int x, int y)                    => apc_gp_get_pixel;
-   method void  ellipse(int x, int y, int Rx, int Ry)      => apc_gp_ellipse;
-   method void  fill_chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_fill_chord;
-   method void  fill_ellipse(int x, int y, int Rx, int Ry) => apc_gp_fill_ellipse;
+   method Bool  ellipse(int x, int y, int Rx, int Ry)      => apc_gp_ellipse;
+   method Bool  fill_chord( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_fill_chord;
+   method Bool  fill_ellipse(int x, int y, int Rx, int Ry) => apc_gp_fill_ellipse;
    method void  fillpoly( SV * points);
-   method void  fill_sector( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_fill_sector;
-   method void  flood_fill( int x, int y, Color color, Bool singleBorder = 1) => apc_gp_flood_fill;
-   method void  line(int x1, int y1, int x2, int y2)       => apc_gp_line;
+   method Bool  fill_sector( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_fill_sector;
+   method Bool  flood_fill( int x, int y, Color color, Bool singleBorder = 1) => apc_gp_flood_fill;
+   method Bool  line(int x1, int y1, int x2, int y2)       => apc_gp_line;
    method void  lines( SV * points);
    method void  put_image(int x, int y, Handle image);
    method void  polyline( SV * points);
    method void  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
-   method void  rectangle(int x1, int y1, int x2, int y2)  => apc_gp_rectangle;
-   method void  sector( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_sector;
-   method void  set_pixel(int x, int y, Color color)       => apc_gp_set_pixel;
+   method Bool  rectangle(int x1, int y1, int x2, int y2)  => apc_gp_rectangle;
+   method Bool  sector( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_sector;
+   method Bool  set_pixel(int x, int y, Color color)       => apc_gp_set_pixel;
    method void  stretch_image(int x, int y, int xDest, int yDest, Handle image);
    method void  text_out( char * text, int x, int y, int len = -1);
    method SV*   text_wrap( char * text, int width, int options = twDefault, int tabIndent = 8, int textLen = -1);

@@ -49,6 +49,7 @@ Component_init( Handle self, HV * profile)
    inherited init( self, profile);
    var-> owner = owner;
    my-> set_name( self, pget_c( name));
+   my-> set_delegations( self, pget_sv( delegations));
    var-> evQueue = malloc( sizeof( List));
    list_create( var-> evQueue,  8, 8);
    apc_component_create( self);
@@ -62,7 +63,7 @@ Component_init( Handle self, HV * profile)
       int len = snprintf( buf, 1023, "on%s", HeKEY( he));
       holder = hv_fetch( profile, buf, len, 0);
       if ( holder == nil || SvTYPE( *holder) == SVt_NULL) continue;
-      my-> add_notification( self, buf, *holder, self, -1);
+      my-> add_notification( self, HeKEY( he), *holder, self, -1);
    }
    sv_free( res);
 }
@@ -581,8 +582,7 @@ XS( Component_notify_FROMPERL)
    /* searching dynamic onXxxx subs */
    if ( var-> eventIDs) {
       void * ret;
-      int len = snprintf( buf, 1022, "on%s", name);
-      ret = hash_fetch( var-> eventIDs, buf, len);
+      ret = hash_fetch( var-> eventIDs, name, nameLen);
       if ( ret != nil) {
          list = var-> events + ( int) ret - 1;
          seqCount += list-> count;
@@ -724,8 +724,7 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
    PList  list;
    int    nameLen = strlen( name);
 
-   if (( name[0] != 'o') || ( name[1] != 'n') ||
-      ( !hv_exists(( HV *) SvRV( my-> notification_types( self)), name + 2, nameLen - 2))) {
+   if ( !hv_exists(( HV *) SvRV( my-> notification_types( self)), name, nameLen)) {
        warn("RTC04B: No such event %s", name);
        return 0;
    }
@@ -776,7 +775,6 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
       list_add( var-> refs, referer);
    NO_SELFREF:;
    }
-
    return ( long) ret;
 }
 
@@ -900,9 +898,47 @@ XS( Component_set_notification_FROMPERL)
    }
 
    sub = ST( 1);
-   my-> add_notification( self, convname, sub, self, -1);
+   if ( convname[0] == 'o' && convname[1] == 'n')
+      my-> add_notification( self, convname + 2, sub, self, -1);
    XSRETURN_EMPTY;
 }
 
 void Component_set_notification          ( Handle self, char * name, SV * subroutine) { warn("Invalid call of Component::set_notification"); }
 void Component_set_notification_REDEFINED( Handle self, char * name, SV * subroutine) { warn("Invalid call of Component::set_notification"); }
+
+void
+Component_set_delegations( Handle self, SV * delegations)
+{
+   int i, len;
+   AV * av;
+   Handle referer;
+   char *name;
+
+   if ( var-> stage > csNormal) return;
+   if ( !var-> owner) return;
+   if ( !SvROK( delegations) || SvTYPE( SvRV( delegations)) != SVt_PVAV) return;
+
+   referer = var-> owner;
+   name    = var-> name;
+   av = ( AV *) SvRV( delegations);
+   len = av_len( av);
+   for ( i = 0; i <= len; i++) {
+      SV **holder = av_fetch( av, i, 0);
+      if ( !holder) continue;
+      if ( SvROK( *holder)) {
+         Handle mate = gimme_the_mate( *holder);
+         if (( mate == nilHandle) || !kind_of( mate, CComponent)) continue;
+         referer = mate;
+      } else if ( SvPOK( *holder)) {
+         CV * sub;
+         SV * subref;
+         char buf[ 1024];
+         char * event = SvPV( *holder, na);
+         snprintf( buf, 1023, "%s_%s", name, event);
+         sub = query_method( referer, buf, 0);
+         if ( sub == nil) continue;
+         my-> add_notification( self, event, subref = newRV(( SV*) sub), referer, -1);
+         sv_free( subref);
+      }
+   }
+}

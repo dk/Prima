@@ -38,7 +38,7 @@ object Prima::Application( Prima::Widget)
    method void   bring_to_front();
    method Point  client_to_screen( Point p);
    method Bool   close();
-   method void   close_help()                                 => apc_help_close;
+   method Bool   close_help()                                 => apc_help_close;
    method void   done();
    method void   detach( Handle objectHandle, Bool kill);
    method void   end_paint();
@@ -64,12 +64,12 @@ object Prima::Application( Prima::Widget)
    method Point  get_size()  => apc_application_get_size;
    static SV *   get_system_info( char * dummy = "");
    static int    get_system_value( char * dummy = "", int sysValue = 0);
-   method void   go( void)   => apc_application_go;
+   method Bool   go( void)   => apc_application_go;
    c_only void   handle_event ( PEvent event);
    method Bool   help_context( long context)   => apc_help_open_topic;
    method void   hide();
    method void   init( HV * profile);
-   method void   lock()                        => apc_application_lock;
+   method Bool   lock()                        => apc_application_lock;
    method void   insert_behind( Handle view);
    method Handle next();
    method Handle prev();
@@ -82,7 +82,7 @@ object Prima::Application( Prima::Widget)
    method void   set_hint_visible( Bool visible);
    method void   show();
    method SV*    sys_action( char * params);
-   method void   unlock()                      => apc_application_unlock;
+   method Bool   unlock()                      => apc_application_unlock;
    c_only void   update_sys_handle( HV * profile);
    static void   yield( char *dummy = "");
 
@@ -109,7 +109,7 @@ object Prima::Application( Prima::Widget)
    method void   set_centered( Bool x, Bool y);
    method void   set_clip_owner( Bool clipOwner);
    method void   set_color_index( Color color, int index);
-   method void   set_enabled( Bool enable);
+   method Bool   set_enabled( Bool enable);
    method void   set_focused( Bool focused);
    method void   set_font( Font font);
    method void   set_help_context( long helpContext);
@@ -125,15 +125,15 @@ object Prima::Application( Prima::Widget)
    method void   set_owner_font( Bool ownerFont);
    method void   set_owner_show_hint( Bool ownerShowHint);
    method void   set_owner_palette( Bool ownerShowHint);
-   method void   set_pos( int x, int y);
+   method Bool   set_pos( int x, int y);
    method void   set_palette( SV * palette);
    method void   set_selectable( Bool selectable);
    method void   set_shape( Handle mask);
    method void   set_sync_paint( Bool syncPaint);
-   method void   set_size( int x, int y);
+   method Bool   set_size( int x, int y);
    method void   set_show_hint( Bool showHint);
    method void   set_text( char * text);
-   method void   set_visible( Bool visible);
+   method Bool   set_visible( Bool visible);
    method void   set_tab_order( int tabOrder);
    method void   set_tab_stop( Bool tabStop);
    method void   set_transparent( Bool transparent);

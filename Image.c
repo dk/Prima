@@ -1610,17 +1610,17 @@ Image_get_pixel( Handle self,int x,int y)
     #undef BGRto32
 }
 
-void
+Bool
 Image_set_pixel( Handle self,int x,int y,Color color)
 {
     RGBColor rgb;
     #define LONGtoBGR(lv,clr)   ((clr).b=(lv)&0xff,(clr).g=((lv)>>8)&0xff,(clr).r=((lv)>>16)&0xff,(clr))
     if ( is_opt( optInDraw)) {
         inherited set_pixel(self,x,y,color);
-        return;
+        return true;
     }
     if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0)) {
-        return;
+        return true;
     }
     switch (var->type & imBPP) {
         case imbpp1  :
@@ -1685,10 +1685,11 @@ Image_set_pixel( Handle self,int x,int y,Color color)
             }
             break;
         default:
-            return;
+            return false;
     }
     my->update_change( self);
     #undef LONGtoBGR
+    return true;
 }
 
 Handle

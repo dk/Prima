@@ -868,8 +868,8 @@ void Application_set_help_context( Handle self, long context)
 void Application_set_text( Handle self, char * text) {}
 void Application_set_buffered( Handle self, Bool buffered) {}
 void Application_set_centered( Handle self, Bool x, Bool y) {}
-void Application_set_enabled( Handle self, Bool enable) {}
-void Application_set_visible( Handle self, Bool visible) {}
+Bool Application_set_enabled( Handle self, Bool enable) { return false;}
+Bool Application_set_visible( Handle self, Bool visible) { return false; }
 void Application_set_grow_mode( Handle self, int flags) {}
 void Application_set_hint_visible( Handle self, Bool visible) {}
 void Application_set_modal_horizon( Handle self, Bool modalHorizon) {}
@@ -879,8 +879,8 @@ void Application_set_owner_back_color( Handle self, Bool ownerBackColor) {}
 void Application_set_owner_font( Handle self, Bool ownerFont) {}
 void Application_set_owner_show_hint( Handle self, Bool ownerShowHint) {}
 void Application_set_owner_palette( Handle self, Bool ownerPalette) {}
-void Application_set_pos( Handle self, int x, int y) {}
-void Application_set_size( Handle self, int x, int y) {}
+Bool Application_set_pos( Handle self, int x, int y) { return false; }
+Bool Application_set_size( Handle self, int x, int y) { return false; }
 void Application_set_selectable( Handle self, Bool selectable) {}
 void Application_set_shape( Handle self, Handle mask) {}
 void Application_set_sync_paint( Handle self, Bool syncPaint) {}

@@ -267,7 +267,7 @@ colorFound:;
       var-> dataSize = line8Size * var-> h;
    }
 
-   if ( var-> palSize <= color && bpp <= im256)
+   if ( var-> palSize > color && bpp <= im256)
       var-> palette[ color]. r = var-> palette[ color]. b = var-> palette[ color]. g = 0;
 }
 

@@ -73,7 +73,7 @@ object Prima::Image( Prima::Drawable)
    method void   set_data( SV * data);
    method void   set_height( int height);
    method void   set_palette( SV * palette);
-   method void   set_pixel(int x, int y, Color color);
+   method Bool   set_pixel(int x, int y, Color color);
    method void   set_preserve_type( Bool preserveType);
    method void   set_h_scaling( Bool scaling);
    method void   set_v_scaling( Bool scaling);

@@ -842,10 +842,11 @@ Widget_locate( Handle self, Rect r )
    my-> set_pos( self, r. left, r. bottom);
 }
 
-void
+Bool
 Widget_lock( Handle self)
 {
    var-> lockCount++;
+   return true;
 }
 
 /*::m */
@@ -1143,13 +1144,14 @@ repaint_all( Handle owner, Handle self, void * dummy)
    return false;
 }
 
-void
+Bool
 Widget_unlock( Handle self)
 {
    if ( --var-> lockCount <= 0) {
       var-> lockCount = 0;
       repaint_all( var-> owner, self, nil);
    }
+   return true;
 }
 
 void
@@ -1592,11 +1594,12 @@ Widget_set_accel_table( Handle self, Handle accelTable)
    else var-> accelTable = accelTable;
 }
 
-void
+Bool
 Widget_set_back_color( Handle self, Color color)
 {
    enter_method;
    my-> set_color_index( self, color, ciBack);
+   return true;
 }
 
 void
@@ -1640,20 +1643,22 @@ Widget_set_centered( Handle self, Bool x, Bool y)
    my-> set_pos( self, mypos. x, mypos. y);
 }
 
-void
+Bool
 Widget_set_clip_rect( Handle self, Rect clipRect)
 {
    if ( opt_InPaint)
       inherited-> set_clip_rect( self, clipRect);
    else
       apc_widget_set_clip_rect( self, clipRect);
+   return true;
 }
 
-void
+Bool
 Widget_set_color( Handle self, Color color)
 {
    enter_method;
    my-> set_color_index( self, color, ciFore);
+   return true;
 }
 
 void
