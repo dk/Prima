@@ -57,6 +57,7 @@ Image_init( Handle self, HV * profile)
          memcpy( var palette, std256gray_palette, sizeof( std256gray_palette));
          break;
    }
+   apc_image_create( self);
    my update_change( self);
 }
 
@@ -187,6 +188,8 @@ Image_done( Handle self)
 {
    apc_image_destroy( self);
    my make_empty( self);
+   var data = nil;
+   var palette = nil;
    inherited done( self);
 }
 
