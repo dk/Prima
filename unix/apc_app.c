@@ -52,13 +52,32 @@ x_io_error_handler( Display *d)
    _exit( 1);
 }
 
+static XrmDatabase
+get_database( void)
+{
+   XrmDatabase db = XrmGetStringDatabase( "");
+   char filename[PATH_MAX];
+   char *c;
+   char *resource_data = XResourceManagerString( DISP);
+   if ( resource_data) {
+      XrmCombineDatabase( XrmGetStringDatabase( resource_data), &db, false);
+   } else {
+      c = getenv( "HOME");
+      if (!c) c = "";
+      snprintf( filename, PATH_MAX, "%s/.Xdefaults", c);
+      XrmCombineFileDatabase( filename, &db, false);
+   }
+   return db;
+}
+
 Bool
 window_subsystem_init( void)
 {
    /*XXX*/ /* Namely, support for -display host:0.0 etc. */
-   XrmQuark common_quarks_list[11];
+   XrmQuark common_quarks_list[12];
    XrmQuarkList ql = common_quarks_list;
    char *common_quarks =
+      "String."
       "Background.background."
       "Font.font."
       "Foreground.foreground."
@@ -74,7 +93,9 @@ window_subsystem_init( void)
    XCHECKPOINT;
 
    XrmInitialize();
+   guts.db = get_database();
    XrmStringToQuarkList( common_quarks, common_quarks_list);
+   guts.qString = *ql++;
    guts.qBackground = *ql++;
    guts.qbackground = *ql++;
    guts.qFont = *ql++;
@@ -149,6 +170,7 @@ window_subsystem_done( void)
    printf( "Unhandled X events: %ld\n", guts. unhandled_events);
    printf( "Skipped X events: %ld\n", guts. skipped_events);
 
+   XrmDestroyDatabase( guts.db);
    if (guts.windows) hash_destroy( guts.windows, false);
    prima_cleanup_font_subsystem();
 }
@@ -192,6 +214,10 @@ apc_application_create( Handle self)
 
    XX-> flags. clipOwner = 1;
    XX-> flags. syncPaint = 0;
+
+   apc_component_fullname_changed_notify( self);
+   guts. mouse_wheel_down = unix_rm_get_int( self, guts.qWheeldown, guts.qwheeldown, 0);
+   guts. mouse_wheel_up = unix_rm_get_int( self, guts.qWheelup, guts.qwheelup, 0);
 
    return true;
 }

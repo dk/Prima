@@ -124,6 +124,8 @@ struct _UnixGuts
    } limits;
    Bool insert;
    int mouse_buttons;
+   int mouse_wheel_up;
+   int mouse_wheel_down;
    unsigned char buttons_map[ 256];
    int cursor_width;
    int cursor_height;
@@ -142,7 +144,11 @@ struct _UnixGuts
    Atom fxa_foundry;
    Atom fxa_average_width;
 
+   /* resource management */
+   XrmDatabase db;
+
    /* generally used quarks */
+   XrmQuark qString;
    XrmQuark qBackground;
    XrmQuark qbackground;
    XrmQuark qFont;
@@ -272,6 +278,7 @@ typedef union _unix_sys_data
 #define X(obj)		((PDrawableSysData)(PComponent((obj))-> sysData))
 #define DEFXX		PDrawableSysData selfxx = X(self)
 #define XX		selfxx
+#define WHEEL_DELTA	120
 
 extern void
 handle_event( XEvent *ev, XEvent *next_event);
@@ -290,6 +297,10 @@ prima_init_image_subsystem( void);
 
 extern void
 prima_cleanup_font_subsystem( void);
+
+extern int
+unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);
+
 
 /* Interaction with Window Managers */
 

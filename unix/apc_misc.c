@@ -33,6 +33,34 @@ debug_write( const char *format, ...)
 }
 
 
+int
+unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value)
+{
+   DEFXX;
+   XrmRepresentation type;
+   XrmValue value;
+   long int r;
+   char *end;
+
+   if ( XX && guts.db && XX-> qClassName && XX-> qInstanceName) {
+      XX-> qClassName[XX-> nClassName] = class_detail;
+      XX-> qClassName[XX-> nClassName + 1] = 0;
+      XX-> qInstanceName[XX-> nInstanceName] = name_detail;
+      XX-> qInstanceName[XX-> nInstanceName + 1] = 0;
+      if ( XrmQGetResource( guts.db,
+			    XX-> qInstanceName,
+			    XX-> qClassName,
+			    &type, &value)) {
+	 if ( type == guts.qString) {
+	    r = strtol((char *)value. addr, &end, 0);
+	    if (*(value. addr) && !*end)
+	       return (int)r;
+	 }
+      }
+   }
+   return default_value;
+}
+
 /* Component-related functions */
 
 void
@@ -72,6 +100,7 @@ apc_component_fullname_changed_notify( Handle self)
       for ( l = 0; l < 256; l++) {
 	 convert[l] = isalnum(l) ? l : '_';
       }
+      convert[0] = 0;
       converted = true;
    }
 
@@ -564,7 +593,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svMouseButtons: return guts. mouse_buttons;
    case svSubmenuDelay:  /* XXX ? */ return 50;
    case svFullDrag: /* XXX ? */ return false;
-   case svWheelPresent: return false;
+   case svWheelPresent: return guts.mouse_wheel_up || guts.mouse_wheel_down;
    case svXIcon: /* XXX wm query */ return 64;
    case svYIcon: /* XXX wm query */ return 64;
    case svXSmallIcon: /* XXX wm query */ return 20;

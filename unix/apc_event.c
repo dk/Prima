@@ -29,7 +29,7 @@ handle_event( XEvent *ev, XEvent *next_event)
    Handle self, h2;
    Bool wasSent;
    Bool disabled;
-   Event e;
+   Event e, secondary;
    PDrawableSysData selfxx;
    XButtonEvent *bev;
 
@@ -38,7 +38,8 @@ handle_event( XEvent *ev, XEvent *next_event)
 
    (void)h2;(void)self;(void)w2;(void)win;(void)xw2h;
 
-   memset( &e, 0, sizeof( e));
+   bzero( &e, sizeof( e));
+   bzero( &secondary, sizeof( secondary));
 
    /* Get a window, including special cases */
    switch ( ev-> type) {
@@ -122,6 +123,16 @@ handle_event( XEvent *ev, XEvent *next_event)
       e. pos. where. x = bev-> x;
       e. pos. where. y = XX-> size. y - bev-> y - 1;
       e. pos. mod = 0;
+      if ( e. cmd == cmMouseDown
+	   && (( guts. mouse_wheel_up != 0 && bev-> button == guts. mouse_wheel_up)
+	       || ( guts. mouse_wheel_down != 0 && bev-> button == guts. mouse_wheel_down)))
+      {
+	 secondary. cmd = cmMouseWheel;
+	 secondary. pos. where. x = e. pos. where. x;
+	 secondary. pos. where. y = e. pos. where. y;
+	 secondary. pos. mod = e. pos. mod;
+	 secondary. pos. button = bev-> button == guts. mouse_wheel_up ? WHEEL_DELTA : -WHEEL_DELTA;
+      }
       break;
    }
    case ButtonRelease: {
@@ -396,6 +407,9 @@ handle_event( XEvent *ev, XEvent *next_event)
    if ( e. cmd) {
       guts. handled_events++;
       CComponent( self)-> message( self, &e);
+      if ( secondary. cmd) {
+	 CComponent( self)-> message( self, &secondary);
+      }
    } else {
       /* Unhandled event, just do nothing */
       DOLBUG( "*** event %u to %s ***\n", ev-> type, PWidget( self)-> name);
