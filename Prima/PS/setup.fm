@@ -21,25 +21,25 @@ sub
 		AddBtn => '3',
 		LParams => '2',
 		Label1 => '0',
-		Label2 => '0',
 		VList => '1',
+		Label2 => '0',
 		Label3 => '0',
 		Label4 => '0',
 		RenameBtn => '3',
 		ImportBtn => '3',
 		Scaling => '0',
 		Profiles => '3',
-		VCombo => '1',
-		ValueBox => '1',
 		ImageViewer1 => '0',
+		ValueBox => '1',
+		VCombo => '1',
 		ImageViewer2 => '0',
-		ValueBook => '1',
 		ImageViewer3 => '0',
-		VHint => '1',
+		ValueBook => '1',
 		ImageViewer4 => '0',
+		VHint => '1',
 		Spool => '2',
-		SaveBtn => '3',
 		PaperSize => '0',
+		SaveBtn => '3',
 		Resolution => '0',
 		DelBtn => '3',
 		VText => '1',
@@ -48,8 +48,10 @@ sub
 		Color => '0',
 		},
 		actions => {
-		onChild => Prima::VB::VBLoader::GO_SUB('$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})'),
-		onChildCreate => Prima::VB::VBLoader::GO_SUB('$_[3]-> origin( $_[3]->left-$_[3]->owner->left, $_[3]-> bottom-$_[3]->owner->bottom);'),
+		onChild => Prima::VB::VBLoader::GO_SUB('$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})
+','TabbedNotebook1', 'onChild'),
+		onChildCreate => Prima::VB::VBLoader::GO_SUB('$_[3]-> origin( $_[3]->left-$_[3]->owner->left, $_[3]-> bottom-$_[3]->owner->bottom);
+','TabbedNotebook1', 'onChildCreate'),
 		},
 		profile => {
 			origin => [ 0, 64],
@@ -58,19 +60,19 @@ sub
 			size => [ 329, 357],
 			owner => 'Form1',
 			growMode => gm::GrowHiX | gm::GrowHiY,
-			pageIndex => 0,
 	}},
 	'Form1' => {
 		class   => 'Prima::Window',
 		module  => 'Prima::Classes',
 		parent => 1,
 		profile => {
+			width => 330,
 			onExecute => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 my $x = $self-> TabbedNotebook1-> Notebook;
 $x-> HelpBtn-> notify(\'Click\') if 
    $x-> ValueBox-> ValueBook-> pageIndex == 3; 
-'),
-			width => 330,
+','Form1', 'onExecute'),
+			name => 'Form1',
 			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];      
 $self-> {imgConvProc} = sub {
   my $self = $_[0];        
@@ -83,25 +85,27 @@ $self-> {imgConvProc} = sub {
   my $i  = Prima::Icon-> create;
   $i-> combine( $x, $a);
   $self-> image(  $i);
-};'),
-			name => 'Form1',
+};
+','Form1', 'onCreate'),
 			text => 'PostScript printer settings',
-			bottom => 368,
+			bottom => 348,
 			originDontCare => 0,
-			origin => [ 436, 368],
+			origin => [ 440, 348],
 			height => 421,
 			size => [ 330, 421],
 			sizeDontCare => 0,
-			left => 436,
+			left => 440,
 	}},
 	'Label1' => {
 		class   => 'Prima::Label',
 		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
 		profile => {
 			origin => [ 20, 252],
 			name => 'Label1',
 			owner => 'TabbedNotebook1',
 			size => [ 100, 20],
+			growMode => gm::GrowHiX,
 			text => 'Paper si~ze:',
 	}},
 	'PaperSize' => {
@@ -113,15 +117,18 @@ $self-> {imgConvProc} = sub {
 			name => 'PaperSize',
 			owner => 'TabbedNotebook1',
 			size => [ 183, 21],
+			growMode => gm::GrowLoX,
 	}},
 	'Label3' => {
 		class   => 'Prima::Label',
 		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
 		profile => {
 			origin => [ 20, 200],
 			name => 'Label3',
-			owner => 'TabbedNotebook1',
 			size => [ 100, 20],
+			owner => 'TabbedNotebook1',
+			growMode => gm::GrowHiX,
 			text => '~Scaling, %:',
 	}},
 	'Scaling' => {
@@ -130,6 +137,7 @@ $self-> {imgConvProc} = sub {
 		profile => {
 			name => 'Scaling',
 			min => 1,
+			growMode => gm::GrowLoX,
 			max => 1000,
 			origin => [ 125, 201],
 			size => [ 183, 20],
@@ -140,21 +148,25 @@ $self-> {imgConvProc} = sub {
 	'Label4' => {
 		class   => 'Prima::Label',
 		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
 		profile => {
 			origin => [ 20, 174],
 			name => 'Label4',
-			owner => 'TabbedNotebook1',
 			size => [ 100, 20],
+			owner => 'TabbedNotebook1',
+			growMode => gm::GrowHiX,
 			text => '~Resolution:',
 	}},
 	'Label2' => {
 		class   => 'Prima::Label',
 		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
 		profile => {
 			origin => [ 20, 226],
 			name => 'Label2',
-			owner => 'TabbedNotebook1',
 			size => [ 100, 20],
+			owner => 'TabbedNotebook1',
+			growMode => gm::GrowHiX,
 			text => '~Copy count:',
 	}},
 	'Resolution' => {
@@ -162,6 +174,7 @@ $self-> {imgConvProc} = sub {
 		module  => 'Prima::Sliders',
 		profile => {
 			name => 'Resolution',
+			growMode => gm::GrowLoX,
 			min => 25,
 			max => 32000,
 			origin => [ 125, 175],
@@ -176,28 +189,31 @@ $self-> {imgConvProc} = sub {
 		profile => {
 			origin => [ 19, 97],
 			name => 'Orientation',
-			owner => 'TabbedNotebook1',
 			size => [ 287, 76],
+			owner => 'TabbedNotebook1',
+			growMode => gm::GrowHiX,
 			text => 'Orientation',
 	}},
 	'CopyCount' => {
 		class   => 'Prima::SpinEdit',
 		module  => 'Prima::Sliders',
 		profile => {
-			origin => [ 125, 226],
 			name => 'CopyCount',
-			owner => 'TabbedNotebook1',
-			size => [ 183, 20],
 			min => 1,
-			value => 1,
+			growMode => gm::GrowLoX,
 			max => 1000,
+			origin => [ 125, 226],
+			size => [ 183, 20],
+			owner => 'TabbedNotebook1',
+			value => 1,
 	}},
 	'ImageViewer1' => {
 		class   => 'Prima::ImageViewer',
 		module  => 'Prima::ImageViewer',
 		profile => {
 			origin => [ 12, 17],
-			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); '),
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); 
+','ImageViewer1', 'onCreate'),
 			name => 'ImageViewer1',
 			owner => 'Orientation',
 			image => Prima::Image->create( width=>24, height=>29, type => im::bpp4, 
@@ -239,7 +255,8 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 		module  => 'Prima::ImageViewer',
 		profile => {
 			origin => [ 142, 19],
-			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); '),
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); 
+','ImageViewer2', 'onCreate'),
 			name => 'ImageViewer2',
 			owner => 'Orientation',
 			image => Prima::Image->create( width=>29, height=>23, type => im::bpp4, 
@@ -283,8 +300,9 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 		profile => {
 			origin => [ 19, 20],
 			name => 'Color',
-			owner => 'TabbedNotebook1',
 			size => [ 287, 76],
+			owner => 'TabbedNotebook1',
+			growMode => gm::GrowHiX,
 			text => 'Color appearance',
 	}},
 	'ImageViewer3' => {
@@ -292,7 +310,8 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 		module  => 'Prima::ImageViewer',
 		profile => {
 			origin => [ 11, 18],
-			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); '),
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); 
+','ImageViewer3', 'onCreate'),
 			name => 'ImageViewer3',
 			owner => 'Color',
 			image => Prima::Image->create( width=>26, height=>32, type => im::bpp4, 
@@ -326,14 +345,16 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 "wwwwww\xdd\xdd\xdd\x00\x00\x00".
 ''),
 			size => [ 26, 32],
-			onMouseClick => Prima::VB::VBLoader::GO_SUB('my ($self, $btn, $mod, $x, $y, $dblclk) = @_;'),
+			onMouseClick => Prima::VB::VBLoader::GO_SUB('my ($self, $btn, $mod, $x, $y, $dblclk) = @_;
+','ImageViewer3', 'onMouseClick'),
 	}},
 	'ImageViewer4' => {
 		class   => 'Prima::ImageViewer',
 		module  => 'Prima::ImageViewer',
 		profile => {
 			origin => [ 141, 18],
-			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); '),
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); 
+','ImageViewer4', 'onCreate'),
 			name => 'ImageViewer4',
 			owner => 'Color',
 			image => Prima::Image->create( width=>26, height=>32, type => im::bpp4, 
@@ -392,7 +413,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 		class   => 'Prima::DetailedList',
 		module  => 'Prima::DetailedList',
 		profile => {
-			name => 'VList',
+			columns => 2,
 			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];        
 $self-> widths([($self->width / 2 ) x 2]);             
 
@@ -480,16 +501,19 @@ non-null values - MediaColor, MediaWeight etc. except UseDeviceFonts.
 A
 
 };
-$self->{helpData}->{$_} =~ s/\n/ /g for keys %{$self->{helpData}};
-   '),
-			columns => 2,
-			dragable => 0,
+$self->{helpData}->{$_} =~ s/\\n/ /g for keys %{$self->{helpData}};
+   
+','VList', 'onCreate'),
+			name => 'VList',
 			items => [['UseDeviceFonts', ' ', '1', '1', ],['UseDeviceFontsOnly', ' ', '1', '0', ],['MediaType', ' ', '0', ' ', ],['MediaColor', ' ', '0', ' ', ],['MediaWeight', ' ', '0', ' ', ],['MediaClass', ' ', '0', ' ', ],['InsertSheet', ' ', '1', '0', ],['LeadingEdge', ' ', '2', '0', ],['ManualFeed', ' ', '1', '0', ],['TraySwitch', ' ', '1', '0', ],['MediaPosition', ' ', '0', ' ', ],['DeferredMediaSelection', ' ', '1', '0', ],['MatchAll', ' ', '1', '0', ],],
+			dragable => 0,
+			growMode => gm::GrowHiX | gm::GrowLoY,
 			scalable => 1,
 			origin => [ 13, 89],
 			clickable => 0,
-			size => [ 299, 188],
 			owner => 'TabbedNotebook1',
+			size => [ 299, 188],
+			headers => ['Item', 'Setting', ],
 			onSelectItem => Prima::VB::VBLoader::GO_SUB('my ( $self, $index, $selectState) = @_; 
 my @i = @{$self-> get_items( $$index[0])};
 my $vbox = $self-> owner-> ValueBox;
@@ -504,8 +528,8 @@ if ( $vbox-> ValueBook-> pageIndex == 3) {
 $vbox-> ValueBook-> pageIndex( $i[2]);
 my @vdt = qw(VText VBool VCombo);
 my @vdv = qw(text checked focusedItem);
-$vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);    '),
-			headers => ['Item', 'Setting', ],
+$vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);    
+','VList', 'onSelectItem'),
 	}},
 	'ValueBox' => {
 		class   => 'Prima::GroupBox',
@@ -513,8 +537,9 @@ $vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);    '),
 		profile => {
 			origin => [ 15, 14],
 			name => 'ValueBox',
-			owner => 'TabbedNotebook1',
 			size => [ 266, 66],
+			owner => 'TabbedNotebook1',
+			growMode => gm::GrowHiX | gm::GrowHiY,
 			text => '',
 	}},
 	'ValueBook' => {
@@ -527,13 +552,15 @@ $vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);    '),
 		VText => '0',
 		},
 		actions => {
-		onChild => Prima::VB::VBLoader::GO_SUB('$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})'),
+		onChild => Prima::VB::VBLoader::GO_SUB('$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})
+','ValueBook', 'onChild'),
 		},
 		profile => {
 			origin => [ 2, 3],
 			name => 'ValueBook',
-			owner => 'ValueBox',
 			size => [ 260, 47],
+			owner => 'ValueBox',
+			growMode => gm::GrowHiX | gm::GrowHiY,
 			pageIndex => 4,
 			pageCount => 5,
 	}},
@@ -543,6 +570,7 @@ $vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);    '),
 		profile => {
 			origin => [ 286, 52],
 			name => 'HelpBtn',
+			size => [ 20, 20],
 			owner => 'TabbedNotebook1',
 			onClick => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];        
 my $x = $self-> owner-> ValueBox-> ValueBook;
@@ -556,8 +584,9 @@ if ( $x-> pageIndex == 3) {
        $x-> VHint-> text( $y-> {helpData}-> {$$i[0]});
        $x-> pageIndex( 3); 
    }
-}'),
-			size => [ 20, 20],
+}
+','HelpBtn', 'onClick'),
+			growMode => gm::GrowLoX,
 			text => '?',
 			font => {style => fs::Bold, },
 	}},
@@ -584,9 +613,11 @@ if (  $i-> [0] eq \'MediaPosition\' ||
     }    
 }
 $i-> [1] = $i-> [3] = $t;
-$x-> redraw_items( $x-> focusedItem); '),
+$x-> redraw_items( $x-> focusedItem); 
+','VText', 'onChange'),
 			size => [ 240, 20],
 			text => '',
+                        growMode => gm::Client,
 	}},
 	'VCombo' => {
 		class   => 'Prima::ComboBox',
@@ -602,8 +633,10 @@ my $x = $self-> owner-> owner-> owner-> VList;
 my $i = $x-> get_items( $x-> focusedItem);
 $i->[1] = $self-> text;
 $i-> [3] = $self-> focusedItem;
-$x-> redraw_items( $x-> focusedItem); '),
+$x-> redraw_items( $x-> focusedItem); 
+','VCombo', 'onChange'),
 			size => [ 233, 23],
+                        growMode => gm::Client,
 	}},
 	'VBool' => {
 		class   => 'Prima::CheckBox',
@@ -611,28 +644,30 @@ $x-> redraw_items( $x-> focusedItem); '),
 		profile => {
 			origin => [ 10, 8],
 			name => 'VBool',
+			owner => 'ValueBook',
 			onCheck => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 my $x = $self-> owner-> owner-> owner-> VList;
 my $i = $x-> get_items( $x-> focusedItem);
 $i-> [3] = $self-> checked;
 $i->[1] = $i-> [3] ? \'Yes\' : \'No\';
 $x-> redraw_items( $x-> focusedItem); 
-'),
-			owner => 'ValueBook',
+','VBool', 'onCheck'),
 			size => [ 100, 36],
+                        growMode => gm::Client,
 			text => '',
 	}},
 	'VHint' => {
 		class   => 'Prima::Edit',
 		module  => 'Prima::Edit',
 		profile => {
-			backColor => wc::Dialog | cl::Back,
 			origin => [ 0, 0],
+			backColor => wc::Dialog | cl::Back,
 			name => 'VHint',
 			owner => 'ValueBook',
 			size => [ 260, 47],
-			vScroll => 1,
 			text => '',
+                        growMode => gm::Client,
+			vScroll => 1,
 			readOnly => 1,
 			wordWrap => 1,
 	}},
@@ -641,12 +676,14 @@ $x-> redraw_items( $x-> focusedItem);
 		module  => 'Prima::Buttons',
 		profile => {
 			origin => [ 14, 148],
+			name => 'LPRadio',
 			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];     
 $self-> enabled( 0) if
-  Prima::Application-> get_system_info->{apc} != apc::Unix;'),
-			name => 'LPRadio',
-			owner => 'Spool',
+  Prima::Application-> get_system_info->{apc} != apc::Unix;
+','LPRadio', 'onCreate'),
 			size => [ 272, 36],
+			owner => 'Spool',
+			growMode => gm::GrowHiX,
 			text => 'Unix ~line printer (LP)',
 	}},
 	'Spool' => {
@@ -657,6 +694,7 @@ $self-> enabled( 0) if
 			name => 'Spool',
 			owner => 'TabbedNotebook1',
 			size => [ 293, 208],
+			growMode => gm::GrowHiX,
 			text => 'Output',
 	}},
 	'Profiles' => {
@@ -665,18 +703,20 @@ $self-> enabled( 0) if
 		profile => {
 			origin => [ 15, 16],
 			name => 'Profiles',
-			owner => 'TabbedNotebook1',
 			size => [ 193, 259],
+			owner => 'TabbedNotebook1',
+			growMode => gm::GrowHiX | gm::GrowHiY,
 	}},
 	'LPLabel' => {
 		class   => 'Prima::Label',
 		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
 		profile => {
 			origin => [ 14, 121],
 			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 $self-> enabled( 0) if
   Prima::Application-> get_system_info->{apc} != apc::Unix;
-'),
+','LPLabel', 'onCreate'),
 			name => 'LPLabel',
 			owner => 'Spool',
 			size => [ 74, 20],
@@ -687,13 +727,14 @@ $self-> enabled( 0) if
 		module  => 'Prima::InputLine',
 		profile => {
 			origin => [ 92, 122],
+			name => 'LParams',
 			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];    
 $self-> enabled( 0) if
   Prima::Application-> get_system_info->{apc} != apc::Unix;
-'),
-			name => 'LParams',
-			owner => 'Spool',
+','LParams', 'onCreate'),
 			size => [ 186, 20],
+			owner => 'Spool',
+			growMode => gm::GrowHiX,
 			text => '',
 	}},
 	'AddBtn' => {
@@ -704,16 +745,18 @@ $self-> enabled( 0) if
 			name => 'AddBtn',
 			owner => 'TabbedNotebook1',
 			size => [ 96, 36],
+			growMode => gm::GrowLoX | gm::GrowLoY,
 			text => '~Add',
 	}},
 	'DelBtn' => {
 		class   => 'Prima::Button',
 		module  => 'Prima::Buttons',
 		profile => {
-			origin => [ 213, 160],
+			origin => [ 213, 161],
 			name => 'DelBtn',
 			size => [ 96, 36],
 			owner => 'TabbedNotebook1',
+			growMode => gm::GrowLoX | gm::GrowLoY,
 			text => '~Remove',
 	}},
 	'Radio6' => {
@@ -722,8 +765,9 @@ $self-> enabled( 0) if
 		profile => {
 			origin => [ 14, 79],
 			name => 'Radio6',
-			owner => 'Spool',
 			size => [ 272, 36],
+			owner => 'Spool',
+			growMode => gm::GrowHiX,
 			text => '~File',
 	}},
 	'Radio7' => {
@@ -732,8 +776,9 @@ $self-> enabled( 0) if
 		profile => {
 			origin => [ 14, 41],
 			name => 'Radio7',
-			owner => 'Spool',
 			size => [ 272, 36],
+			owner => 'Spool',
+			growMode => gm::GrowHiX,
 			text => '~Command',
 	}},
 	'SaveBtn' => {
@@ -742,22 +787,24 @@ $self-> enabled( 0) if
 		profile => {
 			origin => [ 214, 120],
 			name => 'SaveBtn',
-			size => [ 96, 36],
 			owner => 'TabbedNotebook1',
+			size => [ 96, 36],
+			growMode => gm::GrowLoX | gm::GrowLoY,
 			text => '~Save',
 	}},
 	'ImportBtn' => {
 		class   => 'Prima::Button',
 		module  => 'Prima::Buttons',
 		profile => {
-			origin => [ 214, 80],
+			origin => [ 214, 81],
+			name => 'ImportBtn',
 			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 $self-> enabled( 0) if
   Prima::Application-> get_system_info->{apc} != apc::Unix;
-'),
-			name => 'ImportBtn',
+','ImportBtn', 'onCreate'),
 			size => [ 96, 36],
 			owner => 'TabbedNotebook1',
+			growMode => gm::GrowLoX | gm::GrowLoY,
 			text => '~Import...',
 	}},
 	'RenameBtn' => {
@@ -766,8 +813,9 @@ $self-> enabled( 0) if
 		profile => {
 			origin => [ 213, 200],
 			name => 'RenameBtn',
-			size => [ 96, 36],
 			owner => 'TabbedNotebook1',
+			size => [ 96, 36],
+			growMode => gm::GrowLoX | gm::GrowLoY,
 			text => 'Re~name',
 	}},
 	'CmdLine' => {
@@ -776,8 +824,9 @@ $self-> enabled( 0) if
 		profile => {
 			origin => [ 37, 18],
 			name => 'CmdLine',
-			owner => 'Spool',
 			size => [ 241, 20],
+			owner => 'Spool',
+			growMode => gm::GrowHiX,
 			text => '',
 	}},
 	'OK' => {
@@ -788,8 +837,8 @@ $self-> enabled( 0) if
 			name => 'OK',
 			owner => 'Form1',
 			size => [ 96, 36],
-			default => 1,
 			text => '~OK',
+			default => 1,
 	}},
 	'Cancel' => {
 		class   => 'Prima::Button',
@@ -798,9 +847,10 @@ $self-> enabled( 0) if
 			origin => [ 110, 5],
 			name => 'Cancel',
 			owner => 'Form1',
-			size => [ 96, 36],
 			onClick => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];    
-$self-> owner-> cancel;'),
+$self-> owner-> cancel;
+','Cancel', 'onClick'),
+			size => [ 96, 36],
 			text => 'Cancel',
 	}},
 	);
