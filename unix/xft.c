@@ -1025,7 +1025,14 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       xftcolor.pixel       = XX-> fore. primary;
       rop = ropCopyPut;
    }
-   xftcolor.color.alpha = 0xffff;
+
+   if ( XX-> type. bitmap) {
+      xftcolor.color.alpha = 
+	 ((xftcolor.color.red/3 + xftcolor.color.green/3 + xftcolor.color.blue/3) > (0xff00 / 2)) ?
+	    0xffff : 0;
+   } else {
+      xftcolor.color.alpha = 0xffff;
+   }
 
    /* paint background if opaque */
    if ( XX-> flags. paint_opaque) {
