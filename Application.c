@@ -361,8 +361,11 @@ Application_get_system_info( char * dummy)
    char gui_desc [ 1024];
    int  os, gui;
 
-   os  = apc_application_get_os_info( system, release, vendor, arch);
-   gui = apc_application_get_gui_info( gui_desc);
+   os  = apc_application_get_os_info( system, sizeof( system),
+				      release, sizeof( release),
+				      vendor, sizeof( vendor),
+				      arch, sizeof( arch));
+   gui = apc_application_get_gui_info( gui_desc, sizeof( gui_desc));
 
    pset_i( apc,            os);
    pset_i( gui,            gui);

@@ -670,16 +670,16 @@ apc_system_action( const char* params)
 }
 
 void
-apc_query_drives_map( const char* firstDrive, char *result)
+apc_query_drives_map( const char* firstDrive, char *result, int len)
 {
-   DOLBUG( "apc_query_drives_map()\n");
+   if ( !result || len <= 0) return;
+   *result = 0;
 }
 
 int
 apc_query_drive_type( const char *drive)
 {
-   DOLBUG( "apc_query_drive_type()\n");
-   return 0;
+   return dtNone;
 }
 
 char *

@@ -842,7 +842,7 @@ extern void
 apc_application_end_paint_info( Handle self);
 
 extern int
-apc_application_get_gui_info( char * description);
+apc_application_get_gui_info( char * description, int len);
 
 extern Handle
 apc_application_get_view_from_point( Handle self, Point point);
@@ -851,8 +851,10 @@ extern Handle
 apc_application_get_handle( Handle self, ApiHandle apiHandle);
 
 extern int
-apc_application_get_os_info( char *system, char *release,
-			     char *vendor, char *arch);
+apc_application_get_os_info( char *system, int slen,
+			     char *release, int rlen,
+			     char *vendor, int vlen,
+			     char *arch, int alen);
 
 extern Point
 apc_application_get_size( Handle self);
@@ -1845,7 +1847,7 @@ extern char *
 apc_system_action( const char *params);
 
 extern void
-apc_query_drives_map( const char *firstDrive, char *result);
+apc_query_drives_map( const char *firstDrive, char *result, int len);
 
 extern int
 apc_query_drive_type( const char *drive);

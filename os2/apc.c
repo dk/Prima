@@ -259,24 +259,41 @@ apc_application_unlock( Handle self)
 }
 
 int
-apc_application_get_os_info( char * system, char * release, char * vendor, char * arch)
+apc_application_get_os_info( char *system, int slen,
+			     char *release, int rlen,
+			     char *vendor, int vlen,
+			     char *arch, int alen)
 {
    ULONG si[ 2];
    int version, subVersion;
    DosQuerySysInfo( QSV_VERSION_MAJOR, QSV_VERSION_MINOR, &si, sizeof( si));
    version    = ( si[ 1] >= 30) ? ( si[ 1] / 10) : ( si[ 0] / 10);
    subVersion = ( si[ 1] < 30)  ? si[ 1] : 0;
-   if ( system ) strcpy( system, "OS/2");
-   if ( vendor ) strcpy( vendor, "IBM");
-   if ( arch   ) strcpy( arch  , "i386");
-   if ( release) sprintf( release, "%d.%d", version, subVersion);
+   if ( system) {
+      strncpy( system, "OS/2", slen);
+      system[slen-1] = 0;
+   }
+   if ( vendor) {
+      strncpy( vendor, "IBM", vlen);
+      vendor[vlen-1] = 0;
+   }
+   if ( arch) {
+      strncpy( arch, "i386", alen);
+      arch[alen-1] = 0;
+   }
+   if ( release) {
+      snprintf( release, rlen, "%d.%d", version, subVersion);
+   }
    return apcOS2;
 }
 
 int
-apc_application_get_gui_info( char * description)
+apc_application_get_gui_info( char * description, int len)
 {
-   strcpy( description, "Presentation Manager");
+   if ( description) {
+      strncpy( description, "Presentation Manager", len);
+      description[len-1] = 0;
+   }
    return guiPM;
 }
 
@@ -4648,14 +4665,14 @@ apc_system_action( const char* params)
 }
 
 void
-apc_query_drives_map( const char *firstDrive, char *map)
+apc_query_drives_map( const char *firstDrive, char *map, int len)
 {
    char *m = map;
    int beg;
    ULONG curDrive, driveMap;
    int i;
 
-   strcpy( map, "");
+   if ( !map) return;
 
    beg = toupper( *firstDrive);
    if (( beg < 'A') || ( beg > 'Z') || ( firstDrive[1] != ':'))
@@ -4664,7 +4681,7 @@ apc_query_drives_map( const char *firstDrive, char *map)
    beg -= 'A';
 
    DosQueryCurrentDisk( &curDrive, &driveMap);
-   for ( i = beg; i < 26; i++)
+   for ( i = beg; i < 26 && m - map + 3 < len; i++)
    {
       if ((driveMap << ( 31 - i)) >> 31)
       {

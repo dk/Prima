@@ -31,20 +31,20 @@
 SV *Utils_query_drives_map( char *firstDrive)
 {
    char map[ 256];
-   apc_query_drives_map( firstDrive, map);
+   apc_query_drives_map( firstDrive, map, sizeof( map));
    return newSVpv( map, 0);
 }
 
-int Utils_get_os()
+int
+Utils_get_os()
 {
-   char buf[ 1024];
-   return apc_application_get_os_info( buf, buf, buf, buf);
+   return apc_application_get_os_info( nil, 0, nil, 0, nil, 0, nil, 0);
 }
 
-int Utils_get_gui()
+int
+Utils_get_gui()
 {
-   char buf[ 1024];
-   return apc_application_get_gui_info( buf);
+   return apc_application_get_gui_info( nil, 0);
 }
 
 long Utils_ceil( double x)

@@ -145,9 +145,12 @@ apc_application_end_paint_info( Handle self)
 
 
 int
-apc_application_get_gui_info( char * description)
+apc_application_get_gui_info( char * description, int len)
 {
-   strcpy( description, "Windows");
+   if ( description) {
+      strncpy( description, "Windows", len);
+      description[len-1] = 0;
+   }
    return guiWindows;
 }
 
@@ -176,7 +179,10 @@ hwnd_to_view( HWND win)
 
 
 int
-apc_application_get_os_info( char * system, char * release, char * vendor, char * arch)
+apc_application_get_os_info( char *system, int slen,
+			     char *release, int rlen,
+			     char *vendor, int vlen,
+			     char *arch, int alen)
 {
    SYSTEM_INFO si;
    OSVERSIONINFO os = { sizeof( OSVERSIONINFO)};
@@ -184,21 +190,27 @@ apc_application_get_os_info( char * system, char * release, char * vendor, char 
    GetSystemInfo( &si);
    version = GetVersion();
    GetVersionEx( &os);
-   if ( system ) {
-      if ( IS_NT)    strcpy( system, "Windows NT"); else
-      if ( IS_WIN95) {
+   if ( system) {
+      if ( IS_NT) {
+	 strncpy( system, "Windows NT", slen);
+      } else if ( IS_WIN95) {
          if ((os.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) &&
-            ((os.dwMajorVersion > 4) ||
-            ((os.dwMajorVersion == 4) && (os.dwMinorVersion > 0))))
-            strcpy( system, "Windows 98");
-         else
-            strcpy( system, "Windows 95");
-      } else
-         strcpy( system, "Windows");
+	     ((os.dwMajorVersion > 4) ||
+	      ((os.dwMajorVersion == 4) && (os.dwMinorVersion > 0)))) {
+            strncpy( system, "Windows 98", slen);
+	 } else {
+            strncpy( system, "Windows 95", slen);
+	 }
+      } else {
+         strncpy( system, "Windows", slen);
+      }
+      system[ slen-1] = 0;
    }
-   if ( vendor )
-      strcpy( vendor, "Microsoft");
-   if ( arch   ) {
+   if ( vendor) {
+      strncpy( vendor, "Microsoft", vlen);
+      vendor[ vlen-1] = 0;
+   }
+   if ( arch) {
       char * pb = "Unknown";
       switch ( si. wProcessorArchitecture) {
       case PROCESSOR_ARCHITECTURE_INTEL :   pb = "i386";  break;
@@ -206,12 +218,13 @@ apc_application_get_os_info( char * system, char * release, char * vendor, char 
       case PROCESSOR_ARCHITECTURE_ALPHA :   pb = "Alpha"; break;
       case PROCESSOR_ARCHITECTURE_PPC   :   pb = "PPC";   break;
       }
-      strcpy( arch, pb);
+      strncpy( arch, pb, alen);
+      arch[ alen-1] = 0;
    }
-   if ( release) sprintf( release, "%d.%d",
-      LOBYTE( LOWORD( version)),
-      HIBYTE( LOWORD( version))
-   );
+   if ( release)
+      snprintf( release, rlen, "%d.%d",
+		LOBYTE( LOWORD( version)),
+		HIBYTE( LOWORD( version)));
    return apcWin32;
 }
 
@@ -2584,14 +2597,14 @@ apc_system_action( const char * params)
 }
 
 void
-apc_query_drives_map( const char *firstDrive, char *map)
+apc_query_drives_map( const char *firstDrive, char *map, int len)
 {
    char *m = map;
    int beg;
    DWORD driveMap;
    int i;
 
-   strcpy( map, "");
+   if ( !map) return;
 
    beg = toupper( *firstDrive);
    if (( beg < 'A') || ( beg > 'Z') || ( firstDrive[1] != ':'))
@@ -2601,7 +2614,7 @@ apc_query_drives_map( const char *firstDrive, char *map)
 
    if ( !( driveMap = GetLogicalDrives()))
       apiErr;
-   for ( i = beg; i < 26; i++)
+   for ( i = beg; i < 26 && m - map + 3 < len; i++)
    {
       if ((driveMap << ( 31 - i)) >> 31)
       {

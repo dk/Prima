@@ -277,10 +277,12 @@ fprintf( stderr, "apc_application_end_paint_info()\n");
 }
 
 int
-apc_application_get_gui_info( char * description)
+apc_application_get_gui_info( char * description, int len)
 {
-   if ( description)
-      strcpy( description, "X Window System");
+   if ( description) {
+      strncpy( description, "X Window System", len);
+      description[len-1] = 0;
+   }
    return guiXLib;
 }
 
@@ -301,27 +303,42 @@ fprintf( stderr, "apc_application_get_handle()\n");
 }
 
 int
-apc_application_get_os_info( char * system,
-			     char * release,
-			     char * vendor,
-			     char * arch)
+apc_application_get_os_info( char *system, int slen,
+			     char *release, int rlen,
+			     char *vendor, int vlen,
+			     char *arch, int alen)
 {
    static struct utsname name;
    static Bool fetched = false;
 
    if (!fetched) {
       if ( uname(&name)!=0) {
-	 strcpy( name. sysname, "Some UNIX");
-	 strcpy( name. release, "Unknown version of UNIX");
-	 strcpy( name. machine, "Unknown architecture");
+	 strncpy( name. sysname, "Some UNIX", SYS_NMLN);
+	 name. sysname[ SYS_NMLN-1] = 0;
+	 strncpy( name. release, "Unknown version of UNIX", SYS_NMLN);
+	 name. release[ SYS_NMLN-1] = 0;
+	 strncpy( name. machine, "Unknown architecture", SYS_NMLN);
+	 name. machine[ SYS_NMLN-1] = 0;
       }
       fetched = true;
    }
 
-   if (system) strcpy( system, name. sysname);
-   if (release) strcpy( release, name. release);
-   if (vendor) strcpy( vendor, "Unknown vendor");
-   if (arch) strcpy( arch, name. machine);
+   if (system) {
+      strncpy( system, name. sysname, slen);
+      system[ slen-1] = 0;
+   }
+   if (release) {
+      strncpy( release, name. release, rlen);
+      release[ rlen-1] = 0;
+   }
+   if (vendor) {
+      strncpy( vendor, "Unknown vendor", vlen);
+      vendor[ vlen-1] = 0;
+   }
+   if (arch) {
+      strncpy( arch, name. machine, alen);
+      arch[ alen-1] = 0;
+   }
 
    return apcUnix;
 }
