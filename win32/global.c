@@ -1029,8 +1029,9 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    case WM_NCACTIVATE:
       if (( mp1 == 0) && ( mp2 != 0)) {
          Handle x = hwnd_to_view(( HWND) mp2);
-         if ( is_declipped_child( x) && Widget_is_child( x, self))
+         if ( is_declipped_child( x) && Widget_is_child( x, self)) {
             return 1;
+         }   
       }
       // dlg protect code - protecting from window activation
       if ( mp1 && !guts. focSysDisabled) {
@@ -1048,8 +1049,9 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
       // dlg protect code - protecting from user actions
       if ( !guts. focSysDisabled) {
          Handle foc = Application_map_focus( application, self);
-         if ( foc != self)
+         if ( foc != self) {
             return ( foc == apc_window_get_active()) ? HTERROR : HTCLIENT;
+         }   
       }
       break;
    case WM_SETFOCUS:
@@ -1067,7 +1069,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
        {
           Handle x  = var self-> get_selectee( self);
           Handle w  = x;
-          Bool hasCO = false;
+          Bool hasCO = w == self;
           while ( w && w != self) {
              if ( !dsys( w) options. aptClipOwner) {
                 hasCO = true;
@@ -1075,8 +1077,9 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
              }
              w = (( PWidget) w)-> owner;
           }
-          if ( !hasCO)
+          if ( !hasCO) {
              var self-> set_selected( self, true);
+          }   
           // else we do not select any widget, but still have a chance to resize frame :)
        }
        break;
