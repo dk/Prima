@@ -1,345 +1,483 @@
 #! /usr/bin/perl -w
 #
+#  Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+#  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+#  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+#  SUCH DAMAGE.
+#
+
+#
 # Create Makefile for a Prima compilation
 #
 # This is not a ``normal'' Makefile.PL file.
 # It does not use MakeMaker.
 #
-require 5.005;
+require 5.00502;
 use strict;
 use Config;
 use File::Find;
-use vars qw(@all_defines);
+use File::Basename;
+use IO::File;
+use Cwd;
+use vars qw( $dir_sep %make_trans);
+use vars qw(
+    $CC $CFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG
+    $LD $LDFLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
+    $OBJ_EXT $LIB_EXT $EXE_EXT $DL_EXT
+    @INCPATH
+    @LIBPATH
+    @LIBS
+    %DEFINES
+    $PLATFORM
+    $PREFIX
+    $INSTALL_LIB
+    $INSTALL_DL
+    $TMPDIR
+    $NULLDEV
+    $MAKE
+    $RM
+    $SHQUOTE
+    $Win32
+    $MAKETYPE
+);
+use vars qw(
+    @alltml
+    @allclean
+    @allojects
+    %alldeps
+    @allinstall
+    @alldirs
+    $PrimaTarget
+);
 
-my $extraccflags = '-g -O';  # gcc allows both
-$extraccflags = '-g -Wall -Werror';
-
-my %known_header = ();
-
-# trick to be avoided
-die "This mechanism currently only works on UNIX platfroms\n"
-  unless $Config{path_sep} eq ':';
-
-die "This script should be launched from Prima root directory\n"
-  unless -r 'include/apricot.h';
-
-$| = 1;
-
-my $pwd = `pwd`; chomp $pwd;
-
-my @inc_path = ("-I$Config{incpath}/usr/include",
-		"-I$Config{installarchlib}/CORE",
-		"-Iinclude",
-		"-Iinclude/generic",
-		"-I/usr/X11R6/include",
-		"-I/usr/local/include");
-
-
-@all_defines = ("-DPERL_PATCHLEVEL=$Config{patchlevel}",
-		"-DPERL_SUBVERSION=$Config{subversion}",
-		"-DPRIMA_CORE=1",
-		"-DPERL_POLLUTE=1");
-if ( defined( $ENV{ 'PRIMA_PARANOID_MALLOC'}) && $ENV{ 'PRIMA_PARANOID_MALLOC'} =~ /^(1|yes|on|true)$/i) {
-    push @all_defines, "-DPARANOID_MALLOC=1";
+sub print_config
+{
+    foreach my $var ( sort keys %Config) {
+	print "$var='", $Config{ $var} || '', "'\n";
+    }
 }
 
-my @cc;
-push @cc, $Config{cc}, $extraccflags,
-   $Config{cccdlflags}, $Config{ccflags},
-   @inc_path;
+sub qd
+{
+    my ( $path_str) = @_;
+    $path_str =~ s[/][$dir_sep]g;
+    return $path_str;
+}
 
-my @ld;
-push @ld, $Config{cc}, $extraccflags,
-  $Config{cccdlflags}, $Config{ccflags},
-  (map { "-L$_" } split ' ', $Config{libpth}),
-  '-L/usr/X11R6/lib', '-L/usr/local/lib', "-L$Config{installarchlib}/CORE",
-  ;
+sub quotemake
+{
+    return join '', map { $make_trans{ $MAKETYPE}->[ ord]} split //, $_[ 0];
+}
 
-my $alltml = '';
-my $allo = '';
-my $allclean = '';
+sub tempfile
+{
+    my $mask = shift;
+    my $name;
+    my $n = 0;
+    do {
+	$name = sprintf $mask, $n++;
+    } while ( -e $name);
+    return $name;
+}
+
+sub cc_command_line
+{
+    my ( $srcf, $objf, $exef, $compile_only, $dl) = @_;
+    my @cc = ( $CC, split ' ', $CFLAGS);
+    push @cc, split ' ', $CDLFLAGS if $dl;
+    push @cc, $COMPONLYFLAG if $compile_only;
+    push @cc, map( { "$CINCPATHFLAG$_"} @INCPATH);
+    push @cc, map( { "$CDEFFLAG$_=" . ( $DEFINES{ $_} || "")} keys %DEFINES);
+    push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
+    push @cc, "$COUTOFLAG$objf" if $Win32 && ! $compile_only;
+    push @cc, $srcf;
+    unless ( $compile_only) {
+        push @cc, map { "$LDLIBFLAG$_"} @LIBS;
+        push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH;
+    }
+    return @cc;
+}
+
+sub ld_command_line
+{
+    my ( $dstf) = shift;
+    my @ld = ( $LD, split( ' ', $LDFLAGS));
+    push @ld, map { "$LDLIBPATHFLAG$_"} @LIBPATH;
+    push @ld, "$LDOUTFLAG$dstf", @_;
+    push @ld, map { "$LDLIBFLAG$_"} @LIBS;
+    return @ld;
+}
+
+sub compile
+{
+    my ( $text, $compile_only) = @_;
+    my $tmpsrc = qd( tempfile( "$TMPDIR/pmts%04d.c"));
+    my $tmpo = qd( tempfile( "$TMPDIR/pmts%04d$OBJ_EXT"));
+    my $tmpexe = qd( tempfile( "$TMPDIR/pmts%04d$EXE_EXT"));
+    open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
+    print TMPSRC $text;
+    close TMPSRC;
+    open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
+    open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
+#    $NULLDEV = "/dev/tty";
+    open STDOUT, ">$NULLDEV" or die "STDOUT redirect failed: $!";
+    open STDERR, ">&STDOUT" or die "STDERR redirect failed: $!";
+    my $rc = system grep { ! /^-W/} cc_command_line( $tmpsrc, $tmpo, $tmpexe, $compile_only || 0);
+    close STDOUT;
+    close STDERR;
+    open STDOUT, ">&OLDSTDOUT" or die "STDOUT restoration failed: $!";
+    open STDERR, ">&OLDSTDERR" or die "STDERR restoration failed: $!";
+    close OLDSTDOUT;
+    close OLDSTDERR;
+    unlink $tmpsrc;
+    unlink $tmpo if -w $tmpo;
+    unlink $tmpexe if -w $tmpexe;
+    return( $rc == 0);
+}
+
+sub have_header
+{
+    my $header = shift;
+    my $present = compile( <<ENDP, 1);
+#include <$header>
+ENDP
+    if ( $present) {
+	my $defname = "HAVE_" . uc $header;
+	$defname =~ s/\W/_/g;
+	$DEFINES{ $defname} = 1;
+    }
+    return $present;
+}
+
+sub find_header
+{
+    my $header = shift;
+    my ( $incpath, $present);
+    foreach $incpath ( @_) {
+	local @INCPATH = @INCPATH;
+	push @INCPATH, $incpath if $incpath;
+	$present = compile( <<ENDP, 1);
+#include <$header>
+ENDP
+	return $incpath if $present;
+    }
+    return undef;
+}
+
+sub find_lib
+{
+    my $lib = shift;
+    my ( $libpath, $present);
+    local @LIBS = @LIBS;
+    push @LIBS, $lib;
+    foreach $libpath ( @_) {
+	local @LIBPATH = @LIBPATH;
+	push @LIBPATH, $libpath if $libpath;
+	$present = compile( <<ENDP);
+void
+main()
+{
+}
+ENDP
+	return $libpath if $present;
+    }
+    return undef;
+}
+
+sub have_func
+{
+    my ( $funcname) = @_;
+    print "Checking for function $funcname... ";
+    my $rc = compile( <<ENDP);
+void
+main()
+{
+    ${ funcname}();
+}
+ENDP
+    if ( $rc) {
+	my $defname = "HAVE_" . uc $funcname;
+	$defname =~ s/\W/_/g;
+	$DEFINES{ $defname} = 1;
+	print "yes\n";
+    }
+    else {
+	print "no\n";
+    }
+    return $rc;
+}
+
+sub setup_variables
+{
+    die "Oops! OS/2 isn't supported!\n" if $^O =~ /os2/i;
+    if ( $Win32 = ( $^O =~ /mswin32/i)) { # XXX Correct for NT.
+	$PLATFORM = 'win32';
+    }
+    else {
+	$PLATFORM = 'unix';
+    }
+    $CC = $Config{ cc};
+    $CFLAGS = $Config{ ccflags} . ( $Win32 ? " -W3 -WX" : " -Wall -Werror");
+    $CDLFLAGS = "$Config{ cccdlflags} $Config{ ccdlflags}";
+    $COUTOFLAG = $Win32 ? '-Fo' : '-o';
+    $COUTEXEFLAG = $Win32 ? '-Fe' : '-o';
+    $CINCPATHFLAG = '-I';
+    $CDEFFLAG = '-D';
+    $COMPONLYFLAG = '-c';
+    $CLIBPATHFLAG = $Win32 ? '/link /LIBPATH:' : '-L';
+    $LD = $Config{ ld};
+    $LDFLAGS = "$Config{ ldflags} $Config{ lddlflags}";
+    $LDOUTFLAG = $Win32 ? '/OUT:' : '-o';
+    $LDLIBPATHFLAG = $Win32 ? '/LIBPATH:' : '-L';
+    $LDLIBFLAG = $Win32 ? '' : '-l';
+    $OBJ_EXT = $Config{ _o};
+    $LIB_EXT = $Config{ _a};
+    $EXE_EXT = $Config{ _exe};
+    $DL_EXT = "." . $Config{ dlext};
+    @INCPATH = (
+		"include",
+		qd( "include/generic"),
+		$Config{installarchlib} . qd( "/CORE"),
+	       );
+    @LIBPATH = split ' ', $Config{ libpth};
+    @LIBS = map { s/^$LDLIBFLAG//; $_} split ' ', $Config{ libs};
+    %DEFINES = (
+		PERL_PATCHLEVEL => $Config{ patchlevel},
+		PERL_SUBVERSION => $Config{ subversion},
+		PRIMA_CORE => 1,
+		PERL_POLLUTE => 1,
+	       );
+    $DEFINES{ PARANOID_MALLOC} = 1
+	if ( $ENV{ PRIMA_PARANOID_MALLOC}
+	     && $ENV{ PRIMA_PARANOID_MALLOC} =~ /^1|yes|on|true$/i);
+
+    if ( defined $ENV{ PRIMA_DEVEL}) {
+	$CFLAGS .= $Win32 ? " -Zi" : " -g -O";
+	$LDFLAGS .= $Win32 ? "" : " -g";
+    }
+    else {
+	$CFLAGS .= " " . ( $Config{ optimize} || '');
+    }
+
+    $PREFIX = qd( "/home/voland/tmp/lib"); #$Config{ installsitearch};
+    $INSTALL_LIB = $PREFIX . qd( "/Prima");
+    $INSTALL_DL = $PREFIX . qd( "/auto/Prima");
+
+    $TMPDIR = $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp");
+    $NULLDEV = $Win32 ? "NUL" : "/dev/null";
+    $MAKETYPE = ( $MAKE = $Config{ make}) =~ /^nmake$/i ? 'nmake' : 'make';
+    $RM = $Config{ rm};
+    $SHQUOTE = $Win32 ? '"' : "'";
+    $PrimaTarget = qd( "auto/Prima/Prima$DL_EXT");
+}
+
+sub setup_paths
+{
+    unless ( $Win32) {
+	push @INCPATH, ( qd( "/usr/include"), qd( "/usr/local/include"));
+	my $incpath = find_header( qd( "X11/Xlib.h"), qd( "/usr/X11R6/include"), qd( "/usr/X11/include"));
+	die "Prima needs X11 headers for compilation! Perhaps, you have non-standard path to X11?\n" unless defined $incpath;
+	print "X11 includes found in $incpath\n";
+	push @INCPATH, $incpath;
+	my $libpath = find_lib( "X11", "/usr/X11R6/lib", "/usr/X11/lib");
+	die "Prima needs X11 libraries for compilation! Perhaps, you have non-standard path to X11?\n" unless defined $libpath;
+	print "X11 libraries found in $libpath\n";
+	push @LIBPATH, $libpath;
+	push @LIBS, 'X11';
+
+	if ( $incpath = find_header( "gif_lib.h", "", map { "$_/giflib"} @INCPATH)) {
+	    print "Found gif_lib.h\n";
+	    push @INCPATH, $incpath;
+	    $DEFINES{ HAVE_GIFLIB} = 1;
+	    $libpath = find_lib( 'gif', '', '/usr/local/lib');
+	    die "GifLib libraries not found!\n" unless defined $libpath;
+	    push @LIBS, 'gif';
+	    if ( $libpath) {
+		print "Adding $libpath to LIBPATH.\n";
+		push @LIBPATH, $libpath;
+	    }
+	}
+    }
+    else {
+        my $libpath = find_lib( $Config{ libperl}, "", qd( "$Config{ archlib}/CORE"));
+        die "Cannot find perl library" unless defined $libpath;
+        print "Perl library found in ", ( $libpath || "default LIBPATH"), "\n";
+        push @LIBPATH, $libpath if $libpath;
+        push @LIBS, $Config{ libperl};
+
+        $libpath = find_lib( "prigraph$LIB_EXT", "");
+        die "Prima/Win32 requires GBM to work" unless defined $libpath;
+        push @LIBS, "prigraph$LIB_EXT";
+    }
+}
+
+sub setup_defines
+{
+    have_func( 'strcasecmp') || have_func( 'stricmp');
+}
+
+sub setup_misc
+{
+    # Setting up translation tables for quoting string for different make utilities.
+    my ( $make_tbl, $nmake_tbl);
+    $make_tbl = [ map { chr} 0..255];
+    $nmake_tbl = [ map { chr} 0..255];
+    foreach ( ':', ';', '#', '(', ')', '$', '^', '\\', '{', '}', '!', '@', '-') {
+	$nmake_tbl->[ ord] = "^$_";
+    }
+    $make_tbl->[ ord '$'] = '$$';
+    $make_tbl->[ ord '#'] = '\\#';
+    %make_trans = (
+		   make => $make_tbl,
+		   nmake => $nmake_tbl,
+		  );
+}
+
+sub find_file
+{
+    my ( $fname, $dir) = @_;
+    my $pathname = qd( "$dir/$fname");
+    if ( -e $pathname) {
+	return ( $pathname, 1);
+    }
+    opendir D, $dir or die "Cannot open dir $dir: $!";
+    my @entries = map { qd( "$dir/$_")} grep { /^[^.]/ && -d qd( "$dir/$_")} readdir D;
+    closedir D;
+    my $found;
+    foreach my $entry ( @entries) {
+	( $pathname, $found) = find_file( $fname, $entry);
+	return ( $pathname, 1) if $found;
+    }
+    return ( $fname, 0);
+}
+
+sub canon_name
+{
+    my ( $fname) = @_;
+    my $qdirsep = quotemeta( $dir_sep);
+    $fname =~ s{[^$qdirsep]+$qdirsep\.\.(?:$qdirsep|\Z)}{}
+	while $fname =~ /(?:$qdirsep|\A)\.\.(?:$qdirsep|\Z)/;
+    $fname =~ s{(?:(?<=$qdirsep)|(?<=\A))\.(?=$qdirsep|\Z)$qdirsep?}{}g;
+    return $fname;
+}
+
+sub find_cdeps
+{
+    my ( $cfile, $deps, $included) = @_;
+
+    $deps ||= {};
+    $included ||= {};
+
+    return () if exists $deps->{ $cfile};
+    $deps->{ $cfile} = [];
+    return @{ $alldeps{ $cfile}} if exists $alldeps{ $cfile};
+    $alldeps{ $cfile} = [];
+    return () unless -f $cfile;
+
+    my $cf = new IO::File;
+    open $cf, "<$cfile" or die "Cannot open $cfile: $!";
+    while ( <$cf>) {
+	chomp;
+	next unless /^\s*\#\s*include\s+"([^\"]+)"/;
+	my $incfile = $1;
+	my $found = 0;
+	( $incfile, $found) = find_file( $incfile, ".");
+	$incfile = qd( "include/generic/$incfile") unless $found;
+	$incfile = canon_name( $incfile);
+	unless ( exists $included->{ $incfile}) {
+	    push @{ $alldeps{ $cfile}}, $incfile;
+	    push @{ $deps->{ $cfile}}, $incfile;
+	    $included->{ $incfile} = 1;
+	}
+	my @subdeps = find_cdeps( $incfile, $deps, $included);
+	push @{ $deps->{ $cfile}}, @subdeps;
+	push @{ $alldeps{ $cfile}}, @subdeps;
+    }
+    close $cf;
+    return @{ $deps->{ $cfile}};
+}
 
 sub cmake
 {
-  my $cfile = $_[0];
-  print "Finding dependencies for $cfile...";
-  my $extra = '';
-  $extra = '-I/usr/X11R6/include' if $cfile =~ /^unix/;
-  my $ofile = "$1.o" if $cfile =~ /^(.*)\.c$/;
-  die "Internal error: illegal c file"
-    unless defined $ofile;
-  chomp(my $r = `@cc $extra -MM -MG $cfile`);
-  for (`@cc -MM $_[0] 2>&1`) {
-    next unless m{^.*:\d+:\s+(.*)\.(.*): No such file or directory$};
-    if ($2 eq 'h') {
-      my $s = $1;
-      $r =~ s[\b$s\.h\b][include/generic/$s\.h];
-    } elsif ($2 eq 'inc') {
-      my $s = $1;
-      $r =~ s[\b$s\.inc\b][include/generic/$s\.inc];
-    }
-  }
-  $r =~ s[^.*\.o\s*:][$ofile:];
-  $allo .= "$ofile ";
-  $allclean .= "$ofile ";
-  print "\n";
-  $r .= "\n\t@cc $extra -c -o $ofile $cfile\n\n";
+    my ( $cfile) = @_;
+    print "Finding dependencies for $cfile...\n";
+    my $ofile = "$1$OBJ_EXT" if $cfile =~ /^(.*)\.c$/;
+    die "Internal error: illegal c file"
+	unless defined $ofile;
+    push @allclean, qd( $ofile);
+    push @allojects, qd( $ofile);
+    my @deps = find_cdeps( $cfile);
+    return(
+	   "$ofile: $cfile @deps\n\t" .
+	   join( " ", cc_command_line( $cfile, $ofile, "", 1, 1)) .
+	   "\n\n"
+	  );
 }
 
 sub clsmake
 {
-   my $clsfile = $_[0];
-   print "Finding dependencies for $clsfile...";
-   my $classname = $1 if $clsfile =~ /^(.*)\.cls$/;
-   die "Internal error: illegal cls file"
-      unless defined $classname;
-   my $mk = "include/generic/$classname.inc " . 
-      "include/generic/$classname.h " . 
-	 "include/generic/$classname.tml: \\\n" .
-	    "$clsfile utils/gencls.pl ";
-   $alltml .= "include/generic/$classname.tml ";
-   $allclean .= "include/generic/$classname.h ";
-   $allclean .= "include/generic/$classname.inc ";
-   $allclean .= "include/generic/$classname.tml ";
-   for (`perl utils/gencls.pl --depend $clsfile`) {
-      next unless /^ancestor:\s+(.*)$/;
-      $mk .= "include/generic/$1.h $1.cls ";
-   }
-   print "\n";
-   $mk .= "\n\tperl utils/gencls.pl " .
-      "--inc --h --tml $clsfile include/generic\n\n";
+    my ( $clsfile) = @_;
+    print "Finding dependencies for $clsfile...";
+    my $classname = $1 if $clsfile =~ /^(.*)\.cls$/;
+    die "Internal error: illegal cls file"
+	unless defined $classname;
+    my $mk = qd( "include/generic/$classname.inc " .
+		 "include/generic/$classname.h " .
+		 "include/generic/$classname.tml") . ": " .
+		"$clsfile " . qd( "utils/gencls.pl ");
+    push @alltml, qd( "include/generic/$classname.tml");
+    push @allclean, (
+		     qd( "include/generic/$classname.h"),
+		     qd( "include/generic/$classname.inc"),
+		     qd( "include/generic/$classname.tml")
+		    );
+    push @allinstall, qd( "include/generic/$classname.h"), $INSTALL_LIB . qd( "/CORE/generic");
+    for (`perl utils/gencls.pl --depend $clsfile`) {
+	next unless /^ancestor:\s+(.*)$/;
+	$mk .= qd( "include/generic/$1.h $1.cls ");
+    }
+    print "\n";
+    $mk .= "\n\tperl utils/gencls.pl " .
+	"--inc --h --tml $clsfile include/generic\n\n";
 }
 
-sub thunks
-{
-   $allclean .= "thunks.tinc ";
-   <<THUNKS;
-thunks.tinc: $alltml
-\tperl utils/tmlink.pl -Iinclude/generic -othunks.tinc $alltml
+#
+# Here we go...
+#
 
-THUNKS
-}
+$dir_sep = $Config{ path_sep} eq ':' ? '/' : '\\';
 
-sub module_clsmake
-{
-   my ($module,$clsfile,$incdir,$name) = @_;
-   unless (-d $incdir) {
-      system "mkdirhier $incdir";
-      die "cannot create necessary directory $incdir: $!"
-	 unless -d $incdir;
-   }
-   print "Finding dependencies for $module ($clsfile)...";
-   my $mk = "$incdir/$name.inc " . 
-      "$incdir/$name.h: \\\n" . 
-	 "$clsfile utils/gencls.pl ";
-   $allclean .= "$incdir/$name.h ";
-   $allclean .= "$incdir/$name.inc ";
-   $known_header{"$name.h"} = "$incdir/$name.h";
-   $known_header{"$name.inc"} = "$incdir/$name.inc";
-   for (`perl utils/gencls.pl --depend $clsfile`) {
-      next unless /^ancestor:\s+(.*)$/;
-      $mk .= "include/generic/$1.h $1.cls ";
-   }
-   print "\n";
-   $mk .= "\n\tperl utils/gencls.pl " .
-      "--inc --h $clsfile $incdir\n\n";
-}
+die "This script should be launched from Prima root directory\n"
+    unless -r qd( "include/apricot.h") && -d "Prima";
 
-sub module_cmake
-{
-   my ($module,$cfile,$dir,$all_inc,$objects) = @_;
-   print "Finding dependencies for $module ($cfile)...";
-   my $extra = '';
-   $extra = '-I/usr/X11R6/include ' if $cfile =~ /^unix/;
-   $extra .= $all_inc;
-   $cfile =~ m!/([^/]*).c$!;
-   my $name = $1;
-   my $ofile = "$dir/$name.o";
-   chomp(my $r = `@cc $extra -MM -MG $cfile`);
-   for (`@cc $extra -MM $cfile 2>&1`) {
-      next unless m{^.*:\d+:\s+(.*)\.(.*): No such file or directory$};
-      if ($known_header{"$1.$2"}) {
-         my $s = "$1.$2";
-	 $r =~ s[\b$s\b][$known_header{$s}];
-      } elsif ($2 eq 'h') {
-	 my $s = $1;
-	 $r =~ s[\b$s\.h\b][include/generic/$s\.h];
-      } elsif ($2 eq 'inc') {
-	 my $s = $1;
-	 $r =~ s[\b$s\.inc\b][include/generic/$s\.inc];
-      }
-   }
-   $r =~ s[^.*\.o\s*:][$ofile:];
-   $$objects .= "$ofile ";
-   $allclean .= "$ofile ";
-   print "\n";
-   $r .= "\n\t@cc $extra -c -o $ofile $cfile\n\n";
-}
+$| = 1;
 
-sub modules
-{
-   my @cls = ();
-   my $mk = '';
-   print "Getting list of external modules...";
-   find( sub { push @cls, $File::Find::name if /\.cls$/; }, 'modules/');
-   @cls = sort { length $a <=> length $b } @cls;
-   # class name
-   #   modules/IPA/Geometry/Geometry.cls => IPA::Geometry
-   #   modules/IPA/IPA.cls => IPA
-   # shared library name/location
-   #   modules/IPA/Geometry/Geometry.cls => auto/IPA/Geometry/Geometry.so
-   #   modules/IPA/IPA.cls => auto/IPA/IPA.so
-   # dir
-   #   modules/IPA/Geometry/Geometry.cls => modules/IPA/Geometry/
-   #   modules/IPA/IPA.cls => modules/IPA/
-   # incdir
-   #   modules/IPA/Geometry/Geometry.cls => include/generic/IPA/Geometry/
-   #   modules/IPA/IPA.cls => include/generic/IPA/
-   my (@class,@share,@dir,@incdir,@name,@pmdir);
-   for my $cls (@cls) {
-      ($_ = $cls) =~ s!^modules/(.*)\.cls$!auto/${1}.so!;
-      push @share, $_;
-      $_ =~ s!/[^/]*$!!;
-      unless (-d) {
-	 system "mkdirhier $_";
-	 die "cannot create necessary directory $_: $!"
-	    unless -d;
-      }
-      ($_ = $cls) =~ s!^modules/(.*)/[^/]*\.cls$!include/generic/${1}!;
-      push @incdir, $_;
-      ($_ = $cls) =~ s!^modules/(.*)/[^/]*\.cls!$1!;
-      s!/!::!g;
-      push @class, $_;
-      s!::!/!g; s!/?[^/]*$!!;
-      push @pmdir, "scripts/modules/$_";
-      unless (-d "scripts/modules/$_") {
-	 system "mkdirhier scripts/modules/$_";
-	 die "cannot create necessary directory scripts/modules/$_: $!"
-            unless -d "scripts/modules/$_";
-      }
-      ($_ = $cls) =~ s!/[^/]*\.cls!!;
-      push @dir, $_;
-      $cls =~ m!/([^/]*)\.cls!;
-      push @name, $1;
-   }
-   print "\n";
-   my $all_incs = '';
-   for (@incdir) { $all_incs .= "-I$_ "; }
-   for (@dir) { $all_incs .= "-I$_ "; }
-   my $all_modules = '';
-   while (@cls) {
-      $mk .= module_clsmake $class[0], $cls[0], $incdir[0], $name[0];
-      my $objects = '';
-      while (<$dir[0]/*.c>) {
-	 $mk .= module_cmake $class[0], $_, $dir[0], $all_incs, \$objects;
-      }
-      while (<$dir[0]/*.pm>) {
-	 m!([^/]*\.pm)$!;
-	 my $n = $1;
-	 $mk .= <<MAKE;
-$pmdir[0]/$n: $dir[0]/$n
-\tinstall -c -m 0644 $dir[0]/$n $pmdir[0]/$n
+print "Setting up working environment.\n";
+setup_variables;
+setup_paths;
+setup_defines;
+setup_misc;
 
-MAKE
-         $allclean .= "$pmdir[0]/$n ";
-         $all_modules .= "$pmdir[0]/$n ";
-      }
-      $allclean .= "$share[0] ";
-      $all_modules .= "$share[0] ";
-      $mk .= <<MAKE;
-$share[0]: $objects auto/Prima/Prima.so
-\t@ld -Lauto/Prima -shared -o $share[0] $objects $Config{libs} -lperl -lX11 -lgif
-
-MAKE
-      shift @class, shift @cls, shift @incdir, shift @name, shift @dir, shift @share, shift @pmdir;
-   }
-   $mk .= <<MAKE;
-all_modules: $all_modules
-
-MAKE
-}
-
-sub check_function
-{
-   my ($func) = shift;
-   print "checking $func()...";
-   my (@p,@i);
-   while (@_) {
-      push @p, shift;
-      push @i, shift;
-   }
-   my $code = "int main( int argc, char **argv) {\n";
-   my $var = "bugeaaa";
-   my $call = "   $func( ";
-   while (@p) {
-      if ($p[0] =~ /^\s*char\s*\*\s*$/) {
-	 $i[0] =~ s!\\!\\\\!g;
-	 $i[0] =~ s!\"!\\\"!g;
-	 $code .= "   $p[0] $var = \"$i[0]\";\n";
-      } else {
-	 if ($i[0] ne '') {
-	    $code .= "   $p[0] $var = $i[0];\n";
-	 } else {
-	    $code .= "   $p[0] $var;\n";
-	 }
-      }
-      shift @p, shift @i;
-      if (@p) {
-	 $call .= "$var, ";
-      } else {
-	 $call .= "$var);";
-      }
-      $var++;
-   }
-   $code .= "\n$call\n   return 0;\n}\n";
-   my $name = "/tmp/pmplt$$";
-   open C, "> $name.c" or die $!;
-   print C $code;
-   close C;
-   my $r = system("$Config{cc} -o $name $name.c >/dev/null 2>&1") == 0;
-   unlink  "$name.c", "$name";
-   if ($r) {
-      print " found!";
-      push @all_defines, "-DPRIMA_" . uc($func) . "_PRESENT=1";
-   } else {
-      print " not found!";
-   }
-   print "\n";
-}
-
-sub check_header
-{
-   my ($header) = shift;
-   print "checking #include <$header>...";
-   my @where = @_;
-   my $code = "#include <$header>\nvoid stupid_dummy_function( void) {}\n";
-   my $name = "/tmp/pmplt$$";
-   open C, "> $name.c" or die $!;
-   print C $code;
-   close C;
-   my $r = system("@cc -c -o $name.o $name.c >/dev/null 2>&1") == 0;
-   if ($r) {
-      print " found with the existing include path!";
-   } else {
-      for (@where) {
-         $r = system("@cc -I$_ -c -o $name.o $name.c >/dev/null 2>&1") == 0;
-         if ($r) {
-            push @cc, "-I$_";
-            print " found in $_!";
-            last;
-         }
-      }
-      print " not found!" unless $r;
-   }
-   unlink  "$name.c", "$name.o";
-   print "\n";
-}
-
-check_header "gif_lib.h", "/usr/local/include/giflib";
-check_function "stricmp", "char *" => '', "char *" => '';
-check_function "strcasecmp", "char *" => '', "char *" => '';
-check_function "trunc", "double" => 1.5;
-push @cc, @all_defines;
+push @alldirs, qd( "include/generic"), qd( "auto/Prima");
 
 my $make = <<MAKE;
 # Makefile for Prima project under $Config{archname}
@@ -349,7 +487,7 @@ my $make = <<MAKE;
 # Do not edit -- all changes will be lost.
 # Edit Makefile.PL instead.
 
-project: prima all_modules
+all: prima
 
 MAKE
 
@@ -359,65 +497,78 @@ while (<*.cls>) {
 while (<*.c>) {
   $make .= cmake( $_);
 }
-while (<unix/*.c>) {
+while (<$PLATFORM/*.c>) {
   $make .= cmake( $_);
 }
 
-$make .= thunks;
-$make .= modules;
-
-$make .= <<MAKE;
-clean:
-\trm -f $allclean auto/Prima/Prima.so tags TAGS
-
-.PHONY: tags
-
-tags:
-\t/usr/local/bin/ctags -ip *.c \`find include -name "*.h" -print\` \\
-\t\t	/usr/X11R6/include/X11/X*.h unix/*.c \\
-\t\t	$Config{archlib}/CORE/*.h \\
-\t\t	/usr/X11R6/include/X11/keysymdef.h
-\t/usr/local/bin/ctags -ip -e *.c \`find include -name "*.h" -print\` \\
-\t\t	/usr/X11R6/include/X11/X*.h unix/*.c \\
-\t\t	$Config{archlib}/CORE/*.h \\
-\t\t	/usr/X11R6/include/X11/keysymdef.h
-
-calltree:
-.if !defined(func)
-\t\@echo "The calltree target requires a function parameter,"
-\t\@echo "e.g.: \\"make calltree func=apc_font_pick\\""
-.else
-\t\@cflow -X stdio.h -X ctypes.h -X errno.h -X stdlib.h -r "\${func}" @inc_path @all_defines *.c unix/*.c 2> /dev/null
-.endif
-
-mtree:
-\t\@echo Making tree specification...
-\t\@rm -f treespec.1 treespec
-\t\@mtree -c >treespec.1
-\t\@perl -pe 's/treespec\.1(.*)\$\$/treespec\$\$1 nochange/; s/(type=dir.*)\$\$/\$\$1 nochange/;' treespec.1 >treespec
-\t\@rm -f treespec.1
-
-comptree:
-\t\@echo Tree differences:
-\t\@mtree -e -f treespec | perl -ne 'print "\$\$1\\n" if /^(\\S.*):\\s*\$\$/;'
-
-Makefile: Makefile.PL
-\t\@echo Rebuilding Makefile...
-\t\@perl Makefile.PL
-\t\@make
-\t\@echo You are safe to ignore the following error...
-\t\@false
-
-prima: Makefile auto/Prima/Prima.so
-
-auto/Prima/Prima.so: $allo
-\t@ld -shared -o auto/Prima/Prima.so $allo $Config{libs} -lperl -lX11 -lgif
-MAKE
+my $thunks_tinc = qd( "include/generic/thunks.tinc");
+push @allclean, $thunks_tinc;
 
 print "Writing Makefile...";
 $make =~ tr!/!!s;
-open MAKE, ">Makefile"
-  or die "Cannot create Makefile: $!\n";
+open MAKE, ">Makefile" or die "Creation of Makefile failed: $!";
 print MAKE $make;
+
+my $CPSCRIPT = quotemake( 'die qq(Even number of parameters expected) unless ( $#ARGV % 2); while ( scalar @ARGV) { ( $src, $dst) = ( shift @ARGV, shift @ARGV); print qq(Installing $src -> $dst\\n); next unless -f $src; die qq(Destination must be a directory) if -e $dst && ! -d $dst; mkpath $dst unless -d $dst; copy( $src, $dst) or die qq(Copy failed: $!); }');
+my $RMSCRIPT = quotemake( 'unlink @ARGV');
+print MAKE <<MAKE;
+$thunks_tinc: @alltml
+\tperl utils/tmlink.pl -Iinclude/generic -o$thunks_tinc @alltml
+
+RM=$^X -e ${ SHQUOTE}${ RMSCRIPT}${ SHQUOTE}
+
+clean:
+\t\$(RM) @allclean $PrimaTarget
+
+prima: Makefile dirs $PrimaTarget
+
+$PrimaTarget: @allojects
+\t${ \eval{ return join ' ', ld_command_line( $PrimaTarget, @allojects)}}
+
+Makefile: Makefile.PL
+\t\@echo Cleaning up...
+\t\@$MAKE clean
+\t\@echo Rebuilding Makefile...
+\t\@$^X Makefile.PL
+\t\@$MAKE
+\t\@echo You are safe to ignore the following error...
+\t\@false
+
+CP=$^X -MFile::Copy -MFile::Path -MFile::Basename -e ${ SHQUOTE}${ CPSCRIPT}${ SHQUOTE}
+
+install: all
+\t\@\$(CP) \\
+\t$PrimaTarget $INSTALL_DL \\
+MAKE
+
+finddepth( sub { print MAKE "\t", qd( "$File::Find::dir/$_ $PREFIX/$File::Find::dir"), " \\\n" unless -d $_}, 'Prima');
+while ( scalar @allinstall) {
+    my ( $src, $dst) = ( shift @allinstall, shift @allinstall);
+    print MAKE "\t$src $dst \\\n";
+}
+while ( <include/*.h>) {
+    my ( $dsth) = $_;
+    $dsth =~ s/^include/CORE/;
+    print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
+}
+while ( <include/$PLATFORM/*.h>) {
+    my ( $dsth) = $_;
+    $dsth =~ s/^include/CORE/;
+    print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
+}
+print MAKE "\tPrima.pm $PREFIX\n";
+
+print MAKE <<MAKE;
+
+MD=perl -MFile::Path -e ${ SHQUOTE}mkpath [ \@ARGV]${SHQUOTE}
+
+dirs: @alldirs
+
+@alldirs:
+\t\@echo Creating directories...
+\t\@\$(MD) @alldirs
+
+MAKE
+
 close MAKE;
-print "\nAll done.  Now you can run make.\n";
+print "\nAll done.  Now you can run ${ MAKE}.\n";
