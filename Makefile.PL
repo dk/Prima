@@ -1358,39 +1358,53 @@ sub setup_xft
 	    print ", in $incpath" if $incpath;
 	    print "\n";
 	    push @INCPATH, $incpath if $incpath;
+	    print "Checking for presence of libfreetype... ";
 	    if ( defined find_lib( 'freetype', '', '')) {
 		push @LIBS, 'freetype';
 		$HAVE_XFT++;
+		print "yes\n";
 	    } else {
+		print "no\n";
 		$DEFINES{HAVE_FREETYPE_FREETYPE_H} = undef;
 	    }
+	} else {
+	    print "no\n";
 	}
 
 	if ( have_header( "fontconfig/fontconfig.h")) {
+	    print "Checking for presence of libfontconfig... ";
 	    if ( defined find_lib( 'fontconfig', '', '')) {
 		push @LIBS, 'fontconfig';
 		$HAVE_XFT++;
+		print "yes\n";
 	    } else {
 		$DEFINES{HAVE_FONTCONFIG_FONTCONFIG_H} = undef;
+		print "no\n";
 	    }
 	}
 
 	if ( have_header( "X11/extensions/Xrender.h", "X11/X.h", 
 			  "X11/Xlib.h", "X11/extensions/Xext.h")) {
+	    print "Checking for presence of libXrender... ";
 	    if ( defined find_lib( 'Xrender', '', '')) {
 		push @LIBS, 'Xrender';
 		$HAVE_XFT++;
+		print "yes\n";
 	    } else {
 		$DEFINES{HAVE_X11_EXTENSIONS_XRENDER_H} = undef;
+		print "no\n";
 	    }
 	}
 
 	if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h", 
 			  "X11/extensions/Xext.h", "X11/extensions/Xrender.h")) {
+	    print "Checking for presence of libXft... ";
 	    if ( defined find_lib( 'Xft', '', '')) {
+		print "yes\n";
 		push @LIBS, 'Xft';
 		$HAVE_XFT++;
 	    } else {
+		print "no\n";
 		$DEFINES{HAVE_X11_XFT_XFT_H} = undef;
 	    }
 	}
@@ -1401,15 +1415,21 @@ sub setup_xft
 
     $WITH_ICONV = 0 unless $WITH_XFT; # iconv is used for xft only
     if ( $WITH_ICONV && have_header( "iconv.h")) {
+	print "Checking for presence of libiconv... ";
 	if ( defined find_lib( 'iconv', '', '')) {
 	    push @LIBS, 'iconv';
+            print "yes\n";
 	} else {
 	    $DEFINES{HAVE_ICONV_H} = undef;
 	    $WITH_ICONV = 0;
+            print "no\n";
 	}
     } else {
 	$WITH_ICONV = 0;
     }
+    
+    print "Using Xft library\n" if $WITH_XFT;
+    print "Using iconv library\n" if $WITH_ICONV;
 }       
 
 sub generate_win32_def
