@@ -80,6 +80,16 @@ sub save_dialog
    return $saveFileDlg;
 }
 
+sub accelItems
+{
+   return [
+      ['openitem' => '~Open' => 'F3' => 'F3' => sub { $VB::main-> open;}],
+      ['-saveitem1' => '~Save' => 'F2' => 'F2' => sub {$VB::main-> save;}],
+      ['Exit' => 'Alt+X' => '@X' => sub{ $VB::main-> close;}],
+      ['Object Inspector' => 'F11' => 'F11' => sub { $VB::main-> bring_inspector; }],
+      ['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => sub { $VB::main-> form_run}, ],
+   ];
+}
 
 package OPropListViewer;
 use vars qw(@ISA);
@@ -1003,16 +1013,7 @@ sub profile_default
              ['Creation ~order' => sub { Form::fm_creationorder(); } ],
          ]],
          ['~View' => [
-           ['~Object Inspector' => 'F11' => 'F11' => sub {
-              if ( $VB::inspector) {
-                 $VB::inspector-> restore if $VB::inspector-> windowState == ws::Minimized;
-                 $VB::inspector-> bring_to_front;
-                 $VB::inspector-> select;
-              } else {
-                 $VB::inspector = ObjectInspector-> create;
-                 ObjectInspector::renew_widgets;
-              }
-           }],
+           ['~Object Inspector' => 'F11' => 'F11' => sub { $_[0]-> bring_inspector; }],
            ['~Add widgets...' => q(add_widgets)],
            [],
            ['Reset ~guidelines' => sub { Form::fm_resetguidelines(); } ],
@@ -1743,12 +1744,16 @@ sub update_menu
 {
    return unless $VB::main;
    my $m = $VB::main-> menu;
+   my $a = $::application-> accelTable;
    my $f = (defined $VB::form) ? 1 : 0;
    my $r = (defined $VB::main->{running}) ? 1 : 0;
    $m-> enabled( 'runitem', $f && !$r);
+   $a-> enabled( 'runitem', $f && !$r);
    $m-> enabled( 'newitem', !$r);
    $m-> enabled( 'openitem', !$r);
+   $a-> enabled( 'openitem', !$r);
    $m-> enabled( 'saveitem1', $f);
+   $a-> enabled( 'saveitem1', $f);
    $m-> enabled( 'saveitem2', $f);
    $m-> enabled( 'closeitem', $f);
    $m-> enabled( 'breakitem', $f && $r);
@@ -1820,6 +1825,19 @@ sub wait
    $t-> start;
 }
 
+sub bring_inspector
+{
+   if ( $VB::inspector) {
+      $VB::inspector-> restore if $VB::inspector-> windowState == ws::Minimized;
+      $VB::inspector-> bring_to_front;
+      $VB::inspector-> select;
+   } else {
+      $VB::inspector = ObjectInspector-> create;
+      ObjectInspector::renew_widgets;
+   }
+}
+
+
 package VisualBuilder;
 
 $VB::ico = Prima::Image-> create;
@@ -1833,11 +1851,12 @@ ObjectInspector::renew_widgets;
 ObjectInspector::preload() unless $VB::fastLoad;
 $VB::main-> update_menu();
 
+$::application-> accelItems( VB::accelItems);
 
 RERUN: eval {
    run Prima;
 };
-if ( $@) {
+if ( $@ && $::application) {
    Prima::MsgBox::message( "$@") if $@;
    goto RERUN;
 }
