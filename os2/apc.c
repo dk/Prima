@@ -1466,7 +1466,7 @@ Bool
 apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Bool scrollChildren)
 {
    WinShowCursor( var handle, false);
-   if ( !WinScrollWindow( var handle, horiz, vert, (PRECTL)&r, sys pClipRect, nilHandle, nil,
+   if ( !WinScrollWindow( var handle, horiz, vert, (PRECTL)r, sys pClipRect, nilHandle, nil,
                     SW_INVALIDATERGN | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
                   )) apiErr;
    return WinShowCursor( var handle, true);
