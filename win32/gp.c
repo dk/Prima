@@ -851,10 +851,26 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
    HDC ps = sys ps;
    int bk  = GetBkMode( ps);
    int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
+   int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
+
    STYLUS_USE_TEXT( ps);
    if ( opa != bk) SetBkMode( ps, opa);
 
-   if ( !( ok = TextOut( ps, x, sys lastSize. y - y - 1, text, len))) apiErr;
+   /* Win32 has problems with text_out strings that are wider than
+      32K pixel - it doesn't plot the string at all. This hack is
+      although ugly, but is better that Win32 default behaviour, and
+      at least can be excused by the fact that all GP spaces have
+      their geometrical limits. */
+   while ( len > 0) {
+      SIZE sz;
+      int drawLen = ( len > div) ? div : len;
+      if ( !( ok = TextOut( ps, x, sys lastSize. y - y - 1, text, drawLen))) apiErr;
+      if ( len > 0) 
+         GetTextExtentPoint32( ps, text, drawLen, &sz);
+      x += sz. cx - ( IS_NT ? sys tmOverhang : 0);
+      if (( len -= div) <= 0) break;
+      text += div;
+   }
    if ( opa != bk) SetBkMode( ps, bk);
    return ok;
 }}
@@ -1247,38 +1263,51 @@ int
 apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
 {
    SIZE  sz;
+   int   div, offset = 0, ret = 0;
+   
    objCheck 0;
    if ( len == 0) return 0;
-   if ( !GetTextExtentPoint32( sys ps, text, len, &sz)) apiErr;
 
+   /* width more that 32K returned incorrectly by Win32 core */
+   if (( div = 32768L / ( var font. maximalWidth ? var font. maximalWidth : 1)))
+      div = 1;
+   
+   while ( offset < len) {
+      int chunk_len = ( offset + div > len) ? ( len - offset) : div;
+      if ( !GetTextExtentPoint32( sys ps, text + offset, chunk_len, &sz)) apiErr;
+      ret += sz. cx;
+      offset += div;
+   }
+   
    if ( addOverhang) {
       if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
          ABC abc[2];
          GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
          GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
-         if ( abc[0]. abcA < 0) sz. cx -= abc[0]. abcA;
-         if ( abc[1]. abcC < 0) sz. cx -= abc[1]. abcC;
+         if ( abc[0]. abcA < 0) ret -= abc[0]. abcA;
+         if ( abc[1]. abcC < 0) ret -= abc[1]. abcC;
       } else if ( IS_NT)
-         sz. cx += sys tmOverhang;
+         ret += sys tmOverhang;
    } else if ( !IS_NT)
-      sz. cx -= sys tmOverhang;
-   return sz. cx;
+      ret -= sys tmOverhang;
+   return ret;
 }
 
 Point *
 apc_gp_get_text_box( Handle self, const char* text, int len)
 {objCheck nil;{
-   SIZE  sz;
    Point * pt = ( Point *) malloc( sizeof( Point) * 5);
 
-   if ( !GetTextExtentPoint32( sys ps, text, len, &sz)) apiErr;
    memset( pt, 0, sizeof( Point) * 5);
 
-   pt[0].y = pt[2]. y = sz. cy - - var font. descent;
+   pt[0].y = pt[2]. y = var font. ascent;
    pt[1].y = pt[3]. y = - var font. descent;
    pt[4].y = pt[0]. x = pt[1].x = 0;
-   pt[3].x = pt[2]. x = pt[4].x = sz. cx;
-   if ( len > 0 && !IS_NT) pt[4].x -= sys tmOverhang;
+   pt[3].x = pt[2]. x = pt[4].x = apc_gp_get_text_width( self, text, len, false);
+   if ( len > 0 && !IS_NT) {
+      pt[2].x += sys tmOverhang;
+      pt[3].x += sys tmOverhang;
+   }
 
    if ( !is_apt( aptTextOutBaseline)) {
       int i = 5, d = var font. descent;
