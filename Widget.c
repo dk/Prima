@@ -794,7 +794,7 @@ void Widget_handle_event( Handle self, PEvent event)
               cv_call_perl( var mate, var onPopup, "iP", event-> gen. B, event-> gen. P);
            objCheck;
            if ( evOK && p && p-> self-> get_auto(( Handle) p))
-              p-> self-> popup(( Handle) p, event-> gen. P. x, event-> gen. P. y);
+              p-> self-> popup(( Handle) p, event-> gen. P. x, event-> gen. P. y ,0,0,0,0);
         }
         break;
       case cmSize:
