@@ -1364,7 +1364,7 @@ sub plate_glyph
    return '' if $b <= 0;
    $z-> begin_paint;
    $z-> clear;
-   $z-> text_out( chr( $x), ($a < 0) ? -$a : 0, $d - 1);
+   $z-> text_out( chr( $x), ($a < 0) ? -$a : 0, $d);
    $z-> end_paint;
    my $dd = $z-> data;
    my ($j, $k);
