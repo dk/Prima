@@ -249,6 +249,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    attrs. do_not_propagate_mask = attrs. event_mask;
    attrs. win_gravity = ( clip_owner && ( owner != application)) 
       ? SouthWestGravity : NorthWestGravity;
+   attrs. colormap = guts. defaultColormap;
 
    if ( reset) {
       Point pos = PWidget(self)-> pos;
@@ -277,8 +278,8 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    if ( old != nilHandle) return true;
 
    X_WINDOW = XCreateWindow( DISP, parent,
-                             0, 0, 1, 1, 0, CopyFromParent,
-                             InputOutput, CopyFromParent,
+                             0, 0, 1, 1, 0, guts. visual. depth,
+                             InputOutput, VISUAL,
                              0
                              /* | CWBackPixmap */
                              /* | CWBackPixel */
@@ -293,7 +294,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
                              /* | CWSaveUnder */
                              | CWEventMask
                              /* | CWDontPropagate */
-                             /* | CWColormap */
+                             | CWColormap 
                              /* | CWCursor */
                              , &attrs);
    if (!X_WINDOW)
