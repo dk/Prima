@@ -2283,7 +2283,6 @@ apc_menu_create( Handle self, Handle owner)
    dobjCheck( owner) false;
    sys className = WC_MENU;
    sys owner     = DHANDLE( owner);
-   apc_menu_destroy( self);
    return true;
 }
 
@@ -2506,7 +2505,6 @@ apc_popup_create( Handle self, Handle owner)
    objCheck false;
    dobjCheck( owner) false;
    sys owner = DHANDLE( owner);
-   apc_menu_destroy( self);
    sys className = WC_MENU;
    return true;
 }
