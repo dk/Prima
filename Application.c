@@ -90,20 +90,14 @@ void
 Application_done( Handle self)
 {
    my close_help( self);
-   free( var helpFile);
-   my first_that( self, kill_all, nil);
-   my detach( self, var accelTable, true);
+   my first_that_component( self, kill_all, nil);
    list_destroy( &var modalHorizons);
    list_destroy( &var widgets);
-   var accelTable = nilHandle;
-   Object_destroy( var clipboard);
-   var clipboard = nilHandle;
-   Object_destroy( var printer);
-   var printer = nilHandle;
+   free( var helpFile);
    free( var text);
-   var text = nil;
    free( var hint);
-   var hint = nil;
+   var accelTable = var printer = var clipboard = nilHandle;
+   var helpFile   = var text    = var hint      = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
    application = nilHandle;
