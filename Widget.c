@@ -1407,7 +1407,7 @@ Widget_get_popup_font( Handle self)
 Handle
 Widget_get_selectee( Handle self)
 {
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
    if ( is_opt( optSelectable))
       return self;
    else if ( var-> currentWidget) {
@@ -1454,7 +1454,7 @@ void
 Widget_set_font( Handle self, Font font)
 {
    enter_method;
-   if ( var-> stage > csNormal) return;
+   if ( var-> stage > csFrozen) return;
    if ( !opt_InPaint) my-> first_that( self, font_notify, &font);
    if ( var-> handle == nilHandle) return; /* aware of call from Drawable::init */
    apc_font_pick( self, &font, & var-> font);
@@ -1724,7 +1724,7 @@ SV *
 Widget_accelItems( Handle self, Bool set, SV * accelItems)
 {
    enter_method;
-   if ( var-> stage > csNormal) return nilSV;
+   if ( var-> stage > csFrozen) return nilSV;
    if ( !set)
       return var-> accelTable ?
              CAbstractMenu( var-> accelTable)-> get_items( var-> accelTable, "") : nilSV;
@@ -1743,7 +1743,7 @@ Handle
 Widget_accelTable( Handle self, Bool set, Handle accelTable)
 {
    enter_method;
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
    if ( !set)
       return var-> accelTable;
    if ( accelTable && !kind_of( accelTable, CAbstractMenu)) return nilHandle;
@@ -1872,7 +1872,7 @@ Bool
 Widget_current( Handle self, Bool set, Bool current)
 {
    PWidget o;
-   if ( var-> stage > csNormal) return false;
+   if ( var-> stage > csFrozen) return false;
    if ( !set)
       return var-> owner && ( PWidget( var-> owner)-> currentWidget == self);
    o = ( PWidget) var-> owner;
@@ -1889,11 +1889,11 @@ Handle
 Widget_currentWidget( Handle self, Bool set, Handle widget)
 {
    enter_method;
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
    if ( !set)
       return var-> currentWidget;
    if ( widget) {
-      if ( !widget || ( PWidget( widget)-> stage > csNormal) ||
+      if ( !widget || ( PWidget( widget)-> stage > csFrozen) ||
              ( PWidget( widget)-> owner != self)
            ) return nilHandle;
       var-> currentWidget = widget;
@@ -1979,7 +1979,7 @@ Widget_hint( Handle self, Bool set, char *hint)
    enter_method;
    if (!set)
       return var-> hint ? var-> hint : "";
-   if ( var-> stage > csNormal) return "";
+   if ( var-> stage > csFrozen) return "";
    my-> first_that( self, hint_notify, (void*)hint);
 
    free( var-> hint);
@@ -2117,7 +2117,7 @@ Widget_palette( Handle self, Bool set, SV * palette)
    if ( !set)
       return inherited-> palette( self, set, palette);
 
-   if ( var-> stage > csNormal) return nilSV;
+   if ( var-> stage > csFrozen) return nilSV;
    if ( var-> handle == nilHandle) return nilSV; /* aware of call from Drawable::init */
 
    colors = var-> palSize;
@@ -2139,7 +2139,7 @@ Widget_pointerIcon( Handle self, Bool set, Handle icon)
    enter_method;
    Point hotSpot;
 
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
 
    if ( !set) {
       HV * profile = newHV();
@@ -2167,7 +2167,7 @@ Widget_pointerHotSpot( Handle self, Bool set, Point hotSpot)
    Handle icon;
    if ( !set)
       return apc_pointer_get_hot_spot( self);
-   if ( var-> stage > csNormal) return hotSpot;
+   if ( var-> stage > csFrozen) return hotSpot;
    icon = my-> get_pointerIcon( self);
    apc_pointer_set_user( self, icon, hotSpot);
    if ( var-> pointerType == crUser) my-> first_that( self, sptr, nil);
@@ -2178,7 +2178,7 @@ int
 Widget_pointerType( Handle self, Bool set, int type)
 {
    enter_method;
-   if ( var-> stage > csNormal) return 0;
+   if ( var-> stage > csFrozen) return 0;
    if ( !set)
       return var-> pointerType;
    var-> pointerType = type;
@@ -2212,7 +2212,7 @@ Handle
 Widget_popup( Handle self, Bool set, Handle popup)
 {
    enter_method;
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
    if ( !set)
       return var-> popupMenu;
 
@@ -2239,7 +2239,7 @@ SV *
 Widget_popupItems( Handle self, Bool set, SV * popupItems)
 {
    enter_method;
-   if ( var-> stage > csNormal) return nilSV;
+   if ( var-> stage > csFrozen) return nilSV;
    if ( !set)
       return var-> popupMenu ?
          CAbstractMenu( var-> popupMenu)-> get_items( var-> popupMenu, "") : nilSV;
@@ -2318,7 +2318,7 @@ Widget_selected( Handle self, Bool set, Bool selected)
    if ( !set)
       return my-> get_selectedWidget( self) != nilHandle;
 
-   if ( var-> stage > csNormal) return selected;
+   if ( var-> stage > csFrozen) return selected;
    if ( selected) {
       if ( is_opt( optSelectable) && !is_opt( optSystemSelectable)) {
          my-> set_focused( self, true);
@@ -2373,7 +2373,7 @@ Widget_selected( Handle self, Bool set, Bool selected)
 Handle
 Widget_selectedWidget( Handle self, Bool set, Handle widget)
 {
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
 
    if ( !set) {
       if ( var-> stage <= csNormal) {
@@ -2421,7 +2421,7 @@ Widget_selectingButtons( Handle self, Bool set, int sb)
 Handle
 Widget_shape( Handle self, Bool set, Handle mask)
 {
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
 
    if ( !set) {
       if ( apc_widget_get_shape( self, nilHandle)) {
@@ -2484,7 +2484,7 @@ Widget_sizeMin( Handle self, Bool set, Point min)
    if ( !set)
       return var-> sizeMin;
    var-> sizeMin = min;
-   if ( var-> stage == csNormal) {
+   if ( var-> stage == csFrozen) {
       Point sizeActual  = my-> get_size( self);
       Point newSize     = sizeActual;
       if ( sizeActual. x < min. x) newSize. x = min. x;
@@ -2502,7 +2502,7 @@ Widget_sizeMax( Handle self, Bool set, Point max)
    if ( !set)
       return var-> sizeMax;
    var-> sizeMax = max;
-   if ( var-> stage == csNormal) {
+   if ( var-> stage == csFrozen) {
       Point sizeActual  = my-> get_size( self);
       Point newSize     = sizeActual;
       if ( sizeActual. x > max. x) newSize. x = max. x;
@@ -2533,7 +2533,7 @@ Widget_tabOrder( Handle self, Bool set, int tabOrder)
     int count;
     PWidget owner;
 
-    if ( var-> stage > csNormal) return 0;
+    if ( var-> stage > csFrozen) return 0;
     if ( !set)
        return var-> tabOrder;
 
@@ -2619,7 +2619,7 @@ char *
 Widget_text( Handle self, Bool set, char *text)
 {
    if ( !set) return var-> text ? var-> text : "";
-   if ( var-> stage > csNormal) return "";
+   if ( var-> stage > csFrozen) return "";
    free( var-> text);
    var-> text = duplicate_string( text ? text : "");
    return var-> text;

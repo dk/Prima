@@ -541,7 +541,7 @@ icon_notify ( Handle self, Handle child, Handle icon)
 Handle
 Window_icon( Handle self, Bool set, Handle icon)
 {
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
 
    if ( !set) {
       if ( apc_window_get_icon( self, nilHandle)) {
@@ -568,7 +568,7 @@ Window_icon( Handle self, Bool set, Handle icon)
 Handle
 Window_menu( Handle self, Bool set, Handle menu)
 {
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
    if ( !set)
       return var-> menu;
    if ( menu && !kind_of( menu, CMenu)) return nilHandle;
@@ -594,7 +594,7 @@ Window_menu( Handle self, Bool set, Handle menu)
 SV *
 Window_menuItems( Handle self, Bool set, SV * menuItems)
 {
-   if ( var-> stage > csNormal) return nilSV;
+   if ( var-> stage > csFrozen) return nilSV;
 
    if ( !set)
       return var-> menu ? CMenu( var-> menu)-> get_items( var-> menu, "") : nilSV;

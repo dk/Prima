@@ -232,8 +232,6 @@ Drawable_get_bpp( Handle self)
 SV *
 Drawable_linePattern( Handle self, Bool set, SV * pattern)
 {
-   if ( var->stage > csNormal) return nilSV;
-
    if ( set) {
       STRLEN len;
       unsigned char *pat = ( unsigned char *) SvPV( pattern, len);
@@ -824,7 +822,7 @@ SV *
 Drawable_palette( Handle self, Bool set, SV * palette)
 {
    int colors;
-   if ( var-> stage > csNormal) return nilSV;
+   if ( var-> stage > csFrozen) return nilSV;
    colors = var-> palSize;
    if ( set) {
       free( var-> palette);
@@ -854,7 +852,7 @@ Drawable_pixel( Handle self, Bool set, int x, int y, Color color)
 Handle
 Drawable_region( Handle self, Bool set, Handle mask)
 {
-   if ( var-> stage > csNormal) return nilHandle;
+   if ( var-> stage > csFrozen) return nilHandle;
 
    if ( set) {
       if ( mask && !kind_of( mask, CImage)) {

@@ -224,11 +224,11 @@ Component_detach( Handle self, Handle object, Bool kill)
 char *
 Component_name( Handle self, Bool set, char * name)
 {
-   if ( var-> stage > csNormal) return "";
    if ( set) {
       free( var-> name);
       var-> name = duplicate_string( name);
-      apc_component_fullname_changed_notify( self);
+      if ( var-> stage >= csNormal)
+         apc_component_fullname_changed_notify( self);
    } else
       return var-> name ? var-> name : "";
    return "";
