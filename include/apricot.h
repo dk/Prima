@@ -808,7 +808,7 @@ apc_component_destroy( Handle self);
 extern Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint,
 		   Bool clipOwner, int borderIcons, int borderStyle,
-		   Bool taskList, int windowState);
+		   Bool taskList, int windowState, Bool useOrigin, Bool useSize);
 
 extern void
 apc_window_activate( Handle self);

@@ -67,8 +67,8 @@ Widget_init( Handle self, HV * profile)
    attachTo = ( PComponent) var owner;
    attachTo-> self-> attach ( var owner, self);
    dyna_set( self, profile);
-   my update_sys_handle( self, profile);
 
+   my update_sys_handle( self, profile);
    /* props init */
    /* font and colors */
    SvHV_Font( pget_sv( font), &Font_buffer, "Widget::init");
@@ -154,8 +154,10 @@ Widget_init( Handle self, HV * profile)
       var designScale. y = SvNV( * av_fetch( av, 1, 0));
    }
    my set_enabled     ( self, pget_B( enabled));
-   my set_pos         ( self, pget_i( left), pget_i( bottom));
-   my set_size        ( self, pget_i( width), pget_i( height));
+   if ( !pexist( originDontCare) || !pget_B( originDontCare))
+      my set_pos( self, pget_i( left), pget_i( bottom));
+   if ( !pexist( sizeDontCare  ) || !pget_B( sizeDontCare  ))
+      my set_size( self, pget_i( width), pget_i( height));
    {
       Bool x = 0, y = 0;
       if ( pget_B( centered)) { x = 1; y = 1; };

@@ -423,6 +423,7 @@ static Bool repost_msgs( PostMsg * msg, Handle self)
 static Bool
 create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
               Bool taskListed, int className, DWORD style, DWORD exstyle,
+              Bool usePos, Bool useSize,
               ViewProfile * vprf)
 {
    HWND ret;
@@ -465,10 +466,14 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
        {
           HWND frame;
           RECT r;
+          int  rcp[4] = {0,0,0,0};
           if ( !clipOwner) parentView = HWND_DESKTOP;
           if ( !taskListed && ( parentView == HWND_DESKTOP || parentView == nilHandle))
               parentView = DHANDLE( application);
-          if ( !( frame = CreateWindowEx( exstyle, "GenericFrame", "", style, 0, 0, 0, 0,
+          if ( !usePos)  rcp[0] = rcp[1] = CW_USEDEFAULT;
+          if ( !useSize) rcp[2] = rcp[3] = CW_USEDEFAULT;
+          if ( !( frame = CreateWindowEx( exstyle, "GenericFrame", "", style,
+                rcp[0], rcp[1], rcp[2], rcp[3],
                 parentView, nilHandle, guts. instance, nil)))
              apiErrRet;
           if ( !SetWindowPos( frame, behind, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE))
@@ -484,6 +489,8 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
                 0, 0, r. right - r. left, r. bottom - r. top, frame, nilHandle,
                 guts. instance, nil)))
              apiErr;
+          sys lastSize. x = r. right  - r. left;
+          sys lastSize. y = r. bottom - r. top;
           sys handle = frame;
           SetWindowLong( frame, GWL_USERDATA, ( LONG) self);
        }
@@ -538,7 +545,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 // Window
 Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, int borderIcons,
-                   int borderStyle, Bool taskList, int windowState)
+                   int borderStyle, Bool taskList, int windowState, Bool usePos, Bool useSize)
 {
   Bool reset = false;
   ViewProfile vprf;
@@ -553,7 +560,6 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
      | (( borderStyle == bsSizeable)   ? WS_THICKFRAME  : 0)
      | (( borderStyle == bsSingle  )   ? WS_BORDER      : 0)
      | (( borderStyle == bsDialog  )   ? WS_BORDER      : 0)
-//   | (  taskList                     ? FCF_TASKLIST   : 0)
   ;
   DWORD exstyle = 0
      | (( borderStyle == bsDialog  )   ? WS_EX_DLGMODALFRAME : 0)
@@ -580,12 +586,13 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, in
      ws = sys s. window;
      wp. length = sizeof( wp);
      GetWindowPlacement( HANDLE, &wp);
+     usePos = useSize = 1; // prevent using shell-position flags for recreate
      reset = true;
   }
 
-
   if ( reset || ( var handle == nilHandle))
-     if ( !create_group( self, owner, syncPaint, clipOwner, taskList, WC_FRAME, style, exstyle, &vprf)) {
+     if ( !create_group( self, owner, syncPaint, clipOwner,
+           taskList, WC_FRAME, style, exstyle, usePos, useSize, &vprf)) {
         lock( false);
         return false;
      }
@@ -1070,7 +1077,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
       reset = true;
    }
    if ( reset || ( var handle == nilHandle))
-      create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM, WS_CHILD, exstyle, &vprf);
+      create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM, WS_CHILD, exstyle, 1, 1, &vprf);
    if ( reset)
    {
       set_view_ex( self, &vprf);
