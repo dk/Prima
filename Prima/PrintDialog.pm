@@ -63,6 +63,7 @@ sub init
    );
    $self-> insert( Button =>
        origin => [ 208, 4],
+       size => [ 96, 36],
        text   => 'P~roperties...',
        name   => 'Properties',
        delegations => ['Click'],
@@ -81,6 +82,7 @@ sub init
    );
    $self-> insert( Button =>
        origin => [ 4, 4],
+       size => [ 96, 36],
        name => 'OK',
        text => '~OK',
        default => 1,
@@ -124,7 +126,7 @@ sub on_execute
 sub Printers_Change
 {
    my ( $self, $combic) = @_;
-   $::application-> get_printer-> set_printer( $combic-> text);
+   $::application-> get_printer-> printer( $combic-> text);
    $self-> Device-> text( 'Device: ' . $self->{list}-> [ $combic-> List-> focusedItem]->{device});
 }
 
@@ -141,7 +143,7 @@ sub OK_Click
 
 sub Cancel_Click
 {
-   $::application-> get_printer-> set_printer( $_[0]-> {oldPrinter});
+   $::application-> get_printer-> printer( $_[0]-> {oldPrinter});
    $_[0]-> cancel;
 }
 
