@@ -6,9 +6,7 @@ object Image( Drawable)
    int            type;              # imXXXX
    int            lineSize;          # rounded to 32-bit boundary
    int            dataSize;          #  == lineSize * h
-   int            palSize;           #
    int            conversion;        # ictXXXX
-   PRGBColor      palette;
    unsigned char *data;
    int            status;
    ImageStats     stats;
