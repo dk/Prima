@@ -36,13 +36,13 @@ object Prima::Printer( Prima::Drawable)
    method Bool   begin_paint();
    method Bool   begin_paint_info();
    method void   done();
-   method void   end_doc();
+   method Bool   end_doc();
    method void   end_paint();
    method void   end_paint_info();
    method SV*    fonts( char * name = "", char * encoding = "");
    method SV*    font_encodings( char * encoding = "");
    method void   init( HV * profile);
-   method void   new_page();
+   method Bool   new_page();
    method SV *   printers();
    method Bool   setup_dialog()                     => apc_prn_setup;
    c_only Bool   validate_owner( Handle * newOwner, HV * profile);

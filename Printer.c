@@ -87,19 +87,21 @@ Printer_begin_doc( Handle self, char * docName)
    return ok;
 }
 
-void
+Bool
 Printer_new_page( Handle self)
 {
-   if ( !is_opt( optInDraw)) return;
-   apc_prn_new_page( self);
+   if ( !is_opt( optInDraw)) return false;
+   return apc_prn_new_page( self);
 }
 
-void
+Bool
 Printer_end_doc( Handle self)
 {
-   if ( !is_opt( optInDraw)) return;
-   apc_prn_end_doc( self);
+   Bool ret;
+   if ( !is_opt( optInDraw)) return false;
+   ret = apc_prn_end_doc( self);
    inherited end_paint( self);
+   return ret;
 }
 
 void

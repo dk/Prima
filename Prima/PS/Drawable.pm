@@ -451,7 +451,7 @@ sub abort_doc
 sub end_doc
 {
    my $self = $_[0];
-   return unless $self-> {canDraw};
+   return 0 unless $self-> {canDraw};
 
    $self-> emit(<<PSFOOTER);
 ; P
@@ -469,13 +469,14 @@ PSFOOTER
       
    }
    
-   $self-> spool( $self-> {psData});
+   my $ret = $self-> spool( $self-> {psData});
    $self-> {canDraw} = 0; 
    $self-> SUPER::end_paint;
    $self-> restore_state;
    delete $self-> {$_} for 
       qw (saveState localeData changed fontLocaleData psData pagePrefix);
    $self-> {plate}-> destroy, $self-> {plate} = undef if $self-> {plate};
+   return $ret;
 }
 
 # Prima::Drawable interface
