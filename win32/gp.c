@@ -1281,14 +1281,14 @@ apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
    if ( len == 0) return 0;
 
    /* width more that 32K returned incorrectly by Win32 core */
-   if (( div = 32768L / ( var font. maximalWidth ? var font. maximalWidth : 1)))
+   if (( div = 32768L / ( var font. maximalWidth ? var font. maximalWidth : 1)) == 0)
       div = 1;
-   if ( div <= 0) div = 1;
-   
+
    while ( offset < len) {
       int chunk_len = ( offset + div > len) ? ( len - offset) : div;
       if ( !GetTextExtentPoint32( sys ps, text + offset, chunk_len, &sz)) apiErr;
       ret += sz. cx;
+      if ( !IS_NT && offset > 0) ret -= sys tmOverhang;
       offset += div;
    }
    
@@ -1301,7 +1301,7 @@ apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
          if ( abc[1]. abcC < 0) ret -= abc[1]. abcC;
       } else if ( IS_NT)
          ret += sys tmOverhang;
-   } else if ( !IS_NT)
+   } else if ( !IS_NT) 
       ret -= sys tmOverhang;
    return ret;
 }

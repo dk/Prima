@@ -618,7 +618,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
    ii. xHotspot = hotSpot ? hotSpot-> x : 0;
    ii. yHotspot = hotSpot ? hotSpot-> y : 0;
 
-   if ( noSZ || noBPP)
+   if ( noSZ || noBPP || ( !notAnIcon && !IS_NT))
       i = ( PIcon)( i-> self-> dup( img));
 
    if ( IS_WIN95 && forPointer && ( guts. displayBMInfo. bmiHeader. biBitCount <= 4)) {
@@ -657,7 +657,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
    } else {
 // Moronious and "macaronious" code for Win95 -
 // since CreateIconIndirect gives results so weird,
-// we use following sequence.
+// we use the following sequence.
 	 Byte * mask;
          if ( !notAnIcon) {
             int mSize = i-> maskSize / i-> h;
