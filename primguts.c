@@ -526,6 +526,7 @@ register_notifications( PVMT vmt)
       snprintf( buf, 1024, "%s::on%s", vmt-> className, HeKEY( he));
       newXS( buf, Component_set_notification_FROMPERL, vmt-> className);
    }
+   sv_free( nt_ref);
    sv_free( package);
 }
 

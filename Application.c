@@ -313,9 +313,9 @@ Application_fonts( Handle self, char * name, char * encoding)
          char ** enc = (char**) fmtx[i].encoding;
          unsigned char * shift = (unsigned char*) enc + sizeof(char *) - 1, j = *shift;
          AV * loc = newAV();
-         pset_sv( encoding, newSVpv(( j > 0) ? *(++enc) : "", 0));
+         pset_sv_noinc( encoding, newSVpv(( j > 0) ? *(++enc) : "", 0));
          while ( j--) av_push( loc, newSVpv(*(enc++),0));
-         pset_sv( encodings, newRV_noinc(( SV*) loc));
+         pset_sv_noinc( encodings, newRV_noinc(( SV*) loc));
       }
       pdelete( resolution);
       pdelete( codepage);

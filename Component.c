@@ -751,11 +751,15 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
    void * ret;
    PList  list;
    int    nameLen = strlen( name);
+   SV   * res;
 
-   if ( !hv_exists(( HV *) SvRV( my-> notification_types( self)), name, nameLen)) {
+   res = my-> notification_types( self);
+   if ( !hv_exists(( HV *) SvRV( res), name, nameLen)) {
+       sv_free( res);
        warn("RTC04B: No such event %s", name);
        return 0;
    }
+   sv_free( res);
 
    if ( !subroutine || !SvROK( subroutine) || ( SvTYPE( SvRV( subroutine)) != SVt_PVCV)) {
       warn("RTC04C: Not a CODE reference passed to %s to Component::add_notification", name);

@@ -222,8 +222,15 @@ Image_set( Handle self, HV * profile)
       if ( !itype_supported( newType))
          warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", newType);
       else 
-         if ( !opt_InPaint)
-            my-> reset( self, newType, pexist( palette) ? pget_sv( palette) : my->get_palette( self));
+         if ( !opt_InPaint) {
+            if ( pexist( palette)) {
+               my-> reset( self, newType, pget_sv( palette));
+            } else {
+               SV * palette = my-> get_palette( self);
+               my-> reset( self, newType, palette);
+               sv_free( palette);
+            }
+         }
       pdelete( palette);
       pdelete( type);
    }
@@ -400,8 +407,14 @@ Image_set_extended_data( Handle self, HV * profile)
    /* fixing image and maybe palette - for known type it's same code as in ::set, */
    /* but here's no sense calling it, just doing what we need. */
    if ( fixType != var-> type) { 
-      my-> reset( self, fixType, pexist( palette) ? pget_sv( palette) : my-> get_palette( self));
-      pdelete( palette);
+      if ( pexist( palette)) {
+         my-> reset( self, fixType, pget_sv( palette));
+         pdelete( palette);
+      } else {
+         SV * palette = my-> get_palette( self);
+         my-> reset( self, fixType, palette);
+         sv_free( palette);
+      }
    }   
 
     /* copying user data */
@@ -937,7 +950,7 @@ Image_bitmap( Handle self)
    pset_H( owner,        var->owner);
    pset_i( width,        var->w);
    pset_i( height,       var->h);
-   pset_sv( palette,     my->get_palette( self));
+   pset_sv_noinc( palette,     my->get_palette( self));
    pset_i( monochrome,   (var-> type & imBPP) == 1);
    h = Object_create( "Prima::DeviceBitmap", profile);
    sv_free(( SV *) profile);

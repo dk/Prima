@@ -1377,8 +1377,8 @@ Widget_set( Handle self, HV * profile)
          if (order && !pexist(left))   av_push( order, newSVpv("left",0));
          if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
          prima_read_point( pget_sv( origin), set, 2, "RTC0087: Array panic on 'origin'");
-         pset_sv( left,   newSViv(set[0]));
-         pset_sv( bottom, newSViv(set[1]));
+         pset_i( left,   set[0]);
+         pset_i( bottom, set[1]);
          pdelete( origin);
       }
       if ( pexist( rect))
@@ -1389,10 +1389,10 @@ Widget_set( Handle self, HV * profile)
          if (order && !pexist(width)) av_push( order, newSVpv("width",0));
          if (order && !pexist(height)) av_push( order, newSVpv("height",0));
          prima_read_point( pget_sv( rect), rect, 4, "RTC0088: Array panic on 'rect'");
-         pset_sv( left,   newSViv( rect[0]));
-         pset_sv( bottom, newSViv( rect[1]));
-         pset_sv( width,  newSViv( rect[2] - rect[0]));
-         pset_sv( height, newSViv( rect[3] - rect[1]));
+         pset_i( left,   rect[0]);
+         pset_i( bottom, rect[1]);
+         pset_i( width,  rect[2] - rect[0]);
+         pset_i( height, rect[3] - rect[1]);
          pdelete( rect);
       }
       if ( pexist( size))
@@ -1401,8 +1401,8 @@ Widget_set( Handle self, HV * profile)
          if (order && !pexist(width)) av_push( order, newSVpv("width",0));
          if (order && !pexist(height)) av_push( order, newSVpv("height",0));
          prima_read_point( pget_sv( size), set, 2, "RTC0089: Array panic on 'size'");
-         pset_sv( width,  newSViv(set[0]));
-         pset_sv( height, newSViv(set[1]));
+         pset_i( width,  set[0]);
+         pset_i( height, set[1]);
          pdelete( size);
       }
 
