@@ -53,6 +53,7 @@ object Prima::AbstractMenu ( Prima::Component)
    method void   set_variable ( char * varName, char * newName);
    static int    translate_accel( Handle self, char * accel);
    static int    translate_key( Handle self, int code, int key, int mod);
+   static int    translate_shortcut( Handle self, char * key);
 #  private
    Bool   anchored;
    c_only void   dispose_menu( void * menu);

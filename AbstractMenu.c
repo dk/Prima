@@ -685,7 +685,7 @@ AbstractMenu_sub_call_id ( Handle self, int sysId)
    return sub_call( self, ( PMenuItemReg) my-> first_that( self, id_match, (void *) sysId, false));
 }
 
-#define keyRealize( key)     if ((( key & 0xFF) >= 'A') && (( key & 0xFF) <= 'z')) \
+#define keyRealize( key)     if ((( key & 0xFF) >= 'A') && (( key & 0xFF) <= 'z'))  \
                              key = tolower( key & 0xFF) |                          \
                                 (( key & ( kmCtrl | kmAlt)) ?                      \
                                 ( key & ( kmCtrl | kmAlt | kmShift))               \
@@ -755,6 +755,12 @@ AbstractMenu_translate_key( Handle self, int code, int key, int mod)
    key = ( key != kbNoKey ? key : code) | mod;
    keyRealize( key);
    return key;
+}
+
+int
+AbstractMenu_translate_shortcut( Handle self, char * key)
+{
+   return key_normalize( key);
 }
 
 static Bool up_match   ( Handle self, PMenuItemReg m, void * params) { return m-> down == params; }

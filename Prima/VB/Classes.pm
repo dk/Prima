@@ -3099,161 +3099,37 @@ package Prima::VB::Types::key;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
-my %vkeys = (
-);
-
-{
-   for ( keys %kb::) {
-      next if $_ eq 'constant';
-      next if $_ eq 'AUTOLOAD';
-      next if $_ eq 'CharMask';
-      next if $_ eq 'CodeMask';
-      next if $_ eq 'ModMask';
-      $vkeys{$_} = &{$kb::{$_}}();
-   }
-}
+use Prima::KeySelector;
 
 sub open
 {
    my $self = $_[0];
    my $i = $self->{container};
-   my @sz = $i-> size;
-   my $fh = $i-> font-> height;
-   $sz[1] -= $fh + 12;
-   $self->{key} = $i-> insert( ComboBox =>
-      origin   => [ 5, $sz[1]],
-      size     => [ $sz[0] - 5, $fh + 4],
+   $self-> {A} = $i-> insert( KeySelector => 
+      origin   => [ 5, 5],
+      size     => [ $i-> width - 10, $i-> height - 10],
       growMode => gm::Ceiling,
-      onChange => sub { $self-> change},
-      style    => cs::DropDownList,
-      items    => [ sort keys %vkeys, 'A'..'Z', '0'..'9', '+', '-', '*'],
-   );
-
-   $sz[1] -= $fh * 4 + 28;
-   $self->{mod} = $i-> insert( GroupBox =>
-      origin   => [ 5, $sz[1]],
-      size     => [ $sz[0] - 10, $fh * 4 + 28],
-      growMode => gm::Ceiling,
-      style    => cs::DropDown,
-      text     => '',
-   );
-
-   my @esz = $self->{mod}->size;
-   $esz[1] -= $fh * 2 + 4;
-   $self->{modShift} = $self->{mod}->insert( CheckBox =>
-      origin  => [ 8, $esz[1]],
-      size    => [ $esz[0] - 16, $fh + 4],
-      text    => '~Shift',
-      growMode => gm::GrowHiX,
-      onClick => sub { $self-> change(); },
-   );
-
-   $esz[1] -= $fh + 6;
-   $self->{modCtrl} = $self->{mod}->insert( CheckBox =>
-      origin  => [ 8, $esz[1]],
-      size    => [ $esz[0] - 16, $fh + 4],
-      text    => '~Ctrl',
-      growMode => gm::GrowHiX,
-      onClick => sub { $self-> change(); },
-   );
-   $esz[1] -= $fh + 6;
-
-   $self->{modAlt} = $self->{mod}->insert( CheckBox =>
-      origin  => [ 8, $esz[1]],
-      size    => [ $esz[0] - 16, $fh + 4],
-      text    => '~Alt',
-      growMode => gm::GrowHiX,
-      onClick => sub { $self-> change(); },
-   );
-
-
-   $sz[1] -= $fh + 6;
-   $i-> insert( Label =>
-      origin     => [ 5, $sz[1]],
-      size       => [ $sz[0] - 10, $fh + 2],
-      growMode   => gm::GrowHiX,
-      text       => 'Press shortcut key:',
-   );
-
-   $sz[1] -= $fh + 6;
-   $self->{keyhook} = $i->insert( Widget =>
-      origin     => [ 5, $sz[1]],
-      size       => [ $sz[0] - 10, $fh + 2],
-      growMode   => gm::Ceiling,
-      selectable => 1,
-      cursorPos  => [ 4, 1],
-      cursorSize => [ 1, $fh],
-      cursorVisible => [ 1, $fh],
-      onPaint    => sub {
-         my ( $self, $canvas) = @_;
-         $canvas-> rect3d( 0, 0, $canvas-> width - 1, $canvas-> height - 1, 1,
-            $self-> dark3DColor, $self-> light3DColor, $self-> backColor);
-      },
-      onKeyDown => sub {
-         my ( $me, $code, $key, $mod) = @_;
-         $self-> set( Prima::AbstractMenu-> translate_key( $code, $key, $mod));
-         $self-> change;
-      },
+      onChange => sub { $self-> change; },
    );
 }
 
 sub get
 {
-   my $self = $_[0];
-
-   my $mod = ( $self-> {modAlt}-> checked ? km::Alt : 0) |
-      ( $self-> {modCtrl}-> checked ? km::Ctrl : 0) |
-      ( $self-> {modShift}-> checked ? km::Shift : 0)
-   ;
-   my $vk = $self->{key}->text;
-   $vk = exists $vkeys{$vk} ? $vkeys{$vk} : ord( $vk);
-   return $mod | $vk;
+   return $_[0]-> {A}-> key;
 }
 
 sub set
 {
    my ( $self, $data) = @_;
-   if ( $data & kb::CharMask) {
-      my $d = $data & kb::CharMask;
-      if ( $d >= 1 && $d <= 26) {
-         $self-> {key}-> text( chr($d + ord('@')));
-         $data |= km::Ctrl;
-      } else {
-         $self-> {key}-> text( chr($data & kb::CharMask));
-      }
-   } else {
-      my $x = 'NoKey';
-      my $d = $data & kb::CodeMask;
-      for ( keys %vkeys) {
-         next if $_ eq 'constant';
-         $x = $_, last if $d == $vkeys{$_};
-      }
-      $self-> {key}-> text( $x);
-   }
-   $self-> {modAlt}-> checked( $data & km::Alt);
-   $self-> {modCtrl}-> checked( $data & km::Ctrl);
-   $self-> {modShift}-> checked( $data & km::Shift);
+   $self-> {A}-> key( $data); 
 }
 
 sub write
 {
    my ( $class, $id, $data) = @_;
-   my $txt = '';
-   if ( $data & 0xFF) {
-      $txt = 'ord(\''.chr($data & 0xFF).'\')';
-   } else {
-      my $x = 'NoKey';
-      my $d = $data & kb::CodeMask;
-      for ( keys %vkeys) {
-         $x = $_, last if $vkeys{$_} == $d;
-      }
-      $txt = 'kb::'.$x;
-   }
-   $txt .= '|km::Alt' if $data & km::Alt;
-   $txt .= '|km::Ctrl' if $data & km::Ctrl;
-   $txt .= '|km::Shift' if $data & km::Shift;
-   return $txt;
+   return Prima::KeySelector::export( $data);
 }
+
 
 package ItemsOutline;
 use vars qw(@ISA);
