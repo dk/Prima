@@ -539,7 +539,7 @@ alloc_main_color_range( XColor * xc, int count, int maxDiff)
       int G = xc[idx]. green;
       int B = xc[idx]. blue;
       if ( !XAllocColor( DISP, guts. defaultColormap, &xc[idx])) {
-          err = true;
+          err = true; 
           break;
       }
       if ( xc[idx]. pixel >= guts. palSize) {
@@ -626,17 +626,39 @@ fill_cubic( XColor * xc, int d)
 Bool
 prima_init_color_subsystem(void)
 {
-   int count, mask = VisualScreenMask|VisualDepthMask|VisualIDMask;
-   XVisualInfo template, *list;
+   int id, count, mask = VisualScreenMask|VisualDepthMask|VisualIDMask;
+   XVisualInfo template, *list = nil;
+   
+   /* check if non-default depth is selected */
+   id = -1;
+   {
+      char * c, * end;
+      if ( apc_fetch_resource( "Prima", "", "Visual", "visual", 
+                                nilHandle, frString, &c)) {
+         id = strtol( c, &end, 0);
+         if ( *end) id = -1;
+         free( c);
+         template. visualid = id;
+         list = XGetVisualInfo( DISP, VisualIDMask, &template, &count);
+         if ( count <= 0) {
+            warn("warning: visual id '%s' is not found\n", c);
+            if ( list) XFree( list);
+            id = -1;
+         }
+      }
+   }
 
-   template. screen   = SCREEN;
-   template. depth    = guts. depth;
-   template. visualid = XVisualIDFromVisual( XDefaultVisual( DISP, SCREEN));
+FALLBACK_TO_DEFAULT_VISUAL:
+   if ( id < 0) {
+      template. screen   = SCREEN;
+      template. depth    = guts. depth;
+      template. visualid = XVisualIDFromVisual( XDefaultVisual( DISP, SCREEN));
 
-   list = XGetVisualInfo( DISP, mask, &template, &count);
-   if ( count == 0) {
-      warn("panic: no visuals found\n");
-      return false;
+      list = XGetVisualInfo( DISP, mask, &template, &count);
+      if ( count == 0) {
+         warn("panic: no visuals found\n");
+         return false;
+      }
    }
    
    guts. visual = list[0];
@@ -648,18 +670,22 @@ class;
 #endif
    XFree( list);
 
-   if ( guts. depth > 11 && guts. visualClass != TrueColor) {/* XXX */
-      warn("panic: %d bit depth is not true color\n", guts. depth);
+   if ( guts. depth > 11 && guts. visualClass != TrueColor && guts. visualClass != DirectColor) {/* XXX */
+      if ( id >= 0) {
+         warn("warning: visual 0x%x is unusable: cannot use %d bit depth for something not TrueColor or DirectColor\n", id, guts. depth);
+         id = -1;
+         goto FALLBACK_TO_DEFAULT_VISUAL;
+      } else
+         warn("panic: %d bit depth is not true color\n", guts. depth);
       return false;
    }
-   if ( guts. depth <= 8 && 
-        ((guts. visualClass == TrueColor)||
-        (guts. visualClass == DirectColor))) {
-      warn("panic: display is not palette-based (%d bit depth)\n", guts. depth);
-      return false;
+
+   if ( id >= 0 && guts. visualClass == DirectColor) {
+      warn("warning: non-default DirectColor visuals are not supported.\n");
+      id = -1;
+      goto FALLBACK_TO_DEFAULT_VISUAL;
    }
-   
-   guts. defaultColormap  = DefaultColormap( DISP, SCREEN); 
+
    guts. useDithering     = true;
    guts. dynamicColors    = false;
    guts. grayScale        = false;
@@ -669,9 +695,14 @@ class;
    guts. systemColorMapSize = 0;
    guts. colorCubeRib     = 0;
 
+   if ( id >= 0) {
+      guts. defaultColormap = XCreateColormap( DISP, guts. root, VISUAL, AllocNone);
+      guts. privateColormap = 1;
+   } else
+      guts. defaultColormap  = DefaultColormap( DISP, SCREEN); 
+
    guts. monochromeMap[0] = BlackPixel( DISP, SCREEN);
    guts. monochromeMap[1] = WhitePixel( DISP, SCREEN);
-
    switch ( guts. visualClass) {
    case DirectColor:
    case TrueColor:
@@ -681,13 +712,20 @@ class;
 
    case PseudoColor:
       {
-         XColor xc[8];
+         int max;
+         XColor xc[216];
          guts. dynamicColors = true;
-         fill_cubic( xc, 2);
-         if ( !alloc_main_color_range( xc, 8, 27))
+         if ( guts. privateColormap && guts. palSize > 26 ) {
+            if ( guts. palSize > 125) max = 6; else
+            if ( guts. palSize > 64)  max = 5; else
+            if ( guts. palSize > 27)  max = 4; else max = 3;
+         } else
+            max = 2;
+         fill_cubic( xc, max);
+         if ( !alloc_main_color_range( xc, max * max * max, 27))
             goto BLACK_WHITE;
-         if ( !create_std_palettes( xc, 8)) return false;
-         guts. colorCubeRib = 2;
+         if ( !create_std_palettes( xc, max * max * max)) return false;
+         guts. colorCubeRib = max;
       }
       break;
       
@@ -706,6 +744,7 @@ class;
             d--; 
             cd += 2;
          }
+         if ( !guts. palette) goto BLACK_WHITE;
          if ( d < 2) goto BLACK_WHITE_ALLOCATED;
          guts. colorCubeRib = d;
       }
@@ -715,7 +754,7 @@ class;
    case GrayScale:
       {
          XColor xc[256];
-         int maxSteps = ( guts. visualClass == GrayScale) ? 5 : 8;
+         int maxSteps = ( guts. visualClass == GrayScale && !guts. privateColormap ) ? 5 : 8;
          int wantSteps = ( maxSteps > guts. depth) ? guts. depth : maxSteps;
          while ( wantSteps > 1) {
             int i, shades = 1 << wantSteps, c = 0, ndiv = 65536 / (shades-1);
@@ -723,26 +762,35 @@ class;
                xc[i].red = xc[i]. green = xc[i]. blue = c;
                if (( c += ndiv) > 65535) c = 65535;
             }
-            if ( alloc_main_color_range( xc, shades, 256 / shades)) {
+            if ( alloc_main_color_range( xc, shades, 768)) {
                if ( !create_std_palettes( xc, shades)) return false;
                break;
             }
             wantSteps--;
          }
+         if ( !guts. palette) goto BLACK_WHITE;
          if ( wantSteps < 1) goto BLACK_WHITE_ALLOCATED;
          if ( wantSteps > 4) guts. useDithering = false;
          guts. colorCubeRib = wantSteps;
          guts. grayScale = true;
       }
       break;
-      
    default:      
 BLACK_WHITE:
       {
          XColor xc[2];
-         xc[0]. pixel = BlackPixel( DISP, SCREEN);
-         xc[1]. pixel = WhitePixel( DISP, SCREEN);
-         XQueryColors( DISP, guts. defaultColormap, xc, 2);
+         if ( guts. privateColormap) {
+            xc[0]. red = xc[0]. green = xc[0]. blue = 0;
+            xc[1]. red = xc[1]. green = xc[1]. blue = 0xffff;
+            XAllocColor( DISP, guts. defaultColormap, xc);
+            XAllocColor( DISP, guts. defaultColormap, xc + 1);
+            guts. monochromeMap[0] = xc[0].pixel;
+            guts. monochromeMap[1] = xc[1].pixel;
+         } else {
+            xc[0]. pixel = BlackPixel( DISP, SCREEN);
+            xc[1]. pixel = WhitePixel( DISP, SCREEN);
+            XQueryColors( DISP, guts. defaultColormap, xc, 2);
+         }
          XCHECKPOINT;
          if ( !alloc_main_color_range( xc, 2, 65536) || 
               !create_std_palettes( xc, 2)) {
@@ -877,6 +925,7 @@ prima_done_color_subsystem( void)
       for ( i = 0; i < guts. palSize; i++) {
          list_destroy( &guts. palette[i]. users);
          if ( 
+             !guts. privateColormap &&
              guts. palette[i]. rank > RANK_FREE && 
              guts. palette[i]. rank <= RANK_IMMUTABLE) {
             fc. free[ fc. count++] = i;

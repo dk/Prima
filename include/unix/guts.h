@@ -532,6 +532,7 @@ typedef struct _UnixGuts
    Bool                         dynamicColors;
    Bool                         grayScale;
    Bool                         useDithering;
+   Bool                         privateColormap;
    Colormap                     defaultColormap;
    FillPattern *                ditherPatterns;
    Point                        displaySize;

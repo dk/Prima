@@ -297,7 +297,7 @@ window_subsystem_init( void)
 		     &guts. cursor_width,
 		     &guts. cursor_height);
    XCHECKPOINT;
-
+   
    TAILQ_INIT( &guts.paintq);
    TAILQ_INIT( &guts.peventq);
    TAILQ_INIT( &guts.bitmap_gc_pool);

@@ -887,7 +887,6 @@ apc_show_message( const char * message, Bool utf8)
       apc_font_pick( nilHandle, &f, &f);
       cf = prima_find_known_font( &f, false, false);
       if ( !cf || !cf-> id) {
-         warn( "UAF_007: internal error (cf:%08x)", (IV)cf); /* the font was not cached, can't be */
          warn( "%s", message);
          return false;
       }

@@ -505,6 +505,17 @@ create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
 }
 
 static void
+create_rgb_to_8_lut( int ncolors, const PRGBColor pal, Pixel8 *lut)
+{
+   int i;
+   for ( i = 0; i < ncolors; i++) 
+      lut[i] = 
+            (((pal[i].r << guts. red_range  ) >> 8) << guts.   red_shift) |
+            (((pal[i].g << guts. green_range) >> 8) << guts. green_shift) |
+            (((pal[i].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+}
+
+static void
 create_rgb_to_16_lut( int ncolors, const PRGBColor pal, Pixel16 *lut)
 {
    int i;
@@ -716,6 +727,31 @@ create_cache_equal( Image *img, ImageCache *cache)
    return true;
 }
 
+static Bool
+create_cache8_8_tc( Image *img, ImageCache *cache)
+{
+   Pixel8 lut[ NPalEntries8];
+   Pixel8 *data;
+   int x, y;
+   int ls;
+   int h = img-> h, w = img-> w;
+
+   create_rgb_to_8_lut( img-> palSize, img-> palette, lut);
+
+   cache->image = prima_prepare_ximage( w, h, false);
+   if ( !cache->image) return false;
+   ls = get_ximage_bytes_per_line( cache->image);
+   data = get_ximage_data( cache->image);
+
+   for ( y = h-1; y >= 0; y--) {
+      register unsigned char *line = img-> data + y*img-> lineSize;
+      register Pixel8 *d = (Pixel8*)(ls*(h-y-1)+(unsigned char *)data);
+      for ( x = 0; x < w; x++) {
+	 *d++ = lut[line[x]];
+      }
+   }
+   return true;
+}
 
 static Bool
 create_cache8_16( Image *img, ImageCache *cache)
@@ -913,7 +949,10 @@ static Bool
 create_cache8( Image* img, ImageCache *cache, int bpp)
 {
    switch (bpp) {
-   case 8:      return create_cache_equal( img, cache);
+   case 8:      
+      return ( guts. visualClass == TrueColor || guts. visualClass == DirectColor) ?
+               create_cache8_8_tc( img, cache) :
+               create_cache_equal( img, cache);
    case 16:     return create_cache8_16( img, cache);
    case 24:     return create_cache8_24( img, cache);
    case 32:     return create_cache8_32( img, cache);
@@ -1454,39 +1493,38 @@ prima_query_image( Handle self, XImage * i)
    if ( target_depth == 1) {
       prima_copy_xybitmap( img-> data, (Byte*)i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
    } else {
-      if ( guts. idepth != target_depth) {
-         switch ( guts. idepth) {
-         case 16:
-            switch ( target_depth) {
-            case 24:
-               convert_16_to_24( i, img);
-               break;
-            default: goto slurp_image_unsupported_depth;
-            }
-            break;
-         case 32:
-            switch ( target_depth) {
-            case 24:
-               convert_32_to_24( i, img);
-               break;
-            default: goto slurp_image_unsupported_depth;
-            }
-            break;
+     switch ( guts. idepth) {
+     case 8:
+        switch ( target_depth) {
+        case 4:
+           CImage( self)-> create_empty( self, img-> w, img-> h, 8);
+        case 8:
+           convert_equal_paletted( i, img);
+           break;
+        default: goto slurp_image_unsupported_depth;
+        }
+        break;
+     case 16:
+        switch ( target_depth) {
+        case 24:
+           convert_16_to_24( i, img);
+           break;
+        default: goto slurp_image_unsupported_depth;
+        }
+        break;
+     case 32:
+        switch ( target_depth) {
+        case 24:
+           convert_32_to_24( i, img);
+           break;
+        default: goto slurp_image_unsupported_depth;
+        }
+        break;
 slurp_image_unsupported_depth:
-         default:
-            warn("UAI_023: unsupported backing image conversion from %d to %d\n", guts.idepth, target_depth);
-            return false;
-         }
-      } else {
-         switch ( target_depth) {
-         case 8:
-            convert_equal_paletted( i, img);
-            break;
-         default:  
-            warn("UAI_024: unsupported backing image\n");
-            return false;
-         }
-      }
+     default:
+        warn("UAI_023: unsupported backing image conversion from %d to %d\n", guts.idepth, target_depth);
+        return false;
+     }
    }
    return true;
 }   

@@ -137,9 +137,10 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       | OwnerGrabButtonMask;
    attrs. override_redirect = false;
    attrs. do_not_propagate_mask = attrs. event_mask;
+   attrs. colormap = guts. defaultColormap;
    X_WINDOW = XCreateWindow( DISP, guts. root,
-	                     0, 0, 1, 1, 0, CopyFromParent,
-	                     InputOutput, CopyFromParent,
+	                     0, 0, 1, 1, 0, guts. visual. depth,
+	                     InputOutput, VISUAL,
 	                     0
 	                     /* | CWBackPixmap */
 	                     /* | CWBackPixel */
@@ -154,7 +155,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	                     /* | CWSaveUnder */
 	                     | CWEventMask
 	                     /* | CWDontPropagate */
-	                     /* | CWColormap */
+	                      | CWColormap 
 	                     /* | CWCursor */
 	                     , &attrs);
    if (!X_WINDOW) return false;
