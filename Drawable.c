@@ -682,7 +682,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
    unsigned int base = 0x10000000;
    float width[256];
    FontABC abc[256];
-   int start = 0, utfstart = 0, split_start = -1, split_end = -1, i, utfi, utf_split = -1;
+   int start = 0, utf_start = 0, split_start = -1, split_end = -1, i, utf_p, utf_split = -1;
    float w = 0, inc = 0;
    char **ret;
    Bool wasTab = 0, reassign_w = 1;
@@ -691,10 +691,10 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
    int spaceWidth = 0, spaceC = 0, spaceOK = 0;
 
 #define lAdd(end, utfend) \
-   if ( !add_wrapped_text( t, start, utfstart, end, utfend, tildeIndex, \
+   if ( !add_wrapped_text( t, start, utf_start, end, utfend, tildeIndex, \
         &tildePos, &tildeLPos, &tildeLine, &ret, &lSize)) return ret;\
    start = end; \
-   utfstart = utfend; \
+   utf_start = utfend; \
    if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret
       
    t-> count = 0;
@@ -716,7 +716,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 
       
    /* process UV chars */
-   for ( i = 0, utfi = 0; i < t-> textLen; utfi++) {
+   for ( i = 0, utf_p = 0; i < t-> textLen; utf_p++) {
       UV uv;
       float winc;
       int p = i;
@@ -736,12 +736,12 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
       
       switch ( uv ) {
       case '\t':
-         split_start = p; split_end = i; utf_split = utfi;
+         split_start = p; split_end = i; utf_split = utf_p;
          if (!( t-> options & twCalcTabs)) goto _default;
          if ( t-> options & twSpaceBreak) {
-            lAdd( p, utfi); 
+            lAdd( p, utf_p); 
             start = i;
-            utfstart++;
+            utf_start++;
             reassign_w = 1;
             continue;
          }
@@ -759,19 +759,19 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
       case '\n':
       case 0x2028:
       case 0x2029:
-         split_start = p; split_end = i; utf_split = utfi; 
+         split_start = p; split_end = i; utf_split = utf_p; 
          if (!( t-> options & twNewLineBreak)) goto _default;
-         lAdd( p, utfi); 
+         lAdd( p, utf_p); 
          start = i;
-         utfstart++;
+         utf_start++;
          reassign_w = 1;
          continue;
       case ' ':
-         split_start = p; split_end = i; utf_split = utfi; 
+         split_start = p; split_end = i; utf_split = utf_p; 
          if (!( t-> options & twSpaceBreak)) goto _default;
-         lAdd( p, utfi); 
+         lAdd( p, utf_p); 
          start = i;
-         utfstart++;
+         utf_start++;
          reassign_w = 1;
          continue;
       case '~':
@@ -799,14 +799,15 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
                return ret;
             } 
             /* or push this character disregarding the width */
-            lAdd( i, utfi + 1);
+            lAdd( i, utf_p + 1);
          } else { /* normal break condition */
             /* checking if break was at word boundary */ 
             if ( t-> options & twWordBreak) {
                if ( start <= split_start) {
                   lAdd( split_start, utf_split );
                   i = start = split_end;
-                  utfstart++;
+                  utf_start = utf_split + 1;
+                  utf_p = utf_split;
                   w = 0;
                   continue;
                } else if ( t-> options & twBreakSingle) { 
@@ -821,9 +822,10 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
                } 
             }
             /* repeat again */
-            lAdd( p, utfi );
+            lAdd( p, utf_p );
             i = start = p;
-            utfi--;
+            utf_p--;
+            utf_start--;
          }
          w = 0;
          continue;
