@@ -976,6 +976,11 @@ palette => [ 0,0,0,0,0,0],
     $d-> destroy;
 }
 
+sub prf_icon
+{
+   $_[0]-> icon( $_[1]);
+}
+
 
 package MainPanel;
 use vars qw(@ISA *do_layer);
