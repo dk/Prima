@@ -233,7 +233,7 @@ Image_get_h_scaling( Handle self)
 Bool
 Image_get_v_scaling( Handle self)
 {
-   return is_opt( optVScaling); 
+   return is_opt( optVScaling);
 }
 
 void
@@ -256,14 +256,14 @@ Image_set_size( Handle self, int width, int height)
 
 void
 Image_set_width( Handle self, int width)
-{ 
-   my->set_size( self, width, var->h);  
+{
+   my->set_size( self, width, var->h);
 }
 
 void
-Image_set_height( Handle self, int height) 
+Image_set_height( Handle self, int height)
 {
-   my->set_size( self, var->w, height); 
+   my->set_size( self, var->w, height);
 }
 
 SV *
@@ -427,13 +427,13 @@ Image_save( Handle self, char *filename, HV *profile)
 int
 Image_get_type( Handle self)
 {
-   return var->type; 
+   return var->type;
 }
 
 int
-Image_get_bpp( Handle self) 
+Image_get_bpp( Handle self)
 {
-   return var->type & imBPP; 
+   return var->type & imBPP;
 }
 
 
@@ -483,93 +483,6 @@ Image_end_paint_info( Handle self)
 }
 
 
-Bool
-load_image_indirect( Handle self, char *filename, char *subIndex)
-#define checkrc if ( rc != ieOK)  \
-        {                         \
-            var->status = rc;      \
-            free( data);          \
-            free( palette);       \
-            close( file);         \
-            return false;         \
-        }
-{
-#ifdef __unix /* Temporary hack */
-   return true;
-#else
-   GBM gbm;
-   unsigned char *data = nil;
-   GBM_ERR rc;
-   GBMRGB * palette = nil;
-   int file;
-   int ft;
-   int lineSize, dataSize;
-
-   if ( var->stage > csNormal) return false;
-   if ( opt_InPaint) return false;
-
-   memset( &gbm, 0, sizeof( GBM));
-   file = open( filename, O_RDONLY | O_BINARY);
-   if ( file < 0)
-   {
-      var->status = ieFileNotFound;
-      return false;
-   }
-   ft = image_guess_type( file);
-   if ( ft < 0)
-   {
-      rc = gbm_guess_filetype( filename, &ft);
-      checkrc;
-   }
-
-   if ( ft == itBMP) strcat( subIndex, " inv");  /* GBM is baran */
-   rc = gbm_read_header( filename, file, ft, &gbm, subIndex);
-   checkrc;
-
-   palette = malloc( 0x100 * sizeof( GBMRGB));
-   rc = gbm_read_palette( file, ft, &gbm, ( GBMRGB*) palette);
-   checkrc;
-
-   lineSize = (( gbm. w * gbm. bpp + 31) / 32) * 4;
-   dataSize = gbm. h * lineSize;
-   data = ( dataSize > 0) ? malloc( dataSize) : nil;
-   rc = gbm_read_data( file, ft, &gbm, data);
-   checkrc;
-
-   close( file);
-
-   /* init image */
-   my->make_empty( self);
-   var->w        = gbm. w;
-   var->h        = gbm. h;
-   var->type     = gbm. bpp;
-   var->data     = data;
-   var->palette  = ( PRGBColor) palette;
-   var->lineSize = lineSize;
-   var->dataSize = dataSize;
-   var->palSize  = (1 << (var->type & imBPP)) & 0x1ff;
-   cm_reverse_palette( var->palette, var->palette, 256);
-
-   switch( var->type)
-   {
-      case imbpp1:
-         if ( memcmp( var->palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
-            var->type |= imGrayScale;
-         break;
-      case imbpp4:
-         if ( memcmp( var->palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
-            var->type |= imGrayScale;
-         break;
-      case imbpp8:
-         if ( memcmp( var->palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
-            var->type |= imGrayScale;
-         break;
-   }
-   var->status = ieOK;
-   return true;
-#endif /* __unix */
-}
-
 static void
 add_image_profile( HV *profile, PList imgInfo)
 {
@@ -583,7 +496,7 @@ add_image_profile( HV *profile, PList imgInfo)
    HE *he;
 
    imageInfo = ( PImgInfo) malloc( sizeof( ImgInfo));
-   bzero( imageInfo, sizeof( ImgInfo));
+   memset( imageInfo, 0, sizeof( ImgInfo));
    list_add( imgInfo, ( Handle) imageInfo);
    imageInfo->propList = plist_create( HvKEYS( profile), 1);
 
@@ -771,6 +684,212 @@ modify_Image( Handle self, PImgInfo imageInfo)
     --SvREFCNT( SvRV(PImage(self)->mate));
 }
 
+#ifndef __unix
+
+Bool
+load_image_indirect( Handle self, char *filename, char *subIndex)
+#define checkrc if ( rc != ieOK)  \
+        {                         \
+            var->status = rc;      \
+            free( data);          \
+            free( palette);       \
+            close( file);         \
+            return false;         \
+        }
+{
+   GBM gbm;
+   unsigned char *data = nil;
+   GBM_ERR rc;
+   GBMRGB * palette = nil;
+   int file;
+   int ft;
+   int lineSize, dataSize;
+
+   if ( var->stage > csNormal) return false;
+   if ( opt_InPaint) return false;
+
+   memset( &gbm, 0, sizeof( GBM));
+   file = open( filename, O_RDONLY | O_BINARY);
+   if ( file < 0)
+   {
+      var->status = ieFileNotFound;
+      return false;
+   }
+   ft = image_guess_type( file);
+   if ( ft < 0)
+   {
+      rc = gbm_guess_filetype( filename, &ft);
+      checkrc;
+   }
+
+   if ( ft == itBMP) strcat( subIndex, " inv");  /* GBM is baran */
+   rc = gbm_read_header( filename, file, ft, &gbm, subIndex);
+   checkrc;
+
+   palette = malloc( 0x100 * sizeof( GBMRGB));
+   rc = gbm_read_palette( file, ft, &gbm, ( GBMRGB*) palette);
+   checkrc;
+
+   lineSize = (( gbm. w * gbm. bpp + 31) / 32) * 4;
+   dataSize = gbm. h * lineSize;
+   data = ( dataSize > 0) ? malloc( dataSize) : nil;
+   rc = gbm_read_data( file, ft, &gbm, data);
+   checkrc;
+
+   close( file);
+
+   /* init image */
+   my->make_empty( self);
+   var->w        = gbm. w;
+   var->h        = gbm. h;
+   var->type     = gbm. bpp;
+   var->data     = data;
+   var->palette  = ( PRGBColor) palette;
+   var->lineSize = lineSize;
+   var->dataSize = dataSize;
+   var->palSize  = (1 << (var->type & imBPP)) & 0x1ff;
+   cm_reverse_palette( var->palette, var->palette, 256);
+
+   switch( var->type)
+   {
+      case imbpp1:
+         if ( memcmp( var->palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
+            var->type |= imGrayScale;
+         break;
+      case imbpp4:
+         if ( memcmp( var->palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
+            var->type |= imGrayScale;
+         break;
+      case imbpp8:
+         if ( memcmp( var->palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
+            var->type |= imGrayScale;
+         break;
+   }
+   var->status = ieOK;
+   return true;
+}
+
+XS( Image_load_FROMPERL) {
+   dXSARGS;
+   Bool result;
+   Bool as_class = false;
+   Bool wantarray = ( GIMME_V == G_ARRAY);
+   Handle self;
+   char *class_name;
+   PList info;
+   int i;
+   HV *profile;
+
+   if ( items >= 2) {
+      SV *who = ST(0);
+      char *filename = SvPV( ST( 1), na);
+
+      if (!( self = gimme_the_mate( who))) {
+	 PVMT vmt;
+	 if (!SvPOK( who)) {
+	    croak( "Call Image->load() either as instance method or as class method");
+	 }
+	 class_name = SvPV( who, na);
+	 vmt = gimme_the_vmt( class_name);
+	 while ( vmt && vmt != (PVMT)CImage) {
+	    vmt = vmt-> base;
+	 }
+	 if ( !vmt) {
+	    croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
+	 }
+	 as_class = true;
+      } else {
+	 if ( !kind_of( self, CImage)) {
+	    croak( "Are you nuts?  This object is not inherited from ``Image''");
+	 }
+      }
+
+      if ( items > 2 && SvROK( ST( 2)) && SvTYPE( SvRV( ST(2))) == SVt_PVHV) {
+	 /* assuming multi-profile format */
+	 if (!as_class) {
+	    croak ("Invalid usage of Image::load: multiple profiles are not allowed when called as an instance method");
+	 }
+	 for ( i = 2; i < items; i++) {
+	    if ( !SvROK( ST( i)) || SvTYPE( SvRV( ST(i))) != SVt_PVHV) {
+	       croak ("Invalid usage of Image::load: hash reference expected for argument %d", i);
+	    }
+	 }
+         croak( "Sorry, unsupported");
+	 info = plist_create( items - 2, 1);
+	 for ( i = 2; i < items; i++) {
+	    add_image_profile(( HV *)SvRV( ST(i)), info);
+	 }
+      } else {
+	 /* assuming normal single profile */
+         char buf [ 15];
+         int index = 0;
+	 if ( items % 2 != 0) {
+	    croak ("Invalid usage of Image::load: odd number of optional arguments");
+	 }
+	 profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
+         if ( pexist( index)) index = pget_i( index);
+	 if (as_class) croak( "Sorry, unsupported");
+         if ( index >= 0) snprintf( buf, 15, "index=%d", index); else buf[ 0] = 0;
+         result = load_image_indirect( self, filename, buf);
+	 sv_free(( SV*) profile);
+      }
+      SPAGAIN;
+      SP -= items;
+      if ( result) {
+	  if ( as_class) {
+	      Handle *selves;
+	      selves = malloc( info->count * sizeof( Handle));
+	      setbuf( stdout, nil);
+	      for ( i = 0; i < info->count; i++) {
+		  self = ( Handle) create_object( class_name, "", nil);
+		  SPAGAIN;
+		  SP -= items;
+		  modify_Image( self, ( PImgInfo) list_at( info, i));
+		  SPAGAIN;
+		  SP -= items;
+		  selves[ i] = self;
+	      }
+	      if ( wantarray) {
+		  for ( i = 0; i < info-> count; i++) {
+		      XPUSHs( sv_mortalcopy( PImage( selves[ i])-> mate));
+		  }
+	      }
+	      else {
+		  AV *av = newAV();
+		  for ( i = 0; i < info-> count; i++) {
+		      av_push( av, newSVsv( PImage( selves[ i])-> mate));
+		  }
+		  XPUSHs( sv_2mortal( newRV_noinc( (SV*) av)));
+	      }
+	      free( selves);
+	      list_delete_all( info, 0);
+	  } else {
+             /*
+	      if ( info->count > 1) {
+		  croak( "Invalid usage of Image::load: request of multiple images when called as an instance method");
+	      }
+	      else {
+              */
+                  my-> update_change( self);
+                  SPAGAIN;
+                  SP -= items;
+                  XPUSHs( sv_mortalcopy( PImage( self)-> mate));
+                  /*
+	      }
+              */
+	  }
+      }
+      else {
+	  if ( ! wantarray) {
+	      XPUSHs( &sv_undef);
+	  }
+      }
+      PUTBACK;
+      return;
+   }
+   croak ("Invalid usage of %s", "Image::load");
+}
+#else
 XS( Image_load_FROMPERL) {
    dXSARGS;
    Bool result;
@@ -872,6 +991,7 @@ XS( Image_load_FROMPERL) {
 		  modify_Image( self, ( PImgInfo) list_at( info, 0));
 		  SPAGAIN;
 		  SP -= items;
+                  XPUSHs( sv_mortalcopy( PImage( self)-> mate));
 	      }
 	  }
       }
@@ -885,6 +1005,7 @@ XS( Image_load_FROMPERL) {
    }
    croak ("Invalid usage of %s", "Image::load");
 }
+#endif /* Image_load_FROMPERL */
 
 Handle
 Image_load_REDEFINED( SV *who, char *filename, PList imgInfo)
@@ -897,21 +1018,12 @@ Image_load_REDEFINED( SV *who, char *filename, PList imgInfo)
 Handle
 Image_load( SV *who, char *filename, PList imgInfo)
 {
-#ifdef __unix
    (void)who;
    if ( apc_image_read( filename, imgInfo, true)) {
       return nilHandle;
    } else {
       return nilHandle;
    }
-#else
-   Bool ret;
-   char buf[ 15];
-   if ( index >= 0) snprintf( buf, 15, "index=%d", index); else buf[ 0] = 0;
-   ret = load_image_indirect( self, filename, buf);
-   if ( ret) my->update_change( self);
-   return ret;
-#endif /* __unix */
 }
 
 void
