@@ -210,7 +210,7 @@ sub insert_bone
    $self->{bone} = $self-> insert( q(Widget),
       name   => q(Bone),
       pointerType => cr::Arrow,
-      origin => [ $bw + $self->{hScrollBar}-> width-1, $bw - 1],
+      origin => [ $self-> width - $self->{vScrollBar}-> width + 1, $bw - 1],
       size   => [ $self->{vScrollBar}-> width-2, $self->{hScrollBar}-> height-1],
       growMode  => gm::GrowLoX,
       widgetClass => wc::ScrollBar,
