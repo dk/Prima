@@ -676,12 +676,13 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       if (
           ( guts. displayBMInfo. bmiHeader. biBitCount == 8) &&
           ( !is_apt( aptCompatiblePS)) &&
-          ( is_apt( aptWinPS) || is_apt( aptBitmap))
+          // ( is_apt( aptWinPS) || is_apt( aptBitmap))
+          is_apt( aptBitmap)
          )
       {
          // There is a big uncertainity about 8-bit BitBlt's, based on fact that
          // memory DCs aren't really compatible with screen DCs, - correct results
-         // could be guaranteed either when you Blt source DC = CreateCompatibleDC( dest DC),
+         // could be guaranteed only when you Blt source DC = CreateCompatibleDC( dest DC),
          // not when source = CCDC( thirdDC), dest = CCDC( thirdDC) - that's right, I mean it!
          // or just SetDIBits; - latter is slow, stupid, memory-greedy - but surely can be trusted.
          Bool ok;
