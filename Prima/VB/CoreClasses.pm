@@ -253,7 +253,7 @@ sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
-      bool    => ['flat','vertical','default','checkable','checked'],
+      bool    => ['flat','vertical','default','checkable','checked', 'autoRepeat'],
       uiv     => ['glyphs','borderWidth','defaultGlyph','hiliteGlyph','disabledGlyph','pressedGlyph','holdGlyph'],
       upv     => ['imageScale',],
       modalResult  => ['modalResult',],

@@ -533,9 +533,11 @@ sub insert_new_control
       Prima::MsgBox::message( "Error:$@");
       return;
    }
+
    $self->{modified} = 1;
    $j-> select;
    $j-> marked(1,1);
+   ObjectInspector::enter_widget( $j);
 }
 
 sub on_paint
