@@ -160,8 +160,6 @@ typedef struct _FontFlags {
    unsigned sloppy           : 1;
    unsigned disabled         : 1;
    unsigned funky            : 1;
-   unsigned intNames         : 1;
-   unsigned generic          : 1;
 } FontFlags;
 
 typedef struct _FontInfo {
@@ -380,7 +378,6 @@ typedef struct _UnixGuts
    Font                         default_widget_font;
    Font                         default_msg_font;
    Font                         default_caption_font;
-   Bool                         font_detail_names;
    /* Resource management */
    XrmDatabase                  db;
    XrmQuark                     qBackground;

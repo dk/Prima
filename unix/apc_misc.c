@@ -146,42 +146,6 @@ unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int d
    return default_value;
 }
 
-void
-prima_font_pp2font( char * ppFontNameSize, PFont font)
-{
-   char * p = strchr( ppFontNameSize, '.');
-   int i;
-
-   memset( font, 0, sizeof( Font));
-   if ( p)
-   {
-      font-> size = atoi( ppFontNameSize);
-      p++;
-   } else {
-      font-> size = 16;
-      p = "Helv";
-   }
-   font-> width = font-> height = C_NUMERIC_UNDEF;
-   font-> direction = 0;
-   font-> pitch = fpDefault;
-   font-> style = fsNormal;
-   strcpy( font-> name, p);
-   p = font-> name;
-   for ( i = strlen( p) - 1; i >= 0; i--)
-   {
-      if ( p[ i] == '.')
-      {
-         if ( strcmp( "Italic",     &p[ i + 1]) == 0) font-> style |= fsItalic;
-         if ( strcmp( "Underscore", &p[ i + 1]) == 0) font-> style |= fsUnderlined;
-         if ( strcmp( "Strikeout",  &p[ i + 1]) == 0) font-> style |= fsStruckOut;
-         if ( strcmp( "Bold",       &p[ i + 1]) == 0) font-> style |= fsBold;
-         p[ i] = 0;
-      }
-   }
-   apc_font_pick( application, font, font);
-   font-> pitch = fpDefault;
-}
-
 Bool
 apc_fetch_resource( const char *className, const char *name,
                     const char *resClass, const char *res,
