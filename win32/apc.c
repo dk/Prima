@@ -1530,9 +1530,9 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 
       if ( sys pal = palette_create( self)) {
          sys stockPalette = SelectPalette( dc, sys pal, 1);
-         RealizePalette( dc);
+         // RealizePalette( dc);
          sys pal2 = SelectPalette( sys ps, sys pal, 1);
-         RealizePalette( sys ps);
+         // RealizePalette( sys ps);
       }
 
       if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
@@ -1553,7 +1553,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
    } else {
       if ( sys pal = palette_create( self)) {
          sys stockPalette = SelectPalette( sys ps, sys pal, 1);
-         RealizePalette( sys ps);
+         // RealizePalette( sys ps);
       }
    }
    hwnd_enter_paint( self);

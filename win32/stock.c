@@ -1772,6 +1772,7 @@ palette_change( Handle self)
 
    if ( l. l. count == 0) {
       list_destroy( &l.l);
+      hwnd_repaint( self);
       return false;
    }
 
@@ -1780,6 +1781,7 @@ palette_change( Handle self)
    p = ( PRGBColor) malloc( sizeof( RGBColor) * l. sz);
    if ( !p) {
       list_destroy( &l.l);
+      hwnd_repaint( self);
       return false;
    }
    
@@ -1787,6 +1789,7 @@ palette_change( Handle self)
    if ( !d) {
       free( p);
       list_destroy( &l.l);
+      hwnd_repaint( self);
       return false;
    }
 
@@ -1813,7 +1816,7 @@ palette_change( Handle self)
    DeleteObject( SelectPalette( dc, pal, 0));
    ReleaseDC( HANDLE, dc);
 
-   if ( rCol > 0) hwnd_repaint( self);
+   hwnd_repaint( self);
 
    list_destroy( &l.l);
    return true;
