@@ -951,7 +951,7 @@ sub index
    if ( $#_) {
       my $i = $_[1];
       $i = 0 if $i < 0;
-      $i = scalar @c if $i > scalar @c;
+      $i = $#c if $i > $#c;
       $c[$i]-> check if $c[$i];
    } else {
       my $i;
