@@ -581,3 +581,276 @@ sub find_version
 }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Make - module for automated Makefile creating 
+
+=head1 DESCRIPTION
+
+Prima does not use standard C<Make::MakeMaker> module for
+creating its Makefile, nor it encourages to use it for the build of
+Prima-dependent C modules, although this is possible. For such
+a module it is typical to use C<Prima::Make> inside its C<Makefile.PL>,
+and use the methods that provide compilation and linking commands.
+
+The module implements its own basic file operations, required for 
+a typical installer: file copying, removing, creation of distributives etc.
+See L<init> for details.
+
+=head1 SYNOPSIS
+
+   use Prima::Make;
+
+   # check command line 
+   exit unless init( @ARGV ); 
+
+   # object file extension
+   my $o  = $Prima::Config::Config{objext};
+
+   # store .pm files under /File directory
+   setvar( 'INSTALL_LIB', $PREFIX . qd( "/File"));
+
+   # compile command
+   my $cc = cc_command_line( "a.c", "a.$o");
+
+   # so / dll name
+   my $dl = dl_name( "a" );
+
+   # link command
+   my $ld = ld_command_line( "a.c", "a.def", "a.$o");
+
+   open F, "> Makefile";
+   print F <<MAKE;
+   a.$o: a.c
+   \t$cc
+
+   $dl: a.$o
+   \t$ld
+
+   clean:
+   \t$^X Makefile.PL --rm a.$o $ld
+
+   install:
+   \t$^X Makefile.PL --cp $ld $INSTALL_DL a.pm $INSTALL_LIB
+   \t$^X Makefile.PL --cpbin a.pl $INSTALL_BIN
+      
+   MAKE
+   close F;
+
+
+=head2 API
+
+=head2 Methods
+
+=over
+
+=item addlib LIBRARY
+
+Adds LIBRARY to list of libraries, stored in C<@LIBS>.
+
+=item canon_name FILENAME
+
+Converts FILENAME to a canonized form, by eliminating C<..>
+up-references in the path. 
+
+=item cc_command_line C_FILE, O_FILE
+
+Returns suggested command for compilation of a C_FILE into output object O_FILE.
+
+=item dl_name NAME
+
+Converts NAME without an extension into shared library / dll file name
+by adding the OS-dependant extension. Under OS2 NAME can be modified to overcome
+a problem that the system does not handle dll files with name longer than 8 letters.
+This is the reason why under OS/2 Prima dll file is named PrimaDI.dll .
+
+=item dump_command SUB, COMMAND, @PARAMS
+
+Creates a line for executing COMMAND on set of PARAMS.
+This method is used to overcome a problem when PARAMS array
+is too long to be fit into the command line. The method
+calls SUB for each of PARAMS array scalars, and breaks the
+command line at each 20 parameters. SUB is an anonymous subroutine,
+as an only parameter receiving PARAMS array member and returns
+its value adapted for COMMAND.
+
+=item env_true ENV_STRING
+
+Returns a boolean value, reflecting whether the evironment variable is a true value,
+( e.g. C<yes>, C<1>, C<on>, C<true> ) or not.
+
+=item find_version MODULE
+
+Reads MODULE file and extracts its version without actual MODULE load via C<use>.
+If C<$VERSION> string is found there, returns two integers - major and minor file
+version. Otherwise throws an exception.
+
+=item generate_def DEF_FILE, LIBNAME, @EXPORTS
+
+Writes DEF_FILE used in linking of LIBNAME ( library or dll file ).
+DEF_FILE is used on Win32 and OS/2 to explicitly declare the
+list of exported names. These names are passed in @EXPORTS array.
+
+Does nothing under unix environment.
+
+=item init @ARGV
+
+Checks the command line by parsing C<@ARGV> array ( not C<@main::ARGV> ).
+First, the checks are done if the module was invoked as an utility;
+such a call is constructed with a command, started with a double hyphen,
+for example, C<--cp a.pm /perl/site/lib>. The full list of commands
+and actions follows:
+
+=over
+
+=item --cp SOURCE, DEST, [ SOURCE, DEST, ... ]
+
+Copies SOURCE file to DEST. Can accept more than one pair.
+
+=item --cpbin SOURCE, DEST, [ SOURCE, DEST, ... ]
+
+Copies SOURCE file to DEST and modifies DEST so that it
+presents an executable script; during the operation,
+DEST can change both its extension and content. 
+The method can accept more than one pair.
+
+=item --dist TYPE, DISTFILE
+
+Creates a distributive archive of the given TYPE,
+which is either C<bin>, C<zip>, or C<tar>. These correspond to
+binary archive, zip source archive, and tar source archive.
+In case of the binary archive, DISTFILE is combined with OS type string.
+
+=item --md PATH, [ PATH, ... ]
+
+Creates one or more PATH directories by calling C<File::Path::mkpath>, which
+can create a directory with more than one level at a time.
+
+=item --rm FILE, [ FILE, ... ]
+
+Unlinks one or more FILEs.
+
+=back
+
+If none of the options found, it is assumed that module is
+called for generation of C<Makefile>. The command line
+is parsed to see if it contains overrided variables. 
+This allows the user to add, for example, paths to include and library files,
+select installation directories, compiling and debugging switches etc etc.
+
+The list of the user-overridable variables is described in L<Variables> below.
+
+=item find_cdeps C_FILE, DEPENDENCIES, INCLUDES
+
+Scans C_FILE for the eventual dependencies of local include files.
+DEPENDENCIES and INCLUDES are hash references, used for
+global dependancy accounting. DEPENDENCIES keys are C files,
+and its values are arrays of include files. INCLUDES keys are include
+files, and values are always 1. All dependencies are also
+cached internally, so successive calls to same C or include file do 
+not result in file scan.
+
+The method does not handle conditional defines.
+
+=item find_file FILENAME, PATH
+
+Recursively searches for FILENAME in PATH; returns two scalars -
+the full name and success flag.
+
+=item ld_command_line DL_FILE, DEF_FILE, @O_FILES
+
+Returns suggested command for linking of set of object files O_FILES,
+with an eventual DEF_FILE into DL_FILE shared library / dll file.
+The name of DL_FILE is returned by C<dl_name>.
+
+=item qd PATH
+
+Returns PATH with standard directory separator C</> mapped to 
+the OS-default one.
+
+=item quoted_split STRING
+
+Splits STRING by separate spaces, preserving the double-quoted text.
+Returns array of split text chunks.
+
+=item setvar VARIABLE, @DEFAULT
+
+Sets the internal VARIABLE. If the command line contains user-preferred
+settings, these are used. Otherwise, DEFAULT parameters are used.
+The operations allowed are assignment ( C<DEBUG=1> ) 
+and concatenation ( C<INCPATH+=/usr/local/include>).
+
+=back
+
+=head2 Variables
+
+The variables influence many aspects of Makefile generation.
+The user can tune the build process by passing variables in
+the command line, which are parsed in C<init>.
+
+=over
+
+=item $DEBUG
+
+Boolean; if 1, the commands for preserving debugging symbols are 
+emitted by C<cc_command_line> and C<ld_command_line>.
+
+=item @INCPATH
+
+Set of include files paths.
+
+=item $INSTALL_BIN
+
+Installation directory for executable scripts.
+
+=item $INSTALL_DL
+
+Installation directory for shared objects / dll files.
+
+=item $INSTALL_EXAMPLES
+
+Installation directory for example executable scripts.
+
+=item $INSTALL_LIB
+
+Installation directory for perl modules and include files.
+
+=item @LIBPATH
+
+Set of library files paths.
+
+=item @LIBS
+
+Set of library files used for linking.
+
+=item $PREFIX
+
+An installation prefix path, under which the installed files
+will be copied. 
+
+=item $Unix, $Win32, $OS2
+
+Boolean flags for fast check if the current OS type is
+unix, win32, or os2. For extended info use C<$^O> variable.
+
+=back
+
+=head1 BUGS
+
+The module is very experimental. Many features
+simply were not realized, for example, documentation in pod and man files.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<gencls>, L<IPA> ( http://www.prima.eu.org/IPA ).
+
+=cut
