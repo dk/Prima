@@ -949,7 +949,7 @@ apc_window_get_icon( Handle self, Handle icon)
 
    objCheck false;
    p = ( HICON) SendMessage( HANDLE, WM_GETICON, ICON_BIG, 0);
-   if ( icon == nil) return p != nil;
+   if ( icon == nilHandle) return p != nil;
 
    save = sys pointer;
    sys pointer = p;
