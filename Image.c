@@ -1690,10 +1690,7 @@ Image_set_palette( Handle self, SV * palette)
 
 void Image_set_conversion( Handle self, int conversion)
 {
-   if (( var->type & imGrayScale) || (( var->type & imBPP) > imbpp8))
-      var->conversion = ictNone;
-   else
-      var->conversion = conversion;
+   var->conversion = conversion;
 }
 
 void
