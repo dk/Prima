@@ -431,7 +431,7 @@ prima_prepare_drawable_for_painting( Handle self)
          XX-> bsize. y = h = XX-> size. y;
          XX-> btransform. x = 0;
          XX-> btransform. y = 0;
-      } 
+      }
       XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, w, h, guts.depth);
       if (!XX-> gdrawable)
          XX-> gdrawable = XX-> udrawable;
@@ -510,9 +510,9 @@ prima_cleanup_drawable_after_painting( Handle self)
          XSetRegion( DISP, XX-> gc, XX-> stale_region);
          XCHECKPOINT;
       }
-      XCopyArea( DISP, XX-> gdrawable, XX-> udrawable, XX-> gc, 
-                 0, 0, 
-                 XX-> bsize.x, XX-> bsize.y, 
+      XCopyArea( DISP, XX-> gdrawable, XX-> udrawable, XX-> gc,
+                 0, 0,
+                 XX-> bsize.x, XX-> bsize.y,
                  -XX-> btransform. x, XX-> btransform. y);
       XCHECKPOINT;
       XFreePixmap( DISP, XX-> gdrawable);
@@ -549,16 +549,57 @@ apc_gp_done( Handle self)
    return true;
 }
 
+int
+arc_completion( double * angleStart, double * angleEnd, int * needFigure)
+{
+   int max;
+   double diff = ((long)( fabs( *angleEnd - *angleStart) * 1000 + 0.5)) / 1000;
+
+   if ( diff == 0) {
+      *needFigure = false;
+      return 0;
+   }
+
+   while ( *angleStart > *angleEnd)
+      *angleEnd += 360;
+
+   while ( *angleStart < 0) {
+      *angleStart += 360;
+      *angleEnd   += 360;
+   }
+
+   while ( *angleStart >= 360) {
+      *angleStart -= 360;
+      *angleEnd   -= 360;
+   }
+
+   while ( *angleEnd > *angleStart + 360)
+      *angleEnd -= 360;
+
+   if ( diff < 360) {
+      *needFigure = true;
+      return 0;
+   }
+
+   max = (int)(diff / 360);
+   *needFigure = ( max * 360) != diff;
+   if ( max == 1) return 1;
+   return ( max < 3) ? max : ( max % 2);
+}
+
 Bool
 apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
+   int compl, needf;
    DEFXX;
    SHIFT( x, y);
-   if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
+   while ( compl--)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
           0, 360 * 64);
-   XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
-       angleStart * 64, ( angleStart + angleEnd) * 64);
+   if ( needf)
+      XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+          angleStart * 64, ( angleEnd - angleStart) * 64);
    return true;
 }
 
@@ -598,15 +639,17 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 Bool
 apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-   int sy;
+   int sy, compl, needf;
    DEFXX;
    SHIFT( x, y);
    sy = REVERT( y);
-   if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
+   while ( compl--)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
           0, 360 * 64);
+   if ( !needf) return true;
    XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
-       angleStart * 64, ( angleStart + angleEnd) * 64);
+       angleStart * 64, ( angleEnd - angleStart) * 64);
    XDrawLine( DISP, XX-> gdrawable, XX-> gc,
        x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
        x + cos( angleEnd / GRAD) * radX,   sy - sin( angleEnd / GRAD) * radY
@@ -699,10 +742,17 @@ Bool
 apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
    DEFXX;
+   int compl, needf;
    SHIFT( x, y);
+
    XSetArcMode( DISP, XX-> gc, ArcChord);
-   XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
-       angleStart * 64, ( angleStart + angleEnd) * 64);
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
+   while ( compl--)
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
+
+   if ( needf)
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+          angleStart * 64, ( angleEnd - angleStart) * 64);
    return true;
 }
 
@@ -758,10 +808,18 @@ Bool
 apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
    DEFXX;
+   int compl, needf;
+
    SHIFT( x, y);
    XSetArcMode( DISP, XX-> gc, ArcPieSlice);
-   XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
-       angleStart * 64, ( angleStart + angleEnd) * 64);
+
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
+   while ( compl--)
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2, 0, 64*360);
+
+   if ( needf)
+      XFillArc( DISP, XX-> gdrawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
+         angleStart * 64, ( angleEnd - angleStart) * 64);
    return true;
 }
 
@@ -819,15 +877,18 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 Bool
 apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-   int sy;
+   int sy, compl, needf;
    DEFXX;
    SHIFT( x, y);
    sy = REVERT( y);
-   if (( angleEnd > angleStart + 360) && (((int)( angleEnd - angleStart) / 360) % 2) == 1)
+
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
+   while ( compl--)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
           0, 360 * 64);
+   if ( !needf) return true;
    XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
-       angleStart * 64, ( angleStart + angleEnd) * 64);
+       angleStart * 64, ( angleEnd - angleStart) * 64);
    XDrawLine( DISP, XX-> gdrawable, XX-> gc,
        x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
        x, y
