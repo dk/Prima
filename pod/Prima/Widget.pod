@@ -1867,6 +1867,40 @@ widgets.
 
 See also: C<helpContext>
 
+=item insert CLASS, %PROFILE [[ CLASS, %PROFILE], ... ]
+
+Creates one or more widgets with C<owner> property set to the 
+caller widget, and returns the list of references to the newly 
+created widgets. 
+
+Has two calling formats:
+
+=over
+
+=item Single widget
+
+  $parent-> insert( 'Child::Class',
+     name => 'child',
+     ....
+  );
+
+=item Multiple widgets
+
+  $parent-> insert( 
+    [
+       'Child::Class1',
+          name => 'child1',
+          ....
+    ],
+    [
+       'Child::Class2',
+          name => 'child2',
+          ....
+    ],
+  );
+
+=back
+
 =item insert_behind OBJECT
 
 Sends a widget behind the OBJECT on Z-axis, given that
