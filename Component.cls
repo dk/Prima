@@ -4,18 +4,17 @@ object Component( Object)
     char        *name;
     Handle      owner;
     Handle      delegateTo;
-    HV *        refs;                # object references for attach/detach
     ApiHandle   handle;              # apc handle
     method   void      attach( Handle objectHandle);
+    method   Handle    bring( char * componentName);
     method   Bool      can_event();
     method   void      cleanup();
     method   void      clear_event();
-    import   void      components();
     method   void      done();
     method   void      detach( Handle objectHandle, Bool kill);
     method   void      event_error();
     c_only   Handle    first_that_component( void * actionProc, void * params);
-    import   Handle    fetch( char * subCtrlName);
+    public   void      get_components();
     method   Bool      get_event_flag();
     method   SV      * get_handle();
     method   char    * get_name();
@@ -57,6 +56,7 @@ object Component( Object)
     int    evPtr;
     int    evLimit;
     PList  postList;
+    PList  components;
     PList  evQueue;
     PList  refList;
 }
