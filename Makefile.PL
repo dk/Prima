@@ -1157,8 +1157,19 @@ install: all
 \t$PrimaTarget $INSTALL_DL \\
 MAKE
 
-    finddepth( sub { print MAKE "\t", qd( "$File::Find::dir/$_ $PREFIX/$File::Find::dir"), " \\\n" unless -d $_}, 'Prima');
     my ( $instcnt, $maxcnt) = ( 1, 20);
+    finddepth(
+	      sub
+	      {
+		  unless ( -d $_) {
+		      print MAKE "\t", qd( "$File::Find::dir/$_ $PREFIX/$File::Find::dir");
+		      if ( ( $instcnt % $maxcnt) == 0) {
+			  print MAKE "\n\t\@\$(CP)";
+		      }
+		      $instcnt++;
+		      print MAKE " \\\n";
+		  }
+	      }, 'Prima');
     while ( scalar @allinstall) {
 	my ( $src, $dst) = ( shift @allinstall, shift @allinstall);
 	print MAKE "\t$src $dst";
