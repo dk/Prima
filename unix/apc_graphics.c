@@ -1417,7 +1417,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
       }   
 
       /* querying character */
-      if ( r-> map[index. byte1 * r-> width + index. byte2] == nil) continue;
+      if ( r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] == nil) continue;
       cs = XX-> font-> fs-> per_char ? 
          XX-> font-> fs-> per_char + 
             ( index. byte1 - XX-> font-> fs-> min_byte1) * r-> width + 
@@ -1484,7 +1484,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
          XSetFunction( DISP, XX-> gc, GXand);
       }
       XPutImage( DISP, XX-> gdrawable, XX-> gc, 
-          r-> map[index. byte1 * r-> width + index. byte2]-> image, 
+          r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]-> image, 
           0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
       XCHECKPOINT; 
       switch ( XX-> paint_rop) {
@@ -1505,7 +1505,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
           XSetFunction( DISP, XX-> gc, GXor);
       DISPLAY:         
           XPutImage( DISP, XX-> gdrawable, XX-> gc, 
-              r-> map[index. byte1 * r-> width + index. byte2]-> image, 
+              r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]-> image, 
               0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
           XCHECKPOINT;
       }

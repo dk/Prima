@@ -1590,7 +1590,8 @@ FAILED:
          index. byte1 = ( unsigned char) r-> defaultChar1;
          index. byte2 = ( unsigned char) r-> defaultChar2;
       }   
-      if ( r-> map[index. byte1 * r-> width + index. byte2]) continue;
+             
+      if ( r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]) continue;
       cs = f-> fs-> per_char ? 
          f-> fs-> per_char + 
             ( index. byte1 - f-> fs-> min_byte1) * r-> width + 
@@ -1677,7 +1678,7 @@ FAILED:
 
       if ( guts. bit_order != MSBFirst)
          prima_mirror_bytes( ndata, r-> dimension.y * px-> bytes_per_line_alias);
-      r-> map[index. byte1 * r-> width + index. byte2] = px;
+      r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] = px;
    }   
 
    if ( result)
