@@ -42,8 +42,8 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		   int window_state, Bool use_origin, Bool use_size)
 {
    DEFXX;
-   Event e;
    Handle real_owner;
+   XSizeHints hints;
    XSetWindowAttributes attrs;
    XWindow parent = RootWindow( DISP, SCREEN);
 
@@ -116,27 +116,28 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 
    XX-> flags. clip_owner = false;
    XX-> flags. sync_paint = sync_paint;
-   XX-> flags. do_size_hints = true;
-   XX-> flags. no_size = true;
    XX-> flags. process_configure_notify = true;
 
+   XX-> above = nilHandle;
    XX-> owner = real_owner;
+   apc_component_fullname_changed_notify( self);
+   prima_send_create_event( X_WINDOW);
+
+   // setting initial size
    XX-> size. x = DisplayWidth( DISP, SCREEN) / 3;
    XX-> size. y = DisplayHeight( DISP, SCREEN) / 3;
    XX-> known_size = (Point){APC_BAD_SIZE,APC_BAD_SIZE};
    XX-> origin = (Point){0,0};
    XX-> known_origin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
-   apc_component_fullname_changed_notify( self);
-   prima_send_create_event( X_WINDOW);
+   
+   bzero( &hints, sizeof( XSizeHints));
+   hints. flags  = PBaseSize;
+   hints. width  = hints. base_width  = XX-> size. x;
+   hints. height = hints. base_height = XX-> size. y;
+   XSetWMNormalHints( DISP, X_WINDOW, &hints);
+   XResizeWindow( DISP, X_WINDOW, XX-> size. x, XX-> size. y); 
 
-   bzero( &e, sizeof(e));
-   e. gen. source = self;
-   e. cmd = cmSize;
-   e. gen. P = XX-> size;
-   e. gen. R. right = XX-> size. x;
-   e. gen. R. top = XX-> size. y;
-   apc_message( self, &e, false);
-
+   prima_send_cmSize( self, (Point){0,0});
    return true;
 }
 
@@ -198,9 +199,6 @@ apc_window_get_border_style( Handle self)
 Point
 apc_window_get_client_pos( Handle self)
 {
-   if (0) /*MMM*/
-   fprintf( stderr, "%s: getcpos: %d, %d\n",
-            PComponent(self)->name, X(self)->origin.x, X(self)->origin.y);
    return X(self)-> origin;
 }
 
@@ -288,18 +286,11 @@ apc_window_set_client_pos( Handle self, int x, int y)
    XSizeHints hints;
 
    bzero( &hints, sizeof( XSizeHints));
-
    XX-> origin = (Point){x,y}; 
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
-   hints. flags = USPosition | PMinSize | PMaxSize;
+   hints. flags = USPosition;
    hints. x = x;
    hints. y = y;
-   hints. min_width = PWidget(self)-> sizeMin. x;
-   hints. min_height = PWidget(self)-> sizeMin. y;
-   hints. max_width = PWidget(self)-> sizeMax. x;
-   hints. max_height = PWidget(self)-> sizeMax. y;
-   XX-> flags. do_size_hints = false;
-
    XMoveWindow( DISP, X_WINDOW, x, y);
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
@@ -310,22 +301,20 @@ Bool
 apc_window_set_client_size( Handle self, int width, int height)
 {
    DEFXX;
-   int y;
    XSizeHints hints;
    PWidget widg = PWidget( self);
-   Event e;
+   Point sz = XX-> size;
 
    bzero( &hints, sizeof( XSizeHints));
 
    widg-> virtualSize = (Point){width,height};
-
    width = ( width > 0)
       ? (( width >= widg-> sizeMin. x)
 	  ? (( width <= widg-> sizeMax. x)
-	      ? width
+              ? width 
 	      : widg-> sizeMax. x)
 	  : widg-> sizeMin. x)
-      : 1;
+      : 1; 
    height = ( height > 0)
       ? (( height >= widg-> sizeMin. y)
 	  ? (( height <= widg-> sizeMax. y)
@@ -334,41 +323,17 @@ apc_window_set_client_size( Handle self, int width, int height)
 	  : widg-> sizeMin. y)
       : 1;
 
-   bzero( &e, sizeof(e));
-   e. gen. source = self;
-   e. cmd = cmSize;
-   e. gen. R. left = XX-> size. x;
-   e. gen. R. bottom = XX-> size. y;
-   e. gen. P = XX-> size = (Point){width,height}; /* XXX */
-   e. gen. R. right = XX-> size. x;
-   e. gen. R. top = XX-> size. y;
-   y = X(XX-> owner)-> size. y - height - XX-> origin. y;
+   XX-> size = (Point){width,height}; /* XXX */
 
-   hints. flags = USPosition | USSize | PMinSize | PMaxSize;
+   hints. flags = USPosition | USSize;
    hints. x = XX-> origin. x;
-   hints. y = y;
+   hints. y = X(XX-> owner)-> size. y - XX-> size.y - XX-> origin. y;
    hints. width = width;
    hints. height = height;
-   hints. min_width = widg-> sizeMin. x;
-   hints. min_height = widg-> sizeMin. y;
-   hints. max_width = widg-> sizeMax. x;
-   hints. max_height = widg-> sizeMax. y;
-   XX-> flags. do_size_hints = false;
-
-   XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
+   XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, width, height);
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
-
-   {
-      int i, y = X(XX-> owner)-> size. y, count = PWidget( self)-> widgets. count;
-      for ( i = 0; i < count; i++) {
-	 PWidget child = PWidget( PWidget( self)-> widgets. items[i]);
-         XMoveWindow( DISP, child-> handle, X(child)-> origin.x, y - X(child)-> size.y - X(child)-> origin.y);
-      }
-   }
-   apc_message( self, &e, false);
-
-   DOLBUG( "window size to (%d,%d(%d)) - (%d,%d)\n", XX-> origin. x, XX-> origin. y, y, width, height);
+   prima_send_cmSize( self, sz);
    return true;
 }
 
@@ -421,7 +386,7 @@ apc_window_execute( Handle self, Handle insert_before)
    XNoOp( DISP);
    XFlush( DISP);
 
-   while ( prima_one_loop_round( true) && X(self) && X(self)-> flags.modal)
+   while ( prima_one_loop_round( true, true) && X(self) && X(self)-> flags.modal)
       ;
 
    unprotect_object( self);

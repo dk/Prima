@@ -227,8 +227,6 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    XX-> flags. clip_owner = clip_owner;
    XX-> flags. sync_paint = sync_paint;
-   XX-> flags. do_size_hints = false;
-   XX-> flags. no_size = true;
    XX-> flags. process_configure_notify = false;
    XX-> above = nilHandle;
 
@@ -439,7 +437,6 @@ apc_widget_is_showing( Handle self)
 Bool
 apc_widget_is_visible( Handle self)
 {
-   DOLBUG("apc_widget_is_visible(%s): %d\n", PWidget( self)-> name, X(self)-> flags. mapped);
    return X(self)-> flags. mapped ? true : false;
 }
 
@@ -699,15 +696,37 @@ apc_widget_set_shape( Handle self, Handle mask)
    return true;
 }
 
+
+void
+prima_send_cmSize( Handle self, Point oldSize)
+{
+   DEFXX;
+   Event e;
+
+   bzero( &e, sizeof(e));
+   e. gen. source = self;
+   e. cmd = cmSize;
+   e. gen. R. left = oldSize. x;
+   e. gen. R. bottom = oldSize. y;
+   e. gen. P. x = e. gen. R. right = XX-> size. x;
+   e. gen. P. y = e. gen. R. top = XX-> size. y;
+   {
+      int i, y = XX-> size. y, count = PWidget( self)-> widgets. count;
+      for ( i = 0; i < count; i++) {
+	 PWidget child = PWidget( PWidget( self)-> widgets. items[i]);
+         XMoveWindow( DISP, child-> handle, X(child)-> origin.x, y - X(child)-> size.y - X(child)-> origin.y);
+      }
+   }
+   apc_message( self, &e, false);
+}   
+
 Bool
 apc_widget_set_size( Handle self, int width, int height)
 {
    DEFXX;
-   int y;
+   Point sz = XX-> size;
    PWidget widg = PWidget( self);
-   Event e;
 
-   bzero( &e, sizeof( e));
    widg-> virtualSize = (Point){width,height};
 
    width = ( width > 0)
@@ -729,26 +748,10 @@ apc_widget_set_size( Handle self, int width, int height)
    if ( XX-> size. x == width && XX-> size. y == height)
       return true;
 
-   bzero( &e, sizeof(e));
-   e. gen. source = self;
-   e. cmd = cmSize;
-   e. gen. R. left = XX-> size. x;
-   e. gen. R. bottom = XX-> size. y;
-   e. gen. P = XX-> size = (Point){width,height};
-   e. gen. R. right = XX-> size. x;
-   e. gen. R. top = XX-> size. y;
-   y = X(XX-> owner)-> size. y - height - XX-> origin. y;
-   XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
-   XCHECKPOINT;
-
-   {
-      int i, y = X(XX-> owner)-> size. y, count = PWidget( self)-> widgets. count;
-      for ( i = 0; i < count; i++) {
-	 PWidget child = PWidget( PWidget( self)-> widgets. items[i]);
-         XMoveWindow( DISP, child-> handle, X(child)-> origin.x, y - X(child)-> size.y - X(child)-> origin.y);
-      }
-   }
-   apc_message( self, &e, false);
+   XX-> size. x = width;
+   XX-> size. y = height;
+   XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, X(XX-> owner)-> size. y - XX-> size.y - XX-> origin. y, width, height);
+   prima_send_cmSize( self, sz);
    return true;
 }
 
@@ -758,6 +761,7 @@ apc_widget_set_size_bounds( Handle self, Point min, Point max)
    DEFXX;
    if ( XX-> type. window) {  
       XSizeHints hints;
+      bzero( &hints, sizeof( hints));
       hints. flags = PMinSize | PMaxSize;
       hints. min_width  = min. x;
       hints. min_height = min. y;
@@ -773,43 +777,18 @@ Bool
 apc_widget_set_visible( Handle self, Bool show)
 {
    DEFXX;
-   Bool flush_n_wait = false;
+   XWindowAttributes attrs;
 
    if (!XX) return false;
    XX-> flags. mapped = show;
    if ( show) {
-      if ( XX-> flags. do_size_hints) {
-	 XSizeHints hints;
-	 int width, height;
-
-	 bzero( &hints, sizeof( XSizeHints));
-	 hints. flags = PMinSize | PBaseSize;
-	 hints. min_width = PWidget(self)-> sizeMin. x;
-	 hints. min_height = PWidget(self)-> sizeMin. y;
-	 hints. base_width = DisplayWidth( DISP, SCREEN) / 3;
-	 hints. base_height = DisplayHeight( DISP, SCREEN) / 3;
-	 width = hints. base_width < hints. min_width ? hints. min_width : hints. base_width;
-	 height = hints. base_height < hints. min_height ? hints. min_height : hints. base_height;
-	 hints. width = width;
-	 hints. height = height;
-	 XResizeWindow( DISP, X_WINDOW, width, height);
-	 XSetWMNormalHints( DISP, X_WINDOW, &hints);
-	 XCHECKPOINT;
-	 XX-> flags. do_size_hints = false;
-	 flush_n_wait = true;
-      }
-
       XMapWindow( DISP, X_WINDOW);
-      XRaiseWindow( DISP, X_WINDOW);
       XFlush( DISP);
-      if ( flush_n_wait) {
-	 XWindowAttributes attrs;
-
-	 attrs. map_state = IsUnmapped;
-	 while( attrs. map_state == IsUnmapped) {
-	    XGetWindowAttributes( DISP, X_WINDOW, &attrs);
-	    usleep( 10);
-	 }
+      XCHECKPOINT;
+      attrs. map_state = IsUnmapped;
+      while( attrs. map_state == IsUnmapped) {
+        XGetWindowAttributes( DISP, X_WINDOW, &attrs);
+        usleep( 10);
       }
    } else {
       XUnmapWindow( DISP, X_WINDOW);

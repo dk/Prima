@@ -556,8 +556,8 @@ build_font_key( PFontKey key, PFont f, Bool bySize)
    strcpy( key-> name, f-> name);
 }
 
-static PCachedFont
-find_known_font( PFont font, Bool refill, Bool bySize)
+PCachedFont
+prima_find_known_font( PFont font, Bool refill, Bool bySize)
 {
    FontKey key;
    PCachedFont kf;
@@ -1033,7 +1033,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    }
    */
 
-   if ( find_known_font( dest, true, by_size)) {
+   if ( prima_find_known_font( dest, true, by_size)) {
       if ( underlined) dest-> style |= fsUnderlined;
       dest-> direction = direction;
       return true;
@@ -1150,7 +1150,7 @@ apc_gp_set_font( Handle self, PFont font)
    DEFXX;
    Bool reload;
    
-   PCachedFont kf = find_known_font( font, false, false);
+   PCachedFont kf = prima_find_known_font( font, false, false);
    if ( !kf || !kf-> id) {
       dump_font( font);
       croak( "UAF_007: internal error (kf:%08x)", (uint)kf); /* the font was not cached, can't be */
@@ -1186,7 +1186,7 @@ apc_menu_set_font( Handle self, PFont font)
 
    font-> direction = 0; /* skip unnecessary logic */
    
-   kf = find_known_font( font, false, false);
+   kf = prima_find_known_font( font, false, false);
 
    if ( !kf || !kf-> id) {
       dump_font( font);

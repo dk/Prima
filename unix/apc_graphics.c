@@ -368,9 +368,9 @@ prima_allocate_color( Handle self, Color color)
       c = *(( PRGBColor) &color);
    }
 
-   if ( self == nilHandle ||
-        ( XT_IS_IMAGE(X(self)) && (PImage(self)-> type & imBPP) == 1) ||
-        XT_IS_BITMAP(X(self))
+   if ( self != nilHandle && 
+        (( XT_IS_IMAGE(X(self)) && (PImage(self)-> type & imBPP) == 1) ||
+        XT_IS_BITMAP(X(self)))
       ) {
       if ((unsigned short)c.r + (unsigned short)c.g + (unsigned short)c.b > 381)
          return &bitmap_white;
@@ -1740,19 +1740,11 @@ apc_gp_get_clip_rect( Handle self)
 }
 
 PFontABC
-apc_gp_get_font_abc( Handle self, int firstChar, int lastChar)
+prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 {
-   DEFXX;
-   PFontABC abc;
-   XFontStruct *fs;
+   PFontABC abc = malloc( sizeof( FontABC) * (lastChar - firstChar + 1));
    XCharStruct *cs;
    int k;
-
-   if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
-   fs = XQueryFont( DISP, XX-> font-> id);
-   if (!fs) return nil;
-
-   abc = malloc( sizeof( FontABC) * (lastChar - firstChar + 1));
    for ( k = firstChar; k <= lastChar; k++) {
       if ( !fs-> per_char)
 	 cs = &fs-> min_bounds;
@@ -1764,6 +1756,20 @@ apc_gp_get_font_abc( Handle self, int firstChar, int lastChar)
       abc[k]. b = cs-> rbearing - cs-> lbearing;
       abc[k]. c = cs-> width - cs-> rbearing;
    }
+   return abc;
+}   
+
+PFontABC
+apc_gp_get_font_abc( Handle self, int firstChar, int lastChar)
+{
+   DEFXX;
+   PFontABC abc;
+   XFontStruct *fs;
+
+   if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
+   fs = XQueryFont( DISP, XX-> font-> id);
+   if (!fs) return nil;
+   abc = prima_xfont2abc( fs, firstChar, lastChar);
    XFreeFontInfo( nil, fs, 1);
    return abc;
 }

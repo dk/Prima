@@ -224,6 +224,14 @@ typedef struct pending_event
    TAILQ_ENTRY(pending_event) peventq_link;
 } PendingEvent;
 
+struct MsgDlg;
+
+typedef struct _WmGenericData {
+   Atom deleteWindow;
+   Atom protocols;
+   Atom takeFocus;
+} WmGenericData, *PWmGenericData;
+
 struct _UnixGuts
 {
    /* Event management */
@@ -305,7 +313,7 @@ struct _UnixGuts
    /* WM dependancies */
    void                       (*wm_cleanup)( void);
    void                       (*wm_create_window)( Handle, ApiHandle);
-   void                        *wm_data;
+   WmGenericData               *wm_data;
    Bool                       (*wm_translate_event)( Handle, XEvent *, PEvent);
    /* XServer info */
    int                          bit_order;
@@ -343,6 +351,7 @@ struct _UnixGuts
    Bool                         shared_image_extension;
    int                          shared_image_completion_event;
    Bool                         xshmattach_failed;
+   struct MsgDlg               *message_boxes;
 } guts;
 
 #define FXA_RESOLUTION_X guts. fxa_resolution_x
@@ -622,7 +631,7 @@ extern void
 prima_no_cursor( Handle self);
 
 extern Bool
-prima_one_loop_round( Bool wait);
+prima_one_loop_round( Bool wait, Bool careOfApplication);
 
 extern void
 prima_prepare_drawable_for_painting( Handle self);
@@ -678,8 +687,41 @@ prima_find_frame_window( XWindow w);
 extern Bool
 prima_get_frame_info( Handle self, PRect r);
 
+extern void
+prima_send_cmSize( Handle self, Point oldSize);
 
 typedef Bool (*prima_wm_hook)( void);
+
+extern PFontABC
+prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar);
+
+extern PCachedFont
+prima_find_known_font( PFont font, Bool refill, Bool bySize);
+
+struct MsgDlg {
+   struct MsgDlg * next;
+   Font  * font;
+   Point   btnPos;
+   Point   btnSz;
+   char ** wrapped;
+   int     wrappedCount;
+   int    *widths, *lengths;
+   int     OKwidth;
+   Point   textPos;
+   Bool    active;
+   Bool    pressed;
+   Bool    grab;
+   int     fontId;
+   Point   winSz;
+   GC      gc;
+   XColor *fg, *bg, *l3d, *d3d;
+   XWindow w;
+   int     focus_revertTo;
+   XWindow focus;
+};
+
+extern void
+prima_msgdlg_event( XEvent* ev, struct MsgDlg * md);
 
 #endif
 

@@ -584,7 +584,7 @@ send_pending_events( void)
 }
 
 Bool
-prima_one_loop_round( Bool wait)
+prima_one_loop_round( Bool wait, Bool careOfApplication)
 {
    XEvent ev, next_event;
    fd_set read_set, write_set, excpt_set;
@@ -661,12 +661,12 @@ prima_one_loop_round( Bool wait)
          (void) signal( SIGPIPE, oldHandler);
       }
 FetchAndProcess:
-      if (n && application) {
+      if (n && ( application || !careOfApplication)) {
          XNextEvent( DISP, &ev);
          XCHECKPOINT;
          n--;
          while ( n > 0) {
-            if (!application) return false;
+            if (!application && careOfApplication) return false;
             XNextEvent( DISP, &next_event);
             XCHECKPOINT;
             guts. total_events++;
@@ -674,7 +674,7 @@ FetchAndProcess:
             n--;
             memcpy( &ev, &next_event, sizeof( XEvent));
          }
-         if (!application) return false;
+         if (!application && careOfApplication) return false;
          guts. total_events++;
          prima_handle_event( &ev, nil);
       }
@@ -716,7 +716,7 @@ apc_application_go( Handle self)
    XNoOp( DISP);
    XFlush( DISP);
 
-   while ( prima_one_loop_round( true))
+   while ( prima_one_loop_round( true, true))
       ;
 
    if ( application) Object_destroy( application);
@@ -755,6 +755,6 @@ apc_application_yield( void)
 
    XNoOp( DISP);
    XFlush( DISP);
-   prima_one_loop_round( false);
+   prima_one_loop_round( false, true);
    return true;
 }

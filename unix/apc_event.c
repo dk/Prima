@@ -244,6 +244,7 @@ input_disabled( PDrawableSysData XX, Bool ignore_horizon)
 {
    Handle horizon = application;
 
+   if ( guts. message_boxes) return true;
    if ( guts. modal_count > 0 && !ignore_horizon)
       horizon = CApplication(application)-> map_focus( application, XX-> self);
    while (XX->self && XX-> self != horizon && XX-> self != application) {
@@ -281,6 +282,18 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       prima_ximage_event( ev);
       return;
    }
+
+   if ( guts. message_boxes) {
+      struct MsgDlg * md = guts. message_boxes;
+      XWindow win = ev-> xany. window;
+      while ( md) {
+         if ( md-> w == win) {
+            prima_msgdlg_event( ev, md);
+            return;
+         }   
+         md = md-> next;
+      }   
+   }   
 
    if ( appDead)
       return;
@@ -601,9 +614,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
    case ConfigureNotify: {
       XConfigureEvent *cev = &ev-> xconfigure;
-      Point old_size = XX-> known_size;
-      Point old_origin = XX-> known_origin;
-      Bool size_changed;
+      Bool size_changed, pos_changed;
+      Point old_size, old_pos;
 
       if ( cev-> above != XX-> above) {
 	 /* z-order notification */
@@ -615,26 +627,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       if ( !XX-> flags. process_configure_notify)
 	 return;
 
-      if ( XX-> flags. no_size && old_size.x == old_size.y && old_size. x == APC_BAD_SIZE) {
-	 XX-> known_size. x = XX-> size. x;
-	 XX-> known_size. y = XX-> size. y;
-	 XX-> known_origin. x = XX-> origin. x;
-	 XX-> known_origin. y = XX-> origin. y;
-	 return;
-      }
-
-/*       if ( oldSize.x == oldSize.y && oldSize.x == APC_BAD_SIZE) */
-/* 	 oldSize = XX-> size; */
-
-/*       if ( oldOrigin.x == oldOrigin.y && oldOrigin.x == APC_BAD_ORIGIN) */
-/* 	 oldOrigin = XX-> origin; */
-
-      XX-> size. x = cev-> width;
-      XX-> size. y = cev-> height;
-      size_changed = XX-> flags. no_size
-	 || XX-> size. x != XX-> known_size. x
-	 || XX-> size. y != XX-> known_size. y;
-
       if ( XX-> real_parent && !was_sent) {
 	 XWindow cld;
 	 if ( !XTranslateCoordinates( DISP, XX-> real_parent, XX-> parent,
@@ -645,62 +637,25 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 }
 	 XCHECKPOINT;
       }
-      XX-> origin. x = cev-> x;
-      XX-> origin. y = X(XX-> owner)-> size. y - XX-> size. y - cev-> y;
-
-      if ( XX-> flags. no_size
-	   || XX-> origin. x != XX-> known_origin. x
-	   || XX-> origin. y != XX-> known_origin. y) {
-	 /* move notification */
+      
+      size_changed = ( cev-> width != XX-> size. x) && ( cev-> height != XX-> size. y);
+      pos_changed  = ( cev-> x != XX-> origin. x) && ( cev-> y != X(XX-> owner)-> size. y - XX-> size. y - cev-> y);
+      old_size = XX-> size;
+      old_pos  = XX-> origin;
+      XX-> size   = ( Point) { cev-> width, cev-> height};
+      XX-> origin = ( Point) { cev-> x, X(XX-> owner)-> size. y - XX-> size. y - cev-> y };
+      
+      if ( pos_changed) {
 	 e. cmd = cmMove;
-         if (0) /*MMM*/
-         fprintf( stderr, "%s: emove from (%d,%d) to (%d,%d)\n",
-                  PWidget(self)-> name, old_origin.x, old_origin.y, XX->origin.x, XX->origin.y);
-	 e. gen. P = XX-> origin;  (void)old_origin;
+	 e. gen. P = XX-> origin; 
 	 CComponent( self)-> message( self, &e);
          if ( PObject( self)-> stage == csDead) return; 
       }
-
-      XX-> flags. no_size = false;
 
       if ( size_changed) {
-	 /* size notification */
-	 e. gen. source = self;
-	 e. cmd = cmSize;
-	 e. gen. R. left = old_size. x;
-	 e. gen. R. bottom = old_size. y;
-	 e. gen. P = XX-> size;
-	 e. gen. R. right = XX-> size. x;
-	 e. gen. R. top = XX-> size. y;
-	 {
-	    int count = PWidget( self)-> widgets. count;
-	    Handle *selves = malloc( count * sizeof( Handle));
-	    int i;
-
-	    memcpy( selves, PWidget( self)-> widgets. items, count * sizeof( Handle));
-
-	    for ( i = 0; i < count; i++) {
-	       PWidget child = PWidget( selves[i]);
-
-	       if ( X(selves[i])-> flags. clip_owner && (child-> growMode & gmDontCare) == 0) {
-                  int y = XX-> size. y - X(selves[i])-> size.y - X(selves[i])-> origin.y;
-                  XMoveWindow( DISP, PComponent(selves[i])->handle, X(selves[i])-> origin.x, y);
-	       }
-	    }
-
-	    free( selves);
-	 }
-	 DOLBUG( "old size of %s: %dx%d, new size: %dx%d\n",
-		  PComponent( self)-> name,
-		  old_size. x, old_size. y,
-		  XX-> size. x, XX-> size. y);
-	 CComponent( self)-> message( self, &e);
+         prima_send_cmSize( self, old_size);
          if ( PObject( self)-> stage == csDead) return; 
       }
-
-      XX-> known_origin = XX-> origin;
-      XX-> known_size = XX-> size;
-
       return;
    }
    case ConfigureRequest: {

@@ -38,6 +38,8 @@
 #include "File.h"
 #include "Clipboard.h"
 #include "Icon.h"
+#define XK_MISCELLANY
+#include <X11/keysymdef.h>
 
 /* Miscellaneous system-dependent functions */
 
@@ -1276,11 +1278,293 @@ apc_message( Handle self, PEvent e, Bool is_post)
    return true;
 }
 
+static void 
+close_msgdlg( struct MsgDlg * md)
+{
+   md-> active  = false;
+   md-> pressed = false;
+   if ( md-> grab) 
+      XUngrabPointer( DISP, CurrentTime);
+   md-> grab    = false;
+   XUnmapWindow( DISP, md-> w);
+   XFlush( DISP);
+   if ( md-> next == nil) {
+      XSetInputFocus( DISP, md-> focus, md-> focus_revertTo, CurrentTime);
+      XCHECKPOINT;
+   }   
+}   
+
+void
+prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
+{
+   XWindow w = ev-> xany. window;
+   switch ( ev-> type) {
+   case ConfigureNotify:
+      md-> winSz. x = ev-> xconfigure. width;
+      md-> winSz. y = ev-> xconfigure. height;
+      break;   
+   case Expose:
+      {
+         int i, y = md-> textPos. y;
+         int d = md-> pressed ? 2 : 0;
+         XSetForeground( DISP, md-> gc, md-> bg-> pixel); 
+         XFillRectangle( DISP, w, md-> gc, 0, 0, md-> winSz.x, md-> winSz.y);
+         XSetForeground( DISP, md-> gc, md-> fg-> pixel); 
+         for ( i = 0; i < md-> wrappedCount; i++) {
+            XDrawString( DISP, w, md-> gc, 
+              ( md-> winSz.x - md-> widths[i]) / 2, y, 
+                md-> wrapped[i], md-> lengths[i]);
+            y += md-> font-> height + md-> font-> externalLeading;
+         }   
+         XDrawRectangle( DISP, w, md-> gc, 
+            md-> btnPos.x-1, md-> btnPos.y-1, md-> btnSz.x+2, md-> btnSz.y+2);
+         XDrawString( DISP, w, md-> gc, 
+            md-> btnPos.x + ( md-> btnSz.x - md-> OKwidth) / 2 + d,
+            md-> btnPos.y + md-> font-> height + md-> font-> externalLeading +
+              ( md-> btnSz.y - md-> font-> height - md-> font-> externalLeading) / 2 - 2 + d,
+            "OK", 2);
+         XSetForeground( DISP, md-> gc, 
+            md-> pressed ? md-> d3d-> pixel : md-> l3d-> pixel); 
+         XDrawLine( DISP, w, md-> gc,
+            md-> btnPos.x, md-> btnPos.y + md-> btnSz.y - 1, 
+            md-> btnPos.x, md-> btnPos. y);
+         XDrawLine( DISP, w, md-> gc,
+            md-> btnPos.x + 1, md-> btnPos. y,
+            md-> btnPos.x + md-> btnSz.x - 1, md-> btnPos. y);
+         XSetForeground( DISP, md-> gc, 
+            md-> pressed ? md-> l3d-> pixel : md-> d3d-> pixel); 
+         XDrawLine( DISP, w, md-> gc,
+            md-> btnPos.x, md-> btnPos.y + md-> btnSz.y, 
+            md-> btnPos.x + md-> btnSz.x, md-> btnPos.y + md-> btnSz.y);
+         XDrawLine( DISP, w, md-> gc,
+            md-> btnPos.x + md-> btnSz.x, md-> btnPos.y + md-> btnSz.y - 1,
+            md-> btnPos.x + md-> btnSz.x, md-> btnPos.y + 1);
+      }
+      break;
+   case ButtonPress:
+      if ( !md-> grab && 
+         ( ev-> xbutton. button == Button1) &&
+         ( ev-> xbutton. x >= md-> btnPos. x ) &&
+         ( ev-> xbutton. x < md-> btnPos. x + md-> btnSz.x) &&
+         ( ev-> xbutton. y >= md-> btnPos. y ) &&
+         ( ev-> xbutton. y < md-> btnPos. y + md-> btnSz.y)) {
+         md-> pressed = true;
+         md-> grab = true;
+         XClearArea( DISP, w, md-> btnPos.x, md-> btnPos.y,
+             md-> btnSz.x, md-> btnSz.y, true); 
+         XGrabPointer( DISP, w, false, 
+             ButtonReleaseMask | PointerMotionMask | ButtonMotionMask,
+	     GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+      }   
+      break;   
+   case MotionNotify:
+      if ( md-> grab) {
+         Bool np = 
+           (( ev-> xmotion. x >= md-> btnPos. x ) &&
+            ( ev-> xmotion. x < md-> btnPos. x + md-> btnSz.x) &&
+            ( ev-> xmotion. y >= md-> btnPos. y ) &&
+            ( ev-> xmotion. y < md-> btnPos. y + md-> btnSz.y));
+         if ( np != md-> pressed) {
+            md-> pressed = np;
+            XClearArea( DISP, w, md-> btnPos.x, md-> btnPos.y,
+                md-> btnSz.x, md-> btnSz.y, true); 
+         }
+      }      
+      break;
+   case KeyPress:
+      {
+         char str_buf[256];
+         KeySym keysym;
+         int str_len = XLookupString( &ev-> xkey, str_buf, 256, &keysym, nil);
+         if (
+              ( keysym == XK_Return) ||
+              ( keysym == XK_Escape) ||
+              ( keysym == XK_KP_Enter) ||
+              ( keysym == XK_KP_Space) ||
+              (( str_len == 1) && ( str_buf[0] == ' '))
+            ) 
+            close_msgdlg( md);
+      }   
+      break;   
+   case ButtonRelease:
+      if ( md-> grab && 
+         ( ev-> xbutton. button == Button1)) {
+         md-> grab = false;
+         XUngrabPointer( DISP, CurrentTime);
+         if ( md-> pressed) close_msgdlg( md);
+      }   
+      break;
+   case ClientMessage:
+      if (( ev-> xclient. message_type == guts. wm_data-> protocols) &&
+         (( Atom) ev-> xclient. data. l[0] == guts. wm_data-> deleteWindow)) 
+         close_msgdlg( md);
+      break;   
+   }
+}   
+     
+extern char ** Drawable_do_text_wrap( Handle, TextWrapRec *, PFontABC);
+
 Bool
 apc_show_message( const char * message)
 {
-   DOLBUG( "apc_show_message()\n");
-   return true;
+   char ** wrapped;
+   Font f;
+   Point appSz; 
+   Point textSz;
+   Point winSz;
+   TextWrapRec twr;
+   int i;
+   struct MsgDlg md, **storage;
+   Bool ret = true;
+   
+
+   if ( !DISP) {
+      warn( message);
+      return true;
+   }   
+   
+   appSz = apc_application_get_size( nilHandle);
+   // acquiring message font and wrapping message text
+   {
+      PCachedFont cf;
+      PFontABC abc;
+      XFontStruct *fs;
+      int max;
+      
+      apc_sys_get_msg_font( &f);
+      apc_font_pick( nilHandle, &f, &f);
+      cf = prima_find_known_font( &f, false, false);
+      if ( !cf || !cf-> id) {
+         warn( "UAF_007: internal error (cf:%08x)", (uint)cf); /* the font was not cached, can't be */
+         warn( message);
+         return false;
+      }
+      fs = XQueryFont( DISP, cf-> id);
+      if (!fs) {
+         warn( message);
+         return false;
+      }   
+      abc = prima_xfont2abc( fs, 0, 255);
+      
+      twr. text      = ( char *) message;
+      twr. textLen   = strlen( message);
+      twr. width     = appSz. x * 2 / 3;
+      twr. tabIndent = 3;
+      twr. options   = twNewLineBreak | twWordBreak | twReturnLines;
+      wrapped = Drawable_do_text_wrap( nilHandle, &twr, abc);
+      free( abc);
+
+      md. widths  = malloc( twr. count * sizeof(int));
+      md. lengths = malloc( twr. count * sizeof(int));
+
+      // find text extensions
+      max = 0;
+      for ( i = 0; i < twr. count; i++) {
+         md. widths[i] = XTextWidth( fs, wrapped[i], 
+            md. lengths[i] = strlen( wrapped[i]));
+         if ( md. widths[i] > max) max = md. widths[i];
+      }   
+      textSz. x = max;
+      textSz. y = twr. count * ( f. height + f. externalLeading);
+      
+      md. wrapped       = wrapped;
+      md. wrappedCount  = twr. count;
+      md. font          = &f;
+      md. fontId        = cf-> id;
+      md. OKwidth       = XTextWidth( fs, "OK", 2);
+      md. btnSz.x       = md. OKwidth + 2 + 10;
+      if ( md. btnSz. x < 56) md. btnSz. x = 56;
+      md. btnSz.y       = f. height + f. externalLeading + 2 + 12;
+         
+      winSz. x = textSz. x + 4;
+      if ( winSz. x < md. btnSz. x + 2) winSz. x = md. btnSz.x + 2;
+      winSz. x += f. width * 4;
+      winSz. y = textSz. y + 2 + 12 + md. btnSz. y + f. height;
+      while ( winSz. y + 12 >= appSz.y) {
+         winSz. y -= f. height + f. externalLeading;
+         md. wrappedCount--;
+      }      
+      md. btnPos. x = ( winSz. x - md. btnSz. x) / 2;
+      md. btnPos. y = winSz. y - 2 - md. btnSz. y - f. height / 2;
+      md. textPos. x = 2;
+      md. textPos. y = f. height * 3 / 2 + 2;
+      md. winSz = winSz;
+      
+      XFreeFontInfo( nil, fs, 1);
+   }
+
+   md. active  = true;
+   md. next    = nil;
+   md. pressed = false;
+   md. grab    = false;
+   XGetInputFocus( DISP, &md. focus, &md. focus_revertTo);
+   XCHECKPOINT;
+   {
+      XSizeHints xs;
+      XSetWindowAttributes attrs;
+      attrs. event_mask = 0
+	 | KeyPressMask
+	 | ButtonPressMask
+	 | ButtonReleaseMask
+	 | ButtonMotionMask
+	 | PointerMotionMask
+         | StructureNotifyMask
+	 | ExposureMask;
+      attrs. override_redirect = false;
+      attrs. do_not_propagate_mask = attrs. event_mask;
+         
+      md. w = XCreateWindow( DISP, RootWindow( DISP, SCREEN),
+         ( appSz.x - winSz.x) / 2, ( appSz.y - winSz.y) / 2,
+         winSz.x, winSz.y, 0, CopyFromParent, InputOutput, 
+         CopyFromParent, CWEventMask | CWOverrideRedirect, &attrs);  
+      XCHECKPOINT;
+      if ( !md. w) {
+         ret = false;
+         goto EXIT;
+      }   
+      XSetWMProtocols( DISP, md. w, &guts. wm_data-> deleteWindow, 1);
+      XCHECKPOINT;
+      xs. flags = PMinSize | PMaxSize | USPosition;
+      xs. min_width  = xs. max_width  = winSz.x;
+      xs. min_height = xs. max_height = winSz. y;
+      xs. x = ( appSz.x - winSz.x) / 2;
+      xs. y = ( appSz.y - winSz.y) / 2;
+      XSetWMNormalHints( DISP, md. w, &xs);
+      XStoreName( DISP, md. w, "Prima");
+   }
+
+   storage = &guts. message_boxes;
+   while ( *storage) storage = &((*storage)-> next);
+   *storage = &md;
+
+   {
+      XGCValues gcv;
+      gcv. font = md. fontId;
+      md. gc = XCreateGC( DISP, md. w, GCFont, &gcv);
+      md. fg  = prima_allocate_color( nilHandle, clFore | wcDialog);
+      md. bg  = prima_allocate_color( nilHandle, clBack | wcDialog);
+      md. l3d = prima_allocate_color( nilHandle, clLight3DColor | wcDialog);
+      md. d3d = prima_allocate_color( nilHandle, clDark3DColor  | wcDialog);
+   }
+   
+   XMapWindow( DISP, md. w);
+   XMoveResizeWindow( DISP, md. w, 
+      ( appSz.x - winSz.x) / 2, ( appSz.y - winSz.y) / 2, winSz.x, winSz.y);
+   XNoOp( DISP);
+   XFlush( DISP);
+   while ( md. active) prima_one_loop_round( true, false);
+   
+   XFreeGC( DISP, md. gc);
+   XDestroyWindow( DISP, md. w);
+   *storage = md. next;
+EXIT:   
+   free( md. widths);
+   free( md. lengths);
+   for ( i = 0; i < twr. count; i++)
+      free( wrapped[i]);
+   free( wrapped);
+   
+   return ret;
 }
 
 /* system metrics */

@@ -37,11 +37,6 @@
 
 /* Generic Window Manager Support */
 
-typedef struct _WmGenericData {
-   Atom deleteWindow;
-   Atom protocols;
-   Atom takeFocus;
-} WmGenericData, *PWmGenericData;
 
 #define DEFWMDATA PWmGenericData wm = guts. wm_data
 
@@ -77,6 +72,7 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
    DEFWMDATA;
 
    /* fprintf( stderr, "some hook %s\n", PComponent(self)->name); */
+   if ( guts. message_boxes) return false;
 
    if ( xev-> type == ClientMessage && xev-> message_type == wm-> protocols) {
       if ((Atom) xev-> data. l[0] == wm-> deleteWindow) {
