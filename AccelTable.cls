@@ -25,9 +25,8 @@
 #
 object Prima::AccelTable( Prima::AbstractMenu)
 {
-   method Bool   get_selected();
+   property Bool selected;
    method void   init( HV * profile);
    method void   set_items( SV * menuItems);
-   method void   set_selected( Bool selected);
 }
 

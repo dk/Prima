@@ -47,18 +47,16 @@ Menu_update_sys_handle( Handle self, HV * profile)
    pdelete( owner);
 }
 
-void
-Menu_set_selected( Handle self, Bool selected)
+Bool
+Menu_selected( Handle self, Bool set, Bool selected)
 {
-   inherited set_selected( self, selected);
+   if ( !set)
+       return CWindow( var-> owner)-> get_menu( var->  owner) == self;
    if ( selected)
-      ((( PWindow) var-> owner)-> self)-> set_menu( var-> owner, self);
+      CWindow( var-> owner)-> set_menu( var-> owner, self);
    else if ( my-> get_selected( self))
-      ((( PWindow) var-> owner)-> self)-> set_menu( var-> owner, nilHandle);
+      CWindow( var-> owner)-> set_menu( var-> owner, nilHandle);
+   return false;
 }
 
-Bool
-Menu_get_selected( Handle self)
-{
-   return (((( PWindow) var-> owner)-> self)-> get_menu( var-> owner) == self);
-}
+

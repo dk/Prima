@@ -38,7 +38,7 @@ void
 Popup_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
-   opt_assign( optAutoPopup, pget_B( auto));
+   opt_assign( optAutoPopup, pget_B( autoPopup));
 }
 
 void
@@ -55,31 +55,23 @@ Popup_update_sys_handle( Handle self, HV * profile)
 
 
 Bool
-Popup_get_auto( Handle self)
+Popup_autoPopup( Handle self, Bool set, Bool autoPopup)
 {
-  return is_opt( optAutoPopup);
-}
-
-void
-Popup_set_auto( Handle self, Bool autoPopup)
-{
-   opt_assign( optAutoPopup, autoPopup);
-}
-
-void
-Popup_set_selected( Handle self, Bool selected)
-{
-   inherited set_selected( self, selected);
-   if ( selected)
-      ((( PWidget) var-> owner)-> self)-> set_popup( var-> owner, self);
-   else if ( my-> get_selected( self))
-      ((( PWidget) var-> owner)-> self)-> set_popup( var-> owner, nilHandle);
+   if ( set)
+      opt_assign( optAutoPopup, autoPopup);
+   return is_opt( optAutoPopup);
 }
 
 Bool
-Popup_get_selected( Handle self)
+Popup_selected( Handle self, Bool set, Bool selected)
 {
-   return (((( PWidget) var-> owner)-> self)-> get_popup( var-> owner) == self);
+   if ( !set)
+       return CWidget( var-> owner)-> get_popup( var->  owner) == self;
+   if ( selected)
+      CWidget( var-> owner)-> set_popup( var-> owner, self);
+   else if ( my-> get_selected( self))
+      CWidget( var-> owner)-> set_popup( var-> owner, nilHandle);
+   return false;
 }
 
 void

@@ -56,7 +56,14 @@ DeviceBitmap_done( Handle self)
 Bool DeviceBitmap_begin_paint      ( Handle self) { return true;}
 Bool DeviceBitmap_begin_paint_info ( Handle self) { return true;}
 void DeviceBitmap_end_paint        ( Handle self) { return;}
-Bool DeviceBitmap_get_monochrome   ( Handle self) { return var-> monochrome; }
+
+Bool
+DeviceBitmap_monochrome( Handle self, Bool set, Bool monochrome)
+{
+   if ( set)
+      croak("Attempt to write read-only property %s", "DeviceBitmap::monochrome");
+   return var-> monochrome;
+}
 
 static Handle xdup( Handle self, char * className)
 {

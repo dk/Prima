@@ -46,23 +46,18 @@ AccelTable_set_items( Handle self, SV * menuItems)
 {
    if ( var->  stage > csNormal) return;
    my-> dispose_menu( self, var->  tree);
-   var->  tree = my-> new_menu( self, menuItems, 0);
-}
-
-
-void
-AccelTable_set_selected( Handle self, Bool selected)
-{
-   inherited set_selected( self, selected);
-   if ( selected)
-      ((( PWidget) var->  owner)-> self)-> set_accel_table( var->  owner, self);
-   else if ( my-> get_selected( self))
-      ((( PWidget) var->  owner)-> self)-> set_accel_table( var->  owner, nilHandle);
+   var-> tree = my-> new_menu( self, menuItems, 0);
 }
 
 Bool
-AccelTable_get_selected( Handle self)
+AccelTable_selected( Handle self, Bool set, Bool selected)
 {
-   return (((( PWidget) var->  owner)-> self)-> get_accel_table( var->  owner) == self);
+   if ( !set)
+       return CWidget( var-> owner)-> get_accel_table( var->  owner) == self;
+   if ( selected)
+      CWidget( var-> owner)-> set_accel_table( var->  owner, self);
+   else if ( my-> get_selected( self))
+      CWidget( var-> owner)-> set_accel_table( var->  owner, nilHandle);
+   return false;
 }
 

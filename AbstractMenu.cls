@@ -26,6 +26,7 @@
 object Prima::AbstractMenu ( Prima::Component)
 {
    PMenuItemReg  tree;
+   property Bool selected;
    method void   done();
    method void   delete( char * varName);
    c_only void * first_that( void * actionProc, void * params, Bool useDisabled);
@@ -37,7 +38,6 @@ object Prima::AbstractMenu ( Prima::Component)
    method SV   * get_items ( char * varName);
    method Handle get_image ( char * varName);
    method int    get_key ( char * varName);
-   method Bool   get_selected();
    method char * get_text( char * varName);
    method Bool   has_item( char * varName);
    method void   init( HV * profile);
@@ -52,7 +52,6 @@ object Prima::AbstractMenu ( Prima::Component)
    method void   set_image ( char * varName, Handle image);
    method void   set_items ( SV * menuItems);
    method void   set_key( char * varName, char * key);
-   method void   set_selected( Bool selected);
    method void   set_text ( char * varName, char * text);
    method void   set_variable ( char * varName, char * newName);
    static int    translate_accel( Handle self, char * accel);

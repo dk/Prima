@@ -748,8 +748,10 @@ AbstractMenu_set_command( Handle self, char * key, Bool enabled)
    my-> first_that( self, kmcc, &mcc, true);
 }
 
-void AbstractMenu_set_selected( Handle self, Bool selected) {}
-Bool AbstractMenu_get_selected( Handle self) { return false; }
+Bool AbstractMenu_selected( Handle self, Bool set, Bool selected)
+{
+   return false;
+}
 
 SV *
 AbstractMenu_get_handle( Handle self)
