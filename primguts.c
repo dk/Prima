@@ -23,7 +23,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 /* Guts library, main file */
 #include <stdio.h>
 #include <stdarg.h>
@@ -53,6 +52,7 @@
 #include "Timer.h"
 #include "Utils.h"
 #include "Printer.h"
+
 
 #define USE_MAGICAL_STORAGE 0
 
@@ -86,7 +86,7 @@ stricmp(const char *s1, const char *s2)
    const unsigned char *u2 = (const unsigned *)s2;
    while (tolower(*u1) == tolower(*u2++))
       if (*u1++ == '\0')
-	 return 0;
+         return 0;
    return (tolower(*u1) - tolower(*--u2));
 }
 #endif
@@ -1450,7 +1450,6 @@ prima( const char *primaPath, int argc, char **argv)
       }
    }
 
-
 #ifdef __EMX__
    {
       char *e = "";
@@ -1741,22 +1740,22 @@ XS(Utils_getdir_FROMPERL) {
    SP -= items;
    if ( wantarray) {
       if ( dirlist) {
-	 EXTEND( sp, dirlist-> count);
-	 for ( i = 0; i < dirlist-> count; i++) {
-	    PUSHs( sv_2mortal(newSVpv(( char *)dirlist-> items[i], 0)));
-	    free(( char *)dirlist-> items[i]);
-	 }
-	 plist_destroy( dirlist);
+         EXTEND( sp, dirlist-> count);
+         for ( i = 0; i < dirlist-> count; i++) {
+            PUSHs( sv_2mortal(newSVpv(( char *)dirlist-> items[i], 0)));
+            free(( char *)dirlist-> items[i]);
+         }
+         plist_destroy( dirlist);
       }
    } else {
       if ( dirlist) {
-	 XPUSHs( sv_2mortal( newSViv( dirlist-> count / 2)));
-	 for ( i = 0; i < dirlist-> count; i++) {
-	    free(( char *)dirlist-> items[i]);
-	 }
-	 plist_destroy( dirlist);
+         XPUSHs( sv_2mortal( newSViv( dirlist-> count / 2)));
+         for ( i = 0; i < dirlist-> count; i++) {
+            free(( char *)dirlist-> items[i]);
+         }
+         plist_destroy( dirlist);
       } else {
-	 XPUSHs( &sv_undef);
+         XPUSHs( &sv_undef);
       }
    }
    PUTBACK;
@@ -1863,9 +1862,9 @@ list_insert_at( PList slf, Handle item, int pos)
    if ( list_add( slf, item) < 0) return;
    max = slf-> count - 1;
    if ( pos < 0 || pos >= max) return;
-   save = slf-> items[ pos];
-   memmove( &slf-> items[ pos], &slf-> items[ pos + 1], ( max - pos) * sizeof( Handle));
-   slf-> items[ max] = save;
+   save = slf-> items[ max];
+   memmove( &slf-> items[ pos + 1], &slf-> items[ pos], ( max - pos) * sizeof( Handle));
+   slf-> items[ pos] = save;
 }
 
 int
@@ -1927,6 +1926,8 @@ list_delete_all( PList slf, Bool kill)
    }
    slf-> count = 0;
 }
+
+#ifdef PERLY_HASH
 
 PHash
 hash_create( void)
@@ -2018,6 +2019,177 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
    return nil;
 }
 
+long
+hash_count( PHash hash)
+{
+   return HvKEYS(( HV*) hash);
+}
+#else  /* PERLY_HASH */
+
+#define HASH_BUCKETS 33
+
+typedef struct _HashNode_ {
+   int   keyLen;
+   void* key;
+   void* value;
+   struct _HashNode_ *next;
+} HashNode, *PHashNode;
+
+typedef struct _Hash_ {
+   long count;
+   PHashNode buckets[ HASH_BUCKETS];
+} Hash;
+
+PHash
+hash_create( void)
+{
+   Hash * h = malloc( sizeof( Hash));
+   if ( h) memset ( h, 0, sizeof( Hash));
+   return ( PHash) h;
+}
+
+void
+hash_destroy( PHash h, Bool killAll)
+{
+   long i;
+   for ( i = 0; i < HASH_BUCKETS; i++) {
+      PHashNode node = (( Hash *) h)-> buckets[ i];
+      while ( node != nil) {
+         PHashNode next = node-> next;
+         free( node-> key);
+         if ( killAll) free( node-> value);
+         free( node);
+         node = next;
+      }
+   }
+   free( h);
+}
+
+static PHashNode
+hash_findnode( Hash * h, const void *key, int keyLen, long * bucket)
+{
+   unsigned long i;
+   PHashNode node;
+
+   {
+      unsigned long g;
+      const char * data = key;
+      int size = keyLen;
+      i = 0;
+      while ( size)  {
+         i = ( i << 4) + *data++;
+         if (( g = i & 0xF0000000))
+            i ^= g >> 24;
+         i &= ~g;
+         size--;
+      }
+      i %= HASH_BUCKETS;
+   }
+
+   node = h-> buckets[ i];
+   if ( bucket) *bucket = i;
+   while ( node != nil) {
+      if (( keyLen == node-> keyLen) && ( memcmp( key, node-> key, keyLen) == 0))
+         return node;
+      node = node-> next;
+   }
+
+   return nil;
+}
+
+Bool
+hash_store( PHash h, const void *key, int keyLen, void *val)
+{
+   long i;
+   PHashNode node = hash_findnode(( Hash *)h, key, keyLen, &i);
+   if ( node != nil) {
+      node-> value = val;
+      return true;
+   }
+   node = malloc( sizeof( HashNode));
+   if ( node == nil) return false;
+   node-> key = malloc( keyLen);
+   node-> keyLen = keyLen;
+   if ( node-> key == nil) {
+      free( node);
+      return false;
+   }
+   memcpy( node-> key, key, keyLen);
+   node-> value = val;
+   node-> next  = (( Hash *)h)-> buckets[ i];
+   (( Hash *)h)-> buckets[ i] = node;
+   (( Hash *)h)-> count++;
+   return true;
+}
+
+void *
+hash_fetch( PHash h, const void *key, int keyLen)
+{
+   long i;
+   PHashNode node = hash_findnode(( Hash *)h, key, keyLen, &i);
+   if ( node != nil)
+      return node-> value;
+   return nil;
+}
+
+void *
+hash_delete( PHash h, const void *key, int keyLen, Bool kill)
+{
+   long i;
+   PHashNode node = hash_findnode(( Hash *)h, key, keyLen, &i);
+   if ( node != nil) {
+      void * val = node-> value;
+      if ( node == (( Hash *)h)-> buckets[ i])
+         (( Hash *)h)-> buckets[ i] = node-> next;
+      else {
+         PHashNode node2 = (( Hash *)h)-> buckets[ i];
+         while ( node2-> next != node) node2 = node2-> next;
+         node2-> next = node-> next;
+      }
+      free( node-> key);
+      free( node);
+      if ( kill) free( val);
+      (( Hash *)h)-> count--;
+      return val;
+   }
+   return nil;
+}
+
+long
+hash_count( PHash h)
+{
+   return (( Hash *)h)-> count;
+}
+
+void *
+hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** pKey)
+{
+   long i, e = 0, entries = hash_count( h);
+   void * ret = nil;
+   PHashNode * array = malloc( sizeof( PHashNode) * entries);
+   for ( i = 0; i < HASH_BUCKETS; i++) {
+      PHashNode node = (( Hash *)h)-> buckets[ i];
+      while ( node != nil) {
+         array[ e++] = node;
+         node = node-> next;
+      }
+   }
+   for ( i = 0; i < entries; i++) {
+      if ((( PHashProc) action)( array[i]->value,
+            array[i]->keyLen, array[i]->key, params)) {
+         if ( pKeyLen) *pKeyLen = array[i]-> keyLen;
+         if ( pKey) *pKey = array[i]-> key;
+         ret = array[i]-> value;
+         break;
+      }
+   }
+   free( array);
+   return ret;
+}
+
+#endif /* PERLY_HASH */
+
+
 #ifdef PARANOID_MALLOC
 #undef malloc
 #undef free
@@ -2025,6 +2197,9 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
 #undef plist_create
 #ifndef __unix
 #define HAVE_FTIME
+#endif
+#ifndef PERLY_HASH
+#error Cannot use non-perly hashes
 #endif
 
 #include <sys/timeb.h>
