@@ -879,6 +879,12 @@ sub frames
     return wantarray ? @{$me->{frames}} : $me->{frames};
 }
 
+sub frame
+{
+   my ( $self, $frameIndex) = @_;
+   return $self->{frames}->[$frameIndex];
+}
+
 sub insert_to_frame
 {
     my $me = shift;
