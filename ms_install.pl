@@ -70,14 +70,17 @@ SD
 
 my $os2 = $^O eq 'os2';
 my $mswin32 = ($^O =~ /win32/);
+my $cygwin = ($^O =~ /cygwin/);
 
 my $iarc = $Config{ installsitearch};
 my $ibin = $Config{ installbin};
 my $perlpath = $Config{ perlpath};
 $perlpath =~ s/(perl)(\.exe)?$/$1__$2/i if $os2 && $perlpath =~ /perl(\.exe)?$/i;
 
-$iarc =~ s/\//\\/g;
-$ibin =~ s/\//\\/g;
+unless ( $cygwin) {
+   $iarc =~ s/\//\\/g;
+   $ibin =~ s/\//\\/g;
+}
 
 die "Broken config: cannot find directory $iarc\n" unless -d $iarc;
 die "Broken config: cannot find directory $ibin\n" unless -d $ibin;
