@@ -137,6 +137,7 @@ sub init
       size      => [ 245, 25],
       width     => 200,
       text      => $profile{fileName},
+      maxLen    => 32768,
    );
    $self->insert( Label=>
       origin    => [ 14 , 375],
@@ -308,6 +309,7 @@ sub Ext_Change
    $self-> {mask} = $cont{ $ext-> text};
    $self-> canonize_mask;
    $self-> Dir_Change( $self-> Dir);
+   $self-> {filterIndex} = $ext-> List-> focusedItem;
 }
 
 sub Files_SelectItem
@@ -379,7 +381,6 @@ sub Open_Click
          $self->Name->focus;
          return;
       }
-
    }
 # possible commands recognized, treating names as files
    for ( @files)
@@ -443,6 +444,40 @@ sub Open_Click
 # flags & files processed, ending process
    $self-> Name-> text( join ( ' ', @files));
    $self-> ok;
+}
+
+sub filter
+{
+   if ( $#_) {
+      my ( $self, @filter) = @_;
+      @filter = [[ '' => '*']] unless scalar @filter;
+      my @exts;
+      my @mdts;
+      for ( @filter) {
+         push @exts, $$_[0];
+         push @mdts, $$_[1];
+      }
+      $self-> { filterIndex} = scalar @exts - 1 if $self-> { filterIndex} >= scalar @exts;
+      $self-> { mask} = $mdts[ $self-> { filterIndex}];
+      $self-> { mask} = '*' unless defined $self-> { mask};
+      $self-> canonize_mask;
+      $self-> {filter} = \@filter;
+      $self-> Ext-> items( \@exts);
+      $self-> Ext-> text( $exts[$self-> { filterIndex}]);
+   } else {
+      return @{$_[0]-> {filter}};
+   }
+}
+
+sub filterIndex
+{
+   if ( $#_) {
+      return if $_[1] == $_[0]-> Ext-> focusedItem;
+      $_[0]-> Ext-> focusedItem( $_[1]);
+      $_[0]-> Ext-> notify(q(Change));
+   } else {
+      return $_[0]-> {filterIndex};
+   }
 }
 
 sub directory
