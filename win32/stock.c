@@ -362,10 +362,10 @@ find_node( const PFont font, Bool bySize)
    else
       node = fontHash. buckets[ i];
    if ( bySize) {
-      sz = (char *)(&(font-> name)) - (char *)&(font-> style);
+      sz = (char *)(&(font-> name)) - (char *)&(font-> width);
       while ( node != nil)
       {
-         if (( memcmp( &(font-> style), &(node-> key. style), sz) == 0) &&
+         if (( memcmp( &(font-> width), &(node-> key. width), sz) == 0) &&
              ( strcmp( font-> name, node-> key. name) == 0 ) &&
              ( strcmp( font-> encoding, node-> key. encoding) == 0 ) &&
              (font-> size == node-> key. size))
@@ -1089,7 +1089,6 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
    font-> resolution = res. y * 0x10000 + res. x;
    if ( forceSize) {
       key. height = font-> height;
-      key. width  = font-> width;
       addSizeEntry = true;
    } else {
       key. size  = font-> size;
