@@ -601,6 +601,13 @@ AbstractMenu_set_command( Handle self, char * key, Bool enabled)
 void AbstractMenu_set_selected( Handle self, Bool selected) {}
 Bool AbstractMenu_get_selected( Handle self) { return false; }
 
+SV *
+AbstractMenu_get_handle( Handle self)
+{
+   char buf[ 256];
+   snprintf( buf, 256, "0x%08lx", apc_menu_get_handle( self));
+   return newSVpv( buf, 0);
+}
 
 int
 AbstractMenu_translate_accel( Handle self, char * accel)

@@ -139,7 +139,7 @@ Drawable_set_fill_pattern( Handle self, FillPattern pattern)
 void
 Drawable_set_fill_pattern_id( Handle self, int patternId )
 {
-   if (( patternId < 0) && ( patternId > fsMaxId)) patternId = fsSolid;
+   if (( patternId < 0) && ( patternId > fpMaxId)) patternId = fpSolid;
    my set_fill_pattern( self, fillPatterns[ patternId]);
 }
 
@@ -321,6 +321,15 @@ Drawable_get_font( Handle self)
 {
    return var font;
 }
+
+SV *
+Drawable_get_handle( Handle self)
+{
+   char buf[ 256];
+   snprintf( buf, 256, "0x%08lx", apc_gp_get_handle( self));
+   return newSVpv( buf, 0);
+}
+
 
 int
 Drawable_get_height( Handle self)

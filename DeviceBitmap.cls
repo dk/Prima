@@ -8,5 +8,6 @@ object DeviceBitmap( Drawable)
    method Handle icon();
    method Handle image();
    method Bool   get_monochrome();
+   method SV *   get_handle();
    method void   init( HV * profile);
 }

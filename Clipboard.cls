@@ -8,6 +8,7 @@ object Clipboard( Object)
    method void   done();
    method SV *   fetch( char * format);
    method Bool   format_exists( char * format);
+   method SV *   get_handle();
    method int    get_format_count();
    public void   get_formats();
    method int    get_registered_format_count();

@@ -205,6 +205,15 @@ Clipboard_get_format_count( Handle self)
    return ret;
 }
 
+SV *
+Clipboard_get_handle( Handle self)
+{
+   char buf[ 256];
+   snprintf( buf, 256, "0x%08lx", apc_clipboard_get_handle( self));
+   return newSVpv( buf, 0);
+}
+
+
 int
 Clipboard_get_registered_format_count( Handle self)
 {

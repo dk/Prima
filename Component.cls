@@ -1,4 +1,4 @@
-object Component ( Object)
+object Component( Object)
 {
     void        *sysData;            # system-dependent data, defined by apc
     char        *name;
@@ -17,6 +17,7 @@ object Component ( Object)
     c_only   Handle    first_that_component( void * actionProc, void * params);
     import   Handle    fetch( char * subCtrlName);
     method   Bool      get_event_flag();
+    method   SV      * get_handle();
     method   char    * get_name();
     method   Handle    get_owner();
     method   Handle    get_delegate_to();

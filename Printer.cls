@@ -13,6 +13,7 @@ object Printer( Drawable)
    method void   end_paint_info();
    method Bool   set_printer( char * printerName)   => apc_prn_select;
    method char * get_default_printer()              => apc_prn_get_default;
+   method SV   * get_handle();
    method char * get_printer()                      => apc_prn_get_selected;
    method Point  get_resolution()                   => apc_prn_get_resolution;
    method Point  get_size()                         => apc_prn_get_size;

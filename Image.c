@@ -239,6 +239,14 @@ void Image_set_size( Handle self, int width, int height)
 void Image_set_width( Handle self, int width)   { my set_size( self, width, var h);  }
 void Image_set_height( Handle self, int height) { my set_size( self, var w, height); }
 
+SV *
+Image_get_handle( Handle self)
+{
+   char buf[ 256];
+   snprintf( buf, 256, "0x%08lx", apc_image_get_handle( self));
+   return newSVpv( buf, 0);
+}
+
 Bool
 Image_save( Handle self, char *filename, HV *profile)
 #ifndef SCARY_ERRORS
@@ -854,7 +862,7 @@ Image_dup( Handle self)
       memcpy( PImage(img)-> palette, var palette, 768);
       memcpy( PImage(img)-> data,    var data,    var dataSize);
       CImage(img)->set_type( img, i-> type);
-      if  (i->dataSize != PImage(img)->dataSize)
+      if ( i->dataSize != PImage( img)->dataSize)
          croak("RTC0108: Image::dup consistency failed");
       memcpy( i-> data,    PImage(img)-> data,    PImage(img)->dataSize);
       memcpy( i-> palette, PImage(img)-> palette, 768);

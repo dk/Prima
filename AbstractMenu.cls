@@ -8,7 +8,8 @@ object AbstractMenu ( Component)
    method SV   * get_action( char * varName);
    method Bool   get_check( char * varName);
    method Bool   get_enabled( char * varName);
-   method SV *   get_items ( char * varName);
+   method SV   * get_handle();
+   method SV   * get_items ( char * varName);
    method int    get_key ( char * varName);
    method Bool   get_selected();
    method char * get_text( char * varName);

@@ -2,6 +2,7 @@ object Timer( Component)
 {
    method void   done();
    method int    get_timeout()               => apc_timer_get_timeout;
+   method SV *   get_handle();
    c_only void   handle_event ( PEvent event);
    method void   init( HV * profile);
    import SV *   profile_default  ();

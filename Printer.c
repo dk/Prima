@@ -105,3 +105,11 @@ Printer_get_height( Handle self)
    Point p = my get_size( self);
    return p. y;
 }
+
+SV *
+Printer_get_handle( Handle self)
+{
+   char buf[ 256];
+   snprintf( buf, 256, "0x%08lx", apc_prn_get_handle( self));
+   return newSVpv( buf, 0);
+}

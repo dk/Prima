@@ -24,6 +24,7 @@ object Image( Drawable)
    method Handle extract( int x, int y, int width, int height);
    method int    get_bpp();
    method int    get_conversion();
+   method SV   * get_handle();
    method char * get_status_string();
    method SV   * get_palette();
    method Color  get_pixel(int x, int y);

@@ -346,6 +346,12 @@ Component_event_error( Handle self)
    apc_beep( mbWarning);
 }
 
+SV *
+Component_get_handle( Handle self)
+{
+   return newSVsv( nilSV);
+}
+
 static Bool
 oversend( PEvent event, Handle self)
 {
