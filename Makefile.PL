@@ -2455,6 +2455,7 @@ $PrimaTarget: @allojects $extralibs
 \t${ \eval{ return join ' ', ld_command_line( $PrimaTarget, @allojects)}}
 
 test: all
+\t\@echo Testing Prima v$DEFINES{PRIMA_VERSION}.$DEFINES{PRIMA_SUBVERSION}
 \t\@$^X -w test/Tester.pl
 
 ppd:
