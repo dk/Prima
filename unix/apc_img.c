@@ -1244,32 +1244,18 @@ typedef struct {
    int last;
 } StretchSeed;
 
-static void
-stretch_1( const StretchSeed *xseed, const StretchSeed *yseed,
-           Bool xreverse, Bool yreverse,
-           Bool xshrink, Bool yshrink,
-           Byte *source, int source_line_size,
-           Byte *target, int targetwidth, int targetheight,
-           int target_line_size)
+#define ABS(x) (((x)<0)?(-(x)):(x))
+
+static Bool mbsInitialized = false;
+static Byte set_bits[ByteValues];
+static Byte clear_bits[ByteValues];
+
+static void mbs_init_bits()
 {
-   Fixed xcount, ycount;
-   Fixed xstep, ystep;
-   int xlast, ylast;
-   int xfirst, yfirst;
-   unsigned x, i;
-   Byte *last_source = nil;
-   static Bool initialize = true;
-   static Byte set_bits[ByteValues], clear_bits[ByteValues], *bits = set_bits;
-   void *trg;
-   int th, tls;
-
-   trg = target;
-   th = targetheight;
-   tls = target_line_size;
-
-   if ( initialize) {
+   if ( !mbsInitialized) {
+      int i;
       if ( guts.bit_order == MSBFirst) {
-         Byte *mirrored_bits = mirror_bits();
+         Byte * mirrored_bits = mirror_bits();
          for ( i = 0; i < ByteValues; i++) {
             set_bits[i]   = mirrored_bits[1 << (i%ByteBits)];
             clear_bits[i] = ~mirrored_bits[(1 << (i%ByteBits))];
@@ -1280,258 +1266,118 @@ stretch_1( const StretchSeed *xseed, const StretchSeed *yseed,
             clear_bits[i] = ~(1 << (i%ByteBits));
          }
       }
-      initialize = false;
-   }
-   ycount = yseed-> count;
-   ystep  = yseed-> step;
-   ylast  = yseed-> last;
-   yfirst = yseed-> source;
+      mbsInitialized = true;
+   }   
+} 
 
-   source = source + yfirst * source_line_size;
-   bzero( target, targetheight*target_line_size);
-   if (yreverse) {
-      target = target + (targetheight-1)*target_line_size;
-      target_line_size = - target_line_size;
-   }
-
-   if ( yshrink) {
-      while ( targetheight) {
-      }
-   } else {
-      while ( targetheight) {
-         if ( ycount.i.i > ylast) {
-            source += source_line_size;
-            ylast = ycount.i.i;
-         }
-         ycount.l += ystep.l;
-         if ( last_source == source) {
-            memcpy( target, target - target_line_size, target_line_size < 0 ? - target_line_size : target_line_size);
-         } else {
-            last_source = source;
-            xcount = xseed-> count;
-            xstep  = xseed-> step;
-            xlast  = xseed-> last;
-            xfirst = xseed-> source;
-
-            if ( xshrink) {
-            } else {
-               x = 0;
-               while ( x < targetwidth) {
-                  if ( xcount.i.i > xlast) {
-                     xfirst++;
-                     xlast = xcount.i.i;
-                  }
-                  xcount.l += xstep.l;
-                  if ( source[xfirst/ByteBits] & bits[LOWER_BYTE(xfirst)])
-                     target[x/ByteBits] |= set_bits[LOWER_BYTE(x)];
-                  else
-                     target[x/ByteBits] &= clear_bits[LOWER_BYTE(x)];
-                  x++;
-               }
-            }
-         }
-         target += target_line_size;
-         targetheight--;
-      }
-   }
-}
-
-static void
-stretch_16( const StretchSeed *xseed, const StretchSeed *yseed,
-            Bool xreverse, Bool yreverse,
-            Bool xshrink, Bool yshrink,
-            Pixel16 *source, int source_line_size,
-            Pixel16 *target, int targetwidth, int targetheight,
-            int target_line_size)
+static void 
+mbs_mono_in( Byte * srcData, Byte * dstData, Bool xreverse, 
+    int targetwidth, Fixed step, Fixed count,int first, int last, int targetLineSize )
 {
-   Fixed xcount, ycount;
-   Fixed xstep, ystep;
-   int xlast, ylast;
-   int xfirst, yfirst;
-   int x;
-   Pixel16 *last_source = nil;
+    int x   = xreverse ? targetwidth - 1 : 0;
+    int inc = xreverse ? -1 : 1;
+    if ( srcData[first/ByteBits] & set_bits[LOWER_BYTE(first)])
+       dstData[x/ByteBits] |= set_bits[LOWER_BYTE(x)];
+    else
+       dstData[x/ByteBits] &= clear_bits[LOWER_BYTE(x)];
+    
+    x += inc;
+    targetwidth--;
+    while ( targetwidth) {
+       if ( count.i.i > last) {
+           if ( srcData[first/ByteBits] & set_bits[LOWER_BYTE(first)])
+              dstData[x/ByteBits] |= set_bits[LOWER_BYTE(x)];
+           else
+              dstData[x/ByteBits] &= clear_bits[LOWER_BYTE(x)];
+           x += inc;
+           last = count.i.i;
+           targetwidth--;
+       }
+       count.l += step.l;
+       first++;
+    }
+}   
 
-   ycount = yseed-> count;
-   ystep  = yseed-> step;
-   ylast  = yseed-> last;
-   yfirst = yseed-> source;
-
-   source = (Pixel16*)((Byte*)source + yfirst * source_line_size);
-   if (yreverse) {
-      target = (Pixel16*)((Byte*)target + (targetheight-1)*target_line_size);
-      target_line_size = - target_line_size;
-   }
-
-   if ( yshrink) {
-      while ( targetheight) {
+static void 
+mbs_mono_out( Byte * srcData, Byte * dstData, Bool xreverse,   
+    int targetwidth, Fixed step, Fixed count,int first, int last, int targetLineSize)
+{                                                                       
+   int x   = xreverse ? ( targetwidth - 1) : 0;
+   int inc = xreverse ? -1 : 1;
+   while ( targetwidth) {
+      if ( count.i.i > last) {
+         first++;
+         last = count.i.i;
       }
-   } else {
-      while ( targetheight) {
-         if ( ycount.i.i > ylast) {
-            source = (Pixel16*)((Byte*)source + source_line_size);
-            ylast = ycount.i.i;
-         }
-         ycount.l += ystep.l;
-         if ( last_source == source) {
-            memcpy( target, (Byte*)target - target_line_size, target_line_size < 0 ? - target_line_size : target_line_size);
-         } else {
-            last_source = source;
-            xcount = xseed-> count;
-            xstep  = xseed-> step;
-            xlast  = xseed-> last;
-            xfirst = xseed-> source;
+      count.l += step.l;
+      if ( srcData[first/ByteBits] & set_bits[LOWER_BYTE(first)])
+         dstData[x/ByteBits] |= set_bits[LOWER_BYTE(x)];
+      else
+         dstData[x/ByteBits] &= clear_bits[LOWER_BYTE(x)];
+      x += inc;
+      targetwidth--;
+   }   
+}   
 
-            if ( xshrink) {
-            } else {
-               x = 0;
-               while ( x < targetwidth) {
-                  if ( xcount.i.i > xlast) {
-                     xfirst++;
-                     xlast = xcount.i.i;
-                  }
-                  xcount.l += xstep.l;
-                  target[x++] = source[xfirst];
-               }
-            }
-         }
-         target = (Pixel16*)((Byte*)target + target_line_size);
-         targetheight--;
-      }
-   }
-}
 
-static void
-stretch_24( const StretchSeed *xseed, const StretchSeed *yseed,
-            Bool xreverse, Bool yreverse,
-            Bool xshrink, Bool yshrink,
-            Pixel24 *source, int source_line_size,
-            Pixel24 *target, int targetwidth, int targetheight,
-            int target_line_size)
+#define BS_BYTEEXPAND( type)                                                        \
+static void mbs_##type##_out( type * srcData, type * dstData, Bool xreverse,    \
+    int targetwidth, Fixed step, Fixed count,int first, int last, int targetLineSize)\
+{                                                                       \
+   int x   = xreverse ? ( targetwidth - 1) : 0;                         \
+   int inc = xreverse ? -1 : 1;                                         \
+   while ( targetwidth) {                                               \
+      if ( count.i.i > last) {                                          \
+         first++;                                                       \
+         last = count.i.i;                                              \
+      }                                                                 \
+      count.l += step.l;                                                \
+      dstData[x] = srcData[first];                                      \
+      x += inc;                                                         \
+      targetwidth--;                                                    \
+   }                                                                    \
+}   
+
+#define BS_BYTEIMPACT( type)                                                        \
+static void mbs_##type##_in( type * srcData, type * dstData, Bool xreverse,    \
+    int targetwidth, Fixed step, Fixed count, int first, int last, int targetLineSize)    \
+{                                                                       \
+    int x   = xreverse ? targetwidth - 1 : 0;                           \
+    int inc = xreverse ? -1 : 1;                                        \
+    dstData[x] = srcData[first];                                        \
+    x += inc;                                                           \
+    targetwidth--;                                                      \
+    while ( targetwidth) {                                              \
+       if ( count.i.i > last) {                                         \
+           dstData[x] = srcData[first];                                 \
+           x += inc;                                                    \
+           last = count.i.i;                                            \
+           targetwidth--;                                               \
+       }                                                                \
+       count.l += step.l;                                               \
+       first++;                                                         \
+    }                                                                   \
+}   
+
+BS_BYTEEXPAND( Pixel16);
+BS_BYTEEXPAND( Pixel24);
+BS_BYTEEXPAND( Pixel32);
+
+BS_BYTEIMPACT( Pixel16);
+BS_BYTEIMPACT( Pixel24);
+BS_BYTEIMPACT( Pixel32);
+
+
+static void mbs_copy( Byte * srcData, Byte * dstData, Bool xreverse,  
+    int targetwidth, Fixed step, Fixed count, int first, int last, int targetLineSize)
 {
-   Fixed xcount, ycount;
-   Fixed xstep, ystep;
-   int xlast, ylast;
-   int xfirst, yfirst;
-   int x;
-   Pixel24 *last_source = nil;
+   memcpy( dstData, srcData, targetLineSize);
+}   
 
-   ycount = yseed-> count;
-   ystep  = yseed-> step;
-   ylast  = yseed-> last;
-   yfirst = yseed-> source;
-
-   source = (Pixel24*)((Byte*)source + yfirst * source_line_size);
-   if (yreverse) {
-      target = (Pixel24*)((Byte*)target + (targetheight-1)*target_line_size);
-      target_line_size = - target_line_size;
-   }
-
-   if ( yshrink) {
-      while ( targetheight) {
-      }
-   } else {
-      while ( targetheight) {
-         if ( ycount.i.i > ylast) {
-            source = (Pixel24*)((Byte*)source + source_line_size);
-            ylast = ycount.i.i;
-         }
-         ycount.l += ystep.l;
-         if ( last_source == source) {
-            memcpy( target, (Byte*)target - target_line_size, target_line_size < 0 ? - target_line_size : target_line_size);
-         } else {
-            last_source = source;
-            xcount = xseed-> count;
-            xstep  = xseed-> step;
-            xlast  = xseed-> last;
-            xfirst = xseed-> source;
-
-            if ( xshrink) {
-            } else {
-               x = 0;
-               while ( x < targetwidth) {
-                  if ( xcount.i.i > xlast) {
-                     xfirst++;
-                     xlast = xcount.i.i;
-                  }
-                  xcount.l += xstep.l;
-                  target[x++] = source[xfirst];
-               }
-            }
-         }
-         target = (Pixel24*)((Byte*)target + target_line_size);
-         targetheight--;
-      }
-   }
-}
-
-static void
-stretch_32( const StretchSeed *xseed, const StretchSeed *yseed,
-            Bool xreverse, Bool yreverse,
-            Bool xshrink, Bool yshrink,
-            Pixel32 *source, int source_line_size,
-            Pixel32 *target, int targetwidth, int targetheight,
-            int target_line_size)
-{
-   Fixed xcount, ycount;
-   Fixed xstep, ystep;
-   int xlast, ylast;
-   int xfirst, yfirst;
-   int x;
-   Pixel32 *last_source = nil;
-
-   ycount = yseed-> count;
-   ystep  = yseed-> step;
-   ylast  = yseed-> last;
-   yfirst = yseed-> source;
-
-   source = (Pixel32*)((Byte*)source + yfirst * source_line_size);
-   if (yreverse) {
-      target = (Pixel32*)((Byte*)target + (targetheight-1)*target_line_size);
-      target_line_size = - target_line_size;
-   }
-
-   if ( yshrink) {
-      while ( targetheight) {
-      }
-   } else {
-      while ( targetheight) {
-         if ( ycount.i.i > ylast) {
-            source = (Pixel32*)((Byte*)source + source_line_size);
-            ylast = ycount.i.i;
-         }
-         ycount.l += ystep.l;
-         if ( last_source == source) {
-            memcpy( target, (Byte*)target - target_line_size, target_line_size < 0 ? - target_line_size : target_line_size);
-         } else {
-            last_source = source;
-            xcount = xseed-> count;
-            xstep  = xseed-> step;
-            xlast  = xseed-> last;
-            xfirst = xseed-> source;
-
-            if ( xshrink) {
-            } else {
-               x = 0;
-               while ( x < targetwidth) {
-                  if ( xcount.i.i > xlast) {
-                     xfirst++;
-                     xlast = xcount.i.i;
-                  }
-                  xcount.l += xstep.l;
-                  target[x++] = source[xfirst];
-               }
-            }
-         }
-         target = (Pixel32*)((Byte*)target + target_line_size);
-         targetheight--;
-      }
-   }
-}
 
 static void
 stretch_calculate_seed( int ssize, int tsize,
                         int *clipstart, int *clipsize,
-                        int bpp,
                         StretchSeed *seed)
 /*
    ARGUMENTS:
@@ -1542,7 +1388,6 @@ stretch_calculate_seed( int ssize, int tsize,
                         on output, adjusted value
    I/O  int *clipsize   on input, desired size of clipped region
                         on output, adjusted value
-   INP  int bpp         bits per pixel value; used for fine adjustments
    OUT  StretchSeed *seed
                         calculated seed values, should be passed without
                         modification to the actual stretch routine
@@ -1560,31 +1405,14 @@ stretch_calculate_seed( int ssize, int tsize,
 
    count. l = 0;
    s = 0;
-   if ( tsize < 0) {
-      asize  = -tsize;
-      cend   = *clipstart;
-      cstart =  cend + *clipsize;
-      t      =  asize - 1;
-      dt     = -1;
-      if ( cend < 0)            cend = 0;
-      if ( cstart > asize)      cstart = asize;
-      if ( bpp == 1) {
-         cend &= ~7;
-         cstart += 7;  cstart &= ~7;
-      }
-   } else {
-      asize  =  tsize;
-      cstart = *clipstart;
-      cend   =  cstart + *clipsize;
-      t      =  0;
-      dt     =  1;
-      if ( cstart < 0)          cstart = 0;
-      if ( cend > asize)        cend = asize;
-      if ( bpp == 1) {
-         cstart &= ~7;
-         cend += 7;  cend &= ~7;
-      }
-   }
+   asize  =  ABS(tsize);
+   cstart = *clipstart;
+   cend   =  cstart + *clipsize;
+   t      =  0;
+   dt     =  1;
+   if ( cstart < 0)          cstart = 0;
+   if ( cend > asize)        cend = asize;
+   
    if ( asize < ssize) {
       step. l = (double) asize / ssize * 0x10000;
       last    = -1;
@@ -1620,14 +1448,13 @@ stretch_calculate_seed( int ssize, int tsize,
          t += dt;
       }
    }
-   if ( tsize < 0) {
-      *clipstart = cend;
-      *clipsize  = cstart - cend;
-   } else {
-      *clipstart = cstart;
-      *clipsize  = cend - cstart;
-   }
+   *clipstart = cstart;
+   *clipsize  = cend - cstart;
 }
+
+typedef void mStretchProc( void * srcData, void * dstData, Bool xreverse, 
+   int targetwidth, Fixed step, Fixed count, int first, int last, int targetLineSize);
+
 
 static struct PrimaXImage *
 do_stretch( Handle self, PImage img, struct PrimaXImage *cache,
@@ -1650,57 +1477,98 @@ do_stretch( Handle self, PImage img, struct PrimaXImage *cache,
    xclipsize = cr. width;
    yclipstart = cr. y - dst_y;
    yclipsize = cr. height;
-
    bpp = ( cache-> image-> format == XYBitmap) ? 1 : guts. idepth;
-
    if ( xclipstart + xclipsize <= 0 || yclipstart + yclipsize <= 0) return nil;
-   stretch_calculate_seed( src_w, dst_w, &xclipstart, &xclipsize, bpp, &xseed);
-   stretch_calculate_seed( src_h, dst_h, &yclipstart, &yclipsize, 0, &yseed);
+   stretch_calculate_seed( src_w, dst_w, &xclipstart, &xclipsize, &xseed);
+   stretch_calculate_seed( src_h, dst_h, &yclipstart, &yclipsize, &yseed);
    if ( xclipsize <= 0 || yclipsize <= 0) return nil;
-
    stretch = prepare_ximage( xclipsize, yclipsize, bpp == 1);
    if ( !stretch) croak( "UAI_019: error creating ximage");
 
    tls = get_ximage_bytes_per_line( stretch);
    sls = get_ximage_bytes_per_line( cache);
    data = get_ximage_data( stretch);
+   
+   {
+      Byte * last_source = nil;
+      Byte * srcData = ( Byte*) get_ximage_data(cache) + ( src_y + yseed. source) * sls;
+      Byte * dstData = data;
+      Bool   xshrink = dst_w < 0 ? -dst_w < src_w : dst_w < src_w;
+      Bool   yshrink = dst_h < 0 ? -dst_h < src_h : dst_h < src_h;
+      mStretchProc * proc = nil;
+      int targetwidth  = xclipsize;
+      int targetheight = yclipsize;
+      int copyBytes = tls > sls ? sls : tls;
 
-   switch ( bpp) {
-   case 1:
-      stretch_1( &xseed, &yseed,
-                 dst_w < 0, dst_h < 0,
-                 dst_w < 0 ? -dst_w < src_w : dst_w < src_w,
-                 dst_w < 0 ? -dst_w < src_w : dst_w < src_w,
-                 (get_ximage_data(cache) + src_y*sls + src_x/ByteBits), sls,
-                 data, xclipsize, yclipsize, tls);
-      break;
-   case 16:
-      stretch_16( &xseed, &yseed,
-                  dst_w < 0, dst_h < 0,
-                  dst_w < 0 ? -dst_w < src_w : dst_w < src_w,
-                  dst_h < 0 ? -dst_h < src_h : dst_h < src_h,
-                  (void*)(get_ximage_data(cache) + src_y*sls + src_x*sizeof(Pixel16)), sls,
-                  (void*)data, xclipsize, yclipsize, tls);
-      break;
-   case 24:
-      stretch_24( &xseed, &yseed,
-                  dst_w < 0, dst_h < 0,
-                  dst_w < 0 ? -dst_w < src_w : dst_w < src_w,
-                  dst_h < 0 ? -dst_h < src_h : dst_h < src_h,
-                  (void*)(get_ximage_data(cache) + src_y*sls + src_x*sizeof(Pixel24)), sls,
-                  (void*)data, xclipsize, yclipsize, tls);
-      break;
-   case 32:
-      stretch_32( &xseed, &yseed,
-                  dst_w < 0, dst_h < 0,
-                  dst_w < 0 ? -dst_w < src_w : dst_w < src_w,
-                  dst_h < 0 ? -dst_h < src_h : dst_h < src_h,
-                  (void*)(get_ximage_data(cache) + src_y*sls + src_x*sizeof(Pixel32)), sls,
-                  (void*)data, xclipsize, yclipsize, tls);
-      break;
-   default:
-      croak( "UAI_020: %d-bit stretch is not yet implemented", bpp);
-   }
+      switch ( bpp) {
+      case 1:
+          srcData += src_x / ByteBits;
+          xseed. source += src_x % ByteBits;
+          bzero( dstData, targetheight * tls);
+          mbs_init_bits();
+          proc = ( mStretchProc * )( xshrink ? mbs_mono_in : mbs_mono_out);
+          break;
+      case 16: 
+          srcData += src_x * sizeof( Pixel16);
+          proc = ( mStretchProc * )( xshrink ? mbs_Pixel16_in : mbs_Pixel16_out);
+          if ( dst_w == src_w) proc = ( mStretchProc *) mbs_copy;
+          break;
+      case 24: 
+          srcData += src_x * sizeof( Pixel24); 
+          proc = ( mStretchProc * )( xshrink ? mbs_Pixel24_in : mbs_Pixel24_out);
+          if ( dst_w == src_w) proc = ( mStretchProc *) mbs_copy;
+          break;
+      case 32:    
+          srcData += src_x * sizeof( Pixel32); 
+          proc = ( mStretchProc * )( xshrink ? mbs_Pixel32_in : mbs_Pixel32_out);
+          if ( dst_w == src_w) proc = ( mStretchProc *) mbs_copy;
+          break;
+      default:
+          croak( "UAI_020: %d-bit stretch is not yet implemented", bpp); 
+      }   
+
+      
+      
+      if ( dst_h < 0) {
+         dstData += ( yclipsize - 1) * tls;
+         tls = -tls;
+      }   
+
+      if ( yshrink) {
+         proc( srcData, dstData, dst_w < 0, targetwidth, 
+            xseed.step, xseed.count, xseed.source, xseed.last, copyBytes);
+         dstData += tls;
+         targetheight--;
+         while ( targetheight) {
+            if ( yseed.count.i.i > yseed.last) {  
+               proc( srcData, dstData, dst_w < 0, targetwidth, 
+                     xseed.step, xseed.count, xseed.source, xseed.last, copyBytes);
+               dstData += tls;
+               yseed. last = yseed.count.i.i;
+               targetheight--;
+            }   
+            yseed.count.l += yseed.step.l;
+            srcData += sls;
+         }   
+      } else {
+         while ( targetheight) {
+            if ( yseed.count.i.i > yseed.last) {
+               srcData += sls;
+               yseed.last = yseed.count.i.i;
+            }   
+            yseed.count.l += yseed.step.l;
+            if ( last_source == srcData) 
+               memcpy( dstData, dstData - tls, ABS(tls)); 
+            else {
+               last_source = srcData;
+               proc( srcData, dstData, dst_w < 0, targetwidth, 
+                     xseed.step, xseed.count, xseed.source, xseed. last, copyBytes);
+            }   
+            dstData += tls;
+            targetheight--;
+         }   
+      }   
+   }   
    *x = dst_x + xclipstart;
    *y = dst_y + yclipstart;
    *w = xclipsize;
@@ -1726,11 +1594,20 @@ apc_gp_stretch_image( Handle self, Handle image,
       croak( "UAI_021: not implemented");
 
    cache = prima_create_image_cache( img, self);
+   if ( src_h < 0) {
+      src_h = -src_h;
+      dst_h = -dst_h;
+   }   
+   if ( src_w < 0) {
+      src_w = -src_w;
+      dst_w = -dst_w;
+   }   
+   
    if ( src_w != dst_w || src_h != dst_h) {
 
       SHIFT( dst_x, dst_y);
-      dst_y = XX->size.y - dst_y - dst_h;
-      src_y = img-> h - src_y - src_h;
+      dst_y = XX->size.y - dst_y - ABS(dst_h);
+      src_y = img-> h - src_y - ABS(src_h);
 
       if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) {
          warn( "UAI_022: error querying GC values");
