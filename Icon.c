@@ -160,39 +160,6 @@ colorFound:;
    }
 
    var palette[ color]. r = var palette[ color]. b = var palette[ color]. g = 0;
-
-   // {
-   //    // find black
-   //    int black = 0;
-   //    int minSum = var palette[ 0]. r + var palette[ 0]. g + var palette[ 0]. b;
-   //    int sum;
-   //    for ( i = 1; i < 256; i++)
-   //    {
-   //       sum = var palette[ i]. r + var palette[ i]. g + var palette[ i]. b;
-   //       if ( sum < minSum)
-   //       {
-   //          black = i;
-   //          minSum = sum;
-   //       }
-   //    }
-   //    if ( minSum != 0)
-   //    {
-   //       var palette[ black]. r = 0;
-   //       var palette[ black]. g = 0;
-   //       var palette[ black]. b = 0;
-   //    }
-   //
-   //    // remap
-   //    if ( useMask)
-   //    {
-   //       for ( i = 0; i < var dataSize; i++)
-   //         if ( area8[ i] == color) area8[i] = black;
-   //    } else {
-   //      for ( i = 0; i < var dataSize; i++)
-   //        if (!( dest[ i >> 3] & ( 1 << (7 - ( i & 7)))))
-   //          area8[i] = black;
-   //    }
-   // }
 }
 
 void
