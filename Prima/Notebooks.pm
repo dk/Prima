@@ -609,9 +609,10 @@ sub set_page_index
          $$_[0]-> current($$_[3]);
       }
    }
+   $self->{pageIndex} = $pi;
+   $self-> notify(q(Change));
    $self-> unlock;
    $self-> update_view;
-   $self->{pageIndex} = $pi;
 }
 
 sub insert_page
@@ -833,12 +834,20 @@ sub init
       (map { $_  => $profile{$_}} keys %notebookProps),
       designScale => undef,
       pageCount  => scalar @{$profile{tabs}},
+      delegations => ['Change'],
    );
    $self-> {notebook}-> designScale( $self-> designScale); # propagate designScale
    $self-> tabs( $profile{tabs});
    $self-> pageIndex( $profile{pageIndex});
    $self-> visible( $visible);
    return %profile;
+}
+
+sub Notebook_Change
+{
+   my ( $self, $book) = @_;
+   return if $self->{changeLock};
+   $self-> pageIndex( $book-> pageIndex);
 }
 
 sub on_paint
@@ -1011,8 +1020,8 @@ sub set_page_index
 {
    my ( $self, $pi) = @_;
    my ($pix, $mpi) = ( $self->{notebook}->pageIndex, $self->{notebook}->pageCount - 1);
-   $self->{notebook}-> pageIndex( $pi);
    $self->{changeLock} = 1;
+   $self->{notebook}-> pageIndex( $pi);
    $self->{tabSet}-> tabIndex( $self-> page2tab( $self->{notebook}-> pageIndex));
    delete $self->{changeLock};
    my @size = $self-> size;
@@ -1029,6 +1038,7 @@ sub set_page_index
       $size[0] - DefBorderX - (( $a == $newA) ? DefBookmarkX + 2 : 0),
       $size[1] - DefBorderX - $th + 3
    );
+   $self-> notify(q(Change));
 }
 
 sub tabIndex     {($#_)?($_[0]->{tabSet}->tabIndex( $_[1]))   :return $_[0]->{tabSet}->tabIndex}
