@@ -1180,8 +1180,6 @@ sub value
       my ( $self, $value) = @_;
       my ( $min, $max) = ( $self->{min}, $self->{max});
       my $old = $self-> {value};
-      $value = $min if $value < $min;
-      $value = $max if $value > $max;
       if ( $self->{snap}) {
          my ( $minDist, $thatVal, $i) = ( abs( $min - $max));
          my $tval = $self->{tickVal};
@@ -1191,6 +1189,8 @@ sub value
          }
          $value = $thatVal if defined $thatVal;
       }
+      $value = $min if $value < $min;
+      $value = $max if $value > $max;
       return if $old == $value;
       $self->{value} = $value;
       my @size = $self-> size;
