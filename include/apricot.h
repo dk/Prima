@@ -1838,6 +1838,14 @@ _test_malloc( size_t size, int ln, char *fil, Handle self);
 extern void
 _test_free( void *ptr, int ln, char *fil, Handle self);
 
+#define plist_create( sz, delta) paranoid_plist_create( sz, delta, __FILE__, __LINE__)
+#define list_create( slf, sz, delta) paranoid_list_create( slf, sz, delta, __FILE__, __LINE__)
+extern PList
+paranoid_plist_create( int, int, char *, int);
+
+extern void
+paranoid_list_create( PList, int, int, char *, int);
+
 extern Handle self;
 
 #undef malloc
