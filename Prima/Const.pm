@@ -163,23 +163,23 @@ See L<Prima::Widget/colorIndex>
 
 =item Direct color constants
 
-  mb::Black
-  mb::Blue
-  mb::Green
-  mb::Cyan
-  mb::Red
-  mb::Magenta
-  mb::Brown
-  mb::LightGray
-  mb::DarkGray
-  mb::LightBlue
-  mb::LightGreen
-  mb::LightCyan
-  mb::LightRed
-  mb::LightMagenta
-  mb::Yellow
-  mb::White
-  mb::Gray
+  cl::Black
+  cl::Blue
+  cl::Green
+  cl::Cyan
+  cl::Red
+  cl::Magenta
+  cl::Brown
+  cl::LightGray
+  cl::DarkGray
+  cl::LightBlue
+  cl::LightGreen
+  cl::LightCyan
+  cl::LightRed
+  cl::LightMagenta
+  cl::Yellow
+  cl::White
+  cl::Gray
 
 =item Indirect color constants
 

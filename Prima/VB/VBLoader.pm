@@ -307,9 +307,6 @@ A more complicated but more proof code can be met in the toolkit:
        'Form1'     => { visible => 0, centered => 1},
      );
      die "$@\n" unless $form;
-        Prima::message("Error in setup resource: $@"); 
-        return;
-     }
 
 All form widgets can be supplied with custom parameters, all together combined
 in a hash of hashes and passed as the second parameter to C<VBLoad()> function.
