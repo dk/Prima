@@ -407,6 +407,27 @@ sub init
 }
 
 
+sub set
+{
+   my ( $self, %profile) = @_;
+   if ( exists $profile{partial} and exists $profile{whole}) {
+      $self-> set_proportion($profile{partial}, $profile{whole});
+      delete $profile{partial};
+      delete $profile{whole};
+   }
+   if ( exists $profile{min} and exists $profile{max}) {
+      $self-> set_bounds($profile{max}, $profile{max});
+      delete $profile{min};
+      delete $profile{max};
+   }
+   if ( exists $profile{step} and exists $profile{pageStep}) {
+      $self-> set_steps($profile{step}, $profile{pageStep});
+      delete $profile{step};
+      delete $profile{pageStep};
+   }
+   $self-> SUPER::set( %profile);
+}
+
 sub on_size
 {
    $_[0]-> reset;
