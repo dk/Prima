@@ -826,7 +826,7 @@ sub TermView_Size {
 sub TermView_Popup {
     my ( $self, $term, $mouseDriven, $x, $y) = @_;
     my $popup = $self->popup;
-    if ( $popup && $popup->auto) {
+    if ( $popup && $popup->autoPopup) {
         $self->{ mousePos} = $mouseDriven ? [ $x, $y] : undef;
         $popup->popup( $x, $y);
         $term->clear_event;

@@ -148,7 +148,7 @@ sub init
       { $self->$_( $profile{ $_}); }
    $self-> {zoomRect} = [ $self->rect];
    $self-> {miniRect} = [ 0, 0, $self-> sizeMin];
-   $self-> popup-> auto(0) if $self-> popup;
+   $self-> popup-> autoPopup(0) if $self-> popup;
    $self-> {client} = $self-> insert( $profile{clientClass},
       rect         => [ $self-> get_client_rect],
       growMode     => gm::Client,
