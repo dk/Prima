@@ -28,7 +28,7 @@
 /*
  * Created by Vadim Belman <voland@plab.ku.dk>, April 1999.
  */
-#include "unix/img_api.h"
+#include "img_api.h"
 
 /* This function must always be used for creating a new image info structure. */
 PImgInfo
@@ -90,10 +90,11 @@ img_clear_properties( PList propList)
 {
     if ( propList) {
 	int i;
-	
+
 	for ( i = 0; i < propList->count; i++) {
 	    img_free_property( ( PImgProperty) list_at( propList, i));
 	}
+	list_destroy( propList); /* Don't worry: list_add will recreate the list correctly. */
     }
     else {
 	DOLBUG( "*Error* nil passed to img_clear_properties\n");
@@ -152,7 +153,7 @@ img_clear_property( PImgProperty imgProp)
 		    break;   
 		case PROPTYPE_PROP:
 		    for ( i = 0; i < imgProp->used; i++) {
-			img_destroy_properties( &imgProp->val.pProperties[ i]);
+			img_clear_properties( &imgProp->val.pProperties[ i]);
 			list_destroy( &imgProp->val.pProperties[ i]);
 		    }
 		    free( imgProp->val.pProperties);
@@ -173,7 +174,9 @@ img_clear_property( PImgProperty imgProp)
 		    free( imgProp->val.pByte);
 		    break;
 		default:
-		    croak( "Corrupted ImgProperty structure: unknown data type 0x%02x\n", imgProp->flags & PROPTYPE_MASK);
+		    croak( "Corrupted ImgProperty structure: unknown data type 0x%02x of property ``%s''\n",
+			   imgProp->flags & PROPTYPE_MASK, 
+			   imgProp->name);
 		    break;
 	    }
 	}
@@ -193,7 +196,11 @@ img_clear_property( PImgProperty imgProp)
 		    break;
 	    }
 	}
-	bzero( imgProp, sizeof( ImgProperty));
+	imgProp->id =
+	imgProp->flags =
+	imgProp->used =
+	imgProp->size = 0;
+	imgProp->name = nil;
     }
 }
 
@@ -451,7 +458,8 @@ img_push_property_value_v( PImgProperty imgProp, va_list arg)
 		}
 		if ( rc) {
 		    imgProp->val.pBinary[ imgProp->used].size = binSize;
-		    memcpy( imgProp->val.pBinary[ imgProp->used++].data, binData, binSize);
+		    memcpy( imgProp->val.pBinary[ imgProp->used].data, binData, binSize);
+		    imgProp->used++;
 		}
 	    }
 	    break;
