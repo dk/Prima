@@ -28,8 +28,8 @@ use Prima qw(Application Outlines);
 my $w = Prima::Window->create( size => [ 200, 200],
 onDestroy=>sub{$::application-> close});
 my $o = $w-> insert(
-DirectoryOutline =>
-#StringOutline =>
+#DirectoryOutline =>
+StringOutline =>
 popupItems => [
   ['Delete this' => sub{
      my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
@@ -64,8 +64,8 @@ onSelectItem => sub {
    my ($self, $index) = @_;
    #print $self-> path."\n";
 },
-items => [['wdcdec']],
-xitems => [
+#items => [['wdcdec']],
+items => [
    ['Single string'],
    ['Reference', [
       ['Str1'],
