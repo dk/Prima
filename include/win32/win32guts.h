@@ -303,7 +303,6 @@ typedef struct _DrawableData
    int            timeDefsCount;           // count of timers attached.
    PItemRegRec    timeDefs;                // timer list
    Point          size;                    // size of a view
-   int            lockState;               // locking count
    Point          cursorPos;               // cursor position
    Point          cursorSize;              // cursor size
    HCURSOR        pointer;                 // pointer handle
