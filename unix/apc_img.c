@@ -329,6 +329,7 @@ apc_image_begin_paint_info( Handle self)
     DEFXX;
     PImage img = PImage( self);
     Bool bitmap = (img-> type == imBW) || ( guts. idepth == 1);
+    if ( !DISP) return false;
     XX-> gdrawable = XCreatePixmap( DISP, guts. root, 1, 1, 
        bitmap ? 1 : guts. depth);
     XCHECKPOINT;
@@ -377,6 +378,7 @@ Bool
 apc_dbm_create( Handle self, Bool monochrome)
 {
    DEFXX;
+   if ( !DISP) return false;
    if ( guts. idepth == 1) monochrome = true;
    XX-> type.bitmap = !!monochrome;
    XX-> type.pixmap = !monochrome;
@@ -1330,6 +1332,7 @@ apc_image_begin_paint( Handle self)
    int icon = XX-> type. icon;
    Bool bitmap = (img-> type  == imBW) || ( guts. idepth == 1);
 
+   if ( !DISP) return false;
    if (img-> w == 0 || img-> h == 0) return false;
    
    XX-> gdrawable = XCreatePixmap( DISP, guts. root, img-> w, img-> h,
