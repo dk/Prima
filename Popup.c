@@ -16,31 +16,18 @@ Popup_init( Handle self, HV * profile)
 }
 
 void
-Popup_done( Handle self)
-{
-   ((( PWidget) var owner)-> self)-> set_popup( var owner, nilHandle);
-   inherited done( self);
-}
-
-void
 Popup_update_sys_handle( Handle self, HV * profile)
 {
    Handle xOwner = pexist( owner) ? pget_H( owner) : var owner;
    if ( var owner && ( xOwner != var owner))
       ((( PWidget) var owner)-> self)-> set_popup( var owner, nilHandle);
-   if (!(
-       pexist( owner) ||
-       pexist( items)
-    )) return;
-   if ( pexist( items)) {
-      my dispose_menu( self, var tree);
-      var tree = my new_menu( self, pget_sv( items), 0);
-   }
+   var anchored = true;
+   if ( !pexist( owner)) return;
    if ( !apc_popup_create( self, xOwner))
       croak("RTC0061: Cannot create popup");
    pdelete( owner);
-   pdelete( items);
 }
+
 
 Bool
 Popup_get_auto( Handle self)
