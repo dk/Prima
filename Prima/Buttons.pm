@@ -169,6 +169,7 @@ sub on_mouseclick
    $self->{ lastMouseOver}  = 1;
    $self-> pressed( 1);
    $self-> capture(1);
+   $self-> clear_event;
 }
 
 sub on_mouseup

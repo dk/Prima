@@ -759,6 +759,7 @@ sub on_mousedown
       $self-> start_block unless exists $self->{anchor};
    }
    $self-> capture(1);
+   $self-> clear_event;
 }
 
 sub on_mouseup
@@ -769,6 +770,7 @@ sub on_mouseup
    $self-> capture(0);
    $self-> end_block unless $self->{mouseTransaction} == 2;
    $self->{mouseTransaction} = undef;
+   $self-> clear_event;
 }
 
 sub on_mousemove
@@ -776,6 +778,7 @@ sub on_mousemove
    my ( $self, $mod, $x, $y) = @_;
    return unless $self->{mouseTransaction};
    my @xy = $self-> point2xy( $x, $y);
+   $self-> clear_event;
    if ( $xy[2])
    {
       $self-> scroll_timer_stop;
@@ -798,6 +801,7 @@ sub on_mousewheel
    my $newTop = $self-> firstCol - $z;
    my $maxTop = $self-> {maxChunk} - $self->{rows} + 1;
    $self-> firstCol( $newTop > $maxTop ? $maxTop : $newTop);
+   $self-> clear_event;
 }
 
 sub on_mouseclick
