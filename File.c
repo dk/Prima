@@ -95,28 +95,10 @@ File_handle_event( Handle self, PEvent event)
 }
 
 SV *
-File_get_file( Handle self)
+File_file( Handle self, Bool set, SV * file)
 {
-   return var-> file ? var-> file : nilSV;
-}
-
-SV *
-File_get_handle( Handle self)
-{
-   char buf[ 256];
-   snprintf( buf, 256, "0x%08x", var-> fd);
-   return newSVpv( buf, 0);
-}
-
-int
-File_get_mask( Handle self)
-{
-   return var-> userMask;
-}
-
-void
-File_set_file( Handle self, SV * file)
-{
+   if ( !set)
+      return var-> file ? var-> file : nilSV;
    if ( var-> file) {
       apc_file_detach( self);
       sv_free( var-> file);
@@ -138,13 +120,25 @@ File_set_file( Handle self, SV * file)
          }
       }
    }
+   return nilSV;
 }
 
-void
-File_set_mask( Handle self, int mask)
+SV *
+File_get_handle( Handle self)
 {
+   char buf[ 256];
+   snprintf( buf, 256, "0x%08x", var-> fd);
+   return newSVpv( buf, 0);
+}
+
+int
+File_mask( Handle self, Bool set, int mask)
+{
+   if ( !set)
+      return var-> userMask;
    var-> userMask = mask;
    File_reset_notifications( self);
+   return mask;
 }
 
 long

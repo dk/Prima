@@ -262,9 +262,6 @@ sub profile_default
    return $def;
 }
 
-sub file       {($#_)?$_[0]->set_file        ($_[1]):return $_[0]->get_file; }
-sub mask       {($#_)?$_[0]->set_mask        ($_[1]):return $_[0]->get_mask; }
-
 package Prima::Clipboard;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
