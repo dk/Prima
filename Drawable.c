@@ -313,15 +313,11 @@ Drawable_get_nearest_color( Handle self, Color color)
 Point
 Drawable_resolution( Handle self, Bool set, Point resolution)
 {
-   gpARGS;
    if ( set)
       croak("Attempt to write read-only property %s", "Drawable::resolution");
-   gpENTER;
    resolution = apc_gp_get_resolution( self);
-   gpLEAVE;
    return resolution;
 }
-
 
 SV *
 Drawable_get_physical_palette( Handle self)
