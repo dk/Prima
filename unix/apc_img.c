@@ -1339,7 +1339,7 @@ apc_gp_stretch_image( Handle self, Handle image,
                      xDestLen < 0, yDestLen < 0,
                      xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
                      yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,
-                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*2), sls,
+                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*sizeof(uint16_t)), sls,
                      (void*)data, xclipsize, yclipsize, tls);
          break;
       case 32:
@@ -1347,7 +1347,7 @@ apc_gp_stretch_image( Handle self, Handle image,
                      xDestLen < 0, yDestLen < 0,
                      xDestLen < 0 ? -xDestLen < xLen : xDestLen < xLen,
                      yDestLen < 0 ? -yDestLen < yLen : yDestLen < yLen,
-                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*2), sls,
+                     (void*)(get_ximage_data(image_cache) + yFrom*sls + xFrom*sizeof(uint32_t)), sls,
                      (void*)data, xclipsize, yclipsize, tls);
          break;
       default:
