@@ -16,7 +16,7 @@ typedef Bool ActionProc ( Handle self, Handle item, void * params);
 typedef ActionProc *PActionProc;
 #define his (( PWidget) child)->
 
-// local defines
+/* local defines */
 typedef struct _SingleColor
 {
    Color color;
@@ -43,7 +43,7 @@ static Bool hint_notify ( Handle self, Handle child, char * hint);
        Bool single_color_notify ( Handle self, Handle child, void * color);
        Bool kill_all( Handle self, Handle child, void * dummy);
 
-// init, done & update_sys_handle
+/* init, done & update_sys_handle */
 void
 Widget_init( Handle self, HV * profile)
 {
@@ -53,7 +53,7 @@ Widget_init( Handle self, HV * profile)
 
    inherited init( self, profile);
 
-   // var init
+   /* var init */
    list_create( &var widgets, 0, 8);
    var tabOrder = -1;
 
@@ -68,8 +68,8 @@ Widget_init( Handle self, HV * profile)
    dyna_set( self, profile);
    my update_sys_handle( self, profile);
 
-   // props init
-   // font and colors
+   /* props init */
+   /* font and colors */
    SvHV_Font( pget_sv( font), &Font_buffer, "Widget::init");
    my set_widget_class       ( self, pget_i( widgetClass     ));
    my set_color              ( self, pget_i( color           ));
@@ -87,7 +87,7 @@ Widget_init( Handle self, HV * profile)
    my set_color_index( self, pget_i( light3DColor),      ciLight3DColor);
    my set_color_index( self, pget_i( dark3DColor),       ciDark3DColor);
 
-   // light props
+   /* light props */
    my set_brief_keys         ( self, pget_B(  briefKeys));
    my set_buffered           ( self, pget_B(  buffered));
    my set_cursor_visible     ( self, pget_B(  cursorVisible));
@@ -105,7 +105,7 @@ Widget_init( Handle self, HV * profile)
    my set_text               ( self, pget_c(  text));
    opt_assign( optScaleChildren, pget_B( scaleChildren));
 
-   // subcomponents props
+   /* subcomponents props */
    my set_popup_color ( self, pget_i( popupColor),             ciFore);
    my set_popup_color ( self, pget_i( popupBackColor),         ciBack);
    my set_popup_color ( self, pget_i( popupHiliteColor),       ciHiliteText);
@@ -121,7 +121,7 @@ Widget_init( Handle self, HV * profile)
    if ( SvTYPE( sv = pget_sv( accelItems)) != SVt_NULL)
       my set_accel_items( self, sv);
 
-   // size, position, enabling, visibliity etc. runtime
+   /* size, position, enabling, visibliity etc. runtime */
    {
       AV * av   = ( AV *) SvRV( pget_sv( sizeMin));
       Point set;
@@ -214,7 +214,7 @@ Widget_done( Handle self)
    inherited done( self);
 }
 
-// ::a
+/* ::a */
 void
 Widget_attach( Handle self, Handle objectHandle)
 {
@@ -223,7 +223,7 @@ Widget_attach( Handle self, Handle objectHandle)
    inherited attach( self, objectHandle);
 }
 
-//::b
+/*::b */
 Bool
 Widget_begin_paint( Handle self)
 {
@@ -255,7 +255,7 @@ Widget_bring_to_front( Handle self)
    apc_view_set_z_order( self, nilHandle, true);
 }
 
-//::c
+/*::c */
 Bool
 Widget_can_close( Handle self)
 {
@@ -285,7 +285,7 @@ Widget_custom_paint( Handle self)
    return (var onPaint) || (is_dmopt( dmPaint)) || (my on_paint != Widget_on_paint);
 }
 
-//::d
+/*::d */
 void
 Widget_detach( Handle self, Handle objectHandle, Bool kill)
 {
@@ -295,7 +295,7 @@ Widget_detach( Handle self, Handle objectHandle, Bool kill)
    inherited detach( self, objectHandle, kill);
 }
 
-//::e
+/*::e */
 void
 Widget_end_paint( Handle self)
 {
@@ -313,7 +313,7 @@ Widget_end_paint_info( Handle self)
 }
 
 
-//::f
+/*::f */
 Handle
 Widget_first_that( Handle self, void * actionProc, void * params)
 {
@@ -336,8 +336,8 @@ Widget_first_that( Handle self, void * actionProc, void * params)
    return child;
 }
 
-//::g
-//::h
+/*::g */
+/*::h */
 void Widget_handle_event( Handle self, PEvent event)
 {
    enter_method;
@@ -734,7 +734,7 @@ void Widget_handle_event( Handle self, PEvent event)
         }
         break;
       case cmSize:
-        // expecting new size in P, old & new size in R.
+        /* expecting new size in P, old & new size in R. */
         {
            Bool doNotify = false;
            if ( var stage == csNormal) {
@@ -803,7 +803,7 @@ Widget_hide_cursor( Handle self)
       var cursorLock++;
 }
 
-//::i
+/*::i */
 void
 Widget_insert_behind ( Handle self, Handle widget)
 {
@@ -823,8 +823,8 @@ Widget_is_child( Handle self, Handle owner)
    return false;
 }
 
-//::j
-//::k
+/*::j */
+/*::k */
 void
 Widget_key_event( Handle self, int command, int code, int key, int mod, int repeat, Bool post)
 {
@@ -840,7 +840,7 @@ Widget_key_event( Handle self, int command, int code, int key, int mod, int repe
    apc_message( self, &ev, post);
 }
 
-//::l
+/*::l */
 void
 Widget_locate( Handle self, Rect r )
 {
@@ -849,7 +849,7 @@ Widget_locate( Handle self, Rect r )
    my set_pos( self, r. left, r. bottom);
 }
 
-//::m
+/*::m */
 void
 Widget_mouse_event( Handle self, int command, int button, int mod, int x, int y, Bool dbl, Bool post)
 {
@@ -871,15 +871,15 @@ Widget_mouse_event( Handle self, int command, int button, int mod, int x, int y,
    apc_message( self, &ev, post);
 }
 
-//::n
+/*::n */
 Handle
 Widget_next( Handle self)
 {
    return get_zorder( self,  1);
 }
 
-//::o
-//::p
+/*::o */
+/*::p */
 void
 Widget_post_message( Handle self, SV * info1, SV * info2)
 {
@@ -910,15 +910,15 @@ Widget_process_accel( Handle self, int key)
           ((( PWidget) var owner)-> self)->process_accel( var owner, key) : false;
 }
 
-//::q
-//::r
+/*::q */
+/*::r */
 void
 Widget_repaint( Handle self)
 {
    if ( !opt_InPaint && ( var stage == csNormal)) apc_view_repaint( self);
 }
 
-//::s
+/*::s */
 void
 Widget_send_to_back( Handle self)
 {
@@ -1086,8 +1086,8 @@ Widget_show_hint( Handle self)
    ((( PApplication) application)-> self)-> set_hint_action( application, self, true, true);
 }
 
-//::t
-//::u
+/*::t */
+/*::u */
 void
 Widget_update_delegator( Handle self)
 {
@@ -1136,13 +1136,13 @@ Widget_update_view( Handle self)
 {
    if ( !opt_InPaint) apc_view_update( self);
 }
-//::v
-//::w
-//::x
-//::y
-//::z
+/*::v */
+/*::w */
+/*::x */
+/*::y */
+/*::z */
 
-// get_props()
+/* get_props() */
 
 SV *
 Widget_get_accel_items( Handle self)
@@ -1250,7 +1250,7 @@ Widget_get_design_scale( Handle self)
 SV *
 Widget_get_drag_pointer( Handle self)
 {
-   return nilSV; // not currently supported
+   return nilSV; /* not currently supported */
 }
 
 int
@@ -1433,11 +1433,11 @@ Widget_get_selected_widget( Handle self)
    }
    return nilHandle;
 
-   // classic solution should be recursive and inheritant call
-   // of get_selected() here, when Widget would return state of
-   // child-group selected state until Widget::get_selected() called;
-   // thus, each of them would call apc_view_get_focused - that's expensive,
-   // so that's the reason not to use classic object model here.
+   /* classic solution should be recursive and inheritant call */
+   /* of get_selected() here, when Widget would return state of */
+   /* child-group selected state until Widget::get_selected() called; */
+   /* thus, each of them would call apc_view_get_focused - that's expensive, */
+   /* so that's the reason not to use classic object model here. */
 }
 
 int
@@ -1503,7 +1503,7 @@ Widget_get_width( Handle self)
    return my get_size ( self). x;
 }
 
-// set_props()
+/* set_props() */
 
 void
 Widget_set_accel_items( Handle self, SV * accelItems)
@@ -1603,7 +1603,7 @@ Widget_set_color_index( Handle self, Color color, int index)
    if (( index < 0) || ( index > ciMaxId)) return;
    if ( !opt_InPaint) my first_that( self, single_color_notify, &s);
 
-   if ( var handle == nilHandle) return; // aware of call from Drawable::init
+   if ( var handle == nilHandle) return; /* aware of call from Drawable::init */
    if (( color < 0) && (( color & wcMask) == 0)) color |= var widgetClass;
    if ( opt_InPaint)
    {
@@ -1655,7 +1655,7 @@ Widget_set_current_widget( Handle self, Handle widget)
    } else
       var currentWidget = nilHandle;
 
-   // adjust selection if we're in currently selected chain
+   /* adjust selection if we're in currently selected chain */
    if ( my get_selected( self))
       my set_selected_widget( self, widget);
 }
@@ -1695,7 +1695,7 @@ Widget_set_font( Handle self, Font font)
 {
    enter_method;
    if ( !opt_InPaint) my first_that( self, font_notify, &font);
-   if ( var handle == nilHandle) return; // aware of call from Drawable::init
+   if ( var handle == nilHandle) return; /* aware of call from Drawable::init */
    apc_font_pick( self, &font, & var font);
    if ( opt_InPaint) apc_gp_set_font ( self, & var font);
    else {
@@ -1960,7 +1960,7 @@ Widget_set_selected( Handle self, Bool selected)
       if ( var currentWidget) {
          PWidget w = ( PWidget) var currentWidget;
          if ( w-> options. optSystemSelectable && !w-> self-> get_clip_owner(( Handle) w))
-            w-> self-> bring_to_front(( Handle) w); // <- very uncertain !!!!
+            w-> self-> bring_to_front(( Handle) w); /* <- very uncertain !!!! */
          else
             w-> self-> set_selected(( Handle) w, true);
       } else
@@ -1968,15 +1968,15 @@ Widget_set_selected( Handle self, Bool selected)
          my set_focused( self, true);
       else
       if ( is_opt( optSystemSelectable)) {
-         // nothing to do with Widget, reserved for Window
+         /* nothing to do with Widget, reserved for Window */
       }
       else {
          PWidget toFocus = ( PWidget) find_tabfoc( self);
          if ( toFocus)
             toFocus-> self-> set_selected(( Handle) toFocus, 1);
          else {
-         // if group has no selectable widgets and cannot be selected by itself,
-         // process chain of bring_to_front(), followed by set_focused(1) call, if available
+         /* if group has no selectable widgets and cannot be selected by itself, */
+         /* process chain of bring_to_front(), followed by set_focused(1) call, if available */
             PWidget x = ( PWidget) var owner;
             List  lst;
             int i;
@@ -1984,7 +1984,7 @@ Widget_set_selected( Handle self, Bool selected)
             list_create( &lst, 8, 8);
             while ( x) {
                if ( !toFocus && x-> options. optSelectable) {
-                  toFocus = x;  // choose closest owner to focus
+                  toFocus = x;  /* choose closest owner to focus */
                   break;
                }
                if (( Handle) x != application && !kind_of(( Handle) x, CWindow))
@@ -2001,7 +2001,7 @@ Widget_set_selected( Handle self, Bool selected)
             }
             list_destroy( &lst);
          }
-      } // end set_selected( true);
+      } /* end set_selected( true); */
    } else
       my set_focused( self, false);
 }
@@ -2143,7 +2143,7 @@ Widget_set_width( Handle self, int _width )
    my set_size (  self, _width, _h);
 }
 
-// event handlers
+/* event handlers */
 
 void
 Widget_on_paint( Handle self, Handle canvas)
@@ -2188,7 +2188,7 @@ void Widget_on_mouseleave( Handle self ) {}
 void Widget_on_leave( Handle self) {}
 
 
-// static iterators
+/* static iterators */
 static Bool
 unshift_ordering( Handle owner, Handle self, int tabOrder)
 {
@@ -2294,7 +2294,7 @@ sptr( Handle window, Handle self, void * v)
 {
    enter_method;
    if ( !SvROK( var pointer) && ( SvIV( var pointer) == crDefault))
-      my set_pointer( self, var pointer); // possibility to refresh system pointer
+      my set_pointer( self, var pointer); /* possibility to refresh system pointer */
    return false;
 }
 
@@ -2306,7 +2306,7 @@ find_ordering( Handle owner, Handle self, int tabOrder)
 }
 
 
-// static iterators for ownership notifications
+/* static iterators for ownership notifications */
 
 static Bool
 size_notify( Handle self, Handle child, void * metrix)
@@ -2440,7 +2440,7 @@ dyna_set( Handle self, HV * profile)
    dyna( ZOrderChanged);
 }
 
-// XS section
+/* XS section */
 XS( Widget_get_widgets_FROMPERL)
 {
    dXSARGS;
