@@ -33,9 +33,7 @@
 #define my  ((( PIcon) self)-> self)
 #define var (( PIcon) self)
 
-extern void ic_nibble_byte_ictNone( Handle, void *, PRGBColor, int);
-extern void ic_rgb_byte_ictNone( Handle, void *, PRGBColor, int);
-
+extern void ic_type_convert( Handle, Byte *, PRGBColor, int);
 
 void
 produce_mask( Handle self)
@@ -44,63 +42,129 @@ produce_mask( Handle self)
    Byte * dest = var-> mask;
    Byte * src;
    Byte color;
-   int i;
+   RGBColor rgbcolor;
+   int i, bpp2;
    int line8Size = (( var-> w * 8 + 31) / 32) * 4;
    int bpp = var-> type & imBPP;
+   int w = var-> w, h = var-> h;
+   int transpIx = -1;
 
    if ( var-> w == 0 || var-> h == 0) return;
 
-   if ( bpp == imMono)
+   // checking transparency extra info
    {
-      // mono case simplifies our task
-      int j = var-> maskSize;
-      Byte * mask = var-> mask;
-      memcpy ( var-> mask, var-> data, var-> dataSize);
-      while ( j--) mask[ j] = ~mask[ j];
-      var-> palette[0]. r = var-> palette[0]. g = var-> palette[0]. b = 0;
-      return;
-   }
-
-   if ( bpp != im256)
-   {
-      area8 = malloc ( var-> h * line8Size);
-      // convert to 8 bit
-      switch ( bpp)
-      {
-         case im16:
-            ic_nibble_byte_ictNone( self, area8, var-> palette, im256);
-            break;
-         case imRGB:
-            ic_rgb_byte_ictNone( self, area8, var-> palette, im256);
-            break;
+      SV ** holder = hv_fetch(( HV*) SvRV( var-> mate), "extraInfo", 9, 0);
+      if ( holder && SvROK( *holder) && SvTYPE( SvRV( *holder)) == SVt_PVHV) {
+         HV * hv = ( HV*) SvRV( *holder);
+         holder = hv_fetch( hv, "transparentColorIndex", 21, 0);
+         if ( holder && SvIOK( *holder)) {
+            transpIx = SvIV( *holder);
+            if ( transpIx < 0 || transpIx >= var-> palSize) transpIx = -1;
+            if ( transpIx > 0 && !hv_exists( hv, "transparentColor.R", 18)) {
+               hv_store( hv, "transparentColor.R", 18, newSViv( var-> palette[ transpIx]. r), 0);
+               hv_store( hv, "transparentColor.G", 18, newSViv( var-> palette[ transpIx]. g), 0);
+               hv_store( hv, "transparentColor.B", 18, newSViv( var-> palette[ transpIx]. b), 0);
+            }
+         }
       }
    }
 
-   {  // calculate transparent color
+   if ( bpp == imMono) {
+      // mono case simplifies our task
+      int j = var-> maskSize;
+      int ix = ( transpIx <= 0) ? 0 : 1;
+      Byte * mask = var-> mask;
+      memcpy ( var-> mask, var-> data, var-> dataSize);
+      if ( transpIx <= 0) {
+         while ( j--) mask[ j] = ~mask[ j];
+      }
+      var-> palette[ix]. r = var-> palette[ix]. g = var-> palette[ix]. b = 0;
+      return;
+   }
+
+   // convert to 8 bit
+   switch ( bpp)
+   {
+   case im16:
+   case im256:
+   case imRGB:
+      bpp2 = bpp;
+      break;
+   default:
+      bpp2  = im256;
+      area8 = malloc ( var-> h * line8Size);
+      ic_type_convert( self, area8, var-> palette, im256 | ( var-> type & imGrayScale));
+      break;
+   }
+
+   if ( transpIx < 0) {  // calculate transparent color
       Byte corners [4];
       Byte counts  [4] = {1, 1, 1, 1};
-      int j, k;
+      RGBColor rgbcorners[4];
+      int j = var-> lineSize, k;
 
       // retrieving corner pixels
-      corners[ 0] = area8[ 0];
-      corners[ 1] = area8[ var-> w - 1];
-      corners[ 2] = area8[ line8Size * var-> h - line8Size];
-      corners[ 3] = area8[ line8Size * ( var-> h - 1) + var-> w - 1];
+      switch ( bpp2) {
+      case im16:
+         corners[ 0] = area8[ 0] >> 4;
+         corners[ 1] = area8[( w - 1) >> 1];
+         corners[ 1] = (( w - 1) & 1) ? corners[ 1] & 0x0f : corners[ 1] >> 4;
+         corners[ 2] = area8[ j * ( h - 1)] >> 4;
+         corners[ 3] = area8[ j * ( h - 1) + (( w - 1) >> 1)];
+         corners[ 3] = (( w - 1) & 1) ? corners[ 3] & 0x0f : corners[ 3] >> 4;
+         for ( j = 0; j < 4; j++) {
+            rgbcorners[j].r = var-> palette[ corners[ j]]. r;
+            rgbcorners[j].g = var-> palette[ corners[ j]]. g;
+            rgbcorners[j].b = var-> palette[ corners[ j]]. b;
+         }
+         break;
+      case im256:
+         corners[ 0] = area8[ 0];
+         corners[ 1] = area8[ w - 1];
+         corners[ 2] = area8[ j * ( h - 1)];
+         corners[ 3] = area8[ j * ( h - 1) + w - 1];
+         for ( j = 0; j < 4; j++) {
+            rgbcorners[j].r = var-> palette[ corners[ j]]. r;
+            rgbcorners[j].g = var-> palette[ corners[ j]]. g;
+            rgbcorners[j].b = var-> palette[ corners[ j]]. b;
+         }
+         break;
+      case imRGB:
+         rgbcorners[0] = *(PRGBColor)( area8);
+         rgbcorners[1] = *(PRGBColor)( area8 + ( w - 1) * 3);
+         rgbcorners[2] = *(PRGBColor)( area8 + j * ( h - 1));
+         rgbcorners[3] = *(PRGBColor)( area8 + j * ( h - 1) + ( w - 1) * 3);
+         for ( j = 0; j < 4; j++) corners[j] = j;
+         #define rgbcmp(x,y) ((rgbcorners[x].r == rgbcorners[y].r) &&\
+                              (rgbcorners[x].g == rgbcorners[y].g) &&\
+                              (rgbcorners[x].b == rgbcorners[y].b))
+         if ( rgbcmp(1,0)) corners[1] = 0;
+         if ( rgbcmp(2,0)) corners[2] = 0;
+         if ( rgbcmp(3,0)) corners[3] = 0;
+         if ( rgbcmp(2,1)) corners[2] = corners[1];
+         if ( rgbcmp(3,1)) corners[3] = corners[1];
+         if ( rgbcmp(3,2)) corners[3] = corners[2];
+         #undef rgbcmp
+         break;
+      }
 
       // preliminary ponos comparison
       for ( j = 0; j < 4; j++) {
          if (
-             (( var-> palette[ corners[ j]]. b) == 0) &&
-             (( var-> palette[ corners[ j]]. g) == 128) &&
-             (( var-> palette[ corners[ j]]. r) == 128)) {
+             (( rgbcorners[j]. b) == 0) &&
+             (( rgbcorners[j]. g) == 128) &&
+             (( rgbcorners[j]. r) == 128)) {
             color = corners[ j];
+            rgbcolor = rgbcorners[ j];
             goto colorFound;
          }
       }
 
       color = corners[ 3]; // our wild (and possibly bad) guess
+      rgbcolor = rgbcorners[ 3];
+
       // sorting
-      for (j = 0; j < 3; j++)
+      for ( j = 0; j < 3; j++)
          for (k = 0; k < 3; k++)
             if ( corners[ k] < corners[ k + 1]) {
                Byte l = corners[ k];
@@ -120,60 +184,91 @@ produce_mask( Handle self)
                corners[ k] = corners[ k + 1];
                corners[ k + 1] = l;
             }
-      if (( counts[0] > 2) || (( counts[0] == 2) && ( counts[1] == 1)))
-        color = corners[ 0]; else
-      {
+      if (( counts[0] > 2) || (( counts[0] == 2) && ( counts[1] == 1))) {
+        color = corners[ 0];
+        rgbcolor = rgbcorners[ 0];
+      } else {
          int colorsToCompare = ( counts[0] == 2) ? 2 : 4;
 
          // compare to ponos
          for ( j = 0; j < colorsToCompare; j++)
-            if (( var-> palette[ corners[ j]]. b < 20) &&
-                ( var-> palette[ corners[ j]]. r > 100) &&
-                ( var-> palette[ corners[ j]]. r < 150) &&
-                ( var-> palette[ corners[ j]]. g > 100) &&
-                ( var-> palette[ corners[ j]]. g < 150))
+            if (( rgbcorners[j]. b < 20) &&
+                ( rgbcorners[j]. r > 100) &&
+                ( rgbcorners[j]. r < 150) &&
+                ( rgbcorners[j]. g > 100) &&
+                ( rgbcorners[j]. g < 150))
             {
                color = corners[ j];
+               rgbcolor = rgbcorners[ j];
                goto colorFound;
             }
 
          // compare to ponos in a MicroSoft's terminology
          for ( j = 0; j < colorsToCompare; j++)
-            if (( var-> palette[ corners[ j]]. g < 20) &&
-                ( var-> palette[ corners[ j]]. r > 200) &&
-                ( var-> palette[ corners[ j]]. b > 200))
+            if (( rgbcorners[j]. g < 20) &&
+                ( rgbcorners[j]. r > 200) &&
+                ( rgbcorners[j]. b > 200))
             {
                color = corners[ j];
+               rgbcolor = rgbcorners[ j];
                goto colorFound;
             }
-
-         // We're in BIG trouble...
 colorFound:;
       }
+   } else {
+      color = transpIx;
+      rgbcolor = var-> palette[ color];
    }
 
    // processing transparency
    memset( var-> mask, 0, var-> maskSize);
    src  = area8;
-   for ( i = 0; i < var-> h; i++, dest += var-> maskLine, src += line8Size)
-   {
-      int j;
-      for ( j = 0; j < var-> w; j++)
-         if ( src[ j] == color)
-            dest[ j >> 3] |= 1 << (7 - ( j & 7));
+   for ( i = 0; i < h; i++, dest += var-> maskLine, src += var-> lineSize) {
+      register int j;
+      switch ( bpp2) {
+      case im16:
+         {
+            int max = ( w >> 1) + ( w & 1);
+            register int k = 0;
+            for ( j = 0; j < max; j++) {
+               if ( color == ( src[ j] >> 4))
+                  dest[ k >> 3] |= 1 << (7 - ( k & 7));
+               if ( color == ( src[ j] & 0x0f))
+                  dest[ k >> 3] |= 1 << (6 - ( k & 7));
+               k += 2;
+            }
+         }
+         break;
+      case imRGB:
+         {
+            register PRGBColor r = ( PRGBColor) src;
+            for ( j = 0; j < w; j++) {
+               if (( r-> r == rgbcolor.r) &&
+                   ( r-> g == rgbcolor.g) &&
+                   ( r-> b == rgbcolor.b))
+                   dest[ j >> 3] |= 1 << (7 - ( j & 7));
+               r++;
+            }
+         }
+         break;
+      default:
+         for ( j = 0; j < w; j++)
+            if ( src[ j] == color)
+               dest[ j >> 3] |= 1 << (7 - ( j & 7));
+      }
    }
 
    // finalize
-   if ( bpp != im256)
-   {
+   if ( bpp != im256 && bpp != im16 && bpp != imRGB) {
       free ( var-> data);
       var-> data = area8;
-      var-> type = im256;
+      var-> type = im256 | ( var-> type & imGrayScale);
       var-> lineSize = line8Size;
       var-> dataSize = line8Size * var-> h;
    }
 
-   var-> palette[ color]. r = var-> palette[ color]. b = var-> palette[ color]. g = 0;
+   if ( var-> palSize <= color && bpp <= im256)
+      var-> palette[ color]. r = var-> palette[ color]. b = var-> palette[ color]. g = 0;
 }
 
 void
