@@ -48,7 +48,6 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    Handle real_owner;
    XSizeHints hints;
    XSetWindowAttributes attrs;
-   XWindow parent = guts. root;
    Point p0 = {0,0};
 
    if ( border_style != bsSizeable) border_style = bsDialog;
@@ -88,7 +87,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       | OwnerGrabButtonMask;
    attrs. override_redirect = false;
    attrs. do_not_propagate_mask = attrs. event_mask;
-   X_WINDOW = XCreateWindow( DISP, parent,
+   X_WINDOW = XCreateWindow( DISP, guts. root,
 	                     0, 0, 1, 1, 0, CopyFromParent,
 	                     InputOutput, CopyFromParent,
 	                     0
@@ -120,7 +119,8 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XX-> type.window = true;
 
    real_owner = application;
-   XX-> real_parent = XX-> parent = parent;
+   XX-> parent = guts. root;
+   XX-> real_parent = nilHandle;
    XX-> udrawable = XX-> gdrawable = X_WINDOW;
 
    XX-> flags. clip_owner = false;
