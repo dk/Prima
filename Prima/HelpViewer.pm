@@ -153,7 +153,7 @@ $defaultVariableFont $defaultFixedFont);
 { 
   my $path = Prima::path;
   unless ( -d $path) {
-     require File::Path;
+     use File::Path;
      File::Path::mkpath $path;
   }
   $inifile = Prima::IniFile-> create( "$path/HelpWindow");
@@ -354,7 +354,7 @@ sub load_dialog
 
 sub goto
 {
-   require Prima::MsgBox;
+   eval "use Prima::MsgBox"; die "$@\n" if $@;
    my $self = $_[0];
    my $ret = Prima::MsgBox::input_box('Go to location', 'Enter manpage:', ''); 
    $self-> {text}-> load_link( $ret) if defined $ret;
@@ -710,7 +710,7 @@ sub print
 
 sub setup_dialog
 {
-   require Prima::VB::VBLoader;
+   eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
    my $self = $_[0];
    my $t = $self-> {text};
    unless ( defined $setupdlg) {

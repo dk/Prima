@@ -29,8 +29,6 @@
 
 package Prima::IniFile;
 
-require 5.003;       # probably
-
 use strict;
 use Carp;
 use Cwd;

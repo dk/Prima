@@ -282,7 +282,7 @@ sub deepcopy
 
 sub setup_dialog
 {
-   require Prima::PS::Setup;
+   eval "use Prima::PS::Setup"; die "$@\n" if $@;
    $_[0]-> sdlg_exec;
 }
 
@@ -290,7 +290,7 @@ sub spool
 {
    my ( $self, $data) = @_;
    if ( $self-> {data}-> {spoolerType} == file) {
-      require Prima::MsgBox;
+      eval "use Prima::MsgBox"; die "$@\n" if $@;
       my $f = Prima::MsgBox::input_box( 'Print to file', 'Output file name:', '', mb::OKCancel, { buttons => {
          mb::OK => { 
          modalResult => undef,

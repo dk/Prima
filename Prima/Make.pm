@@ -28,7 +28,6 @@
 use strict;
 use Config;
 use Prima::Config;
-require 5.00502;
 use File::Find;
 use File::Basename;
 use File::Path;

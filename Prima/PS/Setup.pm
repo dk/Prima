@@ -96,8 +96,8 @@ sub sdlg_exec
    my $self = $_[0];
    
    unless ( defined $self-> {setupDlg}) {
-      require Prima::VB::VBLoader;
-      require Prima::MsgBox;
+      eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
+      eval "use Prima::MsgBox"; die "$@\n" if $@;
       my $fi = Prima::find_image( 'Prima::PS', 'setup.fm');
       unless ( defined $fi) { Prima::message( "Cannot find resource: Prima::PS::setup.fm"); return }
       eval { $self-> {setupDlg} = { Prima::VB::VBLoader::AUTOFORM_CREATE( $fi,

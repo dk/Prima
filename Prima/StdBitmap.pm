@@ -28,7 +28,7 @@
 #  $Id$
 package Prima::StdBitmap;
 use strict;
-require Prima;
+use Prima;
 
 my %bmCache;
 

@@ -51,7 +51,7 @@ sub AUTOLOAD
 {
    my ($method) = $Prima::ColorDialog::AUTOLOAD =~ /::([^:]+)$/;
    delete ${Prima::ColorDialog::}{AUTOLOAD};
-   require Prima::ColorDialog;
+   eval "use Prima::ColorDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
@@ -61,7 +61,7 @@ sub AUTOLOAD
 {
    my ($method) = $Prima::FontDialog::AUTOLOAD =~ /::([^:]+)$/;
    delete ${Prima::FontDialog::}{AUTOLOAD};
-   require Prima::FontDialog;
+   eval "use Prima::FontDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
@@ -74,7 +74,7 @@ sub AUTOLOAD
    delete ${Prima::OpenDialog::}{AUTOLOAD};
    delete ${Prima::SaveDialog::}{AUTOLOAD};
    delete ${Prima::ChDirDialog::}{AUTOLOAD};
-   require Prima::FileDialog;
+   eval "use Prima::FileDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
@@ -86,7 +86,7 @@ sub AUTOLOAD
    delete ${Prima::OpenDialog::}{AUTOLOAD};
    delete ${Prima::SaveDialog::}{AUTOLOAD};
    delete ${Prima::ChDirDialog::}{AUTOLOAD};
-   require Prima::FileDialog;
+   eval "use Prima::FileDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
@@ -98,7 +98,7 @@ sub AUTOLOAD
    delete ${Prima::OpenDialog::}{AUTOLOAD};
    delete ${Prima::SaveDialog::}{AUTOLOAD};
    delete ${Prima::ChDirDialog::}{AUTOLOAD};
-   require Prima::FileDialog;
+   eval "use Prima::FileDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
@@ -113,7 +113,7 @@ sub AUTOLOAD
    my ($method) = $Prima::FindDialog::AUTOLOAD =~ /::([^:]+)$/;
    delete ${Prima::FindDialog::}{AUTOLOAD};
    delete ${Prima::ReplaceDialog::}{AUTOLOAD};
-   require Prima::EditDialog;
+   eval "use Prima::EditDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
@@ -124,7 +124,7 @@ sub AUTOLOAD
    my ($method) = $Prima::ReplaceDialog::AUTOLOAD =~ /::([^:]+)$/;
    delete ${Prima::FindDialog::}{AUTOLOAD};
    delete ${Prima::ReplaceDialog::}{AUTOLOAD};
-   require Prima::EditDialog;
+   eval "use Prima::EditDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
@@ -134,7 +134,7 @@ sub AUTOLOAD
 {
    my ($method) = $Prima::PrintSetupDialog::AUTOLOAD =~ /::([^:]+)$/;
    delete ${Prima::PrintSetupDialog::}{AUTOLOAD};
-   require Prima::PrintDialog;
+   eval "use Prima::PrintDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
@@ -145,7 +145,7 @@ sub AUTOLOAD
    my ($method) = $Prima::ImageOpenDialog::AUTOLOAD =~ /::([^:]+)$/;
    delete ${Prima::ImageOpenDialog::}{AUTOLOAD};
    delete ${Prima::ImageSaveDialog::}{AUTOLOAD};
-   require Prima::ImageDialog;
+   eval "use Prima::ImageDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
@@ -156,7 +156,7 @@ sub AUTOLOAD
    my ($method) = $Prima::ImageSaveDialog::AUTOLOAD =~ /::([^:]+)$/;
    delete ${Prima::ImageOpenDialog::}{AUTOLOAD};
    delete ${Prima::ImageSaveDialog::}{AUTOLOAD};
-   require Prima::ImageDialog;
+   eval "use Prima::ImageDialog"; die "$@\n" if $@;
    shift->$method(@_);
 }
 
