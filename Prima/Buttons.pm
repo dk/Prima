@@ -32,9 +32,9 @@
 #   CheckBox
 #   Radio
 #   SpeedButton
-#   RadioGroup
+#   RadioGroup ( obsolete ) 
 #   GroupBox
-#   CheckBoxGroup
+#   CheckBoxGroup ( obsolete )
 #
 #   AbstractButton
 #   Cluster
@@ -884,12 +884,36 @@ package Prima::GroupBox;
 use vars qw(@ISA);
 @ISA=qw(Prima::Widget);
 
+{
+my %RNT = (
+   %{Prima::Cluster->notification_types()},
+   RadioClick => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
+
 sub profile_default
 {
-   my $def = $_[ 0]-> SUPER::profile_default;
-   @$def{qw(autoEnableChildren ownerBackColor)} = (1);
-   return $def;
+   return {
+      %{$_[ 0]-> SUPER::profile_default},
+      ownerBackColor     => 1,
+      autoEnableChildren => 1,
+   }
 }
+
+sub on_radioclick
+{
+   my ($me,$rd) = @_;
+   for ($me->widgets)
+   {
+      next if "$rd" eq "$_";
+      next unless $_->isa(q(Prima::Radio));
+      $_-> checked(0);
+   }
+}
+
 
 sub on_paint
 {
@@ -916,56 +940,6 @@ sub on_paint
    }
 }
 
-
-sub text
-{
-   return $_[0]->SUPER::text unless $#_;
-   $_[0]-> SUPER::text($_[1]);
-   $_[0]-> repaint;
-}
-
-
-package Prima::RadioGroup;
-no strict; @ISA=qw(Prima::GroupBox); use strict;
-
-{
-my %RNT = (
-   %{Prima::Cluster->notification_types()},
-   RadioClick => nt::Default,
-);
-
-sub notification_types { return \%RNT; }
-}
-
-
-sub profile_default
-{
-   return {
-      %{$_[ 0]-> SUPER::profile_default},
-      index => 0,
-   }
-}
-
-sub init
-{
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   $self-> index( $profile{index});
-   return %profile;
-}
-
-sub on_radioclick
-{
-   my ($me,$rd) = @_;
-   for ($me->widgets)
-   {
-      next if "$rd" eq "$_";
-      next unless $_->isa(q(Prima::Radio));
-      $_-> checked(0);
-   }
-}
-
-
 sub index
 {
    my $self = $_[0];
@@ -984,26 +958,12 @@ sub index
    }
 }
 
-package Prima::CheckBoxGroup;
-no strict; @ISA=qw(Prima::GroupBox); use strict;
-
-sub profile_default
+sub text
 {
-   return {
-      %{$_[ 0]-> SUPER::profile_default},
-      value => 0,
-   }
+   return $_[0]->SUPER::text unless $#_;
+   $_[0]-> SUPER::text($_[1]);
+   $_[0]-> repaint;
 }
-
-
-sub init
-{
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   $self-> value( $profile{value});
-   return %profile;
-}
-
 
 sub value
 {
@@ -1024,5 +984,455 @@ sub value
    }
 }
 
+package Prima::RadioGroup;    use vars qw(@ISA); @ISA=qw(Prima::GroupBox);
+package Prima::CheckBoxGroup; use vars qw(@ISA); @ISA=qw(Prima::GroupBox); 
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Buttons - button widgets and grouping widgets.
+
+=head1 DESCRIPTION
+
+Prima::Buttons provides two separate sets of classes:
+the button widgets and the grouping widgets. The button widgets
+include push buttons, check-boxes and radio buttons. 
+The grouping widgets are designed for usage as containers for the
+check-boxes and radio buttons, however, any widget can be inserted
+in a grouping widget.
+
+The module provides the following classes:
+
+ * Prima::AbstractButton ( derived from Prima::Widget and Prima::MouseScroller )
+      Prima::Button
+         Prima::SpeedButton
+    * Prima::Cluster
+         Prima::CheckBox
+         Prima::Radio
+   Prima::GroupBox ( derived from Prima::Widget )
+      Prima::RadioGroup       ( obsolete )
+      Prima::CheckBoxGroup    ( obsolete )
+
+Note: C<*> - marked classes are abstract.
+
+=head1 USAGE
+
+  use Prima::Buttons;
+  
+  my $button = $widget-> insert( 'Prima::Button', text => 'Push button');
+  $button-> flat(1);
+
+  my $group = $widget-> insert( 'Prima::GroupBox', onRadioClick => sub { 
+     print $_[1]-> text, "\n"; });
+  $group-> insert( 'Prima::Radio', text => 'Selection 1');
+  $group-> insert( 'Prima::Radio', text => 'Selection 2', pressed => 1);
+  $group-> index(0);
+
+=head1 Prima::AbstractButton
+
+Prima::AbstractButton realizes common functionality of buttons. 
+It provides reaction on mouse and keyboard events, and calls
+L<Click> notification when the user activates the button. The
+mouse activation is performed either by mouse double click or
+successive mouse down and mouse up events withing the button
+boundaries. The keyboard activation is performed on the following conditions:
+
+=over
+
+=item *
+
+The spacebar key is pressed
+
+=item *
+
+C<{default}> ( see L<default> property ) boolean variable is
+set and enter key is pressed. This contition holds even if the button is out of focus.
+
+=item *
+
+C<{accel}> character variable is assigned and the corresponding character key 
+is pressed. C<{accel}> variable is extracted automatically from the text string
+passed to L<text> property. 
+This contition holds even if the button is out of focus.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Check
+
+Abstract callback event. 
+
+=item Click
+
+Called whenever the user presses the button.
+
+=back
+
+=head2 Properties
+
+=over
+
+=item pressed BOOLEAN
+
+Represents the state of button widget, whether it is pressed or not.
+
+Default value: 0
+
+=item text STRING
+
+The text that is drawn in the button. If STRING contains ~ ( tilde ) character,
+the the following character is treated as a hot key, and the character is
+underlined. If the user presses the corresponding character key then 
+L<Click> event is called. This is true even when the button is out of focus.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item draw_veil CANVAS, X1, Y1, X2, Y2
+
+Draws a rectangular veil shape over CANVAS in given boundaries.
+This is the default method of drawing the button in the disabled state.
+
+=item draw_caption CANVAS, X, Y
+
+Draws single line of text, stored in L<text> property on CANVAS at X, Y
+coordinates. Performs underlining of eventual tilde-escaped character, and
+draws the text with dimmed colors if the button is disabled. If the button 
+is focused, draws a dotted line around the text.
+
+=item caption_box CANVAS
+
+Calculates geometrical extensions of text string, stored in L<text> property in pixels.
+Returns two integers, the width and the height of the string for the font selected on CANVAS.
+
+=back
+
+=head1 Prima::Button
+
+A push button class, that extends Prima::AbstractButton functionality by allowing
+an image to be drawn together with the text.
+
+=head2 Properties
+
+=over
+
+=item autoRepeat BOOLEAN
+
+If set, the button behaves like a keyboard button - after the first
+L<Click> event, a timeout is set, after which is expired and the button
+still pressed, L<Click> event is repeatedly called until the button is
+released. Useful for emulating the marginal scroll-bar buttons.
+
+Default value: 0
+
+=item borderWidth INTEGER
+
+Width of 3d-shade border around the button.
+
+Default value: 2
+
+=item checkable BOOLEAN
+
+Selects if the button toggles L<checked> state when the user
+presses it.
+
+Default value: 0
+
+=item checked BOOLEAN
+
+Selects whether the button is checked or not. Only actual
+when L<checkable> property is set. See also L<holdGlyph>. 
+
+Default value: 0
+
+=item default BOOLEAN
+
+Defines if the button should react when the user presses the enter button.
+If set, the button is drawn with the black border, indicating that it executes
+the 'default' action. Useful for OK-buttons in dialogs.
+
+Default value: 0
+
+=item defaultGlyph INTEGER
+
+Selects index of the default sub-image. 
+
+Default value: 0
+
+=item disabledGlyph INTEGER
+
+Selects index of the sub-image for the disabled button state.
+If C<image> does not contain such sub-image, the C<defaultGlyph>
+sub-image is drawn, and is dimmed over with L<draw_veil> method.
+
+Default value: 1
+
+=item flat BOOLEAN
+
+Selects special 'flat' mode, when a button is painted without
+a border when the mouse pointer is outside the button boundaries.
+This mode is useful for the toolbar buttons. See also L<hiliteGlyph>.
+
+Default value: 0
+
+=item glyphs INTEGER
+
+If a button is to be drawn with the image, it can be passed in the L<image>
+property. If, however, the button must be drawn with several different images,
+there are no several image-holding properties. Instead, the L<image> object
+can be logically split vertically into several equal sub-images. This allows
+the button resource to contain all button states into one image file. 
+The C<glyphs> property assigns how many such sub-images the image object contains.
+
+The sub-image indeces can be assigned for rendition of the different states.
+These indeces are selected by the following integer properties: L<defaultGlyph>,
+L<hiliteGlyph>, L<disabledGlyph>, L<pressedGlyph>, L<holdGlyph>.
+
+Default value: 1
+
+=item hiliteGlyph INTEGER
+
+Selects index of the sub-image for the state when the mouse pointer is
+over the button. This image is used only when L<flat> property is set.
+If C<image> does not contain such sub-image, the C<defaultGlyph> sub-image is drawn.
+
+Default value: 0
+
+=item holdGlyph INTEGER
+
+Selects index of the sub-image for the state when the button is L<checked>.
+This image is used only when L<checkable> property is set.
+If C<image> does not contain such sub-image, the C<defaultGlyph> sub-image is drawn.
+
+Default value: 3
+
+=item image OBJECT
+
+If set, the image object is drawn next with the button text, over or left to it
+( see L<vertical> property ). If OBJECT contains several sub-images, then the
+corresponding sub-image is drawn for each button state. See L<glyphs> property.
+
+Default value: undef
+
+=item imageFile FILENAME
+
+Alternative to image selection by loading an image from the file. 
+During the creation state, if set together with L<image> property, is superseded
+by the latter. 
+
+To allow easy multiframe image access, FILENAME string is checked if it contains
+a number after a colon in the string end. Such, C<imageFile('image.gif:3')> call
+would load the fourth frame in C<image.gif> file.
+
+=item imageScale SCALE
+
+Contains zoom factor for the L<image>. 
+
+Default value: 1
+
+=item modalResult INTEGER
+
+Contains a custom integer value, preferably one of C<mb::XXX> constants.
+If a button with non-zero C<modalResult> is owned by a currently executing 
+modal window, and is pressed, its C<modalResult> value is copied to the C<modalResult> 
+property of the owner window, and the latter is closed. 
+This scheme is helpful for the dialog design:
+
+   $dialog-> insert( 'Prima::Button', modalResult => mb::OK, text => '~Ok', default => 1);
+   $dialog-> insert( 'Prima::Button', modalResult => mb::Cancel, text => 'Cancel);
+   return if $dialog-> execute != mb::OK.
+
+The toolkit defines the following constants for C<modalResult> use:
+
+   mb::OK or mb::Ok        
+   mb::Cancel    
+   mb::Yes       
+   mb::No        
+   mb::Abort     
+   mb::Retry     
+   mb::Ignore    
+   mb::Help      
+
+However, any other integer value can be safely used.
+
+Default value: 0
+
+=item pressedGlyph INTEGER
+
+Selects index of the sub-image for the pressed state of the button. 
+If C<image> does not contain such sub-image, the C<defaultGlyph> sub-image is drawn.
+
+=item transparent BOOLEAN
+
+See L<Prima::Widget/transparent>. If set, the background is not painted.
+
+=item vertical BOOLEAN
+
+Determines the position of image next to the text string. If 1,
+the image is drawn above the text; left to the text if 0.
+In a special case when L<text> is an empty string, image is centered.
+
+=back
+
+=head1 Prima::SpeedButton
+
+A convenience class, same as L<Prima::Button> but with default
+square shape and text property set to an empty string.
+
+=head1 Prima::Cluster
+
+An abstract class with common functionality of L<Prima::CheckBox> and
+L<Prima::RadioButton>. Reassigns default actions on tab and back-tab keys, so
+the sibling cluster widgets are not selected. Has C<ownerBackColor> property 
+set to 1, to prevent usage of background color from C<wc::Button> palette.
+
+=head2 Properties
+
+=over
+
+=item auto BOOLEAN
+
+If set, the button is automatically checked when the button is in focus. This
+functionality allows arrow key walking by the radio buttons without pressing
+spacebar key. It is also has a drawback, that if a radio button gets focused
+without user intervention, or indirectly, it also gets checked, so that behavior
+might cause confusion. The said can be exemplified when an unchecked radio button
+in a notebook widget gets active by turning the notebook page.
+
+Although this property is present on the L<Prima::CheckBox>, it is not used in there.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item check
+
+Alias to C<checked(1)>
+
+=item uncheck
+
+Alias to C<checked(0)>
+
+=item toggle
+
+Reverts the C<checked> state of the button and returns the new state.
+
+=back
+
+=head1 Prima::Radio
+
+Represents a standard radio button, that can be either in checked, or in unchecked state.
+When checked, delivers L<RadioClick> event to the owner ( if the latter provides one ).
+
+The button uses the standard toolkit images with C<sbmp::RadioXXX> indeces. 
+If the images can not be loaded, the button is drawn with the graphic primitives.
+
+=head2 Events
+
+=over
+
+=item Check
+
+Called when a button is checked.
+
+=back
+
+=head1 Prima::CheckBox
+
+Represents a standard check box button, that can be either in checked, or in unchecked state.
+
+The button uses the standard toolkit images with C<sbmp::CheckBoxXXX> indeces. 
+If the images can not be loaded, the button is drawn with graphic primitives.
+
+=head1 Prima::GroupBox
+
+The class to be used as a container of radio and check-box buttons.
+It can, however, contain any other widgets.
+
+The widget draws a 3d-shaded box on its boundaries and a text string in its
+upper left corner. Uses C<transparent> property to determine if it needs to
+paint its background.
+
+The class does not provide a method to calculate the extension of the inner rectangle.
+However, it can be safely assumed that all offsets except the upper are 5 pixels.
+The upper offset is dependent on a font, and consitutes the half of the font height.
+
+=head2 Events
+
+=over
+
+=item RadioClick BUTTON
+
+Called whenever one of children radio buttons is checked. BUTTON
+parameter contains the newly checked button. 
+
+The default action of the class is that all checked buttons, 
+except BUTTON, are unchecked. Since the flow type of C<RadioClick> event
+is C<nt::PrivateFirst>, C<on_radioclick> method must be directly overloaded
+to disable this functionality.
+
+=back
+
+=head2 Properties
+
+=over
+
+=item index INTEGER
+
+Checks the child radio button with C<index>. The indexing is
+based on the index in the widget list, returned by C<Prima::Widget::widgets> method.
+
+=item value BITFIELD
+
+BITFIELD is an unsigned integer, where each bit corresponds to the
+C<checked> state of a child check-box button. The indexing is
+based on the index in the widget list, returned by C<Prima::Widget::widgets> method.
+
+=back
+
+=head1 Prima::RadioGroup
+
+This class is obsolete and is same as C<Prima::GroupBox>.
+
+=head1 Prima::CheckBoxGroup
+
+This class is obsolete and is same as C<Prima::GroupBox>.
+
+=head1 BUGS
+
+The push button is not capable of drawing anything other than single line of text and
+single image. If an extended functionality is needed, instead of fully rewriting
+the painting procedure, it might be reasonable to overload C<put_image_indirect>
+method of C<Prima::Button>, and perform custom output there.
+
+Tilde escaping in C<text> is not realized, but is planned to. There currently is no way
+to avoid tilde underscoring.
+
+Radio buttons can get unexpectedly checked when used in notebooks. See L<auto>.
+
+C<Prima::GroupBox::value> parameter is an integer, which size is architecture-dependent.
+Shift towards a vector is considered a good idea.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<Prima::Window>, L<Prima::IntUtils>, 
+L<Prima::StdBitmap>, F<examples/buttons.pl>, F<examples/buttons2.pl>.
+
+=cut
