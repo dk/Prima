@@ -153,10 +153,11 @@ Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 {
    DEFXX;
-   unsigned long mask = GCLineWidth |
-      GCBackground |
-      GCForeground |
-      GCClipMask;
+   unsigned long mask = GCLineWidth
+      | GCBackground
+      | GCForeground
+      | GCFunction
+      | GCClipMask;
 
    XX-> paintRop = XX-> rop;
    XX-> savedFont = PDrawable( self)-> font;
@@ -172,7 +173,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 
    if ( XX-> region) {
       XSetRegion( DISP, XX-> gc, XX-> region);
-      XDestroyRegion( XX-> region);
+      XX-> stale_region = XX-> region;
       XX-> region = nil;
    }
 
@@ -180,6 +181,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 
    if ( !XX-> flags. reloadFont && XX-> font && XX-> font-> id) {
       XSetFont( DISP, XX-> gc, XX-> font-> id);
+      XCHECKPOINT;
    } else {
       apc_gp_set_font( self, &PDrawable( self)-> font);
       XX-> flags. reloadFont = false;
@@ -220,6 +222,10 @@ apc_widget_end_paint( Handle self)
    XX-> flags. paint = false;
    if ( XX-> flags. reloadFont) {
       PDrawable( self)-> font = XX-> savedFont;
+   }
+   if ( XX-> stale_region) {
+      XDestroyRegion( XX-> stale_region);
+      XX-> stale_region = nil;
    }
 }
 
@@ -549,11 +555,27 @@ apc_widget_set_size( Handle self, int width, int height)
 {
    DEFXX;
    int y;
+   PWidget widg = PWidget( self);
+
+   widg-> virtualSize = (Point){width,height};
+
+   width = width > 0
+      ? ( width >= widg-> sizeMin. x
+	  ? ( width <= widg-> sizeMax. x
+	      ? width
+	      : widg-> sizeMax. x)
+	  : widg-> sizeMin. x)
+      : 1;
+   height = height > 0
+      ? ( height >= widg-> sizeMin. y
+	  ? ( height <= widg-> sizeMax. y
+	      ? height
+	      : widg-> sizeMax. y)
+	  : widg-> sizeMin. y)
+      : 1;
 
    XX-> size = (Point){width, height};  /* XXX ? */
    y = X(XX-> owner)-> size. y - height - XX-> origin. y;
-   if ( width == 0) width = 1;
-   if ( height == 0) height = 1;
    XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
    DOLBUG( "widget (%s) size to (%d,%d) - (%d,%d)\n", PWidget(self)-> name, XX-> origin. x, y, width, height);
    XCHECKPOINT;
