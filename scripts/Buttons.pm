@@ -94,7 +94,7 @@ sub on_keydown
       $self-> clear_event;
       return if $self->{spaceTransaction} || $self->{mouseTransaction};
       $self-> { spaceTransaction} = 1;
-      $self-> pressed( !$self-> pressed);
+      $self-> pressed( 1);
    }
    if ( defined $self->{accel} && lc chr $code eq $self-> { accel})
    {
@@ -112,7 +112,7 @@ sub on_keyup
       $self->{spaceTransaction} = undef;
       $self-> capture(0) if $self->{mouseTransaction};
       $self->{mouseTransaction} = undef;
-      $self-> pressed( !$self-> pressed);
+      $self-> pressed( 0);
       $self-> clear_event;
       $self-> notify( 'Click')
    }
@@ -126,7 +126,7 @@ sub on_leave
       $self->{spaceTransaction} = undef;
       $self-> capture(0) if $self->{mouseTransaction};
       $self->{mouseTransaction} = undef;
-      $self-> pressed( !$self-> pressed);
+      $self-> pressed( 0);
    } else {
       $self-> repaint;
    }
@@ -139,20 +139,20 @@ sub on_mousedown
    return if $btn != mb::Left;
    $self->{ mouseTransaction} = 1;
    $self->{ lastMouseOver}  = 1;
-   $self-> pressed( !$self-> pressed);
+   $self-> pressed( 1);
    $self-> capture(1);
    $self-> clear_event;
 }
 
 sub on_mouseclick
 {
-   return unless $_[-1];
-   return if $_[1] != mb::Left;
-   my $self = $_[0];
+   my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
+   return unless $dbl;
+   return if $btn != mb::Left;
    return if $self->{mouseTransaction} || $self->{spaceTransaction};
    $self->{ mouseTransaction} = 1;
    $self->{ lastMouseOver}  = 1;
-   $self-> pressed( !$self-> pressed);
+   $self-> pressed( 1);
    $self-> capture(1);
 }
 
@@ -168,7 +168,7 @@ sub on_mouseup
    $self-> capture(0);
    if ( $x > 0 && $y > 0 && $x < $size[0] && $y < $size[1] )
    {
-      $self-> pressed( !$self-> pressed);
+      $self-> pressed( 0);
       $self-> notify( 'Click');
    }
 }
@@ -179,7 +179,7 @@ sub on_mousemove
    return unless $self->{mouseTransaction};
    my @size = $self-> size;
    my $mouseOver = $x > 0 && $y > 0 && $x < $size[0] && $y < $size[1];
-   $self-> pressed( !$self-> pressed) if $self-> { lastMouseOver} != $mouseOver;
+   $self-> pressed( $mouseOver) if $self-> { lastMouseOver} != $mouseOver;
    $self-> { lastMouseOver} = $mouseOver;
 }
 
