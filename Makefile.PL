@@ -340,7 +340,7 @@ $make .= modules;
 
 $make .= <<MAKE;
 clean:
-\trm -f $allclean auto/Prima/Prima.so
+\trm -f $allclean auto/Prima/Prima.so tags TAGS
 
 .PHONY: tags
 
