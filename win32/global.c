@@ -523,9 +523,12 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
                 if ( ev. key. mod & kmCtrl && isalpha( ev. key. code))
                    ev. key. code = toupper( ev. key. code) - '@';
              }
-          } else
+          } else {
              if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))
                 ev. key. key = kbBackTab;
+             if ( !ctx_remap( ev. key. key, ctx_kb2VK2, true))
+                 ev. key. code = 0;
+          }
       }
       break;
    case WM_INITMENUPOPUP:
