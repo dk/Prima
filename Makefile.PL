@@ -55,7 +55,6 @@ use vars @ovvars = qw(
     $PLATFORM
     $COMPILER
     $PREFIX
-    $PREFIX_BIN
     $INSTALLSCRIPT
     $INSTALLSITEARCH
     $INSTALL_LIB
@@ -78,7 +77,6 @@ use vars @path_expand_ovvars = qw(
     @LIBS
     $COMPILER
     $PREFIX
-    $PREFIX_BIN
     $INSTALLSCRIPT
     $INSTALLSITEARCH
     $INSTALL_LIB
@@ -735,9 +733,19 @@ sub setup_variables
         $DEFINES{ $defname} = $defvalue;
     }
     
-    setvar( 'PREFIX',           $Config{ installsitearch});
-    setvar( 'INSTALLSITEARCH',  $Config{ installsitearch});
-    setvar( 'INSTALLSCRIPT',    $Config{ installscript});
+    # find common denominator with installsitearch and installscript
+    my @a = split( '\\\\|\/', $Config{installscript});
+    my @b = split( '\\\\|\/', $Config{installsitearch});
+    my $i = 0;
+    while ( defined $a[$i] && defined $b[$i]) {
+       last if $a[$i] ne $b[$i];
+       $i++;
+    }
+    my $prefix = qd(($i ? join( '/', @a[0..$i]) : ''));
+    
+    setvar( 'PREFIX',           $prefix);
+    setvar( 'INSTALLSCRIPT',    $PREFIX . qd( '/' . join( '/', @a[$i .. $#a])));
+    setvar( 'INSTALLSITEARCH',  $PREFIX . qd( '/' . join( '/', @b[$i .. $#b])));
     setvar( 'INSTALL_LIB',      $INSTALLSITEARCH . qd( "/Prima"));
     setvar( 'INSTALL_DL',       $INSTALLSITEARCH . qd( "/auto/Prima"));
     setvar( 'INSTALL_EXAMPLES', $INSTALLSITEARCH . qd( "/Prima/examples"));
@@ -1822,6 +1830,7 @@ FOOTER
     $| = 1;
 
     print "Setting up working environment.\n";
+=pod    
     %USER_VARS_LINKS = (
         INSTALLSCRIPT => {
             src => 'PREFIX',
@@ -1832,6 +1841,7 @@ FOOTER
             format => '%s',
         },
     );
+=cut    
     process_commandline;
     setup_variables;
     setup_paths;
