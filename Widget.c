@@ -561,7 +561,9 @@ void Widget_handle_event( Handle self, PEvent event)
         break;
       case cmMouseWheel:
         if ( var onMouseWheel)
-           cv_call_perl( var mate, var onMouseWheel, "iPi",  event-> pos. mod, event -> pos. where, event-> pos. button);
+           cv_call_perl( var mate, var onMouseWheel, "iPi",
+			 event-> pos. mod, event -> pos. where,
+			 event-> pos. button); /* +n*delta == up, -n*delta == down */
         objCheck;
         if ( evOK)
            if ( is_dmopt( dmMouseWheel))
