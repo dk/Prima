@@ -550,7 +550,6 @@ Drawable_get_text_box( Handle self, char * text, int len)
    Point * p;
    AV * av;
    int i;
-   int yAdd = 0;
 
    if ( len < 0) len = strlen( text);
    gpENTER;
@@ -559,7 +558,7 @@ Drawable_get_text_box( Handle self, char * text, int len)
    av = newAV();
    for ( i = 0; i < 5; i++) {
       av_push( av, newSViv( p[ i]. x));
-      av_push( av, newSViv( p[ i]. y + yAdd));
+      av_push( av, newSViv( p[ i]. y));
    };
    free( p);
    return newRV_noinc(( SV *) av);
