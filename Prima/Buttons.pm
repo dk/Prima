@@ -1167,7 +1167,10 @@ Note: C<*> - marked classes are abstract.
 
   use Prima::Buttons;
   
-  my $button = $widget-> insert( 'Prima::Button', text => 'Push button');
+  my $button = $widget-> insert( 'Prima::Button', 
+      text => 'Push button',
+      onClick => sub { print "hey!\n" },
+  );
   $button-> flat(1);
 
   my $group = $widget-> insert( 'Prima::GroupBox', onRadioClick => sub { 
