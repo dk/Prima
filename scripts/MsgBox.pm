@@ -39,15 +39,15 @@ sub message_box
    my $fresh;
    my $freshFirst;
    my $dlg = Dialog-> create(
-       centered => 1,
-       width    => 435,
-       height   => 150,
+       centered      => 1,
+       width         => 435,
+       height        => 150,
        designScale   => [7, 18],
        scaleChildren => 0,
-       visible  => 0,
-       text     => $title,
-       font     => $::application-> get_message_font,
-       onExecute=> sub {
+       visible       => 0,
+       text          => $title,
+       font          => $::application-> get_message_font,
+       onExecute     => sub {
           $fresh-> focus;
           Utils::beep( $options) if $options && !$nosound;
        },
