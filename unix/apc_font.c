@@ -325,6 +325,7 @@ prima_init_font_subsystem( void)
 		  char pattern[ 1024], *pat = pattern;
 		  int dash = 0;
 		  info[i]. font. vector = true;
+		  info[i]. flags. bad_vector = (vector == 3);
 
 		  c = names[ i];
 		  while (*c) {
@@ -854,7 +855,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
       } else if ( f-> pitch != fpDefault) {
 	 diff += 10000.0;  /* 2/3 of the worst case */
       }
-
+      
       if ( info[i]. flags. name && strcmp( name, info[i]. lc_name) == 0) {
 	 diff += 0.0;
       } else if ( info[i]. flags. family && strcmp( name, info[i]. lc_family) == 0) {
@@ -872,6 +873,8 @@ apc_font_pick( Handle self, PFont source, PFont dest)
       if ( !info[i]. flags. vector) {
 	 /* baaaad */
       } else if ( info[i]. font. vector) {
+	 if ( info[i]. flags. bad_vector)
+	    diff += 3.0;
       } else {
 	 if ( info[i]. font. height > f-> height) {
 	    diff += 600.0;
@@ -918,7 +921,6 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    }
 
    qsort( ordered, n, sizeof( *ordered), compare_difference);
-
    i = ordered[0]. n;
    detail_font_info( info + i, f);
 

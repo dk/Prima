@@ -74,6 +74,8 @@ typedef struct _FontFlags {
    int lastChar         : 1;
    int breakChar        : 1;
    int defaultChar      : 1;
+   /* extras */
+   int bad_vector	: 1;
 } FontFlags;
 
 typedef struct _FontInfo {

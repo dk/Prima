@@ -2666,9 +2666,6 @@ apc_gp_stretch_image( Handle self, Handle image,
 extern Bool
 apc_gp_text_out( Handle self, const char* text, int x, int y, int len);
 
-extern char**
-apc_gp_text_wrap( Handle self, TextWrapRec * t);
-
 /* gpi settings */
 extern Color
 apc_gp_get_back_color( Handle self);

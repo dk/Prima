@@ -117,8 +117,8 @@ static RGBColor standard_dialog_colors[] = {
 static RGBColor standard_edit_colors[] = {
    { 0x00, 0x00, 0x00 },	/* Prima.Edit.foreground */
    { 0xcc, 0xcc, 0xcc },        /* Prima.Edit.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Edit.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Edit.hiliteback */
+   { 0xcc, 0xcc, 0xcc },        /* Prima.Edit.hilitefore */
+   { 0x00, 0x00, 0x00 },	/* Prima.Edit.hilitebac */
    { 0x60, 0x60, 0x60 },        /* Prima.Edit.disabledfore */
    { 0xcc, 0xcc, 0xcc },        /* Prima.Edit.disabledback */
    { 0xff, 0xff, 0xff },        /* Prima.Edit.light3d */
@@ -128,8 +128,8 @@ static RGBColor standard_edit_colors[] = {
 static RGBColor standard_inputline_colors[] = {
    { 0x00, 0x00, 0x00 },	/* Prima.Inputline.foreground */
    { 0xcc, 0xcc, 0xcc },        /* Prima.Inputline.background */
-   { 0x00, 0x00, 0x00 },	/* Prima.Inputline.hilitefore */
-   { 0xcc, 0xcc, 0xcc },        /* Prima.Inputline.hiliteback */
+   { 0xcc, 0xcc, 0xcc },        /* Prima.Inputline.hilitefore */
+   { 0x00, 0x00, 0x00 },	/* Prima.Inputline.hiliteback */
    { 0x60, 0x60, 0x60 },        /* Prima.Inputline.disabledfore */
    { 0xcc, 0xcc, 0xcc },        /* Prima.Inputline.disabledback */
    { 0xff, 0xff, 0xff },        /* Prima.Inputline.light3d */
@@ -1295,14 +1295,6 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    return true;
 }
 
-char **
-apc_gp_text_wrap( Handle self, TextWrapRec * t)
-{
-   DOLBUG( "apc_gp_text_wrap()\n");
-   return nil;
-}
-
-
 /* gpi settings */
 Color
 apc_gp_get_back_color( Handle self)
@@ -1351,8 +1343,29 @@ apc_gp_get_clip_rect( Handle self)
 PFontABC
 apc_gp_get_font_abc( Handle self)
 {
-   DOLBUG( "apc_gp_get_font_abc()\n");
-   return nil;
+   DEFXX;
+   PFontABC abc;
+   XFontStruct *fs;
+   XCharStruct *cs;
+   int k;
+
+   if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
+   fs = XQueryFont( DISP, XX-> font-> id);
+   if (!fs) return nil;
+   abc = malloc( sizeof( FontABC) * 256);
+   for ( k = 0; k < 256; k++) {
+      if ( !fs-> per_char)
+	 cs = &fs-> min_bounds;
+      else if ( k < fs-> min_char_or_byte2 || k > fs-> max_char_or_byte2)
+	 cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
+      else
+	 cs = fs-> per_char + k - fs-> min_char_or_byte2;
+      abc[k]. a = cs-> lbearing;
+      abc[k]. b = cs-> rbearing - cs-> lbearing;
+      abc[k]. c = cs-> width - cs-> rbearing;
+   }
+   XFreeFontInfo( nil, fs, 1);
+   return abc;
 }
 
 FillPattern *

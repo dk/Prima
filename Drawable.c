@@ -593,6 +593,221 @@ Drawable_get_text_box( Handle self, char * text, int len)
    return newRV_noinc(( SV *) av);
 }
 
+static char **
+do_text_wrap( Handle self, TextWrapRec *t)
+{
+   PFontABC abc = apc_gp_get_font_abc( self);
+   float width[256];
+   int start = 0, i, lSize = 16;
+   float w = 0, inc;
+   char **ret = malloc( sizeof( char*) * lSize);
+   Bool wasTab    = 0;
+   Bool doWidthBreak = t-> width >= 0;
+   int tildeIndex = -100, tildeLPos, tildeLine, tildePos;
+   unsigned char * text    = ( unsigned char*) t-> text;
+   
+   for ( i = 0; i < 256; i++) {
+      width[i] = abc[i]. a + abc[i]. b + abc[i]. c;
+      abc[i]. c = ( abc[i]. c < 0) ? - abc[i]. c : 0;
+      abc[i]. a = ( abc[i]. a < 0) ? - abc[i]. a : 0;
+   }
+
+// macro for adding string/chunk into result table
+#define lAdd(end) {                                       \
+   int l = end - start;                                   \
+   char * c;                                              \
+   if (!( t-> options & twReturnChunks)) {                \
+      c = malloc( l + 1);                                 \
+      memcpy( c, &text[start], l);                        \
+      c[ l] = 0;                                          \
+   }                                                      \
+   if ( tildeIndex >= 0 && tildeIndex >= start &&         \
+        tildeIndex < end)                                 \
+   {                                                      \
+      tildeLine = t-> t_line = t-> count;                 \
+      tildePos = tildeLPos   = tildeIndex - start;        \
+      if ( tildeIndex == end - 1) {                       \
+         t-> t_line++;                                    \
+         tildeLPos = 0;                                   \
+      }                                                   \
+   }                                                      \
+   if ( t-> count == lSize) {                             \
+      char ** n = malloc( sizeof( char*) * ( lSize + 16));\
+      memcpy( n, ret, sizeof( char*) * lSize);            \
+      lSize += 16;                                        \
+      free( ret);                                         \
+      ret = n;                                            \
+   }                                                      \
+   if ( t-> options & twReturnChunks) {                   \
+      ret[ t-> count++] = (char*) start;                  \
+      ret[ t-> count++] = (char*) l;                      \
+   } else                                                 \
+      ret[ t-> count++] = c;                              \
+   start += l;                                            \
+}
+
+// determining ~ character location
+    if ( t-> options & twCalcMnemonic) {
+       for ( i = 0; i < t-> textLen - 1; i++)
+          if ( text[ i] == '~') {
+             char c = text[ i + 1];
+             if ( c == '~' || c < ' ') {
+                i++;
+                continue;
+             } else {
+                tildeIndex = i;
+                break;
+             }
+          }
+    }
+// scanning line accumulating widths and breaking if necessary
+    t-> count = 0;
+    w = abc[ text[ 0]]. a;
+    for ( i = 0; i < t-> textLen; i++)
+    {
+       float winc;
+
+       switch ( text[ i])
+       {
+          case '\t':
+             if (!( t-> options & twCalcTabs)) goto _default;
+             if ( t-> options & twSpaceBreak)
+             {
+                lAdd( i); start++;
+                w = abc[ text[ i + 1]]. a;
+                continue;
+             }
+             winc = width[' '] * t-> tabIndent;
+             inc  = abc[' ']. c;
+             wasTab = true;
+             break;
+          case '\n':
+             if (!( t-> options & twNewLineBreak)) goto _default;
+             lAdd( i); start++; w = abc[ text[ i + 1]]. a;
+             continue;
+          case ' ':
+             if (!( t-> options & twSpaceBreak)) goto _default;
+             lAdd( i); start++; w = abc[ text[ i + 1]]. a;
+             continue;
+          case '~':
+             if ( i == tildeIndex) {
+                inc = winc = 0;
+                break;
+             }
+          _default: default:
+             winc = width[ text[ i]];
+             inc  = abc[ text[ i]]. c;
+       }
+       if ( doWidthBreak && w + winc + inc > t-> width)
+       {
+          if (( i - start == 0) || (( i - 1 == tildeIndex) && ( i - start == 1))) {
+            // case when even single char could not fit in given width.
+             if ( t-> options & twBreakSingle)
+             {
+                // do not return anything in this case
+                int j;
+                if (!( t-> options & twReturnChunks)) {
+                   for ( j = 0; j < t-> count; j++) free( ret[ j]);
+                   ret[ 0] = malloc(1);
+                   ret[ 0][ 0] = 0;
+                }
+                t-> count = 0;
+		free(abc);
+                return ret;
+             } else
+                // or fit this character
+                lAdd( i + 1);
+          } else {
+             unsigned char * c;
+             lAdd( i);
+             if ( t-> options & twWordBreak)
+             {
+                // checking whether break was at word boundary
+                unsigned char rc = text[ i];
+                int len;
+                if ( t-> options & twReturnChunks)
+                {
+                   c   = &text[ (int)ret[ t-> count - 2]];
+                   len = (int) ret[ t-> count - 1];
+                }
+                else  {
+                  c = ret[ t-> count - 1];
+                  len = strlen( c);
+                }
+                if ( rc != ' ' && rc != '\t' && rc != '\n') {
+                   // determining whether this line could be split
+                   int j;
+                   Bool ok = false;
+                   for ( j = len; j >= 0; j--)
+                      if ( c[ j] == ' ' || c[ j] == '\n' || c[ j] == '\t') {
+                         ok = true;
+                         break;
+                      }
+                   if ( ok)
+                   {
+                      start -= len - j - 1;
+                      if ( t-> options & twReturnChunks)
+                         (int) ret[ t-> count - 1] = j;
+                      else
+                         c[ j] = 0;
+                      i -= len - j - 1;
+                   }
+                }
+             }
+             i--; // repeat again
+          }
+          w = 0;
+          continue;
+       } else
+          w += winc;
+    }
+// adding or skipping last line
+    if ( t-> textLen - start > 0 || t-> count == 0) lAdd( t-> textLen);
+// expanding tabs
+    if (( t-> options & twExpandTabs) && !(t-> options & twReturnChunks) && wasTab)
+    {
+       for ( i = 0; i < t-> count; i++)
+       {
+          int tabs = 0, len = 0;
+          char *substr = ret[ i], *n;
+          while (*substr) { if ( *substr == '\t') tabs++; substr++; len++; }
+          if ( tabs == 0) continue;
+          n = malloc( len + tabs * t-> tabIndent + 1);
+          substr = ret[ i];
+          len = 0;
+          while ( *substr)
+          {
+             if ( *substr == '\t')
+             {
+                int j = t-> tabIndent;
+                while ( j--) n[ len++] = ' ';
+             } else
+                n[ len++] = *substr;
+             substr++;
+          }
+          free( ret[ i]);
+          n[ len] = 0;
+          ret[ i] = n;
+       }
+    }
+// removing ~ and determining it's location
+    if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
+        unsigned char *l = ret[ tildeLine];
+        t-> t_char = l[ tildePos+1];
+        if ( t-> options & twCollapseTilde)
+           memmove( l+tildePos, l+tildePos+1, strlen( l) - tildePos);
+        l = ret[ t-> t_line];
+	w = apc_gp_get_text_width( self, l, tildeLPos, false);
+
+        t-> t_start = w;
+        t-> t_end   = w + width[(unsigned)l[tildeLPos]];
+    } else {
+        t-> t_start = t-> t_end = t-> t_line = -1;
+    }
+    free(abc);
+    return ret;
+}
+
 SV*
 Drawable_text_wrap( Handle self, char * text, int width, int options, int tabIndent, int textLen)
 {
@@ -615,7 +830,7 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    if ( t. textLen   < 0) t. textLen   = strlen( t. text);
 
    gpENTER;
-   c = apc_gp_text_wrap( self, &t);
+   c = do_text_wrap( self, &t);
    gpLEAVE;
 
    for ( i = 0; i < t. count; i++) {
