@@ -333,13 +333,14 @@ sub save
       }    
    }
 
+   if ( $self-> ConvertTo-> enabled) {
+      $dup = $image-> dup;
+      $dup-> type( $codec-> {types}-> [ $self-> ConvertTo-> focusedItem]);
+   }
+
 # invoking filter dialog
    if ( $self-> {codecFilters}-> [ $fi]) {
       my $dlg = $self-> {codecFilters}-> [ $fi];
-      if ( $self-> ConvertTo-> enabled) {
-         $dup = $image-> dup;
-         $dup-> type( $codec-> {types}-> [ $self-> ConvertTo-> focusedItem]);
-      }
       $dlg-> notify( q(Change), $codec, $dup);
       unless ( $dlg-> execute == cm::OK) {
          $self-> cancel;
