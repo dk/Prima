@@ -107,10 +107,10 @@ sub cmd_rgb
       int((($_[1] & 0xff00) >> 8) * 100 / 256 + 0.5) / 100, 
       int(($_[1] & 0xff)*100/256 + 0.5) / 100);
    unless ( $_[0]-> {grayscale}) {
-      return "$r $g $b setrgbcolor";
+      return "$r $g $b A";
    } else {
       my $i = int( 100 * ( 0.31 * $r + 0.5 * $g + 0.18 * $b) + 0.5) / 100;
-      return "$i setgray";
+      return "$i G";
    }
 }
 
@@ -198,7 +198,7 @@ sub change_transform
    my $doSC   = grep { $_ != 0 } @sc; 
 
    if ( !$doClip && !$doTR && !$doSC && !$ro) {
-      $_[0]-> emit('gsave') if $_[1];
+      $_[0]-> emit(':') if $_[1];
       return;
    }
 
@@ -206,14 +206,14 @@ sub change_transform
    @tp = $_[0]-> pixel2point( @tp);
    my $mcr2 = -$cr[2];
    
-   $_[0]-> emit('grestore') unless $_[1];
-   $_[0]-> emit('gsave');
+   $_[0]-> emit(';') unless $_[1];
+   $_[0]-> emit(':');
    $_[0]-> emit(<<CLIP) if $doClip;
-newpath $cr[0] $cr[1] moveto 0 $cr[2] rlineto $cr[3] 0 rlineto 0 $mcr2 rlineto closepath clip
+N $cr[0] $cr[1] M 0 $cr[2] L $cr[3] 0 L 0 $mcr2 L X C
 CLIP
-   $_[0]-> emit("@tp translate") if $doTR;
-   $_[0]-> emit("@sc scale") if $doSC;
-   $_[0]-> emit("$ro rotate") if $ro != 0;
+   $_[0]-> emit("@tp T") if $doTR;
+   $_[0]-> emit("@sc Z") if $doSC;
+   $_[0]-> emit("$ro R") if $ro != 0;
    $_[0]-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineEnd font);
 }
 
@@ -250,13 +250,13 @@ sub fill
             if ( $self-> {grayscale}) {
                my $i = int( 100 * ( 0.31 * $r + 0.5 * $g + 0.18 * $b) + 0.5) / 100; 
                $self-> emit(<<GRAYPAT);
-[\/Pattern \/DeviceGray] setcolorspace
-$i Pat_$self->{fpType} setcolor
+[\/Pattern \/DeviceGray] SS
+$i Pat_$self->{fpType} SC
 GRAYPAT
             } else {
                $self-> emit(<<RGBPAT);
-[\/Pattern \/DeviceRGB] setcolorspace
-$r $g $b Pat_$self->{fpType} setcolor
+[\/Pattern \/DeviceRGB] SS
+$r $g $b Pat_$self->{fpType} SC
 RGBPAT
             }
          }
@@ -297,26 +297,26 @@ sub stroke
          
       if ( $self-> {changed}-> {linePattern}) {
          if ( length( $lp) == 1) {
-            $self-> emit('[] 0 setdash');
+            $self-> emit('[] 0 SD');
          } else {
             my @x = split('', $lp);
             push( @x, 0) if scalar(@x) % 1;
             @x = map { ord($_) } @x;
-            $self-> emit("[@x] 0 setdash");
+            $self-> emit("[@x] 0 SD");
          }
          $self-> {changed}-> {linePattern} = 0;
       }
 
       if ( $self-> {changed}-> {lineWidth}) {
          my ($lw) = $self-> pixel2point($self-> lineWidth);
-         $self-> emit( $lw . ' setlinewidth');
+         $self-> emit( $lw . ' SW');
          $self-> {changed}-> {lineWidth} = 0;
       }
 
       if ( $self-> {changed}-> {lineEnd}) { 
          my $le = $self-> lineEnd;
          my $id = ( $le == le::Round) ? 1 : (( $le == le::Square) ? 2 : 0);
-         $self-> emit( "$id setlinecap");
+         $self-> emit( "$id SL");
       }
 
       if ( $self-> {changed}-> {fill}) {
@@ -366,7 +366,7 @@ sub begin_doc
       my $jd = join( "\n", map { "/$_ $pd{$_}"} keys %pd);
       $setup .= <<NUMPAGES; 
 %%BeginFeature
-<< $jd >> setpagedevice
+<< $jd >> SPD
 %%EndFeature
 NUMPAGES
    }
@@ -386,6 +386,17 @@ $extras
 %%DocumentSuppliedFonts: (atend)
 %%EndComments
 
+/d/def load def/,/load load d/~/exch , d/S/show , d/:/gsave , d/;/grestore ,
+d/N/newpath , d/M/moveto , d/L/rlineto , d/X/closepath , d/C/clip ,
+d/T/translate , d/R/rotate , d/P/showpage , d/Z/scale , d/I/imagemask ,
+d/@/dup , d/G/setgray , d/A/setrgbcolor , d/l/lineto , d/F/fill ,
+d/FF/findfont , d/XF/scalefont , d/SF/setfont , 
+d/O/stroke , d/SD/setdash , d/SL/setlinecap , d/SW/setlinewidth , 
+d/SS/setcolorspace , d/SC/setcolor , d/SM/setmatrix , d/SPD/setpagedevice ,
+d/SP/setpattern , d/CP/currentpoint , d/MX/matrix , d/MP/makepattern , 
+d/b/begin , d/e/end , d/t/true , d/f/false , d/?/ifelse , d/a/arc ,
+d/dummy/_dummy
+
 %%BeginSetup
 $setup
 %%EndSetup
@@ -394,15 +405,11 @@ $setup
 PSHEADER
 
    $self-> {pagePrefix} = <<PREFIX;
-@{$self->{pageMargins}}[0,1] translate
-newpath 0 0 moveto 0 $y rlineto $x 0 rlineto 0 -$y rlineto closepath clip
+@{$self->{pageMargins}}[0,1] T
+N 0 0 M 0 $y L $x 0 L 0 -$y L X C
 PREFIX
 
-   $self-> {pagePrefix} .= <<REV if $self-> {reversed};
-0 0 moveto   
-90 rotate
-0 -$x translate
-REV
+   $self-> {pagePrefix} .= "0 0 M 90 R 0 -$x T\n" if $self-> {reversed};
 
    $self-> {changed} = { map { $_ => 0 } qw(fill lineEnd linePattern lineWidth font)};
    $self-> {docFontMap} = {};
@@ -439,8 +446,7 @@ sub end_doc
    return unless $self-> {canDraw};
 
    $self-> emit(<<PSFOOTER);
-grestore      
-showpage   
+; P
 
 %%Trailer
 %%DocumentNeededFonts:
@@ -451,7 +457,7 @@ PSFOOTER
 
    if ( $self-> {locale}) {
       my @z = map { '/' . $_ } keys %{$self-> {docFontMap}};
-      my $xcl = "/FontList [@z] def\n";
+      my $xcl = "/FontList [@z] d\n";
       
    }
    
@@ -491,8 +497,7 @@ sub new_page
    return 0 unless $_[0]-> {canDraw};
    my $self = $_[0];
    $self-> {pages}++;
-   $self-> emit('grestore');
-   $self-> emit("showpage\n%%Page: $self->{pages} $self->{pages}\n");
+   $self-> emit("; P\n%%Page: $self->{pages} $self->{pages}\n");
    $self-> $_( @{$self-> {saveState}->{$_}}) for qw( translate clipRect);
    $self-> change_transform(1);
    $self-> emit( $self-> {pagePrefix});
@@ -544,17 +549,17 @@ sub fillPattern
 \/BBox [ 0 0 @scaleto]
 \/XStep $scaleto[0]
 \/YStep $scaleto[1] 
-\/PaintProc { begin 
-gsave 
-@scaleto scale
-8 8 true
+\/PaintProc { b 
+: 
+@scaleto Z
+8 8 t
 [8 0 0 8 0 0]
-< $fpid > imagemask
-grestore
-end 
+< $fpid > I
+;
+e 
 } bind
->> matrix makepattern 
-\/Pat_$fpid exch def
+>> MX MP 
+\/Pat_$fpid ~ d
       
 PATTERNDEF
          $self-> {fpHash}-> {$fpid} = 1;
@@ -708,10 +713,10 @@ sub set_locale
    unless ( scalar keys %{$self-> {localeData}}) {
       return if ! defined($loc);
       $self-> emit( <<ENCODER);
-\/reencode_font { exch \/enco exch def
-dup dup findfont dup length dict begin { 1 index 
-\/FID ne{def}{pop pop}ifelse} forall \/Encoding 
-enco def currentdict end definefont } bind def
+\/reencode_font { ~ \/enco ~ d
+@ @ FF @ length dict b { 1 index 
+\/FID ne{d}{pop pop}?} forall \/Encoding 
+enco d currentdict e definefont } bind d
 ENCODER
    }
 
@@ -722,7 +727,7 @@ ENCODER
       for ( $i = 0; $i < 16; $i++) {
          $self-> emit( join('', map {'/' . $_ } @$le[$i * 16 .. $i * 16 + 15]));
       }
-      $self-> emit("] def\n");
+      $self-> emit("] d\n");
    }
 }
 
@@ -781,13 +786,13 @@ sub arc
    my $rx = $dx / 2;
    $end -= $start;
    $self-> stroke( <<ARC,
-$x $y moveto
-gsave   
-$x $y translate
-1 $try scale $start rotate
+$x $y M
+:   
+$x $y T
+1 $try Z $start R
 ARC
-      "newpath $rx 0 moveto 0 0 $rx 0 $end arc stroke",
-      "grestore");
+      "N $rx 0 M 0 0 $rx 0 $end a O",
+      ";");
 }
 
 sub chord
@@ -798,13 +803,13 @@ sub chord
    my $rx = $dx / 2;
    $end -= $start;
    $self-> stroke(<<ARC,
-$x $y moveto
-gsave
-$x $y translate
-1 $try scale $start rotate
+$x $y M
+:
+$x $y T
+1 $try Z $start R
 ARC
-      "newpath $rx 0 moveto 0 0 $rx 0 $end arc closepath stroke",
-      "grestore");
+      "N $rx 0 M 0 0 $rx 0 $end a X O",
+      ";");
 }
 
 sub ellipse
@@ -814,13 +819,13 @@ sub ellipse
    ( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
    my $rx = $dx / 2;
    $self-> stroke(<<ARC,
-$x $y moveto
-gsave   
-$x $y translate
-1 $try scale
+$x $y M
+:   
+$x $y T
+1 $try Z
 ARC
-        "newpath $rx 0 moveto 0 0 $rx 0 360 arc stroke",
-        "grestore");
+        "N $rx 0 M 0 0 $rx 0 360 a O",
+        ";");
 }
 
 sub fill_chord
@@ -831,13 +836,13 @@ sub fill_chord
    my $rx = $dx / 2;
    $end -= $start;
    $self-> fill( <<START,
-$x $y moveto
-gsave   
-$x $y translate
-1 $try scale
+$x $y M
+:   
+$x $y T
+1 $try Z
 START
-     "newpath $rx 0 moveto 0 0 $rx 0 $end arc closepath fill",
-     "grestore");
+     "N $rx 0 M 0 0 $rx 0 $end a X F",
+     ";");
 }
 
 sub fill_ellipse
@@ -847,13 +852,13 @@ sub fill_ellipse
    ( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
    my $rx = $dx / 2;
    $self-> fill(<<ARC,
-$x $y moveto
-gsave   
-$x $y translate
-1 $try scale
+$x $y M
+:   
+$x $y T
+1 $try Z
 ARC
-   "newpath $rx 0 moveto 0 0 $rx 0 360 arc fill",
-   "grestore");
+   "N $rx 0 M 0 0 $rx 0 360 a F",
+   ";");
 }
 
 sub sector
@@ -864,13 +869,13 @@ sub sector
    my $rx = $dx / 2;
    $end -= $start;
    $self-> stroke(<<ARC,
-$x $y moveto
-gsave   
-$x $y translate
-1 $try scale $start rotate
+$x $y M
+:   
+$x $y T
+1 $try Z $start R
 ARC
-      "newpath 0 0 moveto 0 0 $rx 0 $end arc 0 0 lineto stroke",
-      "grestore");
+      "N 0 0 M 0 0 $rx 0 $end a 0 0 l O",
+      ";");
 }
 
 sub fill_sector
@@ -881,14 +886,14 @@ sub fill_sector
    my $rx = $dx / 2;
    $end -= $start;
    $self-> fill(<<ARC,
-$x $y moveto
-gsave   
-$x $y translate
-1 $try scale $start rotate
+$x $y M
+:   
+$x $y T
+1 $try Z $start R
 ARC
 
-     "newpath 0 0 moveto 0 0 $rx 0 $end arc 0 0 lineto fill",
-     "grestore");
+     "N 0 0 M 0 0 $rx 0 $end a 0 0 l F",
+     ";");
 }
 
 sub text_out
@@ -918,18 +923,17 @@ sub text_out
        }      
 
        if ( $self-> {changed}-> {font}) {
-          $self-> emit( "/$fn findfont $self->{font}->{size} scalefont setfont");
+          $self-> emit( "/$fn FF $self->{font}->{size} XF SF");
           $self-> {changed}-> {font} = 0;
        }
    }
    my $wmul = $self-> {font}-> {width} / $self-> {fontWidthDivisor};
-   $self-> emit("gsave");
-   $self-> emit("$x $y translate");
-   $self-> emit("$wmul 1 scale") if $wmul != 1;
-   $self-> emit("0 0 moveto");
+   $self-> emit(": $x $y T");
+   $self-> emit("$wmul 1 Z") if $wmul != 1;
+   $self-> emit("0 0 M");
    if ( $self->{font}->{direction} != 0) {
       my $r = $self->{font}->{direction} / 10;
-      $self-> emit("$r rotate");
+      $self-> emit("$r R");
    }
    my @rb;
    if ( $self-> textOpaque || $self-> {font}-> {style} & fs::Underlined) {
@@ -942,7 +946,7 @@ sub text_out
    }
    if ( $self-> textOpaque) {
       $self-> emit( $self-> cmd_rgb( $self-> backColor)); 
-      $self-> emit( "gsave newpath @rb[0,1] moveto @rb[2,3] lineto @rb[6,7] lineto @rb[4,5] lineto closepath fill grestore");
+      $self-> emit( ": N @rb[0,1] M @rb[2,3] l @rb[6,7] l @rb[4,5] l X F ;");
    }
    
    $self-> emit( $self-> cmd_rgb( $self-> color));
@@ -962,30 +966,29 @@ sub text_out
       ) {
          $j =~ s/([\\()])/\\$1/g; 
          my $adv2 = int( $adv * 100 + 0.5) / 100;
-         $self-> emit( "$adv2 0 moveto") if $adv2 != 0;
-         $self-> emit("($j) show");
+         $self-> emit( "$adv2 0 M") if $adv2 != 0;
+         $self-> emit("($j) S");
       } elsif ( defined $rm-> [ord $j]) {
          my $adv2 = $adv + $$xr[1] * 72.27 / $self-> {resolution}-> [0]; 
          $adv2 = int( $adv * 100 + 0.5) / 100;
          my $pg = $self-> plate_glyph( ord $j);
          if ( length $pg) {
-            $self-> emit( "$adv2 $self->{plate}->{yd} moveto");
-            $self-> emit("gsave currentpoint translate");
+            $self-> emit( "$adv2 $self->{plate}->{yd} M : CP T");
             $self-> emit( $pg);
-            $self-> emit("grestore");
+            $self-> emit(";");
          }
       } 
       $adv += ( $$xr[1] + $$xr[2] + $$xr[3]) * 72.27 / $self-> {resolution}-> [0];
    }
    
    #$text =~ s/([\\()])/\\$1/g;
-   #$self-> emit("($text) show");
+   #$self-> emit("($text) S");
    
    if ( $self-> {font}-> {style} & fs::Underlined) {
-      $self-> emit("[] 0 setdash 0 setlinecap 0 setlinewidth");
-      $self-> emit("newpath @rb[0,3] moveto $rb[4] 0 rlineto stroke");
+      $self-> emit("[] 0 SD 0 SL 0 SW");
+      $self-> emit("N @rb[0,3] M $rb[4] 0 L O");
    }
-   $self-> emit("grestore");
+   $self-> emit(";");
    return 1;
 }
 
@@ -994,7 +997,7 @@ sub bar
    my ( $self, $x1, $y1, $x2, $y2) = @_;
    ( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
    $self-> fill('', 
-     "newpath $x1 $y1 moveto $x1 $y2 lineto $x2 $y2 lineto $x2 $y1 lineto closepath fill", '');
+     "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X F", '');
 }
 
 sub rectangle
@@ -1002,7 +1005,7 @@ sub rectangle
    my ( $self, $x1, $y1, $x2, $y2) = @_;
    ( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
    $self-> stroke( '', 
-      "newpath $x1 $y1 moveto $x1 $y2 lineto $x2 $y2 lineto $x2 $y1 lineto closepath stroke", '');
+      "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X O", '');
 }
 
 sub clear
@@ -1018,7 +1021,7 @@ sub clear
    my $c = $self-> cmd_rgb( $self-> backColor);
    $self-> emit(<<CLEAR);
 $c
-newpath $x1 $y1 moveto $x1 $y2 lineto $x2 $y2 lineto $x2 $y1 lineto closepath fill
+N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X F
 CLEAR
    $self-> {changed}-> {fill} = 1;
 }
@@ -1027,7 +1030,7 @@ sub line
 {
    my ( $self, $x1, $y1, $x2, $y2) = @_;
    ( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
-   $self-> stroke('', "newpath $x1 $y1 moveto $x2 $y2 lineto stroke", '');
+   $self-> stroke('', "N $x1 $y1 M $x2 $y2 l O", '');
 }
 
 sub lines
@@ -1039,7 +1042,7 @@ sub lines
    $c = int( $c / 4) * 4;
    my $z = '';
    for ( $i = 0; $i < $c; $i += 4) {
-      $z .= "newpath @a[$i,$i+1] moveto @a[$i+2,$i+3] lineto stroke";
+      $z .= "N @a[$i,$i+1] M @a[$i+2,$i+3] l O";
    }
    $self-> stroke( '', $z, '');
 }
@@ -1052,11 +1055,11 @@ sub polyline
    my @a = $self-> pixel2point( @$array);
    $c = int( $c / 2) * 2;
    return if $c < 2;
-   my $z = "newpath @a[0,1] moveto ";
+   my $z = "N @a[0,1] M ";
    for ( $i = 2; $i < $c; $i += 2) {
-      $z .= "@a[$i,$i+1] lineto ";
+      $z .= "@a[$i,$i+1] l ";
    }
-   $z .= "stroke";
+   $z .= "O";
    $self-> stroke( '', $z, '');
 }
 
@@ -1068,11 +1071,11 @@ sub fillpoly
    $c = int( $c / 2) * 2;
    return if $c < 2;
    my @a = $self-> pixel2point( @$array); 
-   my $x = "newpath @a[0,1] moveto ";
+   my $x = "N @a[0,1] M ";
    for ( $i = 2; $i < $c; $i += 2) {
-      $x .= "@a[$i,$i+1] lineto ";
+      $x .= "@a[$i,$i+1] l ";
    }
-   $x .= "closepath fill";
+   $x .= "X F";
    $self-> fill( '', $x, '');
 }
 
@@ -1085,10 +1088,10 @@ sub pixel
    my $c = $self-> cmd_rgb( $pix);   
    ($x, $y) = $self-> pixel2point( $x, $y);
    $self-> emit(<<PIXEL);
-gsave
+:
 $c
-newpath $x $y moveto 0 0 rlineto fill
-grestore
+N $x $y M 0 0 L F
+;
 PIXEL
    $self-> {changed}-> {fill} = 1;
 }
@@ -1140,8 +1143,8 @@ sub put_image_indirect
    my $ls = int(( $is[0] * ( $image-> type & im::BPP) + 31) / 32) * 4; 
    my ( $i, $j);
 
-   $self-> emit("gsave $x $y translate @fullScale scale");
-   $self-> emit("/scanline $bt string def");
+   $self-> emit(": $x $y T @fullScale Z");
+   $self-> emit("/scanline $bt string d");
    $self-> emit("@is 8 [$is[0] 0 0 $is[1] 0 0]");
    $self-> emit('{currentfile scanline readhexstring pop}');
    $self-> emit(( $image-> type & im::GrayScale) ? "image" : "false 3 colorimage");
@@ -1152,7 +1155,7 @@ sub put_image_indirect
       $w =~ s/(.)/sprintf("%02x",ord($1))/eg;
       $self-> emit( $w);
    }
-   $self-> emit('grestore');
+   $self-> emit(';');
    return 1;
 }
 
