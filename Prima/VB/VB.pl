@@ -1903,12 +1903,9 @@ $VB::main-> update_menu();
 
 $VB::main-> load_file( $ARGV[0]) if @ARGV && -f $ARGV[0] && -r _;
 
-RERUN: eval {
-   run Prima;
-};
-if ( $@ && $::application) {
-   Prima::MsgBox::message( "$@") if $@;
-   goto RERUN;
+while ($::application) {
+   eval { run Prima };
+   Prima::MsgBox::message( "$@") if $::application && $@;
 }
 
 1;
