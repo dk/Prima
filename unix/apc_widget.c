@@ -114,6 +114,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint,
    XX-> flags. clipOwner = clipOwner;
    XX-> flags. syncPaint = syncPaint;
    XX-> flags. doSizeHints = false;
+   XX-> flags. noSize = true;
 
    XX-> owner = realOwner;
    XX-> size = (Point){0,0};
@@ -121,7 +122,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint,
    XX-> origin = (Point){0,0};
    XX-> knownOrigin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
 
-printf( "&&&&&&&&&&& window created: %s &&&&&&&&&&&\n", PWidget( self)-> name);
+   DOLBUG( "&&&&&&&&&&& window created: %s &&&&&&&&&&&\n", PWidget( self)-> name);
 
    return true;
 }
@@ -166,7 +167,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 Bool
 apc_widget_begin_paint_info( Handle self)
 {
-fprintf( stdout, "apc_widget_begin_paint_info()\n");
+   DOLBUG( "apc_widget_begin_paint_info()\n");
    return false;
 }
 
@@ -202,7 +203,7 @@ apc_widget_end_paint( Handle self)
 void
 apc_widget_end_paint_info( Handle self)
 {
-fprintf( stdout, "apc_widget_end_paint_info()\n");
+   DOLBUG( "apc_widget_end_paint_info()\n");
 }
 
 Bool
@@ -214,7 +215,7 @@ apc_widget_get_clip_owner( Handle self)
 Rect
 apc_widget_get_clip_rect( Handle self)
 {
-fprintf( stdout, "apc_widget_get_clip_rect()\n");
+   DOLBUG( "apc_widget_get_clip_rect()\n");
    return (Rect){0,0,0,0};
 }
 
@@ -227,7 +228,7 @@ apc_widget_get_color( Handle self, int index)
 Bool
 apc_widget_get_first_click( Handle self)
 {
-fprintf( stdout, "apc_widget_get_first_click()\n");
+   DOLBUG( "apc_widget_get_first_click()\n");
    return false;
 }
 
@@ -240,14 +241,14 @@ apc_widget_get_focused( void)
 ApiHandle
 apc_widget_get_handle( Handle self)
 {
-fprintf( stdout, "apc_widget_get_handle()\n");
+   DOLBUG( "apc_widget_get_handle()\n");
    return nilHandle;
 }
 
 Rect
 apc_widget_get_invalid_rect( Handle self)
 {
-fprintf( stdout, "apc_widget_get_invalid_rect()\n");
+   DOLBUG( "apc_widget_get_invalid_rect()\n");
    return (Rect){0,0,0,0};
 }
 
@@ -272,7 +273,7 @@ apc_widget_get_sync_paint( Handle self)
 Bool
 apc_widget_get_transparent( Handle self)
 {
-fprintf( stdout, "apc_widget_get_transparent()\n");
+   DOLBUG( "apc_widget_get_transparent()\n");
    return false;
 }
 
@@ -303,7 +304,7 @@ apc_widget_is_focused( Handle self)
 Bool
 apc_widget_is_responsive( Handle self)
 {
-fprintf( stdout, "apc_widget_is_responsive()\n");
+   DOLBUG( "apc_widget_is_responsive()\n");
    return false;
 }
 
@@ -380,7 +381,7 @@ void
 apc_widget_scroll_rect( Handle self, int horiz, int vert,
 			Rect r, Bool withChildren)
 {
-fprintf( stdout, "apc_widget_scroll_rect()\n");
+   DOLBUG( "apc_widget_scroll_rect()\n");
 }
 
 void
@@ -418,7 +419,7 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 void
 apc_widget_set_clip_rect( Handle self, Rect clipRect)
 {
-fprintf( stdout, "apc_widget_set_clip_rect()\n");
+   DOLBUG( "apc_widget_set_clip_rect()\n");
 }
 
 void
@@ -440,7 +441,7 @@ apc_widget_set_enabled( Handle self, Bool enable)
 void
 apc_widget_set_first_click( Handle self, Bool firstClick)
 {
-fprintf( stdout, "apc_widget_set_first_click()\n");
+   DOLBUG( "apc_widget_set_first_click()\n");
 }
 
 void
@@ -466,10 +467,11 @@ apc_widget_set_focused( Handle self)
 	 state = 0;
    }
    if ( !state) {
+      DOLBUG( "~~~~~~~~~ Setting focus to %s\n", PWidget( self)-> name);
       XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
       XCHECKPOINT;
    } else {
-      printf( "~~~~~~~~~~~~~~~~~~ cannot set focus ~~~~~~~~~~~~~~~~~\n");
+      DOLBUG( "~~~~~~~~~~~~~~~~~~ cannot set focus ~~~~~~~~~~~~~~~~~\n");
    }
 }
 
@@ -487,7 +489,7 @@ apc_widget_set_font( Handle self, PFont font)
 void
 apc_widget_set_palette( Handle self)
 {
-fprintf( stdout, "apc_widget_set_palette()\n");
+   DOLBUG( "apc_widget_set_palette()\n");
 }
 
 void
@@ -498,7 +500,7 @@ apc_widget_set_pos( Handle self, int x, int y)
    XX-> origin = (Point){x,y};  /* XXX ? */
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
    XMoveWindow( DISP, X_WINDOW, x, y);
-fprintf( stdout, "XMoveWindow: widget (%s) move to (%d,%d)\n", PWidget(self)-> name, x, y);
+   DOLBUG( "XMoveWindow: widget (%s) move to (%d,%d)\n", PWidget(self)-> name, x, y);
    XCHECKPOINT;
 }
 
@@ -513,20 +515,21 @@ apc_widget_set_size( Handle self, int width, int height)
    if ( width == 0) width = 1;
    if ( height == 0) height = 1;
    XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
-fprintf( stdout, "widget size to (%d,%d) - (%d,%d)\n", XX-> origin. x, y, width, height);
+   DOLBUG( "widget (%s) size to (%d,%d) - (%d,%d)\n", PWidget(self)-> name, XX-> origin. x, y, width, height);
    XCHECKPOINT;
 }
 
 void
 apc_widget_set_tab_order( Handle self, int tabOrder)
 {
-fprintf( stdout, "apc_widget_set_tab_order()\n");
+   DOLBUG( "apc_widget_set_tab_order()\n");
 }
 
 void
 apc_widget_set_visible( Handle self, Bool show)
 {
    DEFXX;
+   Bool flush_n_wait = false;
 
    XX-> flags. visible = show;
    if ( show) {
@@ -549,13 +552,25 @@ apc_widget_set_visible( Handle self, Bool show)
 	 XSetWMNormalHints( DISP, X_WINDOW, &hints);
 	 XCHECKPOINT;
 	 XX-> flags. doSizeHints = false;
+	 flush_n_wait = true;
       }
 
       XMapWindow( DISP, X_WINDOW);
       // XMapRaised( DISP, X_WINDOW);
       XRaiseWindow( DISP, X_WINDOW);
       XFlush( DISP);
-printf( "&&&&&&&&&&&&& Widget show: %s &&&&&&&&&&&\n", PWidget( self)-> name);
+      if ( flush_n_wait) {
+	 XWindowAttributes attrs;
+/* 	 XSizeHints hints; */
+/* 	 long suppl; */
+/* 	 while (!XGetWMNormalHints( DISP, X_WINDOW, &hints, &suppl)) { */
+	 attrs. map_state = IsUnmapped;
+	 while( attrs. map_state == IsUnmapped) {
+	    XGetWindowAttributes( DISP, X_WINDOW, &attrs);
+	    usleep( 10);
+	 }
+	 apc_application_yield();
+      }
    } else {
       XUnmapWindow( DISP, X_WINDOW);
    }
@@ -565,7 +580,7 @@ printf( "&&&&&&&&&&&&& Widget show: %s &&&&&&&&&&&\n", PWidget( self)-> name);
 void
 apc_widget_set_z_order( Handle self, Handle behind, Bool top)
 {
-fprintf( stdout, "apc_widget_set_z_order()\n");
+   DOLBUG( "apc_widget_set_z_order()\n");
 }
 
 void
@@ -581,6 +596,6 @@ apc_widget_update( Handle self)
 void
 apc_widget_validate_rect( Handle self, Rect rect)
 {
-fprintf( stdout, "apc_widget_validate_rect()\n");
+   DOLBUG( "apc_widget_validate_rect()\n");
 }
 
