@@ -111,6 +111,17 @@ sub set
      delete $parms{onCheck} if exists $parms{onCheck};
 }
 
+sub cancel_transaction
+{
+   my $self = $_[0];
+   if ( $self->{mouseTransaction} || $self->{spaceTransaction}) {
+      $self->{spaceTransaction} = undef;
+      $self-> capture(0) if $self->{mouseTransaction};
+      $self->{mouseTransaction} = undef;
+      $self-> pressed( 0);
+   }
+}
+
 sub on_keydown
 {
    my ( $self, $code, $key, $mod, $repeat) = @_;
@@ -146,12 +157,8 @@ sub on_keyup
 sub on_leave
 {
    my $self = $_[0];
-   if ( $self->{spaceTransaction} || $self->{mouseTransaction})
-   {
-      $self->{spaceTransaction} = undef;
-      $self-> capture(0) if $self->{mouseTransaction};
-      $self->{mouseTransaction} = undef;
-      $self-> pressed( 0);
+   if ( $self->{spaceTransaction} || $self->{mouseTransaction}) {
+      $self-> cancel_transaction;
    } else {
       $self-> repaint;
    }
@@ -289,7 +296,7 @@ sub caption_box
 sub pressed      {($#_)?$_[0]->set_pressed     ($_[1]):return $_[0]->{pressed}     }
 
 sub on_enable  { $_[0]-> repaint; }
-sub on_disable { $_[0]-> repaint; }
+sub on_disable { $_[0]-> cancel_transaction; $_[0]-> repaint; }
 sub on_enter   { $_[0]-> repaint; }
 
 
@@ -739,7 +746,7 @@ use vars qw(@ISA @images);
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
-   @$def{qw(widgetClass onRadioClick)} = (wc::Radio, undef);
+   @$def{qw(widgetClass)} = (wc::Radio, undef);
    return $def;
 }
 
