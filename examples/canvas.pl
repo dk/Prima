@@ -1093,7 +1093,7 @@ sub points
    push @$p, @$p[0,1] 
       if $self-> {fix_last_point} && ( $$p[0] != $$p[-2] || $$p[1] != $$p[1]);
    $self->{points} = $p;
-   $self-> repaint;
+   $self-> update;
 }
 
 sub zoom_points
@@ -1110,6 +1110,7 @@ sub zoom_points
    my @anchor = @{$self->{anchor}};
    my @aspect = @{$self->{aspect}};
    my @shift  = @{$self->{shift}};
+   my @offset = $self->{autoAdjust} ? @{$self->{offset}} : (0,0);
    $x /= $w;
    $y /= $h;
    $h = $self->{points};
@@ -1119,33 +1120,65 @@ sub zoom_points
       my $Y = $$h[$w+1]  - $anchor[1] + $shift[1];
       my $A = ($X * $cos - $Y * $sin);
       my $B = ($X * $sin + $Y * $cos);
-      $A = ( $A + $anchor[0]) * $aspect[0];
-      $B = ( $B + $anchor[1]) * $aspect[1];
+      $A = ( $A + $anchor[0]) * $aspect[0] + $offset[0];
+      $B = ( $B + $anchor[1]) * $aspect[1] + $offset[1];
       push @ret, $A / $x;
       push @ret, $B / $y;
    }
    \@ret;
 }
 
+sub update
+{
+   my $self = $_[0];
+   if ( $self-> {autoAdjust}) {
+      my @r = $self-> extents;
+      $self->{offset} = [ -$r[0],-$r[1]];
+      $self-> size( $r[2]-$r[0],$r[3]-$r[1]);
+   }
+   $self-> repaint;
+}
+
+sub extents
+{
+   my $self = $_[0];
+   my $a = $self-> {autoAdjust};
+   $self-> {autoAdjust} = 0;
+   my $p = $self-> zoom_points( $self-> size);
+   $self-> {autoAdjust} = $a;
+   my $lw = int(($self-> lineWidth || 1) / 2);
+   return -$lw,-$lw,$lw,$lw if 0 == @$p;
+   my $i;
+   my @r = @$p[0,1,0,1];
+   for ( $i = 2; $i < @$p; $i += 2) {
+      $r[0] = $$p[$i] if $r[0] > $$p[$i];
+      $r[1] = $$p[$i+1] if $r[1] > $$p[$i+1];
+      $r[2] = $$p[$i] if $r[2] < $$p[$i];
+      $r[3] = $$p[$i+1] if $r[3] < $$p[$i+1];
+   }
+   $r[$_] -= $lw, $r[$_+2] += $lw for 0,1;
+   @r;
+}
+
 sub anchor 
 {
    return @{$_[0]->{anchor}} unless $#_;
    $_[0]->{anchor} = [($#_ == 1) ? @{$_[1]} : @_[1,2]];
-   $_[0]-> repaint if $_[0]-> {rotate};
+   $_[0]-> update;
 }   
 
 sub aspect 
 {
    return @{$_[0]->{aspect}} unless $#_;
    $_[0]->{aspect} = [(($#_ == 1) ? @{$_[1]} : @_[1,2])];
-   $_[0]-> repaint;
+   $_[0]-> update;
 }   
 
 sub shift 
 {
    return @{$_[0]->{shift}} unless $#_;
    $_[0]-> {shift} = [($#_ == 1) ? @{$_[1]} : @_[1,2]];
-   $_[0]-> repaint;
+   $_[0]-> update;
 }   
 
 sub smooth 
@@ -1153,6 +1186,13 @@ sub smooth
    return $_[0]->{smooth} unless $#_;
    $_[0]->{smooth} = $_[1];
    $_[0]-> repaint;
+}   
+
+sub autoAdjust 
+{
+   return $_[0]->{autoAdjust} unless $#_;
+   $_[0]->{autoAdjust} = $_[1];
+   $_[0]-> update;
 }   
 
 sub rotate 
@@ -1165,7 +1205,7 @@ sub rotate
    $self->{rotate} = $angle;
    delete $self-> {sina};
    delete $self-> {cosa};
-   $self-> repaint;
+   $self-> update;
 }   
 
 package Prima::Canvas::Line;
@@ -1182,6 +1222,7 @@ use vars qw(@ISA %arrowheads);
 sub profile_default 
 {
    $_[0]-> SUPER::profile_default,
+   autoAdjust => 1,
    anchor => [0,0],
    aspect => [1,1],
    shift  => [0,0],
@@ -1239,20 +1280,54 @@ sub arrow
    } else {
       $self->{arrows}->[$idx] = $arrow;
    }
-   $self->repaint;
+   $self->{arrows}->[$idx]-> autoAdjust( 0) if $self->{arrows}->[$idx];
+   $self->update;
+}
+
+sub extents
+{
+   my $self = $_[0];
+   my @r = $self-> SUPER::extents;
+   my @a = (0,0);
+   my $lw = $self-> lineWidth || 1;
+   for ( 0..1) {
+      next unless $self->{arrows}->[$_];
+      my @r = $self->{arrows}->[$_]->extents;
+      $a[0] = $r[2]-$r[0] if $a[0] < $r[2]-$r[0];
+      $a[1] = $r[3]-$r[1] if $a[1] < $r[3]-$r[1];
+   }
+   $a[$_]+=$lw, $r[$_] -= $a[$_], $r[$_+2] += $a[$_] for 0..1;
+   @r;
 }
 
 sub on_paint
 {
    my ( $self, $canvas, $width, $height) = @_;
+   my @a = (0,0);
+   my $lw = ($self-> {lineWidth} || 1);
+   for (@{$self->{arrows}}) { 
+      next unless $_;
+      my @r = $_-> extents;
+      $r[2] -= $r[0];
+      $r[3] -= $r[1];
+      $a[0] = $r[2] if $a[0] < $r[2];
+      $a[1] = $r[3] if $a[1] < $r[3];
+   }
+   my @size  = $self-> size;
+   $a[0] *= $lw * $width / $size[0];
+   $a[1] *= $lw * $height / $size[1];
+   $width  -= $a[0] * 2;
+   $height -= $a[1] * 2;
    my $p = $self-> zoom_points( $width, $height);
    return if 4 > @$p;
-   my @size  = $self-> size;
+   my $i;
+   for ( $i = 0; $i < @$p; $i+=2) {
+      $$p[$i+$_] += $a[$_] for 0,1;
+   }
    $canvas-> lineWidth( $self-> lineWidth * $width / $size[0]);
    $self-> {smooth} ? 
       $canvas-> spline( $p) :
       $canvas-> polyline( $p);
-   my $lw = ($self-> {lineWidth} || 1);
    my $flip = 0;
    my @t = $canvas-> translate;
    for my $arrow ( @{$self->{arrows}}) {
@@ -1270,6 +1345,19 @@ sub on_paint
    }
 }
 
+sub on_layoutchanged
+{
+   $_[0]-> update if $_[0]-> {autoAdjust};
+}
+
+sub lineWidth
+{
+   return $_[0]-> SUPER::lineWidth unless $#_;
+   my $self = shift;
+   $self-> SUPER::lineWidth(@_);
+   $self-> update;
+}
+
 package Prima::Canvas::Polygon;
 use vars qw(@ISA);
 @ISA = qw(Prima::Canvas::FilledOutlined Prima::Canvas::line_properties);
@@ -1284,6 +1372,7 @@ sub profile_default
    smooth => 0,
    rotate => 0,
    fix_last_point => 1,
+   autoAdjust => 1,
 }
 
 sub uses 
@@ -1315,6 +1404,19 @@ sub on_paint
 	 $canvas-> spline( $p) :
 	 $canvas-> polyline( $p);
    }
+}
+
+sub on_layoutchanged
+{
+   $_[0]-> update if $_[0]-> {autoAdjust};
+}
+
+sub lineWidth
+{
+   return $_[0]-> SUPER::lineWidth unless $#_;
+   my $self = shift;
+   $self-> SUPER::lineWidth(@_);
+   $self-> update;
 }
 
 package Prima::Canvas::Image;
