@@ -213,7 +213,7 @@ Icon_dup( Handle self)
 IconHandle
 Icon_split( Handle self)
 {
-   IconHandle ret;
+   IconHandle ret = {0,0};
    PImage i;
    HV * profile = newHV();
    char* className = var self-> className;
@@ -235,4 +235,28 @@ Icon_split( Handle self)
    return ret;
 }
 
+void
+Icon_combine( Handle self, Handle xorMask, Handle andMask)
+{
+   Bool killAM = 0;
+   if ( !kind_of( xorMask, CImage) || !kind_of( andMask, CImage))
+      return;
+   my create_empty( self, PImage( xorMask)-> w, PImage( xorMask)-> h, PImage( xorMask)-> type);
+   if (( PImage( andMask)-> type & imBPP) != imMono) {
+      killAM = 1;
+      andMask = CImage( andMask)-> dup( andMask);
+      CImage( andMask)-> set_type( andMask, imMono);
+   }
+   if ( var w != PImage( andMask)-> w || var h != PImage( andMask)-> h) {
+      if ( !killAM) {
+         killAM = 1;
+         andMask = CImage( andMask)-> dup( andMask);
+      }
+      CImage( andMask)-> set_size( andMask, var w, var h);
+   }
 
+   memcpy( var data, PImage( xorMask)-> data, var dataSize);
+   memcpy( var mask, PImage( andMask)-> data, var maskSize);
+
+   if ( killAM) Object_destroy( andMask);
+}
