@@ -140,7 +140,7 @@ apc_clipboard_set_data( long id, void * data, int length)
    {
       case CF_BITMAP:
          {
-            HBITMAP b = ( HBITMAP) image_make_bitmap_handle(( Handle) data );
+            HBITMAP b = ( HBITMAP) image_make_bitmap_handle(( Handle) data, nil );
             if ( b == nilHandle) apiErrRet;
             if ( !SetClipboardData( id, b)) apiErrRet;
          }
