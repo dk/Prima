@@ -1546,7 +1546,26 @@ PRIGRAPH_WARNING
        }
     }
 
-    die <<NOCODECS unless @ACTIVE_CODECS || $WANTNOCODECS;
+    unless ( @ACTIVE_CODECS || $WANTNOCODECS) {
+       if ( $Win32 || $OS2) {
+          open F, "> Makefile";
+          my $dep = $Win32 ? 'win32' : 'os2';
+          print F <<DUMB_MAKE;
+# This makefile is created deliberately empty in case 
+# Makefile.PL was run from under CPAN shell, which scans
+# Makefile for uresolved dependencies
+# 
+# PREREQ_PM => { Prima::prigraph::$dep=>q[0] }
+#
+all:
+\t$^X Makefile.PL
+\tmake
+
+test: all
+DUMB_MAKE
+          close F;
+       }
+     die <<NOCODECS;
 
 ** No image codecs found. Use
 
@@ -1556,7 +1575,11 @@ to ignore this error. Note that in this configuration Prima
 will not be able to work with graphic files. Please follow
 the instructions in README file.
 
+If you are under CPAN shell and are asked to follow Prima::prigraph 
+dependencies, do so and re-run 'install Prima' afterwards.
+
 NOCODECS
+    }
 
     push @Prima_exports, 'bzero' unless $DEFINES{HAVE_BZERO};
     # Setting up translation tables for quoting string for different make utilities.
