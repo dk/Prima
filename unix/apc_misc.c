@@ -1240,16 +1240,16 @@ apc_system_action( const char *s)
    case 'g':
       if ( l > 15 && strncmp( "get.frame.info ", s, 15) == 0) {
          char *end;
-         char *res;
          XWindow w = strtoul( s + 15, &end, 0);
          Handle self;
          Rect r;
+         char buf[ 80];
 
          if (*end == '\0' &&
              ( self = prima_xw2h( w)) && 
              prima_get_frame_info( self, &r) &&
-             asprintf( &res, "%d %d %d %d", r.left, r.bottom, r.right, r.top) >= 0)
-            return res;
+             snprintf( buf, sizeof(buf), "%d %d %d %d", r.left, r.bottom, r.right, r.top) < sizeof(buf))
+            return duplicate_string( buf);
       }
    }
    return nil;
