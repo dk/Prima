@@ -131,6 +131,7 @@ sub recalc_widths
    my @w;
    my $i;
    my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureTab));
+   $self-> begin_paint_info;
    $self-> push_event;
    for ( $i = 0; $i < scalar @{$self->{tabs}}; $i++)
    {
@@ -139,6 +140,7 @@ sub recalc_widths
       push ( @w, $iw);
    }
    $self-> pop_event;
+   $self-> end_paint_info;
    $self-> {widths}    = [@w];
 }
 
@@ -361,19 +363,7 @@ sub on_measuretab
    $$sref = $self-> get_text_width( $self->{tabs}->[$index]) + DefGapX * 4;
 }
 
-#
-#  @poly:
-#     [2,3]        [4,5]
-#       o..........o
-#      .            .
-#[0,1].   TAB_TEXT   . [6,7]
-#    o................o
-#
-#  @poly2:
-# [0,1]               [2,3]
-#    o................o
-#[6,7]o..............o[4,5]
-#
+# see L<DrawTab> below for more info
 
 sub on_drawtab
 {
@@ -767,6 +757,49 @@ sub set_page_count
    }
 }
 
+my %virtual_properties = (
+   enabled => 1,
+   visible => 2,
+   current => 3,
+);
+
+sub widget_get
+{
+   my ( $self, $widget, $property) = @_;
+   return $widget-> $property() if ! $virtual_properties{$property};
+   my ( $page, $number) = $self-> contains_widget( $widget);
+   return $widget-> $property() if ! defined $page || $page == $self-> {pageIndex};
+   return $self->{widgets}->[$page]->[$number]->[$virtual_properties{$property}];
+}
+
+sub widget_set
+{
+   my ( $self, $widget) = ( shift, shift );
+   my ( $page, $number) = $self-> contains_widget( $widget);
+   if ( ! defined $page || $page == $self-> {pageIndex} ) {
+      $widget-> set( @_ );
+      return;
+   }
+   $number = $self-> {widgets}-> [$page]-> [$number];
+   my %profile;
+   my $clear_current_flag = 0;
+   while ( @_ ) {
+      my ( $property, $value) = ( shift, shift );
+      if ( $virtual_properties{$property} ) {
+         $number-> [ $virtual_properties{ $property } ] = ( $value ? 1 : 0 );
+         $clear_current_flag = 1 if $property eq 'current' && $value;
+      } else {
+         $profile{$property} = $value;
+      }
+   }
+   if ( $clear_current_flag) {
+      for ( @{$self->{widgets}->[$page]} ) {
+         $$_[3] = 0 if $$_[0] != $widget;
+      }
+   }
+   $widget-> set( %profile ) if scalar keys %profile;
+}
+
 sub defaultInsertPage
 {
    $_[0]-> {defaultInsertPage} = $_[1];
@@ -786,6 +819,7 @@ use constant DefBookmarkX => 32;
    pageCount      => 1, defaultInsertPage=> 1,
    attach_to_page => 1, insert_to_page   => 1, insert         => 1, insert_transparent => 1,
    delete_widget  => 1, detach_from_page => 1, move_widget    => 1, contains_widget    => 1,
+   widget_get     => 1, widget_set       => 1, widgets_from_page => 1,
 );
 
 for ( keys %notebookProps) {
@@ -803,7 +837,6 @@ sub profile_default
       ownerBackColor => 1,
       tabs           => [],
       tabIndex       => 0,
-      tabCount       => 0,
    }
 }
 
@@ -1054,3 +1087,390 @@ sub pageIndex    {($#_)?($_[0]->set_page_index   ( $_[1]))    :return $_[0]->{no
 sub tabs         {($#_)?(shift->set_tabs     (    @_   ))     :return $_[0]->get_tabs}
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Notebooks - multipage widgets
+
+=head1 DESCRIPTION
+
+The module contains several widgets useful for organizing multipage ( notebook )
+containers. C<Prima::Notebook> provides basic functionality of a widget container.
+C<Prima::TabSet> is a page selector control, and C<Prima::TabbedNotebook> combines
+these two into a ready-to-use multipage control with interactive navigation.
+
+=head1 SYNOPSIS
+
+   my $nb = Prima::TabbedNotebook-> create(
+      tabs => [ 'First page', 'Second page', 'Second page' ],
+   );
+   $nb-> insert_to_page( 1, 'Prima::Button' );
+   $nb-> insert_to_page( 2, [
+      [ 'Prima::Button', bottom => 10  ],
+      [ 'Prima::Button', bottom => 150 ],
+   ]);
+   $nb-> Notebook-> backColor( cl::Green );
+
+=head1 Prima::Notebook
+
+=head2 Properties
+
+Provides basic widget container functionality. Acts as merely
+a grouping widget, hiding and showing the children widgets when 
+C<pageIndex> property is changed. 
+
+=over
+
+=item defaultInsertPage INTEGER
+
+Selects the page where widgets, attached by C<insert>
+call are assigned to. If set to C<undef>, the default
+page is the current page.
+
+Default value: C<undef>.
+
+=item pageCount INTEGER
+
+Selects number of pages. If the number of pages is reduced, 
+the widgets that belong to the rejected pages are removed
+from the notebook's storage. 
+
+=item pageIndex INTEGER
+
+Selects the index of the current page. Valid values are
+from 0 to C<pageCount - 1>.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item attach_to_page INDEX, @WIDGETS
+
+Attaches list of WIDGETS to INDEXth page. The widgets are not
+necessarily must be children of the notebook widget. If the 
+page is not current, the widgets get hidden and disabled;
+otherwise their state is not changed.
+
+=item contains_widget WIDGET
+
+Searches for WIDGET in the attached widgets list. If
+found, returns two integers: location page index and 
+widget list index. Otherwise returns an empty list.
+
+=item delete_page [ INDEX = -1, REMOVE_CHILDREN = 1 ]
+
+Deletes INDEXth page, and detaches the widgets associated with
+it. If REMOVE_CHILDREN is 1, the detached widgets are
+destroyed. 
+
+=item delete_widget WIDGET
+
+Detaches WIDGET from the widget list and destroys the widget.
+
+=item detach_from_page WIDGET
+
+Detaches WIDGET from the widget list.
+
+=item insert CLASS, %PROFILE [[ CLASS, %PROFILE], ... ]
+
+Creates one or more widgets with C<owner> property set to the 
+caller widget, and returns the list of references to the newly 
+created widgets. 
+
+See L<Prima::Widget/insert> for details. 
+
+=item insert_page [ INDEX = -1 ]
+
+Inserts a new empty page at INDEX. Valid range
+is from 0 to C<pageCount>; setting INDEX equal
+to C<pageCount> is equivalent to appending a page
+to the end of the page list.
+
+=item insert_to_page INDEX, CLASS, %PROFILE, [[ CLASS, %PROFILE], ... ]
+
+Inserts one ore more widgets to INDEXth page. The semantics
+of setting CLASS and PROFILE, as well as the return values
+are fully equivalent to C<insert> method.
+
+See L<Prima::Widget/insert> for details.
+
+=item insert_transparent CLASS, %PROFILE, [[ CLASS, %PROFILE], ... ]
+
+Inserts one or more widgets to the notebook widget, but does not
+add widgets to the widget list, so the widgets are not flipped
+together with pages. Useful for setting omnipresent ( or
+transparent ) widgets, visible on all pages.
+
+The semantics of setting CLASS and PROFILE, as well as 
+the return values are fully equivalent to C<insert> method.
+
+See L<Prima::Widget/insert> for details.
+
+=item move_widget WIDGET, INDEX
+
+Moves WIDGET from its old page to INDEXth page.
+
+=item widget_get WIDGET, PROPERTY
+
+Returns PROPERTY value of WIDGET. If PROPERTY is
+affected by the page flipping mechanism, the internal
+flag value is returned instead.
+
+=item widget_set WIDGET, %PROFILE
+
+Calls C<set> on WIDGET with PROFILE and
+updates the internal visibile, enabled, and current flags
+if these are present in PROFILE. 
+
+See L<Prima::Object/set>.   
+
+=item widgets_from_page INDEX
+
+Returns list of widgets, associated with INDEXth page.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Change OLD_PAGE_INDEX, NEW_PAGE_INDEX
+
+Called when C<pageIndex> value is changed from
+OLD_PAGE_INDEX to NEW_PAGE_INDEX. Current implementation
+invokes this notification while the notebook widget
+is in locked state, so no redraw requests are honored during
+the notification execution.
+
+=back
+
+=head2 Bugs
+
+Since the notebook operates directly on children widgets'
+C<::visible> and C<::enable> properties, there is a problem when
+a widget associated with a non-active page must explicity be hidden 
+or disabled. As a result, such a widget would become visible and enabled anyway.
+This happens because Prima API does not cache property requests. For example,
+after execution of the following code
+
+   $notebook-> pageIndex(1);
+   my $widget = $notebook-> insert_to_page( 0, ... );
+   $widget-> visible(0);
+   $notebook-> pageIndex(0);
+
+C<$widget> will still be visible. As a workaround, C<widget_set> method
+can be suggested, to be called together with the explicit state calls.
+Changing 
+
+   $widget-> visible(0);
+
+code to
+
+   $notebook-> widget_set( $widget, visible => 0);
+
+solves the problem, but introduces an inconsistency in API.
+
+=head1 Prima::TabSet
+
+C<Prima::TabSet> class implements functionality of an interactive
+page switcher. A widget is presented as a set of horizontal
+bookmark-styled tabs with text identifiers.  
+
+=head2 Properties
+
+=over
+
+=item colored BOOLEAN
+
+A boolean property, selects whether each tab uses unique color
+( OS/2 Warp 4 style ), or all tabs are drawn with C<backColor>.
+
+Default value: 1
+
+=item firstTab INTEGER
+
+Selects the first ( leftmost ) visible tab.
+
+=item focusedTab INTEGER
+
+Selects the currently focused tab. This property value is almost
+always equals to C<tabIndex>, except when the widget is navigated
+by arrow keys, and tab selection does not occur until the user
+presses the return key. 
+
+=item topMost BOOLEAN
+
+Selects the way the widget is oriented. If 1, the widget is drawn
+as if it resides on top of another widget. If 0, it is drawn as
+if it is at bottom.
+
+Default value: 1
+
+=item tabIndex INDEX
+
+Selects the INDEXth tab. When changed, C<Change> notification 
+is triggered.
+
+=item tabs ARRAY
+
+Anonymous array of text scalars. Each scalar corresponds to
+a tab and is displayed correspondingly. The class supports
+single-line text strings only; newline characters are not respected.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item get_item_width INDEX
+
+Returns width in pixels of INDEXth tab.
+
+=item tab2firstTab INDEX
+
+Returns the index of a tab, that will be drawn leftmost if
+INDEXth tab is to be displayed.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Change
+
+Triggered when C<tabIndex> property is changed.
+
+=item DrawTab CANVAS, INDEX, COLOR_SET, POLYGON1, POLYGON2
+
+Called when INDEXth tab is to be drawn on CANVAS. COLOR_SET is an array
+reference, and consists of the four cached color values: foreground, background,
+dark 3d color, and light 3d color. POLYGON1 and POLYGON2 are array references, 
+and contain four points as integer pairs in (X,Y)-coordinates. POLYGON1
+keeps coordinates of the larger polygon of a tab, while POLYGON2 of the smaller. Text is
+displayed inside the larger polygon:
+
+   POLYGON1
+   
+        [2,3]        [4,5]
+          o..........o
+         .            .
+   [0,1].   TAB_TEXT   . [6,7]
+       o................o
+
+   POLYGON2
+
+    [0,1]               [2,3]
+       o................o
+   [6,7]o..............o[4,5]
+
+Depending on C<topMost> property value, POLYGON1 and POLYGON2 change 
+their mutual vertical orientation.
+
+The notification is always called from within C<begin_paint/end_paint> block.
+
+=item MeasureTab INDEX, REF
+
+Puts width of INDEXth tab in pixels into REF scalar value.
+This notification must be called from within C<begin_paint_info/end_paint_info> 
+block.
+
+=back
+
+=head1 Prima::TabbedNotebook
+
+The class combines functionality of C<Prima::TabSet> and C<Prima::Notebook>,
+providing the interactive multipage widget functionality. The page indexing
+scheme is two-leveled: the first level is equivalent to the C<Prima::TabSet> - 
+provided tab scheme. Each first-level tab, in turn, contains one or more second-level
+pages, which can be switched using native C<Prima::TabbedNotebook> controls.
+
+First-level tab is often referred as I<tab>, and second-level as I<page>.
+
+=head2 Properties
+
+=over
+
+=item defaultInsertPage INTEGER
+
+Selects the page where widgets, attached by C<insert>
+call are assigned to. If set to C<undef>, the default
+page is the current page.
+
+Default value: C<undef>.
+
+=item pageIndex INTEGER
+
+Selects the INDEXth page or a tabset widget ( the second-level tab ).
+When this property is triggered, C<tabIndex> can change its value,
+and C<Change> notification is triggered.
+
+=item tabIndex INTEGER
+
+Selects the INDEXth tab on a tabset widget using the first-level tab numeration.
+
+=item tabs ARRAY
+
+Governs number and names of notebook pages. ARRAY is an anonymous array
+of text scalars, where each corresponds to a single first-level tab
+and a single notebook page, with the following exception. To define second-level
+tabs, the same text string must be repeated as many times as many second-level
+tabs are desired. For example, the code
+
+    $nb-> tabs('1st', ('2nd') x 3);
+
+results in creation of a notebook of four pages and two first-level
+tabs. The tab C<'2nd'> contains three second-level pages.
+
+The property implicitly operates the underlying notebook's C<pageCount> property.
+When changed at run-time, its effect on the children widgets is therefore the same.
+See L<pageCount> for more information.
+
+=back
+
+=head2 Methods
+
+The class forwards the following methods of C<Prima::Notebook>, which are described
+in L<Prima::Notebook>: C<attach_to_page>, C<insert_to_page>, C<insert>, C<insert_transparent>, 
+C<delete_widget>, C<detach_from_page>, C<move_widget>, C<contains_widget>, 
+C<widget_get>, C<widget_set>, C<widgets_from_page>.
+
+=over
+
+=item tab2page INDEX
+
+Returns second-level tab index, that corresponds to the INDEXth first-level tab.
+
+=item page2tab INDEX
+
+Returns first-level tab index, that corresponds to the INDEXth second-level tab.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Change OLD_PAGE_INDEX, NEW_PAGE_INDEX
+
+Triggered when C<pageIndex> property is changes it s value from
+OLD_PAGE_INDEX to NEW_PAGE_INDEX.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, F<examples/notebook.pl>.
+
+=cut
