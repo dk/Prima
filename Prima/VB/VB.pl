@@ -331,6 +331,7 @@ sub widget_changed
    my ( $how, $id) = @_;
    my $self = $VB::inspector;
    return unless $self;
+   return if $self-> {currentList} != $self-> {plist};
    if ( $self-> {opened}) {
       if ( $id eq $self->{opened}->{id}) {
          return if $self-> {sync};

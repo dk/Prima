@@ -2746,6 +2746,17 @@ sub open
    );
    $self-> {B}->{master} = $self;
 
+   my $xb = $self-> {B}-> {vScrollBar}-> width;
+   $self-> {B}-> insert( Button => 
+      origin => [ $self-> {B}-> width - $xb - $self-> {B}-> indents()-> [2], 
+                 $self-> {B}-> height - $xb - $self-> {B}-> indents()-> [3]],
+      size   => [ ( $xb ) x 2],
+      font   => { height => $xb - 4 * 0.8, style => fs::Bold },
+      text   => 'X',
+      growMode => gm::GrowLoX|gm::GrowLoY,
+      onClick => sub { $self-> {B}-> popup-> popup($_[0]-> origin)},
+   );
+
    $self-> {Div2} = $self-> {container}-> insert( Divider =>
       vertical => 1,
       origin => [ 100, 0],
@@ -3185,6 +3196,16 @@ sub open
       },
    );
    $self-> {A}->{master} = $self;
+   my $xb = $self-> {A}-> {vScrollBar}-> width;
+   $self-> {A}-> insert( Button => 
+      origin => [ $self-> {A}-> width - $xb - $self-> {A}-> indents()-> [2], 
+                 $self-> {A}-> height - $xb - $self-> {A}-> indents()-> [3]],
+      size   => [ ( $xb ) x 2],
+      font   => { height => $xb - 4 * 0.8, style => fs::Bold },
+      text   => 'X',
+      growMode => gm::GrowLoX|gm::GrowLoY,
+      onClick => sub { $self-> {A}-> popup-> popup($_[0]-> origin)},
+   );
    $self-> {B} = $self-> {container}-> insert( InputLine =>
       origin => [ 0, 1],
       width  => $w,
