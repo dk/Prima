@@ -1124,6 +1124,7 @@ sub accel   { ( $#_) ? $_[ 0]->{ menu}-> set_accel  ( $_[0]->{ id}, $_[1]) : ret
 sub key     { ( $#_) ? $_[ 0]->{ menu}-> set_key    ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_key    ( $_[0]->{ id}); }
 sub text    { ( $#_) ? $_[ 0]->{ menu}-> set_text   ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_text   ( $_[0]->{ id}); }
 sub enabled { ( $#_) ? $_[ 0]->{ menu}-> set_enabled( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_enabled( $_[0]->{ id}); }
+sub image   { ( $#_) ? $_[ 0]->{ menu}-> set_image  ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_image  ( $_[0]->{ id}); }
 sub checked { ( $#_) ? $_[ 0]->{ menu}-> set_check  ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_check  ( $_[0]->{ id}); }
 sub enable  { $_[0]->{menu}-> set_enabled( $_[0]->{ id}, 1) };
 sub disable { $_[0]->{menu}-> set_enabled( $_[0]->{ id}, 0) };
@@ -1152,12 +1153,12 @@ sub profile_default
    return $def;
 }
 
-sub set_items  {$_[0]->set(items=>$_[1])}
 sub select     {$_[0]->set_selected(1)}
 
 sub accel      {($#_>1)?shift->set_accel     (@_)   :return $_[0]->get_accel   ($_[1]);}
 sub action     {($#_>1)?shift->set_action    (@_)   :return $_[0]->get_action  ($_[1]);}
 sub checked    {($#_>1)?shift->set_check     (@_)   :return $_[0]->get_check   ($_[1]);}
+sub image      {($#_>1)?shift->set_image     (@_)   :return $_[0]->get_image   ($_[1]);}
 sub enable     {$_[0]->set_enabled($_[1],1);}
 sub disable    {$_[0]->set_enabled($_[1],0);}
 sub check      {$_[0]->set_check($_[1],1);}
