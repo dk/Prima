@@ -245,7 +245,6 @@ prima_ximage_event( XEvent *eve) /* to be called from apc_event's handle_event *
    }
 #endif
 }
-
 void
 prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i, int src_x, int src_y, int dst_x, int dst_y, int width, int height)
 {
@@ -705,7 +704,7 @@ create_cache4_32( Image *img, ImageCache *cache)
 	 *d++ = lut[line[x]];
       }
    }
-   return false;
+   return true;
 }
 
 static Bool
