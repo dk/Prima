@@ -467,6 +467,13 @@ Drawable_stretch_image(Handle self, int x, int y, int xDest, int yDest, Handle i
    apc_gp_stretch_image ( self, image, x, y, 0, 0, xDest, yDest, size.x, size.y,  my get_rop( self));
 }
 
+void
+Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
+{
+   if ( image == nilHandle) return;
+   apc_gp_stretch_image ( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+}
+
 
 void
 Drawable_text_out( Handle self, char * text, int x, int y, int len)

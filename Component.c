@@ -687,7 +687,6 @@ XS( Component_notify_FROMPERL)
      snt = ntMultiple;
    }
    sv_free( res);
-
    hv = ( HV*) SvRV( *hv_fetch(( HV*) SvRV( ST( 0)), "__DYNAS__", 9, 0));
 
    strcat( strcpy( buf, "on"), note);

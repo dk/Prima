@@ -107,8 +107,7 @@ object Prima::Drawable ( Prima::Component)
    method void  lines( SV * points);
    method void  put_image(int x, int y, Handle image);
    method void  polyline( SV * points);
-   method void  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
-                                                           => apc_gp_stretch_image;
+   method void  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
    method void  rectangle(int x1, int y1, int x2, int y2)  => apc_gp_rectangle;
    method void  sector( int x, int y, int Rx, int Ry, double startAngle, double endAngle) => apc_gp_sector;
    method void  set_pixel(int x, int y, Color color)       => apc_gp_set_pixel;

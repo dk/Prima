@@ -478,6 +478,7 @@ log_write( const char *format, ...)
    va_start( arg_ptr, format);
    rc = vfprintf( stderr, format, arg_ptr);
    va_end( arg_ptr);
+   fprintf( stderr, "\n");
 
    return ( rc != EOF);
 }
