@@ -378,15 +378,9 @@ sub on_drawtab
          $$poly[1] + ( $$poly[3] - $$poly[1] - $canvas-> font-> height) / 2
       );
       $canvas-> text_out( $self->{tabs}->[$i], @tx);
-      if ( $i == $self->{focusedTab} && $self-> focused) {
-         $canvas-> linePattern( lp::Dot);
-         $canvas-> color( cl::White);
-         $canvas-> rop( rop::XorPut);
-         $canvas-> rectangle( $tx[0] - 1, $tx[1] - 1,
-            $tx[0] + $self->{widths}->[$i] - DefGapX * 4 + 1, $tx[1] + $canvas-> font-> height + 1);
-         $canvas-> rop( rop::CopyPut);
-         $canvas-> linePattern( lp::Solid);
-      }
+      $canvas-> rect_focus( $tx[0] - 1, $tx[1] - 1,
+         $tx[0] + $self->{widths}->[$i] - DefGapX * 4 + 1, $tx[1] + $canvas-> font-> height + 1)
+            if ( $i == $self->{focusedTab}) && $self-> focused;
    } elsif ( $i == -1) {
       $canvas-> fillpoly([
          $$poly[0] + ( $$poly[6] - $$poly[0]) * 0.6,
@@ -682,6 +676,19 @@ sub contains_widget
    return;
 }
 
+sub widgets_from_page
+{
+   my ( $self, $page) = @_;
+   return if $page < 0 or $page >= $self->{pageCount};
+   my @a = @{$self->{widgets}->[$page]};
+   my $i;
+   my @r = ();
+   for ( $i = 0; $i < scalar @a; $i+=3) {
+      push( @r, $a[$i])
+   };
+   return @r;
+}
+
 sub detach
 {
    my ( $self, $widget, $killFlag) = @_;
@@ -715,8 +722,25 @@ sub move_widget
    $self-> repaint if $self->{pageIndex} == $page || $self->{pageIndex} == $newPage;
 }
 
+sub set_page_count
+{
+   my ( $self, $pageCount) = @_;
+   $pageCount = 0 if $pageCount < 0;
+   return if $pageCount == $self->{pageCount};
+   if ( $pageCount < $self->{pageCount}) {
+      splice(@{$self-> {widgets}},$pageCount);
+      $self->{pageCount} = $pageCount;
+      $self->pageIndex($pageCount - 1) if $self->{pageIndex} < $pageCount - 1;
+   } else {
+      my $i = $pageCount - $self->{pageCount};
+      push (@{$self-> {widgets}},[]) while $i--;
+      $self->{pageCount} = $pageCount;
+      $self->pageIndex(0) if $self->{pageIndex} < 0;
+   }
+}
+
 sub pageIndex     {($#_)?($_[0]->set_page_index   ( $_[1]))    :return $_[0]->{pageIndex}}
-sub pageCount     {($#_)?($_[0]->raise_ro("pageCount"))        :return $_[0]->{pageCount}}
+sub pageCount     {($#_)?($_[0]->set_page_count   ( $_[1]))    :return $_[0]->{pageCount}}
 
 package TabbedNotebook;
 use vars qw(@ISA %notebookProps);
