@@ -199,6 +199,7 @@ sub on_create
 
 sub on_size { $_[0]-> listVisible(0); }
 sub on_move { $_[0]-> listVisible(0); }
+sub on_hide { $_[0]-> listVisible(0); }
 
 
 sub List_Leave
