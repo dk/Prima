@@ -40,11 +40,18 @@ Prima::Application::add_startup_notification( sub {
 
 package Prima::Widget;
 
+sub get_default_font
+{
+   return Prima::Drawable-> font_match( { size => $rtfs }, {});
+}
+
+package Prima::Application;
 
 sub get_default_font
 {
    return Prima::Drawable-> font_match( { size => $rtfs }, {});
 }
+
 
 1;
 
