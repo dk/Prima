@@ -574,7 +574,6 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 {
     Bool rc = false;
     char *format = nil;
-    DOLBUG( "apc_image_read...\n");
     __apc_image_clear_error();
     if ( imgFormats != nil) {
 	__PImgLoadData load_data = load_prepare_data();
@@ -630,6 +629,7 @@ apc_image_read( const char *filename, PList imgInfo, Bool readData)
 					   filename,
 					   strerror( errno));
 		}
+		close( load_data->fd);
 	    }
 	    else {
 		__apc_image_set_error( "apc_image_read(%s): open failed: %s",
