@@ -31,9 +31,8 @@
 #   DirectoryOutline
 
 use strict;
-use Prima::Classes;
-use Prima::IntUtils;
-use Prima::StdBitmap;
+use Cwd;
+use Prima qw(Classes IntUtils StdBitmap);
 
 package Prima::OutlineViewer;
 use vars qw(@ISA @images @imageSize);
@@ -1455,8 +1454,6 @@ use vars qw(@ISA);
 #  2 : icon width
 #  3 : drive icon, only for roots
 
-use Cwd;
-
 my $unix = Prima::Application-> get_system_info->{apc} == apc::Unix;
 my @images;
 my @drvImages;
@@ -1700,6 +1697,7 @@ sub path
    my @ups = split /[\/\\]/, $p;
    my $root;
    if ( $unix) {
+      shift @ups if $ups[0] eq '';
       $root = $self->{items}->[0];
    } else {
       my $lr = shift @ups;
@@ -1718,8 +1716,7 @@ sub path
          $self-> adjust( $idx, 1);
       }
       BRANCH: for ( @{$root->[1]}) {
-         my $branch = lc $_->[0]->[0];
-         next unless $branch eq $subdir;
+         next unless lc($_->[0]->[0]) eq lc($subdir);
          $root = $_;
          last BRANCH;
       }
