@@ -1395,15 +1395,15 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
    
    if ( fi->  flags. xDeviceRes && fi-> flags. yDeviceRes) {
       diff += 30.0 * (int)fabs( 0.5 +
-         ( 100.0 * guts. resolution. y / guts. resolution. x) -
-         ( 100.0 * fi->  font. yDeviceRes / fi->  font. xDeviceRes));
+         (float)( 100.0 * guts. resolution. y / guts. resolution. x) -
+         (float)( 100.0 * fi->  font. yDeviceRes / fi->  font. xDeviceRes));
    }
 
    if ( fi->  flags. yDeviceRes) {
-      diff += 1.0 * (int)fabs( guts. resolution. y - fi->  font. yDeviceRes + 0.5);
+      diff += 1.0 * abs( guts. resolution. y - fi->  font. yDeviceRes);
    }
    if ( fi->  flags. xDeviceRes) {
-      diff += 1.0 * (int)fabs( guts. resolution. x - fi->  font. xDeviceRes + 0.5);
+      diff += 1.0 * abs( guts. resolution. x - fi->  font. xDeviceRes);
    }
 
    if ( fi-> flags. style && ( f-> style & ~(fsUnderlined|fsOutline|fsStruckOut))== fi->  font. style) {

@@ -559,7 +559,7 @@ typedef struct _UnixGuts
    int                          mouse_buttons;
    int                          mouse_wheel_down;
    int                          mouse_wheel_up;
-   NPoint                       resolution;
+   Point                        resolution;
    RequestInformation           ri[REQUEST_RING_SIZE];
    int                          ri_head;
    int                          ri_tail;
@@ -659,7 +659,7 @@ typedef struct _drawable_sys_data
    XDrawable udrawable;
    XDrawable gdrawable;
    XWindow parent;
-   NPoint resolution;
+   Point resolution;
    Point origin, size, bsize;
    Point transform, gtransform, btransform;
    Point ackOrigin, ackSize, ackFrameSize;   
