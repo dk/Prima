@@ -980,6 +980,15 @@ can be done either via C<accelTable(undef)> or C<destroy()> call.
 
 See also: C<accelItems>
 
+=item autoEnableChildren BOOLEAN
+
+If TRUE, all immediate children widgets maintain the same
+C<enabled> state as the widget. This property is useful for
+the group-like widgets ( ComboBox, SpinEdit etc ), that employ their
+children for visual representation.
+
+Default value: 0
+
 =item backColor COLOR
 
 In widget paint state, reflects background color in the graphic context.

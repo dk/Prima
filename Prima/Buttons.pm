@@ -887,7 +887,7 @@ use vars qw(@ISA);
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
-   @$def{qw(ownerBackColor)} = (1);
+   @$def{qw(autoEnableChildren ownerBackColor)} = (1);
    return $def;
 }
 

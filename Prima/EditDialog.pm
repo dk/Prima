@@ -97,6 +97,7 @@ sub init
       text   => 'R~eplace:',
       focusLink => $self-> Replace,
       enabled   => !$profile{findStyle},
+      name      => 'ReplaceLabel',
    );
 
    my $o = $self-> insert( CheckBoxGroup =>
@@ -249,6 +250,16 @@ sub scope       {($#_)?$_[0]->Scope->index($_[1])    :return $_[0]->Scope->index
 sub options     {($#_)?$_[0]->Options->value($_[1])  :return $_[0]->Options->value}
 sub findText    {($#_)?$_[0]->Find->text($_[1])   :return $_[0]->Find->text}
 sub replaceText {($#_)?$_[0]->Replace->text($_[1]):return $_[0]->Replace->text}
+
+sub findStyle
+{
+   return $_[0]-> {findStyle} unless $#_;
+   return if $_[0]-> {findStyle} == $_[1];
+   my ( $self, $style) = @_;
+   $self-> {findStyle} = ( $style ? 1 : 0 );
+   $self-> $_-> enabled( ! $style ) for qw( Replace ReplaceLabel ChangeAll);
+   $self-> Options-> Prompt-> enabled( !$style);
+}
 
 package Prima::ReplaceDialog;
 use vars qw(@ISA);

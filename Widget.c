@@ -111,6 +111,7 @@ Widget_init( Handle self, HV * profile)
    my-> set_palette( self, pget_sv( palette));
 
    /* light props */
+   my-> set_autoEnableChildren ( self, pget_B( autoEnableChildren));
    my-> set_briefKeys          ( self, pget_B( briefKeys));
    my-> set_buffered           ( self, pget_B( buffered));
    my-> set_cursorVisible      ( self, pget_B( cursorVisible));
@@ -272,7 +273,8 @@ Widget_attach( Handle self, Handle objectHandle)
 {
    if ( objectHandle == nilHandle) return;
    if ( var-> stage > csNormal) return;
-   if ( kind_of( objectHandle, CWidget)) list_add( &var-> widgets, objectHandle);
+   if ( kind_of( objectHandle, CWidget)) 
+      list_add( &var-> widgets, objectHandle);
    inherited-> attach( self, objectHandle);
 }
 
@@ -2047,6 +2049,12 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
    return result;
 }
 
+static Bool
+auto_enable_children( Handle self, Handle child, void * enable)
+{
+   apc_widget_set_enabled( child, ( Bool) enable);
+   return false;
+}
 /* properties section */
 
 SV *
@@ -2102,6 +2110,15 @@ Widget_bottom( Handle self, Bool set, int bottom)
    p. y = bottom;
    my-> set_origin( self, p);
    return 0;
+}
+
+Bool
+Widget_autoEnableChildren( Handle self, Bool set, Bool autoEnableChildren)
+{
+   if ( !set)
+      return is_opt( optAutoEnableChildren);
+   opt_assign( optAutoEnableChildren, autoEnableChildren);
+   return false;
 }
 
 Bool
@@ -2264,9 +2281,12 @@ Widget_cursorVisible( Handle self, Bool set, Bool cursorVisible)
 Bool
 Widget_enabled( Handle self, Bool set, Bool enabled)
 {
-   return set ?
-      apc_widget_set_enabled( self, enabled) :
-      apc_widget_is_enabled( self);
+   if ( !set) return apc_widget_is_enabled( self);
+   if ( !apc_widget_set_enabled( self, enabled)) 
+      return false;
+   if ( is_opt( optAutoEnableChildren)) 
+      CWidget(self)-> first_that( self, auto_enable_children, (void*) enabled);
+   return true;
 }
 
 Bool

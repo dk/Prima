@@ -56,6 +56,7 @@ object Prima::Widget( Prima::Drawable)
 # properties
    property  SV *   accelItems;
    property  Handle accelTable;
+   property  Bool   autoEnableChildren;
    property  Color  backColor;
    property  int    bottom;
    property  Bool   briefKeys;

@@ -96,6 +96,7 @@ sub profile_default
       selectable     => 0,
       literal        => 1,
       scaleChildren  => 0,
+      autoEnableChildren => 1,
       editClass      => 'Prima::InputLine',
       listClass      => 'Prima::ListBox',
       buttonClass    => 'Prima::Widget',
@@ -300,7 +301,7 @@ sub Button_Paint
 {
    my ( $owner, $self, $canvas) = @_;
    my ( $w, $h)   = $canvas-> size;
-   my $ena    = $self-> enabled && $owner-> enabled;
+   my $ena    = $self-> enabled;
    my @clr    = $ena ?
     ( $self-> color, $self-> backColor) :
     ( $self-> disabledColor, $self-> disabledBackColor);
@@ -591,5 +592,6 @@ sub style        {($#_)?$_[0]->set_style       ($_[1]):return $_[0]->get_style; 
 sub entryHeight  {($#_)?$_[0]->set_entry_height($_[1]):return $_[0]->get_entry_height;}
 sub listHeight   {($#_)?$_[0]->set_list_height ($_[1]):return $_[0]->get_list_height;}
 sub literal      {($#_)?$_[0]->{literal} =      $_[1] :return $_[0]->{literal}       }
+
 
 1;

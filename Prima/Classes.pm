@@ -649,6 +649,7 @@ sub notification_types { return \%RNT; }
 %WidgetProfile = (
    accelTable        => undef,
    accelItems        => undef,
+   autoEnableChildren=> 0,
    backColor         => cl::Normal,
    briefKeys         => 1,
    buffered          => 0,
@@ -752,6 +753,8 @@ sub profile_check_in
 
    $p->{showHint} = 1 if ( defined $owner) && ( defined $::application) && ( $owner == $::application) &&
       ( exists $p->{ ownerShowHint} ? $p->{ ownerShowHint} : $default->{ ownerShowHint});
+
+   $p->{enabled} = $owner-> enabled if defined $owner && $owner-> autoEnableChildren;
 
    (my $cls = ref $self) =~ s/^Prima:://;
 

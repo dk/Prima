@@ -904,7 +904,7 @@ sub prf_types
          'popupLight3DColor','popupDark3DColor',
       ],
       font          => ['popupFont'],
-      bool          => ['briefKeys','buffered','capture','clipOwner',
+      bool          => ['autoEnableChildren', 'briefKeys','buffered','capture','clipOwner',
          'centered','current','cursorVisible','enabled','firstClick','focused',
          'hintVisible','ownerColor','ownerBackColor','ownerFont','ownerHint',
          'ownerShowHint','ownerPalette','scaleChildren',
