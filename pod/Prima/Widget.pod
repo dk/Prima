@@ -389,7 +389,7 @@ In case two widgets overlap, one of these is drawn
 in full, whereas the another only partly. Prima::Widget
 provides management of the I<Z-axis> ordering, but since
 Z-ordering paradigm can hardly be fit into the 
-properties scheme, the tookit uses methods instead.
+properties scheme, the toolkit uses methods instead.
 
 A widget can use four query methods: C<first()>, C<last()>, C<next()>, 
 and C<prev()>. These return, correspondingly, the first and the last
@@ -415,7 +415,7 @@ By default, if a widget is a child to a widget
 or window, it maintains two features: it is clipped by its
 owner's boundaries and is moved together as the owner widget moves.
 This set of features grants an owner the I<parent> term. However,
-in the tookit a widget without a parent still does have a valid owner.
+in the toolkit a widget without a parent still does have a valid owner.
 Instead of implementing I<parent> property, the C<::clipOwner>
 property was devised. It is 1 by default, and if it is 1, then
 owner of a widget is its parent, at the same time. However, when it is 0, many 
