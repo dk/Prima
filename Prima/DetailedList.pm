@@ -107,6 +107,7 @@ sub init
    my $x = $self-> {header}->items;
    $self-> {umap} = [ 0 .. $#$x];
    $self-> $_( $profile{$_}) for qw( columns mainColumn);
+   $self-> autowidths unless scalar @{$profile{widths}};
    return %profile;
 }
 
@@ -155,6 +156,20 @@ sub columns
    $h-> items( \@iec);
    $self-> {numColumns} = $c;
    $self-> refresh;
+}
+
+sub autowidths
+{
+   my $self = $_[0];
+   my $i;
+   my @w = @{$self-> widths};
+   for ( $i = 0; $i < $self-> {numColumns}; $i++) {
+      $self-> mainColumn( $i);
+      $self-> recalc_widths;
+      $w[ $i] = $self-> {maxWidth} + 5 if $w[ $i] < $self-> {maxWidth} + 5;
+   }
+   undef $self-> {widths};
+   $self-> widths( \@w);
 }
 
 sub draw_items
@@ -291,9 +306,6 @@ sub Header_SizeItem
       confineRect => [ $xs, $a[1], $a[2] + abs( $neww - $oldw), $a[3]],
       clipRect    => \@a,
    );
-   #$self-> invalidate_rect( $self-> item2rect(
-   #   ( $self-> {focusedItem} >= 0) ? $self-> {focusedItem} : 0,
-   #@sz)) if $self-> focused;
    $self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
    if ( $self-> {hScroll}) {
       my $ov = $self-> {vScroll};
@@ -351,7 +363,20 @@ sub get_item_text
 {
    my ( $self, $index, $sref) = @_;
    my $c = $self-> {mainColumn};
-   $$sref = '', return if $c < 0;
+   $$sref = $self-> {items}->[$index]-> [ $c];
+}
+
+sub on_measureitem
+{
+   my ( $self, $index, $sref) = @_;
+   my $c = $self-> {mainColumn};
+   $$sref = $self-> get_text_width( $self-> {items}->[$index]-> [ $c]);
+}
+
+sub on_stringify
+{
+   my ( $self, $index, $sref) = @_;
+   my $c = $self-> {mainColumn};
    $$sref = $self-> {items}->[$index]-> [ $c];
 }
 

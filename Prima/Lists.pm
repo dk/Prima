@@ -1,4 +1,5 @@
 #
+
 #  Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
@@ -120,8 +121,6 @@ sub init
 sub refresh
 {
    my $self = $_[0];
-   #my ( $w, $h, $bw, $dx, $dy) = ( $self-> size, $self->{borderWidth}, $self->{dx}, $self->{dy} );
-   #$self-> invalidate_rect( $bw, $bw + $dy, $w - $bw - $dx, $h - $bw );
    $self-> invalidate_rect( $self-> get_active_area);
    $self-> update_view;
    delete $self-> {singlePaint};
@@ -140,8 +139,6 @@ sub item2rect
 {
    my ( $self, $item, @size) = @_;
    my @a = $self-> get_active_area( 0, @size);
-   #my $bw = $self->{borderWidth};
-   #my ( $dx, $dy) = ( $self->{dx}, $self->{dy});
 
    if ( $self->{multiColumn})
    {
@@ -156,16 +153,8 @@ sub item2rect
              $a[3] - $ih * ( $i + 1),
              $a[0] + $j * ( $iw + 1) + $iw,
              $a[3] - $ih * ( $i + 1) + $ih;
-#     return $bw + $j * ( $iw + 1),
-#            $size[1] - $bw - $ih * ( $i + 1),
-#            $bw + $j * ( $iw + 1) + $iw,
-#            $size[1] - $bw - $ih * ( $i + 1) + $ih;
    } else {
       my ($i,$ih) = ( $item - $self->{topItem}, $self->{itemHeight});
-#     return $bw,
-#            $size[1] - $bw - $ih * ( $i + 1),
-#            $size[0] - $bw - $dx,
-#            $size[1] - $bw - $ih * $i;
       return $a[0], $a[3] - $ih * ( $i + 1), $a[2], $a[3] - $ih * $i;
    }
 }
@@ -174,22 +163,15 @@ sub on_paint
 {
    my ($self,$canvas)   = @_;
    my @size   = $canvas-> size;
-   #my @clr    = $self-> enabled ?
-   #( $self-> color, $self-> backColor) :
-   #( $self-> disabledColor, $self-> disabledBackColor);
    unless ( $self-> enabled) {
       $self-> color( $self-> disabledColor);
       $self-> backColor( $self-> disabledBackColor);
    }
-#  my ( $bw, $ih, $iw, $dx, $dy) = (
-#     $self->{ borderWidth}, $self->{ itemHeight}, $self->{ itemWidth},
-#     $self->{dx}, $self->{dy});
    my ( $bw, $ih, $iw, @a) = (
      $self-> {borderWidth}, $self->{ itemHeight}, $self->{ itemWidth},
      $self-> get_active_area( 1, @size));
    my $i;
    my $j;
-   #my $locWidth = $size[0] - $dx - $bw * 2;
    my $locWidth = $a[2] - $a[0] + 1;
    my @invalidRect = $canvas-> clipRect;
    if ( exists $self->{firstPaint})
@@ -203,38 +185,24 @@ sub on_paint
    }
    if ( defined $self->{uncover})
    {
-      # $canvas-> color( $clr[1]);
-      #my $lastx  = $size[0] - $bw - 1 - $dx;
       if ( $self->{multiColumn})
       {
-         #my $xstart = $bw + $self->{activeColumns} * ( $iw + 1) - 2;
-         # $canvas-> bar( $xstart - $iw + 1, $self->{yedge} + $bw + $dy,
-         #  (( $xstart > $lastx) ? $lastx : $xstart),
-         #  $self->{yedge} + $self->{uncover} - 1) if $xstart > $bw;
          my $xstart = $a[0] + $self->{activeColumns} * ( $iw + 1) - 2;
          $canvas-> clear( $xstart - $iw + 1, $self->{yedge} + $a[1],
             (( $xstart > $a[2]) ? $a[2] : $xstart),
             $self->{yedge} + $self->{uncover} - 1) if $xstart > $a[0];
       } else {
-         #$canvas-> bar( $bw, $bw + $dy, $lastx, $self->{uncover} - 1);
          $canvas-> clear( @a[0..2], $self->{uncover} - 1);
       }
    }
    if ( $self->{multiColumn})
    {
-       # $canvas-> color( $clr[1]);
-#      my $xstart = $bw + $self->{activeColumns} * ( $iw + 1);
-#      my $lastx = $size[0] - $bw - 1 - $dx;
        my $xstart = $a[0] + $self->{activeColumns} * ( $iw + 1);
        if ( $self->{activeColumns} < $self->{columns})
        {
           for ( $i = $self->{activeColumns}; $i < $self->{columns}; $i++)
           {
              $canvas-> clear(
-#            $canvas-> bar(
-#               $xstart, $self->{yedge} + $bw + $dy,
-#               ( $xstart + $iw - 1 > $lastx) ? $lastx : $xstart + $iw - 1,
-#               $size[1] - $bw - 1
                 $xstart, $self->{yedge} + $a[1],
                 ( $xstart + $iw - 1 > $a[2]) ? $a[2] : $xstart + $iw - 1,
                 $a[3],
@@ -242,16 +210,12 @@ sub on_paint
              $xstart += $iw + 1;
           }
        }
-       # $canvas-> color( $clr[1]);
-       #$canvas-> bar( $bw, $bw + $dy, $lastx, $bw + $self->{yedge}-1+$dy)
        $canvas-> clear( @a[0..2], $a[1] + $self->{yedge} - 1)
           if $self->{yedge};
        my $c = $canvas-> color;
        $canvas-> color( $self-> {gridColor});
        for ( $i = 1; $i < $self->{columns}; $i++)
        {
-       #  $canvas-> line( $bw + $i * ( $iw + 1) - 1, $bw + $dy,
-       #                $bw + $i * ( $iw + 1) - 1, $size[1] - $bw);
           $canvas-> line( $a[0] + $i * ( $iw + 1) - 1, $a[1],
                           $a[0] + $i * ( $iw + 1) - 1, $a[3]);
        }
@@ -262,8 +226,6 @@ sub on_paint
    my $foci = $self-> {focusedItem};
    if ( $self->{count} > 0 && $locWidth > 0)
    {
-      #my @clipRect = ( $bw, $bw + $dy, $size[0] - $bw - $dx, $size[1] - $bw);
-      #$canvas-> clipRect( @clipRect);
       $canvas-> clipRect( @a);
       my $singlePaint = exists $self->{singlePaint};
       my @paintArray;
@@ -302,12 +264,6 @@ sub on_paint
                for ( $i = 0; $i < $rows; $i++)
                {
                   last MAIN if $item > $self->{lastItem};
-#                 my @itemRect = (
-#                     $bw + $j * ( $iw + 1),
-#                     $size[1] - $bw - $ih * ( $i + 1),
-#                     $bw + $j * ( $iw + 1) + $iw,
-#                     $size[1] - $bw - $ih * ( $i + 1) + $ih
-#                 );
                   my @itemRect = (
                       $a[0] + $j * ( $iw + 1),
                       $a[3] - $ih * ( $i + 1) + 1,
@@ -338,8 +294,6 @@ sub on_paint
             {
                last if $item > $self->{lastItem};
                my @itemRect = (
-#                 $bw, $size[1] - $bw - $ih * ( $i + 1),
-#                 $size[0] - $bw - $dx, $size[1] - $bw - $ih * $i
                   $a[0], $a[3] - $ih * ( $i + 1) + 1,
                   $a[2], $a[3] - $ih * $i
                );
@@ -352,7 +306,6 @@ sub on_paint
                push( @paintArray, [
                   $item,                                               # item number
                   $itemRect[0] - $self->{offset}, $itemRect[1],        # logic rect
-                  #$itemRect[2] - 1, $itemRect[3] - 1,                #
                   $itemRect[2], $itemRect[3],                          #
                   $sel, $foc, # selected and focused state
                   0 #column
@@ -361,7 +314,6 @@ sub on_paint
             }
          }
       }
-      # $canvas-> color( $clr[0]);
       $self-> draw_items( $canvas, @paintArray);
    }
    delete $self->{singlePaint};
@@ -466,16 +418,12 @@ sub on_leave
 sub point2item
 {
    my ( $self, $x, $y) = @_;
-#  my ( $ih, $iw, $w, $h, $bw, $dx, $dy) = ( $self-> {itemHeight}, $self->{itemWidth},
-#     $self-> size, $self->{borderWidth}, $self->{dx}, $self->{dy});
    my ( $ih, $iw, @a) = ( $self-> {itemHeight}, $self->{itemWidth}, $self-> get_active_area);
 
    if ( $self->{multiColumn})
    {
       my ( $r, $t, $l, $c) = ( $self->{rows}, $self->{topItem}, $self->{lastItem}, $self->{columns});
       $c-- if $self->{multiColumn} && $self->{xTailVisible};
-#     $x -= $bw;                           # dx????
-#     $y -= $bw + $self->{yedge} + $dy;
       $x -= $a[0];                          # a[2]???
       $y -= $a[1] + $self->{yedge};
       $x /= $iw + 1;
@@ -494,13 +442,9 @@ sub point2item
       return $t + $r - 1            if $x < 0   && $y >= $r;
       return $x * $r + $y + $t;
    } else {
-#     return $self->{topItem} - 1 if $y >= $h - $bw;
-#     return $self->{lastItem} + !$self->{tailVisible} if $y <= $bw + $dy;
-#     $h -= $bw;
       return $self->{topItem} - 1 if $y >= $a[3];
       return $self->{lastItem} + !$self->{tailVisible} if $y <= $a[1];
       my $h = $a[3];
-      # $h -= $bw;
 
       my $i = $self->{topItem};
       while ( $y > 0)
@@ -517,12 +461,8 @@ sub on_mousedown
    my ( $self, $btn, $mod, $x, $y) = @_;
    my $bw = $self-> { borderWidth};
    $self-> clear_event;
-   #my ($dx,$dy) = ( $self->{dx}, $self->{dy});
    return if $btn != mb::Left;
    my @a = $self-> get_active_area;
-#  return if defined $self->{mouseTransaction} ||
-#     $y < $bw + $dy || $y >= $size[1] - $bw ||
-#     $x < $bw || $x >= $size[0] - $bw - $dx;
    return if defined $self->{mouseTransaction} ||
       $y < $a[1] || $y >= $a[3] ||
       $x < $a[0] || $x >= $a[2];
@@ -555,12 +495,9 @@ sub on_mousemove
    my ( $self, $mod, $x, $y) = @_;
    return unless defined $self->{mouseTransaction};
    my $bw = $self-> { borderWidth};
-   # my @size = $self-> size;
    my ($item, $aux) = $self-> point2item( $x, $y);
-   # my ($dx,$dy)     = ( $self->{dx}, $self->{dy});
    my @a = $self-> get_active_area;
    if ( $y >= $a[3] || $y < $a[1] || $x >= $a[2] || $x < $a[0])
-   # if ( $y >= $size[1] - $bw || $y < $bw + $dx || $x >= $size[0] - $bw - $dx || $x < $bw)
    {
       $self-> scroll_timer_start unless $self-> scroll_timer_active;
       return unless $self->scroll_timer_semaphore;
@@ -601,7 +538,6 @@ sub on_mousemove
        }
    }
    $self-> focusedItem( $item >= 0 ? $item : 0);
-#  $self-> offset( $self->{offset} + 5 * (( $x < $bw) ? -1 : 1)) if $x >= $size[0] - $bw - $dx || $x < $bw;
    $self-> offset( $self->{offset} + 5 * (( $x < $a[0]) ? -1 : 1)) if $x >= $a[2] || $x < $a[0];
 }
 
@@ -643,11 +579,6 @@ sub reset
    my @size = $self-> get_active_area( 2);
    my $ih   = $self-> {itemHeight};
    my $iw   = $self-> {itemWidth};
-#  my $bw   = $self-> {borderWidth};
-#  $self->{dy} = ( $self->{hScroll} ? $self->{hScrollBar}-> height-1 : 0);
-#  $self->{dx} = ( $self->{vScroll} ? $self->{vScrollBar}-> width-1  : 0);
-#  $size[1] -= $bw * 2 + $self->{dy};
-#  $size[0] -= $bw * 2 + $self->{dx};
    $self->{rows}  = int( $size[1]/$ih);
    $self->{rows}  = 0 if $self->{rows} < 0;
    $self->{yedge} = $size[1] - $self->{rows} * $ih;
@@ -678,7 +609,6 @@ sub reset
              } elsif ( $top <= $max) {
                 $self->{lastItem} = $max;
                 $self->{activeColumns}++;
-              #  $self->{uncover} = $ih * ( $self->{rows} - $max + $top - 1) + $bw + $self->{dy};
                 $self->{uncover} = $ih * ( $self->{rows} - $max + $top - 1) + $a[1];
              }
              $w   += $iw + 1;
@@ -692,7 +622,6 @@ sub reset
       $self->{lastItem} = $x > $z ? $z : $x;
       $self->{uncover} = ( $self->{count} == 0) ? $size[1] :
                          $size[1] - ( $self->{lastItem} - $self->{topItem} + 1) * $ih;
-      #$self->{uncover} += $bw + $self->{dy};
       $self->{uncover} += $a[1];
       $self->{tailVisible} = 0;
       my $integralHeight = ( $self->{integralHeight} && ( $self-> {rows} > 0)) ? 1 : 0;
@@ -734,15 +663,12 @@ sub reset_scrolls
             value    => $self-> {topItem},
          );
       } else {
-      #  my $w = $self-> width - $self->{borderWidth} * 2 - $self->{dx};
          my @sz = $self-> get_active_area( 2);
          my $iw = $self->{itemWidth};
          $self-> {hScrollBar}-> set(
-      #     max      => $iw - $w,
             max      => $iw - $sz[0],
             whole    => $iw,
             value    => $self-> {offset},
-      #     partial  => $w,
             partial  => $sz[0],
             pageStep => $iw / 5,
          );
@@ -934,11 +860,7 @@ sub set_offset
 {
    my ( $self, $offset) = @_;
    $self->{offset} = 0, return if $self->{multiColumn};
-#  my ( $iw, $bw, $w, $dx, $dy) = (
-#     $self->{itemWidth}, $self->{borderWidth}, $self-> width,
-#     $self->{dx}, $self->{dy});
    my ( $iw, @a) = ( $self->{itemWidth}, $self-> get_active_area);
-   # my $lc = $w - 2 * $bw - $dx;
    my $lc = $a[2] - $a[0];
    if ( $iw > $lc) {
       $offset = $iw - $lc if $offset > $iw - $lc;
@@ -949,7 +871,6 @@ sub set_offset
    return if $self->{offset} == $offset;
    my $oldOfs = $self->{offset};
    $self-> {offset} = $offset;
-   # $w -= 2 * $bw + $dx;
    my $dt = $offset - $oldOfs;
    $self-> reset;
    if ( $self->{hScroll} && !$self->{multiColumn} && $self->{scrollTransaction} != 2) {
@@ -959,7 +880,6 @@ sub set_offset
    }
    $self-> scroll( -$dt, 0,
                      clipRect => \@a);
-                   # clipRect => [ $bw, $bw + $dy, $bw + $w, $self-> height - $bw ]);
    $self-> refresh;
 }
 
@@ -1067,9 +987,6 @@ sub set_top_item
    return if $topItem == $self->{topItem};
    my $oldTop = $self->{topItem};
    $self->{topItem} = $topItem;
-#  my ($bw, $ih, $iw, $w, $h, $dx, $dy) = (
-#     $self->{borderWidth}, $self->{itemHeight}, $self->{itemWidth},
-#     $self->size, $self->{dx}, $self->{dy});
    my ( $ih, $iw, @a) = ( $self->{itemHeight}, $self->{itemWidth}, $self-> get_active_area);
    my $dt = $topItem - $oldTop;
    $self-> reset;
@@ -1089,18 +1006,15 @@ sub set_top_item
       if (( $self->{rows} != 0) && ( $dt % $self->{rows} == 0)) {
          $self-> scroll( -( $dt / $self->{rows}) * ($iw + 1), 0,
                          clipRect => \@a);
-   #                     clipRect => [ $bw, $bw + $dy, $w - $bw - $dx, $h - $bw ]);
       } else {
          $a[1] += $self->{yedge};
          $self-> scroll( 0, $ih * $dt,
                          clipRect => \@a);
-   #                     clipRect => [ $bw, $bw + $dy + $self->{yedge}, $w - $bw - $dx, $h - $bw ]);
 
       }
    } else {
       $self-> scroll( 0, $dt * $ih,
                       clipRect => \@a);
-   #                  clipRect => [ $bw, $bw + $dy, $w - $bw - $dx, $h - $bw ]);
    }
    $self-> update_view;
 }
@@ -1566,9 +1480,6 @@ sub draw_items
       for ( @normals)
       {
          my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
-      #  $canvas-> color( $clrs[ $selected ? 3 : 1]);
-      #  $canvas-> bar( $x, $y, $x2, $y2);
-      #  $canvas-> color( $clrs[ $selected ? 2 : 0]);
          my $c = $clrs[ $selected ? 3 : 1];
          if ( $c != $lbc) {
             $canvas-> backColor( $c);
