@@ -163,7 +163,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
                Font fx = f-> font;
                fill_default_font( &fx);
                if ( f-> flags. encoding) strcpy( fx. encoding, f-> font. encoding);
-               apc_font_pick( application, &fx, &fx);
+               prima_core_font_pick( application, &fx, &fx);
                strcpy( f-> font. name, fx. name);
             }
          } else {
@@ -244,7 +244,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
             fill_default_font( &xf);
             if ( !nofamily) strcpy( xf. family, info-> font. family);
             if ( !noname)   strcpy( xf. name, info-> font. name);
-            apc_font_pick( nilHandle, &xf, &xf);
+            prima_core_font_pick( nilHandle, &xf, &xf);
             if ( noname)   strcpy( info-> font. name,   xf. name);
             if ( nofamily) strcpy( info-> font. family, xf. family);
          }
@@ -596,6 +596,10 @@ prima_init_font_subsystem( void)
       }
    }
    
+#ifdef USE_XFT
+   prima_xft_init();
+#endif
+   
    if ( !apc_fetch_resource( "Prima", "", "Font", "font", 
                              nilHandle, frFont, &guts. default_font)) {
       fill_default_font( &guts. default_font);
@@ -641,13 +645,16 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
    if ( !xf ) {
       xf = XLoadQueryFont( DISP, ppFontNameSize);
       if ( !xf) {
-         if ( guts. default_font. size > 0) {
-            *font = guts. default_font;
-         } else {
+
+         if ( guts. default_font. size <= 0) {
             fill_default_font( font);
             apc_font_pick( application, font, font);
             font-> pitch = fpDefault;
          }
+#ifdef USE_XFT
+         if ( !guts. use_xft || prima_xft_parse( ppFontNameSize, font))
+#endif         
+            *font = guts. default_font;
          return;
       }
       hash_store( xfontCache, ppFontNameSize, strlen( ppFontNameSize), xf);
@@ -734,7 +741,6 @@ prima_cleanup_font_subsystem( void)
    guts. font_info = nil;
 
    if ( guts. font_hash) {
-      /* XXX destroy load_name first - enumerating */
       hash_first_that( guts. font_hash, (void*)free_rotated_entries, nil, nil, nil); 
       hash_destroy( guts. font_hash, false);
       guts. font_hash = nil;
@@ -775,23 +781,15 @@ dump_font( PFont f)
    fprintf( stderr, "*** END FONT DUMP ***\n");
 }
 
-typedef struct _FontKey
-{
-   int height;
-   int width;
-   int style;
-   int pitch;
-   char name[ 256];
-} FontKey, *PFontKey;
-
-static void
-build_font_key( PFontKey key, PFont f, Bool bySize)
+void
+prima_build_font_key( PFontKey key, PFont f, Bool bySize)
 {
    bzero( key, sizeof( FontKey));
    key-> height = bySize ? -f-> size : f-> height;
    key-> width = f-> width;
    key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut);
    key-> pitch = f-> pitch;
+   key-> direction = 0;
    strcpy( key-> name, f-> name);
    strcat( key-> name, "\1");
    strcat( key-> name, f-> encoding);
@@ -803,7 +801,7 @@ prima_find_known_font( PFont font, Bool refill, Bool bySize)
    FontKey key;
    PCachedFont kf;
 
-   build_font_key( &key, font, bySize);
+   prima_build_font_key( &key, font, bySize);
    kf = hash_fetch( guts. font_hash, &key, sizeof( FontKey));
    if ( kf && refill) {
       memcpy( font, &kf-> font, sizeof( Font));
@@ -818,16 +816,10 @@ add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s, 
 
    kf = malloc( sizeof( CachedFont));
    if (!kf) {
-     no_memory:
       warn( "no memory");
       return false;
    }
    bzero( kf, sizeof( CachedFont));
-   kf-> load_name = malloc( strlen( name) + 1);
-   if ( !kf-> load_name) {
-      goto no_memory;
-   }
-   strcpy( kf-> load_name, name);
    kf-> id = s-> fid;
    kf-> fs = s;
    memcpy( &kf-> font, &f-> font, sizeof( Font));
@@ -839,19 +831,8 @@ add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s, 
    return true;
 }
 
-#define MAX_HGS_SIZE 5
-
-typedef struct
-{
-   int sp;
-   int locked;
-   int target;
-   int xlfd[MAX_HGS_SIZE];
-   int prima[MAX_HGS_SIZE];
-} HeightGuessStack;
-
-static void
-init_try_height( HeightGuessStack * p, int target, int firstMove )
+void
+prima_init_try_height( HeightGuessStack * p, int target, int firstMove )
 {
    p-> locked = 0;
    p-> sp     = 1;
@@ -859,8 +840,8 @@ init_try_height( HeightGuessStack * p, int target, int firstMove )
    p-> xlfd[0] = firstMove;
 }
 
-static int
-try_height( HeightGuessStack * p, int height)
+int
+prima_try_height( HeightGuessStack * p, int height)
 {
    int ret = -1;
    
@@ -895,7 +876,7 @@ try_height( HeightGuessStack * p, int height)
       /* printf("-- [%d=>%d],[%d=>%d] (%d %d)\n", x0, y0, x1, y1, d0, d1); */
    } else {
       if ( height > 0) /* sp == 0 */
-         ret = p-> target * p-> target / height;
+         ret = p-> xlfd[0] * p-> target / height;
       p-> prima[ p-> sp - 1] = height;
    }
 
@@ -948,9 +929,9 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
          size = font-> size * 10;
       else {
          size = font-> height * 10;
-         init_try_height( &hgs, size, f-> flags. heights_cache ? f-> heights_cache[0] : size);
+         prima_init_try_height( &hgs, size, f-> flags. heights_cache ? f-> heights_cache[0] : size);
          if ( f-> flags. heights_cache)
-            size = try_height( &hgs, f-> heights_cache[1]);
+            size = prima_try_height( &hgs, f-> heights_cache[1]);
       }
    }
 
@@ -999,7 +980,7 @@ AGAIN:
       f-> font. height = s-> max_bounds. ascent + s-> max_bounds. descent;
       f-> flags. height = true;
       if ( f-> vecname && !bySize && f-> font. height != font-> height) {
-         int h = try_height( &hgs, f-> font. height * 10);
+         int h = prima_try_height( &hgs, f-> font. height * 10);
          /* printf("%d::%d => %d, advised %d\n", hgs.sp-1, font-> height, f-> font. height, h); */
          if ( h > 9) {
             if ( !of-> flags. heights_cache) {
@@ -1151,13 +1132,13 @@ AGAIN:
       if ( -underlinePos + underlineThickness / 2 > s-> max_bounds. descent) 
          underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
 
-      build_font_key( &key, font, bySize); 
+      prima_build_font_key( &key, font, bySize); 
  /* printf("add to :%d.%d.{%d}.%s\n", f-> font.height, f-> font.size, f-> font. style, f-> font.name); */
       if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
          return;
       askedDefaultPitch = font-> pitch == fpDefault;
       memcpy( font, &f-> font, sizeof( Font));
-      build_font_key( &key, font, false);
+      prima_build_font_key( &key, font, false);
       if ( !hash_fetch( guts. font_hash, &key, sizeof( FontKey))) {
          if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
             return;
@@ -1166,7 +1147,7 @@ AGAIN:
       if ( askedDefaultPitch && font-> pitch != fpDefault) {
         int pitch = font-> pitch;
         font-> pitch = fpDefault;
-        build_font_key( &key, font, false);
+        prima_build_font_key( &key, font, false);
         if ( !hash_fetch( guts. font_hash, &key, sizeof( FontKey))) {
            if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
               return;
@@ -1297,9 +1278,8 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
    return diff;
 }   
 
-
 Bool
-apc_font_pick( Handle self, PFont source, PFont dest)
+prima_core_font_pick( Handle self, PFont source, PFont dest)
 {
    PFontInfo info = guts. font_info;
    int i, n = guts. n_fonts, index, lastIndex;
@@ -1313,7 +1293,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    HeightGuessStack hgs;
 
    if ( n == 0) return false;
-  
+ 
    if ( prima_find_known_font( dest, true, by_size)) {
       if ( underlined) dest-> style |= fsUnderlined;
       if ( struckout) dest-> style |= fsStruckOut;
@@ -1332,7 +1312,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
    if ( !hash_fetch( encodings, dest-> encoding, strlen( dest-> encoding)))
       dest-> encoding[0] = 0;
 
-   if ( !by_size) init_try_height( &hgs, dest-> height, dest-> height);
+   if ( !by_size) prima_init_try_height( &hgs, dest-> height, dest-> height);
 
    strlwr( lcname, dest-> name);
 AGAIN:   
@@ -1361,7 +1341,7 @@ AGAIN:
    if ( !by_size && info[ i]. flags. sloppy && !info[ i]. vecname) {
       detail_font_info( info + i, dest, false, by_size); 
       if ( minDiff < query_diff( info + i, dest, lcname, by_size)) {
-         int h = try_height( &hgs, info[i]. font. height);
+         int h = prima_try_height( &hgs, info[i]. font. height);
          if ( h > 0) {
             query_type = h;
             goto AGAIN;
@@ -1376,6 +1356,19 @@ AGAIN:
    dest-> direction = direction;
    return true;
 }
+
+Bool
+apc_font_pick( Handle self, PFont source, PFont dest)
+{
+#ifdef USE_XFT
+   if ( guts. use_xft) {
+      if ( prima_xft_font_pick( self, source, dest, nil)) 
+         return true;
+   }
+#endif
+   return prima_core_font_pick( self, source, dest);
+}
+
 
 static PFont
 spec_fonts( int *retCount)
@@ -1467,9 +1460,14 @@ spec_fonts( int *retCount)
 
 Nothing:
    list_destroy( &list);
+   
+#ifdef USE_XFT
+   if ( guts. use_xft)
+      fmtx = prima_xft_fonts( fmtx, nil, nil, retCount);
+#endif
+
    return fmtx;
 }   
-
 
 PFont
 apc_fonts( Handle self, const char *facename, const char * encoding, int *retCount)
@@ -1542,6 +1540,11 @@ apc_fonts( Handle self, const char *facename, const char * encoding, int *retCou
    }   
    free( table);
 
+#ifdef USE_XFT
+   if ( guts. use_xft)
+      fmtx = prima_xft_fonts( fmtx, facename, encoding, retCount);
+#endif
+
    return fmtx;
 }
 
@@ -1551,6 +1554,11 @@ apc_font_encodings( Handle self )
    HE *he;
    PHash hash = hash_create();
    if ( !hash) return nil;
+
+#ifdef USE_XFT
+   if ( guts. use_xft)
+      prima_xft_font_encodings( hash);
+#endif
 
    hv_iterinit(( HV*) encodings);
    for (;;) {
@@ -1566,8 +1574,13 @@ apc_gp_set_font( Handle self, PFont font)
 {
    DEFXX;
    Bool reload;
-   
-   PCachedFont kf = prima_find_known_font( font, false, false);
+   PCachedFont kf;
+
+#ifdef USE_XFT
+   if ( guts. use_xft && prima_xft_set_font( self, font)) return true;
+#endif
+     
+   kf = prima_find_known_font( font, false, false);
    if ( !kf || !kf-> id) {
       dump_font( font);
       if ( DISP) warn( "UAF_007: internal error (kf:%08x)", (IV)kf); /* the font was not cached, can't be */
@@ -1588,7 +1601,6 @@ apc_gp_set_font( Handle self, PFont font)
 
    if ( XX-> flags. paint) {
       XX-> flags. reload_font = reload;
-      /* fprintf( stderr, "set font: %s\n", XX-> font-> load_name); */
       XSetFont( DISP, XX-> gc, XX-> font-> id);
       XCHECKPOINT;
    }
@@ -1600,20 +1612,35 @@ Bool
 apc_menu_set_font( Handle self, PFont font)
 {
    DEFMM;
-   PCachedFont kf;
+   Bool xft_metrics = 0;
+   PCachedFont kf = nil;
 
    font-> direction = 0; /* skip unnecessary logic */
-   
-   kf = prima_find_known_font( font, false, false);
 
-   if ( !kf || !kf-> id) {
-      dump_font( font);
-      warn( "UAF_010: internal error (kf:%08x)", (IV)kf); /* the font was not cached, can't be */
-      return false;
+#ifdef USE_XFT
+   if ( guts. use_xft) {
+      kf = prima_xft_get_cache( font);
+      if ( kf) xft_metrics = 1;
+   }
+#endif
+  
+   if ( !kf) {
+      kf = prima_find_known_font( font, false, false);
+      if ( !kf || !kf-> id) {
+         dump_font( font);
+         warn( "UAF_010: internal error (kf:%08x)", (IV)kf); /* the font was not cached, can't be */
+         return false;
+      }
    }
 
    XX-> font = kf;
-   XX-> guillemots = XTextWidth( kf-> fs, ">>", 2); 
+   if ( !xft_metrics) {
+      XX-> guillemots = XTextWidth( kf-> fs, ">>", 2); 
+   } else {
+#ifdef USE_XFT
+      XX-> guillemots = prima_xft_get_text_width( kf, ">>", 2, true, false, nil, nil);
+#endif
+   }
    if ( !XX-> type. popup && X_WINDOW) {
        if (( kf-> font. height + 4) != X(PComponent(self)-> owner)-> menuHeight) {
           prima_window_reset_menu( PComponent(self)-> owner, kf-> font. height + MENU_ITEM_GAP * 2);

@@ -53,6 +53,7 @@
 
 UnixGuts guts;
 
+
 static int
 x_error_handler( Display *d, XErrorEvent *ev)
 {
@@ -73,6 +74,12 @@ x_error_handler( Display *d, XErrorEvent *ev)
    }
 
    if ( ev-> request_code == 42 /*X_SetInputFocus*/) return 0;
+
+   if ( ev-> request_code == guts. xft_xrender_major_opcode &&
+        ev-> request_code > 127 && 
+        ev-> error_code == BadLength)
+      /* Xrender large polygon request failed */ 
+      guts. xft_disable_large_fonts = 1;
 
    XGetErrorText( d, ev-> error_code, buf, BUFSIZ);
    XGetErrorDatabaseText( d, name, "XError", "X Error", mesg, BUFSIZ);
@@ -273,7 +280,7 @@ window_subsystem_init( void)
    guts.qscrollfirst = *ql++;
    guts.qScrollnext = *ql++;
    guts.qscrollnext = *ql++;
-
+  
    guts. mouse_buttons = XGetPointerMapping( DISP, guts. buttons_map, 256);
    XCHECKPOINT;
 
@@ -307,7 +314,8 @@ window_subsystem_init( void)
    guts. windows = hash_create();
    guts. menu_windows = hash_create();
    guts. ximages = hash_create();
-   guts. menugc = XCreateGC( DISP, guts. root, 0, &gcv);
+   gcv. graphics_exposures = false;
+   guts. menugc = XCreateGC( DISP, guts. root, GCGraphicsExposures, &gcv);
    guts. resolution. x = 25.4 * guts. displaySize. x / DisplayWidthMM( DISP, SCREEN);
    guts. resolution. y = 25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN);
    guts. depth = DefaultDepth( DISP, SCREEN);

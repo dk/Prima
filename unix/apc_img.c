@@ -371,6 +371,10 @@ apc_image_update_change( Handle self)
    else
       XX-> type.pixmap = 0;
    XX-> type.bitmap = !!XX-> type.pixmap;
+   if ( XX-> cached_region) {
+      XDestroyRegion( XX-> cached_region);
+      XX-> cached_region = nil;
+   }
    return true;
 }
 
@@ -1171,7 +1175,8 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
       if (p2 != None) XFreePixmap( DISP, p2);
       return false;
    }
-   gc = XCreateGC( DISP, p1, 0, &gcv);
+   gcv. graphics_exposures = false;
+   gc = XCreateGC( DISP, p1, GCGraphicsExposures, &gcv);
    XSetForeground( DISP, gc, 0);
    XSetBackground( DISP, gc, 1);
    prima_put_ximage( p2, gc, cache->icon, 0, 0, 0, 0, icon-> w, icon-> h);
@@ -1571,7 +1576,8 @@ prima_std_pixmap( Handle self, int type)
        ( type == CACHE_BITMAP) ? 1 : guts. depth);
    if ( !px) return nilHandle;
    
-   gc = XCreateGC( DISP, guts. root, 0, &gcv);
+   gcv. graphics_exposures = false;
+   gc = XCreateGC( DISP, guts. root, GCGraphicsExposures, &gcv);
    if ( guts. palSize > 0) {
       fore = prima_color_find( self,
           RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),

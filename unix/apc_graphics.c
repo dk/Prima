@@ -111,7 +111,8 @@ prima_get_gc( PDrawableSysData selfxx)
    if (XX->gcl)
       TAILQ_REMOVE(gc_pool, XX->gcl, gc_link);
    if (!XX->gcl) {
-      XX-> gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : guts. root, 0, &gcv);
+      gcv. graphics_exposures = false;
+      XX-> gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : guts. root, GCGraphicsExposures, &gcv);
       XCHECKPOINT;
       if (( XX->gcl = alloc1z( GCList))) 
          XX->gcl->gc = XX-> gc;
@@ -215,14 +216,18 @@ Unbuffered:
          XUnionRegion( r, XX-> invalid_region, r);
          XOffsetRegion( r, XX-> btransform. x, -XX-> btransform. y);
          XSetRegion( DISP, XX-> gc, r);
-         XDestroyRegion( r);
+         XX-> current_region = r;
+         XX-> flags. kill_current_region = 1;
       } else {
          XSetRegion( DISP, XX-> gc, XX-> invalid_region);
+         XX-> current_region = XX-> invalid_region;
+         XX-> flags. kill_current_region = 0;
       }
       XX-> paint_region = XX-> invalid_region;
       XX-> invalid_region = nil;
    }
    XX-> clip_mask_extent. x = XX-> clip_mask_extent. y = 0;
+   XX-> flags. xft_clip = 0;
 
    apc_gp_set_color( self, XX-> saved_fore);
    apc_gp_set_back_color( self, XX-> saved_back);
@@ -244,6 +249,17 @@ void
 prima_cleanup_drawable_after_painting( Handle self)
 {
    DEFXX;
+#ifdef USE_XFT
+   if ( XX-> xft_drawable) {
+      XftDrawDestroy( XX-> xft_drawable);
+      XX-> xft_drawable = nil;
+   }
+#endif
+   if ( XX-> flags. kill_current_region) {
+      XDestroyRegion( XX-> current_region);
+      XX-> flags. kill_current_region = 0;
+   }
+   XX-> flags. xft_clip = 0;
    if ( XX-> udrawable && XX-> udrawable != XX-> gdrawable && XX-> gdrawable && !is_opt( optInDrawInfo)) {
       if ( XX-> paint_region) {
          XSetRegion( DISP, XX-> gc, XX-> paint_region);
@@ -1332,37 +1348,123 @@ apc_gp_set_palette( Handle self)
    return prima_palette_replace( self, false);
 }
 
+Region
+region_create( Handle mask)
+{
+   unsigned long w, h, x, y, size = 256, count = 0;
+   Region    rgn = None;
+   Byte       * idata;
+   XRectangle * current, * rdata;
+   Bool      set = 0;
+
+   if ( !mask)
+      return None;
+
+   w = PImage( mask)-> w;
+   h = PImage( mask)-> h;
+   /*
+      XUnionRegion is actually SLOWER than the image scan - 
+      - uncomment if this is wrong
+   if ( X( mask)-> cached_region) {
+      rgn = XCreateRegion();
+      XUnionRegion( rgn, X( mask)-> cached_region, rgn);
+      return rgn;
+   }
+   */
+
+   idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
+
+   rdata = ( XRectangle*) malloc( size * sizeof( XRectangle));
+   if ( !rdata) return None;
+
+   count = 0;
+   current = rdata;
+   current--;
+
+   for ( y = 0; y < h; y++) {
+      for ( x = 0; x < w; x++) {
+         if ( idata[ x >> 3] == 0) {
+            x += 7;
+            continue;
+         }
+         if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
+            if ( set && current-> y == y && current-> x + current-> width == x)
+               current-> width++;
+            else {
+               set = 1;
+               if ( count >= size) {
+                  void * xrdata = realloc( rdata, ( size *= 3) * sizeof( XRectangle));
+                  if ( !xrdata) {
+                     free( rdata); 
+                     return None;
+                  }
+                  rdata = xrdata;
+                  current = rdata;
+                  current += count - 1;
+               }
+               count++;
+               current++;
+               current-> x   = x;
+               current-> y   = y;
+               current-> width  = 1;
+               current-> height = 1;
+            }
+         }
+      }
+      idata -= PImage( mask)-> lineSize;
+   }
+
+   if ( set) {
+      rgn = XCreateRegion();
+      for ( x = 0, current = rdata; x < count; x++, current++) 
+         XUnionRectWithRegion( current, rgn, rgn);
+      /*
+      X( mask)-> cached_region = XCreateRegion();
+      XUnionRegion( X( mask)-> cached_region, rgn, X( mask)-> cached_region);
+      */
+   }
+   free( rdata);
+
+   return rgn;
+}
+
 Bool
 apc_gp_set_region( Handle self, Handle mask)
 {
    DEFXX;
-   Pixmap px;
-   ImageCache *cache;
+   Region region;
    PImage img;
-   GC gc;
-   XGCValues gcv;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
 
    if (mask == nilHandle) {
-      px = None;
-      XX-> clip_mask_extent. x = XX-> clip_mask_extent. y = 0;
-   } else {
-      img = PImage(mask);
-      cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP);
-      if ( !cache) return false;
-      px = XCreatePixmap(DISP, guts. root, img->w, img->h, 1);
-      gc = XCreateGC(DISP, px, 0, &gcv);
-      prima_put_ximage(px, gc, cache->image, 0, 0, 0, 0, img->w, img->h);
-      XFreeGC( DISP, gc);
-      XX-> clip_mask_extent. x = img-> w;
-      XX-> clip_mask_extent. y = img-> h;
-      XSetClipOrigin( DISP, XX-> gc, XX-> btransform.x, 
-         - XX-> btransform. y + XX-> size. y - img-> h);
+      Rect r;
+   EMPTY:
+      r. left   = 0;
+      r. bottom = 0;
+      r. right  = XX-> size. x;
+      r. top    = XX-> size. y;
+      return apc_gp_set_clip_rect( self, r);
    }
-   XSetClipMask(DISP, XX->gc, px);
-   if ( px != None) XFreePixmap( DISP, px);
+   img = PImage(mask);
+   XX-> clip_rect. width = XX-> clip_mask_extent. x = img-> w;
+   XX-> clip_rect. height = XX-> clip_mask_extent. y = img-> h;
+   XX-> clip_rect. x = 0;
+   XX-> clip_rect. y = REVERT(img-> h);
+   if ( !( region = region_create( mask))) goto EMPTY;
+   if ( XX-> paint_region) 
+      XIntersectRegion( region, XX-> paint_region, region);
+   XOffsetRegion( region, XX-> btransform. x, XX-> size.y - img-> h + XX-> btransform. y);
+   XSetRegion( DISP, XX-> gc, region);
+   if ( XX-> flags. kill_current_region) 
+      XDestroyRegion( XX-> current_region);
+   XX-> flags. kill_current_region = 1;
+   XX-> current_region = region;
+   XX-> flags. xft_clip = 0;
+#ifdef USE_XFT
+   if ( XX-> xft_drawable) prima_xft_set_region( self, region);
+#endif   
    return true;
 }
 
@@ -1390,7 +1492,7 @@ gp_get_text_overhangs( Handle self, const char *text, int len, Bool wide)
       XCharStruct * cs;
       cs = prima_char_struct( XX-> font-> fs, (void*) text, wide);  
       ret. x = ( cs-> lbearing < 0) ? - cs-> lbearing : 0;
-      text += (len - 1) * wide ? 2 : 1;
+      text += (len - 1) * (wide ? 2 : 1);
       cs = prima_char_struct( XX-> font-> fs, (void*) text, wide);  
       ret. y = (( cs-> width - cs-> rbearing) < 0) ? cs-> rbearing - cs-> width : 0;
    } else
@@ -1560,6 +1662,8 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 
       if ( PDrawable( self)-> font. style & fsStruckOut) {
          ay =  PDrawable( self)-> font.height/2 + ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
+         ay = (PDrawable( self)-> font.ascent - PDrawable( self)-> font.internalLeading)/2 +
+              + ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
          rx. l = -ovx.x * r-> cos2. l - ay * r-> sin2. l + 0.5;
          ry. l = -ovx.x * r-> sin2. l + ay * r-> cos2. l + 0.5;
          x1 = x + rx. i. i;
@@ -1587,6 +1691,11 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    if ( !XF_IN_PAINT(XX)) return false;
 
    if ( len == 0) return true;
+   
+#ifdef USE_XFT
+   if ( XX-> font-> xft) 
+      return prima_xft_text_out( self, text, x, y, len, utf8);
+#endif   
 
    if ( utf8)  
       if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return false;
@@ -1642,7 +1751,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    
    if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
       int lw = apc_gp_get_line_width( self);
-      int tw = gp_get_text_width( self, text, len, true, utf8);
+      int tw = gp_get_text_width( self, text, len, false, utf8);
       int d  = XX-> font-> underlinePos;
       Point ovx = gp_get_text_overhangs( self, text, len, utf8);
       if ( lw != XX-> font-> underlineThickness)
@@ -1650,10 +1759,11 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
       if ( PDrawable( self)-> font. style & fsUnderlined)
          XDrawLine( DISP, XX-> gdrawable, XX-> gc, 
             x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d)); 
-      if ( PDrawable( self)-> font. style & fsStruckOut)
+      if ( PDrawable( self)-> font. style & fsStruckOut) {
+         int scy = REVERT( y + (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2);
          XDrawLine( DISP, XX-> gdrawable, XX-> gc, 
-            x - ovx.x, REVERT( y + PDrawable( self)-> font.height/2), 
-            x + tw - 1 + ovx.y, REVERT( y + PDrawable( self)-> font.height/2)); 
+            x - ovx.x, scy, x + tw - 1 + ovx.y, scy);
+      }
       if ( lw != XX-> font-> underlineThickness) 
          apc_gp_set_line_width( self, lw);
    }   
@@ -1763,10 +1873,18 @@ PFontABC
 apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
 {
    PFontABC abc;
+
    if ( self) {
       DEFXX;
+      /*
       if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
       if (!XX-> font) return nil;
+      */
+#ifdef USE_XFT
+      if ( XX-> font-> xft)
+         return prima_xft_get_font_abc( self, firstChar, lastChar, unicode);
+#endif   
+
       abc = prima_xfont2abc( XX-> font-> fs, firstChar, lastChar);
    } else
       abc = prima_xfont2abc( guts. font_abc_nil_hack, firstChar, lastChar);
@@ -1779,8 +1897,14 @@ apc_gp_get_font_ranges( Handle self, int * count)
    DEFXX;
    unsigned long * ret = nil;
    XFontStruct * fs;
+   /*
    if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
    if (!XX-> font) return nil;
+   */
+#ifdef USE_XFT
+   if ( XX-> font-> xft)
+      return prima_xft_get_font_ranges( self, count);
+#endif
    fs = XX-> font-> fs;
    *count = (fs-> max_byte1 - fs-> min_byte1 + 1) * 2;
    if (( ret = malloc( sizeof( unsigned long) * ( *count)))) {
@@ -1896,9 +2020,10 @@ gp_get_text_width( Handle self, const char *text, int len, Bool addOverhang, Boo
 {
    DEFXX;
    int ret;
-   
+   /* 
    if ( !XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
    if ( !XX-> font) return 0;
+   */
    ret = wide ? 
       XTextWidth16( XX-> font-> fs, ( XChar2b *) text, len) :
       XTextWidth  ( XX-> font-> fs, (char*) text, len);
@@ -1913,6 +2038,13 @@ int
 apc_gp_get_text_width( Handle self, const char * text, int len, Bool addOverhang, Bool utf8)
 {
    int ret;
+
+#ifdef USE_XFT
+   if ( X(self)-> font-> xft)
+      return prima_xft_get_text_width( X(self)-> font, text, len, addOverhang, utf8, 
+         X(self)-> xft_map8, nil);
+#endif
+   
    if ( utf8)  
       if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return 0;
    ret = gp_get_text_width( self, text, len, addOverhang, utf8);
@@ -1931,10 +2063,12 @@ gp_get_text_box( Handle self, const char * text, int len, Bool wide)
    
    if ( !pt) return nil;
 
+   /*
    if ( !XX-> font) 
       apc_gp_set_font( self, &PDrawable( self)-> font);
    if ( !XX-> font) 
       return nil;
+    */
    
    x = wide ? 
       XTextWidth16( XX-> font-> fs, ( XChar2b*) text, len) :
@@ -1945,7 +2079,7 @@ gp_get_text_box( Handle self, const char * text, int len, Bool wide)
    pt[1].y = pt[3]. y = - XX-> font-> font. descent;
    pt[4].y = 0;
    pt[4].x = x;
-   pt[3].x = pt[2]. x = x - ovx. y;
+   pt[3].x = pt[2]. x = x + ovx. y;
    pt[0].x = pt[1]. x = - ovx. x;
 
    if ( !XX-> flags. paint_base_line) {
@@ -1972,6 +2106,10 @@ Point *
 apc_gp_get_text_box( Handle self, const char * text, int len, Bool utf8)
 {
    Point * ret;
+#ifdef USE_XFT
+   if ( X(self)-> font-> xft)
+      return prima_xft_get_text_box( self, text, len, utf8);
+#endif
    if ( utf8)  
       if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return 0;
    ret = gp_get_text_box( self, text, len, utf8);
@@ -2030,15 +2168,24 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    r. width = clipRect. right - clipRect. left+1;
    r. height = clipRect. top - clipRect. bottom+1;
    XX-> clip_rect = r;
+   XX-> clip_mask_extent. x = r. width;
+   XX-> clip_mask_extent. y = r. height;
    region = XCreateRegion();
    XUnionRectWithRegion( &r, region, region);
    if ( XX-> paint_region) 
       XIntersectRegion( region, XX-> paint_region, region);
    if ( XX-> btransform. x != 0 || XX-> btransform. y != 0) {
       XOffsetRegion( region, XX-> btransform. x, -XX-> btransform. y);
-   } 
+   }
    XSetRegion( DISP, XX-> gc, region);
-   XDestroyRegion( region);
+   if ( XX-> flags. kill_current_region) 
+      XDestroyRegion( XX-> current_region);
+   XX-> flags. kill_current_region = 1;
+   XX-> current_region = region;
+   XX-> flags. xft_clip = 0;
+#ifdef USE_XFT
+   if ( XX-> xft_drawable) prima_xft_set_region( self, region);
+#endif   
    return true;
 }
 

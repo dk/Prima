@@ -384,10 +384,11 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
       XUnionRegion( X(owner)-> paint_region, region, X(owner)-> paint_region);
       XOffsetRegion( X(owner)-> paint_region, -X(owner)-> btransform.x, X(owner)-> btransform.y); 
       XSetRegion( DISP, X(owner)-> gc, region);
+      X(owner)-> current_region = region;
+      X(owner)-> flags. kill_current_region = 1;
       CWidget( owner)-> notify( owner, "sH", "Paint", owner);
       X(owner)-> gdrawable = dc;
       CWidget( owner)-> end_paint( owner);
-      XDestroyRegion( region);
    }
    return true;
 }
@@ -781,9 +782,15 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    }
 
    if ( src_x < XX-> size. x && src_x + w >= 0 && dst_x < XX-> size. x && dst_x + w >= 0 && 
-        src_y < XX-> size. y && src_x + h >= 0 && dst_y < XX-> size. y && dst_y + h >= 0) 
+        src_y < XX-> size. y && src_x + h >= 0 && dst_y < XX-> size. y && dst_y + h >= 0) {
+      XGCValues gcv;
+      gcv. graphics_exposures = true;
+      XChangeGC( DISP, XX-> gc, GCGraphicsExposures, &gcv);
       XCopyArea( DISP, XX-> udrawable, XX-> udrawable, XX-> gc,
    	      src_x, src_y, w, h, dst_x, dst_y);
+      gcv. graphics_exposures = false;
+      XChangeGC( DISP, XX-> gc, GCGraphicsExposures, &gcv);
+   }
    prima_release_gc( XX);
    XCHECKPOINT;
    XFlush( DISP);
@@ -1057,7 +1064,8 @@ apc_widget_set_shape( Handle self, Handle mask)
    cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP);
    if ( !cache) return false;
    px = XCreatePixmap(DISP, guts. root, img->w, img->h + XX-> menuHeight, 1);
-   gc = XCreateGC(DISP, px, 0, &gcv);
+   gcv. graphics_exposures = false;
+   gc = XCreateGC(DISP, px, GCGraphicsExposures, &gcv);
    if ( XX-> menuHeight > 0) {
       XSetForeground( DISP, gc, 1);
       XFillRectangle( DISP, px, gc, 0, 0, img-> w, XX-> menuHeight);

@@ -51,6 +51,12 @@
 #include <X11/extensions/XShm.h>
 #define USE_MITSHM      1
 #endif
+#if defined(HAVE_X11_XFT_XFT_H) && defined(HAVE_FONTCONFIG_FONTCONFIG_H) && defined(HAVE_X11_EXTENSIONS_XRENDER_H)
+#include <X11/Xft/Xft.h>
+#  if XFT_MAJOR > 1
+#     define USE_XFT
+#  endif
+#endif
 #undef Font
 #undef Drawable
 #undef Bool
@@ -200,13 +206,37 @@ typedef struct CachedFont {
    FontFlags    flags;
    Font         font;
    XFontStruct *fs;
-   char        *load_name;
    XFont        id;
    PRotatedFont rotated;
    int          underlinePos;
    int          underlineThickness;
    int          refCnt;
+#ifdef USE_XFT
+   XftFont     *xft;
+   XftFont     *xft_base;
+#endif
 } CachedFont, *PCachedFont;
+
+typedef struct _FontKey
+{
+   int height;
+   int width;
+   int style;
+   int pitch;
+   int direction;
+   char name[ 256];
+} FontKey, *PFontKey;
+
+#define MAX_HGS_SIZE 5
+
+typedef struct
+{
+   int sp;
+   int locked;
+   int target;
+   int xlfd[MAX_HGS_SIZE];
+   int prima[MAX_HGS_SIZE];
+} HeightGuessStack;
 
 union       _unix_sys_data;
 
@@ -514,6 +544,9 @@ typedef struct _UnixGuts
    Bool                         shared_image_extension;
    int                          shared_image_completion_event;
    Bool                         xshmattach_failed;
+   int                          use_xft;
+   Bool                         xft_disable_large_fonts;
+   int                          xft_xrender_major_opcode;
    struct MsgDlg               *message_boxes;
    XWindow                      grab_redirect;
    Handle                       grab_widget;
@@ -614,7 +647,7 @@ typedef struct _drawable_sys_data
    Brush fore, back;
    Color saved_fore, saved_back;
    ColorSet colors;
-   Region invalid_region, paint_region;
+   Region invalid_region, paint_region, current_region, cached_region;
    XRectangle clip_rect;
    FillPattern fill_pattern, saved_fill_pattern;
    Pixmap fp_pixmap;
@@ -657,6 +690,7 @@ typedef struct _drawable_sys_data
       unsigned iconic                   : 1;
       unsigned mapped			: 1;
       unsigned modal                    : 1;
+      unsigned kill_current_region      : 1;
       unsigned opaque                	: 1;
       unsigned paint                    : 1;
       unsigned paint_base_line          : 1;
@@ -674,12 +708,19 @@ typedef struct _drawable_sys_data
       unsigned want_visible             : 1;
       unsigned withdrawn                : 1;
       unsigned zoomed                   : 1;
+      unsigned xft_clip                 : 1;
    } flags;
    ImageCache image_cache;
    Handle preexec_focus;
    TAILQ_ENTRY(_drawable_sys_data) paintq_link;
    TAILQ_HEAD(,configure_event_pair)    configure_pairs;
    Byte * palette;
+#ifdef USE_XFT
+   XftDraw  * xft_drawable;
+   uint32_t * xft_map8;
+   double     xft_font_cos;
+   double     xft_font_sin;
+#endif
 } DrawableSysData, *PDrawableSysData;
 
 #define XF_ENABLED(x)   ((x)->flags.enabled)
@@ -725,6 +766,7 @@ typedef struct _menu_sys_data
    PCachedFont          font;
    int                  guillemots;
    unsigned long        c[ciMaxId+1];
+   Color                rgb[ciMaxId+1];
    XWindow              focus;
    PMenuWindow          focused;
 } MenuSysData, *PMenuSysData;
@@ -1009,6 +1051,18 @@ prima_find_known_font( PFont font, Bool refill, Bool bySize);
 extern void
 prima_font_pp2font( char * ppFontNameSize, PFont font);
 
+extern void
+prima_build_font_key( PFontKey key, PFont f, Bool bySize);
+
+extern Bool
+prima_core_font_pick( Handle self, Font * source, Font * dest);
+
+extern void
+prima_init_try_height( HeightGuessStack * p, int target, int firstMove );
+
+extern int
+prima_try_height( HeightGuessStack * p, int height);
+
 extern void         
 prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int length);
 
@@ -1062,4 +1116,50 @@ typedef int (*XIfEventProcType)(Display*,XEvent*,XPointer);
 
 #endif
 
+extern void
+prima_xft_init( void);
+
+extern void
+prima_xft_done( void);
+
+extern Bool
+prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size);
+
+extern Bool
+prima_xft_set_font( Handle self, PFont font);
+
+extern PFont
+prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *retCount);
+      
+extern void
+prima_xft_font_encodings( PHash hash);
+
+extern int
+prima_xft_get_text_width( PCachedFont self, const char * text, int len, 
+                          Bool addOverhang, Bool utf8, uint32_t * map8, 
+                          Point * overhangs);
+
+extern Point *
+prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8);
+
+extern Bool
+prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8);
+
+extern unsigned long *
+prima_xft_get_font_ranges( Handle self, int * count);
+
+extern PFontABC
+prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode);
+
+extern PCachedFont
+prima_xft_get_cache( PFont font);
+         
+extern uint32_t *
+prima_xft_map8( const char * encoding);
+
+extern Bool
+prima_xft_parse( char * ppFontNameSize, Font * font);
+
+extern void
+prima_xft_set_region( Handle self, Region region);
 

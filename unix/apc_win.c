@@ -843,7 +843,8 @@ apc_window_set_icon( Handle self, Handle icon)
          goto FAIL;
       }
       
-      gc = XCreateGC( DISP, and, 0, &gcv);
+      gcv. graphics_exposures = false;
+      gc = XCreateGC( DISP, and, GCGraphicsExposures, &gcv);
       if ( X(icon)-> image_cache. icon) {
          XSetBackground( DISP, gc, 0xffffffff);
          XSetForeground( DISP, gc, 0x00000000);

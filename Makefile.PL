@@ -74,6 +74,8 @@ use vars @ovvars = qw(
     $WANTNOCODECS
     $DL_LOAD_FLAGS
     $DEBUG
+    $WITH_XFT
+    $WITH_ICONV
     $CODEC_PRIGRAPH
 );
 
@@ -911,6 +913,9 @@ sub setup_variables
        Prima/VB/VB.pl
        Prima/VB/cfgmaint.pl
     );
+    my $unix = (!$Win32 && !$OS2);
+    setvar('WITH_ICONV', $unix);
+    setvar('WITH_XFT', $unix);
     $install_manuals = $cygwin || (!$Win32 && !$OS2);
 
     @Prima_exports = qw(
@@ -1333,6 +1338,55 @@ sub setup_defines
         $DEFINES{ $defname} = ( $DEFINES{ $defname} || '') . join( '', @{ $USER_DEFINES_ADDONS{ $defname}});
     }
 }
+
+sub setup_xft
+{
+   if ( $WITH_XFT) {
+      my @pre_xft_libs = @LIBS;
+      if ( have_header( "fontconfig/fontconfig.h")) {
+         if ( find_lib( 'fontconfig', '', '')) {
+            $DEFINES{HAVE_FONTCONFIG_FONTCONFIG_H} = undef;
+            $WITH_XFT = 0;
+         } else {
+            push @LIBS, 'fontconfig';
+         }
+      }
+      
+      if ( have_header( "X11/extensions/Xrender.h", "X11/X.h", 
+                         "X11/Xlib.h", "X11/extensions/Xext.h")) {
+         if ( find_lib( 'Xrender', '', '')) {
+            $DEFINES{HAVE_X11_EXTENSIONS_XRENDER_H} = undef;
+            $WITH_XFT = 0;
+         } else {
+            push @LIBS, 'Xrender';
+         }
+      }
+
+      if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h", 
+                        "X11/extensions/Xext.h", "X11/extensions/Xrender.h")) {
+         if ( find_lib( 'Xft', '', '')) {
+            $DEFINES{HAVE_X11_XFT_XFT_H} = undef;
+            $WITH_XFT = 0;
+         } else {
+            push @LIBS, 'Xft';
+         }
+      }
+
+      @LIBS = @pre_xft_libs unless $WITH_XFT;
+   }
+   
+   $WITH_ICONV = 0 unless $WITH_XFT; # iconv is used for xft only
+   if ( $WITH_ICONV && have_header( "iconv.h")) {
+      if ( find_lib( 'iconv', '', '')) {
+         $DEFINES{HAVE_ICONV_H} = undef;
+         $WITH_ICONV = 0;
+      } else {
+         push @LIBS, 'iconv';
+      }
+   }
+
+}       
+
 
 sub generate_win32_def
 {
@@ -2136,6 +2190,7 @@ FOOTER
     setup_variables;
     setup_paths;
     setup_defines;
+    setup_xft;
     
     my $config_dir = "include/generic";
     my $config_h = "$config_dir/config.h";
@@ -2199,6 +2254,7 @@ EOF
         $make .= cmake( $_);
     }
     while ( <$PLATFORM/*.c>) {
+        next if !$WITH_XFT && m/xft.c/;
         $make .= cmake( $_);
     }
     while ( <examples/*>) {

@@ -178,6 +178,86 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
 #define MENU_XOFFSET 5
 #define MENU_CHECK_XOFFSET 10
 
+static int
+get_text_width( PCachedFont font, const char * text, int length, Bool utf8, uint32_t * xft_map8)
+{
+   int ret = 0;
+#ifdef USE_XFT
+   if ( font-> xft)
+      return prima_xft_get_text_width( font, text, length, false, utf8, xft_map8, nil);
+#endif   
+   if ( utf8) {
+      int len = utf8_length(( U8*) text, ( U8*) text + length);
+      XChar2b * xc = prima_alloc_utf8_to_wchar( text, len);
+      if ( xc) {
+         ret = XTextWidth16( font-> fs, xc, len);
+         free( xc);
+      }
+   } else {
+      ret = XTextWidth( font-> fs, text, length);
+   }
+   return ret;
+}
+
+typedef struct {
+   void        * xft_drawable;
+   uint32_t    * xft_map8;
+   Color         rgb;
+   unsigned long pixel;
+   XWindow       win;
+   GC            gc;
+} MenuDrawRec;
+
+static void
+get_font_abc( PCachedFont font, char * index, Bool utf8, FontABC * rec, MenuDrawRec * data)
+{
+   char buf[2];
+   XCharStruct * cs;
+#ifdef USE_XFT
+   if ( font-> xft) {
+      Point ovx;
+      rec-> b = prima_xft_get_text_width( font, index, 1, false, 
+                                          utf8, data-> xft_map8, &ovx);
+      /* not really abc, but enough for its single invocation */
+      rec-> a = -ovx. x;
+      rec-> c = -ovx. y;
+      return;
+   }
+#endif   
+   if ( utf8)
+      prima_utf8_to_wchar( index, ( XChar2b*) buf, 1);
+   else
+      buf[0] = *index;
+   cs = prima_char_struct( font-> fs, ( XChar2b*) buf, utf8);
+   rec-> a = cs-> lbearing;
+   rec-> b = cs-> rbearing - cs-> lbearing;
+   rec-> c = cs-> width - cs-> rbearing;
+}
+
+static void
+text_out( PCachedFont font, const char * text, int length, int x, int y, 
+          Bool utf8, MenuDrawRec * data)
+{
+#ifdef USE_XFT
+   XftColor xftcolor;
+   if ( font-> xft) {
+      xftcolor.color.red   = COLOR_R16(data-> rgb);
+      xftcolor.color.green = COLOR_G16(data-> rgb);
+      xftcolor.color.blue  = COLOR_B16(data-> rgb);
+      xftcolor.color.alpha = 0xffff;
+      xftcolor.pixel       = data-> pixel;
+      XftDrawString32(( XftDraw*) data-> xft_drawable, &xftcolor, 
+                      font-> xft, x, y, ( FcChar32*)text, length);
+      return;
+   } 
+#endif   
+   XSetForeground( DISP, data-> gc, data-> pixel);
+   if ( utf8)
+      XDrawString16( DISP, data->win, data->gc, x, y, ( XChar2b*) text, length);   
+   else
+      XDrawString( DISP, data->win, data->gc, x, y, text, length);   
+}
+
 static void
 update_menu_window( PMenuSysData XX, PMenuWindow w)
 {
@@ -186,6 +266,19 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
    PMenuItemReg m = w->m;
    PUnixMenuItem ix;
    int lastIncOk = 1;
+   PCachedFont kf = XX-> font;
+   uint32_t *xft_map8 = nil;
+
+#ifdef USE_XFT
+   {
+      PWindow owner = ( PWindow)(PComponent( w-> self)-> owner);
+      const char * encoding = ( XX-> type. popup) ? 
+         owner-> popupFont. encoding :
+         owner-> menuFont. encoding;
+      xft_map8 = prima_xft_map8( encoding);
+   }
+#endif      
+      
    
    free_unix_items( w);
    w-> num = item_count( w);
@@ -205,7 +298,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
          if ( m-> text) {
             int i, ntildas = 0;
             char * t = m-> text;
-            ix-> height = MENU_ITEM_GAP * 2 + XX-> font-> font. height;
+            ix-> height = MENU_ITEM_GAP * 2 + kf-> font. height;
             for ( i = 0; t[i]; i++) {
                if ( t[i] == '~' && t[i+1]) {
                   ntildas++;
@@ -213,51 +306,33 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
                      i++;
                }   
             }  
-            if ( m-> flags. utf8_text) {
-               int len = utf8_length(( U8*) m-> text, m-> text + i);
-               XChar2b * xc = prima_alloc_utf8_to_wchar( m-> text, len);
-               if ( xc) {
-                  ix-> width += startx + XTextWidth16( XX-> font-> fs, xc, len);
-                  free( xc);
-               }
-            } else {
-               ix-> width += startx + XTextWidth( XX-> font-> fs, m-> text, i);
-            }
-            if ( ntildas) {
-               char c = '~';
-               ix-> width -= prima_char_struct( XX-> font-> fs, &c, 0)-> width * ntildas; 
-            }
+            ix-> width += startx + get_text_width( kf, m-> text, i, 
+               m-> flags. utf8_text, xft_map8);
+            if ( ntildas) 
+               ix-> width -= ntildas * get_text_width( kf, "~", 1, false, xft_map8);
          } else if ( m-> bitmap && PObject( m-> bitmap)-> stage < csDead) {
             Pixmap px = prima_std_pixmap( m-> bitmap, CACHE_LOW_RES);
             if ( px) {
                PImage i = ( PImage) m-> bitmap;
-               ix-> height += ( i-> h < XX-> font-> font. height) ?  XX-> font-> font. height : i-> h +
+               ix-> height += ( i-> h < kf-> font. height) ?  kf-> font. height : i-> h +
                   MENU_ITEM_GAP * 2;
-               if ( ix-> height > guts. displaySize. y - XX-> font-> font. height - MENU_ITEM_GAP * 3 - 4) 
-                 ix-> height = guts. displaySize. y - XX-> font-> font. height - MENU_ITEM_GAP * 3 - 4;
+               if ( ix-> height > guts. displaySize. y - kf-> font. height - MENU_ITEM_GAP * 3 - 4) 
+                 ix-> height = guts. displaySize. y - kf-> font. height - MENU_ITEM_GAP * 3 - 4;
                ix-> width  += i-> w + startx;
                ix-> pixmap = px;
             }
          }
          if ( m-> accel && ( l = strlen( m-> accel))) {
-            if ( m-> flags. utf8_accel) {
-               int len = utf8_length(( U8*) m-> accel, m-> accel + l);
-               XChar2b * xc = prima_alloc_utf8_to_wchar( m-> accel, len);
-               if ( xc) {
-                  ix-> accel_width = XTextWidth16( XX-> font-> fs, xc, len);
-                  free( xc);
-               }
-            } else {
-               ix-> accel_width = XTextWidth( XX-> font-> fs, m-> accel, l);
-            }
+            ix-> accel_width = get_text_width( kf, m-> accel, l, 
+               m-> flags. utf8_accel, xft_map8);
          }
          if ( ix-> accel_width + ix-> width > x) x = ix-> accel_width + ix-> width;
       }
 
       if ( vertical && lastIncOk && 
-           y + ix-> height + MENU_ITEM_GAP * 2 + XX-> font-> font. height > guts. displaySize. y) {
+           y + ix-> height + MENU_ITEM_GAP * 2 + kf-> font. height > guts. displaySize. y) {
          lastIncOk = 0;
-         y += MENU_ITEM_GAP * 2 + XX-> font-> font. height;
+         y += MENU_ITEM_GAP * 2 + kf-> font. height;
       }
       m = m-> next;
       if ( lastIncOk) {
@@ -550,6 +625,36 @@ menu_enter_item( PMenuSysData XX, PMenuWindow w, int index, int type)
    return true;
 }
 
+
+static void
+store_char( U8 * src, int * srcptr, U8 * dst, int * dstptr, Bool utf8, MenuDrawRec * data)
+{
+   if ( utf8) {
+      STRLEN char_len;
+      UV uv = utf8_to_uvchr(( U8*) src + *srcptr, &char_len);
+      *srcptr += char_len;
+      if ( data-> xft_map8) {
+         *(( uint32_t*)(dst + *dstptr)) = (uint32_t) uv;
+         *dstptr += 4;
+      } else {
+         (( XChar2b*)(dst + *dstptr))-> byte1 = uv >> 8;
+         (( XChar2b*)(dst + *dstptr))-> byte2 = uv & 0xff;
+         *dstptr += 2;
+      }
+   } else {
+      if ( data-> xft_map8) {
+         uint32_t c = src[ *srcptr];
+         if ( c > 127)
+            c = data-> xft_map8[ c - 128];
+         *(( uint32_t*)(dst + *dstptr)) = c;
+         (*dstptr) += 4;
+         (*srcptr)++;
+      } else {
+         dst[(*dstptr)++] = src[(*srcptr)++];
+      }
+   }
+}   
+
 void
 prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
 {
@@ -562,12 +667,17 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
       GC gc = guts. menugc;
       int mx, my;
       Bool vertical;
-      int sz = 1024, l, i, x, y;
+      int sz = 1024, l, i, slen, x, y;
       char *s;
       char *t;
       int right, last = 0;
-      int xtoffs;
-      
+      int xtoffs, descent;
+      PCachedFont kf;
+      MenuDrawRec draw;
+      unsigned long clr;
+      Color rgb;
+     
+      kf = XX-> font;
       XX-> paint_pending = false;
       if ( XX-> wstatic. w == win) {
          w = XX-> w;
@@ -583,6 +693,23 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
       my = w-> sz.y - 1;
       ix = w-> um;
       if ( !ix) return;
+
+      bzero( &draw, sizeof( draw));
+      draw. win = win;
+      draw. gc = gc;
+#ifdef USE_XFT
+      if ( kf-> xft) {
+         PWindow owner = ( PWindow)(PComponent( w-> self)-> owner);
+         char * encoding = ( XX-> type. popup) ? 
+            owner-> popupFont. encoding :
+            owner-> menuFont. encoding;
+         draw. xft_map8 = prima_xft_map8( encoding);
+         draw. xft_drawable = XftDrawCreate( DISP, win, 
+            guts. visual. visual, guts. defaultColormap);
+         descent = kf-> xft-> descent;
+      } else
+#endif
+      descent = kf-> fs->max_bounds.descent;
        
       {
          XRectangle r;
@@ -594,10 +721,16 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
          rgn = XCreateRegion();
 	 XUnionRectWithRegion( &r, rgn, rgn);
          XSetRegion( DISP, gc, rgn);
+#ifdef USE_XFT
+         if ( draw. xft_drawable) XftDrawSetClip(( XftDraw*) draw.xft_drawable, rgn);
+#endif         
          XDestroyRegion( rgn);
       }
 
-      XSetFont( DISP, gc, XX-> font-> id);
+#ifdef USE_XFT
+      if ( !kf-> xft)
+#endif      
+         XSetFont( DISP, gc, kf-> id);
       XSetForeground( DISP, gc, XX->c[ciBack]);
       XSetBackground( DISP, gc, XX->c[ciBack]);
       if ( vertical) {
@@ -619,7 +752,6 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
       x = 0;
       if ( !( s = malloc( sz))) goto EXIT;
       while ( m) {
-         int clr; 
          Bool selected = false;
 
          /* printf("%d %d %d %s\n", last, w-> selected, w-> last, m-> text); */
@@ -629,15 +761,25 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
             XSetForeground( DISP, gc, XX-> c[ciHilite]);
             XFillRectangle( DISP, win, gc, p.x, p.y, sz. x, sz.y);
             clr = XX-> c[ciHiliteText];
+            rgb = XX-> rgb[ciHiliteText];
             selected = true;
-         } else
+         } else {
             clr = XX-> c[ciFore];
+            rgb = XX-> rgb[ciFore];
+         }
 
          if ( last > w-> last) {
-            XSetForeground( DISP, gc, clr);
-            XDrawString( DISP, win, gc, 
-                x + MENU_XOFFSET + xtoffs, 
-                y + MENU_ITEM_GAP + XX-> font-> font. height - XX-> font-> font. descent, ">>", 2);   
+            char buf[8];
+            int s = 0, d = 0;
+            draw. pixel = clr;
+            draw. rgb   = rgb;
+            store_char( ">", &s, buf, &d, 0, &draw);
+            s = 0;
+            store_char( ">", &s, buf, &d, 0, &draw);
+            text_out( kf, buf, 2,
+                  x + MENU_XOFFSET + xtoffs, 
+                  y + MENU_ITEM_GAP + kf-> font. height - kf-> font. descent, 
+                  false, &draw);
             break;
          }
 
@@ -657,62 +799,46 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
          } else {
             int deltaY = 0;
 
-            if ( m-> flags. disabled) clr = XX-> c[ciDisabledText];
+            if ( m-> flags. disabled) {
+               clr = XX-> c[ciDisabledText];
+               rgb = XX-> rgb[ ciDisabledText];
+            }
 
             deltaY = ix-> height;
             if ( m-> text) {
-               XFontStruct * xs = XX-> font-> fs;
-               int lineStart = -1, lineEnd = 0, haveDash = 0;
-               int ay = y + deltaY - MENU_ITEM_GAP - XX-> font-> font. descent;
+               int lineStart, lineEnd = 0, haveDash = 0;
+               int ay = y + deltaY - MENU_ITEM_GAP - kf-> font. descent;
 
                t = m-> text;
                for (;;) {
-                  l = 0; i = 0;
+                  l = i = slen = lineEnd = haveDash = 0;
+                  lineStart = -1;
                   while ( l < sz - 1 && t[i]) {
-                     STRLEN len = 1;
-                     UV uv = m-> flags. utf8_text ? utf8_to_uvchr(( U8*) t + i, &len) : *((U8*)t+i);
                      if (t[i] == '~' && t[i+1]) {
                         if ( t[i+1] == '~') {
-                           if ( m-> flags. utf8_text) {
-                              (( XChar2b*)(s+l))-> byte1 = 0;
-                              (( XChar2b*)(s+l))-> byte2 = '~';
-                              l += 2;
-                           } else
-                              s[l++] = '~'; 
+                           int dummy = 0;
+                           store_char( "~", &dummy, s, &l, false, &draw);
                            i += 2;
+                           slen++;
                         } else {
                            if ( !haveDash) {
-                              char buf[2];
-                              if ( m-> flags. utf8_text)
-                                 prima_utf8_to_wchar( t+i+1, ( XChar2b*) buf, 1);
-                              else
-                                 buf[0] = t[i+1];
                               haveDash = 1;
                               lineEnd = lineStart + 
-                                 prima_char_struct( xs, buf, m-> flags. utf8_text)-> width;
+                                 get_text_width( kf, t + i + 1, 1, 
+                                    m-> flags. utf8_text, draw. xft_map8);
                            }
                            i++;
                         }   
                      } else {
                         if ( !haveDash) {
-                           char buf[2];
-                           XCharStruct * cs;
-                           if ( m-> flags. utf8_text)
-                              prima_utf8_to_wchar( t+i, ( XChar2b*) buf, 1);
-                           else
-                              buf[0] = t[i];
-                           cs = prima_char_struct( xs, ( XChar2b*) buf, m-> flags. utf8_text);
+                           FontABC abc;
+                           get_font_abc( kf, t+i, m-> flags. utf8_text, &abc, &draw);
                            if ( lineStart < 0)
-                              lineStart = ( cs-> lbearing < 0) ? - cs-> lbearing : 0;
-                           lineStart += cs-> width;
-                        }   
-                        if ( m-> flags. utf8_text) {
-                           (( XChar2b*)(s+l))-> byte1 = uv >> 8;
-                           (( XChar2b*)(s+l))-> byte2 = uv & 0xff;
-                           l += 2;
-                           i += len;
-                        } else 
-                           s[l++] = t[i++];
+                              lineStart = ( abc.a < 0) ? -abc.a : 0;
+                           lineStart += abc.a + abc.b + abc.c;
+                        }  
+                        store_char( t, &i, s, &l, m-> flags. utf8_text, &draw);
+                        slen++;
                      }
                   }
                   if ( t[i]) {
@@ -722,26 +848,23 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                      break;
                }
                if ( m-> flags. disabled && !selected) {
-                  XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
-                  if ( m-> flags. utf8_text)
-                     XDrawString16( DISP, win, gc, x+MENU_XOFFSET+xtoffs+1, ay+1, ( XChar2b*) s, l / 2);   
-                  else
-                     XDrawString( DISP, win, gc, x+MENU_XOFFSET+xtoffs+1, ay+1, s, l);   
+                  draw. pixel = XX->c[ciLight3DColor]; 
+                  draw. rgb   = XX->rgb[ciLight3DColor]; 
+                  text_out( kf, s, slen, x+MENU_XOFFSET+xtoffs+1, ay+1, 
+                     m-> flags. utf8_text, &draw);
                } 
-               XSetForeground( DISP, gc, clr);
-               if ( m-> flags. utf8_text)
-                  XDrawString16( DISP, win, gc, x+MENU_XOFFSET+xtoffs, ay, ( XChar2b*) s, l / 2);   
-               else
-                  XDrawString( DISP, win, gc, x+MENU_XOFFSET+xtoffs, ay, s, l);
+               draw. pixel = clr;
+               draw. rgb   = rgb;
+               text_out( kf, s, slen, x+MENU_XOFFSET+xtoffs, ay, m-> flags. utf8_text, &draw);
                if ( haveDash) {
                   if ( m-> flags. disabled && !selected) {
                       XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
-                      XDrawLine( DISP, win, gc, x+MENU_XOFFSET+xtoffs+lineStart+1, ay+xs->max_bounds.descent-1+1, 
-                         x+MENU_XOFFSET+xtoffs+lineEnd+1, ay+xs->max_bounds.descent-1+1);
+                      XDrawLine( DISP, win, gc, x+MENU_XOFFSET+xtoffs+lineStart+1, ay+descent-1+1, 
+                         x+MENU_XOFFSET+xtoffs+lineEnd+1, ay+descent-1+1);
                   } 
                   XSetForeground( DISP, gc, clr);
-                  XDrawLine( DISP, win, gc, x+MENU_XOFFSET+xtoffs+lineStart, ay+xs->max_bounds.descent-1, 
-                     x+MENU_XOFFSET+xtoffs+lineEnd, ay+xs->max_bounds.descent-1);
+                  XDrawLine( DISP, win, gc, x+MENU_XOFFSET+xtoffs+lineStart, ay+descent-1, 
+                     x+MENU_XOFFSET+xtoffs+lineEnd, ay+descent-1);
                }  
             } else if ( m-> bitmap && ix-> pixmap) {
                if ( selected) XSetFunction( DISP, gc, GXcopyInverted);
@@ -751,41 +874,40 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
             if ( !vertical) x += ix-> width + MENU_XOFFSET;
 
             if ( m-> accel) {
-               int ul = 0;
+               int i, ul = 0, sl = 0, dl = 0;
                int zx = vertical ? 
                   mx - MENU_XOFFSET - MENU_CHECK_XOFFSET - ix-> accel_width : 
                   x + MENU_XOFFSET/2;
                int zy = vertical ? 
-                  y + ( deltaY + XX-> font-> font. height) / 2 - XX-> font-> font. descent: 
-                  y + deltaY - MENU_ITEM_GAP - XX-> font-> font. descent;
-               l = strlen( m-> accel);
-               if ( m-> flags. utf8_accel) {
-                  ul = prima_utf8_length( m-> accel);
-                  if ( ul * 2 < sz) {
-                     free(s); 
-                     if ( !( s = malloc( sz = (ul * 2 + 2)))) goto EXIT;
-                  }
-                  prima_utf8_to_wchar( m-> accel, ( XChar2b*)s, ul);
-               }
-               if ( m-> flags. disabled && !selected) {
-                  XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
-                  if ( m-> flags. utf8_accel) 
-                     XDrawString16( DISP, win, gc, zx + 1, zy + 1, ( XChar2b*) s, ul);
-                  else
-                     XDrawString( DISP, win, gc, zx + 1, zy + 1, m-> accel, l);
-               } 
-               XSetForeground( DISP, gc, clr);
+                  y + ( deltaY + kf-> font. height) / 2 - kf-> font. descent: 
+                  y + deltaY - MENU_ITEM_GAP - kf-> font. descent;
                if ( m-> flags. utf8_accel) 
-                  XDrawString16( DISP, win, gc, zx, zy, ( XChar2b*) s, ul);
+                  ul = prima_utf8_length( m-> accel);
                else
-                  XDrawString( DISP, win, gc, zx, zy, m-> accel, l);
+                  ul = strlen( m-> accel);
+               if (( ul * 4 + 4) < sz) {
+                  free(s); 
+                  if ( !( s = malloc( sz = (ul * 4 + 4)))) goto EXIT;
+               }
+               for ( i = 0; i < ul; i++)
+                  store_char( m-> accel, &sl, s, &dl, m-> flags. utf8_accel, &draw);
+               if ( m-> flags. disabled && !selected) {
+                  draw. pixel = XX->c[ciLight3DColor]; 
+                  draw. rgb   = XX->rgb[ciLight3DColor]; 
+                  text_out( kf, s, ul, zx + 1, zy + 1,
+                     m-> flags. utf8_accel, &draw);
+               } 
+               draw. pixel = clr;
+               draw. rgb   = rgb;
+               text_out( kf, s, ul, zx, zy,
+                  m-> flags. utf8_accel, &draw);
                if ( !vertical)
                   x += ix-> accel_width + MENU_XOFFSET/2;
             }
             if ( !vertical) x += MENU_XOFFSET;
 
             if ( vertical && m-> down) {
-               int ave    = XX-> font-> font. height * 0.4;
+               int ave    = kf-> font. height * 0.4;
                int center = y + deltaY / 2;
                XPoint p[3];
                p[0].x = mx - MENU_CHECK_XOFFSET/2;
@@ -836,6 +958,10 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
       }
       free(s);
    EXIT:; 
+#ifdef USE_XFT
+      if ( draw. xft_drawable) 
+         XftDrawDestroy( draw. xft_drawable);
+#endif                
    }
    break;
    case ConfigureNotify: {
@@ -1359,6 +1485,7 @@ apc_menu_set_color( Handle self, Color color, int i)
 {
    DEFMM;
    if ( i < 0 || i > ciMaxId) return false;
+   XX-> rgb[i] = prima_map_color( color, nil);
    if ( !XX-> type.popup) {
       if ( X(PWidget(self)-> owner)-> menuColorImmunity) {
          X(PWidget(self)-> owner)-> menuColorImmunity--;
@@ -1372,7 +1499,7 @@ apc_menu_set_color( Handle self, Color color, int i)
          }
       }
    } else 
-      XX-> c[i] = prima_allocate_color( nilHandle, prima_map_color( color, nil), nil);
+      XX-> c[i] = prima_allocate_color( nilHandle, XX-> rgb[i], nil);
    return true;
 }
 
