@@ -1429,7 +1429,9 @@ NOCODECS
 
        open TMPSRC, ">$c1" or die "Creation of temporary file $c1 failed";
        print TMPSRC <<D;
-#include <apricot.h>
+#include <EXTERN.h>
+#include <perl.h>
+#include <XSUB.h>
 
 int test( void ) { return 1; }
 
@@ -1443,7 +1445,9 @@ D
        my $c2  = qd( tempfile( "$TMPDIR/pmts%04d.c"));
        open TMPSRC, ">$c2" or die "Creation of temporary file $c2 failed";
        print TMPSRC <<D;
-#include <apricot.h>
+#include <EXTERN.h>
+#include <perl.h>
+#include <XSUB.h>
 
 extern int test ( void );
 
