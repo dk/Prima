@@ -222,6 +222,8 @@ sub focusedCell
    $self-> SUPER::focusedCell( $x, $y);
 }
 
+my @small_font_metrics;
+
 my $g = $w-> insert( Periodic => 
    origin => [0,0],
    size   => [$w-> size],
@@ -271,7 +273,13 @@ my $g = $w-> insert( Periodic =>
          $canvas-> text_out( $item, $cx1 + 10, $cy1 + 10);
 		 my $f = $canvas->font;
 		 $canvas->font(size => $f->size - 4);
-         $canvas->text_out( $elem_info{$item}->{atomic_number}||"", $cx1 + 35, $cy1 + 35);
+	 	 @small_font_metrics = ( $canvas-> get_text_width('3'), $f-> height)
+		 	unless @small_font_metrics;
+		 
+	 my $text = $elem_info{$item}->{atomic_number}||"";
+         $canvas->text_out( $text, 
+	 	$cx2 - $small_font_metrics[0] * length($text) - 4, 
+		$cy2 - $small_font_metrics[1] - 4);
 		 $canvas->font($f);
          $canvas-> rect_focus( $sx1, $sy1, $sx2-1, $sy2-1) if $focused;
       } elsif ( exists $sides{"$column:$row"}) {
@@ -293,6 +301,12 @@ my $g = $w-> insert( Periodic =>
 	   } elsif ($text eq "Ac") {
 		   $self->focusedCell(0, 12);
 	   }
+   },
+   onSelectCell => sub {
+	my ( $self, $col, $row) = @_;
+	my $item = $self-> {cells}-> [$row]-> [$col];
+	return unless defined($item) and defined ($elem_info{$item}->{name});
+    	$w-> text("Periodic table of elements - $elem_info{$item}->{name} $elem_info{$item}->{atomic_number}");
    },
 );
 
