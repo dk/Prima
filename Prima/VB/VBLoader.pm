@@ -324,6 +324,18 @@ after the creation, the widget hierarchy can be accessed in the standard way:
      ...
      $form-> StartButton-> hide;
 
+In case a form is to be included not from a fm file but from other data source,
+L<AUTOFORM_REALIZE> call can be used to transform perl array into set of
+widgets:
+      
+      $form = AUTOFORM_REALIZE( [ Form1 => {
+         class   => 'Prima::Window',
+         parent  => 1,
+         profile => {
+            name => 'Form1',
+            size => [ 330, 421],
+         }], {});
+
 Real-life examples are met across the toolkit; for instance,
 F<Prima/PS/setup.fm> dialog is used by C<Prima::PS::Setup>.
 
