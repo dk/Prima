@@ -1341,7 +1341,7 @@ apc_gp_get_clip_rect( Handle self)
 }
 
 PFontABC
-apc_gp_get_font_abc( Handle self)
+apc_gp_get_font_abc( Handle self, int *firstChar, int *lastChar)
 {
    DEFXX;
    PFontABC abc;
@@ -1352,18 +1352,18 @@ apc_gp_get_font_abc( Handle self)
    if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
    fs = XQueryFont( DISP, XX-> font-> id);
    if (!fs) return nil;
-   abc = malloc( sizeof( FontABC) * 256);
-   for ( k = 0; k < 256; k++) {
+   abc = malloc( sizeof( FontABC) * (fs-> max_char_or_byte2 - fs-> min_char_or_byte2 + 1));
+   for ( k = fs-> min_char_or_byte2; k <= fs-> max_char_or_byte2; k++) {
       if ( !fs-> per_char)
 	 cs = &fs-> min_bounds;
-      else if ( k < fs-> min_char_or_byte2 || k > fs-> max_char_or_byte2)
-	 cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
       else
 	 cs = fs-> per_char + k - fs-> min_char_or_byte2;
       abc[k]. a = cs-> lbearing;
       abc[k]. b = cs-> rbearing - cs-> lbearing;
       abc[k]. c = cs-> width - cs-> rbearing;
    }
+   if (firstChar) *firstChar = fs-> min_char_or_byte2;
+   if (lastChar) *lastChar = fs-> max_char_or_byte2;
    XFreeFontInfo( nil, fs, 1);
    return abc;
 }
