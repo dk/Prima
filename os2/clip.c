@@ -1,0 +1,235 @@
+
+/*-
+ * Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+/* apc.c --- apc/ api for os/2 */
+#include <limits.h>
+#define INCL_GPIBITMAPS
+#define INCL_GPICONTROL
+#define INCL_DOSFILEMGR
+#define INCL_DOSERRORS
+#define INCL_DOSDEVIOCTL
+#include "os2/os2guts.h"
+#include "Image.h"
+#include "Application.h"
+#define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
+#define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
+#define var (( PWidget) self)->
+#define HANDLE  (( sys className == WC_FRAME) ? WinQueryWindow( var handle, QW_PARENT) : var handle)
+#define DHANDLE( view) (((( PDrawableData)(( PComponent) view)-> sysData)->className == WC_FRAME) ? WinQueryWindow((( PWidget) view)->handle, QW_PARENT) : (( PWidget) view)->handle)
+
+Bool
+apc_clipboard_create( void)
+{
+   return true;
+}
+
+Bool
+apc_clipboard_destroy( void)
+{
+   return true;
+}
+
+Bool
+apc_clipboard_open( void)
+{
+   Bool ok;
+   Bool oad = appDead;
+   appDead = true;
+   ok = WinOpenClipbrd( guts. anchor);
+   appDead = oad;
+   if ( !ok) apiErr;
+   return ok;
+}
+
+Bool
+apc_clipboard_close( void)
+{
+   if ( !WinCloseClipbrd( guts. anchor)) apiErrRet;
+   return true;
+}
+
+Bool
+apc_clipboard_clear( void)
+{
+   if ( !WinEmptyClipbrd( guts. anchor)) apiErrRet;
+   return true;
+}
+
+
+static long cf2CF( long id)
+{
+   if ( id == cfText)   return CF_TEXT;
+   if ( id == cfBitmap) return CF_BITMAP;
+   return id - cfCustom;
+}
+
+Bool
+apc_clipboard_has_format( long id)
+{
+   ULONG flags;
+   return WinQueryClipbrdFmtInfo( guts. anchor, cf2CF( id), &flags);
+}
+
+void *
+apc_clipboard_get_data( long id, int * length)
+{
+   id = cf2CF( id);
+   switch( id)
+   {
+      case CF_BITMAP:
+         {
+             /* XXX palette operations */
+             PImage image      = ( PImage) *length;
+             Handle self       = ( Handle) image;
+             HBITMAP b = WinQueryClipbrdData( guts. anchor, id);
+             HBITMAP b2, bsave;
+             BITMAPINFOHEADER bh;
+             PBITMAPINFO2 bi;
+             POINTL pt [4] = {{0,0},{0,0},{0,0},{0,0}};
+             if ( b == nilHandle) {
+                apcErr( errInvClipboardData);
+                return nil;
+             }
+             if ( !GpiQueryBitmapParameters( b, &bh)) apiErr;
+             if (bh. cBitCount > 8) bh. cBitCount = 24;
+             image_begin_query( bh. cBitCount, ( int *)&bh. cBitCount);
+             image-> self-> create_empty( self, bh. cx, bh. cy, bh. cBitCount);
+             pt[ 1]. x = pt[ 3]. x = bh. cx;
+             pt[ 1]. y = pt[ 3]. y = bh. cy;
+             pt[ 1]. x--;
+             pt[ 1]. y--;
+             bi = get_binfo( self);
+             b2 = GpiCreateBitmap( guts. ps, ( PBITMAPINFOHEADER2)bi, 0, nil, nil);
+             if ( b2 == nilHandle) { apiErr; return nil; }
+             free( bi);
+             bsave = GpiSetBitmap( guts. ps, b2);
+             if ( bsave == HBM_ERROR) apiErr;
+             if ( GpiWCBitBlt( guts. ps, b, 4, pt, ROP_SRCCOPY, BBO_IGNORE) == GPI_ERROR) apiErr;
+             image_query( self, guts. ps);
+             if ( GpiSetBitmap( guts. ps, bsave) == HBM_ERROR) apiErr;
+             if ( !GpiDeleteBitmap( b2)) apiErr;
+             return (void*)*length;
+         }
+         break;
+      case CF_TEXT:
+         {
+             char * ptr = (char*) WinQueryClipbrdData( guts. anchor, id);
+             char * ret;
+             int i, len = *length = strlen( ptr) + 1;
+             if ( ptr == nil) {
+                apcErr( errInvClipboardData);
+                return nil;
+             }
+             ret = malloc( *length);
+             strcpy( ret, ptr);
+             for ( i = 0; i < len - 1; i++)
+                if ( ret[ i] == '\r') {
+                   memcpy( ret + i, ret + i + 1, len - i + 1);
+                   len--;
+                }
+             return ret;
+         }
+         break;
+      default:
+         {
+            char * ptr = (char*) WinQueryClipbrdData( guts. anchor, id);
+            void * ret;
+            if ( ptr == nil) {
+               apcErr( errInvClipboardData);
+               return nil;
+            }
+            *length = *(( int*) ptr);
+            ptr += sizeof( int);
+            ret = malloc( *length);
+            memcpy( ret, ptr, *length);
+            return ret;
+         }
+   }
+   return nil;
+}
+
+Bool
+apc_clipboard_set_data( long id, void * data, int length)
+{
+   id = cf2CF( id);
+   if ( data == nil)
+   {
+      if ( !WinEmptyClipbrd( guts. anchor)) apiErr;
+      return true;
+   }
+   switch ( id)
+   {
+      case CF_BITMAP:
+         {
+            /* XXX palette operations */
+            HBITMAP b = ( HBITMAP) bitmap_make_handle(( Handle) data );
+            if ( b == nilHandle) apiErrRet;
+            if ( !WinSetClipbrdData( guts. anchor, b, id, CFI_HANDLE)) apiErrRet;
+         }
+         break;
+      case CF_TEXT:
+         {
+             void * ptr;
+             rc = DosAllocSharedMem( &ptr, nil, length, PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
+             if ( rc != 0) { apiAltErr( rc); return false; };
+             memcpy( ptr, data, length);
+             if ( !WinSetClipbrdData( guts. anchor, (ULONG)ptr, id, CFI_POINTER)) apiErrRet;
+         }
+         break;
+      default:
+         {
+             char * ptr;
+             rc = DosAllocSharedMem(( PPVOID) &ptr, nil, length+sizeof(int), PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
+             if ( rc != 0) { apiAltErr( rc); return false; };
+             memcpy( ptr+sizeof(int), data, length);
+             memcpy( ptr, &length, sizeof(int));
+             if ( !WinSetClipbrdData( guts. anchor, (ULONG)ptr, id, CFI_POINTER)) apiErrRet;
+         }
+    }
+    return true;
+}
+
+long
+apc_clipboard_register_format( const char * format)
+{
+   ATOM atom;
+   if (( atom = WinAddAtom( WinQuerySystemAtomTable(), format)) == 0) apiErrRet;
+   return atom + cfCustom;
+}
+
+Bool
+apc_clipboard_deregister_format( long id)
+{
+   WinDeleteAtom( WinQuerySystemAtomTable(), (ATOM)( id - cfCustom));
+   return true;
+}
+
+ApiHandle
+apc_clipboard_get_handle( Handle self)
+{
+   return nilHandle;
+}

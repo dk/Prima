@@ -78,7 +78,7 @@ static unsigned long
 elf_hash_by_size( const Font *f)
 {
    unsigned long   h = 0, g;
-   char *name = (char *)&(f-> style);
+   char *name = (char *)&(f-> width);
    int size = (char *)(&(f-> name)) - (char *)name;
 
    while ( size)
@@ -118,7 +118,7 @@ find_node( const PFont font, Bool bySize)
 
    if ( font == nil) return nil;
    if (bySize) {
-      sz = (char *)(&(font-> name)) - (char *)&(font-> style);
+      sz = (char *)(&(font-> name)) - (char *)&(font-> width);
       i = elf_hash_by_size( font) % FONTHASH_SIZE;
    } else {
       sz = (char *)(&(font-> name)) - (char *)font;
@@ -131,7 +131,7 @@ find_node( const PFont font, Bool bySize)
    if ( bySize) {
       while ( node != nil)
       {
-         if (( memcmp( &(font-> style), &(node-> key. style), sz) == 0) &&
+         if (( memcmp( &(font-> width), &(node-> key. width), sz) == 0) &&
              ( strcmp( font-> name, node-> key. name) == 0 ) &&
              (font-> size == node-> key. size))
             return node;
@@ -278,7 +278,10 @@ int
 get_fontid_from_hash( void *_hash, const PFont font, SIZEF *sz, int *vectored)
 {
    PFontIdHash hash = _hash;
-   PFontIdHashNode node = find_id_node( hash, font);
+   PFontIdHashNode node;
+   Font f = *font;
+   f. direction = 0;
+   node = find_id_node( hash, &f);
    if ( node == nil) return 0;
    *sz = node-> size;
    *vectored = node-> vectored;
@@ -319,6 +322,7 @@ add_fontid_to_hash( void *_hash, int id, const PFont font, const SIZEF *sz, int 
    node = malloc( sizeof( FontHashNode));
    if ( node == nil) return;
    memcpy( &(node-> key), font, sizeof( Font));
+   node-> key. direction = 0;
    node-> value = id;
    node-> size = *sz;
    node-> vectored = vectored;
