@@ -327,7 +327,6 @@ apc_prn_begin_doc( Handle self, const char* docName)
 }
 
 
-/* XXX */
 Bool
 apc_prn_begin_paint_info( Handle self)
 {
@@ -351,7 +350,7 @@ apc_prn_begin_paint_info( Handle self)
    if ( strlen( sys s. prn. ppi. pszParms))  dev. pszQueueProcParams = sys s. prn. ppi. pszParms;
    dev .pszSpoolerParams = nil;
    dev .pszNetworkParams = nil;
-   sys dc = DevOpenDC( guts. anchor, OD_QUEUED, "*", 9, (PDEVOPENDATA)&dev, nilHandle);
+   sys dc = DevOpenDC( guts. anchor, OD_INFO, "*", 9, (PDEVOPENDATA)&dev, nilHandle);
    if ( !sys dc) apiErrRet;
    DevQueryCaps( sys dc, CAPS_WIDTH,  1, &sys s. prn. size. cx );
    DevQueryCaps( sys dc, CAPS_HEIGHT, 1, &sys s. prn. size. cy );
@@ -385,7 +384,6 @@ apc_prn_end_doc( Handle self)
    return true;
 }
 
-/* XXX */
 Bool
 apc_prn_end_paint_info( Handle self)
 {
