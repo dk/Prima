@@ -182,6 +182,8 @@ void Window_handle_event( Handle self, PEvent event)
       if ( var onEndModal) cv_call_perl( var mate, var onEndModal, "");
       break;
    case cmActivate:
+      if ( var owner)
+         PWidget( var owner)-> currentWidget = self;
       my on_activate( self);
       objCheck;
       if ( is_dmopt( dmActivate)) delegate_sub( self, "Activate", "H", self);
