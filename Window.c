@@ -299,7 +299,7 @@ Window_exec_enter_proc( Handle self, Bool sharedExec, Handle insertBefore)
       if ( mh != application && !PWindow(mh)-> nextSharedModal)
          list_add( &PApplication( application)-> modalHorizons, mh);
 
-      if ( var nextSharedModal = insertBefore) {
+      if (( var nextSharedModal = insertBefore)) {
          /* inserting window in between of modal list */
          Handle *iBottom = ( mh == application) ?
             &PApplication(mh)-> sharedModal : &PWindow(mh)-> nextSharedModal;
@@ -328,7 +328,7 @@ Window_exec_enter_proc( Handle self, Bool sharedExec, Handle insertBefore)
    {
       PApplication app = ( PApplication) application;
       var modal = mtExclusive;
-      if ( var nextExclModal = insertBefore) {
+      if (( var nextExclModal = insertBefore)) {
          var prevExclModal = PWindow( insertBefore)-> prevExclModal;
          if ( app-> exclModal == insertBefore)
             app-> exclModal = self;
@@ -438,14 +438,17 @@ Window_cancel_children( Handle self)
 int
 Window_execute( Handle self, Handle insertBefore)
 {
-   if ( var modal || my get_clip_owner( self)) return cmCancel;
+   if ( var modal || my get_clip_owner( self))
+      return cmCancel;
+
    protect_object( self);
-   if ( insertBefore && (
-         ( insertBefore == self) ||
-         ( !kind_of( insertBefore, CWindow)) ||
-         ( PWindow( insertBefore)-> modal != mtExclusive)))
-            insertBefore = nilHandle;
-   if ( !apc_window_execute( self, insertBefore)) var modalResult == cmCancel;
+   if ( insertBefore
+	&& ( insertBefore == self
+	     || !kind_of( insertBefore, CWindow)
+	     || PWindow( insertBefore)-> modal != mtExclusive))
+      insertBefore = nilHandle;
+   if ( !apc_window_execute( self, insertBefore))
+      var modalResult = cmCancel;
 
    unprotect_object( self);
    return var modalResult;
