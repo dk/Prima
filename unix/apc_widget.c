@@ -407,6 +407,18 @@ Bool
 apc_widget_destroy( Handle self)
 {
    DEFXX;
+   if ( XX-> user_pointer != None) {
+      XFreeCursor( DISP, XX-> user_pointer);
+      XX-> user_pointer = None;
+   }
+   if ( XX-> user_p_source != None) {
+      XFreePixmap( DISP, XX-> user_p_source);
+      XX-> user_p_source = None;
+   }
+   if ( XX-> user_p_mask != None) {
+      XFreePixmap( DISP, XX-> user_p_mask);
+      XX-> user_p_mask = None;
+   }
    if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self)
       prima_end_menu();
    if ( guts. focused == self)

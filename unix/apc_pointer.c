@@ -121,8 +121,12 @@ apc_pointer_get_hot_spot( Handle self)
       cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
    else
       cs = fs-> per_char + idx - fs-> min_char_or_byte2;
-   ret. x = cs->lbearing;
+   ret. x = -cs->lbearing;
    ret. y = guts.cursor_height - cs->ascent;
+   if ( ret. x < 0) ret. x = 0;
+   if ( ret. y < 0) ret. y = 0;
+   if ( ret. x >= guts. cursor_width)  ret. x = guts. cursor_width  - 1;
+   if ( ret. y >= guts. cursor_height) ret. y = guts. cursor_height - 1;
    return ret;
 }
 
@@ -363,6 +367,10 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
       }
       if ( noSZ || noBPP)
          Object_destroy( cursor);
+      if ( hot_spot. x < 0) hot_spot. x = 0;
+      if ( hot_spot. y < 0) hot_spot. y = 0;
+      if ( hot_spot. x >= guts. cursor_width)  hot_spot. x = guts. cursor_width  - 1;
+      if ( hot_spot. y >= guts. cursor_height) hot_spot. y = guts. cursor_height - 1;
       XX-> pointer_hot_spot = hot_spot;
       xcb. red = xcb. green = xcb. blue = 0; 
       xcw. red = xcw. green = xcw. blue = 0xFFFF; 
