@@ -1432,7 +1432,14 @@ sub cut
 sub copy
 {
    my $self = $_[0];
-   return unless $self-> has_selection;
+   my $text = $self->get_selected_text;
+   $::application-> Clipboard-> store( 'Text', $text) if defined $text;
+}
+
+sub get_selected_text
+{
+   my $self = $_[0];
+   return undef unless $self-> has_selection;
    my @sel = $self-> selection;
    my $text = '';
    my $bt = $self-> blockType;
@@ -1464,7 +1471,7 @@ sub copy
       }
       chomp( $text);
    }
-   $::application-> Clipboard-> store( 'Text', $text);
+   return $text;
 }
 
 sub lock_change
