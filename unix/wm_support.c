@@ -58,7 +58,9 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
       } else if ((Atom) xev-> data. l[0] == wm-> takeFocus) {
 	 Handle toSelect = CWidget( self)-> get_selectee( self);
 	 XWindow s = toSelect ? PWidget(toSelect)-> handle : PWidget(self)-> handle;
-	 fprintf( stderr, "~~~~~~~~~~~~~~ Whoa there! Got take focus!\n");
+	 DOLBUG( "~~~~~~~~~~~~~~ Whoa there! Got take focus: %s to %s\n", 
+		 PWidget(self)-> name,
+		 toSelect ? PWidget( toSelect)-> name : "itself");
 	 XSetInputFocus( DISP, s, RevertToParent, CurrentTime);
 	 XCHECKPOINT;
 	 return false;

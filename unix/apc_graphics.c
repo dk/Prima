@@ -358,7 +358,7 @@ prima_release_gc( PDrawableSysData selfxx)
 void
 apc_gp_init( Handle self)
 {
-fprintf( stderr, "apc_gp_init()\n");
+   DOLBUG( "apc_gp_init()\n");
    X(self)-> resolution = guts. resolution;
 }
 
@@ -371,7 +371,7 @@ apc_gp_done( Handle self)
 void
 apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-fprintf( stderr, "apc_gp_arc()\n");
+   DOLBUG( "apc_gp_arc()\n");
 }
 
 void
@@ -387,43 +387,43 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 void
 apc_gp_clear( Handle self)
 {
-fprintf( stderr, "apc_gp_clear()\n");
+   DOLBUG( "apc_gp_clear()\n");
 }
 
 void
 apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-fprintf( stderr, "apc_gp_chord()\n");
+   DOLBUG( "apc_gp_chord()\n");
 }
 
 void
 apc_gp_draw_poly( Handle self, int numPts, Point * points)
 {
-fprintf( stderr, "apc_gp_draw_poly()\n");
+   DOLBUG( "apc_gp_draw_poly()\n");
 }
 
 void
 apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 {
-fprintf( stderr, "apc_gp_draw_poly2()\n");
+   DOLBUG( "apc_gp_draw_poly2()\n");
 }
 
 void
 apc_gp_ellipse( Handle self, int x, int y, int radX, int radY)
 {
-fprintf( stderr, "apc_gp_ellipse()\n");
+   DOLBUG( "apc_gp_ellipse()\n");
 }
 
 void
 apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-fprintf( stderr, "apc_gp_fill_chord()\n");
+   DOLBUG( "apc_gp_fill_chord()\n");
 }
 
 void
 apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY)
 {
-fprintf( stderr, "apc_gp_fill_ellipse()\n");
+   DOLBUG( "apc_gp_fill_ellipse()\n");
 }
 
 void
@@ -467,19 +467,19 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 void
 apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-fprintf( stderr, "apc_gp_fill_sector()\n");
+   DOLBUG( "apc_gp_fill_sector()\n");
 }
 
 void
 apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBorder)
 {
-fprintf( stderr, "apc_gp_flood_fill()\n");
+   DOLBUG( "apc_gp_flood_fill()\n");
 }
 
 Color
 apc_gp_get_pixel( Handle self, int x, int y)
 {
-fprintf( stderr, "apc_gp_get_pixel()\n");
+   DOLBUG( "apc_gp_get_pixel()\n");
    return 0;
 }
 
@@ -555,9 +555,9 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 	 croak( "apc_gp_put_image(): error during XCreateImage()");
       }
    }
-   fprintf( stderr, "====================\nx,y:%d,%d   x,y:%d,%d,  w,h: %d,%d\n====================\n",
-	    xFrom, img-> h - yFrom - 1,
-	    x, REVERT(y), xLen, yLen);
+   DOLBUG( "====================\nx,y:%d,%d   x,y:%d,%d,  w,h: %d,%d\n====================\n",
+	   xFrom, img-> h - yFrom - 1,
+	   x, REVERT(y), xLen, yLen);
    XPutImage( DISP, XX-> drawable, XX-> gc, IMG-> imageCache,
 	      xFrom, img-> h - yFrom - yLen,
 	      x, REVERT(y) - yLen, xLen, yLen);
@@ -576,13 +576,13 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 void
 apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 {
-fprintf( stderr, "apc_gp_sector()\n");
+   DOLBUG( "apc_gp_sector()\n");
 }
 
 void
 apc_gp_set_palette( Handle self)
 {
-fprintf( stderr, "apc_gp_set_palette()\n");
+   DOLBUG( "apc_gp_set_palette()\n");
 }
 
 void
@@ -605,7 +605,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 		      int x, int y, int xFrom, int yFrom,
 		      int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
-fprintf( stderr, "apc_gp_stretch_image()\n");
+   DOLBUG( "apc_gp_stretch_image()\n");
 }
 
 void
@@ -619,7 +619,7 @@ apc_gp_text_out( Handle self, char * text, int x, int y, int len)
 char **
 apc_gp_text_wrap( Handle self, TextWrapRec * t)
 {
-fprintf( stderr, "apc_gp_text_wrap()\n");
+   DOLBUG( "apc_gp_text_wrap()\n");
    return nil;
 }
 
@@ -650,14 +650,14 @@ apc_gp_get_color( Handle self)
 Rect
 apc_gp_get_clip_rect( Handle self)
 {
-fprintf( stderr, "apc_gp_get_clip_rect()\n");
+   DOLBUG( "apc_gp_get_clip_rect()\n");
    return (Rect){0,0,0,0};
 }
 
 PFontABC
 apc_gp_get_font_abc( Handle self)
 {
-fprintf( stderr, "apc_gp_get_font_abc()\n");
+   DOLBUG( "apc_gp_get_font_abc()\n");
    return nil;
 }
 
@@ -670,7 +670,7 @@ apc_gp_get_fill_pattern( Handle self)
 int
 apc_gp_get_line_end( Handle self)
 {
-fprintf( stderr, "apc_gp_get_line_end()\n");
+   DOLBUG( "apc_gp_get_line_end()\n");
    return 0;
 }
 
@@ -702,14 +702,14 @@ apc_gp_get_line_width( Handle self)
 int
 apc_gp_get_line_pattern( Handle self)
 {
-fprintf( stderr, "apc_gp_get_line_pattern()\n");
+   DOLBUG( "apc_gp_get_line_pattern()\n");
    return 0;
 }
 
 Point
 apc_gp_get_resolution( Handle self)
 {
-fprintf( stderr, "apc_gp_get_resolution()\n");
+   DOLBUG( "apc_gp_get_resolution()\n");
    return (Point){0,0};
 }
 
@@ -727,7 +727,7 @@ apc_gp_get_rop( Handle self)
 int
 apc_gp_get_rop2( Handle self)
 {
-fprintf( stderr, "apc_gp_get_rop2()\n");
+   DOLBUG( "apc_gp_get_rop2()\n");
    return 0;
 }
 
@@ -745,21 +745,21 @@ apc_gp_get_text_width( Handle self, char *text, int len, Bool addOverhang)
 Point *
 apc_gp_get_text_box( Handle self, char * text, int len)
 {
-fprintf( stderr, "apc_gp_get_text_box()\n");
+   DOLBUG( "apc_gp_get_text_box()\n");
    return nil;
 }
 
 Point
 apc_gp_get_transform( Handle self)
 {
-fprintf( stderr, "apc_gp_get_transform()\n");
+   DOLBUG( "apc_gp_get_transform()\n");
    return (Point){0,0};
 }
 
 Bool
 apc_gp_get_text_opaque( Handle self)
 {
-fprintf( stderr, "apc_gp_get_text_opaque()\n");
+   DOLBUG( "apc_gp_get_text_opaque()\n");
    return true;
 }
 
@@ -782,7 +782,7 @@ apc_gp_set_back_color( Handle self, Color color)
 void
 apc_gp_set_clip_rect( Handle self, Rect clipRect)
 {
-fprintf( stderr, "apc_gp_set_clip_rect()\n");
+   DOLBUG( "apc_gp_set_clip_rect()\n");
 }
 
 void
@@ -807,7 +807,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
    DEFXX;
 
    memcpy( XX-> fillPattern, pattern, sizeof( FillPattern));
-fprintf( stderr, "apc_gp_set_fill_pattern()\n");
+   DOLBUG( "apc_gp_set_fill_pattern()\n");
 }
 
 /*- see apc_font.c
@@ -818,7 +818,7 @@ apc_gp_set_font( Handle self, PFont font)
 void
 apc_gp_set_line_end( Handle self, int lineEnd)
 {
-fprintf( stderr, "apc_gp_set_line_end()\n");
+   DOLBUG( "apc_gp_set_line_end()\n");
 }
 
 void
@@ -854,7 +854,7 @@ apc_gp_set_line_pattern( Handle self, int pattern)
 //#define    lpDotDot         0x4444     /* ............ */
 //#define    lpDashDot        0xFAFA     /* _._._._._._ */
 //#define    lpDashDotDot     0xEAEA     /* _.._.._.._.. */
-fprintf( stderr, "apc_gp_set_line_pattern()\n");
+   DOLBUG( "apc_gp_set_line_pattern()\n");
 }
 
 void
@@ -881,18 +881,18 @@ apc_gp_set_rop( Handle self, int rop)
 void
 apc_gp_set_rop2( Handle self, int rop)
 {
-fprintf( stderr, "apc_gp_set_rop2()\n");
+   DOLBUG( "apc_gp_set_rop2()\n");
 }
 
 void
 apc_gp_set_transform( Handle self, int x, int y)
 {
-fprintf( stderr, "apc_gp_set_transform()\n");
+   DOLBUG( "apc_gp_set_transform()\n");
 }
 
 void
 apc_gp_set_text_opaque( Handle self, Bool opaque)
 {
-fprintf( stderr, "apc_gp_set_text_opaque()\n");
+   DOLBUG( "apc_gp_set_text_opaque()\n");
 }
 

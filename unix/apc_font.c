@@ -95,7 +95,7 @@ prima_init_font_subsystem( void)
 
       while (*c) if ( *c++ == '-') nh++;
       c = names[ i];
-/* printf( "NH: %d\n", nh); */
+      /* DOLBUG( "NH: %d\n", nh); */
       if ( nh == 14) {
 	 if ( *c == '+') while (*c && *c != '-')  c++;	    /* skip VERSION */
 	 /* from now on *c == '-' is true (on this level) for all valid XLFD names */
@@ -117,7 +117,7 @@ prima_init_font_subsystem( void)
 	    strlwr( info[i]. lc_family, info[i]. font. family);
 	    strlwr( info[i]. lc_name, info[i]. font. name);
 
-/* printf( "name: %s, family: %s\n", info[i]. font. name, info[i]. font. family); */
+/* 	    DOLBUG( "name: %s, family: %s\n", info[i]. font. name, info[i]. font. family); */
 	 }
 	 if ( *c == '-') {
 	    /* advance through WEIGHT_NAME */
@@ -130,19 +130,19 @@ prima_init_font_subsystem( void)
 	       style++;
 	       info[i]. font. weight = fwMedium;
 	       info[i]. flags. weight = true;
-/* printf( "medium or regular\n"); */
+/* DOLBUG( "medium or regular\n"); */
 	    } else if ( c-b == 4 && strncasecmp( b, "bold", 4) == 0) {
 	       info[i]. font. style = fsBold;
 	       style++;
 	       info[i]. font. weight = fwBold;
 	       info[i]. flags. weight = true;
-/* printf( "bold\n"); */
+/* DOLBUG( "bold\n"); */
 	    } else if ( c-b == 8 && strncasecmp( b, "demibold", 8) == 0) {
 	       info[i]. font. style = fsBold;
 	       style++;
 	       info[i]. font. weight = fwSemiBold;
 	       info[i]. flags. weight = true;
-/* printf( "demibold\n"); */
+/* DOLBUG( "demibold\n"); */
 	    }
 	 }
 	 if ( *c == '-') {
@@ -151,23 +151,23 @@ prima_init_font_subsystem( void)
 	    while ( *c && *c != '-') c++;
 	    if ( c-b == 1 && (*b == 'R' || *b == 'r')) {
 	       style++;
-/* printf( "r-slant\n"); */
+/* DOLBUG( "r-slant\n"); */
 	    } else if ( c-b == 1 && (*b == 'I' || *b == 'i')) {
 	       info[i]. font. style |= fsItalic;
 	       style++;
-/* printf( "i-slant\n"); */
+/* DOLBUG( "i-slant\n"); */
 	    } else if ( c-b == 1 && (*b == 'O' || *b == 'o')) {
 	       info[i]. font. style |= fsItalic;   /* XXX Oblique? */
 	       style++;
-/* printf( "o-slant\n"); */
+/* DOLBUG( "o-slant\n"); */
 	    } else if ( c-b == 2 && (*b == 'R' || *b == 'r') && (b[1] == 'I' || b[1] == 'i')) {
 	       info[i]. font. style |= fsItalic;   /* XXX Reverse Italic? */
 	       style++;
-/* printf( "ri-slant\n"); */
+/* DOLBUG( "ri-slant\n"); */
 	    } else if ( c-b == 2 && (*b == 'R' || *b == 'r') && (b[1] == 'O' || b[1] == 'o')) {
 	       info[i]. font. style |= fsItalic;   /* XXX Reverse Oblique? */
 	       style++;
-/* printf( "ro-slant\n"); */
+/* DOLBUG( "ro-slant\n"); */
 	    }
 	 }
 	 if ( *c == '-') {
@@ -188,9 +188,9 @@ prima_init_font_subsystem( void)
 	    if ( c != b) {
 	       if ( info[i]. font. height) {
 		  info[i]. flags. height = true;
-/* printf( "height: %d\n", info[i]. font. height); */
+/* DOLBUG( "height: %d\n", info[i]. font. height); */
 	       } else {
-/* printf( "vector height\n"); */
+/* DOLBUG( "vector height\n"); */
 		  vector++;
 	       }
 	       c = b;
@@ -204,9 +204,9 @@ prima_init_font_subsystem( void)
 	    if ( c != b) {
 	       if ( info[i]. font. size) {
 		  info[i]. flags. size = true;
-/*  printf( "size: %d\n", info[i]. font. size); */
+/*  DOLBUG( "size: %d\n", info[i]. font. size); */
 	       } else {
-/*  printf( "vector size\n"); */
+/*  DOLBUG( "vector size\n"); */
 		  vector++;
 	       }
 	       c = b;
@@ -219,10 +219,10 @@ prima_init_font_subsystem( void)
 	       info[i]. font. xDeviceRes = strtol( c, &b, 10);
 	    if ( c != b) {
 	       if ( info[i]. font. xDeviceRes) {
-/*  printf( "xres: %d\n", info[i]. font. xDeviceRes); */
+/*  DOLBUG( "xres: %d\n", info[i]. font. xDeviceRes); */
 		  info[i]. flags. xDeviceRes = true;
 	       } else {
-/*  printf( "vector xres\n"); */
+/*  DOLBUG( "vector xres\n"); */
 		  vector++;
 	       }
 	       c = b;
@@ -235,10 +235,10 @@ prima_init_font_subsystem( void)
 	       info[i]. font. yDeviceRes = strtol( c, &b, 10);
 	    if ( c != b) {
 	       if ( info[i]. font. yDeviceRes) {
-/*  printf( "yres: %d\n", info[i]. font. yDeviceRes); */
+/*  DOLBUG( "yres: %d\n", info[i]. font. yDeviceRes); */
 		  info[i]. flags. yDeviceRes = true;
 	       } else {
-/*  printf( "vector yres\n"); */
+/*  DOLBUG( "vector yres\n"); */
 		  vector++;
 	       }
 	       c = b;
@@ -251,18 +251,18 @@ prima_init_font_subsystem( void)
 	    if ( c-b == 1 && (*b == 'p' || *b == 'P')) {
 	       info[i]. font. pitch = fpVariable;
 	       info[i]. flags. pitch = true;
-/*  printf( "var spacing\n"); */
+/*  DOLBUG( "var spacing\n"); */
 	    } else if ( c-b == 1 && (*b == 'm' || *b == 'M')) {
 	       info[i]. font. pitch = fpFixed;
 	       info[i]. flags. pitch = true;
-/*  printf( "fixed spacing\n"); */
+/*  DOLBUG( "fixed spacing\n"); */
 	    } else if ( c-b == 1 && (*b == 'c' || *b == 'C')) {
 	       info[i]. font. pitch = fpFixed;
 	       info[i]. flags. pitch = true;
-/*  printf( "fixed (charcell) spacing\n"); */
+/*  DOLBUG( "fixed (charcell) spacing\n"); */
 	    }
 /*  else */
-/*  printf( "unknown spacing\n"); */
+/*  DOLBUG( "unknown spacing\n"); */
 	 }
 	 if ( *c == '-') {
 	    /* advance through AVERAGE_WIDTH */
@@ -271,10 +271,10 @@ prima_init_font_subsystem( void)
 	       info[i]. font. width = strtol( c, &b, 10);
 	    if ( c != b) {
 	       if ( info[i]. font. width) {
-/*  printf( "avewidth: %d\n", info[i]. font. width); */
+/*  DOLBUG( "avewidth: %d\n", info[i]. font. width); */
 		  info[i]. flags. width = true;
 	       } else {
-/*  printf( "vector avewidth\n"); */
+/*  DOLBUG( "vector avewidth\n"); */
 		  vector++;
 	       }
 	       c = b;
@@ -339,7 +339,7 @@ prima_init_font_subsystem( void)
       }
       if ( !conformant) {
 	 bzero( info+i, sizeof( FontInfo));
-/*  printf( "%s\n", names[i]); */
+/*  DOLBUG( "%s\n", names[i]); */
 	 bad_fonts++;
       }
       info[i]. xname = names[ i];
@@ -354,7 +354,7 @@ prima_init_font_subsystem( void)
    }
    d += ( t2. tv_usec - t1. tv_usec) / 1000000.0;
    d += t2. tv_sec - t1. tv_sec;
-   printf( "It took %g seconds to load and parse %d/%d/%d font names\n", d, count, bad_fonts, vector_fonts);
+   DOLBUG( "It took %g seconds to load and parse %d/%d/%d font names\n", d, count, bad_fonts, vector_fonts);
 
    guts. font_hash = hash_create();
 
@@ -379,20 +379,20 @@ prima_init_font_subsystem( void)
       XFontStruct *fs = XLoadQueryFont( DISP, "-adobe-times-medium-i-normal--36-0-75-75-p-0-iso8859-1");
       int i;
       if ( fs) {
-	 fprintf( stderr, "@@@ Font Info @@@\n");
-	 fprintf( stderr, "@@@ Width: %d\n", fs-> max_bounds. width);
-	 fprintf( stderr, "@@@ Font ascent: %d\n", fs-> ascent);
-	 fprintf( stderr, "@@@ Font descent: %d\n", fs-> descent);
-	 fprintf( stderr, "@@@ Max ascent: %d\n", fs-> max_bounds. ascent);
-	 fprintf( stderr, "@@@ Max descent: %d\n", fs-> max_bounds. descent);
-	 fprintf( stderr, "@@@ Min ascent: %d\n", fs-> min_bounds. ascent);
-	 fprintf( stderr, "@@@ Min descent: %d\n", fs-> min_bounds. descent);
-	 fprintf( stderr, "@@@ First char: %d\n", fs-> min_char_or_byte2);
-	 fprintf( stderr, "@@@ Last char: %d\n", fs-> max_char_or_byte2);
+	 DOLBUG( "@@@ Font Info @@@\n");
+	 DOLBUG( "@@@ Width: %d\n", fs-> max_bounds. width);
+	 DOLBUG( "@@@ Font ascent: %d\n", fs-> ascent);
+	 DOLBUG( "@@@ Font descent: %d\n", fs-> descent);
+	 DOLBUG( "@@@ Max ascent: %d\n", fs-> max_bounds. ascent);
+	 DOLBUG( "@@@ Max descent: %d\n", fs-> max_bounds. descent);
+	 DOLBUG( "@@@ Min ascent: %d\n", fs-> min_bounds. ascent);
+	 DOLBUG( "@@@ Min descent: %d\n", fs-> min_bounds. descent);
+	 DOLBUG( "@@@ First char: %d\n", fs-> min_char_or_byte2);
+	 DOLBUG( "@@@ Last char: %d\n", fs-> max_char_or_byte2);
 	 if ( fs-> per_char) {
-	    fprintf( stderr, "@@@ Looks like proportional font!\n");
+	    DOLBUG( "@@@ Looks like proportional font!\n");
 	    for ( i = fs-> min_char_or_byte2; i <= fs-> max_char_or_byte2; i++) {
-	       fprintf( stderr, "@@@ char: '%c' a: %hd, d: %hd, w: %hd, lb: %hd, rb: %hd\n",
+	       DOLBUG( "@@@ char: '%c' a: %hd, d: %hd, w: %hd, lb: %hd, rb: %hd\n",
 			i,
 			fs-> per_char[ i - fs-> min_char_or_byte2]. ascent,
 			fs-> per_char[ i - fs-> min_char_or_byte2]. descent,
@@ -401,8 +401,8 @@ prima_init_font_subsystem( void)
 			fs-> per_char[ i - fs-> min_char_or_byte2]. rbearing);
 	    }
 	 } else {
-	    fprintf( stderr, "@@@ Looks like monospaced font!\n");
-	    fprintf( stderr, "@@@ chars '%c'--'%c' a: %hd, d: %hd, w: %hd, lb: %hd, rb: %hd\n",
+	    DOLBUG( "@@@ Looks like monospaced font!\n");
+	    DOLBUG( "@@@ chars '%c'--'%c' a: %hd, d: %hd, w: %hd, lb: %hd, rb: %hd\n",
 		     fs-> min_char_or_byte2,
 		     fs-> max_char_or_byte2,
 		     fs-> max_bounds. ascent,
@@ -465,22 +465,22 @@ apc_font_default( PFont f)
 int
 apc_font_load( char * filename)
 {
-fprintf( stderr, "apc_font_load()\n");
+   DOLBUG( "apc_font_load()\n");
    return 0;
 }
 
 static void
 dump_font( PFont f)
 {
-   printf( "*** BEGIN FONT DUMP ***\n");
-   printf( "height: %d\n", f-> height);
-   printf( "width: %d\n", f-> width);
-   printf( "style: %d\n", f-> style);
-   printf( "pitch: %d\n", f-> pitch);
-   printf( "direction: %d\n", f-> direction);
-   printf( "name: %s\n", f-> name ? f-> name : "NONAME");
-   printf( "size: %d\n", f-> size);
-   printf( "*** END FONT DUMP ***\n");
+   DOLBUG( "*** BEGIN FONT DUMP ***\n");
+   DOLBUG( "height: %d\n", f-> height);
+   DOLBUG( "width: %d\n", f-> width);
+   DOLBUG( "style: %d\n", f-> style);
+   DOLBUG( "pitch: %d\n", f-> pitch);
+   DOLBUG( "direction: %d\n", f-> direction);
+   DOLBUG( "name: %s\n", f-> name ? f-> name : "NONAME");
+   DOLBUG( "size: %d\n", f-> size);
+   DOLBUG( "*** END FONT DUMP ***\n");
 }
 
 typedef struct _FontKey
@@ -563,7 +563,7 @@ detail_font_info( PFontInfo f, PFont font)
 	 f = &fi;
       }
 
-      printf( "xname: %s\n", f-> xname);
+      DOLBUG( "xname: %s\n", f-> xname);
       if ( f-> vecname) {
 	 if ( f-> flags. xDeviceRes) {
 	    /* three fields */
@@ -575,7 +575,7 @@ detail_font_info( PFontInfo f, PFont font)
 		     (int)(guts. resolution. y + 0.5),
 		     font-> width);
 	 }
-	 printf( "my query: %s\n", name);
+	 DOLBUG( "my query: %s\n", name);
       } else {
 	 strcpy( name, f-> xname);
       }
@@ -772,7 +772,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
       double diff;
    } *ordered;
 
-   dump_font( dest); /* to prevent warnings */
+   (void)dump_font; /* to prevent warnings */
    if ( !isalpha(dest->name[0])) {
       *((char *)0) = 7;
       croak( "Bad name!");
@@ -874,11 +874,11 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 
 /*
    for ( i = 0; i < 10; i++) {
-      printf( "%d (%g): %s\n", i, ordered[i]. diff, info[ordered[i]. n]. xname);
+      DOLBUG( "%d (%g): %s\n", i, ordered[i]. diff, info[ordered[i]. n]. xname);
    }
-   printf( "................................\n");
+   DOLBUG( "................................\n");
    for ( i = n - 10; i < n; i++) {
-      printf( "%d (%g): %s\n", i, ordered[i]. diff, info[ordered[i]. n]. xname);
+      DOLBUG( "%d (%g): %s\n", i, ordered[i]. diff, info[ordered[i]. n]. xname);
    }
 
 croak( "Ala-ulu");
@@ -889,7 +889,7 @@ croak( "Ala-ulu");
 PFont
 apc_fonts( char *facename, int *retCount)
 {
-fprintf( stderr, "apc_fonts()\n");
+   DOLBUG( "apc_fonts()\n");
    return nil;
 }
 

@@ -107,6 +107,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint,
    XX-> flags. clipOwner = clipOwner;
    XX-> flags. syncPaint = syncPaint;
    XX-> flags. doSizeHints = true;
+   XX-> flags. noSize = true;
 
    XX-> owner = realOwner;
    XX-> size = (Point){0,0};
@@ -120,41 +121,41 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint,
 void
 apc_window_activate( Handle self)
 {
-fprintf( stderr, "apc_window_activate()\n");
+   DOLBUG( "apc_window_activate()\n");
 }
 
 Bool
 apc_window_is_active( Handle self)
 {
-fprintf( stderr, "apc_window_is_active()\n");
+   DOLBUG( "apc_window_is_active()\n");
    return false;
 }
 
 Bool
 apc_window_close( Handle self)
 {
-fprintf( stderr, "apc_window_close()\n");
+   DOLBUG( "apc_window_close()\n");
    return false;
 }
 
 Handle
 apc_window_get_active( void)
 {
-fprintf( stderr, "apc_window_get_active()\n");
+   DOLBUG( "apc_window_get_active()\n");
    return nilHandle;
 }
 
 int
 apc_window_get_border_icons( Handle self)
 {
-fprintf( stderr, "apc_window_get_border_icons()\n");
+   DOLBUG( "apc_window_get_border_icons()\n");
    return 0;
 }
 
 int
 apc_window_get_border_style( Handle self)
 {
-fprintf( stderr, "apc_window_get_border_style()\n");
+   DOLBUG( "apc_window_get_border_style()\n");
    return 0;
 }
 
@@ -173,21 +174,21 @@ apc_window_get_client_size( Handle self)
 Bool
 apc_window_get_icon( Handle self, Handle icon)
 {
-fprintf( stderr, "apc_window_get_icon()\n");
+   DOLBUG( "apc_window_get_icon()\n");
    return false;
 }
 
 int
 apc_window_get_window_state( Handle self)
 {
-fprintf( stderr, "apc_window_get_window_state()\n");
+   DOLBUG( "apc_window_get_window_state()\n");
    return 0;
 }
 
 Bool
 apc_window_get_task_listed( Handle self)
 {
-fprintf( stderr, "apc_window_get_task_listed()\n");
+   DOLBUG( "apc_window_get_task_listed()\n");
    return false;
 }
 
@@ -219,7 +220,7 @@ apc_window_set_client_pos( Handle self, int x, int y)
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
 
-fprintf( stderr, "window move to (%d,%d(%d))\n", x, XX-> origin. y, y);
+   DOLBUG( "window move to (%d,%d(%d))\n", x, XX-> origin. y, y);
 }
 
 void
@@ -247,44 +248,44 @@ apc_window_set_client_size( Handle self, int width, int height)
    XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
 
-fprintf( stderr, "window size to (%d,%d(%d)) - (%d,%d)\n", XX-> origin. x, XX-> origin. y, y, width, height);
+   DOLBUG( "window size to (%d,%d(%d)) - (%d,%d)\n", XX-> origin. x, XX-> origin. y, y, width, height);
 }
 
 Bool
 apc_window_set_menu( Handle self, Handle menu)
 {
-fprintf( stderr, "apc_window_set_menu()\n");
+   DOLBUG( "apc_window_set_menu()\n");
    return false;
 }
 
 void
 apc_window_set_icon( Handle self, Handle icon)
 {
-fprintf( stderr, "apc_window_set_icon()\n");
+   DOLBUG( "apc_window_set_icon()\n");
 }
 
 void
 apc_window_set_window_state( Handle self, int state)
 {
-fprintf( stderr, "apc_window_set_window_state()\n");
+   DOLBUG( "apc_window_set_window_state()\n");
 }
 
 Bool
 apc_window_execute( Handle self, Handle insertBefore)
 {
-fprintf( stderr, "apc_window_execute()\n");
+   DOLBUG( "apc_window_execute()\n");
    return false;
 }
 
 Bool
 apc_window_execute_shared( Handle self, Handle insertBefore)
 {
-fprintf( stderr, "apc_window_execute_shared()\n");
+   DOLBUG( "apc_window_execute_shared()\n");
    return false;
 }
 
 void
 apc_window_end_modal( Handle self)
 {
-fprintf( stderr, "apc_window_end_modal()\n");
+   DOLBUG( "apc_window_end_modal()\n");
 }
