@@ -740,14 +740,12 @@ sub setup_variables
     my @b = split( '\\\\|\/', $Config{installsitearch});
     my $i = 0;
     while ( defined $a[$i] && defined $b[$i]) {
-       print "$a[$i] => $b[$i]\n";
        last if $a[$i] ne $b[$i];
        $i++;
     }
     my $prefix = qd(($i ? join( '/', @a[0..$i-1]) : ''));
     
     setvar( 'PREFIX',           $prefix);
-    die $prefix;
     setvar( 'INSTALLSCRIPT',    $PREFIX . qd( '/' . join( '/', @a[$i .. $#a])));
     setvar( 'INSTALLSITEARCH',  $PREFIX . qd( '/' . join( '/', @b[$i .. $#b])));
     setvar( 'INSTALL_LIB',      $INSTALLSITEARCH . qd( "/Prima"));
