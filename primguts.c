@@ -89,6 +89,23 @@ stricmp(const char *s1, const char *s2)
 }
 #endif
 
+#ifndef HAVE_REALLOCF
+/*
+   This code was taken from FreeBSD 4.0 /usr/src/lib/libc/stdlib/reallocf.c
+   Thanks, Poul Henning!  :-)
+ */
+void *
+reallocf(void *ptr, size_t size)
+{
+   void *nptr;
+
+   nptr = realloc(ptr, size);
+   if (!nptr && ptr)
+      free(ptr);
+   return (nptr);
+}
+#endif
+
 PHash primaObjects = nil;
 
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE

@@ -119,6 +119,10 @@ extern int
 stricmp(const char *s1, const char *s2);
 #endif
 #endif
+#ifndef HAVE_REALLOCF
+extern void *
+reallocf(void *ptr, size_t size);
+#endif
 
 typedef I32 Bool;
 typedef UV Handle;

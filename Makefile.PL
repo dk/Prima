@@ -338,6 +338,7 @@ sub setup_paths
 sub setup_defines
 {
     have_func( 'strcasecmp') || have_func( 'stricmp');
+    have_func( 'reallocf');
 }
 
 sub setup_misc
