@@ -16,7 +16,7 @@ my $wx = Prima::Window-> create(
 my $wl = $wx-> insert( Prima::Widget =>
    clipOwner => 0,
    growMode  => 0,
-   onMove => sub { $dong2 = 1; shift; @mrep2 = scalar(@mrep2) ? ( @mrep2[0,1], @_[2,3]) : @_;  },
+   onMove => sub { $dong2 = 1; __end_wait(); shift; @mrep2 = scalar(@mrep2) ? ( @mrep2[0,1], @_[2,3]) : @_;  },
 );
 
 my @or = $wx-> origin;
@@ -24,17 +24,7 @@ my @or2 = $wl-> origin;
 $dong = 0;
 $wx-> origin( $wx-> left + 1, $wx-> bottom + 1);
 
-sub __mywait
-{
-   my $count = 20000;
-   while ( $count--) {
-      last if $dong && $dong2;
-      $::application-> yield;
-   }
-   return $dong && $dong2;
-}
-
-ok(( $dong && $dong2) || &__mywait);
+ok(( $dong && $dong2) || &__wait);
 my @nor = $wx-> origin;
 if ( $nor[0] == $or[0] + 1 && $nor[1] == $or[1] + 1) {
    ok(1);

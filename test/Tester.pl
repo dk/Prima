@@ -130,15 +130,25 @@ for ( @ARGV) {
    }
 }
 
+my $tick;
+
+sub __end_wait
+{
+   $tick = 1;
+}
 
 sub __wait
 {
-   my $count = 20000;
+   $tick = 0;
+   my $t = Prima::Timer-> create( timeout => 500, 
+      onTick => sub { $tick = 1 });
    $dong = 0;
-   while ( $count--) {
-      last if $dong;
+   $t-> start;
+   while ( 1) {
+      last if $dong || $tick;
       $::application-> yield;
    }
+   $t-> destroy;
    return $dong;
 }
 
