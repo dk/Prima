@@ -2509,9 +2509,11 @@ EOF
        print MAKE "\n\t\@echo Installing man pages...\n";
        print MAKE "\t\@\$(MD) $INSTALL_MAN1 $INSTALL_MAN3\n";
        while ( scalar @allman ) {
-          push @man_to_remove, $allman[1];
-          $allman[1] =~ m/\.(\d+)$/;
-          printf MAKE $cmd, $1, splice( @allman, 0, 2);
+          my ( $src, $dest) = splice( @allman, 0, 2);
+          push @man_to_remove, $dest;
+          $dest =~ m/([^\/]+)\.(\d+)$/;
+	  print  MAKE "\t\@echo $1.$2\n";
+          printf MAKE $cmd, $2, $src, $dest;
        }
        if ( length $Config{gzip}) { s/$/.gz/ for @man_to_remove }
     }
