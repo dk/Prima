@@ -465,21 +465,20 @@ Drawable_polypoints( SV * points, char * procName, int mod, int * n_points)
    AV * av;
    int i, count;
    Point * p;
-   Bool ret;
 
    if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
       warn("RTC0050: Invalid array reference passed to %s", procName);
-      return false;
+      return nil;
    }
    av = ( AV *) SvRV( points);
    count = av_len( av) + 1;
    if ( count % mod) {
       warn("RTC0051: Drawable::%s: Number of elements in an array must be a multiple of %d",
            procName, mod);
-      return false;
+      return nil;
    }
    count /= 2;
-   if ( count < 2) return false;
+   if ( count < 2) return nil;
    if (!( p = allocn( Point, count))) return false;
    for ( i = 0; i < count; i++)
    {
@@ -488,7 +487,7 @@ Drawable_polypoints( SV * points, char * procName, int mod, int * n_points)
        if (( psvx == nil) || ( psvy == nil)) {
           free( p);
           warn("RTC0052: Array panic on item pair %d on Drawable::%s", i, procName);
-          return false;
+          return nil;
        }
        p[ i]. x = SvIV( *psvx);
        p[ i]. y = SvIV( *psvy);
