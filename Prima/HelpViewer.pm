@@ -826,8 +826,7 @@ __END__
 
 =head1 NAME
 
-Prima::HelpViewer, the built-in pod file browser,
-version 1.00
+Prima::HelpViewer - the built-in pod file browser
 
 =head1 USAGE
 

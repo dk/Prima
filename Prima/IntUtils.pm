@@ -33,26 +33,6 @@ use Prima::Const;
 
 package Prima::MouseScroller;
 
-#    Used for system-defined scrolling delays for widgets that scrolls themselves
-#  using MouseMove notification.
-#
-#  widget should inherit MouseScroller as
-#   @ISA = qw(... MouseScroller)
-#
-#    typical mousemove code should be:
-#
-#   if ( mouse_pointer_inside_the_scrollable_area)
-#   {
-#      $self-> scroll_timer_stop;
-#   } else {
-#      $self-> scroll_timer_start unless $self->scroll_timer_active;
-#      return unless $self-> scroll_timer_semaphore;
-#      $self-> scroll_timer_semaphore( 0);
-#   }
-#
-#     MouseScroller also use semaphore named "mouseTransaction", which should
-#   be true when widget is in mouse capture state.
-
 my $scrollTimer;
 
 sub scroll_timer_active
@@ -144,31 +124,6 @@ sub get_active_area
 package Prima::GroupScroller;
 use vars qw(@ISA);
 @ISA = qw(Prima::IntIndents);
-
-#  used for Groups that contains optional scroll bars and provides properties for
-#  it's maintenance and notifications ( HScroll_Change and VScroll_Change).
-#
-#  GroupScroller provides properties hScroll and vScroll of boolean type, which
-#  turns scroll bars on and off. It occupies sub namespace with:
-#    set_h_scroll, set_v_scroll, insert_bone
-#  and object hash with:
-#    hScroll, vScroll, hScrollBar, vScrollBar, bone
-#
-#  GroupScroller uses optional variable named borderWidth ( the width of border that
-#  runs around the group and scroll bars).
-#
-#  widget should inherit GroupScroller as
-#   @ISA = qw(... GroupScroller) , provide hScroll and vScroll properies in
-#   profile_default() and set up variables vScroll and hScroll to 0 at init().
-#
-#  if widget uses borderWidth property, it should call inherited set_border_width
-#  sub, since it needs for maintenance of scroll bars position;
-#  if widget plans to change hScroll and/or vScroll properies at runtime, it should
-#  override set_h_scroll and set_v_scroll subs to reset it's own parameters due visible
-#  area change.
-#
-#  widget should set up scrollbar's max/min/step/pageStep/whole/partial/value
-#  properties manually.
 
 use Prima::ScrollBar;
 
@@ -308,6 +263,210 @@ sub borderWidth     {($#_)?($_[0]->set_border_width( $_[1])):return $_[0]->{bord
 sub hScroll         {($#_)?$_[0]->set_h_scroll       ($_[1]):return $_[0]->{hScroll}}
 sub vScroll         {($#_)?$_[0]->set_v_scroll       ($_[1]):return $_[0]->{vScroll}}
 
-
-
 1;
+
+__DATA__
+
+=head1 NAME
+
+Prima::IntUtils - internal functions
+
+=head1 DESCRIPTION
+
+The module provides packages, containing common functionality
+for some standard classes. The packages are designed as a code
+containers, not as widget classes, and are to be used as 
+secondary ascendants in the widget inheritance declaration.
+
+=head1 Prima::MouseScroller
+
+Implements routines for emulation of auto repeating mouse events.
+A code inside C<MouseMove> callback can be implemented by
+the following scheme:
+
+   if ( mouse_pointer_inside_the_scrollable_area) {
+      $self-> scroll_timer_stop;
+   } else {
+      $self-> scroll_timer_start unless $self->scroll_timer_active;
+      return unless $self-> scroll_timer_semaphore;
+      $self-> scroll_timer_semaphore( 0);
+   }
+
+The class uses a semaphore C<{mouseTransaction}>, which should
+be set to non-zero if a widget is in mouse capture state, and set 
+to zero or C<undef> otherwise.
+
+The class starts an internal timer, which sets a semaphore and
+calls C<MouseMove> notification when triggered. The timer is
+assigned the timeouts, returned by C<Prima::Application::get_scroll_rate>
+( see L<Prima::Application/get_scroll_rate> ).
+
+=head2 Methods
+
+=over
+
+=item scroll_timer_active
+
+Returns a boolean value indicating if the internal timer is started.
+
+=item scroll_timer_semaphore [ VALUE ]
+
+A semaphore, set to 1 when the internal timer was triggered. It is advisable
+to check the semaphore state to discern a timer-generated event from
+the real mouse movement. If VALUE is specified, it is assigned to the semaphore.
+
+=item scroll_timer_start
+
+Starts the internal timer.
+
+=item scroll_timer_stop 
+
+Stops the internal timer.
+
+=back
+
+=head1 Prima::IntIndents
+
+Provides the common functionality for the widgets that delegate part of their
+surface to the border elements. A list box can be of an example, where its
+scroll bars and 3-d borders are such elements.
+
+=head2 Properties
+
+=over
+
+=item indents ARRAY
+
+Contains four integers, specifying the breadth of decoration elements for
+each side. The first integer is width of the left element, the second - height
+of the lower element, the third - width of the right element, the fourth - height
+of the upper element.
+
+The property can accept and return the array either as a four scalars, or as
+an anonymous array of four scalars.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item get_active_area [ TYPE = 0, WIDTH, HEIGHT ] 
+
+Calculates and returns the extension of the area without the border elements,
+or the active area.
+The extension are related to the current size of a widget, however, can be
+overridden by specifying WIDTH and HEIGHT. TYPE is an integer, indicating
+the type of calculation:
+
+=over
+
+=item TYPE = 0
+
+Returns four integers, defining the area in the inclusive-exclusive coordinates.
+
+=item TYPE = 1
+
+Returns four integers, defining the area in the inclusive-inclusive coordinates.
+
+=item TYPE = 2
+
+Returns two integers, the size of the area.
+
+=back
+
+=back
+
+=head1 Prima::GroupScroller
+
+The class is used for widgets that contain optional scroll bars, and provides means for
+their maintenance. The class is the descendant of L<Prima::IntIndents>, and adjusts
+the L<indents> property when scrollbars are shown or hidden, or L<borderWidth> is changed.
+
+The class does not provide range selection for the scrollbars; the descentant classes
+must implement that.
+
+The descendant classes must follow the guidelines:
+
+=over
+
+=item *
+
+A class must provide C<borderWidth>, C<hScroll>, and C<vScroll> property keys in profile_default()
+
+=item *
+
+A class' init() method must set C<{borderWidth}>, C<{hScroll}>, and C<{vScroll}> 
+variables to 0 before the initialization, call C<setup_indents> method,
+and then assign the properties from the object profile.
+
+=item *
+
+If a class needs to overload one of C<borderWidth>, C<hScroll>, and C<vScroll> properties,
+it is mandatory to call the inherited properties.
+
+=item *
+
+A class must implement the scroll bar notification callbacks: C<HScroll_Change> and C<VScroll_Change>.
+
+=item * 
+
+A class must not use the reserved variable names, which are:
+
+   {borderWidth}  - internal borderWidth storage
+   {hScroll}      - internal hScroll value storage
+   {vScroll}      - internal vScroll value storage
+   {hScrollBar}   - pointer to the horizontall scroll bar
+   {vScrollBar}   - pointer to the vertical scroll bar
+   {bone}         - rectangular widget between the scrollbars
+
+The reserved method names:
+
+   set_h_scroll
+   set_v_scroll
+   insert_bone
+   setup_indents
+   borderWidth
+   hScroll
+   vScroll
+
+The reserved widget names:
+
+   HScroll
+   VScroll
+   Bone
+
+=back
+
+=head2 Properties
+
+=over
+
+=item borderWidth INTEGER
+
+Width of 3d-shade border around the widget.
+
+Recommended default value: 2
+
+=item hScroll BOOLEAN
+
+Selects if the horizontal scrollbar is visible. If it is, C<{hScrollBar}>
+points to it.
+
+=item vScroll BOOLEAN
+
+Selects if the vertical scrollbar is visible. If it is, C<{vScrollBar}>
+points to it.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<Prima::InputLine>, L<Prima::Lists>, L<Prima::Edit>,
+L<Prima::Outlines>, L<Prima::ScrollBar>.
+
+=cut 

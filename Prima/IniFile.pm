@@ -33,65 +33,6 @@ use strict;
 use Carp;
 use Cwd;
 
-=head1 NAME
-
-Prima::IniFile - support of Windows-like initialization files
-
-=head1 SYNOPSIS
-
-   use Prima::IniFile;
-
-   my $ini = create Prima::IniFile;
-   my $ini = create Prima::IniFile FILENAME;
-   my $ini = create Prima::IniFile FILENAME,
-               default => HASHREF_OR_ARRAYREF;
-   my $ini = create Prima::IniFile file => FILENAME,
-               default => HASHREF_OR_ARRAYREF;
-
-   my @sections = $ini->sections;
-   my @items = $ini->items(SECTION);
-   my @items = $ini->items(SECTION, 1);
-   my @items = $ini->items(SECTION, all => 1);
-
-   my $value = $ini-> get_values(SECTION, ITEM);
-   my @vals = $ini-> get_values(SECTION, ITEM);
-   my $nvals = $ini-> nvalues(SECTION, ITEM);
-
-   $ini-> set_values(SECTION, ITEM, LIST);
-   $ini-> add_values(SECTION, ITEM, LIST);
-   $ini-> replace_values(SECTION, ITEM, LIST);
-
-   $ini-> write;
-   $ini-> clean;
-   $ini-> read( FILENAME);
-   $ini-> read( FILENAME, default => HASHREF_OR_ARRAYREF);
-
-   my $sec = $ini->section(SECTION);
-   $sec->{ITEM} = VALUE;
-   my $val = $sec->{ITEM};
-   delete $sec->{ITEM};
-   my %everything = %$sec;
-   %$sec = ();
-   for ( keys %$sec) { ... }
-   while ( my ($k,$v) = each %$sec) { ... }
-
-=head1 DESCRIPTION
-
-   Wait, may be I'll write it...
-
-=head1 AUTHOR
-
-  Anton Berezin
-    E-Mail:        tobez@plab.ku.dk
-    WWW Home Page: http://www.plab.ku.dk/tobez/
-
-=head1 COPYRIGHT
-
-Copyright (c) 1998 The Protein Laboratory, University of Copenhagen.
-All rights reserved. This program is free software; you can redistribute
-it and/or modify it under the same terms as Perl itself.
-
-=cut
 
 sub new { shift-> create(@_); }     # a shortcut
 
@@ -598,3 +539,164 @@ sub write
 }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::IniFile - support of Windows-like initialization files
+
+=head1 DESCRIPTION
+
+The module contains a class, that provides mapping of text initialization file to
+a two-level hash structure. The first level
+is called sections, which groups the second level hashes, called items.
+Sections must have unique keys. The items hashes values are arrays of 
+text strings. The methods, operated on these arrays are L<get_values>,
+L<set_values>, L<add_values> and L<replace_values>.
+
+=head1 SYNOPSIS
+
+   use Prima::IniFile;
+
+   my $ini = create Prima::IniFile;
+   my $ini = create Prima::IniFile FILENAME;
+   my $ini = create Prima::IniFile FILENAME,
+               default => HASHREF_OR_ARRAYREF;
+   my $ini = create Prima::IniFile file => FILENAME,
+               default => HASHREF_OR_ARRAYREF;
+
+   my @sections = $ini->sections;
+   my @items = $ini->items(SECTION);
+   my @items = $ini->items(SECTION, 1);
+   my @items = $ini->items(SECTION, all => 1);
+
+   my $value = $ini-> get_values(SECTION, ITEM);
+   my @vals = $ini-> get_values(SECTION, ITEM);
+   my $nvals = $ini-> nvalues(SECTION, ITEM);
+
+   $ini-> set_values(SECTION, ITEM, LIST);
+   $ini-> add_values(SECTION, ITEM, LIST);
+   $ini-> replace_values(SECTION, ITEM, LIST);
+
+   $ini-> write;
+   $ini-> clean;
+   $ini-> read( FILENAME);
+   $ini-> read( FILENAME, default => HASHREF_OR_ARRAYREF);
+
+   my $sec = $ini->section(SECTION);
+   $sec->{ITEM} = VALUE;
+   my $val = $sec->{ITEM};
+   delete $sec->{ITEM};
+   my %everything = %$sec;
+   %$sec = ();
+   for ( keys %$sec) { ... }
+   while ( my ($k,$v) = each %$sec) { ... }
+
+=head1 METHODS
+
+=over
+
+=item add_values SECTION, ITEM, @LIST
+
+Adds LIST of string values to the ITEM in SECTION.
+
+=item clean
+
+Cleans all internal data in the object, including the name of the file.
+
+=item create PROFILE
+
+Creates an instance of the class. The PROFILE is treated partly as
+an array, partly as a hash. If PROFILE consists of a single item, 
+the item is treated as a filename. Otherwise, PROFILE is treated as a hash,
+where the following keys are allowed:
+
+=over
+
+=item file FILENAME
+
+Selects name of file.
+
+=item default %VALUES
+
+Selects the initial values for the file, where VALUES is a two-level
+hash of sections and items. It is passed to L<read>, where it is merged
+with the file data.
+
+=back
+
+=item get_values SECTION, ITEM
+
+Returns array of values for ITEM in SECTION. If called in scalar context,
+and there is more than one value, the first value in list is returned.
+
+=item items SECTION [ HINTS ] 
+
+Returns items in SECTION. HINTS parameters is used to tell if a multiple-valued
+item must be returned as several items of the same name; 
+HINTS can be supplied in the following forms:
+
+  items( $section, 1 )
+  items( $section, all => 1);
+
+=item new PROFILE
+
+Same as L<create>.
+
+=item nvalues SECTION, ITEM
+
+Returns number of values in ITEM in SECTION.
+
+=item read FILENAME, %PROFILE
+
+Flushes the old content and opens new file. FILENAME is a text string,
+PROFILE is a two-level hash of default values for the new file. PROFILE is
+merged with the data from file, and the latter keep the precedence.
+Does not return any success values but, warns if any error
+is occured.
+
+=item replace_values SECTION, ITEM, @VALUES
+
+Removes all values form ITEM in SECTION and assigns it to the new
+list of VALUES.
+
+=item section SECTION
+
+Returns a tied hash for SECTION. All its read and write operations are reflected
+in the caller object, which allows the following syntax:
+
+   my $section = $inifile-> section( 'Sample section');
+   $section-> {Item1} = 'Value1';
+
+which is identical to
+
+   $inifile-> set_items( 'Sample section', 'Item1', 'Value1');
+
+=item sections
+
+Returns array of section names.
+
+=item set_values SECTION, ITEM, @VALUES
+
+Assigns VALUES to ITEM in SECTION. If number of new values are equal or greater
+than the number of the old, the method is same as L<replace_values>. Otherwise,
+the values with indeces higher than the number of new values are not touched.
+
+=item write
+
+Rewrites the file with the object content. The object keeps an internal modification flag
+under name C<{changed}>; in case it is C<undef>, no actual write is performed.
+
+=back
+
+=head1 AUTHORS
+
+Anton Berezin, E<lt>tobez@plab.ku.dkE<gt>
+
+Dmitry Karasik E<lt>dmitry@karasik.eu.orgE<gt>
+
+=cut
+

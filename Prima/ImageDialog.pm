@@ -360,7 +360,7 @@ sub on_endmodal
 
 sub save
 {
-   my ( $self, $image) = @_;
+   my ( $self, $image, %profile) = @_;
    my $ret;
    my $dup;
    return 0 unless $image;
@@ -414,7 +414,7 @@ sub save
       $j++;
    }
 
-   if ( $dup-> save( $self-> fileName)) {
+   if ( $dup-> save( $self-> fileName, %profile)) {
       $ret = 1;
    } else {
       Prima::MsgBox::message("Error saving " . $self-> fileName . ":$@");
@@ -427,3 +427,118 @@ EXIT:
 }
 
 1;
+
+__DATA__
+
+=head1 NAME
+
+Prima::ImageDialog - file open and save dialogs.
+
+=head1 DESCRIPTION
+
+The module provides dialogs specially adjusted for image 
+loading and saving. 
+
+=head1 Prima::ImageOpenDialog
+
+Provides a preview feature, allowing the user to view the image file
+before loading, and the selection of a frame index for the multiframed
+image files. Instead of C<execute> call, the L<load> method is used
+to invoke the dialog and returns the loaded image as a C<Prima::Image> object.
+The loaded object by default contains C<{extras}> hash variable set, which contains 
+extra information returned by the loader. See L<Prima::image-load> for
+more information.
+
+=head2 SYNOPSIS
+
+   my $dlg = Prima::ImageOpenDialog-> create;
+   my $img = $dlg-> load;
+   return unless $img;
+   print "$_:$img->{extras}->{$_}\n" for sort keys %{$img-> {extras}};
+
+=head2 Proprties
+
+=over
+
+=item preview BOOLEAN
+
+Selects if the preview functionality is active. 
+The user can switch it on and off interactively.
+
+Default value: 1
+
+=back
+
+=head2 Methods
+
+=over
+
+=item load %PROFILE
+
+Executes the dialog, and, if successful, loads the image file and frame 
+selected by the user. Returns the loaded image as a C<Prima::Image> object.
+PROFILE is a hash, passed to C<Prima::Image::load> method. In particular,
+it can be used to disable the default loading of extra information in
+C<{extras}> variable, or to specify a non-default loading option.
+For example, C<{extras}-E<gt>{className} = 'Prima::Icon'> would return the loaded
+image as an icon object. See L<Prima::image-load> for more.
+
+=back
+
+=head1 Prima::ImageSaveDialog
+
+Provides a save dialog where the user can select image format, 
+the bit depth and other format-specific options. The format-specific
+options can be set if a dialog for the file format is provided.
+The standard toolkit dialogs reside under in C<Prima::Image> namespace,
+in F<Prima/Image> subdirectory. For example, C<Prima::Image::gif> provides
+the selection of transparency color, and C<Prima::Image::jpeg> the image 
+quality control. If the image passed to the L<image> property contains
+C<{extras}> variable, the data are read and used as the default values.
+In particular, C<{extras}-E<gt>-{codecID}> field, responsible for the
+file format, if present, affects the default file format selection.
+
+=head2 SYNOPSIS
+
+   my $dlg = Prima::ImageSaveDialog-> create;
+   return unless $dlg-> save( $image );
+   print "saved as ", $dlg-> fileName, "\n";
+
+=head2 Properties
+
+=over
+
+=item image IMAGE
+
+Selects the image to be saved. This property is to be used
+for the standard invocation of dialog, via C<execute>. It is not
+needed when the execution and saving is invoked via L<save> method.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item save IMAGE, %PROFILE
+
+Invokes the dialog, and, if the execution was successful, saves
+the IMAGE according to the user selection and PROFILE hash. 
+PROFILE is not used for the default options, but is passed
+directly to C<Prima::Image::save> call, possibly overriding 
+selection of the user.
+Returns 1 in case of success, 0 in case of error. 
+If the error occurs, the user is notified before the method returns.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Window>, L<Prima::codecs>, L<Prima::image-load>,
+L<Prima::Image>, L<Prima::FileDialog>, F<examples/iv.pl>.
+
+=cut

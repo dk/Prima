@@ -793,3 +793,180 @@ sub selText    {
 }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::InputLine - standard input line widget
+
+=head1 DESCRIPTION
+
+The class provides basic functionality of an input line,
+including hidden input, read-only state, selection, and
+clipboard operations. The input line text data is 
+contained in L<text> property.
+
+=head1 API
+
+=head2 Events
+
+=over
+
+=item Change
+
+The notification is called when the L<text> property is changed, either 
+interactively or as a result of direct call.
+
+=back
+
+=head2 Properties
+
+=over
+
+=item alignment INTEGER
+
+One of the following C<ta::> constants, defining the text alignment:
+
+   ta::Left
+   ta::Right
+   ta::Center
+
+Default value: C<ta::Left>
+
+=item autoHeight BOOLEAN
+
+If 1, adjusts the height of the widget automatically when its font changes.
+
+Default value: 1
+
+=item autoSelect BOOLEAN
+
+If 1, all the text is selected when the widget becomes focused.
+
+Default value: 1
+
+=item autoTab BOOLEAN
+
+If 1, the keyboard C<kb::Left> and C<kb::Right> commands, if received
+when the cursor is at the beginning or at the end of text, and cannot be
+mover farther, not processed. The result of this is that the default handler
+moves focus to a neighbor widget, in a way as if the Tab key
+was pressed.
+
+Default value: 0
+
+=item borderWidth INTEGER
+
+Width of 3d-shade border around the widget.
+
+Default value: 2
+
+=item charOffset INTEGER
+
+Selects the position of the cursor in characters starting from
+the beginning of text.
+
+=item firstChar
+
+Selects the first visible character of text
+
+=item insertMode BOOLEAN
+
+Governs the typing mode - if 1, the typed text is inserted, if 0, the text overwrites
+the old text. When C<insertMode> is 0, the cursor shape is thick and covers the whole
+character; when 1, it is of default width.
+
+Default toggle key: Insert
+
+=item maxLen INTEGER
+
+The maximal length of the text, that can be stored into L<text> or typed by the user.
+
+Default value: 256
+
+=item passwordChar CHARACTER
+
+A character to be shown instead of the text letters when L<writeOnly> property value is 1.
+
+Default value: C<'*'>
+
+=item readOnly BOOLEAN
+
+If 1, the text cannot be edited by the user.
+
+Default value: 0
+
+=item selection START, END
+
+Two integers, specifying the beginning and the end of the selected text.
+A case with no selection is when START equals END.
+
+=item selStart INTEGER
+
+Selects the start of text selection.
+
+=item selEnd INTEGER
+
+Selects the end of text selection.
+
+=item wordDelimiters STRING
+
+Contains string of character that are used for locating a word break. 
+Default STRING value consists of punctuation marks, space and tab characters,
+and C<\xff> character.
+
+=item writeOnly BOOLEAN
+
+If 1, the input is not shown but mapped to L<passwordChar> characters.
+Useful for a password entry.
+
+Default value: 0
+
+=back
+
+=head2 Methods 
+
+=over
+
+=item copy
+
+Copies the selected text, if any, to the clipboard.
+
+Default key: Ctrl+Insert
+
+=item cut
+
+Cuts the selected text into the clipboard.
+
+Default key: Shift+Delete
+
+=item delete
+
+Removes the selected text.
+
+Default key: Delete
+
+=item paste
+
+Copies text from the clipboard and inserts it in the cursor position.
+
+Default key: Shift+Insert
+
+=item select_all
+
+Selects all text
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, F<examples/edit.pl>.
+
+=cut

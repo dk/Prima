@@ -547,3 +547,147 @@ sub pressed
 
 
 1;
+
+__DATA__
+
+=head1 NAME
+
+Prima::Header - a multi-tabbed header widget.
+
+=head1 DESCRIPTION
+
+The widget class provides functionality of several button-like
+caption tabs, that can be moved and resized by the user.
+The class was implemented with a view to serve as a table header
+for list and grid widgets.
+
+=head1 API
+
+=head2 Events
+
+=over
+
+=item Click INDEX
+
+Called when the user clicks on the tab, positioned at INDEX.
+
+=item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, TEXT_BASELINE
+
+A callback used to draw the tabs. CANVAS is the output object;
+INDEX is the index of a tab.
+X1,Y2,X2,Y2 are the coordinates of the boudaries of the tab rectangle;
+TEXT_BASELINE is a pre-calculated vertical position for eventual
+centered text output.
+
+=item MeasureItem INDEX, RESULT
+
+Stores in scalar, referenced by RESULT, the width or height ( depending
+on L<vertical> property value ) of the tab in pixels.
+
+=item MoveItem OLD_INDEX, NEW_INDEX
+
+Called when the user moves a tab from its old location, specified by OLD_INDEX,
+to the NEW_INDEX position. By the time of call, all internal structures are
+updated.
+
+=item SizeItem INDEX, OLD_EXTENT, NEW_EXTENT
+
+Called when the user resizes a tab in INDEX position. OLD_EXTENT and NEW_EXTENT
+are either width or height of the tab, depending on L<vertical> property value.
+
+=item SizeItems 
+
+Called when more than one tab has changed its extent. This might happen as a result
+of user action, as well as an effect of set-calling to some properties.
+
+=back
+
+=head2 Properties
+
+=over
+
+=item clickable BOOLEAN
+
+Selects if the user is allowed to click the tabs.
+
+Default value: 1
+
+=item dragable BOOLEAN
+
+Selects if the user is allowed to move of the tabs.
+
+Default value: 1
+
+=item items ARRAY
+
+Array of scalars, representing the internal data of the tabs.
+By default the scalars are treated as text strings.
+
+=item minTabWidth INTEGER
+
+A minimal extent in pixels a tab must occupy.
+
+Default value: 2
+
+=item offset INTEGER
+
+An offset on the major axis ( depends on L<vertical> property value ) 
+that the widget is drawn with. Used for the conjunction with list widgets
+( see L<Prima::DetailedList> ), when the list is horizontally or 
+vertically scrolled. 
+
+Default value: 0
+
+=item pressed INTEGER
+
+Contains the index of the currently pressed tab. A -1 value is selected
+when no tabs are pressed.
+
+Default value: -1
+
+=item scalable BOOLEAN
+
+Selects if the user is allowed to resize the tabs.
+
+Default value: 1
+
+=item vertical BOOLEAN
+
+If 1, the tabs are aligned verically;
+the L<offset>, L<widths> property and extent parameters of the callback
+notification assume heights of the tabs.
+
+If 0, the tabs are aligned horizintally, and the extent properties 
+and parameters assume tab widths.
+
+=item widths ARRAY
+
+Array of integer values, corresponding to the extents of the tabs.
+The extents are widths ( C<vertical> is 0 ) or heights ( C<vertical> is 1 ).
+
+=back
+
+=head2 Methods
+
+=over
+
+=item tab2offset INDEX
+
+Returns offset of the INDEXth tab ( without regard to L<offset> property value ).
+
+=item tab2rect INDEX
+
+Returns four integers, representing the rectangle area, occupied by
+the INDEXth tab ( without regard to L<offset> property value ).
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<Prima::DetailedList>, F<examples/sheet.pl>.
+
+=cut

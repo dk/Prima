@@ -386,3 +386,60 @@ sub showHelp         { ($#_)? shift->raise_ro('showHelp')  : return $_[0]->{show
 sub fixedOnly        { ($#_)? shift->set_fixed_only($_[1]) : return $_[0]->{fixedOnly}};
 
 1;
+
+__DATA__
+
+=head1 NAME
+
+Prima::FontDialog - standard font dialog
+
+=head1 DESCRIPTION
+
+The dialog provides selection of font by name, style, size, and encoding.
+The font selected is returned by L<logFont> property.
+
+=head1 SYNOPSIS
+
+   use Prima::FontDialog;
+   my $f = Prima::FontDialog-> create;
+   return unless $f-> execute == mb::OK;
+   $f = $f-> logFont;
+   print "$_:$f->{$_}\n" for sort keys %$f;
+
+=head1 API
+
+=head2 Properties
+
+=over
+
+=item fixedOnly BOOLEAN
+
+Selects whether only the fonts of fixed pitch ( 1 ) or all fonts ( 0 )
+are displayed in the selection list.
+
+Default value: 0
+
+=item logFont FONT
+
+Provides access to the interactive font selection as a hash reference.
+FONT format is fully compatible with C<Prima::Drawable::font>.
+
+=item showHelp BOOLEAN
+
+Create-only property.
+
+Specifies if the help button is displayed in the dialog.
+
+Default value: 0
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Window>, L<Prima::Drawable>.
+
+=cut
