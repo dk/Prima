@@ -433,9 +433,9 @@ prima_prepare_drawable_for_painting( Handle self)
          XX-> btransform. y = 0;
       }
       XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, w, h, guts.depth);
-      if (!XX-> gdrawable)
-         XX-> gdrawable = XX-> udrawable;
+      if (!XX-> gdrawable) goto Unbuffered;
    } else if ( XX-> udrawable && !XX-> gdrawable) {
+Unbuffered:
       XX-> gdrawable = XX-> udrawable;
       XX-> btransform. x = 0;
       XX-> btransform. y = 0;
@@ -502,11 +502,7 @@ prima_cleanup_drawable_after_painting( Handle self)
 {
    DEFXX;
    if ( XX-> udrawable && XX-> udrawable != XX-> gdrawable && XX-> gdrawable) {
-      if ( XX-> stale_region && ( XX-> clip_rect. x != 0
-                                  || XX-> clip_rect. y != 0
-                                  || XX-> clip_rect. width != XX-> size.x
-                                  || XX-> clip_rect. height != XX-> size.y)) {
-         //XOffsetRegion( XX-> stale_region, -XX-> btransform. x, XX-> btransform. y);
+      if ( XX-> stale_region) {
          XSetRegion( DISP, XX-> gc, XX-> stale_region);
          XCHECKPOINT;
       }

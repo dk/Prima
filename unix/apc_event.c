@@ -597,6 +597,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	    int i;
 
 	    memcpy( selves, PWidget( self)-> widgets. items, count * sizeof( Handle));
+
 	    for ( i = 0; i < count; i++) {
 	       PWidget child = PWidget( selves[i]);
 
@@ -605,6 +606,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
                   XMoveWindow( DISP, PComponent(selves[i])->handle, X(selves[i])-> origin.x, y);
 	       }
 	    }
+
 	    free( selves);
 	 }
 	 DOLBUG( "old size of %s: %dx%d, new size: %dx%d\n",
