@@ -1,0 +1,80 @@
+
+PRIMA is a general purpose extensible graphical user interface 
+toolkit with a rich set of standard widgets and an emphasis on 
+2D image processing tasks. A Perl program using PRIMA looks 
+and behaves identically on X, Win32 and OS/2 PM. 
+
+INSTALLATION
+============
+
+Create a makefile by running Makefile.PL using the perl
+program into whose library you want to install and then run
+make ( or nmake for Win32 and OS/2) three times:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+To install into a private library, for example your home
+directory:
+
+    perl Makefile.PL PREFIX=$HOME/lib/perl
+    make
+    make test
+    make install
+
+If make fails with message
+
+** No image codecs found
+
+that means you don't have image libraries that Prima supports in your path.
+Prima supports libungif, libjpeg and gbm compiled customly
+and named libprigraph. For win32 users it is recommended to
+download http://www.prima.eu.org/download/prigraph.lib and
+http://www.prima.eu.org/download/prima_dlls.zip. prigraph.lib should be
+put into LIBPATH, and prima_dll.zip is to be unpacked and primguts.dll
+and zlib.dll to be put in the same directory to Prima.dll ( which appears 
+after successful compilation in auto/Prima subdirectory ).
+
+EXAMPLES
+========
+
+Look at the code located in examples subdirectory.
+Typical code starts with
+
+   use Prima qw(Application);
+
+and ends with
+   
+   run Prima;
+
+which is an event loop call. Try to begin from the followind code:
+
+   use Prima qw(Application Buttons);
+
+   Prima::Window-> create(
+      text     => 'Hello world!',
+      size     => [ 200, 200],
+   )-> insert( Button =>
+      centered => 1,
+      text     => 'Hello world!',
+      onClick  => sub { $::application-> close },
+   );
+
+   run Prima;
+
+
+COPYRIGHT
+=========
+
+(c) 1997-2001 The Protein Laboratory, University of Copenhagen
+
+AUTHORS
+=======
+
+Dmitry Karasik <dmitry@karasik.eu.org>
+Anton Berezin  <tobez@tobez.org>
+Vadim Belman   <voland@lflat.org>
+
+
