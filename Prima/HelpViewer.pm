@@ -443,6 +443,7 @@ sub filter_p_class
    }
    $content = "=pod\n\n$content\n\n=cut" if $content !~ /=pod/m;
    $self-> {text}-> load_content( $content) if defined $ret;
+   $self-> update_menu(1);
    $self-> text( $self-> {stext} . ' - ' . $ret);
 }
 
@@ -558,7 +559,8 @@ sub update_menu
 	    $level = $depth;
             @$last = (@$last[0,1], $current = [[@$last],[]]);
 	 } elsif ( scalar @stack) {
-	    ($level, $current) = @{pop @stack};
+	    ($level, $current) = @{pop @stack} 
+	       while $level > $depth && @stack;
 	 } else {
 	    $level = 0;
 	    $current = \@array;
