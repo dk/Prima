@@ -1282,7 +1282,7 @@ prima_end_menu(void)
    XX-> focus = nilHandle;
    XX-> focused = nil; 
    if ( XX-> w != &XX-> wstatic) {
-      hash_delete( guts. menu_windows, &w, sizeof( w), false);
+      hash_delete( guts. menu_windows, &w-> w, sizeof( w-> w), false);
       XDestroyWindow( DISP, w-> w);
       free_unix_items( w);
       free( w);
