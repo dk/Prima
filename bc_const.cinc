@@ -102,35 +102,35 @@ cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destCol
    {
       int tolerance = 0;
       int colors    = srcColors;
+
       PRGBColor buf = ( PRGBColor) malloc( srcColors * sizeof( RGBColor));
       memcpy( buf, source, srcColors * sizeof( RGBColor));
-      while ( colors > destColors)
+      while (1)
       {
          int i;
-         for ( i = 0; i < colors; i++)
+         int tt2 = tolerance*tolerance;
+	
+         for ( i = 0; i < colors - 1; i++)
          {
-            RGBColor r = buf[ i];
-            if ( i < colors - 1)
+	    register int r = buf[i]. r;
+	    register int g = buf[i]. g;
+	    register int b = buf[i]. b;
+            int j;
+            register PRGBColor next = buf + i + 1;
+	
+            for ( j = i + 1; j < colors; j++)
             {
-               int j;
-               int k = i + 1;
-               PRGBColor next = &buf[ k];
-               for ( j = i + 1; j < colors; j++)
+               if (( ( next-> r - r)*( next-> r - r) +
+                     ( next-> g - g)*( next-> g - g) +
+                     ( next-> b - b)*( next-> b - b)) <= tt2)
                {
-                  if (( abs( next[0].r - r.r) +
-                        abs( next[0].g - r.g) +
-                        abs( next[0].b - r.b)) <= tolerance)
-                  {
-                     if ( colors == destColors) goto Enough;
-                     if ( j >= colors) break;
-                     buf[ k] = buf[ --colors];
-                  }
-                  next++;
-                  k++;
+                  buf[ j] = buf[ --colors];
+                  if ( colors <= destColors) goto Enough;
                }
+               next++;
             }
          }
-         tolerance++;
+	 tolerance += 2;
       }
 Enough:
       memcpy( dest, buf, destColors * sizeof( RGBColor));
