@@ -385,7 +385,6 @@ sub init
    $self-> quality( $profile{quality});
 
    $self-> Roller_Repaint if $self->{quality};
-
    return %profile;
 }
 

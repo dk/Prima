@@ -249,6 +249,7 @@ sub on_paint
    my $dyim      = int(( $ih - $imageSize[1]) / 2) + 1;
    my $dxim      = int( $imageSize[0] / 2);
 
+
 # drawing lines
    my @lines;
    my @marks;
@@ -491,6 +492,9 @@ sub makehint
       $self-> makehint(0);
       return;
    }
+
+   return if $show && $self->{hinter} && $self->{hinter}-> {id} == $itemid;
+
    my $w = $self-> get_item_width( $item);
    my $x = $self-> width - $self-> {borderWidth} * 2 - $self->{dx};
    my $ofs = ( $lev + 2.5) * $self->{indent} - $self->{offset};
@@ -522,7 +526,6 @@ sub makehint
                  ],
       width   => $w + 4,
       text    => $self-> get_item_text( $item),
-
       visible => 1,
    );
    $self->{hinter}-> repaint;
@@ -556,6 +559,7 @@ sub Hinter_MouseLeave
 {
    $_[0]-> makehint(0);
 }
+
 
 sub on_mousemove
 {

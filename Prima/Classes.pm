@@ -712,7 +712,7 @@ sub notification_types { return \%RNT; }
    disabledBackColor => cl::Disabled,
    disabledColor     => cl::DisabledText,
    enabled           => 1,
-   firstClick        => 0,
+   firstClick        => 1,
    focused           => 0,
    growMode          => 0,
    height            => 100,
@@ -1180,6 +1180,7 @@ sub profile_default
       widgetClass    => wc::Dialog,
       originDontCare => 0,
       sizeDontCare   => 0,
+      taskListed     => 0,
    );
    @$def{keys %prf} = values %prf;
    return $def;

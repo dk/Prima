@@ -1755,7 +1755,10 @@ sub path
    $p = "" unless -d $p;
    $p .= '/' unless $p =~ m![/\\]$!;
    $_[0]-> {path} = $p;
+   return if defined $_[0]-> {recursivePathCall} && $_[0]-> {recursivePathCall} > 2;
+   $_[0]-> {recursivePathCall}++;
    $_[0]-> new_directory;
+   $_[0]-> {recursivePathCall}--;
 }
 
 sub files {
