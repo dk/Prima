@@ -230,8 +230,10 @@ typedef struct _PrinterData
 typedef struct _PaintSaveData
 {
    Color       lbs[2];
+   Bool        fillWinding;
    int         lineWidth;
    int         lineEnd;
+   int         lineJoin;
    unsigned char *linePattern;
    int         linePatternLen;
    FillPattern fillPattern;
@@ -259,8 +261,10 @@ typedef struct _DrawableData
    int             bpp;
 // HPS data
    Color           lbs[2];
+   Bool            fillWinding;
    int             lineWidth;
    int             lineEnd;
+   int             lineJoin;
    unsigned char * linePattern;
    int             linePatternLen;
    FillPattern     fillPattern;

@@ -73,8 +73,11 @@ hwnd_enter_paint( Handle self)
    if ( sys psd == nil) sys psd = malloc( sizeof( PaintSaveData));
    if ( sys psd == nil) return;
    apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
+   sys psd-> fillWinding = sys fillWinding;
+   apc_gp_set_fill_winding( self, sys fillWinding);
    apc_gp_set_line_width( self, sys lineWidth);
    apc_gp_set_line_end( self, sys lineEnd);
+   apc_gp_set_line_join( self, sys lineJoin);
    apc_gp_set_rop( self, sys rop);
    apc_gp_set_rop2( self, sys rop2);
    apc_gp_set_transform( self, sys transform. x, sys transform. y);
@@ -82,6 +85,7 @@ hwnd_enter_paint( Handle self)
    sys psd-> font        = var font;
    sys psd-> lineWidth   = sys lineWidth;
    sys psd-> lineEnd     = sys lineEnd;
+   sys psd-> lineJoin    = sys lineJoin;
    sys psd-> linePattern = sys linePattern;
    sys psd-> linePatternLen = sys linePatternLen;
    sys psd-> rop         = sys rop;
@@ -111,8 +115,10 @@ hwnd_leave_paint( Handle self)
    if ( sys linePatternLen > 3) free( sys linePattern);
    if ( sys psd == nil) return;
    var font           = sys psd-> font;
+   sys fillWinding    = sys psd-> fillWinding;
    sys lineWidth      = sys psd-> lineWidth;
    sys lineEnd        = sys psd-> lineEnd;
+   sys lineJoin       = sys psd-> lineJoin;
    sys linePattern    = sys psd-> linePattern;
    sys linePatternLen = sys psd-> linePatternLen;
    sys rop            = sys psd-> rop;

@@ -226,7 +226,7 @@ apc_gp_fill_chord ( Handle self, int x, int y,  int dX, int dY, double angleStar
    if ( !GpiBeginPath( sys ps, 1)) apiErr;
    if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
    if ( !GpiEndPath( sys ps)) apiErr;
-   if ( GpiFillPath( sys ps, 1, FPATH_ALTERNATE) == GPI_ERROR) apiErrRet;
+   if ( GpiFillPath( sys ps, 1, sys fillWinding ? FPATH_WINDING : FPATH_ALTERNATE) == GPI_ERROR) apiErrRet;
    return true;
 }
 
@@ -252,7 +252,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
    if ( !GpiBeginPath( sys ps, 1)) apiErr;
    if ( GpiPolyLine( sys ps, numPts - 1, ( PPOINTL)&points[1]) == GPI_ERROR) apiErr;
    if ( !GpiEndPath( sys ps)) apiErr;
-   if ( GpiFillPath( sys ps, 1, FPATH_ALTERNATE) == GPI_ERROR) apiErrRet;
+   if ( GpiFillPath( sys ps, 1, sys fillWinding ? FPATH_WINDING : FPATH_ALTERNATE) == GPI_ERROR) apiErrRet;
    return true;
 }
 
@@ -266,7 +266,7 @@ apc_gp_fill_sector ( Handle self, int x, int y,  int dX, int dY, double angleSta
    if ( GpiPartialArc ( sys ps, &ptl, MAKEFIXED( 0, 0x8000), float2fixed(angleStart), float2fixed(angleEnd-angleStart)) == GPI_ERROR) apiErr;
    if ( GpiLine( sys ps, &ptl) == GPI_ERROR) apiErr;
    if ( !GpiEndPath( sys ps)) apiErr;
-   if ( GpiFillPath( sys ps, 1, FPATH_ALTERNATE) == GPI_ERROR) apiErrRet;
+   if ( GpiFillPath( sys ps, 1, sys fillWinding ? FPATH_WINDING : FPATH_ALTERNATE) == GPI_ERROR) apiErrRet;
    return true;
 }
 
@@ -661,23 +661,28 @@ static int ctx_le2LINEEND [] = {
 Bool
 apc_gp_get_fill_winding ( Handle self)
 {
-   /* XXX */
-   return 0;
+   return sys fillWinding;
 }
-
 
 int
 apc_gp_get_line_end ( Handle self)
 {
    if ( !sys ps) return sys lineEnd;
-   return ctx_remap_def( GpiQueryLineEnd( sys ps), ctx_le2LINEEND, false, leFlat);
+   return ctx_remap_def( GpiQueryLineEnd( sys ps), ctx_le2LINEEND, false, leRound);
 }
+
+static int ctx_lj2LINEJOIN [] = {
+   ljRound     ,  LINEJOIN_ROUND  ,
+   ljBevel     ,  LINEJOIN_BEVEL  ,
+   ljMitre     ,  LINEJOIN_MITRE  ,
+   endCtx
+};
 
 int
 apc_gp_get_line_join ( Handle self)
 {
-   /* XXX */
-   return ljRound;
+   if ( !sys ps) return sys lineJoin;
+   return ctx_remap_def( GpiQueryLineJion( sys ps), ctx_lj2LINEJION, false, ljRound);
 }
 
 int
@@ -1039,8 +1044,8 @@ apc_gp_set_font( Handle self, PFont font)
 Bool
 apc_gp_set_fill_winding( Handle self, int fillWinding)
 {
-   /* XXX */
-   return false;
+   sys fillWinding = fillWinding;
+   return true;
 }
 
 Bool
@@ -1055,7 +1060,9 @@ apc_gp_set_line_end ( Handle self, int lineEnd)
 Bool
 apc_gp_set_line_join( Handle self, int lineJoin)
 {
-   /* XXX */
+   if ( !sys ps) { sys lineJoin = lineJoin; return true; }
+   if ( !GpiSetLineJoin( sys ps, ctx_remap_def( lineJoin, ctx_lj2LINEJION, true, LINEJOIN_DEFAULT)))
+      apiErrRet;
    return true;
 }
 
