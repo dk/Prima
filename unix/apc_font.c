@@ -476,7 +476,7 @@ apc_font_default( PFont f)
       font. style = fsNormal;
       font. pitch = fpDefault;
       apc_font_pick( application, &font, &font);
-      font. pitch = fpDefault;
+/* XXX      font. pitch = fpDefault; */
       initialized = true;
    }
    *f = font;
@@ -567,7 +567,7 @@ add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s)
 static void
 detail_font_info( PFontInfo f, PFont font)
 {
-   XFontStruct *s;
+   XFontStruct *s = nil;
    unsigned long v;
    char *c;
    char name[ 1024];
@@ -584,7 +584,7 @@ detail_font_info( PFontInfo f, PFont font)
 	 f = &fi;
       }
 
-      DOLBUG( "xname: %s\n", f-> xname);
+/*       DOLBUG( "xname: %s\n", f-> xname); */
       if ( f-> vecname) {
 	 if ( f-> flags. xDeviceRes) {
 	    /* three fields */
@@ -596,7 +596,7 @@ detail_font_info( PFontInfo f, PFont font)
 		     (int)(guts. resolution. y + 0.5),
 		     font-> width);
 	 }
-	 DOLBUG( "my query: %s\n", name);
+/* 	 DOLBUG( "my query: %s\n", name); */
       } else {
 	 strcpy( name, f-> xname);
       }
@@ -757,10 +757,10 @@ detail_font_info( PFontInfo f, PFont font)
   FAQ> 	{ "CHARSET_ENCODING", 0, atom, 0},
   */
 
+      memcpy( font, &f-> font, sizeof( Font));
+      build_font_key( &key, font);
+      add_font_to_cache( &key, f, name, s);
    }
-   build_font_key( &key, font);
-   memcpy( font, &f-> font, sizeof( Font));
-   add_font_to_cache( &key, f, name, s);
 }
 
 static int
@@ -921,6 +921,7 @@ apc_gp_set_font( Handle self, PFont font)
    Bool reload = false;
 
    PCachedFont kf = find_known_font( font, false);
+
    if ( !kf) {
       Font dest = *font;
       apc_font_pick( self, font, &dest);
