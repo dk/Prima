@@ -650,7 +650,6 @@ XS( Component_notify_FROMPERL)
       perl_call_sv(( SV*) sequence[ i + 1], G_DISCARD | G_EVAL);
       if ( SvTRUE( GvSV( errgv))) {
          PUB_CHECK;
-         PUTBACK_G_EVAL;
          CLOSE_G_EVAL;
          if ( privMethod) sv_free( privMethod);
          free( argsv);

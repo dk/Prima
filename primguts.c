@@ -226,7 +226,6 @@ clean_perl_call_method( char* methname, I32 flags)
          (void)POPs;
       }
       if ( flags & G_EVAL) return ret;
-      PUTBACK_G_EVAL;
       CLOSE_G_EVAL;
       croak( SvPV( GvSV( errgv), na));
    }
@@ -252,7 +251,6 @@ clean_perl_call_pv( char* subname, I32 flags)
          (void)POPs;
       }
       if ( flags & G_EVAL) return ret;
-      PUTBACK_G_EVAL;
       CLOSE_G_EVAL;
       croak( SvPV( GvSV( errgv), na));
    }
@@ -897,7 +895,6 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
          {
             (void)POPs;
             PUB_CHECK;
-            PUTBACK_G_EVAL;
             CLOSE_G_EVAL;
             croak( SvPV( GvSV( errgv), na));    /* propagate */
          } 
@@ -929,7 +926,6 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
          if ( SvTRUE( GvSV( errgv)))
          {
             PUB_CHECK;
-            PUTBACK_G_EVAL;
             CLOSE_G_EVAL;
             croak( SvPV( GvSV( errgv), na));    /* propagate */
          } 
