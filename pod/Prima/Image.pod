@@ -21,13 +21,13 @@ it does not assume that the GUI system uses the same memory format.
 The implicit conversion routines are called when I<Prima::Image> is
 about to be drawn onto the screen, for example. The conversions
 are not always efficient, therefore the I<Prima::DeviceBitmap> class
-is intoduced to represent a bitmap, stored in the system memory
+is introduced to represent a bitmap, stored in the system memory
 in the system pixel format. These two basic classes serve the different
 needs, but can be easily converted to each other, with C<image> and
 C<bitmap> methods. I<Prima::Image> is a more general bitmap representation,
 capable of file and graphic input and output, plus it is supplied with
 number of conversion and scaling functions. The I<Prima::DeviceBitmap>
-class has almost none of additional functionality, and is targetet
+class has almost none of additional functionality, and is targeted
 to efficient graphic input and output.
 
 =head2 Graphic input and output
@@ -42,14 +42,14 @@ When an object enters the enabled state, it serves as a canvas, and
 all I<Prima::Drawable> operations can be performed on it. When the object
 is back to the disabled state, the graphic information is stored into
 the object associated memory, in the pixel format, supported by the toolkit.
-This information can be visualised by using one of C<Prima::Drawable::put_image>
+This information can be visualized by using one of C<Prima::Drawable::put_image>
 group methods. If the object enters the enabled state again, the graphic
 information is presented as an initial state of a bitmap.
 
 It must be noted, that if an implicit conversion takes place after an
 object enters and before it leaves the enabled state, as it is with
 I<Prima::Image> and I<Prima::Icon>, the bitmap is converted to the system pixel
-format. During such conversion some information can be lost, due to downsampling,
+format. During such conversion some information can be lost, due to down-sampling,
 and there is no way to preserve the information. This does not happen with
 I<Prima::DeviceBitmap>.
 
@@ -88,11 +88,11 @@ different formats. This functionality in accessible via C<load()>
 and C<save()> methods. L<Prima::image-load> is dedicated to the 
 description of loading and saving parameters, that can be passed to the methods,
 so they can handle different aspects of file format-specific options,
-such as multi-frame opertaions, auto conversion when a format does not
+such as multi-frame operations, auto conversion when a format does not
 support a particular pixel format etc. In this document, C<load()>
 and C<save()> methods are illustrated only in their basic, single-frame
 functionality. When called with no extra parameters, these methods fail
-only if a disk I/O error occured or an unknown image format was used. 
+only if a disk I/O error occurred or an unknown image format was used. 
 
 When an image is loaded, the old bitmap memory content is discarded,
 and the image attributes are changed accordingly to the loaded image.
@@ -105,9 +105,9 @@ in the image file.
 I<Prima::Image> supports a number of pixel formats, governed by the C<::type>
 property. It is reflected by an integer value, a combination of C<im::XXX>
 constants. The whole set of pixel formats is represented by colored formats,
-like, 16-color, 256-color and 16M-color, and by grayscale formats, mapped to
+like, 16-color, 256-color and 16M-color, and by gray-scale formats, mapped to
 C data types - unsigned char, unsigned short, unsigned long, float and double.
-The grayscale formats are subdivided to real-number formats and complex-number
+The gray-scale formats are subdivided to real-number formats and complex-number
 format; the last ones are represented by two real values per pixel, containing
 the real and the imaginary values.
 
@@ -125,12 +125,12 @@ does not change the data if the image is to be output; the conversion is perform
 only when the image is to be served as a drawing surface. If, by any reason, it is
 desired that the pixel format is not to be changed, the C<::preserveType> property
 must be set to 1. It does not prevent the conversion, but it detects if the image
-was implicity converted inside C<end_paint()> call, and reverts it to
+was implicitly converted inside C<end_paint()> call, and reverts it to
 its previous pixel format.
 
 There are situations, when a pixel format conversion must be made with
-downsampling. One of three downsampling methods can be selected -
-normal, 8x8 halftoning and error diffusion. These can be set to
+down-sampling. One of three down-sampling methods can be selected -
+normal, 8x8 half-toning and error diffusion. These can be set to
 the C<::conversion> property with one of C<ict::XXX> constants.
 When there is no information loss, C<::conversion> property is not used.
 
@@ -184,7 +184,7 @@ Although it is possible to perform all kinds of calculations and modification
 with the pixels, returned by C<::data>, it is not advisable unless the speed
 does not matter. Standalone PDL package, and lately Prima-derived IPA package
 provide routines for data and image analysis. I<Prima::Image> itself provides
-only the simpliest statistic information, namely: lowest and highest pixel values, 
+only the simplest statistic information, namely: lowest and highest pixel values, 
 pixel sum, sum of square pixels, mean, variance, and standard deviation.
 
 =head2 Prima::Icon
@@ -219,7 +219,7 @@ C<rop::CopyPut>, usually fail.
 
 =item conversion TYPE
 
-Selects type of dithering algorithm, when downsampling 
+Selects type of dithering algorithm, when down-sampling 
 takes place. TYPE is one of C<ict::XXX> constants:
 
    ict::None            - no dithering
@@ -265,7 +265,7 @@ the pixel values are either scaled or truncated.
 =item hScaling BOOLEAN
 
 If 1, the bitmap data will be scaled when image changes its
-horizonal extent. If 0, the data will be stripped or padded 
+horizontal extent. If 0, the data will be stripped or padded 
 with zeros.
 
 =item mean
@@ -310,7 +310,7 @@ Returns one of calculated values, that correspond to INDEX, which is one
 of the following C<is::XXX> constants:
 
    is::RangeLo  - minimum pixel value
-   is::RangeHi  - maximun pixel value
+   is::RangeHi  - maximum pixel value
    is::Mean     - mean value
    is::Variance - variance
    is::StdDev   - standard deviation
@@ -343,7 +343,7 @@ Returns sum of squares of pixel values of the image data
 Governs the image pixel format type. TYPE is a combination
 of C<im::XXX> constants. The constants are collected in groups:
 
-Bit-depth constants provide size of pixe is bits. Their actual 
+Bit-depth constants provide size of pixel is bits. Their actual 
 value is same as number of bits, so C<im::bpp1> value is 1,
 C<im::bpp4> - 4, etc. The valid constants represent bit depths 
 from 1 to 128:

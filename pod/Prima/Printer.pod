@@ -40,7 +40,7 @@ returns array of hashes, each describing a printer device; C<get_default_printer
 returns a default printer string identifier. A printer device can be selected
 via the C<::printer> property.
 
-The capabilites of the selected printer can be adjusted via C<setup_dialog()>
+The capabilities of the selected printer can be adjusted via C<setup_dialog()>
 method, that invokes a system-provided ( or, in case of I<Prima::PS::Printer>,
 toolkit-provided ) printer setup dialog, so the user can adjust settings of a
 printer device.
@@ -94,7 +94,7 @@ resolutions or page formats, inside C<setup_dialog()>.
 
 =item abort_doc
 
-Stops the printing session, returns the object to the disabled paiinting state.
+Stops the printing session, returns the object to the disabled painting state.
 Since the document can be passed to the system spooler, parts of it could have been sent
 to a printing device when C<abort_doc()> is called, so some information
 could still been printed.
@@ -118,7 +118,7 @@ mode is exited via C<end_paint_info()> method.
 =item end_doc
 
 Quits the printing session and delivers the document to a printer device.
-Does not report eventual errors, occured during the spooling process -
+Does not report eventual errors, occurred during the spooling process -
 the system is expected to take care about such situations.
 
 =item end_paint
@@ -177,7 +177,7 @@ A boolean flag, 1 if the printer is default, 0 otherwise.
 =item setup_dialog
 
 Invokes the system-provided printer device setup dialog.
-In this setup, the user can adjust the capablities of the printer,
+In this setup, the user can adjust the capabilities of the printer,
 such as page setup, resolution, color, etc etc. 
 
 =item get_default_printer

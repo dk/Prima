@@ -62,7 +62,7 @@ recorded nor used as a template).
 
 That is, in disabled state any Drawable maintains only the graphic context.
 To draw on a canvas, the object must enter the enabled state by begin_paint().
-This function can be unsuccessfull, because the object binds with system resources
+This function can be unsuccessful, because the object binds with system resources
 during this stage, and that can fail. After the enabled state is entered, 
 the canvas is accessible:
 
@@ -76,7 +76,7 @@ the canvas is accessible:
    }
 
 Different objects are mapped to different types of canvases -
-Prima::Image canvas pretains its content after end_paint(),
+Prima::Image canvas pertains its content after end_paint(),
 Prima::Widget maps it to a screen area, which content is of 
 more transitory nature, etc.
 
@@ -121,7 +121,7 @@ antialiasing are subject to system implementation, and can not
 be controlled from perl code. When a property is set in the object 
 disabled state, it is recorded verbatim; color properties 
 are no exception. After the object switched to the enabled
-state, a color value is transformed to a system color prepresentation, and
+state, a color value is transformed to a system color representation, and
 these values may differ. For example, if a display color depth is 15 bits,
 5 bits for every component, then white color value 0xffffff
 is mapped to
@@ -135,13 +135,13 @@ inevident graphic issues discussion ).
 As it might be guessed, Drawable color format is RRGGBB, with component
 resolution 8 bit, thus allowing 2^24 color combinations. If the color space
 depth is different, the color is truncated or expanded automatically. In
-case the device color depth is small, dithering algoritms might apply.
+case the device color depth is small, dithering algorithms might apply.
 
 Note: not only color properties, but all graphic context properties
 allow all possible values in the disabled state, which transformed into
 system-allowed values in the enabled and the information states. 
 This feature can be used to test if a graphic device is capable of 
-preforming certain operaions ( for example,
+performing certain operations ( for example,
 if it supports raster operations - the printers usually do not ). Example:
 
   $d-> begin_paint;
@@ -255,7 +255,7 @@ A combination of C<fs::> ( font style ) constants. The constants hight
    fs::Outline
 
 and can be OR-ed together to express the font style. 
-fs::Normal equals to 0 and usually neved used.
+fs::Normal equals to 0 and usually never used.
 If some styles are not supported by a system-dependent font subsystem,
 they get ignored.
 
@@ -354,7 +354,7 @@ not present in Prima::Drawable namespace; it can be found in two
 built-in class instances, C<Prima::Application> and C<Prima::Printer>.
 
 C<Prima::Application::fonts> returns metrics for the fonts available to
-a screen device, while C<Prima::Printer::fonts> ( or its subsitute Prima::PS::Printer )
+a screen device, while C<Prima::Printer::fonts> ( or its substitute Prima::PS::Printer )
 returns fonts for the printing device. The result of this method is an
 array of font metrics, fully analogous to these 
 returned by C<Prima::Drawable::font> method. 
@@ -366,14 +366,14 @@ returned by C<Prima::Drawable::font> method.
 A string with font family name. The family is a 
 secondary string key, used for distinguishing between
 fonts with same name but of different vendors ( for example,
-Adobe Courier and Microsort Courier).
+Adobe Courier and Microsoft Courier).
 
 =item vector
 
 A boolean; true if the font is vector ( e.g. can be scaled
 with no quality loss ), false otherwise. The false value
 does not show if the font can be scaled at all - the behavior
-is system-dependant. Win32 and OS/2 can scale all non-vector fonts;
+is system-dependent. Win32 and OS/2 can scale all non-vector fonts;
 X11 only the fonts specified as the scalable.
 
 =item ascent
@@ -387,12 +387,12 @@ Number of pixels between a glyph baseline and descent line.
 =item internalLeading
 
 Number of pixels between ascent and internal leading lines.
-Negative if the ascent line is below the intenal leading line.
+Negative if the ascent line is below the internal leading line.
 
 =item externalLeading
 
 Number of pixels between ascent and external leading lines.
-Negative if the ascent line is above the extenal leading line.
+Negative if the ascent line is above the external leading line.
 
 
 =for podview <img src="leadings.gif" cut=1>
@@ -403,7 +403,7 @@ Negative if the ascent line is above the extenal leading line.
   
      $    ------------- ascent line
     $ $
-          ------------- intenal leading line
+          ------------- internal leading line
      $
     $$$
    $   $
@@ -569,7 +569,7 @@ plots a bar that covers 4 pixels: (0,0), (0,1), (1,0) and (1,1).
 The coordinate origin can be shifted using C<::transform> property,
 that translates the (0,0) point to the given offset. Calls to
 C<::transform>, C<::clipRect> and C<::region> always use the 'physical'
-(0,0) point, whereas the plotting methods use the tranformation result,
+(0,0) point, whereas the plotting methods use the transformation result,
 the 'logical' (0,0) point.
 
 As noted before, these three properties can not be used in when an object 
@@ -616,7 +616,7 @@ Accepts either a C<fp::> constant or a reference to an array of 8 integers,
 each representing 8 bits of each line in a pattern, where the first integer
 is the topmost pattern line, and the bit 0x80 is the leftmost pixel in the line.
 
-There are some predefined pattrens, that can be referred via C<fp::> constants:
+There are some predefined patterns, that can be referred via C<fp::> constants:
 
   fp::Empty
   fp::Solid
@@ -691,7 +691,7 @@ PATTERN is either a predefined C<lp::> constant, or
 a string where each even byte is a length of a dash,
 and each odd byte is a length of a gap.
 
-The predefined constatnts are:
+The predefined constants are:
 
     lp::Null           #    ""              /*              */
     lp::Solid          #    "\1"            /* ___________  */
@@ -854,12 +854,12 @@ Draws several lines of text one under another with respect to align and break ru
 specified in FLAGS and TAB_INDENT tab character expansion.
 
 C<draw_text> is a convenience wrapper around C<text_wrap> for drawing the wrapped
-text, and also provides the tilda ( ~ )- character underlining support.
+text, and also provides the tilde ( ~ )- character underlining support.
 
 The FLAGS is a combination of the following constants:
 
   dt::Left                  - text is aligned to the left boundary
-  dt::Right                 - text is aligned to the right boundaryt
+  dt::Right                 - text is aligned to the right boundary
   dt::Center                - text is aligned horizontally in center
   dt::Top                   - text is aligned to the upper boundary
   dt::Bottom                - text is aligned to the lower boundary 
@@ -870,7 +870,7 @@ The FLAGS is a combination of the following constants:
   dt::SpaceBreak            - sets tw::SpaceBreak option to Prima::Drawable::text_wrap call  
   dt::WordBreak             - sets tw::WordBreak option to Prima::Drawable::text_wrap call 
   dt::ExpandTabs            - performs tab character ( \t ) expansion
-  dt::DrawPartial           - draws the last line, if it is visible partally 
+  dt::DrawPartial           - draws the last line, if it is visible partially 
   dt::UseExternalLeading    - text lines positioned vertically with respect to the font external leading
   dt::UseClip               - assign ::clipRect property to the boundary rectangle
   dt::QueryLinesDrawn       - calculates and returns number of lines drawn ( contrary to dt::QueryHeight )
@@ -968,9 +968,9 @@ Context used: rop
 Copies a OBJECT from a source rectangle into a destination rectangle, 
 stretching or compressing the OBJECT to fit the dimensions of the 
 destination rectangle, if necessary.
-The source rectange starts at (X_FROM,Y_FROM), and is SRC_WIDTH pixels wide
+The source rectangle starts at (X_FROM,Y_FROM), and is SRC_WIDTH pixels wide
 and SRC_HEIGHT pixels tall.
-The destination rectange starts at (X,Y), and is abs(DEST_WIDTH) pixels wide
+The destination rectangle starts at (X,Y), and is abs(DEST_WIDTH) pixels wide
 and abs(DEST_HEIGHT) pixels tall.
 If DEST_WIDTH or DEST_HEIGHT are
 negative, a mirroring is performed.
@@ -982,7 +982,7 @@ No context is used.
 =item rect3d X1, Y1, X2, Y2, WIDTH, LIGHT_COLOR, DARK_COLOR, [ BACK_COLOR ] 
 
 Draws 3d-shaded rectangle in boundaries X1,Y1 - X2,Y2 with WIDTH line width
-and LIGHT_COLOR and DARK_COLOR colors. If BACK_COLOR is specifed, paints
+and LIGHT_COLOR and DARK_COLOR colors. If BACK_COLOR is specified, paints
 an inferior rectangle with it, otherwise the inferior rectangle is not touched.
 
 Context used: rop
@@ -1105,7 +1105,7 @@ FIRST_CHAR and ending with LAST_CHAR. If parameters are -1,
 the default range ( 0 and 255 ) is assumed.
 
 The result is an integer array reference, where every character
-glyph is referred by three integeres, each triad containing
+glyph is referred by three integers, each triad containing
 A, B and C values.
 
 For detailed explanation of ABC meaning, see L<"Font ABC metrics">;
@@ -1255,7 +1255,7 @@ If OPTIONS has tw::CalcMnemonic or tw::CollapseTilde bits set,
 then the last scalar in the array result is a hash reference.
 The hash contains extra information regarding the 'hot key' 
 underline position - it is assumed that '~' - escapement denotes
-an underlined character. The hash contains the follwoing keys:
+an underlined character. The hash contains the following keys:
 
 =over 4
 

@@ -46,7 +46,7 @@ that imply default or special cases. These base six fields are:
 =item Menu item name
 
 An unique string, assigned to every menu item. Menu items can be
-acceessed individually by their names, and the following fields
+accessed individually by their names, and the following fields
 can be managed by calling elemental properties, that require an item
 name. The name itself can be dynamically changed by C<set_variable()>
 method. If the menu name was not given explicitly, it is formed 
@@ -78,7 +78,7 @@ An alternate text string, appearing together with a menu item
 or a menu image, usually serving as a description to the hot key,
 associated with a menu item. For example, if a hot key to
 a menu item is combination of 'enter' and 'control' keys, then
-usually accerator text is 'Ctrl+Enter' string. 
+usually accelerator text is 'Ctrl+Enter' string. 
 
 Accelerator text in menu item is accessible via C<::accel>
 property.
@@ -315,7 +315,7 @@ Objects, derived from Prima::Popup class are
 used together with Prima::Widget objects.
 Menu items are visualized when the user pressed
 the pop-up key or mouse buttons combination,
-in responce to Prima::Widget's C<Popup> notification.
+in response to Prima::Widget's C<Popup> notification.
 
 If C<::selected> is set to 1, then a menu object
 is visualized in the system pop-up menu, otherwise it is not.
@@ -454,7 +454,7 @@ NAME is name of the menu item, KEY is an integer value.
 
 If set to 1, menu object is granted extra functionality
 from a window or widget owner object. Different Prima::AbstractMenu
-decsendant provided with different extra functionalites.
+descendant provided with different extra functionalities.
 In I<Usage> section, see L<Prima::Menu>, L<Prima::Popup>
 and L<Prima::AccelTable>.
 
@@ -462,14 +462,14 @@ Within each menu class, only one menu object can be selected
 for its owner.
 
 If set to 0, the only actions performed are
-implict hot-key lookup when on C<KeyDown> event.
+implicit hot-key lookup when on C<KeyDown> event.
 
 Default value: 1 
 
 =item text NAME, STRING / Prima::MenuItem::text STRING
 
 Manages the text, bound with a menu item. STRING
-is an arbitrary string, with '~' ( tilda ) quotation
+is an arbitrary string, with '~' ( tilde ) quotation
 of a hot key character. The hot key character is only used
 when keyboard navigation of a pop-up or a pull-down menu
 is performed; it has no influence outside menu sessions.
@@ -504,7 +504,7 @@ Sets menu item in enabled state.
 
 Returns a system-dependent menu handle.
 
-NB: Prima::AccelTabel use no system resources, and
+NB: Prima::AccelTable use no system resources, and
 this method returns its object handle instead.
 
 =item has_item NAME
@@ -553,7 +553,7 @@ Sets menu object in selected state.
 
 =item set_command KEY, ENABLED
 
-Disables or enables menu items, associcated with
+Disables or enables menu items, associated with
 key combinations KEY.
 
 =item set_variable NAME, NEW_NAME
@@ -575,7 +575,7 @@ The method can be called with no object.
 
 =item translate_key CODE, KEY, MOD
 
-Translates three-integer key prepresentation into
+Translates three-integer key representation into
 the one-integer format and returns the integer value. 
 The three-integer format is used in
 C<KeyDown> and C<KeyUp> notifications for Prima::Widget.

@@ -86,7 +86,7 @@ Component1, Component2 etc.
 Another example can be taken from 
 Prima::Widget::profile_check_in(). Prima::Widget horizontal position
 can be specified by using basic C<left> and C<width> parameters, and
-as well by auxillary C<right>, C<size> and C<rect>. The default of both 
+as well by auxiliary C<right>, C<size> and C<rect>. The default of both 
 C<left> and C<width> is 100. But if only C<right> parameter, for
 example, was passed to create() it is profile_check_in() job to determine
 C<left> value, given that C<width> is still 100.
@@ -113,23 +113,23 @@ After init() finishes, create() calls setup() method
 
 setup() method is a convenience function, it is used when
 some post-init actions must be taken. It gets seldom overloaded,
-primarly because the Component::setup() method calls C<onCreate>
+primarily because the Component::setup() method calls C<onCreate>
 notification, which is more convenient to overload than setup(). 
 
 =back
 
 As can be noticed from the code pieces above, a successful
 create() call returns a newly created object. If an error
-condition occured, undef is returned. It must be noted, that
+condition occurred, undef is returned. It must be noted, that
 only errors that were generated via die() during init() stage 
 result in undef. Other errors raise an exception instead.
 It is not recommended to frame create() calls
 in an C<eval{}> block, because the error conditions can only occur in two
-situaltions. The first is a system error, either inside perl or
+situations. The first is a system error, either inside perl or
 Prima guts, and not much can be done here, since that error can 
 very probably lead to an unstable program and almost always signals
 an implementation bug. The second reason is a caller's error, when
-an uniexistent parameter key or invalid value is passed; such conditions
+an unexistent parameter key or invalid value is passed; such conditions
 are not subject to a runtime error handling as are not the syntax errors.
 
 After create(), the object is subject to events flow.
@@ -164,9 +164,9 @@ because C<onDestroy> overloading can be more easily performed.
 
 =back
 
-The typical conditions that lead to object destrutions are
+The typical conditions that lead to object destructions are
 direct destroy() call, garbage collections mechanisms, 
-user-initated window close ( on C<Prima::Window> only ),
+user-initiated window close ( on C<Prima::Window> only ),
 exception during init() stage. One must be careful implementing
 done() if init() throws an exception therefore.
 
@@ -197,7 +197,7 @@ one that returns some internal state and another that changes it.
 For example, for managing the object name, set_name() and get_name()
 methods would be needed. Indeed, the early Prima implementation
 dealt with large amount of these get's and set's, but later
-these method pairs were deprecated in the favour of properties.
+these method pairs were deprecated in the favor of properties.
 For 'name' there is only one method name() ( or C<::name> later
 in the documentation ). 
 
@@ -267,7 +267,7 @@ that could be declared as properties are not, and instead
 being declared as read-only or write-only properties, they are 
 still declared as plain
 methods with get_ or set_ name prefix. There is not much
-certainity about what methods should be properties and vice versa.
+certainty about what methods should be properties and vice versa.
 
 However, if get_ or set_ methods cannot be used in correspondingly
 write or read fashion, the R/O and W/O properties can. They raise an exception
@@ -360,7 +360,7 @@ call is issued for all these examples.
 =item Direct methods
 
 As it is usual in OO programming, event callback routines
-are declared as methods. 'Direct methods' emply such a paradigm,
+are declared as methods. 'Direct methods' employ such a paradigm,
 so if a class method with name C<on_postmessage> is present,
 it will be called as a method ( i.e., in the object context )
 when C<onPostMessage> event is triggered. Example:
@@ -500,7 +500,7 @@ that control the three aspects of the event flow.
 =item Order
 
 If both anonymous subs and direct/delegated methods are present,
-it must be desided which callback class must be called first.
+it must be decided which callback class must be called first.
 Both 'orders' are useful: for example, if it is designed that 
 a class's default action is to be overridden, it is better to call
 the custom actions first. If, on the contrary, the class action is primary,
@@ -585,7 +585,7 @@ A ::eventFlag(1) call thus cancels the clear_event() effect.
 
 A particular coding style is used when the event is nt::Single-prototyped
 and is called many times in a row, so overheads of calling notify()
-become a burgen. Although notify() logic is somewhat complicated,
+become a burden. Although notify() logic is somewhat complicated,
 it is rather simple with nt::Single case. The helper function
 get_notify_sub() returns the context of callback to-be-called,
 so it can be used to emulate notify() behavior. Example:
@@ -626,7 +626,7 @@ stage. Example:
 =item can NAME, CACHE = 1
 
 Checks if an object namespace contains a NAME method.
-Returns the code refererence to it, if found, and undef if not.
+Returns the code reference to it, if found, and undef if not.
 If CACHE is true, caches the result to speed-up subsequent calls.
 
 =item cleanup
@@ -664,7 +664,7 @@ call.
 
 =item init %PARAMETERS
 
-The most importantt stage of object creation process.
+The most important stage of object creation process.
 PARAMETERS are the modified hash that was passed to create().
 The modification consists of merging with the result of
 profile_default() class method inside profile_check_in()
@@ -1003,7 +1003,7 @@ objects are indifferent.
 Changing owner dynamically is allowed, but it is a main
 source of implementation bugs, since the whole hierarchy
 tree is needed to be recreated. Although this effect is
-not visible in perl, the results are system-dependant, and
+not visible in perl, the results are system-dependent, and
 the code that changes owner property should be tested
 especially thorough.
 

@@ -423,7 +423,7 @@ L<Prima::StdBitmap> - shared access to the standard toolkit bitmaps
 
 L<Prima::Stress> - stress test module
 
-L<Prima::Utils> - miscellanneous routines
+L<Prima::Utils> - miscellaneous routines
 
 L<Prima::Widgets> - miscellaneous widget classes
 

@@ -8,7 +8,7 @@ Prima::File - asynchronous stream I/O.
 
 Prima::File provides access to the I/O stream events,
 that are called when a file handle becomes readable, writable
-or if an exception occured. Registering file handles to Prima::File
+or if an exception occurred. Registering file handles to Prima::File
 objects makes possible the stream operations coexist with the event loop. 
 
 =head1 USAGE
@@ -21,7 +21,7 @@ before the associated events can occur:
   $f-> file( *STDIN);
 
 When a file handle, binded via the C<::file> property becomes readable,
-writable or when an exception signalled, one of three correspondent
+writable or when an exception signaled, one of three correspondent
 events called - C<Read>, C<Write> or C<Exception>. When a handle is
 always readable, or always writable, or, some of these events are
 desired to be blocked, the file event mask can be set via the C<::mask>
@@ -57,7 +57,7 @@ for the implementation details.
 
 Selects a file handle, that is to be monitored for stream I/O events.
 If HANDLE is C<undef>, object is returned to a passive state, and
-the previously binded file handle is deselected.
+the previously binded file handle is de-selected.
 
 =item mask EVENT_MASK
 
@@ -106,7 +106,7 @@ is expected to call a non-blocking write() on the file handle.
 
 =item Exception
 
-Called when an exception is signalled on a file handle.
+Called when an exception is signaled on a file handle.
 The exceptions are specific to handle type and the operating system.
 For example, a unix socket signals C<Exception> when a control status 
 data for a pseudo terminal or an out-of-band data arrives.

@@ -289,7 +289,7 @@ is that they do not.
 Platforms tend to produce different results for 
 angles outside 0 and 2pi. Although Prima assures that 
 correct plotting would be performed for any angle,
-minor incosistencies may be noticed.
+minor inconsistencies may be noticed.
 If emulating, note that 2 and 4-pi arcs
 are not the same - for example, they look differently 
 with rop::Xor.
@@ -352,7 +352,7 @@ scale the bitmap into a memory before the plotting takes place.
 
 =back
 
-=head1 Platform-specific pecularities
+=head1 Platform-specific peculiarities
 
 =head2 OS/2
 

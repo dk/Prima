@@ -72,7 +72,7 @@ position was given, the window is positioned automatically
 by the system. The same is valid for the size.  But some window
 managers bend it to the extreme - for example, default CDE
 setup force the user to set newly created windows' positions explicitly.
-But there is at least one point of certainity.
+But there is at least one point of certainty.
 Typically, when the initial size and/or position of a top-level window 
 are expected to be set by the system, the C<::originDontCare> and
 C<::sizeDontCare> properties can be set to 1 during window creation.
@@ -88,7 +88,7 @@ There are different policies about window positioning and sizing;
 some window managers behave best when the position is given to the window
 with the system-dependent decorations. It is hardly can be called a good
 policy, since it is not possible to calculate the derived window coordinates
-with certainity. This problem results in that it is impossible to
+with certainty. This problem results in that it is impossible to
 be sure about window position and size before these are set explicitly.
 The only, not much efficient help the toolkit can provide is the property
 pair C<::frameOrigin> and C<::frameSize>, which along with C<::origin>
@@ -132,7 +132,7 @@ The stacking order for these two models is slightly different.
 Any window, called execute() is set on top of the last exclusive
 modal window. The same is valid for the shared model, but since
 there can be many shared window stacks, a window enters same stack
-as of its owner. Here introducted the 'modal horizon'
+as of its owner. Here introduced the 'modal horizon'
 term. A modal horizon is a root of the shared window stack, 
 and the default horizon is $::application's. The boolean C<::modalHorizon>
 property is responsible whether the window serves as a horizon or not.
@@ -157,7 +157,7 @@ A top-level window can be equipped with a menu bar. Its outlook
 is system-dependent, but can be controlled by the toolkit up to
 a certain level. The C<::menuItems> property, that manages the menu items
 of a C<::menu> object of L<Prima::Menu> class, arrange the layout
-of the menu. The syntax of the items-deribed properties is described in
+of the menu. The syntax of the items-derived properties is described in
 L<Prima::Menu>, but it must be reiterated that menu item records only
 hint, not request their exact representation. The same is valid for
 the color and font properties, C<::menuColorIndex> and C<::menuFont>.
@@ -402,7 +402,7 @@ See also: C<WindowState>
 
 =item cancel
 
-A standart method to dismiss a modal window with C<mb::Cancel>
+A standard method to dismiss a modal window with C<mb::Cancel>
 result. The effect of calling this method is equal to when
 the user selects a 'close window' action with system-provided
 menu, button or other tool.
@@ -494,9 +494,9 @@ Minimizes window. A shortcut for C<windowState(ws::Minimized)>.
 
 =item ok
 
-A standart method to dismiss a modal window with C<mb::OK>
+A standard method to dismiss a modal window with C<mb::OK>
 result. Typically the effect of calling this method is equal to when
-the user presses the enter key of a modal window, signalling that
+the user presses the enter key of a modal window, signaling that
 the default action is to be taken.
 
 See also: C<cancel>, C<modalResult>, C<execute>, C<execute_shared>

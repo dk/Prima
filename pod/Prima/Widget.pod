@@ -11,7 +11,7 @@ a class, especially crafted to reflect and govern
 properties of a system-dependent window, such as its
 position, hierarchy, outlook etc. Prima::Widget 
 maps onto screen as a rectangular area,
-with disctinct boundaries, pointer and sometimes
+with distinct boundaries, pointer and sometimes
 cursor and a user-selectable input focus.
 
 =head1 USAGE
@@ -82,7 +82,7 @@ means of C<Paint> notification.
 When the life time of a widget is over, C<destroy()> is called,
 often implicitly. If a widget is being destroyed because its owner
 is, it is guaranteed that the children widgets will be destroyed first,
-and the owner afterwards. In such situaltion, widget can operate with 
+and the owner afterwards. In such situation, widget can operate with 
 a limited functionality both with itself and its owners ( see 
 L<Prima::Object>, B<Creation> section ). 
 
@@ -181,10 +181,10 @@ cannot be performed outside the physical boundaries of the canvas.
 
 =head2 Direct rendering
 
-The direct rendering, contratry to the event-driven,
+The direct rendering, contrary to the event-driven,
 is started by a program, not by a system. If a programmer
 wishes to paint over a widget immediately, then 
-C<begin_paint()> is called, and, if successfull, the part 
+C<begin_paint()> is called, and, if successful, the part 
 of the screen occupied by a widget is accessible to the drawing
 and painting routines.
 
@@ -267,7 +267,7 @@ C<::top> - same as C<::rect>.
 
 When a widget is moved or resized, correspondingly two notifications
 occur: C<Move> and C<Size>. The parameters to both are old and new
-postion and size. The notifications occur irrespectible to whether the
+position and size. The notifications occur irrespectable to whether the
 geometry change was issued by the program itself or by the user.
 
 =head2 Implicit size regulations
@@ -277,7 +277,7 @@ properties exist, C<::sizeMin> and C<::sizeMax>, that constrain the
 extension of a widget in their boundaries. The direct call that
 assigns values to the size properties that lie outside 
 C<::sizeMin> and C<::sizeMax> boundaries, will fail - the widget 
-extenstion will be adjusted to the boundary values, not to the
+extension will be adjusted to the boundary values, not to the
 specified ones.
 
 Change to widget's position and size can occur not only by an explicit
@@ -302,13 +302,13 @@ When this implicit size change does occur, the C<::sizeMin>
 and C<::sizeMax> do take their part as well - they still do not allow
 the widget's size excess their boundaries. However, this 
 algorithm derives a problem, that is illustrated by the following 
-conditions. A widget with size-dependant C<::growMode> ( with
+conditions. A widget with size-dependent C<::growMode> ( with
 gm::GrowHiX or gm::GrowHiY bits set ) must maintain certain relation between
 the owner's size and its own. If the implicit size change would
 be dependent on the actual widget size, derived as a result from the previous
 implicit size action, then its size (and probably position) will be incorrect
 after an attempt is made to change the widget's size to values outside
-the size boudaries. 
+the size boundaries. 
 
 Example: child widget has width 100, gm::GrowHiX
 growMode and sizeMin set to (95, 95). Its owner has width 200. 
@@ -426,7 +426,7 @@ with its parent. The widget become parentless, or, more strictly
 speaking, the screen becomes its parent. Moreover, 
 the widget's origin offset is calculated then not from the owner's 
 coordinates but from the screen, and mouse events in the 
-widget do not transgress implictly to the owner's top-level window
+widget do not transgress implicitly to the owner's top-level window
 eventual decorations.
 
 The same results are produced if a widget is inserted in 
@@ -434,13 +434,13 @@ an application object, which does not have screen visualization.
 A widget belonging to an application object, can not reset its C<::clipOwner>
 values to 1.
 
-The C<::clipOwner> property opens a possiblity for the toolkit widgets
+The C<::clipOwner> property opens a possibility for the toolkit widgets
 to live inside other programs' windows. If the C<::parentHandle> is
 changed from its default C<undef> value to a valid system window handle, 
-the widget becames child to this window, which can be any application
+the widget becomes child to this window, which can be any application
 residing on the same display. This option is dangerous, however:
 normally widgets never get destroyed with no reason. A top-level window
-is never destroyed before its C<Close> notfication grants the destruction.
+is never destroyed before its C<Close> notification grants the destruction.
 This case is special, because a widget, inserted into an alien application,
 must be prepared to be destroyed at any moment. It is recommended to
 use prior knowledge about such the application, and, even better, use
@@ -462,13 +462,13 @@ its C<::clipOwner> is 1, of course ).
 
 A widget is visible by default. Visible means that
 it is shown on the screen if it is not shadowed by
-other widgets ( or system windows ). The visiblity
+other widgets ( or system windows ). The visibility
 is governed by the C<::visible> property, and its
 two convenience aliases, C<show()> and C<hide()>.
 
 When a widget is invisible, its geometry is not discarded;
 the widget pertains its position and size, and is subject to
-all previously dicussed implicit sizing issues. When change
+all previously discussed implicit sizing issues. When change
 to C<::visible> property is made, the screen is not updated 
 immediately, but in the next event loop invocation, because uncovering of
 the underlying area of a hidden widget, and repainting of a new-shown widget
@@ -641,7 +641,7 @@ use extensively keyboard input. But in short,
 the key code is one of the C<kb::XXX> ( like, kb::F10, kb::Esc ) constants, 
 and the modifier value is a combination of the C<km::XXX> ( km::Ctrl, km::Shift) 
 constants. The notable exception is kb::None value, which
-hints that the characted code is of value. Some other C<kb::XXX>-marked keys
+hints that the character code is of value. Some other C<kb::XXX>-marked keys
 have the character code as well, and it is up to a programmer how to
 treat these combinations. It is advised, however, to look at the key
 code first, and then to the character code.
@@ -787,7 +787,7 @@ cl::Normal, cl::HiliteText, cl::Hilite, cl::DisabledText, cl::Disabled,
 cl::Light3DColor and cl::Dark3DColor. cl::NormalText is alias to cl::Fore,
 and cl::Normal - to cl::Back. Another constant set, C<ci::>
 can be used with the C<::colorIndex>
-property, a multiplexer for all eight color preoperties. C<ci::> constants
+property, a multiplexer for all eight color properties. C<ci::> constants
 mimic their non-RGB C<cl::> counterparts, so the call
 C<hiliteBackColor(cl::Red)> is equal to C<colorIndex(ci::HiliteText, cl::Red)>.
 
@@ -799,7 +799,7 @@ the C<wc::> constants, that represent standard widget class.
 The widget class is implicitly used when single C<cl::> constant is used;
 its value is read from the C<::widgetClass> property, unless 
 one of C<wc::> constants is combined with the non-RGB C<cl::> value. C<wc::>
-constants are descriped in L<"API">; their usage can make
+constants are described in L<"API">; their usage can make
 call of, for example, C<backColor( cl::Back)> on a button and on
 an input line result in different colors, because the C<cl::Back>
 is translated in the first case into C<cl::Back|wc::Button>, and
@@ -821,7 +821,7 @@ is maintained all the time while the property is true.
 If it is not, the default font values read from the system.
 
 The default font metrics for a widget returned by C<get_default_font()>
-method, that often deals with system-dependend and user-selected
+method, that often deals with system-dependent and user-selected
 preferences ( see L<"Additional resources"> ). Because a widget hold
 an eventual reference to a Prima::Popup object, it contains
 C<get_default_popup_font()> method, that returns the default font
@@ -903,7 +903,7 @@ is inside the widget's boundaries.
 =head2 Menu objects
 
 The default functionality of Prima::Widget coexists with two kinds of the Prima::AbstractMenu
-descentants - Prima::AccelTable and Prima::Popup ( Prima::Window
+descendants - Prima::AccelTable and Prima::Popup ( Prima::Window
 is also with Prima::Menu). The C<::items> properties of these objects
 are accessible through C<::accelItems> and C<::popupItems>, whereas
 the objects themselves - through C<::accelTable> and C<::popup>, 
@@ -911,7 +911,7 @@ correspondingly. As mentioned in L<"User input">,
 these objects hook the user keyboard input and call the programmer-defined 
 callback sub if the key stroke
 equals to one of their table values. As for C<::accelTable>, its 
-fucntion ends here. C<::popup> provides access to a context pop-up menu,
+function ends here. C<::popup> provides access to a context pop-up menu,
 which invocation can be either right-clicking or pressing some
 system-dependent key combination. As a little customization,
 the C<::popupColorIndex> and C<::popupFont> properties are introduced.
@@ -1365,7 +1365,7 @@ See also: C<ownerPalette>
 
 If SYSTEM_WINDOW is a valid system-dependent window handle,
 then a widget becomes the child of a window specified,
-given the wigdet's C<::clipOwner> is 0.
+given the widget's C<::clipOwner> is 0.
 The window can belong to an other application or a process.
 
 Default value is undef.
@@ -1411,7 +1411,7 @@ TYPE can accept one constant of C<cr::XXX> set:
 
    cr::Default                 same pointer type as owner's
    cr::Arrow                   arrow pointer
-   cr::Text                    text entry sursor-like pointer
+   cr::Text                    text entry cursor-like pointer
    cr::Wait                    hourglass
    cr::Size                    general size action pointer
    cr::Move                    general move action pointer 
@@ -1644,7 +1644,7 @@ See also: C<invalidate_rect>, C<repaint>, C<validate_rect>, C<Paint>
 Maintains the order in which tab- and shift-tab- key navigation
 algorithms select the sibling widgets. INTEGER is unique among
 the sibling widgets. In set mode, if INTEGER value is already taken,
-the occupier is assigned another unique value, but without desctruction
+the occupier is assigned another unique value, but without destruction
 of a queue - widgets with ::tabOrder greater than of the widget,
 receive their new values too. Special value -1 is accepted as 'the end of list'
 indicator. Negative value is never returned.
@@ -1741,7 +1741,7 @@ See also: C<centered>, C<y_centered>, C<growMode>, C<origin>, C<Move>.
 
 =item y_centered BOOLEAN
 
-A write-only property. Once set, widget is centered by the verical
+A write-only property. Once set, widget is centered by the vertical
 axis relative to its owner.
 
 See also: C<x_centered>, C<centered>, C<growMode>, C<origin>, C<Move>.
@@ -1774,7 +1774,7 @@ See also: C<screen_to_client>, C<clipOwner>
 
 =item close
 
-Calls C<can_close()>, and if successfull, destroys a widget.
+Calls C<can_close()>, and if successful, destroys a widget.
 Returns the C<can_close()> result.
 
 See also: C<can_close>, C<Close>
@@ -2190,7 +2190,7 @@ See also: C<invalidate_rect>, C<get_invalid_rect>, C<repaint>, C<Paint>, C<syncP
 =item validate_rect X_LEFT_OFFSET Y_BOTTOM_OFFSET X_RIGHT_OFFSET Y_TOP_OFFSET  
 
 Reverses the effect of C<invalidate_rect()>, restoring the original, 'valid'
-state of widget area covered by the rectangula area passed. If a widget
+state of widget area covered by the rectangular area passed. If a widget
 with previously invalid areas was wholly validated by this method, no C<Paint>
 notifications occur.
 
@@ -2395,7 +2395,7 @@ See also: C<showHint>, C<ownerShowHint>, C<hintVisible>, C<ownerHint>
 Sent to the focused widget when the user presses a key.
 CODE contains an eventual character code, KEY is one of C<kb::XXX>
 constants, MOD is a combination of the modificator keys
-pressed when the event occured ( C<km::XXX> ). REPEAT
+pressed when the event occurred ( C<km::XXX> ). REPEAT
 is how many times the key was pressed; usually it is 1.
 ( see C<::briefKeys> ).
 
@@ -2452,7 +2452,7 @@ C<tabOrder>, C<tabStop>, C<accelTable>
 Sent to the focused widget when the user depresses a key.
 CODE contains an eventual character code, KEY is one of C<kb::XXX>
 constants, MOD is a combination of the modificator keys
-pressed when the event occured ( C<km::XXX> ).
+pressed when the event occurred ( C<km::XXX> ).
 
 See also: C<KeyDown>, C<key_up>
 

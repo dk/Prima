@@ -552,7 +552,7 @@ type conversion code is exemplified:
       inherited set ( self, profile);
    }
 
-If type conversion is performed along with palette change, some effeciency
+If type conversion is performed along with palette change, some efficiency
 is gained by supplying both 'type' and 'palette' parameters at a time.
 Moreover, because ordering of the fields is not determined by default
 ( although that be done by supplying '__ORDER__' hash key to set() }, it

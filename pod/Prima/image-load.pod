@@ -10,7 +10,7 @@ Prima::image-load - Using image subsystem
 
 =head2 Simple loading
 
-Simpliest case, loading a single image would look like:
+Simplest case, loading a single image would look like:
 
         my $x = Prima::Image-> load( 'filename.duf');
         die "$@" unless $x;
@@ -64,9 +64,9 @@ Example:
 
 =item map
 
-Contains an anonymous array of frame indeces to load. 
-Valid indeces are above zero, negative ones can't be counted in a way
-perl array indeces are. Example:
+Contains an anonymous array of frame indexes to load. 
+Valid indexes are above zero, negative ones can't be counted in a way
+perl array indexes are. Example:
 
          map => [0, 10, 15..20]
 
@@ -86,7 +86,7 @@ Example:
         }
 
 The code above loads and prints extra information read from a file.
-Typical output, for example, from a gif codec based on libunguf would look
+Typical output, for example, from a gif codec based on libungif would look
 like:
 
     codecID : 1
@@ -100,7 +100,7 @@ indication of codec on the save request.
 
 'frames' is also a Prima-defined extra field, with integer value set to
 a number of frames in the image. It might be set to -1,
-signalling that codec is incapable of quick reading of the frame count.
+signaling that codec is incapable of quick reading of the frame count.
 If, however, it is necessary to get actual frame count, a 'wantFrames'
 profile boolean value should be set to 1 - then frames is guaranteed to
 be set to a 0 or positive value, but the request may take longer time, especially
@@ -117,7 +117,7 @@ enumerated above - loadExtras, loadAll etc. Only loadExtras, noImageData
 and iconUnmask are applicable to
 a frame, other govern the loading process. A codec may as well define its own
 parameters, however it is not possible to tell what parameter belongs to what
-group - this information is to be found in codec documentaion;
+group - this information is to be found in codec documentation;
 
 The parameters that applicable to any frame, can be specified separately to
 every desirable frame in single call. For that purpose, parameter 'profiles'
@@ -166,7 +166,7 @@ upon success and an array with one undefined value on failure.
 
 If Prima needs to create a storage object, it is by default
 Prima::Image, or a class name of an caller object, or a package
-the request was issued on. This behavor can be altered 
+the request was issued on. This behavior can be altered 
 using parameter 'className', which defines the class to be used 
 for the frame.
 
@@ -201,13 +201,13 @@ Typical saving code will be:
 Upon a single-frame invocation save returns 1 upon success an 0 on failure.
 Save requests also can be performed with package syntax:
 
-   die "$@" unelss Prima::Image-> save( 'filename.duf', 
+   die "$@" unless Prima::Image-> save( 'filename.duf', 
        images => [ $x]);
 
 =head2 Multiframe saving
 
 In multiframe invocation save returns number of successfully saved frames.
-File is erased though, if error occured, even after some successfully 
+File is erased though, if error occurred, even after some successfully 
 written frames.
 
     die "$@" if scalar(@images) > Prima::Image-> save( $f, 
@@ -235,7 +235,7 @@ is never extracted from objects but passed to 'images' array instead.
        $x-> {extras}-> {codecID} = 1;
        $x-> save( $f);
 
-Actual correspondence between codecs and their indeces is described latter.
+Actual correspondence between codecs and their indexes is described latter.
 
 NB - if codecID is not given, codec is selected by the file extension.
 
@@ -252,7 +252,7 @@ be planned carefully. As an example the Prima::ImageDialog::SaveImageDialog
 code might be useful.
 
 When the conversion takes place, Image property 'conversion' is used
-for selection of an error distribution algorithm, if downsampling 
+for selection of an error distribution algorithm, if down-sampling 
 is required.
 
 =head2 Appending frames to an existing file
@@ -266,7 +266,7 @@ then an append attempt is made.
 Prima provides single function, Prima::Image-> codecs, which returns an
 anonymous array of hashes, where every hash entry corresponds to a 
 registered codec. 'codecID' parameter on load and save requests is actually
-an index in this array. Indeces for a codecs registered once never change,
+an index in this array. Indexes for a codecs registered once never change,
 so it is safe to manipulate these numbers within single program run.
 
 Codec information that is contained in these hashes is divided into
@@ -305,7 +305,7 @@ Short description of a type of a file, that codec is designed to work with.
 
 Array of strings, with some features description that a codec supports -
 usually codecs implement only a part of file format specification, so it is
-always interestring to know, what part it is.
+always interesting to know, what part it is.
 
 =item module and package
 
