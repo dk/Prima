@@ -2257,10 +2257,36 @@ apc_beep_tone( int freq, int duration)
    Beep( freq, duration);
 }
 
+
 char *
 apc_system_action( char * params)
 {
-   if ( stricmp( params, "wait.before.quit") == 0) { waitBeforeQuit = 1; }
+   switch ( *params) {
+   case 'w':
+      if ( strcmp( params, "wait.before.quit") == 0) {
+         waitBeforeQuit = 1;
+      } else if ( strncmp( params, "win32.DrawFocusRect ", 20) == 0) {
+         RECT r;
+         HWND win;
+         Handle self;
+         int i = sscanf( params + 20, "%lu %d %d %d %d", &win, &r.left, &r.bottom, &r.right, &r.top);
+
+         if ( i != 5 || !( self = hwnd_to_view( win))) {
+            BADPARAMS:
+            warn( "Bad parameters to sysaction win32.DrawFocusRect");
+            return 0;
+         }
+         if ( !opt_InPaint) return 0;
+         r. bottom = sys lastSize. y - r. bottom;
+         r. top    = sys lastSize. y - r. top;
+         DrawFocusRect( sys ps, &r);
+      } else
+         goto DEFAULT;
+      break;
+   DEFAULT:
+   default:
+      warn( "Unknown sysaction");
+   }
    return 0;
 }
 
@@ -2311,7 +2337,13 @@ static int ctx_dt2DRIVE[] =
 int
 apc_query_drive_type( char *drive)
 {
-   return ctx_remap_def( GetDriveType( drive), ctx_dt2DRIVE, false, dtNone);
+   char buf[ 256];                        //  Win95 fix
+   strncpy( buf, drive, 256);             //     sometimes D: isn't enough for 95,
+   if ( buf[1] == ':' && buf[2] == 0) {   //     but ok for D:\.
+      buf[2] = '\\';                      //
+      buf[3] = 0;                         //
+   }                                      //
+   return ctx_remap_def( GetDriveType( buf), ctx_dt2DRIVE, false, dtNone);
 }
 
 static char userName[ 1024];
