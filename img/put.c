@@ -184,6 +184,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       Byte * data  = PImage( src)-> data;
       int dataSize = PImage( src)-> dataSize; 
       int lineSize = PImage( src)-> lineSize; 
+      int palSize  = PImage( src)-> palSize; 
       int type     = PImage( src)-> type;
       void *self   = PImage( src)-> self; 
       RGBColor palette[2];
@@ -194,12 +195,14 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       PImage( src)-> data     =  PIcon( src)-> mask;
       PImage( src)-> lineSize =  PIcon( src)-> maskLine;
       PImage( src)-> dataSize =  PIcon( src)-> maskSize;
+      PImage( src)-> palSize  =  2;
       img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut);
       PImage( src)-> self     = self;
       PImage( src)-> type     = type;
       PImage( src)-> data     = data; 
       PImage( src)-> lineSize = lineSize; 
       PImage( src)-> dataSize = dataSize; 
+      PImage( src)-> palSize  = palSize;
       memcpy( PImage( src)-> palette, palette, 6);
       rop = ropXorPut;
    }  

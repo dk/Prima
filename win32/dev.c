@@ -191,9 +191,6 @@ bm_put_zs( HBITMAP hbm, int x, int y, int z)
 }
 */
 
-
-
-
 HBITMAP
 image_make_bitmap_handle( Handle img, HPALETTE pal)
 {
@@ -207,15 +204,17 @@ image_make_bitmap_handle( Handle img, HPALETTE pal)
    if ( !dc)
       apiErr;
 
+   if ( bi-> bmiHeader. biClrUsed > 0)
+      bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = PImage(img)-> palSize;
+
    if ( xpal == nil)
       xpal = image_make_bitmap_palette( img);
 
    if ( xpal) {
       old = SelectPalette( dc, xpal, 1);
-      RealizePalette( dc);        // m$ suxx !!!
+      RealizePalette( dc);        
    }
 
-   // if (((( PImage) img)-> type & imBPP) != 1)
    if ((( PImage) img)-> type != imBW)
       bm = CreateDIBitmap( dc, &bi-> bmiHeader, CBM_INIT,
         (( PImage) img)-> data, bi, DIB_RGB_COLORS);
@@ -642,6 +641,8 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
       return NULL;
    }
    image_get_binfo(( Handle)i, &bi);
+   if ( bi. bmiHeader. biClrUsed > 0)
+      bi. bmiHeader. biClrUsed = bi. bmiHeader. biClrImportant = i-> palSize;
 
   // if ( 0) {
    if ( IS_NT) {

@@ -820,6 +820,8 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    } else {
       XBITMAPINFO xbi;
       BITMAPINFO * bi = image_get_binfo( deja, &xbi);
+      if ( bi-> bmiHeader. biClrUsed > 0)
+         bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = PImage(deja)-> palSize;
       if ( StretchDIBits( xdc, x, ly - y - yDestLen, xDestLen, yDestLen,
             xFrom, yFrom,
             xLen, yLen, ((PImage) deja)-> data, bi,

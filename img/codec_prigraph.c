@@ -375,6 +375,25 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    CImage( fi-> object)-> create_empty( fi-> object, 
       g-> gbm. w, g-> gbm. h, i-> type); 
 
+   /* free unused palette entries */
+   if ( i-> palSize > 1) {
+      int x = i-> palSize - 1;
+      Color last = ARGB(i->palette[x].r,i->palette[x].g,i->palette[x].b), curr;
+      while (1) {
+         x--;
+         curr = ARGB(i->palette[x].r,i->palette[x].g,i->palette[x].b);
+         if ( curr != last) break;
+         i-> palSize--;
+      }
+      for ( x = 0; x < i-> palSize - 2; x++) {
+         curr = ARGB(i->palette[x].r,i->palette[x].g,i->palette[x].b);
+         if ( curr == last) {
+            i-> palSize--;
+            break;
+         }
+      }
+   }
+
    if (( rc = gbm_read_data( g-> fd, g-> ft, &g-> gbm, PImage( fi-> object)-> data)) != 0) {
       strncpy( fi-> errbuf, gbm_err( rc), 256);
       return false;
@@ -542,7 +561,8 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          strcat(g-> params, (snprintf(oneOpt, 256, " transcol=%d",(int) pget_i( transparentColorIndex)), oneOpt));
    }
 
-   cm_reverse_palette( i-> palette, pal, 256);
+   memset( pal, 0, sizeof( pal));
+   cm_reverse_palette( i-> palette, pal, i-> palSize);
 
    if (( rc = gbm_write( fi-> fileName, g-> fd, g-> ft, &g-> gbm, ( GBMRGB *) pal, i-> data, g-> statParams)) != 0) {
       strncpy( fi-> errbuf, gbm_err( rc), 256);

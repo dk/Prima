@@ -615,15 +615,15 @@ Image_end_paint( Handle self)
       switch( var->type)
       {
          case imbpp1:
-            if ( memcmp( var->palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
+            if ( var-> palSize == 2 && memcmp( var->palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
                var->type |= imGrayScale;
             break;
          case imbpp4:
-            if ( memcmp( var->palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
+            if ( var-> palSize == 16 && memcmp( var->palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
                var->type |= imGrayScale;
             break;
          case imbpp8:
-            if ( memcmp( var->palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
+            if ( var-> palSize == 256 && memcmp( var->palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
                var->type |= imGrayScale;
             break;
       }
@@ -980,6 +980,7 @@ Image_dup( Handle self)
    sv_free(( SV *) profile);
    i = ( PImage) h;
    memcpy( i-> palette, var->palette, 768);
+   i-> palSize = var-> palSize;
    if ( i-> type != var->type)
       croak("RTC0108: Image::dup consistency failed");
    else
@@ -1030,6 +1031,7 @@ Image_extract( Handle self, int x, int y, int width, int height)
 
    i = ( PImage) h;
    memcpy( i-> palette, var->palette, 768);
+   i-> palSize = var-> palSize;
    if (( var->type & imBPP) >= 8) {
       int pixelSize = ( var->type & imBPP) / 8;
       while ( height > 0) {
