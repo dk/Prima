@@ -966,10 +966,16 @@ extern Bool
 apc_widget_is_enabled( Handle self);
 
 extern Bool
-apc_widget_is_responsive( Handle self);
+apc_widget_is_exposed( Handle self);
 
 extern Bool
 apc_widget_is_focused( Handle self);
+
+extern Bool
+apc_widget_is_responsive( Handle self);
+
+extern Bool
+apc_widget_is_showing( Handle self);
 
 extern Bool
 apc_widget_is_visible( Handle self);
