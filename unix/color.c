@@ -333,7 +333,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
          int ab2;
          Bool dyna = guts. dynamicColors && self && X(self)-> type. widget && ( self != application);
          brush-> primary = prima_color_find( self, color, -1, &ab2, RANK_FREE);
-         if ( guts. useDithering && (ab2 > 12)) {
+         if ( guts. useDithering && (brush != &b) && (ab2 > 12)) {
             if ( dyna) {
                XColor xc;
                xc. red   = COLOR_R16(color);
