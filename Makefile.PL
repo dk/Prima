@@ -201,6 +201,10 @@ sub compile
     my $tmpsrc = qd( tempfile( "$TMPDIR/pmts%04d.c"));
     my $tmpo = qd( tempfile( "$TMPDIR/pmts%04d$OBJ_EXT"));
     my $tmpexe = qd( tempfile( "$TMPDIR/pmts%04d$EXE_EXT"));
+    my @tmpextras = (
+       qd( tempfile( "$TMPDIR/pmts%04d.ilk")),
+       qd( tempfile( "$TMPDIR/pmts%04d.pdb")),
+    );
 
     open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
     print TMPSRC $text;
@@ -214,6 +218,7 @@ sub compile
     unlink $tmpsrc;
     unlink $tmpo if -w $tmpo;
     unlink $tmpexe if -w $tmpexe;
+    unlink $_ for @tmpextras;
     return( $rc == 0);
 }
 
