@@ -946,7 +946,7 @@ sub add
          while ( $m =~ m/([A-Z])<([^<>]*)>/gcs) {
 	    push @ids, 
 	       [ pos($m) - length($2) - 3, $1, 2],
-	       [ pos($m) - 1, lc $2, 1];
+	       [ pos($m) - 1, lc $1, 1];
 	    substr $m, $ids[$_][0], $ids[$_][2], '_' x $ids[$_][2] for -2,-1;
 	 }
          while ( $m =~ m/([A-Z])(<<+\s?)/gcs) {
