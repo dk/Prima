@@ -39,7 +39,11 @@ apc_gp_done( Handle self)
          }
       }
    }
-   sys bm = sys pal = sys ps = sys bm = nilHandle;
+   if ( sys p256) {
+      free( sys p256);
+      sys p256 = nil;
+   }
+   sys bm = sys pal = sys ps = sys bm = sys p256 = nilHandle;
    free( sys charTable);
    free( sys charTable2);
    free( sys saveFont);
@@ -377,7 +381,9 @@ apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBord
 Color
 apc_gp_get_pixel( Handle self, int x, int y)
 {
-   return remap_color(( Color) GetPixel( sys ps, x, sys lastSize. y - y - 1), false);
+   COLORREF c = GetPixel( sys ps, x, sys lastSize. y - y - 1);
+   if ( c == CLR_INVALID) return clInvalid;
+   return remap_color(( Color) c, false);
 }
 
 void
@@ -473,7 +479,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    Handle deja = image;
    int    ly   = sys lastSize. y;
    HDC    xdc  = sys ps;
-   HPALETTE p1, p2, p3;
+   HPALETTE p1, p2 = nil, p3;
    HBITMAP  b1;
    HDC dc;
    DWORD theRop;
@@ -483,7 +489,8 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    if ( db) {
       if (
           ( guts. displayBMInfo. bmiHeader. biBitCount == 8) &&
-          ( !is_apt( aptCompatiblePS))
+          ( !is_apt( aptCompatiblePS)) &&
+          ( is_apt( aptWinPS) || is_apt( aptBitmap))
          )
       {
          // There is a big uncertainity about 8-bit BitBlt's, based on fact that
@@ -513,8 +520,6 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       deja = image_enscreen( image, self);
       if ( dc)
          image_set_cache( deja, image);
-      else if ( dsys( image) pal == nil)
-         dsys( image) pal = palette_create( deja);
    }
 
    // if image is actually icon, drawing and-mask
@@ -555,7 +560,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          b1 = nil;
    }
 
-   if ( !sys pal) {
+   if ( p3) {
       p2 = SelectPalette( xdc, p3, 1);
       RealizePalette( xdc);
    }
@@ -851,6 +856,12 @@ apc_gp_get_back_color( Handle self)
    return remap_color( sys lbs[1], false);
 }
 
+int
+apc_gp_get_bpp( Handle self)
+{
+   return sys bpp;
+}
+
 Color
 apc_gp_get_color( Handle self)
 {
@@ -902,6 +913,115 @@ apc_gp_get_line_pattern( Handle self)
    return ( sys stylus. pen. lopnStyle == PS_USERSTYLE) ?
       sys stylus. extPen. patResource-> style :
       ctx_remap_def( sys stylus. pen. lopnStyle, ctx_lp2PS, false, lpSolid);
+}
+
+Color
+apc_gp_get_nearest_color( Handle self, Color color)
+{
+#define quit return remap_color( GetNearestColor( sys ps, clr), false)
+
+   XLOGPALETTE lpLoc, lpGlob;
+   int locIdx, globIdx, cdiff;
+   long clrGlob, clr = remap_color( color, true);
+
+   if ( !sys pal || ( sys bpp > 8)) quit;
+   lpLoc. palNumEntries = GetPaletteEntries( sys pal, 0, 256, lpLoc. palPalEntry);
+   if ( lpLoc. palNumEntries == 0)  quit;
+   lpGlob. palNumEntries = GetSystemPaletteEntries( sys ps, 0, 256, lpGlob. palPalEntry);
+   if ( lpGlob. palNumEntries == 0) quit;
+
+   locIdx = palette_match_color( &lpLoc, clr, &cdiff);
+   if ( cdiff >= COLOR_TOLERANCE)   quit;
+
+   clrGlob = ARGB(
+      lpLoc. palPalEntry[ locIdx]. peBlue,
+      lpLoc. palPalEntry[ locIdx]. peGreen,
+      lpLoc. palPalEntry[ locIdx]. peRed
+   );
+   globIdx = palette_match_color( &lpGlob, clrGlob, &cdiff);
+   if ( cdiff >= COLOR_TOLERANCE)   quit;
+   return ARGB(
+      lpGlob. palPalEntry[ globIdx]. peRed,
+      lpGlob. palPalEntry[ globIdx]. peGreen,
+      lpGlob. palPalEntry[ globIdx]. peBlue
+   );
+#undef quit
+}
+
+PRGBColor
+apc_gp_get_physical_palette( Handle self, int * color)
+{
+   XLOGPALETTE lpGlob;
+   int i, nCol;
+   PRGBColor r;
+
+   if (( GetDeviceCaps( sys ps, RASTERCAPS) & RC_PALETTE) == 0) {
+      *color = 0;
+      return nil;
+   }
+
+   nCol = GetDeviceCaps( sys ps, NUMCOLORS);
+   if ( nCol <= 0 || nCol > 256) {
+      *color = 0;
+      return nil;
+   }
+
+
+   if ( sys pal && ( nCol > 16)) {
+      XLOGPALETTE lp;
+      int i, lpCount = 0;
+      int map[ 256];
+
+      lp. palNumEntries = GetPaletteEntries( sys pal, 0, 256, lp. palPalEntry);
+      lpGlob. palNumEntries = GetSystemPaletteEntries( sys ps, 0, 256, lpGlob. palPalEntry);
+
+      for ( i = 0; i < lp. palNumEntries; i++) {
+         long clr = ARGB(
+           lp. palPalEntry[ i]. peBlue,
+           lp. palPalEntry[ i]. peGreen,
+           lp. palPalEntry[ i]. peRed
+         );
+         int j, cdiff;
+         int idx = palette_match_color( &lpGlob, clr, &cdiff);
+         Bool hasmatch = 0;
+
+         if ( cdiff >= COLOR_TOLERANCE) continue;
+
+         if ( idx < 10 || idx > 245) continue;
+
+         for ( j = 0; j < lpCount; j++)
+            if ( map[ j] == idx) {
+               hasmatch = 1;
+               break;
+            }
+         if ( hasmatch) continue;
+         map[ lpCount++] = idx;
+      }
+
+      for ( i = 0; i < lpCount; i++)
+         lp. palPalEntry[ i] = lpGlob. palPalEntry[ map[ i]];
+      for ( i = 0; i < lpCount; i++)
+         lpGlob. palPalEntry[ i + nCol] = lp. palPalEntry[ i];
+      *color = nCol + lpCount;
+   } else {
+      *color = GetSystemPaletteEntries( sys ps, 0, 256, lpGlob. palPalEntry);
+      if (( nCol == 20) && ( *color == 256))
+         *color = 20;
+   }
+
+   if ( nCol == 20) {
+      int i;
+      for ( i = 0; i < 10; i++)
+         lpGlob. palPalEntry[ i + 10] = lpGlob. palPalEntry[ 255 - i];
+   }
+
+   r = malloc( sizeof( RGBColor) * *color);
+   for ( i = 0; i < *color; i++) {
+      r[i].r = lpGlob. palPalEntry[i]. peRed;
+      r[i].g = lpGlob. palPalEntry[i]. peGreen;
+      r[i].b = lpGlob. palPalEntry[i]. peBlue;
+   }
+   return r;
 }
 
 Point
@@ -997,12 +1117,15 @@ apc_gp_get_text_opaque( Handle self)
    return sys textOpaque;
 }
 
+#define pal_ok ((sys bpp <= 8) && ( sys pal))
+
 void
 apc_gp_set_back_color( Handle self, Color color)
 {
    long clr = remap_color( color, true);
    if ( sys ps) {
       PStylus s = & sys stylus;
+      if ( pal_ok) clr = palette_match( self, clr);
       if ( SetBkColor( sys ps, clr) == CLR_INVALID) apiErr;
       if ( s-> brush. lb. lbStyle == BS_DIBPATTERNPT) {
          s-> brush. backColor = color;
@@ -1030,6 +1153,7 @@ apc_gp_set_clip_rect( Handle self, Rect c)
    if ( !DeleteObject( rgn)) apiErr;
 }
 
+
 void    apc_gp_set_color( Handle self, Color color)
 {
    long clr = remap_color( color, true);
@@ -1037,6 +1161,7 @@ void    apc_gp_set_color( Handle self, Color color)
       sys lbs[0] = clr;
    else {
       PStylus s = & sys stylus;
+      if ( pal_ok) clr = palette_match( self, clr);
       s-> pen. lopnColor = ( COLORREF) clr;
       if ( s-> brush. lb. lbStyle != BS_DIBPATTERNPT) s-> brush. lb. lbColor = ( COLORREF) clr;
       stylus_change( self);
@@ -1141,6 +1266,12 @@ void
 apc_gp_set_palette( Handle self)
 {
    HPALETTE pal;
+
+   if ( sys p256) {
+      free( sys p256);
+      sys p256 = nil;
+   }
+
    if ( !sys ps) return;
    pal = palette_create( self);
    if ( pal)
