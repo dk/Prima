@@ -1038,7 +1038,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       pass-> self-> set_type(( Handle) pass, imByte);
    }
    
-   if ( target_bpp < 24 && img-> type != imBW) {
+   if ( target_bpp <= 8 && img-> type != imBW) {
       int bpp, colors = 0;
       RGBColor palbuf[256], *palptr = nil;
       if ( !dup) {
