@@ -547,7 +547,7 @@ Window_menuColorIndex( Handle self, Bool set, int index, Color color)
    if (( index < 0) || ( index > ciMaxId)) return clInvalid;
    if ( !set)
       return  var-> menuColor[ index];
-   if (( color < 0) && (( color & wcMask) == 0)) color |= wcMenu;
+   if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0)) color |= wcMenu;
    var-> menuColor[ index] = color;
    if ( var-> menu) apc_menu_set_color( var-> menu, color, index);
    return clInvalid;

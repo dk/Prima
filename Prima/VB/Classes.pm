@@ -1615,9 +1615,9 @@ sub open
 sub set
 {
    my ( $self, $data) = @_;
-   if ( $data & 0x80000000) {
+   if ( $data & cl::SysFlag) {
       $self-> {A}-> value( cl::Gray);
-      my ( $acl, $awc) = ( sprintf("%d",$data & 0x80000FFF), $data & 0x0FFF0000);
+      my ( $acl, $awc) = ( sprintf("%d",$data & ~wc::Mask), $data & wc::Mask);
       my $tx = 'undef';
       for ( @uClasses) {
          $tx = $_, last if $awc == &{$wc::{$_}}();
@@ -1652,8 +1652,8 @@ sub write
 {
    my ( $class, $id, $data) = @_;
    my $ret = 0;
-   if ( $data & 0x80000000) {
-      my ( $acl, $awc) = ( sprintf("%d",$data & 0x80000FFF), $data & 0x0FFF0000);
+   if ( $data & cl::SysFlag) {
+      my ( $acl, $awc) = ( sprintf("%d",$data & ~wc::Mask), $data & wc::Mask);
       my $tcl = '0';
       for ( @uClasses) {
          $tcl = "wc::$_", last if $awc == &{$wc::{$_}}();

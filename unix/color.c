@@ -250,13 +250,13 @@ prima_map_color( Color clr, int * hint)
    } else if ( clr == clClear) {
       if ( hint) *hint = COLORHINT_BLACK;
       return 0; 
-   } else return standard_colors[cls][clr-1];
+   } else return standard_colors[cls][(clr & clSysMask) - 1];
 }   
 
 Color
 apc_widget_map_color( Handle self, Color color)
 {
-   if ((color < 0) && (( color & wcMask) == 0)) color |= PWidget(self)->widgetClass;
+   if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0)) color |= PWidget(self)-> widgetClass;
    return prima_map_color( color, nil);
 }   
 

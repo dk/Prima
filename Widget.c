@@ -2065,7 +2065,7 @@ Widget_colorIndex( Handle self, Bool set, int index, Color color)
       if ( !opt_InPaint) my-> first_that( self, single_color_notify, &s);
 
       if ( var-> handle == nilHandle) return clInvalid; /* aware of call from Drawable::init */
-      if (( color < 0) && (( color & wcMask) == 0))
+      if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0))
          color |= var-> widgetClass;
       if ( opt_InPaint) {
          switch ( index) {
@@ -2448,7 +2448,7 @@ Widget_popupColorIndex( Handle self, Bool set, int index, Color color)
    if (( index < 0) || ( index > ciMaxId)) return clInvalid;
    if ( !set)
       return var-> popupColor[ index];
-   if (( color < 0) && (( color & wcMask) == 0)) color |= wcPopup;
+   if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0)) color |= wcPopup;
    var-> popupColor[ index] = color;
    return color;
 }

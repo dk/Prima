@@ -1117,14 +1117,14 @@ remap_color( long clr, Bool toSystem)
 {
    PRGBColor cp = ( PRGBColor) &clr;
    unsigned char sw = cp-> r;
-   if ( toSystem && clr < 0) {
+   if ( toSystem && ( clr & clSysFlag)) {
       long c = clr;
       int * scheme = ( int *) ctx_remap_def( clr & wcMask, ctx_wc2SCHEME, true, ( int) &customScheme);
       if (( clr = ( clr & ~wcMask)) > clMaxSysColor) clr = clMaxSysColor;
       if ( clr == clSet)   return 0xFFFFFF;
       if ( clr == clClear) return 0;
       if ( clr == 0) return 0xFFFFFF; // clInvalid
-      c = GetSysColor( scheme[ clr - 1]);
+      c = GetSysColor( scheme[( clr & clSysMask) - 1]);
       return c;
    }
    cp-> r = cp-> b;
