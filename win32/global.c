@@ -935,13 +935,6 @@ AGAIN:
       break;
    case WM_PAINT:
       return 0;
-   case WM_LBUTTONDBLCLK: case WM_LBUTTONUP:   case WM_LBUTTONDOWN:
-   case WM_MBUTTONDBLCLK: case WM_MBUTTONUP:   case WM_MBUTTONDOWN:
-   case WM_RBUTTONDBLCLK: case WM_RBUTTONUP:   case WM_RBUTTONDOWN:
-   case WM_RMOUSECLICK:   case WM_MMOUSECLICK: case WM_LMOUSECLICK:
-      if ( ev. cmd == 0)
-         return ( LRESULT)1;
-      return ( LRESULT)1;
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
        // ev. cmd = 1; // forced call DefWindowProc superseded for test reasons
