@@ -1897,7 +1897,7 @@ do_stretch( Handle self, PrimaXImage *cache,
    int xclipstart, xclipsize;
    int yclipstart, yclipsize;
 
-   prima_gp_get_clip_rect( self, &cr);
+   prima_gp_get_clip_rect( self, &cr, 1);
    xclipstart = cr. x - dst_x;
    xclipsize = cr. width;
    yclipstart = cr. y - dst_y;
@@ -2095,7 +2095,7 @@ apc_gp_stretch_image( Handle self, Handle image,
              ( wlpal_get( self,  i) != RANK_FREE))
             prima_color_add_ref( self, i, RANK_LOCKED);
    }
-   
+  
    SHIFT( dst_x, dst_y);
    dst_y = XX->size.y - dst_y - ABS(dst_h);
    src_y = img-> h - src_y - ABS(src_h);

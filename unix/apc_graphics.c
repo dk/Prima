@@ -1103,7 +1103,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
    SHIFT( x, y);
    y = REVERT( y);
    color = prima_map_color( color, &hint);
-   prima_gp_get_clip_rect( self, &cr);
+   prima_gp_get_clip_rect( self, &cr, 1);
 
    s. clip. left   = cr. x;
    s. clip. top    = cr. y;
@@ -1850,7 +1850,7 @@ apc_gp_get_color( Handle self)
 
 /* returns rect in X coordinates BUT without menuHeight deviation */
 void
-prima_gp_get_clip_rect( Handle self, XRectangle *cr)
+prima_gp_get_clip_rect( Handle self, XRectangle *cr, Bool for_internal_paints)
 {
    DEFXX;
    XRectangle r;
@@ -1859,9 +1859,8 @@ prima_gp_get_clip_rect( Handle self, XRectangle *cr)
    cr-> y = 0;
    cr-> width = XX-> size.x;
    cr-> height = XX-> size.y;
-   if ( XF_IN_PAINT(XX) && ( XX-> invalid_region || XX-> paint_region)) {
-      XClipBox( XX-> invalid_region ? XX-> invalid_region : XX-> paint_region,
-                &r);
+   if ( XF_IN_PAINT(XX) && XX-> paint_region) {
+      XClipBox( XX-> paint_region, &r);
       prima_rect_intersect( cr, &r);
    }
    if ( XX-> clip_rect. x != 0
@@ -1869,6 +1868,11 @@ prima_gp_get_clip_rect( Handle self, XRectangle *cr)
         || XX-> clip_rect. width != XX-> size.x
         || XX-> clip_rect. height != XX-> size.y) {
       prima_rect_intersect( cr, &XX-> clip_rect);
+   }
+
+   if ( for_internal_paints) {
+      cr-> x += XX-> btransform. x;
+      cr-> y -= XX-> btransform. y;
    }
 }
 
@@ -1879,7 +1883,7 @@ apc_gp_get_clip_rect( Handle self)
    XRectangle cr;
    Rect r;
 
-   prima_gp_get_clip_rect( self, &cr);
+   prima_gp_get_clip_rect( self, &cr, 0);
    r. left = cr. x;
    r. top = XX-> size. y - cr. y - 1;
    r. bottom = r. top - cr. height + 1;

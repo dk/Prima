@@ -1048,7 +1048,7 @@ extern int
 prima_rop_map( int rop);
 
 extern void
-prima_gp_get_clip_rect( Handle self, XRectangle *cr);
+prima_gp_get_clip_rect( Handle self, XRectangle *cr, Bool for_internal_paints);
 
 extern XWindow
 prima_find_frame_window( XWindow w);
