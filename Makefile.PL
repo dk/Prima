@@ -170,7 +170,7 @@ sub null_output
 {
     open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
     open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
-    #	$NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
+#    $NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
     close STDOUT;
     close STDERR;
     open STDOUT, ">$NULLDEV" or fatal "STDOUT redirect failed: $!";
@@ -485,7 +485,7 @@ sub setup_variables
     }
     print "$cc_specs{ $COMPILER}->{ name}\n";
 
-    setvar( 'CFLAGS', $Config{ ccflags} . " $cc_specs{ $COMPILER}->{ warnflags} $cc_specs{ $COMPILER}->{ cflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')));
+    setvar( 'CFLAGS', $Config{ ccflags} . " $cc_specs{ $COMPILER}->{ warnflags} $cc_specs{ $COMPILER}->{ cflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')) . " ");
     setvar( 'CDLFLAGS', "$Config{ cccdlflags} $Config{ ccdlflags}");
     setvar( 'COUTOFLAG', $cc_specs{ $COMPILER}->{ coutoflag});
     setvar( 'COUTEXEFLAG', $cc_specs{ $COMPILER}->{ coutexeflag});
@@ -494,7 +494,7 @@ sub setup_variables
     setvar( 'COMPONLYFLAG', '-c');
     setvar( 'CLIBPATHFLAG', $cc_specs{ $COMPILER}->{ clibpathflag});
     setvar( 'LD', $Config{ ld});
-    setvar( 'LDFLAGS', ( $COMPILER eq 'emx' ? "" : "$Config{ ldflags} ") . "$Config{ lddlflags} $cc_specs{ $COMPILER}->{ ldflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ lddebugflags}" : ""));
+    setvar( 'LDFLAGS', ( $COMPILER eq 'emx' ? "" : "$Config{ ldflags} ") . "$Config{ lddlflags} $cc_specs{ $COMPILER}->{ ldflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ lddebugflags}" : "") . " ");
     setvar( 'LDOUTFLAG', $cc_specs{ $COMPILER}->{ ldoutflag});
     setvar( 'LDLIBPATHFLAG', $cc_specs{ $COMPILER}->{ ldlibpathflag});
     setvar( 'LDLIBFLAG', $cc_specs{ $COMPILER}->{ ldlibflag});
