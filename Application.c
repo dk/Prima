@@ -499,7 +499,7 @@ Application_icon( Handle self, Bool set, Handle icon)
    if ( var-> icon)
       my-> detach( self, var-> icon, true);
    var-> icon = icon;
-   if ( icon)
+   if ( icon && ( list_index_of( var-> components, icon) < 0))
       my-> attach( self, icon);
    return nilHandle;
 }

@@ -260,8 +260,13 @@ Widget_attach( Handle self, Handle objectHandle)
 {
    if ( objectHandle == nilHandle) return;
    if ( var-> stage > csNormal) return;
-   if ( kind_of( objectHandle, CWidget)) 
+   if ( kind_of( objectHandle, CWidget)) {
+      if ( list_index_of( &var-> widgets, objectHandle) >= 0) {
+         warn( "RTC0040: Object attach failed");
+         return;
+      }
       list_add( &var-> widgets, objectHandle);
+   }
    inherited-> attach( self, objectHandle);
 }
 
