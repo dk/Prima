@@ -595,6 +595,17 @@ apc_kbd_get_state( Handle self)
 #define DEFCC		PClipboardSysData selfcc = C(self)
 #define CC		selfcc
 
+PList
+apc_get_standard_clipboards( void)
+{
+   PList l = plist_create( 3, 1);
+   if (!l) return nil;
+   list_add( l, (Handle)duplicate_string( "Primary"));
+   list_add( l, (Handle)duplicate_string( "Secondary"));
+   list_add( l, (Handle)duplicate_string( "Clipboard"));
+   return l;
+}
+
 Bool
 apc_clipboard_create( Handle self)
 {

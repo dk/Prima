@@ -36,6 +36,14 @@
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
+PList
+apc_get_standard_clipboards( void)
+{
+   PList l = plist_create( 1, 1);
+   if (!l) return nil;
+   list_add( l, (Handle)duplicate_string( "Clipboard"));
+   return l;
+}
 
 Bool
 apc_clipboard_create( Handle self)

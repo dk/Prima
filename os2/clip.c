@@ -41,6 +41,15 @@
 #define HANDLE  (( sys className == WC_FRAME) ? WinQueryWindow( var handle, QW_PARENT) : var handle)
 #define DHANDLE( view) (((( PDrawableData)(( PComponent) view)-> sysData)->className == WC_FRAME) ? WinQueryWindow((( PWidget) view)->handle, QW_PARENT) : (( PWidget) view)->handle)
 
+PList
+apc_get_standard_clipboards( void)
+{
+   PList l = plist_create( 1, 1);
+   if (!l) return nil;
+   list_add( l, (Handle)duplicate_string( "Clipboard"));
+   return l;
+}
+
 Bool
 apc_clipboard_create( Handle self)
 {

@@ -1882,6 +1882,9 @@ apc_kbd_get_state( Handle self);
 #define cfImage    cfBitmap
 #define cfCustom   2
 
+extern PList
+apc_get_standard_clipboards( void);
+
 extern Bool
 apc_clipboard_create( Handle self);
 

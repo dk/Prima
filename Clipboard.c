@@ -303,10 +303,36 @@ XS( Clipboard_get_registered_formats_FROMPERL)
    PUTBACK;
 }
 
+XS( Clipboard_get_standard_clipboards_FROMPERL)
+{
+   dXSARGS;
+   int i;
+   PList l;
+
+   fprintf( stderr, "items: %ld\n", items);
+   (void)ax; SP -= items;
+   l = apc_get_standard_clipboards();
+   fprintf( stderr, "ilcnt: %d\n", l-> count);
+   if ( l && l-> count > 0) {
+      EXTEND( sp, l-> count);
+      for ( i = 0; i < l-> count; i++) {
+         char *cc = (char *)list_at( l, i);
+         PUSHs( sv_2mortal( newSVpv(cc, 0)));
+      }
+   }
+   if (l) {
+      list_delete_all( l, true);
+      plist_destroy( l);
+   }
+   PUTBACK;
+}
+
 void Clipboard_get_formats                       ( Handle self) { warn("Invalid call of Clipboard::get_formats"); }
 void Clipboard_get_formats_REDEFINED             ( Handle self) { warn("Invalid call of Clipboard::get_formats"); }
 void Clipboard_get_registered_formats            ( Handle self) { warn("Invalid call of Clipboard::get_registered_formats"); }
 void Clipboard_get_registered_formats_REDEFINED  ( Handle self) { warn("Invalid call of Clipboard::get_registered_formats"); }
+void Clipboard_get_standard_clipboards               ( Handle self) { warn("Invalid call of Clipboard::get_standard_clipboards"); }
+void Clipboard_get_standard_clipboards_REDEFINED     ( Handle self) { warn("Invalid call of Clipboard::get_standard_clipboards"); }
 
 static SV *
 text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)

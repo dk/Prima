@@ -39,6 +39,7 @@ object Prima::Clipboard( Prima::Component)
    public void   get_formats();
    method int    get_registered_format_count();
    public void   get_registered_formats();
+   public void   get_standard_clipboards();
    method void   init( HV * profile);
    method Bool   open();
    method Bool   register_format( char * format);

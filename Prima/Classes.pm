@@ -1415,17 +1415,9 @@ sub setup
 {
    my $self = shift;
    $self-> SUPER::setup;
-   unless (exists $self->{clipboard}) {
-      $self->{clipboard} = $self-> insert( qw(Prima::Clipboard),
-                                           name => 'Clipboard');
-   }
-   unless (exists $self->{clipboard_primary}) {
-      $self->{clipboard_primary} = $self-> insert( qw(Prima::Clipboard),
-                                                   name => 'Primary');
-   }
-   unless (exists $self->{clipboard_secondary}) {
-      $self->{clipboard_secondary} = $self-> insert( qw(Prima::Clipboard),
-                                                     name => 'Secondary');
+   for my $clp (Prima::Clipboard->get_standard_clipboards()) {
+      $self->{$clp} = $self-> insert( qw(Prima::Clipboard), name => $clp)
+         unless exists $self->{$clp};
    }
 }
 
