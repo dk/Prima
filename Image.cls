@@ -55,6 +55,7 @@ object Prima::Image( Prima::Drawable)
    method Handle bitmap();
    method Bool   begin_paint();
    method Bool   begin_paint_info();
+   static SV   * codecs( SV * dummy);
    c_only void   create_empty( int width, int height, int type);
    method void   done();
    method Handle dup();
@@ -63,15 +64,13 @@ object Prima::Image( Prima::Drawable)
    method Handle extract( int x, int y, int width, int height);
    method int    get_bpp();
    method SV   * get_handle();
-   weird  Handle get_info( SV *who, char *filename);
-   static char * get_status_string( SV *self);
    method void   init( HV * profile);
-   weird  Handle load( SV *who, char *filename, PList imgInfo);
+   weird  PList  load( SV * class, char *filename, HV * profile);
    c_only void   make_empty();
    method void   map( Color color);
    import SV *   profile_default ();
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
-   weird  Bool   save( SV *who, char *filename, PList imgInfo);
+   weird  int    save( SV *class, char *filename, HV * profile);
    method void   set( HV * profile);
    c_only void   reset( int type, SV * palette);
    c_only void   stretch( int width, int height);

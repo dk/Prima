@@ -26,11 +26,7 @@
  * $Id$
  */
 
-#ifdef PRIGRAPH
-#   include "gbm.h"
-#endif
-#include "img_api.h"
-
+#include "img.h"
 
 #ifndef __unix
 #   include <io.h>
@@ -58,7 +54,6 @@ extern "C" {
 #define my  ((( PImage) self)-> self)
 #define var (( PImage) self)
 
-static int  Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
 static Bool Image_set_extended_data( Handle self, HV * profile);
 
 void
@@ -95,7 +90,7 @@ Image_init( Handle self, HV * profile)
    opt_assign( optPreserveType, pget_B( preserveType));
    var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
    if (!( var->type & imGrayScale))
-      Image_read_palette( self, var->palette, pget_sv( palette));
+      apc_img_read_palette( var->palette, pget_sv( palette));
    {
       Point set;
       prima_read_point( pget_sv( resolution), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
@@ -117,29 +112,6 @@ Image_init( Handle self, HV * profile)
    my->update_change( self);
 }
 
-static int
-Image_read_palette( Handle self, PRGBColor palBuf, SV * palette)
-{
-   AV * av;
-   int i, count;
-   Byte buf[768];
-
-   if ( !SvROK( palette) || ( SvTYPE( SvRV( palette)) != SVt_PVAV))
-      return 0;
-   av = (AV *) SvRV( palette);
-   count = av_len( av) + 1;
-   if ( count > 768) count = 768;
-   count -= count % 3;
-
-   for ( i = 0; i < count; i++)
-   {
-      SV **itemHolder = av_fetch( av, i, 0);
-      if ( itemHolder == nil) return 0;
-      buf[ i] = SvIV( *itemHolder);
-   }
-   memcpy( palBuf, buf, count);
-   return count/3;
-}
 
 void
 Image_reset( Handle self, int type, SV * palette)
@@ -161,7 +133,7 @@ Image_reset( Handle self, int type, SV * palette)
          }
          break;
       }
-      Image_read_palette( self, var->palette, palette);
+      apc_img_read_palette( var->palette, palette);
    }
    if ( var->type == imByte && type == im256)
    {
@@ -286,12 +258,6 @@ Image_make_empty( Handle self)
    var->dataSize = 0;
    var->data     = nil;
    my->update_change( self);
-}
-
-char *
-Image_get_status_string( SV *self)
-{
-   return (char *)apc_image_get_error_message( nil, 0);
 }
 
 Bool
@@ -456,545 +422,126 @@ GOOD_RETURN:
    return true;
 }   
 
-#ifndef PRIGRAPH
-static void
-fill_in_image_profile( HV *profile, PList propList, const char *calledFrom)
+XS( Image_load_FROMPERL) 
 {
-   SV *value;
-   char *key;
-   AV *ary;
-   SV **elem;
-   PImgProperty imgProp;
-   HE *he;
-
-   hv_iterinit( profile);
-   for (;;)
-   {
-      if (( he = hv_iternext( profile)) == nil)
-         break;
-      value = HeVAL( he);
-      key = HeKEY( he);
-      /* keyLen = HeKLEN( he); */
-
-      if ( SvROK( value)) {
-         switch ( SvTYPE( SvRV( value))) {
-             case SVt_PVAV:
-                 {
-                     int i, n;
-                     STRLEN len;
-                     int elemType = 0; /* Can be either PROPTYPE_BIN or PROPTYPE_PROP
-                                          depending on the array content. */
-                     /* Reference to an array */
-                     ary = (AV*)SvRV( value);
-                     n = av_len( ary) + 1;
-                     /* The first step must be cheking of array content and choosing
-                        elemt type carefully. A mixture of scalars and references isn't
-                        allowed as well as the references may be hash references only. */
-                     if ( n > 0) {
-                         for ( i = 0; i < n; i++) {
-                             if ( ! ( elem = av_fetch( ary, i, false))) {
-                                 croak( "%s: cannot fetch element %d of ``%s''", calledFrom, i, key);
-                             }
-                             if ( ( elemType != 0)
-                                  && ( ( SvROK( *elem) && ( elemType != PROPTYPE_PROP))
-                                       || ( ! SvROK( *elem) && ( elemType == PROPTYPE_PROP)))) {
-                                 croak( "%s: mixture of scalars and references in property ``%s'' is not allowed.\n", calledFrom, key);
-                             }
-                             if ( SvROK( *elem)) {
-                                 if ( SvTYPE( SvRV( *elem)) != SVt_PVHV) {
-                                     croak( "%s: array element %d of key %s is an array.", calledFrom, i, key);
-                                 }
-                                 if ( elemType == 0) {
-                                     elemType = PROPTYPE_PROP;
-                                 }
-                             }
-                             else if ( elemType != PROPTYPE_BIN) {
-                                 elemType = PROPTYPE_BIN;
-                             }
-                         }
-                     }
-                     else {
-                         /* An empty array received, assuming default value for type. */
-                         elemType = PROPTYPE_BIN;
-                     }
-                     imgProp = img_push_property( propList, key, elemType | PROPTYPE_ARRAY, n > 0 ? n : 1);
-                     for ( i = 0; i < n; i++) {
-                         /* I do not check for success of fetching since it has been done
-                            in type-choosing loop. */
-                         elem = av_fetch( ary, i, false);
-                         if ( elemType == PROPTYPE_BIN) {
-                             char *buf = SvPV( *elem, len);
-                             /* len must be increased by 1 to include termination zero. */
-                             img_push_property_value( imgProp, len + 1, buf);
-                         }
-                         else {
-                             HV *subprofile = ( HV *)SvRV( *elem);
-                             img_push_property_value( imgProp, HvKEYS( subprofile));
-                             fill_in_image_profile( subprofile, imgProp->val.pProperties + i, calledFrom);
-                         }
-                     }
-                 }
-                 break;
-             case SVt_PVHV:
-                 {
-                     /* Reference to a hash. */
-                     HV *subprofile = ( HV *) SvRV( value);
-                     imgProp = img_push_property( propList, key, PROPTYPE_PROP, -1, HvKEYS( subprofile));
-                     fill_in_image_profile( subprofile, &imgProp->val.Properties, calledFrom);
-                 }
-                 break;
-             default:
-                 croak( "Invalid usage of %s: illegal reference type for key ``%s''", calledFrom, key);
-         }
-      }
-      else {
-         /* scalar */
-         STRLEN len;
-         char *buf = SvPV( value, len);
-         /* len must be increased by 1 to include termination zero. */
-         img_push_property( propList, key, PROPTYPE_BIN, -1, len + 1, buf);
-      }
-   }
-}
-
-static void
-add_image_profile( PImage img, HV *profile, PList imgInfo, const char *calledFrom)
-{
-   PImgInfo imageInfo;
-
-   if ( ! ( imageInfo = img_info_create( HvKEYS( profile)))) {
-       croak( "%s: can't create new image profile.\n", calledFrom);
-   }
-   fill_in_image_profile( profile, imageInfo->propList, calledFrom);
-   if ( img) {
-       PImgProperty imgProp;
-       img_push_property( imageInfo->propList, "width", PROPTYPE_INT, 0, img->w);
-       img_push_property( imageInfo->propList, "height", PROPTYPE_INT, 0, img->h);
-       img_push_property( imageInfo->propList, "type", PROPTYPE_INT, 0, img->type);
-       img_push_property( imageInfo->propList, "lineSize", PROPTYPE_INT, 0, img->lineSize);
-       img_push_property( imageInfo->propList, "lineSize", PROPTYPE_INT, 0, img->lineSize);
-       imgProp = img_push_property( imageInfo->propList, "data", PROPTYPE_BYTE | PROPTYPE_ARRAY, img->dataSize);
-       memcpy( imgProp->val.pByte, img->data, img->dataSize);
-       imgProp = img_push_property( imageInfo->propList, "palette", PROPTYPE_BYTE | PROPTYPE_ARRAY, img->palSize * 3);
-       memcpy( imgProp->val.pByte, img->palette, img->palSize * 3);
-       img_push_property( imageInfo->propList, "paletteSize", PROPTYPE_INT, 0, img->palSize);
-   }
-   list_add( imgInfo, ( Handle) imageInfo);
-}
-
-static void
-add_image_property_to_profile( HV *profile, PImgProperty imgProp, const char *calledFrom)
-{
-    if ( ( imgProp->flags & PROPTYPE_ARRAY) != PROPTYPE_ARRAY) {
-        switch ( imgProp->flags & PROPTYPE_MASK) {
-            case PROPTYPE_STRING:
-                hv_store( profile,
-                          imgProp->name,
-                          strlen( imgProp->name),
-                          newSVpv( imgProp->val.String, 0),
-                          0
-                    );
-                break;
-            case PROPTYPE_BIN:
-                hv_store( profile,
-                          imgProp->name,
-                          strlen( imgProp->name),
-                          newSVpv(( char*) imgProp->val.Binary.data, imgProp->val.Binary.size),
-                          0
-                    );
-                break;
-            case PROPTYPE_DOUBLE:
-                hv_store( profile,
-                          imgProp->name,
-                          strlen( imgProp->name),
-                          newSVnv( imgProp->val.Double),
-                          0
-                    );
-                break;
-            case PROPTYPE_BYTE:
-                hv_store( profile,
-                          imgProp->name,
-                          strlen( imgProp->name),
-                          newSViv( imgProp->val.EightBits),
-                          0
-                    );
-                break;
-            case PROPTYPE_PROP:
-                {
-                    int propIdx;
-                    HV *hv = newHV();
-                    for ( propIdx = 0; propIdx < imgProp->val.Properties.count; propIdx++) {
-                        add_image_property_to_profile(
-                                hv,
-                                ( PImgProperty) list_at( &imgProp->val.Properties, propIdx),
-                                calledFrom
-                            );
-                    }
-                    hv_store( profile,
-                              imgProp->name,
-                              strlen( imgProp->name),
-                              newRV_noinc( ( SV *) hv),
-                              0
-                        );
-                }
-                break;
-            case PROPTYPE_INT:
-            default:
-                hv_store( profile,
-                          imgProp->name,
-                          strlen( imgProp->name),
-                          newSViv( imgProp->val.Int),
-                          0
-                    );
-                break;
-        }
-    }
-    else {
-        AV *av;
-        int j;
-
-        av = newAV();
-        if ( ! av) {
-            croak( "%s: can't allocate an array", calledFrom);
-        }
-
-        for ( j = 0; j < imgProp->size; j++) {
-            SV *sv;
-            switch( imgProp->flags & PROPTYPE_MASK) {
-                case PROPTYPE_STRING:
-                    sv = newSVpv( imgProp->val.pString[ j], 0);
-                    break;
-                case PROPTYPE_BIN:
-                    sv = newSVpv(( char*) imgProp->val.pBinary[ j].data, imgProp->val.pBinary[ j].size);
-                    break;
-                case PROPTYPE_DOUBLE:
-                    sv= newSVnv( imgProp->val.pDouble[ j]);
-                    break;
-                case PROPTYPE_BYTE:
-                    sv = newSViv( imgProp->val.pByte[ j]);
-                    break;
-                case PROPTYPE_PROP:
-                    {
-                        int propIdx;
-                        HV *hv = newHV();
-                        for ( propIdx = 0; propIdx < imgProp->val.pProperties[ j].count; propIdx++) {
-                            add_image_property_to_profile(
-                                hv,
-                                ( PImgProperty) list_at( imgProp->val.pProperties + j, propIdx),
-                                calledFrom
-                                );
-                        }
-                        sv = newRV_noinc( ( SV *) hv);
-                    }
-                    break;
-                case PROPTYPE_INT:
-                default:
-                    sv = newSViv( imgProp->val.pInt[ j]);
-                    break;
-            }
-            av_push( av, sv);
-        }
-        hv_store( profile, imgProp->name, strlen( imgProp->name), newRV_noinc( ( SV *) av), 0);
-    }
-}
-
-XS( Image_save_FROMPERL) {
-    dXSARGS;
-   Bool result = false;
-   Bool as_class = false;
-   Handle self;
-   char *class_name;
-   PList info = nil;
-   int i;
-   HV *profile;
-
-    if ( items >= 2) {
-        SV *who = ST( 0);
-        char *filename = SvPV( ST( 1), na);
-
-        if ( ! ( self = gimme_the_mate( who))) {
-            PVMT vmt;
-            if ( ! SvPOK( who)) {
-                croak( "Call Image->save() either as instance method or as class method");
-            }
-            class_name = SvPV( who, na);
-            vmt = gimme_the_vmt( class_name);
-            while ( vmt && vmt != (PVMT)CImage) {
-                vmt = vmt-> base;
-            }
-            if ( !vmt) {
-                croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
-            }
-            as_class = true;
-        }
-        else {
-            if ( !kind_of( self, CImage)) {
-                croak( "Are you nuts?  This object is not inherited from ``Image''");
-            }
-        }
-
-        if ( ( items > ( as_class ? 2 : 3)) && ( ( items % 2) != 0)) {
-            croak( "Odd number of parameters for Image::save\n");
-        }
-
-        if ( as_class) {
-            info = plist_create( ( items - 2) / 2, 1);
-            for ( i = 2; i < items; i += 2) {
-                SV *arg0 = ST( i);
-                SV *arg1 = ST( i + 1);
-                Handle img;
-                if ( ! ( img = gimme_the_mate( arg0))) {
-                    croak( "Parameter #%d in call to Image::save is not an object", i + 1);
-                }
-                if ( ! kind_of( img, CImage)) {
-                    croak( "Parameter #%d in call to Image::save is not an Image or its derivative", i + 1);
-                }
-                if ( ( ! SvROK( arg1)) || ( SvTYPE( SvRV( arg1)) != SVt_PVHV)) {
-                    croak( "Parameter #%d in call to Image::save must be a hash reference\n", i + 1);
-                }
-                add_image_profile( PImage( img), ( HV *) SvRV( arg1), info, "Image::save");
-            }
-        }
-        else {
-            info = plist_create( 1, 1);
-            if ( items == 3) {
-                SV *arg = ST( 2);
-                if ( ( ! SvROK( arg)) || ( SvTYPE( SvRV( arg)) != SVt_PVHV)) {
-                    croak( "Second parameter in call to Image::save must be a hash reference\n");
-                }
-                add_image_profile( PImage( self), ( HV *) SvRV( arg), info, "Image::save");
-            }
-            else {
-                profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
-                add_image_profile( PImage( self), profile, info, "Image::save");
-                sv_free( ( SV *) profile);
-            }
-        }
-
-        result = apc_image_save( filename, nil, info);
-
-        if ( info) {
-            for ( i = 0; i < info->count; i++) {
-                img_info_destroy( ( PImgInfo) list_at( info, i));
-            }
-            plist_destroy( info);
-        }
-
-        SPAGAIN;
-        SP -= items;
-
-        XPUSHs( sv_2mortal( newSViv( result)));
-        PUTBACK;
-        return;
-    }
-    croak ("Invalid usage of %s", "Image::save");
-}
-
-Bool
-Image_save_REDEFINED( SV *who, char *filename, PList imgInfo)
-{
-   /* XXX - one day we might want to implement this function in a more clever way */
-   warn( "Invalid call of Image::save(): ask developers to make it valid");
-   return false;
-}
-
-Bool
-Image_save( SV *who, char *filename, PList imgInfo)
-{
-   (void)who;
-   if ( apc_image_save( filename, NULL, imgInfo)) {
-      return false;
-   } else {
-      return false;
-   }
-}
-#else
-
-#define it_bmp 0
-#define it_gif 1
-#define it_pcx 2
-#define it_tif 3
-#define it_tga 4
-#define it_lbm 5
-#define it_vid 6
-#define it_pgm 7
-#define it_ppm 8
-#define it_kps 9
-#define it_iax 10
-#define it_xbm 11
-#define it_spr 12
-#define it_psg 13
-#define it_gem 14
-#define it_cvp 15
-#define it_jpg 16
-#define it_png 17
-
-
-static void excroak( char * s1, char * s2)
-{
-   char buf [ 256];
-   if ( SvTRUE( GvSV( errgv)))
-      snprintf( buf, 256, "%s%s%s", SvPV( GvSV( errgv), na), s1, s2);
-   else
-      snprintf( buf, 256, "%s%s", s1, s2);
-   sv_setpv( GvSV( errgv), buf);
-}
-
-XS( Image_save_FROMPERL) {
    dXSARGS;
    Handle self;
    HV *profile;
-   Bool result = false;
-   int bpp;
-   int file;
-   GBM gbm;
-   GBM_ERR rc = 0;
-   int fileType;
-   char options[1024] = {0};
-   char oneOpt[ 256];
-   char * filename;
+   char *fn;
+   PList ret;
+   Bool err = false;
+   char error[256];
 
-
-   if ( items < 2)
-      croak ("Invalid usage of %s", "Image::save");
-
-   if ( items % 2 != 0) {
-      croak ("Invalid usage of Image::save: odd number of optional arguments");
-   }
-
+   if (( items < 2) || (( items % 2) != 0))
+      croak("Invalid usage of Prima::Image::load");
+   
    self = gimme_the_mate( ST( 0));
-   if ( self == nilHandle)
-      croak( "Illegal object reference passed to Image.save");
-   bpp = var-> type & imBPP;
-   filename = SvPV( ST( 1), na);
-   profile = parse_hv( ax, sp, items, mark, 2, "Image::save");
-   // save
-
-
-#define bekilled(__rc) \
-{switch(__rc) {                                                                     \
-case GBM_ERR_MEM         : excroak("No enough memory: ", filename); break;         \
-case GBM_ERR_NOT_SUPP    : excroak("Format not supported:", filename); break;      \
-case GBM_ERR_BAD_OPTION  : excroak("Invalid option for ", filename); break;        \
-case GBM_ERR_NOT_FOUND   : excroak("Cannot open ", filename); break;               \
-case GBM_ERR_BAD_MAGIC   : excroak("Bad magic found in ", filename); break;        \
-case GBM_ERR_BAD_SIZE    : excroak("Bad size found in ", filename); break;         \
-case GBM_ERR_READ        : excroak("Error reading ", filename); break;             \
-case GBM_ERR_WRITE       : excroak("Error writing ", filename); break;             \
-case GBM_ERR_BAD_ARG     : excroak("Invalid argument for ", filename); break;      \
-default             : excroak("Error processing ", filename); break;               \
-} goto EXIT;}
-
-   if (( bpp != 1) && ( bpp != 4) && ( bpp != 8) && ( bpp != 24))
-      bekilled( GBM_ERR_NOT_SUPP);
-
-   if (( rc = gbm_guess_filetype( filename, &fileType)) != 0)
-      bekilled( GBM_ERR_NOT_SUPP);
-
-   /*
-     gif, iff, lbm - transparent color "transcol=%d"
-     gif      - interlaced             "ilace"
-     tiff     - compressed             "lzw"
-              - description            "imagedescription=%s"
-              - special
-     jpeg     - quality                "quality=%d"
-              - progressive            "prog"
-     png      - compressionLevel       "zlevel=%d"
-              - compression(standard,huffman,filtered) "zstrategy=%c"(d,h,f)
-              - interlaced             "ilace"
-              - description            "Description=%s"
-              - noAutoFilter           "nofilters"
-              - transparent color index"transcol=%d"
-              - transparent color      "transcol=%d/%d/%d"
-   */
-   if ( fileType == it_bmp) strcat( options, " inv");  // GBM баран опять:)
-
-   if ( pexist( interlaced))   strcat(options, " ilace");
-   if ( pexist( compressed))   strcat(options, " lzw");
-   if ( pexist( progressive))  strcat(options, " prog");
-   if ( pexist( noAutoFilter)) strcat(options, " nofilters");
-   if ( pexist( quality))
-      strcat(options, (snprintf(oneOpt, 256, " quality=%d",(int) pget_i( quality)), oneOpt));
-   if ( pexist( compressionLevel))
-      strcat(options, (snprintf(oneOpt, 256, " zlevel=%d",(int) pget_i( compressionLevel)), oneOpt));
-   if ( pexist( transparentColorIndex))
-      strcat(options, (snprintf(oneOpt, 256, " transcol=%d",(int) pget_i( transparentColorIndex)), oneOpt));
-   if ( pexist( transparentColorRGB))
-   {
-      SV *sv = pget_sv( transparentColorRGB);
-      AV *av;
-      if ( !SvROK( sv) || ( SvTYPE( SvRV( sv)) != SVt_PVAV)) bekilled( GBM_ERR_BAD_OPTION);
-      av = ( AV*) SvRV( sv);
-      if ( av_len( av) != 2) bekilled( GBM_ERR_BAD_OPTION);
-      strcat(options, (snprintf(oneOpt, 256, " transcol=%d/%d/%d",
-         (int)SvIV( *av_fetch( av, 2, 0)),
-         (int)SvIV( *av_fetch( av, 1, 0)),
-         (int)SvIV( *av_fetch( av, 0, 0))
-      ), oneOpt));
+   fn   = ( char *) SvPV( ST( 1), na);
+   profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
+   if ( !pexist( className)) 
+      pset_c( className, self ? my-> className : ( char*) SvPV( ST( 0), na));
+   ret = apc_img_load( self, fn, profile, error);
+   sv_free(( SV *) profile);
+   SPAGAIN;
+   SP -= items;
+   if ( ret) {
+      int i;
+      for ( i = 0; i < ret-> count; i++) {
+         PAnyObject o = ( PAnyObject) ret-> items[i];
+         if ( o && o-> mate && o-> mate != nilSV) {
+            XPUSHs( sv_mortalcopy( o-> mate));
+            if (( Handle) o != self)
+              --SvREFCNT( SvRV( o-> mate));
+         } else {
+            XPUSHs( &sv_undef);    
+            err = true;
+         }   
+      }
+      plist_destroy( ret);
+   } else {
+      XPUSHs( &sv_undef);   
+      err = true;
+   }   
+   if ( err) {
+      SV * errSave = GvSV( errgv);
+      if ( SvTRUE( errSave)) {
+         SV * sv = newSVpv( error, na);
+         sv_catsv( errSave, sv);
+         sv_free( sv);
+      } else 
+        sv_setpv( GvSV( errgv), error);
    }
-   if ( pexist( transparentColor))
-   {
-      unsigned long c = pget_i( transparentColor);
-      strcat(options, (snprintf(oneOpt,256, " transcol=%ld/%ld/%ld",
-         ( c >> 16) & 0xFF,
-         ( c >> 8 ) & 0xFF,
-         c & 0xFF
-      ), oneOpt));
-   }
-   if ( pexist( compression))
-   {
-      char * c = pget_c( compression);
-      if ( strcmp( c, "standard") == 0) strcat(options, " zstrategy=d");
-      else if ( strcmp( c, "huffman") == 0) strcat(options, " zstrategy=h");
-      else if ( strcmp( c, "filtered") == 0) strcat(options, " zstrategy=f");
-   }
-   if ( pexist( description))
-   {
-      char *cc = oneOpt;
-      strcat(options, (snprintf(oneOpt,256, " Description=\"%s\"",(char *) pget_c( description)), oneOpt));
-      // tiff
-      snprintf(oneOpt,256," imagedescription=%s",(char *) pget_c( description));
-      while (*++cc) if (*cc == ' ') *cc='_';
-      strcat( options, oneOpt);
-   }
-
-   file = open( filename, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, S_IREAD | S_IWRITE);
-   if ( file == -1) bekilled( GBM_ERR_NOT_FOUND);
-
-   gbm. w = var-> w;
-   gbm. h = var-> h;
-   gbm. bpp = bpp;
-   {
-      RGBColor pal [ 256];
-      cm_reverse_palette( var-> palette, pal, 256);
-      rc = gbm_write( filename, file, fileType, &gbm, ( GBMRGB *) pal, var-> data, options);
-   }
-   close( file);
-   if ( rc != 0) {
-      remove( filename);
-      bekilled( rc);
-   }
-   result = true;
-
-EXIT:
-   sv_free(( SV*) profile);
-   XPUSHs( sv_2mortal( newSViv( result)));
    PUTBACK;
    return;
+}   
+
+PList
+Image_load_REDEFINED( SV * who, char *filename, HV * profile)
+{
+   return nil;
 }
 
-Bool
-Image_save_REDEFINED( SV *who, char *filename, PList imgInfo)
+PList
+Image_load( SV * who, char *filename, HV * profile)
 {
-   return false;
+   PList ret;
+   Handle self = gimme_the_mate( who);
+   char error[ 256];
+   if ( !pexist( className)) 
+      pset_c( className, self ? my-> className : ( char*) SvPV( who, na));
+   ret = apc_img_load( self, filename, profile, error);
+   return ret;
 }
 
-Bool
-Image_save( SV *who, char *filename, PList imgInfo)
+
+XS( Image_save_FROMPERL) 
 {
-   return false;
+   dXSARGS;
+   Handle self;
+   HV *profile;
+   char *fn;
+   int ret;
+   char error[256];
+
+   if (( items < 2) || (( items % 2) != 0))
+      croak("Invalid usage of Prima::Image::save");
+   
+   self = gimme_the_mate( ST( 0));
+   fn   = ( char *) SvPV( ST( 1), na);
+   profile = parse_hv( ax, sp, items, mark, 2, "Image::save");
+   ret = apc_img_save( self, fn, profile, error);
+   sv_free(( SV *) profile);
+   SPAGAIN;
+   SP -= items;
+   XPUSHs( sv_2mortal( newSViv(( ret > 0) ? ret : -ret)));
+   if ( ret <= 0) {
+      SV * errSave = GvSV( errgv);
+      if ( SvTRUE( errSave)) {
+         SV * sv = newSVpv( error, na);
+         sv_catsv( errSave, sv);
+         sv_free( sv);
+      } else 
+        sv_setpv( GvSV( errgv), error);
+   }
+   PUTBACK;
+   return;
+}   
+
+int
+Image_save_REDEFINED( SV * who, char *filename, HV * profile)
+{
+   return 0;
 }
-#endif
+
+int
+Image_save( SV * who, char *filename, HV * profile)
+{
+   Handle self = gimme_the_mate( who);
+   char error[ 256];
+   if ( !pexist( className)) 
+      pset_c( className, self ? my-> className : ( char*) SvPV( who, na));
+   return apc_img_save( self, filename, profile, error);
+}
 
 int
 Image_type( Handle self, Bool set, int type)
@@ -1075,572 +622,6 @@ Image_end_paint_info( Handle self)
    if ( !is_opt( optInDrawInfo)) return;
    apc_image_end_paint_info( self);
    inherited end_paint_info( self);
-}
-
-#ifndef PRIGRAPH
-static void
-modify_Image( Handle self, PImgInfo imageInfo)
-{
-    int i;
-    HV *extraInfo = nil;
-    unsigned gotProps = 0;
-    unsigned paletteType = 0;
-#define REQPROP_WIDTH 0x01
-#define REQPROP_HEIGHT 0x02
-#define REQPROP_TYPE 0x04
-#define REQPROP_DATA 0x08
-#define REQPROP_PALETTE 0x10
-#define REQPROP_LINESIZE 0x20
-#define REQPROP_PALETTESIZE 0x40
-#define EXISTPROP_PALETTETYPE 0x80
-#define REQPROP_ALL ( REQPROP_WIDTH | REQPROP_HEIGHT | REQPROP_TYPE | \
-                      REQPROP_DATA | REQPROP_PALETTE | REQPROP_LINESIZE | \
-                      REQPROP_PALETTESIZE)
-
-    ++SvREFCNT( SvRV(PImage(self)->mate));
-    my->make_empty( self);
-
-    for ( i = 0 ; i < imageInfo->propList->count; i++) {
-        PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, i);
-        if ( strcmp( imgProp->name, "width") == 0) {
-            gotProps |= REQPROP_WIDTH;
-            var->w = imgProp->val.Int;
-        }
-        else if ( strcmp( imgProp->name, "height") == 0) {
-            gotProps |= REQPROP_HEIGHT;
-            var->h = imgProp->val.Int;
-        }
-        else if ( strcmp( imgProp->name, "type") == 0) {
-            gotProps |= REQPROP_TYPE;
-            var->type = imgProp->val.Int;
-        }
-        else if ( strcmp( imgProp->name, "lineSize") == 0) {
-            gotProps |= REQPROP_LINESIZE;
-            var->lineSize = imgProp->val.Int;
-        }
-        else if ( strcmp( imgProp->name, "data") == 0) {
-            gotProps |= REQPROP_DATA;
-            var->data = imgProp->val.pByte;
-            var->dataSize = imgProp->size;
-            imgProp->val.pByte = NULL;
-            imgProp->size = 0;
-        }
-        else if ( strcmp( imgProp->name, "palette") == 0) {
-            gotProps |= REQPROP_PALETTE;
-            var->palette = ( PRGBColor) imgProp->val.pByte;
-            imgProp->val.pByte = NULL;
-            imgProp->size = 0;
-        }
-        else if ( strcmp( imgProp->name, "paletteSize") == 0) {
-            gotProps |= REQPROP_PALETTESIZE;
-            var->palSize = imgProp->val.Int;
-        }
-        else if ( strcmp( imgProp->name, "name") == 0) {
-            my->set_name( self, imgProp->val.String);
-            free( imgProp->val.String);
-            imgProp->val.String = nil;
-        }
-	else if ( strcmp( imgProp->name, "paletteType") == 0) {
-	    gotProps |= EXISTPROP_PALETTETYPE;
-	    paletteType = imgProp->val.Int;
-	}
-        else if ( imageInfo->extraInfo) {
-            HV *profile = extraInfo;
-            if ( ! profile) {
-                if ( hv_exists( ( HV *) SvRV( var->mate), "extraInfo", 9)) {
-                    SV **prf;
-                    prf = hv_fetch( ( HV *) SvRV( var->mate), "extraInfo", 9, 0);
-                    if ( ! prf
-                         || ! SvROK( *prf)
-                         || SvTYPE( SvRV( *prf)) != SVt_PVHV ) {
-                        croak( "Image::load can't fetch ``extraInfo''");
-                    }
-                    profile = ( HV *) SvRV( *prf);
-                    hv_clear( profile);
-                } else {
-                    profile = newHV();
-                    if ( ! profile) {
-                        croak( "Image::load: can't create new ``extraInfo'' profile");
-                    }
-                    hv_store( ( HV *) SvRV( var->mate), "extraInfo", 9,
-                              newRV_noinc( ( SV *) profile),  0);
-                }
-
-                extraInfo = profile;
-            }
-
-            add_image_property_to_profile( profile, imgProp, "Image::load");
-        }
-    }
-
-    if ( ( gotProps & REQPROP_ALL) != REQPROP_ALL) {
-        croak( "*** INTERNAL *** Got an incomplete image information from driver (signature: %08X)", gotProps);
-    }
-    if ( ( var->lineSize * var->h) != var->dataSize) {
-        croak( "Image data/line size inconsistency detected");
-    }
-    if ( ( imageInfo->convertionAllowed >= ICL_NONDESTRUCTIVE)
-	 && ( ( gotProps & EXISTPROP_PALETTETYPE) == EXISTPROP_PALETTETYPE)
-	 && ( paletteType != var->type)) {
-	/* DOLBUG( "Setting palette to type %02x from %02x, palsize: %d\n", paletteType, var->type, var->palSize); */
-	my->set_type( self, paletteType);
-    }
-    --SvREFCNT( SvRV(PImage(self)->mate));
-    my->update_change( self);
-    /* DOLBUG( "Got type: %02x\n", var->type); */
-}
-
-
-XS( Image_load_FROMPERL) {
-   dXSARGS;
-   Bool result;
-   Bool as_class = false;
-   Bool wantarray = ( GIMME_V == G_ARRAY);
-   Bool singleProfile = true;
-   Handle self;
-   char *class_name = nil;
-   PList info = nil;
-   int i;
-   HV *hv;
-
-   if ( items >= 2) {
-      SV *who = ST(0);
-      char *filename = SvPV( ST( 1), na);
-
-      if (!( self = gimme_the_mate( who))) {
-         PVMT vmt;
-         if (!SvPOK( who)) {
-            croak( "Call Image->load() either as instance method or as class method");
-         }
-         class_name = SvPV( who, na);
-         vmt = gimme_the_vmt( class_name);
-         while ( vmt && vmt != (PVMT)CImage) {
-            vmt = vmt-> base;
-         }
-         if ( !vmt) {
-            croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
-         }
-         as_class = true;
-      } else {
-         if ( !kind_of( self, CImage)) {
-            croak( "Are you nuts?  This object is not inherited from ``Image''");
-         }
-      }
-
-      if ( items > 2 && SvROK( ST( 2)) && SvTYPE( SvRV( ST(2))) == SVt_PVHV) {
-         /* assuming multi-profile format */
-         singleProfile = false;
-         if (!as_class) {
-            croak ("Invalid usage of Image::load: multiple profiles are not allowed when called as an instance method");
-         }
-         for ( i = 2; i < items; i++) {
-            if ( !SvROK( ST( i)) || SvTYPE( SvRV( ST(i))) != SVt_PVHV) {
-               croak ("Invalid usage of Image::load: hash reference expected for argument %d", i);
-            }
-         }
-         info = plist_create( items - 2, 1);
-         for ( i = 2; i < items; i++) {
-            add_image_profile( nil, ( HV *) SvRV( ST( i)), info, "Image::load");
-         }
-      }
-      else {
-         /* assuming normal single profile */
-         if ( items % 2 != 0) {
-            croak ("Invalid usage of Image::load: odd number of optional arguments");
-         }
-         info = plist_create( 1, 1);
-         hv = parse_hv( ax, sp, items, mark, 2, "Image::load");
-         add_image_profile( nil, hv, info, "Image::load");
-         sv_free(( SV*)hv);
-      }
-/*    DOLBUG( "Image_load_FROMPERL: calling apc_image_read\n"); */
-      result = apc_image_read( filename, info, true);
-/*    DOLBUG( "Image_load_FROMPERL: apc_image_read( %s) %s\n",
-              filename,
-              result ? "succeed" : "failed"
-          ); */
-/*
-      if ( ! result) {
-          char errorBuf[ 1024];
-          apc_image_get_error_message( errorBuf, 1024);
-          DOLBUG( "Error message: %s\n", errorBuf);
-      }
-*/
-      SPAGAIN;
-      SP -= items;
-      if ( result) {
-          if ( as_class) {
-              Handle *selves;
-              selves = allocn( Handle, info->count);
-              if ( selves == nil) 
-                 croak("Image::load: cannot allocate %d bytes", sizeof( Handle) * info-> count);
-              for ( i = 0; i < info->count; i++) {
-                  self = ( Handle) create_object( class_name, "", nil);
-                  SPAGAIN;
-                  SP -= items;
-                  modify_Image( self, ( PImgInfo) list_at( info, i));
-                  SPAGAIN;
-                  SP -= items;
-                  selves[ i] = self;
-              }
-              if ( wantarray || ( singleProfile && ( info->count <= 1))) {
-                  for ( i = 0; i < info-> count; i++) {
-                      XPUSHs( sv_mortalcopy( PImage( selves[ i])-> mate));
-                  }
-              }
-              else {
-                  AV *av = newAV();
-                  for ( i = 0; i < info-> count; i++) {
-                      av_push( av, newSVsv( PImage( selves[ i])-> mate));
-                  }
-                  XPUSHs( sv_2mortal( newRV_noinc( (SV*) av)));
-              }
-              free( selves);
-          }
-          else {
-              if ( info->count > 1) {
-                  croak( "Invalid usage of Image::load: request of multiple images when called as an instance method");
-              }
-              else {
-                  modify_Image( self, ( PImgInfo) list_at( info, 0));
-                  SPAGAIN;
-                  SP -= items;
-                  XPUSHs( sv_mortalcopy( PImage( self)-> mate));
-              }
-          }
-      }
-      else {
-          if ( ! wantarray) {
-              XPUSHs( &sv_undef);
-          }
-      }
-
-      if ( info) {
-          for ( i = 0; i < info->count; i++) {
-              img_info_destroy( ( PImgInfo) list_at( info, i));
-          }
-          plist_destroy( info);
-      }
-
-      PUTBACK;
-      return;
-   }
-   croak ("Invalid usage of %s", "Image::load");
-}
-
-Handle
-Image_load( SV *who, char *filename, PList imgInfo)
-{
-   (void)who;
-   if ( apc_image_read( filename, imgInfo, true)) {
-      return nilHandle;
-   } else {
-      return nilHandle;
-   }
-}
-#else
-
-
-Bool
-load_image_indirect( Handle self, char * filename, char * subIndex)
-#define checkrc if ( rc != 0)     \
-        {                         \
-            free( data);          \
-            free( palette);       \
-            close( file);         \
-            return false;         \
-        }
-{
-   GBM gbm;
-   unsigned char *data = nil;
-   GBM_ERR rc;
-   GBMRGB * palette = nil;
-   int file;
-   int ft;
-   int lineSize, dataSize;
-
-   if ( is_opt( optInDraw)) return false;
-
-   memset( &gbm, 0, sizeof( GBM));
-   file = open( filename, O_RDONLY | O_BINARY);
-   if ( file < 0)
-      return false;
-
-   ft = image_guess_type( file);
-
-   if ( ft < 0)
-   {
-      rc = gbm_guess_filetype( filename, &ft);
-      checkrc;
-   }
-
-   if ( ft == it_bmp) strcat( subIndex, " inv");  // GBM баран :)
-   rc = gbm_read_header( filename, file, ft, &gbm, subIndex);
-   checkrc;
-
-   palette = allocn( GBMRGB, 0x100);
-   if ( palette == nil)
-      croak("Image::load: cannot allocate %d bytes", 0x300);
-   rc = gbm_read_palette( file, ft, &gbm, ( GBMRGB*) palette);
-   checkrc;
-
-   lineSize = (( gbm. w * gbm. bpp + 31) / 32) * 4;
-   dataSize = gbm. h * lineSize;
-   if ( dataSize > 0) {
-      data = allocb( dataSize);
-      if ( data == nil) 
-         croak("Image::load: cannot allocate %d bytes", var-> dataSize);
-   } else
-      data = nil;
-   rc = gbm_read_data( file, ft, &gbm, data);
-   checkrc;
-
-   close( file);
-
-   // init image
-   my-> make_empty( self);
-   var-> w        = gbm. w;
-   var-> h        = gbm. h;
-   var-> type     = gbm. bpp;
-   var-> data     = data;
-   var-> palette  = ( PRGBColor) palette;
-   var-> lineSize = lineSize;
-   var-> dataSize = dataSize;
-   var-> palSize  = (1 << (var-> type & imBPP)) & 0x1ff;
-   cm_reverse_palette( var-> palette, var-> palette, 256);
-
-   switch( var-> type)
-   {
-      case imbpp1:
-         if ( memcmp( var-> palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
-            var-> type |= imGrayScale;
-         break;
-      case imbpp4:
-         if ( memcmp( var-> palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
-            var-> type |= imGrayScale;
-         break;
-      case imbpp8:
-         if ( memcmp( var-> palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
-            var-> type |= imGrayScale;
-         break;
-   }
-   return true;
-}
-
-XS( Image_load_FROMPERL) {
-   dXSARGS;
-   Bool as_class = false;
-   char *filename, *class_name;
-   Handle self;
-   Bool ret;
-   HV * profile;
-   char buf[ 256] = "";
-
-   if ( items < 2)
-      croak ("Invalid usage of %s", "Image::load");
-
-   filename = SvPV( ST( 1), na);
-
-   if (!( self = gimme_the_mate( ST( 0)))) {
-      PVMT vmt;
-      if (!SvPOK( ST(0)))
-         croak( "Call Image->load() either as instance method or as class method");
-      class_name = SvPV( ST(0), na);
-      vmt = gimme_the_vmt( class_name);
-      while ( vmt && vmt != (PVMT) CImage) vmt = vmt-> base;
-      if ( !vmt)
-         croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
-      as_class = true;
-   } else
-      if ( !kind_of( self, CImage))
-         croak( "Are you nuts?  This object is not inherited from ``Image''");
-
-   if ( items % 2 != 0)
-      croak ("Invalid usage of Image::load: odd number of optional arguments");
-
-   profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
-   if ( pexist( index))
-      sprintf( buf, "index=%d", pget_i( index));
-   sv_free(( SV*)profile);
-
-   SPAGAIN;
-   SP -= items;
-
-   if ( as_class) {
-      profile = newHV();
-      self = Object_create( class_name, profile);
-      sv_free(( SV *) profile);
-      if ( !self) {
-         XPUSHs( sv_2mortal( newSViv( 0)));
-         PUTBACK;
-         return;
-      }
-   }
-
-   if ( !load_image_indirect( self, filename, buf)) {
-      if ( as_class) Object_destroy( self);
-      XPUSHs( sv_2mortal( newSViv( 0)));
-      PUTBACK;
-      return;
-   }
-
-   my->update_change( self);
-   XPUSHs( sv_mortalcopy( var-> mate));
-
-   PUTBACK;
-   return;
-}
-
-Handle
-Image_load( SV *who, char *filename, PList imgInfo)
-{
-   return nilHandle;
-}
-#endif
-
-Handle
-Image_load_REDEFINED( SV *who, char *filename, PList imgInfo)
-{
-   /* XXX - one day we might want to implement this function in a more clever way */
-   warn( "Invalid call of Image::load(): ask developers to make it valid");
-   return nilHandle;
-}
-
-
-#ifndef __unix
-XS( Image_get_info_FROMPERL)
-{
-   warn( "Image::get_info() is unsupported in this version yet.");
-   return;
-}
-#else
-XS( Image_get_info_FROMPERL)
-{
-   dXSARGS;
-   Bool result;
-   Bool wantarray = ( GIMME_V == G_ARRAY);
-   Bool singleProfile = true;
-   Handle self;
-   char *class_name;
-   PList info = nil;
-   int i;
-   HV *hv;
-
-   if ( items >= 2) {
-      SV *who = ST(0);
-      char *filename = SvPV( ST( 1), na);
-
-      if ( ! ( self = gimme_the_mate( who))) {
-         PVMT vmt;
-         if (!SvPOK( who)) {
-            croak( "Image->get_info() called not as class method");
-         }
-         class_name = SvPV( who, na);
-         vmt = gimme_the_vmt( class_name);
-         while ( vmt && vmt != (PVMT)CImage) {
-            vmt = vmt-> base;
-         }
-         if ( !vmt) {
-            croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
-         }
-      } else {
-          croak( "Image::get_info cannot be called as an instance method");
-      }
-
-      if ( items > 2 && SvROK( ST( 2)) && SvTYPE( SvRV( ST(2))) == SVt_PVHV) {
-         /* assuming multi-profile format */
-         singleProfile = false;
-         for ( i = 2; i < items; i++) {
-            if ( !SvROK( ST( i)) || SvTYPE( SvRV( ST(i))) != SVt_PVHV) {
-               croak ("Invalid usage of Image::get_info: hash reference expected for argument %d", i);
-            }
-         }
-         info = plist_create( items - 2, 1);
-         for ( i = 2; i < items; i++) {
-            add_image_profile( nil, ( HV *) SvRV( ST(i)), info, "Image::get_info");
-         }
-      } else {
-         /* assuming normal single profile */
-         if ( items % 2 != 0) {
-            croak ("Invalid usage of Image::get_info: odd number of optional arguments");
-         }
-         info = plist_create( 1, 1);
-         hv = parse_hv( ax, sp, items, mark, 2, "Image::get_info");
-         add_image_profile( nil, hv, info, "Image::get_info");
-         sv_free(( SV*)hv);
-      }
-      result = apc_image_read( filename, info, false);
-      SPAGAIN;
-      SP -= items;
-      if ( result) {
-          HV **hvInfo;
-          hvInfo = allocn( HV*, info->count);
-          if ( hvInfo == nil)
-             croak("Image::get_info: cannot allocate %d bytes", sizeof(HV*)*info->count);
-          for ( i = 0; i < info->count; i++) {
-              int j;
-              PImgInfo imageInfo = ( PImgInfo) list_at( info, i);
-              SPAGAIN;
-              SP -= items;
-              hvInfo[ i] = newHV();
-              for ( j = 0; j < imageInfo->propList->count; j++) {
-                  PImgProperty imgProp = ( PImgProperty) list_at( imageInfo->propList, j);
-                  add_image_property_to_profile( hvInfo[ i], imgProp, "Image::get_info");
-              }
-          }
-          if ( wantarray || ( singleProfile && ( info->count <= 1))) {
-              if ( wantarray && singleProfile && ( info->count <= 1)) {
-                  hv_delete( hvInfo[ 0], "__ORDER__", 9, G_DISCARD);
-                  push_hv( ax, sp, items, mark, 0, hvInfo[ 0]);
-                  SPAGAIN;
-              } else {
-                  for( i = 0; i < info->count; i++) {
-                      XPUSHs( sv_2mortal( newRV_noinc( (SV*) hvInfo[ i])));
-                  }
-              }
-          }
-          else {
-              AV *av = newAV();
-              for ( i = 0; i < info-> count; i++) {
-                  av_push( av, newRV_noinc( ( SV*) hvInfo[ i]));
-              }
-              XPUSHs( sv_2mortal( newRV_noinc( (SV*) av)));
-          }
-          free( hvInfo);
-      }
-      else {
-          if ( ! wantarray) {
-              XPUSHs( &sv_undef);
-          }
-      }
-
-      if ( info) {
-          for ( i =0; i < info->count; i++) {
-              img_info_destroy( ( PImgInfo) list_at( info, i));
-          }
-          plist_destroy( info);
-      }
-
-      PUTBACK;
-      return;
-   }
-   croak ("Invalid usage of %s", "Image::get_info");
-}
-#endif
-
-Handle
-Image_get_info_REDEFINED( SV *who, char *filename)
-{
-   /* XXX - one day we might want to implement this function in a more clever way */
-   warn( "Invalid call of Image::get_info(): ask developers to make it valid");
-   return nilHandle;
-}
-
-Handle
-Image_get_info( SV *who, char *filename)
-{
-   (void)who;
-   return nilHandle;
 }
 
 void
@@ -1731,7 +712,7 @@ Image_palette( Handle self, Bool set, SV * palette)
    if ( set) {
       if ( var->type & imGrayScale) return nilSV;
       if ( !var->palette)           return nilSV;
-      if ( !Image_read_palette( self, var->palette, palette))
+      if ( !apc_img_read_palette( var->palette, palette))
          warn("RTC0107: Invalid array reference passed to Image::palette");
       my-> update_change( self);
    } else {
@@ -2158,7 +1139,21 @@ Image_map( Handle self, Color color)
    else
       my-> update_change( self);
 }   
-   
+
+SV * 
+Image_codecs( SV * dummy)
+{
+   int i;
+   AV * av = newAV();
+   PList p = plist_create( 16, 16);
+   apc_img_codecs( p);  
+   for ( i = 0; i < p-> count; i++) {
+      PImgCodec c = ( PImgCodec ) p-> items[ i];
+      av_push( av, newRV_noinc(( SV *) apc_img_info2hash( c))); 
+   }  
+   plist_destroy( p);
+   return newRV_noinc(( SV *) av); 
+}
 
 #ifdef __cplusplus
 }

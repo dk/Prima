@@ -136,7 +136,7 @@ $w = Prima::Window-> create(
    menuItems => [
       ['~Print' => [
          [A1 => '~Print sample' => \&print_sample],
-         [A2 => 'Printer ~setup...' => sub {$p-> setup_dialog}],
+         [A2 => 'Printer ~setup...' => 'F2' => 'F2' => sub {$p-> setup_dialog}],
          [A3 => 'Print available fonts...' => sub {
             my $item  = $w-> ListBox1-> get_items($w-> ListBox1-> focusedItem);
             print "\n$item\n---\n";

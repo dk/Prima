@@ -78,6 +78,8 @@ use vars qw(
     $useGC
     %cc_specs
     %DEFINES
+    %PASSIVE_CODECS
+    @ACTIVE_CODECS
     %USER_VARS
     %USER_VARS_ADDONS
     %USER_VARS_LINKS
@@ -168,7 +170,7 @@ sub cc_command_line
 #       push @cc, "$CDEFFLAG$_=$DEFINES{$_}";
 #    }
     push @cc, "${ CDEFFLAG}HAVE_CONFIG_H=1";
-    push @cc, "${CDEFFLAG}PRIGRAPH" if $usePrigraph;
+#   push @cc, "${CDEFFLAG}PRIGRAPH" if $usePrigraph;
     push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
     push @cc, "$COUTOFLAG$objf" if $Win32 && ! $compile_only;
     push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH unless $compile_only || ( $COMPILER eq 'msvc');
@@ -652,10 +654,11 @@ sub setup_variables
           exists($envlibs{$d}) ? 0 : 1
        } @libpaths;
     }
+    push( @libpaths, '/usr/local/lib') if $platform eq 'unix';  # or perl makefile.pl LIBPATH+=/usr/local/lib
     setvar( 'LIBPATH', @libpaths);
     my @libs = map { s/^$LDLIBFLAG//; $_} quoted_split($Config{ libs});
     #    push ( @libs, 'pmprintf') if $OS2 && defined $ENV{PRIMA_PMPRINTF};
-    push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
+    #    push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
     if ( $useGC) {
         push @libs, 'leak';
     }
@@ -671,6 +674,22 @@ sub setup_variables
           print "*** Warning (probably harmless): `$lib' library not found\n";
        }
     }
+
+    # finding image codecs
+    while (<img/codec_*.c>) { 
+       m/codec_(.*)\.c$/i;   
+       my ( $fn, $lib) = ( $_, lc $1);
+       $lib.='.lib' if $Win32 || $OS2;
+       if ( defined find_lib( $lib,'')) {
+          push( @ACTIVE_CODECS, lc $1);
+          push( @flibs, $lib);
+          print "Using image library '$lib'\n";
+       } else {
+          $PASSIVE_CODECS{$fn} = 1;
+       }
+    }
+    warn "** warning - no image codecs found\n" unless @ACTIVE_CODECS;
+    
     setvar( 'LIBS', @flibs);
     %DEFINES = (
                 PERL_PATCHLEVEL => $Config{ PATCHLEVEL},
@@ -839,11 +858,18 @@ apc_image_create
 apc_image_destroy
 apc_image_end_paint
 apc_image_end_paint_info
-apc_image_get_error_message
 apc_image_get_handle
-apc_image_read
-apc_image_save
 apc_image_update_change
+apc_img_init
+apc_img_done
+apc_img_register
+apc_img_frame_count
+apc_img_load
+apc_img_save
+apc_img_codecs
+apc_img_info2hash
+apc_img_profile_add
+apc_img_read_palette
 apc_kbd_get_state
 apc_lookup_color
 apc_menu_create
@@ -1427,11 +1453,55 @@ FOOTER
    close F;
 }
 
+sub create_codecs_c
+{
+   open F, "> img/codecs.c" or die "cannot open img/codecs.c:$!\n";
+
+   my $def1 = join("\n", map { "extern void apc_img_codec_$_(void);"} @ACTIVE_CODECS);
+   my $def2 = join("\n", map { "   apc_img_codec_$_();"} @ACTIVE_CODECS);
+   
+   print F <<CONTENT;
+/* 
+  This file was automatically generated.
+  Do not edit, you'll loose your changes anyway. 
+*/
+
+#include "img.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+$def1
+
+void 
+prima_cleanup_image_subsystem(void)
+{
+   apc_img_done();
+}
+
+void 
+prima_init_image_subsystem(void)
+{
+   apc_img_init();
+$def2
+}   
+
+#ifdef __cplusplus
+}
+#endif
+
+CONTENT
+
+   close F;
+}
+
+
 #
 # Here we go...
 #
 
-$usePrigraph = env_true( 'PRIMA_PRIGRAPH');
+# $usePrigraph = env_true( 'PRIMA_PRIGRAPH');
 $useGC = env_true( 'PRIMA_USE_GC');
 
 $Win32 = ( $^O =~ /mswin32/i);
@@ -1601,6 +1671,8 @@ EOF
 
     print "Creating Prima::Config.pm\n";
     create_config_pm;
+    print "Creating img/codecs.c\n";
+    create_codecs_c;
     #exit;
 
     my $make = <<EOF;
@@ -1640,6 +1712,7 @@ EOF
         $make .= cmake( $_);
     }
     while ( <img/*.c>) {
+        next if exists $PASSIVE_CODECS{$_};    
         $make .= cmake( $_);
     }
     while ( <$PLATFORM/*.c>) {
@@ -1666,7 +1739,7 @@ EOF
     my $os_suffix = $^O;
     $os_suffix =~ s/\s/_/g;
     my $bindist_files = 'Prima.pm auto examples test Prima';
-    my $srcdist_files = 'Makefile.PL *.c *.cls Prima.pm examples img include os2 prigraph Prima test unix utils win32';
+    my $srcdist_files = 'Makefile.PL *.c *.cls Prima.pm examples img include os2 Prima test unix utils win32';
     my $distname = 'Prima-1.00';
 
     if ( $OS2) {
