@@ -1712,7 +1712,7 @@ stretch_calculate_seed( int ssize, int tsize,
    if ( cend > asize)        cend = asize;
    
    if ( asize < ssize) {
-      step. l = (double) asize / ssize * 0x10000;
+      step. l = (double) asize / ssize * UINT16_PRECISION;
       last    = -1;
       while ( t != cend) {
          if ( count.i.i > last) {
@@ -1729,7 +1729,7 @@ stretch_calculate_seed( int ssize, int tsize,
          s++;
       }
    } else {
-      step. l = (double) ssize / asize * 0x10000;
+      step. l = (double) ssize / asize * UINT16_PRECISION;
       last    = 0;
       while ( t != cend) {
          if ( count.i.i > last) {

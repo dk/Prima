@@ -1225,10 +1225,10 @@ prima_update_rotated_fonts( PCachedFont f, char * text, int len, int direction, 
          bzero( r-> map, r-> length * sizeof( void*));
       }    
       rad = direction * 3.14159 / 1800.0;
-      r-> sin. l = ( sin1 = sin( -rad)) * 0x10000;
-      r-> cos. l = ( cos1 = cos( -rad)) * 0x10000;
-      r-> sin2.l = ( sin2 = sin(  rad)) * 0x10000;
-      r-> cos2.l = ( cos2 = cos(  rad)) * 0x10000;
+      r-> sin. l = ( sin1 = sin( -rad)) * UINT16_PRECISION;
+      r-> cos. l = ( cos1 = cos( -rad)) * UINT16_PRECISION;
+      r-> sin2.l = ( sin2 = sin(  rad)) * UINT16_PRECISION;
+      r-> cos2.l = ( cos2 = cos(  rad)) * UINT16_PRECISION;
       
 /*
    1(0,y)  2(x,y)
@@ -1327,8 +1327,8 @@ FAILED:
          for ( y = r-> shift. y; y < r-> shift. y + r-> dimension. y; y++) {
             lx. l = r-> shift. x * r-> cos. l - y * r-> sin. l;
             if ( fast)
-               lx. l += 0x8000;
-            ly. l = r-> shift. x * r-> sin. l + y * r-> cos. l + 0x8000;
+               lx. l += UINT16_PRECISION/2;
+            ly. l = r-> shift. x * r-> sin. l + y * r-> cos. l + UINT16_PRECISION/2;
             if ( fast) {
                for ( x = 0; x < r-> dimension. x; x++) {
                if ( ly. i. i >= 0 && ly. i. i < r-> orgBox. y &&
@@ -1347,15 +1347,15 @@ FAILED:
                      Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
                      pv = 0;
                      if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))  
-                        pv += ( 0x10000 - lx. i. f);
+                        pv += ( UINT16_PRECISION - lx. i. f);
                      if ( lx. i. i < r-> orgBox. x - 1) {
                         if ( src[( lx. i. i + 1) >> 3] & ( 1 << ( 7 - (( lx. i. i + 1) & 7))))  
                            pv += lx. i. f; 
                      } else {
                         if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))  
-                           pv += 0x8000;
+                           pv += UINT16_PRECISION/2;
                      }   
-                     if ( pv >= 0x8000)
+                     if ( pv >= UINT16_PRECISION/2)
                         dst[ x >> 3] |= 1 << ( 7 - ( x & 7)); 
                   } 
                   lx. l += r-> cos. l;

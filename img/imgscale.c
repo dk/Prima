@@ -290,7 +290,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
       }
       if ( absh < srcH)
       {
-         ystep. l = (double) absh / srcH * 0x10000;
+         ystep. l = (double) absh / srcH * UINT16_PRECISION;
          memcpy( dstData, srcData, xMin);
          dstData += dstLine;
          for ( i = 0; i < srcH; i++)
@@ -305,7 +305,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
             srcData += srcLine;
          }
       } else {
-         ystep. l = (double) srcH / absh * 0x10000;
+         ystep. l = (double) srcH / absh * UINT16_PRECISION;
          for ( i = 0; i < absh; i++)
          {
             if ( count.i.i > last)
@@ -327,9 +327,9 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
    if ( srcW < absw || srcH < absh || ( type & imBPP) == imNibble)
       memset( dstData, 0, dstLine * absh);
    if ( absw < srcW)
-      xstep. l = (double) absw / srcW * 0x10000;
+      xstep. l = (double) absw / srcW * UINT16_PRECISION;
    else
-      xstep. l = (double) srcW / absw * 0x10000;
+      xstep. l = (double) srcW / absw * UINT16_PRECISION;
    switch( type)
    {
       case imMono:     case imBW:
@@ -377,7 +377,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
    }
    if ( absh < srcH)
    {
-      ystep. l = (double) absh / srcH * 0x10000;
+      ystep. l = (double) absh / srcH * UINT16_PRECISION;
       proc( srcData, dstData, srcW, w, absw, xstep.l);
       dstData += dstLine;
       for ( i = 0; i < srcH; i++)
@@ -392,7 +392,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
          srcData += srcLine;
       }
    } else {
-      ystep. l = (double) srcH / absh * 0x10000;
+      ystep. l = (double) srcH / absh * UINT16_PRECISION;
       for ( i = 0; i < absh; i++)
       {
          if ( count.i.i > last)

@@ -107,12 +107,21 @@ typedef StretchProc *PStretchProc;
 #pragma pack(1)
 typedef union _Fixed {
    int32_t l;
+#if (BYTEORDER==0x4321) || (BYTEORDER==0x87654321)
+   struct {
+     int16_t  i;
+     uint16_t f;
+   } i;
+#else   
    struct {
      uint16_t f;
      int16_t  i;
    } i;
+#endif
 } Fixed;
 #pragma pack()
+
+#define UINT16_PRECISION (1L<<(8*sizeof(uint16_t)))
 
 // bitstroke stretching routines
 extern void bs_mono_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step);

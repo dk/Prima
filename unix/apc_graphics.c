@@ -1380,14 +1380,14 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
   
       /* find reference point in pixmap */
       px = ( cs-> lbearing < 0) ? -cs-> lbearing : 0;
-      rx. l = px * r-> cos2. l - py * r-> sin2. l + 0x8000;
-      ry. l = px * r-> sin2. l + py * r-> cos2. l + 0x8000;
+      rx. l = px * r-> cos2. l - py * r-> sin2. l + UINT16_PRECISION/2;
+      ry. l = px * r-> sin2. l + py * r-> cos2. l + UINT16_PRECISION/2;
       psx = rx. i. i - r-> shift. x;
       psy = ry. i. i - r-> shift. y;
       
       /* find glyph position */
-      rx. l = ax * r-> cos2. l - ay * r-> sin2. l + 0x8000;
-      ry. l = ax * r-> sin2. l + ay * r-> cos2. l + 0x8000;
+      rx. l = ax * r-> cos2. l - ay * r-> sin2. l + UINT16_PRECISION/2;
+      ry. l = ax * r-> sin2. l + ay * r-> cos2. l + UINT16_PRECISION/2;
       dsx = x + rx. i. i - psx;
       dsy = REVERT( y + ry. i. i) + psy - r-> dimension. y + 1;
 
