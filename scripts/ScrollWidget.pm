@@ -85,6 +85,8 @@ sub set_deltas
    my ($odx,$ody) = ($self->{deltaX},$self->{deltaY});
    $w = 0 if $w < 0;
    $h = 0 if $h < 0;
+   $w = int( $w);
+   $h = int( $h);
    my ($x, $y) = $self-> limits;
    my ( $ww, $hh) = $self-> size;
    my ( $www, $hhh) = ( $ww, $hh);
