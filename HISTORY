@@ -1,3 +1,5 @@
+1.09  No new features 
+
 1.08  Add limited utf8/unicode support. Enhance image conversion functionality.
 
 1.07  Documentation completed. Add man pages installation.
@@ -14,4 +16,4 @@
 
 1.01  Make Prima compileable on 64-bit platforms
 
-1.00: CPAN epoch started
+1.00  CPAN epoch started
