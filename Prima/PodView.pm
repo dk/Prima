@@ -514,10 +514,11 @@ sub load_file
       push @ext, ( '.bat' ) if $^O =~ /win32/i;
       push @ext, ( '.bat', '.cmd' ) if $^O =~ /os2/;
       push @ext, ( '.com' ) if $^O =~ /VMS/;
-      for ( map { $_, "$_/pod" } 
+      for ( map { $_, "$_/pod", "$_/pods" } 
               grep { defined && length && -d } 
                  @INC, 
                  split( $Config::Config{path_sep}, $ENV{PATH})) {
+                 print "$_/$manpage\n";
          if ( -f "$_/$manpage") {
             $manpage = "$_/$manpage";
             $path = $_;
