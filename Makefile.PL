@@ -68,6 +68,8 @@ use vars qw(
     %alldeps
     @allinstall
     @alldirs
+    @headers
+    @footers
     $PrimaTarget
 );
 
@@ -548,6 +550,21 @@ all: prima
 
 MAKE
 
+if ( $ENV{ HOME} && ( -d qd( "$ENV{ HOME}/.Makeinc"))) {
+    my $hdir = "$ENV{ HOME}/.Makeinc";
+    if ( -f "$hdir/header.PL") {
+	push @headers, `perl $hdir/header.PL`;
+    }
+    if ( -f "$hdir/footer.PL") {
+	push @footers, `perl $hdir/footer.PL`;
+    }
+    if ( -f "$hdir/Prima.ph") {
+	do "$hdir/Prima.ph";
+    }
+}
+
+$make .= join( "\n", @headers) . "\n";
+
 while (<*.cls>) {
   $make .= clsmake( $_);
 }
@@ -626,6 +643,8 @@ dirs: @alldirs
 \t\@\$(MD) @alldirs
 
 MAKE
+
+print MAKE join( "\n", @footers), "\n";
 
 close MAKE;
 print "\nAll done.  Now you can run ${ MAKE}.\n";
