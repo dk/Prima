@@ -89,6 +89,9 @@ Object_create( char *className, HV * profile)
       OPEN_G_EVAL;
       PERL_CALL_METHOD( "init", G_VOID|G_DISCARD|G_EVAL);
       if ( SvTRUE( GvSV( errgv))) {
+         PUTBACK_G_EVAL;
+         CLOSE_G_EVAL;
+         OPEN_G_EVAL;
          Object_destroy( self);
          PUTBACK_G_EVAL;
          CLOSE_G_EVAL;
