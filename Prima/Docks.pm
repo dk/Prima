@@ -1025,6 +1025,7 @@ sub LeftDocker_Size
 {
    my ( $self, $dock, $ox, $oy, $x, $y) = @_;
    return if $self-> {indents}-> [0] == $x;
+   return unless $self-> can_event;
    $self-> {indents}-> [0] = $x;
    $self-> ClientDocker-> set(
       left  => $x,
@@ -1037,6 +1038,7 @@ sub RightDocker_Size
 {
    my ( $self, $dock, $ox, $oy, $x, $y) = @_;
    return if $self-> {indents}-> [2] == $x;
+   return unless $self-> can_event;
    $self-> {indents}-> [2] = $x;
    $self-> ClientDocker-> width( $self-> width - $x - $self-> {indents}->[0]);
    $self-> repaint;
@@ -1046,6 +1048,7 @@ sub TopDocker_Size
 {
    my ( $self, $dock, $ox, $oy, $x, $y) = @_;
    return if $self-> {indents}-> [3] == $y; 
+   return unless $self-> can_event;
    $self-> {indents}-> [3] = $y;
    my $h = $self-> height - $y - $self-> {indents}-> [1];
    
@@ -1059,6 +1062,7 @@ sub BottomDocker_Size
 {
    my ( $self, $dock, $ox, $oy, $x, $y) = @_;
    return if $self-> {indents}-> [1] == $y; 
+   return unless $self-> can_event;
    $self-> {indents}-> [1] = $y;
    my $h = $self-> height;
    $self-> LeftDocker-> height( $h - $y - $self-> {indents}-> [3]); 
