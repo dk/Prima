@@ -92,6 +92,7 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
          }
          guts. lastWMFocus = X_WINDOW;
          if ( selectee != self) XMapRaised( DISP, PWidget(selectee)-> handle);
+         XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
          Widget_selected( selectee, true, true);
 	 return false;
       }
