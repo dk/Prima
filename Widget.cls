@@ -53,6 +53,7 @@ object Prima::Widget( Prima::Drawable)
    List      widgets;		       # list of child widgets
 
 # properties
+   property  Color backColor;
    property  Color color;
    property  char* hint;
    property  char* text;
@@ -115,7 +116,6 @@ object Prima::Widget( Prima::Drawable)
 # properties read methods
    method   SV *     get_accel_items();
    method   Handle   get_accel_table();
-   method   Color    get_back_color();
    method   int      get_bottom();
    method   Bool     get_brief_keys();
    method   Bool     get_buffered();
@@ -188,7 +188,6 @@ object Prima::Widget( Prima::Drawable)
 # properties write methods
    method   void     set_accel_items( SV * accelItems);
    method   void     set_accel_table( Handle accelTable);
-   method   Bool     set_back_color( Color color);
    method   void     set_bottom( int bottom);
    method   void     set_brief_keys( Bool briefKeys);
    method   void     set_buffered( Bool buffered);

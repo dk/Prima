@@ -322,7 +322,6 @@ sub profile_check_in
 }
 
 sub clipRect   {($#_)?shift->set_clip_rect   (@_   ):return $_[0]->get_clip_rect;   }
-sub backColor  {($#_)?$_[0]->set_back_color  ($_[1]):return $_[0]->get_back_color;  }
 sub fillPattern{($#_)?($#_>1?shift->set_fill_pattern(@_):shift->set_fill_pattern_id(@_)):return $_[0]->get_fill_pattern;}
 sub lineEnd    {($#_)?$_[0]->set_line_end    ($_[1]):return $_[0]->get_line_end;    }
 sub linePattern{($#_)?$_[0]->set_line_pattern($_[1]):return $_[0]->get_line_pattern;}

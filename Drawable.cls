@@ -34,6 +34,7 @@ object Prima::Drawable ( Prima::Component)
    int         palSize;                # logical palette size
 
 
+   property    Color backColor;
    property    Color color;
 
    # globals
@@ -48,9 +49,8 @@ object Prima::Drawable ( Prima::Component)
    c_only Bool	 font_add( Font * source, Font * dest);
    import SV *   profile_default();
 
-   # properties
+   # properties-to-be
    method void   set( HV * profile);
-   method Bool   set_back_color( Color color)       => apc_gp_set_back_color;
    method Bool   set_clip_rect( Rect clipRect)      => apc_gp_set_clip_rect;
    method void   set_fill_pattern ( FillPattern pattern);
    method void   set_fill_pattern_id ( int patternId);
@@ -67,7 +67,6 @@ object Prima::Drawable ( Prima::Component)
    method Bool   set_text_out_baseline( Bool bas)  => apc_gp_set_text_out_baseline;
 
    method int           get_bpp();
-   method Color         get_back_color()                  => apc_gp_get_back_color;
    method Rect          get_clip_rect()                   => apc_gp_get_clip_rect;
    method FillPattern * get_fill_pattern();
    method Font          get_font();

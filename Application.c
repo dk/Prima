@@ -527,7 +527,7 @@ Application_get_color_index( Handle self, int index)
            CDrawable-> get_color ( self) : var->  colors[ index];
      case ciBack:
         return opt_InPaint ?
-           CDrawable-> get_back_color ( self) : var->  colors[ index];
+           CDrawable-> get_backColor ( self) : var->  colors[ index];
      default:
         return  var->  colors[ index];
    }
@@ -556,7 +556,7 @@ Application_set_color_index( Handle self, Color color, int index)
          CDrawable-> set_color ( self, color);
          break;
       case ciBack:
-         CDrawable-> set_back_color ( self, color);
+         CDrawable-> set_backColor ( self, color);
          break;
     }
    var->  colors[ index] = color;
@@ -705,7 +705,7 @@ Application_set_hint_color( Handle self, Color hintColor)
 void
 Application_set_hint_back_color( Handle self, Color hintBackColor)
 {
-   CWidget( var->  hintWidget)-> set_back_color( var->  hintWidget, hintBackColor);
+   CWidget( var->  hintWidget)-> set_backColor( var->  hintWidget, hintBackColor);
 }
 
 void
@@ -730,7 +730,7 @@ Application_get_hint_color( Handle self)
 Color
 Application_get_hint_back_color( Handle self)
 {
-   return CWidget( var->  hintWidget)-> get_back_color( var->  hintWidget);
+   return CWidget( var->  hintWidget)-> get_backColor( var->  hintWidget);
 }
 
 Font

@@ -45,7 +45,7 @@ Drawable_init( Handle self, HV * profile)
    apc_gp_init( self);
    var-> w = var-> h = 0;
    my-> set_color        ( self, pget_i ( color));
-   my-> set_back_color   ( self, pget_i ( backColor));
+   my-> set_backColor   ( self, pget_i ( backColor));
    {
       SV * sv = pget_sv( fillPattern);
       if ( SvROK( sv)) {
@@ -892,6 +892,14 @@ read_palette( int * palSize, SV * palette)
    }
 
    return ( PRGBColor) buf;
+}
+
+Color
+Drawable_backColor( Handle self, Bool set, Color color)
+{
+   if (!set) return apc_gp_get_back_color( self);
+   apc_gp_set_back_color( self, color);
+   return color;
 }
 
 Color

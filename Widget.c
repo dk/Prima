@@ -87,7 +87,7 @@ Widget_init( Handle self, HV * profile)
    SvHV_Font( pget_sv( font), &Font_buffer, "Widget::init");
    my-> set_widget_class       ( self, pget_i( widgetClass  ));
    my-> set_color              ( self, pget_i( color        ));
-   my-> set_back_color         ( self, pget_i( backColor    ));
+   my-> set_backColor         ( self, pget_i( backColor    ));
    my-> set_font               ( self, Font_buffer);
    opt_assign( optOwnerBackColor, pget_B( ownerBackColor));
    opt_assign( optOwnerColor    , pget_B( ownerColor));
@@ -1032,7 +1032,7 @@ Widget_set( Handle self, HV * profile)
             }
             if ( is_opt( optOwnerBackColor))
             {
-               my-> set_back_color( self, ((( PWidget) postOwner)-> self)-> get_back_color( postOwner));
+               my-> set_backColor( self, ((( PWidget) postOwner)-> self)-> get_backColor( postOwner));
                opt_set( optOwnerBackColor);
             }
             if ( is_opt( optOwnerShowHint))
@@ -1238,13 +1238,6 @@ Widget_get_accel_table( Handle self)
    return var-> accelTable;
 }
 
-Color
-Widget_get_back_color( Handle self)
-{
-   enter_method;
-   return my-> get_color_index( self, ciBack);
-}
-
 int
 Widget_get_bottom( Handle self)
 {
@@ -1273,7 +1266,7 @@ Widget_get_color_index( Handle self, int index)
      case ciFore:
         return opt_InPaint ? inherited-> get_color ( self) : apc_widget_get_color( self, ciFore);
      case ciBack:
-        return opt_InPaint ? inherited-> get_back_color ( self) : apc_widget_get_color( self, ciBack);
+        return opt_InPaint ? inherited-> get_backColor ( self) : apc_widget_get_color( self, ciBack);
      default:
         return apc_widget_get_color( self, index);
    }
@@ -1629,14 +1622,6 @@ Widget_set_accel_table( Handle self, Handle accelTable)
    else var-> accelTable = accelTable;
 }
 
-Bool
-Widget_set_back_color( Handle self, Color color)
-{
-   enter_method;
-   my-> set_color_index( self, color, ciBack);
-   return true;
-}
-
 void
 Widget_set_bottom( Handle self, int _bottom )
 {
@@ -1698,7 +1683,7 @@ Widget_set_color_index( Handle self, Color color, int index)
             inherited-> set_color ( self, color);
             break;
          case ciBack:
-            inherited-> set_back_color ( self, color);
+            inherited-> set_backColor ( self, color);
             break;
          default:
             apc_widget_set_color ( self, color, index);
@@ -1847,7 +1832,7 @@ Widget_set_owner_back_color( Handle self, Bool ownerBackColor )
    opt_assign( optOwnerBackColor, ownerBackColor);
    if ( is_opt( optOwnerBackColor) && var-> owner)
    {
-      my-> set_back_color( self, ((( PWidget) var-> owner)-> self)-> get_back_color( var-> owner));
+      my-> set_backColor( self, ((( PWidget) var-> owner)-> self)-> get_backColor( var-> owner));
       opt_set( optOwnerBackColor);
       my-> repaint ( self);
    }
@@ -2558,6 +2543,15 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 }
 
 /* properties section */
+
+Color
+Widget_backColor( Handle self, Bool set, Color color)
+{
+   enter_method;
+   if (!set) return my-> get_color_index( self, ciBack);
+   my-> set_color_index( self, color, ciBack);
+   return color;
+}
 
 Color
 Widget_color( Handle self, Bool set, Color color)

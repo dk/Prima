@@ -40,10 +40,11 @@ sub color
    $self-> SUPER::color( $self-> get_nearest_color( $color));
 }
 
-sub set_back_color
+sub backColor
 {
+   return $_[0]->SUPER::backColor unless $#_;
    my ( $self, $color) = @_;
-   $self-> SUPER::set_back_color( $self-> get_nearest_color( $color));
+   $self-> SUPER::backColor( $self-> get_nearest_color( $color));
 }
 
 package Generic;
