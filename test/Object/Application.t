@@ -5,16 +5,13 @@ my @sz = $a-> size;
 
 $a-> begin_paint;
 ok( $a-> get_paint_state);
-
 my $pix = $a-> get_pixel( 10, 10);
 
 $a-> set_pixel( 10, 10, 0);
 my $bl = $a-> get_pixel( 10, 10);
 $a-> set_pixel( 10, 10, 0xFFFFFF);
 my $wh = $a-> get_pixel( 10, 10);
-
 $a-> set_pixel( 10, 10, $pix);
-
 ok( $bl == 0 && $wh == 0xFFFFFF);
 
 $a-> end_paint;
