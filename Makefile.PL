@@ -172,16 +172,20 @@ sub null_output
     open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
     open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
 #    $NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
-    close STDOUT;
-    close STDERR;
+    if ( $^O !~ /linux/) {
+	close STDOUT;
+	close STDERR;
+    }
     open STDOUT, ">$NULLDEV" or fatal "STDOUT redirect failed: $!";
     open STDERR, ">&STDOUT" or fatal "STDERR redirect failed: $!";
 }
 
 sub restore_output
 {
-    close STDOUT;
-    close STDERR;
+    if ( $^O !~ /linux/) {
+	close STDOUT;
+	close STDERR;
+    }
     open STDOUT, ">&OLDSTDOUT" or fatal "STDOUT restoration failed: $!";
     open STDERR, ">&OLDSTDERR" or fatal "STDERR restoration failed: $!";
     close OLDSTDOUT;
