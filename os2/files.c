@@ -70,7 +70,7 @@ socket_select( void *dummy)
       }
 
       // calling select()
-      if ( fd_max > 0) {
+      if ( fd_max >= 0) {
          int i, j, result = select( fd_max + 1, &socketSet1[0], &socketSet1[1], &socketSet1[2], &socketTimeout);
          socketSetChanged = true;
          if ( result == 0) continue;
@@ -97,7 +97,7 @@ socket_select( void *dummy)
             }
       } else
          // nothing to 'select', sleeping
-         DosSleep( socketTimeout. tv_sec * 1000000 + socketTimeout. tv_usec / 1000);
+         DosSleep( socketTimeout. tv_sec * 1000 + socketTimeout. tv_usec / 1000);
    }
 
    // if somehow failed, making restart possible
@@ -119,7 +119,7 @@ reset_sockets( void)
    for ( i = 0; i < 3; i++)
       FD_ZERO( &socketSet2[i]);
 
-   fd_max = 0;
+   fd_max = -1;
 
    for ( i = 0; i < guts. files. count; i++) {
       Handle self = guts. files. items[i];

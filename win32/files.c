@@ -109,7 +109,7 @@ socket_select( void *dummy)
             }
       } else
          // nothing to 'select', sleeping
-         Sleep( socketTimeout. tv_sec * 1000000 + socketTimeout. tv_usec / 1000);
+         Sleep( socketTimeout. tv_sec * 1000 + socketTimeout. tv_usec / 1000);
    }
 
    // if somehow failed, making restart possible
