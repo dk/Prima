@@ -753,7 +753,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          Widget_first_that( self, move_back, &delta);
          if ( is_apt( aptFocused)) cursor_update(( Handle) self);
       }
-      if ( sys sizeLockLevel == 0)
+      if ( sys sizeLockLevel == 0 && var stage <= csNormal)
          var virtualSize = sys lastSize;
       break;
    case WM_TIMER:
@@ -981,7 +981,6 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
           RECT r;
           int state;
           Bool doWSChange = false;
-          // SetWindowPos(( HWND) var handle, 0, 0, 0, LOWORD( mp2), HIWORD( mp2), SWP_NOZORDER);
           if (( int) mp1 == SIZE_RESTORED) {
              state = wsNormal;
              if ( sys s. window. state != state) doWSChange = true;

@@ -210,3 +210,117 @@ char *dlerror(void)
    return dlerror_description;
 }
 
+
+void  apc_show_message( const char * message)
+{
+   MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+}
+
+Bool
+apc_sys_get_insert_mode()
+{
+   return guts. insertMode;
+}
+
+void
+apc_sys_set_insert_mode( Bool insMode)
+{
+   guts. insertMode = insMode;
+}
+
+Point
+get_window_borders( int borderStyle)
+{
+   Point ret = { 0, 0};
+   switch ( borderStyle)
+   {
+      case bsSizeable:
+         ret. x = GetSystemMetrics( SM_CXFRAME);
+         ret. y = GetSystemMetrics( SM_CYFRAME);
+         break;
+      case bsSingle:
+         ret. x = GetSystemMetrics( SM_CXBORDER);
+         ret. y = GetSystemMetrics( SM_CYBORDER);
+         break;
+      case bsDialog:
+         ret. x = GetSystemMetrics( SM_CXDLGFRAME);
+         ret. y = GetSystemMetrics( SM_CYDLGFRAME);
+         break;
+   }
+   return ret;
+}
+
+int
+apc_sys_get_value( int sysValue)
+{
+   HKEY hKey;
+   DWORD valSize = 256, valType = REG_SZ;
+   char buf[ 256] = "";
+
+   switch ( sysValue) {
+   case svYMenu          :
+       return guts. ncmData. iMenuHeight;
+   case svYTitleBar      :
+       return guts. ncmData. iCaptionHeight;
+   case svMousePresent   :
+       return GetSystemMetrics( SM_MOUSEPRESENT);
+   case svMouseButtons   :
+       return GetSystemMetrics( SM_CMOUSEBUTTONS);
+   case svSubmenuDelay   :
+       RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Desktop", 0, KEY_READ, &hKey);
+       RegQueryValueEx( hKey, "MenuShowDelay", nil, &valType, buf, &valSize);
+       RegCloseKey( hKey);
+       return atol( buf);
+   case svFullDrag       :
+       RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Desktop", 0, KEY_READ, &hKey);
+       RegQueryValueEx( hKey, "DragFullWindows", nil, &valType, buf, &valSize);
+       RegCloseKey( hKey);
+       return atol( buf);
+   case svDblClickDelay   :
+       RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Mouse", 0, KEY_READ, &hKey);
+       RegQueryValueEx( hKey, "DoubleClickSpeed", nil, &valType, buf, &valSize);
+       RegCloseKey( hKey);
+       return atol( buf);
+   case svWheelPresent    : return GetSystemMetrics( SM_MOUSEWHEELPRESENT);
+   case svXIcon           : return guts. iconSizeLarge. x;
+   case svYIcon           : return guts. iconSizeLarge. y;
+   case svXSmallIcon      : return guts. iconSizeSmall. x;
+   case svYSmallIcon      : return guts. iconSizeSmall. y;
+   case svXPointer        : return guts. pointerSize. x;
+   case svYPointer        : return guts. pointerSize. y;
+   case svXScrollbar      : return GetSystemMetrics( SM_CXHSCROLL);
+   case svYScrollbar      : return GetSystemMetrics( SM_CYVSCROLL);
+   case svXCursor         : return GetSystemMetrics( SM_CXBORDER);
+   case svAutoScrollFirst : return 200;
+   case svAutoScrollNext  : return 50;
+   case svInsertMode      : return guts. insertMode;
+   case svXbsNone         : return 0;
+   case svYbsNone         : return 0;
+   case svXbsSizeable     : return GetSystemMetrics( SM_CXFRAME);
+   case svYbsSizeable     : return GetSystemMetrics( SM_CYFRAME);
+   case svXbsSingle       : return GetSystemMetrics( SM_CXBORDER);
+   case svYbsSingle       : return GetSystemMetrics( SM_CYBORDER);
+   case svXbsDialog       : return GetSystemMetrics( SM_CXDLGFRAME);
+   case svYbsDialog       : return GetSystemMetrics( SM_CYDLGFRAME);
+   default:
+      apcErr( errInvParams);
+   }
+   return 0;
+}
+
+PFont
+apc_sys_get_msg_font( PFont copyTo)
+{
+   *copyTo = guts. msgFont;
+   copyTo-> pitch = fpDefault;
+   return copyTo;
+}
+
+PFont
+apc_sys_get_caption_font( PFont copyTo)
+{
+   *copyTo = guts. capFont;
+   copyTo-> pitch = fpDefault;
+   return copyTo;
+}
+
