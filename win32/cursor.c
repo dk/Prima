@@ -24,10 +24,10 @@
  * SUCH DAMAGE.
  */
 
+#include "win32\win32guts.h"
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
-#include "win32\win32guts.h"
 #include "Window.h"
 #include "Icon.h"
 #include "Application.h"

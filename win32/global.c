@@ -205,7 +205,8 @@ window_subsystem_init()
    guts. pointerSize. x   = GetSystemMetrics( SM_CXCURSOR);
    guts. pointerSize. y   = GetSystemMetrics( SM_CYCURSOR);
    list_create( &guts. transp, 8, 8);
-   list_create( &guts. files, 8, 8);
+   // list_create( &guts. files, 8, 8);
+   list_create( &guts. sockets, 8, 8);
 
    // selecting locale layout, more or less latin-like
    {
@@ -241,7 +242,17 @@ window_subsystem_init()
 void
 window_subsystem_done()
 {
-   list_destroy( &guts. files);
+   // list_destroy( &guts. files);
+
+   if ( guts. socketMutex) {
+      // appDead must be TRUE for this moment!
+      appDead = true;
+      if ( WaitForSingleObject( guts. socketThread, 2000) != WAIT_OBJECT_0)
+          warn("Failed to unlock socket thread #2");
+      CloseHandle( guts. socketMutex);
+   }
+
+   list_destroy( &guts. sockets);
    list_destroy( &guts. transp);
    destroy_font_hash();
 
@@ -269,14 +280,18 @@ window_subsystem_cleanup()
 }
 
 static char buf[ 256];
-char * err_msg( DWORD errId)
+char * err_msg( DWORD errId, char * buffer)
 {
    LPVOID lpMsgBuf;
+   if ( buffer == nil) buffer = buf;
    FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, errId,
       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       ( LPTSTR) &lpMsgBuf, 0, NULL);
-   strncpy( buf, lpMsgBuf, 256);
-   buf[ 255] = 0;
+   if ( lpMsgBuf)
+      strncpy( buffer, lpMsgBuf, 256);
+   else
+      buffer[0] = 0;
+   buffer[ 255] = 0;
    LocalFree( lpMsgBuf);
    return buf;
 }
@@ -1157,6 +1172,7 @@ static Bool kill_img_cache( Handle self, int keyLen, void * key, void * killDBM)
 
 LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {
+   int command;
    switch ( msg) {
       case WM_DISPLAYCHANGE:
          {

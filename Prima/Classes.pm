@@ -262,12 +262,14 @@ sub profile_default
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
       file => undef,
+      mask => fe::Read|fe::Write|fe::Exception,
    );
    @$def{keys %prf} = values %prf;
    return $def;
 }
 
 sub file       {($#_)?$_[0]->set_file        ($_[1]):return $_[0]->get_file; }
+sub mask       {($#_)?$_[0]->set_mask        ($_[1]):return $_[0]->get_mask; }
 
 package Prima::Clipboard;
 use vars qw(@ISA);

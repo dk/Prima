@@ -31,7 +31,6 @@
 #include "apricot.h"
 #endif
 #include "Component.h"
-#include "File.h"
 
 static int ctx_mb2MB[] =
 {
@@ -473,44 +472,6 @@ apc_widget_user_profile( char * name, Handle owner)
    return ret;
 }
 
-/* file */
-
-#define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
-#define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
-#define var (( PFile) self)->
 
 
-static void
-reset_files()
-{
-   int i;
-   for ( i = 0; i < guts. files. count; i++)
-      guts. objects[ i] = dsys( guts. files. items[ i]) s. fileObject;
-}
-
-Bool
-apc_file_attach( Handle self)
-{
-   objCheck false;
-   if ( guts. files. count == MAXIMUM_WAIT_OBJECTS) return false;
-   sys s. fileObject = ( HANDLE) _get_osfhandle( var fd);
-   list_add( &guts. files, self);
-   reset_files();
-   return true;
-}
-
-Bool
-apc_file_detach( Handle self)
-{
-   sys s. fileObject = ( HANDLE) -1;
-   list_delete( &guts. files, self);
-   reset_files();
-   return true;
-}
-
-Bool
-apc_file_change_mask( Handle self)
-{
-   return false;
-}
 

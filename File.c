@@ -47,6 +47,7 @@ File_init( Handle self, HV * profile)
 {
    var-> fd = -1;
    inherited-> init( self, profile);
+   my-> set_mask( self, pget_i( mask));
    var-> eventMask2 =
      ( query_method( self, "on_read",    0) ? feRead      : 0) |
      ( query_method( self, "on_write",   0) ? feWrite     : 0) |
@@ -107,6 +108,12 @@ File_get_handle( Handle self)
    return newSVpv( buf, 0);
 }
 
+int
+File_get_mask( Handle self)
+{
+   return var-> userMask;
+}
+
 void
 File_set_file( Handle self, SV * file)
 {
@@ -133,6 +140,13 @@ File_set_file( Handle self, SV * file)
    }
 }
 
+void
+File_set_mask( Handle self, int mask)
+{
+   var-> userMask = mask;
+   File_reset_notifications( self);
+}
+
 long
 File_add_notification( Handle self, char * name, SV * subroutine, Handle referer, int index)
 {
@@ -152,13 +166,13 @@ File_remove_notification( Handle self, long id)
 static void
 File_reset_notifications( Handle self)
 {
-   int i, mask = var-> eventMask2;
+   int i, mask = var-> eventMask2 & var-> userMask;
    PList  list;
    void * ret[ 3];
    int    cmd[ 3] = { feRead, feWrite, feException};
 
    if ( var-> eventIDs == nil) {
-      var-> eventMask = var-> eventMask2;
+      var-> eventMask = mask;
       return;
    }
 

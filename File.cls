@@ -27,6 +27,7 @@ object Prima::File( Prima::Component)
 {
    int   eventMask;
    int   eventMask2;
+   int   userMask;
    int   fd;
    SV *  file;
    method   long      add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
@@ -34,9 +35,11 @@ object Prima::File( Prima::Component)
    method   void      done();
    method   SV      * get_file();
    method   SV      * get_handle();
+   method   int       get_mask();
    c_only   void      handle_event( PEvent event);
    method   Bool      is_active( Bool autoDetach = false);
    import   SV *      notification_types();
    method   void      remove_notification( long id);
    method   void      set_file( SV * file);
+   method   void      set_mask( int mask);
 }

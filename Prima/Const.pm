@@ -67,5 +67,6 @@ package hmp; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# help manager pages constant
 package tw; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text wrapping constants
 package fds; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog scope type
 package fdo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog options
+package fe; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# file events constants
 
 1;

@@ -29,6 +29,7 @@
 #include "apricot.h"
 #endif
 #include "guts.h"
+#include "File.h"
 #include "Menu.h"
 #include "Image.h"
 #include "Window.h"
@@ -302,55 +303,124 @@ apc_application_get_size( Handle self)
 }
 
 static Bool
+files_rehash( Handle self, void * dummy)
+{
+   CFile( self)-> is_active( self, true);
+   return false;
+}
+
+static Bool
 process_msg( MSG * msg)
 {
    switch ( msg-> message)
    {
-      case WM_TERMINATE:
-      case WM_QUIT:
-         return false;
-      case WM_BREAKMSGLOOP:
-         return true;
-      case WM_KEYDOWN:
-      case WM_KEYUP:
-      case WM_SYSKEYDOWN:
-      case WM_SYSKEYUP:
-         GetKeyboardState( guts. keyState);
-         break;
-      case WM_KEYPACKET:
-         {
-            KeyPacket * kp = ( KeyPacket *) msg-> lParam;
-            BYTE * mod = mod_select( kp-> mod);
-            SendMessage( kp-> wnd, kp-> msg, kp-> mp1, kp-> mp2);
-            mod_free( mod);
+   case WM_TERMINATE:
+   case WM_QUIT:
+      return false;
+   case WM_CROAK:
+      if ( msg-> wParam)
+         croak(( char *) msg-> lParam);
+      else
+         warn(( char *) msg-> lParam);
+      return true;
+   case WM_BREAKMSGLOOP:
+      return true;
+   case WM_KEYDOWN:
+   case WM_KEYUP:
+   case WM_SYSKEYDOWN:
+   case WM_SYSKEYUP:
+      GetKeyboardState( guts. keyState);
+      break;
+   case WM_KEYPACKET:
+      {
+         KeyPacket * kp = ( KeyPacket *) msg-> lParam;
+         BYTE * mod = mod_select( kp-> mod);
+         SendMessage( kp-> wnd, kp-> msg, kp-> mp1, kp-> mp2);
+         mod_free( mod);
+      }
+      break;
+   case WM_LBUTTONDOWN:  musClk. emsg = WM_LBUTTONUP; goto MUS1;
+   case WM_MBUTTONDOWN:  musClk. emsg = WM_MBUTTONUP; goto MUS1;
+   case WM_RBUTTONDOWN:  musClk. emsg = WM_RBUTTONUP; goto MUS1;
+   MUS1:
+      musClk. pending = 1;
+      musClk. msg     = *msg;
+      musClk. msg. wParam &=  MK_CONTROL|MK_SHIFT;
+      break;
+   case WM_LBUTTONUP:   musClk. msg. message = WM_LMOUSECLICK; goto MUS2;
+   case WM_MBUTTONUP:   musClk. msg. message = WM_MMOUSECLICK; goto MUS2;
+   case WM_RBUTTONUP:   musClk. msg. message = WM_RMOUSECLICK; goto MUS2;
+   MUS2:
+      if ( musClk. pending &&
+           ( musClk. emsg         == msg-> message) &&
+           ( musClk. msg. hwnd    == msg-> hwnd)    &&
+           ( musClk. msg. wParam  == ( msg-> wParam & ( MK_CONTROL|MK_SHIFT))) &&
+           ( abs( musClk. msg. time  - msg-> time) < 200)
+         )
+         PostMessage( msg-> hwnd, musClk. msg. message, msg-> wParam, msg-> lParam);
+      musClk. pending = 0;
+      break;
+   case WM_LBUTTONDBLCLK:
+   case WM_MBUTTONDBLCLK:
+   case WM_RBUTTONDBLCLK:
+      musClk. pending = 0;
+      break;
+   case WM_SOCKET:
+      {
+         int i;
+         WINHANDLE socket = ( WINHANDLE) msg-> lParam;
+         for ( i = 0; i < guts. sockets. count; i++) {
+            Handle self = guts. sockets. items[ i];
+            if (( sys s. file. object == socket) &&
+                ( PFile( self)-> eventMask & msg-> wParam)) {
+               Event ev;
+               ev. cmd = ( msg-> wParam == feRead) ? cmFileRead :
+                         (( msg-> wParam == feWrite) ? cmFileWrite : cmFileException);
+               CComponent( self)-> message( self, &ev);
+               break;
+            }
          }
-         break;
-      case WM_LBUTTONDOWN:  musClk. emsg = WM_LBUTTONUP; goto MUS1;
-      case WM_MBUTTONDOWN:  musClk. emsg = WM_MBUTTONUP; goto MUS1;
-      case WM_RBUTTONDOWN:  musClk. emsg = WM_RBUTTONUP; goto MUS1;
-      MUS1:
-         musClk. pending = 1;
-         musClk. msg     = *msg;
-         musClk. msg. wParam &=  MK_CONTROL|MK_SHIFT;
-         break;
-      case WM_LBUTTONUP:   musClk. msg. message = WM_LMOUSECLICK; goto MUS2;
-      case WM_MBUTTONUP:   musClk. msg. message = WM_MMOUSECLICK; goto MUS2;
-      case WM_RBUTTONUP:   musClk. msg. message = WM_RMOUSECLICK; goto MUS2;
-      MUS2:
-         if ( musClk. pending &&
-              ( musClk. emsg         == msg-> message) &&
-              ( musClk. msg. hwnd    == msg-> hwnd)    &&
-              ( musClk. msg. wParam  == ( msg-> wParam & ( MK_CONTROL|MK_SHIFT))) &&
-              ( abs( musClk. msg. time  - msg-> time) < 200)
-            )
-            PostMessage( msg-> hwnd, musClk. msg. message, msg-> wParam, msg-> lParam);
-         musClk. pending = 0;
-         break;
-      case WM_LBUTTONDBLCLK:
-      case WM_MBUTTONDBLCLK:
-      case WM_RBUTTONDBLCLK:
-         musClk. pending = 0;
-         break;
+         guts. socketPostSync = 0; // clear semaphore
+      }
+      return true;
+   case WM_SOCKET_REHASH:
+      socket_rehash();
+      guts. socketPostSync = 0; // clear semaphore
+      return true;
+   case WM_FILE:
+      if ( msg-> wParam == 0) {
+         int i;
+
+         if ( guts. files. count == 0) return true;
+
+         list_first_that( &guts. files, files_rehash, nil);
+         for ( i = 0; i < guts. files. count; i++) {
+            Handle self = guts. files. items[i];
+            if ( PFile( self)-> eventMask & feRead)
+               PostMessage( NULL, WM_FILE, feRead, ( LPARAM) self);
+            if ( PFile( self)-> eventMask & feWrite)
+               PostMessage( NULL, WM_FILE, feWrite, ( LPARAM) self);
+            if ( PFile( self)-> eventMask & feException)
+               PostMessage( NULL, WM_FILE, feException, ( LPARAM) self);
+         }
+         PostMessage( NULL, WM_FILE, 0, 0);
+      } else {
+         int i;
+         Handle self = nilHandle;
+         for ( i = 0; i < guts. files. count; i++)
+            if (( guts. files. items[i] == ( Handle) msg-> lParam) &&
+                ( PFile(guts. files. items[i])-> eventMask & msg-> wParam)) {
+               self = ( Handle) msg-> lParam;
+               break;
+            }
+         if ( self) {
+            Event ev;
+            ev. cmd = ( msg-> wParam == feRead) ? cmFileRead :
+                      (( msg-> wParam == feWrite) ? cmFileWrite : cmFileException);
+            CComponent( self)-> message( self, &ev);
+         }
+      }
+      return true;
    }
    // absolutely unneeded syscall, we don't use CHAR messages, but -
    // Mustdie 95 and Mustdie 98 switches kbd lamps inside TranslateMessage()
@@ -368,19 +438,6 @@ apc_application_go( Handle self)
    objCheck false;
 
    while ( GetMessage( &msg, NULL, 0, 0) && process_msg( &msg));
-
-// while ( 1 )
-// {
-//    DWORD result = ( guts. files. count > 0) ?
-//       MsgWaitForMultipleObjects( guts. files. count, guts. files. objects,
-//           false, INFINITE, QS_ALLINPUT) - WAIT_OBJECT_0 : 1;
-//
-//    if ( result >= 0 && result < guts. files. count) {
-//
-//    } else {
-//       while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE) && process_msg( &msg));
-//    }
-// }
 
    if ( application) Object_destroy( application);
    return true;

@@ -6,6 +6,7 @@
 #include "apricot.h"
 
 #define SEVERE_DEBUG
+typedef HANDLE WINHANDLE;
 
 #define IS_NT      (BOOL)( guts. version < 0x80000000)
 #define IS_WIN32S  (BOOL)(!(IS_NT) && (LOBYTE(LOWORD(guts. version))<4))
@@ -54,6 +55,10 @@
 #define WM_SYNCMOVE                       ( WM_USER + 14)
 #define WM_EXTERNAL                       ( WM_USER + 15)
 #define WM_HASMATE                        ( WM_USER + 16)
+#define WM_SOCKET                         ( WM_USER + 17)
+#define WM_SOCKET_REHASH                  ( WM_USER + 18)
+#define WM_FILE                           ( WM_USER + 19)
+#define WM_CROAK                          ( WM_USER + 20)
 #define WM_TERMINATE                      ( WM_USER + 99)
 
 #define WC_CUSTOM       0
@@ -71,6 +76,16 @@
 #define stbText         4
 #define stbBacking      8
 
+#define SOCKETS_NONE         ( guts. socket_version == -1)
+#define SOCKETS_AS_HANDLES   ( guts. socket_version == 1)
+#define SOCKETS_NATIVE       ( guts. socket_version == 2)
+
+#define FHT_SOCKET  1
+#define FHT_PIPE    2
+#define FHT_OTHER   3
+
+
+
 /*  #ifndef  SEVERE_DEBUG */
 /*  #define apiErr       { rc = GetLastError();    apcError = errApcError; } */
 /*  #define apcErr( err)    apcError = err; */
@@ -80,7 +95,7 @@
    rc = GetLastError();                                     \
    apcError = errApcError;                                  \
    fprintf( stderr, "WIN_%d (%s) at line %d in %s", rc,     \
-      err_msg( rc), __LINE__, __FILE__);                    \
+      err_msg( rc, nil), __LINE__, __FILE__);                    \
 }
 #define apcErr( err) {                                      \
    apcError = err;                                          \
@@ -89,7 +104,7 @@
    apcError = errApcError;                                  \
    rc = err;                                                \
    fprintf( stderr, "WIN_%d (%s) at line %d at %s", rc,     \
-        err_msg( rc), __LINE__, __FILE__);                  \
+        err_msg( rc, nil), __LINE__, __FILE__);                  \
 }
 /*  #endif */
 #define apiErrRet         { apiErr;               return false; }
@@ -130,7 +145,6 @@ typedef struct _WinGuts
     int            cmdShow;            // run command state
     int            appLock;            // application lock count
     int            pointerLock;        // pointer lock count
-    HANDLE         ioThread;           // handle of input-output thread
     DWORD          mainThreadId;       // Id of main thread
     Point          displayResolution;  // screen resolution in ppi
     char           defaultFixedFont    [ 256];
@@ -156,9 +170,14 @@ typedef struct _WinGuts
     UINT           errorMode;          // SetErrorMode() result
     DWORD          version;            // GetVersion() cached result
     Point          smDblClk;           // cached SM_CxDOUBLECLK values
-    HANDLE         objects[ MAXIMUM_WAIT_OBJECTS]; // handle objects dynamic list
-    List           files;              // List of active File objects
     Bool           is98;               // is win98
+    int            socket_version;     // socket behavior type
+    List           files;              // List of active File objects
+// socket variables
+    List           sockets;            // List of watchable sockets
+    HANDLE         socketMutex;        // thread semaphore
+    HANDLE         socketThread;       // thread id
+    Bool           socketPostSync;     // semaphore
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
@@ -174,6 +193,12 @@ typedef struct _TimerData
 {
    int  timeout;
 } TimerData;
+
+typedef struct _FileData
+{
+   HANDLE object;
+   int    type;
+} FileData;
 
 typedef struct _PrinterData
 {
@@ -351,7 +376,7 @@ typedef struct _DrawableData
       TimerData     timer;
       WindowData    window;
       PrinterData   prn;
-      HANDLE        fileObject;
+      FileData      file;
       HRGN          imgCachedRegion;      // Image specific field
    } s;
 } DrawableData, *PDrawableData;
@@ -463,7 +488,7 @@ extern HDC          dc_compat_alloc( HDC compatDC);
 extern void         dc_compat_free( void);
 extern void         dbm_recreate( Handle self);
 extern Bool         destroy_font_hash( void);
-extern char *       err_msg( DWORD errId);
+extern char *       err_msg( DWORD errId, char * buffer);
 extern Bool         erratic_line( Handle self);
 extern PDCFont      font_alloc( Font * data, Point * resolution);
 extern void         font_change( Handle self, Font * font);
@@ -501,6 +526,7 @@ extern PPatResource patres_fetch( unsigned char * pattern, int len);
 extern UINT         patres_user( unsigned char * pattern, int len);
 extern void         process_transparents( Handle self);
 extern long         remap_color( long clr, Bool toSystem);
+extern void         socket_rehash( void);
 extern PDCStylus    stylus_alloc( PStylus data);
 extern void         stylus_change( Handle self);
 extern void         stylus_clean( void);

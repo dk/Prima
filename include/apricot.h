@@ -2888,9 +2888,16 @@ extern Bool
 apc_sys_set_insert_mode( Bool insMode);
 
 /* file */
-#define feRead        0x01
-#define feWrite       0x02
-#define feException   0x04
+#define FE(const_name) CONSTANT(fe,const_name)
+START_TABLE(fe,UV)
+#define feRead      1
+FE(Read)
+#define feWrite     2
+FE(Write)
+#define feException 4
+FE(Exception)
+END_TABLE(fe,UV)
+#undef FE
 
 extern Bool
 apc_file_attach( Handle self);
