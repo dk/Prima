@@ -999,3 +999,48 @@ apc_gp_set_font( Handle self, PFont font)
    
    return true;
 }
+
+Bool
+apc_menu_set_font( Handle self, PFont font)
+{
+   PMenuSysData selfxx = ((PMenuSysData)(PComponent((self))-> sysData));
+   PCachedFont kf = find_known_font( font, false);
+
+   if ( !kf) {
+      Font dest = *font;
+      apc_font_pick( self, font, &dest);
+      kf = find_known_font( &dest, false);
+   }
+   if ( !kf) {
+      dump_font( font);
+      croak( "apc_menu_set_font(): the font was not cached");
+   }
+   if ( XX-> font == kf) {
+      /* extra sanity check */
+      if ( !kf-> id) {
+	 croak( "apc_menu_set_font(): [internal] already set, no id");
+      }
+   } else {
+      if ( !kf-> id) {
+	 kf-> fs = XLoadQueryFont( DISP, kf-> load_name);
+	 kf-> id = kf-> fs-> fid;
+	 if ( !kf-> fs) {
+	    croak( "apc_menu_set_font(): error loading font %s", kf-> load_name);
+	 }
+      }
+      kf-> ref_cnt++;
+      if ( XX-> font) {
+	 if ( --XX-> font-> ref_cnt <= 0) {
+	    if ( XX-> font-> id) {
+	       XFreeFont( DISP, XX-> font-> fs);
+	    }
+	    XX-> font-> id = 0;
+	    XX-> font-> fs = nil;
+	    XX-> font-> ref_cnt = 0;
+	 }
+      }
+      XX-> font = kf;
+   }
+
+   return true;
+}
