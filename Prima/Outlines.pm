@@ -478,7 +478,8 @@ sub on_mousedown
       }
    }
 
-   $self-> {mouseTransaction} = (( $mod & km::Alt) && $self->{dragable}) ? 2 : 1;
+   $self-> {mouseTransaction} = 
+      (( $mod & ( km::Alt | ($self->{multiSelect} ? 0 : km::Ctrl))) && $self->{dragable}) ? 2 : 1;
    $self-> focusedItem( $item >= 0 ? $item : 0);
    $self-> {mouseTransaction} = 1 if $self-> focusedItem < 0;
    if ( $self-> {mouseTransaction} == 2) {
