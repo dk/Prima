@@ -156,7 +156,7 @@ arc_completion( double angleStart, double angleEnd, int * needFigure)
 Bool
 apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd)
 { objCheck false; {
-   int compl, needf, maxRad = radX > radY ? radX : radY;
+   int compl, needf;
    HDC     ps = sys ps;
    STYLUS_USE_PEN( ps);
    compl = arc_completion( angleStart, angleEnd, &needf);
@@ -166,8 +166,8 @@ apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, do
    if ( !needf) return true;
    if ( !Arc(
        ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-       x + cos( angleStart / GRAD) * maxRad + 0.5, y - sin( angleStart / GRAD) * maxRad + 0.5,
-       x + cos( angleEnd / GRAD) * maxRad + 0.5,   y - sin( angleEnd / GRAD) * maxRad + 0.5
+       x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
+       x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5
    )) apiErrRet;
    return true;
 }}
@@ -218,7 +218,7 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
    Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
-   int compl, needf, maxRad = radX > radY ? radX : radY;
+   int compl, needf;
    compl = arc_completion( angleStart, angleEnd, &needf);
    STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y;
@@ -226,8 +226,8 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
       Arc( ps, x - radX, y - radY - 1, x + radX + 1, y + radY, x + radX + 1, y, x + radX + 1, y);
    if ( !( ok = !needf || Chord(
        ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-       x + cos( angleStart / GRAD) * maxRad + 0.5, y - sin( angleStart / GRAD) * maxRad + 0.5,
-       x + cos( angleEnd / GRAD) * maxRad + 0.5,   y - sin( angleEnd / GRAD) * maxRad + 0.5
+       x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
+       x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5
    ))) apiErr;
    SelectObject( ps, old);
    return ok;
@@ -295,7 +295,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
    HDC     ps = sys ps;
    HGDIOBJ old;
    Bool   comp;
-   int compl, needf, maxRad = radX > radY ? radX : radY;
+   int compl, needf;
 
    compl = arc_completion( angleStart, angleEnd, &needf);
    comp = stylus_complex( &sys stylus, ps);
@@ -307,8 +307,8 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
          if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1))) apiErr;
       if ( !( ok = !needf || Chord(
           ps, x - radX, y - radY - 1, x + radX + 2, y + radY + 1,
-          x + cos( angleStart / GRAD) * maxRad + 0.5,   y - sin( angleStart / GRAD) * maxRad + 0.5,
-          x + cos( angleEnd / GRAD) * maxRad + 0.5 + 1, y - sin( angleEnd / GRAD) * maxRad + 0.5 + 1
+          x + cos( angleStart / GRAD) * radX + 0.5,   y - sin( angleStart / GRAD) * radY + 0.5,
+          x + cos( angleEnd / GRAD) * radX + 0.5 + 1, y - sin( angleEnd / GRAD) * radY + 0.5 + 1
       ))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
@@ -316,8 +316,8 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
          if ( !( ok = Ellipse( ps, x - radX, y - radY - 1, x + radX + 1, y + radY))) apiErr;
       if ( !( ok = !needf || Chord(
           ps, x - radX, y - radY - 1, x + radX + 1, y + radY,
-          x + cos( angleStart / GRAD) * maxRad + 0.5,   y - sin( angleStart / GRAD) * maxRad + 0.5,
-          x + cos( angleEnd / GRAD) * maxRad + 0.5 + 1, y - sin( angleEnd / GRAD) * maxRad + 0.5 + 1
+          x + cos( angleStart / GRAD) * radX + 0.5,   y - sin( angleStart / GRAD) * radY + 0.5,
+          x + cos( angleEnd / GRAD) * radX + 0.5 + 1, y - sin( angleEnd / GRAD) * radY + 0.5 + 1
       ))) apiErr;
    }
    old = SelectObject( ps, old);
@@ -453,15 +453,15 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    int newY  = sys lastSize. y - y;
    POINT   pts[ 3];
    Bool comp;
-   int compl, needf, maxRad = radX > radY ? radX : radY;
+   int compl, needf;
 
    compl = arc_completion( angleStart, angleEnd, &needf);
    comp = stylus_complex( &sys stylus, ps);
 
-   pts[ 0]. x = x + cos( angleEnd / GRAD) * maxRad + 0.5;
-   pts[ 0]. y = newY - sin( angleEnd / GRAD) * maxRad + 0.5;
-   pts[ 1]. x = x + cos( angleStart / GRAD) * maxRad + 0.5;
-   pts[ 1]. y = newY - sin( angleStart / GRAD) * maxRad + 0.5;
+   pts[ 0]. x = x + cos( angleEnd / GRAD) * radX + 0.5;
+   pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY + 0.5;
+   pts[ 1]. x = x + cos( angleStart / GRAD) * radX + 0.5;
+   pts[ 1]. y = newY - sin( angleStart / GRAD) * radY + 0.5;
 
    STYLUS_USE_BRUSH( ps);
    y = newY;
@@ -570,16 +570,16 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
 {objCheck false;{
    Bool ok = true;
    HDC     ps = sys ps;
-   int compl, needf, maxRad = radX > radY ? radX : radY, newY = sys lastSize. y - y;
+   int compl, needf, newY = sys lastSize. y - y;
    POINT   pts[ 2];
    HGDIOBJ old;
 
    compl = arc_completion( angleStart, angleEnd, &needf);
    old = SelectObject( ps, hBrushHollow);
-   pts[ 0]. x = x + cos( angleEnd / GRAD) * maxRad + 0.5;
-   pts[ 0]. y = newY - sin( angleEnd / GRAD) * maxRad + 0.5;
-   pts[ 1]. x = x + cos( angleStart / GRAD) * maxRad + 0.5;
-   pts[ 1]. y = newY - sin( angleStart / GRAD) * maxRad + 0.5;
+   pts[ 0]. x = x + cos( angleEnd / GRAD) * radX + 0.5;
+   pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY + 0.5;
+   pts[ 1]. x = x + cos( angleStart / GRAD) * radX + 0.5;
+   pts[ 1]. y = newY - sin( angleStart / GRAD) * radY + 0.5;
    STYLUS_USE_PEN( ps);
    y = newY;
    while ( compl--)
