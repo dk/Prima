@@ -448,6 +448,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    /* Get a window, including special cases */
    switch ( ev-> type) {
    case ConfigureNotify:
+   case -ConfigureNotify:
       win = ev-> xconfigure. window;
       break;
    case ReparentNotify:
@@ -837,10 +838,16 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
    case ReparentNotify: {
       XWindow p = ev-> xreparent. parent;
-      if ( XX-> type. window) 
+      if ( !XX-> type. window) return;
 	 XX-> real_parent = ( p == guts. root) ? nilHandle : p;
+         if ( XX-> real_parent) {
+            XWindow dummy;
+            XTranslateCoordinates( DISP, X_WINDOW, XX-> real_parent,
+               0, 0, &XX-> decorationSize.x, &XX-> decorationSize.y, &dummy);
+         } else 
+            XX-> decorationSize = ( Point){0,0};
+      }
       return;
-   }
 
    case -ConfigureNotify: {
       XX-> ackSize. x   = ev-> xconfigure. width;
@@ -958,7 +965,13 @@ copy_events( Handle self, PList events, WMSyncData * w)
              X(self)-> real_parent = ( x-> xreparent. parent == guts. root) ? 
                 nilHandle : x-> xreparent. parent;
              x-> type = DEAD_BEEF;
-         }
+             if ( X(self)-> real_parent) {
+                XWindow dummy;
+                XTranslateCoordinates( DISP, X_WINDOW, X(self)-> real_parent,
+                   0, 0, &X(self)-> decorationSize.x, &X(self)-> decorationSize.y, &dummy);
+             } else 
+                X(self)-> decorationSize = ( Point){0,0};
+             }
          break;
       }
       

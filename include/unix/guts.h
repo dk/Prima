@@ -486,6 +486,7 @@ typedef struct _drawable_sys_data
    Point origin, size, bsize;
    Point transform, gtransform, btransform;
    Point ackOrigin, ackSize;   
+   Point decorationSize;
    Handle owner;  /* The real one */
    XWindow real_parent; /* top levels */
    XWindow parentHandle; /* top levels */

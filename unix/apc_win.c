@@ -334,9 +334,9 @@ apc_window_set_client_pos( Handle self, int x, int y)
    
    y = X(XX-> owner)-> size. y - XX-> size.y - y;
    hints. flags = USPosition;
-   hints. x = x;
-   hints. y = y;
-   XMoveWindow( DISP, X_WINDOW, x, y);
+   hints. x = x - XX-> decorationSize.x;
+   hints. y = y - XX-> decorationSize.y + 1;
+   XMoveWindow( DISP, X_WINDOW, hints. x, hints. y);
    apc_SetWMNormalHints( self, &hints);
    prima_wm_sync( self, ConfigureNotify);
    return true;
@@ -370,11 +370,10 @@ apc_window_set_client_size( Handle self, int width, int height)
       : 1;
 
    hints. flags = USPosition | USSize;
-   hints. x = XX-> origin. x;
-   hints. y = X(XX-> owner)-> size. y - height - XX-> origin. y;
+   hints. x = XX-> origin. x - XX-> decorationSize.x;
+   hints. y = X(XX-> owner)-> size. y - height - XX-> origin. y - XX-> decorationSize.y + 1;
    hints. width = width;
    hints. height = height;
-  
    apc_SetWMNormalHints( self, &hints);
    XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, width, height);
    XCHECKPOINT;
