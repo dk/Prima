@@ -347,10 +347,11 @@ sub setup_misc
     my ( $make_tbl, $nmake_tbl);
     $make_tbl = [ map { chr} 0..255];
     $nmake_tbl = [ map { chr} 0..255];
-    foreach ( ':', ';', '#', '(', ')', '$', '^', '\\', '{', '}', '!', '@', '-') {
+    foreach ( ':', ';', '#', '(', ')', '^', '\\', '{', '}', '!', '@', '-') {
 	$nmake_tbl->[ ord] = "^$_";
     }
-    $make_tbl->[ ord '$'] = '$$';
+    $nmake_tbl->[ ord '%'] = '%%';
+    $nmake_tbl->[ ord '$'] = $make_tbl->[ ord '$'] = '$$';
     $make_tbl->[ ord '#'] = '\\#';
     %make_trans = (
 		   make => $make_tbl,
