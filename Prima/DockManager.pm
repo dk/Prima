@@ -1070,7 +1070,7 @@ The toolbar consists of two widgets. The external dockable widget is
 implemented in C<Prima::DockManager::Toolbar>, and the internal dock
 in C<Prima::DockManager::ToolbarDocker> classes.
 
-=head2 Propeties
+=head2 Properties
 
 =over
 
@@ -1100,7 +1100,7 @@ a C<Prima::LinearDockerShuttle> descendant. When its size is
 changed due an eventual rearrange of its docked widgets, also resizes
 the toolbar.
 
-=head2 Propeties
+=head2 Properties
 
 =over
 
@@ -1143,7 +1143,7 @@ The class is to be used as a simple host to sizeable widgets.
 The user can dispose of the panel bar by clicking close button
 on the external shuttle.
 
-=head2 Propeties
+=head2 Properties
 
 =over
 
@@ -1203,7 +1203,7 @@ configuration. The base constant set is:
 All this functionality is demonstrated in F<examples/dock.pl> 
 example.
 
-=head2 Propeties
+=head2 Properties
 
 =over
 

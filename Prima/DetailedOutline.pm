@@ -368,6 +368,8 @@ This class inherits all the properties, methods, and events of Prima::OutlineVie
 (primary ancestor) and Prima::DetailedList (secondary ancestor).  One new property
 is introduced, and one property is different enough to warrant mention.
 
+=head2 Methods
+
 =over
 
 =item items ARRAY

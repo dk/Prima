@@ -610,7 +610,7 @@ nt::Single-prototyped event is used:
 
 =head1 API
 
-=head2 Prima::Object
+=head2 Prima::Object methods
 
 =over 4
 
@@ -767,9 +767,7 @@ Never called directly.
 
 =back
 
-=head2 Prima::Component
-
-B<Methods>
+=head2 Prima::Component methods
 
 =over 4
 
@@ -965,7 +963,7 @@ bound to REFERER object.
 
 =back
 
-B<Properties>
+=head2 Prima::Component properties
 
 =over 4
 
@@ -1044,7 +1042,7 @@ about the newcomer.
 
 =back
 
-B<Events>
+=head2 Prima::Component events
 
 =over 4
 

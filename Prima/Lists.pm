@@ -1621,18 +1621,6 @@ accessible on this stage as well.
 
 Default value: -1
 
-=item get_item_text INDEX
-
-Returns text string assigned to INDEXth item.
-Since the class does not assume the item storage organization,
-the text is queried via C<Stringify> notification.
-
-=item get_item_width INDEX
-
-Returns width in pixels of INDEXth item.
-Since the class does not assume the item storage organization,
-the value is queried via C<MeasureItem> notification.
-
 =item gridColor COLOR
 
 Color, used for drawing vertical divider lines for multi-column 
@@ -1739,6 +1727,18 @@ indices from FIRST to LAST on CANVAS, starting at point X, Y, and
 incrementing the vertical position with OFFSET. CLIP_RECT is a reference
 to array of four integers with inclusive-inclusive coordinates of the active 
 clipping rectangle.
+
+=item get_item_text INDEX
+
+Returns text string assigned to INDEXth item.
+Since the class does not assume the item storage organization,
+the text is queried via C<Stringify> notification.
+
+=item get_item_width INDEX
+
+Returns width in pixels of INDEXth item.
+Since the class does not assume the item storage organization,
+the value is queried via C<MeasureItem> notification.
 
 =item is_selected INDEX
 

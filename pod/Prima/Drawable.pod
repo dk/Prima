@@ -848,7 +848,7 @@ Selects the width of a canvas.
 
 =back
 
-=head2 Graphic primitives
+=head2 Graphic primitives methods
 
 =over 4
 

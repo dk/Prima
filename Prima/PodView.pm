@@ -1513,7 +1513,7 @@ and is in turn base for the toolkit's default help viewer L<Prima::HelpViewer>.
 The package consists of the several logically separated parts. These include
 file locating and loading, formatting and navigation.
 
-=head2 Content 
+=head2 Content methods
 
 The basic access to the content is not bound to the file system. The POD
 content can be supplied without any file to the viewer. Indeed, the file
@@ -1671,7 +1671,7 @@ C<STYLE_LINK> and C<STYLE_CODE>:
 
 The default colors in the styles are mapped into these entries.
 
-=head2 Links and navigation
+=head2 Link and navigation methods
 
 Prima::PodView provides a hand-icon mouse pointer highlight for the link
 entries and as an interactive part, the link documents or topics are loaded

@@ -1725,7 +1725,7 @@ As can be noticed, these opcodes are far not enough for the full-weight rich tex
 viewer. However, the new opcodes can be created using C<tb::opcode>, that accepts
 the opcode length and returns the new opcode value.
 
-=head2 Rendering
+=head2 Rendering methods
 
 =over
 
@@ -1764,7 +1764,7 @@ CANVAS can be an arbitrary C<Prima::Drawable> descendant.
 
 =back
 
-=head2 Coordinate system
+=head2 Coordinate system methods
 
 Prima::TextView employs two its own coordinate systems:
 (X,Y)-document and (TEXT_OFFSET,BLOCK)-block. 

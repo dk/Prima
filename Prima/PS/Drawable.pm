@@ -1606,7 +1606,7 @@ The module is designed to be compliant with Prima::Drawable interface.
 All properties' behavior is as same as Prima::Drawable's, except those 
 described below. 
 
-=over
+=head2 Inherited properties
 
 =item ::resolution
 
@@ -1667,7 +1667,7 @@ Default value is 0
 
 =back
 
-=head2 Internal routines
+=head2 Internal methods
 
 =over
 
