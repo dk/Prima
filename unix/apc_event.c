@@ -938,6 +938,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    case KeymapNotify: {
       break;
    }
+   case GraphicsExpose:
    case Expose: {
       XRectangle r;
       if ( !was_sent) {
@@ -957,9 +958,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
       process_transparents(self);
       return;
-   }
-   case GraphicsExpose: {
-      break;
    }
    case NoExpose: {
       break;
