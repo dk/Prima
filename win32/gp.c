@@ -1275,6 +1275,11 @@ apc_gp_get_text_box( Handle self, const char* text, int len)
    pt[3].x = pt[2]. x = pt[4].x = sz. cx;
    if ( len > 0 && !IS_NT) pt[4].x -= sys tmOverhang;
 
+   if ( !is_apt( aptTextOutBaseline)) {
+      int i = 5, d = var font. descent;
+      while ( i--) pt[ i]. y += d;
+   }
+
    if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
       ABC abc[2];
       GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
