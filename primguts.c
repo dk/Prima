@@ -43,7 +43,8 @@ static List  staticObjects;
 PHash primaObjects = nil;
 
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
-I32 clean_perl_call_method( char* methname, I32 flags)
+I32
+clean_perl_call_method( char* methname, I32 flags)
 {
    I32 ret;
    ret = perl_call_method( methname, flags | G_EVAL);
@@ -59,7 +60,8 @@ I32 clean_perl_call_method( char* methname, I32 flags)
    return ret;
 }
 
-I32 clean_perl_call_pv( char* subname, I32 flags)
+I32
+clean_perl_call_pv( char* subname, I32 flags)
 {
    I32 ret;
    ret = perl_call_pv( subname, flags | G_EVAL);
@@ -89,7 +91,8 @@ SV* readonly_clean_sv_2mortal( SV* sv) {
 }
 #endif
 
-SV *eval( char *string)
+SV *
+eval( char *string)
 {
    return perl_eval_pv( string, FALSE);
 }
@@ -390,7 +393,8 @@ sv_query_method( SV *sv, char *methodName, Bool cacheIt)
    return nil;
 }
 
-Bool build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
+Bool
+build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
 {
    PVMT vmt = vvmmtt;
    PVMT ancestorVmt = gimme_the_vmt( ancestorName);
@@ -417,19 +421,20 @@ Bool build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtS
    return true;
 }
 
-void build_static_vmt( void *vvmmtt)
+void
+build_static_vmt( void *vvmmtt)
 {
    PVMT vmt = vvmmtt;
    hash_store( vmtHash, vmt-> className, strlen( vmt-> className), vmt);
 }
 
 #ifdef PARANOID_MALLOC
-static unsigned long timestamp( void);
+static unsigned long
+timestamp( void);
 #endif
 
 PVMT
 gimme_the_vmt( const char *className)
-// , VmtPatch *patch, int patchLength)
 {
    PVMT vmt;
    PVMT originalVmt = nil;
@@ -899,7 +904,8 @@ pop_hv_for_REDEFINED( SV **sp, int returned, HV *hv, int expected)
 
 
 static Bool
-kill_objects( void * item, int keyLen, Handle * self, void * dummy) {
+kill_objects( void * item, int keyLen, Handle * self, void * dummy)
+{
    Object_destroy( *self);
    return false;
 }
@@ -1623,7 +1629,8 @@ FillPattern fillPatterns[] = {
 
 // list section
 
-void list_create( PList slf, int size, int delta)
+void
+list_create( PList slf, int size, int delta)
 {
    if ( !slf) return;
    memset( slf, 0, sizeof( List));
@@ -1632,7 +1639,18 @@ void list_create( PList slf, int size, int delta)
    slf-> items = ( size > 0) ? malloc( size * sizeof( Handle)) : nil;
 }
 
-void list_destroy( PList slf)
+PList
+plist_create( int size, int delta)
+{
+   PList new_list = ( PList) malloc( sizeof( List));
+   if ( new_list != nil) {
+      list_create( new_list, size, delta);
+   }
+   return new_list;
+}
+
+void
+list_destroy( PList slf)
 {
    if ( !slf) return;
    free( slf-> items);
@@ -1641,7 +1659,17 @@ void list_destroy( PList slf)
    slf-> size  = 0;
 }
 
-int list_add( PList slf, Handle item)
+void
+plist_destroy( PList self)
+{
+   if ( self != NULL) {
+      list_destroy( self);
+      free( self);
+   }
+}
+
+int
+list_add( PList slf, Handle item)
 {
    if ( !slf) return -1;
    if ( slf-> count == slf-> size)
@@ -1658,7 +1686,8 @@ int list_add( PList slf, Handle item)
    return slf-> count - 1;
 }
 
-void list_insert_at( PList slf, Handle item, int pos)
+void
+list_insert_at( PList slf, Handle item, int pos)
 {
    int max;
    Handle save;
@@ -1670,7 +1699,8 @@ void list_insert_at( PList slf, Handle item, int pos)
    slf-> items[ max] = save;
 }
 
-int list_index_of( PList slf, Handle item)
+int
+list_index_of( PList slf, Handle item)
 {
    int i;
    if ( !slf ) return -1;
@@ -1679,12 +1709,14 @@ int list_index_of( PList slf, Handle item)
    return -1;
 }
 
-void list_delete( PList slf, Handle item)
+void
+list_delete( PList slf, Handle item)
 {
    list_delete_at( slf, list_index_of( slf, item));
 }
 
-void list_delete_at( PList slf, int index)
+void
+list_delete_at( PList slf, int index)
 {
    if ( !slf || index < 0 || index >= slf-> count) return;
    slf-> count--;
@@ -1692,12 +1724,14 @@ void list_delete_at( PList slf, int index)
    memmove( &slf-> items[ index], &slf-> items[ index + 1], ( slf-> count - index) * sizeof( Handle));
 }
 
-Handle list_at( PList slf, int index)
+Handle
+list_at( PList slf, int index)
 {
    return (( index < 0 || !slf) || index >= slf-> count) ? nilHandle : slf-> items[ index];
 }
 
-int list_first_that( PList slf, void * action, void * params)
+int
+list_first_that( PList slf, void * action, void * params)
 {
    int toRet = -1, i, cnt = slf-> count;
    Handle * list;
@@ -1713,7 +1747,8 @@ int list_first_that( PList slf, void * action, void * params)
    return toRet;
 }
 
-void list_delete_all( PList slf, Bool kill)
+void
+list_delete_all( PList slf, Bool kill)
 {
    if ( !slf || ( slf-> count == 0)) return;
    if ( kill ) {
@@ -1724,12 +1759,14 @@ void list_delete_all( PList slf, Bool kill)
    slf-> count = 0;
 }
 
-PHash hash_create( void)
+PHash
+hash_create( void)
 {
    return newHV();
 }
 
-void hash_destroy( PHash h, Bool killAll)
+void
+hash_destroy( PHash h, Bool killAll)
 {
    HE *he;
    hv_iterinit( h);
@@ -1750,7 +1787,8 @@ static SV *ksv = nil;
                    he = hv_fetch_ent( h, ksv, false, 0)
 
 
-void *hash_fetch( PHash h, const void *key, int keyLen)
+void *
+hash_fetch( PHash h, const void *key, int keyLen)
 {
    HE *he;
    ksv_check;
@@ -1758,7 +1796,8 @@ void *hash_fetch( PHash h, const void *key, int keyLen)
    return HeVAL( he);
 }
 
-void *hash_delete( PHash h, const void *key, int keyLen, Bool kill)
+void *
+hash_delete( PHash h, const void *key, int keyLen, Bool kill)
 {
    HE *he;
    void *val;
@@ -1774,7 +1813,8 @@ void *hash_delete( PHash h, const void *key, int keyLen, Bool kill)
    return val;
 }
 
-Bool hash_store( PHash h, const void *key, int keyLen, void *val)
+Bool
+hash_store( PHash h, const void *key, int keyLen, void *val)
 {
    HE *he;
    ksv_check;
@@ -1784,7 +1824,8 @@ Bool hash_store( PHash h, const void *key, int keyLen, void *val)
    return true;
 }
 
-void * hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** pKey)
+void *
+hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** pKey)
 {
    HE *he;
 
@@ -1817,14 +1858,16 @@ void * hash_first_that( PHash h, void * action, void * params, int * pKeyLen, vo
 static PHash hash = nil;
 Handle self = 0;
 
-static unsigned long timestamp( void)
+static unsigned long
+timestamp( void)
 {
    struct timeb t;
    ftime( &t);
    return t. time * 1000 + t. millitm;
 }
 
-static void output_mallocs( void)
+static void
+output_mallocs( void)
 {
    HE *he;
    hv_iterinit( hash);
@@ -1836,7 +1879,8 @@ static void output_mallocs( void)
    sv_free(( SV *) hash);
 }
 
-void *_test_malloc( size_t size, int ln, char *fil, Handle self)
+void *
+_test_malloc( size_t size, int ln, char *fil, Handle self)
 {
    void *mlc;
    char s[512];
@@ -1865,7 +1909,8 @@ void *_test_malloc( size_t size, int ln, char *fil, Handle self)
    return mlc;
 }
 
-void _test_free( void *ptr, int ln, char *fil, Handle self)
+void
+_test_free( void *ptr, int ln, char *fil, Handle self)
 {
    free( ptr);
    hash_delete( hash, &ptr, sizeof(ptr), true);
