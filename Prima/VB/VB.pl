@@ -9,10 +9,16 @@ use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
 
+######### built-in setup variables  ###############
+
+my $lite = 0;                          # set to 1 to use ::Lite packages. For debug only
+$Prima::VB::CfgMaint::systemWide = 0;  # 0 - user config, 1 - root config to write
+my $singleConfig                 = 0;  # set 1 to use only either user or root config
+
+###################################################
+
 $Prima::VB::VBLoader::builderActive = 1;
 my $classes = 'Prima::VB::Classes';
-my $lite = 0;
-
 if ( $lite) {
    $classes = 'Prima::VB::Lite::Classes';
    $Prima::VB::CfgMaint::rootCfg = 'Prima/VB/Lite/Config.pm';
@@ -20,8 +26,7 @@ if ( $lite) {
 
 eval "use $classes;";
 die "$@" if $@;
-use Prima::Application name => 'VB';
-
+use Prima::Application name => 'Form template builder';
 
 package VB;
 use vars qw($inspector
@@ -455,16 +460,23 @@ sub insert_new_control
       next if $co < $creatOrder;
       $creatOrder = $co + 1;
    }
-   my $j = $self-> insert( $xclass,
-      profile => {
-         origin => [$x-4,$y-4],
-         owner  => $wn,
-      },
-      class         => $class,
-      module        => $VB::main->{classes}->{$class}->{RTModule},
-      creationOrder => $creatOrder,
-   );
+   my $j;
+   eval {
+      $j = $self-> insert( $xclass,
+         profile => {
+            origin => [$x-4,$y-4],
+            owner  => $wn,
+         },
+         class         => $class,
+         module        => $VB::main->{classes}->{$class}->{RTModule},
+         creationOrder => $creatOrder,
+      );
+   };
    $VB::main->{currentClass} = undef;
+   if ( $@) {
+      Prima::MsgBox::message( "Error:$@");
+      return;
+   }
    $self->{modified} = 1;
    $j-> select;
 }
@@ -510,7 +522,7 @@ sub on_close
    my $self = $_[0];
    if ( $self->{modified}) {
       my $name = defined ( $VB::main->{fmName}) ? $VB::main->{fmName} : 'Untitled';
-      my $r = Prima::MsgBox::message_box( 'Warning', "Save changes to $name?", mb::YesNoCancel|mb::Warning);
+      my $r = Prima::MsgBox::message( "Save changes to $name?", mb::YesNoCancel|mb::Warning);
       if ( $r == mb::Yes) {
          $self-> clear_event, return unless $VB::main-> save;
          $self->{modified} = undef;
@@ -905,13 +917,11 @@ package MainPanel;
 use vars qw(@ISA *do_layer);
 @ISA = qw(Prima::Window);
 
-my $myText = 'Form template builder';
-
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      text           => $myText,
+      text           => $::application-> name,
       width          => $::application-> width - 12,
       left           => 6,
       bottom         => $::application-> height - 106 -
@@ -978,16 +988,13 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
 
-   $Prima::VB::CfgMaint::systemWide = 0;
-
-   my @r = $lite ?
+   my @r = ( $lite || $singleConfig) ?
       Prima::VB::CfgMaint::open_cfg :
       Prima::VB::CfgMaint::read_cfg;
    die "Error:$r[1]\n" unless $r[0];
 
    my %classes = %Prima::VB::CfgMaint::classes;
    my @pages   = @Prima::VB::CfgMaint::pages;
-   $self-> {orgClasses} = {%classes};
 
    $self-> set(
      sizeMin => [ 350, $self->height],
@@ -1133,7 +1140,7 @@ sub reset_tabs
        my $c = $_;
        eval("use $c;");
        if ( $@) {
-          Prima::MsgBox::message_box( $myText, "Error loading module $_:$@", mb::Error|mb::OK);
+          Prima::MsgBox::message( "Error loading module $_:$@");
           $modules{$_} = 0;
        }
    }
@@ -1172,7 +1179,7 @@ sub reset_tabs
 
    if ( scalar keys %iconfails) {
       my @x = keys %iconfails;
-      Prima::MsgBox::message_box( $myText, "Error loading images: @x", mb::Error|mb::OK);
+      Prima::MsgBox::message( "Error loading images: @x");
    }
 }
 
@@ -1183,25 +1190,13 @@ sub add_widgets
       filter => [['Packages' => '*.pm'], [ 'All files' => '*']],
    );
    return unless $d-> execute;
-   my %clsx = %{$self-> {orgClasses}};
    my @r = Prima::VB::CfgMaint::add_package( $d-> fileName);
-   Prima::MsgBox::message_box( $myText, "Error:$r[1]", mb::OK|mb::Error), return
-      unless $r[0];
-   my %classes = %Prima::VB::CfgMaint::classes;
-   my @pages   = @Prima::VB::CfgMaint::pages;
-   $self->{classes} = \%classes;
-   $self->{pages}   = \@pages;
+   Prima::MsgBox::message( "Error:$r[1]"), return unless $r[0];
+   $self->{classes} = {%Prima::VB::CfgMaint::classes};
+   $self->{pages}   = [@Prima::VB::CfgMaint::pages];
    $self-> reset_tabs;
-
-   my %userClasses = ();
-   for ( keys %classes) {
-      next if $clsx{$_};
-      $userClasses{$_} = $classes{$_};
-   }
-   %Prima::VB::CfgMaint::classes = %userClasses;
    @r = Prima::VB::CfgMaint::write_cfg;
-   %Prima::VB::CfgMaint::classes = %classes;
-   Prima::MsgBox::message_box( $myText, "Error: $r[1]", mb::Ok|mb::Cancel), return unless $r[0];
+   Prima::MsgBox::message( "Error: $r[1]"), return unless $r[0];
 }
 
 sub get_nbpanel_count
@@ -1306,18 +1301,18 @@ sub open
       $contents = <F>;
       close F;
    } else {
-      Prima::MsgBox::message_box( $myText, "Error loading ".$self->{fmName}, mb::OK|mb::Error);
+      Prima::MsgBox::message( "Error loading ".$self->{fmName});
       return;
    }
 
    unless ( $contents =~ /^\s*sub\s*{/ ) {
-      Prima::MsgBox::message_box( $myText,  "Invalid format of ".$self->{fmName}, mb::OK|mb::Error);
+      Prima::MsgBox::message("Invalid format of ".$self->{fmName});
       return;
    }
 
    my $sub = eval( $contents);
    if ( $@) {
-      Prima::MsgBox::message_box( $myText,  "Error loading ".$self->{fmName}.' :'.@_, mb::OK|mb::Error);
+      Prima::MsgBox::message("Error loading ".$self->{fmName}.' :'.@_);
       return;
    }
 
@@ -1657,7 +1652,7 @@ sub save
       my $c = $asPL ? $self-> write_PL : $self-> write_form;
       print F $c;
    } else {
-      Prima::MsgBox::message_box( $myText, "Error saving ".$self->{fmName}, mb::OK|mb::Error);
+      Prima::MsgBox::message("Error saving ".$self->{fmName});
       return 0;
    }
    close F;
@@ -1736,7 +1731,7 @@ sub form_run
       my $sub = eval("$c");
       if ( $@) {
          print "Error loading module $@";
-         Prima::MsgBox::message_box( $myText, "$@", mb::OK|mb::Error);
+         Prima::MsgBox::message("$@");
          return;
       }
       $Prima::VB::VBLoader::builderActive = 0;
@@ -1755,14 +1750,14 @@ sub form_run
       };
    };
    $Prima::VB::VBLoader::builderActive = 1;
-   Prima::MsgBox::message_box( $myText, "$@", mb::OK|mb::Error) if $@;
+   Prima::MsgBox::message( "$@") if $@;
 }
 
 
 package VisualBuilder;
 
 $VB::ico = Prima::Image-> create;
-$VB::ico = undef unless $VB::ico-> load( Prima::find_image( 'VB::VB.gif').':6');
+$VB::ico = undef unless $VB::ico-> load( Prima::find_image( 'VB::VB.gif'), index => 6);
 $VB::main = MainPanel-> create;
 $VB::inspector = ObjectInspector-> create(
    top => $VB::main-> bottom - 12 - $::application-> get_system_value(sv::YTitleBar)

@@ -1156,7 +1156,6 @@ sub open
                Prima::MsgBox::message("Cannot load $f");
             }
          }
-         $d-> destroy;
       },
    );
    $self->{B} = $i-> insert( SpeedButton =>
@@ -1179,7 +1178,6 @@ sub open
                Prima::MsgBox::message("Cannot save $f");
             }
          }
-         $dlg-> destroy;
       },
    );
    $i-> insert( SpeedButton =>
@@ -2142,7 +2140,7 @@ sub open
             if ( $i-> load( $f, index => 0)) {
                my $i1 = $in-> create;
                my $ix = 2;
-               my @images = ( $i1);
+               my @images = ( $i, $i1);
                if ( $i1-> load( $f, index => 1)) {
                    my $maxH = $i1-> height;
                    my $maxW = $i1-> width;
@@ -2195,7 +2193,6 @@ sub open
             }
          }
       FAIL:
-         $d-> destroy;
       },
    );
    $self->{B} = $i-> insert( SpeedButton =>
@@ -2217,7 +2214,6 @@ sub open
                Prima::MsgBox::message('Cannot save '.$dlg-> fileName);
             }
          }
-         $dlg-> destroy;
       },
    );
    $self->{C} = $i-> insert( SpeedButton =>
