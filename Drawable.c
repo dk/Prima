@@ -483,7 +483,7 @@ Drawable_text_out( Handle self, char * text, int x, int y, int len)
 }
 
 void
-polypoints( Handle self, SV * points, char * procName, int mod, void (*procPtr)(Handle,int,Point*))
+polypoints( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(Handle,int,Point*))
 {
    AV * av;
    int i, count;
