@@ -94,6 +94,7 @@ my %staticMethods = ();                # static methods hash
 my %pipeMethods = ();                  # pipe methods hash
 my $level = 0;                         # file entrance level
 my $ownClass;                          # own class name
+my $ownOClass;                         # own original class name
 my $ownFile;                           # own file name, for file.cls
 my $ownCType;                          # own class c type ::-> __
 my $baseClass;                         # base class name
@@ -795,9 +796,11 @@ sub load_single_part
    }
    unless ( $level)
    {
-       $ownClass = $className;
+       $ownOClass = $ownClass = $className;
+       $ownClass =~ s/^Prima:://;
        $ownFile  = (split( '::', $ownClass))[-1];
        $ownCType = $className;
+       $ownCType =~ s/^Prima:://;
        $ownCType =~ s/::/__/g;
    }
    error "APC010: Class $className already defined" if $definedClasses{ $className};
@@ -814,8 +817,10 @@ sub load_single_part
          {
             $baseClass = $superClass;
             $baseFile  = $superClass;
+            $baseFile  =~ s/^Prima:://g;
             $baseFile  =~ s/::/\//g;
             $baseCType = $superClass;
+            $baseCType  =~ s/^Prima:://g;
             $baseCType =~ s/::/__/g;
          }
          expect ")";
@@ -1078,7 +1083,7 @@ sub out_method_profile
       print( HEADER "$tok;\n\n"), next if $publicMethods{$id} && $full;
       my $castedResult = $parms[0];
       $castedResult = exists $typedefs{$castedResult} && $typedefs{$castedResult}{cast} ? " ( $castedResult)" : '';
-      my $subId = $full ? ( $imports ? "\"$ownClass\:\:$id\"" : "\"$id\"") : 'subName';
+      my $subId = $full ? ( $imports ? "\"$ownOClass\:\:$id\"" : "\"$id\"") : 'subName';
 
       my $result = shift @parms;
       my $eptr  = $result =~ /^\*/ ? "*" : "";
@@ -1126,7 +1131,7 @@ sub out_method_profile
          my $ret   = ( $resSub eq 'void') ? '' : 'return ';
          unshift( @parm_ids, 'self') if $useHandle;
          my $parmz = join( ', ', @parm_ids);
-         my $str  = $imports ? "\"$ownClass\:\:$id\"" : "\"$id\"";
+         my $str  = $imports ? "\"$ownOClass\:\:$id\"" : "\"$id\"";
          print HEADER "   $ret$$optRef{$id}( $str, $parmz);\n}\n\n";
          next;
       }
@@ -1213,7 +1218,7 @@ sub out_method_profile
 
       if ( $full) {
          print HEADER ( $imports)
-           ? "   $incCount = PERL_CALL_PV( \"$ownClass\:\:$id\", $retType);\n"
+           ? "   $incCount = PERL_CALL_PV( \"$ownOClass\:\:$id\", $retType);\n"
            : "   $incCount = PERL_CALL_METHOD( \"$id\", $retType);\n";
       } else {
          print HEADER ( $imports)
@@ -1334,7 +1339,7 @@ sub out_FROMPERL_methods
          my $func = ( exists $pipeMethods{ $id}) ? $pipeMethods{$id} : "${ownCType}_$id";
          print HEADER <<LABEL;
 XS( ${ownCType}_${id}_FROMPERL) {
-   $templates_xs{$id}( cv, \"${ownClass}\:\:$id\", $func);
+   $templates_xs{$id}( cv, \"${ownOClass}\:\:$id\", $func);
 }
 
 LABEL
@@ -1397,7 +1402,7 @@ LABEL
             print HEADER "( items != $nParam)";
          }
       }
-      my $croakId = $full ? "${ownClass}\:\:\%s\", \"$id\"" : "\%s\", subName";
+      my $croakId = $full ? "${ownOClass}\:\:\%s\", \"$id\"" : "\%s\", subName";
       print HEADER "\n      croak (\"Invalid usage of $croakId);\n";
       if ( $useHandle)
       {
@@ -1437,7 +1442,7 @@ LABEL
          my ( $lp, $rp) = $ptr ? ('(',')') : ('','');
          if ( exists $structs{$lVar} && defined ${$structs{$lVar}[2]}{hash})
          {
-             # print HEADER "$lVar $incRes$structCount = SvHV_$lVar( ST( $stn), \"${ownClass}\:\:$id\");\n      ";
+             # print HEADER "$lVar $incRes$structCount = SvHV_$lVar( ST( $stn), \"${ownOClass}\:\:$id\");\n      ";
              print HEADER "$lVar $incRes$structCount;\n      ";
              $structCount++;
          } elsif ( exists $arrays{$lVar})
@@ -1829,7 +1834,7 @@ print HEADER "// instance variables \n";
         my $id = $allMethods[$i];
         my $body = $allMethodsBodies[$i];
         $body =~ s{$id\(}{${ownCType}_$id\(};
-        print HEADER "extern $body\n" if ( $allMethodsHosts{$id} eq $ownClass) && !exists( $pipeMethods{$id});
+        print HEADER "extern $body\n" if ( $allMethodsHosts{$id} eq $ownOClass) && !exists( $pipeMethods{$id});
      }
   }
 
@@ -1944,7 +1949,7 @@ CONTAINED_STRUCTURE
 
 //Class virtual methods table
 ${ownCType}_vmt ${ownCType}Vmt = {
-   \"${ownClass}\",
+   \"${ownOClass}\",
    ${\($baseClass && !$genDyna ? "\&${baseCType}Vmt" : "nil")},
    ${\($baseClass && !$genDyna ? "\&${baseCType}Vmt" : "nil")},
    sizeof( $ownCType ),
@@ -1956,8 +1961,8 @@ LABEL
          my $id = $allMethods[ $i];
          print HEADER ",\n   ";
          my $pt = ( exists $pipeMethods{ $id}) ? $pipeMethods{ $id} :
-            "${\(do{my $c = $allMethodsHosts{$id}; $c =~ s[::][__]g; $c })}_$id";
-         $pt = 'nil' if $genDyna && ( $allMethodsHosts{$id} ne $ownClass);
+            "${\(do{my $c = $allMethodsHosts{$id}; $c =~ s[^Prima::][]; $c =~ s[::][__]g;  $c })}_$id";
+         $pt = 'nil' if $genDyna && ( $allMethodsHosts{$id} ne $ownOClass);
          print HEADER $pt;
       }
       print HEADER "\n};\n\n";
@@ -1971,7 +1976,7 @@ XS( $incBuild$ownCType)
    char *$incClass;
 
    if ( items != 1)
-      croak ("Invalid usage of $ownClass\:\:\%s", "$incBuild$ownCType");
+      croak ("Invalid usage of $ownOClass\:\:\%s", "$incBuild$ownCType");
    {
       $incRes = malloc( sizeof( $ownCType));
       memset( $incRes, 0, sizeof( $ownCType));
@@ -2002,9 +2007,9 @@ LABEL
       foreach (@portableMethods)
       {
          my @parms = split(" ", $_);
-         print HEADER "   newXS( \"${ownClass}::$parms[0]\", ${ownCType}_$parms[0]_FROMPERL, \"$ownClass\");\n";
+         print HEADER "   newXS( \"${ownOClass}::$parms[0]\", ${ownCType}_$parms[0]_FROMPERL, \"$ownOClass\");\n";
       }
-      print HEADER "   newXS( \"${ownClass}::create_mate\", $incBuild$ownCType, \"$ownClass\");\n"
+      print HEADER "   newXS( \"${ownOClass}::create_mate\", $incBuild$ownCType, \"$ownOClass\");\n"
          if $genObject && 0;
       print HEADER "}\n\n";
    }
