@@ -438,18 +438,24 @@ sub have_types_in
 {
     my ($hdr, @types) = @_;
     return unless have_header( $hdr);
+    my $found = 1;
     for my $type (@types) {
-       have_type( $type, $hdr);
+       $found = $found && have_type($type, $hdr);
+       last unless $found;
     }
+    return $found;
 }
 
 sub have_funcs_in
 {
     my ($hdr, @funcs) = @_;
     return unless have_header( $hdr);
+    my $found = 1;
     for my $func (@funcs) {
-       have_func( $func, $hdr);
+       $found = $found && have_func( $func, $hdr);
+       last unless $found;
     }
+    return $found;
 }
 
 
@@ -1232,33 +1238,21 @@ sub setup_defines
     have_header( "unistd.h");
     have_header( "strings.h");
 
-    have_types_in( "sys/types.h",
-                   qw(int8_t int16_t int32_t));
-    have_types_in( "sys/types.h",
-                   qw(uint8_t uint16_t uint32_t uint64_t));
-    have_types_in( "sys/types.h",
-                   qw(u_int8_t u_int16_t u_int32_t u_int64_t));
-                   
-    have_types_in( "sys/bitypes.h",
-                   qw(int8_t int16_t int32_t));
-    have_types_in( "sys/bitypes.h",
-                   qw(uint8_t uint16_t uint32_t uint64_t));
-    have_types_in( "sys/bitypes.h",
-                   qw(u_int8_t u_int16_t u_int32_t u_int64_t));
-
-    have_types_in( "sys/inttypes.h",
-                   qw(int8_t int16_t int32_t));
-    have_types_in( "sys/inttypes.h",
-                   qw(uint8_t uint16_t uint32_t uint64_t));
-    have_types_in( "sys/inttypes.h",
-                   qw(u_int8_t u_int16_t u_int32_t u_int64_t));
-
-    have_types_in( "stdint.h",
-                   qw(int8_t int16_t int32_t));
-    have_types_in( "stdint.h",
-                   qw(uint8_t uint16_t uint32_t uint64_t));
-    have_types_in( "stdint.h",
-                   qw(u_int8_t u_int16_t u_int32_t u_int64_t));
+    my @int_types = qw(int8_t int16_t int32_t);
+    my @uint_types = qw(uint8_t uint16_t uint32_t uint64_t);
+    my @u_int_types = qw(u_int8_t u_int16_t u_int32_t u_int64_t);
+    have_types_in( "sys/types.h", @int_types)
+	|| have_types_in( "sys/bitypes.h", @int_types)
+	|| have_types_in( "sys/inttypes.h", @int_types)
+	|| have_types_in( "stdint.h", @int_types);
+    have_types_in( "sys/types.h", @uint_types)
+	|| have_types_in( "sys/bitypes.h", @uint_types)
+	|| have_types_in( "sys/inttypes.h", @uint_types)
+	|| have_types_in( "stdint.h", @uint_types);
+    have_types_in( "sys/types.h", @u_int_types)
+	|| have_types_in( "sys/bitypes.h", @u_int_types)
+	|| have_types_in( "sys/inttypes.h", @u_int_types)
+	|| have_types_in( "stdint.h", @u_int_types);
 
     if ( $NeedX11) {
        have_header( "sys/ipc.h", "sys/types.h");
@@ -1573,7 +1567,7 @@ sub create_config_pm
    my @libpath = @LIBPATH;
    my @libs = @LIBS;
    my $perllib = pop @libs;
-   if ( $perllib =~ m[^(.*)\/([^/]*)$]) {
+   if ( $perllib =~ m/^(.*)\/([^\/]*)$/) {
       my $pfile = $2;
       push @libpath, $1;
       $pfile =~ s/$LIB_EXT$//;
