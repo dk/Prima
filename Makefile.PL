@@ -1195,6 +1195,27 @@ else {
     setup_defines;
     setup_misc;
 
+    my $config_dir = "include/generic";
+    my $config_h = "$config_dir/config.h";
+    print "Creating $config_h\n";
+    unless ( -d "$config_dir") {
+        mkdir $config_dir, 0777;
+    }
+    open CONFIG, ">$config_h" or die "Creation of $config_h failed: $!";
+    print CONFIG <<EOF;
+#ifndef __GENERIC_CONFIG_H__
+#define __GENERIC_CONFIG_H__
+EOF
+    foreach my $define ( sort keys %DEFINES) {
+        print CONFIG "#undef $define\n#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
+    }
+    print CONFIG <<EOF;
+#endif
+EOF
+    close CONFIG;
+    push @allclean, $config_h;
+    push @allinstall, $config_h => $INSTALL_LIB . "/$config_dir";
+
     push @alldirs, qd( "include/generic"), qd( "auto/Prima");
 
     my $make = <<EOF;
@@ -1248,23 +1269,6 @@ EOF
 
     my $thunks_tinc = qd( "include/generic/thunks.tinc");
     push @allclean, $thunks_tinc;
-
-    print "Creating include/generic/config.h\n";
-    unless ( -d "include/generic") {
-        mkdir "include/generic", 0777;
-    }
-    open CONFIG, ">include/generic/config.h" or die "Creation of config.h failed: $!";
-    print CONFIG <<EOF;
-#ifndef __GENERIC_CONFIG_H__
-#define __GENERIC_CONFIG_H__
-EOF
-    foreach my $define ( sort keys %DEFINES) {
-        print CONFIG "#undef $define\n#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
-    }
-    print CONFIG <<EOF;
-#endif
-EOF
-    close CONFIG;
 
     print "Writing Makefile...";
     $make =~ tr[/][]s;
