@@ -205,6 +205,7 @@ sub reset
 sub set_text
 {
    my ( $self, $cap) = @_;
+   $cap = '' unless defined $cap;
    $cap = substr( $cap, 0, $self->{maxLen}) if $self-> {maxLen} >= 0 and length($cap) > $self->{maxLen};
    $self->SUPER::set_text( $cap);
    $cap =~ s/./$self->{passwordChar}/g if $self-> {writeOnly};

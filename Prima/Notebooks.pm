@@ -1004,7 +1004,7 @@ sub get_tabs
       my $j;
       for ( $j = 0; $j < $$t[$i*2+1]; $j++) { push( @ret, $$t[$i*2]); }
    }
-   return @ret;
+   return \@ret;
 }
 
 sub set_page_index
