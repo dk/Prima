@@ -82,7 +82,7 @@ Simpliest open_load() returns non-null pointer - it is enough to report 'o.k'
       return (void*)1;
    }
 
-Its result will be available in PImgLoadFileInstance-> instance,
+Its result will be available in C<PImgLoadFileInstance-E<gt> instance>,
 just in case. If it was dynamically allocated, free it in close_load().
 Dummy close_load() is doing simply nothing:
 
@@ -92,7 +92,7 @@ Dummy close_load() is doing simply nothing:
    }
 
 
-=head2 Writing to PImage-> data
+=head2 Writing to C<PImage-E<gt> data>
 
 As mentioned above, Prima insists on keeping its image data
 in 32-bit aligned scanlines. If libduff allows reading from 
@@ -112,8 +112,8 @@ file by scanlines, we can use this possibility as well:
 Note that image is filled in reverse - Prima images are built
 like classical XY-coordinate grid, where Y ascends upwards.
 
-Here ends the simple part. You can skip down to "Register with 
-image subsystem" part, if you want it fast.
+Here ends the simple part. You can skip down to 
+L<"Registering with image subsystem"> part, if you want it fast.
 
 =head1  Single-frame loading
 
@@ -154,7 +154,8 @@ defined in img_conv.h, and probably ones that you'll need
 would be C<bc_format1_format2>, which work on scanlines
 and probably ibc_repad, which combines some C<bc_XX_XX> with byte
 repadding.
-        For those who are especially lucky, some libraries do not
+
+For those who are especially lucky, some libraries do not
 check between machine byte format and file byte format.
 Prima unfortunately doesn't provide easy method for determining
 this situation, but you have to convert your data in appropriate 
@@ -166,7 +167,7 @@ that is defined ( usually ) in sys/types.h
 If a high-level code just needs image information rather than
 all its bits, codec can provide it in a smart way. Old code
 will work, but will eat memory and time. A flag 
-PImgLoadFileInstance-> noImageData is indicating if image data
+C<PImgLoadFileInstance-E<gt> noImageData> is indicating if image data
 is needed. On that condition, codec needs to report only
 dimensions of the image - but the type must be set anyway.
 Here comes full code:
@@ -211,10 +212,10 @@ Here comes full code:
       return true;
    }
 
-Newly introduced macros pset_i is a convenience operator, 
+The newly introduced macro C<pset_i> is a convenience operator, 
 assigning integer (i) as a value to a hash key, given as a
-first parameter - it becomes string literal upon macro 
-expansion. Hash used for storage is a lexical of type HV*.
+first parameter - it becomes string literal upon the
+expansion. Hash used for storage is a lexical of type C<HV*>.
 Code 
 
         HV * profile = fi-> frameProperties;
@@ -238,7 +239,7 @@ However, it is only Prima point of view - different formats
 can supply number of extra information, often irrelevant but
 sometimes useful. From perl code, Image has a hash reference 'extras'
 on object, where comes all this stuff. Codec can report also
-such data, storing it in PImgLoadFileInstance-> frameProperties.
+such data, storing it in C<PImgLoadFileInstance-E<gt> frameProperties>.
 Data should be stored in native perl format, so if you're not 
 familiar with perlguts, you better read it, especially if
 you want return arrays and hashes. But just in simple, you can
@@ -246,22 +247,22 @@ return:
 
 =over
 
-=item 1 
+=item 1
 
-integers:       pset_i( integer, _l-> integer);
+integers:       pset_i( integer, _l-E<gt> integer);
 
 =item 2
 
-floats:         pset_f( float, _l-> float);
+floats:         pset_f( float, _l-E<gt> float);
 
 =item 3
 
-strings:        pset_c( string, _l-> charstar); 
+strings:        pset_c( string, _l-E<gt> charstar); 
 - note - no malloc codec from you required
 
 =item 4
 
-prima objects:  pset_H( Handle, _l-> primaHandle);
+prima objects:  pset_H( Handle, _l-E<gt> primaHandle);
 
 =item 5
 
@@ -293,13 +294,13 @@ is a C equivalent to
 
 High level code can specify if the extra 
 information should be loaded. This behavior is determined by
-flag PImgLoadFileInstance-> loadExtras. Codec may skip this 
+flag C<PImgLoadFileInstance-E<gt> loadExtras>. Codec may skip this 
 flag, the extra information will not be returned, even if
-PImgLoadFileInstance-> frameProperties was changed. However, 
+C<PImgLoadFileInstance-E<gt> frameProperties> was changed. However, 
 it is advisable to check for the flag, just for an efficiency.
 All keys, possibly assigned to frameProperties should
 be enumerated for high-level code. These strings should be 
-represented into char ** PImgCodecInfo-> loadOutput array.
+represented into C<char ** PImgCodecInfo-E<gt> loadOutput> array.
 
    static char * loadOutput[] = { 
       "hotSpotX",
@@ -329,7 +330,7 @@ If high-level code wants an Icon instead of an Image,
 Prima takes care for producing and-mask automatically.
 However, if codec knows explicitly about transparency
 mask stored in a file, it might change object in the way
-it fits better. Mask is stored on Icon in a -> mask field.
+it fits better. Mask is stored on Icon in a C<-E<gt> mask> field.
 
 a) Let us imagine, that 4-bit image always
 carries a transparent color index, in 0-15 range. In this case,
@@ -372,7 +373,7 @@ open_load() and close_load() are used as brackets for load requests,
 and although they come to full power in multiframe load
 requests, it is very probable that correctly written
 codec should use them. Codec that assigns C<false> to 
-PImgCodecInfo-> canLoadMultiple claims that it cannot load
+C<PImgCodecInfo-E<gt> canLoadMultiple> claims that it cannot load
 those images that have index different from zero. It may
 report total amount of frames, but still be incapable of
 loading them. 
@@ -380,9 +381,9 @@ There is also a load sequence, called null-load,
 when no load() calls are made, just open_load() and close_load().
 These requests are made in case codec can provide some file
 information without loading frames at all. It can be any
-information, of whetever kind. It have to be stored into the hash
-PImgLoadFileInstance-> fileProperties, to be filled once on
-open_load(). The only exception is PImgLoadFileInstance-> frameCount,
+information, of whatever kind. It have to be stored into the hash
+C<PImgLoadFileInstance-E<gt> fileProperties>, to be filled once on
+open_load(). The only exception is C<PImgLoadFileInstance-E<gt> frameCount>,
 which can be filled on open_load(). Actually, frameCount could be 
 filled on any load stage, except close_load(), to make sense in
 frame positioning. Even single frame codec is advised to fill
@@ -397,7 +398,7 @@ to care for open_load() and close_load().
 So far codec is expected to respond for noImageData
 hint only, and it is possible to allow a high-level code to alter
 codec load behavior, passing specific parameters. 
-PImgLoadFileInstance-> profile is a hash, that contains these
+C<PImgLoadFileInstance-E<gt> profile> is a hash, that contains these
 parameters. The data that should be applied to all frames and/or
 image file are set there when open_load() is called. These data, 
 plus frame-specific keys passed to every load() call.
@@ -439,13 +440,13 @@ The latter code chunk can be applied to open_load() as well.
 Image subsystem defines no severity gradation for codec errors.
 If error occurs during load, codec returns false value, which
 is C<null> on open_load() and C<false> on load. It is advisable to 
-explain the error, otherwise user gets common "Loading error"
+explain the error, otherwise the user gets just "Loading error"
 string. To do so, error message is to be copied to 
-PImgLoadFileInstance-> errbuf, which is char[256].
+C<PImgLoadFileInstance-E<gt> errbuf>, which is C<char[256]>.
 On an extreme severe error codec may call croak(),
 which jumps to the closest G_EVAL block. If there is no G_EVAL 
 blocks then program aborts. This condition could also happen if 
-codec calls some Prima code with issues croak(). This condition 
+codec calls some Prima code that issues croak(). This condition 
 is untrappable, - at least without calling perl functions. 
 Understanding that that behavior is not acceptable, 
 it is still under design.
@@ -453,17 +454,17 @@ it is still under design.
 =head1 Multiple-frame load
 
 In order to indicate that a codec is ready to read
-multiframe images, it have to set PImgCodecInfo-> canLoadMultiple
+multiframe images, it must set C<PImgCodecInfo-E<gt> canLoadMultiple>
 flag to true. This only means, that codec should respond to the
-PImgLoadFileInstance-> frame field, which is integer that
-can be in range from 0 to PImgLoadFileInstance-> frameCount - 1.
+C<PImgLoadFileInstance-E<gt> frame> field, which is integer that
+can be in range from C<0> to C<PImgLoadFileInstance-E<gt> frameCount - 1>.
 It is advised that codec should change the frameCount from
-its original value -1 to actual one, to help Prima filter range
+its original value C<-1> to actual one, to help Prima filter range
 requests before they go down to the codec. The only real problem that
 may happen to the codec which it strongly unwilling to initialize
-frameCount, worth an explanation, which is following.
+frameCount, is as follows.
 If a loadAll request was made ( corresponding boolean
-PImgLoadFileInstance-> loadAll flag is set for codec's information)
+C<PImgLoadFileInstance-E<gt> loadAll> flag is set for codec's information)
 and frameCount is not initialized, then Prima starts loading all frames,
 incrementing frame index until it receives an error. Assuming the
 first error it gets is an EOF, it reports no error, so there's no
@@ -521,10 +522,10 @@ defines extra hot spot coordinates, x and y.
    }
 
 Save request takes into account defined supported types, that
-are defined in PImgCodecInfo-> saveTypes. Prima converts image
+are defined in C<PImgCodecInfo-E<gt> saveTypes>. Prima converts image
 to be saved into one of these formats, before actual save() call
 takes place.
-Another boolean flag, PImgSaveFileInstance-> append
+Another boolean flag, C<PImgSaveFileInstance-E<gt> append>
 is summoned to govern appending to or rewriting a file, but
 this functionality is under design. Its current value
 is a hint, if true, for a codec not to rewrite but rather
@@ -540,7 +541,7 @@ Scenario for a multiframe save request is the same as for a load one. All the
 issues concerning palette, data converting and saving extra 
 information are actual, however there's no corresponding flag like
 loadExtras - codec is expected to save all information what it can extract from
-PImgSaveFileInstance-> objectExtras hash. 
+C<PImgSaveFileInstance-E<gt> objectExtras> hash. 
 
 
 =head1 Registering with image subsystem
@@ -593,8 +594,8 @@ codec's capabilities:
       return (void*)1; // just non-null, to indicate success
    }   
 
-The result of init() is stored into PImgCodec-> instance, and
-info into PImgCodec-> info. If dynamic memory was allocated
+The result of init() is stored into C<PImgCodec-E<gt> instance>, and
+info into C<PImgCodec-E<gt> info>. If dynamic memory was allocated
 for these structs, it can be freed on done() invocation.
 Finally, the function that is invoked from Prima,
 is the only that required to be exported, is responsible for
