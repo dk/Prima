@@ -1833,4 +1833,11 @@ ObjectInspector::renew_widgets;
 ObjectInspector::preload() unless $VB::fastLoad;
 $VB::main-> update_menu();
 
-run Prima;
+
+RERUN: eval {
+   run Prima;
+};
+if ( $@) {
+   Prima::MsgBox::message( "$@") if $@;
+   goto RERUN;
+}
