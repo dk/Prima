@@ -121,23 +121,6 @@ font_query_name( XFontStruct * s, PFontInfo f)
    }
 }   
 
-static Bool 
-copy_hash_lists( PList list, int keyLen, void * key, void * dummy) 
-{
-   if ( list-> items[0]) {
-      int i;
-      for ( i = 2; i < list-> count; i++) {
-         PFontInfo f = &guts. font_info[(int)(list-> items[i])];
-         strncat( f-> font. name, " ", 256);
-         strncat( f-> font. name, f-> xname + f-> info_offset, 256);
-         strlwr( f-> lc_name, f-> font. name);
-         f-> flags. generic = false;
-      } 
-   }
-   plist_destroy( list);
-   return false;
-}
-
 Bool
 prima_init_font_subsystem( void)
 {
