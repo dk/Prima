@@ -445,7 +445,7 @@ generic_frame_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
           {
              PSWP new = PVOIDFROMMP( mp1);
              if ( is_apt( aptSyncPaint) && ( new-> fl & ( SWP_MAXIMIZE|SWP_RESTORE)))
-               apc_view_repaint( self);
+               apc_widget_repaint( self);
           }
           break;
    }
@@ -595,7 +595,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
                 ev. cmd = 0; // yes, we abandon mousedown but we should force selection:
                 if ((( PApplication) application)-> hintUnder == self) v-> self-> set_hint_visible( self, 0);
                 if (( v-> options. optSelectable) && ( v-> selectingButtons & ev. pos. button))
-                   apc_view_set_focused( self);
+                   apc_widget_set_focused( self);
             }
         }
         ev. pos. where. x = (short)SHORT1FROMMP( mp1);
@@ -631,7 +631,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
         else
            return MPFROMLONG( CVR_ALIGNLEFT | CVR_ALIGNBOTTOM);
       case WM_CHAR:
-        if ( apc_view_is_responsive( self))
+        if ( apc_widget_is_responsive( self))
         {
            ev. cmd = ( SHORT1FROMMP( mp1) & KC_KEYUP) ? cmKeyUp : cmKeyDown;
            ev. key. code   = SHORT1FROMMP( mp2);
@@ -699,7 +699,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
          ev. cmd         = cmHelp;
          break;
       case WM_HELP:
-         if ( apc_view_is_responsive( self)) {
+         if ( apc_widget_is_responsive( self)) {
             ev. cmd      = cmKeyDown;
             ev. key. key = kbF1;
          }
@@ -721,7 +721,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
          break;
       case WM_MOVE:
          ev. cmd = cmMove;
-         ev. gen. P = apc_view_get_pos( self);
+         ev. gen. P = apc_widget_get_pos( self);
          break;
       case WM_PAINT:
         ev. cmd = cmPaint;

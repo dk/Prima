@@ -352,7 +352,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       if ( mp2 & ( 1 << 29)) ev. key. mod = kbAlt;
    case WM_KEYDOWN:
    case WM_KEYUP:
-      if ( apc_view_is_responsive( self)) {
+      if ( apc_widget_is_responsive( self)) {
           Bool up = ( msg == WM_KEYUP) || ( msg == WM_SYSKEYUP);
           ev. cmd = up ? cmKeyUp : cmKeyDown;
           ev. key. key    = ctx_remap_def( mp1, ctx_kb2VK, false, kbNoKey);
@@ -479,7 +479,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       ev. cmd = cmMouseClick;
       goto MB_MAINACT;
    MB_MAINACT:
-      if ( !is_apt( aptEnabled) || !apc_view_is_responsive( self))
+      if ( !is_apt( aptEnabled) || !apc_widget_is_responsive( self))
       {
          if ( ev. cmd != cmMouseUp) MessageBeep( MB_OK);
          return 0;
@@ -494,7 +494,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              ev. cmd = 0; // yes, we abandon mousedown but we should force selection:
              if ((( PApplication) application)-> hintUnder == self) v-> self-> set_hint_visible( self, 0);
              if (( v-> options. optSelectable) && ( v-> selectingButtons & ev. pos. button))
-                apc_view_set_focused( self);
+                apc_widget_set_focused( self);
          }
       }
       ev. pos. where. x = (short)LOWORD( mp2);

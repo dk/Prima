@@ -373,13 +373,13 @@ static void
 get_view_ex( Handle self, PViewProfile p)
 {
   int i;
-  p-> capture   = apc_view_is_captured( self);
-  for ( i = 0; i <= ciMaxId; i++) p-> colors[ i] = apc_view_get_color( self, i);
-  p-> pos       = apc_view_get_pos( self);
-  p-> size      = apc_view_get_size( self);
-  p-> enabled   = apc_view_is_enabled( self);
-  p-> focused   = apc_view_is_focused( self);
-  p-> visible   = apc_view_is_visible( self);
+  p-> capture   = apc_widget_is_captured( self);
+  for ( i = 0; i <= ciMaxId; i++) p-> colors[ i] = apc_widget_get_color( self, i);
+  p-> pos       = apc_widget_get_pos( self);
+  p-> size      = apc_widget_get_size( self);
+  p-> enabled   = apc_widget_is_enabled( self);
+  p-> focused   = apc_widget_is_focused( self);
+  p-> visible   = apc_widget_is_visible( self);
 }
 
 static void
@@ -387,15 +387,15 @@ set_view_ex( Handle self, PViewProfile p)
 {
   int i;
   HWND wnd = ( HWND) var handle;
-  apc_view_set_visible( self, false);
-  for ( i = 0; i <= ciMaxId; i++) apc_view_set_color( self, p-> colors[i], i);
-  apc_view_set_font( self, &var font);
-  apc_view_set_pos( self, p-> pos. x, p-> pos. y);
-  apc_view_set_size( self, p-> size. x, p-> size. y);
-  apc_view_set_enabled( self, p-> enabled);
-  if ( p-> focused) apc_view_set_focused( self);
-  apc_view_set_visible( self, p-> visible);
-  if ( p-> capture) apc_view_set_capture( self, 1);
+  apc_widget_set_visible( self, false);
+  for ( i = 0; i <= ciMaxId; i++) apc_widget_set_color( self, p-> colors[i], i);
+  apc_widget_set_font( self, &var font);
+  apc_widget_set_pos( self, p-> pos. x, p-> pos. y);
+  apc_widget_set_size( self, p-> size. x, p-> size. y);
+  apc_widget_set_enabled( self, p-> enabled);
+  if ( p-> focused) apc_widget_set_focused( self);
+  apc_widget_set_visible( self, p-> visible);
+  if ( p-> capture) apc_widget_set_capture( self, 1);
   if ( sys timeDefs) for ( i = 0; i < sys timeDefsCount; i++)
      if ( sys timeDefs[ i]. item)
      {
@@ -513,8 +513,8 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    if ( reset)
    {
       int i;
-      apc_view_set_pos( self, vprf-> pos. x, vprf-> pos. y);
-      apc_view_set_size( self, vprf-> size. x, vprf-> size. y);
+      apc_widget_set_pos( self, vprf-> pos. x, vprf-> pos. y);
+      apc_widget_set_size( self, vprf-> size. x, vprf-> size. y);
       for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
       if ( sys className == WC_FRAME)
       {
@@ -939,9 +939,9 @@ apc_window_set_window_state( Handle self, int state)
    if ( fl > 0)
    {
       int i, lock = sys lockState;
-      while ( sys lockState) apc_view_unlock( self);
+      while ( sys lockState) apc_widget_unlock( self);
       ShowWindow( HANDLE, fl);
-      for ( i = 0; i < lock; i++) apc_view_lock( self);
+      for ( i = 0; i < lock; i++) apc_widget_lock( self);
       sys s. window. state = state;
    }
 }
@@ -1025,7 +1025,7 @@ apc_window_end_modal( Handle self)
 
 // View management
 Point
-apc_view_client_to_screen( Handle self, Point p)
+apc_widget_client_to_screen( Handle self, Point p)
 {
    POINT pt;
    Point sz = ((( PWidget) self)-> self)-> get_size( self);
@@ -1039,7 +1039,7 @@ apc_view_client_to_screen( Handle self, Point p)
 }
 
 Bool
-apc_view_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent)
+apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent)
 {
    Bool reset = false;
    ViewProfile vprf;
@@ -1070,14 +1070,14 @@ apc_view_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool
       set_view_ex( self, &vprf);
       var stage = oStage;
    }
-   if ( is_apt( aptTransparent) != transparent && !reset) apc_view_repaint( self);
+   if ( is_apt( aptTransparent) != transparent && !reset) apc_widget_repaint( self);
    apt_assign( aptTransparent, transparent);
-   if ( reset) apc_view_repaint( self);
+   if ( reset) apc_widget_repaint( self);
    return apcError == 0;
 }
 
 Bool
-apc_view_begin_paint( Handle self, Bool insideOnPaint)
+apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 {
    apcErrClear;
 
@@ -1137,7 +1137,7 @@ apc_view_begin_paint( Handle self, Bool insideOnPaint)
 }
 
 Bool
-apc_view_begin_paint_info( Handle self)
+apc_widget_begin_paint_info( Handle self)
 {
    HRGN rgn;
    apt_set( aptWinPS);
@@ -1155,7 +1155,7 @@ apc_view_begin_paint_info( Handle self)
 
 
 void
-apc_view_destroy( Handle self)
+apc_widget_destroy( Handle self)
 {
    if ( sys pointer2) if ( !DestroyCursor( sys pointer2)) apiErr;
    if ( sys recreateData) free( sys recreateData);
@@ -1169,7 +1169,7 @@ apc_view_destroy( Handle self)
 }
 
 PFont
-apc_view_default_font( PFont copyTo)
+apc_widget_default_font( PFont copyTo)
 {
    *copyTo = guts. windowFont;
    copyTo-> pitch = fpDefault;
@@ -1177,7 +1177,7 @@ apc_view_default_font( PFont copyTo)
 }
 
 void
-apc_view_end_paint( Handle self)
+apc_widget_end_paint( Handle self)
 {
    if ( is_opt( optBuffered) && ( sys bm != nilHandle)) {
       if ( !SetViewportOrgEx( sys ps, 0, 0, nil)) apiErr;
@@ -1205,7 +1205,7 @@ apc_view_end_paint( Handle self)
 }
 
 void
-apc_view_end_paint_info( Handle self)
+apc_widget_end_paint_info( Handle self)
 {
    hwnd_leave_paint( self);
    sys pal = nil;
@@ -1216,13 +1216,13 @@ apc_view_end_paint_info( Handle self)
 }
 
 Bool
-apc_view_get_clip_owner( Handle self)
+apc_widget_get_clip_owner( Handle self)
 {
    return is_apt( aptClipOwner);
 }
 
 Rect
-apc_view_get_clip_rect( Handle self)
+apc_widget_get_clip_rect( Handle self)
 {
    Rect r;
    RECT * c = sys pClipRect;
@@ -1238,19 +1238,19 @@ apc_view_get_clip_rect( Handle self)
 }
 
 Color
-apc_view_get_color( Handle self, int index)
+apc_widget_get_color( Handle self, int index)
 {
    return sys viewColors[ index];
 }
 
 Bool
-apc_view_get_first_click( Handle self)
+apc_widget_get_first_click( Handle self)
 {
    return is_apt( aptFirstClick);
 }
 
 Handle
-apc_view_get_focused()
+apc_widget_get_focused()
 {
    return hwnd_to_view( GetFocus());
 }
@@ -1290,13 +1290,13 @@ static Rect * map_RECT( Handle self, RECT * rect)
 }
 
 ApiHandle
-apc_view_get_handle( Handle self)
+apc_widget_get_handle( Handle self)
 {
    return ( ApiHandle) HANDLE;
 }
 
 Rect
-apc_view_get_invalid_rect( Handle self)
+apc_widget_get_invalid_rect( Handle self)
 {
    Rect r  = {0,0,0,0};
    if ( GetUpdateRect(( HWND) var handle, ( PRECT) &r, false))
@@ -1305,7 +1305,7 @@ apc_view_get_invalid_rect( Handle self)
 }
 
 Point
-apc_view_get_pos( Handle self)
+apc_widget_get_pos( Handle self)
 {
    RECT  r;
    Point p, sz;
@@ -1328,7 +1328,7 @@ apc_view_get_pos( Handle self)
 }
 
 Point
-apc_view_get_size( Handle self)
+apc_widget_get_size( Handle self)
 {
    RECT r;
    Point p;
@@ -1349,32 +1349,32 @@ apc_view_get_size( Handle self)
 }
 
 Bool
-apc_view_get_sync_paint( Handle self)
+apc_widget_get_sync_paint( Handle self)
 {
    return is_apt( aptSyncPaint);
 }
 
 Bool
-apc_view_get_transparent( Handle self)
+apc_widget_get_transparent( Handle self)
 {
    return is_apt( aptTransparent);
 }
 
 Bool
-apc_view_is_captured( Handle self)
+apc_widget_is_captured( Handle self)
 {
    return GetCapture() == ( HWND) var handle;
 }
 
 Bool
-apc_view_is_enabled( Handle self)
+apc_widget_is_enabled( Handle self)
 {
    return is_apt( aptEnabled);
    // return IsWindowEnabled( HANDLE);
 }
 
 Bool
-apc_view_is_responsive( Handle self)
+apc_widget_is_responsive( Handle self)
 {
    Bool ena = true;
    while ( ena && self != application) {
@@ -1386,19 +1386,19 @@ apc_view_is_responsive( Handle self)
 }
 
 Bool
-apc_view_is_focused( Handle self)
+apc_widget_is_focused( Handle self)
 {
    return is_apt( aptFocused);
 }
 
 Bool
-apc_view_is_visible( Handle self)
+apc_widget_is_visible( Handle self)
 {
    return IsWindowVisible( HANDLE);
 }
 
 void
-apc_view_invalidate_rect( Handle self, Rect rect)
+apc_widget_invalidate_rect( Handle self, Rect rect)
 {
    if ( sys lockState == 0) {
       if ( !InvalidateRect (( HWND) var handle, map_Rect( self, &rect), false)) apiErr;
@@ -1408,7 +1408,7 @@ apc_view_invalidate_rect( Handle self, Rect rect)
 }
 
 void
-apc_view_lock( Handle self)
+apc_widget_lock( Handle self)
 {
    if ( sys lockState++ == 0) {
       apt_assign( aptLockVisState, ( GetWindowLong( HANDLE, GWL_STYLE) & WS_VISIBLE) == WS_VISIBLE);
@@ -1429,7 +1429,7 @@ repaint_all( Handle owner, Handle self, void * dummy)
 }
 
 void
-apc_view_repaint( Handle self)
+apc_widget_repaint( Handle self)
 {
    if ( sys lockState == 0) {
       if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
@@ -1440,7 +1440,7 @@ apc_view_repaint( Handle self)
 }
 
 Point
-apc_view_screen_to_client( Handle self, Point p)
+apc_widget_screen_to_client( Handle self, Point p)
 {
    POINT pt;
    Point sz = ((( PWidget) self)-> self)-> get_size( self);
@@ -1454,7 +1454,7 @@ apc_view_screen_to_client( Handle self, Point p)
 }
 
 void
-apc_view_scroll( Handle self, int horiz, int vert, Bool scrollChildren)
+apc_widget_scroll( Handle self, int horiz, int vert, Bool scrollChildren)
 {
    HideCaret(( HWND) var handle);
    if ( !ScrollWindowEx(( HWND) var handle,
@@ -1466,7 +1466,7 @@ apc_view_scroll( Handle self, int horiz, int vert, Bool scrollChildren)
 }
 
 void
-apc_view_scroll_rect( Handle self, int horiz, int vert, Rect r, Bool scrollChildren)
+apc_widget_scroll_rect( Handle self, int horiz, int vert, Rect r, Bool scrollChildren)
 {
    HideCaret(( HWND) var handle);
    if ( !ScrollWindowEx(( HWND) var handle,
@@ -1478,7 +1478,7 @@ apc_view_scroll_rect( Handle self, int horiz, int vert, Rect r, Bool scrollChild
 }
 
 void
-apc_view_set_capture( Handle self, Bool capture)
+apc_widget_set_capture( Handle self, Bool capture)
 {
    if ( capture)
       SetCapture(( HWND) var handle);
@@ -1489,7 +1489,7 @@ apc_view_set_capture( Handle self, Bool capture)
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
 
 void
-apc_view_set_clip_rect( Handle self, Rect c)
+apc_widget_set_clip_rect( Handle self, Rect c)
 {
    int ly = sys lastSize. y;
    RECT * cr = &sys clipRect;
@@ -1507,14 +1507,14 @@ apc_view_set_clip_rect( Handle self, Rect c)
 }
 
 void
-apc_view_set_color( Handle self, Color color, int index)
+apc_widget_set_color( Handle self, Color color, int index)
 {
    sys viewColors[ index] = color;
    SendMessage(( HWND) var handle, WM_COLORCHANGED, index, 0);
 }
 
 void
-apc_view_set_enabled( Handle self, Bool enable)
+apc_widget_set_enabled( Handle self, Bool enable)
 {
    apt_assign( aptEnabled, enable);
    if (( sys className == WC_FRAME) || ( var owner == application))
@@ -1522,13 +1522,13 @@ apc_view_set_enabled( Handle self, Bool enable)
 }
 
 void
-apc_view_set_first_click( Handle self, Bool firstClick)
+apc_widget_set_first_click( Handle self, Bool firstClick)
 {
    apt_assign( aptFirstClick, firstClick);
 }
 
 void
-apc_view_set_focused( Handle self)
+apc_widget_set_focused( Handle self)
 {
    if ( self && ( self != Application_map_focus( application, self)))
       return;
@@ -1538,13 +1538,13 @@ apc_view_set_focused( Handle self)
 }
 
 void
-apc_view_set_font( Handle self, PFont font)
+apc_widget_set_font( Handle self, PFont font)
 {
    SendMessage(( HWND) var handle, WM_FONTCHANGED, 0, 0);
 }
 
 void
-apc_view_set_pos( Handle self, int x, int y)
+apc_widget_set_pos( Handle self, int x, int y)
 {
    Handle parent = is_apt( aptClipOwner) ? var owner : application;
    Point sz = ((( PWidget) parent)-> self)-> get_size( parent);
@@ -1574,7 +1574,7 @@ apc_view_set_pos( Handle self, int x, int y)
 }
 
 void
-apc_view_set_size( Handle self, int width, int height)
+apc_widget_set_size( Handle self, int width, int height)
 {
    RECT c, r;
    if ( width  < 0) width = 0;
@@ -1606,12 +1606,12 @@ apc_view_set_size( Handle self, int width, int height)
 }
 
 void
-apc_view_set_tab_order( Handle self, int tabOrder)
+apc_widget_set_tab_order( Handle self, int tabOrder)
 {
 }
 
 void
-apc_view_set_visible( Handle self, Bool show)
+apc_widget_set_visible( Handle self, Bool show)
 {
    if ( sys lockState)
    {
@@ -1627,7 +1627,7 @@ apc_view_set_visible( Handle self, Bool show)
 }
 
 void
-apc_view_set_z_order( Handle self, Handle behind, Bool top)
+apc_widget_set_z_order( Handle self, Handle behind, Bool top)
 {
    HWND opt = ( top) ? HWND_TOP : HWND_BOTTOM;
    if ( behind != nilHandle) opt = DHANDLE( behind);
@@ -1639,7 +1639,7 @@ apc_view_set_z_order( Handle self, Handle behind, Bool top)
 }
 
 void
-apc_view_unlock( Handle self)
+apc_widget_unlock( Handle self)
 {
    if ( --sys lockState == 0) {
       if ( !LockWindowUpdate( nilHandle)) apiErr;
@@ -1650,13 +1650,13 @@ apc_view_unlock( Handle self)
 }
 
 void
-apc_view_update( Handle self)
+apc_widget_update( Handle self)
 {
    if ( !UpdateWindow(( HWND) var handle)) apiErr;
 }
 
 void
-apc_view_validate_rect( Handle self, Rect rect)
+apc_widget_validate_rect( Handle self, Rect rect)
 {
 
    if ( !ValidateRect (( HWND) var handle, map_Rect( self, &rect))) apiErr;

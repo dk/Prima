@@ -187,7 +187,7 @@ void Window_handle_event( Handle self, PEvent event)
       {
          int i         = 0, count = var widgets. count;
          int dir       = ( event-> key. key == kbTab) ? 1 : -1;
-         Handle foc    = apc_view_get_focused();
+         Handle foc    = apc_widget_get_focused();
          Handle * list;
          Handle   org;
          if ( count > 0)

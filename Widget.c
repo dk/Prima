@@ -176,7 +176,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
        pexist( clipOwner) ||
        pexist( transparent)
     )) return;
-   if ( !apc_view_create( self,
+   if ( !apc_widget_create( self,
       pexist( owner)      ? pget_H( owner)      : var owner,
       pexist( syncPaint)  ? pget_B( syncPaint)  : my get_sync_paint( self),
       pexist( clipOwner)  ? pget_B( clipOwner)  : my get_clip_owner( self),
@@ -207,7 +207,7 @@ Widget_done( Handle self)
    var popupMenu = nilHandle;
    SvREFCNT_dec( var pointer);
    free( var text);
-   apc_view_destroy( self);
+   apc_widget_destroy( self);
    free( var hint);
 
    list_destroy( &var widgets);
@@ -230,7 +230,7 @@ Widget_begin_paint( Handle self)
    Bool ok;
    if ( is_opt( optInDraw)) return false;
    inherited begin_paint( self);
-   if ( !( ok = apc_view_begin_paint( self, false)))
+   if ( !( ok = apc_widget_begin_paint( self, false)))
       inherited end_paint( self);
    return ok;
 }
@@ -242,7 +242,7 @@ Widget_begin_paint_info( Handle self)
    if ( is_opt( optInDraw))     return true;
    if ( is_opt( optInDrawInfo)) return false;
    inherited begin_paint_info( self);
-   if ( !( ok = apc_view_begin_paint_info( self)))
+   if ( !( ok = apc_widget_begin_paint_info( self)))
       inherited end_paint_info( self);
    return ok;
 }
@@ -252,7 +252,7 @@ void
 Widget_bring_to_front( Handle self)
 {
    if ( opt_InPaint) return;
-   apc_view_set_z_order( self, nilHandle, true);
+   apc_widget_set_z_order( self, nilHandle, true);
 }
 
 /*::c */
@@ -300,7 +300,7 @@ void
 Widget_end_paint( Handle self)
 {
   if ( !is_opt( optInDraw)) return;
-  apc_view_end_paint( self);
+  apc_widget_end_paint( self);
   inherited end_paint( self);
 }
 
@@ -308,7 +308,7 @@ void
 Widget_end_paint_info( Handle self)
 {
   if ( !is_opt( optInDrawInfo)) return;
-  apc_view_end_paint_info( self);
+  apc_widget_end_paint_info( self);
   inherited end_paint_info( self);
 }
 
@@ -374,11 +374,11 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmPaint        :
         if ( !opt_InPaint)
           if ( inherited begin_paint( self)) {
-             if ( apc_view_begin_paint( self, true)) {
+             if ( apc_widget_begin_paint( self, true)) {
                 if ( var onPaint) cv_call_perl( var mate, var onPaint, "H", self);
                 else if ( is_dmopt( dmPaint)) delegate_sub( self, "Paint", "HH", self, self);
                 else my on_paint( self, self);
-                apc_view_end_paint( self);
+                apc_widget_end_paint( self);
                 inherited end_paint( self);
              } else
                 inherited end_paint( self);
@@ -452,7 +452,7 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmColorChanged:
         if ( !kind_of( event-> gen. source, CPopup))
         {
-           SingleColor s = { apc_view_get_color( self, event-> gen. i), event-> gen. i};
+           SingleColor s = { apc_widget_get_color( self, event-> gen. i), event-> gen. i};
            my first_that( self, single_color_notify, &s);
 
            if ( event-> gen. i == ciFore) opt_clear( optOwnerColor); else
@@ -644,7 +644,7 @@ void Widget_handle_event( Handle self, PEvent event)
            {
               int dir = ( event-> key. key == kbRight
                        || event-> key. key == kbDown) ? 1 : -1;
-              Handle foc = apc_view_get_focused();
+              Handle foc = apc_widget_get_focused();
               Handle * list;
               PWidget  next;
               int i, no = -1, count = var widgets. count;
@@ -807,7 +807,7 @@ Widget_hide_cursor( Handle self)
 void
 Widget_insert_behind ( Handle self, Handle widget)
 {
-   apc_view_set_z_order( self, widget, 0);
+   apc_widget_set_z_order( self, widget, 0);
 }
 
 Bool
@@ -915,14 +915,14 @@ Widget_process_accel( Handle self, int key)
 void
 Widget_repaint( Handle self)
 {
-   if ( !opt_InPaint && ( var stage == csNormal)) apc_view_repaint( self);
+   if ( !opt_InPaint && ( var stage == csNormal)) apc_widget_repaint( self);
 }
 
 /*::s */
 void
 Widget_send_to_back( Handle self)
 {
-   apc_view_set_z_order( self, nilHandle, false);
+   apc_widget_set_z_order( self, nilHandle, false);
 }
 
 void
@@ -1134,7 +1134,7 @@ Widget_update_delegator( Handle self)
 void
 Widget_update_view( Handle self)
 {
-   if ( !opt_InPaint) apc_view_update( self);
+   if ( !opt_InPaint) apc_widget_update( self);
 }
 /*::v */
 /*::w */
@@ -1187,7 +1187,7 @@ Widget_get_clip_rect( Handle self)
 {
    return opt_InPaint ?
       inherited get_clip_rect( self) :
-      apc_view_get_clip_rect( self);
+      apc_widget_get_clip_rect( self);
 
 }
 
@@ -1204,11 +1204,11 @@ Widget_get_color_index( Handle self, int index)
    switch ( index)
    {
      case ciFore:
-        return opt_InPaint ? inherited get_color ( self) : apc_view_get_color( self, ciFore);
+        return opt_InPaint ? inherited get_color ( self) : apc_widget_get_color( self, ciFore);
      case ciBack:
-        return opt_InPaint ? inherited get_back_color ( self) : apc_view_get_color( self, ciBack);
+        return opt_InPaint ? inherited get_back_color ( self) : apc_widget_get_color( self, ciBack);
      default:
-        return apc_view_get_color( self, index);
+        return apc_widget_get_color( self, index);
    }
 }
 
@@ -1228,7 +1228,7 @@ Font
 Widget_get_default_font( char * dummy)
 {
    Font font;
-   apc_view_default_font( &font);
+   apc_widget_default_font( &font);
    return font;
 }
 
@@ -1263,7 +1263,7 @@ SV *
 Widget_get_handle( Handle self)
 {
    char buf[ 256];
-   snprintf( buf, 256, "0x%08x", apc_view_get_handle( self));
+   snprintf( buf, 256, "0x%08x", apc_widget_get_handle( self));
    return newSVpv( buf, 0);
 }
 
@@ -1425,7 +1425,7 @@ Widget_get_selected( Handle self)
 Handle
 Widget_get_selected_widget( Handle self)
 {
-   Handle foc = apc_view_get_focused();
+   Handle foc = apc_widget_get_focused();
    PWidget  f = ( PWidget) foc;
    while( f) {
       if (( Handle) f == self) return foc;
@@ -1436,7 +1436,7 @@ Widget_get_selected_widget( Handle self)
    /* classic solution should be recursive and inheritant call */
    /* of get_selected() here, when Widget would return state of */
    /* child-group selected state until Widget::get_selected() called; */
-   /* thus, each of them would call apc_view_get_focused - that's expensive, */
+   /* thus, each of them would call apc_widget_get_focused - that's expensive, */
    /* so that's the reason not to use classic object model here. */
 }
 
@@ -1563,7 +1563,7 @@ void
 Widget_set_capture( Handle self, Bool capture)
 {
    if ( opt_InPaint) return;
-   apc_view_set_capture( self, capture);
+   apc_widget_set_capture( self, capture);
 }
 
 void
@@ -1585,7 +1585,7 @@ Widget_set_clip_rect( Handle self, Rect clipRect)
    if ( opt_InPaint)
       inherited set_clip_rect( self, clipRect);
    else
-      apc_view_set_clip_rect( self, clipRect);
+      apc_widget_set_clip_rect( self, clipRect);
 }
 
 void
@@ -1616,7 +1616,7 @@ Widget_set_color_index( Handle self, Color color, int index)
             inherited set_back_color ( self, color);
             break;
          default:
-            apc_view_set_color ( self, color, index);
+            apc_widget_set_color ( self, color, index);
       }
    } else {
       switch ( index)
@@ -1628,7 +1628,7 @@ Widget_set_color_index( Handle self, Color color, int index)
             opt_clear( optOwnerBackColor);
             break;
       }
-      apc_view_set_color ( self, color, index);
+      apc_widget_set_color ( self, color, index);
       my repaint( self);
    }
 }
@@ -1684,10 +1684,10 @@ Widget_set_focused( Handle self, Bool focused)
       }
       var currentWidget = nilHandle;
       if ( var stage == csNormal)
-         apc_view_set_focused( self);
+         apc_widget_set_focused( self);
    } else
       if ( var stage == csNormal && my get_selected( self))
-         apc_view_set_focused( nilHandle);
+         apc_widget_set_focused( nilHandle);
 }
 
 void
@@ -1700,7 +1700,7 @@ Widget_set_font( Handle self, Font font)
    if ( opt_InPaint) apc_gp_set_font ( self, & var font);
    else {
       opt_clear( optOwnerFont);
-      apc_view_set_font( self, & var font);
+      apc_widget_set_font( self, & var font);
       my repaint ( self);
    }
 }
@@ -2098,7 +2098,7 @@ Widget_set_tab_order( Handle self, int tabOrder)
    } else
       tabOrder  = locCount;
    var tabOrder = tabOrder;
-   apc_view_set_tab_order( self, tabOrder);
+   apc_widget_set_tab_order( self, tabOrder);
 }
 
 void

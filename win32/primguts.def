@@ -79,38 +79,38 @@ EXPORTS
   apc_timer_set_timeout
   apc_timer_start
   apc_timer_stop
-  apc_view_begin_paint
-  apc_view_client_to_screen
-  apc_view_create
-  apc_view_default_font
-  apc_view_destroy
-  apc_view_end_paint
-  apc_view_get_color
-  apc_view_get_focused
-  apc_view_get_pos
-  apc_view_get_size
-  apc_view_invalidate_rect
-  apc_view_is_captured
-  apc_view_is_enabled
-  apc_view_is_focused
-  apc_view_is_visible
-  apc_view_lock
-  apc_view_repaint
-  apc_view_screen_to_client
-  apc_view_scroll
-  apc_view_scroll_rect
-  apc_view_set_capture
-  apc_view_set_color
-  apc_view_set_enabled
-  apc_view_set_focused
-  apc_view_set_font
-  apc_view_set_pos
-  apc_view_set_size
-  apc_view_set_visible
-  apc_view_set_z_order
-  apc_view_unlock
-  apc_view_update
-  apc_view_validate_rect
+  apc_widget_begin_paint
+  apc_widget_client_to_screen
+  apc_widget_create
+  apc_widget_default_font
+  apc_widget_destroy
+  apc_widget_end_paint
+  apc_widget_get_color
+  apc_widget_get_focused
+  apc_widget_get_pos
+  apc_widget_get_size
+  apc_widget_invalidate_rect
+  apc_widget_is_captured
+  apc_widget_is_enabled
+  apc_widget_is_focused
+  apc_widget_is_visible
+  apc_widget_lock
+  apc_widget_repaint
+  apc_widget_screen_to_client
+  apc_widget_scroll
+  apc_widget_scroll_rect
+  apc_widget_set_capture
+  apc_widget_set_color
+  apc_widget_set_enabled
+  apc_widget_set_focused
+  apc_widget_set_font
+  apc_widget_set_pos
+  apc_widget_set_size
+  apc_widget_set_visible
+  apc_widget_set_z_order
+  apc_widget_unlock
+  apc_widget_update
+  apc_widget_validate_rect
   apc_window_close
   apc_window_create
   apc_window_get_border_icons

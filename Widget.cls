@@ -34,7 +34,7 @@ object Widget( Drawable)
    method   void     bring_to_front();
    method   Bool     can_close();
    method   void     click();
-   method   Point    client_to_screen(Point p)       => apc_view_client_to_screen;
+   method   Point    client_to_screen(Point p)       => apc_widget_client_to_screen;
    method   Bool     close();
    c_only   Bool     custom_paint();
    method   void     detach( Handle objectHandle, Bool kill);
@@ -50,11 +50,11 @@ object Widget( Drawable)
    method   Bool     help();
    method   void     init( HV * profile);
    method   void     insert_behind( Handle view);
-   method   void     invalidate_rect( Rect rect)     => apc_view_invalidate_rect;
+   method   void     invalidate_rect( Rect rect)     => apc_widget_invalidate_rect;
    c_only   Bool     is_child( Handle possibleOwner);
    method   void     key_event( int command, int code, int key = kbNoKey, int mod = 0, int repeat = 1, Bool post = 0);
    method   void     locate       ( Rect r);
-   method   void     lock()                          => apc_view_lock;
+   method   void     lock()                          => apc_widget_lock;
    method   void     mouse_event( int command = cmMouseDown, int button = mbLeft, int mod = 0, int x = 0, int y = 0, Bool dblclk = 0, Bool post = 0);
    method   Handle   next();
    import   SV *     notification_types();
@@ -63,21 +63,21 @@ object Widget( Drawable)
    import   SV *     profile_default ();
    method   Handle   prev();
    method   void     repaint();
-   method   Bool     responsive()                    => apc_view_is_responsive;
-   method   Point    screen_to_client(Point p)       => apc_view_screen_to_client;
-   method   void     scroll( int horiz, int vert, Bool scrollChildren = false)    => apc_view_scroll;
-   method   void     scroll_rect( int horiz, int vert, Rect r, Bool scrollChildren = false)  => apc_view_scroll_rect;
+   method   Bool     responsive()                    => apc_widget_is_responsive;
+   method   Point    screen_to_client(Point p)       => apc_widget_screen_to_client;
+   method   void     scroll( int horiz, int vert, Bool scrollChildren = false)    => apc_widget_scroll;
+   method   void     scroll_rect( int horiz, int vert, Rect r, Bool scrollChildren = false)  => apc_widget_scroll_rect;
    method   void     send_to_back();
    method   void     set( HV * profile);
    method   void     setup();
    method   void     show();
    method   void     show_cursor();
    method   void     show_hint();
-   method   void     unlock()                        => apc_view_unlock;
+   method   void     unlock()                        => apc_widget_unlock;
    method   void     update_view();
    c_only   void     update_sys_handle( HV * profile);
    method   void     update_delegator();
-   method   void     validate_rect( Rect rect)       => apc_view_validate_rect;
+   method   void     validate_rect( Rect rect)       => apc_widget_validate_rect;
 
 # properties read methods
    method   SV *     get_accel_items();
@@ -86,8 +86,8 @@ object Widget( Drawable)
    method   int      get_bottom();
    method   Bool     get_brief_keys();
    method   Bool     get_buffered();
-   method   Bool     get_capture()                   => apc_view_is_captured;
-   method   Bool     get_clip_owner()                => apc_view_get_clip_owner;
+   method   Bool     get_capture()                   => apc_widget_is_captured;
+   method   Bool     get_clip_owner()                => apc_widget_get_clip_owner;
    method   Rect     get_clip_rect();
    method   Color    get_color();
    method   Color    get_color_index( int index);
@@ -100,11 +100,11 @@ object Widget( Drawable)
    static   Font     get_default_popup_font( char * dummy = "");
    method   NPoint   get_design_scale();
    method   SV *     get_drag_pointer();
-   method   Bool     get_enabled()                   => apc_view_is_enabled;
+   method   Bool     get_enabled()                   => apc_widget_is_enabled;
    method   int      get_grow_mode();
-   method   Bool     get_first_click()               => apc_view_get_first_click;
-   method   Bool     get_focused()                   => apc_view_is_focused;
-   method   Rect     get_invalid_rect()              => apc_view_get_invalid_rect;
+   method   Bool     get_first_click()               => apc_widget_get_first_click;
+   method   Bool     get_focused()                   => apc_widget_is_focused;
+   method   Rect     get_invalid_rect()              => apc_widget_get_invalid_rect;
    method   SV   *   get_handle();
    method   char *   get_hint();
    method   Bool     get_hint_visible();
@@ -128,7 +128,7 @@ object Widget( Drawable)
    method   Bool     get_pointer_visible()           => apc_pointer_get_visible;
    method   Color    get_popup_color( int index);
    method   Font     get_popup_font();
-   method   Point    get_pos()                       => apc_view_get_pos;
+   method   Point    get_pos()                       => apc_widget_get_pos;
    method   Rect     get_rect();
    method   int      get_right();
    method   Bool     get_scale_children();
@@ -139,16 +139,16 @@ object Widget( Drawable)
    method   int      get_selecting_buttons();
    method   int      get_shift_state()               => apc_kbd_get_state;
    method   Bool     get_show_hint();
-   method   Point    get_size()                      => apc_view_get_size;
+   method   Point    get_size()                      => apc_widget_get_size;
    method   Point    get_size_min();
    method   Point    get_size_max();
-   method   Bool     get_sync_paint()                => apc_view_get_sync_paint;
+   method   Bool     get_sync_paint()                => apc_widget_get_sync_paint;
    method   int      get_tab_order();
    method   Bool     get_tab_stop();
    method   char *   get_text();
-   method   Bool     get_transparent()               => apc_view_get_transparent;
+   method   Bool     get_transparent()               => apc_widget_get_transparent;
    method   int      get_top();
-   method   Bool     get_visible()                   => apc_view_is_visible;
+   method   Bool     get_visible()                   => apc_widget_is_visible;
    method   int      get_widget_class();
    public   void     get_widgets();
    method   int      get_width();
@@ -172,8 +172,8 @@ object Widget( Drawable)
    method   void     set_cursor_size( int x, int y)    => apc_cursor_set_size;
    method   void     set_cursor_visible( Bool visible) => apc_cursor_set_visible;
    method   void     set_drag_pointer( SV * dragPointer);
-   method   void     set_enabled( Bool enable)         => apc_view_set_enabled;
-   method   void     set_first_click( Bool firstClick) => apc_view_set_first_click;
+   method   void     set_enabled( Bool enable)         => apc_widget_set_enabled;
+   method   void     set_first_click( Bool firstClick) => apc_widget_set_first_click;
    method   void     set_focused( Bool focused);
    method   void     set_font( Font font);
    method   void     set_grow_mode( int flags);
@@ -195,7 +195,7 @@ object Widget( Drawable)
    method   void     set_popup_color( Color color, int index);
    method   void     set_popup_font( Font font);
    method   void     set_popup_items( SV * popupItems);
-   method   void     set_pos( int x, int y)             => apc_view_set_pos;
+   method   void     set_pos( int x, int y)             => apc_widget_set_pos;
    method   void     set_rect( Rect r);
    method   void     set_right( int right);
    method   void     set_scale_children( Bool scaleChildren);
@@ -204,7 +204,7 @@ object Widget( Drawable)
    method   void     set_selected_widget( Handle widget);
    method   void     set_selecting_buttons( int sb);
    method   void     set_show_hint( Bool showHint);
-   method   void     set_size( int x, int y)            => apc_view_set_size;
+   method   void     set_size( int x, int y)            => apc_widget_set_size;
    method   void     set_size_min( Point min);
    method   void     set_size_max( Point max);
    import   void     set_sync_paint( Bool syncPaint);
@@ -213,7 +213,7 @@ object Widget( Drawable)
    method   void     set_text( char * text);
    method   void     set_top( int top);
    import   void     set_transparent( Bool transparent);
-   method   void     set_visible( Bool visible)         => apc_view_set_visible;
+   method   void     set_visible( Bool visible)         => apc_widget_set_visible;
    method   void     set_widget_class( int widgetClass);
    method   void     set_width( int width);
 

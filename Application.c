@@ -332,7 +332,7 @@ Application_set_help_file( Handle self, char * helpFile)
 Handle
 Application_get_focused_widget( Handle self)
 {
-   return apc_view_get_focused();
+   return apc_widget_get_focused();
 }
 
 Handle

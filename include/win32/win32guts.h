@@ -131,7 +131,7 @@ typedef struct _WinGuts
     List           transp;             // transparent controls list
     int            topWindows;         // count of top-level windows in app
     Bool           focSysDisabled;     // focus system disabled
-    Bool           focSysGranted;      // SetFocus() was called inside apc_view_set_focused
+    Bool           focSysGranted;      // SetFocus() was called inside apc_widget_set_focused
     UINT           errorMode;          // SetErrorMode() result
 } WinGuts, *PWinGuts;
 

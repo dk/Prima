@@ -320,13 +320,13 @@ static void
 get_view_ex( Handle self, PViewProfile p)
 {
   int i;
-  p-> capture   = apc_view_is_captured( self);
-  for ( i = 0; i <= ciMaxId; i++) p-> colors[ i] = apc_view_get_color( self, i);
-  p-> pos       = apc_view_get_pos( self);
-  p-> size      = apc_view_get_size( self);
-  p-> enabled   = apc_view_is_enabled( self);
-  p-> focused   = apc_view_is_focused( self);
-  p-> visible   = apc_view_is_visible( self);
+  p-> capture   = apc_widget_is_captured( self);
+  for ( i = 0; i <= ciMaxId; i++) p-> colors[ i] = apc_widget_get_color( self, i);
+  p-> pos       = apc_widget_get_pos( self);
+  p-> size      = apc_widget_get_size( self);
+  p-> enabled   = apc_widget_is_enabled( self);
+  p-> focused   = apc_widget_is_focused( self);
+  p-> visible   = apc_widget_is_visible( self);
 }
 
 static void
@@ -334,15 +334,15 @@ set_view_ex( Handle self, PViewProfile p)
 {
   int i;
   HWND wnd = var handle;
-  apc_view_set_visible( self, false);
-  for ( i = 0; i <= ciMaxId; i++) apc_view_set_color( self, p-> colors[i], i);
-  apc_view_set_font( self, &var font);
-  apc_view_set_pos( self, p-> pos. x, p-> pos. y);
-  apc_view_set_size( self, p-> size. x, p-> size. y);
-  apc_view_set_enabled( self, p-> enabled);
-  if ( p-> focused) apc_view_set_focused( self);
-  apc_view_set_visible( self, p-> visible);
-  if ( p-> capture) apc_view_set_capture( self, 1);
+  apc_widget_set_visible( self, false);
+  for ( i = 0; i <= ciMaxId; i++) apc_widget_set_color( self, p-> colors[i], i);
+  apc_widget_set_font( self, &var font);
+  apc_widget_set_pos( self, p-> pos. x, p-> pos. y);
+  apc_widget_set_size( self, p-> size. x, p-> size. y);
+  apc_widget_set_enabled( self, p-> enabled);
+  if ( p-> focused) apc_widget_set_focused( self);
+  apc_widget_set_visible( self, p-> visible);
+  if ( p-> capture) apc_widget_set_capture( self, 1);
   if ( sys timeDefs) for ( i = 0; i < sys timeDefsCount; i++)
      if ( sys timeDefs[ i]. item)
      {
@@ -666,9 +666,9 @@ apc_window_set_window_state( Handle self, int state)
    if ( fl > 0)
    {
       int i, lock = sys lockState;
-      while ( sys lockState) apc_view_unlock( self);
+      while ( sys lockState) apc_widget_unlock( self);
       if ( !WinSetWindowPos( HANDLE, 0, 0, 0, 0, 0, fl)) apiErr;
-      for ( i = 0; i < lock; i++) apc_view_lock( self);
+      for ( i = 0; i < lock; i++) apc_widget_lock( self);
       sys s. window. state = state;
    }
 }
@@ -961,7 +961,7 @@ remap_color( HPS ps, long clr, Bool toSystem)
 // VIEW
 
 Point
-apc_view_client_to_screen   ( Handle self, Point p)
+apc_widget_client_to_screen   ( Handle self, Point p)
 {
    if ( !WinMapWindowPoints( var handle, HWND_DESKTOP, ( PPOINTL) &p, 1))
       apiErr;
@@ -974,7 +974,7 @@ apc_view_client_to_screen   ( Handle self, Point p)
                              )
 
 Bool
-apc_view_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent)
+apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent)
 {
    Bool reset = false;
    ViewProfile vprf;
@@ -993,9 +993,9 @@ apc_view_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool
       var stage = oStage;
    }
 
-   if ( is_apt( aptTransparent) != transparent && !reset) apc_view_repaint( self);
+   if ( is_apt( aptTransparent) != transparent && !reset) apc_widget_repaint( self);
    apt_assign( aptTransparent, transparent);
-   if ( reset) apc_view_repaint( self);
+   if ( reset) apc_widget_repaint( self);
    return apcError == 0;
 }
 
@@ -1407,7 +1407,7 @@ apc_font_default( PFont font)
 }
 
 PFont
-apc_view_default_font ( PFont font)
+apc_widget_default_font ( PFont font)
 {
    char buf  [256];
    apcErrClear;
@@ -1418,7 +1418,7 @@ apc_view_default_font ( PFont font)
 }
 
 Bool
-apc_view_is_captured( Handle self)
+apc_widget_is_captured( Handle self)
 {
    return WinQueryCapture( HWND_DESKTOP) == HANDLE;
 }
@@ -1437,7 +1437,7 @@ static int ctx_ci2PP[] =
 };
 
 Color
-apc_view_get_color( Handle self, int index)
+apc_widget_get_color( Handle self, int index)
 {
    long p = 0;
    if ( index == ciLight3DColor) return sys l3dc;
@@ -1452,13 +1452,13 @@ apc_view_get_color( Handle self, int index)
 }
 
 void
-apc_view_set_capture( Handle self, Bool capture)
+apc_widget_set_capture( Handle self, Bool capture)
 {
    if ( !WinSetCapture( HWND_DESKTOP, capture ? var handle : nilHandle)) apiErr;
 }
 
 void
-apc_view_set_color( Handle self, Color color, int index)
+apc_widget_set_color( Handle self, Color color, int index)
 {
    int idx;
    color = remap_color( nilHandle, color, true);
@@ -1470,7 +1470,7 @@ apc_view_set_color( Handle self, Color color, int index)
 }
 
 void
-apc_view_set_pos( Handle self, int x, int y)
+apc_widget_set_pos( Handle self, int x, int y)
 {
    if ( kind_of( self, CWindow))
    {
@@ -1487,7 +1487,7 @@ apc_view_set_pos( Handle self, int x, int y)
 }
 
 void
-apc_view_set_size( Handle self, int width, int height)
+apc_widget_set_size( Handle self, int width, int height)
 {
    if ( kind_of( self, CWindow) &&  ( sys s. window. state == wsMinimized))
    {
@@ -1500,7 +1500,7 @@ apc_view_set_size( Handle self, int width, int height)
 }
 
 void
-apc_view_set_visible( Handle self, Bool show)
+apc_widget_set_visible( Handle self, Bool show)
 {
    if ( sys lockState)
    {
@@ -1512,7 +1512,7 @@ apc_view_set_visible( Handle self, Bool show)
 }
 
 void
-apc_view_destroy( Handle self)
+apc_widget_destroy( Handle self)
 {
    if ( sys pointer2) if ( !WinDestroyPointer( sys pointer2)) apiErr;
    free( sys timeDefs);
@@ -1545,19 +1545,19 @@ view_get_font ( Handle self, PFont font)
       font_pp2gp( buf, font);
       font_font2gp( font, sys res, true);
    }
-      else apc_view_default_font( font);
+      else apc_widget_default_font( font);
    return font;
 }
 
 
 Bool
-apc_view_get_first_click ( Handle self)
+apc_widget_get_first_click ( Handle self)
 {
    return is_apt( aptFirstClick);
 }
 
 Point
-apc_view_get_pos( Handle self)
+apc_widget_get_pos( Handle self)
 {
    SWP  swp;
    if ( !WinQueryWindowPos ( HANDLE, &swp)) apiErr;
@@ -1567,25 +1567,25 @@ apc_view_get_pos( Handle self)
 
 
 Bool
-apc_view_get_transparent( Handle self)
+apc_widget_get_transparent( Handle self)
 {
    return is_apt( aptTransparent);
 }
 
 Bool
-apc_view_get_sync_paint( Handle self)
+apc_widget_get_sync_paint( Handle self)
 {
   return is_apt( aptSyncPaint);
 }
 
 Bool
-apc_view_get_clip_owner( Handle self)
+apc_widget_get_clip_owner( Handle self)
 {
    return is_apt( aptClipOwner);
 }
 
 Point
-apc_view_get_size( Handle self)
+apc_widget_get_size( Handle self)
 {
    SWP  swp;
    if ( !WinQueryWindowPos ( HANDLE, &swp)) apiErr;
@@ -1595,7 +1595,7 @@ apc_view_get_size( Handle self)
 }
 
 Rect
-apc_view_get_invalid_rect( Handle self)
+apc_widget_get_invalid_rect( Handle self)
 {
    Rect r;
    Bool ok = ( Bool) WinQueryUpdateRect( var handle, ( PRECTL) &r);
@@ -1603,14 +1603,14 @@ apc_view_get_invalid_rect( Handle self)
 }
 
 Bool
-apc_view_is_enabled ( Handle self)
+apc_widget_is_enabled ( Handle self)
 {
    return is_apt( aptEnabled);
 // return WinIsWindowEnabled( HANDLE);
 }
 
 Bool
-apc_view_is_responsive ( Handle self)
+apc_widget_is_responsive ( Handle self)
 {
    Bool ena = true;
    while ( ena && self != application) {
@@ -1622,43 +1622,43 @@ apc_view_is_responsive ( Handle self)
 }
 
 Bool
-apc_view_is_visible ( Handle self)
+apc_widget_is_visible ( Handle self)
 {
    return is_apt( aptVisible);
 }
 
 Bool
-apc_view_is_focused ( Handle self)
+apc_widget_is_focused ( Handle self)
 {
    return is_apt( aptFocused);
 }
 
 Handle
-apc_view_get_focused( void)
+apc_widget_get_focused( void)
 {
    return hwnd_to_view( WinQueryFocus( HWND_DESKTOP));
 }
 
 void
-apc_view_repaint( Handle self)
+apc_widget_repaint( Handle self)
 {
    if ( !WinInvalidateRect( var handle, nil, true)) apiErr;
 }
 
 void
-apc_view_update( Handle self)
+apc_widget_update( Handle self)
 {
    if ( !WinUpdateWindow( var handle)) apiErr;
 }
 
 void
-apc_view_invalidate_rect( Handle self, Rect rect)
+apc_widget_invalidate_rect( Handle self, Rect rect)
 {
    if ( !WinInvalidateRect ( var handle, ( PRECTL)&rect, true)) apiErr;
 }
 
 void
-apc_view_lock ( Handle self)
+apc_widget_lock ( Handle self)
 {
    if ( sys lockState++ == 0)
    {
@@ -1668,7 +1668,7 @@ apc_view_lock ( Handle self)
 }
 
 void
-apc_view_unlock ( Handle self)
+apc_widget_unlock ( Handle self)
 {
    if ( --sys lockState == 0)
    {
@@ -1678,30 +1678,30 @@ apc_view_unlock ( Handle self)
 }
 
 void
-apc_view_validate_rect ( Handle self, Rect rect)
+apc_widget_validate_rect ( Handle self, Rect rect)
 {
    if ( !WinValidateRect( var handle, ( PRECTL)&rect, true)) apiErr;
 }
 
 void
-apc_view_set_enabled ( Handle self, Bool enable)
+apc_widget_set_enabled ( Handle self, Bool enable)
 {
    apt_assign( aptEnabled, enable);
    if (( sys className == WC_FRAME) || ( var owner == application) || !is_apt( aptClipOwner)) {
       if ( !WinEnableWindow( HANDLE, enable)) apiErr;
    } else
-      apc_view_repaint( self);
+      apc_widget_repaint( self);
 }
 
 
 void
-apc_view_set_first_click( Handle self, Bool firstClick)
+apc_widget_set_first_click( Handle self, Bool firstClick)
 {
    apt_assign( aptFirstClick, firstClick);
 }
 
 void
-apc_view_set_focused ( Handle self)
+apc_widget_set_focused ( Handle self)
 {
    if ( self)
      WinFocusChange( HWND_DESKTOP, var handle, is_apt( aptClipOwner) ? 0
@@ -1711,7 +1711,7 @@ apc_view_set_focused ( Handle self)
 }
 
 void
-apc_view_set_font ( Handle self, PFont font)
+apc_widget_set_font ( Handle self, PFont font)
 {
    char buf [256];
    int oStage = var stage;
@@ -1724,7 +1724,7 @@ apc_view_set_font ( Handle self, PFont font)
 }
 
 void
-apc_view_set_tab_order( Handle self, int tabOrder)
+apc_widget_set_tab_order( Handle self, int tabOrder)
 {
 }
 
@@ -1737,7 +1737,7 @@ static PBITMAPINFO2 get_screen_binfo( void);
 static HBITMAP make_bitmap_ps( Handle img, HPS * hps, HDC * hdc, PBITMAPINFO2 * bm, int createBitmap);
 
 Bool
-apc_view_begin_paint( Handle self, Bool insideOnPaint)
+apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 {
    Bool presetHPS = ( sys ps != nilHandle);
    apcErrClear;
@@ -1802,8 +1802,8 @@ apc_view_begin_paint( Handle self, Bool insideOnPaint)
    }
 
    if ( !GpiCreateLogColorTable( sys ps, 0, LCOLF_RGB, 0, 0, nil)) apiErr;
-   apc_gp_set_color( self, apc_view_get_color( self, ciFore));
-   apc_gp_set_back_color( self, apc_view_get_color( self, ciBack));
+   apc_gp_set_color( self, apc_widget_get_color( self, ciFore));
+   apc_gp_set_back_color( self, apc_widget_get_color( self, ciBack));
    apt_assign( aptFontExists, presetHPS);
    if ( presetHPS)
    {
@@ -1823,7 +1823,7 @@ apc_view_begin_paint( Handle self, Bool insideOnPaint)
 }
 
 void
-apc_view_end_paint( Handle self)
+apc_widget_end_paint( Handle self)
 {
    if ( is_opt( optBuffered) && ( sys bm != nilHandle)) {
       POINTL pt [4] = {
@@ -1869,14 +1869,14 @@ apc_view_end_paint( Handle self)
 }
 
 Point
-apc_view_screen_to_client   ( Handle self, Point p)
+apc_widget_screen_to_client   ( Handle self, Point p)
 {
    if ( !WinMapWindowPoints( HWND_DESKTOP, var handle, ( PPOINTL) &p, 1)) apiErr;
    return p;
 }
 
 void
-apc_view_scroll ( Handle self, int horiz, int vert, Bool scrollChildren)
+apc_widget_scroll ( Handle self, int horiz, int vert, Bool scrollChildren)
 {
    WinShowCursor( var handle, false);
    if ( !WinScrollWindow( HANDLE, horiz, vert, nil, nil, nilHandle, nil,
@@ -1885,7 +1885,7 @@ apc_view_scroll ( Handle self, int horiz, int vert, Bool scrollChildren)
 }
 
 void
-apc_view_scroll_rect( Handle self, int horiz, int vert, Rect r, Bool scrollChildren)
+apc_widget_scroll_rect( Handle self, int horiz, int vert, Rect r, Bool scrollChildren)
 {
    WinShowCursor( var handle, false);
    if ( !WinScrollWindow( HANDLE, horiz, vert, (PRECTL)&r, nil, nilHandle, nil,
@@ -1895,7 +1895,7 @@ apc_view_scroll_rect( Handle self, int horiz, int vert, Rect r, Bool scrollChild
 }
 
 void
-apc_view_set_z_order ( Handle self, Handle behind, Bool top)
+apc_widget_set_z_order ( Handle self, Handle behind, Bool top)
 {
    HWND opt = ( top) ? HWND_TOP : HWND_BOTTOM;
    if ( behind != nilHandle) opt = (( PWidget) behind)-> handle;

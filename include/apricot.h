@@ -674,54 +674,54 @@ extern void    apc_window_end_modal        ( Handle self);
 
 
 /* View management */
-extern Point   apc_view_client_to_screen   ( Handle self, Point p);
-extern Bool    apc_view_create             ( Handle self, Handle owner, Bool syncPaint,
-  Bool clipOwner, Bool transparent);
-extern Bool    apc_view_begin_paint        ( Handle self, Bool insideOnPaint);
-extern Bool    apc_view_begin_paint_info   ( Handle self);
-extern void    apc_view_destroy            ( Handle self);
-extern PFont   apc_view_default_font       ( PFont copyTo);
-extern void    apc_view_end_paint          ( Handle self);
-extern void    apc_view_end_paint_info     ( Handle self);
-extern Bool    apc_view_get_clip_owner     ( Handle self);
-extern Rect    apc_view_get_clip_rect      ( Handle self);
-extern Color   apc_view_get_color          ( Handle self, int index);
-extern Bool    apc_view_get_first_click    ( Handle self);
-extern Handle  apc_view_get_focused        ( void);
-extern ApiHandle apc_view_get_handle       ( Handle self);
-extern Rect    apc_view_get_invalid_rect   ( Handle self);
-extern Point   apc_view_get_pos            ( Handle self);
-extern Point   apc_view_get_size           ( Handle self);
-extern Bool    apc_view_get_sync_paint     ( Handle self);
-extern Bool    apc_view_get_transparent    ( Handle self);
-extern Bool    apc_view_is_captured        ( Handle self);
-extern Bool    apc_view_is_enabled         ( Handle self);
-extern Bool    apc_view_is_responsive      ( Handle self);
-extern Bool    apc_view_is_focused         ( Handle self);
-extern Bool    apc_view_is_visible         ( Handle self);
-extern void    apc_view_invalidate_rect    ( Handle self, Rect rect);
-extern void    apc_view_lock               ( Handle self);
-extern void    apc_view_repaint            ( Handle self);
-extern Point   apc_view_screen_to_client   ( Handle self, Point p);
-extern void    apc_view_scroll             ( Handle self, int horiz, int vert,
-                                             Bool scrollChildren);
-extern void    apc_view_scroll_rect        ( Handle self, int horiz, int vert,
-                                             Rect r, Bool scrollChildren);
-extern void    apc_view_set_capture        ( Handle self, Bool capture);
-extern void    apc_view_set_clip_rect      ( Handle self, Rect clipRect);
-extern void    apc_view_set_color          ( Handle self, Color color, int index);
-extern void    apc_view_set_enabled        ( Handle self, Bool enable);
-extern void    apc_view_set_first_click    ( Handle self, Bool firstClick);
-extern void    apc_view_set_focused        ( Handle self);
-extern void    apc_view_set_font           ( Handle self, PFont font);
-extern void    apc_view_set_pos            ( Handle self, int x, int y);
-extern void    apc_view_set_size           ( Handle self, int width, int height);
-extern void    apc_view_set_tab_order      ( Handle self, int tabOrder);
-extern void    apc_view_set_visible        ( Handle self, Bool show);
-extern void    apc_view_set_z_order        ( Handle self, Handle behind, Bool top);
-extern void    apc_view_unlock             ( Handle self);
-extern void    apc_view_update             ( Handle self);
-extern void    apc_view_validate_rect      ( Handle self, Rect rect);
+extern Point   apc_widget_client_to_screen( Handle self, Point p);
+extern Bool    apc_widget_create          ( Handle self, Handle owner, Bool syncPaint,
+					    Bool clipOwner, Bool transparent);
+extern Bool    apc_widget_begin_paint     ( Handle self, Bool insideOnPaint);
+extern Bool    apc_widget_begin_paint_info( Handle self);
+extern void    apc_widget_destroy         ( Handle self);
+extern PFont   apc_widget_default_font    ( PFont copyTo);
+extern void    apc_widget_end_paint       ( Handle self);
+extern void    apc_widget_end_paint_info  ( Handle self);
+extern Bool    apc_widget_get_clip_owner  ( Handle self);
+extern Rect    apc_widget_get_clip_rect   ( Handle self);
+extern Color   apc_widget_get_color       ( Handle self, int index);
+extern Bool    apc_widget_get_first_click ( Handle self);
+extern Handle  apc_widget_get_focused     ( void);
+extern ApiHandle apc_widget_get_handle    ( Handle self);
+extern Rect    apc_widget_get_invalid_rect( Handle self);
+extern Point   apc_widget_get_pos         ( Handle self);
+extern Point   apc_widget_get_size        ( Handle self);
+extern Bool    apc_widget_get_sync_paint  ( Handle self);
+extern Bool    apc_widget_get_transparent ( Handle self);
+extern Bool    apc_widget_is_captured     ( Handle self);
+extern Bool    apc_widget_is_enabled      ( Handle self);
+extern Bool    apc_widget_is_responsive   ( Handle self);
+extern Bool    apc_widget_is_focused      ( Handle self);
+extern Bool    apc_widget_is_visible      ( Handle self);
+extern void    apc_widget_invalidate_rect ( Handle self, Rect rect);
+extern void    apc_widget_lock            ( Handle self);
+extern void    apc_widget_repaint         ( Handle self);
+extern Point   apc_widget_screen_to_client( Handle self, Point p);
+extern void    apc_widget_scroll          ( Handle self, int horiz, int vert,
+					    Bool scrollChildren);
+extern void    apc_widget_scroll_rect     ( Handle self, int horiz, int vert,
+					    Rect r, Bool scrollChildren);
+extern void    apc_widget_set_capture     ( Handle self, Bool capture);
+extern void    apc_widget_set_clip_rect   ( Handle self, Rect clipRect);
+extern void    apc_widget_set_color       ( Handle self, Color color, int index);
+extern void    apc_widget_set_enabled     ( Handle self, Bool enable);
+extern void    apc_widget_set_first_click ( Handle self, Bool firstClick);
+extern void    apc_widget_set_focused     ( Handle self);
+extern void    apc_widget_set_font        ( Handle self, PFont font);
+extern void    apc_widget_set_pos         ( Handle self, int x, int y);
+extern void    apc_widget_set_size        ( Handle self, int width, int height);
+extern void    apc_widget_set_tab_order   ( Handle self, int tabOrder);
+extern void    apc_widget_set_visible     ( Handle self, Bool show);
+extern void    apc_widget_set_z_order     ( Handle self, Handle behind, Bool top);
+extern void    apc_widget_unlock          ( Handle self);
+extern void    apc_widget_update          ( Handle self);
+extern void    apc_widget_validate_rect   ( Handle self, Rect rect);
 
 /* standard system pointers */
 #define crDefault      -1

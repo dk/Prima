@@ -14,8 +14,8 @@ object Window( Widget)
    method   int      get_border_icons()              => apc_window_get_border_icons;
    method   int      get_border_style()              => apc_window_get_border_style;
    static   Font     get_default_menu_font( char * dummy = "");
-   method   Point    get_frame_pos()                 => apc_view_get_pos;
-   method   Point    get_frame_size()                => apc_view_get_size;
+   method   Point    get_frame_pos()                 => apc_widget_get_pos;
+   method   Point    get_frame_size()                => apc_widget_get_size;
    method   Handle   get_horizon();
    method   Handle   get_icon();
    method   Handle   get_menu();
@@ -39,8 +39,8 @@ object Window( Widget)
    import   void     set_border_style( int style);
    method   void     set_icon( Handle icon);
    method   void     set_focused( Bool focused);
-   method   void     set_frame_size( int x, int y)   => apc_view_set_size;
-   method   void     set_frame_pos( int x, int y)    => apc_view_set_pos;
+   method   void     set_frame_size( int x, int y)   => apc_widget_set_size;
+   method   void     set_frame_pos( int x, int y)    => apc_widget_set_pos;
    method   void     set_menu( Handle menu);
    method   void     set_menu_color( Color color, int index);
    method   void     set_menu_font( Font font);
