@@ -67,6 +67,8 @@ sub profile_default
 sub profile_check_in
 {
    my ( $self, $p, $default) = @_;
+   $p-> {autoHeight} = 0
+      if exists $p->{height} || exists $p->{size} || exists $p-> {rect} || ( exists $p->{top} && exists $p->{bottom});
    $self-> SUPER::profile_check_in( $p, $default);
    ($p-> { selStart}, $p-> { selEnd}) = @{$p-> { selection}} if exists( $p-> { selection});
 }

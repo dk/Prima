@@ -60,7 +60,9 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    my $vertical = exists $p-> {vertical} ? $p-> {vertical} : $default->{ vertical};
    $p-> { autoWidth} = 0
-      if !exists($p->{autoWidth}) && (exists($p->{width}) || exists($p->{size}) || exists($p->{rect}));
+      if exists $p->{width}  || exists $p->{size} || exists $p-> {rect} || ( exists $p->{left} && exists $p->{right});
+   $p-> {autoHeight} = 0
+      if exists $p->{height} || exists $p->{size} || exists $p-> {rect} || ( exists $p->{top} && exists $p->{bottom});
 }
 
 
