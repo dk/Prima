@@ -557,7 +557,7 @@ sub on_paint
    my ($clComplete,$clBack,$clFore,$clHilite) = ($self-> hiliteBackColor, $self-> backColor, $self-> color, $self-> hiliteColor);
    my $v = $self-> {vertical};
    my $complete = $v ? $y : $x;
-   $complete = sprintf( "%d", ($complete - $i*2) * $self->{value} / ($self-> {max} - $self-> {min}) + 0.5);
+   $complete = int(($complete - $i*2) * $self->{value} / ($self-> {max} - $self-> {min}) + 0.5);
    my ( $l3, $d3) = ( $self-> light3DColor, $self-> dark3DColor);
    $canvas-> color( $clComplete);
    $canvas-> bar ( $v ? ($i, $i, $x-$i-1, $i+$complete) : ( $i, $i, $i + $complete, $y-$i-1));
@@ -583,9 +583,9 @@ sub on_paint
    if ( $s ne '')
    {
       my ($fw, $fh) = ( $canvas-> get_text_width( $s), $canvas-> font-> height);
-      my $xBeg = sprintf( "%d", ( $x - $fw) / 2 + 0.5);
+      my $xBeg = int(( $x - $fw) / 2 + 0.5);
       my $xEnd = $xBeg + $fw;
-      my $yBeg = sprintf( "%d", ( $y - $fh) / 2 + 0.5);
+      my $yBeg = int(( $y - $fh) / 2 + 0.5);
       my $yEnd = $yBeg + $fh;
       my ( $zBeg, $zEnd) = $v ? ( $yBeg, $yEnd) : ( $xBeg, $xEnd);
       if ( $zBeg > $i + $complete)
