@@ -393,11 +393,9 @@ Number of pixels between ascent and external leading lines.
 Negative if the ascent line is above the extenal leading line.
 
 
-=for podview <img src="leadings.gif" nobegin=1 >
+=for podview <img src="leadings.gif" cut=1>
 
 =for html <p><img src="leadings.gif">
-
-=begin text
 
           ------------- external leading line
   
@@ -417,9 +415,7 @@ Negative if the ascent line is above the extenal leading line.
                  $
              $$$$  ---- descent line
 
-=end text
-
-=for podview </nobegin>
+=for podview </cut>
 
 =item weight
 
@@ -477,12 +473,9 @@ the three integer values that describe horizontal extents of a
 glyph's black part relative to the glyph extent:
 
 
-=for podview <img src="fontabc.gif" nobegin=1 >
+=for podview <img src="fontabc.gif" cut=1 >
 
 =for html <p><img src="fontabc.gif">
-
-=begin text
-
 
     .  .     .  .      .  .        .  .
     .  .     $$$.      .  .        .  .
@@ -503,9 +496,7 @@ glyph's black part relative to the glyph extent:
       B = 13                B = 10
       C = -3                C = 3
 
-=end text
-
-=for podview </nobegin>
+=for podview </cut>
 
 A and C are negative, if a glyphs 'hangs' over it neighbors, 
 as shown in picture on the left. A and C values are positive, if a glyph contains 

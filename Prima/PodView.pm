@@ -577,6 +577,7 @@ sub open_read
    $self-> clear_all;
    $self-> {readState} = {
       cutting      => 1,
+      pod_cutting  => 1,
       begun        => '',
       bulletMode   => 0,
       
@@ -599,18 +600,17 @@ sub add_formatted
    return unless $self-> {readState};
    
    if ( $format eq 'text') {
-      return if $self-> {readState}-> {ignoreFormat};
       $self-> add($text,STYLE_CODE,0);
    } elsif ( $format eq 'podview') {
       while ( $text =~ m/<\s*([^<>]*)\s*>/gcs) {
          my $cmd = lc $1;
-         if ( $cmd eq 'nobegin') {
-            $self-> {readState}-> {ignoreFormat} = 1;
-         } elsif ( $cmd eq '/nobegin') {
-            $self-> {readState}-> {ignoreFormat} = 0;
+         if ( $cmd eq 'cut') {
+            $self-> {readState}-> {pod_cutting} = 0;
+         } elsif ( $cmd eq '/cut') {
+            $self-> {readState}-> {pod_cutting} = 1;
          } elsif ( $cmd =~ /^img\s*(.*)$/) {
             $cmd = $1;
-            my ( $w, $h, $src, $frame, $nobegin);
+            my ( $w, $h, $src, $frame, $cut);
             $frame = 0;
             while ( $cmd =~ m/\s*([a-z]*)\s*\=\s*(?:(?:'([^']*)')|(?:"([^"]*)")|(\S*))\s*/igcs) {
                my ( $option, $value) = ( lc $1, defined($2)?$2:(defined $3?$3:$4));
@@ -618,7 +618,7 @@ sub add_formatted
                elsif ( $option eq 'height' && $value =~ /^\d+$/) { $h = $value }
                elsif ( $option eq 'frame' && $value =~ /^\d+$/) { $frame = $value }
                elsif ( $option eq 'src') { $src = $value }
-               elsif ( $option eq 'nobegin' ) { $nobegin = $value }
+               elsif ( $option eq 'cut' ) { $cut = $value }
             }
             if ( defined $src) {
                my $index = 0;
@@ -635,8 +635,8 @@ sub add_formatted
                $w = $src-> width unless $w;
                $h = $src-> height unless $h;
                $src-> {stretch} = [$w, $h];
-               $self-> {readState}-> {ignoreFormat} = $nobegin ? 1 : 0
-                  if defined $nobegin;
+               $self-> {readState}-> {pod_cutting} = $cut ? 0 : 1
+                  if defined $cut;
 
                my @imgop = (
                          tb::wrap(0),
@@ -697,6 +697,10 @@ sub read
       if ($r-> {cutting}) {
           next unless /^=/;
           $r->{cutting} = 0;
+      }
+
+      unless ($r-> {pod_cutting}) {
+          next unless /^=/;
       }
 
       if ($r-> {begun}) {
@@ -1531,31 +1535,35 @@ The 'podview' commands are:
 
 =over
 
-=item nobegin
+=item cut
 
 Example:
 
-  =for podview <nobegin>
+  =for podview <cut>
   
-  =for text text
-  
-  =for podview </nobegin>
+  =for text just text-formatter info
 
-The E<lt>nobeginE<gt> clause masks C<=for> and C<=begin> POD directives.
+     ....
+     text-only info
+     ...
+  
+  =for podview </cut>
+
+The E<lt>cut<gt> clause skips all POD input until cancelled.
 It is used in conjunction with the following command, L<img>, to allow
 a POD manpage provide both graphic ('podview', 'html', etc ) and text ( 'text' )
 content. 
 
-=item img src="SRC" [width="WIDTH"] [height="HEIGHT"] [nobegin="NOBEGIN"] [frame="FRAME"]
+=item img src="SRC" [width="WIDTH"] [height="HEIGHT"] [cut="CUT"] [frame="FRAME"]
 
 An image inclusion command, where src is a relative or an absolute path to
 an image file. In case if scaling is required, C<width> and C<height> options
 can be set. When the image is a multiframe image, the frame index can be
-set by C<frame> option. Special C<nobegin> option, if set to a true value, activates the 
-L<nobegin> behavior if ( and only if ) the image load operation was unsuccessful.
+set by C<frame> option. Special C<cut> option, if set to a true value, activates the 
+L<cut> behavior if ( and only if ) the image load operation was unsuccessful.
 This make possible simultaneous use of 'podview' and 'text' :
 
-  =for podview <img src="graphic.gif" nobegin=1 >
+  =for podview <img src="graphic.gif" cut=1 >
 
   =begin text
 
@@ -1566,7 +1574,7 @@ This make possible simultaneous use of 'podview' and 'text' :
 
   =end text
 
-  =for podview </nobegin>
+  =for podview </cut>
   
 In the example above 'graphic.gif' will be shown if it can be found and loaded,
 otherwise the poor-man-drawings would be selected.
