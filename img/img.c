@@ -28,7 +28,7 @@
 
 #include "img.h"
 #include "img_conv.h"
-#include "Image.h"
+#include "Icon.h"
 
 #if PRIMA_PLATFORM == apcUnix
 #include <unistd.h>
@@ -197,6 +197,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    Bool err = false;
    Bool loadExtras = false, noImageData = false;
    Bool incrementalLoad = false;
+   Bool iconUnmask = false;
    char * baseClassName = "Prima::Image";
 
 
@@ -261,6 +262,9 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
 
    if ( pexist( noImageData) && pget_B( noImageData))
       fi. noImageData = noImageData = true;
+   
+   if ( pexist( iconUnmask) && pget_B( iconUnmask))
+      fi. iconUnmask = iconUnmask = true;
 
    if ( pexist( profiles)) {
       SV * sv = pget_sv( profiles);
@@ -411,6 +415,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
 
       fi. loadExtras  = loadExtras;
       fi. noImageData = noImageData;
+      fi. iconUnmask  = iconUnmask;
 
       /* query profile */
       if ( profiles && ( i <= profiles_len)) {
@@ -432,6 +437,8 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
                  fi. loadExtras  = pget_B( loadExtras);
                if ( pexist( noImageData))
                  fi. noImageData = pget_B( noImageData);
+               if ( pexist( iconUnmask))
+                 fi. iconUnmask = pget_B( iconUnmask);
             }   
          }
       }   
@@ -464,6 +471,9 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          }   
       } else
          fi. object = self;
+
+      if ( fi. iconUnmask && kind_of( fi. object, CIcon))
+         PIcon( fi. object)-> autoMasking = amNone;
 
       fi. frameProperties = newHV();
 
@@ -577,6 +587,7 @@ apc_img_frame_count( char * fileName)
    fi. frameMap       = &frameMap;
    fi. loadExtras     = true;
    fi. noImageData    = true;
+   fi. iconUnmask     = false;
    fi. extras         = newHV();
    fi. fileProperties = newHV(); 
    fi. frameCount = -1;
@@ -1135,6 +1146,7 @@ apc_img_info2hash( PImgCodec codec)
       }
       hv_store( hv, "loadExtras",  10, newSViv(0),     0);
       hv_store( hv, "noImageData", 11, newSViv(0),     0);
+      hv_store( hv, "iconUnmask",  10, newSViv(0),     0);
       hv_store( hv, "className",    9, newSVpv("Prima::Image", 0), 0);
    } else
       hv = newHV();

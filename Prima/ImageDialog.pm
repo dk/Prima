@@ -138,9 +138,10 @@ sub update_preview
    return unless defined $x;
    $x = $self-> directory . $x;
    return unless -f $x;
-   $x = Prima::Image-> load( $x, 
+   $x = Prima::Icon-> load( $x, 
       loadExtras => 1, 
       wantFrames => 1, 
+      iconUnmask => 1,
       index => $s->{block} ? $s-> value : 0,
    );
    return unless defined $x;

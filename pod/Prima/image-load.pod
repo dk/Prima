@@ -112,8 +112,8 @@ with more than thousand frames. 'wantFrames' is useful in null load requests.
 The parameters that are accepted by load, are divided into several 
 categories - first, those that apply to all loading process and those
 who apply only to a particular frame. Those who are defined by Prima, are
-enumerated above - loadExtras, loadAll etc. Only loadExtras and noImageData 
-are applicable to
+enumerated above - loadExtras, loadAll etc. Only loadExtras, noImageData 
+and iconUnmask are applicable to
 a frame, other govern the loading process. A codec may as well define its own
 parameters, however it is not possible to tell what parameter belongs to what
 group - this information is to be found in codec documentaion;
@@ -179,6 +179,15 @@ for the frame.
             ],
 
 In this example @x will be ( Icon, Image, Icon) upon success.
+
+When loading to an Icon object, the default toolkit action is
+to build the transparency mask based on image data. When it is
+not the desired behavior, e.g., there is no explicit knowledge 
+of image, but the image may or may not contain transparency 
+information, C<iconUnmask> boolean option can be used. When set
+to a C<true> value, and the object is C<Prima::Icon> descendant,
+C<Prima::Icon::autoMasking> is set to C<am::None> prior to the
+file loading. By default this options is turned off.
 
 =head1 Saving
 

@@ -359,6 +359,11 @@ b) if explicit bit mask is given, code will be like:
 Note that mask is also subject to LSB/MSB and 32-bit alignment 
 issues. Treat it as a regular imbpp1 data format.
 
+c) A format supports transparency information, but image does not
+contain any. In this case no action is required on the codec's part;
+the high-level code specifies if the transparency mask is created 
+( iconUnmask field ).
+
 =head2 open_load() and close_load()
 
 open_load() and close_load() are used as brackets for load requests,
