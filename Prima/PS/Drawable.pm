@@ -130,6 +130,7 @@ my %RNT = (
 sub notification_types { return \%RNT; }
 }
 
+
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
@@ -155,6 +156,14 @@ sub profile_default
    return $def;
 }
 
+sub profile_check_in
+{
+   my ( $self, $p, $default) = @_;
+   Prima::Component::profile_check_in( $self, $p, $default);
+   $p-> { font} = {} unless exists $p->{ font};
+   $p-> { font} = Prima::Drawable-> font_match( $p->{ font}, $default->{ font}, 0);
+}
+
 sub init
 {
    my $self = shift;
@@ -166,6 +175,7 @@ sub init
    $self-> {copies}      = 1;
    $self-> {rotate}      = 1;
    $self-> {font}        = {};
+   $self-> {useDeviceFonts} = 1;
    my %profile = $self-> SUPER::init(@_);
    $self-> $_( $profile{$_}) for qw( grayscale copies pageDevice 
       useDeviceFonts rotate reversed useDeviceFontsOnly);
