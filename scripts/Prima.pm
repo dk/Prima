@@ -67,9 +67,7 @@ sub prima
    die "$@" unless eval( "require '$mainModule';");
    die "Prima was not properly initialized\n" unless defined $::application;
    $::application-> go if $::application-> alive;
-print "Done ::go";
    $::application = undef;
-print "Done undefing";
    1;
 }
 
