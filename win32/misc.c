@@ -59,7 +59,60 @@ apc_beep( int style)
 Bool
 apc_beep_tone( int freq, int duration)
 {
-   if ( !Beep( freq, duration)) apiErrRet;
+   if ( IS_NT) {
+      if ( !Beep( freq, duration)) apiErrRet;
+   } else {
+      SYSTEM_INFO si;
+      GetSystemInfo( &si);
+      if ( 
+#if defined( __BORLANDC__) && ! ( defined( __cplusplus) || defined( _ANONYMOUS_STRUCT))
+           si. u. s. wProcessorArchitecture
+#else
+           si. wProcessorArchitecture
+#endif
+          != PROCESSOR_ARCHITECTURE_INTEL) {
+         if ( !Beep( freq, duration)) apiErrRet;
+         return true;
+      }   
+      if (( duration % 0x1234DC) == 0) return false;
+      if ( freq < 20 || freq > 22000) {
+         Sleep( duration);
+         return true;
+      }   
+      // Nastiest hack ever - Beep() doesn't work under W9X.
+      __asm {
+        in      al,0x61                  ;Stop sound, if any
+        and     al, 0xfc
+        out     0x61, al
+        
+        mov     ebx, freq
+        mov     ax, 0x34DC
+        mov     dx, 0x12
+        div     bx                       ;Count (AX) = 0x1234DC div Hz
+        mov     bx,ax                    ;Save Count in BX
+        in      al,0x61                  ;Check the value in port 0x61
+        test    al,3                     ;Bits 0 and 1 set if speaker is on
+        jnz     SetCount                 ;If they're already on, continue
+
+                                         ;Turn on speaker
+        or      al,3                     ;Set bits 0 and 1
+        out     0x61,al                  ;Change the value
+        mov     al,182                   ;Tell the timer that the count is coming
+        out     0x43,al                  ;by sending 182 to port 0x43
+
+SetCount:
+        mov     al,bl                    ;Low byte into AL
+        out     0x42,al                  ;Load low order byte into port 0x42
+        mov     al,bh                    ;High byte into AL
+        out     0x42,al                  ;Load high order byte into port 0x42
+      }   
+      Sleep( duration);
+      __asm {
+         in     al, 0x61                ; Stop sound
+         and    al, 0xfc
+         out    0x61, al
+      }    
+   }   
    return true;
 }
 

@@ -1650,7 +1650,27 @@ apc_beep( int style)
 Bool
 apc_beep_tone( int freq, int duration)
 {
-   DOLBUG( "apc_beep_tone()\n");
+   XKeyboardControl xkc;
+   XKeyboardState   xks;
+   struct timeval timeout;
+   
+   if ( !DISP) return false;
+   
+   XGetKeyboardControl( DISP, &xks);
+   xkc. bell_pitch    = freq;
+   xkc. bell_duration = duration;
+   XChangeKeyboardControl( DISP, KBBellPitch | KBBellDuration, &xkc);
+   
+   XBell( DISP, 100);
+   
+   xkc. bell_pitch    = xks. bell_pitch;
+   xkc. bell_duration = xks. bell_duration;
+   XChangeKeyboardControl( DISP, KBBellPitch | KBBellDuration, &xkc);
+   
+   timeout. tv_sec  = duration / 1000;
+   timeout. tv_usec = 1000 * (duration % 1000);
+   select( 0, nil, nil, nil, &timeout);
+
    return true;
 }
 
