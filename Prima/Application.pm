@@ -152,7 +152,7 @@ object is created, using C<::hintClass> create-only property.
 
 =item Printer
 
-Result of <get_printer()> method points to an automatically
+Result of L<get_printer> method points to an automatically
 created printer object, responsible for the system-driven
 printing. Depending on the operating system, it is either 
 Prima::Printer, if the system provides GUI printing capabilities,
