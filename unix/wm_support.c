@@ -88,8 +88,7 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
             }
             return false;
          }
-         if ( selectee != self) 
-            CWidget( selectee)-> set_selected( selectee, true);
+         CWidget( selectee)-> set_selected( selectee, true);
 	 return false;
       }
    }
