@@ -623,17 +623,9 @@ void Widget_handle_event( Handle self, PEvent event)
                   event-> key.code, event-> key. key, event-> key. mod, event-> key. repeat);
               objCheck;
               if ( evOK) {
-                 int key = CAbstractMenu-> translate_key( nilHandle, event-> key. code, event-> key. key, event-> key. mod);
-                 if ( my-> process_accel( self, key)) {
-                    my-> clear_event( self);
-                    return;
-                 }
-              }
-              objCheck;
-              if ( evOK && var-> owner) {
                  Event ev = *event;
                  ev. key. source = self;
-                 ev. cmd         = cmDelegateKey;
+                 ev. cmd         = var-> owner ? cmDelegateKey : cmTranslateAccel;
                  ev. key. subcmd = 0;
                  if ( !my-> message( self, &ev)) {
                     my-> clear_event( self);
@@ -642,6 +634,7 @@ void Widget_handle_event( Handle self, PEvent event)
                  objCheck;
               }
               if ( !evOK) break;
+
               {
                   Handle next = nilHandle;
                   switch( event-> key. key) {
@@ -736,6 +729,14 @@ void Widget_handle_event( Handle self, PEvent event)
         }
         break;
       case cmTranslateAccel:
+        {
+           int key = CAbstractMenu-> translate_key( nilHandle, event-> key. code, event-> key. key, event-> key. mod);
+           if ( my-> first_that_component( self, find_accel, &key)) {
+              my-> clear_event( self);
+              return;
+           }
+           objCheck;
+        }
         my-> notify( self, "<siii", "TranslateAccel",
             event-> key.code, event-> key. key, event-> key. mod);
         break;
