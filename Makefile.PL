@@ -1520,7 +1520,8 @@ elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--updateconfig') {
    shift @ARGV;
    my ( $from, $fn) = ( quotemeta(shift @ARGV), shift @ARGV);
    my $ifs = $Win32 ? '\\\\' : '/';
-   my $ipp = $Config{installarchlib} . qd( "/CORE");
+   my $ipp   = $Config{installarchlib} . qd( "/CORE");
+   my $incs  = qd( "['$Config{installsitearch}/Prima/CORE', '$Config{installsitearch}/Prima/CORE/generic', '$Config{installarchlib}/CORE']");
    $SCRIPT_EXT = ( $Win32 ? '.bat' : ( $OS2 ? '.cmd' : ''));
 
    open F, $fn or die "cannot open $fn:$!\n";
@@ -1546,7 +1547,7 @@ HEADER
       print FF $_;
    }
    print FF <<SUBST;
-  incpaths              => '[\'$ipp\']',
+  incpaths              => $incs,
   gencls                => '$Config{installbin}${ifs}gencls$SCRIPT_EXT',
   tmlink                => '$Config{installbin}${ifs}tmlink$SCRIPT_EXT',
 SUBST
