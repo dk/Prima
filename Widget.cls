@@ -121,14 +121,11 @@ object Prima::Widget( Prima::Drawable)
    method   void     bring_to_front();
    method   Bool     can_close();
    method   void     cleanup();
-   method   void     click();
    public   void     client_to_screen();
    method   Bool     close();
    c_only   Bool     custom_paint();
    method   void     detach( Handle objectHandle, Bool kill);
-   import   void     disable_commands();
    method   void     done();
-   import   void     enable_commands();
    method   void     end_paint();
    method   void     end_paint_info();
    method   Bool     exposed()                       => apc_widget_is_exposed;

@@ -335,14 +335,6 @@ Widget_cleanup( Handle self)
 }
 
 
-void
-Widget_click( Handle self)
-{
-   enter_method;
-   Event ev = { cmClick};
-   my-> message( self, &ev);
-}
-
 Bool
 Widget_close( Handle self)
 {
@@ -1708,6 +1700,7 @@ Widget_on_paint( Handle self, Handle canvas)
    c-> self-> clear( canvas, -1, -1, -1, -1);
 }
 
+/*
 void Widget_on_click( Handle self) {}
 void Widget_on_change( Handle self) {}
 void Widget_on_close( Handle self) {}
@@ -1740,6 +1733,7 @@ void Widget_on_mousewheel( Handle self, int shiftState , int x , int y, int z ) 
 void Widget_on_mouseenter( Handle self, int shiftState , int x , int y ) {}
 void Widget_on_mouseleave( Handle self ) {}
 void Widget_on_leave( Handle self) {}
+*/
 
 
 /* static iterators */
