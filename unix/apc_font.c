@@ -517,7 +517,7 @@ prima_init_font_subsystem( char * error_buf)
 
    info = malloc( sizeof( FontInfo) * count);
    if ( !info) {
-      sprintf( error_buf, "No memory (%d bytes)", sizeof(FontInfo)*count);
+      sprintf( error_buf, "No memory (%d bytes)", (int)sizeof(FontInfo)*count);
       return false;
    }   
    bzero( info,  sizeof( FontInfo) * count);

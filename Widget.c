@@ -2008,7 +2008,7 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 static Bool
 auto_enable_children( Handle self, Handle child, void * enable)
 {
-   apc_widget_set_enabled( child, ( Bool) enable);
+   apc_widget_set_enabled( child, ( IV) enable);
    return false;
 }
 /* properties section */
@@ -2240,8 +2240,10 @@ Widget_enabled( Handle self, Bool set, Bool enabled)
    if ( !set) return apc_widget_is_enabled( self);
    if ( !apc_widget_set_enabled( self, enabled)) 
       return false;
-   if ( is_opt( optAutoEnableChildren)) 
-      CWidget(self)-> first_that( self, (void*)auto_enable_children, (void*) enabled);
+   if ( is_opt( optAutoEnableChildren)) {
+      IV iv_enabled = enabled;
+      CWidget(self)-> first_that( self, (void*)auto_enable_children, (void*) iv_enabled);
+   }
    return true;
 }
 

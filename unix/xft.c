@@ -182,7 +182,7 @@ prima_xft_init(void)
       memset( std_charsets[i]. map, 0, sizeof(std_charsets[i]. map));
 
       ii = iconv_open("UCS-4-INTERNAL", std_charsets[i]. name);
-      if ((int) ii < 0) continue;
+      if ( ii == (iconv_t)(-1)) continue;
 
       std_charsets[i]. fcs = FcCharSetUnion( fcs_ascii, fcs_ascii);
       for ( j = 0; j < 128; j++) in[j] = j + 128;

@@ -196,9 +196,9 @@ delete_xfer( PClipboardSysData cc, ClipboardXfer * xfer)
    ClipboardXferKey key;
    CLIPBOARD_XFER_KEY( key, xfer-> requestor, xfer-> property);
    if ( guts. clipboard_xfers) {
-      int refcnt;
+      IV refcnt;
       hash_delete( guts. clipboard_xfers, key, sizeof( key), false);
-      refcnt = ( int) hash_fetch( guts. clipboard_xfers, &xfer-> requestor, sizeof(XWindow));
+      refcnt = ( IV) hash_fetch( guts. clipboard_xfers, &xfer-> requestor, sizeof(XWindow));
       if ( --refcnt == 0) {
          XSelectInput( DISP, xfer-> requestor, 0);
          hash_delete( guts. clipboard_xfers, &xfer-> requestor, sizeof(XWindow), false);
@@ -912,7 +912,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
                if ( CC-> xfers && guts. clipboard_xfers) {
                   ClipboardXfer * x = malloc( sizeof( ClipboardXfer));
                   if ( x) {
-                     int refcnt;
+                     IV refcnt;
                      ClipboardXferKey key;
                      
                      bzero( x, sizeof( ClipboardXfer));
@@ -930,7 +930,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
 
                      CLIPBOARD_XFER_KEY( key, x-> requestor, x-> property);
                      hash_store( guts. clipboard_xfers, key, sizeof(key), (void*) x);
-                     refcnt = (int) hash_fetch( guts. clipboard_xfers, &x-> requestor, sizeof( XWindow));
+                     refcnt = (IV) hash_fetch( guts. clipboard_xfers, &x-> requestor, sizeof( XWindow));
                      if ( refcnt++ == 0)
                         XSelectInput( DISP, x-> requestor, PropertyChangeMask|StructureNotifyMask); 
                      hash_store( guts. clipboard_xfers, &x-> requestor, sizeof(XWindow), (void*) refcnt);

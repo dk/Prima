@@ -986,8 +986,11 @@ add_wrapped_text( TextWrapRec * t, int start, int utfstart, int end, int utfend,
       *lArray = n;
    }
    if ( t-> options & twReturnChunks) {
-      (*lArray)[ t-> count++] = (char*) utfstart;
-      (*lArray)[ t-> count++] = (char*) utfend - utfstart;
+      IV iv;
+      iv = utfstart;
+      (*lArray)[ t-> count++] = (char*) iv;
+      iv = utfend - utfstart;
+      (*lArray)[ t-> count++] = (char*) iv;
    } else
       (*lArray)[ t-> count++] = c;
    return true;
@@ -1236,12 +1239,12 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
    c = Drawable_do_text_wrap( self, &t);
 
    if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) {
-      int rlen = 0;
+      IV rlen = 0;
       if ( c) {
-         if ( t. count > 0) rlen = (int) c[ 1];
+         if ( t. count > 0) rlen = (IV) c[ 1];
          free( c);
       }
-      return newSViv(( IV) rlen);
+      return newSViv( rlen);
    }
 
    if ( !c) return nilSV;

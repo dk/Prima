@@ -221,7 +221,7 @@ init( PImgCodecInfo * info, void * param)
 
 
 #define outc(x){ strncpy( fi-> errbuf, x, 256); return false;}
-#define outcm(dd){ snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", (int)dd); return false;}
+#define outcm(dd){ snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", (int)(dd)); return false;}
 
 #define ALPHA_OPT_BLEND 2
 #define ALPHA_OPT_SPLIT 1

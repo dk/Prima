@@ -107,7 +107,7 @@ typedef struct _LoadRec {
    Byte     xpalette;
 } LoadRec;
 
-#define outcm(dd) snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", (int)dd)
+#define outcm(dd) snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", (int)(dd))
 #define outc(x)   strncpy( fi-> errbuf, x, 256)
 
 static void * 
@@ -383,7 +383,7 @@ static Bool
 prepare_xpm_color( void * value, int keyLen, Color * color_ptr, CalcData * cd)
 {
    Color color = *color_ptr;
-   int v = (int)value - 1, cpp = cd-> image-> cpp, lpp = 6;
+   IV v = (IV)value - 1, cpp = cd-> image-> cpp, lpp = 6;
    char * c;
 
    c = cd-> image-> colorTable[ v]. c_color = 
@@ -463,8 +463,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
              } else {
                 if ( transcolor < 0) {
                    Color key = clInvalid;
+                   IV xx; 
                    transcolor = hash_count( hash);
-                   hash_store( hash, &key, sizeof(key), (void*)(transcolor + 1));
+                   xx = transcolor + 1;
+                   hash_store( hash, &key, sizeof(key), (void*)(xx));
                 }
                 *(dest++) = transcolor;
              }
@@ -530,12 +532,14 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
        cd. delta = image. ncolors * sizeof( XpmColor);
        cd. image = &image;
        for ( x = 0; x < ncolors; x++) {
+          IV xx = x + 1;
           Color c = ARGB(i-> palette[x].r,i-> palette[x].g,i-> palette[x].b);
-          prepare_xpm_color((void*)(x+1), 0, &c, &cd);
+          prepare_xpm_color((void*)(xx), 0, &c, &cd);
        }
        if ( icon) {
           Color c = clInvalid;
-          prepare_xpm_color((void*)(transcolor+1), 0, &c, &cd);
+          IV xx = transcolor + 1;
+          prepare_xpm_color((void*)(xx), 0, &c, &cd);
        }
    }
 
