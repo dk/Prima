@@ -38,7 +38,7 @@ use Cwd;
 use Exporter;
 use vars qw(@ISA @EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw( init qd dl_name quoted_split setvar env_true addlib
+@EXPORT = qw( init qd dl_name quoted_split setvar env_true addlib dump_command
           canon_name find_file find_cdeps cc_command_line ld_command_line generate_def);
 
 use vars qw( %make_trans @ovvars $dir_sep $path_sep );
@@ -466,5 +466,20 @@ sub addlib
    push @LIBS, ( $Unix ? '' : 'lib') . $_[0] . $Prima::Config::Config{ldlibext} 
 }
 
+sub dump_command
+{
+    my ( $line, $sub, $command, $ret) = ( 0, shift, shift, '');
+    $ret .= "\t\@\$($command) \\\n" if scalar @_;
+    for ( @_) {
+       my $call = $sub->($_);
+       if (( $line++ % 20) == 19) {
+          $ret .= "\n\t\@\$($command) \\\n";
+       } elsif ( $line <= scalar @_ && $line > 1) {
+          $ret .=  " \\\n";
+       }
+       $ret .=  "\t$call";
+    }
+    $ret .=  "\n";
+}
 
 1;
