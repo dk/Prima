@@ -238,6 +238,16 @@ sub prf_types
    return $pt;
 }
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onClick',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
 sub caption_box
 {
    my ($self,$canvas) = @_;
@@ -357,6 +367,17 @@ package Prima::VB::InputLine;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+
 
 sub prf_types
 {
@@ -413,6 +434,17 @@ sub prf_passwordChar  { $_[0]->repaint; }
 package Prima::VB::Cluster;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onCheck',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
 
 sub prf_types
 {
@@ -495,6 +527,17 @@ package Prima::VB::GroupRadioBox;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::GroupBox);
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onRadioClick',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -561,6 +604,16 @@ sub prf_vScroll       { $_[0]->repaint; }
 package Prima::VB::ListBox;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onClick',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
 
 
 sub prf_types
@@ -653,6 +706,16 @@ sub prf_types
    return $pt;
 }
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
 sub on_paint
 {
    my ( $self, $canvas) = @_;
@@ -700,6 +763,16 @@ sub prf_types
    );
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
+}
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
 }
 
 
@@ -958,6 +1031,16 @@ package Prima::VB::SpinButton;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
 sub on_paint
 {
    my ( $self, $canvas) = @_;
@@ -984,6 +1067,17 @@ sub on_paint
 package Prima::VB::AltSpinButton;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
 
 sub on_paint
 {
@@ -1080,6 +1174,17 @@ package Prima::VB::Gauge;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -1163,6 +1268,16 @@ package Prima::VB::AbstractSlider;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -1185,6 +1300,16 @@ sub prf_adjust_default
 package Prima::VB::Slider;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::AbstractSlider);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
 
 sub prf_types
 {
@@ -1223,6 +1348,17 @@ package Prima::VB::CircularSlider;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::AbstractSlider);
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
@@ -1258,6 +1394,17 @@ sub on_paint
 package Prima::VB::AbstractOutline;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onClick',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
 
 sub prf_types
 {
@@ -1377,7 +1524,25 @@ sub init
    $self-> {list} = {};
    $self-> {pageCount} = 0;
    $self-> {pageIndex} = 0;
+   $self-> insert( Popup =>
+      name => 'AltPopup',
+      items => [
+         ['~Next page' => '+' => '+' => sub { $self-> prf_set( 'pageIndex' => $self-> prf('pageIndex') + 1);}],
+         ['~Previous page' => '-' => '-' => sub { $self-> prf_set( 'pageIndex' => $self-> prf('pageIndex') - 1);}],
+      ],
+   )-> selected(0);
+   $self-> mainEvent('onDestroy');
    return %profile;
+}
+
+sub on_mousedown
+{
+   my ( $self, $btn, $mod, $x, $y) = @_;
+   if ( $btn == mb::Right && $mod & km::Ctrl) {
+      $self-> Popup2-> popup( $x, $y);
+      $self-> clear_event;
+      return;
+   }
 }
 
 sub prf_pageIndex
@@ -1442,10 +1607,19 @@ sub on_load
    }
 }
 
-
 package Prima::VB::TabSet;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::CommonControl);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onChange',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
 
 sub prf_types
 {
@@ -1495,16 +1669,47 @@ sub on_paint
 
 package Prima::VB::TabbedNotebook;
 use vars qw(@ISA);
-@ISA = qw( Prima::VB::CommonControl);
+@ISA = qw( Prima::VB::Notebook);
 
 sub prf_types
 {
    my $pt = $_[ 0]-> SUPER::prf_types;
    my %de = (
       items => ['tabs'],
+      uiv   => ['tabIndex'],
    );
    $_[0]-> prf_types_add( $pt, \%de);
    return $pt;
+}
+
+sub prf_adjust_default
+{
+   my ( $self, $p, $pf) = @_;
+   $self-> SUPER::prf_adjust_default( $p, $pf);
+   delete $pf->{$_} for qw (
+       tabCount
+       pageCount
+   );
+}
+
+
+sub on_paint
+{
+   my ( $self, $canvas) = @_;
+   my @sz = $canvas-> size;
+   my $cl = $self-> color;
+   my @c3d = ( $self-> light3DColor, $self-> dark3DColor);
+   $canvas-> color( $self-> backColor);
+   $canvas-> bar( 0, 0, @sz);
+   $canvas-> color( $cl);
+   my $fh = $canvas-> font-> height;
+   my $mh = ( $fh * 2 > 28 ) ? $fh * 2 : 28;
+   $canvas-> rect3d( 10, 10, $sz[0] - 11, $sz[1] - 10 - $mh, 1, reverse @c3d);
+   $canvas-> rect3d( 2, 2, $sz[0] - 3, $sz[1] - $mh, 1, @c3d);
+   $canvas-> linePattern( lp::Dash);
+   $canvas-> rectangle( 12, 12, $sz[0] - 29, $sz[1] - 60 - $mh);
+   $canvas-> linePattern( lp::Solid);
+   $canvas-> common_paint( $canvas);
 }
 
 1;

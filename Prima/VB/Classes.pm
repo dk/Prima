@@ -143,8 +143,18 @@ sub profile_default
       selectable => 1,
       sizeable   => 1,
       marked     => 0,
+      mainEvent  => undef,
       sizeMin    => [11,11],
       selectingButtons => mb::Right,
+      accelItems => [
+         ['altpopup',0,0, km::Shift|km::Ctrl|kb::F9 => sub{
+            my $p = $_[0]-> bring( 'AltPopup');
+            if ( $p) {
+               $p-> popup( $_[0]-> pointerPos);
+               $_[0]-> clear_event;
+            }
+         }],
+      ],
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -200,7 +210,7 @@ sub init
       $self->{$_}=0;
    };
    my %profile = $self-> SUPER::init(@_);
-   for ( qw( marked sizeable)) {
+   for ( qw( marked sizeable mainEvent)) {
       $self->$_( $profile{$_});
    }
    $profile{profile}->{name} = $self-> name;
@@ -405,12 +415,33 @@ sub on_mousedown
          return;
       }
    }
+
+   if ( $btn == mb::Right && $mod & km::Ctrl) {
+      my $p = $self-> bring( 'AltPopup');
+      return unless $p;
+      $p-> popup( $x, $y);
+      $self-> clear_event;
+      return;
+   }
 }
 
 sub on_mouseclick
 {
    my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
    return unless $dbl;
+   if ( defined $self-> mainEvent) {
+      my $a = $self-> mainEvent;
+      $self-> marked(1,1);
+      ObjectInspector::enter_widget( $self);
+      $VB::inspector-> set_monger_index( 1);
+      my $list = $VB::inspector-> {currentList};
+      my $ix = $list-> {index}-> {$a};
+      if ( defined $ix) {
+         $list-> focusedItem( $ix);
+         $list-> notify(q(Click)) unless $list-> {check}->[$ix];
+      }
+      return;
+   }
    $self-> notify( q(MouseDown), $btn, $mod, $x, $y);
 }
 
@@ -552,6 +583,7 @@ sub on_keydown
       $self-> clear_event;
       $_-> destroy for $VB::form-> marked_widgets;
       ObjectInspector::renew_widgets();
+      return;
    }
    if ( $key == kb::Esc) {
       if ( $self-> {drag} || $self->{sizeAction}) {
@@ -570,6 +602,7 @@ sub on_keydown
       $self-> {spotX} = $pp[0] - $self->{prevRect}->[0];
       $self-> {spotY} = $pp[1] - $self->{prevRect}->[1];
       $self-> clear_event;
+      return;
    }
 }
 
@@ -608,6 +641,12 @@ sub sizeable
    } else {
      return $_[0]->{sizeable};
    }
+}
+
+sub mainEvent
+{
+   return $_[0]-> {mainEvent} unless $#_;
+   $_[0]-> {mainEvent} = $_[1];
 }
 
 sub prf_name
@@ -757,6 +796,15 @@ sub prf_adjust_default
    $def->{text} = '' unless defined $def->{text};
 }
 
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mainEvent => 'onMouseClick',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
 
 sub prf_types
 {

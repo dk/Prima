@@ -194,17 +194,23 @@ sub Div_Change
    );
 }
 
-sub MTabs_Click
+sub set_monger_index
 {
-   my ( $self, $mtabs) = @_;
-   my $ix = $mtabs-> {mode} ? 0 : 1;
+   my ( $self, $ix) = @_;
+   my $mtabs = $self->{mtabs};
+   return if $ix == $mtabs-> {mode};
    $mtabs->{mode} = $ix;
    $mtabs-> text( $ix ? '~Properties' : '~Events');
-
    $self-> {monger}-> pageIndex( $ix);
    $self-> {currentList} = $self-> { $ix ? 'elist' : 'plist' };
    $self-> close_item;
    $self-> open_item;
+}
+
+sub MTabs_Click
+{
+   my ( $self, $mtabs) = @_;
+   $self-> set_monger_index( $mtabs-> {mode} ? 0 : 1);
 }
 
 sub Selector_Change
@@ -422,6 +428,7 @@ sub profile_default
       class          => 'Prima::Window',
       module         => 'Prima::Classes',
       selectable     => 1,
+      mainEvent      => 'onMouseClick',
       popupItems     => $VB::main-> menu-> get_items( 'edit'),
    );
    @$def{keys %prf} = values %prf;
@@ -572,7 +579,6 @@ sub on_mousedown
    my ( $self, $btn, $mod, $x, $y) = @_;
    return if $self-> {transaction};
    if ( $btn == mb::Left) {
-
       unless ( $self-> {transaction}) {
          if ( abs( $self-> {guidelineX} - $x) < 3) {
             $self-> {transaction} = 2;
