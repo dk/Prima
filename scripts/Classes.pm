@@ -822,7 +822,7 @@ sub profile_check_in
    if ( exists $p-> { designScale})
    {
       my @d = @{$p->{ designScale}};
-      my @a = ( $p->{ font}->{ width}, $p->{ font}->{ height});
+      my @a = ( $default->{ font}->{ width}, $default->{ font}->{ height});
       $p->{left}    *= $a[0] / $d[0] if exists $p->{left};
       $p->{right}   *= $a[0] / $d[0] if exists $p->{right};
       $p->{top}     *= $a[1] / $d[1] if exists $p->{top};
