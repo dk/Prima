@@ -772,6 +772,7 @@ typedef struct _ObjectOptions_ {
 #define   svWheelPresent    24
 #define   svSubmenuDelay    25
 #define   svFullDrag        26
+#define   svDblClickDelay   27
 
 
 extern Handle application;
@@ -990,7 +991,7 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect * rect,
 		   Bool scrollChildren);
 
 extern void
-apc_widget_set_capture( Handle self, Bool capture);
+apc_widget_set_capture( Handle self, Bool capture, Handle confineTo);
 
 extern void
 apc_widget_set_clip_rect( Handle self, Rect clipRect);
