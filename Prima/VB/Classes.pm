@@ -484,9 +484,9 @@ sub on_mousedown
    }
 
    if ( $btn == mb::Right && $mod & km::Ctrl) {
-      $self-> altpopup;
-      $self-> clear_event;
-      return;
+       $self-> altpopup;
+       $self-> clear_event;
+       return;
    }
 }
 
@@ -509,6 +509,7 @@ sub altpopup
 sub on_mouseclick
 {
    my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
+   
    return unless $dbl;
    $mod &= km::Alt|km::Shift|km::Ctrl;
    if ( $mod == 0 && defined $self-> mainEvent && $VB::inspector) {
@@ -658,6 +659,29 @@ sub on_mouseup
          $VB::form-> text( $VB::form->{saveHdr});
       }
    }
+}
+
+sub on_popup
+{
+    my $self = shift;
+    my ($by_mouse, $x, $y) = @_;
+    my $alt = $self->bring('AltPopup');
+    if ($alt) {
+	my $aitems = $alt->get_items('');
+	my $pitems = $VB::form->popup->get_items('');
+	my $p = Prima::Popup->create(
+	    name => 'AltFormPopup',
+	    items => [
+		@$pitems,
+		[],
+		[ '-' . $self->name => '** ' . $self->name . ' **' => qw(nope)],
+		@$aitems,
+	    ]
+	);
+	$p->popup($self->client_to_screen($x, $y));
+	$self->clear_event;
+	return;
+    }
 }
 
 sub on_keydown
