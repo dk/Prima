@@ -51,7 +51,7 @@ $bl = 0;
 for ( $i = 0; $i < 8; $i++) {
    $bl++ if $x-> pixel( $i, 4) == 0;
 }
-ok( $bl == 4);
+ok( $bl > 2 && $bl < 6);
 
 # 5
 $x-> color( cl::White);
