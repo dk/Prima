@@ -582,7 +582,9 @@ Application_HintTimer_Tick( Handle timer)
       ev. gen. B = true;
       ev. gen. H = var hintUnder;
       var hintVisible = 1;
-      if ( CWidget( var hintUnder)-> message( var hintUnder, &ev)) hshow( self);
+      if (( PWidget( var hintUnder)-> stage == csNormal) &&
+          ( CWidget( var hintUnder)-> message( var hintUnder, &ev)))
+          hshow( self);
    } else if ( var hintActive == -1)
       var hintActive = 0;
 }
@@ -602,7 +604,9 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
          ev. gen. H = view;
          ((( PTimer) var hintTimer)-> self)-> stop( var hintTimer);
          var hintVisible = 1;
-         if ( CWidget( view)-> message( view, &ev)) hshow( self);
+         if (( PWidget( view)-> stage == csNormal) &&
+             ( CWidget( view)-> message( view, &ev)))
+             hshow( self);
       } else {
          if ( !byMouse && var hintActive == 1) return;
          CTimer( var hintTimer)-> start( var hintTimer);
@@ -619,11 +623,11 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
          ev. gen. B = false;
          ev. gen. H = view;
          var hintVisible = 0;
-         if ( CWidget( view)-> message( view, &ev))
+         if (( PWidget( view)-> stage != csNormal) ||
+              ( CWidget( view)-> message( view, &ev)))
             CWidget( var hintWidget)-> hide( var hintWidget);
       }
       if ( oldHA != -1) var hintActive = 0;
-      // if ( byMouse && oldHA != 0) {
       if ( byMouse && oldHV) {
          var hintActive = -1;
          CTimer( var hintTimer)-> start( var hintTimer);

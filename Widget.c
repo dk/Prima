@@ -140,6 +140,7 @@ Widget_init( Handle self, HV * profile)
    my set_tab_order          ( self, pget_i(  tabOrder));
    my set_tab_stop           ( self, pget_i(  tabStop));
    my set_text               ( self, pget_c(  text));
+
    opt_assign( optScaleChildren, pget_B( scaleChildren));
 
    /* subcomponents props */
@@ -232,6 +233,9 @@ Widget_done( Handle self)
 {
    enter_method;
    PComponent detachFrom = ( PComponent) var owner;
+
+   if ((( PApplication) application)-> hintUnder == self)
+      my set_hint_visible( self, 0);
 
    my first_that( self, kill_all, nil);
    if ( var accelTable)
@@ -2001,7 +2005,7 @@ void
 Widget_set_hint_visible( Handle self, Bool visible)
 {
    PApplication app = ( PApplication) application;
-   if ( var stage > csNormal) return;
+   if ( var stage >= csDead) return;
    if ( visible == app-> hintVisible) return;
    if ( visible && strlen( var hint) == 0) return;
    app-> self-> set_hint_action( application, self, visible, false);
@@ -2513,7 +2517,7 @@ accel_notify ( Handle group, Handle self, PEvent event)
 {
    enter_method;
    if (( self != event-> key. source) && my get_enabled( self))
-      return !my message( self, event);
+      return ( var stage <= csNormal) ? !my message( self, event) : false;
    else
       return false;
 }
