@@ -208,12 +208,14 @@ sub runfile
          print "$_\n" for @extras;
       } else {
          my $res = 1;
+         my ( $nf, $nr) = ( 0, scalar @results);
          for ( @results) {
             next if $_ < 0;
             $res &= $_;
+            $nf++ unless $_;
          }
          $testsRan++;
-         print (( $res ? "passed" : "failed")."\n");
+         print (( $res ? "passed" : "failed ($nf/$nr)")."\n");
       }
    }
 }
