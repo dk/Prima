@@ -284,11 +284,11 @@ get_standard_color( long class, int index)
 {
    long cls = (class & wcMask) >> 16;
    if ( cls <= 0 || cls > MAX_COLOR_CLASS) {
-      warn( "Illegal color class specified: %08x", class);
+      warn( "UAG_001: illegal color class: %08x", class);
       return RGB_BLACK;
    }
    if ( index < 0 || index > MAX_COLOR_INDEX) {
-      warn( "Illegal color index specified: %d", index);
+      warn( "UAG_002: illegal color index: %d", index);
       return RGB_BLACK;
    }
    return standard_colors[ cls][ index];
@@ -357,7 +357,7 @@ prima_allocate_color( Handle self, Color color)
       x_color = malloc( sizeof( XColor));
       if ( !x_color) {
 	 /* XXX better free existing colors... */
-	 croak( "prima_allocate_color: not enough memory");
+	 croak( "UAG_003: no memory");
       }
       x_color-> red = (short)((unsigned short)c. r << 8);
       x_color-> green = (short)((unsigned short)c. g << 8);
@@ -378,12 +378,9 @@ prima_get_gc( PDrawableSysData selfxx)
    GCList **free_gcl, **used_gcl;
    Bool bitmap;
 
-   if ( XX-> gc && XX-> gcl)
-      return;
+   if ( XX-> gc && XX-> gcl) return;
 
-   if ( XX-> gc || XX-> gcl) {
-      croak( "prima_get_gc: internal error");
-   }
+   if ( XX-> gc || XX-> gcl) croak( "UAG_004: internal error");
 
    bitmap = XX-> flags. is_image && (PImage(XX->self)-> type & imBPP) == 1;
    if ( bitmap) {
@@ -417,9 +414,7 @@ prima_release_gc( PDrawableSysData selfxx)
    GCList **free_gcl, **used_gcl;
 
    if ( XX-> gc) {
-      if ( !XX-> gcl) {
-	 croak( "prima_release_gc: internal error #2");
-      }
+      if ( XX-> gcl == nil) croak( "UAG_005: internal error");
       bitmap = XX-> flags. is_image && (PImage(XX->self)-> type & imBPP) == 1;
       if ( bitmap) {
          free_gcl = &guts. bitmap_free_gcl;
@@ -440,9 +435,7 @@ prima_release_gc( PDrawableSysData selfxx)
       XX-> gc = nil;
       XX-> gcl = nil;
    } else {
-      if ( XX-> gcl) {
-	 croak( "prima_release_gc: internal error #2");
-      }
+      if ( XX-> gcl) croak( "UAG_006: internal error");
    }
 }
 
@@ -713,7 +706,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
    XPoint *p = malloc( sizeof( XPoint)*n);
 
    if (!p)
-      croak( "apc_gp_draw_poly(): not enough memory");
+      croak( "UAG_007: no memory");
 
    for ( i = 0; i < n; i++) {
       p[i].x = pp[i].x + x;
@@ -827,8 +820,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
       free( p);
       size = numPts + 1;
       p = malloc( size * sizeof( XPoint));
-      if ( !p)
-	 croak( "apc_gp_fill_poly: not enough memory");
+      if ( !p) croak( "UAG_008: no memory");
    }
 
    for ( i = 0; i < numPts; i++) {
@@ -842,13 +834,13 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
       XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
       XCHECKPOINT;
    } else {
-      warn( "apc_gp_fill_poly() XFillPolygon() request size limit reached");
+      warn( "UAG_009: request too large");
    }
    if ( guts. limits. XDrawLines > numPts) {
       XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
       XCHECKPOINT;
    } else {
-      warn( "apc_gp_fill_poly() XDrawLines() request size limit reached");
+      warn( "UAG_010: request too large");
    }
    return true;
 }
@@ -987,7 +979,7 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    DEFXX;
    SHIFT( x, y);
 
-   if (1) {
+   if (0) {
       fprintf( stderr, "H: %d, D: %d, A: %d, BD: %d, BA: %d\n",
                XX-> font-> font. height,
                XX-> font-> fs-> descent,
@@ -1109,7 +1101,7 @@ apc_gp_get_line_end( Handle self)
 
    if ( XX-> flags. paint) {
       if ( XGetGCValues( DISP, XX-> gc, GCCapStyle, &gcv) == 0) {
-         warn( "apc_gp_get_line_end(): XGetGCValues() error");
+         warn( "UAG_011: error querying GC values");
          cap = CapButt;
       } else {
          cap = gcv. cap_style;
@@ -1136,7 +1128,7 @@ apc_gp_get_line_width( Handle self)
 	 w = 0;
       else {
 	 if ( XGetGCValues( DISP, XX-> gc, GCLineWidth, &gcv) == 0) {
-	    warn( "apc_gp_get_line_width(): XGetGCValues() error");
+            warn( "UAG_012: error querying GC values");
 	 }
 	 w = gcv. line_width;
       }
@@ -1330,7 +1322,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
       XX-> fp_pixmap =
          XCreateBitmapFromData( DISP, XX-> gdrawable, pattern, 8, 8);
       if ( XX-> fp_pixmap == None)
-         croak( "error creting stipple");
+         croak( "UAG_013: error creating stipple");
    }
    if ( XX-> flags. paint) {
       XSetFillStyle( DISP, XX-> gc, dflt ? FillSolid : FillOpaqueStippled);
