@@ -968,6 +968,16 @@ prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
    return pt;
 }
 
+static XftFont *
+create_no_aa_font( XftFont * font)
+{
+   FcPattern * request;
+   if (!( request = FcPatternDuplicate( font-> pattern))) return nil;
+   FcPatternDel( request, FC_ANTIALIAS);
+   FcPatternAddBool( request, FC_ANTIALIAS, 0);
+   return XftFontOpenPattern( DISP, request);
+}
+
 #define SORT(a,b)	{ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
 #define REVERT(a)	(XX-> size. y - (a) - 1)
 #define SHIFT(a,b)	{ (a) += XX-> gtransform. x + XX-> btransform. x; \
@@ -982,6 +992,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
    DEFXX;
    FcChar32 *ucs4;
    XftColor xftcolor;
+   XftFont *font = XX-> font-> xft;
    int rop = XX-> paint_rop;
 
    /* filter out unsupported rops */
@@ -1030,6 +1041,18 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       xftcolor.color.alpha = 
 	 ((xftcolor.color.red/3 + xftcolor.color.green/3 + xftcolor.color.blue/3) > (0xff00 / 2)) ?
 	    0xffff : 0;
+      /* force-remove antialiasing, xft doesn't have a better API for this */
+      if ( !guts. xft_no_antialias && !XX-> font-> xft_no_aa) {
+         FcBool aa;
+         if ( 
+	      ( FcPatternGetBool( font-> pattern, FC_ANTIALIAS, 0, &aa) == FcResultMatch)
+	      && aa
+	    ) {
+	    XftFont * f = create_no_aa_font( font);
+	    if ( f)
+	       font = XX-> font-> xft_no_aa = f;
+	 }
+       }
    } else {
       xftcolor.color.alpha = 0xffff;
    }
@@ -1118,7 +1141,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       XftDrawChange( XX-> xft_drawable, canvas);
       if ( XX-> flags. xft_clip)
          XftDrawSetClip( XX-> xft_drawable, 0);
-      XftDrawString32( XX-> xft_drawable, &xftcolor, XX-> font-> xft, dx, height - dy, ucs4, len);
+      XftDrawString32( XX-> xft_drawable, &xftcolor, font, dx, height - dy, ucs4, len);
       XftDrawChange( XX-> xft_drawable, XX-> gdrawable);
       if ( XX-> flags. xft_clip)
          XftDrawSetClip( XX-> xft_drawable, XX-> current_region);
@@ -1128,7 +1151,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       XFreePixmap( DISP, canvas);
    } else {
    COPY_PUT:
-      XftDrawString32( XX-> xft_drawable, &xftcolor, XX-> font-> xft, x, REVERT( y) + 1, ucs4, len);
+      XftDrawString32( XX-> xft_drawable, &xftcolor, font, x, REVERT( y) + 1, ucs4, len);
    }
    free( ucs4);
    /*

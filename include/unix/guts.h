@@ -212,6 +212,7 @@ typedef struct CachedFont {
    int          refCnt;
 #ifdef USE_XFT
    XftFont     *xft;
+   XftFont     *xft_no_aa;
    XftFont     *xft_base;
 #endif
 } CachedFont, *PCachedFont;
