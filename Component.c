@@ -465,7 +465,7 @@ Handle
 Component_first_that_component( Handle self, void * actionProc, void * params)
 {
    Handle child = nilHandle;
-   int i, size = 16, count = 0;
+   int i, count;
    Handle * list = nil;
 
    if ( actionProc == nil || var components == nil)
