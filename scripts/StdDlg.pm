@@ -328,7 +328,7 @@ sub Open_Click
 {
    my $self = shift;
    $_ = $self-> Name-> text;
-   my @files = split(';', $_);
+   my @files = split /[; ]/; # XXX
    s/^\s+// for @files;
    s/\s+$// for @files;
    return unless scalar @files;
