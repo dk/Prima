@@ -162,9 +162,9 @@ File_reset_notifications( Handle self)
       return;
    }
 
-   ret[0] = hash_fetch( var-> eventIDs, "onRead",    6);
-   ret[1] = hash_fetch( var-> eventIDs, "onWrite",   7);
-   ret[2] = hash_fetch( var-> eventIDs, "onExecute", 9);
+   ret[0] = hash_fetch( var-> eventIDs, "Read",      4);
+   ret[1] = hash_fetch( var-> eventIDs, "Write",     5);
+   ret[2] = hash_fetch( var-> eventIDs, "Exception", 9);
 
    for ( i = 0; i < 3; i++) {
       if ( ret[i] == nil) continue;
