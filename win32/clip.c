@@ -226,20 +226,31 @@ apc_clipboard_set_data( Handle self, long id, void * data, STRLEN length)
          return true;
       case CF_TEXT:
          {
+             int i, nlength = length;
              void *ptr;
-             HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, length+1);
+             char *dst;
+             HGLOBAL glob;
+             for ( i = 0; i < length; i++) 
+                if (*((( char*) data + i)) == '\n' && *((( char*) data)+i+1) != '\r') 
+                   nlength++;
+             glob = GlobalAlloc( GMEM_DDESHARE, nlength+1);
              if ( !glob) apiErrRet;
              if ( !( ptr = GlobalLock( glob))) apiErrRet;
-             memcpy( ptr, data, length);
-             ((char*)ptr)[length] = 0;
+             dst = ( char *) ptr;
+             for ( i = 0; i < length; i++) {
+                if (*((( char*) data + i)) == '\n' && *((( char*) data)+i+1) != '\r') 
+                   *(dst++) = '\r';
+                *(dst++) = *(( char*) data + i);
+             }
+             ((char*)ptr)[nlength] = 0;
              GlobalUnlock( glob);
              if ( !SetClipboardData( CF_TEXT, glob)) apiErr;
 
-             glob = GlobalAlloc( GMEM_DDESHARE, length+1);
+             glob = GlobalAlloc( GMEM_DDESHARE, nlength+1);
              if ( !glob) apiErrRet;
              if ( !( ptr = GlobalLock( glob))) apiErrRet;
-             CharToOemBuff(( LPCTSTR) data, ( LPTSTR) ptr, length);
-             ((char*)ptr)[length] = 0;
+             CharToOemBuff(( LPCTSTR) data, ( LPTSTR) ptr, nlength);
+             ((char*)ptr)[nlength] = 0;
              GlobalUnlock( glob);
              if ( !SetClipboardData( CF_OEMTEXT, glob)) apiErr;
 
