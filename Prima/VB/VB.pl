@@ -119,6 +119,8 @@ sub accelItems
       ['Exit' => 'Alt+X' => '@X' => sub{ $VB::main-> close;}],
       ['Object Inspector' => 'F11' => 'F11' => sub { $VB::main-> bring_inspector; }],
       ['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => sub { $VB::main-> form_run}, ],
+      ['~Help' => 'F1' => 'F1' => sub { $::application-> open_help('VB/Help')}],
+      ['~Widget property' => 'Shift+F1' => '#F1' => sub { ObjectInspector::help_lookup() }],
    ];
 }
 
@@ -491,6 +493,20 @@ sub on_destroy
    $VB::inspector = undef;
    $VB::main-> {ini}-> {ObjectInspectorRect} = join( ' ', $_[0]-> rect);
 }
+
+sub help_lookup
+{
+   return unless $VB::inspector;
+   my $self = $VB::inspector;
+   my $list = $self->{currentList};
+   my $f    = $list-> focusedItem;
+   return if $f < 0;
+   my $event = $self-> {mtabs}-> {mode};
+   my $id    = $list->{id}->[$f];
+   $id =~ s/^on// if $event;
+   $::application-> open_help("Prima::Widget/$id");
+}
+
 
 package Form;
 use vars qw(@ISA);
@@ -1156,6 +1172,12 @@ sub profile_default
            [],
            ['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => \&form_run ],
            ['-breakitem' => '~Break' => \&form_cancel ],
+         ]],
+         [],
+         ['~Help' => [
+            ['~About' => sub { Prima::MsgBox::message("Visual Builder for Prima toolkit, version $VBVersion")}],
+            ['~Help' => 'F1' => 'F1' => sub { $::application-> open_help('VB/Help')}],
+            ['~Widget property' => 'Shift+F1' => '#F1' => sub { ObjectInspector::help_lookup() }],
          ]],
       ],
    );
@@ -2134,7 +2156,6 @@ sub bring_inspector
    }
 }
 
-
 package VisualBuilder;
 
 $::application-> icon( Prima::Image-> load( Prima::find_image( 'VB::VB.gif'), index => 6));
@@ -2156,3 +2177,335 @@ while ($::application) {
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Visual Builder for the Prima toolkit
+
+=head1 DESCRIPTION
+
+Visual Builder is a RAD-style suite for designing forms under
+the Prima toolkit. It provides rich set of perl-composed widgets,
+whose can be inserted into a form by simple actions. The form
+can be stored in a file and loaded by either user program or
+a simple wrapper, C<starter.pl>; the form can be also stored as
+a valid perl program. 
+
+A form file typically has I<.fm> extension, an can be loaded
+by using L<Prima::VB::VBLoader> module. The following example
+is the only content of the C<starter.pl> wrapper
+
+   Prima::VB::VBLoader::AUTOFORM_CREATE( $ARGV[0],
+     'Form1' => {
+        onDestroy => sub { $::application-> close },
+     }
+   );
+   run Prima;
+   
+and is usually sufficient for executing a form file.
+
+=head1 Help
+
+The builder provides three main windows, that are used
+for designing. These are called I<main panel>, I<object inspector>
+and I<form window>. When the builder is started, the form window is empty.
+
+The main panel consists of the menu bar, speed buttons and the widget 
+buttons. If the user presses a widget button, and then clicks the mouse
+on the form window, the designated widget is inserted into the form
+and becomes a child of the form window.  If the click was made on a visible 
+widget in the form window, the newly inserted widget becomes a children of 
+that widget. After the widget is inserted, its properties are acceissible 
+via the object inspector window.
+
+The menu bar contains the following commands:
+
+=over
+
+=item File
+
+=over
+
+=item New
+
+Closes the current form and opens a new, empty form.
+If the old form was not saved, the user is asked if the changes made 
+have to be saved.
+
+This command is aliased to a 'new file' icon on the panel.
+
+=item Open
+
+Invokes a file open dialog, so a I<.fm> form file can be opened.
+After the successful file load, all form widgets are visible and 
+available for editing.
+
+This command is aliased to an 'open folder' icon on the panel.
+
+=item Save
+
+Stores the form into a file. The user here can select a type 
+of the file to be saved. If the form is saved as I<.fm> form
+file, then it can be re-loaded either in the builder or in the
+user program. If the form is saved as I<.pl> program, then it
+can not be loaded; instead, the program can be run immediately
+without the builder or any supplementary code.
+
+Once the user assigned a name and a type for the form, it is
+never asked when selecting this command.
+
+This command is aliased to a 'save on disk' icon on the panel.
+
+=item Save as
+
+Same as L<Save>, except that a new name or type of file are
+asked every time the command is invoked.
+
+=item Close
+
+Closes the form and removes the form window. If the form window
+was changed, the user is asked if the changes made 
+have to be saved.
+
+=back
+
+=item Edit
+
+=over
+
+=item Copy
+
+Copies the selected widgets into the clipboard, so they can be
+inserted later by using L<Paste> command. 
+The form window can not be copied. 
+
+=item Paste
+
+Reads the information, put by the builder L<Copy> command into the
+clipboard, and inserts the widgets into the form window. The child-parent
+relation is kept by names of the widgets; if the widget with the name of
+the parent of the clipboard-read widgets is not found, the widgets are inserted
+into the form window.
+The form window is not affected by this command.
+
+=item Delete
+
+Deletes the selected widgets.
+The form window can not be deleted.
+
+=item Select all
+
+Selects all of the widgets, inserted in the form window, except the 
+form window itself.
+
+=item Duplicate
+
+Duplicates the selected widgets.
+The form window is not affected by this command.
+
+=item Align
+
+This menu item contains z-ordering actions, that
+are performed on a single widget, regardless of the selection.
+These are:
+
+  Bring to front
+  Send to back
+  Step forward
+  Step backward
+
+=back
+
+=item Change class
+
+Changes the class of an inserted widget. This is an advanced
+option, and can lead to confusions or errors, if the default widget
+class and the supplied class differ too much. It is used when
+the widget that has to be inserted is not present in the builder
+installation. Also, it is called implicitly when a loaded form
+does not contain a valid widget class; in such case I<Prima::Widget>
+class is assigned.
+
+=item Creation order
+
+Opens the dialog, that manages the creation order of the widgets.
+It is not that important for the widget child-parent relation, since
+the builder tracks these, and does not allow a child to be created
+before its parent. However, the explicit order might be helpful
+in a case, when, for example, C<tabOrder> property is left to its default
+value, so it is assigned according to the order of widget creation.
+
+=back
+
+=item View
+
+=item Object inspector
+
+Brings the object inspector window, if it was hidden or closed.
+
+=item Add widgets
+
+Opens a file dialog, where the additional VB modules can be located.
+The modules are used for providing custom widgets and properties
+for the builder. As an example, the F<Prima/VB/examples/Widgety.pm>
+module is provided with the builder and the toolkit. Look inside this
+file for the implementation details.
+
+=item Reset guidelines
+
+Reset the guidelines on the form window into a center position.
+
+=item Snap to guidelines
+
+Specifies if the moving and resizing widget actions must treat
+the form window guidelines as snapping areas.
+
+=item Snap to grid
+
+Specifies if the moving and resizing widget actions must use
+the form window grid granularity instead of the pixel granularity.
+
+=item Run
+
+This command hides the form and object inspector windows and
+'executes' the form, as if it would be run by C<starter.pl>.
+The execution session ends either by closing the form window
+or by calling L<Break> command.
+
+This command is aliased to a 'run' icon on the panel.
+
+=item Break
+
+Explicitly terminates the execution session, initiated by L<Run>
+command.
+
+=over
+
+=item Help
+
+=over
+
+=item About
+
+Displays the information about the visual builder.
+
+=item Help
+
+Displays the information about the usage of the visual builder.
+
+=item Widget property
+
+Invokes a help viewer on L<Prima::Widget> manpage and tries
+to open a topic, corresponding to the current selection
+of the object inspector property or event list. While
+this manpage covers far not all ( but still many ) properties
+and events, it is still a little bit more convenient than nothing.
+
+=back
+
+=back
+
+=head2 Form window
+
+The form widget is a common parent for all widgets, created by the 
+builder. The form window provides the following basic navigation
+functionality.
+
+=over
+
+=item Guidelines
+
+The form window contains two guidelines, the horizontal and the vertical,
+drawn as blue dashed lines. These lines can be moved by dragging with the mouse.
+If menu option L<Snap to guidelines> is on, the widgets moving and sizing
+operations treat the guidelines as the snapping areas.
+
+=item Selection
+
+A widget can be selected by clicking with the mouse on it. There
+can be more than one selected widget at a time, or none at all.
+To explicitly select a widget in addition to the already selected
+ones, hold the C<shift> key while clicking on a widget. This combination
+also deselects the widget. To select all widgets on the form window,
+call L<Select all> command from the menu.
+
+=item Moving
+
+The selected widgets can be moved by dragging the mouse. The widgets
+can be snapped to the grid or the guidelines during the move. If one of
+the moving widgets is selected in the object inspector window, 
+the coordinate changes are reflected in the C<origin> property.
+
+If the C<Tab> key is pressed during the move, the mouse pointer is changed
+between three states, each reflecting the currently accessible coordinates for
+dragging. The default accessible coordinates are both the horizontal and
+the vertical; other two are the horizontal only and the vertical only.
+
+=item Sizing
+
+The sizeable widgets can be dynamically resized. Regardless to the
+amount of the selected widgets, only one widget at a time can be resized.
+If the resized widget is selected in the object inspector window, 
+the size changes are reflected in the C<size> property.
+
+=item Context menus
+
+The right-click ( or the other system-defined pop-up menu invocation command)
+provides the menu, identical to the main panel's L<Edit> submenu.
+
+The alternative context menus can be provided with some widgets ( for
+example, C<TabbedNotebook> ), and are accessible with C<control + right click>
+combination.
+
+=back
+
+=head2 Object inspector window
+
+The inspector window reflects the events and properties of a widget.
+To explicitly select a widget, it must be either clicked by the mouse on
+the form window, or selected in the widget combo-box. Depending on whether
+the properties or the events are selected, the left panel of the inspector
+provides the properties or events list, and the right panel - a value
+of the currently selected property or event. To toggle between the properties
+and the events, use the button below the list.
+
+The adjustable properties of a widget include an incomplete set of the properties,
+returned by the class method C<profile_default> ( the detailed explanation
+see in L<Prima::Object>). Among these are such basic properties as C<origin>, C<size>,
+C<name>, C<color>, C<font>, C<visible>, C<enabled>, C<owner> and many others.
+All the widgets share some common denominator, but almost all provide their own
+intrinsic properties. Each property can be selected by the right-pane hosted property
+selector; in such case, the name of a property is highlighted in the list - that means,
+that the property is initialized. To remove a property from the initialization list,
+double-click on it, so it is grayed again. Some very basic properties as C<name>
+can not be deselected. This is because the builder keeps a name-keyed list; another
+consequence of this fact is that no widgets of same name can exist simultaneously
+within the builder. 
+
+The events, much like the properties, are accessible for direct change. 
+All the events provide a small editor, so the custom code can be supplied.
+This code is executed when the form is run or loaded via C<Prima::VB::VBLoader>
+interface. 
+
+The full explanation of properties and events is not provided here. It is
+not even the goal of this document, because the builder can work with the
+widgets irrespective of their property or event capabilities; this information
+is extracted by native toolkit functionality. To read on what each property or
+event means, use the documentation on the class of interest; L<Prima::Widget> is a good
+start because it encompasses the ground C<Prima::Widget> functionality. 
+The other widgets are ( hopefully ) documented in their modules, for example,
+C<Prima::ScrollBar> documentation can be found in L<Prima::ScrollBar>.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 COPYRIGHT
+
+This program is distributed under the BSD License.
+
+=cut
