@@ -765,7 +765,7 @@ sub MoreBtn_Click
    $d = ColorDialog-> create(
       value => $combo-> value,
    );
-   $combo-> value( $d-> value) if $d-> execute;
+   $combo-> value( $d-> value) if $d-> execute != cm::Cancel;
    $d-> destroy;
 }
 
