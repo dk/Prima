@@ -94,6 +94,8 @@ sub profile_default
          [ DeleteToEnd    => 0, 0, '^E',          sub {$_[0]->delete_to_end unless $_[0]->{readOnly}}],
          [ DupLine        => 0, 0, '^K',          sub {$_[0]->insert_line($_[0]->cursorY, $_[0]-> get_line($_[0]-> cursorY)) unless $_[0]->{readOnly}}],
          [ DeleteBlock    => 0, 0, '@D',          sub {$_[0]->delete_block unless $_[0]->{readOnly}}],
+         [ SplitLine      => 0, 0, kb::Enter,     sub {$_[0]->split_line if !$_[0]->{readOnly} && $_[0]->{wantReturns}}],
+         [ SplitLine2     => 0, 0, km::Ctrl|kb::Enter,sub {$_[0]->split_line if !$_[0]->{readOnly} && !$_[0]->{wantReturns}}],
 # block keys
          [ CancelBlock    => 0, 0, '@U',          q(cancel_block)],
          [ MarkVertical   => 0, 0, '@B',          q(mark_vertical)],
@@ -756,6 +758,61 @@ sub on_mousewheel
    $self-> firstCol( $newTop > $maxTop ? $maxTop : $newTop);
 }
 
+sub on_mouseclick
+{
+   my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
+
+   return if $self->{mouseTransaction};
+   return if $btn != mb::Left;
+   my @xy = $self-> point2xy( $x, $y);
+   return unless $xy[2];
+   my $s = $self-> get_line( $xy[1]);
+   $self-> clear_event;
+
+   if ( !$dbl) {
+      if ( $self-> {doubleclickTimer}) {
+         $self-> {doubleclickTimer}-> destroy;
+         delete $self-> {doubleclickTimer};
+         $self-> selection( 0, $xy[1], length $s, $xy[1]);
+      }
+      return;
+   }
+
+   $self-> cancel_block;
+   $self-> cursor( @xy);
+
+   my $p = $xy[0];
+   my $sl = length $s;
+   my ($l,$r);
+
+   return unless $sl;
+
+   $p = $sl-1 if $p >= $sl;
+   my $word = quotemeta($self->{wordDelimiters});
+   my $nonword = "[$word]";
+   $word = "[^$word]";
+   if ( substr($s,$p,1) =~ /$word/) {
+      substr($s,0,$p) =~ /($word*)$/;
+      $l = $p - length $1;
+      substr($s,$p) =~ /^($word*)/;
+      $r = $p + length $1;
+   } else {
+      substr($s,0,$p) =~ /($nonword*)$/;
+      $l = $p - length $1;
+      substr($s,$p) =~ /^($nonword*)/;
+      $r = $p + length $1;
+   }
+
+   $self-> selection( $l, $xy[1], $r, $xy[1]);
+   $self-> {doubleclickTimer} = Prima::Timer-> create( onTick => sub{
+      $self-> {doubleclickTimer}-> destroy;
+      delete $self-> {doubleclickTimer};
+   }) unless $self-> {doubleclickTimer};
+   $self-> {doubleclickTimer}-> timeout( Prima::Application-> get_system_value( sv::DblClickDelay));
+   $self-> {doubleclickTimer}-> start;
+}
+
+
 sub on_keydown
 {
    my ( $self, $code, $key, $mod, $repeat) = @_;
@@ -763,10 +820,6 @@ sub on_keydown
    $mod &= ( km::Shift|km::Ctrl|km::Alt);
    $self->notify(q(MouseUp),0,0,0) if $self->{mouseTransaction};
    if ( $key == kb::Tab && !$self->{wantTabs}) {
-      return unless $mod & km::Ctrl;
-      $mod &= ~km::Ctrl;
-   }
-   if ( $key == kb::Enter && !$self->{wantReturns}) {
       return unless $mod & km::Ctrl;
       $mod &= ~km::Ctrl;
    }
@@ -790,10 +843,6 @@ sub on_keydown
        }
        $self-> cursor( $cs[0] + $repeat, $cs[1]);
        $self-> clear_event;
-   }
-   if ( $key == kb::Enter && $mod == 0) {
-      $self-> split_line;
-      $self-> clear_event;
    }
 }
 
