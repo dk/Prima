@@ -231,7 +231,7 @@ sub reset_lines
    my $maxLines = int($self-> height / $self-> font-> height);
    $maxLines++ if $self->{showPartial} and (($self-> height % $self-> font-> height) > 0);
    my $opt   = tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::CalcMnemonic|tw::ExpandTabs|tw::CalcTabs;
-   my $width = -1;
+   my $width = 1000000;
    $opt |= tw::CollapseTilde unless $self->{showAccelChar};
    $width = $self-> width if $self->{wordWrap};
    my $lines = $self-> text_wrap( $self-> text, $width, $opt);

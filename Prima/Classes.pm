@@ -424,7 +424,7 @@ sub draw_text
       (( $flags & dt::ExpandTabs    ) ? ( tw::ExpandTabs | tw::CalcTabs) : 0)
    ;
 
-   my @lines = @{$canvas-> text_wrap( $string, ( $flags & dt::NoWordWrap) ? -1 : $w, $twFlags, $tabIndent)};
+   my @lines = @{$canvas-> text_wrap( $string, ( $flags & dt::NoWordWrap) ? 1000000 : $w, $twFlags, $tabIndent)};
    my $tildes;
    $tildes = pop @lines if $flags & dt::DrawMnemonic;
 
