@@ -603,7 +603,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
    char **ret = malloc( sizeof( char*) * lSize);
    Bool wasTab    = 0;
    Bool doWidthBreak = t-> width >= 0;
-   int tildeIndex = -100, tildeLPos, tildeLine, tildePos;
+   int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos= 0;
    unsigned char * text    = ( unsigned char*) t-> text;
    
    for ( i = 0; i < 256; i++) {
@@ -615,7 +615,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
 // macro for adding string/chunk into result table
 #define lAdd(end) {                                       \
    int l = end - start;                                   \
-   char * c;                                              \
+   char *c = nil;                                         \
    if (!( t-> options & twReturnChunks)) {                \
       c = malloc( l + 1);                                 \
       memcpy( c, &text[start], l);                        \
