@@ -519,7 +519,6 @@ sub load_file
               grep { defined && length && -d } 
                  @INC, 
                  split( $Config::Config{path_sep}, $ENV{PATH})) {
-                 print "$_/$manpage\n";
          if ( -f "$_/$manpage") {
             $manpage = "$_/$manpage";
             $path = $_;
