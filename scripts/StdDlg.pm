@@ -19,7 +19,7 @@ package FileDialog;
 use MsgBox;
 use Cwd;
 use vars qw( @ISA);
-@ISA = qw( Window);
+@ISA = qw( Dialog);
 
 sub profile_default
 {
@@ -29,8 +29,6 @@ sub profile_default
       height      => 410,
       centered    => 1,
       visible     => 0,
-      borderStyle => bs::Dialog,
-      borderIcons => bi::SystemMenu | bi::TitleBar,
 
       defaultExt  => '',
       fileName    => '',
@@ -49,7 +47,6 @@ sub profile_default
       showHelp           => 0,
 
       openMode           => 1,
-      widgetClass        => wc::Dialog,
    }
 }
 
