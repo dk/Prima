@@ -245,42 +245,17 @@ sub sdlg_exec
            my $c = Prima::MsgBox::input_box( "Import printer resources", 
               "Enter file name:", "/etc/printcap");
            return unless defined $c;
-           unless ( open F, $c) {
-              Prima::message( "Error opening '$c':$!");
-              return;
-           }
-           my $np;
-           my @names;
-           while ( <F>) {
-              chomp;
-              if ( $np) {
-                 $np = 0 unless /\\\\s*$/;
-              } else {
-                 next if /^\#/ || /^\s*$/;
-                 push( @names, $1) if m/^([^\|\:]+)/;
-                 $np = 1 if /\\\s*$/;
-              }
-           }
-           close F;
-           
-           my $cx;
-           for ( @names) {
-              s/^\s*//g;
-              s/\s*$//g;
-              next unless length;
-              my $n = $_;
-              my $j = 0;
-              while ( exists $self-> {vprinters}-> {$n}) {
-                 $n = "$_ <$j>";
-                 $j++;
-              }
-              $self-> {vprinters}-> {$n} = deepcopy( $self-> {defaultData});
-              $self-> {vprinters}-> {$n}-> {spoolerType} = lpr;
-              $self-> {vprinters}-> {$n}-> {spoolerData} = "-P$_";
-              $_[0]-> owner-> Profiles-> add_items( $n);
-              $cx = $self-> {bigChange} = 1;
-           }
-           Prima::message("No importable resources found") unless $cx;
+	   my @imported = $self-> import_printers( 'vprinters', $c);
+	   if ( @imported) {
+	      if ( defined $imported[0]) {
+                 $_[0]-> owner-> Profiles-> add_items( @imported);
+                 $self-> {bigChange} = 1;
+	      } else {
+                 Prima::message( "Error opening '$c':$!");
+	      }
+	   } else {
+              Prima::message("No importable resources found");
+	   }
         }},
       );
       Prima::message("$@"), return unless $self-> {setupDlg};

@@ -118,12 +118,22 @@ sub init
       $self-> {printers} = $fc if !$@ && defined($fc) && ref($fc) eq 'HASH';
    }
    
-   $self-> {printers}-> {Default} = deepcopy( $self-> {defaultData})
-      unless scalar keys %{$self-> {printers}};
+   unless ( scalar keys %{$self-> {printers}}) {
+      $self-> {printers}-> {'Default printer'} = deepcopy( $self-> {defaultData});
+      if ( $unix) {
+         $self-> import_printers( 'printers', '/etc/printcap');
+         $self-> {printers}-> {GhostView} = deepcopy( $self-> {defaultData});
+         $self-> {printers}-> {GhostView}-> {spoolerType} = exec;
+         $self-> {printers}-> {GhostView}-> {spoolerData} = 'gv -';
+      }
+      $self-> {printers}-> {File} = deepcopy( $self-> {defaultData});
+      $self-> {printers}-> {File}-> {spoolerType} = file;
+   }
+      
 
    unless ( defined $pr) {
-      if ( defined  $self-> {printers}-> {Default}) {
-         $pr = 'Default';
+      if ( defined  $self-> {printers}-> {'Default printer'}) {
+         $pr = 'Default printer';
       } else {
          my @k = keys %{$self-> {printers}};
          $pr = $k[0];
@@ -132,6 +142,43 @@ sub init
 
    $self-> printer( $pr);
    return %profile;   
+}
+
+sub import_printers
+{
+   my ( $self, $slot, $file) = @_;
+   return undef unless open PRINTERS, $file;
+   my $np;
+   my @names;
+   while ( <PRINTERS>) {
+      chomp;
+      if ( $np) {
+         $np = 0 unless /\\\\s*$/;
+      } else {
+         next if /^\#/ || /^\s*$/;
+         push( @names, $1) if m/^([^\|\:]+)/;
+         $np = 1 if /\\\s*$/;
+      }
+   }
+   close PRINTERS;
+
+   my @ret;
+   for ( @names) {
+      s/^\s*//g;
+      s/\s*$//g;
+      next unless length;
+      my $n = "Printer '$_'";
+      my $j = 0;
+      while ( exists $self-> {$slot}-> {$n}) {
+         $n = "Printer '$_' #$j";
+         $j++;
+      }
+      $self-> {$slot}-> {$n} = deepcopy( $self-> {defaultData});
+      $self-> {$slot}-> {$n}-> {spoolerType} = lpr;
+      $self-> {$slot}-> {$n}-> {spoolerData} = "-P$_";
+      push @ret, $n;
+   }
+   return @ret;
 }
 
 sub printers
@@ -143,7 +190,7 @@ sub printers
       push @res, {
          name    => $_,
          device  => 
-           (( $d-> {spoolerType} == lpr ) ? 'LP'  : 
+           (( $d-> {spoolerType} == lpr ) ? "lp $d->{spoolerData}"  : 
            (( $d-> {spoolerType} == file) ? 'file' : $d-> {spoolerData})),
          defaultPrinter =>  ( $self-> {current} eq $_) ? 1 : 0,
       },
@@ -331,6 +378,7 @@ sub begin_doc
       $self-> {spoolHandle} = *PSSTREAM;
       $self-> {spoolName}   = $f;
       unless ( $self-> SUPER::begin_doc( $docName)) {
+         unlink( $self-> {spoolName});
          close( $self-> {spoolHandle});
          return 0;
       }
@@ -340,7 +388,7 @@ sub begin_doc
    return $self-> SUPER::begin_doc( $docName);
 }   
 
-my ( $piped, $sigpipe);
+my ( $sigpipe);
 
 sub __end
 {
@@ -349,7 +397,6 @@ sub __end
    defined($sigpipe) ? $SIG{PIPE} = $sigpipe : delete($SIG{PIPE});
    $self-> {spoolHandle} = undef;
    $sigpipe = undef;
-   $piped = 0;
 }
 
 sub end_doc
@@ -364,11 +411,14 @@ sub abort_doc
    my $self = $_[0];
    $self-> SUPER::abort_doc;
    $self-> __end;
+   unlink $self-> {spoolName} if $self-> {data}-> {spoolerType} == file;
 }
 
 sub spool
 {
    my ( $self, $data) = @_;
+
+   my $piped = 0;
    if ( $self-> {data}-> {spoolerType} != file && !$self-> {spoolHandle}) {
       my @cmds;
       if ( $self-> {data}-> {spoolerType} == lpr) {
@@ -379,29 +429,28 @@ sub spool
       } 
       my $ok = 0;
       $sigpipe = $SIG{PIPE};
-      $SIG{PIPE} = sub { $piped = 1 };
+      $SIG{PIPE} = 'IGNORE';
       CMDS: for ( @cmds) {
          $piped = 0;
          next unless open PSSTREAM, "|$_";
          my $oldfh = select PSSTREAM;
          $|=1;
          select $oldfh;
-         print PSSTREAM $data;
-         select( undef, undef, undef, 0.1); # better than nothing
+         $piped = 1 unless print PSSTREAM $data;
          close( PSSTREAM), next if $piped;
          $ok = 1;
          $self-> {spoolHandle} = *PSSTREAM;
          $self-> {spoolName}   = $_;
          last;
       }
-      Prima::message("Error printing to $cmds[0]") unless $ok;
+      Prima::message("Error printing to '$cmds[0]'") unless $ok;
       return $ok;
    }
 
    if ( !(print {$self->{spoolHandle}} $data) || 
          ( $piped && $self-> {data}-> {spoolerType} != file )
       ) {
-      Prima::message( "Error printing to $self->{spoolName}");
+      Prima::message( "Error printing to '$self->{spoolName}'");
       return 0;
    }
 

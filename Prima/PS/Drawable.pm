@@ -117,12 +117,13 @@ sub cmd_rgb
 sub emit
 {
    my $self = $_[0];
-   return unless $self-> {canDraw};
+   return 0 unless $self-> {canDraw};
    $self-> {psData} .= $_[1] . "\n";
    if ( length($self->{psData}) > 10240) {
       $self-> abort_doc unless $self-> spool( $self->{psData});
       $self->{psData} = '';
    }
+   return 1;
 }
 
 sub save_state
@@ -487,7 +488,7 @@ sub end_paint_info
 
 sub new_page
 {
-   return unless $_[0]-> {canDraw};
+   return 0 unless $_[0]-> {canDraw};
    my $self = $_[0];
    $self-> {pages}++;
    $self-> emit('grestore');
@@ -495,6 +496,7 @@ sub new_page
    $self-> $_( @{$self-> {saveState}->{$_}}) for qw( translate clipRect);
    $self-> change_transform(1);
    $self-> emit( $self-> {pagePrefix});
+   return 1;
 }
 
 sub pages { $_[0]-> {pages} }
@@ -892,7 +894,7 @@ ARC
 sub text_out
 {
    my ( $self, $text, $x, $y, $len) = @_;
-   return unless $self-> {canDraw};
+   return 0 unless $self-> {canDraw};
    $y += $self-> {font}-> {descent} if !$self-> textOutBaseline;
    ( $x, $y) = $self-> pixel2point( $x, $y); 
    if ( !defined( $len) || $len < 0) {
@@ -984,6 +986,7 @@ sub text_out
       $self-> emit("newpath $rb[0] 0 moveto $rb[4] 0 rlineto stroke");
    }
    $self-> emit("grestore");
+   return 1;
 }
 
 sub bar
@@ -1095,7 +1098,7 @@ PIXEL
 
 sub put_image_indirect
 {
-   return unless $_[0]-> {canDraw};
+   return 0 unless $_[0]-> {canDraw};
    my ( $self, $image, $x, $y, $xFrom, $yFrom, $xDestLen, $yDestLen, $xLen, $yLen) = @_;
    
    my $touch;
@@ -1150,6 +1153,7 @@ sub put_image_indirect
       $self-> emit( $w);
    }
    $self-> emit('grestore');
+   return 1;
 }
 
 sub get_bpp              { return $_[0]-> {grayscale} ? 8 : 24 }
