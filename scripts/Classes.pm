@@ -824,29 +824,30 @@ sub profile_check_in
       $p-> { height} = $p-> { size}-> [ 1];
    }
 
-   my @defScale = exists $p->{designScale} ? @{$p->{designScale}} : @{$default->{designScale}};
-   if (( $defScale[0] > 0) && ( $defScale[1] > 0))
-   {
-      @{$p-> { designScale}} = @defScale;
-      for ( qw ( left right top bottom width height))
-      {
-         $p->{$_} = $default->{$_} unless exists $p->{$_};
+   my $designScale = exists $p->{designScale} ? $p->{designScale} : $default->{designScale};
+   if ( defined $designScale) {
+      my @defScale = @$designScale;
+      if (( $defScale[0] > 0) && ( $defScale[1] > 0)) {
+         @{$p-> { designScale}} = @defScale;
+         for ( qw ( left right top bottom width height)) {
+            $p->{$_} = $default->{$_} unless exists $p->{$_};
+         }
+      } else {
+         @defScale = $owner-> get_design_scale if defined $owner && $owner-> scaleChildren;
+         @{$p-> { designScale}} = @defScale if ( $defScale[0] > 0) && ( $defScale[1] > 0);
+      }
+      if ( exists $p-> { designScale}) {
+         my @d = @{$p->{ designScale}};
+         my @a = ( $p->{ font}->{ width}, $p->{ font}->{ height});
+         $p->{left}    *= $a[0] / $d[0] if exists $p->{left};
+         $p->{right}   *= $a[0] / $d[0] if exists $p->{right};
+         $p->{top}     *= $a[1] / $d[1] if exists $p->{top};
+         $p->{bottom}  *= $a[1] / $d[1] if exists $p->{bottom};
+         $p->{width}   *= $a[0] / $d[0] if exists $p->{width};
+         $p->{height}  *= $a[1] / $d[1] if exists $p->{height};
       }
    } else {
-      @defScale = $owner-> get_design_scale if defined $owner && $owner-> scaleChildren;
-      @{$p-> { designScale}} = @defScale if ( $defScale[0] > 0) && ( $defScale[1] > 0);
-   }
-
-   if ( exists $p-> { designScale})
-   {
-      my @d = @{$p->{ designScale}};
-      my @a = ( $p->{ font}->{ width}, $p->{ font}->{ height});
-      $p->{left}    *= $a[0] / $d[0] if exists $p->{left};
-      $p->{right}   *= $a[0] / $d[0] if exists $p->{right};
-      $p->{top}     *= $a[1] / $d[1] if exists $p->{top};
-      $p->{bottom}  *= $a[1] / $d[1] if exists $p->{bottom};
-      $p->{width}   *= $a[0] / $d[0] if exists $p->{width};
-      $p->{height}  *= $a[1] / $d[1] if exists $p->{height};
+      $p-> {designScale} = [0,0];
    }
 
    $p-> { top} = $default->{ bottom} + $p-> { height}
@@ -1190,6 +1191,7 @@ sub key     { ( $#_) ? $_[ 0]->{ menu}-> set_key    ( $_[0]->{ id}, $_[1]) : ret
 sub text    { ( $#_) ? $_[ 0]->{ menu}-> set_text   ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_text   ( $_[0]->{ id}); }
 sub enabled { ( $#_) ? $_[ 0]->{ menu}-> set_enabled( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_enabled( $_[0]->{ id}); }
 sub image   { ( $#_) ? $_[ 0]->{ menu}-> set_image  ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_image  ( $_[0]->{ id}); }
+sub items   { my $i = shift; ( @_) ? $i-> { menu}-> set_items  ( $i->{ id}, @_):return $i->{menu}-> get_items  ( $i->{ id}); }
 sub checked { ( $#_) ? $_[ 0]->{ menu}-> set_check  ( $_[0]->{ id}, $_[1]) : return $_[0]->{ menu}-> get_check  ( $_[0]->{ id}); }
 sub enable  { $_[0]->{menu}-> set_enabled( $_[0]->{ id}, 1) };
 sub disable { $_[0]->{menu}-> set_enabled( $_[0]->{ id}, 0) };
