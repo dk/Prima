@@ -526,6 +526,10 @@ alloc_main_color_range( XColor * xc, int count, int maxDiff)
           err = true;
           break;
       }
+      if ( xc[idx]. pixel < 0 || xc[idx]. pixel >= guts. palSize) {
+         warn("color index out of range returned from XAllocColor()\n");
+         return false; 
+      }
       if (( xc[idx]. blue / 256 - B / 256) * ( xc[idx]. blue / 256 - B / 256) +
           ( xc[idx]. green / 256 - G / 256) * ( xc[idx]. green / 256 - G / 256) +
           ( xc[idx]. red / 256 - R / 256) * ( xc[idx]. red / 256 - R / 256) > 
@@ -606,43 +610,28 @@ fill_cubic( XColor * xc, int d)
 Bool
 prima_init_color_subsystem(void)
 {
-   int i, count, preferred, found = -1;
+   int count, mask = VisualScreenMask|VisualDepthMask|VisualIDMask;
    XVisualInfo template, *list;
 
-   template. screen = SCREEN;
-   template. depth  = guts. depth;
-   list = XGetVisualInfo( DISP, VisualScreenMask|VisualDepthMask,
-                          &template, &count);
+   template. screen   = SCREEN;
+   template. depth    = guts. depth;
+   template. visualid = XVisualIDFromVisual( XDefaultVisual( DISP, SCREEN));
+
+   list = XGetVisualInfo( DISP, mask, &template, &count);
    if ( count == 0) {
       warn("panic: no visuals found\n");
       return false;
    }
-
-   if ( guts. depth <= 4) preferred = StaticColor; else
-   if ( guts. depth <= 8) preferred = PseudoColor; else
-                          preferred = TrueColor;
-
-   for ( i = 0; i < count; i++) {
-      int cls = list[i].
-#if defined(__cplusplus) || defined(c_plusplus)
-c_class;
-#else
-class;
-#endif
-      if ( cls == preferred) {
-         found = i;
-         break;
-      }
-   }
-   if ( found < 0) found = 0;
-   guts. visual = list[found]; 
-   guts. visualClass = list[i].
+   
+   guts. visual = list[0];
+   guts. visualClass = guts. visual. 
 #if defined(__cplusplus) || defined(c_plusplus)
 c_class;
 #else
 class;
 #endif
    XFree( list);
+
    if ( guts. depth > 11 && guts. visualClass != TrueColor) {/* XXX */
       warn("panic: %d bit depth is not true color\n", guts. depth);
       return false;
