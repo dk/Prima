@@ -494,15 +494,15 @@ apc_font_load( const char* filename)
 static void
 dump_font( PFont f)
 {
-   DOLBUG( "*** BEGIN FONT DUMP ***\n");
-   DOLBUG( "height: %d\n", f-> height);
-   DOLBUG( "width: %d\n", f-> width);
-   DOLBUG( "style: %d\n", f-> style);
-   DOLBUG( "pitch: %d\n", f-> pitch);
-   DOLBUG( "direction: %d\n", f-> direction);
-   DOLBUG( "name: %s\n", f-> name ? f-> name : "NONAME");
-   DOLBUG( "size: %d\n", f-> size);
-   DOLBUG( "*** END FONT DUMP ***\n");
+   fprintf( stderr, "*** BEGIN FONT DUMP ***\n");
+   fprintf( stderr, "height: %d\n", f-> height);
+   fprintf( stderr, "width: %d\n", f-> width);
+   fprintf( stderr, "style: %d\n", f-> style);
+   fprintf( stderr, "pitch: %d\n", f-> pitch);
+   fprintf( stderr, "direction: %d\n", f-> direction);
+   fprintf( stderr, "name: %s\n", f-> name ? f-> name : "NONAME");
+   fprintf( stderr, "size: %d\n", f-> size);
+   fprintf( stderr, "*** END FONT DUMP ***\n");
 }
 
 static char*
@@ -823,6 +823,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 
    (void)dump_font; /* to prevent warnings */
    if ( !isalpha(dest->name[0])) {
+      dump_font( dest);
       *((char *)0) = 7;
       croak( "Bad name!");
    }
