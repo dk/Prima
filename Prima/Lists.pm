@@ -1863,7 +1863,7 @@ sub path
    my $p = $_[1];
    $p =~ s{^([^\\\/]*[\\\/][^\\\/]*)[\\\/]$}{$1};
    $p = eval { Cwd::abs_path($p) };
-   $p = "." if $@;
+   $p = "." if $@ || !defined $p;
    $p = "" unless -d $p;
    $p .= '/' unless $p =~ m![/\\]$!;
    $_[0]-> {path} = $p;
