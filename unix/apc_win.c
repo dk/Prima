@@ -519,7 +519,6 @@ apc_window_set_client_pos( Handle self, int x, int y)
    hints. flags = USPosition;
    hints. x = x - XX-> decorationSize. x;
    hints. y = y - XX-> decorationSize. y;
-   apc_SetWMNormalHints( self, &hints);
    XMoveWindow( DISP, X_WINDOW, hints. x, hints. y);
           
    prima_wm_sync( self, ConfigureNotify);
