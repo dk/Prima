@@ -1063,6 +1063,13 @@ apc_system_action( const char *s)
       else if ( l == 26 && strcmp( s, "can.shared.image.extension") == 0 && guts.shared_image_extension)
          return duplicate_string( "yes");
       break;
+   case 'D':
+      if ( l == 7 && ( strcmp( s, "Display") == 0)) {
+         char * c = malloc(19);
+         snprintf( c, 18, "0x%p", DISP);
+         return c;
+      }
+      break;
    case 'g':
       if ( l > 15 && strncmp( "get.frame.info ", s, 15) == 0) {
          char *end;
