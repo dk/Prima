@@ -134,7 +134,7 @@ void
 Component_attach( Handle self, Handle object)
 {
    char key[ 20];
-   if ( object && kind_of( object, CComponent)) {
+   if ( object && kind_of( object, CObject)) {
       if ( !var refs) {
          HV *me = ( HV*) SvRV( var mate);
          if ( SvTYPE( me) == SVt_PVHV && ( var refs = newHV()))
@@ -143,13 +143,14 @@ Component_attach( Handle self, Handle object)
             if ( var refs)
                sv_free(( SV*) var refs);
             var refs = nil;
-            croak( "RTC0040: Component attach failed");
+            croak( "RTC0040: Object attach failed");
          }
       }
       snprintf( key, 20, "%lu", object);
       hv_store( var refs, key, strlen( key),
-                newRV( SvRV( PComponent( object)-> mate)), 0);
-   }
+         newRV( SvRV( PObject( object)-> mate)), 0);
+   } else
+       warn( "RTC0040: Object attach failed");
 }
 
 void
@@ -160,8 +161,7 @@ Component_detach( Handle self, Handle object, Bool kill)
    if ( object && var refs) {
       snprintf( key, 20, "%lu", object);
       hv_delete( var refs, key, strlen( key), G_DISCARD);
-      if ( kill)
-	 Object_destroy( object);
+      if ( kill) Object_destroy( object);
    }
 }
 
