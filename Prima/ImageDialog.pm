@@ -240,6 +240,7 @@ sub profile_default  {
       filter   => [ Prima::ImageDialog::filtered_codecs($codecs) ],
       image    => undef,
       filterDialog => 1,
+      noTestFileCreate => 1,
    }
 }
 
@@ -386,7 +387,7 @@ sub save
             if ($@) {
                Prima::MsgBox::message("Error invoking $codec->{fileShortType} filter dialog:$@");
             } else {
-               $self-> {codecFilters}-> [$fi] = $codec-> {package}-> save_dialog;
+               $self-> {codecFilters}-> [$fi] = $codec-> {package}-> save_dialog( $codec);
             }
          }
       }    
