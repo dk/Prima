@@ -9,7 +9,9 @@
 #include "apricot.h"
 #include "Img.h"
 #include "Image.h"
+#ifndef __unix  /* Temporary hack */
 #include "gbm.h"
+#endif /* __unix */
 #include "Image.inc"
 #include "Clipboard.h"
 
@@ -204,7 +206,11 @@ Image_make_empty( Handle self)
 char *
 Image_get_status_string( Handle self)
 {
+#ifdef __unix  /* Temporary hack */
+   return ieOK;
+#else
    return (char *)gbm_err( var status);
+#endif /* __unix */
 }
 
 Bool Image_get_h_scaling( Handle self) { return is_opt( optHScaling); }
@@ -246,6 +252,9 @@ Image_save( Handle self, char *filename, HV *profile)
 }
 #endif
 {
+#ifdef __unix /* Temporary hack */
+   return true;
+#else
    int bpp = var type & imBPP;
    int file;
    GBM gbm;
@@ -353,6 +362,7 @@ Image_save( Handle self, char *filename, HV *profile)
    close( file);
    var status = ieOK;
    return true;
+#endif /* __unix */
 }
 
 int Image_get_type  ( Handle self) { return var type; }
@@ -415,6 +425,9 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
             return false;         \
         }
 {
+#ifdef __unix /* Temporary hack */
+   return true;
+#else
    GBM gbm;
    unsigned char *data = nil;
    GBM_ERR rc;
@@ -484,6 +497,7 @@ load_image_indirect( Handle self, char * filename, char * subIndex)
    }
    var status = ieOK;
    return true;
+#endif /* __unix */
 }
 
 Bool
