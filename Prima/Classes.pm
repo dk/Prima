@@ -1301,7 +1301,7 @@ sub add_startup_notification
 
 sub setup
 {
-   my $self = shift;
+   my $self = $::application = shift;
    $self-> SUPER::setup;
    for my $clp (Prima::Clipboard->get_standard_clipboards()) {
       $self->{$clp} = $self-> insert( qw(Prima::Clipboard), name => $clp)
