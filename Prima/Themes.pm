@@ -213,11 +213,12 @@ sub DESTROY {}
 1;
 
 =pod 
-=item NAME
+
+=head1 NAME
 
 Prima::Themes - object themes management
 
-=item DESCRIPTION
+=head1 DESCRIPTION
 
 Provides layer for theme registration in Prima. Themes are loosely grouped
 alternations of default class properties and behavior, by default stored in 
@@ -239,7 +240,7 @@ realization of theme.
 
 For interactive theme selection use F<examples/theme.pl> sample program.
 
-=item SYNOPSIS
+=head1 SYNOPSIS
 
 # register a theme file
 use Prima::Themes qw(color);
