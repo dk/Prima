@@ -1823,6 +1823,13 @@ any class can use any of these constants in C<::widgetClass>.
 
 See also: C<map_color>, C<colorIndex>
 
+=item widgets @WIDGETS
+
+In get-mode, returns list of immediate children widgets (identical
+to C<get_widgets>). In set-mode accepts set of widget profiles, as C<insert> does,
+as a list or an array. This way it is possible to create widget hierarchy in
+a single call.
+
 =item width WIDTH
 
 Maintains the width of a widget.
@@ -2387,7 +2394,7 @@ See L<"Geometry">, Implicit size regulations.
 See also: C<width>, C<height>, C<size>
 C<growMode>, C<Move>, C<Size>, C<sizeMax>, C<sizeMin>
 
-=item get_widgets or widgets
+=item get_widgets
 
 Returns list of children widgets.
 

@@ -213,6 +213,24 @@ Widget_init( Handle self, HV * profile)
    if ( pget_B( capture)) my-> set_capture( self, 1, nilHandle);
    if ( pget_B( current)) my-> set_current( self, 1);
    CORE_INIT_TRANSIENT(Widget);
+
+   {
+      SV * widgets = pget_sv( widgets);
+      if ( SvTYPE( widgets) != SVt_NULL) {
+           dSP;
+           ENTER;
+           SAVETMPS;
+           PUSHMARK( sp);
+           XPUSHs( var-> mate);
+           XPUSHs( sv_2mortal( newSVsv( widgets)));
+           PUTBACK;
+           perl_call_method( "widgets", G_DISCARD);
+           SPAGAIN;
+           PUTBACK;
+           FREETMPS;
+           LEAVE;
+      }
+   }
 }
 
 

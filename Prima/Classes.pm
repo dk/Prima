@@ -725,6 +725,7 @@ sub notification_types { return \%RNT; }
    transparent       => 0,
    visible           => 1,
    widgetClass       => wc::Custom,
+   widgets           => undef,
    width             => 100,
    x_centered        => 0,
    y_centered        => 0,
@@ -1014,7 +1015,13 @@ sub pointer
    }
 }
 
-sub widgets    { return shift->get_widgets};
+sub widgets     { 
+	return shift-> get_widgets unless $#_;
+	my $self = shift;
+	return unless $_[0];
+	$self-> insert(($#_ or ref($_[0]) ne 'ARRAY') ? @_ : @{$_[0]});
+}
+
 sub key_up      { splice( @_,5,0,1) if $#_ > 4; shift-> key_event( cm::KeyUp, @_)}
 sub key_down    { shift-> key_event( cm::KeyDown, @_)}
 sub mouse_up    { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseUp, @_); }
