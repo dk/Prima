@@ -311,6 +311,8 @@ L<Prima::Docks> - dockable widgets
 
 L<Prima::Edit> - text editor widget
 
+L<Prima::EventHook> - event filtering
+
 L<Prima::ExtLists> - listbox with checkboxes
 
 L<Prima::FrameSet> - frameset widget class

@@ -55,6 +55,7 @@ extern long   apcError;
 extern List   postDestroys;
 extern int    recursiveCall;
 extern PHash  primaObjects;
+extern SV *   eventHook;
 
 #define CORE_INIT_TRANSIENT(cls) ((PObject)self)->transient_class = (void*)C##cls
 

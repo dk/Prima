@@ -51,6 +51,7 @@ object Prima::Component( Prima::Object)
     public   void      get_notification( char * name, int index);
     c_only   void      handle_event ( PEvent event);
     method   void      init( HV * profile);
+    method   int       is_owner( Handle objectHandle);
     c_only   Bool      message( PEvent event);
     c_only   Bool      migrate( Handle attachTo);
     import   SV *      notification_types();

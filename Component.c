@@ -479,6 +479,22 @@ Component_handle_event( Handle self, PEvent event)
    }
 }
 
+int
+Component_is_owner( Handle self, Handle objectHandle)
+{
+   int depth = 1;
+   if ( !objectHandle || !kind_of( objectHandle, CComponent)) 
+      return 0;
+   if ( objectHandle == self) return -1;
+   while ( PComponent(objectHandle)-> owner) {
+      if ( PComponent(objectHandle)-> owner == self)
+	 return depth;
+      objectHandle = PComponent(objectHandle)-> owner;
+      depth++;
+   }
+   return 0;
+}
+
 Bool
 Component_migrate( Handle self, Handle attachTo)
 {
@@ -590,6 +606,46 @@ Component_on_postmessage( Handle self, SV * info1, SV * info2)
 {
 }
 
+XS( Component_event_hook_FROMPERL)
+{
+   dXSARGS;
+   SV *hook;
+
+   if ( items == 0) {
+   GET_CASE:
+      if ( eventHook)
+         XPUSHs( sv_2mortal( newSVsv(( SV *) eventHook)));
+      else
+         XPUSHs( &sv_undef);
+      PUTBACK;
+      return;
+   }
+
+   hook = ST(0);
+   /* shift unless ref $_[0] */
+   if ( SvPOK(hook) && !SvROK(hook)) {
+      if ( items == 1) goto GET_CASE;
+      hook = ST(1);
+   }
+
+   if ( SvTYPE(hook) == SVt_NULL) {
+      if ( eventHook) sv_free( eventHook);
+      eventHook = nil;
+      PUTBACK;
+      return;
+   }
+
+   if ( !SvROK( hook) || ( SvTYPE( SvRV( hook)) != SVt_PVCV)) {
+      warn("RTC04D: Not a CODE reference passed to Prima::Component::event_hook");
+      PUTBACK;
+      return; 
+   }
+      
+   if ( eventHook) sv_free( eventHook);
+   eventHook = newSVsv( hook);
+   PUTBACK;
+   return;
+}
 
 XS( Component_notify_FROMPERL)
 {
@@ -614,6 +670,36 @@ XS( Component_notify_FROMPERL)
    name    = ( char*) SvPV( ST( 1), na);
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Component.notify");
+
+   if ( eventHook) {
+      dSP;
+      dPUB_ARGS;
+      dG_EVAL_ARGS;
+      
+      int flag;
+      ENTER;
+      SAVETMPS;
+      PUSHMARK( sp);
+      EXTEND( sp, items);
+      for ( i = 0; i < items; i++) PUSHs( ST( i));
+      PUTBACK;
+      OPEN_G_EVAL;
+      perl_call_sv( eventHook, G_SCALAR | G_EVAL);
+      SPAGAIN;
+      if ( SvTRUE( GvSV( errgv))) {
+         (void)POPs;
+         PUB_CHECK;
+         CLOSE_G_EVAL;
+         croak( SvPV( GvSV( errgv), na));
+      } 
+      CLOSE_G_EVAL;
+      SPAGAIN;
+      flag = POPi;
+      FREETMPS;
+      LEAVE;
+      SPAGAIN;
+      if ( !flag) XSRETURN_IV(0);
+   }
 
    if ( var-> stage != csNormal) {
       if ( !is_opt( optcmDestroy)) XSRETURN_IV(1);

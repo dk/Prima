@@ -344,6 +344,9 @@ This method is as well a good source for searching information about
 events that a class generates. The events description for the built-in 
 classes is preserved in Classes.pm.
 
+Prima defined also a non-object event dispatching and filtering mechanism,
+available through L<"event_hook"> static method.
+
 =head2 Propagation
 
 The propagation mechanism has three layers of user-defined
@@ -825,6 +828,23 @@ See also: C<attach>
 
 Issues a system-dependent warning sound signal.
 
+=item event_hook [ SUB ]
+
+Installs a SUB to receive all events on all Prima objects. 
+SUB receives same parameters passed to L<notify>, and must return
+an integer, either 1 or 0, to pass or block the event respectively.
+
+If no SUB is set, returns currently installed event hook pointer.
+If SUB is set, replaces the old hook sub with SUB. If SUB is C<'undef'>,
+event filtering is not used.
+
+Since the C<'event_hook'> mechanism allows only one hook routine
+to be installed at a time, direct usage of the method is discouraged.
+Instead, use L<Prima::EventHook> for multiplex hook access.
+
+The method is static, and can be called either with or without class or
+object as a first parameter.
+
 =item get_components
 
 Returns array of the child objects.
@@ -1057,4 +1077,4 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::internals>
+L<Prima>, L<Prima::internals>, L<Prima::EventHook>.

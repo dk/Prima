@@ -85,6 +85,7 @@ List   postDestroys;
 int    recursiveCall = 0;
 PHash  primaObjects = nil;
 Bool   wantUnicodeInput = 0;
+SV *   eventHook = nil;
 
 char *
 duplicate_string( const char *s)
@@ -1281,6 +1282,7 @@ register_constants( void)
 }
 
 XS( Object_alive_FROMPERL);
+XS( Component_event_hook_FROMPERL);
 
 XS( boot_Prima)
 {
@@ -1325,6 +1327,7 @@ XS( boot_Prima)
    newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
    newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");
    newXS( "Prima::Object::alive", Object_alive_FROMPERL, "Prima::Object");
+   newXS( "Prima::Component::event_hook", Component_event_hook_FROMPERL, "Prima::Component");
    newXS( "Prima::message", Prima_message_FROMPERL, "Prima");
    newXS( "Prima::dl_export", Prima_dl_export, "Prima");
    register_constants();
