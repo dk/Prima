@@ -1270,7 +1270,6 @@ prima_xft_parse( char * ppFontNameSize, Font * font)
    }
    FcPatternDestroy( p);
    if ( ! prima_xft_font_pick( nilHandle, &f, &def, nil)) return false;
-   def. width = 0;
    *font = def;
    return true;
 }
