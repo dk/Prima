@@ -32,6 +32,12 @@
  * System independent image routines
  */
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
 #include <fcntl.h>
 #include "img_api.h"
 #include "gif_support.h"
