@@ -322,17 +322,27 @@ sub spool
       my @cmds;
       if ( $self-> {data}-> {spoolerType} == lpr) {
          push( @cmds, map { $_ . ' ' . $self-> {data}-> {spoolerData}} qw(
-            lp lpr /bin/lp /bin/lpr /usr/bin/lp /usr/bin/lpr));
+           lp lpr /bin/lp /bin/lpr /usr/bin/lp /usr/bin/lpr));
       } else {
          push( @cmds, $self-> {data}-> {spoolerData});
       }
-      my $ok;
-      for ( @cmds) {
+      my $ok = 0;
+      my $piped;
+      my $SP = $SIG{PIPE};
+      $SIG{PIPE} = sub { $piped = 1 };
+      CMDS: for ( @cmds) {
+         $piped = 0;
          next unless open F, "|$_";
-         print F ( $_, "\n"), for @$data;
-         close F;
+         for ( @$data) {
+            print F ( $_, "\n");
+            next CMDS if $piped;
+         }
+         next unless close F;
+         next if $piped;
          $ok = 1;
+         last;
       }
+      defined($SP) ? $SIG{PIPE} = $SP : delete($SIG{PIPE});
       Prima::message("Error printing to $cmds[0]") unless $ok;
    }
 }
