@@ -1046,7 +1046,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
              }
              map_tildas( buf, strlen( i-> text));
              menuItem. dwTypeData = ( LPTSTR) buf;
-          } else if ( i-> bitmap)
+          } else if ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead)
              menuItem. dwTypeData = ( LPTSTR) image_make_bitmap_handle( i-> bitmap, nil);
           InsertMenuItem( m, -1, true, &menuItem);
        }
@@ -1495,12 +1495,14 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       Handle owner = var owner;
       Point tr = dsys(owner)transform2;
       Point ed = apc_widget_get_pos( self);
+      Point sz = apc_widget_get_size( self);
+      Point so = CWidget(owner)-> get_size( owner);
 
       CWidget( owner)-> begin_paint( owner);
       dc = dsys( owner) ps;
       dsys( owner) ps = sys ps;
       dsys(owner) transform2. x += ed. x;
-      dsys(owner) transform2. y += ed. y;
+      dsys(owner) transform2. y += so. y - sz. y - ed. y;
       apc_gp_set_transform( owner, 0, 0);
 
       CWidget( owner)-> notify( owner, "sH", "Paint", owner);
@@ -1508,6 +1510,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       apc_gp_set_transform( owner, 0, 0);
       dsys( owner) ps = dc;
       CWidget( owner)-> end_paint( owner);
+      apc_gp_set_transform( self, sys transform. x, sys transform. y);
    }
 
    return true;
@@ -2252,8 +2255,7 @@ apc_menu_create( Handle self, Handle owner)
    sys className = WC_MENU;
    sys owner     = DHANDLE( owner);
    apc_menu_destroy( self);
-   var handle  = ( Handle) add_item( true, self, (( PMenu) self)-> tree);
-   return var handle != nilHandle;
+   return true;
 }
 
 static Bool clear_menus( PMenuWndData item, int keyLen, void * key, void * params)
@@ -2421,6 +2423,7 @@ apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
 
    if ( !var handle) return false;
    objCheck false;
+   dobjCheck( image) false;
    flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
    if ( flags == 0xFFFFFFFF) return false;
 
@@ -2475,9 +2478,8 @@ apc_popup_create( Handle self, Handle owner)
    dobjCheck( owner) false;
    sys owner = DHANDLE( owner);
    apc_menu_destroy( self);
-   var handle  = ( Handle) add_item( false, self, (( PMenu) self)-> tree);
    sys className = WC_MENU;
-   return var handle != nilHandle;
+   return true;
 }
 
 PFont

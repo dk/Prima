@@ -1175,6 +1175,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       apc_gp_set_transform( owner, 0, 0);
       dsys(owner) ps = ps;
       CWidget( owner)-> end_paint( owner);
+      apc_gp_set_transform( self, sys transform. x, sys transform. y);
    }
 
    return true;
@@ -1810,7 +1811,8 @@ add_item( HWND w, Handle menu, PMenuItemReg i)
        menuItem. afAttribute |= ( i-> checked)  ? MIA_CHECKED        : 0;
        menuItem. afAttribute |= ( i-> disabled) ? MIA_DISABLED       : 0;
        menuItem. id    = i-> id + MENU_ID_AUTOSTART + 1;
-       menuItem. hItem = ( i-> bitmap) ? bitmap_make_handle( i-> bitmap) : 0;
+       menuItem. hItem = ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead) ? 
+          bitmap_make_handle( i-> bitmap) : 0;
        menuItem. hwndSubMenu = add_item( m, menu, i-> down);
        if (!( i-> divider && i-> rightAdjust))
        {
@@ -2020,6 +2022,7 @@ Bool
 apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
 {
    MENUITEM mi;
+   if ( PObject( image)-> stage == csDead) return false;
    if ( !var handle) return false;
    if ( !WinSendMsg( var handle, MM_QUERYITEM, MPFROM2SHORT( m-> id, true), &mi)) apiErr;
    mi. afStyle = ( mi. afStyle & ~MIS_TEXT) | MIS_BITMAP;
@@ -2077,9 +2080,8 @@ apc_popup_create ( Handle self, Handle owner)
    objCheck false;
    dobjCheck( owner) false;
    sys owner = DHANDLE( owner);
-   var handle  = add_item( HWND_OBJECT, self, (( PMenu) self)-> tree);
    sys className = WC_MENU;
-   return var handle != nilHandle;
+   return true;
 }
 
 PFont
