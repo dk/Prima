@@ -158,13 +158,14 @@ apc_clipboard_get_data( Handle self, long id, int * length)
              }
              if ( !( ptr = ( char*) GlobalLock( ph)))
                 apiErrRet;
-             len = *length = strlen( ptr) + 1;
+             len = *length = strlen( ptr);
+             len++;
              ret = ( char *) malloc( *length);
-             strcpy( ret, ptr);
+             memcpy( ret, ptr, *length);
              for ( i = 0; i < len - 1; i++)
                 if ( ret[ i] == '\r') {
                    memcpy( ret + i, ret + i + 1, len - i + 1);
-                   len--;
+                   (*length)--;
                 }
              GlobalUnlock( ph);
              return ret;
@@ -223,25 +224,28 @@ apc_clipboard_set_data( Handle self, long id, void * data, int length)
       case CF_TEXT:
          {
              void *ptr;
-             HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, length);
+             HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, length+1);
              if ( !glob) apiErrRet;
              if ( !( ptr = GlobalLock( glob))) apiErrRet;
              memcpy( ptr, data, length);
+             ((char*)ptr)[length] = 0;
              GlobalUnlock( glob);
              if ( !SetClipboardData( CF_TEXT, glob)) apiErr;
 
-             glob = GlobalAlloc( GMEM_DDESHARE, length);
+             glob = GlobalAlloc( GMEM_DDESHARE, length+1);
              if ( !glob) apiErrRet;
              if ( !( ptr = GlobalLock( glob))) apiErrRet;
              CharToOemBuff(( LPCTSTR) data, ( LPTSTR) ptr, length);
+             ((char*)ptr)[length] = 0;
              GlobalUnlock( glob);
              if ( !SetClipboardData( CF_OEMTEXT, glob)) apiErr;
 
              if ( IS_NT) {
-                glob = GlobalAlloc( GMEM_DDESHARE, length * sizeof( WCHAR));
+                glob = GlobalAlloc( GMEM_DDESHARE, ( length + 1) * sizeof( WCHAR));
                 if ( !glob) apiErrRet;
                 if ( !( ptr = GlobalLock( glob))) apiErrRet;
                 MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, ( LPCSTR) data, length, ( LPWSTR) ptr, length * sizeof( WCHAR));
+                ((WCHAR*)ptr)[length] = 0;
                 GlobalUnlock( glob);
                 if ( !SetClipboardData( CF_UNICODETEXT, glob)) apiErr;
              }

@@ -21,7 +21,6 @@
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
  *
  * $Id$
  */
@@ -273,82 +272,56 @@ apc_getdir( const char *dirname)
    return dirlist;
 }
 
-
-static char dlerror_description[256];
-
-extern void *dlopen( char *path, int mode);
-
-void *
-apc_dlopen(char *path, int mode)
+Bool
+apc_dl_export(char *path)
 {
-   void *RETVAL;
    APIRET rc = 0;
+   PSZ oldLibPath = NULL, newLibPath;
+   ULONG bSize = 4096;
+   int done = 0;
 
-   RETVAL = dlopen(path, mode) ;
+   do {
+      char *p1, *p2;
 
-   if ( RETVAL) {
-      PSZ oldLibPath = NULL, newLibPath;
-      ULONG bSize = 4096;
-      int done = 0;
-
-      do {
-         char *p1, *p2;
-
-         rc = DosAllocMem( ( PPVOID)&oldLibPath, bSize, PAG_COMMIT | PAG_READ | PAG_WRITE);
-         if ( rc != NO_ERROR) {
-             break;
-         }
-         rc = DosQueryExtLIBPATH( oldLibPath, BEGIN_LIBPATH);
-         if ( rc != NO_ERROR) {
-            DosFreeMem( oldLibPath);
-            if ( rc == ERROR_INSUFFICIENT_BUFFER) {
-               bSize += 4096;
-               continue;
-            }
-            break;
-         }
-         newLibPath = ( PSZ)malloc( strlen( oldLibPath) + strlen( path) + 1);
-         if ( newLibPath == NULL) {
-            DosFreeMem( oldLibPath);
-            rc = ERROR_NOT_ENOUGH_MEMORY;
-            break;
-         }
-         strcpy( newLibPath, path);
-         p1 = strrchr( newLibPath, '/');
-         p2 = strrchr( newLibPath, '\\');
-         if ( p1 == NULL) {
-            p1 = p2;
-         }
-         else if ( p1 < p2) {
-            p1 = p2;
-         }
-         if ( p1 != NULL) {
-            *p1++ = ';';
-            *p1 = 0;
-            strcat( newLibPath, oldLibPath);
-            rc = DosSetExtLIBPATH( newLibPath, BEGIN_LIBPATH);
-         }
-         free( newLibPath);
+      rc = DosAllocMem( ( PPVOID)&oldLibPath, bSize, PAG_COMMIT | PAG_READ | PAG_WRITE);
+      if ( rc != NO_ERROR) {
+          break;
+      }
+      rc = DosQueryExtLIBPATH( oldLibPath, BEGIN_LIBPATH);
+      if ( rc != NO_ERROR) {
          DosFreeMem( oldLibPath);
-         done = 1;
-      } while ( ! done);
-   }
-   return ( rc == NO_ERROR ? RETVAL : NULL);
-}
-
-void *
-dlsym(void *dll, char *symbol)
-{
-   PFN ret = nil;
-   DosQueryProcAddr((HMODULE) dll, 0, symbol, &ret);
-   return ( void*) ret;
-}
-
-/* XXX */
-char *
-dlerror(void)
-{
-   return dlerror_description;
+         if ( rc == ERROR_INSUFFICIENT_BUFFER) {
+            bSize += 4096;
+            continue;
+         }
+         break;
+      }
+      newLibPath = ( PSZ)malloc( strlen( oldLibPath) + strlen( path) + 1);
+      if ( newLibPath == NULL) {
+         DosFreeMem( oldLibPath);
+         rc = ERROR_NOT_ENOUGH_MEMORY;
+         break;
+      }
+      strcpy( newLibPath, path);
+      p1 = strrchr( newLibPath, '/');
+      p2 = strrchr( newLibPath, '\\');
+      if ( p1 == NULL) {
+         p1 = p2;
+      }
+      else if ( p1 < p2) {
+         p1 = p2;
+      }
+      if ( p1 != NULL) {
+         *p1++ = ';';
+         *p1 = 0;
+         strcat( newLibPath, oldLibPath);
+         rc = DosSetExtLIBPATH( newLibPath, BEGIN_LIBPATH);
+      }
+      free( newLibPath);
+      DosFreeMem( oldLibPath);
+      done = 1;
+   } while ( ! done);
+   return rc == NO_ERROR;
 }
 
 Bool

@@ -56,6 +56,7 @@ hwnd_enter_paint( Handle self)
    LONG lset[ 2];
    sys fontId = 0;
    sys fontHash = create_fontid_hash();
+   sys fillBitmap = nilHandle;
    apc_gp_set_font( self, &var font);
 
    if ( is_apt( aptWinPS) && self != application) {
@@ -94,6 +95,13 @@ hwnd_enter_paint( Handle self)
 void
 hwnd_leave_paint( Handle self)
 {
+   if ( sys fillBitmap) {
+      if ( !GpiSetPatternSet( sys ps, LCID_DEFAULT)) apiErr;
+      if ( !GpiDeleteSetId( sys ps, 3)) apiErr;
+      if ( !GpiDeleteBitmap( sys fillBitmap)) apiErr;
+      sys fillBitmap = nilHandle;
+   }
+
    sys fontId = 0;
    destroy_fontid_hash( sys fontHash);
    sys fontHash = nil;
@@ -904,6 +912,12 @@ view_get_font ( Handle self, PFont font)
    return font;
 }
 
+int
+apc_font_load( const char* filename)
+{
+   return 0;
+}
+
+
 
 // fonts end
-

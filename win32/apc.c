@@ -713,9 +713,9 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
             style |= WS_POPUP;
             exstyle |= WS_EX_TOOLWINDOW;
        }
-       if ( parentHandle)
-          sys parentHandle = parentView = parentHandle;
-          
+       if ( parentHandle) parentView = parentHandle;
+       sys parentHandle = parentHandle;
+
        if ( !( ret = CreateWindowEx( exstyle,  "Generic", "",
              style | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0,
              parentView, nil, guts. instance, nil)))
@@ -740,7 +740,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    if ( reset)
    {
       int i;
-      Handle oldOwner = var owner; var owner = owner; 
+      Handle oldOwner = var owner; var owner = owner;
       apc_widget_set_pos( self, vprf-> pos. x, vprf-> pos. y);
       apc_widget_set_size( self, vprf-> size. x, vprf-> size. y);
       var owner = oldOwner;
@@ -824,7 +824,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
   apt_assign( aptTaskList,  taskList);
   if ( reset)
   {
-     Handle oldOwner = var owner; var owner = owner; 
+     Handle oldOwner = var owner; var owner = owner;
      apc_window_set_window_state( self, windowState);
      var owner = oldOwner;
      set_view_ex( self, &vprf);
@@ -1371,11 +1371,11 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
       reset = true;
    }
    if ( reset || ( var handle == nilHandle))
-      create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM, 
+      create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM,
          WS_CHILD, exstyle, 1, 1, &vprf, ( HWND) parentHandle);
    if ( reset)
    {
-      Handle oldOwner = var owner; var owner = owner; 
+      Handle oldOwner = var owner; var owner = owner;
       set_view_ex( self, &vprf);
       var owner = oldOwner;
       var stage = oStage;
@@ -1531,7 +1531,7 @@ apc_widget_destroy( Handle self)
    if ( self == lastMouseOver) lastMouseOver = nilHandle;
    free( sys timeDefs);
    if ( var handle == nilHandle) return true;
-   
+
    if ( sys className == WC_FRAME)
       guts. topWindows--;
 
@@ -2074,11 +2074,11 @@ apc_widget_set_pos( Handle self, int x, int y)
       POINT ppos;
       ppos. x = x;
       ppos. y = dsys( application) lastSize. y - y;
-      MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&ppos, 1); 
+      MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&ppos, 1);
       GetWindowRect( sys parentHandle, &r);
       x = ppos. x;
       y = ppos. y;
-   } else 
+   } else
       y = sz. y - y - r. bottom + r. top;
 
    if ( !SetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
@@ -2111,9 +2111,9 @@ apc_widget_set_size( Handle self, int width, int height)
    if ( !GetWindowRect( h, &r)) apiErrRet;
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
-   if ( sys parentHandle) 
-      MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&r, 2); 
-   
+   if ( sys parentHandle)
+      MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&r, 2);
+
    if ( sys className != WC_FRAME) {
       sys sizeLockLevel++;
       var virtualSize. x = width;
@@ -2294,6 +2294,7 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
    objCheck false;
    dobjCheck( var owner) false;
    if ( resize = kind_of( var owner, CWindow) &&
+        kind_of( self, CMenu) &&
         var stage <= csNormal &&
         ((( PAbstractMenu) self)-> self)-> get_selected( self)) {
       owner = ( PWindow) var owner;
@@ -2423,7 +2424,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
    dobjCheck( var owner) false;
 
    if ( kind_of( var owner, CWindow) &&
-	kind_of( self, CMenu) &&
+        kind_of( self, CMenu) &&
         var stage <= csNormal &&
         ((( PAbstractMenu) self)-> self)-> get_selected( self)) {
       HMENU h = GetMenu( DHANDLE( var owner));
@@ -2505,7 +2506,7 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
    ret = TrackPopupMenuEx(
       ( HMENU) var handle, TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_RIGHTBUTTON,
        x, y, owner, anchor ? &tpm : NULL);
-   guts. popupActive = 0; 
+   guts. popupActive = 0;
    return ret;
 }
 
@@ -2772,7 +2773,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 }
 
 static BOOL CALLBACK
-find_console( HWND w, LPARAM ptr) 
+find_console( HWND w, LPARAM ptr)
 {
    DWORD pid;
    char buf[256];
@@ -2782,7 +2783,7 @@ find_console( HWND w, LPARAM ptr)
    if ( strcmp( buf, "ConsoleWindowClass") != 0) return TRUE;
    *(HWND*)(ptr) = w;
    return FALSE;
-}   
+}
 
 char *
 apc_system_action( const char * params)
@@ -2791,7 +2792,7 @@ apc_system_action( const char * params)
    case 'b':
 #define STR "browser"
       if ( strncmp( params, STR, strlen( STR)) == 0) {
-#undef STR   
+#undef STR
          HKEY k;
          DWORD valSize = MAX_PATH, valType = REG_SZ, res;
          char buf[ MAX_PATH] = "";
@@ -2800,8 +2801,8 @@ apc_system_action( const char * params)
          RegCloseKey( k);
          if ( res != ERROR_SUCCESS) return nil;
          return duplicate_string( buf);
-      }   
-      break;   
+      }
+      break;
    case 'w':
       if ( strcmp( params, "wait.before.quit") == 0) {
          waitBeforeQuit = 1;
@@ -2855,23 +2856,23 @@ apc_system_action( const char * params)
          } else {
             warn( "Are you nuts? Microsoft itself afraid of %s yet!", ver);
          }
-      } else if ( strncmp( params, "win32.ConsoleWindow", 19) == 0) {         
+      } else if ( strncmp( params, "win32.ConsoleWindow", 19) == 0) {
          params += 19;
-         
+
          if ( !guts. console) {
             EnumWindows((int (__stdcall*)(void)) find_console, (LPARAM) &guts. console);
             if ( strcmp( params, " exists") == 0) return 0;
             if ( !guts. console) {
-                warn("No associated console window found");            
+                warn("No associated console window found");
                 return 0;
-            }    
-         }   
-         
+            }
+         }
+
          if ( strcmp( params, " exists") == 0) {
            char * p;
            sprintf( p = ( char *) malloc(12), "0x%08x", guts. console);
            return p;
-         } else   
+         } else
          if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else
          if ( strcmp( params, " show") == 0)     { ShowWindow( guts. console, SW_SHOW); } else
          if ( strcmp( params, " minimize") == 0) { ShowWindow( guts. console, SW_MINIMIZE); } else
@@ -2879,7 +2880,7 @@ apc_system_action( const char * params)
          if ( strcmp( params, " restore") == 0)  { ShowWindow( guts. console, SW_RESTORE); } else
          if ( strcmp( params, " topmost") == 0)  { SetWindowPos( guts. console, HWND_TOPMOST, 0,0,0,0, SWP_NOMOVE|SWP_NOSIZE); } else
          if ( strcmp( params, " notopmost") == 0)  { SetWindowPos( guts. console, HWND_NOTOPMOST, 0,0,0,0, SWP_NOMOVE|SWP_NOSIZE); } else
-         if ( strncmp( params, " text", 5) == 0)  { 
+         if ( strncmp( params, " text", 5) == 0)  {
             char * p = (char*)params + 5;
             while ( *p == ' ') p++;
             if ( *p) {
@@ -2894,7 +2895,7 @@ apc_system_action( const char * params)
             warn( "Bad parameters '%s' to sysaction win32.ConsoleWindow", params);
             return 0;
          }
-      } else 
+      } else
          goto DEFAULT;
       break;
    DEFAULT:

@@ -26,8 +26,8 @@
  * $Id$
  */
 /* Created by:
-	 Dmitry Karasik <dk@plab.ku.dk>
-	 Anton Berezin  <tobez@plab.ku.dk>
+         Dmitry Karasik <dk@plab.ku.dk>
+         Anton Berezin  <tobez@plab.ku.dk>
  */
 /* apc.c --- apc/ api for os/2 */
 #include <limits.h>
@@ -126,9 +126,7 @@ apc_application_end_paint( Handle self)
    hwnd_leave_paint( self);
    list_delete( &guts. winPsList, sys ps);
    if ( !( ok = WinReleasePS( sys ps))) apiErr;
-   if ( sys fillBitmap)
-      if ( !GpiDeleteBitmap( sys fillBitmap)) apiErr;
-   sys ps = sys fillBitmap = nilHandle;
+   sys ps = nilHandle;
    apt_clear( aptWinPS);
    apt_clear( aptCompatiblePS);
    return ok;
@@ -457,7 +455,7 @@ static Bool repost_msgs( PostMsg * msg, Handle self)
 
 static Bool
 create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
-              PSZ className, ULONG style, ViewProfile * vprf)
+              PSZ className, ULONG style, ViewProfile * vprf, HWND parentHandle)
 {
    HWND ret;
    HWND old = HANDLE;
@@ -514,6 +512,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
        break;
     case WC_CUSTOM:
        if ( !clipOwner) parentView = HWND_DESKTOP;
+       if ( parentHandle) parentView = parentHandle;
        if ( !( ret = WinCreateWindow( parentView, "GeNeRiC", "",
           style |  WS_CLIPCHILDREN
           | WS_CLIPSIBLINGS
@@ -521,6 +520,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
           , 0, 0, 0, 0, ownerView,
           behind, 0, nil, nil)))
             apiErrRet;
+       sys parentHandle = parentHandle;
        break;
    }
    apt_assign( aptClipOwner, clipOwner);
@@ -537,8 +537,10 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    if ( reset)
    {
       int i;
+      Handle oldOwner = owner; var owner = owner;
       apc_widget_set_pos( self, vprf-> pos. x, vprf-> pos. y);
       apc_widget_set_size( self, vprf-> size. x, vprf-> size. y);
+      var owner = oldOwner;
       for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
       if ( sys className == WC_FRAME)
       {
@@ -607,7 +609,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
       reset = true;
    }
    if ( reset || ( var handle == nilHandle))
-      if ( !create_group( self, owner, syncPaint, false, WC_FRAME, frameFlags, &vprf)) {
+      if ( !create_group( self, owner, syncPaint, false, WC_FRAME, frameFlags, &vprf, nilHandle)) {
          lock( false);
          return false;
       }
@@ -620,7 +622,9 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
    if ( reset)
    {
       HWND h = HANDLE;
+      Handle oldOwner = var owner; var owner = oldOwner;
       set_view_ex( self, &vprf);
+      var owner = oldOwner;
       sys s. window = ws;
       WinSetWindowUShort( h, QWS_XRESTORE,  maxRS. left);
       WinSetWindowUShort( h, QWS_YRESTORE,  maxRS. bottom);
@@ -632,6 +636,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
       sys s. window. modalResult = -1;
    apc_window_set_caption( self, var text);
    lock( false);
+
    return apcError == 0;
 }
 
@@ -847,9 +852,12 @@ apc_window_set_menu( Handle self, Handle menu)
    HWND focus = WinQueryFocus( HWND_DESKTOP);
    Point size = var self-> get_size( self);
    HWND wMenu = WinWindowFromID( HANDLE, FID_MENU);
+
    if ( menu) (( PComponent) menu)-> handle = nilHandle;
    apcErrClear;
-   if ( wMenu) WinDestroyWindow( wMenu);
+
+   if ( wMenu)
+      WinDestroyWindow( wMenu);
    if ( menu)
       (( PComponent) menu)-> handle = add_item( HANDLE, menu, (( PMenu) menu)-> tree);
    if ( var stage <= csNormal)
@@ -974,9 +982,10 @@ apc_window_end_modal( Handle self)
       Handle who = Application_popup_modal( application);
       if ( sys s. window. oldActive)
          WinSetActiveWindow( HWND_DESKTOP, sys s. window. oldActive);
-      if ( !who && var owner)
+      if ( !who && var owner) {
          CWidget( var owner)-> set_selected( var owner, 1);
-      if (!( who = sys s. window. oldFoc)) {
+      }
+      if (( who = sys s. window. oldFoc)) {
          if ( PWidget( who)-> stage == csNormal)
             CWidget( who)-> set_focused( who, 1);
          unprotect_object( who);
@@ -992,6 +1001,9 @@ Bool
 apc_widget_map_points( Handle self, Bool toScreen, int count, Point * points)
 {
    Bool ok;
+
+   if ( self == application) return true;
+
    if ( !( ok = WinMapWindowPoints(
        toScreen ? var handle : HWND_DESKTOP,
        toScreen ? HWND_DESKTOP : var handle,
@@ -1003,10 +1015,11 @@ apc_widget_map_points( Handle self, Bool toScreen, int count, Point * points)
 #define need_view_recreate    (( DHANDLE( owner) != sys owner)        \
                              || ( syncPaint != is_apt( aptSyncPaint)) \
                              || ( clipOwner != is_apt( aptClipOwner)) \
+                             || (( HWND) parentHandle != sys parentHandle) \
                              )
 
 Bool
-apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent)
+apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent, ApiHandle parentHandle)
 {
    Bool reset = false;
    ViewProfile vprf;
@@ -1017,6 +1030,10 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
 
    if ( !kind_of( self, CWidget)) apcErr( errInvObject);
    apcErrClear;
+
+   if ( parentHandle && !WinIsWindow( guts. anchor, ( HWND) parentHandle))
+      return false;
+
    if (( var handle != nilHandle) && need_view_recreate )
    {
       if ( sys recreateData) {
@@ -1028,7 +1045,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
       reset = true;
    }
    if ( reset || ( var handle == nilHandle))
-      create_group( self, owner, syncPaint, clipOwner, WC_CUSTOM, 0, &vprf);
+      create_group( self, owner, syncPaint, clipOwner, WC_CUSTOM, 0, &vprf, parentHandle);
    if ( reset)
    {
       set_view_ex( self, &vprf);
@@ -1212,6 +1229,14 @@ apc_widget_end_paint( Handle self)
          { sys transform2. x + var w - 1, sys transform2. y + var h - 1},
          {0, 0}, { var w, var h}
       };
+
+      if ( sys fillBitmap) {
+         if ( !GpiSetPatternSet( sys ps, LCID_DEFAULT)) apiErr;
+         if ( !GpiDeleteSetId( sys ps, 3)) apiErr;
+         if ( !GpiDeleteBitmap( sys fillBitmap)) apiErr;
+         sys fillBitmap = nilHandle;
+      }
+
       GpiSetBitmap( sys ps, nilHandle);
       if ( GpiWCBitBlt( sys ps2, sys bm, 4, pt, ROP_SRCCOPY, BBO_IGNORE) == GPI_ERROR) apiErr;
       GpiDeleteBitmap( sys bm);
@@ -1237,9 +1262,7 @@ apc_widget_end_paint( Handle self)
          list_delete( &guts. winPsList, sys ps);
       }
    }
-   if ( sys fillBitmap)
-      if ( !GpiDeleteBitmap( sys fillBitmap)) apiErr;
-   sys ps = sys fillBitmap = nilHandle;
+   sys ps = nilHandle;
    apt_clear( aptWinPS);
    apt_clear( aptWM_PAINT);
    apt_clear( aptCompatiblePS);
@@ -1313,6 +1336,14 @@ apc_widget_get_handle( Handle self)
    objCheck 0;
    return ( ApiHandle) HANDLE;
 }
+
+ApiHandle
+apc_widget_get_parent_handle( Handle self)
+{
+   objCheck 0;
+   return ( ApiHandle) sys parentHandle;
+}
+
 
 Rect
 apc_widget_get_invalid_rect( Handle self)
@@ -1470,7 +1501,7 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect *r, Rect *cr, Bool scr
    if ( !WinScrollWindow( var handle, horiz, vert, (PRECTL)r, (PRECTL)cr, nilHandle, nil,
                     SW_INVALIDATERGN | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
                   )) apiErr;
-   return WinShowCursor( var handle, true);
+   return cursor_update( self);
 }
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
@@ -1561,17 +1592,28 @@ apc_widget_set_pos( Handle self, int x, int y)
    SWP swp;
    if ( sys className == WC_FRAME)
    {
-
-      if ( sys s. window. state == wsMinimized) sys s. window. hiddenPos = ( Point){ x, y};
+      Bool ret = 0;
+      if ( sys s. window. state == wsMinimized) {
+         sys s. window. hiddenPos = ( Point){ x, y};
+         ret = 1;
+      }
       if ( var stage == csConstructing && sys s. window. state != wsNormal)
       {
          if ( !WinSetWindowUShort( h, QWS_XRESTORE, x)) apiErr;
          if ( !WinSetWindowUShort( h, QWS_YRESTORE, y)) apiErrRet;
+         return true;
       }
-      return true;
+      if ( ret) return true;
    }
-   WinQueryWindowPos( h, &swp);
-   if ( x == swp. x && y == swp. y) return true;
+   if ( sys parentHandle) {
+      POINTL ppos = { x, y};
+      WinMapWindowPoints( HWND_DESKTOP, sys parentHandle, &ppos, 1);
+      x = ppos. x;
+      y = ppos. y;
+   } else {
+      WinQueryWindowPos( h, &swp);
+      if ( x == swp. x && y == swp. y) return true;
+   }
    if ( !WinSetWindowPos( h, 0, x, y, 0, 0, SWP_MOVE)) apiErrRet;
    return true;
 }
@@ -1595,7 +1637,6 @@ apc_widget_set_size( Handle self, int width, int height)
       var virtualSize = sys s. window. hiddenSize = sys s. window. lastClientSize;
    }
    else {
-      if ( width == var virtualSize. x && height == var virtualSize. y) return true;
       sys sizeLockLevel++;
       var virtualSize = ( Point) {width, height};
       if ( !WinSetWindowPos( HANDLE, 0, 0, 0, width, height, SWP_SIZE)) apiErr;
@@ -1869,6 +1910,7 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
    dobjCheck( var owner) false;
 
    resize = kind_of( var owner, CWindow) &&
+            kind_of( self, CMenu) &&
         var stage <= csNormal &&
         ((( PAbstractMenu) self)-> self)-> get_selected( self);
    if ( resize)
@@ -1985,18 +2027,27 @@ Bool
 apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 {
    HWND att;
+   char buf[256];
+   int  qppOk = 0;
    objCheck false;
    dobjCheck( var owner) false;
 
    att = kind_of( self, CMenu) ? DHANDLE( var owner) : HWND_OBJECT;
    if ( kind_of( var owner, CWindow) &&
-	kind_of( self, CMenu) &&
+        kind_of( self, CMenu) &&
         var stage <= csNormal &&
         ((( PAbstractMenu) self)-> self)-> get_selected( self)) {
       Point size = CWindow( var owner)-> get_size( var owner);
-      if ( var handle)
+      if ( var handle) {
+         if ( !WinQueryPresParam( var handle, PP_FONTNAMESIZE, 0, nil, 255, &buf, QPF_NOINHERIT))
+           apiErr
+         else
+           qppOk = 1;
          WinDestroyWindow( var handle);
+      }
       var handle = ( Handle) add_item( att, self, (( PMenu) self)-> tree);
+      if ( qppOk && !WinSetPresParam( var handle, PP_FONTNAMESIZE, ( ULONG) strlen( buf) + 1, ( PVOID) &buf))
+         apiErr;
       WinSendMsg( DHANDLE( var owner), WM_UPDATEFRAME, MPFROMLONG( FCF_MENU), 0);
       CWindow( var owner)-> set_size( var owner, size);
    } else {

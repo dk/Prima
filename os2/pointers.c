@@ -389,8 +389,11 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 Bool
 apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 {
-   if ( sys pointer2)
+   if ( sys pointer2) {
+      if ( !WinSetPointer( HWND_DESKTOP, NULLHANDLE)) apiErr;
       if ( !WinDestroyPointer( sys pointer2)) apiErr;
+      sys pointer2 = nilHandle;
+   }
    apcErrClear;
    sys pointer2 = icon ? pointer_make_handle( self, icon, hotSpot) : nilHandle;
    if ( apcError) return false;

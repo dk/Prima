@@ -60,6 +60,9 @@
 #define WM_ZORDERSYNC                     ( WM_USER + 16)
 #define WM_REPAINT                        ( WM_USER + 17)
 #define WM_TERMINATE                      ( WM_USER + 99)
+#define WM_FIRST_USER_MESSAGE             ( WM_USER +100)
+#define WM_LAST_USER_MESSAGE              ( WM_USER +900)
+
 
 // OS/2 defaults for apc
 #define DEFAULT_FONT_NAME                "Helv"
@@ -114,6 +117,9 @@ typedef struct _OS2Guts
    Bool  focSysDisabled;     // focus system disabled
    Bool  focSysGranted;      // WinSetFocus() was called inside apc_widget_set_focused
    Bool  appTypePM;          // startup check, whether our application is PM
+   List  eventHooks;         // event hook list
+   Byte  msgMask[100];       // 800 user-defined messages allowed
+
 } OS2Guts;
 
 extern OS2Guts guts;
@@ -263,6 +269,7 @@ typedef struct _DrawableData
    ApiHandle       handle2;                 // auxillary handler
    HWND            parent;                  // window parent
    HWND            owner;                   // window owner
+   HWND            parentHandle;
    Point           cursorPos;               // cursor position
    Point           cursorSize;              // cursor size
    HPOINTER        pointer;                 // pointer data
@@ -290,6 +297,13 @@ typedef struct _MenuWndData
    Handle     menu;
    int        id;
 } MenuWndData, *PMenuWndData;
+
+typedef struct _ParentHandleRec
+{
+   HWND  hwnd;
+   int   refcnt;
+   PFNWP proc;
+} ParentHandleRec, *PParentHandleRec;
 
 
 typedef struct _BInfo

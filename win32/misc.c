@@ -204,26 +204,6 @@ apc_getdir( const char *dirname)
     return ret;
 }
 
-void *apc_dlopen(char *path, int mode)
-{
-   (void) mode;
-   return LoadLibrary( path);
-}
-
-void *dlsym(void *dll, char *symbol)
-{
-   return GetProcAddress((HMODULE)dll, symbol);
-}
-
-static char dlerror_description[256];
-
-char *dlerror(void)
-{
-   snprintf( dlerror_description, 256, "dlerror: %08x", GetLastError());
-   return dlerror_description;
-}
-
-
 Bool
 apc_show_message( const char * message)
 {
@@ -515,6 +495,12 @@ FINALIZE:
    }
    return res;
 }
+
+Bool
+apc_dl_export(char *path)
+{
+   return LoadLibrary( path) != NULL;
+}   
 
 #ifdef __cplusplus
 }

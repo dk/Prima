@@ -25,8 +25,8 @@
  *
  * $Id$
  */
-/* Created by: 
-     Dmitry Karasik <dk@plab.ku.dk> 
+/* Created by:
+     Dmitry Karasik <dk@plab.ku.dk>
      Anton Berezin  <tobez@plab.ku.dk>
 */
 #include <stdio.h>
@@ -56,13 +56,30 @@ extern Bool font_notify ( Handle self, Handle child, void * font);
 
 void sigh ( int sig);
 
+static unsigned long dllModHandle = 0;
+
+unsigned long _DLL_InitTerm( unsigned long modhandle, unsigned long flag)
+{
+   dllModHandle = flag ? 0 : modhandle;
+   return 1;
+}
+
 Bool
 window_subsystem_init( void)
 {
    ULONG minor;
+   PPIB  ppib;
+   PTIB  ptib;
+
+   DosGetInfoBlocks( &ptib, &ppib);
+
    DosQuerySysInfo( QSV_VERSION_MINOR, QSV_VERSION_MINOR, &minor, sizeof( minor));
    memset( &guts, 0, sizeof( guts));
+   guts. pid = ppib-> pib_ulpid;
+
    guts. appTypePM = 1;
+   ppib-> pib_ultype = 3; /* nasty hack - but that way stdout and PM can coexist */
+
    if ( !( guts. anchor = WinInitialize( 0))) return false;
    if ( !( guts. queue = WinCreateMsgQueue( guts. anchor, minor <= 30 ? 256 : 0))) {
       rc = WinGetLastError(guts. anchor);
@@ -76,6 +93,13 @@ window_subsystem_init( void)
    }
    _fpreset();
    create_font_hash();
+
+   { // make Prima.dll accessible for other modules
+      char buf[2048];
+      DosQueryModuleName(dllModHandle, 2048, buf);
+      apc_dl_export( buf);
+   }
+
    if ( !WinRegisterClass( guts. anchor,
                      "GeNeRiC",
                      generic_view_handler,
@@ -131,6 +155,7 @@ window_subsystem_init( void)
    list_create( &guts. transp, 8, 8);
    list_create( &guts. psList, 8, 8);
    list_create( &guts. winPsList, 8, 8);
+   list_create( &guts. eventHooks, 1, 1);
    guts. appLock = 0;
    guts. pointerLock = 0;
 
@@ -181,6 +206,7 @@ void
 window_subsystem_done( void)
 {
    HDC dc = GpiQueryDevice( guts. ps);
+   list_destroy( &guts. eventHooks);
    list_destroy( &guts. transp);
    list_first_that( &guts. psList, freePS, nil);
    list_first_that( &guts. winPsList, freeWinPS, nil);
@@ -196,6 +222,47 @@ window_subsystem_done( void)
    WinTerminate( guts. anchor);
    guts. anchor = guts. queue = nilHandle;
 }
+
+Bool
+apc_register_hook( int hookType, void * hookProc)
+{
+   if ( hookType != HOOK_EVENT_LOOP) return false;
+   list_add( &guts. eventHooks, ( Handle) hookProc);
+   return true;
+}
+
+Bool
+apc_deregister_hook( int hookType, void * hookProc)
+{
+   if ( hookType != HOOK_EVENT_LOOP) return false;
+   list_delete( &guts. eventHooks, ( Handle) hookProc);
+   return true;
+}
+
+Bool
+apc_register_event( void * sysMessage)
+{
+   UINT i;
+   for ( i = 0; i < WM_LAST_USER_MESSAGE - WM_FIRST_USER_MESSAGE; i++) {
+      if (( guts. msgMask[ i >> 3] & (1 << (i & 7))) == 0) {
+         guts. msgMask[ i >> 3] |= 1 << (i & 7);
+         *(( UINT*) sysMessage) = WM_FIRST_USER_MESSAGE + i;
+         return true;
+      }
+   }
+   return false;
+}
+
+Bool
+apc_deregister_event( void * sysMessage)
+{
+   UINT i = *((UINT*) sysMessage);
+   if (( guts. msgMask[ i >> 3] & (1 << (i & 7))) == 0)
+      return false;
+   guts. msgMask[ i >> 3] &= ~(1 << (i & 7));
+   return true;
+}
+
 
 static Bool
 local_wnd( HWND who, HWND client)
@@ -229,7 +296,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
    Event ev;
    MRESULT toReturn = 0;
    ULONG   orgMsg;
-   int orgCmd;
+   int i, orgCmd;
    Handle self;
    PFNWP fnwp;
    Bool hiStage = false;
@@ -240,6 +307,13 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
    view = WinQueryWindowULong( w, QWL_USER);
    if (( view == nilHandle) || appDead)
       return WinDefWindowProc( w, msg, mp1, mp2);
+
+   for ( i = 0; i < guts. eventHooks. count; i++) {
+      QMSG ms = { w, msg, mp1, mp2, 0};
+      if ((( PrimaHookProc *)( guts. eventHooks. items[i]))((void*) &ms))
+         return 0;
+   }
+
 
    // Here we (fortunately) have all we need to parse events
    v = ( PWidget) view;
@@ -374,7 +448,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
         if ( apc_widget_is_responsive( self))
         {
            ev. cmd = ( SHORT1FROMMP( mp1) & KC_KEYUP) ? cmKeyUp : cmKeyDown;
-           ev. key. code   = SHORT1FROMMP( mp2);
+           ev. key. code   = SHORT1FROMMP( mp2) & 0xFF;
            ev. key. key    = ctx_remap_def( SHORT2FROMMP( mp2), ctx_kb2VK, false, kbNoKey);
            ev. key. repeat = CHAR3FROMMP( mp1);
            ev. key. mod    = 0;
@@ -385,6 +459,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
               if ( isalpha( ev. key. code))
                   ev. key. code = toupper( ev. key. code) - '@';
            }
+           if  ( SHORT1FROMMP( mp1) & KC_DEADKEY) { ev. key. mod |= kmDeadKey; }
         }
         break;
       case WM_CLOSE:
@@ -412,6 +487,12 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
         ev. gen. P. y = SHORT2FROMMP( mp1);
         break;
       case WM_DESTROY:
+        if ( v-> stage <= csNormal)
+        {
+           v-> handle = nilHandle;  // tell apc not to kill this HWND
+           WinSetWindowULong( w, QWL_USER, 0);
+           Object_destroy(( Handle) v);
+        }
         break;
       case WM_ENABLE:
          ev. cmd = SHORT1FROMMP( mp1) ? cmEnable : cmDisable;
@@ -582,6 +663,8 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
            {
              POINTL p;
              HWND wp;
+
+             // checking for WM_MOUSEENTER
              if ( lastMouseOver && !WinQueryCapture( HWND_DESKTOP))
              {
                 WinQueryPointerPos( HWND_DESKTOP, &p);
@@ -699,13 +782,6 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
         } else {
            return 0;
         }
-      case WM_DESTROY:
-         if ( v-> stage <= csNormal)
-         {
-            v-> handle = nilHandle;  // tell apc not to kill this HWND
-            Object_destroy(( Handle) v);
-         }
-         break;
       case WM_HELP:
          if ( !ev. cmd)
            WinSendMsg( w, WM_VIEWHELP, 0, 0);
@@ -740,9 +816,17 @@ generic_frame_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
    MPARAM toReturn = 0;
    Bool hiStage = false;
    Point dPoint;
+   int i;
 
    if ( !self)
       return fProc ? fProc( win, msg, mp1, mp2) : WinDefWindowProc( win, msg, mp1, mp2);
+
+   for ( i = 0; i < guts. eventHooks. count; i++) {
+      QMSG ms = { win, msg, mp1, mp2, 0};
+      if ((( PrimaHookProc *)( guts. eventHooks. items[i]))((void*) &ms))
+         return 0;
+   }
+
 
    memset( &ev, 0, sizeof (ev));
    ev. gen. source = self;
@@ -1036,5 +1120,3 @@ generic_menu_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
    ret = md-> fnwp ? md-> fnwp( win, msg, mp1, mp2) : WinDefWindowProc( win, msg, mp1, mp2);
    return ret;
 }
-
-

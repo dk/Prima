@@ -158,17 +158,18 @@ apc_clipboard_get_data( Handle self, long id, int * length)
          {
              char * ptr = (char*) WinQueryClipbrdData( guts. anchor, id);
              char * ret;
-             int i, len = *length = strlen( ptr) + 1;
+             int i, len = *length = strlen( ptr);
+             len++;
              if ( ptr == nil) {
                 apcErr( errInvClipboardData);
                 return nil;
              }
              ret = malloc( *length);
-             strcpy( ret, ptr);
+             memcpy( ret, ptr, *length);
              for ( i = 0; i < len - 1; i++)
                 if ( ret[ i] == '\r') {
                    memcpy( ret + i, ret + i + 1, len - i + 1);
-                   len--;
+                   (*length)--;
                 }
              return ret;
          }
@@ -212,10 +213,11 @@ apc_clipboard_set_data( Handle self, long id, void * data, int length)
          break;
       case CF_TEXT:
          {
-             void * ptr;
-             rc = DosAllocSharedMem( &ptr, nil, length, PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
+             char * ptr;
+             rc = DosAllocSharedMem(( PVOID) &ptr, nil, length + 1, PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
              if ( rc != 0) { apiAltErr( rc); return false; };
              memcpy( ptr, data, length);
+             ptr[length] = 0;
              if ( !WinSetClipbrdData( guts. anchor, (ULONG)ptr, id, CFI_POINTER)) apiErrRet;
          }
          break;
