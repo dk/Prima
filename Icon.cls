@@ -34,6 +34,9 @@ object Icon( Image)
    unsigned char*    mask;
    int               maskLine;
    int               maskSize;
+   method void       init( HV * profile);
+   method SV       * get_mask();
+   method void       set_mask( SV * mask);
    method Handle     dup();
    method IconHandle split();
    method void       combine( Handle xorMask, Handle andMask);

@@ -176,6 +176,33 @@ colorFound:;
    var palette[ color]. r = var palette[ color]. b = var palette[ color]. g = 0;
 }
 
+void
+Icon_init( Handle self, HV * profile)
+{
+   inherited init( self, profile);
+   my set_mask( self, pget_sv( mask));
+}
+
+
+SV *
+Icon_get_mask( Handle self)
+{
+   if ( var stage > csNormal) return nilSV;
+   return newSVpvn( var mask, var maskSize);
+}
+
+void
+Icon_set_mask( Handle self, SV * svmask)
+{
+   int maskSize;
+   void * mask = SvPV( svmask, maskSize);
+
+   if ( var stage > csNormal) return;
+   if ( is_opt( optInDraw) || maskSize <= 0) return;
+
+   memcpy( var mask, mask, maskSize > var maskSize ? var maskSize : maskSize);
+}
+
 
 void
 Icon_update_change( Handle self)
