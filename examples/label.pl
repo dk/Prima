@@ -41,7 +41,7 @@ my $b1 = $w-> insert( Button => left => 20 => bottom => 0);
 $w-> insert( Label =>
 # font => { height => 24},
    origin => [ 20, 50],
-   text => "#define inherwiwted CComponent->\n#define my  ((( P\t~AbstractMenu) self)-> self)->\n #define var (( PAbstractMenu) self)->",
+   text => "#define inherited CComponent->\n#define my  ((( P~AbstractMenu) self)-> self)->\n #define var (( PAbstractMenu) self)->",
    focusLink => $b1,
    wordWrap => 1,
    height => 80,

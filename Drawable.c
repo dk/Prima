@@ -400,13 +400,17 @@ Drawable_get_font_abc( Handle self, int first, int last)
    AV * av = newAV();
    PFontABC abc;
 
+   if ( first < 0) first = 0;
+   if ( last  < 0) last  = 255;
+   if ( first > 255) first = 255;
+   if ( last  > 255) last  = 255;
 
    if ( first > last)
      abc = nil;
    else {
      gpARGS;
      gpENTER;
-     abc = apc_gp_get_font_abc( self, &first, &last);
+     abc = apc_gp_get_font_abc( self, first, last);
      gpLEAVE;
    }
 
@@ -602,9 +606,8 @@ Drawable_get_text_box( Handle self, char * text, int len)
 static char **
 do_text_wrap( Handle self, TextWrapRec *t)
 {
-   int firstChar = -1, lastChar = -1;
-   PFontABC abc, abc_cont;
-   float *width, *width_cont;
+   PFontABC abc;
+   float width[ 256];
    int start = 0, i, lSize = 16;
    float w = 0, inc = 0;
    char **ret;
@@ -613,18 +616,15 @@ do_text_wrap( Handle self, TextWrapRec *t)
    int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset = 0;
    unsigned char * text    = ( unsigned char*) t-> text;
 
-   abc = abc_cont = apc_gp_get_font_abc( self, &firstChar, &lastChar);
-   if ( abc_cont == nil) return nil;
+   abc = apc_gp_get_font_abc( self, 0, 255);
+   if ( abc == nil) return nil;
 
    ret = malloc( sizeof( char*) * lSize);
-   width_cont = width = malloc( sizeof( float) * ( lastChar - firstChar + 1));
-   for ( i = 0; i <= lastChar - firstChar; i++) {
+   for ( i = 0; i < 256; i++) {
       width[i] = abc[i]. a + abc[i]. b + abc[i]. c;
       abc[i]. c = ( abc[i]. c < 0) ? - abc[i]. c : 0;
       abc[i]. a = ( abc[i]. a < 0) ? - abc[i]. a : 0;
    }
-   abc   = abc_cont   - firstChar;
-   width = width_cont - firstChar;
 
 // macro for adding string/chunk into result table
 #define lAdd(end) {                                       \
@@ -664,7 +664,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
     if ( t-> options & twCalcMnemonic) {
        for ( i = 0; i < t-> textLen - 1; i++)
           if ( text[ i] == '~') {
-             char c = text[ i + 1];
+             unsigned char c = text[ i + 1];
              if ( c == '~' || c < ' ') {
                 i++;
                 continue;
@@ -727,8 +727,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
                    ret[ 0][ 0] = 0;
                 }
                 t-> count = 0;
-                free( width_cont);
-                free( abc_cont);
+                free( abc);
                 return ret;
              } else
                 // or fit this character
@@ -784,7 +783,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
         unsigned char *l = ret[ tildeLine];
         t-> t_char = l[ tildePos+1];
         if ( t-> options & twCollapseTilde)
-           memmove( l+tildePos, l+tildePos+1, strlen( l) - tildePos);
+           memmove( l + tildePos, l + tildePos + 1, strlen( l) - tildePos);
         l = ret[ t-> t_line];
         w = tildeOffset;
         t-> t_start = w - 1;
@@ -819,8 +818,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
           ret[ i] = n;
        }
     }
-    free( width_cont);
-    free( abc_cont);
+    free( abc);
     return ret;
 }
 
