@@ -102,10 +102,7 @@ apc_application_create( Handle self)
 void
 apc_application_close( Handle self)
 {
-   if ( guts. logger) {
-      if ( !PostMessage( guts. logger, WM_CLOSE, 0, 0)) apiErr;
-   } else
-      PostQuitMessage(0);
+   PostQuitMessage(0);
 }
 
 void
@@ -117,12 +114,8 @@ apc_application_destroy( Handle self)
       if ( !DestroyWindow( sys handle)) apiErr;
    }
    free( sys timeDefs);
-   if ( !loggerDead)
-      PostMessage( guts. logger, WM_QUIT, 0, 0);
    PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
-   loggerDead = true;
-   if ( !guts. logger)
-      PostQuitMessage(0);
+   PostQuitMessage(0);
 }
 
 void
@@ -1074,15 +1067,6 @@ apc_window_set_icon( Handle self, Handle icon)
    i = icon ? image_make_icon_handle( icon, guts. iconSizeLarge, nil, false) : nil;
    i = ( HICON) SendMessage( HANDLE, WM_SETICON, ICON_BIG, ( LPARAM) i);
    if ( i) DestroyIcon( i);
-   if ( icon && guts. logger != NULL &&
-        ((guts. loggerIcon == NULL) ||
-         (guts. loggerIconSupplier == self))
-      ) {
-      guts. loggerIcon = image_make_icon_handle( icon, guts. iconSizeLarge, nil, false);
-      guts. loggerIconSupplier = self;
-      i = ( HICON) SendMessage( guts. logger, WM_SETICON, ICON_BIG, ( LPARAM) guts. loggerIcon);
-      if ( i) DestroyIcon( i);
-   }
 }
 
 void
@@ -1395,14 +1379,6 @@ apc_widget_destroy( Handle self)
       guts. topWindows--;
 
    if ( !DestroyWindow( HANDLE)) apiErr;
-   if ( self == guts. loggerIconSupplier) {
-      if ( guts. logger) {
-         HICON i = ( HICON) SendMessage( guts. logger, WM_SETICON, ICON_BIG, ( LPARAM) NULL);
-         DestroyIcon( i);
-      }
-      guts. loggerIconSupplier = NULL;
-      guts. loggerIcon = NULL;
-   }
 }
 
 PFont
