@@ -43,7 +43,7 @@ object Prima::Image( Prima::Drawable)
    property SV *   data;
    property Bool   hScaling;
    property SV *   palette;
-   property Color  pixel( int x, int y);
+   property long   pixel( int x, int y);
    property Bool   preserveType;
    property Point  resolution;
    property Point  size;
