@@ -2305,7 +2305,6 @@ Widget_focused( Handle self, Bool set, Bool focused)
 char *
 Widget_helpContext( Handle self, Bool set, char *helpContext)
 {
-   enter_method;
    if (!set)
       return var-> helpContext ? var-> helpContext : "";
    if ( var-> stage > csFrozen) return "";
