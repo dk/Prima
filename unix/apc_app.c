@@ -315,19 +315,29 @@ apc_application_get_gui_info( char * description, int len)
 }
 
 Handle
-apc_application_get_widget_from_point( Handle self, Point point)
+apc_application_get_widget_from_point( Handle self, Point p)
 {
-   DOLBUG( "apc_application_get_widget_from_point()\n");
-   /*NYI*/
+   XWindow from, to, child;
+
+   from = to = RootWindow(DISP,SCREEN);
+   p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
+   while (XTranslateCoordinates(DISP, from, to, p.x, p.y, &p.x, &p.y, &child)) {
+      if (child) {
+         from = to;
+         to = child;
+      } else {
+         if ( to == from) to = X_WINDOW;
+         return prima_xw2h( to);
+      }
+   }
    return nilHandle;
 }
 
 Handle
 apc_application_get_handle( Handle self, ApiHandle apiHandle)
 {
-   DOLBUG( "apc_application_get_handle()\n");
-   /*NYI*/
-   return nilHandle;
+   /* NIY */
+   return RootWindow(DISP,SCREEN);
 }
 
 int

@@ -39,9 +39,10 @@ Point
 apc_widget_client_to_screen( Handle self, Point p)
 {
    XWindow cld;
+   DEFXX;
 
    p. y = X( self)-> size. y - p. y - 1;
-   if ( !XTranslateCoordinates( DISP, X_WINDOW, RootWindow( DISP, SCREEN),
+   if ( !XTranslateCoordinates( DISP, XX->drawable, RootWindow( DISP, SCREEN),
 				p. x, p. y, &p. x, &p. y, &cld)) {
       croak( "apc_widget_client_to_screen(): XTranslateCoordinates() failed");
    }
@@ -244,8 +245,7 @@ apc_widget_get_focused( void)
 ApiHandle
 apc_widget_get_handle( Handle self)
 {
-   DOLBUG( "apc_widget_get_handle()\n");
-   return nilHandle;
+   return X_WINDOW;
 }
 
 Rect
@@ -321,9 +321,10 @@ Bool
 apc_widget_is_showing( Handle self)
 {
    XWindowAttributes attrs;
+   DEFXX;
 
-   if ( X(self)-> flags. mapped
-	&& XGetWindowAttributes( DISP, X_WINDOW, &attrs)
+   if ( XX-> flags. mapped
+	&& XGetWindowAttributes( DISP, XX->drawable, &attrs)
 	&& attrs. map_state == IsViewable)
       return true;
    else
@@ -359,7 +360,7 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
    if ( !XX-> region) {
       XX-> region = XCreateRegion();
       ev. type = Expose;
-      ev. window = X_WINDOW;
+      ev. window = XX->drawable;
       ev. count = 0;
       ev. x = r. x;
       ev. y = r. y;
@@ -368,7 +369,7 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
       XX-> exposed_rect = r;
 
       if ( !XX-> flags. sync_paint) {
-	 XSendEvent( DISP, X_WINDOW, false, 0, (XEvent*)&ev);
+	 XSendEvent( DISP, XX->drawable, false, 0, (XEvent*)&ev);
 	 XCHECKPOINT;
       }
    } else {
@@ -386,15 +387,16 @@ Point
 apc_widget_screen_to_client( Handle self, Point p)
 {
    XWindow cld;
+   DEFXX;
 
    p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
    if ( !XTranslateCoordinates( DISP, RootWindow( DISP, SCREEN),
-				X_WINDOW, p. x, p. y,
+				XX->drawable, p. x, p. y,
 				&p. x, &p. y, &cld)) {
       croak( "apc_widget_screen_to_client(): XTranslateCoordinates() failed");
    }
    XCHECKPOINT;
-   p. y = X( self)-> size. y - p. y - 1;
+   p. y = XX-> size. y - p. y - 1;
    return p;
 }
 
@@ -714,7 +716,7 @@ apc_widget_set_visible( Handle self, Bool show)
    DEFXX;
    Bool flush_n_wait = false;
 
-   DOLBUG( "apc_widget_set_visible( %d) of %s\n", show, PWidget(self)->name);
+   if (!XX) return false;
    XX-> flags. mapped = show;
    if ( show) {
       if ( XX-> flags. do_size_hints) {
@@ -764,7 +766,21 @@ apc_widget_set_visible( Handle self, Bool show)
 Bool
 apc_widget_set_z_order( Handle self, Handle behind, Bool top)
 {
-   DOLBUG( "apc_widget_set_z_order()\n");
+   XWindow windoze[2];
+
+   /* top does not matter if behind is non-nil */
+   if (behind) {
+      windoze[0] = PComponent(behind)->handle;
+      windoze[1] = X_WINDOW;
+      XRestackWindows( DISP, windoze, 2);
+      XCHECKPOINT;
+   } else if (top) {
+      XRaiseWindow( DISP, X_WINDOW);
+      XCHECKPOINT;
+   } else {
+      XLowerWindow( DISP, X_WINDOW);
+      XCHECKPOINT;
+   }
    return true;
 }
 

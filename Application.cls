@@ -140,7 +140,6 @@ object Prima::Application( Prima::Widget)
 
    int     hintActive;
    Bool    hintVisible;
-   Point   hintMousePos;
    Handle  hintUnder;
    Handle  topExclModal;
    Handle  exclModal;

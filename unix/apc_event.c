@@ -36,8 +36,8 @@
 #define XK_XKB_KEYS
 #include <X11/keysymdef.h>
 
-static Handle
-xw2h( XWindow win)
+Handle
+prima_xw2h( XWindow win)
 /*
     tries to map X window to Prima's native handle
  */
@@ -204,8 +204,8 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, Bool release)
 void
 prima_handle_event( XEvent *ev, XEvent *next_event)
 {
-   XWindow win, w2;
-   Handle self, h2;
+   XWindow win;
+   Handle self;
    Bool was_sent;
    Bool disabled;
    Event e, secondary;
@@ -215,8 +215,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
    if ( appDead)
       return;
-
-   (void)h2;(void)self;(void)w2;(void)win;(void)xw2h;
 
    bzero( &e, sizeof( e));
    bzero( &secondary, sizeof( secondary));
@@ -249,7 +247,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       return;
    }
 
-   self = xw2h( win);
+   self = prima_xw2h( win);
    if (!self)
       return;
    e. gen. source = self;
@@ -458,7 +456,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
    case ReparentNotify: {
       XWindow p = ev-> xreparent. parent;
-      if ( !xw2h( p))
+      if ( !prima_xw2h( p))
 	 XX-> real_parent = p;
       DOLBUG( "ReparentNotify\n");
       return;

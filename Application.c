@@ -599,13 +599,14 @@ Application_HintTimer_handle_event( Handle timer, PEvent event)
    CComponent-> handle_event( timer, event);
    if ( event-> cmd == cmTimer) {
       Handle self = application;
-      Point pos = my-> get_pointer_pos( self);
-      ((( PTimer) timer)-> self)-> stop( timer);
-      if ( var->  hintActive == 1)
-      {
+      CTimer(timer)-> stop( timer);
+      if ( var->  hintActive == 1) {
          Event ev = {cmHint};
-         if ( pos. x != var->  hintMousePos. x || pos. y != var->  hintMousePos. y) return;
-         if ( !var->  hintUnder || (( PObject) var->  hintUnder)-> stage != csNormal) return;
+         if (   !var->hintUnder
+             || apc_application_get_widget_from_point( self,
+                   my-> get_pointer_pos(self)) != var->hintUnder
+             || PObject( var-> hintUnder)-> stage != csNormal)
+            return;
          ev. gen. B = true;
          ev. gen. H = var->  hintUnder;
          var->  hintVisible = 1;
@@ -623,7 +624,6 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
    if ( show && !is_opt( optShowHint)) return;
    if ( show)
    {
-      var->  hintMousePos = my-> get_pointer_pos( self);
       var->  hintUnder = view;
       if ( var->  hintActive == -1)
       {

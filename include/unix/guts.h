@@ -330,6 +330,9 @@ typedef union _unix_sys_data
 #define XX		selfxx
 #define WHEEL_DELTA	120
 
+extern Handle
+prima_xw2h( XWindow win);
+
 extern void
 prima_handle_event( XEvent *ev, XEvent *next_event);
 
