@@ -63,7 +63,6 @@ package gui; *AUTOLOAD = \&Const::AUTOLOAD;	# GUI types
 package dt; *AUTOLOAD = \&Const::AUTOLOAD;	# Drives types & draw_text constants
 package cr; *AUTOLOAD = \&Const::AUTOLOAD;	# Pointer ( Cursor Resources) id's
 package sbmp; *AUTOLOAD = \&Const::AUTOLOAD;	# System bitmaps index
-package cf; *AUTOLOAD = \&Const::AUTOLOAD;	# clipboard predefined formats
 package hmp; *AUTOLOAD = \&Const::AUTOLOAD;	# help manager pages constants
 package tw; *AUTOLOAD = \&Const::AUTOLOAD;	# text wrapping constants
 package fds; *AUTOLOAD = \&Const::AUTOLOAD;	# find/replace dialog scope type

@@ -1297,7 +1297,6 @@ register_constants( void)
    register_dt_constants();
    register_cr_constants();
    register_sbmp_constants();
-   register_cf_constants();
    register_hmp_constants();
    register_tw_constants();
    register_fds_constants();

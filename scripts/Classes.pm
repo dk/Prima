@@ -269,8 +269,8 @@ package Clipboard;
 use vars qw(@ISA);
 @ISA = qw(Component);
 
-sub text  { $#_ ? $_[0]-> store( cf::Text,  $_[1]) : return $_[0]-> fetch(cf::Text)  }
-sub image { $#_ ? $_[0]-> store( cf::Image, $_[1]) : return $_[0]-> fetch(cf::Image) }
+sub text  { $#_ ? $_[0]-> store( 'Text',  $_[1]) : return $_[0]-> fetch('Text')  }
+sub image { $#_ ? $_[0]-> store( 'Image', $_[1]) : return $_[0]-> fetch('Image') }
 
 # class Drawable
 package Drawable;

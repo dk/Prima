@@ -528,8 +528,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    HBITMAP  b1;
    HDC dc;
    DWORD theRop;
-   Bool db;
-   int dcmono = 0;
+   Bool db, dcmono;
 
    COLORREF oFore, oBack;
 
@@ -563,25 +562,6 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       }
 
       dc = dsys( image) ps;
-
-      // actions for mono images
-      if ( dcmono = dsys( image) options. aptDeviceBitmap ?
-         (( PDeviceBitmap) image)-> monochrome :
-         ( dsys( image) bpp == 1))
-      {
-         PRGBColor pal = (( PDeviceBitmap) image)-> palette;
-         dcmono = 1;
-         oFore  = GetTextColor( sys ps);
-         oBack  = GetBkColor( sys ps);
-         SetTextColor( sys ps,
-            (( PDeviceBitmap) image)-> palSize > 1
-            ? RGB( pal[0].r, pal[0].g, pal[0].b)
-            : RGB( 0, 0, 0));
-         SetBkColor( sys ps,
-            (( PDeviceBitmap) image)-> palSize > 2
-            ? RGB( pal[1].r, pal[1].g, pal[1].b)
-            : RGB( 0xff, 0xff, 0xff));
-      }
    } else {
       if ( is_apt( aptCompatiblePS))
          dc = CreateCompatibleDC( xdc);
@@ -595,6 +575,28 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          }
       } else
          deja = image_enscreen( image, self);
+   }
+
+   // actions for mono images
+   dcmono = dsys( image) options. aptDeviceBitmap ?
+      (( PDeviceBitmap) image)-> monochrome : (
+         i-> options. optInDraw ?
+           ( dsys( image) bpp == 1) :
+           (( i-> type & imBPP) == 1)
+      );
+
+   if ( dcmono) {
+      PRGBColor pal = i-> palette;
+      oFore  = GetTextColor( sys ps);
+      oBack  = GetBkColor( sys ps);
+      SetTextColor( sys ps,
+         i-> palSize > 1
+         ? RGB( pal[0].r, pal[0].g, pal[0].b)
+         : RGB( 0, 0, 0));
+      SetBkColor( sys ps,
+         i-> palSize > 2
+         ? RGB( pal[1].r, pal[1].g, pal[1].b)
+         : RGB( 0xff, 0xff, 0xff));
    }
 
    // if image is actually icon, drawing and-mask
@@ -660,12 +662,12 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    if ( p2) SelectPalette( xdc, p2, 1);
    if ( b1) SelectObject( dc, b1);
 
-   if ( db) {
-      if ( dcmono) {
-         SetTextColor( sys ps, oFore);
-         SetBkColor( sys ps, oBack);
-      }
-   } else {
+   if ( dcmono) {
+      SetTextColor( sys ps, oFore);
+      SetBkColor( sys ps, oBack);
+   }
+
+   if ( !db) {
       if ( dc) DeleteDC( dc);
       if ( deja != image) Object_destroy( deja);
    }

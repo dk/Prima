@@ -1842,18 +1842,10 @@ extern int
 apc_kbd_get_state( Handle self);
 
 /* Clipboard */
-#define CF(const_name) CONSTANT(cf,const_name)
-START_TABLE(cf,UV)
 #define cfText     0
-CF(Text)
 #define cfBitmap   1
-CF(Bitmap)
 #define cfImage    cfBitmap
-CF(Image)
 #define cfCustom   2
-CF(Custom)
-END_TABLE(cf,UV)
-#undef CF
 
 extern Bool
 apc_clipboard_create( void);

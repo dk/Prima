@@ -163,7 +163,7 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
 }
 
 
-/*
+
 void
 bm_put_zs( HBITMAP hbm, int x, int y, int z)
 {
@@ -184,7 +184,7 @@ bm_put_zs( HBITMAP hbm, int x, int y, int z)
    DeleteDC( xdc);
    dc_free();
 }
-*/
+
 
 
 
@@ -209,11 +209,14 @@ image_make_bitmap_handle( Handle img, HPALETTE pal)
       RealizePalette( dc);        // m$ suxx !!!
    }
 
+   // if (((( PImage) img)-> type & imBPP) != 1)
    if ((( PImage) img)-> type != imBW)
       bm = CreateDIBitmap( dc, &bi-> bmiHeader, CBM_INIT,
         (( PImage) img)-> data, bi, DIB_RGB_COLORS);
-   else
-      bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, (( PImage) img)-> data);
+   else {
+      bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, NULL);
+      SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, (( PImage) img)-> data, bi, DIB_RGB_COLORS);
+   }
 
    if ( !bm) {
       apiErr;
@@ -392,7 +395,8 @@ apc_image_begin_paint( Handle self)
    apcErrClear;
    objCheck false;
    if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
-   sys bpp = GetDeviceCaps( sys ps, BITSPIXEL);
+   sys bpp = (( PImage( self)-> type & imBPP) == imbpp1) ? 1 :
+      GetDeviceCaps( sys ps, BITSPIXEL);
    if ( sys bm == nilHandle) {
       Handle deja  = image_enscreen( self, self);
       image_set_cache( deja, self);

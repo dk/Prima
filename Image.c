@@ -497,8 +497,24 @@ Image_end_paint( Handle self)
    inherited end_paint( self);
    if ( is_opt( optPreserveType) && var->type != oldType)
       my->reset( self, oldType, nilSV);
-   else
+   else {
+      switch( var->type)
+      {
+         case imbpp1:
+            if ( memcmp( var->palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
+               var->type |= imGrayScale;
+            break;
+         case imbpp4:
+            if ( memcmp( var->palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
+               var->type |= imGrayScale;
+            break;
+         case imbpp8:
+            if ( memcmp( var->palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
+               var->type |= imGrayScale;
+            break;
+      }
       my->update_change( self);
+   }
 }
 
 void
