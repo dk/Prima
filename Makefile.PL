@@ -2117,41 +2117,45 @@ EOF
         $cp{$_} = dirname( qd( "$INSTALL_LIB/$dst"));
     }
     my $i = 0;
-    print MAKE "\ninstall: all";
-    for ( keys %cp) {
-       print MAKE "\n\t\@\$(CP) \\\n" if ( $i++ % 20) == 0;
-       print MAKE "\t$_ $cp{$_} \\\n";
+
+    sub dump_cmd
+    {
+        my ( $line, $sub, $command) = ( 0, shift, shift);
+        print MAKE "\t\@\$($command) \\\n" if scalar @_;
+        for ( @_) {
+           my $call = $sub->($_);
+           if (( $line++ % 20) == 19) {
+              print MAKE "\n\t\@\$($command) \\\n";
+           } elsif ( $line <= scalar @_ && $line > 1) {
+              print MAKE " \\\n";
+           }
+           print MAKE "\t$call";
+        }
+        print MAKE "\n";
     }
-    $i = 0;
+
+    print MAKE "\ninstall: all\n";
+    dump_cmd( sub { "$_[0] $cp{$_[0]}"}, 'CP', keys %cp);
     while ( scalar @allbins) {
         my ( $src, $dst) = ( shift @allbins, shift @allbins);
         $cp{qd( basename( $src, '.pl') . $SCRIPT_EXT)} = $dst;
         $cpbin{$src} = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
     }
-    for ( keys %cpbin) {
-       print MAKE "\n\t\@\$(CPBIN) \\\n" if ( $i++ % 20) == 0;
-       print MAKE "\t$_ $cpbin{$_} \\\n";
-    }
+    dump_cmd( sub { "$_[0] $cpbin{$_[0]}"}, 'CPBIN', keys %cpbin);
 
     print MAKE "\n\t\@echo Updating config...\n";
     print MAKE "\t$^X Makefile.PL --updateconfig $INSTALLSITEARCH/Prima/Config.pm\n";
 
-    print MAKE "\ndeinstall:";
-    $i = 0;
+    print MAKE "\ndeinstall:\n";
     my %dirs_to_rm;
-    for ( keys %cp) {
-       my $fn = $_;
-       print MAKE "\n\t\@\$(RM) \\\n" if ( $i++ % 40) == 0;
-       $fn =~ /(\\|\/)?([^\\|\/]+)$/;
-       print MAKE "\t$cp{$_}$dir_sep$2 \\\n";
-       $dirs_to_rm{$cp{$_}} = 1;
-    }
+    dump_cmd( sub { 
+        $dirs_to_rm{$cp{$_[0]}} = 1;
+        $_[0] =~ m/(\\|\/)?([^\\|\/]+)$/; 
+        return "$cp{$_[0]}$dir_sep$2";
+    }, 'RM', keys %cp);
     delete $dirs_to_rm{$INSTALLSITEARCH};
     delete $dirs_to_rm{$INSTALLSCRIPT};
-    print MAKE "\n\t\@\$(RMDIR) \\\n";
-    for ( sort { length($b) <=> length($a) } keys %dirs_to_rm) {
-       print MAKE "\t$_ \\\n";
-    }
+    dump_cmd( sub { $_[0] }, 'RMDIR', sort { length($b) <=> length($a) } keys %dirs_to_rm);
     print MAKE "\n";
     print MAKE join( "\n", @footers), "\n";
 
