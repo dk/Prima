@@ -233,6 +233,7 @@ typedef struct _drawable_sys_data /* more like widget_sys_data */
    NPoint resolution;
    Point origin, knownOrigin;
    Point size, knownSize;
+   Point transform, gtransform;
    Handle owner;  /* The real one */
    XWindow realParent; /* top levels */
    XGCValues gcv;

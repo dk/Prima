@@ -164,6 +164,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
    XX-> back = XX-> savedBack;
    XX-> flags. zeroLine = XX-> flags. savedZeroLine;
    XX-> gcv. clip_mask = None;
+   XX-> gtransform = XX-> transform;
 
    prima_get_gc( XX);
    XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);

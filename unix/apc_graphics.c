@@ -418,7 +418,7 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
 }
 
 void
-apc_gp_draw_poly( Handle self, int numPts, Point * points)
+apc_gp_draw_poly( Handle self, int numPts, Point *points)
 {
    DOLBUG( "apc_gp_draw_poly()\n");
 }
@@ -797,8 +797,12 @@ apc_gp_get_text_box( Handle self, const char* text, int len)
 Point
 apc_gp_get_transform( Handle self)
 {
-   DOLBUG( "apc_gp_get_transform()\n");
-   return (Point){0,0};
+   DEFXX;
+   if ( XX-> flags. paint) {
+      return XX-> gtransform;
+   } else {
+      return XX-> transform;
+   }
 }
 
 Bool
@@ -932,7 +936,14 @@ apc_gp_set_rop2( Handle self, int rop)
 void
 apc_gp_set_transform( Handle self, int x, int y)
 {
-   DOLBUG( "apc_gp_set_transform()\n");
+   DEFXX;
+   if ( XX-> flags. paint) {
+      XX-> gtransform. x = x;
+      XX-> gtransform. y = y;
+   } else {
+      XX-> transform. x = x;
+      XX-> transform. y = y;
+   }
 }
 
 void
