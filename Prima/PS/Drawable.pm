@@ -714,6 +714,11 @@ sub clipRect
    $_[0]-> change_transform;
 }
 
+sub region
+{
+   return undef;
+}
+
 sub scale
 {
    return @{$_[0]-> {scale}} unless $#_;
