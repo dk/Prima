@@ -1449,30 +1449,9 @@ LABEL
              # print HEADER "$lVar $incRes$structCount = SvHV_$lVar( ST( $stn), \"${ownOClass}\:\:$id\");\n      ";
              print HEADER "$lVar $incRes$structCount;\n      ";
              $structCount++;
-         } elsif ( exists $arrays{$lVar})
+         } elsif ( exists $arrays{$lVar} || exists $structs{$lVar})
          {
              print HEADER "$lVar $incRes$structCount;\n      ";
-             $structCount++;
-         } elsif ( exists $structs{$lVar})
-         {
-             print HEADER "$lVar $incRes$structCount = {";
-             my $locCount = exists $structs{$lVar} ? scalar @{$structs{$lVar}[ 0]} : $arrays{$lVar}[0];
-             for ( my $j = 0; $j < $locCount; $j++)
-             {
-                 print HEADER "," if $j;
-                 print HEADER "\n         ";
-                 my $lType =  ${ $structs{ $lVar}[ 0]}[ $j];
-                 my $mtType = $mapTypes{$lType}||$lType;
-                 if ( $lType eq "SV*") {
-                     print HEADER "ST( $stn)";
-                 } elsif ( $lType eq "string") {
-                     print HEADER "\"\"";
-                 } else {
-                     print HEADER "( $lType) $xsConv{$mtType}[1]( ST( $stn)$xsConv{$mtType}[8])";
-                 }
-                 $stn++;
-             }
-             print HEADER "\n      };\n      ";
              $structCount++;
          } else { $stn++ };
       }
@@ -1497,10 +1476,19 @@ LABEL
          {
             for ( my $j = 0; $j < scalar @{ $structs{ $lVar}[ 0]}; $j++)
             {
-                if ( ${ $structs{ $lVar}[ 0]}[ $j] eq "string")
+                my $lType  = ${ $structs{ $lVar}[ 0]}[ $j];
+                my $lName  = ${ $structs{ $lVar}[ 1]}[ $j];
+                if ( $lType eq "string")
                 {
-                    my $lName = ${ $structs{ $lVar}[ 1]}[ $j];
                     print HEADER "strcpy( $incRes$structCount. $lName, ( char*) SvPV( ST( $stn), na));\n      ";
+                } else {
+                    print HEADER "$incRes$structCount. $lName = ";
+                    if ( $lType eq "SV*") {
+                       print HEADER "ST( $stn);\n      ";
+                    } else {
+                       my $mtType = $mapTypes{$lType} || $lType;
+                       print HEADER "( $lType) $xsConv{$mtType}[1]( ST( $stn)$xsConv{$mtType}[8]);\n      ";
+                    }
                 }
                 $stn++;
             }
