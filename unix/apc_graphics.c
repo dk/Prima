@@ -440,6 +440,7 @@ prima_release_gc( PDrawableSysData selfxx)
    }
 }
 
+
 void
 prima_prepare_drawable_for_painting( Handle self)
 {
@@ -472,6 +473,7 @@ Unbuffered:
    }
 
    XX-> paint_rop = XX-> rop;
+   XX-> paint_rop2 = XX-> rop2;
    XX-> flags. paint_base_line = XX-> flags. base_line;
    XX-> flags. paint_opaque    = XX-> flags. opaque;
    XX-> saved_font = PDrawable( self)-> font;
@@ -488,13 +490,16 @@ Unbuffered:
 
    prima_get_gc( XX);
    XX-> gcv. subwindow_mode = (self == application ? IncludeInferiors : ClipByChildren);
+
    XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
    XCHECKPOINT;
+   
    if ( XX-> dashes) {
       XSetDashes( DISP, XX-> gc, 0, XX-> dashes, XX-> ndashes);
       XX-> paint_ndashes = XX-> ndashes;
       XX-> paint_dashes = malloc( XX-> ndashes);
       memcpy( XX-> paint_dashes, XX-> dashes, XX-> ndashes);
+      XX-> line_style = ( XX-> paint_rop2 == ropCopyPut) ? LineDoubleDash : LineOnOffDash;
    } else {
       XX-> paint_dashes = malloc(1);
       if ( XX-> ndashes < 0) {
@@ -504,6 +509,7 @@ Unbuffered:
 	 XX-> paint_dashes[0] = '\1';
 	 XX-> paint_ndashes = 1;
       }
+      XX-> line_style = LineSolid;
    }
 
    XX-> clip_rect. x = 0;
@@ -887,7 +893,6 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
       warn( "UAG_017: put begin_paint somewhere");
       return false;
    }
-
    SHIFT( x, y);
    y = REVERT( y);
    XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
@@ -1594,6 +1599,7 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    DEFXX;
    SHIFT( x, y);
 
+   
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_030: put begin_paint somewhere");
       return false;
@@ -1807,7 +1813,6 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 {
    DEFXX;
    int n;
-
    if ( XF_IN_PAINT(XX)) {
       n = XX-> paint_ndashes;
       memcpy( dashes, XX-> paint_dashes, n);
@@ -1820,7 +1825,7 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 	 n = 1;
 	 strcpy( dashes, "\1");
       } else {
-	 memcpy( dashes, XX-> paint_dashes, n);
+	 memcpy( dashes, XX-> dashes, n);
       }
    }
    return n;
@@ -1849,8 +1854,11 @@ apc_gp_get_rop( Handle self)
 int
 apc_gp_get_rop2( Handle self)
 {
-   DOLBUG( "apc_gp_get_rop2()\n");
-   return 0;
+   DEFXX;
+   if ( XF_IN_PAINT(XX))
+      return XX-> paint_rop2;
+   else
+      return XX-> rop2;
 }
 
 int
@@ -1926,9 +1934,9 @@ apc_gp_get_text_opaque( Handle self)
 {
    DEFXX;
    if ( XF_IN_PAINT(XX)) {
-      return XX-> flags. paint_opaque;
+      return XX-> flags. paint_opaque ? true : false;
    } else {
-      return XX-> flags. opaque;
+      return XX-> flags. opaque ? true : false;
    }
 }
 
@@ -1937,9 +1945,9 @@ apc_gp_get_text_out_baseline( Handle self)
 {
    DEFXX;
    if ( XF_IN_PAINT(XX)) {
-      return XX-> flags. paint_base_line;
+      return XX-> flags. paint_base_line ? true : false;
    } else {
-      return XX-> flags. base_line;
+      return XX-> flags. base_line ? true : false;
    }
 }
 
@@ -2101,10 +2109,11 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 	 gcv. line_style = LineSolid;
 	 XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
       } else {
-	 gcv. line_style = LineOnOffDash;
+	 gcv. line_style = ( XX-> paint_rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;
 	 XSetDashes( DISP, XX-> gc, 0, pattern, len);
 	 XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
       }
+      XX-> line_style = gcv. line_style;
       free(XX->paint_dashes);
       XX-> paint_dashes = malloc( len);
       memcpy( XX-> paint_dashes, pattern, len);
@@ -2123,7 +2132,7 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 	 XX-> dashes = malloc( len);
 	 memcpy( XX-> dashes, pattern, len);
 	 XX-> ndashes = len;
-	 XX-> gcv. line_style = LineOnOffDash;
+	 XX-> gcv. line_style = ( XX-> rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;
       }
    }
    return true;
@@ -2154,7 +2163,20 @@ apc_gp_set_rop( Handle self, int rop)
 Bool
 apc_gp_set_rop2( Handle self, int rop)
 {
-   DOLBUG( "apc_gp_set_rop2()\n");
+   DEFXX;
+   if ( XF_IN_PAINT(XX)) {
+      if ( XX-> paint_rop2 == rop) return true;
+      XX-> paint_rop2 = ( rop == ropCopyPut) ? ropCopyPut : ropNoOper;
+      if ( XX-> line_style != LineSolid) {
+         XGCValues gcv;
+         gcv. line_style = ( rop == ropCopyPut) ? LineDoubleDash : LineOnOffDash;
+         XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
+      }   
+   } else {
+      XX-> rop2 = rop;
+      if ( XX-> gcv. line_style != LineSolid)
+         XX-> gcv. line_style = ( rop == ropCopyPut) ? LineDoubleDash : LineOnOffDash;
+   }   
    return true;
 }
 

@@ -432,6 +432,8 @@ typedef struct _drawable_sys_data
    FillPattern fill_pattern, saved_fill_pattern;
    Pixmap fp_pixmap, saved_fp_pixmap;
    int rop, paint_rop;
+   int rop2, paint_rop2;
+   int line_style;
    unsigned char *dashes, *paint_dashes;
    int ndashes, paint_ndashes;
    PCachedFont font;
