@@ -50,7 +50,7 @@ produce_mask( Handle self)
    Byte color = 0;
    RGBColor rgbcolor;
    int i, bpp2;
-   int line8Size = (( var-> w * 8 + 31) / 32) * 4;
+   int line8Size = (( var-> w * 8 + 31) / 32) * 4, areaLineSize = var-> lineSize;
    int bpp = var-> type & imBPP;
    int w = var-> w, h = var-> h;
 
@@ -88,6 +88,7 @@ produce_mask( Handle self)
       break;
    default:
       bpp2  = im256;
+      areaLineSize = line8Size;
       if (!( area8 = allocb( var-> h * line8Size))) return;
       ic_type_convert( self, area8, var-> palette, im256 | ( var-> type & imGrayScale), &var-> palSize, false);
       break;
@@ -97,7 +98,7 @@ produce_mask( Handle self)
       Byte corners [4];
       Byte counts  [4] = {1, 1, 1, 1};
       RGBColor rgbcorners[4];
-      int j = var-> lineSize, k;
+      int j = areaLineSize, k;
 
       /* retrieving corner pixels */
       switch ( bpp2) {
@@ -216,7 +217,7 @@ colorFound:;
    /* processing transparency */
    memset( var-> mask, 0, var-> maskSize);
    src  = area8;
-   for ( i = 0; i < h; i++, dest += var-> maskLine, src += var-> lineSize) {
+   for ( i = 0; i < h; i++, dest += var-> maskLine, src += areaLineSize) {
       register int j;
       switch ( bpp2) {
       case im16:
@@ -252,14 +253,7 @@ colorFound:;
    }
 
    /* finalize */
-   if ( bpp != im256 && bpp != im16 && bpp != imRGB) {
-      free ( var-> data);
-      var-> data = area8;
-      var-> type = im256 | ( var-> type & imGrayScale);
-      var-> lineSize = line8Size;
-      var-> dataSize = line8Size * var-> h;
-   }
-
+   if ( var-> data != area8) free( area8);
    if ( var-> palSize > color && bpp <= im256)
       var-> palette[ color]. r = var-> palette[ color]. b = var-> palette[ color]. g = 0;
 }
