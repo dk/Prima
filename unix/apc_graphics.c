@@ -446,9 +446,17 @@ prima_cleanup_drawable_after_painting( Handle self)
 {
    DEFXX;
    if ( XX-> udrawable && XX-> udrawable != XX-> gdrawable && XX-> gdrawable) {
+      if ( XX-> stale_region && ( XX-> clip_rect. x != 0
+                                  || XX-> clip_rect. y != 0
+                                  || XX-> clip_rect. width != XX-> size.x
+                                  || XX-> clip_rect. height != XX-> size.y)) {
+         XSetRegion( DISP, XX-> gc, XX-> stale_region);
+         XCHECKPOINT;
+      }
       XCopyArea( DISP, XX-> gdrawable, XX-> udrawable, XX-> gc, 0, 0, XX-> size.x, XX-> size.y, 0, 0);
       XCHECKPOINT;
       XFreePixmap( DISP, XX-> gdrawable);
+      XCHECKPOINT;
       XX-> gdrawable = XX-> udrawable;
    }
    prima_release_gc(XX);
