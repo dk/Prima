@@ -36,7 +36,7 @@ use vars qw(@ISA);
 
 sub on_click
 {
-   print "User button has been pressed";
+   print "User button has been pressed\n";
 }
 
 sub on_paint
