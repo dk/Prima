@@ -646,16 +646,26 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          guts. last_button_event. type = 0;
       }
       
-      if ( e. cmd == cmMouseDown && !XX-> flags. first_click) {
-         Handle x = self, f = guts. focused ? guts. focused : application;
-         while ( !X(x)-> type. window && ( x != application)) x = (( PWidget) x)-> owner;
-         while ( !X(f)-> type. window && ( f != application)) f = (( PWidget) f)-> owner;
-         if ( x != f) {
-            e. cmd = 0;
-            if ((( PApplication) application)-> hintUnder == self) 
-               CWidget(self)-> set_hintVisible( self, 0);
-            if (( PWidget(self)-> options. optSelectable) && ( PWidget(self)-> selectingButtons & e. pos. button))
-               apc_widget_set_focused( self);
+      if ( e. cmd == cmMouseDown) {
+         if ( XX-> flags. first_click) {
+            if ( ! is_opt( optSelectable)) {
+               Handle x = self;
+               while ( !X(x)-> type. window && X(x)-> flags. clip_owner &&
+                       x != application) x = (( PWidget) x)-> owner;
+               if ( X(x)-> type. window) 
+                  XSetInputFocus( DISP, PWidget(x)-> handle, RevertToParent, bev-> time);
+            }
+         } else {
+            Handle x = self, f = guts. focused ? guts. focused : application;
+            while ( !X(x)-> type. window && ( x != application)) x = (( PWidget) x)-> owner;
+            while ( !X(f)-> type. window && ( f != application)) f = (( PWidget) f)-> owner;
+            if ( x != f) {
+               e. cmd = 0;
+               if ((( PApplication) application)-> hintUnder == self) 
+                  CWidget(self)-> set_hintVisible( self, 0);
+               if (( PWidget(self)-> options. optSelectable) && ( PWidget(self)-> selectingButtons & e. pos. button))
+                  apc_widget_set_focused( self);
+            }
          }
       }
       break;
