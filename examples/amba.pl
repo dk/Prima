@@ -38,6 +38,38 @@ Demonstrates custom pointer creation
 
 =cut
 
+use strict;
+
+# binhex and rle crunched data from 5 40x40 1-bit images
+my $d = <<DATA;
+rrrrrj1w8l1w8l1w8l1w8l1w8jj1w8l1w8mwnwn7uekk3uen3ucn1u8oe7o1e78kk3e7cn7e
+7en7e7en6j6n6j6kk7e7en7e7en3e7cn1e78o66ll7epc3pdbpdbp66ll66p3cp18rrlrrrr
+k1uckj1wcl7xl67v3l7iu87l7tj7tjj63ue3l78ktl7xl7xlcw98ii1aiu82cj27ej3t2j5u
+ebudjbuebue8i3uc9uei17uddv417u94v417ub6v4i7u6b7ujbteebbte8i4t9ddct9j3i65
+d3i6kt85dit8m5dp5dll22p1cq8q8q8lm8p3eq8q8rlrrrrk7x8k7we8k7wc8k3wc8k3wc8k
+1wc8k1wc8lwc8j4i7vc8i3ei3vcj7ti1vdiitb81vdjdtciv9jcteiv9jcu87u9j7ue7uaii
+7v7u2j3y2j3vbu6j1xe4kxe4ijxc8k6wc8k67v9l73vbl79v6jj3vecl3v98l1c7c7nvcm1t
+78lj1e78n1c3o1i3rrmrrrk3uemy8ii1yck7x8ky8k7xl23ue2jj7cj1tl7xl7xlc1uc18kt
+cj1t8ii1ycj3yej3yej7yej7zii7zj7dtbetdtj79tbetctj79t3e7ctj71t3e7c7iit1t3e
+7c78ieie1c3838icie1c3818icie1c381838ic1c18ie7cic1c181t7ci8i8i81t7c1ci81c
+1t383e1c3eiej3e3e3ejj3e3e3el1c3e1cn1crrlrrrrri1ycj1ycj1ycj1cl1ck3xjj3xl2
+l3l3xl1wemcj18jk7vn7vn7vn7vn7vkk7vn7vn7vn7vn7vkk7vn7vn4j1nwm1wcjrj7xl7xl
+7xl7c3e1tjj7c3e1tl7c3e1trrrj
+DATA
+$d =~ s/\n//g;
+$d =~ s/([h-r])/q(0)x(ord($1)-ord('h'))/ge;
+$d =~ s/([s-z])/q(f)x(ord($1)-ord('s'))/ge;
+$d =~ s/(..)/chr hex qq(0x$1)/ge;
+#
+my @images = map { Prima::Image-> create(
+   width    => 40,
+   height   => 40,
+   type     => im::BW,
+   data     => $_,
+   lineSize => 5,
+)-> bitmap } grep { length } split "(.{200})", $d;
+
+# figures mnemonic names ( incorrect :)
 my %figs = (
   'K' => [0,0],
   'B1' => [0,1],
@@ -49,6 +81,18 @@ my %figs = (
   'R2' => [0,7],
 );
 
+my %images = (
+  'K'  => $images[1],
+  'B1' => $images[0], 
+  'B2' => $images[0], 
+  'Q'  => $images[3], 
+  'T1' => $images[4], 
+  'T2' => $images[4], 
+  'R1' => $images[2], 
+  'R2' => $images[2], 
+);
+
+# colors shade the degree of fugure coverage
 my @colors = (
    0x808080,
    0x707070,
@@ -61,9 +105,12 @@ my @colors = (
    0x000000,
 );
 
+my @pointer= map { $::application-> get_system_value( $_ )} sv::XPointer, sv::YPointer;
+$pointer[$_] = ( $pointer[$_] - 40 ) / 2 for 0,1;
+
 my $w = Prima::MainWindow-> create(
    name => 'Chess puzzle',
-   size => [ 300, 300],
+   size => [ 360, 360],
    font => { style => fs::Bold, size => 11,},
    buffered => 1,
    menuItems => [
@@ -86,8 +133,8 @@ my $w = Prima::MainWindow-> create(
       $self-> bar ( 0, 0, $self-> size);
       $self-> color( cl::Black);
       for ( $i = 0; $i < 9; $i++) {
-         $self-> line( $i * 32, 0, $i * 32, 32 * 8);
-         $self-> line( 0, $i * 32, 32 * 8, $i * 32);
+         $self-> line( $i * 40, 0, $i * 40, 40 * 8);
+         $self-> line( 0, $i * 40, 40 * 8, $i * 40);
       }
       my @boy = (0) x 64;
       my @busy = (0) x 64;
@@ -149,19 +196,30 @@ my $w = Prima::MainWindow-> create(
       for ( grep $boy[$_], 0..63) {
          my ( $x, $y) = ($_ % 8, int($_/8));
          $self-> color( $colors[$boy[$_]] );
-         $self-> bar( $x * 32+1, $y * 32+1, $x * 32+31, $y * 32+31);
+         $self-> bar( $x * 40+1, $y * 40+1, $x * 40+39, $y * 40+39);
       }
+      
       for ( keys %figs) {
          my ( $x, $y) = @{$figs{$_}};
-         $self-> color( $boy[ $y * 8 + $x] ? cl::LightGreen : cl::Green);
-         $self-> text_out( $_, $x * 32 + 6, $y * 32 + 6);
+         $self-> set(
+            color     => cl::White,
+            backColor => cl::Black,
+            rop       => rop::AndPut,
+         );
+         $self-> put_image( $x * 40, $y * 40, $images{$_});
+         $self-> set(
+            color     => cl::Black,
+            backColor => $boy[ $y * 8 + $x] ? cl::LightGreen : cl::Green,
+            rop       => rop::XorPut,
+         );
+         $self-> put_image( $x * 40, $y * 40, $images{$_});
       }
    },
    onMouseDown => sub {
       my ( $self, $btn, $mod, $x, $y) = @_;
       return if $self->{cap};
-      $x = int( $x / 32);
-      $y = int( $y / 32);
+      $x = int( $x / 40);
+      $y = int( $y / 40);
       return if $x < 0 || $x > 8 || $y < 0 || $y > 8;
       my $i = '';
       for ( keys %figs) {
@@ -176,17 +234,17 @@ my $w = Prima::MainWindow-> create(
       my ( $xor, $and) = $xx-> split;
 
       $and-> begin_paint;
-      $and-> font-> style(fs::Bold);
-      $and-> font-> size(11);
-      $and-> color( cl::Black);
-      $and-> text_out( $i, 0, 0);
+      $and-> rop( rop::NotSrcAnd);
+      $and-> put_image( @pointer, $images{$i});
       $and-> end_paint;
 
       $xor-> begin_paint;
-      $xor-> font-> style(fs::Bold);
-      $xor-> font-> size(11);
-      $xor-> color( $::application-> get_system_value( sv::ColorPointer) ? cl::Green : cl::White);
-      $xor-> text_out( $i, 0, 0);
+      $xor-> set(
+         color      => cl::Black,
+         backColor  => $::application-> get_system_value( sv::ColorPointer) ? cl::Green : cl::White, 
+         rop        => rop::OrPut,
+      );
+      $xor-> put_image( @pointer, $images{$i});
       $xor-> end_paint;
 
       $xx-> combine( $xor, $and);
@@ -195,8 +253,8 @@ my $w = Prima::MainWindow-> create(
    onMouseUp => sub {
       my ( $self, $btn, $mod, $x, $y) = @_;
       return unless $self->{cap};
-      $x = int( $x / 32);
-      $y = int( $y / 32);
+      $x = int( $x / 40);
+      $y = int( $y / 40);
       $self-> capture(0);
       $self-> pointer( cr::Default);
       my $fg = $self-> {cap};
@@ -228,5 +286,6 @@ my $w = Prima::MainWindow-> create(
       }
    },
 );
+
 
 run Prima;
