@@ -1696,7 +1696,7 @@ EOF
 
     push @allrealclean, $config_h;
     push @allinstall, $config_h => $INSTALL_LIB . qd( "/CORE/generic");
-
+    push @allinstall, map { qd($_), $INSTALL_LIB} <pod/*.pod>;
     push @alldirs, qd( "include/generic"), qd( "auto/Prima");
 
     print "Creating Prima::Config.pm\n";
@@ -1768,8 +1768,8 @@ EOF
 # dist-related veriables
     my $os_suffix = $^O;
     $os_suffix =~ s/\s/_/g;
-    my $bindist_files = 'Prima.pm auto examples test Prima';
-    my $srcdist_files = 'Makefile.PL *.c *.cls Prima.pm examples img include os2 Prima test unix utils win32';
+    my $bindist_files = 'Prima.pm auto examples pod test Prima';
+    my $srcdist_files = 'Makefile.PL *.c *.cls Prima.pm examples pod img include os2 Prima test unix utils win32';
     my $distname = 'Prima-1.00';
 
     if ( $OS2) {
