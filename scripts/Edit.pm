@@ -770,6 +770,7 @@ sub on_keydown
 {
    my ( $self, $code, $key, $mod, $repeat) = @_;
    return if $self->{readOnly};
+   $mod &= ( km::Shift|km::Ctrl|km::Alt);
    $self->notify(q(MouseUp),0,0,0) if $self->{mouseTransaction};
    if ( $key == kb::Tab && !$self->{wantTabs}) {
       return unless $mod & km::Ctrl;
