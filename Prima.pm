@@ -245,6 +245,8 @@ B<Perl programming>:
 
 - L<Prima::Widget> - Window management 
 
+- L<Prima::Window> - Window and Dialog - top-level window management
+
 B<C programming>
 
 - L<Prima::internals> - Internal architecture
