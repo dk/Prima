@@ -2563,7 +2563,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
 {
    if ( his growMode)
    {
-#ifdef unix
+#if 0
       Point size  =  his sizeUnbound;
       Point reportedSize  =  his self-> get_size( child);
       Point pos   =  his self-> get_pos( child);
@@ -2604,8 +2604,10 @@ size_notify( Handle self, Handle child, const Rect* metrix)
       if ( his growMode & gmXCenter) pos. x = (((Rect *) metrix)-> right - size. x) / 2;
       if ( his growMode & gmYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
 
-      his self-> set_pos  ( child, pos.x, pos. y);
-      his self-> set_size ( child, size.x, size. y);
+      if ( dx != 0 || dy != 0 || ( his growMode & gmCenter) != 0)
+         his self-> set_pos  ( child, pos.x, pos. y);
+      if ( dx != 0 || dy != 0)
+         his self-> set_size ( child, size.x, size. y);
 #endif
    }
    return false;

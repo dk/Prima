@@ -991,15 +991,15 @@ apc_window_set_client_size( Handle self, int x, int y)
       if ( !GetWindowRect( h, &r)) apiErr;
       if ( !GetClientRect( h, &c)) apiErr;
       sys sizeLockLevel++;
-      var sizeUnbound. x = x + r. right  - r. left - c. right + c. left;
-      var sizeUnbound. y = y + r. bottom - r. top  - c. bottom + c. top;
-      if ( x < 0) y = 0;
+      var sizeUnbound. x = x;
+      var sizeUnbound. y = y;
+      if ( x < 0) x = 0;
       if ( y < 0) y = 0;
       SetWindowPos( h, 0,
          r. left,
          r. top - y + ( c. bottom - c. top),
-         var sizeUnbound. x,
-         var sizeUnbound. y,
+         x + r. right  - r. left - c. right + c. left,
+         y + r. bottom - r. top  - c. bottom + c. top,
          SWP_NOZORDER | SWP_NOACTIVATE);
       sys sizeLockLevel++;
    }
