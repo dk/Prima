@@ -99,14 +99,16 @@ ic_type_convert( Handle self,
    {
       case imMono: switch( dstType)
       {
-         case im16:     ic_mono_nibble_ictNone(BCPARMS);   break;
-         case im256:    ic_mono_byte_ictNone(BCPARMS);     break;
-         case imByte:   ic_mono_graybyte_ictNone(BCPARMS); break;
-         case imRGB:    ic_mono_rgb_ictNone(BCPARMS);      break;
-         case imShort:  ic_MIDCONVERT(mono, short);        break;
-         case imLong:   ic_MIDCONVERT(mono, long);         break;
-         case imFloat:  ic_MIDCONVERT(mono, float);        break;
-         case imDouble: ic_MIDCONVERT(mono, double);       break;
+         case im16:      ic_mono_nibble_ictNone(BCPARMS);    break;
+         case im256:     ic_mono_byte_ictNone(BCPARMS);      break;
+         case imByte:    ic_mono_graybyte_ictNone(BCPARMS);  break;
+         case imRGB:     ic_mono_rgb_ictNone(BCPARMS);       break;
+         case imShort:   ic_MIDCONVERT(mono, short);         break;
+         case imLong:    ic_MIDCONVERT(mono, long);          break;
+         case imFloat:   ic_MIDCONVERT(mono, float);         break;
+         case imDouble:  ic_MIDCONVERT(mono, double);        break;
+         case imComplex: ic_MIDCONVERT(mono, float_complex); break;
+         case imDComplex:ic_MIDCONVERT(mono, double_complex);break;
       }
       break; /* imMono */
 
@@ -133,6 +135,8 @@ ic_type_convert( Handle self,
          case imLong:   ic_MIDCONVERT(nibble, long);         break;
          case imFloat:  ic_MIDCONVERT(nibble, float);        break;
          case imDouble: ic_MIDCONVERT(nibble, double);       break;
+         case imComplex: ic_MIDCONVERT(nibble, float_complex); break;
+         case imDComplex:ic_MIDCONVERT(nibble, double_complex);break;
       }
       break; /* im16 */
 
@@ -169,6 +173,8 @@ ic_type_convert( Handle self,
          case imLong:   ic_MIDCONVERT(byte, long);         break;
          case imFloat:  ic_MIDCONVERT(byte, float);        break;
          case imDouble: ic_MIDCONVERT(byte, double);       break;
+         case imComplex: ic_MIDCONVERT(byte, float_complex); break;
+         case imDComplex:ic_MIDCONVERT(byte, double_complex);break;
       }
       break; /* im256 */
 
@@ -204,6 +210,9 @@ ic_type_convert( Handle self,
          case imLong   : ic_Byte_long( BCPARMS);   break;
          case imFloat  : ic_Byte_float( BCPARMS);  break;
          case imDouble : ic_Byte_double( BCPARMS); break;
+         case imComplex: ic_Byte_float_complex(BCPARMS); break;
+         case imDComplex: ic_Byte_double_complex(BCPARMS); break;
+         break;         
       }
       break; /* imByte */
 
@@ -239,6 +248,8 @@ ic_type_convert( Handle self,
          case imLong   : ic_short_long( BCPARMS);   break;
          case imFloat  : ic_short_float( BCPARMS);  break;
          case imDouble : ic_short_double( BCPARMS); break;
+         case imComplex: ic_short_float_complex(BCPARMS); break;
+         case imDComplex: ic_short_double_complex(BCPARMS); break;
       }
       break;
       /* imShort */
@@ -275,6 +286,8 @@ ic_type_convert( Handle self,
          case imShort  : ic_long_short( BCPARMS);  break;
          case imFloat  : ic_long_float( BCPARMS);  break;
          case imDouble : ic_long_double( BCPARMS); break;
+         case imComplex: ic_long_float_complex(BCPARMS); break;
+         case imDComplex: ic_long_double_complex(BCPARMS); break;
       }
       break;
       /* imLong */
@@ -311,6 +324,8 @@ ic_type_convert( Handle self,
          case imShort  : ic_float_short( BCPARMS);  break;
          case imLong   : ic_float_long( BCPARMS);   break;
          case imDouble : ic_float_double( BCPARMS); break;
+         case imComplex: ic_float_float_complex(BCPARMS); break;
+         case imDComplex: ic_float_double_complex(BCPARMS); break;
       }
       break;
       /* imFloat */
@@ -348,6 +363,8 @@ ic_type_convert( Handle self,
          case imShort  : ic_double_short( BCPARMS);  break;
          case imLong   : ic_double_long( BCPARMS);   break;
          case imFloat  : ic_double_float( BCPARMS);  break;
+         case imComplex: ic_double_float_complex(BCPARMS); break;
+         case imDComplex: ic_double_double_complex(BCPARMS); break;
       }
       break;
       /* imDouble */
@@ -394,8 +411,25 @@ ic_type_convert( Handle self,
          case imLong:   ic_MIDCONVERT(rgb, long);         break;
          case imFloat:  ic_MIDCONVERT(rgb, float);        break;
          case imDouble: ic_MIDCONVERT(rgb, double);       break;
+         case imComplex: ic_MIDCONVERT(rgb, float_complex); break;
+         case imDComplex:ic_MIDCONVERT(rgb, double_complex);break;
       }
       break; /* imRGB */
+
+      case imComplex: switch( dstType) {
+          case imByte:    ic_float_complex_Byte(BCPARMS); break;
+          case imShort:   ic_float_complex_short(BCPARMS); break;
+          case imLong:    ic_float_complex_long(BCPARMS); break;
+          case imDouble:  ic_float_complex_double(BCPARMS); break;
+          case imFloat:   ic_float_complex_float( BCPARMS); break;
+      }                   
+      case imDComplex: switch( dstType) {
+          case imByte:    ic_double_complex_Byte(BCPARMS); break;
+          case imShort:   ic_double_complex_short(BCPARMS); break;
+          case imLong:    ic_double_complex_long(BCPARMS); break;
+          case imDouble:  ic_double_complex_double(BCPARMS); break;
+          case imFloat:   ic_double_complex_float( BCPARMS); break;
+      }                   
    }
 }
 

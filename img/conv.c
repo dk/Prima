@@ -64,6 +64,51 @@ void ic_##SourceType##_##DestType( Handle self,                           \
    memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                     \
 }
 
+#define macro_asis_complex(SourceType,DestType)                                        \
+void ic_##SourceType##_##DestType##_complex( Handle self,                           \
+      Byte *dstData, PRGBColor dstPal, int dstType)                            \
+{                                                                              \
+   SourceType *src = (SourceType*) var->data;                                   \
+   DestType *dst = (DestType*) dstData;                                        \
+   int y;                                                                      \
+   int  width = var->w;                                                         \
+   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
+   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   for ( y = 0; y < var->h; y++)                                                \
+   {                                                                           \
+      SourceType *s = src;                                                     \
+      DestType *d = dst;                                                       \
+      SourceType *stop = s + width;                                            \
+      while ( s != stop) { *d++ = (DestType)*s++; *d++ = 0; }                  \
+      src = (SourceType*)(((Byte*)src) + srcLine);                             \
+      dst = (DestType*)(((Byte*)dst) + dstLine);                               \
+   }                                                                           \
+   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                     \
+}
+
+#define macro_asis_revcomplex(SourceType,DestType)                       \
+void ic_##SourceType##_complex_##DestType( Handle self,                           \
+      Byte *dstData, PRGBColor dstPal, int dstType)                            \
+{                                                                              \
+   SourceType *src = (SourceType*) var->data;                                   \
+   DestType *dst = (DestType*) dstData;                                        \
+   int y;                                                                      \
+   int  width = var->w;                                                         \
+   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
+   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   for ( y = 0; y < var->h; y++)                                                \
+   {                                                                           \
+      SourceType *s = src;                                                     \
+      DestType *d = dst;                                                       \
+      SourceType *stop = s + width*2;                                          \
+      while ( s != stop) { *d++ = (DestType)*s++; s++; }                        \
+      src = (SourceType*)(((Byte*)src) + srcLine);                             \
+      dst = (DestType*)(((Byte*)dst) + dstLine);                               \
+   }                                                                           \
+   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                     \
+}
+
+
 #define macro_int_int(SourceType,DestType)                                     \
 void rs_##SourceType##_##DestType( Handle self,                                \
      Byte * dstData, int dstType,                                              \
@@ -245,6 +290,28 @@ macro_asis(double,short)
 macro_asis(double,long)
 macro_asis(double,float)
 
+macro_asis_complex(Byte,float)
+macro_asis_complex(Byte,double)
+macro_asis_complex(short,float)
+macro_asis_complex(short,double)   
+macro_asis_complex(long,float)   
+macro_asis_complex(long,double)   
+macro_asis_complex(float,float)   
+macro_asis_complex(float,double)   
+macro_asis_complex(double,float)   
+macro_asis_complex(double,double)   
+
+macro_asis_revcomplex(double,double)
+macro_asis_revcomplex(double,float)
+macro_asis_revcomplex(double,long)
+macro_asis_revcomplex(double,short)
+macro_asis_revcomplex(double,Byte)
+macro_asis_revcomplex(float,double)
+macro_asis_revcomplex(float,float)
+macro_asis_revcomplex(float,long)
+macro_asis_revcomplex(float,short)
+macro_asis_revcomplex(float,Byte)
+   
 #ifdef __cplusplus
 }
 #endif
