@@ -1402,7 +1402,7 @@ sub paste
    my $self = $_[0];
    return if $self->{readOnly};
    my $s = $::application-> get_clipboard-> fetch( cf::Text);
-   return if length( $s) == 0;
+   return if !defined($s) or length( $s) == 0;
    $self-> cancel_block unless $self->{blockType} == bt::CUA;
    my @cs = $self-> cursor;
    my @ln = split( "\n", $s, -1);

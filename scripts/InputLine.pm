@@ -376,6 +376,7 @@ sub paste
    my ( $start, $end) = $self-> selection;
    ($start, $end) = ( $self-> charOffset, $self-> charOffset) if $start == $end;
    my $s = $::application-> get_clipboard-> fetch( cf::Text);
+   return if !defined($s) or length( $s) == 0;
    substr( $cap, $start, $end - $start) = $s;
    $self-> selection(0,0);
    $self-> text( $cap);
