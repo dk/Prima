@@ -473,7 +473,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    // case WM_SYSCHAR:return 1;
    case WM_SYSKEYUP:
    case WM_SYSKEYDOWN:
-      if ( mp2 & ( 1 << 29)) ev. key. mod = kbAlt;
+      if ( mp2 & ( 1 << 29)) ev. key. mod = kmAlt;
    case WM_KEYDOWN:
    case WM_KEYUP:
       if ( apc_widget_is_responsive( self)) {
@@ -483,9 +483,9 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
           ev. key. code   = mp1;
           ev. key. repeat = mp2 & 0x000000FF;
           ev. key. mod   |=
-             (( GetKeyState( VK_SHIFT)   < 0) ? kbShift : 0) |
-             (( GetKeyState( VK_CONTROL) < 0) ? kbCtrl  : 0) |
-             (( GetKeyState( VK_MENU)    < 0) ? kbAlt   : 0);
+             (( GetKeyState( VK_SHIFT)   < 0) ? kmShift : 0) |
+             (( GetKeyState( VK_CONTROL) < 0) ? kmCtrl  : 0) |
+             (( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
           if ( ev. key. key == kbNoKey) {
              if ( mp1 < ' ') {
                 ev. key. code = 0;   // bare mod key
@@ -494,8 +494,8 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              } else { // trying to map key to ascii...
                 WORD keys[ 2];
                 UINT scan = ( HIWORD( mp2) & 0xFF) | ( up ? 0x80000000 : 0);
-                if ( ev. key. mod & kbCtrl) {
-                   // non-alphanumeric keys - such as /\|?., etc - with kbCtrl are giving weird results
+                if ( ev. key. mod & kmCtrl) {
+                   // non-alphanumeric keys - such as /\|?., etc - with kmCtrl are giving weird results
                    BYTE octl  = guts. currentKeyState[ VK_CONTROL];
                    HKL  kl    = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
                    guts. currentKeyState[ VK_CONTROL] = 0;
@@ -509,7 +509,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
                 ev. key. code = keys[ 0] & 0xFF;
              }
           } else
-             if ( ev. key. key == kbTab && ( ev. key. mod & kbShift))
+             if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))
                 ev. key. key = kbShiftTab;
       }
       break;
@@ -643,9 +643,9 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       ev. pos. where. y = sys lastSize. y - (short)HIWORD( mp2) - 1;
    MB_MAIN_NOPOS:
       ev. pos. mod      = 0 |
-        (( mp1 & MK_CONTROL) ? kbCtrl  : 0) |
-        (( mp1 & MK_SHIFT  ) ? kbShift : 0) |
-        (( GetKeyState( VK_MENU) < 0) ? kbAlt : 0)
+        (( mp1 & MK_CONTROL) ? kmCtrl  : 0) |
+        (( mp1 & MK_SHIFT  ) ? kmShift : 0) |
+        (( GetKeyState( VK_MENU) < 0) ? kmAlt : 0)
       ;
       break;
    case WM_MENUCHAR:
@@ -654,10 +654,10 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
           ev. key. key    = ctx_remap_def( mp1, ctx_kb2VK2, false, kbNoKey);
           ev. key. code   = mp1;
           ev. key. mod   |=
-             (( GetKeyState( VK_SHIFT)   < 0) ? kbShift : 0) |
-             (( GetKeyState( VK_CONTROL) < 0) ? kbCtrl  : 0) |
-             (( GetKeyState( VK_MENU)    < 0) ? kbAlt   : 0);
-          if (( ev. key. mod & kbCtrl) && ( ev. key. code <= 'z'))
+             (( GetKeyState( VK_SHIFT)   < 0) ? kmShift : 0) |
+             (( GetKeyState( VK_CONTROL) < 0) ? kmCtrl  : 0) |
+             (( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
+          if (( ev. key. mod & kmCtrl) && ( ev. key. code <= 'z'))
              ev. key. code += 'A' - 1;
           key = CAbstractMenu-> translate_key( nilHandle, ev. key. code, ev. key. key, ev. key. mod);
           if ( v-> self-> process_accel( self, key))

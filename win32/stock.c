@@ -1269,9 +1269,9 @@ mod_select( int mod)
    ks-> kss[ 0]   = ks-> ks[ VK_MENU];
    ks-> kss[ 1]   = ks-> ks[ VK_CONTROL];
    ks-> kss[ 2]   = ks-> ks[ VK_SHIFT];
-   ks-> ks[ VK_MENU   ] = ( mod & kbAlt  ) ? 0x80 : 0;
-   ks-> ks[ VK_CONTROL] = ( mod & kbCtrl ) ? 0x80 : 0;
-   ks-> ks[ VK_SHIFT  ] = ( mod & kbShift) ? 0x80 : 0;
+   ks-> ks[ VK_MENU   ] = ( mod & kmAlt  ) ? 0x80 : 0;
+   ks-> ks[ VK_CONTROL] = ( mod & kmCtrl ) ? 0x80 : 0;
+   ks-> ks[ VK_SHIFT  ] = ( mod & kmShift) ? 0x80 : 0;
    SetKeyboardState( ks-> ks);
    ks-> gks = guts. currentKeyState;
    guts. currentKeyState = ks-> ks;

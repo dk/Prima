@@ -31,6 +31,7 @@
 #include <gbm.h>
 #include "Window.h"
 #include "Img.h"
+#include "img_api.h"
 #include "Icon.h"
 #include "DeviceBitmap.h"
 
@@ -727,7 +728,7 @@ apc_prn_destroy( Handle self)
 
 
 static int
-prn_query( Handle self, char * printer, LPPRINTER_INFO_2 info)
+prn_query( Handle self, const char * printer, LPPRINTER_INFO_2 info)
 {
    DWORD returned, needed;
    LPPRINTER_INFO_2 ppi, useThis = nil;
@@ -1034,6 +1035,7 @@ apc_prn_abort_doc( Handle self)
    sys pal = sys ps = nil;
 }
 
+
 Bool
 apc_image_read( const char *filename, PList imgInfo, Bool readData)
 {
@@ -1053,4 +1055,25 @@ apc_image_add_property( PImgInfo imageInfo, const char *propName, U16 propType, 
 }
 
 
+/* XXX - will go AWAY */
+Bool
+img_push_property_value( PImgProperty imgProp, ...)
+{
+   return false;
+}
+PImgProperty
+img_info_add_property( PImgInfo imgInfo,
+		       const char *propName,
+		       U16 propFlags,
+		       int propArraySize,
+		       ...
+                      )
+{
+   return nil;
+}
+PImgInfo
+img_info_create( int propCount)
+{
+   return nil;
+}
 

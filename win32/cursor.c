@@ -238,15 +238,17 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
       ctx_remap_def( sysPtrId, ctx_cr2IDC, true, ( int)IDC_ARROW)));
 
    if ( var stage == csNormal)
-      if ( !SetCursor( sys pointer)) apiErr;
+      SetCursor( sys pointer);
 }
 
 Bool
 apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 {
    objCheck false;
-   if ( sys pointer2)
+   if ( sys pointer2) {
+      SetCursor( NULL);
       if ( !DestroyCursor( sys pointer2)) apiErr;
+   }
    apcErrClear;
    hotSpot. y = guts. pointerSize. y - hotSpot. y - 1;
    sys pointer2 = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot, true) : nilHandle;
@@ -255,7 +257,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
    {
       sys pointer = sys pointer2;
       if ( var stage == csNormal)
-        if ( !SetCursor( sys pointer)) apiErrRet;
+         SetCursor( sys pointer);
    }
    return true;
 }

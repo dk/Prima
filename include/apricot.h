@@ -321,6 +321,10 @@ typedef struct _PostMsg {
 #define mbMiddle        mb2
 
 /* key constants */
+#define kmShift         0x100000
+#define kmCtrl          0x400000
+#define kmAlt           0x800000
+
 #define kbShift         0x100000
 #define kbCtrl          0x400000
 #define kbAlt           0x800000

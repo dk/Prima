@@ -87,7 +87,7 @@ log_write( const char *format, ...)
    return ( rc != EOF);
 }
 
-Bool
+int
 debug_write( const char *format, ...)
 {
    FILE *f;

@@ -1292,7 +1292,10 @@ void
 apc_widget_destroy( Handle self)
 {
    objCheck;
-   if ( sys pointer2) if ( !DestroyCursor( sys pointer2)) apiErr;
+   if ( sys pointer2) {
+      if ( sys pointer2 == sys pointer) SetCursor( NULL); // un-use resource first
+      if ( !DestroyCursor( sys pointer2)) apiErr;
+   }
    if ( sys recreateData) free( sys recreateData);
    free( sys timeDefs);
    if ( var handle == nilHandle) return;
@@ -1901,9 +1904,9 @@ int
 apc_kbd_get_state( Handle self)
 {
   return
-      (( GetKeyState( VK_MENU)    < 0) ? kbAlt      : 0) |
-      (( GetKeyState( VK_CONTROL) < 0) ? kbCtrl     : 0) |
-      (( GetKeyState( VK_SHIFT)   < 0) ? kbShift    : 0);
+      (( GetKeyState( VK_MENU)    < 0) ? kmAlt      : 0) |
+      (( GetKeyState( VK_CONTROL) < 0) ? kmCtrl     : 0) |
+      (( GetKeyState( VK_SHIFT)   < 0) ? kmShift    : 0);
 }
 
 Bool
@@ -2308,8 +2311,8 @@ apc_message( Handle self, PEvent ev, Bool post)
           {
              LPARAM mp2 = MAKELPARAM( ev-> pos. where. x, sys lastSize. y - ev-> pos. where. y - 1);
              WPARAM mp1 = mp1s |
-               (( ev-> pos. mod & kbShift) ? MK_SHIFT   : 0) |
-               (( ev-> pos. mod & kbCtrl ) ? MK_CONTROL : 0);
+               (( ev-> pos. mod & kmShift) ? MK_SHIFT   : 0) |
+               (( ev-> pos. mod & kmCtrl ) ? MK_CONTROL : 0);
              if ( post) {
                 KeyPacket * kp;
                 kp = malloc( sizeof( KeyPacket));
@@ -2321,7 +2324,7 @@ apc_message( Handle self, PEvent ev, Bool post)
                 PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
              } else {
                 BYTE * mod = nil;
-                if (( GetKeyState( VK_MENU) < 0) ^ (( ev-> pos. mod & kbAlt) != 0))
+                if (( GetKeyState( VK_MENU) < 0) ^ (( ev-> pos. mod & kmAlt) != 0))
                    mod = mod_select( ev-> pos. mod);
                 SendMessage(( HWND) var handle, msg, mp1, mp2);
                 if ( mod) mod_free( mod);
@@ -2335,13 +2338,13 @@ apc_message( Handle self, PEvent ev, Bool post)
              LPARAM mp2;
              int scan = 0;
              UINT msg;
-             Bool specF10 = ( ev-> key. key == kbF10) && !( ev-> key. mod & kbAlt);
+             Bool specF10 = ( ev-> key. key == kbF10) && !( ev-> key. mod & kmAlt);
              // constructing mp1
              if ( ev-> key. key == kbNoKey) {
                 if ( ev-> key. code == 0) {
-                   if ( ev-> key. mod & kbAlt   ) mp1 = VK_MENU;    else
-                   if ( ev-> key. mod & kbShift ) mp1 = VK_SHIFT;   else
-                   if ( ev-> key. mod & kbCtrl  ) mp1 = VK_CONTROL; else
+                   if ( ev-> key. mod & kmAlt   ) mp1 = VK_MENU;    else
+                   if ( ev-> key. mod & kmShift ) mp1 = VK_SHIFT;   else
+                   if ( ev-> key. mod & kmCtrl  ) mp1 = VK_CONTROL; else
                       return;
                 } else {
                    SHORT c = VkKeyScan( ev-> key. code);
@@ -2356,14 +2359,14 @@ apc_message( Handle self, PEvent ev, Bool post)
                    mp1 = LOBYTE( c);
                    c = HIBYTE( c);
                    ev-> key. mod |=
-                      (( c & 1) ? kbShift : 0) |
-                      (( c & 2) ? kbCtrl  : 0) |
-                      (( c & 4) ? kbAlt   : 0);
+                      (( c & 1) ? kmShift : 0) |
+                      (( c & 2) ? kmCtrl  : 0) |
+                      (( c & 4) ? kmAlt   : 0);
                 }
              } else {
                  if ( ev-> key. key == kbShiftTab) {
                     mp1  = VK_TAB;
-                    ev-> key. mod |= kbShift;
+                    ev-> key. mod |= kmShift;
                  } else {
                     mp1 = ctx_remap( ev-> key. key, ctx_kb2VK, true);
                     if ( mp1 == 0) return;
@@ -2372,7 +2375,7 @@ apc_message( Handle self, PEvent ev, Bool post)
              }
 
              // constructing msg
-             msg = ( ev-> key. mod & kbAlt) ? (
+             msg = ( ev-> key. mod & kmAlt) ? (
                ( ev-> cmd == cmKeyUp) ? WM_SYSKEYUP : WM_SYSKEYDOWN
              ) : (
                ( ev-> cmd == cmKeyUp) ? WM_KEYUP : WM_KEYDOWN
