@@ -1138,7 +1138,13 @@ Image_map( Handle self, Color color)
       if ( cc != color) bc = 0xffff; /* no exact color found */
    }
   
-   if (( type & imBPP) < 8) {
+   if (
+        (( type & imBPP) < 8) ||
+        (
+           ( type != imRGB) &&
+           ( type != imRGB | imGrayScale)
+        )
+      ) {
       if ( type & imGrayScale)
          my-> set_type( self, imbpp8 | imGrayScale);
       else
