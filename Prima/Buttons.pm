@@ -341,11 +341,12 @@ sub init
 {
    my $self = shift;
    $self->{$_} = 0 for ( qw(
-     borderWidth checkable checked default image glyphs
+     borderWidth checkable checked default glyphs
      vertical defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
      flat modalResult
    ));
    $self->{imageScale} = 1;
+   $self->{image} = undef;
    my %profile = $self-> SUPER::init(@_);
    defined $profile{image} ?
       $self-> image( $profile{image}) :
