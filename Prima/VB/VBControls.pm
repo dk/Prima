@@ -203,10 +203,12 @@ sub on_drawitem
    my ( $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused) = @_;
    my $ena = $me->{check}->[$index];
    unless ( defined $me->{hBenchColor}) {
+      my $save = $me-> color;
       $me->color( $me-> hiliteBackColor);
       my $i1 = $me-> color;
       $me->color( $me-> backColor);
       my $i2 = $me-> color;
+      $me-> color( $save);
       my ( $r1, $g1, $b1, $r2, $g2, $b2) = (
          ( $i1 >> 16) & 0xFF, ( $i1 >> 8) & 0xFF, $i1 & 0xFF,
          ( $i2 >> 16) & 0xFF, ( $i2 >> 8) & 0xFF, $i2 & 0xFF,
