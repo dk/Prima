@@ -440,7 +440,7 @@ sub Wheel_Paint
    $canvas-> rop( rop::XorPut);
    if ( $shapext) {
       my @sz = $canvas-> size;
-      $canvas-> linePattern( lp::Dot);
+      $canvas-> linePattern( lp::DotDot);
       $canvas-> line( $x, 0, $x, $sz[1]);
       $canvas-> line( 0, $y, $sz[0], $y);
    } else {

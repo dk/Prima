@@ -357,7 +357,7 @@ sub rect_focus
          $canvas-> backColor, $canvas-> rop
       );
       $canvas-> set(
-         linePattern => lp::Dot,
+         linePattern => lp::DotDot,
          color       => cl::White,
          backColor   => cl::Black,
          rop         => rop::XorPut,
