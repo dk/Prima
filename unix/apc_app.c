@@ -179,6 +179,7 @@ window_subsystem_init( void)
       "NET_WM_NAME",
       "NET_WM_ICON_NAME",
       "UTF8_STRING",
+      "TARGETS"
    };
    
    bzero( &guts, sizeof( guts));
