@@ -1733,7 +1733,7 @@ get_line_end( int x1, int y1, int x2, int y2, int offset, int delta, int * x3, i
          *x4 = *x3 + delta;
          if ( *x4 > x2) *x4 = x2;
       } else {
-         *x3 -= x1 - offset;
+         *x3 = x1 - offset;
          *x4 = *x3 - delta;
          if ( *x4 < x2) *x4 = x2;
       }
@@ -1785,7 +1785,7 @@ int
 gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
 {
    int x3, y3, x4, y4;
-   int len = sys linePatternLen2, ptr = 0, offset = 0;
+   int len = sys linePatternLen2, ptr = 0, offset = 0, cumul = drawState, delta = 0;
    int llen = get_line_length( x1, y1, x2, y2);
    int lw = sys stylus. pen. lopnWidth. x + 1;
    char * lp = ( len > 3) ? sys linePattern2 : (char*) &sys linePattern2;
@@ -1797,13 +1797,31 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
    if ( GetBkMode( ps) != TRANSPARENT)
       if ( !LineTo( ps, x2, y2)) apiErr;
 
-   if ( drawState > 0) offset += drawState;
+   while ( drawState > 0) {
+      int d = lp[ ptr];
+      if ( !draw) d += lw;
+      drawState -= d;
+      if ( drawState < 0) {
+         offset -= drawState;
+         if ( draw) {
+            get_line_end( x1, y1, x2, y2, 0, offset - 1, &x3, &y3, &x4, &y4);
+            MoveToEx( ps, x3, y3, nil);
+            LineTo( ps, x4, y4);
+         }
+      }
+      draw = !draw;
+      if ( ++ptr >= len) {
+         ptr = cumul = 0;
+         draw = 1;
+      }
+   }
 
    while ( offset < llen) {
-      int delta = lp[ ptr];
+      delta = lp[ ptr];
       if ( !draw) delta += lw;
       get_line_end( x1, y1, x2, y2, offset, delta - 1, &x3, &y3, &x4, &y4);
       offset += delta;
+      cumul += delta;
       if ( draw) {
          MoveToEx( ps, x3, y3, nil);
          LineTo( ps, x4, y4);
@@ -1811,11 +1829,13 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
       draw = !draw;
       if ( ++ptr >= len) {
          ptr = 0;
+         if ( offset < llen) cumul = 0;
          draw = 1;
       }
    }
 
-   return draw ? 0 : lp[ ptr];
+   cumul -= offset - llen;
+   return cumul;
 }
 
 

@@ -225,7 +225,7 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
       adjust_line_end( points[ numPts - 2].x, points[ numPts - 2].y, &points[ numPts - 1].x, &points[ numPts - 1].y, true);
    STYLUS_USE_PEN( sys ps);
    if ( erratic_line( self)) {
-      int draw = 1;
+      int draw = 0;
       for ( i = 0; i < numPts - 1; i++)
          draw = gp_line( self, points[i].x, points[i].y, points[i+1].x, points[i+1].y, draw);
    } else {
@@ -250,7 +250,7 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
    if ( erratic_line( self)) {
       for ( i = 0; i < numPts; i++)  {
          if ( i & 1)
-            gp_line( self, points[ i - 1].x, points[ i - 1].y, points[ i].x, points[ i].y, 1);
+            gp_line( self, points[ i - 1].x, points[ i - 1].y, points[ i].x, points[ i].y, 0);
       }
    } else
       if ( !( ok = PolyPolyline( sys ps, ( POINT*) points, pts, numPts/2))) apiErr;
@@ -533,10 +533,10 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
       y1 = sys lastSize. y - y1 - 1;
       y2 = sys lastSize. y - y2 - 1;
       check_swap( y1, y2);
-      draw = gp_line( self, x1, y1, x2 + 1, y1, 0);
-      draw = gp_line( self, x2, y1, x2, y2 + 1, draw);
-      draw = gp_line( self, x1, y2, x2, y2, draw);
-      gp_line( self, x1, y1, x1, y2, draw);
+      draw = gp_line( self, x2, y1, x1 + 1, y1, 0);
+      draw = gp_line( self, x1, y1, x1, y2 - 1, draw);
+      draw = gp_line( self, x1, y2, x2 - 1, y2, draw);
+      gp_line( self, x2, y2, x2, y1 + 1, draw);
    } else {
       check_swap( y1, y2);
       if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1))) apiErr;
