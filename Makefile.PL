@@ -158,11 +158,15 @@ sub quoted_split
    my @neww = ();
    my $text = shift;
    while ($text =~ m<
-       ("[^\"\\]*(?:\\.[^\"\\]*)*")\s*
+       "((?:[^\"\\]*\\.[^\"\\]*)*)"\s*
      | (\S+)\s*
      | \s+
    >gx) {
-          push @neww, $+ if defined $+;
+      if ( defined $1) {
+          push @neww, $1;
+      } elsif ( defined $2) {
+          push @neww, $2;
+      }
    }
    return @neww;
 }
@@ -211,7 +215,7 @@ sub cc_command_line
     push @cc, $srcf;
     return @cc if $compile_only;
     push @cc, $CLINKPREFIX;
-    push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH if $COMPILER eq 'msvc';
+    push @cc, map { "\"$CLIBPATHFLAG\\\"$_\\\"\"" } @LIBPATH if $COMPILER eq 'msvc';
     push @cc, map { "$LDLIBFLAG$_"} @LIBS;
     return @cc;
 }
@@ -226,7 +230,11 @@ sub ld_command_line
         push @ld, ",", $dstf, ", ,", @LIBS, ",", "win32\\Prima.def,";
     }
     else {
-        push @ld, map { "$LDLIBPATHFLAG$_"} @LIBPATH;
+        push @ld, map { 
+          m/\s/ ? 
+            "$SHQUOTE$LDLIBPATHFLAG$_$SHQUOTE" :
+            "$LDLIBPATHFLAG$_"
+        } @LIBPATH;
         push @ld, "$LDOUTFLAG$dstf", @_;
         push @ld, map { "$LDLIBFLAG$_"} @LIBS;
         push @ld, "os2\\Prima.def" if $OS2;
@@ -690,6 +698,7 @@ sub setup_variables
     setvar( 'TMPDIR', $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp"));
     setvar( 'NULLDEV', "$CWD/makefile.log");
     setvar( 'DL_LOAD_FLAGS', ( $Win32 || $OS2) ? 0 : -1);
+    setvar( 'SHQUOTE', $Win32 ? '"' : "'");
 
     setvar( 'CC', $Config{ cc});
     print "Determining compiler type... ";
@@ -789,17 +798,6 @@ sub setup_variables
                        )
           );
     my @libpaths = quoted_split( $Config{ libpth});
-    if ( $COMPILER eq 'msvc') {
-       # explanation: link /LIBPATH:"Program Files" dirty fails, hail to M$ :E,
-       # trying to link Files.obj with /LIBPATH:Program
-       my %envlibs = map { lc($_) => 1} split(';', $ENV{LIB});
-       @libpaths = grep {
-          my $d = lc $_;
-          $d =~ s/^"//;
-          $d =~ s/"$//;
-          exists($envlibs{$d}) ? 0 : 1
-       } @libpaths;
-    }
     push( @libpaths, '/usr/local/lib') if $platform eq 'unix';  # or perl makefile.pl LIBPATH+=/usr/local/lib
     setvar( 'LIBPATH', @libpaths);
     my @libs = map { s/^$LDLIBFLAG//; $_} quoted_split($Config{ libs});
@@ -880,7 +878,6 @@ sub setup_variables
     $MAKETYPE = 'make' if $MAKETYPE =~ /^gmake|pmake$/;
     die "Unknown make utility" unless $MAKETYPE =~ /^make|nmake|dmake$/;
     setvar( 'RM', $Config{ rm});
-    setvar( 'SHQUOTE', $Win32 ? '"' : "'");
     $OS2DLLF = 'Prima';
     $OS2DLLF = &DynaLoader::mod2fname([$OS2DLLF]) if $OS2 && defined &DynaLoader::mod2fname;
     $PrimaLib    = qd( "auto/Prima/Prima$LIB_EXT");
