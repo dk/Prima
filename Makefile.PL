@@ -559,7 +559,7 @@ sub setup_variables
         if ( $ENV{ PRIMA_PARANOID_MALLOC}
              && $ENV{ PRIMA_PARANOID_MALLOC} =~ /^1|yes|on|true$/i);
     while ( $CFLAGS =~ s/-D(\w+)(?:=(\S+))?\s*//) {
-        my ( $defname, $defvalue) = ( $1, $2 || '');
+        my ( $defname, $defvalue) = ( $1, $2 || 'yep');
         $DEFINES{ $defname} = $defvalue;
     }
 
