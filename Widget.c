@@ -2479,6 +2479,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
 {
    if ( his growMode)
    {
+#ifdef unix
       Point size  =  his sizeUnbound;
       Point reportedSize  =  his self-> get_size( child);
       Point pos   =  his self-> get_pos( child);
@@ -2503,9 +2504,26 @@ size_notify( Handle self, Handle child, const Rect* metrix)
       printf( "size_notify>: %s, pos: %dx%d, size: %dx%d\n",
 	      his name, pos. x, pos.y, size. x, size. y);
 
+      his self-> set_pos ( child, pos.x, pos. y);
+      his self-> set_size( child, size.x, size. y);
+      his sizeUnbound = size;
+#else
+      Point size  =  his sizeUnbound;
+      Point pos   =  his self-> get_pos( child);
+      int   dx    = ((Rect *) metrix)-> right - ((Rect *) metrix)-> left;
+      int   dy    = ((Rect *) metrix)-> top   - ((Rect *) metrix)-> bottom;
+
+      if ( his growMode & gmGrowLoX) pos.  x += dx;
+      if ( his growMode & gmGrowHiX) size. x += dx;
+      if ( his growMode & gmGrowLoY) pos.  y += dy;
+      if ( his growMode & gmGrowHiY) size. y += dy;
+      if ( his growMode & gmXCenter) pos. x = (((Rect *) metrix)-> right - size. x) / 2;
+      if ( his growMode & gmYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
+
       his self-> set_pos  ( child, pos.x, pos. y);
       his self-> set_size ( child, size.x, size. y);
       his sizeUnbound = size;
+#endif
    }
    return false;
 }
