@@ -2130,6 +2130,10 @@ Default value: 1
 
 Provides an icon representation for the expanded items.
 
+=item path STRING
+
+Runtime-only property. Selects current file system path.
+
 =item showDotDirs BOOLEAN
 
 Selects if the directories with the first dot character
