@@ -110,7 +110,7 @@ sub path
    if ( $_[0]) {
       unless ( -d $path) {
          eval "use File::Path"; die "$@\n" if $@;
-         File::Path::mkpath $path;
+         File::Path::mkpath( $path);
       }
       $path .= "/$_[0]";
    }
