@@ -36,6 +36,8 @@ use strict;
 use Config;
 use File::Find;
 use File::Basename;
+use File::Path;
+use File::Copy;
 use IO::File;
 use Cwd;
 use vars qw( %make_trans @ovvars $dir_sep $path_sep );
@@ -49,8 +51,10 @@ use vars @ovvars = qw(
     $PLATFORM
     $COMPILER
     $PREFIX
+    $INSTALL_BIN
     $INSTALL_LIB
     $INSTALL_DL
+    $INSTALL_EXAMPLES
     $TMPDIR
     $NULLDEV
     $MAKE
@@ -65,12 +69,19 @@ use vars qw(
     $Win32
     %cc_specs
     %DEFINES
+    %USER_VARS
+    %USER_VARS_ADDONS
+    %USER_DEFINES
+    %USER_DEFINES_ADDONS
+    %overrideable
     $ARGV_STR
     @alltml
+    @alltmldeps
     @allclean
     @allojects
     %alldeps
     @allinstall
+    @allbins
     @alldirs
     @headers
     @footers
@@ -331,15 +342,52 @@ ENDP
     return $rc;
 }
 
+sub setvar
+{
+    my ( $varname) = shift;
+    die "Tried to set non-overrideable variable $varname" unless $overrideable{ $varname};
+    if ( $overrideable{ $varname} eq '$') {
+	if ( defined $USER_VARS{ $varname}) {
+	    eval "\$$varname = \$USER_VARS{ \$varname}";
+	}
+	else {
+	    eval "\$$varname = join( '', \@_)";
+	}
+	die $@ if $@;
+	if ( defined $USER_VARS_ADDONS{ $varname}) {
+	    eval "\$$varname .= join( '', \@{ \$USER_VARS_ADDONS{ \$varname}})";
+	}
+	die $@ if $@;
+    }
+    elsif ( $overrideable{ $varname} eq '@') {
+	if ( defined $USER_VARS{ $varname}) {
+	    eval "\@$varname = \$USER_VARS{ \$varname}";
+	}
+	else {
+	    eval "\@$varname = \@_";
+	}
+	die $@ if $@;
+	if ( defined $USER_VARS_ADDONS{ $varname}) {
+	    eval "push \@$varname, \@{ \$USER_VARS_ADDONS{ \$varname}}";
+	}
+	die $@ if $@;
+    }
+    else {
+	die "Unsupported type of variable";
+    }
+}
+
 sub setup_variables
 {
     die "Oops! OS/2 isn't supported!\n" if $^O =~ /os2/i;
-    if ( $Win32 = ( $^O =~ /mswin32/i)) { # XXX Correct for NT.
-	$PLATFORM = 'win32';
+    my $platform;
+    if ( $Win32) { # XXX Correct for NT.
+	$platform = 'win32';
     }
     else {
-	$PLATFORM = 'unix';
+	$platform = 'unix';
     }
+    setvar( 'PLATFORM', $platform);
 
     %cc_specs = (
 		 gcc => {
@@ -386,13 +434,17 @@ sub setup_variables
 			  },
 		);
 
-    $TMPDIR = $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp");
-    $NULLDEV = $Win32 ? "NUL" : "/dev/null";
+    setvar( 'TMPDIR', $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp"));
+    setvar( 'NULLDEV', $Win32 ? "NUL" : "/dev/null");
 
-    $CC = $Config{ cc};
+    setvar( 'CC', $Config{ cc});
 
     print "Determining compiler type... ";
-    if ( have_define( "__GNUC__")) {
+    if ( defined $USER_VARS{ COMPILER}) {
+	$COMPILER = $USER_VARS{ COMPILER};
+	die "Compiler type $COMPILER is unknown" unless defined $cc_specs{ $COMPILER};
+    }
+    elsif ( have_define( "__GNUC__")) {
 	$COMPILER = 'gcc';
     }
     elsif ( have_define( "__BORLANDC__")) {
@@ -406,30 +458,31 @@ sub setup_variables
     }
     print "$cc_specs{ $COMPILER}->{ name}\n";
 
-    $CFLAGS = $Config{ ccflags} . " $cc_specs{ $COMPILER}->{ warnflags} $cc_specs{ $COMPILER}->{ cflags}";
-    $CDLFLAGS = "$Config{ cccdlflags} $Config{ ccdlflags}";
-    $COUTOFLAG = $cc_specs{ $COMPILER}->{ coutoflag};
-    $COUTEXEFLAG = $cc_specs{ $COMPILER}->{ coutexeflag};
-    $CINCPATHFLAG = '-I';
-    $CDEFFLAG = '-D';
-    $COMPONLYFLAG = '-c';
-    $CLIBPATHFLAG = $cc_specs{ $COMPILER}->{ clibpathflag};
-    $LD = $Config{ ld};
-    $LDFLAGS = "$Config{ ldflags} $Config{ lddlflags} $cc_specs{ $COMPILER}->{ ldflags}";
-    $LDOUTFLAG = $cc_specs{ $COMPILER}->{ ldoutflag};
-    $LDLIBPATHFLAG = $cc_specs{ $COMPILER}->{ ldlibpathflag};
-    $LDLIBFLAG = $cc_specs{ $COMPILER}->{ ldlibflag};
-    $OBJ_EXT = $Config{ _o};
-    $LIB_EXT = $Config{ _a};
-    $EXE_EXT = $Config{ _exe};
-    $DL_EXT = "." . $Config{ dlext};
-    @INCPATH = (
-		"include",
-		qd( "include/generic"),
-		$Config{installarchlib} . qd( "/CORE"),
-	       );
-    @LIBPATH = split ' ', $Config{ libpth};
-    @LIBS = map { s/^$LDLIBFLAG//; $_} split ' ', $Config{ libs};
+    setvar( 'CFLAGS', $Config{ ccflags} . " $cc_specs{ $COMPILER}->{ warnflags} $cc_specs{ $COMPILER}->{ cflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ cdebugflags}" : " " . ( $Config{ optimize} || '')));
+    setvar( 'CDLFLAGS', "$Config{ cccdlflags} $Config{ ccdlflags}");
+    setvar( 'COUTOFLAG', $cc_specs{ $COMPILER}->{ coutoflag});
+    setvar( 'COUTEXEFLAG', $cc_specs{ $COMPILER}->{ coutexeflag});
+    setvar( 'CINCPATHFLAG', '-I');
+    setvar( 'CDEFFLAG', '-D');
+    setvar( 'COMPONLYFLAG', '-c');
+    setvar( 'CLIBPATHFLAG', $cc_specs{ $COMPILER}->{ clibpathflag});
+    setvar( 'LD', $Config{ ld});
+    setvar( 'LDFLAGS', "$Config{ ldflags} $Config{ lddlflags} $cc_specs{ $COMPILER}->{ ldflags}" . ( defined $ENV{ PRIMA_DEVEL} ? " $cc_specs{ $COMPILER}->{ lddebugflags}" : ""));
+    setvar( 'LDOUTFLAG', $cc_specs{ $COMPILER}->{ ldoutflag});
+    setvar( 'LDLIBPATHFLAG', $cc_specs{ $COMPILER}->{ ldlibpathflag});
+    setvar( 'LDLIBFLAG', $cc_specs{ $COMPILER}->{ ldlibflag});
+    setvar( 'OBJ_EXT', $Config{ _o});
+    setvar( 'LIB_EXT', $Config{ _a});
+    setvar( 'EXE_EXT', $Config{ _exe});
+    setvar( 'DL_EXT', "." . $Config{ dlext});
+    setvar( 'INCPATH', (
+			"include",
+			qd( "include/generic"),
+			$Config{installarchlib} . qd( "/CORE"),
+		       )
+	  );
+    setvar( 'LIBPATH', split ' ', $Config{ libpth});
+    setvar( 'LIBS', map { s/^$LDLIBFLAG//; $_} split ' ', $Config{ libs});
     %DEFINES = (
 		PERL_PATCHLEVEL => $Config{ patchlevel},
 		PERL_SUBVERSION => $Config{ subversion},
@@ -444,19 +497,13 @@ sub setup_variables
 	$DEFINES{ $defname} = $defvalue;
     }
 
-    if ( defined $ENV{ PRIMA_DEVEL}) {
-	$CFLAGS .= " $cc_specs{ $COMPILER}->{ cdebugflags}";
-	$LDFLAGS .= " $cc_specs{ $COMPILER}->{ lddebugflags}";
-    }
-    else {
-	$CFLAGS .= " " . ( $Config{ optimize} || '');
-    }
+    setvar( 'PREFIX', $Config{ installsitearch});
+    setvar( 'INSTALL_BIN', $Config{ installbin});
+    setvar( 'INSTALL_LIB', $PREFIX . qd( "/Prima"));
+    setvar( 'INSTALL_DL', $PREFIX . qd( "/auto/Prima"));
+    setvar( 'INSTALL_EXAMPLES', $PREFIX . qd( "/Prima/examples"));
 
-    $PREFIX = $Config{ installsitearch};
-    $INSTALL_LIB = $PREFIX . qd( "/Prima");
-    $INSTALL_DL = $PREFIX . qd( "/auto/Prima");
-
-    $MAKETYPE = lc ( $MAKE = $Config{ make});
+    setvar( 'MAKETYPE', lc ( $MAKE = $Config{ make}));
     # Note that Borland's make utility also named 'make'. But its
     # usage is deprecated, thus we can ignore it.
     #
@@ -465,10 +512,10 @@ sub setup_variables
     # 'gmake' then we force $MAKETYPE to contain 'make'.
     $MAKETYPE = 'make' if $MAKETYPE =~ /^gmake|pmake$/;
     die "Unknown make utility" unless $MAKETYPE =~ /^make|nmake|dmake$/;
-    $RM = $Config{ rm};
-    $SHQUOTE = $Win32 ? '"' : "'";
+    setvar( 'RM', $Config{ rm});
+    setvar( 'SHQUOTE', $Win32 ? '"' : "'");
     $PrimaTarget = qd( "auto/Prima/Prima$DL_EXT");
-    $DEFFILE = qd( "win32/Prima.def");
+    setvar( 'DEFFILE', qd( "win32/Prima.def"));
 
     @Prima_exports = qw(
   boot_Prima
@@ -636,10 +683,6 @@ sub setup_paths
         print "Perl library found in ", ( $libpath || "default LIBPATH"), "\n";
         push @LIBPATH, $libpath if $libpath;
         push @LIBS, $Config{ libperl};
-
-#        $libpath = find_lib( "prigraph$LIB_EXT", "");
-#        die "Prima/Win32 requires GBM to work" unless defined $libpath;
-#        push @LIBS, "prigraph$LIB_EXT";
     }
 }
 
@@ -654,6 +697,18 @@ sub setup_defines
     have_func( 'reallocf');
     if ( $Win32) {
 	have_type( "BOOLEAN", "windows.h");
+    }
+
+    foreach my $defname ( keys %USER_DEFINES) {
+	if ( defined $USER_DEFINES{ $defname}) {
+	    $DEFINES{ $defname} = $USER_DEFINES{ $defname};
+	}
+	else {
+	    delete $DEFINES{ $defname} if exists $DEFINES{ $defname};
+	}
+    }
+    foreach my $defname ( keys %USER_DEFINES_ADDONS) {
+	$DEFINES{ $defname} = ( $DEFINES{ $defname} || '') . join( '', @{ $USER_DEFINES_ADDONS{ $defname}});
     }
 }
 
@@ -700,7 +755,7 @@ sub setup_misc
 
 sub process_commandline
 {
-    my %overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
+    %overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
     $ARGV_STR = join( " ", map { "\"$_\""} @ARGV);
     foreach my $arg ( @ARGV) {
 	if ( $arg =~ /^\s*(\w+)\s*(\+?)\=(.*)$/) {
@@ -708,20 +763,20 @@ sub process_commandline
 	    die "Unknown variable $varname" unless $overrideable{ $varname};
 	    if ( $overrideable{ $varname} eq '$') {
 		if ( $setmode eq '+') {
-		    eval "\$$varname = \$$varname . \$varval";
+		    push @{ $USER_VARS_ADDONS{ $varname}}, $varval;
 		}
 		else {
-		    eval "\$$varname = \$varval";
+		    $USER_VARS{ $varname} = $varval;
 		}
 		die $@ if $@;
 	    }
 	    elsif ( $overrideable{ $varname} eq '@') {
 		my @values = split /$path_sep/, $varval;
 		if ( $setmode eq '+') {
-		    eval "push \@$varname, \@values";
+		    push @{ $USER_VARS_ADDONS{ $varname}}, @values;
 		}
 		else {
-		    eval "\@$varname = \@values";
+		    $USER_VARS{ $varname} = @values;
 		}
 		die $@ if $@;
 	    }
@@ -729,14 +784,14 @@ sub process_commandline
 	elsif ( $arg =~ /^-(D|U)(\w+)(?:(\+?)=(.*))?$/) {
 	    my ( $defmode, $defname, $setmode, $value) = ( $1, $2, $3 || '', $4 || '');
 	    if ( $defmode eq 'U') {
-		delete $DEFINES{ $defname} if exists $DEFINES{ $defname};
+		$USER_DEFINES{ $defname} = undef; # I.e. it will exists in the hash...
 	    }
 	    else {
 		if ( $setmode eq '+') {
-		    $DEFINES{ $defname} = $DEFINES{ $defname} . $value;
+		    push @{ $USER_DEFINES_ADDONS{ $defname}}, $value;
 		}
 		else {
-		    $DEFINES{ $defname} = $value;
+		    $USER_DEFINES{ $defname} = $value;
 		}
 	    }
 	}
@@ -836,11 +891,11 @@ sub clsmake
     my $classname = $1 if $clsfile =~ /^(.*)\.cls$/;
     die "Internal error: illegal cls file"
 	unless defined $classname;
-    my $mk = qd( "include/generic/$classname.inc " .
-		 "include/generic/$classname.h " .
-		 "include/generic/$classname.tml") . ": Makefile " .
+    my $mk = qd( "include/generic/$classname.h"
+	       ) . ": Makefile " .
 		"$clsfile " . qd( "utils/gencls.pl ");
     push @alltml, qd( "include/generic/$classname.tml");
+    push @alltmldeps, qd( "include/generic/$classname.h");
     push @allclean, (
 		     qd( "include/generic/$classname.h"),
 		     qd( "include/generic/$classname.inc"),
@@ -860,25 +915,58 @@ sub clsmake
 # Here we go...
 #
 
-$CWD = cwd;
-
+$Win32 = ( $^O =~ /mswin32/i);
 $dir_sep = ( $path_sep = $Config{ path_sep}) eq ':' ? '/' : '\\';
 
-die "This script should be launched from Prima root directory\n"
-    unless -r qd( "include/apricot.h") && -d "Prima";
+if ( $#ARGV >= 0 && $ARGV[ 0] =~ /^\-\-cp(bin)?$/) {
+    my $isbin = defined $1;
+    shift @ARGV;
+    die qq(Even number of parameters expected) unless ( $#ARGV % 2);
+    while ( scalar @ARGV) {
+	my ( $src, $dst) = ( shift @ARGV, shift @ARGV);
+	print qq(Installing $src -> $dst\n);
+	next unless -f $src;
+	die qq(Destination must be a directory) if -e $dst && ! -d $dst;
+	mkpath $dst unless -d $dst;
+	copy( $src, $dst) or die qq(Copy failed: $!);
+	if ( $isbin) {
+	    $dst = qd( "$dst/" . basename( $src));
+	    if ( $Win32) {
+		system "pl2bat $dst";
+		unlink $dst;
+	    }
+	    else {
+		chmod 0755, $dst;
+	    }
+	}
+    }
+}
+elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--md') {
+    shift @ARGV;
+    mkpath \@ARGV;
+}
+elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--rm') {
+    shift @ARGV;
+    unlink @ARGV or die "Unlink failed: $!";
+}
+else {
+    $CWD = cwd;
 
-$| = 1;
+    die "This script should be launched from Prima root directory\n"
+	unless -r qd( "include/apricot.h") && -d "Prima";
 
-print "Setting up working environment.\n";
-setup_variables;
-setup_paths;
-setup_defines;
-setup_misc;
-process_commandline;
+    $| = 1;
 
-push @alldirs, qd( "include/generic"), qd( "auto/Prima");
+    print "Setting up working environment.\n";
+    process_commandline;
+    setup_variables;
+    setup_paths;
+    setup_defines;
+    setup_misc;
 
-my $make = <<MAKE;
+    push @alldirs, qd( "include/generic"), qd( "auto/Prima");
+
+    my $make = <<MAKE;
 # Makefile for Prima project under $Config{archname}
 #
 # THIS IS GENERATED FILE.
@@ -890,52 +978,56 @@ all: prima
 
 MAKE
 
-if ( $ENV{ HOME} && ( -d qd( "$ENV{ HOME}/.Makeinc"))) {
-    my $hdir = "$ENV{ HOME}/.Makeinc";
-    if ( -f "$hdir/header.PL") {
-	push @headers, `perl $hdir/header.PL`;
-	push @Makefile_deps, "$hdir/header.PL";
+    if ( $ENV{ HOME} && ( -d qd( "$ENV{ HOME}/.Makeinc"))) {
+	my $hdir = "$ENV{ HOME}/.Makeinc";
+	if ( -f "$hdir/header.PL") {
+	    push @headers, `perl $hdir/header.PL`;
+	    push @Makefile_deps, "$hdir/header.PL";
+	}
+	if ( -f "$hdir/footer.PL") {
+	    push @footers, `perl $hdir/footer.PL`;
+	    push @Makefile_deps, "$hdir/footer.PL";
+	}
+	if ( -f "$hdir/Prima.ph") {
+	    do "$hdir/Prima.ph";
+	    push @Makefile_deps, "$hdir/Prima.ph";
+	}
     }
-    if ( -f "$hdir/footer.PL") {
-	push @footers, `perl $hdir/footer.PL`;
-	push @Makefile_deps, "$hdir/footer.PL";
+
+    $make .= join( "\n", @headers) . "\n";
+
+    while ( <*.cls>) {
+	$make .= clsmake( $_);
     }
-    if ( -f "$hdir/Prima.ph") {
-	do "$hdir/Prima.ph";
-	push @Makefile_deps, "$hdir/Prima.ph";
+    while ( <*.c>) {
+	$make .= cmake( $_);
     }
-}
+    while ( <img/*.c>) {
+	$make .= cmake( $_);
+    }
+    while ( <$PLATFORM/*.c>) {
+	$make .= cmake( $_);
+    }
+    while ( <examples/*.pl>) {
+	push @allbins, $_, $INSTALL_EXAMPLES;
+    }
+    while ( <utils/*.pl>) {
+	push @allbins, $_, $INSTALL_BIN;
+    }
 
-$make .= join( "\n", @headers) . "\n";
+    my $thunks_tinc = qd( "include/generic/thunks.tinc");
+    push @allclean, $thunks_tinc;
 
-while (<*.cls>) {
-  $make .= clsmake( $_);
-}
-while (<*.c>) {
-  $make .= cmake( $_);
-}
-while (<img/*.c>) {
-  $make .= cmake( $_);
-}
-while (<$PLATFORM/*.c>) {
-  $make .= cmake( $_);
-}
+    print "Writing Makefile...";
+    $make =~ tr!/!!s;
+    open MAKE, ">Makefile" or die "Creation of Makefile failed: $!";
+    print MAKE $make;
 
-my $thunks_tinc = qd( "include/generic/thunks.tinc");
-push @allclean, $thunks_tinc;
-
-print "Writing Makefile...";
-$make =~ tr!/!!s;
-open MAKE, ">Makefile" or die "Creation of Makefile failed: $!";
-print MAKE $make;
-
-my $CPSCRIPT = quotemake( 'die qq(Even number of parameters expected) unless ( $#ARGV % 2); while ( scalar @ARGV) { ( $src, $dst) = ( shift @ARGV, shift @ARGV); print qq(Installing $src -> $dst\\n); next unless -f $src; die qq(Destination must be a directory) if -e $dst && ! -d $dst; mkpath $dst unless -d $dst; copy( $src, $dst) or die qq(Copy failed: $!); }');
-my $RMSCRIPT = quotemake( 'unlink @ARGV');
-print MAKE <<MAKE;
-$thunks_tinc: Makefile @alltml
+    print MAKE <<MAKE;
+$thunks_tinc: Makefile @alltmldeps
 \tperl utils/tmlink.pl -Iinclude/generic -o$thunks_tinc @alltml
 
-RM=$^X -e ${ SHQUOTE}${ RMSCRIPT}${ SHQUOTE}
+RM=$^X Makefile.PL --rm
 
 clean:
 \t\$(RM) @allclean $PrimaTarget
@@ -952,33 +1044,41 @@ Makefile: Makefile.PL @Makefile_deps
 \t\@echo You are safe to ignore the following error...
 \t\@false
 
-CP=$^X -MFile::Copy -MFile::Path -MFile::Basename -e ${ SHQUOTE}${ CPSCRIPT}${ SHQUOTE}
+CP=$^X Makefile.PL --cp
+CPBIN=$^X Makefile.PL --cpbin
 
 install: all
 \t\@\$(CP) \\
 \t$PrimaTarget $INSTALL_DL \\
 MAKE
 
-finddepth( sub { print MAKE "\t", qd( "$File::Find::dir/$_ $PREFIX/$File::Find::dir"), " \\\n" unless -d $_}, 'Prima');
-while ( scalar @allinstall) {
-    my ( $src, $dst) = ( shift @allinstall, shift @allinstall);
-    print MAKE "\t$src $dst \\\n";
-}
-while ( <include/*.h>) {
-    my ( $dsth) = $_;
-    $dsth =~ s/^include/CORE/;
-    print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
-}
-while ( <include/$PLATFORM/*.h>) {
-    my ( $dsth) = $_;
-    $dsth =~ s/^include/CORE/;
-    print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
-}
-print MAKE "\tPrima.pm $PREFIX\n";
+    finddepth( sub { print MAKE "\t", qd( "$File::Find::dir/$_ $PREFIX/$File::Find::dir"), " \\\n" unless -d $_}, 'Prima');
+    while ( scalar @allinstall) {
+	my ( $src, $dst) = ( shift @allinstall, shift @allinstall);
+	print MAKE "\t$src $dst \\\n";
+    }
+    while ( <include/*.h>) {
+	my ( $dsth) = $_;
+	$dsth =~ s/^include/CORE/;
+	print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
+    }
+    while ( <include/$PLATFORM/*.h>) {
+	my ( $dsth) = $_;
+	$dsth =~ s/^include/CORE/;
+	print MAKE "\t$_ ", dirname( qd( "$INSTALL_LIB/$dsth")), " \\\n";
+    }
+    print MAKE "\tPrima.pm $PREFIX\n";
 
-print MAKE <<MAKE;
+    print MAKE "\t\@\$(CPBIN)";
+    while ( scalar @allbins) {
+	my ( $src, $dst) = ( shift @allbins, shift @allbins);
+	print MAKE " \\\n\t$src $dst"
+    }
+    print MAKE "\n";
 
-MD=perl -MFile::Path -e ${ SHQUOTE}mkpath [ \@ARGV]${SHQUOTE}
+    print MAKE <<MAKE;
+
+MD=$^X Makefile.PL --md
 
 dirs: @alldirs
 
@@ -988,7 +1088,10 @@ dirs: @alldirs
 
 MAKE
 
-print MAKE join( "\n", @footers), "\n";
+    print MAKE join( "\n", @footers), "\n";
 
-close MAKE;
-print "\nAll done.  Now you can run ${ MAKE}.\n";
+    close MAKE;
+    print "\nAll done.  Now you can run ${ MAKE}.\n";
+}
+
+exit;
