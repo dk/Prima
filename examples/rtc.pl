@@ -50,8 +50,7 @@ my $w = Prima::MainWindow-> create(
 );
 
 $w-> insert( "Button",
-  origin  => [10, 10],
-  width   => 220,
+  pack => { side => 'bottom', pady => 20 },
   text => "Change scrollbar direction",
   onClick=> sub {
     my $i = $_[0]-> owner-> scrollbar;
@@ -61,8 +60,8 @@ $w-> insert( "Button",
 
 $w-> insert( "ScrollBar",
   name    => "scrollbar",
-  origin  => [ 40, 80],
-  size    => [150, 150],
+  pack => { pady => 60, padx => 60, fill => 'both', expand => 1 },
+  size => [ 150, 150],
   onCreate => sub {
      Prima::Timer-> create(
          timeout=> 1000,

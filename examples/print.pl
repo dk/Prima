@@ -165,9 +165,7 @@ $w = Prima::MainWindow-> create(
 );
 
 $l = $w-> insert( ListBox =>
-   origin   => [ 0, 0],
-   size     => [$w-> size],
-   growMode => gm::Client,
+   pack     => { expand => 1, fill => 'both'},
    name     => 'ListBox1',
    onSelectItem => sub {
       my ( $self, $ref, $sel) = @_;

@@ -69,9 +69,8 @@ popupItems => [
   }],
 ],
 path => '.',
-origin => [0,0],
 buffered => 1,
-size=>[200,200],growMode => gm::Client,
+pack => { expand => 1, fill => 'both'},
 onSelectItem => sub {
    my ($self, $index) = @_;
    #print $self-> path."\n";

@@ -49,7 +49,7 @@ my $w = Prima::MainWindow-> create(
 );
 
 $w-> insert( CheckBox =>
-   rect => [ 10, 150, 180, 180],
+   origin => [ 10, 150],
    selectable => 1,
    text => "~Check box",
    hint => 'Check box!',
@@ -57,7 +57,7 @@ $w-> insert( CheckBox =>
 );
 
 $w-> insert( Radio =>
-   rect => [ 190, 150, 300, 180],
+   origin => [ 190, 150],
    selectable => 1,
    text => "~Radio button",
    hint => 'Radio!',
@@ -80,6 +80,7 @@ $w-> insert( Button =>
    glyphs  => 2,
    hint => 'Sly button',
 );
+
 
 $w-> insert( Button =>
    origin  => [ 10, 10],

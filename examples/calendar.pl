@@ -64,13 +64,11 @@ my $w = Prima::MainWindow-> create(
 );
 
 $cal = $w-> insert( Calendar =>
-   origin    => [ 0,0],
-   size      => [ $w-> size],
-   growMode  => gm::Client,
    useLocale => 1,
    onChange  => sub {
       $w-> text( "Calendar - ".$cal-> date_as_string);
    },
+   pack => { expand => 1, fill => 'both'},
 );
 
 $w-> menu-> locale-> check if $cal-> useLocale;

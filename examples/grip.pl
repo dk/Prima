@@ -185,9 +185,7 @@ my $w = Prima::MainWindow-> create(
 );
 
 $w-> insert( ImageViewer =>
-   origin => [ 0, 0],
-   size   => [ $w-> size],
-   growMode => gm::Client,
+   pack    => { expand => 1, fill => 'both' },
    name    => 'IV',
    valignment  => ta::Center,
    alignment   => ta::Center,

@@ -108,10 +108,8 @@ my $i = Prima::Image-> create;
 $i->load('Hand.gif');
 
 $w-> client-> insert( ImageViewer =>
-  origin => [0,0],
-  size   => [ $w-> client-> size],
-  growMode => gm::Client,
   image => $i,
+  pack  => { expand => 1, fill => 'both' },
 );
 
 run Prima;

@@ -126,10 +126,8 @@ $w = Prima::MainWindow-> create(
 
 $t = Prima::TextView-> create(
    owner => $w,
-   growMode => gm::Client,
-   origin   => [0,0],
-   size     => [$w-> size],
    text     => join( "\n", @tale),
+   pack     => { expand => 1, fill => 'both' },
 );
 
 sub typeset

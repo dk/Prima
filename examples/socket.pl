@@ -51,10 +51,8 @@ my $w = Prima::MainWindow-> create(
 );
 
 my $e = $w-> insert( Edit =>
-   origin => [ 0, 30],
-   size => [ $w-> width, $w-> height - 30],
+   pack   => { side => 'top', expand => 1, fill => 'both'},
    text => '',
-   growMode => gm::Client,
    wordWrap => 1,
 );
 
@@ -103,10 +101,9 @@ my $watcher = Prima::File->create(
 );    
 
 my $il = $w-> insert( InputLine =>
-   origin => [ 5, 3],
-   size => [ $w-> width - 10, 20],
    text => '',
    current => 1,
+   pack   => { side => 'bottom', fill => 'x'},
    onKeyDown => sub {
      my ( $me, $code, $key, $mod) = @_;
      return unless $key == kb::Enter;

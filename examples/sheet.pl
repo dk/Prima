@@ -87,9 +87,7 @@ if ( defined $fname) {
 }
 
 my $l = $w-> insert( DetailedList =>
-   origin => [0,0],
-   size   => [ $w-> size],
-   growMode => gm::Client,
+   pack    => { expand => 1, fill => 'both' },
    items   => \@items,
    headers => [ 'Service' , 'Port', 'Protocol', 'Description'],
    columns => 4,

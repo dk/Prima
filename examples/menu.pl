@@ -204,8 +204,7 @@ my $w = TestWindow-> create(
   onDestroy => sub {$::application-> close},
 );
 $w-> insert( "InputLine",
-              origin    => [ 50, 10],
-              width     => 260,
+              pack      => { pady => 20, padx => 20, fill => 'x', side => 'bottom'},
               text      => $w-> text,
               maxLen    => 200,
               onChange  => sub {
@@ -217,12 +216,9 @@ $w-> insert( "InputLine",
             );
 
 $w-> insert( "Label",
+              pack      => { pady => 20, padx => 20, fill => 'both', expand => 1},
               text   => "Type here something",
-              left      => 48,
               backColor => cl::Green,
-              bottom    => 20 + $w-> InputLine1-> height,
-              width     => 200,
-              height    => 60,
               valignment => ta::Center,
               focusLink => $w-> InputLine1,
            );

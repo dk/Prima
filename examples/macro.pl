@@ -221,29 +221,25 @@ sub clean
 
 $w-> insert( [ Button =>
     text    => '~Start',
-    origin  => [ 10, 10],
-    size    => [ 96, 36],
+    pack    => { side => 'left', padx => 10 },
     name    => 'Start',
     selectable => 0,
     onClick => \&start,
   ], [ Button =>
     text    => 'S~top',
-    origin  => [ 116, 10],
-    size    => [ 96, 36],
+    pack    => { side => 'left', padx => 10 },
     name    => 'Stop',
     selectable => 0,
     onClick => \&stop,
   ], [ Button =>
     text    => '~Record',
-    origin  => [ 222, 10],
-    size    => [ 96, 36],
+    pack    => { side => 'left', padx => 10 },
     name    => 'Record',
     selectable => 0,
     onClick => \&record,
   ], [ Button =>
     text    => '~Clean',
-    origin  => [ 328, 10],
-    size    => [ 96, 36],
+    pack    => { side => 'left', padx => 10 },
     name    => 'Clean',
     selectable => 0,
     onClick => \&clean,

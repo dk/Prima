@@ -53,9 +53,7 @@ sub init
    my %profile = $self-> SUPER::init( @_);
 
    my $n = $self-> insert( TabbedNotebook =>
-      origin => [10, 10],
-      size => [ $self-> width - 20, $self-> height - 20],
-      growMode => gm::Client,
+      pack => { fill => 'both', expand => 1, padx => 20, pady => 20 },
 #     pageCount => 11,
       tabs => [0..5,5,5..10],
    );

@@ -70,10 +70,7 @@ my @user_breadths=({},{});
 
 $g = $w-> insert( 
   ( $abstract_grid ? 'Prima::AbstractGrid' : 'Prima::Grid' ),
-   origin => [0, 0],
-   size   => [$w-> size],
   ( $abstract_grid ? () : ('cells', [ map { my $a = $_; [ map {"$a.$_"} 0 .. 300]} 0 .. 300])),
-   growMode => gm::Client,
    onMeasure => sub {
       my ( $self, $axis, $index, $ref) = @_;
       if ( defined $user_breadths[$axis]->{$index} ) {
@@ -113,6 +110,7 @@ $g = $w-> insert(
    allowChangeCellWidth => 1,
    allowChangeCellHeight => 1,
    clipCells => 2,
+   pack => { expand => 1, fill => 'both' },
 );
 if ( $abstract_grid) {
    $g-> columns(10000);
