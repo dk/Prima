@@ -2183,9 +2183,12 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 
 int ctx_kb2VK[] = {
    kbNoKey       ,   0                 ,
-   kbAlt         ,   VK_MENU           ,
-   kbCtrl        ,   VK_CONTROL        ,
-   kbShift       ,   VK_SHIFT          ,
+   kbAltL        ,   VK_MENU           ,
+   kbAltR        ,   VK_RMENU          ,
+   kbCtrlL       ,   VK_CONTROL        ,
+   kbCtrlR       ,   VK_RCONTROL       ,
+   kbShiftL      ,   VK_SHIFT          ,
+   kbShiftR      ,   VK_RSHIFT         ,
    kbBackspace   ,   VK_BACK           ,
    kbTab         ,   VK_TAB            ,
    kbPause       ,   VK_PAUSE          ,
@@ -2365,7 +2368,7 @@ apc_message( Handle self, PEvent ev, Bool post)
                       (( c & 4) ? kmAlt   : 0);
                 }
              } else {
-                 if ( ev-> key. key == kbShiftTab) {
+                 if ( ev-> key. key == kbBackTab) {
                     mp1  = VK_TAB;
                     ev-> key. mod |= kmShift;
                  } else {

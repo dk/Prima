@@ -35,7 +35,7 @@
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
-// #define PROFILING
+// #define NO_LOGGER
 
 WinGuts guts;
 Bool    loggerDead   = false;
@@ -74,7 +74,7 @@ window_subsystem_init()
    HBITMAP hbm;
 
    guts. mainThreadId = GetCurrentThreadId();
-#ifndef PROFILING
+#ifndef NO_LOGGER
    start_logger();
 #endif
 
@@ -246,9 +246,6 @@ window_subsystem_done()
    hash_destroy( stylusMan, true);
    DeleteObject( hPenHollow);
    DeleteObject( hBrushHollow);
-
-// PROFILING
-// dump_logger(); Beep( 400, 400);
 
    DestroyWindow( guts. logger);
    loggerDead          = TRUE;
@@ -510,7 +507,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
              }
           } else
              if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))
-                ev. key. key = kbShiftTab;
+                ev. key. key = kbBackTab;
       }
       break;
    case WM_INITMENUPOPUP:

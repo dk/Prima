@@ -315,9 +315,8 @@ create_logger_window2( void * dummy)
    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
    wc.lpszClassName = "Logger";
 
-
    if ( !RegisterClass( &wc))
-		rc = GetLastError();
+      	rc = GetLastError();
 
    GetWindowRect( GetDesktopWindow(), &r);
    if ( r. bottom > 500) {
@@ -334,7 +333,7 @@ create_logger_window2( void * dummy)
 		rc = GetLastError();
    GetClientRect( guts.logger, &r);
    guts.loggerListBox = CreateWindow( "LISTBOX", "",
-      WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_HSCROLL | LBS_HASSTRINGS,
+      WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT,
       0, 0, r. right - r. top, r. bottom - r. top,
       guts.logger, NULL, guts. instance, NULL);
    if ( !guts. loggerListBox)
