@@ -565,6 +565,13 @@ apc_gp_get_pixel( Handle self, int x, int y)
    return 0;
 }
 
+Bool
+apc_gp_get_region( Handle self, Handle mask)
+{
+   DOLBUG( "apc_gp_get_region()\n");
+   return false;
+}
+
 void
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 {
@@ -691,6 +698,12 @@ void
 apc_gp_set_palette( Handle self)
 {
    DOLBUG( "apc_gp_set_palette()\n");
+}
+
+void
+apc_gp_set_region( Handle self, Handle mask)
+{
+   DOLBUG( "apc_gp_set_region()\n");
 }
 
 void
