@@ -73,7 +73,7 @@ File_cleanup( Handle self)
 Bool
 File_is_active( Handle self, Bool autoDetach)
 {
-   if (!var-> file || var-> file == nilSV)
+   if (!var-> file || SvTYPE( var-> file) != SVt_NULL)
       return false;
    if ( !IoIFP( sv_2io( var-> file))) {
       if ( autoDetach)
@@ -112,8 +112,7 @@ File_file( Handle self, Bool set, SV * file)
    }
    var-> file = nil;
    var-> fd = -1;
-
-   if ( file && file != nilSV) {
+   if ( file && ( SvTYPE( file) != SVt_NULL)) {
       FileStream f = IoIFP(sv_2io(file));
       if (!f) {
          warn("RTC0A0: Not a IO reference passed to File::set_file");
