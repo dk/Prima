@@ -74,3 +74,43 @@ sub unimport {
 }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::StartupWindow - a simplistic startup banner window
+
+=head1 DESCRIPTION
+
+The module, when imported by C<use> call, creates a temporary window
+which appears with 'loading...' text while the modules required by
+a program are loading. The window parameters can be modified by
+passing custom parameters after C<use Prima::StartupWindow> statement,
+which are passed to C<Prima::Window> class as creation parameters.
+The window is discarded by explicit unimporting of the module
+( see L<"SYNOPSIS">  ).
+
+=head1 SYNOPSIS
+
+   use Prima;
+   use Prima::Application;
+   use Prima::StartupWindow; # the window is created here
+
+   use Prima::Buttons;
+   .... # lots of 'use' of other modules
+
+   no Prima::StartupWindow; # the window is discarded here
+
+=head1 AUTHORS
+
+Anton Berezin E<lt>tobez@tobez.orgE<gt>,
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt> ( documentation ).
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Application>.
+
+=cut
