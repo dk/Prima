@@ -750,10 +750,20 @@ sub on_mousedown
 {
    my ( $self, $btn, $mod, $x, $y) = @_;
    return if $self->{mouseTransaction};
-   return if $btn != mb::Left;
+   return if $btn != mb::Left && $btn != mb::Middle;
    my @xy = $self-> point2xy( $x, $y);
    return unless $xy[2];
    $self-> cursor( @xy);
+
+   if ( $btn == mb::Middle) {
+      my $cp = $::application-> bring('Primary');
+      return if !$cp || $self-> {readOnly};
+      $self-> insert_text( $cp-> text, 0);
+      $self-> clear_event;
+      return;
+   }
+
+   
    $self->{mouseTransaction} = 1;
    if ( $self->{persistentBlock} && $self-> has_selection) {
       $self->{mouseTransaction} = 2;
@@ -773,6 +783,10 @@ sub on_mouseup
    $self-> end_block unless $self->{mouseTransaction} == 2;
    $self->{mouseTransaction} = undef;
    $self-> clear_event;
+
+   return if $self-> {writeOnly} || !$self-> has_selection;
+   my $cp = $::application-> bring('Primary');
+   $cp-> text( $self-> get_selected_text) if $cp;
 }
 
 sub on_mousemove
@@ -1514,11 +1528,9 @@ sub change_locked
    return $self->{notifyChangeLock} != 0;
 }
 
-sub paste
+sub insert_text
 {
-   my $self = $_[0];
-   return if $self->{readOnly};
-   my $s = $::application-> Clipboard-> fetch( 'Text');
+   my ( $self, $s, $hilite) = @_;
    return if !defined($s) or length( $s) == 0;
    $self-> cancel_block unless $self->{blockType} == bt::CUA;
    my @cs = $self-> cursor;
@@ -1533,7 +1545,7 @@ sub paste
       substr( $s, $cs[0], 0) = $ln[0];
       $self-> set_line( $cs[1], $s, q(add), $cs[0], $cl + length( $ln[0]));
       $self-> selection( $cs[0], $cs[1], $cs[0] + length( $ln[0]), $cs[1])
-         if $self->{blockType} == bt::CUA;
+         if $hilite && $self->{blockType} == bt::CUA;
    } else {
       my $spl = substr( $s, $cs[0], length( $s) - $cs[0]);
       substr( $s, $cs[0], length( $s) - $cs[0]) = $ln[0];
@@ -1542,10 +1554,17 @@ sub paste
       shift @ln;
       $self-> insert_line( $cs[1] + 1, (@ln, $spl));
       $self-> selection( $cs[0], $cs[1], length( $ln[-1]), $cs[1]+scalar(@ln))
-         if $self->{blockType} == bt::CUA;
+         if $hilite && $self->{blockType} == bt::CUA;
       $self-> unlock;
    }
    $self-> lock_change(0);
+}
+
+sub paste
+{
+   my $self = $_[0];
+   return if $self->{readOnly};
+   $self-> insert_text( $::application-> Clipboard-> fetch( 'Text'), 1);
 }
 
 sub make_logical
