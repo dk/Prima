@@ -796,7 +796,7 @@ apc_image_fetch_more( __PImgLoadData load_data, int preread_size)
 void
 prima_init_image_subsystem( void)
 {
-   apc_register_image_format( APCIMG_VERSION, &gifFormat);
+   apc_register_image_format( APCIMG_VERSION, __gif_init());
 }
 
 void
