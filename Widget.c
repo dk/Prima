@@ -42,6 +42,7 @@ static Bool hint_notify ( Handle self, Handle child, char * hint);
        Bool find_accel( Handle self, Handle item, int * key);
        Bool single_color_notify ( Handle self, Handle child, void * color);
        Bool kill_all( Handle self, Handle child, void * dummy);
+extern PRGBColor read_palette( int * palSize, SV * palette);
 
 /* init, done & update_sys_handle */
 void
@@ -80,6 +81,7 @@ Widget_init( Handle self, HV * profile)
    opt_assign( optOwnerFont     , pget_B( ownerFont));
    opt_assign( optOwnerHint     , pget_B( ownerHint));
    opt_assign( optOwnerShowHint , pget_B( ownerShowHint));
+   opt_assign( optOwnerPalette  , pget_B( ownerPalette));
    my set_color_index( self, pget_i( hiliteColor),       ciHiliteText);
    my set_color_index( self, pget_i( hiliteBackColor),   ciHilite);
    my set_color_index( self, pget_i( disabledColor),     ciDisabledText);
@@ -1305,6 +1307,8 @@ Bool Widget_get_owner_back_color( Handle self) { return is_opt( optOwnerBackColo
 Bool Widget_get_owner_font( Handle self)       { return is_opt( optOwnerFont); }
 Bool Widget_get_owner_hint( Handle self)       { return is_opt( optOwnerHint); }
 Bool Widget_get_owner_show_hint( Handle self)  { return is_opt( optOwnerShowHint); }
+Bool Widget_get_owner_palette( Handle self)  { return is_opt( optOwnerPalette); }
+
 
 Handle
 Widget_get_parent( Handle self)
@@ -1828,6 +1832,14 @@ Widget_set_owner_hint( Handle self, Bool ownerHint )
 }
 
 void
+Widget_set_owner_palette( Handle self, Bool ownerPalette)
+{
+   enter_method;
+   if ( ownerPalette) my set_palette( self, nilSV);
+   opt_assign( optOwnerPalette, ownerPalette);
+}
+
+void
 Widget_set_owner_show_hint( Handle self, Bool ownerShowHint )
 {
    enter_method;
@@ -1837,6 +1849,21 @@ Widget_set_owner_show_hint( Handle self, Bool ownerShowHint )
       my set_show_hint ( self, ((( PWidget) var owner)-> self)-> get_show_hint ( var owner));
       opt_set( optOwnerShowHint);
    }
+}
+
+void
+Widget_set_palette( Handle self, SV * palette)
+{
+   int oclrs = var palSize;
+   free( var palette);
+   var palette = read_palette( &var palSize, palette);
+   opt_clear( optOwnerPalette);
+   if ( oclrs == 0 && var palSize == 0)
+      return; // do not bother apc
+   if ( opt_InPaint)
+      apc_gp_set_palette( self);
+   else
+      apc_widget_set_palette( self);
 }
 
 void
@@ -2400,6 +2427,7 @@ single_color_notify ( Handle self, Handle child, void * color)
       his self-> set_color_index ( child, s-> color, s-> index);
    return false;
 }
+
 
 static void
 dyna_set( Handle self, HV * profile)

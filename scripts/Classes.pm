@@ -314,6 +314,7 @@ sub profile_default
       lineEnd         => le::Round,
       linePattern     => lp::Solid,
       lineWidth       => lw::Thin,
+      palette         => [],
       rop             => rop::CopyPut,
       rop2            => rop::NoOper,
       textOutBaseline => 0,
@@ -343,6 +344,7 @@ sub lineWidth  {($#_)?$_[0]->set_line_width  ($_[1]):return $_[0]->get_line_widt
 sub textOutBaseline{($#_)?$_[0]->set_text_out_baseline($_[1]):return $_[0]->get_text_out_baseline;  }
 sub textOpaque {($#_)?$_[0]->set_text_opaque ($_[1]):return $_[0]->get_text_opaque; }
 sub font       {($#_)?$_[0]->set_font($#_>1?{@_[1..$#_]}:$_[1]):return Font->new($_[0], "get_font", "set_font")}
+sub palette    {($#_)?$_[0]->set_palette      ($_[1]):return $_[0]->get_palette;    }
 sub rop        {($#_)?$_[0]->set_rop         ($_[1]):return $_[0]->get_rop;         }
 sub rop2       {($#_)?$_[0]->set_rop2        ($_[1]):return $_[0]->get_rop2;        }
 sub resolution {($#_)?$_[0]->raise_ro("resolution") :return $_[0]->get_resolution;  }
@@ -388,16 +390,16 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      conversion   => ict::Halftone,
-      height       => 0,
-      palette      => [0,0,0,0xFF,0xFF,0xFF],
-      preserveType => 0,
-      rangeLo      => 0,
-      rangeHi      => 1,
-      type         => im::Mono,
-      width        => 0,
-      hScaling     => 1,
-      vScaling     => 1,
+      conversion    => ict::Halftone,
+      height        => 0,
+      palette       => [0,0,0,0xFF,0xFF,0xFF],
+      preserveType  => 0,
+      rangeLo       => 0,
+      rangeHi       => 1,
+      type          => im::Mono,
+      width         => 0,
+      hScaling      => 1,
+      vScaling      => 1,
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -405,20 +407,20 @@ sub profile_default
 
 sub set_type       {$_[0]->set( type    =>$_[1])}
 
-sub conversion  {($#_)?$_[0]->set_conversion   ($_[1]):return $_[0]->get_conversion;   }
-sub height      {($#_)?$_[0]->set_height       ($_[1]):return $_[0]->get_height;       }
-sub rangeLo     {($#_)?$_[0]->set_stats  ($_[1], is::RangeLo):return $_[0]->get_stats(is::RangeLo);     }
-sub rangeHi     {($#_)?$_[0]->set_stats  ($_[1], is::RangeHi):return $_[0]->get_stats(is::RangeHi);     }
-sub mean        {($#_)?$_[0]->set_stats  ($_[1], is::Mean   ):return $_[0]->get_stats(is::Mean);     }
-sub variance    {($#_)?$_[0]->set_stats  ($_[1], is::Variance):return $_[0]->get_stats(is::Variance);     }
-sub stdDev      {($#_)?$_[0]->set_stats  ($_[1], is::StdDev ):return $_[0]->get_stats(is::StdDev);     }
-sub type        {($#_)?$_[0]->set_type         ($_[1]):return $_[0]->get_type;         }
-sub width       {($#_)?$_[0]->set_width        ($_[1]):return $_[0]->get_width;        }
-sub size        {($#_)?$_[0]->set_size   ($_[1],$_[2]):return $_[0]->get_size;         }
-sub palette     {($#_)?$_[0]->set_palette      ($_[1]):return $_[0]->get_palette;      }
-sub preserveType{($#_)?$_[0]->set_preserve_type($_[1]):return $_[0]->get_preserve_type;}
-sub hScaling    {($#_)?$_[0]->set_h_scaling    ($_[1]):return $_[0]->get_h_scaling    ;}
-sub vScaling    {($#_)?$_[0]->set_v_scaling    ($_[1]):return $_[0]->get_v_scaling    ;}
+sub conversion   {($#_)?$_[0]->set_conversion   ($_[1]):return $_[0]->get_conversion;   }
+sub height       {($#_)?$_[0]->set_height       ($_[1]):return $_[0]->get_height;       }
+sub rangeLo      {($#_)?$_[0]->set_stats  ($_[1], is::RangeLo):return $_[0]->get_stats(is::RangeLo);     }
+sub rangeHi      {($#_)?$_[0]->set_stats  ($_[1], is::RangeHi):return $_[0]->get_stats(is::RangeHi);     }
+sub mean         {($#_)?$_[0]->set_stats  ($_[1], is::Mean   ):return $_[0]->get_stats(is::Mean);     }
+sub variance     {($#_)?$_[0]->set_stats  ($_[1], is::Variance):return $_[0]->get_stats(is::Variance);     }
+sub stdDev       {($#_)?$_[0]->set_stats  ($_[1], is::StdDev ):return $_[0]->get_stats(is::StdDev);     }
+sub type         {($#_)?$_[0]->set_type         ($_[1]):return $_[0]->get_type;         }
+sub width        {($#_)?$_[0]->set_width        ($_[1]):return $_[0]->get_width;        }
+sub size         {($#_)?$_[0]->set_size   ($_[1],$_[2]):return $_[0]->get_size;         }
+sub palette      {($#_)?$_[0]->set_palette      ($_[1]):return $_[0]->get_palette;      }
+sub preserveType {($#_)?$_[0]->set_preserve_type($_[1]):return $_[0]->get_preserve_type;}
+sub hScaling     {($#_)?$_[0]->set_h_scaling    ($_[1]):return $_[0]->get_h_scaling    ;}
+sub vScaling     {($#_)?$_[0]->set_v_scaling    ($_[1]):return $_[0]->get_v_scaling    ;}
 
 # class Icon
 package Icon;
@@ -563,6 +565,7 @@ sub notification_types { return \%RNT; }
    ownerFont         => 1,
    ownerHint         => 1,
    ownerShowHint     => 1,
+   ownerPalette      => 1,
    pointer           => cr::Default,
    pointerVisible    => 1,
    popup             => undef,
@@ -768,6 +771,7 @@ sub ownerBackColor   {($#_)?$_[0]->set_owner_back_color($_[1]) :return $_[0]->ge
 sub ownerColor       {($#_)?$_[0]->set_owner_color($_[1]) :return $_[0]->get_owner_color; }
 sub ownerFont        {($#_)?$_[0]->set_owner_font ($_[1]) :return $_[0]->get_owner_font;  }
 sub ownerHint        {($#_)?$_[0]->set_owner_hint ($_[1]) :return $_[0]->get_owner_hint;  }
+sub ownerPalette     {($#_)?$_[0]->set_owner_palette($_[1]) :return $_[0]->get_owner_palette;  }
 sub ownerShowHint    {($#_)?$_[0]->set_owner_show_hint($_[1]):return $_[0]->get_owner_show_hint;}
 sub pointer          {($#_)?$_[0]->set_pointer     ($_[1]):return $_[0]->get_pointer;     }
 sub pointerPos       {($#_)?shift->set_pointer_pos (@_):return $_[0]->get_pointer_pos; }
@@ -1141,6 +1145,7 @@ sub profile_default
       ownerBackColor => 0,
       ownerFont      => 0,
       ownerShowHint  => 0,
+      ownerPalette   => 0,
       showHint       => 1,
       clipboardClass => 'Clipboard',
       helpFile       => '',
@@ -1166,6 +1171,7 @@ sub profile_check_in
    delete $p-> { ownerBackColor};
    delete $p-> { ownerFont};
    delete $p-> { ownerShowHint};
+   delete $p-> { ownerPalette};
 }
 
 

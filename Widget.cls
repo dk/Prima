@@ -5,27 +5,27 @@
 object Widget( Drawable)
 {
 # user variables
-   Handle   accelTable;		      # accelerator table
-   List     widgets;		      # list of child widgets
-   Handle   currentWidget;	      # current widget pointer
-   int      cursorLock;		      # cursor lock count
-   NPoint   designScale;              # font width and height for view design
-   SV     * dragPointer;              # cursor shape when dragging smth over
-   int      growMode;                 # growing flags, see gfGrowXXX
-   long     helpContext;              # help context
-   char   * hint;                     # hint tag text
-   Font     popupFont;                # font for popup menu
-   ColorSet popupColor;               # colors for popup menu
-   Handle   popupMenu;                # popup menu by default
-   SV     * pointer;                  # cursor shape
-   Point    pos;                      # last position
-   Point    sizeUnbound;              # fictive size not aware of size limits
-   Point    sizeMin;                  # default min size
-   Point    sizeMax;                  # default max size
-   int      tabOrder;                 # tab ordering number
-   char   * text;                     # caption text
-   int      selectingButtons;         # which mouse buttons can select a view
-   int      widgetClass;              # predefined system class
+   Handle    accelTable;	       # accelerator table
+   List      widgets;		       # list of child widgets
+   Handle    currentWidget;	       # current widget pointer
+   int       cursorLock;               # cursor lock count
+   NPoint    designScale;              # font width and height for view design
+   SV     *  dragPointer;              # cursor shape when dragging smth over
+   int       growMode;                 # growing flags, see gfGrowXXX
+   long      helpContext;              # help context
+   char   *  hint;                     # hint tag text
+   Font      popupFont;                # font for popup menu
+   ColorSet  popupColor;               # colors for popup menu
+   Handle    popupMenu;                # popup menu by default
+   SV     *  pointer;                  # cursor shape
+   Point     pos;                      # last position
+   Point     sizeUnbound;              # fictive size not aware of size limits
+   Point     sizeMin;                  # default min size
+   Point     sizeMax;                  # default max size
+   int       tabOrder;                 # tab ordering number
+   char   *  text;                     # caption text
+   int       selectingButtons;         # which mouse buttons can select a view
+   int       widgetClass;              # predefined system class
 
 # direct call methods
    method   void     attach( Handle objectHandle);
@@ -34,7 +34,7 @@ object Widget( Drawable)
    method   void     bring_to_front();
    method   Bool     can_close();
    method   void     click();
-   method   Point    client_to_screen(Point p)       => apc_widget_client_to_screen;
+   method   Point    client_to_screen( Point p)       => apc_widget_client_to_screen;
    method   Bool     close();
    c_only   Bool     custom_paint();
    method   void     detach( Handle objectHandle, Bool kill);
@@ -119,6 +119,7 @@ object Widget( Drawable)
    method   Bool     get_owner_font();
    method   Bool     get_owner_hint();
    method   Bool     get_owner_show_hint();
+   method   Bool     get_owner_palette();
    method   Handle   get_parent();
    method   SV *     get_pointer();
    method   Handle   get_pointer_icon();
@@ -187,6 +188,8 @@ object Widget( Drawable)
    method   void     set_owner_font( Bool ownerFont);
    method   void     set_owner_hint( Bool ownerHint);
    method   void     set_owner_show_hint( Bool ownerShowHint);
+   method   void     set_owner_palette( Bool ownerPalette);
+   method   void     set_palette( SV * palette);
    method   void     set_pointer( SV * pointer);
    method   void     set_pointer_icon( Handle icon, Point hotSpot);
    method   void     set_pointer_pos( int x, int y);

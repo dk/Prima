@@ -63,6 +63,7 @@ object Application( Widget)
    method Font   get_hint_font();
    method int    get_hint_pause();
    method Bool   get_modal_stop();
+   method SV *   get_palette();
    method Handle get_parent();
    method Bool   get_selectable();
    method Bool   get_sync_paint();
@@ -91,7 +92,9 @@ object Application( Widget)
    method void   set_owner_color( Bool ownerColor);
    method void   set_owner_font( Bool ownerFont);
    method void   set_owner_show_hint( Bool ownerShowHint);
+   method void   set_owner_palette( Bool ownerShowHint);
    method void   set_pos( int x, int y);
+   method void   set_palette( SV * palette);
    method void   set_selectable( Bool selectable);
    method void   set_sync_paint( Bool syncPaint);
    method void   set_size( int x, int y);
