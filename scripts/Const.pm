@@ -345,6 +345,7 @@ use constant MouseButtons    => 23   ;
 use constant WheelPresent    => 24   ;
 use constant SubmenuDelay    => 25   ;
 use constant FullDrag        => 26   ;
+use constant DblClickDelay   => 27   ;
 
 # image types
 package im;
