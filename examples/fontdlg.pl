@@ -109,7 +109,7 @@ my $re_size = sub {
    my $name_changed = $_[0];
    my $fn = $fontList{ $w-> NameList-> get_item_text( $w-> NameList-> focusedItem)}{name};
    my @sizes = ();
-   my $current_encoding = ( $lastEncSel eq '(any)' ) ? '' : $lastEncSel;
+   my $current_encoding = ( $lastEncSel eq '(any)' || $name_changed) ? '' : $lastEncSel;
    my @list = @{$::application-> fonts( $fn, $name_changed ? '' : $current_encoding)};
 
    if ( $name_changed) {
