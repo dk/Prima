@@ -50,11 +50,12 @@ sub run
 
 sub find_image
 {
-   shift if @_ > 1;
+   my $mod = @_ > 1 ? shift : 'Prima';
    my $name = shift;
    $name =~ s!::!/!g;
+   $mod =~ s!::!/!g;
    for (@INC) {
-      return "$_/Prima/images/$name" if -f "$_/Prima/images/$name" && -r _;
+      return "$_/$mod/$name" if -f "$_/$mod/$name" && -r _;
    }
    return undef;
 }
