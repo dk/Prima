@@ -197,6 +197,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    Bool err = false;
    Bool loadExtras = false, noImageData = false;
    Bool incrementalLoad = false;
+   char * baseClassName = "Prima::Image";
 
 
 #define out(x){ err = true;\
@@ -265,7 +266,17 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          profiles_len = av_len( profiles);
       } else 
          out("Not an array passed to 'profiles' property");
-   }   
+   }  
+
+   if ( pexist( className)) {
+      PVMT vmt;
+      baseClassName = pget_c( className);
+      vmt = gimme_the_vmt( baseClassName);
+      while ( vmt && vmt != (PVMT)CImage) 
+         vmt = vmt-> base;
+      if ( !vmt) 
+         outd("class '%s' is not a Prima::Image descendant", baseClassName);
+   }      
 
    /* all other properties to be parsed by codec */
    fi. extras = profile;
@@ -378,7 +389,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    /* loading */
    for ( i = 0; i < fi. frameMapSize; i++) {
       HV * profile = commonHV;
-      char * className = "Prima::Image";
+      char * className = baseClassName;
 
       fi. frame = incrementalLoad ? i : fi. frameMap[ i];
       if (( fi. frameCount >= 0 && fi. frame >= fi. frameCount) || 
