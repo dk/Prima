@@ -353,15 +353,15 @@ binary_server( void * instance, int function, int subCommand, SV * data)
 {
    switch( function)
    {
-      case cefInit:
-         {
-            long id = apc_clipboard_register_format((( PClipboardFormatReg) data)-> id);
-            *((long*) instance) = id;
-            return ( SV*) id;
-         }
-      case cefDone:
-         apc_clipboard_deregister_format(( int)instance);
-         break;
+   case cefInit:
+      {
+	 long id = apc_clipboard_register_format((( PClipboardFormatReg) data)-> id);
+	 *((long*) instance) = id;
+	 return ( SV*) id;
+      }
+   case cefDone:
+      apc_clipboard_deregister_format(( int)instance);
+      break;
    case cefFetch:
       {
          int len;
@@ -372,14 +372,14 @@ binary_server( void * instance, int function, int subCommand, SV * data)
             return ret;
          }
       }
-      break;
+   break;
    case cefStore:
       {
          int len;
          void * xdata = SvPV( data, len);
          apc_clipboard_set_data(( int)instance, xdata, len);
       }
-      break;
-      return nilSV;
+   break;
    }
+   return nilSV;
 }
