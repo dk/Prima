@@ -699,6 +699,8 @@ void Widget_handle_event( Handle self, PEvent event)
             Bool doNotify = false;
             if ( var stage == csNormal) {
                doNotify = true;
+            } else if ( var stage > csNormal) {
+               break;
             } else if ( var evQueue != nil) {
               int    i = list_first_that( var evQueue, ( PListProc)find_dup_msg, (void*) event-> cmd);
               PEvent n;
@@ -742,6 +744,8 @@ void Widget_handle_event( Handle self, PEvent event)
            Bool doNotify = false;
            if ( var stage == csNormal) {
               doNotify = true;
+           } else if ( var stage > csNormal) {
+              break;
            } else if ( var evQueue != nil) {
               int    i = list_first_that( var evQueue, ( PListProc)find_dup_msg, (void*) event-> cmd);
               PEvent n;
