@@ -1,3 +1,5 @@
+1.13  Add themes support. Add command-line arguments interface.
+
 1.12  Incorporate Tk geometry managers packer and placer
 
 1.11  Add support for antialiased fonts under X11. Port to cygwin.

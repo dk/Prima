@@ -34,7 +34,7 @@ require DynaLoader;
 use vars qw($VERSION @ISA $__import);
 @ISA = qw(DynaLoader);
 sub dl_load_flags { 0x00 }
-$VERSION = '1.12';
+$VERSION = '1.13';
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {
    $::application = 0;
@@ -350,6 +350,8 @@ L<Prima::Sliders> - sliding bars, spin buttons and input lines, dial widget etc.
 L<Prima::StartupWindow> - a simplistic startup banner window
 
 L<Prima::TextView> - rich text browser widget
+
+L<Prima::Themes> - widget themes manager
 
 =item Standard dialogs
 
