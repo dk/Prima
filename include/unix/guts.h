@@ -407,11 +407,11 @@ typedef struct _UnixGuts
    XrmQuark                     qScrollnext;
    XrmQuark                     qscrollnext;
    /* Timers & cursors */
-   int                          cursor_height;
+   unsigned int                 cursor_height;
    Point                        cursor_pixmap_size;
    Pixmap                       cursor_save;
    Bool                         cursor_shown;
-   int                          cursor_width;
+   unsigned int                 cursor_width;
    Pixmap                       cursor_xor;
    Bool                         insert;
    int                          invisible_timeout;

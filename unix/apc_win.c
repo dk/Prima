@@ -237,7 +237,6 @@ Bool
 apc_window_is_active( Handle self)
 {
    return apc_window_get_active() == self;
-   return false;
 }
 
 Bool
@@ -285,7 +284,7 @@ apc_window_get_icon( Handle self, Handle icon)
 {
    XWMHints * hints;
    Pixmap xor, and;
-   int xx, xy, ax, ay, xd, ad;
+   unsigned int xx, xy, ax, ay, xd, ad;
    Bool ret;
 
    if ( !icon) 
@@ -305,10 +304,11 @@ apc_window_get_icon( Handle self, Handle icon)
 
    {
       XWindow foo;
-      int bar;
-      if ( !XGetGeometry( DISP, xor, &foo, &bar, &bar, &xx, &xy, &bar, &xd))
+      unsigned int bar;
+      int bar2;
+      if ( !XGetGeometry( DISP, xor, &foo, &bar2, &bar2, &xx, &xy, &bar, &xd))
          return false;
-      if ( and && (!XGetGeometry( DISP, and, &foo, &bar, &bar, &ax, &ay, &bar, &ad)))
+      if ( and && (!XGetGeometry( DISP, and, &foo, &bar2, &bar2, &ax, &ay, &bar, &ad)))
          return false;
    } 
 
@@ -373,7 +373,7 @@ XWindow
 prima_find_frame_window( XWindow w)
 {
    XWindow r, p, *c;
-   int nc;
+   unsigned int nc;
 
    if ( w == None)
       return None;

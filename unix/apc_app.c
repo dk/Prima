@@ -522,7 +522,7 @@ apc_application_get_os_info( char *system, int slen,
 #ifndef SYS_NMLN
 #ifdef _SYS_NAMELEN
 #define SYS_NMLN _SYS_NAMELEN
-#elif
+#else
 #define SYS_NMLN 64
 #endif
 #endif   

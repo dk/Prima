@@ -650,7 +650,8 @@ int
 apc_pointer_get_state( Handle self)
 {
    XWindow foo;
-   int bar, mask;
+   int bar;
+   unsigned mask;
    XQueryPointer( DISP, guts.root,  &foo, &foo, &bar, &bar, &bar, &bar, &mask);
    return
       (( mask & Button1Mask) ? mb1 : 0) |
@@ -664,7 +665,8 @@ int
 apc_kbd_get_state( Handle self)
 {
    XWindow foo;
-   int bar, mask;
+   int bar;
+   unsigned int mask;
    XQueryPointer( DISP, guts.root, &foo, &foo, &bar, &bar, &bar, &bar, &mask);
    return
       (( mask & ShiftMask)   ? kmShift : 0) |

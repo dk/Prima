@@ -528,7 +528,8 @@ apc_widget_get_pos( Handle self)
    DEFXX;
    XWindow r;
    Point ret;
-   int x, y, w, h, d, b;
+   int x, y;
+   unsigned int w, h, d, b;
 
    if ( XX-> type. window) {
       Rect rc;

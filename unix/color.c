@@ -556,7 +556,7 @@ alloc_main_color_range( XColor * xc, int count, int maxDiff)
    }
 
    if ( err) {
-      long cnt = 0, free[32];
+      unsigned long cnt = 0, free[32];
       for ( idx = 0; idx < count; idx++) 
          if ( xc[idx]. pixel != 0xFFFFFFFF) {
             free[ cnt++] = xc[idx]. pixel;
@@ -1022,7 +1022,7 @@ int
 prima_color_sync( void)
 {
    int i, count = 0, freed = 0;
-   long free[32];
+   unsigned long free[32];
    MainColorEntry * p = guts. palette;
    for ( i = 0; i < guts. palSize; i++, p++) {
       if ( p-> touched) {
