@@ -70,6 +70,7 @@ use vars qw(
     @alldirs
     @headers
     @footers
+    @Makefile_deps
     $PrimaTarget
 );
 
@@ -554,12 +555,15 @@ if ( $ENV{ HOME} && ( -d qd( "$ENV{ HOME}/.Makeinc"))) {
     my $hdir = "$ENV{ HOME}/.Makeinc";
     if ( -f "$hdir/header.PL") {
 	push @headers, `perl $hdir/header.PL`;
+	push @Makefile_deps, "$hdir/header.PL";
     }
     if ( -f "$hdir/footer.PL") {
 	push @footers, `perl $hdir/footer.PL`;
+	push @Makefile_deps, "$hdir/footer.PL";
     }
     if ( -f "$hdir/Prima.ph") {
 	do "$hdir/Prima.ph";
+	push @Makefile_deps, "$hdir/Prima.ph";
     }
 }
 
@@ -599,9 +603,7 @@ prima: dirs $PrimaTarget
 $PrimaTarget: @allojects
 \t${ \eval{ return join ' ', ld_command_line( $PrimaTarget, @allojects)}}
 
-Makefile: Makefile.PL
-#\t\@echo Cleaning up...
-#\t\@$MAKE clean
+Makefile: Makefile.PL @Makefile_deps
 \t\@echo Rebuilding Makefile...
 \t\@$^X Makefile.PL $ARGV_STR
 \t\@$MAKE
