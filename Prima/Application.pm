@@ -336,7 +336,7 @@ starts Prima without being connected to a X display.
 Since by default the run-level is 1, to start Prima in run-level 0 use the following 
 code:
    
-    $Prima::runlevel = 0;
+    BEGIN { $Prima::runlevel = 0; }
     use Prima;
 
 Note that C<$Prima::runlevel = 0> part must be executed before first C<use Prima> call,
