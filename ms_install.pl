@@ -68,11 +68,13 @@ SD
    }
 }
 
+my $os2 = $^O eq 'os2';
+my $mswin32 = ($^O =~ /win32/);
 
 my $iarc = $Config{ installsitearch};
 my $ibin = $Config{ installbin};
 my $perlpath = $Config{ perlpath};
-$perlpath =~ s/(perl)(\.exe)?$/$1__$2/i if $perlpath =~ /perl(\.exe)?$/i;
+$perlpath =~ s/(perl)(\.exe)?$/$1__$2/i if $os2 && $perlpath =~ /perl(\.exe)?$/i;
 
 $iarc =~ s/\//\\/g;
 $ibin =~ s/\//\\/g;
@@ -87,7 +89,6 @@ $binlib =~ s/\s/_/g;
 die "No distribution found. The install script must be put into the toolkit root directory\n" 
    unless -f 'Prima.pm';
 
-my $os2 = $^O eq 'os2';
 
 my (@instfiles, @instdir);
 
@@ -121,7 +122,7 @@ if ( $install) {
 
       return if -d $_ && m/(utils|pod|test|win32|os2|unix|img|CVS|include|scripts)$/i;
       return if $File::Find::dir =~ /test|CVS|include|win32|os2|unix|bsd|scripts/i;
-      return if m/ms_install|Makefile|\.(pdb|opt|pal|obj|log|dsp|dsw|ncb|c|cls|h|inc|def|tml)/;
+      return if m/ms_install|Makefile|\.(pdb|opt|pal|obj|log|dsp|dsw|ncb|c|cls|h|inc|def|tml|o)/;
 
       if ( -d $_) {
          print "Creating $destdir/$_\n";
@@ -149,7 +150,7 @@ if ( $install) {
    print "Copying executables...\n";
    for ( @cpbin) {
       my ( $src, $dst) = @$_;
-      $dst .= ( $os2 ? '.cmd' : '.bat');
+      $dst .= ( $os2 ? '.cmd' : ( $mswin32 ? '.bat' : ''));
       push @instfiles, $dst;
       print "Installing $src ...\n";
       if ( $os2) {
@@ -166,7 +167,7 @@ ENDP
          }
          close SRCPL;
          close DSTPL;
-      } else {
+      } elsif ( $mswin32) {
          my $i = system("pl2bat $src");
          $src =~ s/pl$//i;
          $src .= 'bat';
@@ -174,6 +175,20 @@ ENDP
          print "Installing $dst ...\n";
          abort "Error:$!\n" unless copy $src, $dst;
          unlink $src;
+      } else {
+         open SRCPL, "<$src" or abort "Cannot open $src: $!";
+         open DSTPL, ">$dst" or abort "Cannot create $dst: $!";
+         print DSTPL <<ENDP;
+#!$Config{perlpath} -w
+ENDP
+         my $filestart = 1;
+         while ( <SRCPL>) {
+             next if $filestart && /^\#\!/;
+             $filestart = 0;
+             print DSTPL;
+         }
+         close SRCPL;
+         close DSTPL;
       }
    }
 

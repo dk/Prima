@@ -401,7 +401,7 @@ sub have_define
     chdir $TMPDIR;
     my $tmpsrc = qd( tempfile( "pmts%04d.c"));
     my $tmpo = $tmpsrc;
-    if ( $Win32) {
+    if ( $Win32 && !$cygwin) {
         $tmpo =~ s/\.c$/\.obj/;
     }
     else {
@@ -746,7 +746,7 @@ sub setup_variables
     # Checking some Config.pm - were empty for ActiveState 626
     $Config{PATCHLEVEL} = $Config{patchlevel} if !defined $Config{PATCHLEVEL} || !length $Config{PATCHLEVEL};
     $Config{SUBVERSION} = $Config{subversion} if !defined $Config{SUBVERSION} || !length $Config{SUBVERSION};
-    $Config{ld} = ($Win32 ? 'link' : 'ld'), print("** warning: malformed Config.pm\n")
+    $Config{ld} = (($Win32 && !$cygwin) ? 'link' : 'ld'), print("** warning: malformed Config.pm\n")
        unless length $Config{ld};
 
     my $ccflags   = $Config{ ccflags};
@@ -887,7 +887,8 @@ sub setup_variables
     setvar( 'RM', $Config{ rm});
     $OS2DLLF = 'Prima';
     $OS2DLLF = &DynaLoader::mod2fname([$OS2DLLF]) if $OS2 && defined &DynaLoader::mod2fname;
-    $PrimaLib    = qd( "auto/Prima/Prima$LIB_EXT");
+    my $libprefix = ( $cygwin ? 'lib' : '');
+    $PrimaLib    = qd( "auto/Prima/${libprefix}Prima$LIB_EXT");
     $PrimaTarget = qd( "auto/Prima/$OS2DLLF$DL_EXT");
     $extralibs = '';
     $extralibs = qd("auto/Prima/Prima.lib") if $OS2;
@@ -1938,7 +1939,7 @@ EOF
                 $filestart = 0;
                 print DSTPL;
             }
-            if ( $Win32) {
+            if ( $Win32 && !$cygwin) {
                 print DSTPL <<EOF;
 __END__
 :endofperl
@@ -2366,6 +2367,7 @@ EOF
            "| $Config{gzip} -c > \%s.gz\n" : 
            "> \%s\n" );
        print MAKE "\n\t\@echo Installing man pages...\n";
+       print MAKE "\t\@\$(MD) $INSTALL_MAN1 $INSTALL_MAN3\n";
        while ( scalar @allman ) {
           push @man_to_remove, $allman[1];
           $allman[1] =~ m/\.(\d+)$/;
