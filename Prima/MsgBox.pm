@@ -135,18 +135,20 @@ sub message_box
    if ( $icon)
    {
       $icon = Prima::StdBitmap::icon( $icon);
-      $iconView = $dlg-> insert( Widget =>
-         origin         => [ 20, ($dlg-> height + $fresh-> height - $icon-> height)/2],
-         size           => [ $icon-> width, $icon-> height],
-         onPaint        => sub {
-            my $self = $_[1];
-            $self-> color( $dlg-> backColor);
-            $self-> bar( 0, 0, $self-> size);
-            $self-> put_image( 0, 0, $icon);
-         },
-      );
+      if ( defined $icon) {
+	  $iconView = $dlg-> insert( Widget =>
+				     origin         => [ 20, ($dlg-> height + $fresh-> height - $icon-> height)/2],
+				     size           => [ $icon-> width, $icon-> height],
+				     onPaint        => sub {
+					 my $self = $_[1];
+					 $self-> color( $dlg-> backColor);
+					 $self-> bar( 0, 0, $self-> size);
+					 $self-> put_image( 0, 0, $icon);
+				     },
+				   );
 
-      $iconRight = $iconView-> right;
+	  $iconRight = $iconView-> right;
+      }
    }
 
    my $label = $dlg-> insert( Label =>
