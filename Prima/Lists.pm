@@ -65,6 +65,7 @@ my %RNT = (
    DrawItem    => nt::Action,
    Stringify   => nt::Action,
    MeasureItem => nt::Action,
+   DragItem    => nt::Default,
 );
 
 sub notification_types { return \%RNT; }
@@ -79,6 +80,7 @@ sub profile_default
       autoVScroll    => 1,
       borderWidth    => 2,
       extendedSelect => 0,
+      dragable       => 0,
       focusedItem    => -1,
       gridColor      => cl::Black,
       hScroll        => 0,
@@ -117,7 +119,7 @@ sub init
       { $self->{$_} = -1; }
    for ( qw( autoHScroll autoVScroll scrollTransaction gridColor dx dy hScroll vScroll 
              itemWidth offset multiColumn count autoHeight multiSelect 
-	     extendedSelect borderWidth))
+	     extendedSelect borderWidth dragable))
       { $self->{$_} = 0; }
    for ( qw( itemHeight integralHeight))
       { $self->{$_} = 1; }
@@ -127,7 +129,7 @@ sub init
    $self->{selectedItems} = {} unless $profile{multiSelect};
    for ( qw( autoHScroll autoVScroll gridColor hScroll vScroll offset multiColumn 
              itemHeight autoHeight itemWidth multiSelect extendedSelect integralHeight 
-             focusedItem topItem selectedItems borderWidth))
+             focusedItem topItem selectedItems borderWidth dragable))
       { $self->$_( $profile{ $_}); }
    $self-> reset;
    $self-> reset_scrolls;
@@ -457,8 +459,14 @@ sub on_mousedown
          return $self->toggle_item( $item);
       }
    }
-   $self-> {mouseTransaction} = 1;
+   $self-> {mouseTransaction} = 
+      (( $mod & ( km::Alt | ($self->{multiSelect} ? 0 : km::Ctrl))) && $self->{dragable}) ? 2 : 1;
    $self-> focusedItem( $foc);
+   if ( $self-> {mouseTransaction} == 2) {
+      $self-> {dragItem} = $self-> focusedItem;
+      $self-> {mousePtr} = $self-> pointer;
+      $self-> pointer( cr::Move);
+   }
    $self-> capture(1);
 }
 
@@ -522,11 +530,18 @@ sub on_mouseup
    my ( $self, $btn, $mod, $x, $y) = @_;
    return if $btn != mb::Left;
    return unless defined $self->{mouseTransaction};
+   my @dragnotify;
+   if ( $self->{mouseTransaction} == 2) {
+      $self-> pointer( $self-> {mousePtr});
+      my $fci = $self-> focusedItem;
+      @dragnotify = ($self-> {dragItem}, $fci) unless $fci == $self-> {dragItem};
+   }
    delete $self->{mouseTransaction};
    delete $self->{mouseHorizontal};
    delete $self->{anchor};
    $self-> capture(0);
    $self-> clear_event;
+   $self-> notify(q(DragItem), @dragnotify) if @dragnotify;
 }
 
 sub on_mousewheel
@@ -757,6 +772,12 @@ sub colorIndex
    ( $index == ci::Grid) ?
       ( $self-> gridColor( $color), $self-> notify(q(ColorChanged), ci::Grid)) :
       ( $self-> SUPER::colorIndex( $index, $color));
+}
+
+sub dragable
+{
+   return $_[0]-> {dragable} unless $#_;
+   $_[0]->{dragable} = $_[1];
 }
 
 sub set_grid_color
@@ -1039,6 +1060,11 @@ sub set_v_scroll
 #sub on_selectitem
 #{
 #   my ($self, $itemIndex, $selectState) = @_;
+#}
+
+#sub on_dragitem
+#{
+#    my ( $self, $from, $to) = @_;
 #}
 
 sub autoHeight    {($#_)?$_[0]->set_auto_height    ($_[1]):return $_[0]->{autoHeight}     }
@@ -1471,6 +1497,21 @@ sub on_keydown
    $self-> SUPER::on_keydown( $code, $key, $mod);
 }
 
+sub on_dragitem
+{
+   my ( $self, $from, $to) = @_;
+   my ( $is, $iw) = ( $self-> {items}, $self-> {widths});
+   splice( @$is, $to, 0, splice( @$is, $from, 1));
+   splice( @$iw, $to, 0, splice( @$iw, $from, 1));
+   if ( exists $self->{selectedItems}->{$from}) {
+      my $k = $self->{selectedItems}->{$from};
+      delete $self->{selectedItems}->{$from};
+      $self->{selectedItems}->{$to} = $k;
+   }
+   $self-> repaint;
+   $self-> clear_event;
+}
+
 sub autoWidth     {($#_)?$_[0]->{autoWidth} = $_[1]       :return $_[0]->{autoWidth}      }
 sub count         {($#_)?$_[0]->raise_ro('count')         :return $_[0]->{count}          }
 sub items         {($#_)?$_[0]->set_items( $_[1])         :return $_[0]->{items}          }
@@ -1606,6 +1647,13 @@ An integer property, destined to reflect number of items in the list.
 Since it is tied to the item storage organization, and hence,
 to possibility of changing the number of items, this property
 is often declared as read-only in descendants of C<Prima::AbstractListViewer>.
+
+=item dragable BOOLEAN
+
+If 1, allows the items to be dragged interactively by pressing control key
+together with left mouse button. If 0, item dragging is disabled.
+
+Default value: 1
 
 =item extendedSelect BOOLEAN
 
@@ -1828,6 +1876,13 @@ Only for multi-select mode.
 
 Called when the user presses return key or double-clicks on
 an item. The index of the item is stored in C<focusedItem>.
+
+=item DragItem OLD_INDEX, NEW_INDEX
+
+Called when the user finishes the drag of an item
+from OLD_INDEX to NEW_INDEX position. The default action
+rearranges the item list in accord with the dragging action.
+Also, it allows dragging a single item only.
 
 =item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, SELECTED, FOCUSED
 
