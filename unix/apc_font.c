@@ -1001,7 +1001,7 @@ AGAIN:
       if ( f-> vecname && !bySize && f-> font. height != font-> height) {
          int h = try_height( &hgs, f-> font. height * 10);
          /* printf("%d::%d => %d, advised %d\n", hgs.sp-1, font-> height, f-> font. height, h); */
-         if ( h > 0) {
+         if ( h > 9) {
             if ( !of-> flags. heights_cache) {
                of-> heights_cache[0] = font-> height * 10;
                of-> heights_cache[1] = f-> font. height;
