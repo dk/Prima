@@ -352,8 +352,8 @@ sub check_auto_size
    my %sets;
    if ( $self->{autoWidth} || $self-> {autoHeight}) {
       my @geomSize = $self-> calc_geom_size;
-      $sets{ geomWidth}  = $geomSize[0];
-      $sets{ geomHeight} = $geomSize[1];
+      $sets{ geomWidth}  = $geomSize[0] if $self-> {autoWidth};
+      $sets{ geomHeight} = $geomSize[1] if $self-> {autoHeight};
       $self-> set( %sets);
    }
 }
@@ -601,8 +601,8 @@ sub std_calc_geom_size
 sub calc_geom_size
 {  
    my @sz = $_[0]-> std_calc_geom_size;
+   $sz[0] = 96 if $sz[0] < 96;
    $sz[1] = 36 if $sz[1] < 36;
-   $sz[0] = 96 if $sz[1] < 96;
    return @sz;
 }
 
@@ -1018,8 +1018,8 @@ sub profile_default
 sub calc_geom_size
 {  
    my @sz = $_[0]-> std_calc_geom_size;
+   $sz[0] = 36 if $sz[0] < 36;
    $sz[1] = 36 if $sz[1] < 36;
-   $sz[0] = 36 if $sz[1] < 36;
    return @sz;
 }
 
