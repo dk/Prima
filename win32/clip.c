@@ -25,7 +25,7 @@
  *
  * $Id$
  */
-
+/* Created by Dmitry Karasik <dk@plab.ku.dk> */
 #include "win32\win32guts.h"
 #include "Window.h"
 #include "Application.h"

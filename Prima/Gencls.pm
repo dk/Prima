@@ -23,6 +23,11 @@
 #  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
+#  Created by:
+#     Dmitry Karasik <dk@plab.ku.dk> 
+#     Anton Berezin  <tobez@plab.ku.dk>
+#     Vadim Belman   <voland@plab.ku.dk>
+#     
 #
 # max error is APC058
 

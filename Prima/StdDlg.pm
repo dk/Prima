@@ -23,6 +23,11 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+#  Created by:
+#     Anton Berezin  <tobez@plab.ku.dk>
+#     Dmitry Karasik <dk@plab.ku.dk> 
+
+
 
 # Contains stubs for load-on-demand of the following modules:
 #   Prima::OpenDialog       => Prima/FileDialog.pm

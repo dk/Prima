@@ -25,7 +25,7 @@
  *
  * $Id$
  */
-
+/* Created by Dmitry Karasik <dk@plab.ku.dk> */
 #include <winsock.h>
 
 void __inline my_fd_zero( fd_set* f)           { FD_ZERO( f); }

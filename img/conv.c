@@ -25,7 +25,7 @@
  *
  * $Id$
  */
-
+/* Created by Anton Berezin <tobez@plab.ku.dk> */
 #include "img_conv.h"
 
 #ifdef __cplusplus

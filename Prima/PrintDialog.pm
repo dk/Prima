@@ -23,6 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+#  Created by Dmitry Karasik <dk@plab.ku.dk>
 
 use strict;
 use Carp;

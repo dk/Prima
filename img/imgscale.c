@@ -25,7 +25,7 @@
  *
  * $Id$
  */
-
+/* Created by Dmitry Karasik <dk@plab.ku.dk> */
 #include "img_conv.h"
 
 #ifdef __cplusplus

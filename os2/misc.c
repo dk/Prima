@@ -25,7 +25,7 @@
  *
  * $Id$
  */
-
+/* Created by Dmitry Karasik <dk@plab.ku.dk> */
 #define INCL_DOSFILEMGR
 #define INCL_DOSERRORS
 #define INCL_DOSDEVIOCTL

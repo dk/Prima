@@ -23,6 +23,9 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+#  Created by:
+#     Dmitry Karasik <dk@plab.ku.dk> 
+#     Anton Berezin  <tobez@plab.ku.dk>
 use Prima;
 use Prima::Const;
 

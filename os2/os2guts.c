@@ -25,7 +25,10 @@
  *
  * $Id$
  */
-
+/* Created by: 
+     Dmitry Karasik <dk@plab.ku.dk> 
+     Anton Berezin  <tobez@plab.ku.dk>
+*/
 #include <stdio.h>
 #define INCL_GPI
 #include "os2/os2guts.h"

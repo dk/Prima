@@ -25,7 +25,7 @@
  *
  * $Id$
  */
-
+/* Created by Anton Berezin <tobez@plab.ku.dk> */
 #include "os2/os2guts.h"
 
 #define FONTHASH_SIZE 563

@@ -23,6 +23,10 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+#  Created by:
+#     Vadim Belman   <voland@plab.ku.dk>
+#     Anton Berezin  <tobez@plab.ku.dk>
+
 package Prima::Utils;
 use strict;
 use Prima::Const;
