@@ -161,6 +161,8 @@ apc_clipboard_get_data( long id, int * length)
                return nil; // not an error
             if ( !( ptr = ( char*) GlobalLock( ph)))
                apiErrRet;
+            *length = *(( int*) ptr);
+            ptr += sizeof( int);
             memcpy( ret = malloc( *length), ptr, *length);
             GlobalUnlock( ph);
             return ret;
@@ -224,14 +226,15 @@ apc_clipboard_set_data( long id, void * data, int length)
       default:
          {
              char* ptr;
-             HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, length);
+             HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, length + sizeof( int));
              if ( !glob) apiErrRet;
              if ( !( ptr = GlobalLock( glob))) {
                 apiErr;
                 GlobalFree( glob);
                 return false;
              }
-             memcpy( ptr, data, length);
+             memcpy( ptr + sizeof( int), data, length);
+             memcpy( ptr, &length, sizeof( int));
              GlobalUnlock( glob);
              if ( !SetClipboardData( id, glob)) apiErrRet;
          }
