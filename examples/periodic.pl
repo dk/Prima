@@ -46,13 +46,19 @@ my $w = Prima::MainWindow-> create(
     size => [ 50 * 14 + 25, 50 * 13 + 25],
 );
 
-my @layers = ( 2, 8, 8, 10, 8, 10, 8, 10, 8, 10, 0, 14, 14);
+my @layers = ( 2, 8, 8, 10, 9, 10, 9, 10, 9, 10, 0, 14, 14);
 my %colors = (
    2 => {
       0 => cl::Blue,
       10 => cl::Red,
    },
    8 => {
+      0 => cl::Blue,
+      1 => cl::Blue,
+      10 => cl::Red,
+      default => 0x804000
+   },
+   9 => {
       0 => cl::Black,
       1 => cl::Black,
       10 => cl::Red,
