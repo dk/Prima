@@ -1265,7 +1265,7 @@ SV *
 Widget_get_handle( Handle self)
 {
    char buf[ 256];
-   snprintf( buf, 256, "0x%08x", apc_widget_get_handle( self));
+   snprintf( buf, 256, "0x%08lx", apc_widget_get_handle( self));
    return newSVpv( buf, 0);
 }
 
@@ -2269,7 +2269,7 @@ find_tabfoc( Handle self)
          return ( Handle) w;
    }
    for ( i = 0; i < var widgets. count; i++)
-      if ( toRet = find_tabfoc( var widgets. items[ i]))
+      if (( toRet = find_tabfoc( var widgets. items[ i])))
          return toRet;
    return nilHandle;
 }
