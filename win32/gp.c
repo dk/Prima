@@ -735,8 +735,8 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
 static BOOL
 gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lpABCF)
 {
-   UINT i;
-   INT fb[ 256];
+   UINT i, sz;
+   INT * fb;
    TEXTMETRIC tm;
 
 
@@ -749,24 +749,33 @@ gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lp
    if ( !GetTextMetrics( dc, &tm)) // determining font
       return FALSE;
 
-   if ( !GetCharWidth( dc, iFirstChar, iLastChar, fb)) // checking full widths
+   sz = iLastChar - iFirstChar + 1;
+   fb = malloc( sizeof( INT) * sz);
+   if ( !GetCharWidth( dc, iFirstChar, iLastChar, fb)) { // checking full widths
+      free( fb);
       return FALSE;
+   }
 
    if ( tm. tmPitchAndFamily & TMPF_TRUETYPE) {
-      ABC abc[ 256];
+      ABC * abc;
       int charExtra;
 
-      if ( !GetCharABCWidths( dc, iFirstChar, iLastChar, abc))
+      abc = malloc( sizeof( ABC) * sz);
+      if ( !GetCharABCWidths( dc, iFirstChar, iLastChar, abc)) {
+         free( abc);
+         free( fb);
          apiErrRet;
+      }
 
       charExtra = fb[0] - tm. tmOverhang - ( abc[0].abcA + abc[0].abcB + abc[0].abcC);
       if ( charExtra < 0) charExtra = 0;
 
       for ( i = 0; i <= iLastChar - iFirstChar; i++) {
-         lpABCF[i]. abcfA = abc[ i]. abcA;
-         lpABCF[i]. abcfB = abc[ i]. abcB + charExtra;
-         lpABCF[i]. abcfC = abc[ i]. abcC;
+         lpABCF[ i]. abcfA = abc[ i]. abcA;
+         lpABCF[ i]. abcfB = abc[ i]. abcB + charExtra;
+         lpABCF[ i]. abcfC = abc[ i]. abcC;
       }
+      free( abc);
    } else {
       memset( lpABCF, 0, sizeof( ABCFLOAT) * ( iLastChar - iFirstChar + 1));
 
@@ -776,21 +785,35 @@ gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lp
          lpABCF[i]. abcfC = -tm. tmOverhang;
       }
    }
+   free( fb);
    return TRUE;
 }
 
 PFontABC
-apc_gp_get_font_abc( Handle self)
+apc_gp_get_font_abc( Handle self, int * first, int * last)
 {objCheck nil;{
    int i;
-   ABCFLOAT f2[ 256];
-   PFontABC f1 = malloc( 256 * sizeof( FontABC));
-   if ( !gp_GetCharABCWidthsFloat( sys ps, 0, 255, f2)) apiErr;
-   for ( i = 0; i < 256; i++) {
+   ABCFLOAT * f2;
+   PFontABC f1;
+   TEXTMETRIC tm;
+   GetTextMetrics( sys ps, &tm);
+
+   if (( *first < 0) || ( *last < 0)) {
+      if ( *first < 0) *first = tm. tmFirstChar;
+      if ( *last  < 0) *last  = tm. tmLastChar;
+   } else {
+      if ( *first < tm. tmFirstChar) *first = tm. tmFirstChar;
+      if ( *last  > tm. tmLastChar)  *last  = tm. tmLastChar;
+   }
+   f1 = malloc(( *last - *first + 1) * sizeof( FontABC));
+   f2 = malloc(( *last - *first + 1) * sizeof( ABCFLOAT));
+   if ( !gp_GetCharABCWidthsFloat( sys ps, *first, *last, f2)) apiErr;
+   for ( i = 0; i <= *last - *first; i++) {
       f1[i].a = f2[i].abcfA;
       f1[i].b = f2[i].abcfB;
       f1[i].c = f2[i].abcfC;
    }
+   free( f2);
    return f1;
 }}
 

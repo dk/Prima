@@ -394,25 +394,31 @@ Drawable_get_physical_palette( Handle self)
 }
 
 SV *
-Drawable_get_font_abc( Handle self)
+Drawable_get_font_abc( Handle self, int first, int last)
 {
-   gpARGS;
    int i;
    AV * av = newAV();
    PFontABC abc;
 
 
-   gpENTER;
-   abc = apc_gp_get_font_abc( self);
-   gpLEAVE;
-
-   for ( i = 0; i < 256; i++) {
-      av_push( av, newSVnv( abc[ i]. a));
-      av_push( av, newSVnv( abc[ i]. b));
-      av_push( av, newSVnv( abc[ i]. c));
+   if ( first > last)
+     abc = nil;
+   else {
+     gpARGS;
+     gpENTER;
+     abc = apc_gp_get_font_abc( self, &first, &last);
+     gpLEAVE;
    }
 
-   free( abc);
+   if ( abc != nil) {
+      for ( i = first; i <= last; i++) {
+         av_push( av, newSVnv( abc[ i]. a));
+         av_push( av, newSVnv( abc[ i]. b));
+         av_push( av, newSVnv( abc[ i]. c));
+      }
+      free( abc);
+   }
+
    return newRV_noinc(( SV *) av);
 }
 
@@ -596,21 +602,29 @@ Drawable_get_text_box( Handle self, char * text, int len)
 static char **
 do_text_wrap( Handle self, TextWrapRec *t)
 {
-   PFontABC abc = apc_gp_get_font_abc( self);
-   float width[256];
+   int firstChar = -1, lastChar = -1;
+   PFontABC abc, abc_cont;
+   float *width, *width_cont;
    int start = 0, i, lSize = 16;
-   float w = 0, inc;
-   char **ret = malloc( sizeof( char*) * lSize);
+   float w = 0, inc = 0;
+   char **ret;
    Bool wasTab    = 0;
    Bool doWidthBreak = t-> width >= 0;
-   int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos= 0;
+   int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset;
    unsigned char * text    = ( unsigned char*) t-> text;
-   
-   for ( i = 0; i < 256; i++) {
+
+   abc = abc_cont = apc_gp_get_font_abc( self, &firstChar, &lastChar);
+   if ( abc_cont == nil) return nil;
+
+   ret = malloc( sizeof( char*) * lSize);
+   width_cont = width = malloc( sizeof( float) * ( lastChar - firstChar + 1));
+   for ( i = 0; i <= lastChar - firstChar; i++) {
       width[i] = abc[i]. a + abc[i]. b + abc[i]. c;
       abc[i]. c = ( abc[i]. c < 0) ? - abc[i]. c : 0;
       abc[i]. a = ( abc[i]. a < 0) ? - abc[i]. a : 0;
    }
+   abc   = abc_cont   - firstChar;
+   width = width_cont - firstChar;
 
 // macro for adding string/chunk into result table
 #define lAdd(end) {                                       \
@@ -691,6 +705,7 @@ do_text_wrap( Handle self, TextWrapRec *t)
              continue;
           case '~':
              if ( i == tildeIndex) {
+                tildeOffset = w;
                 inc = winc = 0;
                 break;
              }
@@ -712,7 +727,8 @@ do_text_wrap( Handle self, TextWrapRec *t)
                    ret[ 0][ 0] = 0;
                 }
                 t-> count = 0;
-		free(abc);
+                free( width_cont);
+                free( abc_cont);
                 return ret;
              } else
                 // or fit this character
@@ -763,6 +779,19 @@ do_text_wrap( Handle self, TextWrapRec *t)
     }
 // adding or skipping last line
     if ( t-> textLen - start > 0 || t-> count == 0) lAdd( t-> textLen);
+// removing ~ and determining it's location
+    if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
+        unsigned char *l = ret[ tildeLine];
+        t-> t_char = l[ tildePos+1];
+        if ( t-> options & twCollapseTilde)
+           memmove( l+tildePos, l+tildePos+1, strlen( l) - tildePos);
+        l = ret[ t-> t_line];
+        w = tildeOffset;
+        t-> t_start = w - 1;
+        t-> t_end   = w + width[(unsigned)l[tildeLPos]];
+    } else {
+        t-> t_start = t-> t_end = t-> t_line = -1;
+    }
 // expanding tabs
     if (( t-> options & twExpandTabs) && !(t-> options & twReturnChunks) && wasTab)
     {
@@ -790,21 +819,8 @@ do_text_wrap( Handle self, TextWrapRec *t)
           ret[ i] = n;
        }
     }
-// removing ~ and determining it's location
-    if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
-        unsigned char *l = ret[ tildeLine];
-        t-> t_char = l[ tildePos+1];
-        if ( t-> options & twCollapseTilde)
-           memmove( l+tildePos, l+tildePos+1, strlen( l) - tildePos);
-        l = ret[ t-> t_line];
-	w = apc_gp_get_text_width( self, l, tildeLPos, false);
-
-        t-> t_start = w;
-        t-> t_end   = w + width[(unsigned)l[tildeLPos]];
-    } else {
-        t-> t_start = t-> t_end = t-> t_line = -1;
-    }
-    free(abc);
+    free( width_cont);
+    free( abc_cont);
     return ret;
 }
 
