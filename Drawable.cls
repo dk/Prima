@@ -45,7 +45,6 @@ object Drawable ( Component)
    method FillPattern * get_fill_pattern();
    method Font          get_font();
    method SV *          get_font_abc();
-   method FontMetric    get_font_metrics( Font f);
    method SV *          get_handle();
    method int           get_height();
    method int           get_line_end()                    => apc_gp_get_line_end;
