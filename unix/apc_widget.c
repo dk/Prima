@@ -668,6 +668,8 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
    DEFXX;
 
    if ( rect) {
+      SORT( rect-> left,   rect-> right);
+      SORT( rect-> bottom, rect-> top);
       r. x = rect-> left;
       r. width = rect-> right - rect-> left;
       r. y = XX-> size. y + XX-> menuHeight - rect-> top;
@@ -711,6 +713,8 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    XCHECKPOINT;
    
    if ( confine) {
+      SORT( confine-> left,   confine-> right);
+      SORT( confine-> bottom, confine-> top);
       src_x = confine-> left;
       src_y = XX-> size. y - confine-> top;
       w = confine-> right - src_x;
@@ -729,7 +733,10 @@ apc_widget_scroll( Handle self, int horiz, int vert,
 
    if (clip) {
       XRectangle cpa;
-     
+
+      SORT( clip-> left,   clip-> right);
+      SORT( clip-> bottom, clip-> top);
+
       r. x = clip-> left;
       r. y = REVERT( clip-> top) + 1;
       r. width = clip-> right - clip-> left;
@@ -1287,6 +1294,10 @@ apc_widget_validate_rect( Handle self, Rect rect)
    XRectangle r;
    DEFXX;
    Region rgn;
+
+   SORT( rect. left,   rect. right);
+   SORT( rect. bottom, rect. top);
+
 
    r. x = rect. left;
    r. width = rect. right - rect. left;
