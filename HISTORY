@@ -1,3 +1,5 @@
+1.08  Add limited utf8/unicode support. Enhance image conversion functionality.
+
 1.07  Documentation completed. Add man pages installation.
 
 1.06  Add libXpm support.
