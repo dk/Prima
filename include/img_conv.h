@@ -25,7 +25,14 @@
  */
 
 #include "Image.h"
+#include <sys/types.h>
 #include <limits.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#else
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 // initializer routine
 extern void init_image_support();

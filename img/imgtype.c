@@ -1,4 +1,4 @@
-#include <img_conv.h>
+#include "img_conv.h"
 #define var (( PImage) self)
 
 /* Color mappers */
