@@ -1,0 +1,564 @@
+#include "unix/guts.h"
+
+/***********************************************************/
+/*                                                         */
+/*  Prima project                                          */
+/*                                                         */
+/*  System dependent widget management (unix, x11)         */
+/*                                                         */
+/*  Copyright (C) 1997,1998 The Protein Laboratory,        */
+/*  University of Copenhagen                               */
+/*                                                         */
+/***********************************************************/
+
+Point
+apc_widget_client_to_screen( Handle self, Point p)
+{
+   XWindow cld;
+
+   p. y = X( self)-> size. y - p. y - 1;
+   if ( !XTranslateCoordinates( DISP, X_WINDOW, RootWindow( DISP, SCREEN),
+				p. x, p. y, &p. x, &p. y, &cld)) {
+      croak( "apc_widget_client_to_screen(): XTranslateCoordinates() failed");
+   }
+   XCHECKPOINT;
+   p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
+   return p;
+}
+
+Bool
+apc_widget_create( Handle self, Handle owner, Bool syncPaint,
+		   Bool clipOwner, Bool transparent)
+{
+   XSetWindowAttributes attrs;
+   XWindow parent;
+   XWindow old;
+   Handle realOwner;
+   DEFXX;
+
+   /* Transparency is ignored for now */
+
+   if ( !clipOwner) {
+      parent = RootWindow( DISP, SCREEN);
+      realOwner = application;
+   } else if ( owner == application) {
+      parent = RootWindow( DISP, SCREEN);
+      realOwner = application;
+   } else {
+      parent = PWidget( owner)-> handle;
+      realOwner = owner;
+   }
+
+   old = X_WINDOW;
+   if ( old && XX-> parent != parent) {
+      /* reparent */
+   } else if ( !old) {
+      /* create */
+      attrs. event_mask = 0
+	 | KeyPressMask
+	 | KeyReleaseMask
+	 | ButtonPressMask
+	 | ButtonReleaseMask
+	 | EnterWindowMask
+	 | LeaveWindowMask
+	 /* | PointerMotionMask */
+	 /* | PointerMotionHintMask */
+	 /* | Button1MotionMask */
+	 /* | Button2MotionMask */
+	 /* | Button3MotionMask */
+	 /* | Button4MotionMask */
+	 /* | Button5MotionMask */
+	 | ButtonMotionMask
+	 | KeymapStateMask
+	 | ExposureMask
+	 | VisibilityChangeMask
+	 | StructureNotifyMask
+	 /* | ResizeRedirectMask */
+	 /* | SubstructureNotifyMask */
+	 /* | SubstructureRedirectMask */
+	 | FocusChangeMask
+	 | PropertyChangeMask
+	 | ColormapChangeMask
+	 | OwnerGrabButtonMask;
+      attrs. override_redirect = true;
+      attrs. do_not_propagate_mask = attrs. event_mask;
+      X_WINDOW = XCreateWindow( DISP, parent,
+				0, 0, 1, 1, 0, CopyFromParent,
+				InputOutput, CopyFromParent,
+				0
+				/* | CWBackPixmap */
+				/* | CWBackPixel */
+				/* | CWBorderPixmap */
+				/* | CWBorderPixel */
+				/* | CWBitGravity */
+				/* | CWWinGravity */
+				/* | CWBackingStore */
+				/* | CWBackingPlanes */
+				/* | CWBackingPixel */
+				| CWOverrideRedirect
+				/* | CWSaveUnder */
+				| CWEventMask
+				/* | CWDontPropagate */
+				/* | CWColormap */
+				/* | CWCursor */
+				, &attrs);
+      if (!X_WINDOW)
+	 return false;
+      XCHECKPOINT;
+      hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
+   }
+   /* otherwise do nothing? */
+   XX-> parent = parent;
+   XX-> drawable = X_WINDOW;
+
+   XX-> flags. clipOwner = clipOwner;
+   XX-> flags. syncPaint = syncPaint;
+
+   XX-> owner = realOwner;
+   XX-> size = (Point){0,0};
+   XX-> knownSize = (Point){APC_BAD_SIZE,APC_BAD_SIZE};
+   XX-> origin = (Point){0,0};
+   XX-> knownOrigin = (Point){APC_BAD_ORIGIN,APC_BAD_ORIGIN};
+
+printf( "&&&&&&&&&&& window created: %s &&&&&&&&&&&\n", PWidget( self)-> name);
+
+   return true;
+}
+
+Bool
+apc_widget_begin_paint( Handle self, Bool insideOnPaint)
+{
+   DEFXX;
+   unsigned long mask = GCLineWidth |
+      GCBackground |
+      GCForeground |
+      GCClipMask;
+
+   XX-> paintRop = XX-> rop;
+   XX-> savedFont = PDrawable( self)-> font;
+   XX-> fore = XX-> savedFore;
+   XX-> back = XX-> savedBack;
+   XX-> flags. zeroLine = XX-> flags. savedZeroLine;
+   XX-> gcv. clip_mask = None;
+
+   prima_get_gc( XX);
+   XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
+   XCHECKPOINT;
+
+   if ( XX-> region) {
+      XSetRegion( DISP, XX-> gc, XX-> region);
+      XDestroyRegion( XX-> region);
+      XX-> region = nil;
+   }
+
+   XX-> flags. paint = true;
+
+   if ( !XX-> flags. reloadFont && XX-> font && XX-> font-> id) {
+      XSetFont( DISP, XX-> gc, XX-> font-> id);
+   } else {
+      apc_gp_set_font( self, &PDrawable( self)-> font);
+      XX-> flags. reloadFont = false;
+   }
+   return true;
+}
+
+Bool
+apc_widget_begin_paint_info( Handle self)
+{
+fprintf( stdout, "apc_widget_begin_paint_info()\n");
+   return false;
+}
+
+void
+apc_widget_destroy( Handle self)
+{
+   if ( X_WINDOW) {
+      XCHECKPOINT;
+      XDestroyWindow( DISP, X_WINDOW);
+      XCHECKPOINT;
+      hash_delete( guts.windows, (void*)&X_WINDOW, sizeof(X_WINDOW), false);
+      X_WINDOW = nilHandle;
+   }
+}
+
+PFont
+apc_widget_default_font( PFont f)
+{
+   return apc_font_default( f);
+}
+
+void
+apc_widget_end_paint( Handle self)
+{
+   DEFXX;
+   prima_release_gc(XX);
+   XX-> flags. paint = false;
+   if ( XX-> flags. reloadFont) {
+      PDrawable( self)-> font = XX-> savedFont;
+   }
+}
+
+void
+apc_widget_end_paint_info( Handle self)
+{
+fprintf( stdout, "apc_widget_end_paint_info()\n");
+}
+
+Bool
+apc_widget_get_clip_owner( Handle self)
+{
+   return X(self)-> flags. clipOwner;
+}
+
+Rect
+apc_widget_get_clip_rect( Handle self)
+{
+fprintf( stdout, "apc_widget_get_clip_rect()\n");
+   return (Rect){0,0,0,0};
+}
+
+Color
+apc_widget_get_color( Handle self, int index)
+{
+   return X(self)-> colors[ index];
+}
+
+Bool
+apc_widget_get_first_click( Handle self)
+{
+fprintf( stdout, "apc_widget_get_first_click()\n");
+   return false;
+}
+
+Handle
+apc_widget_get_focused( void)
+{
+   return guts. focused;
+}
+
+ApiHandle
+apc_widget_get_handle( Handle self)
+{
+fprintf( stdout, "apc_widget_get_handle()\n");
+   return nilHandle;
+}
+
+Rect
+apc_widget_get_invalid_rect( Handle self)
+{
+fprintf( stdout, "apc_widget_get_invalid_rect()\n");
+   return (Rect){0,0,0,0};
+}
+
+Point
+apc_widget_get_pos( Handle self)
+{
+   return X(self)-> origin;
+}
+
+Point
+apc_widget_get_size( Handle self)
+{
+   return X(self)-> size;
+}
+
+Bool
+apc_widget_get_sync_paint( Handle self)
+{
+   return X(self)-> flags. syncPaint;
+}
+
+Bool
+apc_widget_get_transparent( Handle self)
+{
+fprintf( stdout, "apc_widget_get_transparent()\n");
+   return false;
+}
+
+Bool
+apc_widget_is_captured( Handle self)
+{
+   return X(self)-> flags. grab;
+}
+
+Bool
+apc_widget_is_enabled( Handle self)
+{
+   return X(self)-> flags. enabled;
+}
+
+Bool
+apc_widget_is_exposed( Handle self)
+{
+   return X(self)-> flags. exposed;
+}
+
+Bool
+apc_widget_is_focused( Handle self)
+{
+   return X(self)-> flags. focused;
+}
+
+Bool
+apc_widget_is_responsive( Handle self)
+{
+fprintf( stdout, "apc_widget_is_responsive()\n");
+   return false;
+}
+
+Bool
+apc_widget_is_showing( Handle self)
+{
+   return X(self)-> flags. visible;
+}
+
+Bool
+apc_widget_is_visible( Handle self)
+{
+   return X(self)-> flags. mapped;
+}
+
+void
+apc_widget_invalidate_rect( Handle self, Rect *rect)
+{
+   XRectangle r;
+   XExposeEvent ev;
+   DEFXX;
+
+   if ( rect) {
+      r. x = rect-> left;
+      r. width = rect-> right - rect-> left;
+      r. y = XX-> size. y - rect-> top;
+      r. height = rect-> top - rect-> bottom;
+   } else {
+      r. x = 0;
+      r. width = XX-> size. x;
+      r. y = 0;
+      r. height = XX-> size. y;
+   }
+
+   if ( !XX-> region) {
+      XX-> region = XCreateRegion();
+      ev. type = Expose;
+      ev. window = X_WINDOW;
+      ev. count = 0;
+      ev. x = r. x;
+      ev. y = r. y;
+      ev. width = r. width;
+      ev. height = r. height;
+
+      if ( !XX-> flags. syncPaint) {
+	 XSendEvent( DISP, X_WINDOW, false, 0, (XEvent*)&ev);
+	 XCHECKPOINT;
+      }
+   }
+
+   XUnionRectWithRegion( &r, XX-> region, XX-> region);
+   if ( XX-> flags. syncPaint) {
+      apc_widget_update( self);
+   }
+}
+
+Point
+apc_widget_screen_to_client( Handle self, Point p)
+{
+   XWindow cld;
+
+   p. y = DisplayHeight( DISP, SCREEN) - p. y - 1;
+   if ( !XTranslateCoordinates( DISP, RootWindow( DISP, SCREEN),
+				X_WINDOW, p. x, p. y,
+				&p. x, &p. y, &cld)) {
+      croak( "apc_widget_screen_to_client(): XTranslateCoordinates() failed");
+   }
+   XCHECKPOINT;
+   p. y = X( self)-> size. y - p. y - 1;
+   return p;
+}
+
+void
+apc_widget_scroll_rect( Handle self, int horiz, int vert,
+			Rect r, Bool withChildren)
+{
+fprintf( stdout, "apc_widget_scroll_rect()\n");
+}
+
+void
+apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
+{
+   int r;
+   XWindow confine_to = None;
+   DEFXX;
+
+   if ( capture) {
+
+      if ( confineTo && PWidget(confineTo)-> handle)
+	 confine_to = PWidget(confineTo)-> handle;
+
+      r = XGrabPointer( DISP, X_WINDOW, false, 0
+			| ButtonPressMask
+			| ButtonReleaseMask
+			| PointerMotionMask
+			| ButtonMotionMask, GrabModeAsync, GrabModeAsync,
+			None, None, CurrentTime);
+      XCHECKPOINT;
+      if ( r != GrabSuccess) {
+	 /* XXX do something sensible here */
+	 warn( "apc_widget_set_capture(): unsuccessful grab");
+      } else {
+	 XX-> flags. grab = true;
+      }
+   } else if ( !capture) {
+      XUngrabPointer( DISP, CurrentTime);
+      XCHECKPOINT;
+      XX-> flags. grab = false;
+   }
+}
+
+void
+apc_widget_set_clip_rect( Handle self, Rect clipRect)
+{
+fprintf( stdout, "apc_widget_set_clip_rect()\n");
+}
+
+void
+apc_widget_set_color( Handle self, Color color, int index)
+{
+   X(self)-> colors[ index] = color;
+   if ( index == ciFore)
+      apc_gp_set_color( self, color);
+   else if ( index == ciBack)
+      apc_gp_set_back_color( self, color);
+}
+
+void
+apc_widget_set_enabled( Handle self, Bool enable)
+{
+   X(self)-> flags. enabled = enable;
+}
+
+void
+apc_widget_set_first_click( Handle self, Bool firstClick)
+{
+fprintf( stdout, "apc_widget_set_first_click()\n");
+}
+
+void
+apc_widget_set_focused( Handle self)
+{
+   Handle o = self;
+   int state = 0;  /* 0 - can do, 1 - need flush, 2 - cannot do */
+
+   while ( X(o)-> owner && X(o)-> owner != application) {
+      if ( !X(o)-> flags. visible) {
+	 state = 2;
+	 break;
+      }
+      if ( !X(o)-> flags. mapped) {
+	 state = 1;  /* don't break */
+      }
+      o = X(o)-> owner;
+   }
+   if ( state == 1) {
+      XWindowAttributes attrs;
+      if ( XGetWindowAttributes( DISP, X_WINDOW, &attrs) &&
+	   attrs. map_state == IsViewable)
+	 state = 0;
+   }
+   if ( !state) {
+      XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
+      XCHECKPOINT;
+   } else {
+      printf( "~~~~~~~~~~~~~~~~~~ cannot set focus ~~~~~~~~~~~~~~~~~\n");
+   }
+}
+
+void
+apc_widget_set_font( Handle self, PFont font)
+{
+   Event ev = {cmFontChanged};
+
+   apc_gp_set_font( self, font);
+
+   ev. gen. source = self;
+   CWidget(self)-> message( self, &ev);
+}
+
+void
+apc_widget_set_palette( Handle self)
+{
+fprintf( stdout, "apc_widget_set_palette()\n");
+}
+
+void
+apc_widget_set_pos( Handle self, int x, int y)
+{
+   DEFXX;
+
+   XX-> origin = (Point){x,y};  /* XXX ? */
+   y = X(XX-> owner)-> size. y - XX-> size.y - y;
+   XMoveWindow( DISP, X_WINDOW, x, y);
+fprintf( stdout, "XMoveWindow: widget (%s) move to (%d,%d)\n", PWidget(self)-> name, x, y);
+   XCHECKPOINT;
+}
+
+void
+apc_widget_set_size( Handle self, int width, int height)
+{
+   DEFXX;
+   int y;
+
+   XX-> size = (Point){width, height};  /* XXX ? */
+   y = X(XX-> owner)-> size. y - height - XX-> origin. y;
+   if ( width == 0) width = 1;
+   if ( height == 0) height = 1;
+   XMoveResizeWindow( DISP, X_WINDOW, XX-> origin. x, y, width, height);
+fprintf( stdout, "widget size to (%d,%d) - (%d,%d)\n", XX-> origin. x, y, width, height);
+   XCHECKPOINT;
+}
+
+void
+apc_widget_set_tab_order( Handle self, int tabOrder)
+{
+fprintf( stdout, "apc_widget_set_tab_order()\n");
+}
+
+void
+apc_widget_set_visible( Handle self, Bool show)
+{
+   DEFXX;
+
+   XX-> flags. visible = show;
+   if ( show) {
+      XMapWindow( DISP, X_WINDOW);
+      // XMapRaised( DISP, X_WINDOW);
+      XRaiseWindow( DISP, X_WINDOW);
+      XFlush( DISP);
+printf( "&&&&&&&&&&&&& Widget show: %s &&&&&&&&&&&\n", PWidget( self)-> name);
+   } else {
+      XUnmapWindow( DISP, X_WINDOW);
+   }
+   XCHECKPOINT;
+}
+
+void
+apc_widget_set_z_order( Handle self, Handle behind, Bool top)
+{
+fprintf( stdout, "apc_widget_set_z_order()\n");
+}
+
+void
+apc_widget_update( Handle self)
+{
+   Event e;
+   if ( X(self)-> region) {
+      e. cmd = cmPaint;
+      CComponent( self)-> message( self, &e);
+   }
+}
+
+void
+apc_widget_validate_rect( Handle self, Rect rect)
+{
+fprintf( stdout, "apc_widget_validate_rect()\n");
+}
+
