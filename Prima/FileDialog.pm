@@ -26,6 +26,8 @@
 #  Created by:
 #     Dmitry Karasik <dk@plab.ku.dk> 
 #     Anton Berezin  <tobez@plab.ku.dk>
+#  Modifications by:
+#     David Scott <dscott@dgt.com>
 
 #  contains:
 #      OpenDialog
@@ -1126,7 +1128,7 @@ sub profile_default
 {
    return {
       %{$_[ 0]-> SUPER::profile_default},
-      width       => 334,
+      width       => 500,
       height      => 236,
       centered    => 1,
       visible     => 0,
@@ -1135,6 +1137,8 @@ sub profile_default
       directory   => '',
       designScale => [7, 16],
       showHelp    => 0,
+
+      borderStyle => bs::Sizeable,
    }
 }
 
@@ -1151,7 +1155,8 @@ sub init
 
    $self-> insert( DirectoryListBox =>
       origin   => [ 10, $drives ? 40 : 10],
-      width    => 200,
+      width    => 480,
+      growMode => gm::Client,
       height   => $drives ? 160 : 190,
       name     => 'Dir',
       current  => 1,
@@ -1162,22 +1167,23 @@ sub init
    $self->insert( Label =>
       name      => 'Directory',
       origin    => [ 10, 202],
-      size      => [ 200, 25],
-      autoWidth => 0,
+      growMode => gm::Ceiling,
+      autoWidth => 1,
+      autoHeight => 1,
       text      => '~Directory',
       focusLink => $self-> Dir,
    );
 
    $self-> insert( DriveComboBox =>
       origin => [ 10, 10],
-      width  => 200,
+      width  => 150,
       name   => 'Drive',
       delegations => [qw(Change)],
    ) if $drives;
 
    $self-> insert( Button =>
-      origin  => [ 226, 164],
-      size    => [ 96, 36],
+      origin  => [ 200, 3],
+      size        => [ 80, 30],
       text    => '~OK',
       name    => 'OK',
       default => 1,
@@ -1185,17 +1191,18 @@ sub init
    );
 
    $self->insert( Button=>
-      origin      => [ 226, 108],
+      origin      => [ 300, 3],
       name        => 'Cancel',
       text        => 'Cancel',
-      size        => [ 96, 36],
+      size        => [ 80, 30],
       modalResult => cm::Cancel,
    );
+
    $self->insert( Button=>
-      origin      => [ 226, 52],
+      origin      => [ 400, 3],
       name        => 'Help',
       text        => '~Help',
-      size        => [ 96, 36],
+      size        => [ 80, 30],
    ) if $self->{showHelp};
 
    $self-> {curpaths} = {};
@@ -1258,8 +1265,5 @@ sub directory
 }
 
 sub showHelp         { ($#_)? shift->raise_ro('showHelp')  : return $_[0]->{showHelp} };
-
-
-
 
 1;
