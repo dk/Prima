@@ -339,8 +339,8 @@ sub on_keydown
          if ( $key == kb::PgUp) { $newItem -= $mc ? $self->{rows} * $cols : $pgStep};
          $doSelect = $mod & km::Shift;
       }
-      if ( $mod & km::Ctrl ||
-         (( $mod & ( km::Shift|km::Ctrl)==(km::Shift|km::Ctrl)) && $self->{ extendedSelect}))
+      if (( $mod & km::Ctrl) ||
+         ((( $mod & ( km::Shift|km::Ctrl))==(km::Shift|km::Ctrl)) && $self->{ extendedSelect}))
       {
          if ( $key == kb::PgUp || $key == kb::Home) { $newItem = 0};
          if ( $key == kb::PgDn || $key == kb::End)  { $newItem = $self->{count} - 1};

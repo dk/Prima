@@ -22,7 +22,7 @@ ok( $ww && scalar @keydata);
 @keydata = ();
 
 $c-> key_event( cm::KeyUp, 0, kb::Down, km::Ctrl|km::Shift, 1, 0);
-@keydata = grep { scalar @$_ == 5 && $$_[3] == kb::Down && $$_[4] == km::Ctrl|km::Shift } @keydata;
+@keydata = grep { scalar @$_ == 5 && $$_[3] == kb::Down && $$_[4] == (km::Ctrl|km::Shift) } @keydata;
 ok($dong && scalar @keydata);
 @keydata = ();
 
