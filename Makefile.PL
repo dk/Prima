@@ -103,6 +103,7 @@ use vars qw(
     @Makefile_deps
     $PrimaTarget
     @Prima_exports
+    $extralibs
 );
 
 sub print_config
@@ -692,6 +693,8 @@ sub setup_variables
     $OS2DLLF = 'Prima';
     $OS2DLLF = &DynaLoader::mod2fname([$OS2DLLF]) if $OS2 && defined &DynaLoader::mod2fname;
     $PrimaTarget = qd( "auto/Prima/$OS2DLLF$DL_EXT");
+    $extralibs = '';
+    $extralibs = qd("auto/Prima/Prima.lib") if $OS2;
     setvar( 'DEFFILE', $Win32 ? qd( "win32/Prima.def") : ( $OS2 ? qd( "os2/Prima.def") : ''));
     check_dTHR() if $platform eq 'unix';
 
@@ -1365,7 +1368,7 @@ dist: tardist
 
 prima: dirs $PrimaTarget
 
-$PrimaTarget: @allojects
+$PrimaTarget: @allojects $extralibs
 \t${ \eval{ return join ' ', ld_command_line( $PrimaTarget, @allojects)}}
 
 Makefile: Makefile.PL @Makefile_deps
@@ -1382,6 +1385,18 @@ install: all
 \t\@\$(CP) \\
 \t$PrimaTarget $INSTALL_DL \\
 EOF
+    if ( $Win32) {
+       my $libt = $PrimaTarget;
+       if ( $libt =~ s/\.dll$/.lib/i) {
+          $make .= "\t$libt $PREFIX \\\n";   
+       }
+    }
+    if ( $OS2) {
+       $make .= <<OS2D;
+$extralibs:
+\temximp -o $extralibs os2\\Prima\\Prima.def
+OS2D
+    }
 
     my ( $instcnt, $maxcnt) = ( 1, 20);
     finddepth(
