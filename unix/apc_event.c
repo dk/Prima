@@ -897,6 +897,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          XX-> ackSize. y - ev-> xconfigure. y;
       if ( XT_IS_WINDOW(XX) && PWindow( self)-> menu) {
          if ( size_changed) {
+            printf("confi 1\n");
             M(PWindow( self)-> menu)-> paint_pending = true;
             XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
                ev-> xconfigure. width, XX-> menuHeight);
@@ -929,6 +930,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
             M(PWindow( self)-> menu)-> paint_pending = true;
             XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
                ev-> xconfigure. width, XX-> menuHeight);
+            {   
+                XEvent e;
+                Handle menu = PWindow( self)-> menu;
+                e. type = ConfigureNotify;
+                e. xconfigure. width  = ev-> xconfigure. width;
+                e. xconfigure. height = XX-> menuHeight;
+                prima_handle_menu_event( &e, PAbstractMenu(menu)-> handle, menu);
+            }
          }
          M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
          M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
