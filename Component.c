@@ -139,20 +139,20 @@ Component_done( Handle self)
       var refList = nil;
    }
    if ( var postList != nil) {
-      list_first_that( var postList, ( PListProc) free_private_posts, nil);
+      list_first_that( var postList, free_private_posts, nil);
       list_destroy( var postList);
       free( var postList);
       var postList = nil;
    }
    if ( var evQueue != nil)
    {
-      list_first_that( var evQueue, ( PListProc) free_queue, nil);
+      list_first_that( var evQueue, free_queue, nil);
       list_destroy( var evQueue);
       free( var evQueue);
       var evQueue = nil;
    }
    if ( var components != nil) {
-      list_first_that( var components, ( PListProc) detach_all, ( void*) self);
+      list_first_that( var components, detach_all, ( void*) self);
       list_destroy( var components);
       free( var components);
       var components = nil;
@@ -291,8 +291,7 @@ ForceProcess:
       protect_object( self);
       my push_event( self);
       my handle_event( self, event);
-      my pop_event( self);
-      if ( var evStack) ret = var evStack[ var evPtr];
+      ret = my pop_event( self);
       if ( !ret) event-> cmd = 0;
       unprotect_object( self);
    } else if ( var stage == csConstructing) {
@@ -305,8 +304,7 @@ ForceProcess:
          goto ForceProcess;
       case ctSingle:
          event-> cmd = ( event-> cmd & ~ctQueueMask) | ctSingleResponse;
-         if ( list_first_that( var evQueue, ( PListProc) find_dup_msg,
-			   (void *) event-> cmd) >= 0)
+         if ( list_first_that( var evQueue, find_dup_msg, (void*) event-> cmd) >= 0)
 	      break;
       default:
 	      list_add( var evQueue, ( Handle) memcpy( malloc( sizeof( Event)),
@@ -424,7 +422,7 @@ Component_handle_event( Handle self, PEvent event)
       if ( var stage == csNormal)
       {
          if ( var evQueue-> count > 0)
-            list_first_that( var evQueue, ( PListProc)oversend, ( void*) self);
+            list_first_that( var evQueue, oversend, ( void*) self);
          list_destroy( var evQueue);
          free( var evQueue);
          var evQueue = nil;

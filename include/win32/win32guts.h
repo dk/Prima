@@ -437,6 +437,7 @@ extern HBRUSH       hBrushHollow;
 extern PatResource  hPatHollow;
 extern HPEN         hPenHollow;
 extern PHash        regnodeMan;
+extern Handle       lastMouseOver;
 
 LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);

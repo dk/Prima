@@ -644,7 +644,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
       }
       if ( !DestroyWindow( old))
          apiErr;
-      if ( var postList) list_first_that( var postList, ( PListProc) repost_msgs, ( void*)self);
+      if ( var postList) list_first_that( var postList, repost_msgs, ( void*)self);
    }
    PostMessage( ret, WM_PRIMA_CREATE, 0, 0);
    return true;
@@ -1372,6 +1372,7 @@ apc_widget_destroy( Handle self)
       if ( !DestroyCursor( sys pointer2)) apiErr;
    }
    if ( sys recreateData) free( sys recreateData);
+   if ( self == lastMouseOver) lastMouseOver = nilHandle;
    free( sys timeDefs);
    if ( var handle == nilHandle) return;
 

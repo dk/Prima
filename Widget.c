@@ -807,7 +807,7 @@ void Widget_handle_event( Handle self, PEvent event)
             } else if ( var stage > csNormal) {
                break;
             } else if ( var evQueue != nil) {
-              int    i = list_first_that( var evQueue, ( PListProc) find_dup_msg, (void*) event-> cmd);
+              int    i = list_first_that( var evQueue, find_dup_msg, (void*) event-> cmd);
               PEvent n;
               if ( i < 0) {
                  n = malloc( sizeof( Event));
@@ -858,7 +858,7 @@ void Widget_handle_event( Handle self, PEvent event)
            } else if ( var stage > csNormal) {
               break;
            } else if ( var evQueue != nil) {
-              int    i = list_first_that( var evQueue, ( PListProc)find_dup_msg, (void*) event-> cmd);
+              int    i = list_first_that( var evQueue, find_dup_msg, (void*) event-> cmd);
               PEvent n;
               if ( i < 0) {
                  n = malloc( sizeof( Event));

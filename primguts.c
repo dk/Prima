@@ -965,6 +965,7 @@ XS( prima_cleanup)
    dXSARGS;
    (void)items;
 
+   if ( application) Object_destroy( application);
    appDead = true;
    hash_first_that( primaObjects, kill_objects, nil, nil, nil);
    hash_destroy( primaObjects, false);

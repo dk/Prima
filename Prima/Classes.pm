@@ -375,7 +375,7 @@ sub rect_focus
    ( $y, $y1) = ( $y1, $y) if $y > $y1;
 
    $width = 1 if !defined $width || $width < 1;
-   if (( $sysData->{apc} != apc::Win32) or ( $sysData->{system} eq 'Windows NT')) {
+   if (( $width == 1) && (( $sysData->{apc} != apc::Win32) or ( $sysData->{system} eq 'Windows NT'))) {
       my ( $lp, $cl, $cl2, $rop) = (
          $canvas-> linePattern, $canvas-> color,
          $canvas-> backColor, $canvas-> rop
