@@ -464,8 +464,10 @@ void
 prima_mirror_bytes( unsigned char *data, int dataSize)
 {
    Byte *mirrored_bits = mirror_bits();
-   while ( dataSize--)
-      *(data++) = mirrored_bits[*data];
+   while ( dataSize--) {
+      *data = mirrored_bits[*data];
+      data++;
+   }
 }
 
 static Bool
@@ -934,8 +936,10 @@ cache_remap_8( Image*img, ImageCache* cache)
 {
    int sz = img-> h * cache-> image-> bytes_per_line_alias;
    Byte * p = cache-> image-> data_alias;
-   while ( sz--) 
-      *(p++) = guts. mappingPlace[ *p];
+   while ( sz--) {
+      *p = guts. mappingPlace[ *p];
+      p++;
+   }
 }
 
 static void
@@ -943,10 +947,12 @@ cache_remap_4( Image*img, ImageCache* cache)
 {
    int sz = img-> h * cache-> image-> bytes_per_line_alias;
    Byte * p = cache-> image-> data_alias;
-   while ( sz--) 
-      *(p++) = 
+   while ( sz--) {
+      *p = 
          guts. mappingPlace[(*p) & 0xf] |
         (guts. mappingPlace[((*p) & 0xf0) >> 4] << 4);
+      p++;
+   }
 }
 
 static void
@@ -957,7 +963,10 @@ cache_remap_1( Image*img, ImageCache* cache)
    if ( guts. mappingPlace[0] == guts. mappingPlace[1]) 
       memset( p, sz, (guts. mappingPlace[0] == 0) ? 0 : 0xff);
    else if ( guts. mappingPlace[0] != 0)  
-      while ( sz--) *(p++) = ~(*p);
+      while ( sz--) {
+         *p = ~(*p);
+         p++;
+      }
 }
 
 
