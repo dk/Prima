@@ -32,19 +32,16 @@
 #include "Menu.h"
 #include "Widget.h"
 #include "Window.h"
-
+#include <float.h>
 
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define HANDLE  (( sys className == WC_FRAME) ? WinQueryWindow( v->handle, QW_PARENT) : v->handle)
 #define DHANDLE( view) (((( PDrawableData)(( PComponent) view)-> sysData)->className == WC_FRAME) ? WinQueryWindow((( PWidget) view)->handle, QW_PARENT) : (( PWidget) view)->handle)
 
+
 OS2Guts guts;
-APIRET rc            = 0;
-Handle firstModal    = nilHandle; // first modal window in queue
-Handle dlgModal      = nilHandle; // current top-level modal window
-Bool   dlgActive     = 0;         // modal window is visible and activated
-Bool   focusAction   = 0;         // internal focus action flag
+ERRORID rc            = 0;
 Handle lastMouseOver = nilHandle;
 extern Handle hwnd_to_view( HWND win);
 extern Bool single_color_notify ( Handle self, Handle child, void * color);
@@ -56,10 +53,20 @@ window_subsystem_init( void)
    ULONG minor;
    DosQuerySysInfo( QSV_VERSION_MINOR, QSV_VERSION_MINOR, &minor, sizeof( minor));
    memset( &guts, 0, sizeof( guts));
+   guts. appTypePM = 1;
    if ( !( guts. anchor = WinInitialize( 0))) return false;
-   if ( !( guts. queue = WinCreateMsgQueue( guts. anchor, minor <= 30 ? 256 : 0))) apiErrRet;
+   if ( !( guts. queue = WinCreateMsgQueue( guts. anchor, minor <= 30 ? 256 : 0))) {
+      rc = WinGetLastError(guts. anchor);
+      WinTerminate( guts. anchor);
+      if ( rc == 0x81051) {
+         fprintf( stderr, "Not a PM program!\n");
+         guts. appTypePM = 0;
+      } else
+        apiAltErr(rc);
+     return false;
+   }
+   _fpreset();
    create_font_hash();
-   create_logger_window();
    if ( !WinRegisterClass( guts. anchor,
                      "GeNeRiC",
                      generic_view_handler,
@@ -116,6 +123,7 @@ window_subsystem_init( void)
    list_create( &guts. winPsList, 8, 8);
    guts. appLock = 0;
    guts. pointerLock = 0;
+
    return true;
 }
 
@@ -145,12 +153,10 @@ window_subsystem_cleanup( void)
    }
 }
 
-
 void
 window_subsystem_done( void)
 {
    HDC dc = GpiQueryDevice( guts. ps);
-   apc_help_close( application);
    list_destroy( &guts. transp);
    list_first_that( &guts. psList, freePS, nil);
    list_first_that( &guts. winPsList, freeWinPS, nil);
@@ -161,66 +167,11 @@ window_subsystem_done( void)
    guts. fontId = 0;
    destroy_fontid_hash( guts. fontHash);
    DevCloseDC( dc);
-   WinDestroyWindow( WinQueryWindow( guts. logger, QW_PARENT));
    destroy_font_hash();
    WinDestroyMsgQueue( guts. queue);
    WinTerminate( guts. anchor);
    guts. anchor = guts. queue = nilHandle;
 }
-
-#define dmsNormal  0
-#define dmsPassive 1
-#define dmsModal   2
-
-static void popup( void)
-{
-   SWP swp;
-   int fl = SWP_ZORDER;
-   int i;
-   List modals;
-   Handle m;
-
-   if ( focusAction || !dlgModal) return;
-
-
-   focusAction = 1;
-   list_create( &modals, 32, 32);
-   {
-      HWND bottom = WinQueryWindow( HWND_DESKTOP, QW_BOTTOM);
-      Handle h;
-      SWP swp;
-      while ( bottom)
-      {
-         h = hwnd_to_view( bottom);
-         bottom = WinQueryWindow( bottom, QW_PREV);
-         if ( !h) continue;
-         if ( !kind_of( h, CWindow)) continue;
-         if ( DHANDLE(h) && ( dsys( h) s. window. modalResult != -1)) continue;
-         WinQueryWindowPos( DHANDLE(h), &swp);
-         if ( swp. fl & (SWP_HIDE|SWP_MINIMIZE)) continue;
-         list_add( &modals, h);
-      }
-   }
-
-   WinQueryWindowPos( DHANDLE( dlgModal), &swp);
-   if ( swp. fl & SWP_MINIMIZE) fl |= SWP_RESTORE;
-   if ( swp. fl & SWP_HIDE)     fl |= SWP_SHOW;
-   WinSetWindowPos( DHANDLE( dlgModal), HWND_TOP, 0,0,0,0, fl);
-   WinSetActiveWindow( HWND_DESKTOP, DHANDLE( dlgModal));
-
-   m = firstModal;
-   while ( m != dlgModal) { list_add( &modals, m); m = dsys( m) s. window. nextModal; }
-   list_add( &modals, dlgModal);
-   for ( i = modals. count - 2; i >= 0; i--)
-   {
-      WinSetWindowPos( DHANDLE(list_at(&modals,i)), DHANDLE(list_at(&modals,i+1)), 0,0,0,0, SWP_ZORDER);
-   }
-   list_destroy( &modals);
-
-   focusAction = 0;
-   dlgActive = 1;
-}
-
 
 static Bool
 local_wnd( HWND who, HWND client)
@@ -246,286 +197,34 @@ local_wnd( HWND who, HWND client)
 
 
 MRESULT EXPENTRY
-generic_frame_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
-{
-   HWND  client = WinWindowFromID( win, FID_CLIENT);
-   PFNWP fProc  = ( PFNWP) WinQueryWindowULong( win, QWL_USER);
-   Event ev;
-   Handle self = WinQueryWindowULong( client, QWL_USER);
-   PWidget v = ( PWidget) self;
-   MPARAM toReturn;
-   Bool hiStage = false;
-   Bool doRefocus;
-   Point dPoint;
-   int  dms = dlgModal ? ( dlgModal == self ? dmsModal : dmsPassive) : dmsNormal;
-
-   if ( !self)
-      return fProc ? fProc( win, msg, mp1, mp2) : WinDefWindowProc( win, msg, mp1, mp2);
-
-   if ( dms == dmsPassive && !is_apt( aptClipOwner)) {
-      PWidget vv = v;
-      while (vv && ( Handle) vv != application) {
-         if ((Handle)vv == dlgModal){dms = dmsNormal;break;}
-         ( Handle) vv = vv-> owner;
-      }
-   }
-
-   memset( &ev, 0, sizeof (ev));
-   ev. gen. source = self;
-
-
-   switch ( msg)
-   {
-      case WM_ACTIVATE:
-         ev. cmd = SHORT1FROMMP(mp1) ? cmActivate : cmDeactivate;
-         break;
-      case WM_ADJUSTWINDOWPOS:
-      {
-         if ( !focusAction &&
-               ((( dms == dmsModal) && dlgActive) ||
-                 ( dms == dmsPassive))
-            )
-            {
-               (( PSWP) mp1)-> fl &= ~SWP_ZORDER;
-               if ((( PSWP) mp1)-> fl & ( SWP_HIDE | SWP_MINIMIZE))
-                   WinPostMsg( win, WM_DLGPASSIVATE, 0, 0);
-            }
-      }
-      {
-         int fl = (( PSWP) mp1) -> fl;
-         if (fl & ( SWP_SIZE | SWP_MAXIMIZE | SWP_RESTORE))
-         // if (fl & ( SWP_SIZE | SWP_MAXIMIZE))
-         {
-            Point p;
-            ev. cmd = cmCalcBounds;
-            ev. gen. R. left   = (( PSWP) mp1) -> x;
-            ev. gen. R. bottom = (( PSWP) mp1) -> y;
-            p = frame2client( self, ( Point){
-               (( PSWP) mp1) -> cx,
-               (( PSWP) mp1) -> cy
-            }, true);
-            dPoint = ( Point){
-               (( PSWP) mp1) -> cx - p. x,
-               (( PSWP) mp1) -> cy - p. y
-            };
-            ev. gen. R. right = p. x;
-            ev. gen. R. top   = p. y;
-         }
-         if ( fl & SWP_MINIMIZE)
-         {
-            sys s. window. lastFrameSize  = ( Point){(( PSWP) mp1) -> cx, (( PSWP) mp1) -> cy};
-            sys s. window. lastClientSize = frame2client( self,
-               sys s. window. lastFrameSize, true );
-         }
-      }
-      break;
-      case WM_SYSCOMMAND:
-         if ( dms == dmsPassive) { popup(); return 0; }
-         break;
-      case WM_CHAR:
-         if ( dms == dmsPassive) { popup(); return 0; }
-         WinSendMsg( v-> handle, msg, mp1, mp2);
-         break;
-      case WM_HITTEST:
-         if ( dms == dmsPassive)
-         {
-             HWND d = DHANDLE( dlgModal);
-             POINTL p = { SHORT1FROMMP( mp1), SHORT2FROMMP( mp1)};
-             WinMapWindowPoints( win, d, &p, 1);
-             if ( !WinWindowFromPoint( d, &p, 0)) {
-                p = (POINTL){ SHORT1FROMMP( mp1), SHORT2FROMMP( mp1)};
-                WinMapWindowPoints( win, v->handle, &p, 1);
-                if (!WinWindowFromPoint( v->handle, &p, 0)) return ( MRESULT)HT_ERROR;
-             }
-         }
-         break;
-      case WM_DLGPOPUP:
-         popup();
-         break;
-      case WM_DLGPASSIVATE:
-         dlgActive = 0;
-         return 0;
-      case WM_DLGENTERMODAL:
-         WinSendMsg( win, WM_ACTIVATE, MPFROMLONG( 1), 0);
-         ev. cmd = cmExecute;
-         break;
-      case WM_FOCUSCHANGE:
-         if (( dms == dmsPassive) && SHORT1FROMMP( mp2) && !focusAction)
-         {
-            if ( !dlgActive) WinPostMsg( win, WM_DLGPOPUP, 0, 0);
-            return 0;
-         }
-         if (!SHORT1FROMMP(mp2) &&
-             !( SHORT2FROMMP(mp2) & FC_NOLOSEACTIVE)
-             && local_wnd((HWND)mp1,( HWND)v->handle))
-            mp2 = MPFROM2SHORT(SHORT1FROMMP(mp2), SHORT2FROMMP(mp2) | FC_NOLOSEACTIVE);
-         if ( dms == dmsModal && !focusAction)
-         {
-            PID pid;
-            TID tid;
-            Bool alien;
-            WinQueryWindowProcess(( HWND) mp1, &pid, &tid);
-            alien = pid != guts. pid || ( HWND) mp1 == guts. logger ||
-                    ( HWND) mp1 == guts. loggerListBox ||
-                    ( HWND) mp1 == WinQueryWindow( guts. logger, QW_PARENT);
-            if (!( doRefocus = !SHORT1FROMMP( mp2)))
-            {
-               if (!( !alien && local_wnd(( HWND) mp1, ( HWND)v->handle))) dlgActive = 1;
-            } else {
-               if ( alien)
-                  dlgActive = 0;
-               else {
-                  if ( local_wnd(( HWND) mp1, ( HWND)v->handle)) {
-                     doRefocus = 0;
-                  } else {
-                     return 0;
-                  }
-               }
-            }
-         }
-         hiStage = true;
-         break;
-      case WM_WINDOWPOSCHANGED:
-      {
-          PSWP new = PVOIDFROMMP( mp1);
-          PSWP old = new + 1;
-
-          #define wspush(d)                        \
-          if ( v)                                  \
-          {                                        \
-             Event xev;                            \
-             xev. cmd        = cmWindowState;      \
-             xev. gen.source = self;               \
-             xev. gen. i     = d;                  \
-             v-> self-> message( self, &xev);      \
-          }
-
-          if ( new-> fl & ( SWP_SIZE | SWP_MAXIMIZE | SWP_RESTORE | SWP_HIDE))
-          {
-             Point pOld = frame2client( self, ( Point){old->cx, old->cy}, true);
-             Point pNew = frame2client( self, ( Point){new->cx, new->cy}, true);
-             ev. gen. R. left   = pOld. x;
-             ev. gen. R. bottom = pOld. y;
-             ev. gen. P. x = ev. gen. R. right = pNew. x;
-             ev. gen. P. y = ev. gen. R. top   = pNew. y;
-             ev. cmd = cmSize;
-             hiStage = true;
-          }
-          if (( new-> fl & SWP_RESTORE) && ( sys s. window. state == wsMinimized))
-          {
-              Point p = frame2client( self, sys s. window. hiddenSize, false);
-              wspush( wsNormal);
-              sys s. window. state = wsNormal;
-              WinSetWindowPos( win, 0,
-                sys s. window. hiddenPos. x, sys s. window. hiddenPos. y,
-                p.x, p.y, SWP_SIZE|SWP_MOVE
-              );
-          }
-          if (( new-> fl & SWP_RESTORE) && ( sys s. window. state == wsMaximized))
-          {
-             wspush( wsNormal);
-             sys s. window. state = wsNormal;
-          }
-          if (( new-> fl & SWP_MINIMIZE) && !( old-> fl & SWP_MINIMIZE))
-          {
-             sys s. window. hiddenPos.  x = old-> x;
-             sys s. window. hiddenPos.  y = old-> y;
-             sys s. window. hiddenSize = sys s. window. lastClientSize;
-             wspush( wsMinimized);
-             sys s. window. state = wsMinimized;
-          }
-          if (( new-> fl & SWP_MAXIMIZE) && !( old-> fl & SWP_MAXIMIZE))
-          {
-             wspush( wsMaximized);
-             sys s. window. state = wsMaximized;
-          }
-          if ( new-> fl & ( SWP_SHOW | SWP_HIDE))
-             WinSendMsg( client, WM_SHOW, MPFROMLONG((new-> fl & SWP_SHOW)!=0), 0);
-      }
-      break;
-   }
-
-   if ( hiStage)
-      toReturn = fProc ? fProc( win, msg, mp1, mp2) : WinDefWindowProc( win, msg, mp1, mp2);
-
-   if (( ev. cmd != 0) && ( v != nil))
-   {
-      v-> self-> message( self, &ev);
-   }
-
-   if ( v-> stage <= csDestroying)
-   switch ( msg)
-   {
-      case WM_ADJUSTWINDOWPOS:
-         if ( ev. cmd)
-         {
-            (( PSWP) mp1)-> x  = ev. gen. R. left;
-            (( PSWP) mp1)-> y  = ev. gen. R. bottom;
-            (( PSWP) mp1)-> cx = ev. gen. R. right + dPoint. x;
-            (( PSWP) mp1)-> cy = ev. gen. R. top   + dPoint. y;
-          }
-          break;
-      case WM_FOCUSCHANGE:
-          if ( dms == dmsModal && SHORT1FROMMP( mp2) && !focusAction && doRefocus)
-            {  popup(); };
-          break;
-      case WM_WINDOWPOSCHANGED:
-          {
-             PSWP new = PVOIDFROMMP( mp1);
-             if ( is_apt( aptSyncPaint) && ( new-> fl & ( SWP_MAXIMIZE|SWP_RESTORE)))
-               apc_widget_repaint( self);
-          }
-          break;
-   }
-   if ( !WinIsWindow( guts. anchor, win)) return 0;
-   if ( !hiStage)
-      toReturn = fProc ? fProc( win, msg, mp1, mp2) : WinDefWindowProc( win, msg, mp1, mp2);
-   return toReturn;
-}
-
-static Bool
-passive_view( Handle self)
-{
-   PWidget v = ( PWidget) self;
-   if ( !dlgModal) return false;
-   while ( v && ( Handle) v != application && (Handle)v != dlgModal) v = (PWidget)(v-> owner);
-   return (Handle)v != dlgModal;
-}
-
-MRESULT EXPENTRY
 generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
 {
    Handle view;
    PWidget v;
    PWidget orgv;
    Event ev;
-   MRESULT toReturn;
+   MRESULT toReturn = 0;
    ULONG   orgMsg;
    int orgCmd;
    Handle self;
    PFNWP fnwp;
    Bool hiStage = false;
-   int  dms;
 
 #define flow(cm)  ev.cmd = (cm); ( PWidget) v = ctrl;  ( PWidget) view  = ctrl;
 #define flowb(cm) flow(cm) break;
+
    view = WinQueryWindowULong( w, QWL_USER);
    if (( view == nilHandle) || appDead)
-   {
-      // Shit!  Nothing we can do!
       return WinDefWindowProc( w, msg, mp1, mp2);
-   }
 
    // Here we (fortunately) have all we need to parse events
    v = ( PWidget) view;
    self = view;
-   dms = dlgModal ? ( dlgModal == self ? dmsModal : dmsPassive) : dmsNormal;
    ( ApiHandle) fnwp = sys handle2;
    orgv = v;
    orgMsg  = msg;
    memset( &ev, 0, sizeof (ev));
    ev. gen. source = view;
-   toReturn = 0;
    switch ( msg)
    {
       case WM_BUTTON1DBLCLK:
@@ -598,25 +297,13 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
               return 0;
            }
         }
-        if ( passive_view( self)) {
-           if ( ev. cmd == cmMouseDown || (ev. cmd == cmMouseClick && ev. pos. dblclk))
-              WinAlarm( HWND_DESKTOP, WA_WARNING);
-           if ( ev. cmd == cmMouseDown) {
-              if ( !dlgActive) popup();
-           }
-           if (( ev. cmd != cmMouseMove) &&
-               ( ev. cmd != cmMouseEnter) &&
-               ( ev. cmd != cmMouseLeave))
-           return 0;
-           ev. cmd = 0;
-        }
+
         if ( ev.cmd == cmMouseMove && self != lastMouseOver) {
            Handle old = lastMouseOver;
            lastMouseOver = self;
            if ( old) WinSendMsg((( PWidget) old)-> handle, WM_MOUSELEAVE, mp1, mp2);
            WinSendMsg( w, WM_MOUSEENTER, mp1, mp2);
-        } else if ( ev. cmd == cmMouseDown && !is_apt( aptFirstClick))
-        {
+        } else if ( ev. cmd == cmMouseDown && !is_apt( aptFirstClick)) {
             Handle x = self;
             while ( dsys(x) className != WC_FRAME && ( x != application)) x = (( PWidget) x)-> owner;
             if ( x != application && !local_wnd( WinQueryActiveWindow( HWND_DESKTOP), (( PWidget) x)-> handle)){
@@ -628,9 +315,9 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
         }
         ev. pos. where. x = (short)SHORT1FROMMP( mp1);
         ev. pos. where. y = (short)SHORT2FROMMP( mp1);
-        if  ( SHORT2FROMMP( mp2) & KC_SHIFT) { ev. pos. mod |= kbShift; }
-        if  ( SHORT2FROMMP( mp2) & KC_ALT  ) { ev. pos. mod |= kbAlt;   }
-        if  ( SHORT2FROMMP( mp2) & KC_CTRL ) { ev. pos. mod |= kbCtrl;  }
+        if  ( SHORT2FROMMP( mp2) & KC_SHIFT) { ev. pos. mod |= kmShift; }
+        if  ( SHORT2FROMMP( mp2) & KC_ALT  ) { ev. pos. mod |= kmAlt;   }
+        if  ( SHORT2FROMMP( mp2) & KC_CTRL ) { ev. pos. mod |= kmCtrl;  }
         break;
       case WM_ACTIVATEMENU:
          {
@@ -666,9 +353,9 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
            ev. key. key    = ctx_remap_def( SHORT2FROMMP( mp2), ctx_kb2VK, false, kbNoKey);
            ev. key. repeat = CHAR3FROMMP( mp1);
            ev. key. mod    = 0;
-           if  ( SHORT1FROMMP( mp1) & KC_SHIFT) { ev. key. mod |= kbShift; }
-           if  ( SHORT1FROMMP( mp1) & KC_ALT  ) { ev. key. mod |= kbAlt;   }
-           if  ( SHORT1FROMMP( mp1) & KC_CTRL ) { ev. key. mod |= kbCtrl;  }
+           if  ( SHORT1FROMMP( mp1) & KC_SHIFT) { ev. key. mod |= kmShift; }
+           if  ( SHORT1FROMMP( mp1) & KC_ALT  ) { ev. key. mod |= kmAlt;   }
+           if  ( SHORT1FROMMP( mp1) & KC_CTRL ) { ev. key. mod |= kmCtrl;  }
         }
         break;
       case WM_CLOSE:
@@ -698,28 +385,22 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
       case WM_DESTROY:
         break;
       case WM_ENABLE:
-         if ( SHORT1FROMMP( mp1)) { ev. cmd = cmEnable;} else { ev. cmd = cmDisable;}
+         ev. cmd = SHORT1FROMMP( mp1) ? cmEnable : cmDisable;
          hiStage = true;
          break;
-      case WM_DLGPOPUP:
-         popup();
-         break;
       case WM_FOCUSCHANGE:
-         if (( dms == dmsPassive) && SHORT1FROMMP( mp2) && !focusAction)
-         {
-            PWidget x = ( PWidget) self;
-            while ( x && ( Handle) x != application)
-            {
-                if (( Handle) x == dlgModal) break;
-                ( Handle) x = x-> owner;
-            }
-            if (( Handle) x != dlgModal)
-            {
-               WinPostMsg( w, WM_DLGPOPUP, 0, 0);
-               return 0;
+         if ( !guts. focSysDisabled && !guts. focSysGranted) {
+            Handle hf = Application_map_focus( application, self);
+            if ( hf != self) {
+               WinPostMsg( w, WM_FORCEFOCUS, 0, ( MPARAM) hf);
+               return ( MPARAM) 0;
             }
          }
          break;
+      case WM_FORCEFOCUS:
+         if ( mp2)
+            ((( PWidget) mp2)-> self)-> set_selected(( Handle) mp2, 1);
+         return 0;
       case WM_FONTCHANGED:
          ev. cmd = cmFontChanged;
          break;
@@ -786,6 +467,7 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
              case PP_BACKGROUNDCOLOR:
              case PP_BACKGROUNDCOLORINDEX:
                 ev. gen. i = ciBack;
+                opt_clear( optOwnerBackColor);
                 goto SETCMD;
              case PP_HILITEFOREGROUNDCOLOR:
              case PP_HILITEFOREGROUNDCOLORINDEX:
@@ -804,11 +486,11 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
                 ev. gen. i = ciDisabled;
              SETCMD:
                 {
-                   SingleColor s = { apc_view_get_color( self, event-> gen. i), event-> gen. i};
+                   SingleColor s = { apc_widget_get_color( self, ev. gen. i), ev. gen. i};
                    v-> self-> first_that( self, single_color_notify, &s);
                 }
-                if ( event-> gen. i == ciFore) opt_clear( optOwnerColor); else
-                if ( event-> gen. i == ciBack) opt_clear( optOwnerBackColor);
+                if ( ev. gen. i == ciFore) opt_clear( optOwnerColor); else
+                if ( ev. gen. i == ciBack) opt_clear( optOwnerBackColor);
                 ev. cmd = cmColorChanged;
                 hiStage = true;
                 break;
@@ -900,12 +582,13 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
                   WinSendMsg( w, WM_WINDOWPOSCHANGED, mp1, mp2);
                   New->fl |= SWP_MOVE;
                }
-            } else {
-               if ( fl & (SWP_SIZE|SWP_RESTORE|SWP_MAXIMIZE)) ev. cmd = cmSize;
+            } else if ( fl & (SWP_SIZE|SWP_RESTORE|SWP_MAXIMIZE)) {
+               ev. cmd = cmSize;
                ev. gen. R. right  = ev. gen . P. x = New-> cx;
                ev. gen. R. top    = ev. gen . P. y = New-> cy;
                ev. gen. R. left   = Old-> cx;
                ev. gen. R. bottom = Old-> cy;
+               v-> virtualSize = ev. gen. P;
             }
             if ( is_apt( aptTransparent)) WinInvalidateRect( w, nil, false);
          }
@@ -962,10 +645,9 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
       case WM_CLOSE:
         if ( ev. cmd)
         {
-           if ( self == dlgModal)
-           {
-             apc_window_end_modal( self, cmCancel);
-             return 0;
+           if ( sys className == WC_FRAME && PWindow(self)->modal) {
+              Window_cancel( self);
+              return 0;
            }
            else
              Object_destroy(( Handle) v);
@@ -1003,7 +685,212 @@ generic_view_handler( HWND w, ULONG msg, MPARAM mp1, MPARAM mp2)
    return toReturn;
 }
 
+MRESULT EXPENTRY
+generic_frame_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
+{
+   HWND  client = WinWindowFromID( win, FID_CLIENT);
+   PFNWP fProc  = ( PFNWP) WinQueryWindowULong( win, QWL_USER);
+   Event ev;
+   Handle self = WinQueryWindowULong( client, QWL_USER);
+   PWidget v = ( PWidget) self;
+   MPARAM toReturn = 0;
+   Bool hiStage = false;
+   Point dPoint;
 
+   if ( !self)
+      return fProc ? fProc( win, msg, mp1, mp2) : WinDefWindowProc( win, msg, mp1, mp2);
+
+   memset( &ev, 0, sizeof (ev));
+   ev. gen. source = self;
+
+   switch ( msg)
+   {
+      case WM_ACTIVATE:
+         ev. cmd = SHORT1FROMMP(mp1) ? cmActivate : cmDeactivate;
+         break;
+      case WM_ADJUSTWINDOWPOS:
+      {
+         int fl = (( PSWP) mp1) -> fl;
+         if (fl & ( SWP_SIZE | SWP_MAXIMIZE | SWP_RESTORE))
+         // if (fl & ( SWP_SIZE | SWP_MAXIMIZE))
+         {
+            Point p;
+            ev. cmd = cmCalcBounds;
+            ev. gen. R. left   = (( PSWP) mp1) -> x;
+            ev. gen. R. bottom = (( PSWP) mp1) -> y;
+            p = frame2client( self, ( Point){
+               (( PSWP) mp1) -> cx,
+               (( PSWP) mp1) -> cy
+            }, true);
+            dPoint = ( Point){
+               (( PSWP) mp1) -> cx - p. x,
+               (( PSWP) mp1) -> cy - p. y
+            };
+            ev. gen. R. right = p. x;
+            ev. gen. R. top   = p. y;
+         }
+         if ( fl & SWP_MINIMIZE)
+         {
+            sys s. window. lastFrameSize  = ( Point){(( PSWP) mp1) -> cx, (( PSWP) mp1) -> cy};
+            sys s. window. lastClientSize = frame2client( self,
+               sys s. window. lastFrameSize, true );
+         }
+      }
+      break;
+      case WM_CHAR:
+         WinSendMsg( v-> handle, msg, mp1, mp2);
+         break;
+//    case WM_HITTEST:
+//       if ( dms == dmsPassive)
+//       {
+//           HWND d = DHANDLE( dlgModal);
+//           POINTL p = { SHORT1FROMMP( mp1), SHORT2FROMMP( mp1)};
+//           WinMapWindowPoints( win, d, &p, 1);
+//           if ( !WinWindowFromPoint( d, &p, 0)) {
+//              p = (POINTL){ SHORT1FROMMP( mp1), SHORT2FROMMP( mp1)};
+//              WinMapWindowPoints( win, v->handle, &p, 1);
+//              if (!WinWindowFromPoint( v->handle, &p, 0)) return ( MRESULT)HT_ERROR;
+//           }
+//       }
+//       break;
+      case WM_DLGENTERMODAL:
+         WinSendMsg( win, WM_ACTIVATE, MPFROMLONG( 1), 0);
+         ev. cmd = cmExecute;
+         break;
+      case WM_FOCUSCHANGE:
+//       if (( dms == dmsPassive) && SHORT1FROMMP( mp2) && !focusAction)
+//       {
+//          if ( !dlgActive) WinPostMsg( win, WM_DLGPOPUP, 0, 0);
+//          return 0;
+//       }
+//       if (!SHORT1FROMMP(mp2) &&
+//           !( SHORT2FROMMP(mp2) & FC_NOLOSEACTIVE)
+//           && local_wnd((HWND)mp1,( HWND)v->handle))
+//          mp2 = MPFROM2SHORT(SHORT1FROMMP(mp2), SHORT2FROMMP(mp2) | FC_NOLOSEACTIVE);
+//       if ( dms == dmsModal && !focusAction)
+//       {
+//          PID pid;
+//          TID tid;
+//          Bool alien;
+//          WinQueryWindowProcess(( HWND) mp1, &pid, &tid);
+//          alien = pid != guts. pid || ( HWND) mp1 == guts. logger ||
+//                  ( HWND) mp1 == guts. loggerListBox ||
+//                  ( HWND) mp1 == WinQueryWindow( guts. logger, QW_PARENT);
+//          if (!( doRefocus = !SHORT1FROMMP( mp2)))
+//          {
+//             if (!( !alien && local_wnd(( HWND) mp1, ( HWND)v->handle))) dlgActive = 1;
+//          } else {
+//             if ( alien)
+//                dlgActive = 0;
+//             else {
+//                if ( local_wnd(( HWND) mp1, ( HWND)v->handle)) {
+//                   doRefocus = 0;
+//                } else {
+//                   return 0;
+//                }
+//             }
+//          }
+//       }
+//       hiStage = true;
+         break;
+      case WM_WINDOWPOSCHANGED:
+      {
+          PSWP new = PVOIDFROMMP( mp1);
+          PSWP old = new + 1;
+
+          #define wspush(d)                        \
+          if ( v)                                  \
+          {                                        \
+             Event xev;                            \
+             xev. cmd        = cmWindowState;      \
+             xev. gen.source = self;               \
+             xev. gen. i     = d;                  \
+             v-> self-> message( self, &xev);      \
+          }
+
+          if ( new-> fl & ( SWP_SIZE | SWP_MAXIMIZE | SWP_RESTORE | SWP_HIDE))
+          {
+             Point pOld = frame2client( self, ( Point){old->cx, old->cy}, true);
+             Point pNew = frame2client( self, ( Point){new->cx, new->cy}, true);
+             ev. gen. R. left   = pOld. x;
+             ev. gen. R. bottom = pOld. y;
+             ev. gen. P. x = ev. gen. R. right = pNew. x;
+             ev. gen. P. y = ev. gen. R. top   = pNew. y;
+             ev. cmd = cmSize;
+             v-> virtualSize = ev. gen. P;
+             hiStage = true;
+          }
+          if (( new-> fl & SWP_RESTORE) && ( sys s. window. state == wsMinimized))
+          {
+              Point p = frame2client( self, sys s. window. hiddenSize, false);
+              wspush( wsNormal);
+              sys s. window. state = wsNormal;
+              WinSetWindowPos( win, 0,
+                sys s. window. hiddenPos. x, sys s. window. hiddenPos. y,
+                p.x, p.y, SWP_SIZE|SWP_MOVE
+              );
+          }
+          if (( new-> fl & SWP_RESTORE) && ( sys s. window. state == wsMaximized))
+          {
+             wspush( wsNormal);
+             sys s. window. state = wsNormal;
+          }
+          if (( new-> fl & SWP_MINIMIZE) && !( old-> fl & SWP_MINIMIZE))
+          {
+             sys s. window. hiddenPos.  x = old-> x;
+             sys s. window. hiddenPos.  y = old-> y;
+             sys s. window. hiddenSize = sys s. window. lastClientSize;
+             wspush( wsMinimized);
+             sys s. window. state = wsMinimized;
+          }
+          if (( new-> fl & SWP_MAXIMIZE) && !( old-> fl & SWP_MAXIMIZE))
+          {
+             wspush( wsMaximized);
+             sys s. window. state = wsMaximized;
+          }
+          if ( new-> fl & ( SWP_SHOW | SWP_HIDE))
+             WinSendMsg( client, WM_SHOW, MPFROMLONG((new-> fl & SWP_SHOW)!=0), 0);
+      }
+      break;
+   }
+
+   if ( hiStage)
+      toReturn = fProc ? fProc( win, msg, mp1, mp2) : WinDefWindowProc( win, msg, mp1, mp2);
+
+   if (( ev. cmd != 0) && ( v != nil))
+   {
+      v-> self-> message( self, &ev);
+   }
+
+   if ( v-> stage <= csDestroying)
+   switch ( msg)
+   {
+      case WM_ADJUSTWINDOWPOS:
+         if ( ev. cmd)
+         {
+            (( PSWP) mp1)-> x  = ev. gen. R. left;
+            (( PSWP) mp1)-> y  = ev. gen. R. bottom;
+            (( PSWP) mp1)-> cx = ev. gen. R. right + dPoint. x;
+            (( PSWP) mp1)-> cy = ev. gen. R. top   + dPoint. y;
+          }
+          break;
+      case WM_FOCUSCHANGE:
+//        if ( dms == dmsModal && SHORT1FROMMP( mp2) && !focusAction && doRefocus)
+//          {  popup(); };
+          break;
+      case WM_WINDOWPOSCHANGED:
+          {
+             PSWP new = PVOIDFROMMP( mp1);
+             if ( is_apt( aptSyncPaint) && ( new-> fl & ( SWP_MAXIMIZE|SWP_RESTORE)))
+               apc_widget_invalidate_rect( self, nil);
+          }
+          break;
+   }
+   if ( !WinIsWindow( guts. anchor, win)) return 0;
+   if ( !hiStage)
+      toReturn = fProc ? fProc( win, msg, mp1, mp2) : WinDefWindowProc( win, msg, mp1, mp2);
+   return toReturn;
+}
 static Bool
 find_accel( PAbstractMenu menu, PMenuItemReg m, int * key)
 {
@@ -1032,9 +919,9 @@ generic_menu_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
          int code, key, flags = SHORT1FROMMP( mp1), mod = 0;
          code = SHORT1FROMMP( mp2);
          key  = ctx_remap_def( SHORT2FROMMP( mp2), ctx_kb2VK, false, kbNoKey);
-         if  ( flags & KC_SHIFT) { mod |= kbShift; }
-         if  ( flags & KC_ALT  ) { mod |= kbAlt;   }
-         if  ( flags & KC_CTRL ) { mod |= kbCtrl;  }
+         if  ( flags & KC_SHIFT) { mod |= kmShift; }
+         if  ( flags & KC_ALT  ) { mod |= kmAlt;   }
+         if  ( flags & KC_CTRL ) { mod |= kmCtrl;  }
          switch ( SHORT2FROMMP( mp2))
          {
             case VK_ESC: case VK_SPACE: case VK_END:  case VK_HOME:  case VK_LEFT:
@@ -1124,4 +1011,5 @@ generic_menu_handler( HWND win, ULONG msg, MPARAM mp1, MPARAM mp2)
    ret = md-> fnwp ? md-> fnwp( win, msg, mp1, mp2) : WinDefWindowProc( win, msg, mp1, mp2);
    return ret;
 }
+
 
