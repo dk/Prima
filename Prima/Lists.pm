@@ -1650,6 +1650,9 @@ sub on_drawitem
    $canvas-> text_out( $text,
       $left + 2 + $indent + $self-> {oneSpaceWidth} + $iconWidth,
       int($top + $bottom - $self-> {fontHeight}) / 2+0.5);
+   if ( $focusedItem) {
+      $canvas-> rect_focus( $left + $self->{offset}, $bottom, $right, $top);
+   }
    $canvas-> color($clrSave);
 }
 
