@@ -199,13 +199,14 @@ sub List_SelectItem
    $_[0]->{edit}->{interaction} = 1;
    $_[0]->{edit}->text($_[1]-> get_item_text( $_[1]->focusedItem));
    $_[0]->{edit}->{interaction} = undef;
+   $_[0]-> notify( q(Change)) if $_[0]->{style} == cs::Simple;
 }
 
 sub List_MouseUp
 {
    return unless $_[2] == mb::Left || $_[1]-> capture;
    $_[0]-> listVisible(0) if $_[0]->{style} != cs::Simple;
-   $_[0]-> notify( q(Change));
+   $_[0]-> notify( q(Change)) if $_[0]->{style} != cs::Simple;
 }
 
 sub List_Click
