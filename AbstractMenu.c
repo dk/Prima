@@ -60,13 +60,13 @@ key_normalize( const char * key)
 
    for (;;) {
       if (*key == '^')
-	 r |= kmCtrl;
+         r |= kmCtrl;
       else if (*key == '@')
-	 r |= kmAlt;
+         r |= kmAlt;
       else if (*key == '#')
-	 r |= kmShift;
+         r |= kmShift;
       else
-	 break;
+         break;
       key++;
    }
    if (!*key) return kbNoKey;  /* #, ^, @ alone are not allowed */
@@ -84,7 +84,7 @@ key_normalize( const char * key)
             kmCtrl | ( r & kbModMask) | ( toupper( r & kbCharMask)-'@') :
             r;
       } else if (tolower(*key) != 'f')
-	 return kbNoKey;
+         return kbNoKey;
       key++;
       r1 = strtol( key, &e, 10);
       if (*e || r1 < 1 || r1 > 16) return kbNoKey;
@@ -111,7 +111,7 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
 // #define log_write debug_write
 
 void *
-AbstractMenu_new_menu( Handle self, SV * sv, int level)
+AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * autoEnum)
 {
    AV * av;
    int i, count;
@@ -119,8 +119,6 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
    PMenuItemReg m    = nil;
    PMenuItemReg curr = nil;
    Bool rightAdjust = false;
-   static int subCount;
-   static int autoEnum;
 
   //  char buf [ 200];
   //  memset( buf, ' ', 200);
@@ -129,7 +127,6 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
    if ( level == 0)
    {
       if ( SvTYPE( sv) == SVt_NULL) return nil; // null menu
-      subCount = autoEnum = 0;
    }
 
    if ( !SvROK( sv) || ( SvTYPE( SvRV( sv)) != SVt_PVAV)) {
@@ -249,7 +246,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       if ( r-> variable == nil)
       {
          char b[256];    // auto enumeration
-         snprintf( b, 256, "MenuItem%d", ++autoEnum);
+         snprintf( b, 256, "MenuItem%d", ++(*autoEnum));
          r-> variable = duplicate_string( b);
       }
       // log_write( r-> variable);
@@ -304,7 +301,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
             {
                r-> code = newSVsv( subItem);
             } else {
-               r-> down = ( PMenuItemReg) my-> new_menu( self, subItem, level + 1);
+               r-> down = ( PMenuItemReg) my-> new_menu( self, subItem, level + 1, subCount, autoEnum);
                addToSubs = false;
                if ( r-> down == nil)
                {
@@ -321,7 +318,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
                addToSubs = false;
             }
          }
-         if ( addToSubs) r-> id = ++subCount;
+         if ( addToSubs) r-> id = ++(*subCount);
       }
    }
    // log_write("%s}", buf);
@@ -464,9 +461,10 @@ AbstractMenu_get_items ( Handle self, char * varName)
 void
 AbstractMenu_set_items ( Handle self, SV * items)
 {
+   int subCount = 0, autoEnum = 0;
    PMenuItemReg oldBranch = var-> tree;
    if ( var-> stage > csFrozen) return;
-   var-> tree = ( PMenuItemReg) my-> new_menu( self, items, 0);
+   var-> tree = ( PMenuItemReg) my-> new_menu( self, items, 0, &subCount, &autoEnum);
    if ( var-> stage <= csNormal)
       apc_menu_update( self, oldBranch, var-> tree);
    my-> dispose_menu( self, oldBranch);
@@ -796,6 +794,7 @@ static Bool increase_id( Handle self, PMenuItemReg m, int * params)
 void
 AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 {
+   int subCount = 0, autoEnum = 0, level;
    PMenuItemReg *up, m, addFirst, addLast, branch;
 
    if ( var-> stage > csFrozen) return;
@@ -806,24 +805,29 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
    {
       if ( var-> tree == nil)
       {
-         var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
+         var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0, &subCount, &autoEnum);
          if ( var-> stage <= csNormal)
             apc_menu_update( self, nil, var-> tree);
          return;
       }
       branch = m = var-> tree;
       up = &var-> tree;
+      level = 0;
    } else {
       branch = m = ( PMenuItemReg) my-> first_that( self, var_match, rootName, true);
       if ( m == nil || m-> down == nil) return;
       up = &m-> down;
       m = m-> down;
+      level = 1;
    }
+
    {
       int maxId = 0;
       PMenuItemReg save = var-> tree;
       my-> first_that( self, collect_id, &maxId, true);
-      addFirst = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
+      autoEnum = maxId;
+      // the level is 0 or 1 for the sake of rightAdjust
+      addFirst = ( PMenuItemReg) my-> new_menu( self, menuItems, level, &subCount, &autoEnum);
       if ( !addFirst) return; // error in menuItems
       var-> tree = addFirst;
       my-> first_that( self, increase_id, &maxId, true);
