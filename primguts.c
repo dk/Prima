@@ -535,6 +535,9 @@ XS(Prima_init)
 {
    dXSARGS;
    (void)items;
+
+   if ( items < 2) croak("Invalid call to Prima::init"); 
+
    {
       SV * ref;
       SV * package = newSVpv( "Prima::Object", 0);
@@ -559,6 +562,7 @@ XS(Prima_init)
    register_notifications((PVMT)CWindow);
    register_notifications((PVMT)CApplication);
    register_notifications((PVMT)CPrinter);
+   CApplication-> runLevel( "", SvIV(ST(1)));
    SPAGAIN;
    XSRETURN_EMPTY;
 }

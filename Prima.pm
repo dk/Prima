@@ -44,8 +44,7 @@ unless ( UNIVERSAL::can('Prima', 'init')) {
 $::application = undef;
 require Prima::Const;
 require Prima::Classes;
-Prima::init($VERSION);
-Prima::Application-> runLevel($runlevel);
+Prima::init($VERSION, $runlevel);
 
 sub END
 {
