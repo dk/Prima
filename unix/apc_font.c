@@ -759,6 +759,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
    if ( !xf ) {
       xf = XLoadQueryFont( DISP, ppFontNameSize);
       if ( !xf) {
+         Fdebug("font: cannot load %s\n", ppFontNameSize);
          if ( !guts. default_font_ok) {
             fill_default_font( font);
             apc_font_pick( application, font, font);
@@ -806,6 +807,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
          guts. font_info[ guts. n_fonts++] = fi;
       }
    }
+   Fdebug("font: %s parsed to: %d.[w=%d,s=%d].%s.%s\n", ppFontNameSize, DEBUG_FONT((*font)));
 }
 
 void
@@ -1049,10 +1051,10 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       if ( bySize)
          size = font-> size * 10;
       else {
-         size = font-> height * 10;
-         prima_init_try_height( &hgs, size, f-> flags. heights_cache ? f-> heights_cache[0] : size);
+         height = font-> height * 10;
+         prima_init_try_height( &hgs, size, f-> flags. heights_cache ? f-> heights_cache[0] : height);
          if ( f-> flags. heights_cache)
-            size = prima_try_height( &hgs, f-> heights_cache[1]);
+            height = prima_try_height( &hgs, f-> heights_cache[1]);
       }
    }
 
@@ -1065,11 +1067,12 @@ AGAIN:
 
       if ( f-> flags. bad_vector) {
          /* three fields */
-         sprintf( name, f-> vecname, height, size, font-> width * 10);
+         sprintf( name, f-> vecname, height / 10, size, font-> width * 10);
       } else {
          /* five fields */
-         sprintf( name, f-> vecname, height, size, 0, 0, font-> width * 10);
+         sprintf( name, f-> vecname, height / 10, size, 0, 0, font-> width * 10);
       }
+      Fdebug("font: construct: h=%d * 0.1, s=%d\n", height, size);
    } else {
       strcpy( name, f-> xname);
    }
@@ -1108,7 +1111,7 @@ AGAIN:
                of-> heights_cache[0] = font-> height * 10;
                of-> heights_cache[1] = f-> font. height;
             }
-            size = h;
+            height = h;
             goto AGAIN;
          } 
       }
