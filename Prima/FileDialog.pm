@@ -502,6 +502,7 @@ sub init
 sub on_change
 {
    my $self = shift;
+   return unless scalar @{$self-> {drives}};
    $self-> {driveTransaction} = 1;
    $self-> drive( $self-> {drives}-> [$self-> List-> focusedItem]);
    $self-> {driveTransaction} = undef;
