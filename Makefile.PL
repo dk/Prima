@@ -49,7 +49,7 @@ use vars @ovvars = qw(
     $CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG $CLINKPREFIX
     $LD $LDFLAGS $LD_FLAGS $LDOUTFLAG $LDLIBPATHFLAG $LDLIBFLAG
     $LIB $LIBOFLAG
-    $OBJ_EXT $LIB_EXT $EXE_EXT $DL_EXT $SCRIPT_EXT
+    $OBJ_EXT $LIB_EXT $LIB_PREFIX $EXE_EXT $DL_EXT $SCRIPT_EXT
     @INCPATH
     @LIBPATH
     @LIBS
@@ -790,7 +790,8 @@ sub setup_variables
     setvar( 'LDLIBPATHFLAG', $cc_specs{ $COMPILER}->{ ldlibpathflag});
     setvar( 'LDLIBFLAG', $cc_specs{ $COMPILER}->{ ldlibflag});
     setvar( 'OBJ_EXT', $Config{ _o});
-    setvar( 'LIB_EXT', $Config{ _a});
+    setvar( 'LIB_EXT', ( $cygwin ? '.dll' : '') . $Config{ _a});
+    setvar( 'LIB_PREFIX', $cygwin ? 'lib' : '');
     setvar( 'EXE_EXT', $Config{ _exe});
     setvar( 'LIB',     $cc_specs{ $COMPILER}->{ lib});
     setvar( 'LIBOFLAG', $cc_specs{ $COMPILER}->{ liboflag});
@@ -892,8 +893,7 @@ sub setup_variables
     setvar( 'RM', $Config{ rm});
     $OS2DLLF = 'Prima';
     $OS2DLLF = &DynaLoader::mod2fname([$OS2DLLF]) if $OS2 && defined &DynaLoader::mod2fname;
-    my $libprefix = ( $cygwin ? 'lib' : '');
-    $PrimaLib    = qd( "auto/Prima/${libprefix}Prima$LIB_EXT");
+    $PrimaLib    = qd( "auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
     $PrimaTarget = qd( "auto/Prima/$OS2DLLF$DL_EXT");
     $extralibs = '';
     $extralibs = qd("auto/Prima/Prima.lib") if $OS2;
@@ -1897,7 +1897,7 @@ sub create_config_pm
 {
    my $_cwd = cwd;
    my $cwd = qqd($_cwd);
-   my $ifs = $Win32 ? '\\\\' : '/';
+   my $ifs = ($Win32 && !$cygwin) ? '\\\\' : '/';
    my @ip = map { qqd($_) } @INCPATH;
    $ip[0] = "$cwd${ifs}include";
    $ip[1] = "$cwd${ifs}include${ifs}generic";
@@ -1945,8 +1945,8 @@ use vars qw(%Config %Config_inst);
 
 %Config_inst = (
   incpaths              => [ $ippi ],
-  gencls                => '$iscr\\\\gencls$SCRIPT_EXT',
-  tmlink                => '$iscr\\\\tmlink$SCRIPT_EXT',
+  gencls                => '$iscr${ifs}gencls$SCRIPT_EXT',
+  tmlink                => '$iscr${ifs}tmlink$SCRIPT_EXT',
   libname               => '$isa${ifs}Prima$LIB_EXT',
   dlname                => '$isa${ifs}$pt',
   ldpaths               => [$libpathi],
@@ -1974,6 +1974,7 @@ use vars qw(%Config %Config_inst);
   lib                   => '$LIB',
   liboutflag            => '$LIBOFLAG',
   libext                => '$LIB_EXT',
+  libprefix             => '$LIB_PREFIX',
   libname               => '$cwd${ifs}$pl',
   dlname                => '$cwd${ifs}$pt',
   dlext                 => '$DL_EXT',
@@ -2064,9 +2065,10 @@ if ( $#ARGV >= 0 && $ARGV[ 0] =~ /^\-\-cp(bin)?$/) {
         if ( $isbin) {
             my $dstdir = dirname( $dst);
             mkpath $dstdir if $dstdir && ! -d $dstdir;
+	    unlink $dst;
             open SRCPL, "<$src" or die "Cannot open $src: $!";
             open DSTPL, ">$dst" or die "Cannot create $dst: $!";
-            chmod 0555, $dst unless $Win32 || $OS2;
+            chmod 0555, $dst unless ($Win32 && !$cygwin) || $OS2;
             if ( $Win32 && !$cygwin) {
                 print DSTPL <<EOF;
 \@rem = '--*-Perl-*--
@@ -2473,7 +2475,7 @@ EOF
     my %cp;
     my %cpbin;
     $cp{$PrimaTarget} = $INSTALL_DL;
-    $cp{$PrimaLib}    = $INSTALLSITEARCH;
+    $cp{$PrimaLib}    = $INSTALL_DL;
     $cp{"Prima.pm"}   = $INSTALLSITEARCH;
     $cp{'.packlist'}  = $INSTALL_DL;
     push @allman, 'Prima.pm', manname( 'Prima.pm', 3, '');
@@ -2552,6 +2554,7 @@ EOF
        print MAKE "\t\@\$(MD) $INSTALL_MAN1 $INSTALL_MAN3\n";
        while ( scalar @allman ) {
           my ( $src, $dest) = splice( @allman, 0, 2);
+          $dest =~ s/::/./g if ($Win32 || $cygwin);
           push @man_to_remove, $dest;
           $dest =~ m/([^\/]+)\.(\d+)$/;
 	  print  MAKE "\t\@echo $dest" . (length( $Config{gzip} ) ? '.gz' : ''). "\n";

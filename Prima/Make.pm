@@ -60,6 +60,7 @@ use vars @ovvars = qw(
 
 use vars qw(
     $Win32
+    $cygwin
     $OS2
     $Unix
     %DEFINES
@@ -89,6 +90,7 @@ use vars qw(
 $OS2   = $Prima::Config::Config{platform} eq 'os2';
 $Win32 = $Prima::Config::Config{platform} eq 'win32';
 $Unix  = $Prima::Config::Config{platform} eq 'unix';
+$cygwin = $Win32 && $^O =~ /cygwin/;
 
 sub init
 {
@@ -569,7 +571,7 @@ EOF
 
 sub addlib
 {
-   push @LIBS, ( $Unix ? '' : 'lib') . $_[0] . $Prima::Config::Config{ldlibext} 
+   push @LIBS, $_[0] . $Prima::Config::Config{ldlibext};
 }
 
 sub dump_command
@@ -855,10 +857,10 @@ Set of library files used for linking.
 An installation prefix path, under which the installed files
 will be copied. 
 
-=item $Unix, $Win32, $OS2
+=item $Unix, $Win32, $OS2, $cygwin
 
 Boolean flags for fast check if the current OS type is
-unix, win32, or os2. For extended info use C<$^O> variable.
+unix, win32, or os2, or cygwin. For extended info use C<$^O> variable.
 
 =back
 
