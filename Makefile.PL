@@ -31,6 +31,8 @@
 # This is not a ``normal'' Makefile.PL file.
 # It does not use MakeMaker.
 #
+my $usePrigraph = defined $ENV{PRIMA_PRIGRAPH};
+
 require 5.00502;
 use strict;
 use Config;
@@ -140,6 +142,7 @@ sub cc_command_line
     push @cc, $COMPONLYFLAG if $compile_only;
     push @cc, map( { "$CINCPATHFLAG$_"} @INCPATH);
     push @cc, map( { "$CDEFFLAG$_" . ( $DEFINES{ $_} ? "=$DEFINES{ $_}" : '')} keys %DEFINES);
+    push @cc, "${CDEFFLAG}PRIGRAPH" if $usePrigraph;
     push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
     push @cc, "$COUTOFLAG$objf" if $Win32 && ! $compile_only;
     push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH unless $compile_only || ( $COMPILER eq 'msvc');
@@ -171,7 +174,7 @@ sub null_output
 {
     open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
     open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
-#    $NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
+#   $NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
     if ( $^O !~ /linux/) {
 	close STDOUT;
 	close STDERR;
@@ -520,6 +523,7 @@ sub setup_variables
     setvar( 'LIBPATH', split ' ', $Config{ libpth});
     my @libs = map { s/^$LDLIBFLAG//; $_} split ' ', $Config{ libs};
     #	 push ( @libs, 'pmprintf') if $OS2 && defined $ENV{PRIMA_PMPRINTF};
+    push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
     setvar( 'LIBS', @libs);
     %DEFINES = (
 		PERL_PATCHLEVEL => $Config{ patchlevel},

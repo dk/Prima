@@ -60,7 +60,6 @@ palette), gbm_read_data is additionally allowed to follow a gbm_read_header.
 
 #ifndef BOOLEAN_DEFINED
 #define	BOOLEAN_DEFINED
-typedef	int BOOLEAN;
 #ifndef TRUE
 #define	TRUE  1
 #endif

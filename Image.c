@@ -24,6 +24,12 @@
  * SUCH DAMAGE.
  */
 
+#ifdef PRIGRAPH
+#   include "gbm.h"
+#else
+#   include "img_api.h"
+#endif
+
 #ifndef __unix
 #   include <io.h>
 #else
@@ -36,10 +42,10 @@
 #include <math.h>
 #include "apricot.h"
 #include "Image.h"
-#include "img_api.h"
 #include "img_conv.h"
 #include <Image.inc>
 #include "Clipboard.h"
+
 
 #undef  my
 #define inherited CDrawable->
@@ -355,6 +361,7 @@ Image_set_data( Handle self, SV * svdata)
    my->update_change( self);
 }
 
+#ifndef PRIGRAPH
 static void
 fill_in_image_profile( HV *profile, PList propList, const char *calledFrom)
 {
@@ -706,6 +713,193 @@ Image_save( SV *who, char *filename, PList imgInfo)
       return false;
    }
 }
+#else
+
+#define it_bmp 0
+#define it_gif 1
+#define it_pcx 2
+#define it_tif 3
+#define it_tga 4
+#define it_lbm 5
+#define it_vid 6
+#define it_pgm 7
+#define it_ppm 8
+#define it_kps 9
+#define it_iax 10
+#define it_xbm 11
+#define it_spr 12
+#define it_psg 13
+#define it_gem 14
+#define it_cvp 15
+#define it_jpg 16
+#define it_png 17
+
+
+static void excroak( char * s1, char * s2)
+{
+   char buf [ 256];
+   if ( SvTRUE( GvSV( errgv)))
+      snprintf( buf, 256, "%s%s%s", SvPV( GvSV( errgv), na), s1, s2);
+   else
+      snprintf( buf, 256, "%s%s", s1, s2);
+   sv_setpv( GvSV( errgv), buf);
+}
+
+XS( Image_save_FROMPERL) {
+   dXSARGS;
+   Handle self;
+   HV *profile;
+   Bool result = false;
+   int bpp;
+   int file;
+   GBM gbm;
+   GBM_ERR rc = 0;
+   int fileType;
+   char options[1024] = {0};
+   char oneOpt[ 256];
+   char * filename;
+
+
+   if ( items < 2)
+      croak ("Invalid usage of %s", "Image::save");
+
+   if ( items % 2 != 0) {
+      croak ("Invalid usage of Image::save: odd number of optional arguments");
+   }
+
+   self = gimme_the_mate( ST( 0));
+   if ( self == nilHandle)
+      croak( "Illegal object reference passed to Image.save");
+   bpp = var-> type & imBPP;
+   filename = SvPV( ST( 1), na);
+   profile = parse_hv( ax, sp, items, mark, 2, "Image::save");
+   // save
+
+
+#define bekilled(__rc) \
+{switch(__rc) {                                                                     \
+case GBM_ERR_MEM         : excroak("No enough memory: ", filename); break;         \
+case GBM_ERR_NOT_SUPP    : excroak("Format not supported:", filename); break;      \
+case GBM_ERR_BAD_OPTION  : excroak("Invalid option for ", filename); break;        \
+case GBM_ERR_NOT_FOUND   : excroak("Cannot open ", filename); break;               \
+case GBM_ERR_BAD_MAGIC   : excroak("Bad magic found in ", filename); break;        \
+case GBM_ERR_BAD_SIZE    : excroak("Bad size found in ", filename); break;         \
+case GBM_ERR_READ        : excroak("Error reading ", filename); break;             \
+case GBM_ERR_WRITE       : excroak("Error writing ", filename); break;             \
+case GBM_ERR_BAD_ARG     : excroak("Invalid argument for ", filename); break;      \
+default             : excroak("Error processing ", filename); break;               \
+} goto EXIT;}
+
+   if (( bpp != 1) && ( bpp != 4) && ( bpp != 8) && ( bpp != 24))
+      bekilled( GBM_ERR_NOT_SUPP);
+
+   if (( rc = gbm_guess_filetype( filename, &fileType)) != 0)
+      bekilled( GBM_ERR_NOT_SUPP);
+
+   /*
+     gif, iff, lbm - transparent color "transcol=%d"
+     gif      - interlaced             "ilace"
+     tiff     - compressed             "lzw"
+              - description            "imagedescription=%s"
+              - special
+     jpeg     - quality                "quality=%d"
+              - progressive            "prog"
+     png      - compressionLevel       "zlevel=%d"
+              - compression(standard,huffman,filtered) "zstrategy=%c"(d,h,f)
+              - interlaced             "ilace"
+              - description            "Description=%s"
+              - noAutoFilter           "nofilters"
+              - transparent color index"transcol=%d"
+              - transparent color      "transcol=%d/%d/%d"
+   */
+   if ( fileType == it_bmp) strcat( options, " inv");  // GBM баран опять:)
+
+   if ( pexist( interlaced))   strcat(options, " ilace");
+   if ( pexist( compressed))   strcat(options, " lzw");
+   if ( pexist( progressive))  strcat(options, " prog");
+   if ( pexist( noAutoFilter)) strcat(options, " nofilters");
+   if ( pexist( quality))
+      strcat(options, (snprintf(oneOpt, 256, " quality=%d",(int) pget_i( quality)), oneOpt));
+   if ( pexist( compressionLevel))
+      strcat(options, (snprintf(oneOpt, 256, " zlevel=%d",(int) pget_i( compressionLevel)), oneOpt));
+   if ( pexist( transparentColorIndex))
+      strcat(options, (snprintf(oneOpt, 256, " transcol=%d",(int) pget_i( transparentColorIndex)), oneOpt));
+   if ( pexist( transparentColorRGB))
+   {
+      SV *sv = pget_sv( transparentColorRGB);
+      AV *av;
+      if ( !SvROK( sv) || ( SvTYPE( SvRV( sv)) != SVt_PVAV)) bekilled( GBM_ERR_BAD_OPTION);
+      av = ( AV*) SvRV( sv);
+      if ( av_len( av) != 2) bekilled( GBM_ERR_BAD_OPTION);
+      strcat(options, (snprintf(oneOpt, 256, " transcol=%d/%d/%d",
+         (int)SvIV( *av_fetch( av, 2, 0)),
+         (int)SvIV( *av_fetch( av, 1, 0)),
+         (int)SvIV( *av_fetch( av, 0, 0))
+      ), oneOpt));
+   }
+   if ( pexist( transparentColor))
+   {
+      unsigned long c = pget_i( transparentColor);
+      strcat(options, (snprintf(oneOpt,256, " transcol=%ld/%ld/%ld",
+         ( c >> 16) & 0xFF,
+         ( c >> 8 ) & 0xFF,
+         c & 0xFF
+      ), oneOpt));
+   }
+   if ( pexist( compression))
+   {
+      char * c = pget_c( compression);
+      if ( strcmp( c, "standard") == 0) strcat(options, " zstrategy=d");
+      else if ( strcmp( c, "huffman") == 0) strcat(options, " zstrategy=h");
+      else if ( strcmp( c, "filtered") == 0) strcat(options, " zstrategy=f");
+   }
+   if ( pexist( description))
+   {
+      char *cc = oneOpt;
+      strcat(options, (snprintf(oneOpt,256, " Description=\"%s\"",(char *) pget_c( description)), oneOpt));
+      // tiff
+      snprintf(oneOpt,256," imagedescription=%s",(char *) pget_c( description));
+      while (*++cc) if (*cc == ' ') *cc='_';
+      strcat( options, oneOpt);
+   }
+
+   file = open( filename, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, S_IREAD | S_IWRITE);
+   if ( file == -1) bekilled( GBM_ERR_NOT_FOUND);
+
+   gbm. w = var-> w;
+   gbm. h = var-> h;
+   gbm. bpp = bpp;
+   {
+      RGBColor pal [ 256];
+      cm_reverse_palette( var-> palette, pal, 256);
+      rc = gbm_write( filename, file, fileType, &gbm, ( GBMRGB *) pal, var-> data, options);
+   }
+   close( file);
+   if ( rc != 0) {
+      remove( filename);
+      bekilled( rc);
+   }
+   result = true;
+
+EXIT:
+   sv_free(( SV*) profile);
+   XPUSHs( sv_2mortal( newSViv( result)));
+   PUTBACK;
+   return;
+}
+
+Bool
+Image_save_REDEFINED( SV *who, char *filename, PList imgInfo)
+{
+   return false;
+}
+
+Bool
+Image_save( SV *who, char *filename, PList imgInfo)
+{
+   return false;
+}
+#endif
 
 int
 Image_get_type( Handle self)
@@ -781,6 +975,7 @@ Image_end_paint_info( Handle self)
    inherited end_paint_info( self);
 }
 
+#ifndef PRIGRAPH
 static void
 modify_Image( Handle self, PImgInfo imageInfo)
 {
@@ -892,6 +1087,7 @@ modify_Image( Handle self, PImgInfo imageInfo)
     my->update_change( self);
     /* DOLBUG( "Got type: %02x\n", var->type); */
 }
+
 
 XS( Image_load_FROMPERL) {
    dXSARGS;
@@ -1027,14 +1223,6 @@ XS( Image_load_FROMPERL) {
 }
 
 Handle
-Image_load_REDEFINED( SV *who, char *filename, PList imgInfo)
-{
-   /* XXX - one day we might want to implement this function in a more clever way */
-   warn( "Invalid call of Image::load(): ask developers to make it valid");
-   return nilHandle;
-}
-
-Handle
 Image_load( SV *who, char *filename, PList imgInfo)
 {
    (void)who;
@@ -1044,6 +1232,160 @@ Image_load( SV *who, char *filename, PList imgInfo)
       return nilHandle;
    }
 }
+#else
+
+
+Bool
+load_image_indirect( Handle self, char * filename, char * subIndex)
+#define checkrc if ( rc != 0)     \
+        {                         \
+            free( data);          \
+            free( palette);       \
+            close( file);         \
+            return false;         \
+        }
+{
+   GBM gbm;
+   unsigned char *data = nil;
+   GBM_ERR rc;
+   GBMRGB * palette = nil;
+   int file;
+   int ft;
+   int lineSize, dataSize;
+
+   if ( is_opt( optInDraw)) return false;
+
+   memset( &gbm, 0, sizeof( GBM));
+   file = open( filename, O_RDONLY | O_BINARY);
+   if ( file < 0)
+      return false;
+   ft = image_guess_type( file);
+   if ( ft < 0)
+   {
+      rc = gbm_guess_filetype( filename, &ft);
+      checkrc;
+   }
+
+   if ( ft == it_bmp) strcat( subIndex, " inv");  // GBM баран :)
+   rc = gbm_read_header( filename, file, ft, &gbm, subIndex);
+   checkrc;
+
+   palette = malloc( 0x100 * sizeof( GBMRGB));
+   rc = gbm_read_palette( file, ft, &gbm, ( GBMRGB*) palette);
+   checkrc;
+
+   lineSize = (( gbm. w * gbm. bpp + 31) / 32) * 4;
+   dataSize = gbm. h * lineSize;
+   data = ( dataSize > 0) ? malloc( dataSize) : nil;
+   rc = gbm_read_data( file, ft, &gbm, data);
+   checkrc;
+
+   close( file);
+
+   // init image
+   my-> make_empty( self);
+   var-> w        = gbm. w;
+   var-> h        = gbm. h;
+   var-> type     = gbm. bpp;
+   var-> data     = data;
+   var-> palette  = ( PRGBColor) palette;
+   var-> lineSize = lineSize;
+   var-> dataSize = dataSize;
+   var-> palSize  = (1 << (var-> type & imBPP)) & 0x1ff;
+   cm_reverse_palette( var-> palette, var-> palette, 256);
+
+   switch( var-> type)
+   {
+      case imbpp1:
+         if ( memcmp( var-> palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
+            var-> type |= imGrayScale;
+         break;
+      case imbpp4:
+         if ( memcmp( var-> palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
+            var-> type |= imGrayScale;
+         break;
+      case imbpp8:
+         if ( memcmp( var-> palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
+            var-> type |= imGrayScale;
+         break;
+   }
+   return true;
+}
+
+XS( Image_load_FROMPERL) {
+   dXSARGS;
+   Bool as_class = false;
+   char *filename, *class_name;
+   Handle self;
+   Bool ret;
+   HV * profile;
+   char buf[ 256] = "";
+
+   if ( items < 2)
+      croak ("Invalid usage of %s", "Image::load");
+
+   filename = SvPV( ST( 1), na);
+
+   if (!( self = gimme_the_mate( ST( 0)))) {
+      PVMT vmt;
+      if (!SvPOK( ST(0)))
+         croak( "Call Image->load() either as instance method or as class method");
+      class_name = SvPV( ST(0), na);
+      vmt = gimme_the_vmt( class_name);
+      while ( vmt && vmt != (PVMT) CImage) vmt = vmt-> base;
+      if ( !vmt)
+         croak( "Are you nuts?  Class ``%s'' is not inherited from ``Image''", class_name);
+      as_class = true;
+   } else
+      if ( !kind_of( self, CImage))
+         croak( "Are you nuts?  This object is not inherited from ``Image''");
+
+   if ( items % 2 != 0)
+      croak ("Invalid usage of Image::load: odd number of optional arguments");
+
+   profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
+   if ( pexist( index))
+      sprintf( buf, "index=%d", pget_i( index));
+   sv_free(( SV*)profile);
+
+   if ( as_class) {
+      profile = newHV();
+      self = Object_create( class_name, profile);
+      sv_free(( SV *) profile);
+      if ( !self) {
+         PUTBACK;
+         return;
+      }
+   }
+
+   if ( !load_image_indirect( self, filename, buf)) {
+      if ( as_class) Object_destroy( self);
+      PUTBACK;
+      return;
+   }
+
+   my->update_change( self);
+   XPUSHs( sv_mortalcopy( var-> mate));
+
+   PUTBACK;
+   return;
+}
+
+Handle
+Image_load( SV *who, char *filename, PList imgInfo)
+{
+   return nilHandle;
+}
+#endif
+
+Handle
+Image_load_REDEFINED( SV *who, char *filename, PList imgInfo)
+{
+   /* XXX - one day we might want to implement this function in a more clever way */
+   warn( "Invalid call of Image::load(): ask developers to make it valid");
+   return nilHandle;
+}
+
 
 #ifndef __unix
 XS( Image_get_info_FROMPERL)
