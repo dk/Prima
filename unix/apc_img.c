@@ -301,14 +301,29 @@ apc_image_destroy( Handle self)
 Bool
 apc_image_begin_paint_info( Handle self)
 {
-    DOLBUG( "apc_image_begin_paint_info()\n");
-    return false;
+    DEFXX;
+    PImage img = PImage( self);
+    XX-> gdrawable = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), 1, 1, 
+       ((img-> type & imBPP) == 1) ? 1 : guts. depth);
+    XCHECKPOINT;
+    prima_prepare_drawable_for_painting( self);
+    XX-> size. x = 1;
+    XX-> size. y = 1;
+    return true;
 }
 
 Bool
 apc_image_end_paint_info( Handle self)
 {
-   DOLBUG( "apc_image_end_paint_info()\n");
+   DEFXX;
+   prima_cleanup_drawable_after_painting( self);
+   if ( XX-> gdrawable) {
+      XFreePixmap( DISP, XX-> gdrawable);
+      XCHECKPOINT;
+      XX-> gdrawable = 0;
+   }
+   XX-> size. x = PImage( self)-> w;
+   XX-> size. y = PImage( self)-> h;
    return true;
 }
 
@@ -1678,6 +1693,8 @@ apc_gp_stretch_image( Handle self, Handle image,
 
    if ( XT_IS_DBM(X(image)))
       croak( "UAI_021: not implemented");
+
+   if ( img-> options. optInDrawInfo) return false;
 
    cache = prima_create_image_cache( img, self);
    if ( src_h < 0) {

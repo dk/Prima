@@ -449,7 +449,7 @@ prima_prepare_drawable_for_painting( Handle self)
    int w, h;
    XRectangle r;
 
-   if ( XX-> udrawable && is_opt( optBuffered)) {
+   if ( !(PObject( self)-> options. optInDrawInfo) && XX-> udrawable && is_opt( optBuffered)) {
       if ( XX-> region) {
          XClipBox( XX-> region, &r);
          XX-> bsize. x = w = r. width;
@@ -545,7 +545,8 @@ void
 prima_cleanup_drawable_after_painting( Handle self)
 {
    DEFXX;
-   if ( XX-> udrawable && XX-> udrawable != XX-> gdrawable && XX-> gdrawable) {
+   if ( XX-> udrawable && XX-> udrawable != XX-> gdrawable && XX-> gdrawable && 
+       !(PObject( self)-> options. optInDrawInfo)) {
       if ( XX-> stale_region) {
          XSetRegion( DISP, XX-> gc, XX-> stale_region);
          XCHECKPOINT;
@@ -586,7 +587,6 @@ prima_cleanup_drawable_after_painting( Handle self)
 Bool
 apc_gp_init( Handle self)
 {
-   DOLBUG( "apc_gp_init()\n");
    X(self)-> resolution = guts. resolution;
    return true;
 }
@@ -644,6 +644,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
    DEFXX;
    int compl, needf;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_007: put begin_paint somewhere");
       return false;
@@ -665,6 +666,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_008: put begin_paint somewhere");
       return false;
@@ -682,6 +684,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_009: put begin_paint somewhere");
       return false;
@@ -709,6 +712,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
    int compl, needf;
    DEFXX;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_010: put begin_paint somewhere");
       return false;
@@ -737,6 +741,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
    int y = XX-> size. y - 1 - XX-> gtransform. y - XX-> btransform. y;
    XPoint *p;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_011: put begin_paint somewhere");
       return false;
@@ -808,6 +813,7 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
    XSegment *s;
    int n = np / 2;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_013: put begin_paint somewhere");
       return false;
@@ -846,6 +852,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 {
    DEFXX;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_015: put begin_paint somewhere");
       return false;
@@ -863,6 +870,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
    DEFXX;
    int compl, needf;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_016: put begin_paint somewhere");
       return false;
@@ -887,6 +895,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 {
    DEFXX;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_017: put begin_paint somewhere");
       return false;
@@ -906,6 +915,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
    DEFXX;
    int i;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_018: put begin_paint somewhere");
       return false;
@@ -946,6 +956,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
    DEFXX;
    int compl, needf;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_022: put begin_paint somewhere");
       return false;
@@ -1297,6 +1308,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
    /* XXX - implement a general case of line end correction */
    DEFXX;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_025: put begin_paint somewhere");
       return false;
@@ -1317,6 +1329,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_026: put begin_paint somewhere");
       return false;
@@ -1335,6 +1348,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
    int compl, needf;
    DEFXX;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_027: put begin_paint somewhere");
       return false;
@@ -1378,6 +1392,7 @@ apc_gp_set_region( Handle self, Handle mask)
    GC gc;
    XGCValues gcv;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       if (mask) warn( "UAG_028: not implemented");
       return false;
@@ -1407,6 +1422,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    XColor *c = prima_allocate_color( self, color);
    unsigned long old = XX-> fore. pixel;
 
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_029: put begin_paint somewhere");
       return false;
@@ -1598,6 +1614,7 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
    SHIFT( x, y);
 
    
+   if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) {
       warn( "UAG_030: put begin_paint somewhere");
       return false;
