@@ -1343,7 +1343,7 @@ sub out_FROMPERL_methods
          my $func = ( exists $pipeMethods{ $id}) ? $pipeMethods{$id} : "${ownCType}_$id";
          print HEADER <<LABEL;
 XS( ${ownCType}_${id}_FROMPERL) {
-   $templates_xs{$id}( cv, \"${ownOClass}\:\:$id\", $func);
+   $templates_xs{$id}( cv, \"${ownOClass}\:\:$id\", (void*)$func);
 }
 
 LABEL
@@ -1943,7 +1943,7 @@ CONTAINED_STRUCTURE
          my @locp = split (" ", $newMethods[ $j]);
          my $id = $locp[0];
          if ( $j) { print HEADER ','} ;
-         print HEADER "\n  { &(${ownCType}Vmt. $id), &${ownCType}_${id}_REDEFINED, \"$id\"}";
+         print HEADER "\n  { &(${ownCType}Vmt. $id), (void*)&${ownCType}_${id}_REDEFINED, \"$id\"}";
       }
       print HEADER "\n  {nil,nil,nil} // M\$C empty struct error" unless scalar @newMethods;
       print HEADER "\n};\n\n";
