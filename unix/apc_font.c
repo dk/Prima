@@ -289,7 +289,7 @@ prima_init_font_subsystem( void)
 	    /* advance through AVERAGE_WIDTH */
 	    c++; b = c;
 	    if ( *c != '-')
-	       info[i]. font. width = strtol( c, &b, 10);
+	       info[i]. font. width = strtol( c, &b, 10) / 10;
 	    if ( c != b) {
 	       if ( info[i]. font. width) {
 /*  DOLBUG( "avewidth: %d\n", info[i]. font. width); */
@@ -743,7 +743,7 @@ detail_font_info( PFontInfo f, PFont font)
       if ( XGetFontProperty( s, FXA_AVERAGE_WIDTH, &v) && v) {
 	 XCHECKPOINT;
 	 f-> flags. width = true;
-	 f-> font. width = v;
+	 f-> font. width = v / 10;
       }
 
       /* XXX YYY ZZZ */
