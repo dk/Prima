@@ -170,13 +170,15 @@ sub set_valignment
 sub set_image
 {
    my ( $self, $img) = @_;
-   $self->{image} = $img;
    unless ( defined $img) {
       $self->{imageX} = $self->{imageY} = 0;
       $self->limits(0,0);
       $self->palette([]);
+      $self-> repaint if defined $self-> {image};
+      $self->{image} = $img;
       return;
    }
+   $self->{image} = $img;
    my ( $x, $y) = ($img-> width, $img-> height);
    $self-> {imageX} = $x;
    $self-> {imageY} = $y;
