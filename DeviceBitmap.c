@@ -72,7 +72,9 @@ static Handle xdup( Handle self, char * className)
    h = Object_create( className, profile);
    sv_free(( SV *) profile);
    i = ( PDrawable) h;
+   i-> self-> begin_paint( h);
    i-> self-> put_image( h, 0, 0, self);
+   i-> self-> end_paint( h);
    --SvREFCNT( SvRV( i-> mate));
    return h;
 }
