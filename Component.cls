@@ -33,7 +33,7 @@ object Prima::Component( Prima::Object)
 
     property Bool      eventFlag;
     property SV *      delegations;
-    property char *    name;
+    property SV *      name;
     property Handle    owner;
 
     method   long      add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);

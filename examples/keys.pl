@@ -71,6 +71,11 @@ my $w = Prima::Window-> create(
          $repeat = $repeat ? 0 : 1;
          $_[0]-> menu-> checked( 'rr', $repeat);
        }],
+       [ ( Prima::want_unicode_input()   ? '*' : '') . # is is on?
+         ( Prima::want_unicode_input(-1) ? '' : '-') . # is it writable ?
+          'uu' => '~Unicode input' => sub {
+          Prima::want_unicode_input( $_[0]-> menu-> toggle( 'uu'));
+       }],
        [],
        ["Set ~font..." => "Ctrl+F" => '^F' => sub {
           my $d =  $fontDialog ? $fontDialog : Prima::FontDialog-> create(
@@ -78,7 +83,6 @@ my $w = Prima::Window-> create(
           );
           $fontDialog = $d;
           return unless $d-> execute == mb::OK;
-          print $::application-> get_focused_widget;
           $_[0]-> Label1-> font( $d-> logFont);
        }],
     ]]],
@@ -119,9 +123,9 @@ sub keydump
       }
    }
    $mod = '0' if $mod eq '';
-   $t = "$prefx code: $code|$lcode|, key: $key, mod: $mod => $tran\n";
-   print $t;
+   $t = "$prefx code: $code|$lcode|, key: $key, mod: $mod => $tran";
    $self-> text( $t);
+   print "$t\n";
 }
 
 
@@ -152,7 +156,6 @@ my $l = $w-> insert( Label =>
 );
 
 $l-> select;
-#$l-> focus;
 
 $w-> insert( Button =>
    origin => [10,160],
@@ -162,6 +165,5 @@ $w-> insert( Button =>
        $l-> key_event( cm::KeyDown, 0, kb::F10, 0, 1, 0);
    },
 );
-
 
 run Prima;

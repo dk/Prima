@@ -848,7 +848,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 }}
 
 Bool
-apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
+apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8 )
 {objCheck false;{
    Bool ok = true;
    HDC ps = sys ps;
@@ -856,6 +856,9 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
    int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
    int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
    if ( div <= 0) div = 1;
+
+   if ( utf8)  
+      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) return false;
 
    STYLUS_USE_TEXT( ps);
    if ( opa != bk) SetBkMode( ps, opa);
@@ -868,14 +871,21 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
    while ( len > 0) {
       SIZE sz;
       int drawLen = ( len > div) ? div : len;
-      if ( !( ok = TextOut( ps, x, sys lastSize. y - y, text, drawLen))) apiErr;
-      if ( len > 0) 
-         GetTextExtentPoint32( ps, text, drawLen, &sz);
+      if ( utf8) {
+         if ( !( ok = TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, drawLen))) apiErr;
+         if ( len > 0) 
+            GetTextExtentPoint32W( ps, (U16*) text, drawLen, &sz);
+      } else {
+         if ( !( ok = TextOut( ps, x, sys lastSize. y - y, text, drawLen))) apiErr;
+         if ( len > 0) 
+            GetTextExtentPoint32( ps, (char*)text, drawLen, &sz);
+      }
       x += sz. cx - ( IS_NT ? sys tmOverhang : 0);
       if (( len -= div) <= 0) break;
-      text += div;
+      text += div * ( utf8 ? 2 : 1);
    }
    if ( opa != bk) SetBkMode( ps, bk);
+   if ( utf8) free(( char *) text);
    return ok;
 }}
 
@@ -883,33 +893,47 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
 // This procedure is about to compensate morbid Win95 behavior when
 // calling GetCharABCWidthsFloat() - it returns ERROR_CALL_NOT_IMPLEMENTED. psst.
 static BOOL
-gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lpABCF)
+gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lpABCF, Bool unicode)
 {
-   UINT i;
-   INT fb[ 256];
-   TEXTMETRIC tm;
-
+   UINT i, d = iLastChar - iFirstChar + 1;
+   TEXTMETRICW tm;
 
    if ( IS_NT)
-      return GetCharABCWidthsFloat( dc, iFirstChar, iLastChar, lpABCF);
+      return unicode ? 
+         GetCharABCWidthsFloatW( dc, iFirstChar, iLastChar, lpABCF) :
+         GetCharABCWidthsFloatA( dc, iFirstChar, iLastChar, lpABCF);
 
    if ( iFirstChar > iLastChar)  // checking bound as far as we can
       return FALSE;
 
-   if ( !GetTextMetrics( dc, &tm)) // determining font
-      return FALSE;
-
-   if ( !GetCharWidth( dc, iFirstChar, iLastChar, fb)) // checking full widths
+   if ( !GetTextMetricsW( dc, &tm)) // determining font
       return FALSE;
 
    if ( tm. tmPitchAndFamily & TMPF_TRUETYPE) {
-      ABC abc[ 256];
+      ABC *abc;
       int charExtra;
+      INT fb;
+      
+      if ( unicode) {
+         if ( !GetCharWidthW( dc, iFirstChar, iFirstChar, &fb))
+            return FALSE;
+      } else {
+         if ( !GetCharWidthA( dc, iFirstChar, iFirstChar, &fb))
+            return FALSE;
+      }
 
-      if ( !GetCharABCWidths( dc, iFirstChar, iLastChar, abc))
-         apiErrRet;
+      if ( !( abc = malloc( d * sizeof( ABC)))) 
+         return FALSE;
 
-      charExtra = fb[0] - tm. tmOverhang - ( abc[0].abcA + abc[0].abcB + abc[0].abcC);
+      if ( unicode) {
+         if ( !GetCharABCWidthsW( dc, iFirstChar, iLastChar, abc))
+            apiErrRet;
+      } else {
+         if ( !GetCharABCWidthsA( dc, iFirstChar, iLastChar, abc))
+            apiErrRet;
+      }
+
+      charExtra = fb - tm. tmOverhang - ( abc[0].abcA + abc[0].abcB + abc[0].abcC);
       if ( charExtra < 0) charExtra = 0;
 
       for ( i = 0; i <= iLastChar - iFirstChar; i++) {
@@ -917,7 +941,26 @@ gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lp
          lpABCF[i]. abcfB = abc[ i]. abcB + charExtra;
          lpABCF[i]. abcfC = abc[ i]. abcC;
       }
+
+      free( abc);
    } else {
+      INT * fb;
+
+      if ( !( fb = malloc( d * sizeof( INT)))) 
+         return FALSE;
+
+      if ( unicode) {
+         if ( !GetCharWidthW( dc, iFirstChar, iLastChar, fb)) {// checking full widths
+            free( fb);
+            return FALSE;
+         }
+      } else {
+         if ( !GetCharWidthA( dc, iFirstChar, iLastChar, fb)) {// checking full widths
+            free( fb);
+            return FALSE;
+         }
+      }
+
       memset( lpABCF, 0, sizeof( ABCFLOAT) * ( iLastChar - iFirstChar + 1));
 
       for ( i = 0; i <= iLastChar - iFirstChar; i++) {
@@ -925,26 +968,35 @@ gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lp
          lpABCF[i]. abcfB = fb[ i] - tm. tmOverhang;
          lpABCF[i]. abcfC = -tm. tmOverhang;
       }
+
+      free( fb);
    }
+   
    return TRUE;
 }
 
 PFontABC
-apc_gp_get_font_abc( Handle self, int first, int last)
+apc_gp_get_font_abc( Handle self, int first, int last, Bool unicode)
 {objCheck nil;{
    int i;
-   ABCFLOAT f2[ 256];
-   PFontABC f1;
+   ABCFLOAT *f2;
+   PFontABC  f1;
 
    f1 = ( PFontABC) malloc(( last - first + 1) * sizeof( FontABC));
    if ( !f1) return nil;
+   f2 = ( ABCFLOAT*) malloc(( last - first + 1) * sizeof( ABCFLOAT));
+   if ( !f2) {
+      free( f1);
+      return nil;
+   }
 
-   if ( !gp_GetCharABCWidthsFloat( sys ps, first, last, f2)) apiErr;
+   if ( !gp_GetCharABCWidthsFloat( sys ps, first, last, f2, unicode)) apiErr;
    for ( i = 0; i <= last - first; i++) {
       f1[i].a = f2[i].abcfA;
       f1[i].b = f2[i].abcfB;
       f1[i].c = f2[i].abcfC;
    }
+   free( f2);
    return f1;
 }}
 
@@ -1267,8 +1319,8 @@ apc_gp_get_text_out_baseline( Handle self)
 }
 
 
-int
-apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
+static int
+gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Bool wide)
 {
    SIZE  sz;
    int   div, offset = 0, ret = 0;
@@ -1282,7 +1334,11 @@ apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
 
    while ( offset < len) {
       int chunk_len = ( offset + div > len) ? ( len - offset) : div;
-      if ( !GetTextExtentPoint32( sys ps, text + offset, chunk_len, &sz)) apiErr;
+      if ( wide) {
+         if ( !GetTextExtentPoint32W( sys ps, ( WCHAR*) text + offset, chunk_len, &sz)) apiErr;
+      } else {
+         if ( !GetTextExtentPoint32( sys ps, text + offset, chunk_len, &sz)) apiErr;
+      }
       ret += sz. cx;
       if ( !IS_NT && offset > 0) ret -= sys tmOverhang;
       offset += div;
@@ -1291,29 +1347,53 @@ apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang)
    if ( addOverhang) {
       if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
          ABC abc[2];
-         GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
-         GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
+         if ( wide) {
+            GetCharABCWidthsW( sys ps, *((WCHAR*)text), *((WCHAR*)text), &abc[0]);
+            GetCharABCWidthsW( sys ps, *((WCHAR*)text + len - 1), *((WCHAR*)text + len - 1), &abc[1]);
+         } else {
+            GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
+            GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
+         }
          if ( abc[0]. abcA < 0) ret -= abc[0]. abcA;
          if ( abc[1]. abcC < 0) ret -= abc[1]. abcC;
       } else if ( IS_NT)
          ret += sys tmOverhang;
    } else if ( !IS_NT) 
       ret -= sys tmOverhang;
+
    return ret;
 }
 
+int
+apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Bool utf8)
+{
+   int ret;
+   if ( utf8)  
+      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) return 0;
+   ret = gp_get_text_width( self, text, len, addOverhang, utf8);
+   if ( utf8)
+      free(( char*) text);
+   return ret;
+}   
+
 Point *
-apc_gp_get_text_box( Handle self, const char* text, int len)
+apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
 {objCheck nil;{
    Point * pt = ( Point *) malloc( sizeof( Point) * 5);
    if ( !pt) return nil;
 
    memset( pt, 0, sizeof( Point) * 5);
 
+   if ( utf8)  
+      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) {
+         free( pt);
+         return nil;
+      }
+
    pt[0].y = pt[2]. y = var font. ascent;
    pt[1].y = pt[3]. y = - var font. descent;
    pt[4].y = pt[0]. x = pt[1].x = 0;
-   pt[3].x = pt[2]. x = pt[4].x = apc_gp_get_text_width( self, text, len, false);
+   pt[3].x = pt[2]. x = pt[4].x = gp_get_text_width( self, text, len, false, utf8);
    if ( len > 0 && !IS_NT) {
       pt[2].x += sys tmOverhang;
       pt[3].x += sys tmOverhang;
@@ -1326,8 +1406,13 @@ apc_gp_get_text_box( Handle self, const char* text, int len)
 
    if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
       ABC abc[2];
-      GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
-      GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
+      if ( utf8) {
+         GetCharABCWidthsW( sys ps, *((WCHAR*)text), *((WCHAR*)text), &abc[0]);
+         GetCharABCWidthsW( sys ps, *((WCHAR*)text + len - 1), *((WCHAR*)text + len - 1), &abc[1]);
+      } else {
+         GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
+         GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
+      }
       if ( abc[0]. abcA < 0) {
          pt[0].x += abc[0]. abcA;
          pt[1].x += abc[0]. abcA;
@@ -1349,6 +1434,9 @@ apc_gp_get_text_box( Handle self, const char* text, int len)
          pt[i]. y = x * s + y * c;
       }
    }
+
+   if ( utf8) free(( char*) text);
+   
    return pt;
 }}
 
@@ -1468,11 +1556,11 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 Bool
 apc_gp_set_font( Handle self, PFont font)
 {
-   TEXTMETRIC tm;
+   TEXTMETRICW tm;
    objCheck false;
    if ( !sys ps) return true;
    font_change( self, font);
-   GetTextMetrics( sys ps, &tm);
+   GetTextMetricsW( sys ps, &tm);
    sys tmOverhang       = tm. tmOverhang;
    sys tmPitchAndFamily = tm. tmPitchAndFamily;
    return true;

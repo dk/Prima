@@ -910,8 +910,9 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
 static int
 flush_refocus( Display * disp, XEvent * ev, void * dummy)
 {
-   return ev-> type == ClientMessage && ev-> xclient. message_type == guts. wm_data-> protocols 
-      && (Atom) ev-> xclient. data. l[0] == guts. wm_data-> takeFocus;
+   return ev-> type == ClientMessage && 
+          ev-> xclient. message_type == WM_PROTOCOLS &&
+        (Atom) ev-> xclient. data. l[0] == WM_TAKE_FOCUS;
 }
 
 Bool

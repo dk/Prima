@@ -493,16 +493,6 @@ prima_init_font_subsystem( void)
    int count, j , i, bad_fonts = 0, vector_fonts = 0;
    PFontInfo info;
 
-   FXA_RESOLUTION_X = XInternAtom( DISP, "RESOLUTION_X", false);
-   FXA_RESOLUTION_Y = XInternAtom( DISP, "RESOLUTION_Y", false);
-   FXA_PIXEL_SIZE = XInternAtom( DISP, "PIXEL_SIZE", false);
-   FXA_SPACING = XInternAtom( DISP, "SPACING", false);
-   FXA_RELATIVE_WEIGHT = XInternAtom( DISP, "RELATIVE_WEIGHT", false);
-   FXA_FOUNDRY = XInternAtom( DISP, "FOUNDRY", false);
-   FXA_AVERAGE_WIDTH = XInternAtom( DISP, "AVERAGE_WIDTH", false);
-   FXA_CHARSET_REGISTRY = XInternAtom( DISP, "CHARSET_REGISTRY", false);
-   FXA_CHARSET_ENCODING = XInternAtom( DISP, "CHARSET_ENCODING", false);
-
    guts. font_names = names = XListFonts( DISP, "*", INT_MAX, &count);
    if ( !names) {
       warn( "UAF_001: no X memory");
@@ -963,9 +953,9 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
       f-> flags. defaultChar     = true;
       f-> font. defaultChar      = s-> default_char;
       f-> flags. firstChar       = true;
-      f-> font.  firstChar       = s-> min_char_or_byte2;
+      f-> font.  firstChar       = s-> min_byte1 * 255 + s-> min_char_or_byte2;
       f-> flags. lastChar        = true;
-      f-> font.  lastChar        = s-> max_char_or_byte2;
+      f-> font.  lastChar        = s-> max_byte1 * 255 + s-> max_char_or_byte2;
       f-> flags. direction       = true;
       f-> font.  direction       = 0;
 
@@ -984,14 +974,19 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
          f-> flags. maximalWidth = true;   
          if ( s-> per_char) {
             int kl = 0, kr = 255, k;
+            int rl = 0, rr = 255, r, d;
             f-> font. maximalWidth = 0;
+            if ( rl < s-> min_byte1) rl = s-> min_byte1;
+            if ( rr > s-> max_byte1) rr = s-> max_byte1;
             if ( kl < s-> min_char_or_byte2) kl = s-> min_char_or_byte2;
             if ( kr > s-> max_char_or_byte2) kr = s-> max_char_or_byte2;
-            for ( k = kl; k <= kr; k++) {
-               int x = s-> per_char[k - s-> min_char_or_byte2]. width;
-               if ( f-> font. maximalWidth < x)
-                  f-> font. maximalWidth = x;
-            }      
+            d = kr - kl + 1;
+            for ( r = rl; r <= rr; r++) 
+               for ( k = kl; k <= kr; k++) {
+                  int x = s-> per_char[( r - s-> min_byte1) * d + k - s-> min_char_or_byte2]. width;
+                  if ( f-> font. maximalWidth < x)
+                     f-> font. maximalWidth = x;
+               }
          } else 
             f-> font. width = f-> font. maximalWidth = s-> max_bounds. width;
       }
@@ -1471,7 +1466,7 @@ apc_menu_set_font( Handle self, PFont font)
 }
 
 Bool
-prima_update_rotated_fonts( PCachedFont f, char * text, int len, int direction, PRotatedFont * result)
+prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, int direction, PRotatedFont * result)
 {
    PRotatedFont * pr = &f-> rotated;
    PRotatedFont r = nil;
@@ -1503,13 +1498,19 @@ prima_update_rotated_fonts( PCachedFont f, char * text, int len, int direction, 
       }   
       bzero( r, sizeof( RotatedFont));
       r-> direction = direction;
-      r-> first   = f-> fs-> min_char_or_byte2; 
-      r-> length  = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2) 
-         - r-> first + 1;
-      if ( r-> length < 0) r-> length = 0;
-      r-> defaultChar = f-> fs-> default_char;
-      if ( r-> defaultChar < r-> first || r-> defaultChar >= r-> first + r-> length)
-         r-> defaultChar = -1;
+      r-> first1  = f-> fs-> min_byte1; 
+      r-> first2  = f-> fs-> min_char_or_byte2; 
+      r-> width   = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2) 
+         - r-> first2 + 1;
+      if ( r-> width < 0) r-> width = 0;
+      r-> height = f-> fs-> max_byte1 - f-> fs-> min_byte1 + 1;
+      r-> length = r-> width * r-> height;
+      r-> defaultChar1 = f-> fs-> default_char >> 8;
+      r-> defaultChar2 = f-> fs-> default_char & 0xff;
+             
+      if ( r-> defaultChar1 < r-> first1 || r-> defaultChar1 >= r-> first1 + r-> height ||
+           r-> defaultChar2 < r-> first2 || r-> defaultChar2 >= r-> first2 + r-> width)
+         r-> defaultChar1 = r-> defaultChar2 = -1;
          
       if ( r-> length > 0) {
          if ( !( r-> map = malloc( r-> length * sizeof( void*)))) {
@@ -1573,29 +1574,41 @@ FAILED:
 
    /* processing character records */
    for ( i = 0; i < len; i++) {
-      unsigned char index = ( unsigned char) text[i];
+      XChar2b index;
       XCharStruct * cs;
       XImage * ximage;
       PrimaXImage * px;
       Byte * ndata;
       
+      index. byte1 = wide ? (( XChar2b*) text + i)-> byte1 : 0;
+      index. byte2 = wide ? (( XChar2b*) text + i)-> byte2 : *((unsigned char*)text + i);
+      
       /* querying character */
-      if ( index < r-> first || index >= r-> first + r-> length) {
-         if ( r-> defaultChar < 0) continue;
-         index = ( unsigned char) r-> defaultChar;
+      if ( index. byte1 < r-> first1 || index. byte1 >= r-> first1 + r-> height ||
+           index. byte2 < r-> first2 || index. byte2 >= r-> first2 + r-> width) {
+         if ( r-> defaultChar1 < 0 || r-> defaultChar2 < 0) continue;
+         index. byte1 = ( unsigned char) r-> defaultChar1;
+         index. byte2 = ( unsigned char) r-> defaultChar2;
       }   
-      if ( r-> map[index]) continue;
-      cs = f-> fs-> per_char ? f-> fs-> per_char + index - f-> fs-> min_char_or_byte2 :
+      if ( r-> map[index. byte1 * r-> width + index. byte2]) continue;
+      cs = f-> fs-> per_char ? 
+         f-> fs-> per_char + 
+            ( index. byte1 - f-> fs-> min_byte1) * r-> width + 
+              index. byte2 - f-> fs-> min_char_or_byte2 :
          &(f-> fs-> min_bounds);
       XSetForeground( DISP, r-> arena_gc, 0);
       XFillRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x, r-> orgBox .y);
       XSetForeground( DISP, r-> arena_gc, 1);
-      /* XDrawRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x-1, r-> orgBox .y-1); */
-      XDrawString( DISP, r-> arena, r-> arena_gc, 
-          ( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
-          r-> orgBox. y - f-> fs-> descent - 1,
-          (const char *)&index, 1);
-      /* XDrawLine( DISP, r-> arena, r-> arena_gc, 0, r-> orgBox .y-1, 8, r-> orgBox .y-1); */
+      if ( wide)
+         XDrawString16( DISP, r-> arena, r-> arena_gc, 
+             ( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
+             r-> orgBox. y - f-> fs-> descent - 1,
+             &index, 1);
+      else
+         XDrawString( DISP, r-> arena, r-> arena_gc, 
+             ( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
+             r-> orgBox. y - f-> fs-> descent - 1,
+             (const char *)&index. byte2, 1);
       XCHECKPOINT;
 
       /* getting glyph bits */
@@ -1664,11 +1677,46 @@ FAILED:
 
       if ( guts. bit_order != MSBFirst)
          prima_mirror_bytes( ndata, r-> dimension.y * px-> bytes_per_line_alias);
-      r-> map[index] = px;
+      r-> map[index. byte1 * r-> width + index. byte2] = px;
    }   
 
    if ( result)
       *result = r;
    
    return true;
+}   
+
+XCharStruct * 
+prima_char_struct( XFontStruct * xs, void * c, Bool wide) 
+{
+   XCharStruct * cs;
+   int d = xs-> max_char_or_byte2 - xs-> min_char_or_byte2 + 1;
+   int index1        = wide ? (( XChar2b*) c)-> byte1 : 0;
+   int index2        = wide ? (( XChar2b*) c)-> byte2 : *((char*)c);
+   int default_char1 = wide ? ( xs-> default_char >> 8) : 0;
+   int default_char2 = xs-> default_char & 0xff;
+
+   if ( default_char1 < xs-> min_byte1 ||
+        default_char1 > xs-> max_byte1)
+      default_char1 = xs-> min_byte1;
+   if ( default_char2 < xs-> min_char_or_byte2 ||
+        default_char2 > xs-> max_char_or_byte2)
+      default_char2 = xs-> min_char_or_byte2;
+   
+   if ( index1 < xs-> min_byte1 || 
+        index1 > xs-> max_byte1) { 
+      index1 = default_char1;
+      index2 = default_char2;
+   }
+   if ( index2 < xs-> min_char_or_byte2 || 
+        index2 > xs-> max_char_or_byte2) { 
+      index1 = default_char1;
+      index2 = default_char2;
+   }
+   cs = xs-> per_char ? 
+      xs-> per_char + 
+        ( index1 - xs-> min_byte1) * d +
+        ( index2 - xs-> min_char_or_byte2) : 
+      &(xs-> min_bounds);
+   return cs;
 }   

@@ -50,7 +50,7 @@ prima_send_create_event( XWindow win)
    ev. type = ClientMessage;
    ev. display = DISP;
    ev. window = win;
-   ev. message_type = guts. create_event;
+   ev. message_type = CREATE_EVENT;
    ev. format = 32;
    ev. data. l[0] = 0;
    XSendEvent( DISP, win, false, 0, (XEvent*)&ev);
@@ -409,6 +409,79 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
       }
     }   
     return true;
+}
+
+static Bool
+wm_event( Handle self, XEvent *xev, PEvent ev)
+{
+   Handle selectee = CApplication(application)->map_focus( application, self);
+
+   switch ( xev-> xany. type) {
+   case ClientMessage:
+      if ( xev-> xclient. message_type == WM_PROTOCOLS) {
+         if ((Atom) xev-> xclient. data. l[0] == WM_DELETE_WINDOW) {
+            if ( guts. message_boxes) return false;
+            if ( self != CApplication(application)-> map_focus( application, self))
+               return false;
+            ev-> cmd = cmClose;
+            return true;
+         } else if ((Atom) xev-> xclient. data. l[0] == WM_TAKE_FOCUS) {
+            if ( guts. message_boxes) {
+               struct MsgDlg * md = guts. message_boxes;
+               while ( md) {
+                  XMapRaised( DISP, md-> w);
+                  md = md-> next;
+               }
+               return false;
+            }
+            if ( selectee && selectee != self) XMapRaised( DISP, PWidget(selectee)-> handle);
+            XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
+            if ( selectee) Widget_selected( selectee, true, true);
+            return false;
+         }
+      }
+      break;
+   case PropertyNotify:
+      if ( xev-> xproperty. atom == NET_WM_STATE && xev-> xproperty. state == PropertyNewValue) {
+         DEFXX;
+         Atom type;
+         int format;
+         unsigned long i, n, left;
+         Atom * prop;
+         if ( XGetWindowProperty( DISP, xev-> xproperty. window, xev-> xproperty. atom, 0, 128, false, XA_ATOM,
+                             &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
+            if ( prop) {
+               Bool vert = 0, horiz = 0;
+               for ( i = 0; i < n; i++) {
+                  if ( prop[i] == NET_WM_STATE_MAXIMIZED_VERT) 
+                     vert = 1;
+                  else if ( prop[i] == NET_WM_STATE_MAXIMIZED_HORIZ) 
+                     horiz = 1;
+               }
+               XFree(( unsigned char *) prop);
+                  
+               ev-> cmd = cmWindowState;
+               ev-> gen. source = self; 
+               if ( vert & horiz) {
+                  if ( !XX-> flags. zoomed) {
+                     ev-> gen. i = wsMaximized;
+                     XX-> flags. zoomed = 1;
+                  } else 
+                     ev-> cmd = 0;
+               } else {
+                  if ( XX-> flags. zoomed) {
+                     ev-> gen. i = wsNormal;
+                     XX-> flags. zoomed = 0;
+                  } else 
+                     ev-> cmd = 0; 
+               }
+            }
+         }
+      }
+      break;
+   }
+   
+   return false;
 }
 
 
@@ -962,8 +1035,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case PropertyNotify: {
-      if ( guts. wm_translate_event) 
-	 guts. wm_translate_event( self, ev, &e);
+      wm_event( self, ev, &e);
       break;
    }
    case SelectionClear: 
@@ -979,10 +1051,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case ClientMessage: {
-      if ( ev-> xclient. message_type == guts. create_event) {
+      if ( ev-> xclient. message_type == CREATE_EVENT) {
 	 e. cmd = cmSetup;
-      } else if ( guts. wm_translate_event) {
-	 guts. wm_translate_event( self, ev, &e);
+      } else {
+	 wm_event( self, ev, &e);
       }
       break;
    }

@@ -47,12 +47,12 @@ apc_window_task_listed( Handle self, Bool task_list)
    XClientMessageEvent ev;
    unsigned long i, n, left;
 
-   if ( XGetWindowProperty( DISP, X_WINDOW, guts. net_wm_state, 0, 32, false, XA_ATOM,
+   if ( XGetWindowProperty( DISP, X_WINDOW, NET_WM_STATE, 0, 32, false, XA_ATOM,
           &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
      if ( prop) {
          if ( n > 32) n = 32;
          for ( i = 0; i < n; i++) 
-            if ( prop[i] != guts. net_wm_state_skip_taskbar)
+            if ( prop[i] != NET_WM_STATE_SKIP_TASKBAR)
                data[ count++] = prop[i];
          XFree(( unsigned char *) prop);
       }
@@ -63,7 +63,7 @@ apc_window_task_listed( Handle self, Bool task_list)
    ev. type = ClientMessage;
    ev. display = DISP;
    ev. window = X_WINDOW;
-   ev. message_type = guts. net_wm_state;
+   ev. message_type = NET_WM_STATE;
    ev. format = 32;
    /*
       _NET_WM_STATE_REMOVE        0    // remove/unset property 
@@ -71,14 +71,14 @@ apc_window_task_listed( Handle self, Bool task_list)
       _NET_WM_STATE_TOGGLE        2    // toggle property  
     */
    ev. data. l[0] = task_list ? 0 : 1;
-   ev. data. l[1] = ( long) guts. net_wm_state_skip_taskbar;
+   ev. data. l[1] = ( long) NET_WM_STATE_SKIP_TASKBAR;
    ev. data. l[2] = 0;
    XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
    XCHECKPOINT;
 
-   if ( !task_list) data[ count++] = guts. net_wm_state_skip_taskbar;
+   if ( !task_list) data[ count++] = NET_WM_STATE_SKIP_TASKBAR;
 
-   XChangeProperty( DISP, X_WINDOW, guts. net_wm_state, XA_ATOM, 32,
+   XChangeProperty( DISP, X_WINDOW, NET_WM_STATE, XA_ATOM, 32,
        PropModeReplace, ( unsigned char *) data, count);
 } 
 
@@ -92,6 +92,8 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XSizeHints hints;
    XSetWindowAttributes attrs;
    Point p0 = {0,0};
+   Atom atoms[ 2];
+   XWMHints wmhints;
 
    if ( border_style != bsSizeable) border_style = bsDialog;
 
@@ -157,7 +159,15 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
    XCHECKPOINT;
    XX-> flags. iconic = ( window_state == wsMinimized) ? 1 : 0;
-   guts. wm_create_window( self, X_WINDOW);
+   wmhints. flags = InputHint | StateHint;
+   wmhints. input = false;
+   wmhints. initial_state = XX-> flags. iconic ? IconicState : NormalState;
+   XSetWMHints( DISP, X_WINDOW, &wmhints);
+   XCHECKPOINT;
+
+   atoms[ 0] = WM_DELETE_WINDOW;
+   atoms[ 1] = WM_TAKE_FOCUS;
+   XSetWMProtocols( DISP, X_WINDOW, atoms, 2);
    XCHECKPOINT;
 
    XX-> type.drawable = true;
@@ -357,14 +367,29 @@ apc_window_get_task_listed( Handle self)
 }
 
 Bool
-apc_window_set_caption( Handle self, const char *caption)
+apc_window_set_caption( Handle self, const char *caption, Bool utf8)
 {
    XTextProperty p;
-   if ( XStringListToTextProperty(( char **) &caption, 1, &p) == 0) 
-      return false;
-   XSetWMIconName( DISP, X_WINDOW, &p);
-   XSetWMName( DISP, X_WINDOW, &p);
-   XFree( p. value);
+
+   if ( utf8) {
+      if ( XStringListToTextProperty(( char **) &caption, 1, &p) != 0) {
+         XSetWMIconName( DISP, X_WINDOW, &p);
+         XSetWMName( DISP, X_WINDOW, &p);
+         XFree( p. value);
+      }
+      XChangeProperty( DISP, X_WINDOW, NET_WM_NAME, UTF8_STRING, 8, 
+         PropModeReplace, ( unsigned char*) caption, strlen( caption) + 1);
+      XChangeProperty( DISP, X_WINDOW, NET_WM_ICON_NAME, UTF8_STRING, 8, 
+         PropModeReplace, ( unsigned char*) caption, strlen( caption) + 1);
+   } else {
+      XDeleteProperty( DISP, X_WINDOW, NET_WM_NAME);
+      XDeleteProperty( DISP, X_WINDOW, NET_WM_ICON_NAME);
+      if ( XStringListToTextProperty(( char **) &caption, 1, &p) != 0) {
+         XSetWMIconName( DISP, X_WINDOW, &p);
+         XSetWMName( DISP, X_WINDOW, &p);
+         XFree( p. value);
+      }
+   }
    XFlush( DISP);
    return true;
 }

@@ -62,7 +62,6 @@ typedef HANDLE WINHANDLE;
 #endif
 
 
-#define IPC_TAINT
 #define DEFAULT_SYSTEM_FONT              "System"
 #define DEFAULT_WIDGET_FONT              "MS Shell Dlg"
 #define DEFAULT_WIDGET_FONT_SIZE         8
@@ -545,7 +544,7 @@ extern void         font_font2logfont( Font * font, LOGFONT * lf);
 extern void         font_free( PDCFont res, Bool permanent);
 extern void         font_logfont2font( LOGFONT * lf, Font * font, Point * resolution);
 extern void         font_pp2font( char * presParam, Font * font);
-extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
+extern void         font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readOnly);
 extern Bool         get_font_from_hash( PFont font, int *vectored, Bool bySize);
 extern Point        get_window_borders( int borderStyle);
 extern int          gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd, int drawState);
@@ -583,6 +582,10 @@ extern Bool         stylus_extpenned( PStylus stylus, int excludeFlags);
 extern void         stylus_free( PDCStylus res, Bool permanent);
 extern DWORD        stylus_get_extpen_style( PStylus s);
 extern HRGN         region_create( Handle mask);
+extern void         utf8_to_wchar( const char * utf8, WCHAR * u16, int length);
+extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length);
+extern void         wchar2char( char * dest, WCHAR * src, int lim);
+extern void         char2wchar( WCHAR * dest, char * src, int lim);
 
 #ifdef __cplusplus
 }

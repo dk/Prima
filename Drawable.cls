@@ -72,13 +72,13 @@ object Prima::Drawable ( Prima::Component)
 
    method int   get_bpp();
    method Font  get_font();
-   method SV *  get_font_abc( int first = -1, int last = -1);
+   method SV *  get_font_abc( int first = -1, int last = -1, Bool unicode = 0);
    method SV *  get_handle();
    method Color get_nearest_color( Color color);
    method int   get_paint_state();
    method SV *  get_physical_palette();
-   method int   get_text_width( char * text, int len = -1, Bool addOverhang = 0);
-   method SV *  get_text_box( char * text, int len = -1);
+   method int   get_text_width( SV * text, int len = -1, Bool addOverhang = 0);
+   method SV *  get_text_box( SV * text, int len = -1);
 
    # operators
    method Bool  arc( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_arc;
@@ -99,6 +99,10 @@ object Prima::Drawable ( Prima::Component)
    method Bool  rectangle(int x1, int y1, int x2, int y2)  => apc_gp_rectangle;
    method Bool  sector( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_sector;
    method void  stretch_image(int x, int y, int xDest, int yDest, Handle image);
-   method void  text_out( char * text, int x, int y, int len = -1);
-   method SV*   text_wrap( char * text, int width, int options = twDefault, int tabIndent = 8, int textLen = -1);
+   method void  text_out( SV * text, int x, int y, int len = -1);
+   method SV*   text_wrap( SV * text, int width, int options = twDefault, int tabIndent = 8, int textLen = -1);
+
+   # font_abc caches
+   PFontABC font_abc_ascii;
+   PList    font_abc_unicode;
 }

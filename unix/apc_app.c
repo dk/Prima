@@ -158,6 +158,28 @@ window_subsystem_init( void)
       "Submenudelay.submenudelay."
       "Scrollfirst.scrollfirst."
       "Scrollnext.scrollnext";
+   char * atom_names[AI_count] = {
+      "RESOLUTION_X",
+      "RESOLUTION_Y",
+      "PIXEL_SIZE",
+      "SPACING",
+      "RELATIVE_WEIGHT",
+      "FOUNDRY",
+      "AVERAGE_WIDTH",
+      "CHARSET_REGISTRY",
+      "CHARSET_ENCODING",
+      "CREATE_EVENT",
+      "WM_DELETE_WINDOW",
+      "WM_PROTOCOLS",
+      "WM_TAKE_FOCUS",
+      "NET_WM_STATE",
+      "NET_WM_STATE_SKIP_TASKBAR",
+      "NET_WM_STATE_MAXIMIZED_VERT",
+      "NET_WM_STATE_MAXIMIZED_HORIZ",
+      "NET_WM_NAME",
+      "NET_WM_ICON_NAME",
+      "UTF8_STRING",
+   };
    
    bzero( &guts, sizeof( guts));
    {
@@ -216,8 +238,6 @@ window_subsystem_init( void)
    guts. shared_image_completion_event = -1;
 #endif
    
-   guts.create_event = XInternAtom( DISP, "PRIMA_CREATE", false);
-
    XrmInitialize();
    guts.db = get_database();
    XrmStringToQuarkList( common_quarks, common_quarks_list);
@@ -298,13 +318,14 @@ window_subsystem_init( void)
    else {
       warn( "UAA_001: weird machine byte order: %08x", BYTEORDER);
       return false;
-   }   
+   }  
+
+   XInternAtoms( DISP, atom_names, AI_count, 0, guts. atoms);
 
    guts. null_pointer = nilHandle;
    guts. pointer_invisible_count = 0;
    guts. files = plist_create( 16, 16);
    prima_rebuild_watchers();
-   prima_wm_init();
    guts. wm_event_timeout = 100000;
    guts. menu_timeout = 200;
    guts. scroll_first = 200;
@@ -328,8 +349,6 @@ window_subsystem_cleanup( void)
    if ( !DISP) return;
    /*XXX*/
    prima_end_menu();
-   if ( guts. wm_cleanup)
-      guts. wm_cleanup();
 }
 
 static void

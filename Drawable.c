@@ -77,9 +77,27 @@ Drawable_init( Handle self, HV * profile)
    my-> set_palette( self, pget_sv( palette));
 }
 
+static void
+clear_font_abc_caches( Handle self)
+{
+   PList u;
+   if (( u = var-> font_abc_unicode)) {
+      int i;
+      for ( i = 0; i < u-> count; i += 2) 
+         free(( void*) u-> items[ i + 1]);
+      plist_destroy( u);
+      var-> font_abc_unicode = nil;
+   } 
+   if ( var-> font_abc_ascii) {
+      free( var-> font_abc_ascii);
+      var-> font_abc_ascii = nil;
+   }
+}
+
 void
 Drawable_done( Handle self)
 {
+   clear_font_abc_caches( self);
    apc_gp_done( self);
    inherited done( self);
 }
@@ -106,6 +124,7 @@ Drawable_begin_paint( Handle self)
 void
 Drawable_end_paint( Handle self)
 {
+   clear_font_abc_caches( self);
    opt_clear( optInDraw);
 }
 
@@ -122,6 +141,7 @@ Drawable_begin_paint_info( Handle self)
 void
 Drawable_end_paint_info( Handle self)
 {
+   clear_font_abc_caches( self);
    opt_clear( optInDrawInfo);
 }
 
@@ -304,7 +324,7 @@ Drawable_get_physical_palette( Handle self)
 }
 
 SV *
-Drawable_get_font_abc( Handle self, int first, int last)
+Drawable_get_font_abc( Handle self, int first, int last, Bool unicode)
 {
    int i;
    AV * av = newAV();
@@ -312,15 +332,17 @@ Drawable_get_font_abc( Handle self, int first, int last)
 
    if ( first < 0) first = 0;
    if ( last  < 0) last  = 255;
-   if ( first > 255) first = 255;
-   if ( last  > 255) last  = 255;
+   if ( !unicode) {
+      if ( first > 255) first = 255;
+      if ( last  > 255) last  = 255;
+   }
 
    if ( first > last)
      abc = nil;
    else {
      gpARGS;
      gpENTER;
-     abc = apc_gp_get_font_abc( self, first, last);
+     abc = apc_gp_get_font_abc( self, first, last, unicode );
      gpLEAVE;
    }
 
@@ -406,13 +428,17 @@ Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom,
 }
 
 void
-Drawable_text_out( Handle self, char * text, int x, int y, int len)
+Drawable_text_out( Handle self, SV * text, int x, int y, int len)
 {
-   if ( len < 0) len = strlen( text);
-   apc_gp_text_out( self, text, x, y, len);
+   STRLEN dlen;
+   char * c_text = SvPV( text, dlen);
+   Bool   utf8 = SvUTF8( text);
+   if ( utf8) dlen = utf8_length( c_text, c_text + dlen);
+   if ( len < 0 || len > dlen) len = dlen;
+   apc_gp_text_out( self, c_text, x, y, len, utf8);
 }
 
-void
+static void
 polypoints( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(Handle,int,Point*))
 {
    AV * av;
@@ -469,29 +495,37 @@ Drawable_fillpoly( Handle self, SV * points)
 }
 
 int
-Drawable_get_text_width( Handle self, char * text, int len, Bool addOverhang)
+Drawable_get_text_width( Handle self, SV * text, int len, Bool addOverhang)
 {
    gpARGS;
    int res;
-   if ( len < 0) len = strlen( text);
+   STRLEN dlen;
+   char * c_text = SvPV( text, dlen);
+   Bool   utf8 = SvUTF8( text);
+   if ( utf8) dlen = utf8_length( c_text, c_text + dlen);
+   if ( len < 0 || len > dlen) len = dlen;
    gpENTER;
-   res = apc_gp_get_text_width( self, text, len, addOverhang);
+   res = apc_gp_get_text_width( self, c_text, len, addOverhang, utf8);
    gpLEAVE;
    return res;
 }
 
 SV *
-Drawable_get_text_box( Handle self, char * text, int len)
+Drawable_get_text_box( Handle self, SV * text, int len)
 {
    gpARGS;
    Point * p;
    AV * av;
    int i;
-
-   if ( len < 0) len = strlen( text);
+   STRLEN dlen;
+   char * c_text = SvPV( text, dlen);
+   Bool   utf8 = SvUTF8( text);
+   if ( utf8) dlen = utf8_length( c_text, c_text + dlen);
+   if ( len < 0 || len > dlen) len = dlen;
    gpENTER;
-   p = apc_gp_get_text_box( self, text, len);
+   p = apc_gp_get_text_box( self, c_text, len, utf8);
    gpLEAVE;
+
    av = newAV();
    if ( p) {
       for ( i = 0; i < 5; i++) {
@@ -503,294 +537,364 @@ Drawable_get_text_box( Handle self, char * text, int len)
    return newRV_noinc(( SV *) av);
 }
 
-char **
-Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
+static PFontABC
+query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
 {
-   float width[ 256];
-   IV start = 0;
-   float w = 0, inc = 0;
-   char **ret;
-   Bool wasTab    = 0;
-   Bool doWidthBreak = t-> width >= 0;
-   int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset = 0, i, lSize = 16;
-   unsigned char * text    = ( unsigned char*) t-> text;
+   PFontABC abc;
 
-   if (!( ret = allocn( char*, lSize))) return nil;
-   for ( i = 0; i < 256; i++) {
-      width[i] = abc[i]. a + abc[i]. b + abc[i]. c;
-      abc[i]. c = ( abc[i]. c < 0) ? - abc[i]. c : 0;
-      abc[i]. a = ( abc[i]. a < 0) ? - abc[i]. a : 0;
+   /* find if present in cache */
+   if ( t-> utf8_text) {
+      if ( *(t-> unicode)) {
+         int i;
+         PList p;
+         if (( p = *(t-> unicode)))
+            for ( i = 0; i < p-> count; i += 2)
+               if (( unsigned int) p-> items[ i] == base)
+                  return ( PFontABC) p-> items[i + 1];
+      }
+   } else
+      if ( *( t-> ascii)) return *(t-> ascii);
+
+   /* query ABC information */
+   if ( !self) {
+      abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text);
+      if ( !abc) return nil;
+   } else if ( my-> get_font_abc == Drawable_get_font_abc) {
+      gpARGS;
+      gpENTER;
+      abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text);
+      gpLEAVE;
+      if ( !abc) return nil;
+   } else {
+      SV * sv;
+      if ( !( abc = malloc( 256 * sizeof( FontABC)))) return nil;
+      sv = my-> get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text);
+      if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
+         AV * av = ( AV*) SvRV( sv);
+         int i, j = 0, n = av_len( av + 1);
+         if ( n > 256 * 3) n = 256 * 3;
+         n = ( n / 3) * 3;
+         if ( n < 256) memset( abc, 0, 256 * sizeof( FontABC));
+         for ( i = 0; i < n; i += 3) {
+            SV ** holder = av_fetch( av, i, 0);
+            if ( holder) abc[j]. a = ( float) SvNV( *holder);
+            holder = av_fetch( av, i + 1, 0);
+            if ( holder) abc[j]. b = ( float) SvNV( *holder);
+            holder = av_fetch( av, i + 2, 0);
+            if ( holder) abc[j]. c = ( float) SvNV( *holder);
+            j++;
+         }
+      } else
+         memset( abc, 0, 256 * sizeof( FontABC));
+      sv_free( sv);
    }
 
-/* macro for adding string/chunk into result table */
-#define lAdd(end) {                                       \
-   IV l = end - start;                                \
-   char *c = nil;                                         \
-   if (!( t-> options & twReturnChunks)) {                \
-      if ( !( c = allocs( l + 1))) return ret;            \
-      memcpy( c, &text[start], l);                        \
-      c[ l] = 0;                                          \
-   }                                                      \
-   if ( tildeIndex >= 0 && tildeIndex >= start &&         \
-        tildeIndex < end)                                 \
-   {                                                      \
-      tildeLine = t-> t_line = t-> count;                 \
-      tildePos = tildeLPos   = tildeIndex - start;        \
-      if ( tildeIndex == end - 1) {                       \
-         t-> t_line++;                                    \
-         tildeLPos = 0;                                   \
-      }                                                   \
-   }                                                      \
-   if ( t-> count == lSize) {                             \
-      char ** n = allocn( char*, lSize + 16);             \
-      if ( !n) return ret;                                \
-      memcpy( n, ret, sizeof( char*) * lSize);            \
-      lSize += 16;                                        \
-      free( ret);                                         \
-      ret = n;                                            \
-   }                                                      \
-   if ( t-> options & twReturnChunks) {                   \
-      ret[ t-> count++] = (char*) start;                  \
-      ret[ t-> count++] = (char*) l;                      \
-   } else                                                 \
-      ret[ t-> count++] = c;                              \
-   start += l;                                            \
-   if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) \
-      return ret;                                         \
+   /* store in cache */
+   if ( t-> utf8_text) {
+      PList p;
+      if ( !*(t-> unicode))
+         *(t-> unicode) = plist_create( 8, 8);
+      if (( p = *(t-> unicode))) {
+         list_add( p, ( Handle) base);
+         list_add( p, ( Handle) abc);
+      } else {
+         free( abc);
+         return nil;
+      }
+   } else
+      *(t-> ascii) = abc;
+
+   return abc;
 }
 
-/* determining ~ character location */
-    if ( t-> options & twCalcMnemonic) {
-       for ( i = 0; i < t-> textLen - 1; i++)
-          if ( text[ i] == '~') {
-             unsigned char c = text[ i + 1];
-             if ( c == '~' || c < ' ') {
-                i++;
-                continue;
-             } else {
-                tildeIndex = i;
-                break;
-             }
-          }
-    }
-/* scanning line accumulating widths and breaking if necessary */
-    t-> count = 0;
-    w = abc[ text[ 0]]. a;
-    for ( i = 0; i < t-> textLen; i++)
-    {
-       float winc;
+static Bool
+precalc_abc_buffer( PFontABC src, float * width, PFontABC dest)
+{
+   int i;
+   if ( !dest) return false;
+   for ( i = 0; i < 256; i++) {
+      width[i] = src[i]. a + src[i]. b + src[i]. c;
+      dest[i]. a = ( src[i]. a < 0) ? - src[i]. a : 0;
+      dest[i]. b = src[i]. b;
+      dest[i]. c = ( src[i]. c < 0) ? - src[i]. c : 0;
+   }
+   return true;
+}
 
-       switch ( text[ i])
-       {
-          case '\t':
-             if (!( t-> options & twCalcTabs)) goto _default;
-             if ( t-> options & twSpaceBreak)
-             {
-                lAdd( i); start++;
-                w = abc[ text[ i + 1]]. a;
-                continue;
-             }
-             winc = width[' '] * t-> tabIndent;
-             inc  = abc[' ']. c;
-             wasTab = true;
-             break;
-          case '\n':
-             if (!( t-> options & twNewLineBreak)) goto _default;
-             lAdd( i); start++; w = abc[ text[ i + 1]]. a;
-             continue;
-          case ' ':
-             if (!( t-> options & twSpaceBreak)) goto _default;
-             lAdd( i); start++; w = abc[ text[ i + 1]]. a;
-             continue;
-          case '~':
-             if ( i == tildeIndex) {
-                tildeOffset = w;
-                inc = winc = 0;
-                break;
-             }
-          _default: default:
-             winc = width[ text[ i]];
-             inc  = abc[ text[ i]]. c;
-       }
-       
-       if ( doWidthBreak && w + winc + inc > t-> width)
-       {
-          if (( i - start == 0) || (( i - 1 == tildeIndex) && ( i - start == 1))) {
-            /* case when even single char could not fit in given width. */
-             if ( t-> options & twBreakSingle)
-             {
-                /* do not return anything in this case */
-                int j;
-                if (!( t-> options & twReturnChunks)) {
-                   for ( j = 0; j < t-> count; j++) free( ret[ j]);
-                   ret[ 0] = duplicate_string("");
-                }
-                t-> count = 0;
-                return ret;
-             } else
-                /* or fit this character */
-                lAdd( i + 1);
-          } else {
-             unsigned char * c;
-             Bool quickReturn = (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength);
-             if ( quickReturn) {
-                t-> options &= ~twReturnFirstLineLength;
-                t-> options |= twReturnChunks;
-             }
-             lAdd( i);
-             if ( quickReturn) t-> options |= twReturnFirstLineLength;
+static Bool
+add_wrapped_text( TextWrapRec * t, int start, int utfstart, int end, int utfend,
+                  int tildeIndex, int * tildePos, int * tildeLPos, int * tildeLine,
+                  char *** lArray, int * lSize)
+{
+   int l = end - start;
+   char *c = nil;
+   if (!( t-> options & twReturnChunks)) {
+      if ( !( c = allocs( l + 1))) return false;
+      memcpy( c, t-> text + start, l);
+      c[ l] = 0;
+   }                                               
+   if ( tildeIndex >= 0 && tildeIndex >= start && tildeIndex < end) {                                               
+      *tildeLine = t-> t_line = t-> count;
+      *tildePos = *tildeLPos = tildeIndex - start;
+      if ( tildeIndex == end - 1) {
+         t-> t_line++;
+         tildeLPos = 0;
+      }
+   }
+   if ( t-> count == *lSize) {
+      char ** n = allocn( char*, *lSize + 16);
+      if ( !n) return false;
+      memcpy( n, *lArray, sizeof( char*) * (*lSize));
+      *lSize += 16;
+      free( *lArray);
+      *lArray = n;
+   }
+   if ( t-> options & twReturnChunks) {
+      (*lArray)[ t-> count++] = (char*) utfstart;
+      (*lArray)[ t-> count++] = (char*) utfend - utfstart;
+   } else
+      (*lArray)[ t-> count++] = c;
+   return true;
+}
+   
+char **
+Drawable_do_text_wrap( Handle self, TextWrapRec * t)
+{
+   unsigned int base = 0x10000000;
+   float width[256];
+   FontABC abc[256];
+   int start = 0, utfstart = 0, split_start = -1, split_end = -1, i, utfi, utf_split = -1;
+   float w = 0, inc = 0;
+   char **ret;
+   Bool wasTab = 0, reassign_w = 1;
+   Bool doWidthBreak = t-> width >= 0;
+   int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset = 0, lSize = 16;
+   int spaceWidth = 0, spaceC = 0, spaceOK = 0;
 
-             if ( t-> options & twWordBreak)
-             {
-                /* checking whether break was at word boundary */
-                unsigned char rc = text[ i];
-                int len;
-                if ( t-> options & twReturnChunks)
-                {
-                   c   = &text[ (IV)ret[ t-> count - 2]];
-                   len = (IV) ret[ t-> count - 1];
-                }
-                else  {
-                  c = ( unsigned char *) ret[ t-> count - 1];
-                  len = strlen(( const char *) c);
-                }
-                if ( rc != ' ' && rc != '\t' && rc != '\n') {
-                   /* determining whether this line could be split */
-                   IV j;
-                   Bool ok = false;
-                   for ( j = len; j >= 0; j--)
-                      if ( c[ j] == ' ' || c[ j] == '\n' || c[ j] == '\t') {
-                         ok = true;
-                         break;
-                      }
-                   if ( ok)
-                   {
-                      start -= len - j - 1;
-                      if ( t-> options & twReturnChunks)
-                         ret[ t-> count - 1] = ( char *) j;
-                      else
-                         c[ j] = 0;
-                      i -= len - j - 1;
-                   } else if ( t-> options & twBreakSingle) { 
-                      /* cannot be split, return nothing */
-                      int j;
-                      if (!( t-> options & twReturnChunks)) {
-                         for ( j = 0; j < t-> count; j++) free( ret[ j]);
-                         ret[ 0] = duplicate_string("");
-                      }
-                      t-> count = 0;
-                      return ret;
-                   }
-                }
-             }
-             if ( quickReturn) return ret;
-             i--; /* repeat again */
-          }
-          w = 0;
-          continue;
-       } else
-          w += winc;
-    }
-/* adding or skipping last line */
-    if ( t-> textLen - start > 0 || t-> count == 0) lAdd( t-> textLen);
-/* removing ~ and determining it's location */
-    if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
-        unsigned char *l = ( unsigned char *) ret[ tildeLine];
-        t-> t_char = l[ tildePos+1];
-        if ( t-> options & twCollapseTilde)
-           memmove(( void *)( l + tildePos), l + tildePos + 1, strlen(( const char *) l) - tildePos);
-        l = ( unsigned char *) ret[ t-> t_line];
-        w = tildeOffset;
-        t-> t_start = w - 1;
-        t-> t_end   = w + width[(unsigned)l[tildeLPos]];
-    } else {
-        t-> t_start = t-> t_end = t-> t_line = C_NUMERIC_UNDEF;
-    }
-/* expanding tabs */
-    if (( t-> options & twExpandTabs) && !(t-> options & twReturnChunks) && wasTab)
-    {
-       for ( i = 0; i < t-> count; i++)
-       {
-          int tabs = 0, len = 0;
-          char *substr = ret[ i], *n;
-          while (*substr) { if ( *substr == '\t') tabs++; substr++; len++; }
-          if ( tabs == 0) continue;
-          if ( !( n = allocs( len + tabs * t-> tabIndent + 1)))
-             return ret;
-          substr = ret[ i];
-          len = 0;
-          while ( *substr)
-          {
-             if ( *substr == '\t')
-             {
-                int j = t-> tabIndent;
-                while ( j--) n[ len++] = ' ';
-             } else
-                n[ len++] = *substr;
-             substr++;
-          }
-          free( ret[ i]);
-          n[ len] = 0;
-          ret[ i] = n;
-       }
-    }
-    return ret;
+#define lAdd(end, utfend) \
+   if ( !add_wrapped_text( t, start, utfstart, end, utfend, tildeIndex, \
+        &tildePos, &tildeLPos, &tildeLine, &ret, &lSize)) return ret;\
+   start = end; \
+   utfstart = utfend; \
+   if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret
+      
+   t-> count = 0;
+   if (!( ret = allocn( char*, lSize))) return nil;
+
+   /* determining ~ character location */
+   if ( t-> options & twCalcMnemonic) 
+      for ( i = 0; i < t-> textLen - 1; i++)
+         if ( t-> text[ i] == '~') {
+            unsigned char c = t-> text[ i + 1];
+            if ( c == '~' || c < ' ') {
+               i++;
+               continue;
+            } else {
+               tildeIndex = i;
+               break;
+            }
+         }
+
+      
+   /* process UV chars */
+   for ( i = 0, utfi = 0; i < t-> textLen; utfi++) {
+      UV uv;
+      float winc;
+      int p = i;
+      
+      if ( t-> utf8_text) {
+         STRLEN len;
+         uv = utf8_to_uvchr( t-> text + i, &len);
+         i += len;
+      } else
+         uv = (( unsigned char *)(t-> text))[i++];
+
+      if ( uv / 256 != base) 
+         if ( !precalc_abc_buffer( query_abc_range( self, t, base = uv / 256), width, abc))
+            return ret;
+      if ( reassign_w) w = abc[ uv & 0xff]. a;
+      reassign_w = 0;
+      
+      switch ( uv ) {
+      case '\t':
+         split_start = p; split_end = i; utf_split = utfi;
+         if (!( t-> options & twCalcTabs)) goto _default;
+         if ( t-> options & twSpaceBreak) {
+            lAdd( p, utfi); 
+            start = i;
+            utfstart++;
+            reassign_w = 1;
+            continue;
+         }
+         if ( !spaceOK) {
+            PFontABC s = query_abc_range( self, t, 0);
+            if ( !s) return ret;
+            spaceWidth = (s[' '].a + s[' '].b + s[' '].c) * t-> tabIndent; 
+            spaceC     = (s[' '].c < 0) ? - s[' ']. c : 0;
+            spaceOK = 1;
+         }
+         winc = spaceWidth;
+         inc  = spaceC;
+         wasTab = true;
+         break;
+      case '\n':
+      case 0x2028:
+      case 0x2029:
+         split_start = p; split_end = i; utf_split = utfi; 
+         if (!( t-> options & twNewLineBreak)) goto _default;
+         lAdd( p, utfi); 
+         start = i;
+         utfstart++;
+         reassign_w = 1;
+         continue;
+      case ' ':
+         split_start = p; split_end = i; utf_split = utfi; 
+         if (!( t-> options & twSpaceBreak)) goto _default;
+         lAdd( p, utfi); 
+         start = i;
+         utfstart++;
+         reassign_w = 1;
+         continue;
+      case '~':
+         if ( p == tildeIndex ) {
+            tildeOffset = w;
+            inc = winc = 0;
+            break;
+         }
+      _default: default:
+         winc = width[ uv & 0xff];
+         inc  = abc[ uv & 0xff]. c;
+      }
+
+      if ( doWidthBreak && w + winc + inc > t-> width) {
+         if (( p == start) || (( p == start - 1) && ( p - 1 == tildeIndex))) {
+           /* case when even single char cannot be fit in  */
+            if ( t-> options & twBreakSingle) {
+               /* do not return anything in this case */
+               int j;
+               if (!( t-> options & twReturnChunks)) {
+                  for ( j = 0; j < t-> count; j++) free( ret[ j]);
+                  ret[ 0] = duplicate_string("");
+               }
+               t-> count = 0;
+               return ret;
+            } 
+            /* or push this character disregarding the width */
+            lAdd( i, utfi + 1);
+         } else { /* normal break condition */
+            /* checking if break was at word boundary */ 
+            if ( t-> options & twWordBreak) {
+               if ( start <= split_start) {
+                  lAdd( split_start, utf_split );
+                  i = start = split_end;
+                  utfstart++;
+                  w = 0;
+                  continue;
+               } else if ( t-> options & twBreakSingle) { 
+                  /* cannot be split, return nothing */
+                  int j;
+                  if (!( t-> options & twReturnChunks)) {
+                     for ( j = 0; j < t-> count; j++) free( ret[ j]);
+                     ret[ 0] = duplicate_string("");
+                  }
+                  t-> count = 0;
+                  return ret;
+               } 
+            }
+            /* repeat again */
+            lAdd( p, utfi );
+            i = start = p;
+            utfi--;
+         }
+         w = 0;
+         continue;
+      } else
+         w += winc;
+   }
+
+   /* adding or skipping last line */
+   if ( t-> textLen - start > 0 || t-> count == 0) lAdd( t-> textLen, t-> utf8_textLen);
+    
+   /* removing ~ and determining it's location */
+   if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
+      UV uv;
+      STRLEN len;
+      PFontABC abc;
+      char *l = ret[ tildeLine];
+      t-> t_char = t-> text + tildePos + 1;
+      if ( t-> options & twCollapseTilde)
+         memmove( l + tildePos, l + tildePos + 1, strlen( l) - tildePos);
+      l = ret[ t-> t_line] + tildeLPos;
+      uv = t-> utf8_text ? utf8_to_uvchr( l, &len) : *((unsigned char*)l);
+      abc = query_abc_range( self, t, uv / 256) + (uv & 0xff);
+      w = tildeOffset;
+      t-> t_start = w - 1;
+      t-> t_end   = w + abc->a + abc->b + abc->c;
+   } else {
+      t-> t_start = t-> t_end = t-> t_line = C_NUMERIC_UNDEF;
+   }
+
+   /* expanding tabs */
+   if (( t-> options & twExpandTabs) && !(t-> options & twReturnChunks) && wasTab) {
+      for ( i = 0; i < t-> count; i++) {
+         int tabs = 0, len = 0;
+         char *substr = ret[ i], *n;
+         while (*substr) { 
+            if ( *substr == '\t') tabs++; 
+            substr++; 
+            len++; 
+         }
+         if ( tabs == 0) continue;
+         if ( !( n = allocs( len + tabs * t-> tabIndent + 1)))
+            return ret;
+         len = 0;
+         substr = ret[ i];
+         while ( *substr) {
+            if ( *substr == '\t') {
+               int j = t-> tabIndent;
+               while ( j--) n[ len++] = ' ';
+            } else
+               n[ len++] = *substr;
+            substr++;
+         }
+         free( ret[ i]);
+         n[ len] = 0;
+         ret[ i] = n;
+      }
+   }
+
+   return ret;
 }
 
 SV*
-Drawable_text_wrap( Handle self, char * text, int width, int options, int tabIndent, int textLen)
+Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabIndent, int textLen)
 {
-   gpARGS;
    TextWrapRec t;
    Bool retChunks;
    char** c;
    int i;
    AV * av;
-   PFontABC abc = nil;
+   STRLEN tlen;
 
-   t. text = text;
-   t. textLen = textLen;
-   t. width = width;
-   t. tabIndent = tabIndent;
-   t. options = options;
-   retChunks = t. options & twReturnChunks;
-
-   av = newAV();
-   if ( t. tabIndent < 0) t. tabIndent = 0;
-   if ( t. textLen   < 0) t. textLen   = strlen( t. text);
-   if ( t. width     < 0) t. width = 0;
-
-   if ( my-> get_font_abc == Drawable_get_font_abc) {
-      gpENTER;
-      abc = apc_gp_get_font_abc( self, 0, 255);
-      gpLEAVE;
+   t. text      = SvPV( text, tlen);
+   t. utf8_text = SvUTF8( text);
+   if ( t. utf8_text) {
+      i = prima_utf8_length( t. text);
+      if ( textLen < 0 || textLen > i ) textLen = i;
+      t. utf8_textLen = textLen;
+      t. textLen = utf8_hop( t. text, textLen) - (U8*) t. text; 
    } else {
-      SV * sv = my-> get_font_abc( self, 0, 255);
-      if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
-         AV * av = ( AV*) SvRV( sv);
-         int n   = av_len( av) + 1;
-         if ( n > 256 * 3) n = 256 * 3;
-         n = ( n / 3) * 3;
-         if (( abc = ( PFontABC) malloc( 256 * sizeof( FontABC)))) {
-            int i, j = 0;
-            if ( n < 256) memset( abc, 0, 256 * sizeof( FontABC));
-            for ( i = 0; i < n; i += 3) {
-               SV ** holder = av_fetch( av, i, 0);
-               if ( holder) abc[j]. a = ( float) SvNV( *holder);
-               holder = av_fetch( av, i + 1, 0);
-               if ( holder) abc[j]. b = ( float) SvNV( *holder);
-               holder = av_fetch( av, i + 2, 0);
-               if ( holder) abc[j]. c = ( float) SvNV( *holder);
-               j++;
-            }   
-         } 
-      } 
-      sv_free( sv);
+      if ( textLen < 0 || textLen > tlen) textLen = tlen;
+      t. utf8_textLen = t. textLen = textLen;
    }
-   if ( abc == nil) return nilSV;
-   
-   c = Drawable_do_text_wrap( self, &t, abc);
-   free( abc);
+   t. width     = ( width < 0) ? 0 : width;
+   t. tabIndent = ( tabIndent < 0) ? 0 : t. tabIndent;
+   t. options   = options;
+   retChunks    = t. options & twReturnChunks;
+   t. ascii     = &var-> font_abc_ascii;
+   t. unicode   = &var-> font_abc_unicode;
+
+   c = Drawable_do_text_wrap( self, &t);
 
    if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) {
       int rlen = 0;
@@ -803,16 +907,23 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
 
    if ( !c) return nilSV;
 
+   av = newAV();
    for ( i = 0; i < t. count; i++) {
-      av_push( av, retChunks ? ( newSViv(( IV) c[ i])) : ( newSVpv( c[ i], 0)));
-      if ( !retChunks) free( c[i]);
+      SV * sv = retChunks ? newSViv(( IV) c[ i]) : newSVpv( c[ i], 0);
+      if ( !retChunks) { 
+          if ( t. utf8_text) SvUTF8_on( sv);
+          free( c[i]);
+      }
+      av_push( av, sv);
    }
+
    free( c);
-   if  ( t. options & ( twCalcMnemonic | twCollapseTilde))
-   {
+
+   if  ( t. options & ( twCalcMnemonic | twCollapseTilde)) {
       HV * profile = newHV();
-      char b[2] = { 0, 0};
-      b[ 0] = t. t_char;
+      STRLEN len = t. utf8_text ? utf8_hop( t. t_char, 1) - ( U8*) t. t_char : 1;
+      SV * sv_char = newSVpv( t. t_char, len);
+      if ( t. utf8_text) SvUTF8_on( sv_char);
       if ( t. t_start != C_NUMERIC_UNDEF) {
          pset_i( tildeStart, t. t_start);
       } else {
@@ -820,11 +931,13 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
       }
       pset_i( tildeEnd,   t. t_end);
       pset_i( tildeLine,  t. t_line);
-      pset_c( tildeChar,  b);
+      pset_sv_noinc( tildeChar, sv_char);
       av_push( av, newRV_noinc(( SV *) profile));
    }
+
    return newRV_noinc(( SV *) av);
 }
+
 
 PRGBColor
 read_palette( int * palSize, SV * palette)
@@ -1051,6 +1164,7 @@ Drawable_get_font( Handle self)
 void
 Drawable_set_font( Handle self, Font font)
 {
+   clear_font_abc_caches( self);
    apc_font_pick( self, &font, &var-> font);
    apc_gp_set_font( self, &var-> font);
 }

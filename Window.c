@@ -743,12 +743,12 @@ Window_taskListed( Handle self, Bool set, Bool taskListed)
 }
 
 
-char *
-Window_text( Handle self, Bool set, char * text)
+SV *
+Window_text( Handle self, Bool set, SV * text)
 {
-   char *ret = inherited text( self, set, text);
+   SV *ret = inherited text( self, set, text);
    if (set)
-      apc_window_set_caption( self, var-> text);
+      apc_window_set_caption( self, var-> text, is_opt( optUTF8_text));
    return ret;
 }
 

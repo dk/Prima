@@ -1365,38 +1365,30 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 }
 
 static Point
-gp_get_text_overhangs( Handle self, const char *text, int len)
+gp_get_text_overhangs( Handle self, const char *text, int len, Bool wide)
 {
    DEFXX;
    Point ret;
    if ( len > 0) {
       XCharStruct * cs;
-      int index = text[0];
-      int default_char = XX-> font-> fs-> default_char;
-      if ( default_char < XX-> font-> fs-> min_char_or_byte2 ||
-           default_char > XX-> font-> fs-> max_char_or_byte2)
-         default_char = XX-> font-> fs-> min_char_or_byte2;
-      if ( index < XX-> font-> fs-> min_char_or_byte2 || 
-           index > XX-> font-> fs-> max_char_or_byte2) 
-         index = default_char;
-      cs = XX-> font-> fs-> per_char ? XX-> font-> fs-> per_char + index 
-       - XX-> font-> fs-> min_char_or_byte2 : &(XX-> font-> fs-> min_bounds);
+      cs = prima_char_struct( XX-> font-> fs, (void*) text, wide);  
       ret. x = ( cs-> lbearing < 0) ? - cs-> lbearing : 0;
-
-      index = text[len-1];
-      if ( index < XX-> font-> fs-> min_char_or_byte2 || 
-           index > XX-> font-> fs-> max_char_or_byte2) 
-         index = default_char;
-      cs = XX-> font-> fs-> per_char ? XX-> font-> fs-> per_char + index 
-       - XX-> font-> fs-> min_char_or_byte2 : &(XX-> font-> fs-> min_bounds);
+      text += (len - 1) * wide ? 2 : 1;
+      cs = prima_char_struct( XX-> font-> fs, (void*) text, wide);  
       ret. y = (( cs-> width - cs-> rbearing) < 0) ? cs-> rbearing - cs-> width : 0;
    } else
       ret. x = ret. y = 0;
    return ret;
 }   
 
+static int
+gp_get_text_width( Handle self, const char *text, int len, Bool addOverhang, Bool wide);
+
+static Point *
+gp_get_text_box( Handle self, const char * text, int len, Bool wide);
+
 static Bool
-gp_text_out_rotated( Handle self, const char* text, int x, int y, int len) 
+gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool wide) 
 {
    DEFXX;
    int i;
@@ -1407,19 +1399,30 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
    int psx, psy, dsx, dsy;
    Fixed rx, ry;
 
-   if ( !prima_update_rotated_fonts( XX-> font, ( char*) text, len, PDrawable( self)-> font. direction, &r)) 
+   if ( !prima_update_rotated_fonts( XX-> font, text, len, wide, PDrawable( self)-> font. direction, &r)) 
       return false;
 
    for ( i = 0; i < len; i++) {
-      unsigned char index = ( unsigned char) text[i];
+      XChar2b index;
+
       /* acquire actual character index */
-      if ( index < r-> first || index >= r-> first + r-> length) {
-         if ( r-> defaultChar < 0) continue;
-         index = ( unsigned char) r-> defaultChar;
-      }
-      if ( r-> map[index] == nil) continue;
-      cs = XX-> font-> fs-> per_char ? XX-> font-> fs-> per_char + index 
-         - XX-> font-> fs-> min_char_or_byte2 : &(XX-> font-> fs-> min_bounds);
+      index. byte1 = wide ? (( XChar2b*) text+i)-> byte1 : 0;
+      index. byte2 = wide ? (( XChar2b*) text+i)-> byte2 : *((unsigned char*)text+i);
+      
+      if ( index. byte1 < r-> first1 || index. byte1 >= r-> first1 + r-> height ||
+           index. byte2 < r-> first2 || index. byte2 >= r-> first2 + r-> width) {
+         if ( r-> defaultChar1 < 0 || r-> defaultChar2 < 0) continue;
+         index. byte1 = ( unsigned char) r-> defaultChar1;
+         index. byte2 = ( unsigned char) r-> defaultChar2;
+      }   
+
+      /* querying character */
+      if ( r-> map[index. byte1 * r-> width + index. byte2] == nil) continue;
+      cs = XX-> font-> fs-> per_char ? 
+         XX-> font-> fs-> per_char + 
+            ( index. byte1 - XX-> font-> fs-> min_byte1) * r-> width + 
+              index. byte2 - XX-> font-> fs-> min_char_or_byte2 :
+         &(XX-> font-> fs-> min_bounds);
   
       /* find reference point in pixmap */
       px = ( cs-> lbearing < 0) ? -cs-> lbearing : 0;
@@ -1480,7 +1483,9 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
          XSetBackground( DISP, XX-> gc, 0xffffffff);
          XSetFunction( DISP, XX-> gc, GXand);
       }
-      XPutImage( DISP, XX-> gdrawable, XX-> gc, r-> map[index]-> image, 0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
+      XPutImage( DISP, XX-> gdrawable, XX-> gc, 
+          r-> map[index. byte1 * r-> width + index. byte2]-> image, 
+          0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
       XCHECKPOINT; 
       switch ( XX-> paint_rop) {
       case ropAndPut:   
@@ -1498,8 +1503,10 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
           XSetForeground( DISP, XX-> gc, XX-> fore. primary);
           XSetBackground( DISP, XX-> gc, 0);
           XSetFunction( DISP, XX-> gc, GXor);
-      DISPLAY:          
-          XPutImage( DISP, XX-> gdrawable, XX-> gc, r-> map[index]-> image, 0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
+      DISPLAY:         
+          XPutImage( DISP, XX-> gdrawable, XX-> gc, 
+              r-> map[index. byte1 * r-> width + index. byte2]-> image, 
+              0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
           XCHECKPOINT;
       }
       ax += cs-> width;
@@ -1513,9 +1520,9 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
 
    if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {      
       int lw = apc_gp_get_line_width( self);
-      int tw = apc_gp_get_text_width( self, text, len, true) - 1;
+      int tw = gp_get_text_width( self, text, len, true, wide) - 1;
       int d  = XX-> font-> underlinePos;
-      Point ovx = gp_get_text_overhangs( self, text, len);
+      Point ovx = gp_get_text_overhangs( self, text, len, wide);
       int x1, y1, x2, y2;
       if ( lw != XX-> font-> underlineThickness)
          apc_gp_set_line_width( self, XX-> font-> underlineThickness);
@@ -1555,7 +1562,7 @@ gp_text_out_rotated( Handle self, const char* text, int x, int y, int len)
 }   
 
 Bool
-apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
+apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8)
 {
    DEFXX;
    SHIFT( x, y);
@@ -1565,10 +1572,13 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
 
    if ( len == 0) return true;
 
+   if ( utf8)  
+      if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return false;
+   
    /* paint background if opaque */
    if ( XX-> flags. paint_opaque) {
       int i;
-      Point * p = apc_gp_get_text_box( self, text, len);
+      Point * p = gp_get_text_box( self, text, len, utf8);
       FillPattern fp;
       memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
       XSetForeground( DISP, XX-> gc, XX-> back. primary);
@@ -1591,8 +1601,11 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
       free( p); 
    }  
 
-   if ( PDrawable( self)-> font. direction != 0) 
-      return gp_text_out_rotated( self, text, x, y, len);
+   if ( PDrawable( self)-> font. direction != 0) {
+      Bool ret = gp_text_out_rotated( self, text, x, y, len, utf8);
+      if ( utf8) free(( char *) text);
+      return ret;
+   }
 
    if ( !XX-> flags. paint_base_line)
       y += XX-> font-> font. descent;
@@ -1602,14 +1615,18 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
       XSetForeground( DISP, XX-> gc, XX-> fore. primary);
       XX-> flags. brush_fore = 1;
    }
-   XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), text, len);
+
+   if ( utf8)
+      XDrawString16( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), (XChar2b*) text, len);
+   else
+      XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y), ( char*) text, len);
    XCHECKPOINT;
    
    if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
       int lw = apc_gp_get_line_width( self);
-      int tw = apc_gp_get_text_width( self, text, len, true);
+      int tw = gp_get_text_width( self, text, len, true, utf8);
       int d  = XX-> font-> underlinePos;
-      Point ovx = gp_get_text_overhangs( self, text, len);
+      Point ovx = gp_get_text_overhangs( self, text, len, utf8);
       if ( lw != XX-> font-> underlineThickness)
          apc_gp_set_line_width( self, XX-> font-> underlineThickness);
       if ( PDrawable( self)-> font. style & fsUnderlined)
@@ -1622,6 +1639,8 @@ apc_gp_text_out( Handle self, const char* text, int x, int y, int len)
       if ( lw != XX-> font-> underlineThickness) 
          apc_gp_set_line_width( self, lw);
    }   
+
+   if ( utf8) free(( char *) text);
    
    return true;
 }
@@ -1692,19 +1711,30 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 {
    PFontABC abc = malloc( sizeof( FontABC) * (lastChar - firstChar + 1));
    XCharStruct *cs;
-   int k, l;
-   int default_char = fs-> default_char;
+   int k, l, d = fs-> max_char_or_byte2 - fs-> min_char_or_byte2 + 1;
+   int default_char1 = fs-> default_char >> 8;
+   int default_char2 = fs-> default_char & 0xff;
    if ( !abc) return nil;
    
-   if ( default_char < fs-> min_char_or_byte2 || default_char > fs-> max_char_or_byte2)
-        default_char = fs-> min_char_or_byte2;
+   if ( default_char2 < fs-> min_char_or_byte2 || default_char2 > fs-> max_char_or_byte2 ||
+        default_char1 < fs-> min_byte1 || default_char1 > fs-> max_byte1) {
+        default_char1 = fs-> min_byte1;
+        default_char2 = fs-> min_char_or_byte2;
+   }
    for ( k = firstChar, l = 0; k <= lastChar; k++, l++) {
+      int i1 = k >> 8;
+      int i2 = k & 0xff;
       if ( !fs-> per_char)
 	 cs = &fs-> min_bounds;
-      else if ( k < fs-> min_char_or_byte2 || k > fs-> max_char_or_byte2)
-	 cs = fs-> per_char + default_char - fs-> min_char_or_byte2;
+      else if ( i2 < fs-> min_char_or_byte2 || i2 > fs-> max_char_or_byte2 ||
+                i1 < fs-> min_byte1 || i1 > fs-> max_byte1)
+	 cs = fs-> per_char + 
+              (default_char1 - fs-> min_byte1) * d +
+               default_char2 - fs-> min_char_or_byte2;
       else
-	 cs = fs-> per_char + k - fs-> min_char_or_byte2;
+	 cs = fs-> per_char + 
+              (i1 - fs-> min_byte1) * d +
+               i2 - fs-> min_char_or_byte2;
       abc[l]. a = cs-> lbearing;
       abc[l]. b = cs-> rbearing - cs-> lbearing;
       abc[l]. c = cs-> width - cs-> rbearing;
@@ -1713,17 +1743,19 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 }   
 
 PFontABC
-apc_gp_get_font_abc( Handle self, int firstChar, int lastChar)
+apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
 {
-   DEFXX;
    PFontABC abc;
-   XFontStruct *fs;
-
-   if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
-   fs = XQueryFont( DISP, XX-> font-> id);
-   if (!fs) return nil;
-   abc = prima_xfont2abc( fs, firstChar, lastChar);
-   XFreeFontInfo( nil, fs, 1);
+   if ( self) {
+      DEFXX;
+      XFontStruct *fs;
+      if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
+      fs = XQueryFont( DISP, XX-> font-> id);
+      if (!fs) return nil;
+      abc = prima_xfont2abc( fs, firstChar, lastChar);
+      XFreeFontInfo( nil, fs, 1);
+   } else
+      abc = prima_xfont2abc( guts. font_abc_nil_hack, firstChar, lastChar);
    return abc;
 }
 
@@ -1825,37 +1857,52 @@ apc_gp_get_rop2( Handle self)
       return XX-> rop2;
 }
 
-int
-apc_gp_get_text_width( Handle self, const char *text, int len, Bool addOverhang)
+static int
+gp_get_text_width( Handle self, const char *text, int len, Bool addOverhang, Bool wide)
 {
    DEFXX;
-
-   if ( !XX-> font) {
-      apc_gp_set_font( self, &PDrawable( self)-> font);
-   }
+   int ret;
    
+   if ( !XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
+   ret = wide ? 
+      XTextWidth16( XX-> font-> fs, ( XChar2b *) text, len) :
+      XTextWidth  ( XX-> font-> fs, (char*) text, len);
    if ( addOverhang) {
-      Point ovx = gp_get_text_overhangs( self, text, len);
-      return ovx. x + ovx. y + XTextWidth( XX-> font-> fs, text, len);
-   } else
-      return XTextWidth( XX-> font-> fs, text, len);
+      Point ovx = gp_get_text_overhangs( self, text, len, wide);
+      ret += ovx. x + ovx. y;
+   }
+   return ret;
 }
 
-Point *
-apc_gp_get_text_box( Handle self, const char* text, int len)
+int
+apc_gp_get_text_width( Handle self, const char * text, int len, Bool addOverhang, Bool utf8)
+{
+   int ret;
+   if ( utf8)  
+      if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return 0;
+   ret = gp_get_text_width( self, text, len, addOverhang, utf8);
+   if ( utf8)
+      free(( char*) text);
+   return ret;
+}
+
+static Point *
+gp_get_text_box( Handle self, const char * text, int len, Bool wide)
 {
    DEFXX;
    Point * pt = ( Point *) malloc( sizeof( Point) * 5);
    int x;
    Point ovx;
-
+   
    if ( !pt) return nil;
 
    if ( !XX-> font) 
       apc_gp_set_font( self, &PDrawable( self)-> font);
    
-   x = XTextWidth( XX-> font-> fs, text, len);
-   ovx = gp_get_text_overhangs( self, text, len);
+   x = wide ? 
+      XTextWidth16( XX-> font-> fs, ( XChar2b*) text, len) :
+      XTextWidth( XX-> font-> fs, (char*)text, len);
+   ovx = gp_get_text_overhangs( self, text, len, wide);
 
    pt[0].y = pt[2]. y = XX-> font-> font. ascent;
    pt[1].y = pt[3]. y = - XX-> font-> font. descent;
@@ -1883,6 +1930,18 @@ apc_gp_get_text_box( Handle self, const char* text, int len)
  
    return pt;
 }
+
+Point *
+apc_gp_get_text_box( Handle self, const char * text, int len, Bool utf8)
+{
+   Point * ret;
+   if ( utf8)  
+      if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return 0;
+   ret = gp_get_text_box( self, text, len, utf8);
+   if ( utf8)
+      free(( char*) text);
+   return ret;
+}   
 
 Point
 apc_gp_get_transform( Handle self)

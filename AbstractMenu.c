@@ -192,7 +192,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
       /* log_write("%sNo: %d, count: %d", buf, i, count); */
 
       if ( count < 2) {          /* empty of 1 means line divisor, no matter of text */
-         r-> divider = true;
+         r-> flags. divider = true;
          rightAdjust = (( level == 0) && ( var-> anchored));
          addToSubs = false;
       } else if ( count == 2) {
@@ -224,21 +224,22 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
 
       if ( m) curr = curr-> next = r; else curr = m = r; /* adding to list */
 
-      r-> rightAdjust = rightAdjust;
+      r-> flags. rightAdjust = rightAdjust ? 1 : 0;
       r-> id = -1;
 
-#define a_get( l_, num) if ( num >= 0 ) {                                    \
+#define a_get( l_, fl_, num) if ( num >= 0 ) {                                \
                            holder = av_fetch( item, num, 0);                 \
                            if ( holder) {                                    \
                               l_ = duplicate_string( SvPV( *holder, na));    \
+                              fl_ = SvUTF8(*holder) ? 1 : 0;                 \
                            } else {                                          \
                               warn("RTC003A: menu build error: array panic");\
                               my-> dispose_menu( self, m);                     \
                               return nil;                                    \
                            }                                                 \
                         }
-      a_get( r-> accel   , l_accel);
-      a_get( r-> variable, l_var);
+      a_get( r-> accel   , r-> flags. utf8_accel,    l_accel);
+      a_get( r-> variable, r-> flags. utf8_variable, l_var);
       if ( l_key >= 0) {
          holder = av_fetch( item, l_key, 0);
          if ( !holder) {
@@ -255,8 +256,8 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
          int i, decr = 0;
          for ( i = 0; i < 2; i++)
          {
-           if ( s[i] == '-') r-> disabled = ( ++decr > 0); else
-           if ( s[i] == '*') r-> checked  = ( ++decr > 0); /* e.g. true */
+           if ( s[i] == '-') r-> flags. disabled = ( ++decr > 0) ? 1 : 0; else
+           if ( s[i] == '*') r-> flags. checked  = ( ++decr > 0) ? 1 : 0; /* e.g. true */
          }
          if ( decr) memmove( s, s + decr, strlen( s) + 1 - decr);
          if ( strlen( s) == 0) {
@@ -304,6 +305,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
          } else {
          TEXT:
             r-> text = duplicate_string( SvPV( subItem, na));
+            r-> flags. utf8_text = SvUTF8( subItem) ? 1 : 0;
          }
       }
 
@@ -334,9 +336,10 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
                }
             }
          } else {
-            if ( SvPOK( subItem))
+            if ( SvPOK( subItem)) {
                r-> perlSub = duplicate_string( SvPV( subItem, na));
-            else {
+               r-> flags. utf8_perlSub = SvUTF8( subItem) ? 1 : 0;
+            } else {
                warn("RTC0038: menu build error: invalid sub name passed");
                addToSubs = false;
             }
@@ -435,17 +438,20 @@ new_av(  PMenuItemReg m, int level)
    while ( m)
    {
       AV * loc = newAV();
-      if ( !m-> divider)
+      if ( !m-> flags. divider)
       {
          if ( m-> variable)
          {
-            int shift = ( m-> checked ? 1 : 0) + ( m-> disabled ? 1 : 0);
+            int shift = ( m-> flags. checked ? 1 : 0) + ( m-> flags. disabled ? 1 : 0);
             char * varName = allocs( strlen( m-> variable) + 1 + shift);
             if ( varName) {
+               SV * sv;
                strcpy( &varName[ shift], m-> variable);
-               if ( m-> checked)  varName[ --shift] = '*';
-               if ( m-> disabled) varName[ --shift] = '-';
-               av_push( loc, newSVpv( varName, 0));
+               if ( m-> flags. checked)  varName[ --shift] = '*';
+               if ( m-> flags. disabled) varName[ --shift] = '-';
+               sv = newSVpv( varName, 0);
+               if ( m-> flags. utf8_variable) SvUTF8_on( sv);
+               av_push( loc, sv);
                free( varName);
             } else
                av_push( loc, newSVpv( "", 0));
@@ -456,18 +462,28 @@ new_av(  PMenuItemReg m, int level)
                av_push( loc, newRV( SvRV((( PObject)( m-> bitmap))-> mate)));
             else
                av_push( loc, newSVpv( "", 0));
-         } else av_push( loc, newSVpv( m-> text, 0));
+         } else {
+            SV * sv = newSVpv( m-> text, 0);
+            if ( m-> flags. utf8_text) SvUTF8_on( sv);
+            av_push( loc, sv);
+         }
 
          if ( m-> accel)
          {
-            av_push( loc, newSVpv( m-> accel, 0));
+            SV * sv = newSVpv( m-> accel, 0);
+            av_push( loc, sv);
+            if ( m-> flags. utf8_accel) SvUTF8_on( sv);
             av_push( loc, newSViv( m-> key));
          }
 
          if ( m-> down) av_push( loc, new_av( m-> down, level + 1));
          else {
             if ( m-> code) av_push( loc, newSVsv( m-> code)); else
-            if ( m-> perlSub) av_push( loc, newSVpv( m-> perlSub, 0));
+            if ( m-> perlSub) {
+               SV * sv = newSVpv( m-> perlSub, 0);
+               if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
+               av_push( loc, sv);
+            }
          }
 
          if ( m-> data) av_push( loc, newSVsv( m-> data));
@@ -493,7 +509,7 @@ id_match ( Handle self, PMenuItemReg m, void * params)
 static Bool
 key_match ( Handle self, PMenuItemReg m, void * params)
 {
-   return (( m-> key == *(( int*) params)) && ( m-> key != kbNoKey) && !( m->disabled));
+   return (( m-> key == *(( int*) params)) && ( m-> key != kbNoKey) && !( m-> flags. disabled));
 }
 
 SV *
@@ -525,7 +541,7 @@ do_link( Handle self, PMenuItemReg m, PMenuProc p, void * params, Bool useDisabl
 {
    while( m)
    {
-      if ( !m-> disabled || useDisabled)
+      if ( !m->  flags. disabled || useDisabled)
       {
          if ( m-> down)
          {
@@ -553,22 +569,27 @@ AbstractMenu_has_item( Handle self, char * varName)
 }
 
 
-char *
-AbstractMenu_accel( Handle self, Bool set, char * varName, char * accel)
+SV *
+AbstractMenu_accel( Handle self, Bool set, char * varName, SV * accel)
 {
    PMenuItemReg m;
-   if ( var-> stage > csFrozen) return "";
+   if ( var-> stage > csFrozen) return nilSV;
    m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
-   if ( !m) return "";
-   if ( !set)
-      return m-> accel ? m-> accel : "";
-   if ( m-> text == nil) return "";
+   if ( !m) return nilSV;
+   if ( !set) { 
+      SV * sv = newSVpv( m-> accel ? m-> accel : "", 0);
+      if ( m-> flags. utf8_accel) SvUTF8_on( sv);
+      return sv;
+   }
+   if ( m-> text == nil) return nilSV;
    free( m-> accel);
-   m-> accel = duplicate_string( accel);
+   m-> accel = duplicate_string( SvPV( accel, na));
+   m-> flags. utf8_accel = SvUTF8( accel) ? 1 : 0;
+
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
-          apc_menu_item_set_accel( self, m, accel);
-   return accel;
+         apc_menu_item_set_accel( self, m);
+   return nilSV;
 }
 
 
@@ -581,11 +602,15 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
    if ( !m) return nilSV;
    if ( !set) {
       if ( m-> code)    return newSVsv( m-> code);
-      if ( m-> perlSub) return newSVpv( m-> perlSub, 0);
+      if ( m-> perlSub) {
+         SV * sv = newSVpv( m-> perlSub, 0);
+         if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
+         return sv;
+      }
       return nilSV;
    }
 
-   if ( m-> divider || m-> down) return nilSV;
+   if ( m-> flags. divider || m-> down) return nilSV;
    if ( SvROK( action))
    {
       if ( m-> code) sv_free( m-> code);
@@ -596,12 +621,14 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
          free( m-> perlSub);
          m-> perlSub = nil;
       }
+      m-> flags. utf8_perlSub = 0;
    } else {
       char * line = ( char *) SvPV( action, na);
       free( m-> perlSub);
       if ( m-> code) sv_free( m-> code);
       m-> code = nil;
       m-> perlSub = duplicate_string( line);
+      m-> flags. utf8_perlSub = SvUTF8( action) ? 1 : 0;
    }
    return nilSV;
 }
@@ -614,12 +641,12 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
    m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return false;
    if ( !set)
-      return m ? m-> checked : false;
-   if ( m-> divider || m-> down) return false;
-   m-> checked = checked;
+      return m ? m-> flags. checked : false;
+   if ( m-> flags. divider || m-> down) return false;
+   m-> flags. checked = checked ? 1 : 0;
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
-         apc_menu_item_set_check( self, m, checked);
+         apc_menu_item_set_check( self, m);
    return checked;
 }
 
@@ -645,12 +672,12 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
    m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return false;
    if ( !set)
-      return m ? !m-> disabled : false;
-   if (m-> divider) return false;
-   m-> disabled = !enabled;
+      return m ? !m->  flags. disabled : false;
+   if (m-> flags. divider) return false;
+   m->  flags. disabled = ( enabled ? 0 : 1 ) ;
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
-         apc_menu_item_set_enabled( self, m, enabled);
+         apc_menu_item_set_enabled( self, m);
    return enabled;
 }
 
@@ -687,28 +714,31 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
    m-> bitmap = image;
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
-         apc_menu_item_set_image( self, m, image);
+         apc_menu_item_set_image( self, m);
    return nilHandle;
 }
 
-char *
-AbstractMenu_text ( Handle self, Bool set, char * varName, char * text)
+SV *
+AbstractMenu_text ( Handle self, Bool set, char * varName, SV * text)
 {
    PMenuItemReg m;
-   if ( var-> stage > csFrozen) return "";
+   if ( var-> stage > csFrozen) return nilSV;
    m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
-   if ( m == nil) return "";
-   if ( m-> text == nil) return "";
-   if ( !set)
-      return m-> text;
+   if ( m == nil) return nilSV;
+   if ( m-> text == nil) return nilSV;
+   if ( !set) {
+      SV * sv = newSVpv( m-> text ? m-> text : "", 0);
+      if ( m-> flags. utf8_text) SvUTF8_on( sv);
+      return sv;
+   }
    free( m-> text);
-   m-> text = duplicate_string( text);
+   m-> text = duplicate_string( SvPV( text, na));
+   m-> flags. utf8_accel = SvUTF8( text) ? 1 : 0;
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
-         apc_menu_item_set_text( self, m, text);
-   return text;
+         apc_menu_item_set_text( self, m);
+   return nilSV;
 }
-
 
 SV *
 AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
@@ -717,34 +747,50 @@ AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
    if ( var-> stage > csFrozen) return nilSV;
    m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return nilSV;
-   if ( m-> divider || m-> down) return nilSV;
+   if ( m-> flags. divider || m-> down) return nilSV;
    if ( !set)
       return newSViv( m-> key);
 
    m-> key = key_normalize( SvPV( key, na));
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
-         apc_menu_item_set_key( self, m, m-> key);
+         apc_menu_item_set_key( self, m);
    return nilSV;
 }
 
 void
-AbstractMenu_set_variable( Handle self, char * varName, char * newName)
+AbstractMenu_set_variable( Handle self, char * varName, SV * newName)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return;
    m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
    if ( m == nil) return;
    free( m-> variable);
-   m-> variable = duplicate_string( newName);
+   m-> variable = duplicate_string( SvPV( newName, na));
+   m-> flags. utf8_variable = SvUTF8( newName) ? 1 : 0;
 }
 
 Bool
 AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 {
    if ( m == nil) return false;
-   if ( m-> code) cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "s", m-> variable);
-   else if ( m-> perlSub) call_perl( var-> owner, m-> perlSub, "s", m-> variable);
+   if ( m-> code) {
+      if ( m-> flags. utf8_variable) {
+         SV * sv = newSVpv( m-> variable, 0);
+         SvUTF8_on( sv);
+         cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "S", sv);
+         sv_free( sv);
+      } else
+         cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "s", m-> variable);
+   } else if ( m-> perlSub) {
+      if ( m-> flags. utf8_variable) {
+         SV * sv = newSVpv( m-> variable, 0);
+         SvUTF8_on( sv);
+         call_perl( var-> owner, m-> perlSub, "S", sv);
+         sv_free( sv);
+      } else
+         call_perl( var-> owner, m-> perlSub, "s", m-> variable);
+   }
    return true;
 }
 
@@ -778,10 +824,10 @@ kmcc ( Handle self, PMenuItemReg m, void * params)
 {
    if ((( PKmcc) params)-> key == m-> key)
    {
-      m-> disabled = !(( PKmcc) params)-> enabled;
+      m-> flags. disabled = ((( PKmcc) params)-> enabled ? 0 : 1);
       if ( m-> id > 0)
          if ( var-> stage <= csNormal && var-> system)
-            apc_menu_item_set_enabled( self, m, !m-> disabled);
+            apc_menu_item_set_enabled( self, m);
    }
    return false;
 }
@@ -939,9 +985,9 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       m-> next = addFirst;
    }
 
-   if ( m-> rightAdjust) while ( addFirst != addLast-> next)
+   if ( m-> flags. rightAdjust) while ( addFirst != addLast-> next)
    {
-      addFirst-> rightAdjust = true;
+      addFirst-> flags. rightAdjust = true;
       addFirst = addFirst-> next;
    }
 

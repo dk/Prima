@@ -29,14 +29,14 @@ object Prima::AbstractMenu ( Prima::Component)
 {
    PMenuItemReg  tree;
    property Bool   selected;
-   property char * accel  ( char * varName);
+   property SV   * accel  ( char * varName);
    property SV   * action ( char * varName);
    property Bool   checked( char * varName);
    property SV   * data   ( char * varName);
    property Bool   enabled( char * varName);
    property Handle image  ( char * varName);
    property SV   * key    ( char * varName);
-   property char * text   ( char * varName);
+   property SV   * text   ( char * varName);
 
    method void   cleanup();
    method void   done();
@@ -51,7 +51,7 @@ object Prima::AbstractMenu ( Prima::Component)
    method void   set( HV * profile);
    method void   set_command( char * key, Bool enabled);
    method void   set_items( SV * menuItems);
-   method void   set_variable ( char * varName, char * newName);
+   method void   set_variable ( char * varName, SV * newName);
    static int    translate_accel( Handle self, char * accel);
    static int    translate_key( Handle self, int code, int key, int mod);
    static int    translate_shortcut( Handle self, char * key);

@@ -55,7 +55,7 @@ Component_init( Handle self, HV * profile)
       croak( "Illegal object reference passed to Component.init");
    inherited init( self, profile);
    var-> owner = owner;
-   my-> set_name( self, pget_c( name));
+   my-> set_name( self, pget_sv( name));
    my-> set_delegations( self, pget_sv( delegations));
    var-> evQueue = plist_create( 8, 8);
    apc_component_create( self);
@@ -224,17 +224,21 @@ Component_detach( Handle self, Handle object, Bool kill)
    }
 }
 
-char *
-Component_name( Handle self, Bool set, char * name)
+SV *
+Component_name( Handle self, Bool set, SV * name)
 {
    if ( set) {
       free( var-> name);
-      var-> name = duplicate_string( name);
+      var-> name = duplicate_string( SvPV( name, na));
+      opt_assign( optUTF8_name, SvUTF8(name));
       if ( var-> stage >= csNormal)
          apc_component_fullname_changed_notify( self);
-   } else
-      return var-> name ? var-> name : "";
-   return "";
+   } else {
+      name = newSVpv( var-> name ? var-> name : "", 0);
+      if ( is_opt( optUTF8_name)) SvUTF8_on( name);
+      return name;
+   }
+   return nilSV;
 }
 
 Handle

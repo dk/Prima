@@ -290,18 +290,21 @@ $w-> insert( Button =>
            $p-> font-> direction(0);
 
            my $m = $p-> get_font;
+           my $xtext = ( $m-> {firstChar} < 128) ? "ÁMg" : 
+                       join('', map { chr($_+$m-> {firstChar})} 51,52,0x430,0x431,0x440);
            my $s = $size[1] - $m->{height} - $m->{externalLeading} - 20;
-           my $w = $p-> get_text_width("ÁMg") + 66;
+           my $w = $p-> get_text_width($xtext) + 66;
            $p-> textOutBaseline(1);
-           $p-> text_out("ÁMg", 20, $s);
+           $p-> text_out($xtext, 20, $s);
 
            my $cachedFacename = $p-> font-> name;
            my $hsf = $p-> font-> height / 6;
            $hsf = 10 if $hsf < 10;
            $p-> font-> set(
-              height => $hsf,
-              style  => fs::Italic,
-              name   => '',
+              height   => $hsf,
+              style    => fs::Italic,
+              name     => '',
+              encoding => '',
            );
 
            $p-> line( 2, $s, $w, $s);
@@ -460,8 +463,10 @@ $w-> insert( Widget =>
       $_[1]-> color( $back);
       $_[1]-> bar( 0, 0, $x, $y);
       $_[1]-> color( $fore);
-      my $probe = "AaBbCcZz";
-      $probe = $_[1]-> font-> size.".".$_[1]-> font-> name;
+      my $m = $_[1]-> get_font;
+      my $probe = $_[1]-> font-> size.".".$_[1]-> font-> name;
+      $probe = join('', map { chr($_+$m-> {firstChar})} 51,52,0x430,0x431,0x440) 
+        if $m-> {firstChar} > 127;
       my @box = @{$_[1]-> get_text_box( $probe)};
       pop @box;
       pop @box;

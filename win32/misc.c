@@ -258,9 +258,15 @@ apc_getdir( const char *dirname)
 }
 
 Bool
-apc_show_message( const char * message)
+apc_show_message( const char * message, Bool utf8)
 {
-   return MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
+   Bool ret;
+   if ( utf8 && (message = ( char*)alloc_utf8_to_wchar( message, -1))) {
+      ret = MessageBoxW( NULL, ( WCHAR*) message, ( WCHAR*)"P\0r\0i\0m\0a\0", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
+      free(( void*) message); 
+   } else
+      ret = MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
+   return ret;
 }
 
 Bool
@@ -352,6 +358,8 @@ apc_sys_get_value( int sysValue)
    case svYbsDialog       : return GetSystemMetrics( SM_CYDLGFRAME);
    case svShapeExtension  : return 1;
    case svColorPointer    : return guts. displayBMInfo. bmiHeader. biBitCount > 4;
+   case svCanUTF8_Input   : return 1;
+   case svCanUTF8_Output  : return 1;
    default:
       apcErr( errInvParams);
    }
@@ -555,6 +563,52 @@ apc_dl_export(char *path)
 {
    return LoadLibrary( path) != NULL;
 }   
+
+void
+utf8_to_wchar( const char * utf8, WCHAR * u16, int length)
+{
+   STRLEN charlen;
+   while ( length--) {
+      register UV u = ( utf8_to_uvchr(( U8*) utf8, &charlen));
+      if ( u < 0x10000) {
+         *((( U8*) u16)++) = u & 0xff;
+         *((( U8*) u16)++) = u >> 8;
+      } else 
+         *(u16++) = 0xffff;
+      utf8 += charlen;
+   }
+}
+
+WCHAR *
+alloc_utf8_to_wchar( const char * utf8, int length)
+{
+   WCHAR * ret;
+   if ( length < 0) length = prima_utf8_length( utf8) + 1;
+   if ( !( ret = malloc( length * sizeof( WCHAR)))) return nil;
+   utf8_to_wchar( utf8, ret, length);
+   return ret;
+}
+
+void 
+wchar2char( char * dest, WCHAR * src, int lim)
+{
+   if ( lim < 1) return;
+   while ( lim-- && *src) *(dest++) = *((char*)src++);
+   if ( lim < 0) dest--;
+   *dest = 0;
+}
+
+void 
+char2wchar( WCHAR * dest, char * src, int lim)
+{
+   int l = strlen( src) + 1;
+   if ( lim < 1) return;
+   if ( lim > l) lim = l;
+   src  += lim - 2;
+   dest += lim - 1;
+   *(dest--) = 0;
+   while ( lim--) *(dest--) = *(src--);
+}
 
 #ifdef __cplusplus
 }

@@ -322,25 +322,26 @@ void Clipboard_get_standard_clipboards_REDEFINED     ( Handle self) { warn("Inva
 static SV *
 text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 {
-   STRLEN len;
-   char *s;
+   ClipboardDataRec c;
 
    switch( function) {
    case cefInit:
       return ( SV *) cfText;
 
    case cefFetch:
-      s = (char*)apc_clipboard_get_data( self, cfText, &len);
-      if (s) {
-         data = newSVpv( s, len);
-         free(s);
+      if ( apc_clipboard_get_data( self, cfText, &c)) {
+         data = newSVpv( c. text. text, c. text. length);
+         if ( c. text. utf8)
+            SvUTF8_on( data);
+         free( c. text. text);
          return data;
       }
       break;
 
    case cefStore:
-      s = SvPV( data, len);
-      apc_clipboard_set_data( self, cfText, (void*)s, len);
+      c. text. text = SvPV( data, c. text. length);
+      c. text. utf8 = SvUTF8( data);
+      apc_clipboard_set_data( self, cfText, &c);
       break;
    }
    return nilSV;
@@ -349,32 +350,30 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 static SV *
 image_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 {
+    ClipboardDataRec c;
     switch( function) {
     case cefInit:
        return ( SV *) cfBitmap;
     case cefFetch:
        {
           HV * profile = newHV();
-          Handle image;
-          image = Object_create( "Prima::Image", profile);
+          c. image = Object_create( "Prima::Image", profile);
           sv_free(( SV *) profile);
-          if ( apc_clipboard_get_data( self, cfBitmap, (STRLEN*)(&image)) != nil) {
-             --SvREFCNT( SvRV( PImage(image)->  mate));
-             return newSVsv( PImage(image)->  mate);
+          if ( apc_clipboard_get_data( self, cfBitmap, &c)) {
+             --SvREFCNT( SvRV( PImage(c. image)-> mate));
+             return newSVsv( PImage(c. image)->  mate);
           }
-          Object_destroy( image);
+          Object_destroy( c. image);
        }
        break;
     case cefStore:
-       {
-          Handle image = gimme_the_mate( data);
+       c. image = gimme_the_mate( data);
 
-          if ( !kind_of( image, CImage)) {
-             warn("RTC0023: Not an image passed to clipboard");
-             return nilSV;
-          }
-          apc_clipboard_set_data( self, cfBitmap, ( void *) image, 0);
+       if ( !kind_of( c. image, CImage)) {
+          warn("RTC0023: Not an image passed to clipboard");
+          return nilSV;
        }
+       apc_clipboard_set_data( self, cfBitmap, &c);
        break;
     }
     return nilSV;
@@ -383,6 +382,7 @@ image_server( Handle self, PClipboardFormatReg instance, int function, SV * data
 static SV *
 binary_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 {
+   ClipboardDataRec c;
    switch( function) {
    case cefInit:
       return ( SV*) apc_clipboard_register_format( self, instance-> id);
@@ -390,22 +390,15 @@ binary_server( Handle self, PClipboardFormatReg instance, int function, SV * dat
       apc_clipboard_deregister_format( self, instance-> sysId);
       break;
    case cefFetch:
-      {
-         STRLEN len;
-         void *xdata = apc_clipboard_get_data( self, instance-> sysId, &len);
-         if ( xdata) {
-            SV * ret = newSVpv((char*) xdata, len);
-            free( xdata);
-            return ret;
-         }
+      if ( apc_clipboard_get_data( self, instance-> sysId, &c)) {
+         SV * ret = newSVpv((char*) c. binary. data, c. binary. length);
+         free( c. binary. data);
+         return ret;
       }
       break;
    case cefStore:
-      {
-         STRLEN len;
-         void * xdata = SvPV( data, len);
-         apc_clipboard_set_data( self, instance-> sysId, xdata, len);
-      }
+      c. binary. data = SvPV( data, c. binary. length);
+      apc_clipboard_set_data( self, instance-> sysId, &c);
       break;
    }
    return nilSV;

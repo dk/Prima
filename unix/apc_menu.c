@@ -175,22 +175,6 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
    XX-> focused = wx;
 }
 
-static XCharStruct * 
-char_struct( XFontStruct * xs, int c) 
-{
-    XCharStruct * xc;
-    if ( !xs-> per_char) {
-       xc = &xs-> min_bounds;
-    } else if (c < xs-> min_char_or_byte2 || c > xs-> max_char_or_byte2) {
-       int default_char = xs-> default_char;
-       if ( default_char < xs-> min_char_or_byte2 || default_char > xs-> max_char_or_byte2)
-          default_char = xs-> min_char_or_byte2;
-       xc = xs-> per_char + default_char - xs-> min_char_or_byte2; 
-    } else
-       xc = xs-> per_char + c - xs-> min_char_or_byte2;
-    return xc;
-}   
-
 #define MENU_XOFFSET 5
 #define MENU_CHECK_XOFFSET 10
 
@@ -214,7 +198,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
    if ( vertical) w-> last = -1;
    w-> selected = -100;
    while ( m) {
-      if ( m-> divider) {
+      if ( m-> flags. divider) {
          ix-> height = vertical ? MENU_ITEM_GAP * 2 : 0;
       } else {
          int l = 0;
@@ -228,10 +212,21 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
                   if ( t[i+1] == '~') 
                      i++;
                }   
-            }   
-            ix-> width += startx + XTextWidth( XX-> font-> fs, m-> text, i);
-            if ( ntildas)
-               ix-> width -= char_struct( XX-> font-> fs, '~')-> width * ntildas; 
+            }  
+            if ( m-> flags. utf8_text) {
+               int len = utf8_length( m-> text, m-> text + i);
+               XChar2b * xc = prima_alloc_utf8_to_wchar( m-> text, len);
+               if ( xc) {
+                  ix-> width += startx + XTextWidth16( XX-> font-> fs, xc, len);
+                  free( xc);
+               }
+            } else {
+               ix-> width += startx + XTextWidth( XX-> font-> fs, m-> text, i);
+            }
+            if ( ntildas) {
+               char c = '~';
+               ix-> width -= prima_char_struct( XX-> font-> fs, &c, 0)-> width * ntildas; 
+            }
          } else if ( m-> bitmap && PObject( m-> bitmap)-> stage < csDead) {
             Pixmap px = prima_std_pixmap( m-> bitmap, CACHE_LOW_RES);
             if ( px) {
@@ -244,8 +239,18 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
                ix-> pixmap = px;
             }
          }
-         if ( m-> accel && ( l = strlen( m-> accel)))
-            ix-> accel_width = XTextWidth( XX-> font-> fs, m-> accel, l);
+         if ( m-> accel && ( l = strlen( m-> accel))) {
+            if ( m-> flags. utf8_accel) {
+               int len = utf8_length( m-> accel, m-> accel + l);
+               XChar2b * xc = prima_alloc_utf8_to_wchar( m-> accel, len);
+               if ( xc) {
+                  ix-> accel_width = XTextWidth16( XX-> font-> fs, xc, len);
+                  free( xc);
+               }
+            } else {
+               ix-> accel_width = XTextWidth( XX-> font-> fs, m-> accel, l);
+            }
+         }
          if ( ix-> accel_width + ix-> width > x) x = ix-> accel_width + ix-> width;
       }
 
@@ -286,7 +291,7 @@ menu_point2item( PMenuSysData XX, PMenuWindow w, int x, int y, PMenuItemReg * m_
       l = r = 0;
       if ( x < l) return -1;
       while ( m) {
-         if ( m-> divider) {
+         if ( m-> flags. divider) {
             if ( right > 0) {
                r += right;
                right = 0;
@@ -316,7 +321,7 @@ menu_point2item( PMenuSysData XX, PMenuWindow w, int x, int y, PMenuItemReg * m_
          if ( index > w-> last) {
             r += MENU_ITEM_GAP * 2 + XX-> font-> font. height;
             goto CHECK;
-         } else if ( m-> divider) {
+         } else if ( m-> flags. divider) {
             r += MENU_ITEM_GAP * 2;
             if ( y < r) return -1;
          } else {
@@ -347,7 +352,7 @@ menu_item_offset( PMenuSysData XX, PMenuWindow w, int index)
    if ( w == &XX-> wstatic) {
       int right = w-> right;
       while ( m && index--) {
-         if ( m-> divider) {
+         if ( m-> flags. divider) {
             if ( right > 0) {
                ret. x += right;
                right = 0;
@@ -382,7 +387,7 @@ menu_item_size( PMenuSysData XX, PMenuWindow w, int index)
       if ( index >= 0 && index <= w-> last) {
          ix = w-> um + index; 
          while ( index--) m = m-> next; 
-         if ( m-> divider) return ret;
+         if ( m-> flags. divider) return ret;
          ret. x = MENU_XOFFSET * 2 + ix-> width;
          if ( m-> accel) ret. x += MENU_XOFFSET / 2+ ix-> accel_width;
       } else if ( index == w-> last + 1) {
@@ -457,12 +462,12 @@ menu_enter_item( PMenuSysData XX, PMenuWindow w, int index, int type)
    
    if ( index < 0 || index > w-> last + 1 || !w-> um || !m) return false;
    while ( index2--) {
-      if ( m-> divider) div = 1;
+      if ( m-> flags. divider) div = 1;
       m = m-> next;
    }
    if ( index == w-> last + 1) div = 0;
    
-   if ( m-> disabled && index <= w-> last) return false;
+   if ( m-> flags. disabled && index <= w-> last) return false;
         
    if ( m-> down || index == w-> last + 1) {
       PMenuWindow w2;
@@ -636,7 +641,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
             break;
          }
 
-         if ( m-> divider) {
+         if ( m-> flags. divider) {
             if ( vertical) {
                y += MENU_ITEM_GAP - 1;
                XSetForeground( DISP, gc, XX->c[ciDark3DColor]);
@@ -652,7 +657,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
          } else {
             int deltaY = 0;
 
-            if ( m-> disabled) clr = XX-> c[ciDisabledText];
+            if ( m-> flags. disabled) clr = XX-> c[ciDisabledText];
 
             deltaY = ix-> height;
             if ( m-> text) {
@@ -663,25 +668,51 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                t = m-> text;
                for (;;) {
                   l = 0; i = 0;
-                  while ( l < sz && t[i]) {
+                  while ( l < sz - 1 && t[i]) {
+                     STRLEN len = 1;
+                     UV uv = m-> flags. utf8_text ? utf8_to_uvchr( t + i, &len) : *((U8*)t+i);
                      if (t[i] == '~' && t[i+1]) {
                         if ( t[i+1] == '~') {
-                           s[l++] = '~'; i += 2;
+                           if ( m-> flags. utf8_text) {
+                              (( XChar2b*)(s+l))-> byte1 = 0;
+                              (( XChar2b*)(s+l))-> byte2 = '~';
+                              l += 2;
+                           } else
+                              s[l++] = '~'; 
+                           i += 2;
                         } else {
                            if ( !haveDash) {
+                              char buf[2];
+                              if ( m-> flags. utf8_text)
+                                 prima_utf8_to_wchar( t+i+1, ( XChar2b*) buf, 1);
+                              else
+                                 buf[0] = t[i+1];
                               haveDash = 1;
-                              lineEnd = lineStart + char_struct( xs, t[i+1])-> width;
+                              lineEnd = lineStart + 
+                                 prima_char_struct( xs, buf, m-> flags. utf8_text)-> width;
                            }
                            i++;
                         }   
                      } else {
                         if ( !haveDash) {
-                           XCharStruct * cs = char_struct( xs, t[i]);
+                           char buf[2];
+                           XCharStruct * cs;
+                           if ( m-> flags. utf8_text)
+                              prima_utf8_to_wchar( t+i, ( XChar2b*) buf, 1);
+                           else
+                              buf[0] = t[i];
+                           cs = prima_char_struct( xs, ( XChar2b*) buf, m-> flags. utf8_text);
                            if ( lineStart < 0)
                               lineStart = ( cs-> lbearing < 0) ? - cs-> lbearing : 0;
                            lineStart += cs-> width;
                         }   
-                        s[l++] = t[i++];
+                        if ( m-> flags. utf8_text) {
+                           (( XChar2b*)(s+l))-> byte1 = uv >> 8;
+                           (( XChar2b*)(s+l))-> byte2 = uv & 0xff;
+                           l += 2;
+                           i += len;
+                        } else 
+                           s[l++] = t[i++];
                      }
                   }
                   if ( t[i]) {
@@ -690,14 +721,20 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                   } else
                      break;
                }
-               if ( m-> disabled && !selected) {
+               if ( m-> flags. disabled && !selected) {
                   XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
-                  XDrawString( DISP, win, gc, x+MENU_XOFFSET+xtoffs+1, ay+1, s, l);   
+                  if ( m-> flags. utf8_text)
+                     XDrawString16( DISP, win, gc, x+MENU_XOFFSET+xtoffs+1, ay+1, ( XChar2b*) s, l / 2);   
+                  else
+                     XDrawString( DISP, win, gc, x+MENU_XOFFSET+xtoffs+1, ay+1, s, l);   
                } 
                XSetForeground( DISP, gc, clr);
-               XDrawString( DISP, win, gc, x+MENU_XOFFSET+xtoffs, ay, s, l);
+               if ( m-> flags. utf8_text)
+                  XDrawString16( DISP, win, gc, x+MENU_XOFFSET+xtoffs, ay, ( XChar2b*) s, l / 2);   
+               else
+                  XDrawString( DISP, win, gc, x+MENU_XOFFSET+xtoffs, ay, s, l);
                if ( haveDash) {
-                  if ( m-> disabled && !selected) {
+                  if ( m-> flags. disabled && !selected) {
                       XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
                       XDrawLine( DISP, win, gc, x+MENU_XOFFSET+xtoffs+lineStart+1, ay+xs->max_bounds.descent-1+1, 
                          x+MENU_XOFFSET+xtoffs+lineEnd+1, ay+xs->max_bounds.descent-1+1);
@@ -714,6 +751,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
             if ( !vertical) x += ix-> width + MENU_XOFFSET;
 
             if ( m-> accel) {
+               int ul = 0;
                int zx = vertical ? 
                   mx - MENU_XOFFSET - MENU_CHECK_XOFFSET - ix-> accel_width : 
                   x + MENU_XOFFSET/2;
@@ -721,12 +759,26 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                   y + ( deltaY + XX-> font-> font. height) / 2 - XX-> font-> font. descent: 
                   y + deltaY - MENU_ITEM_GAP - XX-> font-> font. descent;
                l = strlen( m-> accel);
-               if ( m-> disabled && !selected) {
+               if ( m-> flags. utf8_accel) {
+                  ul = prima_utf8_length( m-> accel);
+                  if ( ul * 2 < sz) {
+                     free(s); 
+                     if ( !( s = malloc( sz = (ul * 2 + 2)))) goto EXIT;
+                  }
+                  prima_utf8_to_wchar( m-> accel, ( XChar2b*)s, ul);
+               }
+               if ( m-> flags. disabled && !selected) {
                   XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
-                  XDrawString( DISP, win, gc, zx + 1, zy + 1, m-> accel, l);
+                  if ( m-> flags. utf8_accel) 
+                     XDrawString16( DISP, win, gc, zx + 1, zy + 1, ( XChar2b*) s, ul);
+                  else
+                     XDrawString( DISP, win, gc, zx + 1, zy + 1, m-> accel, l);
                } 
                XSetForeground( DISP, gc, clr);
-               XDrawString( DISP, win, gc, zx, zy, m-> accel, l);
+               if ( m-> flags. utf8_accel) 
+                  XDrawString16( DISP, win, gc, zx, zy, ( XChar2b*) s, ul);
+               else
+                  XDrawString( DISP, win, gc, zx, zy, m-> accel, l);
                if ( !vertical)
                   x += ix-> accel_width + MENU_XOFFSET/2;
             }
@@ -742,7 +794,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                p[1].y = center - ave * 0.6;
                p[2].x = mx - ave - MENU_CHECK_XOFFSET/2;
                p[2].y = center + ave * 0.6 + 1;
-               if ( m-> disabled && !selected) {
+               if ( m-> flags. disabled && !selected) {
                   int i;
                   XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
                   for ( i = 0; i < 3; i++) { 
@@ -758,14 +810,14 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                XSetForeground( DISP, gc, clr);
                XFillPolygon( DISP, win, gc, p, 3, Nonconvex, CoordModeOrigin);
             } 
-            if ( m-> checked && vertical) { 
+            if ( m-> flags. checked && vertical) { 
                /* don't draw check marks on horizontal menus - they look ugly */
                int bottom = y + deltaY - MENU_ITEM_GAP - ix-> height * 0.2;
                int ax = x + MENU_XOFFSET / 2;
                XGCValues gcv;
                gcv. line_width = 3;
                XChangeGC( DISP, gc, GCLineWidth, &gcv); 
-               if ( m-> disabled && !selected) {
+               if ( m-> flags. disabled && !selected) {
                   XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
                   XDrawLine( DISP, win, gc, ax + 1 + 1 , y + deltaY / 2 + 1, ax + MENU_XOFFSET - 2 + 1, bottom - 1);
                   XDrawLine( DISP, win, gc, ax + MENU_XOFFSET - 2 + 1, bottom + 1, ax + MENU_CHECK_XOFFSET + 1, y + MENU_ITEM_GAP + ix-> height * 0.2);
@@ -804,7 +856,7 @@ AGAIN:
          ix = w-> um;
          while ( m) { 
             int dx = 0;
-            if ( !m-> divider) {
+            if ( !m-> flags. divider) {
                dx += MENU_XOFFSET * 2 + ix-> width; 
                if ( m-> accel) dx += MENU_XOFFSET / 2 + ix-> accel_width;
             }
@@ -828,7 +880,7 @@ AGAIN:
             Bool hit = false;
             x = 0;
             while ( m) {
-               if ( m-> divider) {
+               if ( m-> flags. divider) {
                   hit = true;
                   break;
                } else {
@@ -841,7 +893,7 @@ AGAIN:
             if ( hit) {
                w-> right = 0;
                while ( m) {
-                  if ( !m-> divider) {
+                  if ( !m-> flags. divider) {
                      w-> right += MENU_XOFFSET * 2 + ix-> width; 
                      if ( m-> accel) w-> right += MENU_XOFFSET / 2 + ix-> accel_width;
                   }
@@ -1086,7 +1138,7 @@ AGAIN:
             m = w-> m;
             z = sel;
             while ( z--) m = m-> next;
-            if ( sel == w-> last + 1 || !m-> divider) {
+            if ( sel == w-> last + 1 || !m-> flags. divider) {
                menu_select_item( XX, w, sel);
                menu_window_delete_downlinks( XX, w);
                if ( piles) {
@@ -1393,42 +1445,42 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
 }
 
 Bool
-apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
+apc_menu_item_set_accel( Handle self, PMenuItemReg m)
 {
    menu_touch( self, m, false);
    return true;
 }
 
 Bool
-apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check)
+apc_menu_item_set_check( Handle self, PMenuItemReg m)
 {
    menu_touch( self, m, false);
    return true;
 }
 
 Bool
-apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled)
+apc_menu_item_set_enabled( Handle self, PMenuItemReg m)
 {
    menu_touch( self, m, false);
    return true;
 }
 
 Bool
-apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
+apc_menu_item_set_image( Handle self, PMenuItemReg m)
 {
    menu_touch( self, m, false);
    return true;
 }
 
 Bool
-apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
+apc_menu_item_set_key( Handle self, PMenuItemReg m)
 {
    menu_touch( self, m, false);
    return true;
 }
 
 Bool
-apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
+apc_menu_item_set_text( Handle self, PMenuItemReg m)
 {
    menu_touch( self, m, false);
    return true;

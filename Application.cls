@@ -63,7 +63,7 @@ object Prima::Application( Prima::Widget)
    property  int    tabOrder;
    property  Bool   tabStop;
    property  Bool   transparent;
-   property  char*  text;
+   property  SV *   text;
    property  Bool   visible;
 
    method Bool   begin_paint();

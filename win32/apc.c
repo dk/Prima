@@ -844,7 +844,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 //  }
     guts. topWindows++;
   }
-  apc_window_set_caption( self, var text);
+  apc_window_set_caption( self, var text, is_opt( optUTF8_text));
   HWND_lock( false);
   return apcError == 0;
 }
@@ -970,12 +970,10 @@ apc_window_get_icon( Handle self, Handle icon)
    return ret;
 }
 
-
-static int;
-map_tildas( char * buf, int len)
+static void
+map_tildas( WCHAR * buf, int len)
 {
    int j, newLen;
-   if ( len < 0) len = strlen( buf);
    newLen = len;
    for ( j = 0; j <= len; j++) {
       if ( buf[ j] == '~') {
@@ -985,20 +983,46 @@ map_tildas( char * buf, int len)
              buf[ j] = '&';
           continue;
       } else if ( buf[ j] == '&') {
-         memmove( &buf[ j + 1], &buf[ j], ++len - j);
+         memmove( &buf[ j + 1], &buf[ j], (++len - j) * sizeof( WCHAR));
          j++;
          newLen++;
          continue;
       }
    }
-   return newLen;
 }
 
+static WCHAR *
+map_text_accel( PMenuItemReg i)
+{
+   int l1, l2 = 0;
+   WCHAR * buf;
+
+   l1 = 1 + ( i-> flags. utf8_text ? prima_utf8_length( i-> text) : strlen( i-> text));
+   if ( i-> accel) 
+      l2 = 1 + ( i-> flags. utf8_accel ? prima_utf8_length( i-> accel) : strlen( i-> accel));
+   buf = malloc( sizeof( WCHAR) * ( l1 + l2));
+   if ( !buf) return nil;
+   
+   if ( i-> flags. utf8_text) 
+      utf8_to_wchar( i-> text, buf, l1 - 1);
+   else
+      MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, i-> text, l1 - 1, buf, l1 * 2 - 2);
+   if ( i-> accel) {
+      buf[l1 - 1] = '\t';
+      if ( i-> flags. utf8_accel) 
+         utf8_to_wchar( i-> accel, buf + l1, l2);
+      else
+         MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, i-> accel, l2 - 1, buf + l1, l2 * 2 - 2);
+   }
+   buf[l1+l2-1] = 0;
+   map_tildas( buf, l1 + l2);
+   return buf;
+}
 
 static HWND
 add_item( Bool menuType, Handle menu, PMenuItemReg i)
 {
-    MENUITEMINFO menuItem;
+    MENUITEMINFOW menuItem;
     HWND m;
     PMenuWndData mwd;
     PMenuItemReg first;
@@ -1029,30 +1053,22 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
        menuItem. cbSize   = sizeof( menuItem);
        menuItem. fMask    = MIIM_STATE | MIIM_SUBMENU | MIIM_TYPE | MIIM_ID;
        menuItem. fType    = 0;
-       menuItem. fType   |= ( i-> divider    ) ? MFT_SEPARATOR    : 0;
+       menuItem. fType   |= ( i-> flags. divider    ) ? MFT_SEPARATOR    : 0;
        menuItem. fType   |= ( i-> bitmap     ) ? MFT_BITMAP       : 0;
        menuItem. fType   |= ( i-> text       ) ? MFT_STRING       : 0;
-       menuItem. fType   |= ( i-> rightAdjust) ? MFT_RIGHTJUSTIFY : 0;
+       menuItem. fType   |= ( i-> flags. rightAdjust) ? MFT_RIGHTJUSTIFY : 0;
        menuItem. fState   = 0;
-       menuItem. fState  |= ( i-> checked )    ? MFS_CHECKED      : 0;
-       menuItem. fState  |= ( i-> disabled)    ? MFS_GRAYED       : 0;
+       menuItem. fState  |= ( i-> flags. checked )    ? MFS_CHECKED      : 0;
+       menuItem. fState  |= ( i-> flags. disabled)    ? MFS_GRAYED       : 0;
        menuItem. wID      = i-> id + MENU_ID_AUTOSTART;
        menuItem. hSubMenu = add_item( menuType, menu, i-> down);
-       if (!( i-> divider && i-> rightAdjust)) {
+       if (!( i-> flags. divider && i-> flags. rightAdjust)) {
           if ( i-> text) {
-             char buf [ 1024];
-             if ( i-> accel) {
-                 snprintf( buf, 1024, "%s\t%s", i-> text, i-> accel);
-             }
-             else {
-                 strncpy( buf, i-> text, 1023);
-                 buf[ 1023] = 0;
-             }
-             map_tildas( buf, strlen( i-> text));
-             menuItem. dwTypeData = ( LPTSTR) buf;
+             menuItem. dwTypeData = map_text_accel( i);
           } else if ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead)
-             menuItem. dwTypeData = ( LPTSTR) image_make_bitmap_handle( i-> bitmap, nil);
-          InsertMenuItem( m, -1, true, &menuItem);
+             menuItem. dwTypeData = ( LPWSTR) image_make_bitmap_handle( i-> bitmap, nil);
+          InsertMenuItemW( m, -1, true, &menuItem);
+          if ( i-> text && menuItem. dwTypeData) free( menuItem. dwTypeData);
        }
        menuItem. dwItemData = menu;
        i = i-> next;
@@ -1081,10 +1097,16 @@ apc_window_get_task_listed( Handle self)
 }
 
 Bool
-apc_window_set_caption( Handle self, const char * caption)
+apc_window_set_caption( Handle self, const char * caption, Bool utf8)
 {
    objCheck false;
-   if ( !( rc = SetWindowText( HANDLE, caption))) apiErr;
+   if ( utf8) {
+      WCHAR * c = alloc_utf8_to_wchar( caption, -1);
+      if ( !( rc = SetWindowTextW( HANDLE, c))) apiErr;
+      free( c);
+   } else {
+      if ( !( rc = SetWindowText( HANDLE, caption))) apiErr;
+   }
    return rc == 0;
 }
 
@@ -2489,11 +2511,11 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
 }
 
 Bool
-apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
+apc_menu_item_set_accel( Handle self, PMenuItemReg m)
 {
-   MENUITEMINFO mii = {sizeof( MENUITEMINFO)};
-   char buf [ 1024];
+   MENUITEMINFOW mii = {sizeof( MENUITEMINFOW)};
    UINT flags;
+   WCHAR * buf;
 
    if ( !var handle) return false;
    objCheck false;
@@ -2503,48 +2525,48 @@ apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
    if ( flags & MF_BITMAP)
       flags = ( flags & ~MF_BITMAP) | MF_STRING;
 
-   snprintf( buf, 1024, "%s\t%s", m-> text, accel);
-   map_tildas( buf, strlen( m-> text));
-
-   if ( !ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, buf))
-      apiErrRet;
-   return true;
+   apcErrClear;
+   buf = map_text_accel( m);
+   if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                    m-> id + MENU_ID_AUTOSTART, buf)) 
+      apiErr;
+   free( buf);
+   return rc == errOk;
 }
 
 Bool
-apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check)
+apc_menu_item_set_check( Handle self, PMenuItemReg m)
 {
    DWORD res;
    if ( !var handle) return false;
    objCheck false;
    res = CheckMenuItem(( HMENU) var handle,
-      m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( check ? MF_CHECKED : MF_UNCHECKED));
+      m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( m-> flags. checked ? MF_CHECKED : MF_UNCHECKED));
    return res != 0xFFFFFFFF;
 }
 
 Bool
-apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled)
+apc_menu_item_set_enabled( Handle self, PMenuItemReg m)
 {
    DWORD res;
    if ( !var handle) return false;
    objCheck false;
    res = EnableMenuItem(( HMENU) var handle,
-      m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( enabled ? MF_ENABLED : MF_GRAYED));
+      m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( m-> flags. disabled ? MF_GRAYED : MF_ENABLED));
    return res != 0xFFFFFFFF;
 }
 
 Bool
-apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
+apc_menu_item_set_key( Handle self, PMenuItemReg m)
 {
    return true;
 }
 
 Bool
-apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
+apc_menu_item_set_text( Handle self, PMenuItemReg m)
 {
-   MENUITEMINFO mii = {sizeof( MENUITEMINFO)};
-   char buf [ 1024];
+   MENUITEMINFOW mii = {sizeof( MENUITEMINFOW)};
+   WCHAR * buf;
    UINT flags;
 
    if ( !var handle) return false;
@@ -2555,35 +2577,31 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
    if ( flags & MF_BITMAP)
       flags = ( flags & ~MF_BITMAP) | MF_STRING;
 
-   if ( m-> accel)
-      snprintf( buf, 1024, "%s\t%s", text, m-> accel);
-   else {
-      strncpy( buf, text, 1023);
-      buf[ 1023] = 0;
-   }
-   map_tildas( buf, strlen( text));
-
-   if ( !ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, buf)) apiErrRet;
-   return true;
+   apcErrClear;
+   buf = map_text_accel( m);
+   if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                    m-> id + MENU_ID_AUTOSTART, (WCHAR*) buf)) apiErr;
+   free( buf);
+   return rc == errOk;
 }
 
 Bool
-apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
+apc_menu_item_set_image( Handle self, PMenuItemReg m)
 {
-   MENUITEMINFO mii = {sizeof( MENUITEMINFO)};
+   MENUITEMINFOW mii = {sizeof( MENUITEMINFOW)};
    UINT flags;
 
    if ( !var handle) return false;
    objCheck false;
-   dobjCheck( image) false;
+   dobjCheck( m-> bitmap) false;
    flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
    if ( flags == 0xFFFFFFFF) return false;
 
    flags |= MF_BITMAP;
 
-   if ( !ModifyMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, ( LPCTSTR) image_make_bitmap_handle( image, nil))) apiErrRet;
+   if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                    m-> id + MENU_ID_AUTOSTART, 
+                    ( LPCWSTR) image_make_bitmap_handle( m-> bitmap, nil))) apiErrRet;
    return true;
 }
 

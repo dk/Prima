@@ -47,7 +47,7 @@ prima_init_clipboard_subsystem(void)
    guts. clipboard_formats[cfText]    = XA_STRING;
    guts. clipboard_formats[cfBitmap]  = XA_BITMAP;
    guts. clipboard_formats[cfPixmap]  = XA_PIXMAP;
-   guts. clipboard_formats[cfTargets] = XInternAtom( DISP, "TARGETS", false);
+   guts. clipboard_formats[cfTargets] = CF_TARGETS;
    return true;
 }
 
@@ -338,30 +338,28 @@ apc_clipboard_has_format( Handle self, long id)
    return false;
 }
 
-void *
-apc_clipboard_get_data( Handle self, long id, STRLEN *length)
+Bool
+apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
 {
    DEFCC;
    STRLEN size;
    unsigned char * data;
-   void * ret;
 
-   if ( id < 0 || id >= guts. clipboard_formats_count) return nil;
+   if ( id < 0 || id >= guts. clipboard_formats_count) return false;
 
-   if ( id == cfBitmap) {
-      ret = apc_clipboard_get_data( self, cfPixmap, length);
-      if ( ret) return ret;
-   }
+   if ( id == cfBitmap) 
+      if ( apc_clipboard_get_data( self, cfPixmap, c)) 
+         return true;
 
    if ( !XX-> inside_event) {
       if ( XX-> internal[id]. size == 0) {
          if ( XX-> external[id]. size == CFDATA_NOT_ACQUIRED) {
-            if ( !query_data( self, id, nil)) return nil;
+            if ( !query_data( self, id, nil)) return false;
          }
-         if ( XX-> external[id]. size == CFDATA_ERROR) return nil;
+         if ( XX-> external[id]. size == CFDATA_ERROR) return false;
       }
    }
-   if ( XX-> internal[id]. size == CFDATA_ERROR) return nil;
+   if ( XX-> internal[id]. size == CFDATA_ERROR) return false;
 
    if ( XX-> internal[id]. size > 0) {
       size = XX-> internal[id]. size;
@@ -370,48 +368,51 @@ apc_clipboard_get_data( Handle self, long id, STRLEN *length)
       size = XX-> external[id]. size;
       data = XX-> external[id]. data;
    }
-   if ( size == 0 || data == nil) return nil;
-   ret = nil;
+   if ( size == 0 || data == nil) return false;
 
    if ( id == cfBitmap || id == cfPixmap) {
-      Handle img = *(( Handle*) length);
+      Handle img = c-> image; 
       XWindow foo;
       Pixmap px = *(( Pixmap*)( data));
       unsigned int dummy, x, y, d;
       int bar;
       
       if ( !XGetGeometry( DISP, px, &foo, &bar, &bar, &x, &y, &dummy, &d))
-         return nil;
+         return false;
       CImage( img)-> create_empty( img, x, y, ( d == 1) ? imBW : guts. qdepth);
-      if ( !prima_std_query_image( img, px)) return nil;
-      ret = (void*)1;
+      if ( !prima_std_query_image( img, px)) return false;
    } else {
-      if (( ret = malloc( size))) {
-         memcpy( ret, data, size);
-         *length = size;
-      } else
+      void * ret = malloc( size);
+      if ( !ret) {
          warn("Not enough memory: %d bytes\n", size);
+         return false;
+      }
+      memcpy( ret, data, size);
+      if ( id == cfText) {
+         c-> text. text   = ( char * ) ret;
+         c-> text. length = size;
+         c-> text. utf8   = false;
+      } else {
+         c-> binary. data = ( char * ) ret;
+         c-> text. length = size;
+      }
    }
-   return ret;
+   return true;
 }
 
 Bool
-apc_clipboard_set_data( Handle self, long id, void * data, STRLEN length)
+apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
 {
    DEFCC;
    if ( id < 0 || id >= guts. clipboard_formats_count) return false;
+
    if ( id == cfPixmap || id == cfTargets) return false;
-
-   if ( data == nil) {
-      apc_clipboard_clear( self);
-      return true;
-   }
-
    if ( id == cfBitmap) clipboard_kill_item( XX-> internal, cfPixmap);
    clipboard_kill_item( XX-> internal, id);
 
-   if ( id == cfBitmap) {
-      Pixmap px = prima_std_pixmap(( Handle) data, CACHE_LOW_RES);
+   switch ( id) {
+   case cfBitmap: {  
+      Pixmap px = prima_std_pixmap( c-> image, CACHE_LOW_RES);
       if ( px) {
          if ( !( XX-> internal[cfPixmap]. data = malloc( sizeof( px)))) {
             XFreePixmap( DISP, px);
@@ -421,11 +422,19 @@ apc_clipboard_set_data( Handle self, long id, void * data, STRLEN length)
          memcpy( XX-> internal[cfPixmap]. data, &px, sizeof(px));
       } else
          return false;
-   } else {
-      if ( !( XX-> internal[id]. data = malloc( length))) 
+      break;}
+   case cfText:{
+      if ( !( XX-> internal[id]. data = malloc( c-> text. length))) 
          return false;
-      XX-> internal[id]. size = length;
-      memcpy( XX-> internal[id]. data, data, length);
+      XX-> internal[id]. size = c-> text. length;
+      memcpy( XX-> internal[id]. data, c-> text. text, c-> text. length);
+      break;}
+   default:
+      if ( !( XX-> internal[id]. data = malloc( c-> binary. length))) 
+         return false;
+      XX-> internal[id]. size = c-> binary. length;
+      memcpy( XX-> internal[id]. data, c-> binary. data, c-> binary. length);
+      break;
    }
    XX-> need_write = true; 
    return true;

@@ -1278,8 +1278,6 @@ SvBOOL( SV *sv)
 #define pexist( key) hv_exists( profile, # key, strlen( #key))
 #define pdelete( key) hv_delete( profile, # key, strlen( #key), G_DISCARD)
 
-#define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested\n", # key), &sv_undef : *temporary_prf_Sv)
-#undef pget_sv
 #define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &sv_undef : *temporary_prf_Sv)
 #define pget_i( key)  ( pget_sv( key), SvIV( *temporary_prf_Sv))
 #define pget_f( key)  ( pget_sv( key), SvNV( *temporary_prf_Sv))
@@ -1400,6 +1398,37 @@ list_first_that( PList self, void * action, void * params);
 extern int
 list_index_of( PList self, Handle item);
 
+/* utf8 */
+#if ((PERL_PATCHLEVEL == 5 && PERL_SUBVERSION >= 8) || (PERL_PATCHLEVEL > 5))
+#define PERL_SUPPORTS_UTF8  1
+#else
+/* dummy utf8 functionality */
+#undef  PERL_SUPPORTS_UTF8
+#define IN_BYTES            1
+#define DO_UTF8(sv)         0
+#define SvUTF8(sv)          0
+#define utf8_length(s,e)    ((e)-(s))
+#define utf8_hop(s,off)     ((s)+(off))
+#define SvUTF8_on(sv)       0
+#define SvUTF8_off(sv)      0
+
+#define utf8_to_uvchr       prima_utf8_to_uv
+#define utf8_to_uvuni       prima_utf8_to_uv
+#define uvchr_to_utf8        prima_uv_to_utf8
+#define uvuni_to_utf8        prima_uv_to_utf8
+extern UV
+prima_utf8_to_uv( U8 * utf8, STRLEN * len);
+
+extern U8 *
+prima_uv_to_utf8( U8 * utf8, UV uv);
+
+#endif
+
+extern Bool wantUnicodeInput;
+
+extern int
+prima_utf8_length( const char * utf8);
+
 /* OS types */
 #define APC(const_name) CONSTANT(apc,const_name)
 START_TABLE(apc,UV)
@@ -1510,6 +1539,7 @@ END_TABLE(dt,UV)
 typedef struct _ObjectOptions_ {
    unsigned optInDestroyList       : 1;   /* Object */
    unsigned optcmDestroy           : 1;   /* Component */
+   unsigned optUTF8_name           : 1;
    unsigned optInDraw              : 1;   /* Drawable */
    unsigned optInDrawInfo          : 1;
    unsigned optTextOutBaseLine     : 1;
@@ -1529,6 +1559,9 @@ typedef struct _ObjectOptions_ {
    unsigned optSystemSelectable    : 1;
    unsigned optTabStop             : 1;
    unsigned optScaleChildren       : 1;
+   unsigned optUTF8_helpContext    : 1;
+   unsigned optUTF8_hint           : 1;
+   unsigned optUTF8_text           : 1;
    unsigned optPreserveType        : 1;   /* Image */
    unsigned optVScaling            : 1;
    unsigned optHScaling            : 1;
@@ -1735,6 +1768,10 @@ SV(DblClickDelay)
 SV(ShapeExtension)
 #define   svColorPointer    29
 SV(ColorPointer)
+#define   svCanUTF8_Input   30
+SV(CanUTF8_Input)
+#define   svCanUTF8_Output  31
+SV(CanUTF8_Output)
 END_TABLE(sv,UV)
 #undef SV
 
@@ -1853,7 +1890,7 @@ extern Bool
 apc_window_get_task_listed( Handle self);
 
 extern Bool
-apc_window_set_caption( Handle self, const char* caption);
+apc_window_set_caption( Handle self, const char* caption, Bool utf8);
 
 extern Bool
 apc_window_set_client_pos( Handle self, int x, int y);
@@ -2139,6 +2176,19 @@ apc_kbd_get_state( Handle self);
 #define cfImage    cfBitmap
 #define cfCustom   2
 
+typedef union {
+   struct {
+      char * text;
+      int    length;
+      Bool   utf8;
+   } text;
+   Handle image;
+   struct {
+      Byte * data;
+      int    length;
+   } binary;
+} ClipboardDataRec, *PClipboardDataRec;
+
 extern PList
 apc_get_standard_clipboards( void);
 
@@ -2160,14 +2210,14 @@ apc_clipboard_clear( Handle self);
 extern Bool
 apc_clipboard_has_format( Handle self, long id);
 
-extern void*
-apc_clipboard_get_data( Handle self, long id, STRLEN *length);
+extern Bool
+apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c);
 
 extern ApiHandle
 apc_clipboard_get_handle( Handle self);
 
 extern Bool
-apc_clipboard_set_data( Handle self, long id, void *data, STRLEN length);
+apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c);
 
 extern long
 apc_clipboard_register_format( Handle self, const char *format);
@@ -2184,15 +2234,21 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
    int    key;                  /* accelerator key, kbXXX */
    int    id;                   /* unique id */
    char * perlSub;              /* sub name */
-   Bool   checked;              /* true if item is checked */
-   Bool   disabled;             /* true if item is disabled */
-   Bool   rightAdjust;          /* true if right adjust ordered */
-   Bool   divider;              /* true if it's line divider */
    Handle bitmap;               /* bitmap if not nil */
    SV *   code;                 /* code if not nil */
    SV *   data;                 /* use data if not nil */
    struct _MenuItemReg* down;   /* pointer to submenu */
    struct _MenuItemReg* next;   /* pointer to next item */
+   struct {
+      unsigned int checked       : 1;  /* true if item is checked */
+      unsigned int disabled      : 1;  /* true if item is disabled */
+      unsigned int rightAdjust   : 1;  /* true if right adjust ordered */
+      unsigned int divider       : 1;  /* true if it's line divider */
+      unsigned int utf8_variable : 1;
+      unsigned int utf8_text     : 1;
+      unsigned int utf8_accel    : 1;
+      unsigned int utf8_perlSub  : 1;
+   } flags;
 } MenuItemReg, *PMenuItemReg;
 
 extern Bool
@@ -2223,22 +2279,22 @@ extern Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m);
 
 extern Bool
-apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel);
+apc_menu_item_set_accel( Handle self, PMenuItemReg m);
 
 extern Bool
-apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check);
+apc_menu_item_set_check( Handle self, PMenuItemReg m);
 
 extern Bool
-apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled);
+apc_menu_item_set_enabled( Handle self, PMenuItemReg m);
 
 extern Bool
-apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image);
+apc_menu_item_set_image( Handle self, PMenuItemReg m);
 
 extern Bool
-apc_menu_item_set_key( Handle self, PMenuItemReg m, int key);
+apc_menu_item_set_key( Handle self, PMenuItemReg m);
 
 extern Bool
-apc_menu_item_set_text( Handle self, PMenuItemReg m, const char* text);
+apc_menu_item_set_text( Handle self, PMenuItemReg m);
 
 extern ApiHandle
 apc_menu_get_handle( Handle self);
@@ -2284,7 +2340,7 @@ extern Bool
 apc_message( Handle self, PEvent ev, Bool post);
 
 extern Bool
-apc_show_message( const char* message);
+apc_show_message( const char* message, Bool utf8);
 
 
 /* graphics constants */
@@ -2885,9 +2941,18 @@ SBMP(Last)
 END_TABLE(sbmp,UV)
 #undef SBMP
 
+typedef struct _FontABC
+{
+   float a;
+   float b;
+   float c;
+} FontABC, *PFontABC;
+
 typedef struct _TextWrapRec {
    char * text;                        /* text to be wrapped */
-   int    textLen;                     /* text length */
+   Bool   utf8_text;                   /* is utf8 */
+   int    textLen;                     /* text length in bytes */
+   int    utf8_textLen;                /* text length in characters */
    int    width;                       /* width to wrap with */
    int    tabIndent;                   /* \t replace to tabIndent spaces */
    int    options;                     /* twXXX constants */
@@ -2895,15 +2960,11 @@ typedef struct _TextWrapRec {
    int    t_start;                     /* ~ starting point */
    int    t_end;                       /* ~ ending point */
    int    t_line;                      /* ~ line */
-   char   t_char;                      /* letter next to ~ */
-} TextWrapRec, *PTextWrapRec;
+   char * t_char;                      /* letter next to ~ */
 
-typedef struct _FontABC
-{
-   float a;
-   float b;
-   float c;
-} FontABC, *PFontABC;
+   PFontABC * ascii;                   /* eventual abc caches, to be freed after call. */
+   PList    * unicode;                 /* NB - .ascii can be present in .unicode ! */
+} TextWrapRec, *PTextWrapRec;
 
 /* gpi functions underplace */
 extern Bool
@@ -2979,7 +3040,7 @@ apc_gp_stretch_image( Handle self, Handle image,
                       int rop);
 
 extern Bool
-apc_gp_text_out( Handle self, const char* text, int x, int y, int len);
+apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8);
 
 /* gpi settings */
 extern Color
@@ -2995,7 +3056,7 @@ extern Rect
 apc_gp_get_clip_rect( Handle self);
 
 extern PFontABC
-apc_gp_get_font_abc( Handle self, int firstChar, int lastChar);
+apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode);
 
 extern FillPattern *
 apc_gp_get_fill_pattern( Handle self);
@@ -3031,13 +3092,13 @@ extern int
 apc_gp_get_rop2( Handle self);
 
 extern Point*
-apc_gp_get_text_box( Handle self, const char* text, int len);
+apc_gp_get_text_box( Handle self, const char * text, int len, Bool utf8);
 
 extern Bool
 apc_gp_get_text_opaque( Handle self);
 
 extern int
-apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang);
+apc_gp_get_text_width( Handle self, const char * text, int len, Bool addOverhang, Bool utf8);
 
 extern Bool
 apc_gp_get_text_out_baseline( Handle self);

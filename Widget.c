@@ -64,7 +64,7 @@ static Bool size_notify( Handle self, Handle child, const Rect* metrix);
 static Bool move_notify( Handle self, Handle child, Point * moveTo);
 static Handle find_tabfoc( Handle self);
 static Bool showhint_notify ( Handle self, Handle child, void * data);
-static Bool hint_notify ( Handle self, Handle child, char * hint);
+static Bool hint_notify ( Handle self, Handle child, SV * hint);
 
 /* init, done & update_sys_handle */
 void
@@ -116,8 +116,8 @@ Widget_init( Handle self, HV * profile)
    my-> set_buffered           ( self, pget_B( buffered));
    my-> set_cursorVisible      ( self, pget_B( cursorVisible));
    my-> set_growMode           ( self, pget_i( growMode));
-   my-> set_helpContext        ( self, pget_c( helpContext));
-   my-> set_hint               ( self, pget_c( hint));
+   my-> set_helpContext        ( self, pget_sv( helpContext));
+   my-> set_hint               ( self, pget_sv( hint));
    my-> set_firstClick         ( self, pget_B( firstClick));
    {
       Point hotSpot;
@@ -135,7 +135,7 @@ Widget_init( Handle self, HV * profile)
    my-> set_showHint           ( self, pget_B( showHint));
    my-> set_tabOrder           ( self, pget_i( tabOrder));
    my-> set_tabStop            ( self, pget_i( tabStop));
-   my-> set_text               ( self, pget_c( text));
+   my-> set_text               ( self, pget_sv( text));
 
    opt_assign( optScaleChildren, pget_B( scaleChildren));
 
@@ -839,51 +839,6 @@ void Widget_handle_event( Handle self, PEvent event)
         }
         break;
    }
-}
-
-Bool
-Widget_help( Handle self)
-{
-   int len;
-   char * htx = var-> helpContext, *file = nil, *buf;
-
-/*
-   The help context string is a pod-styled link ( see perlpod ) :
-   "file/section". If the widget's helpContext begins with /,
-   it's clearly a sub-topic, and the leading content is to be
-   extracted up from the hierarchy. When a grouping widget 
-   does not have any help file related to, and does not wish that
-   its childrens' helpContext would be combined with the upper
-   helpContext, an empty string " " can be set
- */
-
-   if ( strcmp( htx, " ") == 0) return false;
-
-   if ( *htx != 0 && *htx != '/') {
-      call_perl( application, "open_help", "s" , htx);
-      return true;
-   }
-
-   while ( PWidget( self)-> owner) {
-      self = PWidget( self)-> owner;
-      if ( strcmp( var-> helpContext, " ") == 0) return false;
-      if ( var-> helpContext[0] != 0 && var-> helpContext[0] != '/') {
-         file = var-> helpContext;
-         break;
-      }
-   }
-
-   if ( !file) return false;
-
-   len = strlen( file);
-   if ( file[ len - 1] == '/' && *htx) htx++;
-   buf = malloc( strlen( htx) + len + 1);
-   strcpy( buf, file);
-   strcat( buf, htx);
-   call_perl( application, "open_help", "s" , buf);
-   free( buf);
-
-   return true;
 }
 
 void
@@ -1997,7 +1952,7 @@ showhint_notify ( Handle self, Handle child, void * data)
 }
 
 static Bool
-hint_notify ( Handle self, Handle child, char * hint)
+hint_notify ( Handle self, Handle child, SV * hint)
 {
     if ( his-> options. optOwnerHint) {
        his-> self-> set_hint( child, hint);
@@ -2323,43 +2278,50 @@ Widget_focused( Handle self, Bool set, Bool focused)
    return focused;
 }
 
-char *
-Widget_helpContext( Handle self, Bool set, char *helpContext)
+SV *
+Widget_helpContext( Handle self, Bool set, SV *helpContext)
 {
-   if (!set)
-      return var-> helpContext ? var-> helpContext : "";
-   if ( var-> stage > csFrozen) return "";
-
-   free( var-> helpContext);
-   var-> helpContext = duplicate_string( helpContext);
-   return "";
+   if ( set) {
+      if ( var-> stage > csFrozen) return nilSV;
+      free( var-> helpContext);
+      var-> helpContext = duplicate_string( SvPV( helpContext, na));
+      opt_assign( optUTF8_helpContext, SvUTF8(helpContext));
+   } else {
+      helpContext = newSVpv( var-> helpContext ? var-> helpContext : "", 0);
+      if ( is_opt( optUTF8_helpContext)) SvUTF8_on( helpContext);
+      return helpContext;
+   }
+   return nilSV;
 }
 
-char *
-Widget_hint( Handle self, Bool set, char *hint)
+SV *
+Widget_hint( Handle self, Bool set, SV *hint)
 {
    enter_method;
-   if (!set)
-      return var-> hint ? var-> hint : "";
-   if ( var-> stage > csFrozen) return "";
-   my-> first_that( self, (void*)hint_notify, (void*)hint);
-
-   free( var-> hint);
-   var-> hint = duplicate_string( hint);
-   if ( application && (( PApplication) application)-> hintVisible &&
-        (( PApplication) application)-> hintUnder == self)
-   {
-      if ( strlen( var-> hint) == 0) my-> set_hintVisible( self, 0);
+   if ( set) {
+      if ( var-> stage > csFrozen) return nilSV;
+      my-> first_that( self, (void*)hint_notify, (void*)hint);
+      free( var-> hint);
+      var-> hint = duplicate_string( SvPV( hint, na));
+      opt_assign( optUTF8_hint, SvUTF8(hint));
+      if ( application && (( PApplication) application)-> hintVisible &&
+           (( PApplication) application)-> hintUnder == self)
       {
-         char * hintText = var-> hint;
-         Handle self = (( PApplication) application)-> hintWidget;
-         enter_method;
-         if ( self)
-            my-> set_text( self, hintText);
+         SV   * hintText   = my-> get_hint( self);
+         Handle hintWidget = (( PApplication) application)-> hintWidget;
+         if ( strlen( var-> hint) == 0) 
+            my-> set_hintVisible( self, 0);
+         if ( hintWidget) 
+            CWidget(hintWidget)-> set_text( hintWidget, hintText);
+         sv_free( hintText);
       }
+      opt_clear( optOwnerHint);
+   } else {
+      hint = newSVpv( var-> hint ? var-> hint : "", 0);
+      if ( is_opt( optUTF8_hint)) SvUTF8_on( hint);
+      return hint;
    }
-   opt_clear( optOwnerHint);
-   return "";
+   return nilSV;
 }
 
 int
@@ -2967,14 +2929,20 @@ Widget_transparent( Handle self, Bool set, Bool transparent)
    return false;
 }
 
-char *
-Widget_text( Handle self, Bool set, char *text)
+SV *
+Widget_text( Handle self, Bool set, SV *text)
 {
-   if ( !set) return var-> text ? var-> text : "";
-   if ( var-> stage > csFrozen) return "";
-   free( var-> text);
-   var-> text = duplicate_string( text ? text : "");
-   return var-> text;
+   if ( set) {
+      if ( var-> stage > csFrozen) return nilSV;
+      free( var-> text);
+      var-> text = duplicate_string( SvPV( text, na));
+      opt_assign( optUTF8_text, SvUTF8(text));
+   } else {
+      text = newSVpv( var-> text ? var-> text : "", 0);
+      if ( is_opt( optUTF8_text)) SvUTF8_on( text);
+      return text;
+   }
+   return nilSV;
 }
 
 int

@@ -494,7 +494,7 @@ apc_gp_stretch_image ( Handle self, Handle image, int x, int y, int xFrom, int y
 
 
 Bool                                                        /* no fix */
-apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
+apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8)
 {
    POINTL p = {x, y};
    POINTL pt[ TXTBOX_COUNT];
@@ -538,7 +538,7 @@ apc_gp_get_fill_pattern( Handle self)
 
 /* XXX check for correct results !!! */
 PFontABC
-apc_gp_get_font_abc( Handle self, int first, int last)
+apc_gp_get_font_abc( Handle self, int first, int last, Bool unicode)
 {
    int i, x = last - first + 1;
    LONG f2[ 256];
@@ -770,7 +770,7 @@ apc_gp_get_text_out_baseline( Handle self)
 
 /* XXX - check correct results ! */
 int
-apc_gp_get_text_width ( Handle self, const char* text, int len, Bool addOverhang)
+apc_gp_get_text_width ( Handle self, const char* text, int len, Bool addOverhang, Bool utf8 )
 {
    POINTL pt[ TXTBOX_COUNT];
    HPS ps = sys ps;
@@ -789,7 +789,7 @@ apc_gp_get_text_width ( Handle self, const char* text, int len, Bool addOverhang
 
 /* XXX - check correct results ! */
 Point *
-apc_gp_get_text_box( Handle self, const char* text, int len)
+apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
 {
    POINTL * pt = malloc( sizeof( POINTL) * TXTBOX_COUNT);
    if ( !pt) return nil;

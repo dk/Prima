@@ -74,8 +74,8 @@ object Prima::Widget( Prima::Drawable)
    property  int    growMode;
    property  Bool   firstClick;
    property  Bool   focused;
-   property  char*  helpContext;
-   property  char*  hint;
+   property  SV *   helpContext;
+   property  SV *   hint;
    property  int    hintVisible;
    property  int    left;
    property  Handle popup;
@@ -108,7 +108,7 @@ object Prima::Widget( Prima::Drawable)
    property  Bool   syncPaint;
    property  int    tabOrder;
    property  Bool   tabStop;
-   property  char*  text;
+   property  SV *   text;
    property  int    top;
    property  Bool   transparent;
    property  Bool   visible;
@@ -136,7 +136,7 @@ object Prima::Widget( Prima::Drawable)
    c_only   void     handle_event ( PEvent event);
    method   void     hide();
    method   void     hide_cursor();
-   method   Bool     help();
+   import   Bool     help();
    method   void     init( HV * profile);
    method   void     insert_behind( Handle view);
    method   void     invalidate_rect( Rect rect);

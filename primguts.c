@@ -82,6 +82,7 @@ long   apcError = 0;
 List   postDestroys;
 int    recursiveCall = 0;
 PHash  primaObjects = nil;
+Bool   wantUnicodeInput = 0;
 
 char *
 duplicate_string( const char *s)
@@ -567,7 +568,7 @@ XS( Prima_message_FROMPERL)
    (void)items;
    if ( items != 1)
       croak("Invalid usage of Prima::%s", "message");
-   apc_show_message((char*) SvPV( ST(0), na));
+   apc_show_message((char*) SvPV( ST(0), na), SvUTF8(ST(0)));
    XSRETURN_EMPTY;
 }
 
@@ -581,6 +582,28 @@ XS( Prima_dl_export)
    XSRETURN_EMPTY;
 }
 
+XS( Prima_want_unicode_input)
+{
+   dXSARGS;
+   (void)items;
+   switch ( items) {
+   case 0:
+      XSRETURN_IV( wantUnicodeInput);
+      break;  
+   case 1:
+      {
+         Bool writable = PERL_SUPPORTS_UTF8 && apc_sys_get_value( svCanUTF8_Input);
+         if ( writable) {
+            int i = SvIV( ST(0));
+            if ( i >= 0) wantUnicodeInput = ( i ? 1 : 0);
+         }
+         XSRETURN_IV( writable);
+      }
+      break;  
+   default:  
+      croak("Invalid usage of Prima::%s", "want_unicode_input");
+   }
+}
 
 Bool
 build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
@@ -1244,7 +1267,7 @@ NAN = 0.0;
 
    list_create( &staticObjects, 16, 16);
    if ( !window_subsystem_init()) {
-      apc_show_message( "Error initializing PRIMA");
+      apc_show_message( "Error initializing PRIMA", 0);
       ST(0) = &sv_no;
       XSRETURN(1);
    };
@@ -1265,6 +1288,7 @@ NAN = 0.0;
    newXS( "Prima::Object::alive", Object_alive_FROMPERL, "Prima::Object");
    newXS( "Prima::message", Prima_message_FROMPERL, "Prima");
    newXS( "Prima::dl_export", Prima_dl_export, "Prima");
+   newXS( "Prima::want_unicode_input", Prima_want_unicode_input, "Prima");
    register_constants();
    register_Object_Class();
    register_Utils_Package();
@@ -1754,6 +1778,38 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
    }
    return nil;
 }
+
+int
+prima_utf8_length( const char * utf8)
+{
+#ifdef PERL_SUPPORTS_UTF8   
+   int ret = 0;
+   while ( *utf8) {
+      utf8 = utf8_hop(( U8*) utf8, 1);
+      ret++;
+   }
+   return ret;
+#else   
+   return 0;
+#endif  
+}
+
+
+#ifndef PERL_SUPPORTS_UTF8   
+UV
+prima_utf8_to_uv( U8 * utf8, STRLEN * len)
+{
+   *len = 1;
+   return (UV) *utf8;
+}  
+
+U8 *
+prima_uv_to_utf8( U8 * utf8, UV * uv)
+{
+   *(utf8++) = ( U8) uv;
+   return utf8;
+}  
+#endif
 
 #ifdef PARANOID_MALLOC
 #undef malloc

@@ -409,6 +409,10 @@ apc_sys_get_value( int sysValue)
          return max > 1;
       }
       break;
+   case svCanUTF8_Input :
+      return 0;
+   case svCanUTF8_Output :
+      return 0;
    default:
       apcErr( errInvParams);
    }

@@ -1916,19 +1916,19 @@ add_item( HWND w, Handle menu, PMenuItemReg i)
     {
        menuItem. iPosition = MIT_END;
        menuItem. afStyle = 0;
-       menuItem. afStyle |= ( i-> divider    ) ? MIS_SEPARATOR       : 0;
+       menuItem. afStyle |= ( i-> flags. divider) ? MIS_SEPARATOR       : 0;
        menuItem. afStyle |= ( i-> down       ) ? MIS_SUBMENU         : 0;
        menuItem. afStyle |= ( i-> bitmap     ) ? MIS_BITMAP          : 0;
        menuItem. afStyle |= ( i-> text       ) ? MIS_TEXT            : 0;
-       menuItem. afStyle |= ( i-> rightAdjust) ? MIS_BUTTONSEPARATOR : 0;
+       menuItem. afStyle |= ( i-> flags. rightAdjust) ? MIS_BUTTONSEPARATOR : 0;
        menuItem. afAttribute = 0;
-       menuItem. afAttribute |= ( i-> checked)  ? MIA_CHECKED        : 0;
-       menuItem. afAttribute |= ( i-> disabled) ? MIA_DISABLED       : 0;
+       menuItem. afAttribute |= ( i-> flags. checked)  ? MIA_CHECKED        : 0;
+       menuItem. afAttribute |= ( i-> flags. disabled) ? MIA_DISABLED       : 0;
        menuItem. id    = i-> id + MENU_ID_AUTOSTART + 1;
        menuItem. hItem = ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead) ?
           bitmap_make_handle( i-> bitmap) : 0;
        menuItem. hwndSubMenu = add_item( m, menu, i-> down);
-       if (!( i-> divider && i-> rightAdjust))
+       if (!( i-> flags. divider && i-> flags. rightAdjust))
        {
           char buf [ 1024];
           char * t = i-> accel ? buf : i-> text;
@@ -2051,96 +2051,67 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
    return true;
 }
 
-
 Bool
-apc_menu_item_get_check ( Handle self, int sysId)
-{
-   if (!var handle) return false;
-   return ( LONGFROMMP( WinSendMsg(
-      var handle, MM_QUERYITEMATTR,
-      MPFROM2SHORT( sysId, true), MPFROMLONG( MIA_CHECKED)))
-      ) != 0;
-}
-
-Bool
-apc_menu_item_get_enabled ( Handle self, int sysId)
-{
-if (!var handle) return false;
-   return  LONGFROMMP( WinSendMsg(
-      var handle, MM_QUERYITEMATTR,
-      MPFROM2SHORT( sysId, true), MPFROMLONG( MIA_DISABLED))) == 0;
-}
-
-char *
-apc_menu_item_get_text ( Handle self, int sysId, char * buf)
-{
-   if ( var handle)
-     WinSendMsg( var handle, MM_QUERYITEMTEXT, MPFROM2SHORT( sysId, 256), ( MPARAM) buf);
-   else buf[0] = 0;
-   return buf;
-}
-
-Bool
-apc_menu_item_set_accel( Handle self, PMenuItemReg m, const char * accel)
+apc_menu_item_set_accel( Handle self, PMenuItemReg m)
 {
    char buf [ 1024];
-   char * t = accel ? buf : m->text;
+   char * t = m-> accel ? buf : m->text;
    if (!var handle) return false;
-   if ( accel) snprintf( buf, 1024, "%s\t%s", m->text, accel);
+   if ( m-> accel) snprintf( buf, 1024, "%s\t%s", m->text, m-> accel);
    WinSendMsg( var handle, MM_SETITEMTEXT, MPFROM2SHORT( m->id, true), ( MPARAM) t);
    return true;
 }
 
 
 Bool
-apc_menu_item_set_check ( Handle self, PMenuItemReg m, Bool check)
+apc_menu_item_set_check ( Handle self, PMenuItemReg m)
 {
    if (!var handle) return false;
    WinSendMsg( var handle,
       MM_SETITEMATTR, MPFROM2SHORT( m->id, true),
-      MPFROM2SHORT( MIA_CHECKED, check ? MIA_CHECKED : false));
+      MPFROM2SHORT( MIA_CHECKED, m-> flags. checked ? MIA_CHECKED : false));
    return true;
 }
 
 Bool
-apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled)
+apc_menu_item_set_enabled( Handle self, PMenuItemReg m)
 {
    if (!var handle) return false;
    WinSendMsg( var handle,
       MM_SETITEMATTR, MPFROM2SHORT( m->id, true),
-      MPFROM2SHORT( MIA_DISABLED, enabled ? false : MIA_DISABLED));
+      MPFROM2SHORT( MIA_DISABLED, m-> flags. disabled ? MIA_DISABLED : false));
    return true;
 }
 
 Bool
-apc_menu_item_set_text( Handle self, PMenuItemReg m, const char * text)
+apc_menu_item_set_text( Handle self, PMenuItemReg m)
 {
    char buf [ 1024];
-   char * t = m-> accel ? buf : ( char*)text;
+   char * t = m-> accel ? buf : m-> text;
 
    if (!var handle) return false;
-   if ( m-> accel) snprintf( buf, 1024, "%s\t%s", text, m-> accel);
+   if ( m-> accel) snprintf( buf, 1024, "%s\t%s", m-> text, m-> accel);
 
    WinSendMsg( var handle, MM_SETITEMTEXT, MPFROM2SHORT( m->id, true), ( MPARAM) t);
    return true;
 }
 
 Bool
-apc_menu_item_set_key( Handle self, PMenuItemReg m, int key)
+apc_menu_item_set_key( Handle self, PMenuItemReg m)
 {
    return true;
 }
 
 /* XXX - fails to set MIS_BITMAP from MIS_TEXT */
 Bool
-apc_menu_item_set_image( Handle self, PMenuItemReg m, Handle image)
+apc_menu_item_set_image( Handle self, PMenuItemReg m)
 {
    MENUITEM mi;
-   if ( PObject( image)-> stage == csDead) return false;
+   if ( PObject( m-> bitmap)-> stage == csDead) return false;
    if ( !var handle) return false;
    if ( !WinSendMsg( var handle, MM_QUERYITEM, MPFROM2SHORT( m-> id, true), &mi)) apiErr;
    mi. afStyle = ( mi. afStyle & ~MIS_TEXT) | MIS_BITMAP;
-   mi. hItem   = image ? bitmap_make_handle( image) : 0;
+   mi. hItem   = m-> bitmap ? bitmap_make_handle( m-> bitmap) : 0;
    if ( !WinSendMsg( var handle, MM_SETITEM, MPFROM2SHORT( m-> id, true), &mi)) apiErr;
    return true;
 }
@@ -2286,7 +2257,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 }
 
 Bool
-apc_show_message( const char * message)
+apc_show_message( const char * message, Bool utf8)
 {
    char title [256] = {0};
    if ( guts. anchor && guts. queue) {

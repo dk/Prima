@@ -753,9 +753,14 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
             XSetFillStyle( DISP, md-> gc, FillSolid);
          XSetForeground( DISP, md-> gc, md-> fg); 
          for ( i = 0; i < md-> wrappedCount; i++) {
-            XDrawString( DISP, w, md-> gc, 
-              ( md-> winSz.x - md-> widths[i]) / 2, y, 
-                md-> wrapped[i], md-> lengths[i]);
+            if ( md-> wide)
+               XDrawString16( DISP, w, md-> gc, 
+                 ( md-> winSz.x - md-> widths[i]) / 2, y, 
+                   ( XChar2b*) md-> wrapped[i], md-> lengths[i]);
+            else
+               XDrawString( DISP, w, md-> gc, 
+                 ( md-> winSz.x - md-> widths[i]) / 2, y, 
+                   md-> wrapped[i], md-> lengths[i]);
             y += md-> font-> height + md-> font-> externalLeading;
          }   
          XDrawRectangle( DISP, w, md-> gc, 
@@ -837,17 +842,17 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
       }   
       break;
    case ClientMessage:
-      if (( ev-> xclient. message_type == guts. wm_data-> protocols) &&
-         (( Atom) ev-> xclient. data. l[0] == guts. wm_data-> deleteWindow)) 
+      if (( ev-> xclient. message_type == WM_PROTOCOLS) &&
+         (( Atom) ev-> xclient. data. l[0] == WM_DELETE_WINDOW)) 
          close_msgdlg( md);
       break;   
    }
 }   
      
-extern char ** Drawable_do_text_wrap( Handle, TextWrapRec *, PFontABC);
+extern char ** Drawable_do_text_wrap( Handle, TextWrapRec *);
 
 Bool
-apc_show_message( const char * message)
+apc_show_message( const char * message, Bool utf8)
 {
    char ** wrapped;
    Font f;
@@ -858,6 +863,8 @@ apc_show_message( const char * message)
    int i;
    struct MsgDlg md, **storage;
    Bool ret = true;
+   PList font_abc_unicode = nil;
+   PFontABC font_abc_ascii = nil;
 
    if ( !DISP) {
       warn( "%s", message);
@@ -868,7 +875,6 @@ apc_show_message( const char * message)
    /* acquiring message font and wrapping message text */
    {
       PCachedFont cf;
-      PFontABC abc;
       XFontStruct *fs;
       int max;
       
@@ -885,15 +891,26 @@ apc_show_message( const char * message)
          warn( "%s", message);
          return false;
       }   
-      abc = prima_xfont2abc( fs, 0, 255);
       
       twr. text      = ( char *) message;
+      twr. utf8_text = utf8;
       twr. textLen   = strlen( message);
+      twr. utf8_textLen = utf8 ? prima_utf8_length( message) : twr. textLen;
       twr. width     = appSz. x * 2 / 3;
       twr. tabIndent = 3;
       twr. options   = twNewLineBreak | twWordBreak | twReturnLines;
-      wrapped = Drawable_do_text_wrap( nilHandle, &twr, abc);
-      free( abc);
+      twr. ascii     = &font_abc_ascii;
+      twr. unicode   = &font_abc_unicode;
+      guts. font_abc_nil_hack = fs;
+      wrapped = Drawable_do_text_wrap( nilHandle, &twr);
+
+      if ( font_abc_ascii) free( font_abc_ascii);
+      if ( font_abc_unicode) {
+         int i;
+         for ( i = 0; i < font_abc_unicode-> count; i += 2) 
+            free(( void*) font_abc_unicode-> items[ i + 1]);
+         plist_destroy( font_abc_unicode);
+      }
 
       if ( !( md. widths  = malloc( twr. count * sizeof(int)))) {
          XFreeFontInfo( nil, fs, 1);
@@ -911,8 +928,18 @@ apc_show_message( const char * message)
       /* find text extensions */
       max = 0;
       for ( i = 0; i < twr. count; i++) {
-         md. widths[i] = XTextWidth( fs, wrapped[i], 
-            md. lengths[i] = strlen( wrapped[i]));
+         if ( utf8) {
+            char * w;
+            md. lengths[i] = prima_utf8_length( wrapped[i]);
+            w = ( char *) prima_alloc_utf8_to_wchar( wrapped[i], md. lengths[i]);
+            if ( !w) goto EXIT;
+            free( wrapped[i]);
+            wrapped[i] = w;
+            md. widths[i] = XTextWidth16( fs, ( XChar2b*) wrapped[i], md. lengths[i]);
+         } else {
+            md. widths[i] = XTextWidth( fs, wrapped[i], 
+               md. lengths[i] = strlen( wrapped[i]));
+         } 
          if ( md. widths[i] > max) max = md. widths[i];
       }   
       textSz. x = max;
@@ -944,6 +971,7 @@ apc_show_message( const char * message)
       XFreeFontInfo( nil, fs, 1);
    }
 
+   md. wide    = utf8;
    md. active  = true;
    md. next    = nil;
    md. pressed = false;
@@ -975,7 +1003,7 @@ apc_show_message( const char * message)
          ret = false;
          goto EXIT;
       }   
-      XSetWMProtocols( DISP, md. w, &guts. wm_data-> deleteWindow, 1);
+      XSetWMProtocols( DISP, md. w, WM_DELETE_WINDOW, 1);
       XCHECKPOINT;
       xs. flags = PMinSize | PMaxSize | USPosition;
       xs. min_width  = xs. max_width  = winSz.x;
@@ -1359,7 +1387,57 @@ prima_rect_intersect( XRectangle *t, const XRectangle *s)
 }
 
 
+void
+prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int length)
+{
+   STRLEN charlen;
+   while ( length--) {
+      register UV u = ( utf8_to_uvchr(( U8*) utf8, &charlen));
+      if ( u < 0x10000) {
+         u16-> byte1 = u >> 8;
+         u16-> byte2 = u & 0xff;
+      } else 
+         u16-> byte1 = u16-> byte2 = 0xff;
+      u16++;
+      utf8 += charlen;
+   }
+}
 
+XChar2b *
+prima_alloc_utf8_to_wchar( const char * utf8, int length)
+{
+   XChar2b * ret;
+   if ( length < 0) length = prima_utf8_length( utf8) + 1;
+   if ( !( ret = malloc( length * sizeof( XChar2b)))) return nil;
+   prima_utf8_to_wchar( utf8, ret, length);
+   return ret;
+}
+
+void 
+prima_wchar2char( char * dest, XChar2b * src, int lim)
+{
+   if ( lim < 1) return;
+   while ( lim-- && src-> byte1 && src-> byte2) *(dest++) = (src++)-> byte2;
+   if ( lim < 0) dest--;
+   *dest = 0;
+}
+
+void 
+prima_char2wchar( XChar2b * dest, char * src, int lim)
+{
+   int l = strlen( src) + 1;
+   if ( lim < 1) return;
+   if ( lim > l) lim = l;
+   src  += lim - 2;
+   dest += lim - 1;
+   dest-> byte1 = dest-> byte2 = 0;
+   dest--;
+   while ( lim--) {
+      dest-> byte2 = *(src--);
+      dest-> byte1 = 0;
+      dest--;
+   }
+}
 /* printer stubs */
 
 Bool   apc_prn_create( Handle self) { return false; }

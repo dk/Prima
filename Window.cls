@@ -50,7 +50,7 @@ object Prima::Window( Prima::Widget)
    property Bool     selected;
    property Point    size;
    property Bool     taskListed;
-   property char*    text;
+   property SV *     text;
    property Bool     transparent;
    property int      windowState;
 

@@ -175,7 +175,10 @@ typedef struct _FontInfo {
 
 typedef struct _RotatedFont {
    int          direction;
-   int          first;
+   int          first1;
+   int          first2;
+   int          height;
+   int          width;
    int          length;
    PrimaXImage**map;
    Point        shift;
@@ -185,7 +188,8 @@ typedef struct _RotatedFont {
    GC           arena_gc;
    Byte        *arena_bits;
    int          lineSize;
-   int          defaultChar;
+   int          defaultChar1;
+   int          defaultChar2;
    Fixed        sin, cos, sin2, cos2;
    struct       RotatedFont *next;
 } RotatedFont, *PRotatedFont;
@@ -275,12 +279,6 @@ typedef struct pending_event
    TAILQ_ENTRY(pending_event) peventq_link;
 } PendingEvent;
 
-typedef struct _WmGenericData {
-   Atom deleteWindow;
-   Atom protocols;
-   Atom takeFocus;
-} WmGenericData, *PWmGenericData;
-
 #define COLOR_R(x) (((x)>>16)&0xFF)
 #define COLOR_G(x) (((x)>>8)&0xFF)
 #define COLOR_B(x) ((x)&0xFF)
@@ -328,6 +326,54 @@ typedef struct {
    Byte           balance; /* 0-63 */
 } Brush;
 
+#define AI_FXA_RESOLUTION_X               0
+#define AI_FXA_RESOLUTION_Y               1
+#define AI_FXA_PIXEL_SIZE                 2
+#define AI_FXA_SPACING                    3
+#define AI_FXA_RELATIVE_WEIGHT            4
+#define AI_FXA_FOUNDRY                    5
+#define AI_FXA_AVERAGE_WIDTH              6
+#define AI_FXA_CHARSET_REGISTRY           7
+#define AI_FXA_CHARSET_ENCODING           8
+#define AI_CREATE_EVENT                   9
+#define AI_WM_DELETE_WINDOW              10
+#define AI_WM_PROTOCOLS                  11
+#define AI_WM_TAKE_FOCUS                 12
+#define AI_NET_WM_STATE                  13
+#define AI_NET_WM_STATE_SKIP_TASKBAR     14
+#define AI_NET_WM_STATE_MAXIMIZED_VERT   15
+#define AI_NET_WM_STATE_MAXIMIZED_HORIZ  16
+#define AI_NET_WM_NAME                   17
+#define AI_NET_WM_ICON_NAME              18
+#define AI_UTF8_STRING                   19
+#define AI_TARGETS                       20
+#define AI_count                         21
+
+#define FXA_RESOLUTION_X guts. atoms[ AI_FXA_RESOLUTION_X]
+#define FXA_RESOLUTION_Y guts. atoms[ AI_FXA_RESOLUTION_Y]
+#define FXA_POINT_SIZE XA_POINT_SIZE
+#define FXA_PIXEL_SIZE guts. atoms[ AI_FXA_PIXEL_SIZE]
+#define FXA_SPACING guts. atoms[ AI_FXA_SPACING]
+#define FXA_WEIGHT XA_WEIGHT
+#define FXA_RELATIVE_WEIGHT guts. atoms[ AI_FXA_RELATIVE_WEIGHT]
+#define FXA_FOUNDRY guts. atoms[ AI_FXA_FOUNDRY]
+#define FXA_FAMILY_NAME XA_FAMILY_NAME
+#define FXA_AVERAGE_WIDTH   guts. atoms[ AI_FXA_AVERAGE_WIDTH]
+#define FXA_CHARSET_REGISTRY guts. atoms[ AI_FXA_CHARSET_REGISTRY]
+#define FXA_CHARSET_ENCODING guts. atoms[ AI_FXA_CHARSET_ENCODING]
+#define CREATE_EVENT guts. atoms[ AI_CREATE_EVENT]
+#define WM_DELETE_WINDOW guts. atoms[ AI_WM_DELETE_WINDOW]
+#define WM_PROTOCOLS guts. atoms[ AI_WM_PROTOCOLS]
+#define WM_TAKE_FOCUS guts. atoms[ AI_WM_TAKE_FOCUS]
+#define NET_WM_STATE guts. atoms[ AI_NET_WM_STATE]
+#define NET_WM_STATE_SKIP_TASKBAR guts. atoms[ AI_NET_WM_STATE_SKIP_TASKBAR]
+#define NET_WM_STATE_MAXIMIZED_VERT guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_VERT]
+#define NET_WM_STATE_MAXIMIZED_HORIZ guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_HORIZ]
+#define NET_WM_NAME guts. atoms[ AI_NET_WM_NAME]
+#define NET_WM_ICON_NAME guts. atoms[ AI_NET_WM_ICON_NAME]
+#define UTF8_STRING guts. atoms[ AI_UTF8_STRING]
+#define CF_TARGETS guts. atoms[ AI_TARGETS]
+
 typedef struct _UnixGuts
 {
    /* Event management */
@@ -336,7 +382,6 @@ typedef struct _UnixGuts
    PHash                        clipboards;
    Atom *                       clipboard_formats;
    int                          clipboard_formats_count;
-   Atom                         create_event;
    fd_set                       excpt_set;
    PList                        files;
    long                         handled_events;
@@ -362,15 +407,6 @@ typedef struct _UnixGuts
    PHash                        font_hash;
    PFontInfo                    font_info;
    char                       **font_names;
-   Atom                         fxa_average_width;
-   Atom                         fxa_foundry;
-   Atom                         fxa_pixel_size;
-   Atom                         fxa_relative_weight;
-   Atom                         fxa_resolution_x;
-   Atom                         fxa_resolution_y;
-   Atom                         fxa_spacing;
-   Atom                         fxa_charset_encoding;
-   Atom                         fxa_charset_registry;
    int                          n_fonts;
    XFontStruct                 *pointer_font;
    Bool                         default_font_ok;
@@ -421,11 +457,6 @@ typedef struct _UnixGuts
    Handle                       focused;
    PHash                        menu_windows;
    PHash                        windows;
-   /* WM dependancies */
-   void                       (*wm_cleanup)( void);
-   void                       (*wm_create_window)( Handle, ApiHandle);
-   WmGenericData               *wm_data;
-   Bool                       (*wm_translate_event)( Handle, XEvent *, PEvent);
    /* XServer info */
    int                          bit_order;
    unsigned char                buttons_map[256];
@@ -499,24 +530,11 @@ typedef struct _UnixGuts
    TimerSysData                 sys_timers[ LAST_SYS_TIMER - FIRST_SYS_TIMER + 1];
    Bool                         applicationClose;
    char                         locale[32];
-   Atom                         net_wm_state, net_wm_state_skip_taskbar; 
-   Atom                         net_wm_state_maximized_vert, net_wm_state_maximized_horiz;
+   XFontStruct *                font_abc_nil_hack;
+   Atom                         atoms[AI_count];
 } UnixGuts;
 
 extern UnixGuts guts;
-
-#define FXA_RESOLUTION_X guts. fxa_resolution_x
-#define FXA_RESOLUTION_Y guts. fxa_resolution_y
-#define FXA_POINT_SIZE XA_POINT_SIZE
-#define FXA_PIXEL_SIZE guts. fxa_pixel_size
-#define FXA_SPACING guts. fxa_spacing
-#define FXA_WEIGHT XA_WEIGHT
-#define FXA_RELATIVE_WEIGHT guts. fxa_relative_weight
-#define FXA_FOUNDRY guts. fxa_foundry
-#define FXA_FAMILY_NAME XA_FAMILY_NAME
-#define FXA_AVERAGE_WIDTH guts. fxa_average_width
-#define FXA_CHARSET_REGISTRY guts. fxa_charset_registry
-#define FXA_CHARSET_ENCODING guts. fxa_charset_encoding
 
 #define XCHECKPOINT						\
    STMT_START {							\
@@ -858,7 +876,7 @@ extern void
 prima_update_cursor( Handle self);
 
 extern Bool
-prima_update_rotated_fonts( PCachedFont f, char * text, int len, int direction, PRotatedFont *result);
+prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, int direction, PRotatedFont *result);
 
 extern void
 prima_free_rotated_entry( PCachedFont f);
@@ -874,9 +892,6 @@ prima_rect_intersect( XRectangle *t, const XRectangle *s);
 
 extern void
 prima_send_create_event( XWindow win);
-
-extern void
-prima_wm_init( void);
 
 extern void
 prima_gc_ximages( void);
@@ -929,8 +944,6 @@ prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym);
 extern void
 prima_wm_sync( Handle self, int eventType);
 
-typedef Bool (*prima_wm_hook)( void);
-
 extern PFontABC
 prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar);
 
@@ -940,11 +953,27 @@ prima_find_known_font( PFont font, Bool refill, Bool bySize);
 extern void
 prima_font_pp2font( char * ppFontNameSize, PFont font);
 
+extern void         
+prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int length);
+
+extern XChar2b *      
+prima_alloc_utf8_to_wchar( const char * utf8, int length);
+
+extern void         
+prima_wchar2char( char * dest, XChar2b * src, int lim);
+
+extern void         
+prima_char2wchar( XChar2b * dest, char * src, int lim);
+
+extern XCharStruct * 
+prima_char_struct( XFontStruct * xs, void * c, Bool wide);
+
 struct MsgDlg {
    struct MsgDlg * next;
    Font  * font;
    Point   btnPos;
    Point   btnSz;
+   Bool    wide;
    char ** wrapped;
    int     wrappedCount;
    int    *widths, *lengths;
@@ -977,10 +1006,4 @@ typedef int (*XIfEventProcType)(Display*,XEvent*,XPointer);
 
 #endif
 
-/* this does not belong here */
-#ifdef PRIMA_WM_SUPPORT
-static prima_wm_hook registered_window_managers[] = {
-   prima_wm_generic     /* This must be the last item */
-};
-#endif
 

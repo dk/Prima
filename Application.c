@@ -628,7 +628,7 @@ Application_get_scroll_rate( Handle self)
 static void hshow( Handle self)
 {
    PWidget_vmt hintUnder = CWidget( var->  hintUnder);
-   char * text = hintUnder-> get_hint( var->  hintUnder);
+   SV * text = hintUnder-> get_hint( var->  hintUnder);
    Point size  = hintUnder-> get_size( var->  hintUnder);
    Point s = my-> get_size( self);
    Point fin = {0,0};
@@ -640,6 +640,7 @@ static void hshow( Handle self)
    apc_widget_map_points( var-> hintUnder, true, 1, &pos);
 
    hintWidget-> set_text( var->  hintWidget, text);
+   sv_free( text);
    hintSize = hintWidget-> get_size( var->  hintWidget);
 
    fin. x = mouse. x - 16;
@@ -950,7 +951,7 @@ Bool   Application_ownerShowHint( Handle self, Bool set, Bool ownerShowHint) { r
 Bool   Application_ownerPalette( Handle self, Bool set, Bool ownerPalette) { return false; }
 Bool   Application_clipOwner( Handle self, Bool set, Bool clipOwner)   { return true; }
 int    Application_tabOrder( Handle self, Bool set, int tabOrder)      { return 0; }
-char * Application_text    ( Handle self, Bool set, char * text)       { return ""; }
+SV   * Application_text    ( Handle self, Bool set, SV * text)       { return nilSV; }
 Bool   Application_transparent( Handle self, Bool set, Bool transparent) { return false; }
 
 #ifdef __cplusplus

@@ -111,8 +111,8 @@ apc_clipboard_has_format( Handle self, long id)
    return WinQueryClipbrdFmtInfo( guts. anchor, cf2CF( id), &flags);
 }
 
-void *
-apc_clipboard_get_data( Handle self, long id, STRLEN * length)
+Bool
+apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
 {
    id = cf2CF( id);
    switch( id)
@@ -120,8 +120,8 @@ apc_clipboard_get_data( Handle self, long id, STRLEN * length)
       case CF_BITMAP:
          {
              /* XXX palette operations */
-             PImage image      = ( PImage) *length;
-             Handle self       = ( Handle) image;
+             Handle self       = c-> image;
+             PImage image      = ( PImage) self;
              HBITMAP b = WinQueryClipbrdData( guts. anchor, id);
              HBITMAP b2, bsave;
              BITMAPINFOHEADER bh;
@@ -130,7 +130,7 @@ apc_clipboard_get_data( Handle self, long id, STRLEN * length)
              POINTL pt [4] = {{0,0},{0,0},{0,0},{0,0}};
              if ( b == nilHandle) {
                 apcErr( errInvClipboardData);
-                return nil;
+                return false;
              }
              if ( !GpiQueryBitmapParameters( b, &bh)) apiErr;
              if (bh. cBitCount > 8) bh. cBitCount = 24;
@@ -141,9 +141,9 @@ apc_clipboard_get_data( Handle self, long id, STRLEN * length)
              pt[ 1]. y = pt[ 3]. y = bh. cy;
              pt[ 1]. x--;
              pt[ 1]. y--;
-             if ( !( bi = get_binfo( self))) return nil;
+             if ( !( bi = get_binfo( self))) return false;
              b2 = GpiCreateBitmap( guts. ps, ( PBITMAPINFOHEADER2)bi, 0, nil, nil);
-             if ( b2 == nilHandle) { apiErr; return nil; }
+             if ( b2 == nilHandle) { apiErr; return false; }
              free( bi);
              bsave = GpiSetBitmap( guts. ps, b2);
              if ( bsave == HBM_ERROR) apiErr;
@@ -151,28 +151,27 @@ apc_clipboard_get_data( Handle self, long id, STRLEN * length)
              image_query( self, guts. ps);
              if ( GpiSetBitmap( guts. ps, bsave) == HBM_ERROR) apiErr;
              if ( !GpiDeleteBitmap( b2)) apiErr;
-             return (void*)*length;
+             return true;
          }
          break;
       case CF_TEXT:
          {
              char * ptr = (char*) WinQueryClipbrdData( guts. anchor, id);
              char * ret;
-             STRLEN i, len = *length = strlen( ptr);
+             STRLEN i, len = c-> text. length = strlen( ptr);
              len++;
+             c-> text. utf8 = false;
              if ( ptr == nil) {
                 apcErr( errInvClipboardData);
-                return nil;
+                return false;
              }
-             if ( !( ret = malloc( *length)))
-                return nil;
-             memcpy( ret, ptr, *length);
-             for ( i = 0; i < len - 1; i++)
-                if ( ret[ i] == '\r') {
-                   memcpy( ret + i, ret + i + 1, len - i + 1);
-                   (*length)--;
-                }
-             return ret;
+             if ( !( c-> text. text = malloc( c-> text. length)))
+                return false;
+             c-> text. length = 0;
+             for ( i = 0; i < len; i++) 
+                if ( ret[ i] != '\r') 
+                   c-> text. text[ c-> text. length++] = ret[i];
+             return true;
          }
          break;
       default:
@@ -181,20 +180,20 @@ apc_clipboard_get_data( Handle self, long id, STRLEN * length)
             void * ret;
             if ( ptr == nil) {
                apcErr( errInvClipboardData);
-               return nil;
+               return false;
             }
-            *length = *(( int*) ptr);
+            c-> binary. length = *(( int*) ptr);
             ptr += sizeof( int);
-            ret = malloc( *length);
-            if ( ret) memcpy( ret, ptr, *length);
-            return ret;
+            if ( c-> binary. data = malloc( c-> binary. length))
+               memcpy( c-> binary. data, ptr, c-> binary. length);
+            return true;
          }
    }
-   return nil;
+   return false;
 }
 
 Bool
-apc_clipboard_set_data( Handle self, long id, void * data, STRLEN length)
+apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
 {
    id = cf2CF( id);
    if ( data == nil)
@@ -207,7 +206,7 @@ apc_clipboard_set_data( Handle self, long id, void * data, STRLEN length)
       case CF_BITMAP:
          {
             /* XXX palette operations */
-            HBITMAP b = ( HBITMAP) bitmap_make_handle(( Handle) data );
+            HBITMAP b = ( HBITMAP) bitmap_make_handle( i-> image );
             if ( b == nilHandle) apiErrRet;
             if ( !WinSetClipbrdData( guts. anchor, b, id, CFI_HANDLE)) apiErrRet;
          }
@@ -215,20 +214,20 @@ apc_clipboard_set_data( Handle self, long id, void * data, STRLEN length)
       case CF_TEXT:
          {
              char * ptr;
-             rc = DosAllocSharedMem(( PVOID) &ptr, nil, length + 1, PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
+             rc = DosAllocSharedMem(( PVOID) &ptr, nil, c-> text. length + 1, PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
              if ( rc != 0) { apiAltErr( rc); return false; };
-             memcpy( ptr, data, length);
-             ptr[length] = 0;
+             memcpy( ptr, c-> text. text, c-> text. length);
+             ptr[c-> text. length] = 0;
              if ( !WinSetClipbrdData( guts. anchor, (ULONG)ptr, id, CFI_POINTER)) apiErrRet;
          }
          break;
       default:
          {
              char * ptr;
-             rc = DosAllocSharedMem(( PPVOID) &ptr, nil, length+sizeof(int), PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
+             rc = DosAllocSharedMem(( PPVOID) &ptr, nil, c-> binary.length+sizeof(int), PAG_WRITE|PAG_COMMIT|OBJ_GIVEABLE);
              if ( rc != 0) { apiAltErr( rc); return false; };
-             memcpy( ptr+sizeof(int), data, length);
-             memcpy( ptr, &length, sizeof(int));
+             memcpy( ptr+sizeof(int), c-> binary.data, c-> binary.length);
+             memcpy( ptr, &c-> binary.length, sizeof(int));
              if ( !WinSetClipbrdData( guts. anchor, (ULONG)ptr, id, CFI_POINTER)) apiErrRet;
          }
     }
