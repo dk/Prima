@@ -1802,8 +1802,10 @@ d_octet( double angle)
 }
 
 static void
-arc_offset( int delta, double radX, double radY, int * quarter, int * x1, int * y1)
+arc_offset( int delta, int dX, int dY, int * quarter, int * x1, int * y1)
 {
+   int radX = dX / 2;
+   int radY = dY / 2;
 AGAIN:
    switch ( *quarter) {
    case 0:
@@ -1897,7 +1899,7 @@ quarter( double angle)
 */
 
 int
-gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd, int drawState)
+gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd, int drawState)
 {
    int x1, y1, x2, y2;
    int len = sys linePatternLen2, ptr = 0, offset = 0, cumul = drawState, delta = 0;
@@ -1908,8 +1910,8 @@ gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, 
    Bool draw = 1;
    double cosa = cos( angleStart / GRAD), cosb = cos( angleEnd / GRAD);
    double sina = sin( angleStart / GRAD), sinb = sin( angleEnd / GRAD);
-   int xstart = cosa * radX + 0.5, ystart = sina * radY + 0.5;
-   int xend = cosb * radX + 0.5, yend = sinb * radY + 0.5;
+   int xstart = cosa * dX / 2 + 0.5, ystart = sina * dY / 2 + 0.5;
+   int xend = cosb * dX / 2 + 0.5, yend = sinb * dY / 2 + 0.5;
    int qplane, qstart = quarter( angleStart), qend = quarter( angleEnd), lim = 3;
 
    // printf("%g %g\n", angleStart, angleEnd);
@@ -1925,20 +1927,20 @@ gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, 
     } else {
        int i, qe2 = qend;
        llen += is_y( angleStart) ?
-          abs( radY * (( qstart == 2) ? -1 : 1) - ystart) :
-          abs( radX * (( qstart == 1) ? -1 : 1) - xstart);
+          abs( dY / 2 * (( qstart == 2) ? -1 : 1) - ystart) :
+          abs( dX / 2  * (( qstart == 1) ? -1 : 1) - xstart);
        llen += is_y( angleEnd) ?
-          abs( radY * (( qend == 0) ? -1 : 1) - yend) :
-          abs( radX * (( qend == 3) ? -1 : 1) - xend);
+          abs( dY / 2  * (( qend == 0) ? -1 : 1) - yend) :
+          abs( dX / 2  * (( qend == 3) ? -1 : 1) - xend);
        if ( qe2 <= qstart) qe2 += 4;
        for ( i = qstart + 1; i < qe2; i++)
-          llen += abs( 2 * (( i % 2) ? ( radX + 0.5) : ( radY + 0.5)));
+          llen += abs( 2 * (( i % 2) ? ( dX / 2 + 0.5) : ( dY / 2 + 0.5)));
     }
 
     // drawing arc
     if ( GetBkMode( ps) != TRANSPARENT) {
        HPEN pen = SelectObject( ps, CreatePen( PS_SOLID, lw, sys lbs[1]));
-       if ( !Arc( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
+       if ( !Arc( ps, x - ( dX - 1) / 2, y - dY / 2, x + dX / 2 + 1, y + (dY - 1) / 2 + 1,
           x + xstart, y - ystart, x + xend, y - yend
        )) apiErr;
        DeleteObject( SelectObject( ps, pen));
@@ -1947,10 +1949,10 @@ gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, 
     x1 = xstart;
     y1 = ystart;
     switch ( qstart) {
-    case 0: x1 = radX;  break;
-    case 1: y1 = radY;  break;
-    case 2: x1 = -radX; break;
-    case 3: y1 = -radY; break;
+    case 0: x1 = dX / 2 ;  break;
+    case 1: y1 = dY / 2 ;  break;
+    case 2: x1 = -dX / 2 ; break;
+    case 3: y1 = -dY / 2 ; break;
     }
     qplane = qstart;
 
@@ -1962,10 +1964,10 @@ gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, 
           offset -= drawState;
           x2 = x1;
           y2 = y1;
-          arc_offset( d, radX, radY, &qplane, &x1, &y1);
+          arc_offset( d, dX, dY, &qplane, &x1, &y1);
           if ( draw) {
              Arc( ps,
-                x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
+                x - ( dX - 1) / 2, y - dY / 2, x + dX / 2 + 1, y + (dY - 1) / 2 + 1,
                 x + x2, y - y2,
                 x + x1, y - y1
              );
@@ -1987,11 +1989,11 @@ gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, 
        x2 = x1;
        y2 = y1;
        if ( offset + d2 >= llen) d2 = llen - offset;
-       arc_offset( d2, radX, radY, &qplane, &x1, &y1);
+       arc_offset( d2, dX, dY, &qplane, &x1, &y1);
        if ( draw) {
           // if ( lim-- == 0) break;
           Arc( ps,
-             x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
+             x - ( dX - 1) / 2, y - dY / 2, x + dX / 2 + 1, y + (dY - 1) / 2 + 1,
              x + x2, y - y2,
              x + x1, y - y1
           );
