@@ -354,4 +354,4 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>
+L<Prima>, L<Prima::Image>, L<Prima::codecs>

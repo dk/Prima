@@ -241,7 +241,9 @@ B<Perl programming>:
 
 - L<Prima::Drawable> - 2-D graphic interface 
 
-- L<Prima::image-load> - Image subsystem and picture file operations
+- L<Prima::Image>  - Bitmap routines 
+
+- L<Prima::image-load> - Image subsystem and file operations
 
 - L<Prima::Widget> - Window management 
 
