@@ -335,6 +335,7 @@ sub rect3d
       $self-> color( $backColor);
       $self-> bar( $x + $width, $y + $width, $x1 - $width, $y1 - $width);
    }
+   $lColor = $rColor = cl::Black if $self-> get_bpp == 1;
    $self-> color( $c), return if $width <= 0;
    $self-> color( $lColor);
    $self-> lineWidth( 0);
