@@ -114,6 +114,7 @@ char *
 apc_get_user_name()
 {
    DWORD maxSize = 1024;
+
    if ( !GetUserName( userName, &maxSize)) apiErr;
    return userName;
 }
@@ -123,10 +124,10 @@ apc_getdir( const char *dirname)
 {
     long		len;
     char		scanname[MAX_PATH+3];
-    struct stat		sbuf;
     WIN32_FIND_DATA	FindData;
     HANDLE		fh;
 
+    DWORD               fattrs;
     PList               ret;
     Bool                wasDot = false, wasDotDot = false;
 
@@ -153,8 +154,9 @@ apc_getdir( const char *dirname)
 	return NULL;
 
     /* check to see if filename is a directory */
-    if ( win32_stat(dirname, &sbuf) < 0 || !S_ISDIR(sbuf.st_mode))
-	return NULL;
+    fattrs = GetFileAttributes( dirname);
+    if ( fattrs == 0xFFFFFFFF || ( fattrs & FILE_ATTRIBUTE_DIRECTORY) == 0)
+       return NULL;
 
     /* Create the search pattern */
     strcpy(scanname, dirname);
