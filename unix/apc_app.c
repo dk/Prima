@@ -43,7 +43,9 @@
 #error "BYTEORDER is not defined"
 #endif
 #define LSB32   0x1234
+#define LSB64   0x12345678
 #define MSB32   0x4321
+#define MSB64   0x87654321
 #ifndef BUFSIZ
 #define BUFSIZ  2048
 #endif
@@ -272,9 +274,9 @@ window_subsystem_init( void)
       guts. qdepth = 24;
    guts. byte_order = ImageByteOrder( DISP);
    guts. bit_order = BitmapBitOrder( DISP);
-   if ( BYTEORDER == LSB32)
+   if ( BYTEORDER == LSB32 || BYTEORDER == LSB64)
       guts. machine_byte_order = LSBFirst;
-   else if ( BYTEORDER == MSB32)
+   else if ( BYTEORDER == MSB32 || BYTEORDER == MSB64)
       guts. machine_byte_order = MSBFirst;
    else {
       warn( "UAA_001: weird machine byte order: %08x", BYTEORDER);
