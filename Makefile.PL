@@ -593,7 +593,7 @@ sub setup_variables
                 );
 
     setvar( 'TMPDIR', $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{ SystemDrive}\\TEMP") : "/tmp"));
-    setvar( 'NULLDEV', 'makefile.log');
+    setvar( 'NULLDEV', "$CWD/makefile.log");
 
     setvar( 'CC', $Config{ cc});
     print "Determining compiler type... ";
