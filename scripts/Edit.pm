@@ -274,7 +274,6 @@ sub reset
          $self-> {maxLineWidth}  = $self-> {maxLineLength} * $mw;
       }
    }
-
    my $fh    = $self-> font-> height;
    $self-> {rows}  = int($size[1] / $fh);
    my $yTail = $size[1] - $self-> {rows} * $fh;
@@ -424,15 +423,15 @@ sub reset_syntaxer
       push @doers, '/\\G\\b(\\d+)\\b/gc && do { ' .
                    $rest . 'push @a, length($1), ' .
                    $self->{hiliteNumbers} . "; redo; };\n"
-         if $self->{hiliteNumbers};
+         if defined $self->{hiliteNumbers};
       push @doers, '/\\G("[^\\"\\\\]*(?:\\\\.[^\\"\\\\]*)*")/gc && do { ' .
                    $rest . 'push @a, length($1), ' .
                    $self->{hiliteQQStrings} . "; redo; };\n"
-         if $self->{hiliteQQStrings};
+         if defined $self->{hiliteQQStrings};
       push @doers, '/\\G(\'[^\\\'\\\\]*(?:\\\\.[^\\\'\\\\]*)*\')/gc && do { ' .
                    $rest . 'push @a, length($1), ' .
                    $self->{hiliteQStrings} . "; redo; };\n"
-         if $self->{hiliteQStrings};
+         if defined $self->{hiliteQStrings};
       if ($self-> {hiliteChars}) {
          my $i;
          for ($i = 0; $i < scalar @{$self-> {hiliteChars}} - 1; $i+=2) {
