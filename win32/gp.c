@@ -198,6 +198,8 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
 {objCheck;{
    int i, dy = sys lastSize. y;
    for ( i = 0; i < numPts; i++)  points[ i]. y = dy - points[ i]. y - 1;
+   if ( points[ 0]. x != points[ numPts - 1].x || points[ 0]. y != points[ numPts - 1].y)
+      adjust_line_end( points[ numPts - 2].x, points[ numPts - 2].y, &points[ numPts - 1].x, &points[ numPts - 1].y, true);
    STYLUS_USE_PEN( sys ps);
    Polyline( sys ps, ( POINT*) points, numPts);
 }}
@@ -210,6 +212,8 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
    for ( i = 0; i < numPts; i++)  {
       points[ i]. y = dy - points[ i]. y - 1;
       pts[ i] = 2;
+      if ( i & 1)
+         adjust_line_end( points[ i - 1].x, points[ i - 1].y, &points[ i].x, &points[ i].y, true);
    }
    STYLUS_USE_PEN( sys ps);
    PolyPolyline( sys ps, ( POINT*) points, pts, numPts/2);
