@@ -590,7 +590,7 @@ query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
       sv = my-> get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text);
       if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
          AV * av = ( AV*) SvRV( sv);
-         int i, j = 0, n = av_len( av + 1);
+         int i, j = 0, n = av_len( av) + 1;
          if ( n > 256 * 3) n = 256 * 3;
          n = ( n / 3) * 3;
          if ( n < 256) memset( abc, 0, 256 * sizeof( FontABC));
