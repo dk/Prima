@@ -763,8 +763,10 @@ modify_Image( Handle self, PImgInfo imageInfo)
 #define REQPROP_DATA 0x08
 #define REQPROP_PALETTE 0x10
 #define REQPROP_LINESIZE 0x20
+#define REQPROP_PALETTESIZE 0x40
 #define REQPROP_ALL ( REQPROP_WIDTH | REQPROP_HEIGHT | REQPROP_TYPE | \
-		      REQPROP_DATA | REQPROP_PALETTE | REQPROP_LINESIZE)
+		      REQPROP_DATA | REQPROP_PALETTE | REQPROP_LINESIZE | \
+                      REQPROP_PALETTESIZE)
 
     ++SvREFCNT( SvRV(PImage(self)->mate));
     my->make_empty( self);
@@ -797,9 +799,12 @@ modify_Image( Handle self, PImgInfo imageInfo)
 	else if ( strcmp( imgProp->name, "palette") == 0) {
 	    reqProps |= REQPROP_PALETTE;
 	    var->palette = ( PRGBColor) imgProp->val.pByte;
-	    var->palSize = imgProp->size;
 	    imgProp->val.pByte = NULL;
 	    imgProp->size = 0;
+	}
+	else if ( strcmp( imgProp->name, "paletteSize") == 0) {
+	    reqProps |= REQPROP_PALETTESIZE;
+	    var->palSize = imgProp->val.Int;
 	}
 	else if ( strcmp( imgProp->name, "name") == 0) {
 	    my->set_name( self, imgProp->val.String);
