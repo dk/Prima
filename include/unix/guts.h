@@ -350,6 +350,7 @@ typedef struct _drawable_sys_data
    TAILQ_ENTRY(_drawable_sys_data) paintq_link;
 } DrawableSysData, *PDrawableSysData;
 
+#define XF_ENABLED(x)   ((x)->flags.enabled)
 #define XF_IN_PAINT(x)  ((x)->flags.paint)
 #define XF_IS_IMAGE(x)  ((x)->flags.is_image)
 #define XF_IS_ICON(x)   ((x)->flags.is_icon)

@@ -304,7 +304,7 @@ apc_widget_is_captured( Handle self)
 Bool
 apc_widget_is_enabled( Handle self)
 {
-   return X(self)-> flags. enabled;
+   return XF_ENABLED(X(self));
 }
 
 Bool
@@ -528,8 +528,14 @@ apc_widget_set_color( Handle self, Color color, int i)
 Bool
 apc_widget_set_enabled( Handle self, Bool enable)
 {
-   X(self)-> flags. enabled = enable;
-   DOLBUG( "apc_widget_set_enabled( %d) of %s\n", enable, PWidget(self)->name);
+   DEFXX;
+   Event e;
+
+   if ( enable == XF_ENABLED(XX)) return true;
+   XF_ENABLED(XX) = enable;
+   bzero( &e, sizeof( e));
+   e. cmd = enable ? cmEnable : cmDisable;
+   CComponent(self)-> message( self, &e);
    return true;
 }
 

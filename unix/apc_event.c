@@ -308,7 +308,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    }
    e. gen. source = self;
    XX = X(self);
-   disabled = !XX-> flags. enabled;
+   disabled = !XF_ENABLED(XX);
 
    was_sent = ev-> xany. send_event;
 
@@ -568,7 +568,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	   || XX-> origin. y != XX-> known_origin. y) {
 	 /* move notification */
 	 e. cmd = cmMove;
-	 e. gen. P = old_origin;
+         if (0) /*MMM*/
+         fprintf( stderr, "%s: emove from (%d,%d) to (%d,%d)\n",
+                  PWidget(self)-> name, old_origin.x, old_origin.y, XX->origin.x, XX->origin.y);
+	 e. gen. P = XX-> origin;  (void)old_origin;
 	 CComponent( self)-> message( self, &e);
       }
 
