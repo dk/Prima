@@ -127,9 +127,9 @@ vsnprintf( char *buf, size_t len, const char *format, va_list args)
     int rc;
     rc = vsprintf( buf, format, args);
     if ( rc >= len) {
-	/* We'd better die here rather than wait for memory corruption consequences! */
-	fprintf( stderr, "snprintf/vsnprintf buffer overflow, memory corruption possible. Blame Borland for this error!");
-	exit( 1);
+        /* We'd better die here rather than wait for memory corruption consequences! */
+        fprintf( stderr, "snprintf/vsnprintf buffer overflow, memory corruption possible. Blame Borland for this error!");
+        exit( 1);
     }
     return rc;
 }
@@ -1184,7 +1184,7 @@ XS( boot_Prima)
    TYPECHECK( int16_t,  2);
    TYPECHECK( uint32_t, 4);
    TYPECHECK( int32_t,  4);
-   TYPECHECK( void*, sizeof(Handle));
+   TYPECHECK( void*, (int)sizeof(Handle));
 
 #undef TYPECHECK
 #ifdef BROKEN_COMPILER
@@ -1822,10 +1822,10 @@ debug_write( const char *format, ...)
 {
     int rc = 0;
     if ( dolbug) {
-	va_list args;
-	va_start( args, format);
-	rc = vfprintf( stderr, format, args);
-	va_end( args);
+        va_list args;
+        va_start( args, format);
+        rc = vfprintf( stderr, format, args);
+        va_end( args);
     }
     return rc;
 }
