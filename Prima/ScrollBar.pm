@@ -414,6 +414,16 @@ sub profile_default
    }
 }
 
+{
+my %RNT = (
+   %{Prima::Widget->notification_types()},
+   Track => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
+
 sub profile_check_in
 {
    my ( $self, $p, $default) = @_;
@@ -761,9 +771,11 @@ sub on_mousemove
               ( $self->{max} - $self->{min})) /
               ( $groove[2] - $groove[0] - $tab[2] + $tab[0])};
       if ( defined $val) {
+         my $ov = $self-> {value};
          $self-> {suppressNotify} = $self->{autoTrack} ? undef : 1;
          $self-> set_value( $val);
          $self-> {suppressNotify} = undef;
+         $self-> notify(q(Track)) if !$self->{autoTrack} && $ov != $self->{value};
       }
    } elsif ( $who eq q(b1)
 	     || $who eq q(b2)
