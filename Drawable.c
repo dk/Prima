@@ -555,6 +555,8 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
    } else                                                 \
       ret[ t-> count++] = c;                              \
    start += l;                                            \
+   if ( t-> options & twReturnFirstLineLength)           \
+      return ret;                                         \
 }
 
 /* determining ~ character location */
@@ -771,6 +773,15 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    
    c = Drawable_do_text_wrap( self, &t, abc);
    free( abc);
+
+   if ( t. options & twReturnFirstLineLength) {
+      int rlen = 0;
+      if ( c) {
+         if ( t. count > 0) rlen = (int) c[ 1];
+         free( c);
+      }
+      return newSViv(( IV) rlen);
+   }
 
    if ( !c) return nilSV;
 

@@ -2788,6 +2788,8 @@ TW(WordBreak)
 TW(ExpandTabs)
 #define twCollapseTilde   0x100    /* remove ~ from line */
 TW(CollapseTilde)
+#define twReturnFirstLineLength 0x220 
+TW(ReturnFirstLineLength)
 #define twDefault         (twNewLineBreak|twCalcTabs|twExpandTabs|twReturnLines|twWordBreak)
 TW(Default)
 END_TABLE(tw,UV)
