@@ -217,7 +217,7 @@ sub on_paint
             $canvas-> color( $c3d[ 0]);
             $canvas-> bar( $stx, $sty - 1, $stx + $lnx, $sty + 9);
             $canvas-> color( $clr[ 0]);
-            $canvas-> line( $stx, $sty + $_ * 2, $stx + $lnx, $sty + $_ * 2) for 0..5;
+            $canvas-> lines( [ map { $stx, $sty + $_ * 2, $stx + $lnx, $sty + $_ * 2 } 0..5 ] );
          } else {
             my $stx = $rect[0] + int($lenx / 2) - 6 + ( $self-> { tab} ->{ pressed} ? 1 : 0) ;
             my $sty = int($maxy / 3) - ( $self-> { tab} ->{ pressed} ? 1 : 0);
@@ -225,7 +225,7 @@ sub on_paint
             $canvas-> color( $c3d[ 0]);
             $canvas-> bar( $stx + 1, $sty, $stx + 11, $sty + $lny);
             $canvas-> color( $clr[ 0]);
-            $canvas-> line( $stx + $_ * 2, $sty, $stx + $_ * 2, $sty + $lny) for 0..5;
+            $canvas-> lines( [ map { $stx + $_ * 2, $sty, $stx + $_ * 2, $sty + $lny} 0..5 ] );
          }
       }
    } else {
