@@ -726,7 +726,7 @@ sub on_mousemove
    {
       my @groove = @{$self->{groove}->{rect}};
       my @tab    = @{$self->{tab}->{rect}};
-      my $val    = $self->{vertical} ?
+      my $val    = eval{$self->{vertical} ?
          $self->{max} -
             (( $y - $self->{$who}->{aperture} - $self->{btx}) *
              ( $self->{max} - $self->{min})) /
@@ -735,7 +735,7 @@ sub on_mousemove
          $self->{min} +
              (( $x - $self->{$who}->{aperture} - $self->{btx}) *
               ( $self->{max} - $self->{min})) /
-              ( $groove[2] - $groove[0] - $tab[2] + $tab[0]);
+              ( $groove[2] - $groove[0] - $tab[2] + $tab[0])};
       my $ov = $self-> {value};
       $self-> {suppressNotify} = $self->{autoTrack} ? undef : 1;
       $self-> value( $val);
