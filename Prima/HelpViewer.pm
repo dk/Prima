@@ -179,7 +179,7 @@ sub on_keydown
 }
 
 package Prima::PodViewWindow;
-use vars qw(@ISA $loaddlg $finddlg $prndlg $setupdlg $inifile
+use vars qw(@ISA $finddlg $prndlg $setupdlg $inifile
 $defaultVariableFont $defaultFixedFont);
 @ISA = qw(Prima::Window);
 
@@ -394,17 +394,16 @@ sub on_destroy
 sub load_dialog
 {
    my $self = $_[0];
-   $loaddlg = Prima::OpenDialog-> create(
+   my $file = Prima::open_file(
      filter    => [
         ['Documentation' => '*.pod;*.pm;*.pl'],
         ['All files' => '*']],
       text     => 'Open manpage',
-      system => 1,
-    ) unless $loaddlg;
-    return unless $loaddlg-> execute;
-    my $mark = $self-> {text}-> make_bookmark;
-    $self-> {text}-> load_file( $loaddlg-> fileName);
-    $self-> {text}-> notify(q(Bookmark), $mark) if $mark;
+   );
+   return unless defined $file;
+   my $mark = $self-> {text}-> make_bookmark;
+   $self-> {text}-> load_file( $file);
+   $self-> {text}-> notify(q(Bookmark), $mark) if $mark;
 }
 
 sub goto

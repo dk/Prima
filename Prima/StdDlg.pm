@@ -90,6 +90,32 @@ sub AUTOLOAD
    shift->$method(@_);
 }
 
+package Prima;
+
+my ($openFileDlg, $saveFileDlg);
+
+sub open_file
+{
+   my %profile = @_;
+   $openFileDlg = Prima::OpenDialog-> create( 
+      system => exists($profile{system}) ? $profile{system} : 1,
+      onDestroy => sub { undef $openFileDlg},
+   ) unless $openFileDlg;
+   $openFileDlg-> set( %{$openFileDlg-> profile_default}, %profile);
+   return $openFileDlg-> execute;
+}
+
+sub save_file
+{
+   my %profile = @_;
+   $saveFileDlg = Prima::SaveDialog-> create( 
+      system => exists($profile{system}) ? $profile{system} : 1,
+      onDestroy => sub { undef $saveFileDlg},
+   ) unless $saveFileDlg;
+   $saveFileDlg-> set( %{$saveFileDlg-> profile_default}, %profile);
+   return $saveFileDlg-> execute;
+}
+
 package Prima::ChDirDialog;
 
 sub AUTOLOAD
@@ -178,8 +204,13 @@ no need to C<use> the corresponding module explicitly.
 =head1 SYNOPSIS
 
    use Prima::StdDlg;
+   
    Prima::FileDialog-> create-> execute;
    Prima::FontDialog-> create-> execute;
+  
+   # open standard file open dialog
+   my $file = Prima::open_file;
+   print "You've selected: $file\n" if defined $file;
 
 =head1 API
 
@@ -187,7 +218,17 @@ The module accesses the following dialog classes:
 
 =over
 
-=item  Prima::OpenDialog
+=item Prima::open_file 
+
+Invokes standard file open dialog and return the selected file(s).
+Uses system-specific standard file open dialog, if available.
+
+=item Prima::save_file 
+
+Invokes standard file save dialog and return the selected file(s).
+Uses system-specific standard file save dialog, if available.
+
+=item Prima::OpenDialog
 
 File open dialog.
 

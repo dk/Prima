@@ -55,6 +55,7 @@ sub profile_default
       showHelp           => 0,
 
       openMode           => 1,
+      text               => undef,
    }
 }
 
@@ -62,14 +63,15 @@ sub init
 {
    my $self = shift;
    my %profile = $self-> SUPER::init(@_);
-   for ( qw( defaultExt filter directory filterIndex 
-             createPrompt fileMustExist noReadOnly noTestFileCreate
-             overwritePrompt pathMustExist showHelp openMode 
-   )) { $self->{$_} = $profile{$_} }
    $self-> {flags} = {
       HIDEREADONLY => 1,
       EXPLORER => 1,
    };
+   for ( qw( filterIndex openMode)) { $self->{$_}=$profile{$_} }
+   for ( qw( defaultExt filter directory multiSelect
+             createPrompt fileMustExist noReadOnly noTestFileCreate
+             overwritePrompt pathMustExist showHelp 
+   )) { $self->$_($profile{$_}) }
    return %profile;
 }
 
@@ -178,12 +180,7 @@ sub fileName
 {
    unless ( $#_) {
       return $_[0]->{fileName} unless $_[0]->multiSelect;
-      my @s;
-      if ( $_[0]-> {flags}->{EXPLORER}) {
-	 @s = split("\0", $_[0]-> {fileName});
-      } else {
-         @s = quoted_split( $_[0]-> {fileName});
-      }
+      my @s = quoted_split( $_[0]-> {fileName});
       return $s[0] unless wantarray;
       return @s;
    }
@@ -196,6 +193,22 @@ sub defaultExt
    $_[0]->{defaultExt} = $_[1];
 }
 
+sub openMode
+{
+   return $_[0]->{openMode} unless $#_;
+   $_[0]->{openMode} = $_[1];
+}
+
+sub text
+{
+   return $_[0]->{text} unless $#_;
+   $_[0]->{text} = $_[1];
+}
+
+# mere callbacks if someone wants these to inherit
+sub ok {} 
+sub cancel {} 
+
 sub execute
 {
    my $self = $_[0];
@@ -204,13 +217,32 @@ sub execute
       join(',', grep { $self->{flags}->{$_}} keys %{$self->{flags}}));
    Prima::Application-> sys_action( 'win32.OpenFile.filters=' . 
       join("\0", map { "$$_[0] ($$_[1])\0$$_[1]" } @{$self->{filter}}) . "\0");
-   Prima::Application-> sys_action( 'win32.OpenFile.filterindex=' . $self->{filterIndex});
+   Prima::Application-> sys_action( 'win32.OpenFile.filterindex=' . ($self->{filterIndex}+1));
    Prima::Application-> sys_action( 'win32.OpenFile.directory=' . $self->{directory});
    Prima::Application-> sys_action( 'win32.OpenFile.defext=' . $self->{defaultExt});
+   Prima::Application-> sys_action( 'win32.OpenFile.title=' . (defined $self->{text} ? $self->{text} : 'NULL'));
    my $ret = Prima::Application-> sys_action( 'win32.OpenFile.'.($self->{openMode}?'open':'save'));
-   return wantarray ? () : undef if !defined $ret;
-   $self-> {fileName} = $ret;
+   if ( !defined $ret) {
+      $self-> cancel;
+      return wantarray ? () : undef;
+   }
    $self-> {directory} = Prima::Application-> sys_action( 'win32.OpenFile.directory');
+   $self-> {directory} =~ s/\\/\//g;
+   $self-> {directory} =~ s/\s+$//;
+   $self-> {directory} .= '/' unless $self-> {directory} =~ /\/$/;
+   $self-> {fileName} = $ret;
+   if ( $self-> multiSelect) {
+      $self-> {fileName} = join( ' ', map {
+         s/\\/\//g; 
+	 $_ = $self->{directory} . $_ unless m/^\w\:/; # win32 absolute path, if any
+	 s/([\\\s])/\\$1/g;
+	 $_;
+      } quoted_split($self-> {fileName}));
+   } else {
+      $self-> {fileName} =~ s/\\/\//g;
+   }
+   $self-> {filterIndex} = Prima::Application-> sys_action( 'win32.OpenFile.filterindex')-1;
+   $self-> ok;
    return $self-> fileName;
 }
 

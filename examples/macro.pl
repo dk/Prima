@@ -54,27 +54,24 @@ my $doMouseMove = 0;
 
 sub mopen
 {
-   my $dlg  = Prima::OpenDialog-> create(
+   my $f = Prima::open_file(
       filter    => [
          ['Macro record' => '*.mrec'],
          ['All files' => '*']
       ],
    );
-   if ( $dlg-> execute) {
-      my $f = $dlg-> fileName;
-      if ( open F, $f) {
-         stop();
-         @data = ();
-         while (<F>) {
-            push ( @data, [ split(' ', $_)]);
-         }
-         close F;
-         update();
-      } else {
-         MsgBox::message("Cannot load $f");
+   return unless defined $f;
+   if ( open F, $f) {
+      stop();
+      @data = ();
+      while (<F>) {
+         push ( @data, [ split(' ', $_)]);
       }
+      close F;
+      update();
+   } else {
+      MsgBox::message("Cannot load $f");
    }
-   $dlg-> destroy;
 }
 
 
@@ -85,24 +82,21 @@ sub msave
       MsgBox::message("Nothing to save");
       return;
    }
-   my $dlg  = Prima::SaveDialog-> create(
+   my $f = Prima::save_file(
       filter    => [
          ['Macro record' => '*.mrec'],
          ['All files' => '*']
       ],
    );
-   if ( $dlg-> execute) {
-      my $f = $dlg-> fileName;
-      if ( open F, "> $f") {
-         for ( @data) {
-            print F "@$_\n";
-         }
-         close F;
-      } else {
-         MsgBox::message("Cannot save $f");
+   return unless defined $f;
+   if ( open F, "> $f") {
+      for ( @data) {
+         print F "@$_\n";
       }
+      close F;
+   } else {
+      MsgBox::message("Cannot save $f");
    }
-   $dlg-> destroy;
 }
 
 
