@@ -2024,6 +2024,13 @@ sub update_markings
 sub form_cancel
 {
    if ( $VB::main) {
+      if ( $VB::main-> {topLevel}) {
+         for ( $::application-> get_components) {
+            next if $VB::main-> {topLevel}-> {"$_"};
+            eval { $_-> destroy; };
+         }
+         $VB::main-> {topLevel} = undef;
+      }
       return unless $VB::main-> {running};
       $VB::main-> {running}-> destroy;
       $VB::main-> {running} = undef;
@@ -2045,6 +2052,7 @@ sub form_run
    $VB::main-> wait;
    my $c = $self-> write_form;
    my $okCreate = 0;
+   $VB::main-> {topLevel} = { map { ("$_" => 1) } $::application-> get_components };
    eval{
       my $sub = eval("$c");
       if ( $@) {
@@ -2068,7 +2076,14 @@ sub form_run
       };
    };
    $Prima::VB::VBLoader::builderActive = 1;
-   Prima::MsgBox::message( "$@") if $@;
+   if ( $@) {
+      Prima::MsgBox::message( "$@");
+      for ( $::application-> get_components) {
+         next if $VB::main-> {topLevel}-> {"$_"};
+         eval { $_-> destroy; };
+      }
+      $VB::main-> {topLevel} = undef;
+   }
 }
 
 sub wait
