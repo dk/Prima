@@ -754,7 +754,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          if ( is_apt( aptFocused)) cursor_update(( Handle) self);
       }
       if ( sys sizeLockLevel == 0)
-         var sizeUnbound = sys lastSize;
+         var virtualSize = sys lastSize;
       break;
    case WM_TIMER:
       {

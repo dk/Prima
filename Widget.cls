@@ -31,7 +31,6 @@ object Widget( Drawable)
 {
 # user variables
    Handle    accelTable;	       # accelerator table
-   List      widgets;		       # list of child widgets
    Handle    currentWidget;	       # current widget pointer
    int       cursorLock;               # cursor lock count
    NPoint    designScale;              # font width and height for view design
@@ -44,13 +43,14 @@ object Widget( Drawable)
    Handle    popupMenu;                # popup menu by default
    int       pointerType;              # pointer type, crXXX
    Point     pos;                      # last position
-   Point     sizeUnbound;              # fictive size not aware of size limits
+   int       selectingButtons;         # which mouse buttons can select a view
    Point     sizeMin;                  # default min size
    Point     sizeMax;                  # default max size
    int       tabOrder;                 # tab ordering number
    char   *  text;                     # caption text
-   int       selectingButtons;         # which mouse buttons can select a view
+   Point     virtualSize;              # fictive size not aware of size limits
    int       widgetClass;              # predefined system class
+   List      widgets;		       # list of child widgets
 
 # direct call methods
    method   void     attach( Handle objectHandle);

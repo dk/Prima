@@ -991,8 +991,8 @@ apc_window_set_client_size( Handle self, int x, int y)
       if ( !GetWindowRect( h, &r)) apiErr;
       if ( !GetClientRect( h, &c)) apiErr;
       sys sizeLockLevel++;
-      var sizeUnbound. x = x;
-      var sizeUnbound. y = y;
+      var virtualSize. x = x;
+      var virtualSize. y = y;
       if ( x < 0) x = 0;
       if ( y < 0) y = 0;
       SetWindowPos( h, 0,
@@ -1912,8 +1912,8 @@ apc_widget_set_size( Handle self, int width, int height)
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
    if ( sys className != WC_FRAME) {
       sys sizeLockLevel++;
-      var sizeUnbound. x = width;
-      var sizeUnbound. y = height;
+      var virtualSize. x = width;
+      var virtualSize. y = height;
    }
    if ( height < 0) height = 0;
    if ( width  < 0) width  = 0;

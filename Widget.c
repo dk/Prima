@@ -1698,7 +1698,7 @@ Widget_get_top( Handle self)
 Point
 Widget_get_virtual_size( Handle self)
 {
-   return var sizeUnbound;
+   return var virtualSize;
 }
 
 int
@@ -2564,7 +2564,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
    if ( his growMode)
    {
 #if 0
-      Point size  =  his sizeUnbound;
+      Point size  =  his virtualSize;
       Point reportedSize  =  his self-> get_size( child);
       Point pos   =  his self-> get_pos( child);
       int   dx    = metrix-> right - metrix-> left;
@@ -2590,7 +2590,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
 
       his self-> set_pos ( child, pos.x, pos. y);
       his self-> set_size( child, size.x, size. y);
-      his sizeUnbound = size;
+      his virtualSize = size;
 #else
       Point size  =  his self-> get_virtual_size( child);
       Point pos   =  his self-> get_pos( child);
