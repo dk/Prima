@@ -460,6 +460,7 @@ typedef struct _UnixGuts
    XWindow                      grab_redirect;
    Handle                       grab_widget;
    Point                        grab_translate_mouse;
+   Handle                       grab_confine;
    int                          scroll_first;
    int                          scroll_next;
    Handle                       currentMenu;
@@ -832,6 +833,9 @@ prima_cursor_tick( void);
 
 extern void
 prima_no_cursor( Handle self);
+
+extern Cursor
+prima_null_pointer( void);
 
 extern Bool
 prima_one_loop_round( Bool wait, Bool careOfApplication);
