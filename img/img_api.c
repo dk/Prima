@@ -260,7 +260,6 @@ img_property_create_v( const char *name, U16 propFlags, int propArraySize, va_li
 	imgProp->size = -1;
 	imgProp->used = 0;
 	if ( (propFlags & PROPTYPE_ARRAY) == PROPTYPE_ARRAY) {
-	    int arraySize;
 	    imgProp->size = propArraySize > 0 ? propArraySize : 1;
 	    switch ( propFlags & PROPTYPE_MASK) {
 		case PROPTYPE_INT:
