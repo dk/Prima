@@ -1271,8 +1271,8 @@ apc_gp_get_text_box( Handle self, const char* text, int len)
 
    pt[0].y = pt[2]. y = sz. cy - - var font. descent;
    pt[1].y = pt[3]. y = - var font. descent;
-   pt[4].y = 0;
-   pt[3].x = pt[2]. x = pt[4]. x = sz. cx;
+   pt[4].y = pt[0]. x = pt[1].x = 0;
+   pt[3].x = pt[2]. x = pt[4].x = sz. cx;
    if ( len > 0 && !IS_NT) pt[4].x -= sys tmOverhang;
 
    if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
