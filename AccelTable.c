@@ -52,10 +52,9 @@ AccelTable_init( Handle self, HV * profile)
 void
 AccelTable_set_items( Handle self, SV * menuItems)
 {
-   int subCount = 0, autoEnum = 0;
    if ( var-> stage > csFrozen) return;
    my-> dispose_menu( self, var->  tree);
-   var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0, &subCount, &autoEnum);
+   var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
 }
 
 Bool

@@ -116,7 +116,7 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
 /* #define log_write debug_write */
 
 void *
-AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * autoEnum)
+AbstractMenu_new_menu( Handle self, SV * sv, int level)
 {
    AV * av;
    int i, count;
@@ -140,13 +140,12 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
    }
    av = (AV *) SvRV( sv);
    n = av_len( av);
-
+   
    if ( n == -1) {
       if ( level == 0) return nil; /* null menu */
       warn("RTC003E: menu build error: empty array passed");
       return nil;
    }
-   
    /* log_write("%s(%d){", buf, n+1); */
 
    /* cycling the list of items */
@@ -164,7 +163,6 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
       int l_accel = -1;
       int l_key   = -1;
       int l_data  = -1;
-      Bool addToSubs = true;
 
       if ( itemHolder == nil)
       {
@@ -192,10 +190,10 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
       r-> key = kbNoKey;
       /* log_write("%sNo: %d, count: %d", buf, i, count); */
 
-      if ( count < 2) {          /* empty of 1 means line divisor, no matter of text */
+      if ( count < 2) {          /* empty or 1 means line divisor, no matter of text */
          r-> flags. divider = true;
          rightAdjust = (( level == 0) && ( var-> anchored));
-         addToSubs = false;
+	 if ( count == 1) l_var = 0;
       } else if ( count == 2) {
          l_text = 0;
          l_sub  = 1;
@@ -226,18 +224,20 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
       if ( m) curr = curr-> next = r; else curr = m = r; /* adding to list */
 
       r-> flags. rightAdjust = rightAdjust ? 1 : 0;
-      r-> id = -1;
+      r-> id = ++(var-> autoEnum);
 
-#define a_get( l_, fl_, num) if ( num >= 0 ) {                                \
-                           holder = av_fetch( item, num, 0);                 \
-                           if ( holder) {                                    \
-                              l_ = duplicate_string( SvPV( *holder, na));    \
-                              fl_ = SvUTF8(*holder) ? 1 : 0;                 \
-                           } else {                                          \
-                              warn("RTC003A: menu build error: array panic");\
+#define a_get( l_, fl_, num) if ( num >= 0 ) {                                 \
+                           holder = av_fetch( item, num, 0);                   \
+                           if ( holder) {                                      \
+			      if ( SvTYPE(*holder) != SVt_NULL) {              \
+				 l_ = duplicate_string( SvPV( *holder, na));   \
+				 fl_ = SvUTF8(*holder) ? 1 : 0;                \
+			      }                                                \
+                           } else {                                            \
+                              warn("RTC003A: menu build error: array panic");  \
                               my-> dispose_menu( self, m);                     \
-                              return nil;                                    \
-                           }                                                 \
+                              return nil;                                      \
+                           }                                                   \
                         }
       a_get( r-> accel   , r-> flags. utf8_accel,    l_accel);
       a_get( r-> variable, r-> flags. utf8_variable, l_var);
@@ -271,7 +271,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
       if ( r-> variable == nil)
       {
          char b[256];    /* auto enumeration */
-         snprintf( b, 256, "MenuItem%d", ++(*autoEnum));
+         snprintf( b, 256, "MenuItem%d", r-> id);
          r-> variable = duplicate_string( b);
       }
       /* log_write( r-> variable); */
@@ -327,8 +327,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
             {
                r-> code = newSVsv( subItem);
             } else {
-               r-> down = ( PMenuItemReg) my-> new_menu( self, subItem, level + 1, subCount, autoEnum);
-               addToSubs = false;
+               r-> down = ( PMenuItemReg) my-> new_menu( self, subItem, level + 1);
                if ( r-> down == nil)
                {
                   /* seems error was occured inside this call */
@@ -342,10 +341,8 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, int * subCount, int * au
                r-> flags. utf8_perlSub = SvUTF8( subItem) ? 1 : 0;
             } else {
                warn("RTC0038: menu build error: invalid sub name passed");
-               addToSubs = false;
             }
          }
-         if ( addToSubs) r-> id = ++(*subCount);
       }
 
       /* parsing data */
@@ -446,9 +443,12 @@ new_av(  PMenuItemReg m, int level)
                if ( m-> flags. utf8_variable) SvUTF8_on( sv);
                av_push( loc, sv);
                free( varName);
-            } else
-               av_push( loc, newSVpv( "", 0));
-         }
+            } else {
+               av_push( loc, newSVpv( "undefined", 0));
+	    }
+         } else {
+            av_push( loc, newSVpv( "undefined", 0));
+	 }
 
          if ( m-> bitmap) {
             if ( PObject( m-> bitmap)-> stage < csDead)
@@ -466,20 +466,30 @@ new_av(  PMenuItemReg m, int level)
             SV * sv = newSVpv( m-> accel, 0);
             av_push( loc, sv);
             if ( m-> flags. utf8_accel) SvUTF8_on( sv);
-            av_push( loc, newSViv( m-> key));
-         }
+         } else {
+            av_push( loc, newSVpv( "", 0));
+	 }
+         av_push( loc, newSViv( m-> key));
 
-         if ( m-> down) av_push( loc, new_av( m-> down, level + 1));
-         else {
-            if ( m-> code) av_push( loc, newSVsv( m-> code)); else
-            if ( m-> perlSub) {
-               SV * sv = newSVpv( m-> perlSub, 0);
-               if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
-               av_push( loc, sv);
-            }
-         }
+         if ( m-> down) {
+	    av_push( loc, new_av( m-> down, level + 1));
+	 } else if ( m-> code) {
+	    av_push( loc, newSVsv( m-> code)); 
+	 } else if ( m-> perlSub) {
+            SV * sv = newSVpv( m-> perlSub, 0);
+            if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
+            av_push( loc, sv);
+         } else {
+            av_push( loc, newSVpv( "", 0));
+	 }
 
-         if ( m-> data) av_push( loc, newSVsv( m-> data));
+         if ( m-> data) 
+	    av_push( loc, newSVsv( m-> data));
+      } else {
+         if ( m-> variable)
+            av_push( loc, newSVpv( m-> variable, 0));
+	 else
+            av_push( loc, newSVpv( "undefined", 0));
       }
       av_push( glo, newRV_noinc(( SV *) loc));
       m = m-> next;
@@ -506,23 +516,32 @@ key_match ( Handle self, PMenuItemReg m, void * params)
 }
 
 SV *
-AbstractMenu_get_items ( Handle self, char * varName)
+AbstractMenu_get_items( Handle self, char * varName)
 {
    if ( var-> stage > csFrozen) return nilSV;
    if ( strlen( varName))
    {
       PMenuItemReg m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, varName, true);
-      return ( m && m-> down) ? new_av( m-> down, 1) : nilSV;
-   } else return var-> tree ? new_av( var-> tree, 0) : nilSV;
+      if ( m && m-> down) {
+	 return new_av( m-> down, 1);
+      } else if ( m) {
+   	 return newRV_noinc(( SV *) newAV());
+      } else {
+	 return nilSV;
+      }
+   } else {
+      return var-> tree ? 
+	 new_av( var-> tree, 0) :
+   	 newRV_noinc(( SV *) newAV());
+   }
 }
 
 void
 AbstractMenu_set_items( Handle self, SV * items)
 {
-   int subCount = 0, autoEnum = 0;
    PMenuItemReg oldBranch = var-> tree;
    if ( var-> stage > csFrozen) return;
-   var-> tree = ( PMenuItemReg) my-> new_menu( self, items, 0, &subCount, &autoEnum);
+   var-> tree = ( PMenuItemReg) my-> new_menu( self, items, 0);
    if ( var-> stage <= csNormal && var-> system)
       apc_menu_update( self, oldBranch, var-> tree);
    my-> dispose_menu( self, oldBranch);
@@ -712,7 +731,7 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 }
 
 SV *
-AbstractMenu_text ( Handle self, Bool set, char * varName, SV * text)
+AbstractMenu_text( Handle self, Bool set, char * varName, SV * text)
 {
    PMenuItemReg m;
    if ( var-> stage > csFrozen) return nilSV;
@@ -904,12 +923,6 @@ AbstractMenu_remove( Handle self, char * varName)
    my-> dispose_menu( self, m);
 }
 
-static Bool collect_id( Handle self, PMenuItemReg m, int * params)
-{
-   if ( m-> id > 0) (*params)++;
-   return false;
-}
-
 static Bool increase_id( Handle self, PMenuItemReg m, int * params)
 {
    if ( m-> id > 0) m-> id += *params;
@@ -919,7 +932,7 @@ static Bool increase_id( Handle self, PMenuItemReg m, int * params)
 void
 AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 {
-   int subCount = 0, autoEnum = 0, level;
+   int level;
    PMenuItemReg *up, m, addFirst, addLast, branch;
 
    if ( var-> stage > csFrozen) return;
@@ -930,7 +943,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
    {
       if ( var-> tree == nil)
       {
-         var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0, &subCount, &autoEnum);
+         var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
          if ( var-> stage <= csNormal && var-> system)
             apc_menu_update( self, nil, var-> tree);
          return;
@@ -940,24 +953,16 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       level = 0;
    } else {
       branch = m = ( PMenuItemReg) my-> first_that( self, (void*)var_match, rootName, true);
-      if ( m == nil || m-> down == nil) return;
+      if ( m == nil) return;
+      if ( m-> down) index = 0;
       up = &m-> down;
       m = m-> down;
       level = 1;
    }
 
-   {
-      int maxId = 0;
-      PMenuItemReg save = var-> tree;
-      my-> first_that( self, (void*)collect_id, &maxId, true);
-      autoEnum = maxId;
-      /* the level is 0 or 1 for the sake of rightAdjust */
-      addFirst = ( PMenuItemReg) my-> new_menu( self, menuItems, level, &subCount, &autoEnum);
-      if ( !addFirst) return; /* error in menuItems */
-      var-> tree = addFirst;
-      my-> first_that( self, (void*)increase_id, &maxId, true);
-      var-> tree = save;
-   }
+   /* the level is 0 or 1 for the sake of rightAdjust */
+   addFirst = ( PMenuItemReg) my-> new_menu( self, menuItems, level);
+   if ( !addFirst) return; /* error in menuItems */
 
    addLast = addFirst;
    while ( addLast-> next) addLast = addLast-> next;
@@ -966,8 +971,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
    {
       addLast-> next = *up;
       *up = addFirst;
-   } else
-   {
+   } else {
       int i = 1;
       while ( m-> next)
       {
@@ -978,10 +982,11 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
       m-> next = addFirst;
    }
 
-   if ( m-> flags. rightAdjust) while ( addFirst != addLast-> next)
-   {
-      addFirst-> flags. rightAdjust = true;
-      addFirst = addFirst-> next;
+   if ( m && m-> flags. rightAdjust) {
+      while ( addFirst != addLast-> next) {
+         addFirst-> flags. rightAdjust = true;
+         addFirst = addFirst-> next;
+      }
    }
 
    if ( var-> stage <= csNormal && var-> system)

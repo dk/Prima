@@ -2592,6 +2592,7 @@ apc_menu_item_set_enabled( Handle self, PMenuItemReg m)
    objCheck false;
    res = EnableMenuItem(( HMENU) var handle,
       m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( m-> flags. disabled ? MF_GRAYED : MF_ENABLED));
+   DrawMenuBar( DHANDLE( var owner));
    return res != 0xFFFFFFFF;
 }
 
