@@ -25,10 +25,7 @@
 #
 
 use strict;
-use Carp;
-use Prima;
-use Prima::Classes;
-use Prima::Buttons;
+use Prima 'Buttons', Application => { name => 'Buttons sample' };
 
 package UserButton;
 use vars qw(@ISA);
@@ -77,9 +74,6 @@ sub on_paint
 }
 
 
-package UserInit;
-
-$::application = Prima::Application-> create( name => "Buttons.pm");
 my $w = Prima::Window-> create(
    onDestroy => sub { $::application-> close} ,
    text   => "Button example",

@@ -23,14 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-use Prima;
-use Prima::Const;
-use Prima::Widgets;
-use Prima::Buttons;
-use Prima::StdBitmap;
-use Prima::StdDlg;
-
-$::application = Prima::Application-> create( name => "Generic.pm");
+use Prima qw(Widgets Buttons StdBitmap StdDlg), Application => { name => 'Buttons sample' };
 
 my $w = Prima::Window-> create(
   text=> "Handmade buttons",
@@ -81,7 +74,6 @@ $w-> insert( Button =>
    enabled => 0,
    hint => 'See me?',
 );
-
 
 $w-> insert( Button =>
    origin     => [ 130, 10],

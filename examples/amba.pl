@@ -23,10 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-use Prima;
-use Prima::MsgBox;
-
-$::application = Prima::Application-> create( name => "Chess puzzle");
+use Prima 'MsgBox', Application => { name => 'Chess puzzle' };
 
 my %figs = (
   'K' => [0,0],
