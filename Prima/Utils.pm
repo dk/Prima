@@ -41,6 +41,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
                 username
                 xcolor
                 find_image path
+		alarm post
                );
 
 sub xcolor {
@@ -97,6 +98,45 @@ sub path
    return $path;
 }
 
+sub alarm
+{
+   my ( $timeout, $sub, @params) = @_;
+   return 0 unless $::application;
+   my $timer = Prima::Timer-> create( 
+      name    => $sub,
+      timeout => $timeout, 
+      owner   => $::application,
+      onTick  => sub {
+         $_[0]-> destroy;
+         $sub-> (@params);
+      }
+   ); 
+   $timer-> start;
+   return 1 if $timer-> get_active;
+   $timer-> destroy;
+   return 0;
+}
+
+sub post
+{
+   my ( $sub, @params) = @_;
+   return 0 unless $::application;
+   my $id;
+   $id = $::application-> add_notification( 'PostMessage', sub {
+      my ( $me, $parm1, $parm2) = @_;
+      if ( defined($parm1) && $parm1 eq 'Prima::Utils::post' && $parm2 == $id) { 
+         $::application-> remove_notification( $id);
+         $sub->( @params);
+	 $me-> clear_event;
+      }
+   }); 
+   return 0 unless $id;
+   $::application-> post_message( 'Prima::Utils::post', $id);
+   return 1;
+}
+
+
+
 1;
 
 __DATA__
@@ -115,6 +155,10 @@ This makes the module valuable when used without the rest of toolkit code.
 =head1 API
 
 =over
+
+=item alarm $TIMEOUT, $SUB, @PARAMS
+
+Calls SUB with PARAMS after TIMEOUT milliseconds.
 
 =item beep [ FLAGS = mb::Error ] 
 
@@ -198,6 +242,9 @@ it to the path and returns the full file name. In the latter case
 the path is automatically created by C<File::Path::mkpath> unless it
 already exists.
 
+=item post $SUB, @PARAMS
+
+Postpones a call to SUB with PARAMS until the next event loop tick.
 
 =item query_drives_map [ FIRST_DRIVE = "A:" ]
 
