@@ -169,7 +169,10 @@ char_struct( XFontStruct * xs, int c)
     if ( !xs-> per_char) {
        xc = &xs-> min_bounds;
     } else if (c < xs-> min_char_or_byte2 || c > xs-> max_char_or_byte2) {
-       xc = xs-> per_char + xs-> default_char - xs-> min_char_or_byte2; 
+       int default_char = xs-> default_char;
+       if ( default_char < xs-> min_char_or_byte2 || default_char > xs-> max_char_or_byte2)
+          default_char = xs-> min_char_or_byte2;
+       xc = xs-> per_char + default_char - xs-> min_char_or_byte2; 
     } else
        xc = xs-> per_char + c - xs-> min_char_or_byte2;
     return xc;

@@ -1372,19 +1372,21 @@ gp_get_text_overhangs( Handle self, const char *text, int len)
    if ( len > 0) {
       XCharStruct * cs;
       int index = text[0];
-      if ( index < XX-> font-> fs-> min_char_or_byte2) 
-         index = XX-> font-> fs-> default_char;
-      if ( index > XX-> font-> fs-> max_char_or_byte2) 
-         index = XX-> font-> fs-> default_char;
+      int default_char = XX-> font-> fs-> default_char;
+      if ( default_char < XX-> font-> fs-> min_char_or_byte2 ||
+           default_char > XX-> font-> fs-> max_char_or_byte2)
+         default_char = XX-> font-> fs-> min_char_or_byte2;
+      if ( index < XX-> font-> fs-> min_char_or_byte2 || 
+           index > XX-> font-> fs-> max_char_or_byte2) 
+         index = default_char;
       cs = XX-> font-> fs-> per_char ? XX-> font-> fs-> per_char + index 
        - XX-> font-> fs-> min_char_or_byte2 : &(XX-> font-> fs-> min_bounds);
       ret. x = ( cs-> lbearing < 0) ? - cs-> lbearing : 0;
 
       index = text[len-1];
-      if ( index < XX-> font-> fs-> min_char_or_byte2) 
-         index = XX-> font-> fs-> default_char;
-      if ( index > XX-> font-> fs-> max_char_or_byte2) 
-         index = XX-> font-> fs-> default_char;
+      if ( index < XX-> font-> fs-> min_char_or_byte2 || 
+           index > XX-> font-> fs-> max_char_or_byte2) 
+         index = default_char;
       cs = XX-> font-> fs-> per_char ? XX-> font-> fs-> per_char + index 
        - XX-> font-> fs-> min_char_or_byte2 : &(XX-> font-> fs-> min_bounds);
       ret. y = (( cs-> width - cs-> rbearing) < 0) ? cs-> rbearing - cs-> width : 0;
@@ -1688,11 +1690,14 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
    PFontABC abc = malloc( sizeof( FontABC) * (lastChar - firstChar + 1));
    XCharStruct *cs;
    int k, l;
+   int default_char = fs-> default_char;
+   if ( default_char < fs-> min_char_or_byte2 || default_char > fs-> max_char_or_byte2)
+        default_char = fs-> min_char_or_byte2;
    for ( k = firstChar, l = 0; k <= lastChar; k++, l++) {
       if ( !fs-> per_char)
 	 cs = &fs-> min_bounds;
       else if ( k < fs-> min_char_or_byte2 || k > fs-> max_char_or_byte2)
-	 cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
+	 cs = fs-> per_char + default_char - fs-> min_char_or_byte2;
       else
 	 cs = fs-> per_char + k - fs-> min_char_or_byte2;
       abc[l]. a = cs-> lbearing;

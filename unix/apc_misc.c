@@ -1118,6 +1118,37 @@ apc_system_action( const char *s)
          XSynchronize( DISP, true);
          return nil;
       }   
+      if ( strncmp( "setfont ", s, 8) == 0) {
+          Handle self = nilHandle;
+          char font[1024];
+          XWindow win;
+          int i = sscanf( s + 8, "%lu %s", &win, font);
+          if ( i != 2 || !(self = prima_xw2h( win)))  {
+             warn( "Bad parameters to sysaction setfont");
+             return 0;
+          }
+          if ( !opt_InPaint) return 0;
+          XSetFont( DISP, X(self)-> gc, XLoadFont( DISP, font));
+          return nil;
+      }
+      break;
+   case 't':
+      if ( strncmp( "textout16 ", s, 10) == 0) {
+          Handle self = nilHandle;
+          unsigned char text[1024];
+          XWindow win;
+          int x, y, len;
+          int i = sscanf( s + 10, "%lu %d %d %s", &win, &x, &y, text);
+          if ( i != 4 || !(self = prima_xw2h( win)))  {
+             warn( "Bad parameters to sysaction textout16");
+             return 0;
+          }
+          if ( !opt_InPaint) return 0;
+          len = strlen( text);
+          for ( i = 0; i < len; i++) if ( text[i]==255) text[i] = 0;
+          XDrawString16( DISP, win, X(self)-> gc, x, y, ( XChar2b *) text, len / 2);
+          return nil;
+      }
       break;
    }
    warn("Unknow sysaction:%s", s);

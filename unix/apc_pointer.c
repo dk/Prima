@@ -117,9 +117,12 @@ apc_pointer_get_hot_spot( Handle self)
    fs = guts.pointer_font;
    if ( !fs-> per_char)
       cs = &fs-> min_bounds;
-   else if ( idx < fs-> min_char_or_byte2 || idx > fs-> max_char_or_byte2)
-      cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
-   else
+   else if ( idx < fs-> min_char_or_byte2 || idx > fs-> max_char_or_byte2) {
+      int default_char = fs-> default_char;
+      if ( default_char < fs-> min_char_or_byte2 || default_char > fs-> max_char_or_byte2)
+        default_char = fs-> min_char_or_byte2;
+      cs = fs-> per_char + default_char - fs-> min_char_or_byte2;
+   } else
       cs = fs-> per_char + idx - fs-> min_char_or_byte2;
    ret. x = -cs->lbearing;
    ret. y = guts.cursor_height - cs->ascent;
@@ -193,9 +196,12 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       fs = guts.pointer_font;
       if ( !fs-> per_char)
          cs = &fs-> min_bounds;
-      else if ( idx < fs-> min_char_or_byte2 || idx > fs-> max_char_or_byte2)
-         cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
-      else
+      else if ( idx < fs-> min_char_or_byte2 || idx > fs-> max_char_or_byte2) {
+         int default_char = fs-> default_char;
+         if ( default_char < fs-> min_char_or_byte2 || default_char > fs-> max_char_or_byte2)
+            default_char = fs-> min_char_or_byte2;
+         cs = fs-> per_char + default_char - fs-> min_char_or_byte2;
+      } else
          cs = fs-> per_char + idx - fs-> min_char_or_byte2;
       
       p1 = XCreatePixmap( DISP, guts. root, w, h, 1);
