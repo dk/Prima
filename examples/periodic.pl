@@ -140,6 +140,17 @@ my $g = $w-> insert( 'Prima::GridViewer' =>
          $canvas-> line( $cx1-1,$cy2,$cx2,$cy2 ) if $side & 8;
       }
    },
+   onClick => sub {
+	   my ($self) = @_;
+	   my @foc = $self->focusedCell;
+	   my $text = $self->{cells}->[$foc[1]]->[$foc[0]];
+	   return unless $text;
+	   if ($text eq "La") {
+		   $self->focusedCell(0, 11);
+	   } elsif ($text eq "Ac") {
+		   $self->focusedCell(0, 12);
+	   }
+   },
 );
 
 run Prima;
