@@ -224,6 +224,7 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
    int i;
    int yMin = ( var->h > absh) ? absh : var->h;
    PStretchProc proc = nil;
+   Byte *srcLast = nil;
 
    if ( w == var->w) xStretch = false;
    if ( h == var->h) yStretch = false;
@@ -366,7 +367,12 @@ ic_stretch( Handle self, Byte * dstData, int w, int h, Bool xStretch, Bool yStre
             last = count.i.i;
          }
          count. l += ystep. l;
-         proc( srcData, dstData, var->w, w, absw, xstep.l);
+         if ( srcLast == srcData) {
+            memcpy( dstData, dstData - dstLine, dstLine);
+         } else {
+            proc( srcData, dstData, var->w, w, absw, xstep.l);
+            srcLast = srcData;
+         }
          dstData += dstLine;
       }
    }
