@@ -1795,7 +1795,7 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
    MoveToEx( ps, x1, y1, nil);
 
    if ( GetBkMode( ps) != TRANSPARENT)
-      if ( !LineTo( ps, x2, sys lastSize. y - y2 - 1)) apiErr;
+      if ( !LineTo( ps, x2, y2)) apiErr;
 
    if ( drawState > 0) offset += drawState;
 
@@ -1817,4 +1817,5 @@ gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
 
    return draw ? 0 : lp[ ptr];
 }
+
 
