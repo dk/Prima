@@ -388,7 +388,7 @@ sub InputLine_Change
       {
          $txt = $t = $list->get_item_text($i);
          $t = uc $t unless $self->caseSensitive;
-         last if $t =~ /^$cap/;
+         last if $t =~ /^\Q$cap\E/;
       }
       # netscape 4 combo behavior
       if ( $i < scalar @texts)
@@ -396,8 +396,8 @@ sub InputLine_Change
          $edit->{interaction} = 1;
          $edit-> text( $txt);
          $edit->{interaction} = undef;
-         $t =~ /^($cap)/;
-         $edit-> selection( length( $1), length( $t));
+         $t =~ /^\Q$cap\E/;
+         $edit-> selection( length $cap, length $t);
          $list-> focusedItem( $i);
          return;
       }
