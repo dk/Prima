@@ -56,6 +56,7 @@ sub profile_default
       closedIcon     => undef,
       indent         => 12,
       multiSelect    => 0,
+      showDotDirs    => 1,
    }
 }
 
@@ -71,7 +72,7 @@ sub init
    my %profile = $self-> SUPER::init(@_);
    for ( qw( maxWidth oneSpaceWidth))            { $self->{$_} = 0}
    for ( qw( files filesStat items))             { $self->{$_} = []; }
-   for ( qw( openedIcon closedIcon openedGlyphs closedGlyphs indent))
+   for ( qw( openedIcon closedIcon openedGlyphs closedGlyphs indent showDotDirs))
       { $self->{$_} = $profile{$_}}
    $self-> {openedIcon} = $images[0] unless $self-> {openedIcon};
    $self-> {closedIcon} = $images[1] unless $self-> {closedIcon};
@@ -251,7 +252,15 @@ sub new_directory
    my @fs1;
    my @fs2;
    for ( $i = 0; $i < scalar @fs; $i += 2) {
+      next if !$self-> {showDotDirs} && $fs[$i] =~ /^\./;
       push( @fs1, $fs[ $i]);
+      if ( $fs[ $i + 1] eq 'lnk') {
+         if ( -f $p.$fs[$i]) {
+            $fs[ $i + 1] = 'reg';
+         } elsif ( -d _) {
+            $fs[ $i + 1] = 'dir';
+         }
+      }
       push( @fs2, $fs[ $i + 1]);
    }
 
@@ -292,21 +301,19 @@ sub new_directory
    $::application-> pointer( $oldPointer);
 }
 
-
-
 sub path
 {
    return $_[0]-> {path} unless $#_;
    my $p = $_[1];
    $p =~ s{^([^\\\/]*[\\\/][^\\\/]*)[\\\/]$}{$1};
-   $p .= '/' unless $p =~ m![/\\]$!;
+   $p .= '/' unless $p =~ m/[\/\\]$/;
    unless( scalar( stat $p)) {
       $p = "";
    } else {
       $p = eval { Cwd::abs_path($p) };
       $p = "." if $@ || !defined $p;
       $p = "" unless -d $p;
-      $p .= '/' unless $p =~ m![/\\]$!;
+      $p .= '/' unless $p =~ m/[\/\\]$/;
    }
    $_[0]-> {path} = $p;
    return if defined $_[0]-> {recursivePathCall} && $_[0]-> {recursivePathCall} > 2;
@@ -366,6 +373,16 @@ sub indent
    $_[1] = 0 if $_[1] < 0;
    return if $_[0]-> {indent} == $_[1];
    $_[0]-> calibrate;
+}
+
+sub showDotDirs
+{
+   return $_[0]-> {showDotDirs} unless $#_;
+   my ( $self, $show) = @_;
+   $show =  ( $show ? 1 : 0);
+   return if $show == $self-> {showDotDirs};
+   $self-> {showDotDirs} = $show;
+   $self-> new_directory;
 }
 
 package Prima::DriveComboBox::InputLine;
@@ -631,6 +648,7 @@ sub profile_default
       fileMustExist      => 1,
       showHelp           => 0,
       sorted             => 1,
+      showDotFiles       => 0,
 
       openMode           => 1,
    }
@@ -683,7 +701,7 @@ sub init
    my $drives = length( Prima::Utils::query_drives_map);
    $self-> {hasDrives} = $drives;
 
-   for ( qw( defaultExt filter directory filterIndex
+   for ( qw( defaultExt filter directory filterIndex showDotFiles
              createPrompt fileMustExist noReadOnly noTestFileCreate
              overwritePrompt pathMustExist showHelp openMode sorted
    )) { $self->{$_} = $profile{$_} }
@@ -754,6 +772,7 @@ sub init
       size       => [ 235, $drives ? 243 : 303],
       path       => $self-> { directory},
       delegations=> [qw(Change)],
+      showDotDirs=> $self-> {showDotFiles},
    );
 
    $self->insert( DriveComboBox =>
@@ -857,6 +876,7 @@ sub Dir_Change
    my ( $self, $dir) = @_;
    my $mask = $self-> {mask};
    my @a = grep { /$mask/i; } $dir-> files( 'reg');
+   @a = grep { !/^\./ } @a unless $self-> {showDotFiles};
    @a = sort {uc($a) cmp uc($b)} @a if $self->{sorted};
    $self-> Files-> items([@a]);
    $self-> Directory_FontChanged( $self-> Directory);
@@ -1152,6 +1172,17 @@ sub reread
    $_[0]-> Dir_Change( $_[0]-> Dir);
 }
 
+sub showDotFiles
+{
+   return $_[0]-> {showDotFiles} unless $#_;
+   my ( $self, $show) = @_;
+   $show =  ( $show ? 1 : 0);
+   return if $show == $self-> {showDotFiles};
+   $self-> {showDotFiles} = $show;
+   $self-> Dir-> showDotDirs($show);
+   $self-> reread;
+}
+
 sub multiSelect      { ($#_)? $_[0]->Files->multiSelect($_[1]) : return $_[0]->Files->multiSelect };
 sub createPrompt     { ($#_)? $_[0]->{createPrompt} = ($_[1])  : return $_[0]->{createPrompt} };
 sub noReadOnly       { ($#_)? $_[0]->{noReadOnly}   = ($_[1])  : return $_[0]->{noReadOnly} };
@@ -1214,6 +1245,7 @@ sub profile_default
       directory   => '',
       designScale => [7, 16],
       showHelp    => 0,
+      showDotDirs => 0,
 
       borderStyle => bs::Sizeable,
    }
@@ -1227,7 +1259,7 @@ sub init
    my $drives = length( Prima::Utils::query_drives_map);
    $self-> {hasDrives} = $drives;
 
-   for ( qw( showHelp directory
+   for ( qw( showHelp directory showDotDirs
    )) { $self->{$_} = $profile{$_} }
 
    $self-> insert( DirectoryListBox =>
@@ -1239,6 +1271,7 @@ sub init
       current  => 1,
       path     => $self-> { directory},
       delegations => [qw(KeyDown)],
+      showDotDirs => $self-> {showDotDirs},
    );
 
    $self->insert( Label =>
@@ -1343,6 +1376,16 @@ sub directory
 
 sub showHelp         { ($#_)? shift->raise_ro('showHelp')  : return $_[0]->{showHelp} };
 
+sub showDotDirs
+{
+   return $_[0]-> {showDotDirs} unless $#_;
+   my ( $self, $show) = @_;
+   $show =  ( $show ? 1 : 0);
+   return if $show == $self-> {showDotDirs};
+   $self-> {showDotDirs} = $show;
+   $self-> Dir-> showDotDirs($show);
+}
+
 1;
 
 __DATA__
@@ -1402,6 +1445,15 @@ directory.
 =item path STRING
 
 Runtime-only property. Selects a file system path.
+
+=item showDotDirs BOOLEAN
+
+Selects if the directories with the first dot character
+are shown the view. The treatment of the dot-prefixed names
+as hidden is traditional to unix, and is of doubtful use under
+win32 and os2.
+
+Default value: 1
 
 =back
 
@@ -1549,6 +1601,13 @@ closing the dialog.
 
 Default value: 1
 
+=item showDotFiles BOOLEAN
+
+Selects if the directories with the first dot character
+are shown the files view. 
+
+Default value: 0
+
 =item showHelp BOOLEAN
 
 Create-only property. If 1, 'Help' button is inserted in the dialog.
@@ -1592,6 +1651,13 @@ Provides standard dialog with interactive directory selection.
 =item directory STRING
 
 Selects the directory
+
+=item showDotDirs
+
+Selects if the directories with the first dot character
+are shown the view. 
+
+Default value: 0
 
 =item showHelp
 
