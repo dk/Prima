@@ -1,6 +1,6 @@
 =head1 NAME
 
-Prima Image Subsystem - How To Write A Codec
+How to write a codec for Prima image subsystem
 
 =head1 DESCRIPTION
 
