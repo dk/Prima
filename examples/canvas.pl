@@ -1,4 +1,3 @@
-# $Id$
 use strict;
 
 use Prima qw(ScrollWidget);
@@ -54,9 +53,11 @@ sub on_paint
    my %props;
    my %defaults = map { $_ => $canvas-> $_() } @Prima::CanvasObject::uses;
    for my $obj ( @{$self->{objects}}) {
-      my @r = $self-> object2screen( $obj-> rect);
-      $r[2]--; $r[3]--;
-      next if !$obj->visible || $r[0] > $c[2] || $r[1] > $c[3] || $r[2] < $c[0] || $r[3] < $c[1];
+      my @r = $self-> object2screen( $obj-> rect, $obj-> inner_rect);
+      $r[$_]-- for 2,3;
+      next if !$obj->visible || 
+         $r[0] > $c[2] || $r[1] > $c[3] || 
+	 $r[2] < $c[0] || $r[3] < $c[1];
 
       my @uses = $obj->uses;
       delete @props{@uses};
@@ -66,12 +67,10 @@ sub on_paint
          (map { $_ => $defaults{$_} } keys %props)
       );
       %props = map { $_ => 1 } @uses;
-
-      $canvas-> translate( @r[0,1]);
-      $canvas-> clipRect( @r);
-      $r[2] -= $r[0];
-      $r[3] -= $r[1];
-      $obj-> on_paint( $canvas, $r[2]+1,$r[3]+1);
+	
+      $canvas-> translate( @r[4,5]);
+      $canvas-> clipRect( @r[0..3]);
+      $obj-> on_paint( $canvas, $r[6]-$r[4], $r[7]-$r[5]);
    }
    $canvas-> translate(0,0);
    $canvas-> clipRect(@c);
@@ -473,6 +472,29 @@ sub on_keydown
          return;
       }
    }
+
+   if ( $key == kb::Left || $key == kb::Right || $key == kb::Up || $key == kb::Down) {
+      my $obj = $self-> focused_object;
+      if ( $obj) {
+         my ( $dx, $dy) = (0,0);
+         if ( $key == kb::Left) {
+            $dx = -5;
+         } elsif ( $key == kb::Right) {
+            $dx = +5;
+         } elsif ( $key == kb::Down) {
+            $dy = -5;
+         } elsif ( $key == kb::Up) {
+            $dy = +5;
+         }
+         my @sz = $obj-> size;
+         $sz[0] += $dx;
+         $sz[1] += $dy;
+         $sz[0] = 5 if $sz[0] < 5;
+         $sz[1] = 5 if $sz[1] < 5;
+         $obj-> size( @sz);
+      }
+   }
+   
    $self-> SUPER::on_keydown( $code, $key, $mod, $repeat);
 }
 
@@ -495,7 +517,7 @@ use vars qw(%defaults @uses %list_properties);
                textOutBaseline lineJoin fillWinding);
    my $pd = Prima::Drawable-> profile_default();
    %defaults = map { $_ => $pd->{$_} } @uses;
-   %list_properties = map { $_ => 1 } qw(origin size rect);
+   %list_properties = map { $_ => 1 } qw(origin size rect resolution);
 }
 
 sub new
@@ -503,12 +525,16 @@ sub new
    my ( $class, %properties) = @_;
    my $self = bless {}, $class;
    $self-> lock;
+   $self-> {adjust_in_progress} = 1;
    my %defaults = $self-> profile_default;
    $self-> {$_} = $defaults{$_} for keys %defaults;
    $self-> {font} = {%{$defaults{font}}};
+   $self-> {indents} = [0,0,0,0];
    $self-> init( \%defaults, \%properties);
    $self-> set(%properties);
    $self-> on_create;
+   delete $self-> {adjust_in_progress};
+   $self-> adjust( exists $properties{size} or exists $properties{rect});
    $self-> unlock;
    return $self;
 }
@@ -529,10 +555,12 @@ sub destroy
 sub profile_default
 {
    %defaults,
-   origin  => [ 0, 0],
-   size    => [ 100, 100],
-   visible => 1,
-   name    => '',
+   origin     => [ 0, 0],
+   size       => [ 100, 100],
+   visible    => 1,
+   name       => '',
+   resolution => [1,1],
+   autoAdjust => 1,
 }
 
 sub uses
@@ -613,6 +641,16 @@ sub on_size
    my ( $self, $oldx, $oldy, $x, $y) = @_;
 }
 
+sub on_adjust_data
+{
+   my ( $self, $x, $y) = @_;
+}
+
+sub on_adjust_size
+{
+   my ( $self) = @_;
+}
+
 sub on_layoutchanged
 {
    my ( $self) = @_;
@@ -628,6 +666,11 @@ sub on_paint
    my ( $self, $canvas, $width, $heigth) = @_;
 }
 
+sub on_render
+{
+   my ($self) = @_;
+}
+
 sub repaint
 {
    delete $_[0]->{_update} if $_[0]->{_update};
@@ -639,6 +682,15 @@ sub invalidate_rect
    my ( $self, $x1, $y1, $x2, $y2) = @_;
    my @o = $self-> origin;
    $self-> _update( $o[0] + $x1, $o[1] + $y1, $x2 - $x1 + 1, $y2 - $y1 + 1);
+}
+
+sub resolution
+{
+   return @{$_[0]->{resolution}} unless $#_;
+   my ( $self, $x, $y) = @_;
+   return if $x == $self->{resolution}->[0] && $y == $self->{resolution}->[1];
+   $self->{resolution} = [$x, $y];
+   $self-> on_render();
 }
 
 sub _begin_update
@@ -772,9 +824,75 @@ sub size
    $self-> _update( @{$self->{origin}}, @{$self->{size}});
    @{$self->{size}} = ( $x, $y);
    $self-> _update( @{$self->{origin}}, @{$self->{size}});
+   $self-> adjust( 1) unless $self->{adjust_flag};
    $self-> on_size( @s, $x, $y);
    $self-> _end_update;
 }
+
+sub inner_size
+{
+   return map {
+      $_[0]->{size}->[$_] - $_[0]->{indents}->[$_] - $_[0]->{indents}->[$_+2]
+   } 0, 1 unless $#_;
+   my ( $self, $x, $y) = @_;
+   $x += $self->{indents}->[0] + $self->{indents}->[2];
+   $y += $self->{indents}->[1] + $self->{indents}->[3];
+   my $adjust_flag = $self->{adjust_flag};
+   $self->{adjust_flag} = 1;
+   $self-> size( $x, $y);
+   $self->{adjust_flag} = $adjust_flag;
+}
+
+sub inner_rect
+{
+   return 
+      $_[0]->{origin}->[0] + $_[0]->{indents}->[0],
+      $_[0]->{origin}->[1] + $_[0]->{indents}->[1],
+      $_[0]->{origin}->[0] + $_[0]->{size}->[0] - $_[0]->{indents}->[2],
+      $_[0]->{origin}->[1] + $_[0]->{size}->[1] - $_[0]->{indents}->[3],
+      unless $#_;
+   my ( $self, $x1, $y1, $x2, $y2) = @_;
+   $x1 -= $self->{indents}->[0];
+   $y1 -= $self->{indents}->[1];
+   $x2 += $self->{indents}->[2];
+   $y2 += $self->{indents}->[3];
+   my $adjust_flag = $self->{adjust_flag};
+   $self->{adjust_flag} = 1;
+   $self-> rect( $x1, $y1, $x2, $y2);
+   $self->{adjust_flag} = $adjust_flag;
+}
+
+sub indents 
+{
+   return @{$_[0]->{indents}} unless $#_;
+   my ( $self, @indents) = @_;
+   @indents = @{$indents[0]} unless $#indents;
+   $self-> origin( 
+      $self->{origin}->[0] + $self->{indents}->[0] - $indents[0],
+      $self->{origin}->[1] + $self->{indents}->[1] - $indents[1]
+   );
+   @{$self->{indents}} = @indents;
+}
+
+sub adjust
+{
+   my ( $self, $data_from_size) = @_;
+   return if $self->{adjust_in_progress} or !$self->{autoAdjust};
+   $self-> {adjust_in_progress} = 1;
+   $self-> lock;
+   $data_from_size ? 
+      $self-> on_adjust_data(@{$self->{size}}) : 
+      $self-> on_adjust_size();
+   $self-> unlock;
+   delete $self-> {adjust_in_progress};
+}
+
+sub autoAdjust
+{
+   return $_[0]->{autoAdjust} unless $#_;
+   $_[0]->{autoAdjust} = $_[1];
+}
+
 
 sub bring_to_front { $_[0]-> {owner}-> zorder( $_[0], 'front') if $_[0]->{owner} }
 sub send_to_back   { $_[0]-> {owner}-> zorder( $_[0], 'back')  if $_[0]->{owner} }
@@ -1093,13 +1211,13 @@ sub points
    push @$p, @$p[0,1]
       if $self-> {fix_last_point} && ( $$p[0] != $$p[-2] || $$p[1] != $$p[1]);
    $self->{points} = $p;
-   $self-> update;
+   $self-> adjust;
 }
 
 sub zoom_points
 {
    my ( $self, $w, $h) = @_;
-   my ( $x, $y) = $self-> size;
+   my ( $x, $y) = $self-> inner_size;
    return [] if $w < 1 || $h < 1 || $x < 1 || $y < 1;
    unless ( defined $self-> {cosa}) {
       my $a = $self-> {rotate} / 57.295779;
@@ -1110,7 +1228,7 @@ sub zoom_points
    my @anchor = @{$self->{anchor}};
    my @aspect = @{$self->{aspect}};
    my @shift  = @{$self->{shift}};
-   my @offset = $self->{autoAdjust} ? @{$self->{offset}} : (0,0);
+   my @offset = ($self->{offset} && $self->{autoAdjust}) ? @{$self->{offset}} : (0,0);
    $x /= $w;
    $y /= $h;
    $h = $self->{points};
@@ -1128,24 +1246,16 @@ sub zoom_points
    \@ret;
 }
 
-sub update
-{
-   my $self = $_[0];
-   if ( $self-> {autoAdjust}) {
-      my @r = $self-> extents;
-      $self->{offset} = [ -$r[0],-$r[1]];
-      $self-> size( $r[2]-$r[0],$r[3]-$r[1]);
-   }
-   $self-> repaint;
-}
-
 sub extents
 {
-   my $self = $_[0];
-   my $a = $self-> {autoAdjust};
-   $self-> {autoAdjust} = 0;
-   my $p = $self-> zoom_points( $self-> size);
-   $self-> {autoAdjust} = $a;
+   my ( $self, $points) = @_;
+   my $p;
+   if ( $points) {
+      $p = $points;
+   } else {
+      local $self->{offset};
+      $p = $self-> zoom_points( $self-> inner_size);
+   }
    my $lw = int(($self-> lineWidth || 1) / 2);
    return -$lw,-$lw,$lw,$lw if 0 == @$p;
    my $i;
@@ -1157,28 +1267,28 @@ sub extents
       $r[3] = $$p[$i+1] if $r[3] < $$p[$i+1];
    }
    $r[$_] -= $lw, $r[$_+2] += $lw for 0,1;
-   @r;
+   return @r;
 }
 
 sub anchor
 {
    return @{$_[0]->{anchor}} unless $#_;
    $_[0]->{anchor} = [($#_ == 1) ? @{$_[1]} : @_[1,2]];
-   $_[0]-> update;
+   $_[0]-> adjust;
 }
 
 sub aspect
 {
    return @{$_[0]->{aspect}} unless $#_;
    $_[0]->{aspect} = [(($#_ == 1) ? @{$_[1]} : @_[1,2])];
-   $_[0]-> update;
+   $_[0]-> adjust;
 }
 
 sub shift
 {
    return @{$_[0]->{shift}} unless $#_;
    $_[0]-> {shift} = [($#_ == 1) ? @{$_[1]} : @_[1,2]];
-   $_[0]-> update;
+   $_[0]-> adjust;
 }
 
 sub smooth
@@ -1186,13 +1296,6 @@ sub smooth
    return $_[0]->{smooth} unless $#_;
    $_[0]->{smooth} = $_[1];
    $_[0]-> repaint;
-}
-
-sub autoAdjust
-{
-   return $_[0]->{autoAdjust} unless $#_;
-   $_[0]->{autoAdjust} = $_[1];
-   $_[0]-> update;
 }
 
 sub rotate
@@ -1205,7 +1308,7 @@ sub rotate
    $self->{rotate} = $angle;
    delete $self-> {sina};
    delete $self-> {cosa};
-   $self-> update;
+   $self-> adjust;
 }
 
 package Prima::Canvas::Line;
@@ -1222,7 +1325,6 @@ use vars qw(@ISA %arrowheads);
 sub profile_default
 {
    $_[0]-> SUPER::profile_default,
-   autoAdjust => 1,
    anchor => [0,0],
    aspect => [1,1],
    shift  => [0,0],
@@ -1281,51 +1383,59 @@ sub arrow
       $self->{arrows}->[$idx] = $arrow;
    }
    $self->{arrows}->[$idx]-> autoAdjust( 0) if $self->{arrows}->[$idx];
-   $self->update;
+   $self->adjust;
 }
 
-sub extents
+sub on_adjust_size
 {
-   my $self = $_[0];
-   my @r = $self-> SUPER::extents;
-   my @a = (0,0);
-   my $lw = $self-> lineWidth || 1;
+   my ( $self) = @_;
+   delete $self-> {offset};
+   my $p = $self-> zoom_points( $self-> inner_size);
+
+   my @inner = $self-> extents( $p);
+   $inner[$_+2] -= $inner[$_] for 0,1;
+   my @delta = @inner[0,1];
+   $self->{offset} = [map {-1*$_} @delta];
+   @inner[0,1] = (0,0);
+   my @outer = @inner;
+
+   my $flip = 0;
+   my $lw = ($self-> {lineWidth} || 1);
    for ( 0..1) {
-      next unless $self->{arrows}->[$_];
-      my @r = $self->{arrows}->[$_]->extents;
-      $a[0] = $r[2]-$r[0] if $a[0] < $r[2]-$r[0];
-      $a[1] = $r[3]-$r[1] if $a[1] < $r[3]-$r[1];
+      my ( $x1, $y1, $x2, $y2) = @$p[ $flip++ ? (2,3,0,1) : (-4..-1)];
+      next unless $_ = $self->{arrows}->[$_];
+      $_-> rotate( atan2($y2 - $y1, $x2 - $x1) * 57.295779);
+      my @r = map { $_ * $lw } $_->extents;
+      my @arrow_box = ( $x2 + $r[0] - $delta[0], $y2 + $r[1] - $delta[1], 
+                        $x2 + $r[2] - $delta[0], $y2 + $r[3] - $delta[1]);
+      for ( 0,1) {
+         $outer[$_] = $arrow_box[$_] if $outer[$_] > $arrow_box[$_];
+         $outer[$_+2] = $arrow_box[$_+2] if $outer[$_+2] < $arrow_box[$_+2];
+      }
    }
-   $a[$_]+=$lw, $r[$_] -= $a[$_], $r[$_+2] += $a[$_] for 0..1;
-   @r;
+   $self-> indents( 
+      $inner[0] - $outer[0],
+      $inner[1] - $outer[1],
+      $outer[2] - $inner[2],
+      $outer[3] - $inner[3],
+   );
+   $self-> inner_size( @inner[2,3]);
+}
+
+sub on_adjust_data
+{
+   my ( $self, $x, $y) = @_;
 }
 
 sub on_paint
 {
    my ( $self, $canvas, $width, $height) = @_;
-   my @a = (0,0);
    my $lw = ($self-> {lineWidth} || 1);
-   for (@{$self->{arrows}}) {
-      next unless $_;
-      my @r = $_-> extents;
-      $r[2] -= $r[0];
-      $r[3] -= $r[1];
-      $a[0] = $r[2] if $a[0] < $r[2];
-      $a[1] = $r[3] if $a[1] < $r[3];
-   }
-   my @size  = $self-> size;
-   $a[0] *= $lw * $width / $size[0];
-   $a[1] *= $lw * $height / $size[1];
-   $width  -= $a[0] * 2;
-   $height -= $a[1] * 2;
+   my @size  = $self-> inner_size;
    my $p = $self-> zoom_points( $width, $height);
    return if 4 > @$p;
-   my $i;
-   for ( $i = 0; $i < @$p; $i+=2) {
-      $$p[$i+$_] += $a[$_] for 0,1;
-   }
-   $canvas-> lineWidth( $self-> lineWidth * $width / $size[0]);
-   $self-> {smooth} ?
+   $canvas-> lineWidth( $self-> lineWidth * $width / int $size[0]);
+   $self-> {smooth} ?		
       $canvas-> spline( $p) :
       $canvas-> polyline( $p);
    my $flip = 0;
@@ -1340,14 +1450,9 @@ sub on_paint
          backColor => $canvas-> color,
       );
       $arrow-> on_paint( $canvas,
-         $lw * $width * $asize[0] / $size[0],
-         $lw * $height * $asize[1] / $size[1]);
+         $lw * $width * $asize[0] / int $size[0],
+         $lw * $height * $asize[1] / int $size[1]);
    }
-}
-
-sub on_layoutchanged
-{
-   $_[0]-> update if $_[0]-> {autoAdjust};
 }
 
 sub lineWidth
@@ -1355,7 +1460,7 @@ sub lineWidth
    return $_[0]-> SUPER::lineWidth unless $#_;
    my $self = shift;
    $self-> SUPER::lineWidth(@_);
-   $self-> update;
+   $self-> adjust;
 }
 
 package Prima::Canvas::Polygon;
@@ -1372,7 +1477,6 @@ sub profile_default
    smooth => 0,
    rotate => 0,
    fix_last_point => 1,
-   autoAdjust => 1,
 }
 
 sub uses
@@ -1407,17 +1511,12 @@ sub on_paint
    }
 }
 
-sub on_layoutchanged
-{
-   $_[0]-> update if $_[0]-> {autoAdjust};
-}
-
 sub lineWidth
 {
    return $_[0]-> SUPER::lineWidth unless $#_;
    my $self = shift;
    $self-> SUPER::lineWidth(@_);
-   $self-> update;
+   $self-> adjust;
 }
 
 package Prima::Canvas::Image;
@@ -1908,6 +2007,7 @@ sub set_arrowhead
       for ( $obj-> arrows) {
          $_-> aspect( $arrow, $arrow) if $_;
       }
+      $obj-> adjust;
       $obj-> repaint;
    } else {
       $arrow = undef if $arrow eq 'none';
