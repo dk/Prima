@@ -293,7 +293,7 @@ extern Byte     map_halftone8x8_64 [  64];
    Byte * srcData = var->data;                                    \
    Byte colorref[ 256]
 
-#if defined (__BORLANDC__) || ( defined (sgi) && !defined (__GNUC__))
+#if defined (__BORLANDC__)
 #define BCWARN
 #else
 #define BCWARN                                                   \

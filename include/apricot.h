@@ -1263,8 +1263,6 @@ extern SV **temporary_prf_Sv;
 
 #ifdef __GNUC__
 #define SvBOOL(sv) ({ SV *svsv = sv; SvTRUE(svsv);})
-#elif defined(__BORLANDC__) || defined(sgi)
-extern Bool SvBOOL( SV *sv);
 #else
 __INLINE__ Bool
 SvBOOL( SV *sv)
