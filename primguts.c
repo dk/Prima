@@ -118,20 +118,26 @@ reallocf(void *ptr, size_t size)
  * RTL.
  */
 int
+vsnprintf( char *buf, size_t len, const char *format, va_list args)
+{
+    int rc;
+    rc = vsprintf( buf, format, args);
+    if ( rc >= len) {
+	/* We'd better die here rather than wait for memory corruption consequences! */
+	croak( "snprintf/vsnprintf buffer overflow, memory corruption possible. Blame Borland for this error!");
+    }
+    return rc;
+}
+
+int
 snprintf( char *buf, size_t len, const char *format, ...)
 {
     int rc;
     va_list args;
     va_start( args, format);
-    rc = vsprintf( buf, format, args);
+    rc = vsnprintf( buf, len, format, args);
     va_end( args);
     return rc;
-}
-
-int
-vsnprintf( char *buf, size_t len, const char *format, va_list args)
-{
-    return vsprintf( buf, format, args);
 }
 #endif
 
