@@ -1092,6 +1092,7 @@ AGAIN:
       guts. currentMenu = self;
       if ( first && ( ev-> type == ButtonPress) && ( !send_cmMenu( self, nil)))
          return;
+      if ( !first && ( ev-> type == ButtonPress)) return;
       apc_timer_stop( MENU_TIMER);
       menu_select_item( XX, w, px);
       if ( !ev-> xbutton. send_event) {
