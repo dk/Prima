@@ -419,6 +419,7 @@ sub on_mousedown
             @mw = $VB::form-> marked_widgets;
          } else {
             @mw = $VB::form-> marked_widgets if $self-> marked;
+            $self-> bring_to_front;
             $self-> focus;
             $self-> marked(1,1);
             ObjectInspector::enter_widget( $self);
@@ -448,6 +449,7 @@ sub on_mousedown
          return;
       }
 
+      $self-> bring_to_front;
       $self-> focus;
       $self-> marked(1,1);
       ObjectInspector::enter_widget( $self);
@@ -530,8 +532,13 @@ sub on_mousemove
       }
       $self-> xorrect( @{$self-> {prevRect}});
       my @sz = $self-> size;
+      my @og = $self-> origin;
+      if ( $VB::main-> {dsnap}) {
+         $x -= ( $x - $self->{spotX} + $og[0]) % 4;
+         $y -= ( $y - $self->{spotY} + $og[1]) % 4;
+      }
+
       if ( $VB::main-> {gsnap}) {
-         my @og = $self-> origin;
          my $xline = $VB::form->{guidelineX} - $og[0];
          my $yline = $VB::form->{guidelineY} - $og[1];
          $x = $xline + $self->{spotX} if abs( $xline - $x + $self->{spotX}) < 8;
@@ -548,10 +555,15 @@ sub on_mousemove
             my @org = $_[0]-> rect;
             my @new = @org;
             my @min = $self-> sizeMin;
+            my @og = $self-> origin;
             my ( $xa, $ya) = @{$self->{dirData}};
 
+            if ( $VB::main-> {dsnap}) {
+               $x -= ( $x - $self->{spotX} + $og[0]) % 4;
+               $y -= ( $y - $self->{spotY} + $og[1]) % 4;
+            }
+
             if ( $VB::main-> {gsnap}) {
-               my @og = $self-> origin;
                my @sz = $self-> size;
                my $xline = $VB::form->{guidelineX} - $og[0];
                my $yline = $VB::form->{guidelineY} - $og[1];

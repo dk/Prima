@@ -501,8 +501,8 @@ sub init
 
 sub insert_new_control
 {
-   my ( $self, $x, $y, $where) = @_;
-   my $class = $VB::main->{currentClass};
+   my ( $self, $x, $y, $where, %profile) = @_;
+   my $class = exists($profile{class}) ? $profile{class} : $VB::main->{currentClass};
    my $xclass = $VB::main->{classes}->{$class}->{class};
    return unless defined $xclass;
    my $creatOrder = 0;
@@ -517,27 +517,34 @@ sub insert_new_control
       $creatOrder = $co + 1;
    }
    my $j;
+   my %prf = exists($profile{profile}) ? ( %{$profile{profile}}) : ();
    eval {
       $j = $self-> insert( $xclass,
          profile => {
-            origin => [$x-4,$y-4],
+            %prf,
             owner  => $wn,
+            origin => [$x-4,$y-4],
          },
          class         => $class,
          module        => $VB::main->{classes}->{$class}->{RTModule},
          creationOrder => $creatOrder,
       );
+      $j-> {realClass} = $profile{realClass} if exists $profile{realClass};
    };
-   $VB::main->{currentClass} = undef;
+   $VB::main->{currentClass} = undef unless exists $profile{class};
    if ( $@) {
       Prima::MsgBox::message( "Error:$@");
       return;
    }
 
    $self->{modified} = 1;
-   $j-> select;
-   $j-> marked(1,1);
-   ObjectInspector::enter_widget( $j);
+
+   unless ( $profile{manualSelect}) {
+      $j-> select;
+      $j-> marked(1,1);
+      ObjectInspector::enter_widget( $j);
+   }
+   return $j;
 }
 
 sub on_paint
@@ -638,9 +645,9 @@ sub on_mousedown
    if ( $btn == mb::Left) {
       unless ( $self-> {transaction}) {
          if ( abs( $self-> {guidelineX} - $x) < 3) {
-            $self-> {transaction} = 2;
             $self-> capture(1, $self);
             $self->{saveHdr} = $self-> text;
+            $self-> {transaction} = ( abs( $self-> {guidelineY} - $y) < 3) ? 4 : 2;
             return;
          } elsif ( abs( $self-> {guidelineY} - $y) < 3) {
             $self-> {transaction} = 3;
@@ -670,7 +677,7 @@ sub on_mousemove
    my ( $self, $mod, $x, $y) = @_;
    unless ( $self-> {transaction}) {
       if ( abs( $self-> {guidelineX} - $x) < 3) {
-         $self-> pointer( cr::SizeWE);
+         $self-> pointer(( abs( $self-> {guidelineY} - $y) < 3) ? cr::Move : cr::SizeWE);
       } elsif ( abs( $self-> {guidelineY} - $y) < 3) {
          $self-> pointer( cr::SizeNS);
       } else {
@@ -700,6 +707,14 @@ sub on_mousemove
       return;
    }
 
+   if ( $self-> {transaction} == 4) {
+      $self-> {guidelineY} = $y;
+      $self-> {guidelineX} = $x;
+      $self-> text( "$x:$y");
+      $self-> repaint;
+      return;
+   }
+
 }
 
 
@@ -725,7 +740,7 @@ sub on_mouseup
       return;
    }
 
-   if ( $self-> {transaction} == 2 || $self-> {transaction} == 3) {
+   if ( $self-> {transaction} > 1 && $self-> {transaction} < 5) {
       $self-> {transaction} = undef;
       $self-> text( $self->{saveHdr});
       return;
@@ -862,17 +877,17 @@ sub fm_duplicate
    my $self = $VB::form;
    return unless $self;
    my @r = ();
+   my %wjs  = map { $_->prf('name') => $_} ( $self, $self-> widgets);
+
    for ( $self-> marked_widgets) {
-      my $j = $self-> insert( $VB::main->{classes}->{$_->{class}}->{class},
-         profile => {
-            %{$_->{profile}},
-            origin => [ $_-> left + 10, $_-> bottom + 10],
-         },
-         class  => $_->{class},
-         module => $_->{module},
-         creationOrder => $_->{creationOrder},
+      my %prf = (
+         class        => $_->{class},
+         manualSelect => 1,
+         profile      => $_->{profile},
       );
-      $j-> {realClass} = $_->{realClass} if defined $_->{realClass};
+      $prf{realClass} = $_->{realClass} if defined $_->{realClass};
+      my $j = $self-> insert_new_control( $_-> left + 14, $_-> bottom + 14, $wjs{$_->prf('owner')}, %prf);
+      next unless $j;
       $j-> focus unless scalar @r;
       push ( @r, $j);
       $j-> marked(1,0);
@@ -1032,7 +1047,8 @@ sub profile_default
            ['~Add widgets...' => q(add_widgets)],
            [],
            ['Reset ~guidelines' => sub { Form::fm_resetguidelines(); } ],
-           ['*gsnap' => 'Snap to guidelines' => sub { $VB::main-> {gsnap} = $VB::main-> menu-> toggle( 'gsnap'); } ],
+           ['*gsnap' => 'Snap to guid~elines' => sub { $VB::main-> {gsnap} = $VB::main-> menu-> toggle( 'gsnap'); } ],
+           ['*dsnap' => 'Snap to gri~d'       => sub { $VB::main-> {dsnap} = $VB::main-> menu-> toggle( 'dsnap'); } ],
            [],
            ['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => \&form_run ],
            ['-breakitem' => '~Break' => \&form_cancel ],
@@ -1168,6 +1184,7 @@ sub init
    $self->{pages}   = \@pages;
    $self->{gridAlert} = 5;
    $self->{gsnap}     = 1;
+   $self->{dsnap}     = 1;
    return %profile;
 }
 
