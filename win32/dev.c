@@ -702,6 +702,9 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
          apiErrRet;
       }
       GetIconInfo( r, &ii);
+      ii. fIcon = hotSpot ? false : true;
+      ii. xHotspot = hotSpot ? hotSpot-> x : 0;
+      ii. yHotspot = hotSpot ? hotSpot-> y : 0;
       DeleteObject( ii. hbmColor);
 
       if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
