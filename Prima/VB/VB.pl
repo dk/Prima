@@ -459,7 +459,6 @@ sub preload
 
 sub on_destroy
 {
-   $VB::inspector-> item_changed;
    $VB::inspector = undef;
    $VB::main-> {ini}-> {ObjectInspectorRect} = join( ' ', $_[0]-> rect);
 }
@@ -912,18 +911,69 @@ sub fm_duplicate
 
 sub fm_selectall
 {
-   my $self = $VB::form;
-   return unless $self;
-   $_-> marked(1) for $self-> widgets;
+   return unless $VB::form;
+   $_-> marked(1) for $VB::form-> widgets;
 }
 
 sub fm_delete
 {
-   my $self = $VB::form;
-   return unless $self;
-   $_-> destroy for $self-> marked_widgets;
+   return unless $VB::form;
+   $_-> destroy for $VB::form-> marked_widgets;
    ObjectInspector::renew_widgets();
 }
+
+sub fm_copy
+{
+   return if !$VB::form || ! scalar $VB::form-> marked_widgets;
+   my $c = $VB::main-> write_form(1);
+   $::application-> Clipboard-> text( $c);
+}
+
+sub fm_paste
+{
+   return unless $VB::form; 
+   my @seq = $VB::main-> inspect_load_data( $::application-> Clipboard-> text, 0);
+   return unless @seq;
+
+   $VB::main-> wait;
+   my $i;
+   my %names  = map { $_-> prf('name') => 1 } ( $VB::form, $VB::form-> widgets);
+   my $main   = $VB::form-> prf('name');
+   my %keymap;
+   my $classes = $VB::main->{classes};
+
+   for ( $i = 0; $i < scalar @seq; $i+= 2) {
+      my ( $key, $hash) = ( $seq[$i], $seq[$i + 1]); 
+      
+      # handling name clashes
+      my $j = 0;
+      $key = $seq[$i] . "_$j", $j++ while exists $names{$key};
+      $keymap{$seq[$i]} = $key;
+      $hash-> {profile}->{name} = $key;
+
+      unless ( $classes->{$hash->{class}}) {
+         $hash->{realClass} = $hash->{class};
+         $hash->{class}     = 'Prima::Widget';
+      }
+
+      my $wclass = $classes->{$hash->{class}}-> {class};
+      my %handleTypes = map { $_ => 1} @{$wclass-> prf_types-> {Handle}};
+      for ( keys %{$hash-> {profile}}) {
+         next unless exists $handleTypes{ $_};
+         my $mapv = $keymap{$hash->{profile}->{$_}};
+         $mapv = $main unless defined $mapv;
+         $hash->{profile}->{$_} = defined($mapv) ? $mapv : $main;
+      }
+      $seq[$i] = $key;
+   }
+
+   $VB::form-> marked(0,1);
+   @seq = $VB::main-> push_widgets( @seq);
+   ObjectInspector::renew_widgets;
+   $_-> notify(q(Load)) for @seq;
+   $_-> marked( 1, 0) for @seq;
+}
+
 
 sub fm_creationorder
 {
@@ -1041,9 +1091,11 @@ sub profile_default
             ['E~xit' => 'Alt+X' => '@X' => sub{$_[0]->close;}],
          ]],
          ['edit' => '~Edit' => [
+             ['Cop~y' => 'Ctrl+Ins' => km::Ctrl|kb::Insert => sub { Form::fm_copy(); }],
+             ['~Paste' => 'Shift+Ins' => km::Shift|kb::Insert => sub { Form::fm_paste(); }],
+             ['~Delete' => sub { Form::fm_delete(); } ], 
              ['~Select all' => sub { Form::fm_selectall(); }],
              ['D~uplicate'  => 'Ctrl+D' => '^D' => sub { Form::fm_duplicate(); }],
-             ['~Delete' => sub { Form::fm_delete(); } ],
              [],
              ['~Align' => [
                 ['~Bring to front' => 'Shift+PgUp' => km::Shift|kb::PgUp => sub { Form::fm_subalign(1);}],
@@ -1405,107 +1457,92 @@ sub new
    update_menu();
 }
 
-sub load_file
+sub inspect_load_data
 {
-   my ($self,$fileName) = @_;
-
-   $VB::form-> destroy if $VB::form;
-   $VB::form = undef;
-   update_menu();
-   $self->{fmName} = $fileName;
-   my $contents;
+   my ($self, $data, $asFile) = @_; 
    my @preload_modules;
-
-   if ( CORE::open( F, $self->{fmName})) {
-      my $first = <F>;
-      unless ( $first =~ /^# VBForm/ ) {
-         Prima::MsgBox::message("Invalid format of ".$self->{fmName});
-         close F;
+   
+   my $fn = ( $asFile ? $data : "input data");
+   if ( $asFile) {
+      unless (CORE::open( F, $data)) {
+         Prima::MsgBox::message( "Error loading " . $data);
          return;
       }
-
-      my @fvc = Prima::VB::VBLoader::check_version( $first);
-      Prima::MsgBox::message("Incompatible file format version ($fvc[1]) of ".$self->{fmName}."\nBugs possible!",
-         mb::Warning|mb::OK) unless $fvc[0];
-
-      while (<F>) {
-         $contents = $_, last unless /^#/;
-         next unless /^#\s*\[([^\]]+)\](.*)$/;
-         if ( $1 eq 'preload') { 
-            push( @preload_modules, split( ' ', $2)); 
-         }
-      }
       local $/;
-      $contents .= <F>;
+      $data = <F>;
       close F;
-   } else {
-      Prima::MsgBox::message( "Error loading ".$self->{fmName});
+   }
+
+   my @d = split( "\n", $data);
+   undef $data;
+   
+   
+   if ( !defined($d[0]) || !($d[0] =~ /^# VBForm/ )) {
+INV:   
+      Prima::MsgBox::message("Invalid format of $fn");
       return;
    }
-   
+
+   my @fvc = Prima::VB::VBLoader::check_version( $d[0]);
+   Prima::MsgBox::message("Incompatible file format version ($fvc[1]) of $fn.\nBugs possible!",
+      mb::Warning|mb::OK) unless $fvc[0];
+
+   shift @d;
+   my $i;
+   for ( $i = 0; $i < scalar @d; $i++) {
+      last unless $d[$i] =~ /^#/;
+      next unless $d[$i] =~ /^#\s*\[([^\]]+)\](.*)$/;
+      if ( $1 eq 'preload') { 
+         push( @preload_modules, split( ' ', $2)); 
+      }
+   }
+   goto INV if $i >= scalar @d;
+
    for ( @preload_modules) {
       eval "use $_;";
       next unless $@;
       Prima::MsgBox::message( "Error loading module $_:$@");
       return;
    }
+   my $sub = eval( join( "\n", @d[$i..$#d]));
 
-
-   my $sub = eval( $contents);
-   if ( $@) {
-      Prima::MsgBox::message("Error loading ".$self->{fmName}.' :'.@_);
+   if ( $@ || ref($sub) ne 'CODE') {
+      Prima::MsgBox::message("Error loading $fn:$@");
       return;
    }
+   
+   return $sub-> ();
+}
 
-   $VB::main-> wait;
-   my $i;
+sub preload_modules
+{
+   my $self = shift;
+   
+
+}
+
+sub push_widgets
+{
+   my $self     = shift;
+   my $classes = $self->{classes};
+   my $callback = shift if $_[0] && ref($_[0]) eq 'CODE';
+   
+   my @seq = @_;
+   my $main = $VB::form-> prf('name');
+   my %owners  = ( $main => '');
+   my %widgets = ( $main => $VB::form);
+   my @return;
    my %dep;
-   my @seq = $sub->();
+   my $i;
+
    for ( $i = 0; $i < scalar @seq; $i+= 2) {
       $dep{$seq[$i]} = $seq[$i + 1];
    }
 
-   my $main;
-   my %class = ();
-   my $classes = $self->{classes};
    for ( keys %dep) {
-      $main = $_, next if $dep{$_}->{parent};
-      unless ( $classes->{$dep{$_}->{class}}) {
-         $dep{$_}->{realClass} = $dep{$_}->{class};
-         $dep{$_}->{class} = $dep{$_}->{parent} ? 'Prima::Window' : 'Prima::Widget';
-      }
-      $class{$dep{$_}->{class}} = 1;
-   }
-
-   my $oldtxt = $self-> text;
-   my $maxwij = scalar(@seq) / 2;
-   $self-> text( "Loading...");
-
-   my $f = Form-> create(
-      realClass   => $dep{$main}->{realClass},
-      class   => $dep{$main}->{class},
-      module  => $dep{$main}->{module},
-      extras  => $dep{$main}->{extras},
-      creationOrder => 0,
-      visible => 0,
-   );
-   for ( keys %{$dep{$main}->{profile}}) {
-      next unless $_ eq 'size';
-      my $d = $dep{$main}->{profile}->{$_};
-      my @x = $f-> size;
-   }
-   $f-> prf_set( %{$dep{$main}->{profile}});
-
-   my %owners  = ( $main => '');
-   my %widgets = ( $main => $f);
-   for ( keys %dep) {
-      next if $_ eq $main;
       $owners{$_} = exists $dep{$_}->{profile}->{owner} ? $dep{$_}->{profile}->{owner} : $main;
    }
-   $VB::form = $f;
-
-   $VB::inspector->{selectorChanging} = 1;
-   my $loaded = 1;
+   
    local *do_layer = sub
    {
       my $id = $_[0];
@@ -1513,7 +1550,7 @@ sub load_file
       for ( $i = 0; $i < scalar @seq; $i += 2) {
          $_ = $seq[$i];
          next unless $owners{$_} eq $id;
-         my $c = $f-> insert(
+         my $c = $VB::form-> insert(
             $classes->{$dep{$_}->{class}}->{class},
             realClass     => $dep{$_}->{realClass},
             class         => $dep{$_}->{class},
@@ -1521,6 +1558,7 @@ sub load_file
             extras        => $dep{$_}->{extras},
             creationOrder => $i / 2,
          );
+         push ( @return, $c);
          if ( exists $dep{$_}->{profile}->{origin}) {
             my @norg = @{$dep{$_}->{profile}->{origin}};
             unless ( exists $widgets{$owners{$_}}) {
@@ -1537,12 +1575,67 @@ sub load_file
          }
          $c-> prf_set( %{$dep{$_}->{profile}});
          $widgets{$_} = $c;
-         $loaded++;
-         $self-> text( sprintf( "Loaded %d%%", ($loaded / $maxwij) * 100));
+         $callback-> ( $self) if $callback;
          &do_layer( $_);
       }
    };
    &do_layer( $main, \%owners);
+   return @return;
+}
+
+sub load_file
+{
+   my ($self,$fileName) = @_;
+
+   $VB::form-> destroy if $VB::form;
+   $VB::form = undef;
+   update_menu();
+
+   my @seq = $self-> inspect_load_data( $fileName, 1);
+   return unless @seq;
+   
+   $self->{fmName} = $fileName;
+
+   $VB::main-> wait;
+   my ( $i, $mf, $main, $fmindex);
+   my $classes = $self->{classes};
+   
+   for ( $i = 0; $i < scalar @seq; $i+= 2) {
+      my $hash = $seq[$i + 1];
+      if ( $hash-> {parent}) {
+         $main = $seq[$i];
+         $mf   = $seq[$i+1];
+         $fmindex = $i;
+      }
+      unless ( $classes->{$hash->{class}}) {
+         $hash->{realClass} = $hash->{class};
+         $hash->{class}     = $hash->{parent} ? 'Prima::Window' : 'Prima::Widget';
+      }
+   }
+
+   defined($main) ? 
+      splice( @seq, $fmindex, 2) :
+      ( $main = 'Form1', $mf = {});
+
+   my $oldtxt = $self-> text;
+   my $maxwij = scalar(@seq) / 2;
+   $self-> text( "Loading...");
+
+   $VB::form = Form-> create(
+      realClass   => $mf->{realClass},
+      class       => $mf->{class},
+      module      => $mf->{module},
+      extras      => $mf->{extras},
+      creationOrder => 0,
+      visible     => 0,
+   );
+   $VB::form-> prf_set( %{$mf->{profile}});
+   $VB::inspector->{selectorChanging} = 1;
+   my $loaded = 1;
+   $self-> push_widgets( sub {
+     $loaded++;
+     $self-> text( sprintf( "Loaded %d%%", ($loaded / $maxwij) * 100)); 
+   }, @seq);
    $VB::form-> show;
    $VB::inspector->{selectorChanging}--;
    ObjectInspector::renew_widgets;
@@ -1567,9 +1660,10 @@ sub open
 
 sub write_form
 {
-   my $self = $_[0];
+   my ( $self, $partialExport) = @_;
 
-   my @cmp = $VB::form-> widgets;
+   my @cmp = $partialExport ? 
+      $VB::form-> marked_widgets : $VB::form-> widgets;
    my %preload_modules;
 
    my $header = <<PREHEAD;
@@ -1583,7 +1677,7 @@ sub
 STARTSUB
 
    my $main = $VB::form-> prf( 'name');
-   push( @cmp, $VB::form);
+   push( @cmp, $VB::form) unless $partialExport;
    @cmp = sort { $a->{creationOrder} <=> $b->{creationOrder}} @cmp;
 
    for ( @cmp) {
