@@ -483,6 +483,7 @@ typedef struct _drawable_sys_data
       int process_configure_notify	: 1;
       int reload_font			: 1;
       int saved_zero_line       	: 1;
+      int sizeable                      : 1;
       int sync_paint			: 1;
       int want_visible                  : 1;
       int withdrawn                     : 1;

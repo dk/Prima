@@ -72,16 +72,24 @@ wm_generic_translate_event_hook( Handle self, XClientMessageEvent *xev, PEvent e
    DEFWMDATA;
    Handle selectee;
 
-   if ( guts. message_boxes) return false;
    selectee = CApplication(application)->map_focus( application, self);
 
    if ( xev-> type == ClientMessage && xev-> message_type == wm-> protocols) {
       if ((Atom) xev-> data. l[0] == wm-> deleteWindow) {
-         if ( selectee != self) return false;
+         if ( guts. message_boxes) return false;
 	 ev-> cmd = cmClose;
 	 return true;
       } else if ((Atom) xev-> data. l[0] == wm-> takeFocus) {
-         CWidget( selectee)-> set_selected( selectee, true);
+         if ( guts. message_boxes) {
+            struct MsgDlg * md = guts. message_boxes;
+            while ( md) {
+               XMapRaised( DISP, md-> w);
+               md = md-> next;
+            }
+            return false;
+         }
+         if ( selectee != self) 
+            CWidget( selectee)-> set_selected( selectee, true);
 	 return false;
       }
    }

@@ -917,10 +917,17 @@ apc_widget_set_size_bounds( Handle self, Point min, Point max)
       XSizeHints hints;
       bzero( &hints, sizeof( hints));
       hints. flags = PMinSize | PMaxSize;
-      hints. min_width  = min. x;
-      hints. min_height = min. y;
-      hints. max_width  = max. x;
-      hints. max_height = max. y;
+      if ( XX-> flags. sizeable) {
+         hints. min_width  = min. x;
+         hints. min_height = min. y;
+         hints. max_width  = max. x;
+         hints. max_height = max. y;
+      } else {   
+         hints. min_width  = XX-> size. x;
+         hints. min_height = XX-> size. y;
+         hints. max_width  = XX-> size. x;
+         hints. max_height = XX-> size. y;
+      }
       XSetWMNormalHints( DISP, X_WINDOW, &hints);
       XCHECKPOINT;
    }

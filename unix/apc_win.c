@@ -47,8 +47,13 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XSetWindowAttributes attrs;
    XWindow parent = guts. root;
 
-   if ( X_WINDOW)  // recreate request - can't change a thing ... 
+   if ( border_style != bsSizeable) border_style = bsDialog;
+
+   if ( X_WINDOW) { // recreate request 
+      XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
+      apc_widget_set_size_bounds( self, PWidget(self)-> sizeMin, PWidget(self)-> sizeMax);
       return true; 
+   }   
 
    /* create */
    attrs. event_mask = 0
@@ -100,7 +105,6 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	                     /* | CWCursor */
 	                     , &attrs);
    if (!X_WINDOW) return false;
-   XCHECKPOINT;
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
    XCHECKPOINT;
    XX-> flags. iconic = ( window_state == wsMinimized) ? 1 : 0;
@@ -123,6 +127,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XX-> owner = real_owner;
    apc_component_fullname_changed_notify( self);
    prima_send_create_event( X_WINDOW);
+   if ( border_style == bsSizeable) XX-> flags. sizeable = 1;
 
    // setting initial size
    XX-> size = guts. displaySize;
@@ -190,8 +195,7 @@ apc_window_get_border_icons( Handle self)
 int
 apc_window_get_border_style( Handle self)
 {
-   DOLBUG( "apc_window_get_border_style()\n");
-   return 0;
+   return X(self)-> flags. sizeable ? bsSizeable : bsDialog;
 }
 
 Point
@@ -275,13 +279,33 @@ prima_get_frame_info( Handle self, PRect r)
    return true;
 }
 
+static void
+apc_SetWMNormalHints( Handle self, XSizeHints * hints)
+{
+   DEFXX;
+   if ( XX-> flags. sizeable) {
+      hints-> min_width  = PWidget(self)-> sizeMin.x;
+      hints-> min_height = PWidget(self)-> sizeMin.y;
+      hints-> max_width  = PWidget(self)-> sizeMax.x;
+      hints-> max_height = PWidget(self)-> sizeMax.y;
+   } else {   
+      Point who = ( hints-> flags & USSize) ? (Point){hints-> width, hints-> height} : XX-> size;
+      hints-> min_width  = who. x;
+      hints-> min_height = who. y;
+      hints-> max_width  = who. x;
+      hints-> max_height = who. y;
+   }
+   hints-> flags |= PMinSize | PMaxSize;
+   XSetWMNormalHints( DISP, X_WINDOW, hints);
+   XCHECKPOINT;
+}   
+
 Bool
 apc_window_set_client_pos( Handle self, int x, int y)
 {
    DEFXX;
    XSizeHints hints;
    Point p = XX-> origin;
-
    bzero( &hints, sizeof( XSizeHints));
    
    XX-> origin = (Point){x,y};
@@ -290,8 +314,8 @@ apc_window_set_client_pos( Handle self, int x, int y)
    hints. x = x;
    hints. y = y;
    XMoveWindow( DISP, X_WINDOW, x, y);
-   XSetWMNormalHints( DISP, X_WINDOW, &hints);
-   XCHECKPOINT;
+   apc_SetWMNormalHints( self, &hints);
+   
    if ( XX-> origin.x != p. x || XX-> origin. y != p. y) {
       Event e;
       bzero( &e, sizeof( e));
@@ -336,8 +360,8 @@ apc_window_set_client_size( Handle self, int width, int height)
    hints. y = X(XX-> owner)-> size. y - XX-> size.y - XX-> origin. y;
    hints. width = width;
    hints. height = height;
+   apc_SetWMNormalHints( self, &hints);
    XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, width, height);
-   XSetWMNormalHints( DISP, X_WINDOW, &hints);
    XCHECKPOINT;
    prima_send_cmSize( self, sz);
    return true;
@@ -361,13 +385,15 @@ static void
 apc_widget_set_rect( Handle self, int x, int y, int szx, int szy)
 {
     XSizeHints hints;
+
+    bzero( &hints, sizeof( XSizeHints));
     hints. flags = USPosition | USSize;
     hints. x = x;
     hints. y = y;
     hints. width  = szx;
     hints. height = szy;
     XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, hints. width, hints. height);
-    XSetWMNormalHints( DISP, X_WINDOW, &hints);
+    apc_SetWMNormalHints( self, &hints);
 }   
 
 Bool
@@ -434,7 +460,6 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
    if (( XX-> preexec_focus = apc_widget_get_focused()))
       protect_object( XX-> preexec_focus);
    CWindow( self)-> exec_enter_proc( self, shared, insert_before);
-   XSetTransientForHint( DISP, X_WINDOW, PWindow(PWindow(self)-> owner)-> handle);
    apc_widget_set_enabled( self, true);
    apc_widget_set_visible( self, true);
    apc_window_activate( self);
@@ -473,7 +498,6 @@ apc_window_end_modal( Handle self)
    Handle modal, oldfoc;
    DEFXX;
    XX-> flags.modal = false;
-   XSetTransientForHint( DISP, X_WINDOW, nilHandle);
    CWindow( self)-> exec_leave_proc( self);
    apc_widget_set_visible( self, false);
    if ( application) {
