@@ -252,9 +252,10 @@ sub find_lib
 	local @LIBPATH = @LIBPATH;
 	push @LIBPATH, $libpath if $libpath;
 	$present = compile( <<ENDP);
-void
+int
 main()
 {
+   return 0;
 }
 ENDP
 	return $libpath if $present;
@@ -267,10 +268,11 @@ sub have_func
     my ( $funcname) = @_;
     print "Checking for function $funcname... ";
     my $rc = compile( <<ENDP);
-void
+int
 main()
 {
     ${ funcname}();
+    return 0;
 }
 ENDP
     if ( $rc) {
@@ -723,8 +725,8 @@ sub setup_defines
 {
     have_header( "io.h");
     have_header( "unistd.h");
-    have_header( "sys/ipc.h");
-    have_header( "sys/shm.h");
+    have_header( "sys/ipc.h", "sys/types.h");
+    have_header( "sys/shm.h", "sys/types.h");
     have_header( "X11/extensions/shape.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
     have_header( "X11/extensions/XShm.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
     if ( $OS2 && defined $ENV{ PRIMA_PMPRINTF}) {
