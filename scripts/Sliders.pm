@@ -514,6 +514,13 @@ sub max          {($#_)?$_[0]->set_bounds($_[0]-> {'min'}, $_[1])      : return 
 sub step         {($#_)?$_[0]->set_step         ($_[1]):return $_[0]->{step}}
 sub value        {($#_)?$_[0]->set_value        ($_[1]):return $_[0]->{edit}->text;}
 
+# gauge reliefs
+package gr;
+use constant Sink         =>  -1;
+use constant Border       =>  0;
+use constant Raise        =>  1;
+
+
 package Gauge;
 use vars qw(@ISA);
 @ISA = qw(Widget);
@@ -532,12 +539,12 @@ sub profile_default
    return {
       %{$_[ 0]-> SUPER::profile_default},
       indent         => 1,
-      relief         => -1,       # -1 = sink, 0 = border, 1 = raise
+      relief         => gr::Sink,
       ownerBackColor => 1,
       hiliteBackColor=> cl::Blue,
       hiliteColor    => cl::White,
       min            => 0,
-      max            => 1,
+      max            => 100,
       value          => 0,
       threshold      => 0,
       vertical       => 0,
@@ -574,7 +581,7 @@ sub set
 sub on_paint
 {
    my ($self,$canvas) = @_;
-   my ($x, $y) = $canvas-> get_size;
+   my ($x, $y) = $canvas-> size;
    my $i = $self-> indent;
    my ($clComplete,$clBack,$clFore,$clHilite) = ($self-> hiliteBackColor, $self-> backColor, $self-> color, $self-> hiliteColor);
    my $v = $self-> {vertical};
@@ -587,13 +594,13 @@ sub on_paint
    $canvas-> bar ( $v ? ($i, $i+$complete+1, $x-$i-1, $y-$i-1) : ( $i+$complete+1, $i, $x-$i-1, $y-$i-1));
    # draw the border
    my $relief = $self-> relief;
-   $canvas-> color(( $relief < 0) ? $d3 : (( $relief == 0) ? cl::Black : $l3));
+   $canvas-> color(( $relief == gr::Sink) ? $d3 : (( $relief == gr::Border) ? cl::Black : $l3));
    for ( my $j = 0; $j < $i; $j++)
    {
       $canvas-> line( $j, $j, $j, $y - $j - 1);
       $canvas-> line( $j, $y - $j - 1, $x - $j - 1, $y - $j - 1);
    }
-   $canvas-> color(( $relief < 0) ? $l3 : (( $relief == 0) ? cl::Black : $d3));
+   $canvas-> color(( $relief == gr::Sink) ? $l3 : (( $relief == gr::Border) ? cl::Black : $d3));
    for ( my $j = 0; $j < $i; $j++)
    {
       $canvas-> line( $j + 1, $j, $x - $j - 1, $j);
@@ -1295,7 +1302,7 @@ sub reset
 sub offset2pt
 {
    my ( $self, $width, $height, $value, $radius) = @_;
-   my $a = 225 * 3.14159 / 180 - ( 270 * 3.14159 / 180) * abs( $value - $self->{min}) /
+   my $a = 225 * 3.14159 / 180 - ( 270 * 3.14159 / 180) * ( $value - $self->{min}) /
            abs( $self->{min} - $self->{max});
    return $width + $radius * cos($a), $height + $radius * sin($a);
 }
@@ -1387,6 +1394,7 @@ sub on_paint
          }
       }
    } else {
+      $canvas-> bar( 0, 0, @size);
       $canvas-> color( $clr[0]);
    }
 
