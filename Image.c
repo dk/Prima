@@ -127,7 +127,7 @@ Image_reset( Handle self, int type, SV * palette)
    }
    var->lineSize = (( var->w * ( type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
-   var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
+   var->palSize = (1 << ( type & imBPP)) & 0x1ff;
    if ( var->dataSize > 0)
    {
       newData = malloc( var->dataSize);
@@ -495,9 +495,9 @@ Image_end_paint( Handle self)
    if ( !is_opt( optInDraw)) return;
    apc_image_end_paint( self);
    inherited end_paint( self);
-   if ( is_opt( optPreserveType) && var->type != oldType)
+   if ( is_opt( optPreserveType) && var->type != oldType) {
       my->reset( self, oldType, nilSV);
-   else {
+   } else {
       switch( var->type)
       {
          case imbpp1:
@@ -1498,7 +1498,7 @@ Image_get_pixel( Handle self,int x,int y)
         case imbpp1:
             {
                 Byte p=var->data[var->lineSize*y+(x>>3)];
-                p=(p >> (x & 7)) & 1;
+                p=(p >> (7-(x & 7))) & 1;
                 return ((var->type & imGrayScale) ? (p ? 255 : 0) : BGRto32(p));
             }
         case imbpp4:
@@ -1527,7 +1527,8 @@ Image_get_pixel( Handle self,int x,int y)
                 long p;
                 if (var->type & imRealNumber) {
                     float pf=*(float*)(var->data + (var->lineSize*y+x*4));
-                    p=((pf - var->stats[isRangeLo])/(var->stats[isRangeHi] - var->stats[isRangeLo]))*LONG_MAX;
+                    double rangeLo = my-> get_stats( self, isRangeLo);
+                    p=((pf - rangeLo)*LONG_MAX)/(var->stats[isRangeHi] - rangeLo);
                 }
                 else {
                     p=*(long*)(var->data + (var->lineSize*y+x*4));
@@ -1537,10 +1538,12 @@ Image_get_pixel( Handle self,int x,int y)
         case imbpp64:
             {
                 double pd=*(double*)(var->data + (var->lineSize*y+x*8));
+                double rangeLo;
                 if ((var->type & imComplexNumber) || (var->type & imTrigComplexNumber)) {
                     return 0;
                 }
-                return ((pd - var->stats[isRangeLo])/(var->stats[isRangeHi] - var->stats[isRangeLo]))*LONG_MAX;
+                rangeLo = my-> get_stats( self, isRangeLo);
+                return ((pd - rangeLo)/(var->stats[isRangeHi] - rangeLo))*LONG_MAX;
             }
         default:
             return 0;
@@ -1608,7 +1611,8 @@ Image_set_pixel( Handle self,int x,int y,Color color)
         case imbpp32 :
             {
                 if (var->type & imRealNumber) {
-                    *(float*)(var->data+(var->lineSize*y+(x<<2)))=(((float)color)/(LONG_MAX))*(var->stats[isRangeHi]-var->stats[isRangeLo])+var->stats[isRangeLo];
+                    double rangeLo = my-> get_stats( self, isRangeLo);
+                    *(float*)(var->data+(var->lineSize*y+(x<<2)))=(((float)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
                 }
                 else {
                     *(long*)(var->data+(var->lineSize*y+(x<<2)))=color;
@@ -1617,7 +1621,8 @@ Image_set_pixel( Handle self,int x,int y,Color color)
             break;
         case imbpp64 :
             if (var->type & imRealNumber) {
-                *(double*)(var->data+(var->lineSize*y+(x<<2)))=(((double)color)/(LONG_MAX))*(var->stats[isRangeHi]-var->stats[isRangeLo])+var->stats[isRangeLo];
+                double rangeLo = my-> get_stats( self, isRangeLo);
+                *(double*)(var->data+(var->lineSize*y+(x<<2)))=(((double)color)/(LONG_MAX))*(var->stats[isRangeHi]-rangeLo)+rangeLo;
             }
             break;
         default:
