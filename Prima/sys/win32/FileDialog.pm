@@ -205,6 +205,10 @@ sub text
    $_[0]->{text} = $_[1];
 }
 
+# dummies
+sub sorted { 1 }
+sub showDotFiles { 1 }
+
 # mere callbacks if someone wants these to inherit
 sub ok {} 
 sub cancel {} 
