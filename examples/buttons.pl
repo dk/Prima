@@ -117,7 +117,6 @@ sub clone
 
 package main;
 
-
 my $w = Prima::Window-> create(
   onDestroy => sub { $::application-> close} ,
    text   => "Button example",
