@@ -51,6 +51,8 @@ static int Image_read_palette( Handle self, PRGBColor palBuf, SV * palette);
 void
 Image_init( Handle self, HV * profile)
 {
+   int xy[2];
+
    inherited init( self, profile);
    var->w = pget_i( width);
    var->h = pget_i( height);
@@ -65,13 +67,11 @@ Image_init( Handle self, HV * profile)
    var->palette = malloc( 0x100 * sizeof( RGBColor));
    opt_assign( optPreserveType, pget_B( preserveType));
    var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
-   Image_read_palette( self, var->palette, pget_sv( palette));
+   if (!( var->type & imGrayScale))
+      Image_read_palette( self, var->palette, pget_sv( palette));
    my->set_data( self, pget_sv( data));
-   {
-      Point set;
-      prima_read_point( pget_sv( resolution), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
-      my-> set_resolution( self, set.x, set.y);
-   }
+   prima_read_point( pget_sv( resolution), xy, 2, "RTC0109: Array panic on 'resolution'");
+   my-> set_resolution( self, xy[0], xy[1]);
    if ( var->type & imGrayScale) switch ( var->type & imBPP)
    {
    case imbpp1:
