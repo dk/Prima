@@ -137,6 +137,7 @@ long
 File_add_notification( Handle self, char * name, SV * subroutine, Handle referer, int index)
 {
    long id = inherited-> add_notification( self, name, subroutine, referer, index);
+   fprintf( stderr, "notification added: %ld\n", id);
    if ( id != 0) File_reset_notifications( self);
    return id;
 }
@@ -157,7 +158,9 @@ File_reset_notifications( Handle self)
    void * ret[ 3];
    int    cmd[ 3] = { feRead, feWrite, feException};
 
+   fprintf( stderr, "reset\n");
    if ( var-> eventIDs == nil) {
+      fprintf( stderr, "eid == nil\n");
       var-> eventMask = var-> eventMask2;
       return;
    }
@@ -168,13 +171,14 @@ File_reset_notifications( Handle self)
 
    for ( i = 0; i < 3; i++) {
       if ( ret[i] == nil) continue;
+      fprintf( stderr, "!\n");
       list = var-> events + ( int) ret[i] - 1;
       if ( list-> count > 0) mask |= cmd[ i];
    }
 
    if ( var-> file && ( var-> eventMask != mask)) {
-      apc_file_change_mask( self, mask);
       var-> eventMask = mask;
+      apc_file_change_mask( self);
    }
 }
 
