@@ -1144,7 +1144,7 @@ apc_gp_set_font( Handle self, PFont font)
    PCachedFont kf = prima_find_known_font( font, false, false);
    if ( !kf || !kf-> id) {
       dump_font( font);
-      warn( "UAF_007: internal error (kf:%08x)", (IntPtr)kf); /* the font was not cached, can't be */
+      warn( "UAF_007: internal error (kf:%08x)", (IV)kf); /* the font was not cached, can't be */
       return false;
    }
 
@@ -1182,7 +1182,7 @@ apc_menu_set_font( Handle self, PFont font)
 
    if ( !kf || !kf-> id) {
       dump_font( font);
-      warn( "UAF_010: internal error (kf:%08x)", (IntPtr)kf); /* the font was not cached, can't be */
+      warn( "UAF_010: internal error (kf:%08x)", (IV)kf); /* the font was not cached, can't be */
       return false;
    }
 

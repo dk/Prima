@@ -494,7 +494,7 @@ char **
 Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
 {
    float width[ 256];
-   IntPtr start = 0;
+   IV start = 0;
    float w = 0, inc = 0;
    char **ret;
    Bool wasTab    = 0;
@@ -511,7 +511,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
 
 // macro for adding string/chunk into result table
 #define lAdd(end) {                                       \
-   IntPtr l = end - start;                                \
+   IV l = end - start;                                \
    char *c = nil;                                         \
    if (!( t-> options & twReturnChunks)) {                \
       c = allocs( l + 1);                                 \
@@ -624,8 +624,8 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                 int len;
                 if ( t-> options & twReturnChunks)
                 {
-                   c   = &text[ (IntPtr)ret[ t-> count - 2]];
-                   len = (IntPtr) ret[ t-> count - 1];
+                   c   = &text[ (IV)ret[ t-> count - 2]];
+                   len = (IV) ret[ t-> count - 1];
                 }
                 else  {
                   c = ( unsigned char *) ret[ t-> count - 1];
@@ -633,7 +633,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec *t, PFontABC abc)
                 }
                 if ( rc != ' ' && rc != '\t' && rc != '\n') {
                    // determining whether this line could be split
-                   IntPtr j;
+                   IV j;
                    Bool ok = false;
                    for ( j = len; j >= 0; j--)
                       if ( c[ j] == ' ' || c[ j] == '\n' || c[ j] == '\t') {
@@ -758,7 +758,7 @@ Drawable_text_wrap( Handle self, char * text, int width, int options, int tabInd
    free( abc);
 
    for ( i = 0; i < t. count; i++) {
-      av_push( av, retChunks ? ( newSViv(( IntPtr) c[ i])) : ( newSVpv( c[ i], 0)));
+      av_push( av, retChunks ? ( newSViv(( IV) c[ i])) : ( newSVpv( c[ i], 0)));
       if ( !retChunks) free( c[i]);
    }
    free( c);

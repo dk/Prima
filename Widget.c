@@ -361,7 +361,7 @@ Widget_custom_paint( Handle self)
    if ( var-> eventIDs == nil) return false;
    ret = hash_fetch( var-> eventIDs, "Paint", 5);
    if ( ret == nil) return false;
-   list = var-> events + ( IntPtr) ret - 1;
+   list = var-> events + ( IV) ret - 1;
    return list-> count > 0;
 }
 
