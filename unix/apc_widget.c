@@ -1051,9 +1051,12 @@ apc_XUnmapWindow( Handle self)
    Handle z = guts. focused;
    while ( z) {
       if ( z == self) {
-         if (PComponent(self)-> owner)
-            XSetInputFocus( DISP, PComponent(PComponent(self)-> owner)-> handle, 
-               RevertToNone, CurrentTime);
+         if (PComponent(self)-> owner) {
+            z = PComponent(self)-> owner;
+            while ( z && !X(z)-> type. window) z = PComponent(z)-> owner;
+            if ( z && z != application)
+               XSetInputFocus( DISP, PComponent(z)-> handle, RevertToNone, CurrentTime);
+         }
          break;
       }
       z = PComponent(z)-> owner;
