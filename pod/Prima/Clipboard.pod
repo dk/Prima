@@ -1,0 +1,245 @@
+=head1 NAME
+
+Clipboard - GUI-driven intreprocess communication
+
+=head1 DESCRIPTION
+
+Prima::Clipboard class is a descendant of Prima::Component. 
+It serves as an interface to the specific data
+storage, called clipboard, visible to all clients of one 
+GUI space. The system clipboard is intended for the exchange of
+information of an arbitrary type between graphic applications.
+
+=head1 USAGE
+
+Prima::Clipboard provides access to the system clipboard
+data storage. For the easier communication, the system clipboard
+has one 'format' field, that is stored along with the data.
+This field is used to distingush between data formats.
+Moreover, a clipboard can hold simultaneously several data
+instances, of different data formats. Since the primary usage of a clipboard is
+'copying' and 'pasting', an application can store copied
+information in several formats, increasing possibility
+that the receiving application recognizes the data.
+
+Different system provide spectrum of pre-defined data
+types, but the toolkit uses only two of these - a text
+and an image. It does not limit, however, the data format
+being one of these two types - an application is free to
+register its own formats. Both pre-defined and newly defined data 
+formats are described by a string, and the two pre-defined formats
+are represented by C<'Text'> and C<'Image'> string constants. 
+
+The most frequent usage of Prima::Clipboard is to preform
+two tasks - copying and pasting. Both can be exemplified by
+the following:
+
+   my $c = $::application-> Clipboard;
+
+   # paste
+   my $string = $c-> fetch('Text');
+
+   # copy
+   $c-> store( 'Text', $string);
+   
+
+This simplistic code hides other aspects of Prima::Clipboard class,
+although it is fully functional.
+
+First, the default clipboard is accessible by an implicit name call,
+as an object named 'Clipboard'. This scheme makes it easily overridable.
+A more important point is, that the default clipboard object might
+be accompanied by other clipboard objects. This is the case with
+X11 environment, which defines also 'Primary' and 'Secondary'
+system clipboards. Their functionality is identical to the default
+clipboard, however. C<get_standard_clipboards()> method
+returns strings for the clipboards, provided by the system.
+
+Second, code for fetching and storing multi-format data is
+somewhat different. Clipboard is a shared system resource,
+and have to be 'opened', before a process can grab it, so other
+processes can access the clipboard data only after the clipboard
+is 'closed'. C<fetch()> and C<store()> implicitly call C<open()>
+and C<close()>, but these functions must be called explicitly
+for the multi-format data handling. The code below illustrates the
+said:
+
+    # copy text and image 
+    if ( $c-> open) {
+       $c-> clear;
+       $c-> store('Text', $string);
+       $c-> store('Image', $image);
+       $c-> close;
+    }
+
+    # check present formats and paste 
+   if ( $c-> open) { 
+      if ( $c-> format_exists('Text')) {
+         $string = $c-> fetch('Text');
+      }
+      # or, check the desired format alternatively
+      my %formats = map { $_ => 1 } $c-> get_formats;
+      if ( $formats{'Image'}) {
+         $image = $c-> fetch('Image');
+      }
+    
+      $c-> close;
+   }
+
+
+The clear() call in the copying code is necessary so
+the newly written data will not mix with the old.
+
+At last, the newly registered formats can be accessed
+by a program:
+
+   my $myformat = 'Very Special Old Pale Data Format';
+   if ( $c-> register_format($myformat)) {
+      $c-> open;
+      $c-> clear;
+      $c-> store('Text', 'sample text');
+      $c-> store($myformat', 'sample ## text');
+      $c-> close;
+   }
+
+
+Once registered, all processes in a GUI space can access
+the data by this format. The registration must take place 
+also if a Prima-driven program needs to read data in
+a format, defined by an another program. In either case, 
+the duplicate registration is a valid event.
+When no longer needed, a format can be de-registered.
+It is not a mandatory action, however - the toolkit cleans
+up before exit. Moreover, the system maintains a reference
+counter on the custom-registered formats; de-registering
+does not mean deletion, thus. If two processes use a custom
+format, and one exits and re-starts, it still can access the
+data in the same format, registered by its previous incarnation.
+
+=head1 API
+
+=head2 Properties
+
+=over
+
+=item image OBJECT
+
+Provides access to an image, stored in the system clipboard.
+In get-mode call, return C<undef> if no image is stored.
+
+=item text STRING
+
+Provides access to a text stored in the system clipboard.
+In get-mode call, return C<undef> if no text information is
+present.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item clear
+
+Deletes all data from clipboard.
+
+=item close
+
+Closes the open/close brackets. open() and close() can
+be called recursively; only the last close() removes the
+actual clipboard locking, so other processes can use it as well.
+
+=item deregister_format FORMAT_STRING
+
+De-registers a previously registered data format.
+Called implicitly for all not de-registered format
+before a clipboard object is destroyed.
+
+=item fetch FORMAT_STRING
+
+Returns the data of FORMAT_STRING data format,
+if present in the clipboard. Depending on FORMAT_STRING,
+data is either text string for C<'Text'> format, 
+Prima::Image object for C<'Image'> format and a binary scalar
+value for all custom formats.
+
+=item format_exists FORMAT_STRING
+
+Returns a boolean flag, showing whether FORMAT_STRING
+format data is present in the clipboard or not.
+
+=item get_handle
+
+Returns a system handle for a clipboard object.
+
+=item get_formats
+
+Returns array of strings, where each is a format ID,
+reflecting the formats present in the clipboard.
+
+Only the pre-defined formats, and the formats registered
+via C<register_format()> are returned. There is no
+way to see if a format, not registered before, is present.
+
+=item get_registered_formats
+
+Returns array of strings, each representing 
+a registered format. C<Text> and C<Image>
+are returned also.
+
+=item get_standard_clipboards
+
+Returns array of strings, each repersenting
+a system clipboard. The default C<Clipboard>
+is always present. Other clipboards are optional.
+As an example, this function returns only C<Clipboard>
+under win32, but also C<Primary> and C<Secondary>
+under X11. The code, specific to these clipboards
+must refer to this function first.
+
+=item open
+
+Opens a system clipboard and locks it for the process
+single use; returns a success flag. Subsequent C<open>
+calls are possible, and always return 1. Each C<open()>
+must correspond to C<close()>, otherwise the clipboard 
+will stay locked until the blocking process is finished.
+
+=item register_format FORMAT_STRING
+
+Registers a data format under FORMAT_STRING string ID,
+returns a success flag. If a format is already registered,
+1 is returned. All formats, registered via C<register_format()>
+are de-registered with C<deregister_format()> when a program is
+finished.
+
+=item store FORMAT_STRING, SCALAR
+
+Stores SCALAR value into the clipboard in FORMAT_STRING
+data format. Depending of FORMAT_STRING, SCALAR is treated as follows:
+
+   FORMAT_STRING     SCALAR
+   ------------------------------------
+   Text              text string
+   Image             Prima::Image object
+   other formats     binary scalar value
+
+
+NB. All custom formats treated as a binary data. In case
+when the data are transferred between hosts with different byte orders
+no implicit conversions are made. It is up to the programmer
+whether to convert the data in a portable format, or leave it as
+is. The former option is of course preferable. As far as the author knows,
+the I<Storable> module from I<CPAN> collection provides the system-independent
+conversion routines.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Component>, L<Prima::Application>
+
