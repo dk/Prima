@@ -23,7 +23,7 @@
    #define __INLINE__            __inline__
 #endif
 
-#ifdef __unix   // This is wrong, not every unix
+#ifdef __unix	/* This is wrong, not every unix */
    extern double NAN;
 #endif
 
@@ -74,30 +74,6 @@ typedef long Color;
 typedef U8                     Byte;
 typedef U16                    Short;
 typedef U32                    Long;
-typedef struct _ObjectOptions_ {
-   unsigned optInDraw              : 1;   /* Drawable */
-   unsigned optInDrawInfo          : 1;
-   unsigned optTextOutBaseLine     : 1;
-   unsigned optBriefKeys           : 1;   /* Widget */
-   unsigned optBuffered            : 1;
-   unsigned optModalHorizon        : 1;
-   unsigned optOwnerBackColor      : 1;
-   unsigned optOwnerColor          : 1;
-   unsigned optOwnerFont           : 1;
-   unsigned optOwnerHint           : 1;
-   unsigned optOwnerShowHint       : 1;
-   unsigned optOwnerPalette        : 1;
-   unsigned optSetupComplete       : 1;
-   unsigned optSelectable          : 1;
-   unsigned optShowHint            : 1;
-   unsigned optSystemSelectable    : 1;
-   unsigned optTabStop             : 1;
-   unsigned optScaleChildren       : 1;
-   unsigned optPreserveType        : 1;   /* Image */
-   unsigned optVScaling            : 1;
-   unsigned optHScaling            : 1;
-   unsigned optAutoPopup           : 1;   /* Popup */
-} ObjectOptions;
 
 typedef struct _DelegatedMessages_ {
    unsigned dmCreate             : 1;
@@ -150,10 +126,10 @@ typedef struct _RGBColor
    unsigned char r;
 } RGBColor, *PRGBColor;
 
-typedef struct _Complex      { float re, im; } Complex;
-typedef struct _DComplex     { float re, im; } DComplex;
-typedef struct _TrigComplex  { float r, ph;  } TrigComplex;
-typedef struct _TrigDComplex { float r, ph;  } TrigDComplex;
+typedef struct _Complex      { float  re, im; } Complex;
+typedef struct _DComplex     { double re, im; } DComplex;
+typedef struct _TrigComplex  { float  r,  ph; } TrigComplex;
+typedef struct _TrigDComplex { double r,  ph; } TrigDComplex;
 
 #define nil Null(void*)
 #define nilHandle Null(Handle)
@@ -230,9 +206,11 @@ typedef struct _PostMsg {
 #define csConstructing  -1         /* before create() finished */
 #define csNormal         0         /* normal during life stage */
 #define csDestroying     1         /* destroy() started */
-#define csFrozen         2         /* cleanup() started - no messages available at this point */
+#define csFrozen         2         /* cleanup() started - no messages
+				      available at this point */
 #define csFinalizing     3         /* done() started */
-#define csDead           4         /* destroy() finished - no methods available at this point */
+#define csDead           4         /* destroy() finished - no methods
+				      available at this point */
 
 /* Notification types */
 #define ntPrivateFirst   0x0
@@ -247,46 +225,56 @@ typedef struct _PostMsg {
 #define mtExclusive      2
 
 /* Command event types */
-#define ctQueueMask      0x00070000              /* masks bits that defines behavior in !csNormal stages: */
-#define ctCacheable      0x00000000              /*   Command caches in the queue */
-#define ctDiscardable    0x00010000              /*   Command should be discarded */
-#define ctPassThrough    0x00020000              /*   Command acts same way in all csXXX stages */
-#define ctSingle         0x00030000              /*   Command caches in the queue only once, then changes ct bits to */
-#define ctSingleResponse 0x00040000              /*   ctSingleResponse */
+#define ctQueueMask      0x00070000	/* masks bits that defines behavior
+					   in !csNormal stages: */
+#define ctCacheable      0x00000000	/* Command caches in the queue */
+#define ctDiscardable    0x00010000	/* Command should be discarded */
+#define ctPassThrough    0x00020000	/* Command acts same way in all
+					   csXXX stages */
+#define ctSingle         0x00030000	/* Command caches in the queue only
+					   once, then changes ct bits to */
+#define ctSingleResponse 0x00040000	/* ctSingleResponse */
 
 /* Apricot events */
-#define cmHelp           0x00000002                /* WM_HELP analog */
-#define cmOK             0x00000003                /* std OK cmd */
-#define cmCancel         0x00000004                /* std Cancel cmd */
-#define cmClose         (0x00000005|ctDiscardable) /* on dialog close, WM_CLOSE analog */
-#define cmCreate         0x0000000A                /* * WM_CREATE analog */
-#define cmDestroy       (0x0000000B|ctPassThrough) /* * WM_DESTROY analog */
-#define cmHide          (0x0000000C|ctDiscardable) /*  visible flag aware */
-#define cmShow          (0x0000000D|ctDiscardable) /*            commands */
-#define cmReceiveFocus  (0x0000000E|ctDiscardable) /* * focused flag aware */
-#define cmReleaseFocus  (0x0000000F|ctDiscardable) /* *          commands */
-#define cmPaint         (0x00000010|ctSingle)      /*  WM_PAINT analog */
-#define cmRepaint       (0x00000010|ctSingleResponse) /* and it's response action */
-#define cmSize          (0x00000011|ctPassThrough) /* * WM_SIZE analog */
-#define cmMove          (0x00000012|ctPassThrough) /* * WM_MOVE analog */
-#define cmColorChanged  (0x00000013|ctDiscardable) /* * generates when color changed */
-#define cmZOrderChanged (0x00000014|ctDiscardable) /*  z-order change command */
-#define cmEnable        (0x00000015|ctDiscardable) /*  enabled flag aware */
-#define cmDisable       (0x00000016|ctDiscardable) /*  commands */
-#define cmActivate      (0x00000017|ctDiscardable) /*  commands for window active stage change */
-#define cmDeactivate    (0x00000018|ctDiscardable) /* */
-#define cmFontChanged   (0x00000019|ctDiscardable) /* * generates when font changed */
-#define cmWindowState   (0x0000001A|ctDiscardable) /* generates when window state changed */
+#define cmHelp           0x00000002	/* WM_HELP analog */
+#define cmOK             0x00000003	/* std OK cmd */
+#define cmCancel         0x00000004	/* std Cancel cmd */
+#define cmClose         (0x00000005|ctDiscardable)
+					/* on dialog close, WM_CLOSE analog */
+#define cmCreate         0x0000000A	/* WM_CREATE analog */
+#define cmDestroy       (0x0000000B|ctPassThrough) /* WM_DESTROY analog */
+#define cmHide          (0x0000000C|ctDiscardable) /* visible flag aware */
+#define cmShow          (0x0000000D|ctDiscardable) /*           commands */
+#define cmReceiveFocus  (0x0000000E|ctDiscardable) /* focused flag aware */
+#define cmReleaseFocus  (0x0000000F|ctDiscardable) /*           commands */
+#define cmPaint         (0x00000010|ctSingle)      /* WM_PAINT analog */
+#define cmRepaint       (0x00000010|ctSingleResponse) /* and it's response
+							 action */
+#define cmSize          (0x00000011|ctPassThrough) /* WM_SIZE analog */
+#define cmMove          (0x00000012|ctPassThrough) /* WM_MOVE analog */
+#define cmColorChanged  (0x00000013|ctDiscardable) /* generates when color
+						      changed */
+#define cmZOrderChanged (0x00000014|ctDiscardable) /* z-order change command */
+#define cmEnable        (0x00000015|ctDiscardable) /* enabled flag aware */
+#define cmDisable       (0x00000016|ctDiscardable) /*           commands */
+#define cmActivate      (0x00000017|ctDiscardable) /* commands for window */
+#define cmDeactivate    (0x00000018|ctDiscardable) /* active stage change */
+#define cmFontChanged   (0x00000019|ctDiscardable) /* generates when font
+						      changed */
+#define cmWindowState   (0x0000001A|ctDiscardable) /* generates when window
+						      state changed */
 #define cmTimer          0x0000001C                /* WM_TIMER analog */
 #define cmClick          0x0000001D                /* common click */
 #define cmCalcBounds     0x0000001E                /* query on change size */
 #define cmPost           0x0000001F                /* posted message */
-#define cmPopup          0x00000020                /* interactive popup request */
+#define cmPopup          0x00000020                /* interactive popup
+						      request */
 #define cmExecute        0x00000021                /* dialog execution start */
-#define cmSetup          0x00000022                /* first message for alive and active widget */
+#define cmSetup          0x00000022                /* first message for alive
+						      and active widget */
 #define cmHint           0x00000023                /* hint show/hide message */
-#define cmDragDrop       0x00000024                /* * */
-#define cmDragOver       0x00000025                /* * Drag'n'drop aware constants */
+#define cmDragDrop       0x00000024                /* Drag'n'drop aware */
+#define cmDragOver       0x00000025                /*         constants */
 #define cmEndDrag        0x00000026                /* * */
 #define cmMenu          (0x00000027|ctDiscardable) /* send when menu going to be activated */
 #define cmEndModal       0x00000028                /* dialog execution end */
@@ -385,51 +373,107 @@ extern FillPattern fillPatterns[];
 #define C_STRING_UNDEF    "__C_CHAR_UNDEF__"
 #define C_POINTER_UNDEF   nilSV
 
-extern Rect        Rect_buffer          ;
-extern Point       Point_buffer         ;
+extern Rect  Rect_buffer;
+extern Point Point_buffer;
 
-/*    developer functions */
+/* run-time class information functions */
 
-extern Bool   kind_of( Handle object, void *cls);
-extern Bool   type_of( Handle object, void *cls);
+extern Bool
+kind_of( Handle object, void *cls);
 
-/* profiling functions */
-extern Bool   log_write( const char *format, ...);
-extern Bool   debug_write( const char *format, ...);
+extern Bool
+type_of( Handle object, void *cls);
+
+/* debugging functions */
+extern Bool
+log_write( const char *format, ...);
+
+extern Bool
+debug_write( const char *format, ...);
 
 /* perl links */
 #if (PERL_PATCHLEVEL < 5)
 /* ...(perl stinks)... */
 #undef  SvREFCNT_inc
-#define SvREFCNT_inc(sv) ((Sv = (SV*)(sv)), (void)(Sv && ++SvREFCNT(Sv)), (SV*)Sv)
+#define SvREFCNT_inc(sv) ((Sv = (SV*)(sv)),		\
+			  (void)(Sv && ++SvREFCNT(Sv)),	\
+			  (SV*)Sv)
 #endif
 
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
-extern I32 clean_perl_call_method( char* methname, I32 flags);
-extern I32 clean_perl_call_pv( char* subname, I32 flags);
+extern I32
+clean_perl_call_method( char* methname, I32 flags);
+
+extern I32
+clean_perl_call_pv( char* subname, I32 flags);
 #endif
-extern Bool   build_dynamic_vmt( void *vmt, const char *ancestorName, int ancestorVmtSize);
-extern PVMT   gimme_the_vmt( const char *className);
-extern Handle gimme_the_mate( SV *perlObject);
-extern Handle create_mate( SV *perlObject);
-extern SV*    eval( char* string);
-extern CV*    sv_query_method( SV * object, char *methodName, Bool cacheIt);
-extern CV*    query_method( Handle object, char *methodName, Bool cacheIt);
-extern SV *   call_perl_indirect( Handle self, char *subName, char *format, Bool cdecl, Bool coderef, va_list params);
-extern SV *   call_perl( Handle self, char *subName, char *format, ...);
-extern SV *   sv_call_perl( SV * mate, char *subName, char *format, ...);
-extern SV *   notify_perl( Handle self, char *methodName, char *format, ...);
-extern SV *   cv_call_perl( SV * mate, SV * coderef, char *format, ...);
-extern SV *   delegate_sub( Handle self, char * methodName, char *format, ...);
-extern Handle Object_create( char * className, HV * profile);
-extern void   Object_destroy( Handle self);
-extern void   protect_object( Handle obj);
-extern void   unprotect_object( Handle obj);
-extern HV *   parse_hv( I32 ax, SV **sp, I32 items, SV **mark, int expected, const char *methodName);
-extern void   push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv);
-extern SV**   push_hv_for_REDEFINED( SV **sp, HV *hv);
-extern int    pop_hv_for_REDEFINED( SV **sp, int count, HV *hv, int shouldBe);
-extern void * create_object( const char *objClass, const char *types, ...);
+extern Bool
+build_dynamic_vmt( void *vmt, const char *ancestorName, int ancestorVmtSize);
+
+extern PVMT
+gimme_the_vmt( const char *className);
+
+extern Handle
+gimme_the_mate( SV *perlObject);
+
+extern Handle
+create_mate( SV *perlObject);
+
+extern SV*
+eval( char* string);
+
+extern CV*
+sv_query_method( SV * object, char *methodName, Bool cacheIt);
+
+extern CV*
+query_method( Handle object, char *methodName, Bool cacheIt);
+
+extern SV*
+call_perl_indirect( Handle self, char *subName, char *format,
+		    Bool cdecl, Bool coderef, va_list params);
+
+extern SV*
+call_perl( Handle self, char *subName, char *format, ...);
+
+extern SV*
+sv_call_perl( SV * mate, char *subName, char *format, ...);
+
+extern SV*
+notify_perl( Handle self, char *methodName, char *format, ...);
+
+extern SV*
+cv_call_perl( SV * mate, SV * coderef, char *format, ...);
+
+extern SV*
+delegate_sub( Handle self, char * methodName, char *format, ...);
+
+extern Handle
+Object_create( char * className, HV * profile);
+
+extern void
+Object_destroy( Handle self);
+
+extern void
+protect_object( Handle obj);
+
+extern void
+unprotect_object( Handle obj);
+
+extern HV*
+parse_hv( I32 ax, SV **sp, I32 items, SV **mark,
+	  int expected, const char *methodName);
+
+extern void
+push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv);
+
+extern SV**
+push_hv_for_REDEFINED( SV **sp, HV *hv);
+
+extern int
+pop_hv_for_REDEFINED( SV **sp, int count, HV *hv, int shouldBe);
+
+extern void*
+create_object( const char *objClass, const char *types, ...);
 
 extern SV **temporary_prf_Sv;
 
@@ -459,39 +503,43 @@ extern SV **temporary_prf_Sv;
 )
 
 #ifdef POLLUTE_NAME_SPACE
-#define TransmogrifyHandle(c,h)		((P##c)h)
-#define PAbstractMenu(h)		TransmogrifyHandle(AbstractMenu,h)
-#define CAbstractMenu(h)	   (PAbstractMenu(h)->self)
-#define PApplication(h)		   TransmogrifyHandle(Application,h)
-#define CApplication(h)	      (PApplication(h)-> self)
-#define PComponent(h)		   TransmogrifyHandle(Component,h)
-#define CComponent(h)	      (PComponent(h)-> self)
-#define PDrawable(h)		      TransmogrifyHandle(Drawable,h)
-#define CDrawable(h)		      (PDrawable(h)-> self)
-#define PIcon(h)			      TransmogrifyHandle(Icon,h)
-#define CIcon(h)		         (PIcon(h)-> self)
-#define PImage(h)		         TransmogrifyHandle(Image,h)
-#define CImage(h)		         (PImage(h)-> self)
-#define PObject(h)		      TransmogrifyHandle(Object,h)
-#define CObject(h)		      (PObject(h)-> self)
-#define PTimer(h)		         TransmogrifyHandle(Timer,h)
-#define CTimer(h)		         (PTimer(h)-> self)
-#define PWidget(h)		      TransmogrifyHandle(Widget,h)
-#define CWidget(h)		      (PWidget(h)-> self)
-#define PWindow(h)		      TransmogrifyHandle(Window,h)
-#define CWindow(h)		      (PWindow(h)-> self)
+#define TransmogrifyHandle(c,h)		((P##c)(h))
+#define PAbstractMenu(h)		TransmogrifyHandle(AbstractMenu,(h))
+#define CAbstractMenu(h)		(PAbstractMenu(h)->self)
+#define PApplication(h)			TransmogrifyHandle(Application,(h))
+#define CApplication(h)			(PApplication(h)-> self)
+#define PComponent(h)			TransmogrifyHandle(Component,(h))
+#define CComponent(h)			(PComponent(h)-> self)
+#define PDrawable(h)			TransmogrifyHandle(Drawable,(h))
+#define CDrawable(h)			(PDrawable(h)-> self)
+#define PIcon(h)			TransmogrifyHandle(Icon,(h))
+#define CIcon(h)			(PIcon(h)-> self)
+#define PImage(h)			TransmogrifyHandle(Image,(h))
+#define CImage(h)			(PImage(h)-> self)
+#define PObject(h)			TransmogrifyHandle(Object,(h))
+#define CObject(h)			(PObject(h)-> self)
+#define PTimer(h)			TransmogrifyHandle(Timer,(h))
+#define CTimer(h)			(PTimer(h)-> self)
+#define PWidget(h)			TransmogrifyHandle(Widget,(h))
+#define CWidget(h)			(PWidget(h)-> self)
+#define PWindow(h)			TransmogrifyHandle(Window,(h))
+#define CWindow(h)			(PWindow(h)-> self)
 #endif POLLUTE_NAME_SPACE
 
 
 /* mapping functions */
+
 #define endCtx          0x19740108
-extern int    ctx_remap_def ( int value, int * table, Bool direct, int default_value);
+
+extern int
+ctx_remap_def ( int value, int * table, Bool direct, int default_value);
 
 #define ctx_remap_end(a,b,c)	ctx_remap_def((a),(b),(c), endCtx)
 #define ctx_remap(a,b,c)	ctx_remap_def((a),(b),(c), 0)
 
 
-/* listing local functions */
+/* lists support */
+
 typedef struct _List
 {
    Handle * items;
@@ -503,35 +551,67 @@ typedef struct _List
 typedef Bool ListProc ( Handle item, void * params);
 typedef ListProc *PListProc;
 
-extern void   list_create( PList self, int size, int delta);
-extern void   list_destroy( PList self);
-extern int    list_add( PList self, Handle item);
-extern void   list_insert_at( PList self, Handle item, int pos);
-extern Handle list_at( PList self, int index);
-extern void   list_delete( PList self, Handle item);
-extern void   list_delete_all( PList self, Bool kill);
-extern int    list_first_that( PList self, void * action, void * params);
-extern int    list_index_of( PList self, Handle item);
+extern void
+list_create( PList self, int size, int delta);
+
+extern void
+list_destroy( PList self);
+
+extern int
+list_add( PList self, Handle item);
+
+extern void
+list_insert_at( PList self, Handle item, int pos);
+
+extern Handle
+list_at( PList self, int index);
+
+extern void
+list_delete( PList self, Handle item);
+
+extern void
+list_delete_all( PList self, Bool kill);
+
+extern int
+list_first_that( PList self, void * action, void * params);
+
+extern int
+list_index_of( PList self, Handle item);
+
+/* hashes support */
+/* It's a mere coincidence that hashes in Prima guts implemented */
+/* by means of Perl hashes */
 
 typedef HV *PHash;
 typedef Bool HashProc( void * item, int keyLen, void * key, void * params);
 typedef HashProc *PHashProc;
 
-extern PHash hash_create( void);
-extern void  hash_destroy( PHash self, Bool killAll);
-extern void *hash_fetch( PHash self, const void *key, int keyLen);
-extern void *hash_delete( PHash self, const void *key, int keyLen, Bool kill);
-extern Bool  hash_store( PHash self, const void *key, int keyLen, void *val);
-extern void *hash_first_that( PHash self, void * action, void * params, int * pKeyLen, void ** pKey);
+extern PHash
+hash_create( void);
+
+extern void
+hash_destroy( PHash self, Bool killAll);
+
+extern void*
+hash_fetch( PHash self, const void *key, int keyLen);
+
+extern void*
+hash_delete( PHash self, const void *key, int keyLen, Bool kill);
+
+extern Bool
+hash_store( PHash self, const void *key, int keyLen, void *val);
+
+extern void*
+hash_first_that( PHash self, void *action, void *params,
+		 int *pKeyLen, void **pKey);
 
 
-/* platform shortcuts */
-/* operational system type */
+/* OS types */
 #define apcOS2                  1
 #define apcWin32                2
 #define apcUnix                 3
 
-/* gui types */
+/* GUI types */
 #define guiDefault              0
 #define guiPM                   1
 #define guiWindows              2
@@ -539,7 +619,7 @@ extern void *hash_first_that( PHash self, void * action, void * params, int * pK
 #define guiOpenLook             4
 #define guiMotif                5
 
-/* drives types */
+/* drives types (for platforms which have 'em) */
 #define dtUnknown               0
 #define dtNone                  1
 #define dtFloppy                2
@@ -561,11 +641,39 @@ extern void *hash_first_that( PHash self, void * action, void * params, int * pK
 #define errUserCancelled         0x0104
 
 
-#define opt_set( option)           (((PObject)self)->options. option = 1)
-#define opt_clear( option)         (((PObject)self)->options. option = 0)
-#define is_opt( option)            (((PObject)self)->options. option)
-#define opt_assign( option, value) (((PObject)self)->options. option = (value)?1:0)
-#define opt_InPaint                ( is_opt( optInDraw) || is_opt( optInDrawInfo))
+/* system-independent object option flags */
+typedef struct _ObjectOptions_ {
+   unsigned optInDraw              : 1;   /* Drawable */
+   unsigned optInDrawInfo          : 1;
+   unsigned optTextOutBaseLine     : 1;
+   unsigned optBriefKeys           : 1;   /* Widget */
+   unsigned optBuffered            : 1;
+   unsigned optModalHorizon        : 1;
+   unsigned optOwnerBackColor      : 1;
+   unsigned optOwnerColor          : 1;
+   unsigned optOwnerFont           : 1;
+   unsigned optOwnerHint           : 1;
+   unsigned optOwnerShowHint       : 1;
+   unsigned optOwnerPalette        : 1;
+   unsigned optSetupComplete       : 1;
+   unsigned optSelectable          : 1;
+   unsigned optShowHint            : 1;
+   unsigned optSystemSelectable    : 1;
+   unsigned optTabStop             : 1;
+   unsigned optScaleChildren       : 1;
+   unsigned optPreserveType        : 1;   /* Image */
+   unsigned optVScaling            : 1;
+   unsigned optHScaling            : 1;
+   unsigned optAutoPopup           : 1;   /* Popup */
+} ObjectOptions;
+
+#define opt_set( option)           (PObject(self)-> options. option = 1)
+#define opt_clear( option)         (PObject(self)-> options. option = 0)
+#define is_opt( option)            (PObject(self)-> options. option)
+#define opt_assign( option, value) (PObject(self)->options. option = \
+				    (value) ? 1 : 0)
+#define opt_InPaint                ( is_opt( optInDraw) \
+				     || is_opt( optInDrawInfo))
 
 /* apc class constants */
 #define wcUndef               0x0000000
@@ -631,103 +739,270 @@ extern long   apcError;
 ***************** */
 
 /* Application management */
-extern Bool    apc_application_begin_paint        ( Handle self);
-extern Bool    apc_application_begin_paint_info   ( Handle self);
-extern Bool    apc_application_create             ( Handle self);
-extern void    apc_application_close              ( Handle self);
-extern void    apc_application_destroy            ( Handle self);
-extern void    apc_application_end_paint          ( Handle self);
-extern void    apc_application_end_paint_info     ( Handle self);
-extern int     apc_application_get_gui_info       ( char * description);
-extern Handle  apc_application_get_view_from_point( Handle self, Point point);
-extern Handle  apc_application_get_handle         ( Handle self, ApiHandle apiHandle);
-extern int     apc_application_get_os_info        ( char * system, char * release, char * vendor, char * arch);
-extern Point   apc_application_get_size           ( Handle self);
-extern void    apc_application_go                 ( Handle self);
-extern void    apc_application_lock               ( Handle self);
-extern void    apc_application_unlock             ( Handle self);
-extern void    apc_application_yield              ( void);
+extern Bool
+apc_application_begin_paint( Handle self);
+
+extern Bool
+apc_application_begin_paint_info( Handle self);
+
+extern Bool
+apc_application_create( Handle self);
+
+extern void
+apc_application_close( Handle self);
+
+extern void
+apc_application_destroy( Handle self);
+
+extern void
+apc_application_end_paint( Handle self);
+
+extern void
+apc_application_end_paint_info( Handle self);
+
+extern int
+apc_application_get_gui_info( char * description);
+
+extern Handle
+apc_application_get_view_from_point( Handle self, Point point);
+
+extern Handle
+apc_application_get_handle( Handle self, ApiHandle apiHandle);
+
+extern int
+apc_application_get_os_info( char *system, char *release,
+			     char *vendor, char *arch);
+
+extern Point
+apc_application_get_size( Handle self);
+
+extern void
+apc_application_go( Handle self);
+
+extern void
+apc_application_lock( Handle self);
+
+extern void
+apc_application_unlock( Handle self);
+
+extern void
+apc_application_yield( void);
 
 /* Component */
-extern void    apc_component_create        ( Handle self);
-extern void    apc_component_destroy       ( Handle self);
+extern void
+apc_component_create( Handle self);
+
+extern void
+apc_component_destroy( Handle self);
 
 /* Window */
-extern Bool    apc_window_create           ( Handle self, Handle owner, Bool syncPaint,
-                                             Bool clipOwner, int borderIcons, int borderStyle,
-                                             Bool taskList, int windowState);
-extern void    apc_window_activate         ( Handle self);
-extern Bool    apc_window_is_active        ( Handle self);
-extern Bool    apc_window_close            ( Handle self);
-extern Handle  apc_window_get_active       ( void);
-extern int     apc_window_get_border_icons ( Handle self);
-extern int     apc_window_get_border_style ( Handle self);
-extern Point   apc_window_get_client_pos   ( Handle self);
-extern Point   apc_window_get_client_size  ( Handle self);
-extern Bool    apc_window_get_icon         ( Handle self, Handle icon);
-extern int     apc_window_get_window_state ( Handle self);
-extern Bool    apc_window_get_task_listed  ( Handle self);
-extern void    apc_window_set_caption      ( Handle self, char * caption);
-extern void    apc_window_set_client_pos   ( Handle self, int x, int y);
-extern void    apc_window_set_client_size  ( Handle self, int x, int y);
-extern Bool    apc_window_set_menu         ( Handle self, Handle menu);
-extern void    apc_window_set_icon         ( Handle self, Handle icon);
-extern void    apc_window_set_window_state ( Handle self, int state);
-extern Bool    apc_window_execute          ( Handle self, Handle insertBefore);
-extern Bool    apc_window_execute_shared   ( Handle self, Handle insertBefore);
-extern void    apc_window_end_modal        ( Handle self);
+extern Bool
+apc_window_create( Handle self, Handle owner, Bool syncPaint,
+		   Bool clipOwner, int borderIcons, int borderStyle,
+		   Bool taskList, int windowState);
+
+extern void
+apc_window_activate( Handle self);
+
+extern Bool
+apc_window_is_active( Handle self);
+
+extern Bool
+apc_window_close( Handle self);
+
+extern Handle
+apc_window_get_active( void);
+
+extern int
+apc_window_get_border_icons( Handle self);
+
+extern int
+apc_window_get_border_style( Handle self);
+
+extern Point
+apc_window_get_client_pos( Handle self);
+
+extern Point
+apc_window_get_client_size( Handle self);
+
+extern Bool
+apc_window_get_icon( Handle self, Handle icon);
+
+extern int
+apc_window_get_window_state( Handle self);
+
+extern Bool
+apc_window_get_task_listed( Handle self);
+
+extern void
+apc_window_set_caption( Handle self, char * caption);
+
+extern void
+apc_window_set_client_pos( Handle self, int x, int y);
+
+extern void
+apc_window_set_client_size( Handle self, int x, int y);
+
+extern Bool
+apc_window_set_menu( Handle self, Handle menu);
+
+extern void
+apc_window_set_icon( Handle self, Handle icon);
+
+extern void
+apc_window_set_window_state( Handle self, int state);
+
+extern Bool
+apc_window_execute( Handle self, Handle insertBefore);
+
+extern Bool
+apc_window_execute_shared( Handle self, Handle insertBefore);
+
+extern void
+apc_window_end_modal( Handle self);
 
 
-/* View management */
-extern Point   apc_widget_client_to_screen( Handle self, Point p);
-extern Bool    apc_widget_create          ( Handle self, Handle owner, Bool syncPaint,
-					    Bool clipOwner, Bool transparent);
-extern Bool    apc_widget_begin_paint     ( Handle self, Bool insideOnPaint);
-extern Bool    apc_widget_begin_paint_info( Handle self);
-extern void    apc_widget_destroy         ( Handle self);
-extern PFont   apc_widget_default_font    ( PFont copyTo);
-extern void    apc_widget_end_paint       ( Handle self);
-extern void    apc_widget_end_paint_info  ( Handle self);
-extern Bool    apc_widget_get_clip_owner  ( Handle self);
-extern Rect    apc_widget_get_clip_rect   ( Handle self);
-extern Color   apc_widget_get_color       ( Handle self, int index);
-extern Bool    apc_widget_get_first_click ( Handle self);
-extern Handle  apc_widget_get_focused     ( void);
-extern ApiHandle apc_widget_get_handle    ( Handle self);
-extern Rect    apc_widget_get_invalid_rect( Handle self);
-extern Point   apc_widget_get_pos         ( Handle self);
-extern Point   apc_widget_get_size        ( Handle self);
-extern Bool    apc_widget_get_sync_paint  ( Handle self);
-extern Bool    apc_widget_get_transparent ( Handle self);
-extern Bool    apc_widget_is_captured     ( Handle self);
-extern Bool    apc_widget_is_enabled      ( Handle self);
-extern Bool    apc_widget_is_responsive   ( Handle self);
-extern Bool    apc_widget_is_focused      ( Handle self);
-extern Bool    apc_widget_is_visible      ( Handle self);
-extern void    apc_widget_invalidate_rect ( Handle self, Rect rect);
-extern void    apc_widget_lock            ( Handle self);
-extern void    apc_widget_repaint         ( Handle self);
-extern Point   apc_widget_screen_to_client( Handle self, Point p);
-extern void    apc_widget_scroll          ( Handle self, int horiz, int vert,
-					    Bool scrollChildren);
-extern void    apc_widget_scroll_rect     ( Handle self, int horiz, int vert,
-					    Rect r, Bool scrollChildren);
-extern void    apc_widget_set_capture     ( Handle self, Bool capture);
-extern void    apc_widget_set_clip_rect   ( Handle self, Rect clipRect);
-extern void    apc_widget_set_color       ( Handle self, Color color, int index);
-extern void    apc_widget_set_enabled     ( Handle self, Bool enable);
-extern void    apc_widget_set_first_click ( Handle self, Bool firstClick);
-extern void    apc_widget_set_focused     ( Handle self);
-extern void    apc_widget_set_font        ( Handle self, PFont font);
-extern void    apc_widget_set_palette     ( Handle self);
-extern void    apc_widget_set_pos         ( Handle self, int x, int y);
-extern void    apc_widget_set_size        ( Handle self, int width, int height);
-extern void    apc_widget_set_tab_order   ( Handle self, int tabOrder);
-extern void    apc_widget_set_visible     ( Handle self, Bool show);
-extern void    apc_widget_set_z_order     ( Handle self, Handle behind, Bool top);
-extern void    apc_widget_unlock          ( Handle self);
-extern void    apc_widget_update          ( Handle self);
-extern void    apc_widget_validate_rect   ( Handle self, Rect rect);
+/* Widget management */
+extern Point
+apc_widget_client_to_screen( Handle self, Point p);
+
+extern Bool
+apc_widget_create( Handle self, Handle owner, Bool syncPaint,
+		   Bool clipOwner, Bool transparent);
+
+extern Bool
+apc_widget_begin_paint( Handle self, Bool insideOnPaint);
+
+extern Bool
+apc_widget_begin_paint_info( Handle self);
+
+extern void
+apc_widget_destroy( Handle self);
+
+extern PFont
+apc_widget_default_font( PFont copyTo);
+
+extern void
+apc_widget_end_paint( Handle self);
+
+extern void
+apc_widget_end_paint_info( Handle self);
+
+extern Bool
+apc_widget_get_clip_owner( Handle self);
+
+extern Rect
+apc_widget_get_clip_rect( Handle self);
+
+extern Color
+apc_widget_get_color( Handle self, int index);
+
+extern Bool
+apc_widget_get_first_click( Handle self);
+
+extern Handle
+apc_widget_get_focused( void);
+
+extern ApiHandle
+apc_widget_get_handle( Handle self);
+
+extern Rect
+apc_widget_get_invalid_rect( Handle self);
+
+extern Point
+apc_widget_get_pos( Handle self);
+
+extern Point
+apc_widget_get_size( Handle self);
+
+extern Bool
+apc_widget_get_sync_paint( Handle self);
+
+extern Bool
+apc_widget_get_transparent( Handle self);
+
+extern Bool
+apc_widget_is_captured( Handle self);
+
+extern Bool
+apc_widget_is_enabled( Handle self);
+
+extern Bool
+apc_widget_is_responsive( Handle self);
+
+extern Bool
+apc_widget_is_focused( Handle self);
+
+extern Bool
+apc_widget_is_visible( Handle self);
+
+extern void
+apc_widget_invalidate_rect( Handle self, Rect rect);
+
+extern void
+apc_widget_lock( Handle self);
+
+extern void
+apc_widget_repaint( Handle self);
+
+extern Point
+apc_widget_screen_to_client( Handle self, Point p);
+
+extern void
+apc_widget_scroll( Handle self, int horiz, int vert,
+		   Bool scrollChildren);
+
+extern void
+apc_widget_scroll_rect( Handle self, int horiz, int vert,
+			Rect r, Bool scrollChildren);
+
+extern void
+apc_widget_set_capture( Handle self, Bool capture);
+
+extern void
+apc_widget_set_clip_rect( Handle self, Rect clipRect);
+
+extern void
+apc_widget_set_color( Handle self, Color color, int index);
+
+extern void
+apc_widget_set_enabled( Handle self, Bool enable);
+
+extern void
+apc_widget_set_first_click( Handle self, Bool firstClick);
+
+extern void
+apc_widget_set_focused( Handle self);
+
+extern void
+apc_widget_set_font( Handle self, PFont font);
+
+extern void
+apc_widget_set_palette( Handle self);
+
+extern void
+apc_widget_set_pos( Handle self, int x, int y);
+
+extern void
+apc_widget_set_size( Handle self, int width, int height);
+
+extern void
+apc_widget_set_tab_order( Handle self, int tabOrder);
+
+extern void
+apc_widget_set_visible( Handle self, Bool show);
+
+extern void
+apc_widget_set_z_order( Handle self, Handle behind, Bool top);
+
+extern void
+apc_widget_unlock( Handle self);
+
+extern void
+apc_widget_update( Handle self);
+
+extern void
+apc_widget_validate_rect( Handle self, Rect rect);
 
 /* standard system pointers */
 #define crDefault      -1
@@ -743,41 +1018,97 @@ extern void    apc_widget_validate_rect   ( Handle self, Rect rect);
 #define crInvalid      9
 #define crUser         10
 
-/* View attributes */
-extern void    apc_cursor_set_pos            ( Handle self, int x, int y);
-extern void    apc_cursor_set_size           ( Handle self, int x, int y);
-extern void    apc_cursor_set_visible        ( Handle self, Bool visible);
-extern Point   apc_cursor_get_pos            ( Handle self);
-extern Point   apc_cursor_get_size           ( Handle self);
-extern Bool    apc_cursor_get_visible        ( Handle self);
-extern Point   apc_pointer_get_hot_spot      ( Handle self);
-extern Point   apc_pointer_get_pos           ( Handle self);
-extern int     apc_pointer_get_shape         ( Handle self);
-extern Point   apc_pointer_get_size          ( Handle self);
-extern Bool    apc_pointer_get_bitmap        ( Handle self, Handle icon);
-extern Bool    apc_pointer_get_visible       ( Handle self);
-extern void    apc_pointer_set_pos           ( Handle self, int x, int y);
-extern void    apc_pointer_set_shape         ( Handle self, int sysPtrId);
-extern Bool    apc_pointer_set_user          ( Handle self, Handle icon, Point hotSpot);
-extern void    apc_pointer_set_visible       ( Handle self, Bool visible);
-extern int     apc_pointer_get_state         ( Handle self);
-extern int     apc_kbd_get_state             ( Handle self);
+/* Widget attributes */
+extern void
+apc_cursor_set_pos( Handle self, int x, int y);
+
+extern void
+apc_cursor_set_size( Handle self, int x, int y);
+
+extern void
+apc_cursor_set_visible( Handle self, Bool visible);
+
+extern Point
+apc_cursor_get_pos( Handle self);
+
+extern Point
+apc_cursor_get_size( Handle self);
+
+extern Bool
+apc_cursor_get_visible( Handle self);
+
+extern Point
+apc_pointer_get_hot_spot( Handle self);
+
+extern Point
+apc_pointer_get_pos( Handle self);
+
+extern int
+apc_pointer_get_shape( Handle self);
+
+extern Point
+apc_pointer_get_size( Handle self);
+
+extern Bool
+apc_pointer_get_bitmap( Handle self, Handle icon);
+
+extern Bool
+apc_pointer_get_visible( Handle self);
+
+extern void
+apc_pointer_set_pos( Handle self, int x, int y);
+
+extern void
+apc_pointer_set_shape( Handle self, int sysPtrId);
+
+extern Bool
+apc_pointer_set_user( Handle self, Handle icon, Point hotSpot);
+
+extern void
+apc_pointer_set_visible( Handle self, Bool visible);
+
+extern int
+apc_pointer_get_state( Handle self);
+
+extern int
+apc_kbd_get_state( Handle self);
 
 /* Clipboard */
 #define cfText     0
 #define cfBitmap   1
 #define cfCustom   2
 
-extern Bool    apc_clipboard_create           ( void);
-extern void    apc_clipboard_destroy          ( void);
-extern Bool    apc_clipboard_open             ( void);
-extern void    apc_clipboard_close            ( void);
-extern void    apc_clipboard_clear            ( void);
-extern Bool    apc_clipboard_has_format       ( long id);
-extern void *  apc_clipboard_get_data         ( long id, int * length);
-extern Bool    apc_clipboard_set_data         ( long id, void * data, int length);
-extern long    apc_clipboard_register_format  ( char * format);
-extern void    apc_clipboard_deregister_format( long id);
+extern Bool
+apc_clipboard_create( void);
+
+extern void
+apc_clipboard_destroy( void);
+
+extern Bool
+apc_clipboard_open( void);
+
+extern void
+apc_clipboard_close( void);
+
+extern void
+apc_clipboard_clear( void);
+
+extern Bool
+apc_clipboard_has_format( long id);
+
+extern void*
+apc_clipboard_get_data( long id, int *length);
+
+extern Bool
+apc_clipboard_set_data( long id, void *data, int length);
+
+extern long
+apc_clipboard_register_format( char *format);
+
+extern void
+apc_clipboard_deregister_format( long id);
+
+/* Menus & popups */
 
 typedef struct _ItemRegRec {
   int   cmd;
@@ -801,31 +1132,72 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
    struct _MenuItemReg* next;   /* pointer to next item */
 } MenuItemReg, *PMenuItemReg;
 
-/* Menus & popups */
-extern Bool    apc_menu_create               ( Handle self, Handle owner);
-extern void    apc_menu_destroy              ( Handle self);
-extern PFont   apc_menu_default_font         ( PFont font);
-extern Color   apc_menu_get_color            ( Handle self, int index);
-extern PFont   apc_menu_get_font             ( Handle self, PFont font);
-extern void    apc_menu_set_color            ( Handle self, Color color, int index);
-extern void    apc_menu_set_font             ( Handle self, PFont font);
-extern void    apc_menu_item_delete          ( Handle self, PMenuItemReg m);
-extern void    apc_menu_item_set_accel       ( Handle self, PMenuItemReg m, char * accel);
-extern void    apc_menu_item_set_check       ( Handle self, PMenuItemReg m, Bool check);
-extern void    apc_menu_item_set_enabled     ( Handle self, PMenuItemReg m, Bool enabled);
-extern void    apc_menu_item_set_key         ( Handle self, PMenuItemReg m, int key);
-extern void    apc_menu_item_set_text        ( Handle self, PMenuItemReg m, char * text);
-extern Bool    apc_popup_create              ( Handle self, Handle owner);
-extern PFont   apc_popup_default_font        ( PFont font);
-extern Bool    apc_popup                     ( Handle self, int x, int y);
+extern Bool
+apc_menu_create( Handle self, Handle owner);
+
+extern void
+apc_menu_destroy( Handle self);
+
+extern PFont
+apc_menu_default_font( PFont font);
+
+extern Color
+apc_menu_get_color( Handle self, int index);
+
+extern PFont
+apc_menu_get_font( Handle self, PFont font);
+
+extern void
+apc_menu_set_color( Handle self, Color color, int index);
+
+extern void
+apc_menu_set_font( Handle self, PFont font);
+
+extern void
+apc_menu_item_delete( Handle self, PMenuItemReg m);
+
+extern void
+apc_menu_item_set_accel( Handle self, PMenuItemReg m, char * accel);
+
+extern void
+apc_menu_item_set_check( Handle self, PMenuItemReg m, Bool check);
+
+extern void
+apc_menu_item_set_enabled( Handle self, PMenuItemReg m, Bool enabled);
+
+extern void
+apc_menu_item_set_key( Handle self, PMenuItemReg m, int key);
+
+extern void
+apc_menu_item_set_text( Handle self, PMenuItemReg m, char * text);
+
+extern Bool
+apc_popup_create( Handle self, Handle owner);
+
+extern PFont
+apc_popup_default_font( PFont font);
+
+extern Bool
+apc_popup( Handle self, int x, int y);
 
 /* Timer */
-extern Bool    apc_timer_create              ( Handle self, Handle owner, int timeout);
-extern void    apc_timer_destroy             ( Handle self);
-extern int     apc_timer_get_timeout         ( Handle self);
-extern void    apc_timer_set_timeout         ( Handle self, int timeout);
-extern Bool    apc_timer_start               ( Handle self);
-extern void    apc_timer_stop                ( Handle self);
+extern Bool
+apc_timer_create( Handle self, Handle owner, int timeout);
+
+extern void
+apc_timer_destroy( Handle self);
+
+extern int
+apc_timer_get_timeout( Handle self);
+
+extern void
+apc_timer_set_timeout( Handle self, int timeout);
+
+extern Bool
+apc_timer_start( Handle self);
+
+extern void
+apc_timer_stop( Handle self);
 
 /* Help */
 #define  hmpNone                     0
@@ -834,9 +1206,14 @@ extern void    apc_timer_stop                ( Handle self);
 #define  hmpContents                -3
 #define  hmpExtra                   -4
 
-extern Bool    apc_help_open_topic           ( Handle self, long command);
-extern void    apc_help_close                ( Handle self);
-extern void    apc_help_set_file             ( Handle self, char * helpFile);
+extern Bool
+apc_help_open_topic( Handle self, long command);
+
+extern void
+apc_help_close( Handle self);
+
+extern void
+apc_help_set_file( Handle self, char * helpFile);
 
 /* Messages */
 #define mbError        0x0100
@@ -844,11 +1221,14 @@ extern void    apc_help_set_file             ( Handle self, char * helpFile);
 #define mbInformation  0x0400
 #define mbQuestion     0x0800
 
-extern void    apc_message                   ( Handle self, PEvent ev, Bool post);
-extern void    apc_show_message              ( char * message);
+extern void
+apc_message( Handle self, PEvent ev, Bool post);
+
+extern void
+apc_show_message( char * message);
 
 
-/* graphic constants */
+/* graphics constants */
 #define ARGB(r,g,b) ((long)(((unsigned char)(b)|((unsigned short)((unsigned char)(g))<<8))|(((unsigned long)(unsigned char)(r))<<16)))
 
 /* colors */
@@ -881,7 +1261,7 @@ extern void    apc_show_message              ( char * message);
 #define    clDark3DColor      (long)(0x80000008)
 #define    clMaxSysColor      (long)(0x80000008)
 
-/* color indeces */
+/* color indices */
 #define    ciNormalText    0
 #define    ciFore          0
 #define    ciNormal        1
@@ -1004,7 +1384,7 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    fsSimpleDots    12 /*   . . . . . . . . . . */
 #define    fsBorland       13 /*   #################### */
 #define    fsParquet       14 /*   \/\/\/\/\/\/\/\/\/\/ */
-#define    fsCritters      15 /*    */
+#define    fsCritters      15 /*   critters */
 #define    fsMaxId         15
 
 #define    imNone                0
@@ -1047,15 +1427,32 @@ typedef Color ColorSet[ ciMaxId + 1];
 #define    imTrigDComplex   ((sizeof(double)*8*2)|imGrayScale|imTrigComplexNumber)
 
 /* image & bitmaps */
-extern Bool    apc_image_create              ( Handle self);
-extern void    apc_image_destroy             ( Handle self);
-extern Bool    apc_image_begin_paint         ( Handle self);
-extern Bool    apc_image_begin_paint_info    ( Handle self);
-extern void    apc_image_end_paint           ( Handle self);
-extern void    apc_image_end_paint_info      ( Handle self);
-extern void    apc_image_update_change       ( Handle self);
-extern Bool    apc_dbm_create                ( Handle self, Bool monochrome);
-extern void    apc_dbm_destroy               ( Handle self);
+extern Bool
+apc_image_create( Handle self);
+
+extern void
+apc_image_destroy( Handle self);
+
+extern Bool
+apc_image_begin_paint( Handle self);
+
+extern Bool
+apc_image_begin_paint_info( Handle self);
+
+extern void
+apc_image_end_paint( Handle self);
+
+extern void
+apc_image_end_paint_info( Handle self);
+
+extern void
+apc_image_update_change( Handle self);
+
+extern Bool
+apc_dbm_create( Handle self, Bool monochrome);
+
+extern void
+apc_dbm_destroy( Handle self);
 
 /* text wrap options */
 #define twCalcMnemonic    0x001    /* calculate first ~ entry */
@@ -1092,107 +1489,289 @@ typedef struct _FontABC
 } FontABC, *PFontABC;
 
 /* gpi functions underplace */
-extern void    apc_gp_init             ( Handle self);
-extern void    apc_gp_done             ( Handle self);
-extern void    apc_gp_arc              ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd);
-extern void    apc_gp_bar              ( Handle self, int x1, int y1, int x2, int y2);
-extern void    apc_gp_clear            ( Handle self);
-extern void    apc_gp_chord            ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd);
-extern void    apc_gp_draw_poly        ( Handle self, int numPts, Point * points);
-extern void    apc_gp_draw_poly2       ( Handle self, int numPts, Point * points);
-extern void    apc_gp_ellipse          ( Handle self, int x, int y, int radX, int radY);
-extern void    apc_gp_fill_chord       ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd);
-extern void    apc_gp_fill_ellipse     ( Handle self, int x, int y, int radX, int radY);
-extern void    apc_gp_fill_poly        ( Handle self, int numPts, Point * points);
-extern void    apc_gp_fill_sector      ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd);
-extern void    apc_gp_flood_fill       ( Handle self, int x, int y, Color borderColor, Bool singleBorder);
-extern Color   apc_gp_get_pixel        ( Handle self, int x, int y);
-extern void    apc_gp_line             ( Handle self, int x1, int y1, int x2, int y2);
-extern void    apc_gp_put_image        ( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop);
-extern void    apc_gp_rectangle        ( Handle self, int x1, int y1, int x2, int y2);
-extern void    apc_gp_sector           ( Handle self, int x, int y, int radX, int radY, double angleStart, double angleEnd);
-extern void    apc_gp_set_pixel        ( Handle self, int x, int y, Color color);
-extern void    apc_gp_stretch_image    ( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
-extern void    apc_gp_text_out         ( Handle self, char * text, int x, int y, int len);
-extern char ** apc_gp_text_wrap        ( Handle self, TextWrapRec * t);
+extern void
+apc_gp_init( Handle self);
+
+extern void
+apc_gp_done( Handle self);
+
+extern void
+apc_gp_arc( Handle self, int x, int y, int radX, int radY,
+	    double angleStart, double angleEnd);
+
+extern void
+apc_gp_bar( Handle self, int x1, int y1, int x2, int y2);
+
+extern void
+apc_gp_clear( Handle self);
+
+extern void
+apc_gp_chord( Handle self, int x, int y, int radX, int radY,
+	      double angleStart, double angleEnd);
+
+extern void
+apc_gp_draw_poly( Handle self, int numPts, Point * points);
+
+extern void
+apc_gp_draw_poly2( Handle self, int numPts, Point * points);
+
+extern void
+apc_gp_ellipse( Handle self, int x, int y, int radX, int radY);
+
+extern void
+apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY,
+		   double angleStart, double angleEnd);
+
+extern void
+apc_gp_fill_ellipse( Handle self, int x, int y, int radX, int radY);
+
+extern void
+apc_gp_fill_poly( Handle self, int numPts, Point * points);
+
+extern void
+apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY,
+		    double angleStart, double angleEnd);
+
+extern void
+apc_gp_flood_fill( Handle self, int x, int y, Color borderColor,
+		   Bool singleBorder);
+
+extern Color
+apc_gp_get_pixel( Handle self, int x, int y);
+
+extern void
+apc_gp_line( Handle self, int x1, int y1, int x2, int y2);
+
+extern void
+apc_gp_put_image( Handle self, Handle image, int x, int y, 
+		  int xFrom, int yFrom, int xLen, int yLen, int rop);
+extern void
+apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2);
+
+extern void
+apc_gp_sector( Handle self, int x, int y, int radX, int radY,
+	       double angleStart, double angleEnd);
+
+extern void
+apc_gp_set_pixel( Handle self, int x, int y, Color color);
+
+extern void
+apc_gp_stretch_image( Handle self, Handle image, 
+		      int x, int y, int xFrom, int yFrom,
+		      int xDestLen, int yDestLen, int xLen, int yLen,
+		      int rop);
+
+extern void
+apc_gp_text_out( Handle self, char * text, int x, int y, int len);
+
+extern char**
+apc_gp_text_wrap( Handle self, TextWrapRec * t);
 
 /* gpi settings */
-extern Color    apc_gp_get_back_color   ( Handle self);
-extern Color    apc_gp_get_color        ( Handle self);
-extern Rect     apc_gp_get_clip_rect    ( Handle self);
-extern PFontABC apc_gp_get_font_abc     ( Handle self);
-extern FillPattern * apc_gp_get_fill_pattern ( Handle self);
-extern int      apc_gp_get_line_end     ( Handle self);
-extern int      apc_gp_get_line_width   ( Handle self);
-extern int      apc_gp_get_line_pattern ( Handle self);
-extern Point    apc_gp_get_resolution   ( Handle self);
-extern int      apc_gp_get_rop          ( Handle self);
-extern int      apc_gp_get_rop2         ( Handle self);
-extern Point *  apc_gp_get_text_box     ( Handle self, char * text, int len);
-extern Bool     apc_gp_get_text_opaque  ( Handle self);
-extern int      apc_gp_get_text_width   ( Handle self, char * text, int len, Bool addOverhang);
-extern Point    apc_gp_get_transform    ( Handle self);
-extern void     apc_gp_set_back_color   ( Handle self, Color color);
-extern void     apc_gp_set_clip_rect    ( Handle self, Rect clipRect);
-extern void     apc_gp_set_color        ( Handle self, Color color);
-extern void     apc_gp_set_fill_pattern ( Handle self, FillPattern pattern);
-extern void     apc_gp_set_font         ( Handle self, PFont font);
-extern void     apc_gp_set_line_end     ( Handle self, int lineEnd);
-extern void     apc_gp_set_line_width   ( Handle self, int lineWidth);
-extern void     apc_gp_set_line_pattern ( Handle self, int pattern);
-extern void     apc_gp_set_palette      ( Handle self);
-extern void     apc_gp_set_rop          ( Handle self, int rop);
-extern void     apc_gp_set_rop2         ( Handle self, int rop);
-extern void     apc_gp_set_transform    ( Handle self, int x, int y);
-extern void     apc_gp_set_text_opaque  ( Handle self, Bool opaque);
+extern Color
+apc_gp_get_back_color( Handle self);
+
+extern Color
+apc_gp_get_color( Handle self);
+
+extern Rect
+apc_gp_get_clip_rect( Handle self);
+
+extern PFontABC
+apc_gp_get_font_abc( Handle self);
+
+extern FillPattern *
+apc_gp_get_fill_pattern( Handle self);
+
+extern int
+apc_gp_get_line_end( Handle self);
+
+extern int
+apc_gp_get_line_width( Handle self);
+
+extern int
+apc_gp_get_line_pattern( Handle self);
+
+extern Point
+apc_gp_get_resolution( Handle self);
+
+extern int
+apc_gp_get_rop( Handle self);
+
+extern int
+apc_gp_get_rop2( Handle self);
+
+extern Point*
+apc_gp_get_text_box( Handle self, char * text, int len);
+
+extern Bool
+apc_gp_get_text_opaque( Handle self);
+
+extern int
+apc_gp_get_text_width( Handle self, char * text, int len, Bool addOverhang);
+
+extern Point
+apc_gp_get_transform( Handle self);
+
+extern void
+apc_gp_set_back_color( Handle self, Color color);
+
+extern void
+apc_gp_set_clip_rect( Handle self, Rect clipRect);
+
+extern void
+apc_gp_set_color( Handle self, Color color);
+
+extern void
+apc_gp_set_fill_pattern( Handle self, FillPattern pattern);
+
+extern void
+apc_gp_set_font( Handle self, PFont font);
+
+extern void
+apc_gp_set_line_end( Handle self, int lineEnd);
+
+extern void
+apc_gp_set_line_width( Handle self, int lineWidth);
+
+extern void
+apc_gp_set_line_pattern( Handle self, int pattern);
+
+extern void
+apc_gp_set_palette( Handle self);
+
+extern void
+apc_gp_set_rop( Handle self, int rop);
+
+extern void
+apc_gp_set_rop2( Handle self, int rop);
+
+extern void
+apc_gp_set_transform( Handle self, int x, int y);
+
+extern void
+apc_gp_set_text_opaque( Handle self, Bool opaque);
 
 /* printer */
-extern Bool         apc_prn_create           ( Handle self);
-extern void         apc_prn_destroy          ( Handle self);
-extern PrinterInfo* apc_prn_enumerate        ( Handle self, int * count);
-extern Bool         apc_prn_select           ( Handle self, char * printer);
-extern char *       apc_prn_get_selected     ( Handle self);
-extern Point        apc_prn_get_size         ( Handle self);
-extern Point        apc_prn_get_resolution   ( Handle self);
-extern char *       apc_prn_get_default      ( Handle self);
-extern Bool         apc_prn_setup            ( Handle self);
-extern Bool         apc_prn_begin_doc        ( Handle self, char * docName);
-extern Bool         apc_prn_begin_paint_info ( Handle self);
-extern void         apc_prn_end_doc          ( Handle self);
-extern void         apc_prn_end_paint_info   ( Handle self);
-extern void         apc_prn_new_page         ( Handle self);
-extern void         apc_prn_abort_doc        ( Handle self);
+extern Bool
+apc_prn_create( Handle self);
+
+extern void
+apc_prn_destroy( Handle self);
+
+extern PrinterInfo*
+apc_prn_enumerate( Handle self, int * count);
+
+extern Bool
+apc_prn_select( Handle self, char * printer);
+
+extern char*
+apc_prn_get_selected( Handle self);
+
+extern Point
+apc_prn_get_size( Handle self);
+
+extern Point
+apc_prn_get_resolution( Handle self);
+
+extern char*
+apc_prn_get_default( Handle self);
+
+extern Bool
+apc_prn_setup( Handle self);
+
+extern Bool
+apc_prn_begin_doc( Handle self, char * docName);
+
+extern Bool
+apc_prn_begin_paint_info( Handle self);
+
+extern void
+apc_prn_end_doc( Handle self);
+
+extern void
+apc_prn_end_paint_info( Handle self);
+
+extern void
+apc_prn_new_page( Handle self);
+
+extern void
+apc_prn_abort_doc( Handle self);
 
 /* fonts */
-extern PFont       apc_font_default          ( PFont font);
-extern int         apc_font_load             ( char * filename);
-extern void        apc_font_pick             ( Handle self, PFont source, PFont dest);
-extern PFontMetric apc_fonts                 ( char * facename, int * retCount);
-extern PFontMetric apc_font_metrics          ( Handle self, PFont font, PFontMetric metrics);
+extern PFont
+apc_font_default( PFont font);
+
+extern int
+apc_font_load( char * filename);
+
+extern void
+apc_font_pick( Handle self, PFont source, PFont dest);
+
+extern PFontMetric
+apc_fonts( char *facename, int *retCount);
+
+extern PFontMetric
+apc_font_metrics( Handle self, PFont font, PFontMetric metrics);
 
 /* system metrics */
-extern Point   apc_sys_get_autoscroll_rate   ( void);
-extern int     apc_sys_get_cursor_width      ( void);
-extern Bool    apc_sys_get_insert_mode       ( void);
-extern PFont   apc_sys_get_msg_font          ( PFont copyTo);
-extern PFont   apc_sys_get_caption_font      ( PFont copyTo);
-extern Point   apc_sys_get_scrollbar_metrics ( void);
-extern int     apc_sys_get_value             ( int sysValue);
-extern Point   apc_sys_get_window_borders    ( int borderStyle);
-extern void    apc_sys_set_insert_mode       ( Bool insMode);
+extern Point
+apc_sys_get_autoscroll_rate( void);
+
+extern int
+apc_sys_get_cursor_width( void);
+
+extern Bool
+apc_sys_get_insert_mode( void);
+
+extern PFont
+apc_sys_get_msg_font( PFont copyTo);
+
+extern PFont
+apc_sys_get_caption_font( PFont copyTo);
+
+extern Point
+apc_sys_get_scrollbar_metrics( void);
+
+extern int
+apc_sys_get_value( int sysValue);
+
+extern Point
+apc_sys_get_window_borders( int borderStyle);
+
+extern void
+apc_sys_set_insert_mode( Bool insMode);
 
 /* etc */
-extern void         apc_beep                 ( int style);
-extern void         apc_beep_tone            ( int freq, int duration);
-extern char *       apc_system_action        ( char * params);
-extern void         apc_query_drives_map     ( char *firstDrive, char *result);
-extern int          apc_query_drive_type     ( char *drive);
-extern char *       apc_get_user_name        ( void);
-extern void *       apc_dlopen               (char *path, int mode);
+extern void
+apc_beep( int style);
 
+extern void
+apc_beep_tone( int freq, int duration);
+
+extern char *
+apc_system_action( char *params);
+
+extern void
+apc_query_drives_map( char *firstDrive, char *result);
+
+extern int
+apc_query_drive_type( char *drive);
+
+extern char*
+apc_get_user_name( void);
+
+extern void*
+apc_dlopen(char *path, int mode);
+
+/* Memory bugs debugging tools */
 #ifdef PARANOID_MALLOC
-extern void *_test_malloc( size_t size, int ln, char *fil, Handle self);
-extern void _test_free( void *ptr, int ln, char *fil, Handle self);
+extern void *
+_test_malloc( size_t size, int ln, char *fil, Handle self);
+
+extern void
+_test_free( void *ptr, int ln, char *fil, Handle self);
+
 extern Handle self;
 
 #undef malloc
