@@ -162,8 +162,8 @@ Widget_init( Handle self, HV * profile)
    {
       Bool x = 0, y = 0;
       if ( pget_B( centered)) { x = 1; y = 1; };
-      if ( pget_B( x_centered) || ( var growMode & gfXCenter)) x = 1;
-      if ( pget_B( y_centered) || ( var growMode & gfYCenter)) y = 1;
+      if ( pget_B( x_centered) || ( var growMode & gmXCenter)) x = 1;
+      if ( pget_B( y_centered) || ( var growMode & gmYCenter)) y = 1;
       if ( x || y) my set_centered( self, x, y);
    }
    my set_visible     ( self, pget_B( visible));
@@ -458,25 +458,18 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmColorChanged:
         if ( !kind_of( event-> gen. source, CPopup))
         {
-           SingleColor s = { apc_widget_get_color( self, event-> gen. i), event-> gen. i};
-           my first_that( self, single_color_notify, &s);
-
-           if ( event-> gen. i == ciFore) opt_clear( optOwnerColor); else
-           if ( event-> gen. i == ciBack) opt_clear( optOwnerBackColor);
            my on_colorchanged ( self, event-> gen. i);
            if ( is_dmopt( dmColorChanged))
               delegate_sub( self, "ColorChanged", "Hi", self, event-> gen. i);
            if ( var onColorChanged) cv_call_perl( var mate, var onColorChanged, "i", event-> gen. i);
-           if (!opt_InPaint) my repaint( self);
-        } else
+        } else {
             var popupColor[ event-> gen. i] =
                apc_menu_get_color( event-> gen. source, event-> gen. i);
+        }
         break;
       case cmFontChanged:
         if ( !kind_of( event-> gen. source, CPopup))
         {
-           my first_that( self, font_notify, & var font);
-           opt_clear( optOwnerFont);
            my on_fontchanged ( self);
            delegate( FontChanged);
            dyna( FontChanged);
@@ -534,6 +527,15 @@ void Widget_handle_event( Handle self, PEvent event)
               delegate_sub( self, "MouseMove", "HiP", self, event-> pos. mod, event -> pos. where);
           if ( evOK)
              my on_mousemove( self, event-> pos. mod, event -> pos. where. x, event-> pos. where. y);
+        break;
+      case cmMouseWheel:
+        if ( var onMouseWheel)
+           cv_call_perl( var mate, var onMouseWheel, "iPi",  event-> pos. mod, event -> pos. where, event-> pos. button);
+        if ( evOK)
+           if ( is_dmopt( dmMouseWheel))
+              delegate_sub( self, "MouseWheel", "HiPi", self, event-> pos. mod, event -> pos. where, event-> pos. button);
+          if ( evOK)
+             my on_mousewheel( self, event-> pos. mod, event -> pos. where. x, event-> pos. where. y, event-> pos. button);
         break;
       case cmMouseEnter:
         if ( var onMouseEnter)
@@ -724,7 +726,7 @@ void Widget_handle_event( Handle self, PEvent event)
                my on_move( self, var pos, event-> gen. P);
                if ( is_dmopt( dmMove)) delegate_sub( self, "Move", "HPP", self, var pos, event-> gen. P);
                if ( var onMove) cv_call_perl( var mate, var onMove, "PP", var pos, event-> gen. P);
-               if ( var growMode & gfCenter) my set_centered( self, var growMode & gfXCenter, var growMode & gfYCenter);
+               if ( var growMode & gmCenter) my set_centered( self, var growMode & gmXCenter, var growMode & gmYCenter);
             }
          }
         break;
@@ -767,7 +769,7 @@ void Widget_handle_event( Handle self, PEvent event)
               var sizeUnbound. x = event-> gen. P. x;
            if ( var sizeUnbound. y == event-> gen. R. bottom)
               var sizeUnbound. y = event-> gen. P. y;
-           if ( var growMode & gfCenter) my set_centered( self, var growMode & gfXCenter, var growMode & gfYCenter);
+           if ( var growMode & gmCenter) my set_centered( self, var growMode & gmXCenter, var growMode & gmYCenter);
 
            if ( !event-> gen. B) my first_that( self, size_notify, &event-> gen. R);
            if ( doNotify) {
@@ -868,6 +870,7 @@ Widget_mouse_event( Handle self, int command, int button, int mod, int x, int y,
      && command != cmMouseUp
      && command != cmMouseClick
      && command != cmMouseMove
+     && command != cmMouseWheel
      && command != cmMouseEnter
      && command != cmMouseLeave
      ) return;
@@ -1059,7 +1062,7 @@ Widget_set( Handle self, HV * profile)
        var owner = postOwner;
        my set_tab_order( self, var tabOrder);
    }
-   if ( var growMode & gfCenter) my set_centered( self, var growMode & gfXCenter, var growMode & gfYCenter);
+   if ( var growMode & gmCenter) my set_centered( self, var growMode & gmXCenter, var growMode & gmYCenter);
 }
 
 void
@@ -1129,6 +1132,7 @@ Widget_update_delegator( Handle self)
    delegator( MouseDown);
    delegator( MouseUp);
    delegator( MouseMove);
+   delegator( MouseWheel);
    delegator( MouseEnter);
    delegator( MouseLeave);
    delegator( Move);
@@ -1640,7 +1644,7 @@ Widget_set_color_index( Handle self, Color color, int index)
             opt_clear( optOwnerBackColor);
             break;
       }
-      apc_widget_set_color ( self, color, index);
+      apc_widget_set_color( self, color, index);
       my repaint( self);
    }
 }
@@ -1713,7 +1717,7 @@ Widget_set_font( Handle self, Font font)
    else {
       opt_clear( optOwnerFont);
       apc_widget_set_font( self, & var font);
-      my repaint ( self);
+      my repaint( self);
    }
 }
 
@@ -1723,8 +1727,8 @@ Widget_set_grow_mode( Handle self, int flags )
    enter_method;
    Bool x = 0, y = 0;
    var growMode = flags;
-   if ( var growMode & gfXCenter) x = 1;
-   if ( var growMode & gfYCenter) y = 1;
+   if ( var growMode & gmXCenter) x = 1;
+   if ( var growMode & gmYCenter) y = 1;
    if ( x || y) my set_centered( self, x, y);
 }
 
@@ -2219,6 +2223,7 @@ void Widget_on_mouseclick( Handle self, int button , int shiftState , int x , in
 void Widget_on_mousedown( Handle self, int button , int shiftState , int x , int y ) {}
 void Widget_on_mouseup( Handle self, int button , int shiftState , int x , int y ) {}
 void Widget_on_mousemove( Handle self, int shiftState , int x , int y ) {}
+void Widget_on_mousewheel( Handle self, int shiftState , int x , int y, int z ) {}
 void Widget_on_mouseenter( Handle self, int shiftState , int x , int y ) {}
 void Widget_on_mouseleave( Handle self ) {}
 void Widget_on_leave( Handle self) {}
@@ -2354,12 +2359,12 @@ size_notify( Handle self, Handle child, void * metrix)
       int   dx    = ((Rect *) metrix)-> right - ((Rect *) metrix)-> left;
       int   dy    = ((Rect *) metrix)-> top   - ((Rect *) metrix)-> bottom;
 
-      if ( his growMode & gfGrowLoX) pos.  x += dx;
-      if ( his growMode & gfGrowHiX) size. x += dx;
-      if ( his growMode & gfGrowLoY) pos.  y += dy;
-      if ( his growMode & gfGrowHiY) size. y += dy;
-      if ( his growMode & gfXCenter) pos. x = (((Rect *) metrix)-> right - size. x) / 2;
-      if ( his growMode & gfYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
+      if ( his growMode & gmGrowLoX) pos.  x += dx;
+      if ( his growMode & gmGrowHiX) size. x += dx;
+      if ( his growMode & gmGrowLoY) pos.  y += dy;
+      if ( his growMode & gmGrowHiY) size. y += dy;
+      if ( his growMode & gmXCenter) pos. x = (((Rect *) metrix)-> right - size. x) / 2;
+      if ( his growMode & gmYCenter) pos. y = (((Rect *) metrix)-> top   - size. y) / 2;
 
       his self-> set_pos  ( child, pos.x, pos. y);
       his self-> set_size ( child, size.x, size. y);
@@ -2376,7 +2381,7 @@ move_notify( Handle self, Handle child, Point * moveTo)
    int  dy  = moveTo-> y - var pos. y;
    Point p;
 
-   if ( his growMode & gfDontCare) {
+   if ( his growMode & gmDontCare) {
       if ( !clp) return false;
       p = his self-> get_pos( child);
       his self-> set_pos( child, p. x - dx, p. y - dy);
@@ -2465,6 +2470,7 @@ dyna_set( Handle self, HV * profile)
    dyna( MouseDown);
    dyna( MouseUp);
    dyna( MouseMove);
+   dyna( MouseWheel);
    dyna( MouseEnter);
    dyna( MouseLeave);
    dyna( Move);
