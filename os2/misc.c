@@ -1,7 +1,11 @@
 #define INCL_DOSFILEMGR
 #define INCL_DOSERRORS
 #define INCL_DOSDEVIOCTL
+#include <sys/types.h>
+#include <dirent.h>
+// #include <sys/dir.h>
 #include "os2/os2guts.h"
+
 
 static int ctx_mb2WA[] =
 {
@@ -215,11 +219,33 @@ apc_get_user_name( void)
     return ( username ? (char *)username : "");
 }
 
+
 PList
 apc_getdir( const char *dirname)
 {
-   return nil;
+   DIR * dh;
+   struct dirent *de;
+   PList dirlist = nil;
+   char dirn[ 4];
+
+   if ( dirname == nil) return nil;
+   if (( strlen( dirname) == 2) && ( dirname[1] == ':')) {
+      strcpy( dirn, dirname);
+      strcat( dirn, "\\");
+      dirname = dirn;
+   }
+
+   if (( dh = opendir( dirname)) && (dirlist = plist_create( 50, 50))) {
+      while (( de = readdir( dh)))
+      {
+         list_add( dirlist, (Handle) duplicate_string( de-> d_name));
+         list_add( dirlist, (Handle) duplicate_string(( de-> d_attr & A_DIR) ? "dir" : "reg"));
+      }
+      closedir( dh);
+   }
+   return dirlist;
 }
+
 
 static char dlerror_description[256];
 

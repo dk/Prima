@@ -312,7 +312,6 @@ apc_prn_begin_doc( Handle self, const char* docName)
       sys dc = nilHandle;
       return false;
    }
-   if ( !GpiCreateLogColorTable( sys ps, 0, LCOLF_RGB, 0, 0, nil)) apiErr;
    res = DevEscape( sys dc, DEVESC_STARTDOC, strlen( docName), (char*)docName, &out, nil);
    if ( res != DEV_OK)
    {
@@ -322,6 +321,7 @@ apc_prn_begin_doc( Handle self, const char* docName)
       sys dc = sys ps = nilHandle;
       return false;
    }
+   if ( !GpiCreateLogColorTable( sys ps, 0, LCOLF_RGB, 0, 0, nil)) apiErr;
    hwnd_enter_paint( self);
    return true;
 }
