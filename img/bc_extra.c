@@ -148,7 +148,7 @@ bc_bgri_rgb( register Byte * source, register Byte * dest, register int count)
 {
    while ( count--)
    {
-      register Byte a, b, c;
+      register Byte a, b;
       a = *source++;
       b = *source++;
       *dest++ = *source++;
@@ -179,7 +179,7 @@ bc_ibgr_rgb( register Byte * source, register Byte * dest, register int count)
 {
    while ( count--)
    {
-      register Byte a, b, c;
+      register Byte a, b;
       source++;
       a = *source++;
       b = *source++;
