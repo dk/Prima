@@ -27,19 +27,6 @@ sub
 			left => 553,
 			sizeDontCare => 0,
 			size => [ 346, 112],
-			onSetup => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
-        
-my $fonts = $::application-> fonts;
-
-$self-> VarFont-> items( 
-  [ \'Default\', sort map { $_-> {name}} @$fonts ],
-);
-
-$self-> FixFont-> items( 
-  [ \'Default\', sort map { $_-> {name}} grep { $_->{pitch} == fp::Fixed }@$fonts ],
-);  
-  
-','Form1', 'onSetup'),
 			borderStyle => bs::Dialog,
 	}},
 	'CodeColor' => {

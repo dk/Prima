@@ -202,6 +202,9 @@ sub profile_default
           ]],
           [],
           ['Set~up' => 'setup_dialog'],
+          ['Set font ~encoding' => [
+             map { [ "ENC$_", $_, 'set_encoding' ] } @{$::application-> font_encodings()},
+          ]],
         ]], [ '~Go' => [
             [ '-goback' => '~Back' => 'Alt + LeftArrow' => km::Alt | kb::Left => 'back' ],
             [ '-goforw' => '~Forward' => 'Alt + RightArrow' => km::Alt | kb::Right => 'forward' ],
@@ -245,6 +248,14 @@ sub init
       $defaultVariableFont = $self-> {text}-> {fontPalette}-> [0]-> {name};
       $defaultFixedFont    = $self-> {text}-> {fontPalette}-> [1]-> {name};
    }
+   my $enc = (($^O =~ /win32/i) ? 'Western' : 'iso8859-1'); # set a fall-back latin-1 encoding
+   $enc = $::application-> font_encodings->[0] unless 
+      grep { $_ eq $enc } @{$::application-> font_encodings};
+   if ( defined $enc) {
+      $self-> {text}-> {fontPalette}-> [$_]-> {encoding} = $enc for 0, 1;
+      $self-> menu-> check( "ENC$enc") if $self-> menu-> has_item( "ENC$enc");
+   }
+
    my ( $x, $y) = ( 0, $self-> height - $t - 4);
    for ( qw(Back Forward Up Prev Next)) {
       my $lc = lc;
@@ -305,6 +316,16 @@ sub init
          $self-> {text}-> font-> size( $fs);
       }
    }
+   
+   if ( exists $sec-> {FontEncoding} ) {
+       my $fe = $sec-> {FontEncoding};
+       if ( $self-> menu-> has_item( "ENC$fe")) {
+           my $enc = $self-> {text}-> {fontPalette}->[0]-> {encoding};
+           $self-> menu-> uncheck( "ENC$enc") if $self-> menu-> has_item( "ENC$enc");
+           $self-> menu-> check( "ENC$fe");
+           $self-> {text}-> {fontPalette}->[$_]-> {encoding} = $fe for 0,1;
+       }
+   }
 
    if ( $sec-> {FullText}) {
       $self-> menu-> fullView-> check; 
@@ -330,8 +351,9 @@ sub on_close
    my $self = $_[0];
    my $sec = $inifile-> section('View');
 
-   $sec-> {FontSize}  = $self-> {text}-> font-> size;
-   $sec-> {FullText}  = $self-> {text}-> topicView ? 0 : 1;
+   $sec-> {FontSize}     = $self-> {text}-> font-> size;
+   $sec-> {FontEncoding} = $self-> {text}-> {fontPalette}->[0]->{encoding};
+   $sec-> {FullText}     = $self-> {text}-> topicView ? 0 : 1;
 }
 
 sub on_destroy
@@ -729,6 +751,29 @@ sub setup_dialog
    my $sec = $inifile-> section('View');
    my ( $of1, $of2) = map { $t-> {fontPalette}-> [$_]-> {name}} (0,1);
 
+   my $ntext = $self-> text;
+   $self-> text('Enumerating fonts...0%');
+
+   my $fe = $t-> {fontPalette}-> [0]-> {encoding};
+   my $fonts = $::application-> fonts;
+   $self-> text('Enumerating fonts... 30%');
+   $setupdlg-> FixFont-> items( ['Default', sort map { 
+      $_-> {name}} grep { 
+         my $x;
+         if ( $_->{pitch} == fp::Fixed) {
+            $x = $::application-> fonts( $_->{name}, $fe);
+            $x = scalar(@$x) ? 1 : 0; 
+         } 
+         $x;
+      }@$fonts ]);
+   $self-> text('Enumerating fonts... 60%');
+   $setupdlg-> VarFont-> items( [ 'Default', sort map { 
+      $_-> {name}} grep { 
+         my $x = $::application-> fonts( $_->{name}, $fe);
+         $x = scalar(@$x) ? 1 : 0; $x;
+      } @$fonts ]);
+   $self-> text( $ntext);
+
    $setupdlg-> VarFont-> text( $sec-> {VariableFont} ? $sec-> {VariableFont} : 'Default');
    $setupdlg-> FixFont-> text( $sec-> {FixedFont} ? $sec-> {FixedFont} : 'Default');
    $setupdlg-> LinkColor-> value( defined($sec-> {ColorLink}) ? $sec-> {ColorLink} :
@@ -740,7 +785,6 @@ sub setup_dialog
 
    $t-> {colorMap}-> [ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> LinkColor-> value;
    $t-> {colorMap}-> [ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> CodeColor-> value;
-
 
    my $f1 = $setupdlg-> VarFont-> text;
    my $f2 = $setupdlg-> FixFont-> text;
@@ -760,6 +804,23 @@ sub setup_dialog
    } else {
       $t-> repaint;
    }
+}
+
+sub set_encoding
+{
+   my ( $self, $fe) = @_;
+
+   my $t = $self-> {text};
+   my $m = $self-> menu;
+   
+   $fe =~ s/^ENC//;
+   return unless $m-> has_item( "ENC$fe");
+
+   my $enc = $self-> {text}-> {fontPalette}->[0]-> {encoding};
+   $m-> uncheck( "ENC$enc") if $m-> has_item( "ENC$enc");
+   $m-> check( "ENC$fe");
+   $t-> {fontPalette}->[$_]-> {encoding} = $fe for 0,1;
+   $t-> format(1);
 }
 
 1;
