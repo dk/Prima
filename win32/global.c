@@ -247,7 +247,7 @@ window_subsystem_done()
    DeleteObject( hPenHollow);
    DeleteObject( hBrushHollow);
 
-   DestroyWindow( guts. logger);
+   if ( guts. logger) DestroyWindow( guts. logger);
    loggerDead          = TRUE;
    guts. logger        = NULL;
    guts. loggerListBox = NULL;
