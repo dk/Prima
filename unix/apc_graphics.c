@@ -36,7 +36,7 @@
 #include "Image.h"
 
 #define SORT(a,b)	({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
-#define REVERT(a)	({ XX-> size. y - (a) - 1; })
+#define REVERT(a)	({ XX-> size. y + XX-> menuHeight - (a) - 1; })
 #define SHIFT(a,b)	({ (a) += XX-> gtransform. x + XX-> btransform. x; \
                            (b) += XX-> gtransform. y + XX-> btransform. y; })
 #define REVERSE_BYTES_32(x) ((((x)&0xff)<<24) | (((x)&0xff00)<<8) | (((x)&0xff0000)>>8) | (((x)&0xff000000)>>24))
@@ -140,7 +140,7 @@ prima_release_gc( PDrawableSysData selfxx)
 }
 
 void
-prima_prepare_drawable_for_painting( Handle self)
+prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint)
 {
    DEFXX;
    unsigned long mask = VIRGIN_GC_MASK;
@@ -148,7 +148,7 @@ prima_prepare_drawable_for_painting( Handle self)
    XRectangle r;
 
    XF_IN_PAINT(XX) = true;
-   if ( !(PObject( self)-> options. optInDrawInfo) && XX-> udrawable && is_opt( optBuffered)) {
+   if ( inside_on_paint && XX-> udrawable && is_opt( optBuffered)) {
       if ( XX-> region) {
          XClipBox( XX-> region, &r);
          XX-> bsize. x = w = r. width;
@@ -586,7 +586,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
    DEFXX;
    int i;
    int x = XX-> gtransform. x + XX-> btransform. x;
-   int y = XX-> size. y - 1 - XX-> gtransform. y - XX-> btransform. y;
+   int y = XX-> size. y + XX-> menuHeight - 1 - XX-> gtransform. y - XX-> btransform. y;
    XPoint *p;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
@@ -613,7 +613,7 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
    DEFXX;
    int i;
    int x = XX-> gtransform. x + XX-> btransform. x;
-   int y = XX-> size. y - 1 - XX-> gtransform. y - XX-> btransform. y;
+   int y = XX-> size. y + XX-> menuHeight - 1 - XX-> gtransform. y - XX-> btransform. y;
    XSegment *s;
    int n = np / 2;
 
@@ -989,6 +989,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
    y = REVERT( y);
    color = prima_map_color( color);
    prima_gp_get_clip_rect( self, &cr);
+   cr. y += XX-> menuHeight;
 
    s. clip. left   = cr. x;
    s. clip. top    = cr. y;
@@ -1050,7 +1051,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
       pixmap = guts. idepth > 1;
    }   
    
-   im = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - 1, 1, 1, 
+   im = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y + XX-> menuHeight - y - 1, 1, 1, 
                    pixmap ? AllPlanes : 1,
                    pixmap ? ZPixmap   : XYPixmap);
    XCHECKPOINT;
@@ -1265,6 +1266,7 @@ apc_gp_set_region( Handle self, Handle mask)
       prima_put_ximage(px, gc, cache->image, 0, 0, 0, 0, img->w, img->h);
       XFreeGC( DISP, gc);
    }
+   XSetClipOrigin( DISP, XX-> gc, 0, XX-> menuHeight);
    XSetClipMask(DISP, XX->gc, px);
    if ( px != None) {
       XFreePixmap( DISP, px);
@@ -1565,6 +1567,7 @@ apc_gp_get_color( Handle self)
    return ( XF_IN_PAINT(XX)) ? XX-> fore. color : XX-> saved_fore;
 }
 
+/* returns rect in X coordinates BUT without menuHeight deviation */
 void
 prima_gp_get_clip_rect( Handle self, XRectangle *cr)
 {
@@ -1572,7 +1575,7 @@ prima_gp_get_clip_rect( Handle self, XRectangle *cr)
    XRectangle r;
 
    cr-> x = 0;
-   cr-> y = 0;
+   cr-> y = XX-> menuHeight;
    cr-> width = XX-> size.x;
    cr-> height = XX-> size.y;
    if ( XF_IN_PAINT(XX) && ( XX-> region || XX-> stale_region)) {
@@ -1580,6 +1583,7 @@ prima_gp_get_clip_rect( Handle self, XRectangle *cr)
                 &r);
       prima_rect_intersect( cr, &r);
    }
+   cr-> y -= XX-> menuHeight;
    if ( XX-> clip_rect. x != 0
         || XX-> clip_rect. y != 0
         || XX-> clip_rect. width != XX-> size.x
@@ -1835,6 +1839,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    r. width = clipRect. right - clipRect. left+1;
    r. height = clipRect. top - clipRect. bottom+1;
    XX-> clip_rect = r;
+   XX-> clip_rect. y -= XX-> menuHeight;
    region = XCreateRegion();
    XUnionRectWithRegion( &r, region, region);
    if ( XX-> stale_region) {

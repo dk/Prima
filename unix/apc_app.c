@@ -338,7 +338,7 @@ window_subsystem_done( void)
 Bool
 apc_application_begin_paint( Handle self)
 {
-   prima_prepare_drawable_for_painting( self);
+   prima_prepare_drawable_for_painting( self, false);
    return true;
 }
 

@@ -33,10 +33,11 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#include "Window.h"
 #include "Application.h"
 
 #define SORT(a,b)       ({ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }})
-#define REVERT(a)       ({ XX-> size. y - (a) - 1; })
+#define REVERT(a)	({ XX-> size. y + XX-> menuHeight - (a) - 1; })
 
 Bool
 apc_widget_map_points( Handle self, Bool toScreen, int n, Point *p)
@@ -229,6 +230,8 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    if ( reset) {
       int i;
+      if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self)
+         prima_end_menu();
       CWidget( self)-> end_paint_info( self);
       CWidget( self)-> end_paint( self);
       for( i = 0; i < count; i++)
@@ -311,6 +314,9 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       return false;
    XCHECKPOINT;
 
+   if ( XT_IS_WINDOW(X(owner)) && PWindow(owner)-> menu)
+      XRaiseWindow( DISP, PComponent(PWindow(owner)-> menu)-> handle);
+
    if ( reset) {
       hash_delete( guts.windows, &old, sizeof(X_WINDOW), false);
    } else {
@@ -325,6 +331,8 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    XX-> flags. clip_owner = clip_owner;
    XX-> flags. sync_paint = sync_paint;
    XX-> flags. process_configure_notify = false;
+   XX-> flags. position_determined = 1;
+   XX-> flags. size_determined = 1;
    
    XX-> above = nilHandle;
    XX-> owner = real_owner;
@@ -377,6 +385,10 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
             XSync( DISP, false);
             while ( XCheckMaskEvent( DISP, ExposureMask, &ev))
                prima_handle_event( &ev, nil);
+            if ( XX-> flags. paint_pending) {
+               TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+               XX-> flags. paint_pending = false;
+            }
             guts. queued_events = XEventsQueued( DISP, QueuedAlready);
             XX-> flags. transparent_busy = 0;
          } else
@@ -385,7 +397,7 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
    }
    if ( guts. dynamicColors && inside_on_paint) prima_palette_free( self, false);
    prima_no_cursor( self);
-   prima_prepare_drawable_for_painting( self);
+   prima_prepare_drawable_for_painting( self, inside_on_paint);
    if ( useRPDraw) {
       Handle owner = PWidget(self)->owner;
       Point ed = apc_widget_get_pos( self);
@@ -401,7 +413,7 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
       else if ( XX-> stale_region) 
          XSetRegion( DISP, X(owner)-> gc, XX-> stale_region);
       X(owner)-> gtransform. x = -ed. x;
-      X(owner)-> gtransform. y = X(owner)-> size. y - XX-> size.y - ed. y;
+      X(owner)-> gtransform. y = X(owner)-> size. y + X(owner)-> menuHeight - XX-> size.y - ed. y;
       CWidget( owner)-> notify( owner, "sH", "Paint", owner);
       X(owner)-> gdrawable = dc;
       CWidget( owner)-> end_paint( owner);
@@ -415,7 +427,7 @@ Bool
 apc_widget_begin_paint_info( Handle self)
 {
    prima_no_cursor( self);
-   prima_prepare_drawable_for_painting( self);
+   prima_prepare_drawable_for_painting( self, false);
    return true;
 }
 
@@ -423,7 +435,8 @@ Bool
 apc_widget_destroy( Handle self)
 {
    DEFXX;
-
+   if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self)
+      prima_end_menu();
    if ( guts. focused == self)
       guts. focused = nilHandle;
    XX-> flags.modal = false;
@@ -514,7 +527,8 @@ apc_widget_get_invalid_rect( Handle self)
    if ( !XX-> region)
       return (Rect){0,0,0,0};
    XClipBox( XX-> region, &r);
-   return (Rect){r.x, XX-> size.y - r.height - r.y, r.x + r.width, XX-> size.y - r.y};
+   return (Rect){r.x, XX-> size.y + XX-> menuHeight - r.height - r.y, 
+                 r.x + r.width, XX-> size.y + XX-> menuHeight - r.y};
 }
 
 Point
@@ -640,12 +654,12 @@ apc_widget_invalidate_rect( Handle self, Rect *rect)
    if ( rect) {
       r. x = rect-> left;
       r. width = rect-> right - rect-> left;
-      r. y = XX-> size. y - rect-> top;
+      r. y = XX-> size. y + XX-> menuHeight - rect-> top;
       r. height = rect-> top - rect-> bottom;
    } else {
       r. x = 0;
       r. width = XX-> size. x;
-      r. y = 0;
+      r. y = XX-> menuHeight;
       r. height = XX-> size. y;
    }
 
@@ -914,7 +928,7 @@ apc_widget_set_pos( Handle self, int x, int y)
    e. cmd = cmMove;
    e. gen. source = self;
    XX-> origin = e. gen. P = (Point){x,y};
-   y = X(XX-> owner)-> size. y - XX-> size.y - y;
+   y = X(XX-> owner)-> size. y + X(XX-> owner)-> menuHeight - XX-> size.y - y;
    if ( XX-> parentHandle) {
       XWindow cld;
       XTranslateCoordinates( DISP, PWidget(XX-> owner)-> handle, XX-> parentHandle, x, y, &x, &y, &cld);
@@ -997,7 +1011,7 @@ apc_widget_set_size( Handle self, int width, int height)
    XX-> size. y = height;
 
    x = XX-> origin. x;
-   y = X(XX-> owner)-> size. y - XX-> size.y - XX-> origin. y;
+   y = X(XX-> owner)-> size. y + X(XX-> owner)-> menuHeight - XX-> size.y - XX-> origin. y;
    if ( XX-> parentHandle) {
       XWindow cld;
       XTranslateCoordinates( DISP, PWidget(XX-> owner)-> handle, XX-> parentHandle, x, y, &x, &y, &cld);
@@ -1082,6 +1096,9 @@ apc_widget_set_z_order( Handle self, Handle behind, Bool top)
       XLowerWindow( DISP, X_WINDOW);
       XCHECKPOINT;
    }
+
+   if ( XT_IS_WINDOW(X(PWidget(self)-> owner)) && PWindow(PWidget(self)-> owner)-> menu)
+      XRaiseWindow( DISP, PComponent(PWindow(PWidget(self)-> owner)-> menu)-> handle);
 
    if ( X(self)-> type. window) 
       prima_wm_sync( self, ConfigureNotify);

@@ -182,7 +182,7 @@ typedef struct _RotatedFont {
    struct       RotatedFont *next;
 } RotatedFont, *PRotatedFont;
 
-typedef struct _CachedFont {
+typedef struct CachedFont {
    FontFlags    flags;
    Font         font;
    XFontStruct *fs;
@@ -392,6 +392,7 @@ struct _UnixGuts
    XWindow                      grab_redirect;
    Handle                       grab_widget;
    Point                        grab_translate_mouse;
+   Handle                       currentMenu;
    XWindow                      root;
    XVisualInfo                  visual;
    int                          visualClass;
@@ -487,6 +488,7 @@ typedef struct _drawable_sys_data
    Point origin, size, bsize;
    Point transform, gtransform, btransform;
    Point ackOrigin, ackSize;   
+   int menuHeight; 
    Point decorationSize;
    Handle owner;  /* The real one */
    XWindow real_parent; /* top levels */
@@ -526,6 +528,7 @@ typedef struct _drawable_sys_data
       int brush_back                    : 1;
       int brush_null_hatch              : 1;
       int clip_owner			: 1;
+      int configured                    : 1;
       int cursor_visible		: 1;
       int enabled               	: 1;
       int exposed			: 1;
@@ -541,9 +544,11 @@ typedef struct _drawable_sys_data
       int paint_opaque                  : 1;
       int paint_pending                 : 1;
       int pointer_obscured              : 1;
+      int position_determined           : 1;
       int process_configure_notify	: 1;
       int reload_font			: 1;
       int sizeable                      : 1;
+      int size_determined               : 1;
       int sync_paint			: 1;
       int transparent                   : 1;
       int transparent_busy              : 1;
@@ -573,14 +578,16 @@ typedef struct _timer_sys_data
    struct timeval when;
 } TimerSysData, *PTimerSysData;
 
+#define MENU_ITEM_GAP 4
+
 typedef struct _menu_item
 {
    int          x;
    int          y;
-   int          ux;
-   int          uy;
-   int          ul;
-   char        *text;
+   int          width;
+   int          height;
+   int          accel_width;
+   Pixmap       pixmap;
 } UnixMenuItem, *PUnixMenuItem;
 
 typedef struct _menu_window
@@ -593,14 +600,20 @@ typedef struct _menu_window
    PUnixMenuItem        um;
    struct _menu_window *next;
    struct _menu_window *prev;
+   int                  selected;
+   int                  right;
+   int                  last;
+   int                  first;
 } MenuWindow, *PMenuWindow;
 
 typedef struct _menu_sys_data
 {
    COMPONENT_SYS_DATA;
+   Bool                 paint_pending;
    PMenuWindow          w;
+   MenuWindow           wstatic;
    PCachedFont          font;
-   XColor               c[ciMaxId+1];
+   unsigned long        c[ciMaxId+1];
 } MenuSysData, *PMenuSysData;
 
 typedef struct _clipboard_sys_data
@@ -629,6 +642,8 @@ typedef union _unix_sys_data
 #define X_WINDOW	(PComponent(self)-> handle)
 #define X(obj)		((PDrawableSysData)(PComponent((obj))-> sysData))
 #define DEFXX		PDrawableSysData selfxx = (self == nilHandle ? nil : X(self))
+#define M(obj)		((PMenuSysData)(PComponent((obj))-> sysData))
+#define DEFMM           PMenuSysData selfxx = ((PMenuSysData)(PComponent((self))-> sysData))
 #define XX		selfxx
 #define WHEEL_DELTA	120
 
@@ -654,6 +669,7 @@ prima_release_gc( PDrawableSysData);
 
 extern Bool
 prima_init_font_subsystem( void);
+
 extern Bool
 prima_init_color_subsystem( void);
 
@@ -723,7 +739,7 @@ extern Bool
 prima_one_loop_round( Bool wait, Bool careOfApplication);
 
 extern void
-prima_prepare_drawable_for_painting( Handle self);
+prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint);
 
 extern Bool
 prima_simple_message( Handle self, int cmd, Bool is_post);
@@ -781,6 +797,12 @@ prima_send_cmSize( Handle self, Point oldSize);
 
 extern Bool
 apc_window_set_visible( Handle self, Bool show);
+
+extern Bool
+prima_window_reset_menu( Handle self, int newMenuHeight);
+
+extern void
+prima_end_menu(void);
    
 extern void
 prima_wm_sync( Handle self, int eventType);

@@ -1,4 +1,4 @@
-/*-
+/*
  * Copyright (c) 1997-2000 The Protein Laboratory, University of Copenhagen
  * All rights reserved.
  *
@@ -33,6 +33,7 @@
 /***********************************************************/
 
 #include "unix/guts.h"
+#include "Menu.h"
 #include "Icon.h"
 #include "Window.h"
 #include "Application.h"
@@ -219,12 +220,14 @@ apc_window_get_border_style( Handle self)
 Point
 apc_window_get_client_pos( Handle self)
 {
+   if ( !X(self)-> flags. configured) prima_wm_sync( self, ConfigureNotify);
    return X(self)-> origin;
 }
 
 Point
 apc_window_get_client_size( Handle self)
 {
+   if ( !X(self)-> flags. configured) prima_wm_sync( self, ConfigureNotify);
    return X(self)-> size;
 }
 
@@ -346,8 +349,10 @@ prima_get_frame_info( Handle self, PRect r)
    unsigned int pw, ph, pb, pd;
 
    bzero( r, sizeof( Rect));
-   if (( p = prima_find_frame_window( X_WINDOW)) == None) {
-      return false;
+   p = prima_find_frame_window( X_WINDOW);
+   if ( p == nilHandle) {
+      r-> left = XX-> decorationSize. x;
+      r-> top  = XX-> decorationSize. y;
    } else if ( p != X_WINDOW) 
       if ( !XTranslateCoordinates( DISP, X_WINDOW, p, 0, 0, &r-> left, &r-> bottom, &dummy))
          warn( "error in XTranslateCoordinates()");
@@ -356,6 +361,7 @@ prima_get_frame_info( Handle self, PRect r)
       r-> right = pw - r-> left  - XX-> size. x;
       r-> top   = ph - r-> right - XX-> size. y;
    }
+   r-> top += XX-> menuHeight;
    return true;
 }
 
@@ -365,11 +371,13 @@ apc_SetWMNormalHints( Handle self, XSizeHints * hints)
    DEFXX;
    if ( XX-> flags. sizeable) {
       hints-> min_width  = PWidget(self)-> sizeMin.x;
-      hints-> min_height = PWidget(self)-> sizeMin.y;
+      hints-> min_height = PWidget(self)-> sizeMin.y + XX-> menuHeight;
       hints-> max_width  = PWidget(self)-> sizeMax.x;
-      hints-> max_height = PWidget(self)-> sizeMax.y;
+      hints-> max_height = PWidget(self)-> sizeMax.y + XX-> menuHeight;
    } else {   
-      Point who = ( hints-> flags & USSize) ? (Point){hints-> width, hints-> height} : XX-> size;
+      Point who = ( hints-> flags & USSize) ? 
+         (Point){hints-> width, hints-> height} : 
+         (Point){XX-> size.x, XX-> size.y + XX-> menuHeight};
       hints-> min_width  = who. x;
       hints-> min_height = who. y;
       hints-> max_width  = who. x;
@@ -389,33 +397,34 @@ apc_window_set_client_pos( Handle self, int x, int y)
    bzero( &hints, sizeof( XSizeHints));
 
    if ( x == XX-> origin. x && y == XX-> origin. y) return true;
+   XX-> flags. position_determined = 1;
 
    if ( X_WINDOW == guts. grab_redirect) {
       XWindow rx;
       XTranslateCoordinates( DISP, X_WINDOW, guts. root, 0, 0, 
          &guts. grab_translate_mouse.x, &guts. grab_translate_mouse.y, &rx);
    }
-   
-   y = X(XX-> owner)-> size. y - XX-> size.y - y;
+  
+   y = guts. displaySize.y - XX-> size.y - XX-> menuHeight - y;
    hints. flags = USPosition;
    hints. x = x - XX-> decorationSize.x;
    hints. y = y - XX-> decorationSize.y + 1;
-   XMoveWindow( DISP, X_WINDOW, hints. x, hints. y);
    apc_SetWMNormalHints( self, &hints);
+   XMoveWindow( DISP, X_WINDOW, hints. x, hints. y);
    prima_wm_sync( self, ConfigureNotify);
    return true;
 }
 
-Bool
-apc_window_set_client_size( Handle self, int width, int height)
+
+static Bool
+window_set_client_size( Handle self, int width, int height)
 {
    DEFXX;
    XSizeHints hints;
    PWidget widg = PWidget( self);
    
-   if ( width == XX-> size. x && height == XX-> size. y) return true;
-
    bzero( &hints, sizeof( XSizeHints));
+   XX-> flags. size_determined = 1;
 
    widg-> virtualSize = (Point){width,height};
    width = ( width > 0)
@@ -433,15 +442,39 @@ apc_window_set_client_size( Handle self, int width, int height)
 	  : widg-> sizeMin. y)
       : 1;
 
-   hints. flags = USPosition | USSize;
+   hints. flags = USSize | ( XX-> flags. position_determined ? USPosition : 0);
    hints. x = XX-> origin. x - XX-> decorationSize.x;
-   hints. y = X(XX-> owner)-> size. y - height - XX-> origin. y - XX-> decorationSize.y + 1;
+   hints. y = guts. displaySize.y - height - XX-> menuHeight - XX-> origin. y - XX-> decorationSize.y + 1;
    hints. width = width;
-   hints. height = height;
+   hints. height = height + XX-> menuHeight;
    apc_SetWMNormalHints( self, &hints);
-   XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, width, height);
+   if ( XX-> flags. position_determined) {
+      XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, width, height + XX-> menuHeight);
+   } else {
+      XResizeWindow( DISP, X_WINDOW, width, height + XX-> menuHeight);
+   }
    XCHECKPOINT;
    prima_wm_sync( self, ConfigureNotify);
+   return true;
+}
+
+Bool
+apc_window_set_client_size( Handle self, int width, int height)
+{
+   DEFXX;
+   if ( width == XX-> size. x && height == XX-> size. y) return true;
+   return window_set_client_size( self, width, height);
+}
+
+Bool
+prima_window_reset_menu( Handle self, int newMenuHeight)
+{
+   DEFXX;
+   if ( newMenuHeight != XX-> menuHeight) {
+      XX-> menuHeight = newMenuHeight;
+      if ( PWindow(self)-> stage <= csNormal && XX-> flags. size_determined) 
+         return window_set_client_size( self, XX-> size.x, XX-> size.y);
+   }
    return true;
 }
 
@@ -481,12 +514,7 @@ apc_window_set_visible( Handle self, Bool show)
    return true;
 }
 
-Bool
-apc_window_set_menu( Handle self, Handle menu)
-{
-   DOLBUG( "apc_window_set_menu()\n");
-   return false;
-}
+/* apc_window_set_menu is in apc_menu.c */
 
 Bool
 apc_window_set_icon( Handle self, Handle icon)
@@ -528,6 +556,7 @@ apc_window_set_icon( Handle self, Handle icon)
    }
 
    {
+      /* XXX dynamicColors */
       Handle h = CImage(ih.xorMask)-> bitmap( ih.xorMask);
       xor = X(h)-> gdrawable;
       X(h)-> gdrawable = XCreatePixmap( DISP, guts. root, 1, 1, 1);
@@ -571,7 +600,9 @@ apc_widget_set_rect( Handle self, int x, int y, int szx, int szy)
     hints. x = x;
     hints. y = y;
     hints. width  = szx;
-    hints. height = szy;
+    hints. height = szy + X(self)-> menuHeight;
+    X(self)-> flags. size_determined = 1;
+    X(self)-> flags. position_determined = 1;
     XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, hints. width, hints. height);
     apc_SetWMNormalHints( self, &hints);
     prima_wm_sync( self, ConfigureNotify);

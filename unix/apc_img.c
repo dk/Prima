@@ -34,7 +34,7 @@
 #include "Icon.h"
 #include "DeviceBitmap.h"
 
-#define REVERT(a)	({ XX-> size. y - (a) - 1; })
+#define REVERT(a)	({ XX-> size. y + XX-> menuHeight - (a) - 1; })
 #define SHIFT(a,b)	({ (a) += XX-> gtransform. x + XX-> btransform. x; \
                            (b) += XX-> gtransform. y + XX-> btransform. y; })
 /* Multiple evaluation macro! */
@@ -316,7 +316,7 @@ apc_image_begin_paint_info( Handle self)
     XCHECKPOINT;
     XX-> type.pixmap = !bitmap;
     XX-> type.bitmap = !!bitmap;
-    prima_prepare_drawable_for_painting( self);
+    prima_prepare_drawable_for_painting( self, false);
     XX-> size. x = 1;
     XX-> size. y = 1;
     return true;
@@ -372,7 +372,7 @@ apc_dbm_create( Handle self, Bool monochrome)
                                          monochrome ? 1 : guts.depth);
    if (XX-> gdrawable == None) return false;
    XCHECKPOINT;
-   prima_prepare_drawable_for_painting( self);
+   prima_prepare_drawable_for_painting( self, false);
    return true;
 }
 
@@ -995,7 +995,6 @@ prima_create_image_cache( PImage img, Handle drawable)
       pass-> self-> set_type( dup, bpp);
    } 
      
-   
    switch ( pass-> type & imBPP) {
    case 1:   ret = create_cache1( pass, cache, target_bpp); break;
    case 4:   ret = create_cache4( pass, cache, target_bpp); break;
@@ -1041,10 +1040,12 @@ prima_create_image_cache( PImage img, Handle drawable)
 Bool
 prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
 {
-   DEFXX;
    Pixmap p1, p2;
    PIcon icon = PIcon(self);
    ImageCache *cache;
+   GC gc;
+   XGCValues gcv;
+   
    cache = prima_create_image_cache((PImage)icon, nilHandle);
    if ( !cache) return false;
    p1 = XCreatePixmap( DISP, guts. root, icon-> w, icon-> h, 1);
@@ -1055,18 +1056,14 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
       if (p2 != None) XFreePixmap( DISP, p2);
       return false;
    }
-   XX-> gdrawable = p1;
-   prima_prepare_drawable_for_painting( self);
-   XSetForeground( DISP, XX-> gc, 0);
-   XSetBackground( DISP, XX-> gc, 1);
-   prima_put_ximage( p2, XX-> gc, cache->icon,
-                     0, 0, 0, 0, icon-> w, icon-> h);
-   XSetForeground( DISP, XX-> gc, 1);
-   XSetBackground( DISP, XX-> gc, 0);
-   prima_put_ximage( p1, XX-> gc, cache->image,
-                     0, 0, 0, 0, icon-> w, icon-> h);
-   prima_cleanup_drawable_after_painting( self);
-   XX-> gdrawable = None;
+   gc = XCreateGC( DISP, p1, 0, &gcv);
+   XSetForeground( DISP, gc, 0);
+   XSetBackground( DISP, gc, 1);
+   prima_put_ximage( p2, gc, cache->icon, 0, 0, 0, 0, icon-> w, icon-> h);
+   XSetForeground( DISP, gc, 1);
+   XSetBackground( DISP, gc, 0);
+   prima_put_ximage( p1, gc, cache->image, 0, 0, 0, 0, icon-> w, icon-> h);
+   XFreeGC( DISP, gc);
    *xor = p1;
    *and = p2;
    return true;
@@ -1084,7 +1081,7 @@ put_pixmap( Handle self, Handle pixmap, int dst_x, int dst_y, int src_x, int src
 
    XCHECKPOINT;
    XCopyArea( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
-              src_x, YY->size.y - src_y - h,
+              src_x, YY->size.y + YY-> menuHeight - src_y - h,
               w, h,
               dst_x, REVERT(dst_y) - h + 1);
    XCHECKPOINT;
@@ -1263,7 +1260,7 @@ apc_image_begin_paint( Handle self)
    XX-> type.pixmap = !bitmap;
    XX-> type.bitmap = !!bitmap;
    XCHECKPOINT;
-   prima_prepare_drawable_for_painting( self);
+   prima_prepare_drawable_for_painting( self, false);
    apc_gp_put_image( self, self, 0, 0, 0, 0, img-> w, img-> h, ropCopyPut);
    /*                ^^^^^ ^^^^    :-)))  */
    return true;
@@ -1711,6 +1708,7 @@ do_stretch( Handle self, PrimaXImage *cache,
    int yclipstart, yclipsize;
 
    prima_gp_get_clip_rect( self, &cr);
+   cr. y += X(self)-> menuHeight;
    xclipstart = cr. x - dst_x;
    xclipsize = cr. width;
    yclipstart = cr. y - dst_y;
@@ -1858,7 +1856,6 @@ apc_gp_stretch_image( Handle self, Handle image,
       src_h = img-> h - src_y;
    }
    if ( src_w == 0 || src_h == 0) return false;
-
    if ( XT_IS_DBM(X(image))) {
       XImage * i;
       if ( XT_IS_PIXMAP(X(image)) && XT_IS_BITMAP(X(self))) {
@@ -1914,7 +1911,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    }
    
    SHIFT( dst_x, dst_y);
-   dst_y = XX->size.y - dst_y - ABS(dst_h);
+   dst_y = XX->size.y + XX-> menuHeight - dst_y - ABS(dst_h);
    src_y = img-> h - src_y - ABS(src_h);
 
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
@@ -2025,9 +2022,9 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 
    CImage( image)-> create_empty( image, xLen, yLen, guts. qdepth);
    if ( guts. idepth == 1)
-      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - yLen, xLen, yLen, 1, XYPixmap);
+      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y + XX-> menuHeight - y - yLen, xLen, yLen, 1, XYPixmap);
    else
-      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - yLen, xLen, yLen, AllPlanes, ZPixmap);
+      i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y + XX-> menuHeight - y - yLen, xLen, yLen, AllPlanes, ZPixmap);
    XCHECKPOINT;
 
    if ( i) {

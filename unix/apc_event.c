@@ -65,7 +65,7 @@ prima_xw2h( XWindow win)
 {
    Handle self;
    self = (Handle)hash_fetch( guts.windows, (void*)&win, sizeof(win));
-   if (!self)
+   if (!self) 
       self = (Handle)hash_fetch( guts.menu_windows, (void*)&win, sizeof(win));
    return self;
 }
@@ -285,11 +285,10 @@ wm_sync_data_from_event( Handle self, WMSyncData * wmsd, XConfigureEvent * cev)
     if ( X(self)-> real_parent) { // trust no one
        XWindow dummy;
        XTranslateCoordinates( DISP, X_WINDOW, guts. root,
-           0, wmsd-> size. y - 1, &wmsd-> origin. x, &wmsd-> origin. y, 
-           &dummy);
-       wmsd-> origin. y = guts. displaySize. y - wmsd-> origin. y;
-    } else
-       wmsd-> origin = ( Point) { cev-> x, X(X(self)-> owner)-> size. y - wmsd-> size. y - cev-> y };
+           0, 0, &cev-> x, &cev-> y, &dummy);
+    }
+    wmsd-> origin = ( Point) { cev-> x, 
+       X(X(self)-> owner)-> size. y + X(X(self)-> owner)-> menuHeight - wmsd-> size. y - cev-> y };
 }
 
 
@@ -302,6 +301,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
    switch ( wmsd-> eventType) {
    case ConfigureNotify: {
       Point old_size = XX-> size, old_pos = XX-> origin;
+      XX-> flags. configured = 1;
       if ( wmsd-> origin. x != PWidget(self)-> pos. x || wmsd-> origin. y != PWidget(self)-> pos. y) {
          // printf("GOT move to %d %d / %d %d\n", wmsd-> origin.x, wmsd-> origin.y, PWidget(self)->pos. x, PWidget(self)->pos. y);
          bzero( &e, sizeof( Event));
@@ -312,8 +312,9 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
          if ( PObject( self)-> stage == csDead) return false; 
       }
 
-      if ( wmsd-> size. x != XX-> size. x || wmsd-> size. y != XX-> size. y) {
-         XX-> size = wmsd-> size;
+      if ( wmsd-> size. x != XX-> size. x || wmsd-> size. y != XX-> size. y + XX-> menuHeight) {
+         XX-> size. x = wmsd-> size. x;
+         XX-> size. y = wmsd-> size. y - XX-> menuHeight;
          // printf("got size to %d %d\n", XX-> size.x, XX-> size.y);
          prima_send_cmSize( self, old_size);
          if ( PObject( self)-> stage == csDead) return false; 
@@ -491,8 +492,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       win = guts. grab_redirect;
 
    self = prima_xw2h( win);
-
-/* 
+/*
    if ( ev-> type > 0) {
       printf("%d:%s of ", ev-> type, ((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]));
       printf( self ? "%s\n" : "%08x\n", self ? PWidget(self)-> name : self);
@@ -573,7 +573,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	 return;
       }
       e. pos. where. x = bev-> x;
-      e. pos. where. y = XX-> size. y - bev-> y - 1;
+      e. pos. where. y = XX-> size. y + XX-> menuHeight - bev-> y - 1;
       if ( bev-> state & ShiftMask)     e.pos.mod |= kmShift;
       if ( bev-> state & ControlMask)   e.pos.mod |= kmCtrl;
       if ( bev-> state & Mod1Mask)      e.pos.mod |= kmAlt;
@@ -667,7 +667,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          ev-> xmotion. y -= guts. grab_translate_mouse. y;
       }      
       e. pos. where. x = ev-> xmotion. x;
-      e. pos. where. y = XX-> size. y - ev-> xmotion. y - 1;
+      e. pos. where. y = XX-> size. y + XX-> menuHeight - ev-> xmotion. y - 1;
       if ( ev-> xmotion. state & ShiftMask)     e.pos.mod |= kmShift;
       if ( ev-> xmotion. state & ControlMask)   e.pos.mod |= kmCtrl;
       if ( ev-> xmotion. state & Mod1Mask)      e.pos.mod |= kmAlt;
@@ -698,7 +698,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
      CrossingEvent:
       if ( ev-> xcrossing. subwindow != None) return;
       e. pos. where. x = ev-> xcrossing. x;
-      e. pos. where. y = XX-> size. y - ev-> xcrossing. y - 1;
+      e. pos. where. y = XX-> size. y + XX-> menuHeight - ev-> xcrossing. y - 1;
       break;
    }
    case LeaveNotify: {
@@ -853,14 +853,20 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       XX-> ackSize. x   = ev-> xconfigure. width;
       XX-> ackSize. y   = ev-> xconfigure. height;
       XX-> ackOrigin. x = ev-> xconfigure. x;
-      XX-> ackOrigin. y = X(X(self)-> owner)-> size. y -
+      XX-> ackOrigin. y = X(X(self)-> owner)-> size. y + X(X(self)-> owner)-> menuHeight -
          XX-> ackSize. y - ev-> xconfigure. y;
+      if ( XT_IS_WINDOW(XX) && PWindow( self)-> menu) {
+         M(PWindow( self)-> menu)-> paint_pending = true;
+         XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
+            ev-> xconfigure. width, XX-> menuHeight);
+      }
       return;
    }                        
    case ConfigureNotify: {
       XX-> ackOrigin. x = ev-> xconfigure. x;
       XX-> ackSize. x   = ev-> xconfigure. width;
       XX-> ackSize. y   = ev-> xconfigure. height;
+      XX-> flags. configured = 1;
       if ( XX-> flags. process_configure_notify) {
          WMSyncData wmsd;
          wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure);
@@ -868,8 +874,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          XX-> ackOrigin. x = wmsd. origin. x;
          process_wm_sync_data( self, &wmsd);
       } else
-         XX-> ackOrigin. y = X(X(self)-> owner)-> size. y -
+         XX-> ackOrigin. y = X(X(self)-> owner)-> size. y + X(X(self)-> owner)-> menuHeight -
             XX-> ackSize. y - ev-> xconfigure. y;
+      if ( XT_IS_WINDOW(XX) && PWindow( self)-> menu) 
+         XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
+            ev-> xconfigure. width, XX-> menuHeight);
       return;
    }
    case ConfigureRequest: {
@@ -919,6 +928,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       break;
    }
    case MappingNotify: {
+      XRefreshKeyboardMapping( &ev-> xmapping);
       break;
    }
    }
@@ -1027,7 +1037,8 @@ prima_wm_sync( Handle self, int eventType)
    // printf("enter conf for %d\n", eventType);
    wmsd. eventType = eventType;
    wmsd. origin    = XX-> origin;
-   wmsd. size      = XX-> size;
+   wmsd. size.x    = XX-> size.x;
+   wmsd. size.y    = XX-> size.y + XX-> menuHeight;
    wmsd. above     = XX-> above;
    wmsd. mapped    = XX-> flags. mapped;
 

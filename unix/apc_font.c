@@ -1166,7 +1166,7 @@ apc_gp_set_font( Handle self, PFont font)
 Bool
 apc_menu_set_font( Handle self, PFont font)
 {
-   PMenuSysData selfxx = ((PMenuSysData)(PComponent((self))-> sysData));
+   DEFMM;
    PCachedFont kf;
 
    font-> direction = 0; /* skip unnecessary logic */
@@ -1180,6 +1180,15 @@ apc_menu_set_font( Handle self, PFont font)
    }
 
    XX-> font = kf;
+   if ( XX-> type. menu && X_WINDOW) {
+       if (( kf-> font. height + 4) != X(PComponent(self)-> owner)-> menuHeight) {
+          prima_window_reset_menu( PComponent(self)-> owner, kf-> font. height + MENU_ITEM_GAP * 2);
+          XResizeWindow( DISP, X_WINDOW, XX-> w-> sz.x, XX-> w-> sz.y = kf-> font. height + MENU_ITEM_GAP * 2);
+       } else if ( !XX-> paint_pending) {
+          XClearArea( DISP, X_WINDOW, 0, 0, XX-> w-> sz.x, XX-> w-> sz.y, true);
+          XX-> paint_pending = true;
+       }
+   }
    return true;
 }
 
