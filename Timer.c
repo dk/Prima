@@ -70,11 +70,6 @@ Timer_handle_event( Handle self, PEvent event)
    if ( event-> cmd == cmTimer) my-> notify( self, "<s", "Tick");
 }
 
-void
-Timer_on_tick( Handle self)
-{
-}
-
 Bool
 Timer_start( Handle self)
 {

@@ -39,5 +39,4 @@ object Prima::Timer( Prima::Component)
    method Bool   start();
    method void   stop();
    c_only void   update_sys_handle( HV * profile);
-   event  void   on_tick();
 }
