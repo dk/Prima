@@ -340,8 +340,17 @@ code:
     use Prima;
 
 Note that C<$Prima::runlevel = 0> part must be executed before first C<use Prima> call,
-before Prima shared library code is actually initialized.
-The run-level can only be increased, so call
+before Prima shared library code is actually initialized. Alternatively, 
+
+    use Prima::noX11;
+
+call or perl invocation option
+
+    perl -MPrima::noX11
+
+can be used for the same purpose.
+
+The run-level can only be increased, so in order to upgrade the runlevel, call
 
     Prima::Application->runLevel(1);
 
