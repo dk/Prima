@@ -491,22 +491,7 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
 void
 apc_widget_set_focused( Handle self)
 {
-   Handle o = self;
-   int state = 0;  /* 0 - can do, 1 - need flush */
-
-   while ( X(o)-> owner && X(o)-> owner != application) {
-      if ( !X(o)-> flags. mapped) {
-	 state = 1;  /* don't break */
-      }
-      o = X(o)-> owner;
-   }
-   if ( state == 1) {
-      XWindowAttributes attrs;
-      if ( XGetWindowAttributes( DISP, X_WINDOW, &attrs) &&
-	   attrs. map_state == IsViewable)
-	 state = 0;
-   }
-   if ( !state) {
+   if ( apc_widget_is_showing( self)) {
       DOLBUG( "~~~~~~~~~ Setting focus to %s\n", PWidget( self)-> name);
       XSetInputFocus( DISP, X_WINDOW, RevertToParent, CurrentTime);
       XCHECKPOINT;
