@@ -1134,12 +1134,13 @@ sub init
       origin  => [1,5],
       size    => [11,36],
       name    => 'LeftScroll',
+      autoRepeat => 1,
       onPaint => sub {
          $_[0]-> on_paint( $_[1]);
          $_[1]-> color( $_[0]-> enabled ? cl::Black : cl::Gray);
          $_[1]-> fillpoly([7,4,7,32,3,17]);
       },
-      delegations => [qw(Click)],
+      delegations => [ $self, qw(Click)],
    );
 
    $self-> {rightScroll} = $self-> {nb}-> insert( SpeedButton =>
@@ -1147,12 +1148,13 @@ sub init
       size    => [11,36],
       name    => 'RightScroll',
       growMode => gm::Right,
+      autoRepeat => 1,
       onPaint => sub {
          $_[0]-> on_paint( $_[1]);
          $_[1]-> color( $_[0]-> enabled ? cl::Black : cl::Gray);
          $_[1]-> fillpoly([3,4,3,32,7,17]);
       },
-      delegations => [qw(Click)],
+      delegations => [ $self, qw(Click)],
    );
 
    $self->{classes} = \%classes;
