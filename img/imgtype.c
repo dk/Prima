@@ -56,6 +56,24 @@ extern "C" {
    free( n);                                                      \
 }
 
+
+#define ic_MIDCONVERT_REV(from,to,ict)                               \
+{                                                                 \
+   Byte * sData = var->data;                                       \
+   int  sDataSize = var->dataSize, sLineSize = var->lineSize;       \
+   Byte * n = allocb((( var->w * 8 + 31) / 32) * 4 * var->h);    \
+   ic_##from##_Byte(self, n, dstPal, imByte);         \
+   var->data = n;                                                  \
+   var->type = imByte;                                             \
+   var->lineSize = (( var->w * 8 + 31) / 32) * 4;                   \
+   var->dataSize = var->lineSize * var->h;                           \
+   ic_graybyte_##to##_ict##ict( self, dstData, dstPal, dstType);                 \
+   var->data = sData;                                              \
+   var->lineSize = sLineSize;                                      \
+   var->dataSize = sDataSize;                                      \
+   free( n);                                                      \
+}
+
 void
 ic_type_convert( Handle self,
                  Byte * dstData, PRGBColor dstPal, int dstType)
@@ -417,6 +435,30 @@ ic_type_convert( Handle self,
       break; /* imRGB */
 
       case imComplex: switch( dstType) {
+          case imMono:
+            switch ( var->conversion)
+            {
+               case ictNone:
+                  ic_MIDCONVERT_REV(float_complex,mono,None); break;
+               case ictHalftone:
+                  ic_MIDCONVERT_REV(float_complex,mono,Halftone); break;
+               case ictErrorDiffusion:
+                  ic_MIDCONVERT_REV(float_complex,mono,ErrorDiffusion); break;
+            }
+            break; 
+          case im16:
+            switch ( var->conversion)
+            {
+               case ictNone:
+                  ic_MIDCONVERT_REV(float_complex,nibble,None); break;
+               case ictHalftone:
+                  ic_MIDCONVERT_REV(float_complex,nibble,Halftone); break;
+               case ictErrorDiffusion:
+                  ic_MIDCONVERT_REV(float_complex,nibble,ErrorDiffusion); break;
+            }
+            break; 
+          case imRGB:     ic_MIDCONVERT_REV( float_complex,rgb,None); break;  
+          case im256:   
           case imByte:    ic_float_complex_Byte(BCPARMS); break;
           case imShort:   ic_float_complex_short(BCPARMS); break;
           case imLong:    ic_float_complex_long(BCPARMS); break;
@@ -424,6 +466,30 @@ ic_type_convert( Handle self,
           case imFloat:   ic_float_complex_float( BCPARMS); break;
       }                   
       case imDComplex: switch( dstType) {
+          case imMono:
+            switch ( var->conversion)
+            {
+               case ictNone:
+                  ic_MIDCONVERT_REV(double_complex,mono,None); break;
+               case ictHalftone:
+                  ic_MIDCONVERT_REV(double_complex,mono,Halftone); break;
+               case ictErrorDiffusion:
+                  ic_MIDCONVERT_REV(double_complex,mono,ErrorDiffusion); break;
+            }
+            break; 
+          case im16:
+            switch ( var->conversion)
+            {
+               case ictNone:
+                  ic_MIDCONVERT_REV(double_complex,nibble,None); break;
+               case ictHalftone:
+                  ic_MIDCONVERT_REV(double_complex,nibble,Halftone); break;
+               case ictErrorDiffusion:
+                  ic_MIDCONVERT_REV(double_complex,nibble,ErrorDiffusion); break;
+            }
+            break;
+          case imRGB:     ic_MIDCONVERT_REV(double_complex,rgb,None); break;  
+          case im256:
           case imByte:    ic_double_complex_Byte(BCPARMS); break;
           case imShort:   ic_double_complex_short(BCPARMS); break;
           case imLong:    ic_double_complex_long(BCPARMS); break;
