@@ -34,6 +34,8 @@
 #include "Application.h"
 #include "File.h"
 #include <sys/utsname.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 static int
 x_error_handler( Display *d, XErrorEvent *ev)
@@ -120,6 +122,12 @@ window_subsystem_init( void)
    (void)x_io_error_handler;
    XCHECKPOINT;
    guts.connection = ConnectionNumber( DISP);
+
+   {
+      struct sockaddr name;
+      int l = sizeof( name);
+      guts. local_connection = getsockname( fd, &name, &l) >= 0 && l == 0;
+   }
    
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
    if ( XShapeQueryExtension( DISP, &guts.shape_event, &guts.shape_error)) {
@@ -129,6 +137,15 @@ window_subsystem_init( void)
    }
 #else
    guts. shape_extension = false;
+#endif
+#ifdef HAVE_X11_EXTENSIONS_XSHM_H
+   if ( XShmQueryExtension( DISP)) {
+      guts. shared_image_extension = true;
+   } else {
+      guts. shared_image_extension = false;
+   }
+#else
+   guts. shared_image_extension = false;
 #endif
    
    guts.create_event = XInternAtom( DISP, "PRIMA_CREATE", false);
