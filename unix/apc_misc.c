@@ -679,7 +679,19 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       }
       free_pixmap = false;
    } else {
+      XFontStruct *fs;
+      XCharStruct *cs;
+      int idx = cursor_map[id];
+
       if ( !load_pointer_font()) return false;
+      fs = guts.pointer_font;
+      if ( !fs-> per_char)
+         cs = &fs-> min_bounds;
+      else if ( idx < fs-> min_char_or_byte2 || idx > fs-> max_char_or_byte2)
+         cs = fs-> per_char + fs-> default_char - fs-> min_char_or_byte2;
+      else
+         cs = fs-> per_char + idx - fs-> min_char_or_byte2;
+      
       p1 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), w, h, 1);
       p2 = XCreatePixmap( DISP, RootWindow( DISP, SCREEN), w, h, 1);
       gcv. background = 1;
@@ -691,12 +703,12 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
       gcv. foreground = 1;
       XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
       XFillRectangle( DISP, p2, gc, 0, 0, w, h);
-      XDrawString( DISP, p1, gc, w/2, h/2, (c = (char)(cursor_map[id]+1), &c), 1);
+      XDrawString( DISP, p1, gc, -cs-> lbearing, h - cs-> descent, (c = (char)(idx+1), &c), 1);
       gcv. background = 1;
       gcv. foreground = 0;
       XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
-      XDrawString( DISP, p2, gc, w/2, h/2, (c = (char)(cursor_map[id]+1), &c), 1);
-      XDrawString( DISP, p1, gc, w/2, h/2, (c = (char)cursor_map[id], &c), 1);
+      XDrawString( DISP, p2, gc, -cs-> lbearing, h - cs-> descent, (c = (char)(idx+1), &c), 1);
+      XDrawString( DISP, p1, gc, -cs-> lbearing, h - cs-> descent, (c = (char)idx, &c), 1);
       XFreeGC( DISP, gc);
    }
    CIcon(icon)-> create_empty( icon, w, h, imMono);
