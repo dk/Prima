@@ -765,7 +765,7 @@ sub init
       left      => 0,
       width     => $size[0],
       top       => $size[1] - 1,
-      growMode  => gf::Ceiling,
+      growMode  => gm::Ceiling,
       buffered  => 1,
    );
    $self->{notebook} = Notebook-> create(
@@ -774,7 +774,7 @@ sub init
       origin     => [ DefBorderX + 1, DefBorderX + 1],
       size       => [ $size[0] - DefBorderX * 2 - 5,
          $size[1] - DefBorderX * 2 - $self->{tabSet}-> height - DefBookmarkX - 4],
-      growMode   => gf::Client,
+      growMode   => gm::Client,
       pageIndex  => $profile{pageIndex},
       (map { $_  => $profile{$_}} keys %notebookProps),
       delegateTo => $self-> delegateTo,

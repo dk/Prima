@@ -79,7 +79,7 @@ sub profile_default
    my %d = %{$_[ 0]-> SUPER::profile_default};
    return {
       %d,
-      growMode           => gf::GrowHiX | gf::GrowHiY,
+      growMode           => gm::GrowHiX | gm::GrowHiY,
       deltaX             => 0,
       deltaY             => 0,
       limitX             => 0,

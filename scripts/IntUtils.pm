@@ -125,7 +125,7 @@ sub insert_bone
       origin => [ $bw + $self->{hScrollBar}-> width-1, $bw - 1],
       size   => [ $self->{vScrollBar}-> width-2, $self->{hScrollBar}-> height-1],
       ownerBackColor => 1,
-      growMode  => gf::GrowLoX,
+      growMode  => gm::GrowLoX,
       onPaint   => sub {
          my ( $self, $canvas, $owner, $w, $h) = ($_[0], $_[1], $_[0]-> owner, $_[0]-> size);
          $canvas-> color( $self-> backColor);
@@ -147,7 +147,7 @@ sub set_h_scroll
          name     => q(HScroll),
          vertical => 0,
          origin   => [ $bw-1, $bw-1],
-         growMode => gf::GrowHiX,
+         growMode => gm::GrowHiX,
          pointer  => cr::Arrow,
          width    => $self-> width - 2 * $bw + 2 - ( $self->{vScroll} ? $self->{vScrollBar}-> width - 2 : 0),
       );
@@ -187,7 +187,7 @@ sub set_v_scroll
          left     => $size[0] - $bw - $ScrollBar::stdMetrics[0] + 1,
          top      => $size[1] - $bw + 1,
          bottom   => $bw + ( $self->{hScroll} ? $self->{hScrollBar}-> height - 2 : 0),
-         growMode => gf::GrowLoX | gf::GrowHiY,
+         growMode => gm::GrowLoX | gm::GrowHiY,
          pointer  => cr::Arrow,
       );
       if ( $self->{hScroll})

@@ -381,14 +381,14 @@ sub init
       bottom         => 1,
       right          => $w - 1,
       height         => $h - 1 * 2,
-      growMode       => gf::Right,
+      growMode       => gm::Right,
       %{$profile{spinProfile}},
    );
    $self-> {edit} = $self-> insert( $profile{editClass} =>
       name         => 'InputLine',
       origin      => [ 1, 1],
       size        => [ $w - $self->{spin}->width - 1 * 2, $h - 1 * 2],
-      growMode    => gf::GrowHiX|gf::GrowHiY,
+      growMode    => gm::GrowHiX|gm::GrowHiY,
       selectable  => 1,
       tabStop     => 1,
       borderWidth => 0,
@@ -1324,7 +1324,7 @@ sub on_paint
          $canvas-> arc( @cpt[0..1], $cpt[2]-1, $cpt[3]-1, 65, 235);
          $canvas-> color( $c3d[0]);
          $canvas-> arc( @cpt[0..1], $cpt[2]-1, $cpt[3]-1, 255, 405);
-         $canvas-> lineWidth(1);
+         $canvas-> lineWidth(0);
          $canvas-> color( $clr[0]);
          $canvas-> ellipse( @cpt);
       }
@@ -1344,7 +1344,7 @@ sub on_paint
          $canvas-> arc( @cxt[0..1], 3, 3, 65, 235);
          $canvas-> color( $c3d[1]);
          $canvas-> arc( @cxt[0..1], 3, 3, 255, 405);
-         $canvas-> lineWidth(1);
+         $canvas-> lineWidth(0);
          $canvas-> color( $clr[0]);
       }
 

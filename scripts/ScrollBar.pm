@@ -99,7 +99,7 @@ need for a non-selectable widget to be tab-stoppable. :-)
 
 =item growMode
 
-Default value is gf::GrowHiX, i.e. the scrollbar will try
+Default value is gm::GrowHiX, i.e. the scrollbar will try
 to maintain the constant distance from its right edge to its
 owner's right edge as the owner changes its size.
 This is useful for horizontal scrollbars.
@@ -362,7 +362,7 @@ sub profile_default
    return {
       %{$_[ 0]-> SUPER::profile_default},
       autoTrack     => 1,
-      growMode      => gf::GrowHiX,
+      growMode      => gm::GrowHiX,
       height        => $stdMetrics[1],
       min           => 0,
       minThumbSize  => 21,
@@ -387,7 +387,7 @@ sub profile_check_in
    if ( $vertical)
    {
       $p-> { width}    = $stdMetrics[0] unless exists $p->{ width};
-      $p-> { growMode} = gf::GrowLoX | gf::GrowHiY if !exists $p-> { growMode};
+      $p-> { growMode} = gm::GrowLoX | gm::GrowHiY if !exists $p-> { growMode};
    }
 }
 

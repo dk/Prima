@@ -19,7 +19,7 @@ sub import {
          $canvas-> color( $me-> backColor);
          $canvas-> bar( 0, 0, $me-> size);
          $canvas-> color( $fore);
-         $canvas-> font( name => "Tms Rmn", size => 24, style => ft::Bold);
+         $canvas-> font( name => "Tms Rmn", size => 24, style => fs::Bold);
          my $txt = $me-> text;
          $canvas-> text_out( $txt, ($me-> width - $me-> get_text_width($txt))/2, ($me-> height - $me-> font-> height)/2);
       },
