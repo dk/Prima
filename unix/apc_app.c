@@ -95,15 +95,21 @@ Bool
 window_subsystem_init( void)
 {
    /*XXX*/ /* Namely, support for -display host:0.0 etc. */
-   XrmQuark common_quarks_list[12];
+   XrmQuark common_quarks_list[16];
    XrmQuarkList ql = common_quarks_list;
    char *common_quarks =
       "String."
       "Background.background."
+      "Blinkinvisibletime.blinkinvisibletime."
+      "Blinkvisibletime.blinkvisibletime."
       "Font.font."
       "Foreground.foreground."
       "Wheeldown.wheeldown."
       "Wheelup.wheelup";
+   
+   guts. visible_timeout = 200;
+   guts. invisible_timeout = 200;
+   guts. insert = true;
 
    guts. ri_head = guts. ri_tail = 0;
    guts. dolbug = getenv( "PRIMA_DOLBUG") ? true : false;
@@ -118,6 +124,11 @@ window_subsystem_init( void)
    XrmStringToQuarkList( common_quarks, common_quarks_list);
    guts.qString = *ql++;
    guts.qBackground = *ql++;
+   guts.qbackground = *ql++;
+   guts.qBlinkinvisibletime = *ql++;
+   guts.qblinkinvisibletime = *ql++;
+   guts.qBlinkvisibletime = *ql++;
+   guts.qblinkvisibletime = *ql++;
    guts.qbackground = *ql++;
    guts.qFont = *ql++;
    guts.qfont = *ql++;
@@ -239,6 +250,8 @@ apc_application_create( Handle self)
    apc_component_fullname_changed_notify( self);
    guts. mouse_wheel_down = unix_rm_get_int( self, guts.qWheeldown, guts.qwheeldown, 0);
    guts. mouse_wheel_up = unix_rm_get_int( self, guts.qWheelup, guts.qwheelup, 0);
+   guts. visible_timeout = unix_rm_get_int( self, guts.qBlinkvisibletime, guts.qblinkvisibletime, 200);
+   guts. invisible_timeout = unix_rm_get_int( self, guts.qBlinkinvisibletime, guts.qblinkinvisibletime, 200);
 
    return true;
 }
@@ -383,7 +396,11 @@ apc_application_go( Handle self)
 
 	    e. cmd = cmTimer;
 	    apc_timer_start( timer-> who);
-	    CComponent( timer-> who)-> message( timer-> who, &e);
+	    if ( timer-> who == CURSOR_TIMER) {
+	       prima_cursor_tick();
+	    } else {
+	       CComponent( timer-> who)-> message( timer-> who, &e);
+	    }
 	 }
 	 if ( guts. oldest) {
 	    if ( guts. oldest-> when. tv_sec < timeout. tv_sec) {

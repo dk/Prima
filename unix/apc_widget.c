@@ -149,8 +149,6 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    return true;
 }
 
-#define VIRGIN_GC_MASK (GCLineWidth|GCBackground|GCForeground|GCFunction|GCClipMask)
-
 Bool
 apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 {
@@ -164,6 +162,8 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
    XX-> flags. zero_line = XX-> flags. saved_zero_line;
    XX-> gcv. clip_mask = None;
    XX-> gtransform = XX-> transform;
+   
+   prima_no_cursor( self);
 
    prima_get_gc( XX);
    XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
@@ -225,6 +225,7 @@ apc_widget_end_paint( Handle self)
       XDestroyRegion( XX-> stale_region);
       XX-> stale_region = nil;
    }
+   prima_update_cursor( self);
 }
 
 void

@@ -99,6 +99,8 @@ union _unix_sys_data;
 struct _timer_sys_data;
 struct _drawable_sys_data;
 
+#define VIRGIN_GC_MASK (GCLineWidth|GCBackground|GCForeground|GCFunction|GCClipMask)
+
 typedef struct _gc_list
 {
    struct _gc_list *next;
@@ -127,6 +129,8 @@ struct _UnixGuts
    struct _timer_sys_data *cursor_timer;
    Pixmap cursor_save, cursor_xor;
    Point cursor_pixmap_size;
+   Bool cursor_shown;
+   int visible_timeout, invisible_timeout;
    struct {
       long request_length;
       long XDrawLines;
@@ -166,6 +170,10 @@ struct _UnixGuts
    XrmQuark qString;
    XrmQuark qBackground;
    XrmQuark qbackground;
+   XrmQuark qBlinkinvisibletime;
+   XrmQuark qblinkinvisibletime;
+   XrmQuark qBlinkvisibletime;
+   XrmQuark qblinkvisibletime;
    XrmQuark qFont;
    XrmQuark qfont;
    XrmQuark qForeground;
@@ -321,6 +329,15 @@ prima_cleanup_font_subsystem( void);
 
 extern void
 prima_cleanup_image_subsystem( void);
+
+extern void
+prima_cursor_tick( void);
+
+extern void
+prima_no_cursor( Handle self);
+
+extern void
+prima_update_cursor( Handle self);
 
 extern int
 unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);

@@ -356,7 +356,9 @@ handle_event( XEvent *ev, XEvent *next_event)
 	 return;
       }
       XX-> flags. focused = 1;
+      if ( guts. focused) prima_no_cursor( guts. focused);
       guts. focused = self;
+      prima_update_cursor( guts. focused);
       e. cmd = cmReceiveFocus;
       DOLBUG( "~~~~~~~~~ receive focus to %s, mode: %d, sent: %d, detail: %d\n",
 	      PWidget(self)-> name,
@@ -375,6 +377,7 @@ handle_event( XEvent *ev, XEvent *next_event)
 	 return;
       }
       XX-> flags. focused = 0;
+      if ( guts. focused) prima_no_cursor( guts. focused);
       guts. focused = nilHandle;
       DOLBUG( "~~~~~~~~~ release focus of %s, mode: %d, sent: %d, detail: %d\n",
 	      PWidget(self)-> name,

@@ -89,7 +89,7 @@ apc_component_create( Handle self)
 {
    if ( !PComponent( self)-> sysData) {
       PComponent( self)-> sysData = malloc( sizeof( UnixSysData));
-      memset( PComponent( self)-> sysData, 0, sizeof( UnixSysData));
+      bzero( PComponent( self)-> sysData, sizeof( UnixSysData));
    }
 }
 
@@ -236,46 +236,204 @@ apc_component_fullname_changed_notify( Handle self)
 /*    free( instance); */
 }
 
-/* View attributes */
+/* Cursor support */
+
+static XGCValues cursor_gcv = {
+   line_width: 0,
+   background: 0,
+   foreground: 0,
+   clip_mask: None,
+   function: GXcopy
+};
+
+void
+prima_no_cursor( Handle self)
+{
+   if ( guts.focused == self
+	&& X(self)-> flags. cursor_visible
+	&& guts. cursor_save)
+   {
+      DEFXX;
+      int x, y, w, h;
+      
+      h = XX-> cursor_size. y;
+      y = XX-> size. y - (h + XX-> cursor_pos. y);
+      x = XX-> cursor_pos. x;
+      w = XX-> cursor_size. x;
+
+      prima_get_gc( XX);
+      XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &cursor_gcv);
+      XCHECKPOINT;
+      XCopyArea( DISP, guts. cursor_save, XX-> drawable, XX-> gc,
+		 0, 0, w, h, x, y);
+      XCHECKPOINT;
+      prima_release_gc( XX);
+      guts. cursor_shown = false;
+   }
+}
+
+void
+prima_update_cursor( Handle self)
+{
+   if ( guts.focused == self) {
+      DEFXX;
+      int x, y, w, h;
+      
+      h = XX-> cursor_size. y;
+      y = XX-> size. y - (h + XX-> cursor_pos. y);
+      x = XX-> cursor_pos. x;
+      w = XX-> cursor_size. x;
+      
+      if ( !guts. cursor_save || !guts. cursor_xor
+	   || w > guts. cursor_pixmap_size. x
+	   || h > guts. cursor_pixmap_size. y)
+      {
+	 if ( !guts. cursor_save) {
+	    cursor_gcv. background = BlackPixel( DISP, SCREEN);
+	    cursor_gcv. foreground = WhitePixel( DISP, SCREEN);
+	 }
+	 if ( guts. cursor_save) {
+	    XFreePixmap( DISP, guts. cursor_save);
+	    guts. cursor_save = 0;
+	 }
+	 if ( guts. cursor_xor) {
+	    XFreePixmap( DISP, guts. cursor_xor);
+	    guts. cursor_xor = 0;
+	 }
+	 if ( guts. cursor_pixmap_size. x < w)
+	    guts. cursor_pixmap_size. x = w;
+	 if ( guts. cursor_pixmap_size. y < h)
+	    guts. cursor_pixmap_size. y = h;
+	 if ( guts. cursor_pixmap_size. x < 16)
+	    guts. cursor_pixmap_size. x = 16;
+	 if ( guts. cursor_pixmap_size. y < 64)
+	    guts. cursor_pixmap_size. y = 64;
+	 guts. cursor_save = XCreatePixmap( DISP, XX-> drawable,
+					    guts. cursor_pixmap_size. x,
+					    guts. cursor_pixmap_size. y,
+					    guts. depth);
+	 guts. cursor_xor  = XCreatePixmap( DISP, XX-> drawable,
+					    guts. cursor_pixmap_size. x,
+					    guts. cursor_pixmap_size. y,
+					    guts. depth);
+      }
+
+      prima_get_gc( XX);
+      XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &cursor_gcv);
+      XCHECKPOINT;
+      XCopyArea( DISP, XX-> drawable, guts. cursor_save, XX-> gc,
+		 x, y, w, h, 0, 0);
+      XCHECKPOINT;
+      XCopyArea( DISP, guts. cursor_save, guts. cursor_xor, XX-> gc,
+		 0, 0, w, h, 0, 0);
+      XCHECKPOINT;
+      XSetFunction( DISP, XX-> gc, GXxor);
+      XCHECKPOINT;
+      XFillRectangle( DISP, guts. cursor_xor, XX-> gc, 0, 0, w, h);
+      XCHECKPOINT;
+      prima_release_gc( XX);
+      
+      if (!guts. cursor_timer) {
+	 guts. cursor_timer = malloc( sizeof( TimerSysData));
+	 bzero( guts. cursor_timer, sizeof( TimerSysData));
+	 apc_timer_create( CURSOR_TIMER, nilHandle, 2);
+      }
+      if ( XX-> flags. cursor_visible) {
+	 guts. cursor_shown = false;
+	 prima_cursor_tick();
+      } else {
+	 apc_timer_stop( CURSOR_TIMER);
+      }
+   }
+}
+
+void
+prima_cursor_tick( void)
+{
+   if ( guts. focused && X(guts. focused)-> flags. cursor_visible) {
+      PDrawableSysData selfxx = X(guts. focused);
+      Pixmap pixmap;
+      int x, y, w, h;
+
+      if ( guts. cursor_shown) {
+	 guts. cursor_shown = false;
+	 apc_timer_set_timeout( CURSOR_TIMER, guts. invisible_timeout);
+	 pixmap = guts. cursor_save;
+      } else {
+	 guts. cursor_shown = true;
+	 apc_timer_set_timeout( CURSOR_TIMER, guts. visible_timeout);
+	 pixmap = guts. cursor_xor;
+      }
+
+      h = XX-> cursor_size. y;
+      y = XX-> size. y - (h + XX-> cursor_pos. y);
+      x = XX-> cursor_pos. x;
+      w = XX-> cursor_size. x;
+
+      prima_get_gc( XX);
+      XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &cursor_gcv);
+      XCHECKPOINT;
+      XCopyArea( DISP, pixmap, XX-> drawable, XX-> gc, 0, 0, w, h, x, y);
+      XCHECKPOINT;
+      prima_release_gc( XX);
+      XFlush( DISP);
+      XCHECKPOINT;
+   } else {
+      apc_timer_stop( CURSOR_TIMER);
+      guts. cursor_shown = !guts. cursor_shown;
+   }
+}
+
 void
 apc_cursor_set_pos( Handle self, int x, int y)
 {
-   DOLBUG( "apc_cursor_set_pos()\n");
+   DEFXX;
+   prima_no_cursor( self);
+   XX-> cursor_pos. x = x;
+   XX-> cursor_pos. y = y;
+   prima_update_cursor( self);
 }
 
 void
 apc_cursor_set_size( Handle self, int x, int y)
 {
-   DOLBUG( "apc_cursor_set_size()\n");
+   DEFXX;
+   prima_no_cursor( self);
+   XX-> cursor_size. x = x;
+   XX-> cursor_size. y = y;
+   prima_update_cursor( self);
 }
 
 void
 apc_cursor_set_visible( Handle self, Bool visible)
 {
-   DOLBUG( "apc_cursor_set_visible()\n");
+   DEFXX;
+   if ( XX-> flags. cursor_visible != visible) {
+      prima_no_cursor( self);
+      XX-> flags. cursor_visible = visible;
+      prima_update_cursor( self);
+   }
 }
 
 Point
 apc_cursor_get_pos( Handle self)
 {
-   DOLBUG( "apc_cursor_get_pos()\n");
-   return (Point){0,0};
+   return X(self)-> cursor_pos;
 }
 
 Point
 apc_cursor_get_size( Handle self)
 {
-   DOLBUG( "apc_cursor_get_size()\n");
-   return (Point){0,0};
+   return X(self)-> cursor_size;
 }
 
 Bool
 apc_cursor_get_visible( Handle self)
 {
-   DOLBUG( "apc_cursor_get_visible()\n");
-   return false;
+   return X(self)-> flags. cursor_visible;
 }
 
+/* View attributes */
 Point
 apc_pointer_get_hot_spot( Handle self)
 {
@@ -646,7 +804,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svYPointer: return guts. cursor_height;
    case svXScrollbar: return 16;
    case svYScrollbar: return 16;
-   case svXCursor: return 3;  /* XXX I don't know what it means */
+   case svXCursor: return 1;
    case svAutoScrollFirst: return 200;
    case svAutoScrollNext: return 50;
    case svXbsNone: return 0;
