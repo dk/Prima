@@ -1052,7 +1052,7 @@ sub polyline
    for ( $i = 2; $i < $c; $i += 2) {
       $z .= "@a[$i,$i+1] lineto ";
    }
-   $z .= "closepath stroke";
+   $z .= "stroke";
    $self-> stroke( '', $z, '');
 }
 
