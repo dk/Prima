@@ -26,7 +26,8 @@ object Image( Drawable)
    method int    get_conversion();
    method SV   * get_data();
    method SV   * get_handle();
-   method char * get_status_string();
+   weird  Handle get_info( SV *who, char *filename);
+   static char * get_status_string( SV *self);
    method SV   * get_palette();
    method Color  get_pixel(int x, int y);
    method Bool   get_preserve_type();
