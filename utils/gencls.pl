@@ -1,33 +1,17 @@
 #! /usr/bin/perl
+# GENCLS
 #
-#  Copyright (c) 1997-1999 The Protein Laboratory, University of Copenhagen
-#  All rights reserved.
+# APRICOT 001 PROJECT LINE
 #
-#  Redistribution and use in source and binary forms, with or without
-#  modification, are permitted provided that the following conditions
-#  are met:
-#  1. Redistributions of source code must retain the above copyright
-#     notice, this list of conditions and the following disclaimer.
-#  2. Redistributions in binary form must reproduce the above copyright
-#     notice, this list of conditions and the following disclaimer in the
-#     documentation and/or other materials provided with the distribution.
+# .cls -> .h + .inc + .tml
+# pseudo-object perl+c bondage interface parser
 #
-#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-#  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-#  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-#  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-#  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-#  SUCH DAMAGE.
+# Last modified 14-Jan-1999
 #
 
 #use strict;
 
-# max error is APC053
+# max error is APC055
 
 # to index $struct{$type}->[]
 use constant TYPES => 0;
@@ -557,7 +541,7 @@ sub preload_method
    $acc .= "Handle $hSelf" if $useHandle;
 
    #checking 'proc(void) & proc()' cases
-   $tok = getidsym(")*");
+   $tok = getidsym(")*...");
    $acc .= ', ' unless ($tok eq "void") || ($tok eq ")") || (! $useHandle);
    if ($tok eq "void") {
      if ($words[-1] eq "*") {
@@ -578,9 +562,12 @@ sub preload_method
        putback ($tok);
        my $parmNo = 1;
        # cycling parameters
+       my $hasEllipsis = 0;
+       my $ellipsis;
        until( undef)
        {
           my @parm = ();
+          $ellipsis = 0;
           until ( undef)
           {
              $tok = gettok;         # getting single parm description
@@ -599,7 +586,12 @@ sub preload_method
           error "APC040: Invalid parameter $parmNo description" unless defined $tok;
           push ( @types, $tok); # first type description, definitive for
                                 # default parameter validity check
-          error "APC043: Invalid parameter $parmNo description" unless defined $gp[0];
+          if ( $tok eq '...') {
+             $ellipsis  = 1;
+             $hasEllipsis++;
+          } else {
+             error "APC043: Invalid parameter $parmNo description" unless defined $gp[0];
+          }
           my $hasEqState = 0;
           my $defaultParm = undef;
           for ( @gp)            # cycling additive parameter description
@@ -628,6 +620,8 @@ sub preload_method
           last if ( $parm[-1] eq ")");
           $parmNo++;
        }
+       error "APC055: Ellipsis (...) could be defined only in the end of parameters list"
+         if $hasEllipsis > 1 || ( $hasEllipsis == 1 && $ellipsis == 0);
    } else {
       $acc .= $tok; # should be closing parenthesis
    };
@@ -862,7 +856,7 @@ sub load_single_part
            preload_method( 1);
            store_method;
            unless ($level) {
-              error "APC0018: Invalid types in import function $id declaration" unless parse_parms;
+              error "APC018: Invalid types in import function $id declaration" unless parse_parms;
               push (@portableImports, "${id}${acc}");
               push (@newMethods, "${id}${acc}") unless $inherit;
            };
