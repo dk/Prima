@@ -1692,7 +1692,7 @@ sub path
    my @ups = split /[\/\\]/, $p;
    my $root;
    if ( $unix) {
-      $root = $self->{items}->[0]->[1];
+      $root = $self->{items}->[0];
    } else {
       my $lr = shift @ups;
       for ( @{$self->{items}}) {
