@@ -442,7 +442,7 @@ sub filter_p_class
       return;
    }
    $content = "=pod\n\n$content\n\n=cut" if $content !~ /=pod/m;
-   $self-> {text}-> load_content( $ret, $content) if defined $ret;
+   $self-> {text}-> load_content( $content) if defined $ret;
    $self-> text( $self-> {stext} . ' - ' . $ret);
 }
 

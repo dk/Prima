@@ -583,13 +583,12 @@ ERROR
 
 sub load_content 
 {
-   my ( $self, $title, $content) = @_;
+   my ( $self, $content) = @_;
    my $path = '';
    $self-> {manpath} = '';
    undef $self-> {source_file};
    $self-> open_read;
    $self-> read($content);
-   $self-> pageName( $title);
    return $self-> close_read( $self-> {topicView});
 }
 
@@ -1714,7 +1713,7 @@ Loads the manpage, if necessary, and selects the section.
 Loads a bookmark string, prepared by L<make_bookmark> function. 
 Used internally.
 
-=item load_content TITLE, CONTENT
+=item load_content CONTENT
 
 Loads content into the viewer. Returns C<undef> is there is no POD 
 context, 1 otherwise.
