@@ -664,9 +664,11 @@ sub on_mouseup
             my @org = $self-> owner-> client_to_screen( @{$self-> {sav}});
             $org[0] = $self->{prevRect}->[0] - $org[0];
             $org[1] = $self->{prevRect}->[1] - $org[1];
-            for ( @{$self->{extraWidgets}}) {
-               next if $_ == $self;
-               $_-> origin( $_-> left + $org[0], $_-> bottom + $org[1]);
+            for my $wij ( @{$self->{extraWidgets}}) {
+               next if $wij == $self;
+	       my @o = $wij-> origin;
+               $wij-> origin( $o[0] + $org[0], $o[1] + $org[1]);
+	       $wij-> maintain_children_origin( @o);
             }
          }
          $VB::form-> text( $VB::form->{saveHdr});
