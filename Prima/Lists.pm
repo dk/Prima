@@ -719,7 +719,7 @@ sub set_count
    $self-> reset;
    $self-> reset_scrolls;
    $self-> focusedItem( -1) if $self->{focusedItem} >= $count;
-   $self-> repaint;
+   $self-> refresh;
 }
 
 sub set_extended_select
