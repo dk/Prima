@@ -138,6 +138,7 @@ use vars qw(
     @executables
     $install_manuals
     $packlist
+    %cache_find_files
 );
 
 my $extramsg = "(see makefile.log for details)";
@@ -818,7 +819,7 @@ sub setup_variables
     
     if ( $cygwin) {
        $Config{libperl} =~ s/^lib(.*)\.a$/$1/i;
-       push @libs, qw(gdi32 mpr winspool); # add more when appropriate
+       push @libs, qw(gdi32 mpr winspool comdlg32); # add more when appropriate
     }
 
 # here starts lot of execs...
@@ -917,6 +918,7 @@ sub setup_variables
     setvar('WITH_ICONV', $unix);
     setvar('WITH_XFT', $unix);
     $install_manuals = $cygwin || (!$Win32 && !$OS2);
+    $install_manuals = 0 if !length( $INSTALL_MAN1) || !length($INSTALL_MAN3);
 
     @Prima_exports = qw(
 apc_application_begin_paint
@@ -1709,8 +1711,17 @@ sub process_commandline
 sub find_file
 {
     my ( $fname, $dir) = @_;
+    $fname =~ s/\\/\//g;
     my $pathname = qd( "$dir/$fname");
+    if ( exists $cache_find_files{$pathname}) {
+       if ($cache_find_files{$pathname}) {
+       	   return ( $pathname, 1);
+       } else {
+       	   return ( $fname, 0);
+       }
+    }
     if ( -e $pathname) {
+        $cache_find_files{$pathname} = 1;
         return ( $pathname, 1);
     }
     opendir D, $dir or die "Cannot open dir $dir: $!";
@@ -1719,8 +1730,11 @@ sub find_file
     my $found;
     foreach my $entry ( @entries) {
         ( $pathname, $found) = find_file( $fname, $entry);
-        return ( $pathname, 1) if $found;
+	next unless $found;
+        $cache_find_files{$pathname} = 1;
+        return ( $pathname, 1);
     }
+    $cache_find_files{$pathname} = 0;
     return ( $fname, 0);
 }
 

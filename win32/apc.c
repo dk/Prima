@@ -27,6 +27,7 @@
  */
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
 #include "win32\win32guts.h"
+#include <commdlg.h>
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
@@ -3087,11 +3088,13 @@ win32_openfile( const char * params)
    } else if ( strncmp( params, "filterindex", 11) == 0) {
       params += 11;
       if ( *params == '=') {
-	 int fi = 0, i = sscanf( params + 1, "%d", &fi);
+	 int fi = 0;
+	 sscanf( params + 1, "%d", &fi);
 	 o. nFilterIndex = fi;
       } else {
 	 char buf[25];
-	 return duplicate_string( itoa( o. nFilterIndex, buf, 10));
+	 sprintf( buf, "%d", (int) o. nFilterIndex);
+	 return duplicate_string( buf);
       }
    } else if ( strncmp( params, "flags=", 6) == 0) {
       params += 6;
