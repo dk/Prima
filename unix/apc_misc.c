@@ -30,6 +30,7 @@
 /*                                                         */
 /***********************************************************/
 
+#include <sys/stat.h>
 #include "unix/guts.h"
 #include "File.h"
 #include "Clipboard.h"
@@ -1224,6 +1225,8 @@ apc_getdir( const char *dirname)
    struct dirent *de;
    PList dirlist = nil;
    char *type;
+   char path[ 2048];
+   struct stat s;
 
    if (( dh = opendir( dirname)) && (dirlist = plist_create( 50, 50))) {
       while (( de = readdir( dh))) {
@@ -1239,7 +1242,24 @@ apc_getdir( const char *dirname)
 #ifdef DT_WHT
 	 case DT_WHT:	type = "wht";	break;
 #endif
-	 default:	type = "unknown";
+	 default:
+                        snprintf( path, 2047, "%s/%s", dirname, de-> d_name);
+                        type = nil;
+                        if ( stat( path, &s) == 0) {
+                           switch ( s. st_mode & S_IFMT) {
+                           case S_IFIFO:        type = "fifo";  break;
+                           case S_IFCHR:        type = "chr";   break;
+                           case S_IFDIR:        type = "dir";   break;
+                           case S_IFBLK:        type = "blk";   break;
+                           case S_IFREG:        type = "reg";   break;
+                           case S_IFLNK:        type = "lnk";   break;
+                           case S_IFSOCK:       type = "sock";  break;
+#ifdef S_IFWHT
+                           case S_IFWHT:        type = "wht";   break;
+#endif
+                           }
+                        }
+                        if ( !type)     type = "unknown";
 	 }
 	 list_add( dirlist, (Handle)duplicate_string( type));
       }
