@@ -176,14 +176,14 @@ sub profile_default
    my %prf = (
      menuItems => 
         [[ '~File' => [
-           ['~Open' => 'F3' => 'F3' => 'load_dialog' ],
-           ['~Go to...' => 'goto' ],
+           ['~Open' => 'Ctrl+O' => '^O' => 'load_dialog' ],
+           ['~Go to...' => 'G' => 'G' => 'goto' ],
            ['~New window' => 'Ctrl+N' => '^N' => 'new_window'],
            [],
-           ['~Print ...' => 'print'],
+           ['~Print ...' => 'Ctrl+P' => '^P' => 'print'],
            [],
-           ['~Close window' => 'Alt+F4' => '@F4' => sub { $_[0]-> close }],
-           ['Close ~all windows' => 'Alt+X' => '@X' => sub { Prima::HelpViewer-> close }],
+           ['~Close window' => 'Ctrl-W' => '^W' => sub { $_[0]-> close }],
+           ['E~xit' => 'Ctrl+Q' => '^Q' => sub { Prima::HelpViewer-> close }],
         ]], [ '~View' => [
            [ '~Increase font' => 'Ctrl +' => '^+' => sub {
                return if $_[0]-> {text}-> {defaultFontSize} > 100;
@@ -198,7 +198,7 @@ sub profile_default
                $inifile-> section('View')-> {FontSize} = $_[0]-> {text}-> {defaultFontSize};
           }],
           [],
-          [ 'fullView' => 'Full text ~view' => sub {
+          [ 'fullView' => 'Full text ~view' => 'Ctrl+V' => '^V' => sub {
              $_[0]-> {text}-> topicView( ! $_[0]-> menu-> toggle( $_[1]));
              $_[0]-> update;
              $inifile-> section('View')-> {FullText} = $_[0]-> {text}-> topicView ? 0 : 1;

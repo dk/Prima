@@ -127,9 +127,9 @@ sub font_dialog
 sub accelItems
 {
    return [
-      ['openitem' => '~Open' => 'F3' => 'F3' => sub { $VB::main-> open;}],
-      ['-saveitem1' => '~Save' => 'F2' => 'F2' => sub {$VB::main-> save;}],
-      ['Exit' => 'Alt+X' => '@X' => sub{ $VB::main-> close;}],
+      ['openitem' => '~Open' => 'Ctrl+O' => '^O' => sub { $VB::main-> open;}],
+      ['-saveitem1' => '~Save' => 'Ctrl+S' => '^S' => sub {$VB::main-> save;}],
+      ['Exit' => 'Ctrl+Q' => '^Q' => sub{ $VB::main-> close;}],
       ['Object Inspector' => 'F11' => 'F11' => sub { $VB::main-> bring_inspector; }],
       ['Code Editor' => 'F12' => 'F12' => sub { $VB::main-> bring_code_editor; }],
       ['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => sub { $VB::main-> form_run}, ],
@@ -1170,19 +1170,19 @@ sub profile_default
       icon           => $VB::ico,
       menuItems      => [
          ['~File' => [
-            ['newitem' => '~New' => sub {$_[0]->new;}],
-            ['openitem' => '~Open' => 'F3' => 'F3' => sub {$_[0]->open;}],
-            ['-saveitem1' => '~Save' => 'F2' => 'F2' => sub {$_[0]->save;}],
-            ['-saveitem2' =>'Save ~as...' =>           sub {$_[0]->saveas;}],
-            ['closeitem' =>'~Close' =>           sub { $VB::form-> close if $VB::form}],
+            ['newitem' => '~New' => 'Ctrl+N' => '^N' =>     sub {$_[0]->new;}],
+            ['openitem' => '~Open' => 'Ctrl+O' => '^O' =>   sub {$_[0]->open;}],
+            ['-saveitem1' => '~Save' => 'Ctrl+S' => '^S' => sub {$_[0]->save;}],
+            ['-saveitem2' =>'Save ~as...' =>                sub {$_[0]->saveas;}],
+            ['closeitem' =>'~Close' => 'Ctrl+W' => '^W' =>  sub { $VB::form-> close if $VB::form}],
             [],
-            ['E~xit' => 'Alt+X' => '@X' => sub{$_[0]->close;}],
+            ['E~xit' => 'Ctrl+Q' => '^Q' => sub{$_[0]->close;}],
          ]],
          ['edit' => '~Edit' => [
-             ['Cop~y' => 'Ctrl+Ins' => km::Ctrl|kb::Insert, sub { Form::fm_copy(); }],
-             ['~Paste' => 'Shift+Ins' => km::Shift|kb::Insert, sub { Form::fm_paste(); }],
-             ['~Delete' => sub { Form::fm_delete(); } ], 
-             ['~Select all' => sub { Form::fm_selectall(); }],
+             ['Cop~y' => 'Ctrl+C' => '^C' =>       sub { Form::fm_copy(); }],
+             ['~Paste' => 'Ctrl+V' => '^V' =>      sub { Form::fm_paste(); }],
+             ['~Delete' => 'Ctrl-X' => '^X' =>     sub { Form::fm_delete(); } ], 
+             ['~Select all' => 'Ctrl+A' => '^A' => sub { Form::fm_selectall(); }],
              ['D~uplicate'  => 'Ctrl+D' => '^D' => sub { Form::fm_duplicate(); }],
              [],
              ['~Align' => [
