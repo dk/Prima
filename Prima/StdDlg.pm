@@ -28,8 +28,9 @@
 #   Prima::OpenDialog       => Prima/FileDialog.pm
 #   Prima::SaveDialog       => Prima/FileDialog.pm
 #   Prima::ChDirDialog      => Prima/FileDialog.pm
-#   Prima::FindDialog       => Prima/SearchDialog.pm
-#   Prima::ReplaceDialog    => Prima/SearchDialog.pm
+#   Prima::FontDialog       => Prima/FontDialog.pm
+#   Prima::FindDialog       => Prima/EditDialog.pm
+#   Prima::ReplaceDialog    => Prima/EditDialog.pm
 #   Prima::PrintSetupDialog => Prima/PrintDialog.pm
 #   Prima::ColorDialog      => Prima/ColorDialog.pm
 
@@ -45,6 +46,17 @@ sub AUTOLOAD
    shift->$method(@_);
 }
 
+package Prima::FontDialog;
+
+sub AUTOLOAD
+{
+   my ($method) = $Prima::FontDialog::AUTOLOAD =~ /::([^:]+)$/;
+   delete ${Prima::FontDialog::}{AUTOLOAD};
+   require Prima::FontDialog;
+   shift->$method(@_);
+}
+
+
 package Prima::OpenDialog;
 
 sub AUTOLOAD
@@ -57,5 +69,61 @@ sub AUTOLOAD
    shift->$method(@_);
 }
 
+package Prima::SaveDialog;
+
+sub AUTOLOAD
+{
+   my ($method) = $Prima::ChDirDialog::AUTOLOAD =~ /::([^:]+)$/;
+   delete ${Prima::OpenDialog::}{AUTOLOAD};
+   delete ${Prima::SaveDialog::}{AUTOLOAD};
+   delete ${Prima::ChDirDialog::}{AUTOLOAD};
+   require Prima::FileDialog;
+   shift->$method(@_);
+}
+
+package Prima::ChDirDialog;
+
+sub AUTOLOAD
+{
+   my ($method) = $Prima::ChDirDialog::AUTOLOAD =~ /::([^:]+)$/;
+   delete ${Prima::OpenDialog::}{AUTOLOAD};
+   delete ${Prima::SaveDialog::}{AUTOLOAD};
+   delete ${Prima::ChDirDialog::}{AUTOLOAD};
+   require Prima::FileDialog;
+   shift->$method(@_);
+}
+
+
+package Prima::FindDialog;
+
+sub AUTOLOAD
+{
+   my ($method) = $Prima::FindDialog::AUTOLOAD =~ /::([^:]+)$/;
+   delete ${Prima::FindDialog::}{AUTOLOAD};
+   delete ${Prima::ReplaceDialog::}{AUTOLOAD};
+   require Prima::EditDialog;
+   shift->$method(@_);
+}
+
+package Prima::ReplaceDialog;
+
+sub AUTOLOAD
+{
+   my ($method) = $Prima::ReplaceDialog::AUTOLOAD =~ /::([^:]+)$/;
+   delete ${Prima::FindDialog::}{AUTOLOAD};
+   delete ${Prima::ReplaceDialog::}{AUTOLOAD};
+   require Prima::EditDialog;
+   shift->$method(@_);
+}
+
+package Prima::PrintSetupDialog;
+
+sub AUTOLOAD
+{
+   my ($method) = $Prima::PrintSetupDialog::AUTOLOAD =~ /::([^:]+)$/;
+   delete ${Prima::PrintSetupDialog::}{AUTOLOAD};
+   require Prima::PrintDialog;
+   shift->$method(@_);
+}
 
 1;

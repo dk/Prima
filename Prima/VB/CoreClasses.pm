@@ -59,7 +59,7 @@ sub classes
          icon   => 'VB::classes.gif:16',
       },
       'Prima::DirectoryListBox' => {
-         RTModule => 'Prima::Lists',
+         RTModule => 'Prima::FileDialog',
          class  => 'Prima::VB::DirectoryListBox',
          page   => 'Additional',
          icon   => 'VB::classes.gif:6',
@@ -113,7 +113,7 @@ sub classes
          icon   => 'VB::classes.gif:3',
       },
       'Prima::DriveComboBox' => {
-         RTModule => 'Prima::ComboBox',
+         RTModule => 'Prima::FileDialog',
          class  => 'Prima::VB::DriveComboBox',
          page   => 'Additional',
          icon   => 'VB::classes.gif:5',

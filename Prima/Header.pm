@@ -171,16 +171,16 @@ sub on_measureitem
 
 sub point2area
 {
-   my ( $self, $x, $y) = @_;
+   my ( $self, $x, $y, $useBorders) = @_;
    my $i;
    my $pressable = $self-> {clickable} || $self-> {dragable};
    return if !$self-> {scalable} && !$pressable;
    my $lim;
    if ( $self-> {vertical}) {
-      return undef if $x < 1 || $x > $self-> width - 1;
+      return undef if ( $x < 1 || $x > $self-> width - 1) && !$useBorders;
       $lim = $y;
    } else {
-      return undef if $y < 1 || $y > $self-> height - 1;
+      return undef if ( $y < 1 || $y > $self-> height - 1) && !$useBorders;
       $lim = $x;
    }
 
@@ -308,17 +308,17 @@ sub on_mousemove
          $self->{tabId} : -1
       );
       return unless $self-> {dragable};
+      $self-> pointer( cr::Move) if $self->{clickable};
       my @lx = $self-> {vertical} ? @a[1,3] : @a[0,2];
       my $d  = $self-> {vertical} ? $y : $x;
       return if $d >= $lx[0] && $d < $lx[1];
       my $osc = $self-> {scalable}; $self-> {scalable} = 0;
-      my $p = $self-> point2area( $x, $y); # exclude borders
+      my $p = $self-> point2area( $x, $y, 1); # exclude borders
       $self-> {scalable} = $osc;
       my $o = $self-> {tabId};
       return unless defined $p;
       return if $p == $o;
       $self-> {clickAllowed} = 0;
-      $self-> pointer( cr::Move) if $self->{clickable};
       if ( $self-> {widths}->[$p] > $self-> {widths}->[$o]) {
          my @ppos = $self-> pointerPos;
          $ppos[$self-> {vertical} ? 1 : 0] +=

@@ -1101,9 +1101,7 @@ use Prima::Sliders;
 use Prima::InputLine;
 use Prima::Edit;
 use Prima::Buttons;
-use Prima::ColorDialog;
 use Prima::Label;
-use Prima::FontDialog;
 use Prima::Outlines;
 
 package Prima::VB::Types::generic;
