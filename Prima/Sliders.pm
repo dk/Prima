@@ -716,6 +716,14 @@ use constant Axis         => 1;
 use constant Thermometer  => 2;
 use constant StdMinMax    => 3;
 
+=pod
+The sliders are expected to notify the owner in usual way of chaning controls,
+by sending notify('Change'). but, if chaning while mouse tracking is not
+appropriate, the following scheme will help: in on_change() second parameter
+will be true if mouse tracking is performed, and the end of mouse tracking 
+signaled by notify('TrackEnd').
+=cut
+
 package Prima::AbstractSlider;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
@@ -1231,7 +1239,7 @@ sub value
            ( $bh - $sb - DefButtonX) if $self-> {tickAlign} != ta::Dual;
          $self-> invalidate_rect( $v1, $bh - 9 + $yd, $v2, $bh + $sb + 4 + $yd);
       }
-      $self-> notify(q(Change));
+      $self-> notify(q(Change), $self-> {mouseTransaction});
    } else {
       return $_[0]->{value};
    }
@@ -1624,7 +1632,7 @@ sub value
    $self-> invalidate_rect( @clip[0..1], $clip[2]+1, $clip[3]+1);
    $self-> update_view;
    $self-> {singlePaint} = undef;
-   $self-> notify(q(Change));
+   $self-> notify(q(Change), $self-> {mouseTransaction});
 }
 
 1;
