@@ -583,8 +583,7 @@ arc_completion( double * angleStart, double * angleEnd, int * needFigure)
 
    max = (int)(diff / 360);
    *needFigure = ( max * 360) != diff;
-   if ( max == 1) return 1;
-   return ( max < 3) ? max : ( max % 2);
+   return ( max % 2) ? 1 : 2;
 }
 
 Bool
