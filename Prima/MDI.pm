@@ -31,12 +31,10 @@ package Prima::MDI;
 # contains:
 #   MDI
 #   MDIOwner
-#   MDIWindow
-#   MDIExternalDockerShuttle
+#   MDIWindowOwner
 
 use strict;
 use Prima::Classes;
-
 
 package Prima::MDIMethods;
 
@@ -171,7 +169,6 @@ sub profile_default
    @$def{keys %prf} = values %prf;
    return $def;
 }
-
 
 sub init
 {
@@ -650,12 +647,8 @@ sub on_mousedown
             $_[0]-> destroy;
             delete $self-> {exTimer};
             return unless $self-> alive || ! defined ( $self-> popup);
-            my $w  = $self-> height;
-            my $y  = $self-> {titleY};
-            my $bw = $self-> {border};
-            $self-> popup-> popup( $self->{border}, $self->height - $self->{border} - $self->{titleY},
-               $bw, $w - $y - $bw, $bw + $y, $w - $bw
-            );
+            my ( $w, $y, $bw)  = ( $self-> height, $self-> {titleY}, $self-> {border});
+            $self-> popup-> popup( $bw, $w - $y - $bw, $bw, $w - $y - $bw, $bw + $y, $w - $bw);
          },
       );
       $self-> {exTimer}-> start;
@@ -749,21 +742,26 @@ sub on_translateaccel
 {
    my ( $self, $code, $key, $mod) = @_;
    if ( !$self-> {mouseTransaction}) {
-      if (( $key == kb::Tab) && ( $mod & km::Ctrl)) {
-         my $x    = $self-> first;
+      if (( $key == kb::Tab || $key == kb::BackTab) && ( $mod & km::Ctrl)) {
+         my $back = ($key == kb::BackTab);
+         my $x    = ( $back ? $self-> last : $self-> first);
          my $mdix = $x-> isa('Prima::MDI') ? $x : undef;
          while ( $x) {
-            $x = $x-> next;
+            $x = ( $back ? $x-> prev : $x-> next);
             $mdix = $x if $x && $x-> isa('Prima::MDI');
          }
          unless ( $x) {
-            $x = $self-> last;
+            $x = ( $back ? $x-> first : $self-> last );
             $mdix = $x if $x && $x-> isa('Prima::MDI');
          }
          if ( $mdix) {
             $mdix-> bring_to_front;
             $mdix-> select;
          }
+         $self-> clear_event;
+      } if (( $key == kb::Space) && ( $mod & km::Ctrl)) {
+         my ( $w, $y, $bw)  = ( $self-> height, $self-> {titleY}, $self-> {border});
+         $self-> popup-> popup( $bw, $w - $y - $bw, $bw, $w - $y - $bw, $bw + $y, $w - $bw);
          $self-> clear_event;
       }
    }
@@ -1229,82 +1227,415 @@ sub tileable             {($#_)?$_[0]->{tileable}=$_[1]                         
 sub windowState          {($#_)?$_[0]->set_window_state($_[1])                        :return $_[0]->{windowState}    }
 sub icon                 {($#_)?$_[0]->set_icon        ($_[1])  :                      return $_[0]->{icon}           }
 
-package Prima::MDIExternalDockerShuttle;
-use vars qw(@ISA);
-@ISA = qw(Prima::MDI);
-
-sub profile_default
-{
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my $fh = int($def->{font}->{height} / 1.5);
-   my %prf = (
-      titleHeight    => $fh + 4,
-      borderIcons    => mbi::TitleBar | mbi::Close,
-      clipOwner      => 0,
-      shuttle        => undef,
-   );
-   @$def{keys %prf} = values %prf;
-   $def->{font}->{height} = $fh;
-   $def->{font}->{width}  = 0;
-   return $def;   
-}   
-
-sub init
-{
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   $self->$_($profile{$_}) for qw(shuttle);
-   return %profile;
-}   
-
-sub shuttle
-{
-   return $_[0]-> {shuttle} unless $#_;
-   $_[0]-> {shuttle} = $_[1];
-}   
-
-sub on_mousedown
-{
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   if (q(caption) ne $self-> xy2part( $x, $y)) {
-      $self-> SUPER::on_mousedown( $btn, $mod, $x, $y);
-      return;
-   }   
-   $self-> clear_event;
-   return if $self-> {mouseTransaction};
-   $self-> bring_to_front;
-   $self-> select;
-   return if $btn != mb::Left;
-   my $s = $self-> shuttle;
-   if ( $s-> client) {
-      $s-> rect( $s-> client2frame( $s-> client-> rect));
-   } else {
-      $s-> rect( $self-> frame2client( $self-> rect));
-   }   
-   $s-> drag( 1, [ $self-> rect], $s-> screen_to_client( $self-> client_to_screen($x, $y)));
-   $self-> clear_event;
-}   
-
-sub on_mouseclick
-{
-   my ( $self, $btn, $mod, $x, $y, $dbl) = @_; 
-   if (!$dbl || (q(caption) ne $self-> xy2part( $x, $y))) {
-      $self-> SUPER::on_mouseclick( $btn, $mod, $x, $y, $dbl); 
-      return;
-   }   
-   $self-> clear_event;
-   $self-> shuttle-> dock_back;
-}   
-
-sub windowState
-{
-   return $_[0]->{windowState} unless $#_;
-   my ( $self, $ws) = @_;
-   if ( $ws == ws::Maximized) {
-      $self-> shuttle-> dock_back;
-   } else {
-      $self-> SUPER::windowState( $ws);
-   }   
-}   
-
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::MDI - top-level windows emulation classes
+
+=head1 DESCRIPTION
+
+MDI stands for Multiple Document Interface, and is 
+a Microsoft Windows user interface, that consists of multiple non-toplevel windows
+belonging to an application window. The module contains classes that provide
+similar functionality; sub-window widgets realize a set of operations,
+close to those of the real top-level windows, - iconize, maximize, cascade etc.
+
+The basic classes required to use the MDI are C<Prima::MDIOwner> and C<Prima::MDI>,
+which are, correspondingly, sub-window owner class and sub-window class. C<Prima::MDIWindowOwner>
+is exactly the same as C<Prima::MDIOwner> but is a C<Prima::Window> descendant: the both owner classes
+are different only in their first ascendants. Their second ascendant is C<Prima::MDIMethods>
+package, that contains all the owner class functionality.
+
+Usage of C<Prima::MDI> class extends beyond the multi-document paradigm.
+C<Prima::DockManager> module uses the class as a base of a dockable toolbar window class
+( see L<Prima::DockManager>.
+
+=head1 SYNOPSIS
+
+   use Prima::MDI;
+   
+   my $owner = Prima::MDIWindowOwner-> create();
+   my $mdi   = $owner-> insert( 'Prima::MDI');
+   $mdi-> client-> insert( 'Prima::Button' => centered => 1 );
+
+=head1 Prima::MDI
+
+Implements MDI window functionality. A subwindow widget consists of 
+a titlebar, titlebar buttons, and a client widget. The latter must be used as
+an insertion target for all children widgets.
+
+A subwindow can be moved and resized, both by mouse and keyboard.
+These functions, along with maximize, minimize, and restore commands are
+accessible via the toolbar-anchored popup menu. The default set of commands
+is as follows:
+    
+     Close window              - Ctrl+F4
+     Restore window            - Ctrl+F5 or a double click on the titlebar
+     Maximize window           - Ctrl+F10 or a double click on the titlebar 
+     Go to next MDI window     - Ctrl+Tab
+     Go to previous MDI window - Ctrl+Shift+Tab
+     Invoke popup menu         - Ctrl+Space
+
+The class mimics API of C<Prima::Window> class, and in some extent 
+L<Prima::Window> and this page share the same information.
+
+=head2 Properties
+
+=over
+
+=item borderIcons INTEGER
+
+Selects window decorations, which are buttons on titlebar and the titlebar itself.
+Can be 0 or a combination of the following C<mbi::XXX> constants, which are supreset
+of C<bi::XXX> constants ( see L<Prima::Window/borderIcons> ) and are interchangeable.
+
+   mbi::SystemMenu  - system menu button with icon is shown
+   mbi::Minimize    - minimize button 
+   mbi::Maximize    - maximize ( and eventual restore )
+   mbi::TitleBar    - window title 
+   mbi::Close       - close button
+   mbi::All         - all of the above
+
+Default value: C<mbi::All>
+
+=item borderStyle INTEGER
+
+One of C<bs::XXX> constants, selecting the window border style.
+The constants are:
+
+   bs::None      - no border
+   bs::Single    - thin border
+   bs::Dialog    - thick border
+   bs::Sizeable  - thick border with interactive resize capabilities
+
+C<bs::Sizeable> is an unique mode. If selected, the user
+can resize the window interactively. The other border styles
+disallow resizing and affect the border width and design only.
+
+Default value: C<bs::Sizeable>
+
+=item client OBJECT
+
+Selects the client widget at runtime. When changing the client, the old client 
+children are not reparented to the new client. The property cannot be used to
+set the client during the MDI window creation; use
+C<clientClass> and C<clientProfile> properties instead. 
+
+When setting new client object, note that is has to be named C<MDIClient>
+and the window is automatically destroyed after the client is destroyed.
+ 
+=item clientClass STRING
+
+Assigns client widget class.
+
+Create-only property.
+
+Default value: C<Prima::Widget>
+
+=item clientProfile HASH
+
+Assigns hash of properties, passed to the client during the creation.
+
+Create-only property.
+
+=item dragMode SCALAR
+
+A three-state variable, which governs the visual feedback style 
+when the user moves or resizes a window. If 1, the window is 
+moved or resized simultaneously with the user mouse or keyboard actions.
+If 0, a marquee rectangle is drawn, which is
+moved or resized as the user sends the commands; the window is
+actually positioned and / or resized after the dragging session
+is successfully finished. If C<undef>, the system-dependant
+dragging style is used. ( See L<Prima::Application/get_system_value> ).
+
+The dragging session can be aborted by 
+hitting Esc key or calling C<sizemove_cancel> method. 
+
+Default value: C<undef>.
+
+=item icon HANDLE
+
+Selects a custom image to be drawn in the left corner of the toolbar.
+If 0, the default image ( menu button icon ) is drawn. 
+
+Default value: 0
+
+=item iconMin HANDLE
+
+Selects minimized button image in normal state.
+
+=item iconMax HANDLE
+
+Selects maximized button image in normal state.
+
+=item iconClose HANDLE
+
+Selects close button image in normal state.
+
+=item iconRestore HANDLE
+
+Selects restore button image in normal state.
+
+=item iconMinPressed HANDLE
+
+Selects minimize button image in pressed state.
+
+=item iconMaxPressed HANDLE
+
+Selects maximize button image in pressed state.
+
+=item iconClosePressed HANDLE
+
+Selects close button image in pressed state.
+
+=item iconRestorePressed HANDLE
+
+Selects restore button image in pressed state.
+
+=item tileable BOOLEAN
+
+Selects whether the window is allowed to participate
+in cascading and tiling auto-arrangements, performed correspondingly by
+C<cascade> and C<tile> methods. If 0, the window is never positioned 
+automatically.
+
+Default value: 1
+
+=item titleHeight INTEGER
+
+Selects height of the titlebar in pixels. If 0, the default system
+value is used.
+
+Default value: 0
+
+=item windowState STATE
+
+A three-state property, that governs the state of a window.
+STATE can be one of three C<ws::XXX> constants:
+
+   ws::Normal
+   ws::Minimized
+   ws::Maximized
+
+The property can be changed
+either by explicit set-mode call or by the user. In either case,
+a C<WindowState> notification is triggered.
+
+The property has three convenience wrappers: C<maximize()>,
+C<minimize()> and C<restore()>.
+
+Default value: C<ws::Normal>
+
+See also: C<WindowState>
+
+=back
+
+=head2 Methods
+
+=over
+
+=item arrange_icons
+
+Arranges geometrically the minimized sibling MDI windows. 
+
+=item cascade
+
+Arranges sibling MDI windows so they form a cascade-like
+structure: the lowest window is expanded to the full owner window
+inferior rectangle, window next to the lowest occupies the inferior
+rectangle of the lowest window, etc etc. 
+
+Only windows with C<tileable> property set to 1 are processed.
+
+=item client2frame X1, Y1, X2, Y2
+
+Returns a rectangle that the window would occupy if
+its client rectangle is assigned to X1, Y1, X2, Y2 
+rectangle.
+
+=item frame2client X1, Y1, X2, Y2
+
+Returns a rectangle that the window client would occupy if
+the window rectangle is assigned to X1, Y1, X2, Y2 
+rectangle.
+
+=item get_client_rect [ WIDTH, HEIGHT ]
+
+Returns a rectangle in the window coordinate system that the
+client would occopy if the window extensions are WIDTH and HEIGHT.
+If WIDTH and HEIGHT are undefined, the current window size is used.
+
+=item keyMove
+
+Initiates window moving session, navigated by the keybord.
+
+=item keySize
+
+Initiates window resizing session, navigated by the keybord.
+
+=item mdis
+
+Returns array of sibling MDI windows.
+
+=item maximize
+
+Maximizes window. A shortcut for C<windowState(ws::Maximized)>.
+
+=item minimize
+
+Minimizes window. A shortcut for C<windowState(ws::Minimized)>.
+
+=item post_action STRING
+
+Posts an action to the windows; the action is deferred and executed
+in the next message loop. This is used to avoid unnecessary state checks
+when the action-executing code returns. The current implementation 
+accepts following string commands: C<min>, C<max>, C<restore>, C<close>.
+
+=item repaint_title [ STRING = C<title> ]
+
+Invalidates rectangle on the titlebar, corresponding to STRING,
+which can be one of the following:
+
+    left    - redraw the menu button
+    right   - redraw minimize, maximize, and close buttons
+    title   - redraw the title
+
+=item restore
+
+Restores window to normal state from
+minimized or maximized state. A shortcut for C<windowState(ws::Normal)>.
+
+=item sizemove_cancel
+
+Cancels active window moving or resizing session and returns the window
+to the state before the session.
+
+=item tile
+
+Arranges sibling MDI windows so they form a grid-like
+structure, where all windows occupy equal space, if possible.
+
+Only windows with C<tileable> property set to 1 are processed.
+
+=item xy2part X, Y
+
+Maps a point in (X,Y) coordinates into a string, corresponding
+to a part of the window: titlebar, button, or part of the border. The latter
+can be returned only if C<borderStyle> is set to C<bs::Sizeable>.
+The possible return values are:
+
+    border   - window border; the window is not sizeable
+    client   - client widget
+    caption  - titlebar; the window is not moveable
+    title    - titlebar; the window is movable
+    close    - close button
+    min      - minimize button
+    max      - maximize button
+    restore  - restore button
+    menu     - menu button
+    desktop  - the point does not belong to the window
+
+In addition, if the window is sizeable, the following constants can be returned,
+indicating part of the border:
+
+    SizeN    - upper side
+    SizeS    - lower side
+    SizeW    - left side
+    SizeE    - right side
+    SizeSW   - lower left corner
+    SizeNW   - upper left corner
+    SizeSE   - lower right corner
+    SizeNE   - upper right corner
+
+=back
+
+=head2 Events
+
+=over
+
+=item Activate
+
+Triggered when the user activates a window.
+Activation mark is usually resides on a window that
+contains keyboard focus.
+
+The module does not provide the activation function;
+C<select()> call is used instead.
+
+=item Deactivate
+
+Triggered when the user deactivates a window. 
+Window is usually marked inactive, when it contains
+no keyboard focus.
+
+The module does not provide the de-activation
+function; C<deselect()> call is used instead.
+
+=item WindowState STATE
+
+Triggered when window state is changed, either by
+an explicit C<windowState()> call, or by the user.
+STATE is the new window state, one of three C<ws::XXX>
+constants.
+
+=back
+
+=head1 Prima::MDIMethods
+
+=head2 Methods
+
+The package contains several methods for a class that is to be
+used as a MDI windows owner. It is enough
+to add class inheritance to C<Prima::MDIMethods> to use the functionality. This step, however,
+is not required for a widget to become a MDI windows owner; the package
+contains helper functions only, which mostly mirror the arragment
+functions of C<Prima::MDI> class.
+
+=over
+
+=item mdi_activate
+
+Repaints window title in all children MDI windows.
+
+=item mdis
+
+Returns array of children MDI windows.
+
+=item arrange_icons
+
+Same as C<Prima::MDI::arrange_icons>.
+
+=item cascade
+
+Same as C<Prima::MDI::cascade>.
+
+=item tile
+
+Same as C<Prima::MDI::tile>.
+
+=back
+
+=head1 Prima::MDIOwner
+
+A predeclared descendant class of C<Prima::Widget> and C<Prima::MDIMethods>.
+
+=head1 Prima::MDIWindowOwner
+
+A predeclared descendant class of C<Prima::Window> and C<Prima::MDIMethods>.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Widget>, L<Prima::Window>, L<Prima::DockManager>, F<examples/mdi.pl>
+
+=cut
