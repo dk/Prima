@@ -23,6 +23,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+# $Id$
 use Prima qw(Application VB::VBLoader);
 
 die "format: perl starter.pl file.fm\n" unless @ARGV;
