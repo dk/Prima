@@ -1257,21 +1257,38 @@ The result is an anonymous array of 5 points ( 5 integer pairs
 in (X,Y) format). These 5 points are offsets for the following string
 extents, given the string is plotted at (0,0):
 
-1: start of string at ascent line
+1: start of string at ascent line ( top left )
 
-2: start of string at descent line
+2: start of string at descent line ( bottom left )
 
-3: end of string at ascent line
+3: end of string at ascent line ( top right )
 
-4: end of string at descent line
+4: end of string at descent line ( bottom right )
 
 5: concatenation point
 
-The concatenation point coordinates (XC,YC) are coordinated passed
-to consequent text_out() call so the conjoint string would plot
-as if it was a part of TEXT.
+The concatenation point coordinates (XC,YC) are coordinated passed to
+consequent text_out() call so the conjoint string would plot as if it was a
+part of TEXT. Depending on the value of the C<textOutBaseline> property, the
+concatenation point is located either on the baseline or on the descent line.
 
-Context used: font
+Context used: font, textOutBaseline
+
+
+=for podview <img src="gettextbox.gif" cut=1>
+
+=for html <p><img src="gettextbox.gif">
+      
+      1      3         3         4
+         **               ****  
+           *               *  *
+         ***               ***
+        *  *               * 
+         ****               **
+      2       4         1        2
+
+=for podview </cut>
+
 
 =item render_spline VERTICES, [ PRECISION ]
 
