@@ -662,7 +662,6 @@ sub setup_variables
   apc_timer_start
   apc_timer_stop
   apc_widget_begin_paint
-  apc_widget_client_to_screen
   apc_widget_create
   apc_widget_default_font
   apc_widget_destroy
@@ -676,7 +675,7 @@ sub setup_variables
   apc_widget_is_enabled
   apc_widget_is_focused
   apc_widget_is_visible
-  apc_widget_screen_to_client
+  apc_widget_map_points
   apc_widget_scroll
   apc_widget_set_capture
   apc_widget_set_color

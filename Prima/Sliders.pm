@@ -1341,17 +1341,17 @@ sub on_paint
    my $fh  = $canvas-> font-> height;
    my $br  = $self-> {br};
    my $rad = $br * 0.3;
-   my @cpt = ( $self->{circX}, $self->{circY}, $rad, $rad);
+   my @cpt = ( $self->{circX}, $self->{circY}, $rad*2+1, $rad*2+1);
    if ( $self-> {circAlive}) {
       if ( defined $self->{singlePaint}) {
-         $canvas-> fill_ellipse( @cpt[0..1], $rad-3, $rad-3);
+         $canvas-> fill_ellipse( @cpt[0..1], $rad*2-5, $rad*2-5);
          $canvas-> color( $clr[0]);
       } else {
          $canvas-> color( $c3d[1]);
          $canvas-> lineWidth(2);
-         $canvas-> arc( @cpt[0..1], $cpt[2]-1, $cpt[3]-1, 65, 235);
+         $canvas-> arc( @cpt[0..1], $cpt[2]-2, $cpt[3]-2, 65, 235);
          $canvas-> color( $c3d[0]);
-         $canvas-> arc( @cpt[0..1], $cpt[2]-1, $cpt[3]-1, 255, 405);
+         $canvas-> arc( @cpt[0..1], $cpt[2]-2, $cpt[3]-2, 255, 405);
          $canvas-> lineWidth(0);
          $canvas-> color( $clr[0]);
          $canvas-> ellipse( @cpt);

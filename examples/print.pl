@@ -48,7 +48,7 @@ sub paint
    my @size = $p-> size;
 
    $p-> color( cl::LightGray);
-   $p-> fill_ellipse( $size[0]/2, $size[1]/2, 300, 300);
+   $p-> fill_ellipse( $size[0], $size[1], 300, 300);
 
    $p-> color( cl::Black);
    $p-> rectangle( 10, 10, $size[0]-10, $size[1]-10);

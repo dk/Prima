@@ -2677,7 +2677,7 @@ extern Bool
 apc_gp_done( Handle self);
 
 extern Bool
-apc_gp_arc( Handle self, int x, int y, double radX, double radY,
+apc_gp_arc( Handle self, int x, int y, int dX, int dY,
             double angleStart, double angleEnd);
 
 extern Bool
@@ -2687,7 +2687,7 @@ extern Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
-apc_gp_chord( Handle self, int x, int y, double radX, double radY,
+apc_gp_chord( Handle self, int x, int y, int dX, int dY,
               double angleStart, double angleEnd);
 
 extern Bool
@@ -2697,20 +2697,20 @@ extern Bool
 apc_gp_draw_poly2( Handle self, int numPts, Point * points);
 
 extern Bool
-apc_gp_ellipse( Handle self, int x, int y, double radX, double radY);
+apc_gp_ellipse( Handle self, int x, int y, int dX, int dY);
 
 extern Bool
-apc_gp_fill_chord( Handle self, int x, int y, double radX, double radY,
+apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY,
                    double angleStart, double angleEnd);
 
 extern Bool
-apc_gp_fill_ellipse( Handle self, int x, int y, double radX, double radY);
+apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY);
 
 extern Bool
 apc_gp_fill_poly( Handle self, int numPts, Point * points);
 
 extern Bool
-apc_gp_fill_sector( Handle self, int x, int y, double radX, double radY,
+apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY,
                     double angleStart, double angleEnd);
 
 extern Bool
@@ -2730,7 +2730,7 @@ extern Bool
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
-apc_gp_sector( Handle self, int x, int y, double radX, double radY,
+apc_gp_sector( Handle self, int x, int y, int dX, int dY,
                double angleStart, double angleEnd);
 
 extern Bool

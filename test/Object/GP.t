@@ -94,7 +94,7 @@ ok( $x-> pixel( 1,1) == 0 &&
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
-$x-> ellipse( 2, 2, 1, 1);
+$x-> ellipse( 2, 2, 3, 3);
 ok( $x-> pixel( 1,2) == 0 &&
     $x-> pixel( 2,1) == 0 &&
     $x-> pixel( 2,3) == 0 &&
@@ -108,12 +108,13 @@ ok( $x-> pixel( 1,2) == 0 &&
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
-$x-> arc( 4, 4, 3, 3, 30, 210);
+$x-> arc( 4, 4, 7, 7, 30, 210);
 ok( $x-> pixel( 1,4) == 0 &&
     $x-> pixel( 4,7) == 0 &&
     $x-> pixel( 7,4) == 0xFFFFFF &&
     $x-> pixel( 4,1) == 0xFFFFFF
 );
+
 
 
 # 10
@@ -144,12 +145,11 @@ ok( $x-> pixel( 2,1) == 0 &&
     $x-> pixel( 7,0) == 0xFFFFFF
 );
 
-
 # 12
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
-$x-> fill_ellipse( 2, 2, 1, 1);
+$x-> fill_ellipse( 2, 2, 3, 3);
 ok( $x-> pixel( 1,2) == 0 &&
     $x-> pixel( 2,1) == 0 &&
     $x-> pixel( 2,3) == 0 &&
@@ -164,7 +164,7 @@ ok( $x-> pixel( 1,2) == 0 &&
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
-$x-> fill_chord( 4, 4, 3, 3, 30, 210);
+$x-> fill_chord( 4, 4, 7, 7, 30, 210);
 ok( $x-> pixel( 1,4) == 0 &&
     $x-> pixel( 4,7) == 0 &&
     $x-> pixel( 4,4) == 0 &&
@@ -206,7 +206,7 @@ ok( $x-> pixel( 1,4) == 0 &&
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
-$x-> fill_ellipse( 2, 2, 1, 1);
+$x-> fill_ellipse( 2, 2, 3, 3);
 my $image = $x-> image;
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);

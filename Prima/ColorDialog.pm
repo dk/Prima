@@ -195,8 +195,8 @@ sub create_wheel
    $a-> color( cl::Black);
    $a-> fill_ellipse(
      128, 128,
-     128 - $imul - 1,
-     128 - $imul - 1);
+     255 - $imul * 2,
+     255 - $imul * 2);
    $a-> rop( rop::XorPut);
    $a-> put_image( 0, 0, $i);
    $a-> end_paint;
@@ -220,7 +220,7 @@ sub create_wheel_shape
    $a-> color( cl::Black);
    $a-> bar( 0, 0, 255, 255);
    $a-> color( cl::White);
-   $a-> fill_ellipse( 128, 128, 128 - $imul - 1, 128 - $imul - 1);
+   $a-> fill_ellipse( 128, 128, 255 - $imul * 2, 255 - $imul * 2);
    $a-> end_paint;
    return $a;
 }
@@ -444,7 +444,7 @@ sub Wheel_Paint
       $canvas-> line( 0, $y, $sz[0], $y);
    } else {
       $canvas-> lineWidth( 3);
-      $canvas-> ellipse( $x, $y, 6, 6);
+      $canvas-> ellipse( $x, $y, 13, 13);
    }
 }
 

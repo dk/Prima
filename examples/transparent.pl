@@ -67,7 +67,7 @@ $w-> insert(
       $self-> color( cl::LightGreen);
       $self-> lineWidth( 4);
       $self-> line( 3, 3, $self-> size);
-      $self-> ellipse( 50, 50, 40, 40);
+      $self-> ellipse( 50, 50, 80, 80);
    },
    onMouseDown => sub {
       $_[0]-> bring_to_front;

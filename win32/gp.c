@@ -133,8 +133,17 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
 
+#define ELLIPSE_RECT x - ( dX - 1) / 2, y - dY / 2, x + dX / 2 + 1, y + (dY - 1) / 2 + 1
+#define ELLIPSE_RECT_SUPERINCLUSIVE x - ( dX - 1) / 2, y - dY / 2, x + dX / 2 + 2, y + (dY - 1) / 2 + 2
+#define ARC_COMPLETE x + dX / 2 + 1, y, x + dX / 2 + 1, y
+#define ARC_ANGLED   x + cos( angleStart / GRAD) * dX / 2 + 0.5, y - sin( angleStart / GRAD) * dY / 2 + 0.5, \
+                     x + cos( angleEnd / GRAD) * dX / 2 + 0.5,   y - sin( angleEnd / GRAD) * dY / 2 + 0.5
+#define ARC_ANGLED_SUPERINCLUSIVE   x + cos( angleStart / GRAD) * dX / 2 + 0.5, y - sin( angleStart / GRAD) * dY / 2 + 0.5, \
+                     x + cos( angleEnd / GRAD) * dX / 2 + 1.5,   y - sin( angleEnd / GRAD) * dY / 2 + 1.5
+
+
 Bool
-apc_gp_arc( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 { objCheck false; {
    int compl, needf, drawState = 0;
    Bool erratic = erratic_line( self);
@@ -144,19 +153,15 @@ apc_gp_arc( Handle self, int x, int y, double radX, double radY, double angleSta
    y = sys lastSize. y - y - 1;
    while( compl--) {
       if ( erratic)
-         drawState = gp_arc( self, x, y, radX, radY, 0, 360, drawState);
+         drawState = gp_arc( self, x, y, dX, dY, 0, 360, drawState);
       else
-         Arc( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5, x + radX + 1.0, y, x + radX + 1.0, y);
+         Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
    }
    if ( !needf) return true;
    if ( erratic)
-      gp_arc( self, x, y, radX, radY, angleStart, angleEnd, drawState);
+      gp_arc( self, x, y, dX, dY, angleStart, angleEnd, drawState);
    else
-      if ( !Arc(
-          ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
-          x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
-          x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5
-      )) apiErrRet;
+      if ( !Arc( ps, ELLIPSE_RECT, ARC_ANGLED)) apiErrRet;
    return true;
 }}
 
@@ -201,7 +206,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 }}
 
 Bool
-apc_gp_chord( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {objCheck false;{
    Bool ok = true;
    HDC     ps = sys ps;
@@ -213,24 +218,16 @@ apc_gp_chord( Handle self, int x, int y, double radX, double radY, double angleS
    y = sys lastSize. y - y - 1;
    while( compl--) {
       if ( erratic)
-         drawState = gp_arc( self, x, y, radX, radY, 0, 360, drawState);
+         drawState = gp_arc( self, x, y,  dX, dY, 0, 360, drawState);
       else
-         Arc( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5, x + radX + 1.0, y, x + radX + 1.0, y);
+         Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
    }
    if ( needf) {
       if ( erratic) {
-         drawState = gp_arc( self, x, y, radX, radY, angleStart, angleEnd, drawState);
-         gp_line( self,
-             x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
-             x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5,
-             drawState
-         );
+         drawState = gp_arc( self, x, y,  dX, dY, angleStart, angleEnd, drawState);
+         gp_line( self, ARC_ANGLED, drawState);
       } else
-         if ( !( ok = Chord(
-             ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
-             x + cos( angleStart / GRAD) * radX + 0.5, y - sin( angleStart / GRAD) * radY + 0.5,
-             x + cos( angleEnd / GRAD) * radX + 0.5,   y - sin( angleEnd / GRAD) * radY + 0.5
-         ))) apiErr;
+         if ( !( ok = Chord( ps, ELLIPSE_RECT, ARC_ANGLED))) apiErr;
    }
    SelectObject( ps, old);
    return ok;
@@ -280,25 +277,26 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 
 
 Bool
-apc_gp_ellipse( Handle self, int x, int y, double radX, double radY)
+apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 {objCheck false;{
-   Bool ok = true;
+   Bool    ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
+
    STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y - 1;
    if ( erratic_line( self))
-      gp_arc( self, x, y, radX, radY, 0, 360, 0);
+      gp_arc( self, x, y, dX, dY, 0, 360, 0);
    else {
-      // if ( !( ok = Ellipse( ps, x - radX + 0.5, y - radY - 0.5, x + radX + 1.5, y + radY + 0.5))) apiErr;
-      if ( !( ok = Ellipse( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5))) apiErr;
+      // if ( !( ok = Ellipse( ps, x - dX - 0.5, y - dY + 0.5, x + dX + 1.0, y + dY + 1.5))) apiErr;
+      if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
    }
    SelectObject( ps, old);
    return ok;
 }}
 
 Bool
-apc_gp_fill_chord( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {objCheck false;{
    Bool ok = true;
    HDC     ps = sys ps;
@@ -313,20 +311,16 @@ apc_gp_fill_chord( Handle self, int x, int y, double radX, double radY, double a
    if ( comp) {
       old  = SelectObject( ps, hPenHollow);
       while ( compl--)
-         if ( !( ok = Ellipse( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 2.0, y + radY + 2.5))) apiErr;
+         if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
       if ( !( ok = !needf || Chord(
-          ps, x - radX - 0.5, y - radY + 0.5, x + radX + 2.0, y + radY + 2.5,
-          x + cos( angleStart / GRAD) * radX + 0.5,   y - sin( angleStart / GRAD) * radY + 0.5,
-          x + cos( angleEnd / GRAD) * radX + 0.5 + 1, y - sin( angleEnd / GRAD) * radY + 0.5 + 1
+          ps, ELLIPSE_RECT_SUPERINCLUSIVE, ARC_ANGLED_SUPERINCLUSIVE
       ))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
       while ( compl--)
-         if ( !( ok = Ellipse( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5))) apiErr;
+         if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
       if ( !( ok = !needf || Chord(
-          ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
-          x + cos( angleStart / GRAD) * radX + 0.5,   y - sin( angleStart / GRAD) * radY + 0.5,
-          x + cos( angleEnd / GRAD) * radX + 0.5 + 1, y - sin( angleEnd / GRAD) * radY + 0.5 + 1
+          ps, ELLIPSE_RECT, ARC_ANGLED_SUPERINCLUSIVE
       ))) apiErr;
    }
    old = SelectObject( ps, old);
@@ -335,7 +329,7 @@ apc_gp_fill_chord( Handle self, int x, int y, double radX, double radY, double a
 }}
 
 Bool
-apc_gp_fill_ellipse( Handle self, int x, int y, double radX, double radY)
+apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY)
 {objCheck false;{
    Bool ok = true;
    HDC     ps  = sys ps;
@@ -345,10 +339,10 @@ apc_gp_fill_ellipse( Handle self, int x, int y, double radX, double radY)
    y = sys lastSize. y - y - 1;
    if ( comp) {
       old  = SelectObject( ps, hPenHollow);
-      if ( !( ok = Ellipse( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 2.0, y + radY + 2.5))) apiErr;
+      if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
-      if ( !( ok = Ellipse( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5))) apiErr;
+      if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
    }
    old = SelectObject( ps, old);
    if ( !comp) DeleteObject( old);
@@ -379,7 +373,7 @@ Bool
 apc_gp_fill_poly( Handle self, int numPts, Point * points)
 {Bool ok = true; objCheck false;{
    HDC     ps = sys ps;
-   int i,  dy = sys lastSize. y - 1;
+   int i,  dy = sys lastSize. y;
 
    for ( i = 0; i < numPts; i++) points[ i]. y = dy - points[ i]. y - 1;
 
@@ -454,7 +448,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 }return ok;}
 
 Bool
-apc_gp_fill_sector( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {objCheck false;{
    Bool ok = true;
    HDC     ps = sys ps;
@@ -467,28 +461,28 @@ apc_gp_fill_sector( Handle self, int x, int y, double radX, double radY, double 
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    comp = stylus_complex( &sys stylus, ps);
 
-   pts[ 0]. x = x + cos( angleEnd / GRAD) * radX + 0.5;
-   pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY + 0.5;
-   pts[ 1]. x = x + cos( angleStart / GRAD) * radX + 0.5;
-   pts[ 1]. y = newY - sin( angleStart / GRAD) * radY + 0.5;
+   pts[ 0]. x = x + cos( angleEnd / GRAD) * dX / 2 + 0.5;
+   pts[ 0]. y = newY - sin( angleEnd / GRAD) * dY / 2 + 0.5;
+   pts[ 1]. x = x + cos( angleStart / GRAD) * dX / 2 + 0.5;
+   pts[ 1]. y = newY - sin( angleStart / GRAD) * dY / 2 + 0.5;
 
    STYLUS_USE_BRUSH( ps);
    y = newY;
    if ( comp) {
       old = SelectObject( ps, hPenHollow);
       while ( compl--)
-         if ( !( ok = Ellipse( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 2.0, y + radY + 2.5))) apiErr;
+         if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
       if ( !( ok = !needf || Pie(
-          ps, x - radX - 0.5, y - radY + 0.5, x + radX + 2.0, y + radY + 2.5,
+          ps, ELLIPSE_RECT_SUPERINCLUSIVE,
           pts[ 1]. x, pts[ 1]. y,
           pts[ 0]. x, pts[ 0]. y
       ))) apiErr;
    } else {
       old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. pen. lopnColor));
       while ( compl--)
-         if ( !( ok = Ellipse( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5))) apiErr;
+         if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
       if ( !( ok = !needf || Pie(
-          ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
+          ps, ELLIPSE_RECT,
           pts[ 1]. x, pts[ 1]. y,
           pts[ 0]. x, pts[ 0]. y
       ))) apiErr;
@@ -575,7 +569,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 }}
 
 Bool
-apc_gp_sector( Handle self, int x, int y, double radX, double radY, double angleStart, double angleEnd)
+apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {objCheck false;{
    Bool ok = true;
    HDC     ps = sys ps;
@@ -586,27 +580,27 @@ apc_gp_sector( Handle self, int x, int y, double radX, double radY, double angle
 
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    old = SelectObject( ps, hBrushHollow);
-   pts[ 0]. x = x + cos( angleEnd / GRAD) * radX + 0.5;
-   pts[ 0]. y = newY - sin( angleEnd / GRAD) * radY + 0.5;
-   pts[ 1]. x = x + cos( angleStart / GRAD) * radX + 0.5;
-   pts[ 1]. y = newY - sin( angleStart / GRAD) * radY + 0.5;
+   pts[ 0]. x = x + cos( angleEnd / GRAD) * dX / 2 + 0.5;
+   pts[ 0]. y = newY - sin( angleEnd / GRAD) * dY / 2 + 0.5;
+   pts[ 1]. x = x + cos( angleStart / GRAD) * dX / 2 + 0.5;
+   pts[ 1]. y = newY - sin( angleStart / GRAD) * dY / 2 + 0.5;
    STYLUS_USE_PEN( ps);
    y = newY;
 
    while( compl--) {
       if ( erratic)
-         drawState = gp_arc( self, x, y, radX, radY, 0, 360, drawState);
+         drawState = gp_arc( self, x, y, dX, dY, 0, 360, drawState);
       else
-         Arc( ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5, x + radX + 1.0, y, x + radX + 1.0, y);
+         Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
    }
    if ( needf) {
       if ( erratic) {
-         drawState = gp_arc( self, x, y, radX, radY, angleStart, angleEnd, drawState);
+         drawState = gp_arc( self, x, y, dX, dY, angleStart, angleEnd, drawState);
          drawState = gp_line( self, pts[ 1]. x, pts[ 1]. y, x, y, drawState);
          gp_line( self, x, y, pts[ 0]. x, pts[ 0]. y, drawState);
       } else
          if ( !( ok = Pie(
-             ps, x - radX - 0.5, y - radY + 0.5, x + radX + 1.0, y + radY + 1.5,
+             ps, ELLIPSE_RECT,
              pts[ 1]. x, pts[ 1]. y,
              pts[ 0]. x, pts[ 0]. y
          ))) apiErr;

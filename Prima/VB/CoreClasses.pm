@@ -754,7 +754,7 @@ sub on_paint
    $canvas-> color( $cl);
    $canvas-> rectangle(0,0,$sz[0]-1,$sz[1]-1);
    my $ws = 18;
-   my $ex = 2;
+   my $ex = 5;
    if ( $sz[ $v ? 1 : 0] > $ws * 2) {
       if ( $v) {
          $canvas-> rectangle(2,2,$sz[0]-3,2+$ws);
