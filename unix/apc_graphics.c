@@ -475,7 +475,7 @@ apc_gp_arc( Handle self, int x, int y, int radX, int radY, double angleStart, do
       XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
           0, 360 * 64);
    XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
-       angleStart * 64, angleEnd * 64);
+       angleStart * 64, ( angleStart + angleEnd) * 64);
    return true;
 }
 
@@ -511,7 +511,7 @@ apc_gp_chord( Handle self, int x, int y, int radX, int radY, double angleStart, 
       XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
           0, 360 * 64);
    XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
-       angleStart * 64, angleEnd * 64);
+       angleStart * 64, ( angleStart + angleEnd) * 64);
    XDrawLine( DISP, XX-> drawable, XX-> gc,
        x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
        x + cos( angleEnd / GRAD) * radX,   sy - sin( angleEnd / GRAD) * radY
@@ -607,7 +607,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int radX, int radY, double angleSt
    SHIFT( x, y);
    XSetArcMode( DISP, XX-> gc, ArcChord);
    XFillArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
-       angleStart * 64, angleEnd * 64);
+       angleStart * 64, ( angleStart + angleEnd) * 64);
    return true;
 }
 
@@ -666,7 +666,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int radX, int radY, double angleS
    SHIFT( x, y);
    XSetArcMode( DISP, XX-> gc, ArcPieSlice);
    XFillArc( DISP, XX-> drawable, XX-> gc, x - radX, REVERT( y) - radY, radX * 2, radY * 2,
-       angleStart * 64, angleEnd * 64);
+       angleStart * 64, ( angleStart + angleEnd) * 64);
    return true;
 }
 
@@ -1307,7 +1307,7 @@ apc_gp_sector( Handle self, int x, int y, int radX, int radY, double angleStart,
       XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
           0, 360 * 64);
    XDrawArc( DISP, XX-> drawable, XX-> gc, x - radX, sy - radY, radX * 2, radY * 2,
-       angleStart * 64, angleEnd * 64);
+       angleStart * 64, ( angleStart + angleEnd) * 64);
    XDrawLine( DISP, XX-> drawable, XX-> gc,
        x + cos( angleStart / GRAD) * radX, sy - sin( angleStart / GRAD) * radY,
        x, y
