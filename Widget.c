@@ -470,6 +470,7 @@ Widget_first_that( Handle self, void * actionProc, void * params)
 }
 
 /*::g */
+
 /*::h */
 
 void Widget_handle_event( Handle self, PEvent event)
@@ -649,6 +650,30 @@ void Widget_handle_event( Handle self, PEvent event)
                  objCheck;
               }
               if ( !evOK) break;
+              {
+                  Handle next = nilHandle;
+                  switch( event-> key. key) {
+                  case kbLeft: 
+                     next = my-> next_positional( self, -1, 0);
+                     break;
+                  case kbRight: 
+                     next = my-> next_positional( self, 1, 0);
+                     break;
+                  case kbUp: 
+                     next = my-> next_positional( self, 0, 1);
+                     break;
+                  case kbDown: 
+                     next = my-> next_positional( self, 0, -1);
+                     break;
+                  default:;   
+                  }   
+                  if ( next) {
+                     CWidget( next)-> set_selected( next, true);
+                     objCheck;
+                     my-> clear_event( self);
+                     return;
+                  }
+              }   
            }
         }
         break;
@@ -710,49 +735,6 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmTranslateAccel:
         my-> notify( self, "<siii", "TranslateAccel",
             event-> key.code, event-> key. key, event-> key. mod);
-        objCheck;
-        if ( evOK) {
-           if ( event-> key. key == kbLeft      || event-> key. key == kbRight     ||
-                event-> key. key == kbUp        || event-> key. key == kbDown
-              )
-           {
-              int dir = ( event-> key. key == kbRight
-                       || event-> key. key == kbDown) ? 1 : -1;
-              Handle foc = apc_widget_get_focused();
-              Handle * list;
-              PWidget  next;
-              int i, no = -1, count = var-> widgets. count;
-
-              list = var-> widgets. items;
-              if ( count)
-              {
-                 if ( kind_of( foc, CWidget))
-                 {
-                    for ( i = 0; i < count; i++) if ( list[ i] == foc) { no = i; break; }
-                    if ( no < 0) foc = list[ no = 0];
-                 } else
-                    foc = list[ no = 0];
-                 next = ( PWidget) foc;
-                 count--;
-                 while ( 1)
-                 {
-                    if ( dir < 0 && no == 0) no = count; else
-                    if ( dir > 0 && no == count) no = 0; else
-                    no += dir;
-                    next = ( PWidget) list[ no];
-                    if ( next == ( PWidget) foc) goto out;
-                    if ( next-> self-> get_enabled( list[ no]) &&
-                         next-> self-> get_tabStop( list[ no]) &&
-                         next-> self-> get_selectee( list[ no])) break;
-                 }
-                 next-> self-> set_selected(( Handle) next, true);
-                 objCheck;
-                 my-> clear_event( self);
-                 return;
-              }
-           out:;
-           }
-        }
         break;
       case cmKeyUp:
         my-> notify( self, "<siii", "KeyUp",
@@ -971,6 +953,112 @@ Widget_next( Handle self)
    return apc_widget_get_z_order( self, zoNext);
 }
 
+static void 
+fill_tab_candidates( PList list, Handle level)
+{
+   int i;
+   PList w = &(PWidget( level)-> widgets);
+   for ( i = 0; i < w-> count; i++) {
+      Handle x = w-> items[i];
+      if ( CWidget( x)-> get_visible( x) && CWidget( x)-> get_enabled( x)) {
+         if ( CWidget( x)-> get_selectable( x) && CWidget( x)-> get_tabStop( x))
+            list_add( list, x);
+         fill_tab_candidates( list, x);
+      }
+   }   
+}
+
+Handle 
+Widget_next_positional( Handle self, int dx, int dy)
+{
+   Handle horizon = self;
+   
+   int i, maxDiff = INT_MAX;
+   Handle max = nilHandle;
+   List candidates;
+   Point p[2], psz;
+   
+   int minor[2], major[2], axis, extraDiff, ir[4];
+
+   /*
+      In order to compute positional difference, using four penalties.
+      To simplify algorithm, Rect will be translated to int[4] and
+      minor, major and extraDiff assigned to array indexes for those 
+      steps - minor for first and third, major for second and extraDiff for last one.
+    */
+   
+   axis = ( dx == 0) ? dy : dx;
+   minor[0] = ( dx == 0) ? 0 : 1;
+   minor[1] = minor[0] + 2;
+   extraDiff = major[(axis < 0) ? 0 : 1] = ( dx == 0) ? 1 : 0;
+   major[(axis < 0) ? 1 : 0] = extraDiff + 2;
+   extraDiff = ( dx == 0) ? (( axis < 0) ? 0 : 2) : (( axis < 0) ? 1 : 3);
+   
+   while ( PWidget( horizon)-> owner) {
+      if (
+          ( PWidget( horizon)-> options. optSystemSelectable) || // fast check for CWindow
+          ( PWidget( horizon)-> options. optModalHorizon) 
+         ) break; 
+      horizon = PWidget( horizon)-> owner;
+   }
+
+   if ( !CWidget( horizon)-> get_visible( horizon) ||
+        !CWidget( horizon)-> get_enabled( horizon)) return nilHandle;
+
+   list_create( &candidates, 64, 64);
+   fill_tab_candidates( &candidates, horizon);
+   
+   p[0].x = p[0].y = 0;
+   p[1] = CWidget( self)-> get_size( self);
+   apc_widget_map_points( self, true, 2, p);
+   apc_widget_map_points( horizon, false, 2, p);
+   ir[0] = p[0].x; ir[1] = p[0].y; ir[2] = p[1].x; ir[3] = p[1].y;
+
+   for ( i = 0; i < candidates. count; i++) {
+      int    diff, ix[4];
+      Handle x = candidates. items[i];
+
+      if ( x == self) continue;
+      
+      p[0].x = p[0].y = 0;
+      p[1] = CWidget( x)-> get_size( x);
+      apc_widget_map_points( x, true, 2, p);
+      apc_widget_map_points( horizon, false, 2, p);
+      ix[0] = p[0].x; ix[1] = p[0].y; ix[2] = p[1].x; ix[3] = p[1].y;
+
+      /* First step - checking if the widget is subject to comparison. It is not,
+         if it's minor axis is not contiguous with self's */
+
+      if ( ix[ minor[0]] > ir[ minor[1]] || ix[ minor[1]] < ir[ minor[0]]) 
+         continue;
+
+      /* Using x100 penalty for distance in major axis - and discarding those that 
+         of different sign */
+      diff = ( ix[ major[ 1]] - ir[ major[0]]) * 100 * axis;
+      if ( diff < 0) 
+         continue;
+
+      /* Adding x10 penalty for incomplete minor axis congruence. Addition goes in tenths,
+         in a way to not allow congruence overweight major axis distance */
+      if ( ix[ minor[0]] > ir[ minor[0]])
+         diff += ( ix[ minor[0]] - ir[ minor[0]]) * 100 / ( ir[ minor[1]] - ir[ minor[0]]);
+      if ( ix[ minor[1]] < ir[ minor[1]])
+         diff += ( ir[ minor[1]] - ix[ minor[1]]) * 100 / ( ir[ minor[1]] - ir[ minor[0]]);
+
+      /* Adding 'distance from level' x1 penalty */
+      if (( ix[ extraDiff] - ir[ extraDiff]) * axis < 0) 
+         diff += abs( ix[ extraDiff] - ir[ extraDiff]);
+
+      if ( diff < maxDiff) {
+         max = x;
+         maxDiff = diff;
+      }   
+   }   
+   
+   list_destroy( &candidates);
+
+   return max;
+}
 /*::o */
 /*::p */
 void
