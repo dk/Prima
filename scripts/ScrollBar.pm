@@ -661,10 +661,10 @@ sub on_keydown
    my ( $v, $x, $d, $s, $ps) = ($self-> vertical, $self-> value, 0, $self-> step, $self-> pageStep);
    $d = $s  if ( $key == kb::Right && !$v) || ( $key == kb::Down && $v);
    $d = -$s if ( $key == kb::Left  && !$v) || ( $key == kb::Up   && $v);
-   $d = $ps  if $key == kb::PgDn && !($mod & kb::Ctrl);
-   $d = -$ps if $key == kb::PgUp && !($mod & kb::Ctrl);
-   $d = $self-> max - $x if ( $key == kb::PgDn && $mod & kb::Ctrl) || $key == kb::End;
-   $d = -$x if ( $key == kb::PgUp && $mod & kb::Ctrl) || $key == kb::Home;
+   $d = $ps  if $key == kb::PgDn && !($mod & km::Ctrl);
+   $d = -$ps if $key == kb::PgUp && !($mod & km::Ctrl);
+   $d = $self-> max - $x if ( $key == kb::PgDn && $mod & km::Ctrl) || $key == kb::End;
+   $d = -$x if ( $key == kb::PgUp && $mod & km::Ctrl) || $key == kb::Home;
    $self-> clear_event, $self-> value( $x + $d) if $d;
 }
 

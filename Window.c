@@ -227,7 +227,7 @@ void Window_handle_event( Handle self, PEvent event)
          my clear_event( self);
       }
       objCheck;
-      if ( event-> key. key == kbTab || event-> key. key == kbShiftTab)
+      if ( event-> key. key == kbTab || event-> key. key == kbBackTab)
       {
          int i         = 0, count = var widgets. count;
          int dir       = ( event-> key. key == kbTab) ? 1 : -1;
