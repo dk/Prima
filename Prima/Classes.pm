@@ -906,18 +906,6 @@ sub popupLight3DColor     { return shift-> popupColorIndex( ci::Light3DColor, @_
 sub x_centered       {($#_)?$_[0]->set_centered(1,0)      :$_[0]->raise_wo("x_centered"); }
 sub y_centered       {($#_)?$_[0]->set_centered(0,1)      :$_[0]->raise_wo("y_centered"); }
 
-sub set_commands
-{
-   my ( $self, $enable, @commands) = @_;
-   foreach ( $self-> get_components)
-   {
-      if ( $_->isa("Prima::AbstractMenu")) {
-        my $menu = $_;
-        foreach ( @commands) { $menu-> set_command( $_, $enable); }
-      };
-   }
-}
-
 sub insert
 {
    my $self = shift;
@@ -957,12 +945,12 @@ sub pointer
 }
 
 sub widgets    { return shift->get_widgets};
-sub enable_commands  { shift->set_commands(1,@_)}
-sub disable_commands { shift->set_commands(0,@_)}
-sub key_up      { shift-> key_event( cm::KeyUp,   @_)}
+sub key_up      { splice( @_,5,0,1) if $#_ > 4; shift-> key_event( cm::KeyUp, @_)}
 sub key_down    { shift-> key_event( cm::KeyDown, @_)}
 sub mouse_up    { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseUp, @_); }
 sub mouse_move  { splice( @_,5,0,0) if $#_ > 4; splice( @_,1,0,0); shift-> mouse_event( cm::MouseMove, @_) }
+sub mouse_enter { splice( @_,5,0,0) if $#_ > 4; splice( @_,1,0,0); shift-> mouse_event( cm::MouseEnter, @_) }
+sub mouse_leave { shift-> mouse_event( cm::MouseLeave ) }
 sub mouse_wheel { splice( @_,5,0,0) if $#_ > 4; shift-> mouse_event( cm::MouseWheel, @_) }
 sub mouse_down  { splice( @_,5,0,0) if $#_ > 4;
                   splice( @_,2,0,0) if $#_ < 4;
