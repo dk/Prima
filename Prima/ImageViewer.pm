@@ -407,7 +407,7 @@ the both constants produce equal effect here.
 
 Default value: C<ta::Bottom>
 
-=item zoom INTEGER
+=item zoom FLOAT
 
 Selects zoom level for image display. The acceptable value range
 is between 0.02 and 100. The zoom value
