@@ -211,6 +211,10 @@ Unbuffered:
    XX-> clip_rect. width = XX-> size.x;
    XX-> clip_rect. height = XX-> size.y;
    if ( XX-> invalid_region && inside_on_paint && !is_opt( optInDrawInfo)) {
+      if ( XX-> flags. kill_current_region) {
+         XDestroyRegion( XX-> current_region);
+         XX-> flags. kill_current_region = 0;
+      }
       if ( XX-> btransform. x != 0 || XX-> btransform. y != 0) {
          Region r = XCreateRegion();
          XUnionRegion( r, XX-> invalid_region, r);
@@ -258,6 +262,7 @@ prima_cleanup_drawable_after_painting( Handle self)
       XDestroyRegion( XX-> current_region);
       XX-> flags. kill_current_region = 0;
    }
+   XX-> current_region = 0;
    XX-> flags. xft_clip = 0;
    if ( XX-> udrawable && XX-> udrawable != XX-> gdrawable && XX-> gdrawable && !is_opt( optInDrawInfo)) {
       if ( XX-> paint_region) {
@@ -1471,7 +1476,7 @@ apc_gp_set_region( Handle self, Handle mask)
    XX-> current_region = region;
    XX-> flags. xft_clip = 0;
 #ifdef USE_XFT
-   if ( XX-> xft_drawable) prima_xft_set_region( self, region);
+   if ( XX-> xft_drawable) prima_xft_update_region( self);
 #endif   
    return true;
 }
@@ -2180,7 +2185,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    XX-> clip_mask_extent. y = r. height;
    region = XCreateRegion();
    XUnionRectWithRegion( &r, region, region);
-   if ( XX-> paint_region) 
+   if ( XX-> paint_region)
       XIntersectRegion( region, XX-> paint_region, region);
    if ( XX-> btransform. x != 0 || XX-> btransform. y != 0) {
       XOffsetRegion( region, XX-> btransform. x, -XX-> btransform. y);
@@ -2192,7 +2197,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
    XX-> current_region = region;
    XX-> flags. xft_clip = 0;
 #ifdef USE_XFT
-   if ( XX-> xft_drawable) prima_xft_set_region( self, region);
+   if ( XX-> xft_drawable) prima_xft_update_region( self);
 #endif   
    return true;
 }

@@ -1204,6 +1204,6 @@ extern Bool
 prima_xft_parse( char * ppFontNameSize, Font * font);
 
 extern void
-prima_xft_set_region( Handle self, Region region);
+prima_xft_update_region( Handle self);
 
 

@@ -1109,8 +1109,12 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       }
       XFillRectangle( DISP, canvas, gc, 0, 0, width, height);
       XftDrawChange( XX-> xft_drawable, canvas);
+      if ( XX-> flags. xft_clip)
+         XftDrawSetClip( XX-> xft_drawable, 0);
       XftDrawString32( XX-> xft_drawable, &xftcolor, XX-> font-> xft, dx, height - dy, ucs4, len);
       XftDrawChange( XX-> xft_drawable, XX-> gdrawable);
+      if ( XX-> flags. xft_clip)
+         XftDrawSetClip( XX-> xft_drawable, XX-> current_region);
       XCHECKPOINT;
       XCopyArea( DISP, canvas, XX-> gdrawable, XX-> gc, 0, 0, width, height, x - dx, REVERT( y - dy + height));
       XFreeGC( DISP, gc);
@@ -1315,11 +1319,11 @@ prima_xft_parse( char * ppFontNameSize, Font * font)
 }
 
 void
-prima_xft_set_region( Handle self, Region region)
+prima_xft_update_region( Handle self)
 {
    DEFXX;
    if ( XX-> xft_drawable) {
-      XftDrawSetClip( XX-> xft_drawable, region);
+      XftDrawSetClip( XX-> xft_drawable, XX-> current_region);
       XX-> flags. xft_clip = 1;
    }
 }
