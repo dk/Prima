@@ -75,13 +75,6 @@ sub init
    my $self = shift;
    $self-> {preview} = 0;
    my %profile = $self-> SUPER::init(@_);
-   $self-> {Preview} = $self-> insert( CheckBox => 
-      origin => [ 524, 80],
-      text   => '~Preview',
-      size   => [ 96, 36],
-      name   => 'Preview',
-      delegations => [qw(Click)]
-   );
    
    my $pk = $self-> insert( ImageViewer => 
       origin => [ 524, 120],
@@ -91,6 +84,26 @@ sub init
       valignment => ta::Center,
    );
    $pk-> size(($self-> Cancel-> width) x 2); # force square dimension
+
+   $self-> insert( ScrollBar => 
+      origin      => [ $pk-> left, $pk-> top + 2],
+      width       => $pk-> width,
+      selectable  => 1,
+      tabStop     => 1,
+      name        => 'FrameSelector',
+      designScale => undef,
+      visible     => 0,
+      value       => 0,
+      delegations => ['Change'],
+   );
+
+   $self-> {Preview} = $self-> insert( CheckBox => 
+      origin => [ 524, 80],
+      text   => '~Preview',
+      size   => [ 96, 36],
+      name   => 'Preview',
+      delegations => [qw(Click)]
+   );
 
    $self-> insert( Label => 
       origin => [ 524, 25],
@@ -103,16 +116,21 @@ sub init
    );
    
    $self-> preview( $profile{preview});
+   $self-> {frameIndex} = 0;
    return %profile;
 }
+
 
 sub update_preview
 {
    my $self = $_[0];
    my $i = $self-> PickHole;
    my $j = $self-> Info;
+   my $s = $self-> FrameSelector;
    $i-> image( undef);
    $j-> text('');
+   $s-> hide unless $s-> {block};
+   $self-> {frameIndex} = 0;
    return unless $self-> preview;
    my $x = $self-> Files;
    $x = $x-> get_items( $x-> focusedItem);
@@ -120,7 +138,11 @@ sub update_preview
    return unless defined $x;
    $x = $self-> directory . $x;
    return unless -f $x;
-   $x = Prima::Image-> load( $x, loadExtras => 1);
+   $x = Prima::Image-> load( $x, 
+      loadExtras => 1, 
+      wantFrames => 1, 
+      index => $s->{block} ? $s-> value : 0,
+   );
    return unless defined $x;
    $i-> image( $x);
    my @szA = $x->size;
@@ -132,8 +154,24 @@ sub update_preview
    my $text = $szA[0].'x'.$szA[1].'x'. ($x-> type & im::BPP) . " bpp ".
        $codecs->[$x->{extras}->{codecID}]->{fileShortType};
    $text .= ',grayscale' if $x-> type & im::GrayScale;
+   if ( $x->{extras}->{frames} > 1) {
+      unless ( $s-> {block}) {
+         $text .= ",$x->{extras}->{frames} frames";
+         $s-> {block} = 1;
+         $s-> set(
+            visible => 1,
+            max     => $x-> {extras}-> {frames} - 1,
+            value   => 0,
+         );
+         $s-> {block} = 0;
+      } else {
+         $text .= ",frame ". ($s-> value + 1) . "of $x->{extras}->{frames}";
+         $self-> {frameIndex} = $s-> value;
+      }
+   }
    $j-> text( $text);
 }
+
 
 sub preview
 {
@@ -154,11 +192,29 @@ sub Files_SelectItem
    $self-> update_preview if $self-> preview;
 }
 
+sub Dir_Change
+{
+   my ( $self, $lst) = @_;
+   $self-> SUPER::Dir_Change( $lst);
+   $self-> update_preview if $self-> preview;
+}
+
+sub FrameSelector_Change
+{
+   my ( $self, $fs) = @_;
+   return if $fs-> {block};
+   my $v = $fs-> value;
+   $fs-> {block} = 1;
+   $self-> update_preview;
+   $fs-> {block} = 0;
+}
+
 sub load
 {
    my ( $self, %profile) = @_;
    return undef unless defined $self-> execute;
    $profile{loadExtras} = 1 unless exists $profile{loadExtras};
+   $profile{index} = $self-> {frameIndex};
    my @r = Prima::Image-> load( $self-> fileName, %profile);
    unless ( defined $r[-1]) {
       Prima::MsgBox::message("Error loading " . $self-> fileName . ":$@");
