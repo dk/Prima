@@ -53,13 +53,15 @@ use vars qw(@ISA);
 sub create_menu
 {
    my $img = Prima::Image-> create;
-   $img-> load( 'h:/var/backup/os2/os2/bitmap/wicker2.gif');
+   $0 =~ /^(.*)\\|\/[^\\\/]+$/;
+   $img-> load( "$1/Hand.gif");
    return [
       [ "~File" => [
           [ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!";}],   # anonymous sub
           [ $img => sub {
-             my $img = Prima::Image-> create;
-             $img-> load( 'h:/var/backup/os2/os2/bitmap/testimg.gif');
+             my $img = $_[0]-> menu-> image( $_[1]);
+             my @r = @{$img-> palette};
+             $img-> palette( [reverse @r]);
              $_[0]->menu->image( $_[1], $img);
           }],                        # image
           [],                                       # division line
@@ -119,7 +121,7 @@ sub Exit
 sub Check
 {
    my $menu = $_[ 0]-> menu;
-   $menu-> set_check( 'checker', ! $menu-> get_check( 'checker'));
+   $menu-> checked( 'checker', ! $menu-> checked( 'checker'));
 }
 
 sub PrintText
