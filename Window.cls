@@ -23,6 +23,8 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+# $Id$
+
 object Prima::Window( Prima::Widget)
 {
    Handle   menu;
@@ -78,5 +80,4 @@ object Prima::Window( Prima::Widget)
    c_only   void    exec_enter_proc( Bool sharedExec, Handle insertBefore);
    c_only   void    exec_leave_proc();
    c_only   void    cancel_children();
-
 }

@@ -23,6 +23,8 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+# $Id$
+
 local @ImageStats double[7];
 
 object Prima::Image( Prima::Drawable)

@@ -26,6 +26,7 @@
 #
 #  Main widget description
 #
+# $Id$
 
 object Prima::Widget( Prima::Drawable)
 {
@@ -193,4 +194,3 @@ object Prima::Widget( Prima::Drawable)
 # other
    method   void     on_paint( Handle canvas);
 }
-

@@ -23,10 +23,11 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+# $Id$
+
 object Prima::AccelTable( Prima::AbstractMenu)
 {
    property Bool selected;
    method void   init( HV * profile);
    method void   set_items( SV * menuItems);
 }
-
