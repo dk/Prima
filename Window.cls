@@ -31,6 +31,7 @@ object Prima::Window( Prima::Widget)
    int      modal;
    int      modalResult;
 
+   property Bool     selected;
    property char*    text;
 
    method   void     cancel();
@@ -78,7 +79,6 @@ object Prima::Window( Prima::Widget)
    method   void     set_modal_result( int modalResult);
    method   void     set_owner_icon( Bool ownerIcon);
    method   Bool     set_pos( int x, int y)          => apc_window_set_client_pos;
-   method   void     set_selected( Bool selected);
    method   Bool     set_size( int x, int y)         => apc_window_set_client_size;
    import   void     set_task_listed( Bool taskListed);
    method   void     set_transparent( Bool transparent);

@@ -56,6 +56,7 @@ object Prima::Widget( Prima::Drawable)
    property  Color backColor;
    property  Color color;
    property  char* hint;
+   property  Bool  selected;
    property  char* text;
 
 # direct call methods
@@ -165,7 +166,6 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     get_scale_children();
    method   Bool     get_selectable();
    c_only   Handle   get_selectee();
-   method   Bool     get_selected();
    method   Handle   get_selected_widget();
    method   int      get_selecting_buttons();
    method   Handle   get_shape();
@@ -231,7 +231,6 @@ object Prima::Widget( Prima::Drawable)
    method   void     set_right( int right);
    method   void     set_scale_children( Bool scaleChildren);
    method   void     set_selectable( Bool selectable);
-   method   void     set_selected( Bool selected);
    method   void     set_selected_widget( Handle widget);
    method   void     set_selecting_buttons( int sb);
    method   void     set_shape( Handle mask);

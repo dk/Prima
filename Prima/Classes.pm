@@ -964,7 +964,6 @@ sub right            {($#_)?$_[0]->set_right       ($_[1]):return $_[0]->get_rig
 sub rect             {($#_)? ($_[0]->set_rect($#_>1?@_[1..$#_]:@{$_[1]})):return $_[0]->get_rect}
 sub scaleChildren    {($#_)?$_[0]->set_scale_children  ($_[1]):return $_[0]->get_scale_children;  }
 sub selectable       {($#_)?$_[0]->set_selectable  ($_[1]):return $_[0]->get_selectable}
-sub selected         {($#_)?$_[0]->set_selected    ($_[1]):return $_[0]->get_selected  }
 sub selectedWidget  {($#_)?$_[0]->set_selected_widget($_[1]):return $_[0]->get_selected_widget;}
 sub selectingButtons {($#_)?$_[0]->set_selecting_buttons($_[1]):return $_[0]->get_selecting_buttons}
 sub shape            {($#_)?$_[0]->set_shape       ($_[1]):return $_[0]->get_shape;       }
@@ -1249,7 +1248,6 @@ sub uncheck    {$_[0]->set_check($_[1],0);}
 sub enabled    {($#_>1)?shift->set_enabled   (@_)   :return $_[0]->get_enabled ($_[1]);}
 sub key        {($#_>1)?shift->set_key       (@_)   :return $_[0]->get_key     ($_[1]);}
 sub items      {($#_)?$_[0]->set_items       ($_[1]):return $_[0]->get_items("");      }
-sub selected   {($#_)?$_[0]->set_selected    ($_[1]):return $_[0]->get_selected;       }
 sub text       {($#_>1)?shift->set_text      (@_)   :return $_[0]->get_text    ($_[1]);}
 sub variable   {($#_>1)?shift->set_variable  (@_)   :return $_[0]->get_variable($_[1]);}
 sub toggle     {

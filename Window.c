@@ -519,14 +519,6 @@ Window_set_focused( Handle self, Bool focused)
 }
 
 
-void
-Window_set_selected( Handle self, Bool selected)
-{
-   activate( self, selected);
-   inherited set_selected( self, selected);
-}
-
-
 Handle
 Window_get_menu( Handle self)
 {
@@ -707,6 +699,16 @@ void  Window_on_activate( Handle self) {}
 void  Window_on_deactivate( Handle self) {}
 void  Window_on_windowstate( Handle self, int windowState) {}
 void  Window_set_transparent( Handle self, Bool transparent) {}
+
+Bool
+Window_selected( Handle self, Bool set, Bool selected)
+{
+   if (!set)
+      return inherited get_selected( self);
+   activate( self, selected);
+   inherited set_selected( self, selected);
+   return selected;
+}
 
 char *
 Window_text( Handle self, Bool set, char * text)
