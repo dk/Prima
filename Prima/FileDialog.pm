@@ -126,7 +126,7 @@ sub on_click
    my $ind = $items->[$foc]-> {indent};
    for (@{$items}) { $newP .= $_-> {text}."/" if $_-> {indent} < $ind; }
    $newP .= $items-> [$foc]-> {text};
-   $newP .= '/' unless $newP =~ m![/\\]$!;
+   $newP .= '/' unless $newP =~ m/[\/\\]$/;
    $_[0]-> path( $newP);
 }
 
@@ -301,6 +301,18 @@ sub new_directory
    $::application-> pointer( $oldPointer);
 }
 
+sub safe_abs_path
+{
+   my $p = $_[0];
+   my $warn;
+   local $SIG{__WARN__} = sub {
+      $warn = "@_";
+   };
+   $p = eval { Cwd::abs_path($p) };
+   $@ .= $warn if defined $warn;
+   return $p;
+}
+
 sub path
 {
    return $_[0]-> {path} unless $#_;
@@ -310,7 +322,7 @@ sub path
    unless( scalar( stat $p)) {
       $p = "";
    } else {
-      $p = eval { Cwd::abs_path($p) };
+      $p = safe_abs_path($p);
       $p = "." if $@ || !defined $p;
       $p = "" unless -d $p;
       $p .= '/' unless $p =~ m/[\/\\]$/;
@@ -673,7 +685,7 @@ sub canonize_mask
 sub canon_path
 {
    my $p = shift;
-   return Cwd::abs_path($p) if -d $p;
+   return Prima::DirectoryListBox::safe_abs_path($p) if -d $p;
    my $dir = $p;
    my $fn;
    if ($dir =~ s{[/\\]([^\\/]+)$}{}) {
@@ -685,7 +697,7 @@ sub canon_path
    unless ( scalar(stat($dir . (( !$unix && $dir =~ /:$/) ? '/' : '')))) {
       $dir = "";
    } else {
-      $dir = eval { Cwd::abs_path($dir) };
+      $dir = Prima::DirectoryListBox::safe_abs_path($dir);
       $dir = "." if $@;
       $dir = "" unless -d $dir;
       $dir =~ s/(\\|\/)$//;
@@ -723,6 +735,7 @@ sub init
       size      => [ 245, 25],
       text      => $profile{fileName},
       maxLen    => 32768,
+      delegations => [qw(KeyDown)],
    );
    $self->insert( Label=>
       origin    => [ 14 , 375],
@@ -843,11 +856,156 @@ sub on_show
    $self-> Dir_Change( $self-> Dir);
 }
 
+sub on_endmodal
+{
+   $_[0]-> hide_completions;
+}
+
 sub execute
 {
    return ($_[0]-> SUPER::execute != mb::Cancel) ? $_[0]-> fileName : ( wantarray ? () : undef);
 }
 
+sub hide_completions
+{
+   if ( $_[0]-> {completionList}) {
+      $_[0]-> {completionList}-> destroy;
+      delete $_[0]-> {completionList};
+   }
+}
+
+sub Name_KeyDown
+{
+   my ( $dlg, $self, $code, $key, $mod) = @_;
+
+   if (($key == kb::Tab) && !($mod & km::Ctrl)) {
+      $self-> clear_event;
+      my $f = $self-> text;
+      substr( $f, $self-> selStart) = ''
+         if $self-> selStart == $self-> charOffset && 
+            $self-> selEnd == length $f;
+      $f =~ s/^\s*//;
+      $f =~ s/\\\s/ /g;
+      $f =~ s/^~/$ENV{HOME}/ if $f =~ m/^~/ && defined $ENV{HOME};
+      my $relative;
+      $f = $dlg-> Dir-> path .  $f, $relative = 1 if 
+         ($unix && $f !~ /^\//) ||
+         (!$unix && $f !~ /^([a-z]\:|\/)/i);
+      $f =~ s/\\/\//g;
+      my $path = $f;
+      my $rel_path = $relative ? substr($path, length($dlg-> Dir-> path)) : $path;
+      $path =~ s/(^|\/)[^\/]*$/$1/;
+      $rel_path =~ s/(^|\/)[^\/]*$/$1/;
+      my $residue = substr( $f, length $path);
+      if ( -d $path) {
+         my $i;
+         my @fs = Prima::Utils::getdir( $path);
+         my @completions;
+         my $mask = $dlg-> {mask};
+         for ( $i = 0; $i < scalar @fs; $i += 2) {
+            next if !$dlg-> {showDotFiles} && $fs[$i] =~ /^\./;
+            next if substr( $fs[$i], 0, length $residue) ne $residue;
+            $fs[ $i + 1] = 'dir' if $fs[ $i + 1] eq 'lnk' && -d $path.$fs[$i];
+            next if $fs[ $i + 1] ne 'dir' && $fs[$i] !~ /$mask/;
+            push @completions, $fs[$i] . (( $fs[ $i + 1] eq 'dir') ? '/' : '');
+         }
+         s/\s/\\ /g for @completions;
+         if ( 1 == scalar @completions) {
+            $self-> text( $rel_path . $completions[0]);
+            $i = length( $rel_path) + length( $residue );
+            $self-> selection( $i, length($rel_path) + length($completions[0]));
+            $self-> charOffset( $i);
+         } elsif ( 1 < scalar @completions) {
+            unless ( $dlg-> {completionList}) {
+               $dlg-> {completionList} = Prima::ListBox-> create(
+                  owner       => $dlg,
+                  width       => $self-> width, 
+                  bottom      => $dlg-> Files-> bottom,
+                  top         => $self-> bottom - 1, 
+                  left        => $self-> left,
+                  designScale => undef,
+                  name        => 'CompletionList',
+                  delegations => [qw(SelectItem KeyDown Click)],
+               );
+               $dlg->{completionMatch} = '';
+               $dlg->{completionListIndex} = 0;
+            }
+            if ( 
+                 $dlg->{completionMatch} eq $rel_path &&
+                 defined $completions[$dlg->{completionListIndex}] &&
+                 defined $dlg-> {completionList}-> get_items($dlg->{completionListIndex}) &&
+                 $dlg-> {completionList}-> get_items($dlg->{completionListIndex}) eq
+                   $completions[$dlg->{completionListIndex}] 
+                 ) {
+               $dlg->{completionList}-> focusedItem($dlg->{completionListIndex});
+               $f = $rel_path . $completions[$dlg->{completionListIndex}]; 
+               $self-> text( $f);
+               $i = length( $rel_path) + length( $residue);
+               $self-> selection( $i , length $f);
+               $self-> charOffset( $i);
+               $dlg->{completionListIndex} = 0 if ++$dlg->{completionListIndex} >= @completions;
+            } else {
+               $dlg->{completionListIndex} = 0;
+            }
+            $dlg-> {completionList}-> items( \@completions);
+            $dlg-> {completionList}-> bring_to_front;
+         } elsif ($dlg-> {completionList}) {
+            $dlg-> {completionList}-> items([]);
+            $dlg->{completionListIndex} = 0;
+         }
+         $dlg->{completionMatch} = $rel_path;
+         $dlg->{completionPath}  = $path;
+      }
+   } elsif ( $key == kb::Esc && $dlg-> {completionList}) {
+      $dlg-> {completionList}-> destroy;
+      delete $dlg-> {completionList};
+      $self-> clear_event;
+      my $f = $self-> text;
+      if ( $self-> selStart == $self-> charOffset && $self-> selEnd == length $f) {
+         substr( $f, $self-> selStart) = '';
+         $self-> text( $f);
+      }
+   }
+}
+
+sub CompletionList_Click
+{
+   my ( $self, $lst) = @_;
+   $self-> Name_text( $self-> {completionMatch} . $lst-> get_items($lst-> focusedItem));
+   $self-> hide_completions;
+   $self-> Name-> select;
+}
+
+sub CompletionList_SelectItem
+{
+   my ( $self, $lst) = @_;
+   my $text = $lst-> get_items($lst-> focusedItem);
+   $self-> Name_text( $self-> {completionMatch} . $text);
+   if ( $self-> {completionPath} eq $self-> Dir-> path) { # simulate Files walk
+      my $f = $self-> Files;
+      my $c = $f-> count;
+      for ( my $i = 0; $i < $c; $i++) {
+         next unless $f-> get_item_text($i) eq $text;
+         $f-> focusedItem( $i);
+         last;
+      }
+   }
+}
+
+sub CompletionList_KeyDown
+{
+   my ( $dlg, $self, $code, $key, $mod) = @_;
+   if ( $key == kb::Esc) {
+      $self-> clear_event;
+      $dlg-> hide_completions;
+      $dlg-> Name-> select;
+   } elsif ( $key == kb::Enter) {
+      $dlg-> Name_text( $dlg-> {completionMatch} . $self-> get_items($self-> focusedItem));
+      $self-> clear_event;
+      $dlg-> hide_completions;
+      $dlg-> Name-> select;
+   }
+}
 
 sub Files_KeyDown
 {
@@ -969,6 +1127,7 @@ sub Name_text
 sub Open_Click
 {
    my $self = shift;
+   $self-> hide_completions;
    $_ = $self-> Name-> text;
    my @files;
    if ( $self-> multiSelect) {
