@@ -26,6 +26,7 @@
 # $Id$
 package Prima::VB::CfgMaint;
 use strict;
+use Prima::Utils;
 use vars qw(@pages %classes $backup $userCfg $rootCfg $systemWide);
 
 @pages      = ();
@@ -57,14 +58,10 @@ sub open_cfg
       $file =~ s[\\][/]g;
       eval "require \"$file\";";
    } else {
-      warn "Environment variable HOME does not exist\n" unless exists $ENV{HOME};
-      my $home = ( defined($ENV{HOME}) ? $ENV{HOME} : '' ) . '/.prima';
-      $home =~ s[\\][/]g;
-      $home =~ s/\/$//;
-      $file = "$home/$userCfg";
+      $file = Prima::Utils::path($userCfg);
       $pkg  = "Prima::VB::UserConfig";
       return 1 unless -f $file;
-      eval "require \"$home/$userCfg\";";
+      eval "require \"$file\";";
    }
    return (0,  "$@") if $@;
 

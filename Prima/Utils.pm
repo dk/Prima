@@ -31,7 +31,6 @@
 
 package Prima::Utils;
 use strict;
-use Prima::Const;
 require Exporter;
 use vars qw(@ISA @EXPORT @EXPORT_OK);
 @ISA = qw(Exporter);
@@ -41,6 +40,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
                 beep sound
                 username
                 xcolor
+                find_image path
                );
 
 sub xcolor {
@@ -58,6 +58,45 @@ sub xcolor {
    return ($r<<16)|($g<<8)|($b);
 }
 
+sub find_image
+{
+   my $mod = @_ > 1 ? shift : 'Prima';
+   my $name = shift;
+   $name =~ s!::!/!g;
+   $mod =~ s!::!/!g;
+   for (@INC) {
+      return "$_/$mod/$name" if -f "$_/$mod/$name" && -r _;
+   }
+   return undef;
+}
+
+# returns a preferred path for the toolkit configuration files,
+# or, if a filename given, returns the name appended to the path
+# and proofs that the path exists
+sub path
+{
+   my $path;
+   if ( exists $ENV{HOME}) {
+      $path = "$ENV{HOME}/.prima";
+   } elsif ( $^O =~ /win/i && exists $ENV{USERPROFILE}) {
+      $path = "$ENV{USERPROFILE}/.prima";
+   } elsif ( $^O =~ /win/i && exists $ENV{WINDIR}) {
+      $path = "$ENV{WINDIR}/.prima";
+   } else {
+      $path = "/.prima";
+   }
+
+   if ( $_[0]) {
+      unless ( -d $path) {
+         eval "use File::Path"; die "$@\n" if $@;
+         File::Path::mkpath( $path);
+      }
+      $path .= "/$_[0]";
+   }
+
+   return $path;
+}
+
 1;
 
 __DATA__
@@ -68,8 +107,10 @@ Prima::Utils - miscellanneous routines
 
 =head1 DESCRIPTION
 
-The module contains several routines, implemented in C. These
-routines can be accessed via C<Prima::Utils::> prefix.
+The module contains several helper routines, implemented in both C and perl. 
+Whereas the C-coded parts are accessible only if 'use Prima;' statement was issued
+prior to the 'use Prima::Utils' invocation, the perl-coded are always available.
+This makes the module valuable when used without the rest of toolkit code.
 
 =head1 API
 
@@ -115,6 +156,13 @@ Obsolete function.
 
 Returns stdlib's ceil() of DOUBLE
 
+=item find_image PATH
+
+Converts PATH from perl module notation into a file path, and
+searches for the file in C<@INC> paths set. If a file is
+found, its full filename is returned; otherwise C<undef> is
+returned.
+
 =item floor DOUBLE
 
 Obsolete function.
@@ -140,6 +188,16 @@ The file type is a string, one of the following:
 
 This function was implemented for faster directory reading, 
 to avoid successive call of C<stat> for every file.
+
+=item path [ FILE ]
+
+If called with no parameters, returns path to a directory,
+usually F<~/.prima>, that can be used to contain the user settings
+of a toolkit module or a program. If FILE is specified, appends
+it to the path and returns the full file name. In the latter case 
+the path is automatically created by C<File::Path::mkpath> unless it
+already exists.
+
 
 =item query_drives_map [ FIRST_DRIVE = "A:" ]
 

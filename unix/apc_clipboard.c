@@ -132,7 +132,7 @@ get_typename( long id, int index)
 {
    switch ( id) {
    case cfText:
-      if ( !wantUnicodeInput) break;
+      if ( !PApplication(application)-> wantUnicodeInput) break;
       if ( index > 1) return None;
       return ( index == 0) ? UTF8_STRING : CF_NAME(id);
    case cfBitmap:

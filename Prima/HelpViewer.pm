@@ -35,6 +35,7 @@ use Prima::Buttons;
 use Prima::InputLine;
 use Prima::StdDlg;
 use Prima::IniFile;
+use Prima::Utils;
 
 package Prima::HelpViewer;
 use vars qw(@helpWindows $windowClass);
@@ -182,7 +183,7 @@ use vars qw(@ISA $loaddlg $finddlg $prndlg $setupdlg $inifile
 $defaultVariableFont $defaultFixedFont);
 @ISA = qw(Prima::Window);
 
-$inifile = Prima::IniFile-> create( Prima::path( 'HelpWindow'));
+$inifile = Prima::IniFile-> create( Prima::Utils::path( 'HelpWindow'));
 
 sub profile_default
 {

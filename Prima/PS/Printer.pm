@@ -48,6 +48,7 @@ compliant with Prima::Printer interface.
 
 use strict;
 use Prima;
+use Prima::Utils;
 use Prima::PS::Drawable;
 
 package Prima::PS::Printer;
@@ -65,7 +66,7 @@ sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
    my %prf = (
-      resFile       => Prima::path . '/Printer',
+      resFile       => Prima::Utils::path . '/Printer',
       printer       => undef,
       defaultData   => {
          color          => 1,

@@ -551,7 +551,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 
           keyState = guts. keyState;
 AGAIN:             
-          if ( wantUnicodeInput) {
+          if ( PApplication(application)-> wantUnicodeInput) {
              WCHAR keys[ 2];
              // unicode mapping
              switch ( ToUnicodeEx( mp1, scan, keyState, keys, 2, 0, kl)) {

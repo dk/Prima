@@ -38,6 +38,7 @@
 
 use strict;
 use Prima;
+use Prima::Utils;
 use Prima::Docks;
 use Prima::Notebooks;
 use Prima::Lists;
@@ -1008,7 +1009,7 @@ sub class
    $image =~ s/\:(\d+)$//;
    my $index = $1 || 0;
    my $i = Prima::Icon-> create;
-   undef($i) unless $i-> load(Prima::find_image($image), index => $index);
+   undef($i) unless $i-> load(Prima::Utils::find_image($image), index => $index);
    return $action, {
       class   => 'Prima::SpeedButton',
       profile => {

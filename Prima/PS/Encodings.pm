@@ -31,7 +31,7 @@ package Prima::PS::Encodings;
 use vars qw(%files %fontspecific %cache);
 
 use strict;
-use Prima;
+use Prima::Utils;
 
 %files = (
   'default'    => 'PS/locale/ascii',
@@ -100,7 +100,7 @@ sub load
 
    return $cache{$fx} if exists $cache{$fx};
 
-   my $f = Prima-> find_image( $fx); 
+   my $f = Prima::Utils::find_image( $fx); 
    unless ( $f) {
       warn("Prima::PS::Encodings: cannot find encoding file for $cp\n");
       return load('default') unless $cp eq 'default';

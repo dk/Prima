@@ -930,6 +930,20 @@ Application_modalHorizon( Handle self, Bool set, Bool modalHorizon)
    return true;
 }
 
+int
+Application_wantUnicodeInput( Handle self, Bool set, int want_ui)
+{
+   if ( !set) return var-> wantUnicodeInput;
+#ifdef PERL_SUPPORTS_UTF8
+   if ( apc_sys_get_value( svCanUTF8_Input)) {
+      if ( want_ui >= 0) var-> wantUnicodeInput = ( want_ui ? 1 : 0);
+      return 1;
+   }
+#endif
+   return 0;
+}
+
+
 void   Application_update_sys_handle( Handle self, HV * profile) {}
 Bool   Application_get_capture( Handle self) { return false; }
 void   Application_set_capture( Handle self, Bool capture, Handle confineTo) {}

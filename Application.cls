@@ -65,6 +65,7 @@ object Prima::Application( Prima::Widget)
    property  Bool   transparent;
    property  SV *   text;
    property  Bool   visible;
+   property  int    wantUnicodeInput;
 
    method Bool   begin_paint();
    method Bool   begin_paint_info();
@@ -129,6 +130,7 @@ object Prima::Application( Prima::Widget)
    Handle  topSharedModal;
    Handle  sharedModal;
    List    modalHorizons;
+   Bool    wantUnicodeInput;
 
    c_only  Handle map_focus( Handle from);
    c_only  Handle top_frame( Handle from);

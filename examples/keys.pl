@@ -71,10 +71,10 @@ my $w = Prima::Window-> create(
          $repeat = $repeat ? 0 : 1;
          $_[0]-> menu-> checked( 'rr', $repeat);
        }],
-       [ ( Prima::want_unicode_input()   ? '*' : '') . # is is on?
-         ( Prima::want_unicode_input(-1) ? '' : '-') . # is it writable ?
+       [ ( $::application-> wantUnicodeInput()   ? '*' : '') . # is is on?
+         ( $::application-> wantUnicodeInput(-1) ? '' : '-') . # is it writable ?
           'uu' => '~Unicode input' => sub {
-          Prima::want_unicode_input( $_[0]-> menu-> toggle( 'uu'));
+          $::application-> wantUnicodeInput( $_[0]-> menu-> toggle( 'uu'));
        }],
        [],
        ["Set ~font..." => "Ctrl+F" => '^F' => sub {

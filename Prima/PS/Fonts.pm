@@ -31,6 +31,7 @@ package Prima::PS::Fonts;
 
 use strict;
 use Prima;
+use Prima::Utils;
 use Prima::PS::Encodings;
 use vars qw(%files %enum_families $defaultFontName $variablePitchName $fixedPitchName $symbolFontName);
 
@@ -67,7 +68,7 @@ sub query_metrics
    return $cache{$file} if exists $cache{$file};
 
    my $defFN = $files{ $defaultFontName};
-   my $fx = Prima-> find_image( $file);
+   my $fx = Prima::Utils::find_image( $file);
 
    unless ( $fx) {
       if ( $name eq $defaultFontName) {

@@ -323,13 +323,13 @@ If 0, hides the pointer so it is not visible in all
 system windows. Therefore this property usage must be considered 
 with care.
 
-=item size 
+=item size WIDTH, HEIGHT
 
 A read-only property.
 
 Returns two integers, width and height of the screen.
 
-=item showHint
+=item showHint BOOLEAN
 
 If 1, the toolkit is allowed to show the hint label over 
 a widget. If 0, the display of the hint is forbidden. In addition to functionality
@@ -337,6 +337,16 @@ of C<::showHint> property in Prima::Widget, Prima::Application::showHint
 is another layer of hint visibility control - if it is 0,
 all hint actions are disabled, disregarding C<::showHint> value
 in widgets.
+
+=item wantUnicodeInput INTEGER
+
+Selects if the system is allowed to generate key codes in unicode. 
+In get-mode returns the effective state of the unicode input flag, which cannot be
+changed if perl or system do not support UTF8. In set mode, returns 1 if
+the operation is supported, 0 if the system does not support unicode. This feature can
+be used to check the writability of the property, by passing a negative value;
+no attempts to change the property value will be made, but the return value
+will be valid.
 
 =back
 

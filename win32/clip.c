@@ -146,7 +146,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
          }
          break;
       case CF_TEXT:
-         if ( wantUnicodeInput && HAS_WCHAR && IsClipboardFormatAvailable( CF_UNICODETEXT)) {
+         if ( PApplication(application)-> wantUnicodeInput && HAS_WCHAR && IsClipboardFormatAvailable( CF_UNICODETEXT)) {
              WCHAR *ptr, *p;
              int i, len, size;
              char *utf;

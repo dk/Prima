@@ -55,6 +55,7 @@ use Prima::Application;
 use Prima::Edit;
 use Prima::Buttons;
 use Prima::DockManager;
+use Prima::Utils;
 
 package dmfp;
 use constant Edit       => 0x100000;
@@ -410,7 +411,7 @@ $i-> register_panel( 'Banner' => {
 });   
 
 
-my $resFile = Prima::path('demo_dock');
+my $resFile = Prima::Utils::path('demo_dock');
 
 # after all that, creating window ( the window itself is of small importance...)
 

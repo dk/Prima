@@ -30,6 +30,7 @@
 use strict;
 use Prima;
 use Config;
+use Prima::Utils;
 use Prima::TextView;
 
 package Prima::PodView::Link;
@@ -635,7 +636,7 @@ sub add_formatted
                       grep { defined && length && -d } 
                       ( length($self-> {manpath}) ? $self->{manpath} : (), 
                         @INC, split( $Config::Config{path_sep}, $ENV{PATH}));
-                  $src = Prima::find_image( $src);
+                  $src = Prima::Utils::find_image( $src);
                   next unless $src;
                }
                $src = Prima::Image-> load( $src, index => $frame);

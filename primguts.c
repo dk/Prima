@@ -582,33 +582,6 @@ XS( Prima_dl_export)
    XSRETURN_EMPTY;
 }
 
-XS( Prima_want_unicode_input)
-{
-   dXSARGS;
-   (void)items;
-   switch ( items) {
-   case 0:
-      XSRETURN_IV( wantUnicodeInput);
-      break;
-   case 1:
-      {
-#ifdef PERL_SUPPORTS_UTF8
-         Bool writable = apc_sys_get_value( svCanUTF8_Input);
-         if ( writable) {
-            int i = SvIV( ST(0));
-            if ( i >= 0) wantUnicodeInput = ( i ? 1 : 0);
-         }
-         XSRETURN_IV( writable);
-#else
-         XSRETURN_IV( 0);
-#endif
-      }
-      break;
-   default:
-      croak("Invalid usage of Prima::%s", "want_unicode_input");
-   }
-}
-
 Bool
 build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
 {
@@ -1292,7 +1265,6 @@ NAN = 0.0;
    newXS( "Prima::Object::alive", Object_alive_FROMPERL, "Prima::Object");
    newXS( "Prima::message", Prima_message_FROMPERL, "Prima");
    newXS( "Prima::dl_export", Prima_dl_export, "Prima");
-   newXS( "Prima::want_unicode_input", Prima_want_unicode_input, "Prima");
    register_constants();
    register_Object_Class();
    register_Utils_Package();
@@ -1482,44 +1454,6 @@ FillPattern fillPatterns[] = {
   {0x02, 0x27, 0x05, 0x00, 0x20, 0x72, 0x50, 0x00}
 };
 
-
-XS(Utils_getdir_FROMPERL) {
-   dXSARGS;
-   Bool wantarray = ( GIMME_V == G_ARRAY);
-   char *dirname;
-   PList dirlist;
-   int i;
-
-   if ( items >= 2) {
-      croak( "invalid usage of Prima::Utils::getdir");
-   }
-   dirname = SvPV( ST( 0), na);
-   dirlist = apc_getdir( dirname);
-   SPAGAIN;
-   SP -= items;
-   if ( wantarray) {
-      if ( dirlist) {
-         EXTEND( sp, dirlist-> count);
-         for ( i = 0; i < dirlist-> count; i++) {
-            PUSHs( sv_2mortal(newSVpv(( char *)dirlist-> items[i], 0)));
-            free(( char *)dirlist-> items[i]);
-         }
-         plist_destroy( dirlist);
-      }
-   } else {
-      if ( dirlist) {
-         XPUSHs( sv_2mortal( newSViv( dirlist-> count / 2)));
-         for ( i = 0; i < dirlist-> count; i++) {
-            free(( char *)dirlist-> items[i]);
-         }
-         plist_destroy( dirlist);
-      } else {
-         XPUSHs( &sv_undef);
-      }
-   }
-   PUTBACK;
-   return;
-}
 
 /* list section */
 

@@ -1427,8 +1427,6 @@ prima_uv_to_utf8( U8 * utf8, UV uv);
 
 #endif
 
-extern Bool wantUnicodeInput;
-
 extern int
 prima_utf8_length( const char * utf8);
 

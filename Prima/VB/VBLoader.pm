@@ -26,6 +26,7 @@
 # $Id$
 package Prima::VB::VBLoader;
 use strict;
+use Prima::Utils;
 use vars qw($builderActive $fileVersion @eventContext $form);
 
 $fileVersion   = '1.2';
@@ -245,7 +246,7 @@ sub VBLoad
    if ( $filename =~ /.+\:\:([^\:]+)$/ && $filename !~ /^</ ) { # seemingly a module syntax
       my @path = split( '::', $filename);
       my $file = pop @path;
-      my $ret = Prima::find_image( join('::', @path), $file);
+      my $ret = Prima::Utils::find_image( join('::', @path), $file);
       $@ = "Cannot find resource: $filename", return undef unless $ret;
       $filename = $ret;
    } else {
@@ -368,10 +369,10 @@ path name, or as a relative module name. In a way,
 and
  
    Prima::VBLoad( 
-   Prima::find_image( 'Module' 'form.fm')
+   Prima::Utils::find_image( 'Module' 'form.fm')
 
 are identical. If the procedure finds that FILENAME is a relative
-module name, it calls C<Prima::find_image> automatically. To
+module name, it calls C<Prima::Utils::find_image> automatically. To
 tell explicitly that FILENAME is a file system path name, FILENAME
 must be prefixed with C<E<lt>> symbol ( the syntax is influenced by C<CORE::open> ).
 
