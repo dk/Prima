@@ -272,8 +272,7 @@ prima_hash_delete( PHash self, const void *key, int keyLen, Bool kill);
 extern Bool
 prima_hash_store( PHash self, const void *key, int keyLen, void *val);
 
-extern long
-prima_hash_count( PHash self);
+#define prima_hash_count(hash) (HvKEYS(( HV*) hash))
 
 extern void*
 prima_hash_first_that( PHash self, void *action, void *params,
