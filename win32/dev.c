@@ -209,8 +209,13 @@ image_make_bitmap_handle( Handle img, HPALETTE pal)
       RealizePalette( dc);        // m$ suxx !!!
    }
 
-   if ( !( bm = CreateDIBitmap( dc, &bi-> bmiHeader, CBM_INIT,
-        (( PImage) img)-> data, bi, DIB_RGB_COLORS))) {
+   if ((( PImage) img)-> type != imBW)
+      bm = CreateDIBitmap( dc, &bi-> bmiHeader, CBM_INIT,
+        (( PImage) img)-> data, bi, DIB_RGB_COLORS);
+   else
+      bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, (( PImage) img)-> data);
+
+   if ( !bm) {
       apiErr;
       if ( old) {
          SelectPalette( dc, old, 1);
@@ -287,10 +292,16 @@ image_destroy_cache( Handle self)
    if ( sys bm) {
       if ( !DeleteObject( sys bm)) apiErr;
       hash_delete( imageMan, &self, sizeof( self), false);
+      sys bm = nilHandle;
    }
-   if ( sys pal)
+   if ( sys pal) {
       if ( !DeleteObject( sys pal)) apiErr;
-   sys bm = sys pal = nilHandle;
+      sys pal = nilHandle;
+   }
+   if ( sys s. imgCachedRegion) {
+      if ( !DeleteObject( sys s. imgCachedRegion)) apiErr;
+      sys s. imgCachedRegion = nilHandle;
+   }
 }
 
 void

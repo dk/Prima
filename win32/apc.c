@@ -415,14 +415,16 @@ process_transparents( Handle self)
    objCheck;
    GetWindowRect(( HWND) var handle, &mr);
    for ( i = 0; i < var widgets. count; i++) {
+      HWND xwnd;
       Handle x = var widgets. items[ i];
       dobjCheck(x);
-      if ( dsys(x) options. aptTransparent && IsWindowVisible( DHANDLE( x))) {
+      xwnd = DHANDLE(x);
+      if ( dsys(x) options. aptTransparent && IsWindowVisible( xwnd)) {
          RECT r, dr;
-         GetWindowRect( DHANDLE( x), &r);
+         GetWindowRect( xwnd, &r);
          IntersectRect( &dr, &r, &mr);
          if ( !IsRectEmpty( &dr))
-            InvalidateRect( DHANDLE( x), nil, false);
+            InvalidateRect( xwnd, nil, false);
       }
    }
 }
@@ -954,20 +956,22 @@ void
 apc_window_set_client_size( Handle self, int x, int y)
 {
    RECT r, c, c2;
+   HWND h;
    int  ws = apc_window_get_window_state( self);
-   if ( x < 0) x = 0;
-   if ( y < 0) y = 0;
+
 
    objCheck;
+   h = HANDLE;
    if (( var stage == csConstructing && ws != wsNormal) || ws == wsMinimized) {
-   // if (( var stage == csConstructing) || ws == wsMinimized) {
       WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
       Point delta = get_window_borders( sys s. window. borderStyle);
 
-      if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
-      if ( !GetWindowRect( HANDLE, &c2)) apiErr;
+      if ( x < 0) x = 0;
+      if ( y < 0) y = 0;
+      if ( !GetWindowPlacement( h, &w)) apiErr;
+      if ( !GetWindowRect( h, &c2)) apiErr;
       if ( ws == wsMaximized) {
-         if ( !GetClientRect( HANDLE, &c)) apiErr;
+         if ( !GetClientRect( h, &c)) apiErr;
       }
       else {
          // cannot acquire client extension at this time. Using euristic calculations.
@@ -982,19 +986,24 @@ apc_window_set_client_size( Handle self, int x, int y)
       w. rcNormalPosition. right  = x + ( c2. right - c2. left - c. right + c. left) + w. rcNormalPosition. left;
       w. flags   = 0;
       w. showCmd = 0;
-      if ( !SetWindowPlacement( HANDLE, &w)) apiErr;
+      if ( !SetWindowPlacement( h, &w)) apiErr;
    } else {
-      if ( !GetWindowRect( HANDLE, &r)) apiErr;
-      if ( !GetClientRect( HANDLE, &c)) apiErr;
-      SetWindowPos( HANDLE, 0,
+      if ( !GetWindowRect( h, &r)) apiErr;
+      if ( !GetClientRect( h, &c)) apiErr;
+      sys sizeLockLevel++;
+      var sizeUnbound. x = x + r. right  - r. left - c. right + c. left;
+      var sizeUnbound. y = y + r. bottom - r. top  - c. bottom + c. top;
+      if ( x < 0) y = 0;
+      if ( y < 0) y = 0;
+      SetWindowPos( h, 0,
          r. left,
          r. top - y + ( c. bottom - c. top),
-         x + r. right  - r. left - c. right + c. left,
-         y + r. bottom - r. top  - c. bottom + c. top,
+         var sizeUnbound. x,
+         var sizeUnbound. y,
          SWP_NOZORDER | SWP_NOACTIVATE);
+      sys sizeLockLevel++;
    }
 }
-
 
 Bool
 apc_window_set_menu( Handle self, Handle menu)
@@ -1880,16 +1889,17 @@ apc_widget_set_pos( Handle self, int x, int y)
 void
 apc_widget_set_size( Handle self, int width, int height)
 {
-   RECT c, r;
+   RECT r;
+   HWND h;
    objCheck;
-   if ( width  < 0) width = 0;
-   if ( height < 0) height = 0;
+   h = HANDLE;
    if ( sys className == WC_FRAME) {
-      HWND h = HANDLE;
       int  ws = apc_window_get_window_state( self);
       if (( var stage == csConstructing && ws != wsNormal) || ( ws == wsMinimized)) {
          WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
          if ( !GetWindowPlacement( h, &w)) apiErr;
+         if ( width  < 0) width = 0;
+         if ( height < 0) height = 0;
          w. rcNormalPosition. top    = w. rcNormalPosition. bottom - height;
          w. rcNormalPosition. right  = width + w. rcNormalPosition. left;
          w. flags = w. showCmd = 0;
@@ -1897,24 +1907,32 @@ apc_widget_set_size( Handle self, int width, int height)
          return;
       }
    }
-   if ( !GetWindowRect( HANDLE, &r)) apiErr;
+   if ( !GetWindowRect( h, &r)) apiErr;
    if ( is_apt( aptClipOwner) && ( var owner != application))
       MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
-   if ( !GetClientRect( HANDLE, &c)) apiErr;
-   if ( !SetWindowPos( HANDLE, 0,
+   if ( sys className != WC_FRAME) {
+      sys sizeLockLevel++;
+      var sizeUnbound. x = width;
+      var sizeUnbound. y = height;
+   }
+   if ( height < 0) height = 0;
+   if ( width  < 0) width  = 0;
+   if ( !SetWindowPos( h, 0,
       r. left, r. bottom - height,
       width, height,
       SWP_NOZORDER | SWP_NOACTIVATE)) apiErr;
+   if ( sys className != WC_FRAME) sys sizeLockLevel--;
 }
 
 void
 apc_widget_set_shape( Handle self, Handle mask)
 {
-   RGNDATA * rdata;
+   RGNDATA * rdata = nil;
    RECT    * current;
    LONG i, w, h, x, y, size = 256;
    Byte    * idata;
    Bool      set = 0;
+   HRGN      rgn = nilHandle;
 
    objCheck;
    if ( !mask) {
@@ -1922,6 +1940,15 @@ apc_widget_set_shape( Handle self, Handle mask)
       return;
    }
    dobjCheck( mask);
+
+   w = PImage( mask)-> w;
+   h = PImage( mask)-> h;
+   if ( dsys( mask) s. imgCachedRegion) {
+      rgn = CreateRectRgn(0,0,0,0);
+      CombineRgn( rgn, dsys( mask) s. imgCachedRegion, nil, RGN_COPY);
+      goto USE_CACHED_REGION;
+   }
+
    idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
 
    rdata = ( RGNDATA*) malloc( sizeof( RGNDATAHEADER) + size * sizeof( RECT));
@@ -1929,13 +1956,12 @@ apc_widget_set_shape( Handle self, Handle mask)
    current = ( RECT * ) &( rdata-> Buffer);
    current--;
 
-   w = PImage( mask)-> w;
-   h = PImage( mask)-> h;
-
-   // for ( y = h - 1; y >= 0; y--) {
    for ( y = 0; y < h; y++) {
-      int ey = h - y - 1;
       for ( x = 0; x < w; x++) {
+         if ( idata[ x >> 3] == 0) {
+            x += 7;
+            continue;
+         }
          if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
             if ( set && current-> top == y && current-> right == x)
                current-> right++;
@@ -1959,8 +1985,6 @@ apc_widget_set_shape( Handle self, Handle mask)
    }
 
    if ( set) {
-      HRGN rgn;
-
       rdata-> rdh. dwSize          = sizeof( RGNDATAHEADER);
       rdata-> rdh. iType           = RDH_RECTANGLES;
       rdata-> rdh. nRgnSize        = rdata-> rdh. nCount * sizeof( RECT);
@@ -1969,14 +1993,17 @@ apc_widget_set_shape( Handle self, Handle mask)
       rdata-> rdh. rcBound. right  = h;
       rdata-> rdh. rcBound. bottom = w;
 
-      sys extraBounds. x = w;
-      sys extraBounds. y = h;
-
       if ( !( rgn = ExtCreateRegion( NULL,
          sizeof( RGNDATAHEADER) + ( rdata-> rdh. nCount * sizeof( RECT)), rdata))) {
          apcErr( 900);
       }
 
+      dsys( mask) s. imgCachedRegion = CreateRectRgn(0,0,0,0);
+      CombineRgn( dsys( mask) s. imgCachedRegion, rgn, nil, RGN_COPY);
+
+USE_CACHED_REGION:
+      sys extraBounds. x = w;
+      sys extraBounds. y = h;
       if ( sys className == WC_FRAME) {
          Point delta = get_window_borders( sys s. window. borderStyle);
          Point sz    = apc_widget_get_size( self);

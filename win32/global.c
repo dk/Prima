@@ -748,12 +748,13 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
       ev. gen. R. bottom = sys lastSize. y;
       sys lastSize. x    = ev. gen. R. right  = ev. gen . P. x = ( short) LOWORD( mp2);
       sys lastSize. y    = ev. gen. R. top    = ev. gen . P. y = ( short) HIWORD( mp2);
-      if ( ev. gen. R. top != ev. gen. R. bottom)
-      {
+      if ( ev. gen. R. top != ev. gen. R. bottom) {
          int delta = ev. gen. R. top - ev. gen. R. bottom;
          Widget_first_that( self, move_back, &delta);
          if ( is_apt( aptFocused)) cursor_update(( Handle) self);
       }
+      if ( sys sizeLockLevel == 0)
+         var sizeUnbound = sys lastSize;
       break;
    case WM_TIMER:
       {

@@ -179,6 +179,7 @@ object Widget( Drawable)
    method   char *   get_text();
    method   Bool     get_transparent()               => apc_widget_get_transparent;
    method   int      get_top();
+   method   Point    get_virtual_size();
    method   Bool     get_visible()                   => apc_widget_is_visible;
    method   int      get_widget_class();
    public   void     get_widgets();

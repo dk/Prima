@@ -74,7 +74,6 @@ apc_gp_done( Handle self)
    sys fontResource = nil;
    free( sys charTable);
    free( sys charTable2);
-   free( sys saveFont);
 }
 
 static __INLINE__ void
@@ -677,7 +676,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
 {objCheck;{
    HDC ps = sys ps;
    int bk  = GetBkMode( ps);
-   int opa = sys textOpaque ? OPAQUE : TRANSPARENT;
+   int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
    STYLUS_USE_TEXT( ps);
    if ( opa != bk) SetBkMode( ps, opa);
 
@@ -1256,7 +1255,7 @@ Bool
 apc_gp_get_text_opaque( Handle self)
 {
    objCheck 0;
-   return sys textOpaque;
+   return is_apt( aptTextOpaque);
 }
 
 #define pal_ok ((sys bpp <= 8) && ( sys pal))
@@ -1474,7 +1473,7 @@ void
 apc_gp_set_text_opaque( Handle self, Bool opaque)
 {
    objCheck;
-   sys textOpaque = opaque;
+   apt_assign( aptTextOpaque, opaque);
 }
 
 

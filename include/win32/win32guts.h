@@ -5,6 +5,8 @@
 #include <winspool.h>
 #include "apricot.h"
 
+#define SEVERE_DEBUG
+
 #define IS_NT      (BOOL)( guts. version < 0x80000000)
 #define IS_WIN32S  (BOOL)(!(IS_NT) && (LOBYTE(LOWORD(guts. version))<4))
 #define IS_WIN95   (BOOL)(!(IS_NT) && !(IS_WIN32S))
@@ -22,38 +24,49 @@
 #undef  HWND_DESKTOP
 #define HWND_DESKTOP         GetDesktopWindow()
 
-#define MENU_ID_AUTOSTART    100
-#define TID_USERMAX          32767
 
 #define DEFAULT_SYSTEM_FONT              "System"
 #define DEFAULT_WIDGET_FONT              "MS Shell Dlg"
 #define DEFAULT_WIDGET_FONT_SIZE         8
 #define COLOR_TOLERANCE                  4
 #define HASMATE_MAGIC                    0xDEAF0CE1
-
+#define MENU_ID_AUTOSTART                100
+#define TID_USERMAX                      32767
 
 #define WM_WRITE_TO_LOG                   ( WM_USER + 0)
 #define WM_PRIMA_CREATE                   ( WM_USER + 1)
-#define WM_MENUCOMMAND                    ( WM_USER + 2)
-#define WM_POSTAL                         ( WM_USER + 3)
-#define WM_DLGENTERMODAL                  ( WM_USER + 4)
-#define WM_ZORDERSYNC                     ( WM_USER + 6)
+#define WM_POSTAL                         ( WM_USER + 2)
+#define WM_DLGENTERMODAL                  ( WM_USER + 3)
+#define WM_ZORDERSYNC                     ( WM_USER + 4)
 #define WM_BREAKMSGLOOP                   ( WM_USER + 5)
-#define WM_COLORCHANGED                   ( WM_USER + 7)
-#define WM_MOUSEENTER                     ( WM_USER + 8)
-#define WM_MOUSEEXIT                      ( WM_USER + 9)
-#define WM_SETVISIBLE                     ( WM_USER + 10)
-#define WM_KEYPACKET                      ( WM_USER + 11)
-#define WM_LMOUSECLICK                    ( WM_USER + 12)
-#define WM_MMOUSECLICK                    ( WM_USER + 13)
-#define WM_RMOUSECLICK                    ( WM_USER + 14)
-#define WM_FORCEFOCUS                     ( WM_USER + 15)
-#define WM_SYNCMOVE                       ( WM_USER + 16)
-#define WM_EXTERNAL                       ( WM_USER + 17)
-#define WM_HASMATE                        ( WM_USER + 18)
+#define WM_MOUSEENTER                     ( WM_USER + 6)
+#define WM_MOUSEEXIT                      ( WM_USER + 7)
+#define WM_SETVISIBLE                     ( WM_USER + 8)
+#define WM_KEYPACKET                      ( WM_USER + 9)
+#define WM_LMOUSECLICK                    ( WM_USER + 10)
+#define WM_MMOUSECLICK                    ( WM_USER + 11)
+#define WM_RMOUSECLICK                    ( WM_USER + 12)
+#define WM_FORCEFOCUS                     ( WM_USER + 13)
+#define WM_SYNCMOVE                       ( WM_USER + 14)
+#define WM_EXTERNAL                       ( WM_USER + 15)
+#define WM_HASMATE                        ( WM_USER + 16)
 #define WM_TERMINATE                      ( WM_USER + 99)
 
-#define  SEVERE_DEBUG
+#define WC_CUSTOM       0
+#define WC_DLG          1
+#define WC_APPLICATION  2
+#define WC_FRAME        3
+#define WC_MENU         4
+#define WC_POPUP        5
+
+#define exsLinePattern  1
+#define exsLineEnd      2
+
+#define stbPen          1
+#define stbBrush        2
+#define stbText         4
+#define stbBacking      8
+
 #ifndef  SEVERE_DEBUG
 #define apiErr       { rc = GetLastError();    apcError = errApcError; }
 #define apcErr( err)    apcError = err;
@@ -84,7 +97,6 @@
 #define objCheck          if ( var stage == csDead) return
 #define dobjCheck(handle) if ((( PObject)handle)-> stage == csDead) return
 
-
 typedef struct _HandleOptions_ {
    unsigned aptWM_PAINT             : 1;       // true if inside WM_PAINT
    unsigned aptWinPS                : 1;       // window PS was passed to paint
@@ -105,6 +117,7 @@ typedef struct _HandleOptions_ {
    unsigned aptExtraFont            : 1;       // extra font styles ( angle, shear) has been applied
    unsigned aptDCChangeLock         : 1;       // locks SelectObject() calls
    unsigned aptEnabled              : 1;       // enabled flag
+   unsigned aptTextOpaque           : 1;       // gp text drawing flag
 } HandleOptions;
 
 typedef struct _WinGuts
@@ -142,7 +155,6 @@ typedef struct _WinGuts
     DWORD          version;            // GetVersion() cached result
     Point          smDblClk;           // cached SM_CxDOUBLECLK values
 } WinGuts, *PWinGuts;
-
 
 typedef struct _WindowData
 {
@@ -258,35 +270,35 @@ typedef struct _ItemRegRec {
 
 typedef struct _DrawableData
 {
-   HWND           handle;
-   HWND           owner;
-   HWND           parent;
-   HDC            ps;
-   HDC            ps2;
-   PAINTSTRUCT    paintStruc;
+   /* Drawable basic data*/
+   HDC            ps;                      // general HDC
+   PAINTSTRUCT    paintStruc;              // HDC counterpart
    HBITMAP        bm;                      // cached bitmap
    HPALETTE       pal;                     // cached palette
-   HPALETTE       pal2;                    // cached palette for optBuffered
-   char          *bmRaw;                   // cached raw bitmap
-   ColorSet       viewColors;
-   int            bpp;
-   PXLOGPALETTE   p256;                    // cached squeezed palette
-// HDC data
 
-   PDCStylus      stylusResource;
-   int            stylusFlags;             // stbXXXX
-   PDCFont        fontResource;
-   Stylus         stylus;
-   Font           font;
+   /* stylus and font hash management fields */
+   PDCStylus      stylusResource;          // current stylus pointer
+   int            stylusFlags;             // stylus resource cache( stbXXXX)
+   Stylus         stylus;                  // widgets stylus record
+   PDCFont        fontResource;            // font resource pointer
+
+   /* Stock objects of HDC - to be restored after paint mode */
    HPEN           stockPen;
    HBRUSH         stockBrush;
    HFONT          stockFont;
    HBITMAP        stockBM;
    HPALETTE       stockPalette;
 
+   /* HDC info fields */
+   int            bpp;                     // bits per pixel
+   Point          res;                     // resolution
+
+   /* cached gp_GetCharABCWidthsFloat results */
+   float *        charTable;
+   ABCFLOAT *     charTable2;
+
+   /* HDC attributes storage outside paint mode */
    Color          lbs[2];
-   RECT           clipRect;
-   RECT *         pClipRect;
    int            lineWidth;
    int            lineEnd;
    int            linePattern;
@@ -295,35 +307,50 @@ typedef struct _DrawableData
    int            rop;
    int            rop2;
    Point          transform;
-   Point          transform2;
-   Point          res;
-   float *        charTable;
-   ABCFLOAT *     charTable2;
-   HFONT          saveFont;
-   Bool           textOpaque;
-   Color          l3dc;                    // light 3d color
-   Color          d3dc;                    // dark  3d color
-   PPaintSaveData psd;
+   PPaintSaveData psd;                     // Their values durind paint saved in sys psd
 
-   HandleOptions  options;                 // apt_XXX settings
+   /* Basic widget fields */
+   HWND           handle;                  // Windows handle of a widget
+   HWND           owner;                   // Windows owner of a widget
+   HWND           parent;                  // Windows parent of a widget
    int            className;               // class name ( WC_XXX)
+
+   /* Widget properties */
+   HandleOptions  options;                 // apt_XXX settings
+   ColorSet       viewColors;              // widget color palette
+   PXLOGPALETTE   p256;                    // cached squeezed palette
+   RECT           clipRect;                // storage for ScrollWindow clipping rectangle
+   RECT *         pClipRect;               // pointer either to sys clipRect or nil, for fast use
+   void *         recreateData;            // ViewProfile custom area
+
+   /* Custom data for widget paint in optBuffered state */
+   HDC            ps2;                     // original HDC
+   HPALETTE       pal2;                    // original palette
+   Point          transform2;              // necessary additional transposition
+
+   /* Positioning support fields */
+   Point          lastSize;                // last actual size
+   int            sizeLockLevel;           // size locking flag
+   int            yOverride;               // special cached height value. Used in WM_SIZE<->WM_MOVE interactions
+
+   /* Widget attributes - timers, cursor, pointers, menu, shape */
    int            timeDefsCount;           // count of timers attached.
    PItemRegRec    timeDefs;                // timer list
-   Point          size;                    // size of a view
    Point          cursorPos;               // cursor position
    Point          cursorSize;              // cursor size
    HCURSOR        pointer;                 // pointer handle
    HCURSOR        pointer2;                // user pointer data
    int            pointerId;               // pointer id
-   Point          lastSize;                // last actual size
-   int            yOverride;               // special cached height value. Used in WM_SIZE<->WM_MOVE interactions
-   void  *        recreateData;            // ViewProfile custom area
    Handle         lastMenu;                // last menu activated by WM_INITMENU or WM_INITMENUPOPUP
-   HWND           lastFocHWND;             // last focused window control
+   Point          extraBounds;             // used in region calculations
+   Point          extraPos;                // used in region calculations
+
+   /* Other class-specific data */
    union {
-     TimerData     timer;
-     WindowData    window;
-     PrinterData   prn;
+      TimerData     timer;
+      WindowData    window;
+      PrinterData   prn;
+      HRGN          imgCachedRegion;      // Image specific field
    } s;
 } DrawableData, *PDrawableData;
 
@@ -347,22 +374,6 @@ typedef struct _MusClkRec {
    UINT    emsg;
    MSG     msg;
 } MusClkRec;
-
-
-#define WC_CUSTOM      0
-#define WC_DLG         1
-#define WC_APPLICATION 2
-#define WC_FRAME       3
-#define WC_MENU        4
-#define WC_POPUP       5
-
-#define exsLinePattern  1
-#define exsLineEnd      2
-
-#define stbPen          1
-#define stbBrush        2
-#define stbText         4
-#define stbBacking      8
 
 #define STYLUS_USE_PEN( __ps)                              \
    if ( !( sys stylusFlags & stbPen)) {                    \
@@ -392,7 +403,6 @@ typedef struct _MusClkRec {
       sys stylusFlags |= stbBacking;                       \
    }
 
-
 #define csAxEvents csFrozen
 
 #define apt_set( option)           ( sys options. option = 1)
@@ -410,85 +420,78 @@ typedef struct _MusClkRec {
    !dsys(handle)options.aptClipOwner                                                    \
 )
 
-
 #define palette_create image_make_bitmap_palette
 
 extern Bool         appDead;
-
+extern DIBMONOBRUSH bmiHatch;
+extern PHash        fontMan;
+extern int          FONTSTRUCSIZE;
+extern int          FONTSTRUCSIZE2;
 extern WinGuts      guts;
+extern PHash        imageMan;
 extern Bool         loggerDead;
+extern PHash        menuMan;
+extern MusClkRec    musClk;
+extern PHash        patMan;
 extern DWORD        rc;
 extern PHash        stylusMan;
-extern PHash        fontMan;
-extern PHash        patMan;
-extern PHash        menuMan;
-extern PHash        imageMan;
-extern DIBMONOBRUSH bmiHatch;
+extern HBRUSH       hBrushHollow;
+extern PatResource  hPatHollow;
+extern HPEN         hPenHollow;
 
-LRESULT CALLBACK generic_view_handler     ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
-LRESULT CALLBACK generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
-LRESULT CALLBACK generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
+LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
+LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
+LRESULT CALLBACK    generic_view_handler     ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 
-extern HPEN        hPenHollow;
-extern HBRUSH      hBrushHollow;
-extern PatResource hPatHollow;
-extern int         FONTSTRUCSIZE;
-extern int         FONTSTRUCSIZE2;
-extern MusClkRec   musClk;
-
-extern char *       err_msg( DWORD errId);
-extern PDCStylus    stylus_alloc( PStylus data);
-extern void         stylus_free( PDCStylus res, Bool permanent);
-extern void         stylus_change( Handle self);
-extern void         stylus_clean();
-extern Bool         stylus_extpenned( PStylus stylus, int excludeFlags);
-extern Bool         stylus_complex( PStylus stylus, HDC dc);
-extern DWORD        stylus_get_extpen_style( PStylus s);
-extern PDCFont      font_alloc( Font * data, Point * resolution);
-extern void         font_free( PDCFont res);
-extern void         font_change( Handle self, Font * font);
-extern void         font_clean();
-extern void         font_logfont2font( LOGFONT * lf, Font * font, Point * resolution);
-extern void         font_font2logfont( Font * font, LOGFONT * lf);
-extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
-extern PPatResource patres_fetch( DWORD pattern);
+extern Bool         add_font_to_hash( const PFont key, const PFont font, int vectored, FAMTEXTMETRIC * fm, Bool addSizeEntry);
+extern void         cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
+extern Bool         create_font_hash( void);
 extern void         cursor_update( Handle self);
 extern HDC          dc_alloc();
 extern void         dc_free();
 extern HDC          dc_compat_alloc( HDC compatDC);
 extern void         dc_compat_free();
-extern Handle       hwnd_to_view( HWND win);
+extern void         dbm_recreate( Handle self);
+extern Bool         destroy_font_hash( void);
+extern char *       err_msg( DWORD errId);
+extern PDCFont      font_alloc( Font * data, Point * resolution);
+extern void         font_change( Handle self, Font * font);
+extern void         font_clean();
+extern void         font_font2logfont( Font * font, LOGFONT * lf);
+extern void         font_free( PDCFont res);
+extern void         font_logfont2font( LOGFONT * lf, Font * font, Point * resolution);
+extern void         font_textmetric2font( TEXTMETRIC * tm, Font * fm, Bool readOnly);
+extern Bool         get_font_from_hash( PFont font, int *vectored, FAMTEXTMETRIC * fm, Bool bySize);
+extern Point        get_window_borders( int borderStyle);
 extern void         hwnd_enter_paint( Handle self);
-extern void         hwnd_leave_paint( Handle self);
-extern Handle       hwnd_top_level( Handle self);
 extern Handle       hwnd_frame_top_level( Handle self);
-extern Bool         image_screenable( Handle image, Handle screen, int * bitCount);
+extern void         hwnd_leave_paint( Handle self);
+extern Handle       hwnd_to_view( HWND win);
+extern Handle       hwnd_top_level( Handle self);
+extern void         image_destroy_cache( Handle self);
 extern Handle       image_enscreen( Handle image, Handle screen);
 extern BITMAPINFO * image_get_binfo( Handle img, XBITMAPINFO * bi);
 extern HBITMAP      image_make_bitmap_handle( Handle img, HPALETTE palette);
 extern HPALETTE     image_make_bitmap_palette( Handle img);
-extern void         image_set_cache( Handle from, Handle self);
-extern void         image_destroy_cache( Handle self);
-extern void         image_query_bits( Handle self, Bool forceNewImage);
 extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer);
-extern BYTE *       mod_select( int mod);
+extern void         image_query_bits( Handle self, Bool forceNewImage);
+extern Bool         image_screenable( Handle image, Handle screen, int * bitCount);
+extern void         image_set_cache( Handle from, Handle self);
 extern void         mod_free( BYTE * modState);
-extern void         dbm_recreate( Handle self);
+extern BYTE *       mod_select( int mod);
 extern Bool         palette_change( Handle self);
 extern long         palette_match( Handle self, long color);
 extern int          palette_match_color( XLOGPALETTE * lp, long clr, int * diffFactor);
+extern PPatResource patres_fetch( DWORD pattern);
 extern void         process_transparents( Handle self);
-extern Point        get_window_borders( int borderStyle);
-
-
-extern Bool      create_font_hash  ( void);
-extern Bool      destroy_font_hash ( void);
-extern Bool      add_font_to_hash  ( const PFont key, const PFont font, int vectored, FAMTEXTMETRIC * fm, Bool addSizeEntry);
-extern Bool      get_font_from_hash( PFont font, int *vectored, FAMTEXTMETRIC * fm, Bool bySize);
-
-extern long      remap_color( long clr, Bool toSystem);
-extern void      cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
-
+extern long         remap_color( long clr, Bool toSystem);
+extern PDCStylus    stylus_alloc( PStylus data);
+extern void         stylus_change( Handle self);
+extern void         stylus_clean();
+extern Bool         stylus_complex( PStylus stylus, HDC dc);
+extern Bool         stylus_extpenned( PStylus stylus, int excludeFlags);
+extern void         stylus_free( PDCStylus res, Bool permanent);
+extern DWORD        stylus_get_extpen_style( PStylus s);
 
 #endif
 

@@ -797,7 +797,7 @@ void Widget_handle_event( Handle self, PEvent event)
             } else if ( var stage > csNormal) {
                break;
             } else if ( var evQueue != nil) {
-              int    i = list_first_that( var evQueue, ( PListProc)find_dup_msg, (void*) event-> cmd);
+              int    i = list_first_that( var evQueue, ( PListProc) find_dup_msg, (void*) event-> cmd);
               PEvent n;
               if ( i < 0) {
                  n = malloc( sizeof( Event));
@@ -861,10 +861,6 @@ void Widget_handle_event( Handle self, PEvent event)
               n-> gen. P. x = n-> gen. R. right  = event-> gen. P. x;
               n-> gen. P. y = n-> gen. R. top    = event-> gen. P. y;
            }
-           if ( var sizeUnbound. x == event-> gen. R. left)
-              var sizeUnbound. x = event-> gen. P. x;
-           if ( var sizeUnbound. y == event-> gen. R. bottom)
-              var sizeUnbound. y = event-> gen. P. y;
            if ( var growMode & gmCenter) my set_centered( self, var growMode & gmXCenter, var growMode & gmYCenter);
 
            if ( !event-> gen. B) my first_that( self, size_notify, &event-> gen. R);
@@ -1699,6 +1695,12 @@ Widget_get_top( Handle self)
    return r. top;
 }
 
+Point
+Widget_get_virtual_size( Handle self)
+{
+   return var sizeUnbound;
+}
+
 int
 Widget_get_widget_class( Handle self)
 {
@@ -2288,6 +2290,8 @@ Widget_set_show_hint( Handle self, Bool showHint )
 void
 Widget_set_shape( Handle self, Handle mask)
 {
+   if ( mask && !kind_of( mask, CImage)) return;
+
    if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
       Handle i = CImage( mask)-> dup( mask);
       ++SvREFCNT( SvRV( PImage( i)-> mate));
@@ -2588,7 +2592,7 @@ size_notify( Handle self, Handle child, const Rect* metrix)
       his self-> set_size( child, size.x, size. y);
       his sizeUnbound = size;
 #else
-      Point size  =  his sizeUnbound;
+      Point size  =  his self-> get_virtual_size( child);
       Point pos   =  his self-> get_pos( child);
       int   dx    = ((Rect *) metrix)-> right - ((Rect *) metrix)-> left;
       int   dy    = ((Rect *) metrix)-> top   - ((Rect *) metrix)-> bottom;
@@ -2602,7 +2606,6 @@ size_notify( Handle self, Handle child, const Rect* metrix)
 
       his self-> set_pos  ( child, pos.x, pos. y);
       his self-> set_size ( child, size.x, size. y);
-      his sizeUnbound = size;
 #endif
    }
    return false;

@@ -867,7 +867,6 @@ fep2( ENUMLOGFONT FAR *e, NEWTEXTMETRIC FAR *t, int type, PList lst)
    return 1;
 }
 
-
 PFont
 apc_fonts( const char* facename, int * retCount)
 {
@@ -1177,7 +1176,7 @@ hwnd_enter_paint( Handle self)
    apc_gp_set_back_color( self, sys viewColors[ ciBack]);
 
    if ( sys psd == nil) sys psd = malloc( sizeof( PaintSaveData));
-   apc_gp_set_text_opaque( self, sys textOpaque);
+   apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
    apc_gp_set_line_width( self, sys lineWidth);
    apc_gp_set_line_end( self, sys lineEnd);
    apc_gp_set_line_pattern( self, sys linePattern);
@@ -1192,7 +1191,7 @@ hwnd_enter_paint( Handle self)
    sys psd-> rop         = sys rop;
    sys psd-> rop2        = sys rop2;
    sys psd-> transform   = sys transform;
-   sys psd-> textOpaque  = sys textOpaque;
+   sys psd-> textOpaque  = is_apt( aptTextOpaque);
 
    apt_clear( aptDCChangeLock);
    stylus_change( self);
@@ -1219,7 +1218,7 @@ hwnd_leave_paint( Handle self)
       sys rop         = sys psd-> rop;
       sys rop2        = sys psd-> rop2;
       sys transform   = sys psd-> transform;
-      sys textOpaque  = sys psd-> textOpaque;
+      apt_assign( aptTextOpaque, sys psd-> textOpaque);
       free( sys psd);
       sys psd = nil;
    }
