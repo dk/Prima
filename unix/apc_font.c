@@ -36,9 +36,21 @@
 #include <locale.h>
 
 static PHash xfontCache = nil;
-static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 static Bool have_vector_fonts = false;
 static PHash encodings = nil;
+static char **ignore_encodings;
+static int n_ignore_encodings;
+static char *s_ignore_encodings;
+
+/* these are freed right after use */
+static char * do_default_font = nil;
+static char * do_caption_font = nil;
+static char * do_msg_font = nil;
+static char * do_menu_font = nil;
+static char * do_widget_font = nil;
+static Bool   do_xft = true;
+
+static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 
 static void
 strlwr( char *d, const char *s)
@@ -61,6 +73,12 @@ fill_default_font( Font * font )
    font-> pitch = fpDefault;
 }
 
+/* Extracts font name, charset, foundry etc from X properties, if available.
+   Usually it is when X server can access its internal font files directly.
+   This means two things:
+   - X properties values are not the same as XLFD, and are precise font descriptors
+   - alias fonts ( defined via fonts.alias ) don't have X properties
+ */
 static void
 font_query_name( XFontStruct * s, PFontInfo f)
 {
@@ -186,10 +204,6 @@ font_query_name( XFontStruct * s, PFontInfo f)
       f-> flags. name = true;
    }
 }   
-
-static char **ignore_encodings;
-static int n_ignore_encodings;
-static char *s_ignore_encodings;
 
 static Bool
 xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
@@ -488,13 +502,6 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 skip_font:
    return conformant;
 }
-
-static char * do_default_font = nil;
-static char * do_caption_font = nil;
-static char * do_msg_font = nil;
-static char * do_menu_font = nil;
-static char * do_widget_font = nil;
-static Bool   do_xft = true;
 
 Bool
 prima_init_font_subsystem( void)
@@ -1069,7 +1076,7 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
          size = font-> size * 10;
       else {
          height = font-> height * 10;
-         prima_init_try_height( &hgs, size, f-> flags. heights_cache ? f-> heights_cache[0] : height);
+         prima_init_try_height( &hgs, height, f-> flags. heights_cache ? f-> heights_cache[0] : height);
          if ( f-> flags. heights_cache)
             height = prima_try_height( &hgs, f-> heights_cache[1]);
       }
@@ -1089,7 +1096,7 @@ AGAIN:
          /* five fields */
          sprintf( name, f-> vecname, height / 10, size, 0, 0, font-> width * 10);
       }
-      Fdebug("font: construct: h=%d * 0.1, s=%d\n", height, size);
+      Fdebug("font: construct h=%g, s=%d\n", (float)height/10, size);
    } else {
       strcpy( name, f-> xname);
    }
