@@ -205,8 +205,11 @@ ok( $x-> pixel( 1,4) == 0 &&
 # 17
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
-$x-> color( cl::Black);
-$x-> fill_ellipse( 2, 2, 3, 3);
+$x-> pixel( 1,2,cl::Black);
+$x-> pixel( 2,1,cl::Black);
+$x-> pixel( 2,3,cl::Black);
+$x-> pixel( 3,2,cl::Black);
+$x-> pixel( 2,2,cl::Black);
 my $image = $x-> image;
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
