@@ -351,6 +351,11 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
    a[0] = COLOR_R(color);
    a[1] = COLOR_G(color);
    a[2] = COLOR_B(color);
+
+   if ( guts. grayScale) {
+      a[0] = a[1] = a[2] = ( a[0] + a[1] + a[2]) / 3;
+      color = a[0] * ( 65536 + 256 + 1);
+   }
   /*  printf("%s asked for %06x\n", self?PWidget(self)->name:"null", color); */
    if (self && XT_IS_BITMAP(XX)) {
       Byte balance = ( a[0] + a[1] + a[2] + 6) / (3 * 4);
@@ -382,7 +387,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
          }
 
          if ( guts. useDithering && (brush != &b) && (ab2 > 12)) {
-            if ( guts. grayScale) {
+            if ( guts. grayScale && guts. systemColorMapSize > guts. palSize / 2) {
                int clr = ( COLOR_R(color) + COLOR_G(color) + 
                      COLOR_B(color)) / 3;
                int grd  = 256 / ( guts. systemColorMapSize - 1);
@@ -495,13 +500,12 @@ R'G' , B=0            maximal error lines). balance is computed as diff between
                      }
                   }
 ENOUGH:;                  
-                  if ( maxDiff > (64/(guts.colorCubeRib-1))) {
+                  if ( !guts. grayScale && maxDiff > (64/(guts.colorCubeRib-1))) {
                      cubic = true;
                      goto DITHER;
                   } 
                   brush-> secondary = bestMatch;
                   brush-> balance   = 63 - BMcd * 64 / BMbd;
-                  /* printf("MIX with %d of %06x\n", brush-> balance, guts.palette[bestMatch].composite); */
                }
             }
          }
@@ -762,7 +766,7 @@ class;
                xc[i].red = xc[i]. green = xc[i]. blue = c;
                if (( c += ndiv) > 65535) c = 65535;
             }
-            if ( alloc_main_color_range( xc, shades, 768)) {
+            if ( alloc_main_color_range( xc, shades, 768 / shades)) {
                if ( !create_std_palettes( xc, shades)) return false;
                break;
             }
