@@ -369,6 +369,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       }
       e. cmd = cmMouseEnter;
      CrossingEvent:
+      if ( ev-> xcrossing. subwindow != None) return;
       e. pos. where. x = ev-> xcrossing. x;
       e. pos. where. y = XX-> size. y - ev-> xcrossing. y - 1;
       break;
