@@ -1957,13 +1957,41 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Rect *cr, Bool sc
 {
    PRECT pRect = r ? map_Rect( self, r) : nil;
    PRECT pClipRect = cr ? map_Rect( self, cr) : nil;
+   Point sz = apc_widget_get_size( self);
    objCheck false;
+
    HideCaret(( HWND) var handle);
 
-   if ( !ScrollWindowEx(( HWND) var handle,
-      horiz, -vert, pRect, pClipRect, NULL, NULL,
-      SW_INVALIDATE | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
-   )) apiErr;
+   if ( pClipRect) {
+      if ( pClipRect-> left < 0) pClipRect-> left = 0;
+      if ( pClipRect-> top  < 0) pClipRect-> top = 0;
+      if ( pClipRect-> right  > sz. x) pClipRect-> right = sz. x;
+      if ( pClipRect-> bottom > sz. y) pClipRect-> bottom = sz. y;
+   }
+
+   if ( pRect) {
+      if ( pRect-> left < 0) pRect-> left = 0;
+      if ( pRect-> top  < 0) pRect-> top = 0;
+      if ( pRect-> right  > sz. x) pRect-> right = sz. x;
+      if ( pRect-> bottom > sz. y) pRect-> bottom = sz. y;
+   }
+
+   if ( horiz > sz. x || horiz < -sz. x || vert > sz. y || vert < -sz. y) {
+      if ( pRect && pClipRect) {
+         RECT rc;
+         UnionRect( &rc, (RECT*)pRect, (RECT*)pClipRect);
+         InvalidateRect(( HWND) var handle, &rc, false);
+      } else 
+         InvalidateRect(( HWND) var handle, pRect ? pRect : pClipRect, false);
+   } else {
+      if ( !ScrollWindowEx(( HWND) var handle,
+         horiz, -vert, pRect, pClipRect, NULL, NULL,
+         SW_INVALIDATE | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
+      )) {
+         ShowCaret(( HWND) var handle);
+         apiErr;
+      }
+   }
    objCheck false;
    if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
    return ShowCaret(( HWND) var handle);
