@@ -535,6 +535,7 @@ sub profile_default
       hScaling      => 1,
       vScaling      => 1,
       data          => '',
+      resolution    => [ 0, 0],
    );
    @$def{keys %prf} = values %prf;
    return $def;
@@ -558,11 +559,25 @@ sub palette      {($#_)?$_[0]->set_palette      ($_[1]):return $_[0]->get_palett
 sub preserveType {($#_)?$_[0]->set_preserve_type($_[1]):return $_[0]->get_preserve_type;}
 sub hScaling     {($#_)?$_[0]->set_h_scaling    ($_[1]):return $_[0]->get_h_scaling    ;}
 sub vScaling     {($#_)?$_[0]->set_v_scaling    ($_[1]):return $_[0]->get_v_scaling    ;}
+sub resolution   {($#_)?shift->set_resolution   (@_)   :return $_[0]->get_resolution   ;}
 
 # class Icon
 package Icon;
 use vars qw( @ISA);
 @ISA = qw(Image);
+
+sub profile_default
+{
+   my $def = $_[ 0]-> SUPER::profile_default;
+   my %prf = (
+      mask  => '',
+   );
+   @$def{keys %prf} = values %prf;
+   return $def;
+}
+
+
+sub mask         {($#_)?$_[0]->set_mask         ($_[1]):return $_[0]->get_mask;         }
 
 # class DeviceBitmap
 package DeviceBitmap;
@@ -822,7 +837,7 @@ sub profile_check_in
    if ( exists $p-> { designScale})
    {
       my @d = @{$p->{ designScale}};
-      my @a = ( $default->{ font}->{ width}, $default->{ font}->{ height});
+      my @a = ( $p->{ font}->{ width}, $p->{ font}->{ height});
       $p->{left}    *= $a[0] / $d[0] if exists $p->{left};
       $p->{right}   *= $a[0] / $d[0] if exists $p->{right};
       $p->{top}     *= $a[1] / $d[1] if exists $p->{top};
@@ -899,7 +914,7 @@ sub cursorVisible    {($#_)?$_[0]->set_cursor_visible($_[1]):return $_[0]->get_c
 sub enabled          {($#_)?$_[0]->set_enabled     ($_[1]):return $_[0]->get_enabled;     }
 sub growMode         {($#_)?$_[0]->set_grow_mode   ($_[1]):return $_[0]->get_grow_mode;   }
 sub dark3DColor      {($#_)?$_[0]->set_color_index ($_[1], ci::Dark3DColor):return $_[0]->get_color_index(ci::Dark3DColor)}
-sub designScale      {($#_)?$_[0]->raise_ro("designScale")              :return $_[0]->get_design_scale;       }
+sub designScale      {($#_)?shift->set_design_scale(@_)                 :return $_[0]->get_design_scale;       }
 sub disabledBackColor{($#_)?$_[0]->set_color_index ($_[1], ci::Disabled):return $_[0]->get_color_index(ci::Disabled)}
 sub disabledColor    {($#_)?$_[0]->set_color_index ($_[1], ci::DisabledText):return $_[0]->get_color_index(ci::DisabledText)}
 sub firstClick       {($#_)?$_[0]->set_first_click ($_[1]):return $_[0]->get_first_click; }
