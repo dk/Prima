@@ -105,9 +105,9 @@ set_net_hints( XWindow window, int task_listed, int modal, int zoom)
    }
 
    /* finally reset the list of properties */
-   if (  task_listed == 0) data[ count++] = NET_WM_STATE_SKIP_TASKBAR;
-   if (  modal > 0) data[ count++] = NET_WM_STATE_MODAL;
-   if (  zoom > 0)  {
+   if ( task_listed == 0) data[ count++] = NET_WM_STATE_SKIP_TASKBAR;
+   if ( modal > 0) data[ count++] = NET_WM_STATE_MODAL;
+   if ( zoom > 0)  {
       data[ count++] = NET_WM_STATE_MAXIMIZED_VERT;
       data[ count++] = NET_WM_STATE_MAXIMIZED_HORZ;
    }
@@ -1058,13 +1058,18 @@ apc_window_set_window_state( Handle self, int state)
          XMapWindow( DISP, X_WINDOW);
          /* suppress reaction to UnmapNotify */
          XX-> flags. suppress_cmMinimize = 1;
-         prima_wm_sync( self, MapNotify);
+         prima_wm_sync( self, ConfigureNotify);
          XX-> flags. suppress_cmMinimize = 0;
+	 if ( !prima_wm_net_state_read_maximization( X_WINDOW, NET_WM_STATE)) {
+	    /* wm denies maximization request, do maximization by casual heuristic */
+	    goto FALL_THROUGH;
+	 }
       }
       XX-> zoomRect = zoomRect; /* often reset in ConfigureNotify to already maximized window */
       XX-> flags. zoomed = 1;
       did_net_zoom = 1;
       sync = 0;
+   FALL_THROUGH:
    }
 
    if ( !XX-> flags. withdrawn) {

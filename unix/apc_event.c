@@ -1071,13 +1071,19 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    case -ConfigureNotify: 
       if ( XT_IS_WINDOW(XX)) {
          if ( win != XX-> client) {
+	    int nh;
+            WMSyncData wmsd;
             Bool size_changed =
                XX-> ackFrameSize. x != ev-> xconfigure. width || 
                XX-> ackFrameSize. y != ev-> xconfigure. height;
+            wmsd. allow_cmSize = true;
             XX-> ackOrigin. x = ev-> xconfigure. x;
             XX-> ackOrigin. y = X(X(self)-> owner)-> size. y - ev-> xconfigure. height - ev-> xconfigure. y;
             XX-> ackFrameSize. x   = ev-> xconfigure. width;
             XX-> ackFrameSize. y   = ev-> xconfigure. height;
+            nh = ev-> xconfigure. height - XX-> menuHeight;
+            if ( nh < 1 ) nh = 1;
+            XMoveResizeWindow( DISP, XX-> client, 0, XX-> menuHeight, ev-> xconfigure. width, nh);
             if ( PWindow( self)-> menu) {
                if ( size_changed) {
                   M(PWindow( self)-> menu)-> paint_pending = true;
@@ -1088,6 +1094,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
                M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
                prima_end_menu();
             }
+            wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure, XX-> flags. mapped);
+            process_wm_sync_data( self, &wmsd);
          } else {
             XX-> ackSize. x  = ev-> xconfigure. width;
             XX-> ackSize. y  = ev-> xconfigure. height;
