@@ -285,6 +285,8 @@ L<Prima::Widget::place> - Tk::place geometry manager
 
 L<Prima::Window> - top-level window management
 
+L<Prima::Clipboard> - GUI interprocess data exchange
+
 L<Prima::Menu> - pull-down and pop-up menu objects
 
 L<Prima::Timer> - programmable periodical events 
@@ -304,6 +306,8 @@ L<Prima::Calendar> - calendar widget
 L<Prima::ComboBox> - combo box widget 
 
 L<Prima::DetailedList> - multi-column list viewer with controlling header widget
+
+L<Prima::DetailedOutline> - a multi-column outline viewer with controlling header widget
 
 L<Prima::DockManager> - advanced dockable widgets
 
@@ -415,11 +419,15 @@ L<Prima::StdBitmap> - shared access to the standard toolkit bitmaps
 
 L<Prima::Stress> - stress test module
 
+L<Prima::Tie> - tie widget properties to scalars or arrays
+
 L<Prima::Utils> - miscellaneous routines
 
 L<Prima::Widgets> - miscellaneous widget classes
 
 L<Prima::gp-problems> - Graphic subsystem portability issues
+
+L<Prima::X11> - usage guide for X11 environment
 
 =back
 
