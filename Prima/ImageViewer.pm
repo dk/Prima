@@ -144,7 +144,7 @@ sub on_paint
       $imX = $imXz / $iS * $iI;
    }
 
-   $canvas-> clear( $atx, $aty, $imXz, $imYz) if $self-> {icon};
+   $canvas-> clear( $atx, $aty, $atx + $imXz, $aty + $imYz) if $self-> {icon};
 
    $canvas-> put_image_indirect(
       $self->{image},
