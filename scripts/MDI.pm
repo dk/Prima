@@ -585,7 +585,12 @@ sub on_mousedown
             $_[0]-> destroy;
             delete $self-> {exTimer};
             return unless $self-> alive || ! defined ( $self-> popup);
-            $self-> popup-> popup( $self->{border}, $self->height - $self->{border} - $self->{titleY});
+            my $w  = $self-> height;
+            my $y  = $self-> {titleY};
+            my $bw = $self-> {border};
+            $self-> popup-> popup( $self->{border}, $self->height - $self->{border} - $self->{titleY},
+               $bw, $w - $y - $bw, $bw + $y, $w - $bw
+            );
          },
       );
       $self-> {exTimer}-> start;
