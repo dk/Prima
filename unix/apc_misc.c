@@ -732,8 +732,13 @@ apc_pointer_get_visible( Handle self)
 Bool
 apc_pointer_set_pos( Handle self, int x, int y)
 {
-   DOLBUG( "apc_pointer_set_pos()\n");
-   return true;
+   int ax = DisplayWidth( DISP, SCREEN);
+   int ay = DisplayHeight( DISP, SCREEN);
+   if ( !XWarpPointer( DISP, None, RootWindow( DISP, SCREEN), 
+      0, 0, ax, ay, x, ay - y - 1))
+      return false;
+   XCHECKPOINT;
+   return true;   
 }
 
 Bool
@@ -833,6 +838,10 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
          warn( "error creating cursor from pixmaps");
          return false;
       }
+      if ( XX-> pointer_id == crUser && self != application) {
+         XDefineCursor( DISP, XX-> udrawable, XX-> user_pointer);
+         XCHECKPOINT;
+      }      
    }
    return true;
 }
