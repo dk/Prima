@@ -1,5 +1,7 @@
 #ifndef __unix
 #   include <io.h>
+#else
+#   include <unistd.h>
 #endif /* __unix */
 #include <fcntl.h>
 #include <sys/types.h>
