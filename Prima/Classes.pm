@@ -586,7 +586,7 @@ sub profile_default
 
 # class Widget
 package Prima::Widget;
-use vars qw(@ISA %WidgetProfile);
+use vars qw(@ISA %WidgetProfile @default_font_box);
 @ISA = qw(Prima::Drawable);
 
 {
@@ -815,7 +815,11 @@ sub profile_check_in
       }
       if ( exists $p-> { designScale}) {
          my @d = @{$p->{ designScale}};
-         my @a = ( $p->{ font}->{ width}, $p->{ font}->{ height});
+         unless ( @default_font_box) {
+            my $f = $::application-> get_default_font;
+            @default_font_box = ( $f->{ width}, $f->{ height});
+         }
+         my @a = @default_font_box;
          $p->{left}    *= $a[0] / $d[0] if exists $p->{left};
          $p->{right}   *= $a[0] / $d[0] if exists $p->{right};
          $p->{top}     *= $a[1] / $d[1] if exists $p->{top};
