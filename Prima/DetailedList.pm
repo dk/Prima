@@ -114,7 +114,12 @@ sub init
    my $x = $self-> {header}->items;
    $self-> {umap} = [ 0 .. $#$x];
    $self-> $_( $profile{$_}) for qw( columns mainColumn);
-   $self-> autowidths unless scalar @{$profile{widths}};
+   if ( scalar @{$profile{widths}}) {
+      $self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
+      $self-> reset_scrolls;
+   } else {
+      $self-> autowidths;
+   }
    return %profile;
 }
 
