@@ -32,6 +32,7 @@
 #define DEFAULT_WIDGET_FONT              "MS Shell Dlg"
 #define DEFAULT_WIDGET_FONT_SIZE         8
 #define COLOR_TOLERANCE                  4
+#define HASMATE_MAGIC                    0xDEAF0CE1
 
 
 #define WM_WRITE_TO_LOG                   ( WM_USER + 0)
@@ -52,6 +53,7 @@
 #define WM_FORCEFOCUS                     ( WM_USER + 15)
 #define WM_SYNCMOVE                       ( WM_USER + 16)
 #define WM_EXTERNAL                       ( WM_USER + 17)
+#define WM_HASMATE                        ( WM_USER + 18)
 #define WM_TERMINATE                      ( WM_USER + 99)
 
 #define  SEVERE_DEBUG
