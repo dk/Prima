@@ -219,21 +219,21 @@ XS( Object_alive_FROMPERL)
    if ( items != 1)
       croak("Invalid usage of Prima::Object::%s", "alive");
    _c_apricot_self_ = gimme_the_real_mate( ST( 0));
-   if ( _c_apricot_self_ == nilHandle)
-      croak( "Illegal object reference passed to Prima::Object::%s", "alive");
    SPAGAIN;
    SP -= items;
-
-   switch ((( PObject) _c_apricot_self_)-> stage) {
-   case csConstructing:
-       ret = 2;
-       break;
-   case csNormal:
-       ret = 1;
-       break;
-   default:
-       ret = 0;
-   }
+   if ( _c_apricot_self_ != nilHandle) {
+      switch ((( PObject) _c_apricot_self_)-> stage) {
+      case csConstructing:
+          ret = 2;
+          break;
+      case csNormal:
+          ret = 1;
+          break;
+      default:
+          ret = 0;
+      }
+   } else
+      ret = 0;
    XPUSHs( sv_2mortal( newSViv( ret)));
    PUTBACK;
    return;
