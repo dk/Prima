@@ -1,4 +1,4 @@
-object Clipboard( Object)
+object Clipboard( Component)
 {
    int    openCount;
    int    formatCount;

@@ -5,7 +5,7 @@
 #include "Clipboard.inc"
 
 #undef  my
-#define inherited CObject->
+#define inherited CComponent->
 #define my  ((( PClipboard) self)-> self)->
 #define var (( PClipboard) self)->
 
