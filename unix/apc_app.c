@@ -417,7 +417,8 @@ window_subsystem_get_options( int * argc, char *** argv)
 	    " X(XRDB),"\
 	    " A(all together)",
 #ifdef USE_XFT
-   "no-xft", "do not use XFT",
+   "no-xft",       "do not use XFT",
+   "no-aa",        "do not anti-alias XFT fonts",
 #endif   
    "font", 
 #ifdef USE_XFT

@@ -49,6 +49,7 @@ static char * do_msg_font = nil;
 static char * do_menu_font = nil;
 static char * do_widget_font = nil;
 static Bool   do_xft = true;
+static Bool   do_xft_no_antialias = false;
 
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 
@@ -601,6 +602,7 @@ prima_init_font_subsystem( void)
    }
    
 #ifdef USE_XFT
+   guts. xft_no_antialias = do_xft_no_antialias;
    if ( do_xft) prima_xft_init();
 #endif
 
@@ -700,6 +702,11 @@ prima_font_subsystem_set_option( char * option, char * value)
    if ( strcmp( option, "no-xft") == 0) {
       if ( value) warn("`--no-xft' option has no parameters");
       do_xft = false;
+      return true;
+   } else
+   if ( strcmp( option, "no-aa") == 0) {
+      if ( value) warn("`--no-antialias' option has no parameters");
+      do_xft_no_antialias = true;
       return true;
    } else
    if ( strcmp( option, "font") == 0) {

@@ -219,7 +219,7 @@ prima_xft_init(void)
       hash_store( encodings, upcase, length, (void*) (std_charsets + i));
       hash_store( encodings, std_charsets[i]. name, length, (void*) (std_charsets + i));
    }
-
+ 
    locale = hash_fetch( encodings, guts. locale, strlen( guts.locale));
    if ( !locale) locale = std_charsets;
 }
@@ -464,6 +464,8 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
       FcPatternAddMatrix( request, FC_MATRIX, &mat);
    }
 
+   if ( guts. xft_no_antialias)
+      FcPatternAddBool( request, FC_ANTIALIAS, 0);
 
    /* match best font - must return something useful; the match is statically allocated */
    match = XftFontMatch( DISP, SCREEN, request, &res);

@@ -573,6 +573,7 @@ typedef struct _UnixGuts
    int                          use_xft;
    Bool                         xft_disable_large_fonts;
    int                          xft_xrender_major_opcode;
+   Bool                         xft_no_antialias;
    struct MsgDlg               *message_boxes;
    XWindow                      grab_redirect;
    Handle                       grab_widget;
