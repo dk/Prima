@@ -501,12 +501,13 @@ menu_enter_item( PMenuSysData XX, PMenuWindow w, int index, int type)
       w2-> pos = n;
       XX-> focused = w2;
    } else {
+      Handle self = w-> self;
       if (( &XX-> wstatic == w) && ( type == 0)) {
          menu_window_delete_downlinks( XX, w);
          return true;
       }
       prima_end_menu();
-      CAbstractMenu( w-> self)-> sub_call( w-> self, m);
+      CAbstractMenu( self)-> sub_call( self, m);
       return false;
    }
    return true;
