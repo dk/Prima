@@ -528,7 +528,20 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          if ( i == 0) firstObjectExtras = extras; 
          hv_store(( HV* )SvRV((( PAnyObject) fi. object)-> mate), "extras", 6, newSVsv( sv), 0);
          sv_free( sv);
-      } 
+      } else if ( fi. noImageData) { /* no extras, report dimensions only */
+         HV * extras = newHV();
+         SV * sv = newRV_noinc(( SV *) extras), **item;
+         if (( item = hv_fetch( fi. frameProperties, "width", 5, 0)) && SvOK( *item)) 
+            hv_store( extras, "width", 5, newSVsv( *item), 0);
+         else
+            hv_store( extras, "width", 5, newSViv(PImage(fi.object)-> w), 0);
+         if (( item = hv_fetch( fi. frameProperties, "height", 6, 0)) && SvOK( *item)) 
+            hv_store( extras, "height", 6, newSVsv( *item), 0);
+         else
+            hv_store( extras, "height", 6, newSViv(PImage(fi.object)-> h), 0);
+         hv_store(( HV* )SvRV((( PAnyObject) fi. object)-> mate), "extras", 6, newSVsv( sv), 0);
+         sv_free( sv);
+      }
 
       sv_free(( SV *) fi. frameProperties);
       if ( fi. profile != commonHV) sv_free(( SV *) fi. profile);
