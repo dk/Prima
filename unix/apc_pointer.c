@@ -303,6 +303,7 @@ apc_pointer_set_shape( Handle self, int id)
          XCHECKPOINT;
       }
    }
+   XFlush( DISP);
    return true;
 }
 
@@ -388,6 +389,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
          XCHECKPOINT;
       }      
    }
+   XFlush( DISP);
    return true;
 }
 
@@ -448,6 +450,7 @@ apc_pointer_set_visible( Handle self, Bool visible)
                     : guts. null_pointer);  
       }   
    }   
+   XFlush( DISP);
    return true;
 }
 

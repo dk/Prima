@@ -748,6 +748,7 @@ apc_widget_scroll( Handle self, int horiz, int vert,
    	      src_x, src_y, w, h, dst_x, dst_y);
    prima_release_gc( XX);
    XCHECKPOINT;
+   XFlush( DISP);
 
    r. x = src_x;
    r. y = src_y;
@@ -844,6 +845,7 @@ AGAIN:
       XX-> flags. grab = false;
       guts. grab_widget = nilHandle;
    }
+   XFlush( DISP);
    return true;
 }
 

@@ -318,6 +318,7 @@ apc_window_set_caption( Handle self, const char *caption)
    XSetWMIconName( DISP, X_WINDOW, &p);
    XSetWMName( DISP, X_WINDOW, &p);
    XFree( p. value);
+   XFlush( DISP);
    return true;
 }
 
