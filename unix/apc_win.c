@@ -1048,7 +1048,17 @@ apc_window_set_window_state( Handle self, int state)
       Rect zoomRect;
    /* net hints changes by themselves do not result in maximization -
       need explicit map/unmap. */
-      if ( visible) XUnmapWindow( DISP, X_WINDOW);
+      if ( visible) {
+	 XUnmapWindow( DISP, X_WINDOW);
+         /* suppress reaction to UnmapNotify */
+         XX-> flags. suppress_cmMinimize = 1;
+         prima_wm_sync( self, UnmapNotify);
+         XX-> flags. suppress_cmMinimize = 0;
+	 /* in case WM removes NET properties on unmap ( pretty valid )
+	    wait a bit so we can push our net hints. Still a race, but 
+	    nothing bad if we lose - heuristic maximization works fine also, after all. */
+	 XSync( DISP, false);
+      }
       set_net_hints( X_WINDOW, -1, -1, 1);
       zoomRect. left   = XX-> origin.x;
       zoomRect. bottom = XX-> origin.y;
@@ -1056,12 +1066,13 @@ apc_window_set_window_state( Handle self, int state)
       zoomRect. top    = XX-> size.y;
       if ( visible) {
          XMapWindow( DISP, X_WINDOW);
-         /* suppress reaction to UnmapNotify */
+         /* again, wait and suppress reaction to UnmapNotify */
          XX-> flags. suppress_cmMinimize = 1;
          prima_wm_sync( self, ConfigureNotify);
          XX-> flags. suppress_cmMinimize = 0;
 	 if ( !prima_wm_net_state_read_maximization( X_WINDOW, NET_WM_STATE)) {
-	    /* wm denies maximization request, do maximization by casual heuristic */
+	    /* wm denies maximization request, or we lost in the race ( see above ),
+	       do maximization by casual heuristic */
 	    goto FALL_THROUGH;
 	 }
       }
