@@ -12,6 +12,8 @@
 
 /* #define PARANOID_MALLOC */
 
+#define DOLBUG debug_write
+
 #ifdef _MSC_VER
    #define BROKEN_COMPILER       1
    #define BROKEN_PERL_PLATFORM  1
@@ -372,7 +374,7 @@ type_of( Handle object, void *cls);
 extern Bool
 log_write( const char *format, ...);
 
-extern Bool
+extern int
 debug_write( const char *format, ...);
 
 /* perl links */
@@ -1493,10 +1495,16 @@ typedef struct _IMGProperties {
    /*
     * Property types are the same as for capabilities but with addition of
     * b - byte.
+    * B - binary data.
     */
    char *type;
    char *descr;
 } ImgProps, *PImgProps;
+
+typedef struct _IMGBinaryData {
+    int size;
+    Byte *data;
+} IMGBinaryData, *PIMGBinaryData;
 
 typedef struct _IMGProperty { /* To be passed for Load/Save related operations. */
    char *name;
@@ -1508,16 +1516,19 @@ typedef struct _IMGProperty { /* To be passed for Load/Save related operations. 
 #define PROPTYPE_DOUBLE  0x0002
 #define PROPTYPE_STRING  0x0003
 #define PROPTYPE_BYTE    0x0004
+#define PROPTYPE_BIN     0x0005
    union {
       int Int;
       double Double;
       char *String;
       Byte Byte;
+      IMGBinaryData Binary;
 
       int *pInt;
       double *pDouble;
       char **pString;
       Byte *pByte;
+      PIMGBinaryData pBinary;
    } val;
 } ImgProperty, *PImgProperty;
 
