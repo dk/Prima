@@ -272,7 +272,7 @@ sub on_paint
    my @marks;
    my @texts;
 
-   my $deltax = - $self->{offset} + ($indent/2);
+   my $deltax = - $self->{offset} + ($indent/2) + $a[0];
    $canvas-> set(
       fillPattern => fp::SimpleDots,
       color       => cl::White,
@@ -463,8 +463,12 @@ sub on_mousedown
 
    my $item   = $self-> point2item( $y, $size[1]);
    my ( $rec, $lev) = $self-> get_item( $item);
-   if ( $rec && ( $x > -$o + $lev * $i + $i/2) &&
-      ( $x < -$o + $lev * $i + ($i*3)/2)) {
+#  if ( $rec && ( $x > -$o + $lev * $i + $i/2 + $a[0]) &&
+#     ( $x < -$o + $lev * $i + ($i*3)/2 + $a[0])) {
+   if ( $rec &&
+         ( $x >= ( 1 + $lev) * $i + $a[0] - $o - $imageSize[0] / 2) &&
+         ( $x <  ( 1 + $lev) * $i + $a[0] - $o + $imageSize[0] / 2)
+      ) {
       $self-> adjust( $item, $rec->[2] ? 0 : 1) if $rec->[1];
       return;
    }
@@ -491,8 +495,12 @@ sub on_mouseclick
    #my ($dx,$dy,$o,$i) = ( $self->{dx}, $self->{dy}, $self->{offset}, $self->{indent});
    my ($o,$i) = ( $self->{offset}, $self->{indent});
    my ( $rec, $lev) = $self-> get_item( $item);
-   if ( $rec && ( $x > -$o + $lev * $i + $i/2) &&
-      ( $x < -$o + $lev * $i + ($i*3)/2)) {
+#  if ( $rec && ( $x > -$o + $lev * $i + $i/2 + $self->{indents}->[0]) &&
+#     ( $x < -$o + $lev * $i + ($i*3)/2 + $self->{indents}->[0])) {
+   if ( $rec &&
+         ( $x >= ( 1 + $lev) * $i + $self->{indents}->[0] - $o - $imageSize[0] / 2) &&
+         ( $x <  ( 1 + $lev) * $i + $self->{indents}->[0] - $o + $imageSize[0] / 2)
+      ) {
       $self-> adjust( $item, $rec->[2] ? 0 : 1) if $rec->[1];
       return;
    }
@@ -509,7 +517,6 @@ sub makehint
       return;
    }
    return if defined $self->{unsuccessfullId} && $self->{unsuccessfullId} == $itemid;
-   $self->{unsuccessfullId} = undef;
 
    return unless $self->{showItemHint};
 
@@ -519,16 +526,22 @@ sub makehint
       return;
    }
 
-   return if $show && $self->{hinter} && $self->{hinter}-> {id} == $itemid;
+   # return if $show && $self->{hinter} && $self->{hinter}-> {id} == $itemid;
 
    my $w = $self-> get_item_width( $item);
 #  my $x = $self-> width - $self-> {borderWidth} * 2 - $self->{dx};
-   my ($x,$y) = $self-> get_active_area( 2);
-   my $ofs = ( $lev + 2.5) * $self->{indent} - $self->{offset};
-   if ( $w + $ofs <= $x) {
+#  my ($x,$y) = $self-> get_active_area( 2);
+   my @a = $self-> get_active_area;
+   my $ofs = ( $lev + 2.5) * $self->{indent} - $self->{offset} + $self-> {indents}->[0];
+
+#  if ( $w + $ofs <= $x) {
+   if ( $w + $ofs <= $a[2]) {
       $self-> makehint(0);
       return;
    }
+
+   $self->{unsuccessfullId} = undef;
+
    unless ( $self->{hinter}) {
        $self->{hinter} = $self-> insert( Widget =>
            clipOwner      => 0,
@@ -599,7 +612,7 @@ sub on_mousemove
    if ( !defined $self->{mouseTransaction} && $self->{showItemHint}) {
       my $item   = $self-> point2item( $y, $size[1]);
       my ( $rec, $lev) = $self-> get_item( $item);
-      if ( !$rec || ( $x < -$self->{offset} + ($lev + 2) * $self->{indent})) {
+      if ( !$rec || ( $x < -$self->{offset} + ($lev + 2) * $self->{indent} + $self->{indents}->[0])) {
          $self-> makehint( 0);
          return;
       }
