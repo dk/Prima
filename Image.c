@@ -85,8 +85,11 @@ Image_init( Handle self, HV * profile)
       my-> set_data( self, pget_sv( data));
    opt_assign( optPreserveType, pget_B( preserveType));
    var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
-   if (!( var->type & imGrayScale))
-      apc_img_read_palette( var->palette, pget_sv( palette));
+   if (!( var->type & imGrayScale)) {
+      int ps = apc_img_read_palette( var->palette, pget_sv( palette));
+      if ( ps) var-> palSize = ps;
+   }
+
    {
       Point set;
       prima_read_point( pget_sv( resolution), (int*)&set, 2, "RTC0109: Array panic on 'resolution'");
@@ -108,13 +111,16 @@ Image_init( Handle self, HV * profile)
    my->update_change( self);
 }
 
-
 void
 Image_reset( Handle self, int type, SV * palette)
 {
+   int ps;
    Byte * newData = nil;
    if ( var->stage > csFrozen) return;
+
+   ps = (1 << ( type & imBPP)) & 0x1ff;
    if (!( type & imGrayScale)) {
+      int pps;
       switch ( type) {
       case im16:
          if (( var-> type & imBPP) < im16) {
@@ -129,7 +135,8 @@ Image_reset( Handle self, int type, SV * palette)
          }
          break;
       }
-      apc_img_read_palette( var->palette, palette);
+      pps = apc_img_read_palette( var->palette, palette);
+      if ( pps) ps = pps;
    }
    if ( var->type == imByte && type == im256)
    {
@@ -138,7 +145,7 @@ Image_reset( Handle self, int type, SV * palette)
    }
    var->lineSize = (( var->w * ( type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
-   var->palSize = (1 << ( type & imBPP)) & 0x1ff;
+   var->palSize  = ps;
    if ( var->dataSize > 0) {
       newData = allocb( var-> dataSize);
       if ( newData == nil) {
@@ -705,9 +712,13 @@ Image_palette( Handle self, Bool set, SV * palette)
 {
    if ( var->stage > csFrozen) return nilSV;
    if ( set) {
+      int ps;
       if ( var->type & imGrayScale) return nilSV;
       if ( !var->palette)           return nilSV;
-      if ( !apc_img_read_palette( var->palette, palette))
+      ps = apc_img_read_palette( var->palette, palette);
+      if ( ps)
+         var-> palSize = ps;
+      else
          warn("RTC0107: Invalid array reference passed to Image::palette");
       my-> update_change( self);
    } else {
@@ -716,6 +727,7 @@ Image_palette( Handle self, Bool set, SV * palette)
       int colors = ( 1 << ( var->type & imBPP)) & 0x1ff;
       Byte * pal = ( Byte*) var->palette;
       if (( var->type & imGrayScale) && (( var->type & imBPP) > imbpp8)) colors = 256;
+      if ( var-> palSize < colors) colors = var-> palSize;
       for ( i = 0; i < colors*3; i++) av_push( av, newSViv( pal[ i]));
       return newRV_noinc(( SV *) av);
    }

@@ -118,7 +118,7 @@ make_palette_sv( ColorMapObject * pal)
 static void
 copy_palette( PImage i, ColorMapObject * pal)
 {
-   int j;
+   int j, last_non_null = -1, first_null = -1;
    PRGBColor r = i-> palette;
    GifColorType * c = pal-> Colors;
    
@@ -128,9 +128,16 @@ copy_palette( PImage i, ColorMapObject * pal)
       r-> r = c-> Red;
       r-> g = c-> Green;
       r-> b = c-> Blue;
+      if ( r-> r != 0 || r-> g != 0 || r-> b != 0)
+         last_non_null = j;
+      else if ( first_null < 0 && r-> r == 0 && r-> g == 0 && r-> b == 0)
+         first_null = j;
       c++;
       r++;
-   }   
+   }  
+   /* optimize palette, since gif palette must be **2 only */
+   i-> palSize = last_non_null + 1;
+   if ( first_null > last_non_null && i-> palSize < 256) i-> palSize++;
 }   
 
 static void
@@ -341,9 +348,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
             pset_i( height,     l-> gft-> Image. Height);
          } else {
             GifPixelType * data;
-            int ls = sizeof( GifPixelType) * l-> gft-> Image. Width;
+            int ls = sizeof( GifPixelType) * l-> gft-> Image. Width, ps = i-> palSize;
             i-> self-> create_empty(( Handle) i, 
                 l-> gft-> Image. Width, l-> gft-> Image. Height, i-> type);
+            i-> palSize = ps;
             data = ( GifPixelType *) malloc( ls * i-> h);
             if ( !data) outcm( ls * i-> h);
             if ( DGifGetLine( l-> gft, data, i-> w * i-> h) != GIF_OK) {
@@ -480,9 +488,19 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 static ColorMapObject * 
 make_colormap( PRGBColor r, int sz)
 {
-   int j;
-   ColorMapObject * ret = MakeMapObject( sz, nil);
-   GifColorType   * c;   
+   int j, psz;
+   ColorMapObject * ret;
+   GifColorType   * c;  
+
+   if ( sz <= 2)  psz = 2;  else
+   if ( sz <= 4)  psz = 4;  else
+   if ( sz <= 8)  psz = 8;  else
+   if ( sz <= 16) psz = 16; else
+   if ( sz <= 32) psz = 32; else
+   if ( sz <= 64) psz = 64; else
+   if ( sz <= 128) psz = 128; else
+      psz = 256;
+   ret = MakeMapObject( psz, nil);
    if ( !ret) return nil;
    c = ret-> Colors;
    for ( j = 0; j < sz; j++) {
@@ -492,6 +510,10 @@ make_colormap( PRGBColor r, int sz)
       c++;
       r++;
    }   
+   for ( j = sz; j < psz; j++) {
+      c-> Red = c-> Green = c-> Blue = 0;
+      c++;
+   }
    return ret;
 }   
 
