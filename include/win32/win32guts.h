@@ -4,8 +4,8 @@
 #include <winspool.h>
 #include "apricot.h"
 
-#define IS_NT      (BOOL)(GetVersion() < 0x80000000)
-#define IS_WIN32S  (BOOL)(!(IS_NT) && (LOBYTE(LOWORD(GetVersion()))<4))
+#define IS_NT      (BOOL)( guts. version < 0x80000000)
+#define IS_WIN32S  (BOOL)(!(IS_NT) && (LOBYTE(LOWORD(guts. version))<4))
 #define IS_WIN95   (BOOL)(!(IS_NT) && !(IS_WIN32S))
 
 #ifdef UNICODE
@@ -136,6 +136,7 @@ typedef struct _WinGuts
     Bool           focSysDisabled;     // focus system disabled
     Bool           focSysGranted;      // SetFocus() was called inside apc_widget_set_focused
     UINT           errorMode;          // SetErrorMode() result
+    DWORD          version;            // GetVersion() cached result
 } WinGuts, *PWinGuts;
 
 
