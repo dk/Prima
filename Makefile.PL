@@ -675,21 +675,6 @@ sub setup_variables
        }
     }
 
-    # finding image codecs
-    while (<img/codec_*.c>) { 
-       m/codec_(.*)\.c$/i;   
-       my ( $fn, $lib) = ( $_, lc $1);
-       $lib.='.lib' if $Win32 || $OS2;
-       if ( defined find_lib( $lib,'')) {
-          push( @ACTIVE_CODECS, lc $1);
-          push( @flibs, $lib);
-          print "Using image library '$lib'\n";
-       } else {
-          $PASSIVE_CODECS{$fn} = 1;
-       }
-    }
-    warn "** warning - no image codecs found\n" unless @ACTIVE_CODECS;
-    
     setvar( 'LIBS', @flibs);
     %DEFINES = (
                 PERL_PATCHLEVEL => $Config{ PATCHLEVEL},
@@ -1181,6 +1166,22 @@ EOF
 
 sub setup_misc
 {
+    # finding image codecs
+    my %libs = map { $_ => 1 } @LIBS;
+    while (<img/codec_*.c>) { 
+       m/codec_(.*)\.c$/i; 
+       my ( $fn, $lib) = ( $_, $1);
+       $lib.='.lib' if $Win32 || $OS2;
+       if ( $libs{$lib} || defined find_lib( $lib,'')) {
+          push( @ACTIVE_CODECS, $1);
+          push( @LIBS, $lib) unless $libs{$lib};
+          print "Using image library '$lib'\n";
+       } else {
+          $PASSIVE_CODECS{$fn} = 1;
+       }
+    }
+    warn "** warning - no image codecs found\n" unless @ACTIVE_CODECS;
+
     push @Prima_exports, 'bzero' unless $DEFINES{HAVE_BZERO};
     # Setting up translation tables for quoting string for different make utilities.
     my ( $make_tbl, $nmake_tbl, $dmake_tbl);
