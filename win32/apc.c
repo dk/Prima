@@ -1308,7 +1308,7 @@ apc_window_end_modal( Handle self)
 
 // View management
 Bool
-apc_widget_map_point( Handle self, Bool toScreen, int count, Point * p)
+apc_widget_map_points( Handle self, Bool toScreen, int count, Point * p)
 {
    int i;
    POINT pt = {0,0};

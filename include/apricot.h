@@ -1742,7 +1742,7 @@ extern Bool
 apc_widget_invalidate_rect( Handle self, Rect * rect);
 
 extern Bool
-apc_widget_map_point( Handle self, Bool toScreen, int count, Point * points);
+apc_widget_map_points( Handle self, Bool toScreen, int count, Point * points);
 
 extern Bool
 apc_widget_scroll( Handle self, int horiz, int vert,

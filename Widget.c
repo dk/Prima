@@ -727,8 +727,8 @@ void Widget_handle_event( Handle self, PEvent event)
                  PPopup p = ( PPopup) CWidget( self)-> get_popup( self);
                  if ( p && p-> self-> get_autoPopup(( Handle) p)) {
                     Point px = event-> gen. P;
-                    apc_widget_map_point( org,  true,  1, &px);
-                    apc_widget_map_point( self, false, 1, &px);
+                    apc_widget_map_points( org,  true,  1, &px);
+                    apc_widget_map_points( self, false, 1, &px);
                     p-> self-> popup(( Handle) p, px. x, px. y ,0,0,0,0);
                     CWidget( org)-> clear_event( org);
                     return;
@@ -2135,13 +2135,12 @@ Widget_pointerType( Handle self, Bool set, int type)
 Point
 Widget_pointerPos( Handle self, Bool set, Point p)
 {
-   enter_method;
    if ( !set) {
       p = apc_pointer_get_pos( self);
-      apc_widget_map_point( self, false, 1, &p);
+      apc_widget_map_points( self, false, 1, &p);
       return p;
    }
-   apc_widget_map_point( self, true, 1, &p);
+   apc_widget_map_points( self, true, 1, &p);
    apc_pointer_set_pos( self, p. x, p. y);
    return p;
 }
@@ -2624,7 +2623,7 @@ XS( Widget_client_to_screen_FROMPERL)
       points[i]. x = SvIV( ST( i * 2 + 1));
       points[i]. y = SvIV( ST( i * 2 + 2));
    }
-   apc_widget_map_point( self, true, count, points);
+   apc_widget_map_points( self, true, count, points);
    EXTEND( sp, count * 2);
    for ( i = 0; i < count; i++) {
       PUSHs( sv_2mortal( newSViv( points[i].x)));
@@ -2654,7 +2653,7 @@ XS( Widget_screen_to_client_FROMPERL)
       points[i]. x = SvIV( ST( i * 2 + 1));
       points[i]. y = SvIV( ST( i * 2 + 2));
    }
-   apc_widget_map_point( self, false, count, points);
+   apc_widget_map_points( self, false, count, points);
    EXTEND( sp, count * 2);
    for ( i = 0; i < count; i++) {
       PUSHs( sv_2mortal( newSViv( points[i].x)));

@@ -588,7 +588,7 @@ static void hshow( Handle self)
    Point hintSize;
    PWidget_vmt hintWidget = CWidget( var->  hintWidget);
 
-   apc_widget_map_point( var-> hintUnder, true, 1, &pos);
+   apc_widget_map_points( var-> hintUnder, true, 1, &pos);
 
    hintWidget-> set_text( var->  hintWidget, text);
    hintSize = hintWidget-> get_size( var->  hintWidget);
