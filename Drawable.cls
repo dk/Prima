@@ -70,7 +70,7 @@ object Prima::Drawable ( Prima::Component)
    method Color         get_color()                       => apc_gp_get_color;
    method FillPattern * get_fill_pattern();
    method Font          get_font();
-   method SV *          get_font_abc();
+   method SV *          get_font_abc( int first = -1, int last = -1);
    method SV *          get_handle();
    method int           get_height();
    method int           get_line_end()                    => apc_gp_get_line_end;
