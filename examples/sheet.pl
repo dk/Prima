@@ -69,7 +69,7 @@ if ( defined $fname) {
    while (<F>) {
       next if /^#/;
       chomp;
-      s/\t/\s/g;
+      s/\t/ /g;
       next unless /^(\w+)\s+(\d+)(\\|\/)(\w+)\s+?\#\s*(.*)$/;
       push ( @items, [ $1, $2, $4, $5]);
    }

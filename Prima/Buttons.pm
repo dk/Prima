@@ -237,7 +237,7 @@ sub draw_caption
    my ( $self, $canvas, $x, $y) = @_;
    my $cap = $self-> text;
    $cap =~ s/^([^~]*)\~(.*)$/$1$2/;
-   my ( $leftPart, $accel) = ( $1, length($2) ? substr( $2, 0, 1) : undef);
+   my ( $leftPart, $accel) = ( $1, ( defined ($2) && length($2)) ? substr( $2, 0, 1) : undef);
    my ( $fw, $fh, $enabled) = (
       $canvas-> get_text_width( $cap),
       $canvas-> font-> height,
@@ -295,7 +295,7 @@ sub text
    my ( $self, $caption) = @_;
    my $cap = $caption;
    $cap =~ s/^([^~]*)\~(.*)$/$1$2/;
-   my $ac = $self-> { accel} = length($2) ? lc substr( $2, 0, 1) : undef;
+   my $ac = $self-> { accel} = (defined($2) && length($2)) ? lc substr( $2, 0, 1) : undef;
    $self-> SUPER::text( $caption);
    $self-> repaint;
 }
