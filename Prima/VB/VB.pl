@@ -579,15 +579,23 @@ sub on_paint
 sub on_move
 {
    my ( $self, $ox, $oy, $x, $y) = @_;
-   return if $self-> {syncRecting};
-   $self-> prf_set( origin => [$x, $y], originDontCare => 0);
+   $self-> prf_set(
+      origin => [$x, $y],
+      originDontCare => 0,
+   ) unless $self-> {syncRecting};
+   $self-> {profile}->{left} = $x;
+   $self-> {profile}->{bottom} = $y;
 }
 
 sub on_size
 {
    my ( $self, $ox, $oy, $x, $y) = @_;
-   return if $self-> {syncRecting};
-   $self-> prf_set( size => [$x, $y], sizeDontCare => 0);
+   $self-> prf_set(
+      size => [$x, $y],
+      sizeDontCare => 0,
+   ) unless $self-> {syncRecting};
+   $self-> {profile}->{width} = $x;
+   $self-> {profile}->{height} = $y;
 }
 
 sub on_close
@@ -794,6 +802,8 @@ sub fm_reclass
    return unless $self;
    my $cx = $self-> selectedWidget;
    $self = $cx if $cx;
+   my $lab_text = 'Class name';
+   $lab_text =  "Temporary class for ".$self->{realClass} if defined $self->{realClass};
    my $dlg = Prima::Dialog-> create(
       icon => $VB::ico,
       size => [ 429, 55],
@@ -814,9 +824,12 @@ sub fm_reclass
        origin => [ 5, 28],
        autoWidth => 0,
        size => [ 317, 20],
-       text => 'Class name',
+       text => $lab_text,
    ]);
-   $self-> {class} = $i-> text if $dlg-> execute == cm::OK;
+   if ( $dlg-> execute == cm::OK) {
+      $self-> {class} = $i-> text;
+      delete $self-> {realClass};
+   }
    $dlg->  destroy;
 }
 
@@ -876,6 +889,7 @@ sub fm_duplicate
          module => $_->{module},
          creationOrder => $_->{creationOrder},
       );
+      $j-> {realClass} = $_->{realClass} if defined $_->{realClass};
       $j-> focus unless scalar @r;
       push ( @r, $j);
       $j-> marked(1,0);
@@ -1008,6 +1022,7 @@ sub profile_default
             ['openitem' => '~Open' => 'F3' => 'F3' => sub {$_[0]->open;}],
             ['-saveitem1' => '~Save' => 'F2' => 'F2' => sub {$_[0]->save;}],
             ['-saveitem2' =>'Save ~as...' =>           sub {$_[0]->saveas;}],
+            ['closeitem' =>'~Close' =>           sub {$VB::form-> close if $VB::form}],
             [],
             ['E~xit' => 'Alt+X' => '@X' => sub{$_[0]->close;}],
          ]],
@@ -1062,14 +1077,42 @@ sub init
      sizeMax => [ 16384, $self->height],
    );
 
-   $self->{runbutton} = $self-> insert( SpeedButton =>
+   $self->{newbutton} = $self-> insert( SpeedButton =>
       origin    => [ 4, $self-> height - 30],
+      size      => [ 26, 26],
+      hint      => 'New',
+      imageFile => 'icons/new.bmp',
+      glyphs    => 2,
+      onClick   => sub { $VB::main-> new; } ,
+   );
+
+   $self->{openbutton} = $self-> insert( SpeedButton =>
+      origin    => [ 32, $self-> height - 30],
+      size      => [ 26, 26],
+      hint      => 'Open',
+      imageFile => 'icons/open.bmp',
+      glyphs    => 2,
+      onClick   => sub { $VB::main-> open; } ,
+   );
+
+   $self->{savebutton} = $self-> insert( SpeedButton =>
+       origin    => [ 60, $self-> height - 30],
+       size      => [ 26, 26],
+       hint      => 'Save',
+       imageFile => 'icons/save.bmp',
+       glyphs    => 2,
+       onClick   => sub { $VB::main-> save; } ,
+    );
+
+   $self->{runbutton} = $self-> insert( SpeedButton =>
+      origin    => [ 88, $self-> height - 30],
       size      => [ 26, 26],
       hint      => 'Run',
       imageFile => 'icons/run.bmp',
       glyphs    => 2,
       onClick   => sub { $VB::main-> form_run} ,
    );
+
 
    $self-> {tabset} = $self-> insert( TabSet =>
       left   => 150,
@@ -1251,8 +1294,21 @@ sub TabSet_Change
 
 sub get_typerec
 {
-   my ( $self, $type) = @_;
-   return 'Prima::VB::Types::generic' unless defined $type;
+   my ( $self, $type, $valPtr) = @_;
+   unless ( defined $type) {
+      my $rwx = 'generic';
+      if ( defined $valPtr && defined $$valPtr) {
+         # checking as object
+         if ( ref($$valPtr)) {
+            if ( $$valPtr->isa('Prima::Icon')) {
+               $rwx = 'icon';
+            } elsif ( $$valPtr->isa('Prima::Image')) {
+               $rwx = 'image';
+            }
+         }
+      }
+      return "Prima::VB::Types::$rwx";
+   }
    $self-> {typerecs} = () unless exists $self-> {typerecs};
    my $t = $self-> {typerecs};
    return $t->{$type} if exists $t->{type};
@@ -1334,19 +1390,23 @@ sub open
    for ( keys %dep) {
       $main = $_, next if $dep{$_}->{parent};
       unless ( $classes->{$dep{$_}->{class}}) {
-         my $zx = $dep{$_}->{parent} ? 'Window' : 'Widget';
-         Prima::MsgBox::message_box( $myText, "Unknown class: ".$dep{$_}->{class}.
-         ", temporarily converted to $zx.", mb::OK|mb::Warning);
-         $dep{$_}->{class} = $zx;
+         $dep{$_}->{realClass} = $dep{$_}->{class};
+         $dep{$_}->{class} = $dep{$_}->{parent} ? 'Prima::Window' : 'Prima::Widget';
       }
       $class{$dep{$_}->{class}} = 1;
    }
 
    my $f = Form-> create(
+      realClass   => $dep{$main}->{realClass},
       class   => $dep{$main}->{class},
       module  => $dep{$main}->{module},
       creationOrder => 0,
    );
+   for ( keys %{$dep{$main}->{profile}}) {
+      next unless $_ eq 'size';
+      my $d = $dep{$main}->{profile}->{$_};
+      my @x = $f-> size;
+   }
    $f-> prf_set( %{$dep{$main}->{profile}});
 
    my %owners  = ( $main => '');
@@ -1366,6 +1426,7 @@ sub open
          next unless $owners{$_} eq $id;
          my $c = $f-> insert(
             $classes->{$dep{$_}->{class}}->{class},
+            realClass     => $dep{$_}->{realClass},
             class         => $dep{$_}->{class},
             module        => $dep{$_}->{module},
             creationOrder => $i / 2,
@@ -1395,10 +1456,6 @@ sub open
    update_menu();
 }
 
-sub write_val
-{
-
-}
 
 sub write_form
 {
@@ -1420,6 +1477,7 @@ PREHEAD
 
    for ( @cmp) {
       my ( $class, $module) = @{$_}{'class','module'};
+      $class = $_->{realClass} if defined $_->{realClass};
       my $types = $_->{types};
       my $name = $_-> prf( 'name');
       $c .= <<MEDI;
@@ -1440,7 +1498,7 @@ MEDI
             );
             $val = \@nval;
          }
-         my $type = $self-> get_typerec( $types->{$_});
+         my $type = $self-> get_typerec( $types->{$_}, \$val);
          $val = defined($val) ? $type-> write( $_, $val) : 'undef';
          $c .= "          $_ => $val,\n";
       }
@@ -1470,6 +1528,7 @@ PREPREHEAD
    my %modules = map { $_->{module} => 1 } @cmp;
    $c .= "use $_;\n" for sort keys %modules;
    $c .= <<PREHEAD;
+
 package ${main}Window;
 use vars qw(\@ISA);
 \@ISA = qw(Prima::Window);
@@ -1483,7 +1542,7 @@ PREHEAD
    my $types = $VB::form->{types};
    for ( keys %$prf) {
       my $val = $prf->{$_};
-      my $type = $self-> get_typerec( $types->{$_});
+      my $type = $self-> get_typerec( $types->{$_}, \$val);
       $val = defined($val) ? $type-> write( $_, $val) : 'undef';
       $c .= "       $_ => $val,\n";
    }
@@ -1497,20 +1556,32 @@ sub init
 {
    my \$self = shift;
    my \%profile = \$self-> SUPER::init(\@_);
+   my \%names   = ( q($main) => \$self);
 
-   \$self-> insert(
 HEAD2
-   $c .= '     ';
    @cmp = sort { $a->{creationOrder} <=> $b->{creationOrder}} @cmp;
+   my %names = (
+      $main => 1
+   );
+   my @re_cmp;
 
+AGAIN:
    for ( @cmp) {
+      my $owner = $_->prf('owner');
+      unless ( $names{$owner}) {
+         push @re_cmp, $_;
+         next;
+      }
       my ( $class, $module) = @{$_}{'class','module'};
+      $class = $_->{realClass} if defined $_->{realClass};
       my $types = $_->{types};
       my $name = $_-> prf( 'name');
-      $c .= "[ $class => \n";
+      $names{$name} = 1;
+      $c .= "   \$names{q($name)} = \$names{q($owner)}-> insert( $class => \n";
+#     $c .= "$class-> create(
       my ( $x,$prf) = ($_, $_->{profile});
       my @o = $_-> get_o_delta;
-      for( keys %{$prf}) {
+      for ( keys %{$prf}) {
          my $val = $prf->{$_};
          if ( $_ eq 'origin' && defined $val) {
             my @nval = (
@@ -1519,16 +1590,25 @@ HEAD2
             );
             $val = \@nval;
          }
-         my $type = $self-> get_typerec( $types->{$_});
+         next if $_ eq 'owner';
+         my $type = $self-> get_typerec( $types->{$_}, \$val);
          $val = defined($val) ? $type-> write( $_, $val) : 'undef';
          $c .= "       $_ => $val,\n";
       }
-      $c .= "   ],";
+      $c .= "   );\n";
+   }
+   if ( scalar @re_cmp) {
+      @cmp = @re_cmp;
+      goto AGAIN;
    }
 
 $c .= <<POSTHEAD;
-);
    return \%profile;
+}
+
+sub on_destroy
+{
+   \$::application-> close;
 }
 
 package ${main}Auto;
@@ -1599,8 +1679,12 @@ sub update_menu
    $m-> enabled( 'openitem', !$r);
    $m-> enabled( 'saveitem1', $f);
    $m-> enabled( 'saveitem2', $f);
+   $m-> enabled( 'closeitem', $f);
    $m-> enabled( 'breakitem', $f && $r);
    $VB::main-> {runbutton}-> enabled( $f && !$r);
+   $VB::main-> {openbutton}-> enabled( !$r);
+   $VB::main-> {newbutton}-> enabled( !$r);
+   $VB::main-> {savebutton}-> enabled( $f);
 }
 
 
@@ -1623,26 +1707,31 @@ sub form_run
    return unless $VB::form;
    if ( $VB::main->{running}) {
       $VB::main->{running}-> destroy;
+      $VB::main->{running} = undef;
    }
    my $c = $self-> write_form;
+   my $okCreate = 0;
    eval{
       eval("$c");
       if ( $@) {
-         Prima::MsgBox::message_box( $myText, $@, mb::OK|mb::Error);
+         print "Error loading module $@";
+         Prima::MsgBox::message_box( $myText, "$@", mb::OK|mb::Error);
          return;
       }
       my @d = &AUTOFORM::AUTOFORM_DEPLOY();
       my %r = Prima::VB::VBLoader::AUTOFORM_REALIZE( \@d, {});
       my $f = $r{$VB::form->prf('name')};
+      $okCreate = 1;
       if ( $f) {
          $f-> set( onClose => \&form_cancel );
          $VB::main-> {running} = $f;
          update_menu();
+         $f-> select;
          $VB::form-> hide;
          $VB::inspector-> hide if $VB::inspector;
       };
    };
-   Prima::MsgBox::message_box( $myText, $@, mb::OK|mb::Error) if $@;
+   Prima::MsgBox::message_box( $myText, "$@", mb::OK|mb::Error) if $@;
 }
 
 

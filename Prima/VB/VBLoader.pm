@@ -23,6 +23,7 @@ sub AUTOFORM_REALIZE
    for ( keys %modules) {
       my $c = $_;
       eval("use $c;");
+      die "$@" if $@;
    }
 
    delete $dep{$main}->{profile}->{owner};

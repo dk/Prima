@@ -18,7 +18,8 @@ package Prima::VB::Object;
 sub init_profiler
 {
    my ( $self, $prf) = @_;
-   $self-> {class}   = $prf->{class};
+   $self-> {class}      = $prf->{class};
+   $self-> {realClass}  = $prf->{realClass} if defined $prf->{realClass};
    $self-> {module}  = $prf->{module};
    $self-> {creationOrder} = $prf->{creationOrder};
    $self-> {creationOrder} = 0 unless defined $self-> {creationOrder};
@@ -744,11 +745,9 @@ sub rerect
    );
    if (( $who eq 'left') || ( $who eq 'bottom')) {
       $self-> prf_origin( [$self-> origin]);
-      $self-> prf_set( originDontCare => 0);
    }
    if (( $who eq 'width') || ( $who eq 'height') || ( $who eq 'right') || ( $who eq 'top')) {
       $self-> prf_size( [ $self-> size]);
-      $self-> prf_set( sizeDontCare => 0);
    }
    $self-> {syncRecting} = undef;
 }
@@ -758,7 +757,6 @@ sub on_move
    my ( $self, $ox, $oy, $x, $y) = @_;
    return if $self-> {syncRecting};
    $self-> prf_set( origin => [$x, $y]);
-   $self-> prf_set( originDontCare => 0);
 }
 
 sub on_size
@@ -766,7 +764,6 @@ sub on_size
    my ( $self, $ox, $oy, $x, $y) = @_;
    return if $self-> {syncRecting};
    $self-> prf_set( size => [$x, $y]);
-   $self-> prf_set( sizeDontCare => 0);
 }
 
 sub on_paint
