@@ -864,7 +864,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len)
    while ( len > 0) {
       SIZE sz;
       int drawLen = ( len > div) ? div : len;
-      if ( !( ok = TextOut( ps, x, sys lastSize. y - y - 1, text, drawLen))) apiErr;
+      if ( !( ok = TextOut( ps, x, sys lastSize. y - y, text, drawLen))) apiErr;
       if ( len > 0) 
          GetTextExtentPoint32( ps, text, drawLen, &sz);
       x += sz. cx - ( IS_NT ? sys tmOverhang : 0);
