@@ -63,8 +63,6 @@
 
 long   apcError = 0;
 
-static PerlInterpreter *myPerl;
-static char evaluation[ 4096];
 static PHash vmtHash = nil;
 static List  staticObjects;
 
