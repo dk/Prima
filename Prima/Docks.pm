@@ -46,28 +46,28 @@ use Prima;
 use strict;
 use Tie::RefHash;
 
-# This is the interface to the dock widget where other widgets can be set in.
-# The followings subs provide minimal necessary interface to negotiate between
+# This is the interface to a dock widget where other widgets can be set in.
+# The followings subs provide minimal necessary interface for negotiating between
 # two parties.
 
 package Prima::AbstractDocker::Interface;
 
 # ::open_session:
-# opens a docking session. when client wants to dock, it could easily trash down
-# the server with ::mouse_move's, when on the every event docking request would be 
-# called. the sessions are used to calculate as much as possible once, to make
-# ::query call lighter. default behaviour caches all children docks, and provides
-# queue-like invocation on ::next_docker. the ::query call returns either the docking
-# position ( should be implemented in descendants) or the child dock. in that case
-# ::query and ::next_docker works like findfirst/findnext sequence. the ::query call
-# implemented here sets the children dock queue pointer to the start.
+# Opens a docking session. When a client wants to dock, it could easily trash down
+# the server with its ::mouse_move's, if one would be called on an every event docking 
+# request. The 'sessions' are used to calculate as much as possible once, to make
+# ::query call lighter. Default behaviour caches all children docks, and provides
+# queue-like invocation on ::next_docker. The ::query call returns either a docking
+# position ( should be implemented in descendants) or a child dock. In latter case
+# ::query and ::next_docker work like findfirst/findnext sequence. The ::query call
+# implemented here resets the children dock queue pointer to the start.
 # 
 # profile format:
 #   self  => InternalDockerShuttle descendant
-#   sizes => [[x,y], [x,y], [x,y], ...] set of shapes that docking window can wear
+#   sizes => [[x,y], [x,y], [x,y], ...] set of shapes that a docking window can shift to
 #   position => [ x, y], the wanted position ( in widget's coordinates)
 #   sizeable => [ bool, bool], if none of shapes accepted, whether docking window can resize itself
-#   sizeMin  => [ x, y], the minimal size that docking window can accept ( used only if sizeable)
+#   sizeMin  => [ x, y], the minimal size that a docking window can accept ( used only if sizeable)
 
 sub open_session
 {
@@ -112,7 +112,7 @@ sub check_session
 
 # this sub returns either rectangle, where widget can be set, or the another dock manager.
 # @rect may be empty, then ::query finds first appropriate answer.
-# Once the client finds the ::query' answer suitable, it changes owner to $self,
+# Once a client finds the ::query' answer suitable, it changes its owner to $self,
 # changes it's origin and size correspondingly to the ::query response, and then
 # calls ->dock.
 sub query
@@ -141,7 +141,7 @@ sub next_docker
    undef;
 }   
 
-# close_session must be called as the session is over.
+# close_session must be called as soon as the session is over.
 sub close_session
 {
 #  my ( $self, $session_id) = @_;   
@@ -149,9 +149,9 @@ sub close_session
 }   
 
 
-# these two subs must nto be called directly, but rather to client
+# these two subs must not be called directly, but only to a client
 # response on being docked or undocked.
-# the $self usually reshapes itself or rearranges it's docklings within
+# $self usually reshapes itself or rearranges it's docklings within
 # these subs.
 sub undock
 {
@@ -233,9 +233,9 @@ sub rearrange
    $self-> redock_widget($_) for @r;
 }
 
-# result of the ::fingerprint doesn't serve any particular reason. however,
+# result of the ::fingerprint doesn't serve any particular reason, however
 # in the InternalDockerShuttle implementation it's value AND'ed with client's
-# fingerprint value, thus in early stage rejecting non-suitable docks.
+# fingerprint value, thus rejecting non-suitable docks in early stage.
 
 sub fingerprint {
    return exists($_[0]->{fingerprint})?$_[0]->{fingerprint}:0xFFFF unless $#_;
@@ -408,9 +408,9 @@ use constant MinorMore        => ForwardMinorMore | BackMinorMore;
 use constant Forward          => 0x0F0F;
 use constant Back             => 0xF0F0;
 
-# Implementation of the dock, that is useful for toolbars etc.
-# It doesn't allow tiling, and it's smart enough to reshape itself and
-# to rearrange it's docklings. 
+# Implementation of the dock useful for toolbars etc.
+# Doesn't allow tiling, and is smart enough to reshape itself and
+# to rearrange it's docklings if necessary. 
 
 package Prima::LinearWidgetDocker;
 use vars qw(@ISA);
@@ -904,8 +904,8 @@ sub on_dockerror
    $self-> redock_widget( $urchin);
 }   
 
-# the implementation of MFC-like docking window, where four sides
-# of the window are 'pop-up' docking areas.
+# implementation of a MFC-like docking window, where the four sides
+# of a window are 'rubber' docking areas.
 
 package Prima::FourPartDocker;
 use vars qw(@ISA);
@@ -1080,12 +1080,12 @@ sub BottomDocker_Size
 
 
 # Shuttles ( the clients)
-# This object servers as a 'shuttle' for the docking object while it's not docked. 
-# It's very simple implementation, and more useful one could be found in MDI.pm,
-# the Prima::MDIExternalDockerShuttle.
+# This object servers as a 'shuttle' for a docking object while it's not docked.
+# It's very simple implementation, and more useful one could be found in MDI.pm
+# - see Prima::MDIExternalDockerShuttle.
 #
-# The interface for substitution must contain properties ::shuttle and ::client,
-# and subs client2frame and frame2client.
+# The interface for successful substitution must contain properties 
+# ::shuttle and ::client and subs client2frame and frame2client.
 
 package Prima::ExternalDockerShuttle;
 use vars qw(@ISA);
@@ -1274,10 +1274,10 @@ sub on_mouseup
    $self-> close;
 }   
 
-# This shuttle hosts the widgets while it's docked to some AbstractDocker::Interface 
-# descendant. It communicates with docks, and provides the UI for dragging itself
-# with respect of the suggested positions. Although the code piece is large, it's rather
-# an implementation of a 'widget that can dock' idea, because all the API is provided by
+# This shuttle hosts widgets while it's docked to an AbstractDocker::Interface 
+# descendant. It communicates with different dock widgets, and provides the UI for dragging itself
+# with respect of the suggested positions. Although the code piece is quite large, it's just
+# an implementation of a 'widget that can dock' idea, because all the API is already provided by
 # AbstractDocker::Interface.
 
 package Prima::InternalDockerShuttle;
@@ -1392,6 +1392,7 @@ sub client
    my $ed = $self-> {externalDocker};
    my @cf = $ed-> client2frame( $c-> rect);
    $ed-> size( $cf[2] - $cf[0], $cf[3] - $cf[1]);
+   $c-> set( map {'owner' . $_ => 0} qw( Font Hint Palette Color BackColor));
    $c-> owner( $ed-> client);
    $c-> clipOwner(1);
    $c-> origin( 0, 0);
@@ -1729,6 +1730,7 @@ AGAIN:
       $ed-> rect( $ed-> client2frame( @r));
       $ed-> origin( @rect[0,1]) if @rect;
       if ( $c) {
+         $c-> set( map {'owner' . $_ => 0} qw( Font Hint Palette Color BackColor));
          $c-> owner( $ed-> client);
          $c-> clipOwner(1);
          $c-> origin( 0, 0);
@@ -1846,6 +1848,7 @@ sub vertical
    return if $i == $self-> {vertical};
    $self-> {vertical} = $i;
    $self-> update_indents;
+   $self-> repaint;
 }   
 
 sub update_indents
