@@ -85,7 +85,11 @@ Object_create( char *className, HV * profile)
       XPUSHs( var-> mate);
       sp = push_hv_for_REDEFINED( sp, profile);
       PUTBACK;
-      PERL_CALL_METHOD( "init", G_VOID|G_DISCARD);
+      PERL_CALL_METHOD( "init", G_VOID|G_DISCARD|G_EVAL);
+      if ( SvTRUE( GvSV( errgv))) {
+         Object_destroy( self);
+         croak( SvPV( GvSV( errgv), na));
+      }
       SPAGAIN;
       FREETMPS;
       LEAVE;
