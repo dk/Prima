@@ -35,7 +35,7 @@ Prints a PS document after setup dialog is finished.
 Whereas Prima::PS modules can be used on any platform,
 they serve as an only remedy on *nix systems when printing
 via Prima is desired. The Prima::PS interface can load user
-preferences from $HOME/.prima_printer file. This file is
+preferences from $HOME/.prima/printer file. This file is
 maintained by the PostScript output setup dialog.
 
 =cut

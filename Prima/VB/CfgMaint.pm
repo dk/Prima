@@ -25,6 +25,7 @@
 #
 # $Id$
 package Prima::VB::CfgMaint;
+use strict;
 use vars qw(@pages %classes $backup $userCfg $rootCfg $systemWide);
 
 @pages      = ();
@@ -32,7 +33,7 @@ use vars qw(@pages %classes $backup $userCfg $rootCfg $systemWide);
 $backup     = 1;
 $systemWide = 0;
 $rootCfg    = 'Prima/VB/Config.pm';
-$userCfg    = '.vbconfig';
+$userCfg    = 'vbconfig';
 
 my $file;
 my $pkg;
@@ -41,7 +42,7 @@ my $pkg;
 sub reset_cfg
 {
    @pages   = ();
-   @classes = ();
+   %classes = ();
 }
 
 sub open_cfg
@@ -56,13 +57,9 @@ sub open_cfg
       $file =~ s[\\][/]g;
       eval "require \"$file\";";
    } else {
-      my $home = $ENV{HOME};
-      unless ( defined $home) {
-         warn "HOME environment variable is not set\n";
-         $home = '.';
-      }
+      warn "Environment variable HOME does not exist\n" unless exists $ENV{HOME};
+      my $home = ( defined($ENV{HOME}) ? $ENV{HOME} : '' ) . '/.prima';
       $home =~ s[\\][/]g;
-      $home =~ s/\\$//;
       $home =~ s/\/$//;
       $file = "$home/$userCfg";
       $pkg  = "Prima::VB::UserConfig";
@@ -107,6 +104,16 @@ sub read_cfg
 sub write_cfg
 {
    return ( 0, "Cannot write to $file") if -f $file && ! -w _;
+
+   unless ( -f $file) {
+      my $x = $file;
+      $x =~ s/[\\\/]?[^\\\/]+$//;
+      unless ( -d $x) {
+         eval "use File::Path"; die "$@\n" if $@;
+         File::Path::mkpath( $x);
+      }
+   }
+   
 
    if ( $backup && -f $file) {
       local $/;

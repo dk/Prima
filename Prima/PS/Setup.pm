@@ -197,6 +197,14 @@ sub sdlg_exec
            my $n = $self-> {resFile};
            my $x = $_[0]-> owner-> Profiles;
            $self-> sdlg_export( $self-> {vprinters}-> { $x-> get_items( $x-> focusedItem)});
+           unless ( -f $n) {
+              my $x = $n;
+              $x =~ s/[\\\/]?[^\\\/]+$//;
+              unless ( -d $x) {
+                 eval "use File::Path"; die "$@\n" if $@;
+                 File::Path::mkpath( $x);
+              }
+           }
         SAVE:   
            unless ( open F, "> $n") {
               goto SAVE if Prima::MsgBox::message_box( $self-> {setupDlg}-> text,
