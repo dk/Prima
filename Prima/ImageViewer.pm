@@ -84,7 +84,7 @@ sub init
 sub on_paint
 {
    my ( $self, $canvas) = @_;
-   my @size   = $canvas-> size;
+   my @size   = $self-> size;
    my $bw     = $self-> {borderWidth};
 
    unless ( $self-> {image}) {
