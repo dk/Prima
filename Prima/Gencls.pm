@@ -2051,14 +2051,24 @@ print HEADER "// instance variables \n";
   # property set/get defines
   print HEADER "\n";
 
+  my %propBody = map {
+     my @x = split( ' ', $_);
+     ( scalar(@x) > 5 && $properties{$x[0]}) ? ( $x[0] => $#x - 4) : ();
+  } @newMethods;
   for ( keys %properties) {
      my $type = $properties{$_};
      my $def  = ( exists $structs{ $type} || exists( $arrays{ $type})) ? "${type}_buffer" : "($type)0";
+     my @lval;
+     my @rval;
+     if ( defined $propBody{$_}) {
+        @lval = ',' . join( ',', map { "__var$_"} ( 1..$propBody{$_}));
+        @rval = ',' . join( ',', map { "(__var$_)"} ( 1..$propBody{$_}));
+     }
      print HEADER <<SD;
 #undef  get_$_
 #undef  set_$_
-#define get_$_(__hs)         $_((__hs),false,$def)
-#define set_$_(__hs,__val)   $_((__hs),true,(__val))
+#define get_$_(__hs@lval)         $_((__hs),0@rval,$def)
+#define set_$_(__hs@lval,__val)   $_((__hs),1@rval,(__val))
 SD
   }
 
