@@ -1357,7 +1357,7 @@ sub setup_xft
 	    print "yes";
 	    print ", in $incpath" if $incpath;
 	    print "\n";
-	    push @INCPATH, $incpath;
+	    push @INCPATH, $incpath if $incpath;
 	    if ( defined find_lib( 'freetype', '', '')) {
 		push @LIBS, 'freetype';
 		$HAVE_XFT++;
