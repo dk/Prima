@@ -3276,5 +3276,378 @@ sub write
    return "\n[$c]";
 }
 
-
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::VB::Classes - Visual Builder widgets and types
+
+=head1 DESCRIPTION
+
+Visual Builder is designed without a prior knowledge of the 
+widget classes that would be contained in its widget palette.
+Instead, it provides a registration interface for new widgets and their specific properties.
+
+This document describes API, provided by the builder, and the widget
+interface. Through the document, I<widget> or I<widget class> mean
+not the original widget or class, but their representatives.
+
+=head1 USAGE
+
+The widget must provide specific methods to cooperate with the builder.
+It is not required, however, to contain these methods in its base module
+or package; it can delegate its representation to another, usually
+very light class, which is used by the builder.
+
+Such a class must be derived from C<Prima::VB::Object>, which provides
+base functionality. One of basic features here is overloading of
+property change method. Since the user can change any property interactively,
+the class can catch the properties of interest by declaring C<prf_XXX>
+method, where XXX is the property name. C<Prima::VB::Widget> declares
+set of these methods, assuming that a widget would repaint when, for example,
+its C<color> or C<font> properties change.
+
+The hierarchy of VB classes mimics the one of the core toolkit classes,
+but this is a mere resemblance, no other dependences except the names
+are present. The hierarchy is as follows:
+
+    Prima::VB::Object   Prima::Widget
+       Prima::VB::Component
+          Prima::VB::Drawable
+             Prima::VB::Widget
+                Prima::VB::Control
+                   Prima::VB::Window
+
+NB: C<Prima::VB::CoreClasses> extends the hierarchy to the full set of default
+widget palette in the builder. This module is not provided with documentation
+though since its function is obvious and its code is trivial.
+
+Since the real widgets are used in the interaction with the builder,
+their properties are not touched when changed by the object inspector
+or otherwise. The widgets 
+keep the set of properties in a separated hash. The properties are 
+accessible by C<prf> and C<prf_set> methods.
+
+A type object is a class used to represent a particular type of
+property in object inspector window in the builder.
+The type objects, like the widget classes, also are not hardcoded. The builder
+presents a basic set of the type objects, which can be easily expanded.
+The hierarchy ( incomplete ) of the type objects classes is as follows:
+
+    Prima::VB::Types::generic
+       Prima::VB::Types::bool
+       Prima::VB::Types::color
+       Prima::VB::Types::point
+       Prima::VB::Types::icon
+       Prima::VB::Types::Handle
+       Prima::VB::Types::textee
+          Prima::VB::Types::text
+          Prima::VB::Types::string
+             Prima::VB::Types::char
+             Prima::VB::Types::name
+             Prima::VB::Types::iv
+                Prima::VB::Types::uiv
+
+The document does not describe the types, since their function
+can be observed at runtime in the object inspector.
+Only C<Prima::VB::Types::generic> API is documented.
+
+=head1 Prima::VB::Object
+
+=head2 Properties
+
+=over
+
+=item class STRING
+
+Selects the original widget class. Create-only property.
+
+=item creationOrder INTEGER
+
+Selects the creation order of the widget.
+
+=item module STRING
+
+Selects the module that contains the original widget class. Create-only property.
+
+=item profile HASH
+
+Selects the original widget profile. Create-only property.
+Changes to profile at run-time performed by C<prf_set> method.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item act_profile
+
+Returns hash of callbacks to be stored in the form file and
+executed by C<Prima::VB::VBLoader> when the form file is loaded.
+The keys fo hash are names of VBLoader events and values - strings
+with code to be eval'ed. See L<Prima::VB::VBLoader/Events>
+for description and format of the callbacks.
+
+Called when the builder writes a form file.
+
+=item add_hooks @PROPERTIES
+
+Registers the object as a watcher to set of PROPERTIES.
+When any object changes a property listed in the hook record,
+C<on_hook> callback is triggered.
+
+Special name C<'DESTROY'> can be used to set a hook on object destruction event.
+
+
+=item ext_profile
+
+Returns a class-specific hash, written in a form file.
+Its use is to serve as a set of extra parameters, passed from
+the builder to C<act_profile> events.
+
+=item prf_set %PROIFLE
+
+A main method for setting a property of an object.
+PROFILE keys are property names, and value are property values.
+
+=item prf_adjust_default PROFILE, DEFAULT_PROFILE
+
+DEFAULT_PROFILE is a result of C<profile_default> call 
+of the real object class. However, not all properties usually
+are exported to the object inspector. C<prf_adjust_default>
+deletes the unneeded property keys from PROFILE hash.
+
+=item prf_delete @PROPERTIES
+
+Removes PROPERTIES from internal properties hash.
+This action results in that the PROPERTIES in the object inspector
+are set back to their default values.
+
+=item prf_events 
+
+Returns hash of a class-specific events. These appear in
+the object inspector on C<Events> page. The hash keys are
+event names; the hash values are default code pieces,
+that describe format of the event parameters. Example:
+
+   sub prf_events { return (
+      $_[0]-> SUPER::prf_events,
+      onSelectItem  => 'my ( $self, $index, $selectState) = @_;',
+   )}
+
+=item prf @PROPERTIES
+
+Maps array of PROPERTIES names to their values. If called
+in scalar context, returns the first value only; if in array 
+context, returns array of property values.
+
+=item prf_types
+
+Returns an anonymous hash, where keys are names of
+the type class without C<Prima::VB::Types::> prefix,
+and values are arrays of property names.
+
+This callback returns an inverse mapping of properties
+by the types.
+
+=item prf_types_add PROFILE1, PROFILE2
+
+Adds PROFILE2 content to PROFILE1. PROFILE1 and PROFILE2 are 
+hashes in format of result of C<prf_types> method.
+
+=item remove_hooks @PROPERTIES
+
+Cancels watch for set of PROPERTIES.
+
+=back
+
+=head2 Events
+
+=over
+
+=item on_hook NAME, PROPERTY, OLD_VALUE, NEW_VALUE
+
+Called for all objects, registered as watchers
+by C<add_hooks> when PROPERTY on object NAME is changed
+from OLD_VALUE to NEW_VALUE. Special PROPERTY C<'DESTROY'>
+hook is called when object NAME is destroyed.
+
+=back
+
+=head1 Prima::VB::Component
+
+=head2 Properties
+
+=over
+
+=item marked MARKED , EXCLUSIVE
+
+Selects marked state of a widget. If MARKED flag is 1, the widget is
+selected as marked. If 0, it is selected as unmarked.
+If EXCLUSIVE flag is set to 1, then all marked widgets are unmarked
+before the object mark flag is set.
+
+=item sizeable BOOLEAN
+
+If 1, the widget can be resized by the user.
+If 0, in can only be moved.
+
+=item mainEvent STRING
+
+Selects the event name, that will be opened in the object inspector
+when the user double clicks on the widget.
+
+=back
+
+=head2 Methods
+
+=over
+
+=item common_paint CANVAS
+
+Draws selection and resize marks on the widget
+if it is in the selected state. To be called from
+all C<on_paint> callbacks.
+
+=item get_o_delta 
+
+Returns offset to the owner widget. Since the builder does
+not insert widgets in widgets to reflect the user-designed
+object hierarchy, this method is to be used to calculate
+children widgets relative positions.
+
+=item xy2part X, Y
+
+Maps X, Y point into part of widget. If result is not
+equal to C<'client'> string, the event in X, Y point
+must be ignored.
+
+=item iterate_children SUB, @ARGS
+
+Traverses all children widget in the hierarchy,
+calling SUB routine with widget, self, and @ARGS
+parameters on each.
+
+=item altpopup
+
+Invokes an alternative, class-specific popup menu, if present.
+The popup object must be named C<'AltPopup'>.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Load
+
+Called when the widget is loaded from a file or the clipboard.
+
+=back
+
+=head1 Prima::VB::Types::generic
+
+Root of all type classes. 
+
+A type class can be used with 
+and without object instance. The instantiated class
+contains reference to ID string, which is a property
+name that the object presents in the object inspector,
+and WIDGET, which is the property applied to. When
+the object inspector switches widgets, the type object
+is commanded to update the references.
+
+A class must also be usable without object instance,
+in particular, in C<write> method. It is called to
+export the propety value in a storable format
+as a string, better as a perl-evaluable expression.
+
+=head2 Methods
+
+=over
+
+
+=item new CONTAINER, ID, WIDGET
+
+Constructor method. CONTAINER is a panel widget in the object
+inspector, where the type object can insert property value
+selector widgets.
+
+=item renew ID, WIDGET
+
+Resets property name and the widget.
+
+=item quotable STRING
+
+Returns quotable STRING.
+
+=item printable STRING
+
+Returns a string that can be stored in a file.
+
+=back
+
+=head2 Callbacks
+
+=over
+
+=item change
+
+Called when the widget propety value is changed.
+
+=item change_id
+
+Called when the property name ( ID ) is changed.
+The type object may consider update its look
+or eventual internal variables on this event.
+
+=item get
+
+Returns property value, based on the selector widgets value.
+
+=item open
+
+Called when the type object is to be visualised first time.
+The object must create property value selector widgets
+in the C<{container}> panel widget.
+
+=item preload_modules
+
+Returns array of strings of modules, needed to be pre-loaded
+before a form file with type class-specific information can be loaded.
+Usually it is used when C<write> method
+exports constant values, which are defined in another module.
+
+=item set DATA
+
+Called when a new value is set to the widget property by means other than the 
+selector widgets, so these can be updated. DATA is the property new value.
+
+=item valid
+
+Checks internal state of data and returns a boolean
+flag, if the type object data can be exported and
+set to widget profile.
+
+=item write CLASS, ID, DATA
+
+Called when DATA is to be written in form.
+C<write> must return such a string that 
+can be loaded by C<Prima::VB::VBLoader> later.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<VB>, L<Prima::VB::VBLoader>, L<Prima::VB::CfgMaint>.
+
+=cut

@@ -35,18 +35,18 @@ options:
    -o    read-only mode
    -p    execute 'use Prima;' code
 commands:
-   a  - add     p|k    name
-   l  - list    w|p|k  ( w - [page])
-   d  - remove  w|p|k  name
+   a  - add     p|m    name
+   l  - list    w|p|m  ( w - [page])
+   d  - remove  w|p|m  name
    r  - rename  w|p    name new_name
    m  - move    w|p    name new_page or none to end
 objects:
    w  - widgets
    p  - pages
-   k  - packages
+   m  - modules
 
 examples:
-   cfgmaint -r a k CPAN/Prima/VB/New/MyCtrls.pm
+   cfgmaint -r a m CPAN/Prima/VB/New/MyCtrls.pm
    cfgmaint -b l w
 ABOUT
 
@@ -96,11 +96,11 @@ die "Insufficient number of parameters\n" if @cmd < 2;
 
 $cmd[$_] = lc $cmd[$_] for 0..1;
 if ( $cmd[0] eq 'a') {
-   check('pk', 3);
+   check('pm', 3);
 } elsif ( $cmd[0] eq 'l') {
-   check('wpk', 2);
+   check('wpm', 2);
 } elsif( $cmd[0] eq 'd') {
-   check('wpk', 3);
+   check('wpm', 3);
 } elsif( $cmd[0] eq 'r') {
    check('wp', 4);
 } elsif( $cmd[0] eq 'm') {
@@ -119,10 +119,10 @@ if ( $both) {
 die "$r[1]\n" unless $r[0];
 
 if ( $cmd[0] eq 'a') {
-   if ( $cmd[1] eq 'k') {
+   if ( $cmd[1] eq 'm') {
       my %cs = %Prima::VB::CfgMaint::classes;
       my %pg = map { $_ => 1} @Prima::VB::CfgMaint::pages;
-      assert( Prima::VB::CfgMaint::add_package( $cmd[2]));
+      assert( Prima::VB::CfgMaint::add_module( $cmd[2]));
       for ( @Prima::VB::CfgMaint::pages) {
          next if $pg{$_};
          print "page '$_' added\n";
@@ -147,7 +147,7 @@ if ( $cmd[0] eq 'a') {
       die "Page '$cmd[2]' doesn't exist\n" unless $ok;
    } elsif ( $cmd[1] eq 'p') {
       print join( "\n", @Prima::VB::CfgMaint::pages);
-   } elsif ( $cmd[1] eq 'k') {
+   } elsif ( $cmd[1] eq 'm') {
       my %pk = ();
       $pk{$Prima::VB::CfgMaint::classes{$_}->{module}} = 1
         for keys %Prima::VB::CfgMaint::classes;
@@ -171,7 +171,7 @@ if ( $cmd[0] eq 'a') {
          delete $Prima::VB::CfgMaint::classes{$_};
          print "Widget '$_' deleted\n";
       }
-   } elsif ( $cmd[1] eq 'k') {
+   } elsif ( $cmd[1] eq 'm') {
       my %dep;
       my $ok = 0;
       for ( keys %Prima::VB::CfgMaint::classes) {
@@ -243,4 +243,136 @@ if ( $cmd[0] eq 'a') {
 
 assert( Prima::VB::CfgMaint::write_cfg) unless $ro;
 
+__DATA__
+
+=pod
+
+=head1 NAME
+
+cfgmaint - configuration tool for Visual Builder
+
+=head1 SYNTAX
+
+cfgmaint [ -rbxop ] command object [ parameters ]
+
+=head1 DESCRIPTION
+
+Maintains widget palette configuration for the Visual Builder.
+It can be stored in the system-wide and the local user config files.
+C<cfgmaint> allows adding, renaming, moving, and deleting the
+classes and pages in the Visual Builder widget palette.
+
+=head1 USAGE
+
+C<cfgmaint> is invoked with C<command> and C<object> arguments,
+where C<command> defines the action to be taken, and C<object> - 
+the object to be handled. 
+
+=head2 Options
+
+=over
+
+=item -r
+
+Write configuration to the system-wide config file
+
+=item -b
+
+Read configuration from both system-wide and user config files
+
+=item -x
+
+Do not write backups
+
+=item -o
+
+Read-only mode
+
+=item -p
+
+Execute C<use Prima;> code before start. This option
+might be necessary when adding a module that relies on the toolkit
+but does not invoke the code itself.
+
+=back
+
+=head2 Objects
+
+=over
+
+=item m
+
+Selects a module. Valid for add, list, and remove commands.
+
+=item p
+
+Selects a page. Valid for all commands.
+
+=item w
+
+Selects a widget. Valid for list, remove, rename, and move commands. 
+
+=back
+
+=head2 Commands
+
+=over
+
+=item a  
+
+Adds a new object to the configuration. Can be either a page or
+a module.
+
+=item d
+
+Removes an object.
+
+=item l
+
+Prints object name. In case object is a widget, prints all
+registered widgets. If the string is specified as an additional
+parameter, it is treated as a page name and only widgets from
+the page are printed.
+
+=item r
+
+Renames an object to a new name, which is passed as additional parameter.
+Can be either a widget or a page.
+
+=item m
+
+If C<object> is a widget, relocates one or more widgets to a new page.
+If C<object> is a page, moves the page before the page specified as an additional parameter,
+or to the end if no additional page specified.
+
+=back
+
+=head1 EXAMPLE
+
+Add a new module to the system-wide configuration:
+
+   cfgmaint -r a m CPAN/Prima/VB/New/MyCtrls.pm 
+
+List widgets, present in both config files:
+
+   cfgmaint -b l w
+
+Rename a page:
+
+   cfgmaint r p General Basic
+
+=head1 FILES
+
+F<Prima/VB/Config.pm>, F<~/.prima/vbconfig>
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<VB>, L<Prima::VB::CfgMaint>
+
+
+=cut
 

@@ -163,12 +163,12 @@ HEAD2
    return 1;
 }
 
-sub add_package
+sub add_module
 {
    my $file = $_[0];
    my $pkg;
 
-   return ( 0, "Cannot open package $file") unless open F, $file;
+   return ( 0, "Cannot open module $file") unless open F, $file;
    while ( <F>) {
       next if /^#/;
       next unless /package\s+([^\s;].*)/m;
@@ -183,7 +183,7 @@ sub add_package
    if ( $@) {
       my $err = "$@";
       if ( $err =~ /Can\'t locate\s([^\s]+)\sin/) {
-         $err = "Corrupted package $file - internal and file names doesn't match";
+         $err = "Corrupted module $file - internal and file names doesn't match";
       }
       return ( 0, $err);
    }
@@ -205,3 +205,136 @@ sub add_package
 
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::VB::CfgMaint - maintains visual builder widget palette configuration.
+
+=head1 DESCRIPTION
+
+The module is used by the Visual Builder and C<cfgmaint> programs, to maintain
+the former's widget palette. The installed widgets are displayed
+in main panel of the Visual Builder, and can be maintained by C<cfgmaint>.
+
+=head1 USAGE
+
+The Visual Builder widget palette configuration is contained in two files - the system-wide
+C<Prima::VB::Config> and the user C<~/.prima/vbconfig>. The user config file take the precedence
+when loaded by the Visual Builder. The module can select either configuration
+by assigning C<$systemWide> boolean property.
+
+The widgets are grouped in pages, which are accessible by names. 
+
+New widgets can be added to the palette by calling C<add_module> method,
+which accepts a perl module file as its first parameter. The module must
+conform to the VB-loadable format.
+
+=head1 FORMAT
+
+This section describes format of a module with VB-loadable widgets.
+
+The module must define a package with same name as the module.
+In the package, C<class> sub must be declared, that returns an array
+or paired scalars, where each first item in a pair corresponds to the 
+widget class and the second to a hash, that contains the class loading information,
+and must contain the following keys:
+
+=over
+
+=item class STRING
+
+Name of the VB-representation class, which represents the original
+widget class in the Visual Builder. This is usually a lightweight
+class, which does not contain all functionality of the original
+class, but is capable of visually reflecting changes to the class properties.
+
+=item icon PATH
+
+Sets an image file, where the class icon is contained. 
+PATH provides an extended syntax for indicating a frame index, if the image file 
+is multiframed: the frame index is appended to the path name
+with C<:> character prefix, for example: C<"NewWidget::icons.gif:2">.
+
+=item module STRING
+
+Sets the module name, that contains C<class>.
+
+=item page STRING
+
+Sets the default palette page where the widget is to be put.
+The current implementation of the Visual Builder provides four
+pages: C<General,Additional,Sliders,Abstract>. If the page
+is not present, new page is automatically created when the
+widget class is registered.
+
+=item RTModule STRING
+
+Sets the module name, that contains the original class.
+
+=back
+
+The reader is urged to explore F<Prima::VB::examples::Widgety> file,
+which contains an example class C<Prima::SampleWidget>, its 
+VB-representation, and a property C<lineRoundStyle> definition example.
+
+=head1 API
+
+=head2 Methods
+
+=over
+
+=item add_module FILE
+
+Reads FILE module and loads all VB-loadable widgets from it.
+
+=item classes
+
+Returns string declaration of all registered classes in format
+of C<classes> registration procedure ( see L</FORMAT> ).
+
+=item open_cfg
+
+Loads class and pages information from either a system-wide or a user configuration file.
+If succeeds, the information is stored in C<@pages> and C<%classes> variables (
+the old information is lost ) and returns 1. If fails, returns 0 and string with the error
+explanation; C<@pages> and C<%classes> content is undefined.
+
+=item pages
+
+Returns array of page names
+
+=item read_cfg
+
+Reads information from both system-wide and user configuration files,
+and merges the information. If succeeds, returns 1. If fails, returns 0
+and string with the error explanation.
+
+=item reset_cfg 
+
+Erases all information about pages and classes.
+
+=item write_cfg
+
+Writes either the system-wide or the user configuration file.
+If C<$backup> flag is set to 1, the old file renamed with C<.bak> extension.
+If succeeds, returns 1. If fails, returns 0 and string with the error explanation.
+
+=back
+
+=head1 FILES
+
+F<Prima::VB::Config.pm>, C<~/.prima/vbconfig>.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<VB>, L<cfgmaint>, F<Prima::VB::examples::Widgety>.
+
+=cut

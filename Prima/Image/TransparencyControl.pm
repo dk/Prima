@@ -316,3 +316,74 @@ sub OK_Click
 }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Image::TransparencyControl - standard dialog
+for transparent color index selection.
+
+=head1 DESCRIPTION
+
+The module contains two classes - C<Prima::Image::BasicTransparencyDialog>
+and C<Prima::Image::TransparencyControl>. The former provides a dialog,
+used by image codec-specific save options dialogs to select a transparent
+color index when saving an image to a file. C<Prima::Image::TransparencyControl>
+is a widget class that displays the image palette and allow color rather than
+index selection.
+
+=head1 Prima::Image::TransparencyControl
+
+=head2 Properties
+
+=over 
+
+=item index INTEGER
+
+Selects the palette index.
+
+=item image IMAGE
+
+Selects image which palette is displayed, and the color 
+index can be selected from.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Change
+
+Triggered when the user changes C<index> property.
+
+=back
+
+=head1 Prima::Image::BasicTransparencyDialog
+
+=head2 Methods
+
+=over
+
+=item transparent BOOLEAN
+
+If 1, the transparent selection widgets are enabled, and the
+user can select the palette index. If 0, the widgets are
+disabled; the image file is saved with no transparent color index.
+
+The property can be toggled interactively by a checkbox.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima::ImageDialog>.
+
+=cut
