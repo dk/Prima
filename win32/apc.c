@@ -1041,7 +1041,7 @@ apc_window_set_window_state( Handle self, int state)
    {
       case wsMaximized: fl = SW_SHOWMAXIMIZED; break;
       case wsMinimized: fl = SW_MINIMIZE; break;
-      case wsNormal   : fl = SW_RESTORE ; break;
+      case wsNormal   : fl = SW_SHOWNORMAL; break;
    }
    if ( fl > 0)
    {
