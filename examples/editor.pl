@@ -44,6 +44,9 @@ use Prima::Application;
 use Prima::MsgBox;
 use Prima::StdDlg;
 
+eval "use Encode;";
+my $can_utf8 = $@ ? 0 : 1;
+
 package Indicator;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
@@ -141,6 +144,7 @@ sub profile_default
    return {
       %def,
       fileName => undef,
+      utf8     => $can_utf8,
       menuItems => [
          [ '~File' => [
             [ '~New'        => q(new_window)],
@@ -172,6 +176,11 @@ sub profile_default
             [ '*hsc' => '~Horizontal scrollbar' => sub{ $_[0]->{editor}-> hScroll( $_[0]->menu-> hsc-> toggle)}],
             [ '*vsc' => '~Vertical scrollbar'   => sub{ $_[0]->{editor}-> vScroll( $_[0]->menu-> vsc-> toggle)}],
             [],
+	    (
+	       $can_utf8 ? 
+	       ['utf'  => 'UTF-8 mode' => sub { $_[0]-> {utf8} = $_[0]-> menu-> utf-> toggle }] :
+	       ()
+	    ),
             [ 'Set ~font' => q(setfont)],
         ]]
       ],
@@ -186,15 +195,16 @@ sub init
    my %profile = $self-> SUPER::init(@_);
    my $fn = $profile{fileName};
    my $cap = '';
+   $self-> menu-> utf-> check if $self-> {utf8} = $profile{utf8};
    if ( defined $fn) {
-      if ( open FILE, $fn) {
+      if ( open FILE, '<'.($profile{utf8} ? 'utf8' : ''), $fn) {
          if ( ! defined read( FILE, $cap, -s $fn)) {
-            Prima::MsgBox::message("Cannot read file $fn");
+            Prima::MsgBox::message("Cannot read file $fn:$!");
             $fn = undef;
          }
          close FILE;
       } else {
-         Prima::MsgBox::message("Cannot open file $fn");
+         Prima::MsgBox::message("Cannot open file $fn:$!");
          $fn = undef;
       }
    }
@@ -249,6 +259,7 @@ sub new_window
       left   => $self-> left + 10,
       bottom => $self-> bottom - 10,
       font   => $self-> font,
+      utf8   => $self-> {utf8},
    );
    $ww-> {editor}-> focus;
    return $ww;
@@ -265,6 +276,7 @@ sub open_file
          bottom   => $self-> bottom - 10,
          fileName => $f,
          font     => $self-> font,
+	 utf8     => $self-> {utf8},
       );
       $ww-> {editor}->focus;
    }
@@ -275,8 +287,9 @@ sub save_file
    my $self = $_[0];
    return $self-> save_as if $self-> text eq '.Untitled';
    my $fn = $self-> text;
-   if ( open FILE, ">$fn") {
+   if ( open FILE, '>'.($self->{utf8} ? 'utf8' : ''), $fn) {
       my $cap = $self->{editor}->text;
+      Encode::_utf8_off($cap) if $can_utf8 and !$self->{utf8};
       my $swr = syswrite(FILE,$cap,length($cap));
       close FILE;
       unless (defined $swr && $swr==length($cap)) {
@@ -302,8 +315,9 @@ sub save_as
    my $ret = 0;
    if ( defined $fn) {
 SAVE: while(1){
-         next SAVE unless open FILE, ">$fn";
+         next SAVE unless open FILE, '>'.($self->{utf8} ? 'utf8' : ''), $fn;
          my $cap = $self->{editor}->text;
+         Encode::_utf8_off($cap) if $can_utf8 and !$self->{utf8};
          my $swr = syswrite(FILE,$cap,length($cap));
          close FILE;
          unless (defined $swr && $swr==length($cap)) {
