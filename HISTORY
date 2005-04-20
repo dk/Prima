@@ -1,3 +1,5 @@
+1.18  Extend function of listboxes and outlines. Change syntax of Drawable:: text methods. 
+
 1.17  Add Window::onTop. Add =SYNOPSIS sections in selected modules. 
 
 1.16  Add Clipboard::UTF8 exchange format. Add Drawable ::lineJoin and ::fillWinding.
