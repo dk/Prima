@@ -1377,7 +1377,7 @@ sub profile_default
       printerModule  => $unix ? 'Prima::PS::Printer' : '',
       helpClass      => 'Prima::HelpViewer',
       helpModule     => 'Prima::HelpViewer',
-      wantUnicodeInput => 1,
+      wantUnicodeInput => 0,
    );
    @$def{keys %prf} = values %prf;
    return $def;
