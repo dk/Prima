@@ -329,6 +329,32 @@ Check Prima/VB/examples/Widgety.pm . This file, if loaded through
 'Add widget' command in VB, adds example widget class and example 
 VB property into the VB palette and Object Inspector.
 
+=head2 How would I use unicode/UTF8 in Prima?
+
+Basically, 
+
+   $::application-> wantUnicodeInput(1)
+
+is enough to tell Prima to provide input in Unicode/UTF8. Note, that if the
+data received in that fashion are to be put through file I/O, the C<'utf8'> IO
+layer must be selected ( see L<open> ).
+
+Prima can input and output UTF8 text if the underlying system capabilities
+support that ( check Prima::Application::get_system_value, C<sv::CanUTF8_Input>
+and C<sv::CanUTF8_Output> ).  Displaying UTF8 text is transparent, because Perl
+scalars can be unambiguously told whether the text they contain is in UTF8 or
+not. The text that comes from the user input
+- keyboard and clipboard - can be treated and reported to Prima
+either as UTF8 or plain text, depending on
+C<Prima::Application::wantUnicodeInput> property.
+
+The keyboard input is easy, because a character key event comes with the character
+code, not the character itself, and conversion between these is done via
+standard perl's C<chr> and C<ord>.  The clipboard input is more complicated,
+because the clipboard may contain both UTF8 and plain text data at once, and it
+must be decided by the programmer explicitly which one is desired.  See more in
+L<Prima::Clipboard/Unicode>.
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
