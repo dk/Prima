@@ -696,14 +696,9 @@ sub set_auto_height
    $self->{autoHeight} = $auto;
 }
 
-sub set_border_width
+sub reset_indents
 {
-   my ( $self, $bw) = @_;
-   $bw = 0 if $bw < 0;
-   $bw = 1 if $bw > $self-> height / 2;
-   $bw = 1 if $bw > $self-> width  / 2;
-   return if $bw == $self-> {borderWidth};
-   $self-> SUPER::set_border_width( $bw);
+   my ( $self) = @_;
    $self-> reset;
    $self-> reset_scrolls;
    $self-> repaint;
@@ -1033,28 +1028,6 @@ sub HScroll_Change
       $self-> offset( $scr-> value);
    $self-> {scrollTransaction} = 0;
 }
-
-
-sub set_h_scroll
-{
-   my ( $self, $hs) = @_;
-   return if $hs == $self->{hScroll};
-   $self-> SUPER::set_h_scroll( $hs);
-   $self-> reset;
-   $self-> reset_scrolls;
-   $self-> repaint;
-}
-
-sub set_v_scroll
-{
-   my ( $self, $vs) = @_;
-   return if $vs == $self->{vScroll};
-   $self-> SUPER::set_v_scroll( $vs);
-   $self-> reset;
-   $self-> reset_scrolls;
-   $self-> repaint;
-}
-
 
 #sub on_drawitem
 #{

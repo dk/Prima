@@ -958,17 +958,6 @@ sub set_block_type
    $self-> repaint;
 }
 
-sub set_border_width
-{
-   my ( $self, $bw) = @_;
-   my $obw = $self-> {borderWidth};
-   $self-> SUPER::set_border_width( $bw);
-   return if $obw == $self-> {borderWidth};
-   $self-> reset_render;
-   $self-> reset_scrolls;
-   $self-> repaint;
-}
-
 sub set_text_ref
 {
    my ( $self, $ref) = @_;
@@ -1178,11 +1167,9 @@ sub set_top_line
                    clipRect => [ $self-> get_active_area]);
 }
 
-sub set_h_scroll
+sub reset_indents
 {
-   my ( $self, $hs) = @_;
-   return if $hs == $self->{hScroll};
-   $self-> SUPER::set_h_scroll( $hs);
+   my ( $self) = @_;
    $self-> reset_render;
    $self-> reset_scrolls;
    $self-> repaint;
@@ -1442,16 +1429,6 @@ sub set_syntax_hilite
    $self->{syntaxHilite} = $sh;
    $self-> reset_syntaxer if $sh;
    $self-> reset_syntax;
-   $self-> repaint;
-}
-
-sub set_v_scroll
-{
-   my ( $self, $vs) = @_;
-   return if $vs == $self->{vScroll};
-   $self-> SUPER::set_v_scroll( $vs);
-   $self-> reset_render;
-   $self-> reset_scrolls;
    $self-> repaint;
 }
 

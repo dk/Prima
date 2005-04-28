@@ -160,8 +160,10 @@ sub set_border_width
    $self-> insert_bone if defined $self-> {bone};
    my $d = $bw - $obw;
    $self->setup_indents;
+   $self->reset_indents;
 }
 
+sub reset_indents {}
 
 sub insert_bone
 {
@@ -226,6 +228,7 @@ sub set_h_scroll
          delete $self-> {bone};
       }
    }
+   $self->reset_indents;
 }
 
 sub set_v_scroll
@@ -265,6 +268,7 @@ sub set_v_scroll
          delete $self-> {bone};
       }
    }
+   $self->reset_indents;
 }
 
 sub autoHScroll
@@ -457,6 +461,7 @@ The reserved method names:
    set_v_scroll
    insert_bone
    setup_indents
+   reset_indents
    borderWidth
    autoHScroll
    autoVScroll
@@ -500,6 +505,27 @@ points to it.
 
 Selects if the vertical scrollbar is visible. If it is, C<{vScrollBar}>
 points to it.
+
+=back
+
+=head2 Properties
+
+=over
+
+=item setup_indents
+
+The method is never called directly; it should be called whenever widget
+layout is changed so that indents are affected. The method is a request
+to recalculate indents, depending on the widget layout.
+
+The method is not reentrant; to receive this callback and update the widget
+layout, that in turn can result in more C<setup_indents> calls, overload
+C<reset_indents> .
+
+=item reset_indents
+
+Called after C<setup_indents> is called and internal widget layout is updated,
+to give a chance to follow-up the layout changes.
 
 =back
 
