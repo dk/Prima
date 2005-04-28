@@ -503,6 +503,7 @@ sub block_wrap
    my ( $haswrapinfo, @wrapret);
    my ( @ret, $z);
    my $lastTextOffset = $$b[ tb::BLK_TEXT_OFFSET];
+   my $has_text;
 
    my $newblock = sub 
    {
@@ -512,6 +513,7 @@ sub block_wrap
       $$z[ tb::BLK_FLAGS] &= ~ tb::T_SIZE;
       $$z[ tb::BLK_TEXT_OFFSET] = $$b [ tb::BLK_TEXT_OFFSET];
       $x = 0;
+      undef $has_text;
    };
 
    my $retrace = sub 
@@ -552,6 +554,7 @@ sub block_wrap
          if ( $x + $tw + $apx <= $width) {
             push @$z, tb::OP_TEXT, $ofs, $tlen, $tw;
             $x += $tw;
+	    $has_text = 1;
 # print "copied as is, advanced to $x, width $tw, $ofs\n";
          } elsif ( $wrapmode) {
             next if $tlen <= 0;
@@ -565,8 +568,14 @@ sub block_wrap
                tw::ReturnFirstLineLength | tw::WordBreak | tw::BreakSingle);
 # print "repo $l bytes wrapped in $width - $apx - $x\n";
             if ( $l > 0) {
-               push @$z, tb::OP_TEXT, $ofs + length $leadingSpaces, $l, 
-                  $tw = $canvas-> get_text_width( substr( $str, 0, $l), 1);
+	       if ( $has_text) {
+                  push @$z, tb::OP_TEXT, $ofs, $l + length $leadingSpaces, 
+                     $tw = $canvas-> get_text_width( $leadingSpaces . substr( $str, 0, $l), 1);
+               } else {
+                  push @$z, tb::OP_TEXT, $ofs + length $leadingSpaces, $l, 
+                     $tw = $canvas-> get_text_width( substr( $str, 0, $l), 1);
+	          $has_text = 1;
+               }
 # print "$x + advance $$z[-1]/$tw|", $leadingSpaces , "+", substr( $str, 0, $l), "|\n";
                $str = substr( $str, $l);
                $l += length $leadingSpaces;
@@ -593,6 +602,7 @@ sub block_wrap
                   if ( $str =~ m/^(\S+)(\s*)/) {
                      $tw = $canvas-> get_text_width( $1, 1);
                      push @$z, tb::OP_TEXT, $ofs, length $1, $tw;
+	             $has_text = 1;
                      $x += $tw;
                      $ofs  += length($1) + length($2);
                      $tlen -= length($1) + length($2);
@@ -600,6 +610,7 @@ sub block_wrap
                   }
                }
                push @$z, tb::OP_TEXT, $ofs, length($str), $x += $canvas-> get_text_width( $str, 1);
+	       $has_text = 1;
             }
          } elsif ( $haswrapinfo) { # unwrappable, and cannot be fit - retrace
             $retrace->();
