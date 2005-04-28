@@ -885,20 +885,19 @@ window_set_client_size( Handle self, int width, int height)
    widg-> virtualSize. x = width;
    widg-> virtualSize. y = height;
 
-   width = ( width > 0)
-      ? (( width >= widg-> sizeMin. x)
+   width = ( width >= widg-> sizeMin. x)
 	  ? (( width <= widg-> sizeMax. x)
               ? width 
 	      : widg-> sizeMax. x)
-	  : widg-> sizeMin. x)
-      : 1; 
-   height = ( height > 0)
-      ? (( height >= widg-> sizeMin. y)
+	  : widg-> sizeMin. x;
+   if ( width == 0) width = 1;
+
+   height = ( height >= widg-> sizeMin. y)
 	  ? (( height <= widg-> sizeMax. y)
 	      ? height
 	      : widg-> sizeMax. y)
-	  : widg-> sizeMin. y)
-      : 1;
+	  : widg-> sizeMin. y;
+   if ( height == 0) height = 1;
 
    if ( XX-> flags. zoomed) {
       XX-> zoomRect. right = width;
@@ -950,20 +949,19 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
    widg-> virtualSize. x = width;
    widg-> virtualSize. y = height;
 
-   width = ( width > 0)
-      ? (( width >= widg-> sizeMin. x)
+   width = ( width >= widg-> sizeMin. x)
 	  ? (( width <= widg-> sizeMax. x)
               ? width 
 	      : widg-> sizeMax. x)
-	  : widg-> sizeMin. x)
-      : 1; 
-   height = ( height > 0)
-      ? (( height >= widg-> sizeMin. y)
+	  : widg-> sizeMin. x;
+   if ( width == 0) width = 1;
+
+   height = ( height >= widg-> sizeMin. y)
 	  ? (( height <= widg-> sizeMax. y)
 	      ? height
 	      : widg-> sizeMax. y)
-	  : widg-> sizeMin. y)
-      : 1;
+	  : widg-> sizeMin. y;
+   if ( height == 0) height = 1;
 
    if ( XX-> flags. zoomed) {
       XX-> zoomRect. left = x;
