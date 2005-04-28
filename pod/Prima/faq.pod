@@ -355,6 +355,11 @@ because the clipboard may contain both UTF8 and plain text data at once, and it
 must be decided by the programmer explicitly which one is desired.  See more in
 L<Prima::Clipboard/Unicode>.
 
+=head2 Is there a way to display POD text that comes with my program / package ?
+
+   $::application-> open_help( $0 );
+   $::application-> open_help( 'My::Package/BUGS' );
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
