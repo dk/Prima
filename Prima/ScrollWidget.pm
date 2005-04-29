@@ -35,6 +35,15 @@ package Prima::ScrollWidget;
 use vars qw(@ISA);
 @ISA = qw( Prima::Widget Prima::GroupScroller);
 
+{
+my %RNT = (
+   %{Prima::Widget->notification_types()},
+   Scroll      => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
 sub profile_default
 {
    my $def = $_[ 0]-> SUPER::profile_default;
@@ -94,6 +103,10 @@ sub reset_scrolls
       }
    }
    if ( $self-> {autoVScroll}) {
+      if ( $reread) {
+         ($x, $y) = $self-> get_active_area(2);
+	 $reread = 0;
+      }
       my $vs = ( $y < $h) ? 1 : 0;
       if ( $vs != $self-> {vScroll}) {
          $self-> vScroll( $vs);
@@ -144,7 +157,7 @@ sub set_deltas
    $h = int( $h);
    my ($x, $y) = $self-> limits;
    my @sz = $self-> size;
-   my ( $ww, $hh)   = $self-> get_active_area( 2, @sz);
+   my ( $ww, $hh) = $self-> get_active_area( 2, @sz);
    $x -= $ww;
    $y -= $hh;
    $x = 0 if $x < 0;
@@ -155,11 +168,17 @@ sub set_deltas
    return if $w == $odx && $h == $ody;
    $self-> {deltaY} = $h;
    $self-> {deltaX} = $w;
-   $self-> scroll( $odx - $w, $h - $ody, clipRect => [$self->get_active_area(0, @sz)]);
+   $self-> notify('Scroll', $odx - $w, $h - $ody);
    $self-> {scrollTransaction} = 1;
    $self-> {hScrollBar}-> value( $w) if $self->{hScroll};
    $self-> {vScrollBar}-> value( $h) if $self->{vScroll};
    $self-> {scrollTransaction} = undef;
+}
+
+sub on_scroll
+{
+   my ( $self, $dx, $dy) = @_;
+   $self-> scroll( $dx, $dy, clipRect => [$self->get_active_area(0)]);
 }
 
 sub on_size
@@ -234,6 +253,17 @@ Selects horizontal document extension.
 =item limitY INTEGER
 
 Selects vertical document extension.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Scroll DX, DY
+
+Called whenever the client area is to be scrolled. The default
+action calls C<Widget::scroll> .
 
 =back
  
