@@ -50,6 +50,7 @@ object Prima::Widget( Prima::Drawable)
    char   *  text;                     # caption text
    int       widgetClass;              # predefined system class
    List      widgets;		       # list of child widgets
+   Handle *  enum_lists;               # list of currently running enumerators
 
 #  geometry managers data
 #  common:   

@@ -282,6 +282,19 @@ Widget_done( Handle self)
    var-> helpContext = nil;
    var-> hint = nil;
 
+   if ( var-> owner) {
+      Handle * enum_lists = PWidget( var-> owner)-> enum_lists;
+      while ( enum_lists) {
+         unsigned int i, count;
+	 count = (unsigned int) enum_lists[1];
+	 for ( i = 2; i < count + 2; i++) {
+	    if ( self == enum_lists[i]) 
+	       enum_lists[i] = nilHandle;
+	 }
+         enum_lists = ( Handle*) enum_lists[0];
+      }
+   }
+
    list_destroy( &var-> widgets);
    inherited-> done( self);
 }
@@ -368,7 +381,11 @@ Widget_cleanup( Handle self)
    if ( application && (( PApplication) application)-> hintUnder == self)
       my-> set_hintVisible( self, 0);
 
-   my-> first_that( self, (void*)kill_all, nil);
+   {
+      int i;
+      for ( i = 0; i < var-> widgets. count; i++)
+         Object_destroy( var-> widgets. items[i]);
+   }
 
    my-> detach( self, var-> accelTable, true);
    var-> accelTable = nilHandle;
@@ -495,17 +512,22 @@ Widget_first_that( Handle self, void * actionProc, void * params)
    int i, count  = var-> widgets. count;
    Handle * list;
    if ( actionProc == nil || count == 0) return nilHandle;
-   if (!(list = allocn( Handle, count))) return nilHandle;
-   memcpy( list, var-> widgets. items, sizeof( Handle) * count);
+   if (!(list = allocn( Handle, count + 2))) return nilHandle;
 
-   for ( i = 0; i < count; i++)
+   list[0] = (Handle)( var-> enum_lists);
+   list[1] = (Handle)( count);
+   var-> enum_lists = list;
+   memcpy( list + 2, var-> widgets. items, sizeof( Handle) * count);
+
+   for ( i = 2; i < count + 2; i++)
    {
-      if ((( PActionProc) actionProc)( self, list[ i], params))
+      if ( list[i] && (( PActionProc) actionProc)( self, list[ i], params))
       {
          child = list[ i];
          break;
       }
    }
+   var-> enum_lists = (Handle*)(*list);
    free( list);
    return child;
 }

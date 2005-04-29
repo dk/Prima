@@ -153,7 +153,11 @@ Application_done( Handle self)
 void
 Application_cleanup( Handle self)
 {
-   my-> first_that( self, (void*)kill_all, nil);
+   int i;
+
+   for ( i = 0; i < var-> widgets. count; i++)
+      Object_destroy( var-> widgets. items[i]);
+      
    if ( var-> icon)
       my-> detach( self, var-> icon, true);
    var-> icon = nilHandle;
