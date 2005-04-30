@@ -52,7 +52,6 @@ sub notification_types { return \%RNT; }
 my %hdrProps = (
    clickable   => 1,
    scalable    => 1,
-   dragable    => 1,
    minTabWidth => 1,
 );
 
