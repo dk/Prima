@@ -901,7 +901,7 @@ sub init
       designScale => undef,
       pageCount  => scalar @{$profile{tabs}},
       delegations => $profile{notebookDelegations},
-      %{$profile{tabsetProfile}},
+      %{$profile{notebookProfile}},
    );
    $self-> {notebook}-> designScale( $self-> designScale); # propagate designScale
    $self-> tabs( $profile{tabs});
