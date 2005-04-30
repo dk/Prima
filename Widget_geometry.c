@@ -54,7 +54,7 @@ static void Widget_place_leave( Handle self);
    growMode - native Prima model, borrowed from TurboVision. Does not live with
               geomSize request size, uses virtualSize instead.
 
-   pack and place - stolen from Perl-Tk.  
+   pack and place - copy-pasted from Perl-Tk.  
    Warning - all Tk positioning code is in Tk coordinates, meaning that Y axis descends
    
   */
@@ -154,28 +154,20 @@ Widget_geomSize( Handle self, Bool set, Point geomSize)
 int
 Widget_geomHeight( Handle self, Bool set, int geomHeight)
 {
-   if ( !set) 
-      return var-> geomSize. y;
-      /* return ( var-> geometry == gtDefault) ? my-> get_height( self) : var-> geomSize. y; */
-   var-> geomSize. y = geomHeight;
-   if ( var-> geometry == gtDefault) 
-      my-> set_height( self, var-> geomSize. y);
-   else
-      geometry_reset_all();
+   if ( set) {
+      Point p = { var-> geomSize. x, geomHeight};
+      my-> set_geomSize( self, p);
+   }
    return var-> geomSize. y;
 }
 
 int
 Widget_geomWidth( Handle self, Bool set, int geomWidth)
 {
-   if ( !set) 
-      return var-> geomSize. x;
-      /* return ( var-> geometry == gtDefault) ? my-> get_width( self) : var-> geomSize. x; */
-   var-> geomSize. x = geomWidth;
-   if ( var-> geometry == gtDefault) 
-      my-> set_width( self, var-> geomSize. x);
-   else
-      geometry_reset_all();
+   if ( set) {
+      Point p = { geomWidth, var-> geomSize. y};
+      my-> set_geomSize( self, p);
+   }
    return var-> geomSize. x;
 }
 
@@ -186,7 +178,7 @@ Widget_packPropagate( Handle self, Bool set, Bool propagate)
    if ( !set) return is_opt( optPackPropagate);
    repack = !(is_opt( optPackPropagate)) && propagate;
    opt_assign( optPackPropagate, propagate);
-   if ( repack) geometry_reset_all();
+   if ( repack) geometry_reset(self,-1);
    return is_opt( optPackPropagate);
 }
 
@@ -587,11 +579,18 @@ Widget_pack_slaves( Handle self)
     if ((((maxWidth != my-> get_geomWidth(self)))
 	    || (maxHeight != my-> get_geomHeight(self)))
 	    && is_opt( optPackPropagate)) {
-        Point p;
+        Point p, oldsize;
         p. x = maxWidth;
         p. y = maxHeight;
+	oldsize = my-> get_size( self);
         my-> set_geomSize( self, p);
-	return;
+	size = my-> get_size( self);
+	/* if size didn't change, that means, that no cmSize came, and thus
+	   the actual repacking of slaves never took place */
+	if ( oldsize. x != size. x || oldsize. y != size. y)
+	    return;
+    } else {
+	size = my-> get_size( self);
     }
 
     /*
@@ -606,7 +605,6 @@ Widget_pack_slaves( Handle self)
      */
 
     cavityX = cavityY = x = y = 0;
-    size = CWidget(self)-> get_size( self);
     cavityWidth = size. x;
     cavityHeight = size. y;
     for ( slavePtr=masterPtr; slavePtr != NULL; slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
