@@ -170,7 +170,8 @@ sub insert_bone
    my $self = $_[0];
    my $bw   = $self->{borderWidth};
    $self-> {bone}-> destroy if defined $self-> {bone};
-   $self->{bone} = $self-> insert( q(Widget),
+   $self->{bone} = Prima::Widget-> new(
+      owner  => $self,
       name   => q(Bone),
       pointerType => cr::Arrow,
       origin => [ $self-> width - $self->{vScrollBar}-> width + 3 - $bw, $bw - 1],
@@ -195,7 +196,8 @@ sub set_h_scroll
    return if $hs == $self->{hScroll};
    my $bw = $self-> {borderWidth} || 0;
    if ( $self->{hScroll} = $hs) {
-      $self->{hScrollBar} = $self-> insert( q(ScrollBar),
+      $self->{hScrollBar} = Prima::ScrollBar-> new(
+         owner       => $self,
          name        => q(HScroll),
          vertical    => 0,
          origin      => [ $bw-1, $bw-1],
@@ -238,7 +240,8 @@ sub set_v_scroll
    my $bw = $self-> {borderWidth} || 0;
    my @size = $self-> size;
    if ( $self->{vScroll} = $vs) {
-      $self->{vScrollBar} = $self-> insert( q(ScrollBar),
+      $self->{vScrollBar} = Prima::ScrollBar-> new(
+         owner    => $self,
          name     => q(VScroll),
          vertical => 1,
          left     => $size[0] - $bw - $Prima::ScrollBar::stdMetrics[0] + 1,
