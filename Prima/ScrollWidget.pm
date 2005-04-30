@@ -203,6 +203,187 @@ sub deltaX        {($#_)?$_[0]->set_deltas($_[1],$_[0]->{deltaY}):return $_[0]->
 sub deltaY        {($#_)?$_[0]->set_deltas($_[0]->{'deltaX'},$_[1]):return $_[0]->{'deltaY'};  }
 sub deltas        {($#_)?$_[0]->set_deltas         ($_[1], $_[2]):return ($_[0]->{'deltaX'},$_[0]->{'deltaY'}); }
 
+
+package Prima::ScrollGroup;
+use vars qw(@ISA);
+@ISA = qw(Prima::ScrollWidget);
+
+sub profile_default
+{
+	my $def = $_[0]-> SUPER::profile_default;
+	my %prf = (
+		rigid      		=> 1,
+		slaveClass		=> 'Prima::Widget',
+		slaveProfile		=> {},
+		slaveDelegations	=> [],
+		clientClass		=> 'Prima::ScrollGroup::Client',
+		clientProfile		=> {},
+		clientDelegations	=> [],
+	);
+	@$def{keys %prf} = values %prf;
+	return $def;
+}
+
+sub init
+{
+	my ($self, %profile) = @_;
+	%profile = $self-> SUPER::init(%profile);
+
+	$self-> {$_} = 0 for qw(rigid);
+	$self-> $_( $profile{$_}) for qw(rigid);
+   
+	$self-> {slave} = $profile{slaveClass}-> new( 
+		delegations => $profile{slaveDelegations},
+		%{$profile{slaveProfile}},
+		owner => $self,
+		name => 'SlaveWindow',
+		rect  => [ $self-> get_active_area(0) ],
+		growMode => gm::Client,
+	);
+
+	$self-> {client_geomSize} = [0,0];
+	$self-> {client} = $profile{clientClass}-> new( 
+		delegations => [ $self, 'Size', @{$profile{clientDelegations}}],
+		%{$profile{clientProfile}},
+		owner => $self-> {slave},
+		name  => 'ClientWindow',
+		designScale  => undef,
+		scaleChildren => $profile{scaleChildren},
+	);
+
+	$self-> {client}-> designScale( $self-> designScale);
+	$self-> reset;
+
+	return %profile;
+}
+
+sub reset_indents
+{
+	$_[0]-> reset;
+}
+
+sub ClientWindow_Size
+{
+	$_[0]-> reset;
+}
+
+sub ClientWindow_geomSize
+{
+	my ( $self, $client, $x, $y) = @_;
+	$client-> sizeMin( $x, $y) if $self-> rigid;
+        $self-> update_geom_size( $x, $y);
+}
+
+sub packPropagate
+{
+	return shift-> SUPER::packPropagate unless $#_;
+	my ( $self, $pack_propagate) = @_;
+	$self-> SUPER::packPropagate( $pack_propagate);
+        $self-> propagate_size if $pack_propagate;
+}
+
+sub propagate_size
+{
+	my $self = $_[0];
+        $self-> update_geom_size( $self-> {client}-> geomSize) 
+		if $self-> {client};
+}
+
+sub reset
+{
+	my ( $self, $forced) = @_;
+	return unless $self-> {client};
+
+	my @size = $self-> size;
+	$self-> {slave}-> rect( $self-> get_active_area(0, @size));
+
+	my @l = $self-> limits;
+	my @s = $self-> {client}-> size;
+	my @o = $self-> {client}-> origin;
+	
+	local $self-> {protect_scrolling} = 1;
+	$self-> deltas( -$o[0], $o[1] - $self-> {slave}-> height + $s[1]);
+	
+	( $l[0] == $s[0] and $l[1] == $s[1]) ? 
+		$self-> reset_scrolls : 
+		$self-> limits( $s[0], $s[1]);
+}
+
+sub update_geom_size
+{
+	my ( $self, $x, $y) = @_;
+	return unless $self-> packPropagate;
+	my @i = $self-> indents;
+	$self-> geomSize( 
+		$x + $i[0] + $i[2],
+		$y + $i[1] + $i[3]
+	);
+}
+
+sub on_paint
+{
+	my ( $self, $canvas) = @_;
+	my @size = $self-> size;
+	$canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 
+		$self-> borderWidth, $self-> dark3DColor, $self-> light3DColor,
+		$self-> backColor);
+}
+
+sub on_size
+{
+	$_[0]-> reset;
+}
+
+sub on_scroll
+{
+	my ( $self, $dx, $dy) = @_;
+	return if $self-> {protect_scrolling};
+	local $self-> {protect_scrolling} = 1;
+	my @o = $self-> {client}-> origin;
+	$self-> {client}-> origin(
+		$o[0] + $dx,
+		$o[1] + $dy,
+	);
+}
+
+sub slave { $_[0]-> {slave} } 
+sub client { $_[0]-> {client} } 
+sub insert { shift-> {client}-> insert( @_ ) }
+
+sub rigid
+{
+	return $_[0]-> {rigid} unless $#_;
+
+	my ( $self, $rigid) = @_;
+	return if $self-> {rigid} == $rigid;
+	$self-> {rigid} = $rigid;
+	$self-> reset if $rigid;
+}
+
+package Prima::ScrollGroup::Client;
+use vars qw(@ISA);
+@ISA = qw(Prima::Widget);
+
+sub profile_default
+{
+	my $def = $_[0]-> SUPER::profile_default;
+	my %prf = (
+		geometry  => gt::Pack,
+		packInfo  => { expand => 1, fill => 'both'},
+	);
+	@$def{keys %prf} = values %prf;
+	return $def;
+}
+
+sub geomSize
+{
+	return $_[0]-> SUPER::geomSize unless $#_;
+	my $self = shift;
+	$self-> SUPER::geomSize( @_);
+	$self-> owner-> owner-> ClientWindow_geomSize( $self, @_);
+}
+
+
 1;
 
 __DATA__

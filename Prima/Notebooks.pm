@@ -591,14 +591,17 @@ sub set_page_index
          $$_[1] = $$_[0]-> enabled;
          $$_[2] = $$_[0]-> visible;
          $$_[3] = $$_[0]-> current;
+         $$_[4] = $$_[0]-> geometry;
          $$_[0]-> visible(0);
          $$_[0]-> enabled(0);
+         $$_[0]-> geometry(gt::Default);
       }
    }
    $cp = $self->{widgets}->[$pi];
    if ( defined $cp) {
       my $hasSel;
       for ( @$cp) {
+         $$_[0]-> geometry($$_[4]);
          $$_[0]-> enabled($$_[1]);
          $$_[0]-> visible($$_[2]);
          if ( !defined $hasSel && $$_[3]) {
@@ -652,12 +655,13 @@ sub attach_to_page
       # $_->add_notification( Disable => \&_disable => $self);
       # $_->add_notification( Show    => \&_show    => $self);
       # $_->add_notification( Hide    => \&_hide    => $self);
-      my @rec = ( $_, $_->enabled, $_->visible, $_->current);
+      my @rec = ( $_, $_->enabled, $_->visible, $_->current, $_-> geometry);
       push( @{$cp}, [@rec]);
       next if $page == $self->{pageIndex};
       $_-> visible(0);
       $_-> autoEnableChildren(0);
       $_-> enabled(0);
+      $_-> geometry(gt::Default);
    }
 }
 
@@ -767,6 +771,7 @@ my %virtual_properties = (
    enabled => 1,
    visible => 2,
    current => 3,
+   geometry => 4,
 );
 
 sub widget_get
@@ -1187,6 +1192,92 @@ sub tabIndex     {($#_)?($_[0]->{tabSet}->tabIndex( $_[1]))   :return $_[0]->{ta
 sub pageIndex    {($#_)?($_[0]->set_page_index   ( $_[1]))    :return $_[0]->{notebook}->pageIndex}
 sub tabs         {($#_)?(shift->set_tabs     (    @_   ))     :return $_[0]->get_tabs}
 
+package Prima::ScrollNotebook::Client;
+use vars qw(@ISA);
+@ISA = qw(Prima::Notebook);
+
+sub profile_default
+{
+	my $def = $_[0]-> SUPER::profile_default;
+	my %prf = (
+		geometry  => gt::Pack,
+		packInfo  => { expand => 1, fill => 'both'},
+	);
+	@$def{keys %prf} = values %prf;
+	return $def;
+}
+
+sub geomSize
+{
+	return $_[0]-> SUPER::geomSize unless $#_;
+	my $self = shift;
+	$self-> SUPER::geomSize( @_);
+	$self-> owner-> owner-> ClientWindow_geomSize( $self, @_);
+}
+
+package Prima::ScrollNotebook;
+use vars qw(@ISA);
+@ISA = qw(Prima::ScrollGroup);
+
+for ( qw(pageIndex insert_page delete_page), 
+	keys %Prima::TabbedNotebook::notebookProps) {
+	eval <<GENPROC;
+	sub $_ { return shift-> {client}-> $_(\@_); }
+GENPROC
+}
+
+sub profile_default
+{
+	return {
+		%{Prima::Notebook->profile_default},
+		%{$_[ 0]-> SUPER::profile_default},
+		clientClass  => 'Prima::ScrollNotebook::Client',
+	}
+}
+
+package Prima::TabbedScrollNotebook::Client;
+use vars qw(@ISA);
+@ISA = qw(Prima::ScrollNotebook);
+
+sub update_geom_size
+{
+	my ( $self, $x, $y) = @_;
+	my $owner = $self-> owner;
+	return unless $owner-> packPropagate;
+	my @o = $owner-> size;
+	my @s = $self-> get_virtual_size;
+	$owner-> geomSize( $o[0] - $s[0] + $x, $o[1] - $s[1] + $y);
+}
+
+package Prima::TabbedScrollNotebook;
+use vars qw(@ISA);
+@ISA = qw(Prima::TabbedNotebook);
+
+sub profile_default
+{
+	return {
+		%{$_[ 0]-> SUPER::profile_default},
+		notebookClass => 'Prima::TabbedScrollNotebook::Client',
+	}
+}
+
+sub client { shift-> {notebook}-> client }
+
+sub packPropagate
+{
+	return shift-> SUPER::packPropagate unless $#_;
+	my ( $self, $pack_propagate) = @_;
+	$self-> SUPER::packPropagate( $pack_propagate);
+        $self-> propagate_size if $pack_propagate;
+}
+
+sub propagate_size
+{
+	my $self = $_[0];
+        $self-> {notebook}-> propagate_size
+		if $self-> {notebook};
+}
+
 1;
 
 __DATA__
@@ -1326,7 +1417,7 @@ flag value is returned instead.
 =item widget_set WIDGET, %PROFILE
 
 Calls C<set> on WIDGET with PROFILE and
-updates the internal visible, enabled, and current flags
+updates the internal C<visible>, C<enabled>, C<current>, and C<geometry> properties
 if these are present in PROFILE. 
 
 See L<Prima::Object/set>.   

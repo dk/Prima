@@ -27,7 +27,7 @@
 #
 #  $Id$
 
-use Prima qw(Application Themes ScrollBar Buttons InputLine ExtLists Notebooks);
+use Prima qw(Application Themes ScrollBar Buttons InputLine ExtLists Notebooks ScrollWidget);
 
 =pod 
 =item NAME
@@ -57,9 +57,8 @@ sub test
 	Prima::Themes::select( @themes);
 	my $failed = join(',', grep { ! Prima::Themes::active $_ } @themes);
 	Prima::message("Theme(s) $failed failed to load") if length $failed;
-	$t = $playground-> insert( TabbedNotebook => 
+	$t = $playground-> insert( TabbedScrollNotebook => 
 		pack => { fill => 'both', expand => 1},
-		packPropagate => 0,
 		tabs => ['Tab'],
 	);
 
