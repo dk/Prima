@@ -1258,6 +1258,31 @@ sub profile_default
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
 		notebookClass => 'Prima::TabbedScrollNotebook::Client',
+		clientProfile => {},
+		clientDelegations => [],
+		clientSize    => [ 100, 100],
+	}
+}
+
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+	$self-> SUPER::profile_check_in( $p, $default);
+	$p-> {notebookProfile}->{clientSize} = $p-> {clientSize}
+		if exists $p-> {clientSize} and not exists $p-> {notebookProfile}->{clientSize};
+	if ( exists $p-> {clientProfile}) {
+		%{$p-> {notebookProfile}-> {clientProfile}} = (
+			($default-> {notebookProfile}-> {clientProfile} ?
+				%{$default-> {notebookProfile}-> {clientProfile}} : ()),
+			%{$p-> {clientProfile}},
+		);
+	}
+	if ( exists $p-> {clientDelegations}) {
+		@{$p-> {notebookProfile}-> {clientDelegations}} = (
+			( $default-> {notebookProfile}-> {clientDelegations} ?
+				@{$default-> {notebookProfile}-> {clientDelegations}} : ()),
+			@{$p-> {clientDelegations}},
+		);
 	}
 }
 
@@ -1276,6 +1301,17 @@ sub propagate_size
 	my $self = $_[0];
         $self-> {notebook}-> propagate_size
 		if $self-> {notebook};
+}
+
+sub clientSize
+{
+	return $_[0]-> {notebook}-> clientSize unless $#_;
+	shift-> {notebook}-> clientSize(@_);
+}
+
+sub use_current_size
+{
+	$_[0]-> {notebook}-> use_current_size;
 }
 
 1;

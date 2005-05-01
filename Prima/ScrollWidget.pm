@@ -213,6 +213,7 @@ sub profile_default
 	my $def = $_[0]-> SUPER::profile_default;
 	my %prf = (
 		rigid      		=> 1,
+		clientSize		=> [100, 100],
 		slaveClass		=> 'Prima::Widget',
 		slaveProfile		=> {},
 		slaveDelegations	=> [],
@@ -222,6 +223,17 @@ sub profile_default
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
+}
+
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+	$self-> SUPER::profile_check_in( $p, $default);
+	if ( exists $p-> {clientSize}) {
+		$p-> {rigid} = 0 unless exists $p-> {rigid};
+		$p-> {clientProfile}->{geometry} = gt::Default
+			unless exists $p-> {clientProfile}->{geometry};
+	}
 }
 
 sub init
@@ -243,7 +255,11 @@ sub init
 
 	$self-> {client_geomSize} = [0,0];
 	$self-> {client} = $profile{clientClass}-> new( 
-		delegations => [ $self, 'Size', @{$profile{clientDelegations}}],
+		delegations => [ $self, 'Size', $self, 'Move', @{$profile{clientDelegations}}],
+		( $profile{rigid} ? () : ( 
+			origin => [0,0],
+			size   => $profile{clientSize})
+		),
 		%{$profile{clientProfile}},
 		owner => $self-> {slave},
 		name  => 'ClientWindow',
@@ -252,17 +268,22 @@ sub init
 	);
 
 	$self-> {client}-> designScale( $self-> designScale);
-	$self-> reset;
+	$self-> reset(1);
 
 	return %profile;
 }
 
 sub reset_indents
 {
-	$_[0]-> reset;
+	$_[0]-> reset(1);
 }
 
 sub ClientWindow_Size
+{
+	$_[0]-> reset;
+}
+
+sub ClientWindow_Move
 {
 	$_[0]-> reset;
 }
@@ -295,18 +316,31 @@ sub reset
 	return unless $self-> {client};
 
 	my @size = $self-> size;
-	$self-> {slave}-> rect( $self-> get_active_area(0, @size));
+	$self-> {slave}-> rect( $self-> get_active_area(0, @size))
+		if $forced;
 
 	my @l = $self-> limits;
 	my @s = $self-> {client}-> size;
 	my @o = $self-> {client}-> origin;
 	
 	local $self-> {protect_scrolling} = 1;
-	$self-> deltas( -$o[0], $o[1] - $self-> {slave}-> height + $s[1]);
-	
 	( $l[0] == $s[0] and $l[1] == $s[1]) ? 
 		$self-> reset_scrolls : 
 		$self-> limits( $s[0], $s[1]);
+	$self-> deltas( -$o[0], $o[1] - $self-> {slave}-> height + $s[1]);
+	
+}
+
+sub children_extensions
+{
+	my $self = $_[0];
+	my @ext = ( 0,0 );
+	for my $w ( $self-> {client}-> widgets) {
+		my @r = $w-> rect;
+		$ext[0] = $r[2] if $ext[0] < $r[2];
+		$ext[1] = $r[3] if $ext[1] < $r[3];
+	}
+	return @ext;
 }
 
 sub update_geom_size
@@ -331,7 +365,7 @@ sub on_paint
 
 sub on_size
 {
-	$_[0]-> reset;
+	$_[0]-> reset(1);
 }
 
 sub on_scroll
@@ -358,6 +392,17 @@ sub rigid
 	return if $self-> {rigid} == $rigid;
 	$self-> {rigid} = $rigid;
 	$self-> reset if $rigid;
+}
+
+sub clientSize
+{
+	return $_[0]-> {client}-> size unless $#_;
+	shift-> {client}-> size(@_);
+}
+
+sub use_current_size
+{
+	$_[0]-> {client}-> sizeMin( $_[0]-> children_extensions);
 }
 
 package Prima::ScrollGroup::Client;
