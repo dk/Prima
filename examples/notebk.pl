@@ -41,6 +41,7 @@ Prima::TabbedNotebook standard class.
 use Prima;
 use Prima::Buttons;
 use Prima::Notebooks;
+use Prima::ScrollWidget;
 use Prima::Application;
 
 package Bla;
@@ -52,7 +53,7 @@ sub init
    my $self = shift;
    my %profile = $self-> SUPER::init( @_);
 
-   my $n = $self-> insert( TabbedNotebook =>
+   my $n = $self-> insert( TabbedScrollNotebook =>
       pack => { fill => 'both', expand => 1, padx => 20, pady => 20 },
 #     pageCount => 11,
       tabs => [0..5,5,5..10],
@@ -87,6 +88,7 @@ sub init
       growMode => gm::XCenter,
       onClick => sub { $n->style($n->style ? 0 : 1) },
    );
+   $n-> use_current_size;
    return %profile;
 }
 
