@@ -841,6 +841,7 @@ sub setup_variables
                 PERL_SUBVERSION => $Config{ SUBVERSION},
                 PRIMA_CORE => 1,
                 PERL_POLLUTE => 1,
+		PRIMA_DEBUG  => $DEBUG,
                );
      $DEFINES{PRIMA_PLATFORM} = $OS2 ? 1 : ( $Win32 ? 2 : 3);
     if ( env_true( 'PRIMA_PARANOID_MALLOC')) {

@@ -124,11 +124,7 @@ typedef HANDLE SOCKETHANDLE;
 
 
 
-/*  #ifndef  SEVERE_DEBUG */
-/*  #define apiErr       { rc = GetLastError();    apcError = errApcError; } */
-/*  #define apcErr( err)    apcError = err; */
-/*  #define apiAltErr( err) { apcError = errApcError; rc = err; } */
-/*  #else */
+#if PRIMA_DEBUG
 #define apiErr {                                            \
    rc = GetLastError();                                     \
    apcError = errApcError;                                  \
@@ -144,7 +140,12 @@ typedef HANDLE SOCKETHANDLE;
    fprintf( stderr, "WIN_%d (%s) at line %d at %s", (int)rc,     \
         err_msg( rc, nil), __LINE__, __FILE__);                  \
 }
-/*  #endif */
+#else
+#define apiErr       { rc = GetLastError();    apcError = errApcError; }
+#define apcErr( err)    apcError = err;
+#define apiAltErr( err) { apcError = errApcError; rc = err; }
+#endif /* PRIMA_DEBUG */
+
 #define apiErrRet         { apiErr;               return false; }
 #define apiErrCheckRet    { apiErrCheck; if ( rc) return false; }
 #define apcErrRet(err)    { apcErr(err);          return false; }
