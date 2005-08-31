@@ -360,6 +360,35 @@ L<Prima::Clipboard/Unicode>.
    $::application-> open_help( $0 );
    $::application-> open_help( 'My::Package/BUGS' );
 
+=head2 How to implement parallel processing?
+
+Prima doesn't work if called from more than one thread, since Perl scalars
+cannot be shared between threads automatically, but only if explicitly told,
+bu using L<thread::shared>. Prima does work in multithread environments though,
+but only given it runs within a dedicated thread. It is important not to
+call Prima methods from any other thread, because scalars that may be created
+inside these calls will be unavailable to the Prima core, which would result
+in strange errors.
+
+It is possible to run things in parallel by calling the eveng processing
+by hands: instead of entering the main loop with
+   
+   run Prima;
+
+one can write
+
+   while ( 1) {
+      ... do some calculations .. 
+      $::application->yield;
+   }
+
+That'll give Prima a chance to handle accumulated events, but that technique is
+only viable if calculation can be quantized into relatively short time frames.
+The general solution would be harder to implement and debug, but it scales
+well. The idea is to fork a process, and communicate with it via its stdin
+and/or stdout ( see L<perlipc> how to do that), and use L<Prima::File> to
+asyncronously read data passed through the pipe.
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
