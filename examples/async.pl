@@ -8,18 +8,19 @@ async.pl - example of using asynchonous communication with a process
 
 =cut
 
+BEGIN {
+	die "Win32 doesn't support non-blocking pipe IO, aborting\n" if $^O =~ /win32/i;
+};
+
 use strict;
-use Fcntl;
+use Fcntl qw(O_NONBLOCK F_GETFL F_SETFL);
 use Prima qw(Application Label);
 
 open F, "$^X -e '\$|++;for(1..10){sleep(1);print qq(\$_\\n)}' |";
 
-unless ( $^O =~ /win32/i) {
-	Fcntl->export( qw(O_NONBLOCK F_GETFL F_SETFL));
-	my $fc;
-	fcntl( F, F_GETFL, $fc) or die "can't fcntl(F_GETFL):$!\n";
-	fcntl( F, F_SETFL, O_NONBLOCK|$fc) or die "can't fcntl(F_SETFL):$!\n";
-}
+my $fc;
+fcntl( F, F_GETFL, $fc) or die "can't fcntl(F_GETFL):$!\n";
+fcntl( F, F_SETFL, O_NONBLOCK|$fc) or die "can't fcntl(F_SETFL):$!\n";
 
 my ( $file, $label, $window);
 
