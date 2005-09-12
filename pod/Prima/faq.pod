@@ -384,10 +384,14 @@ one can write
 
 That'll give Prima a chance to handle accumulated events, but that technique is
 only viable if calculation can be quantized into relatively short time frames.
-The general solution would be harder to implement and debug, but it scales
+
+The generic solution would be harder to implement and debug, but it scales
 well. The idea is to fork a process, and communicate with it via its stdin
 and/or stdout ( see L<perlipc> how to do that), and use L<Prima::File> to
-asyncronously read data passed through the pipe.
+asyncronously read data passed through a pipe or a socket. 
+
+Note: Win32 runtime library does not support asynchronous pipes, only asyncronous sockets.
+Cygwin does support both asyncronous pipes and sockets.
 
 =head1 AUTHOR
 
