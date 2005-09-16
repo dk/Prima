@@ -58,6 +58,10 @@ use Prima::Lists;
 use Prima::Sliders;
 use Prima::Buttons;
 
+# try to use perl5.8 glyph names
+eval "use charnames qw(:full);";
+my $use_charnames = $@ ? 0 : 1;
+
 sub run {
 my $w = 0;
 
@@ -392,7 +396,12 @@ $w-> insert( Button =>
               my $d = $$_[1] - $$_[0] + 1;
               if ( $item < $d) {
                  my $c = $$_[0] + $item;
-                 $self-> hint( sprintf( "0x%x", $c));
+		 my $pretty = sprintf( "0x%x", $c);
+		 if ( $use_charnames) {
+		 	my $x = charnames::viacode($c);
+			$pretty .= " - $x" if defined $x;
+		 }
+                 $self-> hint( $pretty );
                  $self-> hintVisible(1);
                  last;
               } else {
