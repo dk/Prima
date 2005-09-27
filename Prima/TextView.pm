@@ -1231,6 +1231,9 @@ sub on_mouseclick
       length ${$self->{text}} : $self-> {blocks}-> [$bid+1]-> [tb::BLK_TEXT_OFFSET];
    $self-> selection( 0, $bid, $ln - $self-> {blocks}-> [$bid]-> [tb::BLK_TEXT_OFFSET], $bid);
    $self-> clear_event;
+   
+   my $cp = $::application-> bring('Primary');
+   $cp-> text( $self-> get_selected_text) if $cp;
 }
 
 sub on_mouseup
