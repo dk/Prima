@@ -230,7 +230,7 @@ Prima::Themes - object themes management
 
 Provides layer for theme registration in Prima. Themes are loosely grouped
 alternations of default class properties and behavior, by default stored in 
-C<Prima/theme> subdirectory. The theme realization is implemented as interception
+C<Prima/themes> subdirectory. The theme realization is implemented as interception
 of object profile during its creation, inside C<::profile_add>. Various themes
 apply various alterations, one way only - once an object is applied a theme,
 it cannot be neither changed nor revoked thereafter.
@@ -244,27 +244,27 @@ not aware of themes can be coupled with themes in the rc file by the following:
 
 C<Prima::Themes> namespace provides registration and execution functionality.
 C<Prima::Themes::Proxy> is a class for overriding certain methods, for internal
-realization of theme.
+realization of a theme.
 
 For interactive theme selection use F<examples/theme.pl> sample program.
 
 =head1 SYNOPSIS
 
-# register a theme file
-use Prima::Themes qw(color);
-# or
-use Prima::Themes; load('color');
-# list registered themes
-print Prima::Themes::list;
-
-# install a theme
-Prima::Themes::install('cyan');
-# list installed themes
-print Prima::Themes::list_active;
-# create object with another theme while 'cyan' is active
-Class->create( theme => 'yellow');
-# remove a theme
-Prima::Themes::uninstall('cyan');
+   # register a theme file
+   use Prima::Themes qw(color);
+   # or
+   use Prima::Themes; load('color');
+   # list registered themes
+   print Prima::Themes::list;
+   
+   # install a theme
+   Prima::Themes::install('cyan');
+   # list installed themes
+   print Prima::Themes::list_active;
+   # create object with another theme while 'cyan' is active
+   Class->create( theme => 'yellow');
+   # remove a theme
+   Prima::Themes::uninstall('cyan');
 
 =head1 Prima::Themes
 
@@ -273,29 +273,28 @@ Prima::Themes::uninstall('cyan');
 =item load @THEME_MODULES
 
 Load THEME_MODULES from files via C<use> clause, dies on error.
-Can be used instead explicit C<use>.
+Can be used instead of explicit C<use>.
 
 A loaded theme file may register one or more themes.
 
 =item register $FILE, $THEME, $MATCH, $CALLBACK, $INSTALLER
 
-Registers loaded theme. $THEME is unique string identifier.
-$MATCH is an array of pairs, where first item is class string,
-and second is a custom scalar parameter. When a new object is created,
-its class is matched via C<isa> to each given class string,
-and if matched, $CALLBACK routine is called with parameters:
+Registers a previously loaded theme. $THEME is a unique string identifier.
+$MATCH is an array of pairs, where the first item is a class name,
+and the second is an arbitrary scalar parameter. When a new object is created,
+its class is matched via C<isa> to each given class name,
+and if matched, the $CALLBACK routine is called with the following parameters:
 object, default profile, user profile, second item of the matched pair.
 
-If $CALLBACK is C<undef>, default C<merger> routine is called,
-which treats the second items of pairs as hashed of same format as
-default and user profiles.
+If $CALLBACK is C<undef>, the default L<merger> routine is called,
+which treats the second items of the pairs as hashes of the same format as
+the default and user profiles.
 
-The theme is inactive until C<install> is called. If $INSTALLER
-subroutine is passed, it is called during install and uninstall,
-with two parameters, theme name and install flag. When install flag 
-is 1, the theme is about to be installed; the subroutine is expected
-to return a boolean success flag. Otherwise, subroutine return value
-is not used.
+The theme is inactive until C<install> is called. If $INSTALLER subroutine is
+passed, it is called during install and uninstall, with two parameters, the
+name of the theme and boolean install/uninstall flag. When install flag is 1,
+the theme is about to be installed; the subroutine is expected to return a
+boolean success flag. Otherwise, subroutine return value is not used.
 
 $FILE is used to indicate the file in which the theme is stored.
 
@@ -305,7 +304,8 @@ Un-registers $THEME.
 
 =item install @THEMES
 
-Installs loaded THEMES; the installed themes are used to match new objects.
+Installs previosuly loaded and registered loaded THEMES; the installed themes
+are now used to match new objects.
 
 =item uninstall @THEMES
 
@@ -313,28 +313,28 @@ Uninstalls loaded THEMES.
 
 =item list
 
-Returns list of registered themes.
+Returns the list of registered themes.
 
 =item list_active
 
-Returns list of installed themes.
+Returns the list of installed themes.
 
 =item loaded $THEME
 
-Return 1 if theme is registered, 0 otherwise.
+Return 1 if $THEME is registered, 0 otherwise.
 
 =item active $THEME
 
-Return 1 if theme is installed, 0 otherwise.
+Return 1 if $THEME is installed, 0 otherwise.
 
 =item select @THEMES
 
-Uninstalls all currently installed themes, and installs THEMES.
+Uninstalls all currently installed themes, and installs THEMES instead.
 
 =item merger $OBJECT, $PROFILE_DEFAULT, $PROFILE_USER, $PROFILE_THEME
 
-Default profile merging routine, merges $PROFILE_THEME into $PROFILE_USER,
-based in keys found in $PROFILE_DEFAULT.
+Default profile merging routine, merges $PROFILE_THEME into $PROFILE_USER
+by keys from $PROFILE_DEFAULT.
 
 =item load_rc [ $INSTALL = 1 ]
 
@@ -354,8 +354,8 @@ An instance of C<Prima::Themes::Proxy>, created as
 
   Prima::Themes::Proxy-> new( $OBJECT)
 
-is a non-functional wrapper for any Perl object $OBJECT. Any methods of $OBJECT
-class, except C<AUTOLOAD>, C<DESTROY>, and C<new>, are forwarded to $OBJECT
+is a non-functional wrapper for any Perl object $OBJECT. All methods of $OBJECT,
+except C<AUTOLOAD>, C<DESTROY>, and C<new>, are forwarded to $OBJECT
 itself transparently. The class can be used, for example, to deny all
 changes to C<lineWidth> inside object's painting routine:
 
