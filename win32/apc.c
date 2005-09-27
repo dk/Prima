@@ -325,6 +325,7 @@ files_rehash( Handle self, void * dummy)
 static Bool
 process_msg( MSG * msg)
 {
+   Bool postpone_msg_translation = false;
    switch ( msg-> message)
    {
    case WM_TERMINATE:
@@ -337,6 +338,12 @@ process_msg( MSG * msg)
          warn(( char *) msg-> lParam);
       return true;
    case WM_SYSKEYDOWN:
+      /*
+	 If Prima handles an Alt-Key combination that is also handled by a menu
+	 in TranslateMessage(), we need to prevent the message from being
+	 processed by the menu, by setting guts.dont_xlate_message flag.
+       */
+      postpone_msg_translation = true;
    case WM_SYSKEYUP:
    case WM_KEYDOWN:
    case WM_KEYUP:
@@ -430,8 +437,15 @@ process_msg( MSG * msg)
       }
       return true;
    }
-   TranslateMessage( msg);
+   if ( !postpone_msg_translation) 
+      TranslateMessage( msg);
    DispatchMessage( msg);
+   if ( postpone_msg_translation) { 
+      if ( guts. dont_xlate_message)
+         guts. dont_xlate_message = false;
+      else
+         TranslateMessage( msg);
+   }
    kill_zombies();
    return true;
 }

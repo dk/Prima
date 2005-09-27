@@ -227,6 +227,7 @@ typedef struct _WinGuts
     HANDLE         socketMutex;        // thread semaphore
     HANDLE         socketThread;       // thread id
     Bool           socketPostSync;     // semaphore
+    Bool           dont_xlate_message; // one-time stopper to TranslateMessage() call
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData

@@ -453,6 +453,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    Event   ev;
    Bool    hiStage   = false;
    int     i, orgCmd;
+   Bool    message_result = true;
 
    if ( !self || appDead)
       return DefWindowProc( win, msg, mp1, mp2);
@@ -960,7 +961,10 @@ AGAIN:
       ret = DefWindowProc( win, msg, mp1, mp2);
 
    orgCmd = ev. cmd;
-   if ( ev. cmd) v-> self-> message( self, &ev); else ev. cmd = orgMsg;
+   if ( ev. cmd) 
+      message_result = v-> self-> message( self, &ev); 
+   else 
+      ev. cmd = orgMsg;
 
    if ( v-> stage > csNormal) orgMsg = 0; // protect us from dead body
 
@@ -973,6 +977,9 @@ AGAIN:
    case WM_PAINT:
       return 0;
    case WM_SYSKEYDOWN:
+       if ( !message_result)
+	  guts. dont_xlate_message = true;
+       break;
    case WM_SYSKEYUP:
        // ev. cmd = 1; // forced call DefWindowProc superseded for test reasons
        break;
