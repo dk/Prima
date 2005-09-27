@@ -358,7 +358,7 @@ sub load_link
             $t = $tid;
             last;
          }
-         if ( !defined $t || $t < 0) {
+         if ( length( $section) and ( !defined $t || $t < 0)) {
             $tid = -1;
             my $s = quotemeta $section;
             for ( @{$self-> {topics}}) {
