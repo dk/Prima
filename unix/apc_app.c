@@ -426,6 +426,7 @@ window_subsystem_get_options( int * argc, char *** argv)
 	    " P(palettes and colors),"\
 	    " X(XRDB),"\
 	    " A(all together)",
+   "no-core-fonts", "do not use core fonts",
 #ifdef USE_XFT
    "no-xft",        "do not use XFT",
    "no-aa",         "do not anti-alias XFT fonts",

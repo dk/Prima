@@ -255,6 +255,15 @@ Prima can make use only of font name, size, and style flags.
 C<--no-xft> command-line argument, and boolean C<UseXFT.usexft> XRDB property 
 can be used to disable use of the Xft library.
 
+=item C<--no-core-fonts>
+
+Disables all X11 core fonts, except C<fixed> fonts. The C<fixed>
+font is selected for the same reasons that X server is designed
+to provide at least one font, which usually is C<fixed>.
+
+It is valid to combine C<--no-core-fonts> and C<--no-xft>. Moreover,
+adding C<--noscaled> to these gives Prima programs a 'classic' X look.
+
 =item C<--font-priority>
 
 Can be set to either C<xft> or C<core>, to select a font provider mechanism

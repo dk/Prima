@@ -49,6 +49,7 @@ static char * do_msg_font = nil;
 static char * do_menu_font = nil;
 static char * do_widget_font = nil;
 static Bool   do_xft = true;
+static Bool   do_core_fonts = true;
 static Bool   do_xft_no_antialias = false;
 static Bool   do_xft_priority = true;
 static Bool   do_no_scaled_fonts = false;
@@ -509,9 +510,18 @@ prima_init_font_subsystem( char * error_buf)
    int count, j , i, bad_fonts = 0, vector_fonts = 0;
    PFontInfo info;
 
-   guts. font_names = names = XListFonts( DISP, "*", INT_MAX, &count);
+   if ( do_core_fonts) {
+      int nocorefonts = 0;
+      apc_fetch_resource( "Prima", "", "Nocorefonts", "nocorefonts", 
+         nilHandle, frUnix_int, &nocorefonts);
+      if ( nocorefonts) do_core_fonts = false;
+   }
+
+   guts. font_names = names = XListFonts( DISP, 
+      do_core_fonts ? "*" : "-*-fixed-*",
+      INT_MAX, &count);
    if ( !names) {
-      sprintf( error_buf, "XListFonts error: no memory");
+      sprintf( error_buf, "No fonts returned by XListFonts, cannot continue");
       return false;
    }
 
@@ -706,6 +716,11 @@ prima_init_font_subsystem( char * error_buf)
 Bool
 prima_font_subsystem_set_option( char * option, char * value)
 {
+   if ( strcmp( option, "no-core-fonts") == 0) {
+      if ( value) warn("`--no-core' option has no parameters");
+      do_core_fonts = false;
+      return true;
+   } else
    if ( strcmp( option, "no-xft") == 0) {
       if ( value) warn("`--no-xft' option has no parameters");
       do_xft = false;
