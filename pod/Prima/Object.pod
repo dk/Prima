@@ -897,6 +897,8 @@ Calls C<PostMessage> event with parameters SCALAR1 and SCALAR2 once during idle
 event loop. Returns immediately.  Does not guarantee that C<PostMessage> will
 be called, however.
 
+See also L<Prima::Utils/post>
+
 =item push_event
 
 Opens event processing stage brackets.

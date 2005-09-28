@@ -370,9 +370,9 @@ call Prima methods from any other thread, because scalars that may be created
 inside these calls will be unavailable to the Prima core, which would result
 in strange errors.
 
-It is possible to run things in parallel by calling the eveng processing
+It is possible to run things in parallel by calling the event processing
 by hands: instead of entering the main loop with
-   
+
    run Prima;
 
 one can write
@@ -383,7 +383,7 @@ one can write
    }
 
 That'll give Prima a chance to handle accumulated events, but that technique is
-only viable if calculation can be quantized into relatively short time frames.
+only viable if calculations can be quantized into relatively short time frames.
 
 The generic solution would be harder to implement and debug, but it scales
 well. The idea is to fork a process, and communicate with it via its stdin
@@ -392,6 +392,35 @@ asyncronously read data passed through a pipe or a socket.
 
 Note: Win32 runtime library does not support asynchronous pipes, only asyncronous sockets.
 Cygwin does support both asyncronous pipes and sockets.
+
+=head2 How do I post an asynchronous message?
+
+C<Prima::Component::post_message> method posts a message through the system event dispatcher
+and returns immediately; when the message is arrived, C<onPostMessage> notification is triggered:
+
+
+   use Prima qw(Application);
+   my $w = Prima::MainWindow-> create( onPostMessage => sub { shift; print "@_\n" });
+   $w-> post_message(1,2);
+   print "3 4 ";
+   run Prima;
+
+   output: 3 4 1 2
+
+This technique is fine when all calls to the C<post_message> on the object are
+controlled.  To multiplex callbacks one can use one of the two scalars passed
+to C<post_message> as callback identification. This is done by
+L<Prima::Utils/post>, that internally intercepts C<$::application>'s
+C<PostMessage> and provides the procedural interface to the same function:
+
+   use Prima qw(Application);
+   use Prima::Utils qw(post);
+
+   post( sub { print "@_\n" }, 'a');
+   print "b";
+   run Prima;
+
+   output: ba
 
 =head1 AUTHOR
 
