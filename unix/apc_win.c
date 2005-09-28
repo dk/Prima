@@ -1267,9 +1267,9 @@ apc_window_execute( Handle self, Handle insert_before)
    protect_object( self);
 
    XSync( DISP, false);
-   while ( prima_one_loop_round( true, true) && XX && XX-> flags.modal)
+   while ( prima_one_loop_round( true, true) && XX-> flags.modal)
       ;
-   if ( XX) set_net_hints( X_WINDOW, -1, XX-> flags.modal, -1, -1);
+   if ( X_WINDOW) set_net_hints( X_WINDOW, -1, XX-> flags.modal, -1, -1);
    unprotect_object( self);
    return true;
 }
