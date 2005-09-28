@@ -790,7 +790,6 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
 static Bool
 wm_event( Handle self, XEvent *xev, PEvent ev)
 {
-   Handle selectee = CApplication(application)->map_focus( application, self);
 
    switch ( xev-> xany. type) {
    case ClientMessage:
@@ -802,6 +801,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
             ev-> cmd = cmClose;
             return true;
          } else if ((Atom) xev-> xclient. data. l[0] == WM_TAKE_FOCUS) {
+            Handle selectee;
             if ( guts. message_boxes) {
                struct MsgDlg * md = guts. message_boxes;
                while ( md) {
@@ -810,7 +810,14 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
                }
                return false;
             }
-            if ( selectee && selectee != self) XMapRaised( DISP, PWidget(selectee)-> handle);
+
+            selectee = CApplication(application)-> map_focus( application, self);
+
+	    /* under modal window? */
+
+            if ( selectee && selectee != self) 
+	       XMapRaised( DISP, PWidget(selectee)-> handle);
+
 	    if ( !guts. currentMenu) {
    	       if ( selectee) {
                   int rev;
@@ -823,12 +830,13 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 		        return false;
 		  }
 	       }
-	       if ( !guts. currentMenu) {
-	          guts. currentFocusTime = xev-> xclient. data. l[1];
+	       guts. currentFocusTime = xev-> xclient. data. l[1];
+	       /* Refuse to take focus unless there are no modal windows above */
+	       if ( !selectee || selectee == self)
 	          XSetInputFocus( DISP, X_WINDOW, RevertToParent, xev-> xclient. data. l[1]);
-	          if ( selectee) Widget_selected( selectee, true, true);
-	          guts. currentFocusTime = CurrentTime;
-	       }
+	       if ( selectee) 
+	          Widget_selected( selectee, true, true);
+	       guts. currentFocusTime = CurrentTime;
 	    }
             return false;
          }
