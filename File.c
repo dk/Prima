@@ -106,7 +106,7 @@ SV *
 File_file( Handle self, Bool set, SV * file)
 {
    if ( !set)
-      return var-> file ? var-> file : nilSV;
+      return var-> file ? newSVsv( var-> file) : nilSV;
    if ( var-> file) {
       apc_file_detach( self);
       sv_free( var-> file);
