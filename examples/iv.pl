@@ -222,6 +222,7 @@ sub fload
    my $i = Prima::Image-> create;
    if ( $i-> load( $f, loadExtras => 1)) {
       menuadd( $_[0]);
+      $self-> owner-> size( $i-> width, $i-> height);
       $self-> image( $i);
       $self-> {fileName} = $f;
       status( $_[0]);
