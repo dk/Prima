@@ -95,6 +95,22 @@ sub reset_scrolls
    $self-> {winX} = $x;
    $self-> {winY} = $y;
 
+   if ( $self-> {autoHScroll} and $self->{autoVScroll} and 
+         ( $self-> {hScroll} or $self-> {vScroll})
+      ) {
+      # avoid the special case when two scrollbars are unncessary, but are present
+      # since they obscure parts of the panel that would have been visible fully,
+      # if not for the scrollbars
+      my $dx = $self->{vScroll} ? $Prima::ScrollBar::stdMetrics[0] : 0;
+      my $dy = $self->{hScroll} ? $Prima::ScrollBar::stdMetrics[1] : 0;
+      if ( $x + $dx >= $w and $y + $dy >= $h) {
+         $self-> hScroll(0) if $self->{hScroll};
+         $self-> vScroll(0) if $self->{vScroll};
+         $self-> set_deltas( $self->{deltaX}, $self->{deltaY});
+	 return;
+      }
+   }
+
    if ( $self-> {autoHScroll}) {
       my $hs = ( $x < $w) ? 1 : 0;
       if ( $hs != $self-> {hScroll}) {
