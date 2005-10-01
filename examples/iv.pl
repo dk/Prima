@@ -222,7 +222,10 @@ sub fload
    my $i = Prima::Image-> create;
    if ( $i-> load( $f, loadExtras => 1)) {
       menuadd( $_[0]);
-      $self-> owner-> size( $i-> width, $i-> height);
+      my @sizes = ( $i-> size, map { $_ * 0.9 } $::application-> size);
+      $self-> owner-> size( map {
+	     ( $sizes[$_] > $sizes[$_ + 2]) ?  $sizes[$_ + 2] : $sizes[$_]
+      } 0,1);
       $self-> image( $i);
       $self-> {fileName} = $f;
       status( $_[0]);
