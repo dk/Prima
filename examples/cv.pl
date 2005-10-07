@@ -34,8 +34,8 @@ Standard color dialog
 =item FEATURES
 
 Demonstrates usage of a standard color dialog.
-Note the right-button drag effect from the color wheel with Shift
-or Alt button pressed.
+Note the left-button drag effect from the color wheel with 
+compbinations of Shift,Alt,and Control.
 
 =cut
 

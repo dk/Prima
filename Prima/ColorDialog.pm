@@ -44,6 +44,16 @@ package Prima::ColorDialog;
 use vars qw( @ISA $colorWheel $colorWheelShape);
 @ISA = qw( Prima::Dialog);
 
+{
+my %RNT = (
+   %{Prima::Dialog->notification_types()},
+   BeginDragColor => nt::Command,
+   EndDragColor   => nt::Command,
+);
+
+sub notification_types { return \%RNT; }
+}
+
 my $shapext = Prima::Application-> get_system_value( sv::ShapeExtension);
 
 sub hsv2rgb
@@ -393,6 +403,27 @@ sub on_destroy
    $colorWheelShape = undef;
 }
 
+sub on_begindragcolor
+{
+   my ( $self, $property) = @_;
+   $self-> {old_text} = $self-> text;
+   $self-> {wheel}-> pointer( cr::Invalid);
+   $self-> text( "Apply $property...");
+}
+
+sub on_enddragcolor
+{
+   my ( $self, $property, $widget) = @_;
+
+   $self-> {wheel}-> pointer( cr::Default);
+   $self-> text( $self-> {old_text});
+   if ( $widget) {
+      $property = $widget-> can( $property);
+      $property-> ( $widget, $self-> value) if $property;
+   }
+   delete $self-> {old_text};
+}
+
 use constant Hue    => 1;
 use constant Sat    => 2;
 use constant Lum    => 4;
@@ -452,18 +483,37 @@ sub Wheel_MouseDown
 {
    my ( $owner, $self, $btn, $mod, $x, $y) = @_;
    return if $self->{mouseTransation};
-   return if $btn != mb::Left and $btn != mb::Right;
+   return if $btn != mb::Left;
    my ( $h, $s, $ok) = xy2hs( $x-9, $y-9, 119);
    return if $ok;
-   $self->{mouseTransation} = $btn;
+   $self-> {mouseTransation} = $btn;
    $self-> capture(1);
-   $self-> notify( "MouseMove", $mod, $x, $y) if $btn == mb::Left;
+   if ( $btn == mb::Left) {
+      if ( $mod == ( km::Ctrl | km::Alt)) {
+         $self-> {drag_color} = 'disabledColor';
+      } elsif ( $mod == ( km::Ctrl | km::Alt | km::Shift)) {
+         $self-> {drag_color} = 'disabledBackColor';
+      } elsif ( $mod == ( km::Ctrl | km::Shift)) {
+         $self-> {drag_color} = 'hiliteColor';
+      } elsif ( $mod == ( km::Alt | km::Shift)) {
+         $self-> {drag_color} = 'hiliteBackColor';
+      } elsif ( $mod & km::Ctrl) {
+         $self-> {drag_color} = 'color';
+      } elsif ( $mod & km::Alt) {
+         $self-> {drag_color} = 'backColor';
+      } else {
+         $self-> notify( "MouseMove", $mod, $x, $y);
+      }
+
+      $owner-> notify( 'BeginDragColor', $self-> {drag_color})
+         if $self-> {drag_color};
+   }
 }
 
 sub Wheel_MouseMove
 {
    my ( $owner, $self, $mod, $x, $y) = @_;
-   return if !$self->{mouseTransation} || $self->{mouseTransation} != mb::Left;
+   return if !$self->{mouseTransation} or $self->{drag_color};
    my ( $h, $s, $ok) = xy2hs( $x-9, $y-9, 119);
    $owner-> {setTransaction} = 1;
    $owner-> {HSVPin} = Lum|Hue|Sat;
@@ -480,14 +530,10 @@ sub Wheel_MouseUp
    return unless $self->{mouseTransation};
    $self->{mouseTransation} = undef;
    $self-> capture(0);
-   if ( $btn == mb::Right) {
-      my $x = $::application-> get_widget_from_point( $self-> client_to_screen( $x, $y));
-      return unless $x;
-      if ( $mod & km::Shift) {
-         $x-> backColor( $owner-> value);
-      } else {
-         $x-> color( $owner-> value);
-      }
+   if ( $self-> {drag_color}) {
+      $owner-> notify('EndDragColor', $self-> {drag_color},
+         $::application-> get_widget_from_point( $self-> client_to_screen( $x, $y)));
+      delete $self-> {drag_color};	 
    }
 }
 
@@ -965,6 +1011,32 @@ drawn on a BACK_COLOR background, and returns a C<Prima::DeviceBitmap> object.
 Creates a circular 1-bit mask, with radius derived from SHAPES.
 SHAPES must be same as passed to L<create_wheel>.
 Returns C<Prima::Image> object.
+
+=back
+
+=head2 Events
+
+=over
+
+=item BeginDragColor $PROPERTY
+
+Called when the user starts dragginh a color from the color wheel by with left
+mouse button and combination of Alt, Ctrl, and Shift keys. $PROPERTY is one
+of C<Prima::Widget> color properties, and depends on combination of keys:
+    
+      Alt              backColor
+      Ctrl             color
+      Alt+Shift        hiliteBackColor
+      Ctrl+Shift       hiliteColor
+      Ctrl+Alt         disabledColor
+      Ctrl+Alt+Shift   disabledBackColor
+
+Default action reflects the property to be changes in the dialog title
+
+=item EndDragColor $PROPERTY, $WIDGET
+
+Called when the user releases the mouse drag over a Prima widget.
+Default action sets C<< $WIDGET->$PROPERTY >> to the current color value.
 
 =back
 
