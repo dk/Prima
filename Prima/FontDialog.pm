@@ -41,6 +41,16 @@ use Prima::MsgBox;
 use vars qw( @ISA);
 @ISA = qw( Prima::Dialog);
 
+{
+my %RNT = (
+   %{Prima::Dialog->notification_types()},
+   BeginDragFont => nt::Command,
+   EndDragFont   => nt::Command,
+);
+
+sub notification_types { return \%RNT; }
+}
+
 sub profile_default
 {
    return {
@@ -154,7 +164,7 @@ sub init
       origin     => [ 5, 5],
       size       => [ 345, 90],
       name       => 'Example',
-      delegations=> [ $self, 'Paint', 'FontChanged'],
+      delegations=> [ $self, 'Paint', 'FontChanged', 'MouseDown', 'MouseUp'],
    );
 
    my $enc = $self-> insert( ComboBox =>
@@ -302,6 +312,25 @@ sub apply
    delete $self-> { normalFontSet};
 }
 
+sub on_begindragfont
+{
+   my ( $self) = @_;
+   $self-> {old_text} = $self-> text;
+   $self-> Sample-> Example-> pointer( cr::Invalid);
+   $self-> text( "Apply font...");
+}
+
+sub on_enddragfont
+{
+   my ( $self, $widget) = @_;
+
+   $self-> Sample-> Example-> pointer( cr::Default);
+   $self-> text( $self-> {old_text});
+   delete $self-> {old_text};
+   $widget-> font( $self-> logFont)
+      if $widget;
+}
+
 sub Example_Paint
 {
    my ( $owner, $self, $canvas) = @_;
@@ -323,6 +352,25 @@ sub Example_FontChanged
    my ( $owner, $example) = @_;
    return if $owner-> {normalFontSet};
    $owner-> logFont( $example-> font);
+}
+
+sub Example_MouseDown
+{
+   my ( $owner, $self, $btn, $mod, $x, $y) = @_;
+   return if $btn != mb::Left or $self->{drag_font}; 
+   $self-> {drag_font} = 1;
+   $self-> capture(1);
+   $owner-> notify( 'BeginDragFont', $self-> {drag_color});
+}
+
+sub Example_MouseUp
+{
+   my ( $owner, $self, $btn, $mod, $x, $y) = @_;
+   return unless $self->{drag_font};
+   delete $self->{drag_font};
+   $self-> capture(0);
+   $owner-> notify('EndDragFont',
+      $::application-> get_widget_from_point( $self-> client_to_screen( $x, $y)));
 }
 
 sub Name_SelectItem
@@ -433,6 +481,25 @@ Specifies if the help button is displayed in the dialog.
 Default value: 0
 
 =back
+
+=head2 Events
+
+=over
+
+=item BeginDragFont
+
+Called when the user starts dragging a font from the font sample widget by
+left mouse button.
+
+Default action reflects the status in the dialog title
+
+=item EndDragFont $WIDGET
+
+Called when the user releases the mouse drag over a Prima widget.
+Default action applies currently selected font to $WIDGET.
+
+=back
+
 
 =head1 AUTHOR
 
