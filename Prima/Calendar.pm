@@ -124,7 +124,8 @@ sub init
       size        => [ $w - 10, $h - $fh * 3 - 22 ],
       name        => 'Day',
       selectable  => 1,
-      delegations => [ qw( Paint MouseDown KeyDown Size FontChanged Enter Leave)],
+      current     => 1,
+      delegations => [ qw( Paint MouseDown MouseMove MouseUp KeyDown Size FontChanged Enter Leave)],
       growMode    => gm::Client,
    );
    
@@ -223,7 +224,7 @@ sub Day_Paint
       unless $self-> enabled;
    $canvas-> rect3d( 0, 0, $sz[0]-1, $sz[1]-1, 2, $self-> dark3DColor, $self-> light3DColor, $self-> backColor);
 
-   my @zs = ( $self-> {X}, $self-> {Y}, $self-> {CX1}, $self-> {CY}); 
+   my @zs = ( $self-> {X}, $self-> {Y}, $self->{CX1}, $self-> {CY}); 
    my $i;
    my $c = $canvas-> color;
    my $b = $canvas-> backColor;
@@ -235,7 +236,7 @@ sub Day_Paint
    $canvas-> clipRect( 2, 2, $sz[0] - 3, $sz[1] - 3);
    for ( $i = 0; $i < 7; $i++) {
       $canvas-> text_out( $owner-> {days}-> [$i], 
-         $i * $zs[0] + $zs[2] , $sz[1]-$zs[1]+$zs[3],
+         $i * $zs[0] + $self->{CX2}, $sz[1]-$zs[1]+$zs[3],
       );
    }
 
@@ -266,12 +267,18 @@ sub Day_Paint
 sub Day_KeyDown
 {
    my ( $owner, $self, $code, $key, $mod, $repeat) = @_;
-   return unless grep { $key == $_ } (kb::Left, kb::Right, kb::Down, kb::Up);
+   return unless grep { $key == $_ } (kb::Left, kb::Right, kb::Down, kb::Up, kb::PgUp, kb::PgDn);
    my ( $d, $m, $y) = @{$owner-> {date}};
    $d--  if $key == kb::Left;
    $d++  if $key == kb::Right;
    $d+=7 if $key == kb::Down;
    $d-=7 if $key == kb::Up;
+   if ( $key == kb::PgDn) {
+      ( $m == 11) ? ($y++, $m = 0) : $m++;
+   }
+   if ( $key == kb::PgUp) {
+      ( $m == 0) ? ($y--, $m = 11) : $m--;
+   }
    $self-> clear_event;
    $owner-> date( $d, $m, $y);
 }
@@ -279,6 +286,23 @@ sub Day_KeyDown
 sub Day_MouseDown
 {
    my ( $owner, $self, $btn, $mod, $x, $y) = @_;
+   return unless $btn == mb::Left;
+   my ( $day, $month, $year) = @{$owner->{date}};
+   my @zs = ( $self-> {X}, $self-> {Y});
+   my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
+   my @sz = $self-> size;
+   $day = (int(($sz[1] - $y - 2) / $zs[1]) - 1) * 7 + 
+           int(($x - 2) / $zs[0]) - $owner-> day_of_week( 1, $month, $year) + 1;
+   $self-> clear_event;
+   $self-> {mouseTransaction} = 1;
+   return if $day <= 0 || $day > $v;
+   $owner-> date( $day, $month, $year);
+}
+
+sub Day_MouseMove
+{
+   my ( $owner, $self, $mod, $x, $y) = @_;
+   return unless $self-> {mouseTransaction};
    my ( $day, $month, $year) = @{$owner->{date}};
    my @zs = ( $self-> {X}, $self-> {Y});
    my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
@@ -290,16 +314,30 @@ sub Day_MouseDown
    $owner-> date( $day, $month, $year);
 }
 
+sub Day_MouseUp
+{
+   my ( $owner, $self, $btn, $mod, $x, $y) = @_;
+   return unless $btn == mb::Left && $self-> {mouseTransaction};
+   delete $self-> {mouseTransaction};
+   $self-> clear_event;
+}
+
 sub day_reset
 {
    my ( $owner, $self, $x, $y) = @_;
    $self-> {X} = int(( $x - 4) / 7 );
    $self-> {Y} = int(( $y - 4) / 7 );
-   ($x,$y) = ($self-> font-> maximalWidth * 2, $self-> font-> height);
-   $self-> {X} = $x if $self->{X} < $x;
+   $self-> begin_paint_info;
+   my ($x1,$x2) = (
+      $self-> get_text_width('8'),
+      $self-> get_text_width('28')
+   );
+   $y = $self-> font-> height;
+   $self-> end_paint_info;
+   $self-> {X} = $x2 if $self->{X} < $x2;
    $self-> {Y} = $y if $self->{Y} < $y;
-   $self-> {CX1} = int(( $self-> {X} - $x / 2 ) / 2) + 4;
-   $self-> {CX2} = int(( $self-> {X} - $x ) / 2) + 4;
+   $self-> {CX1} = int(( $self-> {X} - $x1 ) / 2) + 4;
+   $self-> {CX2} = int(( $self-> {X} - $x2 ) / 2) + 4;
    $self-> {CY} = int(( $self-> {Y} - $y ) / 2);
 }
 
@@ -346,7 +384,8 @@ sub date
    $self-> {date} = [ $day, $month, $year ];
    $self-> Year-> value( $year + 1900);
    $self-> Month-> focusedItem( $month);
-   $self-> Day-> repaint;
+   my $day = $self-> Day;
+   $day-> invalidate_rect( 2, 2, $day-> width - 3, $day-> height - $day->{Y} - 3);
    $self-> notify(q(Change));
 }
 
