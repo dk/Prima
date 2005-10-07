@@ -82,6 +82,7 @@ sub init
 
    my $fh = $self-> font-> height;
    my ( $w, $h) = $self-> size;
+   $self-> reset_days;
 
    $self-> insert( ComboBox => 
       origin   => [ 5, $h - $fh * 2 - 10 ],
@@ -338,6 +339,7 @@ sub day_reset
    $y = $self-> font-> height;
    $self-> end_paint_info;
    $self-> {X} = $x2 if $self->{X} < $x2;
+   $self-> {X} = $x3 if $self->{X} < $x3;
    $self-> {Y} = $y if $self->{Y} < $y;
    $self-> {CX1} = int(( $self-> {X} - $x1 ) / 2) + 4;
    $self-> {CX2} = int(( $self-> {X} - $x2 ) / 2) + 4;
