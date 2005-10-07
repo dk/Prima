@@ -1072,6 +1072,26 @@ sub on_size
    $self-> {syncRecting} = undef;
 }
 
+sub on_colorchanged
+{
+   my ( $self, $index) = @_;
+   my @colors = qw(color backColor hiliteColor hiliteBackColor disabledColor disabledBackColor light3DColor dark3DColor); 
+   return if $self-> {syncColoring} or $index >= @colors;
+   $self-> {syncColoring} = 1;
+   $index = $colors[$index];
+   $self-> prf_set( $index => $self-> $index());
+   delete $self-> {syncColoring};
+}
+
+sub on_fontchanged
+{
+   my ( $self) = @_;
+   return if $self-> {syncColoring};
+   $self-> {syncColoring} = 1;
+   $self-> prf_set( font => $self-> font);
+   delete $self-> {syncColoring};
+}
+
 sub on_paint
 {
    my ( $self, $canvas) = @_;

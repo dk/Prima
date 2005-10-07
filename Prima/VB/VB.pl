@@ -24,7 +24,7 @@
 #
 # $Id$
 use strict;
-use Prima qw(StdDlg Notebooks MsgBox ComboBox ColorDialog IniFile Utils);
+use Prima qw(StdDlg Notebooks MsgBox ComboBox FontDialog ColorDialog IniFile Utils);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
@@ -54,6 +54,8 @@ use vars qw($inspector
             $main
             $editor
             $code
+	    $font_dialog
+	    $color_dialog
             $form
             $fastLoad
             $writeMode
@@ -1199,6 +1201,8 @@ sub profile_default
          ['~View' => [
            ['~Object Inspector' => 'F11' => 'F11' => sub { $_[0]-> bring_inspector; }],
            ['~Code editor'      => 'F12' => 'F12' => sub { $_[0]-> bring_code_editor; }],
+           ['Co~lor dialog'  => q(bring_color_dialog) ],
+           ['~Font dialog'  => q(bring_font_dialog) ],
            ['~Add widgets...' => q(add_widgets)],
            [],
            ['Reset ~guidelines' => sub { Form::fm_resetguidelines(); } ],
@@ -2240,6 +2244,56 @@ sub bring_code_editor
    } else {
       $VB::editor = CodeEditor-> create;
    }
+}
+
+sub bring_font_dialog
+{
+   if ( $VB::font_dialog) {
+      $VB::font_dialog-> restore if $VB::font_dialog-> windowState == ws::Minimized;
+   } else {
+      $VB::font_dialog = Prima::FontDialog-> new( 
+	 borderIcons => bi::All & ~bi::Maximize,
+	 taskListed  => 1,
+         onDestroy   => sub { $VB::font_dialog = undef }, 
+      );
+      my $y;
+      for ( $VB::font_dialog-> widgets) {
+          next unless $_->isa("Prima::Button") and $_->text =~ /ok|cancel/i;
+	  $y = $_-> right;
+	  $_-> set( visible => 0, enabled => 0);
+      }
+      $VB::font_dialog-> Size-> set( 
+         left  => $VB::font_dialog-> Size-> left,
+         right => $y
+      );
+      $VB::font_dialog-> visible(1);
+   }
+   $VB::font_dialog-> bring_to_front;
+   $VB::font_dialog-> select;
+}
+
+sub bring_color_dialog
+{
+   if ( $VB::color_dialog) {
+      $VB::color_dialog-> restore if $VB::color_dialog-> windowState == ws::Minimized;
+   } else {
+      $VB::color_dialog = Prima::ColorDialog-> new( 
+	 borderIcons => bi::All & ~bi::Maximize,
+	 taskListed  => 1,
+         onDestroy => sub { $VB::color_dialog = undef }, 
+      );
+      my $y;
+      for ( $VB::color_dialog-> widgets) {
+          next unless $_->isa("Prima::Button") and $_->text =~ /ok|cancel/i;
+	  $y = $_-> top;
+	  $_-> set( visible => 0, enabled => 0);
+      }
+      $_-> bottom( $_-> bottom - $y) for $VB::color_dialog-> widgets;
+      $VB::color_dialog-> height( $VB::color_dialog-> height - $y);
+      $VB::color_dialog-> visible(1);
+   }
+   $VB::color_dialog-> bring_to_front;
+   $VB::color_dialog-> select;
 }
 
 package VisualBuilder;
