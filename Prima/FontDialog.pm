@@ -61,6 +61,7 @@ sub profile_default
       visible     => 0,
       designScale => [7, 16],
       text        => 'Select font',
+      borderStyle => bs::Sizeable,
 
       showHelp    => 0,
       fixedOnly   => 0,
@@ -130,6 +131,7 @@ sub init
       name   => 'Name',
       style  => cs::Simple,
       onSelectItem => sub { $self-> Name_SelectItem( @_);},
+      growMode     => gm::Client,
    );
 
    $self-> insert( Label =>
@@ -137,6 +139,7 @@ sub init
       size      => [ 96, 18],
       text      => '~Font:',
       focusLink => $name,
+      growMode  => gm::Ceiling,
    );
 
    my $size = $self-> insert( ComboBox =>
@@ -145,6 +148,7 @@ sub init
       name   => 'Size',
       style  => cs::Simple,
       delegations => ['Change'],
+      growMode    => gm::Right,
    );
 
    $self-> insert( Label =>
@@ -152,12 +156,14 @@ sub init
       size      => [ 96, 18],
       text      => '~Size:',
       focusLink => $size,
+      growMode  => gm::GrowLoX | gm::GrowLoY,
    );
 
    $gr = $self-> insert( GroupBox =>
       origin     => [ 175, 40],
       size       => [ 355, 120],
       name       => 'Sample',
+      growMode   => gm::Floor,
    );
    
    $j = $gr-> insert( Widget =>
@@ -165,6 +171,7 @@ sub init
       size       => [ 345, 90],
       name       => 'Example',
       delegations=> [ $self, 'Paint', 'FontChanged', 'MouseDown', 'MouseUp'],
+      growMode   => gm::Client,
    );
 
    my $enc = $self-> insert( ComboBox =>
@@ -173,6 +180,7 @@ sub init
       name       => 'Encoding',
       style      => cs::DropDownList,
       delegations=> [ 'Change' ],
+      growMode   => gm::Floor,
    );
 
    $self-> insert( Label => 
@@ -188,6 +196,7 @@ sub init
       text        => '~OK',
       default     => 1,
       modalResult => mb::OK,
+      growMode    => gm::GrowLoX | gm::GrowLoY,
    );
 
    $self-> insert( Button =>
@@ -195,6 +204,7 @@ sub init
       size        => [ 96, 36],
       text        => 'Cancel',
       modalResult => mb::Cancel,
+      growMode    => gm::GrowLoX | gm::GrowLoY,
    );
 
    $self->insert( Button =>
