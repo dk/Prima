@@ -1013,17 +1013,17 @@ sub prf_events
    );
 }
 
-sub prf_color        { $_[0]-> color($_[1]); }
-sub prf_backColor    { $_[0]-> backColor( $_[1]); }
-sub prf_light3DColor { $_[0]-> light3DColor($_[1]); }
-sub prf_dark3DColor  { $_[0]-> dark3DColor($_[1]); }
-sub prf_hiliteColor       { $_[0]-> hiliteColor($_[1]); }
-sub prf_disabledColor     { $_[0]-> disabledColor($_[1]); }
-sub prf_hiliteBackColor   { $_[0]-> hiliteBackColor($_[1]); }
-sub prf_disabledBackColor { $_[0]-> disabledBackColor($_[1]); }
+sub prf_color        { $_[0]-> recolor($_[1],'color'); }
+sub prf_backColor    { $_[0]-> recolor($_[1],'backColor'); }
+sub prf_light3DColor { $_[0]-> recolor($_[1],'light3DColor'); }
+sub prf_dark3DColor  { $_[0]-> recolor($_[1],'dark3DColor'); }
+sub prf_hiliteColor       { $_[0]-> recolor($_[1],'hiliteColor'); }
+sub prf_disabledColor     { $_[0]-> recolor($_[1],'disabledColor'); }
+sub prf_hiliteBackColor   { $_[0]-> recolor($_[1],'hiliteBackColor'); }
+sub prf_disabledBackColor { $_[0]-> recolor($_[1],'disabledBackColor'); }
 sub prf_name         { $_[0]->SUPER::prf_name($_[1]); $_[0]-> repaint;      }
 sub prf_text         { $_[0]-> text($_[1]); $_[0]-> repaint; }
-sub prf_font         { $_[0]-> font( $_[1]); }
+sub prf_font         { $_[0]-> recolor($_[1],'font'); }
 sub prf_left         { $_[0]-> rerect($_[1], 'left'); }
 sub prf_right        { $_[0]-> rerect($_[1], 'right'); }
 sub prf_top          { $_[0]-> rerect($_[1], 'top'); }
@@ -1052,6 +1052,17 @@ sub rerect
       $self-> prf_size( [ $self-> size]);
    }
    $self-> {syncRecting} = undef;
+}
+
+sub recolor
+{
+   my ( $self, $data, $who) = @_;
+   return if $self-> {syncColoring};
+   $self-> {syncColoring} = $who;
+   $self-> set(
+      $who => $data,
+   );
+   $self-> {syncColoring} = undef;
 }
 
 sub on_move
