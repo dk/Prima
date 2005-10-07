@@ -212,7 +212,9 @@ sub useLocale
    $self-> Month-> items( $self-> make_months);
    $self-> Month-> text( $self-> Month-> List-> get_item_text( $self-> Month-> focusedItem));
    $self-> reset_days;
-   $self-> Day-> repaint; 
+   my $day = $self-> Day;
+   $self-> day_reset( $day, $day-> size); 
+   $day-> repaint;
 }
 
 sub Day_Paint 
@@ -236,7 +238,7 @@ sub Day_Paint
    $canvas-> clipRect( 2, 2, $sz[0] - 3, $sz[1] - 3);
    for ( $i = 0; $i < 7; $i++) {
       $canvas-> text_out( $owner-> {days}-> [$i], 
-         $i * $zs[0] + $self->{CX2}, $sz[1]-$zs[1]+$zs[3],
+         $i * $zs[0] + $self->{CX3}, $sz[1]-$zs[1]+$zs[3],
       );
    }
 
@@ -328,9 +330,10 @@ sub day_reset
    $self-> {X} = int(( $x - 4) / 7 );
    $self-> {Y} = int(( $y - 4) / 7 );
    $self-> begin_paint_info;
-   my ($x1,$x2) = (
+   my ($x1,$x2,$x3) = (
       $self-> get_text_width('8'),
-      $self-> get_text_width('28')
+      $self-> get_text_width('28'),
+      $self-> get_text_width( $owner->{days}->[0])
    );
    $y = $self-> font-> height;
    $self-> end_paint_info;
@@ -338,6 +341,7 @@ sub day_reset
    $self-> {Y} = $y if $self->{Y} < $y;
    $self-> {CX1} = int(( $self-> {X} - $x1 ) / 2) + 4;
    $self-> {CX2} = int(( $self-> {X} - $x2 ) / 2) + 4;
+   $self-> {CX3} = int(( $self-> {X} - $x3 ) / 2) + 4;
    $self-> {CY} = int(( $self-> {Y} - $y ) / 2);
 }
 
@@ -384,7 +388,7 @@ sub date
    $self-> {date} = [ $day, $month, $year ];
    $self-> Year-> value( $year + 1900);
    $self-> Month-> focusedItem( $month);
-   my $day = $self-> Day;
+   $day = $self-> Day;
    $day-> invalidate_rect( 2, 2, $day-> width - 3, $day-> height - $day->{Y} - 3);
    $self-> notify(q(Change));
 }
