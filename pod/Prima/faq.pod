@@ -422,6 +422,13 @@ C<PostMessage> and provides the procedural interface to the same function:
 
    output: ba
 
+=head2 Now to address widgets inside TabbedNotebook / TabbedScrollNotebook ?
+
+The tabbed notebooks work as parent widgets for C<Prima::Notebook>, that
+doesn't have any interface elements on its own, and provides only page flipping
+function. The sub-widgets, therefore, are to be addressed as C<<
+$TabbedNotebook-> Notebook-> MyButton >>.
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
