@@ -1670,6 +1670,8 @@ sub on_hook
       if (( $n eq $old) || exists $l->{$old}) {
          return if exists $l->{$new} || ( $n eq $new);
          delete $l->{$who};
+      } elsif (( $n eq $new) && exists $l->{$who}) {
+         return; # notebook itself was renamed
       } elsif (( $n eq $new) || exists $l->{$new}) {
          return if exists $l->{$old} || ( $n eq $old);
          $l-> {$who} = $self-> {pageIndex};
