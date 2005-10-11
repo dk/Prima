@@ -957,12 +957,7 @@ sub fm_subalign
    push @new_indexes, grep { ! exists $marked{$_}} (0..$#sorted_widgets) unless $forward;
    for ( my $i = 0; $i < @sorted_widgets; $i++) {
       $sorted_widgets[$new_indexes[$i]]->{creationOrder} = $i;
-   }
-   $forward ? 
-      $marked_widgets[-1]-> bring_to_front :
-      $marked_widgets[-1]-> send_to_back;
-   for ( my $i = $#marked_widgets - 1; $i >= 0; $i--) {
-      $marked_widgets[$i]-> insert_behind( $marked_widgets[$i + 1]);
+      $sorted_widgets[$new_indexes[$i]]->bring_to_front;
    }
 }
 
@@ -987,10 +982,7 @@ sub fm_stepalign
          if $marked_indexes[-1] < $#sorted_widgets;
       push @new_indexes, @marked_indexes; 
       if ( $marked_indexes[-1] < $#sorted_widgets - 1) {
-         $marked_widgets[-1]-> insert_behind( $sorted_widgets[$marked_indexes[-1]+2]);
          push @new_indexes, ($marked_indexes[-1]+2..$#sorted_widgets);
-      } else {
-         $marked_widgets[-1]-> bring_to_front;
       }
    } else {
       push @new_indexes, (0..$marked_indexes[0]-2)
@@ -1000,18 +992,20 @@ sub fm_stepalign
       push @new_indexes, ($marked_indexes[0]-1)
          if $marked_indexes[0] > 0;
       push @new_indexes, grep { ! exists $marked{$_}} ($marked_indexes[0]..$#sorted_widgets);
-      if ( $anchor == @new_indexes) {
-         $marked_widgets[-1]-> send_to_back;
-      } else {
-         $marked_widgets[-1]-> insert_behind( $sorted_widgets[$new_indexes[$anchor]]);
-      }
-   }
-   for ( my $i = $#marked_widgets - 1; $i >= 0; $i--) {
-      $marked_widgets[$i]-> insert_behind( $marked_widgets[$i + 1]);
    }
    for ( my $i = 0; $i < @sorted_widgets; $i++) {
       $sorted_widgets[$new_indexes[$i]]->{creationOrder} = $i;
+      $sorted_widgets[$new_indexes[$i]]->bring_to_front;
    }
+}
+
+sub fm_realign
+{
+   my $self = $VB::form;
+   return unless $self;
+   $_-> bring_to_front for 
+      sort { $a->{creationOrder} <=> $b->{creationOrder}} 
+      $VB::form-> widgets;
 }
 
 sub fm_duplicate
@@ -1236,7 +1230,8 @@ sub profile_default
                 ['~Bring to front' => 'Shift+PgUp' => km::Shift|kb::PgUp, sub { Form::fm_subalign(1);}],
                 ['~Send to back'   => 'Shift+PgDn' => km::Shift|kb::PgDn, sub { Form::fm_subalign(0);}],
                 ['Step ~forward'   => 'Ctrl+PgUp' => km::Ctrl|kb::PgUp, sub { Form::fm_stepalign(1);}],
-                ['Step ~back'      => 'Ctrl+PgDn' => km::Ctrl|kb::PgDn, sub { Form::fm_stepalign(0);}],
+                ['Step bac~k'      => 'Ctrl+PgDn' => km::Ctrl|kb::PgDn, sub { Form::fm_stepalign(0);}],
+                ['~Restore order'   => 'Shift+Ctrl+PgDn' => km::Shift|km::Ctrl|kb::PgDn, sub { Form::fm_realign;}],
              ]],
              ['~Change class...' => sub { Form::fm_reclass();}],
              ['Creation ~order' => sub { Form::fm_creationorder(); } ],
@@ -2494,13 +2489,14 @@ The form window is not affected by this command.
 =item Align
 
 This menu item contains z-ordering actions, that
-are performed on a single widget, regardless of the selection.
+are performed on selected widgets.
 These are:
 
   Bring to front
   Send to back
   Step forward
   Step backward
+  Restore order
 
 =back
 
