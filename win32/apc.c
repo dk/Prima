@@ -3164,9 +3164,9 @@ win32_openfile( const char * params)
 	 if ( stricmp( params, "EXPLORER") == 0) o. Flags |=              OFN_EXPLORER; else
 	 if ( stricmp( params, "NODEREFERENCELINKS") == 0) o. Flags |=    OFN_NODEREFERENCELINKS; else
 	 if ( stricmp( params, "LONGNAMES") == 0) o. Flags |=             OFN_LONGNAMES; else
-	 warn("win32.OpenFile: Unknown constant OFN_%s", params);
-	 params = cp + 1;
-	 if ( !pp) break;
+         warn("win32.OpenFile: Unknown constant OFN_%s", params);
+         params = cp + 1;
+         if ( !pp) break;
       }
    } else if (( strncmp( params, "open", 4) == 0) || 
               ( strncmp( params, "save", 4) == 0)) {
@@ -3176,8 +3176,19 @@ win32_openfile( const char * params)
       guts. focSysDialog = 1;
       o. lpstrFile = filename;
       ret = (strncmp( params, "open", 4) == 0) ? 
-	 GetOpenFileName( &o) :
+         GetOpenFileName( &o) :
          GetSaveFileName( &o);
+      if ( ret == 0) {
+         DWORD error;
+         error = CommDlgExtendedError();
+         if ( error != 0) {
+            warn("win32.OpenFile: Get%sFileName error %d at line %d at %s\n", 
+        	 (strncmp( params, "open", 4) == 0) ? "Open" : "Save",
+                 error,
+        	 __LINE__, __FILE__
+            );
+         }
+      }
       guts. focSysDialog = 0;
       if ( !ret) return 0;
       strncpy( directory, o. lpstrFile, o. nFileOffset);
