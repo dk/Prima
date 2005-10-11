@@ -943,31 +943,74 @@ sub fm_subalign
 {
    my $self = $VB::form;
    return unless $self;
-   my ( $id) = @_;
-   my @wijs = $VB::form-> marked_widgets;
-   return unless scalar @wijs;
-   $id ?
-      $wijs[0]-> bring_to_front :
-      $wijs[0]-> send_to_back;
+   my ( $forward) = @_;
+   my @marked_widgets = $VB::form-> marked_widgets;
+   return unless scalar @marked_widgets;
+   my @sorted_widgets = sort { $a->{creationOrder} <=> $b->{creationOrder}} 
+      $VB::form-> widgets;
+   my %marked = map { $_->{creationOrder}  => 1 } @marked_widgets;
+   return if @sorted_widgets == scalar keys %marked;
+   @marked_widgets = grep { exists $marked{$_->{creationOrder}}} @sorted_widgets;
+   my @new_indexes;
+   push @new_indexes, grep { ! exists $marked{$_}} (0..$#sorted_widgets) if $forward;
+   push @new_indexes, grep {   exists $marked{$_}} (0..$#sorted_widgets);
+   push @new_indexes, grep { ! exists $marked{$_}} (0..$#sorted_widgets) unless $forward;
+   for ( my $i = 0; $i < @sorted_widgets; $i++) {
+      $sorted_widgets[$new_indexes[$i]]->{creationOrder} = $i;
+   }
+   $forward ? 
+      $marked_widgets[-1]-> bring_to_front :
+      $marked_widgets[-1]-> send_to_back;
+   for ( my $i = $#marked_widgets - 1; $i >= 0; $i--) {
+      $marked_widgets[$i]-> insert_behind( $marked_widgets[$i + 1]);
+   }
 }
 
 sub fm_stepalign
 {
    my $self = $VB::form;
    return unless $self;
-   my ($id) = @_;
-   my @wijs = $VB::form-> marked_widgets;
-   return unless scalar @wijs;
-   my $cx = $wijs[0];
-   if ( $id) {
-      my $cz = $cx-> prev;
-      if ( $cz) {
-         $cz = $cz-> prev;
-         $cz ? $cx-> insert_behind( $cz) : $cx-> bring_to_front;
+   my ($forward) = @_;
+   my @marked_widgets = $VB::form-> marked_widgets;
+   return unless scalar @marked_widgets;
+   my @sorted_widgets = sort { $a->{creationOrder} <=> $b->{creationOrder}} 
+      $VB::form-> widgets;
+   my %marked = map { $_->{creationOrder}  => 1 } @marked_widgets;
+   my @marked_indexes = grep { exists $marked{$_}} (0..$#sorted_widgets);
+   @marked_widgets = grep { exists $marked{$_->{creationOrder}}} @sorted_widgets;
+   return if @marked_indexes == @sorted_widgets;
+   my @new_indexes;
+   my $anchor;
+   if ( $forward) {
+      push @new_indexes, grep { ! exists $marked{$_}} (0..$marked_indexes[-1]);
+      push @new_indexes, ($marked_indexes[-1]+1)
+         if $marked_indexes[-1] < $#sorted_widgets;
+      push @new_indexes, @marked_indexes; 
+      if ( $marked_indexes[-1] < $#sorted_widgets - 1) {
+         $marked_widgets[-1]-> insert_behind( $sorted_widgets[$marked_indexes[-1]+2]);
+         push @new_indexes, ($marked_indexes[-1]+2..$#sorted_widgets);
+      } else {
+         $marked_widgets[-1]-> bring_to_front;
       }
    } else {
-      my $cz = $cx-> next;
-      $cx-> insert_behind( $cz) if $cz;
+      push @new_indexes, (0..$marked_indexes[0]-2)
+         if $marked_indexes[0] > 1;
+      push @new_indexes, @marked_indexes; 
+      my $anchor = @new_indexes;
+      push @new_indexes, ($marked_indexes[0]-1)
+         if $marked_indexes[0] > 0;
+      push @new_indexes, grep { ! exists $marked{$_}} ($marked_indexes[0]..$#sorted_widgets);
+      if ( $anchor == @new_indexes) {
+         $marked_widgets[-1]-> send_to_back;
+      } else {
+         $marked_widgets[-1]-> insert_behind( $sorted_widgets[$new_indexes[$anchor]]);
+      }
+   }
+   for ( my $i = $#marked_widgets - 1; $i >= 0; $i--) {
+      $marked_widgets[$i]-> insert_behind( $marked_widgets[$i + 1]);
+   }
+   for ( my $i = 0; $i < @sorted_widgets; $i++) {
+      $sorted_widgets[$new_indexes[$i]]->{creationOrder} = $i;
    }
 }
 
