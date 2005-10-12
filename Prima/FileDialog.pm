@@ -642,8 +642,10 @@ sub profile_default
       %{$_[ 0]-> SUPER::profile_default},
       width       => 635,
       height      => 410,
+      sizeMin     => [380, 280],
       centered    => 1,
       visible     => 0,
+      borderStyle => bs::Sizeable,
 
       defaultExt  => '',
       fileName    => '',
@@ -665,6 +667,16 @@ sub profile_default
 
       openMode           => 1,
       system             => 0,
+   }
+}
+
+sub profile_check_in
+{
+   my ( $self, $p, $default) = @_;
+   $self-> SUPER::profile_check_in( $p, $default);
+   unless ( $p-> {sizeMin}) {
+      $p-> {sizeMin}->[0] = $default->{sizeMin}->[0] * $p-> {width} / $default->{width};
+      $p-> {sizeMin}->[1] = $default->{sizeMin}->[1] * $p-> {height} / $default->{height};
    }
 }
 
@@ -754,12 +766,15 @@ sub init
       text      => $profile{fileName},
       maxLen    => 32768,
       delegations => [qw(KeyDown)],
+      growMode    => gm::GrowLoY,
    );
    $self->insert( Label=>
       origin    => [ 14 , 375],
       size      => [ 245, 25],
       focusLink => $self-> Name,
-      text   => '~Filename',
+      text      => '~Filename',
+      growMode  => gm::GrowLoY,
+      name      => 'NameLabel',
    );
 
    $self-> insert( ListBox  =>
@@ -768,6 +783,7 @@ sub init
       size        => [ 245, 243],
       multiSelect => $profile{ multiSelect},
       delegations => [qw(KeyDown SelectItem Click)],
+      growMode    => gm::GrowHiY,
    );
 
    $self->insert( ComboBox =>
@@ -795,6 +811,7 @@ sub init
       autoWidth => 0,
       text      => $profile{ directory},
       delegations => [qw(FontChanged)],
+      growMode    => gm::GrowLoY,
    );
 
    $self->insert( DirectoryListBox =>
@@ -804,6 +821,7 @@ sub init
       path       => $self-> { directory},
       delegations=> [qw(Change)],
       showDotDirs=> $self-> {showDotFiles},
+      growMode   => gm::GrowHiY,
    );
 
    $self->insert( DriveComboBox =>
@@ -815,27 +833,32 @@ sub init
    ) if $drives;
 
    $self->insert( Label=>
-      origin    => [ 275, 375],
-      size      => [ 235, 25],
-      text   => 'Di~rectory',
-      focusLink => $self-> Dir,
+      origin     => [ 275, 375],
+      size       => [ 235, 25],
+      text       => 'Di~rectory',
+      focusLink  => $self-> Dir,
+      growMode   => gm::GrowLoY,
+      name       => 'DirectoryLabel',
    );
 
    $self->insert( Label =>
       origin    => [ 275, 55],
       size      => [ 235, 25],
-      text   => '~Drives',
+      text      => '~Drives',
       focusLink => $self-> Drive,
+      name      => 'DriveLabel',
    ) if $drives;
 
-   $self->insert( Button=>
+   my $button = $self->insert( Button=>
       origin  => [ 524, 350],
       size    => [ 96, 36],
       text => $self-> {openMode} ? '~Open' : '~Save',
       name    => 'Open',
       default => 1,
       delegations => [qw(Click)],
+      growMode    => gm::GrowLoX | gm::GrowLoY,
    );
+   $self-> {right_margin}  = $self-> width - $button-> left;
 
    $self->insert( Button=>
       origin      => [ 524, 294],
@@ -843,12 +866,14 @@ sub init
       text    => 'Cancel',
       size        => [ 96, 36],
       modalResult => mb::Cancel,
+      growMode    => gm::GrowLoX | gm::GrowLoY,
    );
    $self->insert( Button=>
       origin      => [ 524, 224],
       name        => 'Help',
       text        => '~Help',
       size        => [ 96, 36],
+      growMode    => gm::GrowLoX | gm::GrowLoY,
    ) if $self->{showHelp};
    $self-> Name-> current(1);
    $self-> Name-> select_all;
@@ -867,6 +892,23 @@ sub on_create
    $self-> Dir_Change( $self-> Dir);
 }
 
+sub on_size
+{
+   my ( $self, $ox, $oy, $x, $y) = @_;
+
+   my ( $w, $dx, @left, @right);
+   
+   $dx = $self-> Files-> left;
+   $x -= $self-> {right_margin};
+   $w = ( $x - 3 * $dx ) / 2;
+   $_-> width( $w) for 
+      grep { defined } map { $self->bring($_) } 
+      qw(Files Name NameLabel Ext ExtensionsLabel);
+   $x = 2 * $dx + $w;
+   $_-> set( left => $x, width => $w) for 
+      grep { defined } map { $self->bring($_) } 
+      qw(Directory DirectoryLabel Dir Drive DriveLabel);
+}
 
 sub on_show
 {
