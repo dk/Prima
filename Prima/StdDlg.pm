@@ -105,6 +105,7 @@ sub open_file
       system => exists($profile{system}) ? $profile{system} : 1,
       onDestroy => sub { undef $openFileDlg},
    ) unless $openFileDlg;
+   delete $profile{system};
    my %a = %{$openFileDlg-> profile_default};
    $openFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
    return $openFileDlg-> execute;
@@ -117,6 +118,7 @@ sub save_file
       system => exists($profile{system}) ? $profile{system} : 1,
       onDestroy => sub { undef $saveFileDlg},
    ) unless $saveFileDlg;
+   delete $profile{system};
    my %a = %{$saveFileDlg-> profile_default};
    $saveFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
    return $saveFileDlg-> execute;
