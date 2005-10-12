@@ -57,6 +57,7 @@ sub profile_default
       %{$_[ 0]-> SUPER::profile_default},
       width       => 540,
       height      => 350,
+      sizeMin     => [380, 280],
       centered    => 1,
       visible     => 0,
       designScale => [7, 16],
@@ -75,6 +76,10 @@ sub profile_check_in
    $self-> SUPER::profile_check_in( $p, $default);
    $p-> { logFont} = {} unless exists $p->{ logFont};
    $p-> { logFont} = Prima::Drawable-> font_match( $p->{ logFont}, $default->{ logFont}, 1);
+   unless ( $p-> {sizeMin}) {
+      $p-> {sizeMin}->[0] = $default->{sizeMin}->[0] * $p-> {width} / $default->{width};
+      $p-> {sizeMin}->[1] = $default->{sizeMin}->[1] * $p-> {height} / $default->{height};
+   }
 }
 
 sub init
