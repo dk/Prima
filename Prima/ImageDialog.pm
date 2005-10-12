@@ -61,6 +61,7 @@ sub profile_default {
    return { 
       %{$_[ 0]-> SUPER::profile_default},
       preview  => 1,
+      sizeMin  => [380,400],
       text     => 'Open image',
       filter  => [
          ['Images' => Prima::ImageDialog::filtered_codecs2all( $codecs)],
@@ -78,11 +79,14 @@ sub init
    my %profile = $self-> SUPER::init(@_);
    
    my $pk = $self-> insert( ImageViewer => 
-      origin => [ 524, 120],
-      name   => 'PickHole',
-      borderWidth => 1,
-      alignment => ta::Center,
+      origin     => [ 524, 120],
+      name       => 'PickHole',
+      borderWidth=> 1,
+      alignment  => ta::Center,
       valignment => ta::Center,
+      growMode   => gm::GrowLoX | gm::GrowLoY,
+      hScroll    => 0,
+      vScroll    => 0,
    );
    $pk-> size(($self-> Cancel-> width) x 2); # force square dimension
 
@@ -96,6 +100,7 @@ sub init
       visible     => 0,
       value       => 0,
       delegations => ['Change'],
+      growMode    => gm::GrowLoX | gm::GrowLoY,
    );
 
    $self-> {Preview} = $self-> insert( CheckBox => 
@@ -103,17 +108,19 @@ sub init
       text   => '~Preview',
       size   => [ 96, 36],
       name   => 'Preview',
-      delegations => [qw(Click)]
+      delegations => [qw(Click)],
+      growMode    => gm::GrowLoX | gm::GrowLoY,
    );
 
    $self-> insert( Label => 
-      origin => [ 524, 25],
-      size   => [ 96, 56],
+      origin => [ 524, 5],
+      size   => [ 96, 76],
       name   => 'Info',
       text   => '',
       alignment => ta::Center,
-      valignment => ta::Center,
+      valignment => ta::Top,
       wordWrap => 1,
+      growMode   => gm::GrowLoX | gm::GrowHiY,
    );
    
    $self-> preview( $profile{preview});
@@ -167,7 +174,7 @@ sub update_preview
          );
          $s-> {block} = 0;
       } else {
-         $text .= ",frame ". ($s-> value + 1) . "of $x->{extras}->{frames}";
+         $text .= ",frame ". ($s-> value + 1) . " of $x->{extras}->{frames}";
          $self-> {frameIndex} = $s-> value;
       }
    }
