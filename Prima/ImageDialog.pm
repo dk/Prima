@@ -262,6 +262,7 @@ sub init
       name => 'ConvertTo',
       style => cs::DropDownList,
       size  => [ 96, 25],
+      growMode   => gm::GrowLoX,
    );   
    $self-> insert( Label => 
       origin => [ 524, 110],
@@ -269,6 +270,7 @@ sub init
       size  => [ 96, 20],
       name => 'ConvertToLabel',
       focusLink => $self-> {ConvertTo},
+      growMode   => gm::GrowLoX,
    );
    $self-> {UseFilter} = $self-> insert( CheckBox => 
       origin => [ 524, 20],
@@ -276,6 +278,7 @@ sub init
       size   => [ 96, 36],
       name   => 'UseFilter',
       delegations => [qw(Click)],
+      growMode   => gm::GrowLoX,
    );
    $self-> {codecFilters} = [];
    $self-> {allCodecs} = Prima::Image-> codecs;
